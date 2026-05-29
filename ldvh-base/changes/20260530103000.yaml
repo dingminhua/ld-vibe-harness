@@ -1,0 +1,23 @@
+change:
+  id: "20260530103000"
+  title: "删除 references/ 目录并更新 02 目录说明"
+  description: >
+    1. 删除 references/ 目录及其所有文件（内容已迁移至 specs/refs/）。
+    2. 更新 specs/02-LDVH目录说明.md：
+       - 一级目录说明表中删除 references/ 行
+       - 删除 3.5 references 目录整节
+       - 后续目录编号相应调整（3.6→3.5，3.7→3.6）
+       - 目录内容归属示例表中删除 references/ 行
+       - 更新 specs 编号分区说明，匹配实际文件：
+         - 01-07 补充"含子编号如 04.01、05.02 等"
+         - 10-39 补充"当前仅 10 为索引，11-39 待补齐"
+         - 40-69 补充"当前仅 40 为索引，41-69 待补齐"
+         - 删除 70-99 保留扩展（已移至 evals/）
+       - 更新事实源性质描述："70-99 保留扩展不直接构成强制规则" → "evals/ 不直接构成强制规则"
+       - 更新 refs/ 内容来源描述，删除 references/ 引用
+  reason: "references/ 内容已迁移至 specs/refs/，原目录不再必要；同步更新目录说明以匹配实际结构"
+  impact:
+    - "references/（删除）"
+    - "specs/02-LDVH目录说明.md（更新）"
+  status: "completed"
+  verification: "references/ 目录已删除，02 文档已更新"

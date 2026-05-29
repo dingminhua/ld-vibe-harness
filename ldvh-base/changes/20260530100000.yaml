@@ -1,0 +1,16 @@
+change:
+  id: "20260530100000"
+  title: "将 specs/02-LDVH文件夹说明.md 重命名为 specs/02-LDVH目录说明.md"
+  description: >
+    将 specs/02 文档中的"文件夹"统一替换为"目录"，包括：
+    - 文件名：02-LDVH文件夹说明.md → 02-LDVH目录说明.md
+    - 标题：LDVH 文件夹说明 → LDVH 目录说明
+    - 正文：所有"文件夹"替换为"目录"，"文件夹规划"替换为"目录规划"，"文件夹层级"替换为"目录层级"
+    - 空格维持现状，不做调整
+  reason: "'文件夹'偏口语化，'目录'更符合工程规范文档的专业术语习惯"
+  impact:
+    - "specs/02-LDVH目录说明.md（新增）"
+    - "specs/02-LDVH文件夹说明.md（删除）"
+    - "引用本文的 specs/70-LDVH对Linear的借鉴评估.md 中的文件名引用需同步更新"
+  status: "completed"
+  verification: "文件已创建，内容已核对，所有'文件夹'已替换为'目录'"
