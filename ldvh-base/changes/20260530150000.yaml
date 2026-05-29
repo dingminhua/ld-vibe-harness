@@ -1,0 +1,38 @@
+id: CHG-20260530150000
+type: change
+title: 收敛 04 Trae 机制规范为 Rules Skill Agent 三机制
+status: recorded
+created: 2026-05-30
+updated: 2026-05-30
+date: 2026-05-30
+changes:
+  - 更新 specs/04-LDVH-Trae机制规范.md，将 04 系列正式治理范围收敛为 Rules、Skill、Agent 三类机制。
+  - 在 specs/04-LDVH-Trae机制规范.md 建立 Rules、Skill、Agent 三者选择边界表，并声明该表是三者选择规则的唯一对比事实源。
+  - 更新 specs/04.01-Rules机制规范.md，删除非 Rules、Skill、Agent 机制关系。
+  - 更新 specs/04.02-Skill机制规范.md，删除非 Rules、Skill、Agent 机制概念，并将升级 Agent 的判断改为权限边界表达。
+  - 更新 specs/04.03-Agent机制规范.md，删除非 Rules、Skill、Agent 机制概念，并将 Agent 创建门槛、定义摘要和检查项改为权限边界表达。
+  - 删除 specs/04.04-MCP与工具调用机制规范.md。
+  - 更新 specs/00-LD-Vibe-Harness理念与纲要.md，将 Trae Solo 环境机制示例收敛为 Rules、Skill、Agent。
+  - 更新 specs/01-specs文档结构规范.md，删除 04.04 子文档示例。
+reason: 用户明确要求 04 系列只保留 Rules、Skill、Agent 三类机制，删除其他机制概念，并在 04 主文档建立三者对比边界表，同时避免构造第二事实源。
+impact:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+  - specs/01-specs文档结构规范.md
+  - specs/04-LDVH-Trae机制规范.md
+  - specs/04.01-Rules机制规范.md
+  - specs/04.02-Skill机制规范.md
+  - specs/04.03-Agent机制规范.md
+  - specs/04.04-MCP与工具调用机制规范.md
+  - ldvh-base/changes/20260530150000.yaml
+validation:
+  - grep 检查 specs/ 下已无 MCP、Tool Calling、工具调用、斜杠命令、上下文工具、.trae/specs、04.04、工具权限、工具结果、过程命令、外部工具协议、人机对话入口、上下文注入入口残留。
+  - 04 主文档保留 Rules、Skill、Agent 对比边界表，并声明子文档不得复制维护另一套选择规则。
+  - 04.01、04.02、04.03 仅保留各自机制内部细则。
+project: ld-vibe-harness
+tags:
+  - specs
+  - trae-mechanism
+  - rules
+  - skill
+  - agent
+  - single-source-of-truth

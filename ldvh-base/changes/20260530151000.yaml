@@ -1,0 +1,36 @@
+id: CHG-20260530151000
+type: change
+title: 重命名 04 主文档为 LDVH AI 协作规范
+status: recorded
+created: 2026-05-30
+updated: 2026-05-30
+date: 2026-05-30
+changes:
+  - 将 specs/04-LDVH-Trae机制规范.md 重命名为 specs/04-LDVH-AI协作规范.md。
+  - 更新 specs/04-LDVH-AI协作规范.md 的标题、定位和子文档分工表述。
+  - 更新 specs/04.01-Rules机制规范.md、specs/04.02-Skill机制规范.md、specs/04.03-Agent机制规范.md 的所属主文档、上位依据和父规范关系引用。
+  - 更新 specs/00-LD-Vibe-Harness理念与纲要.md 的基础规范索引，将 04 表述为 LDVH AI 协作规范。
+  - 更新 specs/01-specs文档结构规范.md 的正式规范文档示例。
+reason: 用户确认 04 主文档应改为 04-LDVH-AI协作规范.md，以更准确表达该文档治理 Rules、Skill、Agent 三类 AI 协作机制，而不是泛化介绍 Trae 机制。
+impact:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+  - specs/01-specs文档结构规范.md
+  - specs/04-LDVH-AI协作规范.md
+  - specs/04-LDVH-Trae机制规范.md
+  - specs/04.01-Rules机制规范.md
+  - specs/04.02-Skill机制规范.md
+  - specs/04.03-Agent机制规范.md
+  - ldvh-base/changes/20260530151000.yaml
+validation:
+  - 已检查 specs/ 下不存在 04-LDVH-Trae机制规范、LDVH Trae 机制规范、Trae 机制规范残留。
+  - 04 主文档继续作为 Rules、Skill、Agent 三者对比选择边界的唯一事实源。
+  - 04.01、04.02、04.03 仅引用 04 主文档，不复制维护三者选择规则。
+project: ld-vibe-harness
+tags:
+  - specs
+  - ai-collaboration
+  - rules
+  - skill
+  - agent
+  - rename
+  - single-source-of-truth

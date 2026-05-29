@@ -114,7 +114,7 @@ LD Vibe Harness 不是由单一工具、单一规范或单一对象体系构成�
 | 类别 | 英文 | 归属 | Harness 的角色 | 回答的问题 | 举例 |
 |---|---|---|---|---|---|
 | 介质 | Medium | 行业标准 | 定义使用规则，不重新定义介质本身 | 用什么承载 | YAML、Markdown、Python、JavaScript |
-| Trae Solo 环境机制 | Trae Solo Environment Mechanisms | Trae 提供 | 利用，不重新定义 | AI 协作运行在哪些原生机制之上 | Rules、Skill、Agent、MCP、Tool Calling |
+| Trae Solo 环境机制 | Trae Solo Environment Mechanisms | Trae 提供 | 利用，不重新定义 | AI 协作运行在哪些原生机制之上 | Rules、Skill、Agent |
 | Harness 工具 | Harness Tools | Harness 提供 | 实现和维护 | 用什么辅助读取、校验、展示和写入 | Web Tools、Python 辅助程序 |
 | Harness 生产对象 | Harness Production Objects | Harness 定义规范，项目实例化 | 建模工程生产事实 | 项目事实如何被组织、流转和沉淀 | Intent、Task、Memo、ADR、Evidence、Change、Pitfall |
 | Harness 行动模型 | Harness Action Model | Harness 定义规范，项目执行时适用 | 建模 AI 行动控制 | AI 如何读取、判断、执行、停下和回写 | Context、Scenario、Gate、规则适用、Skill 进入、Agent 调度、事实源回写 |
@@ -131,7 +131,7 @@ YAML、Markdown、Python、JavaScript 等文件格式和编程语言是 LD Vibe 
 
 ### 4.3 Trae Solo 环境机制
 
-Trae Solo 提供了 Rules、Skill、Agent、MCP、Tool Calling 等原生机制，它们是 LD Vibe Harness 可以利用的 AI 协作底座，但机制本身不会自动形成工程驾驭能力，也不会天然约束 AI 行为。
+在 LDVH 当前正式治理范围内，Trae Solo 环境机制只纳入 Rules、Skill、Agent 三类可落地协作机制。它们是 LD Vibe Harness 可以利用的 AI 协作底座，但机制本身不会自动形成工程驾驭能力，也不会天然约束 AI 行为。
 
 LD Vibe Harness 对 Trae Solo 环境机制的态度：
 
@@ -260,7 +260,7 @@ LD Vibe Harness 的基础规范由 01-07 承载。本文只定义基础规范在
 1. specs 文档结构、编号、文档类型和引用纪律由 `specs/01-specs文档结构规范.md` 定义；
 2. LDVH 项目文件夹规划由 `specs/02-LDVH文件夹说明.md` 定义；
 3. 事实源边界与承载规则由 `specs/03-事实源边界与承载规范.md` 定义；
-4. LDVH Trae 机制由 `specs/04-LDVH-Trae机制规范.md` 定义；
+4. LDVH AI 协作规范由 `specs/04-LDVH-AI协作规范.md` 定义；
 5. LDVH 工具基础规则由后续 `specs/05-LDVH工具基础规范.md` 定义；
 6. LDVH 生产对象基础规则由后续 `specs/06-LDVH生产对象基础规范.md` 定义，并由 10-39 展开具体对象规范；
 7. LDVH 行动模型基础规则由后续 `specs/07-LDVH行动模型基础规范.md` 定义，并由 40-69 展开具体行动规范。
