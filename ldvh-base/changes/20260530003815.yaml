@@ -1,0 +1,24 @@
+id: CHG-20260530003815
+type: change
+title: 新增管理分层思想借鉴评估文档
+status: recorded
+created: 2026-05-30
+updated: 2026-05-30
+date: 2026-05-30
+changes:
+  - 新增 specs/73-LDVH的管理分层思想借鉴评估.md，基于 PM Kit 七层管理分层思想（规范→决策→需求→实践→对象→记录→审查）重新评估对 LD Vibe Harness 的借鉴价值。
+  - 将七层模型映射到 LD Vibe Harness 的五类构成要素和 AI 行动模型中。
+  - 提取分层管理思维、管理闭环逻辑、常见误区防范和文档归属判断方法四个借鉴方向。
+  - 明确不应照搬 PM Kit 的 docs/20-89 需求编号、98/99 审计入口等内容。
+reason: 用户要求将 PM Kit 的 meta 管理思想学习笔记加入参考分析，评估对 LD Vibe Harness 的借鉴价值。
+impact:
+  - specs/73-LDVH的管理分层思想借鉴评估.md
+validation: 已确认文档遵循 01 specs 文档结构规范的内部调研骨架，包含上位依据、事实源边界声明、Human Gate 检查、不进入本文的内容和待补齐事项。
+project: ld-vibe-harness
+tags:
+  - specs
+  - internal-research
+  - management-layers
+  - pm-kit-reference
+  - governance
+  - action-model
