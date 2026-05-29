@@ -1,0 +1,30 @@
+id: CHG-20260530000151
+type: change
+title: 统一 LDVH 目录前缀和基础规范命名
+status: recorded
+created: 2026-05-30
+updated: 2026-05-30
+date: 2026-05-30
+changes:
+  - 将实际目录 ld-base/ 重命名为 ldvh-base/。
+  - 新增 ldvh-web/ 和 ldvh-tools/ 目录，用于统一 LDVH 前缀。
+  - 将 specs 中 ld-base/、ld-web/、ld-tools/ 引用更新为 ldvh-base/、ldvh-web/、ldvh-tools/。
+  - 将 05、06、07 规划命名统一为 LDVH 工具基础规范、LDVH 生产对象基础规范、LDVH 行动模型基础规范。
+  - 将基础设施规范表述调整为基础规范表述。
+reason: 用户确认 LDVH 相关目录和基础规范命名需要统一，避免 ld-* 与 LDVH 命名混用。
+impact:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+  - specs/01-specs文档结构规范.md
+  - specs/02-LDVH文件夹说明.md
+  - specs/03-事实源边界与承载规范.md
+  - ldvh-base/
+  - ldvh-web/
+  - ldvh-tools/
+validation: 已复查 specs 中旧路径和旧命名残留，确认旧 ld-* 路径仅存在于历史 Change 记录正文中。
+project: ld-vibe-harness
+tags:
+  - specs
+  - directory-rename
+  - ldvh
+  - governance
+  - change-record

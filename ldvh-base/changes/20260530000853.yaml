@@ -1,0 +1,28 @@
+id: CHG-20260530000853
+type: change
+title: web/ 和 tools/ 目录去掉 LDVH 前缀
+status: recorded
+created: 2026-05-30
+updated: 2026-05-30
+date: 2026-05-30
+changes:
+  - 将 ldvh-web/ 重命名为 web/，将 ldvh-tools/ 重命名为 tools/。
+  - 更新 specs 中所有 ldvh-web/ 和 ldvh-tools/ 引用为 web/ 和 tools/。
+  - 保留 ldvh-base/ 前缀，因它是管辖项目需新增的对象实例目录。
+reason: web/ 和 tools/ 只在本项目内存在，不需要 LDVH 前缀；ldvh-base/ 是管辖项目需新增的目录，保留前缀以区分归属。
+impact:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+  - specs/01-specs文档结构规范.md
+  - specs/02-LDVH文件夹说明.md
+  - specs/03-事实源边界与承载规范.md
+  - web/
+  - tools/
+validation: 已通过 Read 工具逐行检查，确认 specs 中无 ldvh-web/ 和 ldvh-tools/ 残留引用。
+project: ld-vibe-harness
+tags:
+  - specs
+  - directory-rename
+  - web
+  - tools
+  - governance
+  - change-record

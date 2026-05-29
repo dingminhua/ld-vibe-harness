@@ -18,15 +18,15 @@
 
 ## 二、与 00 总纲的关系
 
-00 定义 LD Vibe Harness 的产品理念、价值实现标准、五类构成要素和基础设施规范索引。本文承接 00 中“介质、Trae Solo 环境机制、Harness 工具、Harness 生产对象、Harness 行动模型共同组成工程驾驭体系”的架构判断，专门定义这些内容在项目文件夹中的承载位置。
+00 定义 LD Vibe Harness 的产品理念、价值实现标准、五类构成要素和基础规范索引。本文承接 00 中“介质、Trae Solo 环境机制、Harness 工具、Harness 生产对象、Harness 行动模型共同组成工程驾驭体系”的架构判断，专门定义这些内容在项目文件夹中的承载位置。
 
-本文是 LD Vibe Harness 项目文件夹规划的权威位置。00 只保留基础设施规范索引，不重复维护项目目录说明；03 定义事实源边界，不重复维护目录用途说明。
+本文是 LD Vibe Harness 项目文件夹规划的权威位置。00 只保留基础规范索引，不重复维护项目目录说明；03 定义事实源边界，不重复维护目录用途说明。
 
 ---
 
 ## 三、文件夹规划边界
 
-**事实源边界声明：** 本文的权威领域是 LD Vibe Harness 项目文件夹规划、一级目录用途、目录之间的内容归属关系和管辖项目定义。本文不定义 specs 文档编号、子文档、实践文档和引用纪律（见 `specs/01-specs文档结构规范.md`）；不定义最终事实源判断、单一事实源原则和事实承载规则（见 `specs/03-事实源边界与承载规范.md`）；不定义具体生产对象字段和状态机（见 10-39 Harness 生产对象）；不定义 AI 行动流程（见 40-69 Harness 行动模型）；不定义工具实现细节（见 `ld-web/` 和 `ld-tools/`）。
+**事实源边界声明：** 本文的权威领域是 LD Vibe Harness 项目文件夹规划、一级目录用途、目录之间的内容归属关系和管辖项目定义。本文不定义 specs 文档编号、子文档、实践文档和引用纪律（见 `specs/01-specs文档结构规范.md`）；不定义最终事实源判断、单一事实源原则和事实承载规则（见 `specs/03-事实源边界与承载规范.md`）；不定义具体生产对象字段和状态机（见 10-39 Harness 生产对象）；不定义 AI 行动流程（见 40-69 Harness 行动模型）；不定义工具实现细节（见 `web/` 和 `tools/`）。
 
 ### 3.1 管辖项目定义
 
@@ -36,19 +36,19 @@
 
 | 目录 | 定位 | 主要内容 |
 |---|---|---|
-| specs/ | LD Vibe Harness 规范目录 | 00-99 specs 文档，包括理念总纲、基础设施规范、生产对象规范、行动模型规范和内部调研 |
+| specs/ | LD Vibe Harness 规范目录 | 00-99 specs 文档，包括理念总纲、基础规范、生产对象规范、行动模型规范和内部调研 |
 | docs/ | 管辖项目资料目录 | 管辖项目资料、管辖项目审计结果、报告、操作说明、产品资料和非规范性实践 |
 | references/ | 外部资料目录 | 第三方文档、外部案例、外部方法资料和参考材料 |
-| ld-base/ | 结构化对象实例目录 | Task、ADR、Evidence、Change、Pitfall 等 Harness 生产对象实例 |
-| ld-web/ | Web Tools 实现目录 | LD Vibe Harness Web Tools 的前端、后端、页面和相关实现 |
-| ld-tools/ | 程序辅助工具目录 | 脚本、校验器、聚合器、受控写入工具和其他程序辅助工具 |
+| ldvh-base/ | 结构化对象实例目录 | Task、ADR、Evidence、Change、Pitfall 等 Harness 生产对象实例 |
+| web/ | Web Tools 实现目录 | LD Vibe Harness Web Tools 的前端、后端、页面和相关实现 |
+| tools/ | 程序辅助工具目录 | 脚本、校验器、聚合器、受控写入工具和其他程序辅助工具 |
 
 ### 3.3 specs 目录
 
 specs/ 承载 LD Vibe Harness 的规范体系和内部调研文档，包括：
 
 1. 00 理念与纲要；
-2. 01-09 基础设施规范；
+2. 01-07 基础规范；
 3. 10-39 Harness 生产对象规范；
 4. 40-69 Harness 行动模型规范；
 5. 70-89 内部调研；
@@ -68,19 +68,19 @@ references/ 承载外部资料、第三方文档、外部案例、外部方法�
 
 references/ 下的文档可使用两位数字前缀按新增顺序自然增长；该编号只用于排序和引用便利，不属于 specs 规范编号体系。
 
-### 3.6 ld-base 目录
+### 3.6 ldvh-base 目录
 
-ld-base/ 承载结构化 Harness 生产对象实例，例如 Task、ADR、Evidence、Change、Pitfall 等。
+ldvh-base/ 承载结构化 Harness 生产对象实例，例如 Task、ADR、Evidence、Change、Pitfall 等。
 
-ld-base/ 下各对象实例的目录结构、字段、状态和验收规则由 10-39 Harness 生产对象规范定义。
+ldvh-base/ 下各对象实例的目录结构、字段、状态和验收规则由 10-39 Harness 生产对象规范定义。
 
-### 3.7 ld-web 与 ld-tools 目录
+### 3.7 web 与 tools 目录
 
-ld-web/ 承载 LD Vibe Harness Web Tools 的实现。
+web/ 承载 LD Vibe Harness Web Tools 的实现。
 
-ld-tools/ 承载程序辅助工具、脚本、校验器、聚合器和受控写入工具。
+tools/ 承载程序辅助工具、脚本、校验器、聚合器和受控写入工具。
 
-Web Tools 和程序辅助工具的角色边界由后续 Harness 工具规范定义。
+Web Tools 和程序辅助工具的角色边界由后续 `specs/05-LDVH工具基础规范.md` 定义。
 
 ---
 
@@ -94,11 +94,11 @@ Web Tools 和程序辅助工具的角色边界由后续 Harness 工具规范定�
 | 事实源边界与承载规则 | specs/ |
 | 生产对象规范 | specs/ |
 | 行动模型规范 | specs/ |
-| 结构化对象实例 | ld-base/ |
+| 结构化对象实例 | ldvh-base/ |
 | 管辖项目资料和审计结果 | docs/ |
 | 外部资料和第三方参考 | references/ |
-| Web Tools 实现 | ld-web/ |
-| 程序辅助工具实现 | ld-tools/ |
+| Web Tools 实现 | web/ |
+| 程序辅助工具实现 | tools/ |
 
 ---
 
@@ -141,6 +141,6 @@ Web Tools 和程序辅助工具的角色边界由后续 Harness 工具规范定�
 
 ## 七、待补齐事项
 
-1. ld-base/ 下各类生产对象实例的具体目录结构，待 10-39 Harness 生产对象规范稳定后补齐；
+1. ldvh-base/ 下各类生产对象实例的具体目录结构，待 10-39 Harness 生产对象规范稳定后补齐；
 2. docs/ 下管辖项目资料的分类方式，待管辖项目实践稳定后补齐；
-3. ld-web/ 与 ld-tools/ 的实现目录细分，待 Harness 工具规范和实现演进后补齐。
+3. web/ 与 tools/ 的实现目录细分，待 LDVH 工具基础规范和实现演进后补齐。
