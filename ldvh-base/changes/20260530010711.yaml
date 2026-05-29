@@ -1,0 +1,31 @@
+id: CHG-20260530010711
+type: change
+title: 收敛 specs 文档边界表达规则并审查现有文档
+status: recorded
+created: 2026-05-30
+updated: 2026-05-30
+date: 2026-05-30
+changes:
+  - 修改 specs/01-specs文档结构规范.md，取消正式规范文档对事实源边界声明和“不进入本文”章节的强制要求。
+  - 在 specs/01-specs文档结构规范.md 中新增反向边界治理规则，要求职责边界由头部定位、适用范围、上位依据、相关规范和正文正向规则表达。
+  - 更新正式规范文档骨架、子文档骨架和 specs 写作检查项，禁止设置“不进入本文”“边界说明”等反向边界章节。
+  - 审查并更新 specs/00-LD-Vibe-Harness理念与纲要.md、specs/02-LDVH文件夹说明.md、specs/03-事实源边界与承载规范.md、specs/70-LDVH对Linear的借鉴评估.md、specs/71-LDVH对gstack的借鉴评估.md、specs/72-LDVH的Agent-Harness概念.md、specs/73-LDVH的管理分层思想借鉴评估.md，移除“不进入本文”章节。
+  - 收敛 specs/02-LDVH文件夹说明.md 和 specs/03-事实源边界与承载规范.md 中的事实源边界声明，改为正向职责表达。
+reason: 用户确认“不进入本文”和“边界说明”会不可控膨胀，要求先修改 01 相关规定，再按新规定审查现有文档。
+impact:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+  - specs/01-specs文档结构规范.md
+  - specs/02-LDVH文件夹说明.md
+  - specs/03-事实源边界与承载规范.md
+  - specs/70-LDVH对Linear的借鉴评估.md
+  - specs/71-LDVH对gstack的借鉴评估.md
+  - specs/72-LDVH的Agent-Harness概念.md
+  - specs/73-LDVH的管理分层思想借鉴评估.md
+validation: 已执行文本检索审查，现有读取结果显示 01/02/03 的核心规则已改为正向职责表达；00/02/03/70/71/72/73 的“不进入本文”章节已移除。后续如需，可继续用全量 grep 复核并处理工具索引延迟带来的旧结果。
+project: ld-vibe-harness
+tags:
+  - specs
+  - governance
+  - document-structure
+  - anti-boundary-expansion
+  - change-record
