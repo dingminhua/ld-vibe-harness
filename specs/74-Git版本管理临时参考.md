@@ -3,6 +3,9 @@
 > 创建日期：2026-05-30
 > 状态：内部调研 / 临时参考
 > 编号归属：70-89 内部调研
+> 调研边界：不直接构成强制规则
+> 执行效力：无，结论需进入 01-69 正式规范区间或 ADR 后才成为稳定规则
+> AI 执行边界：禁止据此自动执行 commit、push、tag、release 或分支切换
 > 来源：`trae-pm-kit/references/16-LD-Vibe-Harness-Git版本管理架构与迁移计划.md`
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
 > 相关规范：`specs/01-specs文档结构规范.md`、`specs/02-LDVH文件夹说明.md`、`specs/03-事实源边界与承载规范.md`
