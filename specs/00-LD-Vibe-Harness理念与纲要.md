@@ -34,7 +34,7 @@ LD Vibe Harness 以 AI 执行者为第一服务对象，整个体系围绕"帮�
 
 因此，LD Vibe Harness 不只为 AI 提供上下文，还要为 AI 提供场景识别、工具选择、Skill 进入、子 Agent 调度和人类确认的行动依据。
 
-在这个前提下，LD Vibe Harness 的架构分为三个逻辑层次：底层确保 AI 能基于事实源稳定行动；中间层通过 Human Gate 让人确认关键节点；上层通过工具降低人和 AI 维护事实源的成本。
+在这个前提下，LD Vibe Harness 的架构由介质、Trae Solo 环境机制、Harness 工具、Harness 生产对象和 Harness 行动模型五类构成要素共同组成。
 
 人在 LD Vibe Harness 中负责：
 
@@ -64,33 +64,37 @@ AI 负责：
 
 ---
 
-## 三、架构：介质层 + 三层能力
+## 三、架构：五类构成要素
 
-LD Vibe Harness 的架构由一个贯穿层和三个能力层构成。介质层是三层共同依赖的行业标准，三层能力各有归属、各有角色、各有规范边界。
+LD Vibe Harness 不是由单一工具、单一规范或单一对象体系构成，而是由五类构成要素共同形成 AI 工程驾驭体系：介质、Trae Solo 环境机制、Harness 工具、Harness 生产对象和 Harness 行动模型。
 
-### 3.1 介质层
+这五类不是上下层级，也不是五种能力，而是性质不同、分工不同、共同服务于同一工程闭环的构成要素。
 
-YAML、Markdown、Python、JavaScript 等文件格式和编程语言是行业标准介质，不属于任何一层，但被三层共同使用。
+### 3.1 五类构成要素总览
 
-介质层的核心特征：
+| 类别 | 英文 | 归属 | Harness 的角色 | 回答的问题 | 举例 |
+|---|---|---|---|---|---|
+| 介质 | Medium | 行业标准 | 定义使用规则，不重新定义介质本身 | 用什么承载 | YAML、Markdown、Python、JavaScript |
+| Trae Solo 环境机制 | Trae Solo Environment Mechanisms | Trae 提供 | 利用，不重新定义 | AI 协作运行在哪些原生机制之上 | Rules、Skill、Agent、MCP、Tool Calling |
+| Harness 工具 | Harness Tools | Harness 提供 | 实现和维护 | 用什么辅助读取、校验、展示和写入 | Web Tools、Python 辅助程序 |
+| Harness 生产对象 | Harness Production Objects | Harness 定义规范，项目实例化 | 建模工程生产事实 | 项目事实如何被组织、流转和沉淀 | Intent、Task、Memo、ADR、Evidence、Change、Pitfall |
+| Harness 行动模型 | Harness Action Model | Harness 定义规范，项目执行时适用 | 建模 AI 行动控制 | AI 如何读取、判断、执行、停下和回写 | Context、Scenario、Gate、规则适用、Skill 进入、Agent 调度、事实源回写 |
 
-1. **行业标准**：介质本身的语法和规范由行业标准定义，不属于 Trae、Harness 或项目；
+### 3.2 介质
+
+YAML、Markdown、Python、JavaScript 等文件格式和编程语言是 LD Vibe Harness 使用的行业标准承载形式。介质本身不属于 Trae、Harness 或项目，也不是 Harness 自定义对象。
+
+介质的核心特征：
+
+1. **行业标准**：介质本身的语法和规范由行业标准定义；
 2. **Harness 定义使用规则**：Harness 在 10-事实源规范中定义这些介质的使用规则（什么时候用 YAML、什么时候用 Markdown、字段契约怎么定义），但不重新定义介质本身；
-3. **三层共用**：Trae Solo 环境通过 .md 文件落地 Rules、Skill、Agent 定义；Harness 工具通过 .py 程序落地 Web 后端和辅助脚本；Harness 对象通过 .yaml / .md 文件落地 Task、ADR、Pitfall 实例。
+3. **五类共用**：Trae Solo 环境机制通过 .md 文件落地 Rules、Skill、Agent 定义；Harness 工具通过 .py / .js 程序落地 Web 后端、前端和辅助脚本；Harness 生产对象通过 .yaml / .md 文件落地 Task、ADR、Pitfall 等实例；Harness 行动模型通过规范、规则入口和结构化上下文约束 AI 行动。
 
-### 3.2 三层能力定义
+### 3.3 Trae Solo 环境机制
 
-| 层 | 英文 | 归属 | Harness 的角色 | 举例 |
-|---|---|---|---|---|
-| Trae Solo 环境 | Trae Solo Environment | Trae 提供 | 利用，不重新定义 | Rules、Skill、Agent、MCP、Tool Calling |
-| Harness 工具 | Harness Tools | Harness 提供 | 实现和维护 | Web Tools、Python 辅助程序 |
-| Harness 对象 | Harness Objects | Harness 定义规范，项目实例化 | 定义规范 | Task、Memo、ADR、Pitfall |
+Trae Solo 提供了 Rules、Skill、Agent、MCP、Tool Calling 等原生机制，它们是 LD Vibe Harness 可以利用的 AI 协作底座，但机制本身不会自动形成工程驾驭能力，也不会天然约束 AI 行为。
 
-### 3.3 Trae Solo 环境
-
-Trae Solo 提供了 Rules、Skill、Agent、MCP、Tool Calling 等原生机制，它们是 LD Vibe Harness 可以利用的基础能力，但机制本身不会自动形成工程驾驭能力，也不会天然约束 AI 行为。
-
-LD Vibe Harness 对 Trae Solo 环境的态度：
+LD Vibe Harness 对 Trae Solo 环境机制的态度：
 
 1. **利用不重新定义**：Harness 定义如何使用 Trae 原生机制（规范层），不重新定义机制本身；
 2. **规范不替代**：Harness 的 Rules、Skill、Agent 设计规范，是对 Trae 原生机制的使用约束和最佳实践，不是替代 Trae 的机制；
@@ -98,9 +102,9 @@ LD Vibe Harness 对 Trae Solo 环境的态度：
 
 ### 3.4 Harness 工具
 
-Harness 工具是 LD Vibe Harness 自身提供的能力，用于桥接 AI 优先的结构化信息和人的可读可操作需求。
+Harness 工具是 LD Vibe Harness 自身提供的辅助执行手段，用于桥接 AI 优先的结构化信息和人的可读可操作需求。
 
-Harness 工具包括：
+Harness 工具包括可视化工具和程序辅助工具。当前主要包括：
 
 1. **Web Tools**：可视化工具，把 AI 优先的结构化信息（YAML、Markdown）转化为人可读、可操作的界面，桥接信息；
 2. **Python 辅助程序**：解析、校验、聚合和受控写入事实源，降低人和 AI 维护结构化文件的成本。
@@ -111,39 +115,63 @@ Harness 工具的边界：
 2. 工具可以提供受控写入入口，但不能绕过事实源边界和 Human Gate；
 3. 工具可以聚合展示，但不能独立维护与事实源冲突的派生数据。
 
-### 3.5 Harness 对象
+### 3.5 Harness 生产对象
 
-Harness 对象是 LD Vibe Harness 定义规范的结构化事实实体。Harness 定义对象的规范（状态机、字段契约、事实源边界、准入条件），项目按规范创建实例。
+Harness 生产对象是 LD Vibe Harness 对工程生产事实的自定义建模，用于承载意图、任务、决策、风险、依赖、证据、变更、产物、检查项和经验沉淀。
 
-Harness 对象的核心特征：
+典型 Harness 生产对象包括 Intent、TaskSet、Task、Memo、ADR、Risk、Dependency、Evidence、Artifact、Checklist、Change、Pitfall。
 
-1. **规范由 Harness 定义**：对象的状态机、字段契约、事实源边界和准入条件由 Harness 规范体系定义；
-2. **实例由项目拥有**：每个项目按规范创建的对象实例属于项目，存放在项目的 ld-base/ 目录中；
-3. **生命周期受治理**：对象的创建、状态变更、验收和关闭受任务治理和 Human Gate 约束。
+Harness 生产对象的核心特征：
 
-Harness 对象的权威定义、对象地图、对象关系和对象事实源边界，由 14-Harness 对象规范和 20-49 Harness 对象实践展开。本文只说明 LD Vibe Harness 必须以对象为基础组织事实源、工具辅助和 AI 协作，不在总纲中重复维护对象清单或对象状态。
+1. **规范由 Harness 定义**：对象的准入条件、字段契约、状态流转、事实源边界和验收规则由 Harness 规范体系定义；
+2. **实例由项目拥有**：每个项目按规范创建的对象实例属于项目，存放在项目的结构化事实源目录中；
+3. **服务工程生产**：对象用于让 AI、人和工具围绕同一组项目事实协作，支持任务拆解、状态追踪、证据回写、决策追溯和变更审计。
 
-### 3.6 介质层与三层能力的关系
+Harness 生产对象的权威定义、对象地图、对象关系和对象事实源边界，由 14-管理对象规范和 20-49 管理对象实践展开。本文只说明 LD Vibe Harness 必须以生产对象为基础组织项目事实、工具辅助和 AI 协作，不在总纲中重复维护对象清单或对象状态。
+
+### 3.6 Harness 行动模型
+
+Harness 行动模型是 LD Vibe Harness 对 AI 在项目中如何行动的执行控制建模，用于回答 AI 进入项目后该读什么、如何判断、如何执行、何时停下等待人确认，以及完成后如何把事实写回项目。
+
+Harness 行动模型包括：
+
+1. **Context**：AI 行动前应获得的最小可行动上下文；
+2. **Scenario**：AI 如何识别当前任务场景；
+3. **Gate / Human Gate**：AI 何时必须暂停并请求人确认；
+4. **规则适用**：AI 如何加载、理解和遵守 Rules；
+5. **Skill 进入**：AI 何时进入可复用流程；
+6. **Agent 调度**：AI 何时调用子 Agent 或专业角色；
+7. **事实源回写**：AI 完成执行后如何按事实源边界写回项目。
+
+其中 Rules、Skill、Agent 与 Trae Solo 原生机制有关。Trae Solo 提供底层机制，LD Vibe Harness 不重新定义机制本身，只定义这些机制在 Harness 中如何被设计、组织、触发、治理和回写事实源。
+
+### 3.7 五类构成要素的关系
 
 ```text
-介质层（YAML / Markdown / Python / JavaScript，行业标准）
-  ↕ 三层共用
-Trae Solo 环境（提供原生机制，通过 .md 落地）
-  ↓ Harness 定义使用规范
-Harness 工具（桥接 AI 和人，通过 .py / .js 落地）
-  ↓ 工具读写 Harness 对象
-Harness 对象（承载项目事实，通过 .yaml / .md 落地）
-  ↓ AI 和人通过工具操作对象
+介质
+  承载规范、规则、工具代码、对象实例、上下文材料和执行证据
+
+Trae Solo 环境机制
+  提供 AI 协作入口和 Rules / Skill / Agent / MCP / Tool Calling 等原生机制
+
+Harness 工具
+  读取、校验、聚合、展示和受控写入 Git 文件事实源
+
+Harness 生产对象
+  建模工程生产事实：意图、任务、决策、风险、证据、变更、产物和经验
+
+Harness 行动模型
+  建模 AI 行动控制：上下文读取、场景识别、规则适用、工具选择、Skill 进入、Agent 调度、Human Gate 和事实源回写
 ```
 
-三层协作的核心闭环：
+五类构成要素共同形成核心闭环：
 
-1. 介质层提供行业标准格式，三层按各自规则使用；
-2. Trae Solo 环境提供 Rules、Skill、Agent 等原生机制；
-3. Harness 定义这些机制的使用规范，并构建工具链和工作流；
-4. Harness 工具桥接 AI 优先的结构化信息和人的可读可操作需求；
-5. Harness 对象承载项目事实，AI 和人通过工具操作对象；
-6. 人的意图通过规则、事实源、工具链和工作流，转化为可规划、可执行、可验证、可沉淀的 AI 工程闭环。
+1. 介质提供行业标准承载形式；
+2. Trae Solo 环境机制提供 AI 协作入口；
+3. Harness 行动模型约束 AI 如何读取上下文、识别场景、选择工具、进入 Skill、调度 Agent、触发 Human Gate 和回写事实源；
+4. Harness 工具辅助解析、校验、聚合、展示和受控写入；
+5. Harness 生产对象承载工程生产事实，沉淀任务、决策、证据、变更和经验；
+6. 人的意图通过规则、事实源、工具链和行动模型，转化为可规划、可执行、可验证、可沉淀的 AI 工程闭环。
 
 ---
 
