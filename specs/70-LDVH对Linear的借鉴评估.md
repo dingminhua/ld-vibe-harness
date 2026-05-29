@@ -70,7 +70,7 @@ LD Vibe Harness 应该让 AI 和人可以在几秒内完成：
 
 Linear 的 Issue 好用，是因为它把一个可执行工作对象设计得非常清楚。
 
-LD Vibe Harness 的 Task 可以学习这种体验，但字段应保持自身语义，且必须满足 YAML 结构化承载原则：
+LD Vibe Harness 的 Task 可以学习这种体验，但字段建议保持自身语义；若升级为正式规范，宜满足 YAML 结构化承载原则：
 
 | Linear Issue | LD Vibe Harness Task |
 |---|---|
@@ -147,7 +147,7 @@ LD Vibe Harness 已有更严格的状态机和 Human Gate，但状态流转需�
 - Cancelled：需要填写取消原因
 ```
 
-如果用户或 AI 触发非法流转，不应只报错，而应解释原因，例如：
+如果用户或 AI 触发非法流转，建议不只报错，也解释原因，例如：
 
 ```text
 当前状态不能直接进入 Closed，请先进入 Review Needed，验收后再关闭。
@@ -159,7 +159,7 @@ LD Vibe Harness 已有更严格的状态机和 Human Gate，但状态流转需�
 
 Linear 创建 Issue 很轻，通常标题先行，后续补充。
 
-LD Vibe Harness 也应支持轻量输入，但必须区分对象类型：
+LD Vibe Harness 也可支持轻量输入，但建议区分对象类型：
 
 - 随手想法 → Memo
 - 正式输入 → Intent
@@ -184,7 +184,7 @@ LD Vibe Harness 可以允许用户选择：
 - 作为规则修改候选
 - 关联到某个 TaskSet
 
-重点是不应一开始要求用户填写完整表单。
+重点是不宜一开始要求用户填写完整表单。
 
 ### 4.7 学习关联关系
 

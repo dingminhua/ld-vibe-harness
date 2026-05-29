@@ -91,9 +91,9 @@ LD Vibe Harness 的审查由行动模型 Gate 和 Human Gate 承载
 
 ### 5.1 分层管理思维
 
-PM Kit 七层模型的核心价值是：不同性质的内容应该放在不同的位置，避免混在一起。
+PM Kit 七层模型的核心价值是：不同性质的内容宜放在不同的位置，避免混在一起。
 
-LD Vibe Harness 应借鉴这种思维，但映射到自身的架构中：
+LD Vibe Harness 可以借鉴这种思维，但建议映射到自身的架构中：
 
 | PM Kit 七层 | LD Vibe Harness 对应 | 说明 |
 |---|---|---|
@@ -145,10 +145,10 @@ PM Kit 总结的常见误区对 LD Vibe Harness 同样适用：
 
 | PM Kit 误区 | LD Vibe Harness 适配 |
 |---|---|
-| 把任务写进规范 | Task 实例应放在 ldvh-base/，不应写入 specs/ 正文 |
-| 把操作步骤写成正式规则 | 操作步骤应放在 Skill、tools/ 或 docs/，不应写入 specs/ |
-| 把审计发现直接变 TODO | 审计发现必须先分类（Task / Risk / Memo / 暂不处理），不能无脑任务化 |
-| 把工具视图当事实源 | Web Tools 只能读取和展示 Git 文件事实源，不能成为最终事实源 |
+| 把任务写进规范 | Task 实例宜放在 ldvh-base/，不宜写入 specs/ 正文 |
+| 把操作步骤写成正式规则 | 操作步骤宜放在 Skill、tools/ 或 docs/，不宜写入 specs/ |
+| 把审计发现直接变 TODO | 审计发现宜先分类（Task / Risk / Memo / 暂不处理），不宜无脑任务化 |
+| 把工具视图当事实源 | Web Tools 宜限定为读取和展示 Git 文件事实源，不宜成为最终事实源 |
 | 把 help 当正式规范 | docs/ 操作说明和学习材料只帮助理解，正式规则以 specs/ 为准 |
 
 这些误区应纳入 LD Vibe Harness 的事实源边界规范和 AI 行动模型的 Gate 判断中。

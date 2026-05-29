@@ -92,8 +92,8 @@ LD Vibe Harness 可以借鉴这种阶段化方式，但落点不是"自动执行
 | 分析 | 关联 docs / ADR / 审计发现 |
 | 决策 | Decision Needed / Human Gate |
 | 执行 | Task 进入 Executing |
-| 验证 | Review Needed，必须有验证证据 |
-| 关闭 | Closed，必须有 closure_evidence |
+| 验证 | Review Needed，若升级为正式规范，宜要求验证证据 |
+| 关闭 | Closed，若升级为正式规范，宜要求 closure_evidence |
 | 复盘 | 进入 Change、Pitfall 或 ADR |
 
 这能把 LD Vibe Harness 的状态机从"字段"变成"AI 理解的流程"。
@@ -102,7 +102,7 @@ LD Vibe Harness 可以借鉴这种阶段化方式，但落点不是"自动执行
 
 gstack 的一个核心优势是角色非常清晰：CEO reviewer、eng manager、designer、QA lead、security officer、release engineer 等。每个 Skill 不只是提示词，而是一个稳定工作流。
 
-LD Vibe Harness 可以借鉴角色矩阵，但不应一开始创建大量 Agent。更适合的路径是：
+LD Vibe Harness 可以借鉴角色矩阵，但不宜一开始创建大量 Agent。更适合的路径是：
 
 ```text
 先沉淀角色视角 → 再沉淀 Skill → 最后在确有隔离需求时创建 Agent
