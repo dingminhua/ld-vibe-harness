@@ -1,6 +1,6 @@
 # Sequential Thinking 使用模板
 
-> 日期：2026-05-21
+> 创建日期：2026-05-21
 > 来源：Sequential Thinking MCP 官方文档
 > 定位：外部资料引用，不直接成为 LDVH 强制规则
 

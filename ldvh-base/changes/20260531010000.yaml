@@ -1,0 +1,42 @@
+id: change-20260531010000-specs-audit-round2
+类型: specs_update
+created_at: "2026-05-31T01:00:00+08:00"
+actor: AI
+scope:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+  - specs/01-specs文档结构与术语规范.md
+  - specs/evals/01-LDVH对Linear的借鉴评估.md
+  - specs/evals/02-LDVH对gstack的借鉴评估.md
+  - specs/evals/03-LDVH对Agent-Harness的借鉴评估.md
+  - specs/evals/04-LDVH对七层管理模型的借鉴评估.md
+  - specs/evals/05-Git版本管理临时参考.md
+  - specs/evals/06-LDVH的MCP使用评估.md
+  - specs/evals/07-LDVH自建MCP评估.md
+  - specs/refs/01-Trae-Rules-Skills-Agent使用规则调研.md
+  - specs/refs/02-Trae-MCP用法调研.md
+  - specs/refs/03-社区推荐Rules-Skills-MCP与自定义Agent调研.md
+  - specs/refs/04-TRAE一键导入智能体手册.md
+  - specs/refs/05-Trae斜杠命令与上下文工具使用手册.md
+  - specs/refs/06-Sequential-Thinking使用模板.md
+  - specs/refs/07-Context7使用模板.md
+  - specs/refs/08-ui-ux-pro-max-skill使用指南.md
+  - specs/refs/09-项目开发Git管理流程.md
+  - specs/refs/10-网站功能基线冻结与优化审计参考.md
+summary: 依据 specs 文档合规审计第二轮结果修正头部元信息和骨架规则
+changes:
+  - 修改 01 §6.1：正式规范文档骨架增加注释，允许 10-39 和 40-69 区段使用"与直接上位基础规范的关系"替代"与 00 总纲的关系"
+  - 修改 00 头部"原则"字段：从反向表达改为正向表达，指向权威承载位置
+  - 修改 evals/ 全部 7 个文件：将"状态"字段替换为"定位"字段，与 01 §5.6 规范对齐
+  - 修改 refs/ 全部 10 个文件：将"日期"字段统一为"创建日期"，与 01 §5.7 规范对齐
+reason: specs 文档合规审计发现 evals 缺定位字段、refs 日期命名不一致、11/41 骨架标题与规范建议偏差、00 头部含反向表达
+impact:
+  - 01 骨架规则与 11/41 实际写作方式一致
+  - evals 文档头部字段符合 01 §5.6 规范
+  - refs 文档头部字段符合 01 §5.7 规范
+  - 00 头部表达方式与 01 反向边界规则精神一致
+human_gate:
+  status: confirmed
+  confirmation: 用户确认选择方案(b)修改 01 规范允许 10-39/40-69 使用直接上位关系标题，其余按审计建议执行
+validation:
+  status: done
+  notes: 已完成头部字段合规性检查、骨架规则一致性检查和术语边界检查

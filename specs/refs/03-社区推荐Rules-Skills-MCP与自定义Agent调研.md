@@ -1,6 +1,6 @@
 # 社区推荐 Rules、Skills、MCP 与自定义 Agent 调研
 
-> 日期：2026-05-26
+> 创建日期：2026-05-26
 > 来源：Trae 官方论坛、MCP.directory、火山引擎 MCP 市场、Trae 官方文档、Trae 官方最佳实践入口
 > 定位：外部资料引用，不直接成为 LDVH 强制规则
 
