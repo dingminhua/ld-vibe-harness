@@ -1,0 +1,22 @@
+id: change-20260530174500-agent-harness-eval-rewrite
+type: specs_update
+created_at: "2026-05-30T17:45:00+08:00"
+actor: AI
+scope:
+  - specs/evals/03-LDVH对Agent-Harness的借鉴评估.md
+summary: 重写 Agent Harness 内部调研文档，使其定位与 Linear、gstack 借鉴评估一致
+changes:
+  - 将标题从"LD Vibe Harness 的 Agent Harness 概念"调整为"LD Vibe Harness 对 Agent Harness 的借鉴评估"
+  - 将文件名从"03-LDVH的Agent-Harness概念.md"重命名为"03-LDVH对Agent-Harness的借鉴评估.md"
+  - 将原有概念解释型内容重构为外部产品/理念借鉴评估型内容
+  - 新增 Agent Harness 概念概览、与 LD Vibe Harness 的关系判断、最值得借鉴的设计思想、可落地建议和风险评估
+  - 强化与 00 总纲中 Git 文件事实源、Harness 生产对象、Harness 行动模型、Human Gate、证据沉淀和事实回写等核心价值的一致性
+  - 保留内部调研边界，明确结论需进入 01-69 正式规范区间或 ADR 后才成为稳定规则
+reason: 用户指出 03 文档应与 01 Linear、02 gstack 两篇评估文档一样，定位为对其他产品或理念的借鉴评估，而不是单纯解释 Agent Harness 概念
+impact:
+  - 03 文档结构与 01、02 两篇 evals 文档更加一致
+  - Agent Harness 的参考价值被转译为 LD Vibe Harness 的行动模型、工具、生产对象和事实源治理启发
+  - 不改变正式规范，不直接引入新的强制规则
+validation:
+  status: done
+  notes: 已检查 03 文档标题、章节结构、内部调研边界、执行效力、上位依据和 Change 记录，确认与 01、02 evals 文档定位一致且未升级为正式规范

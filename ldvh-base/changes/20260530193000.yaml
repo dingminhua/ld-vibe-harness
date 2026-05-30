@@ -1,0 +1,17 @@
+id: change-20260530193000-add-self-built-mcp-eval
+type: evals_add
+created_at: "2026-05-30T19:30:00+08:00"
+actor: AI
+scope:
+  - specs/evals/07-LDVH自建MCP评估.md
+summary: 新增 LDVH 自建 MCP 评估文档，评估 LDVH 是否需要自建 MCP Server、候选自建 MCP 清单、与 05 工具层的关系、实现路径和风险
+changes:
+  - 新增 specs/evals/07-LDVH自建MCP评估.md
+reason: 06 MCP 使用评估覆盖了第三方 MCP 引入，但 LDVH 特有的结构化事实源操作需求（读取、聚合、上下文包、校验、受控写入）无法由第三方 MCP 覆盖，需要评估自建 MCP 的可行性和约束
+impact:
+  - specs/evals/ 新增一篇项目评估文档
+  - 评估结论不直接构成强制规则，需进入 01-69 正式规范区间或 ADR 后才成为稳定规则
+  - 与 06 评估形成互补：第三方 MCP 提供通用能力，自建 MCP 提供 LDVH 特有能力
+validation:
+  status: done
+  notes: 已确认文档头部元信息包含创建日期、状态、编号归属、调研边界、执行效力、上位依据和相关规范；已确认与 03 事实源边界、05 工具基础规范、05.01 程序辅助规范、07 行动模型基础规范的一致性；已确认与 06 MCP 使用评估的互补关系

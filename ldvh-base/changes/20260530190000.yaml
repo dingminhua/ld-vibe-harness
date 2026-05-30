@@ -1,0 +1,16 @@
+id: change-20260530190000-add-mcp-eval
+type: evals_add
+created_at: "2026-05-30T19:00:00+08:00"
+actor: AI
+scope:
+  - specs/evals/06-LDVH的MCP使用评估.md
+summary: 新增 LDVH MCP 使用评估文档，基于 refs/02、refs/03、refs/06、refs/07 中的 MCP 信息和 specs/00-07 正文内容，评估 LDVH 可能需要 MCP 的场景、候选 MCP 优先级和引入约束
+changes:
+  - 新增 specs/evals/06-LDVH的MCP使用评估.md
+reason: refs/ 中已有 MCP 用法调研和社区推荐资料，specs/ 正文中行动模型、AI 协作机制、工具层等存在 MCP 需求触点，需要项目级评估文档将外部资料与 LDVH 规范体系对接
+impact:
+  - specs/evals/ 新增一篇项目评估文档
+  - 评估结论不直接构成强制规则，需进入 01-69 正式规范区间或 ADR 后才成为稳定规则
+validation:
+  status: done
+  notes: 已确认文档头部元信息包含创建日期、状态、编号归属、调研边界、执行效力、上位依据和相关规范；已确认与 03 事实源边界、04 AI 协作规范、05 工具基础规范、07 行动模型基础规范的一致性
