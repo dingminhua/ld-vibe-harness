@@ -110,8 +110,9 @@ NN-{英文名}-{中文名}.md
 | `NN.03` | `NN.03-Agent.md` | Agent 实践内容 |
 | `NN.04` | `NN.04-Tools.md` | Tools 实践内容 |
 | `NN.05` | `NN.05-Web.md` | Web 实践内容 |
+| `NN.06` | `NN.06-Contract.md` | 结构化契约、字段 schema、接口契约和数据结构 |
 
-`NN.01-Rules.md`、`NN.02-Skill.md`、`NN.03-Agent.md`、`NN.04-Tools.md`、`NN.05-Web.md` 均为附件型实践子文档。对象自身的字段规则、状态规则、验收规则和实例检查要求应留在 `NN` 主文件，不应转移到附件型实践子文档。
+`NN.01-Rules.md`、`NN.02-Skill.md`、`NN.03-Agent.md`、`NN.04-Tools.md`、`NN.05-Web.md` 均为附件型实践子文档，`NN.06-Contract.md` 为契约子文档。对象自身的字段规则、状态规则、验收规则和实例检查要求应留在 `NN` 主文件，不应转移到附件型实践子文档。
 
 ### 4.6 落地初始化、落地审计与合规检查
 
