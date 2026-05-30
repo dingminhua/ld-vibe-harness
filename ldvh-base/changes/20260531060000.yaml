@@ -1,9 +1,15 @@
-summary: 多角色思考行动模型落地初始化
-reason: 完成落地前决策和价值与要素审查，执行落地初始化
+summary: 多角色思考行动模型落地初始化 + 规则文件命名规范变更
+reason: 完成落地前决策和价值与要素审查，执行落地初始化；同步变更规则文件命名规范
 details:
+  - action: rename
+    file: .trae/rules/workspace_rules.md → .trae/rules/ldvh-l0-rules.md
+    description: L0 规则文件重命名，使用 ldvh-l0 前缀标识
+  - action: rename
+    file: .trae/rules/project_rules.md → .trae/rules/ldvh-l1-rules.md
+    description: L1 规则文件重命名，使用 ldvh-l1 前缀标识
   - action: modify
-    file: .trae/rules/workspace_rules.md
-    description: L0 工作区规则增加 ldvh-多角色思考入口摘要和压缩保护行
+    file: .trae/rules/ldvh-l0-rules.md
+    description: L0 增加 ldvh-多角色思考入口摘要和压缩保护行，更新 L1/L2 文件名引用
   - action: create
     file: specs/41.01-Rules.md
     description: 创建 Rules 入口实践附件型子文档
@@ -25,8 +31,13 @@ details:
   - action: modify
     file: specs/41-multi-role-thinking-多角色思考.md
     description: 清理 .trae/agents/ 引用，更新附件型子文档表格（41.01-41.06 全部 active）
+  - action: modify
+    file: specs/04.01-Rules机制规范.md
+    description: 更新规则文件命名规范（workspace_rules→ldvh-l0, project_rules→ldvh-l1, *-rules→ldvh-l2-*）
 verification:
-  - L0 入口摘要已写入 workspace_rules.md
+  - L0 规则文件已重命名为 ldvh-l0-rules.md
+  - L1 规则文件已重命名为 ldvh-l1-rules.md
+  - L0 入口摘要和压缩保护行已更新
   - 41.01-41.06 已创建
   - 41.06 和 41 主文档中 .trae/agents/ 引用已清理
-  - 41 主文档子文档表格已更新（41.01-41.06 全部 active，41.04/41.05 标注为规范准备文档）
+  - 04.01 规范中文件名引用已更新
