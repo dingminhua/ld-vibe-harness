@@ -350,20 +350,7 @@ LDVH 特有能力用自建 MCP；
 
 ---
 
-## 十、Human Gate 建议
-
-以下情况应评估 Human Gate：
-
-1. 创建、修改或删除自建 MCP Server；
-2. 将 Controlled Writer MCP 开放给 Agent 使用；
-3. 自建 MCP 的写入操作绕过 Human Gate 或状态机校验；
-4. 自建 MCP 维护独立于 Git 文件事实源的权威数据；
-5. 自建 MCP 的工具输出被提升为稳定事实但未回写 Git 文件事实源；
-6. 改变自建 MCP 与 05 工具层的职责分工。
-
----
-
-## 十一、与 06 MCP 使用评估的关系
+## 十、与 06 MCP 使用评估的关系
 
 | 维度 | 06 评估 | 本文 |
 |---|---|---|
@@ -378,7 +365,7 @@ LDVH 特有能力用自建 MCP；
 
 ---
 
-## 十二、待补齐事项
+## 十一、待补齐事项
 
 1. 10-39 生产对象规范稳定后，确定 Fact Reader 和 Status Aggregator 的具体工具清单和字段映射；
 2. 07 行动模型 Context 组件明确后，确定 Context Pack 的上下文类型和内容模板；

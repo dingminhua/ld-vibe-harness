@@ -1,0 +1,39 @@
+id: change-20260531004500-specs-audit-fixes
+类型: specs_update
+created_at: "2026-05-31T00:45:00+08:00"
+actor: AI
+scope:
+  - specs/01-specs文档结构与术语规范.md
+  - specs/11-ADR-决策记录.md
+  - specs/41.06-功能初始化.md
+  - specs/41.07-功能审计.md
+  - specs/evals/01-LDVH对Linear的借鉴评估.md
+  - specs/evals/02-LDVH对gstack的借鉴评估.md
+  - specs/evals/03-LDVH对Agent-Harness的借鉴评估.md
+  - specs/evals/04-LDVH对七层管理模型的借鉴评估.md
+  - specs/evals/05-Git版本管理临时参考.md
+  - specs/evals/06-LDVH的MCP使用评估.md
+  - specs/evals/07-LDVH自建MCP评估.md
+summary: 依据 specs 文档合规审计结果修正规范和文档
+changes:
+  - 修改 01 §5.6：evals/ 承载范围增加内部参考文档；元数据字段从"状态"改为"定位"；明确 evals/ 不需要 Human Gate 与检查要求章节
+  - 修改 01 §5.7：refs/ 元数据要求简化为创建日期、来源和定位
+  - 修改 01 §十：新增待补齐事项第 6 条
+  - 修改 11 §四和§十二：执行文件命名从中文改为英文机制名（规则→Rules、技能→Skill、程序→Tools、展示→Web）
+  - 修改 11 §十五：待补齐事项中 11.04-程序.md 引用改为 11.04-Tools.md
+  - 修改 41.06：程序执行文件改为 Tools 执行文件，程序改为 Tools 辅助
+  - 修改 41.07：程序边界改为 Tools 边界，程序改为 Tools 辅助或 Web 展示
+  - 移除 evals/ 全部 7 个文件的 Human Gate 独立章节，后续章节编号前移
+reason: specs 文档合规审计发现 11 执行文件命名违反术语边界规则、41.06/41.07 裸用中文"程序"、evals/ 不需要 Human Gate 章节、refs/ 元数据要求应与实际对齐
+impact:
+  - 11 执行文件规划与 01 §7.3 术语边界规则一致
+  - 41.06/41.07 术语与 01 §7.2 一致
+  - evals/ 文档不再包含 Human Gate 章节
+  - refs/ 元数据要求与现有文档实践对齐
+  - evals/ 承载范围明确包含内部参考文档
+human_gate:
+  status: confirmed
+  confirmation: 用户确认 refs/ 不需要太多元数据按现有文档修改规定、evals 不需要 Human Gate 章节、evals/05 是内部文档
+validation:
+  status: done
+  notes: 已完成术语边界检查、执行文件命名一致性检查、evals/ Human Gate 章节移除验证和章节编号连续性检查

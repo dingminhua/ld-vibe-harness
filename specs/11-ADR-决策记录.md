@@ -95,7 +95,7 @@ ldvh-base/adrs/adr-{NNNN}-short-title.yaml
 |---|---|
 | ADR 对象模型 | `specs/11-ADR-决策记录.md` |
 | ADR 对象实例 | `ldvh-base/adrs/` |
-| ADR 执行文件 | `specs/11.01-规则.md` 至 `specs/11.07-功能审计.md` |
+| ADR 执行文件 | `specs/11.01-Rules.md` 至 `specs/11.07-功能审计.md` |
 | ADR 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
 ---
@@ -315,11 +315,11 @@ ADR 基础字段遵循 06 §6.4 的字段契约原则。
 
 | 文件 | 状态 |
 |---|---|
-| `11.01-规则.md` | planned |
-| `11.02-技能.md` | planned |
+| `11.01-Rules.md` | planned |
+| `11.02-Skill.md` | planned |
 | `11.03-Agent.md` | planned |
-| `11.04-程序.md` | planned |
-| `11.05-展示.md` | planned |
+| `11.04-Tools.md` | planned |
+| `11.05-Web.md` | planned |
 | `11.06-功能初始化.md` | planned |
 | `11.07-功能审计.md` | planned |
 
@@ -363,5 +363,5 @@ ADR 基础字段遵循 06 §6.4 的字段契约原则。
 
 1. ADR 与 Risk、Dependency 的转化关系待对应对象模型稳定后补充；
 2. ADR 的自动过期或定期审查机制待实践验证；
-3. ADR YAML schema 待 `11.04-程序.md` 创建时细化；
+3. ADR YAML schema 待 `11.04-Tools.md` 创建时细化；
 4. ADR 相关 Rules、Skill、Agent、展示、功能初始化和功能审计待对应执行文件创建时展开。
