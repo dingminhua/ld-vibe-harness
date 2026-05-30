@@ -1,0 +1,33 @@
+id: change-20260530231500-multi-role-thinking-execution-files
+类型: specs_update
+created_at: "2026-05-30T23:15:00+08:00"
+actor: AI
+scope:
+  - specs/41.01-规则.md
+  - specs/41.02-技能.md
+  - specs/41.03-Agent.md
+  - specs/41.04-程序.md
+  - specs/41.05-展示.md
+  - specs/41.06-功能初始化.md
+  - specs/41.07-功能审计.md
+summary: 创建多角色思考行动模型的 41.01-41.07 执行文件
+changes:
+  - 创建 41.01-规则.md，定义多角色思考 Rules 入口、触发规则、禁止事项和规则检查
+  - 创建 41.02-技能.md，定义多角色思考 Skill 设计、命名、部署、输入输出和迁移边界
+  - 创建 41.03-Agent.md，定义 Agent 增强模式、Trae 预制 Agent 前提检查、调度边界和结果汇总
+  - 创建 41.04-程序.md，定义 Context 包、报告结构校验、角色字段校验、Agent 前提校验和回写候选检查
+  - 创建 41.05-展示.md，定义 Web 展示派生视图、风险展示、分歧展示和 Human Gate 展示边界
+  - 创建 41.06-功能初始化.md，定义多角色思考功能启用检查和初始化报告格式
+  - 创建 41.07-功能审计.md，定义持续有效性检查、漂移检查、审计流程和审计输出格式
+reason: 用户确认多角色思考作为行动模型是正确方向，并要求构建对应子文档
+impact:
+  - 41 多角色思考从主行动模型扩展为具备 Rules、Skill、Agent、程序、展示、初始化和审计规划的完整行动方案
+  - 明确 Skill 不调度 Agent，Agent 增强模式以 Trae 预制 Agent 可用为前提，未满足时降级
+  - 明确程序和 Web 展示只能作为辅助与派生视图，不能替代 Git 文件事实源或 Human Gate
+  - 为后续创建 LDVH 版 Skill、Agent 调度映射、程序校验和 Web 展示实现提供执行边界
+human_gate:
+  status: confirmed
+  confirmation: 用户要求在确认多角色思考作为行动模型正确后构建响应子文档
+validation:
+  status: done
+  notes: 已完成 41.01-41.07 Markdown 基础结构检查、Change YAML 解析检查和关键内容一致性检查；确认执行文件非空、代码围栏配对、父文档引用存在，且 Skill/Agent/程序/展示/初始化/审计关键边界已写入

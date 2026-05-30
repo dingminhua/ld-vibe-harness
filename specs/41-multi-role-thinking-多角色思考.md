@@ -4,7 +4,7 @@
 > 定位：定义多角色思考行动模型，包括行动定位、准入条件、事实源边界、Context、Scenario、执行流程、Gate、Skill / Agent 调度、事实源回写、证据留存和检查要求
 > 适用范围：所有接入 LDVH 且需要对复杂变更、决策、风险或跨模块影响进行多视角分析的项目
 > 上位依据：`specs/07-LDVH行动模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-specs文档结构规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`、`specs/04-LDVH-AI协作规范.md`、`specs/04.02-Skill机制规范.md`、`specs/04.03-Agent机制规范.md`、`specs/05-LDVH工具基础规范.md`、`specs/06-LDVH生产对象基础规范.md`、`specs/40-行动模型集合索引.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-specs文档结构与术语规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`、`specs/04-LDVH-AI协作规范.md`、`specs/04.02-Skill机制规范.md`、`specs/04.03-Agent机制规范.md`、`specs/05-LDVH工具基础规范.md`、`specs/06-LDVH生产对象基础规范.md`、`specs/40-行动模型集合索引.md`
 
 ---
 
@@ -84,7 +84,7 @@
 | 早期 Skill 原型 | `/Users/dmh2002/trae_projects/.trae/skills/pm-kit-multi-role-analysis/SKILL.md`，仅作为迁移参考，不作为 LDVH 权威规则 |
 | 多角色分析过程输出 | 当前对话、Skill 输出或 Agent 输出，默认不是最终事实源 |
 | 稳定结论、任务、决策、风险、证据或变更 | 按 03 和 10-39 对象规范写入 `ldvh-base/`、`docs/` 或 `specs/` |
-| 执行文件 | `specs/41.01-规则.md` 至 `specs/41.07-功能审计.md` |
+| 执行文件 | `specs/41.01-Rules.md` 至 `specs/41.07-功能审计.md` |
 
 多角色思考输出不得与 Git 文件事实源并行维护同一稳定事实。需要长期遵守的结论应升级为 ADR、specs 或 Rules；需要执行的动作应进入 Task；有保留价值但暂不任务化的信息应进入 Memo；实际修改应记录 Change。
 
@@ -431,9 +431,9 @@ Agent 增强调度遵循以下规则：
 
 | 编号 | 文件名 | 状态 | 内容 |
 |---|---|---|---|
-| `41.01` | `41.01-规则.md` | planned | 多角色思考相关 Rules 入口、触发规则和禁止事项 |
-| `41.02` | `41.02-技能.md` | planned | LDVH 多角色思考 Skill 的设计、命名、部署、输入输出和迁移方案 |
-| `41.03` | `41.03-Agent.md` | planned | Agent 增强模式的可用性检查、预制 Agent 映射、上下文分发和汇总规则 |
+| `41.01` | `41.01-Rules.md` | planned | Rules 适配、放置位置、生效方式、摘要边界和禁止承载内容 |
+| `41.02` | `41.02-Skill.md` | planned | Skill 适配、命名、部署、输入输出和迁移方案 |
+| `41.03` | `41.03-Agent.md` | planned | Agent 适配、增强模式可用性检查、预制 Agent 映射、上下文分发和汇总规则 |
 | `41.04` | `41.04-程序.md` | planned | Context 包生成、角色映射校验、报告结构校验和回写候选检查 |
 | `41.05` | `41.05-展示.md` | planned | 多角色报告展示、风险和 Human Gate 待确认项展示 |
 | `41.06` | `41.06-功能初始化.md` | planned | 检查 Skill、Agent、工具和规则入口是否可用 |

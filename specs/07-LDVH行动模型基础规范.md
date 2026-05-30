@@ -4,7 +4,7 @@
 > 定位：定义 LDVH 行动模型的基础规则、行动模型模型、准入条件、通用规范和与 40-69 具体行动规范的关系
 > 适用范围：所有接入 LDVH 的项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-specs文档结构规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`、`specs/04-LDVH-AI协作规范.md`、`specs/05-LDVH工具基础规范.md`、`specs/06-LDVH生产对象基础规范.md`
+> 相关规范：`specs/01-specs文档结构与术语规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`、`specs/04-LDVH-AI协作规范.md`、`specs/05-LDVH工具基础规范.md`、`specs/06-LDVH生产对象基础规范.md`
 
 ---
 
@@ -120,19 +120,21 @@ NN-{英文名}-{中文名}.md
 
 行动模型执行文件用于承接某个行动模型的具体执行内容，不重新定义行动模型。执行文件按需创建，不得为空占位。执行文件名不重复行动名，行动归属由 `NN` 决定。
 
-具体行动规范只声明 Rules、Skill、Agent、程序和工具适配原则；具体 Rules、Skill、Agent、程序实现、展示实现、功能初始化和功能审计进入对应执行文件。
+具体行动规范只声明 Rules 适配、Skill 适配、Agent 适配、程序和工具适配原则；具体 Rules、Skill、Agent、程序实现、展示实现、功能初始化和功能审计进入对应执行文件。
 
 执行文件统一命名如下：
 
 | 编号 | 文件名 | 内容 |
 |---|---|---|
-| `NN.01` | `NN.01-规则.md` | Rules 执行内容 |
-| `NN.02` | `NN.02-技能.md` | Skill 执行内容 |
-| `NN.03` | `NN.03-Agent.md` | Agent 执行内容 |
+| `NN.01` | `NN.01-Rules.md` | Rules 适配执行内容 |
+| `NN.02` | `NN.02-Skill.md` | Skill 适配执行内容 |
+| `NN.03` | `NN.03-Agent.md` | Agent 适配执行内容 |
 | `NN.04` | `NN.04-程序.md` | 程序辅助执行内容 |
 | `NN.05` | `NN.05-展示.md` | 工具展示执行内容 |
 | `NN.06` | `NN.06-功能初始化.md` | 功能启用检查与动作 |
 | `NN.07` | `NN.07-功能审计.md` | 功能持续有效性检查 |
+
+`NN.01-Rules.md`、`NN.02-Skill.md`、`NN.03-Agent.md` 中的 Rules、Skill、Agent 均指 Trae 机制适配。行动自身的 Context、Scenario、Gate、执行流程、回写要求和证据要求应留在 `NN` 主文件，不应转移到机制适配执行文件。
 
 ### 4.7 初始化检查与审计检查
 

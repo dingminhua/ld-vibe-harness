@@ -4,7 +4,7 @@
 > 定位：LD Vibe Harness 项目目录规划说明
 > 适用范围：LD Vibe Harness 项目及所有接入 LD Vibe Harness 的管辖项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-specs文档结构规范.md`、`specs/03-事实源边界与承载规范.md`
+> 相关规范：`specs/01-specs文档结构与术语规范.md`、`specs/03-事实源边界与承载规范.md`
 
 ---
 
@@ -55,7 +55,7 @@ specs/ 承载 LD Vibe Harness 的规范体系、外部资料引用和项目评�
 5. refs/ 外部资料引用；
 6. evals/ 项目评估文档。
 
-specs/ 的编号、文档类型、子文档、实践文档和引用纪律由 `specs/01-specs文档结构规范.md` 定义。
+specs/ 的编号、文档类型、子文档、实践文档和引用纪律由 `specs/01-specs文档结构与术语规范.md` 定义。
 
 ### 3.3.1 refs 目录
 
@@ -101,7 +101,7 @@ Web Tools 和程序辅助工具的角色边界由后续 `specs/05-LDVH工具基�
 |---|---|
 | LD Vibe Harness 理念、价值标准和构成要素 | specs/ |
 | 目录规划说明 | specs/ |
-| specs 文档结构规范 | specs/ |
+| specs 文档结构与术语规范 | specs/ |
 | 事实源边界与承载规则 | specs/ |
 | 生产对象规范 | specs/ |
 | 行动模型规范 | specs/ |

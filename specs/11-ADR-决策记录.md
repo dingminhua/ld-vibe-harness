@@ -4,7 +4,7 @@
 > 定位：定义 ADR 决策记录生产对象模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、适配原则、执行文件规划和实例检查
 > 适用范围：所有接入 LDVH 且需要管理长期决策的项目
 > 上位依据：`specs/06-LDVH生产对象基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-specs文档结构规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`、`specs/04-LDVH-AI协作规范.md`、`specs/05-LDVH工具基础规范.md`、`specs/10-生产对象集合索引.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-specs文档结构与术语规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`、`specs/04-LDVH-AI协作规范.md`、`specs/05-LDVH工具基础规范.md`、`specs/10-生产对象集合索引.md`
 
 ---
 

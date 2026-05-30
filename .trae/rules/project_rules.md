@@ -13,7 +13,7 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，围绕 Git 文�
 进入本项目处理 specs、ldvh-base、references、tools、web 或项目规则相关事项时，优先读取：
 
 1. `specs/00-LD-Vibe-Harness理念与纲要.md`
-2. `specs/01-specs文档结构规范.md`
+2. `specs/01-specs文档结构与术语规范.md`
 3. `specs/02-LDVH目录说明.md`
 4. `specs/03-事实源边界与承载规范.md`
 

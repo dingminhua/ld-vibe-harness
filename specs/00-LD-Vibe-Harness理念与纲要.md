@@ -257,7 +257,7 @@ LD Vibe Harness 的基础规范由 01-07 承载。本文只定义基础规范在
 
 当前基础规范规划如下：
 
-1. specs 文档结构、编号、文档类型和引用纪律由 `specs/01-specs文档结构规范.md` 定义；
+1. specs 文档结构、编号、文档类型和引用纪律由 `specs/01-specs文档结构与术语规范.md` 定义；
 2. LDVH 项目目录规划由 `specs/02-LDVH目录说明.md` 定义；
 3. 事实源边界与承载规则由 `specs/03-事实源边界与承载规范.md` 定义；
 4. LDVH AI 协作规范由 `specs/04-LDVH-AI协作规范.md` 定义；
@@ -273,7 +273,7 @@ LD Vibe Harness 的基础规范由 01-07 承载。本文只定义基础规范在
 
 涉及 LD Vibe Harness 理念、价值标准、五类构成要素、基础规范权威领域、生产对象模型或行动模型的高影响变更，应评估 Human Gate。
 
-具体文档结构类 Human Gate 由 `specs/01-specs文档结构规范.md` 定义；目录规划类 Human Gate 由 `specs/02-LDVH目录说明.md` 定义；事实源边界类 Human Gate 由 `specs/03-事实源边界与承载规范.md` 定义；生产对象和行动模型相关 Human Gate 由对应正式规范定义。
+具体文档结构类 Human Gate 由 `specs/01-specs文档结构与术语规范.md` 定义；目录规划类 Human Gate 由 `specs/02-LDVH目录说明.md` 定义；事实源边界类 Human Gate 由 `specs/03-事实源边界与承载规范.md` 定义；生产对象和行动模型相关 Human Gate 由对应正式规范定义。
 
 当 AI 识别到可能触发 Human Gate 的情况时，至少必须暂停当前变更动作，向人提醒该操作可能触发 Human Gate，并说明涉及的事实源、影响范围和建议确认事项。
 

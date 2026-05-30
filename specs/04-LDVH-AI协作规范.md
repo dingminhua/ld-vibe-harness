@@ -4,7 +4,7 @@
 > 定位：LD Vibe Harness 使用、约束、扩展、命名和治理 Rules、Skill、Agent 三类可落地 AI 协作机制的基础规范
 > 适用范围：LD Vibe Harness 项目及所有接入 LD Vibe Harness 的管辖项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-specs文档结构规范.md`、`specs/03-事实源边界与承载规范.md`
+> 相关规范：`specs/01-specs文档结构与术语规范.md`、`specs/03-事实源边界与承载规范.md`
 
 ---
 
