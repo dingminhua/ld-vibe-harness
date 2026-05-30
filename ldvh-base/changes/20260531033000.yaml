@@ -35,3 +35,17 @@ human_gate:
 validation:
   status: done
   notes: 已完成引用残留检索；41.06/41.07 与 NN.SS.PP 仅在取消说明或非正式参考区出现，正式规范区间未发现仍要求默认七文件结构的残留引用
+
+follow_up:
+  - time: "2026-05-31T03:45:00+08:00"
+    summary: 收窄实践子文档适用边界，明确只有生产对象规范区和行动模型规范区的模型子文档属于实践子文档
+    files:
+      - specs/01-specs文档结构与术语规范.md
+      - specs/02-LDVH目录说明.md
+      - specs/04-LDVH-AI协作规范.md
+      - specs/04.02-Skill机制规范.md
+      - specs/05-LDVH工具基础规范.md
+      - specs/05.01-Tools辅助规范.md
+      - specs/06-LDVH生产对象基础规范.md
+      - specs/07-LDVH行动模型基础规范.md
+    notes: 修正此前将实践子文档泛化到所有 NN.SS 子文档的表述；04/05 等基础规范子文档仍为机制规范子文档，不属于模型实践子文档
