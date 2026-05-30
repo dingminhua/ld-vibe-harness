@@ -4,7 +4,7 @@
 > 定位：定义 LDVH 行动模型的基础规则、Context、Scenario、Gate、事实源回写原则和与 40-69 具体行动规范的关系
 > 适用范围：所有接入 LDVH 的项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-specs文档结构规范.md`、`specs/02-LDVH文件夹说明.md`、`specs/03-事实源边界与承载规范.md`、`specs/06-LDVH生产对象基础规范.md`
+> 相关规范：`specs/01-specs文档结构规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`、`specs/06-LDVH生产对象基础规范.md`
 
 ---
 
@@ -132,7 +132,7 @@ Gate 分为以下类型：
 以下情况必须触发 Human Gate：
 1. **改变 LDVH 理念、价值标准、五类构成要素或基础规范权威领域**；
 2. **新增、删除、重命名或重排 specs 编号**；
-3. **将 70-89 内部调研结论升级为正式规范或 ADR**；
+3. **将 specs/evals/ 项目评估结论升级为正式规范或 ADR**；
 4. **改变事实源权威位置、目录事实源性质或对象承载位置**；
 5. **将 push、tag、release 等远程 Git 操作交由 AI 自动执行**；
 6. **新增、删除或改变项目规则、Skill、Agent 等 AI 行动入口**；

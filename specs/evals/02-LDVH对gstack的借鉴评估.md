@@ -6,7 +6,7 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 01-69 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-specs文档结构规范.md`、`specs/02-LDVH文件夹说明.md`、`specs/03-事实源边界与承载规范.md`
+> 相关规范：`specs/01-specs文档结构规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`
 
 ---
 

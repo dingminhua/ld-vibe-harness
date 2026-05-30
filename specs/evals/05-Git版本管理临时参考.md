@@ -8,7 +8,7 @@
 > AI 执行边界：本文是临时参考，不授权 AI 据此自动执行 commit、push、tag、release 或分支切换
 > 来源：`trae-pm-kit/references/16-LD-Vibe-Harness-Git版本管理架构与迁移计划.md`
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-specs文档结构规范.md`、`specs/02-LDVH文件夹说明.md`、`specs/03-事实源边界与承载规范.md`
+> 相关规范：`specs/01-specs文档结构规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`
 
 ---
 

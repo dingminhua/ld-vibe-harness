@@ -4,7 +4,7 @@
 > 定位：LD Vibe Harness 工具体系、程序辅助层和 Web 展示层的基础边界规范
 > 适用范围：LD Vibe Harness 项目及所有接入 LD Vibe Harness 的管辖项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/02-LDVH文件夹说明.md`、`specs/03-事实源边界与承载规范.md`
+> 相关规范：`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`
 
 ---
 
