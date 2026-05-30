@@ -12,7 +12,7 @@
 
 本文定义 ADR 决策记录生产对象模型。ADR 是已确认、后续应遵守的决策记录，用于沉淀需要跨会话、跨任务或跨执行轮次追溯的长期决策。
 
-本文只定义 ADR 对象模型。ADR 相关 Rules、Skill、Agent、Tools 辅助和 Web 展示实践由 §十二规划的模型实践子文档承载；实例初始化检查和实例审计检查由本文承载。
+本文只定义 ADR 对象模型。ADR 相关 Rules、Skill、Agent、Tools 辅助和 Web 展示实践由 §十二规划的模型实践子文档承载；检查要求按 06 §4.6 执行。
 
 ---
 
@@ -175,7 +175,7 @@ rejected → 无
 3. 改变事实源归属；
 4. 改变 Human Gate 判断；
 5. 多次重复出现且需要稳定约束；
-6. 影响功能初始化、工具写入或对象关闭方式。
+6. 影响检查要求、工具写入或对象关闭方式。
 
 升级后应保持：
 
@@ -323,43 +323,10 @@ ADR 基础字段遵循 06 §6.4 的字段契约原则。
 
 ---
 
-## 十三、实例初始化检查
-
-创建 ADR 实例时，应检查：
-
-| # | 检查项 | 标准 |
-|---|---|---|
-| 1 | 文件命名 | 符合 `ldvh-base/adrs/adr-{NNNN}-short-title.yaml` |
-| 2 | 必填字段 | 具备 id、type、title、status、created、updated、date、context、decision、consequences |
-| 3 | 类型固定 | `type` 为 `adr` |
-| 4 | 状态合法 | `status` 属于 ADR 标准状态 |
-| 5 | 内容明确 | context、decision、consequences 可理解、可追溯 |
-| 6 | 引用有效 | related_objects、related_rules、superseded_by 引用有效 |
-| 7 | Human Gate | 直接创建或流转为 `accepted` 时已获确认 |
-
----
-
-## 十四、实例审计检查
-
-审计 ADR 实例时，应检查：
-
-| # | 检查项 | 标准 |
-|---|---|---|
-| 1 | 准入判断 | 未把临时判断、一次性选择或局部方案过度 ADR 化 |
-| 2 | 状态流转 | ADR 状态属于标准状态，流转属于合法流转 |
-| 3 | 条件必填 | `superseded` 状态具备 `superseded_by` 字段 |
-| 4 | 升级路径 | 满足升级条件的 ADR 已考虑升级为 specs 或 Rules |
-| 5 | 转化记录 | Memo、Task 或 Evidence 转化为 ADR 时已记录来源对象 ID |
-| 6 | 推翻证据 | 推翻旧 ADR 时已标记状态、引用新 ADR、补充原因 |
-| 7 | 历史保留 | ADR 不得删除，终态 ADR 保留历史 |
-| 8 | Human Gate | 需要人类确认的操作未被 AI、程序或工具绕过 |
-| 9 | 事实源边界 | ADR 模型、实例、模型实践子文档和工具展示未混淆事实源位置 |
-
----
-
-## 十五、待补齐事项
+## 十三、待补齐事项
 
 1. ADR 与 Risk、Dependency 的转化关系待对应对象模型稳定后补充；
 2. ADR 的自动过期或定期审查机制待实践验证；
 3. ADR YAML schema 待 `11.04-Tools.md` 创建时细化；
-4. ADR 相关 Rules、Skill、Agent、Tools 和 Web 实践待对应模型实践子文档创建时展开。
+4. ADR 相关 Rules、Skill、Agent、Tools 和 Web 实践待对应模型实践子文档创建时展开；
+5. 检查要求按 06 §4.6 执行，落地初始化和落地审计按需要定义。
