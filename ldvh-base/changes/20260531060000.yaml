@@ -1,0 +1,32 @@
+summary: 多角色思考行动模型落地初始化
+reason: 完成落地前决策和价值与要素审查，执行落地初始化
+details:
+  - action: modify
+    file: .trae/rules/workspace_rules.md
+    description: L0 工作区规则增加 ldvh-多角色思考入口摘要和压缩保护行
+  - action: create
+    file: specs/41.01-Rules.md
+    description: 创建 Rules 入口实践附件型子文档
+  - action: create
+    file: specs/41.02-Skill.md
+    description: 创建 Skill 边界实践附件型子文档
+  - action: create
+    file: specs/41.03-Agent.md
+    description: 创建 Agent 调度实践附件型子文档，含角色-子 Agent 类型混合映射
+  - action: create
+    file: specs/41.04-Tools.md
+    description: 创建 Tools 辅助实践附件型子文档（规范准备文档）
+  - action: create
+    file: specs/41.05-Web.md
+    description: 创建 Web 展示实践附件型子文档（规范准备文档）
+  - action: modify
+    file: specs/41.06-Contract.md
+    description: 清理 .trae/agents/ 引用，修正为 Task 工具系统子 Agent + 角色参数注入
+  - action: modify
+    file: specs/41-multi-role-thinking-多角色思考.md
+    description: 清理 .trae/agents/ 引用，更新附件型子文档表格（41.01-41.06 全部 active）
+verification:
+  - L0 入口摘要已写入 workspace_rules.md
+  - 41.01-41.06 已创建
+  - 41.06 和 41 主文档中 .trae/agents/ 引用已清理
+  - 41 主文档子文档表格已更新（41.01-41.06 全部 active，41.04/41.05 标注为规范准备文档）
