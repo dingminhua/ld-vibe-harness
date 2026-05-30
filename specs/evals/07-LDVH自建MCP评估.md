@@ -6,7 +6,7 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 01-69 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/03-事实源边界与承载规范.md`、`specs/04-LDVH-AI协作规范.md`、`specs/05-LDVH工具基础规范.md`、`specs/05.01-程序辅助规范.md`、`specs/07-LDVH行动模型基础规范.md`
+> 相关规范：`specs/03-事实源边界与承载规范.md`、`specs/04-LDVH-AI协作规范.md`、`specs/05-LDVH工具基础规范.md`、`specs/05.01-Tools辅助规范.md`、`specs/07-LDVH行动模型基础规范.md`
 > 参考来源：`specs/refs/02-Trae-MCP用法调研.md`、`specs/evals/06-LDVH的MCP使用评估.md`
 
 ---
@@ -21,10 +21,10 @@
 
 ### 1.1 核心结论
 
-LDVH 可以考虑自建 MCP，但自建 MCP 不应成为新的工具层，也不应替代 tools/ 程序辅助层。它更准确的定位是：
+LDVH 可以考虑自建 MCP，但自建 MCP 不应成为新的工具层，也不应替代 tools/ Tools 辅助层。它更准确的定位是：
 
 ```text
-自建 MCP = 05.01 程序辅助层面向 Agent 的协议入口
+自建 MCP = 05.01 Tools 辅助层面向 Agent 的协议入口
 ```
 
 因此，自建 MCP 应遵循以下结论：
@@ -76,7 +76,7 @@ Trae 内置工具可以读写文件、运行终端命令和搜索文本，但它
 
 ### 2.3 自建 MCP 的核心价值
 
-自建 MCP 的价值不是增加工具数量，而是把 05.01 程序辅助层的确定性能力，通过 MCP 协议暴露为 Agent 可调用的结构化工具，让 Agent 不需要理解底层文件格式和校验逻辑，也能完成事实源读取、校验、聚合和受控写入。
+自建 MCP 的价值不是增加工具数量，而是把 05.01 Tools 辅助层的确定性能力，通过 MCP 协议暴露为 Agent 可调用的结构化工具，让 Agent 不需要理解底层文件格式和校验逻辑，也能完成事实源读取、校验、聚合和受控写入。
 
 这与 03 Agent-Harness 评估中的启发一致：把工具调用纳入治理，而不是追求更多工具。
 
@@ -86,7 +86,7 @@ Trae 内置工具可以读写文件、运行终端命令和搜索文本，但它
 
 ### 3.1 触发条件
 
-LDVH 不因存在 Python 程序就自建 MCP，也不因某项能力会被 AI 使用就自建 MCP。只有当某项 LDVH 特有的程序辅助能力需要被 Agent 长期、结构化、权限受控地调用，且第三方 MCP、Trae 内置工具、CLI、Skill 或 Web API 都不足以覆盖时，才应考虑自建 MCP。
+LDVH 不因存在 Python 程序就自建 MCP，也不因某项能力会被 AI 使用就自建 MCP。只有当某项 LDVH 特有的 Tools 辅助能力需要被 Agent 长期、结构化、权限受控地调用，且第三方 MCP、Trae 内置工具、CLI、Skill 或 Web API 都不足以覆盖时，才应考虑自建 MCP。
 
 应考虑自建 MCP 的条件如下：
 
@@ -99,7 +99,7 @@ LDVH 不因存在 Python 程序就自建 MCP，也不因某项能力会被 AI �
 | 结构化输入输出 | 能力可以表达为稳定参数、结构化响应和来源引用 |
 | 权限最小化价值 | MCP 化后可以减少 Agent 直接访问文件系统、终端或写入能力的范围 |
 | 事实源可追溯 | 输出可以追溯到 Git 文件事实源，且不会形成第二事实源 |
-| 底层能力可复用 | 底层解析、校验、聚合或写入逻辑优先来自 tools/ 程序辅助层 |
+| 底层能力可复用 | 底层解析、校验、聚合或写入逻辑优先来自 tools/ Tools 辅助层 |
 
 ### 3.2 不应自建 MCP 的情况
 
@@ -120,12 +120,12 @@ LDVH 不因存在 Python 程序就自建 MCP，也不因某项能力会被 AI �
 
 ## 四、自建 MCP 与 05 工具层的关系
 
-### 4.1 自建 MCP 是程序辅助层入口，不是替代层
+### 4.1 自建 MCP 是Tools 辅助层入口，不是替代层
 
-自建 MCP Server 不是新的工具层，而是 05.01 程序辅助层面向 Agent 的协议接口：
+自建 MCP Server 不是新的工具层，而是 05.01 Tools 辅助层面向 Agent 的协议接口：
 
 ```text
-程序辅助层（tools/）
+Tools 辅助层（tools/）
   ├── CLI 入口：供人、AI 或脚本通过终端直接调用
   ├── Skill 流程入口：供 Skill 在授权流程中调用确定性程序
   ├── Web API 入口：供 05.02 Web 展示层调用
@@ -136,7 +136,7 @@ LDVH 不因存在 Python 程序就自建 MCP，也不因某项能力会被 AI �
 
 1. 自建 MCP 的底层逻辑应复用 tools/ 中的解析、校验、聚合和受控写入模块；
 2. 自建 MCP 不另建权威数据存储，所有读写仍指向 Git 文件事实源；
-3. 自建 MCP 的输出与程序辅助层输出一样，不是最终事实源；
+3. 自建 MCP 的输出与 Tools 辅助层输出一样，不是最终事实源；
 4. MCP 入口层只做协议适配，不实现业务逻辑，不维护状态，不存储数据。
 
 ### 4.2 自建 MCP 不改变 05 工具边界
@@ -144,13 +144,13 @@ LDVH 不因存在 Python 程序就自建 MCP，也不因某项能力会被 AI �
 自建 MCP 引入后，05 工具基础规范的约束仍然适用：
 
 1. MCP 工具输出不是最终事实源；
-2. MCP 工具不得绕过程序辅助层的校验和受控写入边界；
+2. MCP 工具不得绕过Tools 辅助层的校验和受控写入边界；
 3. MCP 工具不得直接调用 AI、Skill 或 Agent；
 4. MCP 工具不得替代 specs/、ldvh-base/ 或 docs/ 的权威事实。
 
 ### 4.3 Python 程序是否 MCP 化的判断
 
-Python 程序属于 05.01 程序辅助层的能力实现。MCP 是其中一种面向 Agent 的协议入口，不是 Python 程序的唯一调用方式。
+Python 程序属于 05.01 Tools 辅助层的能力实现。MCP 是其中一种面向 Agent 的协议入口，不是 Python 程序的唯一调用方式。
 
 | 入口 | 适用场景 | 边界 |
 |---|---|---|
@@ -232,7 +232,7 @@ Controlled Writer MCP 为 Agent 提供受控写入 `ldvh-base/` 的能力，包�
 |---|---|---|
 | 传输方式 | stdio | LDVH 是本地项目，不需要远程访问；stdio 简单且权限面较小 |
 | 运行方式 | 通过 `npx` 或 `uvx` 启动 | 与 Trae 本地 MCP 启动方式一致 |
-| 编程语言 | Python | 与 tools/ 程序辅助层一致，便于复用解析、校验、聚合模块 |
+| 编程语言 | Python | 与 tools/ Tools 辅助层一致，便于复用解析、校验、聚合模块 |
 | 配置位置 | `.trae/mcp.json` 项目级配置 | 符合 Trae 项目级 MCP 配置方式，配置跟随项目 |
 
 ### 6.2 配置示例
@@ -346,7 +346,7 @@ LDVH 特有能力用自建 MCP；
 | 对象规范未稳定导致频繁变更 | 生产对象规范变更会导致 MCP 字段和状态机同步变更 | 等至少 Task 和 Change 对象规范稳定后再实现；MCP 与对象规范保持引用关系；初期只覆盖核心对象 |
 | 维护成本上升 | 需要适配 Trae MCP 协议、对象规范和 tools/ 模块变更 | MCP 入口层保持薄封装；业务逻辑复用 tools/；入口层只测试协议适配 |
 | 与 Web 展示层功能重叠 | Fact Reader、Status Aggregator、Context Pack 与 Web 展示层可能读取同类数据 | 底层复用同一 tools/ 模块；MCP 面向 Agent 结构化调用，Web 面向人可视化交互 |
-| 误把 MCP 当作唯一程序入口 | 可能导致所有 Python 脚本被过度 MCP 化 | 明确 MCP 只是程序辅助层入口之一；简单能力保留 CLI；多步骤流程由 Skill 编排；面向人确认的能力进入 Web 展示层 |
+| 误把 MCP 当作唯一程序入口 | 可能导致所有 Python 脚本被过度 MCP 化 | 明确 MCP 只是Tools 辅助层入口之一；简单能力保留 CLI；多步骤流程由 Skill 编排；面向人确认的能力进入 Web 展示层 |
 
 ---
 
@@ -369,12 +369,12 @@ LDVH 特有能力用自建 MCP；
 |---|---|---|
 | 范围 | 第三方 MCP 引入评估 | 自建 MCP 评估 |
 | 核心问题 | LDVH 需要哪些第三方 MCP | LDVH 是否需要自建 MCP，以及自建哪些 |
-| 定位 | MCP 是 Agent 的可选工具能力来源 | 自建 MCP 是程序辅助层的 Agent 接口 |
-| 约束来源 | 03 事实源边界 + 05 工具边界 + 04.03 Agent 权限 | 同 06，另加 05.01 程序辅助规范的具体约束 |
+| 定位 | MCP 是 Agent 的可选工具能力来源 | 自建 MCP 是Tools 辅助层的 Agent 接口 |
+| 约束来源 | 03 事实源边界 + 05 工具边界 + 04.03 Agent 权限 | 同 06，另加 05.01 Tools 辅助规范的具体约束 |
 | 优先级 | Sequential Thinking > Context7 > Playwright | Fact Reader + Status Aggregator > Context Pack + Validator > Controlled Writer |
 | 互补关系 | 第三方 MCP 提供通用能力 | 自建 MCP 提供 LDVH 特有能力，两者不重叠 |
 
-自建 MCP 与直接调用 Python 程序不是互斥关系。Python 程序是程序辅助层的能力实现，MCP 是其中一种面向 Agent 的协议入口。CLI、Skill、Web API 和 MCP 可以并存，区别在于服务对象、权限边界和交互形态不同。
+自建 MCP 与直接调用 Python 程序不是互斥关系。Python 程序是Tools 辅助层的能力实现，MCP 是其中一种面向 Agent 的协议入口。CLI、Skill、Web API 和 MCP 可以并存，区别在于服务对象、权限边界和交互形态不同。
 
 ---
 
@@ -382,6 +382,6 @@ LDVH 特有能力用自建 MCP；
 
 1. 10-39 生产对象规范稳定后，确定 Fact Reader 和 Status Aggregator 的具体工具清单和字段映射；
 2. 07 行动模型 Context 组件明确后，确定 Context Pack 的上下文类型和内容模板；
-3. 05.01 程序辅助层模块可用后，评估 MCP 入口层的实现复杂度和复用比例；
+3. 05.01 Tools 辅助层模块可用后，评估 MCP 入口层的实现复杂度和复用比例；
 4. Controlled Writer 的 Human Gate 判断逻辑待 07 Gate 组件和具体行动规范稳定后定义；
 5. 如未来建立自建 MCP 的实现和测试流程，应将本文 §九 的风险缓解措施纳入实现规范。
