@@ -1,0 +1,28 @@
+id: change-20260530224500-action-model-multi-role-thinking
+类型: specs_update
+created_at: "2026-05-30T22:45:00+08:00"
+actor: AI
+scope:
+  - specs/07-LDVH行动模型基础规范.md
+  - specs/40-行动模型集合索引.md
+  - specs/41-multi-role-thinking-多角色思考.md
+summary: 重构行动模型基础规范并创建首个多角色思考行动模型
+changes:
+  - 参考 06 生产对象基础规范重构 07，补齐行动模型模型、标准组成、准入条件、执行文件规划、初始化检查、审计检查、功能初始化和功能审计边界
+  - 在 07 中明确 Context、Scenario、Gate、Rules、Skill、Agent、工具协作、事实源回写和证据留存的通用原则
+  - 更新 40 行动模型集合索引，将 41 定义为多角色思考行动模型，并顺延原 planned 行动编号
+  - 创建 41 多角色思考行动模型，定义主上下文轻量模式、Skill 辅助模式和 Agent 增强模式
+  - 在 41 中明确 Agent 增强模式以前提可检查为原则，默认前提为已安装并可调用 Trae 预制 Agent，未满足时降级为轻量或 Skill 辅助模式
+  - 在 41 中将早期 pm-kit-multi-role-analysis Skill 标记为迁移参考，不作为 LDVH 当前权威规则
+reason: 用户要求 07 参考 06 重新梳理，并将早期多角色分析 Skill 转换为更完整的行动模型，同时建立 Trae 预制 Agent 前提和未初始化时的降级规则
+impact:
+  - 行动模型规范区形成与生产对象规范区一致的主文件、执行文件、初始化和审计闭环
+  - 多角色思考成为 40-69 区段首个 active 具体行动模型
+  - 后续可基于 41.01-41.07 逐步创建规则、技能、Agent、程序、展示、功能初始化和功能审计执行文件
+  - 原项目初始化等 planned 行动编号从 41 顺延至 42 起
+human_gate:
+  status: confirmed
+  confirmation: 用户确认执行写入、选择 41 作为多角色思考编号，并选择 Trae 预制 Agent 为增强模式推荐前提
+validation:
+  status: done
+  notes: 已完成 Markdown 基础结构检查、Change YAML 解析检查和关键内容一致性检查；确认 07、40、41 文件非空、代码围栏配对、关键章节与 Agent 前提规则已写入
