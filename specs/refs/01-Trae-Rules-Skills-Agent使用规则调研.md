@@ -1,9 +1,8 @@
 # Trae Rules、Skills 与 Agent 使用规则调研
 
-> 调研日期：2026-05-26
-> 调研对象：Trae 官方文档
-> 适用范围：PM Kit 对 Trae 规则、技能与智能体机制的理解、设计借鉴与初始化建议
-> 文档角色：帮助材料 / 外部调研整理
+> 日期：2026-05-26
+> 来源：Trae 官方文档
+> 定位：外部资料引用，不直接成为 LDVH 强制规则
 
 ---
 
@@ -35,7 +34,7 @@ Trae 官网更新日志显示，截至 2026-05-19，最新记录版本为 TRAE v
 
 与 Rules、Skills、Agent 相关的关键变化如下：
 
-| 日期 | 版本 | 变化 | 对 PM Kit 的启发 |
+| 日期 | 版本 | 变化 | 对 LDVH 的启发 |
 |---|---|---|---|
 | 2026-05-19 | v3.5.59 | 提升终端命令执行稳定性与兼容性 | 涉及命令执行的 Agent / Skill 应保留验证与失败处理 |
 | 2026-05-08 | v3.5.56 | Builder 和 Builder with MCP 合并为 Agent，SOLO Coder 更名为 SOLO Agent | 文档中应使用 Agent、SOLO Agent 作为新名称，避免沿用旧称 |
@@ -43,7 +42,7 @@ Trae 官网更新日志显示，截至 2026-05-19，最新记录版本为 TRAE v
 | 2026-04-14 | v3.5.51 | Rules 支持最多 3 层嵌套；支持在任意子目录创建 `.trae/rules/`；支持 Git Commit Message 规则 | L1/L2 规则体系可借鉴根目录规则 + 子目录规则的分层模型 |
 | 2026-04-02 | v3.5.44 | 支持从 `.agents/skills` 目录加载技能；支持 Git Commit Message 规则 | Skill 可兼容开放 Agent Skills 生态，但同名优先级需注意 |
 | 2026-02-12 | v3.5.31 | 新增 Spec 模式；新增 `/plan`、`/spec` 模式切换指令 | 复杂任务可借鉴“规格文档 + 任务列表 + 验收清单”模式 |
-| 2026-01-23 | v3.5.24/25 | Skills 升级：支持全局技能和项目技能、手动开启/关闭、IDE 模型和自定义 Agent 使用 | PM Kit 的 Skill 设计应区分跨项目通用与项目专属 |
+| 2026-01-23 | v3.5.24/25 | Skills 升级：支持全局技能和项目技能、手动开启/关闭、IDE 模型和自定义 Agent 使用 | LDVH 的 Skill 设计应区分跨项目通用与项目专属 |
 | 2026-01-13 | v3.5.21 | 支持创建 Skill 并在 SOLO 模式中使用，支持手动上传、对话自动创建 | Skill 创建可由 AI 辅助，但需要人工评审 |
 | 2026-01-06 | v3.5.18 | Rules 升级：多条规则、导入 AGENTS.md/CLAUDE.md/CLAUDE.local.md、项目规则 4 种生效方式 | 规则不再只是单文件静态提示，而是可分层、可按场景激活的规则系统 |
 
@@ -128,7 +127,7 @@ Trae 支持将项目根目录中的 `AGENTS.md`、`CLAUDE.md`、`CLAUDE.local.md
 2. Trae 兼容 `CLAUDE.md` 和 `CLAUDE.local.md`，从 Claude Code 导入项目时可复用已有文件。
 3. 开启后，智能体会读取这些文件并添加到上下文中。
 
-PM Kit 视角下，这类文件可视为跨工具兼容的规则入口，但需要避免与 `.trae/rules/` 形成冲突事实源。
+LDVH 视角下，这类文件可视为跨工具兼容的规则入口，但需要避免与 `.trae/rules/` 形成冲突事实源。
 
 ### 3.7 Git Commit Message 规则
 
@@ -446,13 +445,13 @@ SOLO Agent 会生成三阶段文档组：
 需要跨工具兼容 → AGENTS.md / CLAUDE.md，但要控制事实源冲突
 ```
 
-### 7.3 PM Kit 借鉴建议
+### 7.3 LDVH 借鉴建议
 
-1. PM Kit 的 L0/L1 规则应保持短小、稳定、硬约束化，避免写成百科手册。
+1. LDVH 的 L0/L1 规则应保持短小、稳定、硬约束化，避免写成百科手册。
 2. L2 场景规则可借鉴 Trae 的智能生效、指定文件生效和子目录规则机制。
 3. 对话整理、任务验收、备忘写入等流程型能力更适合 Skill，而不是一直放在 Rules 中。
 4. 多角色分析、前后端专项审查、性能测试等角色型能力更适合 Agent。
-5. 复杂功能开发可借鉴 SOLO Agent 的 Plan/Spec 模式，但 PM Kit 应明确自己的事实源边界，避免 `.trae/specs/` 与项目 `specs/`、`docs/`、`task-base/` 混淆。
+5. 复杂功能开发可借鉴 SOLO Agent 的 Plan/Spec 模式，但 LDVH 应明确自己的事实源边界，避免 `.trae/specs/` 与项目 `specs/`、`docs/`、`ldvh-base/` 混淆。
 6. Agent 或 Skill 分享前必须脱敏，尤其是 Prompt、MCP Server 配置、内部路径、密钥、Token、业务数据。
 7. 新增规则或 Skill 后建议开启新对话验证，避免旧上下文覆盖新配置。
 
@@ -476,4 +475,4 @@ SOLO Agent 会生成三阶段文档组：
 1. Trae 版本更新频繁，Rules、Skills、Agent 的字段、目录和 UI 入口应定期按官网复查。
 2. 官方文档未在本次调研中提供所有 Agent 配置文件的本地文件格式细节，如需落地 Git 化管理，应另行验证。
 3. `.agents/skills/` 与 `.trae/skills/` 的生态兼容策略需要结合实际项目继续评估。
-4. PM Kit 是否要把本调研内容进一步提炼进正式 `specs/04-AI协作规范.md` 或独立 Skill/Agent 设计规范，应另行决策。
+4. LDVH 是否要把本调研内容进一步提炼进正式 `specs/04-AI协作规范.md` 或独立 Skill/Agent 设计规范，应另行决策。

@@ -6,7 +6,7 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 01-69 正式规范区间或 ADR 后才成为稳定规则
 > AI 执行边界：本文是临时参考，不授权 AI 据此自动执行 commit、push、tag、release 或分支切换
-> 来源：`trae-pm-kit/references/16-LD-Vibe-Harness-Git版本管理架构与迁移计划.md`
+> 来源：外部参考文档（已迁入 specs/refs/）
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
 > 相关规范：`specs/01-specs文档结构规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`
 
@@ -311,7 +311,7 @@ Release Notes 参考结构：
 | `agents/` | `agents` |
 | `web/` | `web` |
 | `core/` | `core` |
-| `references/` | `docs` |
+| `specs/refs/` | `refs` |
 | `docs/` | `docs` |
 | `ldvh-base/` | `base` |
 | `README.md` | `docs` |
@@ -327,10 +327,10 @@ Release Notes 参考结构：
 |---|---|---|
 | `specs/` | 迁移并重组 | 核心规范体系 |
 | `specs-v2/` | 迁移并重组 | 新版规范，可作为重构来源 |
-| `pm-kit-web/` | 迁移 | Web 工具可改名为 `web/` |
-| `references/` | 选择性迁移 | 按需迁移参考资料 |
-| `docs/` | 选择性迁移 | PM Kit 产品需求不迁 |
-| `pm-kit-base/` | 部分迁移 | ADR 按需迁移，过程性对象慎迁 |
+| `web/`（原旧项目 Web 工具目录） | 迁移 | Web 工具目录 |
+| `specs/refs/` | 选择性迁移 | 按需迁移参考资料 |
+| `docs/` | 选择性迁移 | 旧项目产品需求不迁 |
+| 旧项目结构化对象目录 | 部分迁移 | ADR 按需迁移，过程性对象慎迁 |
 | `product.yaml` | 迁移并改写 | 更新品牌定义 |
 | `.trae/rules/` | 迁移并改写 | 更新项目规则 |
 | `plan/` | 不迁移 | 过程性材料留在旧 repo |

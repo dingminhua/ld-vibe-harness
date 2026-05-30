@@ -23,7 +23,7 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，围绕 Git 文�
 
 - `specs/` 承载 LD Vibe Harness 规范体系和内部调研。
 - `ldvh-base/` 承载结构化生产对象实例和变更记录。
-- `references/` 承载外部资料和第三方参考，不能直接作为 LD Vibe Harness 强制规则。
+- `specs/refs/` 承载外部资料和第三方参考，不能直接作为 LD Vibe Harness 强制规则。
 - `specs-v2/` 是迁移和重构参考区，不自动替代 `specs/` 当前权威规范。
 - `web/` 与 `tools/` 是工具实现目录，工具输出不能替代 Git 文件事实源。
 

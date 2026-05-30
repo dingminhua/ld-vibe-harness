@@ -1,11 +1,8 @@
 # ui-ux-pro-max-skill 使用指南
 
-&gt; 最后更新：2026-05-21
-&gt; 本文档提供 ui-ux-pro-max-skill 的使用说明、调用场景和最佳实践。
-&gt; 
-&gt; ✅ **技能状态：已安装可用**
-&gt; - 技能路径：`/Users/dmh2002/.trae-cn/skills/ui-ux-pro-max-skill-main`
-&gt; - 技能版本：v2.0
+> 日期：2026-05-21
+> 来源：ui-ux-pro-max-skill 官方仓库
+> 定位：外部资料引用，不直接成为 LDVH 强制规则
 
 ---
 
