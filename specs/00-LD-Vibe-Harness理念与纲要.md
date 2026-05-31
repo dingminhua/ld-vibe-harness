@@ -24,6 +24,8 @@ LD Vibe Harness 关注的核心问题是：
 AI 进入项目后，如何知道该读什么、做什么、不能做什么、何时停下等待人确认，以及完成后如何把事实写回项目。
 ```
 
+LD Vibe Harness 是 Harness 思想的实践，简称为LDVH。
+
 ---
 
 ## 二、第一服务对象
@@ -34,7 +36,7 @@ LD Vibe Harness 以 AI 执行者为第一服务对象，整个体系围绕"帮�
 
 因此，LD Vibe Harness 不只为 AI 提供上下文，还要为 AI 提供场景识别、工具选择、Skill 进入、子 Agent 调度和人类确认的行动依据。
 
-在这个前提下，LD Vibe Harness 的架构由介质、Trae Solo 环境机制、Harness 工具、Harness 生产对象和 Harness 行动模型五类构成要素共同组成。
+在这个前提下，LD Vibe Harness 的架构由介质、Trae Solo 环境机制、工具、生产对象和行动模型五类构成要素共同组成。
 
 人在 LD Vibe Harness 中负责：
 
@@ -86,9 +88,9 @@ LD Vibe Harness 的建设成效不以文档、任务、工具页面或对象数�
 |---|---|
 | 介质 | 提供 Git 可追踪、AI 可读取、人可审查、工具可解析的承载形式 |
 | Trae Solo 环境机制 | 提供 AI 协作入口和原生机制，但不直接保证工程可控 |
-| Harness 工具 | 降低读取、校验、聚合、展示和受控写入事实源的成本 |
-| Harness 生产对象 | 把项目生产事实建模为可追踪、可验证、可流转的对象 |
-| Harness 行动模型 | 约束 AI 如何读取上下文、识别场景、执行任务、触发门禁和回写事实 |
+| 工具 | 降低读取、校验、聚合、展示和受控写入事实源的成本 |
+| 生产对象 | 把项目生产事实建模为可追踪、可验证、可流转的对象 |
+| 行动模型 | 约束 AI 如何读取上下文、识别场景、执行任务、触发门禁和回写事实 |
 
 ### 3.3 反向判断
 
@@ -99,35 +101,35 @@ LD Vibe Harness 的建设成效不以文档、任务、工具页面或对象数�
 3. 工具展示与 Git 文件事实源不一致；
 4. AI 无法识别应触发 Human Gate 的关键节点；
 5. 人无法基于事实源和证据完成验收；
-6. 同类失败反复发生且没有进入 Pitfall、规则或行动模型。
+6. 同类失败反复发生且没有进入 Pitfall、规范规则或行动模型。
 
 ---
 
 ## 四、架构：五类构成要素
 
-LD Vibe Harness 不是由单一工具、单一规范或单一对象体系构成，而是由五类构成要素共同形成 AI 工程驾驭体系：介质、Trae Solo 环境机制、Harness 工具、Harness 生产对象和 Harness 行动模型。
+LD Vibe Harness 不是由单一工具、单一规范或单一对象体系构成，而是由五类构成要素共同形成 AI 工程驾驭体系：介质、Trae Solo 环境机制、工具、生产对象和行动模型。
 
 这五类不是上下层级，也不是五种能力，而是性质不同、分工不同、共同服务于同一工程闭环的构成要素。
 
 ### 4.1 五类构成要素总览
 
-| 类别 | 英文 | 归属 | Harness 的角色 | 回答的问题 | 举例 |
+| 类别 | 英文 | 归属 | 角色 | 回答的问题 | 举例 |
 |---|---|---|---|---|---|
 | 介质 | Medium | 行业标准 | 定义使用规则，不重新定义介质本身 | 用什么承载 | YAML、Markdown、Python、JavaScript |
 | Trae Solo 环境机制 | Trae Solo Environment Mechanisms | Trae 提供 | 利用，不重新定义 | AI 协作运行在哪些原生机制之上 | Rules、Skill、Agent |
-| Harness 工具 | Harness Tools | Harness 提供 | 实现和维护 | 用什么辅助读取、校验、展示和写入 | Web Tools、Python 辅助程序 |
-| Harness 生产对象 | Harness Production Objects | Harness 定义规范，项目实例化 | 建模工程生产事实 | 项目事实如何被组织、流转和沉淀 | Intent、Task、Memo、ADR、Evidence、Change、Pitfall |
-| Harness 行动模型 | Harness Action Model | Harness 定义规范，项目执行时适用 | 建模 AI 行动控制 | AI 如何读取、判断、执行、停下和回写 | Context、Scenario、Gate、Rules 适用、Skill 进入、Agent 调度、事实源回写 |
+| 工具 | Tools | LDVH 提供 | 实现和维护 | 用什么辅助读取、校验、展示和写入 | Web Tools、Python 辅助程序 |
+| 生产对象 | Production Objects | LDVH 定义规范，项目实例化 | 建模工程生产事实 | 项目事实如何被组织、流转和沉淀 | Intent、Task、Memo、ADR、Evidence、Change、Pitfall |
+| 行动模型 | Action Model | LDVH 定义规范，项目执行时适用 | 建模 AI 行动控制 | AI 如何读取、判断、执行、停下和回写 | Context、Scenario、Gate、Rules 适用、Skill 进入、Agent 调度、事实源回写 |
 
 ### 4.2 介质
 
-YAML、Markdown、Python、JavaScript 等文件格式和编程语言是 LD Vibe Harness 使用的行业标准承载形式。介质本身不属于 Trae、Harness 或项目，也不是 Harness 自定义对象。
+YAML、Markdown、Python、JavaScript 等文件格式和编程语言是 LD Vibe Harness 使用的行业标准承载形式。介质本身不属于 Trae、LDVH 或项目，也不是 LDVH 自定义对象。
 
 介质的核心特征：
 
 1. **行业标准**：介质本身的语法和规范由行业标准定义；
-2. **Harness 定义使用要求**：Harness 在基础规范中定义这些介质的使用要求，但不重新定义介质本身；
-3. **五类共用**：Trae Solo 环境机制通过 .md 文件落地 Rules、Skill、Agent 定义；Harness 工具通过 .py / .js 程序落地 Web 后端、前端和辅助脚本；Harness 生产对象通过 .yaml / .md 文件落地 Task、ADR、Pitfall 等实例；Harness 行动模型通过规范、Rules 入口和结构化上下文约束 AI 行动。
+2. **LDVH 定义使用要求**：LDVH 在基础规范中定义这些介质的使用要求，但不重新定义介质本身；
+3. **五类共用**：Trae Solo 环境机制通过 .md 文件落地 Rules、Skill、Agent 定义；工具通过 .py / .js 程序落地 Web 后端、前端和辅助脚本；生产对象通过 .yaml / .md 文件落地 Task、ADR、Pitfall 等实例；行动模型通过规范、Rules 入口和结构化上下文约束 AI 行动。
 
 ### 4.3 Trae Solo 环境机制
 
@@ -135,42 +137,42 @@ YAML、Markdown、Python、JavaScript 等文件格式和编程语言是 LD Vibe 
 
 LD Vibe Harness 对 Trae Solo 环境机制的态度：
 
-1. **利用不重新定义**：Harness 定义如何使用 Trae 原生机制，不重新定义机制本身；
-2. **规范不替代**：Harness 的 Rules、Skill、Agent 设计规范，是对 Trae 原生机制的使用约束和最佳实践，不是替代 Trae 的机制；
-3. **适配不绑定**：Harness 的规范体系适配 Trae Solo 的能力模型，但不假设 Trae 是唯一可用的 AI 编程环境。
+1. **利用不重新定义**：LDVH 定义如何使用 Trae 原生机制，不重新定义机制本身；
+2. **规范不替代**：LDVH 的 Rules、Skill、Agent 设计规范，是对 Trae 原生机制的使用约束和最佳实践，不是替代 Trae 的机制；
+3. **适配不绑定**：LDVH 的规范体系适配 Trae Solo 的能力模型，但不假设 Trae 是唯一可用的 AI 编程环境。
 
-### 4.4 Harness 工具
+### 4.4 工具
 
-Harness 工具是 LD Vibe Harness 自身提供的辅助执行手段，用于桥接 AI 优先的结构化信息和人的可读可操作需求。
+工具是 LD Vibe Harness 自身提供的辅助执行手段，用于桥接 AI 优先的结构化信息和人的可读可操作需求。
 
-Harness 工具包括可视化工具和 Tools 辅助工具。当前主要包括：
+工具包括可视化工具和 Tools 辅助工具。当前主要包括：
 
 1. **Web Tools**：可视化工具，把 AI 优先的结构化信息转化为人可读、可操作的界面，桥接信息；
 2. **Python 辅助程序**：解析、校验、聚合和受控写入事实源，降低人和 AI 维护结构化文件的成本。
 
-Harness 工具的边界：
+工具的边界：
 
 1. 工具可以降低维护成本，但不能成为最终事实源；
 2. 工具可以提供受控写入入口，但不能绕过事实源边界和 Human Gate；
 3. 工具可以聚合并提供 Web 展示，但不能独立维护与事实源冲突的派生数据。
 
-### 4.5 Harness 生产对象
+### 4.5 生产对象
 
-Harness 生产对象是 LD Vibe Harness 对工程生产事实的自定义建模，用于承载意图、任务、决策、风险、依赖、证据、变更、产物、检查项和经验沉淀。
+生产对象是 LD Vibe Harness 对工程生产事实的自定义建模，用于承载意图、任务、决策、风险、依赖、证据、变更、产物、检查项和经验沉淀。
 
-典型 Harness 生产对象包括 Intent、TaskSet、Task、Memo、ADR、Risk、Dependency、Evidence、Artifact、Checklist、Change、Pitfall。
+典型生产对象包括 Intent、TaskSet、Task、Memo、ADR、Risk、Dependency、Evidence、Artifact、Checklist、Change、Pitfall。
 
-Harness 生产对象的核心特征：
+生产对象的核心特征：
 
-1. **规范由 Harness 定义**：对象的准入条件、字段契约、状态流转、事实源边界和验收规则由 Harness 规范体系定义；
+1. **规范由 LDVH 定义**：对象的准入条件、字段契约、状态流转、事实源边界和验收规则由 LDVH 规范体系定义；
 2. **实例由项目拥有**：每个项目按规范创建的对象实例属于项目，存放在项目的结构化事实源目录中；
 3. **服务工程生产**：对象用于让 AI、人和工具围绕同一组项目事实协作，支持任务拆解、状态追踪、证据回写、决策追溯和变更审计。
 
-### 4.6 Harness 行动模型
+### 4.6 行动模型
 
-Harness 行动模型是 LD Vibe Harness 对 AI 在项目中如何行动的执行控制建模，用于回答 AI 进入项目后该读什么、如何判断、如何执行、何时停下等待人确认，以及完成后如何把事实写回项目。
+行动模型是 LD Vibe Harness 对 AI 在项目中如何行动的执行控制建模，用于回答 AI 进入项目后该读什么、如何判断、如何执行、何时停下等待人确认，以及完成后如何把事实写回项目。
 
-Harness 行动模型包括：
+行动模型包括：
 
 1. **Context**：AI 行动前应获得的最小可行动上下文；
 2. **Scenario**：AI 如何识别当前任务场景；
@@ -180,7 +182,7 @@ Harness 行动模型包括：
 6. **Agent 调度**：AI 何时调用子 Agent 或专业角色；
 7. **事实源回写**：AI 完成执行后如何按事实源边界写回项目。
 
-其中 Rules、Skill、Agent 与 Trae Solo 原生机制有关。Trae Solo 提供底层机制，LD Vibe Harness 不重新定义机制本身，只定义这些机制在 Harness 中如何被设计、组织、触发、治理和回写事实源。
+其中 Rules、Skill、Agent 与 Trae Solo 原生机制有关。Trae Solo 提供底层机制，LD Vibe Harness 不重新定义机制本身，只定义这些机制在 LDVH 中如何被设计、组织、触发、治理和回写事实源。
 
 ---
 
@@ -196,9 +198,9 @@ LD Vibe Harness 的事实源必须回到 Git 可追踪文件。事实源权威�
 |---|---|
 | 介质 | 提供事实源承载形式 |
 | Trae Solo 环境机制 | 提供协作入口，但不成为最终事实源 |
-| Harness 工具 | 读取、校验、聚合、提供 Web 展示和受控写入事实源，但不成为最终事实源 |
-| Harness 生产对象 | 是项目生产事实的主要结构化承载 |
-| Harness 行动模型 | 规定 AI 如何读取、判断和回写事实源 |
+| 工具 | 读取、校验、聚合、提供 Web 展示和受控写入事实源，但不成为最终事实源 |
+| 生产对象 | 是项目生产事实的主要结构化承载 |
+| 行动模型 | 规定 AI 如何读取、判断和回写事实源 |
 
 YAML 更适合承载任务、状态、结构化关系、审计字段和可解析决策。Markdown 更适合承载背景、原因、解释、需求语境和规范说明。
 
@@ -211,7 +213,7 @@ LD Vibe Harness 的协作关系不是“工具替人管理项目”，也不是�
 ```text
 人表达意图、约束或确认
   ↓
-AI 依据 Harness 行动模型识别场景、事实源边界和 Human Gate
+AI 依据行动模型识别场景、事实源边界和 Human Gate
   ↓
 AI 读取事实源，并判断是否需要工具、Skill 或子 Agent
   ↓
@@ -229,7 +231,7 @@ Web Tools 展示状态、待确认事项和检查结果
 这个闭环必须满足：
 
 1. 起点可以来自人的对话输入，但终点必须回到文件事实源；
-2. AI 可以依据 Harness 行动模型调度工具、Skill 或子 Agent，但不能绕过事实源边界和 Human Gate；
+2. AI 可以依据行动模型调度工具、Skill 或子 Agent，但不能绕过事实源边界和 Human Gate；
 3. 工具可以降低维护成本，但不能成为最终事实源；
 4. 人可以通过 Web Tools 观察和确认，但关键事实仍以 Git 文件为准；
 5. 每次执行都应留下可追溯的任务状态、验证证据、ADR 或检查结果。
@@ -296,6 +298,6 @@ LD Vibe Harness 的基础规范由 01-03 与 10-19 承载。本文只定义基�
 ## 八、待补齐事项
 
 1. 10-19 核心基础规范待逐步创建；
-2. 20 生产对象集合索引和 21-49 Harness 生产对象的具体对象规范待逐步创建；
-3. 50 行动模型集合索引和 51-79 Harness 行动模型的具体行动规范待逐步创建；
+2. 20 生产对象集合索引和 21-49 具体生产对象规范待逐步创建；
+3. 50 行动模型集合索引和 51-79 具体行动规范待逐步创建；
 4. specs/evals/ 项目评估区的升级机制待进一步细化。

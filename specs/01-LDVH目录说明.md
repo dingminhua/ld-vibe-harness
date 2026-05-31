@@ -19,7 +19,7 @@
 
 ## 二、与 00 总纲的关系
 
-00 定义 LD Vibe Harness 的产品理念、价值实现标准、五类构成要素和基础规范索引。本文承接 00 中"介质、Trae Solo 环境机制、Harness 工具、Harness 生产对象、Harness 行动模型共同组成工程驾驭体系"的架构判断，专门定义这些内容在项目目录中的承载位置和 specs 编号分区。
+00 定义 LD Vibe Harness 的产品理念、价值实现标准、五类构成要素和基础规范索引。本文承接 00 中"介质、Trae Solo 环境机制、工具、生产对象、行动模型共同组成工程驾驭体系"的架构判断，专门定义这些内容在项目目录中的承载位置和 specs 编号分区。
 
 本文是 LD Vibe Harness 项目目录规划、specs 编号分区和目录事实源性质声明的权威位置。00 只保留基础规范索引，不重复维护项目目录说明；10 定义事实源权威性判断原则，本文依据 10 的原则声明各目录在事实源体系中的性质，但不定义原则本身。
 
@@ -39,7 +39,7 @@
 |---|---|---|---|
 | specs/ | LD Vibe Harness 规范目录 | 00-99 specs 文档、refs/ 外部资料、evals/ 项目评估 | 规范事实源；evals/ 不直接构成强制规则 |
 | docs/ | 管辖项目资料目录 | 管辖项目资料、管辖项目审计结果、报告、操作说明、产品资料和非规范性实践 | 管辖项目文档事实源；不是 LDVH 基础规范事实源 |
-| ldvh-base/ | 结构化对象实例目录 | Task、ADR、Evidence、Change、Pitfall 等 Harness 生产对象实例 | 结构化生产对象实例事实源 |
+| ldvh-base/ | 结构化对象实例目录 | Task、ADR、Evidence、Change、Pitfall 等 LDVH 生产对象实例 | 结构化生产对象实例事实源 |
 | web/ | Web Tools 实现目录 | LD Vibe Harness Web Tools 的前端、后端、页面和相关实现 | 非最终事实源；工具实现和运行状态不能替代事实源 |
 | tools/ | Tools 辅助工具目录 | 脚本、校验器、聚合器、受控写入工具和其他 Tools 辅助工具 | 非最终事实源；工具实现和运行结果不能替代事实源 |
 
@@ -75,9 +75,9 @@ docs/ 面向人的阅读、确认、审查和操作需要，不用于承载 LD V
 
 ### 3.5 ldvh-base 目录
 
-ldvh-base/ 承载结构化 Harness 生产对象实例，例如 Task、ADR、Evidence、Change、Pitfall 等。
+ldvh-base/ 承载结构化 LDVH 生产对象实例，例如 Task、ADR、Evidence、Change、Pitfall 等。
 
-ldvh-base/ 下各对象实例的目录结构、字段、状态和验收规则由 20-49 Harness 生产对象规范定义。
+ldvh-base/ 下各对象实例的目录结构、字段、状态和验收规则由 20-49 LDVH 生产对象规范定义。
 
 ### 3.6 web 与 tools 目录
 
@@ -156,7 +156,7 @@ specs/ 采用分区编号，编号本身必须表达文档在规范体系中的�
 
 ## 七、待补齐事项
 
-1. ldvh-base/ 下各类生产对象实例的具体目录结构，待 20-49 Harness 生产对象规范稳定后补齐；
+1. ldvh-base/ 下各类生产对象实例的具体目录结构，待 20-49 LDVH 生产对象规范稳定后补齐；
 2. docs/ 下管辖项目资料的分类方式，待管辖项目实践稳定后补齐；
 3. web/ 与 tools/ 的实现目录细分，待 LDVH 工具基础规范和实现演进后补齐；
 4. docs/、ldvh-base/、web/、tools/ 等规划一级目录待按落地初始化需要创建或审计。

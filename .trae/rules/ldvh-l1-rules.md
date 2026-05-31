@@ -6,7 +6,7 @@
 
 ## 项目定位
 
-LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，围绕 Git 文件事实源、AI 行动模型、Harness 生产对象、Human Gate 和工具辅助能力，帮助 AI 稳定读取、受控执行、留下证据并按边界回写项目事实。
+LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，围绕 Git 文件事实源、AI 行动模型、生产对象、Human Gate 和工具辅助能力，帮助 AI 稳定读取、受控执行、留下证据并按边界回写项目事实。LD Vibe Harness 是 Harness 思想的实践，简称为LDVH。
 
 ## 必读入口
 
@@ -33,8 +33,8 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，围绕 Git 文�
 - `01-03` 是基础规范区。
 - `04-09` 是保留基础规范扩展区。
 - `10-19` 是核心基础规范区。
-- `20-49` 是 Harness 生产对象规范区。
-- `50-79` 是 Harness 行动模型规范区。
+- `20-49` 是 LDVH 生产对象规范区。
+- `50-79` 是 LDVH 行动模型规范区。
 - `80-99` 保留给后续扩展，不得未经确认提前占用。
 - `specs/evals/` 是项目评估区，不直接构成强制执行规则。
 - `specs/refs/` 是外部资料引用区，不直接成为 LDVH 强制规则。
