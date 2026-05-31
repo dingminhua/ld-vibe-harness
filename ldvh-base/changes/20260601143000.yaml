@@ -1,0 +1,54 @@
+type: change
+title: 明确 Skill Tools 与子 Agent 流程入口边界
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  ADR 写入与状态变更、Tools 受控执行、多角色子 Agent 编排之间存在职责边界需要进一步明确。
+  Skill 适合承接流程性判断、准入说明、Human Gate 编排和写入意图确认，Tools 适合承接已授权、可机械化、可校验的受控执行。
+  多角色思考涉及子 Agent 调度，而 Skill 不能调用或编排 Agent，Tools 也不得直接调用 AI、Skill 或 Agent，因此多角色子 Agent 模式必须先由 Rules 入口触发，再由主控依据行动模型主文档和契约编排。
+decision: |
+  1. 更新 Skill 机制规范，明确 Skill 可调用 Tools 执行确定性解析、校验、聚合、上下文准备或受控写入，但 Tools 不承载流程性判断。
+  2. 更新 Agent 机制规范，明确已定义子 Agent 流程入口的行动模型必须从 Rules 入口和主文档进入，不得由 Skill、Tools、MCP、脚本或工具缓存绕过入口发起。
+  3. 更新 Tools 基础规范和 Tools 辅助规范，明确 Tools 可执行已授权、可机械化、可校验的受控写入，但不得产生授权本身、替代流程性判断、调用 AI/Skill/Agent 或触发子 Agent 流程。
+  4. 更新 ADR 主文档、21.02-Skill.md 和 21.04-Tools.md，明确 ADR 中 Skill 负责流程性判断和 Human Gate 编排，Tools 未来可在授权后承接受控写入，但当前 ADR Tools 仍为只读索引、查询、统计和校验能力。
+  5. 更新多角色思考主文档、51.01-Rules.md、51.02-Skill.md、51.03-Agent.md、51.04-Tools.md 和 51.06-Contract.md，明确多角色子 Agent 模式必须先从 Rules 入口进入，并由主控使用当前运行环境可调用 Agent 容器编排。
+  6. 更新 L0 工作区规则中的多角色思考入口摘要，加入子 Agent 模式不得由 Skill、Tools、MCP 或脚本直接触发的边界。
+consequences: |
+  - 后续判断机制分工时，应采用“Skill 负责流程性判断与 Human Gate 编排，Tools 负责已授权的确定性受控执行”的边界。
+  - 当前 AI 运行环境提供的可调用 Agent 容器不自动归入 LDVH Tools 辅助层，不得据此放宽 Tools 不调用 AI、Skill 或 Agent 的限制。
+  - 多角色子 Agent 流程只能由 Rules 入口触发后主控编排，Skill、Tools、MCP、脚本或工具缓存不得直接作为入口。
+  - 51.03-Agent.md 不再维护具体可调用 Agent 类型清单，只保留运行时映射原则。
+  - ADR Tools 受控写入仍属于未来能力，未实现前不得假定 tools/adr_index.py 具备写入能力。
+affects:
+  - /Users/dmh2002/trae_projects/.trae/rules/ldvh-l0-rules.md
+  - specs/11.02-Skill机制规范.md
+  - specs/11.03-Agent机制规范.md
+  - specs/12-LDVH工具基础规范.md
+  - specs/12.01-Tools辅助规范.md
+  - specs/21-ADR-决策记录.md
+  - specs/21.02-Skill.md
+  - specs/21.04-Tools.md
+  - specs/51-multi-role-thinking-多角色思考.md
+  - specs/51.01-Rules.md
+  - specs/51.02-Skill.md
+  - specs/51.03-Agent.md
+  - specs/51.04-Tools.md
+  - specs/51.06-Contract.md
+related_rules:
+  - specs/11.02-Skill机制规范.md
+  - specs/11.03-Agent机制规范.md
+  - specs/12-LDVH工具基础规范.md
+  - specs/12.01-Tools辅助规范.md
+  - specs/21-ADR-决策记录.md
+  - specs/51-multi-role-thinking-多角色思考.md
+  - specs/51.06-Contract.md
+human_gate:
+  required: true
+  confirmed_by: user
+  confirmation_context: 用户要求将 Skill/Tools 边界和子 Agent 流程只能由 Rules 入口触发的重大事项加入相关规定文档，并要求完成后检查。
+validation: |
+  1. 已执行 Change YAML 解析检查；首次检查发现本 Change 的 validation 字段包含未转义命令片段导致 YAML 解析失败，已修正为块文本。
+  2. 已执行边界文本检查，确认 specs/51.03-Agent.md 和 specs/51.06-Contract.md 不再包含被禁止固化的 Task 工具系统子 Agent、混合映射方案和推荐子 Agent 类型等表述。
+  3. 已执行 ADR Tools 回归测试：python3 -m pytest tests/tools/test_adr_index.py，结果为 8 passed。
+  4. 修正后再次执行 Change YAML 解析检查，结果记录在本次对话验收输出中。
