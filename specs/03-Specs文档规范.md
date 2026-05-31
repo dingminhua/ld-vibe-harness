@@ -375,7 +375,7 @@ specs/refs/ 承载与 LD Vibe Harness 规范体系相关的外部资料引用，
 8. 索引文档定义新的对象字段、状态机或行动规则；
 9. 改变机制关系声明规则，或新增、修改、删除会影响 Rules、Skill、Agent、Tools、Web 或 Contract 实体同步检查的机制关系声明。
 
-当 AI 识别到上述情况时，依据 `specs/00-LD-Vibe-Harness理念与纲要.md` §七 Human Gate 程序规则执行。
+当 AI 识别到上述情况时，依据 `specs/00-LD-Vibe-Harness理念与纲要.md` §八 Human Gate 程序规则执行。
 
 文档写作检查至少包括：
 

@@ -3,6 +3,7 @@
 > 最后更新：2026-06-01
 > 层级：L1 项目规则
 > 适用项目：ld-vibe-harness
+> 生效方式：始终生效
 > 规范来源：`specs/11.01-Rules机制规范.md`、`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-LDVH目录说明.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`
 > 维护边界：本文件只作为 LDVH 项目入口、项目专属硬约束和 L2 引导，不替代 specs 正式规范
 

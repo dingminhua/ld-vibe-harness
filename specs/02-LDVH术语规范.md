@@ -171,7 +171,18 @@ Rules 可以通过短摘要提醒 AI 评估某个 Scenario，但不应在 Rules 
 
 ---
 
-## 十二、Human Gate 与检查要求
+## 十二、机制关系声明
+
+本文存在以下机制关系：
+
+| 关联机制 | 关联实体 | 关系类型 | 同步触发 |
+|---|---|---|---|
+| Rules | `../.trae/rules/ldvh-l0-rules.md` | 管辖项目定义和机制英文专名入口摘要 | 本文的管辖项目定义、LDVH 与 Harness 关系或机制英文专名变化时 |
+| Rules | `.trae/rules/ldvh-l2-specs-rules.md` | specs 术语使用入口摘要 | 本文的机制英文专名、中文术语定语或模型实践子文档命名规则变化时 |
+
+---
+
+## 十三、Human Gate 与检查要求
 
 以下情况应评估 Human Gate：
 
@@ -188,7 +199,7 @@ Rules 可以通过短摘要提醒 AI 评估某个 Scenario，但不应在 Rules 
 11. 让 Web 适配文件承载 UI 状态作为稳定事实；
 12. 让契约子文档承载主模型的对象定位、状态机、Scenario、Gate、执行流程或 Human Gate。
 
-当 AI 识别到上述情况时，依据 `specs/00-LD-Vibe-Harness理念与纲要.md` §七 Human Gate 程序规则执行。
+当 AI 识别到上述情况时，依据 `specs/00-LD-Vibe-Harness理念与纲要.md` §八 Human Gate 程序规则执行。
 
 术语规范检查至少包括：
 
@@ -204,7 +215,7 @@ Rules 可以通过短摘要提醒 AI 评估某个 Scenario，但不应在 Rules 
 
 ---
 
-## 十三、待补齐事项
+## 十四、待补齐事项
 
 1. 已有 specs 文档中的裸用中文"规则""技能""代理""智能体"等术语待后续持续审计和修正；
 2. 模型实践子文档命名维度规则待事实模型和行动模型的具体机制实践稳定后继续补充示例；
