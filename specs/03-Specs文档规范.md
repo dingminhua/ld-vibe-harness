@@ -297,7 +297,7 @@ specs/refs/ 承载与 LD Vibe Harness 规范体系相关的外部资料引用，
 ## 六、待补齐事项
 ```
 
-契约子文档不得复制主文档的对象定位、状态机、Scenario、Gate、执行流程或 Human Gate 规则。契约子文档只定义结构化契约，供 Tools 校验、Web 展示和 Agent 调度消费。
+契约子文档不得复制主文档的对象定位、状态机、Scenario、Gate、执行流程或 Human Gate 规则。契约子文档只定义结构化契约，供 Tools 校验、Web 信息同步和 Agent 调度消费。
 
 ---
 

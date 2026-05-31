@@ -1,0 +1,60 @@
+type: change
+title: 统一模型实践子文档命名与机制分工
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  用户确认将模型实践子文档分工统一为 Rules 入口约束、Skill 契约式行动、Agent 上下文隔离、Tools 契约式校验与执行、Web 信息同步。
+  本次变更不是单独修改 51 模型，而是要求 specs/ 下相关底层规范、现有模型实践子文档和内部评估文档与该分工方向保持一致。
+decision: |
+  1. 更新 02、04，明确 NN.01-NN.05 的默认分工方向和标题语义。
+  2. 更新 11、11.02、11.03，强化 Skill 契约式行动与 Agent 上下文隔离边界。
+  3. 更新 12、12.01、12.02，将 Web 从展示语义收敛为信息同步语义，并保留文件名 12.02-Web展示规范.md 不变。
+  4. 更新 13、14，将事实模型和行动模型中的 Tools/Web 适配表述调整为 Tools 契约式校验与执行、Web 信息同步。
+  5. 更新 21 和 51 相关主文档及附件型实践子文档标题、定位和检查项，使现有模型文档与新分工方向一致。
+  6. 更新 specs/evals/ 内部评估文档中的相关表述；specs/refs/ 外部引用材料保留原始表述，不作为本次规范统一对象。
+consequences: |
+  - 后续新增或调整 NN.01-NN.05 子文档时，应优先采用本次确定的五类机制分工方向。
+  - Web 的规范语义从展示转为信息同步；Web 可同步状态、缺口、证据和确认项，但不得成为事实源。
+  - Tools 的规范语义强化为契约式校验与执行；Skill 的规范语义强化为契约式行动。
+  - refs 外部资料仍可能出现原始中文术语或旧表述，使用时应按正式 specs 规范转写。
+affects:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+  - specs/02-LDVH术语规范.md
+  - specs/03-Specs文档规范.md
+  - specs/04-LDVH模型子文档规范.md
+  - specs/11-LDVH-AI协作规范.md
+  - specs/11.02-Skill机制规范.md
+  - specs/11.03-Agent机制规范.md
+  - specs/12-LDVH工具基础规范.md
+  - specs/12.01-Tools辅助规范.md
+  - specs/12.02-Web展示规范.md
+  - specs/13-LDVH事实模型基础规范.md
+  - specs/14-LDVH行动模型基础规范.md
+  - specs/21-ADR-决策记录.md
+  - specs/21.02-Skill.md
+  - specs/21.04-Tools.md
+  - specs/21.05-Web.md
+  - specs/51-multi-role-thinking-多角色思考.md
+  - specs/51.02-Skill.md
+  - specs/51.04-Tools.md
+  - specs/51.05-Web.md
+  - specs/51.06-Contract.md
+  - specs/evals/03-LDVH对Agent-Harness的借鉴评估.md
+  - specs/evals/06-LDVH的MCP使用评估.md
+  - specs/evals/07-LDVH自建MCP评估.md
+  - specs/evals/08-LDVH对MCP-Shrimp-Task-Manager的借鉴评估.md
+related_rules:
+  - specs/02-LDVH术语规范.md
+  - specs/04-LDVH模型子文档规范.md
+  - specs/11.02-Skill机制规范.md
+  - specs/12-LDVH工具基础规范.md
+  - specs/12.01-Tools辅助规范.md
+  - specs/12.02-Web展示规范.md
+human_gate:
+  required: true
+  confirmed_by: user
+  confirmation_context: 用户同意按 Rules 入口约束、Skill 契约式行动、Agent 上下文隔离、Tools 契约式校验与执行、Web 信息同步的方向推进 specs 相关内容统一。
+validation: |
+  待执行：旧术语检索、YAML 解析检查和 git diff 审查。

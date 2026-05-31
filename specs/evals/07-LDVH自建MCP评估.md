@@ -86,7 +86,7 @@ Trae 内置工具可以读写文件、运行终端命令和搜索文本，但它
 
 ### 3.1 触发条件
 
-LDVH 不因存在 Python 程序就自建 MCP，也不因某项能力会被 AI 使用就自建 MCP。只有当某项 LDVH 特有的 Tools 辅助能力需要被 Agent 长期、结构化、权限受控地调用，且第三方 MCP、Trae 内置工具、CLI、Skill 或 Web API 都不足以覆盖时，才应考虑自建 MCP。
+LDVH 不因存在 Python Tools 能力就自建 MCP，也不因某项能力会被 AI 使用就自建 MCP。只有当某项 LDVH 特有的 Tools 辅助能力需要被 Agent 长期、结构化、权限受控地调用，且第三方 MCP、Trae 内置工具、CLI、Skill 或 Web API 都不足以覆盖时，才应考虑自建 MCP。
 
 应考虑自建 MCP 的条件如下：
 
@@ -106,7 +106,7 @@ LDVH 不因存在 Python 程序就自建 MCP，也不因某项能力会被 AI �
 以下情况不应自建 MCP：
 
 1. 只是一次性脚本或临时调试命令；
-2. 只是为了让 Python 程序“看起来更智能”；
+2. 只是为了让 Python Tools 能力“看起来更智能”；
 3. CLI 已足够简单且权限风险可控；
 4. Skill 已能稳定编排该流程；
 5. Web API 更适合人查看、确认或编辑；
@@ -127,8 +127,8 @@ LDVH 不因存在 Python 程序就自建 MCP，也不因某项能力会被 AI �
 ```text
 Tools 辅助层（tools/）
   ├── CLI 入口：供人、AI 或脚本通过终端直接调用
-  ├── Skill 流程入口：供 Skill 在授权流程中调用确定性程序
-  ├── Web API 入口：供 12.02 Web 展示层调用
+  ├── Skill 契约式行动流程入口：供 Skill 在授权流程中调用确定性 Tools 处理逻辑
+  ├── Web API 入口：供 12.02 Web 信息同步层调用
   └── MCP 入口：供 Agent 通过 Trae MCP 协议结构化调用
 ```
 
@@ -148,18 +148,18 @@ Tools 辅助层（tools/）
 3. MCP 工具不得直接调用 AI、Skill 或 Agent；
 4. MCP 工具不得替代 specs/、ldvh-base/或 docs/ 的权威事实。
 
-### 4.3 Python 程序是否 MCP 化的判断
+### 4.3 Python Tools 能力是否 MCP 化的判断
 
-Python 程序属于 12.01 Tools 辅助层的能力实现。MCP 是其中一种面向 Agent 的协议入口，不是 Python 程序的唯一调用方式。
+Python Tools 能力属于 12.01 Tools 辅助层的能力实现。MCP 是其中一种面向 Agent 的协议入口，不是 Python Tools 能力的唯一调用方式。
 
 | 入口 | 适用场景 | 边界 |
 |---|---|---|
 | CLI | 本地开发、一次性检查、简单校验、AI 临时调用 | 依赖命令参数和执行上下文，适合轻量使用 |
-| Skill 流程入口 | 可复用多步骤流程中的确定性步骤 | Skill 负责编排，Python 只执行确定性程序逻辑 |
-| Web API | 人需要查看、确认、编辑或验收的场景 | Web 展示层负责人机交互，不成为事实源 |
+| Skill 契约式行动流程入口 | 可复用多步骤流程中的确定性步骤 | Skill 负责编排，Python 只执行确定性 Tools 处理逻辑逻辑 |
+| Web API | 人需要查看、确认、编辑或验收的场景 | Web 信息同步层负责人机交互，不成为事实源 |
 | MCP | Agent 长期、结构化、权限受控地调用工具能力 | MCP 只做协议适配和结构化返回，不实现业务逻辑 |
 
-某个 Python 程序是否需要 MCP 化，应至少满足以下一项：
+某个 Python Tools 能力是否需要 MCP 化，应至少满足以下一项：
 
 1. Agent 需要长期、稳定、重复调用；
 2. 需要以结构化工具参数替代自由命令行参数；
@@ -345,8 +345,8 @@ LDVH 特有能力用自建 MCP；
 | MCP 输出被当作事实源 | Agent 可能把结构化视图当作权威事实源 | 工具描述明确输出不是事实源；聚合结果包含来源引用；与 Git 文件事实源不一致时以 Git 为准 |
 | 对象规范未稳定导致频繁变更 | 事实模型规范变更会导致 MCP 字段和状态机同步变更 | 等至少 Task 和 Change 对象规范稳定后再实现；MCP 与对象规范保持引用关系；初期只覆盖核心对象 |
 | 维护成本上升 | 需要适配 Trae MCP 协议、对象规范和 tools/ 模块变更 | MCP 入口层保持薄封装；业务逻辑复用 tools/；入口层只测试协议适配 |
-| 与 Web 展示层功能重叠 | Fact Reader、Status Aggregator、Context Pack 与 Web 展示层可能读取同类数据 | 底层复用同一 tools/ 模块；MCP 面向 Agent 结构化调用，Web 面向人可视化交互 |
-| 误把 MCP 当作唯一程序入口 | 可能导致所有 Python 脚本被过度 MCP 化 | 明确 MCP 只是Tools 辅助层入口之一；简单能力保留 CLI；多步骤流程由 Skill 编排；面向人确认的能力进入 Web 展示层 |
+| 与 Web 信息同步层功能重叠 | Fact Reader、Status Aggregator、Context Pack 与 Web 信息同步层可能读取同类数据 | 底层复用同一 tools/ 模块；MCP 面向 Agent 结构化调用，Web 面向人可视化交互 |
+| 误把 MCP 当作唯一程序入口 | 可能导致所有 Python 脚本被过度 MCP 化 | 明确 MCP 只是 Tools 辅助层入口之一；简单能力保留 CLI；多步骤流程由 Skill 编排；面向人确认的能力进入 Web 信息同步层 |
 
 ---
 
@@ -361,7 +361,7 @@ LDVH 特有能力用自建 MCP；
 | 优先级 | Sequential Thinking > Context7 > Playwright | Fact Reader + Status Aggregator > Context Pack + Validator > Controlled Writer |
 | 互补关系 | 第三方 MCP 提供通用能力 | 自建 MCP 提供 LDVH 特有能力，两者不重叠 |
 
-自建 MCP 与直接调用 Python 程序不是互斥关系。Python 程序是Tools 辅助层的能力实现，MCP 是其中一种面向 Agent 的协议入口。CLI、Skill、Web API 和 MCP 可以并存，区别在于服务对象、权限边界和交互形态不同。
+自建 MCP 与直接调用 Python Tools 能力不是互斥关系。Python Tools 能力是Tools 辅助层的能力实现，MCP 是其中一种面向 Agent 的协议入口。CLI、Skill、Web API 和 MCP 可以并存，区别在于服务对象、权限边界和交互形态不同。
 
 ---
 

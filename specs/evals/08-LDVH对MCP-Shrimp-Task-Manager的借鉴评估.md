@@ -68,7 +68,7 @@ Shrimp 的主要源码分工如下：
 | `src/web/webServer.ts` | 内嵌 Express WebGUI，提供任务 API 和 SSE 更新 |
 | `tools/task-viewer/` | 独立 React + Node 任务查看器和管理界面 |
 
-对 LDVH 有启发的是：Shrimp 把“工具能力、任务模型、Prompt 模板、Agent 匹配、Web 展示”分层实现，降低了单一工具入口的复杂度。LDVH 后续如构建自有工具，也应避免把 AI 流程、对象字段、Web 展示和文件写入混在一个不可治理模块中。
+对 LDVH 有启发的是：Shrimp 把“工具能力、任务模型、Prompt 模板、Agent 匹配、Web 信息同步”分层实现，降低了单一工具入口的复杂度。LDVH 后续如构建自有工具，也应避免把 AI 流程、对象字段、Web 信息同步和文件写入混在一个不可治理模块中。
 
 ### 2.3 MCP 工具注册与调用分发
 
@@ -214,7 +214,7 @@ Shrimp 有两套 Web 能力。
 
 第二套是独立 `tools/task-viewer`，功能更完整。它包含 Node server、React 前端、TanStack Table、i18n、模板管理、Agent 管理、历史查看、任务详情、任务编辑、Chat Agent 等能力。其配置使用用户 home 下的设置文件和模板目录，并按 project profile 读取不同 `tasks.json`。
 
-对 LDVH 的启发是：Web 展示层应成为“事实源观察与人类确认工作台”，而不是另一个事实源。Shrimp 的 Task Viewer 在可观察性上值得借鉴，包括任务筛选、详情、历史、Agent 分配和模板管理。但 LDVH 的 `specs/12.02-Web展示规范.md` 已明确：Web 页面状态、缓存和数据库派生视图不得替代 Git 文件事实源；Web 可以展示、提示 Gate 和提供受控编辑入口，但不得直接调用 AI、Skill 或 Agent，也不得绕过 Tools 辅助层校验。
+对 LDVH 的启发是：Web 信息同步层应成为“事实源观察与人类确认工作台”，而不是另一个事实源。Shrimp 的 Task Viewer 在可观察性上值得借鉴，包括任务筛选、详情、历史、Agent 分配和模板管理。但 LDVH 的 `specs/12.02-Web展示规范.md` 已明确：Web 页面状态、缓存和数据库派生视图不得替代 Git 文件事实源；Web 可以展示、提示 Gate 和提供受控编辑入口，但不得直接调用 AI、Skill 或 Agent，也不得绕过 Tools 辅助层校验。
 
 ---
 
@@ -228,12 +228,12 @@ Shrimp 有两套 Web 能力。
 | Task 模型 | Task 事实模型 | 借鉴依赖、关联文件、实现指南、验证标准、完成摘要、Agent 建议字段 | 字段契约需由 LDVH 12 Task 规范定义，实例应在 `ldvh-base/` |
 | `execute_task` | Task 执行动作 | 借鉴执行前依赖检查、状态切换、相关文件读取和执行 Prompt | 执行状态变更应先写入权威 Task 实例，不能只在工具缓存中变更 |
 | `verify_task` | Review、Evidence、Checklist | 借鉴验证前置、评分阈值和完成摘要 | 工具验证不等于人类验收，不得替代 Human Gate |
-| `query_task` / `get_task_detail` | Tools 辅助层、Web 展示层 | 借鉴跨当前任务和历史任务的检索 | 检索结果是派生视图，权威仍是 Git 文件事实源 |
+| `query_task` / `get_task_detail` | Tools 辅助层、Web 信息同步层 | 借鉴跨当前任务和历史任务的检索 | 检索结果是派生视图，权威仍是 Git 文件事实源 |
 | `{DATA_DIR}/memory` | Evidence、Change、Pitfall、历史索引 | 借鉴跨会话记忆与历史恢复目标 | memory 不能成为唯一事实源，稳定经验应回写对应对象 |
 | Prompt 模板系统 | Rules、Skill、行动模型、工具模板 | 借鉴多语言模板、覆盖、追加和变量替换机制 | 模板不能与正式规范形成冲突事实源 |
 | Agent 自动匹配 | Agent 调度辅助、Web 建议 | 借鉴基于任务内容的 Agent 建议 | Agent 调度须服从 11.03，不能自动创建或授权 Agent |
-| 内嵌 WebGUI | Web 展示层 | 借鉴轻量任务展示和 SSE 刷新 | WebGUI 状态不能替代文件事实源 |
-| 独立 Task Viewer | Web 展示层 + Tools 辅助层 | 借鉴任务表格、详情、历史、模板、Agent 管理和人类工作台 | Web 写入必须受控，写入后回读 Git 文件事实源并记录 Change |
+| 内嵌 WebGUI | Web 信息同步层 | 借鉴轻量任务展示和 SSE 刷新 | WebGUI 状态不能替代文件事实源 |
+| 独立 Task Viewer | Web 信息同步层 + Tools 辅助层 | 借鉴任务表格、详情、历史、模板、Agent 管理和人类工作台 | Web 写入必须受控，写入后回读 Git 文件事实源并记录 Change |
 | research_mode | specs/evals、ADR、Memo、行动模型 | 借鉴研究状态整合和后续步骤约束 | 研究过程不等于结论，稳定结论需进入 evals、ADR 或正式规范 |
 | init_project_rules | 项目初始化行动、Rules 机制 | 借鉴项目入口规则初始化思路 | 规则变更触发 Human Gate，不能自动泛滥生成规则 |
 
@@ -339,7 +339,7 @@ LDVH 可形成“研究模式行动模型”或 evals 写作骨架：
 
 ### 4.7 Web Tools 应服务人类确认质量
 
-Shrimp Task Viewer 的价值不只是“好看”，而是让人能看到任务、状态、历史、关联、Agent、模板和操作入口。LDVH 的 Web 展示层也应服务 V6“人类确认质量”。
+Shrimp Task Viewer 的价值不只是“好看”，而是让人能看到任务、状态、历史、关联、Agent、模板和操作入口。LDVH 的 Web 信息同步层也应服务 V6“人类确认质量”。
 
 LDVH Web Tools 可借鉴的视图包括：
 
@@ -351,7 +351,7 @@ LDVH Web Tools 可借鉴的视图包括：
 6. Pitfall 命中与重复风险提示；
 7. 规则、Skill、Agent 和行动模型命中情况。
 
-但 LDVH Web 展示层必须遵守：页面状态不替代 Git 文件事实源；受控编辑写入必须明确目标文件；写入后必须回读事实源；必要时记录 Change。
+但 LDVH Web 信息同步层必须遵守：页面状态不替代 Git 文件事实源；受控编辑写入必须明确目标文件；写入后必须回读事实源；必要时记录 Change。
 
 ---
 
@@ -379,7 +379,7 @@ Shrimp 提供 `process_thought` 和反思工具，强调思维处理。LDVH 可�
 
 ### 5.6 不应让 Web Viewer 直接调用 AI 并写回权威事实
 
-Shrimp 独立 viewer 中存在 OpenAI 批量分配 Agent 和 Chat Agent 能力。LDVH 的 `specs/12.02-Web展示规范.md` 已明确 Web 展示层不得直接调用 AI、Skill 或 Agent。LDVH Web 可以生成上下文、展示建议、提供人工操作入口，但 AI 判断和事实源回写应受行动模型、Tools 辅助层和 Human Gate 约束。
+Shrimp 独立 viewer 中存在 OpenAI 批量分配 Agent 和 Chat Agent 能力。LDVH 的 `specs/12.02-Web展示规范.md` 已明确 Web 信息同步层不得直接调用 AI、Skill 或 Agent。LDVH Web 可以生成上下文、展示建议、提供人工操作入口，但 AI 判断和事实源回写应受行动模型、Tools 辅助层和 Human Gate 约束。
 
 ### 5.7 不应把 Agent 自动匹配等同于 Agent 治理
 

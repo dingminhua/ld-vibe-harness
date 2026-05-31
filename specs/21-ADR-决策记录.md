@@ -12,7 +12,7 @@
 
 本文定义 ADR 决策记录事实模型。ADR 是已确认、后续应遵守的决策记录，用于沉淀需要跨会话、跨任务或跨执行轮次追溯的长期决策。
 
-本文只定义 ADR 对象模型。ADR 相关 Rules、Skill、Agent、Tools 辅助和 Web 展示实践可按需由 §十二附件型实践子文档承接。
+本文只定义 ADR 对象模型。ADR 相关 Rules、Skill、Agent、Tools 契约式校验与执行和 Web 信息同步实践可按需由 §十二附件型实践子文档承接。
 
 ---
 
@@ -320,13 +320,13 @@ ADR 基础字段遵循 13 §6.4 的字段契约原则。
 
 ---
 
-## 十三、Web 展示适配
+## 十三、Web 信息同步适配
 
-1. Web 可以展示 ADR 列表、状态分布、影响范围、关联对象、升级路径和推翻历史。
-2. Web 可以展示待确认 ADR、已终态 ADR，以及 ADR 与 specs、Rules、Task、Memo、Evidence 的关联。
-3. Web 展示的 ADR 信息必须可追溯到 Git 文件事实源。
+1. Web 可以同步 ADR 列表、状态分布、影响范围、关联对象、升级路径和推翻历史。
+2. Web 可以同步待确认 ADR、已终态 ADR，以及 ADR 与 specs、Rules、Task、Memo、Evidence 的关联。
+3. Web 信息同步的 ADR 信息必须可追溯到 Git 文件事实源。
 4. Web 不得维护与 ADR 事实源不一致的权威状态。
-5. Web 展示 ADR 状态变更时，应提示 Human Gate 要求。
+5. Web 信息同步 ADR 状态变更时，应提示 Human Gate 要求。
 6. Web 不得绕过 ADR 字段契约直接维护派生状态。
 
 ---
@@ -340,8 +340,8 @@ ADR 基础字段遵循 13 §6.4 的字段契约原则。
 | `21.01` | `21.01-Rules.md` | active | ADR 准入条件在 Rules 层的入口摘要、放置位置、生效方式和禁止承载内容 |
 | `21.02` | `21.02-Skill.md` | active-prep | ADR 创建、升级、推翻和废弃的可复用流程；当前不创建 Trae Skill 实体 |
 | `21.03` | `21.03-Agent.md` | not-created | 说明 ADR 不需要创建专用 Agent 的理由 |
-| `21.04` | `21.04-Tools.md` | active | ADR Tools 辅助能力定义，承接 `tools/adr_index.py` 的索引、查询、统计和校验实践 |
-| `21.05` | `21.05-Web.md` | active-prep | ADR Web 展示的未来能力定义；当前不实现 Web 页面 |
+| `21.04` | `21.04-Tools.md` | active | ADR Tools 契约式校验与执行能力定义，承接 `tools/adr_index.py` 的索引、查询、统计和校验实践 |
+| `21.05` | `21.05-Web.md` | active-prep | ADR Web 信息同步的未来能力定义；当前不实现 Web 页面 |
 | `21.06` | `21.06-Contract.md` | active | ADR YAML schema、字段约束、文件命名契约和状态流转契约 |
 
 21.01-21.06 均应保留为当前实践展开。后续新增、删除、重命名或改变附件型实践子文档状态，应按 `specs/04-LDVH模型子文档规范.md` 和 Human Gate 要求处理。
@@ -434,8 +434,8 @@ ADR 对象模型合规检查应覆盖以下内容：
 7. ADR 事实源回写是否符合本文 §九；
 8. ADR 证据留存是否符合本文 §十；
 9. ADR AI 协作适配是否符合本文 §十一；
-10. ADR Tools 辅助适配及其测试验收是否符合本文 §十二和 `specs/12.01-Tools辅助规范.md`；
-11. ADR Web 展示适配是否符合本文 §十三；
+10. ADR Tools 契约式校验与执行适配及其测试验收是否符合本文 §十二和 `specs/12.01-Tools辅助规范.md`；
+11. ADR Web 信息同步适配是否符合本文 §十三；
 12. ADR 附件型实践子文档命名和六槽位状态是否符合 `specs/04-LDVH模型子文档规范.md`，是否存在对应子文档且经 Human Gate 确认。
 
 ---
