@@ -1,0 +1,18 @@
+summary: 统一将"多系统子 Agent 模式"更名为"多角色子 Agent 模式"
+reason: >
+  用户反馈"多系统子 Agent 模式"命名中的"系统"语义模糊，容易误解为
+  启动多个不同类型的 Agent 系统。实际做法是用同一个通用容器
+  general_purpose_task 注入不同角色参数，本质是"多角色"视角分析。
+  统一更名为"多角色子 Agent 模式"以准确表达其含义。
+changed_files:
+  - specs/51-multi-role-thinking-多角色思考.md
+  - specs/51.06-Contract.md
+  - specs/51.03-Agent.md
+  - specs/51.02-Skill.md
+  - specs/51.04-Tools.md
+  - specs/51.05-Web.md
+  - specs/50-行动模型集合索引.md
+  - specs/refs/11-Trae-Agent调用机制与多角色并行分析调研.md
+verification: >
+  specs/ 目录下"多系统子 Agent"检索结果为 0 处，已全部替换为
+  "多角色子 Agent"。

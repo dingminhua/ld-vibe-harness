@@ -1,0 +1,29 @@
+summary: specs 编号体系一致性修复（P0/P1）
+reason: >
+  审查发现 specs/ 根目录 10-14 系列文档文件名与正文编号体系不一致。
+  旧文件名已更新为新编号（10-14），但正文仍使用旧编号（01-07），
+  导致跨文档引用路径大量失效。本次修复让正文编号与文件名对齐，
+  同时修复 P1 术语不规范（Harness→LDVH）和 51 系列头部字段缺失。
+changed_files:
+  - specs/10-事实源边界与承载规范.md
+  - specs/11-LDVH-AI协作规范.md
+  - specs/11.01-Rules机制规范.md
+  - specs/11.02-Skill机制规范.md
+  - specs/11.03-Agent机制规范.md
+  - specs/12-LDVH工具基础规范.md
+  - specs/12.01-Tools辅助规范.md
+  - specs/12.02-Web展示规范.md
+  - specs/13-LDVH生产对象基础规范.md
+  - specs/14-LDVH行动模型基础规范.md
+  - specs/51.01-Rules.md
+  - specs/51.02-Skill.md
+  - specs/51.03-Agent.md
+  - specs/51.04-Tools.md
+  - specs/51.05-Web.md
+  - specs/51.06-Contract.md
+verification: >
+  P0：10-14 系列文档正文中旧编号引用已全部替换为新编号，
+  不存在的引用路径已更新为实际文件路径，零残留。
+  P1：13-14 中"Harness"术语已替换为"LDVH"；
+  51.01-51.06 已补齐所属主文档、关系、适用范围头部字段；
+  51.06 §一标题改为"本文定位"，新增待补齐事项章节。
