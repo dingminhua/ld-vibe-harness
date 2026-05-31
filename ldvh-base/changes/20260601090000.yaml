@@ -1,0 +1,28 @@
+summary: 移除 L0 规则多角色思考入口的 ldvh- 前缀，L0 文件名已提供命名空间
+type: rules
+status: completed
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  L0 文件 ldvh-l0-rules.md 中"多角色思考入口"章节标题使用 ldvh- 前缀，
+  但 L0 文件名已携带 ldvh- 前缀，文件内其他6个章节标题均无前缀，命名不一致。
+  51.01-Rules.md §三 要求"使用 ldvh- 前缀标识，避免与项目原生规则冲突"，
+  但 L0 文件全部内容都是 LDVH 体系定义的，不存在项目原生规则混入需要区分的场景。
+  前缀解决了一个不存在的问题，属于过度设计。
+decision: |
+  1. 移除 L0 文件章节标题中的 ldvh- 前缀：## ldvh-多角色思考入口 → ## 多角色思考入口；
+  2. 移除压缩保护行中的 ldvh- 前缀：ldvh-多角色思考见51 → 多角色思考见51；
+  3. 修改 51.01-Rules.md §三，将前缀要求改为"L0 文件名已提供命名空间，章节标题和压缩保护行不使用 ldvh- 前缀"；
+  4. 修改 51.01-Rules.md §四，压缩保护行引用从 ldvh-多角色思考见51 改为 多角色思考见51；
+  5. 修改 51.01-Rules.md §六 检查项2，从"是否使用 ldvh- 前缀标识"改为"章节标题是否与 L0 文件其他章节命名风格一致"。
+consequences: |
+  - L0 文件内章节标题命名风格统一，无 ldvh- 前缀
+  - 压缩保护行与章节标题一致，无 ldvh- 前缀
+  - 51.01 规范与 L0 实际一致
+  - 落地审计检查项更新为命名风格一致性检查
+affects:
+  - .trae/rules/ldvh-l0-rules.md
+  - ld-vibe-harness/specs/51.01-Rules.md
+related_rules:
+  - specs/51.01-Rules.md
+  - specs/11.01-Rules机制规范.md

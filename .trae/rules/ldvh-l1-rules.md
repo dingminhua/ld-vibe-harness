@@ -37,8 +37,9 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。�
 ## L2 场景规则
 
 - `ldvh-l2-specs-rules.md`：编辑 specs/ 目录下文档时生效
-- `ldvh-l2-production-rules.md`：编辑 ldvh-base/ 下 YAML 实例时生效
+
+生产对象实例编辑规则已提升至 L0 层级（`ldvh-l0-production-rules.md`），适用于所有管辖项目，不在本项目 L2 中维护。
 
 ## 压缩保护
 
-LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs-v2不替代specs | L1引导L2
+LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs-v2不替代specs | L1引导L2 | 生产对象规则在L0

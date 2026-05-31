@@ -1,0 +1,11 @@
+summary: 强化 ADR 创建必须触发 Human Gate
+reason: >
+  用户明确 ADR 的创建必须获得人的同意。此前 ADR 模型只将 proposed → accepted、废弃、替代、升级、重命名和修改 accepted decision
+  明确列为必须触发 Human Gate 的操作，导致创建 proposed ADR 文件本身没有被强制纳入 Human Gate。
+  此次变更将“创建 ADR”加入 ADR 主模型的 Human Gate 必触发操作，并同步强化 AI 协作、落地初始化、落地审计、合规检查和 L2 生产对象规则。
+changed_files:
+  - specs/21-ADR-决策记录.md
+  - .trae/rules/ldvh-l2-production-rules.md
+verification: >
+  已确认 specs/21 中 §7.1、§11、§17、§18、§19 均包含 ADR 创建 Human Gate 要求；
+  已确认 L2 生产对象规则中 ADR 约束明确创建 ADR YAML 文件前必须触发 Human Gate。

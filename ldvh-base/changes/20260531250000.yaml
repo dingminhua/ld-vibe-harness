@@ -1,0 +1,38 @@
+summary: 将生产对象规则从 L2 提升至 L0，新增管辖项目定义和配置
+type: rules
+status: completed
+created: 2026-05-31
+updated: 2026-05-31
+context: |
+  生产对象规则（字段契约、状态机、Human Gate、引用完整性）由 LDVH specs 统一定义，
+  对所有管辖项目通用。ldvh-base/ 存在于每个管辖项目。
+  将其定为 L2 意味着它只属于单个项目，但实际上它是跨项目的工作区级规则。
+  管辖项目定义此前仅在 specs/01 §3.1 中简单定义，未在术语规范中明确。
+  管辖项目目录配置此前无权威位置，L0 规则中仅有非正式的项目集成员列表。
+decision: |
+  1. 将生产对象编辑规则从 L2 提升至 L0，创建 ldvh-l0-production-rules.md；
+  2. 在 specs/02 §七 新增管辖项目定义，明确管辖项目与 LDVH 项目的关系、
+     ldvh-base/ 目录归属、管辖项目目录配置的权威位置；
+  3. 在 L0 工作区规则中增加管辖项目配置表，作为管辖项目目录列表的权威位置，
+     决定 ldvh-base/ 目录应出现在哪些项目目录下；
+  4. 更新 specs/11.01 §三、§四、§六，将生产对象规则纳入 L0 层级定义；
+  5. 删除 ldvh-l2-production-rules.md，更新 ldvh-l1-rules.md 移除 L2 生产对象规则引用；
+  6. 更新 specs/21.01 将 L2 引用改为 L0；
+  7. 更新 specs/01 §3.1 引用 specs/02 §七 作为管辖项目定义的权威位置。
+consequences: |
+  - 生产对象规则适用于所有管辖项目，不再局限于单个项目
+  - 新增管辖项目时，只需在 L0 管辖项目配置表中添加条目，无需为每个项目创建 L2 生产对象规则
+  - 管辖项目定义有了术语规范层的权威位置
+  - ldvh-base/ 目录位置由 L0 管辖项目配置决定
+affects:
+  - .trae/rules/ldvh-l0-rules.md
+  - .trae/rules/ldvh-l0-production-rules.md
+  - ld-vibe-harness/.trae/rules/ldvh-l1-rules.md
+  - ld-vibe-harness/specs/02-LDVH术语规范.md
+  - ld-vibe-harness/specs/11.01-Rules机制规范.md
+  - ld-vibe-harness/specs/21.01-Rules.md
+  - ld-vibe-harness/specs/01-LDVH目录说明.md
+related_rules:
+  - specs/02-LDVH术语规范.md
+  - specs/11.01-Rules机制规范.md
+  - specs/13-LDVH生产对象基础规范.md

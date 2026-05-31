@@ -209,6 +209,7 @@ specs 或 Rules 记录以后必须怎么做
 
 | 操作 | 需要确认的内容 |
 |---|---|
+| 创建 ADR | ADR 准入条件、决策内容、影响范围和是否允许写入 ADR 事实源 |
 | `proposed → accepted` | 决策确认与影响范围认可 |
 | `accepted → deprecated` | 废弃原因与后续处理 |
 | `accepted → superseded` | 替代决策与新 ADR 关联 |
@@ -301,7 +302,7 @@ ADR 基础字段遵循 13 §6.4 的字段契约原则。
 2. AI 不得将 `proposed` 状态的 ADR 作为执行依据。
 3. AI 读取终态 ADR 时，应识别其历史语境，不作为当前执行依据。
 4. AI 不得因为某个判断看起来重要就自动创建 ADR，必须先判断是否满足 ADR 准入条件。
-5. AI 创建 ADR 时，初始状态应为 `proposed`，不得直接创建为 `accepted`。
+5. AI 创建 ADR 前必须获得 Human Gate 确认；经确认后创建的 ADR 初始状态应为 `proposed`，不得直接创建为 `accepted`。
 6. AI 不得自行推翻、废弃或升级 `accepted` 状态的 ADR，必须经 Human Gate 确认。
 
 ---
@@ -381,11 +382,12 @@ ADR 对象模型进入项目实践时，需要完成以下初始化：
 1. 创建 `ldvh-base/adrs/` 目录；
 2. 确认 ADR 编号从 `0001` 起递增，固定 4 位；
 3. 确认 ADR 实例文件命名规则为 `adr-{NNNN}-short-title.yaml`；
-4. 确认 ADR 状态流转遵循本文 §五 定义的状态机；
-5. 确认 ADR Human Gate 触发条件遵循本文 §七；
-6. 在项目 Rules 摘要中引用 ADR 准入条件（本文 §3.3）；
-7. 确认 Tools 辅助程序已覆盖 ADR 字段完整性校验和状态合法性校验；
-8. 记录暂缓项和初始化产物。
+4. 确认创建 ADR 必须触发 Human Gate；
+5. 确认 ADR 状态流转遵循本文 §五 定义的状态机；
+6. 确认 ADR Human Gate 触发条件遵循本文 §七；
+7. 在项目 Rules 摘要中引用 ADR 准入条件（本文 §3.3）；
+8. 确认 Tools 辅助程序已覆盖 ADR 字段完整性校验和状态合法性校验；
+9. 记录暂缓项和初始化产物。
 
 ---
 
@@ -396,13 +398,14 @@ ADR 对象模型落地审计应覆盖以下内容：
 1. `ldvh-base/adrs/` 目录是否存在且与 Git 文件事实源一致；
 2. ADR 实例文件命名是否符合 `adr-{NNNN}-short-title.yaml` 格式；
 3. ADR 实例字段是否完整，必填字段是否齐全；
-4. ADR 状态流转是否合法，是否存在非法流转；
-5. `superseded` 状态的 ADR 是否已填写 `superseded_by` 字段；
-6. Human Gate 触发操作是否有确认记录；
-7. ADR 引用的 `related_objects` 和 `related_rules` 是否有效；
-8. 是否存在 `proposed` 状态 ADR 被作为执行依据的情况；
-9. 附件型实践子文档是否按需创建、非空、不替代主模型；
-10. 识别初始化缺口、过期实践和需要整改的附件型实践子文档。
+4. ADR 创建操作是否有 Human Gate 确认记录；
+5. ADR 状态流转是否合法，是否存在非法流转；
+6. `superseded` 状态的 ADR 是否已填写 `superseded_by` 字段；
+7. Human Gate 触发操作是否有确认记录；
+8. ADR 引用的 `related_objects` 和 `related_rules` 是否有效；
+9. 是否存在 `proposed` 状态 ADR 被作为执行依据的情况；
+10. 附件型实践子文档是否按需创建、非空、不替代主模型；
+11. 识别初始化缺口、过期实践和需要整改的附件型实践子文档。
 
 ---
 
@@ -415,7 +418,7 @@ ADR 对象模型合规检查应覆盖以下内容：
 3. ADR 状态流转是否符合本文 §五 定义的状态机；
 4. ADR 对象关系引用是否符合本文 §六 定义的关系规则；
 5. ADR 事实源边界是否符合本文 §四 和 10 事实源边界规范；
-6. ADR Human Gate 是否符合本文 §七 定义的触发条件；
+6. ADR 创建和状态变更 Human Gate 是否符合本文 §七 定义的触发条件；
 7. ADR 事实源回写是否符合本文 §九；
 8. ADR 证据留存是否符合本文 §十；
 9. ADR AI 协作适配是否符合本文 §十一；

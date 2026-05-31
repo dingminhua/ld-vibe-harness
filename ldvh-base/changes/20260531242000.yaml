@@ -1,0 +1,13 @@
+summary: 删除错误 ADR 实例并清理其引用
+reason: >
+  Human Gate 确认 adr-001.yaml 和 adr-002.yaml 是由错误理解引发的错误 ADR 实例，继续保留会让 AI 误判存在有效的 ADR 决策演化链。
+  因此本次按错误事实源纠偏处理，删除两个错误 ADR 实例，并修正旧 Change 记录中对 ADR-001/ADR-002 的描述和 changed_files 引用。
+  管辖项目概念以 specs/02-LDVH术语规范.md §七 为权威定义，管辖项目目录和 ldvh-base/ 路径以 L0 工作区规则的管辖项目配置为权威位置。
+changed_files:
+  - ldvh-base/adrs/adr-001.yaml
+  - ldvh-base/adrs/adr-002.yaml
+  - ldvh-base/changes/20260531200000.yaml
+verification: >
+  adr-001.yaml 和 adr-002.yaml 已删除；
+  20260531200000.yaml 已移除 ADR-001/ADR-002 状态、创建和 changed_files 引用；
+  后续不再通过新的 ADR 承接本次错误 ADR 清理。
