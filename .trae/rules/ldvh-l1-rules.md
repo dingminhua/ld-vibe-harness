@@ -1,8 +1,10 @@
 # LD Vibe Harness 项目规则
 
-> 最后更新：2026-05-31
+> 最后更新：2026-06-01
 > 层级：L1 项目规则
 > 适用项目：ld-vibe-harness
+> 规范来源：`specs/11.01-Rules机制规范.md`、`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-LDVH目录说明.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`
+> 维护边界：本文件只作为 LDVH 项目入口、项目专属硬约束和 L2 引导，不替代 specs 正式规范
 
 ## 项目定位
 
@@ -31,12 +33,12 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。�
 ## 项目专属硬约束
 
 1. 不自动执行 commit、push、tag、release，除非用户明确要求
-2. 编写或修改规范时，优先引用权威文档，不复制并维护同一规则（依据 `specs/03-Specs文档规范.md` §六）
+2. 编写或修改规范时，优先引用权威文档，不复制并维护同一规则（依据 `specs/03-Specs文档规范.md` §七）
 3. 新增或修改项目文档、规则或规范后，必须在 `ldvh-base/changes/` 创建 Change YAML 记录（依据 `specs/10-事实源边界与承载规范.md` §七）
 
 ## L2 场景规则
 
-- `ldvh-l2-specs-rules.md`：编辑 specs/ 目录下文档时生效
+- `ldvh-l2-specs-rules.md`：编辑 specs/ 目录下文档时生效；L1 只负责引导该 L2，具体关联关系由 `specs/03-Specs文档规范.md` §六维护
 
 事实实例编辑规则已提升至 L0 层级（`ldvh-l0-fact-model-rules.md`），适用于所有管辖项目，不在本项目 L2 中维护。
 

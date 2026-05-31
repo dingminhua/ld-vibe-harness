@@ -1,0 +1,42 @@
+type: change
+title: 补齐机制关系声明实例并审计模型子文档承接
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  用户确认按小批次计划执行：普通 specs 文档只在确有机制实体消费时补机制关系声明；事实模型和行动模型不补普通声明，而检查 NN.01-NN.06 子文档承接情况。
+  本轮优先处理 11.01 与 13 的普通机制关系声明，并审计 ADR 与多角色思考现有模型实践子文档的 Rules、Tools、Agent 和 Contract 承接关系。
+decision: |
+  在 `specs/11.01-Rules机制规范.md` 中补充本文自身的机制关系声明，列出与 L0、L0 fact-model、L1、L2 specs Rules 文件的同步触发关系。
+  在 `specs/13-LDVH事实模型基础规范.md` 中补充本文自身与 L0 fact-model Rules 入口的机制关系声明，并说明 20-49 具体事实模型仍通过 04 的 NN.01-NN.06 子文档承接机制关系。
+  审计 ADR 21.01、21.04、21.06 后，确认 Rules、Tools、Contract 已承接；同步补充 21.04 和 21.06 对 04 §八联动规则的引用，并修正 21.06 对 13 字段契约原则的章节引用。
+  审计多角色思考 51.01、51.03、51.06 后，确认 Agent 和 Contract 已承接；补强 51.01 与 L0 Rules 实体路径、维护边界和同步触发关系。
+consequences: |
+  - 11.01 和 13 已具备普通 specs 文档机制关系声明实例。
+  - ADR 和多角色思考继续沿用模型子文档体系承接机制关系，不引入普通机制关系声明。
+  - 13 新增章节导致后续章节编号顺延，已同步修正当前发现的 21.06 引用。
+  - 后续普通 specs 文档机制关系声明可按本轮方式逐步审计，不需要全量铺开。
+affects:
+  - specs/11.01-Rules机制规范.md
+  - specs/13-LDVH事实模型基础规范.md
+  - specs/21.04-Tools.md
+  - specs/21.06-Contract.md
+  - specs/51.01-Rules.md
+related_rules:
+  - specs/03-Specs文档规范.md
+  - specs/04-LDVH模型子文档规范.md
+  - specs/11.01-Rules机制规范.md
+  - specs/13-LDVH事实模型基础规范.md
+  - specs/21-ADR-决策记录.md
+  - specs/51-multi-role-thinking-多角色思考.md
+human_gate:
+  required: true
+  confirmed_by: user
+  confirmation_context: 用户确认按计划执行本轮机制关系声明补齐与模型子文档承接审计。
+validation: |
+  1. 已补充 11.01 机制关系声明实例。
+  2. 已补充 13 机制关系声明实例，并保留模型文档双轨规则。
+  3. 已审计 ADR 21.01/21.04/21.06 承接关系并完成最小修正。
+  4. 已审计多角色思考 51.01/51.03/51.06 承接关系并完成最小修正。
+  5. 已执行后续一致性检查和测试，结果见本次对话总结。

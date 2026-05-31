@@ -3,6 +3,8 @@
 > 层级：L2 场景规则
 > 适用项目：ld-vibe-harness
 > 生效方式：globs — 编辑 specs/ 目录下 Markdown 文件时生效
+> 规范来源：`specs/03-Specs文档规范.md`、`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/11.01-Rules机制规范.md`
+> 维护边界：本文件只作为 specs 编辑入口摘要，不替代 specs/ 正式规范；本文与 specs 文档的机制关系依据 `specs/03-Specs文档规范.md` §六维护
 
 ## 文档骨架
 
@@ -10,7 +12,7 @@
 
 ## 引用纪律
 
-不得复制其他权威文档的规则正文，只能写"依据权威文档 §Y"。依据 `specs/03-Specs文档规范.md` §六。
+不得复制其他权威文档的规则正文，只能写"依据权威文档 §Y"。依据 `specs/03-Specs文档规范.md` §七。
 
 ## 编号分区
 
