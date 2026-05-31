@@ -1,0 +1,32 @@
+type: change
+title: ADR 生产对象落地初始化
+status: done
+created: 2026-05-31
+updated: 2026-05-31
+context: |
+  specs/21 ADR 决策记录已完成落地前决策和价值与要素审查，审查通过。
+  决策结果：创建 21.01-Rules.md 和 21.02-Skill.md 附件型实践子文档，
+  L2 production-rules 增加 ADR 约束，创建 ldvh-base/adrs/ 目录。
+  ADR 索引通过 Python 程序动态生成，不建静态索引文件，待 12.01 稳定后实现。
+decision: |
+  1. 创建 ldvh-base/adrs/ 目录
+  2. 创建 specs/21.01-Rules.md（active），定义 ADR Rules 入口实践
+  3. 创建 specs/21.02-Skill.md（active），定义 ADR 创建/升级/推翻 Skill 流程
+  4. 更新 L2 production-rules 增加 ADR 约束
+  5. 更新 specs/21 §十四 附件型实践子文档状态
+  6. 更新 specs/20 索引中 ADR 条目说明
+consequences: |
+  - ADR 生产对象完成落地初始化，可投入使用
+  - AI 编辑 ADR YAML 时受 L2 规则约束
+  - ADR 创建/升级/推翻有可复用 Skill 流程
+  - 21.03-21.06 附件型实践子文档保持 planned 状态
+affects:
+  - ld-vibe-harness/ldvh-base/adrs/
+  - ld-vibe-harness/specs/21.01-Rules.md
+  - ld-vibe-harness/specs/21.02-Skill.md
+  - ld-vibe-harness/specs/21-ADR-决策记录.md
+  - ld-vibe-harness/specs/20-生产对象集合索引.md
+  - ld-vibe-harness/.trae/rules/ldvh-l2-production-rules.md
+related_rules:
+  - ld-vibe-harness/specs/21-ADR-决策记录.md
+  - ld-vibe-harness/specs/13-LDVH生产对象基础规范.md

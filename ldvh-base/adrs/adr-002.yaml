@@ -1,0 +1,32 @@
+adr_id: "002"
+title: "ldvh-base 归属项目内部，每个管辖项目各自拥有 base"
+status: accepted
+created: 2026-05-31
+updated: 2026-05-31
+context: |
+  ADR-001 将 ldvh-base 提升至工作区根目录，理由是"关联到每个管辖项目"。
+  但经重新审视，ldvh-base 的内容（changes、adrs 等）虽然关联到管辖项目，
+  其生产者和归属者仍然是 LDVH 项目本身。关联关系不等于归属关系。
+  无论 LDVH 在项目内还是与项目并行，ldvh-base 都应在项目目录内。
+  此外，每个接入 LDVH 的管辖项目应各自拥有 ldvh-base/ 目录，
+  由该项目自身管理，不存在共享 ldvh-base 的需求。
+decision: |
+  1. 将 ldvh-base/ 回退为 ld-vibe-harness/ 项目内部目录；
+  2. 规定每个接入 LDVH 的管辖项目应各自拥有 ldvh-base/ 目录；
+  3. 更新 specs/01 §3.5 和 specs/13 §3.2 明确此原则；
+  4. 移除所有"工作区级目录"路径标注。
+consequences: |
+  - ldvh-base/ 位于项目内部，随项目 git 仓库版本控制
+  - 每个管辖项目有独立的 ldvh-base/，互不干扰
+  - ADR 索引工具路径回退为项目内部路径
+  - 推翻 ADR-001 的决策
+affects:
+  - ldvh-base/
+  - ld-vibe-harness/specs/01-LDVH目录说明.md
+  - ld-vibe-harness/specs/13-LDVH生产对象基础规范.md
+  - ld-vibe-harness/tools/adr_index.py
+related_rules:
+  - specs/01-LDVH目录说明.md
+  - specs/13-LDVH生产对象基础规范.md
+  - specs/10-事实源边界与承载规范.md
+supersedes: "001"

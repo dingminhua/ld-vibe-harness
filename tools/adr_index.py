@@ -24,7 +24,7 @@ from pathlib import Path
 from datetime import datetime
 
 
-ADRS_DIR = Path(__file__).resolve().parent.parent.parent / "ldvh-base" / "adrs"
+ADRS_DIR = Path(__file__).resolve().parent.parent / "ldvh-base" / "adrs"
 
 
 def load_adr(filepath):

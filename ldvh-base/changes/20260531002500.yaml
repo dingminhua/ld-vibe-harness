@@ -1,0 +1,40 @@
+id: change-20260531002500-tools-web-mechanism-names
+类型: specs_update
+created_at: "2026-05-31T00:25:00+08:00"
+actor: AI
+scope:
+  - specs/01-specs文档结构与术语规范.md
+  - specs/05-LDVH工具基础规范.md
+  - specs/05.01-Tools辅助规范.md
+  - specs/05.01-程序辅助规范.md
+  - specs/05.02-Web展示规范.md
+  - specs/06-LDVH生产对象基础规范.md
+  - specs/07-LDVH行动模型基础规范.md
+  - specs/41-multi-role-thinking-多角色思考.md
+  - specs/41.04-Tools.md
+  - specs/41.05-Web.md
+  - specs/41.04-程序.md
+  - specs/41.05-展示.md
+  - specs/41.06-功能初始化.md
+  - specs/41.07-功能审计.md
+summary: 将程序和展示机制命名统一为 Tools 与 Web，并重命名 05.01、41.04、41.05
+changes:
+  - 在 01 术语边界中加入 Tools 与 Web 机制英文专名
+  - 将 05.01-程序辅助规范.md 重命名为 05.01-Tools辅助规范.md，并将正文改为 Tools 辅助层表述
+  - 更新 05 主文档和 05.02 中对 Tools 辅助层和 Web 展示层的引用
+  - 修改 06 和 07 的执行文件命名表，将 NN.04-程序.md 和 NN.05-展示.md 改为 NN.04-Tools.md 和 NN.05-Web.md
+  - 更新 41 主文件执行文件规划，将 41.04-程序.md 和 41.05-展示.md 改为 41.04-Tools.md 和 41.05-Web.md
+  - 创建 41.04-Tools.md 和 41.05-Web.md，分别承接 Tools 适配和 Web 适配内容
+  - 删除旧文件 41.04-程序.md 和 41.05-展示.md
+  - 更新 41.06 和 41.07 中旧文件名及 Tools/Web 边界引用
+reason: 用户要求程序使用 Tools 表示，展示使用 Web 表示，并将 05.01-程序辅助规范改为 Tools 辅助规范，以保持机制文件命名与 Rules、Skill、Agent 一致
+impact:
+  - 后续生产对象和行动模型执行文件统一使用 NN.01-Rules.md、NN.02-Skill.md、NN.03-Agent.md、NN.04-Tools.md、NN.05-Web.md
+  - Tools 与 Web 成为顶层术语边界中的机制英文专名
+  - 旧中文“程序/展示”文件名不再作为机制执行文件命名使用
+human_gate:
+  status: confirmed
+  confirmation: 用户明确要求程序用 Tools、展示用 Web，并要求 05.01 改为 Tools 辅助规范
+validation:
+  status: done
+  notes: 已完成文件存在性检查、旧文件名引用清理检查、Markdown 基础结构检查、Change YAML 解析检查和关键内容一致性检查；确认 05.01-Tools辅助规范.md、41.04-Tools.md、41.05-Web.md 存在，旧 05.01-程序辅助规范.md、41.04-程序.md、41.05-展示.md 已移除，active specs 与 .trae/rules 中无旧文件名引用

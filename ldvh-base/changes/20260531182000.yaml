@@ -1,0 +1,43 @@
+type: change
+title: 多角色评估后的 specs 符合性修正（术语、引用、骨架、待补齐事项）
+status: done
+created: 2026-05-31
+updated: 2026-05-31
+context: |
+  基于多角色思考评估（governance-reviewer、documentation-engineer、audit-reviewer）
+  发现 specs/ 目录下文件存在术语违规、旧编号引用错误、骨架不完整、
+  待补齐事项与实际状态脱节等问题。
+decision: |
+  1. 术语修正：12/14 "Harness 工具/行动模型" → "LDVH 工具/行动模型"；
+     21 §十一 "工具展示适配" → "Web 展示适配"；51.05 标题 "呈现" → "展示"
+  2. 引用路径修正：evals/06、evals/07、evals/08、refs/11 中旧编号
+     （04→11、05→12、06→13、10→20、40→50、41→51）全部更新为当前编号
+  3. specs/21 补齐缺失章节：§九事实源回写要求、§十证据留存要求，
+     后续章节编号同步更新
+  4. 51.01-Rules.md、51.03-Agent.md 补齐 Human Gate 和待补齐事项章节
+  5. 00、03、13 待补齐事项与实际状态对齐
+consequences: |
+  - specs 正式规范区术语与 specs/02 术语规范一致
+  - evals/refs 引用路径指向正确的当前编号
+  - specs/21 覆盖 13 §4.2 全部 18 项标准组成
+  - 51.01/51.03 符合 specs/03 §5.3 完整骨架要求
+  - 待补齐事项反映当前实际状态
+affects:
+  - ld-vibe-harness/specs/12-LDVH工具基础规范.md
+  - ld-vibe-harness/specs/14-LDVH行动模型基础规范.md
+  - ld-vibe-harness/specs/21-ADR-决策记录.md
+  - ld-vibe-harness/specs/51.01-Rules.md
+  - ld-vibe-harness/specs/51.03-Agent.md
+  - ld-vibe-harness/specs/51.05-Web.md
+  - ld-vibe-harness/specs/51-multi-role-thinking-多角色思考.md
+  - ld-vibe-harness/specs/00-LD-Vibe-Harness理念与纲要.md
+  - ld-vibe-harness/specs/03-Specs文档规范.md
+  - ld-vibe-harness/specs/13-LDVH生产对象基础规范.md
+  - ld-vibe-harness/specs/evals/06-LDVH的MCP使用评估.md
+  - ld-vibe-harness/specs/evals/07-LDVH自建MCP评估.md
+  - ld-vibe-harness/specs/evals/08-LDVH对MCP-Shrimp-Task-Manager的借鉴评估.md
+  - ld-vibe-harness/specs/refs/11-Trae-Agent调用机制与多角色并行分析调研.md
+related_rules:
+  - ld-vibe-harness/specs/02-LDVH术语规范.md
+  - ld-vibe-harness/specs/03-Specs文档规范.md
+  - ld-vibe-harness/specs/13-LDVH生产对象基础规范.md

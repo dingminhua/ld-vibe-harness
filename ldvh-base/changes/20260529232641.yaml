@@ -1,0 +1,26 @@
+id: CHG-20260529232641
+type: change
+title: 精修 00 总纲事实源边界和文档治理规则
+status: recorded
+created: 2026-05-29
+updated: 2026-05-29
+date: 2026-05-29
+changes:
+  - 补充管辖项目定义，明确其为接入并使用 LD Vibe Harness 的实际项目。
+  - 将 specs/ 定位收窄为规范事实源，明确不承载具体生产对象实例。
+  - 明确 specs 编号分区不得替代对象实例事实源。
+  - 调整子文档规则，保留父文档引用、所属范围、章节归属和待补齐标记等最小治理信息。
+  - 重写引用纪律，以事实源单一性、边界优先和冲突处理为核心。
+  - 增强 Human Gate 最低动作要求，要求 AI 至少暂停并提醒人确认相关风险。
+  - 删除 pm-kit-base/changes 迁移待补齐说明。
+reason: 用户确认按内部评估意见修正 00 总纲中的边界、引用纪律、Human Gate 和遗留路径问题。
+impact:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+validation: 已复查修改后目录边界、子文档规则、引用纪律、Human Gate 和待补齐事项的一致性。
+project: ld-vibe-harness
+tags:
+  - specs
+  - governance
+  - fact-source
+  - human-gate
+  - change-record

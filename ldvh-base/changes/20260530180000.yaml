@@ -1,0 +1,16 @@
+id: change-20260530180000-fix-03-naming
+type: specs_fix
+created_at: "2026-05-30T18:00:00+08:00"
+actor: AI
+scope:
+  - specs/03-事实源边界与承载规范.md
+summary: 修复 03 §八 典型事实归属表中对 specs/05 的命名，从"LDVH 工具边界规范"统一为"LDVH 工具基础规范"
+changes:
+  - 将表中"LDVH 工具边界规范 | specs/05"改为"LDVH 工具基础规范 | specs/05"
+reason: specs/00 §六.5、specs/01 §七.3 和 specs/05 文件自身均使用"LDVH 工具基础规范"作为权威名称，03 表中使用"工具边界规范"属于命名不一致
+impact:
+  - 03 表项名称与 00、01、05 的权威命名统一
+  - 不改变事实源归属或规范内容
+validation:
+  status: done
+  notes: 已确认 00、01、05 三处均使用"工具基础规范"，且 05 文件标题即为"LDVH 工具基础规范"，03 修改后命名一致

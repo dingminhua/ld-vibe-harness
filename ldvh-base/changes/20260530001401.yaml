@@ -1,0 +1,26 @@
+id: CHG-20260530001401
+type: change
+title: 新增索引文档类型和骨架规范
+status: recorded
+created: 2026-05-30
+updated: 2026-05-30
+date: 2026-05-30
+changes:
+  - 在 01 specs 文档结构规范中新增 5.5 索引文档类型定义。
+  - 在 01 specs 文档结构规范中新增 6.4 索引文档骨架。
+  - 将编号分区表中 10/40 的"可作为"改为"为"，正式确认索引文档定位。
+  - 在 Human Gate 中新增索引文档相关触发条件（新增重排索引、索引定义新规则）。
+  - 在写作检查表中新增"索引一致性"检查项。
+  - 在不进入本文的内容中新增索引文档越权规则。
+  - 在待补齐事项中标注 10/40 索引文档待创建。
+reason: 用户指出 10 和 40 作为生产对象/行动模型的入口索引是一种新的文档形式，需要单独定义文档类型和骨架规范。
+impact:
+  - specs/01-specs文档结构规范.md
+validation: 已确认索引文档类型定义、骨架格式、Human Gate 和不进入本文的内容完整且不自相矛盾。
+project: ld-vibe-harness
+tags:
+  - specs
+  - document-type
+  - index
+  - governance
+  - change-record

@@ -280,7 +280,7 @@ gstack 通过 context-save/context-restore 解决跨会话上下文恢复。LD V
 
 | 风险 | 表现 | 控制方式 |
 |---|---|---|
-| 过度 gstack 化 | LD Vibe Harness 变成 AI 命令集合，失去事实源治理定位 | 坚持 specs/ldvh-base/（工作区级目录）/docs 为事实源 |
+| 过度 gstack 化 | LD Vibe Harness 变成 AI 命令集合，失去事实源治理定位 | 坚持 specs/ldvh-base//docs 为事实源 |
 | Skill 泛滥 | 每个想法都做 Skill，维护成本升高 | 只有重复、多步骤、稳定输出的流程才做 Skill |
 | Agent 泛滥 | 角色很多但没有独立上下文必要 | 按 Trae Solo 环境机制规范中的 Agent 创建门槛执行 |
 | 自动化越权 | 工具直接替用户做关键决策 | Human Gate 必须可见、可审计 |

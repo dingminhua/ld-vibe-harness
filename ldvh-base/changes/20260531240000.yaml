@@ -1,0 +1,16 @@
+summary: 修复 L0 规则中多角色思考的路径引用，并补充 51 文档创建记录
+reason: >
+  落地后检查发现 L0 规则中多角色思考入口的路径引用错误，指向 41 而非 51。
+  同时压缩保护行中的标识也需要同步修正。此外，51 文档及其附件子文档的创建缺少 Change 记录。
+changed_files:
+  - .trae/rules/ldvh-l0-rules.md
+  - specs/51-multi-role-thinking-多角色思考.md
+  - specs/51.01-Rules.md
+  - specs/51.02-Skill.md
+  - specs/51.03-Agent.md
+  - specs/51.04-Tools.md
+  - specs/51.05-Web.md
+  - specs/51.06-Contract.md
+verification: >
+  L0 规则第 57 行和第 67 行的路径引用已从 41 修正为 51，压缩保护行标识已同步更新。
+  51 主文档及 6 个附件子文档已存在，结构符合规范。

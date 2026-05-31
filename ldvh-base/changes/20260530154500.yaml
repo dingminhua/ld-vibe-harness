@@ -1,0 +1,18 @@
+id: change-20260530154500
+created_at: '2026-05-30T15:45:00+08:00'
+type: spec_update
+summary: 新增 05 LDVH 工具基础规范及程序辅助、Web 展示子文档
+reason: 将 Harness 工具能力拆分为程序辅助层与 Web 展示层，明确 tools/ 与 web/ 的职责边界、事实源边界和 Human Gate 要求。
+impact_files:
+  - specs/05-LDVH工具基础规范.md
+  - specs/05.01-程序辅助规范.md
+  - specs/05.02-Web展示规范.md
+changes:
+  - 新增 05 主文档，定义 LDVH 工具体系总边界、程序辅助层与 Web 展示层分工、工具事实源边界和 Human Gate 总规则。
+  - 新增 05.01 子文档，定义 tools/ 程序辅助层的解析、校验、聚合、上下文包、受控写入和输出边界。
+  - 新增 05.02 子文档，定义 web/ Web 展示层的派生视图、展示原则、Human Gate UI、受控编辑入口和缓存边界。
+validation:
+  - 已依据 specs/00、specs/02、specs/03 和 specs-v2/12、specs-v2/13 建立 05 系列文档边界。
+  - 已检查 05 主文档包含 05.01/05.02 子文档分工、工具分工最后决策点、事实源边界和 Human Gate 总规则。
+  - 已检查 05.01/05.02 均引用 05 第五节作为程序辅助层 / Web 展示层选择依据。
+  - 已检查 01 中已有 05 基础规范编号示例，02 中已有 web/tools 由 05 定义边界的引用，无需同步修改。
