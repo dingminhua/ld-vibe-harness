@@ -15,14 +15,18 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。�
 
 进入本项目处理 specs、ldvh-base、references、tools、web 或项目规则相关事项时，优先读取：
 
-1. `specs/00-LD-Vibe-Harness理念与纲要.md`
-2. `specs/01-LDVH目录说明.md`
-3. `specs/02-LDVH术语规范.md`
-4. `specs/03-Specs文档规范.md`
+| 文档 | 核心章节 | 读取方式 |
+|---|---|---|
+| `specs/00-LD-Vibe-Harness理念与纲要.md` | §一 理念、§三 价值标准 | 按需定位 |
+| `specs/01-LDVH目录说明.md` | §三 目录事实源性质 | 按需定位 |
+| `specs/02-LDVH术语规范.md` | §四 机制英文专名、§五 术语变更 | 按需定位 |
+| `specs/03-Specs文档规范.md` | §五 文档骨架、§七 引用纪律 | 按需定位 |
 
 处理 L0/L1/L2 Rules 新增、修改或审计时，必须读取 `specs/11.01-Rules机制规范.md`，并按 §七从 `specs/*.md` 根目录正式文档反向发现 Rules 需求。
 
 处理内部调研或规范迁移时，再按任务需要读取 `specs/evals/` 对应文档。
+
+读取方式说明：按需定位 = 先搜索章节标题再按行范围读取；不得因"必读"而全文读取超过 200 行的文档。
 
 ## 目录事实源边界
 
@@ -47,4 +51,4 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。�
 
 ## 压缩保护
 
-LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs-v2不替代specs | L1引导L2 | Rules审计读11.01并反向发现specs根文档 | 事实模型规则在L0
+LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs-v2不替代specs | L1引导L2 | Rules审计读11.01并反向发现specs根文档 | 事实模型规则在L0 | 读取先定位再Read | 必读不等于全文读
