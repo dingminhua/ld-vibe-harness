@@ -25,7 +25,7 @@ MCP Shrimp Task Manager 是一个面向 AI Agent 的 MCP 任务治理工具。�
 3. 通过持久化任务事实维持跨会话连续性；
 4. 用 Web Viewer 提升人对任务状态、历史、Agent 分配和模板的可观察性。
 
-但 Shrimp 与 LDVH 的边界差异同样关键。Shrimp 的 `{DATA_DIR}/tasks.json`、memory 备份、Web Viewer 设置、模板目录、Agent 扫描结果和 OpenAI 交互结果属于工具运行数据或派生数据。LDVH 的最终事实源必须是 Git 可追踪文件，稳定事实应回到 `specs/`、`ldvh-base/`、`docs/` 或其他权威位置。LDVH 可以借鉴 Shrimp 的工具化流程、任务字段、验证动作、研究模式、Prompt 模板和可视化思路，但不能把 Shrimp 的 MCP Server 状态、工具私有数据目录、Web UI 状态或模型输出提升为 LDVH 的最终事实源。
+但 Shrimp 与 LDVH 的边界差异同样关键。Shrimp 的 `{DATA_DIR}/tasks.json`、memory 备份、Web Viewer 设置、模板目录、Agent 扫描结果和 OpenAI 交互结果属于工具运行数据或派生数据。LDVH 的最终事实源必须是 Git 可追踪文件，稳定事实应回到 `specs/`、`ldvh-base/`（工作区级目录）、`docs/` 或其他权威位置。LDVH 可以借鉴 Shrimp 的工具化流程、任务字段、验证动作、研究模式、Prompt 模板和可视化思路，但不能把 Shrimp 的 MCP Server 状态、工具私有数据目录、Web UI 状态或模型输出提升为 LDVH 的最终事实源。
 
 本文建议：LDVH 后续建设不应照搬 Shrimp，而应将其能力拆解后重新映射到 LDVH 五类构成要素中：以 Git 文件作为最终事实源，以 LDVH 生产对象承载任务、证据、变更、风险和决策，以 LDVH 行动模型约束计划、拆解、执行、验证和回写，以 Rules / Skill / Agent 规范治理协作机制，以 Tools / Web 降低读取、校验、展示和受控写入成本。
 
@@ -131,7 +131,7 @@ Shrimp 使用 `{DATA_DIR}/tasks.json` 保存当前任务，使用 `{DATA_DIR}/me
 5. `clearAllTasks()` 只备份 completed tasks 到 memory，并清空当前任务；
 6. `query_task` 可搜索当前任务和 memory 备份。
 
-这说明 Shrimp 已意识到 AI 编程中的跨会话记忆问题，并用本地 JSON + 本地 Git 历史缓解上下文丢失。对 LDVH 而言，这个目标高度正确，但实现边界必须不同：LDVH 不应把工具私有 `tasks.json` 作为权威任务事实源。LDVH 的稳定任务、证据、变更和决策应进入 `ldvh-base/` 下对应对象实例，工具缓存、索引或 Viewer 配置只能作为派生层或受控写入入口。
+这说明 Shrimp 已意识到 AI 编程中的跨会话记忆问题，并用本地 JSON + 本地 Git 历史缓解上下文丢失。对 LDVH 而言，这个目标高度正确，但实现边界必须不同：LDVH 不应把工具私有 `tasks.json` 作为权威任务事实源。LDVH 的稳定任务、证据、变更和决策应进入 `ldvh-base/`（工作区级目录）下对应对象实例，工具缓存、索引或 Viewer 配置只能作为派生层或受控写入入口。
 
 ### 2.6 Prompt-first 工具设计
 
@@ -225,7 +225,7 @@ Shrimp 有两套 Web 能力。
 | MCP Server 工具接口 | LDVH 工具 | 将任务查询、任务拆分、状态切换、验证、上下文包生成等能力工具化 | MCP Server 只能是工具实现形态，不能定义新的事实源权威位置 |
 | `plan_task` / `analyze_task` / `reflect_task` | LDVH 行动模型、Skill | 将计划、分析、反思拆成可识别阶段 | 分析结论只有写入 evals、ADR、Task 或 Evidence 后才成为稳定事实 |
 | `split_tasks` | Task / TaskSet 对象、需求转任务行动 | 借鉴任务拆分、依赖解析、实现指南和验证标准 | 自动拆分不得绕过 Human Gate，不得擅自扩大范围 |
-| Task 模型 | Task 生产对象 | 借鉴依赖、关联文件、实现指南、验证标准、完成摘要、Agent 建议字段 | 字段契约需由 LDVH 12 Task 规范定义，实例应在 `ldvh-base/` |
+| Task 模型 | Task 生产对象 | 借鉴依赖、关联文件、实现指南、验证标准、完成摘要、Agent 建议字段 | 字段契约需由 LDVH 12 Task 规范定义，实例应在 `ldvh-base/`（工作区级目录） |
 | `execute_task` | Task 执行动作 | 借鉴执行前依赖检查、状态切换、相关文件读取和执行 Prompt | 执行状态变更应先写入权威 Task 实例，不能只在工具缓存中变更 |
 | `verify_task` | Review、Evidence、Checklist | 借鉴验证前置、评分阈值和完成摘要 | 工具验证不等于人类验收，不得替代 Human Gate |
 | `query_task` / `get_task_detail` | Tools 辅助层、Web 展示层 | 借鉴跨当前任务和历史任务的检索 | 检索结果是派生视图，权威仍是 Git 文件事实源 |
@@ -299,11 +299,11 @@ Shrimp 的 `tasks.json`、memory 备份和本地 git history 都服务于跨会�
 | 稳定规范 | `specs/00-79` |
 | 外部资料摘录 | `specs/refs/` |
 | 项目级评估 | `specs/evals/` |
-| 任务状态与执行字段 | `ldvh-base/tasks/` 或未来 Task 实例目录 |
-| 决策结论 | `ldvh-base/adrs/` 或对应 ADR 实例目录 |
-| 执行证据 | `ldvh-base/evidence/` 或未来 Evidence 实例目录 |
-| 变更记录 | `ldvh-base/changes/` |
-| 经验教训 | `ldvh-base/pitfalls.md` 或未来 Pitfall 实例目录 |
+| 任务状态与执行字段 | `ldvh-base/tasks/`（工作区级目录）或未来 Task 实例目录 |
+| 决策结论 | `ldvh-base/adrs/`（工作区级目录）或对应 ADR 实例目录 |
+| 执行证据 | `ldvh-base/evidence/`（工作区级目录）或未来 Evidence 实例目录 |
+| 变更记录 | `ldvh-base/changes/`（工作区级目录） |
+| 经验教训 | `ldvh-base/pitfalls.md`（工作区级目录）或未来 Pitfall 实例目录 |
 
 工具可以帮助收集、展示和写入这些记忆，但工具自己的数据库、缓存、JSON 文件或 UI 状态不能成为权威事实源。
 
@@ -359,7 +359,7 @@ LDVH Web Tools 可借鉴的视图包括：
 
 ### 5.1 不应照搬 Shrimp 的 `{DATA_DIR}/tasks.json` 为权威任务源
 
-Shrimp 使用单一 JSON 文件保存任务，适合工具自身简洁实现。但 LDVH 的任务对象应属于项目事实源，进入 `ldvh-base/` 下未来定义的 Task 实例目录或文件结构。否则会出现工具数据与 LDVH 生产对象并行维护同一事实的问题。
+Shrimp 使用单一 JSON 文件保存任务，适合工具自身简洁实现。但 LDVH 的任务对象应属于项目事实源，进入 `ldvh-base/`（工作区级目录）下未来定义的 Task 实例目录或文件结构。否则会出现工具数据与 LDVH 生产对象并行维护同一事实的问题。
 
 ### 5.2 不应把 memory 备份当作长期事实源
 
@@ -499,7 +499,7 @@ Shrimp Task Viewer 中的多 profile、任务历史、模板管理、Agent 管�
 | Task 阻塞处理 | `specs/46-Task阻塞处理` | 处理依赖未满足、外部等待和 Human Gate 阻塞 | 创建 planned 行动正式规范需确认 |
 | Review 执行动作 | `specs/47-Review执行` | 区分工具验证、AI 自检、人类验收和 Human Gate | 创建 planned 行动正式规范需确认 |
 | 研究模式行动模型或 evals 模板 | `specs/50-79` 或 `specs/evals/` 模板 | 将外部调研转为可复用工程活动 | 若进入正式行动规范需确认 |
-| MCP 工具接入 ADR | `ldvh-base/adrs/` | 判断 LDVH 是否以 MCP Server 形式提供 LDVH 工具 | ADR 创建和工具方向确认需评估 |
+| MCP 工具接入 ADR | `ldvh-base/adrs/`（工作区级目录） | 判断 LDVH 是否以 MCP Server 形式提供 LDVH 工具 | ADR 创建和工具方向确认需评估 |
 | Web Tools 任务工作台设计 | `web/` 实现规划或工具设计文档 | 提升人类确认质量 | 若写入或改变事实源链路需确认 |
 | Prompt 模板治理规则 | `specs/12` 子文档、Skill/Tools 实践文档 | 防止模板与规范冲突 | 影响 AI 行动入口时需确认 |
 

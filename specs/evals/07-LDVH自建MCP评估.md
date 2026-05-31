@@ -55,11 +55,11 @@ LDVH 可以考虑自建 MCP，但自建 MCP 不应成为新的工具层，也不
 
 | LDVH 需求 | 第三方 MCP 能否覆盖 | 缺口说明 |
 |---|---|---|
-| 读取 `ldvh-base/` 中的生产对象实例 | 否 | 第三方 MCP 不理解 LDVH 对象结构、字段契约和状态机 |
+| 读取 `ldvh-base/`（工作区级目录）中的生产对象实例 | 否 | 第三方 MCP 不理解 LDVH 对象结构、字段契约和状态机 |
 | 校验生产对象字段和状态合法性 | 否 | 校验规则由 10-39 生产对象规范定义，第三方 MCP 不掌握 |
 | 聚合项目状态 | 否 | 阻塞视图、待验收视图等依赖 LDVH 目录结构和对象关系 |
 | 生成最小可行动上下文包 | 否 | 上下文包由 07 行动模型中的 Context 组件定义 |
-| 受控写入 `ldvh-base/` | 否 | 写入必须经过校验、Human Gate 判断和 Change 记录 |
+| 受控写入 `ldvh-base/`（工作区级目录） | 否 | 写入必须经过校验、Human Gate 判断和 Change 记录 |
 | 查询 specs 规范体系结构 | 否 | specs 编号分区、文档类型和引用纪律是 LDVH 特有规则 |
 
 ### 2.2 Trae 内置工具的能力缺口
@@ -146,7 +146,7 @@ Tools 辅助层（tools/）
 1. MCP 工具输出不是最终事实源；
 2. MCP 工具不得绕过Tools 辅助层的校验和受控写入边界；
 3. MCP 工具不得直接调用 AI、Skill 或 Agent；
-4. MCP 工具不得替代 specs/、ldvh-base/ 或 docs/ 的权威事实。
+4. MCP 工具不得替代 specs/、ldvh-base/（工作区级目录）或 docs/ 的权威事实。
 
 ### 4.3 Python 程序是否 MCP 化的判断
 
@@ -180,11 +180,11 @@ Python 程序属于 12.01 Tools 辅助层的能力实现。MCP 是其中一种�
 | Status Aggregator | 聚合项目状态视图 | `blocked_tasks`、`review_needed_tasks`、`decision_needed`、`project_summary`、`intent_progress` | 帮助 Agent 快速识别工作入口 | 低 | 第一优先级 |
 | Context Pack | 生成最小可行动上下文包 | `task_context`、`decision_context`、`review_context`、`change_context` | 直接支撑 07 Context 组件 | 中 | 第二优先级 |
 | Validator | 校验生产对象合法性 | `validate_task`、`validate_change`、`validate_state_transition`、`check_references` | 支撑 Gate 判断和写入前检查 | 中 | 第二优先级 |
-| Controlled Writer | 受控写入 `ldvh-base/` | `create_task`、`update_task_status`、`create_change`、`create_memo`、`create_pitfall` | 降低直接写文件风险 | 高 | 第三优先级 |
+| Controlled Writer | 受控写入 `ldvh-base/`（工作区级目录） | `create_task`、`update_task_status`、`create_change`、`create_memo`、`create_pitfall` | 降低直接写文件风险 | 高 | 第三优先级 |
 
 ### 5.2 Fact Reader MCP
 
-Fact Reader MCP 为 Agent 提供结构化事实源读取能力。它按对象类型和 ID 读取 `ldvh-base/` 中的生产对象实例，并返回字段、状态、来源引用等结构化结果。
+Fact Reader MCP 为 Agent 提供结构化事实源读取能力。它按对象类型和 ID 读取 `ldvh-base/`（工作区级目录）中的生产对象实例，并返回字段、状态、来源引用等结构化结果。
 
 它直接支撑 07 行动模型中的 Context 组件。Agent 可通过 Fact Reader 快速组装最小可行动上下文，而不是逐文件读取和手动解析 YAML。
 
@@ -216,7 +216,7 @@ Validator MCP 为 Agent 提供生产对象校验能力，包括字段完整性�
 
 ### 5.6 Controlled Writer MCP
 
-Controlled Writer MCP 为 Agent 提供受控写入 `ldvh-base/` 的能力，包括创建 Task、更新 Task 状态、创建 Change、创建 Memo 和创建 Pitfall。
+Controlled Writer MCP 为 Agent 提供受控写入 `ldvh-base/`（工作区级目录）的能力，包括创建 Task、更新 Task 状态、创建 Change、创建 Memo 和创建 Pitfall。
 
 它价值高，但风险最高。写入能力如果绕过 Human Gate、状态机校验或 Change 记录，将直接破坏事实源完整性。
 
@@ -341,7 +341,7 @@ LDVH 特有能力用自建 MCP；
 
 | 风险 | 说明 | 缓解措施 |
 |---|---|---|
-| 写入破坏事实源 | Controlled Writer MCP 如果绕过 Human Gate 或状态机校验，将直接破坏 `ldvh-base/` 完整性 | Controlled Writer 最后实现；写入前执行完整校验链；关键写入触发 Human Gate；写入后验证并追加 Change 记录；初期只实现只读 MCP |
+| 写入破坏事实源 | Controlled Writer MCP 如果绕过 Human Gate 或状态机校验，将直接破坏 `ldvh-base/`（工作区级目录）完整性 | Controlled Writer 最后实现；写入前执行完整校验链；关键写入触发 Human Gate；写入后验证并追加 Change 记录；初期只实现只读 MCP |
 | MCP 输出被当作事实源 | Agent 可能把结构化视图当作权威事实源 | 工具描述明确输出不是事实源；聚合结果包含来源引用；与 Git 文件事实源不一致时以 Git 为准 |
 | 对象规范未稳定导致频繁变更 | 生产对象规范变更会导致 MCP 字段和状态机同步变更 | 等至少 Task 和 Change 对象规范稳定后再实现；MCP 与对象规范保持引用关系；初期只覆盖核心对象 |
 | 维护成本上升 | 需要适配 Trae MCP 协议、对象规范和 tools/ 模块变更 | MCP 入口层保持薄封装；业务逻辑复用 tools/；入口层只测试协议适配 |

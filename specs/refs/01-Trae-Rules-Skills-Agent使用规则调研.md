@@ -451,7 +451,7 @@ SOLO Agent 会生成三阶段文档组：
 2. L2 场景规则可借鉴 Trae 的智能生效、指定文件生效和子目录规则机制。
 3. 对话整理、任务验收、备忘写入等流程型能力更适合 Skill，而不是一直放在 Rules 中。
 4. 多角色分析、前后端专项审查、性能测试等角色型能力更适合 Agent。
-5. 复杂功能开发可借鉴 SOLO Agent 的 Plan/Spec 模式，但 LDVH 应明确自己的事实源边界，避免 `.trae/specs/` 与项目 `specs/`、`docs/`、`ldvh-base/` 混淆。
+5. 复杂功能开发可借鉴 SOLO Agent 的 Plan/Spec 模式，但 LDVH 应明确自己的事实源边界，避免 `.trae/specs/` 与项目 `specs/`、`docs/`、`ldvh-base/`（工作区级目录）混淆。
 6. Agent 或 Skill 分享前必须脱敏，尤其是 Prompt、MCP Server 配置、内部路径、密钥、Token、业务数据。
 7. 新增规则或 Skill 后建议开启新对话验证，避免旧上下文覆盖新配置。
 

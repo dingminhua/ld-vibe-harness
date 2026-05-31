@@ -1,7 +1,7 @@
 # ADR 决策记录
 
 > 创建日期：2026-05-30
-> 定位：定义 ADR 决策记录生产对象模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、适配原则、附件型实践子文档、落地初始化、落地审计和合规检查
+> 定位：定义 ADR 决策记录生产对象模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存、适配原则、附件型实践子文档、落地初始化、落地审计和合规检查
 > 适用范围：所有接入 LDVH 且需要管理长期决策的项目
 > 上位依据：`specs/13-LDVH生产对象基础规范.md`
 > 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-Specs文档规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/20-生产对象集合索引.md`
@@ -83,7 +83,7 @@ ADR 记录为什么这样决定，specs 或 Rules 记录以后必须怎么做。
 
 本文是 ADR 决策记录生产对象模型的权威事实源。本文定义 ADR 的准入条件、状态机、对象关系、Human Gate、字段契约和适配原则。
 
-ADR 对象实例的权威事实源位置为：
+ADR 对象实例的权威事实源位置为（ldvh-base/ 为工作区级目录，位于工作区根目录）：
 
 ```text
 ldvh-base/adrs/adr-{NNNN}-short-title.yaml
@@ -94,7 +94,7 @@ ldvh-base/adrs/adr-{NNNN}-short-title.yaml
 | 内容 | 权威位置 |
 |---|---|
 | ADR 对象模型 | `specs/21-ADR-决策记录.md` |
-| ADR 对象实例 | `ldvh-base/adrs/` |
+| ADR 对象实例 | `ldvh-base/adrs/`（工作区级目录） |
 | ADR 模型实践子文档 | `specs/21.01-Rules.md` 至 `specs/21.05-Web.md` |
 | ADR 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
@@ -290,7 +290,7 @@ ADR 基础字段遵循 13 §6.4 的字段契约原则。
 1. ADR 从 `proposed` 变更为 `accepted` 时，应留存决策依据和确认记录。
 2. ADR 推翻或废弃时，应留存推翻原因、替代方案和确认记录。
 3. ADR 升级时，应留存升级原因、新旧 ADR 关联和确认记录。
-4. 证据留存位置为 ADR YAML 实例的 `context`、`decision`、`consequences` 字段和 `ldvh-base/changes/` 中的 Change 记录。
+4. 证据留存位置为 ADR YAML 实例的 `context`、`decision`、`consequences` 字段和 `ldvh-base/changes/`（工作区级目录）中的 Change 记录。
 5. ADR 证据应可追溯到 Git 文件事实源，不得仅存在于对话历史或工具缓存中。
 
 ---
@@ -334,8 +334,8 @@ ADR 基础字段遵循 13 §6.4 的字段契约原则。
 
 | 文件 | 状态 |
 |---|---|
-| `21.01-Rules.md` | planned |
-| `21.02-Skill.md` | planned |
+| `21.01-Rules.md` | active |
+| `21.02-Skill.md` | active |
 | `21.03-Agent.md` | planned |
 | `21.04-Tools.md` | planned |
 | `21.05-Web.md` | planned |
@@ -378,7 +378,7 @@ ADR 对象模型进入项目实践前，应确认以下决策：
 
 ADR 对象模型进入项目实践时，需要完成以下初始化：
 
-1. 创建 `ldvh-base/adrs/` 目录；
+1. 创建 `ldvh-base/adrs/` 目录（工作区级目录）；
 2. 确认 ADR 编号从 `0001` 起递增，固定 4 位；
 3. 确认 ADR 实例文件命名规则为 `adr-{NNNN}-short-title.yaml`；
 4. 确认 ADR 状态流转遵循本文 §五 定义的状态机；
@@ -393,7 +393,7 @@ ADR 对象模型进入项目实践时，需要完成以下初始化：
 
 ADR 对象模型落地审计应覆盖以下内容：
 
-1. `ldvh-base/adrs/` 目录是否存在且与 Git 文件事实源一致；
+1. `ldvh-base/adrs/` 目录（工作区级目录）是否存在且与 Git 文件事实源一致；
 2. ADR 实例文件命名是否符合 `adr-{NNNN}-short-title.yaml` 格式；
 3. ADR 实例字段是否完整，必填字段是否齐全；
 4. ADR 状态流转是否合法，是否存在非法流转；

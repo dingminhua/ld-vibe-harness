@@ -313,7 +313,7 @@ Release Notes 参考结构：
 | `core/` | `core` |
 | `specs/refs/` | `refs` |
 | `docs/` | `docs` |
-| `ldvh-base/` | `base` |
+| `ldvh-base/`（工作区级目录） | `base` |
 | `README.md` | `docs` |
 | `.gitignore` | `infra` |
 

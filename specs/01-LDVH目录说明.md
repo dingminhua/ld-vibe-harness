@@ -39,7 +39,7 @@
 |---|---|---|---|
 | specs/ | LD Vibe Harness 规范目录 | 00-99 specs 文档、refs/ 外部资料、evals/ 项目评估 | 规范事实源；evals/ 不直接构成强制规则 |
 | docs/ | 管辖项目资料目录 | 管辖项目资料、管辖项目审计结果、报告、操作说明、产品资料和非规范性实践 | 管辖项目文档事实源；不是 LDVH 基础规范事实源 |
-| ldvh-base/ | 结构化对象实例目录 | Task、ADR、Evidence、Change、Pitfall 等 LDVH 生产对象实例 | 结构化生产对象实例事实源 |
+| ldvh-base/ | 结构化对象实例目录（工作区级） | Task、ADR、Evidence、Change、Pitfall 等 LDVH 生产对象实例 | 结构化生产对象实例事实源 |
 | web/ | Web Tools 实现目录 | LD Vibe Harness Web Tools 的前端、后端、页面和相关实现 | 非最终事实源；工具实现和运行状态不能替代事实源 |
 | tools/ | Tools 辅助工具目录 | 脚本、校验器、聚合器、受控写入工具和其他 Tools 辅助工具 | 非最终事实源；工具实现和运行结果不能替代事实源 |
 
@@ -75,9 +75,9 @@ docs/ 面向人的阅读、确认、审查和操作需要，不用于承载 LD V
 
 ### 3.5 ldvh-base 目录
 
-ldvh-base/ 承载结构化 LDVH 生产对象实例，例如 Task、ADR、Evidence、Change、Pitfall 等。
+ldvh-base/ 位于工作区根目录，与 ld-vibe-harness/ 同级，承载结构化 LDVH 生产对象实例，例如 Task、ADR、Evidence、Change、Pitfall 等。
 
-ldvh-base/ 下各对象实例的目录结构、字段、状态和验收规则由 20-49 LDVH 生产对象规范定义。
+ldvh-base/ 不属于 ld-vibe-harness/ 项目内部目录，而是工作区级共享目录，服务于接入 LDVH 的所有项目。ldvh-base/ 下各对象实例的目录结构、字段、状态和验收规则由 20-49 LDVH 生产对象规范定义。
 
 ### 3.6 web 与 tools 目录
 
@@ -122,7 +122,7 @@ specs/ 采用分区编号，编号本身必须表达文档在规范体系中的�
 | 行动模型规范 | specs/ |
 | 外部资料引用（与规范直接相关） | specs/refs/ |
 | 项目评估文档（内部调研结论） | specs/evals/ |
-| 结构化对象实例 | ldvh-base/ |
+| 结构化对象实例 | ldvh-base/（工作区级目录） |
 | 管辖项目资料和审计结果 | docs/ |
 | Web Tools 实现 | web/ |
 | Tools 辅助工具实现 | tools/ |
@@ -156,7 +156,7 @@ specs/ 采用分区编号，编号本身必须表达文档在规范体系中的�
 
 ## 七、待补齐事项
 
-1. ldvh-base/ 下各类生产对象实例的具体目录结构，待 20-49 LDVH 生产对象规范稳定后补齐；
+1. ldvh-base/（工作区级目录）下各类生产对象实例的具体目录结构，待 20-49 LDVH 生产对象规范稳定后补齐；
 2. docs/ 下管辖项目资料的分类方式，待管辖项目实践稳定后补齐；
 3. web/ 与 tools/ 的实现目录细分，待 LDVH 工具基础规范和实现演进后补齐；
-4. docs/、ldvh-base/、web/、tools/ 等规划一级目录待按落地初始化需要创建或审计。
+4. docs/、ldvh-base/（工作区级）、web/、tools/ 等规划一级目录待按落地初始化需要创建或审计。
