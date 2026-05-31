@@ -57,4 +57,6 @@ human_gate:
   confirmed_by: user
   confirmation_context: 用户同意按 Rules 入口约束、Skill 契约式行动、Agent 上下文隔离、Tools 契约式校验与执行、Web 信息同步的方向推进 specs 相关内容统一。
 validation: |
-  待执行：旧术语检索、YAML 解析检查和 git diff 审查。
+  1. 已执行旧术语检索：正式 specs 与 evals 中未发现需继续替换的旧命名；剩余命中仅包括 02 术语规范的禁用词示例、事实模型规则专名，以及 refs 外部引用材料原文。
+  2. 已执行 Change YAML 解析检查，结果为 yaml ok。
+  3. 已执行 git diff --check，未发现空白或格式错误。
