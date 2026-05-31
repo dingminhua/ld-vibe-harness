@@ -1,0 +1,37 @@
+type: change
+title: 固定 Skill 与 Agent 子文档实践类型命名
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  用户指出模型实践子文档标题不应把 Skill 和 Agent 的实践类型作为可选项。
+  经核查，现有规范中 Skill 已倾向使用“契约式行动实践”，Agent 在部分位置仍使用“上下文隔离实践”，容易形成局部命名选项。
+decision: |
+  更新 `specs/02-LDVH术语规范.md`，明确模型实践子文档标题实践类型使用固定标准名称：Skill 固定为“契约式行动实践”，Agent 固定为“独立上下文并行实践”，具体模型不得自行替换为流程实践、上下文隔离实践、能力实践、展示实践等其他实践类型名称。
+  更新 `specs/04-LDVH模型子文档规范.md`，将 `NN.03-Agent.md` 的内容名称改为“Agent 独立上下文并行实践”。
+  更新 `specs/21.02-Skill.md` 标题、适用范围和定位，使用“ADR — Skill 契约式行动实践”。
+  更新 `specs/21.03-Agent.md` 标题和适用范围，使用“ADR — Agent 独立上下文并行实践”。
+consequences: |
+  - Skill / Agent 模型实践子文档不再存在局部实践类型命名选项。
+  - 后续 `NN.02-Skill.md` 标题应固定使用“{主模型名} — Skill 契约式行动实践”。
+  - 后续 `NN.03-Agent.md` 标题应固定使用“{主模型名} — Agent 独立上下文并行实践”。
+  - 若某模型不创建 Skill 或 Agent 实体，应通过子文档状态和正文说明表达，不得通过改标题实践类型表达。
+affects:
+  - specs/02-LDVH术语规范.md
+  - specs/04-LDVH模型子文档规范.md
+  - specs/21.02-Skill.md
+  - specs/21.03-Agent.md
+related_rules:
+  - specs/02-LDVH术语规范.md
+  - specs/03-Specs文档规范.md
+  - specs/04-LDVH模型子文档规范.md
+human_gate:
+  required: true
+  confirmed_by: user
+  confirmation_context: 用户要求修改规范，固定 Skill 和 Agent 子文档实践类型命名。
+validation: |
+  1. 已执行 `python3 tools/adr_index.py validate`，结果为暂无 ADR 记录，跳过校验。
+  2. 已执行 `python3 -m pytest -q tests/tools/test_adr_index.py`，结果为 17 passed。
+  3. 已执行 `python3 -m py_compile tools/adr_index.py`，结果通过。
+  4. 已执行 `grep -R "Skill 流程实践\|Agent 上下文隔离实践" -n specs/02-LDVH术语规范.md specs/04-LDVH模型子文档规范.md specs/21.02-Skill.md specs/21.03-Agent.md || true`，目标范围内未发现旧标题实践类型残留。

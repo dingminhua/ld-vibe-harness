@@ -1,0 +1,40 @@
+type: change
+title: 重新初始化 ADR Rules Skill Agent 子文档
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  用户指出 `specs/21.01-Rules.md`、`specs/21.02-Skill.md` 和 `specs/21.03-Agent.md` 应视为尚未重新进行初始化。
+  此前 `ldvh-base/adrs/` 目录初始化 Change 已修正为仅表示 ADR 事实源目录初始化，不代表 ADR 六槽位完整重新初始化完成。
+  ADR Tools 已具备受控写入能力，因此 Rules、Skill、Agent 三个子文档需要同步审计和校准。
+decision: |
+  更新 `specs/21.01-Rules.md`，将 ADR Tools 写入命令前的 Human Gate 授权边界纳入 Rules 入口实践，并明确 `draft` 输出和 `proposed` ADR 不得作为执行依据。
+  更新 `specs/21.02-Skill.md`，移除 ADR Tools 受控写入能力未实现的过期表述，明确 AI 在主上下文执行 ADR 流程时应优先使用 ADR Tools 执行已授权的机械化写入。
+  更新 `specs/21.03-Agent.md`，同步当前 ADR Tools 已承接确定性读写和校验能力的事实，维持不创建专用 Agent 的结论。
+  修正 `ldvh-base/changes/20260601213000.yaml`，明确该 Change 不代表 ADR 六槽位完整重新初始化完成。
+consequences: |
+  - 21.01 Rules、21.02 Skill 和 21.03 Agent 已按当前 ADR Tools 能力完成重新初始化审计与校准。
+  - ADR Skill 流程现在明确区分流程性判断、人类确认和 Tools 受控写入执行。
+  - ADR Agent 不创建结论继续成立，且理由进一步绑定 Tools 承接确定性读写能力。
+  - 后续仍需单独评估 21.05 Web 和 21.06 Contract 是否需要重新初始化审计。
+affects:
+  - specs/21.01-Rules.md
+  - specs/21.02-Skill.md
+  - specs/21.03-Agent.md
+  - ldvh-base/changes/20260601213000.yaml
+related_rules:
+  - specs/04-LDVH模型子文档规范.md
+  - specs/11.01-Rules机制规范.md
+  - specs/11.02-Skill机制规范.md
+  - specs/11.03-Agent机制规范.md
+  - specs/21-ADR-决策记录.md
+  - specs/21.04-Tools.md
+human_gate:
+  required: true
+  confirmed_by: user
+  confirmation_context: 用户确认执行 21.01、21.02、21.03 三个 ADR 子文档的重新初始化审计与修正。
+validation: |
+  1. 已执行 `python3 tools/adr_index.py validate`，结果为暂无 ADR 记录，跳过校验。
+  2. 已执行 `python3 -m pytest tests/tools/test_adr_index.py`，结果为 17 passed。
+  3. 已执行 `python3 -m py_compile tools/adr_index.py`，结果通过。
