@@ -36,7 +36,7 @@ LD Vibe Harness 以 AI 执行者为第一服务对象，整个体系围绕"帮�
 
 因此，LD Vibe Harness 不只为 AI 提供上下文，还要为 AI 提供场景识别、工具选择、Skill 进入、子 Agent 调度和人类确认的行动依据。
 
-在这个前提下，LD Vibe Harness 的架构由介质、Trae Solo 环境机制、工具、生产对象和行动模型五类构成要素共同组成。
+在这个前提下，LD Vibe Harness 的架构由介质、Trae Solo 环境机制、工具、事实模型和行动模型五类构成要素共同组成。
 
 人在 LD Vibe Harness 中负责：
 
@@ -89,7 +89,7 @@ LD Vibe Harness 的建设成效不以文档、任务、工具页面或对象数�
 | 介质 | 提供 Git 可追踪、AI 可读取、人可审查、工具可解析的承载形式 |
 | Trae Solo 环境机制 | 提供 AI 协作入口和原生机制，但不直接保证工程可控 |
 | 工具 | 降低读取、校验、聚合、展示和受控写入事实源的成本 |
-| 生产对象 | 把项目生产事实建模为可追踪、可验证、可流转的对象 |
+| 事实模型 | 把项目生产事实建模为可追踪、可验证、可流转的对象 |
 | 行动模型 | 约束 AI 如何读取上下文、识别场景、执行任务、触发门禁和回写事实 |
 
 ### 3.3 反向判断
@@ -107,7 +107,7 @@ LD Vibe Harness 的建设成效不以文档、任务、工具页面或对象数�
 
 ## 四、架构：五类构成要素
 
-LD Vibe Harness 不是由单一工具、单一规范或单一对象体系构成，而是由五类构成要素共同形成 AI 工程驾驭体系：介质、Trae Solo 环境机制、工具、生产对象和行动模型。
+LD Vibe Harness 不是由单一工具、单一规范或单一对象体系构成，而是由五类构成要素共同形成 AI 工程驾驭体系：介质、Trae Solo 环境机制、工具、事实模型和行动模型。
 
 这五类不是上下层级，也不是五种能力，而是性质不同、分工不同、共同服务于同一工程闭环的构成要素。
 
@@ -118,7 +118,7 @@ LD Vibe Harness 不是由单一工具、单一规范或单一对象体系构成�
 | 介质 | Medium | 行业标准 | 定义使用规则，不重新定义介质本身 | 用什么承载 | YAML、Markdown、Python、JavaScript |
 | Trae Solo 环境机制 | Trae Solo Environment Mechanisms | Trae 提供 | 利用，不重新定义 | AI 协作运行在哪些原生机制之上 | Rules、Skill、Agent |
 | 工具 | Tools | LDVH 提供 | 实现和维护 | 用什么辅助读取、校验、展示和写入 | Web Tools、Python 辅助程序 |
-| 生产对象 | Production Objects | LDVH 定义规范，项目实例化 | 建模工程生产事实 | 项目事实如何被组织、流转和沉淀 | Intent、Task、Memo、ADR、Evidence、Change、Pitfall |
+| 事实模型 | Production Objects | LDVH 定义规范，项目实例化 | 建模工程生产事实 | 项目事实如何被组织、流转和沉淀 | Intent、Task、Memo、ADR、Evidence、Change、Pitfall |
 | 行动模型 | Action Model | LDVH 定义规范，项目执行时适用 | 建模 AI 行动控制 | AI 如何读取、判断、执行、停下和回写 | Context、Scenario、Gate、Rules 适用、Skill 进入、Agent 调度、事实源回写 |
 
 ### 4.2 介质
@@ -129,7 +129,7 @@ YAML、Markdown、Python、JavaScript 等文件格式和编程语言是 LD Vibe 
 
 1. **行业标准**：介质本身的语法和规范由行业标准定义；
 2. **LDVH 定义使用要求**：LDVH 在基础规范中定义这些介质的使用要求，但不重新定义介质本身；
-3. **五类共用**：Trae Solo 环境机制通过 .md 文件落地 Rules、Skill、Agent 定义；工具通过 .py / .js 程序落地 Web 后端、前端和辅助脚本；生产对象通过 .yaml / .md 文件落地 Task、ADR、Pitfall 等实例；行动模型通过规范、Rules 入口和结构化上下文约束 AI 行动。
+3. **五类共用**：Trae Solo 环境机制通过 .md 文件落地 Rules、Skill、Agent 定义；工具通过 .py / .js 程序落地 Web 后端、前端和辅助脚本；事实模型通过 .yaml / .md 文件落地 Task、ADR、Pitfall 等实例；行动模型通过规范、Rules 入口和结构化上下文约束 AI 行动。
 
 ### 4.3 Trae Solo 环境机制
 
@@ -156,13 +156,13 @@ LD Vibe Harness 对 Trae Solo 环境机制的态度：
 2. 工具可以提供受控写入入口，但不能绕过事实源边界和 Human Gate；
 3. 工具可以聚合并提供 Web 展示，但不能独立维护与事实源冲突的派生数据。
 
-### 4.5 生产对象
+### 4.5 事实模型
 
-生产对象是 LD Vibe Harness 对工程生产事实的自定义建模，用于承载意图、任务、决策、风险、依赖、证据、变更、产物、检查项和经验沉淀。
+事实模型是 LD Vibe Harness 对工程生产事实的自定义建模，用于承载意图、任务、决策、风险、依赖、证据、变更、产物、检查项和经验沉淀。
 
-典型生产对象包括 Intent、TaskSet、Task、Memo、ADR、Risk、Dependency、Evidence、Artifact、Checklist、Change、Pitfall。
+典型事实模型包括 Intent、TaskSet、Task、Memo、ADR、Risk、Dependency、Evidence、Artifact、Checklist、Change、Pitfall。
 
-生产对象的核心特征：
+事实模型的核心特征：
 
 1. **规范由 LDVH 定义**：对象的准入条件、字段契约、状态流转、事实源边界和验收规则由 LDVH 规范体系定义；
 2. **实例由项目拥有**：每个项目按规范创建的对象实例属于项目，存放在项目的结构化事实源目录中；
@@ -199,7 +199,7 @@ LD Vibe Harness 的事实源必须回到 Git 可追踪文件。事实源权威�
 | 介质 | 提供事实源承载形式 |
 | Trae Solo 环境机制 | 提供协作入口，但不成为最终事实源 |
 | 工具 | 读取、校验、聚合、提供 Web 展示和受控写入事实源，但不成为最终事实源 |
-| 生产对象 | 是项目生产事实的主要结构化承载 |
+| 事实模型 | 是项目生产事实的主要结构化承载 |
 | 行动模型 | 规定 AI 如何读取、判断和回写事实源 |
 
 YAML 更适合承载任务、状态、结构化关系、审计字段和可解析决策。Markdown 更适合承载背景、原因、解释、需求语境和规范说明。
@@ -217,7 +217,7 @@ AI 依据行动模型识别场景、事实源边界和 Human Gate
   ↓
 AI 读取事实源，并判断是否需要工具、Skill 或子 Agent
   ↓
-AI 按生产对象和行动模型拆解、执行、检查任务
+AI 按事实模型和行动模型拆解、执行、检查任务
   ↓
 工具辅助解析、校验、聚合和受控写入
   ↓
@@ -265,7 +265,7 @@ LD Vibe Harness 的基础规范由 01-03 与 10-19 承载。本文只定义基�
 4. 事实源边界与承载规则由规划中的 `specs/10-事实源边界与承载规范.md` 定义；
 5. LDVH AI 协作规范由规划中的 `specs/11-LDVH-AI协作规范.md` 定义；
 6. LDVH 工具基础规则由规划中的 `specs/12-LDVH工具基础规范.md` 定义；
-7. LDVH 生产对象基础规则由规划中的 `specs/13-LDVH生产对象基础规范.md` 定义，并由 20-49 展开具体对象规范；
+7. LDVH 事实模型基础规则由规划中的 `specs/13-LDVH事实模型基础规范.md` 定义，并由 20-49 展开具体对象规范；
 8. LDVH 行动模型基础规则由规划中的 `specs/14-LDVH行动模型基础规范.md` 定义，并由 50-79 展开具体行动规范。
 
 发生冲突时，以对应基础规范的权威领域为准。
@@ -274,9 +274,9 @@ LD Vibe Harness 的基础规范由 01-03 与 10-19 承载。本文只定义基�
 
 ## 七、Human Gate 与检查要求
 
-涉及 LD Vibe Harness 理念、价值标准、五类构成要素、基础规范权威领域、生产对象模型或行动模型的高影响变更，应评估 Human Gate。
+涉及 LD Vibe Harness 理念、价值标准、五类构成要素、基础规范权威领域、事实模型或行动模型的高影响变更，应评估 Human Gate。
 
-具体文档结构类 Human Gate 由 `specs/03-Specs文档规范.md` 定义；目录规划类 Human Gate 由 `specs/01-LDVH目录说明.md` 定义；术语变更类 Human Gate 由 `specs/02-LDVH术语规范.md` 定义；事实源边界类 Human Gate 由规划中的 `specs/10-事实源边界与承载规范.md` 定义；生产对象和行动模型相关 Human Gate 由对应正式规范定义。
+具体文档结构类 Human Gate 由 `specs/03-Specs文档规范.md` 定义；目录规划类 Human Gate 由 `specs/01-LDVH目录说明.md` 定义；术语变更类 Human Gate 由 `specs/02-LDVH术语规范.md` 定义；事实源边界类 Human Gate 由规划中的 `specs/10-事实源边界与承载规范.md` 定义；事实模型和行动模型相关 Human Gate 由对应正式规范定义。
 
 当 AI 识别到可能触发 Human Gate 的情况时，至少必须暂停当前变更动作，向人提醒该操作可能触发 Human Gate，并说明涉及的事实源、影响范围和建议确认事项。
 
@@ -298,5 +298,5 @@ LD Vibe Harness 的基础规范由 01-03 与 10-19 承载。本文只定义基�
 ## 八、待补齐事项
 
 1. 10-19 核心基础规范已全部创建；
-2. 20-49 生产对象规范中 20 索引和 21 ADR 已创建，22-49 待逐步创建；
+2. 20-49 事实模型规范中 20 索引和 21 ADR 已创建，22-49 待逐步创建；
 3. 50-79 行动模型规范中 50 索引和 51 多角色思考已创建，52-79 待逐步创建。

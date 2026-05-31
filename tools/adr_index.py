@@ -10,14 +10,16 @@
 命令:
     list                列出所有 ADR 摘要
     search <keyword>    按关键词搜索 ADR
-    status <status>     按状态筛选 ADR (proposed/accepted/deprecated/superseded)
+    status <status>     按状态筛选 ADR (proposed/accepted/deprecated/superseded/rejected)
     show <adr_id>       显示单个 ADR 详情
     stats               显示 ADR 状态统计
+    validate            校验所有 ADR 实例的字段完整性与状态合法性
     related <spec>       显示与指定 specs 文件关联的 ADR
 """
 
 import sys
 import os
+import re
 import glob
 import yaml
 from pathlib import Path
@@ -64,7 +66,7 @@ def cmd_list(adrs):
     print(f"{'ID':<12} {'状态':<14} {'标题':<40} {'创建日期'}")
     print("-" * 85)
     for adr in adrs:
-        adr_id = adr.get("adr_id", adr.get("_file", "N/A"))
+        adr_id = adr.get("id", adr.get("_file", "N/A"))
         status = adr.get("status", "N/A")
         title = adr.get("title", "N/A")
         if len(title) > 38:
@@ -82,7 +84,7 @@ def cmd_search(adrs, keyword):
             str(adr.get("context", "")),
             str(adr.get("decision", "")),
             str(adr.get("consequences", "")),
-            str(adr.get("adr_id", "")),
+            str(adr.get("id", "")),
         ]).lower()
         if keyword_lower in searchable:
             matched.append(adr)
@@ -104,17 +106,27 @@ def cmd_status(adrs, status):
 
 def cmd_show(adrs, adr_id):
     for adr in adrs:
-        if adr.get("adr_id") == adr_id or adr.get("_file", "").startswith(f"adr-{adr_id}"):
+        if adr.get("id") == adr_id or adr.get("_file", "").startswith(f"adr-{adr_id}"):
             print(f"文件: {adr['_file']}")
             print(f"路径: {adr['_path']}")
-            print(f"ID: {adr.get('adr_id', 'N/A')}")
+            print(f"ID: {adr.get('id', 'N/A')}")
+            print(f"类型: {adr.get('type', 'N/A')}")
             print(f"标题: {adr.get('title', 'N/A')}")
             print(f"状态: {adr.get('status', 'N/A')}")
+            print(f"决策日期: {fmt_date(adr.get('date'))}")
             print(f"创建: {fmt_date(adr.get('created'))}")
             print(f"更新: {fmt_date(adr.get('updated'))}")
             print(f"\n背景:\n{adr.get('context', 'N/A')}")
             print(f"\n决策:\n{adr.get('decision', 'N/A')}")
             print(f"\n影响:\n{adr.get('consequences', 'N/A')}")
+            alternatives = adr.get("alternatives")
+            if alternatives:
+                print(f"\n替代方案:")
+                if isinstance(alternatives, list):
+                    for alt in alternatives:
+                        print(f"  - {alt}")
+                else:
+                    print(f"  {alternatives}")
             affects = adr.get("affects", [])
             if affects:
                 print(f"\n影响文件:")
@@ -128,9 +140,6 @@ def cmd_show(adrs, adr_id):
             superseded_by = adr.get("superseded_by")
             if superseded_by:
                 print(f"\n被推翻: {superseded_by}")
-            supersedes = adr.get("supersedes")
-            if supersedes:
-                print(f"\n推翻: {supersedes}")
             return
     print(f"未找到 ADR: {adr_id}")
 
@@ -142,10 +151,10 @@ def cmd_stats(adrs):
         status_counts[s] = status_counts.get(s, 0) + 1
     print(f"ADR 总数: {len(adrs)}")
     print()
-    for status in ["proposed", "accepted", "deprecated", "superseded"]:
+    for status in ["proposed", "accepted", "deprecated", "superseded", "rejected"]:
         count = status_counts.get(status, 0)
         print(f"  {status}: {count}")
-    other = sum(v for k, v in status_counts.items() if k not in ["proposed", "accepted", "deprecated", "superseded"])
+    other = sum(v for k, v in status_counts.items() if k not in ["proposed", "accepted", "deprecated", "superseded", "rejected"])
     if other:
         print(f"  其他: {other}")
 
@@ -165,6 +174,47 @@ def cmd_related(adrs, spec_path):
     cmd_list(matched)
 
 
+VALID_STATUSES = {"proposed", "accepted", "deprecated", "superseded", "rejected"}
+REQUIRED_FIELDS = ["id", "type", "title", "status", "created", "updated", "date", "context", "decision", "consequences"]
+FILENAME_PATTERN = re.compile(r"^adr-\d{4}-.+\.yaml$")
+
+
+def cmd_validate(adrs):
+    if not adrs:
+        print("暂无 ADR 记录，跳过校验。")
+        return
+    total = len(adrs)
+    passed = 0
+    failed = 0
+    for adr in adrs:
+        issues = []
+        file_name = adr.get("_file", "N/A")
+        for field in REQUIRED_FIELDS:
+            if not adr.get(field):
+                issues.append(f"必填字段缺失: {field}")
+        status = adr.get("status", "")
+        if status and status not in VALID_STATUSES:
+            issues.append(f"状态不合法: {status}，合法值: {', '.join(sorted(VALID_STATUSES))}")
+        if status == "superseded" and not adr.get("superseded_by"):
+            issues.append("状态为 superseded 时 superseded_by 为必填")
+        adr_type = adr.get("type", "")
+        if adr_type and adr_type != "adr":
+            issues.append(f"type 字段应为 adr，实际为: {adr_type}")
+        if not FILENAME_PATTERN.match(file_name):
+            issues.append(f"文件命名不匹配 adr-{{NNNN}}-*.yaml 格式: {file_name}")
+        if issues:
+            failed += 1
+            print(f"[不合规] {file_name}")
+            for issue in issues:
+                print(f"  - {issue}")
+        else:
+            passed += 1
+    print()
+    print(f"校验依据: specs/21.06-Contract.md §八字段契约")
+    print(f"校验对象: {total} 个 ADR 实例")
+    print(f"校验结果: 通过 {passed}，不合规 {failed}")
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -182,7 +232,7 @@ def main():
         cmd_search(adrs, sys.argv[2])
     elif command == "status":
         if len(sys.argv) < 3:
-            print("用法: python3 adr_index.py status <proposed|accepted|deprecated|superseded>")
+            print("用法: python3 adr_index.py status <proposed|accepted|deprecated|superseded|rejected>")
             sys.exit(1)
         cmd_status(adrs, sys.argv[2])
     elif command == "show":
@@ -192,6 +242,8 @@ def main():
         cmd_show(adrs, sys.argv[2])
     elif command == "stats":
         cmd_stats(adrs)
+    elif command == "validate":
+        cmd_validate(adrs)
     elif command == "related":
         if len(sys.argv) < 3:
             print("用法: python3 adr_index.py related <spec_path>")

@@ -55,8 +55,8 @@ LDVH 可以考虑自建 MCP，但自建 MCP 不应成为新的工具层，也不
 
 | LDVH 需求 | 第三方 MCP 能否覆盖 | 缺口说明 |
 |---|---|---|
-| 读取 `ldvh-base/`中的生产对象实例 | 否 | 第三方 MCP 不理解 LDVH 对象结构、字段契约和状态机 |
-| 校验生产对象字段和状态合法性 | 否 | 校验规则由 10-39 生产对象规范定义，第三方 MCP 不掌握 |
+| 读取 `ldvh-base/`中的事实实例 | 否 | 第三方 MCP 不理解 LDVH 对象结构、字段契约和状态机 |
+| 校验事实模型字段和状态合法性 | 否 | 校验规则由 10-39 事实模型规范定义，第三方 MCP 不掌握 |
 | 聚合项目状态 | 否 | 阻塞视图、待验收视图等依赖 LDVH 目录结构和对象关系 |
 | 生成最小可行动上下文包 | 否 | 上下文包由 07 行动模型中的 Context 组件定义 |
 | 受控写入 `ldvh-base/` | 否 | 写入必须经过校验、Human Gate 判断和 Change 记录 |
@@ -179,12 +179,12 @@ Python 程序属于 12.01 Tools 辅助层的能力实现。MCP 是其中一种�
 | Fact Reader | 结构化读取事实源 | `read_task`、`list_tasks`、`read_adr`、`read_memo`、`read_change`、`read_pitfall` | 降低 Agent 组装上下文成本 | 低 | 第一优先级 |
 | Status Aggregator | 聚合项目状态视图 | `blocked_tasks`、`review_needed_tasks`、`decision_needed`、`project_summary`、`intent_progress` | 帮助 Agent 快速识别工作入口 | 低 | 第一优先级 |
 | Context Pack | 生成最小可行动上下文包 | `task_context`、`decision_context`、`review_context`、`change_context` | 直接支撑 07 Context 组件 | 中 | 第二优先级 |
-| Validator | 校验生产对象合法性 | `validate_task`、`validate_change`、`validate_state_transition`、`check_references` | 支撑 Gate 判断和写入前检查 | 中 | 第二优先级 |
+| Validator | 校验事实模型合法性 | `validate_task`、`validate_change`、`validate_state_transition`、`check_references` | 支撑 Gate 判断和写入前检查 | 中 | 第二优先级 |
 | Controlled Writer | 受控写入 `ldvh-base/` | `create_task`、`update_task_status`、`create_change`、`create_memo`、`create_pitfall` | 降低直接写文件风险 | 高 | 第三优先级 |
 
 ### 5.2 Fact Reader MCP
 
-Fact Reader MCP 为 Agent 提供结构化事实源读取能力。它按对象类型和 ID 读取 `ldvh-base/`中的生产对象实例，并返回字段、状态、来源引用等结构化结果。
+Fact Reader MCP 为 Agent 提供结构化事实源读取能力。它按对象类型和 ID 读取 `ldvh-base/`中的事实实例，并返回字段、状态、来源引用等结构化结果。
 
 它直接支撑 07 行动模型中的 Context 组件。Agent 可通过 Fact Reader 快速组装最小可行动上下文，而不是逐文件读取和手动解析 YAML。
 
@@ -208,7 +208,7 @@ Context Pack MCP 为 Agent 生成最小可行动上下文包。典型工具包�
 
 ### 5.5 Validator MCP
 
-Validator MCP 为 Agent 提供生产对象校验能力，包括字段完整性、状态合法性、状态流转和引用完整性校验。
+Validator MCP 为 Agent 提供事实模型校验能力，包括字段完整性、状态合法性、状态流转和引用完整性校验。
 
 它支撑 07 行动模型中的 Gate 判断。Agent 可在关键操作前主动校验，减少非法状态流转、引用缺失和格式错误。
 
@@ -343,7 +343,7 @@ LDVH 特有能力用自建 MCP；
 |---|---|---|
 | 写入破坏事实源 | Controlled Writer MCP 如果绕过 Human Gate 或状态机校验，将直接破坏 `ldvh-base/`完整性 | Controlled Writer 最后实现；写入前执行完整校验链；关键写入触发 Human Gate；写入后验证并追加 Change 记录；初期只实现只读 MCP |
 | MCP 输出被当作事实源 | Agent 可能把结构化视图当作权威事实源 | 工具描述明确输出不是事实源；聚合结果包含来源引用；与 Git 文件事实源不一致时以 Git 为准 |
-| 对象规范未稳定导致频繁变更 | 生产对象规范变更会导致 MCP 字段和状态机同步变更 | 等至少 Task 和 Change 对象规范稳定后再实现；MCP 与对象规范保持引用关系；初期只覆盖核心对象 |
+| 对象规范未稳定导致频繁变更 | 事实模型规范变更会导致 MCP 字段和状态机同步变更 | 等至少 Task 和 Change 对象规范稳定后再实现；MCP 与对象规范保持引用关系；初期只覆盖核心对象 |
 | 维护成本上升 | 需要适配 Trae MCP 协议、对象规范和 tools/ 模块变更 | MCP 入口层保持薄封装；业务逻辑复用 tools/；入口层只测试协议适配 |
 | 与 Web 展示层功能重叠 | Fact Reader、Status Aggregator、Context Pack 与 Web 展示层可能读取同类数据 | 底层复用同一 tools/ 模块；MCP 面向 Agent 结构化调用，Web 面向人可视化交互 |
 | 误把 MCP 当作唯一程序入口 | 可能导致所有 Python 脚本被过度 MCP 化 | 明确 MCP 只是Tools 辅助层入口之一；简单能力保留 CLI；多步骤流程由 Skill 编排；面向人确认的能力进入 Web 展示层 |
@@ -367,7 +367,7 @@ LDVH 特有能力用自建 MCP；
 
 ## 十一、待补齐事项
 
-1. 10-39 生产对象规范稳定后，确定 Fact Reader 和 Status Aggregator 的具体工具清单和字段映射；
+1. 10-39 事实模型规范稳定后，确定 Fact Reader 和 Status Aggregator 的具体工具清单和字段映射；
 2. 07 行动模型 Context 组件明确后，确定 Context Pack 的上下文类型和内容模板；
 3. 12.01 Tools 辅助层模块可用后，评估 MCP 入口层的实现复杂度和复用比例；
 4. Controlled Writer 的 Human Gate 判断逻辑待 07 Gate 组件和具体行动规范稳定后定义；

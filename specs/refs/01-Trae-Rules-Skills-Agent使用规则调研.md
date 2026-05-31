@@ -451,7 +451,7 @@ SOLO Agent 会生成三阶段文档组：
 2. L2 场景规则可借鉴 Trae 的智能生效、指定文件生效和子目录规则机制。
 3. 对话整理、任务验收、备忘写入等流程型能力更适合 Skill，而不是一直放在 Rules 中。
 4. 多角色分析、前后端专项审查、性能测试等角色型能力更适合 Agent。
-5. 复杂功能开发可借鉴 SOLO Agent 的 Plan/Spec 模式，但 LDVH 应明确自己的事实源边界，避免 `.trae/specs/` 与项目 `specs/`、`docs/`、`ldvh-base/`混淆。
+5. 复杂功能开发可借鉴 SOLO Agent 的 Plan/Spec 模式，但 LDVH 应明确自己的事实源边界，避免 Trae 的 `.trae/specs/` 与项目规范目录、文档目录和事实实例目录混淆。
 6. Agent 或 Skill 分享前必须脱敏，尤其是 Prompt、MCP Server 配置、内部路径、密钥、Token、业务数据。
 7. 新增规则或 Skill 后建议开启新对话验证，避免旧上下文覆盖新配置。
 
@@ -475,4 +475,4 @@ SOLO Agent 会生成三阶段文档组：
 1. Trae 版本更新频繁，Rules、Skills、Agent 的字段、目录和 UI 入口应定期按官网复查。
 2. 官方文档未在本次调研中提供所有 Agent 配置文件的本地文件格式细节，如需落地 Git 化管理，应另行验证。
 3. `.agents/skills/` 与 `.trae/skills/` 的生态兼容策略需要结合实际项目继续评估。
-4. LDVH 是否要把本调研内容进一步提炼进正式 `specs/11-LDVH-AI协作规范.md` 或独立 Skill/Agent 设计规范，应另行决策。
+4. LDVH 是否要把本调研内容进一步提炼进正式 AI 协作规范或独立 Skill/Agent 设计规范，应另行决策。

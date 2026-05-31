@@ -22,7 +22,7 @@ gstack 对 LD Vibe Harness 有较高参考价值，但 LD Vibe Harness 不应复
 
 更准确的判断是：
 
-> gstack 是面向 Claude Code 的 AI 工程工作流与技能工厂；LD Vibe Harness 是面向 Vibe Coding + Trae Solo 场景的工程驾驭框架，围绕事实源、生产对象和行动模型设计。
+> gstack 是面向 Claude Code 的 AI 工程工作流与技能工厂；LD Vibe Harness 是面向 Vibe Coding + Trae Solo 场景的工程驾驭框架，围绕事实源、事实模型和行动模型设计。
 
 LD Vibe Harness 最值得借鉴 gstack 的不是具体命令数量，也不是浏览器守护进程本身，而是以下能力组合：
 
@@ -57,7 +57,7 @@ gstack 是一个围绕 Claude Code 构建的 AI 工程工作流项目。它通�
 
 | 维度 | gstack | LD Vibe Harness |
 |---|---|---|
-| 产品形态 | Claude Code Skill + CLI + 浏览器工具 | 本地规范 + Harness 工具 + 生产对象 + 行动模型 |
+| 产品形态 | Claude Code Skill + CLI + 浏览器工具 | 本地规范 + Harness 工具 + 事实模型 + 行动模型 |
 | 核心对象 | Skill、Agent 角色、浏览器会话、发布流程、上下文记忆 | Intent、Task、Memo、ADR、Evidence、Change、Pitfall |
 | 主要目标 | 把 AI 编码助手扩展成工程团队流水线 | 让 AI 进入项目后知道读什么、做什么、不能做什么、何时停下、如何回写 |
 | 数据事实源 | 技能文件、仓库文档、运行状态、上下文存档 | Git 仓库中的 specs、ldvh-base、docs |
@@ -143,7 +143,7 @@ gstack 很重视浏览器 QA，强调真实 Chromium、真实点击、截图、�
 
 LD Vibe Harness 目前不是浏览器自动化工具，但可以借鉴它的 QA 证据思维：任务关闭前必须能回答"在哪里验证、怎么验证、证据是什么"。
 
-建议 LD Vibe Harness 在生产对象规范中强化：
+建议 LD Vibe Harness 在事实模型规范中强化：
 
 | 字段或视图 | 借鉴点 |
 |---|---|
@@ -319,6 +319,6 @@ LD Vibe Harness：让项目事实源和 AI 协作治理更像一个可操作的�
 ## 十、待补齐事项
 
 1. 本文结论如何进入 05 LDVH 工具基础规范待工具规范稳定后确定；
-2. 本文结论如何影响 10-39 生产对象规范待对象规范稳定后确定；
+2. 本文结论如何影响 10-39 事实模型规范待对象规范稳定后确定；
 3. 本文结论如何影响 40-69 行动模型规范待行动模型规范稳定后确定；
 4. 本文结论如何影响 04 Trae Solo 环境机制规范（Skill / Agent 设计）待机制规范稳定后确定。

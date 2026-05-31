@@ -24,7 +24,7 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。�
 目录事实源性质声明见 `specs/01-LDVH目录说明.md` §3.2。本项目关键边界：
 
 - `specs/` 承载 LDVH 规范体系和内部调研
-- `ldvh-base/` 承载结构化生产对象实例和变更记录
+- `ldvh-base/` 承载结构化事实实例和变更记录
 - `specs/refs/` 承载外部资料引用，不能直接作为 LDVH 强制规则
 - `specs-v2/` 是迁移和重构参考区，不自动替代 `specs/` 当前权威规范
 
@@ -38,8 +38,8 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。�
 
 - `ldvh-l2-specs-rules.md`：编辑 specs/ 目录下文档时生效
 
-生产对象实例编辑规则已提升至 L0 层级（`ldvh-l0-production-rules.md`），适用于所有管辖项目，不在本项目 L2 中维护。
+事实实例编辑规则已提升至 L0 层级（`ldvh-l0-fact-model-rules.md`），适用于所有管辖项目，不在本项目 L2 中维护。
 
 ## 压缩保护
 
-LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs-v2不替代specs | L1引导L2 | 生产对象规则在L0
+LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs-v2不替代specs | L1引导L2 | 事实模型规则在L0

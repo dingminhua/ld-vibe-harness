@@ -7,7 +7,7 @@
 > 调研边界：基于 `/Users/dmh2002/trae_projects/mcp-shrimp-task-manager` 本地仓库的 README、docs、src、tools/task-viewer 与配置文件进行分析，重点评估其对 LD Vibe Harness 的可借鉴方向
 > 执行效力：本文为内部调研和方案比较，不直接构成 LD Vibe Harness 强制规则；结论进入 `specs/00-79` 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-LDVH术语规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`
-> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH生产对象基础规范.md`、`specs/14-LDVH行动模型基础规范.md`、`specs/20-生产对象集合索引.md`、`specs/50-行动模型集合索引.md`
+> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/14-LDVH行动模型基础规范.md`、`specs/20-事实模型集合索引.md`、`specs/50-行动模型集合索引.md`
 > 参考项目：`/Users/dmh2002/trae_projects/mcp-shrimp-task-manager`
 
 ---
@@ -27,7 +27,7 @@ MCP Shrimp Task Manager 是一个面向 AI Agent 的 MCP 任务治理工具。�
 
 但 Shrimp 与 LDVH 的边界差异同样关键。Shrimp 的 `{DATA_DIR}/tasks.json`、memory 备份、Web Viewer 设置、模板目录、Agent 扫描结果和 OpenAI 交互结果属于工具运行数据或派生数据。LDVH 的最终事实源必须是 Git 可追踪文件，稳定事实应回到 `specs/`、`ldvh-base/`、`docs/` 或其他权威位置。LDVH 可以借鉴 Shrimp 的工具化流程、任务字段、验证动作、研究模式、Prompt 模板和可视化思路，但不能把 Shrimp 的 MCP Server 状态、工具私有数据目录、Web UI 状态或模型输出提升为 LDVH 的最终事实源。
 
-本文建议：LDVH 后续建设不应照搬 Shrimp，而应将其能力拆解后重新映射到 LDVH 五类构成要素中：以 Git 文件作为最终事实源，以 LDVH 生产对象承载任务、证据、变更、风险和决策，以 LDVH 行动模型约束计划、拆解、执行、验证和回写，以 Rules / Skill / Agent 规范治理协作机制，以 Tools / Web 降低读取、校验、展示和受控写入成本。
+本文建议：LDVH 后续建设不应照搬 Shrimp，而应将其能力拆解后重新映射到 LDVH 五类构成要素中：以 Git 文件作为最终事实源，以 LDVH 事实模型承载任务、证据、变更、风险和决策，以 LDVH 行动模型约束计划、拆解、执行、验证和回写，以 Rules / Skill / Agent 规范治理协作机制，以 Tools / Web 降低读取、校验、展示和受控写入成本。
 
 ---
 
@@ -225,7 +225,7 @@ Shrimp 有两套 Web 能力。
 | MCP Server 工具接口 | LDVH 工具 | 将任务查询、任务拆分、状态切换、验证、上下文包生成等能力工具化 | MCP Server 只能是工具实现形态，不能定义新的事实源权威位置 |
 | `plan_task` / `analyze_task` / `reflect_task` | LDVH 行动模型、Skill | 将计划、分析、反思拆成可识别阶段 | 分析结论只有写入 evals、ADR、Task 或 Evidence 后才成为稳定事实 |
 | `split_tasks` | Task / TaskSet 对象、需求转任务行动 | 借鉴任务拆分、依赖解析、实现指南和验证标准 | 自动拆分不得绕过 Human Gate，不得擅自扩大范围 |
-| Task 模型 | Task 生产对象 | 借鉴依赖、关联文件、实现指南、验证标准、完成摘要、Agent 建议字段 | 字段契约需由 LDVH 12 Task 规范定义，实例应在 `ldvh-base/` |
+| Task 模型 | Task 事实模型 | 借鉴依赖、关联文件、实现指南、验证标准、完成摘要、Agent 建议字段 | 字段契约需由 LDVH 12 Task 规范定义，实例应在 `ldvh-base/` |
 | `execute_task` | Task 执行动作 | 借鉴执行前依赖检查、状态切换、相关文件读取和执行 Prompt | 执行状态变更应先写入权威 Task 实例，不能只在工具缓存中变更 |
 | `verify_task` | Review、Evidence、Checklist | 借鉴验证前置、评分阈值和完成摘要 | 工具验证不等于人类验收，不得替代 Human Gate |
 | `query_task` / `get_task_detail` | Tools 辅助层、Web 展示层 | 借鉴跨当前任务和历史任务的检索 | 检索结果是派生视图，权威仍是 Git 文件事实源 |
@@ -359,7 +359,7 @@ LDVH Web Tools 可借鉴的视图包括：
 
 ### 5.1 不应照搬 Shrimp 的 `{DATA_DIR}/tasks.json` 为权威任务源
 
-Shrimp 使用单一 JSON 文件保存任务，适合工具自身简洁实现。但 LDVH 的任务对象应属于项目事实源，进入 `ldvh-base/`下未来定义的 Task 实例目录或文件结构。否则会出现工具数据与 LDVH 生产对象并行维护同一事实的问题。
+Shrimp 使用单一 JSON 文件保存任务，适合工具自身简洁实现。但 LDVH 的任务对象应属于项目事实源，进入 `ldvh-base/`下未来定义的 Task 实例目录或文件结构。否则会出现工具数据与 LDVH 事实模型并行维护同一事实的问题。
 
 ### 5.2 不应把 memory 备份当作长期事实源
 
@@ -395,7 +395,7 @@ Shrimp 的 `init_project_rules` 提供项目规则初始化指导，这对新 Ag
 
 ### 6.1 优先建设 Task 对象规范
 
-Shrimp 最直接的借鉴对象是 Task 模型。LDVH 当前 `specs/10-生产对象集合索引.md` 已将 `12` 规划为 Task。建议在建设 `specs/12-Task-任务对象` 时重点吸收 Shrimp 的以下设计：
+Shrimp 最直接的借鉴对象是 Task 模型。LDVH 当前 `specs/10-事实模型集合索引.md` 已将 `12` 规划为 Task。建议在建设 `specs/12-Task-任务对象` 时重点吸收 Shrimp 的以下设计：
 
 1. Task 是最小可执行、可追踪、可验证、可关闭对象；
 2. Task 应有依赖关系和阻塞关系；
@@ -455,7 +455,7 @@ Shrimp 的模板系统值得 LDVH 借鉴，但 LDVH 需要更严格地区分规�
 
 ### 6.5 将 Web Tools 设计为事实源观察和确认工作台
 
-LDVH Web Tools 不应复制一个通用任务管理软件，而应围绕 LDVH 生产对象和行动模型提供工作台：
+LDVH Web Tools 不应复制一个通用任务管理软件，而应围绕 LDVH 事实模型和行动模型提供工作台：
 
 1. 任务状态、依赖、阻塞和证据视图；
 2. 待确认 Human Gate 列表；
@@ -526,7 +526,7 @@ LDVH 应吸收 Shrimp 的以下思想：
 
 1. LDVH 不是单一 MCP 工具，而是工程化驾驭框架；
 2. LDVH 的最终事实源必须是 Git 可追踪文件；
-3. LDVH 生产对象承载稳定工程事实；
+3. LDVH 事实模型承载稳定工程事实；
 4. LDVH 行动模型约束 AI 如何行动；
 5. Rules / Skill / Agent 是协作机制，不是事实源；
 6. LDVH 工具只辅助读取、校验、聚合、展示和受控写入；

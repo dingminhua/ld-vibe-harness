@@ -22,7 +22,7 @@ Agent Harness 对 LD Vibe Harness 有很高参考价值，因为二者都在解�
 
 但 LD Vibe Harness 不应把自己定义为通用 Agent Harness 平台。更准确的判断是：
 
-> Agent Harness 是围绕 LLM 构建的执行约束系统；LD Vibe Harness 是面向 Vibe Coding + Trae Solo 场景的工程驾驭框架，核心在于 Git 文件事实源、Harness 生产对象和 AI 行动模型。
+> Agent Harness 是围绕 LLM 构建的执行约束系统；LD Vibe Harness 是面向 Vibe Coding + Trae Solo 场景的工程驾驭框架，核心在于 Git 文件事实源、Harness 事实模型和 AI 行动模型。
 
 LD Vibe Harness 最值得借鉴 Agent Harness 的不是“让 AI 更自主”，而是以下能力组合：
 
@@ -71,7 +71,7 @@ Agent Harness 的核心价值是把 LLM 的随机生成能力，放进一个可�
 
 | 维度 | Agent Harness | LD Vibe Harness |
 |---|---|---|
-| 产品形态 | 通用 Agent 执行框架、运行时或工程理念 | 本地规范 + Harness 工具 + 生产对象 + 行动模型 |
+| 产品形态 | 通用 Agent 执行框架、运行时或工程理念 | 本地规范 + Harness 工具 + 事实模型 + 行动模型 |
 | 第一服务对象 | LLM Agent 的执行能力 | AI 执行者在项目中的稳定协作 |
 | 核心目标 | 让 AI 能调用工具、执行任务、验证结果 | 让 AI 知道读什么、做什么、不能做什么、何时停下、如何回写 |
 | 数据事实源 | 可能是数据库、向量库、运行日志、任务状态或外部系统 | Git 仓库中的 specs、ldvh-base、docs |
@@ -113,7 +113,7 @@ Prompt 可以改善一次回答，但不能稳定解决以下问题：
 - AI 是否把结果写回可追溯文件；
 - 下一次会话是否能恢复关键上下文。
 
-LD Vibe Harness 应继续坚持：规则、事实源、工具、生产对象和行动模型共同构成工程底座。Prompt 只是入口之一，不能替代 Harness。
+LD Vibe Harness 应继续坚持：规则、事实源、工具、事实模型和行动模型共同构成工程底座。Prompt 只是入口之一，不能替代 Harness。
 
 对应到 LD Vibe Harness：
 
@@ -204,7 +204,7 @@ Agent Harness 的启发不是替换这些对象，而是让 AI 在行动前更�
 
 Vibe Coding 容易出现“看起来完成了”的错觉。Agent Harness 强调测试和反馈循环，能提醒 LD Vibe Harness：完成不应以 AI 自述为准，而应以可追溯证据为准。
 
-LD Vibe Harness 后续可以在生产对象和行动模型中进一步强化：
+LD Vibe Harness 后续可以在事实模型和行动模型中进一步强化：
 
 | 阶段 | 证据要求 |
 |---|---|
@@ -369,5 +369,5 @@ LD Vibe Harness：给 Vibe Coding 装上可追溯的项目事实源和行动治�
 
 1. 本文结论如何进入 04 LDVH AI 协作规范（Skill / Agent / Rules 使用边界）待机制规范稳定后确定；
 2. 本文结论如何影响 05 LDVH 工具基础规范（如上下文包、Human Gate 可见化、事实源健康检查）待工具规范稳定后确定；
-3. 本文结论如何影响 10-39 生产对象规范（如 Task evidence、verification、closure_evidence）待对象规范稳定后确定；
+3. 本文结论如何影响 10-39 事实模型规范（如 Task evidence、verification、closure_evidence）待对象规范稳定后确定；
 4. 本文结论如何影响 40-69 行动模型规范（如执行循环、Gate 判断、反馈沉淀）待行动模型规范稳定后确定。

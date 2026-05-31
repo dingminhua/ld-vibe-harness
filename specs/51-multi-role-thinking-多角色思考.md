@@ -4,7 +4,7 @@
 > 定位：定义多角色思考行动模型，包括行动定位、准入条件、事实源边界、Context、Scenario、执行流程、Gate、Rules / Agent 调度、事实源回写、证据留存和检查要求
 > 适用范围：所有接入 LDVH 且需要对复杂变更、决策、风险或跨模块影响进行多视角分析的项目
 > 上位依据：`specs/14-LDVH行动模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-Specs文档规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/11.01-Rules机制规范.md`、`specs/11.02-Skill机制规范.md`、`specs/11.03-Agent机制规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH生产对象基础规范.md`、`specs/50-行动模型集合索引.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-Specs文档规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/11.01-Rules机制规范.md`、`specs/11.02-Skill机制规范.md`、`specs/11.03-Agent机制规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/50-行动模型集合索引.md`
 
 ---
 
@@ -103,7 +103,7 @@
 3. 与本次主题直接相关的 specs、ldvh-base、docs、tools、web 或代码文件；
 4. `specs/14-LDVH行动模型基础规范.md`；
 5. `specs/11-LDVH-AI协作规范.md`、`specs/11.02-Skill机制规范.md`、`specs/11.03-Agent机制规范.md`；
-6. 需要判断事实源回写时读取 `specs/10-事实源边界与承载规范.md` 和对应生产对象规范；
+6. 需要判断事实源回写时读取 `specs/10-事实源边界与承载规范.md` 和对应事实模型规范；
 7. 需要判断工具协作时读取 `specs/12-LDVH工具基础规范.md`。
 
 ### 6.2 可选 Context
@@ -186,13 +186,13 @@ AI 应先判断分析主题属于哪些类型：
 
 ### 8.3 角色定义
 
-角色定义是多角色思考的稳定规范内容，不创建 Role 生产对象，不创建"角色应用场景"生产对象。角色定义应作为 AI、Rules、Agent、Tools 和 Web 可共同引用的结构化契约使用，不应在 Skill、Agent Prompt、工具缓存或 Web 状态中复制维护第二事实源。
+角色定义是多角色思考的稳定规范内容，不创建 Role 事实模型，不创建"角色应用场景"事实模型。角色定义应作为 AI、Rules、Agent、Tools 和 Web 可共同引用的结构化契约使用，不应在 Skill、Agent Prompt、工具缓存或 Web 状态中复制维护第二事实源。
 
 本文只定义角色定义的事实源边界和使用原则。角色字段契约、默认角色集合、角色选择输入输出、角色调用参数、角色分析结果和多角色报告结构由 `specs/51.06-Contract.md` 承接。
 
 角色定义使用应遵循以下原则：
 
-1. 角色定义属于 specs 稳定规范，不属于 `ldvh-base/`生产对象实例；
+1. 角色定义属于 specs 稳定规范，不属于 `ldvh-base/`事实实例；
 2. 默认角色集合由 51.06 统一维护，主控按主题和变更类型选择角色；
 3. 不为每个角色创建自定义 Agent；角色内容作为运行时参数注入主上下文或可调用 Agent 容器；
 4. 不创建独立"角色应用场景"对象；不同用途下的输出结构由 51.06 的契约字段表达。
@@ -449,7 +449,7 @@ MCP Server 在多角色思考中的定位：MCP 结果可作为输入材料，�
 价值与要素审查至少应覆盖：
 
 1. 拟落地的 Rules 入口摘要、Agent 调度、Tools 校验和契约子文档是否有助于 V1 稳定理解、V2 受控执行、V3 门禁识别、V4 证据沉淀、V5 事实回写、V6 人类确认质量或 V7 持续改进中的一项或多项；
-2. 各实践子项是否明确归属于介质、Trae Solo 环境机制、Harness 工具、Harness 生产对象或 Harness 行动模型之一，且未混淆五类构成要素边界；
+2. 各实践子项是否明确归属于介质、Trae Solo 环境机制、Harness 工具、Harness 事实模型或 Harness 行动模型之一，且未混淆五类构成要素边界；
 3. 多角色思考行动模型是否仍以 AI 执行者为第一服务对象，帮助 AI 识别场景、读取事实源、选择工具 / Skill / Agent、触发 Human Gate 和回写事实；
 4. 是否避免把 Agent 输出、工具缓存、Web 状态或 Skill 输出当作最终事实源；
 5. 是否避免创建无必要的 Rules、Skill、Agent、工具或对象，导致体系膨胀但不提升可控性；
