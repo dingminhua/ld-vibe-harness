@@ -1,0 +1,34 @@
+type: change
+title: 将 Rules 反向发现审计要求接入运行时入口
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  `specs/11.01-Rules机制规范.md` 已补充现有 L0/L1/L2 Rules 审计时从 `specs/*.md` 根目录正式文档反向发现 Rules 需求的要求。
+  用户进一步指出应先补充文档，因为文档决定规则。因此本次同步应明确文档先行传导顺序：先由 specs 权威文档定义判断标准、触发条件和检查要求，再将必要摘要接入后续 AI 会实际读取的项目 L1 和 specs 编辑 L2 Rules 入口。
+decision: |
+  在 `specs/11.01-Rules机制规范.md` 中补充 Rules 审计要求的文档先行传导顺序：先在 specs 权威文档中定义判断标准、触发条件和检查要求，再依据机制关系声明或模型实践子文档判断 L0/L1/L2 Rules 入口同步，最后只在 Rules 文件中写入运行时入口摘要、必读提醒、压缩保护或场景触发提示。
+  在 `.trae/rules/ldvh-l1-rules.md` 的必读入口中补充：处理 L0/L1/L2 Rules 新增、修改或审计时，必须读取 `specs/11.01-Rules机制规范.md`，并按 §七从 `specs/*.md` 根目录正式文档反向发现 Rules 需求。
+  在 `.trae/rules/ldvh-l1-rules.md` 的 L2 场景规则引导和压缩保护中加入 Rules 审计反向发现提示。
+  在 `.trae/rules/ldvh-l2-specs-rules.md` 中新增 Rules 审计入口摘要，要求普通 specs 文档按 03 §六判断，事实模型和行动模型通过 NN.01-Rules.md 模型实践子文档承接，Rules 文件只保留入口摘要和权威 specs 引用。
+consequences: |
+  - 后续 AI 进入 LDVH 项目处理项目规则相关事项时，会在 L1 层被引导读取 11.01 并执行反向发现。
+  - 后续 AI 编辑 specs 文档时，会在 L2 层获得 Rules 审计提醒。
+  - 本次只增加运行时入口摘要，不改变 11.01、03、04、13、14 的权威边界，不复制完整规范正文。
+affects:
+  - specs/11.01-Rules机制规范.md
+  - .trae/rules/ldvh-l1-rules.md
+  - .trae/rules/ldvh-l2-specs-rules.md
+related_rules:
+  - specs/11.01-Rules机制规范.md
+  - specs/03-Specs文档规范.md
+  - specs/04-LDVH模型子文档规范.md
+  - specs/13-LDVH事实模型基础规范.md
+  - specs/14-LDVH行动模型基础规范.md
+human_gate:
+  required: true
+  confirmed_by: user
+  confirmation_context: 用户询问如何落地，让以后都知道要这么判断，并进一步指出应先补充文档，因为文档决定规则。
+validation: |
+  待执行一致性检查和测试。

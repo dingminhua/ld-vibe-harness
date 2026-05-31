@@ -1,0 +1,36 @@
+type: change
+title: 对齐 ADR 主规范落地状态表述
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  用户指出 `specs/21-ADR-决策记录.md` 对象模型尚未实际落地，并询问是否应重新生成主规范。
+  经检查，ADR 主规范、21.01-21.06 子文档和 `tools/adr_index.py` 已存在，但 `ldvh-base/adrs/` 目录和 ADR Tools 测试验收未确认完成。
+  原主规范中“六槽位完整实践”的表述容易被误读为项目落地初始化已经完成，需要按 `specs/04-LDVH模型子文档规范.md` 和 `specs/13-LDVH事实模型基础规范.md` 校准。
+decision: |
+  不整体重写 21-ADR 主规范，保留 ADR 定义、准入条件、状态机、Human Gate、字段契约和事实源边界等稳定内容。
+  局部重构 `specs/21-ADR-决策记录.md` 的附件型实践子文档、落地前决策、落地初始化、落地审计和待补齐事项章节。
+  明确六槽位子文档形成显式结论不等同于 ADR 对象实例事实源、Tools 测试或项目落地初始化已经完成。
+  明确当实际落地状态不明、过期、部分完成或与子文档状态声明不一致时，应重新执行落地前决策和价值与要素审查。
+consequences: |
+  - ADR 主规范与新的模型子文档规范、事实模型落地流程保持一致。
+  - 后续不能仅因 21.01-21.06 子文档或 `tools/adr_index.py` 存在就声称 ADR 已完成项目落地。
+  - `ldvh-base/adrs/` 初始化、ADR Tools 测试补齐和 21.04 active 状态复核仍需经落地前决策和 Human Gate 确认。
+affects:
+  - specs/21-ADR-决策记录.md
+related_rules:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+  - specs/03-Specs文档规范.md
+  - specs/04-LDVH模型子文档规范.md
+  - specs/10-事实源边界与承载规范.md
+  - specs/13-LDVH事实模型基础规范.md
+human_gate:
+  required: true
+  confirmed_by: user
+  confirmation_context: 用户要求按新规范对齐重构 21-ADR 主规范。
+validation: |
+  1. 已按上位规范复核重构范围，未整体重写稳定对象模型规则。
+  2. 已补充 ADR 未落地、部分落地和状态不一致时重新执行落地前决策的要求。
+  3. 已执行 `python3 -m pytest tests/tools/test_adr_index.py`，结果为 8 passed。
+  4. 已执行 `python3 -m py_compile tools/adr_index.py`，结果通过。

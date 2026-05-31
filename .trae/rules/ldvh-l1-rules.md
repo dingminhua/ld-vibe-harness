@@ -20,6 +20,8 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。�
 3. `specs/02-LDVH术语规范.md`
 4. `specs/03-Specs文档规范.md`
 
+处理 L0/L1/L2 Rules 新增、修改或审计时，必须读取 `specs/11.01-Rules机制规范.md`，并按 §七从 `specs/*.md` 根目录正式文档反向发现 Rules 需求。
+
 处理内部调研或规范迁移时，再按任务需要读取 `specs/evals/` 对应文档。
 
 ## 目录事实源边界
@@ -39,10 +41,10 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。�
 
 ## L2 场景规则
 
-- `ldvh-l2-specs-rules.md`：编辑 specs/ 目录下文档时生效；L1 只负责引导该 L2，具体关联关系由 `specs/03-Specs文档规范.md` §六维护
+- `ldvh-l2-specs-rules.md`：编辑 specs/ 目录下文档时生效；L1 只负责引导该 L2，具体关联关系由 `specs/03-Specs文档规范.md` §六维护；审计 Rules 时依据 `specs/11.01-Rules机制规范.md` §七反向发现 specs 根目录文档中的 Rules 需求
 
 事实实例编辑规则已提升至 L0 层级（`ldvh-l0-fact-model-rules.md`），适用于所有管辖项目，不在本项目 L2 中维护。
 
 ## 压缩保护
 
-LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs-v2不替代specs | L1引导L2 | 事实模型规则在L0
+LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs-v2不替代specs | L1引导L2 | Rules审计读11.01并反向发现specs根文档 | 事实模型规则在L0

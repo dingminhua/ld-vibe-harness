@@ -1,0 +1,28 @@
+type: change
+title: 补齐 L0 L1 Rules 生效方式字段
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  使用 `specs/11.01-Rules机制规范.md` 审计当前 L0/L1/L2 Rules 后，发现 L0 工作区 Rules 和 LDVH L1 项目 Rules 头部缺少显式生效方式声明。
+  根据 11.01 §四，L0 和 L1 推荐 Trae 生效方式均为始终生效。
+decision: |
+  在 `../.trae/rules/ldvh-l0-rules.md` 头部补充 `生效方式：始终生效`。
+  在 `.trae/rules/ldvh-l1-rules.md` 头部补充 `生效方式：始终生效`。
+consequences: |
+  - L0/L1 Rules 头部字段与 11.01 的 Trae Rules 生效方式映射保持一致。
+  - 本次只补充元信息字段，不改变 Rules 正文、事实源归属或机制关系声明。
+affects:
+  - ../.trae/rules/ldvh-l0-rules.md
+  - .trae/rules/ldvh-l1-rules.md
+related_rules:
+  - specs/11.01-Rules机制规范.md
+human_gate:
+  required: true
+  confirmed_by: user
+  confirmation_context: 用户要求先进行审计发现的小修。
+validation: |
+  1. 已确认 L0 工作区 Rules 头部包含 `生效方式：始终生效`。
+  2. 已确认 LDVH L1 项目 Rules 头部包含 `生效方式：始终生效`。
+  3. 已执行后续一致性检查和测试，结果见本次对话总结。

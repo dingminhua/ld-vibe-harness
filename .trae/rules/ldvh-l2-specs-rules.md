@@ -29,3 +29,7 @@
 ## refs 反向引用
 
 specs/refs/ 下的文档不得引用 specs/ 目录内的任何文件，包括路径引用、关联规范声明和依据引用。依据 `specs/01-LDVH目录说明.md` §3.3.1。
+
+## Rules 审计
+
+新增、修改或审计 L0/L1/L2 Rules 时，必须依据 `specs/11.01-Rules机制规范.md` §七读取 `specs/*.md` 根目录正式文档，反向发现 Rules 需求；普通 specs 文档按 `specs/03-Specs文档规范.md` §六判断，事实模型和行动模型通过 NN.01-Rules.md 模型实践子文档承接。Rules 文件只保留入口摘要和权威 specs 引用，不复制 specs 正文。
