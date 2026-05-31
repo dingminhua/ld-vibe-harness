@@ -1,0 +1,23 @@
+summary: 41.05-Web 从 active-prep 降级为"不需要 Web 呈现"
+date: 2026-05-31
+reason: |
+  多角色思考的输出（角色结论、分歧、风险、回写建议、Human Gate 待确认项）均在对话中以
+  Markdown 格式呈现，不需要 Web 页面承载。Web 是网页呈现，与对话中呈现不是一回事。
+  41.05 从 active-prep 改为按 07 §4.6"机制不需要时只写不创建理由"规则处理。
+actions:
+  - 41.05-Web.md 重写为"不需要 Web 呈现的理由"（标题改为 Web 呈现实践）
+  - 41 主文档 §15.2 表格 41.05 状态从 active-prep 改为 active，描述简化
+  - 41 主文档 §15.2 后说明文字去掉 41.05 的 active-prep 标注
+  - 41 主文档 §十六 落地前决策去掉 Web 展示入口条目，编号顺延
+  - 41 主文档 §十七 价值与要素审查去掉 Web 展示
+  - 41 主文档 §十八 落地初始化去掉"配置 Web 展示入口"
+  - 41 主文档 §十八 第5条改为"Web 不创建理由"
+  - 41 主文档 §十八 落地审计 active-prep 检查项去掉 41.05
+  - 41 主文档 §二十 待补齐事项去掉 Web Tools 展示相关条目
+affected_files:
+  - specs/41.05-Web.md
+  - specs/41-multi-role-thinking-多角色思考.md
+verification:
+  - 41.05 内容为"定位 + 不创建 Web 呈现的理由"
+  - 41 主文档无"Web 展示入口"或"Web 呈现"的落地需求描述
+  - 41 主文档 active-prep 只剩 41.04
