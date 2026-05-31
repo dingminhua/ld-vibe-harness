@@ -13,9 +13,9 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，围绕 Git 文�
 进入本项目处理 specs、ldvh-base、references、tools、web 或项目规则相关事项时，优先读取：
 
 1. `specs/00-LD-Vibe-Harness理念与纲要.md`
-2. `specs/01-specs文档结构与术语规范.md`
-3. `specs/02-LDVH目录说明.md`
-4. `specs/03-事实源边界与承载规范.md`
+2. `specs/01-LDVH目录说明.md`
+3. `specs/02-LDVH术语规范.md`
+4. `specs/03-Specs文档规范.md`
 
 处理内部调研、规范迁移或 Git 管理事项时，再按任务需要读取 `specs/evals/` 对应文档。
 
@@ -30,13 +30,15 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，围绕 Git 文�
 ## specs 文档约束
 
 - `00` 是总纲。
-- `01-07` 是基础规范区。
-- `10-39` 是 Harness 生产对象规范区。
-- `40-69` 是 Harness 行动模型规范区。
-- `70-99` 保留给后续扩展，不得未经确认提前占用。
+- `01-03` 是基础规范区。
+- `04-09` 是保留基础规范扩展区。
+- `10-19` 是核心基础规范区。
+- `20-49` 是 Harness 生产对象规范区。
+- `50-79` 是 Harness 行动模型规范区。
+- `80-99` 保留给后续扩展，不得未经确认提前占用。
 - `specs/evals/` 是项目评估区，不直接构成强制执行规则。
 - `specs/refs/` 是外部资料引用区，不直接成为 LDVH 强制规则。
-- 项目评估结论只有进入 `01-69` 正式规范区间或 ADR 后，才成为稳定规则。
+- 项目评估结论只有进入 `00-79` 正式规范区间或 ADR 后，才成为稳定规则。
 
 ## Human Gate
 

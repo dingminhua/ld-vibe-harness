@@ -29,4 +29,4 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，由 LaoDing 基
 
 ## License
 
-MIT
+Copyright 2026 LaoDing. Licensed under the [Apache License 2.0](LICENSE).
