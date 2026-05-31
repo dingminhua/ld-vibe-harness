@@ -1,0 +1,22 @@
+type: change
+title: 强化 Tools Python 文件测试要求
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  specs/12.01-Tools辅助规范.md 已要求 Tools 辅助能力新增或修改时补充自动化测试，
+  但尚未直接约束 tools/ 下新增或修改 Python 文件必须配套 pytest 测试文件。
+  为避免后续新增 Python Tools 时遗漏测试，需要将要求从能力层约束进一步落到文件层约束。
+decision: |
+  1. 将 Tools 测试原则中的“应同步补充或更新自动化测试”强化为“必须同步补充或更新自动化测试”。
+  2. 明确 tools/ 下新增或修改 Python 文件时，必须在 tests/tools/ 下补充或更新对应 pytest 测试文件。
+  3. 更新 Tools 辅助层检查项中的测试覆盖标准，使其直接检查 tools/ Python 文件与 tests/tools/ pytest 文件的对应关系。
+consequences: |
+  - 后续新增 tools/*.py 时必须同步新增 tests/tools/test_*.py。
+  - 后续修改 tools/*.py 时必须同步评估并更新对应 pytest 测试。
+  - 无法自动化覆盖的行为仍需在变更记录、任务证据或人工验收材料中说明替代检查方式。
+affects:
+  - specs/12.01-Tools辅助规范.md
+related_rules:
+  - specs/12.01-Tools辅助规范.md
+  - specs/01-LDVH目录说明.md

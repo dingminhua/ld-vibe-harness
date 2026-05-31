@@ -1,0 +1,25 @@
+type: change
+title: 补充 Tools pytest 测试规范
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  Tools 辅助层已经开始出现实际实现，例如 tools/adr_index.py。
+  该类 Tools 会读取、解析、聚合和校验 Git 文件事实源，输出会影响 AI 上下文和 Web 派生视图。
+  若没有统一测试约定，后续 Tools 新增或修改时容易缺少可重复验证环节。
+decision: |
+  1. 在 specs/12.01-Tools辅助规范.md 中新增 Tools 测试原则。
+  2. 明确每个 Tools 辅助能力在新增或修改时，应同步补充或更新自动化测试。
+  3. 明确 Python Tools 默认使用 pytest。
+  4. 明确测试文件统一放在项目根目录 tests/tools/ 下，并按被测工具命名。
+  5. 将测试覆盖加入 Tools 辅助层检查要求。
+consequences: |
+  - 后续 Tools 新增或修改时需要同步考虑 pytest 测试。
+  - tools/adr_index.py 后续应补充 tests/tools/test_adr_index.py。
+  - 无法自动化覆盖的 Tools 行为需要在变更记录、任务证据或人工验收材料中说明替代检查方式。
+affects:
+  - specs/12.01-Tools辅助规范.md
+related_rules:
+  - specs/12-LDVH工具基础规范.md
+  - specs/12.01-Tools辅助规范.md
+  - specs/10-事实源边界与承载规范.md
