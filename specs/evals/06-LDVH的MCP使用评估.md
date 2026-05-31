@@ -4,9 +4,9 @@
 > 定位：LD Vibe Harness 对 MCP 使用的项目级评估
 > 编号归属：70-89 内部调研
 > 调研边界：不直接构成强制规则
-> 执行效力：无，结论需进入 01-69 正式规范区间或 ADR 后才成为稳定规则
+> 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/03-事实源边界与承载规范.md`、`specs/04-LDVH-AI协作规范.md`、`specs/05-LDVH工具基础规范.md`、`specs/07-LDVH行动模型基础规范.md`
+> 相关规范：`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/14-LDVH行动模型基础规范.md`
 > 参考来源：`specs/refs/02-Trae-MCP用法调研.md`、`specs/refs/03-社区推荐Rules-Skills-MCP与自定义Agent调研.md`、`specs/refs/06-Sequential-Thinking使用模板.md`、`specs/refs/07-Context7使用模板.md`
 
 ---
@@ -17,7 +17,7 @@
 
 MCP 是 Trae Solo 环境中 Agent 可调用的外部工具协议层，不是 LDVH 五类构成要素中的独立要素，也不是 04 系列正式治理的三类协作机制（Rules、Skill、Agent）之一。MCP 在 LDVH 中的定位是：**Agent 的可选工具能力来源，受 05 工具基础规范和 03 事实源边界约束**。
 
-本文是内部调研，不直接构成强制规则；调研结论进入 01-69 正式规范区间或 ADR 后才成为稳定规则。
+本文是内部调研，不直接构成强制规则；调研结论进入 00-79 正式规范区间或 ADR 后才成为稳定规则。
 
 ---
 

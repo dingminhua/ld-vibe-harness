@@ -1,0 +1,49 @@
+summary: specs 文件多角度合规评估后修复编号引用错误和骨架缺失
+reason: >
+  对 specs/ 目录下全部文件进行多角度合规评估，发现 5 项严重问题（编号引用错误）、
+  7 项中等问题（骨架偏差和引用不一致）和 3 项轻微问题（格式细节）。
+  本次修复覆盖全部严重和中等问题，以及 2 项轻微问题。
+  主要修复内容：
+  - 13 生产对象基础规范中 "11-39" 编号区段全部修正为 "21-49"，"10" 索引编号修正为 "20"，
+    "23-39" 预留编号修正为 "33-49"，"02-LDVH目录说明" 修正为 "01-LDVH目录说明"
+  - 12 和 12.01 待补齐事项中旧编号 "06/07" 修正为 "13/14"
+  - 51 §二 标题 "与 07 的关系" 修正为 "与直接上位基础规范的关系"，
+    正文 "07" 修正为 "14"，"41.13" 引用修正为 "51.06"
+  - 51.03 "41.13 §六" 修正为 "51.06 §六"
+  - 13 和 14 引用 "02 §7.3.1" 修正为 "02 §7.1"
+  - 14 相关规范引用格式统一为长格式
+  - evals/01-08 全部旧编号引用更新为当前编号体系，"01-69" 修正为 "00-79"
+  - refs/01 旧编号引用更新
+  - 21 补充落地前决策（§十三）和价值与要素审查（§十四）章节，后续章节编号顺延
+  - 51.02 和 51.05 补充检查项章节
+  - 51.04 补充 Human Gate 章节
+  - 03 骨架规则中正式增加模型实践子文档 "定位" 字段说明
+changed_files:
+  - specs/13-LDVH生产对象基础规范.md
+  - specs/14-LDVH行动模型基础规范.md
+  - specs/12-LDVH工具基础规范.md
+  - specs/12.01-Tools辅助规范.md
+  - specs/51-multi-role-thinking-多角色思考.md
+  - specs/51.02-Skill.md
+  - specs/51.03-Agent.md
+  - specs/51.04-Tools.md
+  - specs/51.05-Web.md
+  - specs/21-ADR-决策记录.md
+  - specs/03-Specs文档规范.md
+  - specs/evals/01-LDVH对Linear的借鉴评估.md
+  - specs/evals/02-LDVH对gstack的借鉴评估.md
+  - specs/evals/03-LDVH对Agent-Harness的借鉴评估.md
+  - specs/evals/04-LDVH对七层管理模型的借鉴评估.md
+  - specs/evals/05-Git版本管理临时参考.md
+  - specs/evals/06-LDVH的MCP使用评估.md
+  - specs/evals/07-LDVH自建MCP评估.md
+  - specs/evals/08-LDVH对MCP-Shrimp-Task-Manager的借鉴评估.md
+  - specs/refs/01-Trae-Rules-Skills-Agent使用规则调研.md
+verification: >
+  全部旧编号引用已清理：grep 扫描确认 specs/ 下无 "11-39"、"与 07 的关系"、
+  "41.13"、"§7.3.1"、"01-69 正式" 残留。
+  旧规范文件名引用（specs/01-specs文档结构与术语规范.md、specs/02-LDVH目录说明.md、
+  specs/03-事实源边界与承载规范.md、specs/04-LDVH-AI协作规范.md、
+  specs/05-LDVH工具基础规范.md、specs/05.01-Tools辅助规范.md、
+  specs/07-LDVH行动模型基础规范.md）已全部更新为当前编号。
+  21 章节编号已顺延验证。51.02、51.04、51.05 补充章节已就位。

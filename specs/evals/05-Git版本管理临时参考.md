@@ -4,11 +4,11 @@
 > 定位：LD Vibe Harness Git 版本管理的项目级临时参考
 > 编号归属：70-89 内部调研
 > 调研边界：不直接构成强制规则
-> 执行效力：无，结论需进入 01-69 正式规范区间或 ADR 后才成为稳定规则
+> 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > AI 执行边界：本文是临时参考，不授权 AI 据此自动执行 commit、push、tag、release 或分支切换
 > 来源：外部参考文档（已迁入 specs/refs/）
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-specs文档结构与术语规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`
+> 相关规范：`specs/02-LDVH术语规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`
 
 ---
 

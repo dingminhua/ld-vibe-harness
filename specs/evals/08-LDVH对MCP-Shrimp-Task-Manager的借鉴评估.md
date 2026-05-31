@@ -5,9 +5,9 @@
 > 定位：LD Vibe Harness 对 MCP Shrimp Task Manager 的源码级借鉴评估
 > 编号归属：`specs/evals/` 项目评估文档，编号仅用于排序和引用便利，不属于 specs 正式规范编号体系
 > 调研边界：基于 `/Users/dmh2002/trae_projects/mcp-shrimp-task-manager` 本地仓库的 README、docs、src、tools/task-viewer 与配置文件进行分析，重点评估其对 LD Vibe Harness 的可借鉴方向
-> 执行效力：本文为内部调研和方案比较，不直接构成 LD Vibe Harness 强制规则；结论进入 `specs/01-69` 正式规范区间或 ADR 后才成为稳定规则
-> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-specs文档结构与术语规范.md`、`specs/02-LDVH目录说明.md`、`specs/03-事实源边界与承载规范.md`
-> 相关规范：`specs/04-LDVH-AI协作规范.md`、`specs/05-LDVH工具基础规范.md`、`specs/06-LDVH生产对象基础规范.md`、`specs/07-LDVH行动模型基础规范.md`、`specs/10-生产对象集合索引.md`、`specs/40-行动模型集合索引.md`
+> 执行效力：本文为内部调研和方案比较，不直接构成 LD Vibe Harness 强制规则；结论进入 `specs/00-79` 正式规范区间或 ADR 后才成为稳定规则
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-LDVH术语规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`
+> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/06-LDVH生产对象基础规范.md`、`specs/14-LDVH行动模型基础规范.md`、`specs/10-生产对象集合索引.md`、`specs/40-行动模型集合索引.md`
 > 参考项目：`/Users/dmh2002/trae_projects/mcp-shrimp-task-manager`
 
 ---
@@ -296,7 +296,7 @@ Shrimp 的 `tasks.json`、memory 备份和本地 git history 都服务于跨会�
 
 | 记忆类型 | 建议承载 |
 |---|---|
-| 稳定规范 | `specs/01-69` |
+| 稳定规范 | `specs/00-79` |
 | 外部资料摘录 | `specs/refs/` |
 | 项目级评估 | `specs/evals/` |
 | 任务状态与执行字段 | `ldvh-base/tasks/` 或未来 Task 实例目录 |

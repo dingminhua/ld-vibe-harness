@@ -475,4 +475,4 @@ SOLO Agent 会生成三阶段文档组：
 1. Trae 版本更新频繁，Rules、Skills、Agent 的字段、目录和 UI 入口应定期按官网复查。
 2. 官方文档未在本次调研中提供所有 Agent 配置文件的本地文件格式细节，如需落地 Git 化管理，应另行验证。
 3. `.agents/skills/` 与 `.trae/skills/` 的生态兼容策略需要结合实际项目继续评估。
-4. LDVH 是否要把本调研内容进一步提炼进正式 `specs/04-AI协作规范.md` 或独立 Skill/Agent 设计规范，应另行决策。
+4. LDVH 是否要把本调研内容进一步提炼进正式 `specs/11-LDVH-AI协作规范.md` 或独立 Skill/Agent 设计规范，应另行决策。
