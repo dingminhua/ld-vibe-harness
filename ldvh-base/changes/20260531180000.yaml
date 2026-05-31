@@ -1,29 +1,32 @@
-summary: specs 编号体系一致性修复（P0/P1）
-reason: >
-  审查发现 specs/ 根目录 10-14 系列文档文件名与正文编号体系不一致。
-  旧文件名已更新为新编号（10-14），但正文仍使用旧编号（01-07），
-  导致跨文档引用路径大量失效。本次修复让正文编号与文件名对齐，
-  同时修复 P1 术语不规范（Harness→LDVH）和 51 系列头部字段缺失。
-changed_files:
-  - specs/10-事实源边界与承载规范.md
-  - specs/11-LDVH-AI协作规范.md
-  - specs/11.01-Rules机制规范.md
-  - specs/11.02-Skill机制规范.md
-  - specs/11.03-Agent机制规范.md
-  - specs/12-LDVH工具基础规范.md
-  - specs/12.01-Tools辅助规范.md
-  - specs/12.02-Web展示规范.md
-  - specs/13-LDVH生产对象基础规范.md
-  - specs/14-LDVH行动模型基础规范.md
-  - specs/51.01-Rules.md
-  - specs/51.02-Skill.md
-  - specs/51.03-Agent.md
-  - specs/51.04-Tools.md
-  - specs/51.05-Web.md
-  - specs/51.06-Contract.md
-verification: >
-  P0：10-14 系列文档正文中旧编号引用已全部替换为新编号，
-  不存在的引用路径已更新为实际文件路径，零残留。
-  P1：13-14 中"Harness"术语已替换为"LDVH"；
-  51.01-51.06 已补齐所属主文档、关系、适用范围头部字段；
-  51.06 §一标题改为"本文定位"，新增待补齐事项章节。
+type: change
+title: 按 LDVH specs 11.01 重建 L0/L1/L2 规则体系
+status: done
+created: 2026-05-31
+updated: 2026-05-31
+context: |
+  原 L0 包含 PM Kit 专属硬约束（应在 PM Kit L1 而非 L0），
+  原 LDVH L1 大量重复 specs/00、specs/01、specs/03、specs/10 已定义内容，
+  L2 场景规则不存在。
+  依据 specs/11.01-Rules机制规范.md §三 的分层职责要求重建。
+decision: |
+  1. L0 重建：移除 PM Kit 专属硬约束，只保留工作区桥接、项目识别、
+     L1 读取机制和多角色思考入口；新增 ld-vibe-harness 为项目集成员；
+     基础规范来源按项目分别声明
+  2. L1 重建：移除重复 specs 的内容（specs 文档约束、Human Gate、
+     变更记录要求、执行注意事项），只保留项目定位、必读入口、
+     目录事实源边界引用和 3 条项目专属硬约束；新增 L2 场景规则引导
+  3. L2 新建：创建 ldvh-l2-specs-rules.md（specs 文档编辑场景）
+     和 ldvh-l2-production-rules.md（生产对象实例编辑场景）
+consequences: |
+  - L0 不再承载 PM Kit 专属约束，PM Kit L1 需自行补充缺失约束
+  - LDVH L1 更精简，规范细节依赖 specs 而非规则文件
+  - L2 提供文件类型级别的编辑约束，减少 specs 违规风险
+affects:
+  - .trae/rules/ldvh-l0-rules.md
+  - ld-vibe-harness/.trae/rules/ldvh-l1-rules.md
+  - ld-vibe-harness/.trae/rules/ldvh-l2-specs-rules.md
+  - ld-vibe-harness/.trae/rules/ldvh-l2-production-rules.md
+related_rules:
+  - ld-vibe-harness/specs/11.01-Rules机制规范.md
+  - ld-vibe-harness/specs/03-Specs文档规范.md
+  - ld-vibe-harness/specs/01-LDVH目录说明.md

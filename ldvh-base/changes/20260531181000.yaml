@@ -1,0 +1,25 @@
+type: change
+title: 在 13/14 §4.6 补充附件型实践子文档骨架覆盖条款
+status: done
+created: 2026-05-31
+updated: 2026-05-31
+context: |
+  specs/03 §5.3 定义了模型实践子文档完整骨架（8节），但未区分"不创建"和"需要创建"两种情况。
+  specs/13 §4.6 和 specs/14 §4.6 已有简化条款（不创建时只需说明理由），
+  但未明确声明骨架覆盖关系，导致审计时简化文档被误判为骨架不完整。
+decision: |
+  在 specs/13 §4.6 和 specs/14 §4.6 中为三种情况分别明确骨架要求：
+  1. 不创建：骨架不适用 specs/03 §5.3，只需本文定位+不创建理由+检查项
+  2. active-prep：骨架不适用 specs/03 §5.3，只需本文定位+当前状态与未来能力定义+实现前提和边界约束+检查项
+  3. 需要创建：遵循 specs/03 §5.3 完整骨架
+  同时补充：不创建和 active-prep 升级时需补齐完整骨架。
+consequences: |
+  - 51.02-Skill.md、51.05-Web.md 等简化文档有明确的规范依据
+  - 51.04-Tools.md（active-prep）有明确的最小骨架要求
+  - 51.01-Rules.md、51.03-Agent.md（需要创建）需补齐完整骨架
+  - 审计检查时不再误判简化文档为骨架不完整
+affects:
+  - ld-vibe-harness/specs/13-LDVH生产对象基础规范.md
+  - ld-vibe-harness/specs/14-LDVH行动模型基础规范.md
+related_rules:
+  - ld-vibe-harness/specs/03-Specs文档规范.md

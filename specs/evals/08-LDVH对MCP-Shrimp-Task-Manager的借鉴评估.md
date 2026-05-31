@@ -7,7 +7,7 @@
 > 调研边界：基于 `/Users/dmh2002/trae_projects/mcp-shrimp-task-manager` 本地仓库的 README、docs、src、tools/task-viewer 与配置文件进行分析，重点评估其对 LD Vibe Harness 的可借鉴方向
 > 执行效力：本文为内部调研和方案比较，不直接构成 LD Vibe Harness 强制规则；结论进入 `specs/00-79` 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-LDVH术语规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`
-> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/06-LDVH生产对象基础规范.md`、`specs/14-LDVH行动模型基础规范.md`、`specs/10-生产对象集合索引.md`、`specs/40-行动模型集合索引.md`
+> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH生产对象基础规范.md`、`specs/14-LDVH行动模型基础规范.md`、`specs/20-生产对象集合索引.md`、`specs/50-行动模型集合索引.md`
 > 参考项目：`/Users/dmh2002/trae_projects/mcp-shrimp-task-manager`
 
 ---
@@ -27,7 +27,7 @@ MCP Shrimp Task Manager 是一个面向 AI Agent 的 MCP 任务治理工具。�
 
 但 Shrimp 与 LDVH 的边界差异同样关键。Shrimp 的 `{DATA_DIR}/tasks.json`、memory 备份、Web Viewer 设置、模板目录、Agent 扫描结果和 OpenAI 交互结果属于工具运行数据或派生数据。LDVH 的最终事实源必须是 Git 可追踪文件，稳定事实应回到 `specs/`、`ldvh-base/`、`docs/` 或其他权威位置。LDVH 可以借鉴 Shrimp 的工具化流程、任务字段、验证动作、研究模式、Prompt 模板和可视化思路，但不能把 Shrimp 的 MCP Server 状态、工具私有数据目录、Web UI 状态或模型输出提升为 LDVH 的最终事实源。
 
-本文建议：LDVH 后续建设不应照搬 Shrimp，而应将其能力拆解后重新映射到 LDVH 五类构成要素中：以 Git 文件作为最终事实源，以 Harness 生产对象承载任务、证据、变更、风险和决策，以 Harness 行动模型约束计划、拆解、执行、验证和回写，以 Rules / Skill / Agent 规范治理协作机制，以 Tools / Web 降低读取、校验、展示和受控写入成本。
+本文建议：LDVH 后续建设不应照搬 Shrimp，而应将其能力拆解后重新映射到 LDVH 五类构成要素中：以 Git 文件作为最终事实源，以 LDVH 生产对象承载任务、证据、变更、风险和决策，以 LDVH 行动模型约束计划、拆解、执行、验证和回写，以 Rules / Skill / Agent 规范治理协作机制，以 Tools / Web 降低读取、校验、展示和受控写入成本。
 
 ---
 
@@ -178,7 +178,7 @@ plan_task
 6. completed 任务默认不能删除，也不能随意更新；
 7. 删除任务时若存在其他任务依赖该任务，则拒绝删除。
 
-这条生命周期对 LDVH 的行动模型区段很有参考价值。LDVH 当前 `specs/40-行动模型集合索引.md` 已规划“需求转任务”“Task 执行”“Task 阻塞处理”“Review 执行”“对象状态更新”等行动。Shrimp 提供了一个可对照样板：行动模型不应只定义原则，还应定义状态变更前置、依赖检查、执行上下文、验证标准、证据回写和关闭条件。
+这条生命周期对 LDVH 的行动模型区段很有参考价值。LDVH 当前 `specs/50-行动模型集合索引.md` 已规划“需求转任务”“Task 执行”“Task 阻塞处理”“Review 执行”“对象状态更新”等行动。Shrimp 提供了一个可对照样板：行动模型不应只定义原则，还应定义状态变更前置、依赖检查、执行上下文、验证标准、证据回写和关闭条件。
 
 ### 2.8 Agent 机制
 
@@ -199,7 +199,7 @@ Viewer 端包括：
 5. OpenAI 批量分配 Agent；
 6. Chat Agent 基于当前任务和页面上下文提供建议。
 
-对 LDVH 的启发是：Agent 分配应服务任务执行，而不是单独作为炫技功能。但 LDVH 也必须坚持 `specs/04.03-Agent机制规范.md` 的边界：Agent 创建、修改、权限调整和事实源回写需要治理；Agent 输出不是最终事实源；Agent 不得自行宣称任务完成；推荐 Agent 清单不应直接进入正式规范。Shrimp 的自动匹配逻辑可以作为工具辅助建议，但不应自动替代 LDVH 的 Agent 调度判断和 Human Gate。
+对 LDVH 的启发是：Agent 分配应服务任务执行，而不是单独作为炫技功能。但 LDVH 也必须坚持 `specs/11.03-Agent机制规范.md` 的边界：Agent 创建、修改、权限调整和事实源回写需要治理；Agent 输出不是最终事实源；Agent 不得自行宣称任务完成；推荐 Agent 清单不应直接进入正式规范。Shrimp 的自动匹配逻辑可以作为工具辅助建议，但不应自动替代 LDVH 的 Agent 调度判断和 Human Gate。
 
 ### 2.9 Web 能力
 
@@ -214,7 +214,7 @@ Shrimp 有两套 Web 能力。
 
 第二套是独立 `tools/task-viewer`，功能更完整。它包含 Node server、React 前端、TanStack Table、i18n、模板管理、Agent 管理、历史查看、任务详情、任务编辑、Chat Agent 等能力。其配置使用用户 home 下的设置文件和模板目录，并按 project profile 读取不同 `tasks.json`。
 
-对 LDVH 的启发是：Web 展示层应成为“事实源观察与人类确认工作台”，而不是另一个事实源。Shrimp 的 Task Viewer 在可观察性上值得借鉴，包括任务筛选、详情、历史、Agent 分配和模板管理。但 LDVH 的 `specs/05.02-Web展示规范.md` 已明确：Web 页面状态、缓存和数据库派生视图不得替代 Git 文件事实源；Web 可以展示、提示 Gate 和提供受控编辑入口，但不得直接调用 AI、Skill 或 Agent，也不得绕过 Tools 辅助层校验。
+对 LDVH 的启发是：Web 展示层应成为“事实源观察与人类确认工作台”，而不是另一个事实源。Shrimp 的 Task Viewer 在可观察性上值得借鉴，包括任务筛选、详情、历史、Agent 分配和模板管理。但 LDVH 的 `specs/12.02-Web展示规范.md` 已明确：Web 页面状态、缓存和数据库派生视图不得替代 Git 文件事实源；Web 可以展示、提示 Gate 和提供受控编辑入口，但不得直接调用 AI、Skill 或 Agent，也不得绕过 Tools 辅助层校验。
 
 ---
 
@@ -222,8 +222,8 @@ Shrimp 有两套 Web 能力。
 
 | Shrimp 能力 | LDVH 映射位置 | 可借鉴方式 | 边界要求 |
 |---|---|---|---|
-| MCP Server 工具接口 | Harness 工具 | 将任务查询、任务拆分、状态切换、验证、上下文包生成等能力工具化 | MCP Server 只能是工具实现形态，不能定义新的事实源权威位置 |
-| `plan_task` / `analyze_task` / `reflect_task` | Harness 行动模型、Skill | 将计划、分析、反思拆成可识别阶段 | 分析结论只有写入 evals、ADR、Task 或 Evidence 后才成为稳定事实 |
+| MCP Server 工具接口 | LDVH 工具 | 将任务查询、任务拆分、状态切换、验证、上下文包生成等能力工具化 | MCP Server 只能是工具实现形态，不能定义新的事实源权威位置 |
+| `plan_task` / `analyze_task` / `reflect_task` | LDVH 行动模型、Skill | 将计划、分析、反思拆成可识别阶段 | 分析结论只有写入 evals、ADR、Task 或 Evidence 后才成为稳定事实 |
 | `split_tasks` | Task / TaskSet 对象、需求转任务行动 | 借鉴任务拆分、依赖解析、实现指南和验证标准 | 自动拆分不得绕过 Human Gate，不得擅自扩大范围 |
 | Task 模型 | Task 生产对象 | 借鉴依赖、关联文件、实现指南、验证标准、完成摘要、Agent 建议字段 | 字段契约需由 LDVH 12 Task 规范定义，实例应在 `ldvh-base/` |
 | `execute_task` | Task 执行动作 | 借鉴执行前依赖检查、状态切换、相关文件读取和执行 Prompt | 执行状态变更应先写入权威 Task 实例，不能只在工具缓存中变更 |
@@ -231,7 +231,7 @@ Shrimp 有两套 Web 能力。
 | `query_task` / `get_task_detail` | Tools 辅助层、Web 展示层 | 借鉴跨当前任务和历史任务的检索 | 检索结果是派生视图，权威仍是 Git 文件事实源 |
 | `{DATA_DIR}/memory` | Evidence、Change、Pitfall、历史索引 | 借鉴跨会话记忆与历史恢复目标 | memory 不能成为唯一事实源，稳定经验应回写对应对象 |
 | Prompt 模板系统 | Rules、Skill、行动模型、工具模板 | 借鉴多语言模板、覆盖、追加和变量替换机制 | 模板不能与正式规范形成冲突事实源 |
-| Agent 自动匹配 | Agent 调度辅助、Web 建议 | 借鉴基于任务内容的 Agent 建议 | Agent 调度须服从 04.03，不能自动创建或授权 Agent |
+| Agent 自动匹配 | Agent 调度辅助、Web 建议 | 借鉴基于任务内容的 Agent 建议 | Agent 调度须服从 11.03，不能自动创建或授权 Agent |
 | 内嵌 WebGUI | Web 展示层 | 借鉴轻量任务展示和 SSE 刷新 | WebGUI 状态不能替代文件事实源 |
 | 独立 Task Viewer | Web 展示层 + Tools 辅助层 | 借鉴任务表格、详情、历史、模板、Agent 管理和人类工作台 | Web 写入必须受控，写入后回读 Git 文件事实源并记录 Change |
 | research_mode | specs/evals、ADR、Memo、行动模型 | 借鉴研究状态整合和后续步骤约束 | 研究过程不等于结论，稳定结论需进入 evals、ADR 或正式规范 |
@@ -379,11 +379,11 @@ Shrimp 提供 `process_thought` 和反思工具，强调思维处理。LDVH 可�
 
 ### 5.6 不应让 Web Viewer 直接调用 AI 并写回权威事实
 
-Shrimp 独立 viewer 中存在 OpenAI 批量分配 Agent 和 Chat Agent 能力。LDVH 的 `specs/05.02-Web展示规范.md` 已明确 Web 展示层不得直接调用 AI、Skill 或 Agent。LDVH Web 可以生成上下文、展示建议、提供人工操作入口，但 AI 判断和事实源回写应受行动模型、Tools 辅助层和 Human Gate 约束。
+Shrimp 独立 viewer 中存在 OpenAI 批量分配 Agent 和 Chat Agent 能力。LDVH 的 `specs/12.02-Web展示规范.md` 已明确 Web 展示层不得直接调用 AI、Skill 或 Agent。LDVH Web 可以生成上下文、展示建议、提供人工操作入口，但 AI 判断和事实源回写应受行动模型、Tools 辅助层和 Human Gate 约束。
 
 ### 5.7 不应把 Agent 自动匹配等同于 Agent 治理
 
-Shrimp 的关键词匹配可以为任务填充 `agent` 字段，但 LDVH 的 Agent 创建、调用、权限、定义摘要和生命周期需要受 `specs/04.03-Agent机制规范.md` 治理。自动匹配最多是建议，不应自动创建 Agent、授权 Agent、修改 Agent Prompt 或绕过主控判断。
+Shrimp 的关键词匹配可以为任务填充 `agent` 字段，但 LDVH 的 Agent 创建、调用、权限、定义摘要和生命周期需要受 `specs/11.03-Agent机制规范.md` 治理。自动匹配最多是建议，不应自动创建 Agent、授权 Agent、修改 Agent Prompt 或绕过主控判断。
 
 ### 5.8 不应让项目规则初始化变成规则泛滥
 
@@ -407,7 +407,7 @@ Shrimp 最直接的借鉴对象是 Task 模型。LDVH 当前 `specs/10-生产对
 
 ### 6.2 补齐任务生命周期行动模型
 
-LDVH 当前 `specs/40-行动模型集合索引.md` 已规划 `44 需求转任务`、`45 Task 执行`、`46 Task 阻塞处理`、`47 Review 执行`、`50 对象状态更新`。建议参考 Shrimp 的任务生命周期，把这些行动模型串成闭环：
+LDVH 当前 `specs/50-行动模型集合索引.md` 已规划 `44 需求转任务`、`45 Task 执行`、`46 Task 阻塞处理`、`47 Review 执行`、`50 对象状态更新`。建议参考 Shrimp 的任务生命周期，把这些行动模型串成闭环：
 
 1. 读取 Context；
 2. 识别 Scenario；
@@ -498,10 +498,10 @@ Shrimp Task Viewer 中的多 profile、任务历史、模板管理、Agent 管�
 | Task 执行动作 | `specs/45-Task执行` | 约束状态前置、依赖检查、执行证据和验证 | 创建 planned 行动正式规范需确认 |
 | Task 阻塞处理 | `specs/46-Task阻塞处理` | 处理依赖未满足、外部等待和 Human Gate 阻塞 | 创建 planned 行动正式规范需确认 |
 | Review 执行动作 | `specs/47-Review执行` | 区分工具验证、AI 自检、人类验收和 Human Gate | 创建 planned 行动正式规范需确认 |
-| 研究模式行动模型或 evals 模板 | `specs/40-69` 或 `specs/evals/` 模板 | 将外部调研转为可复用工程活动 | 若进入正式行动规范需确认 |
-| MCP 工具接入 ADR | `ldvh-base/adrs/` | 判断 LDVH 是否以 MCP Server 形式提供 Harness 工具 | ADR 创建和工具方向确认需评估 |
+| 研究模式行动模型或 evals 模板 | `specs/50-79` 或 `specs/evals/` 模板 | 将外部调研转为可复用工程活动 | 若进入正式行动规范需确认 |
+| MCP 工具接入 ADR | `ldvh-base/adrs/` | 判断 LDVH 是否以 MCP Server 形式提供 LDVH 工具 | ADR 创建和工具方向确认需评估 |
 | Web Tools 任务工作台设计 | `web/` 实现规划或工具设计文档 | 提升人类确认质量 | 若写入或改变事实源链路需确认 |
-| Prompt 模板治理规则 | `specs/05` 子文档、Skill/Tools 实践文档 | 防止模板与规范冲突 | 影响 AI 行动入口时需确认 |
+| Prompt 模板治理规则 | `specs/12` 子文档、Skill/Tools 实践文档 | 防止模板与规范冲突 | 影响 AI 行动入口时需确认 |
 
 ---
 
@@ -526,10 +526,10 @@ LDVH 应吸收 Shrimp 的以下思想：
 
 1. LDVH 不是单一 MCP 工具，而是工程化驾驭框架；
 2. LDVH 的最终事实源必须是 Git 可追踪文件；
-3. Harness 生产对象承载稳定工程事实；
-4. Harness 行动模型约束 AI 如何行动；
+3. LDVH 生产对象承载稳定工程事实；
+4. LDVH 行动模型约束 AI 如何行动；
 5. Rules / Skill / Agent 是协作机制，不是事实源；
-6. Harness 工具只辅助读取、校验、聚合、展示和受控写入；
+6. LDVH 工具只辅助读取、校验、聚合、展示和受控写入；
 7. Web 状态、工具缓存、模型输出和 MCP Server 内存不得替代事实源；
 8. Human Gate 不能被自动规划、自动拆分、自动验证或自动 Agent 分配绕过。
 

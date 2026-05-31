@@ -1,12 +1,12 @@
 # LD Vibe Harness 项目规则
 
-> 最后更新：2026-05-30
+> 最后更新：2026-05-31
 > 层级：L1 项目规则
 > 适用项目：ld-vibe-harness
 
 ## 项目定位
 
-LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，围绕 Git 文件事实源、AI 行动模型、生产对象、Human Gate 和工具辅助能力，帮助 AI 稳定读取、受控执行、留下证据并按边界回写项目事实。LD Vibe Harness 是 Harness 思想的实践，简称为LDVH。
+LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。定位与理念见 `specs/00-LD-Vibe-Harness理念与纲要.md`。
 
 ## 必读入口
 
@@ -17,47 +17,28 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，围绕 Git 文�
 3. `specs/02-LDVH术语规范.md`
 4. `specs/03-Specs文档规范.md`
 
-处理内部调研、规范迁移或 Git 管理事项时，再按任务需要读取 `specs/evals/` 对应文档。
+处理内部调研或规范迁移时，再按任务需要读取 `specs/evals/` 对应文档。
 
 ## 目录事实源边界
 
-- `specs/` 承载 LD Vibe Harness 规范体系和内部调研。
-- `ldvh-base/` 承载结构化生产对象实例和变更记录。
-- `specs/refs/` 承载外部资料和第三方参考，不能直接作为 LD Vibe Harness 强制规则。
-- `specs-v2/` 是迁移和重构参考区，不自动替代 `specs/` 当前权威规范。
-- `web/` 与 `tools/` 是工具实现目录，工具输出不能替代 Git 文件事实源。
+目录事实源性质声明见 `specs/01-LDVH目录说明.md` §3.2。本项目关键边界：
 
-## specs 文档约束
+- `specs/` 承载 LDVH 规范体系和内部调研
+- `ldvh-base/` 承载结构化生产对象实例和变更记录
+- `specs/refs/` 承载外部资料引用，不能直接作为 LDVH 强制规则
+- `specs-v2/` 是迁移和重构参考区，不自动替代 `specs/` 当前权威规范
 
-- `00` 是总纲。
-- `01-03` 是基础规范区。
-- `04-09` 是保留基础规范扩展区。
-- `10-19` 是核心基础规范区。
-- `20-49` 是 LDVH 生产对象规范区。
-- `50-79` 是 LDVH 行动模型规范区。
-- `80-99` 保留给后续扩展，不得未经确认提前占用。
-- `specs/evals/` 是项目评估区，不直接构成强制执行规则。
-- `specs/refs/` 是外部资料引用区，不直接成为 LDVH 强制规则。
-- 项目评估结论只有进入 `00-79` 正式规范区间或 ADR 后，才成为稳定规则。
+## 项目专属硬约束
 
-## Human Gate
+1. 不自动执行 commit、push、tag、release，除非用户明确要求
+2. 编写或修改规范时，优先引用权威文档，不复制并维护同一规则（依据 `specs/03-Specs文档规范.md` §六）
+3. 新增或修改项目文档、规则或规范后，必须在 `ldvh-base/changes/` 创建 Change YAML 记录（依据 `specs/10-事实源边界与承载规范.md` §七）
 
-以下事项应暂停并提醒用户确认：
+## L2 场景规则
 
-1. 改变 LD Vibe Harness 理念、价值标准、五类构成要素或基础规范权威领域；
-2. 新增、删除、重命名或重排 specs 编号；
-3. 将 `specs/evals/` 项目评估结论升级为正式规范或 ADR；
-4. 改变事实源权威位置、目录事实源性质或对象承载位置；
-5. 将 push、tag、release 等远程 Git 操作交由 AI 自动执行；
-6. 新增、删除或改变项目规则、Skill、Agent 等 AI 行动入口。
+- `ldvh-l2-specs-rules.md`：编辑 specs/ 目录下文档时生效
+- `ldvh-l2-production-rules.md`：编辑 ldvh-base/ 目录下 YAML 实例时生效
 
-## 变更记录要求
+## 压缩保护
 
-新增或修改项目文档、规则或规范后，必须在 `ldvh-base/changes/` 创建 Change YAML 记录。文件名使用 `YYYYMMDDHHmmss.yaml`，内容应包含变更摘要、原因、影响文件和验证结果。
-
-## 执行注意事项
-
-- 不依赖聊天记忆作为事实源。
-- 不把工具缓存、命令输出、数据库派生视图或 UI 状态作为最终事实源。
-- 不自动执行 commit、push、tag、release，除非用户明确要求。
-- 编写或修改规范时，优先引用权威文档，不复制并维护同一规则。
+LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs-v2不替代specs | L1引导L2

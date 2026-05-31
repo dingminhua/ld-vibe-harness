@@ -24,7 +24,7 @@
 LDVH 可以考虑自建 MCP，但自建 MCP 不应成为新的工具层，也不应替代 tools/ Tools 辅助层。它更准确的定位是：
 
 ```text
-自建 MCP = 05.01 Tools 辅助层面向 Agent 的协议入口
+自建 MCP = 12.01 Tools 辅助层面向 Agent 的协议入口
 ```
 
 因此，自建 MCP 应遵循以下结论：
@@ -76,7 +76,7 @@ Trae 内置工具可以读写文件、运行终端命令和搜索文本，但它
 
 ### 2.3 自建 MCP 的核心价值
 
-自建 MCP 的价值不是增加工具数量，而是把 05.01 Tools 辅助层的确定性能力，通过 MCP 协议暴露为 Agent 可调用的结构化工具，让 Agent 不需要理解底层文件格式和校验逻辑，也能完成事实源读取、校验、聚合和受控写入。
+自建 MCP 的价值不是增加工具数量，而是把 12.01 Tools 辅助层的确定性能力，通过 MCP 协议暴露为 Agent 可调用的结构化工具，让 Agent 不需要理解底层文件格式和校验逻辑，也能完成事实源读取、校验、聚合和受控写入。
 
 这与 03 Agent-Harness 评估中的启发一致：把工具调用纳入治理，而不是追求更多工具。
 
@@ -122,13 +122,13 @@ LDVH 不因存在 Python 程序就自建 MCP，也不因某项能力会被 AI �
 
 ### 4.1 自建 MCP 是Tools 辅助层入口，不是替代层
 
-自建 MCP Server 不是新的工具层，而是 05.01 Tools 辅助层面向 Agent 的协议接口：
+自建 MCP Server 不是新的工具层，而是 12.01 Tools 辅助层面向 Agent 的协议接口：
 
 ```text
 Tools 辅助层（tools/）
   ├── CLI 入口：供人、AI 或脚本通过终端直接调用
   ├── Skill 流程入口：供 Skill 在授权流程中调用确定性程序
-  ├── Web API 入口：供 05.02 Web 展示层调用
+  ├── Web API 入口：供 12.02 Web 展示层调用
   └── MCP 入口：供 Agent 通过 Trae MCP 协议结构化调用
 ```
 
@@ -150,7 +150,7 @@ Tools 辅助层（tools/）
 
 ### 4.3 Python 程序是否 MCP 化的判断
 
-Python 程序属于 05.01 Tools 辅助层的能力实现。MCP 是其中一种面向 Agent 的协议入口，不是 Python 程序的唯一调用方式。
+Python 程序属于 12.01 Tools 辅助层的能力实现。MCP 是其中一种面向 Agent 的协议入口，不是 Python 程序的唯一调用方式。
 
 | 入口 | 适用场景 | 边界 |
 |---|---|---|
@@ -357,7 +357,7 @@ LDVH 特有能力用自建 MCP；
 | 范围 | 第三方 MCP 引入评估 | 自建 MCP 评估 |
 | 核心问题 | LDVH 需要哪些第三方 MCP | LDVH 是否需要自建 MCP，以及自建哪些 |
 | 定位 | MCP 是 Agent 的可选工具能力来源 | 自建 MCP 是Tools 辅助层的 Agent 接口 |
-| 约束来源 | 03 事实源边界 + 05 工具边界 + 04.03 Agent 权限 | 同 06，另加 05.01 Tools 辅助规范的具体约束 |
+| 约束来源 | 03 事实源边界 + 12 工具边界 + 11.03 Agent 权限 | 同 06，另加 12.01 Tools 辅助规范的具体约束 |
 | 优先级 | Sequential Thinking > Context7 > Playwright | Fact Reader + Status Aggregator > Context Pack + Validator > Controlled Writer |
 | 互补关系 | 第三方 MCP 提供通用能力 | 自建 MCP 提供 LDVH 特有能力，两者不重叠 |
 
@@ -369,6 +369,6 @@ LDVH 特有能力用自建 MCP；
 
 1. 10-39 生产对象规范稳定后，确定 Fact Reader 和 Status Aggregator 的具体工具清单和字段映射；
 2. 07 行动模型 Context 组件明确后，确定 Context Pack 的上下文类型和内容模板；
-3. 05.01 Tools 辅助层模块可用后，评估 MCP 入口层的实现复杂度和复用比例；
+3. 12.01 Tools 辅助层模块可用后，评估 MCP 入口层的实现复杂度和复用比例；
 4. Controlled Writer 的 Human Gate 判断逻辑待 07 Gate 组件和具体行动规范稳定后定义；
 5. 如未来建立自建 MCP 的实现和测试流程，应将本文 §九 的风险缓解措施纳入实现规范。
