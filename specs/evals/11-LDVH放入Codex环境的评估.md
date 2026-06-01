@@ -495,7 +495,93 @@ LDVH 的 Human Gate 触发条件（"什么情况下需要人确认"）不变。�
 
 ---
 
-## 9. 产品原则沉淀
+## 9. 到底值不值得从 Trae Solo 切换到 Codex？
+
+以上都是从 LDVH 规范体系的角度分析"如果迁移需要改什么"。本节从 **LDVH 使用者的实际体验** 角度回答：到底值不值得换？
+
+### 9.1 两平台事实对比
+
+| 维度 | Trae Solo | OpenAI Codex | 谁赢 |
+|---|---|---|---|
+| **产品形态** | AI-native IDE（VS Code fork） | CLI（Rust）+ Cloud + IDE Extension + Desktop App | 各有优势 |
+| **默认模型** | Claude 3.5 Sonnet / GPT-4o / Doubao-1.5-pro / DeepSeek（多模型自由切换） | GPT-5.4（CLI）/ GPT-5.3-Codex（Cloud） | Trae（模型选择更多） |
+| **上下文窗口** | 受限（MCP 被限制为 8000 字符描述 + 40 工具上限，说明上下文窗口较紧张） | 272K 默认，最大 1M tokens | **Codex 大幅领先** |
+| **Rules 机制** | `.trae/rules/`，4 种生效方式（alwaysApply / globs / description / #Rule），3 层嵌套 | `AGENTS.md` 分层 Markdown，无生效方式区分，无 globs 触发 | **Trae 大幅领先** |
+| **Skill 机制** | `.trae/skills/`，兼容 Agent Skills 标准 | `.codex/skills/` SKILL.md 开放标准，渐进式披露 | 基本持平（同标准） |
+| **Agent 机制** | 自定义 Agent（Prompt + MCP + 工具），SOLO Agent 编排，最多 20 并发云端任务 | `/fork` 会话分叉 + Cloud 并行任务 + MCP 多 Agent | 基本持平 |
+| **Human Gate** | AskUserQuestion（专用 API，暂停等待） | approval_policy（untrusted / on-request / never）+ TUI 交互审批 | **Codex 更灵活** |
+| **沙箱安全** | 无明显沙箱能力 | OS 内核级（Seatbelt/Landlock）+ read-only / workspace-write / danger-full-access | **Codex 独有** |
+| **MCP** | stdio / SSE / Streamable HTTP；8000 字符描述上限 + 40 工具上限 | stdio / HTTP / UDS；无已知硬限制 | **Codex 更宽松** |
+| **自动化/CI** | 无 | `codex exec` + GitHub Action + Automations | **Codex 独有** |
+| **跨会话记忆** | 无 | Codex App Memory（预览版） | **Codex 独有** |
+| **中文支持** | 99% 中文指令理解准确率，国内技术栈深度优化 | 无中文专项优化 | **Trae 大幅领先** |
+| **定价** | Free 永久免费（无调用次数限制）；Pro $10/月 | 免费含 ChatGPT Plus/Pro 订阅；API 按量付费 | **Trae 更便宜** |
+| **用户规模** | 600 万+ 注册（2025 年底） | 400 万周活（2026 年 4 月） | 接近 |
+| **开源** | 否（VS Code fork，闭源增强） | CLI 完全开源（Apache 2.0，Rust） | **Codex 更透明** |
+| **数据隐私** | 代码不用于训练（opt-out） | 代码不上传（本地执行） | 接近 |
+| **LDVH 现状** | ✅ 已深度集成 | ❌ 需从零迁移 | **Trae 零成本** |
+
+### 9.2 对 LDVH 使用者而言：Trae 赢的维度更重要
+
+上面的对比如果只看数量——Codex 在更多维度上领先。但对于 **用 LDVH 做 AI 驱动工程治理** 这个具体场景，赢在哪个维度比赢了多少个维度更重要。
+
+**Trae 赢的维度，恰好是 LDVH 最核心的依赖：**
+
+| Trae 优势 | 对 LDVH 的意义 |
+|---|---|
+| **Rules 机制的 4 种生效方式** | LDVH 的 L0/L1/L2 规则体系深度依赖 globs（按文件类型触发）和 description（按场景触发）。Codex 的 AGENTS.md 完全没有这些能力——这是迁移的最大硬伤 |
+| **中文支持** | 你所有的 specs、eval 文档、Rules 都是中文写的。Codex 没有中文专项优化，指令理解准确率会下降 |
+| **零迁移成本** | LDVH 已经在 Trae 上跑通了全部机制。切到 Codex 需要重写 Rules、迁移 Skill、重构 Agent 调度、重新对接 Human Gate |
+| **永久免费** | 无调用次数限制的免费 tier，对个人项目的长期运行很重要 |
+
+**Codex 赢的维度，对 LDVH 更多是"锦上添花"而非"雪中送炭"：**
+
+| Codex 优势 | 对 LDVH 的实际价值 |
+|---|---|
+| **272K-1M 上下文** | 这是 Codex 最大的真实优势。Trae 的上下文约束导致 LDVH 花了大量精力设计"最小可行动上下文"策略。但——这个约束目前还没到"不可用"的程度，只是"需要谨慎" |
+| **OS 级沙箱** | 很好，但 LDVH 通过 Human Gate + Rules 已经做到了"AI 不会擅自执行危险操作"。沙箱是更强的保障，但不是必需品 |
+| **自动化/CI** | LDVH 目前没有自动化需求。如果有，可以用 GitHub Action 独立配置，不需要依赖 AI IDE |
+| **Memory** | 和 LDVH 的 Pitfall/Change 互补，但 LDVH 自己的沉淀机制已经够用 |
+| **Codex Cloud 并行** | Trae SOLO 也支持最多 20 并发云端任务（Ultra 版） |
+
+### 9.3 判断
+
+**不建议现在切换。** 理由按重要性排序：
+
+1. **Rules 机制是硬伤**。Codex 的 AGENTS.md 无法替代 Trae 的 globs / description / #Rule 触发方式。LDVH 的 L2 规则（按文件类型和场景生效）在 Codex 中会退化为"永远生效"——这会让 AI 的上下文被不相关的规则污染，反而降低执行质量。这不是"适配成本"的问题，是"能力缺失"的问题。
+
+2. **迁移成本 > 当前收益**。LDVH 在 Trae 上已经完整跑通。切到 Codex 需要大量适配工作，而目前没有遇到"非换不可"的痛点（如 Trae 上下文窗口严重阻塞实际工作）。
+
+3. **中文是你的工作语言**。所有 specs 都用中文写，Trae 的中文优化是实际价值。
+
+4. **Codex 还在快速迭代**。AGENTS.md 将来可能增加更精细的触发机制。等一等可能更好。
+
+**什么情况下应该重新评估：**
+
+| 触发条件 | 原因 |
+|---|---|
+| Trae 上下文窗口严重阻塞实际工作 | 这是 Codex 最大的差异化优势 |
+| Codex 的 AGENTS.md 增加了类似 globs 的触发机制 | 消除了迁移的最大阻点 |
+| Trae 开始收费或大幅限制免费额度 | 改变了性价比计算 |
+| 你需要 CI/CD 集成或定时自动化 | Codex 在这方面独有优势 |
+
+### 9.4 折中方案：双轨使用
+
+如果对 Codex 的某些能力（如大上下文、沙箱）确实有需求，不一定要全面切换：
+
+```text
+Trae Solo（主力）               Codex CLI（辅助）
+├─ 日常 LDVH 驱动开发             ├─ 需要大上下文的任务（如全量 specs 审计）
+├─ Rules / Skill / Agent 机制     ├─ 需要 OS 级沙箱隔离的试验性代码生成
+├─ Human Gate（AskUserQuestion）   ├─ 定时自动化（codex exec + cron）
+└─ 所有 LDVH 规范治理             └─ PR 自动审查（GitHub Action）
+```
+
+两个平台共享同一套 Git 事实源（specs/、ldvh-base/）。Codex 不取代 Trae，只补充 Trae 能力短板。
+
+---
+
+## 10. 产品原则沉淀
 
 > LDVH 放入 Codex 后，内核不变，底座替换，能力增强。
 
@@ -507,9 +593,36 @@ LDVH 的 Human Gate 触发条件（"什么情况下需要人确认"）不变。�
 4. **简化而非膨胀**：Codex 的多项原生能力（沙箱、审批、上下文管理）直接替代了 LDVH 中自行设计的机制，LDVH 规范可以瘦身；
 5. **事实源不妥协**：Git 文件是唯一事实源，Codex 云端存储、Memory、Linear 集成都不能替代。
 
+### 10.1 LDVH 不应开发工具已具备的能力
+
+这是判定 LDVH 边界的一个关键原则。无论面向 Trae Solo 还是 Codex，判断某项能力是否应由 LDVH 自己实现时，先问一个问题：**平台/工具是否已经提供了这项能力？**
+
+| 能力 | Trae 已提供？ | Codex 已提供？ | LDVH 应做什么 |
+|---|---|---|---|
+| 规则约束机制 | ✅ Rules 4 种生效方式 | ✅ AGENTS.md（但无 globs/description） | 定义约束**内容**（specs），不重新实现规则加载引擎 |
+| 可复用工作流 | ✅ Skill | ✅ SKILL.md | 定义工作流**内容**，不重新实现 Skill 执行引擎 |
+| Agent 调度 | ✅ SOLO Agent + 自定义 Agent | ✅ `/fork` + Cloud + MCP | 定义**何时**需要 Agent，不重新实现 Agent 运行时 |
+| Human Gate | ✅ AskUserQuestion | ✅ approval_policy + TUI | 定义**什么场景**必须触发 Human Gate，不重新实现审批 UI |
+| 任务管理 | ❌ 无 | ❌ 无（Linear 不算，原因见 §5.4.1） | LDVH Task 属于"工具没有的能力"——这不是重复造轮子 |
+| 决策记录 | ❌ 无 | ❌ 无 | ADR 属于 LDVH 独有——工具不提供 |
+| 经验沉淀 | ❌ 无 | ⚠️ Memory（但不满足 LDVH 的审计和 Git 事实源要求） | Pitfall / Change 仍需要，Memory 作为补充 |
+| 安全沙箱 | ❌ 无 | ✅ sandbox_mode（OS 内核级） | **不需要 LDVH 自建**——直接使用 Codex 沙箱 |
+| MCP 工具协议 | ✅ MCP client | ✅ MCP client + server | 定义**哪些 MCP 用于哪些场景**，不重新实现 MCP 协议 |
+| 自动化/CI | ❌ 无 | ✅ codex exec + GitHub Action | **不需要 LDVH 自建**——直接使用 Codex 自动化 |
+
+核心规则：
+
+```text
+LDVH 负责的：工具没有的（事实模型、治理规则、行动流程定义）
+LDVH 不负责的：工具已有的（规则引擎、沙箱、审批 UI、自动化运行时）
+LDVH 桥接的：工具已有但需要 LDVH 语义的（告诉工具"何时用"、"怎么配"）
+```
+
+这个原则反过来也意味着：如果将来某个平台提供了一项 LDVH 当前自建的能力（且满足 LDVH 的 Git 事实源和审计要求），LDVH 应该**删除自建实现，改用平台能力**。这不是退化，是瘦身——LDVH 的价值在于工程治理规范，不在于运行时基础设施。
+
 ---
 
-## 10. 待补齐事项
+## 11. 待补齐事项
 
 1. 在实际 Codex CLI 环境中验证 AGENTS.md 分层加载行为（特别是子目录 AGENTS.md 是否如预期生效）；
 2. 测试 LDVH 的 YAML 事实源在 Codex 工作流中的读写体验；
