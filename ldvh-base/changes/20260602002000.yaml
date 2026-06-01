@@ -1,0 +1,32 @@
+type: change
+title: 收窄 03.01 specs 文档索引默认输入范围
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  03.01 原先将 specs/evals/*.md 和 specs/refs/*.md 纳入第一阶段 specs 文档索引默认输入范围，可能使 AI 在普通规范定位时读取评估文档或外部资料引用文档，增加误将背景资料或外部资料作为稳定规范依据的风险。
+decision: |
+  将 03.01 的默认索引输入范围收窄为 specs/*.md，即 specs 根目录下的正式规范文档、子文档、模型实践子文档、Contract 子文档和区段集合索引。
+  明确 specs/evals/ 和 specs/refs/ 不进入默认索引范围，只有在用户明确指定具体文件、具体目录，或明确要求读取内部评估、外部资料引用时，才可按原文读取。
+  同步调整 tools/index_03_01_specs_docs.py 的 INPUT_PATTERNS 为仅扫描 *.md，并更新对应测试断言。
+consequences: |
+  - 默认 specs 文档索引更加聚焦根目录规范文档；
+  - AI 默认定位时不会因 evals 或 refs 文档增加噪声；
+  - evals 和 refs 仍可在人明确指定时按原文读取，但不得直接作为 LDVH 稳定规范判断依据；
+  - refs 反向引用纪律不再由 03.01 第一阶段默认索引覆盖，应由 03 或对应专项检查承接。
+affects:
+  - specs/03.01-Specs文档索引规范.md
+  - tools/index_03_01_specs_docs.py
+  - tests/tools/test_index_03_01_specs_docs.py
+related_rules:
+  - specs/03-Specs文档规范.md
+  - specs/10-事实源边界与承载规范.md
+  - specs/12.01-Tools辅助规范.md
+human_gate:
+  required: false
+  reason: 本次按用户明确要求收窄默认索引读取范围，降低 AI 默认消费风险；不新增目录事实源、不提升索引为事实源、不让 Tools 自动修改 specs 原文或事实实例。
+validation: |
+  python3 -m pytest tests/tools/test_index_03_01_specs_docs.py 通过，5 passed。
+  python3 tools/index_03_01_specs_docs.py --root . 验证 metadata.input_patterns 为 ['*.md']，实际输出 33 份 docs，未包含 specs/evals/ 或 specs/refs/ 路径。
+  python3 -m pytest 全量测试通过，55 passed。

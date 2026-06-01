@@ -113,9 +113,8 @@ def test_build_generates_docs_sections_relations_and_mechanisms(tmp_path):
     assert {doc["path"] for doc in indexes["docs"]} == {
         "specs/03-Specs文档规范.md",
         "specs/10-事实源边界与承载规范.md",
-        "specs/evals/01-评估.md",
-        "specs/refs/01-外部资料.md",
     }
+    assert indexes["metadata"]["input_patterns"] == ["*.md"]
 
     doc = next(item for item in indexes["docs"] if item["path"] == "specs/03-Specs文档规范.md")
     assert doc["title"] == "Specs 文档规范"
@@ -211,7 +210,7 @@ def test_write_outputs_creates_expected_json_files(tmp_path):
     ]
     payload = json.loads((out_dir / "specs-docs-index.json").read_text(encoding="utf-8"))
     assert payload["metadata"]["derived"] is True
-    assert len(payload["docs"]) == 4
+    assert len(payload["docs"]) == 2
 
 
 def test_main_outputs_json_to_stdout(tmp_path, capsys):
