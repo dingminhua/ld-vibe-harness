@@ -313,6 +313,8 @@ Gate 的执行遵循以下原则：
 4. **证据留存**：Gate 的确认过程必须留下可追溯的证据；
 5. **回写联动**：Gate 结果形成稳定事实时，应按事实源边界回写。
 
+在 Trae 平台中，Human Gate 通过 AskUserQuestion 工具实现。触发条件、设计规范和取消降级策略见 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §5-7。
+
 ### 6.4 Rules 适用原则
 
 规则是 AI、人和工具必须遵守的行为边界。

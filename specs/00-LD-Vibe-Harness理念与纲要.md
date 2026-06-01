@@ -158,6 +158,8 @@ LD Vibe Harness 对 Trae Solo 环境机制的态度：
 2. **规范不替代**：LDVH 的 Rules、Skill、Agent 设计规范，是对 Trae 原生机制的使用约束和最佳实践，不是替代 Trae 的机制；
 3. **适配不绑定**：LDVH 的规范体系适配 Trae Solo 的能力模型，但不假设 Trae 是唯一可用的 AI 编程环境。
 
+Trae 平台特有工具能力（如 AskUserQuestion）的使用方式由 `specs/05-Trae-Solo AskUserQuestion使用规范.md` 定义。00 不重复维护具体工具的触发场景、设计规范或降级策略。
+
 ### 4.4 工具
 
 工具是 LD Vibe Harness 自身提供的辅助执行手段，用于桥接 AI 优先的结构化信息和人的可读可操作需求。
