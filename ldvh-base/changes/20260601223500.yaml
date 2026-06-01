@@ -1,0 +1,28 @@
+type: change
+title: 章节编号与有序列表编号区分规则
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  用户指出 specs 文档中存在两类编号：章节标题按 `7.1` 展开，以及章节内部有序列表从 `1.` 重新开始。
+  需要在 `specs/03-Specs文档规范.md` 中补充二者区别，避免后续迁移时将普通列表误升级为子章节，或将需要稳定引用的内容保留为普通列表。
+decision: |
+  更新 `specs/03-Specs文档规范.md` §4.1，补充正文章节标题编号与正文有序列表编号应区分处理。
+  明确 `## N. 标题`、`### N.N 标题`、`#### N.N.N 标题` 属于章节编号，应随文档层级连续展开。
+  明确章节内部普通枚举、步骤、检查项和规则清单可以使用 Markdown 有序列表，并可在每个章节内从 `1.` 重新开始。
+  明确只有需要稳定引用、进入章节索引或被 Rules、Skill、Agent、Tools、Web 或 Contract 实体消费的内容，才应升级为 `N.N` 或 `N.N.N` 子章节。
+consequences: |
+  - 后续 specs 文档迁移时，应保留普通有序列表的局部编号语义，不强制改成章节层级编号。
+  - 需要稳定引用或机制实体消费的内容，应优先整理为可定位的层级章节。
+  - 文档审计时可区分 Markdown 标题编号与正文列表编号，避免误判。
+affects:
+  - specs/03-Specs文档规范.md
+related_rules:
+  - specs/03-Specs文档规范.md
+human_gate:
+  required: true
+  confirmed_by: user
+  confirmation_context: 用户要求将章节编号与有序列表编号的区分规则补充进 03 文档。
+validation: |
+  已确认补充规则位于 `specs/03-Specs文档规范.md` §4.1 的章节编号规则之后，且未改变 evals/ 与 refs/ 的事实源性质声明。
