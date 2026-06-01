@@ -67,7 +67,7 @@ specs/ 承载 LD Vibe Harness 的规范体系、外部资料引用和项目评�
 
 specs/ 的文档类型、文档骨架、模型实践子文档和引用纪律由 `specs/03-Specs文档规范.md` 定义。specs/ 中使用的术语边界和机制英文专名由 `specs/02-LDVH术语规范.md` 定义。
 
-### 3.3.1 refs 目录
+#### 3.3.1 refs 目录
 
 refs/ 位于 specs/ 下，承载与 LD Vibe Harness 规范体系相关的外部资料引用。
 
@@ -77,7 +77,7 @@ refs/ 与 specs/ 规范体系之间是单向引用关系：specs/ 可以引用 r
 
 refs/ 下的编号只用于排序和引用便利，不属于 specs 规范编号体系。
 
-### 3.3.2 evals 目录
+#### 3.3.2 evals 目录
 
 evals/ 位于 specs/ 下，承载因 LD Vibe Harness 项目实际情况而生成的评估文档。
 
