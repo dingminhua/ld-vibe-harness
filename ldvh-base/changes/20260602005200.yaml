@@ -1,0 +1,24 @@
+type: change
+title: 补充 evals/11 §5.4.1 — Linear 不能替代 LDVH Task
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  用户追问 Codex 集成 Linear 后，是否不需要 LDVH 自己的 Task 了。经分析确认不能替代。
+decision: |
+  新增 §5.4.1 小节：
+  - 7 维度对比 LDVH Task (Git YAML) vs Linear Issue (云端数据库)
+  - 核心结论：Linear 只能作为辅助视图，不能替代 Git 文件事实源
+  - Linear 合理定位：人的可视化工作台，不是权威事实源
+  - 与 eval 01 结论保持一致
+consequences:
+  - evals/11 新增 §5.4.1
+affects:
+  - specs/evals/11-LDVH放入Codex环境的评估.md
+related_rules:
+  - specs/evals/01-LDVH对Linear的借鉴评估.md
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+human_gate:
+  required: false
+  reason: 调研补充内容。

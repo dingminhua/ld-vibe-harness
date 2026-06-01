@@ -1,0 +1,22 @@
+type: change
+title: 补充 evals/11 §4.4.1 — 两个 MCP 服务在 Codex 的可用性确认
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  用户追问当前用到的 2 个 MCP 服务（Sequential Thinking、Context7）在 Codex 是否也有。经调研确认两者均原生支持，且 Context7 是 Codex 推荐 MCP Server。
+decision: |
+  新增 §4.4.1 小节：
+  - Sequential Thinking：`codex mcp add sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking`
+  - Context7：`codex mcp add context7 -- npx -y @upstash/context7-mcp`
+  - 补充 Trae MCP vs Codex MCP 的 6 维度差异对比
+  - 迁移成本评估：极低
+consequences:
+  - evals/11 新增 §4.4.1，明确两个 MCP 服务的迁移路径
+affects:
+  - specs/evals/11-LDVH放入Codex环境的评估.md
+related_rules: []
+human_gate:
+  required: false
+  reason: 调研补充内容。

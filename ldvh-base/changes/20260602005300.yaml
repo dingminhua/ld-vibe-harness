@@ -1,0 +1,24 @@
+type: change
+title: 补充 evals/11 §5.4.1 — "消费者不同"视角论证 Linear 不能替代 LDVH Task
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  用户指出 Linear Issue 和 LDVH Task 目的相同，疑问为何不能直接用 Linear 替代。补充"消费者不同"的核心论证。
+decision: |
+  新增"为什么目的相同却不能替代：消费者不同"子节：
+  - Linear Issue 第一消费者是人，LDVH Task 第一消费者是 AI
+  - 信息密度、状态流转、证据要求三个维度的"人用 vs AI用"对比
+  - 典型使用流程对比（Linear：人拖卡片 → LDVH Task：AI 读执行上下文包）
+  - 如果放弃 LDVH Task 的三个后果
+  - 结论：不是重复造轮子，是造不同用途的轮子——互补关系
+consequences:
+  - evals/11 §5.4.1 新增消费者视角分析
+affects:
+  - specs/evals/11-LDVH放入Codex环境的评估.md
+related_rules:
+  - specs/evals/01-LDVH对Linear的借鉴评估.md
+human_gate:
+  required: false
+  reason: 调研补充内容。

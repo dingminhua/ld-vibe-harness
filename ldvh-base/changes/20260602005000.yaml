@@ -1,0 +1,38 @@
+type: change
+title: 重写 evals/11-LDVH放入Codex环境的评估.md — 基于实际调研
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  初版文档包含大量推测性内容，用户要求调查后答复。随后对 OpenAI Codex（CLI v0.118.0、Cloud、IDE Extension、Desktop App）进行了实际调研，基于产品事实重写全文。
+decision: |
+  基于以下调研来源重写文档：
+  - Codex CLI 开源仓库（github.com/openai/codex）及官方文档
+  - AGENTS.md 开放标准及 SKILL.md Agent Skills 标准
+  - Codex approval_policy、sandbox_mode、MCP 支持的实际机制
+  - Codex 产品家族（CLI/Cloud/IDE Extension/App）的实际能力矩阵
+  - 上下文窗口 272K-1M、GPT-5.4 模型等具体参数
+
+  文档结构从"推测"改为"事实概览 → 差异对比 → 提升点（有依据）→ 改动点（具体可行）"。
+consequences: |
+  - 删除了所有"可能"、"推测"、"通常"等不确定描述；
+  - 新增 §2 Codex 环境事实概览（产品形态、模型参数、核心机制）；
+  - 新增 §3 关键差异对比表（10 个维度逐一对比）；
+  - §4 提升点全部附带 Codex 能力依据；
+  - §5 改动点全部给出具体适配方案（AGENTS.md 分层 / SKILL.md / approval_policy / /fork 等）；
+  - §8 新增三阶段迁移路径及验证标准；
+  - 删除原 §8 待确认事项（大部分已有答案）。
+affects:
+  - specs/evals/11-LDVH放入Codex环境的评估.md
+related_rules:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+  - specs/11-LDVH-AI协作规范.md
+  - specs/11.01-Rules机制规范.md
+  - specs/11.02-Skill机制规范.md
+  - specs/11.03-Agent机制规范.md
+  - specs/12-LDVH工具基础规范.md
+  - specs/14-LDVH行动模型基础规范.md
+human_gate:
+  required: false
+  reason: 调研文档，不构成强制规则。
