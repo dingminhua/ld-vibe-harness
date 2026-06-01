@@ -37,6 +37,7 @@ human_gate:
   required: false
   reason: 本次按用户明确要求收窄默认索引读取范围，降低 AI 默认消费风险；不新增目录事实源、不提升索引为事实源、不让 Tools 自动修改 specs 原文或事实实例。
 validation: |
+  wc -m ../.trae/rules/ldvh-l0-rules.md .trae/rules/ldvh-l1-rules.md .trae/rules/ldvh-l2-specs-rules.md 验证 L0 984 字符、L1 840 字符、L2 847 字符，均未超过 1000 字符。
   python3 tools/check_03_specs_doc_standard.py 通过。
   python3 tools/check_03_specs_references.py 通过。
   python3 -m pytest tests/tools/test_index_03_01_specs_docs.py 通过，5 passed。

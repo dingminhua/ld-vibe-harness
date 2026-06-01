@@ -8,7 +8,7 @@
 
 ## 编辑入口
 
-编辑 specs Markdown 时，文档骨架、章节编号、引用纪律、机制关系声明和 refs/evals 边界以 `specs/03-Specs文档规范.md` 为准；编号分区以 `specs/01-LDVH目录说明.md` 为准；术语以 `specs/02-LDVH术语规范.md` 为准。
+编辑 specs Markdown 时，文档骨架、章节编号、标题层级、引用纪律、机制关系声明和 refs/evals 边界以 `specs/03-Specs文档规范.md` 为准；编号分区以 `specs/01-LDVH目录说明.md` 为准；术语以 `specs/02-LDVH术语规范.md` 为准。
 
 ## 索引与读取
 
@@ -20,4 +20,4 @@ specs 文档索引依据 `specs/03.01-Specs文档索引规范.md`，默认只覆
 
 ## 压缩保护
 
-骨架引用03 | 编号引用01 | 术语引用02 | 索引引用03.01 | refs不反向引用specs | evals/refs需指定 | Rules审计读11.01§7 | 只写入口不复制正文
+骨架引用03 | 章节标题定位 | 编号引用01 | 术语引用02 | 03.01只作辅助 | refs不反向引用specs | evals/refs需指定 | Rules审计读11.01§7 | 只写入口不复制正文
