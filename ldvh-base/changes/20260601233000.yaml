@@ -1,0 +1,39 @@
+type: change
+title: 新增 Specs 文档索引规范
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  用户确认将索引机制范围收敛为 specs 文档索引，不覆盖 ldvh-base 事实实例、项目生产内容或业务索引。
+  依据 specs/03-Specs文档规范.md 的子文档骨架，新增 03.01 作为 03 的父规范扩展。
+decision: |
+  新增 specs/03.01-Specs文档索引规范.md，定义 specs 文档索引的定位、输入范围、索引类型、生成原则、输出原则、AI 消费规则、Tools 辅助程序边界、失效回退、机制关系和检查要求。
+  新增 tools/index_03_01_specs_docs.py，提供只读 specs 文档索引生成能力，可输出文档清单、章节、引用关系、机制关系和诊断索引。
+  新增 tests/tools/test_index_specs_docs.py，覆盖 specs 文档索引生成、诊断和输出行为。
+  明确 03.01 只治理 specs 文档索引，不覆盖 ldvh-base 事实实例、项目生产内容、业务对象、业务数据、业务 Web / MCP 查询索引或管辖项目自有索引。
+  明确 specs 文档索引属于 Tools 从 Git 文件事实源生成的派生数据，不替代 specs 原文，不作为规范判断、Rules、审计、决策或任务状态的唯一来源。
+consequences: |
+  - specs 文档索引从 evals 设想进入 03 的正式子文档规范承接。
+  - 只读 Tools 原型已依据 03.01 生成 specs 文档清单索引、章节索引、引用关系索引、机制关系声明索引和诊断结果。
+  - 文档内章节索引第一阶段继续保留，机器章节索引用于 AI 精准定位和一致性诊断。
+  - 生产内容索引不进入 03.01，后续由业务、事实模型、行动模型或项目 Tools 另行承接。
+affects:
+  - specs/03.01-Specs文档索引规范.md
+  - tools/index_03_01_specs_docs.py
+  - tests/tools/test_index_specs_docs.py
+related_rules:
+  - specs/03-Specs文档规范.md
+  - specs/10-事实源边界与承载规范.md
+  - specs/12-LDVH工具基础规范.md
+  - specs/12.01-Tools辅助规范.md
+  - specs/14-LDVH行动模型基础规范.md
+human_gate:
+  required: false
+  reason: 本次新增 03 的父规范扩展，用于承接用户确认的 specs 文档索引治理范围；未改变现有目录事实源性质、未删除章节索引、未修改 Rules 生效方式，也未将索引提升为事实源。
+validation: |
+  已创建 specs/03.01-Specs文档索引规范.md。
+  已创建 tools/index_03_01_specs_docs.py 和 tests/tools/test_index_specs_docs.py。
+  `python3 -m pytest tests/tools/test_index_specs_docs.py` 通过，5 passed。
+  `python3 -m pytest` 通过，55 passed。
+  `python3 tools/index_03_01_specs_docs.py --root .` 可生成真实仓库索引，统计为 55 docs、1175 sections、1229 relations、26 mechanisms、131 diagnostics。

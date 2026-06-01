@@ -43,6 +43,12 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。�
 2. 编写或修改规范时，优先引用权威文档，不复制并维护同一规则（依据 `specs/03-Specs文档规范.md` §七）
 3. 新增或修改项目文档、规则或规范后，必须在 `ldvh-base/changes/` 创建 Change YAML 记录（依据 `specs/10-事实源边界与承载规范.md` §七）
 
+## Human Gate 实现
+
+本项目使用 Trae AskUserQuestion 工具实现 Human Gate 机制。
+触发条件和设计规范见 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §5-6。
+取消处理见同文件 §7。
+
 ## L2 场景规则
 
 - `ldvh-l2-specs-rules.md`：编辑 specs/ 目录下文档时生效；L1 只负责引导该 L2，具体关联关系由 `specs/03-Specs文档规范.md` §六维护；审计 Rules 时依据 `specs/11.01-Rules机制规范.md` §七反向发现 specs 根目录文档中的 Rules 需求
@@ -51,4 +57,4 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。�
 
 ## 压缩保护
 
-LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs-v2不替代specs | L1引导L2 | Rules审计读11.01并反向发现specs根文档 | 事实模型规则在L0 | 读取先定位再Read | 必读不等于全文读
+LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs-v2不替代specs | L1引导L2 | Rules审计读11.01并反向发现specs根文档 | 事实模型规则在L0 | 读取先定位再Read | 必读不等于全文读 | HumanGate用AskUserQuestion见05

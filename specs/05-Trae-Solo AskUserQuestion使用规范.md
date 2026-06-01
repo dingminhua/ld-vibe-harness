@@ -308,7 +308,7 @@ Skill 可提供结构化问询模板，降低 AI 构造参数的认知负担。S
 | Rules | `../.trae/rules/ldvh-l0-rules.md` | L0 工作区规则引用 | 本文的 AskUserQuestion 触发场景、设计规范或降级策略变化时 |
 | Rules | `.trae/rules/ldvh-l1-rules.md` | L1 项目规则引用 | 本文的 Human Gate 实现方式或跨 AI 知识传递路径变化时 |
 | Rules | `.trae/rules/ldvh-l2-specs-rules.md` | L2 场景规则引用 | 本文的问询设计规范或取消处理规则变化时 |
-| 行动模型 | `specs/14-LDVH行动模型基础规范.md` §8 | Human Gate 上位定义 | 本文的触发场景与 14 §8 不一致时 |
+| 行动模型 | `specs/14-LDVH行动模型基础规范.md` §9 | Human Gate 上位定义 | 本文的触发场景与 14 §9 不一致时 |
 | 行动模型 | `specs/51-multi-role-thinking-多角色思考.md` §7.3 | 模式选择规则 | 51 §7.3 的模式选择问询设计变化时 |
 | 调研 | `specs/refs/12-Trae-AskUserQuestion问询工具调研.md` | 参数契约来源 | refs/12 新增参数、约束或平台行为变化时 |
 

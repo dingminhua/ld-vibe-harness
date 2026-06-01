@@ -1,0 +1,39 @@
+type: change
+title: 清理 specs 根目录正式规范中"规划中"过时标注
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  specs 根目录自身规范符合性审查发现 P0 #2-#4：10-14、20、50 已全部创建并稳定，
+  但 00、01、03 中仍残留约 15 处"规划中的"标注，与实际状态矛盾，
+  违反 03 §7.1"引用目标真实存在"和 10 §1.1"事实源必须反映当前状态"。
+decision: |
+  将所有"规划中的"标注移除，改为直接引用已存在的规范文件。
+  涉及文件和位置：
+  - 00 §5.1 L212：1 处
+  - 00 §6 L284-288：5 处
+  - 00 §8 L309：1 处
+  - 01 §3.2 L62：2 处
+  - 03 §2 L63-69：7 处
+  - 03 §5.2 L191：1 处
+  - 03 §5.3 L225：1 处
+  - 03 §7.1 L390：5 处
+  - 03 §8 L442：1 处
+consequences: |
+  - specs 根目录正式规范不再包含与实际状态矛盾的"规划中"标注。
+  - AI 读取规范时不会被误导为这些文档尚不存在。
+  - 引用检查工具验证通过，无新增引用失效。
+affects:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+  - specs/01-LDVH目录说明.md
+  - specs/03-Specs文档规范.md
+related_rules:
+  - specs/03-Specs文档规范.md
+  - specs/10-事实源边界与承载规范.md
+human_gate:
+  required: false
+  reason: 纯信息性标注更新，将"规划中的"改为直接引用已存在的文件，不改变任何规范语义或规则内容。
+validation: |
+  specs 根目录 *.md 文件中不再包含"规划中的"标注（evals/ 子目录除外）。
+  tools/check_03_specs_references.py 检查通过。
