@@ -30,11 +30,12 @@ import sys
 import re
 import yaml
 from pathlib import Path
-from datetime import datetime
+from datetime import date, datetime
 
 
-ADRS_DIR = Path(__file__).resolve().parent.parent / "ldvh-base" / "adrs"
-CHANGES_DIR = Path(__file__).resolve().parent.parent / "ldvh-base" / "changes"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+ADRS_DIR = PROJECT_ROOT / "ldvh-base" / "adrs"
+CHANGES_DIR = PROJECT_ROOT / "ldvh-base" / "changes"
 VALID_STATUSES = {"proposed", "accepted", "deprecated", "superseded", "rejected"}
 TERMINAL_STATUSES = {"deprecated", "superseded", "rejected"}
 ALLOWED_TRANSITIONS = {
@@ -80,7 +81,7 @@ def load_all_adrs():
 
 
 def fmt_date(val):
-    if isinstance(val, datetime):
+    if isinstance(val, (date, datetime)):
         return val.strftime("%Y-%m-%d")
     return str(val) if val else "N/A"
 
@@ -121,6 +122,35 @@ def adr_number(adr_id):
     return int(match.group(1))
 
 
+def is_iso_date(value):
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d") == value.date().isoformat()
+    if isinstance(value, date):
+        return True
+    if not isinstance(value, str):
+        return False
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").strftime("%Y-%m-%d") == value
+    except ValueError:
+        return False
+
+
+def rule_path_exists(rule_path):
+    path = Path(str(rule_path))
+    if path.is_absolute():
+        return path.exists()
+    return (PROJECT_ROOT / path).exists()
+
+
+def related_object_exists(object_id, known_ids=None):
+    value = str(object_id)
+    if known_ids is not None:
+        return value in known_ids
+    if value.startswith("adr-"):
+        return any(adr_path.stem.startswith(f"{value}-") for adr_path in ADRS_DIR.glob(f"{value}-*.yaml"))
+    return True
+
+
 def next_adr_id(adrs):
     max_num = 0
     for adr in adrs:
@@ -145,11 +175,14 @@ def find_adr(adrs, adr_id):
     raise ToolError(f"未找到 ADR: {adr_id}")
 
 
-def validate_adr_data(adr, file_name):
+def validate_adr_data(adr, file_name, known_ids=None):
     issues = []
     for field in REQUIRED_FIELDS:
         if not adr.get(field):
             issues.append(f"必填字段缺失: {field}")
+    for field in ["created", "updated", "date"]:
+        if adr.get(field) and not is_iso_date(adr.get(field)):
+            issues.append(f"日期格式不合法: {field} 应为 YYYY-MM-DD")
     status = adr.get("status", "")
     if status and status not in VALID_STATUSES:
         issues.append(f"状态不合法: {status}，合法值: {', '.join(sorted(VALID_STATUSES))}")
@@ -172,6 +205,16 @@ def validate_adr_data(adr, file_name):
             issues.append(f"{field} 不得为 null")
         if field in adr and adr.get(field) is not None and not isinstance(adr.get(field), list):
             issues.append(f"{field} 必须为列表")
+    related_objects = adr.get("related_objects") or []
+    if isinstance(related_objects, list):
+        for object_id in related_objects:
+            if not related_object_exists(object_id, known_ids):
+                issues.append(f"related_objects 引用不存在: {object_id}")
+    related_rules = adr.get("related_rules") or []
+    if isinstance(related_rules, list):
+        for rule_path in related_rules:
+            if not rule_path_exists(rule_path):
+                issues.append(f"related_rules 引用路径不存在: {rule_path}")
     return issues
 
 
@@ -396,9 +439,10 @@ def cmd_validate(adrs):
     total = len(adrs)
     passed = 0
     failed = 0
+    known_ids = {adr.get("id") for adr in adrs if adr.get("id")}
     for adr in adrs:
         file_name = adr.get("_file", "N/A")
-        issues = validate_adr_data(adr, file_name)
+        issues = validate_adr_data(adr, file_name, known_ids)
         if issues:
             failed += 1
             print(f"[不合规] {file_name}")

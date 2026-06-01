@@ -28,4 +28,5 @@ human_gate:
   confirmed_by: user
   confirmation_context: 用户要求按 03 文档机制关系声明执行，并写入 Python 检查工具与测试用例。
 validation: |
-  待运行 `python3 -m pytest` 和 `python3 tools/check_03_specs_doc_standard.py specs/03-Specs文档规范.md` 完成验证。
+  已运行 `python3 -m pytest`，30 个测试全部通过。
+  已运行 `python3 tools/check_03_specs_doc_standard.py specs/03-Specs文档规范.md`，03 文档规范检查通过。

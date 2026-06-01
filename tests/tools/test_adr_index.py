@@ -77,6 +77,71 @@ def test_fmt_date_handles_datetime_and_empty_values():
     assert adr_index.fmt_date("2026-06-01") == "2026-06-01"
 
 
+def test_validate_reports_invalid_date_format():
+    adr = {
+        "_file": "adr-0001-test.yaml",
+        "id": "adr-0001",
+        "type": "adr",
+        "title": "测试 ADR",
+        "status": "accepted",
+        "created": "2026/06/01",
+        "updated": "2026-06-01",
+        "date": "2026-06-01",
+        "context": "测试背景",
+        "decision": "测试决策",
+        "consequences": "测试影响",
+    }
+
+    assert "日期格式不合法: created 应为 YYYY-MM-DD" in adr_index.validate_adr_data(adr, adr["_file"])
+
+
+def test_validate_reports_invalid_references(tmp_path, monkeypatch):
+    monkeypatch.setattr(adr_index, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(adr_index, "ADRS_DIR", tmp_path / "adrs")
+    adr = {
+        "_file": "adr-0001-test.yaml",
+        "id": "adr-0001",
+        "type": "adr",
+        "title": "测试 ADR",
+        "status": "accepted",
+        "created": "2026-06-01",
+        "updated": "2026-06-01",
+        "date": "2026-06-01",
+        "context": "测试背景",
+        "decision": "测试决策",
+        "consequences": "测试影响",
+        "related_objects": ["adr-9999"],
+        "related_rules": ["specs/not-found.md"],
+    }
+
+    issues = adr_index.validate_adr_data(adr, adr["_file"], {"adr-0001"})
+    assert "related_objects 引用不存在: adr-9999" in issues
+    assert "related_rules 引用路径不存在: specs/not-found.md" in issues
+
+
+def test_validate_accepts_existing_related_rule_path(tmp_path, monkeypatch):
+    spec_path = tmp_path / "specs" / "21.06-Contract.md"
+    spec_path.parent.mkdir(parents=True)
+    spec_path.write_text("# Contract\n", encoding="utf-8")
+    monkeypatch.setattr(adr_index, "PROJECT_ROOT", tmp_path)
+    adr = {
+        "_file": "adr-0001-test.yaml",
+        "id": "adr-0001",
+        "type": "adr",
+        "title": "测试 ADR",
+        "status": "accepted",
+        "created": "2026-06-01",
+        "updated": "2026-06-01",
+        "date": "2026-06-01",
+        "context": "测试背景",
+        "decision": "测试决策",
+        "consequences": "测试影响",
+        "related_rules": ["specs/21.06-Contract.md"],
+    }
+
+    assert adr_index.validate_adr_data(adr, adr["_file"], {"adr-0001"}) == []
+
+
 def test_load_adr_reads_yaml_and_attaches_source_path(tmp_path):
     path = tmp_path / "adr-0001-test.yaml"
     write_adr(path)
@@ -208,6 +273,30 @@ def test_cmd_validate_reports_missing_field_invalid_status_and_superseded_target
     assert "校验结果: 通过 0，不合规 2" in output
 
 
+def test_cmd_validate_reports_superseded_by_on_non_superseded(capsys):
+    adrs = [
+        {
+            "_file": "adr-0001-test.yaml",
+            "id": "adr-0001",
+            "type": "adr",
+            "title": "测试 ADR",
+            "status": "accepted",
+            "created": "2026-06-01",
+            "updated": "2026-06-01",
+            "date": "2026-06-01",
+            "context": "测试背景",
+            "decision": "测试决策",
+            "consequences": "测试影响",
+            "superseded_by": "adr-0002",
+        }
+    ]
+
+    adr_index.cmd_validate(adrs)
+
+    output = capsys.readouterr().out
+    assert "仅 status 为 superseded 时允许填写 superseded_by" in output
+
+
 def test_next_adr_id_uses_highest_existing_number():
     adrs = [{"id": "adr-0001"}, {"id": "adr-0009"}, {"id": "memo-0001"}]
 
@@ -264,6 +353,19 @@ def test_transition_rejects_illegal_status_change(tmp_path, monkeypatch):
         adr_index.cmd_transition(args, adrs)
 
     assert read_yaml(path)["status"] == "proposed"
+
+
+def test_transition_rejects_terminal_status_reopen(tmp_path, monkeypatch):
+    path = tmp_path / "adr-0001-test.yaml"
+    write_adr(path, status="rejected")
+    monkeypatch.setattr(adr_index, "ADRS_DIR", tmp_path)
+    adrs = adr_index.load_all_adrs()
+    args = Args(adr_id="adr-0001", status="accepted", superseded_by=None, **auth_args())
+
+    with pytest.raises(adr_index.ToolError, match="终态"):
+        adr_index.cmd_transition(args, adrs)
+
+    assert read_yaml(path)["status"] == "rejected"
 
 
 def test_transition_accepts_proposed_to_accepted(tmp_path, monkeypatch):

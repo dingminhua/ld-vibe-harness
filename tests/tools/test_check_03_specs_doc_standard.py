@@ -198,6 +198,40 @@ def test_missing_arabic_heading_number_is_reported(tmp_path):
     assert any("缺少阿拉伯数字编号" in message for message in messages(checker.check_file(path)))
 
 
+def test_chapter_index_heading_without_number_is_allowed(tmp_path):
+    path = write_md(
+        tmp_path / "index.md",
+        """
+# 文档标题
+
+## 章节索引
+
+## 1. 第一章
+""",
+    )
+
+    assert checker.check_file(path) == []
+
+
+def test_heading_deeper_than_four_levels_is_reported(tmp_path):
+    path = write_md(
+        tmp_path / "deep.md",
+        """
+# 文档标题
+
+## 1. 第一章
+
+### 1.1 第一节
+
+#### 1.1.1 第一小节
+
+##### 1.1.1.1 过深标题
+""",
+    )
+
+    assert any("不支持超过四级" in message for message in messages(checker.check_file(path)))
+
+
 def test_check_paths_reads_markdown_files_recursively(tmp_path):
     write_md(tmp_path / "a.md", "# 标题\n\n## 1. 第一章")
     nested = tmp_path / "nested"
