@@ -376,6 +376,7 @@ specs/refs/ 承载与 LD Vibe Harness 规范体系相关的外部资料引用，
 | 关联机制 | 关联实体 | 关系类型 | 同步触发 |
 |---|---|---|---|
 | Rules | `ld-vibe-harness/.trae/rules/ldvh-l2-specs-rules.md` | specs 编辑入口摘要 | 本文的文档骨架、引用纪律、机制关系声明、反向边界或文档治理检查变化时 |
+| Tools | `ld-vibe-harness/tools/check_03_specs_doc_standard.py` | 03 文档规范机械化检查工具 | 本文的章节编号、章节索引、文档骨架、引用纪律、反向边界、refs 反向引用或文档治理检查变化时 |
 
 ---
 
@@ -408,6 +409,10 @@ specs/refs/ 承载与 LD Vibe Harness 规范体系相关的外部资料引用，
 
 当 AI 识别到上述情况时，依据 `specs/00-LD-Vibe-Harness理念与纲要.md` §八 Human Gate 程序规则执行。
 
+项目应提供 `tools/check_03_specs_doc_standard.py`，作为本文的机械化检查工具，用于辅助检查 specs/ 目录内 Markdown 文档的章节标题编号。工具至少应检查：一级章节是否连续；二级、三级章节是否与父章节编号一致；同级章节是否掉号、跳号或重复；标题编号层级是否与 Markdown 标题层级一致；是否存在中文大写或罗马数字章节标题残留。工具应忽略 fenced code block 内的示例标题和正文 Markdown 有序列表。
+
+AI 在新增、迁移或批量修改 specs/ 下 Markdown 文档章节标题编号后，应优先调用 `tools/check_03_specs_doc_standard.py`；工具不可用时，应人工检查并在回复或 Change 记录中说明降级原因。工具测试用例应放置于 `tests/tools/test_check_03_specs_doc_standard.py`，并通过项目当前测试入口执行。
+
 文档写作检查至少包括：
 
 | 检查项 | 标准 |
@@ -420,7 +425,7 @@ specs/refs/ 承载与 LD Vibe Harness 规范体系相关的外部资料引用，
 | refs 反向引用 | refs/ 下文档未引用 specs/ 目录内文件 |
 | 架构术语一致性 | 与五类构成要素、事实模型和行动模型术语一致，术语使用符合 `specs/02-LDVH术语规范.md` |
 | 编号分区 | 文档编号符合 `specs/01-LDVH目录说明.md` 的编号分区 |
-| 章节编号 | specs/ 目录内 Markdown 文档正文章节标题统一使用阿拉伯数字层级编号；同一文档内未混用中文大写章节编号、罗马数字编号和阿拉伯数字章节编号 |
+| 章节编号 | specs/ 目录内 Markdown 文档正文章节标题统一使用阿拉伯数字层级编号；同一文档内未混用中文大写章节编号、罗马数字编号和阿拉伯数字章节编号；新增、迁移或批量修改章节标题编号后已优先调用 `tools/check_03_specs_doc_standard.py`，工具不可用时已记录降级原因 |
 | 事实源边界一致性 | 与规划中的 `specs/10-事实源边界与承载规范.md` 的事实源边界一致 |
 | 机制关系声明 | 普通 specs 文档仅声明实际消费的机制关系；事实模型和行动模型通过 04 的 NN.01-NN.06 模型实践子文档承接机制关系；关联实体已同步检查 |
 | 索引一致性 | 索引文档的清单与对应区段实际文档一致，且未在清单之外定义 specs 规范 |
