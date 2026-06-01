@@ -3,7 +3,7 @@
 > 层级：L2 场景规则
 > 适用项目：ld-vibe-harness
 > 生效方式：globs — 编辑 specs/ 目录下 Markdown 文件时生效
-> 规范来源：`specs/03-Specs文档规范.md`、`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/11.01-Rules机制规范.md`
+> 规范来源：`specs/03-Specs文档规范.md`、`specs/03.01-Specs文档索引规范.md`、`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/11.01-Rules机制规范.md`
 > 维护边界：本文件只作为 specs 编辑入口摘要，不替代 specs/ 正式规范；本文与 specs 文档的机制关系依据 `specs/03-Specs文档规范.md` §六维护
 
 ## 文档骨架
@@ -25,6 +25,10 @@
 ## 反向边界
 
 不得设置"不进入本文""边界说明"等反向边界章节。依据 `specs/03-Specs文档规范.md` §五。
+
+## 文档索引
+
+specs 文档索引机制依据 `specs/03.01-Specs文档索引规范.md`。默认索引只覆盖 `specs/*.md` 根目录文档；`specs/evals/` 和 `specs/refs/` 只有在用户明确指定时读取。索引只作定位辅助，规范判断必须读取 specs 原文。
 
 ## refs 反向引用
 
