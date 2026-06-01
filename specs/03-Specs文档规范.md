@@ -377,6 +377,7 @@ specs/refs/ 承载与 LD Vibe Harness 规范体系相关的外部资料引用，
 |---|---|---|---|
 | Rules | `ld-vibe-harness/.trae/rules/ldvh-l2-specs-rules.md` | specs 编辑入口摘要 | 本文的文档骨架、引用纪律、机制关系声明、反向边界或文档治理检查变化时 |
 | Tools | `ld-vibe-harness/tools/check_03_specs_doc_standard.py` | 03 文档规范机械化检查工具 | 本文的章节编号、章节索引、文档骨架、引用纪律、反向边界、refs 反向引用或文档治理检查变化时 |
+| Tools | `ld-vibe-harness/tools/check_03_specs_references.py` | 03 文档引用机械化检查工具 | 本文的章节引用、引用纪律、refs 反向引用、机制关系声明或文档治理检查变化时 |
 
 ---
 
@@ -413,6 +414,10 @@ specs/refs/ 承载与 LD Vibe Harness 规范体系相关的外部资料引用，
 
 AI 在新增、迁移或批量修改 specs/ 下 Markdown 文档章节标题编号后，应优先调用 `tools/check_03_specs_doc_standard.py`；工具不可用时，应人工检查并在回复或 Change 记录中说明降级原因。工具测试用例应放置于 `tests/tools/test_check_03_specs_doc_standard.py`，并通过项目当前测试入口执行。
 
+项目应提供 `tools/check_03_specs_references.py`，作为本文的机械化检查工具，用于辅助检查 specs/ 目录内 Markdown 文档的章节引用。工具至少应检查：显式 `specs/*.md` 路径引用的目标文件是否存在；显式路径后的 `§N`、`§N.N` 或 `§N.N.N` 目标章节是否存在；同文档内部章节引用是否存在；`NN §N` 或 `NN.SS §N` 速记引用是否能解析到目标文档和章节；正文是否残留 `§一`、`§七` 等中文大写章节引用。工具应忽略 fenced code block 内的示例引用。
+
+AI 在新增、迁移、重命名或批量修改 specs/ 下 Markdown 文档文件名、章节编号、章节引用、上位依据、相关规范、机制关系声明、索引清单或引用纪律相关内容后，应优先调用 `tools/check_03_specs_references.py`；工具不可用时，应人工检查并在回复或 Change 记录中说明降级原因。工具默认检查 specs/ 根目录正式规范文档；需要专项审计 `specs/evals/` 或 `specs/refs/` 时，应显式传入目标目录或文件。工具测试用例应放置于 `tests/tools/test_check_03_specs_references.py`，并通过项目当前测试入口执行。
+
 工具使用建议：
 
 1. 批量修改前先运行工具获取全量基线，避免仅凭正则脚本匹配特定模式而遗漏边缘情况（如脚本只匹配了"一～十"而漏掉"十一～二十"，或只处理了 `##` 层级而遗漏 `####` 无编号子标题）；
@@ -433,6 +438,7 @@ AI 在新增、迁移或批量修改 specs/ 下 Markdown 文档章节标题编�
 | 架构术语一致性 | 与五类构成要素、事实模型和行动模型术语一致，术语使用符合 `specs/02-LDVH术语规范.md` |
 | 编号分区 | 文档编号符合 `specs/01-LDVH目录说明.md` 的编号分区 |
 | 章节编号 | specs/ 目录内 Markdown 文档正文章节标题统一使用阿拉伯数字层级编号；同一文档内未混用中文大写章节编号、罗马数字编号和阿拉伯数字章节编号；新增、迁移或批量修改章节标题编号后已优先调用 `tools/check_03_specs_doc_standard.py`，工具不可用时已记录降级原因 |
+| 章节引用 | specs/ 目录内 Markdown 文档正文引用章节时统一使用 `§N`、`§N.N` 或 `§N.N.N`；引用目标文件和目标章节真实存在；新增、迁移、重命名或批量修改章节引用后已优先调用 `tools/check_03_specs_references.py`，工具不可用时已记录降级原因 |
 | 事实源边界一致性 | 与规划中的 `specs/10-事实源边界与承载规范.md` 的事实源边界一致 |
 | 机制关系声明 | 普通 specs 文档仅声明实际消费的机制关系；事实模型和行动模型通过 04 的 NN.01-NN.06 模型实践子文档承接机制关系；关联实体已同步检查 |
 | 索引一致性 | 索引文档的清单与对应区段实际文档一致，且未在清单之外定义 specs 规范 |

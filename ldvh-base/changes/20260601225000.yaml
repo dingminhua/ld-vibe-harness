@@ -1,0 +1,34 @@
+type: change
+title: 新增文档索引程序设想评估
+author: ai
+status: done
+created: 2026-06-01
+updated: 2026-06-01
+context: |
+  用户要求将“使用 Python 生成 LDVH 文档索引，供 AI 文档咨询优先读取并按需读取正文”的设想写入 `specs/evals/`，用于后续考虑推进。
+  该设想涉及 AI 文档咨询读取路径、文档内章节索引是否保留、`specs/11.01-Rules机制规范.md` 以及 L0/L1/L2 Rules 的潜在调整。
+decision: |
+  新增 `specs/evals/10-LDVH文档索引程序设想评估.md`，作为内部评估文档记录该设想。
+  文档明确索引程序应定位为 Tools 生成的派生索引和读取导航层，不替代 specs 正文、Rules 正文或 `ldvh-base/` 事实实例。
+  文档建议分阶段推进：先实现只读索引程序并保留现有章节索引，再评估是否将索引作为 AI 优先定位辅助，最后再决定是否调整正式规范和 Rules。
+consequences: |
+  - 后续如推进文档索引程序，可基于该 evals 文档创建 ADR、Task 或正式 Tools 规范变更。
+  - 当前变更不直接修改 00-79 正式规范、Rules、Tools 或文档骨架要求。
+  - 文档内章节索引、L0/L1/L2 Rules 和 11.01 读取机制暂不因该评估文档发生执行层变更。
+affects:
+  - specs/evals/10-LDVH文档索引程序设想评估.md
+related_rules:
+  - specs/01-LDVH目录说明.md
+  - specs/03-Specs文档规范.md
+  - specs/10-事实源边界与承载规范.md
+  - specs/11.01-Rules机制规范.md
+  - specs/12-LDVH工具基础规范.md
+  - specs/12.01-Tools辅助规范.md
+  - specs/14-LDVH行动模型基础规范.md
+human_gate:
+  required: false
+  confirmed_by: none
+  confirmation_context: 用户明确要求将设想写入 `specs/evals/` 作为后续考虑推进的内部评估材料，未直接要求修改正式规范、Rules 或事实模型规则。
+validation: |
+  已运行 `python3 tools/check_03_specs_doc_standard.py specs/evals/10-LDVH文档索引程序设想评估.md`，检查通过。
+  已使用 Python `yaml.safe_load` 读取 `ldvh-base/changes/20260601225000.yaml`，YAML 解析通过。
