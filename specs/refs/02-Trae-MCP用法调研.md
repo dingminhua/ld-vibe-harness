@@ -6,7 +6,7 @@
 
 ---
 
-## 一、结论摘要
+## 1. 结论摘要
 
 Trae 中的 MCP（Model Context Protocol）用于把外部工具和服务连接到 Trae IDE。Trae 内的 Agent 作为 MCP Client，可按需向 MCP Server 发起请求，从而调用外部工具能力。
 
@@ -29,7 +29,7 @@ Trae 官方当前支持：
 
 ---
 
-## 二、MCP 的官方定义
+## 2. MCP 的官方定义
 
 Trae 官方说明：Model Context Protocol 是一种允许 LLM 访问自定义工具和服务的协议。Trae 中的智能体作为 MCP Client，可以向 MCP Server 发起请求，使用 MCP Server 暴露的工具。
 
@@ -45,7 +45,7 @@ Trae 官方说明：Model Context Protocol 是一种允许 LLM 访问自定义�
 
 ---
 
-## 三、Trae 支持的 MCP Server 类型
+## 3. Trae 支持的 MCP Server 类型
 
 | 类型 | 传输协议 | 执行环境 | 典型场景 |
 |---|---|---|---|
@@ -67,7 +67,7 @@ Trae 对工具运行结果支持：Text Content、Structured Content。
 
 ---
 
-## 四、添加 MCP Server 的方式
+## 4. 添加 MCP Server 的方式
 
 ### 4.1 从 MCP 市场添加
 
@@ -109,7 +109,7 @@ Trae 对工具运行结果支持：Text Content、Structured Content。
 
 ---
 
-## 五、项目级 MCP
+## 5. 项目级 MCP
 
 Trae 支持项目级 MCP Server。
 
@@ -133,7 +133,7 @@ LDVH 视角下，项目级 MCP 是强能力入口，至少需要满足：
 
 ---
 
-## 六、MCP Server 配置格式
+## 6. MCP Server 配置格式
 
 ### 6.1 stdio 类型
 
@@ -238,7 +238,7 @@ MCP Server 配置支持变量，目前官方说明仅支持 `${workspaceFolder}`
 
 ---
 
-## 七、在 Agent 中使用 MCP Server
+## 7. 在 Agent 中使用 MCP Server
 
 MCP Server 需要添加到 Agent 中，Agent 才能调用其中工具。
 
@@ -267,7 +267,7 @@ MCP Server 需要添加到 Agent 中，Agent 才能调用其中工具。
 
 ---
 
-## 八、MCP 使用限制与常见问题
+## 8. MCP 使用限制与常见问题
 
 ### 8.1 工具描述和工具数量上限
 
@@ -326,7 +326,7 @@ Trae 官方论坛 FAQ 提到，受模型上下文窗口限制，Trae 为 MCP 信
 
 ---
 
-## 九、官方教程中的典型 MCP 场景
+## 9. 官方教程中的典型 MCP 场景
 
 ### 9.1 Figma AI Bridge
 
@@ -363,7 +363,7 @@ Trae 官方论坛 FAQ 提到，受模型上下文窗口限制，Trae 为 MCP 信
 
 ---
 
-## 十、最新版本相关信息
+## 10. 最新版本相关信息
 
 截至本次调研，Trae 官网更新日志中与 MCP 直接相关的变更包括：
 
@@ -382,7 +382,7 @@ Trae 官方论坛 FAQ 提到，受模型上下文窗口限制，Trae 为 MCP 信
 
 ---
 
-## 十一、信息来源
+## 11. 信息来源
 
 1. Trae MCP 概览：`https://docs.trae.ai/ide/model-context-protocol?_lang=zh`
 2. Trae 添加 MCP Server：`https://docs.trae.ai/ide/add-mcp-servers?_lang=zh`

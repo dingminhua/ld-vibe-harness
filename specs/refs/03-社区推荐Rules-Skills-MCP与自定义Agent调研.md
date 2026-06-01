@@ -6,7 +6,7 @@
 
 ---
 
-## 一、结论摘要
+## 1. 结论摘要
 
 社区材料中对 Rules、Skills、MCP 和自定义 Agent 的分工有一个实用比喻：
 
@@ -44,7 +44,7 @@ MCP 是锤子，Skills 是钉钉子的技能，Rules 是施工规范，Agent 是
 
 ---
 
-## 二、社区对 Rules、Skills、MCP、Agent 的分工建议
+## 2. 社区对 Rules、Skills、MCP、Agent 的分工建议
 
 Trae 社区教程中给出的核心原则是：
 
@@ -73,7 +73,7 @@ Trae 社区教程中给出的核心原则是：
 
 ---
 
-## 三、社区推荐的 Rules 内容
+## 3. 社区推荐的 Rules 内容
 
 ### 3.1 Rules 的社区定位
 
@@ -200,7 +200,7 @@ Rules 只写必须遵守和绝对禁止的内容；
 
 ---
 
-## 四、社区推荐的自定义 Agent 配置
+## 4. 社区推荐的自定义 Agent 配置
 
 ### 4.1 自定义 Agent 的社区定位
 
@@ -315,7 +315,7 @@ SOLO Agent
 
 ---
 
-## 五、社区高频推荐 MCP
+## 5. 社区高频推荐 MCP
 
 ### 5.1 通用开发类
 
@@ -379,7 +379,7 @@ SOLO Agent
 
 ---
 
-## 六、MCP.directory 中的热门 MCP 与 Skills
+## 6. MCP.directory 中的热门 MCP 与 Skills
 
 MCP.directory 自称是 MCP Servers 和 Agent Skills 目录，首页显示：
 
@@ -412,7 +412,7 @@ MCP.directory 自称是 MCP Servers 和 Agent Skills 目录，首页显示：
 
 ---
 
-## 七、Rules、Skills、MCP 与 Agent 的组合模式
+## 7. Rules、Skills、MCP 与 Agent 的组合模式
 
 ### 7.1 浏览器测试组合
 
@@ -495,7 +495,7 @@ MCP.directory 自称是 MCP Servers 和 Agent Skills 目录，首页显示：
 
 ---
 
-## 八、通用推荐清单
+## 8. 通用推荐清单
 
 ### 8.1 个人开发者 / 小项目
 
@@ -563,7 +563,7 @@ MCP.directory 自称是 MCP Servers 和 Agent Skills 目录，首页显示：
 
 ---
 
-## 九、风险与反模式
+## 9. 风险与反模式
 
 ### 9.1 反模式：所有 MCP 全部启用
 
@@ -613,7 +613,7 @@ MCP.directory 自称是 MCP Servers 和 Agent Skills 目录，首页显示：
 
 ---
 
-## 十、信息来源
+## 10. 信息来源
 
 1. Trae 官方论坛：`https://forum.trae.cn/t/topic/8191`
 2. Trae 官方论坛 FAQ：`https://forum.trae.cn/t/topic/65`

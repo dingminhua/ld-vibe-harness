@@ -2,7 +2,6 @@
 
 > 创建日期：2026-05-30
 > 定位：LD Vibe Harness 对 gstack 的项目级借鉴评估
-> 编号归属：70-89 内部调研
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
@@ -10,13 +9,13 @@
 
 ---
 
-## 一、本文解决的问题
+## 1. 本文解决的问题
 
 本文评估 LD Vibe Harness 应如何借鉴 gstack 的设计思想，同时保持自身"面向 Vibe Coding 的工程驾驭框架"的独特定位。本文是内部调研，不直接构成强制规则；调研结论进入 00-79 正式规范区间或 ADR 后才成为稳定规则。
 
 ---
 
-## 二、结论
+## 2. 结论
 
 gstack 对 LD Vibe Harness 有较高参考价值，但 LD Vibe Harness 不应复制 gstack 的产品形态。
 
@@ -34,7 +33,7 @@ LD Vibe Harness 最值得借鉴 gstack 的不是具体命令数量，也不是�
 
 ---
 
-## 三、项目概览
+## 3. 项目概览
 
 gstack 是一个围绕 Claude Code 构建的 AI 工程工作流项目。它通过一组 Markdown Skill、CLI 工具、浏览器能力和本地状态机制，把单个 AI 编程助手扩展成类似"虚拟工程团队"的协作体系。
 
@@ -53,7 +52,7 @@ gstack 是一个围绕 Claude Code 构建的 AI 工程工作流项目。它通�
 
 ---
 
-## 四、与 LD Vibe Harness 的关系判断
+## 4. 与 LD Vibe Harness 的关系判断
 
 | 维度 | gstack | LD Vibe Harness |
 |---|---|---|
@@ -76,7 +75,7 @@ LD Vibe Harness 的工具只做聚合视图和受控编辑入口
 
 ---
 
-## 五、最值得借鉴的设计思想
+## 5. 最值得借鉴的设计思想
 
 ### 5.1 阶段化 AI 工程流程
 
@@ -194,7 +193,7 @@ AI 可以建议
 
 ---
 
-## 六、对 LD Vibe Harness 的启发
+## 6. 对 LD Vibe Harness 的启发
 
 ### 6.1 从"看板"升级为"协作驾驭体系"
 
@@ -243,7 +242,7 @@ gstack 通过 context-save/context-restore 解决跨会话上下文恢复。LD V
 
 ---
 
-## 七、可落地建议
+## 7. 可落地建议
 
 ### 7.1 短期建议
 
@@ -276,7 +275,7 @@ gstack 通过 context-save/context-restore 解决跨会话上下文恢复。LD V
 
 ---
 
-## 八、风险评估
+## 8. 风险评估
 
 | 风险 | 表现 | 控制方式 |
 |---|---|---|
@@ -289,7 +288,7 @@ gstack 通过 context-save/context-restore 解决跨会话上下文恢复。LD V
 
 ---
 
-## 九、评估结论
+## 9. 评估结论
 
 gstack 对 LD Vibe Harness 的核心启发可以浓缩为一句话：
 
@@ -316,7 +315,7 @@ LD Vibe Harness：让项目事实源和 AI 协作治理更像一个可操作的�
 
 ---
 
-## 十、待补齐事项
+## 10. 待补齐事项
 
 1. 本文结论如何进入 05 LDVH 工具基础规范待工具规范稳定后确定；
 2. 本文结论如何影响 10-39 事实模型规范待对象规范稳定后确定；
