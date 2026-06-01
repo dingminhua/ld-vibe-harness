@@ -12,6 +12,7 @@ decision: |
   同步调整 tools/index_03_01_specs_docs.py 的 INPUT_PATTERNS 为仅扫描 *.md，并更新对应测试断言。
   同步更新 L0/L1/L2 Rules 的索引机制入口摘要：L0 作为工作区读取策略入口，L1 作为 LDVH 项目 specs 读取入口，L2 作为 specs 编辑场景入口。
   同步评估并更新需要知道该机制的规范：03.01 补充 L0 Rules 机制关系，12.01 作为 Tools 辅助层规范引用 03.01 并约束 specs 文档索引能力，14 作为 AI 读取策略权威位置纳入机器索引辅助定位。
+  按 11.01 §7 和 §8 重新梳理 L0/L1/L2 Rules，将其压缩为运行时入口摘要、必读提醒和场景触发提示，避免复制 specs 正文。
 consequences: |
   - 默认 specs 文档索引更加聚焦根目录规范文档；
   - AI 默认定位时不会因 evals 或 refs 文档增加噪声；

@@ -4,58 +4,23 @@
 > 层级：L1 项目规则
 > 适用项目：ld-vibe-harness
 > 生效方式：始终生效
-> 规范来源：`specs/11.01-Rules机制规范.md`、`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-LDVH目录说明.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`
-> 维护边界：本文件只作为 LDVH 项目入口、项目专属硬约束和 L2 引导，不替代 specs 正式规范
+> 规范来源：`specs/11.01-Rules机制规范.md`、`specs/03.01-Specs文档索引规范.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`
+> 维护边界：本文件只作 LDVH 项目入口、项目专属硬约束和 L2 引导，不替代 specs 正式规范
 
-## 项目定位
+## 项目入口
 
-LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，简称 LDVH。定位与理念见 `specs/00-LD-Vibe-Harness理念与纲要.md`。
+LDVH 定位见 `specs/00-LD-Vibe-Harness理念与纲要.md`。项目目录事实源见 `specs/01-LDVH目录说明.md`。术语见 `specs/02-LDVH术语规范.md`。specs 文档骨架和引用纪律见 `specs/03-Specs文档规范.md`。specs 文档索引和章节定位见 `specs/03.01-Specs文档索引规范.md`。
 
-## 必读入口
+读取 specs 时可用 03.01 索引辅助定位 `specs/*.md`，但必须读取原文作判断；`specs/evals/` 与 `specs/refs/` 只有用户明确指定或任务明确要求时读取。
 
-进入本项目处理 specs、ldvh-base、references、tools、web 或项目规则相关事项时，优先读取：
+## 项目硬约束
 
-| 文档 | 核心章节 | 读取方式 |
-|---|---|---|
-| `specs/00-LD-Vibe-Harness理念与纲要.md` | §一 理念、§三 价值标准 | 按需定位 |
-| `specs/01-LDVH目录说明.md` | §三 目录事实源性质 | 按需定位 |
-| `specs/02-LDVH术语规范.md` | §四 机制英文专名、§五 术语变更 | 按需定位 |
-| `specs/03-Specs文档规范.md` | §五 文档骨架、§七 引用纪律 | 按需定位 |
-| `specs/03.01-Specs文档索引规范.md` | §5 输入范围、§10 AI 消费规则 | 需要 specs 文档索引或章节定位时读取 |
+不自动 commit、push、tag、release。新增或修改项目文档、Rules、规范或事实实例后，在 `ldvh-base/changes/` 记录 Change。Human Gate 由 AskUserQuestion 实现，入口见 `specs/05-Trae-Solo AskUserQuestion使用规范.md`。
 
-处理 L0/L1/L2 Rules 新增、修改或审计时，必须读取 `specs/11.01-Rules机制规范.md`，并按 §七从 `specs/*.md` 根目录正式文档反向发现 Rules 需求。
+## L2 引导
 
-处理内部调研或规范迁移时，再按任务需要读取 `specs/evals/` 对应文档。
-
-读取方式说明：按需定位 = 先搜索或使用 03.01 定义的 specs 文档索引定位章节，再按行范围读取；索引默认只覆盖 `specs/*.md` 根目录文档；不得因"必读"而全文读取超过 200 行的文档。
-
-## 目录事实源边界
-
-目录事实源性质声明见 `specs/01-LDVH目录说明.md` §3.2。本项目关键边界：
-
-- `specs/` 承载 LDVH 规范体系和内部调研
-- `ldvh-base/` 承载结构化事实实例和变更记录
-- `specs/refs/` 承载外部资料引用，不能直接作为 LDVH 强制规则
-- `specs-v2/` 是迁移和重构参考区，不自动替代 `specs/` 当前权威规范
-
-## 项目专属硬约束
-
-1. 不自动执行 commit、push、tag、release，除非用户明确要求
-2. 编写或修改规范时，优先引用权威文档，不复制并维护同一规则（依据 `specs/03-Specs文档规范.md` §七）
-3. 新增或修改项目文档、规则或规范后，必须在 `ldvh-base/changes/` 创建 Change YAML 记录（依据 `specs/10-事实源边界与承载规范.md` §七）
-
-## Human Gate 实现
-
-本项目使用 Trae AskUserQuestion 工具实现 Human Gate 机制。
-触发条件和设计规范见 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §5-6。
-取消处理见同文件 §7。
-
-## L2 场景规则
-
-- `ldvh-l2-specs-rules.md`：编辑 specs/ 目录下文档时生效；L1 只负责引导该 L2，具体关联关系由 `specs/03-Specs文档规范.md` §六维护；审计 Rules 时依据 `specs/11.01-Rules机制规范.md` §七反向发现 specs 根目录文档中的 Rules 需求
-
-事实实例编辑规则已提升至 L0 层级（`ldvh-l0-fact-model-rules.md`），适用于所有管辖项目，不在本项目 L2 中维护。
+编辑 specs Markdown 时进入 `.trae/rules/ldvh-l2-specs-rules.md`。编辑 `ldvh-base/` YAML 时进入工作区 L0 事实模型规则。新增、修改或审计 L0/L1/L2 Rules 时，先读 `specs/11.01-Rules机制规范.md` §7，并从 `specs/*.md` 根目录正式文档反向发现 Rules 需求。
 
 ## 压缩保护
 
-LDVH项目 | 不自动push | 引用不复制 | 改文档写change | specs索引见03.01且默认只含根目录 | specs-v2不替代specs | L1引导L2 | Rules审计读11.01并反向发现specs根文档 | 事实模型规则在L0 | 读取先定位再Read | 必读不等于全文读 | HumanGate用AskUserQuestion见05
+LDVH项目 | 不自动push | 改文档写Change | specs索引见03.01 | evals/refs需指定 | specs编辑进L2 | ldvh-base进事实模型L0 | Rules审计读11.01§7 | 读原文作判断
