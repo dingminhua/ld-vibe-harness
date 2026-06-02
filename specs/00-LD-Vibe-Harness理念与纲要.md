@@ -22,7 +22,7 @@ LD Vibe Harness 是 Harness 思想的实践，简称为 LDVH。
 
 ---
 
-## 2. 第一服务对象
+## 2. 以 AI 执行者为第一服务对象
 
 LD Vibe Harness 以 AI 执行者为第一服务对象。
 
