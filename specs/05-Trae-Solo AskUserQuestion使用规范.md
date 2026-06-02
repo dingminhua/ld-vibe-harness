@@ -260,19 +260,23 @@ AskUserQuestion 是 Trae 平台特有工具，其他 AI 模型不具备此能力
 
 ### 8.3 Rules 注入
 
-项目 L1 或 L2 Rules 中应声明 AskUserQuestion 的使用要求：
+L0、项目 L1 或 L2 Rules 中需要承载 AskUserQuestion 使用要求时，应声明以下内容。Rules 只写运行时入口摘要，不复制本文完整规则；入口摘要必须让 AI 知道需要执行 Human Gate 时应暂停动作并调用 AskUserQuestion 完成人类确认，而不是只提示“入口见 `specs/05-Trae-Solo AskUserQuestion使用规范.md`”。同一项目上下文中如 L0 已承载该机制摘要，L1/L2 不应重复维护，只保留各自项目或场景专属约束。
 
 ```markdown
 ## Human Gate 实现
 
-本项目使用 Trae AskUserQuestion 工具实现 Human Gate 机制。
-触发条件和设计规范见 specs/05-Trae-Solo AskUserQuestion使用规范.md §5-6。
-取消处理见 §7。
+本项目使用 Trae AskUserQuestion 工具承载 Human Gate 确认机制。需要 Human Gate 时，先暂停拟执行动作，用 AskUserQuestion 向用户确认；问题和选项按 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §6 设计，必须包含暂停/暂缓选项；用户取消或选择暂停后，按 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §7 停止执行并等待指示。触发场景见 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §5，参数细节需要时再读 `specs/refs/12-Trae-AskUserQuestion问询工具调研.md` §2.1。
+```
+
+L0/L1/L2 Rules 因字符上限需要压缩时，至少保留以下信息：
+
+```text
+Human Gate：用 AskUserQuestion 承载确认机制；需要确认时先暂停动作并问询；问询按 specs/05-Trae-Solo AskUserQuestion使用规范.md §6，含暂停/暂缓；取消按 specs/05-Trae-Solo AskUserQuestion使用规范.md §7 停止等待。
 ```
 
 ### 8.4 Skill 模板
 
-Skill 可提供结构化问询模板，降低 AI 构造参数的认知负担。Skill 模板应引用 05 §6（设计规范）和 §7（取消处理）。
+Skill 可提供结构化问询模板，降低 AI 构造参数的认知负担。Skill 模板应引用 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §6（设计规范）和 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §7（取消处理）。
 
 ### 8.5 规范文档引用
 

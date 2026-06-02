@@ -13,7 +13,7 @@ LDVH 定位见 00，目录见 01，术语见 02，specs 骨架和引用纪律见
 
 ## 硬约束
 
-不自动 commit、push、tag、release。新增或修改项目文档、Rules、规范或事实实例后，在 `ldvh-base/changes/` 记录 Change。Human Gate 由 AskUserQuestion 实现，入口见 05。
+不自动 commit、push、tag、release。新增或修改项目文档、Rules、规范或事实实例后，在 `ldvh-base/changes/` 记录 Change。
 
 ## L2 引导
 
