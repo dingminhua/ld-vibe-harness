@@ -13,7 +13,7 @@
 
 ## 硬约束
 
-不自动 commit、push、tag、release。新增机制、规则或规范内容必须服务 LDVH 价值标准。高影响变更、事实源变更、状态流转、关键决策或方案选择先识别 Human Gate；修改项目文档、Rules、规范或事实实例后，按 22 记录变更。
+新增机制、规则或规范内容必须服务 LDVH 价值标准。高影响变更、事实源变更、状态流转、关键决策或方案选择先识别 Human Gate。修改 specs、Rules、ldvh-base 事实实例、Tools 或项目配置后，属于 22 §3.3 准入变更，按 22.01 §5 完成提交准备（diff 展示、message 展示、格式预检、用户确认）后执行 commit。不自动 push、tag、release。
 
 ## ADR 入口
 
@@ -25,4 +25,4 @@
 
 ## 压缩保护
 
-LDVH | 00-20按任务读原文 | 00价值 01目录 02术语 03specs 04子文档 05HG 10事实源 11协作 12Tools 13事实 14行动 20索引 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0
+LDVH | 00-20按任务读原文 | 00价值 01目录 02术语 03specs 04子文档 05HG 10事实源 11协作 12Tools 13事实 14行动 20索引 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0 | 准入变更按22§3.3+22.01§5准备后commit
