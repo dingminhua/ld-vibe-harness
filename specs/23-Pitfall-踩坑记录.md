@@ -72,7 +72,7 @@ Pitfall 不是所有问题、Bug、临时错误或失败尝试的默认归宿。
 
 Pitfall 记录为什么会踩坑、如何解决和以后如何规避；Rules 记录必须遵守的高频行为边界；Skill 记录可复用流程；Tools 记录确定性解析、校验、聚合和受控写入能力。
 
-当 Pitfall 中的规避策略升级为长期强制行为时，应将规则正文写入 specs 或 Rules，Pitfall 保留问题背景、根因和验证证据。Pitfall 不替代 specs 规范正文，不替代 Rules 执行入口，不替代 Task、Evidence、Change 或 ADR 的事实源。
+当 Pitfall 中的规避策略需要形成长期强制行为时，应将规则正文写入 specs 或 Rules，Pitfall 保留问题背景、根因和验证证据。Pitfall 不替代 specs 规范正文，不替代 Rules 执行入口，不替代 Task、Evidence、Change 或 ADR 的事实源。
 
 ---
 
@@ -90,10 +90,10 @@ ldvh-base/pitfalls/pitfall-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| Pitfall 对象模型 | `specs/32-Pitfall-踩坑记录.md` |
+| Pitfall 对象模型 | `specs/23-Pitfall-踩坑记录.md` |
 | Pitfall 对象实例 | `ldvh-base/pitfalls/` |
-| Pitfall 模型实践子文档 | `specs/32.01-Rules.md` 至 `specs/32.05-Web.md` |
-| Pitfall 契约子文档 | `specs/32.06-Contract.md` |
+| Pitfall 模型实践子文档 | `specs/23.01-Rules.md` 至 `specs/23.05-Web.md` |
+| Pitfall 契约子文档 | `specs/23.06-Contract.md` |
 | Pitfall 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
 ---
@@ -155,11 +155,11 @@ archived → 无
 
 转化后，Pitfall 的 `source_objects` 字段应记录来源 Memo ID。Memo 侧的状态和回链字段由 Memo 对象模型定义。
 
-### 6.3 Pitfall → Rules / Skill / Tools
+### 6.3 Pitfall 与 Rules / Skill / Tools
 
-当 Pitfall 中的规避策略、流程修正或工具需求需要成为稳定协作机制时，应分流到 Rules、Skill 或 Tools。
+Pitfall 和 Rules / Skill / Tools 是独立对象，不存在转换关系。当 Pitfall 中的规避策略、流程修正或工具需求需要成为稳定协作机制时，应创建新的 Rules、Skill 或 Tools 实体承接，Pitfall 保留不删除。
 
-满足以下条件之一时，应考虑升级：
+满足以下条件之一时，应考虑分流：
 
 1. 规避策略需要成为强制规则；
 2. 解决流程需要重复执行并可标准化；
@@ -167,23 +167,27 @@ archived → 无
 4. 问题多次出现，需要改变 AI、人或工具的长期行为；
 5. 影响事实源边界、Human Gate、检查要求或对象关闭方式。
 
-升级后应保持：
+分流后应保持：
 
 ```text
-Pitfall 记录踩坑事实、根因、解决方式和经验来源
-Rules / Skill / Tools 记录以后必须怎么做或如何机械化执行
+Pitfall 记录踩坑事实、根因、解决方式和经验来源（保留，不删除）
+Rules / Skill / Tools 记录以后必须怎么做或如何机械化执行（新增，独立对象）
 ```
 
-升级操作必须：
+分流操作必须：
 
-1. 将规则正文、流程实践或工具契约写入对应事实源；
-2. Pitfall 保留问题背景、根因和验证证据，不删除；
-3. 在 Pitfall 的 `related_rules` 或 `related_objects` 字段记录升级后的关联；
+1. 将规则正文、流程实践或工具契约写入对应事实源（创建新实体）；
+2. Pitfall 保留问题背景、根因和验证证据，不删除、不转换；
+3. 在 Pitfall 的 `related_rules` 或 `related_objects` 字段记录关联的新实体引用；
 4. 经 Human Gate 确认。
 
-### 6.4 Pitfall → ADR
+### 6.4 Pitfall 与 ADR
 
-当 Pitfall 暴露的问题需要形成长期决策、改变事实源归属或影响多个事实模型时，应考虑创建 ADR。ADR 记录决策原因和决策内容，Pitfall 保留踩坑事实和经验。
+Pitfall 和 ADR 是独立对象，不存在转换关系。经验是经验，决定是决定，两者可以关联但不可互相替代。
+
+当 Pitfall 暴露的问题需要形成长期决策、改变事实源归属或影响多个事实模型时，应创建新的 ADR。Pitfall 保留踩坑事实和经验不删除，ADR 作为新增决策记录独立存在。Pitfall 通过 `related_objects` 关联 ADR 引用。
+
+当 ADR 的决策执行后踩坑时，应创建新的 Pitfall。ADR 保留决策记录不删除，Pitfall 作为新增经验记录独立存在。Pitfall 通过 `source_objects` 或 `related_objects` 关联 ADR 引用。
 
 ### 6.5 不满足准入的信息
 
@@ -208,7 +212,7 @@ Rules / Skill / Tools 记录以后必须怎么做或如何机械化执行
 | `draft → active` | 经验已解决、已验证且可作为后续执行参考 |
 | `active → superseded` | 替代原因与替代对象 |
 | `active → archived` | 归档原因与后续是否仍可参考 |
-| Pitfall 升级为 specs、Rules、Skill 或 Tools | 升级内容与事实源归属 |
+| Pitfall 分流为 specs、Rules、Skill 或 Tools | 分流内容与事实源归属 |
 | Pitfall 文件重命名 | 引用同步更新 |
 | 修改已 active Pitfall 的 `avoidance`、`resolution` 或 `root_cause` 字段 | 核心经验内容变更 |
 
@@ -220,7 +224,7 @@ Human Gate 确认应保留在对话上下文、相关 Task / Evidence 或受控�
 
 ## 8. 字段契约
 
-Pitfall YAML 字段契约由 `specs/32.06-Contract.md` 承接。本文只定义字段类别和语义范围，不维护完整 schema。
+Pitfall YAML 字段契约由 `specs/23.06-Contract.md` 承接。本文只定义字段类别和语义范围，不维护完整 schema。
 
 Pitfall 字段应覆盖：
 
@@ -275,12 +279,12 @@ AI 引用 Pitfall 时，应区分：
 
 | 编号 | 文档 | 状态 | 摘要 |
 |---|---|---|---|
-| 32.01 | `32.01-Rules.md` | active | 定义 Pitfall 的 Rules 入口提醒、读取提示、写入 Human Gate 和禁止承载内容 |
-| 32.02 | `32.02-Skill.md` | active-prep | 定义未来 Pitfall 整理 Skill 的能力边界、实现前提和检查项 |
-| 32.03 | `32.03-Agent.md` | not-created | 说明当前不创建 Pitfall 专用 Agent 的理由和检查项 |
-| 32.04 | `32.04-Tools.md` | active-prep | 定义未来 Pitfall 解析、校验、聚合和受控写入工具的能力边界 |
-| 32.05 | `32.05-Web.md` | active-prep | 定义未来 Web 信息同步、检索和 Human Gate UI 的能力边界 |
-| 32.06 | `32.06-Contract.md` | active | 定义 Pitfall YAML schema、字段约束、文件命名和状态流转契约 |
+| 23.01 | `23.01-Rules.md` | active | 定义 Pitfall 的 Rules 入口提醒、读取提示、写入 Human Gate 和禁止承载内容 |
+| 23.02 | `23.02-Skill.md` | active-prep | 定义未来 Pitfall 整理 Skill 的能力边界、实现前提和检查项 |
+| 23.03 | `23.03-Agent.md` | not-created | 说明当前不创建 Pitfall 专用 Agent 的理由和检查项 |
+| 23.04 | `23.04-Tools.md` | active-prep | 定义未来 Pitfall 解析、校验、聚合和受控写入工具的能力边界 |
+| 23.05 | `23.05-Web.md` | active-prep | 定义未来 Web 信息同步、检索和 Human Gate UI 的能力边界 |
+| 23.06 | `23.06-Contract.md` | active | 定义 Pitfall YAML schema、字段约束、文件命名和状态流转契约 |
 
 ### 12.2 子文档适用条件
 
@@ -290,9 +294,9 @@ AI 引用 Pitfall 时，应区分：
 
 ## 13. Tools 契约式校验与执行适配
 
-Pitfall Tools 应依据 `specs/32.06-Contract.md` 执行字段解析、状态校验、引用检查、状态筛选、聚合查询和受控写入。Tools 不得自行扩张字段契约，不得绕过 Human Gate 创建、激活、归档或替代 Pitfall。
+Pitfall Tools 应依据 `specs/23.06-Contract.md` 执行字段解析、状态校验、引用检查、状态筛选、聚合查询和受控写入。Tools 不得自行扩张字段契约，不得绕过 Human Gate 创建、激活、归档或替代 Pitfall。
 
-在 Tools 能力未实现前，AI 或人可按本文和 `specs/32.06-Contract.md` 人工创建或更新 Pitfall，但必须记录降级原因、执行字段检查并按 Change 要求保留变更记录。
+在 Tools 能力未实现前，AI 或人可按本文和 `specs/23.06-Contract.md` 人工创建或更新 Pitfall，但必须记录降级原因、执行字段检查并按 Change 要求保留变更记录。
 
 ---
 
@@ -321,13 +325,13 @@ Pitfall 在 LDVH 中正式落地，采用以下决策：
 读取 Pitfall 时，应按以下顺序处理：
 
 1. 读取当前项目 L1 和事实模型入口；
-2. 读取本文和 `specs/32.06-Contract.md`；
+2. 读取本文和 `specs/23.06-Contract.md`；
 3. 读取 `ldvh-base/pitfalls/` 下相关实例；
 4. 优先筛选 `active` 状态；
 5. 遇到 `superseded` 状态时追踪 `superseded_by`；
 6. 按标签、适用范围、关联对象和目标文件筛选相关记录。
 
-读取后发现缺口、冲突或需变更时，应分流到创建、更新、状态流转、升级、归档或替代流程。
+读取后发现缺口、冲突或需变更时，应分流到创建、更新、状态流转、归档或替代流程。
 
 ### 15.2 写入策略
 
@@ -366,13 +370,13 @@ Pitfall 仍以 AI 执行者为第一服务对象，帮助 AI 在执行前读取�
 
 Pitfall 落地初始化包含以下产物：
 
-1. 创建 `specs/32-Pitfall-踩坑记录.md`；
-2. 创建 `specs/32.01-Rules.md`；
-3. 创建 `specs/32.02-Skill.md`；
-4. 创建 `specs/32.03-Agent.md`；
-5. 创建 `specs/32.04-Tools.md`；
-6. 创建 `specs/32.05-Web.md`；
-7. 创建 `specs/32.06-Contract.md`；
+1. 创建 `specs/23-Pitfall-踩坑记录.md`；
+2. 创建 `specs/23.01-Rules.md`；
+3. 创建 `specs/23.02-Skill.md`；
+4. 创建 `specs/23.03-Agent.md`；
+5. 创建 `specs/23.04-Tools.md`；
+6. 创建 `specs/23.05-Web.md`；
+7. 创建 `specs/23.06-Contract.md`；
 8. 更新 `specs/20-事实模型集合索引.md`；
 9. 后续创建实例前确认项目存在 `ldvh-base/pitfalls/`，不存在时按 Human Gate 创建。
 
@@ -409,11 +413,11 @@ Pitfall 落地审计应检查：
 2. 准入条件是否排除了未解决问题、未验证猜测和一次性临时错误；
 3. 事实源是否为 `ldvh-base/pitfalls/`；
 4. 状态流转是否符合 §5；
-5. 字段契约是否由 `specs/32.06-Contract.md` 承接；
+5. 字段契约是否由 `specs/23.06-Contract.md` 承接；
 6. Human Gate 是否覆盖创建、激活、归档、替代和核心经验字段修改；
 7. AI 协作是否区分 `active`、`draft`、`superseded` 和 `archived` 的适用性；
 8. Tools 和 Web 是否只作为派生或受控入口，不维护第二事实源；
-9. 升级为 Rules、Skill、Tools 或 ADR 时是否保持事实源职责分离。
+9. 分流到 Rules、Skill、Tools 或 ADR 时是否保持事实源职责分离。
 
 ---
 
