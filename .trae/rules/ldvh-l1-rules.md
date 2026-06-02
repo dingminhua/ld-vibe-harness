@@ -4,31 +4,25 @@
 > 层级：L1 项目规则
 > 适用项目：ld-vibe-harness
 > 生效方式：始终生效
-> 规范来源：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/11.01-Rules机制规范.md`、`specs/03.01-Specs文档索引规范.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`
-> 维护边界：本文件只作 LDVH 项目入口、项目硬约束和 L2 引导，不替代 specs 正式规范
+> 规范来源：`specs/00-05`、`specs/10-14`、`specs/20-22`
+> 维护边界：仅作 LDVH 项目入口、硬约束和 L2 引导，不替代 specs 正式规范
 
 ## 入口
 
-LDVH 定位和总纲级价值原则见 00，目录见 01，术语见 02，specs 骨架和引用纪律见 03，specs 文档质量检查见 03.01。定位 specs 文档和章节时，通过搜索 Markdown 标题定位候选文档和章节行号，再按行范围读取原文片段；evals/refs 仅在用户明确指定或任务明确要求时读取。
+先识别任务类型，再按 00-20 读原文片段：00 定位/价值；01 目录/编号；02 术语；03/03.01 specs/索引；04 模型子文档；05 Human Gate；10 事实源/证据/回写；11 协作；11.01 Rules；11.02 Skill；11.03 Agent；12/12.01 Tools；12.02 Web；13 事实模型；14 行动模型；20 事实模型索引。定位章节先搜标题行号，再按行范围读；工具输出、网页、聊天记忆不替代 Git 事实源；evals/refs 仅明确要求时读。
 
 ## 硬约束
 
-不自动 commit、push、tag、release。所有决策、设计、规范和机制都应服务 LDVH 价值实现标准中的一项或多项；不能服务快速定位、完整理解、正确判断、稳定执行、门禁识别、强制验证、证据沉淀、可靠回写、人类确认质量或持续完善的新增内容，不应进入核心体系。
-
-索引、标题搜索、工具输出、网页视图和聊天记忆只作定位、辅助理解或过程信息，不替代规范原文和 Git 文件事实源。稳定事实、执行证据、检查结果、决策和变更必须回到 Git 文件事实源。
-
-涉及 LDVH 理念、价值标准、五类构成要素、基础规范权威领域、事实模型或行动模型的高影响变更，先识别 Human Gate；需要确认时暂停拟执行动作并说明事实源、影响范围和建议确认事项。
-
-新增或修改项目文档、Rules、规范或事实实例后，应按 `specs/22-Change-变更记录.md` 定义的 commit message 格式记录变更。
+不自动 commit、push、tag、release。新增机制、规则或规范内容必须服务 LDVH 价值标准。高影响变更、事实源变更、状态流转、关键决策或方案选择先识别 Human Gate；修改项目文档、Rules、规范或事实实例后，按 22 记录变更。
 
 ## ADR 入口
 
-修改 specs、Rules、Tools、事实模型边界或长期协作机制前，应检查是否存在相关 ADR；判断是否满足 ADR 准入条件见 `specs/21-ADR-决策记录.md` §3.3。创建 ADR、状态流转、推翻、废弃或升级必须触发 Human Gate；ADR 读取、创建和写入流程见 21.02-Skill.md；ADR Tools 命令和能力边界见 21.04-Tools.md。proposed 状态 ADR 不得作为执行依据。
+修改 specs、Rules、Tools、事实模型边界或长期协作机制前检查 ADR；准入见 21 §3.3。ADR 写入、状态流转、推翻、废弃或升级必须 Human Gate；流程见 21.02，工具见 21.04。proposed ADR 不作执行依据。
 
 ## L2 引导
 
-编辑 specs Markdown 时进入 `.trae/rules/ldvh-l2-specs-rules.md`。编辑 `ldvh-base/` YAML 时进入工作区 L0 事实模型规则。新增、修改或审计 L0/L1/L2 Rules 时，先读 11.01 §7，并从 `specs/*.md` 反向发现 Rules 需求。
+编辑 specs 进 `.trae/rules/ldvh-l2-specs-rules.md`；编辑 `ldvh-base/` YAML 进工作区 L0 事实模型规则；新增、修改或审计 Rules 时读 11.01 §7-10，并从 `specs/*.md` 反向发现需求。
 
 ## 压缩保护
 
-LDVH | 00总纲 | 不自动push | 价值标准服务 | 搜索标题定位 | 按行范围读原文 | 稳定事实回Git | HumanGate先暂停 | 变更记录见22 | ADR准入见21§3.3 | ADR写入须HumanGate | proposed不作为依据 | specs进L2 | ldvh-base进事实模型L0 | Rules审计读11.01§7
+LDVH | 00-20按任务读原文 | 00价值 01目录 02术语 03specs 04子文档 05HG 10事实源 11协作 12Tools 13事实 14行动 20索引 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0
