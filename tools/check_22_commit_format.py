@@ -32,6 +32,9 @@ HEADER_RE = re.compile(r"^([a-z]+)(?:\(([^)]+)\))?:\s+(.+)$")
 # Refs 行格式
 REFS_RE = re.compile(r"^Refs:\s*(.+)$", re.MULTILINE)
 
+# 中文字符检测（specs/22.06-Contract.md §4.1）
+HAS_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
+
 FORMAT_HELP = """\
 正确的 commit message 格式（specs/22.06-Contract.md）：
 
@@ -173,6 +176,16 @@ def check_commit(commit: CommitInfo) -> list[Issue]:
             commit.hash, "warning",
             "缺少 Refs: 行（非强制但建议添加关联对象引用）"
         ))
+
+    # 检查是否包含中文（error，强制）
+    # subject 中 type(scope) 之后的内容 + body 全文
+    if m:
+        content_to_check = subject_val + "\n" + commit.body
+        if not HAS_CHINESE_RE.search(content_to_check):
+            issues.append(Issue(
+                commit.hash, "error",
+                "commit message 必须包含中文字符（subject 和 body 部分），type 和 scope 不要求中文"
+            ))
 
     return issues
 

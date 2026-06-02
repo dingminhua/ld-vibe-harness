@@ -21,13 +21,13 @@ def issues_messages(issues):
 
 
 def test_valid_type_and_subject():
-    commit = make_commit("a" * 40, "docs: add README")
+    commit = make_commit("a" * 40, "docs: 添加 README")
     errors = [i for i in checker.check_commit(commit) if i.level == "error"]
     assert errors == []
 
 
 def test_valid_type_with_scope():
-    commit = make_commit("a" * 40, "spec(specs): update rules")
+    commit = make_commit("a" * 40, "spec(specs): 更新规则")
     errors = [i for i in checker.check_commit(commit) if i.level == "error"]
     assert errors == []
 
@@ -97,9 +97,8 @@ def test_multiple_issues():
 
 def test_all_valid_types():
     for t in checker.VALID_TYPES:
-        commit = make_commit("a" * 40, f"{t}: some change")
+        commit = make_commit("a" * 40, f"{t}: 测试变更")
         issues = checker.check_commit(commit)
-        # 只有 Refs 缺失 warning，无 error
         errors = [i for i in issues if i.level == "error"]
         assert errors == [], f"type '{t}' should be valid"
 
@@ -224,3 +223,37 @@ def test_show_format_output(capsys):
     assert "<type>(<scope>): <subject>" in captured.out
     assert "feat" in captured.out
     assert "specs" in captured.out
+
+
+# -------- 中文字符检测 --------
+
+
+def test_chinese_subject():
+    commit = make_commit("a" * 40, "spec(tools): 新增中文检测功能")
+    issues = checker.check_commit(commit)
+    msgs = issues_messages(issues)
+    assert not any("必须包含中文字符" in m for m in msgs)
+
+
+def test_chinese_body():
+    commit = make_commit(
+        "a" * 40,
+        "spec(tools): add chinese check",
+        "在提交前检测 commit message 是否包含中文。\n\nRefs: 22-Change-变更记录"
+    )
+    issues = checker.check_commit(commit)
+    msgs = issues_messages(issues)
+    assert not any("必须包含中文字符" in m for m in msgs)
+
+
+def test_no_chinese_error():
+    commit = make_commit("a" * 40, "spec(tools): add feature without chinese")
+    issues = checker.check_commit(commit)
+    msgs = issues_messages(issues)
+    assert any("必须包含中文字符" in m for m in msgs)
+
+
+def test_check_message_no_chinese():
+    issues = checker.check_message("spec(tools): add feature without chinese\n\nNo chinese here.")
+    msgs = issues_messages(issues)
+    assert any("必须包含中文字符" in m for m in msgs)
