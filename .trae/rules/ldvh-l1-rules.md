@@ -19,7 +19,7 @@ LDVH 定位和总纲级价值原则见 00，目录见 01，术语见 02，specs 
 
 涉及 LDVH 理念、价值标准、五类构成要素、基础规范权威领域、事实模型或行动模型的高影响变更，先识别 Human Gate；需要确认时暂停拟执行动作并说明事实源、影响范围和建议确认事项。
 
-新增或修改项目文档、Rules、规范或事实实例后，应记录变更。【暂缓：当前 `ldvh-base/changes/` YAML 记录机制暂缓执行，后续以其他方式实现。暂缓期间，变更记录要求仍保留，具体实现方式待替换。】
+新增或修改项目文档、Rules、规范或事实实例后，应按 `specs/22-Change-变更记录.md` 定义的 commit message 格式记录变更。
 
 ## ADR 入口
 
@@ -31,4 +31,4 @@ LDVH 定位和总纲级价值原则见 00，目录见 01，术语见 02，specs 
 
 ## 压缩保护
 
-LDVH | 00总纲 | 不自动push | 价值标准服务 | 搜索标题定位 | 按行范围读原文 | 稳定事实回Git | HumanGate先暂停 | 变更记录(暂缓) | ADR准入见21§3.3 | ADR写入须HumanGate | proposed不作为依据 | specs进L2 | ldvh-base进事实模型L0 | Rules审计读11.01§7
+LDVH | 00总纲 | 不自动push | 价值标准服务 | 搜索标题定位 | 按行范围读原文 | 稳定事实回Git | HumanGate先暂停 | 变更记录见22 | ADR准入见21§3.3 | ADR写入须HumanGate | proposed不作为依据 | specs进L2 | ldvh-base进事实模型L0 | Rules审计读11.01§7
