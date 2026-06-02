@@ -1,0 +1,37 @@
+type: change
+title: 新增仓库根 .gitignore，忽略 Python/macOS/pytest/IDE 产物
+author: ai
+status: done
+created: 2026-06-02
+updated: 2026-06-02
+context: |
+  仓库根目录此前没有 .gitignore，已观察到 .DS_Store（macOS）和
+  .pytest_cache/（pytest）被错误地纳入跟踪范围。pyproject.toml
+  显示项目类型为 Python（>=3.9，依赖 PyYAML / pytest）。
+  按 L1 硬约束，新增项目文件需在 ldvh-base/changes/ 记录 Change。
+decision: |
+  在仓库根新增 .gitignore，覆盖：
+  - Python 字节码与打包产物：__pycache__/、*.py[cod]、.eggs/、
+    *.egg-info/、build/、dist/、wheels/、*.egg、MANIFEST
+  - 虚拟环境：.venv/、venv/、env/、ENV/、.python-version
+  - 测试与缓存：.pytest_cache/、.cache/、.coverage*、coverage.xml、
+    htmlcov/、.tox/、.nox/、.mypy_cache/、.ruff_cache/
+  - IDE/编辑器：.vscode/、.idea/、*.swp、*.swo、*~、.project、
+    .classpath、.settings/
+  - 操作系统：.DS_Store、.AppleDouble、.LSOverride、Thumbs.db 等
+  - 日志/临时：*.log、*.tmp、*.bak
+
+  明确不忽略 .trae/、ldvh-base/、specs/、specs-v2/、tests/、
+  tools/、web/、LICENSE、README.md、pyproject.toml —— 这些都是
+  LDVH 刻意承载的项目内容。
+consequences:
+  - 仓库根新增 .gitignore
+  - 已存在的 .DS_Store 与 .pytest_cache/ 后续可通过
+    `git rm --cached` 解除跟踪（不在本次提交范围内）
+affects:
+  - .gitignore
+related_rules:
+  - .trae/rules/ldvh-l1-rules.md
+human_gate:
+  required: false
+  reason: 新增通用忽略文件，不涉及规范、Rules 或事实实例的字段契约变更。
