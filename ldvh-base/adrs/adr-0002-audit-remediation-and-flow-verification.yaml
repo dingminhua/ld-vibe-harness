@@ -1,0 +1,19 @@
+id: adr-0002
+type: adr
+title: ADR 落地审计整改与流程验证
+status: rejected
+created: '2026-06-03'
+updated: '2026-06-03'
+date: '2026-06-03'
+context: 落地审计发现 L1 Rules 缺少 ADR 入口摘要、Human Gate 确认记录可追溯性不足、adr-0001 仍为 proposed 状态。已完成整改并需通过流程验证
+  ADR 创建和拒绝的生命周期。
+decision: 1) L1 Rules 补充 ADR 读取提醒和写入 Human Gate 入口摘要；2) adr-0001 context 补充结构化确认记录；3)
+  创建本 ADR 后走 proposed→rejected 流程验证拒绝生命周期；4) 同步将 adr-0001 也走 proposed→rejected 流程。
+consequences: 整改项落地；adr-0001 和 0002 均进入 rejected 终态，保留历史记录不删除。
+affects:
+- .trae/rules/ldvh-l1-rules.md
+- ldvh-base/adrs/adr-0001-adr-mechanism-initialization.yaml
+related_objects: []
+related_rules:
+- specs/21-ADR-决策记录.md
+- specs/21.02-Skill.md

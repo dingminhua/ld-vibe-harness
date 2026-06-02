@@ -166,9 +166,10 @@ def test_load_all_adrs_reads_only_adr_yaml_files(tmp_path, monkeypatch):
     write_adr(tmp_path / "memo-0001.yaml", id="memo-0001", title="不应读取")
     monkeypatch.setattr(adr_index, "ADRS_DIR", tmp_path)
 
-    adrs = adr_index.load_all_adrs()
+    adrs, parse_errors = adr_index.load_all_adrs()
 
     assert [adr["id"] for adr in adrs] == ["adr-0001", "adr-0002"]
+    assert parse_errors == []
 
 
 def test_cmd_search_matches_decision_text(capsys):
@@ -346,7 +347,7 @@ def test_transition_rejects_illegal_status_change(tmp_path, monkeypatch):
     path = tmp_path / "adr-0001-test.yaml"
     write_adr(path, status="proposed")
     monkeypatch.setattr(adr_index, "ADRS_DIR", tmp_path)
-    adrs = adr_index.load_all_adrs()
+    adrs, _ = adr_index.load_all_adrs()
     args = Args(adr_id="adr-0001", status="deprecated", superseded_by=None, **auth_args())
 
     with pytest.raises(adr_index.ToolError, match="非法"):
@@ -359,7 +360,7 @@ def test_transition_rejects_terminal_status_reopen(tmp_path, monkeypatch):
     path = tmp_path / "adr-0001-test.yaml"
     write_adr(path, status="rejected")
     monkeypatch.setattr(adr_index, "ADRS_DIR", tmp_path)
-    adrs = adr_index.load_all_adrs()
+    adrs, _ = adr_index.load_all_adrs()
     args = Args(adr_id="adr-0001", status="accepted", superseded_by=None, **auth_args())
 
     with pytest.raises(adr_index.ToolError, match="终态"):
@@ -372,7 +373,7 @@ def test_transition_accepts_proposed_to_accepted(tmp_path, monkeypatch):
     path = tmp_path / "adr-0001-test.yaml"
     write_adr(path, status="proposed")
     monkeypatch.setattr(adr_index, "ADRS_DIR", tmp_path)
-    adrs = adr_index.load_all_adrs()
+    adrs, _ = adr_index.load_all_adrs()
     args = Args(adr_id="adr-0001", status="accepted", superseded_by=None, **auth_args())
 
     adr_index.cmd_transition(args, adrs)
@@ -384,7 +385,7 @@ def test_link_rule_appends_unique_rule(tmp_path, monkeypatch):
     path = tmp_path / "adr-0001-test.yaml"
     write_adr(path, related_rules=[])
     monkeypatch.setattr(adr_index, "ADRS_DIR", tmp_path)
-    adrs = adr_index.load_all_adrs()
+    adrs, _ = adr_index.load_all_adrs()
     args = Args(adr_id="adr-0001", rule=["specs/21.04-Tools.md"], **auth_args())
 
     adr_index.cmd_link_rule(args, adrs)
@@ -396,7 +397,7 @@ def test_deprecate_updates_status_and_reason(tmp_path, monkeypatch):
     path = tmp_path / "adr-0001-test.yaml"
     write_adr(path, status="accepted", consequences="原影响")
     monkeypatch.setattr(adr_index, "ADRS_DIR", tmp_path)
-    adrs = adr_index.load_all_adrs()
+    adrs, _ = adr_index.load_all_adrs()
     args = Args(adr_id="adr-0001", reason="已不适用", reason_field="consequences", **auth_args())
 
     adr_index.cmd_deprecate(args, adrs)
@@ -410,7 +411,7 @@ def test_supersede_creates_new_adr_and_updates_old(tmp_path, monkeypatch):
     old_path = tmp_path / "adr-0001-old.yaml"
     write_adr(old_path, id="adr-0001", status="accepted", title="旧 ADR")
     monkeypatch.setattr(adr_index, "ADRS_DIR", tmp_path)
-    adrs = adr_index.load_all_adrs()
+    adrs, _ = adr_index.load_all_adrs()
     args = Args(old_adr_id="adr-0001", **adr_content(slug="new-adr", title="新 ADR"), **auth_args())
 
     adr_index.cmd_supersede(args, adrs)
@@ -421,3 +422,18 @@ def test_supersede_creates_new_adr_and_updates_old(tmp_path, monkeypatch):
     assert old_data["superseded_by"] == "adr-0002"
     assert new_data["status"] == "proposed"
     assert "adr-0001" in new_data["related_objects"]
+
+
+def test_load_all_adrs_reports_parse_errors(tmp_path, monkeypatch):
+    good_path = tmp_path / "adr-0001-good.yaml"
+    write_adr(good_path)
+    bad_path = tmp_path / "adr-0002-bad.yaml"
+    bad_path.write_text("id: adr-0002\ntype: adr\nstatus: [broken\n", encoding="utf-8")
+    monkeypatch.setattr(adr_index, "ADRS_DIR", tmp_path)
+
+    adrs, parse_errors = adr_index.load_all_adrs()
+
+    assert len(adrs) == 1
+    assert adrs[0]["id"] == "adr-0001"
+    assert len(parse_errors) == 1
+    assert "adr-0002-bad.yaml" in parse_errors[0][0]

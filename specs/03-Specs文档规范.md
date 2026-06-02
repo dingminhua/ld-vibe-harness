@@ -1,6 +1,7 @@
 # Specs 文档规范
 
 > 更新日期：2026-06-03
+> 定位：LD Vibe Harness 文档类型、文档骨架、引用纪律和文档治理检查的权威规范
 > 适用范围：LD Vibe Harness specs/ 目录下的正式规范文档、子文档、模型实践子文档、项目评估文档和文档治理
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
 > 相关规范：`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`

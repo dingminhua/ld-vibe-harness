@@ -71,13 +71,22 @@ def load_adr(filepath):
 
 def load_all_adrs():
     if not ADRS_DIR.exists():
-        return []
+        return [], []
     adrs = []
+    parse_errors = []
     for filepath in sorted(ADRS_DIR.glob("adr-*.yaml")):
-        adr = load_adr(filepath)
-        if adr:
-            adrs.append(adr)
-    return adrs
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+            if data is None:
+                parse_errors.append((filepath.name, "YAML 内容为空"))
+                continue
+            data["_file"] = filepath.name
+            data["_path"] = str(filepath)
+            adrs.append(data)
+        except Exception as e:
+            parse_errors.append((filepath.name, str(e)))
+    return adrs, parse_errors
 
 
 def fmt_date(val):
@@ -245,6 +254,8 @@ def write_yaml(path, data):
 
 def build_adr(args, adr_id):
     date_value = args.date or today()
+    gate_record = f"[Human Gate 确认记录: 确认人={getattr(args, 'confirmed_by', 'N/A')}, 确认时间={date_value}, 确认上下文={getattr(args, 'confirmation_context', 'N/A')}]"
+    context_with_gate = f"{args.context}\n{gate_record}" if getattr(args, 'context', None) else gate_record
     data = {
         "id": adr_id,
         "type": "adr",
@@ -253,7 +264,7 @@ def build_adr(args, adr_id):
         "created": date_value,
         "updated": date_value,
         "date": date_value,
-        "context": args.context,
+        "context": context_with_gate,
         "decision": args.decision,
         "consequences": args.consequences,
         "affects": parse_list(getattr(args, "affects", [])),
@@ -504,6 +515,9 @@ def cmd_transition(args, adrs):
         if not args.superseded_by:
             raise ToolError("状态流转被拒绝：accepted → superseded 必须提供 --superseded-by。")
         updates["superseded_by"] = args.superseded_by
+    gate_record = f"[Human Gate 确认记录: 确认人={args.confirmed_by}, 确认时间={today()}, 确认上下文={args.confirmation_context}]"
+    existing_context = adr.get("context", "")
+    updates["context"] = f"{existing_context}\n{gate_record}" if existing_context else gate_record
     path = update_adr_file(adr, updates)
     change_path = maybe_write_change(
         args,
@@ -675,7 +689,13 @@ def main(argv=None):
     if not args.command:
         parser.print_help()
         sys.exit(0)
-    adrs = load_all_adrs()
+    adrs, parse_errors = load_all_adrs()
+    if parse_errors:
+        for fname, err in parse_errors:
+            print(f"[警告] ADR 文件解析失败: {fname} — {err}", file=sys.stderr)
+        if args.command in ("create", "next-id", "draft", "transition", "link-rule", "deprecate", "supersede"):
+            print(f"[错误] 写入类命令在存在解析失败的 ADR 时被拒绝，请先修复上述文件。", file=sys.stderr)
+            sys.exit(1)
     try:
         if args.command == "list":
             cmd_list(adrs)

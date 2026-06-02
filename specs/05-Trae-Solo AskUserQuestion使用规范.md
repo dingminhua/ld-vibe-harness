@@ -44,7 +44,7 @@
 
 本文不重新定义：
 
-1. AskUserQuestion 的参数契约（见 refs/12 §2.1）；
+1. AskUserQuestion 的参数契约（见 refs/12 §2）；
 2. Trae IDE 的弹窗渲染逻辑；
 3. 用户选择后 IDE 如何封装返回消息。
 
@@ -105,7 +105,7 @@ AskUserQuestion 接收 `questions` 数组，每个问题包含以下字段：
 | `label` | string | 是 | 选项显示文本，1-5 词 |
 | `description` | string | 是 | 选项说明，解释选择后果 |
 
-完整参数契约见 refs/12 §2.1。
+完整参数契约见 refs/12 §2。
 
 ### 4.3 约束条件
 

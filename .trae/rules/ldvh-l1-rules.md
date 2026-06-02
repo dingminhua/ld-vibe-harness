@@ -1,6 +1,6 @@
 # LD Vibe Harness 项目规则
 
-> 最后更新：2026-06-02
+> 最后更新：2026-06-03
 > 层级：L1 项目规则
 > 适用项目：ld-vibe-harness
 > 生效方式：始终生效
@@ -21,10 +21,14 @@ LDVH 定位和总纲级价值原则见 00，目录见 01，术语见 02，specs 
 
 新增或修改项目文档、Rules、规范或事实实例后，应记录变更。【暂缓：当前 `ldvh-base/changes/` YAML 记录机制暂缓执行，后续以其他方式实现。暂缓期间，变更记录要求仍保留，具体实现方式待替换。】
 
+## ADR 入口
+
+修改 specs、Rules、Tools、事实模型边界或长期协作机制前，应检查是否存在相关 ADR；判断是否满足 ADR 准入条件见 `specs/21-ADR-决策记录.md` §3.3。创建 ADR、状态流转、推翻、废弃或升级必须触发 Human Gate；ADR 读取、创建和写入流程见 21.02-Skill.md；ADR Tools 命令和能力边界见 21.04-Tools.md。proposed 状态 ADR 不得作为执行依据。
+
 ## L2 引导
 
 编辑 specs Markdown 时进入 `.trae/rules/ldvh-l2-specs-rules.md`。编辑 `ldvh-base/` YAML 时进入工作区 L0 事实模型规则。新增、修改或审计 L0/L1/L2 Rules 时，先读 11.01 §7，并从 `specs/*.md` 反向发现 Rules 需求。
 
 ## 压缩保护
 
-LDVH | 00总纲 | 不自动push | 价值标准服务 | 搜索标题定位 | 按行范围读原文 | 稳定事实回Git | HumanGate先暂停 | 变更记录(暂缓) | specs进L2 | ldvh-base进事实模型L0 | Rules审计读11.01§7
+LDVH | 00总纲 | 不自动push | 价值标准服务 | 搜索标题定位 | 按行范围读原文 | 稳定事实回Git | HumanGate先暂停 | 变更记录(暂缓) | ADR准入见21§3.3 | ADR写入须HumanGate | proposed不作为依据 | specs进L2 | ldvh-base进事实模型L0 | Rules审计读11.01§7
