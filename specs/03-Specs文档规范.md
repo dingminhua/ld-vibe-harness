@@ -469,7 +469,7 @@ specs/refs/ 与 specs/ 规范体系之间的引用方向如下：
 9. 改变机制落地关系规则，或新增、修改、删除会影响 Rules、Skill、Agent、Tools、Web 或 Contract 实体同步检查、落地初始化、审计或规则漂移诊断的机制落地关系；
 10. 改变 specs/ 根目录正式规范文档与 specs/evals/、specs/refs/ 之间的引用方向规则。
 
-当 AI 识别到上述情况时，依据 `specs/00-LD-Vibe-Harness理念与纲要.md` §8 Human Gate 程序规则执行。
+当 AI 识别到上述情况时，依据 `specs/00-LD-Vibe-Harness理念与纲要.md` §7 Human Gate 与检查要求执行。
 
 项目应提供 `tools/check_03_specs_doc_standard.py`，作为本文的机械化检查工具，用于辅助检查 specs/ 目录内 Markdown 文档的章节标题编号。工具至少应检查：一级章节是否连续；二级、三级章节是否与父章节编号一致；同级章节是否掉号、跳号或重复；标题编号层级是否与 Markdown 标题层级一致；是否存在中文大写或罗马数字章节标题残留。工具应忽略 fenced code block 内的示例标题和正文 Markdown 有序列表。
 

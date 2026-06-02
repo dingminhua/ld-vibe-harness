@@ -172,11 +172,11 @@ Rules 可以通过短摘要提醒 AI 评估某个 Scenario，但不应在 Rules 
 
 ---
 
-## 12. 机制关系声明
+## 12. 机制落地关系
 
-本文存在以下机制关系：
+本文通过以下机制关系说明相关机制实体的落地、同步、检查或审计触发条件。
 
-| 关联机制 | 关联实体 | 关系类型 | 同步触发 |
+| 关联机制 | 关联实体 | 关系类型 | 触发条件 |
 |---|---|---|---|
 | Rules | `../.trae/rules/ldvh-l0-rules.md` | 管辖项目定义和机制英文专名入口摘要 | 本文的管辖项目定义、LDVH 与 Harness 关系或机制英文专名变化时 |
 | Rules | `.trae/rules/ldvh-l2-specs-rules.md` | specs 术语使用入口摘要 | 本文的机制英文专名、中文术语定语或模型实践子文档命名规则变化时 |
@@ -200,7 +200,7 @@ Rules 可以通过短摘要提醒 AI 评估某个 Scenario，但不应在 Rules 
 11. 让 Web 适配文件承载 UI 状态作为稳定事实；
 12. 让契约子文档承载主模型的对象定位、状态机、Scenario、Gate、执行流程或 Human Gate。
 
-当 AI 识别到上述情况时，依据 `specs/00-LD-Vibe-Harness理念与纲要.md` §8 Human Gate 程序规则执行。
+当 AI 识别到上述情况时，依据 `specs/00-LD-Vibe-Harness理念与纲要.md` §7 Human Gate 与检查要求执行。
 
 术语规范检查至少包括：
 

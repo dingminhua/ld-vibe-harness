@@ -4,7 +4,7 @@
 > 定位：定义 Trae Solo 环境机制中 AskUserQuestion 工具在 LDVH 中的使用方式、触发条件和跨 AI 知识传递路径
 > 适用范围：所有接入 LD Vibe Harness 且运行于 Trae 平台的项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md` §3.3
-> 相关规范：`specs/02-LDVH术语规范.md`、`specs/10-事实源边界与承载规范.md`、`specs/14-LDVH行动模型基础规范.md`、`specs/refs/12-Trae-AskUserQuestion问询工具调研.md`
+> 相关规范：`specs/02-LDVH术语规范.md`、`specs/10-事实源边界与承载规范.md`、`specs/14-LDVH行动模型基础规范.md`
 
 ---
 
@@ -19,7 +19,7 @@
 4. 用户取消后 AI 应遵循的降级策略；
 5. 如何让不了解 AskUserQuestion 的 AI 知道如何使用。
 
-本文不定义 Trae Solo 其他机制（如 Rules、Skill、Agent、Task、RunCommand 等）的使用方式，也不重新定义 AskUserQuestion 工具本身的参数细节。参数细节详见 `specs/refs/12-Trae-AskUserQuestion问询工具调研.md`。
+本文不定义 Trae Solo 其他机制（如 Rules、Skill、Agent、Task、RunCommand 等）的使用方式，也不重新定义 AskUserQuestion 工具本身的参数细节。
 
 ---
 
@@ -284,7 +284,7 @@ L0、项目 L1 或 L2 Rules 中需要承载 AskUserQuestion 使用要求时，�
 ```markdown
 ## Human Gate 实现
 
-本项目使用 Trae AskUserQuestion 工具承载 Human Gate 确认机制。需要 Human Gate 时，先暂停拟执行动作，用 AskUserQuestion 向用户确认；问题和选项按 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §6 设计，必须包含暂停/暂缓选项；用户取消或选择暂停后，按 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §7 停止执行并等待指示。触发场景见 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §5，参数细节需要时再读 `specs/refs/12-Trae-AskUserQuestion问询工具调研.md` §2.1。
+本项目使用 Trae AskUserQuestion 工具承载 Human Gate 确认机制。需要 Human Gate 时，先暂停拟执行动作，用 AskUserQuestion 向用户确认；问题和选项按 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §6 设计，必须包含暂停/暂缓选项；用户取消或选择暂停后，按 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §7 停止执行并等待指示。触发场景见 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §5。
 ```
 
 L0/L1/L2 Rules 因字符上限需要压缩时，至少保留以下信息：
@@ -302,21 +302,22 @@ Skill 可提供结构化问询模板，降低 AI 构造参数的认知负担。S
 当 AI 需要详细了解 AskUserQuestion 工具参数时，引导读取 refs/12：
 
 ```text
-参数契约详见 specs/refs/12-Trae-AskUserQuestion问询工具调研.md §2.1。
+参数契约详见本文 §6。
 ```
 
 ---
 
-## 9. 机制关系声明
+## 9. 机制落地关系
 
-| 关联机制 | 关联实体 | 关系类型 | 同步触发 |
+本文通过以下机制关系说明相关机制实体的落地、同步、检查或审计触发条件。
+
+| 关联机制 | 关联实体 | 关系类型 | 触发条件 |
 |---|---|---|---|
 | Rules | `../.trae/rules/ldvh-l0-rules.md` | L0 工作区规则引用 | 本文的 AskUserQuestion 触发场景、设计规范或降级策略变化时 |
 | Rules | `.trae/rules/ldvh-l1-rules.md` | L1 项目规则引用 | 本文的 Human Gate 实现方式或跨 AI 知识传递路径变化时 |
 | Rules | `.trae/rules/ldvh-l2-specs-rules.md` | L2 场景规则引用 | 本文的问询设计规范或取消处理规则变化时 |
 | 行动模型 | `specs/14-LDVH行动模型基础规范.md` §9 | Human Gate 上位定义 | 本文的触发场景与 14 §9 不一致时 |
 | 行动模型 | `specs/51-multi-role-thinking-多角色思考.md` §7.3 | 模式选择规则 | 51 §7.3 的模式选择问询设计变化时 |
-| 调研 | `specs/refs/12-Trae-AskUserQuestion问询工具调研.md` | 参数契约来源 | refs/12 新增参数、约束或平台行为变化时 |
 
 ---
 
