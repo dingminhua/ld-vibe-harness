@@ -43,7 +43,7 @@ LDVH specs 中，英文机制名 Rules、Skill、Agent、Tools、Web 专指 Trae
 | Skill | Trae Skill 机制 | `specs/11.02-Skill机制规范.md` |
 | Agent | Trae Agent 机制 | `specs/11.03-Agent机制规范.md` |
 | Tools | LDVH `tools/` Tools 辅助机制 | `specs/12.01-Tools辅助规范.md` |
-| Web | LDVH `web/` Web 信息同步机制 | `specs/12.02-Web展示规范.md` |
+| Web | LDVH `web/` Web 信息同步机制 | `specs/12.02-Web信息同步规范.md` |
 
 提到上述机制时，应使用英文专名 Rules、Skill、Agent、Tools、Web，不使用裸中文"规则""技能""代理""智能体""程序""展示"替代。
 

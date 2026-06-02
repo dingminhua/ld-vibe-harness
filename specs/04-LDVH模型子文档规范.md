@@ -224,6 +224,18 @@ Skill、Tools、Contract 和需求变更联动规则用于约束模型落地初�
 
 ---
 
+## 9.5 机制落地关系
+
+| 机制 | 落地位置 | 类型 | 触发条件 |
+|---|---|---|---|
+| L0 Rules | `../.trae/rules/ldvh-l0-rules.md`、`../.trae/rules/ldvh-l0-fact-model-rules.md` | 规则入口 | 子文档分类、命名、状态骨架或契约规则变化时 |
+| L1 Rules | `../.trae/rules/ldvh-l1-rules.md` | 规则入口 | 子文档分类、命名、状态骨架或契约规则变化时 |
+| L2 Specs Rules | `../.trae/rules/ldvh-l2-specs-rules.md` | 规则入口 | 子文档分类、命名、状态骨架或契约规则变化时 |
+| 13 | `specs/13-LDVH事实模型基础规范.md` | 基础规范 | 事实模型子文档规则变化时 |
+| 14 | `specs/14-LDVH行动模型基础规范.md` | 基础规范 | 行动模型子文档规则变化时 |
+
+---
+
 ## 10. Human Gate
 
 以下情况应评估 Human Gate：

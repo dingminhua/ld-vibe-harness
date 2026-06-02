@@ -282,7 +282,7 @@ YAML、Markdown、Python 等介质是行业标准，Codex 完全支持。不需�
 
 #### 5.3.1 Web 信息同步层
 
-LDVH 的 Web Tools（`specs/12.02-Web展示规范.md`）在 Codex CLI 中无法直接运行 Web 服务——CLI 是终端 TUI，不承载 Web 界面。
+LDVH 的 Web Tools（`specs/12.02-Web信息同步规范.md`）在 Codex CLI 中无法直接运行 Web 服务——CLI 是终端 TUI，不承载 Web 界面。
 
 **三种替代方案**：
 

@@ -123,16 +123,18 @@ AskUserQuestion 接收 `questions` 数组，每个问题包含以下字段：
 
 ### 5.1 Human Gate 实现
 
-当行动模型规范定义 Human Gate 触发条件时，应通过 AskUserQuestion 实现用户确认。
+当行动模型规范、事实模型规范、项目 Rules 或当前任务语境定义 Human Gate 触发条件时，应通过 AskUserQuestion 实现用户确认。
+
+当用户请求创建或修改事实源、执行 ADR 写入、事实对象状态流转、规范升级、高风险变更，或需要在 2-4 个互斥或可多选方案中选择时，AI 必须暂停拟执行动作并调用 AskUserQuestion；用户选择确认后才可继续执行，用户选择暂停、暂缓或取消后必须停止执行并等待后续指示。
 
 触发场景示例：
 
 | 场景 | 问询示例 |
 |---|---|
-| 创建新事实对象 | "即将创建 ADR-001，是否确认创建？" |
-| 关键状态流转 | "将 Task-001 从 proposed 转为 accepted，是否确认？" |
-| 删除事实对象 | "即将删除 Memo-003，是否确认删除？" |
-| 高风险操作 | "此变更影响 5 个文件，是否继续？" |
+| 创建新事实对象 | "即将创建 ADR-001，是否确认创建，或暂缓？" |
+| 关键状态流转 | "将 Task-001 从 proposed 转为 accepted，是否确认，或暂缓？" |
+| 删除事实对象 | "即将删除 Memo-003，是否确认删除，或暂停？" |
+| 高风险操作 | "此变更影响 5 个文件，是否继续，或暂停？" |
 
 ### 5.2 模式选择
 
@@ -273,24 +275,24 @@ AskUserQuestion 是 Trae 平台特有工具，其他 AI 模型不具备此能力
 
 | 路径 | 机制 | AI 如何获知 |
 |---|---|---|
-| L0/L1/L2 Rules | 会话初始化时自动注入 | 平台自动注入 |
+| L0 Rules | 会话初始化时自动注入 | 平台自动注入 |
 | Skill 模板 | 按需展开问询模板 | 语义匹配触发 |
 | 规范文档引用 | AI 读取 05 或 refs/12 | 文件读取 |
 
 ### 8.3 Rules 注入
 
-L0、项目 L1 或 L2 Rules 中需要承载 AskUserQuestion 使用要求时，应声明以下内容。Rules 只写运行时入口摘要，不复制本文完整规则；入口摘要必须让 AI 知道需要执行 Human Gate 时应暂停动作并调用 AskUserQuestion 完成人类确认，而不是只提示“入口见 `specs/05-Trae-Solo AskUserQuestion使用规范.md`”。同一项目上下文中如 L0 已承载该机制摘要，L1/L2 不应重复维护，只保留各自项目或场景专属约束。
+L0 Rules 应承载 AskUserQuestion 使用要求。Rules 只写运行时入口摘要，不复制本文完整规则；入口摘要必须让 AI 知道需要执行 Human Gate 时应暂停动作并调用 AskUserQuestion 完成人类确认，而不是只提示“入口见 `specs/05-Trae-Solo AskUserQuestion使用规范.md`”。L1/L2 Rules 不应重复维护与 L0 相同的 AskUserQuestion 通用规则，只在存在项目或场景专属约束时补充差异化要求。
 
 ```markdown
 ## Human Gate 实现
 
-本项目使用 Trae AskUserQuestion 工具承载 Human Gate 确认机制。需要 Human Gate 时，先暂停拟执行动作，用 AskUserQuestion 向用户确认；问题和选项按 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §6 设计，必须包含暂停/暂缓选项；用户取消或选择暂停后，按 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §7 停止执行并等待指示。触发场景见 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §5。
+本工作区使用 Trae AskUserQuestion 工具承载 Human Gate 确认机制。需要 Human Gate 时，先暂停拟执行动作，用 AskUserQuestion 向用户确认；问题和选项按 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §6 设计，必须包含暂停/暂缓选项；用户取消或选择暂停后，按 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §7 停止执行并等待指示。触发场景见 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §5。
 ```
 
-L0/L1/L2 Rules 因字符上限需要压缩时，至少保留以下信息：
+L0 Rules 因字符上限需要压缩时，至少保留以下信息：
 
 ```text
-Human Gate：用 AskUserQuestion 承载确认机制；需要确认时先暂停动作并问询；问询按 specs/05-Trae-Solo AskUserQuestion使用规范.md §6，含暂停/暂缓；取消按 specs/05-Trae-Solo AskUserQuestion使用规范.md §7 停止等待。
+Human Gate：用 AskUserQuestion 承载确认机制；当用户请求创建/修改事实源、执行 ADR 写入、事实对象状态流转、规范升级、高风险变更，或需要在 2-4 个互斥或可多选方案中选择时，先暂停拟执行动作并问询；确认后继续，暂停/暂缓/取消后停止等待；问询按 specs/05 §6，含暂停/暂缓；取消按 specs/05 §7 停止等待。
 ```
 
 ### 8.4 Skill 模板
@@ -309,15 +311,11 @@ Skill 可提供结构化问询模板，降低 AI 构造参数的认知负担。S
 
 ## 9. 机制落地关系
 
-本文通过以下机制关系说明相关机制实体的落地、同步、检查或审计触发条件。
+机制落地关系只记录本文与 Trae 环境机制实体之间的落地、同步、检查或审计关系，不记录本文与其他 specs 规范文档之间的普通规范引用、上位定义或内容一致性关系。本文的 AskUserQuestion 通用运行时入口只落地到 L0 工作区规则；L1/L2 Rules 不重复维护相同通用规则。
 
 | 关联机制 | 关联实体 | 关系类型 | 触发条件 |
 |---|---|---|---|
-| Rules | `../.trae/rules/ldvh-l0-rules.md` | L0 工作区规则引用 | 本文的 AskUserQuestion 触发场景、设计规范或降级策略变化时 |
-| Rules | `.trae/rules/ldvh-l1-rules.md` | L1 项目规则引用 | 本文的 Human Gate 实现方式或跨 AI 知识传递路径变化时 |
-| Rules | `.trae/rules/ldvh-l2-specs-rules.md` | L2 场景规则引用 | 本文的问询设计规范或取消处理规则变化时 |
-| 行动模型 | `specs/14-LDVH行动模型基础规范.md` §9 | Human Gate 上位定义 | 本文的触发场景与 14 §9 不一致时 |
-| 行动模型 | `specs/51-multi-role-thinking-多角色思考.md` §7.3 | 模式选择规则 | 51 §7.3 的模式选择问询设计变化时 |
+| Rules | `../.trae/rules/ldvh-l0-rules.md` | L0 工作区规则引用 | 本文的 AskUserQuestion 触发场景、设计规范、降级策略或通用运行时入口摘要变化时 |
 
 ---
 
@@ -329,7 +327,7 @@ Skill 可提供结构化问询模板，降低 AI 构造参数的认知负担。S
 
 1. 新增 AskUserQuestion 触发场景；
 2. 修改降级策略或取消处理规则；
-3. 在 L1/L2 Rules 中新增或移除 AskUserQuestion 使用要求。
+3. 在 L0 Rules 中新增、修改或移除 AskUserQuestion 通用运行时入口摘要。
 
 ### 10.2. 合规检查
 

@@ -214,7 +214,7 @@ Shrimp 有两套 Web 能力。
 
 第二套是独立 `tools/task-viewer`，功能更完整。它包含 Node server、React 前端、TanStack Table、i18n、模板管理、Agent 管理、历史查看、任务详情、任务编辑、Chat Agent 等能力。其配置使用用户 home 下的设置文件和模板目录，并按 project profile 读取不同 `tasks.json`。
 
-对 LDVH 的启发是：Web 信息同步层应成为“事实源观察与人类确认工作台”，而不是另一个事实源。Shrimp 的 Task Viewer 在可观察性上值得借鉴，包括任务筛选、详情、历史、Agent 分配和模板管理。但 LDVH 的 `specs/12.02-Web展示规范.md` 已明确：Web 页面状态、缓存和数据库派生视图不得替代 Git 文件事实源；Web 可以展示、提示 Gate 和提供受控编辑入口，但不得直接调用 AI、Skill 或 Agent，也不得绕过 Tools 辅助层校验。
+对 LDVH 的启发是：Web 信息同步层应成为“事实源观察与人类确认工作台”，而不是另一个事实源。Shrimp 的 Task Viewer 在可观察性上值得借鉴，包括任务筛选、详情、历史、Agent 分配和模板管理。但 LDVH 的 `specs/12.02-Web信息同步规范.md` 已明确：Web 页面状态、缓存和数据库派生视图不得替代 Git 文件事实源；Web 可以展示、提示 Gate 和提供受控编辑入口，但不得直接调用 AI、Skill 或 Agent，也不得绕过 Tools 辅助层校验。
 
 ---
 
@@ -379,7 +379,7 @@ Shrimp 提供 `process_thought` 和反思工具，强调思维处理。LDVH 可�
 
 ### 5.6 不应让 Web Viewer 直接调用 AI 并写回权威事实
 
-Shrimp 独立 viewer 中存在 OpenAI 批量分配 Agent 和 Chat Agent 能力。LDVH 的 `specs/12.02-Web展示规范.md` 已明确 Web 信息同步层不得直接调用 AI、Skill 或 Agent。LDVH Web 可以生成上下文、展示建议、提供人工操作入口，但 AI 判断和事实源回写应受行动模型、Tools 辅助层和 Human Gate 约束。
+Shrimp 独立 viewer 中存在 OpenAI 批量分配 Agent 和 Chat Agent 能力。LDVH 的 `specs/12.02-Web信息同步规范.md` 已明确 Web 信息同步层不得直接调用 AI、Skill 或 Agent。LDVH Web 可以生成上下文、展示建议、提供人工操作入口，但 AI 判断和事实源回写应受行动模型、Tools 辅助层和 Human Gate 约束。
 
 ### 5.7 不应把 Agent 自动匹配等同于 Agent 治理
 
