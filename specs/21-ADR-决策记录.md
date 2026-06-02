@@ -351,7 +351,7 @@ ADR 基础字段遵循 13 §6.4 的字段契约原则。
 | 编号 | 文件 | 状态 | 内容 |
 |---|---|---|---|
 | `21.01` | `21.01-Rules.md` | active | ADR 准入条件在 Rules 层的入口摘要、放置位置、生效方式和禁止承载内容 |
-| `21.02` | `21.02-Skill.md` | active-prep | ADR 创建、升级、推翻和废弃的可复用流程；当前不创建 Trae Skill 实体 |
+| `21.02` | `21.02-Skill.md` | active | ADR 创建、升级、推翻和废弃的可复用流程，已落地工作区 L0 Skill 实体 `/Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/SKILL.md` |
 | `21.03` | `21.03-Agent.md` | not-created | 说明 ADR 不需要创建专用 Agent 的理由 |
 | `21.04` | `21.04-Tools.md` | active | ADR Tools 契约式校验与执行能力定义，承接 `tools/adr_index.py` 的索引、查询、统计和校验实践 |
 | `21.05` | `21.05-Web.md` | active-prep | ADR Web 信息同步的未来能力定义；当前不实现 Web 页面 |
@@ -477,8 +477,8 @@ ADR 对象模型合规检查应覆盖以下内容：
 2. ADR 的自动过期或定期审查机制待实践验证；
 3. ADR YAML schema 的 JSON Schema 表达待 21.06-Contract.md 后续按需细化；
 4. ADR 相关 Rules、Skill、Agent、Tools、Web 和 Contract 实践应按 21.01-21.06 子文档持续维护；
-5. ADR 对象模型在本项目中的实际落地状态需按读取策略和写入策略重新执行落地前决策后确认；
-6. `ldvh-base/adrs/` 是否立即初始化，待 Human Gate 确认；
-7. ADR Tools 测试文件、测试命令、测试覆盖范围和验收记录待与 `21.04-Tools.md` 同步复核；
+5. ADR 对象模型在本项目中已完成补齐落地初始化，初始化决策记录见 `ldvh-base/adrs/adr-0001-adr-mechanism-initialization.yaml`；
+6. `ldvh-base/adrs/` 已初始化，ADR 编号从 `adr-0001` 开始；
+7. ADR Tools 测试文件、测试命令、测试覆盖范围和验收记录需持续与 `21.04-Tools.md` 同步复核；
 8. `21.04-Tools.md` 的 active 状态需持续与 `tools/adr_index.py` 实际能力和测试验收结果保持一致；
-9. ADR Skill 实体是否从 active-prep 进入 `.trae/skills/ldvh-adr/` 落地，需在完成读取流程、写入流程和 Tools 验证复核后经 Human Gate 确认。
+9. ADR Skill 实体已从 active-prep 进入工作区 L0 `/Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/` 落地，后续需持续保持 `21.02-Skill.md`、Skill 实体、Tools 能力和测试验收结果一致。
