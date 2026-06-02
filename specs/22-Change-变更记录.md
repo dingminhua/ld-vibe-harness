@@ -51,7 +51,8 @@ Change 与 Git commit 的关系：
 1. **承载关系**：Git commit 是 Change 的权威事实源，不是 Change 的替代品；
 2. **格式约束**：并非所有 Git commit 都自动成为有效 Change 事实实例，只有符合本文 §8 定义格式的 commit 才是；
 3. **查询约定**：Change 查询通过 `git log` 命令和格式化输出实现，不需要额外索引文件；
-4. **不可变性**：Git commit 一旦创建即不可变，Change 实例同样不可变。
+4. **不可变性**：Git commit 一旦创建即不可变，Change 实例同样不可变；
+5. **跨仓库**：一次任务可能涉及工作区中多个 Git 仓库的文件修改。每个受影响的仓库应独立提交，各仓库的 commit message 均应符合本文 §8 格式，构成独立的 Change 事实实例。
 
 ### 3.3 Change 准入条件
 
@@ -153,7 +154,8 @@ Change 记录本身是事实源修改的自然结果，不需要为"记录 Chang
 
 1. 每个 commit 应聚焦单一变更主题，避免在同一 commit 中混合不相关修改；
 2. commit message 应符合本文 §8 定义的格式规范；
-3. 涉及 Human Gate 的修改，应在 commit message body 中说明确认情况。
+3. 涉及 Human Gate 的修改，应在 commit message body 中说明确认情况；
+4. 任务完成后，应遍历工作区所有 Git 仓库，对每个有修改的仓库独立执行 commit，不可遗漏任何受影响的仓库。
 
 ---
 
@@ -320,7 +322,7 @@ ADR 索引按创建日期降序排列，应改为按编号升序。
 
 ## 14. 附件型实践子文档
 
-Change 对象模型不需要创建 22.01-22.06 附件型实践子文档。理由如下：
+Change 对象模型不需要创建 active 状态附件型实践子文档。22.01-22.06 六个子文档槽位全部为 not-created 状态，对应子文档文件仍需存在以说明不创建理由和检查项（依据 `specs/04-LDVH模型子文档规范.md` §4.2、§6.1）。理由如下：
 
 1. **Change 无独立 YAML 实例**：Change 事实实例承载于 Git commit，不需要 Rules 入口约束 YAML 写入、Skill 编排创建流程、Agent 并行处理、Tools 受控写入或 Web 编辑入口；
 2. **Change 无状态流转**：commit 不可变，不需要状态机相关的 Rules 提醒、Skill 流程或 Tools 校验；
@@ -370,10 +372,11 @@ Change 对象模型进入项目实践时，需要完成以下初始化：
 1. 确认 Change 事实实例以 Git commit 承载，不创建 `ldvh-base/changes/` 目录；
 2. 确认 commit message 格式规范遵循本文 §8；
 3. 确认 Change 读取入口为 `git log --format` 命令；
-4. 确认 Change 不需要附件型实践子文档；
+4. 确认 Change 的 22.01-22.06 六个子文档槽位全部为 not-created 状态，对应子文档文件已创建；
 5. 确认项目 Rules 中是否需要增加 commit message 格式提醒；
 6. 确认是否需要 Tools 辅助程序覆盖 commit message 格式校验能力；
-7. 记录暂缓项和初始化产物。
+7. 确认跨仓库 commit 机制：落地初始化涉及多个 Git 仓库时，每个仓库均需独立提交；
+8. 记录暂缓项和初始化产物。
 
 ---
 
