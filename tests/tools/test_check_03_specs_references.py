@@ -264,3 +264,24 @@ def test_check_paths_reads_markdown_files_recursively(tmp_path):
     assert len(result) == 1
     assert result[0].path.name == "b.md"
     assert result[0].code == "MISSING_INTERNAL_SECTION"
+
+
+def test_explicit_specs_path_reference_resolves_unchecked_existing_file(tmp_path, monkeypatch):
+    specs_dir = tmp_path / "specs"
+    target = write_md(specs_dir / "02-LDVH术语规范.md", "# 术语\n\n## 7. 管辖项目")
+    source = write_md(
+        specs_dir / "01-LDVH目录说明.md",
+        """
+# 目录
+
+## 1. 第一章
+
+依据 `specs/02-LDVH术语规范.md` §7。
+""",
+    )
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(checker, "SPECS_DIR", specs_dir)
+
+    assert checker.check_paths([source]) == []
+    assert target.exists()
+

@@ -74,7 +74,10 @@ def extract_sections(path):
 
 def build_document_map(paths):
     documents = {}
-    for path in iter_markdown_files(paths):
+    scan_paths = list(paths)
+    if SPECS_DIR.exists():
+        scan_paths.append(SPECS_DIR)
+    for path in iter_markdown_files(scan_paths):
         documents[path.resolve()] = Document(path.resolve(), extract_sections(path))
     return documents
 
