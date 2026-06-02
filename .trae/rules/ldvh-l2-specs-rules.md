@@ -8,7 +8,7 @@
 
 ## 编辑入口
 
-编辑 specs Markdown 时，文档骨架、章节编号、标题层级、引用纪律、机制关系声明和 refs/evals 边界以 `specs/03-Specs文档规范.md` 为准；编号分区以 `specs/01-LDVH目录说明.md` 为准；术语以 `specs/02-LDVH术语规范.md` 为准。
+编辑 specs Markdown 时，文档骨架、章节编号、标题层级、引用纪律、机制落地关系和 refs/evals 边界以 `specs/03-Specs文档规范.md` 为准；编号分区以 `specs/01-LDVH目录说明.md` 为准；术语以 `specs/02-LDVH术语规范.md` 为准。
 
 ## 索引与读取
 
