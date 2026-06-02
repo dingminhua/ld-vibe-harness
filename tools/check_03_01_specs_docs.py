@@ -25,7 +25,7 @@ class IndexError(Exception):
     pass
 
 
-class SpecsIndexer:
+class SpecsChecker:
     def __init__(self, root):
         self.root = Path(root).resolve()
         self.specs_dir = self.root / "specs"
@@ -55,7 +55,7 @@ class SpecsIndexer:
                 "derived": True,
                 "source_of_truth": False,
                 "generated_at": datetime.now().isoformat(timespec="seconds"),
-                "tool": "tools/index_03_01_specs_docs.py",
+                "tool": "tools/check_03_01_specs_docs.py",
                 "input_patterns": list(INPUT_PATTERNS),
                 "root": str(self.root),
             },
@@ -411,7 +411,7 @@ def write_outputs(indexes, out_dir):
 
 
 def build_parser():
-    parser = argparse.ArgumentParser(description="生成 03.01 specs 文档派生索引。")
+    parser = argparse.ArgumentParser(description="检查 03.01 specs 文档质量，输出派生索引和诊断结果。")
     parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
     parser.add_argument("--out", default=None, help="输出目录；未提供时将完整索引输出到 stdout。")
     parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")
@@ -420,13 +420,13 @@ def build_parser():
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
-    indexer = SpecsIndexer(args.root)
-    if not indexer.specs_dir.exists():
-        raise IndexError(f"specs 目录不存在: {indexer.specs_dir}")
-    indexes = indexer.build()
+    checker = SpecsChecker(args.root)
+    if not checker.specs_dir.exists():
+        raise IndexError(f"specs 目录不存在: {checker.specs_dir}")
+    indexes = checker.build()
     if args.out:
         written = write_outputs(indexes, args.out)
-        print(f"已生成 03.01 specs 文档索引: {args.out}")
+        print(f"已生成 03.01 specs 文档检查结果: {args.out}")
         for name in written:
             print(f"- {name}")
     else:
