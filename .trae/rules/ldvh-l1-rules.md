@@ -1,19 +1,25 @@
 # LD Vibe Harness 项目规则
 
-> 最后更新：2026-06-01
+> 最后更新：2026-06-02
 > 层级：L1 项目规则
 > 适用项目：ld-vibe-harness
 > 生效方式：始终生效
-> 规范来源：`specs/11.01-Rules机制规范.md`、`specs/03.01-Specs文档索引规范.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`
+> 规范来源：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/11.01-Rules机制规范.md`、`specs/03.01-Specs文档索引规范.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`
 > 维护边界：本文件只作 LDVH 项目入口、项目硬约束和 L2 引导，不替代 specs 正式规范
 
 ## 入口
 
-LDVH 定位见 00，目录见 01，术语见 02，specs 骨架和引用纪律见 03，specs 索引和章节定位见 03.01。读取 specs 先搜索 Markdown 标题并按行范围读原文，可用 03.01 辅助定位 `specs/*.md`；evals/refs 仅在用户明确指定或任务明确要求时读取。
+LDVH 定位和总纲级价值原则见 00，目录见 01，术语见 02，specs 骨架和引用纪律见 03，specs 索引和章节定位见 03.01。读取 specs 先搜索 Markdown 标题并按行范围读原文，可用 03.01 辅助定位 `specs/*.md`；evals/refs 仅在用户明确指定或任务明确要求时读取。
 
 ## 硬约束
 
-不自动 commit、push、tag、release。新增或修改项目文档、Rules、规范或事实实例后，在 `ldvh-base/changes/` 记录 Change。
+不自动 commit、push、tag、release。所有决策、设计、规范和机制都应服务 LDVH 价值实现标准中的一项或多项；不能服务快速定位、完整理解、正确判断、稳定执行、门禁识别、强制验证、证据沉淀、可靠回写、人类确认质量或持续完善的新增内容，不应进入核心体系。
+
+索引、标题搜索、工具输出、网页视图和聊天记忆只作定位、辅助理解或过程信息，不替代规范原文和 Git 文件事实源。稳定事实、执行证据、检查结果、决策和变更必须回到 Git 文件事实源。
+
+涉及 LDVH 理念、价值标准、五类构成要素、基础规范权威领域、事实模型或行动模型的高影响变更，先识别 Human Gate；需要确认时暂停拟执行动作并说明事实源、影响范围和建议确认事项。
+
+新增或修改项目文档、Rules、规范或事实实例后，在 `ldvh-base/changes/` 记录 Change。
 
 ## L2 引导
 
@@ -21,4 +27,4 @@ LDVH 定位见 00，目录见 01，术语见 02，specs 骨架和引用纪律见
 
 ## 压缩保护
 
-LDVH | 不自动push | 改文档写Change | specs标题搜索+03.01辅助 | evals/refs需指定 | specs进L2 | ldvh-base进事实模型L0 | Rules审计读11.01§7 | 读原文判断
+LDVH | 00总纲 | 不自动push | 价值标准服务 | 读原文判断 | 索引只定位 | 稳定事实回Git | HumanGate先暂停 | 改文档写Change | specs进L2 | ldvh-base进事实模型L0 | Rules审计读11.01§7
