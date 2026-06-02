@@ -1,0 +1,30 @@
+type: change
+title: 补强 specs 索引机制关系声明
+author: ai
+status: done
+created: 2026-06-03
+updated: 2026-06-03
+context: |
+  用户指出此前 AI 虽认可 specs 索引机制价值，但实际判断时仍绕回标题搜索和原文读取，导致 03.01 中的索引消费机制可能流于形式。经使用 tools/index_03_01_specs_docs.py 生成派生索引确认，03.01 的机制关系声明可被工具提取，但 Rules、Tools 和测试同步关系对“索引优先消费顺序”的约束不够明确。
+decision: |
+  1. 修改 specs/03.01-Specs文档索引规范.md 的机制关系声明；
+  2. 将 L2 Rules 关系类型补强为 specs 编辑场景索引优先消费入口摘要，并把同步触发扩展到索引优先消费顺序；
+  3. 将 L1 Rules 和 L0 Rules 的同步触发补充索引优先消费顺序和索引优先回退策略；
+  4. 将 Tools 关联实体从泛化的 tools/ 精确到 tools/index_03_01_specs_docs.py；
+  5. 新增 Tests 机制关系，关联 tests/tools/test_index_03_01_specs_docs.py，用于承接索引字段、机制关系提取、输出文件名、诊断规则和失效回退要求变化。
+consequences: |
+  - 03.01 的机制关系声明从“索引机制存在”补强为可驱动 Rules、Tools 和 Tests 同步的机制入口；
+  - 后续修改 03.01 的 AI 消费规则、索引优先消费顺序或失效回退时，应同步评估 L0/L1/L2 Rules、索引工具和测试；
+  - 本次只修改规范，不修改 Rules、Tools 或测试实现，后续实践落地应按该机制关系继续推进。
+affects:
+  - specs/03.01-Specs文档索引规范.md
+related_rules:
+  - specs/03.01-Specs文档索引规范.md
+  - specs/00-LD-Vibe-Harness理念与纲要.md
+  - specs/13-LDVH事实模型基础规范.md
+  - specs/20-事实模型集合索引.md
+human_gate:
+  required: false
+  reason: 本次未提升索引为规范事实源，未改变 specs 文档骨架、头部字段、引用纪律、长期输出目录事实源性质或 Tools 自动写入边界；属于对 03.01 机制关系声明的补强。
+validation: |
+  已运行 python3 tools/index_03_01_specs_docs.py --root /Users/dmh2002/trae_projects/ld-vibe-harness --out /tmp/ldvh-specs-index-check-after，命令退出码为 0。已读取 /tmp/ldvh-specs-index-check-after/specs-mechanism-index.json，确认 03.01 修改后的 Rules、Tools、Tests、Web 机制关系均被提取，来源行号为 244-249。
