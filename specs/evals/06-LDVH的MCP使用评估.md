@@ -24,7 +24,7 @@ MCP 是 Trae Solo 环境中 Agent 可调用的外部工具协议层，不是 LDV
 
 ### 2.1 MCP 不属于 LDVH 五类构成要素
 
-LD Vibe Harness 的五类构成要素是介质、Trae Solo 环境机制、LDVH 工具、LDVH 事实模型和 LDVH 行动模型（依据 `specs/00` §四）。MCP 是 Trae Solo 环境中 Agent 可调用的工具协议，属于 Trae 平台提供的能力，不是 LDVH 自定义的构成要素。
+LD Vibe Harness 的五类构成要素是介质、Trae Solo 环境机制、LDVH 工具、LDVH 事实模型和 LDVH 行动模型（依据 `specs/00` §三）。MCP 是 Trae Solo 环境中 Agent 可调用的工具协议，属于 Trae 平台提供的能力，不是 LDVH 自定义的构成要素。
 
 ### 2.2 MCP 不是 11 系列正式治理对象
 

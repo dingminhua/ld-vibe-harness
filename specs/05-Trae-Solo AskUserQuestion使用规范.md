@@ -3,7 +3,7 @@
 > 创建日期：2026-06-01
 > 定位：定义 Trae Solo 环境机制中 AskUserQuestion 工具在 LDVH 中的使用方式、触发条件和跨 AI 知识传递路径
 > 适用范围：所有接入 LD Vibe Harness 且运行于 Trae 平台的项目
-> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md` §4.3
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md` §3.3
 > 相关规范：`specs/02-LDVH术语规范.md`、`specs/10-事实源边界与承载规范.md`、`specs/14-LDVH行动模型基础规范.md`、`specs/refs/12-Trae-AskUserQuestion问询工具调研.md`
 
 ---
@@ -25,7 +25,7 @@
 
 ## 2. 与 00 总纲的关系
 
-00 §4.3 定义 Trae Solo 环境机制为 LDVH 五类构成要素之一，并声明 LDVH 对 Trae 机制的态度是"利用不重新定义"。本文依据 00 §4.3 声明利用 AskUserQuestion 工具实现 Human Gate 机制，不重新定义 Trae 平台提供的 AskUserQuestion 工具本身。
+00 §3.3 定义 Trae Solo 环境机制为 LDVH 五类构成要素之一，并声明 LDVH 对 Trae 机制的态度是"利用不重新定义"。本文依据 00 §3.3 声明利用 AskUserQuestion 工具实现 Human Gate 机制，不重新定义 Trae 平台提供的 AskUserQuestion 工具本身。
 
 00 §5.4 定义人类确认闭环：关键决策、高风险操作、状态流转和事实源变更需要人类确认。本文定义人类确认闭环在 Trae 平台中通过 AskUserQuestion 工具实现的技术路径。
 

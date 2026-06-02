@@ -415,7 +415,7 @@ LDVH 的 Human Gate 触发条件（"什么情况下需要人确认"）不变。�
 | 第一服务对象是 AI 执行者 | LDVH 的存在理由 |
 | Git 文件是唯一事实源 | Codex 的云端存储、Memory、Linear 集成都不能替代 Git 文件事实源 |
 | 五类构成要素分工 | 分工关系不因平台变化而混淆 |
-| V1-V7 价值实现标准 | LDVH 的工程标尺 |
+| V1-V10 价值实现标准 | LDVH 的工程标尺 |
 | Human Gate 原则 | 人必须能在关键节点确认 |
 | 事实源闭环 | 起点可以是对话，终点必须是 Git 文件 |
 | 受控执行 | AI 不能绕过规则、状态机、Human Gate |
@@ -443,7 +443,7 @@ LDVH 的 Human Gate 触发条件（"什么情况下需要人确认"）不变。�
 
 - 事实模型（Intent、Task、Memo、ADR、Evidence、Change、Pitfall）
 - 事实源边界
-- 价值实现标准（V1-V7）
+- 价值实现标准（V1-V10）
 - 行动模型触发逻辑（Scenario、Gate 条件、回写规则）
 - specs 文档结构和编号分区
 - 介质使用要求
