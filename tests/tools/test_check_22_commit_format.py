@@ -155,3 +155,72 @@ def test_git_log_failure(mock_run, capsys):
     except SystemExit:
         pass
     # 不验证具体输出，只验证不会崩溃
+
+
+# -------- check_message 提交前预检 --------
+
+
+def test_check_message_valid():
+    msg = "spec(tools): add pre-commit check\n\nBody text\n\nRefs: 22-Change-变更记录"
+    issues = checker.check_message(msg)
+    errors = [i for i in issues if i.level == "error"]
+    assert errors == []
+
+
+def test_check_message_invalid_type():
+    msg = "badtype: broken"
+    issues = checker.check_message(msg)
+    msgs = issues_messages(issues)
+    assert any("不在有效枚举中" in m for m in msgs)
+
+
+def test_check_message_empty():
+    issues = checker.check_message("")
+    msgs = issues_messages(issues)
+    assert any("不能为空" in m for m in msgs)
+
+
+def test_check_message_no_header_format():
+    msg = "just a regular sentence without proper format"
+    issues = checker.check_message(msg)
+    msgs = issues_messages(issues)
+    assert any("第一行格式不符合" in m for m in msgs)
+
+
+def test_check_message_too_long():
+    msg = "docs: " + "x" * 73
+    issues = checker.check_message(msg)
+    msgs = issues_messages(issues)
+    assert any("超过 72 字符" in m for m in msgs)
+
+
+# -------- parse_message_text --------
+
+
+def test_parse_message_text_simple():
+    commit = checker.parse_message_text("feat: add feature")
+    assert commit.hash == "<message>"
+    assert commit.subject == "feat: add feature"
+    assert commit.body == ""
+    assert commit.full_message == "feat: add feature"
+
+
+def test_parse_message_text_with_body():
+    text = "feat: add feature\n\nSome description\nMore details\n\nRefs: ADR-0001"
+    commit = checker.parse_message_text(text)
+    assert commit.hash == "<message>"
+    assert commit.subject == "feat: add feature"
+    assert "Some description" in commit.body
+    assert "Refs: ADR-0001" in commit.full_message
+
+
+# -------- show_format --------
+
+
+def test_show_format_output(capsys):
+    checker.show_format()
+    captured = capsys.readouterr()
+    assert "正确的 commit message 格式" in captured.out
+    assert "<type>(<scope>): <subject>" in captured.out
+    assert "feat" in captured.out
+    assert "specs" in captured.out

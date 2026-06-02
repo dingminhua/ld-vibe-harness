@@ -155,7 +155,8 @@ Change 记录本身是事实源修改的自然结果，不需要为"记录 Chang
 1. 每个 commit 应聚焦单一变更主题，避免在同一 commit 中混合不相关修改；
 2. commit message 应符合本文 §8 定义的格式规范；
 3. 涉及 Human Gate 的修改，应在 commit message body 中说明确认情况；
-4. 任务完成后，应遍历工作区所有 Git 仓库，对每个有修改的仓库独立执行 commit，不可遗漏任何受影响的仓库。
+4. 任务完成后，应遍历工作区所有 Git 仓库，对每个有修改的仓库独立执行 commit，不可遗漏任何受影响的仓库；
+5. commit 前必须调用 `tools/check_22_commit_format.py --check-message` 预检拟提交的 message，预检不通过（exit code ≠ 0）时不得执行 commit。
 
 ---
 
