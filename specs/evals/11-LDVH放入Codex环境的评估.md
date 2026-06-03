@@ -129,7 +129,7 @@ LDVH 的 MCP 使用评估（`specs/evals/06`）将 MCP 定位为"Agent 的可选
 | Codex 自身可作为 MCP Server（`codex mcp-server`） | 其他 Agent 可以通过 MCP 调用 Codex |
 | 工具命名空间隔离（`mcp__<server>__<tool>`） | 多 MCP Server 工具不冲突 |
 
-### 4.4.1 当前两个 MCP 服务在 Codex 的可用性
+### 4.5 当前两个 MCP 服务在 Codex 的可用性
 
 LDVH 当前使用的两个 MCP 服务均已在 Codex 中得到确认支持：
 
@@ -178,7 +178,7 @@ args = ["-y", "@upstash/context7-mcp"]
 
 **迁移成本**：极低。两个 Server 都只需一行命令添加，或复制配置到 `config.toml`。工具调用名称从原始名称变为 `mcp__sequential-thinking__sequentialthinking` / `mcp__context7__resolve-library-id` 等格式，LDVH 的 Skill 或 Action Model 中提到这些工具时需更新名称。
 
-### 4.5 自动化与 CI/CD：从"无"到"完整流水线"
+### 4.6 自动化与 CI/CD：从"无"到"完整流水线"
 
 | Codex 能力 | 对 LDVH 的价值 |
 |---|---|
@@ -186,7 +186,7 @@ args = ["-y", "@upstash/context7-mcp"]
 | GitHub Action（PR Review） | AI 自动审查 PR，按 `AGENTS.md` 中 `## Review guidelines` 规则执行 |
 | Codex App Automations | 定时触发审计任务、依赖更新检查、Pitfall 扫描 |
 
-### 4.6 Codex App Memory：从"Pitfall + Change"到"原生记忆"
+### 4.7 Codex App Memory：从"Pitfall + Change"到"原生记忆"
 
 LDVH 的 Pitfall 和 Change 机制是用结构化 YAML 记录经验和变更。Codex App 的 Memory 功能（预览版）提供了补充：
 
@@ -320,7 +320,7 @@ Codex 原生集成了 Linear。一个自然会产生的想法是：既然 Codex 
 | 离线可用 | ✅ Git 本地 | ❌ 依赖 Linear 服务 | LDVH 更可靠 |
 | AI 读取 | 直接读 YAML，上下文消耗确定 | 通过 API/MCP 查询，增加不确定性 | LDVH 更可控 |
 
-#### 为什么目的相同却不能替代：消费者不同
+#### 5.4.2 为什么目的相同却不能替代：消费者不同
 
 Linear Issue 和 LDVH Task 目的确实一样——都是任务追踪。但决定数据模型设计的不是"目的是什么"，而是 **"谁来消费这个数据"**：
 

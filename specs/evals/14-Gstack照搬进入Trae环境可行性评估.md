@@ -344,7 +344,7 @@ Tools 缓存     = 加速层（按需计算、可重建）
 
 ## 7. AI 视角下的实施优先级
 
-### P0：让 AI 不再盲
+### 7.1 P0：让 AI 不再盲
 
 当前 AI 进入 LDVH 项目后最大的痛点是"找不到入口、不知道该干什么"。
 
@@ -352,7 +352,7 @@ Tools 缓存     = 加速层（按需计算、可重建）
 2. **Core Loop 主线**：README、L1 Rules、Skill routing 围绕同一条主线表达：Intent → Plan → Execute → Verify → Record → Learn；
 3. **最小事实内核**：先稳定 Intent、Task、ADR、Evidence、Change 五类对象，其他按痛点启用。
 
-### P1：让 AI 不再越界
+### 7.2 P1：让 AI 不再越界
 
 当前 Human Gate 靠 Rules 提醒和 AI 自律，AI 容易忽略。
 
@@ -360,7 +360,7 @@ Tools 缓存     = 加速层（按需计算、可重建）
 2. **Fact Validator**：AI 修改 YAML 后即时校验字段、状态机、引用完整性；
 3. **Scope Freeze**：任务执行期间限定 AI 只能编辑某些目录或文件类型。
 
-### P2：让 AI 不再丢证据
+### 7.3 P2：让 AI 不再丢证据
 
 当前 AI 完成任务后证据散落在聊天记录中。
 
@@ -368,7 +368,7 @@ Tools 缓存     = 加速层（按需计算、可重建）
 2. **受控写入工具**：多文件事务写入 + 写入前校验 + Change 记录自动生成；
 3. **ldvh-close Skill**：关闭前强制检查 acceptance / verification / closure_evidence。
 
-### P3：让 AI 能复盘
+### 7.4 P3：让 AI 能复盘
 
 当前同类错误反复发生，没有沉淀。
 

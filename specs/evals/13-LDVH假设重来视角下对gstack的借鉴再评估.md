@@ -359,7 +359,7 @@ Web Tools 只做展示和受控写入，不做事实权威。
 
 ## 9. 对当前 LDVH 的建议优先级
 
-### P0：把 00 的闭环主线产品化
+### 9.1 P0：把 00 的闭环主线产品化
 
 当前 00 已经写得清楚，但 README、L1 Rules、Skill 入口和 Web Tools 应进一步围绕同一条主线表达：
 
@@ -369,13 +369,13 @@ Intent → Plan → Execute → Verify → Record → Learn
 
 这是最能推动 Vibe Coding 实践的改动。
 
-### P1：降低新用户和新 AI 的入口复杂度
+### 9.2 P1：降低新用户和新 AI 的入口复杂度
 
 为 AI 提供统一的“进入项目后先看这里”的最小上下文入口，而不是让 AI 在大量 specs 中自行导航。
 
 这不是取消规范，而是增加 AI 友好的调度层。
 
-### P1：把 Human Gate 工具化
+### 9.3 P1：把 Human Gate 工具化
 
 不只写“需要 Human Gate”，还要让工具能提示：
 
@@ -384,7 +384,7 @@ Intent → Plan → Execute → Verify → Record → Learn
 3. 需要确认哪些事项；
 4. 确认后应写回什么证据。
 
-### P2：建立 LDVH 自己的 review / verify / close 工作流
+### 9.4 P2：建立 LDVH 自己的 review / verify / close 工作流
 
 gstack 的 review、qa、ship 很实践导向。LDVH 应建立自己的对应链条，但重点不是 push PR，而是：
 
@@ -395,7 +395,7 @@ gstack 的 review、qa、ship 很实践导向。LDVH 应建立自己的对应链
 5. Pitfall 是否需要沉淀；
 6. 是否触发 ADR 或 Human Gate。
 
-### P2：引入真实交互验证思想
+### 9.5 P2：引入真实交互验证思想
 
 尤其是 Web Tools 本身、前端项目、产品类项目，应借鉴 gstack 的真实浏览器验证理念，让 Evidence 不只来自命令行测试，也来自用户流验证。
 
