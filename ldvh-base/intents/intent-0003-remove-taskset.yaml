@@ -1,0 +1,21 @@
+id: intent-0003
+type: intent
+title: 取消中间包装型事实模型并由 Intent/Task 承接核心职责
+status: active
+created: 2026-06-04
+updated: 2026-06-04
+description: |
+  将 TaskSet 从 LDVH active fact model 中移除或降级，明确 Intent 承接目标、背景、约束、成功标准、关联任务和完成判断。
+  Task 直接关联 Intent，Web、tags、filters 或派生视图承接任务分组展示，不再通过 TaskSet 作为主链路对象。
+  将 Evidence 从独立 active fact model 中移除或降级，普通验证、结果物和关闭证据由 Task 字段及被引用结果物承接，不再额外包装成 Evidence YAML。
+success_criteria: |
+  20 事实模型集合索引、24 Intent、27 Task、28 TaskSet、29 Evidence、相关 Contract、Skill、Rules 和 Validator 中不再把 TaskSet 或 Evidence 作为主链路对象或强制归属。
+  现有 taskset-0002 的处理路径明确，task-0003 不再依赖 taskset-0002。
+  现有 ev-0001 与 ev-0002 的处理路径明确，Task 可直接引用文档、日志、报告、截图、commit 或测试结果。
+constraints: |
+  保留 Intent → Task → Change 主链路；TaskSet 不再新建；Evidence 不再作为默认独立对象创建；修改事实源和规范后按提交纪律处理。
+source: 用户确认取消 TaskSet，并进一步确认取消 Evidence，二者均由 Intent/Task 直接承接原职责
+related_tasks:
+  - task-0004
+  - task-0005
+related_adrs: []

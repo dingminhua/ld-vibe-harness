@@ -1,0 +1,22 @@
+id: task-0004
+type: task
+title: 取消 TaskSet 独立事实模型并调整 Intent/Task 关系
+status: planned
+created: 2026-06-04
+updated: 2026-06-04
+description: |
+  取消 TaskSet 作为 LDVH 独立事实模型和主链路对象，将目标、背景、约束、成功标准、关联任务和完成判断收敛到 Intent。
+  调整 Task 与 Intent 的关系，移除 TaskSet 强制归属、自动归类和级联关闭要求，并明确 Web 或轻量字段承接分组展示。
+source_intent: intent-0003
+source: intent-0003
+taskset:
+parent_task:
+sub_tasks: []
+acceptance: |
+  20 事实模型集合索引、24 Intent、27 Task、28 TaskSet、相关 Contract、Skill、Rules、Validator 中的 TaskSet 主链路职责被移除或降级；现有 task-0003 不再引用 taskset-0002；taskset-0002 被关闭、废弃或迁移方案明确。
+verification: |
+  运行相关事实模型校验、specs 检查、lint/typecheck 或可用测试命令，确认取消 TaskSet 后 Intent/Task 主链路可被事实源和工具正确解析。
+assignee: AI
+related_adrs: []
+related_evidence: []
+related_changes: []
