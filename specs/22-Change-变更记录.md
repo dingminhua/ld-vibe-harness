@@ -327,20 +327,38 @@ Change 22.01-22.06 六个子文档槽位状态如下：
 
 | 编号 | 子文档 | 状态 | 说明 |
 |---|---|---|---|
-| 22.01 | Rules.md | not-created | Change 提交前提醒和纪律由 ldvh-commit Skill 编排，Rules 只保留入口引用 |
+| 22.01 | Rules.md | active | Change 提交前提醒和提交纪律的权威位置，L0/L1 Rules 的提交纪律入口由此子文档定义 |
 | 22.02 | Skill.md | active | ldvh-commit Skill 编排提交流程：diff 展示 → message 起草 → 格式预检 → 确认 → commit |
 | 22.03 | Agent.md | not-created | Change 不需要 Agent 并行处理 |
-| 22.04 | Tools.md | not-created | commit message 格式校验由 check_22_commit_format.py 直接执行 |
-| 22.05 | Web.md | not-created | Change 不需要独立 Web 编辑入口 |
-| 22.06 | Contract.md | not-created | commit message 格式规范在本文 §8 已完整定义 |
+| 22.04 | Tools.md | active | commit message 格式校验由 check_22_commit_format.py 执行，提供 --show-format、--check-message、git log 审计三种能力 |
+| 22.05 | Web.md | not-created | Change 不需要独立 Web 编辑入口，读取和查询通过 git log 命令执行；未来如需 Web 变更看板再评估创建 |
+| 22.06 | Contract.md | active | commit message 格式契约的权威位置，定义 type 枚举、scope 枚举、正则表达式和契约消费声明 |
 
 22.02 从 not-created 升级为 active 的理由：
 
 1. **提交流程需要多步骤编排**：diff 展示、message 起草、格式预检、用户确认、逐文件 add、commit 是多步骤流程，适合 Skill 编排；
-2. **减少 Rules 冗余**：当前 L0、22.01 多处重复维护提交步骤，Skill 集中维护后 Rules 只需引用入口；
+2. **减少 Rules 冗余**：Skill 集中维护提交流程后，Rules 只需引用入口；
 3. **确保执行一致性**：Skill 统一编排确保每次提交都经过完整检查链，不会因 AI 上下文差异遗漏步骤。
 
-其余子文档保持 not-created 状态，理由不变：Change 无独立 YAML 实例、无状态流转、格式简单、机制适配已在本文 §11-§13 直接说明。
+22.01 从 not-created 升级为 active 的理由：
+
+1. **L0 Rules 的权威来源**：22.01 定义了 Change 提交纪律的完整规则，L0/L1 Rules 从中提取运行时入口摘要，符合 11.01 Rules 机制规范的分层关系；
+2. **提交纪律需要明确边界**：哪些场景必须调用 Skill、哪些不得跳过 Skill 直接 commit、Rules 层不得承载哪些内容，需要权威位置定义；
+3. **Change 虽无 YAML 实例但提交纪律独立**：Change 的格式契约、提交流程、校验工具有明确的机制落地需求，不应省略。
+
+22.04 从 not-created 升级为 active 的理由：
+
+1. **Tools 校验已实现并在使用**：check_22_commit_format.py 已实现 --show-format、--check-message、git log 审计三种能力，并提供测试覆盖；
+2. **预检是强制制度**：22 §7.3 要求 commit 前必须调用预检工具，需要 Tools 子文档定义命令参数、调用方式和测试要求；
+3. **契约消费声明需要落地**：22.06 Contract 定义了格式契约，22.04 声明 Tools 如何消费该契约。
+
+22.06 从 not-created 升级为 active 的理由：
+
+1. **格式契约需要独立权威位置**：commit message 的 type 枚举、scope 枚举、正则表达式、中文字符检测规则需要结构化定义，供 Tools 校验和 AI 遵守消费；
+2. **契约子文档是 Tools 和 Rules 的共同依据**：22.04 Tools 校验和 22.01 Rules 提醒都以 22.06 契约为准；
+3. **Change 虽无 YAML 但契约格式独立**：commit message 格式契约是 Change 的核心结构化接口，需要独立子文档承载。
+
+22.03、22.05 保持 not-created 状态，理由不变：Change 无独立 YAML 实例、无状态流转、Agent 并行处理和 Web 编辑入口当前不需要。
 
 ---
 
@@ -350,10 +368,10 @@ Change 对象模型进入项目实践前，应确认以下决策：
 
 1. Change 事实实例以 Git commit 承载，不创建 `ldvh-base/changes/` 目录；
 2. Change 读取策略：通过 `git log --format` 命令按本文 §8 格式解析，支持按 type、scope、Refs 筛选；
-3. Change 写入策略：通过标准 commit message 格式写入，不需要额外写入入口或受控写入工具；
-4. 是否需要在 Rules 中增加 commit message 格式提醒；
-5. 是否需要 Tools 辅助程序覆盖 commit message 格式校验能力；
-6. 哪些事项立即落地，哪些事项暂缓，暂缓原因和后续评估方式是什么。
+3. Change 写入策略：通过标准 commit message 格式写入，通过 ldvh-commit Skill 编排提交流程，通过 check_22_commit_format.py 执行格式预检；
+4. 已确认在 Rules 中增加提交纪律提醒（22.01）；
+5. 已确认 Tools 辅助程序覆盖 commit message 格式校验能力（22.04）；
+6. 已确认哪些事项立即落地，哪些事项暂缓。
 
 落地前决策的输出是决策清单，不是初始化产物。未完成落地前决策前，不应声称已经完成落地初始化。
 
@@ -383,7 +401,7 @@ Change 对象模型进入项目实践时，需要完成以下初始化：
 1. 确认 Change 事实实例以 Git commit 承载，不创建 `ldvh-base/changes/` 目录；
 2. 确认 commit message 格式规范遵循本文 §8；
 3. 确认 Change 读取入口为 `git log --format` 命令；
-4. 确认 Change 的 22.02 子文档为 active 状态，其余 22.01、22.03-22.06 子文档为 not-created 状态，对应子文档文件已创建；
+4. 确认 Change 的 22.02、22.01、22.04、22.06 子文档为 active 状态，22.03、22.05 为 not-created 状态，对应子文档文件已创建；
 5. 确认项目 Rules 中是否需要增加 commit message 格式提醒；
 6. 确认是否需要 Tools 辅助程序覆盖 commit message 格式校验能力；
 7. 确认跨仓库 commit 机制：落地初始化涉及多个 Git 仓库时，每个仓库均需独立提交；
@@ -415,14 +433,14 @@ Change 对象模型合规检查应覆盖以下内容：
 4. Change 读取策略是否符合本文 §11 和 §12；
 5. Change 写入策略是否符合本文 §7 和 §9；
 6. Change 不使用 `ldvh-base/changes/` 目录是否符合本文 §4 的声明；
-7. Change 附件型实践子文档状态是否符合本文 §14 的定义（22.02 active，其余 not-created）。
+7. Change 附件型实践子文档状态是否符合本文 §14 的定义（22.01、22.02、22.04、22.06 active，22.03、22.05 not-created）。
 
 ---
 
 ## 20. 待补齐事项
 
 1. Change 与 Task、Memo、Risk、Dependency 的关联规则待对应对象模型稳定后补充；
-2. commit message 格式校验工具待按需实现；
-3. Change Web 信息同步能力待按需实现；
+2. commit message 格式校验工具已实现，后续按需扩展多仓库批量校验能力；
+3. Change Web 信息同步能力待按需实现（22.05 当前 not-created，未来如需变更看板再评估）；
 4. commit message `type` 枚举是否需要扩展待实践验证；
 5. 项目中已有的暂缓标注（"暂缓：Change 记录机制待替换，见 L1 规则"）应替换为对本文的引用。
