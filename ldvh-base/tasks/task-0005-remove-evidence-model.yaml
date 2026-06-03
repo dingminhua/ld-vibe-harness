@@ -13,7 +13,11 @@ taskset:
 parent_task:
 sub_tasks: []
 acceptance: |
-  Task 可直接引用文档、日志、报告、截图、commit 或测试结果；Evidence 不再作为 active fact model 和 Task 必备关联对象；29 Evidence 规范与 Contract 被移除、废弃或降级；27 Task 规范和 Contract 增强结果物引用字段并移除 related_evidence 强依赖；现有 ev-0001 与 ev-0002 完成迁移或废弃说明。
+  - [ ] Task 可直接引用文档、日志、报告、截图、commit 或测试结果
+  - [ ] Evidence 不再作为 active fact model 和 Task 必备关联对象
+  - [ ] 29 Evidence 规范与 Contract 被移除、废弃或降级
+  - [ ] 27 Task 规范和 Contract 增强结果物引用字段并移除 related_evidence 强依赖
+  - [ ] 现有 ev-0001 与 ev-0002 完成迁移或废弃说明
 verification: |
   运行事实模型校验、specs 检查、pytest 或相关验证命令，确认取消 Evidence 后 Task 仍能承载验证方式、关闭证据和结果物引用。
 assignee: AI

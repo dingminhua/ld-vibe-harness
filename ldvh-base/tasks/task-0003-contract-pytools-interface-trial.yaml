@@ -11,7 +11,10 @@ source_intent: intent-0002
 source: intent-0002
 taskset: taskset-0002
 acceptance: |
-  13-LDVH事实模型基础规范新增事实对象接口公共原语；12.01-Tools辅助规范新增 PyTools 命名、CLI、ToolResult、ToolIssue、exit code、测试和契约同步规则；27.06 与 22.06 完成 Task/Change 试点接口契约；27.04 与 22.04 记录对应 Tools 消费关系和同步要求。
+  - [ ] 13-LDVH事实模型基础规范新增事实对象接口公共原语
+  - [ ] 12.01-Tools辅助规范新增 PyTools 命名、CLI、ToolResult、ToolIssue、exit code、测试和契约同步规则
+  - [ ] 27.06 与 22.06 完成 Task/Change 试点接口契约
+  - [ ] 27.04 与 22.04 记录对应 Tools 消费关系和同步要求
 verification: |
   运行 Fact Validator 校验新增事实源；检查相关 specs 修改后可从规范推理出对象 Contract 与 PyTools 接口治理规则；后续如修改工具代码，运行 tests/tools 对应测试。
 assignee: AI

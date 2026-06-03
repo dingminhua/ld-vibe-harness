@@ -24,7 +24,7 @@
 | Intent | 识别用户意图，创建 Intent/Task | ldvh-intake |
 | Plan | 拆解步骤，评估风险 | 待建设 |
 | Execute | 按计划实施，遵守约束 | 待建设 |
-| Verify | lint/test/build/真实交互验证 | 待建设 |
+| Verify | 独立 agent 验证 acceptance 检查列表 + lint/test/build | ldvh-close §2.1 |
 | Record | Evidence 回写，Change 记录，状态更新 | ldvh-close |
 | Learn | Pitfall 沉淀，Rule 改进 | 待建设 |
 

@@ -13,7 +13,12 @@ taskset:
 parent_task:
 sub_tasks: []
 acceptance: |
-  20 事实模型集合索引、24 Intent、27 Task、28 TaskSet、相关 Contract、Skill、Rules、Validator 中的 TaskSet 主链路职责被移除或降级；现有 task-0003 不再引用 taskset-0002；taskset-0002 被关闭、废弃或迁移方案明确。
+  - [ ] 20 事实模型集合索引中 TaskSet 主链路职责被移除或降级
+  - [ ] 24 Intent 中 TaskSet 主链路职责被移除或降级
+  - [ ] 27 Task 中 TaskSet 主链路职责被移除或降级
+  - [ ] 28 TaskSet 及相关 Contract、Skill、Rules、Validator 中 TaskSet 主链路职责被移除或降级
+  - [ ] 现有 task-0003 不再引用 taskset-0002
+  - [ ] taskset-0002 被关闭、废弃或迁移方案明确
 verification: |
   运行相关事实模型校验、specs 检查、lint/typecheck 或可用测试命令，确认取消 TaskSet 后 Intent/Task 主链路可被事实源和工具正确解析。
 assignee: AI

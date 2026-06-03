@@ -114,6 +114,17 @@ review_needed → executing（退回：审查不通过）
 
 未在上述规则中列出的流转为非法流转，Tools 辅助和工具应拒绝执行。
 
+### 5.2.1 状态触发规则
+
+| 流转 | 触发时机 | 触发者 |
+|---|---|---|
+| planned → executing | AI 开始执行任务时 | AI |
+| executing → review_needed | 独立 agent 验证 acceptance 全部通过后 | AI |
+| review_needed → closed | Human Gate 确认后 | AI + Human |
+| review_needed → executing | 验证未通过，需要修复时 | AI |
+
+AI 开始执行 `planned` 状态的 Task 前，必须先将状态变更为 `executing` 并更新 `updated` 日期。不得在 `planned` 状态下直接执行任务。
+
 `closed` 是稳定终态。终态 Task 不得重开；如需重新执行，必须新建 Task 承接，并在新 Task 中引用原 Task。
 
 `review_needed` 状态的 Task 退回到 `executing` 时，应记录退回原因，并更新 `updated` 字段。
@@ -122,9 +133,10 @@ review_needed → executing（退回：审查不通过）
 
 Task 从 `review_needed` → `closed` 必须满足：
 
-1. `closure_evidence` 字段已填写；
-2. 关联 Evidence 的 `verification_result` 不为 `fail`（如有）；
-3. 已获得 Human Gate 确认。
+1. `acceptance` 字段中所有检查项已标记为 `- [x]`；
+2. 所有子任务（`sub_tasks`）已关闭（`status: closed`）；
+3. `closure_evidence` 字段已填写；
+4. 已获得 Human Gate 确认。
 
 ---
 
@@ -154,6 +166,8 @@ Task 的创建、状态变更和关闭都应记录 Change。Change 以 Git commi
 
 ### 6.5 Task → TaskSet
 
+> 注意：TaskSet 已决定取消独立事实模型（参见 intent-0003），本节将在 task-0004 完成后移除。Task 应直接关联 Intent，不再强制归属 TaskSet。
+
 Task 应归属一个 TaskSet。Task 的 `taskset` 字段引用所属 TaskSet ID。创建 Task 时，AI 应优先自动归入现有活跃 TaskSet；无法归入时，应提示用户是否创建新 TaskSet。TaskSet 的字段和状态由 TaskSet 对象模型（`specs/28-TaskSet-任务集.md`）定义。
 
 ### 6.6 Task → Task（子任务）
@@ -166,7 +180,8 @@ Task 可以有子任务。子任务与父任务使用相同的对象模型和状
 2. **默认归属**：子任务默认归入父任务所在的 TaskSet；
 3. **关闭条件**：父任务关闭前，所有子任务必须已关闭（`status: closed`）；
 4. **自动创建**：AI 执行 Task 时发现 bug、缺口或规范遗漏，应自动创建子任务并关联到当前 Task；
-5. **同级扩展**：如果子任务执行过程中又发现新问题，应创建新的子任务挂在同一个父任务下，而不是嵌套更深层级。
+5. **验证发现 bug 时创建子任务**：独立 agent 验证 acceptance 列表时发现未通过项，应为每个 bug 创建子任务，`parent_task` 指向当前 Task，`acceptance` 包含修复该 bug 的验收标准；子任务修复完成后重新验证主任务 acceptance 列表；如重新验证仍发现新 bug，停止自动循环并通过 AskUserQuestion 向用户报告；
+6. **同级扩展**：如果子任务执行过程中又发现新问题，应创建新的子任务挂在同一个父任务下，而不是嵌套更深层级。
 
 子任务与 TaskSet 是两个维度：TaskSet 是横向归类（同目标的一组任务），parent_task 是纵向分解（父任务的子任务）。
 
@@ -235,7 +250,7 @@ Task 基础字段遵循 `specs/13-LDVH事实模型基础规范.md` §7.3 的字�
 | `taskset` | string | 否 | 所属 TaskSet ID，引用 TaskSet 事实模型 |
 | `parent_task` | string | 否 | 父任务 ID，非空时表示本 Task 为子任务 |
 | `sub_tasks` | list of string | 否 | 子任务 ID 列表 |
-| `acceptance` | string | 是 | 验收标准 |
+| `acceptance` | string | 是 | 验收标准，必须使用检查列表格式（`- [ ]` / `- [x]`），每项为可独立验证的原子条件 |
 | `verification` | string | 否 | 验证方式 |
 | `assignee` | string | 否 | 执行者 |
 | `related_adrs` | list of string | 否 | 关联 ADR ID 列表 |

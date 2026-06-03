@@ -185,6 +185,16 @@ def validate_task(path: Path, data: dict[str, Any]) -> list[Issue]:
         for field in ["closed_at", "closure_evidence"]:
             if is_empty(data.get(field)):
                 issues.append(Issue(str(path), "error", "MISSING_CLOSURE_FIELD", f"closed 状态必须提供非空字段: {field}"))
+    # acceptance 检查列表格式校验
+    acceptance_text = data.get("acceptance")
+    if acceptance_text and isinstance(acceptance_text, str):
+        unchecked_items = re.findall(r"^- \[ \]", acceptance_text, re.MULTILINE)
+        checked_items = re.findall(r"^- \[x\]", acceptance_text, re.MULTILINE)
+        if not unchecked_items and not checked_items:
+            issues.append(Issue(str(path), "warning", "ACCEPTANCE_NOT_CHECKLIST",
+                "acceptance 字段应使用检查列表格式（- [ ] / - [x]），每项为可独立验证的原子条件"))
+    elif not acceptance_text:
+        issues.append(Issue(str(path), "error", "MISSING_REQUIRED_FIELD", "acceptance 字段为空"))
     return issues
 
 

@@ -11,7 +11,9 @@ source_intent: intent-0001
 source: intent-0001
 taskset: taskset-0001
 acceptance: |
-  ldvh-intake、ldvh-close 或相关写入说明明确提示长文本字段优先使用 YAML 块标量；Fact Validator 或测试覆盖含冒号长文本的合法样例；相关验证命令通过。
+  - [ ] ldvh-intake、ldvh-close 或相关写入说明明确提示长文本字段优先使用 YAML 块标量
+  - [ ] Fact Validator 或测试覆盖含冒号长文本的合法样例
+  - [ ] 相关验证命令通过
 verification: python3 tools/check_fact_model.py ldvh-base/intents/ ldvh-base/tasks/ ldvh-base/evidence/ && python3 -m pytest tests/tools/test_check_fact_model.py
 assignee: AI
 related_adrs: []
