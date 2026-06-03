@@ -290,7 +290,29 @@ Trae Plan 与 Spec 不替代 LDVH 的 Rules、事实模型、Skill 和 Tools，�
 4. `.trae/specs/` 可被视为"规划态"资产，但执行态和权威状态仍应回到 `ldvh-base/` 或 `specs/`；
 5. 低风险任务不强制 Plan/Spec，避免过度流程化。
 
-### 8.2 Spec 三文档与 LDVH 核心事实对象的映射
+### 8.2 Plan / Spec 是执行层脚手架，LDVH 做闭环验收
+
+本次进一步形成的共识：Plan 与 Spec 首先属于执行层机制，而不是 LDVH 的长期事实源本体。
+
+1. Plan 是短周期执行策略，用于帮助 AI 在当前轮次拆解步骤、暴露风险和获得确认；默认不应长期入库。
+2. Spec 是复杂任务执行前的规划材料，可作为规划态资产保留，但不应成为执行状态或验收状态的权威来源。
+3. LDVH 不应逐步验收 Plan 或 Spec 中的每个执行细节，而应验收最终交付是否契合 Intent / Task 的目标、约束和验收标准。
+4. 当实际执行路径偏离 Plan / Spec，但最终结果满足 LDVH 闭环验收要求时，不需要为了同步过程材料而回写或修正 Plan / Spec。
+5. 只有当偏离 Plan / Spec 形成重要决策、范围变化、风险、踩坑或长期经验时，才应沉淀为 ADR、Change、Pitfall 或 Learn 类事实。
+
+LDVH 的闭环验收关注：
+
+1. **目标一致性**：最终产出是否回应用户原始目标和 Task 目标；
+2. **范围一致性**：是否存在明显做多、做少或偏题；
+3. **约束一致性**：是否遵守 Rules、事实模型、状态机、Human Gate 和已接受 ADR；
+4. **验证充分性**：是否执行了与任务风险匹配的 lint、typecheck、test、build、真实交互或人工检查；
+5. **证据充分性**：Evidence 是否能支撑完成判断；
+6. **变更可追溯性**：Change 或等价记录是否说明发生了什么变化、为什么变化、影响范围是什么；
+7. **后续沉淀**：是否存在需要继续形成 ADR、Pitfall、Rule 改进或后续 Task 的内容。
+
+因此，Plan / Spec 对 LDVH 的价值不是“完整归档过程”，而是为闭环验收提供输入。LDVH 应只吸收其中经确认且影响交付判断的稳定事实。
+
+### 8.3 Spec 三文档与 LDVH 核心事实对象的映射
 
 Trae Spec 三文档与 LDVH 最小事实内核存在自然映射：
 
@@ -298,11 +320,11 @@ Trae Spec 三文档与 LDVH 最小事实内核存在自然映射：
 |---|---|---|
 | `spec.md` | Intent | 目标、范围、成功标准、影响边界 |
 | `tasks.md` | Task | 可执行任务拆解 |
-| `checklist.md` | Evidence | 验收项、验证结果、关闭证据 |
+| `checklist.md` | Evidence 输入 | 验收设想和验证提示，执行后才形成 Evidence |
 
-该映射是后续 `ldvh-spec` Skill、Spec→LDVH 对象转换、Dogfood 测试和产品化安装体验的重要基础。
+该映射是后续 `ldvh-spec` Skill、Spec→LDVH 对象转换、Dogfood 测试和产品化安装体验的重要基础。映射时不应全文搬运或维护双重状态；`spec.md`、`tasks.md` 和 `checklist.md` 只提供来源和候选输入，权威状态仍回到 Intent、Task、Evidence、Change、ADR 等 LDVH 事实对象。
 
-### 8.3 specs-v2 中应吸收的新对象与流程
+### 8.4 specs-v2 中应吸收的新对象与流程
 
 吸收自 `specs/evals/16-specs-v2内容价值评估.md` 的共识：specs-v2 中最有价值的是当前 specs/ 缺失的新对象和新流程，而不是已有等价规范。
 
@@ -316,7 +338,7 @@ Trae Spec 三文档与 LDVH 最小事实内核存在自然映射：
 6. **交付实践规范**：定义发布前检查、发布后验证、回滚方案和发布记录要求；
 7. **推荐 Agent 清单**：为后续少量高价值 Agent 建设提供候选，而不是一次性创建大量 Agent。
 
-### 8.4 specs-v2 吸收原则
+### 8.5 specs-v2 吸收原则
 
 1. specs-v2 内容必须完成术语适配（PM Kit → LDVH，pm-kit-base → ldvh-base）；
 2. specs-v2 对象实践不能原样复制，应改写为 LDVH 主文档 + NN.01-NN.06 子文档结构；
@@ -356,7 +378,12 @@ Trae Spec 三文档与 LDVH 最小事实内核存在自然映射：
 
 ## 11. 长期约束
 
+> 回流状态：本节第 2-4 条已回流到 11 系列正式规范，分别由 `specs/11-LDVH-AI协作规范.md`、`specs/11.01-Rules机制规范.md` 和 `specs/11.02-Skill机制规范.md` 承接；本文保留为产品方向入口摘要，不替代正式规范。
+
 1. Skill 提示词、Skill 文档和面向 AI 的 Skill 编排说明应使用中文，除非外部平台字段或技术标识必须使用英文。
+2. 涉及规范、Rules、Skill、Agent、Tools、事实模型、状态机、部署边界或目录边界的判断，AI 不得只凭记忆、目录现状或经验推断；必须先定位并读取对应规范原文，再给出结论。
+3. 当 AI 发现自己依赖了错误记忆、跳过规范原文、混淆层级或误判部署边界时，应把该错误转化为可执行检查项：明确触发场景、必读原文、检查顺序和停止条件。
+4. LDVH 的价值不在于要求 AI 永远不犯错，而在于把已发现的错误模式沉淀为 Rules、Skill、Tools 或事实源检查，降低同类错误复发概率。
 
 ---
 

@@ -1,0 +1,9 @@
+- [x] `specs/11-LDVH-AI协作规范.md` 明确包含“规范判断必须回原文”的通用要求
+- [x] `specs/11-LDVH-AI协作规范.md` 明确包含“错误模式转检查项”的要求
+- [x] `specs/11.01-Rules机制规范.md` 明确包含“重要规则回流 specs”的要求
+- [x] `specs/11.01-Rules机制规范.md` 明确 Rules 是正式规范的运行时投影，不是框架级原则正文的长期权威来源
+- [x] `specs/11.02-Skill机制规范.md` 明确包含 LDVH 通用 Skill 部署判断检查流程
+- [x] `specs/11.02-Skill机制规范.md` 明确不能只凭项目内 `.trae/skills/` 目录或聊天记忆判断 Skill 已落地
+- [x] `specs/evals/17-LDVH-Gstack-Trae融合产品方向共识.md` 标记相关共识已回流 11 系列正式规范
+- [x] 新增内容没有创建新的跨机制选择表，仍以 `specs/11-LDVH-AI协作规范.md` §5 为唯一选择边界
+- [x] specs 文档规范相关测试或检查命令已通过

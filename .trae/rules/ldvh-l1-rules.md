@@ -15,7 +15,7 @@
 
 ## 硬约束
 
-新增机制、规则或规范内容必须服务 LDVH 价值标准。Human Gate 场景见工作区 L0 "场景入口"。提交时调用 `ldvh-commit` Skill。Skill 提示词、Skill 文档和面向 AI 的 Skill 编排说明使用中文，除非外部平台字段或技术标识必须使用英文。框架建设必须服务最近一次可运行闭环；连续新增抽象而未 Dogfood 时，应暂停扩张并转入实例验证。
+新增机制、规则或规范内容必须服务 LDVH 价值标准。Human Gate 场景见工作区 L0 "场景入口"。提交时调用 `ldvh-commit` Skill。Skill 提示词、Skill 文档和面向 AI 的 Skill 编排说明使用中文，除非外部平台字段或技术标识必须使用英文。框架建设必须服务最近一次可运行闭环；连续新增抽象而未 Dogfood 时，应暂停扩张并转入实例验证。涉及规范、Rules、Skill、Agent、Tools、事实模型、状态机、部署边界或目录边界的判断，必须先定位并读取对应规范原文，不得只凭记忆、目录现状或经验推断。
 
 ## Core Loop 阶段路由
 
@@ -40,4 +40,4 @@ AI 应在每次用户交互时判断当前 Core Loop 阶段，并推荐对应 Sk
 
 ## 压缩保护
 
-LDVH | 00-20按任务读原文 | 产品化/Gstack/Trae/CoreLoop/PyTools先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=PyTools聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task/Evidence | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04子文档 05HG 10事实源 11协作 12Tools 13事实 14行动 20索引 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0 | 提交调用ldvh-commit Skill | CoreLoop路由=Intent→ldvh-intake|Record→ldvh-close
+LDVH | 00-20按任务读原文 | 产品化/Gstack/Trae/CoreLoop/PyTools先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 规范/Skill/Tools/部署判断必须回原文 | 错误模式转检查项 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=PyTools聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task/Evidence | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04子文档 05HG 10事实源 11协作 12Tools 13事实 14行动 20索引 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0 | 提交调用ldvh-commit Skill | CoreLoop路由=Intent→ldvh-intake|Record→ldvh-close
