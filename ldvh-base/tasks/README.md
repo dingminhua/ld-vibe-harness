@@ -23,5 +23,5 @@ task-{NNNN}-short-title.yaml
 
 ## 规范依据
 
-- 对象模型：`specs/31-Task-任务.md`
-- 契约子文档：`specs/31.06-Contract.md`
+- 对象模型：`specs/27-Task-任务.md`
+- 契约子文档：`specs/27.06-Contract.md`

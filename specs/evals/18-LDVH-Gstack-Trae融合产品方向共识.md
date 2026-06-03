@@ -48,7 +48,7 @@ Gstack 的体验范式
 5. **当前 LDVH 已经具备最小 Dogfood 基础**：Intent / Task / Evidence 最小事实内核、ADR / Change 基础规范、Fact Validator、`ldvh-intake`、`ldvh-close`、`ldvh-adr`、`ldvh-commit` 已经形成可运行骨架。
 6. **当前最应优先补齐的不是继续抽象新对象，而是 Record / Change 闭环**：LDVH 已经能创建任务、执行验证、回写 Evidence、关闭 Task，但“变更发生了什么、为什么发生、影响范围是什么、如何与 Evidence / Task / commit 关联”仍需要更清晰的承载策略。
 
-对原 17 号文档第 3、4、5 节的判断：本文继续认可其核心内容，不反对其主方向；需要补充的边界是：**Gstack 的体验范式可以强吸收，但 Gstack 的安装布局、遥测、自动提交、浏览器 daemon、远程 tunnel、ML prompt-injection 防线和大量角色 Skill 不应直接照搬到 LDVH。Trae Solo 能力也应以当前可用工具和项目规则为准，不应把外部宿主机制强行假设为已存在能力。**
+对原 17 号文档第 3、4、5 节的判断：本文继续认可其核心内容，不反对其主方向；需要补充的边界是：**Gstack 的体验范式和 Skill prompt 经验可以强吸收，但 Gstack 的安装布局、遥测、自动提交、浏览器 daemon、远程 tunnel、ML prompt-injection 防线和大量角色 Skill 的目录形态不应直接照搬到 LDVH。Trae Solo 能力也应以当前可用工具和项目规则为准，不应把外部宿主机制强行假设为已存在能力。**
 
 ---
 
@@ -165,13 +165,15 @@ Gstack 中最值得 LDVH 借鉴的是：
 7. team mode 中“可选试点 / 强制接入”的 adoption 思路；
 8. scope drift detection 和 plan-completion review；
 9. release / ship 之前的强 gate；
-10. learn / retro 把失败和经验转化为后续默认行为。
+10. learn / retro 把失败和经验转化为后续默认行为；
+11. `When to invoke`、触发词、允许工具、前置探测、Step、STOP、输出格式等 Skill prompt 组织方式；
+12. review / qa / ship / retro / learn 等 Skill 对“何时进入、读什么、做什么、何时停、如何交付”的流程化表达。
 
 Gstack 中不应直接照搬的是：
 
 1. `~/.gstack/` 或类似本地隐藏目录作为稳定事实源；
 2. Claude Code slash command 结构；
-3. 大量人格化角色 Skill；
+3. 大量人格化角色 Skill 的目录形态；
 4. 自动遥测和自动更新默认开启；
 5. 自动提交、自动 push、自动发布；
 6. pair-agent / ngrok 远程浏览器控制；
@@ -235,6 +237,35 @@ Trae Solo 的 Plan / Spec 应被分级使用：
 | 涉及 LDVH Human Gate 的关键变更 | Plan / Spec 不能替代 AskUserQuestion |
 
 `.trae/specs/` 可作为规划态资产和候选输入，但不应成为权威执行状态。权威状态仍应回到 `ldvh-base/`、正式 `specs/`、ADR、Evidence、Change 或 Git commit 记录。
+
+### 4.4 Skill、视角与 Agent 的产品化分层
+
+Gstack 的大量角色 Skill 说明：AI 工程协作可以通过提示词把专业流程产品化。更准确地说，Gstack 倾向于用 Skill 承载稳定行动入口：Skill 不只是 prompt，而是行动入口、上下文装配、流程约束、工具授权和产物契约的组合。
+
+在 Gstack 中，一个 Skill 通常同时回答：什么时候进入这个流程、进入前要读取或探测什么上下文、允许使用哪些工具、执行步骤和 STOP 点是什么、Human Gate 如何触发、最终要交付什么产物。因此，Gstack 的 Skill 是一种构建行动上下文的产品机制，而不是单纯的角色文本。
+
+但这不意味着所有行动都应该变成 Skill。LDVH 不应把这个经验简化为“所有入口 Skill 化”，也不应简化为“不要角色 Skill”，而应拆成四层吸收：
+
+| 层级 | LDVH 建议 | 适用场景 |
+|---|---|---|
+| 稳定行动入口 | 优先评估 Skill 化 | 需要上下文装配、工具授权、流程约束、Human Gate 和产物契约的高频行动 |
+| 生命周期流程 | 建设为 Skill | 符合 Core Loop、输入输出稳定、高频复用、需要降低 AI 进入摩擦 |
+| 临时角色视角 | 在主上下文运行时切换 | 只需要产品、工程、QA、安全、架构等视角补充判断，不需要隔离上下文 |
+| 多角色子 Agent | 由主控按需并行调度 | 需要独立上下文、并行分析、结论隔离或大上下文分摊 |
+| 长期专业入口 | 谨慎建设正式 Agent 或稳定规范 | 角色长期复用、权限边界明确、输出契约稳定 |
+
+因此，`ldvh-plan`、`ldvh-verify`、`ldvh-review`、`ldvh-close`、`ldvh-retro` 这类生命周期流程适合逐步 Skill 化；某些稳定工程动作如果需要重复装配上下文、执行门禁和交付结构化产物，也可以进入 Skill 候选。但“产品经理视角”“架构师视角”“QA 视角”“安全视角”等不应默认创建成独立 Skill 或 Agent。它们更适合作为运行时视角参数，由主控根据任务复杂度决定是在主上下文临时切换，还是启动一个或多个子 Agent。
+
+Trae Solo 中子 Agent 可以并行，也可以在授权边界内调用 Skill。LDVH 对这项能力的产品判断是：
+
+1. 子 Agent 调用 Skill 可以作为复杂任务的能力组合方式；
+2. 子 Agent 是否可调用某个 Skill，应由主控输入、行动模型或 Agent 定义明确授权；
+3. 子 Agent 输出必须回到主控汇总，不能直接成为权威事实源；
+4. 子 Agent 发现 Human Gate、状态流转、ADR、事实源写入或高风险变更时，应停止相关修改并报告主控；
+5. Skill 不应主动调度 Agent 的边界仍然成立，Agent 可调用 Skill 不等于 Skill 可反向调度 Agent；
+6. 多角色并行的价值在于扩大视角和隔离上下文，不应替代事实源、Evidence、Change 或 Human Gate。
+
+这一区分能同时保留 Gstack 角色化 prompt 的价值和 LDVH 的治理纪律：稳定行动入口优先评估 Skill 化，生命周期流程沉淀为 Skill，临时专业判断沉淀为视角，复杂并行判断交给子 Agent，稳定结论回写到事实源、正式规范、ADR 或 Change。
 
 ---
 
@@ -450,7 +481,51 @@ Core Loop 当前最弱的是 Plan、Execute、Verify、Learn。
 3. Execute 阶段先由 Rules + Task 状态 + 人工执行承接；
 4. Learn 阶段待 Pitfall / Memo 压力更明显后再建设。
 
-### 8.5 第五步：Web MVP 只读对齐 `ldvh-base`
+### 8.5 第五步：吸收 Gstack Skill Prompt 经验并设计生命周期 Skill
+
+用户已明确校准：Gstack 的 Skill prompt 不是简单的“角色 Skill 目录”，其中包含大量值得 LDVH 吸收的工程经验。后续应专门从 Gstack 的 `review`、`qa`、`ship`、`retro`、`learn`、`plan-tune`、`spec`、`skillify` 等 Skill 中提炼提示词结构，而不是只停留在宏观产品公式。
+
+优先吸收的 prompt 经验包括：
+
+1. **入口判断**：`When to invoke this skill`、触发词、主动建议条件、禁用条件；
+2. **工具边界**：allowed tools、Plan Mode safe operations、Skill Invocation During Plan Mode；
+3. **前置探测**：分支、仓库模式、配置、历史 learnings、上下文恢复和能力探测；
+4. **Human Gate 表达**：AskUserQuestion 的触发条件、选项设计、STOP 点和继续条件；
+5. **流程步骤**：Step 化执行、每步输入、动作、产物、失败处理和交接；
+6. **质量门禁**：scope drift、plan-completion review、真实 QA、测试证据、release gate；
+7. **输出契约**：最终报告、TODO 格式、PR body、测试摘要、复盘报告、学习记录；
+8. **经验回灌**：learnings、timeline、retro、question tuning、developer profile 等跨会话改进机制。
+
+LDVH 对这些经验的吸收方式不是复制英文 prompt 或本地状态目录，而是转写为中文 Skill 提示词、LDVH 事实源边界、Human Gate、Evidence、Change 和 PyTools 校验。尤其需要把 Gstack 的“何时进入、读什么、问什么、做什么、何时停、输出什么、如何把经验变成默认行为”提炼为 LDVH Skill 模板。
+
+建议下一批生命周期 Skill 的设计顺序为：
+
+1. `ldvh-plan`：吸收 Gstack plan / spec / review 的任务澄清、风险识别、scope drift 和验证计划表达；
+2. `ldvh-verify`：吸收 Gstack QA 的真实验证、分级检查、修复后复验和证据摘要；
+3. `ldvh-review`：吸收 Gstack review 的 diff 审查、结构性问题、trust boundary 和 pre-landing gate；
+4. `ldvh-retro`：吸收 Gstack retro / learn 的经验沉淀、趋势复盘和可执行改进；
+5. `ldvh-close` 继续强化：吸收 ship / release gate 的完成判断、变更摘要和交付前检查。
+
+### 8.6 第六步：明确 Spec / Plan 与自有 Skill 的协同边界
+
+Trae Solo 的原生 `/spec` 和 `/plan` 不能被普通 Skill 在内部程序化调用。它们属于用户主动触发的交互层工作流，拥有普通 Skill 不具备的平台特权，例如专属确认 UI、任务进度面板、固定产物路径和执行流控制。因此，LDVH 不应把短期产品路径设计成“Skill 自动调用 Spec / Plan”，而应设计成“用户先触发 Spec / Plan，再由 LDVH Skill 消费其产物”。
+
+进一步看，原生 Spec / Plan 可以被理解为 Trae Solo 内置的特权规划 Skill。它们与普通 Skill 共享“触发入口、注入指令、生成产物、等待确认、进入执行”的基本模式；差异主要在平台特权，而不是概念模型。如果剥离平台 UI、自动进度追踪和执行流控制，其核心逻辑可以被 LDVH 自有 Skill 重新表达。
+
+这意味着 LDVH 的长期治理核心不应依赖原生 Spec / Plan。短期可以兼容和消费其产物，中期应建设 `ldvh-spec`、`ldvh-plan` 等自有 Skill，长期由 LDVH Skill 体系承接规格、计划、验证、关闭和学习流程。这个路径的代价是失去部分平台级 UI 和自动任务进度能力，收益是获得完全可控的 Human Gate、事实源归属、Evidence、Change、ADR 和 Core Loop 状态流转。
+
+推荐协同模式如下：
+
+1. 复杂需求短期可由用户触发 `/spec`，确认规格后，再触发 `ldvh-intake`、`ldvh-plan` 或后续执行类 Skill；
+2. 复杂工程任务短期可由用户触发 `/plan`，确认计划后，再由 LDVH Skill 按计划执行、验证和记录；
+3. 简单、稳定、生命周期化的行动可以直接触发对应 LDVH Skill，不强制进入 Spec / Plan；
+4. Skill 可以消费 Spec / Plan 产物作为输入上下文，但不能在内部触发 `/spec` 或 `/plan`；
+5. Spec / Plan 的用户确认不自动替代 LDVH 的 Human Gate、ADR、Evidence 或 Change 记录；
+6. 自有 `ldvh-spec` / `ldvh-plan` 的目标不是复制原生 Spec / Plan，而是把规格、计划、验收、验证和任务推进治理化。
+
+因此，原生 Spec / Plan 是可用的上游结构化加速器，但不是 LDVH 的长期权威核心。真正完整的 LDVH 应逐步用自有 Skill 把 Spec / Plan 的核心逻辑治理化：由 LDVH Skill 生成或更新 Intent 草案、Task 草案、Plan 产物、Acceptance、Verification、Human Gate 选项、Evidence 草案、ADR 候选和 Change 记录策略。
+
+### 8.7 第七步：Web MVP 只读对齐 `ldvh-base`
 
 `pm-kit-web/` 已有工作台原型，但当前尚未对齐 LDVH 新事实内核。
 
@@ -476,13 +551,15 @@ Git 文件事实源 → PyTools 聚合 → Web 只读展示 → 人做更高质�
 后续行动如出现分支，应按以下原则排序：
 
 1. **先入口，后深度**：先让 AI 知道当前阶段和下一步，再补复杂治理；
-2. **先核心闭环，后扩展对象**：先稳定 Intent / Task / ADR / Evidence / Change，再扩展 Risk / Memo / Dependency / Artifact / Checklist / TaskSet；
-3. **先 Record / Change，后 Web 写入**：没有可追溯变更记录之前，不应扩大写入入口；
-4. **先 Contract 消费，后复杂自动化**：先让 PyTools 能读契约校验事实，再做自动修复、受控写入和 Web 展示；
-5. **先 Dogfood，后产品扩张**：先在 LDVH 自身验证 Core Loop，再考虑外部用户安装体验；
-6. **先 Trae-native，后外部依赖**：优先使用 Trae 原生机制，不急于引入外部 daemon 或复杂 CLI；
-7. **先可解释，后自动化**：所有自动化必须能解释依据、来源和影响范围；
-8. **先低风险信任边界，后高成本安全栈**：先做 untrusted envelope、allowlist、scoped token，再考虑复杂模型检测。
+2. **先兼容原生规划，后沉淀自有 Skill**：复杂需求和复杂工程任务短期可消费原生 Spec / Plan 产物，长期应由 `ldvh-spec`、`ldvh-plan` 等自有 Skill 承接治理化规格、计划和验收流程；
+3. **先生命周期 Skill，后角色目录**：符合 Core Loop、输入输出稳定、高频复用的流程优先 Skill 化；需要上下文装配、工具授权、流程约束、Human Gate 和产物契约的稳定行动入口应进入 Skill 候选；临时角色优先运行时视角切换；
+4. **先核心闭环，后扩展对象**：先稳定 Intent / Task / ADR / Evidence / Change，再扩展 Risk / Memo / Dependency / Artifact / Checklist / TaskSet；
+5. **先 Record / Change，后 Web 写入**：没有可追溯变更记录之前，不应扩大写入入口；
+6. **先 Contract 消费，后复杂自动化**：先让 PyTools 能读契约校验事实，再做自动修复、受控写入和 Web 展示；
+7. **先 Dogfood，后产品扩张**：先在 LDVH 自身验证 Core Loop，再考虑外部用户安装体验；
+8. **先 Trae-native，后外部依赖**：优先使用 Trae 原生机制，不急于引入外部 daemon 或复杂 CLI；
+9. **先可解释，后自动化**：所有自动化必须能解释依据、来源和影响范围；
+10. **先低风险信任边界，后高成本安全栈**：先做 untrusted envelope、allowlist、scoped token，再考虑复杂模型检测。
 
 ---
 
@@ -492,16 +569,19 @@ Git 文件事实源 → PyTools 聚合 → Web 只读展示 → 人做更高质�
 
 1. 不照搬 Gstack 的 Claude Code Skill 结构；
 2. 不引入 `~/.ldvh/` 本地隐藏状态目录作为稳定事实源；
-3. 不一次性创建大量 Agent；
-4. 不在 Tools 中调用 AI、Skill 或 Agent；
-5. 不把 Memory 当作 Git 文件事实源的替代品；
-6. 不自动发布、自动提交、自动合并；
-7. 不先做复杂 Web 产品再验证 Core Loop；
-8. 不在没有 Contract 消费规则的情况下扩张 PyTools；
-9. 不把 `.trae/specs/` 变成第二套权威状态；
-10. 不把 Plan 确认当作正式 Human Gate 的替代品；
-11. 不把 Gstack 的 telemetry、auto-update、browser tunnel、pair-agent 作为默认能力；
-12. 不为了未来可能需要的对象而打断当前最小闭环。
+3. 不按人格化角色目录一次性创建大量 Skill 或 Agent；
+4. 不把临时专业视角固化为默认 Skill；
+5. 不在 Tools 中调用 AI、Skill 或 Agent；
+6. 不把 Memory 当作 Git 文件事实源的替代品；
+7. 不自动发布、自动提交、自动合并；
+8. 不先做复杂 Web 产品再验证 Core Loop；
+9. 不在没有 Contract 消费规则的情况下扩张 PyTools；
+10. 不把 `.trae/specs/` 变成第二套权威状态；
+11. 不让 Skill 内部触发 `/spec` 或 `/plan`；
+12. 不把 Plan / Spec 确认当作正式 Human Gate 的替代品；
+13. 不把 Gstack 的 telemetry、auto-update、browser tunnel、pair-agent 作为默认能力；
+14. 不让子 Agent 绕过主控、Human Gate、事实源写入和 Change 记录；
+15. 不为了未来可能需要的对象而打断当前最小闭环。
 
 ---
 

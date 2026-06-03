@@ -82,9 +82,9 @@ ldvh-base/evidence/ev-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| Evidence 对象模型 | `specs/28-Evidence-验证证据.md` |
+| Evidence 对象模型 | `specs/29-Evidence-验证证据.md` |
 | Evidence 对象实例 | `ldvh-base/evidence/` |
-| Evidence 契约子文档 | `specs/28.06-Contract.md` |
+| Evidence 契约子文档 | `specs/29.06-Contract.md` |
 | Evidence 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
 ---
@@ -172,7 +172,7 @@ Evidence 基础字段遵循 `specs/13-LDVH事实模型基础规范.md` §7.3 的
 | `content` | string | 是 | 证据内容或摘要 |
 | `artifact_path` | string | 否 | 附件路径（截图、日志文件等） |
 
-字段约束和完整 YAML 示例详见 `specs/28.06-Contract.md`。
+字段约束和完整 YAML 示例详见 `specs/29.06-Contract.md`。
 
 ---
 

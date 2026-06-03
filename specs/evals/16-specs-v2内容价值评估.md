@@ -222,7 +222,7 @@ specs-v2 是 PM Kit 规范体系的早期设计稿，采用与当前 specs/ 不�
 | specs-v2 文件 | specs/ 等价 | 说明 |
 |---|---|---|
 | 20-ADR-决策记录对象实践 | specs/21 + 21.01-21.06 | specs/ 已有更成熟的 ADR 规范体系 |
-| 21-Task-任务对象实践 | specs/31 + 31.01-31.06 | specs/ 已有更成熟的 Task 规范体系 |
+| 21-Task-任务对象实践 | specs/27 + 27.01-27.06 | specs/ 已有更成熟的 Task 规范体系 |
 | 23-Pitfall-踩坑记录对象实践 | specs/23 + 23.01-23.06 | specs/ 已有更成熟的 Pitfall 规范体系 |
 | 24-Change-变更记录对象实践 | specs/22 + 22.01-22.06 | specs/ 已有更成熟的 Change 规范体系 |
 

@@ -1,11 +1,14 @@
 # LDVH Tools 与 AI 协作路线图评估
 
 > 创建日期：2026-06-03
+> 更新日期：2026-06-04
 > 定位：LD Vibe Harness 当前 Tools 能力缺口、AI 协作优化方向与实施优先级的多视角评估
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
 > 相关规范：`specs/12-LDVH工具基础规范.md`、`specs/12.01-Tools辅助规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/14-LDVH行动模型基础规范.md`、`specs/20-事实模型集合索引.md`、`specs/50-行动模型集合索引.md`
+> 方向校准：`specs/evals/18-LDVH-Gstack-Trae融合产品方向共识.md`
+> 代码调研来源：`/Users/dmh2002/trae_projects/gstack`、`/Users/dmh2002/trae_projects/ld-vibe-harness`
 
 ---
 
@@ -21,7 +24,9 @@ LDVH 当前规范骨架已基本完整（00-14 核心基础规范、20-22 事实
 
 **LDVH 的核心瓶颈不在规范，在工具。** 当前 Tools 辅助层只有 5 个 Python 脚本，且全部集中在 specs 文档自查和 ADR 基础索引领域。12.01 定义的 8 项允许职责中，"上下文包生成"完全空白，"聚合"只有 specs 文档层面，"受控写入"只有 ADR 局部实现，"校验"缺少对象级字段和状态机校验。这导致 AI 每次进入项目都需要手动拼凑上下文，写入操作缺乏校验安全网，工程闭环在"工具辅助"环节断裂。
 
-建议优先实施路线：**规则上下文路由器 → Context Pack 生成器 → 通用对象校验框架 → 通用原子写入工具 → 事实模型补齐配套 → 行动模型配套 → Web 层**。其中前三项独立于事实模型/行动模型创建进度，可先行建设。
+原建议优先实施路线：**规则上下文路由器 → Context Pack 生成器 → 通用对象校验框架 → 通用原子写入工具 → 事实模型补齐配套 → 行动模型配套 → Web 层**。其中前三项独立于事实模型/行动模型创建进度，可先行建设。
+
+**2026-06-04 方向校准**：经 evals/18 视角复核、Gstack 实际实现调研和 Trae Skill 能力对比（见 §11-§13），原建议的"先建通用基础设施工具"路线与 evals/18 的"Core Loop 优先、按痛点扩展、防递归建设"原则存在结构性偏差。修正后的优先级见 §14。
 
 ---
 
@@ -221,3 +226,255 @@ Web 信息同步层需要从零建设，但前提是 Tools 辅助层有了聚合
 5. 事实模型 23-32 的创建顺序和依赖关系待规划；
 6. 行动模型 52-60 对 Tools 的调用契约（何时调用、传什么参数、如何消费输出）待定义；
 7. Web 信息同步层的技术选型（框架、部署方式）待调研。
+
+---
+
+## 11. 与 evals/18 重构方向的对齐评估
+
+> 本节基于 `specs/evals/18-LDVH-Gstack-Trae融合产品方向共识.md` 的视角，重新审视本文原建议的方向。
+
+### 11.1 原建议与 evals/18 原则的偏差
+
+| evals/18 原则 | 本文原建议 | 偏差判断 |
+|---|---|---|
+| Core Loop 优先 | 不以 Core Loop 组织优先级，而是以"工具能力矩阵"组织 | **偏差**：工具是手段不是目的，应服务于闭环 |
+| 最小事实内核优先 | 为 10 个 planned 事实模型(23-32)全部规划了工具需求 | **偏差**：违反"按痛点启用"原则 |
+| 按痛点扩展 | 预先规划了完整的 5 层工具体系 | **偏差**：典型的"为框架建框架" |
+| 防递归建设 | P0 的 Context Router 和 Context Pack Generator 本身就是框架基础设施 | **偏差**：这些工具不直接服务最近一次可运行闭环 |
+| 当前优先 Change/Record 闭环 | 完全未提及 Change/Record 闭环作为当前优先级 | **偏差**：错过了 evals/18 §8.1 的核心判断 |
+| Gstack 提供体验范式而非实现模板 | 未分析 Gstack 如何解决同类问题 | **缺失**：缺少关键参照 |
+| 先可解释后自动化 | 通用原子写入工具、通用对象校验器是高度自动化抽象 | **偏差**：跳过了"先人工可运行"阶段 |
+
+### 11.2 原建议中仍有价值的部分
+
+1. V1-V10 价值标准落地缺口分析（§3）是准确的诊断，缺口描述仍然成立；
+2. 当前 Tools 现状盘点（§8）是事实性描述，仍有参考价值；
+3. "不是每个事实模型都需要独立工具脚本"的判断正确；
+4. Contract 驱动校验的方向正确；
+5. 项目审计(58)是工具最能独立发力的场景，这个判断仍然成立；
+6. 事实模型和行动模型对工具的需求链分析（§4、§5）作为长期参考仍有价值，但不应作为当前实施依据。
+
+### 11.3 核心问题
+
+本文原建议的诊断（工具不够）是准确的，但药方（建通用基础设施工具）开错了。正确药方是 evals/18 的"流程内嵌正确行为"——让 Skill 指令告诉 AI 进入时读什么、执行时校验什么、写入时遵循什么，而非先建独立工具再让 AI 使用工具。
+
+---
+
+## 12. Gstack 实际解决方案调研
+
+> 本节基于 `/Users/dmh2002/trae_projects/gstack` 代码调研，分析 Gstack 如何解决本文 §7 识别的同类问题。
+
+### 12.1 Gstack 的核心策略
+
+Gstack 的核心策略是：**把上下文生成和校验嵌入 Skill 模板，而非构建独立基础设施工具。**
+
+Gstack 不建 Context Router、Context Pack Generator、Universal Object Validator 或 Universal Atomic Write Tool。它用 Resolver 系统 + Skill 模板 + Schema Pack 三层机制，在构建时将动态上下文烘焙进 Skill 提示词，在运行时让 AI 按 Skill 指令执行。
+
+### 12.2 上下文路由：Skill 触发声明 + 约定匹配
+
+Gstack 不建 Context Router。每个 SKILL.md 通过 `triggers` 和 `allowed-tools` 元数据声明自己的适用场景：
+
+```yaml
+triggers:
+  - unfreeze edits
+  - unlock all directories
+allowed-tools:
+  - Bash
+  - Read
+```
+
+AI（Claude Code）根据用户意图匹配 trigger，不需要额外路由工具。路由机制是 AI 的语义匹配能力 + Skill 的 description 声明，不是独立工具。
+
+**LDVH 对应物**：L0/L1 Rules 的入口路由已经在做这件事，只是还没产品化为 Skill 触发声明。
+
+### 12.3 上下文包：Resolver 系统嵌入 Skill 模板
+
+Gstack 不建 Context Pack Generator。它用 `{{PLACEHOLDER}}` 模板变量 + Resolver 函数系统，在构建时将上下文注入 Skill 提示词：
+
+- `{{PREAMBLE}}` → 注入写作风格、完成状态、上下文健康
+- `{{LEARNINGS_SEARCH}}` → 注入历史 learnings 搜索命令
+- `{{BRAIN_PREFLIGHT}}` → 注入 brain 缓存摘要
+- `{{REVIEW_DASHBOARD}}` → 注入 review 仪表板
+- `{{SCOPE_DRIFT}}` → 注入 scope drift 检测
+
+每个 Resolver 是一个轻量函数（`scripts/resolvers/` 下约 40 个），按需组合，不是统一基础设施。Resolver 的核心接口：
+
+```typescript
+type ResolverFn = (ctx: TemplateContext, args?: string[]) => string;
+```
+
+`TemplateContext` 包含 `skillName`、`host`、`paths`、`preambleTier` 等字段，Resolver 根据上下文生成不同内容。
+
+**LDVH 对应物**：Skill 提示词中应嵌入场景相关的上下文生成逻辑（"必读文件"段），而非依赖外部 Context Pack 工具。当前 ldvh-intake、ldvh-close 的"必读文件"段已经是运行时等价方案。
+
+### 12.4 校验：Schema Pack + AI 遵循指令
+
+Gstack 不建 Universal Object Validator。它用 `gstack-schema-pack.ts` 定义类型化页面结构（field shape、required、enum values），但运行时校验由 AI 按 Skill 指令执行，不是独立校验工具。
+
+Schema Pack 定义了 8 种页面类型（user-profile、product、goal、developer-persona、brand、competitive-intel、skill-run、take），每种包含字段定义、保留策略和链接关系。Schema Pack 更像"给 AI 的字段契约参考"，而非运行时校验器。
+
+**LDVH 对应物**：Contract 子文档已经在做这件事——定义字段契约供 AI 和 PyTools 消费。`check_fact_model.py` 已经是最小校验实现，不需要先建通用框架再校验。
+
+### 12.5 写入：Skill 内嵌 bash 命令
+
+Gstack 不建 Universal Atomic Write Tool。写入操作直接嵌入 Skill 模板的 bash 命令中：
+
+- `gbrain put "<slug>" --content "..."` — 写入 brain
+- 普通 bash 文件写入 — 写入项目文件
+- 无事务机制，靠 Skill 指令保证顺序
+
+**LDVH 对应物**：`adr_index.py` 已有 ADR 原子写入能力。按痛点逐步扩展，不需要先抽象通用层。
+
+### 12.6 项目态势聚合：Brain Preflight + Learnings
+
+Gstack 不建 Project Status Aggregator。它用两个嵌入式机制：
+
+- **Brain Preflight**：在规划类 Skill 执行前，加载缓存的 brain 摘要（product、goal、persona 等），每个摘要由 `gstack-brain-cache get` 获取
+- **Learnings Search**：搜索历史 `learnings.jsonl`，按 key+type 去重，"latest winner"策略
+
+两者都嵌入 Skill 模板，不是独立聚合工具。
+
+**LDVH 对应物**：ldvh-close 和 ldvh-intake 已在 Skill 层面做上下文聚合，不需要独立聚合器。
+
+### 12.7 Gstack 方法论总结
+
+Gstack 的方法论是"使用即流程"——正确行为成为 AI 默认路径，而不是先建工具再让 AI 使用工具。这对应 evals/18 §3.1 共识三中的第 3 条："使用即流程：正确行为应成为 AI 默认路径，而不是只写在规范里。"
+
+但 Gstack 的 Resolver 系统有一个关键特性：它把上下文获取的摩擦降到了零。AI 进入 Skill 时，相关上下文已经在提示词中，不需要额外操作。这与 Trae 的运行时获取模式存在摩擦差异：
+
+| 方式 | AI 需要做什么 | 摩擦 |
+|---|---|---|
+| Gstack Resolver | 什么都不用做，上下文已在提示词中 | 零 |
+| Trae "必读文件" | 读 4-6 个文件，自己拼凑上下文 | 高 |
+| Trae 上下文工具 | 调一次工具，拿到结构化上下文 | 低 |
+
+Gstack 的构建时烘焙在 Trae 环境中无法实现（Trae Skill 是纯静态 Markdown，无模板变量机制）。但 Trae 可以用**运行时工具调用**达到同等效果——AI 进入 Skill 时调一次 `ldvh-context` 工具，拿到结构化上下文，而不是自己读多个文件拼凑。
+
+这意味着：一个轻量的上下文获取 PyTool（如 `ldvh-context`），本质上是 **Trae 原生的 Resolver 等价物**。它不是 evals/12 原建议的"通用基础设施工具"，而是 Gstack Resolver 在 Trae 环境中的自然映射。
+
+---
+
+## 13. Trae Skill 能力对比
+
+> 本节基于 Trae 官方文档和实际 Skill 文件调研，评估 Trae Skill 是否具备实现 Gstack 体验范式的能力。
+
+### 13.1 核心架构对比
+
+| 能力维度 | Gstack | Trae Skill | 差距判断 |
+|---|---|---|---|
+| 上下文动态生成 | Resolver 系统，构建时将 `{{PLACEHOLDER}}` 替换为动态内容 | 无。SKILL.md 是纯静态文档 | 有差距，但有运行时等价方案 |
+| 模板变量 | 40+ Resolver（LEARNINGS_SEARCH、BRAIN_PREFLIGHT、REVIEW_DASHBOARD 等） | 无等价机制 | 有差距 |
+| 持久化知识 | gbrain（知识图谱）+ learnings.jsonl（跨会话经验） | Memory 系统（独立于 Skill） | 部分等价 |
+| Schema 校验 | schema-pack 定义类型化页面结构 | 无内置机制，靠 AI 遵循指令或 PyTools | 有差距 |
+| Skill 路由 | `triggers` + `description` 语义匹配 | `description` + `trigger_keywords` 语义匹配 | 基本等价 |
+| 宿主适配 | 多宿主配置（Claude Code、Codex 等） | 单宿主（Trae） | 无需（LDVH 只用 Trae） |
+| 运行时命令 | Skill 内嵌 bash 命令 | Skill 指令引导 AI 使用 RunCommand | 等价 |
+| Human Gate | AskUserQuestion decision brief | AskUserQuestion | 等价 |
+| 外部脚本 | Skill 文件夹可含 bin/ 脚本 | Skill 文件夹可含 Python/Bash 脚本 | 等价 |
+
+### 13.2 关键差距详解
+
+**差距 1：无动态上下文注入**
+
+Gstack 的 Resolver 系统在构建时将动态上下文烘焙进 Skill 提示词。Trae Skill 没有构建时变量替换，每个 SKILL.md 是纯静态 Markdown。
+
+LDVH 当前用"必读文件"段作为运行时等价方案：AI 按 Skill 指令读取多个文件，自己拼凑上下文。这在**功能上等价**，但在**摩擦上不等价**——AI 每次要读 4-6 个文件、自己拼凑、可能遗漏，这正是 Gstack 用 Resolver 消除的摩擦。
+
+Trae 的原生解法是**运行时工具调用**：AI 进入 Skill 时调一次轻量 PyTool（如 `ldvh-context --scene intake`），拿到结构化上下文。一次调用替代多次文件读取，摩擦从"高"降到"低"。这个 PyTool 本质上是 Gstack Resolver 在 Trae 环境中的自然映射，不是"通用基础设施工具"，而是"Trae 原生 Resolver 等价物"。
+
+**差距 2：无 Schema Pack**
+
+Gstack 用 schema-pack 定义类型化页面结构，AI 按 schema 生成/校验数据。Trae Skill 无内置等价物。
+
+LDVH 的等价方案：Contract 子文档（`NN.06-Contract.md`）+ `check_fact_model.py`。Contract 定义字段契约，PyTools 消费 Contract 做校验。这比 Gstack 的 schema-pack 更正式（Git 文件事实源），但运行时自动化程度更低。
+
+**差距 3：无持久化知识集成**
+
+Gstack 的 gbrain 是与 Skill 深度集成的持久化知识图谱。Trae 的 Memory 是独立机制，Skill 无法声明式引用 Memory 内容。
+
+LDVH 的等价方案：Git 文件事实源（`ldvh-base/`）+ Skill 指令引导 AI 读取。比 gbrain 更持久（Git 可追溯），但缺少语义搜索能力。
+
+### 13.3 Trae Skill 能做到但 Gstack 做不到的
+
+| 能力 | 说明 |
+|---|---|
+| Plan / Spec 模式 | Trae 有内置的 Plan 和 Spec 模式，Gstack 没有 |
+| Schedule 定时任务 | Trae 有 Schedule 机制，Gstack 无等价物 |
+| Agent 子代理 | Trae 有 Task 工具启动子 Agent，Gstack 的 Skill 是单体 |
+| Web Preview | Trae 有内置 Web 预览，Gstack 靠 browse daemon |
+| Memory 跨会话 | Trae Memory 是平台级能力，Gstack 靠 gbrain |
+
+### 13.4 对 LDVH 的影响判断
+
+**核心结论：Trae Skill 具备实现 Gstack 体验范式的基本能力，但缺少构建时动态注入的"糖衣"。**
+
+1. **上下文路由**：Trae Skill 的 `description` 语义匹配 ≈ Gstack 的 `triggers`。LDVH 不需要建 Context Router 工具，现有 L0/L1 Rules 入口 + Skill description 已经在做路由。
+2. **上下文包**：Trae Skill 无法构建时烘焙动态上下文，"必读文件"段功能等价但摩擦高（AI 需读多个文件自己拼凑）。当摩擦明显时，应建轻量 `ldvh-context` PyTool 作为 Trae 原生 Resolver 等价物——一次调用拿到结构化上下文，替代多次文件读取。这不是"通用基础设施"，而是 Gstack Resolver 在 Trae 中的自然映射。
+3. **校验**：Trae Skill 无法内嵌 schema-pack，但可以调用 PyTools。`check_fact_model.py` 已经是最小实现。不需要建通用对象校验框架——按痛点逐对象扩展即可。
+4. **写入**：Trae Skill 可以引导 AI 用 RunCommand 执行写入脚本。`adr_index.py` 已有原子写入。不需要建通用原子写入工具——按痛点扩展。
+5. **聚合**：`ldvh-context` 可同时承担聚合职责（按场景返回项目态势），不需要独立项目态势聚合器。
+
+---
+
+## 14. 修正后的优先级
+
+> 本节基于 §11-§13 的分析，修正 §9 的原建议优先级，使其与 evals/18 方向对齐。
+
+### 14.1 修正原则
+
+1. **Core Loop 优先**：优先级以 Core Loop 阶段组织，不以工具能力矩阵组织
+2. **最小事实内核优先**：只补当前闭环需要的对象，不为 planned 对象预建工具
+3. **按痛点扩展**：碰到什么问题补什么能力，不预先规划完整工具体系
+4. **防递归建设**：每次新增能力必须服务最近一次可运行闭环
+5. **先可解释后自动化**：先让 AI 按 Skill 指令手动跑通，再考虑 PyTools 自动化
+6. **Trae 原生 Resolver 等价**：Gstack 用构建时 Resolver 零摩擦注入上下文，Trae 用运行时 PyTool 调用低摩擦获取上下文，两者是同一问题的两种解法；当"必读文件"摩擦明显时，应建轻量上下文获取工具
+
+### 14.2 修正后优先级
+
+```
+第一优先级：Change/Record 闭环（evals/18 §8.1 已明确）
+    → ldvh-commit + ldvh-close 消费 Task/Evidence/ADR 信息
+    → 不需要新建工具，强化现有 Skill 即可
+    → Change 暂以 Git commit message 为主承载
+
+第二优先级：Core Loop Skill 补齐 + 上下文获取工具
+    → ldvh-plan：围绕 Task 形成执行计划、风险、验证命令
+    → ldvh-verify：统一 lint/test/build/真实交互验证和 Evidence 草案
+    → ldvh-context：Trae 原生 Resolver 等价物，按场景返回结构化上下文
+      · 当"必读文件"摩擦明显时建设（AI 需读多个文件拼凑上下文时）
+      · 不是通用基础设施，是 Gstack Resolver 在 Trae 中的自然映射
+      · 同时承担项目态势聚合职责，不需要独立聚合器
+      · 先服务 intake/close 场景，再扩展到 plan/verify
+    → 不需要独立 Context Router（Skill description + Rules 入口已做路由）
+
+第三优先级：PyTools 按痛点扩展
+    → check_fact_model.py 逐步消费更多 Contract
+    → 不需要先建通用框架
+    → 碰到什么对象补什么校验
+    → 旧工具按触碰即整理原则迁移
+
+第四优先级：Web 只读态势
+    → 消费 PyTools 输出（含 ldvh-context 聚合数据）
+    → 不需要独立聚合器
+    → 定位：Git 文件事实源 → PyTools 聚合 → Web 只读展示 → 人做更高质量 Human Gate
+
+持续：Pitfall 沉淀 + 审计工具
+    → V10 持续完善的落地载体
+    → 项目审计(58)仍是工具最能独立发力的场景
+```
+
+### 14.3 原建议中各工具的修正处置
+
+| 原建议工具 | 修正处置 | 理由 |
+|---|---|---|
+| 规则上下文路由器 | **不建**。L0/L1 Rules 入口 + Skill description 已在做路由 | Trae Skill 的 description 语义匹配 ≈ Gstack triggers，不需要独立工具 |
+| Context Pack 生成器 | **降级为按痛点建设**。当"必读文件"摩擦明显时，建轻量 `ldvh-context` PyTool | Gstack 用 Resolver 构建时零摩擦注入，Trae 用运行时工具调用低摩擦获取，两者是同一问题的两种解法；`ldvh-context` 是 Trae 原生 Resolver 等价物，不是通用基础设施 |
+| 通用对象校验框架 | **不建**。check_fact_model.py 按痛点逐对象扩展 | 防递归：先让 AI 按 Contract 手动校验，痛点明确后再自动化 |
+| 通用原子写入工具 | **不建**。adr_index.py 按痛点扩展 | 先让 AI 按 Skill 指令 + PyTools 手动跑通，再考虑抽象 |
+| 项目态势聚合器 | **合并到 ldvh-context**。按场景返回项目态势，不需要独立聚合器 | `ldvh-context --scene intake` 可同时返回对象清单、状态、待确认事项 |
+
+### 14.4 与原建议的关系
+
+原建议 §3-§7 的诊断（V1-V10 缺口、事实模型工具需求链、行动模型参与节点、Tools 能力矩阵、AI 协作关键路径）仍然成立，作为长期参考保留。
+
+原建议 §9 的优先级被本节取代。核心变化是：从"先建通用基础设施工具"转向"先跑通 Core Loop 闭环，按痛点扩展 PyTools 和 Skill"。其中 Context Pack 生成器从"不建"修正为"降级为按痛点建设"——当"必读文件"摩擦明显时，建轻量 `ldvh-context` PyTool 作为 Trae 原生 Resolver 等价物，同时承担项目态势聚合职责。

@@ -518,7 +518,7 @@ Phase 1（交付后）：AI 进入项目 → L0 告知项目类型 → L1 告知
 | 1 | Intent 事实模型规范 | specs/24 | 准入条件、字段契约、状态机、Human Gate |
 | 2 | Task 事实模型规范 | specs/新编号 | 准入条件、字段契约、状态机、Human Gate |
 | 3 | ADR 事实模型规范 | specs/21 | 从现有 21 精简复用 |
-| 4 | Evidence 事实模型规范 | specs/28 | 准入条件、字段契约、状态机 |
+| 4 | Evidence 事实模型规范 | specs/29 | 准入条件、字段契约、状态机 |
 | 5 | Change 事实模型规范 | specs/22 | 从现有 22 精简复用 |
 | 6 | 20 事实模型集合索引 | specs | 5 类核心对象索引，扩展对象标注 planned |
 | 7 | Contract 子文档 | specs/NN.06 | 5 类对象的字段契约（供 Tools 消费） |
@@ -923,7 +923,7 @@ upgrade:
 
 ## 12. 最小事实内核的构建路径
 
-5 类核心事实对象（Intent、Task、ADR、Evidence、Change）中，ADR(21) 和 Change(22) 已有完整规范，Intent(24)、Task、Evidence(28) 处于 planned 状态或未分配编号。本节定义从零构建的具体路径。
+5 类核心事实对象（Intent、Task、ADR、Evidence、Change）中，ADR(21) 和 Change(22) 已有完整规范，Intent(24)、Task、Evidence(29) 处于 planned 状态或未分配编号。本节定义从零构建的具体路径。
 
 ### 12.1 现有构建标准
 
@@ -1086,9 +1086,9 @@ Step 1: 复用 ADR(21) 和 Change(22)
   │     参考精简版模板，从零设计
   │     同步创建 Task.06-Contract 子文档
   │
-  └─→ Step 4: 构建 Evidence(28) 精简版规范
+  └─→ Step 4: 构建 Evidence(29) 精简版规范
         参考精简版模板，从零设计
-        同步创建 28.06-Contract 子文档
+        同步创建 29.06-Contract 子文档
 ```
 
 Step 2-4 可并行编写，因为三者的字段契约相对独立。

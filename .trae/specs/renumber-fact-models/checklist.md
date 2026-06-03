@@ -1,0 +1,21 @@
+- [x] Task 主规范文件已从 31-Task-任务.md 重命名为 27-Task-任务.md
+- [x] Task 所有子文档已从 31.0x 重命名为 27.0x
+- [x] Evidence 主规范文件已从 28-Evidence-验证证据.md 重命名为 29-Evidence-验证证据.md
+- [x] Evidence 所有子文档已从 28.0x 重命名为 29.0x
+- [x] Task 主规范内部引用已全部从 31 更新为 27
+- [x] Task 子文档内部引用已全部从 31 更新为 27
+- [x] Evidence 主规范内部引用已全部从 28 更新为 29
+- [x] Evidence 子文档内部引用已全部从 28 更新为 29
+- [x] Task 主规范中对 Evidence 的交叉引用已从 28 更新为 29
+- [x] specs/20-事实模型集合索引.md 中 27/28/29/31 编号引用已全部更新
+- [x] specs/evals/17 文档中编号引用已更新
+- [x] specs/evals/14 文档中编号引用已更新
+- [x] specs/evals/15 文档中编号引用已更新
+- [x] specs/evals/16 文档中编号引用已更新
+- [x] ldvh-base/evidence/README.md 中编号引用已更新
+- [x] ldvh-base/tasks/README.md 中编号引用已更新
+- [x] .trae/skills/ldvh-close/SKILL.md 中编号引用已更新
+- [x] .trae/skills/ldvh-intake/SKILL.md 中编号引用已更新
+- [x] python3 tools/check_03_specs_doc_standard.py 不因本次变更引入新错误
+- [x] python3 tools/check_03_01_specs_docs.py 不因本次变更引入新错误
+- [x] python3 tools/check_03_specs_references.py 不因本次变更引入新错误

@@ -22,5 +22,5 @@ ev-{NNNN}-short-title.yaml
 
 ## 规范依据
 
-- 对象模型：`specs/28-Evidence-验证证据.md`
-- 契约子文档：`specs/28.06-Contract.md`
+- 对象模型：`specs/29-Evidence-验证证据.md`
+- 契约子文档：`specs/29.06-Contract.md`

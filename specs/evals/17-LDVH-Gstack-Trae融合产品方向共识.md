@@ -160,8 +160,8 @@ Trae 提供运行环境；
 | 对象 | 规范 | 契约 | 状态 |
 |---|---|---|---|
 | Intent | `specs/24-Intent-意图.md` | `specs/24.06-Contract.md` | active |
-| Evidence | `specs/28-Evidence-验证证据.md` | `specs/28.06-Contract.md` | active |
-| Task | `specs/31-Task-任务.md` | `specs/31.06-Contract.md` | active |
+| Evidence | `specs/29-Evidence-验证证据.md` | `specs/29.06-Contract.md` | active |
+| Task | `specs/27-Task-任务.md` | `specs/27.06-Contract.md` | active |
 
 ADR(21) 和 Change(22) 已有完整规范。Intent、Task、Evidence 当前为精简版规范，后续按阶段补齐完整版。
 
@@ -184,109 +184,86 @@ Plan / Execute / Verify / Learn → 待建设
 
 ### 6.4 当前阶段快照（2026-06-04）
 
-截至 2026-06-04，LDVH MVP 骨架已经推进到 **Dogfood 1 完成** 阶段：
+截至 2026-06-04，LDVH MVP 骨架已经推进到 **Dogfood 1 完成并进入生产对象体系梳理** 阶段：
 
-1. **最小事实内核已具备**：Intent / Task / Evidence 已有精简版规范和 Contract；ADR / Change 已有完整规范。
+1. **最小事实内核已具备**：Intent / Task / Evidence 已有精简版规范和 Contract；ADR / Change 已有完整规范；Pitfall 已有正式规范。
 2. **PyTools 最小校验能力已具备**：`tools/check_fact_model.py` 已实现，可校验 Intent / Task / Evidence YAML；`tests/tools/test_check_fact_model.py` 已覆盖合法、非法、输入错误和目录批量校验。
-3. **规范判断回原文已回流正式规范**：相关原则已进入 `specs/11`、`specs/11.01`、`specs/11.02`，不再只停留在 L1 Rules 或 evals/17。
-4. **Core Loop Skill 已部署到工作区顶层**：`ldvh-intake` 与 `ldvh-close` 已从项目内草案目录迁移到 `/Users/dmh2002/trae_projects/.trae/skills/`，项目内 `.trae/skills/` 草案目录已删除。
-5. **运行时文件忽略已处理**：`pm-kit-web/.pm-kit.pid` 已加入 `.gitignore`。
-6. **Dogfood 1 已完成**：已创建 `intent-0001`、`task-0001`、`ev-0001`；`task-0001` 已通过 `ldvh-close` Human Gate 关闭，`intent-0001` 已标记为 `completed`。
-7. **Dogfood 1 暴露的问题**：Evidence YAML 的 `content` 字段如果包含冒号，应使用块标量，否则会触发 YAML 解析错误；该问题已在 `ev-0001` 中记录。
-8. **当前真正下一步**：提交 Dogfood 事实实例与入口文档更新，然后进入下一轮最小闭环复盘或补充 PyTools/Skill 对 YAML 字符串安全的提示能力。
-9. **待讨论流程缺口**：执行主线 Task 时，AI 发现 bug、缺口、规范遗漏或流程问题后，应如何自动创建关联 Task、区分 blocking 与 follow-up、如何影响主线 Task 关闭条件，目前尚未进入正式规范；该问题需要先讨论主线后再决定是否创建 `task-0003` 或进入 specs。
+3. **YAML 长文本问题已完成一次闭环**：`task-0002` 已关闭，`ev-0002` 已记录验证通过；`ldvh-intake`、`ldvh-close` 与 Fact Validator 已补充块标量提示和测试覆盖。
+4. **规范判断回原文已回流正式规范**：相关原则已进入 `specs/11`、`specs/11.01`、`specs/11.02`，不再只停留在 L1 Rules 或 evals/17。
+5. **Core Loop Skill 已部署到工作区顶层**：`ldvh-intake` 与 `ldvh-close` 已从项目内草案目录迁移到 `/Users/dmh2002/trae_projects/.trae/skills/`，项目内 `.trae/skills/` 草案目录已删除。
+6. **运行时文件忽略已处理**：`pm-kit-web/.pm-kit.pid` 已加入 `.gitignore`。
+7. **当前真正下一步**：先完成 LDVH 生产对象整体梳理，把确定要做的对象、要降级的概念、要删除或不吸收的内容写入正式规范和本文，避免后续按过时 planned 清单扩张。
+8. **待讨论流程缺口**：执行主线 Task 时，AI 发现 bug、缺口、规范遗漏或流程问题后，应如何自动创建关联 Task、区分 blocking 与 follow-up、如何影响主线 Task 关闭条件，目前尚未进入正式规范；该问题需要在生产对象边界清晰后再进入 TaskSet / Task 关系设计。
 
 ---
 
 ## 7. 下一步主线
 
-当前下一步主线不是孤立新建某个工具，而是把 Fact Validator 纳入 LDVH PyTools / Tools 规范体系。
+当前下一步主线不是继续围绕单个工具扩张，而是先把 LDVH 生产对象体系梳理清楚：哪些对象必须落地为事实模型，哪些概念应降级为字段、模板或 Markdown 文档，哪些来自 Gstack 或 specs-v2 的内容当前不吸收。
 
-### 7.1 为什么下一步是 PyTools 体系化
+### 7.1 为什么先梳理生产对象
 
-当前已有部分 PyTools，例如：
+继续扩张 Tools、Web、Skill 或 Agent 之前，必须先明确生产对象边界，否则会出现三个问题：
 
-```text
-tools/check_22_commit_format.py
-```
+1. AI 会把发现的问题、风险、依赖、检查项和产物都误创建为 Task 或 ADR；
+2. 过时 planned 清单会推动 Risk / Dependency / Artifact / Checklist 等概念过早成为独立事实模型；
+3. Gstack 中的流程产物、runtime artifacts 或角色分工会被误认为 LDVH 必须照搬的事实对象。
 
-它已经体现了：
-
-```text
-读取契约 / 规范 → 校验输入 → 输出错误或通过
-```
-
-Fact Validator 与它属于同一类工具能力。因此下一步应是：
+因此当前主线是：
 
 ```text
-盘点现有 PyTools → 明确 PyTools 在 LDVH Tools 体系中的定位 → 定义 Fact Validator 作为能力族 → 决定最小实现路径
+梳理生产概念 → 区分事实模型 / 字段 / 模板 / 文档 → 更新 13 / 20 / 17 → 再决定下一批对象落地
 ```
 
-### 7.2 Fact Validator 的定位
+### 7.2 当前对象边界共识
 
-Fact Validator 不应是孤立工具，而应归入 PyTools 能力族：
+| Object / Concept | 中文 | 当前结论 | 承载方式 |
+|---|---|---|---|
+| Intent | 意图 | 已落地事实模型 | `ldvh-base/intents/` |
+| Task | 任务 | 已落地事实模型 | `ldvh-base/tasks/` |
+| Evidence | 证据 | 已落地事实模型 | `ldvh-base/evidence/` |
+| ADR | 决策记录 | 已落地事实模型 | `ldvh-base/adrs/` |
+| Change | 变更记录 | 已落地事实模型 | Git commit |
+| Pitfall | 踩坑记录 | 已落地事实模型 | 待按 23 规范实例化 |
+| Memo | 备忘 | 高优先级待落地事实模型 | 25 |
+| Profile | 项目画像 | 高优先级待落地事实模型 | 26 |
+| TaskSet | 任务集 | 高优先级待落地事实模型 | 28 |
+| Risk | 风险 | 降级为字段候选 | Task / Memo / ADR / TaskSet 字段 |
+| Dependency | 依赖 | 降级为关系字段 | Task / TaskSet 的 blocked_by、blocks、relation_type 等 |
+| Artifact | 产物 | 降级为路径或输出字段 | Evidence artifact_path、Task / TaskSet 输出字段 |
+| Checklist | 检查清单 | 降级为模板、字段或 Skill section | Task / TaskSet 验收项，执行结果进入 Evidence |
+| Roadmap | 路线图 | 暂作 Markdown 文档 | evals/17、docs 或未来路线图文档 |
 
-```text
-Contract Validator + State Machine Validator + Reference Validator
-```
+### 7.3 Gstack 借鉴边界
 
-它应消费：
+Gstack 对 LDVH 的价值主要是流程和产物连续交接，而不是事实对象模型本身。LDVH 当前只吸收以下方向：
 
-1. `24.06-Contract.md`；
-2. `28.06-Contract.md`；
-3. `31.06-Contract.md`；
-4. 后续更多 NN.06-Contract.md。
+1. 阶段化流程：让 AI 知道当前在 Intent、Plan、Execute、Verify、Record、Learn 哪一段；
+2. 产物连续交接：前一阶段输出应成为后一阶段输入；
+3. 质量门禁前置：测试、检查、review、ship summary 不能只靠最后补救；
+4. 角色化审查思路：在必要时用少量高价值 Agent 或 Skill 辅助，而不是一次性创建大量角色；
+5. JSONL、ship sections、TODO.md 等只作为流程产物参考，不作为 LDVH 权威事实源。
 
-### 7.3 PyTools 现状与标准化原则
+### 7.4 删除、降级与不吸收清单
 
-当前 `tools/` 下已经存在一批 PyTools：
+当前明确删除、降级或不吸收：
 
-1. `adr_index.py`：ADR 查询、统计、校验、草案生成和受控写入；
-2. `check_22_commit_format.py`：Change commit message 格式校验；
-3. `check_03_specs_doc_standard.py`：specs 文档标题和编号规范校验；
-4. `check_03_01_specs_docs.py`：specs 文档索引相关校验；
-5. `check_03_specs_references.py`：specs 文档引用相关校验。
+1. 不把 Risk / 风险、Dependency / 依赖、Artifact / 产物、Checklist / 检查清单、Roadmap / 路线图列入当前独立事实模型落地优先队列；
+2. 不直接吸收 Gstack 的 browser daemon、remote tunnel、本地隐藏状态目录、runtime cache 或 telemetry 作为权威事实源；
+3. 不一次性创建大量 Agent、角色 Skill 或复杂 review army；
+4. 不自动发布、自动合并、自动提交；提交仍按 `ldvh-commit` Skill 和 Change 纪律执行；
+5. 不把 checklist、artifact、dependency 这类属性型概念强行对象化；
+6. 不把 Roadmap / 路线图做成 YAML 对象，除非后续证明它需要独立状态、负责人、完成度统计或 Web 聚合。
 
-这些工具已经证明 PyTools 路线可行，但目前存在标准不统一的问题：
+### 7.5 后续落地顺序
 
-1. 有些工具只读，有些工具带受控写入；
-2. 有些工具内置契约常量，有些工具依据 specs 文档说明；
-3. Issue / error / warning 输出格式不完全一致；
-4. CLI 命令、参数命名、退出码语义需要统一；
-5. Contract 消费方式尚未形成通用框架；
-6. 测试结构已有雏形，但需要形成统一约定。
+生产对象边界稳定后，下一步优先级应是：
 
-因此，PyTools 的下一步不是大规模推倒重写，而是**按统一标准渐进式重构**：
-
-```text
-先定义 PyTools 标准 → 新工具按标准实现 → 旧工具按触碰即整理原则逐步迁移
-```
-
-不应一次性重构所有 PyTools，避免打断当前最小闭环。优先级应是：
-
-1. 先抽象统一的输出、退出码、Issue 表达和 CLI 参数约定；
-2. 再实现最小 Fact Validator；
-3. 然后将现有 `check_22_commit_format.py`、`adr_index.py` 等逐步对齐标准；
-4. 最后再考虑通用 Contract 消费框架和 Web 聚合输出。
-
----
-
-### 7.4 推荐下一步 Spec
-
-下一步建议创建 Spec：
-
-```text
-/spec 将 Fact Validator 纳入 PyTools / Tools 规范体系
-```
-
-该 Spec 应包含：
-
-1. 盘点现有 PyTools；
-2. 定义 PyTools 分类；
-3. 明确 Fact Validator 的能力边界；
-4. 补充或更新 Tools 规范；
-5. 规划最小实现脚本，例如 `tools/check_fact_model.py`；
-6. 为后续 Dogfood 创建 Intent → Task → Evidence 实例提供校验基础。
+1. 先落地 TaskSet / 任务集，因为它直接解决“主线任务、支线任务、关联任务和自动归类”的问题；
+2. 再落地 Memo / 备忘，用于承接尚未任务化但有保留价值的发现，避免所有问题都变成 Task；
+3. 再落地 Profile / 项目画像，用于产品化、多项目接入和初始化体验；
+4. Pitfall / 踩坑记录已有规范，后续应在真实错误复盘中实例化；
+5. 初始化流程、审计流程、开发实践、交付实践和推荐 Agent 清单继续作为 specs-v2 保留建议，但必须逐项满足 LDVH 准入条件后再落地。
 
 ---
 

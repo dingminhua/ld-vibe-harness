@@ -164,7 +164,7 @@ LDVH 当前工作流以**规范驱动**为核心：
 
 **具体做法：**
 
-1. Plan 确认后，AI 按 LDVH Task 规范（specs/31）将每个任务项写入 `ldvh-base/tasks/` YAML
+1. Plan 确认后，AI 按 LDVH Task 规范（specs/27）将每个任务项写入 `ldvh-base/tasks/` YAML
 2. Task 的 `source` 字段标记为 `plan-mode`
 3. Plan 执行过程中，Task 状态随执行进度更新
 4. 执行完成后，Evidence 回写到 `ldvh-base/evidence/`
@@ -206,8 +206,8 @@ LDVH 当前工作流以**规范驱动**为核心：
 | Spec 文档 | LDVH 事实模型 | 转化规则 |
 |-----------|--------------|---------|
 | `spec.md` | Intent（specs/24） | spec.md 的 Why/What Changes/Impact 对应 Intent 的目标、范围、成功标准 |
-| `tasks.md` | Task（specs/31） | tasks.md 的每个任务项对应一个 Task 实例 |
-| `checklist.md` | Evidence（specs/28） | checklist.md 的验收项对应 Evidence 的验证结果 |
+| `tasks.md` | Task（specs/27） | tasks.md 的每个任务项对应一个 Task 实例 |
+| `checklist.md` | Evidence（specs/29） | checklist.md 的验收项对应 Evidence 的验证结果 |
 
 **具体做法：**
 

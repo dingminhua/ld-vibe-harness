@@ -83,9 +83,9 @@ ldvh-base/tasks/task-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| Task 对象模型 | `specs/31-Task-任务.md` |
+| Task 对象模型 | `specs/27-Task-任务.md` |
 | Task 对象实例 | `ldvh-base/tasks/` |
-| Task 契约子文档 | `specs/31.06-Contract.md` |
+| Task 契约子文档 | `specs/27.06-Contract.md` |
 | Task 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
 ---
@@ -146,7 +146,7 @@ Task 可关联多个 ADR，作为执行过程中涉及的决策参考。
 
 Task 可关联多个 Evidence，作为验证结果和关闭证据。
 
-创建 Evidence 后，关联 Task 的 `related_evidence` 字段应记录 Evidence ID。Evidence 的字段和状态由 Evidence 对象模型（`specs/28-Evidence-验证证据.md`）定义。
+创建 Evidence 后，关联 Task 的 `related_evidence` 字段应记录 Evidence ID。Evidence 的字段和状态由 Evidence 对象模型（`specs/29-Evidence-验证证据.md`）定义。
 
 ### 6.4 Task → Change
 
@@ -197,7 +197,7 @@ Task 基础字段遵循 `specs/13-LDVH事实模型基础规范.md` §7.3 的字�
 | `closed_at` | date | 条件必填 | 仅当 `status` 为 `closed` 时必须填写 |
 | `closure_evidence` | string | 条件必填 | 仅当 `status` 为 `closed` 时必须填写，关闭证据摘要 |
 
-字段约束和完整 YAML 示例详见 `specs/31.06-Contract.md`。
+字段约束和完整 YAML 示例详见 `specs/27.06-Contract.md`。
 
 ---
 
