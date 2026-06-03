@@ -182,6 +182,19 @@ Record → ldvh-close
 Plan / Execute / Verify / Learn → 待建设
 ```
 
+### 6.4 当前阶段快照（2026-06-04）
+
+截至 2026-06-04，LDVH MVP 骨架已经推进到 **Dogfood 1 完成** 阶段：
+
+1. **最小事实内核已具备**：Intent / Task / Evidence 已有精简版规范和 Contract；ADR / Change 已有完整规范。
+2. **PyTools 最小校验能力已具备**：`tools/check_fact_model.py` 已实现，可校验 Intent / Task / Evidence YAML；`tests/tools/test_check_fact_model.py` 已覆盖合法、非法、输入错误和目录批量校验。
+3. **规范判断回原文已回流正式规范**：相关原则已进入 `specs/11`、`specs/11.01`、`specs/11.02`，不再只停留在 L1 Rules 或 evals/17。
+4. **Core Loop Skill 已部署到工作区顶层**：`ldvh-intake` 与 `ldvh-close` 已从项目内草案目录迁移到 `/Users/dmh2002/trae_projects/.trae/skills/`，项目内 `.trae/skills/` 草案目录已删除。
+5. **运行时文件忽略已处理**：`pm-kit-web/.pm-kit.pid` 已加入 `.gitignore`。
+6. **Dogfood 1 已完成**：已创建 `intent-0001`、`task-0001`、`ev-0001`；`task-0001` 已通过 `ldvh-close` Human Gate 关闭，`intent-0001` 已标记为 `completed`。
+7. **Dogfood 1 暴露的问题**：Evidence YAML 的 `content` 字段如果包含冒号，应使用块标量，否则会触发 YAML 解析错误；该问题已在 `ev-0001` 中记录。
+8. **当前真正下一步**：提交 Dogfood 事实实例与入口文档更新，然后进入下一轮最小闭环复盘或补充 PyTools/Skill 对 YAML 字符串安全的提示能力。
+
 ---
 
 ## 7. 下一步主线
