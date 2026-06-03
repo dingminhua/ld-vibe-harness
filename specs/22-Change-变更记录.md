@@ -323,14 +323,24 @@ ADR 索引按创建日期降序排列，应改为按编号升序。
 
 ## 14. 附件型实践子文档
 
-Change 对象模型不需要创建 active 状态附件型实践子文档。22.01-22.06 六个子文档槽位全部为 not-created 状态，对应子文档文件仍需存在以说明不创建理由和检查项（依据 `specs/04-LDVH模型子文档规范.md` §4.2、§6.1）。理由如下：
+Change 22.01-22.06 六个子文档槽位状态如下：
 
-1. **Change 无独立 YAML 实例**：Change 事实实例承载于 Git commit，不需要 Rules 入口约束 YAML 写入、Skill 编排创建流程、Agent 并行处理、Tools 受控写入或 Web 编辑入口；
-2. **Change 无状态流转**：commit 不可变，不需要状态机相关的 Rules 提醒、Skill 流程或 Tools 校验；
-3. **Change 格式简单**：commit message 格式规范在本文 §8 已完整定义，不需要独立 Contract 子文档；
-4. **Change 机制适配简单**：各机制适配已在本文 §11-§13 直接说明，不需要独立子文档展开。
+| 编号 | 子文档 | 状态 | 说明 |
+|---|---|---|---|
+| 22.01 | Rules.md | not-created | Change 提交前提醒和纪律由 ldvh-commit Skill 编排，Rules 只保留入口引用 |
+| 22.02 | Skill.md | active | ldvh-commit Skill 编排提交流程：diff 展示 → message 起草 → 格式预检 → 确认 → commit |
+| 22.03 | Agent.md | not-created | Change 不需要 Agent 并行处理 |
+| 22.04 | Tools.md | not-created | commit message 格式校验由 check_22_commit_format.py 直接执行 |
+| 22.05 | Web.md | not-created | Change 不需要独立 Web 编辑入口 |
+| 22.06 | Contract.md | not-created | commit message 格式规范在本文 §8 已完整定义 |
 
-如后续 Change 模型复杂度增加（如需要自动化 commit message 校验工具、Web 变更看板或 Skill 编排变更记录流程），可经 Human Gate 确认后创建对应子文档。
+22.02 从 not-created 升级为 active 的理由：
+
+1. **提交流程需要多步骤编排**：diff 展示、message 起草、格式预检、用户确认、逐文件 add、commit 是多步骤流程，适合 Skill 编排；
+2. **减少 Rules 冗余**：当前 L0、22.01 多处重复维护提交步骤，Skill 集中维护后 Rules 只需引用入口；
+3. **确保执行一致性**：Skill 统一编排确保每次提交都经过完整检查链，不会因 AI 上下文差异遗漏步骤。
+
+其余子文档保持 not-created 状态，理由不变：Change 无独立 YAML 实例、无状态流转、格式简单、机制适配已在本文 §11-§13 直接说明。
 
 ---
 
@@ -373,7 +383,7 @@ Change 对象模型进入项目实践时，需要完成以下初始化：
 1. 确认 Change 事实实例以 Git commit 承载，不创建 `ldvh-base/changes/` 目录；
 2. 确认 commit message 格式规范遵循本文 §8；
 3. 确认 Change 读取入口为 `git log --format` 命令；
-4. 确认 Change 的 22.01-22.06 六个子文档槽位全部为 not-created 状态，对应子文档文件已创建；
+4. 确认 Change 的 22.02 子文档为 active 状态，其余 22.01、22.03-22.06 子文档为 not-created 状态，对应子文档文件已创建；
 5. 确认项目 Rules 中是否需要增加 commit message 格式提醒；
 6. 确认是否需要 Tools 辅助程序覆盖 commit message 格式校验能力；
 7. 确认跨仓库 commit 机制：落地初始化涉及多个 Git 仓库时，每个仓库均需独立提交；
@@ -405,7 +415,7 @@ Change 对象模型合规检查应覆盖以下内容：
 4. Change 读取策略是否符合本文 §11 和 §12；
 5. Change 写入策略是否符合本文 §7 和 §9；
 6. Change 不使用 `ldvh-base/changes/` 目录是否符合本文 §4 的声明；
-7. Change 不需要附件型实践子文档是否符合本文 §14 的理由说明。
+7. Change 附件型实践子文档状态是否符合本文 §14 的定义（22.02 active，其余 not-created）。
 
 ---
 
