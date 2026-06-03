@@ -147,7 +147,7 @@ Core Loop 的 Record 阶段完成判断需要 Task、Evidence 和 Change 三者�
 - Task 关闭且有 Evidence 但无 Change → 变更未沉淀到事实源；
 - 有 Change 但 Task 未关闭 → 变更未经过关闭审查。
 
-`ldvh-close` Skill 在关闭 Task 时，如产生了事实源修改（准入变更），应内部调用 `ldvh-commit` Skill 编排提交，确保 Change 与 Task 关闭同步完成。
+`ldvh-close` Skill 在关闭 Task 时，必然修改事实源（status → closed、closed_at、closure_evidence），属于准入变更，因此必须内部调用 `ldvh-commit` Skill 编排提交，确保 Change 与 Task 关闭同步完成。
 
 Task 的 `related_changes` 字段当前暂不回写，靠 commit message 中的 `Refs:` 实现反向追溯。后续如 Web Dogfood 暴露正向追溯需求，可通过 ADR 决策是否回写。
 
