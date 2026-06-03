@@ -47,6 +47,7 @@ Gstack 的体验范式
 4. **三者融合的目标不是复刻 Gstack，而是形成 Trae-native 的 LDVH Core Loop**：把 `Intent → Plan → Execute → Verify → Record → Learn` 做成 AI 进入项目后的第一体验。
 5. **当前 LDVH 已经具备最小 Dogfood 基础**：9 个 active fact models，其中 Intent / Task / TaskSet / Evidence / Memo / Profile / Pitfall 这 7 类 YAML Dogfood 对象已由 Fact Validator 覆盖，ADR / Change 由专用流程和提交纪律承接。
 6. **当前最应优先补齐的不是继续抽象新对象，而是 Record / Change 闭环和执行中发现问题的分流规则**。
+7. **specs 是规则、Skill、Agent、Tools 的可推理源头**：所有 Rules、Skill、Agent、Tools 的设计、行为和边界，必须能从 specs 文档中推理出来；specs 不是被动文档库，而是实现层的唯一权威依据。如果 specs 中没有记录某个决策、约束或流程，后续就无法反推出为什么 Skill 这样设计、为什么规则这样写、为什么 Agent 这样行动。因此，每个重要决策都必须回写到对应的 specs 子文档（如 27.02-Skill.md、22.02-Skill.md、22.01-Rules.md 等），而不仅仅停留在 evals 或对话中。
 
 ---
 
@@ -471,13 +472,13 @@ Gstack 对 LDVH 的价值主要是完整的产品化工程工作流和产物连�
 
 需要回答的问题是：
 
-1. Change 的最小事实源是否继续以 Git commit message 为主？
-2. `ldvh-close` 关闭 Task 时，如何形成足够的 Record 摘要，并在产生准入变更时进入 `ldvh-commit` / Change 流程？
-3. `ldvh-commit` 提交时，如何消费 Task / Evidence / ADR 信息形成 Change 记录？
-4. Task 的 `related_changes` 当前为空时，是否影响关闭判断？
-5. 当前规范已取消 `ldvh-base/changes/` YAML 实例目录，本项目不再把它作为近期方案；文档保留该问题作为历史迁移说明和外部用户兼容提示。
-6. 如果其他用户或未来部署形态确实需要新增 Change YAML，是否必须先通过 ADR 决策事实源归属变化？
-7. 如果暂不新增 Change YAML，Evidence、Task closure、commit message 三者如何共同支撑 Record 阶段完成判断？
+1. ~~Change 的最小事实源是否继续以 Git commit message 为主？~~ **已决策：是。** Change 权威事实源为 Git commit，见 `specs/22-Change-变更记录.md` §4。
+2. ~~`ldvh-close` 关闭 Task 时，如何形成足够的 Record 摘要，并在产生准入变更时进入 `ldvh-commit` / Change 流程？~~ **已决策：ldvh-close 内部调用 ldvh-commit。** 见 `specs/27.02-Skill.md` §1.1、`specs/22.02-Skill.md` §7.1、`.trae/skills/ldvh-close/SKILL.md` §6。
+3. `ldvh-commit` 提交时，如何消费 Task / Evidence / ADR 信息形成 Change 记录？（待后续 ldvh-commit 增强时决策）
+4. ~~Task 的 `related_changes` 当前为空时，是否影响关闭判断？~~ **已决策：暂不回写，不影响关闭判断。** 靠 commit message Refs 反向追溯。见 `specs/27.02-Skill.md` §1.3。
+5. ~~当前规范已取消 `ldvh-base/changes/` YAML 实例目录，本项目不再把它作为近期方案；文档保留该问题作为历史迁移说明和外部用户兼容提示。~~ **已确认。**
+6. 如果其他用户或未来部署形态确实需要新增 Change YAML，是否必须先通过 ADR 决策事实源归属变化？（待外部用户场景出现时决策）
+7. ~~如果暂不新增 Change YAML，Evidence、Task closure、commit message 三者如何共同支撑 Record 阶段完成判断？~~ **已决策：Task + Evidence + Change 三要素。** 见 `specs/22-Change-变更记录.md` §6.4、`specs/27.02-Skill.md` §1.2。
 
 本文建议短期采用过渡策略：
 
