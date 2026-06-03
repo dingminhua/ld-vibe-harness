@@ -73,6 +73,57 @@ source_task: task-0001
 """
 
 
+def valid_taskset_yaml(status="active", extra=""):
+    return f"""
+id: taskset-0001
+type: taskset
+title: Valid TaskSet
+status: {status}
+created: "2026-06-04"
+updated: "2026-06-04"
+description: Define a valid taskset fixture
+scope: Test scope
+tasks:
+  - task-0001
+related_adrs: []
+related_evidence: []
+{extra}
+"""
+
+
+def valid_profile_yaml():
+    return """
+id: profile-0001
+type: profile
+title: Valid Profile
+status: active
+created: "2026-06-04"
+updated: "2026-06-04"
+description: Define a valid profile fixture
+project_name: test-project
+project_path: /tmp/test-project
+ldvh_base_path: /tmp/test-project/ldvh-base
+related_tasks: []
+related_adrs: []
+related_tasksets: []
+"""
+
+
+def valid_memo_yaml(status="active", extra=""):
+    return f"""
+id: memo-0001
+type: memo
+title: Valid Memo
+status: {status}
+created: "2026-06-04"
+updated: "2026-06-04"
+description: Define a valid memo fixture
+source: test
+category: gap
+{extra}
+"""
+
+
 def test_valid_intent_cli_exit_zero(tmp_path):
     path = write_yaml(tmp_path / "intent-0001-valid-intent.yaml", valid_intent_yaml())
 
@@ -230,3 +281,98 @@ def test_directory_batch_validation_summary(tmp_path):
     assert "INVALID_STATUS" in result.stdout
     assert "ignored.yml" not in result.stdout
     assert "检查完成: files=4 errors=1 warnings=0" in result.stdout
+
+
+def test_valid_taskset_cli_exit_zero(tmp_path):
+    path = write_yaml(tmp_path / "taskset-0001-valid-taskset.yaml", valid_taskset_yaml())
+
+    result = run_checker(path)
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+    assert result.stderr == ""
+
+
+def test_valid_profile_cli_exit_zero(tmp_path):
+    path = write_yaml(tmp_path / "profile-0001-valid-profile.yaml", valid_profile_yaml())
+
+    result = run_checker(path)
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+    assert result.stderr == ""
+
+
+def test_valid_memo_cli_exit_zero(tmp_path):
+    path = write_yaml(tmp_path / "memo-0001-valid-memo.yaml", valid_memo_yaml())
+
+    result = run_checker(path)
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+    assert result.stderr == ""
+
+
+def test_taskset_closed_missing_closure_fields(tmp_path):
+    content = valid_taskset_yaml(status="closed")
+    path = write_yaml(tmp_path / "taskset-0001-closed-no-closure.yaml", content)
+
+    result = run_checker(path)
+
+    assert result.returncode == 1
+    assert "MISSING_CLOSURE_FIELD" in result.stdout
+    assert "closed_at" in result.stdout
+    assert "closure_evidence" in result.stdout
+
+
+def test_memo_invalid_category(tmp_path):
+    content = valid_memo_yaml().replace("category: gap", "category: invalid")
+    path = write_yaml(tmp_path / "memo-0001-invalid-category.yaml", content)
+
+    result = run_checker(path)
+
+    assert result.returncode == 1
+    assert "INVALID_CATEGORY" in result.stdout
+
+
+def test_memo_resolved_missing_resolved_fields(tmp_path):
+    content = valid_memo_yaml(status="resolved")
+    path = write_yaml(tmp_path / "memo-0001-resolved-no-fields.yaml", content)
+
+    result = run_checker(path)
+
+    assert result.returncode == 1
+    assert "MISSING_RESOLVED_FIELD" in result.stdout
+    assert "resolved_to" in result.stdout
+    assert "resolved_at" in result.stdout
+
+
+def test_memo_invalid_priority_warning(tmp_path):
+    content = valid_memo_yaml().replace("category: gap", "category: gap\npriority: urgent")
+    path = write_yaml(tmp_path / "memo-0001-invalid-priority.yaml", content)
+
+    result = run_checker(path)
+
+    assert result.returncode == 0
+    assert "INVALID_PRIORITY" in result.stdout
+    assert "检查完成: files=1 errors=0 warnings=1" in result.stdout
+
+
+def test_taskset_invalid_status(tmp_path):
+    content = valid_taskset_yaml(status="unknown")
+    path = write_yaml(tmp_path / "taskset-0001-invalid-status.yaml", content)
+
+    result = run_checker(path)
+
+    assert result.returncode == 1
+    assert "INVALID_STATUS" in result.stdout
+
+
+def test_profile_invalid_status(tmp_path):
+    content = valid_profile_yaml().replace("status: active", "status: unknown")
+    path = write_yaml(tmp_path / "profile-0001-invalid-status.yaml", content)
+
+    result = run_checker(path)
+
+    assert result.returncode == 1
+    assert "INVALID_STATUS" in result.stdout
