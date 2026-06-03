@@ -1,12 +1,12 @@
 # LDVH Web 网站重做推进基础文档
 
 > 创建日期：2026-06-04
-> 定位：基于 evals/18 产品方向共识、当前 LDVH 事实源与 pm-kit-web 现状，为重新建设 LDVH Web 网站提供推进基础
+> 定位：基于 evals/17 产品方向共识、当前 LDVH 事实源与 pm-kit-web 现状，为重新建设 LDVH Web 网站提供推进基础
 > 编号归属：specs/evals/ 项目评估文档，自然序号 19
 > 调研边界：基于当前仓库文档、事实源、Tools 与 pm-kit-web 代码现状；不直接构成强制规则
 > 执行效力：无，结论需进入正式 specs、ADR、Task 或实现计划后才成为稳定执行依据
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/12-LDVH工具基础规范.md`、`specs/12.02-Web信息同步规范.md`
-> 相关参考：`specs/evals/18-LDVH-Gstack-Trae融合产品方向共识.md`
+> 相关参考：`specs/evals/17-LDVH-Gstack-Trae融合产品方向共识.md`
 > 代码调研来源：`pm-kit-web/`、`tools/check_fact_model.py`、`ldvh-base/`
 
 ---
@@ -19,7 +19,7 @@
 
 1. 明确新 LDVH Web 网站应继承和放弃什么；
 2. 明确当前 `pm-kit-web/` 与 LDVH 新事实内核之间的差距；
-3. 把 evals/18 中关于 Web MVP 的共识转化为可执行的产品边界；
+3. 把 evals/17 中关于 Web MVP 的共识转化为可执行的产品边界；
 4. 为后续 Spec、Task、ADR 或实现工作提供固定起点；
 5. 防止新 Web 再次变成第二套任务系统、第二套事实源或复杂产品先行。
 
@@ -83,7 +83,7 @@ Intent / Task / ADR / Evidence / Change
 5. Change 已有规范、commit message 校验工具与 `ldvh-commit` Skill；
 6. `ldvh-intake` 与 `ldvh-close` 已形成 Core Loop 的 Intent / Record 阶段入口；
 7. L0 / L1 Rules 已加入 Core Loop 路由；
-8. evals/18 已明确 Web MVP 只读对齐 `ldvh-base` 的方向。
+8. evals/17 已明确 Web MVP 只读对齐 `ldvh-base` 的方向。
 
 这说明新 Web 可以从真实事实源读取，而不需要先发明一套 Web 内部任务模型。
 
@@ -472,11 +472,11 @@ ldvh-base reader
 
 ---
 
-## 9. 与 evals/18 的对齐
+## 9. 与 evals/17 的对齐
 
-本文对 evals/18 的承接关系如下：
+本文对 evals/17 的承接关系如下：
 
-| evals/18 共识 | 本文承接方式 |
+| evals/17 共识 | 本文承接方式 |
 |---|---|
 | Gstack 提供体验范式 | 吸收驾驶舱、阶段入口、真实验证和 Gate 上下文体验 |
 | LDVH 提供治理骨架 | Web 只展示 Git 文件事实源和规范化对象关系 |
