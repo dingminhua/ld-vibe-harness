@@ -394,7 +394,75 @@ Gstack 的 gbrain 是与 Skill 深度集成的持久化知识图谱。Trae 的 M
 
 LDVH 的等价方案：Git 文件事实源（`ldvh-base/`）+ Skill 指令引导 AI 读取。比 gbrain 更持久（Git 可追溯），但缺少语义搜索能力。
 
-### 13.3 Trae Skill 能做到但 Gstack 做不到的
+### 13.3 Trae 官方 Skill 最佳实践要点
+
+> 本节基于 Trae 官方文档 `https://docs.trae.cn/ide/best-practice-for-how-to-write-a-good-skill` 提炼。
+
+#### 13.3.1 五个核心标准
+
+| 标准 | 描述 | 对 LDVH 的启示 |
+|---|---|---|
+| 边界明确 | 正向条件 + 负向条件，否则命中率低 | LDVH Skill 的"触发条件"和"不适用场景"段符合此标准 |
+| 输入输出结构化 | 用函数签名式定义 Input/Output | LDVH Skill 的"输出格式"段部分符合，但缺少 Input 定义 |
+| 步骤明确可执行 | 指令式具体动作，不是概括性描述 | LDVH Skill 的"编排流程"段基本符合 |
+| 失败策略完备 | 明确失败路径，不让模型自由发挥 | LDVH Skill 有部分失败策略，但不够系统化 |
+| 职责绝对单一 | 每个 Skill 只做一件事 | LDVH 当前 Skill 符合（intake/close/commit/adr 各一个） |
+
+#### 13.3.2 指导方式三级自由度
+
+| 自由度 | 适用场景 | 指导方式 | LDVH 对应 |
+|---|---|---|---|
+| 高 | 存在多种有效方法 | 给原则 | 代码审查、技术方案评估 |
+| 中 | 存在首选模式，允许变通 | 给框架/模板 | 报告生成、Evidence 草案 |
+| 低 | 操作脆弱易错，一致性至关重要 | 给可执行脚本 | ADR 创建（adr_index.py）、commit 格式校验 |
+
+LDVH 当前 Skill 主要用中自由度（给框架），但 ADR 和 commit 相关操作已经用低自由度（给脚本）。后续 ldvh-context 也应采用低自由度——给可执行脚本，让 AI 调用而非自行拼凑。
+
+#### 13.3.3 渐进式披露
+
+Trae 官方明确推荐：
+
+1. SKILL.md 主体 ≤ 500 行，只含必要信息
+2. 详细内容拆到引用文件，保持一层引用深度（避免 A→B→C 链式引用）
+3. 长文件加目录
+
+**这是 Gstack 没有但 Trae 官方明确推荐的实践**，对 LDVH 有直接指导意义：
+
+- LDVH 当前 Skill 的"必读文件"段让 AI 读 4-6 个规范文件，这些文件本身又引用其他文件，容易形成链式引用
+- 更好的做法：SKILL.md 只引用最必要的 1-2 个文件（如 Contract），其余上下文由 `ldvh-context` 工具聚合后一次性提供
+- 这进一步验证了 `ldvh-context` 的必要性：它不仅是 Resolver 等价物，还是渐进式披露的"引用文件层"——AI 不需要自己读多个文件，工具已经聚合好了
+
+#### 13.3.4 评测驱动、失败优先的构建流程
+
+Trae 官方推荐的 Skill 构建流程：
+
+1. 建"无 Skill"基线，识别真实问题
+2. 以失败优先定义评测用例
+3. 写最小化 Skill，只通过当前评测
+4. 补充边界条件与结构化示例
+5. 评测回归与持续迭代
+6. 结合真实使用路径校准
+
+**这与 evals/18 的"防递归建设"原则高度一致**：
+
+- "无 Skill 基线" ≈ "先人工可运行，再工具自动化"
+- "失败优先" ≈ "碰到什么问题补什么能力"
+- "最小化 Skill" ≈ "只补当前闭环的最小缺口"
+- "评测回归" ≈ "Dogfood 优先于继续抽象"
+
+对 LDVH 的启示：每个新 Skill（ldvh-plan、ldvh-verify、ldvh-context）都应先跑"无 Skill 基线"，识别真实摩擦点，再写最小化 Skill。
+
+#### 13.3.5 可执行脚本加固原则
+
+Trae 官方对 Skill 中引用的脚本提出三个要求：
+
+1. **错误显式处理**：捕获常见异常，返回清晰错误原因和下一步建议，不让模型猜
+2. **输出自解释**：成功/失败路径都有明确输出，验证类脚本列出通过项与失败项
+3. **避免魔法数字**：常量有语义化名称和设计依据
+
+对 LDVH PyTools 的启示：`check_fact_model.py`、`adr_index.py` 和未来的 `ldvh-context` 都应遵循这些原则，确保输出对 AI 可理解、可决策。
+
+### 13.4 Trae Skill 能做到但 Gstack 做不到的
 
 | 能力 | 说明 |
 |---|---|
@@ -404,15 +472,16 @@ LDVH 的等价方案：Git 文件事实源（`ldvh-base/`）+ Skill 指令引导
 | Web Preview | Trae 有内置 Web 预览，Gstack 靠 browse daemon |
 | Memory 跨会话 | Trae Memory 是平台级能力，Gstack 靠 gbrain |
 
-### 13.4 对 LDVH 的影响判断
+### 13.5 对 LDVH 的影响判断
 
-**核心结论：Trae Skill 具备实现 Gstack 体验范式的基本能力，但缺少构建时动态注入的"糖衣"。**
+**核心结论：Trae Skill 具备实现 Gstack 体验范式的基本能力，但缺少构建时动态注入的"糖衣"。Trae 官方最佳实践提供了 Gstack 没有的工程化指导（渐进式披露、评测驱动迭代、脚本加固），LDVH 应同时吸收 Gstack 的体验范式和 Trae 的工程实践。**
 
 1. **上下文路由**：Trae Skill 的 `description` 语义匹配 ≈ Gstack 的 `triggers`。LDVH 不需要建 Context Router 工具，现有 L0/L1 Rules 入口 + Skill description 已经在做路由。
-2. **上下文包**：Trae Skill 无法构建时烘焙动态上下文，"必读文件"段功能等价但摩擦高（AI 需读多个文件自己拼凑）。当摩擦明显时，应建轻量 `ldvh-context` PyTool 作为 Trae 原生 Resolver 等价物——一次调用拿到结构化上下文，替代多次文件读取。这不是"通用基础设施"，而是 Gstack Resolver 在 Trae 中的自然映射。
+2. **上下文包**：Trae Skill 无法构建时烘焙动态上下文，"必读文件"段功能等价但摩擦高（AI 需读多个文件自己拼凑）。当摩擦明显时，应建轻量 `ldvh-context` PyTool 作为 Trae 原生 Resolver 等价物——一次调用拿到结构化上下文，替代多次文件读取。这不是"通用基础设施"，而是 Gstack Resolver 在 Trae 中的自然映射。Trae 官方的渐进式披露原则进一步验证了这一点：`ldvh-context` 是"引用文件层"的聚合，避免 AI 自己读多个文件形成链式引用。
 3. **校验**：Trae Skill 无法内嵌 schema-pack，但可以调用 PyTools。`check_fact_model.py` 已经是最小实现。不需要建通用对象校验框架——按痛点逐对象扩展即可。
 4. **写入**：Trae Skill 可以引导 AI 用 RunCommand 执行写入脚本。`adr_index.py` 已有原子写入。不需要建通用原子写入工具——按痛点扩展。
 5. **聚合**：`ldvh-context` 可同时承担聚合职责（按场景返回项目态势），不需要独立项目态势聚合器。
+6. **工程实践**：Trae 官方的"评测驱动、失败优先"构建流程与 evals/18 的"防递归建设"高度一致，LDVH 应将其作为 Skill 和 PyTools 开发的标准流程。每个新 Skill/工具都应先跑"无 Skill 基线"识别真实摩擦，再写最小化实现。
 
 ---
 
@@ -445,6 +514,9 @@ LDVH 的等价方案：Git 文件事实源（`ldvh-base/`）+ Skill 指令引导
       · 不是通用基础设施，是 Gstack Resolver 在 Trae 中的自然映射
       · 同时承担项目态势聚合职责，不需要独立聚合器
       · 先服务 intake/close 场景，再扩展到 plan/verify
+      · 遵循 Trae 官方渐进式披露原则：SKILL.md 只引用最必要的 1-2 个文件，其余由工具聚合
+      · 遵循 Trae 官方脚本加固原则：错误显式处理、输出自解释、避免魔法数字
+      · 遵循"评测驱动、失败优先"：先跑无工具基线识别摩擦，再写最小化实现
     → 不需要独立 Context Router（Skill description + Rules 入口已做路由）
 
 第三优先级：PyTools 按痛点扩展

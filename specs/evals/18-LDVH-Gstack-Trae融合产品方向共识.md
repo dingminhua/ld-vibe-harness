@@ -485,6 +485,11 @@ Core Loop 当前最弱的是 Plan、Execute、Verify、Learn。
 
 用户已明确校准：Gstack 的 Skill prompt 不是简单的“角色 Skill 目录”，其中包含大量值得 LDVH 吸收的工程经验。后续应专门从 Gstack 的 `review`、`qa`、`ship`、`retro`、`learn`、`plan-tune`、`spec`、`skillify` 等 Skill 中提炼提示词结构，而不是只停留在宏观产品公式。
 
+Trae 官方提供了两份与 LDVH Skill 设计直接相关的参考文档，后续设计自有 Skill 时应以网站内容为准：
+
+1. [如何写好一个 Skill：从创建到迭代的最佳实践](https://docs.trae.cn/ide/best-practice-for-how-to-write-a-good-skill)：把 Skill 定义为一份清晰、严谨、可执行的指令文档，用于告诉模型在什么条件下使用、按照哪些步骤执行、产出什么结果。核心要点包括：Skill 不是一次性 Prompt 也不是写给人看的说明；元数据（name / description）直接影响触发准确率；必须明确 Use when / Do NOT use when 边界；输入输出应结构化定义；步骤必须可执行而非概括性描述；失败策略必须显式化；职责绝对单一；SKILL.md 应渐进式披露而非包罗万象；复杂 Skill 应定义工作流与反馈闭环；脚本输出必须自解释；构建流程应评测驱动、失败优先；
+2. [研发场景十大热门 Skill 推荐](https://docs.trae.cn/ide/top-10-recommended-skills-for-development-scenarios)：覆盖前端设计、前端开发、全栈开发、代码审查、Web 应用测试、CI/CD PR 创建、Linting 修复、技术文档更新和 Skill 发现等研发场景。对 LDVH 的参考价值在于：这些 Skill 展示了 Trae 生态中已被验证的职责划分方式——每个 Skill 只解决一个核心动作（如 `frontend-code-review` 只做前端代码审查、`fix` 只做 linting 和格式修复、`update-docs` 只做文档同步）；部分 Skill 采用了 SKILL.md + references/ + scripts/ 的渐进式披露结构；代码审查类 Skill 提供了结构化报告（紧急待修复 vs 改进建议）的输出模式；测试类 Skill 展示了"先侦查后行动"的验证流程。
+
 优先吸收的 prompt 经验包括：
 
 1. **入口判断**：`When to invoke this skill`、触发词、主动建议条件、禁用条件；
@@ -496,15 +501,29 @@ Core Loop 当前最弱的是 Plan、Execute、Verify、Learn。
 7. **输出契约**：最终报告、TODO 格式、PR body、测试摘要、复盘报告、学习记录；
 8. **经验回灌**：learnings、timeline、retro、question tuning、developer profile 等跨会话改进机制。
 
+结合 Trae 官方最佳实践，LDVH 设计自有 Skill 时还应补充以下原则：
+
+1. **元数据即入口**：Skill 的 `name` 和 `description` 直接影响模型发现与触发准确率，应简洁、唯一、包含核心功能与触发时机关键词；
+2. **边界优先**：每个 Skill 必须明确 Use when 和 Do NOT use when，避免模型在错误时机误触发；
+3. **输入输出结构化**：用类似函数签名的方式定义 Input / Output，降低上下文解释成本；
+4. **步骤必须可执行**：Skill 的步骤应是具体指令，而不是概括性描述；
+5. **失败策略显式化**：验证失败、输入缺失、依赖不可用、权限不足等场景应有明确停止、重试、回退或上报规则；
+6. **职责绝对单一**：单个 Skill 只解决一个核心动作，不把规格、执行、验证、发布、学习全部捆绑进一个入口；
+7. **渐进式披露**：`SKILL.md` 作为入口和导航，保持最小必要信息；长参考、示例、脚本拆到资源文件，避免一次加载过多上下文；
+8. **工作流与反馈闭环**：复杂 Skill 应显式定义计划、验证、执行、再验证的检查清单；
+9. **脚本输出自解释**：Skill 依赖的脚本必须失败可预期、输出可理解、参数可解释；
+10. **评测驱动、失败优先**：先建立无 Skill 基线和失败用例，再写最小化 Skill，并用真实使用反馈持续回归。
+
 LDVH 对这些经验的吸收方式不是复制英文 prompt 或本地状态目录，而是转写为中文 Skill 提示词、LDVH 事实源边界、Human Gate、Evidence、Change 和 PyTools 校验。尤其需要把 Gstack 的“何时进入、读什么、问什么、做什么、何时停、输出什么、如何把经验变成默认行为”提炼为 LDVH Skill 模板。
 
 建议下一批生命周期 Skill 的设计顺序为：
 
-1. `ldvh-plan`：吸收 Gstack plan / spec / review 的任务澄清、风险识别、scope drift 和验证计划表达；
-2. `ldvh-verify`：吸收 Gstack QA 的真实验证、分级检查、修复后复验和证据摘要；
-3. `ldvh-review`：吸收 Gstack review 的 diff 审查、结构性问题、trust boundary 和 pre-landing gate；
-4. `ldvh-retro`：吸收 Gstack retro / learn 的经验沉淀、趋势复盘和可执行改进；
-5. `ldvh-close` 继续强化：吸收 ship / release gate 的完成判断、变更摘要和交付前检查。
+1. `ldvh-spec`：参考 Trae 官方 Skill 最佳实践和原生 Spec / Plan 的特权规划模式，负责需求澄清、规格草案、验收标准、Human Gate 选项和事实源归属判断；
+2. `ldvh-plan`：吸收 Gstack plan / spec / review 的任务澄清、风险识别、scope drift 和验证计划表达；
+3. `ldvh-verify`：吸收 Gstack QA 的真实验证、分级检查、修复后复验和证据摘要；
+4. `ldvh-review`：吸收 Gstack review 的 diff 审查、结构性问题、trust boundary 和 pre-landing gate；
+5. `ldvh-retro`：吸收 Gstack retro / learn 的经验沉淀、趋势复盘和可执行改进；
+6. `ldvh-close` 继续强化：吸收 ship / release gate 的完成判断、变更摘要和交付前检查。
 
 ### 8.6 第六步：明确 Spec / Plan 与自有 Skill 的协同边界
 
@@ -571,17 +590,18 @@ Git 文件事实源 → PyTools 聚合 → Web 只读展示 → 人做更高质�
 2. 不引入 `~/.ldvh/` 本地隐藏状态目录作为稳定事实源；
 3. 不按人格化角色目录一次性创建大量 Skill 或 Agent；
 4. 不把临时专业视角固化为默认 Skill；
-5. 不在 Tools 中调用 AI、Skill 或 Agent；
-6. 不把 Memory 当作 Git 文件事实源的替代品；
-7. 不自动发布、自动提交、自动合并；
-8. 不先做复杂 Web 产品再验证 Core Loop；
-9. 不在没有 Contract 消费规则的情况下扩张 PyTools；
-10. 不把 `.trae/specs/` 变成第二套权威状态；
-11. 不让 Skill 内部触发 `/spec` 或 `/plan`；
-12. 不把 Plan / Spec 确认当作正式 Human Gate 的替代品；
-13. 不把 Gstack 的 telemetry、auto-update、browser tunnel、pair-agent 作为默认能力；
-14. 不让子 Agent 绕过主控、Human Gate、事实源写入和 Change 记录；
-15. 不为了未来可能需要的对象而打断当前最小闭环。
+5. 不把 Skill 写成一次性 Prompt 或写给人看的长说明；
+6. 不在 Tools 中调用 AI、Skill 或 Agent；
+7. 不把 Memory 当作 Git 文件事实源的替代品；
+8. 不自动发布、自动提交、自动合并；
+9. 不先做复杂 Web 产品再验证 Core Loop；
+10. 不在没有 Contract 消费规则的情况下扩张 PyTools；
+11. 不把 `.trae/specs/` 变成第二套权威状态；
+12. 不让 Skill 内部触发 `/spec` 或 `/plan`；
+13. 不把 Plan / Spec 确认当作正式 Human Gate 的替代品；
+14. 不把 Gstack 的 telemetry、auto-update、browser tunnel、pair-agent 作为默认能力；
+15. 不让子 Agent 绕过主控、Human Gate、事实源写入和 Change 记录；
+16. 不为了未来可能需要的对象而打断当前最小闭环。
 
 ---
 
