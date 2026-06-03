@@ -194,6 +194,7 @@ Plan / Execute / Verify / Learn → 待建设
 6. **Dogfood 1 已完成**：已创建 `intent-0001`、`task-0001`、`ev-0001`；`task-0001` 已通过 `ldvh-close` Human Gate 关闭，`intent-0001` 已标记为 `completed`。
 7. **Dogfood 1 暴露的问题**：Evidence YAML 的 `content` 字段如果包含冒号，应使用块标量，否则会触发 YAML 解析错误；该问题已在 `ev-0001` 中记录。
 8. **当前真正下一步**：提交 Dogfood 事实实例与入口文档更新，然后进入下一轮最小闭环复盘或补充 PyTools/Skill 对 YAML 字符串安全的提示能力。
+9. **待讨论流程缺口**：执行主线 Task 时，AI 发现 bug、缺口、规范遗漏或流程问题后，应如何自动创建关联 Task、区分 blocking 与 follow-up、如何影响主线 Task 关闭条件，目前尚未进入正式规范；该问题需要先讨论主线后再决定是否创建 `task-0003` 或进入 specs。
 
 ---
 
