@@ -12,31 +12,36 @@ from typing import Any
 import yaml
 
 
-OBJECT_TYPES = {"intent", "task", "evidence"}
+OBJECT_TYPES = {"intent", "task", "evidence", "pitfall"}
 FILENAME_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "task": re.compile(r"^task-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "evidence": re.compile(r"^ev-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
 }
 ID_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}$"),
     "task": re.compile(r"^task-\d{4}$"),
     "evidence": re.compile(r"^ev-\d{4}$"),
+    "pitfall": re.compile(r"^pitfall-\d{4}$"),
 }
 VALID_STATUSES = {
     "intent": {"draft", "active", "completed", "closed"},
     "task": {"planned", "executing", "review_needed", "closed"},
     "evidence": {"candidate", "verified", "archived"},
+    "pitfall": {"draft", "active", "superseded", "archived"},
 }
 REQUIRED_FIELDS = {
     "intent": ["id", "type", "title", "status", "created", "updated", "description", "success_criteria", "source"],
     "task": ["id", "type", "title", "status", "created", "updated", "description", "source", "acceptance"],
     "evidence": ["id", "type", "title", "status", "created", "updated", "evidence_type", "verification_method", "verification_result", "content"],
+    "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
 }
 LIST_FIELDS = {
     "intent": {"related_tasks", "related_adrs"},
     "task": {"related_adrs", "related_evidence", "related_changes"},
     "evidence": set(),
+    "pitfall": {"source_objects", "related_objects", "related_rules", "tags"},
 }
 VALID_EVIDENCE_TYPES = {"verification", "execution", "closure", "review"}
 VALID_VERIFICATION_RESULTS = {"pass", "fail", "partial"}
@@ -177,6 +182,23 @@ def validate_evidence(path: Path, data: dict[str, Any]) -> list[Issue]:
     return issues
 
 
+VALID_SEVERITY = {"low", "medium", "high", "critical"}
+VALID_REPEATABILITY = {"always", "conditional", "rare", "once"}
+
+
+def validate_pitfall(path: Path, data: dict[str, Any]) -> list[Issue]:
+    issues = validate_common(path, data, "pitfall")
+    severity = data.get("severity")
+    if severity is not None and severity not in VALID_SEVERITY:
+        valid_values = ", ".join(sorted(VALID_SEVERITY))
+        issues.append(Issue(str(path), "warning", "INVALID_SEVERITY", f"severity 必须是以下值之一: {valid_values}"))
+    repeatability = data.get("repeatability")
+    if repeatability is not None and repeatability not in VALID_REPEATABILITY:
+        valid_values = ", ".join(sorted(VALID_REPEATABILITY))
+        issues.append(Issue(str(path), "warning", "INVALID_REPEATABILITY", f"repeatability 必须是以下值之一: {valid_values}"))
+    return issues
+
+
 def validate_file(path: Path) -> tuple[list[Issue], bool]:
     data, load_issue = load_yaml(path)
     if load_issue:
@@ -188,6 +210,7 @@ def validate_file(path: Path) -> tuple[list[Issue], bool]:
         "intent": validate_intent,
         "task": validate_task,
         "evidence": validate_evidence,
+        "pitfall": validate_pitfall,
     }
     return validators[object_type](path, data), False
 
