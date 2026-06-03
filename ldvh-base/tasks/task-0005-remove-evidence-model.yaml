@@ -1,7 +1,7 @@
 id: task-0005
 type: task
 title: 取消 Evidence 独立事实模型并调整 Task 结果引用
-status: planned
+status: executing
 created: 2026-06-04
 updated: 2026-06-04
 description: |
@@ -9,18 +9,21 @@ description: |
   普通验证、结果物和关闭证据由 Task 的 verification、verification_result、closure_evidence、result_refs 或 artifact_refs 等字段承接；文档、日志、报告、截图、commit 等结果物作为被 Task 引用的事实或产物存在，不再额外包装成 Evidence YAML。
 source_intent: intent-0003
 source: intent-0003
-taskset:
 parent_task:
 sub_tasks: []
 acceptance: |
-  - [ ] Task 可直接引用文档、日志、报告、截图、commit 或测试结果
-  - [ ] Evidence 不再作为 active fact model 和 Task 必备关联对象
-  - [ ] 29 Evidence 规范与 Contract 被移除、废弃或降级
-  - [ ] 27 Task 规范和 Contract 增强结果物引用字段并移除 related_evidence 强依赖
-  - [ ] 现有 ev-0001 与 ev-0002 完成迁移或废弃说明
+  - [ ] 20 事实模型集合索引中 Evidence 从 active 降级为 removed
+  - [ ] 29-Evidence-验证证据.md 主规范删除
+  - [ ] 29.06-Contract.md 删除
+  - [ ] 29.01-Rules.md、29.02-Skill.md 等 Evidence 子文档删除
+  - [ ] 27 Task 规范中 related_evidence 字段移除，Evidence 引用关系移除
+  - [ ] 27.06-Contract.md 中 related_evidence 字段移除
+  - [ ] check_fact_model.py 中 evidence 类型校验移除
+  - [ ] ldvh-close SKILL.md 中 Evidence 验证结果检查移除
+  - [ ] ev-0001 和 ev-0002 实例文件删除
+  - [ ] 所有 Task 实例中 related_evidence 字段清空
 verification: |
   运行事实模型校验、specs 检查、pytest 或相关验证命令，确认取消 Evidence 后 Task 仍能承载验证方式、关闭证据和结果物引用。
 assignee: AI
 related_adrs: []
-related_evidence: []
 related_changes: []

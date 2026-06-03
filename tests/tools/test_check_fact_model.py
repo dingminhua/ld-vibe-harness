@@ -51,42 +51,7 @@ source: test
 acceptance:
   - Validator accepts this task
 related_adrs: []
-related_evidence: []
 related_changes: []
-{extra}
-"""
-
-
-def valid_evidence_yaml():
-    return """
-id: ev-0001
-type: evidence
-title: Valid Evidence
-status: verified
-created: "2026-06-03"
-updated: "2026-06-03"
-evidence_type: verification
-verification_method: pytest
-verification_result: pass
-content: Validator accepts this evidence
-source_task: task-0001
-"""
-
-
-def valid_taskset_yaml(status="active", extra=""):
-    return f"""
-id: taskset-0001
-type: taskset
-title: Valid TaskSet
-status: {status}
-created: "2026-06-04"
-updated: "2026-06-04"
-description: Define a valid taskset fixture
-scope: Test scope
-tasks:
-  - task-0001
-related_adrs: []
-related_evidence: []
 {extra}
 """
 
@@ -105,7 +70,6 @@ project_path: /tmp/test-project
 ldvh_base_path: /tmp/test-project/ldvh-base
 related_tasks: []
 related_adrs: []
-related_tasksets: []
 """
 
 
@@ -136,30 +100,6 @@ def test_valid_intent_cli_exit_zero(tmp_path):
 
 def test_valid_task_cli_exit_zero(tmp_path):
     path = write_yaml(tmp_path / "task-0001-valid-task.yaml", valid_task_yaml())
-
-    result = run_checker(path)
-
-    assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
-    assert result.stderr == ""
-
-
-def test_valid_evidence_cli_exit_zero(tmp_path):
-    path = write_yaml(tmp_path / "ev-0001-valid-evidence.yaml", valid_evidence_yaml())
-
-    result = run_checker(path)
-
-    assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
-    assert result.stderr == ""
-
-
-def test_valid_evidence_block_scalar_with_colon_cli_exit_zero(tmp_path):
-    content = valid_evidence_yaml().replace(
-        "content: Validator accepts this evidence",
-        "content: |\n  Validator accepts long text with colon: pass\n  command: python3 tools/check_fact_model.py",
-    )
-    path = write_yaml(tmp_path / "ev-0001-valid-evidence.yaml", content)
 
     result = run_checker(path)
 
@@ -204,14 +144,14 @@ def test_type_mismatch_cli_exit_one(tmp_path):
 
 
 def test_list_type_mismatch_cli_exit_one(tmp_path):
-    content = valid_task_yaml().replace("related_evidence: []", "related_evidence: ev-0001")
+    content = valid_task_yaml().replace("related_adrs: []", "related_adrs: adr-0001")
     path = write_yaml(tmp_path / "task-0001-list-type-mismatch.yaml", content)
 
     result = run_checker(path)
 
     assert result.returncode == 1
     assert "INVALID_LIST_FIELD" in result.stdout
-    assert "related_evidence" in result.stdout
+    assert "related_adrs" in result.stdout
     assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
 
 
@@ -270,7 +210,7 @@ def test_directory_batch_validation_summary(tmp_path):
     nested_dir.mkdir(parents=True)
     write_yaml(batch_dir / "intent-0001-valid-intent.yaml", valid_intent_yaml())
     write_yaml(batch_dir / "task-0001-valid-task.yaml", valid_task_yaml())
-    write_yaml(nested_dir / "ev-0001-valid-evidence.yaml", valid_evidence_yaml())
+    write_yaml(nested_dir / "memo-0001-valid-memo.yaml", valid_memo_yaml())
     invalid = valid_task_yaml().replace("status: planned", "status: invalid")
     write_yaml(nested_dir / "task-0001-invalid-status.yaml", invalid)
     (batch_dir / "ignored.yml").write_text("not: scanned\n", encoding="utf-8")
@@ -281,16 +221,6 @@ def test_directory_batch_validation_summary(tmp_path):
     assert "INVALID_STATUS" in result.stdout
     assert "ignored.yml" not in result.stdout
     assert "检查完成: files=4 errors=1 warnings=0" in result.stdout
-
-
-def test_valid_taskset_cli_exit_zero(tmp_path):
-    path = write_yaml(tmp_path / "taskset-0001-valid-taskset.yaml", valid_taskset_yaml())
-
-    result = run_checker(path)
-
-    assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
-    assert result.stderr == ""
 
 
 def test_valid_profile_cli_exit_zero(tmp_path):
@@ -311,18 +241,6 @@ def test_valid_memo_cli_exit_zero(tmp_path):
     assert result.returncode == 0
     assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
     assert result.stderr == ""
-
-
-def test_taskset_closed_missing_closure_fields(tmp_path):
-    content = valid_taskset_yaml(status="closed")
-    path = write_yaml(tmp_path / "taskset-0001-closed-no-closure.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "MISSING_CLOSURE_FIELD" in result.stdout
-    assert "closed_at" in result.stdout
-    assert "closure_evidence" in result.stdout
 
 
 def test_memo_invalid_category(tmp_path):
@@ -356,16 +274,6 @@ def test_memo_invalid_priority_warning(tmp_path):
     assert result.returncode == 0
     assert "INVALID_PRIORITY" in result.stdout
     assert "检查完成: files=1 errors=0 warnings=1" in result.stdout
-
-
-def test_taskset_invalid_status(tmp_path):
-    content = valid_taskset_yaml(status="unknown")
-    path = write_yaml(tmp_path / "taskset-0001-invalid-status.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "INVALID_STATUS" in result.stdout
 
 
 def test_profile_invalid_status(tmp_path):

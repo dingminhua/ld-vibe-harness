@@ -1,7 +1,7 @@
 id: task-0004
 type: task
 title: 取消 TaskSet 独立事实模型并调整 Intent/Task 关系
-status: planned
+status: executing
 created: 2026-06-04
 updated: 2026-06-04
 description: |
@@ -9,19 +9,23 @@ description: |
   调整 Task 与 Intent 的关系，移除 TaskSet 强制归属、自动归类和级联关闭要求，并明确 Web 或轻量字段承接分组展示。
 source_intent: intent-0003
 source: intent-0003
-taskset:
 parent_task:
 sub_tasks: []
 acceptance: |
-  - [ ] 20 事实模型集合索引中 TaskSet 主链路职责被移除或降级
-  - [ ] 24 Intent 中 TaskSet 主链路职责被移除或降级
-  - [ ] 27 Task 中 TaskSet 主链路职责被移除或降级
-  - [ ] 28 TaskSet 及相关 Contract、Skill、Rules、Validator 中 TaskSet 主链路职责被移除或降级
-  - [ ] 现有 task-0003 不再引用 taskset-0002
-  - [ ] taskset-0002 被关闭、废弃或迁移方案明确
+  - [ ] 20 事实模型集合索引中 TaskSet 从 active 降级为 removed
+  - [ ] 28-TaskSet-任务集.md 主规范删除
+  - [ ] 28.06-Contract.md 删除
+  - [ ] 28.01-Rules.md、28.02-Skill.md 等 TaskSet 子文档删除
+  - [ ] 27 Task 规范和 Contract 中 taskset 字段移除
+  - [ ] 27.06-Contract.md 中 taskset 字段和 related_evidence 字段移除
+  - [ ] check_fact_model.py 中 taskset 类型校验移除
+  - [ ] ldvh-intake SKILL.md 中 TaskSet 归类逻辑移除
+  - [ ] ldvh-close SKILL.md 中 TaskSet 级联检查移除
+  - [ ] taskset-0001 和 taskset-0002 实例文件删除
+  - [ ] task-0003 不再引用 taskset 字段
+  - [ ] 所有 Task 实例中 taskset 字段清空
 verification: |
   运行相关事实模型校验、specs 检查、lint/typecheck 或可用测试命令，确认取消 TaskSet 后 Intent/Task 主链路可被事实源和工具正确解析。
 assignee: AI
 related_adrs: []
-related_evidence: []
 related_changes: []

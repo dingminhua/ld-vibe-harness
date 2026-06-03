@@ -9,7 +9,6 @@ description: |
   本任务用于固化 YAML 长文本字段的安全写入规则，降低后续 Intent、Task、Evidence 写入时的解析失败风险。
 source_intent: intent-0001
 source: intent-0001
-taskset: taskset-0001
 acceptance: |
   - [ ] ldvh-intake、ldvh-close 或相关写入说明明确提示长文本字段优先使用 YAML 块标量
   - [ ] Fact Validator 或测试覆盖含冒号长文本的合法样例
@@ -17,9 +16,6 @@ acceptance: |
 verification: python3 tools/check_fact_model.py ldvh-base/intents/ ldvh-base/tasks/ ldvh-base/evidence/ && python3 -m pytest tests/tools/test_check_fact_model.py
 assignee: AI
 related_adrs: []
-related_evidence:
-  - ev-0001
-  - ev-0002
 related_changes: []
 closed_at: 2026-06-04
 closure_evidence: |

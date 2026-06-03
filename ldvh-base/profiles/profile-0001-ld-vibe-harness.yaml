@@ -16,6 +16,4 @@ related_tasks:
   - task-0001
   - task-0002
 related_adrs: []
-related_tasksets:
-  - taskset-0001
 notes: LDVH 核心项目，所有规范和事实模型的管辖项目

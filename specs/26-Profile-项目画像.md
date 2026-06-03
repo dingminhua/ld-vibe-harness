@@ -150,13 +150,7 @@ Profile 可关联多个 Memo，作为项目级备忘。
 
 创建 Profile 后，关联 Memo 的 `related_profiles` 字段应记录 Profile ID（如 Memo 模型支持）。Memo 的字段和状态由 Memo 对象模型定义。
 
-### 6.4 Profile → TaskSet
-
-Profile 可关联多个 TaskSet，作为项目级任务集。
-
-创建 Profile 后，关联 TaskSet 的 `related_profiles` 字段应记录 Profile ID（如 TaskSet 模型支持）。TaskSet 的字段和状态由 TaskSet 对象模型定义。
-
-### 6.5 Profile → Change
+### 6.4 Profile → Change
 
 Profile 的创建、状态变更和归档都应记录 Change。Change 以 Git commit 为权威事实源（依据 `specs/22-Change-变更记录.md`）。
 
@@ -203,7 +197,6 @@ Profile 基础字段遵循 `specs/13-LDVH事实模型基础规范.md` §7.3 的�
 | `skills_path` | string | 否 | .trae/skills/ 路径 |
 | `related_tasks` | list of string | 否 | 关联 Task ID 列表 |
 | `related_adrs` | list of string | 否 | 关联 ADR ID 列表 |
-| `related_tasksets` | list of string | 否 | 关联 TaskSet ID 列表 |
 | `notes` | string | 否 | 补充说明 |
 
 字段约束和完整 YAML 示例详见 `specs/26.06-Contract.md`。
@@ -214,7 +207,7 @@ Profile 基础字段遵循 `specs/13-LDVH事实模型基础规范.md` §7.3 的�
 
 1. 创建 Profile 时应记录 Change（依据 `specs/22-Change-变更记录.md`）；
 2. Profile 状态变更时应记录 Change；
-3. Profile 关联 Task、ADR、Memo、TaskSet 时应更新对应字段并记录 Change；
+3. Profile 关联 Task、ADR、Memo 时应更新对应字段并记录 Change；
 4. Profile 实例写入 `ldvh-base/profiles/` 目录后，应确保文件命名符合 `profile-{NNNN}-project-name.yaml` 格式。
 
 ---

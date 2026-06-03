@@ -7,7 +7,6 @@ updated: 2026-06-04
 description: 创建第一组真实 Intent / Task / Evidence 实例，用于验证 LDVH 最小 Core Loop 是否可在自身项目中跑通。
 source_intent: intent-0001
 source: intent-0001
-taskset: taskset-0001
 acceptance: |
   - [ ] Intent、Task、Evidence YAML 均存在
   - [ ] 通过 tools/check_fact_model.py 校验
@@ -15,8 +14,6 @@ acceptance: |
 verification: python3 tools/check_fact_model.py ldvh-base/intents/ ldvh-base/tasks/ ldvh-base/evidence/
 assignee: AI
 related_adrs: []
-related_evidence:
-  - ev-0001
 related_changes: []
 closed_at: 2026-06-04
 closure_evidence: ev-0001 记录第一组 Intent / Task / Evidence 事实实例通过最小 Fact Validator 校验，最终结果为 files=3 errors=0 warnings=0。

@@ -12,54 +12,42 @@ from typing import Any
 import yaml
 
 
-OBJECT_TYPES = {"intent", "task", "evidence", "pitfall", "taskset", "profile", "memo"}
+OBJECT_TYPES = {"intent", "task", "pitfall", "profile", "memo"}
 FILENAME_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "task": re.compile(r"^task-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "evidence": re.compile(r"^ev-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "taskset": re.compile(r"^taskset-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "profile": re.compile(r"^profile-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
 }
 ID_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}$"),
     "task": re.compile(r"^task-\d{4}$"),
-    "evidence": re.compile(r"^ev-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
-    "taskset": re.compile(r"^taskset-\d{4}$"),
     "profile": re.compile(r"^profile-\d{4}$"),
     "memo": re.compile(r"^memo-\d{4}$"),
 }
 VALID_STATUSES = {
     "intent": {"draft", "active", "completed", "closed"},
     "task": {"planned", "executing", "review_needed", "closed"},
-    "evidence": {"candidate", "verified", "archived"},
     "pitfall": {"draft", "active", "superseded", "archived"},
-    "taskset": {"planned", "active", "review_needed", "closed"},
     "profile": {"draft", "active", "suspended", "archived"},
     "memo": {"draft", "active", "resolved", "archived"},
 }
 REQUIRED_FIELDS = {
     "intent": ["id", "type", "title", "status", "created", "updated", "description", "success_criteria", "source"],
     "task": ["id", "type", "title", "status", "created", "updated", "description", "source", "acceptance"],
-    "evidence": ["id", "type", "title", "status", "created", "updated", "evidence_type", "verification_method", "verification_result", "content"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
-    "taskset": ["id", "type", "title", "status", "created", "updated", "description", "scope", "tasks"],
     "profile": ["id", "type", "title", "status", "created", "updated", "description", "project_name", "project_path", "ldvh_base_path"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category"],
 }
 LIST_FIELDS = {
     "intent": {"related_tasks", "related_adrs"},
-    "task": {"related_adrs", "related_evidence", "related_changes", "sub_tasks"},
-    "evidence": set(),
+    "task": {"related_adrs", "related_changes", "sub_tasks"},
     "pitfall": {"source_objects", "related_objects", "related_rules", "tags"},
-    "taskset": {"tasks", "related_adrs", "related_evidence"},
-    "profile": {"related_tasks", "related_adrs", "related_tasksets"},
-    "memo": {"related_tasks", "related_adrs", "related_evidence"},
+    "profile": {"related_tasks", "related_adrs"},
+    "memo": {"related_tasks", "related_adrs"},
 }
-VALID_EVIDENCE_TYPES = {"verification", "execution", "closure", "review"}
-VALID_VERIFICATION_RESULTS = {"pass", "fail", "partial"}
 
 
 @dataclass(frozen=True)
@@ -140,10 +128,6 @@ def infer_object_type(path: Path, data: dict[str, Any]) -> str | None:
         return "intent"
     if name.startswith("task-"):
         return "task"
-    if name.startswith("ev-"):
-        return "evidence"
-    if name.startswith("taskset-"):
-        return "taskset"
     if name.startswith("profile-"):
         return "profile"
     if name.startswith("memo-"):
@@ -198,21 +182,6 @@ def validate_task(path: Path, data: dict[str, Any]) -> list[Issue]:
     return issues
 
 
-def validate_evidence(path: Path, data: dict[str, Any]) -> list[Issue]:
-    issues = validate_common(path, data, "evidence")
-    evidence_type = data.get("evidence_type")
-    if evidence_type not in VALID_EVIDENCE_TYPES:
-        valid_values = ", ".join(sorted(VALID_EVIDENCE_TYPES))
-        issues.append(Issue(str(path), "error", "INVALID_EVIDENCE_TYPE", f"evidence_type 必须是以下值之一: {valid_values}"))
-    verification_result = data.get("verification_result")
-    if verification_result not in VALID_VERIFICATION_RESULTS:
-        valid_values = ", ".join(sorted(VALID_VERIFICATION_RESULTS))
-        issues.append(Issue(str(path), "error", "INVALID_VERIFICATION_RESULT", f"verification_result 必须是以下值之一: {valid_values}"))
-    if is_empty(data.get("source_task")) and is_empty(data.get("source_adr")):
-        issues.append(Issue(str(path), "error", "MISSING_EVIDENCE_SOURCE", "source_task 或 source_adr 至少一个必须非空"))
-    return issues
-
-
 VALID_SEVERITY = {"low", "medium", "high", "critical"}
 VALID_REPEATABILITY = {"always", "conditional", "rare", "once"}
 VALID_MEMO_CATEGORIES = {"discovery", "reminder", "question", "gap", "preference"}
@@ -229,15 +198,6 @@ def validate_pitfall(path: Path, data: dict[str, Any]) -> list[Issue]:
     if repeatability is not None and repeatability not in VALID_REPEATABILITY:
         valid_values = ", ".join(sorted(VALID_REPEATABILITY))
         issues.append(Issue(str(path), "warning", "INVALID_REPEATABILITY", f"repeatability 必须是以下值之一: {valid_values}"))
-    return issues
-
-
-def validate_taskset(path: Path, data: dict[str, Any]) -> list[Issue]:
-    issues = validate_common(path, data, "taskset")
-    if data.get("status") == "closed":
-        for field in ["closed_at", "closure_evidence"]:
-            if is_empty(data.get(field)):
-                issues.append(Issue(str(path), "error", "MISSING_CLOSURE_FIELD", f"closed 状态必须提供非空字段: {field}"))
     return issues
 
 
@@ -272,9 +232,7 @@ def validate_file(path: Path) -> tuple[list[Issue], bool]:
     validators = {
         "intent": validate_intent,
         "task": validate_task,
-        "evidence": validate_evidence,
         "pitfall": validate_pitfall,
-        "taskset": validate_taskset,
         "profile": validate_profile,
         "memo": validate_memo,
     }
@@ -287,7 +245,7 @@ def print_issues(issues: list[Issue]) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="校验 Intent、Task、Evidence 事实模型 YAML 文件")
+    parser = argparse.ArgumentParser(description="校验 Intent、Task 事实模型 YAML 文件")
     parser.add_argument("paths", nargs="+", help="一个或多个 .yaml 文件或目录")
     return parser.parse_args()
 

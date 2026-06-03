@@ -136,16 +136,16 @@ Change 没有状态字段，没有状态流转。一个 Change 事实实例只�
 
 ### 6.4 Record 阶段完成判断条件
 
-Core Loop 的 Record 阶段完成判断需要 Task、Evidence 和 Change 三者共同支撑。一个 Task 的 Record 阶段视为完成，当且仅当：
+Core Loop 的 Record 阶段完成判断需要 Task 和 Change 共同支撑。一个 Task 的 Record 阶段视为完成，当且仅当：
 
 1. **Task 已关闭**：Task 状态为 `closed`，`closure_evidence` 已填写；
-2. **至少一条 Evidence**：Task 的 `related_evidence` 中至少有一条 `verification_result` 为 `pass` 的 Evidence；
-3. **对应 Change 已提交**：存在至少一个符合本文 §8 格式的 commit，其 `Refs:` 引用了该 Task ID。
+2. **对应 Change 已提交**：存在至少一个符合本文 §8 格式的 commit，其 `Refs:` 引用了该 Task ID。
 
-三者缺一不可：
-- Task 关闭但无 Evidence → 无法证明完成质量；
-- Task 关闭且有 Evidence 但无 Change → 变更未沉淀到事实源；
+两者缺一不可：
+- Task 关闭但无 Change → 变更未沉淀到事实源；
 - 有 Change 但 Task 未关闭 → 变更未经过关闭审查。
+
+注：Evidence 独立事实模型已取消，验证和关闭证据由 Task 的 `closure_evidence` 字段和引用结果物承接。
 
 `ldvh-close` Skill 在关闭 Task 时，必然修改事实源（status → closed、closed_at、closure_evidence），属于准入变更，因此必须内部调用 `ldvh-commit` Skill 编排提交，确保 Change 与 Task 关闭同步完成。
 
@@ -248,7 +248,6 @@ Refs: ADR-0001, Task-0042
 | `Task` | Task 任务 |
 | `Memo` | Memo 备忘 |
 | `Risk` | Risk 风险 |
-| `Evidence` | Evidence 证据 |
 
 ### 8.5 格式约束
 
