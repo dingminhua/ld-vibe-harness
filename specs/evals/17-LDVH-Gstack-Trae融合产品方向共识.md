@@ -45,7 +45,7 @@ Gstack 的体验范式
 2. **LDVH 提供治理骨架**：LDVH 的核心价值仍是 Git 文件事实源、事实模型、状态机、Human Gate、Evidence、Change、ADR、Rules、Skill、Tools 与 AI 第一服务对象原则。
 3. **Trae Solo 提供运行环境**：Trae Solo 的 Rules、Skill、Agent、Tools、AskUserQuestion、RunCommand、Preview、Schedule、Memory 等能力，是 LDVH 在当前环境中产品化的原生承载层。
 4. **三者融合的目标不是复刻 Gstack，而是形成 Trae-native 的 LDVH Core Loop**：把 `Intent → Plan → Execute → Verify → Record → Learn` 做成 AI 进入项目后的第一体验。
-5. **当前 LDVH 已经具备最小 Dogfood 基础**：7 个事实对象、4 个 Core Loop Skill、Fact Validator 覆盖全部对象类型。
+5. **当前 LDVH 已经具备最小 Dogfood 基础**：9 个 active fact models，其中 Intent / Task / TaskSet / Evidence / Memo / Profile / Pitfall 这 7 类 YAML Dogfood 对象已由 Fact Validator 覆盖，ADR / Change 由专用流程和提交纪律承接。
 6. **当前最应优先补齐的不是继续抽象新对象，而是 Record / Change 闭环和执行中发现问题的分流规则**。
 
 ---
@@ -56,12 +56,12 @@ Gstack 的体验范式
 
 LDVH 不照搬 Gstack 的具体实现，但吸收 Gstack 对 AI 编程工作流产品化的关键洞察。
 
-通过读取 Gstack 代码可以确认，Gstack 的本质不是单一浏览器工具，也不是一批 prompt，而是一套把 AI 工程工作流做成产品的机制：
+通过读取 Gstack 代码可以确认，Gstack 的本质不是单一浏览器工具，也不是一批 prompt，而是一套把 AI 工程工作流做成产品的机制。LDVH 后续要做的是在 Trae-native、Git 事实源和 Human Gate 纪律之上吸收完整经验，并做出更适合 Vibe Coding 治理场景的版本，而不是把 Gstack 简化成少数口号：
 
 1. 顶层工作流把工程过程组织为 `Think → Plan → Build → Review → Test → Ship → Reflect`；
 2. 大量 `SKILL.md` 将产品、计划、工程、Review、QA、发布、复盘等环节角色化；
 3. `SKILL.md.tmpl`、生成器、host config 和 runtime assets 共同避免多宿主、多 Skill 手工漂移；
-4. browse daemon 把浏览器变成低延迟、可连续操作、可验证真实页面的硬能力；
+4. browse daemon 把浏览器变成低延迟、可连续操作、可验证真实页面的硬能力，这一思想应进入 LDVH 长期产品设计，后续可评估 Trae Preview、RunCommand、PyTools、浏览器 MCP 或其他轻量替代实现；
 5. AskUserQuestion decision brief 把 Human Gate 变成结构化问询协议；
 6. review / qa / ship 等 Skill 把 scope drift、真实浏览器 QA、回归验证、发布 gate 纳入流程；
 7. trust boundary、CDP allowlist、scoped token 等机制说明工具输出和网页内容必须分可信边界。
@@ -75,11 +75,12 @@ Gstack 对 LDVH 的价值在于提供体验范式，而不是提供可直接复�
 3. **使用即流程**：正确行为应成为 AI 默认路径，而不是只写在规范里；
 4. **质量门禁前置**：Plan、Human Gate、Verify、Evidence、Change 应进入主流程；
 5. **产物连续交接**：前一阶段产物应成为后一阶段输入，而不是散落在对话中；
-6. **真实环境验证**：对 Web、CLI、安装、发布类任务，真实交互验证比静态自信更重要；
+6. **真实环境验证**：对 Web、CLI、安装、发布类任务，真实交互验证比静态自信更重要；Gstack browser daemon 背后的持久真实交互环境思想应被保留，并寻找 Trae-native 或轻量变通实现；
 7. **信任边界显式化**：网页内容、外部工具输出、运行时缓存、AI 记忆均不能自动等同于权威事实源；
-8. **产品体验优先**：框架应让 AI 更容易正确工作，而不是只让规范更完整。
+8. **产品体验优先**：框架应让 AI 更容易正确工作，而不是只让规范更完整；
+9. **过程沉淀为规范**：Gstack 的启发之一是规范、约束和质量门禁不是一次性预设完成，而是在一个个真实流程、决策和复盘中逐步构建；LDVH 当前的正式 specs 可以理解为大量历史 ADR、经验和规则已经被消化后固化成文档的结果，后续仍应允许新 ADR 驱动规范演进。
 
-Gstack 的具体实现，如 Claude Code Skill 结构、slash command、本地隐藏状态目录、浏览器 daemon、大量角色 Agent、自动遥测、自动更新、自动提交、自动发布、ngrok tunnel 和 ML prompt-injection classifier，不作为 LDVH 在 Trae Solo 环境中的直接实现模板。
+Gstack 的具体实现，如 Claude Code Skill 结构、slash command、本地隐藏状态目录、大量角色 Agent、自动遥测、自动更新、自动提交、自动发布、ngrok tunnel 和 ML prompt-injection classifier，不作为 LDVH 在 Trae Solo 环境中的直接实现模板。浏览器 daemon 不作为默认照搬实现，但其“持久真实交互环境 + 可验证页面状态 + 低延迟操作通道”的产品思想应保留，并在后续寻找 Trae-native 或轻量变通实现。
 
 ### 3.2 共识二：LDVH 将演进为更适合 Vibe Coding 的产品
 
@@ -94,7 +95,8 @@ LDVH 的目标不是单纯的规范库，也不是一组内部规则，而是面
 5. **可验证**：AI 的输出能通过 PyTools、Fact Validator、Gate Detector、Evidence Collector、测试和真实交互验证；
 6. **可沉淀**：Intent、Task、ADR、Evidence、Change、Pitfall、Memo 等事实能回到 Git 文件事实源或正式规范；
 7. **可审计**：Human Gate、状态流转、事实源写入、验证命令和 Change 记录可追溯；
-8. **可演进**：框架能通过 Learn、Retro、Rule 改进、Tools 改进和版本升级持续优化。
+8. **可演进**：框架能通过 Learn、Retro、ADR、Rule 改进、Tools 改进和版本升级持续优化；
+9. **可观察和可操作**：用户能通过 Web 入口快速理解当前状态，并在受控边界内变更状态或记录新的 Memo。
 
 因此，LDVH 不应继续以"先补全所有规范"为第一体验，而应以 Core Loop 为第一体验：
 
@@ -122,7 +124,7 @@ Intent / Task / ADR / Evidence / Change
 | Evidence | 完成判断靠什么证据支撑 |
 | Change | 实际发生了什么变化，为什么变化，影响范围是什么 |
 
-第二层扩展对象按痛点启用，包括 TaskSet、Memo、Profile、Pitfall、Risk、Dependency、Artifact、Checklist 等。
+已落地对象分为两层：第一层是 Intent / Task / ADR / Evidence / Change 构成的最小治理内核；第二层是 TaskSet / Memo / Profile / Pitfall 这 4 类已在 Dogfood 压力下落地的扩展对象。Risk / Dependency / Artifact / Checklist / Roadmap 仍保持字段、关系、模板或文档承载，暂不独立对象化。
 
 这意味着：
 
@@ -138,9 +140,9 @@ Intent / Task / ADR / Evidence / Change
 
 ### 4.1 Gstack 提供体验范式
 
-Gstack 的作用是启发 LDVH 如何把 AI 工程工作流做成低摩擦产品体验。
+Gstack 的作用是启发 LDVH 如何把 AI 工程工作流做成低摩擦产品体验。这里的借鉴不是把 Gstack 简化为一个生命周期口号，而是保留它的完整产品机制：工作流阶段、角色化 Skill、模板生成、多宿主适配、浏览器真实验证、Human Gate decision brief、scope drift、plan-completion review、ship/release gate、retro/learn、信任边界和工具安全。
 
-它提供的不是实现边界，而是体验参照：
+它提供的是完整体验参照，而不是可直接搬运的实现边界：
 
 ```text
 Think → Plan → Build → Review → Test → Ship → Reflect
@@ -157,7 +159,7 @@ Gstack 中最值得 LDVH 借鉴的是：
 1. 生命周期式 Skill，而不是零散命令；
 2. 计划、评审、QA、发布、复盘之间的产物交接；
 3. AskUserQuestion decision brief 形式的 Human Gate；
-4. 浏览器 QA 和真实交互验证思想；
+4. 浏览器 QA、持久真实交互环境和可验证页面状态思想；
 5. Skill 模板化和宿主适配机制；
 6. 工具输出的 trust boundary；
 7. team mode 中"可选试点 / 强制接入"的 adoption 思路；
@@ -297,7 +299,7 @@ Trae 提供运行环境；
 
 ### 6.1 核心事实对象
 
-已补齐最小事实内核中的 7 个对象：
+已补齐 9 个 active fact models；其中 7 类 YAML Dogfood 对象已补齐规范、契约与实例化承载：
 
 | 对象 | 规范 | 契约 | 状态 |
 |---|---|---|---|
@@ -316,7 +318,7 @@ ADR(21) 和 Change(22) 已有完整规范。Intent、Task、Evidence 当前为�
 已创建：
 
 1. `ldvh-intake`：用户意图 → 识别场景 → 创建 Intent/Task/TaskSet/Memo/Profile → TaskSet 自动归类 → Human Gate → 写入事实源；
-2. `ldvh-close`：关闭条件校验（含子任务联动、TaskSet 关闭）→ Human Gate → 状态更新 → 级联检查（Intent/TaskSet/父任务）→ Change 记录；
+2. `ldvh-close`：关闭条件校验（含子任务联动、TaskSet 关闭）→ Human Gate → 状态更新 → 级联检查（Intent/TaskSet/父任务）→ 若产生准入变更则进入 `ldvh-commit` / Change 流程；
 3. `ldvh-adr`：ADR 创建、状态流转和受控写入；
 4. `ldvh-commit`：准入变更提交编排。
 
@@ -358,12 +360,12 @@ Dogfood 暴露 YAML 长文本问题 → task-0002 → Skill / Tool / Test 修复
 
 截至 2026-06-04，LDVH MVP 骨架已经推进到 **生产对象体系梳理完成并进入 Dogfood 验证** 阶段：
 
-1. **最小事实内核已扩展至 7 个对象**：Intent / Task / TaskSet / Evidence / Memo / Profile / Pitfall 均已有精简版规范和 Contract；ADR / Change 已有完整规范。
-2. **PyTools 校验能力已覆盖全部 7 种对象**：`tools/check_fact_model.py` 已支持 Intent / Task / TaskSet / Evidence / Memo / Profile / Pitfall；`tests/tools/test_check_fact_model.py` 已覆盖 22 个测试用例。
+1. **最小事实内核已扩展至 9 个 active fact models**：ADR / Change 已有完整规范；Intent / Task / TaskSet / Evidence / Memo / Profile / Pitfall 这 7 类 YAML Dogfood 对象均已有精简版规范和 Contract。
+2. **PyTools 校验能力已覆盖 7 类 YAML Dogfood 对象**：`tools/check_fact_model.py` 已支持 Intent / Task / TaskSet / Evidence / Memo / Profile / Pitfall；ADR / Change 由专用流程、commit message 契约和提交纪律承接；`tests/tools/test_check_fact_model.py` 已覆盖 22 个测试用例。
 3. **Dogfood 实例已创建**：taskset-0001（核心事实模型 Dogfood）、profile-0001（ld-vibe-harness 项目画像）、memo-0001（22 子文档状态缺口）、pitfall-0001/0002/0003 已实例化。
 4. **Skill 已支持新对象类型**：`ldvh-intake` 新增 TaskSet/Memo/Profile 创建分支和 TaskSet 自动归类；`ldvh-close` 新增 TaskSet 关闭、子任务联动、级联检查。
 5. **Task 子任务机制已落地**：parent_task/sub_tasks 字段、深度限制两层、关闭前置条件。
-6. **Pitfall-0002/0003 已修复并 superseded**：22 主文档与子文档状态矛盾已修复；提交纪律规则重复维护已通过 L0 去重修复（权威位置确定为 22.01-Rules.md）。
+6. **Pitfall-0002/0003 已修复并 superseded**：Change 需要 22 系列子文档承接 Rules、Skill、Tools、Contract 等实践机制；当前 22 主文档仍需继续清理历史残留表述，提交纪律规则重复维护已通过 L0 去重修复（权威位置确定为 22.01-Rules.md）。
 7. **specs 文档规范已清理**：32 个 not-created 子文档章节编号补齐，22.02 编号跳跃修复，check_03 问题从 113 降至 0。
 
 ---
@@ -391,20 +393,21 @@ Dogfood 暴露 YAML 长文本问题 → task-0002 → Skill / Tool / Test 修复
 
 ### 7.2 Gstack 借鉴边界
 
-Gstack 对 LDVH 的价值主要是流程和产物连续交接，而不是事实对象模型本身。LDVH 当前只吸收以下方向：
+Gstack 对 LDVH 的价值主要是完整的产品化工程工作流和产物连续交接，而不是事实对象模型本身。LDVH 当前应吸收以下方向：
 
 1. 阶段化流程：让 AI 知道当前在 Intent、Plan、Execute、Verify、Record、Learn 哪一段；
 2. 产物连续交接：前一阶段输出应成为后一阶段输入；
 3. 质量门禁前置：测试、检查、review、ship summary 不能只靠最后补救；
 4. 角色化审查思路：在必要时用少量高价值 Agent 或 Skill 辅助，而不是一次性创建大量角色；
-5. JSONL、ship sections、TODO.md 等只作为流程产物参考，不作为 LDVH 权威事实源。
+5. JSONL、ship sections、TODO.md 等只作为流程产物参考，不作为 LDVH 权威事实源；
+6. 真实环境能力：吸收 Gstack browser daemon 背后的思想，把浏览器、CLI、安装、预览和运行时页面状态纳入可验证证据链；具体实现优先寻找 Trae-native 或轻量替代，而不是默认复制外部 daemon。
 
 ### 7.3 删除、降级与不吸收清单
 
 当前明确删除、降级或不吸收：
 
 1. 不把 Risk / 风险、Dependency / 依赖、Artifact / 产物、Checklist / 检查清单、Roadmap / 路线图列入当前独立事实模型落地优先队列；
-2. 不直接吸收 Gstack 的 browser daemon、remote tunnel、本地隐藏状态目录、runtime cache 或 telemetry 作为权威事实源；
+2. 不直接吸收 Gstack 的 browser daemon、remote tunnel、本地隐藏状态目录、runtime cache 或 telemetry 作为权威事实源；browser daemon 的思想保留为后续真实验证能力候选，但实现方式必须服从 Trae-native、Human Gate 和 Git 事实源边界；
 3. 不一次性创建大量 Agent、角色 Skill 或复杂 review army；
 4. 不自动发布、自动合并、自动提交；提交仍按 `ldvh-commit` Skill 和 Change 纪律执行；
 5. 不把 checklist、artifact、dependency 这类属性型概念强行对象化；
@@ -458,7 +461,7 @@ Gstack 对 LDVH 的价值主要是流程和产物连续交接，而不是事实�
 
 ### 9.1 当前真正下一步：补齐 Change / Record 闭环
 
-当前下一步不再是"创建 Fact Validator Spec"，也不再是"证明最小事实内核能否跑通"。这些已经有初步成果。
+当前下一步不是单独创建一个宏大的 Fact Validator Spec，也不再是“证明最小事实内核能否跑通”。这些已经有初步成果。Fact Validator / PyTools 的规范化应围绕 Record / Change 闭环需要，以最小必要方式推进。
 
 当前真正下一步是：
 
@@ -469,11 +472,11 @@ Gstack 对 LDVH 的价值主要是流程和产物连续交接，而不是事实�
 需要回答的问题是：
 
 1. Change 的最小事实源是否继续以 Git commit message 为主？
-2. `ldvh-close` 关闭 Task 时，是否必须产生 Change 摘要？
+2. `ldvh-close` 关闭 Task 时，如何形成足够的 Record 摘要，并在产生准入变更时进入 `ldvh-commit` / Change 流程？
 3. `ldvh-commit` 提交时，如何消费 Task / Evidence / ADR 信息形成 Change 记录？
 4. Task 的 `related_changes` 当前为空时，是否影响关闭判断？
-5. 是否需要 `ldvh-base/changes/` YAML 实例目录？
-6. 如果需要新增 Change YAML，是否必须先通过 ADR 决策事实源归属变化？
+5. 当前规范已取消 `ldvh-base/changes/` YAML 实例目录，本项目不再把它作为近期方案；文档保留该问题作为历史迁移说明和外部用户兼容提示。
+6. 如果其他用户或未来部署形态确实需要新增 Change YAML，是否必须先通过 ADR 决策事实源归属变化？
 7. 如果暂不新增 Change YAML，Evidence、Task closure、commit message 三者如何共同支撑 Record 阶段完成判断？
 
 本文建议短期采用过渡策略：
@@ -481,7 +484,7 @@ Gstack 对 LDVH 的价值主要是流程和产物连续交接，而不是事实�
 ```text
 Change 暂以 specs/22 定义的 Git commit message / ldvh-commit / check_22_commit_format.py 为主承载；
 Task closure 和 Evidence 中保留足够摘要；
-暂不直接新增 ldvh-base/changes/ YAML；
+暂不直接新增 ldvh-base/changes/ YAML；该做法属于旧方案，本项目当前已取消，但保留为历史迁移和外部用户适配问题；
 若未来决定实例化 Change YAML，应先进入 ADR 或正式规范升级流程。
 ```
 
@@ -556,12 +559,12 @@ Gstack 的 Skill prompt 不是简单的"角色 Skill 目录"，其中包含大�
 
 建议下一批生命周期 Skill 的设计顺序为：
 
-1. `ldvh-spec`：负责需求澄清、规格草案、验收标准、Human Gate 选项和事实源归属判断；
-2. `ldvh-plan`：吸收 Gstack plan / spec / review 的任务澄清、风险识别、scope drift 和验证计划表达；
-3. `ldvh-verify`：吸收 Gstack QA 的真实验证、分级检查、修复后复验和证据摘要；
+1. `ldvh-plan`：吸收 Gstack plan / spec / review 的任务澄清、风险识别、scope drift 和验证计划表达，围绕 Task 形成执行计划、风险、验证命令和 Human Gate 判断；
+2. `ldvh-verify`：吸收 Gstack QA 的真实验证、分级检查、修复后复验和证据摘要；
+3. `ldvh-close` 继续强化：吸收 ship / release gate 的完成判断、变更摘要和交付前检查，并在准入变更发生时进入 `ldvh-commit` / Change 流程；
 4. `ldvh-review`：吸收 Gstack review 的 diff 审查、结构性问题、trust boundary 和 pre-landing gate；
 5. `ldvh-retro`：吸收 Gstack retro / learn 的经验沉淀、趋势复盘和可执行改进；
-6. `ldvh-close` 继续强化：吸收 ship / release gate 的完成判断、变更摘要和交付前检查。
+6. `ldvh-spec`：作为后续候选，负责需求澄清、规格草案、验收标准、Human Gate 选项和事实源归属判断，但必须避免和 Trae 原生 `/spec` 边界混淆。
 
 ### 9.6 第六步：明确 Spec / Plan 与自有 Skill 的协同边界
 
@@ -608,7 +611,7 @@ Git 文件事实源 → PyTools 聚合 → Web 只读展示 → 人做更高质�
 5. **先 Record / Change，后 Web 写入**：没有可追溯变更记录之前，不应扩大写入入口；
 6. **先 Contract 消费，后复杂自动化**：先让 PyTools 能读契约校验事实，再做自动修复、受控写入和 Web 展示；
 7. **先 Dogfood，后产品扩张**：先在 LDVH 自身验证 Core Loop，再考虑外部用户安装体验；
-8. **先 Trae-native，后外部依赖**：优先使用 Trae 原生机制，不急于引入外部 daemon 或复杂 CLI；
+8. **先 Trae-native，后外部依赖**：优先使用 Trae 原生机制；browser daemon 的产品思想保留，但具体实现先评估 Preview、RunCommand、PyTools、浏览器 MCP 或其他轻量替代，不急于引入外部 daemon 或复杂 CLI；
 9. **先可解释，后自动化**：所有自动化必须能解释依据、来源和影响范围；
 10. **先低风险信任边界，后高成本安全栈**：先做 untrusted envelope、allowlist、scoped token，再考虑复杂模型检测。
 
@@ -627,7 +630,7 @@ Git 文件事实源 → PyTools 聚合 → Web 只读展示 → 人做更高质�
 7. 不把 Memory 当作 Git 文件事实源的替代品；
 8. 不自动发布、自动提交、自动合并；
 9. 不先做复杂 Web 产品再验证 Core Loop；
-10. 不在没有 Contract 消费规则的情况下扩张 PyTools；
+10. 不在没有 Contract 消费路线的情况下大规模扩张 PyTools；允许为当前闭环补最小只读校验工具，但新增工具应说明未来如何迁移到 Contract 消费；
 11. 不把 `.trae/specs/` 变成第二套权威状态；
 12. 不让 Skill 内部触发 `/spec` 或 `/plan`；
 13. 不把 Plan / Spec 确认当作正式 Human Gate 的替代品；
@@ -688,32 +691,40 @@ LDVH 当前处于"用框架完善框架"阶段。该阶段必须防止递归死�
 
 如果不能回答，应暂缓。
 
-### 13.4 Web 最小展示入口
+### 13.4 Web 最小状态与操作入口
 
-Web 展示应纳入 MVP，但必须限定为只读的最小态势入口，避免提前演变成复杂 Web 产品分支。
+Web 对 LDVH 产品化很重要，不只是后期展示层。它应帮助用户快速了解当前项目状态、Core Loop 阶段、待处理 Task、证据缺口、最近 Change 和潜在风险，并在 Human Gate 场景中降低理解成本。
 
-当前阶段的 Web MVP 只应服务以下目标：
+Web 入口应与 Core Loop / Validator / Record 同步推进，而不是等所有底层机制完全稳定后再启动。原因是 Web 开发相对独立，且它本身是最好的 Dogfood 场景：在展示状态、推进状态、记录 Memo、聚合 Evidence 和呈现 Change 的过程中，会暴露事实模型、状态机、PyTools 输出、Human Gate、权限边界和用户理解成本上的真实问题。
+
+Web 同步推进的边界是：它可以尽早做状态理解、只读聚合、受控状态变更和 Memo 创建，但不应变成绕过事实源、状态机、Human Gate 和 Change 纪律的第二套系统。
+
+当前阶段的 Web MVP 应服务以下目标：
 
 1. 展示当前 Core Loop 状态；
 2. 展示 Intent / Task / Evidence / ADR / Change 的数量、状态和关联；
 3. 展示哪些 Task 待执行、待审查、待关闭；
 4. 展示哪些 Evidence 失败或缺失；
 5. 展示最近 Change 与当前风险提示；
-6. 为 Human Gate 提供只读上下文。
+6. 为 Human Gate 提供上下文；
+7. 支持受控状态变更入口，例如将 Task 推进到允许的下一状态、触发关闭前检查或进入 Human Gate；
+8. 支持记录新的 Memo，作为 Web MVP 中唯一默认允许创建的事实对象。
 
 当前阶段明确不做：
 
-1. 不做 Web 写入事实源；
-2. 不做复杂权限系统；
-3. 不做数据库持久化；
-4. 不做复杂看板拖拽；
-5. 不让 Web 成为新的事实源；
-6. 不替代 `ldvh-base/` 或 `specs/`。
+1. 不绕过状态机直接改状态；
+2. 不绕过 Human Gate 写入需要确认的事实源；
+3. 不在 Web 中默认创建除 Memo 之外的新事实对象；
+4. 不做复杂权限系统；
+5. 不做数据库持久化；
+6. 不做复杂看板拖拽；
+7. 不让 Web 成为新的事实源；
+8. 不替代 `ldvh-base/`、`specs/`、PyTools 或 Change 纪律。
 
 Web MVP 的定位是：
 
 ```text
-Git 文件事实源 → PyTools 聚合 → Web 只读展示 → 人做更高质量 Human Gate
+Git 文件事实源 → PyTools 聚合 → Web 状态理解与受控操作 → Human Gate / Change 纪律 → Git 文件事实源
 ```
 
 ---
