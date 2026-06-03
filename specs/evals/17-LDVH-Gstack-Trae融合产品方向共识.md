@@ -155,22 +155,26 @@ Trae 提供运行环境；
 
 ### 6.1 核心事实对象
 
-已补齐最小事实内核中的 3 个对象：
+已补齐最小事实内核中的 7 个对象：
 
 | 对象 | 规范 | 契约 | 状态 |
 |---|---|---|---|
 | Intent | `specs/24-Intent-意图.md` | `specs/24.06-Contract.md` | active |
-| Evidence | `specs/29-Evidence-验证证据.md` | `specs/29.06-Contract.md` | active |
 | Task | `specs/27-Task-任务.md` | `specs/27.06-Contract.md` | active |
+| TaskSet | `specs/28-TaskSet-任务集.md` | `specs/28.06-Contract.md` | active |
+| Evidence | `specs/29-Evidence-验证证据.md` | `specs/29.06-Contract.md` | active |
+| Memo | `specs/25-Memo-备忘.md` | `specs/25.06-Contract.md` | active |
+| Profile | `specs/26-Profile-项目画像.md` | `specs/26.06-Contract.md` | active |
+| Pitfall | `specs/23-Pitfall-踩坑记录.md` | `specs/23.06-Contract.md` | active |
 
-ADR(21) 和 Change(22) 已有完整规范。Intent、Task、Evidence 当前为精简版规范，后续按阶段补齐完整版。
+ADR(21) 和 Change(22) 已有完整规范。Intent、Task、Evidence 当前为精简版规范，后续按阶段补齐完整版。Task 已新增子任务机制（parent_task/sub_tasks）和关联任务自动创建流程。
 
 ### 6.2 Core Loop Skill 入口
 
 已创建：
 
-1. `ldvh-intake`：用户意图 → 识别场景 → 创建 Intent/Task → Human Gate → 写入事实源；
-2. `ldvh-close`：关闭条件校验 → Human Gate → 状态更新 → Change 记录。
+1. `ldvh-intake`：用户意图 → 识别场景 → 创建 Intent/Task/TaskSet/Memo/Profile → TaskSet 自动归类 → Human Gate → 写入事实源；
+2. `ldvh-close`：关闭条件校验（含子任务联动、TaskSet 关闭）→ Human Gate → 状态更新 → 级联检查（Intent/TaskSet/父任务）→ Change 记录。
 
 ### 6.3 Core Loop Rules 入口
 
@@ -184,16 +188,16 @@ Plan / Execute / Verify / Learn → 待建设
 
 ### 6.4 当前阶段快照（2026-06-04）
 
-截至 2026-06-04，LDVH MVP 骨架已经推进到 **Dogfood 1 完成并进入生产对象体系梳理** 阶段：
+截至 2026-06-04，LDVH MVP 骨架已经推进到 **生产对象体系梳理完成并进入 Dogfood 验证** 阶段：
 
-1. **最小事实内核已具备**：Intent / Task / Evidence 已有精简版规范和 Contract；ADR / Change 已有完整规范；Pitfall 已有正式规范。
-2. **PyTools 最小校验能力已具备**：`tools/check_fact_model.py` 已实现，可校验 Intent / Task / Evidence YAML；`tests/tools/test_check_fact_model.py` 已覆盖合法、非法、输入错误和目录批量校验。
-3. **YAML 长文本问题已完成一次闭环**：`task-0002` 已关闭，`ev-0002` 已记录验证通过；`ldvh-intake`、`ldvh-close` 与 Fact Validator 已补充块标量提示和测试覆盖。
-4. **规范判断回原文已回流正式规范**：相关原则已进入 `specs/11`、`specs/11.01`、`specs/11.02`，不再只停留在 L1 Rules 或 evals/17。
-5. **Core Loop Skill 已部署到工作区顶层**：`ldvh-intake` 与 `ldvh-close` 已从项目内草案目录迁移到 `/Users/dmh2002/trae_projects/.trae/skills/`，项目内 `.trae/skills/` 草案目录已删除。
-6. **运行时文件忽略已处理**：`pm-kit-web/.pm-kit.pid` 已加入 `.gitignore`。
-7. **当前真正下一步**：先完成 LDVH 生产对象整体梳理，把确定要做的对象、要降级的概念、要删除或不吸收的内容写入正式规范和本文，避免后续按过时 planned 清单扩张。
-8. **待讨论流程缺口**：执行主线 Task 时，AI 发现 bug、缺口、规范遗漏或流程问题后，应如何自动创建关联 Task、区分 blocking 与 follow-up、如何影响主线 Task 关闭条件，目前尚未进入正式规范；该问题需要在生产对象边界清晰后再进入 TaskSet / Task 关系设计。
+1. **最小事实内核已扩展至 7 个对象**：Intent / Task / TaskSet / Evidence / Memo / Profile / Pitfall 均已有精简版规范和 Contract；ADR / Change 已有完整规范。
+2. **PyTools 校验能力已覆盖全部 7 种对象**：`tools/check_fact_model.py` 已支持 Intent / Task / TaskSet / Evidence / Memo / Profile / Pitfall；`tests/tools/test_check_fact_model.py` 已覆盖 22 个测试用例。
+3. **Dogfood 实例已创建**：taskset-0001（核心事实模型 Dogfood）、profile-0001（ld-vibe-harness 项目画像）、memo-0001（22 子文档状态缺口）、pitfall-0001/0002/0003 已实例化。
+4. **Skill 已支持新对象类型**：`ldvh-intake` 新增 TaskSet/Memo/Profile 创建分支和 TaskSet 自动归类；`ldvh-close` 新增 TaskSet 关闭、子任务联动、级联检查。
+5. **Task 子任务机制已落地**：parent_task/sub_tasks 字段、深度限制两层、关闭前置条件。
+6. **Pitfall-0002/0003 已修复并 superseded**：22 主文档与子文档状态矛盾已修复；提交纪律规则重复维护已通过 L0 去重修复（权威位置确定为 22.01-Rules.md）。
+7. **specs 文档规范已清理**：32 个 not-created 子文档章节编号补齐，22.02 编号跳跃修复，check_03 问题从 113 降至 46。
+8. **当前真正下一步**：用新对象跑真实工作流验证 Skill 流程，或推进 ldvh-context PyTool 降低 AI 上下文组装摩擦。
 
 ---
 
@@ -221,13 +225,13 @@ Plan / Execute / Verify / Learn → 待建设
 |---|---|---|---|
 | Intent | 意图 | 已落地事实模型 | `ldvh-base/intents/` |
 | Task | 任务 | 已落地事实模型 | `ldvh-base/tasks/` |
+| TaskSet | 任务集 | 已落地事实模型 | `ldvh-base/tasksets/` |
 | Evidence | 证据 | 已落地事实模型 | `ldvh-base/evidence/` |
+| Memo | 备忘 | 已落地事实模型 | `ldvh-base/memos/` |
+| Profile | 项目画像 | 已落地事实模型 | `ldvh-base/profiles/` |
 | ADR | 决策记录 | 已落地事实模型 | `ldvh-base/adrs/` |
 | Change | 变更记录 | 已落地事实模型 | Git commit |
-| Pitfall | 踩坑记录 | 已落地事实模型 | 待按 23 规范实例化 |
-| Memo | 备忘 | 高优先级待落地事实模型 | 25 |
-| Profile | 项目画像 | 高优先级待落地事实模型 | 26 |
-| TaskSet | 任务集 | 高优先级待落地事实模型 | 28 |
+| Pitfall | 踩坑记录 | 已落地事实模型 | `ldvh-base/pitfalls/` |
 | Risk | 风险 | 降级为字段候选 | Task / Memo / ADR / TaskSet 字段 |
 | Dependency | 依赖 | 降级为关系字段 | Task / TaskSet 的 blocked_by、blocks、relation_type 等 |
 | Artifact | 产物 | 降级为路径或输出字段 | Evidence artifact_path、Task / TaskSet 输出字段 |
@@ -259,11 +263,13 @@ Gstack 对 LDVH 的价值主要是流程和产物连续交接，而不是事实�
 
 生产对象边界稳定后，下一步优先级应是：
 
-1. 先落地 TaskSet / 任务集，因为它直接解决“主线任务、支线任务、关联任务和自动归类”的问题；
-2. 再落地 Memo / 备忘，用于承接尚未任务化但有保留价值的发现，避免所有问题都变成 Task；
-3. 再落地 Profile / 项目画像，用于产品化、多项目接入和初始化体验；
-4. Pitfall / 踩坑记录已有规范，后续应在真实错误复盘中实例化；
-5. 初始化流程、审计流程、开发实践、交付实践和推荐 Agent 清单继续作为 specs-v2 保留建议，但必须逐项满足 LDVH 准入条件后再落地。
+1. ~~先落地 TaskSet / 任务集，因为它直接解决"主线任务、支线任务、关联任务和自动归类"的问题~~ ✅ 已完成；
+2. ~~再落地 Memo / 备忘，用于承接尚未任务化但有保留价值的发现，避免所有问题都变成 Task~~ ✅ 已完成；
+3. ~~再落地 Profile / 项目画像，用于产品化、多项目接入和初始化体验~~ ✅ 已完成；
+4. ~~Pitfall / 踩坑记录已有规范，后续应在真实错误复盘中实例化~~ ✅ 已完成（3 个实例）；
+5. 用新对象跑真实工作流验证 Skill 流程（TaskSet 自动归类、Memo 分流、Profile 初始化）；
+6. 推进 ldvh-context PyTool，降低 AI 上下文组装摩擦；
+7. 初始化流程、审计流程、开发实践、交付实践和推荐 Agent 清单继续作为 specs-v2 保留建议，但必须逐项满足 LDVH 准入条件后再落地。
 
 ---
 
