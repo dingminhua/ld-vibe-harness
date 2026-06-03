@@ -133,7 +133,7 @@ AI 开始执行 `planned` 状态的 Task 前，必须先将状态变更为 `exec
 
 Task 从 `review_needed` → `closed` 必须满足：
 
-1. `acceptance` 字段中所有检查项已标记为 `- [x]`；
+1. `acceptance` 字段中所有检查项已标记为 `- [x]`（未勾选的 `- [ ]` 项存在时，必须启动独立 agent 重新审计，不得直接关闭）；
 2. 所有子任务（`sub_tasks`）已关闭（`status: closed`）；
 3. `closure_evidence` 字段已填写；
 4. 已获得 Human Gate 确认。
