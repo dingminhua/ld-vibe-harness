@@ -152,6 +152,10 @@ Task 可关联多个 Evidence，作为验证结果和关闭证据。
 
 Task 的创建、状态变更和关闭都应记录 Change。Change 以 Git commit 为权威事实源（依据 `specs/22-Change-变更记录.md`）。
 
+### 6.5 Task → TaskSet
+
+Task 应归属一个 TaskSet。Task 的 `taskset` 字段引用所属 TaskSet ID。创建 Task 时，AI 应优先自动归入现有活跃 TaskSet；无法归入时，应提示用户是否创建新 TaskSet。TaskSet 的字段和状态由 TaskSet 对象模型（`specs/28-TaskSet-任务集.md`）定义。
+
 ---
 
 ## 7. Human Gate
@@ -188,6 +192,7 @@ Task 基础字段遵循 `specs/13-LDVH事实模型基础规范.md` §7.3 的字�
 | `description` | string | 是 | 任务详细描述 |
 | `source_intent` | string | 否 | 关联 Intent ID |
 | `source` | string | 是 | 来源（Intent ID 或用户直接指示） |
+| `taskset` | string | 否 | 所属 TaskSet ID，引用 TaskSet 事实模型 |
 | `acceptance` | string | 是 | 验收标准 |
 | `verification` | string | 否 | 验证方式 |
 | `assignee` | string | 否 | 执行者 |
