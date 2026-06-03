@@ -1,0 +1,21 @@
+id: profile-0001
+type: profile
+title: ld-vibe-harness 项目画像
+status: active
+created: 2026-06-04
+updated: 2026-06-04
+description: LDVH 核心框架项目，承载规范体系、事实模型和工具链
+project_name: ld-vibe-harness
+project_path: /Users/dmh2002/trae_projects/ld-vibe-harness
+ldvh_base_path: /Users/dmh2002/trae_projects/ld-vibe-harness/ldvh-base
+language: Python
+framework: ""
+rules_path: /Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules
+skills_path: /Users/dmh2002/trae_projects/ld-vibe-harness/.trae/skills
+related_tasks:
+  - task-0001
+  - task-0002
+related_adrs: []
+related_tasksets:
+  - taskset-0001
+notes: LDVH 核心项目，所有规范和事实模型的管辖项目

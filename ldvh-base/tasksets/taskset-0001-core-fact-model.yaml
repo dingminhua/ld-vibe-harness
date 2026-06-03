@@ -1,0 +1,19 @@
+id: taskset-0001
+type: taskset
+title: LDVH 核心事实模型 Dogfood
+status: active
+created: 2026-06-04
+updated: 2026-06-04
+description: |
+  承载 LDVH 核心事实模型的 Dogfood 验证工作，包括最小 Core Loop 跑通、
+  YAML 长文本安全写入规则固化、以及新对象实例化验证。
+scope: LDVH 事实模型规范体系中的核心执行实体模型，包括 Intent、Task、TaskSet、Evidence、Pitfall
+source_intent: intent-0001
+related_profile: profile-0001
+tasks:
+  - task-0001
+  - task-0002
+related_adrs: []
+related_evidence:
+  - ev-0001
+  - ev-0002
