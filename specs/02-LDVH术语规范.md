@@ -38,14 +38,17 @@
 LDVH specs 中，英文机制名 Rules、Skill、Agent、Tools、Web 专指 Trae 或 LDVH 工具体系中的机制层：
 
 | 术语 | 含义 | 机制规范 |
-|---|---|---|
+|---|---|---|---|
 | Rules | Trae Rules 机制 | `specs/11.01-Rules机制规范.md` |
 | Skill | Trae Skill 机制 | `specs/11.02-Skill机制规范.md` |
 | Agent | Trae Agent 机制 | `specs/11.03-Agent机制规范.md` |
 | Tools | LDVH `tools/` Tools 辅助机制 | `specs/12.01-Tools辅助规范.md` |
 | Web | LDVH `web/` Web 信息同步机制 | `specs/12.02-Web信息同步规范.md` |
+| PyTools | LDVH `tools/` 下由 Python 构建的确定性辅助程序 | `specs/12.01-Tools辅助规范.md` |
 
-提到上述机制时，应使用英文专名 Rules、Skill、Agent、Tools、Web，不使用裸中文"规则""技能""代理""智能体""程序""展示"替代。
+提到上述机制时，应使用英文专名 Rules、Skill、Agent、Tools、Web、PyTools，不使用裸中文"规则""技能""代理""智能体""程序""展示"替代。
+
+Tools 与 PyTools 的区分：Tools 指 Tools 辅助机制层（概念、原则、职责边界），PyTools 指 `tools/` 下具体的 Python 程序实现。避免"工具"一词同时指向机制和实现，造成泛化指向。
 
 ---
 
@@ -63,6 +66,7 @@ LDVH specs 中，英文机制名 Rules、Skill、Agent、Tools、Web 专指 Trae
 | 普通能力说明 | 能力、功能、流程、方法 | 技能 |
 | AI 泛称 | AI 执行者、AI 代理能力、子代理能力 | Agent、代理、智能体 |
 | 确定性工具辅助 | Tools 辅助、Tools 适配、Tools 能力 | 程序、程序辅助 |
+| Python 确定性辅助程序 | PyTools 实现、PyTools 脚本 | 工具程序、Python 工具 |
 | Web 信息同步能力 | Web 信息同步、Web 适配、Web 信息同步层 | 展示 |
 | Trae / LDVH 机制适配 | Rules 适配、Skill 适配、Agent 适配、Tools 适配、Web 适配 | 规则适配、技能适配、代理适配、程序适配、展示适配 |
 
