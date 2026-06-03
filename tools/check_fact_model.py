@@ -98,7 +98,12 @@ def load_yaml(path: Path) -> tuple[dict[str, Any] | None, Issue | None]:
         with open(path, "r", encoding="utf-8") as handle:
             data = yaml.safe_load(handle)
     except yaml.YAMLError as exc:
-        return None, Issue(str(path), "error", "YAML_PARSE_ERROR", f"YAML 解析失败: {exc}")
+        return None, Issue(
+            str(path),
+            "error",
+            "YAML_PARSE_ERROR",
+            f"YAML 解析失败: {exc}。如果长文本包含冒号、换行、命令或列表式说明，请优先使用 YAML 块标量 |。",
+        )
     except OSError as exc:
         return None, Issue(str(path), "error", "INPUT_READ_ERROR", f"读取失败: {exc}")
     if not isinstance(data, dict):

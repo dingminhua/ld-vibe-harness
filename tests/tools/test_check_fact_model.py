@@ -103,6 +103,20 @@ def test_valid_evidence_cli_exit_zero(tmp_path):
     assert result.stderr == ""
 
 
+def test_valid_evidence_block_scalar_with_colon_cli_exit_zero(tmp_path):
+    content = valid_evidence_yaml().replace(
+        "content: Validator accepts this evidence",
+        "content: |\n  Validator accepts long text with colon: pass\n  command: python3 tools/check_fact_model.py",
+    )
+    path = write_yaml(tmp_path / "ev-0001-valid-evidence.yaml", content)
+
+    result = run_checker(path)
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+    assert result.stderr == ""
+
+
 def test_missing_required_field_cli_exit_one(tmp_path):
     content = valid_intent_yaml().replace("title: Valid Intent\n", "")
     path = write_yaml(tmp_path / "intent-0001-missing-title.yaml", content)
@@ -177,6 +191,7 @@ def test_yaml_parse_failure_cli_exit_two(tmp_path):
 
     assert result.returncode == 2
     assert "YAML_PARSE_ERROR" in result.stdout
+    assert "YAML 块标量" in result.stdout
     assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
 
 
