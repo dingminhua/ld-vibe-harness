@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<!-- PM Kit v2.0 -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trae PM Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<link rel="stylesheet" href="/client/style.css?v=3.0">
+</head>
+<body>
+<div class="page">
+  <div class="health-bar" id="healthBar">
+    <div class="health-bar-top">
+      <div class="health-bar-product-line">
+        <span class="health-bar-product" id="healthBarProduct">Trae PM Kit</span>
+        <span class="health-bar-description" id="healthBarDescription">通用产品管理套件（规范 + 工具）</span>
+      </div>
+      <button class="health-bar-refresh" onclick="manualRefresh()" title="刷新数据">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <nav>
+    <button class="tab primary-nav active" data-tab="overview" onclick="setTab('overview')">总览</button>
+    <button class="tab primary-nav" data-tab="tasks" onclick="setTab('tasks')">任务</button>
+    <button class="tab primary-nav" data-tab="tasksets" onclick="setTab('tasksets')">任务集</button>
+    <button class="tab primary-nav" data-tab="product" onclick="setTab('product')">产品</button>
+    <button class="tab primary-nav" data-tab="memos" onclick="setTab('memos')">备忘</button>
+    <button class="tab primary-nav" data-tab="settings" onclick="setTab('settings')">设置</button>
+  </nav>
+
+  <!-- 1. 总览（首页） -->
+  <section id="overview" class="active">
+    <!-- 任务 + 备忘 -->
+    <div class="dashboard-grid" style="margin-top:0;">
+      <div class="card">
+        <h3 class="zone-label">任务</h3>
+        <div class="task-metrics-preview-zone" id="taskMetricsPreview">
+          <div class="metric-card" data-target="actions">
+            <div class="metric-label">进行中</div><div class="metric-value">0</div>
+          </div>
+          <div class="metric-card" data-target="actions">
+            <div class="metric-label">已规划</div><div class="metric-value">0</div>
+          </div>
+          <div class="metric-card" data-target="actions">
+            <div class="metric-label">待规划</div><div class="metric-value">0</div>
+          </div>
+          <div class="metric-card" data-target="governance">
+            <div class="metric-label">待决策</div><div class="metric-value">0</div>
+          </div>
+          <div class="metric-card" data-target="governance">
+            <div class="metric-label">待验收</div><div class="metric-value">0</div>
+          </div>
+          <div class="metric-card" data-target="governance">
+            <div class="metric-label">被阻塞</div><div class="metric-value">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 备忘列表 -->
+      <div id="memoListOverview" class="card">
+        <h3 class="zone-label">备忘</h3>
+        <div class="memo-list-content"></div>
+      </div>
+    </div>
+
+    <!-- 需求进度 + 最近变化 -->
+    <div class="dashboard-grid" style="margin-top:16px;">
+      <div id="requirementProgress" class="card">
+        <h3 class="zone-label">需求进度</h3>
+        <div id="progressList"></div>
+      </div>
+      <div id="recentChanges" class="card">
+        <h3 class="zone-label">最近变化</h3>
+        <div id="recentList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 任务集（预留） -->
+  <section id="tasksets">
+    <div class="panel cockpit-hero">
+      <h2>任务集</h2>
+      <p>管理任务分组和项目级进度。</p>
+    </div>
+  </section>
+
+  <!-- 3. 产品（预留） -->
+  <section id="product">
+    <div class="panel cockpit-hero">
+      <h2>产品</h2>
+      <p>全局态势感知和产品维度视图。</p>
+    </div>
+  </section>
+
+  <!-- 4. 备忘（预留） -->
+  <section id="memos">
+    <div class="panel cockpit-hero">
+      <h2>备忘</h2>
+      <p>处理未任务化的输入和待办。</p>
+    </div>
+  </section>
+
+  <!-- 5. 设置 -->
+  <section id="settings">
+    <div class="panel cockpit-hero">
+      <h2>设置</h2>
+      <p>项目配置、产品配置和系统信息。</p>
+    </div>
+    <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="tab secondary-nav active" data-settab="projectRules" onclick="setSettingsTab('projectRules')">项目规则</button>
+      <button class="tab secondary-nav" data-settab="productConfig" onclick="setSettingsTab('productConfig')">产品配置</button>
+      <button class="tab secondary-nav" data-settab="panorama" onclick="setSettingsTab('panorama')">全景视图</button>
+      <button class="tab secondary-nav" data-settab="api" onclick="openApi()">API</button>
+      <button class="tab secondary-nav" data-settab="about" onclick="setSettingsTab('about')">关于</button>
+    </div>
+
+    <!-- 设置-项目规则 -->
+    <div id="setProjectRules">
+      <div class="toolbar" style="margin-bottom:14px;">
+        <button class="btn primary" onclick="loadProjectRules()">刷新规则</button>
+      </div>
+      <table>
+        <thead><tr><th>项目</th><th>角色</th><th>project_rules</th><th>必读索引</th><th>压缩保护</th></tr></thead>
+        <tbody id="projectRules"></tbody>
+      </table>
+    </div>
+
+    <!-- 设置-产品配置 -->
+    <div id="setProductConfig" class="hidden">
+      <div class="card">
+        <h3>产品信息</h3>
+        <div class="task-detail-section">
+          <div class="task-detail-row"><div class="task-detail-label">产品 ID</div><div class="task-detail-value" id="cfgProductId">-</div></div>
+          <div class="task-detail-row"><div class="task-detail-label">产品名称</div><div class="task-detail-value" id="cfgProductName">-</div></div>
+          <div class="task-detail-row"><div class="task-detail-label">产品描述</div><div class="task-detail-value" id="cfgProductDesc">-</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3>项目列表</h3>
+        <div id="cfgProjectList"></div>
+      </div>
+    </div>
+
+    <!-- 设置-全景视图 -->
+    <div id="setPanorama" class="hidden">
+      <div class="grid cols-2" style="margin-bottom:18px;">
+        <div class="card">
+          <h3>核心数据流</h3>
+          <div id="mermaidDataFlow" class="mermaid-wrap"></div>
+        </div>
+        <div class="card">
+          <h3>跨项目依赖</h3>
+          <div id="mermaidDependency" class="mermaid-wrap"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:18px;">
+        <h3>系统规划</h3>
+        <table>
+          <thead><tr><th>#</th><th>系统</th><th>说明</th><th>负责项目</th><th>优先级</th><th>状态</th><th>依赖</th></tr></thead>
+          <tbody id="systemTable"></tbody>
+        </table>
+      </div>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>关键决策</h3>
+          <div id="decisionTimeline" class="timeline"></div>
+        </div>
+        <div class="card">
+          <h3>项目总览</h3>
+          <div id="panoramaProjects" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设置-关于 -->
+    <div id="setAbout" class="hidden">
+      <div class="card">
+        <h3>Trae PM Kit</h3>
+        <p>版本：v2.0</p>
+        <p style="margin-top:8px;">通用产品管理套件（规范 + 工具），为 vibeCoding 项目提供产品管理规范和任务管理工具。</p>
+        <p style="margin-top:8px;color:var(--muted);">规范层：定义 vibeCoding 场景下的产品管理对象与协作边界</p>
+        <p style="color:var(--muted);">工具层：基于 Git 文件事实源（零依赖、无数据库）的任务管理工具</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 旧 tab 区域（PMKIT-027 清理前保留，hidden） -->
+  <!-- 旧-行动 -->
+  <section id="actions" class="hidden">
+    <div class="panel cockpit-hero">
+      <h2>行动</h2>
+      <p>展示从目标分解、沟通生成、审计发现、规则触发和计划变更中分流出的可推进事项。支持在合法状态之间状态流转，结果受控写回 task-base 事实源。</p>
+    </div>
+    <div class="toolbar" style="margin-bottom:14px;">
+      <button class="btn primary" onclick="loadRequirements()">刷新</button>
+      <button class="btn" onclick="loadTaskHealth()">迁移健康度</button>
+      <button class="btn" onclick="loadTaskBaseFromActions()">TaskBase</button>
+      <div class="view-toggle">
+        <button class="view-toggle-btn active" id="reqViewList" onclick="setReqView('list')" title="列表视图">
+          <svg viewBox="0 0 16 16"><path d="M1 3h14v1.5H1zm0 4h14v1.5H1zm0 4h14v1.5H1z"/></svg>
+          列表
+        </button>
+        <button class="view-toggle-btn" id="reqViewKanban" onclick="setReqView('kanban')" title="看板视图">
+          <svg viewBox="0 0 16 16"><path d="M1 2h4v12H1zm5 0h4v8H6zm5 0h4v10h-4z"/></svg>
+          看板
+        </button>
+      </div>
+      <input class="search-input" id="reqSearch" placeholder="搜索行动..." oninput="debounceReqSearch()">
+      <select class="filter-select" id="reqFilterStatus" onchange="loadRequirements()">
+        <option value="">全部状态</option>
+        <option value="待办">待办</option>
+        <option value="进行中">进行中</option>
+        <option value="已完成">已完成</option>
+        <option value="待确认">待确认</option>
+        <option value="阻塞">阻塞</option>
+        <option value="待验证">待验证</option>
+      </select>
+      <select class="filter-select" id="reqFilterPriority" onchange="loadRequirements()">
+        <option value="">全部优先级</option>
+        <option value="P0">P0</option>
+        <option value="P1">P1</option>
+        <option value="P2">P2</option>
+        <option value="P3">P3</option>
+      </select>
+    </div>
+    <div class="project-selector" id="reqProjectSelector"></div>
+    <div class="grid cols-4" id="taskHealthSummary"></div>
+    <div id="taskHealthList" class="grid cols-2 hidden"></div>
+    <div id="actionTaskBaseArea" class="hidden" style="margin-top:14px;">
+      <div class="grid cols-4" id="taskBaseSummary" style="margin-bottom:14px;"></div>
+      <div class="view-toggle" style="margin-bottom:14px;">
+        <button class="view-toggle-btn active" id="memoViewKanban" onclick="setMemoView('kanban')" title="看板视图">
+          <svg viewBox="0 0 16 16"><path d="M1 2h4v12H1zm5 0h4v8H6zm5 0h4v10h-4z"/></svg>
+          备忘看板
+        </button>
+        <button class="view-toggle-btn" id="memoViewList" onclick="setMemoView('list')" title="列表视图">
+          <svg viewBox="0 0 16 16"><path d="M1 3h14v1.5H1zm0 4h14v1.5H1zm0 4h14v1.5H1z"/></svg>
+          备忘列表
+        </button>
+      </div>
+      <div class="project-selector" id="memoProjectSelector"></div>
+      <div class="grid cols-2" style="align-items:start;margin-bottom:18px;">
+        <div class="panel"><h3>TaskSets</h3><div id="taskBaseTasksets"></div></div>
+        <div class="panel"><h3>Tasks</h3><div id="taskBaseTasks"></div></div>
+      </div>
+      <div id="memoKanban"></div>
+      <div id="memoList" class="memo-list hidden"></div>
+    </div>
+    <div class="grid cols-4" id="reqSummary"></div>
+    <div style="height:14px;"></div>
+    <div id="reqList" class="grid cols-2"></div>
+    <div id="reqKanban" class="hidden"></div>
+  </section>
+
+  <!-- 旧-需求 -->
+  <section id="requirements" class="hidden">
+    <div class="panel cockpit-hero">
+      <h2>需求</h2>
+      <p>聚合 20-59 需求、task-base 执行对象、未处理备忘和 AI 上下文复制入口。动态状态来自 task-base。</p>
+    </div>
+    <div class="toolbar" style="margin-bottom:14px;">
+      <button class="btn primary" onclick="loadRequirementOverview()">刷新全貌</button>
+      <button class="btn" onclick="openSourceDocsFromReq()">文档列表</button>
+      <span id="requirementOverviewScope" style="color:var(--muted);font-size:13px;"></span>
+    </div>
+    <div id="reqDocViewArea" class="hidden" style="margin-bottom:14px;">
+      <div class="toolbar" style="margin-bottom:14px;">
+        <button class="btn" id="docViewToggle" onclick="toggleDocView()">Markdown 视图</button>
+      </div>
+      <div class="doc-list" id="docList"></div>
+      <div style="height: 14px;"></div>
+      <div class="viewer raw" id="docViewer">点击上方文档卡片预览内容。</div>
+    </div>
+    <div class="grid cols-4" id="requirementOverviewSummary" style="margin-bottom:18px;"></div>
+    <div class="grid cols-2" style="align-items:start;">
+      <div id="requirementOverviewList" class="grid"></div>
+      <div id="requirementOverviewDetail" class="task-detail"><p style="color:var(--muted);">选择左侧需求查看详情和 AI 上下文。</p></div>
+    </div>
+  </section>
+
+  <!-- 旧-治理 -->
+  <section id="governance" class="hidden">
+    <div class="panel cockpit-hero">
+      <h2>治理</h2>
+      <p>决策验收、规则复核、变更审计和关闭质量，确保 AI 协作过程符合治理约束。</p>
+    </div>
+    <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="tab secondary-nav active" data-govtab="waitingDecisions" onclick="setGovTab('waitingDecisions')">等待决策</button>
+      <button class="tab secondary-nav" data-govtab="decisions" onclick="setGovTab('decisions')">决策记录</button>
+      <button class="tab secondary-nav" data-govtab="rulesAudit" onclick="setGovTab('rulesAudit')">规则复核</button>
+      <button class="tab secondary-nav" data-govtab="changes" onclick="setGovTab('changes')">变更与审计</button>
+    </div>
+    <div id="govWaitingDecisions">
+      <div class="toolbar" style="margin-bottom:14px;">
+        <button class="btn primary" onclick="loadWaitingDecisions()">刷新</button>
+        <span style="color:var(--muted);font-size:13px;">聚合需要广义决策、确认、验收或补充判断的事项。PM Kit 只读取事实源，不调用 AI。</span>
+      </div>
+      <div class="grid cols-4" id="waitingSummary"></div>
+      <div style="height:14px;"></div>
+      <div id="waitingList" class="grid cols-2"></div>
+    </div>
+    <div id="govDecisions" class="hidden">
+      <div class="toolbar" style="margin-bottom:14px;">
+        <button class="btn primary" onclick="loadDecisions()">刷新</button>
+        <span style="color:var(--muted);font-size:13px;">已做出的决策记录，按来源分组展示。</span>
+      </div>
+      <div id="govDecisionsList"></div>
+    </div>
+    <div id="govRulesAudit" class="hidden">
+      <div class="toolbar" style="margin-bottom:14px;">
+        <button class="btn primary" onclick="loadRulesAudit()">运行规则复核</button>
+      </div>
+      <div id="rulesAuditSummary" class="grid cols-4"></div>
+      <div style="height:14px;"></div>
+      <div id="rulesAuditList" class="grid cols-2"></div>
+    </div>
+    <div id="govChanges" class="hidden">
+      <div class="panel" id="changeList"></div>
+      <div style="margin-top:18px;">
+        <h3 class="zone-label">操作审计日志</h3>
+        <div id="auditLogList" style="max-height:400px;overflow:auto;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 旧-驾驶舱 -->
+  <section id="legacyOverview" class="hidden"></section>
+</div>
+
+<!-- 任务详情右侧滑出面板 (PMKIT-014 预留结构) -->
+<div class="task-detail-overlay" id="taskDetailOverlay" onclick="closeTaskDetail()">
+  <div class="task-detail-panel" id="taskDetailPanel" onclick="event.stopPropagation()">
+    <div class="panel-header">
+      <div class="panel-title" id="taskDetailTitle">任务详情</div>
+      <button class="btn-close" onclick="closeTaskDetail()">×</button>
+    </div>
+    <div class="panel-body" id="taskDetailBody">
+      <p style="color:var(--muted);">选择任务查看详情。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 全局 Command Menu (PMKIT-016 预留结构) -->
+<div class="command-menu-overlay" id="commandMenuOverlay" onclick="closeCommandMenu()">
+  <div class="command-menu" id="commandMenu" onclick="event.stopPropagation()">
+    <div class="command-input-wrap">
+      <input class="command-input" id="commandInput" placeholder="搜索任务、文档、备忘...">
+    </div>
+    <div class="command-results" id="commandResults">
+      <p style="color:var(--muted);text-align:center;padding:24px;">输入关键词开始搜索</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addMemoModal">
+  <div class="modal">
+    <h2>新增备忘</h2>
+    <label>项目</label>
+    <select id="memoAddProject"></select>
+    <label>日期</label>
+    <input type="date" id="memoAddDate">
+    <label>类型</label>
+    <select id="memoAddType">
+      <option value="TODO">待办</option>
+      <option value="FOUND">发现</option>
+      <option value="DECISION">决策</option>
+      <option value="QUESTION">问题</option>
+    </select>
+    <label>优先级</label>
+    <select id="memoAddPriority">
+      <option value="P1">P1</option>
+      <option value="P0">P0</option>
+      <option value="P2">P2</option>
+      <option value="P3">P3</option>
+    </select>
+    <label>分组标题</label>
+    <input type="text" id="memoAddGroup" placeholder="可选">
+    <label>内容</label>
+    <textarea id="memoAddContent"></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeAddMemoModal()">取消</button>
+      <button class="btn primary" onclick="submitAddMemo()">提交</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editMemoModal">
+  <div class="modal">
+    <h2>编辑备忘</h2>
+    <label>类型</label>
+    <select id="memoEditType">
+      <option value="TODO">待办</option>
+      <option value="FOUND">发现</option>
+      <option value="DECISION">决策</option>
+      <option value="QUESTION">问题</option>
+    </select>
+    <label>状态</label>
+    <select id="memoEditStatus">
+      <option value="pending">待办</option>
+      <option value="in_progress">进行中</option>
+      <option value="done">已完成</option>
+      <option value="cancelled">已取消</option>
+    </select>
+    <label>内容</label>
+    <textarea id="memoEditContent"></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeEditMemoModal()">取消</button>
+      <button class="btn primary" onclick="submitEditMemo()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="archiveMemoModal">
+  <div class="modal">
+    <h2>确认归档</h2>
+    <p>确认归档此条目？此操作将标记为已归档。</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeArchiveMemoModal()">取消</button>
+      <button class="btn danger" onclick="confirmArchiveMemo()">归档</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="transitionModal">
+  <div class="modal">
+    <h2>受控状态流转</h2>
+    <p id="transitionTitle" style="color:var(--muted);margin-bottom:12px;"></p>
+    <label>原因 / 问题 / 回退说明</label>
+    <textarea id="transitionReason" placeholder="阻塞、取消或回退时必填"></textarea>
+    <label>决策记录</label>
+    <textarea id="transitionDecision" placeholder="涉及 Human Gate 或 Decision Needed 时填写"></textarea>
+    <label>验收结果</label>
+    <textarea id="transitionAcceptance" placeholder="关闭或验收时填写"></textarea>
+    <label>关闭证据</label>
+    <textarea id="transitionEvidence" placeholder="关闭时填写验证命令、页面验证或事实源证据"></textarea>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;"><input type="checkbox" id="transitionHumanConfirmed" style="width:auto;"> Human Gate 已确认</label>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeTransitionModal()">取消</button>
+      <button class="btn primary" onclick="confirmTransition()">确认流转</button>
+    </div>
+  </div>
+</div>
+
+<script src="/client/app.js?v=3.0"></script>
+</body>
+</html>
