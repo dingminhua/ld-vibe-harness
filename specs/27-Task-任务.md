@@ -156,6 +156,20 @@ Task 的创建、状态变更和关闭都应记录 Change。Change 以 Git commi
 
 Task 应归属一个 TaskSet。Task 的 `taskset` 字段引用所属 TaskSet ID。创建 Task 时，AI 应优先自动归入现有活跃 TaskSet；无法归入时，应提示用户是否创建新 TaskSet。TaskSet 的字段和状态由 TaskSet 对象模型（`specs/28-TaskSet-任务集.md`）定义。
 
+### 6.6 Task → Task（子任务）
+
+Task 可以有子任务。子任务与父任务使用相同的对象模型和状态机，通过 `parent_task` 字段建立纵向分解关系。
+
+子任务规则：
+
+1. **深度限制**：子任务不能再有子任务，即 `parent_task` 不为空的 Task 不得被其他 Task 的 `parent_task` 引用；
+2. **默认归属**：子任务默认归入父任务所在的 TaskSet；
+3. **关闭条件**：父任务关闭前，所有子任务必须已关闭（`status: closed`）；
+4. **自动创建**：AI 执行 Task 时发现 bug、缺口或规范遗漏，应自动创建子任务并关联到当前 Task；
+5. **同级扩展**：如果子任务执行过程中又发现新问题，应创建新的子任务挂在同一个父任务下，而不是嵌套更深层级。
+
+子任务与 TaskSet 是两个维度：TaskSet 是横向归类（同目标的一组任务），parent_task 是纵向分解（父任务的子任务）。
+
 ---
 
 ## 7. Human Gate
@@ -164,7 +178,8 @@ Task 应归属一个 TaskSet。Task 的 `taskset` 字段引用所属 TaskSet ID�
 
 1. 状态从 `executing` → `review_needed` 时确认；
 2. 状态从 `review_needed` → `closed` 时确认；
-3. 高风险操作前确认（修改 specs、Rules、ADR、ldvh-base/ 等事实源）。
+3. 高风险操作前确认（修改 specs、Rules、ADR、ldvh-base/ 等事实源）；
+4. 创建子任务时确认（AI 自动创建子任务时应通知用户）。
 
 Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/05-Trae-Solo AskUserQuestion使用规范.md`）。
 
@@ -193,6 +208,8 @@ Task 基础字段遵循 `specs/13-LDVH事实模型基础规范.md` §7.3 的字�
 | `source_intent` | string | 否 | 关联 Intent ID |
 | `source` | string | 是 | 来源（Intent ID 或用户直接指示） |
 | `taskset` | string | 否 | 所属 TaskSet ID，引用 TaskSet 事实模型 |
+| `parent_task` | string | 否 | 父任务 ID，非空时表示本 Task 为子任务 |
+| `sub_tasks` | list of string | 否 | 子任务 ID 列表 |
 | `acceptance` | string | 是 | 验收标准 |
 | `verification` | string | 否 | 验证方式 |
 | `assignee` | string | 否 | 执行者 |
