@@ -15,6 +15,19 @@
 
 新增机制、规则或规范内容必须服务 LDVH 价值标准。Human Gate 场景见工作区 L0 "场景入口"。提交时调用 `ldvh-commit` Skill。
 
+## Core Loop 阶段路由
+
+| 阶段 | AI 应做什么 | 推荐 Skill |
+|---|---|---|
+| Intent | 识别用户意图，创建 Intent/Task | ldvh-intake |
+| Plan | 拆解步骤，评估风险 | 待建设 |
+| Execute | 按计划实施，遵守约束 | 待建设 |
+| Verify | lint/test/build/真实交互验证 | 待建设 |
+| Record | Evidence 回写，Change 记录，状态更新 | ldvh-close |
+| Learn | Pitfall 沉淀，Rule 改进 | 待建设 |
+
+AI 应在每次用户交互时判断当前 Core Loop 阶段，并推荐对应 Skill。未建设的阶段按现有 Rules 和规范执行。
+
 ## ADR 入口
 
 修改 specs、Rules、Tools、事实模型边界或长期协作机制前检查 ADR；准入见 21 §3.3。ADR 写入、状态流转、推翻、废弃或升级必须 Human Gate；流程见 21.02，工具见 21.04。proposed ADR 不作执行依据。
@@ -25,4 +38,4 @@
 
 ## 压缩保护
 
-LDVH | 00-20按任务读原文 | 00价值 01目录 02术语 03specs 04子文档 05HG 10事实源 11协作 12Tools 13事实 14行动 20索引 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0 | 提交调用ldvh-commit Skill
+LDVH | 00-20按任务读原文 | 00价值 01目录 02术语 03specs 04子文档 05HG 10事实源 11协作 12Tools 13事实 14行动 20索引 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0 | 提交调用ldvh-commit Skill | CoreLoop路由=Intent→ldvh-intake|Record→ldvh-close
