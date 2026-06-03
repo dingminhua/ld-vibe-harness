@@ -21,7 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 VALID_TYPES = {"feat", "fix", "docs", "refactor", "test", "chore", "spec", "rule", "adr", "revert"}
 
 # specs/22.06-Contract.md §3.2 scope 枚举（推荐值，非强制）
-RECOMMENDED_SCOPES = {"specs", "rules", "adr", "tools", "web"}
+RECOMMENDED_SCOPES = {"specs", "rules", "adr", "tools", "web", "evals", "refs"}
 
 # specs/22.06-Contract.md §3.3: subject 不超过 72 字符
 MAX_SUBJECT_LEN = 72
