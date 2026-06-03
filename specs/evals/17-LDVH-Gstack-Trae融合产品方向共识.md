@@ -2,11 +2,11 @@
 
 > 创建日期：2026-06-03
 > 更新日期：2026-06-04
-> 定位：LDVH 后续产品化演进的共识起点，承接原 evals/14、15、16、18 中仍有价值的判断，用于避免后续删除旧评估文档后丢失主线
+> 定位：LDVH 后续产品化演进的共识起点，承接原 evals/10、12、13、14、15、16、18 中仍有价值的判断，用于避免后续删除旧评估文档后丢失主线
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关参考：`specs/evals/13-LDVH假设重来视角下对gstack的借鉴再评估.md`、`specs/evals/14-Gstack照搬进入Trae环境可行性评估.md`
+> 相关参考：原 evals/10、12、13、14、15、16、18 的有价值内容已吸收到本文
 > 代码调研来源：`/Users/dmh2002/trae_projects/gstack`、`/Users/dmh2002/trae_projects/ld-vibe-harness`
 
 ---
@@ -197,6 +197,12 @@ LDVH 应保留并强化：
 10. V1-V10 价值判断标准。
 
 但 LDVH 需要降低 AI 初始使用摩擦，让 Core Loop 成为第一体验。
+
+Human Gate 应从规范纪律升级为工具护栏，建议三类安全工具：
+
+1. **Destructive Action Guard**：阻止未授权的破坏性操作（force push、reset --hard、clean -f 等）；
+2. **Fact Source Guard**：阻止绕过事实源写入流程的直接文件修改；
+3. **Scope Freeze Guard**：阻止超出当前 Task 范围的未授权变更。
 
 LDVH 的产品化不是把规范削弱，而是把规范从"AI 需要主动记住的文档"转化为：
 
@@ -417,7 +423,7 @@ Gstack 对 LDVH 的价值主要是流程和产物连续交接，而不是事实�
 3. 最小事实内核应优先于全对象铺开；
 4. 核心 Skill 可围绕 `ldvh-intake`、`ldvh-plan`、`ldvh-execute`、`ldvh-review`、`ldvh-close`、`ldvh-retro` 逐步建设；
 5. 四类工具能力应保留为长期方向：Context Primer、Fact Validator、Gate Detector、Evidence Collector；
-6. 验证应分级：静态检查、单元测试、集成测试、真实交互、证据回写；
+6. 验证应分级：静态验证（lint / schema）、单元验证（单对象校验）、集成验证（跨对象引用和状态机）、真实交互验证（Web / CLI / 安装）、证据回写（验证结果沉淀为 Evidence）；
 7. Web MVP 应服务只读态势和 Human Gate 质量，而不是先成为复杂产品。
 
 ### 8.2 从原 15 号文档吸收的内容
