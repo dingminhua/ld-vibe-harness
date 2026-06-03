@@ -1,0 +1,18 @@
+id: intent-0002
+type: intent
+title: 建立事实对象 Contract 与 PyTools 接口治理规范
+status: active
+created: 2026-06-04
+updated: 2026-06-04
+description: |
+  建立 LDVH 9 个 active fact models 的对象接口契约，并同步定义 PyTools 命名、CLI、输出、测试与契约变更联动规则。
+  本意图用于解决当前 Contract 子文档只停留在 YAML 字段表、PyTools 接口各自为政、Web/Tools 消费缺少统一接口的问题。
+success_criteria: |
+  specs 中可以推理出事实对象 Raw 接口、引用关系接口、消费者接口、PyTools ToolResult/ToolIssue 输出接口、旧工具迁移策略、测试要求和契约变更同步要求。
+  Task 与 Change 先完成公共原语和试点契约，后续可推广到 9 个 active fact models。
+constraints: |
+  先推进 specs 契约，不直接做 Web 呈现；先不大规模重写 Python 工具；不把 Web ViewModel 反向写入事实对象 Contract；Contract 变更后必须进入 ldvh-commit 流程。
+source: 用户要求补全现有 9 个对象接口，并统一 PyTools 命名、接口、测试和变更同步机制
+related_tasks:
+  - task-0003
+related_adrs: []
