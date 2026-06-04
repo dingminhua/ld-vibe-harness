@@ -1,19 +1,19 @@
 # Change 变更记录
 
 > 创建日期：2026-06-03
-> 定位：定义 Change 变更记录事实模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约（映射为 commit message 格式规范）、事实源回写、证据留存、适配原则、落地初始化、落地审计和合规检查
+> 定位：定义 Change 变更记录工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约（映射为 commit message 格式规范）、事实源回写、证据留存、适配原则、落地初始化、落地审计和合规检查
 > 适用范围：所有接入 LDVH 且需要追踪事实源变更的项目
-> 上位依据：`specs/07-LDVH事实模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-LDVH-Trae-Solo-环境规范.md`、`specs/06-PyTools与WebTools规范.md`、`specs/20-事实模型集合索引.md`
+> 上位依据：`specs/07-工作模型基础规范.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/06-Python与Web工具规范.md`、`specs/20-工作模型集合索引.md`
 
 ---
 
 ---
 ## 1. 本文解决的问题
 
-本文定义 Change 变更记录事实模型。Change 是对事实源产生影响的实际修改记录，用于沉淀项目中每次对规范、Rules、事实实例、工具实现或其他 Git 文件事实源的变更。
+本文定义 Change 变更记录工作模型。Change 是对事实源产生影响的实际修改记录，用于沉淀项目中每次对规范、Rules、事实实例、工具实现或其他 Git 文件事实源的变更。
 
-Change 与其他事实模型的核心区别在于承载方式：Change 不使用 `ldvh-base/` 下的 YAML 实例文件承载，而是直接以 Git commit 作为事实实例的权威事实源。本文定义 commit message 标准格式、关联规则、查询约定和工具解析要求。
+Change 与其他工作模型的核心区别在于承载方式：Change 不使用 `ldvh-base/` 下的 YAML 实例文件承载，而是直接以 Git commit 作为事实实例的权威事实源。本文定义 commit message 标准格式、关联规则、查询约定和工具解析要求。
 
 本文只定义 Change 对象模型。Change 不需要附件型实践子文档，各机制适配在主文档中直接说明。
 
@@ -21,7 +21,7 @@ Change 与其他事实模型的核心区别在于承载方式：Change 不使用
 
 ## 2. 与 13 的关系
 
-`specs/07-LDVH事实模型基础规范.md` 定义事实模型通用规则、文件命名、附件型实践子文档命名和事实模型标准组成。本文依据 07 §4.2 定义 Change 对象模型。
+`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、附件型实践子文档命名和工作模型标准组成。本文依据 07 §4.2 定义 Change 对象模型。
 
 本文不重新定义 13 中的通用规则。发生冲突时，以 13 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
 
@@ -81,7 +81,7 @@ Change 记录做了什么修改，ADR 记录为什么这样决定，specs 或 Ru
 
 ## 4. 事实源边界
 
-本文是 Change 变更记录事实模型的权威事实源。本文定义 Change 的准入条件、commit message 格式、对象关系、Human Gate 和适配原则。
+本文是 Change 变更记录工作模型的权威事实源。本文定义 Change 的准入条件、commit message 格式、对象关系、Human Gate 和适配原则。
 
 Change 事实实例的权威事实源位置为：
 
@@ -145,7 +145,7 @@ Core Loop 的 Record 阶段完成判断需要 Task 和 Change 共同支撑。一
 - Task 关闭但无 Change → 变更未沉淀到事实源；
 - 有 Change 但 Task 未关闭 → 变更未经过关闭审查。
 
-注：Evidence 独立事实模型已取消，验证和关闭证据由 Task 的 `closure_evidence` 字段和引用结果物承接。
+注：Evidence 独立工作模型已取消，验证和关闭证据由 Task 的 `closure_evidence` 字段和引用结果物承接。
 
 `ldvh-close` Skill 在关闭 Task 时，必然修改事实源（status → closed、closed_at、closure_evidence），属于准入变更，因此必须内部调用 `ldvh-commit` Skill 编排提交，确保 Change 与 Task 关闭同步完成。
 
@@ -234,7 +234,7 @@ scope 不限于上述枚举，可根据项目实际情况扩展。
 
 ### 8.4 Refs 格式
 
-`Refs` 用于关联其他事实模型对象，格式为 `{对象类型}-{编号}`，多个对象用逗号分隔：
+`Refs` 用于关联其他工作模型对象，格式为 `{对象类型}-{编号}`，多个对象用逗号分隔：
 
 ```text
 Refs: ADR-0001, Task-0042
@@ -254,13 +254,13 @@ Refs: ADR-0001, Task-0042
 1. `subject` 不得超过 72 字符；
 2. `body` 每行不得超过 72 字符；
 3. `type` 必须属于 §8.2 定义的枚举值；
-4. `Refs` 中的对象编号应引用已存在的事实模型对象；
+4. `Refs` 中的对象编号应引用已存在的工作模型对象；
 5. `revert` 类型的 commit 必须在 `Refs` 中关联被回退的 commit hash。
 
 ### 8.6 示例
 
 ```text
-spec(specs): 定义 Change 变更记录事实模型
+spec(specs): 定义 Change 变更记录工作模型
 
 创建 22-Change-变更记录.md，以 Git commit 作为 Change
 事实实例的权威事实源，定义 commit message 标准格式、
@@ -400,7 +400,7 @@ Change 对象模型进入项目实践前，应确认以下决策：
 价值与要素审查至少应覆盖：
 
 1. Change 对象模型是否有助于 V7 证据沉淀、V8 可靠回写或 V10 持续完善中的一项或多项；
-2. Change 对象模型是否明确归属于 LDVH 事实模型，且未混淆五类构成要素边界；
+2. Change 对象模型是否明确归属于 LDVH 工作模型，且未混淆四类构成要素边界；
 3. Change 对象模型是否仍以 AI 执行者为第一服务对象，帮助 AI 追溯变更历史、理解变更原因和关联变更对象；
 4. 是否避免把工具缓存、Web 状态、Agent 输出、Skill 输出或聊天过程当作 Change 最终事实源；
 5. 是否避免创建无必要的规则、Skill、Agent、工具或对象，导致体系膨胀但不提升可控性；
@@ -431,7 +431,7 @@ Change 对象模型落地审计应覆盖以下内容：
 
 1. 项目 commit message 是否符合本文 §8 定义的格式规范；
 2. 涉及 specs、Rules、`ldvh-base/` 事实实例修改的 commit 是否使用了标准格式；
-3. commit message 中的 `Refs` 是否引用了有效的事实模型对象；
+3. commit message 中的 `Refs` 是否引用了有效的工作模型对象；
 4. 是否存在 `git rebase`、`git commit --amend` 或 `git push --force` 修改已推送 Change 事实实例的情况；
 5. 是否存在应使用标准格式但未使用的 commit；
 6. Tools 辅助程序是否覆盖 commit message 格式校验能力；
@@ -443,7 +443,7 @@ Change 对象模型落地审计应覆盖以下内容：
 
 Change 对象模型合规检查应覆盖以下内容：
 
-1. Change 对象模型规范写作是否符合 13 事实模型标准组成（13 §4.2），缺项是否已说明原因；
+1. Change 对象模型规范写作是否符合 07 工作模型标准组成（07 §4.2），缺项是否已说明原因；
 2. commit message 格式是否符合本文 §8 定义的字段契约；
 3. Change 事实源边界是否符合本文 §4 和 10 事实源边界规范；
 4. Change 读取策略是否符合本文 §11 和 §12；

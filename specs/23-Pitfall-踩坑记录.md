@@ -1,17 +1,17 @@
 # Pitfall 踩坑记录
 
 > 创建日期：2026-06-03
-> 定位：定义 Pitfall 踩坑记录事实模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存、适配原则、附件型实践子文档、落地初始化、落地审计和合规检查
+> 定位：定义 Pitfall 踩坑记录工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存、适配原则、附件型实践子文档、落地初始化、落地审计和合规检查
 > 适用范围：所有接入 LDVH 且需要沉淀已解决踩坑经验的项目
-> 上位依据：`specs/07-LDVH事实模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-LDVH-Trae-Solo-环境规范.md`、`specs/06-PyTools与WebTools规范.md`、`specs/20-事实模型集合索引.md`
+> 上位依据：`specs/07-工作模型基础规范.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/06-Python与Web工具规范.md`、`specs/20-工作模型集合索引.md`
 
 ---
 
 ---
 ## 1. 本文解决的问题
 
-本文定义 Pitfall 踩坑记录事实模型。Pitfall 是已解决且具有复用价值的踩坑经验，用于沉淀反直觉问题、误判原因、解决方式、验证结果和后续规避策略，帮助 AI、人和工具在后续执行中提前避坑。
+本文定义 Pitfall 踩坑记录工作模型。Pitfall 是已解决且具有复用价值的踩坑经验，用于沉淀反直觉问题、误判原因、解决方式、验证结果和后续规避策略，帮助 AI、人和工具在后续执行中提前避坑。
 
 本文只定义 Pitfall 对象模型。Pitfall 相关 Rules、Skill、Agent、Tools 契约式校验与执行和 Web 信息同步实践由 §12 附件型实践子文档承接。
 
@@ -19,7 +19,7 @@
 
 ## 2. 与 13 的关系
 
-`specs/07-LDVH事实模型基础规范.md` 定义事实模型通用规则、文件命名、附件型实践子文档命名和事实模型标准组成。本文依据 07 §4.2 定义 Pitfall 对象模型。
+`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、附件型实践子文档命名和工作模型标准组成。本文依据 07 §4.2 定义 Pitfall 对象模型。
 
 本文不重新定义 13 中的通用规则。发生冲突时，以 13 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
 
@@ -55,7 +55,7 @@ Pitfall 不是所有问题、Bug、临时错误或失败尝试的默认归宿。
 3. 问题跨任务、跨会话或跨项目具有复用价值；
 4. 问题暴露了事实源读取、工具使用、验证命令、规则入口或协作流程中的稳定陷阱；
 5. 同类问题已经出现多次，需要形成规避策略；
-6. 问题可作为 Rules、Skill、Tools、Web 或行动模型后续改进的输入。
+6. 问题可作为 Rules、Skill、Tools、Web 或工作流程后续改进的输入。
 
 不满足 Pitfall 准入条件的临时信息，可以先作为 Memo、Task 证据、Evidence 或当前执行记录保留。
 
@@ -78,7 +78,7 @@ Pitfall 记录为什么会踩坑、如何解决和以后如何规避；Rules 记
 
 ## 4. 事实源边界
 
-本文是 Pitfall 踩坑记录事实模型的权威事实源。本文定义 Pitfall 的准入条件、状态机、对象关系、Human Gate、字段契约和适配原则。
+本文是 Pitfall 踩坑记录工作模型的权威事实源。本文定义 Pitfall 的准入条件、状态机、对象关系、Human Gate、字段契约和适配原则。
 
 Pitfall 对象实例的权威事实源位置为：
 
@@ -185,7 +185,7 @@ Rules / Skill / Tools 记录以后必须怎么做或如何机械化执行（新�
 
 Pitfall 和 ADR 是独立对象，不存在转换关系。经验是经验，决定是决定，两者可以关联但不可互相替代。
 
-当 Pitfall 暴露的问题需要形成长期决策、改变事实源归属或影响多个事实模型时，应创建新的 ADR。Pitfall 保留踩坑事实和经验不删除，ADR 作为新增决策记录独立存在。Pitfall 通过 `related_objects` 关联 ADR 引用。
+当 Pitfall 暴露的问题需要形成长期决策、改变事实源归属或影响多个工作模型时，应创建新的 ADR。Pitfall 保留踩坑事实和经验不删除，ADR 作为新增决策记录独立存在。Pitfall 通过 `related_objects` 关联 ADR 引用。
 
 当 ADR 的决策执行后踩坑时，应创建新的 Pitfall。ADR 保留决策记录不删除，Pitfall 作为新增经验记录独立存在。Pitfall 通过 `source_objects` 或 `related_objects` 关联 ADR 引用。
 
@@ -240,7 +240,7 @@ Pitfall 字段应覆盖：
 
 创建或更新 Pitfall 时，应写回对应项目的 `ldvh-base/pitfalls/`。不得只保存在聊天记录、工具输出、临时日志或派生视图中。
 
-涉及 specs、Rules、Skill、Tools、Web 或其他事实实例变更时，应按 Change 事实模型记录变更。Pitfall 不替代 Change；Change 记录事实源实际修改，Pitfall 记录经验沉淀。
+涉及 specs、Rules、Skill、Tools、Web 或其他事实实例变更时，应按 Change 工作模型记录变更。Pitfall 不替代 Change；Change 记录事实源实际修改，Pitfall 记录经验沉淀。
 
 ---
 
@@ -260,7 +260,7 @@ Pitfall 应保留足够证据，使后续 AI 或人能够判断经验是否可�
 
 ## 11. AI 协作适配
 
-AI 在进入代码、文档、规则或工具修改前，应按项目规则和事实模型入口判断是否需要读取当前项目的 active Pitfall。读取 Pitfall 时，应优先筛选与当前任务类型、目标文件、技术栈、工具命令或事实源类型相关的记录。
+AI 在进入代码、文档、规则或工具修改前，应按项目规则和工作模型入口判断是否需要读取当前项目的 active Pitfall。读取 Pitfall 时，应优先筛选与当前任务类型、目标文件、技术栈、工具命令或事实源类型相关的记录。
 
 AI 发现新的踩坑经验时，应先判断是否满足准入条件；满足时应暂停并通过 Human Gate 确认是否创建 Pitfall。未解决或未验证的信息不得直接写入 active Pitfall。
 
@@ -324,7 +324,7 @@ Pitfall 在 LDVH 中正式落地，采用以下决策：
 
 读取 Pitfall 时，应按以下顺序处理：
 
-1. 读取当前项目 L1 和事实模型入口；
+1. 读取当前项目 L1 和工作模型入口；
 2. 读取本文和 `specs/23.06-Contract.md`；
 3. 读取 `ldvh-base/pitfalls/` 下相关实例；
 4. 优先筛选 `active` 状态；
@@ -377,7 +377,7 @@ Pitfall 落地初始化包含以下产物：
 5. 创建 `specs/23.04-Tools.md`；
 6. 创建 `specs/23.05-Web.md`；
 7. 创建 `specs/23.06-Contract.md`；
-8. 更新 `specs/20-事实模型集合索引.md`；
+8. 更新 `specs/20-工作模型集合索引.md`；
 9. 后续创建实例前确认项目存在 `ldvh-base/pitfalls/`，不存在时按 Human Gate 创建。
 
 暂缓项：
@@ -407,7 +407,7 @@ Pitfall 落地审计应检查：
 
 ## 19. 合规检查
 
-检查 Pitfall 事实模型是否合规时，应确认：
+检查 Pitfall 工作模型是否合规时，应确认：
 
 1. 对象定位是否仍为已解决且具有复用价值的踩坑经验；
 2. 准入条件是否排除了未解决问题、未验证猜测和一次性临时错误；
@@ -426,5 +426,5 @@ Pitfall 落地审计应检查：
 1. Pitfall Skill 实体待实践稳定后创建；
 2. Pitfall Tools 解析、校验、聚合和受控写入能力待通用对象工具框架稳定后实现；
 3. Pitfall Web 展示和筛选能力待 Web 信息同步层启动后实现；
-4. Pitfall 与 Task、Evidence、Memo、ADR、Change 的跨对象引用校验待对应事实模型全部落地后细化；
+4. Pitfall 与 Task、Evidence、Memo、ADR、Change 的跨对象引用校验待对应工作模型全部落地后细化；
 5. `severity`、`repeatability` 和 `tags` 的枚举范围待实践验证后收敛。

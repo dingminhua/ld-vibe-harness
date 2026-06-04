@@ -4,7 +4,7 @@
 > 定位：定义 LDVH 规范体系中的特别说明，补充 11 未覆盖的 Human Gate 豁免条件
 > 适用范围：所有接入 LD Vibe Harness 且运行于 Trae 平台的项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/05-LDVH-Trae-Solo-环境规范.md`
+> 相关规范：`specs/05-Trae-Solo环境规范.md`
 
 ---
 
