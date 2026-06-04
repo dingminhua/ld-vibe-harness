@@ -9,12 +9,12 @@ export default {
     extend: {
       colors: {
         ldvh: {
-          bg: 'var(--ldvh-bg)',
-          panel: 'var(--ldvh-panel)',
-          border: 'var(--ldvh-border)',
-          'text-primary': 'var(--ldvh-text-primary)',
-          'text-secondary': 'var(--ldvh-text-secondary)',
-          accent: 'var(--ldvh-accent)',
+          bg: 'rgb(var(--ldvh-bg) / <alpha-value>)',
+          panel: 'rgb(var(--ldvh-panel) / <alpha-value>)',
+          border: 'rgb(var(--ldvh-border) / <alpha-value>)',
+          'text-primary': 'rgb(var(--ldvh-text-primary) / <alpha-value>)',
+          'text-secondary': 'rgb(var(--ldvh-text-secondary) / <alpha-value>)',
+          accent: 'rgb(var(--ldvh-accent) / <alpha-value>)',
         },
       },
     },

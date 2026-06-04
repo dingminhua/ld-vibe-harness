@@ -11,30 +11,30 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Light theme (default) */
-  --ldvh-bg: #f8f9fb;
-  --ldvh-panel: #ffffff;
-  --ldvh-border: #e5e7eb;
-  --ldvh-text-primary: #18181b;
-  --ldvh-text-secondary: #6b7280;
-  --ldvh-accent: #059669;
+  /* Light theme (default) — RGB channels for Tailwind alpha support */
+  --ldvh-bg: 248 249 251;
+  --ldvh-panel: 255 255 255;
+  --ldvh-border: 229 231 235;
+  --ldvh-text-primary: 24 24 27;
+  --ldvh-text-secondary: 107 114 128;
+  --ldvh-accent: 5 150 105;
   color-scheme: light;
 }
 
 :root.dark {
-  --ldvh-bg: #0a0a0f;
-  --ldvh-panel: #12121a;
-  --ldvh-border: #1e1e2e;
-  --ldvh-text-primary: #e4e4e7;
-  --ldvh-text-secondary: #a1a1aa;
-  --ldvh-accent: #00d4aa;
+  --ldvh-bg: 10 10 15;
+  --ldvh-panel: 18 18 26;
+  --ldvh-border: 30 30 46;
+  --ldvh-text-primary: 228 228 231;
+  --ldvh-text-secondary: 161 161 170;
+  --ldvh-accent: 0 212 170;
   color-scheme: dark;
 }
 
 body {
   margin: 0;
-  background-color: var(--ldvh-bg);
-  color: var(--ldvh-text-primary);
+  background-color: rgb(var(--ldvh-bg));
+  color: rgb(var(--ldvh-text-primary));
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
@@ -49,11 +49,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--ldvh-panel);
+  background: rgb(var(--ldvh-panel));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--ldvh-border);
+  background: rgb(var(--ldvh-border));
   border-radius: 3px;
 }
 
