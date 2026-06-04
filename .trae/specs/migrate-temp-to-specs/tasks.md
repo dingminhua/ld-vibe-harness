@@ -10,7 +10,7 @@
   - [ ] SubTask 1.7: 将 temp/05.01-Tools辅助规范.md 复制为 specs/12.01-Tools辅助规范.md，更新内部引用
   - [ ] SubTask 1.8: 将 temp/05.02-Web展示规范.md 复制为 specs/12.02-Web展示规范.md，更新内部引用
   - [ ] SubTask 1.9: 将 temp/06-LDVH生产对象基础规范.md 复制为 specs/13-LDVH生产对象基础规范.md，更新内部引用
-  - [ ] SubTask 1.10: 将 temp/07-LDVH行动模型基础规范.md 复制为 specs/14-LDVH行动模型基础规范.md，更新内部引用
+  - [ ] SubTask 1.10: 将 temp/07-LDVH行动模型基础规范.md 复制为 specs/14-LDVH工作流基础规范.md，更新内部引用
 
 - [ ] Task 2: 迁移生产对象规范文档（20-21）
   - [ ] SubTask 2.1: 将 temp/10-生产对象集合索引.md 复制为 specs/20-生产对象集合索引.md，更新内部引用

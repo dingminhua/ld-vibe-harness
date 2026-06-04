@@ -4,7 +4,7 @@
 > 定位：定义 Trae Solo 环境机制中 AskUserQuestion 工具在 LDVH 中的使用方式、触发条件和跨 AI 知识传递路径
 > 适用范围：所有接入 LD Vibe Harness 且运行于 Trae 平台的项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md` §3.3
-> 相关规范：`specs/02-LDVH术语规范.md`、`specs/10-事实源边界与承载规范.md`、`specs/14-LDVH行动模型基础规范.md`
+> 相关规范：`specs/02-LDVH术语规范.md`、`specs/10-事实源边界与承载规范.md`、`specs/14-LDVH工作流基础规范.md`
 
 ---
 
