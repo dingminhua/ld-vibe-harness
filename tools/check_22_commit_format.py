@@ -18,7 +18,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # specs/22.06-Contract.md §3.1 type 枚举
-VALID_TYPES = {"feat", "fix", "docs", "refactor", "test", "chore", "spec", "rule", "adr", "revert"}
+VALID_TYPES = {"feat", "fix", "docs", "refactor", "test", "chore", "spec", "rule", "adr", "evals", "refs", "revert"}
 
 # specs/22.06-Contract.md §3.2 scope 枚举（推荐值，非强制）
 RECOMMENDED_SCOPES = {"specs", "rules", "adr", "tools", "web", "evals", "refs"}
