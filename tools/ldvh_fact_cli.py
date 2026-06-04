@@ -11,7 +11,7 @@ import argparse
 import json
 import re
 import sys
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -302,7 +302,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         return 1
 
     # 构建 YAML 数据
-    today = date.today().isoformat()
+    now = datetime.now().isoformat()
     data = {}
     for field in REQUIRED_FIELDS[object_type]:
         if field == "id":
@@ -314,7 +314,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         elif field == "status":
             data[field] = DEFAULT_STATUS[object_type]
         elif field in ("created", "updated"):
-            data[field] = today
+            data[field] = now
         else:
             # 其他必填字段默认为空字符串占位
             data[field] = ""
@@ -423,9 +423,9 @@ def cmd_transition(args: argparse.Namespace) -> int:
 
     # 执行流转
     data["status"] = new_status
-    data["updated"] = date.today().isoformat()
+    data["updated"] = datetime.now().isoformat()
     if object_type == "task" and new_status == "closed":
-        data["closed_at"] = date.today().isoformat()
+        data["closed_at"] = datetime.now().isoformat()
 
     # 退回流转记录 reason
     # 判断是否为退回：新状态在当前状态之前（简化判断：非正向推进）
@@ -444,7 +444,7 @@ def cmd_transition(args: argparse.Namespace) -> int:
             "from": current_status,
             "to": new_status,
             "reason": reason,
-            "date": date.today().isoformat(),
+            "date": datetime.now().isoformat(),
         })
 
     # 写回文件

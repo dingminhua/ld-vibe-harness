@@ -5,8 +5,31 @@
 import { Router, type Request, type Response } from 'express'
 import { listObjects, validate, OBJECT_TYPES, type ObjectType, LDVH_ROOT } from '../services/pytools.js'
 import { getGitLog } from '../services/git.js'
+import { getRelativeTime } from '../services/time.js'
+import { getTypeColor, TYPE_COLORS } from '../services/typeColors.js'
 
 const router = Router()
+
+/** 待推进状态优先级排序 */
+const ACTION_STATUS_PRIORITY: Record<string, number> = {
+  verifying: 1,
+  review_needed: 2,
+  executing: 3,
+  planned: 4,
+  active: 5,
+  proposed: 6,
+  pending_review: 7,
+  observed: 8,
+  confirmed: 9,
+  draft: 10,
+  suspended: 11,
+}
+
+/** 判断状态是否为"可推进"（非终态） */
+function isActionableStatus(status: string): boolean {
+  const terminalStatuses = ['closed', 'completed', 'rejected', 'superseded', 'deprecated', 'archived', 'resolved', 'implemented', 'applied', 'cancelled', 'filed']
+  return !terminalStatuses.includes(status)
+}
 
 router.get('/', async (_req: Request, res: Response): Promise<void> => {
   try {
@@ -20,7 +43,7 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
     const [listResults, validationResult, gitLog] = await Promise.all([
       Promise.all(listPromises),
       validate(),
-      getGitLog(10).catch(() => []),
+      getGitLog(10, 'zh').catch(() => []),
     ])
 
     // 聚合 profile（取第一个 profile 对象）
@@ -47,17 +70,35 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
       return { type, total: items.length, byStatus }
     })
 
-    // 聚合最近更新项（取 top 10），保留所有字段以支持双语
+    // 聚合所有对象，用于最近更新和待推进
     const allItems: Array<Record<string, unknown>> = []
     for (const { type, result } of listResults) {
       if (!result.ok || !('data' in result)) continue
       const items = (result.data as { items: Array<Record<string, unknown>> }).items || []
       for (const item of items) {
-        allItems.push({ ...item, type })
+        allItems.push({
+          ...item,
+          type,
+          relativeTime: getRelativeTime(String(item.updated || ''), 'zh'),
+          typeColor: getTypeColor(type),
+        })
       }
     }
-    allItems.sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')))
-    const recentItems = allItems.slice(0, 10)
+
+    // 最近更新项（取 top 10）
+    const sortedByUpdated = [...allItems].sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')))
+    const recentItems = sortedByUpdated.slice(0, 10)
+
+    // 待推进项：筛选非终态，按优先级排序
+    const actionItems = allItems
+      .filter(item => isActionableStatus(String(item.status || '')))
+      .sort((a, b) => {
+        const priorityA = ACTION_STATUS_PRIORITY[String(a.status)] ?? 99
+        const priorityB = ACTION_STATUS_PRIORITY[String(b.status)] ?? 99
+        if (priorityA !== priorityB) return priorityA - priorityB
+        return String(a.updated || '').localeCompare(String(b.updated || ''))
+      })
+      .slice(0, 8)
 
     // 校验结果
     let validation: { ok: boolean; errors: number; warnings: number } = { ok: true, errors: 0, warnings: 0 }
@@ -74,6 +115,7 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
       profile,
       stats,
       recentItems,
+      actionItems,
       recentChanges: gitLog,
       validation,
     })

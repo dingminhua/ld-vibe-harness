@@ -20,6 +20,19 @@ export interface DashboardData {
     title_zh?: string;
     status: string;
     updated: string;
+    relativeTime: string;
+    typeColor: string;
+  }>;
+  actionItems: Array<{
+    id: string;
+    type: string;
+    title: string;
+    title_en?: string;
+    title_zh?: string;
+    status: string;
+    updated: string;
+    relativeTime: string;
+    typeColor: string;
   }>;
   recentChanges: Array<{
     hash: string;
@@ -27,6 +40,9 @@ export interface DashboardData {
     author: string;
     date: string;
     message: string;
+    category: string;
+    description: string;
+    relativeTime: string;
   }>;
   validation: {
     ok: boolean;
@@ -104,6 +120,9 @@ export interface ChangelogEntry {
   author: string;
   date: string;
   message: string;
+  category: string;
+  description: string;
+  relativeTime: string;
 }
 
 export async function fetchChangelog(count?: number): Promise<ChangelogEntry[]> {

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, CheckCircle, AlertCircle, AlertTriangle, Shield, GitCommit } from 'lucide-react';
+import { Activity, CheckCircle, AlertCircle, AlertTriangle, Shield, GitCommit, ArrowRightCircle } from 'lucide-react';
 import StatsCard from '@/components/StatsCard';
 import StatusBadge from '@/components/StatusBadge';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import type { LocaleKey } from '@/i18n/locales';
+import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
 
 const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
   intent: 'nav.intents',
@@ -113,15 +114,23 @@ export default function Dashboard() {
                   onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span className="whitespace-nowrap font-mono text-xs text-ldvh-text-secondary">{t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}</span>
+                    <span
+                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{
+                        backgroundColor: `${item.typeColor}20`,
+                        color: item.typeColor,
+                      }}
+                    >
+                      {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
+                    </span>
                     <span className="truncate text-sm text-ldvh-text-primary">
                       {getLocalizedTitle(item, locale) || item.id}
                     </span>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
-                    <span className="whitespace-nowrap font-mono text-xs text-ldvh-text-secondary">
-                      {item.updated}
+                    <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
+                      {item.relativeTime}
                     </span>
                   </div>
                 </li>
@@ -147,11 +156,19 @@ export default function Dashboard() {
                   onClick={() => navigate('/changelog')}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span className="whitespace-nowrap font-mono text-xs text-ldvh-accent">{entry.shortHash}</span>
-                    <span className="truncate text-sm text-ldvh-text-primary">{entry.message}</span>
+                    <span
+                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{
+                        backgroundColor: `${CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other}20`,
+                        color: CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other,
+                      }}
+                    >
+                      {getCategoryLocale(entry.category, locale)}
+                    </span>
+                    <span className="truncate text-sm text-ldvh-text-primary">{entry.description}</span>
                   </div>
-                  <span className="whitespace-nowrap font-mono text-xs text-ldvh-text-secondary">
-                    {entry.date.slice(0, 10)}
+                  <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
+                    {entry.relativeTime}
                   </span>
                 </li>
               ))}
@@ -160,8 +177,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Validation status - full width */}
-      <div className="mt-6 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+      {/* Validation status + Action Items - side by side */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* Validation status */}
+        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
             <Shield size={16} className="text-ldvh-accent" />
             <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.validationStatus')}</h3>
@@ -190,6 +209,49 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Action Items */}
+        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <ArrowRightCircle size={16} className="text-ldvh-accent" />
+            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.actionItems')}</h3>
+          </div>
+          {data.actionItems.length === 0 ? (
+            <p className="text-sm text-ldvh-text-secondary">{t('dashboard.noActionItems')}</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {data.actionItems.map((item) => (
+                <li
+                  key={`${item.type}-${item.id}`}
+                  className="flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30"
+                  onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span
+                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{
+                        backgroundColor: `${item.typeColor}20`,
+                        color: item.typeColor,
+                      }}
+                    >
+                      {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
+                    </span>
+                    <span className="truncate text-sm text-ldvh-text-primary">
+                      {getLocalizedTitle(item, locale) || item.id}
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
+                    <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
+                      {item.relativeTime}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

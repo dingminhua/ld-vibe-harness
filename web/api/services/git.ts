@@ -5,6 +5,7 @@
 import { execFile } from 'child_process'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { getRelativeTime as sharedGetRelativeTime } from './time.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -18,12 +19,50 @@ export interface GitLogEntry {
   author: string
   date: string
   message: string
+  category: string
+  description: string
+  relativeTime: string
 }
+
+/** Conventional commit 分类颜色 */
+export const CATEGORY_COLORS: Record<string, string> = {
+  feat: '#3b82f6',      // blue
+  fix: '#ef4444',       // red
+  docs: '#6b7280',      // gray
+  style: '#a855f7',     // purple
+  refactor: '#06b6d4',  // cyan
+  test: '#eab308',      // yellow
+  chore: '#6b7280',     // gray
+  perf: '#22c55e',      // green
+  ci: '#ec4899',        // pink
+  build: '#92400e',     // brown
+  default: '#6b7280',   // gray
+}
+
+/**
+ * 解析 conventional commit message
+ * 格式: type(scope): description 或 type: description
+ */
+function parseCommitMessage(message: string): { category: string; description: string } {
+  const match = message.match(/^(\w+)(?:\([^)]+\))?:\s*(.+)$/)
+  if (match) {
+    return {
+      category: match[1],
+      description: match[2],
+    }
+  }
+  return {
+    category: 'other',
+    description: message,
+  }
+}
+
+
 
 /**
  * 获取 git log 列表
  */
-export async function getGitLog(count: number = 50): Promise<GitLogEntry[]> {
+export async function getGitLog(count: number = 50, locale: string = 'zh'): Promise<GitLogEntry[]> {
   return new Promise((resolve, reject) => {
     execFile(
       'git',
@@ -38,12 +77,17 @@ export async function getGitLog(count: number = 50): Promise<GitLogEntry[]> {
         const lines = stdout.trim().split('\n').filter(Boolean)
         const entries: GitLogEntry[] = lines.map((line) => {
           const [hash, shortHash, author, date, ...msgParts] = line.split('|')
+          const message = msgParts.join('|')
+          const { category, description } = parseCommitMessage(message)
           return {
             hash,
             shortHash,
             author,
             date,
-            message: msgParts.join('|'),
+            message,
+            category,
+            description,
+            relativeTime: sharedGetRelativeTime(date, locale),
           }
         })
 
