@@ -4,7 +4,7 @@
 > 定位：定义 LDVH 规范模型的附件型子文档通用规则，包括子文档分类、命名、状态骨架、契约子文档规则和与主文档的关系
 > 适用范围：所有接入 LDVH 的项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/03-Specs文档规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/14-LDVH行动模型基础规范.md`
+> 相关规范：`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/03-Specs文档规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/14-LDVH工作流基础规范.md`
 
 ---
 
@@ -32,7 +32,7 @@ LDVH 规范模型是 specs/ 中按 NN 编号组织的、有主文档和子文档
 | 规范模型 | 规范区段 | 基础规范 | 实例层 |
 |---|---|---|---|
 | 事实模型 | specs/20-49 | `specs/13-LDVH事实模型基础规范.md` | 事实实例（ldvh-base/） |
-| 行动模型 | specs/50-79 | `specs/14-LDVH行动模型基础规范.md` | 行动执行（运行时） |
+| 行动模型 | specs/50-79 | `specs/14-LDVH工作流基础规范.md` | 行动执行（运行时） |
 
 未来新增的规范模型类型（如 specs/80-99 区段）也适用本文定义的子文档通用规则。
 
@@ -232,7 +232,7 @@ Skill、Tools、Contract 和需求变更联动规则用于约束模型落地初�
 | L1 Rules | `../.trae/rules/ldvh-l1-rules.md` | 规则入口 | 子文档分类、命名、状态骨架或契约规则变化时 |
 | L2 Specs Rules | `../.trae/rules/ldvh-l2-specs-rules.md` | 规则入口 | 子文档分类、命名、状态骨架或契约规则变化时 |
 | 13 | `specs/13-LDVH事实模型基础规范.md` | 基础规范 | 事实模型子文档规则变化时 |
-| 14 | `specs/14-LDVH行动模型基础规范.md` | 基础规范 | 行动模型子文档规则变化时 |
+| 14 | `specs/14-LDVH工作流基础规范.md` | 基础规范 | 行动模型子文档规则变化时 |
 
 ---
 

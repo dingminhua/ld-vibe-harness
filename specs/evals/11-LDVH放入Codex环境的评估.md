@@ -5,7 +5,7 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/11.01-Rules机制规范.md`、`specs/11.02-Skill机制规范.md`、`specs/11.03-Agent机制规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/14-LDVH行动模型基础规范.md`、`specs/51-multi-role-thinking-多角色思考.md`
+> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/11.01-Rules机制规范.md`、`specs/11.02-Skill机制规范.md`、`specs/11.03-Agent机制规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/14-LDVH工作流基础规范.md`、`specs/51-multi-role-thinking-多角色思考.md`
 
 ---
 

@@ -6,7 +6,7 @@
 > 编号归属：`specs/evals/` 项目评估与内部辅助文档，编号仅用于排序和引用便利，不属于 specs 正式规范编号体系
 > 使用边界：本文提供可复制使用的提示词模板，不直接构成 LD Vibe Harness 强制规则；实际执行仍以 `specs/00-79`、项目 Rules 和 `ldvh-base/` 事实实例为准
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`
-> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/11.01-Rules机制规范.md`、`specs/14-LDVH行动模型基础规范.md`、`specs/51-multi-role-thinking-多角色思考.md`、`specs/51.06-Contract.md`
+> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/11.01-Rules机制规范.md`、`specs/14-LDVH工作流基础规范.md`、`specs/51-multi-role-thinking-多角色思考.md`、`specs/51.06-Contract.md`
 
 ---
 
@@ -80,7 +80,7 @@
    - 是否存在复制维护其他权威文档规则正文的问题。
    - 是否存在反向边界章节或不符合 `03-Specs文档规范.md` 的结构问题。
    - 是否存在事实源边界不清、第二事实源、引用路径失效或索引未同步。
-   - 如属于 20-49 或 50-79 区段，是否符合事实模型或行动模型基础规范及其附件型实践子文档规则。
+   - 如属于 20-49 或 50-79 区段，是否符合事实模型或工作流基础规范及其附件型实践子文档规则。
 4. 不要把 `specs/refs/` 的外部资料当作强制规则来源。
 5. 不要把工具缓存、聊天过程或 Agent 输出当作事实源。
 
@@ -207,7 +207,7 @@
 7. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/10-事实源边界与承载规范.md`
 8. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/11-LDVH-AI协作规范.md`
 9. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/13-LDVH事实模型基础规范.md`
-10. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/14-LDVH行动模型基础规范.md`
+10. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/14-LDVH工作流基础规范.md`
 11. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/51-multi-role-thinking-多角色思考.md`
 12. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/51.06-Contract.md`
 

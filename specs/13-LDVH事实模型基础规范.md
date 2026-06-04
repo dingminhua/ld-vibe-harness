@@ -5,7 +5,7 @@
 > 定位：定义 LDVH 事实模型的基础规则、事实模型、准入条件、通用规范和与 20-49 具体事实模型规范的关系
 > 适用范围：所有接入 LDVH 的项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/03-Specs文档规范.md`、`specs/04-LDVH模型子文档规范.md`、`specs/10-事实源边界与承载规范.md`、`specs/14-LDVH行动模型基础规范.md`
+> 相关规范：`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/03-Specs文档规范.md`、`specs/04-LDVH模型子文档规范.md`、`specs/10-事实源边界与承载规范.md`、`specs/14-LDVH工作流基础规范.md`
 
 ---
 
