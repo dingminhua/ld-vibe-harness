@@ -22,7 +22,7 @@ root_cause: |
   4. acceptance 列表勾选没有强制触发点，AI 倾向于跳过勾选直接提交。
 resolution: |
   1. 在 ldvh-close Skill 中增加关闭前强制检查：acceptance 列表是否已全部勾选为 - [x]，未勾选则必须重新审计；
-  2. 在 L1 Rules 中增加：规范变更后执行受影响任务前，必须重新读取变更后的规范；
+  2. 在项目规则中增加：规范变更后执行受影响任务前，必须重新读取变更后的规范；
   3. 在 27-Task 关闭条件中增加：acceptance 列表必须已勾选，否则不允许关闭。
 verification: |
   验证方式：后续任务执行时，AI 是否在关闭前检查 acceptance 勾选状态；

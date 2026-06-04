@@ -363,7 +363,7 @@ Dogfood 暴露 YAML 长文本问题 → task-0002 → Skill / Tool / Test 修复
 3. **Dogfood 实例已创建**：profile-0001（ld-vibe-harness 项目画像）、memo-0001（22 子文档状态缺口）、pitfall-0001/0002/0003 已实例化。
 4. **Skill 已支持新对象类型**：`ldvh-intake` 新增 Memo/Profile 创建分支；`ldvh-close` 新增子任务联动、级联检查。
 5. **Task 子任务机制已落地**：parent_task/sub_tasks 字段、深度限制两层、关闭前置条件。
-6. **Pitfall-0002/0003 已修复并 superseded**：Change 需要 22 系列子文档承接 Rules、Skill、Tools、Contract 等实践机制；当前 22 主文档仍需继续清理历史残留表述，提交纪律规则重复维护已通过 L0 去重修复（权威位置确定为 22.01-Rules.md）。
+6. **Pitfall-0002/0003 已修复并 superseded**：Change 需要 22 系列子文档承接 Rules、Skill、Tools、Contract 等实践机制；当前 22 主文档仍需继续清理历史残留表述，提交纪律规则重复维护已通过工作区规则去重修复（权威位置确定为 22.01-Rules.md）。
 7. **specs 文档规范已清理**：32 个 not-created 子文档章节编号补齐，22.02 编号跳跃修复，check_03 问题从 113 降至 0。
 
 ---

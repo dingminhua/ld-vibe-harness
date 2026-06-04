@@ -228,7 +228,7 @@ YAML、Markdown、Python 等介质是行业标准，Codex 完全支持。不需�
 
 **关键差异**：
 
-1. Trae Rules 的 `globs` 按文件类型自动触发——Codex 的 AGENTS.md **没有**这个能力。Codex 是"按目录分层加载"，不是"按文件类型过滤"。LDVH 的 L2 globs 规则需要改为在目标文件所在目录放置 `AGENTS.md`。
+1. Trae Rules 的 `globs` 按文件类型自动触发——Codex 的 AGENTS.md **没有**这个能力。Codex 是"按目录分层加载"，不是"按文件类型过滤"。LDVH 的 场景规则 globs 规则需要改为在目标文件所在目录放置 `AGENTS.md`。
 
 2. Trae Rules 的 `description` 智能生效——Codex 的 SKILL.md 有类似的 `description` 匹配触发机制，但 SKILL.md 是工作流而非约束规则。如果需要"按场景触发约束"，建议用 SKILL.md 包装。
 
@@ -478,7 +478,7 @@ LDVH 的 Human Gate 触发条件（"什么情况下需要人确认"）不变。�
 目标：LDVH 在 Codex 中的体验不弱于 Trae Solo。
 
 1. 将每个 LDVH Skill 改写为 SKILL.md；
-2. 将 L2 globs 规则改为子目录 AGENTS.md 或 SKILL.md；
+2. 将 场景规则 globs 规则改为子目录 AGENTS.md 或 SKILL.md；
 3. 配置 MCP Server（如 Context7、Sequential Thinking）；
 4. 将 Human Gate 触发逻辑写进 AGENTS.md；
 5. 验证 Codes 辅助层在 Codex 沙箱中正常运行。
