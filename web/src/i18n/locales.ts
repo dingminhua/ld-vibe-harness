@@ -120,12 +120,12 @@ export const UI_LOCALES = {
     'nav.intents': 'Intents',
     'nav.tasks': 'Tasks',
     'nav.adrs': 'ADRs',
-    'nav.pitfalls': 'Pitfalls',
+    'nav.pitfalls': 'Bugs',
     'nav.memos': 'Memos',
     'nav.profiles': 'Profiles',
     'nav.changes': 'Changes',
     'nav.validate': 'Validate',
-    'nav.changelog': 'Changelog',
+    'nav.changelog': 'Changes',
 
     // Dashboard
     'dashboard.title': 'Dashboard',
@@ -164,9 +164,9 @@ export const UI_LOCALES = {
     'validate.byFile': 'Grouped by file',
 
     // Changelog
-    'changelog.title': 'Changelog',
+    'changelog.title': 'Changes',
     'changelog.subtitle': 'Git commit history, click to view details',
-    'changelog.loadFailed': 'Failed to load changelog',
+    'changelog.loadFailed': 'Failed to load changes',
     'changelog.detailFailed': 'Failed to load commit detail',
 
     // Common
