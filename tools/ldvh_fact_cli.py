@@ -518,14 +518,20 @@ def cmd_list(args: argparse.Namespace) -> int:
             obj_status = data.get("status", "")
             if status_filter and obj_status != status_filter:
                 continue
-            items.append({
+            item_data: dict[str, Any] = {
                 "id": data.get("id", ""),
                 "type": data.get("type", object_type),
                 "status": obj_status,
                 "title": data.get("title", ""),
                 "path": str(yaml_path),
                 "updated": data.get("updated", ""),
-            })
+            }
+            # 传递可选的双语字段
+            if "title_en" in data:
+                item_data["title_en"] = data["title_en"]
+            if "title_zh" in data:
+                item_data["title_zh"] = data["title_zh"]
+            items.append(item_data)
 
     if fmt == "json":
         result: dict[str, Any] = {

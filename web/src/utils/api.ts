@@ -16,6 +16,8 @@ export interface DashboardData {
     id: string;
     type: string;
     title: string;
+    title_en?: string;
+    title_zh?: string;
     status: string;
     updated: string;
   }>;

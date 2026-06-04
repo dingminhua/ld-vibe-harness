@@ -47,22 +47,16 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
       return { type, total: items.length, byStatus }
     })
 
-    // 聚合最近更新项（取 top 10）
-    const allItems: Array<{ id: string; type: string; title: string; status: string; updated: string }> = []
+    // 聚合最近更新项（取 top 10），保留所有字段以支持双语
+    const allItems: Array<Record<string, unknown>> = []
     for (const { type, result } of listResults) {
       if (!result.ok || !('data' in result)) continue
       const items = (result.data as { items: Array<Record<string, unknown>> }).items || []
       for (const item of items) {
-        allItems.push({
-          id: String(item.id || ''),
-          type,
-          title: String(item.title || ''),
-          status: String(item.status || ''),
-          updated: String(item.updated || ''),
-        })
+        allItems.push({ ...item, type })
       }
     }
-    allItems.sort((a, b) => b.updated.localeCompare(a.updated))
+    allItems.sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')))
     const recentItems = allItems.slice(0, 10)
 
     // 校验结果
