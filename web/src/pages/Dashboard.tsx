@@ -105,20 +105,20 @@ export default function Dashboard() {
           {data.recentItems.length === 0 ? (
             <p className="text-sm text-ldvh-text-secondary">{t('dashboard.noRecentActivity')}</p>
           ) : (
-            <ul className="flex flex-col gap-1.5">
+            <ul className="flex flex-col gap-2">
               {data.recentItems.map((item) => (
                 <li
                   key={`${item.type}-${item.id}`}
-                  className="flex cursor-pointer items-center justify-between rounded-md px-3 py-1.5 transition-colors hover:bg-ldvh-border/30"
+                  className="flex cursor-pointer items-center justify-between rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30"
                   onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
                 >
-                  <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
                     <span className="whitespace-nowrap font-mono text-xs text-ldvh-text-secondary">{t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}</span>
                     <span className="truncate text-sm text-ldvh-text-primary">
                       {getLocalizedTitle(item, locale) || item.id}
                     </span>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2.5">
+                  <div className="flex shrink-0 items-center gap-3">
                     <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
                     <span className="whitespace-nowrap font-mono text-xs text-ldvh-text-secondary">
                       {item.updated}
