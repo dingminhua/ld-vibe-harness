@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from dataclasses import dataclass
@@ -66,9 +67,21 @@ class Issue:
     level: str
     code: str
     message: str
+    field: str | None = None
+    suggestion: str | None = None
 
     def format(self) -> str:
         return f"{self.path}: [{self.level}] {self.code}: {self.message}"
+
+    def to_dict(self) -> dict[str, str | None]:
+        return {
+            "level": self.level,
+            "code": self.code,
+            "message": self.message,
+            "path": self.path,
+            "field": self.field,
+            "suggestion": self.suggestion,
+        }
 
 
 def is_empty(value: Any) -> bool:
@@ -271,9 +284,39 @@ def print_issues(issues: list[Issue]) -> None:
         print(issue.format())
 
 
+def build_tool_result(target: Path, files_count: int, issues: list[Issue]) -> dict[str, Any]:
+    errors = sum(1 for issue in issues if issue.level == "error")
+    warnings = sum(1 for issue in issues if issue.level == "warning")
+    return {
+        "ok": errors == 0,
+        "command": "ldvh_fact_validate",
+        "action": "validate",
+        "target": str(target),
+        "summary": {
+            "files": files_count,
+            "errors": errors,
+            "warnings": warnings,
+        },
+        "issues": [issue.to_dict() for issue in issues],
+        "data": {},
+    }
+
+
+def print_text_result(files_count: int, issues: list[Issue]) -> None:
+    print_issues(issues)
+    errors = sum(1 for issue in issues if issue.level == "error")
+    warnings = sum(1 for issue in issues if issue.level == "warning")
+    print(f"检查完成: files={files_count} errors={errors} warnings={warnings}")
+
+
+def print_json_result(result: dict[str, Any]) -> None:
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="校验 Intent、Task 事实模型 YAML 文件")
     parser.add_argument("paths", nargs="+", help="一个或多个 .yaml 文件或目录")
+    parser.add_argument("--format", choices={"text", "json"}, default="text", help="输出格式，默认 text")
     return parser.parse_args()
 
 
@@ -286,10 +329,11 @@ def main() -> int:
         file_issues, is_input_parse_type_error = validate_file(path)
         issues.extend(file_issues)
         has_input_parse_type_error = has_input_parse_type_error or is_input_parse_type_error
-    print_issues(issues)
     error_count = sum(1 for issue in issues if issue.level == "error")
-    warning_count = sum(1 for issue in issues if issue.level == "warning")
-    print(f"检查完成: files={len(files)} errors={error_count} warnings={warning_count}")
+    if args.format == "json":
+        print_json_result(build_tool_result(Path(",".join(args.paths)), len(files), issues))
+    else:
+        print_text_result(len(files), issues)
     if has_input_parse_type_error:
         return 2
     if error_count:

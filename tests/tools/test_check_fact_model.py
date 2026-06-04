@@ -1,3 +1,4 @@
+import json
 import subprocess
 from pathlib import Path
 
@@ -6,9 +7,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = PROJECT_ROOT / "tools" / "ldvh_fact_validate.py"
 
 
-def run_checker(*paths):
+def run_checker(*paths, extra_args=None):
+    cmd = ["python3", str(SCRIPT_PATH), *[str(path) for path in paths]]
+    if extra_args:
+        cmd.extend(extra_args)
     return subprocess.run(
-        ["python3", str(SCRIPT_PATH), *[str(path) for path in paths]],
+        cmd,
         cwd=PROJECT_ROOT,
         text=True,
         capture_output=True,
@@ -348,3 +352,50 @@ def test_profile_invalid_status(tmp_path):
 
     assert result.returncode == 1
     assert "INVALID_STATUS" in result.stdout
+
+
+def test_json_output_valid(tmp_path):
+    path = write_yaml(tmp_path / "intent-0001-valid-intent.yaml", valid_intent_yaml())
+
+    result = run_checker(path, extra_args=["--format", "json"])
+
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+    assert data["command"] == "ldvh_fact_validate"
+    assert data["action"] == "validate"
+    assert data["summary"]["files"] == 1
+    assert data["summary"]["errors"] == 0
+    assert data["summary"]["warnings"] == 0
+    assert data["issues"] == []
+    assert data["data"] == {}
+
+
+def test_json_output_with_errors(tmp_path):
+    content = valid_task_yaml().replace("status: planned", "status: unknown")
+    path = write_yaml(tmp_path / "task-0001-invalid-status.yaml", content)
+
+    result = run_checker(path, extra_args=["--format", "json"])
+
+    assert result.returncode == 1
+    data = json.loads(result.stdout)
+    assert data["ok"] is False
+    assert data["summary"]["errors"] == 1
+    assert len(data["issues"]) == 1
+    issue = data["issues"][0]
+    assert issue["code"] == "INVALID_STATUS"
+    assert issue["level"] == "error"
+    assert "path" in issue
+    assert "message" in issue
+
+
+def test_text_output_backward_compatible(tmp_path):
+    path = write_yaml(tmp_path / "intent-0001-valid-intent.yaml", valid_intent_yaml())
+
+    result_default = run_checker(path)
+    result_explicit = run_checker(path, extra_args=["--format", "text"])
+
+    assert result_default.returncode == 0
+    assert result_explicit.returncode == 0
+    assert result_default.stdout == result_explicit.stdout
+    assert "检查完成: files=1 errors=0 warnings=0" in result_default.stdout
