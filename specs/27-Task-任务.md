@@ -125,7 +125,7 @@ review_needed → executing（退回：审查不通过）
 | executing → verifying | AI 完成执行，启动独立 agent 审计时 | AI |
 | verifying → review_needed | 独立 agent 审计 acceptance 全部通过后 | AI |
 | verifying → executing | 审计发现 bug，需要修复时 | AI |
-| review_needed → closed | Human Gate 确认后 | AI + Human |
+| review_needed → closed | 关闭条件全部满足时 | AI |
 | review_needed → executing | 审查不通过，需要修复时 | AI |
 
 AI 开始执行 `planned` 状态的 Task 前，必须先将状态变更为 `executing` 并更新 `updated` 日期。不得在 `planned` 状态下直接执行任务。
@@ -142,8 +142,9 @@ Task 从 `review_needed` → `closed` 必须满足：
 
 1. `acceptance` 字段中所有检查项已标记为 `- [x]`（未勾选的 `- [ ]` 项存在时，必须启动独立 agent 重新审计，不得直接关闭）；
 2. 所有子任务（`sub_tasks`）已关闭（`status: closed`）；
-3. `closure_evidence` 字段已填写；
-4. 已获得 Human Gate 确认。
+3. `closure_evidence` 字段已填写。
+
+以上条件全部满足时，AI 直接将 Task 状态变更为 `closed`，不需要 Human Gate 确认。
 
 ---
 
@@ -216,8 +217,7 @@ AI 执行 Task 时发现 bug、缺口或规范遗漏，应按以下流程自动�
 以下场景必须触发 Human Gate：
 
 1. 状态从 `verifying` → `review_needed` 时确认；
-2. 状态从 `review_needed` → `closed` 时确认；
-3. 高风险操作前确认（修改 specs、Rules、ADR、ldvh-base/ 等事实源）；
+2. 高风险操作前确认（修改 specs、Rules、ADR、ldvh-base/ 等事实源）；
 4. 创建子任务时确认（AI 自动创建子任务时应通知用户）。
 
 Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/05-Trae-Solo AskUserQuestion使用规范.md`）。
