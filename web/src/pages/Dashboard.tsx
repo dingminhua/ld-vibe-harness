@@ -95,7 +95,7 @@ export default function Dashboard() {
         })}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent activity */}
         <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
@@ -158,9 +158,10 @@ export default function Dashboard() {
             </ul>
           )}
         </div>
+      </div>
 
-        {/* Validation status */}
-        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+      {/* Validation status - full width */}
+      <div className="mt-6 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
             <Shield size={16} className="text-ldvh-accent" />
             <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.validationStatus')}</h3>
