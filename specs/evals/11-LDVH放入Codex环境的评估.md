@@ -5,7 +5,7 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/11.01-Rules机制规范.md`、`specs/11.02-Skill机制规范.md`、`specs/11.03-Agent机制规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/50-LDVH工作流基础规范.md`、`specs/51-multi-role-thinking-多角色思考.md`
+> 相关规范：`specs/11-LDVH-Trae-Solo-环境规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/50-LDVH工作流基础规范.md`、`specs/51-multi-role-thinking-多角色思考.md`
 
 ---
 
@@ -99,11 +99,11 @@ Codex 的 272K 默认上下文窗口（最大 1M）远大于 Trae Solo。LDVH �
 
 | LDVH 当前做法 | Codex 下的变化 | 依据 |
 |---|---|---|
-| 自定义 Agent 调度规则（`specs/11.03`） | 大部分可删除 | Codex Cloud 原生并行多任务；`/fork` 原生会话分叉；MCP 可编排多 Agent |
+| 自定义 Agent 调度规则（`specs/11` §8） | 大部分可删除 | Codex Cloud 原生并行多任务；`/fork` 原生会话分叉；MCP 可编排多 Agent |
 | 手动判断"何时需要子 Agent" | 保留判断逻辑，但执行交棒 | Codex 会自行决定是否 `/fork` 或派发 Cloud 任务 |
 | Agent 权限边界、生命周期管理 | 删除 | Codex 的 `sandbox_mode` + `approval_policy` 原生覆盖 |
 
-结论：**`specs/11.03-Agent机制规范.md` 可以删减约 80%。** 只保留"何时需要独立上下文/并行"的判断逻辑。
+结论：**`specs/11-LDVH-Trae-Solo-环境规范.md` §8 可以删减约 80%。** 只保留"何时需要独立上下文/并行"的判断逻辑。
 
 ### 4.3 安全沙箱：从"无"到"OS 内核级"
 
@@ -276,7 +276,7 @@ YAML、Markdown、Python 等介质是行业标准，Codex 完全支持。不需�
 | MCP 多 Agent 编排 | 通过 MCP 连接其他 Agent → 等同于"Agent 调度" |
 | `codex exec` | 非交互式执行 → 等同于"Agent 后台任务" |
 
-**适配结论**：**`specs/11.03-Agent机制规范.md` 可以删除约 80%。** 只保留"何时应 `/fork` 或派发 Cloud 任务"的判断逻辑。
+**适配结论**：**`specs/11-LDVH-Trae-Solo-环境规范.md` §8 可以删除约 80%。** 只保留"何时应 `/fork` 或派发 Cloud 任务"的判断逻辑。
 
 ### 5.3 工具（Tools）：局部适配
 

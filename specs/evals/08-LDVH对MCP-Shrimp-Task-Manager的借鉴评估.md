@@ -7,7 +7,7 @@
 > 调研边界：基于 `/Users/dmh2002/trae_projects/mcp-shrimp-task-manager` 本地仓库的 README、docs、src、tools/task-viewer 与配置文件进行分析，重点评估其对 LD Vibe Harness 的可借鉴方向
 > 执行效力：本文为内部调研和方案比较，不直接构成 LD Vibe Harness 强制规则；结论进入 `specs/00-79` 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-LDVH术语规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`
-> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/50-LDVH工作流基础规范.md`、`specs/20-事实模型集合索引.md`
+> 相关规范：`specs/11-LDVH-Trae-Solo-环境规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/50-LDVH工作流基础规范.md`、`specs/20-事实模型集合索引.md`
 > 参考项目：`/Users/dmh2002/trae_projects/mcp-shrimp-task-manager`
 
 ---
@@ -199,7 +199,7 @@ Viewer 端包括：
 5. OpenAI 批量分配 Agent；
 6. Chat Agent 基于当前任务和页面上下文提供建议。
 
-对 LDVH 的启发是：Agent 分配应服务任务执行，而不是单独作为炫技功能。但 LDVH 也必须坚持 `specs/11.03-Agent机制规范.md` 的边界：Agent 创建、修改、权限调整和事实源回写需要治理；Agent 输出不是最终事实源；Agent 不得自行宣称任务完成；推荐 Agent 清单不应直接进入正式规范。Shrimp 的自动匹配逻辑可以作为工具辅助建议，但不应自动替代 LDVH 的 Agent 调度判断和 Human Gate。
+对 LDVH 的启发是：Agent 分配应服务任务执行，而不是单独作为炫技功能。但 LDVH 也必须坚持 `specs/11-LDVH-Trae-Solo-环境规范.md` §8 的边界：Agent 创建、修改、权限调整和事实源回写需要治理；Agent 输出不是最终事实源；Agent 不得自行宣称任务完成；推荐 Agent 清单不应直接进入正式规范。Shrimp 的自动匹配逻辑可以作为工具辅助建议，但不应自动替代 LDVH 的 Agent 调度判断和 Human Gate。
 
 ### 2.9 Web 能力
 
@@ -231,7 +231,7 @@ Shrimp 有两套 Web 能力。
 | `query_task` / `get_task_detail` | Tools 辅助层、Web 信息同步层 | 借鉴跨当前任务和历史任务的检索 | 检索结果是派生视图，权威仍是 Git 文件事实源 |
 | `{DATA_DIR}/memory` | Evidence、Change、Pitfall、历史索引 | 借鉴跨会话记忆与历史恢复目标 | memory 不能成为唯一事实源，稳定经验应回写对应对象 |
 | Prompt 模板系统 | Rules、Skill、行动模型、工具模板 | 借鉴多语言模板、覆盖、追加和变量替换机制 | 模板不能与正式规范形成冲突事实源 |
-| Agent 自动匹配 | Agent 调度辅助、Web 建议 | 借鉴基于任务内容的 Agent 建议 | Agent 调度须服从 11.03，不能自动创建或授权 Agent |
+| Agent 自动匹配 | Agent 调度辅助、Web 建议 | 借鉴基于任务内容的 Agent 建议 | Agent 调度须服从 11 §8，不能自动创建或授权 Agent |
 | 内嵌 WebGUI | Web 信息同步层 | 借鉴轻量任务展示和 SSE 刷新 | WebGUI 状态不能替代文件事实源 |
 | 独立 Task Viewer | Web 信息同步层 + Tools 辅助层 | 借鉴任务表格、详情、历史、模板、Agent 管理和人类工作台 | Web 写入必须受控，写入后回读 Git 文件事实源并记录 Change |
 | research_mode | specs/evals、ADR、Memo、行动模型 | 借鉴研究状态整合和后续步骤约束 | 研究过程不等于结论，稳定结论需进入 evals、ADR 或正式规范 |
@@ -383,7 +383,7 @@ Shrimp 独立 viewer 中存在 OpenAI 批量分配 Agent 和 Chat Agent 能力�
 
 ### 5.7 不应把 Agent 自动匹配等同于 Agent 治理
 
-Shrimp 的关键词匹配可以为任务填充 `agent` 字段，但 LDVH 的 Agent 创建、调用、权限、定义摘要和生命周期需要受 `specs/11.03-Agent机制规范.md` 治理。自动匹配最多是建议，不应自动创建 Agent、授权 Agent、修改 Agent Prompt 或绕过主控判断。
+Shrimp 的关键词匹配可以为任务填充 `agent` 字段，但 LDVH 的 Agent 创建、调用、权限、定义摘要和生命周期需要受 `specs/11-LDVH-Trae-Solo-环境规范.md` §8 治理。自动匹配最多是建议，不应自动创建 Agent、授权 Agent、修改 Agent Prompt 或绕过主控判断。
 
 ### 5.8 不应让项目规则初始化变成规则泛滥
 

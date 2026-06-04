@@ -1,4 +1,4 @@
-# Codex Desktop 功能调研
+# Codex App 功能调研
 
 > 创建日期：2026-06-01
 > 来源：OpenAI 官方介绍、Codex 官方文档、Tech Times、IntuitionLabs、ses-base、notai.jp、ai-revolution.co.jp、ai-reboot.io、MorphLLM、Educative、网易、lilting 等
@@ -378,7 +378,7 @@ Codex Desktop 引入的"真实桌面操作"显著拉高了攻击面，需重点�
 | 事实模型边界 | Worktree 隔离 = 智能体副本 | 隔离 = 防污染主线；事实模型有 worktree 隐喻 |
 | 压缩保护 | Codex CLI 共享 `config.toml` | 共享配置是"压缩保护"的一种实现 |
 
-注意：以上仅为"参考启发"，refs 文件不构成 LDVH 强制规则；规则变更须经 `specs/11.01-Rules机制规范.md` §7 审计。
+注意：以上仅为"参考启发"，refs 文件不构成 LDVH 强制规则；规则变更须经 `specs/11-LDVH-Trae-Solo-环境规范.md` §6 审计。
 
 ---
 

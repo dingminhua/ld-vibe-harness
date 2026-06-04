@@ -4,7 +4,7 @@
 > 定位：定义 Change 变更记录事实模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约（映射为 commit message 格式规范）、事实源回写、证据留存、适配原则、落地初始化、落地审计和合规检查
 > 适用范围：所有接入 LDVH 且需要追踪事实源变更的项目
 > 上位依据：`specs/13-LDVH事实模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-Specs文档规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/20-事实模型集合索引.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-Specs文档规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-Trae-Solo-环境规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/20-事实模型集合索引.md`
 
 ---
 
@@ -358,7 +358,7 @@ Change 22.01-22.06 六个子文档槽位状态如下：
 
 22.01 从 not-created 升级为 active 的理由：
 
-1. **L0 Rules 的权威来源**：22.01 定义了 Change 提交纪律的完整规则，L0/L1 Rules 从中提取运行时入口摘要，符合 11.01 Rules 机制规范的分层关系；
+1. **L0 Rules 的权威来源**：22.01 定义了 Change 提交纪律的完整规则，L0/L1 Rules 从中提取运行时入口摘要，符合 11 §6 Rules 机制规范的分层关系；
 2. **提交纪律需要明确边界**：哪些场景必须调用 Skill、哪些不得跳过 Skill 直接 commit、Rules 层不得承载哪些内容，需要权威位置定义；
 3. **Change 虽无 YAML 实例但提交纪律独立**：Change 的格式契约、提交流程、校验工具有明确的机制落地需求，不应省略。
 

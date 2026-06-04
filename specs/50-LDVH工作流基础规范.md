@@ -4,7 +4,7 @@
 > 定位：定义 LDVH 工作流的基础规则、工作流标准组成、准入条件、通用规范、工作流区段索引和与 51-79 具体工作流规范的关系
 > 适用范围：所有接入 LDVH 的项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH事实模型基础规范.md`
+> 相关规范：`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-Trae-Solo-环境规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH事实模型基础规范.md`
 
 ---
 
@@ -291,7 +291,7 @@ Gate 的执行遵循以下原则：
 4. **证据留存**：Gate 的确认过程必须留下可追溯的证据；
 5. **回写联动**：Gate 结果形成稳定事实时，应按事实源边界回写。
 
-在 Trae 平台中，Human Gate 通过 AskUserQuestion 工具实现。触发条件、设计规范和取消降级策略见 `specs/05-Trae-Solo AskUserQuestion使用规范.md` §5-7。
+在 Trae 平台中，Human Gate 通过 AskUserQuestion 工具实现。触发条件、设计规范和取消降级策略见 `specs/11-LDVH-Trae-Solo-环境规范.md` §9。
 
 ### 6.4 Rules 适用原则
 
@@ -302,22 +302,21 @@ Gate 的执行遵循以下原则：
 1. **优先级**：项目规则优先于 LDVH 基础规则；
 2. **不冲突**：规则之间不得冲突，冲突时按优先级处理，并评估是否需要修正规则；
 3. **可追溯**：规则必须有明确的来源和版本；
-4. **机制回指**：Rules 机制设计和治理以 `specs/11-LDVH-AI协作规范.md` 和 `specs/11.01-Rules机制规范.md` 为准；
+4. **机制回指**：Rules 机制设计和治理以 `specs/11-LDVH-Trae-Solo-环境规范.md` §6 为准；
 5. **Human Gate**：规则变更必须触发 Human Gate。
 
 ### 6.5 Skill 进入原则
 
-Skill 是 AI 可使用的可复用流程。工作流可以在具体场景中说明何时建议进入 Skill，但 Skill 的准入、命名、部署、输出和事实源回写边界由 `specs/11-LDVH-AI协作规范.md` 和 `specs/11.02-Skill机制规范.md` 定义，本文不重复维护通用规则。
+Skill 是 AI 可使用的可复用流程。工作流可以在具体场景中说明何时建议进入 Skill，但 Skill 的准入、命名、部署、输出和事实源回写边界由 `specs/11-LDVH-Trae-Solo-环境规范.md` §7 定义，本文不重复维护通用规则。
 
 Skill 进入在工作流中的适配说明如下：
 
-1. **场景匹配**：根据当前 Scenario 判断是否需要可复用流程，判断标准以 11.02 为准；
+1. **场景匹配**：根据当前 Scenario 判断是否需要可复用流程，判断标准以 11 §7 为准；
 2. **机制回指**：Skill 准入、边界和证据留存必须回指 11 系列规范及本文 §6.8 事实源回写原则；
-3. **交还主控**：工作流引用 Skill 时，应要求 Skill 在流程结束后输出下一步建议并交还主控，不得自行链式调用下一个 Skill 或子 Agent。
 
 ### 6.6 Agent 调度原则
 
-Agent 是 AI 代理执行能力。工作流可以在具体场景中说明何时建议调度 Agent，但 Agent 的创建、调用、定义摘要、生命周期、权限边界和事实源回写边界由 `specs/11-LDVH-AI协作规范.md` 和 `specs/11.03-Agent机制规范.md` 定义。
+Agent 是 AI 代理执行能力。工作流可以在具体场景中说明何时建议调度 Agent，但 Agent 的创建、调用、定义摘要、生命周期、权限边界和事实源回写边界由 `specs/11-LDVH-Trae-Solo-环境规范.md` §8 定义。
 
 Agent 调度在工作流中的通用原则：
 
@@ -453,7 +452,7 @@ AI 在执行 Task 过程中发现问题时，必须按以下分流规则判断�
 | 审计行动 | 项目审计 | 发现项目状态、事实源和执行闭环中的问题 |
 | 管理行动 | 对象创建、对象状态更新 | 管理结构化对象和状态的受控变更 |
 
-Rules、Skill、Agent 的机制选择和治理边界由 `specs/11-LDVH-AI协作规范.md` 及其子文档定义。本文只维护工作流规范区段的索引关系，不重复定义 AI 协作机制规则。
+Rules、Skill、Agent 的机制选择和治理边界由 `specs/11-LDVH-Trae-Solo-环境规范.md` 定义。本文只维护工作流规范区段的索引关系，不重复定义 AI 协作机制规则。
 
 ### 7.3 关系原则
 

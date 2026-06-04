@@ -164,7 +164,7 @@ Profile 的创建、状态变更和归档都应记录 Change。Change 以 Git co
 2. 状态从 `active` → `suspended` 时确认；
 3. 状态从 `active` → `archived` 时确认。
 
-Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/05-Trae-Solo AskUserQuestion使用规范.md`）。
+Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/11-LDVH-Trae-Solo-环境规范.md` §9）。
 
 ---
 

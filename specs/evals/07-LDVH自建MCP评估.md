@@ -5,7 +5,7 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/12.01-Tools辅助规范.md`、`specs/50-LDVH工作流基础规范.md`
+> 相关规范：`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-Trae-Solo-环境规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/12.01-Tools辅助规范.md`、`specs/50-LDVH工作流基础规范.md`
 > 参考来源：`specs/refs/02-Trae-MCP用法调研.md`、`specs/evals/06-LDVH的MCP使用评估.md`
 
 ---
@@ -356,7 +356,7 @@ LDVH 特有能力用自建 MCP；
 | 范围 | 第三方 MCP 引入评估 | 自建 MCP 评估 |
 | 核心问题 | LDVH 需要哪些第三方 MCP | LDVH 是否需要自建 MCP，以及自建哪些 |
 | 定位 | MCP 是 Agent 的可选工具能力来源 | 自建 MCP 是Tools 辅助层的 Agent 接口 |
-| 约束来源 | 03 事实源边界 + 12 工具边界 + 11.03 Agent 权限 | 同 06，另加 12.01 Tools 辅助规范的具体约束 |
+| 约束来源 | 03 事实源边界 + 12 工具边界 + 11 §8 Agent 权限 | 同 06，另加 12.01 Tools 辅助规范的具体约束 |
 | 优先级 | Sequential Thinking > Context7 > Playwright | Fact Reader + Status Aggregator > Context Pack + Validator > Controlled Writer |
 | 互补关系 | 第三方 MCP 提供通用能力 | 自建 MCP 提供 LDVH 特有能力，两者不重叠 |
 

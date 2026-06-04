@@ -5,8 +5,8 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/50-LDVH工作流基础规范.md`
-> 参考来源：`specs/refs/02-Trae-MCP用法调研.md`、`specs/refs/03-社区推荐Rules-Skills-MCP与自定义Agent调研.md`、`specs/refs/06-Sequential-Thinking使用模板.md`、`specs/refs/07-Context7使用模板.md`
+> 相关规范：`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-Trae-Solo-环境规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/50-LDVH工作流基础规范.md`
+> 参考来源：`specs/refs/02-Trae-MCP用法调研.md`、`specs/refs/03-社区推荐Rules-Skills-MCP与自定义Agent调研.md`、`specs/refs/01-Sequential-Thinking使用模板.md`、`specs/refs/02-Context7使用模板.md`
 
 ---
 
@@ -28,7 +28,7 @@ LD Vibe Harness 的五类构成要素是介质、Trae Solo 环境机制、LDVH �
 
 ### 2.2 MCP 不是 11 系列正式治理对象
 
-11 系列只治理 Rules、Skill、Agent 三类可落地 AI 协作机制（依据 `specs/11` §三）。MCP 不在其中。MCP 在 LDVH 中的角色是 Agent 的工具能力来源，其使用边界由 11.03 Agent 机制规范和 12 工具基础规范共同约束。
+11 系列只治理 Rules、Skill、Agent 三类可落地 AI 协作机制（依据 `specs/11` §三）。MCP 不在其中。MCP 在 LDVH 中的角色是 Agent 的工具能力来源，其使用边界由 11 §8 Agent 机制规范和 12 工具基础规范共同约束。
 
 ### 2.3 MCP 受 12 工具边界约束
 
@@ -61,7 +61,7 @@ MCP 引入按"工具供应链"对待，不是按普通文档或普通规则对�
 | Scenario 识别 | 多个场景同时匹配时需要逐步推理选择优先级 | Sequential Thinking | 适合；07 §4.2.3 明确要求"多个场景同时匹配时按优先级选择"，复杂场景可借助逐步推理 |
 | Gate 判断 | Gate 条件涉及复杂逻辑判定 | Sequential Thinking | 部分适合；简单 Gate 由规则直接判定，复杂 Gate（如跨项目影响分析）可借助逐步推理 |
 | Skill 进入 | Skill 触发条件判断 | 不需要 MCP | Skill 进入由规则和场景匹配决定，不需要外部工具 |
-| Agent 调度 | Agent 调度条件判断 | 不需要 MCP | Agent 调度由 11.03 治理条件决定，不需要外部工具 |
+| Agent 调度 | Agent 调度条件判断 | 不需要 MCP | Agent 调度由 11 §8 治理条件决定，不需要外部工具 |
 | 事实源回写 | 回写目标判断和写入执行 | 不需要 MCP | 回写由 03 事实源边界和 12.01 受控写入原则决定，Tools 辅助层已覆盖 |
 
 ### 3.2 AI 协作机制（specs/11 系列）中的 MCP 需求
@@ -69,8 +69,8 @@ MCP 引入按"工具供应链"对待，不是按普通文档或普通规则对�
 | 机制 | 可能需要 MCP 支撑的场景 | 候选 MCP | 评估 |
 |---|---|---|---|
 | Rules | 规则读取和加载 | 不需要 MCP | Rules 由 Trae 原生机制加载，不需要外部工具 |
-| Skill | Skill 执行中的外部信息获取 | Context7、Fetch | 部分适合；Skill 可建议用户使用 Agent 查询外部信息，但 Skill 自身不调度 Agent（依据 11.02 §七） |
-| Agent | Agent 执行中需要外部工具能力 | 按角色分配 | 适合；这是 MCP 的核心使用场景，按 11.03 权限最小化原则配置 |
+| Skill | Skill 执行中的外部信息获取 | Context7、Fetch | 部分适合；Skill 可建议用户使用 Agent 查询外部信息，但 Skill 自身不调度 Agent（依据 11 §7 §七） |
+| Agent | Agent 执行中需要外部工具能力 | 按角色分配 | 适合；这是 MCP 的核心使用场景，按 11 §8 权限最小化原则配置 |
 
 ### 3.3 工具层（specs/12 系列）中的 MCP 需求
 
@@ -113,7 +113,7 @@ MCP 引入按"工具供应链"对待，不是按普通文档或普通规则对�
 | 不适用场景 | 简单场景识别、直接规则判定、单文件小改、可由规则直接处理的 Gate |
 | LDVH 约束 | 输出是过程信息，不是事实源；推理结论需回写 Git 文件事实源后才成为稳定事实；不应给所有 Agent 默认开启，按需分配给需要复杂推理的 Agent |
 | 配置建议 | 分配给需要复杂推理的 Agent（如规范分析 Agent、架构决策 Agent），不分配给简单执行型 Agent |
-| 参考模板 | `specs/refs/06-Sequential-Thinking使用模板.md` |
+| 参考模板 | `specs/refs/01-Sequential-Thinking使用模板.md` |
 
 #### 4.1.2 Context7
 
@@ -124,7 +124,7 @@ MCP 引入按"工具供应链"对待，不是按普通文档或普通规则对�
 | 不适用场景 | 已有稳定内置文档查询工具时、查询内容已在 specs/refs/ 中有引用副本时 |
 | LDVH 约束 | Context7 输出是外部文档上下文，不是 LDVH 事实源；查询结果如需长期保留，应写入 specs/refs/；不应替代 specs/ 中已有的权威规则 |
 | 配置建议 | 分配给代码开发类 Agent（如 Frontend Architect、Backend Architect），不分配给规范治理或纯文档类 Agent |
-| 参考模板 | `specs/refs/07-Context7使用模板.md` |
+| 参考模板 | `specs/refs/02-Context7使用模板.md` |
 
 #### 4.1.3 Playwright
 
@@ -187,7 +187,7 @@ MCP 引入按"工具供应链"对待，不是按普通文档或普通规则对�
 | 维度 | 评估 |
 |---|---|
 | 不推荐原因（对 LDVH 自身） | LDVH 是本地 / 仓库事实源框架，自身不需要云服务、数据库或支付能力 |
-| 对管辖项目 | 如管辖项目需要，应由管辖项目按自身需求配置，不进入 LDVH 核心 MCP 配置；必须遵守 11.03 权限最小化原则和 Human Gate |
+| 对管辖项目 | 如管辖项目需要，应由管辖项目按自身需求配置，不进入 LDVH 核心 MCP 配置；必须遵守 11 §8 权限最小化原则和 Human Gate |
 
 ---
 
@@ -208,8 +208,8 @@ MCP 引入按"工具供应链"对待，不是按普通文档或普通规则对�
 
 ### 5.3 Agent 权限约束
 
-1. MCP 应按 Agent 职责分配，不得把所有 MCP 都加给所有 Agent（依据 `specs/11.03` §三和 refs/02 §七）；
-2. Agent 的 MCP 权限范围应最小必要（依据 `specs/11.03` §九）；
+1. MCP 应按 Agent 职责分配，不得把所有 MCP 都加给所有 Agent（依据 `specs/11-LDVH-Trae-Solo-环境规范.md` §8 和 refs/02 §七）；
+2. Agent 的 MCP 权限范围应最小必要（依据 `specs/11-LDVH-Trae-Solo-环境规范.md` §8）；
 3. 高风险 MCP 必须绑定专用 Agent，禁止默认开放给通用 Agent（依据 refs/03 §九.3）。
 
 ### 5.4 配置安全约束
@@ -277,7 +277,7 @@ MCP 引入按"工具供应链"对待，不是按普通文档或普通规则对�
 1. 直接支撑 07 行动模型的核心组件（Context、Scenario、Gate）；
 2. LDVH 规范体系本身复杂度高，跨 specs 影响分析是高频需求；
 3. 不依赖外部 API 密钥，本地 stdio 即可运行；
-4. 已有使用模板（`specs/refs/06`）。
+4. 已有使用模板（`specs/refs/01`）。
 
 ### 7.2 第二优先级：Context7
 
@@ -286,7 +286,7 @@ MCP 引入按"工具供应链"对待，不是按普通文档或普通规则对�
 1. 支撑代码开发场景的实时文档查询；
 2. web/ 和 tools/ 实现时需要查询框架最新用法；
 3. 不依赖付费 API，本地 stdio 即可运行；
-4. 已有使用模板（`specs/refs/07`）。
+4. 已有使用模板（`specs/refs/02`）。
 
 ### 7.3 第三优先级：Playwright
 

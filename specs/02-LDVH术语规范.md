@@ -39,9 +39,9 @@ LDVH specs 中，英文机制名 Rules、Skill、Agent、Tools、Web 专指 Trae
 
 | 术语 | 含义 | 机制规范 |
 |---|---|---|---|
-| Rules | Trae Rules 机制 | `specs/11.01-Rules机制规范.md` |
-| Skill | Trae Skill 机制 | `specs/11.02-Skill机制规范.md` |
-| Agent | Trae Agent 机制 | `specs/11.03-Agent机制规范.md` |
+| Rules | Trae Rules 机制 | `specs/11-LDVH-Trae-Solo-环境规范.md` §6 |
+| Skill | Trae Skill 机制 | `specs/11-LDVH-Trae-Solo-环境规范.md` §7 |
+| Agent | Trae Agent 机制 | `specs/11-LDVH-Trae-Solo-环境规范.md` §8 |
 | Tools | LDVH `tools/` Tools 辅助机制 | `specs/12.01-Tools辅助规范.md` |
 | Web | LDVH `web/` Web 信息同步机制 | `specs/12.02-Web信息同步规范.md` |
 | PyTools | LDVH `tools/` 下由 Python 构建的确定性辅助程序 | `specs/12.01-Tools辅助规范.md` |

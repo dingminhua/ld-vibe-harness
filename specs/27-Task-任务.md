@@ -217,7 +217,7 @@ Human Gate 场景由 `specs/27.01-Rules.md` §5.3 承接。本节只列出概要
 2. 高风险操作前确认（修改 specs、Rules、ADR、ldvh-base/ 等事实源）；
 4. 创建子任务时确认（AI 自动创建子任务时应通知用户）。
 
-Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/05-Trae-Solo AskUserQuestion使用规范.md`）。
+Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/11-LDVH-Trae-Solo-环境规范.md` §9）。
 
 ---
 

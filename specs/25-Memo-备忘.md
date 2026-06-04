@@ -164,7 +164,7 @@ Memo 的创建、状态变更和分流都应记录 Change。Change 以 Git commi
 2. 状态从 `active` → `resolved` 时确认分流目标；
 3. 高风险操作前确认（修改 specs、Rules、ADR、ldvh-base/ 等事实源）。
 
-Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/05-Trae-Solo AskUserQuestion使用规范.md`）。
+Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/11-LDVH-Trae-Solo-环境规范.md` §9）。
 
 ---
 

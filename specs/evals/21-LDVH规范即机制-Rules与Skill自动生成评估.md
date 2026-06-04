@@ -3,7 +3,7 @@
 > 创建日期：2026-06-04
 > 定位：项目评估文档，评估 Rules 和 Skill 从 specs 自动生成的可行性、收益和前提条件
 > 适用范围：LD Vibe Harness Rules/Skill 自动生成机制的设计评估
-> 上位依据：`specs/11.01-Rules机制规范.md`、`specs/11.02-Skill机制规范.md`
+> 上位依据：`specs/11-LDVH-Trae-Solo-环境规范.md` §6、`specs/11-LDVH-Trae-Solo-环境规范.md` §7
 
 ---
 
@@ -26,7 +26,7 @@
 **输入**：
 - `specs/NN-对象名.md`（主文档）
 - `specs/NN.01-Rules.md`（Rules 子文档）
-- `specs/11.01-Rules机制规范.md`（Rules 机制规范）
+- `specs/11-LDVH-Trae-Solo-环境规范.md` §6（Rules 机制规范）
 - `ldvh-base/profiles/`（项目配置，确定项目路径和 ldvh-base 路径）
 
 **输出**：
@@ -46,7 +46,7 @@
 **输入**：
 - `specs/NN-对象名.md`（主文档）
 - `specs/NN.02-Skill.md`（Skill 子文档）
-- `specs/11.02-Skill机制规范.md`（Skill 机制规范）
+- `specs/11-LDVH-Trae-Solo-环境规范.md` §7（Skill 机制规范）
 - `tools/`（PyTools 命令清单，确定 Skill 可调用的命令）
 
 **输出**：
@@ -180,8 +180,8 @@ AI 生成是非确定性的，同样的 specs 两次生成可能产出略有不�
 
 实现自动生成需要对现有 specs 进行调整：
 
-1. **11.01-Rules机制规范**：增加"Rules 生成规范"章节，定义生成源、生成模板、生成验证
-2. **11.02-Skill机制规范**：增加"Skill 生成规范"章节，定义生成源、生成模板、生成验证
+1. **11 §6 Rules 机制规范**：增加"Rules 生成规范"章节，定义生成源、生成模板、生成验证
+2. **11 §7 Skill 机制规范**：增加"Skill 生成规范"章节，定义生成源、生成模板、生成验证
 3. **各 NN.01/N.02 子文档**：统一章节结构，确保可被模板化生成
 5. **20-事实模型集合索引**：增加对象类型到 Rules/Skill 模板的映射关系
 

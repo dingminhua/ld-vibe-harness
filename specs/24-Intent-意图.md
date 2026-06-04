@@ -151,7 +151,7 @@ completed → closed
 1. 创建 Intent 时确认；
 2. 状态从 `active` → `completed` 时确认（确认关联 Task 是否全部完成）。
 
-Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/05-Trae-Solo AskUserQuestion使用规范.md`）。
+Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/11-LDVH-Trae-Solo-环境规范.md` §9）。
 
 ---
 
