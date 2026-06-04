@@ -113,13 +113,13 @@ export default function Dashboard() {
                   onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
-                    <span className="font-mono text-xs text-ldvh-text-secondary">{item.type}</span>
+                    <span className="font-mono text-xs text-ldvh-text-secondary">{t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}</span>
                     <span className="truncate text-sm text-ldvh-text-primary">
                       {getLocalizedTitle(item, locale) || item.id}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <StatusBadge status={item.status} />
+                    <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
                     <span className="font-mono text-xs text-ldvh-text-secondary">
                       {item.updated}
                     </span>
