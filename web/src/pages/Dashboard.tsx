@@ -34,10 +34,10 @@ export default function Dashboard() {
   const { t, locale, getStatus } = useI18n();
 
   useEffect(() => {
-    fetchDashboard()
+    fetchDashboard(locale)
       .then(setData)
       .catch((e) => setError(e.message));
-  }, []);
+  }, [locale]);
 
   if (error) {
     return (

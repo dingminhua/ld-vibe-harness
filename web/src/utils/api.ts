@@ -95,8 +95,9 @@ async function request<T>(url: string): Promise<T> {
   return res.json();
 }
 
-export async function fetchDashboard(): Promise<DashboardData> {
-  return request<DashboardData>('/dashboard');
+export async function fetchDashboard(locale?: string): Promise<DashboardData> {
+  const params = locale ? `?locale=${locale}` : '';
+  return request<DashboardData>(`/dashboard${params}`);
 }
 
 export async function fetchObjects(type: string, status?: string): Promise<{ ok: boolean; summary: { count: number }; data: { items: ObjectItem[] } }> {
@@ -125,9 +126,12 @@ export interface ChangelogEntry {
   relativeTime: string;
 }
 
-export async function fetchChangelog(count?: number): Promise<ChangelogEntry[]> {
-  const params = count ? `?count=${count}` : '';
-  return request<ChangelogEntry[]>(`/changelog${params}`);
+export async function fetchChangelog(count?: number, locale?: string): Promise<ChangelogEntry[]> {
+  const params = new URLSearchParams();
+  if (count) params.set('count', String(count));
+  if (locale) params.set('locale', locale);
+  const qs = params.toString();
+  return request<ChangelogEntry[]>(`/changelog${qs ? `?${qs}` : ''}`);
 }
 
 export async function fetchCommitDetail(hash: string): Promise<{ hash: string; stat: string }> {

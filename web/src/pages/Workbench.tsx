@@ -42,10 +42,10 @@ export default function Workbench() {
   const { t, locale, getStatus } = useI18n();
 
   useEffect(() => {
-    fetchDashboard()
+    fetchDashboard(locale)
       .then(setData)
       .catch((e) => setError(e.message));
-  }, []);
+  }, [locale]);
 
   const taskStats = data?.stats.find((item) => item.type === 'task');
   const activeTasks = useMemo(

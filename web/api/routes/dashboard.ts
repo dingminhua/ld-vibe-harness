@@ -31,8 +31,10 @@ function isActionableStatus(status: string): boolean {
   return !terminalStatuses.includes(status)
 }
 
-router.get('/', async (_req: Request, res: Response): Promise<void> => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
+    const locale = String(req.query.locale || 'zh')
+
     // 并行请求所有对象类型列表
     const listPromises = OBJECT_TYPES.map(async (type) => {
       const result = await listObjects(type)
@@ -43,7 +45,7 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
     const [listResults, validationResult, gitLog] = await Promise.all([
       Promise.all(listPromises),
       validate(),
-      getGitLog(10, 'zh').catch(() => []),
+      getGitLog(10, locale).catch(() => []),
     ])
 
     // 聚合 profile（取第一个 profile 对象）
@@ -79,7 +81,7 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
         allItems.push({
           ...item,
           type,
-          relativeTime: getRelativeTime(String(item.updated || ''), 'zh'),
+          relativeTime: getRelativeTime(String(item.updated || ''), locale),
           typeColor: getTypeColor(type),
         })
       }

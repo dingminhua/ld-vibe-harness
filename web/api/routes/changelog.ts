@@ -11,7 +11,8 @@ const router = Router()
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const count = Math.min(Math.max(parseInt(req.query.count as string) || 50, 1), 200)
-    const entries = await getGitLog(count)
+    const locale = String(req.query.locale || 'zh')
+    const entries = await getGitLog(count, locale)
     res.json(entries)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to fetch git log'

@@ -12,10 +12,10 @@ export default function Changelog() {
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
-    fetchChangelog(50)
+    fetchChangelog(50, locale)
       .then(setEntries)
       .catch((e) => setError(e.message));
-  }, []);
+  }, [locale]);
 
   const handleToggle = async (hash: string) => {
     if (expandedHash === hash) {
