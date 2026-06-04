@@ -9,7 +9,7 @@ from typing import Optional
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SCRIPT_PATH = PROJECT_ROOT / "tools" / "fact_model_cli.py"
+SCRIPT_PATH = PROJECT_ROOT / "tools" / "ldvh_fact_cli.py"
 
 
 def run_cli(*args, base_dir: Optional[str] = None):

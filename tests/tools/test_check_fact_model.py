@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SCRIPT_PATH = PROJECT_ROOT / "tools" / "check_fact_model.py"
+SCRIPT_PATH = PROJECT_ROOT / "tools" / "ldvh_fact_validate.py"
 
 
 def run_checker(*paths):
