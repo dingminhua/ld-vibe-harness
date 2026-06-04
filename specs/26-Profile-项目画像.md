@@ -223,8 +223,3 @@ Profile 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字�
 | 10 | Tools 契约式校验与执行适配 | Phase 3（Contract 机制文件先行） |
 | 11 | Web 信息同步适配 | Phase 5 |
 | 12 | 机制适配边界 | Phase 4 |
-| 13 | 落地前决策 | Phase 4 |
-| 14 | 价值与要素审查 | Phase 4 |
-| 15 | 落地初始化 | Phase 4 |
-| 16 | 落地审计 | Phase 5 |
-| 17 | 合规检查 | Phase 5 |

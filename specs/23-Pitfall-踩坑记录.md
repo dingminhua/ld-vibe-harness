@@ -1,7 +1,7 @@
 # Pitfall 踩坑记录
 
 > 创建日期：2026-06-03
-> 定位：定义 Pitfall 踩坑记录工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存、适配原则、机制适配边界、落地初始化、落地审计和合规检查
+> 定位：定义 Pitfall 踩坑记录工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存、适配原则、机制适配边界和对象特有实例检查
 > 适用范围：所有接入 LDVH 且需要沉淀已解决踩坑经验的项目
 > 上位依据：`specs/07-工作模型基础规范.md`
 > 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/06-Python与Web工具规范.md`、`specs/20-工作模型集合索引.md`
@@ -308,106 +308,9 @@ Web 写入能力如未来实现，必须通过 Tools 受控写入或等价校验
 
 ---
 
-## 15. 落地前决策
+## 15. 对象特有实例检查
 
-Pitfall 在 LDVH 中正式落地，采用以下决策：
-
-1. 实例事实源使用 `ldvh-base/pitfalls/`；
-2. 实例格式使用 YAML；
-3. 主模型编号使用 32，保持与 20 索引中 planned Pitfall 编号一致；
-4. Rules 机制承接 active，用于建立读取与写入提醒；
-5. Skill、Tools、Web 暂为 active-prep，先定义能力边界，待通用对象工具和标准 Skill 稳定后实现；
-6. Agent 机制承接为 not-needed，不创建专用 Agent；
-7. Contract 为 active，作为工具实现前置契约。
-
-### 15.1 读取策略
-
-读取 Pitfall 时，应按以下顺序处理：
-
-1. 读取当前项目 L1 和工作模型入口；
-2. 读取本文和 `specs/23.06-Contract.md`；
-3. 读取 `ldvh-base/pitfalls/` 下相关实例；
-4. 优先筛选 `active` 状态；
-5. 遇到 `superseded` 状态时追踪 `superseded_by`；
-6. 按标签、适用范围、关联对象和目标文件筛选相关记录。
-
-读取后发现缺口、冲突或需变更时，应分流到创建、更新、状态流转、归档或替代流程。
-
-### 15.2 写入策略
-
-写入 Pitfall 时，应按以下边界处理：
-
-1. 创建、激活、归档、替代和核心经验字段修改必须触发 Human Gate；
-2. Tools 能力实现前，由 AI 或人依据本文和 Contract 人工写入；
-3. Tools 能力实现后，优先由 Tools 承接受控写入；
-4. 涉及 specs、Rules、Skill、Tools、Web 或事实实例修改时，应按 Change 要求记录变更；
-5. 未解决或未验证的信息不得写入 `active` 状态。
-
----
-
-## 16. 价值与要素审查
-
-Pitfall 对 LDVH 价值实现的支撑如下：
-
-| 价值标准 | 支撑方式 |
-|---|---|
-| V1 快速定位 | 让 AI 快速定位已知反直觉问题和规避策略 |
-| V2 完整理解 | 通过问题、根因、解决和验证字段补齐经验上下文 |
-| V3 正确判断 | 避免 AI 重复采用已知错误路径 |
-| V4 稳定执行 | 将重复踩坑转化为稳定参考事实 |
-| V5 门禁识别 | 创建和激活经验时触发 Human Gate |
-| V6 强制验证 | 要求解决方式和验证结果进入字段契约 |
-| V7 证据沉淀 | 关联 Task、Evidence、Change 和验证摘要 |
-| V8 可靠回写 | 以 Git YAML 事实源承载经验 |
-| V9 人类确认质量 | Web 和 Human Gate 可展示经验与确认点 |
-| V10 持续完善 | 将踩坑经验分流为 Rules、Skill、Tools 或 ADR 改进输入 |
-
-Pitfall 仍以 AI 执行者为第一服务对象，帮助 AI 在执行前读取经验、执行中规避误判、执行后沉淀可复用知识。
-
----
-
-## 17. 落地初始化
-
-Pitfall 落地初始化包含以下产物：
-
-1. 创建 `specs/23-Pitfall-踩坑记录.md`；
-2. 创建 `specs/23.01-Rules.md`；
-3. 创建 `specs/23.02-Skill.md`；
-4. 创建 `specs/23.03-Agent.md`；
-5. 创建 `specs/23.04-Tools.md`；
-6. 创建 `specs/23.05-Web.md`；
-7. 创建 `specs/23.06-Contract.md`；
-8. 更新 `specs/20-工作模型集合索引.md`；
-9. 后续创建实例前确认项目存在 `ldvh-base/pitfalls/`，不存在时按 Human Gate 创建。
-
-暂缓项：
-
-1. Pitfall 专用 Skill 实体暂不创建；
-2. Pitfall Tools 实体暂不创建；
-3. Pitfall Web 页面暂不创建；
-4. 通用对象校验框架稳定后，再补齐 Pitfall 解析、校验和受控写入实现。
-
----
-
-## 18. 落地审计
-
-Pitfall 落地审计应检查：
-
-1. 主规范和历史机制拆分文件是否存在；
-2. 机制承接状态是否与正文意图一致；
-3. 20 索引是否已同步；
-4. `ldvh-base/pitfalls/` 实例是否符合 Contract；
-5. 创建、激活、归档、替代和核心字段修改是否经过 Human Gate；
-6. `active` Pitfall 是否包含已验证解决方式；
-7. `superseded` Pitfall 是否填写替代对象；
-8. Pitfall 是否未复制 Task、Evidence、Change、ADR、Rules 或日志形成第二事实源；
-9. 相关仓库变更是否按 Change 要求记录。
-
----
-
-## 19. 合规检查
-
-检查 Pitfall 工作模型是否合规时，应确认：
+检查 Pitfall 工作模型实例是否符合规范时，应确认：
 
 1. 对象定位是否仍为已解决且具有复用价值的踩坑经验；
 2. 准入条件是否排除了未解决问题、未验证猜测和一次性临时错误；
@@ -417,11 +320,13 @@ Pitfall 落地审计应检查：
 6. Human Gate 是否覆盖创建、激活、归档、替代和核心经验字段修改；
 7. AI 协作是否区分 `active`、`draft`、`superseded` 和 `archived` 的适用性；
 8. Tools 和 Web 是否只作为派生或受控入口，不维护第二事实源；
-9. 分流到 Rules、Skill、Tools 或 ADR 时是否保持事实源职责分离。
+9. 分流到 Rules、Skill、Tools 或 ADR 时是否保持事实源职责分离；
+10. `active` Pitfall 是否包含已验证解决方式；
+11. `superseded` Pitfall 是否填写替代对象；
+12. Pitfall 是否未复制 Task、Evidence、Change、ADR、Rules 或日志形成第二事实源。
 
----
-
-## 20. 待补齐事项
+本节不定义产品级初始化或产品级审计流程。产品初始化由 42 工作流程负责执行；产品审计由 43 工作流程负责执行。
+## 16. 待补齐事项
 
 1. Pitfall Skill 实体待实践稳定后创建；
 2. Pitfall Tools 解析、校验、聚合和受控写入能力待通用对象工具框架稳定后实现；
