@@ -1,6 +1,8 @@
 id: intent-0002
 type: intent
 title: 建立事实对象 Contract 与 PyTools 接口治理规范
+title_en: Establish Contract and PyTools interface governance for fact objects
+title_zh: 建立事实对象 Contract 与 PyTools 接口治理规范
 status: completed
 created: 2026-06-04
 updated: '2026-06-04'

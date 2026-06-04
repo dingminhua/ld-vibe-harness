@@ -1,6 +1,8 @@
 id: task-0006
 type: task
 title: PyTools 承接生产对象增删改查
+title_en: PyTools handles CRUD for production objects
+title_zh: PyTools 承接生产对象增删改查
 status: closed
 created: 2026-06-04
 updated: 2026-06-04

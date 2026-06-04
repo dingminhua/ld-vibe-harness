@@ -1,6 +1,8 @@
 id: pitfall-0005
 type: pitfall
 title: 创建任务后不立即执行，把任务当停止点
+title_en: Task created but not immediately transitioned to executing
+title_zh: 创建任务后不立即执行，把任务当停止点
 status: active
 created: 2026-06-04
 updated: 2026-06-04

@@ -1,6 +1,8 @@
 id: task-0005
 type: task
 title: 取消 Evidence 独立事实模型并调整 Task 结果引用
+title_en: Remove Evidence independent fact model and adjust Task result references
+title_zh: 取消 Evidence 独立事实模型并调整 Task 结果引用
 status: closed
 created: 2026-06-04
 updated: 2026-06-04

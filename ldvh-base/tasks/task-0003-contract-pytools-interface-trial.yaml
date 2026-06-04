@@ -1,6 +1,8 @@
 id: task-0003
 type: task
 title: 建立 Contract 与 PyTools 接口公共原语并完成 Task/Change 试点
+title_en: Establish Contract/PyTools public primitives and complete Task/Change pilot
+title_zh: 建立 Contract 与 PyTools 接口公共原语并完成 Task/Change 试点
 status: closed
 created: 2026-06-04
 updated: '2026-06-04'

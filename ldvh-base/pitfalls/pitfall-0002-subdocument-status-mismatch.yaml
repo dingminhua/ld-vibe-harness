@@ -1,6 +1,8 @@
 id: pitfall-0002
 type: pitfall
 title: 主文档声明子文档 not-created 但实际文件包含完整内容
+title_en: Subdocument state machine out of sync
+title_zh: 主文档声明子文档 not-created 但实际文件包含完整内容
 status: superseded
 created: '2026-06-04'
 updated: '2026-06-04'

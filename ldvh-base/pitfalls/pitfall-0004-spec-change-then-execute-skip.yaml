@@ -1,6 +1,8 @@
 id: pitfall-0004
 type: pitfall
 title: 规范变更后同一会话内执行任务跳过新规范要求
+title_en: Spec change not synced causes execution skip
+title_zh: 规范变更后同一会话内执行任务跳过新规范要求
 status: active
 created: '2026-06-04'
 updated: '2026-06-04'

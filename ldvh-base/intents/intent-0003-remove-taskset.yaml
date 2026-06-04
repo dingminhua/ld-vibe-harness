@@ -1,6 +1,8 @@
 id: intent-0003
 type: intent
 title: 生产对象管理
+title_en: Remove TaskSet independent fact model and adjust Intent/Task relationship
+title_zh: 生产对象管理
 status: completed
 created: 2026-06-04
 updated: '2026-06-04'
