@@ -250,6 +250,8 @@ def test_transition_task_close_requires_acceptance_and_evidence(tmp_path):
     result = run_cli("transition", str(task_path), "--to", "closed")
     assert result.returncode == 0
     assert "review_needed → closed" in result.stdout
+    data = yaml.safe_load(task_path.read_text(encoding="utf-8"))
+    assert data["closed_at"]
 
 
 def test_transition_invalid_target_status(tmp_path):

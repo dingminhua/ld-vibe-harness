@@ -331,6 +331,8 @@ def cmd_transition(args: argparse.Namespace) -> int:
     # 执行流转
     data["status"] = new_status
     data["updated"] = date.today().isoformat()
+    if object_type == "task" and new_status == "closed":
+        data["closed_at"] = date.today().isoformat()
 
     # 退回流转记录 reason
     # 判断是否为退回：新状态在当前状态之前（简化判断：非正向推进）
