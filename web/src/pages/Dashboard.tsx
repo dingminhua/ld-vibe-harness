@@ -113,7 +113,7 @@ export default function Dashboard() {
                   onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
                 >
                   <div className="flex items-center gap-2 overflow-hidden">
-                    <span className="font-mono text-xs text-ldvh-text-secondary">{t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}</span>
+                    <span className="whitespace-nowrap font-mono text-xs text-ldvh-text-secondary">{t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}</span>
                     <span className="truncate text-sm text-ldvh-text-primary">
                       {getLocalizedTitle(item, locale) || item.id}
                     </span>

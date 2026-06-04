@@ -13,7 +13,7 @@ export default function StatusBadge({ status, statusLabel, size = 'sm' }: Status
 
   return (
     <span
-      className={`inline-flex items-center rounded-full font-mono font-medium ${sizeClasses}`}
+      className={`inline-flex items-center whitespace-nowrap rounded-full font-mono font-medium ${sizeClasses}`}
       style={{
         color,
         backgroundColor: `${color}18`,
