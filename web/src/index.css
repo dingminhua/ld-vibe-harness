@@ -16,7 +16,8 @@
   --ldvh-panel: #ffffff;
   --ldvh-border: #e5e7eb;
   --ldvh-text-primary: #18181b;
-  --ldvh-text-secondary: #71717a;
+  --ldvh-text-secondary: #6b7280;
+  --ldvh-accent: #059669;
   color-scheme: light;
 }
 
@@ -25,7 +26,8 @@
   --ldvh-panel: #12121a;
   --ldvh-border: #1e1e2e;
   --ldvh-text-primary: #e4e4e7;
-  --ldvh-text-secondary: #71717a;
+  --ldvh-text-secondary: #a1a1aa;
+  --ldvh-accent: #00d4aa;
   color-scheme: dark;
 }
 

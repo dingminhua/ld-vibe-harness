@@ -1,3 +1,4 @@
+import { useTheme } from '@/hooks/useTheme';
 import { getStatusColor } from '@/utils/statusColors';
 
 interface StatsCardProps {
@@ -10,6 +11,7 @@ interface StatsCardProps {
 }
 
 export default function StatsCard({ type, label, count, byStatus, getStatus, onClick }: StatsCardProps) {
+  const { resolved } = useTheme();
   const total = count;
   const entries = Object.entries(byStatus);
 
@@ -24,7 +26,7 @@ export default function StatsCard({ type, label, count, byStatus, getStatus, onC
       </div>
       {/* Status distribution bar */}
       {entries.length > 0 && (
-        <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-ldvh-border/50">
+        <div key={resolved} className="flex h-1.5 w-full overflow-hidden rounded-full bg-ldvh-border/50">
           {entries.map(([status, statusCount]) => (
             <div
               key={status}
@@ -40,7 +42,7 @@ export default function StatsCard({ type, label, count, byStatus, getStatus, onC
       )}
       {/* Status labels */}
       {entries.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div key={`labels-${resolved}`} className="flex flex-wrap gap-1">
           {entries.map(([status, statusCount]) => (
             <span
               key={status}

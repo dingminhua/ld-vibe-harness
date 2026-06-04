@@ -14,7 +14,7 @@ export default {
           border: 'var(--ldvh-border)',
           'text-primary': 'var(--ldvh-text-primary)',
           'text-secondary': 'var(--ldvh-text-secondary)',
-          accent: '#00d4aa',
+          accent: 'var(--ldvh-accent)',
         },
       },
     },
