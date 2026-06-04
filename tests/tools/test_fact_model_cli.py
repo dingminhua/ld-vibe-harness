@@ -68,6 +68,7 @@ def test_create_task(tmp_path):
     assert data["type"] == "task"
     assert data["status"] == "planned"
     assert "acceptance" in data
+    assert data["blocked_by"] == []
 
 
 def test_create_adr_with_change(tmp_path):
@@ -263,6 +264,56 @@ def test_transition_invalid_target_status(tmp_path):
     result = run_cli("transition", str(intent_path), "--to", "executing")
     assert result.returncode == 1
     assert "目标状态不合法" in result.stderr
+
+
+def test_transition_task_blocked_by_requires_closed_predecessor(tmp_path):
+    blocker_result = run_cli("create", "task", "--title", "Blocker", base_dir=str(tmp_path))
+    blocker_path = Path(blocker_result.stdout.strip().splitlines()[0])
+    blocked_result = run_cli("create", "task", "--title", "Blocked", base_dir=str(tmp_path))
+    blocked_path = Path(blocked_result.stdout.strip().splitlines()[0])
+
+    blocked_data = yaml.safe_load(blocked_path.read_text(encoding="utf-8"))
+    blocked_data["blocked_by"] = ["task-0001"]
+    blocked_path.write_text(yaml.dump(blocked_data, allow_unicode=True, default_flow_style=False, sort_keys=False), encoding="utf-8")
+
+    result = run_cli("transition", str(blocked_path), "--to", "executing")
+    assert result.returncode == 1
+    assert "前置 Task 未关闭" in result.stderr
+
+    blocker_data = yaml.safe_load(blocker_path.read_text(encoding="utf-8"))
+    blocker_data["status"] = "closed"
+    blocker_data["closure_evidence"] = "done"
+    blocker_data["closed_at"] = "2026-06-04"
+    blocker_path.write_text(yaml.dump(blocker_data, allow_unicode=True, default_flow_style=False, sort_keys=False), encoding="utf-8")
+
+    result = run_cli("transition", str(blocked_path), "--to", "executing")
+    assert result.returncode == 0
+    assert "planned → executing" in result.stdout
+
+
+def test_deps_outputs_structured_task_dependencies(tmp_path):
+    blocker_result = run_cli("create", "task", "--title", "Blocker", base_dir=str(tmp_path))
+    blocker_path = Path(blocker_result.stdout.strip().splitlines()[0])
+    blocked_result = run_cli("create", "task", "--title", "Blocked", base_dir=str(tmp_path))
+    blocked_path = Path(blocked_result.stdout.strip().splitlines()[0])
+
+    blocked_data = yaml.safe_load(blocked_path.read_text(encoding="utf-8"))
+    blocked_data["blocked_by"] = ["task-0001"]
+    blocked_path.write_text(yaml.dump(blocked_data, allow_unicode=True, default_flow_style=False, sort_keys=False), encoding="utf-8")
+
+    result = run_cli("deps", "task-0002", "--format", "json", base_dir=str(tmp_path))
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    assert payload["action"] == "deps"
+    assert payload["summary"]["blocked_by_count"] == 1
+    assert payload["summary"]["ready_to_execute"] is False
+    assert payload["data"]["blocked_by"][0]["id"] == "task-0001"
+
+    result = run_cli("deps", "task-0001", "--format", "json", base_dir=str(tmp_path))
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    assert payload["summary"]["blocks_count"] == 1
+    assert payload["data"]["blocks"][0]["id"] == "task-0002"
 
 
 # ── delete 命令 ──────────────────────────────────────────────────────────

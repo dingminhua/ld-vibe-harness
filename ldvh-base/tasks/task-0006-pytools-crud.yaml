@@ -7,36 +7,45 @@ status: closed
 created: 2026-06-04
 updated: 2026-06-04
 closed_at: 2026-06-04
-description: |
-  当前 Skill（ldvh-intake、ldvh-close、ldvh-adr、ldvh-commit）直接写 YAML 文件，
-  缺乏确定性校验和原子性保证。PyTools 应承接生产对象的 create、transition、delete
-  等确定性操作，Skill 只做流程编排和 PyTools 调用。
-
-  目标：
-  1. 为 7 个 active fact model（Intent/Task/ADR/Change/Memo/Profile/Pitfall）
-     提供 create/transition/delete PyTools 命令
-  2. 命令封装多文件写入（如 ADR YAML + Change YAML）为原子操作
-  3. 命令消费 Contract 子文档做字段校验和状态机校验
-  4. Skill 流程中调用 PyTools 命令替代直接写 YAML
+description: "当前 Skill（ldvh-intake、ldvh-close、ldvh-adr、ldvh-commit）直接写 YAML 文件，\n\
+  缺乏确定性校验和原子性保证。PyTools 应承接生产对象的 create、transition、delete\n等确定性操作，Skill 只做流程编排和 PyTools\
+  \ 调用。\n\n目标：\n1. 为 7 个 active fact model（Intent/Task/ADR/Change/Memo/Profile/Pitfall）\n\
+  \   提供 create/transition/delete PyTools 命令\n2. 命令封装多文件写入（如 ADR YAML + Change YAML）为原子操作\n\
+  3. 命令消费 Contract 子文档做字段校验和状态机校验\n4. Skill 流程中调用 PyTools 命令替代直接写 YAML\n"
 source_intent: intent-0003
 source: intent-0003
-parent_task:
+parent_task: null
 sub_tasks: []
-acceptance: |
-  - [x] tools/ 下有统一的 fact_model_cli.py 或等价入口，支持 create/transition/delete 子命令
+acceptance: '- [x] tools/ 下有统一的 fact_model_cli.py 或等价入口，支持 create/transition/delete
+  子命令
+
   - [x] create 命令对 7 类对象生成符合 Contract 的 YAML 骨架
+
   - [x] transition 命令校验状态流转合法性后更新 status 和 updated 字段
+
   - [x] delete 命令校验对象状态后删除 YAML 文件
+
   - [x] ADR create 封装 ADR YAML + Change YAML 为原子操作
+
   - [x] ldvh-intake Skill 调用 PyTools create 命令而非直接写 YAML
+
   - [x] ldvh-close Skill 调用 PyTools transition 命令而非直接写 YAML
+
   - [x] 现有 tests/tools/ 下有对应测试用例
-verification: python3 -m pytest tests/tools/ && python3 tools/check_fact_model.py ldvh-base/
-assignee:
+
+  '
+verification: python3 -m pytest tests/tools/ && python3 tools/check_fact_model.py
+  ldvh-base/
+assignee: null
 related_adrs: []
 related_changes: []
-closure_evidence: |
-  fact_model_cli.py 已实现 create/transition/delete 三个子命令，覆盖 7 类对象。
+closure_evidence: 'fact_model_cli.py 已实现 create/transition/delete 三个子命令，覆盖 7 类对象。
+
   ADR create 原子创建关联 Change YAML。
+
   ldvh-intake 和 ldvh-close Skill 已更新为调用 PyTools 命令。
+
   22 个测试用例全部通过。
+
+  '
+blocked_by: []

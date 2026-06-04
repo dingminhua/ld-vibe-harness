@@ -108,7 +108,7 @@ Task 标准状态如下：
 ### 5.2 合法状态流转
 
 ```text
-planned → executing
+planned → executing（要求 blocked_by 全部 closed，如有）
 executing → verifying
 verifying → review_needed
 verifying → executing（退回：审计发现 bug）
@@ -124,7 +124,7 @@ review_needed → executing（退回：审查不通过）
 
 | 流转 | 触发时机 | 触发者 |
 |---|---|---|
-| planned → executing | AI 准备执行任务时 | AI |
+| planned → executing | AI 准备执行任务，且 `blocked_by` 中所有前置 Task 已关闭时 | AI |
 | executing → verifying | AI 完成执行，启动独立 agent 审计时 | AI |
 | verifying → review_needed | 独立 agent 审计 acceptance 全部通过后 | AI |
 | verifying → executing | 审计发现 bug，需要修复时 | AI |
@@ -181,6 +181,18 @@ Task 可以有子任务。子任务与父任务使用相同的对象模型和状
 6. **同级扩展**：如果子任务执行过程中又发现新问题，应创建新的子任务挂在同一个父任务下，而不是嵌套更深层级。
 
 子任务与 Intent 是两个维度：Intent 是横向归类（同目标的一组任务），parent_task 是纵向分解（父任务的子任务）。
+
+### 6.6 Task → Task（前置依赖）
+
+Task 可以通过 `blocked_by` 字段声明前置 Task。`blocked_by` 表示当前 Task 在进入执行态前必须等待的硬前置任务列表。
+
+前置依赖规则：
+
+1. `blocked_by` 为 Task ID 列表，可为空列表；
+2. `blocked_by` 中的每个 Task ID 必须引用已存在的 Task；
+3. 当前 Task 不得在 `blocked_by` 中引用自身；
+4. 当前 Task 从 `planned` 进入 `executing` 前，`blocked_by` 中所有 Task 必须为 `closed`；
+5. 前置依赖是执行顺序约束，不等同于父子任务分解；`blocked_by` 不改变 `source_intent`、`parent_task` 或 `sub_tasks` 关系。
 
 ### 6.7 关联任务自动创建流程
 
@@ -245,6 +257,7 @@ Task 基础字段遵循 `specs/13-LDVH事实模型基础规范.md` §7.3 的字�
 | `source` | string | 是 | 来源（Intent ID 或用户直接指示） |
 | `parent_task` | string | 否 | 父任务 ID，非空时表示本 Task 为子任务 |
 | `sub_tasks` | list of string | 否 | 子任务 ID 列表 |
+| `blocked_by` | list of string | 否 | 前置 Task ID 列表；列表中的 Task 全部关闭后，当前 Task 才允许进入执行态 |
 | `acceptance` | string | 是 | 验收标准，必须使用检查列表格式（`- [ ]` / `- [x]`），每项为可独立验证的原子条件 |
 | `verification` | string | 否 | 验证方式 |
 | `assignee` | string | 否 | 执行者 |

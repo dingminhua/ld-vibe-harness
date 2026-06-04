@@ -56,6 +56,7 @@ acceptance:
   - Validator accepts this task
 related_adrs: []
 related_changes: []
+blocked_by: []
 {extra}
 """
 
@@ -191,6 +192,32 @@ def test_list_type_mismatch_cli_exit_one(tmp_path):
     assert "INVALID_LIST_FIELD" in result.stdout
     assert "related_adrs" in result.stdout
     assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
+
+
+def test_blocked_by_not_closed_cli_exit_one(tmp_path):
+    write_yaml(tmp_path / "task-0001-blocker.yaml", valid_task_yaml())
+    blocked = valid_task_yaml(status="executing").replace("id: task-0001", "id: task-0002")
+    blocked = blocked.replace("blocked_by: []", "blocked_by:\n  - task-0001")
+    write_yaml(tmp_path / "task-0002-blocked.yaml", blocked)
+
+    result = run_checker(tmp_path)
+
+    assert result.returncode == 1
+    assert "BLOCKED_BY_NOT_CLOSED" in result.stdout
+    assert "task-0001" in result.stdout
+
+
+def test_blocked_by_closed_cli_exit_zero(tmp_path):
+    blocker = valid_task_yaml(status="closed", extra='closure_evidence: done\nclosed_at: "2026-06-03"')
+    write_yaml(tmp_path / "task-0001-blocker.yaml", blocker)
+    blocked = valid_task_yaml(status="executing").replace("id: task-0001", "id: task-0002")
+    blocked = blocked.replace("blocked_by: []", "blocked_by:\n  - task-0001")
+    write_yaml(tmp_path / "task-0002-blocked.yaml", blocked)
+
+    result = run_checker(tmp_path)
+
+    assert result.returncode == 0
+    assert "检查完成: files=2 errors=0 warnings=0" in result.stdout
 
 
 def test_invalid_filename_cli_exit_one(tmp_path):

@@ -191,6 +191,79 @@ def save_yaml(path: Path, data: dict) -> None:
         yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
 
+def find_task_by_id(tasks_dir: Path, task_id: str) -> tuple[Path | None, dict[str, Any] | None]:
+    matches = sorted(tasks_dir.glob(f"{task_id}-*.yaml"))
+    if not matches:
+        return None, None
+    task_path = matches[0]
+    task_data = load_yaml(task_path)
+    return task_path, task_data
+
+
+def validate_task_blockers_closed(yaml_file: Path, data: dict[str, Any]) -> bool:
+    blocked_by = data.get("blocked_by", [])
+    if not blocked_by:
+        return True
+    if not isinstance(blocked_by, list):
+        error("blocked_by 必须是 Task ID 列表")
+        return False
+    for blocker_id in blocked_by:
+        if not isinstance(blocker_id, str) or not ID_PATTERNS["task"].match(blocker_id):
+            error(f"blocked_by 中必须使用 task-{{NNNN}} 格式的 Task ID: {blocker_id}")
+            return False
+        if blocker_id == data.get("id"):
+            error("blocked_by 不得引用当前 Task 自身")
+            return False
+        blocker_path, blocker_data = find_task_by_id(yaml_file.parent, blocker_id)
+        if blocker_path is None or blocker_data is None:
+            error(f"blocked_by 引用的 Task 不存在: {blocker_id}")
+            return False
+        if blocker_data.get("status") != "closed":
+            error(f"前置 Task 未关闭，当前 Task 不得进入执行态: {blocker_id}")
+            return False
+    return True
+
+
+def get_task_dependencies(tasks_dir: Path, task_id: str) -> dict[str, Any] | None:
+    task_path, task_data = find_task_by_id(tasks_dir, task_id)
+    if task_path is None or task_data is None:
+        return None
+    blocked_by = task_data.get("blocked_by", [])
+    blocks = []
+    if tasks_dir.exists():
+        for yaml_path in sorted(tasks_dir.glob("task-*.yaml")):
+            data = load_yaml(yaml_path)
+            if data is None:
+                continue
+            if task_id in (data.get("blocked_by") or []):
+                blocks.append({
+                    "id": data.get("id", ""),
+                    "status": data.get("status", ""),
+                    "title": data.get("title", ""),
+                    "path": str(yaml_path),
+                })
+    blockers = []
+    if isinstance(blocked_by, list):
+        for blocker_id in blocked_by:
+            blocker_path, blocker_data = find_task_by_id(tasks_dir, blocker_id) if isinstance(blocker_id, str) else (None, None)
+            blockers.append({
+                "id": blocker_id,
+                "status": blocker_data.get("status", "") if blocker_data else "",
+                "title": blocker_data.get("title", "") if blocker_data else "",
+                "path": str(blocker_path) if blocker_path else "",
+                "closed": bool(blocker_data and blocker_data.get("status") == "closed"),
+            })
+    return {
+        "id": task_data.get("id", task_id),
+        "status": task_data.get("status", ""),
+        "title": task_data.get("title", ""),
+        "path": str(task_path),
+        "blocked_by": blockers,
+        "blocks": blocks,
+        "ready_to_execute": all(item.get("closed") for item in blockers),
+    }
+
+
 def _json_safe(obj: Any) -> Any:
     """递归转换不可 JSON 序列化的对象为可序列化类型。"""
     if isinstance(obj, date):
@@ -245,6 +318,8 @@ def cmd_create(args: argparse.Namespace) -> int:
         else:
             # 其他必填字段默认为空字符串占位
             data[field] = ""
+    if object_type == "task":
+        data["blocked_by"] = []
 
     # 写入文件
     save_yaml(filepath, data)
@@ -317,6 +392,11 @@ def cmd_transition(args: argparse.Namespace) -> int:
     if new_status not in allowed:
         error(f"不允许的流转: {current_status} → {new_status}，允许的目标状态: {', '.join(sorted(allowed)) or '无'}")
         return 1
+
+    # Task 前置任务强制校验（planned → executing）
+    if object_type == "task" and current_status == "planned" and new_status == "executing":
+        if not validate_task_blockers_closed(yaml_file, data):
+            return 1
 
     # Task 关闭条件校验（review_needed → closed）
     if object_type == "task" and current_status == "review_needed" and new_status == "closed":
@@ -471,6 +551,80 @@ def cmd_list(args: argparse.Namespace) -> int:
     return 0
 
 
+# ── deps 命令 ──────────────────────────────────────────────────────────
+
+def cmd_deps(args: argparse.Namespace) -> int:
+    """展示 Task 的前置依赖与被阻塞关系。"""
+    target = args.target
+    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
+    fmt = args.format
+    tasks_dir = base_dir / DIRECTORY_MAP["task"]
+
+    # target 可为 Task ID 或 YAML 文件路径
+    target_path = Path(target)
+    if target_path.is_file():
+        data = load_yaml(target_path)
+        if data is None:
+            return 1
+        if data.get("type") != "task":
+            error(f"deps 仅支持 task 对象: {target}")
+            return 1
+        task_id = data.get("id")
+        if not isinstance(task_id, str) or not ID_PATTERNS["task"].match(task_id):
+            error(f"Task ID 不合法: {task_id}")
+            return 1
+        tasks_dir = target_path.parent
+    else:
+        task_id = target
+        if not ID_PATTERNS["task"].match(task_id):
+            error(f"Task ID 必须使用 task-{{NNNN}} 格式: {task_id}")
+            return 1
+
+    deps = get_task_dependencies(tasks_dir, task_id)
+    if deps is None:
+        error(f"找不到 Task: {task_id}")
+        return 1
+
+    if fmt == "json":
+        result = {
+            "ok": True,
+            "command": "ldvh_fact_cli",
+            "action": "deps",
+            "target": task_id,
+            "summary": {
+                "id": deps.get("id", task_id),
+                "status": deps.get("status", ""),
+                "blocked_by_count": len(deps.get("blocked_by", [])),
+                "blocks_count": len(deps.get("blocks", [])),
+                "ready_to_execute": deps.get("ready_to_execute", False),
+            },
+            "issues": [],
+            "data": deps,
+        }
+        print(json.dumps(_json_safe(result), ensure_ascii=False, indent=2))
+    else:
+        print(f"{deps.get('id', task_id)}\t{deps.get('status', '')}\t{deps.get('title', '')}")
+        print(f"path: {deps.get('path', '')}")
+        print(f"ready_to_execute: {deps.get('ready_to_execute', False)}")
+        print("blocked_by:")
+        blockers = deps.get("blocked_by", [])
+        if blockers:
+            for item in blockers:
+                closed_mark = "closed" if item.get("closed") else "not_closed"
+                print(f"  - {item.get('id', '')}\t{item.get('status', '')}\t{closed_mark}\t{item.get('title', '')}")
+        else:
+            print("  (none)")
+        print("blocks:")
+        blocked = deps.get("blocks", [])
+        if blocked:
+            for item in blocked:
+                print(f"  - {item.get('id', '')}\t{item.get('status', '')}\t{item.get('title', '')}")
+        else:
+            print("  (none)")
+
+    return 0
+
+
 # ── show 命令 ──────────────────────────────────────────────────────────
 
 def cmd_show(args: argparse.Namespace) -> int:
@@ -558,6 +712,12 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     list_parser.add_argument("--format", choices={"text", "json"}, default="text", help="输出格式，默认 text")
 
+    # deps 子命令
+    deps_parser = subparsers.add_parser("deps", help="查看 Task 依赖关系")
+    deps_parser.add_argument("target", help="Task ID（如 task-0001）或 Task YAML 文件路径")
+    deps_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+    deps_parser.add_argument("--format", choices={"text", "json"}, default="text", help="输出格式，默认 text")
+
     # show 子命令
     show_parser = subparsers.add_parser("show", help="查看事实对象详情")
     show_parser.add_argument("target", help="YAML 文件路径或对象 ID（如 task-0001）")
@@ -580,6 +740,8 @@ def main() -> int:
         return cmd_delete(args)
     elif args.command == "list":
         return cmd_list(args)
+    elif args.command == "deps":
+        return cmd_deps(args)
     elif args.command == "show":
         return cmd_show(args)
     else:

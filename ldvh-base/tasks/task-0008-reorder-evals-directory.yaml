@@ -1,0 +1,32 @@
+id: task-0008
+type: task
+title: 整理 evals 目录
+status: planned
+created: '2026-06-04'
+updated: '2026-06-04'
+description: '重新排列 evals 目录下文档序号，检查引用关系，确保编号连续且引用正确。本任务是 task-0007（梳理 50 号工作流基础规范）的前置任务，task-0007
+  应在本任务完成后执行。
+
+  '
+source_intent: intent-0004
+source: intent-0004
+parent_task: null
+sub_tasks: []
+acceptance: '- [ ] 已读取 evals 目录下所有文档，梳理当前编号和内容
+
+  - [ ] 已识别编号不连续、重复或需要调整的文档
+
+  - [ ] 已检查 evals 文档对 specs 目录的引用是否正确
+
+  - [ ] 已形成编号重排方案并通过 Human Gate 确认
+
+  - [ ] 已更新相关引用和索引
+
+  '
+verification: '检查 evals 目录编号连续性、引用正确性，以及 Human Gate 确认记录。
+
+  '
+assignee: null
+related_adrs: []
+related_changes: []
+blocked_by: []

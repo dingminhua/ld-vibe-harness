@@ -52,7 +52,7 @@ REQUIRED_FIELDS = {
 }
 LIST_FIELDS = {
     "intent": {"related_tasks", "related_adrs"},
-    "task": {"related_adrs", "related_changes", "sub_tasks"},
+    "task": {"related_adrs", "related_changes", "sub_tasks", "blocked_by"},
     "adr": {"related_tasks", "related_adrs", "related_changes"},
     "pitfall": {"source_objects", "related_objects", "related_rules", "tags"},
     "profile": {"related_tasks", "related_adrs"},
@@ -200,9 +200,33 @@ def validate_change(path: Path, data: dict[str, Any]) -> list[Issue]:
     return validate_common(path, data, "change")
 
 
+def find_task_by_id(tasks_dir: Path, task_id: str) -> tuple[Path | None, dict[str, Any] | None, Issue | None]:
+    matches = sorted(tasks_dir.glob(f"{task_id}-*.yaml"))
+    if not matches:
+        return None, None, None
+    task_path = matches[0]
+    task_data, load_issue = load_yaml(task_path)
+    return task_path, task_data, load_issue
+
+
+def validate_task_id_list(path: Path, field: str, value: Any) -> list[Issue]:
+    issues = []
+    if field not in value:
+        return issues
+    items = value.get(field)
+    if not isinstance(items, list):
+        return issues
+    for item in items:
+        if not isinstance(item, str) or not ID_PATTERNS["task"].match(item):
+            issues.append(Issue(str(path), "error", "INVALID_TASK_REFERENCE", f"{field} 中必须使用 task-{{NNNN}} 格式的 Task ID: {item}", field=field))
+    return issues
+
 
 def validate_task(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "task")
+    task_id = data.get("id")
+    tasks_dir = path.parent
+    issues.extend(validate_task_id_list(path, "blocked_by", data))
     if data.get("status") == "closed":
         for field in ["closed_at", "closure_evidence"]:
             if is_empty(data.get(field)):
@@ -217,6 +241,23 @@ def validate_task(path: Path, data: dict[str, Any]) -> list[Issue]:
                 "acceptance 字段应使用检查列表格式（- [ ] / - [x]），每项为可独立验证的原子条件"))
     elif not acceptance_text:
         issues.append(Issue(str(path), "error", "MISSING_REQUIRED_FIELD", "acceptance 字段为空"))
+    blocked_by = data.get("blocked_by", [])
+    if isinstance(blocked_by, list):
+        for blocker_id in blocked_by:
+            if not isinstance(blocker_id, str) or not ID_PATTERNS["task"].match(blocker_id):
+                continue
+            if blocker_id == task_id:
+                issues.append(Issue(str(path), "error", "SELF_BLOCKED_TASK", "blocked_by 不得引用当前 Task 自身", field="blocked_by"))
+                continue
+            blocker_path, blocker_data, load_issue = find_task_by_id(tasks_dir, blocker_id)
+            if load_issue:
+                issues.append(load_issue)
+                continue
+            if blocker_path is None or blocker_data is None:
+                issues.append(Issue(str(path), "error", "BLOCKED_BY_NOT_FOUND", f"blocked_by 引用的 Task 不存在: {blocker_id}", field="blocked_by"))
+                continue
+            if blocker_data.get("status") != "closed" and data.get("status") in {"executing", "verifying", "review_needed", "closed"}:
+                issues.append(Issue(str(path), "error", "BLOCKED_BY_NOT_CLOSED", f"前置 Task 未关闭，当前 Task 不得执行或关闭: {blocker_id}", field="blocked_by"))
     return issues
 
 
