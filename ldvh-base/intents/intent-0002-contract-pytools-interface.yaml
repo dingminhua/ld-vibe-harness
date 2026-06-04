@@ -17,4 +17,6 @@ constraints: |
 source: 用户要求补全现有 9 个对象接口，并统一 PyTools 命名、接口、测试和变更同步机制
 related_tasks:
   - task-0003
+  - task-0019
+  - task-0020
 related_adrs: []

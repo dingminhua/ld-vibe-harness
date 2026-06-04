@@ -3,10 +3,10 @@ import json
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).resolve().parents[2] / "tools" / "check_03_01_specs_docs.py"
-spec = importlib.util.spec_from_file_location("check_03_01_specs_docs", MODULE_PATH)
-check_03_01_specs_docs = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(check_03_01_specs_docs)
+MODULE_PATH = Path(__file__).resolve().parents[2] / "tools" / "specs_index_validate.py"
+spec = importlib.util.spec_from_file_location("specs_index_validate", MODULE_PATH)
+specs_index_validate = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(specs_index_validate)
 
 
 def write_md(path, content):
@@ -106,7 +106,7 @@ def build_fixture(tmp_path):
 
 def test_build_generates_docs_sections_relations_and_mechanisms(tmp_path):
     root = build_fixture(tmp_path)
-    indexes = check_03_01_specs_docs.SpecsChecker(root).build()
+    indexes = specs_index_validate.SpecsChecker(root).build()
 
     assert indexes["metadata"]["derived"] is True
     assert indexes["metadata"]["source_of_truth"] is False
@@ -162,7 +162,7 @@ def test_document_kind_and_required_header_diagnostics(tmp_path):
 """,
     )
 
-    indexes = check_03_01_specs_docs.SpecsChecker(tmp_path).build()
+    indexes = specs_index_validate.SpecsChecker(tmp_path).build()
 
     doc = indexes["docs"][0]
     assert doc["doc_kind"] == "subdocument"
@@ -187,7 +187,7 @@ def test_broken_markdown_path_is_reported(tmp_path):
 """,
     )
 
-    indexes = check_03_01_specs_docs.SpecsChecker(tmp_path).build()
+    indexes = specs_index_validate.SpecsChecker(tmp_path).build()
 
     messages = [item["message"] for item in indexes["diagnostics"]]
     assert any("specs/not-found.md" in message for message in messages)
@@ -196,10 +196,10 @@ def test_broken_markdown_path_is_reported(tmp_path):
 
 def test_write_outputs_creates_expected_json_files(tmp_path):
     root = build_fixture(tmp_path)
-    indexes = check_03_01_specs_docs.SpecsChecker(root).build()
+    indexes = specs_index_validate.SpecsChecker(root).build()
     out_dir = tmp_path / "out"
 
-    written = check_03_01_specs_docs.write_outputs(indexes, out_dir)
+    written = specs_index_validate.write_outputs(indexes, out_dir)
 
     assert written == [
         "specs-diagnostics.json",
@@ -216,9 +216,9 @@ def test_write_outputs_creates_expected_json_files(tmp_path):
 def test_main_outputs_json_to_stdout(tmp_path, capsys):
     root = build_fixture(tmp_path)
 
-    exit_code = check_03_01_specs_docs.main(["--root", str(root)])
+    exit_code = specs_index_validate.main(["--root", str(root)])
 
     assert exit_code == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["metadata"]["tool"] == "tools/check_03_01_specs_docs.py"
+    assert payload["metadata"]["tool"] == "tools/specs_index_validate.py"
     assert payload["docs"]

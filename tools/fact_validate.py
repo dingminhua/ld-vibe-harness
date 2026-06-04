@@ -330,7 +330,7 @@ def build_tool_result(target: Path, files_count: int, issues: list[Issue]) -> di
     warnings = sum(1 for issue in issues if issue.level == "warning")
     return {
         "ok": errors == 0,
-        "command": "ldvh_fact_validate",
+        "command": "fact_validate",
         "action": "validate",
         "target": str(target),
         "summary": {

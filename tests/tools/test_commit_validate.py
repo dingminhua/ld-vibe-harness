@@ -4,8 +4,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-MODULE_PATH = Path(__file__).resolve().parents[2] / "tools" / "check_22_commit_format.py"
-spec = importlib.util.spec_from_file_location("check_22_commit_format", MODULE_PATH)
+MODULE_PATH = Path(__file__).resolve().parents[2] / "tools" / "commit_validate.py"
+spec = importlib.util.spec_from_file_location("commit_validate", MODULE_PATH)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""LDVH 事实模型 CLI 工具：create / transition / delete / list / show。
+"""LDVH 事实模型 CLI 工具：create / transition / delete / list / show / search / stats / related / link-rule / deprecate / supersede。
 
 对 LDVH 生产对象（intent, task, adr, pitfall, memo, profile, change）
-执行创建、状态流转、删除、列表查询和详情查看操作。当前硬编码元数据，后续迁移到读取 Contract。
+执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
+ADR 专属写入操作（link-rule / deprecate / supersede）必须携带 Human Gate 确认参数。
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from typing import Any
 import yaml
 
 
-# ── 对象元数据（硬编码，与 check_fact_model.py 保持一致） ──────────────
+# ── 对象元数据（硬编码，与 fact_validate.py 保持一致） ──────────────
 
 OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "memo", "profile", "change"}
 
@@ -131,6 +132,10 @@ DIRECTORY_MAP = {
 
 # 允许删除的状态集合
 DELETABLE_STATUSES = {"draft", "proposed"}
+
+# ADR 专属常量
+ADR_TERMINAL_STATUSES = {"deprecated", "superseded", "rejected"}
+ADR_SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
 # ── 工具函数 ────────────────────────────────────────────────────────────
@@ -275,6 +280,175 @@ def _json_safe(obj: Any) -> Any:
     return obj
 
 
+# ── ADR 专属工具函数 ────────────────────────────────────────────────────
+
+def _today_iso() -> str:
+    """返回当前 ISO 格式时间戳。"""
+    return datetime.now().isoformat()
+
+
+def _parse_list_values(values: list[str] | None) -> list[str]:
+    """将 --flag 多值和逗号分隔值展平为列表。"""
+    if not values:
+        return []
+    items = []
+    for value in values:
+        for item in str(value).split(","):
+            item = item.strip()
+            if item:
+                items.append(item)
+    return items
+
+
+def _ensure_authorized(args: argparse.Namespace) -> None:
+    """检查 Human Gate 确认参数，缺少时抛出 SystemExit。"""
+    if not getattr(args, "human_gate_confirmed", False):
+        error("写入被拒绝：缺少 --human-gate-confirmed。Tools 不生成授权，必须由 Human Gate 先确认。")
+        raise SystemExit(1)
+    if not getattr(args, "confirmed_by", None):
+        error("写入被拒绝：缺少 --confirmed-by。")
+        raise SystemExit(1)
+    if not getattr(args, "confirmation_context", None):
+        error("写入被拒绝：缺少 --confirmation-context。")
+        raise SystemExit(1)
+
+
+def _load_all_of_type(object_type: str, base_dir: Path) -> tuple[list[dict], list[tuple[str, str]]]:
+    """加载指定类型的所有对象，返回 (对象列表, 解析错误列表)。"""
+    directory = base_dir / DIRECTORY_MAP[object_type]
+    if not directory.exists():
+        return [], []
+    objects = []
+    parse_errors = []
+    for filepath in sorted(directory.glob(f"{object_type}-*.yaml")):
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+            if data is None:
+                parse_errors.append((filepath.name, "YAML 内容为空"))
+                continue
+            data["_file"] = filepath.name
+            data["_path"] = str(filepath)
+            objects.append(data)
+        except Exception as e:
+            parse_errors.append((filepath.name, str(e)))
+    return objects, parse_errors
+
+
+def _find_adr_by_id(adrs: list[dict], adr_id: str) -> dict:
+    """在 ADR 列表中按 id 查找，找不到时抛出 SystemExit。"""
+    for adr in adrs:
+        if adr.get("id") == adr_id:
+            return adr
+    error(f"未找到 ADR: {adr_id}")
+    raise SystemExit(1)
+
+
+def _adr_filepath(adr_id: str, slug: str, base_dir: Path) -> Path:
+    """根据 ADR ID 和 slug 计算文件路径。"""
+    if not ID_PATTERNS["adr"].match(adr_id):
+        error(f"ADR ID 不合法: {adr_id}")
+        raise SystemExit(1)
+    if not ADR_SLUG_PATTERN.match(slug):
+        error("slug 不合法：必须使用小写英文、数字和短横线，例如 use-yaml-for-adr。")
+        raise SystemExit(1)
+    return base_dir / DIRECTORY_MAP["adr"] / f"{adr_id}-{slug}.yaml"
+
+
+def _update_adr_file(adr: dict, updates: dict, base_dir: Path) -> Path:
+    """更新 ADR 文件，移除运行时字段后写入。"""
+    path = Path(adr["_path"])
+    data = {k: v for k, v in adr.items() if not k.startswith("_")}
+    data.update(updates)
+    save_yaml(path, data)
+    return path
+
+
+def _write_change_record(
+    title: str,
+    context: str,
+    decision: str,
+    consequences: str,
+    affects: list[str],
+    confirmed_by: str,
+    confirmation_context: str,
+    base_dir: Path,
+) -> Path:
+    """写入 Change YAML 记录。"""
+    change_dir = base_dir / DIRECTORY_MAP["change"]
+    change_dir.mkdir(parents=True, exist_ok=True)
+    change_num = next_number(change_dir, "change")
+    change_id = f"change-{change_num:04d}"
+    # 用时间戳确保唯一
+    ts = datetime.now().strftime("%Y%m%d%H%M%S")
+    filename = f"{change_id}-{ts}.yaml"
+    path = change_dir / filename
+    counter = 1
+    while path.exists():
+        filename = f"{change_id}-{ts}-{counter}.yaml"
+        path = change_dir / filename
+        counter += 1
+    now = _today_iso()
+    data = {
+        "id": change_id,
+        "type": "change",
+        "title": title,
+        "status": "done",
+        "created": now,
+        "updated": now,
+        "description": context,
+        "change_type": "adr_operation",
+        "scope": decision,
+        "human_gate": {
+            "required": True,
+            "confirmed_by": confirmed_by,
+            "confirmation_context": confirmation_context,
+        },
+    }
+    save_yaml(path, data)
+    return path
+
+
+def _maybe_write_change(args: argparse.Namespace, title: str, context: str,
+                        decision: str, consequences: str, affects: list[str],
+                        base_dir: Path) -> Path | None:
+    """当 --write-change 被指定时写入 Change 记录。"""
+    if not getattr(args, "write_change", False):
+        return None
+    return _write_change_record(
+        title, context, decision, consequences, affects,
+        args.confirmed_by, args.confirmation_context, base_dir,
+    )
+
+
+def _build_adr_data(adr_id: str, args: argparse.Namespace, now: str) -> dict:
+    """构建 ADR 数据字典。"""
+    gate_record = (
+        f"[Human Gate 确认记录: 确认人={getattr(args, 'confirmed_by', 'N/A')}, "
+        f"确认时间={now}, 确认上下文={getattr(args, 'confirmation_context', 'N/A')}]"
+    )
+    context_val = getattr(args, "context", "") or ""
+    context_with_gate = f"{context_val}\n{gate_record}" if context_val else gate_record
+    data = {
+        "id": adr_id,
+        "type": "adr",
+        "title": args.title,
+        "status": "proposed",
+        "created": now,
+        "updated": now,
+        "date": getattr(args, "date", None) or now,
+        "context": context_with_gate,
+        "decision": args.decision,
+        "consequences": args.consequences,
+        "affects": _parse_list_values(getattr(args, "affects", None)),
+        "related_objects": _parse_list_values(getattr(args, "related_objects", None)),
+        "related_rules": _parse_list_values(getattr(args, "related_rules", None)),
+    }
+    if getattr(args, "alternatives", None):
+        data["alternatives"] = args.alternatives
+    return data
+
+
 # ── create 命令 ─────────────────────────────────────────────────────────
 
 def cmd_create(args: argparse.Namespace) -> int:
@@ -288,6 +462,13 @@ def cmd_create(args: argparse.Namespace) -> int:
     if object_type not in OBJECT_TYPES:
         error(f"不支持的对象类型: {object_type}，有效类型: {', '.join(sorted(OBJECT_TYPES))}")
         return 1
+
+    # ADR 创建时强制 Human Gate
+    if object_type == "adr":
+        try:
+            _ensure_authorized(args)
+        except SystemExit:
+            return 1
 
     # 计算目录和编号
     directory = base_dir / DIRECTORY_MAP[object_type]
@@ -321,6 +502,14 @@ def cmd_create(args: argparse.Namespace) -> int:
     if object_type == "task":
         data["blocked_by"] = []
 
+    # ADR 创建时回写 Human Gate 记录到 context
+    if object_type == "adr":
+        gate_record = (
+            f"[Human Gate 确认记录: 确认人={getattr(args, 'confirmed_by', 'N/A')}, "
+            f"确认时间={now}, 确认上下文={getattr(args, 'confirmation_context', 'N/A')}]"
+        )
+        data["context"] = gate_record
+
     # 写入文件
     save_yaml(filepath, data)
     print(str(filepath))
@@ -344,7 +533,7 @@ def cmd_create(args: argparse.Namespace) -> int:
             elif field == "status":
                 change_data[field] = DEFAULT_STATUS["change"]
             elif field in ("created", "updated"):
-                change_data[field] = today
+                change_data[field] = now
             elif field == "description":
                 change_data[field] = f"ADR {obj_id} 创建"
             else:
@@ -352,6 +541,19 @@ def cmd_create(args: argparse.Namespace) -> int:
 
         save_yaml(change_filepath, change_data)
         print(str(change_filepath))
+
+        # --write-change 时额外写入带 Human Gate 的 Change 记录
+        change_path = _maybe_write_change(
+            args,
+            f"创建 ADR {obj_id}",
+            getattr(args, "confirmation_context", ""),
+            f"创建 ADR: {data['title']}",
+            "ADR 实例已创建为 proposed，后续 accepted 仍需单独 Human Gate。",
+            [str(filepath)],
+            base_dir,
+        )
+        if change_path:
+            print(str(change_path))
 
     return 0
 
@@ -377,6 +579,13 @@ def cmd_transition(args: argparse.Namespace) -> int:
         error(f"不支持的对象类型: {object_type}")
         return 1
 
+    # ADR 状态流转时强制 Human Gate
+    if object_type == "adr":
+        try:
+            _ensure_authorized(args)
+        except SystemExit:
+            return 1
+
     # 校验当前状态合法
     if current_status not in VALID_STATUSES[object_type]:
         error(f"当前状态不合法: {current_status}")
@@ -392,6 +601,18 @@ def cmd_transition(args: argparse.Namespace) -> int:
     if new_status not in allowed:
         error(f"不允许的流转: {current_status} → {new_status}，允许的目标状态: {', '.join(sorted(allowed)) or '无'}")
         return 1
+
+    # ADR 终态不可重开
+    if object_type == "adr" and current_status in ADR_TERMINAL_STATUSES:
+        error(f"状态流转被拒绝：{current_status} 为终态，不得重开。")
+        return 1
+
+    # ADR accepted → superseded 必须提供 --superseded-by
+    if object_type == "adr" and new_status == "superseded":
+        if not getattr(args, "superseded_by", None):
+            error("状态流转被拒绝：accepted → superseded 必须提供 --superseded-by。")
+            return 1
+        data["superseded_by"] = args.superseded_by
 
     # Task 前置任务强制校验（planned → executing）
     if object_type == "task" and current_status == "planned" and new_status == "executing":
@@ -410,10 +631,6 @@ def cmd_transition(args: argparse.Namespace) -> int:
         # 校验 sub_tasks 全部 closed
         sub_tasks = data.get("sub_tasks", [])
         if isinstance(sub_tasks, list) and sub_tasks:
-            # 检查子任务是否全部 closed（子任务为 id 列表时无法直接判断状态，
-            # 这里检查是否有非 closed 状态的子任务 id 记录）
-            # 当前简化处理：如果有 sub_tasks 列表且非空，提示需要确认
-            # 严格来说需要读取每个子任务文件，此处仅做基本检查
             pass
         # 校验 closure_evidence 已填写
         closure_evidence = data.get("closure_evidence")
@@ -427,8 +644,16 @@ def cmd_transition(args: argparse.Namespace) -> int:
     if object_type == "task" and new_status == "closed":
         data["closed_at"] = datetime.now().isoformat()
 
+    # ADR 流转时回写 Human Gate 记录到 context
+    if object_type == "adr":
+        gate_record = (
+            f"[Human Gate 确认记录: 确认人={getattr(args, 'confirmed_by', 'N/A')}, "
+            f"确认时间={_today_iso()}, 确认上下文={getattr(args, 'confirmation_context', 'N/A')}]"
+        )
+        existing_context = data.get("context", "")
+        data["context"] = f"{existing_context}\n{gate_record}" if existing_context else gate_record
+
     # 退回流转记录 reason
-    # 判断是否为退回：新状态在当前状态之前（简化判断：非正向推进）
     backward_pairs = {
         ("verifying", "executing"),
         ("review_needed", "executing"),
@@ -437,7 +662,6 @@ def cmd_transition(args: argparse.Namespace) -> int:
         if not reason:
             error(f"退回流转 {current_status} → {new_status} 需要提供 --reason")
             return 1
-        # 将 reason 追加到 description 或单独记录
         if "transition_reasons" not in data:
             data["transition_reasons"] = []
         data["transition_reasons"].append({
@@ -450,6 +674,22 @@ def cmd_transition(args: argparse.Namespace) -> int:
     # 写回文件
     save_yaml(yaml_file, data)
     print(f"{current_status} → {new_status}")
+
+    # ADR 流转时 --write-change 写入 Change 记录
+    if object_type == "adr":
+        base_dir = Path(getattr(args, "base_dir", ".")) if getattr(args, "base_dir", None) else yaml_file.parents[2] if len(yaml_file.parents) > 2 else Path(".")
+        change_path = _maybe_write_change(
+            args,
+            f"更新 ADR 状态 {data.get('id', '')}",
+            getattr(args, "confirmation_context", ""),
+            f"ADR 状态从 {current_status} 变更为 {new_status}。",
+            "状态流转已写入 ADR YAML，终态 ADR 不得重开。",
+            [str(yaml_file)],
+            base_dir,
+        )
+        if change_path:
+            print(str(change_path))
+
     return 0
 
 
@@ -500,7 +740,6 @@ def cmd_list(args: argparse.Namespace) -> int:
     issues: list[dict[str, str | None]] = []
 
     if not directory.exists():
-        # 目录不存在不算错误，返回空列表
         pass
     else:
         for yaml_path in sorted(directory.glob("*.yaml")):
@@ -526,7 +765,6 @@ def cmd_list(args: argparse.Namespace) -> int:
                 "path": str(yaml_path),
                 "updated": data.get("updated", ""),
             }
-            # 传递可选的双语字段
             if "title_en" in data:
                 item_data["title_en"] = data["title_en"]
             if "title_zh" in data:
@@ -536,7 +774,7 @@ def cmd_list(args: argparse.Namespace) -> int:
     if fmt == "json":
         result: dict[str, Any] = {
             "ok": True,
-            "command": "ldvh_fact_cli",
+            "command": "fact_cli",
             "action": "list",
             "target": object_type,
             "summary": {
@@ -566,7 +804,6 @@ def cmd_deps(args: argparse.Namespace) -> int:
     fmt = args.format
     tasks_dir = base_dir / DIRECTORY_MAP["task"]
 
-    # target 可为 Task ID 或 YAML 文件路径
     target_path = Path(target)
     if target_path.is_file():
         data = load_yaml(target_path)
@@ -594,7 +831,7 @@ def cmd_deps(args: argparse.Namespace) -> int:
     if fmt == "json":
         result = {
             "ok": True,
-            "command": "ldvh_fact_cli",
+            "command": "fact_cli",
             "action": "deps",
             "target": task_id,
             "summary": {
@@ -639,12 +876,10 @@ def cmd_show(args: argparse.Namespace) -> int:
     base_dir = Path(args.base_dir) if args.base_dir else Path(".")
     fmt = args.format
 
-    # 判断 target 是文件路径还是对象 ID
     target_path = Path(target)
     if target_path.is_file():
         yaml_file = target_path
     else:
-        # 按 ID 查找：解析类型和编号，在对应目录搜索
         matched = False
         for obj_type, pattern in ID_PATTERNS.items():
             if pattern.match(target):
@@ -666,7 +901,7 @@ def cmd_show(args: argparse.Namespace) -> int:
     if fmt == "json":
         result = {
             "ok": True,
-            "command": "ldvh_fact_cli",
+            "command": "fact_cli",
             "action": "show",
             "target": str(yaml_file),
             "summary": {
@@ -679,18 +914,317 @@ def cmd_show(args: argparse.Namespace) -> int:
         }
         print(json.dumps(_json_safe(result), ensure_ascii=False, indent=2))
     else:
-        # 文本模式直接输出 YAML
         print(yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False).rstrip())
 
     return 0
 
 
+# ── search 命令 ────────────────────────────────────────────────────────
+
+def cmd_search(args: argparse.Namespace) -> int:
+    """按关键词搜索事实对象。"""
+    keyword = args.keyword
+    object_type = getattr(args, "type", None)
+    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
+    keyword_lower = keyword.lower()
+
+    types_to_search = [object_type] if object_type else sorted(OBJECT_TYPES)
+    matched: list[dict[str, Any]] = []
+
+    for otype in types_to_search:
+        if otype not in OBJECT_TYPES:
+            error(f"不支持的对象类型: {otype}")
+            return 1
+        directory = base_dir / DIRECTORY_MAP[otype]
+        if not directory.exists():
+            continue
+        for yaml_path in sorted(directory.glob(f"{otype}-*.yaml")):
+            data = load_yaml(yaml_path)
+            if data is None:
+                continue
+            searchable = " ".join([
+                str(data.get("title", "")),
+                str(data.get("context", "")),
+                str(data.get("decision", "")),
+                str(data.get("consequences", "")),
+                str(data.get("description", "")),
+                str(data.get("id", "")),
+            ]).lower()
+            if keyword_lower in searchable:
+                matched.append({
+                    "id": data.get("id", ""),
+                    "type": data.get("type", otype),
+                    "status": data.get("status", ""),
+                    "title": data.get("title", ""),
+                    "path": str(yaml_path),
+                })
+
+    if not matched:
+        print(f"未找到包含 '{keyword}' 的对象。")
+        return 0
+
+    print(f"找到 {len(matched)} 个匹配的对象：\n")
+    print(f"{'ID':<16} {'类型':<10} {'状态':<14} {'标题':<40}")
+    print("-" * 85)
+    for item in matched:
+        title = item["title"]
+        if len(title) > 38:
+            title = title[:36] + ".."
+        print(f"{item['id']:<16} {item['type']:<10} {item['status']:<14} {title:<40}")
+    return 0
+
+
+# ── stats 命令 ─────────────────────────────────────────────────────────
+
+def cmd_stats(args: argparse.Namespace) -> int:
+    """统计对象状态分布。"""
+    object_type = getattr(args, "type", None)
+    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
+
+    types_to_stat = [object_type] if object_type else sorted(OBJECT_TYPES)
+
+    for otype in types_to_stat:
+        if otype not in OBJECT_TYPES:
+            error(f"不支持的对象类型: {otype}")
+            return 1
+        directory = base_dir / DIRECTORY_MAP[otype]
+        status_counts: dict[str, int] = {}
+        total = 0
+        if directory.exists():
+            for yaml_path in sorted(directory.glob(f"{otype}-*.yaml")):
+                data = load_yaml(yaml_path)
+                if data is None:
+                    continue
+                s = data.get("status", "unknown")
+                status_counts[s] = status_counts.get(s, 0) + 1
+                total += 1
+
+        print(f"{otype} 总数: {total}")
+        for status in sorted(VALID_STATUSES.get(otype, [])):
+            count = status_counts.get(status, 0)
+            if count > 0:
+                print(f"  {status}: {count}")
+        other = sum(v for k, v in status_counts.items() if k not in VALID_STATUSES.get(otype, set()))
+        if other:
+            print(f"  其他: {other}")
+        print()
+
+    return 0
+
+
+# ── related 命令 ───────────────────────────────────────────────────────
+
+def cmd_related(args: argparse.Namespace) -> int:
+    """查询与指定 specs 关联的 ADR。"""
+    spec_path = args.spec_path
+    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
+
+    adrs, _ = _load_all_of_type("adr", base_dir)
+    matched = []
+    for adr in adrs:
+        affects = adr.get("affects", [])
+        related_rules = adr.get("related_rules", [])
+        all_refs = [str(r) for r in (affects or []) + (related_rules or [])]
+        if any(spec_path in ref for ref in all_refs):
+            matched.append(adr)
+
+    if not matched:
+        print(f"未找到与 '{spec_path}' 关联的 ADR。")
+        return 0
+
+    print(f"与 '{spec_path}' 关联的 ADR 共 {len(matched)} 个：\n")
+    print(f"{'ID':<12} {'状态':<14} {'标题':<40}")
+    print("-" * 70)
+    for adr in matched:
+        adr_id = adr.get("id", "N/A")
+        status = adr.get("status", "N/A")
+        title = adr.get("title", "N/A")
+        if len(str(title)) > 38:
+            title = str(title)[:36] + ".."
+        print(f"{adr_id:<12} {status:<14} {title:<40}")
+    return 0
+
+
+# ── link-rule 命令 ─────────────────────────────────────────────────────
+
+def cmd_link_rule(args: argparse.Namespace) -> int:
+    """更新 ADR 的 related_rules 字段。"""
+    try:
+        _ensure_authorized(args)
+    except SystemExit:
+        return 1
+
+    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
+    adrs, _ = _load_all_of_type("adr", base_dir)
+    adr = _find_adr_by_id(adrs, args.adr_id)
+
+    rules = adr.get("related_rules") or []
+    if not isinstance(rules, list):
+        error("related_rules 当前不是列表，拒绝写入。")
+        return 1
+
+    changed = False
+    for rule in _parse_list_values(args.rule):
+        if rule not in rules:
+            rules.append(rule)
+            changed = True
+
+    if not changed:
+        print("related_rules 无变化。")
+        return 0
+
+    path = _update_adr_file(adr, {"related_rules": rules, "updated": _today_iso()}, base_dir)
+    change_path = _maybe_write_change(
+        args,
+        f"更新 ADR 关联规则 {args.adr_id}",
+        getattr(args, "confirmation_context", ""),
+        f"更新 ADR {args.adr_id} 的 related_rules。",
+        "ADR 关联规则字段已回写。",
+        [str(path)],
+        base_dir,
+    )
+    print(f"已更新 related_rules: {args.adr_id}")
+    if change_path:
+        print(str(change_path))
+    return 0
+
+
+# ── deprecate 命令 ─────────────────────────────────────────────────────
+
+def cmd_deprecate(args: argparse.Namespace) -> int:
+    """废弃 ADR（accepted → deprecated + 废弃原因回写）。"""
+    try:
+        _ensure_authorized(args)
+    except SystemExit:
+        return 1
+
+    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
+    adrs, _ = _load_all_of_type("adr", base_dir)
+    adr = _find_adr_by_id(adrs, args.adr_id)
+
+    current = adr.get("status")
+    allowed = VALID_TRANSITIONS["adr"].get(current, set())
+    if "deprecated" not in allowed:
+        error(f"废弃被拒绝：{current} → deprecated 非法。")
+        return 1
+
+    context = str(adr.get("context", ""))
+    consequences = str(adr.get("consequences", ""))
+    addition = f"废弃原因：{args.reason}"
+    reason_field = getattr(args, "reason_field", "consequences")
+    updates: dict[str, Any] = {"status": "deprecated", "updated": _today_iso()}
+    if reason_field == "context":
+        updates["context"] = f"{context}\n\n{addition}" if context else addition
+    else:
+        updates["consequences"] = f"{consequences}\n\n{addition}" if consequences else addition
+
+    path = _update_adr_file(adr, updates, base_dir)
+    change_path = _maybe_write_change(
+        args,
+        f"废弃 ADR {args.adr_id}",
+        getattr(args, "confirmation_context", ""),
+        f"ADR {args.adr_id} 状态变更为 deprecated。",
+        args.reason,
+        [str(path)],
+        base_dir,
+    )
+    print(f"已废弃 ADR: {args.adr_id}")
+    if change_path:
+        print(str(change_path))
+    return 0
+
+
+# ── supersede 命令 ─────────────────────────────────────────────────────
+
+def cmd_supersede(args: argparse.Namespace) -> int:
+    """推翻 ADR（创建新 ADR + 旧 ADR 标记 superseded）。"""
+    try:
+        _ensure_authorized(args)
+    except SystemExit:
+        return 1
+
+    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
+    adrs, _ = _load_all_of_type("adr", base_dir)
+    old_adr = _find_adr_by_id(adrs, args.old_adr_id)
+
+    old_status = old_adr.get("status")
+    allowed = VALID_TRANSITIONS["adr"].get(old_status, set())
+    if "superseded" not in allowed:
+        error(f"推翻被拒绝：{old_status} → superseded 非法。")
+        return 1
+
+    # 计算新 ADR ID
+    adr_dir = base_dir / DIRECTORY_MAP["adr"]
+    new_num = next_number(adr_dir, "adr")
+    new_id = f"adr-{new_num:04d}"
+    now = _today_iso()
+
+    # 构建新 ADR 数据
+    new_adr = _build_adr_data(new_id, args, now)
+    related_objects = new_adr.get("related_objects", [])
+    if args.old_adr_id not in related_objects:
+        related_objects.append(args.old_adr_id)
+    new_adr["related_objects"] = related_objects
+
+    new_path = _adr_filepath(new_id, args.slug, base_dir)
+    if new_path.exists():
+        error(f"写入被拒绝：目标文件已存在 {new_path}")
+        return 1
+
+    # 写入新 ADR
+    save_yaml(new_path, new_adr)
+
+    # 更新旧 ADR
+    old_path = _update_adr_file(
+        old_adr,
+        {"status": "superseded", "superseded_by": new_id, "updated": now},
+        base_dir,
+    )
+
+    change_path = _maybe_write_change(
+        args,
+        f"推翻 ADR {args.old_adr_id}",
+        getattr(args, "confirmation_context", ""),
+        f"创建替代 ADR {new_id}，并将 {args.old_adr_id} 标记为 superseded。",
+        "旧 ADR 已保留历史，新 ADR 以 proposed 状态承接重新决策。",
+        [str(old_path), str(new_path)],
+        base_dir,
+    )
+    print(f"已创建替代 ADR: {new_path}")
+    print(f"已更新旧 ADR: {args.old_adr_id} → superseded_by {new_id}")
+    if change_path:
+        print(str(change_path))
+    return 0
+
+
 # ── CLI 入口 ────────────────────────────────────────────────────────────
+
+def _add_authorization_args(parser: argparse.ArgumentParser) -> None:
+    """为写入类子命令添加 Human Gate 确认参数。"""
+    parser.add_argument("--human-gate-confirmed", action="store_true", help="Human Gate 已确认")
+    parser.add_argument("--confirmed-by", default=None, help="确认人")
+    parser.add_argument("--confirmation-context", default=None, help="确认上下文")
+    parser.add_argument("--write-change", action="store_true", help="同时写入 Change 记录")
+
+
+def _add_adr_content_args(parser: argparse.ArgumentParser) -> None:
+    """为 ADR 创建类子命令添加内容参数。"""
+    parser.add_argument("--slug", required=True, help="ADR 文件名 slug")
+    parser.add_argument("--title", required=True, help="ADR 标题")
+    parser.add_argument("--context", default="", help="ADR 背景")
+    parser.add_argument("--decision", required=True, help="ADR 决策")
+    parser.add_argument("--consequences", required=True, help="ADR 影响")
+    parser.add_argument("--date", default=None, help="决策日期")
+    parser.add_argument("--alternatives", default=None, help="替代方案")
+    parser.add_argument("--affects", action="append", default=None, help="影响文件（可多次指定）")
+    parser.add_argument("--related-objects", action="append", default=None, help="关联对象（可多次指定）")
+    parser.add_argument("--related-rules", action="append", default=None, help="关联规范（可多次指定）")
+
 
 def build_parser() -> argparse.ArgumentParser:
     """构建 argparse 解析器。"""
     parser = argparse.ArgumentParser(
-        description="LDVH 事实模型 CLI：创建、状态流转、删除、列表查询、详情查看"
+        description="LDVH 事实模型 CLI：创建、状态流转、删除、列表查询、详情查看、搜索、统计"
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -700,12 +1234,16 @@ def build_parser() -> argparse.ArgumentParser:
     create_parser.add_argument("--title", required=True, help="对象标题")
     create_parser.add_argument("--short-title", default=None, help="文件名短标识（默认从标题自动生成）")
     create_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+    _add_authorization_args(create_parser)
 
     # transition 子命令
     transition_parser = subparsers.add_parser("transition", help="执行状态流转")
     transition_parser.add_argument("yaml_file", help="YAML 文件路径")
     transition_parser.add_argument("--to", required=True, dest="to", help="目标状态")
     transition_parser.add_argument("--reason", default=None, help="退回流转原因")
+    transition_parser.add_argument("--superseded-by", default=None, help="被替代的新 ADR ID（ADR superseded 时必填）")
+    transition_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+    _add_authorization_args(transition_parser)
 
     # delete 子命令
     delete_parser = subparsers.add_parser("delete", help="删除事实对象")
@@ -730,6 +1268,44 @@ def build_parser() -> argparse.ArgumentParser:
     show_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     show_parser.add_argument("--format", choices={"text", "json"}, default="text", help="输出格式，默认 text")
 
+    # search 子命令
+    search_parser = subparsers.add_parser("search", help="按关键词搜索事实对象")
+    search_parser.add_argument("keyword", help="搜索关键词")
+    search_parser.add_argument("--type", default=None, dest="type", help="限定对象类型（默认搜索所有类型）")
+    search_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+
+    # stats 子命令
+    stats_parser = subparsers.add_parser("stats", help="统计对象状态分布")
+    stats_parser.add_argument("--type", default=None, dest="type", help="限定对象类型（默认统计所有类型）")
+    stats_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+
+    # related 子命令
+    related_parser = subparsers.add_parser("related", help="查询与指定 specs 关联的 ADR")
+    related_parser.add_argument("spec_path", help="specs 文件路径（如 specs/21.06-Contract.md）")
+    related_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+
+    # link-rule 子命令
+    link_rule_parser = subparsers.add_parser("link-rule", help="更新 ADR 关联规范")
+    link_rule_parser.add_argument("adr_id", help="ADR ID（如 adr-0001）")
+    link_rule_parser.add_argument("--rule", action="append", required=True, help="规范路径（可多次指定）")
+    link_rule_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+    _add_authorization_args(link_rule_parser)
+
+    # deprecate 子命令
+    deprecate_parser = subparsers.add_parser("deprecate", help="废弃 ADR")
+    deprecate_parser.add_argument("adr_id", help="ADR ID（如 adr-0001）")
+    deprecate_parser.add_argument("--reason", required=True, help="废弃原因")
+    deprecate_parser.add_argument("--reason-field", choices=["context", "consequences"], default="consequences", help="废弃原因写入字段（默认 consequences）")
+    deprecate_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+    _add_authorization_args(deprecate_parser)
+
+    # supersede 子命令
+    supersede_parser = subparsers.add_parser("supersede", help="推翻 ADR（创建新 ADR + 旧 ADR 标记 superseded）")
+    supersede_parser.add_argument("--old-adr-id", required=True, help="被推翻的 ADR ID")
+    _add_adr_content_args(supersede_parser)
+    supersede_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+    _add_authorization_args(supersede_parser)
+
     return parser
 
 
@@ -750,6 +1326,18 @@ def main() -> int:
         return cmd_deps(args)
     elif args.command == "show":
         return cmd_show(args)
+    elif args.command == "search":
+        return cmd_search(args)
+    elif args.command == "stats":
+        return cmd_stats(args)
+    elif args.command == "related":
+        return cmd_related(args)
+    elif args.command == "link-rule":
+        return cmd_link_rule(args)
+    elif args.command == "deprecate":
+        return cmd_deprecate(args)
+    elif args.command == "supersede":
+        return cmd_supersede(args)
     else:
         parser.print_help()
         return 1

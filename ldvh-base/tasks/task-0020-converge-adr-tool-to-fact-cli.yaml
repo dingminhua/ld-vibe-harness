@@ -1,0 +1,47 @@
+id: task-0020
+type: task
+title: 收敛 ADR 独立工具到统一 fact_cli
+status: closed
+created: '2026-06-05T05:00:41.282802'
+updated: '2026-06-05T06:00:00.000000'
+closed_at: '2026-06-05T06:00:00.000000'
+description: |
+  当前 ADR 拥有独立工具 adr_index.py，而其他 6 个 active 对象（Intent/Task/Memo/Profile/Pitfall/Change）
+  全部共用 fact_cli.py + fact_validate.py。ADR 不应有独立工具，其专属能力应合并进统一工具。
+  adr_index.py 比 fact_cli.py 多出的能力及归属：
+  - search / stats / related：通用查询增强，已进入 fact_cli.py
+  - draft：fact_cli.py 的 create 已有骨架生成
+  - link-rule：ADR 字段回写，已进入 fact_cli.py
+  - deprecate / supersede：本质是状态流转 + 关联字段回写，已进入 fact_cli.py
+  - Human Gate 参数强制：统一工具已强制，不是 ADR 专属
+  - Change 记录生成：fact_cli.py 的 ADR create/transition 已支持 --write-change
+  本任务将 adr_index.py 的 ADR 专属能力合并进 fact_cli.py，然后删除 adr_index.py。
+  同时更新 21.04-Tools.md 规范引用和 ADR Skill 中的工具调用路径。
+source: intent-0002
+source_intent: intent-0002
+acceptance: |
+  - [x] fact_cli.py 已新增 ADR 专属子命令（search、stats、related、link-rule、deprecate、supersede）
+  - [x] fact_cli.py 的 ADR create/transition 已包含 Human Gate 参数强制检查
+  - [x] fact_cli.py 的 ADR create/transition 已包含 Change 记录生成
+  - [x] adr_index.py 已删除
+  - [x] 21.04-Tools.md 中 tools/adr_index.py 引用已更新为指向 fact_cli.py
+  - [x] ADR Skill（ldvh-adr）中 tools/adr_index.py 调用已更新为 fact_cli.py
+  - [x] tests/tools/test_adr_index.py 已重写为测试 fact_cli.py 的 ADR 子命令
+  - [x] python3 -m pytest tests/ 全部通过（153 passed）
+  - [x] python3 tools/fact_validate.py ldvh-base/ 校验通过
+verification: |
+  python3 -m pytest tests/ -q → 153 passed；
+  python3 tools/fact_validate.py ldvh-base/ → files=35 errors=8（均为历史遗留）；
+  grep 确认 specs/、.trae/skills/ 中无 adr_index.py 工具文件名残留引用（仅 test_adr_index.py 测试文件名保留）。
+assignee: AI
+related_adrs: []
+related_changes: []
+blocked_by:
+  - task-0019
+closure_evidence: |
+  fact_cli.py 已新增 6 个 ADR 专属子命令：search、stats、related、link-rule、deprecate、supersede。
+  ADR create/transition 已强制 Human Gate 参数检查，支持 --write-change 生成 Change 记录。
+  adr_index.py 已删除。
+  21.04-Tools.md、21-ADR-决策记录.md、21.05-Web.md、ldvh-adr Skill、docs/ 中所有 adr_index.py 引用已更新为 fact_cli.py。
+  test_adr_index.py 已重写为测试 fact_cli.py 的 ADR 子命令。
+  153 个测试全部通过。

@@ -2,8 +2,8 @@ import importlib.util
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).resolve().parents[2] / "tools" / "check_03_specs_references.py"
-spec = importlib.util.spec_from_file_location("check_03_specs_references", MODULE_PATH)
+MODULE_PATH = Path(__file__).resolve().parents[2] / "tools" / "specs_refs_validate.py"
+spec = importlib.util.spec_from_file_location("specs_refs_validate", MODULE_PATH)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
 

@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SCRIPT_PATH = PROJECT_ROOT / "tools" / "ldvh_fact_validate.py"
+SCRIPT_PATH = PROJECT_ROOT / "tools" / "fact_validate.py"
 
 
 def run_checker(*paths, extra_args=None):
@@ -389,7 +389,7 @@ def test_json_output_valid(tmp_path):
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
-    assert data["command"] == "ldvh_fact_validate"
+    assert data["command"] == "fact_validate"
     assert data["action"] == "validate"
     assert data["summary"]["files"] == 1
     assert data["summary"]["errors"] == 0

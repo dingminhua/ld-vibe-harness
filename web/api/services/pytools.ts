@@ -80,19 +80,19 @@ export async function listObjects(type: ObjectType, baseDir: string = LDVH_ROOT,
   if (status) {
     args.push('--status', status)
   }
-  return runPyTools('ldvh_fact_cli.py', args)
+  return runPyTools('fact_cli.py', args)
 }
 
 /**
  * 查看单个事实对象详情
  */
 export async function showObject(id: string, baseDir: string = LDVH_ROOT): Promise<PyToolsResult | PyToolsError> {
-  return runPyTools('ldvh_fact_cli.py', ['show', id, '--format', 'json', '--base-dir', baseDir])
+  return runPyTools('fact_cli.py', ['show', id, '--format', 'json', '--base-dir', baseDir])
 }
 
 /**
  * 校验 ldvh-base 目录下所有事实对象
  */
 export async function validate(baseDir: string = LDVH_BASE_DIR): Promise<PyToolsResult | PyToolsError> {
-  return runPyTools('ldvh_fact_validate.py', [baseDir, '--format', 'json'])
+  return runPyTools('fact_validate.py', [baseDir, '--format', 'json'])
 }

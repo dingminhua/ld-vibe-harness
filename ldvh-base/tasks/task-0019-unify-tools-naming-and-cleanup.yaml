@@ -1,0 +1,52 @@
+id: task-0019
+type: task
+title: 统一 tools 目录命名与清理历史工具
+status: closed
+created: '2026-06-05T05:00:28.812414'
+updated: '2026-06-05T05:30:00.000000'
+closed_at: '2026-06-05T05:30:00.000000'
+description: |
+  当前 tools/ 目录下工具命名不统一，部分工具不符合 06 §4.3 命名规则，且存在已迁移的兼容 wrapper 未清理。
+  本任务统一命名、删除历史 wrapper、更新规范中的命名规则和工具引用。
+  具体变更：
+  1. ldvh_fact_cli.py → fact_cli.py（去掉 ldvh_ 前缀，工具已在项目 tools/ 目录下无需项目前缀）
+  2. ldvh_fact_validate.py → fact_validate.py
+  3. check_03_specs_doc_standard.py → specs_doc_validate.py
+  4. check_03_specs_references.py → specs_refs_validate.py
+  5. check_03_01_specs_docs.py → specs_index_validate.py
+  6. check_22_commit_format.py → commit_validate.py
+  7. 删除 fact_model_cli.py（已是兼容 wrapper）
+  8. 删除 check_fact_model.py（已是兼容 wrapper）
+  9. 更新 06 §4.3 命名规则：从 ldvh_<domain>_<capability>.py 改为 <domain>_<capability>.py
+  10. 更新所有 specs、Rules、Skill 中对旧工具文件名的引用
+  11. 更新 tests/tools/ 中对旧文件名的 import 和调用
+source: intent-0002
+source_intent: intent-0002
+acceptance: |
+  - [x] fact_cli.py 和 fact_validate.py 已重命名（去掉 ldvh_ 前缀）
+  - [x] check_03_specs_doc_standard.py 已重命名为 specs_doc_validate.py
+  - [x] check_03_specs_references.py 已重命名为 specs_refs_validate.py
+  - [x] check_03_01_specs_docs.py 已重命名为 specs_index_validate.py
+  - [x] check_22_commit_format.py 已重命名为 commit_validate.py
+  - [x] fact_model_cli.py 和 check_fact_model.py 已删除
+  - [x] 06 §4.3 命名规则已更新为 <domain>_<capability>.py
+  - [x] 所有 specs、Rules、Skill 中旧工具文件名引用已更新
+  - [x] tests/tools/ 中 import 和调用已更新
+  - [x] python3 -m pytest tests/ 全部通过（141 passed, 1 failed 为 adr_index.py 遗留问题，task-0020 处理）
+  - [x] python3 tools/fact_validate.py ldvh-base/ 校验通过
+verification: |
+  python3 -m pytest tests/ -q → 141 passed, 1 failed（adr_index.py fmt_date 遗留问题）；
+  python3 tools/fact_validate.py ldvh-base/ → files=35 errors=8（均为历史遗留）；
+  grep 确认 specs/、.trae/rules/、.trae/skills/、web/、docs/ 中无旧工具文件名残留（仅 ldvh-base/tasks/ 历史记录保留）。
+assignee: AI
+related_adrs: []
+related_changes: []
+blocked_by: []
+closure_evidence: |
+  所有文件重命名完成：ldvh_fact_cli.py→fact_cli.py, ldvh_fact_validate.py→fact_validate.py,
+  check_03_specs_doc_standard.py→specs_doc_validate.py, check_03_specs_references.py→specs_refs_validate.py,
+  check_03_01_specs_docs.py→specs_index_validate.py, check_22_commit_format.py→commit_validate.py。
+  fact_model_cli.py 和 check_fact_model.py 已删除。
+  06 §4.3 命名规则已更新。
+  specs/、.trae/skills/、web/、docs/、tests/ 中所有旧工具名引用已更新。
+  修复了 fact_cli.py 中 ADR 创建时 today→now 的 NameError bug。

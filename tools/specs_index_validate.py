@@ -55,7 +55,7 @@ class SpecsChecker:
                 "derived": True,
                 "source_of_truth": False,
                 "generated_at": datetime.now().isoformat(timespec="seconds"),
-                "tool": "tools/check_03_01_specs_docs.py",
+                "tool": "tools/specs_index_validate.py",
                 "input_patterns": list(INPUT_PATTERNS),
                 "root": str(self.root),
             },

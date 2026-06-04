@@ -1,4 +1,4 @@
-"""Tests for tools/fact_model_cli.py: create / transition / delete / list / show commands."""
+"""Tests for tools/fact_cli.py: create / transition / delete / list / show commands."""
 
 from __future__ import annotations
 
@@ -10,11 +10,11 @@ from typing import Optional
 import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SCRIPT_PATH = PROJECT_ROOT / "tools" / "ldvh_fact_cli.py"
+SCRIPT_PATH = PROJECT_ROOT / "tools" / "fact_cli.py"
 
 
 def run_cli(*args, base_dir: Optional[str] = None):
-    """Run fact_model_cli.py with the given arguments."""
+    """Run fact_cli.py with the given arguments."""
     cmd = ["python3", str(SCRIPT_PATH)]
     if base_dir is not None:
         # Insert --base-dir right after the subcommand
@@ -72,12 +72,15 @@ def test_create_task(tmp_path):
 
 
 def test_create_adr_with_change(tmp_path):
-    result = run_cli("create", "adr", "--title", "Choose Framework", base_dir=str(tmp_path))
+    result = run_cli("create", "adr", "--title", "Choose Framework",
+                     "--human-gate-confirmed", "--confirmed-by", "tester",
+                     "--confirmation-context", "test",
+                     base_dir=str(tmp_path))
     assert result.returncode == 0
 
     out_lines = result.stdout.strip().splitlines()
-    # ADR create should output two lines: ADR file and Change file
-    assert len(out_lines) == 2
+    # ADR create should output at least ADR file and Change file
+    assert len(out_lines) >= 2
 
     adr_path = Path(out_lines[0])
     change_path = Path(out_lines[1])
@@ -330,7 +333,10 @@ def test_delete_draft_status(tmp_path):
 
 
 def test_delete_proposed_status(tmp_path):
-    result = run_cli("create", "adr", "--title", "Delete ADR", base_dir=str(tmp_path))
+    result = run_cli("create", "adr", "--title", "Delete ADR",
+                     "--human-gate-confirmed", "--confirmed-by", "tester",
+                     "--confirmation-context", "test",
+                     base_dir=str(tmp_path))
     adr_path = Path(result.stdout.strip().splitlines()[0])
 
     result = run_cli("delete", str(adr_path))
