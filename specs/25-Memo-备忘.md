@@ -150,13 +150,7 @@ Memo 可升级为 Intent，作为待讨论事项转化为明确意图的路径�
 
 Memo 升级为 Intent 后，Memo 的 `resolved_to` 字段应记录 Intent ID。Intent 的字段和状态由 Intent 对象模型（`specs/24-Intent-意图.md`）定义。
 
-### 6.4 Memo → Evidence
-
-Memo 可作为 Evidence 的参考来源。
-
-Memo 关联 Evidence 后，Memo 的 `related_evidence` 字段应记录 Evidence ID。Evidence 的字段和状态由 Evidence 对象模型（`specs/29-Evidence-验证证据.md`）定义。
-
-### 6.5 Memo → Change
+### 6.4 Memo → Change
 
 Memo 的创建、状态变更和分流都应记录 Change。Change 以 Git commit 为权威事实源（依据 `specs/22-Change-变更记录.md`）。
 
@@ -201,7 +195,6 @@ Memo 基础字段遵循 `specs/13-LDVH事实模型基础规范.md` §7.3 的字�
 | `resolved_at` | date | 条件必填 | 仅当 `status` 为 `resolved` 时必须填写 |
 | `related_tasks` | list of string | 否 | 关联 Task ID 列表 |
 | `related_adrs` | list of string | 否 | 关联 ADR ID 列表 |
-| `related_evidence` | list of string | 否 | 关联 Evidence ID 列表 |
 
 字段约束和完整 YAML 示例详见 `specs/25.06-Contract.md`。
 

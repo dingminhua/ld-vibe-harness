@@ -45,7 +45,7 @@ Gstack 的体验范式
 2. **LDVH 提供治理骨架**：LDVH 的核心价值仍是 Git 文件事实源、事实模型、状态机、Human Gate、Evidence、Change、ADR、Rules、Skill、Tools 与 AI 第一服务对象原则。
 3. **Trae Solo 提供运行环境**：Trae Solo 的 Rules、Skill、Agent、Tools、AskUserQuestion、RunCommand、Preview、Schedule、Memory 等能力，是 LDVH 在当前环境中产品化的原生承载层。
 4. **三者融合的目标不是复刻 Gstack，而是形成 Trae-native 的 LDVH Core Loop**：把 `Intent → Plan → Execute → Verify → Record → Learn` 做成 AI 进入项目后的第一体验。
-5. **当前 LDVH 已经具备最小 Dogfood 基础**：9 个 active fact models，其中 Intent / Task / TaskSet / Evidence / Memo / Profile / Pitfall 这 7 类 YAML Dogfood 对象已由 Fact Validator 覆盖，ADR / Change 由专用流程和提交纪律承接。
+5. **当前 LDVH 已经具备最小 Dogfood 基础**：7 个 active fact models，其中 Intent / Task / Memo / Profile / Pitfall 这 5 类 YAML Dogfood 对象已由 Fact Validator 覆盖，ADR / Change 由专用流程和提交纪律承接。
 6. **当前最应优先补齐的不是继续抽象新对象，而是 Record / Change 闭环和执行中发现问题的分流规则**。
 7. **specs 是规则、Skill、Agent、Tools 的可推理源头**：所有 Rules、Skill、Agent、Tools 的设计、行为和边界，必须能从 specs 文档中推理出来；specs 不是被动文档库，而是实现层的唯一权威依据。如果 specs 中没有记录某个决策、约束或流程，后续就无法反推出为什么 Skill 这样设计、为什么规则这样写、为什么 Agent 这样行动。因此，每个重要决策都必须回写到对应的 specs 子文档（如 27.02-Skill.md、22.02-Skill.md、22.01-Rules.md 等），而不仅仅停留在 evals 或对话中。
 
@@ -112,27 +112,26 @@ LDVH 当前和下一阶段都应坚持最小事实内核优先。
 第一层最小事实内核是：
 
 ```text
-Intent / Task / ADR / Evidence / Change
+Intent / Task / ADR / Change
 ```
 
-这五类对象分别回答：
+这四类对象分别回答：
 
 | 对象 | 回答的问题 |
 |---|---|
 | Intent | 人真正想达成什么，约束是什么 |
 | Task | AI 当前要执行什么，验收标准是什么 |
 | ADR | 长期决策为什么这样做，何时成为执行依据 |
-| Evidence | 完成判断靠什么证据支撑 |
 | Change | 实际发生了什么变化，为什么变化，影响范围是什么 |
 
-已落地对象分为两层：第一层是 Intent / Task / ADR / Evidence / Change 构成的最小治理内核；第二层是 TaskSet / Memo / Profile / Pitfall 这 4 类已在 Dogfood 压力下落地的扩展对象。Risk / Dependency / Artifact / Checklist / Roadmap 仍保持字段、关系、模板或文档承载，暂不独立对象化。
+已落地对象分为两层：第一层是 Intent / Task / ADR / Change 构成的最小治理内核；第二层是 Memo / Profile / Pitfall 这 3 类已在 Dogfood 压力下落地的扩展对象。Risk / Dependency / Artifact / Checklist / Roadmap 仍保持字段、关系、模板或文档承载，暂不独立对象化。
 
 这意味着：
 
 1. 不应让 AI 一进入项目就面对所有对象；
 2. 不应因为发现一个潜在对象就立刻扩张事实模型；
 3. 扩展对象必须服务最近一次可运行闭环；
-4. TaskSet / Memo / Profile / Pitfall 已在真实 Dogfood 压力下落地为事实模型；
+4. Memo / Profile / Pitfall 已在真实 Dogfood 压力下落地为事实模型；
 5. Risk、Dependency、Artifact、Checklist 等对象应在真实 Dogfood 压力出现后再进入主线。
 
 ---
@@ -300,26 +299,24 @@ Trae 提供运行环境；
 
 ### 6.1 核心事实对象
 
-已补齐 9 个 active fact models；其中 7 类 YAML Dogfood 对象已补齐规范、契约与实例化承载：
+已补齐 7 个 active fact models；其中 5 类 YAML Dogfood 对象已补齐规范、契约与实例化承载：
 
 | 对象 | 规范 | 契约 | 状态 |
 |---|---|---|---|
 | Intent | `specs/24-Intent-意图.md` | `specs/24.06-Contract.md` | active |
 | Task | `specs/27-Task-任务.md` | `specs/27.06-Contract.md` | active |
-| TaskSet | `specs/28-TaskSet-任务集.md` | `specs/28.06-Contract.md` | active |
-| Evidence | `specs/29-Evidence-验证证据.md` | `specs/29.06-Contract.md` | active |
 | Memo | `specs/25-Memo-备忘.md` | `specs/25.06-Contract.md` | active |
 | Profile | `specs/26-Profile-项目画像.md` | `specs/26.06-Contract.md` | active |
 | Pitfall | `specs/23-Pitfall-踩坑记录.md` | `specs/23.06-Contract.md` | active |
 
-ADR(21) 和 Change(22) 已有完整规范。Intent、Task、Evidence 当前为精简版规范，后续按阶段补齐完整版。Task 已新增子任务机制（parent_task/sub_tasks）和关联任务自动创建流程。
+ADR(21) 和 Change(22) 已有完整规范。Intent、Task 当前为精简版规范，后续按阶段补齐完整版。Task 已新增子任务机制（parent_task/sub_tasks）和关联任务自动创建流程。
 
 ### 6.2 Core Loop Skill 入口
 
 已创建：
 
-1. `ldvh-intake`：用户意图 → 识别场景 → 创建 Intent/Task/TaskSet/Memo/Profile → TaskSet 自动归类 → Human Gate → 写入事实源；
-2. `ldvh-close`：关闭条件校验（含子任务联动、TaskSet 关闭）→ Human Gate → 状态更新 → 级联检查（Intent/TaskSet/父任务）→ 若产生准入变更则进入 `ldvh-commit` / Change 流程；
+1. `ldvh-intake`：用户意图 → 识别场景 → 创建 Intent/Task/Memo/Profile → Human Gate → 写入事实源；
+2. `ldvh-close`：关闭条件校验（含子任务联动）→ 状态更新 → 级联检查（Intent/父任务）→ 若产生准入变更则进入 `ldvh-commit` / Change 流程；
 3. `ldvh-adr`：ADR 创建、状态流转和受控写入；
 4. `ldvh-commit`：准入变更提交编排。
 
@@ -328,19 +325,19 @@ ADR(21) 和 Change(22) 已有完整规范。Intent、Task、Evidence 当前为�
 当前 LDVH 已经跑通过两轮最小闭环：
 
 ```text
-Intent → Task → Evidence → Close
+Intent → Task → Change
 ```
 
 第一轮：
 
 ```text
-intent-0001 → task-0001 → ev-0001 → task closed → intent completed
+intent-0001 → task-0001 → task closed → intent completed
 ```
 
 第二轮：
 
 ```text
-Dogfood 暴露 YAML 长文本问题 → task-0002 → Skill / Tool / Test 修复 → ev-0002 → task closed
+Dogfood 暴露 YAML 长文本问题 → task-0002 → Skill / Tool / Test 修复 → task closed
 ```
 
 这说明 LDVH 已经不只是规范草案，而是能用自身机制处理自身问题。
@@ -361,10 +358,10 @@ Dogfood 暴露 YAML 长文本问题 → task-0002 → Skill / Tool / Test 修复
 
 截至 2026-06-04，LDVH MVP 骨架已经推进到 **生产对象体系梳理完成并进入 Dogfood 验证** 阶段：
 
-1. **最小事实内核已扩展至 9 个 active fact models**：ADR / Change 已有完整规范；Intent / Task / TaskSet / Evidence / Memo / Profile / Pitfall 这 7 类 YAML Dogfood 对象均已有精简版规范和 Contract。
-2. **PyTools 校验能力已覆盖 7 类 YAML Dogfood 对象**：`tools/check_fact_model.py` 已支持 Intent / Task / TaskSet / Evidence / Memo / Profile / Pitfall；ADR / Change 由专用流程、commit message 契约和提交纪律承接；`tests/tools/test_check_fact_model.py` 已覆盖 22 个测试用例。
-3. **Dogfood 实例已创建**：taskset-0001（核心事实模型 Dogfood）、profile-0001（ld-vibe-harness 项目画像）、memo-0001（22 子文档状态缺口）、pitfall-0001/0002/0003 已实例化。
-4. **Skill 已支持新对象类型**：`ldvh-intake` 新增 TaskSet/Memo/Profile 创建分支和 TaskSet 自动归类；`ldvh-close` 新增 TaskSet 关闭、子任务联动、级联检查。
+1. **最小事实内核已扩展至 7 个 active fact models**：ADR / Change 已有完整规范；Intent / Task / Memo / Profile / Pitfall 这 5 类 YAML Dogfood 对象均已有精简版规范和 Contract。
+2. **PyTools 校验能力已覆盖 5 类 YAML Dogfood 对象**：`tools/check_fact_model.py` 已支持 Intent / Task / Memo / Profile / Pitfall；ADR / Change 由专用流程、commit message 契约和提交纪律承接；`tests/tools/test_check_fact_model.py` 已覆盖 22 个测试用例。
+3. **Dogfood 实例已创建**：profile-0001（ld-vibe-harness 项目画像）、memo-0001（22 子文档状态缺口）、pitfall-0001/0002/0003 已实例化。
+4. **Skill 已支持新对象类型**：`ldvh-intake` 新增 Memo/Profile 创建分支；`ldvh-close` 新增子任务联动、级联检查。
 5. **Task 子任务机制已落地**：parent_task/sub_tasks 字段、深度限制两层、关闭前置条件。
 6. **Pitfall-0002/0003 已修复并 superseded**：Change 需要 22 系列子文档承接 Rules、Skill、Tools、Contract 等实践机制；当前 22 主文档仍需继续清理历史残留表述，提交纪律规则重复维护已通过 L0 去重修复（权威位置确定为 22.01-Rules.md）。
 7. **specs 文档规范已清理**：32 个 not-created 子文档章节编号补齐，22.02 编号跳跃修复，check_03 问题从 113 降至 0。
@@ -379,17 +376,15 @@ Dogfood 暴露 YAML 长文本问题 → task-0002 → Skill / Tool / Test 修复
 |---|---|---|---|
 | Intent | 意图 | 已落地事实模型 | `ldvh-base/intents/` |
 | Task | 任务 | 已落地事实模型 | `ldvh-base/tasks/` |
-| TaskSet | 任务集 | 已落地事实模型 | `ldvh-base/tasksets/` |
-| Evidence | 证据 | 已落地事实模型 | `ldvh-base/evidence/` |
 | Memo | 备忘 | 已落地事实模型 | `ldvh-base/memos/` |
 | Profile | 项目画像 | 已落地事实模型 | `ldvh-base/profiles/` |
 | ADR | 决策记录 | 已落地事实模型 | `ldvh-base/adrs/` |
 | Change | 变更记录 | 已落地事实模型 | Git commit |
 | Pitfall | 踩坑记录 | 已落地事实模型 | `ldvh-base/pitfalls/` |
-| Risk | 风险 | 降级为字段候选 | Task / Memo / ADR / TaskSet 字段 |
-| Dependency | 依赖 | 降级为关系字段 | Task / TaskSet 的 blocked_by、blocks、relation_type 等 |
-| Artifact | 产物 | 降级为路径或输出字段 | Evidence artifact_path、Task / TaskSet 输出字段 |
-| Checklist | 检查清单 | 降级为模板、字段或 Skill section | Task / TaskSet 验收项，执行结果进入 Evidence |
+| Risk | 风险 | 降级为字段候选 | Task / Memo / ADR 字段 |
+| Dependency | 依赖 | 降级为关系字段 | Task 的 blocked_by、blocks、relation_type 等 |
+| Artifact | 产物 | 降级为路径或输出字段 | Task 输出字段 |
+| Checklist | 检查清单 | 降级为模板、字段或 Skill section | Task 验收项，执行结果进入 Task closure_evidence |
 | Roadmap | 路线图 | 暂作 Markdown 文档 | evals/17、docs 或未来路线图文档 |
 
 ### 7.2 Gstack 借鉴边界
@@ -608,7 +603,7 @@ Git 文件事实源 → PyTools 聚合 → Web 只读展示 → 人做更高质�
 1. **先入口，后深度**：先让 AI 知道当前阶段和下一步，再补复杂治理；
 2. **先兼容原生规划，后沉淀自有 Skill**：复杂需求和复杂工程任务短期可消费原生 Spec / Plan 产物，长期应由 `ldvh-spec`、`ldvh-plan` 等自有 Skill 承接治理化规格、计划和验收流程；
 3. **先生命周期 Skill，后角色目录**：符合 Core Loop、输入输出稳定、高频复用的流程优先 Skill 化；需要上下文装配、工具授权、流程约束、Human Gate 和产物契约的稳定行动入口应进入 Skill 候选；临时角色优先运行时视角切换；
-4. **先核心闭环，后扩展对象**：先稳定 Intent / Task / ADR / Evidence / Change，再扩展 Risk / Memo / Dependency / Artifact / Checklist / TaskSet；
+4. **先核心闭环，后扩展对象**：先稳定 Intent / Task / ADR / Change，再扩展 Memo / Profile / Pitfall / Risk / Dependency / Artifact / Checklist；
 5. **先 Record / Change，后 Web 写入**：没有可追溯变更记录之前，不应扩大写入入口；
 6. **先 Contract 消费，后复杂自动化**：先让 PyTools 能读契约校验事实，再做自动修复、受控写入和 Web 展示；
 7. **先 Dogfood，后产品扩张**：先在 LDVH 自身验证 Core Loop，再考虑外部用户安装体验；
@@ -670,7 +665,7 @@ LDVH 当前处于"用框架完善框架"阶段。该阶段必须防止递归死�
 当出现以下信号时，应停止继续扩张框架，转入实例验证或 Dogfood：
 
 1. 连续两个任务都在新增规范，而没有创建或验证任何事实实例；
-2. 当前任务的输出无法被 Intent / Task / Evidence / Change 之一承载；
+2. 当前任务的输出无法被 Intent / Task / Change 之一承载；
 3. 新增能力不能改善 AI 进入、执行、验证、沉淀或演进中的任一环节；
 4. 需要新增第三个前置规范才能完成当前规范；
 5. 讨论开始围绕"为了建框架还需要什么框架"而不是"如何跑通下一个闭环"。
@@ -680,7 +675,7 @@ LDVH 当前处于"用框架完善框架"阶段。该阶段必须防止递归死�
 当前阶段的最小闭环是：
 
 ```text
-共识/需求 → ldvh-intake → Intent/Task → 执行 → Evidence → ldvh-close → Change → 复盘
+共识/需求 → ldvh-intake → Intent/Task → 执行 → ldvh-close → Change → 复盘
 ```
 
 后续每个新增能力应优先回答：
