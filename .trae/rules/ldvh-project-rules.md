@@ -19,6 +19,8 @@
 
 **规范变更后执行约束**：规范变更后同一会话内执行受影响的任务时，AI 必须重新读取变更后的规范，并明确声明"已按新规范调整执行计划"。执行 Task 前必须遵守 `blocked_by` 前置任务强制阻塞规则；任务关闭前必须检查 acceptance 列表是否已全部勾选为 `- [x]`；未勾选则必须启动独立 agent 重新审计，不得直接关闭。
 
+**规格变更与工具联动约束**：变更涉及事实源边界、字段契约、状态机、对象类型、目录结构或术语的 specs 修改，AI 必须在提交前同步检查 tools/ 下的代码实现，确认是否存在需要更新的硬编码行为、目标对象映射、校验规则或测试用例。未完成 tools/ 同步的规格变更不得声称已完成。
+
 ## Core Loop 阶段路由
 
 | 阶段 | AI 应做什么 | 推荐 Skill |
@@ -38,8 +40,8 @@ AI 应在每次用户交互时判断当前 Core Loop 阶段，并推荐对应 Sk
 
 ## 场景规则引导
 
-编辑 specs 进 `.trae/rules/ldvh-specs-rules.md`；编辑 `ldvh-base/` YAML 进事实模型规则；新增、修改或审计 Rules 时读 05 §6，并从 `specs/*.md` 反向发现需求。
+编辑 specs 进 `.trae/rules/ldvh-specs-rules.md`；编辑 `ldvh-base/` YAML 进事实模型规则；新增、修改或审计 Rules 时读 05 §6，并从 `specs/*.md` 反向发现需求。规格变更涉及事实源边界、字段契约、状态机、对象类型、目录结构或术语时，同步检查 `tools/` 代码实现并在提交前完成同步。
 
 ## 压缩保护
 
-LDVH | 00-08按任务读原文 | 产品化/Gstack/Trae/CoreLoop/Python/Web工具先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 规范/Skill/Tools/部署判断必须回原文 | 错误模式转检查项 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=Python/Web工具聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04事实源边界 05 Trae Solo 环境规范 06 Python/Web工具 07工作模型 08工作流程 | 搜标题行号 | Git为准 | ADR见21 | specs进ldvh-specs-rules | ldvh-base进事实模型规则 | CoreLoop路由=Intent→ldvh-intake|Plan→ldvh-plan|Record→ldvh-close
+LDVH | 00-08按任务读原文 | 产品化/Gstack/Trae/CoreLoop/Python/Web工具先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 规范/Skill/Tools/部署判断必须回原文 | 错误模式转检查项 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=Python/Web工具聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04事实源边界 05 Trae Solo 环境规范 06 Python/Web工具 07工作模型 08工作流程 | 搜标题行号 | Git为准 | ADR见21 | specs进ldvh-specs-rules | ldvh-base进事实模型规则 | CoreLoop路由=Intent→ldvh-intake|Plan→ldvh-plan|Record→ldvh-close | 改specs检查tools/代码

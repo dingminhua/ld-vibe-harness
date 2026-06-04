@@ -55,7 +55,6 @@ def auth_args(**overrides):
         "human_gate_confirmed": True,
         "confirmed_by": "user",
         "confirmation_context": "测试 Human Gate 确认",
-        "write_change": False,
     }
     data.update(overrides)
     return data
@@ -141,7 +140,8 @@ def test_create_task(tmp_path):
     assert data["blocked_by"] == []
 
 
-def test_create_adr_with_change(tmp_path):
+def test_create_adr_no_change(tmp_path):
+    """ADR 创建不再自动生成 Change YAML。Change 使用 Git commit 作为事实源。"""
     result = run_cli("create", "adr", "--title", "Choose Framework",
                      "--human-gate-confirmed", "--confirmed-by", "tester",
                      "--confirmation-context", "test",
@@ -149,26 +149,16 @@ def test_create_adr_with_change(tmp_path):
     assert result.returncode == 0
 
     out_lines = result.stdout.strip().splitlines()
-    # ADR create should output at least ADR file and Change file
-    assert len(out_lines) >= 2
+    # ADR create should output only ADR file (no Change file)
+    assert len(out_lines) == 1
 
     adr_path = Path(out_lines[0])
-    change_path = Path(out_lines[1])
-
-    # Verify ADR
     adr_data = yaml.safe_load(adr_path.read_text(encoding="utf-8"))
     assert adr_data["id"] == "adr-0001"
     assert adr_data["type"] == "adr"
     assert adr_data["status"] == "proposed"
     for field in ("context", "decision", "consequences"):
         assert field in adr_data
-
-    # Verify associated Change
-    change_data = yaml.safe_load(change_path.read_text(encoding="utf-8"))
-    assert change_data["id"] == "change-0001"
-    assert change_data["type"] == "change"
-    assert change_data["status"] == "proposed"
-    assert "ADR adr-0001" in change_data["description"]
 
 
 def test_create_auto_numbering(tmp_path):
@@ -215,16 +205,6 @@ def test_create_profile(tmp_path):
     data = yaml.safe_load(Path(out_lines[0]).read_text(encoding="utf-8"))
     assert data["id"] == "profile-0001"
     assert data["status"] == "draft"
-
-
-def test_create_change(tmp_path):
-    result = run_cli("create", "change", "--title", "Schema Update", base_dir=str(tmp_path))
-    assert result.returncode == 0
-
-    out_lines = result.stdout.strip().splitlines()
-    data = yaml.safe_load(Path(out_lines[0]).read_text(encoding="utf-8"))
-    assert data["id"] == "change-0001"
-    assert data["status"] == "proposed"
 
 
 # ── transition 命令 ──────────────────────────────────────────────────────
@@ -991,46 +971,4 @@ def test_transition_adr_rejects_terminal_status_reopen(tmp_path):
     assert "不允许的流转" in result.stderr or "终态" in result.stderr
 
 
-# ── --write-change 测试 ────────────────────────────────────────────────
-
-
-def test_deprecate_with_write_change_creates_change_record(tmp_path):
-    adrs_dir = tmp_path / "ldvh-base" / "adrs"
-    adrs_dir.mkdir(parents=True)
-    write_adr(adrs_dir / "adr-0001-test.yaml", status="accepted")
-
-    result = run_cli(
-        "deprecate", "adr-0001",
-        "--reason", "已不适用",
-        "--human-gate-confirmed", "--confirmed-by", "user",
-        "--confirmation-context", "测试",
-        "--write-change",
-        base_dir=str(tmp_path),
-    )
-    assert result.returncode == 0
-
-    changes_dir = tmp_path / "ldvh-base" / "changes"
-    change_files = list(changes_dir.glob("change-*.yaml"))
-    assert len(change_files) >= 1
-    change_data = read_yaml(change_files[0])
-    assert change_data["human_gate"]["confirmed_by"] == "user"
-
-
-def test_link_rule_with_write_change_creates_change_record(tmp_path):
-    adrs_dir = tmp_path / "ldvh-base" / "adrs"
-    adrs_dir.mkdir(parents=True)
-    write_adr(adrs_dir / "adr-0001-test.yaml", related_rules=[])
-
-    result = run_cli(
-        "link-rule", "adr-0001",
-        "--rule", "specs/21.04-Tools.md",
-        "--human-gate-confirmed", "--confirmed-by", "user",
-        "--confirmation-context", "测试",
-        "--write-change",
-        base_dir=str(tmp_path),
-    )
-    assert result.returncode == 0
-
-    changes_dir = tmp_path / "ldvh-base" / "changes"
-    change_files = list(changes_dir.glob("change-*.yaml"))
-    assert len(change_files) >= 1
+# ── 测试辅助函数

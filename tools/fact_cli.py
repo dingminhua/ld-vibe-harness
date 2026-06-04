@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """LDVH 事实模型 CLI 工具：create / transition / delete / list / show / search / stats / related / link-rule / deprecate / supersede。
 
-对 LDVH 生产对象（intent, task, adr, pitfall, memo, profile, change）
+对 LDVH 生产对象（intent, task, adr, pitfall, memo, profile）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
+Change 使用 Git commit 作为事实源，不通过本 CLI 管理。
 ADR 专属写入操作（link-rule / deprecate / supersede）必须携带 Human Gate 确认参数。
 """
 
@@ -21,7 +22,8 @@ import yaml
 
 # ── 对象元数据（硬编码，与 fact_validate.py 保持一致） ──────────────
 
-OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "memo", "profile", "change"}
+# Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
+OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "memo", "profile"}
 
 ID_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}$"),
@@ -30,7 +32,6 @@ ID_PATTERNS = {
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
     "profile": re.compile(r"^profile-\d{4}$"),
     "memo": re.compile(r"^memo-\d{4}$"),
-    "change": re.compile(r"^change-\d{4}$"),
 }
 
 FILENAME_PATTERNS = {
@@ -40,7 +41,6 @@ FILENAME_PATTERNS = {
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "profile": re.compile(r"^profile-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "change": re.compile(r"^change-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
 }
 
 VALID_STATUSES = {
@@ -50,7 +50,6 @@ VALID_STATUSES = {
     "pitfall": {"draft", "active", "superseded", "archived"},
     "profile": {"draft", "active", "suspended", "archived"},
     "memo": {"draft", "active", "resolved", "archived"},
-    "change": {"proposed", "accepted", "implemented", "deprecated"},
 }
 
 VALID_TRANSITIONS = {
@@ -92,12 +91,6 @@ VALID_TRANSITIONS = {
         "resolved": set(),
         "archived": set(),
     },
-    "change": {
-        "proposed": {"accepted", "deprecated"},
-        "accepted": {"implemented", "deprecated"},
-        "implemented": {"deprecated"},
-        "deprecated": set(),
-    },
 }
 
 REQUIRED_FIELDS = {
@@ -107,7 +100,6 @@ REQUIRED_FIELDS = {
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "profile": ["id", "type", "title", "status", "created", "updated", "description", "project_name", "project_path", "ldvh_base_path"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category"],
-    "change": ["id", "type", "title", "status", "created", "updated", "description", "change_type", "scope"],
 }
 
 DEFAULT_STATUS = {
@@ -117,7 +109,6 @@ DEFAULT_STATUS = {
     "pitfall": "draft",
     "profile": "draft",
     "memo": "draft",
-    "change": "proposed",
 }
 
 DIRECTORY_MAP = {
@@ -127,7 +118,6 @@ DIRECTORY_MAP = {
     "pitfall": "ldvh-base/pitfalls/",
     "profile": "ldvh-base/profiles/",
     "memo": "ldvh-base/memos/",
-    "change": "ldvh-base/changes/",
 }
 
 # 允许删除的状态集合
@@ -364,61 +354,7 @@ def _update_adr_file(adr: dict, updates: dict, base_dir: Path) -> Path:
     return path
 
 
-def _write_change_record(
-    title: str,
-    context: str,
-    decision: str,
-    consequences: str,
-    affects: list[str],
-    confirmed_by: str,
-    confirmation_context: str,
-    base_dir: Path,
-) -> Path:
-    """写入 Change YAML 记录。"""
-    change_dir = base_dir / DIRECTORY_MAP["change"]
-    change_dir.mkdir(parents=True, exist_ok=True)
-    change_num = next_number(change_dir, "change")
-    change_id = f"change-{change_num:04d}"
-    # 用时间戳确保唯一
-    ts = datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"{change_id}-{ts}.yaml"
-    path = change_dir / filename
-    counter = 1
-    while path.exists():
-        filename = f"{change_id}-{ts}-{counter}.yaml"
-        path = change_dir / filename
-        counter += 1
-    now = _today_iso()
-    data = {
-        "id": change_id,
-        "type": "change",
-        "title": title,
-        "status": "done",
-        "created": now,
-        "updated": now,
-        "description": context,
-        "change_type": "adr_operation",
-        "scope": decision,
-        "human_gate": {
-            "required": True,
-            "confirmed_by": confirmed_by,
-            "confirmation_context": confirmation_context,
-        },
-    }
-    save_yaml(path, data)
-    return path
 
-
-def _maybe_write_change(args: argparse.Namespace, title: str, context: str,
-                        decision: str, consequences: str, affects: list[str],
-                        base_dir: Path) -> Path | None:
-    """当 --write-change 被指定时写入 Change 记录。"""
-    if not getattr(args, "write_change", False):
-        return None
-    return _write_change_record(
-        title, context, decision, consequences, affects,
-        args.confirmed_by, args.confirmation_context, base_dir,
-    )
 
 
 def _build_adr_data(adr_id: str, args: argparse.Namespace, now: str) -> dict:
@@ -514,46 +450,6 @@ def cmd_create(args: argparse.Namespace) -> int:
     save_yaml(filepath, data)
     print(str(filepath))
 
-    # ADR 创建时同时创建关联的 Change YAML（原子操作）
-    if object_type == "adr":
-        change_dir = base_dir / DIRECTORY_MAP["change"]
-        change_num = next_number(change_dir, "change")
-        change_id = f"change-{change_num:04d}"
-        change_filename = f"{change_id}-{short_title}.yaml"
-        change_filepath = change_dir / change_filename
-
-        change_data = {}
-        for field in REQUIRED_FIELDS["change"]:
-            if field == "id":
-                change_data[field] = change_id
-            elif field == "type":
-                change_data[field] = "change"
-            elif field == "title":
-                change_data[field] = title
-            elif field == "status":
-                change_data[field] = DEFAULT_STATUS["change"]
-            elif field in ("created", "updated"):
-                change_data[field] = now
-            elif field == "description":
-                change_data[field] = f"ADR {obj_id} 创建"
-            else:
-                change_data[field] = ""
-
-        save_yaml(change_filepath, change_data)
-        print(str(change_filepath))
-
-        # --write-change 时额外写入带 Human Gate 的 Change 记录
-        change_path = _maybe_write_change(
-            args,
-            f"创建 ADR {obj_id}",
-            getattr(args, "confirmation_context", ""),
-            f"创建 ADR: {data['title']}",
-            "ADR 实例已创建为 proposed，后续 accepted 仍需单独 Human Gate。",
-            [str(filepath)],
-            base_dir,
-        )
-        if change_path:
-            print(str(change_path))
 
     return 0
 
@@ -675,20 +571,6 @@ def cmd_transition(args: argparse.Namespace) -> int:
     save_yaml(yaml_file, data)
     print(f"{current_status} → {new_status}")
 
-    # ADR 流转时 --write-change 写入 Change 记录
-    if object_type == "adr":
-        base_dir = Path(getattr(args, "base_dir", ".")) if getattr(args, "base_dir", None) else yaml_file.parents[2] if len(yaml_file.parents) > 2 else Path(".")
-        change_path = _maybe_write_change(
-            args,
-            f"更新 ADR 状态 {data.get('id', '')}",
-            getattr(args, "confirmation_context", ""),
-            f"ADR 状态从 {current_status} 变更为 {new_status}。",
-            "状态流转已写入 ADR YAML，终态 ADR 不得重开。",
-            [str(yaml_file)],
-            base_dir,
-        )
-        if change_path:
-            print(str(change_path))
 
     return 0
 
@@ -1074,18 +956,7 @@ def cmd_link_rule(args: argparse.Namespace) -> int:
         return 0
 
     path = _update_adr_file(adr, {"related_rules": rules, "updated": _today_iso()}, base_dir)
-    change_path = _maybe_write_change(
-        args,
-        f"更新 ADR 关联规则 {args.adr_id}",
-        getattr(args, "confirmation_context", ""),
-        f"更新 ADR {args.adr_id} 的 related_rules。",
-        "ADR 关联规则字段已回写。",
-        [str(path)],
-        base_dir,
-    )
     print(f"已更新 related_rules: {args.adr_id}")
-    if change_path:
-        print(str(change_path))
     return 0
 
 
@@ -1119,18 +990,7 @@ def cmd_deprecate(args: argparse.Namespace) -> int:
         updates["consequences"] = f"{consequences}\n\n{addition}" if consequences else addition
 
     path = _update_adr_file(adr, updates, base_dir)
-    change_path = _maybe_write_change(
-        args,
-        f"废弃 ADR {args.adr_id}",
-        getattr(args, "confirmation_context", ""),
-        f"ADR {args.adr_id} 状态变更为 deprecated。",
-        args.reason,
-        [str(path)],
-        base_dir,
-    )
     print(f"已废弃 ADR: {args.adr_id}")
-    if change_path:
-        print(str(change_path))
     return 0
 
 
@@ -1181,19 +1041,8 @@ def cmd_supersede(args: argparse.Namespace) -> int:
         base_dir,
     )
 
-    change_path = _maybe_write_change(
-        args,
-        f"推翻 ADR {args.old_adr_id}",
-        getattr(args, "confirmation_context", ""),
-        f"创建替代 ADR {new_id}，并将 {args.old_adr_id} 标记为 superseded。",
-        "旧 ADR 已保留历史，新 ADR 以 proposed 状态承接重新决策。",
-        [str(old_path), str(new_path)],
-        base_dir,
-    )
     print(f"已创建替代 ADR: {new_path}")
     print(f"已更新旧 ADR: {args.old_adr_id} → superseded_by {new_id}")
-    if change_path:
-        print(str(change_path))
     return 0
 
 
@@ -1204,7 +1053,6 @@ def _add_authorization_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--human-gate-confirmed", action="store_true", help="Human Gate 已确认")
     parser.add_argument("--confirmed-by", default=None, help="确认人")
     parser.add_argument("--confirmation-context", default=None, help="确认上下文")
-    parser.add_argument("--write-change", action="store_true", help="同时写入 Change 记录")
 
 
 def _add_adr_content_args(parser: argparse.ArgumentParser) -> None:

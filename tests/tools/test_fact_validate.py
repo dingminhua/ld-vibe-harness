@@ -328,14 +328,14 @@ def test_rejected_adr_cli_exit_zero(tmp_path):
     assert result.stderr == ""
 
 
-def test_valid_change_cli_exit_zero(tmp_path):
+def test_change_file_rejected_by_validator(tmp_path):
+    """Change YAML 不再被事实验证器支持。Change 使用 Git commit 作为事实源。"""
     path = write_yaml(tmp_path / "change-0001-valid-change.yaml", valid_change_yaml())
 
     result = run_checker(path)
 
-    assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
-    assert result.stderr == ""
+    assert result.returncode != 0
+    assert "UNKNOWN_OBJECT_TYPE" in result.stdout
 
 
 def test_memo_invalid_category(tmp_path):

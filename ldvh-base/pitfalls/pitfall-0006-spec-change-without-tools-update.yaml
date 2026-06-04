@@ -1,0 +1,58 @@
+id: pitfall-0006
+type: pitfall
+title: 规格重构未同步更新 tools/ 代码实现
+title_zh: 规格重构未同步更新 tools/ 代码实现
+title_en: Spec refactor without tools/ code sync
+status: active
+created: '2026-06-05'
+updated: '2026-06-05'
+symptoms: |
+  对 specs 进行架构级重构（工作流区段从 50-79 移至 40-59、生产对象区段从 20-49 收窄为 20-39、
+  移除 Change YAML 管理、统一术语"契约子文档"→"结构化契约文件"等）后，tools/ 下的
+  fact_cli.py 和 fact_validate.py 仍包含旧代码逻辑：
+  - fact_cli.py 仍在创建 ADR 时自动生成 Change YAML 文件
+  - fact_cli.py 仍然支持 --write-change 参数和 _write_change_record 函数
+  - fact_cli.py 和 fact_validate.py 的 OBJECT_TYPES/ID_PATTERNS/FILENAME_PATTERNS 仍包含 "change"
+  - fact_validate.py 仍有 validate_change 函数和 dispatch 入口
+  - fact_validate.py 和 fact_cli.py 的 LIST_FIELDS 中 task/adr 仍包含 related_changes
+
+  直到用户明确要求"检查代码"才被发现和修复。
+trigger_conditions: |
+  规格重构仅关注 rules/、specs/ 文档层面的文件修改，未意识到 tools/ 是 specs 的代码实现，
+  需要随 specs 一并更新。AI 的行为惯性是"修 specs 就只修 specs"，缺少"tools/ 可能也受影响"的意识。
+root_cause: |
+  1. L1 项目规则中缺少规格变更与 tools/ 代码联动的硬约束；
+  2. spec 06 缺少"specs 变更必须检查 tools 实现"的规范定义；
+  3. AI 没有建立"规格文档 → 工具代码"的双向感知能力；
+  4. 缺少一个机器可消费的规格-工具依赖映射清单；
+  5. tools/ 中的对象类型元数据（OBJECT_TYPES 等）直接在代码中硬编码，没有从单一事实源派生。
+resolution: |
+  1. 在 L1 项目规则中增加"规格变更与工具联动约束"硬约束，明确涉及事实源边界、字段契约、状态机、
+     对象类型、目录结构或术语的 specs 修改，AI 必须在提交前同步检查 tools/ 代码；
+  2. 在 L1 压缩保护行末尾增加"改specs检查tools/代码"；
+  3. 在 L1 场景规则引导中增加同步检查 tools/ 的要求；
+  4. 在 spec 06 新增 §4.7"规格变更与工具联动规则"，详细定义联动检查触发条件、检查内容、
+     未覆盖处理、测试同步要求和依赖声明；
+  5. 创建本 Pitfall 记录本次教训。
+verification: |
+  验证方式：后续规格变更中，AI 是否在提交前主动检查 tools/ 代码并同步更新；
+  如果 tools/ 代码与 specs 不一致，是否被捕获并阻止提交。
+avoidance: |
+  进行 specs 修改时，判断是否涉及以下类型（任一项成立即需检查 tools/ 代码）：
+  - 对象类型增删或重命名
+  - 字段契约变更
+  - 状态机变更
+  - 事实源目录变更
+  - 术语统一
+  涉及时，在修改计划中明确包含 tools/ 代码检查和测试同步步骤，
+  并在提交前执行 grep 搜索 tools/ 中受影响的硬编码引用。
+applicability: |
+  所有接入 LDVH 的管辖项目，所有涉及 specs 变更的 AI 操作。
+source_objects:
+  - adr-0005
+related_rules:
+  - "specs/06-Python与Web工具规范.md §4.7"
+  - ".trae/rules/ldvh-project-rules.md"
+tags:
+  - spec-tools-sync
+  - process-improvement

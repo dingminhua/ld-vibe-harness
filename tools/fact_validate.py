@@ -13,7 +13,8 @@ from typing import Any
 import yaml
 
 
-OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "profile", "memo", "change"}
+# Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
+OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "profile", "memo"}
 FILENAME_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "task": re.compile(r"^task-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
@@ -21,7 +22,6 @@ FILENAME_PATTERNS = {
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "profile": re.compile(r"^profile-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "change": re.compile(r"^change-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
 }
 ID_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}$"),
@@ -30,7 +30,6 @@ ID_PATTERNS = {
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
     "profile": re.compile(r"^profile-\d{4}$"),
     "memo": re.compile(r"^memo-\d{4}$"),
-    "change": re.compile(r"^change-\d{4}$"),
 }
 VALID_STATUSES = {
     "intent": {"draft", "active", "completed", "closed"},
@@ -39,7 +38,6 @@ VALID_STATUSES = {
     "pitfall": {"draft", "active", "superseded", "archived"},
     "profile": {"draft", "active", "suspended", "archived"},
     "memo": {"draft", "active", "resolved", "archived"},
-    "change": {"proposed", "accepted", "implemented", "deprecated"},
 }
 REQUIRED_FIELDS = {
     "intent": ["id", "type", "title", "status", "created", "updated", "description", "success_criteria", "source"],
@@ -48,16 +46,14 @@ REQUIRED_FIELDS = {
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "profile": ["id", "type", "title", "status", "created", "updated", "description", "project_name", "project_path", "ldvh_base_path"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category"],
-    "change": ["id", "type", "title", "status", "created", "updated", "description", "change_type", "scope"],
 }
 LIST_FIELDS = {
     "intent": {"related_tasks", "related_adrs"},
-    "task": {"related_adrs", "related_changes", "sub_tasks", "blocked_by"},
-    "adr": {"related_tasks", "related_adrs", "related_changes"},
+    "task": {"related_adrs", "sub_tasks", "blocked_by"},
+    "adr": {"related_tasks", "related_adrs"},
     "pitfall": {"source_objects", "related_objects", "related_rules", "tags"},
     "profile": {"related_tasks", "related_adrs"},
     "memo": {"related_tasks", "related_adrs"},
-    "change": {"related_tasks", "related_adrs", "affected_files"},
 }
 
 
@@ -159,8 +155,6 @@ def infer_object_type(path: Path, data: dict[str, Any]) -> str | None:
         return "profile"
     if name.startswith("memo-"):
         return "memo"
-    if name.startswith("change-"):
-        return "change"
     return None
 
 
@@ -196,8 +190,6 @@ def validate_adr(path: Path, data: dict[str, Any]) -> list[Issue]:
     return validate_common(path, data, "adr")
 
 
-def validate_change(path: Path, data: dict[str, Any]) -> list[Issue]:
-    return validate_common(path, data, "change")
 
 
 def find_task_by_id(tasks_dir: Path, task_id: str) -> tuple[Path | None, dict[str, Any] | None, Issue | None]:
@@ -315,7 +307,6 @@ def validate_file(path: Path) -> tuple[list[Issue], bool]:
         "pitfall": validate_pitfall,
         "profile": validate_profile,
         "memo": validate_memo,
-        "change": validate_change,
     }
     return validators[object_type](path, data), False
 
