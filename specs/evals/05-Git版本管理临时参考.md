@@ -7,7 +7,7 @@
 > AI 执行边界：本文是临时参考，不授权 AI 据此自动执行 commit、push、tag、release 或分支切换
 > 来源：外部参考文档（已迁入 specs/refs/）
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/02-LDVH术语规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`
+> 相关规范：`specs/02-术语规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`
 
 ---
 

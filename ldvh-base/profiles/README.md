@@ -23,4 +23,4 @@ profile-{NNNN}-project-name.yaml
 ## 规范依据
 
 - 对象模型：`specs/26-Profile-项目画像.md`
-- 契约子文档：`specs/26.06-Contract.md`
+- 结构化契约文件：`specs/26.06-Contract.md`

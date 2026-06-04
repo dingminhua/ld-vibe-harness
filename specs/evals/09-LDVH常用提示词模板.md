@@ -5,8 +5,8 @@
 > 定位：LD Vibe Harness 内部常用提示词模板集合，用于在临时对话中快速发起规范检查、调研、审查和多角色思考
 > 编号归属：`specs/evals/` 项目评估与内部辅助文档，编号仅用于排序和引用便利，不属于 specs 正式规范编号体系
 > 使用边界：本文提供可复制使用的提示词模板，不直接构成 LD Vibe Harness 强制规则；实际执行仍以 `specs/00-79`、项目 Rules 和 `ldvh-base/` 事实实例为准
-> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`
-> 相关规范：`specs/11-LDVH-Trae-Solo-环境规范.md`、`specs/50-LDVH工作流基础规范.md`、`specs/51-multi-role-thinking-多角色思考.md`、`specs/51.06-Contract.md`
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`
+> 相关规范：`specs/05-Trae-Solo环境规范.md`、`specs/08-工作流程基础规范.md`、`specs/41-multi-role-thinking-多角色思考.md`、`specs/41.06-Contract.md`
 
 ---
 
@@ -35,12 +35,12 @@
 1. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-project-rules.md`
 2. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-specs-rules.md`
 3. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/00-LD-Vibe-Harness理念与纲要.md`
-4. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/01-LDVH目录说明.md`
-5. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/02-LDVH术语规范.md`
-6. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/03-Specs文档规范.md`
-7. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/10-事实源边界与承载规范.md`
-8. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/51-multi-role-thinking-多角色思考.md`
-9. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/51.06-Contract.md`
+4. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/01-目录说明.md`
+5. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/02-术语规范.md`
+6. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/03-文档规范.md`
+7. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/04-事实源边界与承载规范.md`
+8. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/41-multi-role-thinking-多角色思考.md`
+9. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/41.06-Contract.md`
 
 请进入多角色思考。角色选择必须依据 `51.06-Contract.md` 的 RoleSelectionOutput 契约说明选择理由。至少包含：
 - `product-value-reviewer`：检查规范是否服务 LDVH 价值目标，是否存在为机制而机制、范围膨胀或投入产出不清。
@@ -72,7 +72,7 @@
 
 审查范围要求：
 1. 只检查 `specs` 根目录下的 `*.md` 文件。
-2. 区分正式规范、集合索引、事实模型规范、行动模型规范、附件型实践子文档和契约子文档。
+2. 区分正式规范、集合索引、事实模型规范、行动模型规范、历史机制文件和结构化契约文件。
 3. 对每个文件至少检查：
    - 头部元数据是否符合其文档类型要求。
    - 编号和路径是否符合 `01-LDVH目录说明.md`。
@@ -80,7 +80,7 @@
    - 是否存在复制维护其他权威文档规则正文的问题。
    - 是否存在反向边界章节或不符合 `03-Specs文档规范.md` 的结构问题。
    - 是否存在事实源边界不清、第二事实源、引用路径失效或索引未同步。
-   - 如属于 20-49 或 50-79 区段，是否符合事实模型或工作流基础规范及其附件型实践子文档规则。
+   - 如属于 20-49 或 50-79 区段，是否符合事实模型或工作流基础规范及其历史机制文件规则。
 4. 不要把 `specs/refs/` 的外部资料当作强制规则来源。
 5. 不要把工具缓存、聊天过程或 Agent 输出当作事实源。
 
@@ -121,7 +121,7 @@
 要求：
 1. 先读取项目规则和适用的场景规则。
 2. 读取该文件头部声明的上位依据和相关规范。
-3. 判断文档类型：普通规范、索引、事实模型、行动模型、附件型实践子文档或契约子文档。
+3. 判断文档类型：普通规范、索引、事实模型、行动模型、历史机制文件或结构化契约文件。
 4. 检查头部元数据、编号归属、术语、引用纪律、事实源边界、Human Gate、Change 记录要求。
 5. 不要直接修改，先输出问题清单和建议修改方案。
 6. 如建议修改 specs 或 Rules，请说明是否需要同步创建或更新 `ldvh-base/changes/` Change 记录。
@@ -147,7 +147,7 @@
 请读取并依据：
 1. 项目规则。
 2. 与该文件或对象相关的 specs 权威规范。
-3. 如涉及多角色思考，请读取 `specs/51-multi-role-thinking-多角色思考.md` 和 `specs/51.06-Contract.md`。
+3. 如涉及多角色思考，请读取 `specs/41-multi-role-thinking-多角色思考.md` 和 `specs/41.06-Contract.md`。
 
 输出：
 - 是否需要 Human Gate：true / false
@@ -201,15 +201,15 @@
 1. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-project-rules.md`
 2. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-specs-rules.md`
 3. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/00-LD-Vibe-Harness理念与纲要.md`
-4. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/01-LDVH目录说明.md`
-5. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/02-LDVH术语规范.md`
-6. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/03-Specs文档规范.md`
-7. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/10-事实源边界与承载规范.md`
-8. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/11-LDVH-Trae-Solo-环境规范.md`
-9. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/13-LDVH事实模型基础规范.md`
-10. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/50-LDVH工作流基础规范.md`
-11. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/51-multi-role-thinking-多角色思考.md`
-12. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/51.06-Contract.md`
+4. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/01-目录说明.md`
+5. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/02-术语规范.md`
+6. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/03-文档规范.md`
+7. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/04-事实源边界与承载规范.md`
+8. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/05-Trae-Solo环境规范.md`
+9. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/07-工作模型基础规范.md`
+10. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/08-工作流程基础规范.md`
+11. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/41-multi-role-thinking-多角色思考.md`
+12. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/41.06-Contract.md`
 
 请进入多角色思考。角色选择必须依据 `51.06-Contract.md` 的 RoleSelectionOutput 契约说明选择理由。至少包含：
 - `product-value-reviewer`：从产品价值角度审查 V1-V7 是否被规范体系设计支撑，是否存在为机制而机制、价值标准被弱化或被替代指标替换的问题。
@@ -263,7 +263,7 @@
 这是本次审查的重点。围绕以下问题逐一深审：
 
 1. **Context 定义完整性**：行动模型是否为每种场景定义了 AI 行动前应获得的最小可行动上下文？是否存在场景缺少 Context 定义？
-2. **上下文来源精准性**：AI 的上下文是否来自 Git 文件事实源，而非聊天记忆、工具缓存或派生数据？是否符合 `specs/10-事实源边界与承载规范.md`？
+2. **上下文来源精准性**：AI 的上下文是否来自 Git 文件事实源，而非聊天记忆、工具缓存或派生数据？是否符合 `specs/04-事实源边界与承载规范.md`？
 3. **上下文加载机制**：Rules 入口是否引导 AI 按场景加载必要上下文？工作区规则 → 项目规则 → 场景规则的读取链路是否完整？是否存在跳过读取直接执行的情况？
 4. **上下文充分性**：AI 获得的上下文是否足够执行当前任务？是否存在反复询问已有事实、误读项目边界或遗漏关键约束的情况（V1 不满足时的表现）？
 5. **上下文精简性**：AI 获得的上下文是否存在过载？是否读取了与当前任务无关的大量文件？最小可行动上下文是否可度量？

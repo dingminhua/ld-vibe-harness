@@ -23,4 +23,4 @@ taskset-{NNNN}-short-title.yaml
 ## 规范依据
 
 - 对象模型：`specs/28-TaskSet-任务集.md`
-- 契约子文档：`specs/28.06-Contract.md`
+- 结构化契约文件：`specs/28.06-Contract.md`

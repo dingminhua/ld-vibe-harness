@@ -3,7 +3,7 @@
 > 创建日期：2026-06-04
 > 定位：项目评估文档，评估 Rules 和 Skill 从 specs 自动生成的可行性、收益和前提条件
 > 适用范围：LD Vibe Harness Rules/Skill 自动生成机制的设计评估
-> 上位依据：`specs/11-LDVH-Trae-Solo-环境规范.md` §6、`specs/11-LDVH-Trae-Solo-环境规范.md` §7
+> 上位依据：`specs/05-Trae-Solo环境规范.md` §6、`specs/05-Trae-Solo环境规范.md` §7
 
 ---
 
@@ -26,7 +26,7 @@
 **输入**：
 - `specs/NN-对象名.md`（主文档）
 - `specs/NN.01-Rules.md`（Rules 子文档）
-- `specs/11-LDVH-Trae-Solo-环境规范.md` §6（Rules 机制规范）
+- `specs/05-Trae-Solo环境规范.md` §6（Rules 机制规范）
 - `ldvh-base/profiles/`（项目配置，确定项目路径和 ldvh-base 路径）
 
 **输出**：
@@ -46,7 +46,7 @@
 **输入**：
 - `specs/NN-对象名.md`（主文档）
 - `specs/NN.02-Skill.md`（Skill 子文档）
-- `specs/11-LDVH-Trae-Solo-环境规范.md` §7（Skill 机制规范）
+- `specs/05-Trae-Solo环境规范.md` §7（Skill 机制规范）
 - `tools/`（PyTools 命令清单，确定 Skill 可调用的命令）
 
 **输出**：

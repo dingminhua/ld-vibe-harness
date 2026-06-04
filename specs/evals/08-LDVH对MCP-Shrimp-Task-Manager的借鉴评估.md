@@ -6,8 +6,8 @@
 > 编号归属：`specs/evals/` 项目评估文档，编号仅用于排序和引用便利，不属于 specs 正式规范编号体系
 > 调研边界：基于 `/Users/dmh2002/trae_projects/mcp-shrimp-task-manager` 本地仓库的 README、docs、src、tools/task-viewer 与配置文件进行分析，重点评估其对 LD Vibe Harness 的可借鉴方向
 > 执行效力：本文为内部调研和方案比较，不直接构成 LD Vibe Harness 强制规则；结论进入 `specs/00-79` 正式规范区间或 ADR 后才成为稳定规则
-> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-LDVH术语规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`
-> 相关规范：`specs/11-LDVH-Trae-Solo-环境规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/50-LDVH工作流基础规范.md`、`specs/20-事实模型集合索引.md`
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`
+> 相关规范：`specs/05-Trae-Solo环境规范.md`、`specs/06-Python与Web工具规范.md`、`specs/07-工作模型基础规范.md`、`specs/08-工作流程基础规范.md`、`specs/20-工作模型集合索引.md`
 > 参考项目：`/Users/dmh2002/trae_projects/mcp-shrimp-task-manager`
 
 ---
@@ -178,7 +178,7 @@ plan_task
 6. completed 任务默认不能删除，也不能随意更新；
 7. 删除任务时若存在其他任务依赖该任务，则拒绝删除。
 
-这条生命周期对 LDVH 的行动模型区段很有参考价值。LDVH 当前 `specs/50-LDVH工作流基础规范.md` §7.3 已规划“需求转任务”“Task 执行”“Task 阻塞处理”“Review 执行”“对象状态更新”等行动。Shrimp 提供了一个可对照样板：行动模型不应只定义原则，还应定义状态变更前置、依赖检查、执行上下文、验证标准、证据回写和关闭条件。
+这条生命周期对 LDVH 的行动模型区段很有参考价值。LDVH 当前 `specs/08-工作流程基础规范.md` §7.3 已规划“需求转任务”“Task 执行”“Task 阻塞处理”“Review 执行”“对象状态更新”等行动。Shrimp 提供了一个可对照样板：行动模型不应只定义原则，还应定义状态变更前置、依赖检查、执行上下文、验证标准、证据回写和关闭条件。
 
 ### 2.8 Agent 机制
 
@@ -199,7 +199,7 @@ Viewer 端包括：
 5. OpenAI 批量分配 Agent；
 6. Chat Agent 基于当前任务和页面上下文提供建议。
 
-对 LDVH 的启发是：Agent 分配应服务任务执行，而不是单独作为炫技功能。但 LDVH 也必须坚持 `specs/11-LDVH-Trae-Solo-环境规范.md` §8 的边界：Agent 创建、修改、权限调整和事实源回写需要治理；Agent 输出不是最终事实源；Agent 不得自行宣称任务完成；推荐 Agent 清单不应直接进入正式规范。Shrimp 的自动匹配逻辑可以作为工具辅助建议，但不应自动替代 LDVH 的 Agent 调度判断和 Human Gate。
+对 LDVH 的启发是：Agent 分配应服务任务执行，而不是单独作为炫技功能。但 LDVH 也必须坚持 `specs/05-Trae-Solo环境规范.md` §8 的边界：Agent 创建、修改、权限调整和事实源回写需要治理；Agent 输出不是最终事实源；Agent 不得自行宣称任务完成；推荐 Agent 清单不应直接进入正式规范。Shrimp 的自动匹配逻辑可以作为工具辅助建议，但不应自动替代 LDVH 的 Agent 调度判断和 Human Gate。
 
 ### 2.9 Web 能力
 
@@ -383,7 +383,7 @@ Shrimp 独立 viewer 中存在 OpenAI 批量分配 Agent 和 Chat Agent 能力�
 
 ### 5.7 不应把 Agent 自动匹配等同于 Agent 治理
 
-Shrimp 的关键词匹配可以为任务填充 `agent` 字段，但 LDVH 的 Agent 创建、调用、权限、定义摘要和生命周期需要受 `specs/11-LDVH-Trae-Solo-环境规范.md` §8 治理。自动匹配最多是建议，不应自动创建 Agent、授权 Agent、修改 Agent Prompt 或绕过主控判断。
+Shrimp 的关键词匹配可以为任务填充 `agent` 字段，但 LDVH 的 Agent 创建、调用、权限、定义摘要和生命周期需要受 `specs/05-Trae-Solo环境规范.md` §8 治理。自动匹配最多是建议，不应自动创建 Agent、授权 Agent、修改 Agent Prompt 或绕过主控判断。
 
 ### 5.8 不应让项目规则初始化变成规则泛滥
 
@@ -395,7 +395,7 @@ Shrimp 的 `init_project_rules` 提供项目规则初始化指导，这对新 Ag
 
 ### 6.1 优先建设 Task 对象规范
 
-Shrimp 最直接的借鉴对象是 Task 模型。LDVH 当前 `specs/10-事实模型集合索引.md` 已将 `12` 规划为 Task。建议在建设 `specs/12-Task-任务对象` 时重点吸收 Shrimp 的以下设计：
+Shrimp 最直接的借鉴对象是 Task 模型。LDVH 当前 `specs/20-工作模型集合索引.md` 已将 `27` 规划为 Task。建议在建设 `specs/27-Task-任务.md` 时重点吸收 Shrimp 的以下设计：
 
 1. Task 是最小可执行、可追踪、可验证、可关闭对象；
 2. Task 应有依赖关系和阻塞关系；
@@ -407,7 +407,7 @@ Shrimp 最直接的借鉴对象是 Task 模型。LDVH 当前 `specs/10-事实模
 
 ### 6.2 补齐任务生命周期行动模型
 
-LDVH 当前 `specs/50-LDVH工作流基础规范.md` §7.3 已规划 `44 需求转任务`、`45 Task 执行`、`46 Task 阻塞处理`、`47 Review 执行`、`50 对象状态更新`。建议参考 Shrimp 的任务生命周期，把这些行动模型串成闭环：
+LDVH 当前 `specs/08-工作流程基础规范.md` §7.3 已规划 `44 需求转任务`、`45 Task 执行`、`46 Task 阻塞处理`、`47 Review 执行`、`50 对象状态更新`。建议参考 Shrimp 的任务生命周期，把这些行动模型串成闭环：
 
 1. 读取 Context；
 2. 识别 Scenario；

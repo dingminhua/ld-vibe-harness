@@ -5,7 +5,7 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-Trae-Solo-环境规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/50-LDVH工作流基础规范.md`
+> 相关规范：`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/06-Python与Web工具规范.md`、`specs/08-工作流程基础规范.md`
 > 参考来源：`specs/refs/02-Trae-MCP用法调研.md`、`specs/refs/03-社区推荐Rules-Skills-MCP与自定义Agent调研.md`、`specs/refs/01-Sequential-Thinking使用模板.md`、`specs/refs/02-Context7使用模板.md`
 
 ---
@@ -208,8 +208,8 @@ MCP 引入按"工具供应链"对待，不是按普通文档或普通规则对�
 
 ### 5.3 Agent 权限约束
 
-1. MCP 应按 Agent 职责分配，不得把所有 MCP 都加给所有 Agent（依据 `specs/11-LDVH-Trae-Solo-环境规范.md` §8 和 refs/02 §七）；
-2. Agent 的 MCP 权限范围应最小必要（依据 `specs/11-LDVH-Trae-Solo-环境规范.md` §8）；
+1. MCP 应按 Agent 职责分配，不得把所有 MCP 都加给所有 Agent（依据 `specs/05-Trae-Solo环境规范.md` §8 和 refs/02 §七）；
+2. Agent 的 MCP 权限范围应最小必要（依据 `specs/05-Trae-Solo环境规范.md` §8）；
 3. 高风险 MCP 必须绑定专用 Agent，禁止默认开放给通用 Agent（依据 refs/03 §九.3）。
 
 ### 5.4 配置安全约束
