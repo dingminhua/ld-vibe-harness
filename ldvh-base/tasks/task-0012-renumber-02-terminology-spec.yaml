@@ -1,0 +1,27 @@
+id: task-0012
+type: task
+title: renumber 02 terminology spec
+status: planned
+created: '2026-06-05'
+updated: '2026-06-05'
+description: 将现有 specs/02-LDVH术语规范.md 调整为新编号体系下的 02-术语规范，并同步更新 specs 根目录正式规范与 Rules
+  中对该文档编号、标题和路径的引用；本任务只覆盖 02 目标项。
+source: 用户指示：新增任务，将 01 文档改为目录说明，02 文档改为术语规范，03 文档改为文档规范并强行并入 03.01，10 改为 04，11 改为
+  05，12 改为 06-PyTools与WebTools规范并合并 12.01/12.02，13 改为 07，50 改为 08；确认口径：按目标 8 项拆分，只建任务不执行，合并采用精简并入，引用范围先限
+  specs 根目录正式规范与 Rules。
+acceptance: '- [ ] 02 文档文件名、标题和头部定位调整为“术语规范”
+
+  - [ ] specs 根目录正式规范中对原 02 文档的引用已更新为新路径和新标题
+
+  - [ ] Rules 中对原 02 文档的引用已更新为新路径和新标题
+
+  - [ ] 不处理 specs/evals、specs/refs、tools/tests/web 等非本轮确认范围引用
+
+  - [ ] 可用文档规范检查和引用检查通过'
+blocked_by: []
+parent_task: null
+sub_tasks: []
+assignee: AI
+related_adrs: []
+related_changes: []
+verification: 检查 02 文档文件名、标题、头部元数据和 specs 根目录正式规范与 Rules 引用；运行 specs 文档规范检查、引用检查和事实模型校验。
