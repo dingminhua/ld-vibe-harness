@@ -142,7 +142,7 @@ git checkout dev
 ```text
 feat(specs): 新增事实源治理规范
 fix(web): 修复任务列表分页显示错误
-spec(rules): 调整 L1 规则读取机制
+spec(rules): 调整项目规则读取机制
 tool(web): 新增备忘批量导出功能
 docs: 更新 README 产品定义
 chore(infra): 配置 GitHub Actions 发布流程
@@ -221,7 +221,7 @@ git commit -m "feat(web): 新增任务看板视图"
 git commit -m "fix(web): 修复列表排序错误"
 git commit -m "docs: 更新安装说明"
 git commit -m "feat(specs): 新增 AI 协作规范"
-git commit -m "fix(rules): 修正 L1 规则路径"
+git commit -m "fix(rules): 修正项目规则路径"
 ```
 
 ### 7.2 查看累计改动

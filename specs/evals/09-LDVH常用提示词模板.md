@@ -32,8 +32,8 @@
 目标：判断 specs 根目录正式规范文件是否符合 LDVH 自身规范体系要求，并输出可执行的整改建议。不要直接修改文件，先只做审查报告；如发现必须修改的事项，请列为建议动作，等待我确认。
 
 必须先读取并遵守以下入口：
-1. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-l1-rules.md`
-2. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-l2-specs-rules.md`
+1. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-project-rules.md`
+2. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-specs-rules.md`
 3. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/00-LD-Vibe-Harness理念与纲要.md`
 4. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/01-LDVH目录说明.md`
 5. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/02-LDVH术语规范.md`
@@ -119,7 +119,7 @@
 文件：`在这里填写文件绝对路径`
 
 要求：
-1. 先读取项目 L1 Rules 和适用的 L2 Rules。
+1. 先读取项目规则和适用的场景规则。
 2. 读取该文件头部声明的上位依据和相关规范。
 3. 判断文档类型：普通规范、索引、事实模型、行动模型、附件型实践子文档或契约子文档。
 4. 检查头部元数据、编号归属、术语、引用纪律、事实源边界、Human Gate、Change 记录要求。
@@ -145,7 +145,7 @@
 - 在这里填写计划修改的文件、对象或机制
 
 请读取并依据：
-1. 项目 L1 Rules。
+1. 项目规则。
 2. 与该文件或对象相关的 specs 权威规范。
 3. 如涉及多角色思考，请读取 `specs/51-multi-role-thinking-多角色思考.md` 和 `specs/51.06-Contract.md`。
 
@@ -166,7 +166,7 @@
 请根据本次已经完成的文件修改，生成或补齐 `ldvh-base/changes/` 下的 Change YAML 记录。
 
 要求：
-1. 先读取项目 L1 Rules、事实模型基础规范和 Change 相关规范或既有 Change YAML 示例。
+1. 先读取项目规则、事实模型基础规范和 Change 相关规范或既有 Change YAML 示例。
 2. 不要把 Change 当作普通配置文件随意写入。
 3. Change 记录应准确反映已发生的事实源修改，不夸大、不记录纯过程聊天。
 4. affects 必须列出实际受影响文件。
@@ -198,8 +198,8 @@
 目标：判断 LDVH 规范体系和项目实践是否真正落实了核心价值，输出可执行的改进建议。不要直接修改文件，先只做审查报告；如发现必须修改的事项，请列为建议动作，等待我确认。
 
 必须先读取并遵守以下入口：
-1. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-l1-rules.md`
-2. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-l2-specs-rules.md`
+1. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-project-rules.md`
+2. `/Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules/ldvh-specs-rules.md`
 3. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/00-LD-Vibe-Harness理念与纲要.md`
 4. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/01-LDVH目录说明.md`
 5. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/02-LDVH术语规范.md`

@@ -173,7 +173,7 @@ Change 记录本身是事实源修改的自然结果，不需要为"记录 Chang
 2. commit message 应符合本文 §8 定义的格式规范；
 3. 涉及 Human Gate 的修改，应在 commit message body 中说明确认情况；
 4. 任务完成后，应遍历工作区所有 Git 仓库，对每个有修改的仓库独立执行 commit，不可遗漏任何受影响的仓库；
-5. commit 前必须调用 `tools/check_22_commit_format.py --check-message` 预检拟提交的 message，预检不通过（exit code ≠ 0）时不得执行 commit。
+5. commit 前必须调用 `tools/commit_validate.py --check-message` 预检拟提交的 message，预检不通过（exit code ≠ 0）时不得执行 commit。
 
 ---
 
@@ -343,10 +343,10 @@ Change Change 现有机制承接文件状态如下，后续应按 07 §4.6 逐�
 
 | 编号 | 机制文件 | 状态 | 说明 |
 |---|---|---|---|
-| 22.01 | Rules.md | active | Change 提交前提醒和提交纪律的权威位置，L0/L1 Rules 的提交纪律入口由此机制文件定义 |
+| 22.01 | Rules.md | active | Change 提交前提醒和提交纪律的权威位置，工作区规则/项目规则的提交纪律入口由此机制文件定义 |
 | 22.02 | Skill.md | active | ldvh-commit Skill 编排提交流程：diff 展示 → message 起草 → 格式预检 → 确认 → commit |
 | 22.03 | Agent.md | not-needed | Change 不需要 Agent 并行处理 |
-| 22.04 | Tools.md | active | commit message 格式校验由 check_22_commit_format.py 执行，提供 --show-format、--check-message、git log 审计三种能力 |
+| 22.04 | Tools.md | active | commit message 格式校验由 commit_validate.py 执行，提供 --show-format、--check-message、git log 审计三种能力 |
 | 22.05 | Web.md | not-needed | Change 不需要独立 Web 编辑入口，读取和查询通过 git log 命令执行；未来如需 Web 变更看板再评估创建 |
 | 22.06 | Contract.md | active | commit message 格式契约的权威位置，定义 type 枚举、scope 枚举、正则表达式和契约消费声明 |
 
@@ -358,13 +358,13 @@ Change Change 现有机制承接文件状态如下，后续应按 07 §4.6 逐�
 
 22.01 从 not-needed 升级为 active 的理由：
 
-1. **L0 Rules 的权威来源**：22.01 定义了 Change 提交纪律的完整规则，L0/L1 Rules 从中提取运行时入口摘要，符合 05 §6 Rules 机制规范的分层关系；
+1. **工作区规则的权威来源**：22.01 定义了 Change 提交纪律的完整规则，工作区规则/项目规则从中提取运行时入口摘要，符合 05 §6 Rules 机制规范的分层关系；
 2. **提交纪律需要明确边界**：哪些场景必须调用 Skill、哪些不得跳过 Skill 直接 commit、Rules 层不得承载哪些内容，需要权威位置定义；
 3. **Change 虽无 YAML 实例但提交纪律独立**：Change 的格式契约、提交流程、校验工具有明确的机制落地需求，不应省略。
 
 22.04 从 not-needed 升级为 active 的理由：
 
-1. **Tools 校验已实现并在使用**：check_22_commit_format.py 已实现 --show-format、--check-message、git log 审计三种能力，并提供测试覆盖；
+1. **Tools 校验已实现并在使用**：commit_validate.py 已实现 --show-format、--check-message、git log 审计三种能力，并提供测试覆盖；
 2. **预检是强制制度**：22 §7.3 要求 commit 前必须调用预检工具，需要 Tools 机制文件或 06 定义命令参数、调用方式和测试要求；
 3. **契约消费声明需要落地**：22.06 Contract 定义了格式契约，22.04 声明 Tools 如何消费该契约。
 
@@ -397,4 +397,4 @@ Change Change 现有机制承接文件状态如下，后续应按 07 §4.6 逐�
 2. commit message 格式校验工具已实现，后续按需扩展多仓库批量校验能力；
 3. Change Web 信息同步能力待按需实现（22.05 当前 not-needed，未来如需变更看板再评估）；
 4. commit message `type` 枚举是否需要扩展待实践验证；
-5. 项目中已有的暂缓标注（"暂缓：Change 记录机制待替换，见 L1 规则"）应替换为对本文的引用。
+5. 项目中已有的暂缓标注（"暂缓：Change 记录机制待替换，见项目规则"）应替换为对本文的引用。

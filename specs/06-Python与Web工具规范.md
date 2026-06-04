@@ -57,7 +57,7 @@ PyTools 辅助层面向机器可执行、可重复、可校验的确定性工作
 
 ### 4.3 命名与 CLI 规则
 
-PyTools 文件统一放置于 `tools/`，命名格式为 `ldvh_<domain>_<capability>.py`。
+PyTools 文件统一放置于 `tools/`，命名格式为 `<domain>_<capability>.py`。
 
 CLI 至少支持 `--help`；输入路径参数应区分文件/目录/项目根目录；写入类命令必须显式表达目标对象/状态/路径。
 
@@ -172,7 +172,7 @@ LDVH 对工具的治理原则如下：
 
 | 关联机制 | 关联实体 | 关系类型 | 触发条件 |
 |---|---|---|---|
-| Rules | `../.trae/rules/ldvh-l0-rules.md`、`../.trae/rules/ldvh-l1-rules.md` | L0/L1 规则入口 | 本文的工具分工、受控写入规则或事实源边界适配变化时 |
+| Rules | `../.trae/rules/ldvh-workspace-rules.md`、`../.trae/rules/ldvh-project-rules.md` | 工作区规则/项目规则入口 | 本文的工具分工、受控写入规则或事实源边界适配变化时 |
 | Tools | （已合并到本文 §4） | 规则合并 | PyTools 辅助层能力、校验规则或写入链路变化时 |
 | Web | （已合并到本文 §5） | 规则合并 | WebTools 信息同步层能力、信息同步规则或同步链路变化时 |
 

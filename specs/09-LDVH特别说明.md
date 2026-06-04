@@ -31,13 +31,13 @@
 
 | 关联机制 | 关联实体 | 关系类型 | 触发条件 |
 |---|---|---|---|
-| Rules | `../.trae/rules/ldvh-l0-rules.md` | L0 工作区规则引用 | 本文的 Human Gate 豁免条件变化时 |
+| Rules | `../.trae/rules/ldvh-workspace-rules.md` | 工作区规则引用 | 本文的 Human Gate 豁免条件变化时 |
 
 ---
 
 ## 5. Human Gate 与检查要求
 
-修改本文 Human Gate 豁免条件时，应评估 Human Gate 并同步更新 L0 工作区规则。
+修改本文 Human Gate 豁免条件时，应评估 Human Gate 并同步更新工作区规则。
 
 ---
 

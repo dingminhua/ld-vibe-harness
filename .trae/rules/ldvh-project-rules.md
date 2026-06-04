@@ -1,11 +1,11 @@
 # LD Vibe Harness 项目规则
 
 > 最后更新：2026-06-03
-> 层级：L1 项目规则
+> 层级：项目规则
 > 适用项目：ld-vibe-harness
 > 生效方式：始终生效
 > 规范来源：`specs/00-05`、`specs/10-14`、`specs/20-22`
-> 维护边界：仅作 LDVH 项目入口、硬约束和 L2 引导，不替代 specs 正式规范
+> 维护边界：仅作 LDVH 项目入口、硬约束和场景规则引导，不替代 specs 正式规范
 
 ## 入口
 
@@ -36,10 +36,10 @@ AI 应在每次用户交互时判断当前 Core Loop 阶段，并推荐对应 Sk
 
 修改 specs、Rules、Tools、工作模型边界或长期协作机制前检查 ADR；准入见 21 §3.3。ADR 写入、状态流转、推翻、废弃或升级必须 Human Gate；流程见 21.02，工具见 21.04。proposed ADR 不作执行依据。
 
-## L2 引导
+## 场景规则引导
 
-编辑 specs 进 `.trae/rules/ldvh-l2-specs-rules.md`；编辑 `ldvh-base/` YAML 进工作区 L0 工作模型规则；新增、修改或审计 Rules 时读 05 §6，并从 `specs/*.md` 反向发现需求。
+编辑 specs 进 `.trae/rules/ldvh-l2-specs-rules.md`；编辑 `ldvh-base/` YAML 进工作区场景规则；新增、修改或审计 Rules 时读 05 §6，并从 `specs/*.md` 反向发现需求。
 
 ## 压缩保护
 
-LDVH | 00-08按任务读原文 | 产品化/Gstack/Trae/CoreLoop/Python/Web工具先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 规范/Skill/Tools/部署判断必须回原文 | 错误模式转检查项 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=Python/Web工具聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04事实源边界 05 Trae Solo 环境规范 06 Python/Web工具 07工作模型 08工作流程 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0 | CoreLoop路由=Intent→ldvh-intake|Plan→ldvh-plan|Record→ldvh-close
+LDVH | 00-08按任务读原文 | 产品化/Gstack/Trae/CoreLoop/Python/Web工具先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 规范/Skill/Tools/部署判断必须回原文 | 错误模式转检查项 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=Python/Web工具聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04事实源边界 05 Trae Solo 环境规范 06 Python/Web工具 07工作模型 08工作流程 | 搜标题行号 | Git为准 | ADR见21 | specs进场景规则 | ldvh-base进工作区场景规则 | CoreLoop路由=Intent→ldvh-intake|Plan→ldvh-plan|Record→ldvh-close

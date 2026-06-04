@@ -1,6 +1,6 @@
 # LDVH Specs 文档编辑规则
 
-> 层级：L2 场景规则
+> 层级：场景规则
 > 适用项目：ld-vibe-harness
 > 生效方式：globs — 编辑 specs/ 目录下 Markdown 文件时生效
 > 规范来源：`specs/03-文档规范.md`、`specs/03-文档规范.md §8`、`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/22-Change-变更记录.md`、`specs/22.01-Rules.md`
@@ -12,7 +12,7 @@
 
 ## 索引与读取
 
-读取策略同工作区 L0 "读取策略"。索引与文档质量检查依据 `specs/03-文档规范.md §8`。
+读取策略同工作区规则"读取策略"。索引与文档质量检查依据 `specs/03-文档规范.md §8`。
 
 ## 场景约束
 

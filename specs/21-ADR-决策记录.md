@@ -353,7 +353,7 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 | `21.01` | `21.01-Rules.md` | active | ADR 准入条件在 Rules 层的入口摘要、放置位置、生效方式和禁止承载内容 |
 | `21.02` | `21.02-Skill.md` | active | ADR 创建、升级、推翻和废弃的可复用流程，已落地工作区 L0 Skill 实体 `/Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/SKILL.md` |
 | `21.03` | `21.03-Agent.md` | not-needed | 说明 ADR 不需要创建专用 Agent 的理由 |
-| `21.04` | `21.04-Tools.md` | active | ADR Tools 契约式校验与执行能力定义，承接 `tools/adr_index.py` 的索引、查询、统计和校验实践 |
+| `21.04` | `21.04-Tools.md` | active | ADR Tools 契约式校验与执行能力定义，承接 `tools/fact_cli.py` 的 ADR 索引、查询、统计实践和 `tools/fact_validate.py` 的校验实践 |
 | `21.05` | `21.05-Web.md` | active-prep | ADR Web 信息同步的未来能力定义；当前不实现 Web 页面 |
 | `21.06` | `21.06-Contract.md` | active | ADR YAML schema、字段约束、文件命名契约和状态流转契约 |
 
@@ -387,5 +387,5 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 5. ADR 对象模型在本项目中已完成补齐落地初始化，初始化决策记录见 `ldvh-base/adrs/adr-0001-adr-mechanism-initialization.yaml`；
 6. `ldvh-base/adrs/` 已初始化，ADR 编号从 `adr-0001` 开始；
 7. ADR Tools 测试文件、测试命令、测试覆盖范围和验收记录需持续与 `21.04-Tools.md` 同步复核；
-8. `21.04-Tools.md` 的 active 状态需持续与 `tools/adr_index.py` 实际能力和测试验收结果保持一致；
+8. `21.04-Tools.md` 的 active 状态需持续与 `tools/fact_cli.py` 和 `tools/fact_validate.py` 实际能力和测试验收结果保持一致；
 9. ADR Skill 实体已从 active-prep 进入工作区 L0 `/Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/` 落地，后续需持续保持 `21.02-Skill.md`、Skill 实体、Tools 能力和测试验收结果一致。

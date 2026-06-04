@@ -48,7 +48,7 @@ OpenAI Codex 是 OpenAI 推出的 AI 软件工程 Agent 产品家族，包含四
 
 | 能力 | Codex 实现 | 对标 LDVH 中的概念 |
 |---|---|---|
-| **项目指令** | `AGENTS.md` — 分层 Markdown 文件，从 `~/.codex/` → Git root → 子目录逐层叠加，32KB 默认上限 | L0/L1/L2 Rules + specs |
+| **项目指令** | `AGENTS.md` — 分层 Markdown 文件，从 `~/.codex/` → Git root → 子目录逐层叠加，32KB 默认上限 | 工作区规则/项目规则/场景规则 + specs |
 | **可复用工作流** | `SKILL.md` — Agent Skills 开放标准，YAML front matter + Markdown，渐进式披露，存储在 `.codex/skills/` | Skill |
 | **审批/人机交互** | `approval_policy`: `untrusted`（每步审批）/ `on-request`（Codex 自行判断）/ `never`；交互式 TUI 中每步操作可审批 | Human Gate |
 | **沙箱/安全** | `sandbox_mode`: `read-only` / `workspace-write` / `danger-full-access`；网络访问可配置（`network_access`）；OS 内核级隔离 | LDVH 没有对等机制 |
@@ -67,7 +67,7 @@ OpenAI Codex 是 OpenAI 推出的 AI 软件工程 Agent 产品家族，包含四
 |---|---|---|
 | 运行位置 | 本地 IDE + Trae 云端 Agent | CLI 本地 / Cloud 远程容器 / IDE 插件 / Desktop App |
 | 上下文窗口 | 受 Trae 限制（具体数值未公开） | 272K 默认，最大 1M tokens |
-| 规则机制 | `.trae/rules/` — L0/L1/L2 分层，`alwaysApply`/`globs`/`description` 生效方式 | `AGENTS.md` — 分层 Markdown，从用户目录到子目录逐层叠加，无内置生效方式区分 |
+| 规则机制 | `.trae/rules/` — 工作区规则/项目规则/场景规则分层，`alwaysApply`/`globs`/`description` 生效方式 | `AGENTS.md` — 分层 Markdown，从用户目录到子目录逐层叠加，无内置生效方式区分 |
 | Skill 机制 | Trae Skill — 项目 `.trae/skills/` 目录 | SKILL.md 开放标准 — `.codex/skills/`，渐进式披露（name+desc → body → scripts/refs） |
 | Agent 机制 | Trae Agent — LDVH 在其上自建调度规则 | `/fork` 会话分叉 + Cloud 并行任务 + MCP 多 Agent 编排 |
 | Human Gate | AskUserQuestion（Trae 特有工具） | `approval_policy`（untrusted/on-request/never）+ TUI 交互式审批 |
@@ -220,10 +220,10 @@ YAML、Markdown、Python 等介质是行业标准，Codex 完全支持。不需�
 
 | LDVH Rules 概念 | Codex 对等实现 | 适配方案 |
 |---|---|---|
-| L0 工作区规则（始终生效） | `~/.codex/AGENTS.md`（全局，始终加载） | 将 L0 内容写入 `~/.codex/AGENTS.md` |
-| L0 事实模型规则（globs：编辑 ldvh-base/ YAML 时生效） | 无直接对等机制。AGENTS.md 没有"按文件类型触发"的能力 | ① 在对应子目录放 `AGENTS.md`（如 `ldvh-base/AGENTS.md`）；② 或在项目根 `AGENTS.md` 中声明"编辑 ldvh-base/ 下 YAML 时的规则" |
-| L1 项目规则（始终生效） | 项目根 `AGENTS.md`（Codex 自动从 Git root 向上扫描到 CWD） | 将 L1 内容写入项目根 `AGENTS.md` |
-| L2 场景规则（globs / description） | `SKILL.md`（通过 description 匹配触发）+ 子目录 `AGENTS.md`（就近生效） | 将 L2 规则改写为：① 子目录 `AGENTS.md`（如果是"特定文件类型"约束）；② 或 `SKILL.md`（如果是"特定操作流程"） |
+| 工作区规则（始终生效） | `~/.codex/AGENTS.md`（全局，始终加载） | 将工作区规则内容写入 `~/.codex/AGENTS.md` |
+| 事实模型规则（globs：编辑 ldvh-base/ YAML 时生效） | 无直接对等机制。AGENTS.md 没有"按文件类型触发"的能力 | ① 在对应子目录放 `AGENTS.md`（如 `ldvh-base/AGENTS.md`）；② 或在项目根 `AGENTS.md` 中声明"编辑 ldvh-base/ 下 YAML 时的规则" |
+| 项目规则（始终生效） | 项目根 `AGENTS.md`（Codex 自动从 Git root 向上扫描到 CWD） | 将项目规则内容写入项目根 `AGENTS.md` |
+| 场景规则（globs / description） | `SKILL.md`（通过 description 匹配触发）+ 子目录 `AGENTS.md`（就近生效） | 将场景规则改写为：① 子目录 `AGENTS.md`（如果是"特定文件类型"约束）；② 或 `SKILL.md`（如果是"特定操作流程"） |
 | 压缩保护段 | 不再需要。Codex 使用 Compaction（语义摘要）而非截断 | 删除所有压缩保护段 |
 
 **关键差异**：
@@ -234,7 +234,7 @@ YAML、Markdown、Python 等介质是行业标准，Codex 完全支持。不需�
 
 3. AGENTS.md 有 32KB 默认上限——如果 LDVH 的 specs 规范内容较多，需要拆分到子目录的 AGENTS.md 中。
 
-**适配结论**：LDVH 的 Rules 体系需要从"L0/L1/L2 分层 + Trae 生效方式映射"改为"AGENTS.md 目录分层 + SKILL.md 场景触发"。约束语义不变，承载形式变化。
+**适配结论**：LDVH 的 Rules 体系需要从"工作区规则/项目规则/场景规则分层 + Trae 生效方式映射"改为"AGENTS.md 目录分层 + SKILL.md 场景触发"。约束语义不变，承载形式变化。
 
 #### 5.2.2 Skill → SKILL.md
 
@@ -431,7 +431,7 @@ LDVH 的 Human Gate 触发条件（"什么情况下需要人确认"）不变。�
 
 | 改动项 | 改动量 | 工作量估计 |
 |---|---|---|
-| L0/L1/L2 Rules 重写为 AGENTS.md 分层 + SKILL.md | 大 | 需要逐一映射每个 Rule 到 Codex 机制 |
+| 工作区规则/项目规则/场景规则重写为 AGENTS.md 分层 + SKILL.md | 大 | 需要逐一映射每个 Rule 到 Codex 机制 |
 | Skill 迁移到 SKILL.md | 中 | 每个 Skill 添加 YAML front matter，拆分资源文件 |
 | Agent 调度规范大幅简化 | 中 | 删除约 80% 内容 |
 | Human Gate 实现从 AskUserQuestion 改为 Codex approval_policy | 中 | 重写 Gate 实现章节 |
@@ -465,8 +465,8 @@ LDVH 的 Human Gate 触发条件（"什么情况下需要人确认"）不变。�
 
 目标：LDVH specs + ldvh-base 在 Codex 中可被 AI 读取和遵守。
 
-1. 创建项目根 `AGENTS.md`，将 L1 规则核心内容写入；
-2. 在 `ldvh-base/` 下创建 `AGENTS.md`，将 L0 事实模型规则写入；
+1. 创建项目根 `AGENTS.md`，将项目规则核心内容写入；
+2. 在 `ldvh-base/` 下创建 `AGENTS.md`，将事实模型规则写入；
 3. 在 `specs/` 下创建 `AGENTS.md`，声明 specs 文档的读取优先级；
 4. 保持 `codex` 默认的 `workspace-write` + `on-request` 审批策略；
 5. 不迁移 Skill，不修改 Agent 调度，不用 Web Tools。
@@ -529,7 +529,7 @@ LDVH 的 Human Gate 触发条件（"什么情况下需要人确认"）不变。�
 
 | Trae 优势 | 对 LDVH 的意义 |
 |---|---|
-| **Rules 机制的 4 种生效方式** | LDVH 的 L0/L1/L2 规则体系深度依赖 globs（按文件类型触发）和 description（按场景触发）。Codex 的 AGENTS.md 完全没有这些能力——这是迁移的最大硬伤 |
+| **Rules 机制的 4 种生效方式** | LDVH 的工作区规则/项目规则/场景规则体系深度依赖 globs（按文件类型触发）和 description（按场景触发）。Codex 的 AGENTS.md 完全没有这些能力——这是迁移的最大硬伤 |
 | **中文支持** | 你所有的 specs、eval 文档、Rules 都是中文写的。Codex 没有中文专项优化，指令理解准确率会下降 |
 | **零迁移成本** | LDVH 已经在 Trae 上跑通了全部机制。切到 Codex 需要重写 Rules、迁移 Skill、重构 Agent 调度、重新对接 Human Gate |
 | **永久免费** | 无调用次数限制的免费 tier，对个人项目的长期运行很重要 |
@@ -548,7 +548,7 @@ LDVH 的 Human Gate 触发条件（"什么情况下需要人确认"）不变。�
 
 **不建议现在切换。** 理由按重要性排序：
 
-1. **Rules 机制是硬伤**。Codex 的 AGENTS.md 无法替代 Trae 的 globs / description / #Rule 触发方式。LDVH 的 L2 规则（按文件类型和场景生效）在 Codex 中会退化为"永远生效"——这会让 AI 的上下文被不相关的规则污染，反而降低执行质量。这不是"适配成本"的问题，是"能力缺失"的问题。
+1. **Rules 机制是硬伤**。Codex 的 AGENTS.md 无法替代 Trae 的 globs / description / #Rule 触发方式。LDVH 的场景规则（按文件类型和场景生效）在 Codex 中会退化为"永远生效"——这会让 AI 的上下文被不相关的规则污染，反而降低执行质量。这不是"适配成本"的问题，是"能力缺失"的问题。
 
 2. **迁移成本 > 当前收益**。LDVH 在 Trae 上已经完整跑通。切到 Codex 需要大量适配工作，而目前没有遇到"非换不可"的痛点（如 Trae 上下文窗口严重阻塞实际工作）。
 

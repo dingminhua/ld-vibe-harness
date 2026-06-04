@@ -359,7 +359,7 @@ Dogfood 暴露 YAML 长文本问题 → task-0002 → Skill / Tool / Test 修复
 截至 2026-06-04，LDVH MVP 骨架已经推进到 **生产对象体系梳理完成并进入 Dogfood 验证** 阶段：
 
 1. **最小事实内核已扩展至 7 个 active fact models**：ADR / Change 已有完整规范；Intent / Task / Memo / Profile / Pitfall 这 5 类 YAML Dogfood 对象均已有精简版规范和 Contract。
-2. **PyTools 校验能力已覆盖 5 类 YAML Dogfood 对象**：`tools/check_fact_model.py` 已支持 Intent / Task / Memo / Profile / Pitfall；ADR / Change 由专用流程、commit message 契约和提交纪律承接；`tests/tools/test_check_fact_model.py` 已覆盖 22 个测试用例。
+2. **PyTools 校验能力已覆盖 5 类 YAML Dogfood 对象**：`tools/fact_validate.py` 已支持 Intent / Task / Memo / Profile / Pitfall；ADR / Change 由专用流程、commit message 契约和提交纪律承接；`tests/tools/test_fact_validate.py` 已覆盖 22 个测试用例。
 3. **Dogfood 实例已创建**：profile-0001（ld-vibe-harness 项目画像）、memo-0001（22 子文档状态缺口）、pitfall-0001/0002/0003 已实例化。
 4. **Skill 已支持新对象类型**：`ldvh-intake` 新增 Memo/Profile 创建分支；`ldvh-close` 新增子任务联动、级联检查。
 5. **Task 子任务机制已落地**：parent_task/sub_tasks 字段、深度限制两层、关闭前置条件。
@@ -478,7 +478,7 @@ Gstack 对 LDVH 的价值主要是完整的产品化工程工作流和产物连�
 本文建议短期采用过渡策略：
 
 ```text
-Change 暂以 specs/22 定义的 Git commit message / ldvh-commit / check_22_commit_format.py 为主承载；
+Change 暂以 specs/22 定义的 Git commit message / ldvh-commit / commit_validate.py 为主承载；
 Task closure 和 Evidence 中保留足够摘要；
 暂不直接新增 ldvh-base/changes/ YAML；该做法属于旧方案，本项目当前已取消，但保留为历史迁移和外部用户适配问题；
 若未来决定实例化 Change YAML，应先进入 ADR 或正式规范升级流程。
@@ -508,7 +508,7 @@ Fact Validator 已经是可用的最小工具，但还不是最终工具体系�
 后续 PyTools 应按以下顺序推进：
 
 1. 固化 Issue 输出格式、退出码、CLI 参数、只读/写入边界；
-2. 将 `check_fact_model.py` 作为 PyTools 标准样板；
+2. 将 `fact_validate.py` 作为 PyTools 标准样板；
 3. 逐步补 Reference Validator 和 State Machine Validator；
 4. 逐步从内置常量转向消费 Contract；
 5. 旧工具按触碰即整理原则迁移；

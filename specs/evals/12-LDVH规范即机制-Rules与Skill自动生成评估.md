@@ -30,14 +30,14 @@
 - `ldvh-base/profiles/`（项目配置，确定项目路径和 ldvh-base 路径）
 
 **输出**：
-- `.trae/rules/ldvh-l0-fact-model-rules.md`（L0 事实模型规则，含所有对象关键规则入口）
-- `.trae/rules/ldvh-l1-rules.md`（L1 项目规则，如项目有独立 L1）
+- `.trae/rules/ldvh-fact-model-rules.md`（事实模型规则，含所有对象关键规则入口）
+- `.trae/rules/ldvh-project-rules.md`（项目规则，如项目有独立项目规则）
 
 **生成逻辑**：
 1. 扫描所有 active 状态的 fact model 主文档和 Rules 子文档
 2. 提取每个对象的关键规则（状态变更规则、关闭条件、Human Gate 场景）
-3. 按层级（L0/L1）组装 Rules 文件
-4. L0 承载跨项目通用规则入口，L1 承载项目特定规则
+3. 按层级（工作区规则/项目规则）组装 Rules 文件
+4. 工作区场景规则承载跨项目通用规则入口，项目规则承载项目特定规则
 
 ### 2.2 ldvh-gen-skills
 
@@ -125,8 +125,8 @@
 Rules 和 Skill 的生成模板需要精心设计：
 
 1. **Rules 模板**：
-   - L0 事实模型规则：从各 NN.01-Rules.md 提取关键规则，组装为入口提醒
-   - L1 项目规则：从 Profile 和项目配置提取项目特定规则
+   - 事实模型规则：从各 NN.01-Rules.md 提取关键规则，组装为入口提醒
+   - 项目规则：从 Profile 和项目配置提取项目特定规则
    - 模板应支持"最小集 + 引用"模式：只放关键约束，详细内容引用 specs
 
 2. **Skill 模板**：
@@ -150,7 +150,7 @@ AI 生成是非确定性的，同样的 specs 两次生成可能产出略有不�
 1. **覆盖度检查**：生成的 Rules/Skill 是否覆盖了 specs 中的关键规则
 2. **格式校验**：生成的文件是否符合 Trae Rules/Skill 格式要求
 3. **引用完整性**：生成的文件中引用的 specs 路径是否有效
-4. **Fact Validator**：生成后运行 `check_fact_model.py` 校验
+4. **Fact Validator**：生成后运行 `fact_validate.py` 校验
 5. **Diff 审计**：对比生成前后的 diff，确认变更符合预期
 
 ### 4.5 跨项目适配
@@ -233,7 +233,7 @@ ldvh-gen-rules 和 ldvh-gen-skills 自身也是 Skill，它们的 SKILL.md 是�
 | NN.01-Rules.md | 生成源，ldvh-gen-rules 从中提取关键规则 |
 | NN.02-Skill.md | 生成源，ldvh-gen-skills 从中提取流程步骤 |
 | NN.06-Contract.md | 生成源，提供字段契约和状态机定义 |
-| L0/L1 Rules | 生成目标，ldvh-gen-rules 的输出 |
+| 工作区规则/项目规则 | 生成目标，ldvh-gen-rules 的输出 |
 | Trae Skills | 生成目标，ldvh-gen-skills 的输出 |
 | PyTools | 生成 Skill 的调用对象，Skill 中引用 PyTools 命令 |
 | Fact Validator | 生成验证工具，生成后运行校验 |

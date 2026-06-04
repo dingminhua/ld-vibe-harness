@@ -373,7 +373,7 @@ Codex Desktop 引入的"真实桌面操作"显著拉高了攻击面，需重点�
 |---|---|---|
 | 多角色思考（`specs/51-...`） | 多个 Agent 并行 + Skills 切换角色 | 把"角色"显式建模为可加载的 Skill 集合 |
 | Human Gate | 权限模式三档（Default / Auto Review / Full Access） | Human Gate 在 Codex 体系内有清晰颗粒度，可作类比 |
-| L0/L1/L2 规则分层 | `AGENTS.md` 项目级 + 桌面 / CLI / IDE 全局默认 | 项目级规则 + 全局默认 = 分层规则 |
+| 工作区规则/项目规则/场景规则分层 | `AGENTS.md` 项目级 + 桌面 / CLI / IDE 全局默认 | 项目级规则 + 全局默认 = 分层规则 |
 | Skills vs Agent | Skills = 自然语言 + 脚本包；Agent = 调度 + 工具组合 | Skills 与 Agent 在 Codex 中是组合关系，可借鉴 |
 | 事实模型边界 | Worktree 隔离 = 智能体副本 | 隔离 = 防污染主线；事实模型有 worktree 隐喻 |
 | 压缩保护 | Codex CLI 共享 `config.toml` | 共享配置是"压缩保护"的一种实现 |

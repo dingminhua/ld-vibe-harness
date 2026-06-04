@@ -277,7 +277,7 @@ LDVH 当前顶层结构由五类构成要素共同支撑：介质、开发环境
 候选动作：
 
 1. 统一 Contract 子文档可被 Tools 消费的结构；
-2. 将 `check_fact_model.py` 中可迁移的硬编码规则逐步转为 Contract 消费；
+2. 将 `fact_validate.py` 中可迁移的硬编码规则逐步转为 Contract 消费；
 3. 补 Reference Validator 和 State Machine Validator 的最小路线；
 4. 让 Web 优先消费 PyTools 输出，而不是重复解析所有事实源；
 5. 用测试锁定迁移前后的行为一致性。
