@@ -57,12 +57,12 @@ export const UI_LOCALES = {
     'nav.intents': '意图',
     'nav.tasks': '任务',
     'nav.adrs': 'ADR',
-    'nav.pitfalls': '陷阱',
+    'nav.pitfalls': 'BUG',
     'nav.memos': '备忘',
     'nav.profiles': '画像',
     'nav.changes': '变更',
     'nav.validate': '校验',
-    'nav.changelog': '变更日志',
+    'nav.changelog': '变更',
 
     // Dashboard
     'dashboard.title': '仪表盘',
@@ -101,7 +101,7 @@ export const UI_LOCALES = {
     'validate.byFile': '按文件分组',
 
     // Changelog
-    'changelog.title': '变更日志',
+    'changelog.title': '变更',
     'changelog.subtitle': 'Git 提交历史记录，点击查看详情',
     'changelog.loadFailed': '加载变更日志失败',
     'changelog.detailFailed': '加载提交详情失败',

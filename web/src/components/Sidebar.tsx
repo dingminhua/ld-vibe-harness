@@ -9,7 +9,7 @@ import {
   Bug,
   StickyNote,
   Globe,
-  GitCommitHorizontal,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import type { LocaleKey } from '@/i18n/locales';
@@ -23,7 +23,7 @@ const NAV_ITEMS: { to: string; labelKey: LocaleKey; icon: typeof LayoutDashboard
   { to: '/objects/memo', labelKey: 'nav.memos', icon: StickyNote },
   { to: '/objects/profile', labelKey: 'nav.profiles', icon: BookOpen },
   { to: '/validate', labelKey: 'nav.validate', icon: Shield },
-  { to: '/changelog', labelKey: 'nav.changelog', icon: GitCommitHorizontal },
+  { to: '/changelog', labelKey: 'nav.changelog', icon: ClipboardCheck },
 ];
 
 export default function Sidebar() {
