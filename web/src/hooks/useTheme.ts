@@ -1,29 +1,61 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-type Theme = 'light' | 'dark';
+type ThemeMode = 'system' | 'light' | 'dark';
+type ResolvedTheme = 'light' | 'dark';
+
+const STORAGE_KEY = 'ldvh-theme-mode';
+
+function getSystemTheme(): ResolvedTheme {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function resolveTheme(mode: ThemeMode): ResolvedTheme {
+  return mode === 'system' ? getSystemTheme() : mode;
+}
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme) {
-      return savedTheme;
-    }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const [mode, setMode] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
+    if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
+    return 'system'; // 默认跟随系统
   });
 
-  useEffect(() => {
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+  const resolved = resolveTheme(mode);
 
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+  useEffect(() => {
+    const html = document.documentElement;
+    html.classList.remove('light', 'dark');
+    html.classList.add(resolved);
+    html.setAttribute('data-theme', mode);
+    localStorage.setItem(STORAGE_KEY, mode);
+  }, [mode, resolved]);
+
+  // 监听系统主题变化
+  useEffect(() => {
+    if (mode !== 'system') return;
+
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = () => {
+      // 触发重新渲染以更新 resolved
+      setMode('system');
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [mode]);
+
+  const cycleTheme = useCallback(() => {
+    setMode(prev => {
+      if (prev === 'system') return 'light';
+      if (prev === 'light') return 'dark';
+      return 'system';
+    });
+  }, []);
 
   return {
-    theme,
-    toggleTheme,
-    isDark: theme === 'dark'
+    mode,
+    resolved,
+    isDark: resolved === 'dark',
+    setMode,
+    cycleTheme,
   };
-} 
+}

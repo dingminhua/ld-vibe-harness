@@ -10,13 +10,30 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Light theme (default) */
+  --ldvh-bg: #f8f9fb;
+  --ldvh-panel: #ffffff;
+  --ldvh-border: #e5e7eb;
+  --ldvh-text-primary: #18181b;
+  --ldvh-text-secondary: #71717a;
+  color-scheme: light;
+}
+
+:root.dark {
+  --ldvh-bg: #0a0a0f;
+  --ldvh-panel: #12121a;
+  --ldvh-border: #1e1e2e;
+  --ldvh-text-primary: #e4e4e7;
+  --ldvh-text-secondary: #71717a;
   color-scheme: dark;
 }
 
 body {
   margin: 0;
-  background-color: #0a0a0f;
-  color: #e4e4e7;
+  background-color: var(--ldvh-bg);
+  color: var(--ldvh-text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .font-mono {
@@ -30,14 +47,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #12121a;
+  background: var(--ldvh-panel);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a2a3a;
+  background: var(--ldvh-border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a4a;
+  opacity: 0.8;
 }
