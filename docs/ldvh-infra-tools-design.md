@@ -88,7 +88,7 @@ Task Intent
 **校验框架需要消费的：**
 
 - `fact_cli.py` 的 ADR 索引和查询能力 → 校验框架可调用其 ADR 引用完整性检查
-- `specs_refs_validate.py` 的引用检查 → 校验框架可调用其跨文档引用校验
+- `specs_validate.py refs` 的引用检查 → 校验框架可调用其跨文档引用校验
 - `commit_validate.py` 的格式检查 → 校验框架可调用其 Change 格式校验
 
 **当前状态：** 现有工具各自独立，输出格式不统一。校验框架需要定义统一的校验结果格式，现有工具逐步适配或替换。
