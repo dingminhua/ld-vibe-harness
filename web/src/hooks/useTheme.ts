@@ -9,8 +9,11 @@ function getSystemTheme(): ResolvedTheme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-function resolveTheme(mode: ThemeMode): ResolvedTheme {
-  return mode === 'system' ? getSystemTheme() : mode;
+function applyTheme(mode: ThemeMode) {
+  const resolved = mode === 'system' ? getSystemTheme() : mode;
+  const html = document.documentElement;
+  html.classList.remove('light', 'dark');
+  html.classList.add(resolved);
 }
 
 export function useTheme() {
@@ -20,25 +23,17 @@ export function useTheme() {
     return 'system'; // 默认跟随系统
   });
 
-  const resolved = resolveTheme(mode);
-
+  // 初始化 + 同步 DOM
   useEffect(() => {
-    const html = document.documentElement;
-    html.classList.remove('light', 'dark');
-    html.classList.add(resolved);
-    html.setAttribute('data-theme', mode);
+    applyTheme(mode);
     localStorage.setItem(STORAGE_KEY, mode);
-  }, [mode, resolved]);
+  }, [mode]);
 
   // 监听系统主题变化
   useEffect(() => {
     if (mode !== 'system') return;
-
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = () => {
-      // 触发重新渲染以更新 resolved
-      setMode('system');
-    };
+    const handler = () => applyTheme('system');
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, [mode]);
@@ -50,6 +45,8 @@ export function useTheme() {
       return 'system';
     });
   }, []);
+
+  const resolved = mode === 'system' ? getSystemTheme() : mode;
 
   return {
     mode,
