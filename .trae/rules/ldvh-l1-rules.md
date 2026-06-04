@@ -24,7 +24,7 @@
 | 阶段 | AI 应做什么 | 推荐 Skill |
 |---|---|---|
 | Intent | 识别用户意图，创建 Intent/Task | ldvh-intake |
-| Plan | 拆解步骤，评估风险 | 待建设 |
+| Plan | 拆解步骤，评估风险 | ldvh-plan |
 | Execute | 按计划实施，遵守约束 | 待建设 |
 | Verify | 独立 agent 审计 acceptance 检查列表（Task 状态: verifying）+ lint/test/build | ldvh-close §2.1 |
 | Record | Change 记录，状态更新 | ldvh-close |
@@ -42,4 +42,4 @@ AI 应在每次用户交互时判断当前 Core Loop 阶段，并推荐对应 Sk
 
 ## 压缩保护
 
-LDVH | 00-20按任务读原文 | 产品化/Gstack/Trae/CoreLoop/PyTools先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 规范/Skill/Tools/部署判断必须回原文 | 错误模式转检查项 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=PyTools聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04子文档 05HG 10事实源 11协作 12Tools 13事实 14行动 20索引 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0 | CoreLoop路由=Intent→ldvh-intake|Record→ldvh-close
+LDVH | 00-20按任务读原文 | 产品化/Gstack/Trae/CoreLoop/PyTools先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 规范/Skill/Tools/部署判断必须回原文 | 错误模式转检查项 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=PyTools聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04子文档 05HG 10事实源 11协作 12Tools 13事实 14行动 20索引 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0 | CoreLoop路由=Intent→ldvh-intake|Plan→ldvh-plan|Record→ldvh-close
