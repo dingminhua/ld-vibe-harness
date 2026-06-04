@@ -100,6 +100,7 @@ Task 标准状态如下：
 |---|---|
 | `planned` | 已拆解，待执行 |
 | `executing` | 正在执行 |
+| `verifying` | 独立 agent 审计中 |
 | `review_needed` | 执行完成，待审查 |
 | `closed` | 审查通过，已关闭 |
 
@@ -107,7 +108,9 @@ Task 标准状态如下：
 
 ```text
 planned → executing
-executing → review_needed
+executing → verifying
+verifying → review_needed
+verifying → executing（退回：审计发现 bug）
 review_needed → closed
 review_needed → executing（退回：审查不通过）
 ```
@@ -118,12 +121,16 @@ review_needed → executing（退回：审查不通过）
 
 | 流转 | 触发时机 | 触发者 |
 |---|---|---|
-| planned → executing | AI 开始执行任务时 | AI |
-| executing → review_needed | 独立 agent 验证 acceptance 全部通过后 | AI |
+| planned → executing | AI 准备执行任务时 | AI |
+| executing → verifying | AI 完成执行，启动独立 agent 审计时 | AI |
+| verifying → review_needed | 独立 agent 审计 acceptance 全部通过后 | AI |
+| verifying → executing | 审计发现 bug，需要修复时 | AI |
 | review_needed → closed | Human Gate 确认后 | AI + Human |
-| review_needed → executing | 验证未通过，需要修复时 | AI |
+| review_needed → executing | 审查不通过，需要修复时 | AI |
 
 AI 开始执行 `planned` 状态的 Task 前，必须先将状态变更为 `executing` 并更新 `updated` 日期。不得在 `planned` 状态下直接执行任务。
+
+AI 完成执行后启动独立 agent 审计前，必须先将状态变更为 `verifying`。审计通过后变更为 `review_needed`，审计发现 bug 则退回 `executing`。
 
 `closed` 是稳定终态。终态 Task 不得重开；如需重新执行，必须新建 Task 承接，并在新 Task 中引用原 Task。
 
@@ -208,7 +215,7 @@ AI 执行 Task 时发现 bug、缺口或规范遗漏，应按以下流程自动�
 
 以下场景必须触发 Human Gate：
 
-1. 状态从 `executing` → `review_needed` 时确认；
+1. 状态从 `verifying` → `review_needed` 时确认；
 2. 状态从 `review_needed` → `closed` 时确认；
 3. 高风险操作前确认（修改 specs、Rules、ADR、ldvh-base/ 等事实源）；
 4. 创建子任务时确认（AI 自动创建子任务时应通知用户）。

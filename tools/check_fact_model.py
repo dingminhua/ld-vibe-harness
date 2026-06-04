@@ -29,7 +29,7 @@ ID_PATTERNS = {
 }
 VALID_STATUSES = {
     "intent": {"draft", "active", "completed", "closed"},
-    "task": {"planned", "executing", "review_needed", "closed"},
+    "task": {"planned", "executing", "verifying", "review_needed", "closed"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "profile": {"draft", "active", "suspended", "archived"},
     "memo": {"draft", "active", "resolved", "archived"},
