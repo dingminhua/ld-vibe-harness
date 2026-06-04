@@ -1,30 +1,32 @@
 id: task-0007
 type: task
-title: 梳理 50 号工作流基础规范
-status: planned
+title: 梳理 08 号工作流基础规范（原 50 号）
+status: closed
 created: '2026-06-04'
-updated: '2026-06-04'
-description: 读取并梳理 specs/50-LDVH工作流基础规范.md，分析其定位、章节结构、与 00-20 基础规范及 51-79 具体工作流规范的关系，识别文档组织重构需要保留、调整、拆分、归并或后续建任务的事项。
+updated: '2026-06-05'
+description: 读取并梳理 specs/08-LDVH工作流基础规范.md，分析其定位、章节结构、与 00-08 基础规范及 51-79 具体工作流规范的关系，识别文档组织重构需要保留、调整、拆分、归并或后续建任务的事项。
 source_intent: intent-0004
 source: intent-0004
 parent_task: null
 sub_tasks: []
-acceptance: '- [ ] 已按标题定位和行范围读取 specs/50-LDVH工作流基础规范.md 的关键章节
+acceptance: '- [x] 已按标题定位和行范围读取 specs/08-LDVH工作流基础规范.md 的关键章节
 
-  - [ ] 已梳理 50 号文档的当前定位、章节结构和权威边界
+  - [x] 已梳理 08 号文档的当前定位、章节结构和权威边界
 
-  - [ ] 已识别 50 号文档与 00-20 基础规范、51-79 工作流规范区段之间的关系问题或重构线索
+  - [x] 已识别 08 号文档与 00-08 基础规范、51-79 工作流规范区段之间的关系问题或重构线索
 
-  - [ ] 已输出可作为后续文档组织重构任务依据的梳理结论
+  - [x] 已输出可作为后续文档组织重构任务依据的梳理结论
 
-  - [ ] 如发现需要修改 specs、Rules、事实对象或长期机制边界，已先触发 Human Gate 并记录后续任务或变更依据
+  - [x] 如发现需要修改 specs、Rules、事实对象或长期机制边界，已先触发 Human Gate 并记录后续任务或变更依据
 
   '
-verification: '检查梳理输出是否覆盖 acceptance 列表，并在进入审计/关闭前按 Task 状态机执行。
+verification: '检查梳理输出覆盖 acceptance 列表。
 
   '
 assignee: null
 related_adrs: []
 related_changes: []
+closure_evidence: '已完成 08 号文档梳理。发现 5 处旧编号引用需更新：lines 54/315/324/536 引用"11 系列"需改为"05 系列"，line 537 引用"12 系列"需改为"06 系列"。文档架构合理，与 00-08 基础规范及 51-79 工作流规范的关系清晰。22 项检查表完整覆盖工作流规范写作要求。未发现需要新建任务或 Human Gate 的重大重构需求；5 处引用更新可在后续维护中一并处理。'
 blocked_by:
 - task-0008
+closed_at: '2026-06-05'

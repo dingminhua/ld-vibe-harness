@@ -5,7 +5,7 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入正式 specs、ADR 或 Task 后才成为稳定执行依据
 > 上位依据：`specs/11-LDVH-Trae-Solo-环境规范.md` §7、`specs/12-LDVH工具基础规范.md`、`specs/12.02-Web信息同步规范.md`
-> 相关参考：`specs/evals/17-LDVH-Gstack-Trae融合产品共识.md`、`specs/evals/19-LDVH-Web网站重做推进基础文档.md`
+> 相关参考：`specs/evals/11-LDVH-Gstack-Trae融合产品方向共识.md`、`specs/evals/19-LDVH-Web网站重做推进基础文档.md`
 
 ---
 

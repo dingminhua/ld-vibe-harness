@@ -3,8 +3,8 @@
 > 创建日期：2026-06-04
 > 定位：定义 Profile 项目画像事实模型（精简版），包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约和事实源回写要求
 > 适用范围：所有接入 LDVH 且需要管理项目身份、路径映射和接入配置的项目
-> 上位依据：`specs/13-LDVH事实模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`、`specs/20-事实模型集合索引.md`
+> 上位依据：`specs/07-LDVH事实模型基础规范.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`、`specs/20-事实模型集合索引.md`
 
 ---
 
@@ -22,7 +22,7 @@
 
 ## 2. 与 13 的关系
 
-`specs/13-LDVH事实模型基础规范.md` 定义事实模型通用规则、文件命名、附件型实践子文档命名和事实模型标准组成。本文依据 13 §4.2 定义 Profile 对象模型。
+`specs/07-LDVH事实模型基础规范.md` 定义事实模型通用规则、文件命名、附件型实践子文档命名和事实模型标准组成。本文依据 07 §4.2 定义 Profile 对象模型。
 
 本文不重新定义 13 中的通用规则。发生冲突时，以 13 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
 
@@ -164,7 +164,7 @@ Profile 的创建、状态变更和归档都应记录 Change。Change 以 Git co
 2. 状态从 `active` → `suspended` 时确认；
 3. 状态从 `active` → `archived` 时确认。
 
-Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/11-LDVH-Trae-Solo-环境规范.md` §9）。
+Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/05-LDVH-Trae-Solo-环境规范.md` §9）。
 
 ---
 
@@ -172,7 +172,7 @@ Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/11-LDVH-Tra
 
 ### 8.1 基础字段
 
-Profile 基础字段遵循 `specs/13-LDVH事实模型基础规范.md` §7.3 的字段契约原则。
+Profile 基础字段遵循 `specs/07-LDVH事实模型基础规范.md` §7.3 的字段契约原则。
 
 | 字段名 | 类型 | 必填 | 说明 |
 |---|---|---|---|
@@ -214,9 +214,9 @@ Profile 基础字段遵循 `specs/13-LDVH事实模型基础规范.md` §7.3 的�
 
 ## 10. 待补齐事项
 
-以下章节依据 `specs/13-LDVH事实模型基础规范.md` §4.2 应定义但本文未展开，待后续阶段补齐：
+以下章节依据 `specs/07-LDVH事实模型基础规范.md` §4.2 应定义但本文未展开，待后续阶段补齐：
 
-| 13 §4.2 编号 | 章节名称 | 计划补齐阶段 |
+| 07 §4.2 编号 | 章节名称 | 计划补齐阶段 |
 |---|---|---|
 | 8 | 证据留存要求 | Phase 3 |
 | 9 | AI 协作适配 | Phase 4 |

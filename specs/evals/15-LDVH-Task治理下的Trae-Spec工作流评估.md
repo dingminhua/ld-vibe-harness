@@ -3,7 +3,7 @@
 > 创建日期：2026-06-05
 > 定位：评估 LDVH 如何在 Task 治理下吸收 Trae Spec 工作流，形成从需求记录、Spec 生成、事实源吸收、序列执行到独立审计的闭环
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/14-LDVH行动模型基础规范.md`、`specs/20-事实模型集合索引.md`、`specs/24-Intent-意图.md`、`specs/27-Task-任务.md`
-> 相关评估：`specs/evals/17-LDVH-Gstack-Trae融合产品方向共识.md`、`specs/refs/trae/06-Spec与Plan工作流.md`
+> 相关评估：`specs/evals/11-LDVH-Gstack-Trae融合产品方向共识.md`、`specs/refs/trae/06-Spec与Plan工作流.md`
 > 调研边界：评估文档，不直接构成强制规则；稳定规则需进入正式 specs、Rules、Skill 或 ADR 后生效
 
 ---
@@ -392,7 +392,7 @@ Output Contract:
 
 ```text
 Output Contract:
-- Primary artifact: specs/evals/24-LDVH-Task治理下的Trae-Spec工作流评估.md
+- Primary artifact: specs/evals/15-LDVH-Task治理下的Trae-Spec工作流评估.md
 - Required changes:
   - 新文档存在
   - 旧 20 号文档不存在
@@ -417,7 +417,7 @@ Output Contract:
 ```text
 | artifact | expected state | verification |
 |---|---|---|
-| specs/evals/24-...md | exists | ls specs/evals |
+| specs/evals/15-...md | exists | ls specs/evals |
 | specs/evals/20-...md | absent | ls specs/evals |
 | specs/27-Task-任务.md | unchanged | git diff -- specs/27-Task-任务.md |
 ```

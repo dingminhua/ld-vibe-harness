@@ -340,7 +340,7 @@ Web 写入能力应在 Record / Change、状态机和 Human Gate 机制更稳定
 2. 根据后续讨论形成第一批可执行调整项；
 3. 判断哪些调整项需要 ADR；
 4. 判断是否需要创建 Intent / Task 承接本轮结构调整；
-5. 判断是否将部分稳定结论回流到 `specs/evals/17-LDVH-Gstack-Trae融合产品方向共识.md`；
+5. 判断是否将部分稳定结论回流到 `specs/evals/11-LDVH-Gstack-Trae融合产品方向共识.md`；
 6. 判断是否需要创建 Plan / Verify 相关行动模型或 Skill 草案；
 7. 判断是否需要为 Tools Contract 消费创建独立 Task；
 8. 判断 Web 只读态势入口是否作为下一轮 Dogfood 目标。

@@ -385,7 +385,7 @@ Dogfood 暴露 YAML 长文本问题 → task-0002 → Skill / Tool / Test 修复
 | Dependency | 依赖 | 降级为关系字段 | Task 的 blocked_by、blocks、relation_type 等 |
 | Artifact | 产物 | 降级为路径或输出字段 | Task 输出字段 |
 | Checklist | 检查清单 | 降级为模板、字段或 Skill section | Task 验收项，执行结果进入 Task closure_evidence |
-| Roadmap | 路线图 | 暂作 Markdown 文档 | evals/17、docs 或未来路线图文档 |
+| Roadmap | 路线图 | 暂作 Markdown 文档 | evals/11、docs 或未来路线图文档 |
 
 ### 7.2 Gstack 借鉴边界
 

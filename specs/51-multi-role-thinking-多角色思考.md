@@ -3,8 +3,8 @@
 > 创建日期：2026-05-30
 > 定位：定义多角色思考行动模型，包括行动定位、准入条件、事实源边界、Context、Scenario、执行流程、Gate、Rules / Agent 调度、事实源回写、证据留存和检查要求
 > 适用范围：所有接入 LDVH 且需要对复杂变更、决策、风险或跨模块影响进行多视角分析的项目
-> 上位依据：`specs/50-LDVH工作流基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-Specs文档规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-Trae-Solo-环境规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH事实模型基础规范.md`
+> 上位依据：`specs/08-LDVH工作流基础规范.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-LDVH-Trae-Solo-环境规范.md`、`specs/06-PyTools与WebTools规范.md`、`specs/07-LDVH事实模型基础规范.md`
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## 2. 与直接上位基础规范的关系
 
-`specs/50-LDVH工作流基础规范.md` 定义行动模型通用规则、文件命名、附件型实践子文档命名和行动模型标准组成。本文依据 50 §4.2 定义多角色思考行动模型。
+`specs/08-LDVH工作流基础规范.md` 定义行动模型通用规则、文件命名、附件型实践子文档命名和行动模型标准组成。本文依据 08 §4.2 定义多角色思考行动模型。
 
 本文不重新定义 50 中的通用规则。发生冲突时，以 50 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
 
@@ -81,9 +81,9 @@
 | 内容 | 权威位置 |
 |---|---|
 | 多角色思考行动模型 | `specs/51-multi-role-thinking-多角色思考.md` |
-| 工作流基础规范与区段索引 | `specs/50-LDVH工作流基础规范.md` |
-| Skill 机制边界 | `specs/11-LDVH-Trae-Solo-环境规范.md` §7 |
-| Agent 机制边界 | `specs/11-LDVH-Trae-Solo-环境规范.md` §8 |
+| 工作流基础规范与区段索引 | `specs/08-LDVH工作流基础规范.md` |
+| Skill 机制边界 | `specs/05-LDVH-Trae-Solo-环境规范.md` §7 |
+| Agent 机制边界 | `specs/05-LDVH-Trae-Solo-环境规范.md` §8 |
 | 多角色分析过程输出 | 当前对话或 Agent 输出，默认不是最终事实源 |
 | 稳定结论、任务、决策、风险、证据或变更 | 按 03 和 20-49 对象规范写入 `ldvh-base/`、`docs/` 或 `specs/` |
 | 附件型实践子文档 | `specs/51.01-Rules.md` 至 `specs/51.06-Contract.md`，作为附件型实践承接文档，按需展开机制实践，不重新定义 51 主模型 |
@@ -102,10 +102,10 @@
 1. 用户提出的分析主题、目标、约束和期望输出；
 2. 当前项目 L1 规则和相关工作区规则；
 3. 与本次主题直接相关的 specs、ldvh-base、docs、tools、web 或代码文件；
-4. `specs/50-LDVH工作流基础规范.md`；
-5. `specs/11-LDVH-Trae-Solo-环境规范.md`；
-6. 需要判断事实源回写时读取 `specs/10-事实源边界与承载规范.md` 和对应事实模型规范；
-7. 需要判断工具协作时读取 `specs/12-LDVH工具基础规范.md`。
+4. `specs/08-LDVH工作流基础规范.md`；
+5. `specs/05-LDVH-Trae-Solo-环境规范.md`；
+6. 需要判断事实源回写时读取 `specs/04-事实源边界与承载规范.md` 和对应事实模型规范；
+7. 需要判断工具协作时读取 `specs/06-PyTools与WebTools规范.md`。
 
 ### 6.2 可选 Context
 
@@ -332,7 +332,7 @@ Rules 不得复制本文的完整 Scenario、角色定义、执行流程、输�
 8. 子 Agent 发现 Human Gate 场景时必须标注，不得自行执行高影响写入；
 9. 不为每个角色创建自定义 Agent；角色定义来自本文，作为运行时参数注入；
 10. 多角色子 Agent 模式不依赖 `.trae/agents/` 自定义 Agent 文件；角色参数注入规则见 `specs/51.03-Agent.md`；
-11. 需要创建、导入、启用、修改或删除 Agent 时，必须按 11 §8 触发 Human Gate。
+11. 需要创建、导入、启用、修改或删除 Agent 时，必须按 05 §8 触发 Human Gate。
 
 可调用 Agent 容器是指当前主控能够通过工具接口实际启动的 Agent 类型。本文不维护可调用 Agent 容器清单，不在稳定规范中核验特定 Agent 可用状态，也不把某个环境中的可用 Agent 列表写成稳定规则。
 

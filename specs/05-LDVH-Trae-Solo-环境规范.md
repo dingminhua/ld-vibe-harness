@@ -4,7 +4,7 @@
 > 定位：LDVH 框架下使用 Trae Solo 环境机制的特殊约定
 > 适用范围：LD Vibe Harness 项目及所有接入 LD Vibe Harness 的管辖项目
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`
+> 相关规范：`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`
 
 ---
 
@@ -222,7 +222,7 @@ Rules 是 specs 正式规范的运行时投影，可以承载入口摘要、压�
 
 ### 6.5 Rules 与机制落地关系
 
-普通 specs 文档与 Rules 实体的关联关系，应由对应 specs 文档依据 `specs/03-Specs文档规范.md` §6 的机制落地关系维护。
+普通 specs 文档与 Rules 实体的关联关系，应由对应 specs 文档依据 `specs/03-文档规范.md` §6 的机制落地关系维护。
 
 Rules 文件头部应声明规范来源和维护边界。规范来源用于说明该 Rules 文件摘要、触发或约束的权威 specs；维护边界用于说明该 Rules 文件只作为运行时入口、压缩摘要或场景约束，不替代 specs 正式规范。
 
@@ -478,7 +478,7 @@ Rules、Skill、Agent、AskUserQuestion 和其他 Trae 工具运行过程中产�
 ### 11.1 通用回写规则
 
 1. Skill 输出、Agent 分析、工具输出和临时计划默认都是过程信息；
-2. 过程信息只有满足 `specs/10-事实源边界与承载规范.md` 的回写要求，并写入对应 Git 文件事实源后，才成为稳定事实；
+2. 过程信息只有满足 `specs/04-事实源边界与承载规范.md` 的回写要求，并写入对应 Git 文件事实源后，才成为稳定事实；
 3. 规则类事实应写入 specs/ 或 `.trae/rules/` 对应规则文件；
 4. 结构化事实模型事实应写入 `ldvh-base/` 对应对象目录；
 5. 管辖项目资料、报告或审计结果应写入 docs/；

@@ -38,7 +38,7 @@ AI 应在每次用户交互时判断当前 Core Loop 阶段，并推荐对应 Sk
 
 ## L2 引导
 
-编辑 specs 进 `.trae/rules/ldvh-l2-specs-rules.md`；编辑 `ldvh-base/` YAML 进工作区 L0 事实模型规则；新增、修改或审计 Rules 时读 11 §6，并从 `specs/*.md` 反向发现需求。
+编辑 specs 进 `.trae/rules/ldvh-l2-specs-rules.md`；编辑 `ldvh-base/` YAML 进工作区 L0 事实模型规则；新增、修改或审计 Rules 时读 05 §6，并从 `specs/*.md` 反向发现需求。
 
 ## 压缩保护
 
