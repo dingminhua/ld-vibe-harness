@@ -84,6 +84,7 @@ ldvh-base/tasks/task-{NNNN}-short-title.yaml
 | 内容 | 权威位置 |
 |---|---|
 | Task 对象模型 | `specs/27-Task-任务.md` |
+| Task Rules 入口实践 | `specs/27.01-Rules.md` |
 | Task 对象实例 | `ldvh-base/tasks/` |
 | Task 契约子文档 | `specs/27.06-Contract.md` |
 | Task 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
@@ -119,6 +120,8 @@ review_needed → executing（退回：审查不通过）
 
 ### 5.2.1 状态触发规则
 
+状态触发规则、关闭条件和 Human Gate 场景由 `specs/27.01-Rules.md` 承接。本节只定义状态机结构和合法流转方向。
+
 | 流转 | 触发时机 | 触发者 |
 |---|---|---|
 | planned → executing | AI 准备执行任务时 | AI |
@@ -128,19 +131,13 @@ review_needed → executing（退回：审查不通过）
 | review_needed → closed | 关闭条件全部满足时 | AI |
 | review_needed → executing | 审查不通过，需要修复时 | AI |
 
-AI 开始执行 `planned` 状态的 Task 前，必须先将状态变更为 `executing` 并更新 `updated` 日期。不得在 `planned` 状态下直接执行任务。
-
-AI 完成执行后启动独立 agent 审计前，必须先将状态变更为 `verifying`。审计通过后变更为 `review_needed`，审计发现 bug 则退回 `executing`。
-
 `closed` 是稳定终态。终态 Task 不得重开；如需重新执行，必须新建 Task 承接，并在新 Task 中引用原 Task。
-
-`review_needed` 状态的 Task 退回到 `executing` 时，应记录退回原因，并更新 `updated` 字段。
 
 ### 5.3 关闭条件
 
-Task 从 `review_needed` → `closed` 必须满足：
+关闭条件由 `specs/27.01-Rules.md` §5.2 承接。本节只列出条件概要：
 
-1. `acceptance` 字段中所有检查项已标记为 `- [x]`（未勾选的 `- [ ]` 项存在时，必须启动独立 agent 重新审计，不得直接关闭）；
+1. `acceptance` 字段中所有检查项已标记为 `- [x]`；
 2. 所有子任务（`sub_tasks`）已关闭（`status: closed`）；
 3. `closure_evidence` 字段已填写。
 
@@ -214,7 +211,7 @@ AI 执行 Task 时发现 bug、缺口或规范遗漏，应按以下流程自动�
 
 ## 7. Human Gate
 
-以下场景必须触发 Human Gate：
+Human Gate 场景由 `specs/27.01-Rules.md` §5.3 承接。本节只列出概要：
 
 1. 状态从 `verifying` → `review_needed` 时确认；
 2. 高风险操作前确认（修改 specs、Rules、ADR、ldvh-base/ 等事实源）；
