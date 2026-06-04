@@ -1,7 +1,8 @@
-"""Tests for tools/fact_model_cli.py: create / transition / delete commands."""
+"""Tests for tools/fact_model_cli.py: create / transition / delete / list / show commands."""
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -344,3 +345,99 @@ def test_delete_nonexistent_file(tmp_path):
     fake_path = tmp_path / "ldvh-base" / "intents" / "intent-9999-nope.yaml"
     result = run_cli("delete", str(fake_path))
     assert result.returncode == 1
+
+
+# ── list 命令 ──────────────────────────────────────────────────────────
+
+
+def test_list_text_output(tmp_path):
+    # Create two intents
+    run_cli("create", "intent", "--title", "First Intent", base_dir=str(tmp_path))
+    run_cli("create", "intent", "--title", "Second Intent", base_dir=str(tmp_path))
+
+    result = run_cli("list", "intent", base_dir=str(tmp_path))
+    assert result.returncode == 0
+    lines = result.stdout.strip().splitlines()
+    assert len(lines) == 2
+    assert "intent-0001" in lines[0]
+    assert "intent-0002" in lines[1]
+
+
+def test_list_json_output(tmp_path):
+    run_cli("create", "task", "--title", "List JSON Task", base_dir=str(tmp_path))
+
+    result = run_cli("list", "task", "--format", "json", base_dir=str(tmp_path))
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+    assert data["action"] == "list"
+    assert data["target"] == "task"
+    assert data["summary"]["count"] == 1
+    assert len(data["data"]["items"]) == 1
+    item = data["data"]["items"][0]
+    assert item["id"] == "task-0001"
+    assert item["status"] == "planned"
+    assert item["title"] == "List JSON Task"
+
+
+def test_list_status_filter(tmp_path):
+    run_cli("create", "intent", "--title", "Draft One", base_dir=str(tmp_path))
+    # Create and transition second to active
+    result = run_cli("create", "intent", "--title", "Active One", base_dir=str(tmp_path))
+    intent_path = Path(result.stdout.strip().splitlines()[0])
+    run_cli("transition", str(intent_path), "--to", "active")
+
+    result = run_cli("list", "intent", "--status", "draft", base_dir=str(tmp_path))
+    assert result.returncode == 0
+    lines = result.stdout.strip().splitlines()
+    assert len(lines) == 1
+    assert "intent-0001" in lines[0]
+    assert "draft" in lines[0]
+
+
+def test_list_empty_directory(tmp_path):
+    result = run_cli("list", "memo", base_dir=str(tmp_path))
+    assert result.returncode == 0
+    assert "未找到 memo 对象" in result.stdout
+
+
+# ── show 命令 ──────────────────────────────────────────────────────────
+
+
+def test_show_by_file_path(tmp_path):
+    result = run_cli("create", "memo", "--title", "Show Test", base_dir=str(tmp_path))
+    memo_path = Path(result.stdout.strip().splitlines()[0])
+
+    result = run_cli("show", str(memo_path))
+    assert result.returncode == 0
+    data = yaml.safe_load(result.stdout)
+    assert data["id"] == "memo-0001"
+    assert data["title"] == "Show Test"
+
+
+def test_show_by_object_id(tmp_path):
+    run_cli("create", "intent", "--title", "ID Lookup", base_dir=str(tmp_path))
+
+    result = run_cli("show", "intent-0001", base_dir=str(tmp_path))
+    assert result.returncode == 0
+    data = yaml.safe_load(result.stdout)
+    assert data["id"] == "intent-0001"
+
+
+def test_show_json_output(tmp_path):
+    result = run_cli("create", "task", "--title", "Show JSON", base_dir=str(tmp_path))
+    task_path = Path(result.stdout.strip().splitlines()[0])
+
+    result = run_cli("show", str(task_path), "--format", "json")
+    assert result.returncode == 0
+    data = json.loads(result.stdout)
+    assert data["ok"] is True
+    assert data["action"] == "show"
+    assert data["summary"]["id"] == "task-0001"
+    assert data["data"]["title"] == "Show JSON"
+
+
+def test_show_nonexistent_id(tmp_path):
+    result = run_cli("show", "task-9999", base_dir=str(tmp_path))
+    assert result.returncode == 1
+    assert "找不到对象" in result.stderr

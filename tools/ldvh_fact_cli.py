@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""LDVH 事实模型 CLI 工具：create / transition / delete。
+"""LDVH 事实模型 CLI 工具：create / transition / delete / list / show。
 
 对 LDVH 生产对象（intent, task, adr, pitfall, memo, profile, change）
-执行创建、状态流转和删除操作。当前硬编码元数据，后续迁移到读取 Contract。
+执行创建、状态流转、删除、列表查询和详情查看操作。当前硬编码元数据，后续迁移到读取 Contract。
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -187,6 +189,17 @@ def save_yaml(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+
+def _json_safe(obj: Any) -> Any:
+    """递归转换不可 JSON 序列化的对象为可序列化类型。"""
+    if isinstance(obj, date):
+        return obj.isoformat()
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_json_safe(v) for v in obj]
+    return obj
 
 
 # ── create 命令 ─────────────────────────────────────────────────────────
@@ -389,12 +402,135 @@ def cmd_delete(args: argparse.Namespace) -> int:
     return 0
 
 
+# ── list 命令 ──────────────────────────────────────────────────────────
+
+def cmd_list(args: argparse.Namespace) -> int:
+    """列出指定类型的事实对象摘要。"""
+    object_type = args.object_type
+    status_filter = args.status
+    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
+    fmt = args.format
+
+    if object_type not in OBJECT_TYPES:
+        error(f"不支持的对象类型: {object_type}，有效类型: {', '.join(sorted(OBJECT_TYPES))}")
+        return 1
+
+    directory = base_dir / DIRECTORY_MAP[object_type]
+    items: list[dict[str, Any]] = []
+    issues: list[dict[str, str | None]] = []
+
+    if not directory.exists():
+        # 目录不存在不算错误，返回空列表
+        pass
+    else:
+        for yaml_path in sorted(directory.glob("*.yaml")):
+            data = load_yaml(yaml_path)
+            if data is None:
+                issues.append({
+                    "level": "warning",
+                    "code": "YAML_LOAD_FAILED",
+                    "message": f"无法加载: {yaml_path}",
+                    "path": str(yaml_path),
+                    "field": None,
+                    "suggestion": None,
+                })
+                continue
+            obj_status = data.get("status", "")
+            if status_filter and obj_status != status_filter:
+                continue
+            items.append({
+                "id": data.get("id", ""),
+                "type": data.get("type", object_type),
+                "status": obj_status,
+                "title": data.get("title", ""),
+                "path": str(yaml_path),
+                "updated": data.get("updated", ""),
+            })
+
+    if fmt == "json":
+        result: dict[str, Any] = {
+            "ok": True,
+            "command": "ldvh_fact_cli",
+            "action": "list",
+            "target": object_type,
+            "summary": {
+                "count": len(items),
+                "errors": 0,
+                "warnings": len(issues),
+            },
+            "issues": issues,
+            "data": {"items": items},
+        }
+        print(json.dumps(_json_safe(result), ensure_ascii=False, indent=2))
+    else:
+        for item in items:
+            print(f"{item['id']}\t{item['status']}\t{item['title']}")
+        if not items:
+            print(f"未找到 {object_type} 对象")
+
+    return 0
+
+
+# ── show 命令 ──────────────────────────────────────────────────────────
+
+def cmd_show(args: argparse.Namespace) -> int:
+    """展示单个事实对象详情。"""
+    target = args.target
+    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
+    fmt = args.format
+
+    # 判断 target 是文件路径还是对象 ID
+    target_path = Path(target)
+    if target_path.is_file():
+        yaml_file = target_path
+    else:
+        # 按 ID 查找：解析类型和编号，在对应目录搜索
+        matched = False
+        for obj_type, pattern in ID_PATTERNS.items():
+            if pattern.match(target):
+                directory = base_dir / DIRECTORY_MAP[obj_type]
+                if directory.exists():
+                    for yaml_path in sorted(directory.glob(f"{target}-*.yaml")):
+                        yaml_file = yaml_path
+                        matched = True
+                        break
+                break
+        if not matched:
+            error(f"找不到对象: {target}")
+            return 1
+
+    data = load_yaml(yaml_file)
+    if data is None:
+        return 1
+
+    if fmt == "json":
+        result = {
+            "ok": True,
+            "command": "ldvh_fact_cli",
+            "action": "show",
+            "target": str(yaml_file),
+            "summary": {
+                "id": data.get("id", ""),
+                "type": data.get("type", ""),
+                "status": data.get("status", ""),
+            },
+            "issues": [],
+            "data": data,
+        }
+        print(json.dumps(_json_safe(result), ensure_ascii=False, indent=2))
+    else:
+        # 文本模式直接输出 YAML
+        print(yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False).rstrip())
+
+    return 0
+
+
 # ── CLI 入口 ────────────────────────────────────────────────────────────
 
 def build_parser() -> argparse.ArgumentParser:
     """构建 argparse 解析器。"""
     parser = argparse.ArgumentParser(
-        description="LDVH 事实模型 CLI：创建、状态流转、删除生产对象"
+        description="LDVH 事实模型 CLI：创建、状态流转、删除、列表查询、详情查看"
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -415,6 +551,19 @@ def build_parser() -> argparse.ArgumentParser:
     delete_parser = subparsers.add_parser("delete", help="删除事实对象")
     delete_parser.add_argument("yaml_file", help="YAML 文件路径")
 
+    # list 子命令
+    list_parser = subparsers.add_parser("list", help="列出事实对象摘要")
+    list_parser.add_argument("object_type", choices=sorted(OBJECT_TYPES), help="对象类型")
+    list_parser.add_argument("--status", default=None, help="按状态过滤")
+    list_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+    list_parser.add_argument("--format", choices={"text", "json"}, default="text", help="输出格式，默认 text")
+
+    # show 子命令
+    show_parser = subparsers.add_parser("show", help="查看事实对象详情")
+    show_parser.add_argument("target", help="YAML 文件路径或对象 ID（如 task-0001）")
+    show_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+    show_parser.add_argument("--format", choices={"text", "json"}, default="text", help="输出格式，默认 text")
+
     return parser
 
 
@@ -429,6 +578,10 @@ def main() -> int:
         return cmd_transition(args)
     elif args.command == "delete":
         return cmd_delete(args)
+    elif args.command == "list":
+        return cmd_list(args)
+    elif args.command == "show":
+        return cmd_show(args)
     else:
         parser.print_help()
         return 1
