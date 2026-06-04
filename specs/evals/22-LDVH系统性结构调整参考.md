@@ -5,7 +5,7 @@
 > 调研边界：基于当前 LDVH 规范体系、事实模型、行动模型和产品化方向进行结构诊断，不直接构成强制规则
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-LDVH目录说明.md`、`specs/03-Specs文档规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/14-LDVH工作流基础规范.md`、`specs/20-事实模型集合索引.md`、`specs/50-行动模型集合索引.md`
+> 相关规范：`specs/01-LDVH目录说明.md`、`specs/03-Specs文档规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/50-LDVH工作流基础规范.md`、`specs/20-事实模型集合索引.md`
 
 ---
 

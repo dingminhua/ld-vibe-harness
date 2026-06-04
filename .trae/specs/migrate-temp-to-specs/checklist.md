@@ -7,10 +7,9 @@
 - [ ] specs/ 目录包含 12.01-Tools辅助规范.md
 - [ ] specs/ 目录包含 12.02-Web展示规范.md
 - [ ] specs/ 目录包含 13-LDVH生产对象基础规范.md
-- [ ] specs/ 目录包含 14-LDVH工作流基础规范.md
+- [ ] specs/ 目录包含 50-LDVH工作流基础规范.md（含原索引内容）
 - [ ] specs/ 目录包含 20-生产对象集合索引.md
 - [ ] specs/ 目录包含 21-ADR-决策记录.md
-- [ ] specs/ 目录包含 50-行动模型集合索引.md
 - [ ] specs/ 目录包含 51-multi-role-thinking-多角色思考.md
 - [ ] specs/ 目录包含 51.01-Rules.md
 - [ ] specs/ 目录包含 51.02-Skill.md

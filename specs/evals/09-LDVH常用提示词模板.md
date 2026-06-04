@@ -6,7 +6,7 @@
 > 编号归属：`specs/evals/` 项目评估与内部辅助文档，编号仅用于排序和引用便利，不属于 specs 正式规范编号体系
 > 使用边界：本文提供可复制使用的提示词模板，不直接构成 LD Vibe Harness 强制规则；实际执行仍以 `specs/00-79`、项目 Rules 和 `ldvh-base/` 事实实例为准
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-LDVH目录说明.md`、`specs/02-LDVH术语规范.md`、`specs/03-Specs文档规范.md`、`specs/10-事实源边界与承载规范.md`
-> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/11.01-Rules机制规范.md`、`specs/14-LDVH工作流基础规范.md`、`specs/51-multi-role-thinking-多角色思考.md`、`specs/51.06-Contract.md`
+> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/11.01-Rules机制规范.md`、`specs/50-LDVH工作流基础规范.md`、`specs/51-multi-role-thinking-多角色思考.md`、`specs/51.06-Contract.md`
 
 ---
 
@@ -207,7 +207,7 @@
 7. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/10-事实源边界与承载规范.md`
 8. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/11-LDVH-AI协作规范.md`
 9. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/13-LDVH事实模型基础规范.md`
-10. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/14-LDVH工作流基础规范.md`
+10. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/50-LDVH工作流基础规范.md`
 11. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/51-multi-role-thinking-多角色思考.md`
 12. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/51.06-Contract.md`
 

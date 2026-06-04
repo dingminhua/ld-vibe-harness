@@ -34,10 +34,10 @@
 | `05.01-Tools辅助规范.md` | `12.01-Tools辅助规范.md` |
 | `05.02-Web展示规范.md` | `12.02-Web展示规范.md` |
 | `06-LDVH生产对象基础规范.md` | `13-LDVH生产对象基础规范.md` |
-| `07-LDVH行动模型基础规范.md` | `14-LDVH工作流基础规范.md` |
+| `07-LDVH行动模型基础规范.md` | `50-LDVH工作流基础规范.md` |
 | `10-生产对象集合索引.md` | `20-生产对象集合索引.md` |
 | `11-ADR-决策记录.md` | `21-ADR-决策记录.md` |
-| `40-行动模型集合索引.md` | `50-行动模型集合索引.md` |
+| `40-行动模型集合索引.md` | `50-LDVH工作流基础规范.md`（已合并） |
 | `41-multi-role-thinking-多角色思考.md` | `51-multi-role-thinking-多角色思考.md` |
 | `41.01-Rules.md` | `51.01-Rules.md` |
 | `41.02-Skill.md` | `51.02-Skill.md` |
@@ -70,10 +70,10 @@
 | `specs/05.01-Tools辅助规范.md` | `specs/12.01-Tools辅助规范.md` |
 | `specs/05.02-Web展示规范.md` | `specs/12.02-Web展示规范.md` |
 | `specs/06-LDVH生产对象基础规范.md` | `specs/13-LDVH生产对象基础规范.md` |
-| `specs/07-LDVH行动模型基础规范.md` | `specs/14-LDVH工作流基础规范.md` |
+| `specs/07-LDVH行动模型基础规范.md` | `specs/50-LDVH工作流基础规范.md` |
 | `specs/10-生产对象集合索引.md` | `specs/20-生产对象集合索引.md` |
 | `specs/11-ADR-决策记录.md` | `specs/21-ADR-决策记录.md` |
-| `specs/40-行动模型集合索引.md` | `specs/50-行动模型集合索引.md` |
+| `specs/40-行动模型集合索引.md` | `specs/50-LDVH工作流基础规范.md`（已合并） |
 | `specs/41-multi-role-thinking-多角色思考.md` | `specs/51-multi-role-thinking-多角色思考.md` |
 | `specs/41.01-Rules.md` | `specs/51.01-Rules.md` |
 | `specs/41.02-Skill.md` | `specs/51.02-Skill.md` |
@@ -100,9 +100,9 @@
 | `04 系列` | `11 系列` |
 | `05 系列` | `12 系列` |
 | `06 §` | `13 §` |
-| `07 §` | `14 §` |
+| `07 §` | `50 §` |
 | `06-LDVH生产对象基础规范` | `13-LDVH生产对象基础规范` |
-| `07-LDVH行动模型基础规范` | `14-LDVH工作流基础规范` |
+| `07-LDVH行动模型基础规范` | `50-LDVH工作流基础规范` |
 | `04-LDVH-AI协作规范` | `11-LDVH-AI协作规范` |
 | `05-LDVH工具基础规范` | `12-LDVH工具基础规范` |
 | `04.01` | `11.01` |
@@ -134,7 +134,7 @@
 
 系统 SHALL 更新现有 specs 文档（00、01、02、03）中的引用：
 
-1. 00 总纲：移除 `specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH生产对象基础规范.md`、`specs/14-LDVH工作流基础规范.md` 引用前的"规划中的"标记；更新待补齐事项
+1. 00 总纲：移除 `specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH生产对象基础规范.md`、`specs/50-LDVH工作流基础规范.md` 引用前的"规划中的"标记；更新待补齐事项
 2. 01 目录说明：移除"规划中的"标记
 3. 02 术语规范：无需变更（已使用正确编号）
 4. 03 文档规范：移除"规划中的"标记

@@ -7,7 +7,7 @@
 > 调研边界：基于 `/Users/dmh2002/trae_projects/mcp-shrimp-task-manager` 本地仓库的 README、docs、src、tools/task-viewer 与配置文件进行分析，重点评估其对 LD Vibe Harness 的可借鉴方向
 > 执行效力：本文为内部调研和方案比较，不直接构成 LD Vibe Harness 强制规则；结论进入 `specs/00-79` 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-LDVH术语规范.md`、`specs/01-LDVH目录说明.md`、`specs/10-事实源边界与承载规范.md`
-> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/14-LDVH工作流基础规范.md`、`specs/20-事实模型集合索引.md`、`specs/50-行动模型集合索引.md`
+> 相关规范：`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/13-LDVH事实模型基础规范.md`、`specs/50-LDVH工作流基础规范.md`、`specs/20-事实模型集合索引.md`
 > 参考项目：`/Users/dmh2002/trae_projects/mcp-shrimp-task-manager`
 
 ---
@@ -178,7 +178,7 @@ plan_task
 6. completed 任务默认不能删除，也不能随意更新；
 7. 删除任务时若存在其他任务依赖该任务，则拒绝删除。
 
-这条生命周期对 LDVH 的行动模型区段很有参考价值。LDVH 当前 `specs/50-行动模型集合索引.md` 已规划“需求转任务”“Task 执行”“Task 阻塞处理”“Review 执行”“对象状态更新”等行动。Shrimp 提供了一个可对照样板：行动模型不应只定义原则，还应定义状态变更前置、依赖检查、执行上下文、验证标准、证据回写和关闭条件。
+这条生命周期对 LDVH 的行动模型区段很有参考价值。LDVH 当前 `specs/50-LDVH工作流基础规范.md` §7.3 已规划“需求转任务”“Task 执行”“Task 阻塞处理”“Review 执行”“对象状态更新”等行动。Shrimp 提供了一个可对照样板：行动模型不应只定义原则，还应定义状态变更前置、依赖检查、执行上下文、验证标准、证据回写和关闭条件。
 
 ### 2.8 Agent 机制
 
@@ -407,7 +407,7 @@ Shrimp 最直接的借鉴对象是 Task 模型。LDVH 当前 `specs/10-事实模
 
 ### 6.2 补齐任务生命周期行动模型
 
-LDVH 当前 `specs/50-行动模型集合索引.md` 已规划 `44 需求转任务`、`45 Task 执行`、`46 Task 阻塞处理`、`47 Review 执行`、`50 对象状态更新`。建议参考 Shrimp 的任务生命周期，把这些行动模型串成闭环：
+LDVH 当前 `specs/50-LDVH工作流基础规范.md` §7.3 已规划 `44 需求转任务`、`45 Task 执行`、`46 Task 阻塞处理`、`47 Review 执行`、`50 对象状态更新`。建议参考 Shrimp 的任务生命周期，把这些行动模型串成闭环：
 
 1. 读取 Context；
 2. 识别 Scenario；

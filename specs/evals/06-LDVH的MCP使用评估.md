@@ -5,7 +5,7 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/14-LDVH工作流基础规范.md`
+> 相关规范：`specs/10-事实源边界与承载规范.md`、`specs/11-LDVH-AI协作规范.md`、`specs/12-LDVH工具基础规范.md`、`specs/50-LDVH工作流基础规范.md`
 > 参考来源：`specs/refs/02-Trae-MCP用法调研.md`、`specs/refs/03-社区推荐Rules-Skills-MCP与自定义Agent调研.md`、`specs/refs/06-Sequential-Thinking使用模板.md`、`specs/refs/07-Context7使用模板.md`
 
 ---
