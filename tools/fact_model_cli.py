@@ -43,7 +43,7 @@ FILENAME_PATTERNS = {
 VALID_STATUSES = {
     "intent": {"draft", "active", "completed", "closed"},
     "task": {"planned", "executing", "verifying", "review_needed", "closed"},
-    "adr": {"proposed", "accepted", "deprecated", "superseded"},
+    "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "profile": {"draft", "active", "suspended", "archived"},
     "memo": {"draft", "active", "resolved", "archived"},
@@ -65,8 +65,9 @@ VALID_TRANSITIONS = {
         "closed": set(),
     },
     "adr": {
-        "proposed": {"accepted", "deprecated"},
+        "proposed": {"accepted", "rejected", "deprecated"},
         "accepted": {"deprecated", "superseded"},
+        "rejected": set(),
         "deprecated": set(),
         "superseded": set(),
     },

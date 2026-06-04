@@ -11,6 +11,9 @@ symptoms:
   - 创建 Task 后状态停留在 planned，不自动进入 executing
   - 用户需要额外提醒"你为什么不执行"
   - AI 把"创建任务"和"执行任务"当作两个独立阶段
+trigger_conditions:
+  - 用户表达明确执行意图，AI 创建 Task 后停止
+  - 当前会话具备继续执行条件，但 Task 仍停留在 planned
 root_cause: |
   AI 将任务创建理解为规划动作的终点，而非执行动作的起点。
   心理模型上把"创建任务"和"执行任务"当作两个独立阶段，
@@ -20,10 +23,14 @@ resolution: |
   1. 创建 Task 后立即将状态变更为 executing 并开始执行
   2. 在 27.01-Rules.md 中补强规则：创建 Task 后如当前会话可执行，必须立即执行
   3. 在 ldvh-intake Skill 中明确：创建后如可执行则立即进入执行
+verification: |
+  检查 27.01-Rules.md 与 ldvh-intake Skill 是否明确承载创建 Task 后立即执行规则；后续创建新 Task 时，确认状态先流转到 executing 再开始实际执行。
 avoidance: |
   1. 创建 Task 后检查：当前会话是否可立即执行？如果是，立即变更状态为 executing 并开始
   2. 不把 Task 创建当作交付物，Task 是追踪机制不是停止点
   3. 用户说"做X"时，期望从创建到执行是连续流程
+applicability: |
+  适用于所有由用户明确执行意图触发的 Task 创建场景，尤其是当前会话可以直接进入执行、验证或修复的任务。
 superseded_by:
 related_tasks:
   - task-0006

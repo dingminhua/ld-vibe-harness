@@ -4,6 +4,7 @@ title: 取消 Evidence 独立事实模型并调整 Task 结果引用
 status: closed
 created: 2026-06-04
 updated: 2026-06-04
+closed_at: 2026-06-04
 description: |
   取消 Evidence 作为 LDVH 独立 active fact model。
   普通验证、结果物和关闭证据由 Task 的 verification、verification_result、closure_evidence、result_refs 或 artifact_refs 等字段承接；文档、日志、报告、截图、commit 等结果物作为被 Task 引用的事实或产物存在，不再额外包装成 Evidence YAML。

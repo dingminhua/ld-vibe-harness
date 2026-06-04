@@ -88,6 +88,40 @@ category: gap
 """
 
 
+def valid_adr_yaml(status="accepted"):
+    return f"""
+id: adr-0001
+type: adr
+title: Valid ADR
+status: {status}
+created: "2026-06-04"
+updated: "2026-06-04"
+context: Define a valid ADR fixture
+decision: Accept this ADR fixture
+consequences: Validator accepts this ADR
+related_tasks: []
+related_adrs: []
+related_changes: []
+"""
+
+
+def valid_change_yaml():
+    return """
+id: change-0001
+type: change
+title: Valid Change
+status: proposed
+created: "2026-06-04"
+updated: "2026-06-04"
+description: Define a valid change fixture
+change_type: spec
+scope: tests
+related_tasks: []
+related_adrs: []
+affected_files: []
+"""
+
+
 def test_valid_intent_cli_exit_zero(tmp_path):
     path = write_yaml(tmp_path / "intent-0001-valid-intent.yaml", valid_intent_yaml())
 
@@ -235,6 +269,36 @@ def test_valid_profile_cli_exit_zero(tmp_path):
 
 def test_valid_memo_cli_exit_zero(tmp_path):
     path = write_yaml(tmp_path / "memo-0001-valid-memo.yaml", valid_memo_yaml())
+
+    result = run_checker(path)
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+    assert result.stderr == ""
+
+
+def test_valid_adr_cli_exit_zero(tmp_path):
+    path = write_yaml(tmp_path / "adr-0001-valid-adr.yaml", valid_adr_yaml())
+
+    result = run_checker(path)
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+    assert result.stderr == ""
+
+
+def test_rejected_adr_cli_exit_zero(tmp_path):
+    path = write_yaml(tmp_path / "adr-0001-rejected-adr.yaml", valid_adr_yaml(status="rejected"))
+
+    result = run_checker(path)
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+    assert result.stderr == ""
+
+
+def test_valid_change_cli_exit_zero(tmp_path):
+    path = write_yaml(tmp_path / "change-0001-valid-change.yaml", valid_change_yaml())
 
     result = run_checker(path)
 

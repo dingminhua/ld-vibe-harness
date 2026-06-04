@@ -4,6 +4,7 @@ title: 取消 TaskSet 独立事实模型并调整 Intent/Task 关系
 status: closed
 created: 2026-06-04
 updated: 2026-06-04
+closed_at: 2026-06-04
 description: |
   取消 TaskSet 作为 LDVH 独立事实模型和主链路对象，将目标、背景、约束、成功标准、关联任务和完成判断收敛到 Intent。
   调整 Task 与 Intent 的关系，移除 TaskSet 强制归属、自动归类和级联关闭要求，并明确 Web 或轻量字段承接分组展示。

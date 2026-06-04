@@ -12,41 +12,51 @@ from typing import Any
 import yaml
 
 
-OBJECT_TYPES = {"intent", "task", "pitfall", "profile", "memo"}
+OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "profile", "memo", "change"}
 FILENAME_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "task": re.compile(r"^task-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "profile": re.compile(r"^profile-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "change": re.compile(r"^change-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
 }
 ID_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}$"),
     "task": re.compile(r"^task-\d{4}$"),
+    "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
     "profile": re.compile(r"^profile-\d{4}$"),
     "memo": re.compile(r"^memo-\d{4}$"),
+    "change": re.compile(r"^change-\d{4}$"),
 }
 VALID_STATUSES = {
     "intent": {"draft", "active", "completed", "closed"},
     "task": {"planned", "executing", "verifying", "review_needed", "closed"},
+    "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "profile": {"draft", "active", "suspended", "archived"},
     "memo": {"draft", "active", "resolved", "archived"},
+    "change": {"proposed", "accepted", "implemented", "deprecated"},
 }
 REQUIRED_FIELDS = {
     "intent": ["id", "type", "title", "status", "created", "updated", "description", "success_criteria", "source"],
     "task": ["id", "type", "title", "status", "created", "updated", "description", "source", "acceptance"],
+    "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "profile": ["id", "type", "title", "status", "created", "updated", "description", "project_name", "project_path", "ldvh_base_path"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category"],
+    "change": ["id", "type", "title", "status", "created", "updated", "description", "change_type", "scope"],
 }
 LIST_FIELDS = {
     "intent": {"related_tasks", "related_adrs"},
     "task": {"related_adrs", "related_changes", "sub_tasks"},
+    "adr": {"related_tasks", "related_adrs", "related_changes"},
     "pitfall": {"source_objects", "related_objects", "related_rules", "tags"},
     "profile": {"related_tasks", "related_adrs"},
     "memo": {"related_tasks", "related_adrs"},
+    "change": {"related_tasks", "related_adrs", "affected_files"},
 }
 
 
@@ -128,10 +138,16 @@ def infer_object_type(path: Path, data: dict[str, Any]) -> str | None:
         return "intent"
     if name.startswith("task-"):
         return "task"
+    if name.startswith("adr-"):
+        return "adr"
+    if name.startswith("pitfall-"):
+        return "pitfall"
     if name.startswith("profile-"):
         return "profile"
     if name.startswith("memo-"):
         return "memo"
+    if name.startswith("change-"):
+        return "change"
     return None
 
 
@@ -161,6 +177,15 @@ def validate_common(path: Path, data: dict[str, Any], object_type: str) -> list[
 
 def validate_intent(path: Path, data: dict[str, Any]) -> list[Issue]:
     return validate_common(path, data, "intent")
+
+
+def validate_adr(path: Path, data: dict[str, Any]) -> list[Issue]:
+    return validate_common(path, data, "adr")
+
+
+def validate_change(path: Path, data: dict[str, Any]) -> list[Issue]:
+    return validate_common(path, data, "change")
+
 
 
 def validate_task(path: Path, data: dict[str, Any]) -> list[Issue]:
@@ -232,9 +257,11 @@ def validate_file(path: Path) -> tuple[list[Issue], bool]:
     validators = {
         "intent": validate_intent,
         "task": validate_task,
+        "adr": validate_adr,
         "pitfall": validate_pitfall,
         "profile": validate_profile,
         "memo": validate_memo,
+        "change": validate_change,
     }
     return validators[object_type](path, data), False
 
