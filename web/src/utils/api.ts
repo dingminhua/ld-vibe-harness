@@ -19,6 +19,13 @@ export interface DashboardData {
     status: string;
     updated: string;
   }>;
+  recentChanges: Array<{
+    hash: string;
+    shortHash: string;
+    author: string;
+    date: string;
+    message: string;
+  }>;
   validation: {
     ok: boolean;
     errors: number;

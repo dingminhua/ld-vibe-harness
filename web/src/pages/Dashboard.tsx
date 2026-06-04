@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, CheckCircle, AlertCircle, AlertTriangle, Shield } from 'lucide-react';
+import { Activity, CheckCircle, AlertCircle, AlertTriangle, Shield, GitCommit } from 'lucide-react';
 import StatsCard from '@/components/StatsCard';
 import StatusBadge from '@/components/StatusBadge';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
@@ -95,7 +95,7 @@ export default function Dashboard() {
         })}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Recent activity */}
         <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
@@ -124,6 +124,35 @@ export default function Dashboard() {
                       {item.updated}
                     </span>
                   </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Recent changes */}
+        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <GitCommit size={16} className="text-ldvh-accent" />
+            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.recentChanges')}</h3>
+          </div>
+          {data.recentChanges.length === 0 ? (
+            <p className="text-sm text-ldvh-text-secondary">{t('dashboard.noRecentChanges')}</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {data.recentChanges.map((entry) => (
+                <li
+                  key={entry.hash}
+                  className="flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30"
+                  onClick={() => navigate('/changelog')}
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="whitespace-nowrap font-mono text-xs text-ldvh-accent">{entry.shortHash}</span>
+                    <span className="truncate text-sm text-ldvh-text-primary">{entry.message}</span>
+                  </div>
+                  <span className="whitespace-nowrap font-mono text-xs text-ldvh-text-secondary">
+                    {entry.date.slice(0, 10)}
+                  </span>
                 </li>
               ))}
             </ul>

@@ -67,8 +67,10 @@ export const UI_LOCALES = {
     // Dashboard
     'dashboard.title': '仪表盘',
     'dashboard.recentActivity': '最近活动',
+    'dashboard.recentChanges': '最近变更',
     'dashboard.validationStatus': '校验状态',
     'dashboard.noRecentActivity': '暂无最近活动',
+    'dashboard.noRecentChanges': '暂无最近变更',
     'dashboard.status': '状态',
     'dashboard.errors': '错误',
     'dashboard.warnings': '警告',
@@ -130,8 +132,10 @@ export const UI_LOCALES = {
     // Dashboard
     'dashboard.title': 'Dashboard',
     'dashboard.recentActivity': 'Recent Activity',
+    'dashboard.recentChanges': 'Recent Changes',
     'dashboard.validationStatus': 'Validation Status',
     'dashboard.noRecentActivity': 'No recent activity',
+    'dashboard.noRecentChanges': 'No recent changes',
     'dashboard.status': 'Status',
     'dashboard.errors': 'Errors',
     'dashboard.warnings': 'Warnings',

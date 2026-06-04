@@ -4,6 +4,7 @@
 
 import { Router, type Request, type Response } from 'express'
 import { listObjects, validate, OBJECT_TYPES, type ObjectType, LDVH_ROOT } from '../services/pytools.js'
+import { getGitLog } from '../services/git.js'
 
 const router = Router()
 
@@ -15,10 +16,11 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
       return { type, result }
     })
 
-    // 同时请求校验结果
-    const [listResults, validationResult] = await Promise.all([
+    // 同时请求校验结果和 git log
+    const [listResults, validationResult, gitLog] = await Promise.all([
       Promise.all(listPromises),
       validate(),
+      getGitLog(10).catch(() => []),
     ])
 
     // 聚合 profile（取第一个 profile 对象）
@@ -78,6 +80,7 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
       profile,
       stats,
       recentItems,
+      recentChanges: gitLog,
       validation,
     })
   } catch (err) {
