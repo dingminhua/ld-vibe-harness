@@ -10,6 +10,7 @@ import {
   StickyNote,
   Globe,
   ClipboardCheck,
+  FlaskConical,
   Sun,
   Moon,
   Monitor,
@@ -20,6 +21,7 @@ import type { LocaleKey } from '@/i18n/locales';
 
 const NAV_ITEMS: { to: string; labelKey: LocaleKey; icon: typeof LayoutDashboard }[] = [
   { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard },
+  { to: '/workbench', labelKey: 'nav.workbench', icon: FlaskConical },
   { to: '/objects/intent', labelKey: 'nav.intents', icon: Lightbulb },
   { to: '/objects/task', labelKey: 'nav.tasks', icon: Target },
   { to: '/objects/adr', labelKey: 'nav.adrs', icon: GitBranch },

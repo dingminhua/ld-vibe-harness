@@ -63,6 +63,7 @@ export const UI_LOCALES = {
     'nav.changes': '变更',
     'nav.validate': '校验',
     'nav.changelog': '变更',
+    'nav.workbench': '工作台',
 
     // Dashboard
     'dashboard.title': '仪表盘',
@@ -79,6 +80,33 @@ export const UI_LOCALES = {
     'dashboard.pass': '通过',
     'dashboard.fail': '未通过',
 
+    // Workbench
+    'workbench.badge': '实验视图 · 不替换主页',
+    'workbench.title': 'LDVH 工作台',
+    'workbench.subtitle': '把事实对象组织成任务、关系、证据和动作的只读实验入口，用来验证交互结构。',
+    'workbench.backToDashboard': '返回仪表盘',
+    'workbench.openTasks': '任务总数',
+    'workbench.taskSignal': '来自任务事实对象统计',
+    'workbench.actionItems': '待推进',
+    'workbench.actionSignal': '需要优先关注的对象',
+    'workbench.recentChanges': '近期变更',
+    'workbench.changeSignal': '可作为证据线索',
+    'workbench.validation': '校验',
+    'workbench.caseFile': '任务案卷',
+    'workbench.acceptance': '验收',
+    'workbench.known': '已识别',
+    'workbench.acceptanceHint': '第一版只展示工作流信号，后续可接入真实验收项。',
+    'workbench.evidence': '证据',
+    'workbench.actions': '动作',
+    'workbench.actionAddEvidence': '添加证据（实验占位）',
+    'workbench.actionLinkTask': '关联任务（实验占位）',
+    'workbench.actionReview': '发起审查（实验占位）',
+    'workbench.noTask': '当前没有可展示的任务案卷。',
+    'workbench.relationships': '关联对象',
+    'workbench.noRelationships': '暂无关联对象线索。',
+    'workbench.traceability': '追踪链路',
+    'workbench.step': '步骤',
+
     // Object List
     'objectList.noObjects': '未找到 {type} 对象',
     'objectList.all': '全部',
@@ -92,6 +120,7 @@ export const UI_LOCALES = {
     'objectDetail.status': '状态',
     'objectDetail.created': '创建时间',
     'objectDetail.updated': '更新时间',
+    'objectDetail.closedAt': '关闭时间',
 
     // Validate
     'validate.title': '校验',
@@ -130,6 +159,7 @@ export const UI_LOCALES = {
     'nav.changes': 'Changes',
     'nav.validate': 'Validate',
     'nav.changelog': 'Changes',
+    'nav.workbench': 'Workbench',
 
     // Dashboard
     'dashboard.title': 'Dashboard',
@@ -146,6 +176,32 @@ export const UI_LOCALES = {
     'dashboard.pass': 'PASS',
     'dashboard.fail': 'FAIL',
 
+    'workbench.badge': 'Experimental · Dashboard unchanged',
+    'workbench.title': 'LDVH Workbench',
+    'workbench.subtitle': 'A read-only experiment that organizes facts into tasks, relationships, evidence, and actions.',
+    'workbench.backToDashboard': 'Back to Dashboard',
+    'workbench.openTasks': 'Total Tasks',
+    'workbench.taskSignal': 'From task fact statistics',
+    'workbench.actionItems': 'Action Items',
+    'workbench.actionSignal': 'Objects that need attention',
+    'workbench.recentChanges': 'Recent Changes',
+    'workbench.changeSignal': 'Evidence candidates',
+    'workbench.validation': 'Validation',
+    'workbench.caseFile': 'Task Case File',
+    'workbench.acceptance': 'Acceptance',
+    'workbench.known': 'Known',
+    'workbench.acceptanceHint': 'The first version shows workflow signals only; real acceptance items can be connected later.',
+    'workbench.evidence': 'Evidence',
+    'workbench.actions': 'Actions',
+    'workbench.actionAddEvidence': 'Add evidence (placeholder)',
+    'workbench.actionLinkTask': 'Link task (placeholder)',
+    'workbench.actionReview': 'Start review (placeholder)',
+    'workbench.noTask': 'No task case file is available.',
+    'workbench.relationships': 'Related Objects',
+    'workbench.noRelationships': 'No relationship signals yet.',
+    'workbench.traceability': 'Traceability Chain',
+    'workbench.step': 'Step',
+
     // Object List
     'objectList.noObjects': 'No {type} found',
     'objectList.all': 'All',
@@ -159,6 +215,7 @@ export const UI_LOCALES = {
     'objectDetail.status': 'Status',
     'objectDetail.created': 'Created',
     'objectDetail.updated': 'Updated',
+    'objectDetail.closedAt': 'Closed',
 
     // Validate
     'validate.title': 'Validation',

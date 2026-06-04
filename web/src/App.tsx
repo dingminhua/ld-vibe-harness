@@ -5,6 +5,7 @@ import TopNavLayout from '@/components/TopNavLayout';
 import Dashboard from '@/pages/Dashboard';
 import ObjectList from '@/pages/ObjectList';
 import ObjectDetail from '@/pages/ObjectDetail';
+import Workbench from '@/pages/Workbench';
 import Validate from '@/pages/Validate';
 import Changelog from '@/pages/Changelog';
 
@@ -17,6 +18,7 @@ function AppRoutes() {
     <ActiveLayout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/workbench" element={<Workbench />} />
         <Route path="/objects/:type" element={<ObjectList />} />
         <Route path="/objects/:type/:id" element={<ObjectDetail />} />
         <Route path="/validate" element={<Validate />} />

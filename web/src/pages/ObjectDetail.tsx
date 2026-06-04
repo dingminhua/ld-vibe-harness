@@ -1,9 +1,65 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2 } from 'lucide-react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
 import { fetchObjectDetail, type ObjectDetail } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
+import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
+
+/** 字段分组定义 */
+const META_KEYS = ['id', 'type', 'status', 'created', 'updated', 'closed_at', 'title', 'title_en', 'title_zh'];
+/** 长文本字段（用 Markdown 渲染） */
+const MARKDOWN_FIELDS = ['description', 'success_criteria', 'constraints', 'acceptance', 'verification', 'notes', 'rationale', 'context', 'consequences', 'observation', 'analysis', 'mitigation', 'resolution'];
+/** 列表字段（用带图标的条目展示） */
+const CHECKLIST_FIELDS = ['acceptance', 'blocked_by'];
+
+/** 对象类型中英映射 */
+const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
+  intent: { zh: '意图', en: 'Intent' },
+  task: { zh: '任务', en: 'Task' },
+  adr: { zh: 'ADR', en: 'ADR' },
+  pitfall: { zh: 'BUG', en: 'Bug' },
+  memo: { zh: '备忘', en: 'Memo' },
+  profile: { zh: '画像', en: 'Profile' },
+  change: { zh: '变更', en: 'Change' },
+};
+
+/** 字段名中英映射 */
+const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
+  description: { zh: '描述', en: 'Description' },
+  success_criteria: { zh: '成功标准', en: 'Success Criteria' },
+  constraints: { zh: '约束', en: 'Constraints' },
+  acceptance: { zh: '验收标准', en: 'Acceptance' },
+  verification: { zh: '验证方式', en: 'Verification' },
+  notes: { zh: '备注', en: 'Notes' },
+  rationale: { zh: '理由', en: 'Rationale' },
+  context: { zh: '背景', en: 'Context' },
+  consequences: { zh: '影响', en: 'Consequences' },
+  observation: { zh: '观察', en: 'Observation' },
+  analysis: { zh: '分析', en: 'Analysis' },
+  mitigation: { zh: '缓解措施', en: 'Mitigation' },
+  resolution: { zh: '解决方案', en: 'Resolution' },
+  blocked_by: { zh: '前置依赖', en: 'Blocked By' },
+  source_intent: { zh: '来源意图', en: 'Source Intent' },
+  parent_task: { zh: '父任务', en: 'Parent Task' },
+  closure_evidence: { zh: '关闭证据', en: 'Closure Evidence' },
+  transition_reasons: { zh: '流转记录', en: 'Transition Reasons' },
+  options: { zh: '选项', en: 'Options' },
+  decision: { zh: '决策', en: 'Decision' },
+  related_tasks: { zh: '关联任务', en: 'Related Tasks' },
+  related_adrs: { zh: '关联 ADR', en: 'Related ADRs' },
+  scope: { zh: '范围', en: 'Scope' },
+  impact: { zh: '影响范围', en: 'Impact' },
+  severity: { zh: '严重程度', en: 'Severity' },
+  category: { zh: '分类', en: 'Category' },
+  tags: { zh: '标签', en: 'Tags' },
+  path: { zh: '路径', en: 'Path' },
+  changes: { zh: '变更列表', en: 'Changes' },
+};
 
 export default function ObjectDetail() {
   const { type, id } = useParams<{ type: string; id: string }>();
@@ -43,85 +99,80 @@ export default function ObjectDetail() {
   const objId = detail.summary.id;
   const objType = detail.summary.type;
   const objStatus = detail.summary.status;
+  const typeColor = CATEGORY_COLORS[objType] || CATEGORY_COLORS.other;
 
   const displayTitle = (locale === 'en'
     ? ((obj.title_en as string) || obj.title as string)
     : ((obj.title_zh as string) || obj.title as string)) || objId;
 
-  // Fields to show in metadata grid
-  const metaKeys = ['id', 'type', 'status', 'created', 'updated', 'closed_at'];
-  // Remaining fields for content section
+  // 内容字段（排除元信息）
   const contentEntries = Object.entries(obj).filter(
-    ([key]) => !metaKeys.includes(key)
+    ([key]) => !META_KEYS.includes(key)
   );
 
+  // 生成真正的 YAML 源码
+  const yamlSource = objectToYaml(obj);
+
   return (
-    <div className="p-6">
+    <div className="mx-auto max-w-4xl p-6">
       {/* Header */}
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6">
         <button
           onClick={() => navigate(`/objects/${type}`)}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+          className="mb-3 flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={14} />
           {t('objectDetail.back')}
         </button>
-        <h1 className="text-lg font-semibold text-ldvh-text-primary">
-          {displayTitle}
-        </h1>
-      </div>
-
-      {/* Metadata grid */}
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-3">
-          <p className="mb-1 text-xs text-ldvh-text-secondary">{t('objectDetail.id')}</p>
-          <p className="font-mono text-sm text-ldvh-text-primary">{objId}</p>
-        </div>
-        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-3">
-          <p className="mb-1 text-xs text-ldvh-text-secondary">{t('objectDetail.type')}</p>
-          <p className="font-mono text-sm text-ldvh-text-primary">{objType}</p>
-        </div>
-        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-3">
-          <p className="mb-1 text-xs text-ldvh-text-secondary">{t('objectDetail.status')}</p>
+        <div className="flex items-start gap-3">
+          <span
+            className="mt-1 shrink-0 rounded px-2 py-0.5 text-xs font-medium"
+            style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
+          >
+            {TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-semibold text-ldvh-text-primary">{displayTitle}</h1>
+            <p className="mt-0.5 font-mono text-xs text-ldvh-text-secondary">{objId}</p>
+          </div>
           <StatusBadge status={objStatus} statusLabel={getStatus(objStatus)} size="md" />
         </div>
-        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-3">
-          <p className="mb-1 text-xs text-ldvh-text-secondary">{t('objectDetail.created')}</p>
-          <p className="font-mono text-sm text-ldvh-text-primary">{obj.created as string || '-'}</p>
-        </div>
-        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-3">
-          <p className="mb-1 text-xs text-ldvh-text-secondary">{t('objectDetail.updated')}</p>
-          <p className="font-mono text-sm text-ldvh-text-primary">{obj.updated as string || '-'}</p>
-        </div>
+      </div>
+
+      {/* Metadata row */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        <MetaChip label={t('objectDetail.created')} value={obj.created as string || '-'} />
+        <MetaChip label={t('objectDetail.updated')} value={obj.updated as string || '-'} />
+        {obj.closed_at && <MetaChip label={t('objectDetail.closedAt')} value={obj.closed_at as string} />}
       </div>
 
       {/* Content fields */}
-      <div className="mb-6 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-        <h3 className="mb-4 text-sm font-medium text-ldvh-text-primary">{t('objectDetail.content')}</h3>
-        <div className="flex flex-col gap-4">
-          {contentEntries.map(([key, value]) => (
-            <div key={key}>
-              <p className="mb-1 font-mono text-xs text-ldvh-text-secondary">{key}</p>
-              <FieldValue value={value} />
-            </div>
-          ))}
-        </div>
+      <div className="mb-6 flex flex-col gap-5">
+        {contentEntries.map(([key, value]) => (
+          <ContentField key={key} fieldKey={key} value={value} locale={locale} />
+        ))}
       </div>
 
       {/* YAML source */}
-      <div className="rounded-lg border border-ldvh-border bg-ldvh-panel">
+      <div className="rounded-lg border border-ldvh-border bg-ldvh-panel overflow-hidden">
         <button
           onClick={() => setShowYaml(!showYaml)}
-          className="flex w-full items-center justify-between p-4 text-sm text-ldvh-text-secondary transition-colors hover:text-ldvh-text-primary"
+          className="flex w-full items-center gap-2 p-3 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
         >
-          <span className="font-mono">{t('objectDetail.yamlSource')}</span>
-          {showYaml ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          <Code2 size={14} />
+          <span>{t('objectDetail.yamlSource')}</span>
+          <span className="ml-auto">{showYaml ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
         </button>
         {showYaml && (
-          <div className="border-t border-ldvh-border p-4">
-            <pre className="max-h-96 overflow-auto font-mono text-xs text-ldvh-text-secondary">
-              {JSON.stringify(obj, null, 2)}
-            </pre>
+          <div className="border-t border-ldvh-border">
+            <SyntaxHighlighter
+              language="yaml"
+              style={oneDark}
+              customStyle={{ margin: 0, borderRadius: 0, fontSize: '12px', maxHeight: '400px' }}
+              showLineNumbers
+            >
+              {yamlSource}
+            </SyntaxHighlighter>
           </div>
         )}
       </div>
@@ -129,61 +180,189 @@ export default function ObjectDetail() {
   );
 }
 
-function FieldValue({ value }: { value: unknown }) {
+/** 元信息小标签 */
+function MetaChip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-md border border-ldvh-border bg-ldvh-panel px-2.5 py-1">
+      <span className="text-[10px] text-ldvh-text-secondary">{label}</span>
+      <span className="font-mono text-xs text-ldvh-text-primary">{value}</span>
+    </div>
+  );
+}
+
+/** 内容字段：根据字段类型选择渲染方式 */
+function ContentField({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
+  if (value === null || value === undefined) return null;
+  if (value === '') return null;
+
+  // 字段名国际化
+  const labelEntry = FIELD_LABEL_LOCALES[fieldKey];
+  const label = labelEntry
+    ? (locale === 'en' ? labelEntry.en : labelEntry.zh)
+    : fieldKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  return (
+    <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <FileText size={13} className="text-ldvh-accent" />
+        <h4 className="text-xs font-medium tracking-wide text-ldvh-text-secondary">{label}</h4>
+      </div>
+      <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />
+    </div>
+  );
+}
+
+/** 递归渲染字段值 */
+function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; value: unknown; depth: number; locale: string }) {
   if (value === null || value === undefined) {
-    return <span className="font-mono text-xs text-ldvh-text-secondary italic">null</span>;
+    return <span className="text-xs text-ldvh-text-secondary italic">—</span>;
   }
 
+  // 字符串
   if (typeof value === 'string') {
-    if (value.includes('\n') || value.length > 120) {
+    // 空字符串不显示
+    if (value === '') return null;
+
+    // 检查列表字段（Markdown 格式的 checklist）
+    if (CHECKLIST_FIELDS.includes(fieldKey) && value.includes('- [')) {
       return (
-        <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md bg-ldvh-bg p-3 font-mono text-sm text-ldvh-text-primary">
-          {value}
-        </pre>
+        <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-li:my-0.5 prose-ul:my-1">
+          <Markdown remarkPlugins={[remarkGfm]}>{value}</Markdown>
+        </div>
       );
     }
+
+    // Markdown 字段
+    if (MARKDOWN_FIELDS.includes(fieldKey)) {
+      return (
+        <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-li:my-0.5 prose-ul:my-1 prose-pre:my-2 prose-code:text-ldvh-accent">
+          <Markdown remarkPlugins={[remarkGfm]}>{value}</Markdown>
+        </div>
+      );
+    }
+
+    // 长文本（含换行）
+    if (value.includes('\n') || value.length > 200) {
+      return (
+        <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-pre:my-2">
+          <Markdown remarkPlugins={[remarkGfm]}>{value}</Markdown>
+        </div>
+      );
+    }
+
+    // 短文本
     return <span className="text-sm text-ldvh-text-primary">{value}</span>;
   }
 
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      return <span className="font-mono text-xs text-ldvh-text-secondary italic">empty</span>;
-    }
-    if (typeof value[0] === 'string') {
-      return (
-        <ul className="flex flex-col gap-1 pl-4">
-          {value.map((item, i) => (
-            <li key={i} className="text-sm text-ldvh-text-primary">
-              <span className="mr-2 text-ldvh-text-secondary">•</span>
-              {item}
-            </li>
-          ))}
-        </ul>
-      );
-    }
+  // 布尔值
+  if (typeof value === 'boolean') {
     return (
-      <ul className="flex flex-col gap-2 pl-4">
-        {value.map((item, i) => (
-          <li key={i} className="rounded-md bg-ldvh-bg p-2">
-            <FieldValue value={item} />
-          </li>
-        ))}
-      </ul>
+      <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${value ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+        {value ? 'true' : 'false'}
+      </span>
     );
   }
 
-  if (typeof value === 'object') {
+  // 数字
+  if (typeof value === 'number') {
+    return <span className="font-mono text-sm text-ldvh-accent">{value}</span>;
+  }
+
+  // 数组
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return <span className="text-xs text-ldvh-text-secondary italic">empty</span>;
+    }
+
+    // 字符串数组
+    if (typeof value[0] === 'string') {
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((item, i) => (
+            <span key={i} className="rounded-md bg-ldvh-bg px-2 py-0.5 text-xs text-ldvh-text-primary border border-ldvh-border">
+              {item}
+            </span>
+          ))}
+        </div>
+      );
+    }
+
+    // 对象数组
     return (
-      <div className="rounded-md bg-ldvh-bg p-3">
-        {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
-          <div key={k} className="mb-1 last:mb-0">
-            <span className="font-mono text-xs text-ldvh-text-secondary">{k}: </span>
-            <FieldValue value={v} />
+      <div className="flex flex-col gap-2">
+        {value.map((item, i) => (
+          <div key={i} className="rounded-md border border-ldvh-border bg-ldvh-bg p-3">
+            <FieldValue fieldKey={fieldKey} value={item} depth={depth + 1} locale={locale} />
           </div>
         ))}
       </div>
     );
   }
 
-  return <span className="font-mono text-sm text-ldvh-text-primary">{String(value)}</span>;
+  // 对象
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>);
+    return (
+      <div className={`flex flex-col gap-2 ${depth > 0 ? '' : ''}`}>
+        {entries.map(([k, v]) => {
+          const subLabel = FIELD_LABEL_LOCALES[k];
+          const displayKey = subLabel
+            ? (locale === 'en' ? subLabel.en : subLabel.zh)
+            : k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          return (
+            <div key={k} className="flex gap-2">
+              <span className="shrink-0 rounded bg-ldvh-bg px-1.5 py-0.5 text-[11px] text-ldvh-text-secondary border border-ldvh-border">
+                {displayKey}
+              </span>
+              <div className="min-w-0 flex-1">
+                <FieldValue fieldKey={k} value={v} depth={depth + 1} locale={locale} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return <span className="text-sm text-ldvh-text-primary">{String(value)}</span>;
+}
+
+/** 简单对象转 YAML 字符串 */
+function objectToYaml(obj: Record<string, unknown>, indent: number = 0): string {
+  const prefix = '  '.repeat(indent);
+  const lines: string[] = [];
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === null || value === undefined) {
+      lines.push(`${prefix}${key}: null`);
+    } else if (typeof value === 'string') {
+      if (value.includes('\n') || value.includes(':') || value.includes('#') || value.startsWith(' ')) {
+        lines.push(`${prefix}${key}: |`);
+        for (const line of value.split('\n')) {
+          lines.push(`${prefix}  ${line}`);
+        }
+      } else {
+        lines.push(`${prefix}${key}: ${value}`);
+      }
+    } else if (typeof value === 'boolean' || typeof value === 'number') {
+      lines.push(`${prefix}${key}: ${value}`);
+    } else if (Array.isArray(value)) {
+      lines.push(`${prefix}${key}:`);
+      for (const item of value) {
+        if (typeof item === 'string') {
+          lines.push(`${prefix}- ${item}`);
+        } else if (typeof item === 'object' && item !== null) {
+          const subLines = objectToYaml(item as Record<string, unknown>, indent + 1);
+          lines.push(`${prefix}- ${subLines.trimStart()}`);
+        } else {
+          lines.push(`${prefix}- ${item}`);
+        }
+      }
+    } else if (typeof value === 'object') {
+      lines.push(`${prefix}${key}:`);
+      lines.push(objectToYaml(value as Record<string, unknown>, indent + 1));
+    }
+  }
+
+  return lines.join('\n');
 }
