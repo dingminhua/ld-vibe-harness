@@ -9,7 +9,7 @@
 
 ## 入口
 
-先识别任务类型，再按 00-20 读原文片段：00 定位/价值；01 目录/编号；02 术语；03/03.01 specs/索引；04 模型子文档；05 Human Gate；10 事实源/证据/回写；11 协作；11.01 Rules；11.02 Skill；11.03 Agent；12/12.01 Tools；12.02 Web；13 事实模型；14 行动模型；20 事实模型索引。定位章节先搜标题行号，再按行范围读；工具输出、网页、聊天记忆不替代 Git 事实源；evals/refs 仅明确要求时读。
+先识别任务类型，再按 00-20 读原文片段：00 定位/价值；01 目录/编号；02 术语；03/03.01 specs/索引；04 Trae Solo 环境规范；11 §9；10 事实源/证据/回写；11 Trae Solo 环境规范；11 §6 Rules；11 §7 Skill；11 §8 Agent；12/12.01 Tools；12.02 Web；13 事实模型；14 行动模型；20 事实模型索引。定位章节先搜标题行号，再按行范围读；工具输出、网页、聊天记忆不替代 Git 事实源；evals/refs 仅明确要求时读。
 
 产品化、Gstack 借鉴、Trae Solo 利用、Core Loop、PyTools、事实模型、Skill、Rules、Agent、Web 或安装配置体验相关任务，先读 `specs/evals/17-LDVH-Gstack-Trae融合产品方向共识.md` 作为产品方向入口；13 号文档是底层架构前置，优先级高于 14 号评估，必要时回读 `specs/evals/13-LDVH假设重来视角下对gstack的借鉴再评估.md`；发现重要共识、关键决策、方向修正或长期约束时，应更新 evals/17。
 
@@ -38,8 +38,8 @@ AI 应在每次用户交互时判断当前 Core Loop 阶段，并推荐对应 Sk
 
 ## L2 引导
 
-编辑 specs 进 `.trae/rules/ldvh-l2-specs-rules.md`；编辑 `ldvh-base/` YAML 进工作区 L0 事实模型规则；新增、修改或审计 Rules 时读 11.01 §7-10，并从 `specs/*.md` 反向发现需求。
+编辑 specs 进 `.trae/rules/ldvh-l2-specs-rules.md`；编辑 `ldvh-base/` YAML 进工作区 L0 事实模型规则；新增、修改或审计 Rules 时读 11 §6，并从 `specs/*.md` 反向发现需求。
 
 ## 压缩保护
 
-LDVH | 00-20按任务读原文 | 产品化/Gstack/Trae/CoreLoop/PyTools先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 规范/Skill/Tools/部署判断必须回原文 | 错误模式转检查项 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=PyTools聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04子文档 05HG 10事实源 11协作 12Tools 13事实 14行动 20索引 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0 | CoreLoop路由=Intent→ldvh-intake|Plan→ldvh-plan|Record→ldvh-close
+LDVH | 00-20按任务读原文 | 产品化/Gstack/Trae/CoreLoop/PyTools先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 规范/Skill/Tools/部署判断必须回原文 | 错误模式转检查项 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=PyTools聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04 Trae Solo 环境规范 11§9 10事实源 11 Trae Solo 环境规范 12Tools 13事实 14行动 20索引 | 搜标题行号 | Git为准 | ADR见21 | specs进L2 | ldvh-base进事实L0 | CoreLoop路由=Intent→ldvh-intake|Plan→ldvh-plan|Record→ldvh-close
