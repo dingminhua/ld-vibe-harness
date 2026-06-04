@@ -1,7 +1,7 @@
 # Pitfall 踩坑记录
 
 > 创建日期：2026-06-03
-> 定位：定义 Pitfall 踩坑记录工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存、适配原则、附件型实践子文档、落地初始化、落地审计和合规检查
+> 定位：定义 Pitfall 踩坑记录工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存、适配原则、机制适配边界、落地初始化、落地审计和合规检查
 > 适用范围：所有接入 LDVH 且需要沉淀已解决踩坑经验的项目
 > 上位依据：`specs/07-工作模型基础规范.md`
 > 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/06-Python与Web工具规范.md`、`specs/20-工作模型集合索引.md`
@@ -13,15 +13,15 @@
 
 本文定义 Pitfall 踩坑记录工作模型。Pitfall 是已解决且具有复用价值的踩坑经验，用于沉淀反直觉问题、误判原因、解决方式、验证结果和后续规避策略，帮助 AI、人和工具在后续执行中提前避坑。
 
-本文只定义 Pitfall 对象模型。Pitfall 相关 Rules、Skill、Agent、Tools 契约式校验与执行和 Web 信息同步实践由 §12 附件型实践子文档承接。
+本文只定义 Pitfall 对象模型。Pitfall 相关 Rules、Skill、Agent、Tools 契约式校验与执行和 Web 信息同步实践按 §12 机制适配边界和 07 §4.6 承接。
 
 ---
 
-## 2. 与 13 的关系
+## 2. 与 07 的关系
 
-`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、附件型实践子文档命名和工作模型标准组成。本文依据 07 §4.2 定义 Pitfall 对象模型。
+`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、主规范结构、机制适配边界和工作模型标准组成。本文依据 07 §4.2 定义 Pitfall 对象模型。
 
-本文不重新定义 13 中的通用规则。发生冲突时，以 13 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
+本文不重新定义 07 中的通用规则。发生冲突时，以 07 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
 
 ---
 
@@ -92,8 +92,8 @@ ldvh-base/pitfalls/pitfall-{NNNN}-short-title.yaml
 |---|---|
 | Pitfall 对象模型 | `specs/23-Pitfall-踩坑记录.md` |
 | Pitfall 对象实例 | `ldvh-base/pitfalls/` |
-| Pitfall 模型实践子文档 | `specs/23.01-Rules.md` 至 `specs/23.05-Web.md` |
-| Pitfall 契约子文档 | `specs/23.06-Contract.md` |
+| Pitfall 历史机制拆分文件 | `specs/23.01-Rules.md` 至 `specs/23.05-Web.md` |
+| Pitfall 字段契约文件 | `specs/23.06-Contract.md` |
 | Pitfall 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
 ---
@@ -273,22 +273,22 @@ AI 引用 Pitfall 时，应区分：
 
 ---
 
-## 12. 附件型实践子文档
+## 12. 机制适配边界
 
-### 12.1 子文档清单
+### 12.1 机制承接清单
 
 | 编号 | 文档 | 状态 | 摘要 |
 |---|---|---|---|
 | 23.01 | `23.01-Rules.md` | active | 定义 Pitfall 的 Rules 入口提醒、读取提示、写入 Human Gate 和禁止承载内容 |
 | 23.02 | `23.02-Skill.md` | active-prep | 定义未来 Pitfall 整理 Skill 的能力边界、实现前提和检查项 |
-| 23.03 | `23.03-Agent.md` | not-created | 说明当前不创建 Pitfall 专用 Agent 的理由和检查项 |
+| 23.03 | `23.03-Agent.md` | not-needed | 说明当前不创建 Pitfall 专用 Agent 的理由和检查项 |
 | 23.04 | `23.04-Tools.md` | active-prep | 定义未来 Pitfall 解析、校验、聚合和受控写入工具的能力边界 |
 | 23.05 | `23.05-Web.md` | active-prep | 定义未来 Web 信息同步、检索和 Human Gate UI 的能力边界 |
 | 23.06 | `23.06-Contract.md` | active | 定义 Pitfall YAML schema、字段约束、文件命名和状态流转契约 |
 
-### 12.2 子文档适用条件
+### 12.2 机制承接适用条件
 
-子文档仅承接机制实践或契约，不重新定义 Pitfall 的对象定位、准入条件、状态机、对象关系、Human Gate 或事实源边界。发生冲突时，以本文和上位基础规范为准。
+机制文件仅承接机制实践或契约，不重新定义 Pitfall 的对象定位、准入条件、状态机、对象关系、Human Gate 或事实源边界。发生冲突时，以本文和上位基础规范为准。
 
 ---
 
@@ -315,9 +315,9 @@ Pitfall 在 LDVH 中正式落地，采用以下决策：
 1. 实例事实源使用 `ldvh-base/pitfalls/`；
 2. 实例格式使用 YAML；
 3. 主模型编号使用 32，保持与 20 索引中 planned Pitfall 编号一致；
-4. Rules 子文档 active，用于建立读取与写入提醒；
+4. Rules 机制承接 active，用于建立读取与写入提醒；
 5. Skill、Tools、Web 暂为 active-prep，先定义能力边界，待通用对象工具和标准 Skill 稳定后实现；
-6. Agent 为 not-created，不创建专用 Agent；
+6. Agent 机制承接为 not-needed，不创建专用 Agent；
 7. Contract 为 active，作为工具实现前置契约。
 
 ### 15.1 读取策略
@@ -393,8 +393,8 @@ Pitfall 落地初始化包含以下产物：
 
 Pitfall 落地审计应检查：
 
-1. 主文档和六个子文档是否存在；
-2. 子文档状态是否与正文意图一致；
+1. 主规范和历史机制拆分文件是否存在；
+2. 机制承接状态是否与正文意图一致；
 3. 20 索引是否已同步；
 4. `ldvh-base/pitfalls/` 实例是否符合 Contract；
 5. 创建、激活、归档、替代和核心字段修改是否经过 Human Gate；

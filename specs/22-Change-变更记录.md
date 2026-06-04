@@ -15,22 +15,22 @@
 
 Change 与其他工作模型的核心区别在于承载方式：Change 不使用 `ldvh-base/` 下的 YAML 实例文件承载，而是直接以 Git commit 作为事实实例的权威事实源。本文定义 commit message 标准格式、关联规则、查询约定和工具解析要求。
 
-本文只定义 Change 对象模型。Change 不需要附件型实践子文档，各机制适配在主文档中直接说明。
+本文只定义 Change 对象模型。Change 不需要固定拆分文件，各机制适配在主规范中直接说明。
 
 ---
 
-## 2. 与 13 的关系
+## 2. 与 07 的关系
 
-`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、附件型实践子文档命名和工作模型标准组成。本文依据 07 §4.2 定义 Change 对象模型。
+`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、主规范结构、机制适配边界和工作模型标准组成。本文依据 07 §4.2 定义 Change 对象模型。
 
-本文不重新定义 13 中的通用规则。发生冲突时，以 13 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
+本文不重新定义 07 中的通用规则。发生冲突时，以 07 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
 
 Change 因承载方式特殊（Git commit 而非 YAML 实例文件），以下方面与 13 通用规则存在适配差异：
 
 1. **事实实例位置**：Change 实例不在 `ldvh-base/` 下，而是 Git commit 历史；
 2. **字段契约**：Change 字段映射为 commit message 格式，而非 YAML 字段；
 3. **状态机**：Change 实例不可变，无状态流转；
-4. **附件型实践子文档**：Change 不需要 22.01-22.06 子文档，理由见 §14。
+4. **机制适配边界**：Change 不需要 22.01-22.06 机制文件，理由见 §14。
 
 ---
 
@@ -337,44 +337,44 @@ ADR 索引按创建日期降序排列，应改为按编号升序。
 
 ---
 
-## 14. 附件型实践子文档
+## 14. 机制适配边界
 
-Change 22.01-22.06 六个子文档槽位状态如下：
+Change Change 现有机制承接文件状态如下，后续应按 07 §4.6 逐步评估、合并或迁移：
 
-| 编号 | 子文档 | 状态 | 说明 |
+| 编号 | 机制文件 | 状态 | 说明 |
 |---|---|---|---|
-| 22.01 | Rules.md | active | Change 提交前提醒和提交纪律的权威位置，L0/L1 Rules 的提交纪律入口由此子文档定义 |
+| 22.01 | Rules.md | active | Change 提交前提醒和提交纪律的权威位置，L0/L1 Rules 的提交纪律入口由此机制文件定义 |
 | 22.02 | Skill.md | active | ldvh-commit Skill 编排提交流程：diff 展示 → message 起草 → 格式预检 → 确认 → commit |
-| 22.03 | Agent.md | not-created | Change 不需要 Agent 并行处理 |
+| 22.03 | Agent.md | not-needed | Change 不需要 Agent 并行处理 |
 | 22.04 | Tools.md | active | commit message 格式校验由 check_22_commit_format.py 执行，提供 --show-format、--check-message、git log 审计三种能力 |
-| 22.05 | Web.md | not-created | Change 不需要独立 Web 编辑入口，读取和查询通过 git log 命令执行；未来如需 Web 变更看板再评估创建 |
+| 22.05 | Web.md | not-needed | Change 不需要独立 Web 编辑入口，读取和查询通过 git log 命令执行；未来如需 Web 变更看板再评估创建 |
 | 22.06 | Contract.md | active | commit message 格式契约的权威位置，定义 type 枚举、scope 枚举、正则表达式和契约消费声明 |
 
-22.02 从 not-created 升级为 active 的理由：
+22.02 从 not-needed 升级为 active 的理由：
 
 1. **提交流程需要多步骤编排**：diff 展示、message 起草、格式预检、用户确认、逐文件 add、commit 是多步骤流程，适合 Skill 编排；
 2. **减少 Rules 冗余**：Skill 集中维护提交流程后，Rules 只需引用入口；
 3. **确保执行一致性**：Skill 统一编排确保每次提交都经过完整检查链，不会因 AI 上下文差异遗漏步骤。
 
-22.01 从 not-created 升级为 active 的理由：
+22.01 从 not-needed 升级为 active 的理由：
 
 1. **L0 Rules 的权威来源**：22.01 定义了 Change 提交纪律的完整规则，L0/L1 Rules 从中提取运行时入口摘要，符合 05 §6 Rules 机制规范的分层关系；
 2. **提交纪律需要明确边界**：哪些场景必须调用 Skill、哪些不得跳过 Skill 直接 commit、Rules 层不得承载哪些内容，需要权威位置定义；
 3. **Change 虽无 YAML 实例但提交纪律独立**：Change 的格式契约、提交流程、校验工具有明确的机制落地需求，不应省略。
 
-22.04 从 not-created 升级为 active 的理由：
+22.04 从 not-needed 升级为 active 的理由：
 
 1. **Tools 校验已实现并在使用**：check_22_commit_format.py 已实现 --show-format、--check-message、git log 审计三种能力，并提供测试覆盖；
-2. **预检是强制制度**：22 §7.3 要求 commit 前必须调用预检工具，需要 Tools 子文档定义命令参数、调用方式和测试要求；
+2. **预检是强制制度**：22 §7.3 要求 commit 前必须调用预检工具，需要 Tools 机制文件或 06 定义命令参数、调用方式和测试要求；
 3. **契约消费声明需要落地**：22.06 Contract 定义了格式契约，22.04 声明 Tools 如何消费该契约。
 
-22.06 从 not-created 升级为 active 的理由：
+22.06 从 not-needed 升级为 active 的理由：
 
 1. **格式契约需要独立权威位置**：commit message 的 type 枚举、scope 枚举、正则表达式、中文字符检测规则需要结构化定义，供 Tools 校验和 AI 遵守消费；
-2. **契约子文档是 Tools 和 Rules 的共同依据**：22.04 Tools 校验和 22.01 Rules 提醒都以 22.06 契约为准；
-3. **Change 虽无 YAML 但契约格式独立**：commit message 格式契约是 Change 的核心结构化接口，需要独立子文档承载。
+2. **字段契约文件是 Tools 和 Rules 的共同依据**：22.04 Tools 校验和 22.01 Rules 提醒都以 22.06 契约为准；
+3. **Change 虽无 YAML 但契约格式独立**：commit message 格式契约是 Change 的核心结构化接口，需要明确机制承接入口。
 
-22.03、22.05 保持 not-created 状态，理由不变：Change 无独立 YAML 实例、无状态流转、Agent 并行处理和 Web 编辑入口当前不需要。
+22.03、22.05 保持 not-needed 状态，理由不变：Change 无独立 YAML 实例、无状态流转、Agent 并行处理和 Web 编辑入口当前不需要。
 
 ---
 
@@ -404,7 +404,7 @@ Change 对象模型进入项目实践前，应确认以下决策：
 3. Change 对象模型是否仍以 AI 执行者为第一服务对象，帮助 AI 追溯变更历史、理解变更原因和关联变更对象；
 4. 是否避免把工具缓存、Web 状态、Agent 输出、Skill 输出或聊天过程当作 Change 最终事实源；
 5. 是否避免创建无必要的规则、Skill、Agent、工具或对象，导致体系膨胀但不提升可控性；
-6. 以 Git commit 承载 Change 是否符合 10 事实源边界规范中的最终事实源原则和单一事实源规则。
+6. 以 Git commit 承载 Change 是否符合 04 事实源边界规范中的最终事实源原则和单一事实源规则。
 
 审查不通过时，应回到落地前决策修正方案、标记暂缓或停止落地；不得直接进入初始化。
 
@@ -417,7 +417,7 @@ Change 对象模型进入项目实践时，需要完成以下初始化：
 1. 确认 Change 事实实例以 Git commit 承载，不创建 `ldvh-base/changes/` 目录；
 2. 确认 commit message 格式规范遵循本文 §8；
 3. 确认 Change 读取入口为 `git log --format` 命令；
-4. 确认 Change 的 22.02、22.01、22.04、22.06 子文档为 active 状态，22.03、22.05 为 not-created 状态，对应子文档文件已创建；
+4. 确认 Change 的 22.02、22.01、22.04、22.06 机制文件为 active 状态，22.03、22.05 为 not-needed 状态，对应机制承接入口已确认；
 5. 确认项目 Rules 中是否需要增加 commit message 格式提醒；
 6. 确认是否需要 Tools 辅助程序覆盖 commit message 格式校验能力；
 7. 确认跨仓库 commit 机制：落地初始化涉及多个 Git 仓库时，每个仓库均需独立提交；
@@ -445,11 +445,11 @@ Change 对象模型合规检查应覆盖以下内容：
 
 1. Change 对象模型规范写作是否符合 07 工作模型标准组成（07 §4.2），缺项是否已说明原因；
 2. commit message 格式是否符合本文 §8 定义的字段契约；
-3. Change 事实源边界是否符合本文 §4 和 10 事实源边界规范；
+3. Change 事实源边界是否符合本文 §4 和 04 事实源边界规范；
 4. Change 读取策略是否符合本文 §11 和 §12；
 5. Change 写入策略是否符合本文 §7 和 §9；
 6. Change 不使用 `ldvh-base/changes/` 目录是否符合本文 §4 的声明；
-7. Change 附件型实践子文档状态是否符合本文 §14 的定义（22.01、22.02、22.04、22.06 active，22.03、22.05 not-created）。
+7. Change 机制适配边界状态是否符合本文 §14 的定义（22.01、22.02、22.04、22.06 active，22.03、22.05 not-needed）。
 
 ---
 
@@ -457,6 +457,6 @@ Change 对象模型合规检查应覆盖以下内容：
 
 1. Change 与 Task、Memo、Risk、Dependency 的关联规则待对应对象模型稳定后补充；
 2. commit message 格式校验工具已实现，后续按需扩展多仓库批量校验能力；
-3. Change Web 信息同步能力待按需实现（22.05 当前 not-created，未来如需变更看板再评估）；
+3. Change Web 信息同步能力待按需实现（22.05 当前 not-needed，未来如需变更看板再评估）；
 4. commit message `type` 枚举是否需要扩展待实践验证；
 5. 项目中已有的暂缓标注（"暂缓：Change 记录机制待替换，见 L1 规则"）应替换为对本文的引用。

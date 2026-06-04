@@ -14,17 +14,17 @@
 
 本文定义 Intent 意图工作模型。Intent 是人的原始目标、范围、成功标准和约束，用于沉淀需要跨任务追踪的用户意图，为 Task 拆解和 ADR 决策提供上游来源。
 
-本文只定义 Intent 对象模型。Intent 相关 Rules、Skill、Agent、Tools 契约式校验与执行和 Web 信息同步实践可按需由 §12 附件型实践子文档承接。
+本文只定义 Intent 对象模型。Intent 相关 Rules、Skill、Agent、Tools 契约式校验与执行和 Web 信息同步实践应按 §12 机制适配边界和 07 §4.6 承接。
 
 本文是精简版规范，只包含核心章节。07 §4.2 中未展开的章节标注于 §10 待补齐事项。
 
 ---
 
-## 2. 与 13 的关系
+## 2. 与 07 的关系
 
-`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、附件型实践子文档命名和工作模型标准组成。本文依据 07 §4.2 定义 Intent 对象模型。
+`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、主规范结构、机制适配边界和工作模型标准组成。本文依据 07 §4.2 定义 Intent 对象模型。
 
-本文不重新定义 13 中的通用规则。发生冲突时，以 13 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
+本文不重新定义 07 中的通用规则。发生冲突时，以 07 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
 
 ---
 
@@ -84,7 +84,7 @@ ldvh-base/intents/intent-{NNNN}-short-title.yaml
 |---|---|
 | Intent 对象模型 | `specs/24-Intent-意图.md` |
 | Intent 对象实例 | `ldvh-base/intents/` |
-| Intent 契约子文档 | `specs/24.06-Contract.md` |
+| Intent 字段契约文件 | `specs/24.06-Contract.md` |
 | Intent 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
 ---
@@ -202,9 +202,9 @@ Intent 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段
 |---|---|---|
 | 8 | 证据留存要求 | Phase 3 |
 | 9 | AI 协作适配 | Phase 4 |
-| 10 | Tools 契约式校验与执行适配 | Phase 3（Contract 子文档先行） |
+| 10 | Tools 契约式校验与执行适配 | Phase 3（Contract 机制文件先行） |
 | 11 | Web 信息同步适配 | Phase 5 |
-| 12 | 附件型实践子文档按需拆分规则 | Phase 4 |
+| 12 | 机制适配边界 | Phase 4 |
 | 13 | 落地前决策 | Phase 4 |
 | 14 | 价值与要素审查 | Phase 4 |
 | 15 | 落地初始化 | Phase 4 |
