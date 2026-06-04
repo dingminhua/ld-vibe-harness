@@ -1,0 +1,34 @@
+id: task-0006
+type: task
+title: PyTools 承接生产对象增删改查
+status: planned
+created: 2026-06-04
+updated: 2026-06-04
+description: |
+  当前 Skill（ldvh-intake、ldvh-close、ldvh-adr、ldvh-commit）直接写 YAML 文件，
+  缺乏确定性校验和原子性保证。PyTools 应承接生产对象的 create、transition、delete
+  等确定性操作，Skill 只做流程编排和 PyTools 调用。
+
+  目标：
+  1. 为 7 个 active fact model（Intent/Task/ADR/Change/Memo/Profile/Pitfall）
+     提供 create/transition/delete PyTools 命令
+  2. 命令封装多文件写入（如 ADR YAML + Change YAML）为原子操作
+  3. 命令消费 Contract 子文档做字段校验和状态机校验
+  4. Skill 流程中调用 PyTools 命令替代直接写 YAML
+source_intent: intent-0003
+source: intent-0003
+parent_task:
+sub_tasks: []
+acceptance: |
+  - [ ] tools/ 下有统一的 fact_model_cli.py 或等价入口，支持 create/transition/delete 子命令
+  - [ ] create 命令对 7 类对象生成符合 Contract 的 YAML 骨架
+  - [ ] transition 命令校验状态流转合法性后更新 status 和 updated 字段
+  - [ ] delete 命令校验对象状态后删除 YAML 文件
+  - [ ] ADR create 封装 ADR YAML + Change YAML 为原子操作
+  - [ ] ldvh-intake Skill 调用 PyTools create 命令而非直接写 YAML
+  - [ ] ldvh-close Skill 调用 PyTools transition 命令而非直接写 YAML
+  - [ ] 现有 tests/tools/ 下有对应测试用例
+verification: python3 -m pytest tests/tools/ && python3 tools/check_fact_model.py ldvh-base/
+assignee:
+related_adrs: []
+related_changes: []

@@ -19,4 +19,5 @@ source: 用户确认取消 TaskSet 和 Evidence，并提出 PyTools 承接增删
 related_tasks:
   - task-0004
   - task-0005
+  - task-0006
 related_adrs: []
