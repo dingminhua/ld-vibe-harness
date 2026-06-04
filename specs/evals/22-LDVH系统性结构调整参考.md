@@ -155,6 +155,8 @@ LDVH 当前顶层结构由五类构成要素共同支撑：介质、开发环境
 
 后续不建议一次性创建所有生命周期 Skill，而应先补 Plan / Verify 的最小入口，再根据 Dogfood 结果判断 Learn 是否需要 Skill 化。
 
+同时，行动流程需要明确“主控唯一调度”原则：Skill 只完成单个受控流程，流程结束后必须输出下一步建议并交还主控；需要并行、独立上下文、多角色判断或子 Agent 审计时，Skill 只能建议主控调度 Agent，不能自行调用 Agent 或链式调用下一个 Skill。
+
 ### 4.4 工具产品问题
 
 当前 PyTools 已经能提供最小事实模型校验和 CLI 骨架，但产品化结构仍有几个关键边界：
@@ -263,7 +265,8 @@ LDVH 当前顶层结构由五类构成要素共同支撑：介质、开发环境
 2. 讨论是否创建 `ldvh-verify`；
 3. 明确 Task 从 `executing` 到 `verifying` 再到 `review_needed` 的最小证据要求；
 4. 明确 lint、test、build、独立审计和人工审查的分工；
-5. 将失败、阻塞和后续发现分流到 Task、Memo、Pitfall 或 ADR。
+5. 将失败、阻塞和后续发现分流到 Task、Memo、Pitfall 或 ADR；
+6. 为 `ldvh-plan`、`ldvh-verify`、`ldvh-close` 等生命周期 Skill 统一增加交还主控输出，明确下一步建议、建议调度对象、所需输入、预期输出和停止条件。
 
 ### 6.4 第四阶段：Contract 消费路线
 
@@ -306,7 +309,9 @@ Web 写入能力应在 Record / Change、状态机和 Human Gate 机制更稳定
 7. Pitfall、Memo、ADR 的分流规则是否需要被固化为行动模型或 Skill；
 8. PyTools 的下一步是继续 CRUD，还是先做 Contract 消费；
 9. Web 是否只做只读态势，还是需要 Human Gate 辅助界面；
-10. 哪些结构调整必须先通过 ADR。
+10. 哪些结构调整必须先通过 ADR；
+11. 生命周期 Skill 的交还主控输出是否应成为所有 Skill 的统一输出契约；
+12. 需要子 Agent 的场景是否都应从 Skill 内部动作改为“Skill 建议、主控调度”。
 
 ---
 
