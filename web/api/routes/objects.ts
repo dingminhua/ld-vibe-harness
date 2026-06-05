@@ -159,6 +159,38 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
+  // Intent 聚合：合并关联 Task 的 deliverables 和 related_docs
+  if (type === 'intent' && result.data) {
+    const relatedTasks: string[] = (result.data.related_tasks as string[]) || []
+    if (relatedTasks.length > 0) {
+      const taskDir = path.join(LDVH_BASE_DIR, 'tasks')
+      const deliverablesSet = new Set<string>()
+      const docsSet = new Set<string>()
+
+      for (const taskId of relatedTasks) {
+        try {
+          if (!fs.existsSync(taskDir)) continue
+          const taskFiles = fs.readdirSync(taskDir).filter(f => f.startsWith(`${taskId}-`) && f.endsWith('.yaml'))
+          if (taskFiles.length === 0) continue
+          const taskContent = fs.readFileSync(path.join(taskDir, taskFiles[0]), 'utf-8')
+          const taskObj = yaml.load(taskContent) as Record<string, unknown>
+          const taskDeliverables = (taskObj.deliverables as string[]) || []
+          const taskDocs = (taskObj.related_docs as string[]) || []
+          taskDeliverables.forEach(d => deliverablesSet.add(d))
+          taskDocs.forEach(d => docsSet.add(d))
+        } catch {
+          // 单个 task 读取失败不影响整体聚合
+        }
+      }
+
+      result.data.aggregated_deliverables = [...deliverablesSet]
+      result.data.aggregated_docs = [...docsSet]
+    } else {
+      result.data.aggregated_deliverables = []
+      result.data.aggregated_docs = []
+    }
+  }
+
   res.json(result)
 })
 

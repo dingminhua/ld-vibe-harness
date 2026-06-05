@@ -17,7 +17,7 @@ import { getTypeDescription, getStatusHint } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 
 /** 字段分组定义 */
-const META_KEYS = ['id', 'type', 'status', 'created', 'updated', 'closed_at', 'title', 'title_en', 'title_zh'];
+const META_KEYS = ['id', 'type', 'status', 'created', 'updated', 'closed_at', 'title', 'title_en', 'title_zh', 'aggregated_deliverables', 'aggregated_docs'];
 /** 长文本字段（用 SummaryText 组件渲染，支持展开/收起） */
 const SUMMARY_TEXT_FIELDS = ['description', 'context', 'consequences', 'success_criteria', 'constraints', 'rationale', 'observation', 'analysis', 'mitigation', 'resolution', 'verification', 'notes'];
 /** 引用字段（用 ReferenceCard 组件渲染） */
@@ -166,6 +166,12 @@ export default function ObjectDetail() {
     ? ((obj.title_en as string) || obj.title as string)
     : ((obj.title_zh as string) || obj.title as string)) || objId;
 
+  // 聚合字段（仅 Intent 类型使用）
+  const aggregatedDeliverables = (obj.aggregated_deliverables as string[]) || [];
+  const aggregatedDocs = (obj.aggregated_docs as string[]) || [];
+  const hasAggregatedDeliverables = aggregatedDeliverables.length > 0;
+  const hasAggregatedDocs = aggregatedDocs.length > 0;
+
   // 内容字段（排除元信息）
   const contentEntries = Object.entries(obj).filter(
     ([key]) => !META_KEYS.includes(key)
@@ -242,6 +248,34 @@ export default function ObjectDetail() {
               <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} objId={objId} onRefresh={refreshDetail} />
             ))}
           </div>
+
+          {/* 聚合区域 - 仅 Intent 类型显示 */}
+          {objType === 'intent' && (hasAggregatedDeliverables || hasAggregatedDocs) && (
+            <div className="mb-6 flex flex-col gap-5">
+              {hasAggregatedDeliverables && (
+                <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <FileText size={13} className="text-ldvh-accent" />
+                    <h4 className="text-xs font-medium tracking-wide text-ldvh-text-secondary">
+                      {t('objectDetail.aggregatedDeliverables')}
+                    </h4>
+                  </div>
+                  <DocPreviewLink docs={aggregatedDeliverables} />
+                </div>
+              )}
+              {hasAggregatedDocs && (
+                <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <FileText size={13} className="text-ldvh-accent" />
+                    <h4 className="text-xs font-medium tracking-wide text-ldvh-text-secondary">
+                      {t('objectDetail.aggregatedDocs')}
+                    </h4>
+                  </div>
+                  <DocPreviewLink docs={aggregatedDocs} />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* YAML source */}
           <div className="rounded-lg border border-ldvh-border bg-ldvh-panel overflow-hidden">

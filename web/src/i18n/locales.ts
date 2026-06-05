@@ -172,6 +172,8 @@ export const UI_LOCALES = {
     'objectDetail.closedAt': '关闭时间',
     'objectDetail.expand': '展开',
     'objectDetail.collapse': '收起',
+    'objectDetail.aggregatedDeliverables': '关联产出',
+    'objectDetail.aggregatedDocs': '关联文档',
 
     // Reading Panel
     'readingPanel.truncated': '内容已截断',
@@ -285,6 +287,8 @@ export const UI_LOCALES = {
     'objectDetail.closedAt': 'Closed',
     'objectDetail.expand': 'Expand',
     'objectDetail.collapse': 'Collapse',
+    'objectDetail.aggregatedDeliverables': 'Aggregated Deliverables',
+    'objectDetail.aggregatedDocs': 'Aggregated Docs',
 
     // Reading Panel
     'readingPanel.truncated': 'Content truncated',
