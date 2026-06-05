@@ -8,9 +8,7 @@ import express, {
   type NextFunction,
 } from 'express'
 import cors from 'cors'
-import path from 'path'
 import dotenv from 'dotenv'
-import { fileURLToPath } from 'url'
 import authRoutes from './routes/auth.js'
 import dashboardRoutes from './routes/dashboard.js'
 import objectsRoutes from './routes/objects.js'
@@ -18,11 +16,6 @@ import validateRoutes from './routes/validate.js'
 import changelogRoutes from './routes/changelog.js'
 import docsRoutes from './routes/docs.js'
 
-// for esm mode
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-// load env
 dotenv.config()
 
 const app: express.Application = express()
@@ -51,6 +44,8 @@ app.use('/api/docs', docsRoutes)
 app.use(
   '/api/health',
   (req: Request, res: Response, next: NextFunction): void => {
+    void req
+    void next
     res.status(200).json({
       success: true,
       message: 'ok',
@@ -62,6 +57,9 @@ app.use(
  * error handler middleware
  */
 app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+  void error
+  void req
+  void next
   res.status(500).json({
     success: false,
     error: 'Server internal error',

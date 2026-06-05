@@ -1046,6 +1046,76 @@ def cmd_supersede(args: argparse.Namespace) -> int:
     return 0
 
 
+# ── update 命令 ─────────────────────────────────────────────────────────
+
+def cmd_update(args: argparse.Namespace) -> int:
+    """更新事实对象的指定字段。"""
+    target = args.target
+    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
+
+    # 定位文件
+    target_path = Path(target)
+    if target_path.is_file():
+        yaml_file = target_path
+    else:
+        matched = False
+        for obj_type, pattern in ID_PATTERNS.items():
+            if pattern.match(target):
+                directory = base_dir / DIRECTORY_MAP[obj_type]
+                if directory.exists():
+                    for yp in sorted(directory.glob(f"{target}-*.yaml")):
+                        yaml_file = yp
+                        matched = True
+                        break
+                break
+        if not matched:
+            error(f"找不到对象: {target}")
+            return 1
+
+    data = load_yaml(yaml_file)
+    if data is None:
+        return 1
+
+    object_type = data.get("type")
+    if object_type not in OBJECT_TYPES:
+        error(f"不支持的对象类型: {object_type}")
+        return 1
+
+    # 解析 --set 参数（key=value 格式）
+    updates = {}
+    for item in (args.set or []):
+        if "=" not in item:
+            error(f"--set 格式错误，应为 key=value: {item}")
+            return 1
+        key, value = item.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        # 列表类型字段：逗号分隔
+        if key in ("related_tasks", "related_adrs", "related_pitfalls", "related_docs",
+                    "blocked_by", "sub_tasks", "affects", "related_objects", "related_rules"):
+            updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
+        else:
+            updates[key] = value
+
+    if not updates:
+        error("未指定要更新的字段，请使用 --set key=value")
+        return 1
+
+    # 禁止修改 id 和 type
+    if "id" in updates or "type" in updates:
+        error("不允许修改 id 和 type 字段")
+        return 1
+
+    # 应用更新
+    data.update(updates)
+    data["updated"] = datetime.now().isoformat()
+
+    # 写回文件
+    save_yaml(yaml_file, data)
+    print(f"已更新 {data.get('id', target)}: {', '.join(f'{k}={v}' for k, v in updates.items())}")
+    return 0
+
+
 # ── CLI 入口 ────────────────────────────────────────────────────────────
 
 def _add_authorization_args(parser: argparse.ArgumentParser) -> None:
@@ -1154,6 +1224,12 @@ def build_parser() -> argparse.ArgumentParser:
     supersede_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     _add_authorization_args(supersede_parser)
 
+    # update 子命令
+    update_parser = subparsers.add_parser("update", help="更新事实对象的指定字段")
+    update_parser.add_argument("target", help="对象 ID（如 intent-0002）或 YAML 文件路径")
+    update_parser.add_argument("--set", action="append", default=None, help="设置字段值（key=value，可多次指定，列表字段用逗号分隔）")
+    update_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+
     return parser
 
 
@@ -1186,6 +1262,8 @@ def main() -> int:
         return cmd_deprecate(args)
     elif args.command == "supersede":
         return cmd_supersede(args)
+    elif args.command == "update":
+        return cmd_update(args)
     else:
         parser.print_help()
         return 1

@@ -3,10 +3,10 @@
  */
 
 import { Router, type Request, type Response } from 'express'
-import { listObjects, validate, OBJECT_TYPES, type ObjectType, LDVH_ROOT } from '../services/pytools.js'
+import { listObjects, validate, OBJECT_TYPES } from '../services/pytools.js'
 import { getGitLog } from '../services/git.js'
 import { getRelativeTime } from '../services/time.js'
-import { getTypeColor, TYPE_COLORS } from '../services/typeColors.js'
+import { getTypeColor } from '../services/typeColors.js'
 
 const router = Router()
 
@@ -122,6 +122,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       validation,
     })
   } catch (err) {
+    void err
     res.status(500).json({ ok: false, error: 'Dashboard aggregation failed' })
   }
 })

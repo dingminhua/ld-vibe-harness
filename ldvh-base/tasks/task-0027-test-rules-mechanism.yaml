@@ -1,0 +1,17 @@
+id: task-0027
+type: task
+title: 测试当前规则机制有效性
+status: planned
+created: '2026-06-05T17:57:47.201963'
+updated: '2026-06-05T17:57:59.958448'
+description: 通过实际操作验证 LDVH 三层规则体系（工作区规则、项目规则、场景规则）是否按预期生效，包括规则触发、约束拦截、Human Gate 等机制
+source: 用户要求测试规则机制有效性
+acceptance: '- [ ] 工作区规则在每次对话首句触发\n- [ ] 项目规则在读取项目文件时触发\n- [ ] 场景规则在编辑对应文件时触发\n- [
+  ] Human Gate 在关键操作时正确拦截\n- [ ] 事实模型规则在编辑 ldvh-base/ YAML 时触发\n- [ ] 测试结果记录并反馈规则漏洞'
+blocked_by: []
+title_en: Test Current Rules Mechanism Effectiveness
+title_zh: 测试当前规则机制有效性
+related_tasks: []
+related_adrs: []
+related_pitfalls: []
+related_docs: []

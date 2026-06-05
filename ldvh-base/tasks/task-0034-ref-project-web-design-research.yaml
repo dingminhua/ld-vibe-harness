@@ -1,0 +1,30 @@
+id: task-0034
+type: task
+title: 调研工作区外部参考项目Web设计
+status: closed
+created: '2026-06-05T19:53:16.820993'
+updated: '2026-06-05T20:12:00.000000'
+description: |
+  调研工作区内外部参考项目的前端 Web 设计，提取可借鉴的设计模式、布局方案、主题系统和组件架构，
+  输出结构化参考文档到 specs/refs/ 目录，为 LDVH Web 展示层（intent-0006）提供设计参考。
+
+  调研范围：
+  1. gstack — 浏览器扩展 + 设计工具链，TypeScript + Bun 技术栈
+  2. mcp-shrimp-task-manager/tools/task-viewer — React + Vite + Tailwind 任务查看器
+  3. trae-pm-kit/pm-kit-web — 原生 HTML/CSS/JS 项目管理 Web 应用
+
+source: intent-0006
+source_intent: intent-0006
+acceptance: |
+  - [x] 三个参考项目的前端设计调研完成
+  - [x] 参考文档写入 specs/refs/ 目录
+  - [x] 文档覆盖技术栈、布局设计、主题系统、组件模式、设计特色
+  - [x] 提炼出对 LDVH Web 的可借鉴要点
+blocked_by: []
+related_adrs: []
+closed_at: '2026-06-05T20:12:00.000000'
+closure_evidence: |
+  参考文档已写入 specs/refs/08-工作区参考项目Web设计调研.md，覆盖三个项目的
+  技术栈、布局设计、主题系统、组件模式和设计特色，并提炼出对 LDVH Web 的
+  可借鉴要点（辉光效果、Pill 状态标签增强、命令面板、看板视图等）和
+  不建议借鉴项。Fact Validator 校验通过，无新增错误。

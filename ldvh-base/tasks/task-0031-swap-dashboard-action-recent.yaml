@@ -1,14 +1,17 @@
 id: task-0031
 type: task
 title: 仪表盘待推进与最近活动位置互换
-status: planned
+status: executing
 created: '2026-06-05T18:11:55.653424'
-updated: '2026-06-05T18:25:00'
-description: |
-  将 Dashboard 页面中"待推进"和"最近活动"两个区域的位置互换，使最近活动显示在待推进上方，优先展示动态信息。
+updated: '2026-06-05T18:19:22.690748'
+description: '将 Dashboard 页面中"待推进"和"最近活动"两个区域的位置互换，使最近活动显示在待推进上方，优先展示动态信息。
+
+  '
 source_intent: intent-0006
 source: intent-0006
-acceptance: |
-  - [ ] Dashboard 页面"最近活动"区域位于"待推进"区域上方
+acceptance: '- [ ] Dashboard 页面"最近活动"区域位于"待推进"区域上方
+
   - [ ] 两个区域内容和功能不受影响
+
+  '
 blocked_by: []

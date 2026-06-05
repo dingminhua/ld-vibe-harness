@@ -8,7 +8,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
 import { fetchObjectDetail, type ObjectDetail } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
-import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
+import { CATEGORY_COLORS } from '@/utils/categoryColors';
 
 /** 字段分组定义 */
 const META_KEYS = ['id', 'type', 'status', 'created', 'updated', 'closed_at', 'title', 'title_en', 'title_zh'];
@@ -424,7 +424,7 @@ function RelatedDocsList({ docs }: { docs: string[] }) {
   const [docContent, setDocContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
 
   const handleToggle = async (idx: number, docPath: string) => {
     if (expandedIdx === idx) {

@@ -1,11 +1,11 @@
 id: intent-0003
 type: intent
-title: 生产对象管理
-title_en: Remove TaskSet independent fact model and adjust Intent/Task relationship
-title_zh: 生产对象管理
+title: 工作模型管理
+title_en: Work Model Management
+title_zh: 工作模型管理
 status: completed
 created: 2026-06-04
-updated: '2026-06-04'
+updated: '2026-06-05T17:46:02.417998'
 description: 'LDVH 生产对象的增删改查、模型收敛和机制分层治理。
 
   已完成决策：取消 TaskSet 和 Evidence 作为独立 active fact model，由 Intent 承接目标/背景/约束/成功标准/关联任务和完成判断，由
@@ -33,3 +33,5 @@ related_tasks:
 - task-0005
 - task-0006
 related_adrs: []
+related_pitfalls: []
+related_docs: []

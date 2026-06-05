@@ -48,12 +48,12 @@ REQUIRED_FIELDS = {
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category"],
 }
 LIST_FIELDS = {
-    "intent": {"related_tasks", "related_adrs"},
+    "intent": {"related_tasks", "related_adrs", "related_pitfalls", "related_docs"},
     "task": {"related_adrs", "sub_tasks", "blocked_by"},
     "adr": {"related_tasks", "related_adrs"},
     "pitfall": {"source_objects", "related_objects", "related_rules", "tags"},
     "profile": {"related_tasks", "related_adrs"},
-    "memo": {"related_tasks", "related_adrs"},
+    "memo": {"related_tasks", "related_adrs", "related_docs"},
 }
 
 

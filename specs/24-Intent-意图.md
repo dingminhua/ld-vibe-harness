@@ -179,6 +179,8 @@ Intent 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段
 | `source` | string | 是 | 来源（谁在什么场景下表达的） |
 | `related_tasks` | list of string | 否 | 关联 Task ID 列表 |
 | `related_adrs` | list of string | 否 | 关联 ADR ID 列表 |
+| `related_pitfalls` | list of string | 否 | 关联 Pitfall（BUG）ID 列表 |
+| `related_docs` | list of string | 否 | 关联文档对象 ID 列表 |
 
 字段约束和完整 YAML 示例已回并到本文。
 
@@ -198,6 +200,8 @@ source: 用户在项目评估讨论中表达
 related_tasks:
   - task-0001
 related_adrs: []
+related_pitfalls: []
+related_docs: []
 ```
 
 ### 8.4 字段约束
@@ -206,9 +210,11 @@ related_adrs: []
 2. `type` 必须固定为 `intent`；
 3. `related_tasks` 应引用已存在的工作模型 ID，引用无效时应标记为校验警告；
 4. `related_adrs` 应引用已存在的工作模型 ID，引用无效时应标记为校验警告；
-5. `id` 格式必须为 `intent-{NNNN}`，编号固定 4 位，从 `0001` 起递增；
-6. `created` 和 `updated` 使用 ISO 8601 日期格式（`YYYY-MM-DD`）；
-7. `related_tasks`、`related_adrs` 为列表类型，可为空列表，不得省略字段后以 null 替代空列表。
+7. `related_pitfalls` 应引用已存在的 Pitfall 对象 ID，引用无效时应标记为校验警告；
+8. `related_docs` 应引用已存在的文档对象 ID，引用无效时应标记为校验警告；
+9. `id` 格式必须为 `intent-{NNNN}`，编号固定 4 位，从 `0001` 起递增；
+10. `created` 和 `updated` 使用 ISO 8601 日期格式（`YYYY-MM-DD`）；
+11. `related_tasks`、`related_adrs`、`related_pitfalls`、`related_docs` 为列表类型，可为空列表，不得省略字段后以 null 替代空列表。
 
 ### 8.5 文件命名契约
 

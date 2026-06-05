@@ -3,11 +3,15 @@ type: intent
 title: Dogfood LDVH 最小 Core Loop
 status: completed
 created: 2026-06-04
-updated: 2026-06-04
-description: 在 LDVH 自身项目中跑通第一条最小 Core Loop，验证 Intent、Task、Evidence、Fact Validator、ldvh-intake 和 ldvh-close 能否协同工作。
-success_criteria: 创建真实 Intent、Task 和 Evidence 实例，并通过 tools/check_fact_model.py 校验；后续可用 ldvh-close 关闭 Task。
+updated: '2026-06-05T17:40:14.307095'
+description: 在 LDVH 自身项目中跑通第一条最小 Core Loop，验证 Intent、Task、Evidence、Fact Validator、ldvh-intake
+  和 ldvh-close 能否协同工作。
+success_criteria: 创建真实 Intent、Task 和 Evidence 实例，并通过 tools/check_fact_model.py 校验；后续可用
+  ldvh-close 关闭 Task。
 constraints: 不扩展新框架分支；不先做 Web；只验证最小可运行闭环。
 source: 用户要求 AI 安排第一条 Dogfood Task
 related_tasks:
-  - task-0001
+- task-0001
 related_adrs: []
+related_pitfalls: []
+related_docs: []

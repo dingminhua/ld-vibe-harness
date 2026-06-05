@@ -1,0 +1,19 @@
+id: memo-0003
+type: memo
+title: 多项目管理与项目集合缺失
+status: draft
+created: '2026-06-05T10:07:10.869099'
+updated: '2026-06-05T10:07:10.869099'
+description: |
+  当前存在多个项目需要管理的情况，面临两个问题：
+  1. 项目定义不够清晰——什么算一个项目、什么不算，边界判定标准缺失
+  2. 生产对象只有 Profile（项目画像）代表单个项目，没有项目集合对象，多项目分组和聚合治理缺少结构化承载
+
+  建议方案：以"不新增对象、强化现有机制"为主，以"Profile 增加分组标签"为补充，暂不引入项目集合对象。
+source: 用户提出"存在多个项目需要管理的情况，项目的定义要清晰，生产对象只有项目没有项目集合如何处理"
+category: question
+priority: high
+related_tasks: []
+related_adrs: []
+related_docs:
+  - specs/evals/18-LDVH多项目治理与项目集合缺失分析.md
