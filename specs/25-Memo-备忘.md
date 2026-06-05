@@ -196,7 +196,65 @@ Memo 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 | `related_tasks` | list of string | 否 | 关联 Task ID 列表 |
 | `related_adrs` | list of string | 否 | 关联 ADR ID 列表 |
 
-字段约束和完整 YAML 示例详见 `specs/25.06-Contract.md`。
+字段约束和完整 YAML 示例已由历史契约文件 `specs/25.06-Contract.md` 回并到本文；历史 Contract 文件仅作为迁移前结构化契约副本，后续删除或归档前需经 Human Gate。
+
+### 8.3 完整 YAML 示例
+
+```yaml
+id: memo-0001
+type: memo
+title: 规范文档中缺少错误处理章节
+status: resolved
+created: 2026-06-04
+updated: 2026-06-04
+description: 在审查 specs/07 时发现缺少错误处理和异常场景的统一规范，需要后续补充
+source: 执行 task-0003 过程中的发现
+category: gap
+priority: medium
+resolved_to: task-0012
+resolved_at: 2026-06-04
+related_tasks:
+  - task-0003
+related_adrs: []
+```
+
+### 8.4 字段约束
+
+1. `status` 必须属于 Memo 标准状态枚举：`draft`、`active`、`resolved`、`archived`；
+2. `type` 必须固定为 `memo`；
+3. `category` 必须属于分类枚举：`discovery`、`reminder`、`question`、`gap`、`preference`；
+4. `priority` 必须属于优先级枚举：`low`、`medium`、`high`；未填写时默认为 `low`；
+5. `resolved_to` 仅在 `status: resolved` 时必填，其他状态下不得填写；
+6. `resolved_at` 仅在 `status: resolved` 时必填，其他状态下不得填写；
+7. `resolved_to` 应引用已存在的工作模型 ID，引用无效时应标记为校验警告；
+8. `related_tasks` 和 `related_adrs` 应引用已存在的工作模型 ID，引用无效时应标记为校验警告；
+9. `id` 格式必须为 `memo-{NNNN}`，编号固定 4 位，从 `0001` 起递增；
+10. `created`、`updated` 和 `resolved_at` 使用 ISO 8601 日期格式（`YYYY-MM-DD`）；
+11. `related_tasks`、`related_adrs` 为列表类型，可为空列表，不得省略字段后以 null 替代空列表。
+
+### 8.5 文件命名契约
+
+Memo 实例文件命名规则为 `memo-{NNNN}-short-title.yaml`。编号从 `0001` 起递增，固定 4 位；英文短标题使用小写短横线命名；每个项目独立编号，不使用跨项目全局编号；文件存放位置为 `ldvh-base/memos/`；文件名变化必须同步检查所有引用该 Memo 的 `related_tasks`、`related_adrs` 和其他关联字段。
+
+### 8.6 状态流转契约
+
+| 当前状态 | 可流转至 |
+|---|---|
+| `draft` | `active`, `archived` |
+| `active` | `resolved`, `archived` |
+| `resolved` | `archived` |
+| `archived` | 无 |
+
+`draft` → `archived` 为直接归档流转，表示记录后判断不需要保留。`active` → `resolved` 为分流流转，必须填写 `resolved_to` 字段。
+
+### 8.7 契约消费与检查项
+
+1. Tools 辅助程序解析 Memo 时应依据本文定义的 YAML schema 和字段约束，不得自行扩张格式契约；
+2. Tools 辅助程序校验 Memo 时应覆盖字段完整性、状态合法性、条件必填和引用有效性；
+3. Tools 辅助程序读取 Memo 时可依据本文状态枚举和字段契约执行状态筛选、详情解析和关联字段解析，但 Memo 读取结果是否可作为当前执行依据由本文和 Skill 流程判断；
+4. 实践子文档和工具可以消费本文契约，但不得复制维护契约字段第二事实源；
+5. 修改本文契约属于规范变更，应评估 Human Gate 并记录 Change（依据 `specs/22-Change-变更记录.md`）；
+6. Memo YAML 实例字段完整性、`status`、`type`、分类、优先级、分流字段、关联引用、文件命名、状态流转和终态重开情况均属于契约检查项。
 
 ---
 
@@ -210,14 +268,18 @@ Memo 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 
 ---
 
-## 10. 待补齐事项
+## 10. 机制适配边界
 
-以下章节依据 `specs/07-工作模型基础规范.md` §4.2 应定义但本文未展开，待后续阶段补齐：
+1. Memo Rules、Skill、Agent、Tools、Web 和 Contract 历史子文档不再作为 Memo 完整性的固定组成；
+2. 当前无需独立 Memo Rules、Skill 或 Agent 入口时，应由本文和 Core Loop 入口承接对象规则、触发条件和协作边界；
+3. Tools 校验应由通用 Fact Validator 消费本文结构化契约完成；对象级 Tools 实践仅在出现对象特定校验或执行能力时创建；
+4. Web 展示或交互由后续 Web 信息同步层统一适配；对象级 Web 实践仅在出现对象特定展示、筛选或交互需求时创建；
+5. 删除、归档或重命名历史机制文件前必须通过 Human Gate。
 
-| 07 §4.2 编号 | 章节名称 | 计划补齐阶段 |
-|---|---|---|
-| 8 | 证据留存要求 | Phase 3 |
-| 9 | AI 协作适配 | Phase 4 |
-| 10 | Tools 契约式校验与执行适配 | Phase 3（Contract 机制文件先行） |
-| 11 | Web 信息同步适配 | Phase 5 |
-| 12 | 机制适配边界 | Phase 4 |
+---
+
+## 11. 待补齐事项
+
+1. Memo YAML schema 的 JSON Schema 表达待 Tools 实现稳定后补齐；
+2. `resolved_to`、`related_tasks`、`related_adrs` 的引用校验规则待对应对象模型稳定后补充；
+3. `category` 枚举是否需要扩展待 Memo 实践积累后确定。

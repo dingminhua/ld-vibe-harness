@@ -326,10 +326,10 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 7. Tools 辅助程序可在 Human Gate 已确认、操作意图已由 AI 或人明确给出、且满足 Contract 校验时，执行可机械化、可校验的受控写入。
 8. Tools 辅助程序写入 ADR 时应校验字段完整性、状态合法性、引用有效性、写入授权和变更记录要求（依据 specs/22-Change-变更记录.md）
 9. Tools 辅助程序不得自行判断 ADR 准入、生成授权、替代流程性判断或自动执行 ADR 状态流转中需要 Human Gate 确认的操作。
-10. 当前 ADR Tools 只读查询、契约校验和受控写入能力是否实现，由 21.04-Tools.md 声明；未声明实现前，不得假定 Tools 已具备对应能力。
+10. 当前 ADR Tools 只读查询、契约校验和受控写入能力以 `tools/fact_cli.py`、`tools/fact_validate.py` 及其测试验收为准；历史 `21.04-Tools.md` 仅作为迁移前能力说明，不得替代实际实现与主规范判断。
 11. ADR 读取流程中的列表、查询、状态筛选、关联查询、统计和校验属于应评估的可机械化只读步骤。
 12. ADR 创建、升级、推翻和废弃流程中的编号生成、ADR YAML 写入、状态流转写入、关联字段回写、推翻或废弃字段回写和 Change 记录生成（依据 specs/22-Change-变更记录.md）属于应评估的可机械化受控写入步骤。
-13. 若 21.04-Tools.md 或 Tools 实现未覆盖上述读取或写入步骤，应将缺口记录为 ADR 对象模型待补齐的阻塞项或暂缓项；不得因只读、查询、统计、校验或局部写入能力已存在而声称 ADR Tools 完整支撑对象模型落地。
+13. 若 Tools 实现未覆盖上述读取或写入步骤，应将缺口记录为 ADR 对象模型待补齐的阻塞项或暂缓项；不得因只读、查询、统计、校验或局部写入能力已存在而声称 ADR Tools 完整支撑对象模型落地。
 
 ---
 
@@ -357,7 +357,7 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 | `21.05` | `21.05-Web.md` | active-prep | ADR Web 信息同步的未来能力定义；当前不实现 Web 页面 |
 | `21.06` | `21.06-Contract.md` | active | ADR YAML schema、字段约束、文件命名契约和状态流转契约 |
 
-21.01-21.06 为历史机制文件，后续应逐步评估、合并或迁移；不得再作为 ADR 完整性的默认要求。后续新增、删除、重命名或改变机制适配边界状态，应通过 Human Gate 确认后处理。若机制承接状态、实体实现、测试验收或项目实际落地状态不一致，应先通过 Human Gate 确认方案，再进入整改。
+21.01-21.06 为历史机制文件，迁移采用“先合并、再校验、后删除或归档”的顺序；不得再作为 ADR 完整性的默认要求。ADR 对象规则、状态机、字段契约、Tools/Web 消费边界和实例检查的权威入口为本文；运行时入口分别落到 `.trae/rules/`、`ldvh-adr` Skill、`tools/` 与 `web/`。后续新增、删除、重命名或改变机制适配边界状态，应通过 Human Gate 确认后处理。若机制承接状态、实体实现、测试验收或项目实际落地状态不一致，应先通过 Human Gate 确认方案，再进入整改。
 
 ---
 
@@ -382,10 +382,9 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 
 1. ADR 与 Risk、Dependency 的转化关系待对应对象模型稳定后补充；
 2. ADR 的自动过期或定期审查机制待实践验证；
-3. ADR YAML schema 的 JSON Schema 表达待 21.06-Contract.md 后续按需细化；
-4. ADR 相关 Rules、Skill、Agent、Tools、Web 和 Contract 实践应按 21.01-21.06 机制文件持续维护；
+3. ADR YAML schema 的 JSON Schema 表达待 `specs/21.06-Contract.md` 内容回并后按需细化；
+4. ADR 相关 Rules、Skill、Agent、Tools、Web 和 Contract 历史机制文件应按本文 §14 的迁移原则逐步回并到主规范、运行 Rules、Skill 实体、Tools 实现、Web 实现或 backlog；
 5. ADR 对象模型在本项目中已完成补齐落地初始化，初始化决策记录见 `ldvh-base/adrs/adr-0001-adr-mechanism-initialization.yaml`；
 6. `ldvh-base/adrs/` 已初始化，ADR 编号从 `adr-0001` 开始；
-7. ADR Tools 测试文件、测试命令、测试覆盖范围和验收记录需持续与 `21.04-Tools.md` 同步复核；
-8. `21.04-Tools.md` 的 active 状态需持续与 `tools/fact_cli.py` 和 `tools/fact_validate.py` 实际能力和测试验收结果保持一致；
-9. ADR Skill 实体已从 active-prep 进入工作区 `/Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/` 落地，后续需持续保持 `21.02-Skill.md`、Skill 实体、Tools 能力和测试验收结果一致。
+7. ADR Tools 测试文件、测试命令、测试覆盖范围和验收记录需持续与 `tools/fact_cli.py`、`tools/fact_validate.py` 及测试验收结果同步复核；
+8. ADR Skill 实体已落地工作区 `/Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/`，后续需持续保持其与本文、Tools 能力和测试验收结果一致。

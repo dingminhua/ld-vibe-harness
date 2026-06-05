@@ -288,7 +288,7 @@ AI 引用 Pitfall 时，应区分：
 
 ### 12.2 机制承接适用条件
 
-机制文件仅承接机制实践或契约，不重新定义 Pitfall 的对象定位、准入条件、状态机、对象关系、Human Gate 或事实源边界。发生冲突时，以本文和上位基础规范为准。
+机制文件仅承接迁移前的机制实践或契约，不重新定义 Pitfall 的对象定位、准入条件、状态机、对象关系、Human Gate 或事实源边界。发生冲突时，以本文和上位基础规范为准。Pitfall 的 Rules、Skill、Agent、Tools、Web 和 Contract 有效内容应逐步合并到本文、05、06、运行 Rules、未来 Skill/Tools/Web 实现或对应 backlog；迁移完成后，23.01-23.06 不再作为 Pitfall 完整性的默认要求。
 
 ---
 
@@ -303,6 +303,8 @@ Pitfall Tools 应依据 `specs/23.06-Contract.md` 执行字段解析、状态校
 ## 14. Web 信息同步适配
 
 Pitfall Web 展示或编辑入口只能作为派生视图或受控入口，不得成为第二事实源。Web 可展示 active Pitfall、按标签筛选、提示相关任务风险、展示替代链和提供 Human Gate UI。
+
+Web 通用派生视图、Human Gate UI、受控编辑入口和不得维护第二事实源等规则归属 `specs/06-Python与Web工具规范.md`；Pitfall 具体页面、接口、状态呈现和 backlog 归属 `web/`、`web/docs/` 或本文机制适配边界。历史 `23.05-Web.md` 仅作为迁移前能力说明。
 
 Web 写入能力如未来实现，必须通过 Tools 受控写入或等价校验流程写回 `ldvh-base/pitfalls/`。
 

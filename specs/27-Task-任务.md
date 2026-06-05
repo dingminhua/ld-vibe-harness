@@ -120,7 +120,7 @@ review_needed → executing（退回：审查不通过）
 
 #### 5.2.1 状态触发规则
 
-状态触发规则、关闭条件和 Human Gate 场景由 `specs/27.01-Rules.md` 承接。本节只定义状态机结构和合法流转方向。
+状态触发规则、关闭条件和 Human Gate 场景由本文直接承接；历史 `specs/27.01-Rules.md` 仅作为迁移前摘要，不再作为 Task 生命周期规则的第二事实源。
 
 | 流转 | 触发时机 | 触发者 |
 |---|---|---|
@@ -135,7 +135,7 @@ review_needed → executing（退回：审查不通过）
 
 ### 5.3 关闭条件
 
-关闭条件由 `specs/27.01-Rules.md` §5.2 承接。本节只列出条件概要：
+关闭条件由本文直接承接：
 
 1. `acceptance` 字段中所有检查项已标记为 `- [x]`；
 2. 所有子任务（`sub_tasks`）已关闭（`status: closed`）；
@@ -223,7 +223,7 @@ AI 执行 Task 时发现 bug、缺口或规范遗漏，应按以下流程自动�
 
 ## 7. Human Gate
 
-Human Gate 场景由 `specs/27.01-Rules.md` §5.3 承接。本节只列出概要：
+Human Gate 场景由本文直接承接，历史 `specs/27.01-Rules.md` 仅作为迁移前摘要：
 
 1. 状态从 `verifying` → `review_needed` 时确认；
 2. 高风险操作前确认（修改 specs、Rules、ADR、ldvh-base/ 等事实源）；
@@ -266,7 +266,7 @@ Task 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 | `closed_at` | date | 条件必填 | 仅当 `status` 为 `closed` 时必须填写 |
 | `closure_evidence` | string | 条件必填 | 仅当 `status` 为 `closed` 时必须填写，关闭证据摘要 |
 
-字段约束和完整 YAML 示例详见 `specs/27.06-Contract.md`。
+字段约束和完整 YAML 示例当前由历史契约文件 `specs/27.06-Contract.md` 过渡承接；本文是 Task 字段契约的权威入口，后续应将结构化契约回并到本文后再删除或归档历史 Contract 文件。
 
 ---
 

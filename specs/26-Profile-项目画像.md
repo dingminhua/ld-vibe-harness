@@ -199,7 +199,69 @@ Profile 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字�
 | `related_adrs` | list of string | 否 | 关联 ADR ID 列表 |
 | `notes` | string | 否 | 补充说明 |
 
-字段约束和完整 YAML 示例详见 `specs/26.06-Contract.md`。
+字段约束和完整 YAML 示例已由历史契约文件 `specs/26.06-Contract.md` 回并到本文；历史 Contract 文件仅作为迁移前结构化契约副本，后续删除或归档前需经 Human Gate。
+
+### 8.3 完整 YAML 示例
+
+```yaml
+id: profile-0001
+type: profile
+title: ld-vibe-harness 项目画像
+status: active
+created: 2026-06-04
+updated: 2026-06-04
+description: LDVH 核心框架项目，承载规范体系、工作模型和工具链
+project_name: ld-vibe-harness
+project_path: /Users/dmh2002/trae_projects/ld-vibe-harness
+ldvh_base_path: /Users/dmh2002/trae_projects/ld-vibe-harness/ldvh-base
+language: Python
+framework: ""
+rules_path: /Users/dmh2002/trae_projects/ld-vibe-harness/.trae/rules
+skills_path: /Users/dmh2002/trae_projects/ld-vibe-harness/.trae/skills
+related_tasks:
+  - task-0001
+related_adrs:
+  - adr-0001
+notes: LDVH 核心项目，所有规范和工作模型的管辖项目
+```
+
+### 8.4 字段约束
+
+1. `status` 必须属于 Profile 标准状态枚举：`draft`、`active`、`suspended`、`archived`；
+2. `type` 必须固定为 `profile`；
+3. `project_name` 不得为空字符串，应使用项目唯一标识名称；
+4. `project_path` 必须为有效绝对路径；
+5. `ldvh_base_path` 必须为有效绝对路径，且应为 `project_path` 的子路径；
+6. `rules_path` 如填写，必须为有效绝对路径；
+7. `skills_path` 如填写，必须为有效绝对路径；
+8. `related_tasks` 和 `related_adrs` 应引用已存在的工作模型 ID，引用无效时应标记为校验警告；
+9. `id` 格式必须为 `profile-{NNNN}`，编号固定 4 位，从 `0001` 起递增；
+10. `created` 和 `updated` 使用 ISO 8601 日期格式（`YYYY-MM-DD`）；
+11. `related_tasks`、`related_adrs` 为列表类型，可为空列表，不得省略字段后以 null 替代空列表。
+
+### 8.5 文件命名契约
+
+Profile 实例文件命名规则为 `profile-{NNNN}-project-name.yaml`。编号从 `0001` 起递增，固定 4 位；英文短标题使用小写短横线命名；每个项目独立编号，不使用跨项目全局编号；文件存放位置为 `ldvh-base/profiles/`；文件名变化必须同步检查所有引用该 Profile 的 `related_profiles` 和其他关联字段。
+
+### 8.6 状态流转契约
+
+| 当前状态 | 可流转至 |
+|---|---|
+| `draft` | `active` |
+| `active` | `suspended`, `archived` |
+| `suspended` | `active`, `archived` |
+| `archived` | 无 |
+
+`active` → `suspended` 为暂停流转，应记录暂停原因。`suspended` → `active` 为恢复流转，应记录恢复原因。
+
+### 8.7 契约消费与检查项
+
+1. Tools 辅助程序解析 Profile 时应依据本文定义的 YAML schema 和字段约束，不得自行扩张格式契约；
+2. Tools 辅助程序校验 Profile 时应覆盖字段完整性、状态合法性、条件必填和引用有效性；
+3. Tools 辅助程序读取 Profile 时可依据本文状态枚举和字段契约执行状态筛选、详情解析和关联字段解析，但 Profile 读取结果是否可作为当前执行依据由本文和 Skill 流程判断；
+4. 实践子文档和工具可以消费本文契约，但不得复制维护契约字段第二事实源；
+5. 修改本文契约属于规范变更，应评估 Human Gate 并记录 Change（依据 `specs/22-Change-变更记录.md`）；
+6. Profile YAML 实例字段完整性、`status`、`type`、路径字段、关联引用、文件命名、状态流转、终态重开、暂停原因和恢复原因均属于契约检查项。
 
 ---
 
@@ -212,14 +274,19 @@ Profile 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字�
 
 ---
 
-## 10. 待补齐事项
+## 10. 机制适配边界
 
-以下章节依据 `specs/07-工作模型基础规范.md` §4.2 应定义但本文未展开，待后续阶段补齐：
+1. Profile Rules、Skill、Agent、Tools、Web 和 Contract 历史子文档不再作为 Profile 完整性的固定组成；
+2. 当前无需独立 Profile Rules、Skill 或 Agent 入口时，应由本文和 Core Loop 入口承接对象规则、触发条件和协作边界；
+3. Tools 校验应由通用 Fact Validator 消费本文结构化契约完成；对象级 Tools 实践仅在出现对象特定校验或执行能力时创建；
+4. Web 展示或交互由后续 Web 信息同步层统一适配；对象级 Web 实践仅在出现对象特定展示、筛选或交互需求时创建；
+5. 删除、归档或重命名历史机制文件前必须通过 Human Gate。
 
-| 07 §4.2 编号 | 章节名称 | 计划补齐阶段 |
-|---|---|---|
-| 8 | 证据留存要求 | Phase 3 |
-| 9 | AI 协作适配 | Phase 4 |
-| 10 | Tools 契约式校验与执行适配 | Phase 3（Contract 机制文件先行） |
-| 11 | Web 信息同步适配 | Phase 5 |
-| 12 | 机制适配边界 | Phase 4 |
+---
+
+## 11. 待补齐事项
+
+1. Profile YAML schema 的 JSON Schema 表达待 Tools 实现稳定后补齐；
+2. `related_tasks`、`related_adrs` 的引用校验规则待对应对象模型稳定后补充；
+3. `project_path` 和 `ldvh_base_path` 的路径有效性校验规则待实践积累后确定是否需要独立字段；
+4. `language` 和 `framework` 的枚举值待实践积累后确定是否需要标准化。

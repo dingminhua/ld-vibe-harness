@@ -7,7 +7,6 @@
 > 相关规范：`specs/05-Trae-Solo环境规范.md`
 
 ---
-
 ---
 ## 1. 本文解决的问题
 
@@ -19,28 +18,35 @@
 
 00 §5.3 定义人类确认闭环，11 定义通过 AskUserQuestion 实现 Human Gate 的技术路径。本文承接 00 和 11，明确特定操作不需要触发 Human Gate 的豁免条件。
 
----
-
-## 3. Human Gate 豁免条件
-
-删除 `.md`、`.yaml`、`.py` 文件时，不需要触发 Human Gate。
 
 ---
 
-## 4. 机制落地关系
+## 4. 对话入口特别说明
+
+工作区规则中必须加入并遵守以下指令：每次和用户对话前，第一句话必须先说“Hello，LDVH”。
+
+如果进入工作区场景规则，则第一句话必须是“Hello, LDVH,我们在操作工作区规定限制的文件”。
+
+调用 Python 工具或脚本时，必须使用 `python3` 命令，不得使用 `python`。
+
+删除 `.md`、`.py` 文件时，不需要触发 Human Gate。
+
+---
+
+## 5. 机制落地关系
 
 | 关联机制 | 关联实体 | 关系类型 | 触发条件 |
 |---|---|---|---|
-| Rules | `../.trae/rules/ldvh-workspace-rules.md` | 工作区规则引用 | 本文的 Human Gate 豁免条件变化时 |
+| Rules | `../.trae/rules/ldvh-workspace-rules.md` | 工作区规则引用 | 本文的 Human Gate 豁免条件或对话入口特别说明变化时 |
 
 ---
 
-## 5. Human Gate 与检查要求
+## 6. Human Gate 与检查要求
 
 修改本文 Human Gate 豁免条件时，应评估 Human Gate 并同步更新工作区规则。
 
 ---
 
-## 6. 待补齐事项
+## 7. 待补齐事项
 
 （无）
