@@ -144,6 +144,10 @@ export const UI_LOCALES = {
     'common.loading': '加载中...',
     'common.loadFailed': '加载失败',
     'common.language': '语言',
+    'common.true': '是',
+    'common.false': '否',
+    'common.empty': '空',
+    'common.null': '—',
   },
   en: {
     // Logo
@@ -240,6 +244,10 @@ export const UI_LOCALES = {
     'common.loading': 'Loading...',
     'common.loadFailed': 'Failed to load',
     'common.language': 'Language',
+    'common.true': 'Yes',
+    'common.false': 'No',
+    'common.empty': 'Empty',
+    'common.null': '—',
   },
 } as const;
 

@@ -1,4 +1,4 @@
-# Change 变更记录
+# Change 变更
 
 > 创建日期：2026-06-03
 > 定位：定义 Change 变更记录工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约（映射为 commit message 格式规范）、事实源回写、证据留存、适配原则和对象特有实例检查
@@ -91,7 +91,7 @@ Git commit 历史
 
 | 内容 | 权威位置 |
 |---|---|
-| Change 对象模型 | `specs/22-Change-变更记录.md` |
+| Change 对象模型 | `specs/22-Change-变更.md` |
 | Change 事实实例 | Git commit 历史 |
 | Change 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
@@ -262,7 +262,7 @@ Refs: ADR-0001, Task-0042
 ```text
 spec(specs): 定义 Change 变更记录工作模型
 
-创建 22-Change-变更记录.md，以 Git commit 作为 Change
+创建 22-Change-变更.md，以 Git commit 作为 Change
 事实实例的权威事实源，定义 commit message 标准格式、
 关联规则和查询约定。
 

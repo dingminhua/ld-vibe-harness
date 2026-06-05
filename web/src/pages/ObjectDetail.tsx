@@ -59,6 +59,7 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   tags: { zh: '标签', en: 'Tags' },
   path: { zh: '路径', en: 'Path' },
   changes: { zh: '变更列表', en: 'Changes' },
+  related_docs: { zh: '关联文档', en: 'Related Docs' },
 };
 
 export default function ObjectDetail() {
@@ -214,8 +215,9 @@ function ContentField({ fieldKey, value, locale }: { fieldKey: string; value: un
 
 /** 递归渲染字段值 */
 function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; value: unknown; depth: number; locale: string }) {
+  const { t } = useI18n();
   if (value === null || value === undefined) {
-    return <span className="text-xs text-ldvh-text-secondary italic">—</span>;
+    return <span className="text-xs text-ldvh-text-secondary italic">{t('common.null')}</span>;
   }
 
   // 字符串
@@ -258,7 +260,7 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
   if (typeof value === 'boolean') {
     return (
       <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${value ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-        {value ? 'true' : 'false'}
+        {value ? t('common.true') : t('common.false')}
       </span>
     );
   }
@@ -271,11 +273,36 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
   // 数组
   if (Array.isArray(value)) {
     if (value.length === 0) {
-      return <span className="text-xs text-ldvh-text-secondary italic">empty</span>;
+      return <span className="text-xs text-ldvh-text-secondary italic">{t('common.empty')}</span>;
     }
 
     // 字符串数组
     if (typeof value[0] === 'string') {
+      // related_docs 字段渲染为可点击链接
+      if (fieldKey === 'related_docs') {
+        return (
+          <div className="flex flex-wrap gap-1.5">
+            {value.map((item, i) => {
+              const href = item.startsWith('http') ? item : undefined;
+              return href ? (
+                <a
+                  key={i}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-md bg-ldvh-bg px-2 py-0.5 text-xs text-ldvh-accent border border-ldvh-border hover:underline"
+                >
+                  {item}
+                </a>
+              ) : (
+                <span key={i} className="rounded-md bg-ldvh-bg px-2 py-0.5 text-xs text-ldvh-text-primary border border-ldvh-border">
+                  {item}
+                </span>
+              );
+            })}
+          </div>
+        );
+      }
       return (
         <div className="flex flex-wrap gap-1.5">
           {value.map((item, i) => (

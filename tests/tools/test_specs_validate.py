@@ -384,7 +384,7 @@ def test_shorthand_reference_passes(tmp_path, monkeypatch):
     specs_dir = tmp_path / "specs"
     target = write_md(specs_dir / "13-LDVH事实模型基础规范.md", "# 规范\n\n## 4. 状态机")
     source = write_md(
-        specs_dir / "21-ADR-决策记录.md",
+        specs_dir / "21-ADR-决策.md",
         """
 # ADR
 
@@ -420,7 +420,7 @@ def test_subdocument_can_reference_parent_sections(tmp_path, monkeypatch):
 
 def test_shorthand_main_document_reference_passes(tmp_path, monkeypatch):
     specs_dir = tmp_path / "specs"
-    target = write_md(specs_dir / "21-ADR-决策记录.md", "# ADR\n\n## 3. 字段契约")
+    target = write_md(specs_dir / "21-ADR-决策.md", "# ADR\n\n## 3. 字段契约")
     source = write_md(
         specs_dir / "20-工作模型集合索引.md",
         """
@@ -441,7 +441,7 @@ def test_missing_shorthand_section_is_reported(tmp_path, monkeypatch):
     specs_dir = tmp_path / "specs"
     target = write_md(specs_dir / "13-LDVH事实模型基础规范.md", "# 规范\n\n## 4. 状态机")
     source = write_md(
-        specs_dir / "21-ADR-决策记录.md",
+        specs_dir / "21-ADR-决策.md",
         """
 # ADR
 
@@ -462,7 +462,7 @@ def test_missing_shorthand_section_is_reported(tmp_path, monkeypatch):
 def test_unresolved_shorthand_is_reported(tmp_path, monkeypatch):
     specs_dir = tmp_path / "specs"
     source = write_md(
-        specs_dir / "21-ADR-决策记录.md",
+        specs_dir / "21-ADR-决策.md",
         """
 # ADR
 

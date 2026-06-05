@@ -3,16 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import StatusBadge from '@/components/StatusBadge';
 import { fetchObjects, type ObjectItem } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
-import type { LocaleKey } from '@/i18n/locales';
-
-const OBJECT_TYPES: { key: string; labelKey: LocaleKey }[] = [
-  { key: 'intent', labelKey: 'nav.intents' },
-  { key: 'task', labelKey: 'nav.tasks' },
-  { key: 'adr', labelKey: 'nav.adrs' },
-  { key: 'pitfall', labelKey: 'nav.pitfalls' },
-  { key: 'memo', labelKey: 'nav.memos' },
-  { key: 'profile', labelKey: 'nav.profiles' },
-];
 
 function getLocalizedTitle(item: ObjectItem, locale: string): string {
   if (locale === 'en') {
@@ -47,26 +37,6 @@ export default function ObjectList() {
 
   return (
     <div className="p-6">
-      {/* Type tabs */}
-      <div className="mb-4 flex flex-wrap gap-1.5">
-        {OBJECT_TYPES.map((ot) => (
-          <button
-            key={ot.key}
-            onClick={() => {
-              setActiveStatus(null);
-              navigate(`/objects/${ot.key}`);
-            }}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              ot.key === currentType
-                ? 'bg-ldvh-accent/15 text-ldvh-accent'
-                : 'text-ldvh-text-secondary hover:bg-ldvh-border/50 hover:text-ldvh-text-primary'
-            }`}
-          >
-            {t(ot.labelKey)}
-          </button>
-        ))}
-      </div>
-
       {/* Status filter pills */}
       {allStatuses.length > 1 && (
         <div className="mb-4 flex flex-wrap gap-1.5">

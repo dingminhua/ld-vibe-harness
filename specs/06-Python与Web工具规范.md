@@ -244,7 +244,7 @@ Tools 和 Web 的机制承接不再通过固定 NN.04-Tools.md 或 NN.05-Web.md 
 | 事实源边界 | 工具输出、缓存、数据库和 UI 状态未替代 Git 文件事实源 |
 | 受控写入 | 写入目标、写入前校验、写入后验证和 Human Gate 已识别 |
 | AI 协作边界 | 工具未直接调用 AI、Skill 或 Agent |
-| Change 记录 | 工具规范或工具写入类高影响变更已记录（依据 specs/22-Change-变更记录.md） |
+| Change 记录 | 工具规范或工具写入类高影响变更已记录（依据 specs/22-Change-变更.md） |
 
 ## 12. 待补齐事项
 

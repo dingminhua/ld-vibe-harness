@@ -29,7 +29,7 @@ applicability: 所有接入 LDVH 的项目，所有事实模型子文档
 source_objects: []
 related_objects: []
 related_rules:
-  - specs/22-Change-变更记录.md
+  - specs/22-Change-变更.md
 tags:
   - subdocument
   - consistency

@@ -155,7 +155,7 @@ Task 可关联一个 Intent，作为该 Intent 的执行单元。
 
 Task 可关联多个 ADR，作为执行过程中涉及的决策参考。
 
-创建 Task 后，关联 ADR 的 `related_objects` 字段应记录 Task ID。ADR 的字段、状态和关闭规则由 ADR 对象模型（`specs/21-ADR-决策记录.md`）定义。
+创建 Task 后，关联 ADR 的 `related_objects` 字段应记录 Task ID。ADR 的字段、状态和关闭规则由 ADR 对象模型（`specs/21-ADR-决策.md`）定义。
 
 ### 6.3 Task → Evidence（已取消）
 
@@ -163,7 +163,7 @@ Evidence 独立工作模型已取消。Task 直接通过 `closure_evidence` 字�
 
 ### 6.4 Task → Change
 
-Task 的创建、状态变更和关闭都应记录 Change。Change 以 Git commit 为权威事实源（依据 `specs/22-Change-变更记录.md`）。
+Task 的创建、状态变更和关闭都应记录 Change。Change 以 Git commit 为权威事实源（依据 `specs/22-Change-变更.md`）。
 
 ### 6.5 Task → Task（子任务）
 
@@ -270,7 +270,7 @@ Task 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 
 ## 9. 事实源回写要求
 
-1. 创建 Task 时应记录 Change（依据 `specs/22-Change-变更记录.md`）；
+1. 创建 Task 时应记录 Change（依据 `specs/22-Change-变更.md`）；
 2. Task 状态变更时应记录 Change；
 3. Task 关联 Intent、ADR 时应更新对应字段并记录 Change；
 4. Task 关闭时必须填写 `closure_evidence` 字段；

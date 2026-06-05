@@ -18,4 +18,4 @@ affects:
 - 所有 bug 修复和代码问题修改场景
 related_objects: []
 related_rules:
-- specs/21-ADR-决策记录.md
+- specs/21-ADR-决策.md

@@ -141,7 +141,7 @@ Profile 可关联多个治理 Task，作为项目级工作单元。
 
 Profile 可关联多个 ADR，作为项目级决策参考。
 
-创建 Profile 后，关联 ADR 的 `related_objects` 字段应记录 Profile ID。ADR 的字段、状态和关闭规则由 ADR 对象模型（`specs/21-ADR-决策记录.md`）定义。
+创建 Profile 后，关联 ADR 的 `related_objects` 字段应记录 Profile ID。ADR 的字段、状态和关闭规则由 ADR 对象模型（`specs/21-ADR-决策.md`）定义。
 
 ### 6.3 Profile → Memo
 
@@ -151,7 +151,7 @@ Profile 可关联多个 Memo，作为项目级备忘。
 
 ### 6.4 Profile → Change
 
-Profile 的创建、状态变更和归档都应记录 Change。Change 以 Git commit 为权威事实源（依据 `specs/22-Change-变更记录.md`）。
+Profile 的创建、状态变更和归档都应记录 Change。Change 以 Git commit 为权威事实源（依据 `specs/22-Change-变更.md`）。
 
 ---
 
@@ -259,14 +259,14 @@ Profile 实例文件命名规则为 `profile-{NNNN}-project-name.yaml`。编号�
 2. Tools 辅助程序校验 Profile 时应覆盖字段完整性、状态合法性、条件必填和引用有效性；
 3. Tools 辅助程序读取 Profile 时可依据本文状态枚举和字段契约执行状态筛选、详情解析和关联字段解析，但 Profile 读取结果是否可作为当前执行依据由本文和 Skill 流程判断；
 4. 实践子文档和工具可以消费本文契约，但不得复制维护契约字段第二事实源；
-5. 修改本文契约属于规范变更，应评估 Human Gate 并记录 Change（依据 `specs/22-Change-变更记录.md`）；
+5. 修改本文契约属于规范变更，应评估 Human Gate 并记录 Change（依据 `specs/22-Change-变更.md`）；
 6. Profile YAML 实例字段完整性、`status`、`type`、路径字段、关联引用、文件命名、状态流转、终态重开、暂停原因和恢复原因均属于契约检查项。
 
 ---
 
 ## 9. 事实源回写要求
 
-1. 创建 Profile 时应记录 Change（依据 `specs/22-Change-变更记录.md`）；
+1. 创建 Profile 时应记录 Change（依据 `specs/22-Change-变更.md`）；
 2. Profile 状态变更时应记录 Change；
 3. Profile 关联 Task、ADR、Memo 时应更新对应字段并记录 Change；
 4. Profile 实例写入 `ldvh-base/profiles/` 目录后，应确保文件命名符合 `profile-{NNNN}-project-name.yaml` 格式。

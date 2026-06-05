@@ -1,4 +1,4 @@
-# Pitfall 踩坑记录
+# Pitfall 踩坑
 
 > 创建日期：2026-06-03
 > 定位：定义 Pitfall 踩坑记录工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存、适配原则、机制适配边界和对象特有实例检查
@@ -90,7 +90,7 @@ ldvh-base/pitfalls/pitfall-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| Pitfall 对象模型 | `specs/23-Pitfall-踩坑记录.md` |
+| Pitfall 对象模型 | `specs/23-Pitfall-踩坑.md` |
 | Pitfall 对象实例 | `ldvh-base/pitfalls/` |
 | Pitfall 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 

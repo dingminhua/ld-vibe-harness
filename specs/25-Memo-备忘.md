@@ -141,7 +141,7 @@ Memo 分流为 Task 后，Memo 的 `resolved_to` 字段应记录 Task ID。Task 
 
 Memo 可分流为 ADR，作为临时判断或偏好转化为长期决策的路径。
 
-Memo 分流为 ADR 后，Memo 的 `resolved_to` 字段应记录 ADR ID。ADR 的字段、状态和关闭规则由 ADR 对象模型（`specs/21-ADR-决策记录.md`）定义。
+Memo 分流为 ADR 后，Memo 的 `resolved_to` 字段应记录 ADR ID。ADR 的字段、状态和关闭规则由 ADR 对象模型（`specs/21-ADR-决策.md`）定义。
 
 ### 6.3 Memo → Intent
 
@@ -151,7 +151,7 @@ Memo 升级为 Intent 后，Memo 的 `resolved_to` 字段应记录 Intent ID。I
 
 ### 6.4 Memo → Change
 
-Memo 的创建、状态变更和分流都应记录 Change。Change 以 Git commit 为权威事实源（依据 `specs/22-Change-变更记录.md`）。
+Memo 的创建、状态变更和分流都应记录 Change。Change 以 Git commit 为权威事实源（依据 `specs/22-Change-变更.md`）。
 
 ---
 
@@ -252,14 +252,14 @@ Memo 实例文件命名规则为 `memo-{NNNN}-short-title.yaml`。编号从 `000
 2. Tools 辅助程序校验 Memo 时应覆盖字段完整性、状态合法性、条件必填和引用有效性；
 3. Tools 辅助程序读取 Memo 时可依据本文状态枚举和字段契约执行状态筛选、详情解析和关联字段解析，但 Memo 读取结果是否可作为当前执行依据由本文和 Skill 流程判断；
 4. 实践子文档和工具可以消费本文契约，但不得复制维护契约字段第二事实源；
-5. 修改本文契约属于规范变更，应评估 Human Gate 并记录 Change（依据 `specs/22-Change-变更记录.md`）；
+5. 修改本文契约属于规范变更，应评估 Human Gate 并记录 Change（依据 `specs/22-Change-变更.md`）；
 6. Memo YAML 实例字段完整性、`status`、`type`、分类、优先级、分流字段、关联引用、文件命名、状态流转和终态重开情况均属于契约检查项。
 
 ---
 
 ## 9. 事实源回写要求
 
-1. 创建 Memo 时应记录 Change（依据 `specs/22-Change-变更记录.md`）；
+1. 创建 Memo 时应记录 Change（依据 `specs/22-Change-变更.md`）；
 2. Memo 状态变更时应记录 Change；
 3. Memo 分流为 Task、ADR 或 Intent 时应更新 `resolved_to` 字段并记录 Change；
 4. Memo 关联 Task、ADR、Evidence 时应更新对应字段并记录 Change；

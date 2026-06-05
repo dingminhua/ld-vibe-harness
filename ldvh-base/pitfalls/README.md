@@ -4,8 +4,8 @@
 
 ## 规范
 
-- 主规范：`specs/23-Pitfall-踩坑记录.md`
-- 契约：已回并到 specs/23-Pitfall-踩坑记录.md
+- 主规范：`specs/23-Pitfall-踩坑.md`
+- 契约：已回并到 specs/23-Pitfall-踩坑.md
 
 ## 命名规则
 

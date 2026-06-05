@@ -3,7 +3,7 @@
 > 层级：场景规则
 > 适用项目：ld-vibe-harness
 > 生效方式：globs — 编辑 specs/ 目录下 Markdown 文件时生效
-> 规范来源：`specs/03-文档规范.md`、`specs/03-文档规范.md §8`、`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/22-Change-变更记录.md`
+> 规范来源：`specs/03-文档规范.md`、`specs/03-文档规范.md §8`、`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/22-Change-变更.md`
 > 维护边界：本文件只作 specs 编辑入口摘要，不替代 specs 正式规范
 
 ## 编辑入口

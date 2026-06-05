@@ -307,7 +307,7 @@ Trae 提供运行环境；
 | Task | `specs/27-Task-任务.md` | 已回并到规范 | active |
 | Memo | `specs/25-Memo-备忘.md` | 已回并到规范 | active |
 | Profile | `specs/26-Profile-项目画像.md` | 已回并到规范 | active |
-| Pitfall | `specs/23-Pitfall-踩坑记录.md` | 已回并到规范 | active |
+| Pitfall | `specs/23-Pitfall-踩坑.md` | 已回并到规范 | active |
 
 ADR(21) 和 Change(22) 已有完整规范。Intent、Task 当前为精简版规范，后续按阶段补齐完整版。Task 已新增子任务机制（parent_task/sub_tasks）和关联任务自动创建流程。
 
@@ -467,13 +467,13 @@ Gstack 对 LDVH 的价值主要是完整的产品化工程工作流和产物连�
 
 需要回答的问题是：
 
-1. ~~Change 的最小事实源是否继续以 Git commit message 为主？~~ **已决策：是。** Change 权威事实源为 Git commit，见 `specs/22-Change-变更记录.md` §4。
+1. ~~Change 的最小事实源是否继续以 Git commit message 为主？~~ **已决策：是。** Change 权威事实源为 Git commit，见 `specs/22-Change-变更.md` §4。
 2. ~~`ldvh-close` 关闭 Task 时，如何形成足够的 Record 摘要，并在产生准入变更时进入 `ldvh-commit` / Change 流程？~~ **已决策：ldvh-close 内部调用 ldvh-commit。** 见 `specs/27.02-Skill.md` §1.1、`specs/22.02-Skill.md` §7.1、`.trae/skills/ldvh-close/SKILL.md` §6。
 3. `ldvh-commit` 提交时，如何消费 Task / Evidence / ADR 信息形成 Change 记录？（待后续 ldvh-commit 增强时决策）
 4. ~~Task 的 `related_changes` 当前为空时，是否影响关闭判断？~~ **已决策：暂不回写，不影响关闭判断。** 靠 commit message Refs 反向追溯。见 `specs/27.02-Skill.md` §1.3。
 5. ~~当前规范已取消 `ldvh-base/changes/` YAML 实例目录，本项目不再把它作为近期方案；文档保留该问题作为历史迁移说明和外部用户兼容提示。~~ **已确认。**
 6. 如果其他用户或未来部署形态确实需要新增 Change YAML，是否必须先通过 ADR 决策事实源归属变化？（待外部用户场景出现时决策）
-7. ~~如果暂不新增 Change YAML，Evidence、Task closure、commit message 三者如何共同支撑 Record 阶段完成判断？~~ **已决策：Task + Evidence + Change 三要素。** 见 `specs/22-Change-变更记录.md` §6.4、`specs/27.02-Skill.md` §1.2。
+7. ~~如果暂不新增 Change YAML，Evidence、Task closure、commit message 三者如何共同支撑 Record 阶段完成判断？~~ **已决策：Task + Evidence + Change 三要素。** 见 `specs/22-Change-变更.md` §6.4、`specs/27.02-Skill.md` §1.2。
 
 本文建议短期采用过渡策略：
 

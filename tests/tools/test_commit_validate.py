@@ -66,7 +66,7 @@ def test_with_refs_no_warning():
     commit = make_commit(
         "a" * 40,
         "docs: add feature",
-        "Some body text\n\nRefs: 22-Change-变更记录"
+        "Some body text\n\nRefs: 22-Change-变更"
     )
     issues = checker.check_commit(commit)
     msgs = issues_messages(issues)
@@ -123,7 +123,7 @@ def test_refs_with_multiple_objects():
     commit = make_commit(
         "a" * 40,
         "docs: add feature",
-        "Body\n\nRefs: 22-Change-变更记录, ADR-0001"
+        "Body\n\nRefs: 22-Change-变更, ADR-0001"
     )
     issues = checker.check_commit(commit)
     msgs = issues_messages(issues)
@@ -160,7 +160,7 @@ def test_git_log_failure(mock_run, capsys):
 
 
 def test_check_message_valid():
-    msg = "spec(tools): add pre-commit check\n\nBody text\n\nRefs: 22-Change-变更记录"
+    msg = "spec(tools): add pre-commit check\n\nBody text\n\nRefs: 22-Change-变更"
     issues = checker.check_message(msg)
     errors = [i for i in issues if i.level == "error"]
     assert errors == []
@@ -239,7 +239,7 @@ def test_chinese_body():
     commit = make_commit(
         "a" * 40,
         "spec(tools): add chinese check",
-        "在提交前检测 commit message 是否包含中文。\n\nRefs: 22-Change-变更记录"
+        "在提交前检测 commit message 是否包含中文。\n\nRefs: 22-Change-变更"
     )
     issues = checker.check_commit(commit)
     msgs = issues_messages(issues)
