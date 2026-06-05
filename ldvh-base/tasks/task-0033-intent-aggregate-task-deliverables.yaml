@@ -1,0 +1,22 @@
+id: task-0033
+type: task
+title: 意图详情页聚合关联任务产出和文档
+status: planned
+created: '2026-06-05T18:36:16.862942'
+updated: '2026-06-05T18:50:00'
+description: |
+  Intent 详情页需要聚合展示其关联 Task 的产出物和关联文档。当前 Intent 只显示自身的 related_tasks 列表，用户需要逐个点击 Task 才能看到产出，无法在意图层面一览全局进展。
+
+  实现方式为数据聚合：后端根据 Intent 的 related_tasks 逐个查询 Task 详情，提取每个 Task 的 deliverables 和 related_docs，合并去重后返回前端；前端在 Intent 详情页新增"关联产出"和"关联文档"聚合区域，复用现有的 ReferenceList 和 RelatedDocsList 组件渲染。
+
+  前置依赖：task-0032（Task 对象新增 deliverables 字段）。
+source_intent: intent-0006
+source: intent-0006
+acceptance: |
+  - [ ] 后端 API 返回 Intent 详情时聚合关联 Task 的 deliverables 和 related_docs
+  - [ ] Intent 详情页新增"关联产出"聚合区域，展示所有关联 Task 的产出物
+  - [ ] Intent 详情页新增"关联文档"聚合区域，展示所有关联 Task 的关联文档
+  - [ ] 聚合结果去重，避免同一文档重复显示
+  - [ ] 产出物和文档可点击查看或跳转
+blocked_by:
+  - task-0032

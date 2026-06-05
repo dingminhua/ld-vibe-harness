@@ -20,6 +20,8 @@ related_tasks:
 - task-0025
 - task-0029
 - task-0030
+- task-0031
+- task-0033
 related_adrs: []
 related_pitfalls: []
 related_docs: []
