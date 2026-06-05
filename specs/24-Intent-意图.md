@@ -8,35 +8,17 @@
 
 ---
 
----
-
-## 1. 本文解决的问题
+## 1. 对象定位与准入条件
 
 本文定义 Intent 意图工作模型。Intent 是人的原始目标、范围、成功标准和约束，用于沉淀需要跨任务追踪的用户意图，为 Task 拆解和 ADR 决策提供上游来源。
 
-本文只定义 Intent 对象模型。Intent 相关 Rules、Skill、Agent、Tools 契约式校验与执行和 Web 信息同步实践应按 §12 机制适配边界和 07 §4.6 承接。
-
-本文是精简版规范，只包含核心章节。07 §4.2 中未展开的章节标注于 §10 待补齐事项。
-
----
-
-## 2. 与 07 的关系
-
-`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、主规范结构、机制适配边界和工作模型标准组成。本文依据 07 §4.2 定义 Intent 对象模型。
-
-本文不重新定义 07 中的通用规则。发生冲突时，以 07 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
-
----
-
-## 3. 对象定位与准入条件
-
-### 3.1 Intent 定义
+### 1.1 Intent 定义
 
 Intent 是人的原始目标、范围、成功标准和约束。Intent 应记录用户想要什么、成功标准是什么、约束是什么、来源是什么。
 
 Intent 不是所有用户输入的默认归宿。AI 可以在当前任务中直接处理简单请求，但只有满足准入条件、需要跨任务追踪或影响范围超出单次操作的意图，才应进入 Intent 事实源。
 
-### 3.2 Intent 与临时请求
+### 1.2 Intent 与临时请求
 
 临时请求是用户在执行过程中的简单指示、一次性操作或局部调整，不默认成为 Intent。临时请求可以保留在当前执行上下文或 Task 中。
 
@@ -47,7 +29,7 @@ Intent 不是所有用户输入的默认归宿。AI 可以在当前任务中直�
 3. 明确的来源（谁在什么场景下表达的）；
 4. 可追溯的状态。
 
-### 3.3 Intent 准入条件
+### 1.3 Intent 准入条件
 
 当一个意图满足以下条件之一时，应考虑形成 Intent：
 
@@ -68,7 +50,7 @@ AI 不得因为用户表达了任何意图就自动创建 Intent。只有满足�
 
 ---
 
-## 4. 事实源边界
+## 2. 事实源边界
 
 本文是 Intent 意图工作模型的权威事实源。本文定义 Intent 的准入条件、状态机、对象关系、Human Gate 和字段契约。
 
@@ -88,9 +70,9 @@ ldvh-base/intents/intent-{NNNN}-short-title.yaml
 
 ---
 
-## 5. 状态机
+## 3. 状态机
 
-### 5.1 标准状态
+### 3.1 标准状态
 
 Intent 标准状态如下：
 
@@ -101,7 +83,7 @@ Intent 标准状态如下：
 | `completed` | 关联 Task 全部完成 |
 | `closed` | 已确认完成并沉淀 |
 
-### 5.2 合法状态流转
+### 3.2 合法状态流转
 
 ```text
 draft → active
@@ -117,21 +99,21 @@ completed → closed
 
 ---
 
-## 6. 与其他对象的关系
+## 4. 与其他对象的关系
 
-### 6.1 Intent → Task
+### 4.1 Intent → Task
 
 当 Intent 进入 active 状态时，应创建 Task 承接执行工作，Intent 保留意图记录。
 
 创建 Task 后，Intent 的 `related_tasks` 字段应记录相关 Task ID。Task 的字段、状态和关闭规则由 Task 对象模型定义。
 
-### 6.2 Intent → ADR
+### 4.2 Intent → ADR
 
 当 Intent 的实现涉及需要长期追溯的决策时，应创建 ADR 记录决策。
 
 创建 ADR 后，Intent 的 `related_adrs` 字段应记录相关 ADR ID。ADR 的字段、状态和关闭规则由 ADR 对象模型（`specs/21-ADR-决策.md`）定义。
 
-### 6.3 Memo → Intent
+### 4.3 Memo → Intent
 
 当 Memo 中的输入涉及明确目标且满足 Intent 准入条件时，Memo 可转化为 Intent。
 
@@ -143,7 +125,7 @@ completed → closed
 
 ---
 
-## 7. Human Gate
+## 5. Human Gate
 
 以下场景必须触发 Human Gate：
 
@@ -154,9 +136,9 @@ Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/05-Trae-Sol
 
 ---
 
-## 8. 字段契约
+## 6. 字段契约
 
-### 8.1 基础字段
+### 6.1 基础字段
 
 Intent 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段契约原则。
 
@@ -169,7 +151,7 @@ Intent 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段
 | `created` | date | 是 | 对象创建日期 |
 | `updated` | date | 是 | 最近更新日期 |
 
-### 8.2 扩展字段
+### 6.2 扩展字段
 
 | 字段名 | 类型 | 必填 | 说明 |
 |---|---|---|---|
@@ -184,7 +166,7 @@ Intent 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段
 
 字段约束和完整 YAML 示例已回并到本文。
 
-### 8.3 完整 YAML 示例
+### 6.3 完整 YAML 示例
 
 ```yaml
 id: intent-0001
@@ -204,7 +186,7 @@ related_pitfalls: []
 related_docs: []
 ```
 
-### 8.4 字段约束
+### 6.4 字段约束
 
 1. `status` 必须属于 Intent 标准状态枚举：`draft`、`active`、`completed`、`closed`；
 2. `type` 必须固定为 `intent`；
@@ -216,11 +198,11 @@ related_docs: []
 10. `created` 和 `updated` 使用 ISO 8601 日期格式（`YYYY-MM-DD`）；
 11. `related_tasks`、`related_adrs`、`related_pitfalls`、`related_docs` 为列表类型，可为空列表，不得省略字段后以 null 替代空列表。
 
-### 8.5 文件命名契约
+### 6.5 文件命名契约
 
 Intent 实例文件命名规则为 `intent-{NNNN}-short-title.yaml`。编号从 `0001` 起递增，固定 4 位；英文短标题使用小写短横线命名；每个项目独立编号，不使用跨项目全局编号；文件存放位置为 `ldvh-base/intents/`；文件名变化必须同步检查所有引用该 Intent 的 `related_objects` 和其他关联字段。
 
-### 8.6 状态流转契约
+### 6.6 状态流转契约
 
 | 当前状态 | 可流转至 |
 |---|---|
@@ -229,7 +211,7 @@ Intent 实例文件命名规则为 `intent-{NNNN}-short-title.yaml`。编号从 
 | `completed` | `closed` |
 | `closed` | 无 |
 
-### 8.7 契约消费与检查项
+### 6.7 契约消费与检查项
 
 1. Tools 辅助程序解析 Intent 时应依据本文定义的 YAML schema 和字段约束，不得自行扩张格式契约；
 2. Tools 辅助程序校验 Intent 时应覆盖字段完整性、状态合法性、条件必填和引用有效性；
@@ -241,26 +223,44 @@ Intent 实例文件命名规则为 `intent-{NNNN}-short-title.yaml`。编号从 
 
 ---
 
-## 9. 事实源回写要求
+## 7. 事实源回写与证据留存
+
+### 7.1 事实源回写
 
 1. 创建 Intent 时应记录 Change（依据 `specs/22-Change-变更.md`）；
 2. Intent 状态变更时应记录 Change；
 3. Intent 关联 Task 或 ADR 时应更新 `related_tasks` 或 `related_adrs` 字段并记录 Change；
 4. Intent 实例写入 `ldvh-base/intents/` 目录后，应确保文件命名符合 `intent-{NNNN}-short-title.yaml` 格式。
 
----
+### 7.2 证据留存
 
-## 10. 机制适配边界
+证据留存通用规则引用 `specs/07-工作模型基础规范.md` §7.4。Intent 对象特有差异：
 
-1. Intent Rules、Skill、Agent、Tools、Web 和 Contract 历史子文档不再作为 Intent 完整性的固定组成；
-2. 当前无需独立 Intent Rules、Skill 或 Agent 入口时，应由本文和 Core Loop 入口承接对象规则、触发条件和协作边界；
-3. Tools 校验应由通用 Fact Validator 消费本文结构化契约完成；对象级 Tools 实践仅在出现对象特定校验或执行能力时创建；
-4. Web 展示或交互由后续 Web 信息同步层统一适配；对象级 Web 实践仅在出现对象特定展示、筛选或交互需求时创建；
-5. 删除、归档或重命名历史机制文件前必须通过 Human Gate。
+1. Intent 完成（`completed`）时，应留存完成依据（如关联 Task 的执行结果和验收结论）；
+2. Intent 关闭（`closed`）时，应留存关联 Task 的最终结果摘要。
 
 ---
 
-## 11. 待补齐事项
+## 8. 适配规则
+
+### 8.1 AI 协作
+
+AI 协作通用规则引用 `specs/07-工作模型基础规范.md` §7.5。Intent 对象特有差异：
+
+1. AI 识别到用户意图时，应判断是否满足 Intent 准入条件（§1.3）；
+2. 创建 Intent 前必须通过 Human Gate 确认（§5）。
+
+### 8.2 Tools 辅助
+
+Tools 辅助通用规则引用 `specs/07-工作模型基础规范.md` §7.6。当前由通用 Fact Validator 消费本文结构化契约完成校验，对象级 Tools 实践待按需创建。
+
+### 8.3 Web 信息同步
+
+Web 信息同步通用规则引用 `specs/07-工作模型基础规范.md` §7.7。当前未实现对象级 Web 实践，待后续统一适配。
+
+---
+
+## 9. 待补齐事项
 
 1. Intent YAML schema 的 JSON Schema 表达待 Tools 实现稳定后补齐；
 2. `related_tasks` 和 `related_adrs` 的引用校验规则待对应对象模型稳定后补充。

@@ -8,35 +8,17 @@
 
 ---
 
----
-
-## 1. 本文解决的问题
+## 1. 对象定位与准入条件
 
 本文定义 Task 任务工作模型。Task 是 AI 可执行的工作单元，有明确验收标准和回写目标，用于承载从 Intent 拆解或用户直接指示的具体工作。
 
-本文只定义 Task 对象模型。Task 相关 Rules、Skill、Agent、Tools 契约式校验与执行和 Web 信息同步实践应按 §12 机制适配边界和 07 §4.6 承接。
-
-本文是精简版规范，只包含核心章节。07 §4.2 中未展开的章节标注于 §10 待补齐事项。
-
----
-
-## 2. 与 07 的关系
-
-`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、主规范结构、机制适配边界和工作模型标准组成。本文依据 07 §4.2 定义 Task 对象模型。
-
-本文不重新定义 07 中的通用规则。发生冲突时，以 07 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
-
----
-
-## 3. 对象定位与准入条件
-
-### 3.1 Task 定义
+### 1.1 Task 定义
 
 Task 是 AI 可执行的工作单元，有明确验收标准和回写目标。Task 应记录目标、验收标准、验证方式、来源和关联对象。
 
 Task 不是所有工作的默认归宿。AI 可以在当前上下文中直接处理简单操作，但只有满足准入条件、需要跨会话追踪或需要验收确认的工作，才应进入 Task 事实源。
 
-### 3.2 Task 与临时工作
+### 1.2 Task 与临时工作
 
 临时工作是执行过程中的简单操作、一次性调整或局部修改，不默认成为 Task。临时工作可以保留在当前执行上下文中。
 
@@ -47,7 +29,7 @@ Task 不是所有工作的默认归宿。AI 可以在当前上下文中直接处
 3. 明确的来源（Intent 或用户直接指示）；
 4. 可追溯的状态。
 
-### 3.3 Task 准入条件
+### 1.3 Task 准入条件
 
 当一个工作单元满足以下条件之一时，应考虑形成 Task：
 
@@ -69,7 +51,7 @@ AI 不得因为用户提出了任何请求就自动创建 Task。只有满足准
 
 ---
 
-## 4. 事实源边界
+## 2. 事实源边界
 
 本文是 Task 任务工作模型的权威事实源。本文定义 Task 的准入条件、状态机、对象关系、Human Gate 和字段契约。
 
@@ -89,9 +71,9 @@ ldvh-base/tasks/task-{NNNN}-short-title.yaml
 
 ---
 
-## 5. 状态机
+## 3. 状态机
 
-### 5.1 标准状态
+### 3.1 标准状态
 
 Task 标准状态如下：
 
@@ -103,7 +85,7 @@ Task 标准状态如下：
 | `review_needed` | 执行完成，待审查 |
 | `closed` | 审查通过，已关闭 |
 
-### 5.2 合法状态流转
+### 3.2 合法状态流转
 
 ```text
 planned → executing（要求 blocked_by 全部 closed，如有）
@@ -116,7 +98,7 @@ review_needed → executing（退回：审查不通过）
 
 未在上述规则中列出的流转为非法流转，Tools 辅助和工具应拒绝执行。
 
-#### 5.2.1 状态触发规则
+#### 3.2.1 状态触发规则
 
 状态触发规则、关闭条件和 Human Gate 场景由本文直接承接。
 
@@ -131,7 +113,7 @@ review_needed → executing（退回：审查不通过）
 
 `closed` 是稳定终态。终态 Task 不得重开；如需重新执行，必须新建 Task 承接，并在新 Task 中引用原 Task。
 
-### 5.3 关闭条件
+### 3.3 关闭条件
 
 关闭条件由本文直接承接：
 
@@ -143,29 +125,29 @@ review_needed → executing（退回：审查不通过）
 
 ---
 
-## 6. 与其他对象的关系
+## 4. 与其他对象的关系
 
-### 6.1 Task → Intent
+### 4.1 Task → Intent
 
 Task 可关联一个 Intent，作为该 Intent 的执行单元。
 
 创建 Task 后，关联 Intent 的 `related_tasks` 字段应记录 Task ID。Intent 的字段和状态由 Intent 对象模型（`specs/24-Intent-意图.md`）定义。
 
-### 6.2 Task → ADR
+### 4.2 Task → ADR
 
 Task 可关联多个 ADR，作为执行过程中涉及的决策参考。
 
 创建 Task 后，关联 ADR 的 `related_objects` 字段应记录 Task ID。ADR 的字段、状态和关闭规则由 ADR 对象模型（`specs/21-ADR-决策.md`）定义。
 
-### 6.3 Task → Evidence（已取消）
+### 4.3 Task → Evidence（已取消）
 
 Evidence 独立工作模型已取消。Task 直接通过 `closure_evidence` 字段记录关闭证据，通过引用结果物（如文件路径、构建产物、测试报告等）承接验证和关闭证据功能。不再使用 `related_evidence` 字段和独立的 Evidence 对象。
 
-### 6.4 Task → Change
+### 4.4 Task → Change
 
 Task 的创建、状态变更和关闭都应记录 Change。Change 以 Git commit 为权威事实源（依据 `specs/22-Change-变更.md`）。
 
-### 6.5 Task → Task（子任务）
+### 4.5 Task → Task（子任务）
 
 Task 可以有子任务。子任务与父任务使用相同的对象模型和状态机，通过 `parent_task` 字段建立纵向分解关系。
 
@@ -180,7 +162,7 @@ Task 可以有子任务。子任务与父任务使用相同的对象模型和状
 
 子任务与 Intent 是两个维度：Intent 是横向归类（同目标的一组任务），parent_task 是纵向分解（父任务的子任务）。
 
-### 6.6 Task → Task（前置依赖）
+### 4.6 Task → Task（前置依赖）
 
 Task 可以通过 `blocked_by` 字段声明前置 Task。`blocked_by` 表示当前 Task 在进入执行态前必须等待的硬前置任务列表。
 
@@ -192,7 +174,7 @@ Task 可以通过 `blocked_by` 字段声明前置 Task。`blocked_by` 表示当�
 4. 当前 Task 从 `planned` 进入 `executing` 前，`blocked_by` 中所有 Task 必须为 `closed`；
 5. 前置依赖是执行顺序约束，不等同于父子任务分解；`blocked_by` 不改变 `source_intent`、`parent_task` 或 `sub_tasks` 关系。
 
-### 6.7 关联任务自动创建流程
+### 4.7 关联任务自动创建流程
 
 AI 执行 Task 时发现 bug、缺口或规范遗漏，应按以下流程自动创建关联任务：
 
@@ -211,7 +193,7 @@ AI 执行 Task 时发现 bug、缺口或规范遗漏，应按以下流程自动�
    - 设置 `parent_task` 为当前 Task ID
    - 设置 `source_intent` 为当前 Task 的 `source_intent`
    - 将子任务 ID 添加到当前 Task 的 `sub_tasks` 列表
-   - 通知用户（Human Gate §7 第 4 条）
+   - 通知用户（Human Gate §5 第 3 条）
 
 4. **继续执行**：创建关联任务后，AI 应继续完成当前 Task 的剩余工作，而不是中断当前 Task 去执行子任务。子任务应在当前 Task 完成或暂停后执行。
 
@@ -219,21 +201,21 @@ AI 执行 Task 时发现 bug、缺口或规范遗漏，应按以下流程自动�
 
 ---
 
-## 7. Human Gate
+## 5. Human Gate
 
 Human Gate 场景由本文直接承接：
 
 1. 状态从 `verifying` → `review_needed` 时确认；
 2. 高风险操作前确认（修改 specs、Rules、ADR、ldvh-base/ 等事实源）；
-4. 创建子任务时确认（AI 自动创建子任务时应通知用户）。
+3. 创建子任务时确认（AI 自动创建子任务时应通知用户）。
 
 Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/05-Trae-Solo环境规范.md` §9）。
 
 ---
 
-## 8. 字段契约
+## 6. 字段契约
 
-### 8.1 基础字段
+### 6.1 基础字段
 
 Task 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段契约原则。
 
@@ -246,7 +228,7 @@ Task 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 | `created` | date | 是 | 对象创建日期 |
 | `updated` | date | 是 | 最近更新日期 |
 
-### 8.2 扩展字段
+### 6.2 扩展字段
 
 | 字段名 | 类型 | 必填 | 说明 |
 |---|---|---|---|
@@ -268,7 +250,9 @@ Task 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 
 ---
 
-## 9. 事实源回写要求
+## 7. 事实源回写与证据留存
+
+### 7.1 事实源回写
 
 1. 创建 Task 时应记录 Change（依据 `specs/22-Change-变更.md`）；
 2. Task 状态变更时应记录 Change；
@@ -276,9 +260,35 @@ Task 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 4. Task 关闭时必须填写 `closure_evidence` 字段；
 5. Task 实例写入 `ldvh-base/tasks/` 目录后，应确保文件命名符合 `task-{NNNN}-short-title.yaml` 格式。
 
+### 7.2 证据留存
+
+证据留存通用规则引用 `specs/07-工作模型基础规范.md` §7.4。Task 对象特有差异：
+
+1. Task 关闭（`closed`）时，应留存 `closure_evidence` 字段内容和验收结果（`acceptance` 列表中所有检查项的最终状态）。
+
 ---
 
-## 10. 待补齐事项
+## 8. 适配规则
+
+### 8.1 AI 协作
+
+AI 协作通用规则引用 `specs/07-工作模型基础规范.md` §7.5。Task 对象特有差异：
+
+1. AI 识别到可执行目标时，应判断是否满足 Task 准入条件（§1.3）；
+2. 创建 Task 前必须通过 Human Gate 确认（§5）；
+3. `blocked_by` 未全部关闭时，Task 不得从 `planned` 进入 `executing`（§3.2）。
+
+### 8.2 Tools 辅助
+
+Tools 辅助通用规则引用 `specs/07-工作模型基础规范.md` §7.6。当前由通用 Fact Validator 消费本文结构化契约完成校验，对象级 Tools 实践待按需创建。
+
+### 8.3 Web 信息同步
+
+Web 信息同步通用规则引用 `specs/07-工作模型基础规范.md` §7.7。当前未实现对象级 Web 实践，待后续统一适配。
+
+---
+
+## 9. 待补齐事项
 
 以下章节依据 `specs/07-工作模型基础规范.md` §4.2 应定义但本文未展开，待后续阶段补齐：
 

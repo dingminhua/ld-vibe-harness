@@ -19,6 +19,9 @@ const CHECKLIST_FIELDS = ['acceptance', 'blocked_by'];
 /** 引用字段（渲染为可点击的引用列表） */
 const REFERENCE_FIELDS = ['related_tasks', 'related_adrs', 'blocked_by', 'source_intent', 'parent_task'];
 
+/** 可折叠的关联内容字段（intent 类型默认展开，其他类型默认折叠） */
+const COLLAPSIBLE_FIELDS = ['related_tasks', 'related_docs', 'related_adrs', 'deliverables', 'blocked_by'];
+
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   intent: { zh: '意图', en: 'Intent' },
@@ -152,7 +155,7 @@ export default function ObjectDetail() {
       {/* Content fields */}
       <div className="mb-6 flex flex-col gap-5">
         {contentEntries.map(([key, value]) => (
-          <ContentField key={key} fieldKey={key} value={value} locale={locale} />
+          <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} />
         ))}
       </div>
 
@@ -194,7 +197,10 @@ function MetaChip({ label, value }: { label: string; value: string }) {
 }
 
 /** 内容字段：根据字段类型选择渲染方式 */
-function ContentField({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
+function ContentField({ fieldKey, value, locale, objType }: { fieldKey: string; value: unknown; locale: string; objType: string }) {
+  const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
+  const [collapsed, setCollapsed] = useState(isCollapsible ? objType !== 'intent' : false);
+
   if (value === null || value === undefined) return null;
   if (value === '') return null;
 
@@ -206,11 +212,19 @@ function ContentField({ fieldKey, value, locale }: { fieldKey: string; value: un
 
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-      <div className="mb-2 flex items-center gap-2">
+      <div
+        className={`mb-2 flex items-center gap-2 ${isCollapsible ? 'cursor-pointer select-none' : ''}`}
+        onClick={isCollapsible ? () => setCollapsed(c => !c) : undefined}
+      >
         <FileText size={13} className="text-ldvh-accent" />
         <h4 className="text-xs font-medium tracking-wide text-ldvh-text-secondary">{label}</h4>
+        {isCollapsible && (
+          <span className="ml-auto text-ldvh-text-secondary">
+            {collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+          </span>
+        )}
       </div>
-      <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />
+      {!collapsed && <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />}
     </div>
   );
 }

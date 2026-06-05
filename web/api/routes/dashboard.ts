@@ -10,21 +10,6 @@ import { getTypeColor } from '../services/typeColors.js'
 
 const router = Router()
 
-/** 待推进状态优先级排序 */
-const ACTION_STATUS_PRIORITY: Record<string, number> = {
-  verifying: 1,
-  review_needed: 2,
-  executing: 3,
-  planned: 4,
-  active: 5,
-  proposed: 6,
-  pending_review: 7,
-  observed: 8,
-  confirmed: 9,
-  draft: 10,
-  suspended: 11,
-}
-
 /** 判断状态是否为"可推进"（非终态） */
 function isActionableStatus(status: string): boolean {
   const terminalStatuses = ['closed', 'completed', 'rejected', 'superseded', 'deprecated', 'archived', 'resolved', 'implemented', 'applied', 'cancelled', 'filed']
@@ -91,15 +76,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const sortedByUpdated = [...allItems].sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')))
     const recentItems = sortedByUpdated.slice(0, 10)
 
-    // 待推进项：筛选非终态，按优先级排序
+    // 待推进项：筛选非终态，按 updated 时间倒序排列（最近更新的排在最前面）
     const actionItems = allItems
       .filter(item => isActionableStatus(String(item.status || '')))
-      .sort((a, b) => {
-        const priorityA = ACTION_STATUS_PRIORITY[String(a.status)] ?? 99
-        const priorityB = ACTION_STATUS_PRIORITY[String(b.status)] ?? 99
-        if (priorityA !== priorityB) return priorityA - priorityB
-        return String(a.updated || '').localeCompare(String(b.updated || ''))
-      })
+      .sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')))
       .slice(0, 8)
 
     // 校验结果

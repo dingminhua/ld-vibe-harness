@@ -1,39 +1,24 @@
 # ADR 决策
 
 > 创建日期：2026-05-30
-> 定位：定义 ADR 决策记录工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存、适配原则、机制适配边界和对象特有实例检查
+> 定位：定义 ADR 决策工作模型，包括对象定位与准入条件、事实源边界、状态机、与其他对象的关系、Human Gate、字段契约、事实源回写与证据留存、适配规则、待补齐事项
 > 适用范围：所有接入 LDVH 且需要管理长期决策的项目
 > 上位依据：`specs/07-工作模型基础规范.md`
 > 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/06-Python与Web工具规范.md`、`specs/20-工作模型集合索引.md`
 
 ---
 
----
-## 1. 本文解决的问题
+## 1. 对象定位与准入条件
 
-本文定义 ADR 决策记录工作模型。ADR 是已确认、后续应遵守的决策记录，用于沉淀需要跨会话、跨任务或跨执行轮次追溯的长期决策。
+本文定义 ADR 决策工作模型。ADR 是已确认、后续应遵守的决策，用于沉淀需要跨会话、跨任务或跨执行轮次追溯的长期决策。
 
-本文只定义 ADR 对象模型。ADR 相关 Rules、Skill、Agent、Tools 契约式校验与执行和 Web 信息同步实践可按需由 §12机制适配边界承接。
-
----
-
-## 2. 与 07 的关系
-
-`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、主规范结构、机制适配边界和工作模型标准组成。本文依据 07 §4.2 定义 ADR 对象模型。
-
-本文不重新定义 07 中的通用规则。发生冲突时，以 07 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
-
----
-
-## 3. 对象定位与准入条件
-
-### 3.1 ADR 定义
+### 1.1 ADR 定义
 
 ADR 是已确认、后续应遵守的决策记录。ADR 应记录决策内容、背景、原因、选择、影响范围、决策后果和后续约束。
 
 ADR 不是所有判断的默认归宿。AI 可以在当前任务中做临时判断、记录分析结论或选择局部执行策略，但只有满足准入条件、影响长期执行方式或需要跨会话追溯的决策，才应进入 ADR 事实源。
 
-### 3.2 ADR 与临时判断
+### 1.2 ADR 与临时判断
 
 临时判断是 AI 或人在执行过程中做出的局部选择，不默认成为 ADR。临时判断可以保留在当前执行上下文、Memo、Task 证据或讨论材料中。
 
@@ -47,7 +32,7 @@ ADR 是满足准入条件、进入 LDVH 工作模型体系的决策。所有 ADR
 4. 影响范围；
 5. 可追溯的状态。
 
-### 3.3 ADR 准入条件
+### 1.3 ADR 准入条件
 
 当一个判断满足以下条件之一时，应考虑形成 ADR：
 
@@ -72,7 +57,7 @@ ADR 是满足准入条件、进入 LDVH 工作模型体系的决策。所有 ADR
 
 AI 不得因为某个判断看起来重要就自动创建 ADR。只有满足准入条件的判断，才应写入 ADR 事实源。
 
-### 3.4 ADR 与 specs / Rules 的边界
+### 1.4 ADR 与 specs / Rules 的边界
 
 ADR 记录为什么这样决定，specs 或 Rules 记录以后必须怎么做。两者不得互相替代。
 
@@ -80,9 +65,9 @@ ADR 记录为什么这样决定，specs 或 Rules 记录以后必须怎么做。
 
 ---
 
-## 4. 事实源边界
+## 2. 事实源边界
 
-本文是 ADR 决策记录工作模型的权威事实源。本文定义 ADR 的准入条件、状态机、对象关系、Human Gate、字段契约和适配原则。
+本文是 ADR 决策记录工作模型的权威事实源。本文定义 ADR 的准入条件、状态机、对象关系、Human Gate、字段契约和适配规则。
 
 ADR 对象实例的权威事实源位置为：
 
@@ -100,9 +85,9 @@ ldvh-base/adrs/adr-{NNNN}-short-title.yaml
 
 ---
 
-## 5. 状态机
+## 3. 状态机
 
-### 5.1 标准状态
+### 3.1 标准状态
 
 ADR 标准状态如下：
 
@@ -114,7 +99,7 @@ ADR 标准状态如下：
 | `superseded` | 已被新 ADR 替代 |
 | `rejected` | 已否决，不采纳 |
 
-### 5.2 合法状态流转
+### 3.2 合法状态流转
 
 ```text
 proposed → accepted, rejected
@@ -132,9 +117,9 @@ rejected → 无
 
 ---
 
-## 6. 与其他对象的关系
+## 4. 与其他对象的关系
 
-### 6.1 Memo → ADR
+### 4.1 Memo → ADR
 
 当 Memo 中的输入涉及需要长期追溯的判断或选择，且满足 ADR 准入条件时，Memo 可转化为 ADR。
 
@@ -146,7 +131,7 @@ rejected → 无
 
 转化后，ADR 的 `related_objects` 字段应记录来源 Memo ID。Memo 侧的状态和回链字段由 Memo 对象模型定义。
 
-### 6.2 Task / Evidence → ADR
+### 4.2 Task / Evidence → ADR
 
 当 Task 执行过程或 Evidence 中产生的判断满足 ADR 准入条件时，可将该判断升级为 ADR。
 
@@ -158,13 +143,13 @@ rejected → 无
 
 转化后，ADR 的 `related_objects` 字段应记录来源 Task ID 或 Evidence ID。Task 和 Evidence 侧的记录方式由对应对象模型定义。
 
-### 6.3 ADR → Task
+### 4.3 ADR → Task
 
 当 ADR 的决策需要具体执行时，应创建 Task 承接执行工作，ADR 保留决策记录。
 
 创建 Task 后，ADR 的 `related_objects` 字段应记录相关 Task ID。Task 的字段、状态和关闭规则由 Task 对象模型定义。
 
-### 6.4 ADR → specs / Rules
+### 4.4 ADR → specs / Rules
 
 当 ADR 满足升级条件时，决策应升级为 specs 或 Rules 中的规则正文。
 
@@ -191,7 +176,7 @@ specs 或 Rules 记录以后必须怎么做
 3. 在 ADR 的 `related_rules` 字段记录升级后的规则文件；
 4. 经 Human Gate 确认。
 
-### 6.5 不满足准入的判断
+### 4.5 不满足准入的判断
 
 不满足 ADR 准入条件的判断，应按其性质分流：
 
@@ -203,9 +188,9 @@ specs 或 Rules 记录以后必须怎么做
 
 ---
 
-## 7. Human Gate
+## 5. Human Gate
 
-### 7.1 必须触发 Human Gate 的操作
+### 5.1 必须触发 Human Gate 的操作
 
 | 操作 | 需要确认的内容 |
 |---|---|
@@ -217,7 +202,7 @@ specs 或 Rules 记录以后必须怎么做
 | ADR 文件重命名 | 引用同步更新 |
 | 修改已 accepted ADR 的 `decision` 字段 | 核心决策内容变更 |
 
-### 7.2 应评估 Human Gate 的情况
+### 5.2 应评估 Human Gate 的情况
 
 1. 新增影响多个项目、规则、Skill、Agent、工具或工作模型边界的 ADR；
 2. 将原本只是 Memo、Intent、Task 证据或临时判断的内容升级为 ADR；
@@ -225,7 +210,7 @@ specs 或 Rules 记录以后必须怎么做
 4. 修改 ADR 的核心决策内容；
 5. 改变 ADR 的事实源载体、状态机或升级路径语义。
 
-### 7.3 推翻与废弃规则
+### 5.3 推翻与废弃规则
 
 1. ADR 不得删除。推翻旧决策时，不得删除旧 ADR 文件，应通过状态变更表达。
 2. 推翻旧决策时，将旧 ADR 的 `status` 标记为 `superseded`，并在 `superseded_by` 字段引用新 ADR 的 ID。新 ADR 的 `context` 中应说明推翻旧决策的原因。
@@ -236,9 +221,9 @@ specs 或 Rules 记录以后必须怎么做
 
 ---
 
-## 8. 字段契约
+## 6. 字段契约
 
-### 8.1 基础字段
+### 6.1 基础字段
 
 ADR 基础字段遵循 07 §6.4 的字段契约原则。
 
@@ -251,7 +236,7 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 | `created` | 是 | 对象创建日期 |
 | `updated` | 是 | 最近更新日期 |
 
-### 8.2 ADR 扩展字段
+### 6.2 ADR 扩展字段
 
 | 字段名 | 必填 | 说明 |
 |---|---|---|
@@ -265,7 +250,7 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 | `related_rules` | 否 | 关联的 specs 或 Rules 文件列表 |
 | `superseded_by` | 条件必填 | 仅当 `status` 为 `superseded` 时必须填写，指向替代本决策的新 ADR ID |
 
-### 8.3 字段约束
+### 6.3 字段约束
 
 1. `status` 必须属于 ADR 标准状态；
 2. `type` 必须固定为 `adr`；
@@ -277,103 +262,53 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 
 ---
 
-## 9. 事实源回写要求
+## 7. 事实源回写与证据留存
 
-1. ADR 状态变更时，必须先更新 ADR YAML 实例中的状态字段，再执行后续操作。
-2. ADR 被 `accepted` 或 `superseded` 后，相关 specs 文档如需同步更新，应在 ADR 实例的 `affects` 字段中声明受影响文件，并按 04 事实源边界规范执行回写。
-3. ADR 推翻或废弃时，应在 ADR 实例中记录推翻原因和替代 ADR 引用，不得直接删除 ADR 文件。
-4. ADR 回写不得绕过 Human Gate，涉及正式规范变更的 ADR 必须经确认后才能回写。
+通用规则遵循 07 §7.4（记录 Change、回写不绕过 Human Gate、证据可追溯、不得仅存在于对话历史）。本节只保留 ADR 对象特有差异。
 
----
+### 7.1 回写特有
 
-## 10. 证据留存要求
+1. ADR 被 `accepted` 或 `superseded` 后，相关 specs 文档如需同步更新，应在 ADR 实例的 `affects` 字段中声明受影响文件，并按 04 事实源边界规范执行回写。
+2. ADR 推翻或废弃时，应在 ADR 实例中记录推翻原因和替代 ADR 引用，不得直接删除 ADR 文件。
+
+### 7.2 证据特有
 
 1. ADR 从 `proposed` 变更为 `accepted` 时，应留存决策依据和确认记录。
 2. ADR 推翻或废弃时，应留存推翻原因、替代方案和确认记录。
 3. ADR 升级时，应留存升级原因、新旧 ADR 关联和确认记录。
-4. 证据留存位置为 ADR YAML 实例的 `context`、`decision`、`consequences` 字段（依据 specs/22-Change-变更.md）
-5. ADR 证据应可追溯到 Git 文件事实源，不得仅存在于对话历史或工具缓存中。
+4. 证据留存位置为 ADR YAML 实例的 `context`、`decision`、`consequences` 字段。
 
 ---
 
-## 11. AI 协作适配
+## 8. 适配规则
+
+通用规则遵循 07 §7.5（AI 协作）、§7.6（Tools 辅助）、§7.7（Web 信息同步）。本节只保留 ADR 对象特有差异。
+
+### 8.1 AI 协作
 
 1. AI 读取 ADR 时应优先读取 `accepted` 状态的 ADR，作为已确认决策的执行依据。
-2. AI 在修改 specs、Rules、Tools、工作模型边界或处理影响长期执行方式的判断前，应评估是否需要读取相关 ADR。
-3. AI 读取 ADR 时应从 `ldvh-base/adrs/` Git 文件事实源或本文 §12 声明的只读 Tools 派生结果获取信息，不得依赖聊天记忆、工具缓存或 Web 派生状态作为最终依据。
-4. AI 应根据 ADR 状态判断读取结果适用性：`accepted` 可作为当前执行依据，`proposed` 只作为待确认信息，`deprecated`、`superseded` 和 `rejected` 只作为历史信息。
-5. AI 读取 `superseded` 状态 ADR 时，应继续追踪 `superseded_by` 指向的新 ADR；未能追踪到替代 ADR 时，应标记为读取缺口。
-6. AI 读取 ADR 后应输出与当前任务相关的 ADR ID、状态、适用性、关联原因和是否存在冲突或缺口。
-7. AI 不得将 `proposed` 状态的 ADR 作为执行依据。
-8. AI 读取终态 ADR 时，应识别其历史语境，不作为当前执行依据。
-9. AI 不得因为某个判断看起来重要就自动创建 ADR，必须先判断是否满足 ADR 准入条件。
-10. AI 创建 ADR 前必须获得 Human Gate 确认；经确认后创建的 ADR 初始状态应为 `proposed`，不得直接创建为 `accepted`。
-11. AI 不得自行推翻、废弃或升级 `accepted` 状态的 ADR，必须经 Human Gate 确认。
-12. 读取后发现缺少决策依据、决策冲突、已接受 ADR 需要调整或已有决策需要升级时，应按本文准入条件、状态机和 Human Gate 要求分流到创建、升级、推翻、废弃或其他后续流程。
+2. AI 读取 `superseded` 状态 ADR 时，应继续追踪 `superseded_by` 指向的新 ADR；未能追踪到替代 ADR 时，应标记为读取缺口。
+3. AI 不得将 `proposed` 状态的 ADR 作为执行依据。
+4. AI 不得自行推翻、废弃或升级 `accepted` 状态的 ADR，必须经 Human Gate 确认。
+5. AI 创建 ADR 前必须获得 Human Gate 确认；经确认后创建的 ADR 初始状态应为 `proposed`，不得直接创建为 `accepted`。
 
----
+### 8.2 Tools 辅助
 
-## 12. Tools 辅助适配
+1. Tools 辅助程序校验 ADR 时应覆盖字段完整性、状态合法性、条件必填、引用有效性、格式合规性和 Human Gate 共 6 项。
+2. Tools 辅助程序可聚合 ADR 列表、状态分布、升级路径、影响范围和推翻历史共 5 类输出；聚合输出属于派生视图数据，不替代 ADR 事实源。
+3. Tools 辅助程序受控写入应满足 Human Gate 已确认、操作意图已由 AI 或人明确给出、Contract 校验通过，并校验字段完整性、状态合法性、引用有效性、写入授权和变更记录要求共 8 项条件。
+4. 当前 ADR Tools 只读查询、契约校验和受控写入能力以 `tools/fact_cli.py`、`tools/fact_validate.py` 及其测试验收为准，不得替代实际实现与主规范判断。
 
-1. Tools 辅助程序解析 ADR 时应依据本文定义的字段契约和文件命名规则。
-2. Tools 辅助程序读取 ADR 时应从 `ldvh-base/adrs/` Git 文件事实源生成运行时派生结果，支持列表、关键词查询、状态筛选、详情查看、关联查询、统计和校验。
-3. Tools 只读查询结果不自动成为执行依据；AI 或 Skill 必须按本文状态语义判断读取结果适用性。
-4. Tools 辅助程序校验 ADR 时应覆盖字段完整性、状态合法性、条件必填、引用有效性、格式合规性和 Human Gate。
-5. Tools 辅助程序可聚合 ADR 列表、状态分布、升级路径、影响范围和推翻历史。
-6. 聚合输出属于派生视图数据，不替代 ADR 事实源。
-7. Tools 辅助程序可在 Human Gate 已确认、操作意图已由 AI 或人明确给出、且满足 Contract 校验时，执行可机械化、可校验的受控写入。
-8. Tools 辅助程序写入 ADR 时应校验字段完整性、状态合法性、引用有效性、写入授权和变更记录要求（依据 specs/22-Change-变更.md）
-9. Tools 辅助程序不得自行判断 ADR 准入、生成授权、替代流程性判断或自动执行 ADR 状态流转中需要 Human Gate 确认的操作。
-10. 当前 ADR Tools 只读查询、契约校验和受控写入能力以 `tools/fact_cli.py`、`tools/fact_validate.py` 及其测试验收为准，不得替代实际实现与主规范判断。
-11. ADR 读取流程中的列表、查询、状态筛选、关联查询、统计和校验属于应评估的可机械化只读步骤。
-12. ADR 创建、升级、推翻和废弃流程中的编号生成、ADR YAML 写入、状态流转写入、关联字段回写、推翻或废弃字段回写和 Change 记录生成（依据 specs/22-Change-变更.md）属于应评估的可机械化受控写入步骤。
-13. 若 Tools 实现未覆盖上述读取或写入步骤，应将缺口记录为 ADR 对象模型待补齐的阻塞项或暂缓项；不得因只读、查询、统计、校验或局部写入能力已存在而声称 ADR Tools 完整支撑对象模型落地。
-
----
-
-## 13. Web 信息同步适配
+### 8.3 Web 信息同步
 
 1. Web 可以同步 ADR 列表、状态分布、影响范围、关联对象、升级路径和推翻历史。
-2. Web 可以同步待确认 ADR、已终态 ADR，以及 ADR 与 specs、Rules、Task、Memo、Evidence 的关联。
-3. Web 信息同步的 ADR 信息必须可追溯到 Git 文件事实源。
-4. Web 不得维护与 ADR 事实源不一致的权威状态。
-5. Web 信息同步 ADR 状态变更时，应提示 Human Gate 要求。
-6. Web 不得绕过 ADR 字段契约直接维护派生状态。
 
 ---
 
-## 14. 机制适配边界
-
-机制适配边界含义、命名规则和状态骨架由各模型主规范自行声明。ADR 对象模型已为现有机制承接入口形成显式结论；该结论表示历史机制文件状态已声明，不等同于 ADR 对象实例事实源、Tools 测试或项目产品初始化已经完成。
-
-历史机制文件 21.01-21.06 已删除，内容已回并到本文对应章节。
-
----
-
-## 15. 对象特有实例检查
-
-检查 ADR 工作模型实例是否符合规范时，应确认：
-
-1. ADR 实例字段是否符合本文 §8 定义的字段契约；
-2. ADR 状态流转是否符合本文 §5 定义的状态机，是否存在非法流转；
-3. ADR 对象关系引用是否符合本文 §6 定义的关系规则，`related_objects`、`related_rules` 和 `superseded_by` 是否有效；
-4. ADR 事实源边界是否符合本文 §4 和 `specs/04-事实源边界与承载规范.md`；
-5. ADR 创建和状态变更是否经过 Human Gate（依据本文 §7）；
-6. ADR 事实源回写是否符合本文 §9；
-7. ADR 证据留存是否符合本文 §10；
-8. ADR AI 协作适配是否符合本文 §11；
-9. `proposed` 状态 ADR 是否未被作为执行依据；
-10. `superseded` 状态 ADR 是否已填写 `superseded_by` 字段；
-11. ADR 机制适配边界状态是否与实际文件一致。
-
-本节不定义产品级初始化或产品级审计流程。产品初始化由 42 工作流程负责执行；产品审计由 43 工作流程负责执行。
-## 16. 待补齐事项
+## 9. 待补齐事项
 
 1. ADR 与 Risk、Dependency 的转化关系待对应对象模型稳定后补充；
 2. ADR 的自动过期或定期审查机制待实践验证；
 3. ADR YAML schema 的 JSON Schema 表达待按需细化；
-4. ADR 相关 Rules、Skill、Agent、Tools、Web 和 Contract 历史机制文件应按本文 §14 的迁移原则逐步回并到主规范、运行 Rules、Skill 实体、Tools 实现、Web 实现或 backlog；
-5. ADR 对象模型在本项目中已完成补齐落地初始化，初始化决策记录见 `ldvh-base/adrs/adr-0001-adr-mechanism-initialization.yaml`；
-6. `ldvh-base/adrs/` 已初始化，ADR 编号从 `adr-0001` 开始；
-7. ADR Tools 测试文件、测试命令、测试覆盖范围和验收记录需持续与 `tools/fact_cli.py`、`tools/fact_validate.py` 及测试验收结果同步复核；
-8. ADR Skill 实体已落地工作区 `/Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/`，后续需持续保持其与本文、Tools 能力和测试验收结果一致。
+4. ADR Tools 测试文件、测试命令、测试覆盖范围和验收记录需持续与 `tools/fact_cli.py`、`tools/fact_validate.py` 及测试验收结果同步复核；
+5. ADR Skill 实体已落地工作区 `/Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/`，后续需持续保持其与本文、Tools 能力和测试验收结果一致。

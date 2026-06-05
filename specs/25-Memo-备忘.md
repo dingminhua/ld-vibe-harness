@@ -8,35 +8,17 @@
 
 ---
 
----
-
-## 1. 本文解决的问题
+## 1. 对象定位与准入条件
 
 本文定义 Memo 备忘工作模型。Memo 承载尚未任务化但有保留价值的输入、发现和提醒，避免误创建 Task 或 ADR。
 
-本文只定义 Memo 对象模型。Memo 相关 Rules、Skill、Agent、Tools 契约式校验与执行和 Web 信息同步实践应按 §12 机制适配边界和 07 §4.6 承接。
-
-本文是精简版规范，只包含核心章节。07 §4.2 中未展开的章节标注于 §10 待补齐事项。
-
----
-
-## 2. 与 07 的关系
-
-`specs/07-工作模型基础规范.md` 定义工作模型通用规则、文件命名、主规范结构、机制适配边界和工作模型标准组成。本文依据 07 §4.2 定义 Memo 对象模型。
-
-本文不重新定义 07 中的通用规则。发生冲突时，以 07 及其上位基础规范为准，除非本文明确说明例外并经 Human Gate 确认。
-
----
-
-## 3. 对象定位与准入条件
-
-### 3.1 Memo 定义
+### 1.1 Memo 定义
 
 Memo 承载尚未任务化但有保留价值的输入、发现和提醒，避免误创建 Task 或 ADR。Memo 应记录内容描述、来源、分类和关联对象。
 
 Memo 不是所有信息的默认归宿。AI 可以在当前上下文中直接处理简单信息，但只有满足准入条件、需要跨会话保留或需要分流追踪的信息，才应进入 Memo 事实源。
 
-### 3.2 Memo 与临时信息
+### 1.2 Memo 与临时信息
 
 临时信息是对话过程中的简单问答、一次性确认或即时处理的内容，不默认成为 Memo。临时信息可以保留在当前执行上下文中。
 
@@ -47,7 +29,7 @@ Memo 不是所有信息的默认归宿。AI 可以在当前上下文中直接处
 3. 明确的分类；
 4. 可追溯的状态。
 
-### 3.3 Memo 准入条件
+### 1.3 Memo 准入条件
 
 当一个信息单元满足以下条件之一时，应考虑形成 Memo：
 
@@ -69,7 +51,7 @@ AI 不得因为用户提出了任何信息就自动创建 Memo。只有满足准
 
 ---
 
-## 4. 事实源边界
+## 2. 事实源边界
 
 本文是 Memo 备忘工作模型的权威事实源。本文定义 Memo 的准入条件、状态机、对象关系、Human Gate 和字段契约。
 
@@ -89,9 +71,9 @@ ldvh-base/memos/memo-{NNNN}-short-title.yaml
 
 ---
 
-## 5. 状态机
+## 3. 状态机
 
-### 5.1 标准状态
+### 3.1 标准状态
 
 Memo 标准状态如下：
 
@@ -102,7 +84,7 @@ Memo 标准状态如下：
 | `resolved` | 已分流到 Task/ADR/其他对象或已失效 |
 | `archived` | 已归档，不再活跃但保留历史 |
 
-### 5.2 合法状态流转
+### 3.2 合法状态流转
 
 ```text
 draft → active
@@ -118,7 +100,7 @@ resolved → archived
 
 `resolved` 状态的 Memo 必须填写 `resolved_to` 字段，记录分流目标对象 ID。
 
-### 5.3 关闭条件
+### 3.3 关闭条件
 
 Memo 没有"关闭"概念，只有"已分流"或"已归档"。
 
@@ -129,33 +111,33 @@ Memo 从 `active` → `resolved` 必须满足：
 
 ---
 
-## 6. 与其他对象的关系
+## 4. 与其他对象的关系
 
-### 6.1 Memo → Task
+### 4.1 Memo → Task
 
 Memo 可分流为 Task，作为尚未任务化信息转化为可执行工作单元的路径。
 
 Memo 分流为 Task 后，Memo 的 `resolved_to` 字段应记录 Task ID。Task 的 `source` 字段可记录 Memo ID。Task 的字段和状态由 Task 对象模型（`specs/27-Task-任务.md`）定义。
 
-### 6.2 Memo → ADR
+### 4.2 Memo → ADR
 
 Memo 可分流为 ADR，作为临时判断或偏好转化为长期决策的路径。
 
 Memo 分流为 ADR 后，Memo 的 `resolved_to` 字段应记录 ADR ID。ADR 的字段、状态和关闭规则由 ADR 对象模型（`specs/21-ADR-决策.md`）定义。
 
-### 6.3 Memo → Intent
+### 4.3 Memo → Intent
 
 Memo 可升级为 Intent，作为待讨论事项转化为明确意图的路径。
 
 Memo 升级为 Intent 后，Memo 的 `resolved_to` 字段应记录 Intent ID。Intent 的字段和状态由 Intent 对象模型（`specs/24-Intent-意图.md`）定义。
 
-### 6.4 Memo → Change
+### 4.4 Memo → Change
 
 Memo 的创建、状态变更和分流都应记录 Change。Change 以 Git commit 为权威事实源（依据 `specs/22-Change-变更.md`）。
 
 ---
 
-## 7. Human Gate
+## 5. Human Gate
 
 以下场景必须触发 Human Gate：
 
@@ -167,9 +149,9 @@ Human Gate 在 Trae 中通过 AskUserQuestion 承载（依据 `specs/05-Trae-Sol
 
 ---
 
-## 8. 字段契约
+## 6. 字段契约
 
-### 8.1 基础字段
+### 6.1 基础字段
 
 Memo 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段契约原则。
 
@@ -182,7 +164,7 @@ Memo 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 | `created` | date | 是 | 对象创建日期 |
 | `updated` | date | 是 | 最近更新日期 |
 
-### 8.2 扩展字段
+### 6.2 扩展字段
 
 | 字段名 | 类型 | 必填 | 说明 |
 |---|---|---|---|
@@ -198,7 +180,7 @@ Memo 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 
 字段约束和完整 YAML 示例已回并到本文。
 
-### 8.3 完整 YAML 示例
+### 6.3 完整 YAML 示例
 
 ```yaml
 id: memo-0001
@@ -219,7 +201,7 @@ related_adrs: []
 related_docs: []
 ```
 
-### 8.4 字段约束
+### 6.4 字段约束
 
 1. `status` 必须属于 Memo 标准状态枚举：`draft`、`active`、`resolved`、`archived`；
 2. `type` 必须固定为 `memo`；
@@ -234,11 +216,11 @@ related_docs: []
 11. `related_tasks`、`related_adrs`、`related_docs` 为列表类型，可为空列表，不得省略字段后以 null 替代空列表；
 12. `related_docs` 存放文档路径，推荐使用相对项目根路径，路径不存在时应标记为校验警告；
 
-### 8.5 文件命名契约
+### 6.5 文件命名契约
 
 Memo 实例文件命名规则为 `memo-{NNNN}-short-title.yaml`。编号从 `0001` 起递增，固定 4 位；英文短标题使用小写短横线命名；每个项目独立编号，不使用跨项目全局编号；文件存放位置为 `ldvh-base/memos/`；文件名变化必须同步检查所有引用该 Memo 的 `related_tasks`、`related_adrs` 和其他关联字段。
 
-### 8.6 状态流转契约
+### 6.6 状态流转契约
 
 | 当前状态 | 可流转至 |
 |---|---|
@@ -249,7 +231,7 @@ Memo 实例文件命名规则为 `memo-{NNNN}-short-title.yaml`。编号从 `000
 
 `draft` → `archived` 为直接归档流转，表示记录后判断不需要保留。`active` → `resolved` 为分流流转，必须填写 `resolved_to` 字段。
 
-### 8.7 契约消费与检查项
+### 6.7 契约消费与检查项
 
 1. Tools 辅助程序解析 Memo 时应依据本文定义的 YAML schema 和字段约束，不得自行扩张格式契约；
 2. Tools 辅助程序校验 Memo 时应覆盖字段完整性、状态合法性、条件必填和引用有效性；
@@ -260,7 +242,9 @@ Memo 实例文件命名规则为 `memo-{NNNN}-short-title.yaml`。编号从 `000
 
 ---
 
-## 9. 事实源回写要求
+## 7. 事实源回写与证据留存
+
+### 7.1 事实源回写
 
 1. 创建 Memo 时应记录 Change（依据 `specs/22-Change-变更.md`）；
 2. Memo 状态变更时应记录 Change；
@@ -268,19 +252,35 @@ Memo 实例文件命名规则为 `memo-{NNNN}-short-title.yaml`。编号从 `000
 4. Memo 关联 Task、ADR、Evidence 时应更新对应字段并记录 Change；
 5. Memo 实例写入 `ldvh-base/memos/` 目录后，应确保文件命名符合 `memo-{NNNN}-short-title.yaml` 格式。
 
----
+### 7.2 证据留存
 
-## 10. 机制适配边界
+证据留存通用规则引用 `specs/07-工作模型基础规范.md` §7.4。Memo 对象特有差异：
 
-1. Memo Rules、Skill、Agent、Tools、Web 和 Contract 历史子文档不再作为 Memo 完整性的固定组成；
-2. 当前无需独立 Memo Rules、Skill 或 Agent 入口时，应由本文和 Core Loop 入口承接对象规则、触发条件和协作边界；
-3. Tools 校验应由通用 Fact Validator 消费本文结构化契约完成；对象级 Tools 实践仅在出现对象特定校验或执行能力时创建；
-4. Web 展示或交互由后续 Web 信息同步层统一适配；对象级 Web 实践仅在出现对象特定展示、筛选或交互需求时创建；
-5. 删除、归档或重命名历史机制文件前必须通过 Human Gate。
+1. Memo 分流（`resolved`）时，应留存分流依据（如分流目标对象的 ID 和分流原因）；
+2. Memo 归档（`archived`）时，应留存归档原因和确认记录。
 
 ---
 
-## 11. 待补齐事项
+## 8. 适配规则
+
+### 8.1 AI 协作
+
+AI 协作通用规则引用 `specs/07-工作模型基础规范.md` §7.5。Memo 对象特有差异：
+
+1. AI 发现有保留价值但未任务化信息时，应判断是否满足 Memo 准入条件（§1.3）；
+2. 创建 Memo 前必须通过 Human Gate 确认（§5）。
+
+### 8.2 Tools 辅助
+
+Tools 辅助通用规则引用 `specs/07-工作模型基础规范.md` §7.6。当前由通用 Fact Validator 消费本文结构化契约完成校验，对象级 Tools 实践待按需创建。
+
+### 8.3 Web 信息同步
+
+Web 信息同步通用规则引用 `specs/07-工作模型基础规范.md` §7.7。当前未实现对象级 Web 实践，待后续统一适配。
+
+---
+
+## 9. 待补齐事项
 
 1. Memo YAML schema 的 JSON Schema 表达待 Tools 实现稳定后补齐；
 2. `resolved_to`、`related_tasks`、`related_adrs` 的引用校验规则待对应对象模型稳定后补充；
