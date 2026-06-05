@@ -9,6 +9,7 @@ description: |
   首个案例（BP-01）：Memo 驱动的调研与规划工作流——通过聊天要求创建 Memo，
   让 AI 撰写可行性方案放入调研文件夹并进行关联，可独立或并行进行，
   之后根据调研内容进行下一步工作计划。
+source_intent: intent-0004
 source: 用户直接指示
 acceptance: |
   - [ ] specs/11-最佳实践.md 文件已创建，符合文档规范骨架

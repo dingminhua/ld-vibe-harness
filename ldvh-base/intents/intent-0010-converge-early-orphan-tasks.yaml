@@ -1,0 +1,33 @@
+id: intent-0010
+type: intent
+title: 收敛早期零散任务
+status: closed
+created: '2026-06-05T20:05:33.868116'
+updated: '2026-06-05T20:20:00'
+description: |
+  早期创建的 13 个任务缺少 source_intent 关联，属于项目初期用户直接指示产生的零散任务。
+  本意图将这些任务收敛归组，建立统一的意图追踪，补齐意图-任务关联关系。
+  涉及任务：task-0010~0018（文档重编号批次）、task-0024（最佳实践文档）、
+  task-0026（工作模型骨架统一）、task-0027（规则机制测试）、task-0028（竞品调研）
+success_criteria: |
+  所有 13 个任务的 source_intent 字段指向 intent-0010，
+  意图-任务关联关系完整可查
+constraints: ''
+source: AI 审计发现 13 个任务缺少意图关联，用户指示创建收敛意图
+related_tasks:
+  - task-0010
+  - task-0011
+  - task-0012
+  - task-0013
+  - task-0014
+  - task-0015
+  - task-0016
+  - task-0017
+  - task-0018
+  - task-0024
+  - task-0026
+  - task-0027
+  - task-0028
+related_adrs: []
+related_pitfalls: []
+related_docs: []
