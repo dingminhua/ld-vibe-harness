@@ -336,7 +336,7 @@ function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { 
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
       <div
-        className={`mb-2 flex items-center gap-2 ${isCollapsible ? 'cursor-pointer select-none' : ''}`}
+        className={`mb-2 flex items-center gap-2 ${isCollapsible ? 'cursor-pointer select-none focus:outline-none' : ''}`}
         onClick={isCollapsible ? () => setCollapsed(c => !c) : undefined}
       >
         <FileText size={13} className="text-ldvh-accent" />

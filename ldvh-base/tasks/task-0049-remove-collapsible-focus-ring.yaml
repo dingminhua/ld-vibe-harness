@@ -1,0 +1,33 @@
+id: task-0049
+type: task
+title: 移除可折叠字段的白色focus ring动画
+status: closed
+created: '2026-06-06T00:30:38.636904'
+updated: '2026-06-06T00:32:24.729918'
+description: 'ObjectDetail 页面中可折叠字段（related_tasks、related_docs 等）的标题区域点击展开/收起时，会出现白色圈
+  focus ring 动画效果，影响视觉体验。需要移除该 focus ring，改为更柔和的视觉反馈。
+
+  '
+source_intent: intent-0006
+source: intent-0006
+acceptance: '- [x] 可折叠字段标题点击展开/收起时不再出现白色圈 focus ring 效果
+
+  - [x] 点击反馈仍保留（如背景色变化），确保可交互性不被破坏
+
+
+  ''
+
+  '
+blocked_by: []
+deliverables:
+- web/src/pages/ObjectDetail.tsx
+- web/src/index.css
+closure_evidence: '全局 CSS 移除默认 focus ring（*:focus { outline: none }），仅保留键盘导航的 focus-visible
+  样式（accent 色半透明 outline）。
+
+  ContentField 可折叠标题添加 focus:outline-none 类。
+
+  鼠标点击不再出现白色圈，键盘 Tab 导航仍保留可见焦点指示。
+
+  '
+closed_at: '2026-06-06T00:32:24.729925'

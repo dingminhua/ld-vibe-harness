@@ -38,6 +38,16 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* Remove default focus ring, keep focus-visible for keyboard users */
+*:focus {
+  outline: none;
+}
+*:focus-visible {
+  outline: 2px solid rgb(var(--ldvh-accent) / 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .font-mono {
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
