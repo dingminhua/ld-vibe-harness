@@ -17,13 +17,13 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-# specs/22.06-Contract.md §3.1 type 枚举
+# specs/22-Change-变更记录.md §3.1 type 枚举
 VALID_TYPES = {"feat", "fix", "docs", "refactor", "test", "chore", "spec", "rule", "adr", "revert"}
 
-# specs/22.06-Contract.md §3.2 scope 枚举（推荐值，非强制）
+# specs/22-Change-变更记录.md §3.2 scope 枚举（推荐值，非强制）
 RECOMMENDED_SCOPES = {"specs", "rules", "adr", "tools", "web", "evals", "refs"}
 
-# specs/22.06-Contract.md §3.3: subject 不超过 72 字符
+# specs/22-Change-变更记录.md §3.3: subject 不超过 72 字符
 MAX_SUBJECT_LEN = 72
 
 # 第一行格式: <type>(<scope>): <subject>
@@ -32,11 +32,11 @@ HEADER_RE = re.compile(r"^([a-z]+)(?:\(([^)]+)\))?:\s+(.+)$")
 # Refs 行格式
 REFS_RE = re.compile(r"^Refs:\s*(.+)$", re.MULTILINE)
 
-# 中文字符检测（specs/22.06-Contract.md §4.1）
+# 中文字符检测（specs/22-Change-变更记录.md §4.1）
 HAS_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
 
 FORMAT_HELP = """\
-正确的 commit message 格式（specs/22.06-Contract.md）：
+正确的 commit message 格式（specs/22-Change-变更记录.md）：
 
     <type>(<scope>): <subject>
 

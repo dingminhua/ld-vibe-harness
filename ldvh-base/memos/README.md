@@ -23,4 +23,4 @@ memo-{NNNN}-short-title.yaml
 ## 规范依据
 
 - 对象模型：`specs/25-Memo-备忘.md`
-- 结构化契约文件：`specs/25.06-Contract.md`
+- 结构化契约：已回并到 `specs/25-Memo-备忘.md`

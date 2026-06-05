@@ -5,7 +5,7 @@
 ## 规范
 
 - 主规范：`specs/23-Pitfall-踩坑记录.md`
-- 契约：`specs/23.06-Contract.md`
+- 契约：已回并到 specs/23-Pitfall-踩坑记录.md
 
 ## 命名规则
 

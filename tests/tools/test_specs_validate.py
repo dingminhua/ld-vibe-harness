@@ -418,17 +418,17 @@ def test_subdocument_can_reference_parent_sections(tmp_path, monkeypatch):
     assert checker.refs_check_paths([source, parent]) == []
 
 
-def test_shorthand_subdocument_reference_passes(tmp_path, monkeypatch):
+def test_shorthand_main_document_reference_passes(tmp_path, monkeypatch):
     specs_dir = tmp_path / "specs"
-    target = write_md(specs_dir / "21.06-Contract.md", "# Contract\n\n## 3. 字段契约")
+    target = write_md(specs_dir / "21-ADR-决策记录.md", "# ADR\n\n## 3. 字段契约")
     source = write_md(
-        specs_dir / "21-ADR-决策记录.md",
+        specs_dir / "20-工作模型集合索引.md",
         """
-# ADR
+# 工作模型集合索引
 
 ## 1. 第一章
 
-依据 21.06 §3。
+依据 21 §3。
 """,
     )
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)

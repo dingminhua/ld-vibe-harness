@@ -303,11 +303,11 @@ Trae 提供运行环境；
 
 | 对象 | 规范 | 契约 | 状态 |
 |---|---|---|---|
-| Intent | `specs/24-Intent-意图.md` | `specs/24.06-Contract.md` | active |
-| Task | `specs/27-Task-任务.md` | `specs/27.06-Contract.md` | active |
-| Memo | `specs/25-Memo-备忘.md` | `specs/25.06-Contract.md` | active |
-| Profile | `specs/26-Profile-项目画像.md` | `specs/26.06-Contract.md` | active |
-| Pitfall | `specs/23-Pitfall-踩坑记录.md` | `specs/23.06-Contract.md` | active |
+| Intent | `specs/24-Intent-意图.md` | 已回并到规范 | active |
+| Task | `specs/27-Task-任务.md` | 已回并到规范 | active |
+| Memo | `specs/25-Memo-备忘.md` | 已回并到规范 | active |
+| Profile | `specs/26-Profile-项目画像.md` | 已回并到规范 | active |
+| Pitfall | `specs/23-Pitfall-踩坑记录.md` | 已回并到规范 | active |
 
 ADR(21) 和 Change(22) 已有完整规范。Intent、Task 当前为精简版规范，后续按阶段补齐完整版。Task 已新增子任务机制（parent_task/sub_tasks）和关联任务自动创建流程。
 

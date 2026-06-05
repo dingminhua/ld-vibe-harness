@@ -36,7 +36,7 @@ AI 应在每次用户交互时判断当前 Core Loop 阶段，并推荐对应 Sk
 
 ## ADR 入口
 
-修改 specs、Rules、Tools、工作模型边界或长期协作机制前检查 ADR；准入见 21 §3.3。ADR 写入、状态流转、推翻、废弃或升级必须 Human Gate；流程见 21.02，工具见 21.04。proposed ADR 不作执行依据。
+修改 specs、Rules、Tools、工作模型边界或长期协作机制前检查 ADR；准入见 21 §3.3。ADR 写入、状态流转、推翻、废弃或升级必须 Human Gate；流程和工具见 21 主规范。proposed ADR 不作执行依据。
 
 ## 场景规则引导
 

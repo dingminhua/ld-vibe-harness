@@ -24,4 +24,4 @@ task-{NNNN}-short-title.yaml
 ## 规范依据
 
 - 对象模型：`specs/27-Task-任务.md`
-- 结构化契约文件：`specs/27.06-Contract.md`
+- 结构化契约：已回并到 `specs/27-Task-任务.md`

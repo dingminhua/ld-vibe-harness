@@ -30,7 +30,7 @@ Change 因承载方式特殊（Git commit 而非 YAML 实例文件），以下�
 1. **事实实例位置**：Change 实例不在 `ldvh-base/` 下，而是 Git commit 历史；
 2. **字段契约**：Change 字段映射为 commit message 格式，而非 YAML 字段；
 3. **状态机**：Change 实例不可变，无状态流转；
-4. **机制适配边界**：Change 不需要 22.01-22.06 机制文件，理由见 §14。
+4. **机制适配边界**：Change 机制适配见 §14。
 
 ---
 
@@ -339,42 +339,7 @@ ADR 索引按创建日期降序排列，应改为按编号升序。
 
 ## 14. 机制适配边界
 
-Change 现有机制承接文件为历史机制文件，后续应按 07 §4.6 和 08 §8.1 采用“先合并、再校验、后删除或归档”的顺序评估、合并或迁移。Change 主规范、commit message 格式、提交纪律、Tools 校验和 Skill 编排的权威入口应逐步回到本文、05、06、运行 Rules、`ldvh-commit` Skill、`tools/commit_validate.py` 与测试验收结果；历史 22.01-22.06 不再作为 Change 完整性的默认要求。
-
-| 编号 | 机制文件 | 状态 | 说明 |
-|---|---|---|---|
-| 22.01 | Rules.md | active | Change 提交前提醒和提交纪律的权威位置，工作区规则/项目规则的提交纪律入口由此机制文件定义 |
-| 22.02 | Skill.md | active | ldvh-commit Skill 编排提交流程：diff 展示 → message 起草 → 格式预检 → 确认 → commit |
-| 22.03 | Agent.md | not-needed | Change 不需要 Agent 并行处理 |
-| 22.04 | Tools.md | active | commit message 格式校验由 commit_validate.py 执行，提供 --show-format、--check-message、git log 审计三种能力 |
-| 22.05 | Web.md | not-needed | Change 不需要独立 Web 编辑入口，读取和查询通过 git log 命令执行；未来如需 Web 变更看板再评估创建 |
-| 22.06 | Contract.md | active | commit message 格式契约的权威位置，定义 type 枚举、scope 枚举、正则表达式和契约消费声明 |
-
-22.02 从 not-needed 升级为 active 的理由：
-
-1. **提交流程需要多步骤编排**：diff 展示、message 起草、格式预检、用户确认、逐文件 add、commit 是多步骤流程，适合 Skill 编排；
-2. **减少 Rules 冗余**：Skill 集中维护提交流程后，Rules 只需引用入口；
-3. **确保执行一致性**：Skill 统一编排确保每次提交都经过完整检查链，不会因 AI 上下文差异遗漏步骤。
-
-22.01 从 not-needed 升级为 active 的理由：
-
-1. **工作区规则的权威来源**：22.01 定义了 Change 提交纪律的完整规则，工作区规则/项目规则从中提取运行时入口摘要，符合 05 §6 Rules 机制规范的分层关系；
-2. **提交纪律需要明确边界**：哪些场景必须调用 Skill、哪些不得跳过 Skill 直接 commit、Rules 层不得承载哪些内容，需要权威位置定义；
-3. **Change 虽无 YAML 实例但提交纪律独立**：Change 的格式契约、提交流程、校验工具有明确的机制落地需求，不应省略。
-
-22.04 从 not-needed 升级为 active 的理由：
-
-1. **Tools 校验已实现并在使用**：commit_validate.py 已实现 --show-format、--check-message、git log 审计三种能力，并提供测试覆盖；
-2. **预检是强制制度**：22 §7.3 要求 commit 前必须调用预检工具，需要 Tools 机制文件或 06 定义命令参数、调用方式和测试要求；
-3. **契约消费声明需要落地**：22.06 Contract 定义了格式契约，22.04 声明 Tools 如何消费该契约。
-
-22.06 从 not-needed 升级为 active 的理由：
-
-1. **格式契约需要独立权威位置**：commit message 的 type 枚举、scope 枚举、正则表达式、中文字符检测规则需要结构化定义，供 Tools 校验和 AI 遵守消费；
-2. **字段契约文件是 Tools 和 Rules 的共同依据**：22.04 Tools 校验和 22.01 Rules 提醒都以 22.06 契约为准；
-3. **Change 虽无 YAML 但契约格式独立**：commit message 格式契约是 Change 的核心结构化接口，需要明确机制承接入口。
-
-22.03、22.05 保持 not-needed 状态，理由不变：Change 无独立 YAML 实例、无状态流转、Agent 并行处理和 Web 编辑入口当前不需要。
+Change 机制内容已合并到本文、05、06、运行 Rules、`ldvh-commit` Skill、`tools/commit_validate.py` 与测试验收结果；历史机制文件 22.01-22.06 已删除，内容已回并到本文对应章节。
 
 ---
 
@@ -395,6 +360,6 @@ Change 现有机制承接文件为历史机制文件，后续应按 07 §4.6 和
 
 1. Change 与 Task、Memo、Risk、Dependency 的关联规则待对应对象模型稳定后补充；
 2. commit message 格式校验工具已实现，后续按需扩展多仓库批量校验能力；
-3. Change Web 信息同步能力待按需实现（22.05 当前 not-needed，未来如需变更看板再评估）；
+3. Change Web 信息同步能力待按需实现，未来如需变更看板再评估；
 4. commit message `type` 枚举是否需要扩展待实践验证；
 5. 项目中已有的暂缓标注（"暂缓：Change 记录机制待替换，见项目规则"）应替换为对本文的引用。

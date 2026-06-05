@@ -84,7 +84,6 @@ ldvh-base/profiles/profile-{NNNN}-project-name.yaml
 |---|---|
 | Profile 对象模型 | `specs/26-Profile-项目画像.md` |
 | Profile 对象实例 | `ldvh-base/profiles/` |
-| Profile 字段契约文件 | `specs/26.06-Contract.md` |
 | Profile 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
 ---
@@ -199,7 +198,7 @@ Profile 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字�
 | `related_adrs` | list of string | 否 | 关联 ADR ID 列表 |
 | `notes` | string | 否 | 补充说明 |
 
-字段约束和完整 YAML 示例已由历史契约文件 `specs/26.06-Contract.md` 回并到本文；历史 Contract 文件仅作为迁移前结构化契约副本，后续删除或归档前需经 Human Gate。
+字段约束和完整 YAML 示例已回并到本文。
 
 ### 8.3 完整 YAML 示例
 

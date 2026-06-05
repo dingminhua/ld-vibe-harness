@@ -96,8 +96,6 @@ ldvh-base/adrs/adr-{NNNN}-short-title.yaml
 |---|---|
 | ADR 对象模型 | `specs/21-ADR-决策记录.md` |
 | ADR 对象实例 | `ldvh-base/adrs/` |
-| ADR 历史机制拆分文件 | `specs/21.01-Rules.md` 至 `specs/21.05-Web.md` |
-| ADR 字段契约文件 | `specs/21.06-Contract.md` |
 | ADR 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
 ---
@@ -302,7 +300,7 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 
 1. AI 读取 ADR 时应优先读取 `accepted` 状态的 ADR，作为已确认决策的执行依据。
 2. AI 在修改 specs、Rules、Tools、工作模型边界或处理影响长期执行方式的判断前，应评估是否需要读取相关 ADR。
-3. AI 读取 ADR 时应从 `ldvh-base/adrs/` Git 文件事实源或 21.04 声明的只读 Tools 派生结果获取信息，不得依赖聊天记忆、工具缓存或 Web 派生状态作为最终依据。
+3. AI 读取 ADR 时应从 `ldvh-base/adrs/` Git 文件事实源或本文 §12 声明的只读 Tools 派生结果获取信息，不得依赖聊天记忆、工具缓存或 Web 派生状态作为最终依据。
 4. AI 应根据 ADR 状态判断读取结果适用性：`accepted` 可作为当前执行依据，`proposed` 只作为待确认信息，`deprecated`、`superseded` 和 `rejected` 只作为历史信息。
 5. AI 读取 `superseded` 状态 ADR 时，应继续追踪 `superseded_by` 指向的新 ADR；未能追踪到替代 ADR 时，应标记为读取缺口。
 6. AI 读取 ADR 后应输出与当前任务相关的 ADR ID、状态、适用性、关联原因和是否存在冲突或缺口。
@@ -317,7 +315,7 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 
 ## 12. Tools 辅助适配
 
-1. Tools 辅助程序解析 ADR 时应依据本文和 `specs/21.06-Contract.md` 定义的字段契约和文件命名规则。
+1. Tools 辅助程序解析 ADR 时应依据本文定义的字段契约和文件命名规则。
 2. Tools 辅助程序读取 ADR 时应从 `ldvh-base/adrs/` Git 文件事实源生成运行时派生结果，支持列表、关键词查询、状态筛选、详情查看、关联查询、统计和校验。
 3. Tools 只读查询结果不自动成为执行依据；AI 或 Skill 必须按本文状态语义判断读取结果适用性。
 4. Tools 辅助程序校验 ADR 时应覆盖字段完整性、状态合法性、条件必填、引用有效性、格式合规性和 Human Gate。
@@ -326,7 +324,7 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 7. Tools 辅助程序可在 Human Gate 已确认、操作意图已由 AI 或人明确给出、且满足 Contract 校验时，执行可机械化、可校验的受控写入。
 8. Tools 辅助程序写入 ADR 时应校验字段完整性、状态合法性、引用有效性、写入授权和变更记录要求（依据 specs/22-Change-变更记录.md）
 9. Tools 辅助程序不得自行判断 ADR 准入、生成授权、替代流程性判断或自动执行 ADR 状态流转中需要 Human Gate 确认的操作。
-10. 当前 ADR Tools 只读查询、契约校验和受控写入能力以 `tools/fact_cli.py`、`tools/fact_validate.py` 及其测试验收为准；历史 `21.04-Tools.md` 仅作为迁移前能力说明，不得替代实际实现与主规范判断。
+10. 当前 ADR Tools 只读查询、契约校验和受控写入能力以 `tools/fact_cli.py`、`tools/fact_validate.py` 及其测试验收为准，不得替代实际实现与主规范判断。
 11. ADR 读取流程中的列表、查询、状态筛选、关联查询、统计和校验属于应评估的可机械化只读步骤。
 12. ADR 创建、升级、推翻和废弃流程中的编号生成、ADR YAML 写入、状态流转写入、关联字段回写、推翻或废弃字段回写和 Change 记录生成（依据 specs/22-Change-变更记录.md）属于应评估的可机械化受控写入步骤。
 13. 若 Tools 实现未覆盖上述读取或写入步骤，应将缺口记录为 ADR 对象模型待补齐的阻塞项或暂缓项；不得因只读、查询、统计、校验或局部写入能力已存在而声称 ADR Tools 完整支撑对象模型落地。
@@ -348,16 +346,7 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 
 机制适配边界含义、命名规则和状态骨架由各模型主规范自行声明。ADR 对象模型已为现有机制承接入口形成显式结论；该结论表示历史机制文件状态已声明，不等同于 ADR 对象实例事实源、Tools 测试或项目产品初始化已经完成。
 
-| 编号 | 文件 | 状态 | 内容 |
-|---|---|---|---|
-| `21.01` | `21.01-Rules.md` | active | ADR 准入条件在 Rules 层的入口摘要、放置位置、生效方式和禁止承载内容 |
-| `21.02` | `21.02-Skill.md` | active | ADR 创建、升级、推翻和废弃的可复用流程，已落地工作区 Skill 实体 `/Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/SKILL.md` |
-| `21.03` | `21.03-Agent.md` | not-needed | 说明 ADR 不需要创建专用 Agent 的理由 |
-| `21.04` | `21.04-Tools.md` | active | ADR Tools 契约式校验与执行能力定义，承接 `tools/fact_cli.py` 的 ADR 索引、查询、统计实践和 `tools/fact_validate.py` 的校验实践 |
-| `21.05` | `21.05-Web.md` | active-prep | ADR Web 信息同步的未来能力定义；当前不实现 Web 页面 |
-| `21.06` | `21.06-Contract.md` | active | ADR YAML schema、字段约束、文件命名契约和状态流转契约 |
-
-21.01-21.06 为历史机制文件，迁移采用“先合并、再校验、后删除或归档”的顺序；不得再作为 ADR 完整性的默认要求。ADR 对象规则、状态机、字段契约、Tools/Web 消费边界和实例检查的权威入口为本文；运行时入口分别落到 `.trae/rules/`、`ldvh-adr` Skill、`tools/` 与 `web/`。后续新增、删除、重命名或改变机制适配边界状态，应通过 Human Gate 确认后处理。若机制承接状态、实体实现、测试验收或项目实际落地状态不一致，应先通过 Human Gate 确认方案，再进入整改。
+历史机制文件 21.01-21.06 已删除，内容已回并到本文对应章节。
 
 ---
 
@@ -365,7 +354,7 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 
 检查 ADR 工作模型实例是否符合规范时，应确认：
 
-1. ADR 实例字段是否符合本文 §8 定义的字段契约和 `specs/21.06-Contract.md` 的结构化契约；
+1. ADR 实例字段是否符合本文 §8 定义的字段契约；
 2. ADR 状态流转是否符合本文 §5 定义的状态机，是否存在非法流转；
 3. ADR 对象关系引用是否符合本文 §6 定义的关系规则，`related_objects`、`related_rules` 和 `superseded_by` 是否有效；
 4. ADR 事实源边界是否符合本文 §4 和 `specs/04-事实源边界与承载规范.md`；
@@ -382,7 +371,7 @@ ADR 基础字段遵循 07 §6.4 的字段契约原则。
 
 1. ADR 与 Risk、Dependency 的转化关系待对应对象模型稳定后补充；
 2. ADR 的自动过期或定期审查机制待实践验证；
-3. ADR YAML schema 的 JSON Schema 表达待 `specs/21.06-Contract.md` 内容回并后按需细化；
+3. ADR YAML schema 的 JSON Schema 表达待按需细化；
 4. ADR 相关 Rules、Skill、Agent、Tools、Web 和 Contract 历史机制文件应按本文 §14 的迁移原则逐步回并到主规范、运行 Rules、Skill 实体、Tools 实现、Web 实现或 backlog；
 5. ADR 对象模型在本项目中已完成补齐落地初始化，初始化决策记录见 `ldvh-base/adrs/adr-0001-adr-mechanism-initialization.yaml`；
 6. `ldvh-base/adrs/` 已初始化，ADR 编号从 `adr-0001` 开始；

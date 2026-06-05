@@ -92,8 +92,6 @@ ldvh-base/pitfalls/pitfall-{NNNN}-short-title.yaml
 |---|---|
 | Pitfall 对象模型 | `specs/23-Pitfall-踩坑记录.md` |
 | Pitfall 对象实例 | `ldvh-base/pitfalls/` |
-| Pitfall 历史机制拆分文件 | `specs/23.01-Rules.md` 至 `specs/23.05-Web.md` |
-| Pitfall 字段契约文件 | `specs/23.06-Contract.md` |
 | Pitfall 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
 ---
@@ -224,7 +222,7 @@ Human Gate 确认应保留在对话上下文、相关 Task / Evidence 或受控�
 
 ## 8. 字段契约
 
-Pitfall YAML 字段契约由 `specs/23.06-Contract.md` 承接。本文只定义字段类别和语义范围，不维护完整 schema。
+Pitfall YAML 字段契约由本文承接，包含字段类别、语义范围和完整 schema。
 
 Pitfall 字段应覆盖：
 
@@ -277,26 +275,19 @@ AI 引用 Pitfall 时，应区分：
 
 ### 12.1 机制承接清单
 
-| 编号 | 文档 | 状态 | 摘要 |
-|---|---|---|---|
-| 23.01 | `23.01-Rules.md` | active | 定义 Pitfall 的 Rules 入口提醒、读取提示、写入 Human Gate 和禁止承载内容 |
-| 23.02 | `23.02-Skill.md` | active-prep | 定义未来 Pitfall 整理 Skill 的能力边界、实现前提和检查项 |
-| 23.03 | `23.03-Agent.md` | not-needed | 说明当前不创建 Pitfall 专用 Agent 的理由和检查项 |
-| 23.04 | `23.04-Tools.md` | active-prep | 定义未来 Pitfall 解析、校验、聚合和受控写入工具的能力边界 |
-| 23.05 | `23.05-Web.md` | active-prep | 定义未来 Web 信息同步、检索和 Human Gate UI 的能力边界 |
-| 23.06 | `23.06-Contract.md` | active | 定义 Pitfall YAML schema、字段约束、文件命名和状态流转契约 |
+历史机制文件 23.01-23.06 已删除，内容已回并到本文对应章节。
 
 ### 12.2 机制承接适用条件
 
-机制文件仅承接迁移前的机制实践或契约，不重新定义 Pitfall 的对象定位、准入条件、状态机、对象关系、Human Gate 或事实源边界。发生冲突时，以本文和上位基础规范为准。Pitfall 的 Rules、Skill、Agent、Tools、Web 和 Contract 有效内容应逐步合并到本文、05、06、运行 Rules、未来 Skill/Tools/Web 实现或对应 backlog；迁移完成后，23.01-23.06 不再作为 Pitfall 完整性的默认要求。
+机制内容已合并到本文、05、06、运行 Rules、未来 Skill/Tools/Web 实现或对应 backlog；历史机制文件 23.01-23.06 已删除。
 
 ---
 
 ## 13. Tools 契约式校验与执行适配
 
-Pitfall Tools 应依据 `specs/23.06-Contract.md` 执行字段解析、状态校验、引用检查、状态筛选、聚合查询和受控写入。Tools 不得自行扩张字段契约，不得绕过 Human Gate 创建、激活、归档或替代 Pitfall。
+Pitfall Tools 应依据本文执行字段解析、状态校验、引用检查、状态筛选、聚合查询和受控写入。Tools 不得自行扩张字段契约，不得绕过 Human Gate 创建、激活、归档或替代 Pitfall。
 
-在 Tools 能力未实现前，AI 或人可按本文和 `specs/23.06-Contract.md` 人工创建或更新 Pitfall，但必须记录降级原因、执行字段检查并按 Change 要求保留变更记录。
+在 Tools 能力未实现前，AI 或人可按本文人工创建或更新 Pitfall，但必须记录降级原因、执行字段检查并按 Change 要求保留变更记录。
 
 ---
 
@@ -304,7 +295,7 @@ Pitfall Tools 应依据 `specs/23.06-Contract.md` 执行字段解析、状态校
 
 Pitfall Web 展示或编辑入口只能作为派生视图或受控入口，不得成为第二事实源。Web 可展示 active Pitfall、按标签筛选、提示相关任务风险、展示替代链和提供 Human Gate UI。
 
-Web 通用派生视图、Human Gate UI、受控编辑入口和不得维护第二事实源等规则归属 `specs/06-Python与Web工具规范.md`；Pitfall 具体页面、接口、状态呈现和 backlog 归属 `web/`、`web/docs/` 或本文机制适配边界。历史 `23.05-Web.md` 仅作为迁移前能力说明。
+Web 通用派生视图、Human Gate UI、受控编辑入口和不得维护第二事实源等规则归属 `specs/06-Python与Web工具规范.md`；Pitfall 具体页面、接口、状态呈现和 backlog 归属 `web/`、`web/docs/` 或本文机制适配边界。
 
 Web 写入能力如未来实现，必须通过 Tools 受控写入或等价校验流程写回 `ldvh-base/pitfalls/`。
 
@@ -318,7 +309,7 @@ Web 写入能力如未来实现，必须通过 Tools 受控写入或等价校验
 2. 准入条件是否排除了未解决问题、未验证猜测和一次性临时错误；
 3. 事实源是否为 `ldvh-base/pitfalls/`；
 4. 状态流转是否符合 §5；
-5. 字段契约是否由 `specs/23.06-Contract.md` 承接；
+5. 字段契约是否由本文承接；
 6. Human Gate 是否覆盖创建、激活、归档、替代和核心经验字段修改；
 7. AI 协作是否区分 `active`、`draft`、`superseded` 和 `archived` 的适用性；
 8. Tools 和 Web 是否只作为派生或受控入口，不维护第二事实源；

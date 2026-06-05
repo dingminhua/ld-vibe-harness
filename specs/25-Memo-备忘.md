@@ -85,7 +85,6 @@ ldvh-base/memos/memo-{NNNN}-short-title.yaml
 |---|---|
 | Memo 对象模型 | `specs/25-Memo-备忘.md` |
 | Memo 对象实例 | `ldvh-base/memos/` |
-| Memo 字段契约文件 | `specs/25.06-Contract.md` |
 | Memo 展示或聚合视图 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
 ---
@@ -196,7 +195,7 @@ Memo 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 | `related_tasks` | list of string | 否 | 关联 Task ID 列表 |
 | `related_adrs` | list of string | 否 | 关联 ADR ID 列表 |
 
-字段约束和完整 YAML 示例已由历史契约文件 `specs/25.06-Contract.md` 回并到本文；历史 Contract 文件仅作为迁移前结构化契约副本，后续删除或归档前需经 Human Gate。
+字段约束和完整 YAML 示例已回并到本文。
 
 ### 8.3 完整 YAML 示例
 

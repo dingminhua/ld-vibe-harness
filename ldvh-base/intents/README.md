@@ -23,4 +23,4 @@ intent-{NNNN}-short-title.yaml
 ## 规范依据
 
 - 对象模型：`specs/24-Intent-意图.md`
-- 结构化契约文件：`specs/24.06-Contract.md`
+- 结构化契约：已回并到 `specs/24-Intent-意图.md`

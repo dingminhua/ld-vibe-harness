@@ -1129,7 +1129,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # related 子命令
     related_parser = subparsers.add_parser("related", help="查询与指定 specs 关联的 ADR")
-    related_parser.add_argument("spec_path", help="specs 文件路径（如 specs/21.06-Contract.md）")
+    related_parser.add_argument("spec_path", help="specs 文件路径（如 specs/21-ADR-决策记录.md）")
     related_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
 
     # link-rule 子命令

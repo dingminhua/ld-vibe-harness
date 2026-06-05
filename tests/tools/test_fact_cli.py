@@ -91,7 +91,7 @@ def write_adr(path, **overrides):
         "consequences": "测试影响",
         "affects": ["specs/12.01-Tools辅助规范.md"],
         "related_objects": [],
-        "related_rules": ["specs/21.06-Contract.md"],
+        "related_rules": ["specs/21-ADR-决策记录.md"],
     }
     data.update(overrides)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -714,7 +714,7 @@ def test_link_rule_appends_unique_rule(tmp_path):
 
     result = run_cli(
         "link-rule", "adr-0001",
-        "--rule", "specs/21.04-Tools.md",
+        "--rule", "specs/21-ADR-决策记录.md",
         "--human-gate-confirmed", "--confirmed-by", "user",
         "--confirmation-context", "测试",
         base_dir=str(tmp_path),
@@ -723,7 +723,7 @@ def test_link_rule_appends_unique_rule(tmp_path):
     assert "已更新 related_rules" in result.stdout
 
     data = read_yaml(adrs_dir / "adr-0001-test.yaml")
-    assert data["related_rules"] == ["specs/21.04-Tools.md"]
+    assert data["related_rules"] == ["specs/21-ADR-决策记录.md"]
 
 
 def test_link_rule_rejects_without_human_gate(tmp_path):
