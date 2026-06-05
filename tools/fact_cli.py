@@ -437,6 +437,10 @@ def cmd_create(args: argparse.Namespace) -> int:
             data[field] = ""
     if object_type == "task":
         data["blocked_by"] = []
+        data["deliverables"] = []
+        deliverables_val = getattr(args, "deliverables", None)
+        if deliverables_val:
+            data["deliverables"] = _parse_list_values(deliverables_val)
 
     # ADR 创建时回写 Human Gate 记录到 context
     if object_type == "adr":
@@ -1152,6 +1156,7 @@ def build_parser() -> argparse.ArgumentParser:
     create_parser.add_argument("object_type", choices=sorted(OBJECT_TYPES), help="对象类型")
     create_parser.add_argument("--title", required=True, help="对象标题")
     create_parser.add_argument("--short-title", default=None, help="文件名短标识（默认从标题自动生成）")
+    create_parser.add_argument("--deliverables", action="append", default=None, help="Task 产出物路径（可多次指定，支持逗号分隔）")
     create_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     _add_authorization_args(create_parser)
 

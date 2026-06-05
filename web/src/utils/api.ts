@@ -147,3 +147,17 @@ export interface DocContent {
 export async function fetchDocContent(docPath: string): Promise<DocContent> {
   return request<DocContent>(`/docs?path=${encodeURIComponent(docPath)}`);
 }
+
+/** 更新对象指定字段 */
+export async function patchObjectField(type: string, id: string, field: string, value: string): Promise<ObjectDetail> {
+  const res = await fetch(`${API_BASE}/objects/${type}/${encodeURIComponent(id)}/field`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ field, value }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.error || `API error: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
+}

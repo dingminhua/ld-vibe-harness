@@ -127,124 +127,6 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent activity */}
-        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <Activity size={16} className="text-ldvh-accent" />
-            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.recentActivity')}</h3>
-          </div>
-          {data.recentItems.length === 0 ? (
-            <p className="text-sm text-ldvh-text-secondary">{t('dashboard.noRecentActivity')}</p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {data.recentItems.map((item) => (
-                <li
-                  key={`${item.type}-${item.id}`}
-                  className="flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30"
-                  onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span
-                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
-                      style={{
-                        backgroundColor: `${item.typeColor}20`,
-                        color: item.typeColor,
-                      }}
-                    >
-                      {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
-                    </span>
-                    <span className="truncate text-sm text-ldvh-text-primary">
-                      {getLocalizedTitle(item, locale) || item.id}
-                    </span>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
-                    <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
-                      {item.relativeTime}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Recent changes */}
-        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <GitCommit size={16} className="text-ldvh-accent" />
-            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.recentChanges')}</h3>
-          </div>
-          {data.recentChanges.length === 0 ? (
-            <p className="text-sm text-ldvh-text-secondary">{t('dashboard.noRecentChanges')}</p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {data.recentChanges.map((entry) => (
-                <li
-                  key={entry.hash}
-                  className="flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30"
-                  onClick={() => navigate('/changelog')}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span
-                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
-                      style={{
-                        backgroundColor: `${CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other}20`,
-                        color: CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other,
-                      }}
-                    >
-                      {getCategoryLocale(entry.category, locale)}
-                    </span>
-                    <span className="truncate text-sm text-ldvh-text-primary">{entry.description}</span>
-                  </div>
-                  <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
-                    {entry.relativeTime}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-
-      {/* Validation status + Action Items - side by side */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        {/* Validation status */}
-        <div className={`rounded-lg border bg-ldvh-panel p-4 ${data.validation.ok ? 'border-ldvh-border' : 'border-red-500'}`}>
-          <div className="mb-3 flex items-center gap-2">
-            <Shield size={16} className="text-ldvh-accent" />
-            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.validationStatus')}</h3>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className={`flex flex-col items-center rounded-md p-3 ${data.validation.ok ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-              {data.validation.ok ? (
-                <CheckCircle size={20} className="mb-1 text-green-400" />
-              ) : (
-                <AlertCircle size={20} className="mb-1 text-red-400" />
-              )}
-              <span className={`font-mono text-xl font-semibold ${data.validation.ok ? 'text-green-400' : 'text-red-400'}`}>
-                {data.validation.ok ? t('dashboard.pass') : t('dashboard.fail')}
-              </span>
-              <span className="text-xs text-ldvh-text-secondary">{t('dashboard.status')}</span>
-            </div>
-            <div className="flex flex-col items-center rounded-md bg-red-500/10 p-3">
-              <AlertCircle size={20} className="mb-1 text-red-400" />
-              <span className="font-mono text-xl font-semibold text-red-400">{data.validation.errors}</span>
-              <span className="text-xs text-ldvh-text-secondary">{t('dashboard.errors')}</span>
-            </div>
-            <div className="flex flex-col items-center rounded-md bg-yellow-500/10 p-3">
-              <AlertTriangle size={20} className="mb-1 text-yellow-400" />
-              <span className="font-mono text-xl font-semibold text-yellow-400">{data.validation.warnings}</span>
-              <span className="text-xs text-ldvh-text-secondary">{t('dashboard.warnings')}</span>
-            </div>
-          </div>
-          {!data.validation.ok && (
-            <p className="mt-3 text-xs font-medium text-red-400">
-              {t('dashboard.validationErrorHint')}
-            </p>
-          )}
-        </div>
-
         {/* Action Items */}
         <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
@@ -287,6 +169,124 @@ export default function Dashboard() {
                 );
               })}
             </ul>
+          )}
+        </div>
+
+        {/* Recent changes */}
+        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <GitCommit size={16} className="text-ldvh-accent" />
+            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.recentChanges')}</h3>
+          </div>
+          {data.recentChanges.length === 0 ? (
+            <p className="text-sm text-ldvh-text-secondary">{t('dashboard.noRecentChanges')}</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {data.recentChanges.map((entry) => (
+                <li
+                  key={entry.hash}
+                  className="flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30"
+                  onClick={() => navigate('/changelog')}
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span
+                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{
+                        backgroundColor: `${CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other}20`,
+                        color: CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other,
+                      }}
+                    >
+                      {getCategoryLocale(entry.category, locale)}
+                    </span>
+                    <span className="truncate text-sm text-ldvh-text-primary">{entry.description}</span>
+                  </div>
+                  <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
+                    {entry.relativeTime}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* Recent activity + Validation status - side by side */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* Recent activity */}
+        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Activity size={16} className="text-ldvh-accent" />
+            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.recentActivity')}</h3>
+          </div>
+          {data.recentItems.length === 0 ? (
+            <p className="text-sm text-ldvh-text-secondary">{t('dashboard.noRecentActivity')}</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {data.recentItems.map((item) => (
+                <li
+                  key={`${item.type}-${item.id}`}
+                  className="flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30"
+                  onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span
+                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{
+                        backgroundColor: `${item.typeColor}20`,
+                        color: item.typeColor,
+                      }}
+                    >
+                      {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
+                    </span>
+                    <span className="truncate text-sm text-ldvh-text-primary">
+                      {getLocalizedTitle(item, locale) || item.id}
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
+                    <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
+                      {item.relativeTime}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Validation status */}
+        <div className={`rounded-lg border bg-ldvh-panel p-4 ${data.validation.ok ? 'border-ldvh-border' : 'border-red-500'}`}>
+          <div className="mb-3 flex items-center gap-2">
+            <Shield size={16} className="text-ldvh-accent" />
+            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.validationStatus')}</h3>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className={`flex flex-col items-center rounded-md p-3 ${data.validation.ok ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+              {data.validation.ok ? (
+                <CheckCircle size={20} className="mb-1 text-green-400" />
+              ) : (
+                <AlertCircle size={20} className="mb-1 text-red-400" />
+              )}
+              <span className={`font-mono text-xl font-semibold ${data.validation.ok ? 'text-green-400' : 'text-red-400'}`}>
+                {data.validation.ok ? t('dashboard.pass') : t('dashboard.fail')}
+              </span>
+              <span className="text-xs text-ldvh-text-secondary">{t('dashboard.status')}</span>
+            </div>
+            <div className="flex flex-col items-center rounded-md bg-red-500/10 p-3">
+              <AlertCircle size={20} className="mb-1 text-red-400" />
+              <span className="font-mono text-xl font-semibold text-red-400">{data.validation.errors}</span>
+              <span className="text-xs text-ldvh-text-secondary">{t('dashboard.errors')}</span>
+            </div>
+            <div className="flex flex-col items-center rounded-md bg-yellow-500/10 p-3">
+              <AlertTriangle size={20} className="mb-1 text-yellow-400" />
+              <span className="font-mono text-xl font-semibold text-yellow-400">{data.validation.warnings}</span>
+              <span className="text-xs text-ldvh-text-secondary">{t('dashboard.warnings')}</span>
+            </div>
+          </div>
+          {!data.validation.ok && (
+            <p className="mt-3 text-xs font-medium text-red-400">
+              {t('dashboard.validationErrorHint')}
+            </p>
           )}
         </div>
       </div>

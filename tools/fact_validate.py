@@ -218,6 +218,12 @@ def validate_task(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "task")
     task_id = data.get("id")
     tasks_dir = path.parent
+    # deliverables 元素类型校验
+    deliverables = data.get("deliverables")
+    if isinstance(deliverables, list):
+        for i, item in enumerate(deliverables):
+            if not isinstance(item, str):
+                issues.append(Issue(str(path), "error", "INVALID_DELIVERABLES_ELEMENT", f"deliverables 中每个元素必须是字符串，第 {i + 1} 项类型为 {type(item).__name__}", field="deliverables"))
     issues.extend(validate_task_id_list(path, "blocked_by", data))
     if data.get("status") == "closed":
         for field in ["closed_at", "closure_evidence"]:

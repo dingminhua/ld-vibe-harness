@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2, Info } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2, Info, Pencil } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
@@ -10,7 +10,8 @@ import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import ReadingPanel, { type PanelContent } from '@/components/ReadingPanel';
-import { fetchObjectDetail, type ObjectDetail } from '@/utils/api';
+import IntentSelector from '@/components/IntentSelector';
+import { fetchObjectDetail, patchObjectField, type ObjectDetail } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getTypeDescription, getStatusHint } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
@@ -24,7 +25,7 @@ const REFERENCE_FIELDS = ['blocked_by', 'source_intent', 'parent_task', 'related
 /** 可折叠的关联内容字段（intent 类型默认展开，其他类型默认折叠） */
 const COLLAPSIBLE_FIELDS = ['related_tasks', 'related_docs', 'related_adrs', 'deliverables', 'blocked_by'];
 /** Task 类型字段展示优先顺序 */
-const TASK_FIELD_ORDER = ['acceptance', 'blocked_by', 'related_docs'];
+const TASK_FIELD_ORDER = ['acceptance', 'blocked_by', 'related_docs', 'deliverables'];
 
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
@@ -69,6 +70,7 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   path: { zh: '路径', en: 'Path' },
   changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
+  deliverables: { zh: '产出物', en: 'Deliverables' },
 };
 
 export default function ObjectDetail() {
@@ -118,6 +120,13 @@ export default function ObjectDetail() {
       document.removeEventListener('ldvh:ref-preview', handleRefPreview);
     };
   }, [openDocPanel, openRefPanel]);
+
+  const refreshDetail = useCallback(() => {
+    if (!type || !id) return;
+    fetchObjectDetail(type, id)
+      .then(setDetail)
+      .catch((e) => setError(e.message));
+  }, [type, id]);
 
   useEffect(() => {
     if (!type || !id) return;
@@ -230,7 +239,7 @@ export default function ObjectDetail() {
           {/* Content fields */}
           <div className="mb-6 flex flex-col gap-5">
             {contentEntries.map(([key, value]) => (
-              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} />
+              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} objId={objId} onRefresh={refreshDetail} />
             ))}
           </div>
 
@@ -277,7 +286,7 @@ function MetaChip({ label, value }: { label: string; value: string }) {
 }
 
 /** 内容字段：根据字段类型选择渲染方式 */
-function ContentField({ fieldKey, value, locale, objType }: { fieldKey: string; value: unknown; locale: string; objType: string }) {
+function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { fieldKey: string; value: unknown; locale: string; objType: string; objId: string; onRefresh: () => void }) {
   const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
   const [collapsed, setCollapsed] = useState(isCollapsible ? objType !== 'intent' : false);
 
@@ -304,14 +313,16 @@ function ContentField({ fieldKey, value, locale, objType }: { fieldKey: string; 
           </span>
         )}
       </div>
-      {!collapsed && <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />}
+      {!collapsed && <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />}
     </div>
   );
 }
 
 /** 递归渲染字段值 */
-function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; value: unknown; depth: number; locale: string }) {
+function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh }: { fieldKey: string; value: unknown; depth: number; locale: string; objType?: string; objId?: string; onRefresh?: () => void }) {
   const { t } = useI18n();
+  const [editingSourceIntent, setEditingSourceIntent] = useState(false);
+  const [saving, setSaving] = useState(false);
   if (value === null || value === undefined) {
     return <span className="text-xs text-ldvh-text-secondary italic">{t('common.null')}</span>;
   }
@@ -338,6 +349,47 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
 
     // 单字符串引用字段（source_intent、parent_task）使用 ReferenceCard
     if (REFERENCE_FIELDS.includes(fieldKey) && parseRefType(value)) {
+      // source_intent 字段在 task 类型下支持内联编辑
+      const canEdit = fieldKey === 'source_intent' && objType === 'task' && objId && onRefresh;
+      if (canEdit) {
+        const handleSelect = async (intentId: string) => {
+          if (!objId || !onRefresh) return;
+          setSaving(true);
+          try {
+            await patchObjectField('task', objId, 'source_intent', intentId);
+            setEditingSourceIntent(false);
+            onRefresh();
+          } catch {
+            // keep selector open on error
+          } finally {
+            setSaving(false);
+          }
+        };
+        return (
+          <div className="relative">
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <ReferenceCard refs={[value]} />
+              </div>
+              <button
+                onClick={() => setEditingSourceIntent(true)}
+                disabled={saving}
+                className="shrink-0 rounded-md border border-ldvh-border p-1.5 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary disabled:opacity-50"
+                title={locale === 'en' ? 'Edit source intent' : '编辑来源意图'}
+              >
+                <Pencil size={13} />
+              </button>
+            </div>
+            {editingSourceIntent && (
+              <IntentSelector
+                currentIntentId={value}
+                onSelect={handleSelect}
+                onClose={() => setEditingSourceIntent(false)}
+              />
+            )}
+          </div>
+        );
+      }
       return <ReferenceCard refs={[value]} />;
     }
 
@@ -376,6 +428,10 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
       if (fieldKey === 'related_docs') {
         return <DocPreviewLink docs={value as string[]} />;
       }
+      // deliverables 字段使用 DocPreviewLink 组件
+      if (fieldKey === 'deliverables') {
+        return <DocPreviewLink docs={value as string[]} />;
+      }
       // 引用字段使用 ReferenceCard 组件
       if (REFERENCE_FIELDS.includes(fieldKey)) {
         return <ReferenceCard refs={value as string[]} />;
@@ -396,7 +452,7 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
       <div className="flex flex-col gap-2">
         {value.map((item, i) => (
           <div key={i} className="rounded-md border border-ldvh-border bg-ldvh-bg p-3">
-            <FieldValue fieldKey={fieldKey} value={item} depth={depth + 1} locale={locale} />
+            <FieldValue fieldKey={fieldKey} value={item} depth={depth + 1} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />
           </div>
         ))}
       </div>
@@ -419,7 +475,7 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
                 {displayKey}
               </span>
               <div className="min-w-0 flex-1">
-                <FieldValue fieldKey={k} value={v} depth={depth + 1} locale={locale} />
+                <FieldValue fieldKey={k} value={v} depth={depth + 1} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />
               </div>
             </div>
           );
