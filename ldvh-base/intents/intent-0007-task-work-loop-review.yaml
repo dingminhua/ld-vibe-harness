@@ -1,0 +1,15 @@
+id: intent-0007
+type: intent
+title: 任务工作闭环梳理
+status: draft
+created: '2026-06-05T17:46:21.082842'
+updated: '2026-06-05T17:46:34.149613'
+description: ''
+success_criteria: ''
+source: ''
+title_en: Task Work Loop Review
+title_zh: 任务工作闭环梳理
+related_pitfalls: []
+related_docs: []
+related_tasks:
+- task-0032
