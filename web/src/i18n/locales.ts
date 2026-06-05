@@ -64,6 +64,7 @@ export const UI_LOCALES = {
     'nav.validate': '校验',
     'nav.changelog': '变更',
     'nav.workbench': '工作台',
+    'nav.switchLayout': '切换布局',
 
     // Dashboard
     'dashboard.title': '仪表盘',
@@ -160,6 +161,7 @@ export const UI_LOCALES = {
     'nav.validate': 'Validate',
     'nav.changelog': 'Changes',
     'nav.workbench': 'Workbench',
+    'nav.switchLayout': 'Switch Layout',
 
     // Dashboard
     'dashboard.title': 'Dashboard',

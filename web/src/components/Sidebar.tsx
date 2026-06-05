@@ -14,6 +14,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  PanelTop,
 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import { useTheme } from '@/hooks/useTheme';
@@ -100,6 +101,14 @@ export default function Sidebar() {
             <ThemeIcon mode={mode} />
           </button>
         </div>
+        <button
+          onClick={() => { window.location.href = window.location.pathname + '?layout=topnav'; }}
+          title={t('nav.switchLayout')}
+          className="mt-1.5 flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+        >
+          <PanelTop size={16} />
+          {t('nav.switchLayout')}
+        </button>
       </div>
     </aside>
   );

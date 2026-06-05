@@ -14,6 +14,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  PanelLeft,
 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import { useTheme } from '@/hooks/useTheme';
@@ -76,6 +77,13 @@ export default function TopNav() {
 
       {/* Controls */}
       <div className="flex items-center gap-1">
+        <button
+          onClick={() => { window.location.href = window.location.pathname; }}
+          title={t('nav.switchLayout')}
+          className="flex items-center justify-center rounded-md p-1.5 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+        >
+          <PanelLeft size={14} />
+        </button>
         <button
           onClick={() => setLocale(locale === 'zh' ? 'en' : 'zh')}
           title={locale === 'zh' ? 'Switch to English' : '切换到中文'}
