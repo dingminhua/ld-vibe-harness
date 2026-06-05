@@ -195,7 +195,7 @@ export default function ObjectDetail() {
   return (
     <div className="flex h-full">
       {/* Main content area */}
-      <div className={`flex-1 overflow-y-auto transition-all duration-300 ${panelOpen ? 'lg:mr-0' : ''}`}>
+      <div className={`flex-1 overflow-y-auto rounded-none transition-[margin] duration-300 ${panelOpen ? 'lg:mr-0' : ''}`}>
         <div className={`mx-auto p-6 ${panelOpen ? 'max-w-4xl' : 'max-w-4xl'}`}>
           {/* Header */}
           <div className="mb-6">

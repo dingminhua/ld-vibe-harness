@@ -4,30 +4,29 @@ title: 移除可折叠字段的白色focus ring动画
 status: closed
 created: '2026-06-06T00:30:38.636904'
 updated: '2026-06-06T00:32:24.729918'
-description: 'ObjectDetail 页面中可折叠字段（related_tasks、related_docs 等）的标题区域点击展开/收起时，会出现白色圈
-  focus ring 动画效果，影响视觉体验。需要移除该 focus ring，改为更柔和的视觉反馈。
-
-  '
+description: |
+  ObjectDetail 页面在加载/路由切换时，内容区会出现一个巨大的白色圆形轮廓动画（从圆→圆角矩形→消失），影响视觉体验。
+  根因：ObjectDetail 主容器的 transition-all duration-300 导致 border-radius（浏览器默认值 8251.97px）在页面加载时做动画过渡。
 source_intent: intent-0006
 source: intent-0006
-acceptance: '- [x] 可折叠字段标题点击展开/收起时不再出现白色圈 focus ring 效果
-
-  - [x] 点击反馈仍保留（如背景色变化），确保可交互性不被破坏
-
-
-  ''
-
-  '
+acceptance: |
+  - [x] 页面加载/路由切换时不再出现白色圆形轮廓动画
+  - [x] ReadingPanel 面板开关的 margin 过渡正常工作
 blocked_by: []
 deliverables:
 - web/src/pages/ObjectDetail.tsx
 - web/src/index.css
-closure_evidence: '全局 CSS 移除默认 focus ring（*:focus { outline: none }），仅保留键盘导航的 focus-visible
-  样式（accent 色半透明 outline）。
+related_pitfalls:
+- pitfall-0007
+closure_evidence: |-
+  根因定位：通过 Playwright 连续帧截图 + CSS dump 确认，白色圆圈动画由 ObjectDetail.tsx
+  主容器（第198行）的 `transition-all duration-300` 导致。Chrome 对该元素设置默认 border-radius=8251.97px，
+  transition-all 使其在页面加载时从大值过渡到实际值（0px），产生"圆→方框"轮廓动画。
 
-  ContentField 可折叠标题添加 focus:outline-none 类。
+  修复措施：
+  1. ObjectDetail.tsx 第198行：`transition-all` → `transition-[margin]`（仅过渡 margin）+ 添加 `rounded-none`
+  2. index.css：全局清除 focus ring、tap-highlight 和浏览器默认按钮样式
 
-  鼠标点击不再出现白色圈，键盘 Tab 导航仍保留可见焦点指示。
-
-  '
-closed_at: '2026-06-06T00:32:24.729925'
+  验证结果：Playwright 帧截图对比确认修复后无圆形轮廓；ReadingPanel margin 过渡正常。
+  经验已沉淀至 pitfall-0007。
+closed_at: '2026-06-06T02:10:00'

@@ -1,0 +1,59 @@
+id: pitfall-0007
+type: pitfall
+title: Tailwind transition-all 导致页面加载 border-radius 动画
+title_zh: Tailwind transition-all 导致页面加载 border-radius 动画
+title_en: Tailwind transition-all causes page-load border-radius animation
+status: active
+created: '2026-06-06T02:08:49.375414'
+updated: '2026-06-06T02:10:00'
+symptoms: |
+  页面加载或路由切换时，内容区外围出现一个巨大的白色/透明圆形轮廓动画，
+  从圆形 → 圆角矩形 → 消失，持续约 300ms，视觉上非常突兀。
+  现象出现在 ObjectDetail 页面（/objects/intent/:id 等）的主内容容器区域。
+trigger_conditions: |
+  1. 容器元素使用了 Tailwind 的 `transition-all` 类（或 CSS `transition: all`）；
+  2. 浏览器对该元素存在默认的 `border-radius` 计算值（Chrome 可达 8251.97px）；
+  3. 页面加载或路由切换触发该元素的首次渲染/重排；
+  4. transition-all 使 border-radius 参与过渡动画，从浏览器默认大值过渡到实际样式值。
+root_cause: |
+  Tailwind 的 `transition-all` 会为所有可动画 CSS 属性启用过渡效果，包括 border-radius。
+  Chrome 浏览器对某些布局容器元素会设置一个极大的默认 border-radius 值（实测 8251.97px），
+  当页面首次渲染时，transition-all 导致该值从 8251.97px 动画过渡到实际样式的值（如 0 或具体 px），
+  从而产生肉眼可见的"圆圈→方框"轮廓动画。
+
+  关键代码位置：ObjectDetail.tsx 主容器的 className 包含 `transition-all duration-300`。
+resolution: |
+  1. 将 `transition-all` 替换为精确的属性列表，仅过渡真正需要动画的属性：
+     - `transition-[margin]` — 仅过渡 margin 属性（本例中用于 ReadingPanel 面板开关）
+     - 或使用 `transition-[opacity,transform,margin]` 明确指定属性
+  2. 对不需要圆角的容器显式设置 `rounded-none`（border-radius: 0），消除浏览器默认值干扰
+  3. 全局层面在 index.css 中清除不必要的 focus ring 和 tap-highlight（辅助手段）
+
+  修复文件：web/src/pages/ObjectDetail.tsx 第198行
+  修复前：<div className="... transition-all duration-300 ...">
+  修复后：<div className="... rounded-none transition-[margin] duration-300 ...">
+verification: |
+  1. 使用 Playwright 连续帧截图脚本（direct-nav.cjs）对比修复前后帧序列：
+     - 修复前：direct-01/direct-02 帧可见明显圆形轮廓
+     - 修复后：同位置帧不再出现圆形轮廓
+  2. 手动验证：直接访问 /objects/intent/intent-0001，页面加载无异常动画
+  3. 功能回归：ReadingPanel 面板开关的 margin 过渡仍然正常工作
+avoidance: |
+  1. **永远不要使用 `transition-all`**：Tailwind 项目中应始终指定明确的过渡属性列表
+     （如 `transition-[opacity,transform]`、`transition-colors`、`transition-[margin]`）
+  2. 新增 UI 组件或修改现有组件的 transition 时，检查是否使用了 `transition-all`
+  3. 对容器元素显式设置 border-radius（即使为 0），避免依赖浏览器默认值
+  4. 如需排查类似"莫名出现的圆形/圆角动画"，用 DevTools 检查元素的 computed border-radius
+     和 transition 属性，特别关注是否有 `transition: all`
+applicability: |
+  所有使用 Tailwind CSS 的前端项目，特别是 React + Vite + Tailwind 技术栈。
+  任何涉及页面切换、路由变化或动态渲染容器的场景。
+source_objects:
+  - task-0049
+related_rules:
+  - "web/docs/01-全局设计约束.md"
+tags:
+  - tailwind-css
+  - transition-animation
+  - border-radius
+  - frontend-gotcha

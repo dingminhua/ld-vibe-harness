@@ -38,14 +38,25 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Remove default focus ring, keep focus-visible for keyboard users */
-*:focus {
-  outline: none;
+/* Remove ALL focus rings, outlines, and visual artifacts on click/focus */
+*:focus,
+*:focus-visible,
+*:focus-within,
+*:active {
+  outline: none !important;
+  box-shadow: none !important;
 }
-*:focus-visible {
-  outline: 2px solid rgb(var(--ldvh-accent) / 0.5);
-  outline-offset: 2px;
-  border-radius: 4px;
+
+/* Chrome-specific: remove default focus ring color */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Remove default button/link rings from browser UA stylesheet */
+button::-moz-focus-inner,
+input::-moz-focus-inner {
+  border: 0;
+  padding: 0;
 }
 
 .font-mono {
