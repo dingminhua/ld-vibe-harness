@@ -243,6 +243,9 @@ Task 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 | `assignee` | string | 否 | 执行者 |
 | `related_adrs` | list of string | 否 | 关联 ADR ID 列表 |
 | `related_changes` | list of string | 否 | 关联 Change ID 列表 |
+| `related_docs` | list of string | 否 | 任务参考的输入文档路径列表 |
+| `affected_docs` | list of string | 否 | 任务完成后需要同步更新的文档路径列表；关闭时校验这些文档是否有变更，无变更需在 closure_evidence 中说明豁免理由 |
+| `deliverables` | list of string | 否 | 任务产出的结果物路径列表 |
 | `closed_at` | date | 条件必填 | 仅当 `status` 为 `closed` 时必须填写 |
 | `closure_evidence` | string | 条件必填 | 仅当 `status` 为 `closed` 时必须填写，关闭证据摘要 |
 
@@ -259,6 +262,25 @@ Task 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 3. Task 关联 Intent、ADR 时应更新对应字段并记录 Change；
 4. Task 关闭时必须填写 `closure_evidence` 字段；
 5. Task 实例写入 `ldvh-base/tasks/` 目录后，应确保文件命名符合 `task-{NNNN}-short-title.yaml` 格式。
+
+### 7.1.1 文档同步检查
+
+Task 关闭时，如 `affected_docs` 非空，必须校验：
+
+1. `affected_docs` 中列出的文档在 Task 执行期间是否有 git 变更；
+2. 有变更 → 视为已同步，通过检查；
+3. 无变更 → 需在 `closure_evidence` 中说明豁免理由（如"该文档无需更新，变更不影响文档内容"）；
+4. 未说明豁免理由 → 不得关闭 Task。
+
+三类文档关系的语义区分：
+
+| 字段 | 语义 | 示例 |
+|---|---|---|
+| `related_docs` | 任务参考的输入文档 | `specs/27-Task-任务.md`（参考字段契约） |
+| `affected_docs` | 任务完成后需同步更新的文档 | `specs/27-Task-任务.md`（新增字段需更新契约） |
+| `deliverables` | 任务产出的结果物 | `specs/refs/07-竞品测试任务安排分析与最佳实践调研.md` |
+
+同一文档可同时出现在 `related_docs` 和 `affected_docs` 中（既参考又需更新）。
 
 ### 7.2 证据留存
 

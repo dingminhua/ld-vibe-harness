@@ -1092,6 +1092,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         value = value.strip()
         # 列表类型字段：逗号分隔
         if key in ("related_tasks", "related_adrs", "related_pitfalls", "related_docs",
+                    "affected_docs", "deliverables",
                     "blocked_by", "sub_tasks", "affects", "related_objects", "related_rules"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
         else:

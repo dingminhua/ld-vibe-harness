@@ -1,9 +1,9 @@
 id: task-0037
 type: task
 title: 任务完成后文档同步机制
-status: planned
+status: executing
 created: '2026-06-05T20:12:12.093436'
-updated: '2026-06-05T20:20:00'
+updated: '2026-06-05T22:00:00'
 description: |
   Task 完成后，涉及的文档（specs 规范、web/docs 设计文档）不会自动同步更新，导致文档与实现脱节。例如 task-0036 实现了内联编辑后，web/docs/04-ObjectDetail.md 不会反映新功能；task-0032 新增 deliverables 字段后，specs/27-Task-任务.md 需要更新字段契约。
 
@@ -22,9 +22,12 @@ description: |
 source_intent: intent-0007
 source: intent-0007
 acceptance: |
-  - [ ] 明确 Task 关闭流程中文档同步的规范要求
-  - [ ] Task acceptance 模板增加"相关文档已同步"检查项
-  - [ ] 评估 affected_docs 字段是否需要新增（与 related_docs 区分）
-  - [ ] ldvh-close Skill 增加文档同步检查步骤
+  - [x] 明确 Task 关闭流程中文档同步的规范要求
+  - [x] Task acceptance 模板增加"相关文档已同步"检查项
+  - [x] 评估 affected_docs 字段是否需要新增（与 related_docs 区分）
+  - [x] ldvh-close Skill 增加文档同步检查步骤
   - [ ] 已有 Task 实例补充 affected_docs 或相关文档关联
 blocked_by: []
+affected_docs:
+  - specs/27-Task-任务.md
+deliverables: []

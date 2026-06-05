@@ -49,7 +49,7 @@ REQUIRED_FIELDS = {
 }
 LIST_FIELDS = {
     "intent": {"related_tasks", "related_adrs", "related_pitfalls", "related_docs"},
-    "task": {"related_adrs", "sub_tasks", "blocked_by"},
+    "task": {"related_adrs", "sub_tasks", "blocked_by", "related_docs", "affected_docs", "deliverables"},
     "adr": {"related_tasks", "related_adrs"},
     "pitfall": {"source_objects", "related_objects", "related_rules", "tags"},
     "profile": {"related_tasks", "related_adrs"},
