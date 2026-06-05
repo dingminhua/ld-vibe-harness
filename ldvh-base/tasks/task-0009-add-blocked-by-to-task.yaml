@@ -43,4 +43,7 @@ closure_evidence: '已完成 blocked_by 前置任务字段全量落地：更新 
 
   '
 blocked_by: []
+affected_docs:
+  - specs/27-Task-任务.md
+  - specs/06-Python与Web工具规范.md
 closed_at: '2026-06-05'

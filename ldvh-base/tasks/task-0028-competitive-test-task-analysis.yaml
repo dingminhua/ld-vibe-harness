@@ -25,3 +25,5 @@ related_docs:
 - specs/evals/20-Superpowers深度调研-TDD强制-工程纪律与LDVH借鉴.md
 - specs/evals/21-BMAD-METHOD深度调研-企业级方法论-微文件架构与LDVH借鉴.md
 - specs/refs/07-竞品测试任务安排分析与最佳实践调研.md
+deliverables:
+  - specs/refs/07-竞品测试任务安排分析与最佳实践调研.md

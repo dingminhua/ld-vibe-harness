@@ -43,3 +43,6 @@ acceptance: |
   - [ ] fact_validate.py 校验 affected_docs 格式
 blocked_by:
   - task-0037
+affected_docs:
+  - specs/27-Task-任务.md
+  - specs/06-Python与Web工具规范.md

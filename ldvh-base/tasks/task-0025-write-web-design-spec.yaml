@@ -34,4 +34,18 @@ related_docs:
 - web/docs/04-ObjectDetail.md
 - web/docs/05-Validate.md
 - web/docs/06-Changelog.md
+affected_docs:
+  - web/docs/01-全局设计约束.md
+  - web/docs/02-Dashboard.md
+  - web/docs/03-ObjectList.md
+  - web/docs/04-ObjectDetail.md
+  - web/docs/05-Validate.md
+  - web/docs/06-Changelog.md
+deliverables:
+  - web/docs/01-全局设计约束.md
+  - web/docs/02-Dashboard.md
+  - web/docs/03-ObjectList.md
+  - web/docs/04-ObjectDetail.md
+  - web/docs/05-Validate.md
+  - web/docs/06-Changelog.md
 closed_at: '2026-06-05T21:05:05.791030'

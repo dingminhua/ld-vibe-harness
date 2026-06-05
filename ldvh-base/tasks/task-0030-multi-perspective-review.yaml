@@ -22,3 +22,5 @@ acceptance: '- [ ] 定义至少 3 种角色视角及其核心诉求
 
   '
 blocked_by: []
+deliverables:
+  - web/docs/08-多角色审视报告.md

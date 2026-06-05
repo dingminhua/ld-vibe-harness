@@ -19,3 +19,5 @@ acceptance: '- [ ] 完成内容可读性问题分析，识别当前各字段内�
 
   '
 blocked_by: []
+deliverables:
+  - web/docs/07-内容可读性设计建议.md

@@ -17,3 +17,6 @@ acceptance: |
   - [ ] Web ObjectDetail 页面渲染 deliverables 字段
   - [ ] 已有 Task 实例补充 deliverables 字段（如 task-0028）
 blocked_by: []
+affected_docs:
+  - specs/27-Task-任务.md
+  - specs/06-Python与Web工具规范.md

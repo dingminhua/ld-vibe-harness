@@ -49,3 +49,5 @@ closure_evidence: 'fact_model_cli.py 已实现 create/transition/delete 三个�
 
   '
 blocked_by: []
+affected_docs:
+  - specs/06-Python与Web工具规范.md

@@ -38,6 +38,9 @@ related_adrs: []
 related_changes: []
 blocked_by:
   - task-0019
+affected_docs:
+  - specs/06-Python与Web工具规范.md
+  - specs/21-ADR-决策.md
 closure_evidence: |
   fact_cli.py 已新增 6 个 ADR 专属子命令：search、stats、related、link-rule、deprecate、supersede。
   ADR create/transition 已强制 Human Gate 参数检查，支持 --write-change 生成 Change 记录。
