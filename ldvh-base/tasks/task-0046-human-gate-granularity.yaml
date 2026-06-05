@@ -29,5 +29,5 @@ related_docs:
 - specs/refs/07-竞品测试任务安排分析与最佳实践调研.md
 - specs/evals/19-Gstack深度调研-人工确认-测试流程-使用说明与LDVH对比.md
 deliverables:
-- ldvh-base/adrs/adr-0007（新建）
+- ldvh-base/adrs/adr-0008（新建）
 - specs/07-工作模型基础规范.md（修订）
