@@ -1,19 +1,11 @@
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useI18n } from '@/i18n/context';
 
 interface EvidenceBlockProps {
   value: string;
 }
 
-/** 匹配验证命令，如 python3 tools/xxx、python tools/xxx、npx xxx 等 */
-const COMMAND_RE = /(`{1,3})([^`]*?(?:python3?|npx|npm|yarn|pip|cargo|go\s+(?:run|test|build))\s+[^\n`]*?)\1/g;
-
-/** 匹配文件路径，如 specs/xxx、src/xxx、tools/xxx 等 */
-const PATH_RE = /(`{1,3})([^`]*?(?:specs\/|src\/|tools\/|web\/|config\/|\.\/|\/)[^\n`]*?)\1/g;
-
 export default function EvidenceBlock({ value }: EvidenceBlockProps) {
-  const { t } = useI18n();
 
   return (
     <div className="rounded-lg border border-ldvh-accent/20 bg-ldvh-accent/5 p-3">

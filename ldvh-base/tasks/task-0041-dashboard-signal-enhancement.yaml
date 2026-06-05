@@ -3,9 +3,9 @@ type: task
 title: Dashboard 态势摘要与信号强化
 title_en: Dashboard Status Summary and Signal Enhancement
 title_zh: Dashboard 态势摘要与信号强化
-status: executing
+status: closed
 created: '2026-06-05T22:04:54.258663'
-updated: '2026-06-05T22:06:01.692906'
+updated: '2026-06-05T23:01:17.062259'
 description: '强化 Dashboard 的信号表达和信息层次，按 08-网站整体性多角色审视研究 §4.2 改进：
 
   - Dashboard 顶部增加项目态势摘要（一句话概括当前项目状态）
@@ -19,19 +19,27 @@ description: '强化 Dashboard 的信号表达和信息层次，按 08-网站整
   '
 source_intent: intent-0006
 source: intent-0006
-acceptance: '- [ ] Dashboard 顶部增加项目态势摘要行，显示关键数字（如"3 个任务执行中，2 个待审查"）
+acceptance: '- [x] Dashboard 顶部增加项目态势摘要行，显示关键数字（如"3 个任务执行中，2 个待审查"）
 
-  - [ ] 待推进区域中 executing/verifying/review_needed 状态条目使用加粗或高亮背景
+  - [x] 待推进区域中 executing/verifying/review_needed 状态条目使用加粗或高亮背景
 
-  - [ ] 校验失败时 Dashboard 校验状态区域显示红色边框和提示文案
+  - [x] 校验失败时 Dashboard 校验状态区域显示红色边框和提示文案
 
-  - [ ] Changelog 页面 commit message 中的 Refs 引用可点击跳转到对应对象详情
+  - [x] Changelog 页面 commit message 中的 Refs 引用可点击跳转到对应对象详情
 
-  - [ ] 态势摘要和提示文案支持中英双语
+  - [x] 态势摘要和提示文案支持中英双语
 
-  - [ ] TypeScript 编译和 ESLint 通过
+  - [x] TypeScript 编译和 ESLint 通过
 
   '
 blocked_by: []
+closure_evidence: 'Dashboard态势摘要行按状态分组计数actionItems，待推进区域executing/verifying/review_needed
+
+  加粗+黄色色条+高亮背景，校验失败红色边框+提示文案，Changelog Refs解析为可点击链接。
+
+  独立agent验证6项acceptance全部通过。
+
+  '
 affected_docs:
-  - web/docs/02-Dashboard.md
+- web/docs/02-Dashboard.md
+closed_at: '2026-06-05T23:01:17.062265'

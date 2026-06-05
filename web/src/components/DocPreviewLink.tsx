@@ -1,12 +1,10 @@
 import { FileText, ExternalLink } from 'lucide-react';
-import { useI18n } from '@/i18n/context';
 
 interface DocPreviewLinkProps {
   docs: string[];
 }
 
 export default function DocPreviewLink({ docs }: DocPreviewLinkProps) {
-  const { t } = useI18n();
 
   if (docs.length === 0) return null;
 

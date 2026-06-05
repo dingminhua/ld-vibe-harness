@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { CheckSquare, Square } from 'lucide-react';
-import { useI18n } from '@/i18n/context';
 
 interface ChecklistCardProps {
   value: string;
@@ -24,7 +22,6 @@ function parseChecklist(value: string): ChecklistItem[] {
 }
 
 export default function ChecklistCard({ value }: ChecklistCardProps) {
-  const { t } = useI18n();
   const items = parseChecklist(value);
   const doneCount = items.filter(i => i.checked).length;
   const totalCount = items.length;
