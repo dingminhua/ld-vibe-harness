@@ -80,6 +80,12 @@ export const UI_LOCALES = {
     'dashboard.warnings': '警告',
     'dashboard.pass': '通过',
     'dashboard.fail': '未通过',
+    'dashboard.summary.executing': '{count} 个任务执行中',
+    'dashboard.summary.verifying': '{count} 个验证中',
+    'dashboard.summary.reviewNeeded': '{count} 个待审查',
+    'dashboard.summary.planned': '{count} 个计划中',
+    'dashboard.summary.validationErrors': '{count} 个校验错误',
+    'dashboard.validationErrorHint': '存在校验错误，请查看详情',
 
     // Workbench
     'workbench.badge': '实验视图 · 不替换主页',
@@ -122,6 +128,8 @@ export const UI_LOCALES = {
     'objectDetail.created': '创建时间',
     'objectDetail.updated': '更新时间',
     'objectDetail.closedAt': '关闭时间',
+    'objectDetail.expand': '展开',
+    'objectDetail.collapse': '收起',
 
     // Validate
     'validate.title': '校验',
@@ -181,6 +189,12 @@ export const UI_LOCALES = {
     'dashboard.warnings': 'Warnings',
     'dashboard.pass': 'PASS',
     'dashboard.fail': 'FAIL',
+    'dashboard.summary.executing': '{count} tasks executing',
+    'dashboard.summary.verifying': '{count} verifying',
+    'dashboard.summary.reviewNeeded': '{count} pending review',
+    'dashboard.summary.planned': '{count} planned',
+    'dashboard.summary.validationErrors': '{count} validation errors',
+    'dashboard.validationErrorHint': 'Validation errors found, check details',
 
     'workbench.badge': 'Experimental · Dashboard unchanged',
     'workbench.title': 'LDVH Workbench',
@@ -222,6 +236,8 @@ export const UI_LOCALES = {
     'objectDetail.created': 'Created',
     'objectDetail.updated': 'Updated',
     'objectDetail.closedAt': 'Closed',
+    'objectDetail.expand': 'Expand',
+    'objectDetail.collapse': 'Collapse',
 
     // Validate
     'validate.title': 'Validation',

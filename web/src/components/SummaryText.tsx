@@ -1,0 +1,47 @@
+import { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { useI18n } from '@/i18n/context';
+
+interface SummaryTextProps {
+  value: string;
+}
+
+const COLLAPSE_THRESHOLD = 150; // ~3 lines
+
+export default function SummaryText({ value }: SummaryTextProps) {
+  const { t } = useI18n();
+  const [expanded, setExpanded] = useState(false);
+
+  const needsTruncation = value.length > COLLAPSE_THRESHOLD;
+  const displayText = expanded ? value : value.slice(0, COLLAPSE_THRESHOLD);
+
+  return (
+    <div>
+      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-li:my-0.5 prose-ul:my-1 prose-pre:my-2 prose-code:text-ldvh-accent">
+        <Markdown remarkPlugins={[remarkGfm]}>
+          {needsTruncation && !expanded ? displayText + '…' : value}
+        </Markdown>
+      </div>
+      {needsTruncation && (
+        <button
+          onClick={() => setExpanded(v => !v)}
+          className="mt-1 flex items-center gap-1 text-xs text-ldvh-accent transition-colors hover:text-ldvh-accent/80"
+        >
+          {expanded ? (
+            <>
+              <ChevronUp size={12} />
+              {t('objectDetail.collapse')}
+            </>
+          ) : (
+            <>
+              <ChevronDown size={12} />
+              {t('objectDetail.expand')}
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}

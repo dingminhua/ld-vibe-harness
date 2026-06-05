@@ -19,6 +19,9 @@ const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
 
 const TYPE_ORDER = ['intent', 'task', 'adr', 'pitfall', 'memo', 'profile'];
 
+/** 需要在待推进区域突出显示的关键状态 */
+const HIGHLIGHT_STATUSES = new Set(['executing', 'verifying', 'review_needed']);
+
 /** 根据语言获取标题（优先 title_en，回退 title 中文） */
 function getLocalizedTitle(item: { title?: string; title_en?: string; title_zh?: string }, locale: string): string {
   if (locale === 'en') {
@@ -61,7 +64,34 @@ export default function Dashboard() {
 
   return (
     <div className="p-6">
-      <h1 className="mb-6 text-xl font-semibold text-ldvh-text-primary">{t('dashboard.title')}</h1>
+      <h1 className="mb-2 text-xl font-semibold text-ldvh-text-primary">{t('dashboard.title')}</h1>
+
+      {/* 项目态势摘要行 */}
+      {(() => {
+        const statusCounts: Record<string, number> = {};
+        for (const item of data.actionItems) {
+          statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
+        }
+        const parts: string[] = [];
+        const statusKeys: Array<{ status: string; key: 'dashboard.summary.executing' | 'dashboard.summary.verifying' | 'dashboard.summary.reviewNeeded' | 'dashboard.summary.planned' }> = [
+          { status: 'executing', key: 'dashboard.summary.executing' },
+          { status: 'verifying', key: 'dashboard.summary.verifying' },
+          { status: 'review_needed', key: 'dashboard.summary.reviewNeeded' },
+          { status: 'planned', key: 'dashboard.summary.planned' },
+        ];
+        for (const { status, key } of statusKeys) {
+          const count = statusCounts[status];
+          if (count) {
+            parts.push(t(key, { count: String(count) }));
+          }
+        }
+        if (data.validation.errors > 0) {
+          parts.push(t('dashboard.summary.validationErrors', { count: String(data.validation.errors) }));
+        }
+        return parts.length > 0 ? (
+          <p className="mb-4 text-xs text-ldvh-text-secondary">{parts.join(locale === 'zh' ? '，' : ', ')}</p>
+        ) : null;
+      })()}
 
       {/* Profile card */}
       {data.profile && (
@@ -180,7 +210,7 @@ export default function Dashboard() {
       {/* Validation status + Action Items - side by side */}
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Validation status */}
-        <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+        <div className={`rounded-lg border bg-ldvh-panel p-4 ${data.validation.ok ? 'border-ldvh-border' : 'border-red-500'}`}>
           <div className="mb-3 flex items-center gap-2">
             <Shield size={16} className="text-ldvh-accent" />
             <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.validationStatus')}</h3>
@@ -208,6 +238,11 @@ export default function Dashboard() {
               <span className="text-xs text-ldvh-text-secondary">{t('dashboard.warnings')}</span>
             </div>
           </div>
+          {!data.validation.ok && (
+            <p className="mt-3 text-xs font-medium text-red-400">
+              {t('dashboard.validationErrorHint')}
+            </p>
+          )}
         </div>
 
         {/* Action Items */}
@@ -220,34 +255,37 @@ export default function Dashboard() {
             <p className="text-sm text-ldvh-text-secondary">{t('dashboard.noActionItems')}</p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {data.actionItems.map((item) => (
-                <li
-                  key={`${item.type}-${item.id}`}
-                  className="flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30"
-                  onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span
-                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
-                      style={{
-                        backgroundColor: `${item.typeColor}20`,
-                        color: item.typeColor,
-                      }}
-                    >
-                      {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
-                    </span>
-                    <span className="truncate text-sm text-ldvh-text-primary">
-                      {getLocalizedTitle(item, locale) || item.id}
-                    </span>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
-                    <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
-                      {item.relativeTime}
-                    </span>
-                  </div>
-                </li>
-              ))}
+              {data.actionItems.map((item) => {
+                const isHighlight = HIGHLIGHT_STATUSES.has(item.status);
+                return (
+                  <li
+                    key={`${item.type}-${item.id}`}
+                    className={`flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30 ${isHighlight ? 'border-l-2 border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : ''}`}
+                    onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <span
+                        className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                        style={{
+                          backgroundColor: `${item.typeColor}20`,
+                          color: item.typeColor,
+                        }}
+                      >
+                        {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
+                      </span>
+                      <span className={`truncate text-sm text-ldvh-text-primary ${isHighlight ? 'font-semibold' : ''}`}>
+                        {getLocalizedTitle(item, locale) || item.id}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
+                      <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
+                        {item.relativeTime}
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
