@@ -16,6 +16,7 @@ import dashboardRoutes from './routes/dashboard.js'
 import objectsRoutes from './routes/objects.js'
 import validateRoutes from './routes/validate.js'
 import changelogRoutes from './routes/changelog.js'
+import docsRoutes from './routes/docs.js'
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url)
@@ -42,6 +43,7 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/objects', objectsRoutes)
 app.use('/api/validate', validateRoutes)
 app.use('/api/changelog', changelogRoutes)
+app.use('/api/docs', docsRoutes)
 
 /**
  * health

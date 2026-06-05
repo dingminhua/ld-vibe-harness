@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2, ExternalLink, Link2 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -16,6 +16,8 @@ const META_KEYS = ['id', 'type', 'status', 'created', 'updated', 'closed_at', 't
 const MARKDOWN_FIELDS = ['description', 'success_criteria', 'constraints', 'acceptance', 'verification', 'notes', 'rationale', 'context', 'consequences', 'observation', 'analysis', 'mitigation', 'resolution'];
 /** 列表字段（用带图标的条目展示） */
 const CHECKLIST_FIELDS = ['acceptance', 'blocked_by'];
+/** 引用字段（渲染为可点击的引用列表） */
+const REFERENCE_FIELDS = ['related_tasks', 'related_adrs', 'blocked_by', 'source_intent', 'parent_task'];
 
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
@@ -252,6 +254,11 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
       );
     }
 
+    // 单字符串引用字段（source_intent、parent_task）
+    if (REFERENCE_FIELDS.includes(fieldKey) && parseRefType(value)) {
+      return <ReferenceLink refId={value} />;
+    }
+
     // 短文本
     return <span className="text-sm text-ldvh-text-primary">{value}</span>;
   }
@@ -278,30 +285,13 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
 
     // 字符串数组
     if (typeof value[0] === 'string') {
-      // related_docs 字段渲染为可点击链接
+      // related_docs 字段渲染为可折叠展开的文档卡片
       if (fieldKey === 'related_docs') {
-        return (
-          <div className="flex flex-wrap gap-1.5">
-            {value.map((item, i) => {
-              const href = item.startsWith('http') ? item : undefined;
-              return href ? (
-                <a
-                  key={i}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-md bg-ldvh-bg px-2 py-0.5 text-xs text-ldvh-accent border border-ldvh-border hover:underline"
-                >
-                  {item}
-                </a>
-              ) : (
-                <span key={i} className="rounded-md bg-ldvh-bg px-2 py-0.5 text-xs text-ldvh-text-primary border border-ldvh-border">
-                  {item}
-                </span>
-              );
-            })}
-          </div>
-        );
+        return <RelatedDocsList docs={value as string[]} />;
+      }
+      // 引用字段渲染为可点击的引用列表
+      if (REFERENCE_FIELDS.includes(fieldKey)) {
+        return <ReferenceList refs={value as string[]} />;
       }
       return (
         <div className="flex flex-wrap gap-1.5">
@@ -352,6 +342,168 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
   }
 
   return <span className="text-sm text-ldvh-text-primary">{String(value)}</span>;
+}
+
+/** 从引用 ID 解析对象类型（如 task-0001 → task） */
+function parseRefType(refId: string): string | null {
+  const m = refId.match(/^([a-z]+)-\d+$/);
+  return m ? m[1] : null;
+}
+
+/** 引用链接：单个可点击引用项 */
+function ReferenceLink({ refId }: { refId: string }) {
+  const navigate = useNavigate();
+  const { locale, getStatus } = useI18n();
+  const [info, setInfo] = useState<{ title: string; status: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refType = parseRefType(refId);
+
+  useEffect(() => {
+    if (!refType) { setLoading(false); return; }
+    fetchObjectDetail(refType, refId)
+      .then((detail) => {
+        const obj = detail.data;
+        const title = (locale === 'en'
+          ? (obj.title_en as string || obj.title as string)
+          : (obj.title_zh as string || obj.title as string)) || refId;
+        setInfo({ title, status: detail.summary.status });
+      })
+      .catch(() => setInfo(null))
+      .finally(() => setLoading(false));
+  }, [refType, refId, locale]);
+
+  const typeColor = refType ? (CATEGORY_COLORS[refType] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
+  const typeLabel = TYPE_LOCALES[refType || '']
+    ? (locale === 'en' ? TYPE_LOCALES[refType!].en : TYPE_LOCALES[refType!].zh)
+    : refType;
+
+  const handleClick = () => {
+    if (refType) navigate(`/objects/${refType}/${refId}`);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={!refType}
+      className="flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left text-sm transition-colors hover:bg-ldvh-border/30 disabled:cursor-default"
+    >
+      <Link2 size={13} className="shrink-0" style={{ color: typeColor }} />
+      {typeLabel && (
+        <span
+          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+          style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
+        >
+          {typeLabel}
+        </span>
+      )}
+      <span className="min-w-0 flex-1 truncate text-ldvh-text-primary">
+        {loading ? <span className="text-ldvh-text-secondary">{refId}</span> : (info?.title || refId)}
+      </span>
+      {info?.status && (
+        <span className="shrink-0 text-[10px] text-ldvh-text-secondary">{getStatus(info.status)}</span>
+      )}
+    </button>
+  );
+}
+
+/** 引用列表：多个引用项，每个独立一行 */
+function ReferenceList({ refs }: { refs: string[] }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {refs.map((ref, i) => (
+        <ReferenceLink key={i} refId={ref} />
+      ))}
+    </div>
+  );
+}
+
+/** 关联文档列表：可折叠展开查看内容 */
+function RelatedDocsList({ docs }: { docs: string[] }) {
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const [docContent, setDocContent] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const { t, locale } = useI18n();
+
+  const handleToggle = async (idx: number, docPath: string) => {
+    if (expandedIdx === idx) {
+      setExpandedIdx(null);
+      setDocContent(null);
+      return;
+    }
+
+    // 外部链接直接打开
+    if (docPath.startsWith('http')) {
+      window.open(docPath, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    setExpandedIdx(idx);
+    setDocContent(null);
+    setLoadError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch(`/api/docs?path=${encodeURIComponent(docPath)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setDocContent(data.content);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {docs.map((doc, i) => {
+        const isExternal = doc.startsWith('http');
+        const isExpanded = expandedIdx === i;
+        return (
+          <div key={i} className="rounded-lg border border-ldvh-border bg-ldvh-bg overflow-hidden">
+            <button
+              onClick={() => handleToggle(i, doc)}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-ldvh-border/30"
+            >
+              {isExternal ? (
+                <ExternalLink size={13} className="shrink-0 text-ldvh-accent" />
+              ) : (
+                <FileText size={13} className="shrink-0 text-ldvh-accent" />
+              )}
+              <span className="min-w-0 flex-1 truncate text-ldvh-text-primary">{doc}</span>
+              {isExternal ? (
+                <span className="shrink-0 text-[10px] text-ldvh-text-secondary">↗</span>
+              ) : (
+                <span className="shrink-0 text-ldvh-text-secondary">
+                  {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                </span>
+              )}
+            </button>
+            {isExpanded && (
+              <div className="border-t border-ldvh-border">
+                {loading ? (
+                  <div className="flex items-center gap-2 px-3 py-3">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-ldvh-accent border-t-transparent" />
+                    <span className="text-xs text-ldvh-text-secondary">{t('common.loading')}</span>
+                  </div>
+                ) : loadError ? (
+                  <div className="px-3 py-3 text-xs text-red-400">{loadError}</div>
+                ) : (
+                  <div className="max-h-80 overflow-y-auto px-3 py-3">
+                    <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-li:my-0.5 prose-ul:my-1 prose-pre:my-2 prose-code:text-ldvh-accent">
+                      <Markdown remarkPlugins={[remarkGfm]}>{docContent || ''}</Markdown>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 /** 简单对象转 YAML 字符串 */
