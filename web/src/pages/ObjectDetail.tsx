@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2, Info } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
@@ -9,8 +9,10 @@ import ReferenceCard from '@/components/ReferenceCard';
 import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
+import ReadingPanel, { type PanelContent } from '@/components/ReadingPanel';
 import { fetchObjectDetail, type ObjectDetail } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
+import { getTypeDescription, getStatusHint } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 
 /** 字段分组定义 */
@@ -75,7 +77,47 @@ export default function ObjectDetail() {
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelContent, setPanelContent] = useState<PanelContent | null>(null);
   const { t, getStatus, locale } = useI18n();
+
+  const openDocPanel = useCallback((path: string) => {
+    setPanelContent({ type: 'doc', path });
+    setPanelOpen(true);
+  }, []);
+
+  const openRefPanel = useCallback((refType: string, refId: string) => {
+    setPanelContent({ type: 'object', refType, refId });
+    setPanelOpen(true);
+  }, []);
+
+  const closePanel = useCallback(() => {
+    setPanelOpen(false);
+  }, []);
+
+  // Listen for ldvh:doc-preview and ldvh:ref-preview custom events
+  useEffect(() => {
+    const handleDocPreview = (e: Event) => {
+      const customEvent = e as CustomEvent<{ path: string }>;
+      openDocPanel(customEvent.detail.path);
+    };
+
+    const handleRefPreview = (e: Event) => {
+      const customEvent = e as CustomEvent<{ refType: string; refId: string }>;
+      // On desktop, prevent navigation and open panel instead
+      if (window.innerWidth >= 1024) {
+        e.preventDefault();
+        openRefPanel(customEvent.detail.refType, customEvent.detail.refId);
+      }
+    };
+
+    document.addEventListener('ldvh:doc-preview', handleDocPreview);
+    document.addEventListener('ldvh:ref-preview', handleRefPreview);
+    return () => {
+      document.removeEventListener('ldvh:doc-preview', handleDocPreview);
+      document.removeEventListener('ldvh:ref-preview', handleRefPreview);
+    };
+  }, [openDocPanel, openRefPanel]);
 
   useEffect(() => {
     if (!type || !id) return;
@@ -108,6 +150,8 @@ export default function ObjectDetail() {
   const objType = detail.summary.type;
   const objStatus = detail.summary.status;
   const typeColor = CATEGORY_COLORS[objType] || CATEGORY_COLORS.other;
+  const typeDesc = getTypeDescription(objType, locale);
+  const statusHint = getStatusHint(objStatus, locale);
 
   const displayTitle = (locale === 'en'
     ? ((obj.title_en as string) || obj.title as string)
@@ -134,68 +178,90 @@ export default function ObjectDetail() {
   const yamlSource = objectToYaml(obj);
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <button
-          onClick={() => navigate(`/objects/${type}`)}
-          className="mb-3 flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
-        >
-          <ArrowLeft size={14} />
-          {t('objectDetail.back')}
-        </button>
-        <div className="flex items-start gap-3">
-          <span
-            className="mt-1 shrink-0 rounded px-2 py-0.5 text-xs font-medium"
-            style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
-          >
-            {TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
-          </span>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-semibold text-ldvh-text-primary">{displayTitle}</h1>
-            <p className="mt-0.5 font-mono text-xs text-ldvh-text-secondary">{objId}</p>
+    <div className="flex h-full">
+      {/* Main content area */}
+      <div className={`flex-1 overflow-y-auto transition-all duration-300 ${panelOpen ? 'lg:mr-0' : ''}`}>
+        <div className={`mx-auto p-6 ${panelOpen ? 'max-w-4xl' : 'max-w-4xl'}`}>
+          {/* Header */}
+          <div className="mb-6">
+            <button
+              onClick={() => navigate(`/objects/${type}`)}
+              className="mb-3 flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+            >
+              <ArrowLeft size={14} />
+              {t('objectDetail.back')}
+            </button>
+            <div className="flex items-start gap-3">
+              <span
+                className="mt-1 shrink-0 rounded px-2 py-0.5 text-xs font-medium"
+                style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
+              >
+                {TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
+              </span>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl font-semibold text-ldvh-text-primary">{displayTitle}</h1>
+                <p className="mt-0.5 font-mono text-xs text-ldvh-text-secondary">{objId}</p>
+                {typeDesc && (
+                  <p className="mt-1 text-xs text-ldvh-text-secondary">{typeDesc}</p>
+                )}
+              </div>
+              <div className="flex flex-col items-end gap-1.5">
+                <StatusBadge status={objStatus} statusLabel={getStatus(objStatus)} size="md" />
+                {statusHint && (
+                  <span className="text-[11px] text-ldvh-text-secondary">{statusHint}</span>
+                )}
+              </div>
+            </div>
+            {objStatus === 'review_needed' && (
+              <div className="mt-3 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                <Info size={14} className="shrink-0 text-amber-400" />
+                <span className="text-xs text-amber-300">{t('objectDetail.humanGateTip')}</span>
+              </div>
+            )}
           </div>
-          <StatusBadge status={objStatus} statusLabel={getStatus(objStatus)} size="md" />
+
+          {/* Metadata row */}
+          <div className="mb-6 flex flex-wrap gap-2">
+            <MetaChip label={t('objectDetail.created')} value={obj.created as string || '-'} />
+            <MetaChip label={t('objectDetail.updated')} value={obj.updated as string || '-'} />
+            {obj.closed_at && <MetaChip label={t('objectDetail.closedAt')} value={obj.closed_at as string} />}
+          </div>
+
+          {/* Content fields */}
+          <div className="mb-6 flex flex-col gap-5">
+            {contentEntries.map(([key, value]) => (
+              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} />
+            ))}
+          </div>
+
+          {/* YAML source */}
+          <div className="rounded-lg border border-ldvh-border bg-ldvh-panel overflow-hidden">
+            <button
+              onClick={() => setShowYaml(!showYaml)}
+              className="flex w-full items-center gap-2 p-3 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
+            >
+              <Code2 size={14} />
+              <span>{t('objectDetail.yamlSource')}</span>
+              <span className="ml-auto">{showYaml ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
+            </button>
+            {showYaml && (
+              <div className="border-t border-ldvh-border">
+                <SyntaxHighlighter
+                  language="yaml"
+                  style={oneDark}
+                  customStyle={{ margin: 0, borderRadius: 0, fontSize: '12px', maxHeight: '400px' }}
+                  showLineNumbers
+                >
+                  {yamlSource}
+                </SyntaxHighlighter>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Metadata row */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        <MetaChip label={t('objectDetail.created')} value={obj.created as string || '-'} />
-        <MetaChip label={t('objectDetail.updated')} value={obj.updated as string || '-'} />
-        {obj.closed_at && <MetaChip label={t('objectDetail.closedAt')} value={obj.closed_at as string} />}
-      </div>
-
-      {/* Content fields */}
-      <div className="mb-6 flex flex-col gap-5">
-        {contentEntries.map(([key, value]) => (
-          <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} />
-        ))}
-      </div>
-
-      {/* YAML source */}
-      <div className="rounded-lg border border-ldvh-border bg-ldvh-panel overflow-hidden">
-        <button
-          onClick={() => setShowYaml(!showYaml)}
-          className="flex w-full items-center gap-2 p-3 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
-        >
-          <Code2 size={14} />
-          <span>{t('objectDetail.yamlSource')}</span>
-          <span className="ml-auto">{showYaml ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
-        </button>
-        {showYaml && (
-          <div className="border-t border-ldvh-border">
-            <SyntaxHighlighter
-              language="yaml"
-              style={oneDark}
-              customStyle={{ margin: 0, borderRadius: 0, fontSize: '12px', maxHeight: '400px' }}
-              showLineNumbers
-            >
-              {yamlSource}
-            </SyntaxHighlighter>
-          </div>
-        )}
-      </div>
+      {/* Right reading panel */}
+      <ReadingPanel open={panelOpen} onClose={closePanel} content={panelContent} />
     </div>
   );
 }

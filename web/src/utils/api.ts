@@ -137,3 +137,13 @@ export async function fetchChangelog(count?: number, locale?: string): Promise<C
 export async function fetchCommitDetail(hash: string): Promise<{ hash: string; stat: string }> {
   return request<{ hash: string; stat: string }>(`/changelog/${hash}`);
 }
+
+export interface DocContent {
+  path: string;
+  content: string;
+  truncated: boolean;
+}
+
+export async function fetchDocContent(docPath: string): Promise<DocContent> {
+  return request<DocContent>(`/docs?path=${encodeURIComponent(docPath)}`);
+}

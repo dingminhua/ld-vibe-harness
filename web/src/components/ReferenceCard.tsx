@@ -67,7 +67,18 @@ function ReferenceItem({ refId }: { refId: string }) {
     : refType;
 
   const handleClick = () => {
-    if (refType) navigate(`/objects/${refType}/${refId}`);
+    if (!refType) return;
+    // Emit custom event for reading panel; if preventDefault is called (desktop),
+    // open the panel instead of navigating
+    const event = new CustomEvent('ldvh:ref-preview', {
+      detail: { refType, refId },
+      bubbles: true,
+      cancelable: true,
+    });
+    const notPrevented = document.dispatchEvent(event);
+    if (notPrevented) {
+      navigate(`/objects/${refType}/${refId}`);
+    }
   };
 
   return (

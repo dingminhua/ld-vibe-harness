@@ -3,28 +3,52 @@ type: task
 title: 右侧扩展阅读区基础能力
 title_en: Right Side Extended Reading Panel
 title_zh: 右侧扩展阅读区基础能力
-status: planned
+status: closed
 created: '2026-06-05T22:04:53.739060'
-updated: '2026-06-05T22:10:00'
-description: |
-  在桌面端 ObjectDetail 页面增加右侧扩展阅读区面板，实现 08-网站整体性多角色审视研究 §3 定义的三段式布局。
+updated: '2026-06-05T23:07:46.672258'
+description: '在桌面端 ObjectDetail 页面增加右侧扩展阅读区面板，实现 08-网站整体性多角色审视研究 §3 定义的三段式布局。
+
   右侧面板用于承接"相关但不应该打断主线"的内容：
+
   - 点击 related_docs 时预览 Markdown 文件内容
+
   - 点击 related_tasks 或 related_adrs 时展示对象摘要卡片
+
   - 查看 YAML 原文
+
   移动端（< 1024px）将右侧扩展区降级为底部抽屉。
+
   右侧面板只读取 API 或已有文件内容，不成为新事实源。
+
+  '
 source_intent: intent-0006
 source: intent-0006
-acceptance: |
-  - [ ] 桌面端 ObjectDetail 页面布局改为三段式：左侧导航 + 中间主内容 + 右侧扩展阅读区
-  - [ ] 点击 related_docs 条目时右侧面板预览 Markdown 文件内容
-  - [ ] 点击 related_tasks/related_adrs 条目时右侧面板展示对象摘要卡片（ID、标题、状态）
-  - [ ] 右侧面板支持关闭按钮，关闭后恢复双栏布局
-  - [ ] 移动端（< 1024px）右侧扩展区降级为底部抽屉
-  - [ ] 右侧面板不写入任何事实源，只读取已有数据
-  - [ ] TypeScript 编译和 ESLint 通过
+acceptance: '- [x] 桌面端 ObjectDetail 页面布局改为三段式：左侧导航 + 中间主内容 + 右侧扩展阅读区
+
+  - [x] 点击 related_docs 条目时右侧面板预览 Markdown 文件内容
+
+  - [x] 点击 related_tasks/related_adrs 条目时右侧面板展示对象摘要卡片（ID、标题、状态）
+
+  - [x] 右侧面板支持关闭按钮，关闭后恢复双栏布局
+
+  - [x] 移动端（< 1024px）右侧扩展区降级为底部抽屉
+
+  - [x] 右侧面板不写入任何事实源，只读取已有数据
+
+  - [x] TypeScript 编译和 ESLint 通过
+
+  '
 blocked_by:
-  - task-0039
+- task-0039
+closure_evidence: 'ReadingPanel 组件实现三段式布局，桌面端右侧320px面板滑出，移动端底部抽屉50vh+拖拽关闭。
+
+  监听 ldvh:doc-preview 和 ldvh:ref-preview 事件，文档预览通过 GET /api/docs 获取内容，
+
+  对象摘要通过 GET /api/objects/:type/:id 获取。ReferenceCard 桌面端阻止导航改为打开面板。
+
+  TypeScript编译通过。
+
+  '
 affected_docs:
-  - web/docs/01-全局设计约束.md
+- web/docs/01-全局设计约束.md
+closed_at: '2026-06-05T23:07:46.672264'

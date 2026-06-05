@@ -45,6 +45,48 @@ export function getStatusLocale(status: string, locale: string): string {
 }
 
 // ============================================================
+// 对象类型一句话说明
+// ============================================================
+export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }> = {
+  intent: { zh: '跨任务追踪的目标', en: 'Cross-task tracking goal' },
+  task: { zh: '可执行的工作单元', en: 'Executable work unit' },
+  adr: { zh: '架构决策记录', en: 'Architecture Decision Record' },
+  pitfall: { zh: '已知问题或陷阱', en: 'Known issue or pitfall' },
+  memo: { zh: '待任务化的备忘', en: 'Memo pending taskification' },
+  profile: { zh: '项目画像', en: 'Project profile' },
+  change: { zh: '变更记录', en: 'Change record' },
+};
+
+/** 根据类型返回一句话说明，未知类型回退到空字符串 */
+export function getTypeDescription(type: string, locale: string): string {
+  const entry = TYPE_DESCRIPTION_LOCALES[type];
+  if (!entry) return '';
+  return locale === 'en' ? entry.en : entry.zh;
+}
+
+// ============================================================
+// 状态行动提示
+// ============================================================
+export const STATUS_HINT_LOCALES: Record<string, { zh: string; en: string }> = {
+  planned: { zh: '等待执行', en: 'Waiting to start' },
+  active: { zh: '进行中', en: 'In progress' },
+  executing: { zh: '执行中', en: 'Executing' },
+  verifying: { zh: '验证中，等待独立审查', en: 'Verifying, awaiting independent review' },
+  review_needed: { zh: '待审查，需要确认后关闭', en: 'Pending review, confirm to close' },
+  draft: { zh: '草稿中', en: 'In draft' },
+  proposed: { zh: '提案中，待讨论', en: 'Proposed, pending discussion' },
+  completed: { zh: '已完成', en: 'Completed' },
+  closed: { zh: '已关闭', en: 'Closed' },
+};
+
+/** 根据状态返回行动提示，未知状态回退到空字符串 */
+export function getStatusHint(status: string, locale: string): string {
+  const entry = STATUS_HINT_LOCALES[status];
+  if (!entry) return '';
+  return locale === 'en' ? entry.en : entry.zh;
+}
+
+// ============================================================
 // UI 文案词汇表
 // ============================================================
 export const UI_LOCALES = {
@@ -130,6 +172,11 @@ export const UI_LOCALES = {
     'objectDetail.closedAt': '关闭时间',
     'objectDetail.expand': '展开',
     'objectDetail.collapse': '收起',
+
+    // Reading Panel
+    'readingPanel.truncated': '内容已截断',
+    'readingPanel.close': '关闭',
+    'objectDetail.humanGateTip': '此对象需要确认后才能关闭',
 
     // Validate
     'validate.title': '校验',
@@ -238,6 +285,11 @@ export const UI_LOCALES = {
     'objectDetail.closedAt': 'Closed',
     'objectDetail.expand': 'Expand',
     'objectDetail.collapse': 'Collapse',
+
+    // Reading Panel
+    'readingPanel.truncated': 'Content truncated',
+    'readingPanel.close': 'Close',
+    'objectDetail.humanGateTip': 'This object requires confirmation before closing',
 
     // Validate
     'validate.title': 'Validation',
