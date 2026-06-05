@@ -1,0 +1,30 @@
+id: task-0047
+type: task
+title: 错误到规则的反馈闭环
+status: planned
+created: '2026-06-06T00:03:35.838429'
+updated: '2026-06-06T00:03:35.838429'
+description: |
+  当前 LDVH 的 Pitfall 记录了问题，但缺乏从问题到规则的自动转化机制。
+  借鉴 Error-Driven Context Refinement，建立 Pitfall → ADR 的推荐流程：
+  1. Pitfall 关闭时提示是否需要创建 ADR 固化经验
+  2. Change 记录中标注是否源自 Pitfall 修复
+  3. ldvh-close Skill 在关闭 Pitfall 时增加 ADR 推荐步骤
+source_intent: intent-0009
+source: 竞品调研报告 specs/refs/07 建议5
+acceptance: |
+  - [ ] 修改 Pitfall 规范（specs/26），增加关闭时 ADR 推荐流程
+  - [ ] 修改 Change 规范（specs/22），增加 pitfall_origin 标注
+  - [ ] 更新 ldvh-close Skill，Pitfall 关闭时增加 ADR 推荐步骤
+  - [ ] 至少一个现有 Pitfall 实例补充 ADR 推荐记录作为示范
+blocked_by: []
+title_en: Error-to-Rule Feedback Loop
+title_zh: 错误到规则的反馈闭环
+related_tasks: []
+related_adrs: []
+related_pitfalls: []
+related_docs:
+- specs/refs/07-竞品测试任务安排分析与最佳实践调研.md
+deliverables:
+- specs/26-Pitfall-陷阱.md（修订）
+- specs/22-Change-变更记录.md（修订）
