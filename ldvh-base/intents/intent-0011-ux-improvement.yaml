@@ -1,0 +1,12 @@
+id: intent-0011
+type: intent
+title: 用户体验改进
+status: active
+created: '2026-06-06T00:28:02.377672'
+updated: '2026-06-06T00:32:29.177930'
+description: 改进 LDVH 人机交互体验，包括 Human Gate 确认标题过长时的展示优化：当确认标题超过 60 字符时，将简要摘要放入标题，详细内容单独陈述。
+success_criteria: Human Gate 确认标题超过 60 字符时自动拆分为简要标题+详情展开；所有现有 Skill 的 Human Gate 交互符合此规则
+source: 用户反馈 LDVH 人机交互确认标题过长，影响可读性
+constraints: 不改变 Human Gate 的确认机制本身，仅优化展示方式
+related_tasks:
+- task-0050

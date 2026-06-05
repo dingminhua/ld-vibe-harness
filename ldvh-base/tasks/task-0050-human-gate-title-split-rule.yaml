@@ -1,0 +1,20 @@
+id: task-0050
+type: task
+title: Human Gate 标题超长拆分规则实现
+status: executing
+created: '2026-06-06T00:30:40.787036'
+updated: '2026-06-06T00:31:07.327758'
+description: 实现 Human Gate 确认标题超 60 字符时的拆分展示规则：简要摘要放入标题，详细内容单独陈述。扫描所有 Skill 的 Human
+  Gate 交互，确保符合此规则。
+source: intent-0011
+acceptance: '- [ ] 所有 Skill 的 Human Gate 确认标题不超过 60 字符\n- [ ] 超长标题已拆分为简要标题+详情展开\n-
+  [ ] 拆分后确认信息可读性优于拆分前\n- [ ] 相关文档已同步更新'
+blocked_by: []
+deliverables:
+- 更新后的 Skill 文件
+source_intent: intent-0011
+verification: 逐一检查每个 Skill 的 AskUserQuestion 调用，确认标题长度和拆分逻辑
+related_docs:
+- specs/05-Trae-Solo环境规范.md
+affected_docs:
+- specs/05-Trae-Solo环境规范.md
