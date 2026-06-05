@@ -1,0 +1,18 @@
+id: task-0025
+type: task
+title: 编写 Web 设计规划文档
+status: planned
+created: '2026-06-05T17:19:47.322096'
+updated: '2026-06-05T17:20:00'
+description: |
+  在 web/docs/ 参考文档文件夹中创建 Web 设计规划文档，将设计意图、信息架构、页面结构、交互规范、视觉体系和组件规范系统性地写入文档，作为后续 Web 开展工作的设计依据。
+source_intent: intent-0006
+source: intent-0006
+acceptance: |
+  - [ ] 设计规划文档已创建于 web/docs/ 目录
+  - [ ] 文档覆盖信息架构和页面结构
+  - [ ] 文档覆盖交互规范和导航模式
+  - [ ] 文档覆盖视觉体系（颜色、排版、间距）
+  - [ ] 文档覆盖组件规范和复用策略
+  - [ ] 文档内容可作为后续页面开发的设计依据
+blocked_by: []
