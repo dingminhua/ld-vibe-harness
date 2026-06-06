@@ -4,50 +4,47 @@ title: web semantic rendering by field content format
 status: closed
 created: '2026-06-06T18:16:51.468288'
 updated: '2026-06-06T18:28:52.910502'
-description: '## 背景
+description: |
+  ## 背景
 
-
-  specs/12-通用字段内容格式规范.md 已创建，定义了六种字段内容格式及 Web 语义化渲染消费规则。当前 ObjectDetail 已有部分语义化渲染（ChecklistCard
-  / EvidenceBlock / SummaryText / ReferenceCard），但与 12 号规范的对齐存在以下差距：
-
+  specs/12-通用字段内容格式规范.md 已创建，定义了六种字段内容格式及 Web 语义化渲染消费规则。当前 ObjectDetail 已有部分语义化渲染（ChecklistCard / EvidenceBlock / SummaryText / ReferenceCard），但与 12 号规范的对齐存在以下差距：
 
   - verification 字段走 SummaryText（普通 Markdown），应走 EvidenceBlock
-
   - success_criteria 含 checklist 时走 SummaryText，应识别后走 ChecklistCard
-
   - transition_reasons 未纳入字段分类
-
   - SummaryText 截断可能破坏 Markdown 语法结构
-
 
   ## 目标
 
-
   按 specs/12-通用字段内容格式规范.md §5 的渲染消费规则，优化 ObjectDetail 字段语义化渲染。
-
 
   ## 边界
 
-
   - 只改 web/ 下前端代码，不改 specs 或 tools
-
   - 不改变 Web 信息同步层边界（仍是派生视图，不回写事实源）
-
   - 不引入新的 Web 编辑能力
-
-  '
 source: intent-0006
 source_intent: intent-0006
-acceptance: '- [x] verification 字段改用 EvidenceBlock 渲染\n- [x] success_criteria 含 checklist
-  时自动走 ChecklistCard 渲染\n- [x] transition_reasons 加入 SUMMARY_TEXT_FIELDS\n- [x] SummaryText
-  截断改为按段落截断或纯文本摘要，避免破坏 Markdown 语法\n- [x] 运行事实源校验通过'
+acceptance: |
+  - [x] verification 字段改用 EvidenceBlock 渲染
+  - [x] success_criteria 含 checklist 时自动走 ChecklistCard 渲染
+  - [x] transition_reasons 加入 SUMMARY_TEXT_FIELDS
+  - [x] SummaryText 截断改为按段落截断或纯文本摘要，避免破坏 Markdown 语法
+  - [x] 运行事实源校验通过
 blocked_by: []
 deliverables:
 - web/src/pages/ObjectDetail.tsx
 - web/src/components/SummaryText.tsx
-closure_evidence: '## 验证结果\n\n- verification 字段已改用 EvidenceBlock 渲染（ObjectDetail.tsx
-  第379-382行）\n- success_criteria 含 checklist 时自动走 ChecklistCard（ObjectDetail.tsx 第385-387行）\n-
-  transition_reasons 已加入 SUMMARY_TEXT_FIELDS（ObjectDetail.tsx 第22行）\n- SummaryText
-  截断改为按段落截断 truncateByParagraph（SummaryText.tsx 第13-27行）\n- 事实源校验无新增 error（16个error均为历史遗留）\n\n##
-  结论\n\n4项渲染优化全部实现，TypeScript 编译通过，事实源校验无新增错误。'
+closure_evidence: |
+  ## 验证结果
+
+  - verification 字段已改用 EvidenceBlock 渲染（ObjectDetail.tsx 第379-382行）
+  - success_criteria 含 checklist 时自动走 ChecklistCard（ObjectDetail.tsx 第385-387行）
+  - transition_reasons 已加入 SUMMARY_TEXT_FIELDS（ObjectDetail.tsx 第22行）
+  - SummaryText 截断改为按段落截断 truncateByParagraph（SummaryText.tsx 第13-27行）
+  - 事实源校验无新增 error（16个error均为历史遗留）
+
+  ## 结论
+
+  4项渲染优化全部实现，TypeScript 编译通过，事实源校验无新增错误。
 closed_at: '2026-06-06T18:28:52.910508'

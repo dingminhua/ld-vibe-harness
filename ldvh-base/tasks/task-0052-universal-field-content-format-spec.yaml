@@ -4,75 +4,47 @@ title: 制定通用字段内容格式规范并对齐 Tools/Web
 status: closed
 created: '2026-06-06T08:58:50.957625'
 updated: '2026-06-06T18:40:33.152752'
-description: '## 背景
+description: |
+  ## 背景
 
-
-  LDVH 事实对象 YAML 中，description、acceptance、verification、closure_evidence、notes 等长文本字段当前缺少统一的内容格式规范。AI
-  写入时不知道哪些字段可以写 Markdown、Web 不知道哪些字段应该走语义组件渲染、Validator 不知道哪些字段需要格式校验。
-
+  LDVH 事实对象 YAML 中，description、acceptance、verification、closure_evidence、notes 等长文本字段当前缺少统一的内容格式规范。AI 写入时不知道哪些字段可以写 Markdown、Web 不知道哪些字段应该走语义组件渲染、Validator 不知道哪些字段需要格式校验。
 
   ## 目标
 
-
   创建 specs/12-通用字段内容格式规范.md，定义 LDVH 事实对象字段内容的通用格式类型、字段映射、Tools 校验消费规则和 Web 语义化渲染消费规则。
-
 
   ## 边界
 
-
   - 不改变 ldvh-base/ YAML 事实源权威边界
-
   - 不引入外部 .md 正文引用机制
-
   - 不创建 Narrative / Checklist / Evidence 等独立工作模型
-
   - 不修改对象状态机或字段契约定义（仍由 21-27 各对象规范负责）
-
   - 如执行中发现需改变事实源边界，应另建 ADR
-
-  '
 source: intent-0004
 source_intent: intent-0004
-acceptance: '- [x] 创建 specs/12-通用字段内容格式规范.md
-
+acceptance: |
+  - [x] 创建 specs/12-通用字段内容格式规范.md
   - [x] 定义 Narrative / Checklist / Evidence / Decision / Reference / Log 六种内容格式的边界和书写规则
-
   - [x] 建立现有对象字段到内容格式的映射表
-
   - [x] 明确 Tools（fact_validate.py 等）校验消费规则
-
   - [x] 明确 Web（ObjectDetail / SummaryText / ChecklistCard / EvidenceBlock 等）语义化渲染消费规则
-
   - [x] 判断并记录是否需要同步修改 03 / 06 / 07 / 21-27 等相关规范
-
   - [x] 运行事实源校验通过（16个error均为历史遗留）
-
-  '
 blocked_by: []
-closure_evidence: '## 验证结果
-
+closure_evidence: |
+  ## 验证结果
 
   - specs/12-通用字段内容格式规范.md 已创建（407行），包含11个章节
-
   - 六种内容格式（Narrative/Checklist/Evidence/Decision/Reference/Log）边界和书写规则已定义
-
   - 六类对象字段映射表已建立
-
   - Tools 校验消费规则已明确（error/warning/暂不校验三级）
-
   - Web 语义化渲染消费规则已明确
-
   - 与其他规范关系已记录（并列/消费方/上位依据）
-
   - 事实源校验16个error均为历史遗留，非本任务引入
-
 
   ## 结论
 
-
   12号规范文档完整创建，Tools和Web落地任务（task-0053/0054）均已关闭。
-
-  '
 deliverables:
 - specs/12-通用字段内容格式规范.md
 related_docs:
