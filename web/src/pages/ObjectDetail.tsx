@@ -18,6 +18,7 @@ import { CATEGORY_COLORS } from '@/utils/categoryColors';
 
 /** 字段分组定义 */
 const META_KEYS = ['id', 'type', 'status', 'created', 'updated', 'closed_at', 'title', 'title_en', 'title_zh', 'aggregated_deliverables', 'aggregated_docs'];
+const TASK_AUXILIARY_META_KEYS = ['category', 'priority', 'severity', 'tags', 'scope', 'impact', 'assignee'];
 /** 长文本字段（用 SummaryText 组件渲染，支持展开/收起） */
 const SUMMARY_TEXT_FIELDS = ['description', 'context', 'consequences', 'success_criteria', 'constraints', 'rationale', 'observation', 'analysis', 'mitigation', 'resolution', 'verification', 'notes', 'transition_reasons'];
 /** 引用字段（用 ReferenceCard 组件渲染） */
@@ -67,6 +68,8 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   impact: { zh: '影响范围', en: 'Impact' },
   severity: { zh: '严重程度', en: 'Severity' },
   category: { zh: '分类', en: 'Category' },
+  priority: { zh: '优先级', en: 'Priority' },
+  assignee: { zh: '执行者', en: 'Assignee' },
   tags: { zh: '标签', en: 'Tags' },
   path: { zh: '路径', en: 'Path' },
   changes: { zh: '变更列表', en: 'Changes' },
@@ -190,6 +193,8 @@ export default function ObjectDetail() {
     });
   }
 
+  const taskAuxiliaryMetaEntries = objType === 'task' ? getTaskAuxiliaryMetaEntries(obj) : [];
+
   // 生成真正的 YAML 源码
   const yamlSource = objectToYaml(obj);
 
@@ -241,6 +246,9 @@ export default function ObjectDetail() {
             <MetaChip label={t('objectDetail.created')} value={obj.created as string || '-'} />
             <MetaChip label={t('objectDetail.updated')} value={obj.updated as string || '-'} />
             {obj.closed_at && <MetaChip label={t('objectDetail.closedAt')} value={obj.closed_at as string} />}
+            {taskAuxiliaryMetaEntries.map(([key, value]) => (
+              <MetaChip key={key} label={getFieldLabel(key, locale)} value={formatAuxiliaryMetaValue(value)} />
+            ))}
           </div>
 
           {/* Content fields */}
@@ -325,7 +333,7 @@ function MetaChip({ label, value }: { label: string; value: string }) {
 }
 
 function TaskReadingLayout({ obj, locale, objType, objId, onRefresh }: { obj: Record<string, unknown>; locale: string; objType: string; objId: string; onRefresh: () => void }) {
-  const hidden = new Set(['source', 'description', 'source_intent', 'acceptance', 'verification', 'closure_evidence', 'deliverables', 'related_docs', 'affected_docs', 'blocked_by', ...META_KEYS]);
+  const hidden = new Set(['source', 'description', 'source_intent', 'acceptance', 'verification', 'closure_evidence', 'deliverables', 'related_docs', 'affected_docs', 'blocked_by', ...TASK_AUXILIARY_META_KEYS, ...META_KEYS]);
   const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && value !== null && value !== undefined && value !== '');
 
   return (
@@ -381,6 +389,21 @@ function TaskReadingLayout({ obj, locale, objType, objId, onRefresh }: { obj: Re
       )}
     </div>
   );
+}
+
+function getTaskAuxiliaryMetaEntries(obj: Record<string, unknown>) {
+  return TASK_AUXILIARY_META_KEYS
+    .map((key) => [key, obj[key]] as [string, unknown])
+    .filter(([, value]) => value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0));
+}
+
+function getFieldLabel(fieldKey: string, locale: string) {
+  const labelEntry = FIELD_LABEL_LOCALES[fieldKey];
+  return labelEntry ? (locale === 'en' ? labelEntry.en : labelEntry.zh) : fieldKey.replace(/_/g, ' ');
+}
+
+function formatAuxiliaryMetaValue(value: unknown) {
+  return Array.isArray(value) ? value.join(' · ') : String(value);
 }
 
 function TaskSection({ title, tone, children }: { title: string; tone: 'primary' | 'checklist' | 'evidence' | 'docs' | 'default'; children: ReactNode }) {
