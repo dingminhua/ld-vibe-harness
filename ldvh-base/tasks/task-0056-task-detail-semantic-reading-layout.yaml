@@ -1,9 +1,9 @@
 id: task-0056
 type: task
 title: Task 详情语义阅读结构重构
-status: executing
+status: closed
 created: '2026-06-07T00:39:37.004998'
-updated: '2026-06-07T00:40:10.001830'
+updated: '2026-06-07T00:51:45.709239'
 description: |
   ## 背景
 
@@ -21,15 +21,28 @@ description: |
   - 不把所有对象统一改成同一布局，只优先处理 Task 详情页
 source: 用户反馈 Task 详情页虽然 Markdown 能渲染，但阅读体验仍不舒服、结构不清晰，要求继续行动直到达成目标。
 acceptance: |
-  - [ ] Task 详情页不再仅按 YAML 字段平铺，而是形成任务主线阅读结构
-  - [ ] description/source/source_intent 聚合为任务目标与来源区域
-  - [ ] acceptance 使用清晰的验收区域，展示完成进度和检查项
-  - [ ] verification 与 closure_evidence 形成验证/关闭证据区域，Markdown 标题和列表层级清晰
-  - [ ] deliverables/related_docs/affected_docs 形成产出与文档区域
-  - [ ] 原 YAML 源码折叠入口保留
-  - [ ] 运行 TypeScript 类型检查通过
+  - [x] Task 详情页不再仅按 YAML 字段平铺，而是形成任务主线阅读结构
+  - [x] description/source/source_intent 聚合为任务目标与来源区域
+  - [x] acceptance 使用清晰的验收区域，展示完成进度和检查项
+  - [x] verification 与 closure_evidence 形成验证/关闭证据区域，Markdown 标题和列表层级清晰
+  - [x] deliverables/related_docs/affected_docs 形成产出与文档区域
+  - [x] 原 YAML 源码折叠入口保留
+  - [x] 运行 TypeScript 类型检查通过
 blocked_by: []
 deliverables: []
 source_intent: intent-0006
-verification: 打开 /objects/task/task-0052 和 /objects/task/task-0056，检查 Task 页面是否能按目标、验收、验证、证据、产出形成清晰阅读结构；运行
-  npx tsc --noEmit。
+verification: |
+  打开 /objects/task/task-0052 和 /objects/task/task-0056，检查 Task 页面是否能按目标、验收、验证、证据、产出形成清晰阅读结构；运行 npx tsc --noEmit。
+closure_evidence: |
+  ## 完成证据
+
+  1. TaskReadingLayout 组件已实现，按任务工作流主线组织页面：任务目标→验收标准→验证/关闭证据→产出与文档→其他字段
+  2. TaskSection 组件提供语义色调分区（primary/checklist/evidence/docs/default）
+  3. description+source+source_intent 聚合为任务目标区域
+  4. acceptance 使用 ChecklistCard 展示验收进度
+  5. verification+closure_evidence 使用 EvidenceBlock 渲染，双列布局
+  6. deliverables/related_docs/affected_docs 形成产出与文档三列区域
+  7. YAML 源码折叠入口保留在页面底部
+  8. npx tsc --noEmit 类型检查通过
+  9. 同步修复 task-0052 编号冲突（Hermes→task-0055）和 fact_cli.py update \n 转义 bug
+closed_at: '2026-06-07T00:51:45.709245'
