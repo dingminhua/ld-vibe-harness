@@ -1094,6 +1094,8 @@ def cmd_update(args: argparse.Namespace) -> int:
         key, value = item.split("=", 1)
         key = key.strip()
         value = value.strip()
+        # 处理字符串转义：\n → 换行, \\ → 反斜杠
+        value = value.replace("\\n", "\n").replace("\\\\", "\\")
         # 列表类型字段：逗号分隔
         if key in ("related_tasks", "related_adrs", "related_pitfalls", "related_docs",
                     "affected_docs", "deliverables",
