@@ -4,53 +4,33 @@ title: Task 意图归属内联编辑
 status: closed
 created: '2026-06-05T20:10:05.899771'
 updated: '2026-06-05T23:23:14.612332'
-description: '在 Web 端支持编辑 Task 的 source_intent（意图归属），采用内联编辑方式。
-
+description: |
+  在 Web 端支持编辑 Task 的 source_intent（意图归属），采用内联编辑方式。
 
   实现方案：
-
   1. 后端新增 PATCH /api/objects/:type/:id/field API，支持安全更新指定字段
-
-  2. 修改 source_intent 时自动同步双向关联：旧 Intent 的 related_tasks 移除该 Task，新 Intent 的 related_tasks
-  添加该 Task
-
+  2. 修改 source_intent 时自动同步双向关联：旧 Intent 的 related_tasks 移除该 Task，新 Intent 的 related_tasks 添加该 Task
   3. 前端在 Task 详情页 source_intent 字段旁添加编辑按钮（铅笔图标）
-
   4. 点击后弹出 Intent 选择器（下拉列表，列出所有 active/draft 状态的 Intent）
-
   5. 选择后调用 API 更新，页面实时刷新
 
-
   这是 Web 展示层从纯只读向可交互演进的第一步，需要谨慎设计 API 安全边界。
-
-  '
 source_intent: intent-0006
 source: intent-0006
-acceptance: '- [x] 后端新增 PATCH /api/objects/:type/:id/field API
-
+acceptance: |
+  - [x] 后端新增 PATCH /api/objects/:type/:id/field API
   - [x] API 支持更新 source_intent 字段，校验目标 Intent 存在性
-
   - [x] 修改 source_intent 时自动同步双向关联（旧 Intent 移除、新 Intent 添加 related_tasks）
-
   - [x] 前端 Task 详情页 source_intent 旁显示编辑按钮
-
   - [x] 编辑按钮点击后弹出 Intent 选择器
-
   - [x] 选择后调用 API 更新并刷新页面
-
   - [x] API 有安全边界，仅允许更新白名单字段
-
-  '
 blocked_by: []
-closure_evidence: '后端 PATCH /api/objects/:type/:id/field API 实现字段白名单安全边界，
-
+closure_evidence: |
+  后端 PATCH /api/objects/:type/:id/field API 实现字段白名单安全边界，
   source_intent 更新时自动同步双向关联（旧Intent移除+新Intent添加related_tasks），
-
   前端 IntentSelector 组件支持搜索过滤和选择，ObjectDetail 集成铅笔图标+选择器。
-
   TypeScript编译通过。
-
-  '
 affected_docs:
 - web/docs/04-ObjectDetail.md
 closed_at: '2026-06-05T23:23:14.612339'

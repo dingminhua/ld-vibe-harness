@@ -4,29 +4,20 @@ title: 编写 Web 设计规划文档
 status: closed
 created: '2026-06-05T17:19:47.322096'
 updated: '2026-06-05T21:05:05.791024'
-description: '关联 web/docs/ 下已有的 Web 设计规划文档，作为后续 Web 展现工作的设计依据。文档已覆盖全局设计约束、各页面设计规范等内容。
-
-  '
+description: |
+  关联 web/docs/ 下已有的 Web 设计规划文档，作为后续 Web 展现工作的设计依据。文档已覆盖全局设计约束、各页面设计规范等内容。
 source_intent: intent-0006
 source: intent-0006
-acceptance: '- [x] 设计规划文档已存在于 web/docs/ 目录
-
+acceptance: |
+  - [x] 设计规划文档已存在于 web/docs/ 目录
   - [x] 文档覆盖全局设计约束和页面结构
-
   - [x] 文档覆盖交互规范和导航模式
-
   - [x] 文档覆盖视觉体系（颜色、排版、间距）
-
   - [x] 文档覆盖组件规范和复用策略
-
   - [x] 文档内容可作为后续页面开发的设计依据
-
-  '
 blocked_by: []
-closure_evidence: 'web/docs/ 下 8 份设计文档齐全（01-全局设计约束、02-Dashboard、03-ObjectList、04-ObjectDetail、05-Validate、06-Changelog、07-内容可读性研究、08-多角色审视研究），覆盖全局约束、页面结构、交互规范、视觉体系、组件规范，独立
-  agent 验证 6 项 acceptance 全部通过
-
-  '
+closure_evidence: |
+  web/docs/ 下 8 份设计文档齐全（01-全局设计约束、02-Dashboard、03-ObjectList、04-ObjectDetail、05-Validate、06-Changelog、07-内容可读性研究、08-多角色审视研究），覆盖全局约束、页面结构、交互规范、视觉体系、组件规范，独立 agent 验证 6 项 acceptance 全部通过
 related_docs:
 - web/docs/01-全局设计约束.md
 - web/docs/02-Dashboard.md
@@ -35,17 +26,17 @@ related_docs:
 - web/docs/05-Validate.md
 - web/docs/06-Changelog.md
 affected_docs:
-  - web/docs/01-全局设计约束.md
-  - web/docs/02-Dashboard.md
-  - web/docs/03-ObjectList.md
-  - web/docs/04-ObjectDetail.md
-  - web/docs/05-Validate.md
-  - web/docs/06-Changelog.md
+- web/docs/01-全局设计约束.md
+- web/docs/02-Dashboard.md
+- web/docs/03-ObjectList.md
+- web/docs/04-ObjectDetail.md
+- web/docs/05-Validate.md
+- web/docs/06-Changelog.md
 deliverables:
-  - web/docs/01-全局设计约束.md
-  - web/docs/02-Dashboard.md
-  - web/docs/03-ObjectList.md
-  - web/docs/04-ObjectDetail.md
-  - web/docs/05-Validate.md
-  - web/docs/06-Changelog.md
+- web/docs/01-全局设计约束.md
+- web/docs/02-Dashboard.md
+- web/docs/03-ObjectList.md
+- web/docs/04-ObjectDetail.md
+- web/docs/05-Validate.md
+- web/docs/06-Changelog.md
 closed_at: '2026-06-05T21:05:05.791030'

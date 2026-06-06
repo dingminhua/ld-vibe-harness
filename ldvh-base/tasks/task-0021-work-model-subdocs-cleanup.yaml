@@ -4,157 +4,82 @@ title: 实际清理工作模型子文档体系
 status: closed
 created: '2026-06-05T06:20:49.877841'
 updated: '2026-06-05T09:08:00.685366'
-description: 直接清理 specs/20-39 范围内工作模型历史子文档体系：根据 07 §4.6、20 §6 和 06/05/08 的机制归属边界，对
-  Rules、Skill、Agent、Tools、Web、Contract 等子文档执行保留、合并、删除或上移，并同步修正引用关系；如遇规范冲突、权威边界不清或大规模删除风险，必须先提出问题并经
-  Human Gate 确认。
+description: 直接清理 specs/20-39 范围内工作模型历史子文档体系：根据 07 §4.6、20 §6 和 06/05/08 的机制归属边界，对 Rules、Skill、Agent、Tools、Web、Contract 等子文档执行保留、合并、删除或上移，并同步修正引用关系；如遇规范冲突、权威边界不清或大规模删除风险，必须先提出问题并经 Human Gate 确认。
 source: intent-0004
-acceptance: '- [x] 已列出待清理子文档清单，并按删除、合并回主规范、上移到机制规范、迁移到运行入口、过渡保留分类
-
+acceptance: |-
+  - [x] 已列出待清理子文档清单，并按删除、合并回主规范、上移到机制规范、迁移到运行入口、过渡保留分类
   - [x] 已实际处理可确定的空占位、重复或过时历史子文档，或将需删除/归档的具体动作拆分到后续 Task 并设置阻塞关系
-
   - [x] 已对需要合并或上移的内容完成对应主规范、05/06/08、Rules、Skill、Tools 或 Web 入口更新
-
   - [x] 已检查并修正所有受影响引用，确认不再依赖固定 NN.01-NN.06 子文档结构
-
-  - [x] 已对无法直接清理或需要另行决策的问题形成明确阻塞/后续项，而不是自行缩小任务边界'
+  - [x] 已对无法直接清理或需要另行决策的问题形成明确阻塞/后续项，而不是自行缩小任务边界
 blocked_by: []
 title_en: Clean up work model subdocument system
 title_zh: 清理工作模型子文档体系
 source_intent: intent-0004
 parent_task: null
 sub_tasks: []
-verification: '已按 specs/20-39 现存历史机制子文档形成逐文件分类，当前执行用户确认的“先合并”策略；删除、归档或重命名仍需后续 Human
-  Gate。
-
+verification: |
+  已按 specs/20-39 现存历史机制子文档形成逐文件分类，当前执行用户确认的“先合并”策略；删除、归档或重命名仍需后续 Human Gate。
 
   已合并回主规范或机制规范：
-
-  - 21.01-Rules.md、21.02-Skill.md、21.03-Agent.md、21.04-Tools.md、21.05-Web.md、21.06-Contract.md：ADR
-  规则、Skill/Tools/Web 边界和 Contract 权威入口已在 21 主规范、运行 Rules、ldvh-adr Skill、tools 与 web
-  边界中明确；历史文件暂作迁移前资料。
-
-  - 22.01-Rules.md、22.02-Skill.md、22.03-Agent.md、22.04-Tools.md、22.05-Web.md、22.06-Contract.md：Change
-  提交纪律、Skill 编排和工具校验边界已在 22 主规范、05/06/08 和 ldvh-commit Skill 中明确；历史文件暂作迁移前资料。
-
-  - 23.01-Rules.md、23.02-Skill.md、23.03-Agent.md、23.04-Tools.md、23.05-Web.md、23.06-Contract.md：Pitfall
-  主规范已修正主文档引用并补充 Tools/Web/Contract 迁移边界；历史文件暂作迁移前资料。
-
-  - 24.06-Contract.md、25.06-Contract.md、26.06-Contract.md：Intent/Memo/Profile 结构化契约已回并到
-  24/25/26 主规范，包含 YAML 示例、字段约束、命名契约、状态流转和契约消费检查项。
-
-  - 27.01-Rules.md、27.02-Skill.md、27.03-Agent.md、27.04-Tools.md、27.05-Web.md、27.06-Contract.md：Task
-  生命周期、关闭条件和 Human Gate 权威入口已回到 27 主规范；Contract 仍作为结构化契约过渡副本。
-
+  - 21.01-Rules.md、21.02-Skill.md、21.03-Agent.md、21.04-Tools.md、21.05-Web.md、21.06-Contract.md：ADR 规则、Skill/Tools/Web 边界和 Contract 权威入口已在 21 主规范、运行 Rules、ldvh-adr Skill、tools 与 web 边界中明确；历史文件暂作迁移前资料。
+  - 22.01-Rules.md、22.02-Skill.md、22.03-Agent.md、22.04-Tools.md、22.05-Web.md、22.06-Contract.md：Change 提交纪律、Skill 编排和工具校验边界已在 22 主规范、05/06/08 和 ldvh-commit Skill 中明确；历史文件暂作迁移前资料。
+  - 23.01-Rules.md、23.02-Skill.md、23.03-Agent.md、23.04-Tools.md、23.05-Web.md、23.06-Contract.md：Pitfall 主规范已修正主文档引用并补充 Tools/Web/Contract 迁移边界；历史文件暂作迁移前资料。
+  - 24.06-Contract.md、25.06-Contract.md、26.06-Contract.md：Intent/Memo/Profile 结构化契约已回并到 24/25/26 主规范，包含 YAML 示例、字段约束、命名契约、状态流转和契约消费检查项。
+  - 27.01-Rules.md、27.02-Skill.md、27.03-Agent.md、27.04-Tools.md、27.05-Web.md、27.06-Contract.md：Task 生命周期、关闭条件和 Human Gate 权威入口已回到 27 主规范；Contract 仍作为结构化契约过渡副本。
 
   空占位或重复性历史机制文件，建议删除或归档但本轮暂不直接删除：
-
-  - 24.01-Rules.md、24.02-Skill.md、24.03-Agent.md、24.04-Tools.md、24.05-Web.md：内容主要为
-  not-created 或占位说明；共性内容已压缩进 24 主规范机制适配边界。
-
-  - 25.01-Rules.md、25.02-Skill.md、25.03-Agent.md、25.04-Tools.md、25.05-Web.md：内容主要为
-  not-created 或占位说明；共性内容已压缩进 25 主规范机制适配边界。
-
-  - 26.01-Rules.md、26.02-Skill.md、26.03-Agent.md、26.04-Tools.md、26.05-Web.md：内容主要为
-  not-created 或占位说明；文件内错误主文档名已修正，共性内容已压缩进 26 主规范机制适配边界。
-
+  - 24.01-Rules.md、24.02-Skill.md、24.03-Agent.md、24.04-Tools.md、24.05-Web.md：内容主要为 not-created 或占位说明；共性内容已压缩进 24 主规范机制适配边界。
+  - 25.01-Rules.md、25.02-Skill.md、25.03-Agent.md、25.04-Tools.md、25.05-Web.md：内容主要为 not-created 或占位说明；共性内容已压缩进 25 主规范机制适配边界。
+  - 26.01-Rules.md、26.02-Skill.md、26.03-Agent.md、26.04-Tools.md、26.05-Web.md：内容主要为 not-created 或占位说明；文件内错误主文档名已修正，共性内容已压缩进 26 主规范机制适配边界。
 
   过渡保留，需后续决策后再删除或归档：
-
-  - 21.*、22.*、23.*、27.* 历史机制文件仍可能被 Skill、运行 Rules 或既有引用用于迁移期追溯，删除前需确认运行入口、工具和 Web
-  不再消费。
-
+  - 21.*、22.*、23.*、27.* 历史机制文件仍可能被 Skill、运行 Rules 或既有引用用于迁移期追溯，删除前需确认运行入口、工具和 Web 不再消费。
   - 24.06、25.06、26.06 Contract 内容已回并，但文件仍可能被 Fact Validator 或历史引用消费，删除前需确认工具读取路径。
 
-
   已执行校验：
-
   - python3 tools/fact_validate.py ldvh-base/tasks/task-0021-work-model-subdocs-cleanup.yaml：通过。
-
   - python3 tools/specs_validate.py all：无 error，仍有历史 warning。
-
-  - python3 -m pytest tests/tools/test_fact_validate.py tests/tools/test_fact_cli.py：88
-  passed。
-
+  - python3 -m pytest tests/tools/test_fact_validate.py tests/tools/test_fact_cli.py：88 passed。
 
   当前阻塞/后续项：
-
   - 是否删除、归档或重命名 24/25/26 的 not-created 占位历史机制文件，需要 Human Gate。
-
   - 是否删除、归档或重命名已回并的 24.06/25.06/26.06 Contract 文件，需要先确认工具消费路径并经 Human Gate。
-
   - 21/22/23/27 历史机制文件是否转入归档，需要在运行 Rules、Skill、Tools、Web 入口完成消费路径复核后经 Human Gate。
 
-
   再审查结果：
-
   - tools/ 未发现运行时读取 21-27 历史机制文件的硬编码依赖；commit_validate.py 中 22.06-Contract.md 仅作为格式依据注释。
-
   - tests/ 仅存在 ADR 相关测试样例引用 21.04-Tools.md 和 21.06-Contract.md，不构成生产运行消费路径。
-
   - web/ 未发现对 21-27 历史机制文件的消费路径。
-
-  - 工作区运行 Rules 和 Skill 原先仍显式引用 21.02、21.04、21.06、22.02、22.04、22.06、24.06、25.06、26.06、27.01、27.06
-  等历史机制文件作为必读、冲突依据或创建契约来源；已将 `.trae/rules/ldvh-fact-model-rules.md`、`ldvh-adr`、`ldvh-commit`、`ldvh-intake`、`ldvh-plan`、`ldvh-close`
-  的权威入口收敛到对应主规范、已回并契约章节和实际 tools/test 验收结果，历史机制文件仅保留迁移期参考语义。
-
+  - 工作区运行 Rules 和 Skill 原先仍显式引用 21.02、21.04、21.06、22.02、22.04、22.06、24.06、25.06、26.06、27.01、27.06 等历史机制文件作为必读、冲突依据或创建契约来源；已将 `.trae/rules/ldvh-fact-model-rules.md`、`ldvh-adr`、`ldvh-commit`、`ldvh-intake`、`ldvh-plan`、`ldvh-close` 的权威入口收敛到对应主规范、已回并契约章节和实际 tools/test 验收结果，历史机制文件仅保留迁移期参考语义。
   - specs 根规范中的 03、20、07 对 NN.01-NN.06 的引用属于历史机制文件定义和迁移边界说明，可保留；evals/ 下的历史引用不作为本轮正式规范清理范围。
-
   - 21/22/27 的历史机制子文档内部仍存在将同组历史文件称为权威承接位置的表述；本轮按 Human Gate 选择不继续修正内部措辞，而是先形成后续删除/归档候选清单。
 
-
   后续删除/归档候选清单：
-
   - 优先删除候选（not-created 或占位性文件，主规范已承接共性边界）：24.01-Rules.md、24.02-Skill.md、24.03-Agent.md、24.04-Tools.md、24.05-Web.md、25.01-Rules.md、25.02-Skill.md、25.03-Agent.md、25.04-Tools.md、25.05-Web.md、26.01-Rules.md、26.02-Skill.md、26.03-Agent.md、26.04-Tools.md、26.05-Web.md。
-
   - 优先归档候选（内容已大部分回并，但仍有迁移期追溯价值或测试样例引用）：24.06-Contract.md、25.06-Contract.md、26.06-Contract.md、23.01-Rules.md、23.02-Skill.md、23.03-Agent.md、23.04-Tools.md、23.05-Web.md、23.06-Contract.md。
-
   - 暂不删除候选（运行入口已降级为迁移期参考，但子文档内部仍有权威措辞，需先修正或单独确认归档策略）：21.01-Rules.md、21.02-Skill.md、21.03-Agent.md、21.04-Tools.md、21.05-Web.md、21.06-Contract.md、22.01-Rules.md、22.02-Skill.md、22.03-Agent.md、22.04-Tools.md、22.05-Web.md、22.06-Contract.md、27.01-Rules.md、27.02-Skill.md、27.03-Agent.md、27.04-Tools.md、27.05-Web.md、27.06-Contract.md。
-
-  - 删除或归档上述任一文件前必须再次通过 Human Gate，并先运行引用检查，尤其检查 `.trae/rules`、`.trae/skills`、`tools/`、`tests/`、`web/`
-  和 specs 根规范。
-
+  - 删除或归档上述任一文件前必须再次通过 Human Gate，并先运行引用检查，尤其检查 `.trae/rules`、`.trae/skills`、`tools/`、`tests/`、`web/` 和 specs 根规范。
 
   当前任务审计结论：
-
   - task-0021 已完成合并回写、运行入口收敛、删除/归档候选清单沉淀和阻塞项记录。
-
-  - task-0021 尚未直接删除或归档历史机制文件；经用户确认，具体删除或归档动作已拆分到 task-0022-delete-work-model-subdocs.yaml，不再作为
-  task-0021 的直接执行范围。
-
-  - 具体删除或归档阶段已按用户确认拆分到 task-0022-delete-work-model-subdocs.yaml；task-0022 blocked_by
-  task-0021，执行前必须重新进行引用检查和 Human Gate。
-
-  '
+  - task-0021 尚未直接删除或归档历史机制文件；经用户确认，具体删除或归档动作已拆分到 task-0022-delete-work-model-subdocs.yaml，不再作为 task-0021 的直接执行范围。
+  - 具体删除或归档阶段已按用户确认拆分到 task-0022-delete-work-model-subdocs.yaml；task-0022 blocked_by task-0021，执行前必须重新进行引用检查和 Human Gate。
 assignee: null
 related_adrs: []
 related_changes: []
 closed_at: '2026-06-05T09:08:00.685374'
-closure_evidence: 'Task 21 已完成当前审计和拆分范围内的关闭条件：
-
+closure_evidence: |
+  Task 21 已完成当前审计和拆分范围内的关闭条件：
 
   - 已按“先合并、再校验、后删除或归档”策略处理工作模型历史机制子文档体系，完成 21/22/23/24/25/26/27 主规范与 05/06/08 机制规范的必要回写。
-
-  - 已将 24.06、25.06、26.06 Contract 的结构化契约内容回并到 24/25/26 主规范，并将 Intent/Memo/Profile
-  的历史机制文件降级为迁移期参考或删除候选。
-
-  - 已修正运行入口依赖，将 `.trae/rules/ldvh-fact-model-rules.md` 与 ldvh-adr、ldvh-commit、ldvh-intake、ldvh-plan、ldvh-close
-  Skill 的权威入口收敛到主规范、已回并契约章节、tools 实现和测试验收结果。
-
-  - 已完成受影响引用审计，确认 tools、tests、web 与 specs 根规范不存在必须依赖固定 NN.01-NN.06 子文档结构才能运行的路径；仍保留迁移期追溯引用的文件已在
-  verification 中分类说明。
-
-  - 已沉淀后续删除/归档候选清单：24.01-24.05、25.01-25.05、26.01-26.05 为优先删除候选；24.06、25.06、26.06 与
-  23.01-23.06 为优先归档候选；21.01-21.06、22.01-22.06、27.01-27.06 暂不删除。
-
-  - 已按用户要求创建后续任务 task-0022-delete-work-model-subdocs.yaml，用于承接具体删除或归档动作；task-0022
-  设置 blocked_by: task-0021，执行前必须重新引用检查并通过 Human Gate。
-
+  - 已将 24.06、25.06、26.06 Contract 的结构化契约内容回并到 24/25/26 主规范，并将 Intent/Memo/Profile 的历史机制文件降级为迁移期参考或删除候选。
+  - 已修正运行入口依赖，将 `.trae/rules/ldvh-fact-model-rules.md` 与 ldvh-adr、ldvh-commit、ldvh-intake、ldvh-plan、ldvh-close Skill 的权威入口收敛到主规范、已回并契约章节、tools 实现和测试验收结果。
+  - 已完成受影响引用审计，确认 tools、tests、web 与 specs 根规范不存在必须依赖固定 NN.01-NN.06 子文档结构才能运行的路径；仍保留迁移期追溯引用的文件已在 verification 中分类说明。
+  - 已沉淀后续删除/归档候选清单：24.01-24.05、25.01-25.05、26.01-26.05 为优先删除候选；24.06、25.06、26.06 与 23.01-23.06 为优先归档候选；21.01-21.06、22.01-22.06、27.01-27.06 暂不删除。
+  - 已按用户要求创建后续任务 task-0022-delete-work-model-subdocs.yaml，用于承接具体删除或归档动作；task-0022 设置 blocked_by: task-0021，执行前必须重新引用检查并通过 Human Gate。
   - 已完成独立审计，结论为 Task 21 acceptance 和 Task 22 handoff 通过，Task 21 可进入 review_needed；用户已确认进入审查。
-
-  - 已执行事实源校验：python3 tools/fact_validate.py ldvh-base/tasks/task-0021-work-model-subdocs-cleanup.yaml
-  ldvh-base/tasks/task-0022-delete-work-model-subdocs.yaml，结果为 files=2 errors=0 warnings=0。
-
-  '
+  - 已执行事实源校验：python3 tools/fact_validate.py ldvh-base/tasks/task-0021-work-model-subdocs-cleanup.yaml ldvh-base/tasks/task-0022-delete-work-model-subdocs.yaml，结果为 files=2 errors=0 warnings=0。
 transition_reasons:
 - from: verifying
   to: executing

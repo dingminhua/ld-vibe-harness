@@ -3,7 +3,7 @@ type: intent
 title: 竞品调研
 status: active
 created: '2026-06-05T17:58:39.443728'
-updated: '2026-06-05T17:59:25.649197'
+updated: '2026-06-06T09:59:48.709247'
 description: 深入研究 Gstack、Superpowers、BMAD-METHOD 等竞品的方法论、测试任务安排和工程纪律机制，结合行业最佳实践，为
   LDVH 提供改进方向
 success_criteria: 完成竞品测试任务安排的深度分析；完成行业最佳实践联网调研；产出分析报告进入 specs/refs/ 参考文档
@@ -23,3 +23,4 @@ related_tasks:
 - task-0046
 - task-0047
 - task-0051
+- task-0052

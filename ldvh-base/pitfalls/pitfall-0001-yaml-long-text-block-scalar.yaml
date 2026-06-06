@@ -28,15 +28,15 @@ avoidance: |
   - Pitfall：symptoms、trigger_conditions、root_cause、resolution、verification、avoidance
 applicability: 所有接入 LDVH 的项目，所有事实模型类型
 source_objects:
-  - task-0002
-  - ev-0002
+- task-0002
+- ev-0002
 related_objects: []
 related_rules:
-  - specs/29-Evidence-验证证据.md
-  - specs/27-Task-任务.md
+- specs/29-Evidence-验证证据.md
+- specs/27-Task-任务.md
 tags:
-  - yaml
-  - fact-model
-  - ai-collaboration
+- yaml
+- fact-model
+- ai-collaboration
 severity: medium
 repeatability: always

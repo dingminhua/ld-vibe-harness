@@ -4,28 +4,18 @@ title: 待推进时间倒序和意图详情默认展开
 status: closed
 created: '2026-06-05T20:00:29.116009'
 updated: '2026-06-05T21:05:05.852207'
-description: '两项改进：
-
+description: |
+  两项改进：
   1. Dashboard 待推进列表按更新时间倒序排列，最近更新的排在最前面，方便用户优先关注最新动态
-
   2. ObjectDetail 页面中意图类型的对象，其所有关联内容（related_tasks、related_docs、deliverables 等）默认展开显示，无需手动点击展开
-
-  '
 source_intent: intent-0006
 source: intent-0006
-acceptance: '- [x] Dashboard 待推进列表按 updated 时间倒序排列
-
+acceptance: |
+  - [x] Dashboard 待推进列表按 updated 时间倒序排列
   - [x] 意图类型对象详情页中关联任务列表默认展开
-
   - [x] 意图类型对象详情页中关联文档默认展开
-
   - [x] 其他类型对象详情页保持现有折叠行为不变
-
-  '
 blocked_by: []
-closure_evidence: 'Dashboard 待推进排序改为 updated 时间倒序（dashboard.ts）；ObjectDetail 页面新增
-  COLLAPSIBLE_FIELDS 机制，intent 类型默认展开关联内容，其他类型默认折叠；TypeScript 编译和 ESLint 通过，独立 agent
-  验证 4 项 acceptance 全部通过
-
-  '
+closure_evidence: |
+  Dashboard 待推进排序改为 updated 时间倒序（dashboard.ts）；ObjectDetail 页面新增 COLLAPSIBLE_FIELDS 机制，intent 类型默认展开关联内容，其他类型默认折叠；TypeScript 编译和 ESLint 通过，独立 agent 验证 4 项 acceptance 全部通过
 closed_at: '2026-06-05T21:05:05.852214'

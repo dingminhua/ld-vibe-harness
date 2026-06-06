@@ -4,23 +4,16 @@ title: 竞品测试任务安排分析与最佳实践调研
 status: closed
 created: '2026-06-05T17:59:00.102418'
 updated: '2026-06-06T00:01:18.379272'
-description: '深入分析 Gstack(19)、Superpowers(20)、BMAD-METHOD(21) 三个竞品如何安排测试任务，联网调研行业最佳实践，最终产出分析报告进入
-  specs/refs/ 参考文档。
-
-  '
+description: |
+  深入分析 Gstack(19)、Superpowers(20)、BMAD-METHOD(21) 三个竞品如何安排测试任务，联网调研行业最佳实践，最终产出分析报告进入 specs/refs/ 参考文档。
 source_intent: intent-0009
 source: 用户要求深入调研竞品测试任务安排及最佳实践
-acceptance: '- [x] 深入阅读 specs/evals/19、20、21 中关于测试任务安排的内容
-
+acceptance: |
+  - [x] 深入阅读 specs/evals/19、20、21 中关于测试任务安排的内容
   - [x] 联网调研 AI 辅助开发中测试任务安排的最佳实践
-
   - [x] 分析各竞品测试任务安排的异同与优劣
-
   - [x] 产出分析报告写入 specs/refs/ 目录
-
   - [x] 报告包含竞品对比、最佳实践总结和 LDVH 改进建议
-
-  '
 blocked_by: []
 title_en: Competitive Test Task Arrangement Analysis and Best Practices Research
 title_zh: 竞品测试任务安排分析与最佳实践调研
@@ -34,17 +27,11 @@ related_docs:
 - specs/refs/07-竞品测试任务安排分析与最佳实践调研.md
 deliverables:
 - specs/refs/07-竞品测试任务安排分析与最佳实践调研.md
-closure_evidence: '独立 agent 逐项验证 5 条 acceptance 全部通过：
-
+closure_evidence: |
+  独立 agent 逐项验证 5 条 acceptance 全部通过：
   1. specs/evals/19、20、21 均包含测试任务安排相关章节
-
   2. 报告第3章包含 STDD、Agentic Engineering、Checkpoint 等行业最佳实践
-
   3. 报告第2章包含三竞品五维度对比及各自优劣分析
-
   4. specs/refs/07 报告已写入，共221行5章节
-
   5. 报告覆盖竞品对比、最佳实践总结、5条LDVH改进建议
-
-  '
 closed_at: '2026-06-06T00:01:18.379280'

@@ -16,4 +16,4 @@ priority: high
 related_tasks: []
 related_adrs: []
 related_docs:
-  - specs/evals/18-LDVH多项目治理与项目集合缺失分析.md
+- specs/evals/18-LDVH多项目治理与项目集合缺失分析.md

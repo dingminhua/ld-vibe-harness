@@ -42,7 +42,7 @@ acceptance: |
   - [ ] fact_cli.py 支持 affected_docs 字段
   - [ ] fact_validate.py 校验 affected_docs 格式
 blocked_by:
-  - task-0037
+- task-0037
 affected_docs:
-  - specs/27-Task-任务.md
-  - specs/06-Python与Web工具规范.md
+- specs/27-Task-任务.md
+- specs/06-Python与Web工具规范.md

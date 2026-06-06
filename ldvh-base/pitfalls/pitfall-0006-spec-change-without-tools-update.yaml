@@ -49,10 +49,10 @@ avoidance: |
 applicability: |
   所有接入 LDVH 的管辖项目，所有涉及 specs 变更的 AI 操作。
 source_objects:
-  - adr-0005
+- adr-0005
 related_rules:
-  - "specs/06-Python与Web工具规范.md §4.7"
-  - ".trae/rules/ldvh-project-rules.md"
+- specs/06-Python与Web工具规范.md §4.7
+- .trae/rules/ldvh-project-rules.md
 tags:
-  - spec-tools-sync
-  - process-improvement
+- spec-tools-sync
+- process-improvement

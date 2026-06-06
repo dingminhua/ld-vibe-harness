@@ -4,19 +4,15 @@ title: 精简 11 号 Trae Solo 环境规范
 status: closed
 created: '2026-06-05'
 updated: '2026-06-05'
-description: 按用户直接指示调整 specs/11-LDVH-Trae-Solo-环境规范.md：避免重复 Trae 官方或 refs 外部资料已有内容，将
-  Trae 功能权威内容引用到 specs/refs/ 中的 Trae 文章，只保留 LDVH 对相关功能使用的特殊约定。
+description: 按用户直接指示调整 specs/11-LDVH-Trae-Solo-环境规范.md：避免重复 Trae 官方或 refs 外部资料已有内容，将 Trae 功能权威内容引用到 specs/refs/ 中的 Trae 文章，只保留 LDVH 对相关功能使用的特殊约定。
 source_intent: intent-0004
 source: 用户直接指示：ldvh的11号文档，不应该重复已有的内容，权威内容应该引用refs中的trae文章，只写LDVH中关于相关功能使用的特殊约定，你看看如何处理，将这个作为一个任务，且立即执行
-acceptance: '- [x] 11 号文档不再复制 Trae 官方或 refs 外部文章可承载的通用功能说明
-
+acceptance: |-
+  - [x] 11 号文档不再复制 Trae 官方或 refs 外部文章可承载的通用功能说明
   - [x] 11 号文档明确 Trae 功能事实以 refs 中 Trae 文章为权威引用来源
-
   - [x] 11 号文档仅保留 LDVH 在 Rules、Skill、Agent、AskUserQuestion、Schedule、MCP 等相关功能上的特殊使用约定
-
   - [x] specs/refs 中存在或补齐 Trae 相关文章入口，且 refs 不反向引用 specs
-
-  - [x] 修改后通过可用校验命令'
+  - [x] 修改后通过可用校验命令
 blocked_by: []
 parent_task: null
 sub_tasks: []
@@ -24,15 +20,8 @@ verification: 阅读 11 号文档与 specs/refs 中 Trae 相关资料，检查�
 assignee: AI
 related_adrs: []
 related_changes: []
-closure_evidence: '已完成 specs/11-LDVH-Trae-Solo-环境规范.md 重写：Trae 平台客观事实改为引用 specs/refs/trae/
-  权威入口，正文收敛为 LDVH 对 Rules、Skill、Agent、AskUserQuestion、RunCommand、Schedule、MCP、Commands/Plan/Spec
-  的特殊使用约定。
-
+closure_evidence: |-
+  已完成 specs/11-LDVH-Trae-Solo-环境规范.md 重写：Trae 平台客观事实改为引用 specs/refs/trae/ 权威入口，正文收敛为 LDVH 对 Rules、Skill、Agent、AskUserQuestion、RunCommand、Schedule、MCP、Commands/Plan/Spec 的特殊使用约定。
   独立审查确认 5 项 acceptance 全部通过。
-
-  校验通过：python3 tools/check_03_specs_doc_standard.py specs/11-LDVH-Trae-Solo-环境规范.md；python3
-  tools/check_03_specs_references.py specs/11-LDVH-Trae-Solo-环境规范.md；python3 tools/ldvh_fact_validate.py
-  ldvh-base/；python3 -m pytest tests/tools/test_check_fact_model.py tests/tools/test_fact_model_cli.py
-  tests/tools/test_check_03_specs_doc_standard.py tests/tools/test_check_03_specs_references.py；git
-  diff --check。'
+  校验通过：python3 tools/check_03_specs_doc_standard.py specs/11-LDVH-Trae-Solo-环境规范.md；python3 tools/check_03_specs_references.py specs/11-LDVH-Trae-Solo-环境规范.md；python3 tools/ldvh_fact_validate.py ldvh-base/；python3 -m pytest tests/tools/test_check_fact_model.py tests/tools/test_fact_model_cli.py tests/tools/test_check_03_specs_doc_standard.py tests/tools/test_check_03_specs_references.py；git diff --check。
 closed_at: '2026-06-05'

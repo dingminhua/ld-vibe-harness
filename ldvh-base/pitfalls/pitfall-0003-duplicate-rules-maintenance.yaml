@@ -28,11 +28,11 @@ applicability: 所有接入 LDVH 的项目，所有规则层级
 source_objects: []
 related_objects: []
 related_rules:
-  - specs/11.01-Rules机制规范.md
-  - specs/22.01-Rules.md
+- specs/11.01-Rules机制规范.md
+- specs/22.01-Rules.md
 tags:
-  - rules
-  - consistency
-  - single-authority
+- rules
+- consistency
+- single-authority
 severity: high
 repeatability: always

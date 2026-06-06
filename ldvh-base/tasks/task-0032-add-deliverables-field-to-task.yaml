@@ -4,35 +4,23 @@ title: Task 对象新增产出字段
 status: closed
 created: '2026-06-05T18:22:37.530515'
 updated: '2026-06-05T23:23:13.144445'
-description: 'Task 对象缺少记录任务产出/结果物的字段。当前任务完成后产生的文件（如分析报告、代码文件等）无法在 Task 事实源中直接体现，只能通过
-  related_docs 间接关联，但 related_docs 语义是"参考文档"而非"产出物"。
+description: |
+  Task 对象缺少记录任务产出/结果物的字段。当前任务完成后产生的文件（如分析报告、代码文件等）无法在 Task 事实源中直接体现，只能通过 related_docs 间接关联，但 related_docs 语义是"参考文档"而非"产出物"。
 
-
-  需要在 Task 工作模型中新增 deliverables（产出物）字段，用于记录任务执行后产生的具体结果物路径，例如 specs/refs/07-竞品测试任务安排分析与最佳实践调研.md
-  是 task-0028 的产出。
-
-  '
+  需要在 Task 工作模型中新增 deliverables（产出物）字段，用于记录任务执行后产生的具体结果物路径，例如 specs/refs/07-竞品测试任务安排分析与最佳实践调研.md 是 task-0028 的产出。
 source_intent: intent-0007
 source: intent-0007
-acceptance: '- [x] specs/27-Task-任务.md 字段契约新增 deliverables 字段定义
-
+acceptance: |
+  - [x] specs/27-Task-任务.md 字段契约新增 deliverables 字段定义
   - [x] fact_cli.py 创建 Task 时支持 deliverables 字段
-
   - [x] fact_validate.py 校验 deliverables 字段格式
-
   - [x] Web ObjectDetail 页面渲染 deliverables 字段
-
   - [x] 已有 Task 实例补充 deliverables 字段（如 task-0028）
-
-  '
 blocked_by: []
-closure_evidence: 'specs/27 已有 deliverables 定义，fact_cli.py 新增 --deliverables 参数和骨架默认值，
-
+closure_evidence: |
+  specs/27 已有 deliverables 定义，fact_cli.py 新增 --deliverables 参数和骨架默认值，
   fact_validate.py 新增元素类型校验，ObjectDetail 用 DocPreviewLink 渲染 deliverables，
-
   task-0028 已有 deliverables 字段。TypeScript编译和fact_validate通过。
-
-  '
 affected_docs:
 - specs/27-Task-任务.md
 - specs/06-Python与Web工具规范.md

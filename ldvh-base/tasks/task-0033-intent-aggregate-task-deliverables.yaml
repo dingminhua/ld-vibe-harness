@@ -4,38 +4,24 @@ title: 意图详情页聚合关联任务产出和文档
 status: closed
 created: '2026-06-05T18:36:16.862942'
 updated: '2026-06-05T23:29:43.534144'
-description: 'Intent 详情页需要聚合展示其关联 Task 的产出物和关联文档。当前 Intent 只显示自身的 related_tasks 列表，用户需要逐个点击
-  Task 才能看到产出，无法在意图层面一览全局进展。
+description: |
+  Intent 详情页需要聚合展示其关联 Task 的产出物和关联文档。当前 Intent 只显示自身的 related_tasks 列表，用户需要逐个点击 Task 才能看到产出，无法在意图层面一览全局进展。
 
-
-  实现方式为数据聚合：后端根据 Intent 的 related_tasks 逐个查询 Task 详情，提取每个 Task 的 deliverables 和 related_docs，合并去重后返回前端；前端在
-  Intent 详情页新增"关联产出"和"关联文档"聚合区域，复用现有的 ReferenceList 和 RelatedDocsList 组件渲染。
-
+  实现方式为数据聚合：后端根据 Intent 的 related_tasks 逐个查询 Task 详情，提取每个 Task 的 deliverables 和 related_docs，合并去重后返回前端；前端在 Intent 详情页新增"关联产出"和"关联文档"聚合区域，复用现有的 ReferenceList 和 RelatedDocsList 组件渲染。
 
   前置依赖：task-0032（Task 对象新增 deliverables 字段）。
-
-  '
 source_intent: intent-0006
 source: intent-0006
-acceptance: '- [x] 后端 API 返回 Intent 详情时聚合关联 Task 的 deliverables 和 related_docs
-
+acceptance: |
+  - [x] 后端 API 返回 Intent 详情时聚合关联 Task 的 deliverables 和 related_docs
   - [x] Intent 详情页新增"关联产出"聚合区域，展示所有关联 Task 的产出物
-
   - [x] Intent 详情页新增"关联文档"聚合区域，展示所有关联 Task 的关联文档
-
   - [x] 聚合结果去重，避免同一文档重复显示
-
   - [x] 产出物和文档可点击查看或跳转
-
-  '
 blocked_by:
 - task-0032
-closure_evidence: '后端 objects.ts GET /:type/:id 路由在 type=intent 时聚合 related_tasks
-  中每个 task 的 deliverables 和 related_docs，使用 Set 去重，返回 aggregated_deliverables 和 aggregated_docs。
-
+closure_evidence: |
+  后端 objects.ts GET /:type/:id 路由在 type=intent 时聚合 related_tasks 中每个 task 的 deliverables 和 related_docs，使用 Set 去重，返回 aggregated_deliverables 和 aggregated_docs。
   前端 ObjectDetail.tsx 在 objType=intent 时新增"关联产出"和"关联文档"聚合区域，复用 DocPreviewLink 组件渲染，支持点击预览。
-
   独立 agent 验证全部 5 项 acceptance 检查项通过。
-
-  '
 closed_at: '2026-06-05T23:29:43.534154'

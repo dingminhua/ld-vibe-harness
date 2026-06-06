@@ -25,12 +25,12 @@ acceptance: |
 verification: 逐条对比分析结果可追溯，结论有逻辑支撑
 blocked_by: []
 related_docs:
-  - .trae/rules/ldvh-fact-model-rules.md
-  - .trae/rules/ldvh-workspace-rules.md
-  - ld-vibe-harness/.trae/rules/ldvh-project-rules.md
+- .trae/rules/ldvh-fact-model-rules.md
+- .trae/rules/ldvh-workspace-rules.md
+- ld-vibe-harness/.trae/rules/ldvh-project-rules.md
 affected_docs:
-  - .trae/rules/ldvh-fact-model-rules.md
-  - .trae/rules/ldvh-workspace-rules.md
+- .trae/rules/ldvh-fact-model-rules.md
+- .trae/rules/ldvh-workspace-rules.md
 deliverables: []
 closure_evidence: |
   task-0048 独立验收前补充的可追溯分析证据。

@@ -6,16 +6,18 @@ title_zh: 创建任务后不立即执行，把任务当停止点
 status: active
 created: 2026-06-04
 updated: 2026-06-04
-description: |
-  AI 在用户指示"执行X"时，创建了 Task 实例但停在 planned 状态，
+description: 'AI 在用户指示"执行X"时，创建了 Task 实例但停在 planned 状态，
+
   没有立即变更为 executing 并开始执行。任务被当作停止点而非追踪机制。
+
+  '
 symptoms:
-  - 创建 Task 后状态停留在 planned，不自动进入 executing
-  - 用户需要额外提醒"你为什么不执行"
-  - AI 把"创建任务"和"执行任务"当作两个独立阶段
+- 创建 Task 后状态停留在 planned，不自动进入 executing
+- 用户需要额外提醒"你为什么不执行"
+- AI 把"创建任务"和"执行任务"当作两个独立阶段
 trigger_conditions:
-  - 用户表达明确执行意图，AI 创建 Task 后停止
-  - 当前会话具备继续执行条件，但 Task 仍停留在 planned
+- 用户表达明确执行意图，AI 创建 Task 后停止
+- 当前会话具备继续执行条件，但 Task 仍停留在 planned
 root_cause: |
   AI 将任务创建理解为规划动作的终点，而非执行动作的起点。
   心理模型上把"创建任务"和"执行任务"当作两个独立阶段，
@@ -33,7 +35,7 @@ avoidance: |
   3. 用户说"做X"时，期望从创建到执行是连续流程
 applicability: |
   适用于所有由用户明确执行意图触发的 Task 创建场景，尤其是当前会话可以直接进入执行、验证或修复的任务。
-superseded_by:
+superseded_by: null
 related_tasks:
-  - task-0006
+- task-0006
 related_adrs: []

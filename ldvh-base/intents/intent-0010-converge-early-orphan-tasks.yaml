@@ -15,19 +15,19 @@ success_criteria: |
 constraints: ''
 source: AI 审计发现 13 个任务缺少意图关联，用户指示创建收敛意图
 related_tasks:
-  - task-0010
-  - task-0011
-  - task-0012
-  - task-0013
-  - task-0014
-  - task-0015
-  - task-0016
-  - task-0017
-  - task-0018
-  - task-0024
-  - task-0026
-  - task-0027
-  - task-0028
+- task-0010
+- task-0011
+- task-0012
+- task-0013
+- task-0014
+- task-0015
+- task-0016
+- task-0017
+- task-0018
+- task-0024
+- task-0026
+- task-0027
+- task-0028
 related_adrs: []
 related_pitfalls: []
 related_docs: []

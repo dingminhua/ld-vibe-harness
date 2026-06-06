@@ -7,47 +7,30 @@ status: closed
 created: 2026-06-04
 updated: 2026-06-04
 closed_at: 2026-06-04
-description: '取消 TaskSet 作为 LDVH 独立事实模型和主链路对象，将目标、背景、约束、成功标准、关联任务和完成判断收敛到 Intent。
-
+description: |
+  取消 TaskSet 作为 LDVH 独立事实模型和主链路对象，将目标、背景、约束、成功标准、关联任务和完成判断收敛到 Intent。
   调整 Task 与 Intent 的关系，移除 TaskSet 强制归属、自动归类和级联关闭要求，并明确 Web 或轻量字段承接分组展示。
-
-  '
 source_intent: intent-0003
 source: intent-0003
 parent_task: null
 sub_tasks: []
-acceptance: '- [x] 20 事实模型集合索引中 TaskSet 从 active 降级为 removed
-
+acceptance: |
+  - [x] 20 事实模型集合索引中 TaskSet 从 active 降级为 removed
   - [x] 28-TaskSet-任务集.md 主规范删除
-
   - [x] 28.06-Contract.md 删除
-
   - [x] 28.01-Rules.md、28.02-Skill.md 等 TaskSet 子文档删除
-
   - [x] 27 Task 规范和 Contract 中 taskset 字段移除
-
   - [x] 27.06-Contract.md 中 taskset 字段和 related_evidence 字段移除
-
   - [x] check_fact_model.py 中 taskset 类型校验移除
-
   - [x] ldvh-intake SKILL.md 中 TaskSet 归类逻辑移除
-
   - [x] ldvh-close SKILL.md 中 TaskSet 级联检查移除
-
   - [x] taskset-0001 和 taskset-0002 实例文件删除
-
   - [x] task-0003 不再引用 taskset 字段
-
   - [x] 所有 Task 实例中 taskset 字段清空
-
-  '
-verification: '运行相关事实模型校验、specs 检查、lint/typecheck 或可用测试命令，确认取消 TaskSet 后 Intent/Task
-  主链路可被事实源和工具正确解析。
-
-  '
-closure_evidence: '独立 agent 审计 12/12 项通过；pytest 102 passed；Fact Validator 0 新增错误。
-
-  '
+verification: |
+  运行相关事实模型校验、specs 检查、lint/typecheck 或可用测试命令，确认取消 TaskSet 后 Intent/Task 主链路可被事实源和工具正确解析。
+closure_evidence: |
+  独立 agent 审计 12/12 项通过；pytest 102 passed；Fact Validator 0 新增错误。
 assignee: AI
 related_adrs: []
 related_changes: []

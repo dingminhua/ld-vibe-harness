@@ -12,5 +12,5 @@ priority: medium
 related_tasks: []
 related_adrs: []
 related_docs:
-  - specs/05-Trae-Solo环境规范.md
-  - specs/08-工作流程基础规范.md
+- specs/05-Trae-Solo环境规范.md
+- specs/08-工作流程基础规范.md

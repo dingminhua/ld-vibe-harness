@@ -12,7 +12,6 @@ description: |
   1. gstack — 浏览器扩展 + 设计工具链，TypeScript + Bun 技术栈
   2. mcp-shrimp-task-manager/tools/task-viewer — React + Vite + Tailwind 任务查看器
   3. trae-pm-kit/pm-kit-web — 原生 HTML/CSS/JS 项目管理 Web 应用
-
 source: intent-0006
 source_intent: intent-0006
 acceptance: |
