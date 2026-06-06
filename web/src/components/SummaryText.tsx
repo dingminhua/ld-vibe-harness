@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -10,12 +10,31 @@ interface SummaryTextProps {
 
 const COLLAPSE_THRESHOLD = 150; // ~3 lines
 
+/** 按段落截断 Markdown 文本，避免破坏语法结构 */
+function truncateByParagraph(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+
+  // 按双换行分段落
+  const paragraphs = text.split(/\n\n+/);
+  let result = '';
+  for (const para of paragraphs) {
+    if (result.length + para.length + 2 > maxChars && result.length > 0) {
+      break;
+    }
+    result += (result ? '\n\n' : '') + para;
+  }
+  return result;
+}
+
 export default function SummaryText({ value }: SummaryTextProps) {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
 
   const needsTruncation = value.length > COLLAPSE_THRESHOLD;
-  const displayText = expanded ? value : value.slice(0, COLLAPSE_THRESHOLD);
+  const displayText = useMemo(
+    () => expanded ? value : truncateByParagraph(value, COLLAPSE_THRESHOLD),
+    [value, expanded]
+  );
 
   return (
     <div>

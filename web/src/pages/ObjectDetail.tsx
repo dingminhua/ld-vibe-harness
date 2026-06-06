@@ -19,7 +19,7 @@ import { CATEGORY_COLORS } from '@/utils/categoryColors';
 /** 字段分组定义 */
 const META_KEYS = ['id', 'type', 'status', 'created', 'updated', 'closed_at', 'title', 'title_en', 'title_zh', 'aggregated_deliverables', 'aggregated_docs'];
 /** 长文本字段（用 SummaryText 组件渲染，支持展开/收起） */
-const SUMMARY_TEXT_FIELDS = ['description', 'context', 'consequences', 'success_criteria', 'constraints', 'rationale', 'observation', 'analysis', 'mitigation', 'resolution', 'verification', 'notes'];
+const SUMMARY_TEXT_FIELDS = ['description', 'context', 'consequences', 'success_criteria', 'constraints', 'rationale', 'observation', 'analysis', 'mitigation', 'resolution', 'verification', 'notes', 'transition_reasons'];
 /** 引用字段（用 ReferenceCard 组件渲染） */
 const REFERENCE_FIELDS = ['blocked_by', 'source_intent', 'parent_task', 'related_tasks', 'related_adrs'];
 /** 可折叠的关联内容字段（intent 类型默认展开，其他类型默认折叠） */
@@ -374,6 +374,16 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
     // closure_evidence 字段使用 EvidenceBlock 组件
     if (fieldKey === 'closure_evidence') {
       return <EvidenceBlock value={value} />;
+    }
+
+    // verification 字段使用 EvidenceBlock 组件（12-通用字段内容格式规范 §5）
+    if (fieldKey === 'verification') {
+      return <EvidenceBlock value={value} />;
+    }
+
+    // success_criteria 含 checklist 时使用 ChecklistCard（12-通用字段内容格式规范 §5）
+    if (fieldKey === 'success_criteria' && /^\s*- \[[ xX]\]/m.test(value)) {
+      return <ChecklistCard value={value} />;
     }
 
     // 长文本字段使用 SummaryText 组件

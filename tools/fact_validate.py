@@ -56,6 +56,29 @@ LIST_FIELDS = {
     "memo": {"related_tasks", "related_adrs", "related_docs"},
 }
 
+# 12-通用字段内容格式规范：长文本字段定义
+LONG_TEXT_FIELDS = {
+    "intent": {"description", "success_criteria", "constraints"},
+    "task": {"description", "acceptance", "verification", "closure_evidence"},
+    "adr": {"context", "decision", "consequences"},
+    "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
+    "profile": {"description", "notes"},
+    "memo": {"description"},
+}
+
+# 12-通用字段内容格式规范：路径引用字段定义
+PATH_FIELDS = {"related_docs", "deliverables", "affected_docs"}
+
+# 12-通用字段内容格式规范：Evidence 字段定义
+EVIDENCE_FIELDS = {"verification", "closure_evidence"}
+
+# 危险 HTML 标签和属性模式
+DANGEROUS_HTML_PATTERNS = [
+    re.compile(r"<\s*script", re.IGNORECASE),
+    re.compile(r"<\s*iframe", re.IGNORECASE),
+    re.compile(r"<\s*[a-z][a-z0-9]*\s+[^>]*on\w+\s*=", re.IGNORECASE),
+]
+
 
 @dataclass(frozen=True)
 class Issue:
@@ -158,6 +181,102 @@ def infer_object_type(path: Path, data: dict[str, Any]) -> str | None:
     return None
 
 
+def validate_long_text_block_scalar(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
+    """12-通用字段内容格式规范 §6.2：长文本字段含冒号/换行但未用 YAML 块标量时报 warning。"""
+    issues = []
+    fields = LONG_TEXT_FIELDS.get(object_type, set())
+    # 读取原始 YAML 文本，检查字段是否使用了块标量 | 或 >
+    try:
+        raw_text = path.read_text(encoding="utf-8")
+    except OSError:
+        return issues
+    for field in sorted(fields):
+        value = data.get(field)
+        if not isinstance(value, str) or not value:
+            continue
+        # 只对包含换行或冒号的字段检查
+        if "\n" not in value and ": " not in value:
+            continue
+        # 检查原始文本中该字段是否使用了块标量
+        # 匹配 field: | 或 field: > 或 field: |+ 等
+        block_scalar_pattern = re.compile(rf"^{re.escape(field)}:\s*[|>]", re.MULTILINE)
+        if block_scalar_pattern.search(raw_text):
+            continue  # 已使用块标量，不报
+        issues.append(Issue(
+            str(path), "warning", "LONG_TEXT_NOT_BLOCK_SCALAR",
+            f"字段 {field} 包含换行或冒号，建议使用 YAML 块标量 | 书写",
+            field=field,
+            suggestion=f'将 {field} 改为块标量写法，如 {field}: |',
+        ))
+    return issues
+
+
+def validate_path_fields_exist(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
+    """12-通用字段内容格式规范 §6.1：路径引用字段中的相对路径不存在时报 error。"""
+    issues = []
+    project_root = path.parent.parent.parent  # ldvh-base/xxx/ -> ldvh-base/ -> project root
+    for field in sorted(PATH_FIELDS):
+        items = data.get(field)
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if not isinstance(item, str):
+                continue
+            if item.startswith("http://") or item.startswith("https://"):
+                continue  # 外部链接不校验
+            # 跳过明显不是路径的描述性文本（含中文括号、中文标点等）
+            if re.search(r"[（）\(\)「」【】]", item):
+                continue
+            # 只校验看起来像文件路径的字符串（含 / 或以 . 开头或含扩展名）
+            if "/" not in item and not item.startswith(".") and "." not in item.split("/")[-1]:
+                continue
+            resolved = project_root / item
+            if not resolved.exists():
+                issues.append(Issue(
+                    str(path), "error", "PATH_NOT_FOUND",
+                    f"字段 {field} 中引用的路径不存在: {item}",
+                    field=field,
+                ))
+    return issues
+
+
+def validate_dangerous_html(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
+    """12-通用字段内容格式规范 §6.1：长文本字段包含危险 HTML 标签时报 error。"""
+    issues = []
+    fields = LONG_TEXT_FIELDS.get(object_type, set())
+    for field in sorted(fields):
+        value = data.get(field)
+        if not isinstance(value, str) or not value:
+            continue
+        for pattern in DANGEROUS_HTML_PATTERNS:
+            if pattern.search(value):
+                issues.append(Issue(
+                    str(path), "error", "DANGEROUS_HTML",
+                    f"字段 {field} 包含危险 HTML 内容（script/iframe/事件处理器），请移除",
+                    field=field,
+                ))
+                break  # 每个字段只报一次
+    return issues
+
+
+def validate_evidence_format(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
+    """12-通用字段内容格式规范 §6.2：Evidence 字段非空但缺少验证结果或结论结构时报 warning。"""
+    issues = []
+    for field in sorted(EVIDENCE_FIELDS):
+        value = data.get(field)
+        if not isinstance(value, str) or not value.strip():
+            continue
+        has_result = bool(re.search(r"##\s*验证结果|##\s*结果|##\s*Result", value))
+        has_conclusion = bool(re.search(r"##\s*结论|##\s*Conclusion", value))
+        if not (has_result or has_conclusion):
+            issues.append(Issue(
+                str(path), "warning", "EVIDENCE_FORMAT_HINT",
+                f"字段 {field} 建议包含验证结果（## 验证结果）和结论（## 结论）结构",
+                field=field,
+            ))
+    return issues
+
+
 def validate_common(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
     issues = []
     display_path = str(path)
@@ -179,6 +298,14 @@ def validate_common(path: Path, data: dict[str, Any], object_type: str) -> list[
     for field in sorted(LIST_FIELDS[object_type]):
         if field in data and not isinstance(data[field], list):
             issues.append(Issue(display_path, "error", "INVALID_LIST_FIELD", f"字段必须是 list: {field}"))
+    # 12-通用字段内容格式规范：长文本字段 YAML 块标量提示
+    issues.extend(validate_long_text_block_scalar(path, data, object_type))
+    # 12-通用字段内容格式规范：路径引用字段存在性校验
+    issues.extend(validate_path_fields_exist(path, data, object_type))
+    # 12-通用字段内容格式规范：危险 HTML 拦截
+    issues.extend(validate_dangerous_html(path, data, object_type))
+    # 12-通用字段内容格式规范：Evidence 字段格式提示
+    issues.extend(validate_evidence_format(path, data, object_type))
     return issues
 
 
