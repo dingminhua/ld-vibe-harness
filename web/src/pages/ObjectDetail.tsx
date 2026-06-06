@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type ReactNode } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2, Info, Pencil } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -26,10 +26,6 @@ const REFERENCE_FIELDS = ['blocked_by', 'source_intent', 'parent_task', 'related
 const COLLAPSIBLE_FIELDS = ['related_tasks', 'related_docs', 'related_adrs', 'deliverables', 'blocked_by'];
 /** Task 类型字段展示优先顺序 */
 const TASK_FIELD_ORDER = ['acceptance', 'blocked_by', 'related_docs', 'deliverables'];
-/** 主内容字段：无卡片，直接展示为正文 */
-const PRIMARY_FIELDS = ['description', 'context', 'decision', 'consequences'];
-/** 结构化字段：轻量卡片，走语义组件 */
-const STRUCTURED_FIELDS = ['acceptance', 'verification', 'closure_evidence', 'success_criteria'];
 
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
@@ -44,6 +40,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
 
 /** 字段名中英映射 */
 const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
+  source: { zh: '来源', en: 'Source' },
   description: { zh: '描述', en: 'Description' },
   success_criteria: { zh: '成功标准', en: 'Success Criteria' },
   constraints: { zh: '约束', en: 'Constraints' },
@@ -247,11 +244,15 @@ export default function ObjectDetail() {
           </div>
 
           {/* Content fields */}
-          <div className="mb-6 flex flex-col divide-y divide-ldvh-border/30">
-            {contentEntries.map(([key, value]) => (
-              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} objId={objId} onRefresh={refreshDetail} />
-            ))}
-          </div>
+          {objType === 'task' ? (
+            <TaskReadingLayout obj={obj} locale={locale} objType={objType} objId={objId} onRefresh={refreshDetail} />
+          ) : (
+            <div className="mb-6 flex flex-col gap-5">
+              {contentEntries.map(([key, value]) => (
+                <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} objId={objId} onRefresh={refreshDetail} />
+              ))}
+            </div>
+          )}
 
           {/* 聚合区域 - 仅 Intent 类型显示 */}
           {objType === 'intent' && (hasAggregatedDeliverables || hasAggregatedDocs) && (
@@ -323,6 +324,107 @@ function MetaChip({ label, value }: { label: string; value: string }) {
   );
 }
 
+function TaskReadingLayout({ obj, locale, objType, objId, onRefresh }: { obj: Record<string, unknown>; locale: string; objType: string; objId: string; onRefresh: () => void }) {
+  const hidden = new Set(['source', 'description', 'source_intent', 'acceptance', 'verification', 'closure_evidence', 'deliverables', 'related_docs', 'affected_docs', 'blocked_by', ...META_KEYS]);
+  const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && value !== null && value !== undefined && value !== '');
+
+  return (
+    <div className="mb-6 flex flex-col gap-5">
+      <TaskSection title="任务目标" tone="primary">
+        {obj.description ? <SummaryText value={String(obj.description)} /> : <EmptyHint text="未记录任务描述" />}
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {obj.source && <TaskInlineField label="来源" value={<SummaryText value={String(obj.source)} />} />}
+          {obj.source_intent && (
+            <TaskInlineField
+              label="来源意图"
+              value={<FieldValue fieldKey="source_intent" value={obj.source_intent} depth={0} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />}
+            />
+          )}
+        </div>
+      </TaskSection>
+
+      <TaskSection title="验收标准" tone="checklist">
+        {obj.acceptance ? <ChecklistCard value={String(obj.acceptance)} /> : <EmptyHint text="未记录验收标准" />}
+      </TaskSection>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <TaskSection title="验证方式" tone="evidence">
+          {obj.verification ? <EvidenceBlock value={String(obj.verification)} /> : <EmptyHint text="未记录验证方式" />}
+        </TaskSection>
+        <TaskSection title="关闭证据" tone="evidence">
+          {obj.closure_evidence ? <EvidenceBlock value={String(obj.closure_evidence)} /> : <EmptyHint text="尚未记录关闭证据" />}
+        </TaskSection>
+      </div>
+
+      <TaskSection title="产出与文档" tone="docs">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <TaskDocGroup label="产出物" docs={obj.deliverables as string[] | undefined} />
+          <TaskDocGroup label="关联文档" docs={obj.related_docs as string[] | undefined} />
+          <TaskDocGroup label="影响文档" docs={obj.affected_docs as string[] | undefined} />
+        </div>
+      </TaskSection>
+
+      {obj.blocked_by && Array.isArray(obj.blocked_by) && obj.blocked_by.length > 0 && (
+        <TaskSection title="前置依赖" tone="default">
+          <ReferenceCard refs={obj.blocked_by as string[]} />
+        </TaskSection>
+      )}
+
+      {otherEntries.length > 0 && (
+        <TaskSection title="其他字段" tone="default">
+          <div className="flex flex-col gap-3">
+            {otherEntries.map(([key, value]) => (
+              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />
+            ))}
+          </div>
+        </TaskSection>
+      )}
+    </div>
+  );
+}
+
+function TaskSection({ title, tone, children }: { title: string; tone: 'primary' | 'checklist' | 'evidence' | 'docs' | 'default'; children: ReactNode }) {
+  const toneClass = {
+    primary: 'border-ldvh-accent/30 bg-ldvh-panel',
+    checklist: 'border-emerald-500/25 bg-ldvh-panel',
+    evidence: 'border-sky-500/25 bg-ldvh-panel',
+    docs: 'border-violet-500/25 bg-ldvh-panel',
+    default: 'border-ldvh-border bg-ldvh-panel',
+  }[tone];
+
+  return (
+    <section className={`rounded-xl border p-4 ${toneClass}`}>
+      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ldvh-text-primary">
+        <span className="h-1.5 w-1.5 rounded-full bg-ldvh-accent" />
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function TaskInlineField({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="rounded-lg border border-ldvh-border bg-ldvh-bg/40 p-3">
+      <div className="mb-1 text-[11px] font-medium tracking-wide text-ldvh-text-secondary">{label}</div>
+      {value}
+    </div>
+  );
+}
+
+function TaskDocGroup({ label, docs }: { label: string; docs?: string[] }) {
+  return (
+    <div className="rounded-lg border border-ldvh-border bg-ldvh-bg/40 p-3">
+      <div className="mb-2 text-[11px] font-medium tracking-wide text-ldvh-text-secondary">{label}</div>
+      {docs && docs.length > 0 ? <DocPreviewLink docs={docs} /> : <EmptyHint text="空" />}
+    </div>
+  );
+}
+
+function EmptyHint({ text }: { text: string }) {
+  return <span className="text-sm text-ldvh-text-secondary">{text}</span>;
+}
+
 /** 内容字段：根据字段类型选择渲染方式和样式 */
 function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { fieldKey: string; value: unknown; locale: string; objType: string; objId: string; onRefresh: () => void }) {
   const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
@@ -337,30 +439,6 @@ function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { 
     ? (locale === 'en' ? labelEntry.en : labelEntry.zh)
     : fieldKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-  const isPrimary = PRIMARY_FIELDS.includes(fieldKey);
-  const isStructured = STRUCTURED_FIELDS.includes(fieldKey);
-
-  // 主内容字段：无卡片，直接展示
-  if (isPrimary) {
-    return (
-      <div className="py-3">
-        <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-ldvh-text-secondary">{label}</h4>
-        <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />
-      </div>
-    );
-  }
-
-  // 结构化字段：轻量卡片
-  if (isStructured) {
-    return (
-      <div className="rounded-lg bg-ldvh-bg/50 p-3">
-        <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-ldvh-text-secondary">{label}</h4>
-        <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />
-      </div>
-    );
-  }
-
-  // 其他字段：带边框卡片 + 可折叠
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
       <div
