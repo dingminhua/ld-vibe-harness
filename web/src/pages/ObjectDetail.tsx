@@ -26,6 +26,10 @@ const REFERENCE_FIELDS = ['blocked_by', 'source_intent', 'parent_task', 'related
 const COLLAPSIBLE_FIELDS = ['related_tasks', 'related_docs', 'related_adrs', 'deliverables', 'blocked_by'];
 /** Task 类型字段展示优先顺序 */
 const TASK_FIELD_ORDER = ['acceptance', 'blocked_by', 'related_docs', 'deliverables'];
+/** 主内容字段：无卡片，直接展示为正文 */
+const PRIMARY_FIELDS = ['description', 'context', 'decision', 'consequences'];
+/** 结构化字段：轻量卡片，走语义组件 */
+const STRUCTURED_FIELDS = ['acceptance', 'verification', 'closure_evidence', 'success_criteria'];
 
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
@@ -243,7 +247,7 @@ export default function ObjectDetail() {
           </div>
 
           {/* Content fields */}
-          <div className="mb-6 flex flex-col gap-5">
+          <div className="mb-6 flex flex-col divide-y divide-ldvh-border/30">
             {contentEntries.map(([key, value]) => (
               <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} objId={objId} onRefresh={refreshDetail} />
             ))}
@@ -319,7 +323,7 @@ function MetaChip({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** 内容字段：根据字段类型选择渲染方式 */
+/** 内容字段：根据字段类型选择渲染方式和样式 */
 function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { fieldKey: string; value: unknown; locale: string; objType: string; objId: string; onRefresh: () => void }) {
   const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
   const [collapsed, setCollapsed] = useState(isCollapsible ? objType !== 'intent' : false);
@@ -333,6 +337,30 @@ function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { 
     ? (locale === 'en' ? labelEntry.en : labelEntry.zh)
     : fieldKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
+  const isPrimary = PRIMARY_FIELDS.includes(fieldKey);
+  const isStructured = STRUCTURED_FIELDS.includes(fieldKey);
+
+  // 主内容字段：无卡片，直接展示
+  if (isPrimary) {
+    return (
+      <div className="py-3">
+        <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-ldvh-text-secondary">{label}</h4>
+        <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />
+      </div>
+    );
+  }
+
+  // 结构化字段：轻量卡片
+  if (isStructured) {
+    return (
+      <div className="rounded-lg bg-ldvh-bg/50 p-3">
+        <h4 className="mb-2 text-xs font-medium uppercase tracking-wider text-ldvh-text-secondary">{label}</h4>
+        <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />
+      </div>
+    );
+  }
+
+  // 其他字段：带边框卡片 + 可折叠
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
       <div
@@ -371,14 +399,14 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
       return <ChecklistCard value={value} />;
     }
 
-    // closure_evidence 字段使用 EvidenceBlock 组件
+    // closure_evidence 字段使用 EvidenceBlock 组件（嵌入模式）
     if (fieldKey === 'closure_evidence') {
-      return <EvidenceBlock value={value} />;
+      return <EvidenceBlock value={value} embedded />;
     }
 
-    // verification 字段使用 EvidenceBlock 组件（12-通用字段内容格式规范 §5）
+    // verification 字段使用 EvidenceBlock 组件（嵌入模式）
     if (fieldKey === 'verification') {
-      return <EvidenceBlock value={value} />;
+      return <EvidenceBlock value={value} embedded />;
     }
 
     // success_criteria 含 checklist 时使用 ChecklistCard（12-通用字段内容格式规范 §5）

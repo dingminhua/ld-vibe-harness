@@ -8,13 +8,12 @@ interface SummaryTextProps {
   value: string;
 }
 
-const COLLAPSE_THRESHOLD = 150; // ~3 lines
+const COLLAPSE_THRESHOLD = 150;
 
 /** 按段落截断 Markdown 文本，避免破坏语法结构 */
 function truncateByParagraph(text: string, maxChars: number): string {
   if (text.length <= maxChars) return text;
 
-  // 按双换行分段落
   const paragraphs = text.split(/\n\n+/);
   let result = '';
   for (const para of paragraphs) {
@@ -38,7 +37,7 @@ export default function SummaryText({ value }: SummaryTextProps) {
 
   return (
     <div>
-      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-li:my-0.5 prose-ul:my-1 prose-pre:my-2 prose-code:text-ldvh-accent">
+      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-p:leading-relaxed prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1 prose-pre:my-2 prose-headings:mt-3 prose-headings:mb-1.5 prose-h2:text-base prose-h2:font-semibold prose-h3:text-sm prose-h3:font-medium prose-code:text-ldvh-accent">
         <Markdown remarkPlugins={[remarkGfm]}>
           {needsTruncation && !expanded ? displayText + '…' : value}
         </Markdown>
@@ -46,7 +45,7 @@ export default function SummaryText({ value }: SummaryTextProps) {
       {needsTruncation && (
         <button
           onClick={() => setExpanded(v => !v)}
-          className="mt-1 flex items-center gap-1 text-xs text-ldvh-accent transition-colors hover:text-ldvh-accent/80"
+          className="mt-1.5 flex items-center gap-1 text-xs text-ldvh-accent transition-colors hover:text-ldvh-accent/80"
         >
           {expanded ? (
             <>
