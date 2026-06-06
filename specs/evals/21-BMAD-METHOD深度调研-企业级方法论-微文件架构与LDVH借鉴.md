@@ -4,7 +4,7 @@
 > 定位：对 BMAD-METHOD 项目的代码级深度调研，覆盖方法论阶段、Agent 体系、微文件架构、质量门禁、企业级特性及对 LDVH 的借鉴价值
 > 调研边界：不直接构成强制规则；结论进入正式规范或 ADR 后才成为稳定执行依据
 > 代码调研来源：`/Users/dmh2002/trae_projects/BMAD-METHOD`（完整代码库）
-> 上位参考：`specs/evals/11-LDVH-Gstack-Trae融合产品方向共识.md`
+> 上位参考：`specs/evals/25-LDVH全盘确认与核心吸收建议.md`
 
 ---
 
@@ -481,7 +481,7 @@ BMAD 的外部交接路由可参考，但 LDVH 的核心事实源是 Git，需�
 
 ## 11. 来源
 
-### 代码来源
+### 11.1 代码来源
 
 - `/Users/dmh2002/trae_projects/BMAD-METHOD/README.md`
 - `/Users/dmh2002/trae_projects/BMAD-METHOD/docs/reference/agents.md`
@@ -503,8 +503,8 @@ BMAD 的外部交接路由可参考，但 LDVH 的核心事实源是 Git，需�
 - `/Users/dmh2002/trae_projects/BMAD-METHOD/src/bmm-skills/4-implementation/bmad-checkpoint-preview/SKILL.md`
 - `/Users/dmh2002/trae_projects/BMAD-METHOD/src/core-skills/bmad-brainstorming/SKILL.md`
 
-### 内部参考
+### 11.2 内部参考
 
-- `specs/evals/11-LDVH-Gstack-Trae融合产品方向共识.md`
+- `specs/evals/25-LDVH全盘确认与核心吸收建议.md`
 - `specs/evals/19-Gstack深度调研-人工确认-测试流程-使用说明与LDVH对比.md`
 - `specs/evals/20-Superpowers深度调研-TDD强制-工程纪律与LDVH借鉴.md`

@@ -4,7 +4,7 @@
 > 定位：对 Gstack 项目的代码级深度调研，覆盖人工确认环节、测试流程、使用说明、LDVH 对比和社区口碑
 > 调研边界：不直接构成强制规则；结论进入正式规范或 ADR 后才成为稳定执行依据
 > 代码调研来源：`/Users/dmh2002/trae_projects/gstack`（完整代码库）
-> 上位参考：`specs/evals/11-LDVH-Gstack-Trae融合产品方向共识.md`
+> 上位参考：`specs/evals/25-LDVH全盘确认与核心吸收建议.md`
 
 ---
 
@@ -643,7 +643,7 @@ Gstack 是一个被名人效应放大但确实有实质价值的工具。核心�
 
 ## 8. 来源
 
-### 代码来源
+### 8.1 代码来源
 
 - `/Users/dmh2002/trae_projects/gstack/README.md`
 - `/Users/dmh2002/trae_projects/gstack/SKILL.md`
@@ -659,7 +659,7 @@ Gstack 是一个被名人效应放大但确实有实质价值的工具。核心�
 - `/Users/dmh2002/trae_projects/gstack/browse/src/` 目录下多个源文件
 - `/Users/dmh2002/trae_projects/gstack/lib/gbrain-guards.ts`
 
-### 社区反馈来源
+### 8.2 社区反馈来源
 
 - Gstack 实测文章（今日头条多篇文章）
 - GitHub Issues（238 个 Open Issues）
@@ -668,6 +668,6 @@ Gstack 是一个被名人效应放大但确实有实质价值的工具。核心�
 - Reddit 社区讨论
 - 与 Superpowers、AI-SDLC、BMAD 的对比文章
 
-### 内部参考
+### 8.3 内部参考
 
-- `specs/evals/11-LDVH-Gstack-Trae融合产品方向共识.md`
+- `specs/evals/25-LDVH全盘确认与核心吸收建议.md`

@@ -4,7 +4,7 @@
 > 定位：对 Superpowers 项目的代码级深度调研，覆盖核心理念、TDD 强制机制、人工确认环节、测试流程、子代理架构及对 LDVH 的借鉴价值
 > 调研边界：不直接构成强制规则；结论进入正式规范或 ADR 后才成为稳定执行依据
 > 代码调研来源：`/Users/dmh2002/trae_projects/superpowers`（完整代码库）
-> 上位参考：`specs/evals/11-LDVH-Gstack-Trae融合产品方向共识.md`
+> 上位参考：`specs/evals/25-LDVH全盘确认与核心吸收建议.md`
 
 ---
 
@@ -386,7 +386,7 @@ LDVH 可借鉴此模式：当同一 Task 反复修复失败时，不是继续尝
 
 ## 9. 来源
 
-### 代码来源
+### 9.1 代码来源
 
 - `/Users/dmh2002/trae_projects/superpowers/README.md`
 - `/Users/dmh2002/trae_projects/superpowers/src/CLAUDE.md`
@@ -408,7 +408,7 @@ LDVH 可借鉴此模式：当同一 Task 反复修复失败时，不是继续尝
 - `/Users/dmh2002/trae_projects/superpowers/src/docs/testing.md`
 - `/Users/dmh2002/trae_projects/superpowers/src/hooks/session-start`
 
-### 内部参考
+### 9.2 内部参考
 
-- `specs/evals/11-LDVH-Gstack-Trae融合产品方向共识.md`
+- `specs/evals/25-LDVH全盘确认与核心吸收建议.md`
 - `specs/evals/19-Gstack深度调研-人工确认-测试流程-使用说明与LDVH对比.md`
