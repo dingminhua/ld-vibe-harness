@@ -4,11 +4,11 @@ title: 规则规范梳理
 status: active
 created: '2026-06-05T17:46:22.344405'
 updated: '2026-06-06T08:24:12.000000'
-description: 梳理和验证 LDVH 规则规范体系的有效性，确保工作区规则、项目规则、场景规则三层机制在实际执行中能正确约束 AI 行为
+description: 梳理和验证 LDVH 规则规范体系的有效性，确保工作区规则、项目规则和 specs 原文入口能正确约束 AI 行为，并移除场景规则层造成的分散与失效风险
 success_criteria: 通过实际任务执行验证规则触发、约束生效、Human Gate 拦截等机制均按预期工作；识别并修复规则体系中的漏洞和不足
 source: 用户要求验证当前规则机制是否有效
 title_en: Rules and Specs Review
 title_zh: 规则规范梳理
 related_pitfalls: []
 related_docs: []
-related_tasks: [task-0048]
+related_tasks: [task-0048, task-0058, task-0059]

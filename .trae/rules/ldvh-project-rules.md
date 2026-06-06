@@ -1,11 +1,11 @@
 # LD Vibe Harness 项目规则
 
-> 最后更新：2026-06-03
+> 最后更新：2026-06-07T02:10
 > 层级：项目规则
 > 适用项目：ld-vibe-harness
 > 生效方式：始终生效
-> 规范来源：`specs/00-05`、`specs/04-08`、`specs/20-39`
-> 维护边界：仅作 LDVH 项目入口、硬约束和场景规则引导，不替代 specs 正式规范
+> 规范来源：`specs/00-08`、`specs/20-39`、`specs/05-Trae-Solo环境规范.md`、`specs/07-工作模型基础规范.md`、`specs/20-工作模型集合索引.md`
+> 维护边界：仅作 LDVH 项目入口、硬约束、对象规范入口、specs 编辑入口和事实实例编辑硬约束，不替代 specs 正式规范；LDVH 不使用场景规则层
 
 ## 入口
 
@@ -20,6 +20,8 @@
 **规范变更后执行约束**：规范变更后同一会话内执行受影响的任务时，AI 必须重新读取变更后的规范，并明确声明"已按新规范调整执行计划"。执行 Task 前必须遵守 `blocked_by` 前置任务强制阻塞规则；任务关闭前必须检查 acceptance 列表是否已全部勾选为 `- [x]`；未勾选则必须启动独立 agent 重新审计，不得直接关闭。
 
 **规格变更与工具联动约束**：变更涉及事实源边界、字段契约、状态机、对象类型、目录结构或术语的 specs 修改，AI 必须在提交前同步检查 tools/ 下的代码实现，确认是否存在需要更新的硬编码行为、目标对象映射、校验规则或测试用例。未完成 tools/ 同步的规格变更不得声称已完成。
+
+**事实实例编辑硬约束**：编辑 `ldvh-base/` YAML 前，必须识别对象类型，读取 `specs/07-工作模型基础规范.md` 和 `specs/20-工作模型集合索引.md` 指向的对应主规范及已回并结构化契约章节；不得把 `ldvh-base/` YAML 当普通配置文件随意修改；不得绕过对象状态机；不得自行添加对象规范未定义字段；未读取对应对象规范和结构化契约章节时，不得编辑事实实例。
 
 ## Core Loop 阶段路由
 
@@ -38,10 +40,10 @@ AI 应在每次用户交互时判断当前 Core Loop 阶段，并推荐对应 Sk
 
 修改 specs、Rules、Tools、工作模型边界或长期协作机制前检查 ADR；准入见 21 §3.3。ADR 写入、状态流转、推翻、废弃或升级必须 Human Gate；流程和工具见 21 主规范。proposed ADR 不作执行依据。
 
-## 场景规则引导
+## Specs 与 Rules 入口
 
-编辑 specs 进 `.trae/rules/ldvh-specs-rules.md`；编辑 `ldvh-base/` YAML 进事实模型规则；新增、修改或审计 Rules 时读 05 §6，并从 `specs/*.md` 反向发现需求。规格变更涉及事实源边界、字段契约、状态机、对象类型、目录结构或术语时，同步检查 `tools/` 代码实现并在提交前完成同步。
+编辑 specs Markdown 时，文档骨架、章节编号、标题层级、引用纪律、机制落地关系和 refs/evals 边界以 `specs/03-文档规范.md` 为准；编号分区以 `specs/01-目录说明.md` 为准；术语以 `specs/02-术语规范.md` 为准。新增、修改或审计 Rules 时读 05 §6，并从 `specs/*.md` 反向发现需求。规格变更涉及事实源边界、字段契约、状态机、对象类型、目录结构或术语时，同步检查 `tools/` 代码实现并在提交前完成同步。
 
 ## 压缩保护
 
-LDVH | 00-08按任务读原文 | 产品化/Gstack/Trae/CoreLoop/Python/Web工具先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 规范/Skill/Tools/部署判断必须回原文 | 错误模式转检查项 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=Python/Web工具聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04事实源边界 05 Trae Solo 环境规范 06 Python/Web工具 07工作模型 08工作流程 | 搜标题行号 | Git为准 | ADR见21 | specs进ldvh-specs-rules | ldvh-base进事实模型规则 | CoreLoop路由=Intent→ldvh-intake|Plan→ldvh-plan|Record→ldvh-close | 改specs检查tools/代码
+LDVH | 00-08按任务读原文 | 产品化/Gstack/Trae/CoreLoop/Python/Web工具先读evals17 | evals13=底层架构前置>evals14 | 重要共识更新evals17 | 规范/Skill/Tools/部署判断必须回原文 | 错误模式转检查项 | 防递归=服务最近可运行闭环+抽象后Dogfood | WebMVP=Python/Web工具聚合后只读态势入口不写事实源 | Skill提示词中文 | Plan/Spec分级使用并映射Intent/Task | Memo/Profile/初始化/审计/开发交付实践为待吸收高价值 | 00价值 01目录 02术语 03specs 04事实源边界 05 Trae Solo 环境规范 06 Python/Web工具 07工作模型 08工作流程 | 搜标题行号 | Git为准 | ADR见21 | specs编辑读03/01/02 | ldvh-base读07/20及对象主规范 | 不使用场景规则 | CoreLoop路由=Intent→ldvh-intake|Plan→ldvh-plan|Record→ldvh-close | 改specs检查tools/代码
