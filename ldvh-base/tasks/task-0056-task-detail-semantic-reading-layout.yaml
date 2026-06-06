@@ -1,0 +1,35 @@
+id: task-0056
+type: task
+title: Task 详情语义阅读结构重构
+status: executing
+created: '2026-06-07T00:39:37.004998'
+updated: '2026-06-07T00:40:10.001830'
+description: |
+  ## 背景
+
+  ObjectDetail 当前按 YAML 字段逐项平铺展示，即使字段内容支持 Markdown，也只是把字段转为普通 Markdown/组件。Task 详情阅读缺少任务主线结构，用户难以快速理解目标、验收、验证、证据和产出之间的关系。
+
+  ## 目标
+
+  为 Task 对象建立专用的语义阅读布局，让页面按任务工作流呈现：任务目标、验收标准、验证方式、关闭证据、产出与关联文档。
+
+  ## 边界
+
+  - 只修改 Web 前端展示层
+  - 不改变 YAML 事实源权威边界
+  - 不引入 Web 写入能力
+  - 不把所有对象统一改成同一布局，只优先处理 Task 详情页
+source: 用户反馈 Task 详情页虽然 Markdown 能渲染，但阅读体验仍不舒服、结构不清晰，要求继续行动直到达成目标。
+acceptance: |
+  - [ ] Task 详情页不再仅按 YAML 字段平铺，而是形成任务主线阅读结构
+  - [ ] description/source/source_intent 聚合为任务目标与来源区域
+  - [ ] acceptance 使用清晰的验收区域，展示完成进度和检查项
+  - [ ] verification 与 closure_evidence 形成验证/关闭证据区域，Markdown 标题和列表层级清晰
+  - [ ] deliverables/related_docs/affected_docs 形成产出与文档区域
+  - [ ] 原 YAML 源码折叠入口保留
+  - [ ] 运行 TypeScript 类型检查通过
+blocked_by: []
+deliverables: []
+source_intent: intent-0006
+verification: 打开 /objects/task/task-0052 和 /objects/task/task-0056，检查 Task 页面是否能按目标、验收、验证、证据、产出形成清晰阅读结构；运行
+  npx tsc --noEmit。

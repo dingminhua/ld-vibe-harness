@@ -1,6 +1,6 @@
 # Hermes Agent源码调研：调用任务生成与执行机制
 
-> 来源：intent-0009 竞品调研 | task-0052
+> 来源：intent-0009 竞品调研 | task-0055
 > 日期：2026-06-06
 > 调研对象：NousResearch/hermes-agent
 > 源码位置：`/Users/dmh2002/trae_projects/hermes-agent`
