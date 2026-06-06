@@ -24,7 +24,7 @@ LD Vibe Harness 是 Harness 思想的实践，由 LaoDing 基于实践沉淀而�
 
 ## 2. 以 AI 执行者为第一服务对象
 
-LD Vibe Harness 以 AI 执行者为第一服务对象，先按照 AI 执行者的能力结构与客观缺陷设计产品框架，再调度 Human 的判断决策、AI 的推理泛化、Code 的确定高效、Web 的呈现交互，各尽其能，形成合力，共同驾驭 Vibe Coding，实现产品闭环。
+LD Vibe Harness 以 AI 执行者为第一服务对象，先按照 AI 执行者的行为本质设计产品框架，再调度 Human 的判断与决策、AI 的推理与泛化，依托 Code 的确定性执行、Web 的可视化干预，形成合力，共同驾驭 Vibe Coding，实现产品闭环。
 
 AI 执行者的能力结构可以从三个方面理解。
 
