@@ -26,7 +26,7 @@ related_adrs: []
 related_pitfalls: []
 related_docs:
 - specs/refs/07-竞品测试任务安排分析与最佳实践调研.md
-- specs/evals/20-Superpowers深度调研-TDD强制-工程纪律与LDVH借鉴.md
+- specs/evals/17-Superpowers深度调研-TDD强制-工程纪律与LDVH借鉴.md
 deliverables:
 - ldvh-base/adrs/adr-0007（新建）
 - specs/27-Task-任务.md（修订）

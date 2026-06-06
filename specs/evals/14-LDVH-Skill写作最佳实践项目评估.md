@@ -3,7 +3,7 @@
 > 创建日期：2026-06-05
 > 定位：项目评估文档，基于 Trae Skill 写作最佳实践评估当前 LDVH Skill 体系的改进方向
 > 调研边界：评估文档，不直接构成强制规则；稳定结论需进入正式 specs、Rules、Skill 或 ADR 后生效
-> 上位依据：`specs/refs/trae/10-Skill写作最佳实践.md`、`specs/evals/12-LDVH规范即机制-Rules与Skill自动生成评估.md`、`specs/evals/14-LDVH第三方技能引入的思考.md`、`specs/evals/15-LDVH-Task治理下的Trae-Spec工作流评估.md`
+> 上位依据：`specs/refs/trae/10-Skill写作最佳实践.md`、`specs/evals/11-LDVH规范即机制-Rules与Skill自动生成评估.md`、`specs/evals/12-LDVH第三方技能引入的思考.md`、`specs/evals/13-LDVH-Task治理下的Trae-Spec工作流评估.md`
 > 评估对象：工作区级 LDVH Skills（`ldvh-intake`、`ldvh-plan`、`ldvh-adr`、`ldvh-close`、`ldvh-commit`）及后续 Skill 建设策略
 
 ---
