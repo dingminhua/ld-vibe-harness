@@ -15,6 +15,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SPECS_DIR = PROJECT_ROOT / "specs"
+SPECS_V2_DIR = PROJECT_ROOT / "specs-v2"
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 
 
@@ -361,6 +362,172 @@ def refs_main(paths):
 
 
 # ══════════════════════════════════════════════════════════════════════
+# landing — 规范落地要求表检查
+# ══════════════════════════════════════════════════════════════════════
+
+LANDING_SECTION_TITLE = "规范落地要求"
+LANDING_REQUIRED_COLUMNS = ["落地要求", "要求内容", "保障机制", "同步类型", "触发条件"]
+LANDING_ALLOWED_TYPES = {
+    "上位约束承接要求",
+    "入口可见要求",
+    "流程复用要求",
+    "子 Agent 思考要求",
+    "确定性执行要求",
+    "Human 交互要求",
+    "生命周期触发要求",
+}
+
+
+def landing_default_check_paths():
+    if SPECS_V2_DIR.exists():
+        return [str(path) for path in sorted(SPECS_V2_DIR.glob("*.md"))]
+    return []
+
+
+def landing_is_formal_spec(path):
+    resolved = path.resolve()
+    try:
+        rel = resolved.relative_to(PROJECT_ROOT)
+    except ValueError:
+        return False
+    return len(rel.parts) == 2 and rel.parts[0] == "specs-v2" and path.suffix == ".md"
+
+
+def landing_strip_section_number(title):
+    return DOC_NUMBERED_HEADING_RE.sub("", title, count=1).strip()
+
+
+def landing_split_cells(line):
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def landing_is_separator(cells):
+    return all(set(cell) <= {"-", ":", " "} for cell in cells)
+
+
+def landing_check_file(path):
+    issues = []
+    if not landing_is_formal_spec(path):
+        return issues
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    in_code_block = False
+    in_landing_section = False
+    section_line = None
+    header_seen = False
+    table_seen = False
+    row_seen = False
+
+    for index, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block:
+            continue
+
+        heading = HEADING_RE.match(line)
+        if heading:
+            level = len(heading.group(1))
+            title = landing_strip_section_number(heading.group(2).strip())
+            if in_landing_section and not table_seen:
+                issues.append(Issue(path, section_line, "规范落地要求章节缺少表格", code="LANDING_TABLE_MISSING"))
+            elif in_landing_section and table_seen and not row_seen:
+                issues.append(Issue(path, section_line, "规范落地要求表格缺少数据行", code="LANDING_ROW_MISSING"))
+            in_landing_section = level == 2 and title == LANDING_SECTION_TITLE
+            section_line = index if in_landing_section else None
+            header_seen = False
+            table_seen = False
+            row_seen = False
+            continue
+
+        if not in_landing_section:
+            continue
+
+        if not stripped:
+            continue
+        if not stripped.startswith("|"):
+            if table_seen:
+                break
+            continue
+
+        cells = landing_split_cells(stripped)
+        if landing_is_separator(cells):
+            continue
+
+        if not header_seen:
+            header_seen = True
+            table_seen = True
+            if cells[: len(LANDING_REQUIRED_COLUMNS)] != LANDING_REQUIRED_COLUMNS:
+                expected = " | ".join(LANDING_REQUIRED_COLUMNS)
+                actual = " | ".join(cells)
+                issues.append(
+                    Issue(
+                        path,
+                        index,
+                        f"规范落地要求表头不符合 15 要求: 期望 {expected}，实际 {actual}",
+                        code="LANDING_HEADER_INVALID",
+                    )
+                )
+            continue
+
+        row_seen = True
+        if len(cells) < len(LANDING_REQUIRED_COLUMNS):
+            issues.append(Issue(path, index, "规范落地要求表格行缺少必填字段", code="LANDING_ROW_TOO_SHORT"))
+            continue
+
+        required_values = cells[: len(LANDING_REQUIRED_COLUMNS)]
+        for column, value in zip(LANDING_REQUIRED_COLUMNS, required_values):
+            if not value:
+                issues.append(Issue(path, index, f"规范落地要求表格字段为空: {column}", code="LANDING_FIELD_EMPTY"))
+
+        requirement_type = required_values[0]
+        if requirement_type and requirement_type not in LANDING_ALLOWED_TYPES:
+            allowed = "、".join(sorted(LANDING_ALLOWED_TYPES))
+            issues.append(
+                Issue(
+                    path,
+                    index,
+                    f"规范落地要求类型未在 15 中定义: {requirement_type}；允许值: {allowed}",
+                    code="LANDING_TYPE_INVALID",
+                )
+            )
+
+    if in_landing_section and not table_seen:
+        issues.append(Issue(path, section_line, "规范落地要求章节缺少表格", code="LANDING_TABLE_MISSING"))
+    elif in_landing_section and table_seen and not row_seen:
+        issues.append(Issue(path, section_line, "规范落地要求表格缺少数据行", code="LANDING_ROW_MISSING"))
+
+    if not any(
+        len(match.group(1)) == 2 and landing_strip_section_number(match.group(2).strip()) == LANDING_SECTION_TITLE
+        for match in (HEADING_RE.match(line) for line in lines)
+        if match
+    ):
+        issues.append(Issue(path, 1, "正式规范文档缺少规范落地要求章节", code="LANDING_SECTION_MISSING"))
+
+    return issues
+
+
+def landing_check_paths(paths):
+    issues = []
+    for path in iter_markdown_files(paths):
+        issues.extend(landing_check_file(path))
+    return issues
+
+
+def landing_main(paths):
+    check_paths = paths if paths else landing_default_check_paths()
+    issues = landing_check_paths(check_paths)
+    if issues:
+        print(f"规范落地要求检查失败，共 {len(issues)} 个问题：")
+        for issue in issues:
+            print(f"- {issue.format(PROJECT_ROOT)}")
+        return 1
+    print("规范落地要求检查通过。")
+    return 0
+
+
+# ══════════════════════════════════════════════════════════════════════
 # index — 生成索引
 # ══════════════════════════════════════════════════════════════════════
 
@@ -378,9 +545,10 @@ class SpecsIndexError(Exception):
 
 
 class SpecsChecker:
-    def __init__(self, root):
+    def __init__(self, root, specs_dir="specs"):
         self.root = Path(root).resolve()
-        self.specs_dir = self.root / "specs"
+        raw_specs_dir = Path(specs_dir)
+        self.specs_dir = raw_specs_dir.resolve() if raw_specs_dir.is_absolute() else (self.root / raw_specs_dir).resolve()
 
     def scan_files(self):
         files = []
@@ -581,7 +749,12 @@ class SpecsChecker:
             heading = HEADING_RE.match(line)
             if heading:
                 title = heading.group(2).strip()
-                in_section = "机制承接关系" in title or "机制落地关系" in title or "机制关系声明" in title
+                in_section = (
+                    "规范落地要求" in title
+                    or "机制承接关系" in title
+                    or "机制落地关系" in title
+                    or "机制关系声明" in title
+                )
                 in_table = False
                 header_seen = False
                 continue
@@ -612,6 +785,11 @@ class SpecsChecker:
                     "entity": self.clean_cell(cells[1]),
                     "relation_type": self.clean_cell(cells[2]),
                     "sync_trigger": self.clean_cell(cells[3]),
+                    "landing_requirement": self.clean_cell(cells[0]) if len(cells) >= 5 else None,
+                    "requirement_content": self.clean_cell(cells[1]) if len(cells) >= 5 else None,
+                    "guarantee_mechanism": self.clean_cell(cells[2]) if len(cells) >= 5 else None,
+                    "sync_type": self.clean_cell(cells[3]) if len(cells) >= 5 else None,
+                    "landing_trigger": self.clean_cell(cells[4]) if len(cells) >= 5 else None,
                     "content_hash": content_hash,
                 }
             )
@@ -762,10 +940,10 @@ def write_outputs(indexes, out_dir):
     return sorted(outputs)
 
 
-def index_main(root, out=None, fail_on_diagnostics=False):
-    checker = SpecsChecker(root)
+def index_main(root, out=None, fail_on_diagnostics=False, specs_dir="specs"):
+    checker = SpecsChecker(root, specs_dir)
     if not checker.specs_dir.exists():
-        raise SpecsIndexError(f"specs 目录不存在: {checker.specs_dir}")
+        raise SpecsIndexError(f"规范目录不存在: {checker.specs_dir}")
     indexes = checker.build()
     if out:
         written = write_outputs(indexes, out)
@@ -777,6 +955,24 @@ def index_main(root, out=None, fail_on_diagnostics=False):
     if fail_on_diagnostics and indexes["diagnostics"]:
         return 1
     return 0
+
+
+def infer_specs_dir_from_paths(paths):
+    if not paths:
+        return "specs"
+    resolved_dirs = []
+    for raw_path in paths:
+        path = Path(raw_path)
+        resolved = path.resolve()
+        try:
+            rel = resolved.relative_to(PROJECT_ROOT)
+        except ValueError:
+            continue
+        if rel.parts:
+            resolved_dirs.append(rel.parts[0])
+    if resolved_dirs and all(item == "specs-v2" for item in resolved_dirs):
+        return "specs-v2"
+    return "specs"
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -795,16 +991,22 @@ def build_parser():
     refs_parser = subparsers.add_parser("refs", help="检查 specs Markdown 文档中的 § 引用是否存在。")
     refs_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
 
+    # landing
+    landing_parser = subparsers.add_parser("landing", help="检查 specs-v2 正式规范的规范落地要求表。")
+    landing_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs-v2/ 根目录正式规范。")
+
     # index
     index_parser = subparsers.add_parser("index", help="生成 specs 文档派生索引和诊断结果（03.01 规范文档剖面）。")
     index_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
+    index_parser.add_argument("--specs-dir", default="specs", help="要生成索引的规范目录，默认 specs；v2 可传 specs-v2。")
     index_parser.add_argument("--out", default=None, help="输出目录；未提供时将完整索引输出到 stdout。")
     index_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")
 
     # all
-    all_parser = subparsers.add_parser("all", help="运行所有检查（doc + refs + index）。")
-    all_parser.add_argument("paths", nargs="*", default=[str(SPECS_DIR)], help="要检查的 Markdown 文件或目录，默认检查 specs/。")
+    all_parser = subparsers.add_parser("all", help="运行所有检查（doc + refs + landing + index）。")
+    all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/，landing 默认检查 specs-v2/。")
     all_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录（用于 index 子命令）。")
+    all_parser.add_argument("--specs-dir", default=None, help="要生成索引的规范目录；未提供时根据 paths 推断，默认 specs。")
     all_parser.add_argument("--out", default=None, help="输出目录（用于 index 子命令）；未提供时将完整索引输出到 stdout。")
     all_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态（用于 index 子命令）。")
 
@@ -822,25 +1024,34 @@ def main(argv=None):
         paths = args.paths if args.paths is not None else refs_default_check_paths()
         return refs_main(paths)
 
+    if command == "landing":
+        return landing_main(args.paths)
+
     if command == "index":
         try:
-            return index_main(args.root, args.out, args.fail_on_diagnostics)
+            return index_main(args.root, args.out, args.fail_on_diagnostics, args.specs_dir)
         except SpecsIndexError as exc:
             print(str(exc), file=sys.stderr)
             return 2
 
     if command == "all":
         exit_code = 0
+        doc_paths = args.paths if args.paths else [str(SPECS_DIR)]
         # doc
-        if doc_main(args.paths) != 0:
+        if doc_main(doc_paths) != 0:
             exit_code = 1
         # refs
         refs_paths = args.paths if args.paths else refs_default_check_paths()
         if refs_main(refs_paths) != 0:
             exit_code = 1
+        # landing
+        landing_paths = args.paths if args.paths else landing_default_check_paths()
+        if landing_main(landing_paths) != 0:
+            exit_code = 1
         # index
         try:
-            if index_main(args.root, args.out, args.fail_on_diagnostics) != 0:
+            index_specs_dir = args.specs_dir or infer_specs_dir_from_paths(args.paths)
+            if index_main(args.root, args.out, args.fail_on_diagnostics, index_specs_dir) != 0:
                 exit_code = 1
         except SpecsIndexError as exc:
             print(str(exc), file=sys.stderr)
