@@ -4,7 +4,7 @@
 > 定位：定义 ADR 决策工作模型，包括对象定位与准入条件、事实源边界、状态机、与其他对象的关系、Human Gate、字段契约、事实源回写与证据留存、适配规则、待补齐事项
 > 适用范围：所有接入 LDVH 且需要管理长期决策的项目
 > 上位依据：`specs/07-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/06-Python与Web工具规范.md`、`specs/20-工作模型集合索引.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/20-工作模型集合索引.md`
 
 ---
 

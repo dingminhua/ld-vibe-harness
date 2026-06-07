@@ -5,7 +5,7 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/05-Trae-Solo环境规范.md`、`specs/06-Python与Web工具规范.md`、`specs/08-工作流程基础规范.md`、`specs/41-multi-role-thinking-多角色思考.md`
+> 相关规范：`specs/05-Trae-Solo环境规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/08-工作流程基础规范.md`、`specs/41-multi-role-thinking-多角色思考.md`
 
 ---
 

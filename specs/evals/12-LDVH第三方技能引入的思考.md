@@ -4,7 +4,7 @@
 > 定位：项目评估文档，评估第三方平台预置技能（如 Trae `web-dev`）引入 LDVH 项目的方式、边界与融合策略
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入正式 specs、ADR 或 Task 后才成为稳定执行依据
-> 上位依据：`specs/05-Trae-Solo环境规范.md` §7、`specs/06-Python与Web工具规范.md`、`specs/06-Python与Web工具规范.md（已删除 12.02）`
+> 上位依据：`specs/05-Trae-Solo环境规范.md` §7、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`（已删除 12.02）
 > 相关参考：`specs/evals/21-LDVH全盘确认与核心吸收建议.md`
 
 ---

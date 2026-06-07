@@ -4,7 +4,7 @@
 > 定位：定义 LDVH 使用第三方平台 Skill 的准入、边界、治理接管、Human Gate、事实源回写和机制适配要求
 > 适用范围：LD Vibe Harness 项目及所有接入 LD Vibe Harness 的管辖项目中，由平台、市场、全局目录、外部生态或非本项目版本化来源提供的第三方 Skill
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/06-Python与Web工具规范.md`、`specs/08-工作流程基础规范.md`
+> 相关规范：`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/08-工作流程基础规范.md`
 
 ---
 

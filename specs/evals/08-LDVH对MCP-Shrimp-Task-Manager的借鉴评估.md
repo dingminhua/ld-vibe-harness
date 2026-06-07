@@ -7,7 +7,7 @@
 > 调研边界：基于 `/Users/dmh2002/trae_projects/mcp-shrimp-task-manager` 本地仓库的 README、docs、src、tools/task-viewer 与配置文件进行分析，重点评估其对 LD Vibe Harness 的可借鉴方向
 > 执行效力：本文为内部调研和方案比较，不直接构成 LD Vibe Harness 强制规则；结论进入 `specs/00-79` 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`
-> 相关规范：`specs/05-Trae-Solo环境规范.md`、`specs/06-Python与Web工具规范.md`、`specs/07-工作模型基础规范.md`、`specs/08-工作流程基础规范.md`、`specs/20-工作模型集合索引.md`
+> 相关规范：`specs/05-Trae-Solo环境规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/07-工作模型基础规范.md`、`specs/08-工作流程基础规范.md`、`specs/20-工作模型集合索引.md`
 > 参考项目：`/Users/dmh2002/trae_projects/mcp-shrimp-task-manager`
 
 ---
