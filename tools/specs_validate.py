@@ -465,7 +465,7 @@ def landing_check_file(path):
                     Issue(
                         path,
                         index,
-                        f"规范落地要求表头不符合 15 要求: 期望 {expected}，实际 {actual}",
+                        f"规范落地要求表头不符合 04.01 要求: 期望 {expected}，实际 {actual}",
                         code="LANDING_HEADER_INVALID",
                     )
                 )
@@ -488,7 +488,7 @@ def landing_check_file(path):
                 Issue(
                     path,
                     index,
-                    f"规范落地要求类型未在 15 中定义: {requirement_type}；允许值: {allowed}",
+                    f"规范落地要求类型未在 04.01 中定义: {requirement_type}；允许值: {allowed}",
                     code="LANDING_TYPE_INVALID",
                 )
             )
