@@ -23,7 +23,7 @@ related_docs:
   - specs/02-术语规范.md
   - specs/07-工作模型基础规范.md
   - specs/09-LDVH特别说明.md
-  - specs/12-通用字段内容格式规范.md
+  - specs/12-工作模型字段内容格式规范.md
   - specs/41-multi-role-thinking-多角色思考.md
   - ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
 affected_docs:
@@ -31,7 +31,7 @@ affected_docs:
   - specs/02-术语规范.md
   - specs/07-工作模型基础规范.md
   - specs/09-LDVH特别说明.md
-  - specs/12-通用字段内容格式规范.md
+  - specs/12-工作模型字段内容格式规范.md
   - specs/41-multi-role-thinking-多角色思考.md
 deliverables: []
 closure_evidence: |
@@ -44,7 +44,7 @@ closure_evidence: |
   - specs/02-术语规范.md：将“工作模型规则”定义调整为由项目规则事实实例硬约束、工作区项目识别入口和 specs 对象规范原文共同承接，不再作为独立工作区场景规则默认承载层。
   - specs/07-工作模型基础规范.md：将事实实例编辑入口从 ldvh-fact-model-rules.md 调整为工作区规则识别管辖项目、项目规则承接硬约束和对象规范入口。
   - specs/09-LDVH特别说明.md：取消独立工作区场景规则问候语，保留统一 Hello，LDVH 问候。
-  - specs/12-通用字段内容格式规范.md：将机制落地关系从 ldvh-fact-model-rules.md 改为工作区规则与项目规则。
+  - specs/12-工作模型字段内容格式规范.md：将机制落地关系从 ldvh-fact-model-rules.md 改为工作区规则与项目规则。
   - specs/41-multi-role-thinking-多角色思考.md：同步移除将场景规则作为入口摘要或落地位置的普通并列口径。
 
   引用检查命令：

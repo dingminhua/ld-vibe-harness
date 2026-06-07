@@ -1,6 +1,6 @@
 id: task-0052
 type: task
-title: 制定通用字段内容格式规范并对齐 Tools/Web
+title: 制定工作模型字段内容格式规范并对齐 Tools/Web
 status: closed
 created: '2026-06-06T08:58:50.957625'
 updated: '2026-06-06T18:40:33.152752'
@@ -11,7 +11,7 @@ description: |
 
   ## 目标
 
-  创建 specs/12-通用字段内容格式规范.md，定义 LDVH 事实对象字段内容的通用格式类型、字段映射、Tools 校验消费规则和 Web 语义化渲染消费规则。
+  创建 specs/12-工作模型字段内容格式规范.md，定义 LDVH 工作模型字段内容格式类型、字段映射、Tools 校验消费规则和 Web 语义化渲染消费规则。
 
   ## 边界
 
@@ -23,18 +23,18 @@ description: |
 source: intent-0004
 source_intent: intent-0004
 acceptance: |
-  - [x] 创建 specs/12-通用字段内容格式规范.md
+  - [x] 创建 specs/12-工作模型字段内容格式规范.md
   - [x] 定义 Narrative / Checklist / Evidence / Decision / Reference / Log 六种内容格式的边界和书写规则
   - [x] 建立现有对象字段到内容格式的映射表
   - [x] 明确 Tools（fact_validate.py 等）校验消费规则
   - [x] 明确 Web（ObjectDetail / SummaryText / ChecklistCard / EvidenceBlock 等）语义化渲染消费规则
-  - [x] 判断并记录是否需要同步修改 03 / 06 / 07 / 21-27 等相关规范
+  - [x] 判断并记录是否需要同步修改 03 / 07 / 14 / 15 / 21-27 等相关规范
   - [x] 运行事实源校验通过（16个error均为历史遗留）
 blocked_by: []
 closure_evidence: |
   ## 验证结果
 
-  - specs/12-通用字段内容格式规范.md 已创建（407行），包含11个章节
+  - specs/12-工作模型字段内容格式规范.md 已创建（407行），包含11个章节
   - 六种内容格式（Narrative/Checklist/Evidence/Decision/Reference/Log）边界和书写规则已定义
   - 六类对象字段映射表已建立
   - Tools 校验消费规则已明确（error/warning/暂不校验三级）
@@ -46,11 +46,12 @@ closure_evidence: |
 
   12号规范文档完整创建，Tools和Web落地任务（task-0053/0054）均已关闭。
 deliverables:
-- specs/12-通用字段内容格式规范.md
+- specs/12-工作模型字段内容格式规范.md
 related_docs:
 - specs/03-文档规范.md
 - specs/04-事实源边界与承载规范.md
-- specs/06-Python与Web工具规范.md
+- specs/14-Code实现与工具规范.md
+- specs/15-Web信息同步规范.md
 - specs/07-工作模型基础规范.md
 - specs/20-工作模型集合索引.md
 - web/docs/07-内容可读性深度研究.md

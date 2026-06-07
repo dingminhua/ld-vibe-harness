@@ -7,11 +7,11 @@ updated: '2026-06-06T18:30:40.647886'
 description: |
   ## 背景
 
-  specs/12-通用字段内容格式规范.md 已创建，定义了六种字段内容格式（Narrative / Checklist / Evidence / Decision / Reference / Log）及其校验消费规则。当前 fact_validate.py 仅实现了部分校验（acceptance checklist 格式、closed 状态必填字段），需要按 12 号规范补齐校验规则。
+  specs/12-工作模型字段内容格式规范.md 已创建，定义了六种字段内容格式（Narrative / Checklist / Evidence / Decision / Reference / Log）及其校验消费规则。当前 fact_validate.py 仅实现了部分校验（acceptance checklist 格式、closed 状态必填字段），需要按 12 号规范补齐校验规则。
 
   ## 目标
 
-  按 specs/12-通用字段内容格式规范.md §6 的校验消费规则，增强 fact_validate.py 的字段内容格式校验能力。
+  按 specs/12-工作模型字段内容格式规范.md §6 的校验消费规则，增强 fact_validate.py 的字段内容格式校验能力。
 
   ## 边界
 

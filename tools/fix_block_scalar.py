@@ -9,7 +9,7 @@ from pathlib import Path
 import yaml
 
 
-# 12-通用字段内容格式规范：长文本字段定义
+# 12-工作模型字段内容格式规范：长文本字段定义
 LONG_TEXT_FIELDS = {
     "intent": {"description", "success_criteria", "constraints"},
     "task": {"description", "acceptance", "verification", "closure_evidence"},

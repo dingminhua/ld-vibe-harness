@@ -23,7 +23,7 @@ description: |
 
   ## 执行与验收说明
 
-  本发现已通过 task-0052 进入执行，产出 specs/12-通用字段内容格式规范.md。Task 执行完成后需要 Human Gate 验收，原因是：
+  本发现已通过 task-0052 进入执行，产出 specs/12-工作模型字段内容格式规范.md。Task 执行完成后需要 Human Gate 验收，原因是：
 
   - 规范文档属于事实源变更，需要人确认内容准确性和边界合理性；
   - 规范一旦 accepted，将影响后续 AI 写入、Web 渲染和 Validator 校验；

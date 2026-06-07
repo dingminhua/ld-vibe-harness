@@ -510,7 +510,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
       return <EvidenceBlock value={value} embedded />;
     }
 
-    // success_criteria 含 checklist 时使用 ChecklistCard（12-通用字段内容格式规范 §5）
+    // success_criteria 含 checklist 时使用 ChecklistCard（12-工作模型字段内容格式规范 §5）
     if (fieldKey === 'success_criteria' && /^\s*- \[[ xX]\]/m.test(value)) {
       return <ChecklistCard value={value} />;
     }

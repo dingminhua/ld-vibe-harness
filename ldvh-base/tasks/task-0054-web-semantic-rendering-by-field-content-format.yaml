@@ -7,7 +7,7 @@ updated: '2026-06-06T18:28:52.910502'
 description: |
   ## 背景
 
-  specs/12-通用字段内容格式规范.md 已创建，定义了六种字段内容格式及 Web 语义化渲染消费规则。当前 ObjectDetail 已有部分语义化渲染（ChecklistCard / EvidenceBlock / SummaryText / ReferenceCard），但与 12 号规范的对齐存在以下差距：
+  specs/12-工作模型字段内容格式规范.md 已创建，定义了六种字段内容格式及 Web 语义化渲染消费规则。当前 ObjectDetail 已有部分语义化渲染（ChecklistCard / EvidenceBlock / SummaryText / ReferenceCard），但与 12 号规范的对齐存在以下差距：
 
   - verification 字段走 SummaryText（普通 Markdown），应走 EvidenceBlock
   - success_criteria 含 checklist 时走 SummaryText，应识别后走 ChecklistCard
@@ -16,7 +16,7 @@ description: |
 
   ## 目标
 
-  按 specs/12-通用字段内容格式规范.md §5 的渲染消费规则，优化 ObjectDetail 字段语义化渲染。
+  按 specs/12-工作模型字段内容格式规范.md §5 的渲染消费规则，优化 ObjectDetail 字段语义化渲染。
 
   ## 边界
 
