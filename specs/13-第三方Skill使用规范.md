@@ -4,7 +4,7 @@
 > 定位：定义 LDVH 使用第三方平台 Skill 的准入、边界、治理接管、Human Gate、事实源回写和机制适配要求
 > 适用范围：LD Vibe Harness 项目及所有接入 LD Vibe Harness 的管辖项目中，由平台、市场、全局目录、外部生态或非本项目版本化来源提供的第三方 Skill
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/08-工作流程基础规范.md`
+> 相关规范：`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档基础规范.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/08-工作流程基础规范.md`
 
 ---
 
@@ -298,16 +298,16 @@ AI 准备使用第三方平台 Skill 前，应完成以下判断：
 
 ## 9. 机制落地关系
 
-| 机制实体 | 关系类型 | 落地要求 | 同步触发条件 |
+| 关联机制 | 关联实体 | 关系类型 | 触发条件 |
 |---|---|---|---|
-| specs | 权威规范 | 本文承载第三方平台 Skill 使用的稳定规范 | 第三方平台 Skill 使用边界、接管流程或包装策略发生稳定变化 |
-| Rules | 入口摘要 | 工作区规则或项目规则只保留必要入口摘要，不复制本文正文 | AI 高频遗漏第三方平台 Skill 治理接管或 Human Gate 时 |
-| Skill | 流程入口 | 高频、稳定、可复用的第三方平台 Skill 使用流程可包装为 LDVH 自建 Skill | Dogfood 证据显示直接使用反复遗漏接管检查 |
-| Agent | 独立上下文 | 仅在需要隔离上下文、并行审计或专业视角时由主控调度 | 第三方平台 Skill 产出物规模大、风险高或需要独立审查 |
-| Tools | 确定性校验 | 可将重复的接管检查、路径扫描、字段校验或事实源边界检查沉淀为 PyTools | 检查项稳定且适合确定性处理 |
-| Web | Human 协同 | 可展示第三方平台 Skill 产出物、接管状态、风险和待确认项 | 需要人类确认、验收或可视化接管工作台 |
-| ADR | 长期决策 | 记录长期采用、限制、替代或废弃某类第三方平台 Skill 的原因 | 判断影响长期执行方式、协作边界或多个机制 |
-| Change | 变更记录 | specs、Rules、Skill、Tools、Web 或事实源变更应通过 Git commit 承载 | 修改满足 Change 准入条件时 |
+| specs | `specs/13-第三方Skill使用规范.md` | 权威规范 | 第三方平台 Skill 使用边界、接管流程或包装策略发生稳定变化 |
+| Rules | 工作区规则或项目规则 | 入口摘要 | AI 高频遗漏第三方平台 Skill 治理接管或 Human Gate 时 |
+| Skill | LDVH 自建 Skill | 流程入口 | Dogfood 证据显示直接使用反复遗漏接管检查 |
+| Agent | 独立上下文 Agent | 隔离审计 | 第三方平台 Skill 产出物规模大、风险高或需要独立审查 |
+| Tools | PyTools | 确定性校验 | 检查项稳定且适合确定性处理 |
+| Web | Web 工作台 | Human 协同 | 需要人类确认、验收或可视化接管工作台 |
+| ADR | ADR 对象 | 长期决策 | 判断影响长期执行方式、协作边界或多个机制 |
+| Change | Change 记录或 Git commit | 变更记录 | 修改满足 Change 准入条件时 |
 
 ## 10. Human Gate 与检查要求
 

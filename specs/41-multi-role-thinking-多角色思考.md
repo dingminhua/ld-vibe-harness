@@ -4,7 +4,7 @@
 > 定位：定义多角色思考工作流程，包括行动定位、准入条件、事实源边界、Context、Scenario、执行流程、Gate、Rules / Agent 调度、事实源回写、证据留存和检查要求
 > 适用范围：所有接入 LDVH 且需要对复杂变更、决策、风险或跨模块影响进行多视角分析的项目
 > 上位依据：`specs/08-工作流程基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/07-工作模型基础规范.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档基础规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/07-工作模型基础规范.md`
 
 ---
 

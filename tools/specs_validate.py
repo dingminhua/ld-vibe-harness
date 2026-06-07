@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Specs 文档规范、引用完整性和索引生成统一检查工具。"""
+"""Specs 文档结构、引用完整性和派生索引统一检查工具。"""
 
 import argparse
 import hashlib
@@ -193,11 +193,11 @@ def doc_check_paths(paths):
 def doc_main(paths):
     issues = doc_check_paths(paths)
     if issues:
-        print(f"03 Specs 文档规范检查失败，共 {len(issues)} 个问题：")
+        print(f"03 文档基础规范检查失败，共 {len(issues)} 个问题：")
         for issue in issues:
             print(f"- {issue.format(PROJECT_ROOT)}")
         return 1
-    print("03 Specs 文档规范检查通过。")
+    print("03 文档基础规范检查通过。")
     return 0
 
 
@@ -249,7 +249,7 @@ def refs_build_document_map(paths):
 
 
 def refs_resolve_markdown_path(raw_path, current_path):
-    if raw_path.startswith("specs/"):
+    if raw_path.startswith("specs/") or raw_path.startswith("specs-v2/"):
         return (PROJECT_ROOT / raw_path).resolve()
     if raw_path.startswith("./") or raw_path.startswith("../"):
         return (current_path.parent / raw_path).resolve()
@@ -368,7 +368,7 @@ INDEX_INPUT_PATTERNS = ("*.md",)
 INDEX_NUMBERED_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?(?:\s+|$)")
 INDEX_HEADER_FIELD_RE = re.compile(r"^>\s*([^：:]+)[：:]\s*(.*)\s*$")
 INDEX_BACKTICK_MD_RE = re.compile(r"`([^`]+\.md)`")
-INDEX_PLAIN_SPECS_MD_RE = re.compile(r"(?<![`\w./-])(specs/(?:evals/|refs/)?[^\s`，。；、)）]+\.md)")
+INDEX_PLAIN_SPECS_MD_RE = re.compile(r"(?<![`\w./-])((?:specs|specs-v2)/(?:evals/|refs/)?[^\s`，。；、)）]+\.md)")
 INDEX_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\d]+(?:\.\d+)*)")
 INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
 
@@ -581,7 +581,7 @@ class SpecsChecker:
             heading = HEADING_RE.match(line)
             if heading:
                 title = heading.group(2).strip()
-                in_section = "机制关系声明" in title
+                in_section = "机制承接关系" in title or "机制落地关系" in title or "机制关系声明" in title
                 in_table = False
                 header_seen = False
                 continue
@@ -687,7 +687,7 @@ class SpecsChecker:
 
     def resolve_target_path(self, raw_path, current_path):
         raw = str(raw_path)
-        if raw.startswith("specs/"):
+        if raw.startswith("specs/") or raw.startswith("specs-v2/"):
             return (self.root / raw).resolve()
         if raw.startswith("./") or raw.startswith("../"):
             return (current_path.parent / raw).resolve()
@@ -769,7 +769,7 @@ def index_main(root, out=None, fail_on_diagnostics=False):
     indexes = checker.build()
     if out:
         written = write_outputs(indexes, out)
-        print(f"已生成 03.01 specs 文档检查结果: {out}")
+        print(f"已生成 specs 文档派生索引与诊断结果: {out}")
         for name in written:
             print(f"- {name}")
     else:
@@ -784,11 +784,11 @@ def index_main(root, out=None, fail_on_diagnostics=False):
 # ══════════════════════════════════════════════════════════════════════
 
 def build_parser():
-    parser = argparse.ArgumentParser(description="Specs 文档规范、引用完整性和索引生成统一检查工具。")
+    parser = argparse.ArgumentParser(description="Specs 文档结构、引用完整性和派生索引统一检查工具。")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # doc
-    doc_parser = subparsers.add_parser("doc", help="检查 specs Markdown 文档是否符合 03-Specs 文档规范的章节编号要求。")
+    doc_parser = subparsers.add_parser("doc", help="检查 specs Markdown 文档是否符合 03 文档基础规范的章节编号要求。")
     doc_parser.add_argument("paths", nargs="*", default=[str(SPECS_DIR)], help="要检查的 Markdown 文件或目录，默认检查 specs/。")
 
     # refs
@@ -796,7 +796,7 @@ def build_parser():
     refs_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
 
     # index
-    index_parser = subparsers.add_parser("index", help="检查 03.01 specs 文档质量，输出派生索引和诊断结果。")
+    index_parser = subparsers.add_parser("index", help="生成 specs 文档派生索引和诊断结果（03.01 规范文档剖面）。")
     index_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
     index_parser.add_argument("--out", default=None, help="输出目录；未提供时将完整索引输出到 stdout。")
     index_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")

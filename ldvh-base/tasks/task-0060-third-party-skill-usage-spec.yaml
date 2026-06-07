@@ -30,7 +30,7 @@ related_docs:
 - specs/evals/12-LDVH第三方技能引入的思考.md
 - specs/01-目录说明.md
 - specs/02-术语规范.md
-- specs/03-文档规范.md
+- specs/03-文档基础规范.md
 - specs/05-Trae-Solo环境规范.md
 - specs/06-Python与Web工具规范.md
 - specs/08-工作流程基础规范.md

@@ -4,7 +4,7 @@
 > 定位：定义 Change 变更记录工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约（映射为 commit message 格式规范）、事实源回写与证据留存、适配规则
 > 适用范围：所有接入 LDVH 且需要追踪事实源变更的项目
 > 上位依据：`specs/07-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/20-工作模型集合索引.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档基础规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/20-工作模型集合索引.md`
 
 ---
 
@@ -293,7 +293,7 @@ ADR 索引按创建日期降序排列，应改为按编号升序。
 
 ## 8. 适配规则
 
-通用规则引用 07 §7.5/§7.6/§7.7。以下仅保留 Change 对象特有差异。
+通用规则引用 `specs/07-工作模型基础规范.md` §7.5、`specs/07-工作模型基础规范.md` §7.6、`specs/07-工作模型基础规范.md` §7.7。以下仅保留 Change 对象特有差异。
 
 ### 8.1 AI 协作
 

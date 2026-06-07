@@ -4,7 +4,7 @@
 > 定位：定义 Task 任务工作模型（精简版），包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约和事实源回写要求
 > 适用范围：所有接入 LDVH 且需要管理 AI 可执行工作单元的项目
 > 上位依据：`specs/07-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`、`specs/20-工作模型集合索引.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/03-文档基础规范.md`、`specs/04-事实源边界与承载规范.md`、`specs/20-工作模型集合索引.md`
 
 ---
 
@@ -263,7 +263,7 @@ Task 基础字段遵循 `specs/07-工作模型基础规范.md` §7.3 的字段�
 4. Task 关闭时必须填写 `closure_evidence` 字段；
 5. Task 实例写入 `ldvh-base/tasks/` 目录后，应确保文件命名符合 `task-{NNNN}-short-title.yaml` 格式。
 
-### 7.1.1 文档同步检查
+### 7.2 文档同步检查
 
 Task 关闭时，如 `affected_docs` 非空，必须校验：
 
@@ -282,7 +282,7 @@ Task 关闭时，如 `affected_docs` 非空，必须校验：
 
 同一文档可同时出现在 `related_docs` 和 `affected_docs` 中（既参考又需更新）。
 
-### 7.2 证据留存
+### 7.3 证据留存
 
 证据留存通用规则引用 `specs/07-工作模型基础规范.md` §7.4。Task 对象特有差异：
 

@@ -5,7 +5,7 @@
 > 定位：LD Vibe Harness 内部常用提示词模板集合，用于在临时对话中快速发起规范检查、调研、审查和多角色思考
 > 编号归属：`specs/evals/` 项目评估与内部辅助文档，编号仅用于排序和引用便利，不属于 specs 正式规范编号体系
 > 使用边界：本文提供可复制使用的提示词模板，不直接构成 LD Vibe Harness 强制规则；实际执行仍以 `specs/00-79`、项目 Rules 和 `ldvh-base/` 事实实例为准
-> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档基础规范.md`、`specs/04-事实源边界与承载规范.md`
 > 相关规范：`specs/05-Trae-Solo环境规范.md`、`specs/08-工作流程基础规范.md`、`specs/41-multi-role-thinking-多角色思考.md`、`specs/41.06-Contract.md`
 
 ---
@@ -37,7 +37,7 @@
 3. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/00-LD-Vibe-Harness理念与纲要.md`
 4. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/01-目录说明.md`
 5. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/02-术语规范.md`
-6. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/03-文档规范.md`
+6. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/03-文档基础规范.md`
 7. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/04-事实源边界与承载规范.md`
 8. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/41-multi-role-thinking-多角色思考.md`
 9. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/41.06-Contract.md`
@@ -203,7 +203,7 @@
 3. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/00-LD-Vibe-Harness理念与纲要.md`
 4. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/01-目录说明.md`
 5. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/02-术语规范.md`
-6. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/03-文档规范.md`
+6. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/03-文档基础规范.md`
 7. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/04-事实源边界与承载规范.md`
 8. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/05-Trae-Solo环境规范.md`
 9. `/Users/dmh2002/trae_projects/ld-vibe-harness/specs/07-工作模型基础规范.md`

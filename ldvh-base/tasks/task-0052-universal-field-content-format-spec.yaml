@@ -48,7 +48,7 @@ closure_evidence: |
 deliverables:
 - specs/12-工作模型字段内容格式规范.md
 related_docs:
-- specs/03-文档规范.md
+- specs/03-文档基础规范.md
 - specs/04-事实源边界与承载规范.md
 - specs/14-Code实现与工具规范.md
 - specs/15-Web信息同步规范.md
