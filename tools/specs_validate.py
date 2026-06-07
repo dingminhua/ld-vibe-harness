@@ -528,6 +528,155 @@ def landing_main(paths):
 
 
 # ══════════════════════════════════════════════════════════════════════
+# env-init — 根目录 LDVH 环境初始化记录检查
+# ══════════════════════════════════════════════════════════════════════
+
+ENV_INIT_FILENAME = "LDVH-ENVIRONMENT-INITIALIZATION.md"
+ENV_INIT_REQUIRED_TITLE = "LDVH 环境初始化记录"
+ENV_INIT_REQUIRED_SECTIONS = [
+    "这个文件是什么",
+    "适配状态与持续提醒",
+    "初始化摘要",
+    "能力核验来源",
+    "环境适配映射",
+    "当前运行投影状态",
+    "初始化动作",
+    "更新规则",
+    "Human Gate 与检查",
+    "未决限制与后续事项",
+]
+ENV_INIT_REQUIRED_STATUS_FIELDS = [
+    "记录适用项目",
+    "记录适用环境",
+    "用户当前项目",
+    "用户当前开发平台",
+    "适配状态",
+    "最近 Human 确认",
+]
+ENV_INIT_FORBIDDEN_LEGACY_HEADINGS = [
+    "What This File Is",
+    "Initialization Summary",
+    "Capability Verification Source",
+    "Environment Adaptation Mapping",
+    "Current Runtime Projection Status",
+    "Initialization Actions",
+    "Update Rules",
+    "Human Gate And Checks",
+    "Open Limits And Follow-ups",
+]
+
+
+def env_init_strip_section_number(title):
+    return DOC_NUMBERED_HEADING_RE.sub("", title, count=1).strip()
+
+
+def env_init_table_fields_under_heading(lines, heading_title):
+    fields = set()
+    in_code_block = False
+    in_section = False
+    in_table = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block:
+            continue
+        heading = HEADING_RE.match(line)
+        if heading:
+            title = env_init_strip_section_number(heading.group(2).strip())
+            if in_section and in_table:
+                break
+            in_section = title == heading_title
+            in_table = False
+            continue
+        if not in_section:
+            continue
+        if not stripped:
+            continue
+        if not stripped.startswith("|"):
+            if in_table:
+                break
+            continue
+        cells = landing_split_cells(stripped)
+        if landing_is_separator(cells):
+            continue
+        if cells and cells[0] in {"检查项", "字段"}:
+            in_table = True
+            continue
+        if len(cells) >= 2:
+            in_table = True
+            fields.add(cells[0])
+    return fields
+
+
+def env_init_check_root(root):
+    root = Path(root)
+    path = root / ENV_INIT_FILENAME
+    issues = []
+    if not path.exists():
+        return [
+            Issue(
+                path,
+                1,
+                f"项目根目录缺少环境初始化记录: {ENV_INIT_FILENAME}；请先按 04.03 模板创建并完成当前项目与当前开发平台适配",
+                code="ENV_INIT_MISSING",
+            )
+        ]
+    if not path.is_file():
+        return [Issue(path, 1, f"环境初始化记录不是文件: {ENV_INIT_FILENAME}", code="ENV_INIT_NOT_FILE")]
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    title = None
+    headings = set()
+    in_code_block = False
+    for index, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block:
+            continue
+        match = HEADING_RE.match(line)
+        if not match:
+            continue
+        level = len(match.group(1))
+        raw_title = match.group(2).strip()
+        clean_title = env_init_strip_section_number(raw_title)
+        if level == 1 and title is None:
+            title = raw_title
+        if level == 2:
+            headings.add(clean_title)
+            if clean_title in ENV_INIT_FORBIDDEN_LEGACY_HEADINGS:
+                issues.append(Issue(path, index, f"环境初始化记录仍使用英文旧章节名: {clean_title}", code="ENV_INIT_LEGACY_HEADING"))
+
+    if title != ENV_INIT_REQUIRED_TITLE:
+        issues.append(Issue(path, 1, f"环境初始化记录一级标题应为: {ENV_INIT_REQUIRED_TITLE}", code="ENV_INIT_TITLE_INVALID"))
+
+    for section in ENV_INIT_REQUIRED_SECTIONS:
+        if section not in headings:
+            issues.append(Issue(path, 1, f"环境初始化记录缺少必备章节: {section}", code="ENV_INIT_SECTION_MISSING"))
+
+    status_fields = env_init_table_fields_under_heading(lines, "适配状态与持续提醒")
+    for field in ENV_INIT_REQUIRED_STATUS_FIELDS:
+        if field not in status_fields:
+            issues.append(Issue(path, 1, f"适配状态与持续提醒章节缺少字段: {field}", code="ENV_INIT_STATUS_FIELD_MISSING"))
+
+    return issues
+
+
+def env_init_main(root):
+    issues = env_init_check_root(root)
+    if issues:
+        print(f"环境初始化记录检查失败，共 {len(issues)} 个问题：")
+        for issue in issues:
+            print(f"- {issue.format(PROJECT_ROOT)}")
+        return 1
+    print("环境初始化记录检查通过。")
+    return 0
+
+
+# ══════════════════════════════════════════════════════════════════════
 # index — 生成索引
 # ══════════════════════════════════════════════════════════════════════
 
@@ -995,6 +1144,10 @@ def build_parser():
     landing_parser = subparsers.add_parser("landing", help="检查 specs-v2 正式规范的规范落地要求表。")
     landing_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs-v2/ 根目录正式规范。")
 
+    # env-init
+    env_init_parser = subparsers.add_parser("env-init", help="检查项目根目录 LDVH 环境初始化记录的中文模板结构。")
+    env_init_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
+
     # index
     index_parser = subparsers.add_parser("index", help="生成 specs 文档派生索引和诊断结果（03.01 规范文档剖面）。")
     index_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
@@ -1027,6 +1180,9 @@ def main(argv=None):
     if command == "landing":
         return landing_main(args.paths)
 
+    if command == "env-init":
+        return env_init_main(args.root)
+
     if command == "index":
         try:
             return index_main(args.root, args.out, args.fail_on_diagnostics, args.specs_dir)
@@ -1047,6 +1203,9 @@ def main(argv=None):
         # landing
         landing_paths = args.paths if args.paths else landing_default_check_paths()
         if landing_main(landing_paths) != 0:
+            exit_code = 1
+        # env-init
+        if env_init_main(args.root) != 0:
             exit_code = 1
         # index
         try:
