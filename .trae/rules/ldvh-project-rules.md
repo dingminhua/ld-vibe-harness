@@ -13,7 +13,7 @@
 
 ## 硬约束
 
-新增机制、规则或规范内容必须服务 LDVH 价值标准（见 00 §4-5）。Human Gate 场景见工作区 L0 "场景入口"。Skill 语言约束见 05 §7.3。防递归建设原则见 00 §5.5。涉及规范、Rules、Skill、Agent、Tools、工作模型、状态机、部署边界或目录边界的判断，必须先定位并读取对应规范原文（见 05 §11.2）。
+新增机制、规则或规范内容必须服务 LDVH 价值标准（见 00 §4-5）。Human Gate 场景见工作区 L0 "场景入口"。Skill 语言约束见 05 §7.3。防递归建设原则见 00 §6。涉及规范、Rules、Skill、Agent、Tools、工作模型、状态机、部署边界或目录边界的判断，必须先定位并读取对应规范原文（见 05 §11.2）。
 
 **规范变更后执行约束**：规范变更后同一会话内执行受影响的任务时，AI 必须重新读取变更后的规范，并明确声明"已按新规范调整执行计划"。执行 Task 前必须遵守 `blocked_by` 前置任务强制阻塞规则；任务关闭前必须检查 acceptance 列表是否已全部勾选为 `- [x]`；未勾选则必须启动独立 agent 重新审计，不得直接关闭。
 
@@ -44,4 +44,4 @@ AI 应在每次用户交互时判断当前 Core Loop 阶段，并推荐对应 Sk
 
 ## 压缩保护
 
-LDVH | 00-08按任务读原文 | 相关evals/refs先读取 | 规范/Skill/Tools/部署判断必须回原文(05§11.2) | 防递归见00§5.5 | Skill语言见05§7.3 | 00价值 01目录 02术语 03specs 04事实源边界 05 Trae Solo 环境规范 06 Python/Web工具 07工作模型 08工作流程 | 搜标题行号 | Git为准 | ADR见21 | specs编辑读03/01/02 | ldvh-base读07/20及对象主规范 | 不使用场景规则 | 项目规则不引用evals | CoreLoop路由=Intent→ldvh-intake|Plan→ldvh-plan|Record→ldvh-close | 改specs检查tools/代码
+LDVH | 00-08按任务读原文 | 相关evals/refs先读取 | 规范/Skill/Tools/部署判断必须回原文(05§11.2) | 防递归见00§6 | Skill语言见05§7.3 | 00价值 01目录 02术语 03specs 04事实源边界 05 Trae Solo 环境规范 06 Python/Web工具 07工作模型 08工作流程 | 搜标题行号 | Git为准 | ADR见21 | specs编辑读03/01/02 | ldvh-base读07/20及对象主规范 | 不使用场景规则 | 项目规则不引用evals | CoreLoop路由=Intent→ldvh-intake|Plan→ldvh-plan|Record→ldvh-close | 改specs检查tools/代码
