@@ -508,6 +508,6 @@ BMAD 的外部交接路由可参考，但 LDVH 的核心事实源是 Git，需�
 
 ### 11.2 内部参考
 
-- `specs/evals/21-LDVH全盘确认与核心吸收建议.md`
+- `docs/evals/18-LDVH候选事项承接评估.md`
 - `specs/evals/02-LDVH对Gstack的借鉴评估与深度调研.md`
 - `specs/evals/17-Superpowers深度调研-TDD强制-工程纪律与LDVH借鉴.md`
