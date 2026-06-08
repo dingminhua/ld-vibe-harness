@@ -132,7 +132,7 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   framework: { zh: '框架', en: 'Framework' },
   repeatability: { zh: '复现概率', en: 'Repeatability' },
   related_rules: { zh: '承接规则', en: 'Related Rules' },
-  status_history: { zh: '状态历史', en: 'Status History' },
+  status_history: { zh: '状态记录', en: 'Status History' },
   changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
   deliverables: { zh: '产出物', en: 'Deliverables' },

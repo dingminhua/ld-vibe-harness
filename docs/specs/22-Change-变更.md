@@ -17,7 +17,7 @@ Change 是工作模型中的特殊对象：它不使用 `ldvh-base/changes/` 下
 
 以下修改应通过符合本文 §6 的 commit message 记录为 Change：
 
-1. 修改 docs/specs 正式规范、evals 吸收结果、refs 摘要或迁移结论；
+1. 修改 docs/specs 正式规范、evals 吸收结果、refs 摘要或输入材料吸收结论；
 2. 修改 docs 正文、docs/evals 或 docs/refs 中的稳定项目事实；
 3. 修改 `ldvh-base/` 下的事实实例；
 4. 修改 Rules / Instructions、Skill、Agent、环境适配记录或运行投影；
@@ -38,7 +38,7 @@ Git commit 是 Change 事实实例的权威承载。每个符合本文 commit me
 规则如下：
 
 1. Git commit 是 Change 的权威事实源，不是 Change 的替代品；
-2. 并非所有历史 commit 都自动符合当前 Change 格式；
+2. 并非所有既有 commit 都自动符合当前 Change 格式；
 3. Change 查询通过 `git log`、Code 解析或 Web 派生视图实现，不创建额外索引文件；
 4. commit 创建后即不可变；如需修正，应创建新的修正或 revert commit；
 5. 一个工作可能涉及多个 Git 仓库时，每个受影响仓库应独立提交，分别形成 Change。
@@ -51,19 +51,19 @@ Git commit 是 Change 事实实例的权威承载。每个符合本文 commit me
 Change 实例的权威事实源位置为：
 
 ```text
-Git commit 历史
+Git commit 记录
 ```
 
 | 内容 | 权威位置 |
 |---|---|
 | Change 工作模型规范 | `docs/specs/22-Change-变更.md` |
-| Change 事实实例 | Git commit 历史 |
+| Change 事实实例 | Git commit 记录 |
 | Change 字段契约 | commit message 格式 |
 | Change 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
 Change 不使用 `ldvh-base/changes/` 目录。`ldvh-base/changes/` 不创建，不作为 Change 事实源。
 
-对应旧规范已吸收。Change 的当前稳定规则以本文为准。
+Change 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机
@@ -74,21 +74,21 @@ Change 没有 YAML `status` 字段，也没有普通工作模型意义上的状�
 
 | 状态 | 含义 |
 |---|---|
-| exists | commit 已创建并存在于 Git 历史中 |
+| exists | commit 已创建并存在于 Git 记录中 |
 | invalid-format | commit 存在，但 message 不符合本文字段契约 |
 | reverted | 后续存在 revert commit 或修正 commit 回退该变更 |
 
-`invalid-format` 和 `reverted` 不是可写入字段，而是 Code 或 AI 根据 Git 历史派生出的判断。
+`invalid-format` 和 `reverted` 不是可写入字段，而是 Code 或 AI 根据 Git 记录派生出的判断。
 
 ### 3.2 修正与回退
 
-Change 实例创建后不得通过 `git commit --amend`、`git rebase` 或 `git push --force` 修改已共享历史。需要修正时，应创建新的 commit：
+Change 实例创建后不得通过 `git commit --amend`、`git rebase` 或 `git push --force` 修改已共享提交记录。需要修正时，应创建新的 commit：
 
-1. 内容错误但仍需保留修改历史时，创建后续修正 commit；
+1. 内容错误但仍需保留修改记录时，创建后续修正 commit；
 2. 需要回退修改时，创建 `revert` 类型 commit；
 3. 修正或回退 commit 应通过 `Refs:` 关联原 commit hash 或相关工作对象。
 
-未推送、未共享且明确处于本地草稿阶段的历史整理，仍应遵守当前项目和 Human Gate 的授权边界。
+未推送、未共享且明确处于本地草稿阶段的提交记录整理，仍应遵守当前项目和 Human Gate 的授权边界。
 
 ---
 ## 4. 对象关系
@@ -130,8 +130,8 @@ Change 自身不为“记录变更”额外触发 Human Gate。Human Gate 由被
 2. 修改 `ldvh-base/` 中高影响事实实例；
 3. 修改 Rules / Instructions、Skill、Agent 或环境运行投影；
 4. 修改 Code 受控写入、校验、Human Gate 或 Web 受控编辑能力；
-5. 进行破坏性 Git 操作，例如改写已共享历史、强推或删除分支；
-6. 试图把 Change 从 Git commit 历史改为 `ldvh-base/changes/` YAML 实例；
+5. 进行破坏性 Git 操作，例如改写已共享提交记录、强推或删除分支；
+6. 试图把 Change 从 Git commit 记录改为 `ldvh-base/changes/` YAML 实例；
 7. 删除或绕过 commit message 校验要求。
 
 commit 前应检查当前工作区是否存在不属于本次变更的用户修改；不得把不相关修改混入同一个 commit。
@@ -226,7 +226,7 @@ Risk、Dependency、Artifact、Checklist 当前不是独立工作模型，不应
 docs(specs): 更新 Change 工作模型
 
 新增 docs/specs/22-Change-变更.md，明确 Change 以 Git
-commit 历史作为事实实例，不创建 ldvh-base/changes/。
+commit 记录作为事实实例，不创建 ldvh-base/changes/。
 
 Refs: 22-Change-变更
 ```
@@ -271,9 +271,9 @@ Git commit 本身是 Change 的完整证据，至少包含：
 3. 修改文件和 diff；
 4. commit message；
 5. 关联对象或说明；
-6. revert 或修正历史。
+6. revert 或修正记录。
 
-Change 的派生列表、Web 看板、工具输出和统计结果不得替代 Git commit 历史。
+Change 的派生列表、Web 看板、工具输出和统计结果不得替代 Git commit 记录。
 
 ---
 ## 8. 适配规则
@@ -286,7 +286,7 @@ AI 处理 Change 时应遵守：
 2. commit 前检查工作区，避免混入不相关修改；
 3. commit message 应按本文 §6 编写；
 4. 涉及 Human Gate 的修改，应在 body 或相关对象中记录确认情况；
-5. 不得通过 amend、rebase 或 force push 改写已共享 Change 历史；
+5. 不得通过 amend、rebase 或 force push 改写已共享 Change 记录；
 6. 不得因为 Change 不使用 YAML 实例，就跳过变更追溯。
 
 ### 8.2 Code 辅助
@@ -294,7 +294,7 @@ AI 处理 Change 时应遵守：
 Code 可依据本文实现以下能力：
 
 1. 校验拟提交的 commit message；
-2. 扫描 Git 历史并报告格式不合规 commit；
+2. 扫描 Git 记录并报告格式不合规 commit；
 3. 按 type、scope、Refs、时间、文件路径聚合 Change；
 4. 生成对象关联的 Change 列表；
 5. 检查 Task、Intent 等对象是否缺少关联 Change；
@@ -304,15 +304,15 @@ Code 可依据本文实现以下能力：
 
 ### 8.3 Web 信息同步
 
-Web 可展示 Change 列表、类型分布、影响范围、关联对象、最近变更、待确认变更和与特定对象关联的变更历史。
+Web 可展示 Change 列表、类型分布、影响范围、关联对象、最近变更、待确认变更和与特定对象关联的变更记录。
 
-Web 不得把数据库缓存、页面状态或派生索引替代 Git commit 历史。涉及受控提交或确认时，应遵守 Human Gate 和 Code 校验要求。
+Web 不得把数据库缓存、页面状态或派生索引替代 Git commit 记录。涉及受控提交或确认时，应遵守 Human Gate 和 Code 校验要求。
 
 ### 8.4 工作流程与环境适配
 
 提交、关闭任务、记录变更和审计变更的具体行动流程由后续 40-59 工作流程规范承接。本文只定义 Change 实例的事实规则和 commit message 契约。
 
-环境不支持自动 commit 校验或 Git 历史解析时，应记录降级方式，例如人工检查 commit message、直接使用 Git 命令查询或暂停提交；不得把未校验 commit 表述为完整通过。
+环境不支持自动 commit 校验或 Git 记录解析时，应记录降级方式，例如人工检查 commit message、直接使用 Git 命令查询或暂停提交；不得把未校验 commit 表述为完整通过。
 
 ---
 ## 9. 规范落地要求
@@ -321,10 +321,10 @@ Web 不得把数据库缓存、页面状态或派生索引替代 Git commit 历�
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | 后续工作模型、工作流程和提交实践应遵守本文定义的 Change 事实源边界、commit message 契约和 Git 历史不可变原则 | 05、本文、20 集合索引、Human Gate | 工作模型治理 | 创建、提交、回退、审计或查询 Change 时 |
-| 入口可见要求 | AI 执行事实源修改、关闭 Task、完成 Intent 或准备提交时，应能定位本文 | 20 集合索引、commit 流程入口、运行入口摘要 | AI 执行入口提示 | Git 提交、任务关闭、规范迁移、Code/Web 修改或多仓库变更时 |
+| 上位约束承接要求 | 后续工作模型、工作流程和提交实践应遵守本文定义的 Change 事实源边界、commit message 契约和 Git 记录不可变原则 | 05、本文、20 集合索引、Human Gate | 工作模型治理 | 创建、提交、回退、审计或查询 Change 时 |
+| 入口可见要求 | AI 执行事实源修改、关闭 Task、完成 Intent 或准备提交时，应能定位本文 | 20 集合索引、commit 流程入口、运行入口摘要 | AI 执行入口提示 | Git 提交、任务关闭、规范吸收、Code/Web 修改或多仓库变更时 |
 | 确定性执行要求 | commit message 格式、type、scope、Refs、subject 长度和中文约束应由 Code 校验或记录缺口 | `tools/commit_validate.py`、`docs/specs/07-Code实现规范.md`、正反样例 | 校验实现 | commit 格式、枚举、Refs 规则或校验实现变化时 |
-| Human 交互要求 | 高影响事实源修改、历史改写、强推、删除校验或改变 Change 承载方式应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
+| Human 交互要求 | 高影响事实源修改、提交记录改写、强推、删除校验或改变 Change 承载方式应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
 | 生命周期触发要求 | Change 规范变化后，应检查 commit_validate、测试、Task、Intent、Web、运行投影和相关工作流程是否需要同步 | Code 测试、对象关系检查、Web 联动检查、人工降级检查 | 触发保障 | Change 字段契约、事实源边界、提交纪律或适配规则变化时 |
 
 ---
@@ -335,19 +335,19 @@ Change 规范检查至少包括：
 | 检查项 | 标准 |
 |---|---|
 | 准入判断 | 已说明哪些修改需要 commit 追溯 |
-| 事实源位置 | Change 实例由 Git commit 历史承载，不创建 `ldvh-base/changes/` |
+| 事实源位置 | Change 实例由 Git commit 记录承载，不创建 `ldvh-base/changes/` |
 | 字段契约 | commit message 符合 §6 |
 | 状态例外 | 已说明 Change 无 YAML 状态流转，派生状态不写入事实源 |
 | 对象关系 | Task、Intent、ADR、Memo、Pitfall、Profile 引用边界清晰 |
 | 暂缓对象化 | Risk、Dependency、Artifact、Checklist 未作为默认 Refs 对象前缀 |
 | Human Gate | 高影响修改和破坏性 Git 操作已评估 Human Gate |
-| Code 边界 | commit_validate 等 Code 只校验和诊断，不替代 Git commit 历史 |
-| Web 边界 | Web 派生视图未替代 Git commit 历史 |
+| Code 边界 | commit_validate 等 Code 只校验和诊断，不替代 Git commit 记录 |
+| Web 边界 | Web 派生视图未替代 Git commit 记录 |
 
 ---
 ## 11. 待补齐事项
 
 1. Change Web 信息同步能力待 Web 实现规划时补齐；
 2. commit message 是否继续强制包含中文，需在更通用的管辖项目场景中评估；
-3. 任务关闭、Intent 完成和提交之间的工作流程待 40-59 迁入后承接；
+3. 任务关闭、Intent 完成和提交之间的工作流程待 40-59 承接；
 4. `tools/commit_validate.py` 的正反样例应随本文 commit message 契约变化持续维护。

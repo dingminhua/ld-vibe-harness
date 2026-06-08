@@ -1001,7 +1001,7 @@ def cmd_deprecate(args: argparse.Namespace) -> int:
 # ── supersede 命令 ─────────────────────────────────────────────────────
 
 def cmd_supersede(args: argparse.Namespace) -> int:
-    """推翻 ADR（创建新 ADR + 旧 ADR 标记 superseded）。"""
+    """推翻 ADR（创建新 ADR + 原 ADR 标记 superseded）。"""
     try:
         _ensure_authorized(args)
     except SystemExit:
@@ -1038,7 +1038,7 @@ def cmd_supersede(args: argparse.Namespace) -> int:
     # 写入新 ADR
     save_yaml(new_path, new_adr)
 
-    # 更新旧 ADR
+    # 更新原 ADR
     old_path = _update_adr_file(
         old_adr,
         {"status": "superseded", "superseded_by": new_id, "updated": now},
@@ -1046,7 +1046,7 @@ def cmd_supersede(args: argparse.Namespace) -> int:
     )
 
     print(f"已创建替代 ADR: {new_path}")
-    print(f"已更新旧 ADR: {args.old_adr_id} → superseded_by {new_id}")
+    print(f"已更新原 ADR: {args.old_adr_id} → superseded_by {new_id}")
     return 0
 
 
@@ -1226,7 +1226,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_authorization_args(deprecate_parser)
 
     # supersede 子命令
-    supersede_parser = subparsers.add_parser("supersede", help="推翻 ADR（创建新 ADR + 旧 ADR 标记 superseded）")
+    supersede_parser = subparsers.add_parser("supersede", help="推翻 ADR（创建新 ADR + 原 ADR 标记 superseded）")
     supersede_parser.add_argument("--old-adr-id", required=True, help="被推翻的 ADR ID")
     _add_adr_content_args(supersede_parser)
     supersede_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")

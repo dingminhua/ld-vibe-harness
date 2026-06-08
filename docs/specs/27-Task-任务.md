@@ -58,7 +58,7 @@ ldvh-base/tasks/task-{NNNN}-short-title.yaml
 | Task 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
 | Task 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
-对应旧规范已吸收。Task 的当前稳定规则以本文为准。
+Task 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机
@@ -125,7 +125,7 @@ Task 可以通过 `related_adrs` 引用多个 ADR，表示执行时需要遵守�
 
 ### 4.3 Task 与 Change
 
-Task 的创建、状态变化、关闭和关键事实源修改都应留下 Git 可追溯记录。Task 可通过 Git commit、`status_history`、`closure_evidence` 和 `related_changes` 保持追溯；Change 的 commit message 契约和 Git 历史事实源边界由 `docs/specs/22-Change-变更.md` 定义。
+Task 的创建、状态变化、关闭和关键事实源修改都应留下 Git 可追溯记录。Task 可通过 Git commit、`status_history`、`closure_evidence` 和 `related_changes` 保持追溯；Change 的 commit message 契约和 Git 记录事实源边界由 `docs/specs/22-Change-变更.md` 定义。
 
 ### 4.4 Task 与 Task 子任务
 
@@ -244,7 +244,7 @@ assignee: AI
 related_adrs: []
 related_changes: []
 related_docs:
-  - specs/27-Task-任务.md
+  - docs/specs/27-Task-任务.md
   - docs/specs/20-工作模型集合索引.md
 affected_docs:
   - docs/specs/20-工作模型集合索引.md
@@ -255,7 +255,7 @@ status_history:
     from:
     to: planned
     actor: AI
-    reason: 用户要求继续迁移工作模型
+    reason: 用户要求继续完善工作模型
 closed_at:
 closure_evidence:
 ```
@@ -355,7 +355,7 @@ Task 执行、验证、关闭和审计的具体行动流程由后续 40-59 工�
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Task 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、关闭条件和事实源边界 | 05、03.04、本文、20 集合索引、Human Gate | 工作模型治理 | 创建、修改、迁移、审计或关闭 Task 时 |
+| 上位约束承接要求 | Task 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、关闭条件和事实源边界 | 05、03.04、本文、20 集合索引、Human Gate | 工作模型治理 | 创建、修改、搬移、审计或关闭 Task 时 |
 | 入口可见要求 | AI 处理可执行工作单元、验收标准、证据、依赖、风险、产物或检查项时，应能定位本文 | 20 集合索引、运行入口摘要、Task 执行流程入口 | AI 执行入口提示 | 任务入口、事实实例目录、状态流转或字段契约变化时 |
 | 确定性执行要求 | Task 字段、状态、引用、文件命名、验收清单、关闭条件和文档同步检查应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、Task 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、关闭条件或 affected_docs 规则变化时 |
 | Human 交互要求 | Task 创建、删除、高风险事实源写入、验收改写、关闭豁免和终态修改应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
@@ -385,5 +385,5 @@ Task 规范检查至少包括：
 
 1. Task 校验 Code 待字段契约稳定后补齐正反样例；
 2. Task Web 展示和受控编辑入口待 Web 实现规划时补齐；
-3. Task 执行、验证、关闭和审计的具体工作流程待 40-59 迁入后承接；
+3. Task 执行、验证、关闭和审计的具体工作流程待 40-59 承接；
 4. `risk_assessment` 的字段内容格式是否需要从 Narrative / Checklist 细化为专用格式，待更多实例实践后评估。

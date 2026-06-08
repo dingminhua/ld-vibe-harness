@@ -2,7 +2,7 @@
 """检查 Git commit message 是否符合 docs/specs/22-Change-变更.md 格式。
 
 功能：
-  - 默认模式：检查最近 N 条 git commit 历史
+  - 默认模式：检查最近 N 条 git commit 记录
   - --show-format：展示正确的 commit message 格式规范（供 AI 参考）
   - --check-message：在提交前校验拟提交的 message 文本（提交前强制预检）
 """
@@ -52,10 +52,10 @@ FORMAT_HELP = """\
   Refs      建议。关联对象，多个对象用逗号分隔
 
 示例：
-  docs(specs): 迁移 Change 工作模型到 v2
+  docs(specs): 更新 Change 工作模型
 
   新增 docs/specs/22-Change-变更.md，明确 Change
-  以 Git commit 历史作为事实实例。
+  以 Git commit 记录作为事实实例。
 
   Refs: 22-Change-变更
 """.format(

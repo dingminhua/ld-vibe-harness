@@ -65,7 +65,7 @@ ldvh-base/adrs/adr-{NNNN}-short-title.yaml
 | ADR 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
 | ADR 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
-对应旧规范已吸收。ADR 的当前稳定规则以本文为准。
+ADR 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机
@@ -78,7 +78,7 @@ ADR 标准状态如下：
 |---|---|
 | `proposed` | 已提出，尚未确认，不得作为稳定执行依据 |
 | `accepted` | 已确认，后续应遵守 |
-| `deprecated` | 已废弃，不再建议遵守，但保留历史 |
+| `deprecated` | 已废弃，不再建议遵守，但保留记录 |
 | `superseded` | 已被新 ADR 替代 |
 | `rejected` | 已否决，不采纳 |
 
@@ -156,9 +156,9 @@ ADR 中的决策升级为稳定规则时，应：
 5. 修改 `accepted` ADR 的 `decision` 字段；
 6. 将 ADR 决策升级为 docs/specs、Rules / Instructions、Skill、Agent、Code、Web 或运行投影规则；
 7. 改变 ADR 的事实源载体、状态机、升级路径或终态语义；
-8. 删除旧 ADR 而不是通过状态表达废弃或替代。
+8. 删除原 ADR 而不是通过状态表达废弃或替代。
 
-推翻旧决策时，不得删除旧 ADR 文件。应将旧 ADR 标记为 `superseded`，在 `superseded_by` 中引用新 ADR，并在新 ADR 的 `context` 中说明替代原因。废弃决策时，应将旧 ADR 标记为 `deprecated`，并记录废弃原因。
+推翻原决策时，不得删除原 ADR 文件。应将原 ADR 标记为 `superseded`，在 `superseded_by` 中引用新 ADR，并在新 ADR 的 `context` 中说明替代原因。废弃决策时，应将原 ADR 标记为 `deprecated`，并记录废弃原因。
 
 Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影记录承接。本文只规定 ADR 语境下需要确认的事实和影响范围。
 
@@ -196,7 +196,7 @@ Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影�
 ```yaml
 id: adr-0001
 type: adr
-title: Change 使用 Git commit 历史承载
+title: Change 使用 Git commit 记录承载
 status: accepted
 created: 2026-06-09
 updated: 2026-06-09
@@ -204,12 +204,12 @@ date: 2026-06-09
 context: |
   LDVH 需要记录事实源变更，但不希望为每次变更额外创建 YAML 实例。
 decision: |
-  Change 事实实例直接由 Git commit 历史承载，不创建 ldvh-base/changes/。
+  Change 事实实例直接由 Git commit 记录承载，不创建 ldvh-base/changes/。
 consequences: |
   - Git commit message 必须符合 Change 规范
-  - Web 和 Code 只能派生展示 Change，不得替代 Git 历史
+  - Web 和 Code 只能派生展示 Change，不得替代 Git 记录
 alternatives: |
-  曾考虑创建 changes YAML 实例，但会与 Git 历史形成重复事实源。
+  曾考虑创建 changes YAML 实例，但会与 Git 记录形成重复事实源。
 affects:
   - docs/specs/22-Change-变更.md
 related_intents: []
@@ -301,7 +301,7 @@ ADR 创建、确认、废弃、替代和升级为规范的具体行动流程由�
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | ADR 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、终态规则和事实源边界 | 05、03.04、本文、20 集合索引、22 Change、Human Gate | 工作模型治理 | 创建、修改、迁移、审计、接受、废弃或替代 ADR 时 |
+| 上位约束承接要求 | ADR 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、终态规则和事实源边界 | 05、03.04、本文、20 集合索引、22 Change、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、接受、废弃或替代 ADR 时 |
 | 入口可见要求 | AI 处理长期决策、规范判断、事实源边界、方案取舍或执行约束时，应能定位本文 | 20 集合索引、运行入口摘要、ADR 决策流程入口 | AI 执行入口提示 | 决策入口、规范升级、状态流转或字段契约变化时 |
 | 确定性执行要求 | ADR 字段、状态、引用、文件命名、替代链和条件必填应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、ADR 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、替代规则或相关规范路径变化时 |
 | Human 交互要求 | ADR 创建、接受、废弃、替代、核心决策改写和升级为规范应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
@@ -331,5 +331,5 @@ ADR 规范检查至少包括：
 
 1. ADR 校验 Code 待字段契约稳定后补齐正反样例；
 2. ADR Web 展示和受控编辑入口待 Web 实现规划时补齐；
-3. ADR 创建、接受、废弃、替代和升级为规范的具体工作流程待 40-59 迁入后承接；
+3. ADR 创建、接受、废弃、替代和升级为规范的具体工作流程待 40-59 承接；
 4. 是否需要 ADR 定期审查机制，待更多实例实践后评估。

@@ -827,7 +827,7 @@ def test_deprecate_writes_reason_to_context(tmp_path):
 def test_supersede_creates_new_adr_and_updates_old(tmp_path):
     adrs_dir = tmp_path / "ldvh-base" / "adrs"
     adrs_dir.mkdir(parents=True)
-    write_adr(adrs_dir / "adr-0001-old.yaml", id="adr-0001", status="accepted", title="旧 ADR")
+    write_adr(adrs_dir / "adr-0001-old.yaml", id="adr-0001", status="accepted", title="原 ADR")
 
     result = run_cli(
         "supersede",
@@ -843,7 +843,7 @@ def test_supersede_creates_new_adr_and_updates_old(tmp_path):
     )
     assert result.returncode == 0
     assert "已创建替代 ADR" in result.stdout
-    assert "已更新旧 ADR" in result.stdout
+    assert "已更新原 ADR" in result.stdout
 
     old_data = read_yaml(adrs_dir / "adr-0001-old.yaml")
     new_data = read_yaml(adrs_dir / "adr-0002-new-adr.yaml")

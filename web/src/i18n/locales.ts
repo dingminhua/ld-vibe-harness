@@ -193,7 +193,7 @@ export const UI_LOCALES = {
 
     // Changelog
     'changelog.title': '变更',
-    'changelog.subtitle': 'Git 提交历史记录，点击查看详情',
+    'changelog.subtitle': 'Git 提交记录，点击查看详情',
     'changelog.loadFailed': '加载变更日志失败',
     'changelog.detailFailed': '加载提交详情失败',
 

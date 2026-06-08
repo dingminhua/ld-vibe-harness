@@ -85,7 +85,7 @@ router.patch('/:type/:id/field', async (req: Request, res: Response): Promise<vo
       fs.writeFileSync(newIntentPath, yaml.dump(newIntent, { lineWidth: -1, quotingType: '"', forceQuotes: false }), 'utf-8')
     }
 
-    // 如果旧 Intent 存在且不同于新 Intent，从旧 Intent 的 related_tasks 移除该 Task
+    // 如果原 Intent 存在且不同于新 Intent，从原 Intent 的 related_tasks 移除该 Task
     if (oldIntentId && oldIntentId !== newIntentId) {
       const oldIntentFiles = fs.readdirSync(intentDir).filter(f => f.startsWith(`${oldIntentId}-`) && f.endsWith('.yaml'))
       if (oldIntentFiles.length > 0) {

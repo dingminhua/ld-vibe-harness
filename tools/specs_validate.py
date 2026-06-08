@@ -654,7 +654,7 @@ def env_init_check_root(root):
         if level == 2:
             headings.add(clean_title)
             if clean_title in ENV_INIT_FORBIDDEN_LEGACY_HEADINGS:
-                issues.append(Issue(path, index, f"环境初始化记录仍使用英文旧章节名: {clean_title}", code="ENV_INIT_LEGACY_HEADING"))
+                issues.append(Issue(path, index, f"环境初始化记录仍使用过期英文章节名: {clean_title}", code="ENV_INIT_LEGACY_HEADING"))
 
     if title != ENV_INIT_REQUIRED_TITLE:
         issues.append(Issue(path, 1, f"环境初始化记录一级标题应为: {ENV_INIT_REQUIRED_TITLE}", code="ENV_INIT_TITLE_INVALID"))
@@ -1173,7 +1173,7 @@ def build_parser():
     # index
     index_parser = subparsers.add_parser("index", help="生成 specs 文档派生索引和诊断结果（03.01 规范文档剖面）。")
     index_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
-    index_parser.add_argument("--specs-dir", default="docs/specs", help="要生成索引的规范目录，默认 docs/specs；旧迁移素材可传 specs。")
+    index_parser.add_argument("--specs-dir", default="docs/specs", help="要生成索引的规范目录，默认 docs/specs。")
     index_parser.add_argument("--out", default=None, help="输出目录；未提供时将完整索引输出到 stdout。")
     index_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")
 

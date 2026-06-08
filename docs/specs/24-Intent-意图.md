@@ -11,7 +11,7 @@
 
 Intent / 意图是人的目标、范围、成功标准和约束的结构化事实。Intent 用于沉淀需要跨任务追踪的目标入口，为 Task 拆解、ADR 决策、Memo 转化和最终完成判断提供上游依据。
 
-Intent 同时承接旧 TaskSet / 任务集取消后的任务集合职责。LDVH 不再创建独立 TaskSet 工作模型；围绕同一目标、主题、阶段或治理域组织的一组 Task，应通过 Intent 的 `related_tasks`、`success_criteria` 和完成证据承载。
+Intent 同时承接 TaskSet / 任务集取消后的任务集合职责。LDVH 不再创建独立 TaskSet 工作模型；围绕同一目标、主题、阶段或治理域组织的一组 Task，应通过 Intent 的 `related_tasks`、`success_criteria` 和完成证据承载。
 
 ### 1.1 Intent 准入条件
 
@@ -57,7 +57,7 @@ ldvh-base/intents/intent-{NNNN}-short-title.yaml
 | Intent 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
 | Intent 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
-对应旧规范已吸收。Intent 的当前稳定规则以本文为准。
+Intent 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机
@@ -217,14 +217,14 @@ updated: 2026-06-09
 description: |
   将工作模型集合索引、Intent 和 Task 纳入当前正式规范，使 AI 可以围绕目标、任务、验收和关闭证据形成最小可追踪闭环。
 success_criteria: |
-  - [ ] 20 工作模型集合索引已迁入
-  - [ ] 24 Intent 已迁入
-  - [ ] 27 Task 已迁入
+  - [ ] 20 工作模型集合索引已更新
+  - [ ] 24 Intent 已更新
+  - [ ] 27 Task 已更新
   - [ ] TaskSet 不再作为独立工作模型恢复
 constraints: |
   - 不恢复固定 NN.01-NN.06 子文档结构
   - 不把 Evidence、Risk、Dependency、Artifact、Checklist 误对象化
-source: 用户讨论中确认工作模型迁移优先级
+source: 用户讨论中确认工作模型优先级
 related_tasks:
   - task-0001
 related_adrs: []
@@ -238,7 +238,7 @@ status_history:
     from:
     to: active
     actor: AI
-    reason: 用户确认继续迁移工作模型
+    reason: 用户确认继续完善工作模型
 completed_at:
 completion_evidence:
 closed_at:
@@ -258,7 +258,7 @@ Intent 回写遵循以下规则：
 5. Intent 进入 `completed` 时必须填写 `completed_at` 和 `completion_evidence`；
 6. Intent 进入 `closed` 时必须填写 `closed_at`；
 7. 关键事实源修改应按 `docs/specs/22-Change-变更.md` 形成 Git 可追溯记录。
-7. Intent 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
+8. Intent 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
 
 ### 7.2 证据留存
 
@@ -319,7 +319,7 @@ Intent 创建、拆解、完成和关闭的具体行动流程由后续 40-59 工
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Intent 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、完成条件和事实源边界 | 05、03.04、本文、20 集合索引、27 Task、Human Gate | 工作模型治理 | 创建、修改、迁移、审计、完成或关闭 Intent 时 |
+| 上位约束承接要求 | Intent 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、完成条件和事实源边界 | 05、03.04、本文、20 集合索引、27 Task、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、完成或关闭 Intent 时 |
 | 入口可见要求 | AI 处理目标、范围、成功标准、约束、任务集合或完成判断时，应能定位本文 | 20 集合索引、运行入口摘要、Intent 拆解流程入口 | AI 执行入口提示 | 目标入口、任务拆解、事实实例目录、状态流转或字段契约变化时 |
 | 确定性执行要求 | Intent 字段、状态、引用、文件命名、完成条件和 Task 关系一致性应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、Intent 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、完成条件或 Task 关系规则变化时 |
 | Human 交互要求 | Intent 创建、删除、完成、关闭、成功标准改写、约束突破和 TaskSet 恢复应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
@@ -347,5 +347,5 @@ Intent 规范检查至少包括：
 
 1. Intent 校验 Code 待字段契约稳定后补齐正反样例；
 2. Intent Web 展示和受控编辑入口待 Web 实现规划时补齐；
-3. Intent 创建、拆解、完成和关闭的具体工作流程待 40-59 迁入后承接；
+3. Intent 创建、拆解、完成和关闭的具体工作流程待 40-59 承接；
 4. `success_criteria` 是否强制使用 Checklist，待更多实例实践后评估。

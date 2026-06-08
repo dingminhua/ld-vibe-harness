@@ -9,19 +9,19 @@
 
 ## 1. 结论摘要
 
-Cursor Rules 支持用户级和项目级两级体系。项目规则存放在 .cursor/rules/ 目录下，使用 .mdc 文件格式（Markdown with Context），支持 Always、Auto Attached、Agent Requested 和 Manual 四种触发类型。旧版 .cursorrules 文件已废弃，推荐迁移到 .cursor/rules/ 目录。User Rules 在 Cursor Settings 中配置，跨所有项目生效。四种规则类型通过 alwaysApply、globs 和 description 字段组合控制触发方式。
+Cursor Rules 支持用户级和项目级两级体系。项目规则存放在 .cursor/rules/ 目录下，使用 .mdc 文件格式（Markdown with Context），支持 Always、Auto Attached、Agent Requested 和 Manual 四种触发类型。.cursorrules 文件已废弃，推荐改用 .cursor/rules/ 目录。User Rules 在 Cursor Settings 中配置，跨所有项目生效。四种规则类型通过 alwaysApply、globs 和 description 字段组合控制触发方式。
 
 ## 2. 官方定位
 
 Rules 用于为 AI 助手定义项目级或用户级的行为指令，控制代码生成风格、技术栈约束、架构决策等。这是 Cursor 区别于其他 AI IDE 的核心特性之一。
 
-## 3. .cursorrules 文件（旧版，已废弃迁移）
+## 3. .cursorrules 文件（已废弃）
 
 - 位置：项目根目录下的 .cursorrules 文件
 - 格式：纯文本/Markdown，无特殊结构要求
 - 作用域：整个项目，所有对话自动加载
-- 状态：Cursor 官方已将其标记为 deprecated，推荐迁移到 .cursor/rules/ 目录下的 Project Rules
-- 迁移方式：将 .cursorrules 内容拆分为多个 .mdc 文件放入 .cursor/rules/ 目录
+- 状态：Cursor 官方已将其标记为 deprecated，推荐改用 .cursor/rules/ 目录下的 Project Rules
+- 转换方式：将 .cursorrules 内容拆分为多个 .mdc 文件放入 .cursor/rules/ 目录
 
 ## 4. .cursor/rules/ 目录（Project Rules，当前推荐）
 

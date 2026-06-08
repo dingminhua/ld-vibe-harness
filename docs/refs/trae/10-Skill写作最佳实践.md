@@ -90,7 +90,7 @@ description: Review code for correctness, maintainability, security risks, and e
 
 ```yaml
 ---
-name: helper-v2
+name: helper-general
 description: Helps with things.
 ---
 ```

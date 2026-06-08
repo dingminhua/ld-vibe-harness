@@ -65,7 +65,7 @@ ldvh-base/pitfalls/pitfall-{NNNN}-short-title.yaml
 | Pitfall 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
 | Pitfall 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
-对应旧规范已吸收。Pitfall 的当前稳定规则以本文为准。
+Pitfall 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机
@@ -79,7 +79,7 @@ Pitfall 标准状态如下：
 | `draft` | 已记录草稿，尚未确认符合准入条件或字段完整性不足 |
 | `active` | 已确认，问题已解决且可作为后续执行参考 |
 | `superseded` | 已被新的 Pitfall、ADR、规范、运行入口、Code、Web 或工作流程替代 |
-| `archived` | 已归档，不再作为常规参考，但保留历史 |
+| `archived` | 已归档，不再作为常规参考，但保留记录 |
 
 `superseded` 和 `archived` 是稳定终态。终态 Pitfall 不得直接重开；如需重新沉淀，应新建 Pitfall，并在新 Pitfall 中引用原 Pitfall。
 
@@ -99,7 +99,7 @@ active → archived
 | `draft` → `active` | 问题已解决、解决方式已验证、规避策略已可复用 | 只有 active Pitfall 可作为稳定执行参考 |
 | `draft` → `archived` | 记录后判断不满足准入条件或不需要继续保留 | 应记录归档原因 |
 | `active` → `superseded` | 已被新 Pitfall、ADR、规范、运行入口或实现替代 | `superseded_by` 条件必填 |
-| `active` → `archived` | 经验不再常规适用，但保留历史 | 应记录归档原因 |
+| `active` → `archived` | 经验不再常规适用，但保留记录 | 应记录归档原因 |
 
 未列出的状态流转为非法流转。Code 和 Web 不得绕过本文状态机直接修改状态。
 
@@ -169,7 +169,7 @@ Pitfall 的创建、状态变化、核心经验改写、归档、替代和被吸
 5. 修改 `root_cause`、`resolution`、`verification` 或 `avoidance` 等核心经验字段；
 6. 将 Pitfall 的规避策略吸收到 docs/specs、Rules / Instructions、Skill、Agent、Code、Web 或工作流程；
 7. 将未解决或未验证问题写成 `active` Pitfall；
-8. 删除旧 Pitfall 而不是通过状态表达归档或替代。
+8. 删除原 Pitfall 而不是通过状态表达归档或替代。
 
 Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影记录承接。本文只规定 Pitfall 语境下需要确认的事实和影响范围。
 
@@ -216,30 +216,30 @@ Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影�
 ```yaml
 id: pitfall-0001
 type: pitfall
-title: 把历史素材直接当成当前权威规范
+title: 把输入材料直接当成当前权威规范
 status: active
 created: 2026-06-09
 updated: 2026-06-09
 symptoms: |
-  AI 在吸收历史旧规范或临时参考中的规则时，未先判断该内容是否已经吸收到 docs/specs。
+  AI 在吸收输入材料或临时参考中的规则时，未先判断该内容是否已经吸收到 docs/specs。
 trigger_conditions: |
-  - [x] 历史材料内容比当前正式规范更详细
+  - [x] 输入材料内容比当前正式规范更详细
   - [x] 当前主题存在候选事项或待补齐事项
 root_cause: |
-  历史材料不是当前权威事实源；直接引用会绕过正式规范的吸收和重写边界。
+  输入材料不是当前权威事实源；直接引用会绕过正式规范的吸收和重写边界。
 resolution: |
-  先读取 docs/specs 的对应正文和集合索引，再把历史材料只作为输入材料比较和吸收。
+  先读取 docs/specs 的对应正文和集合索引，再把输入材料只作为比较和吸收来源。
 verification: |
-  已通过 01、03、09 和 20 的旧规范边界检查。
+  已通过 01、03、09 和 20 的输入材料边界检查。
 avoidance: |
   - [x] 修改正式规范前先确认对应规范是否已经存在或登记为候选事项
-  - [x] 历史材料只在输入材料语境下引用
+  - [x] 输入材料只在输入材料语境下引用
 applicability: |
-  适用于 docs/specs 维护、旧规范迁移收尾和历史材料吸收任务。
+  适用于 docs/specs 维护、输入材料吸收和规范边界检查任务。
 severity: high
 repeatability: recurring
 tags:
-  - migration
+  - input-material
   - fact-source
 source_tasks: []
 source_memos: []
@@ -360,7 +360,7 @@ Pitfall 识别、创建、激活、归档、替代和吸收到规范或实现的
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Pitfall 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、经验吸收边界和事实源边界 | 05、03.04、本文、20 集合索引、21 ADR、25 Memo、27 Task、Human Gate | 工作模型治理 | 创建、修改、迁移、审计、激活、归档或替代 Pitfall 时 |
+| 上位约束承接要求 | Pitfall 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、经验吸收边界和事实源边界 | 05、03.04、本文、20 集合索引、21 ADR、25 Memo、27 Task、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、激活、归档或替代 Pitfall 时 |
 | 入口可见要求 | AI 处理已解决可复用经验、反直觉问题、重复误判或规避策略时，应能定位本文 | 20 集合索引、运行入口摘要、Pitfall 检索或经验吸收流程入口 | AI 执行入口提示 | 经验沉淀、任务执行前检查、状态流转或字段契约变化时 |
 | 确定性执行要求 | Pitfall 字段、状态、引用、文件命名、条件必填、标签和替代链应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、Pitfall 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、替代规则或标签规则变化时 |
 | Human 交互要求 | Pitfall 创建、激活、归档、替代、核心经验改写和吸收到规范或实现时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
@@ -390,6 +390,6 @@ Pitfall 规范检查至少包括：
 ## 11. 待补齐事项
 
 1. Pitfall Web 基础详情字段已同步，筛选和任务执行前提示入口待 Web 实现规划时补齐；
-2. Pitfall 识别、创建、激活、归档、替代和吸收的具体工作流程待 40-59 迁入后承接；
+2. Pitfall 识别、创建、激活、归档、替代和吸收的具体工作流程待 40-59 承接；
 3. `severity`、`repeatability` 和 `tags` 的枚举范围待更多实例实践后评估；
-4. Pitfall 与工作流程中 Learn 阶段的关系，待 40-59 迁入后进一步校准。
+4. Pitfall 与工作流程中 Learn 阶段的关系，待 40-59 稳定后进一步校准。
