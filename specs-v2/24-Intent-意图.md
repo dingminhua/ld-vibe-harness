@@ -257,6 +257,7 @@ Intent 回写遵循以下规则：
 4. 创建或关联 Task、ADR、Memo、Pitfall 时，应同步检查 Intent 关系字段；
 5. Intent 进入 `completed` 时必须填写 `completed_at` 和 `completion_evidence`；
 6. Intent 进入 `closed` 时必须填写 `closed_at`；
+7. 关键事实源修改应按 `specs-v2/22-Change-变更.md` 形成 Git 可追溯记录。
 7. Intent 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
 
 ### 7.2 证据留存

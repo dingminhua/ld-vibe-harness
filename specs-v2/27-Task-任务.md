@@ -125,7 +125,7 @@ Task 可以通过 `related_adrs` 引用多个 ADR，表示执行时需要遵守�
 
 ### 4.3 Task 与 Change
 
-Task 的创建、状态变化、关闭和关键事实源修改都应留下 Git 可追溯记录。Change 迁入 v2 前，Task 先通过 Git commit、`status_history` 和 `closure_evidence` 保持追溯；Change 迁入后，`related_changes` 应按 Change 规范补齐。
+Task 的创建、状态变化、关闭和关键事实源修改都应留下 Git 可追溯记录。Task 可通过 Git commit、`status_history`、`closure_evidence` 和 `related_changes` 保持追溯；Change 的 commit message 契约和 Git 历史事实源边界由 `specs-v2/22-Change-变更.md` 定义。
 
 ### 4.4 Task 与 Task 子任务
 
@@ -206,7 +206,7 @@ Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影�
 | `risk_assessment` | 风险判断、已知不确定性和降级方式 | string | 否 | 高风险任务应填写 | Narrative / Checklist | AI、Human |
 | `assignee` | 执行者 | string | 否 | 可为 AI、Human 或角色名 | Reference | AI、Web |
 | `related_adrs` | 关联 ADR ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_changes` | 关联 Change ID 或 commit 列表 | list[string] | 否 | Change 迁入前可记录 commit | Reference | AI、Code、Web |
+| `related_changes` | 关联 Change commit 列表 | list[string] | 否 | 可记录 commit hash 或 Change 引用 | Reference | AI、Code、Web |
 | `related_docs` | 参考输入文档路径列表 | list[string] | 否 | 路径应可追溯 | Reference | AI、Code、Web |
 | `affected_docs` | 任务完成后应同步检查的文档路径列表 | list[string] | 否 | 关闭前检查是否变更或说明豁免 | Reference | AI、Code |
 | `deliverables` | 产物、报告、截图、构建产物或导出文件路径列表 | list[string] | 否 | 结果物应可追溯 | Reference | AI、Code、Web |

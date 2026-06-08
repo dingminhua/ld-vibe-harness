@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""检查 Git commit message 是否符合 specs/22-Change-变更.md §8 格式。
+"""检查 Git commit message 是否符合 specs-v2/22-Change-变更.md 格式。
 
 功能：
   - 默认模式：检查最近 N 条 git commit 历史
@@ -17,13 +17,13 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-# specs/22-Change-变更.md §3.1 type 枚举
+# specs-v2/22-Change-变更.md type 枚举
 VALID_TYPES = {"feat", "fix", "docs", "refactor", "test", "chore", "spec", "rule", "adr", "revert"}
 
-# specs/22-Change-变更.md §3.2 scope 枚举（推荐值，非强制）
-RECOMMENDED_SCOPES = {"specs", "rules", "adr", "tools", "web", "evals", "refs"}
+# specs-v2/22-Change-变更.md scope 枚举（推荐值，非强制）
+RECOMMENDED_SCOPES = {"specs", "docs", "rules", "adr", "tools", "web", "tests", "config", "evals", "refs"}
 
-# specs/22-Change-变更.md §3.3: subject 不超过 72 字符
+# specs-v2/22-Change-变更.md: subject 推荐不超过 72 字符
 MAX_SUBJECT_LEN = 72
 
 # 第一行格式: <type>(<scope>): <subject>
@@ -32,11 +32,11 @@ HEADER_RE = re.compile(r"^([a-z]+)(?:\(([^)]+)\))?:\s+(.+)$")
 # Refs 行格式
 REFS_RE = re.compile(r"^Refs:\s*(.+)$", re.MULTILINE)
 
-# 中文字符检测（specs/22-Change-变更.md §4.1）
+# 中文字符检测（当前 LDVH 自身项目 Code 实现纪律）
 HAS_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
 
 FORMAT_HELP = """\
-正确的 commit message 格式（specs/22-Change-变更.md）：
+正确的 commit message 格式（specs-v2/22-Change-变更.md）：
 
     <type>(<scope>): <subject>
 
@@ -52,9 +52,10 @@ FORMAT_HELP = """\
   Refs      建议。关联对象，多个对象用逗号分隔
 
 示例：
-  spec(tools): 新增 commit message 格式校验工具
+  docs(specs): 迁移 Change 工作模型到 v2
 
-  完成 specs/22-Change-变更.md 落地初始化，新增校验工具。
+  新增 specs-v2/22-Change-变更.md，明确 Change
+  以 Git commit 历史作为事实实例。
 
   Refs: 22-Change-变更
 """.format(
@@ -200,7 +201,7 @@ def check_message(message_text: str) -> list[Issue]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="检查 Git commit message 是否符合 specs/22 §8 格式"
+        description="检查 Git commit message 是否符合 specs-v2/22-Change-变更.md 格式"
     )
     parser.add_argument(
         "--show-format", action="store_true",
@@ -266,7 +267,7 @@ def main():
                 error_count += 1
 
     if total_issues == 0:
-        print(f"最近 {args.count} 条 commit 格式均符合 specs/22 §8 要求")
+        print(f"最近 {args.count} 条 commit 格式均符合 specs-v2/22-Change-变更.md 要求")
     else:
         print(f"\n共 {total_issues} 个问题（{error_count} 个 error），检查了 {len(commits)} 条 commit")
         if error_count > 0:
