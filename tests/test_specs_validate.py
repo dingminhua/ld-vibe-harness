@@ -814,7 +814,7 @@ def test_index_main_outputs_json_to_stdout(tmp_path, capsys):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# env-init — 根目录 LDVH 环境初始化记录检查
+# env-init — LDVH 自身项目根目录环境初始化记录检查
 # ══════════════════════════════════════════════════════════════════════
 
 
@@ -835,11 +835,11 @@ def write_env_init(root, extra_status_rows="", heading_override=None):
 |---|---|
 | 记录适用项目 | 示例项目 |
 | 记录适用环境 | Codex |
-| 用户当前项目 | 示例项目 |
-| 用户当前开发平台 | Codex |
+| LDVH 当前项目 | 示例项目 |
+| 当前开发环境 | Codex |
 | 权限边界 | 示例权限 |
 | Human 授权状态 | 示例授权 |
-| 适配状态 | 已适配当前项目与当前环境 |
+| 适配状态 | 已适配 LDVH 自身项目与当前开发环境 |
 | 最近 Human 确认 | 2026-06-08 |
 {extra_status_rows}
 
@@ -892,7 +892,7 @@ def test_env_init_missing_root_record_is_reported(tmp_path):
     issues = checker.env_init_check_root(tmp_path)
 
     assert env_init_codes(issues) == ["ENV_INIT_MISSING"]
-    assert "先按 04.03 模板创建并完成当前项目与当前开发平台适配" in issues[0].message
+    assert "先按 04.03 模板创建并完成 LDVH 自身项目与当前开发环境适配" in issues[0].message
 
 
 def test_env_init_missing_status_field_is_reported(tmp_path):
@@ -931,7 +931,7 @@ def test_env_init_missing_status_field_is_reported(tmp_path):
     issues = checker.env_init_check_root(tmp_path)
 
     assert "ENV_INIT_STATUS_FIELD_MISSING" in env_init_codes(issues)
-    assert any("用户当前开发平台" in issue.message for issue in issues)
+    assert any("当前开发环境" in issue.message for issue in issues)
 
 
 def test_env_init_legacy_english_heading_is_reported(tmp_path):
@@ -944,3 +944,106 @@ def test_env_init_legacy_english_heading_is_reported(tmp_path):
 
     assert "ENV_INIT_LEGACY_HEADING" in env_init_codes(issues)
     assert "ENV_INIT_SECTION_MISSING" in env_init_codes(issues)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# governed-projects — 根目录管辖项目配置检查
+# ══════════════════════════════════════════════════════════════════════
+
+
+def write_governed_projects(root, content):
+    return write_md(root / "LDVH-GOVERNED-PROJECTS.yaml", content)
+
+
+def governed_project_codes(issues):
+    return [issue.code for issue in issues]
+
+
+def test_governed_projects_empty_list_passes(tmp_path):
+    write_governed_projects(
+        tmp_path,
+        """
+product_name: LD Vibe Harness
+product_description: |
+  管理当前工作区项目。
+projects: []
+""",
+    )
+
+    assert checker.governed_projects_check_root(tmp_path) == []
+
+
+def test_governed_projects_multiple_projects_pass(tmp_path):
+    write_governed_projects(
+        tmp_path,
+        """
+product_name: LD Vibe Harness
+product_description: |
+  管理多个项目。
+projects:
+  - id: app-web
+    path: /Users/me/projects/app-web
+    name: App Web
+    description: |
+      前端项目。
+  - id: app-api
+    path: /Users/me/projects/app-api
+""",
+    )
+
+    assert checker.governed_projects_check_root(tmp_path) == []
+
+
+def test_governed_projects_product_fields_are_required(tmp_path):
+    write_governed_projects(tmp_path, "projects: []")
+
+    codes = governed_project_codes(checker.governed_projects_check_root(tmp_path))
+
+    assert "GOVERNED_PROJECTS_ROOT_FIELD_MISSING" in codes
+
+
+def test_governed_projects_duplicate_id_is_reported(tmp_path):
+    write_governed_projects(
+        tmp_path,
+        """
+product_name: LD Vibe Harness
+product_description: |
+  管理当前工作区项目。
+projects:
+  - id: app
+    name: App One
+    description: One
+    path: /tmp/app-one
+  - id: app
+    name: App Two
+    description: Two
+    path: /tmp/app-two
+""",
+    )
+
+    issues = checker.governed_projects_check_root(tmp_path)
+
+    assert "GOVERNED_PROJECT_ID_DUPLICATE" in governed_project_codes(issues)
+
+
+def test_governed_projects_extra_fields_are_reported(tmp_path):
+    write_governed_projects(
+        tmp_path,
+        """
+product_name: LD Vibe Harness
+product_description: |
+  管理当前工作区项目。
+version: 1
+projects:
+  - id: app
+    name: App
+    description: App project
+    path: /tmp/app
+    type: governed_project
+""",
+    )
+
+    codes = governed_project_codes(checker.governed_projects_check_root(tmp_path))
+
+    assert "GOVERNED_PROJECTS_ROOT_FIELD_FORBIDDEN" in codes
+    assert "GOVERNED_PROJECT_FIELD_FORBIDDEN" in codes

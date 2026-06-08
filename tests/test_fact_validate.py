@@ -61,34 +61,6 @@ blocked_by: []
 """
 
 
-def valid_profile_yaml(project_root: Path):
-    ldvh_base_path = project_root / "ldvh-base"
-    docs_path = project_root / "docs"
-    environment_record_path = project_root / "LDVH-ENVIRONMENT-INITIALIZATION.md"
-    return f"""
-id: profile-0001
-type: profile
-title: Valid Profile
-status: active
-created: "2026-06-04"
-updated: "2026-06-04"
-description: Define a valid profile fixture
-project_name: test-project
-project_kind: governed_project
-project_path: {project_root}
-ldvh_base_path: {ldvh_base_path}
-docs_path: {docs_path}
-environment_record_path: {environment_record_path}
-related_intents: []
-related_tasks: []
-related_adrs: []
-related_memos: []
-related_pitfalls: []
-related_docs: []
-related_changes: []
-"""
-
-
 def valid_pitfall_yaml(status="active", extra=""):
     return f"""
 id: pitfall-0001
@@ -114,20 +86,11 @@ source_tasks: []
 source_memos: []
 related_intents: []
 related_adrs: []
-related_profiles: []
 related_changes: []
 related_docs: []
 related_rules: []
 {extra}
 """
-
-
-def prepare_profile_project(tmp_path: Path) -> Path:
-    project_root = tmp_path / "project"
-    (project_root / "ldvh-base").mkdir(parents=True)
-    (project_root / "docs").mkdir()
-    (project_root / "LDVH-ENVIRONMENT-INITIALIZATION.md").write_text("# LDVH 环境初始化记录\n", encoding="utf-8")
-    return project_root
 
 
 def valid_memo_yaml(status="active", extra=""):
@@ -340,17 +303,6 @@ def test_directory_batch_validation_summary(tmp_path):
     assert "检查完成: files=4 errors=1 warnings=0" in result.stdout
 
 
-def test_valid_profile_cli_exit_zero(tmp_path):
-    project_root = prepare_profile_project(tmp_path)
-    path = write_yaml(tmp_path / "profile-0001-valid-profile.yaml", valid_profile_yaml(project_root))
-
-    result = run_checker(path)
-
-    assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
-    assert result.stderr == ""
-
-
 def test_valid_pitfall_cli_exit_zero(tmp_path):
     path = write_yaml(tmp_path / "pitfall-0001-valid-pitfall.yaml", valid_pitfall_yaml())
 
@@ -434,57 +386,18 @@ def test_memo_invalid_priority_warning(tmp_path):
     assert "检查完成: files=1 errors=0 warnings=1" in result.stdout
 
 
-def test_profile_invalid_status(tmp_path):
-    project_root = prepare_profile_project(tmp_path)
-    content = valid_profile_yaml(project_root).replace("status: active", "status: unknown")
-    path = write_yaml(tmp_path / "profile-0001-invalid-status.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "INVALID_STATUS" in result.stdout
-
-
-def test_profile_project_kind_required_and_valid(tmp_path):
-    project_root = prepare_profile_project(tmp_path)
-    content = valid_profile_yaml(project_root).replace("project_kind: governed_project", "project_kind: personal")
-    path = write_yaml(tmp_path / "profile-0001-invalid-kind.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "INVALID_PROJECT_KIND" in result.stdout
-
-
-def test_active_profile_requires_environment_record(tmp_path):
-    project_root = prepare_profile_project(tmp_path)
-    content = valid_profile_yaml(project_root).replace(
-        f"environment_record_path: {project_root / 'LDVH-ENVIRONMENT-INITIALIZATION.md'}\n",
-        "",
+def test_task_acceptance_not_checklist_error(tmp_path):
+    content = valid_task_yaml().replace(
+        "acceptance:\n  - Validator accepts this task",
+        "acceptance: Validator accepts this task",
     )
-    path = write_yaml(tmp_path / "profile-0001-missing-env-record.yaml", content)
+    path = write_yaml(tmp_path / "task-0001-acceptance-not-checklist.yaml", content)
 
     result = run_checker(path)
 
     assert result.returncode == 1
-    assert "MISSING_ACTIVE_PROFILE_PATH" in result.stdout
-    assert "environment_record_path" in result.stdout
-
-
-def test_profile_environment_record_must_use_expected_filename(tmp_path):
-    project_root = prepare_profile_project(tmp_path)
-    wrong_record = project_root / "ENV.md"
-    wrong_record.write_text("# Wrong\n", encoding="utf-8")
-    content = valid_profile_yaml(project_root).replace(
-        str(project_root / "LDVH-ENVIRONMENT-INITIALIZATION.md"),
-        str(wrong_record),
-    )
-    path = write_yaml(tmp_path / "profile-0001-wrong-env-record.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "INVALID_ENVIRONMENT_RECORD_PATH" in result.stdout
+    assert "ACCEPTANCE_NOT_CHECKLIST" in result.stdout
+    assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
 
 
 def test_pitfall_invalid_repeatability(tmp_path):

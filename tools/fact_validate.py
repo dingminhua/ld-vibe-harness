@@ -14,13 +14,12 @@ import yaml
 
 
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "profile", "memo"}
+OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "memo"}
 FILENAME_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "task": re.compile(r"^task-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "profile": re.compile(r"^profile-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
 }
 ID_PATTERNS = {
@@ -28,7 +27,6 @@ ID_PATTERNS = {
     "task": re.compile(r"^task-\d{4}$"),
     "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
-    "profile": re.compile(r"^profile-\d{4}$"),
     "memo": re.compile(r"^memo-\d{4}$"),
 }
 VALID_STATUSES = {
@@ -36,7 +34,6 @@ VALID_STATUSES = {
     "task": {"planned", "executing", "verifying", "review_needed", "closed"},
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
-    "profile": {"draft", "active", "suspended", "archived"},
     "memo": {"draft", "active", "resolved", "archived"},
 }
 REQUIRED_FIELDS = {
@@ -44,7 +41,6 @@ REQUIRED_FIELDS = {
     "task": ["id", "type", "title", "status", "created", "updated", "description", "source", "acceptance"],
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
-    "profile": ["id", "type", "title", "status", "created", "updated", "description", "project_name", "project_kind", "project_path", "ldvh_base_path"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category"],
 }
 LIST_FIELDS = {
@@ -54,11 +50,7 @@ LIST_FIELDS = {
     "pitfall": {
         "source_objects", "related_objects", "related_rules", "tags",
         "source_tasks", "source_memos", "related_intents", "related_adrs",
-        "related_profiles", "related_changes", "related_docs",
-    },
-    "profile": {
-        "related_intents", "related_tasks", "related_adrs", "related_memos",
-        "related_pitfalls", "related_docs", "related_changes", "status_history",
+        "related_changes", "related_docs",
     },
     "memo": {"related_tasks", "related_adrs", "related_docs"},
 }
@@ -69,7 +61,6 @@ LONG_TEXT_FIELDS = {
     "task": {"description", "acceptance", "verification", "closure_evidence"},
     "adr": {"context", "decision", "consequences"},
     "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
-    "profile": {"description", "notes"},
     "memo": {"description"},
 }
 
@@ -181,8 +172,6 @@ def infer_object_type(path: Path, data: dict[str, Any]) -> str | None:
         return "adr"
     if name.startswith("pitfall-"):
         return "pitfall"
-    if name.startswith("profile-"):
-        return "profile"
     if name.startswith("memo-"):
         return "memo"
     return None
@@ -446,7 +435,7 @@ def validate_task(path: Path, data: dict[str, Any]) -> list[Issue]:
         unchecked_items = re.findall(r"^- \[ \]", acceptance_text, re.MULTILINE)
         checked_items = re.findall(r"^- \[x\]", acceptance_text, re.MULTILINE)
         if not unchecked_items and not checked_items:
-            issues.append(Issue(str(path), "warning", "ACCEPTANCE_NOT_CHECKLIST",
+            issues.append(Issue(str(path), "error", "ACCEPTANCE_NOT_CHECKLIST",
                 "acceptance 字段应使用检查列表格式（- [ ] / - [x]），每项为可独立验证的原子条件"))
     elif not acceptance_text:
         issues.append(Issue(str(path), "error", "MISSING_REQUIRED_FIELD", "acceptance 字段为空"))
@@ -472,7 +461,6 @@ def validate_task(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 VALID_SEVERITY = {"low", "medium", "high", "critical"}
 VALID_REPEATABILITY = {"unknown", "once", "recurring"}
-VALID_PROJECT_KINDS = {"ldvh_self", "governed_project", "management_project"}
 VALID_MEMO_CATEGORIES = {"discovery", "reminder", "question", "gap", "preference"}
 VALID_MEMO_PRIORITIES = {"low", "medium", "high"}
 
@@ -482,7 +470,6 @@ ID_LIST_FIELDS = {
     "related_adrs": "adr",
     "related_memos": "memo",
     "related_pitfalls": "pitfall",
-    "related_profiles": "profile",
     "source_tasks": "task",
     "source_memos": "memo",
 }
@@ -500,30 +487,6 @@ def validate_pitfall(path: Path, data: dict[str, Any]) -> list[Issue]:
         issues.append(Issue(str(path), "error", "MISSING_SUPERSEDED_BY", "superseded 状态必须提供非空字段: superseded_by", field="superseded_by"))
     if data.get("status") == "archived" and is_empty(data.get("archive_reason")) and is_empty(data.get("superseded_by")):
         issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态未被替代时必须提供归档原因: archive_reason", field="archive_reason"))
-    return issues
-
-
-def validate_profile(path: Path, data: dict[str, Any]) -> list[Issue]:
-    issues = validate_common(path, data, "profile")
-    issues.extend(validate_enum_field(path, data, "project_kind", VALID_PROJECT_KINDS))
-    for field, target_type in ID_LIST_FIELDS.items():
-        issues.extend(validate_id_list_format(path, data, field, target_type))
-    for field in ("project_path", "ldvh_base_path", "docs_path", "environment_record_path"):
-        issues.extend(validate_path_value(path, field, data.get(field)))
-    if data.get("status") in {"active", "suspended"}:
-        for field in ("project_path", "ldvh_base_path", "environment_record_path"):
-            if is_empty(data.get(field)):
-                issues.append(Issue(str(path), "error", "MISSING_ACTIVE_PROFILE_PATH", f"{data.get('status')} 状态必须提供非空字段: {field}", field=field))
-    environment_record_path = data.get("environment_record_path")
-    if isinstance(environment_record_path, str) and environment_record_path:
-        if Path(environment_record_path).name != "LDVH-ENVIRONMENT-INITIALIZATION.md":
-            issues.append(Issue(
-                str(path),
-                "error",
-                "INVALID_ENVIRONMENT_RECORD_PATH",
-                "environment_record_path 必须指向 LDVH-ENVIRONMENT-INITIALIZATION.md",
-                field="environment_record_path",
-            ))
     return issues
 
 
@@ -556,7 +519,6 @@ def validate_file(path: Path) -> tuple[list[Issue], bool]:
         "task": validate_task,
         "adr": validate_adr,
         "pitfall": validate_pitfall,
-        "profile": validate_profile,
         "memo": validate_memo,
     }
     return validators[object_type](path, data), False

@@ -123,7 +123,7 @@ def test_refs_with_multiple_objects():
     commit = make_commit(
         "a" * 40,
         "docs: add feature",
-        "Body\n\nRefs: 22-Change-变更, ADR-0001"
+        "Body\n\nRefs: 22-Change-变更, adr-0001"
     )
     issues = checker.check_commit(commit)
     msgs = issues_messages(issues)
@@ -134,14 +134,14 @@ def test_refs_with_multiple_objects():
 def test_git_log_parsing(mock_run):
     mock_run.return_value = subprocess.CompletedProcess(
         args=[], returncode=0,
-        stdout="abc12345\x00feat: add feature\x00Body text\n\nRefs: ADR-0001\x1e",
+        stdout="abc12345\x00feat: add feature\x00Body text\n\nRefs: adr-0001\x1e",
         stderr=""
     )
     commits = checker.git_log(1)
     assert len(commits) == 1
     assert commits[0].hash == "abc12345"
     assert commits[0].subject == "feat: add feature"
-    assert "Refs: ADR-0001" in commits[0].body
+    assert "Refs: adr-0001" in commits[0].body
 
 
 @patch("subprocess.run")
@@ -205,12 +205,12 @@ def test_parse_message_text_simple():
 
 
 def test_parse_message_text_with_body():
-    text = "feat: add feature\n\nSome description\nMore details\n\nRefs: ADR-0001"
+    text = "feat: add feature\n\nSome description\nMore details\n\nRefs: adr-0001"
     commit = checker.parse_message_text(text)
     assert commit.hash == "<message>"
     assert commit.subject == "feat: add feature"
     assert "Some description" in commit.body
-    assert "Refs: ADR-0001" in commit.full_message
+    assert "Refs: adr-0001" in commit.full_message
 
 
 # -------- show_format --------

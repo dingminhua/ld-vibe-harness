@@ -15,7 +15,6 @@ LONG_TEXT_FIELDS = {
     "task": {"description", "acceptance", "verification", "closure_evidence"},
     "adr": {"context", "decision", "consequences"},
     "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
-    "profile": {"description", "notes"},
     "memo": {"description"},
 }
 

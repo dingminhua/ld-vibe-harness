@@ -4,7 +4,7 @@
 > 定位：LDVH Web 构成要素、Web 信息同步层、派生视图、人类确认工作台、受控编辑入口和 Web 实现文档边界的权威规范
 > 适用范围：LDVH 项目及所有接入 LDVH 的管辖项目中的 `web/`、Web 信息同步实现、Web 文档、派生视图和 Human Gate UI
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`
+> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`
 
 ---
 

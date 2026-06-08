@@ -197,16 +197,6 @@ def test_create_pitfall(tmp_path):
     assert data["status"] == "draft"
 
 
-def test_create_profile(tmp_path):
-    result = run_cli("create", "profile", "--title", "Project Profile", base_dir=str(tmp_path))
-    assert result.returncode == 0
-
-    out_lines = result.stdout.strip().splitlines()
-    data = yaml.safe_load(Path(out_lines[0]).read_text(encoding="utf-8"))
-    assert data["id"] == "profile-0001"
-    assert data["status"] == "draft"
-
-
 # ── transition 命令 ──────────────────────────────────────────────────────
 
 

@@ -4,7 +4,7 @@
 > 定位：定义 Change / 变更工作模型，包括对象定位、准入条件、事实源边界、commit message 字段契约、对象关系、Human Gate、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要追踪 Git 文件事实源变更、提交纪律、变更证据和对象关联的项目
 > 上位依据：`docs/specs/05-工作模型基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/24-Intent-意图.md`、`docs/specs/27-Task-任务.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/24-Intent-意图.md`、`docs/specs/26-Task-任务.md`
 
 ---
 ## 1. 对象定位与准入条件
@@ -22,7 +22,7 @@ Change 是工作模型中的特殊对象：它不使用 `ldvh-base/changes/` 下
 3. 修改 `ldvh-base/` 下的事实实例；
 4. 修改 Rules / Instructions、Skill、Agent、环境适配记录或运行投影；
 5. 修改 Code、Web、测试、配置或会影响 LDVH 行为的实现文件；
-6. 完成 Task、Intent、ADR、Memo、Pitfall、Profile 等对象的创建、状态变化、关闭或删除；
+6. 完成 Task、Intent、ADR、Memo、Pitfall 等对象的创建、状态变化、关闭或删除；
 7. 影响其他对象、规范入口、事实源边界或需要跨会话追溯的修改。
 
 以下修改通常不需要单独作为 Change 强制记录，但如果被提交，commit message 仍应符合本文格式：
@@ -101,7 +101,7 @@ Task 的创建、状态变化、关闭和关键事实源修改都应留下 Chang
 2. `closure_evidence` 已填写；
 3. 存在至少一个符合本文格式的 commit，其 `Refs:` 或 body 明确关联该 Task，或 Task 的 `related_changes` 记录该 commit。
 
-Task 规范由 `docs/specs/27-Task-任务.md` 定义。Change 不替代 Task 的验收标准、关闭证据或状态机。
+Task 规范由 `docs/specs/26-Task-任务.md` 定义。Change 不替代 Task 的验收标准、关闭证据或状态机。
 
 ### 4.2 Change 与 Intent
 
@@ -111,9 +111,9 @@ Intent 的创建、完成、关闭、成功标准变更和关联 Task 调整都�
 
 当 Change 涉及长期决策、事实源边界、架构方向或高影响规则变化时，应创建或关联 ADR。ADR 的准入、状态和字段契约由 `docs/specs/21-ADR-决策.md` 定义。
 
-### 4.4 Change 与 Memo、Pitfall、Profile
+### 4.4 Change 与 Memo、Pitfall
 
-Memo 的准入、状态和字段契约由 `docs/specs/25-Memo-备忘.md` 定义。Pitfall 的准入、状态和字段契约由 `docs/specs/23-Pitfall-踩坑.md` 定义。Profile 的准入、状态和字段契约由 `docs/specs/26-Profile-项目画像.md` 定义。Change 可通过 `Refs:` 或 body 记录相关 Memo、Pitfall、Profile ID、路径或摘要。
+Memo 的准入、状态和字段契约由 `docs/specs/25-Memo-备忘.md` 定义。Pitfall 的准入、状态和字段契约由 `docs/specs/23-Pitfall-踩坑.md` 定义。Change 可通过 `Refs:` 或 body 记录相关 Memo、Pitfall ID、路径或摘要。
 
 ### 4.5 Change 与规范、Code、Web
 
@@ -157,7 +157,7 @@ Refs: <object-refs>
 | `scope` | 否 | 影响范围 | `specs` |
 | `subject` | 是 | 简短说明，推荐不超过 72 字符 | `更新 Change 工作模型` |
 | `body` | 否 | 说明变更原因、内容、风险和 Human Gate 结果 | `新增 docs/specs/22...` |
-| `Refs` | 建议 | 关联对象、规范编号、commit hash 或任务 ID | `Refs: Task-0001, 22-Change-变更` |
+| `Refs` | 建议 | 关联对象、规范编号、commit hash 或任务 ID | `Refs: task-0001, 22-Change-变更` |
 
 `Refs` 暂为建议字段。没有明确对象可关联时，可以省略，但 Code 应给出 warning 而不是 error。
 
@@ -199,12 +199,11 @@ scope 为推荐值，项目可以在不破坏解析的前提下扩展。
 
 | 引用类型 | 格式示例 |
 |---|---|
-| Task | `Task-0001` |
-| Intent | `Intent-0001` |
-| ADR | `ADR-0001` |
-| Memo | `Memo-0001` |
-| Pitfall | `Pitfall-0001` |
-| Profile | `Profile-0001` |
+| Task | `task-0001` |
+| Intent | `intent-0001` |
+| ADR | `adr-0001` |
+| Memo | `memo-0001` |
+| Pitfall | `pitfall-0001` |
 | 规范文档 | `22-Change-变更` |
 | commit hash | `abc1234` |
 
@@ -245,7 +244,7 @@ revert(specs): 回退错误的 Task 字段契约修改
 
 回退 abc1234 中对 Task 状态机的错误调整。
 
-Refs: abc1234, Task-0001
+Refs: abc1234, task-0001
 ```
 
 ---
@@ -338,7 +337,7 @@ Change 规范检查至少包括：
 | 事实源位置 | Change 实例由 Git commit 记录承载，不创建 `ldvh-base/changes/` |
 | 字段契约 | commit message 符合 §6 |
 | 状态例外 | 已说明 Change 无 YAML 状态流转，派生状态不写入事实源 |
-| 对象关系 | Task、Intent、ADR、Memo、Pitfall、Profile 引用边界清晰 |
+| 对象关系 | Task、Intent、ADR、Memo、Pitfall 引用边界清晰 |
 | 暂缓对象化 | Risk、Dependency、Artifact、Checklist 未作为默认 Refs 对象前缀 |
 | Human Gate | 高影响修改和破坏性 Git 操作已评估 Human Gate |
 | Code 边界 | commit_validate 等 Code 只校验和诊断，不替代 Git commit 记录 |

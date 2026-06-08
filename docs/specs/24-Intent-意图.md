@@ -4,7 +4,7 @@
 > 定位：定义 Intent / 意图工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理人的目标、范围、成功标准、约束、任务集合和完成判断的项目
 > 上位依据：`docs/specs/05-工作模型基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/27-Task-任务.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/26-Task-任务.md`
 
 ---
 ## 1. 对象定位与准入条件
@@ -158,7 +158,7 @@ TaskSet 已取消独立工作模型。Intent 承接 TaskSet 的目标分组和�
 | 描述约束和范围 | Intent `constraints` |
 | 判断集合完成 | Intent `completed` 状态和 `completion_evidence` |
 
-Intent 不承接 Task 的执行状态细节。每个 Task 的执行、验证、关闭和证据仍由 `docs/specs/27-Task-任务.md` 定义。
+Intent 不承接 Task 的执行状态细节。每个 Task 的执行、验证、关闭和证据仍由 `docs/specs/26-Task-任务.md` 定义。
 
 ---
 ## 5. Human Gate
@@ -219,7 +219,7 @@ description: |
 success_criteria: |
   - [ ] 20 工作模型集合索引已更新
   - [ ] 24 Intent 已更新
-  - [ ] 27 Task 已更新
+  - [ ] 26 Task 已更新
   - [ ] TaskSet 不再作为独立工作模型恢复
 constraints: |
   - 不恢复固定 NN.01-NN.06 子文档结构
@@ -232,7 +232,7 @@ related_memos: []
 related_pitfalls: []
 related_docs:
   - docs/specs/20-工作模型集合索引.md
-  - docs/specs/27-Task-任务.md
+  - docs/specs/26-Task-任务.md
 status_history:
   - at: 2026-06-09
     from:
@@ -319,7 +319,7 @@ Intent 创建、拆解、完成和关闭的具体行动流程由后续 40-59 工
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Intent 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、完成条件和事实源边界 | 05、03.04、本文、20 集合索引、27 Task、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、完成或关闭 Intent 时 |
+| 上位约束承接要求 | Intent 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、完成条件和事实源边界 | 05、03.04、本文、20 集合索引、26 Task、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、完成或关闭 Intent 时 |
 | 入口可见要求 | AI 处理目标、范围、成功标准、约束、任务集合或完成判断时，应能定位本文 | 20 集合索引、运行入口摘要、Intent 拆解流程入口 | AI 执行入口提示 | 目标入口、任务拆解、事实实例目录、状态流转或字段契约变化时 |
 | 确定性执行要求 | Intent 字段、状态、引用、文件命名、完成条件和 Task 关系一致性应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、Intent 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、完成条件或 Task 关系规则变化时 |
 | Human 交互要求 | Intent 创建、删除、完成、关闭、成功标准改写、约束突破和 TaskSet 恢复应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |

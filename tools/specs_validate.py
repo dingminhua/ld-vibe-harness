@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+import yaml
+
 
 # ── 通用常量 ──
 
@@ -532,7 +534,7 @@ def landing_main(paths):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# env-init — 根目录 LDVH 环境初始化记录检查
+# env-init — LDVH 自身项目根目录环境初始化记录检查
 # ══════════════════════════════════════════════════════════════════════
 
 ENV_INIT_FILENAME = "LDVH-ENVIRONMENT-INITIALIZATION.md"
@@ -552,8 +554,8 @@ ENV_INIT_REQUIRED_SECTIONS = [
 ENV_INIT_REQUIRED_STATUS_FIELDS = [
     "记录适用项目",
     "记录适用环境",
-    "用户当前项目",
-    "用户当前开发平台",
+    "LDVH 当前项目",
+    "当前开发环境",
     "权限边界",
     "Human 授权状态",
     "适配状态",
@@ -625,7 +627,7 @@ def env_init_check_root(root):
             Issue(
                 path,
                 1,
-                f"项目根目录缺少环境初始化记录: {ENV_INIT_FILENAME}；请先按 04.03 模板创建并完成当前项目与当前开发平台适配",
+                f"LDVH 项目根目录缺少环境初始化记录: {ENV_INIT_FILENAME}；请先按 04.03 模板创建并完成 LDVH 自身项目与当前开发环境适配",
                 code="ENV_INIT_MISSING",
             )
         ]
@@ -679,6 +681,96 @@ def env_init_main(root):
             print(f"- {issue.format(PROJECT_ROOT)}")
         return 1
     print("环境初始化记录检查通过。")
+    return 0
+
+
+# ══════════════════════════════════════════════════════════════════════
+# governed-projects — 根目录管辖项目配置检查
+# ══════════════════════════════════════════════════════════════════════
+
+GOVERNED_PROJECTS_FILENAME = "LDVH-GOVERNED-PROJECTS.yaml"
+GOVERNED_PROJECTS_ROOT_FIELDS = {"product_name", "product_description", "projects"}
+GOVERNED_PROJECTS_ITEM_FIELDS = {"id", "name", "description", "path"}
+GOVERNED_PROJECTS_REQUIRED_ITEM_FIELDS = {"id", "path"}
+
+
+def governed_projects_check_root(root):
+    root = Path(root)
+    path = root / GOVERNED_PROJECTS_FILENAME
+    issues = []
+    if not path.exists():
+        return [
+            Issue(
+                path,
+                1,
+                f"LDVH 项目根目录缺少管辖项目配置: {GOVERNED_PROJECTS_FILENAME}",
+                code="GOVERNED_PROJECTS_MISSING",
+            )
+        ]
+    if not path.is_file():
+        return [Issue(path, 1, f"管辖项目配置不是文件: {GOVERNED_PROJECTS_FILENAME}", code="GOVERNED_PROJECTS_NOT_FILE")]
+
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        return [Issue(path, 1, f"管辖项目配置 YAML 解析失败: {exc}", code="GOVERNED_PROJECTS_YAML_INVALID")]
+
+    if not isinstance(data, dict):
+        return [Issue(path, 1, "管辖项目配置根对象必须是 mapping，且只包含 product_name、product_description、projects 字段", code="GOVERNED_PROJECTS_ROOT_INVALID")]
+
+    root_fields = set(data)
+    extra_root_fields = sorted(root_fields - GOVERNED_PROJECTS_ROOT_FIELDS)
+    missing_root_fields = sorted(GOVERNED_PROJECTS_ROOT_FIELDS - root_fields)
+    for field in missing_root_fields:
+        issues.append(Issue(path, 1, f"管辖项目配置缺少根字段: {field}", code="GOVERNED_PROJECTS_ROOT_FIELD_MISSING"))
+    for field in extra_root_fields:
+        issues.append(Issue(path, 1, f"管辖项目配置不得包含根字段: {field}", code="GOVERNED_PROJECTS_ROOT_FIELD_FORBIDDEN"))
+    for field in sorted({"product_name", "product_description"} & root_fields):
+        value = data.get(field)
+        if not isinstance(value, str) or not value.strip():
+            issues.append(Issue(path, 1, f"管辖项目配置根字段 {field} 必须是非空字符串", code="GOVERNED_PROJECTS_ROOT_FIELD_INVALID"))
+
+    projects = data.get("projects")
+    if not isinstance(projects, list):
+        issues.append(Issue(path, 1, "projects 必须是列表；没有管辖项目时使用空列表", code="GOVERNED_PROJECTS_LIST_INVALID"))
+        return issues
+
+    seen_ids = {}
+    for index, project in enumerate(projects, start=1):
+        if not isinstance(project, dict):
+            issues.append(Issue(path, 1, f"projects[{index}] 必须是对象", code="GOVERNED_PROJECT_ITEM_INVALID"))
+            continue
+        item_fields = set(project)
+        missing_fields = sorted(GOVERNED_PROJECTS_REQUIRED_ITEM_FIELDS - item_fields)
+        extra_fields = sorted(item_fields - GOVERNED_PROJECTS_ITEM_FIELDS)
+        for field in missing_fields:
+            issues.append(Issue(path, 1, f"projects[{index}] 缺少字段: {field}", code="GOVERNED_PROJECT_FIELD_MISSING"))
+        for field in extra_fields:
+            issues.append(Issue(path, 1, f"projects[{index}] 不得包含字段: {field}", code="GOVERNED_PROJECT_FIELD_FORBIDDEN"))
+        for field in sorted(GOVERNED_PROJECTS_ITEM_FIELDS & item_fields):
+            value = project.get(field)
+            if not isinstance(value, str) or not value.strip():
+                issues.append(Issue(path, 1, f"projects[{index}].{field} 必须是非空字符串", code="GOVERNED_PROJECT_FIELD_INVALID"))
+        project_id = project.get("id")
+        if isinstance(project_id, str) and project_id.strip():
+            normalized_id = project_id.strip()
+            if normalized_id in seen_ids:
+                first_index = seen_ids[normalized_id]
+                issues.append(Issue(path, 1, f"管辖项目 id 重复: {normalized_id}（projects[{first_index}] 与 projects[{index}]）", code="GOVERNED_PROJECT_ID_DUPLICATE"))
+            else:
+                seen_ids[normalized_id] = index
+
+    return issues
+
+
+def governed_projects_main(root):
+    issues = governed_projects_check_root(root)
+    if issues:
+        print(f"管辖项目配置检查失败，共 {len(issues)} 个问题：")
+        for issue in issues:
+            print(f"- {issue.format(PROJECT_ROOT)}")
+        return 1
+    print("管辖项目配置检查通过。")
     return 0
 
 
@@ -1167,8 +1259,12 @@ def build_parser():
     landing_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/specs/ 根目录正式规范。")
 
     # env-init
-    env_init_parser = subparsers.add_parser("env-init", help="检查项目根目录 LDVH 环境初始化记录的中文模板结构。")
-    env_init_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
+    env_init_parser = subparsers.add_parser("env-init", help="检查 LDVH 自身项目根目录环境初始化记录的中文模板结构。")
+    env_init_parser.add_argument("--root", default=str(PROJECT_ROOT), help="LDVH 项目根目录，默认使用当前工具所在项目。")
+
+    # governed-projects
+    governed_projects_parser = subparsers.add_parser("governed-projects", help="检查 LDVH 根目录管辖项目配置。")
+    governed_projects_parser.add_argument("--root", default=str(PROJECT_ROOT), help="LDVH 项目根目录，默认使用当前工具所在项目。")
 
     # index
     index_parser = subparsers.add_parser("index", help="生成 specs 文档派生索引和诊断结果（03.01 规范文档剖面）。")
@@ -1205,6 +1301,9 @@ def main(argv=None):
     if command == "env-init":
         return env_init_main(args.root)
 
+    if command == "governed-projects":
+        return governed_projects_main(args.root)
+
     if command == "index":
         try:
             return index_main(args.root, args.out, args.fail_on_diagnostics, args.specs_dir)
@@ -1228,6 +1327,9 @@ def main(argv=None):
             exit_code = 1
         # env-init
         if env_init_main(args.root) != 0:
+            exit_code = 1
+        # governed-projects
+        if governed_projects_main(args.root) != 0:
             exit_code = 1
         # index
         try:

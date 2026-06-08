@@ -53,7 +53,7 @@ ldvh-base/tasks/task-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| Task 工作模型规范 | `docs/specs/27-Task-任务.md` |
+| Task 工作模型规范 | `docs/specs/26-Task-任务.md` |
 | Task 实例 | `ldvh-base/tasks/` |
 | Task 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
 | Task 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
@@ -233,7 +233,7 @@ parent_task:
 sub_tasks: []
 blocked_by: []
 acceptance: |
-  - [ ] 创建 docs/specs/27-Task-任务.md
+  - [ ] 创建 docs/specs/26-Task-任务.md
   - [ ] 明确 Task 对证据、依赖、风险、产物和检查项的字段承接
   - [ ] 更新 20 工作模型集合索引
 verification: |
@@ -244,12 +244,12 @@ assignee: AI
 related_adrs: []
 related_changes: []
 related_docs:
-  - docs/specs/27-Task-任务.md
+  - docs/specs/26-Task-任务.md
   - docs/specs/20-工作模型集合索引.md
 affected_docs:
   - docs/specs/20-工作模型集合索引.md
 deliverables:
-  - docs/specs/27-Task-任务.md
+  - docs/specs/26-Task-任务.md
 status_history:
   - at: 2026-06-09
     from:

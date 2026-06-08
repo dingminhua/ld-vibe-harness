@@ -4,14 +4,14 @@
 > 定位：定义 Memo / 备忘工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理尚未任务化但有保留价值的输入、发现、提醒、问题、缺口和偏好的项目
 > 上位依据：`docs/specs/05-工作模型基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/22-Change-变更.md`、`docs/specs/24-Intent-意图.md`、`docs/specs/27-Task-任务.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/22-Change-变更.md`、`docs/specs/24-Intent-意图.md`、`docs/specs/26-Task-任务.md`
 
 ---
 ## 1. 对象定位与准入条件
 
 Memo / 备忘承载尚未任务化但有保留价值的输入、发现、提醒、问题、缺口和偏好。Memo 的目标是降低误创建 Task、ADR 或 Intent 的冲动，同时避免有价值的信息只留在聊天记忆中。
 
-Memo 是分流前的事实对象。它可以后续转化或关联到 Task、ADR、Intent、Pitfall、Profile、docs 或其他事实源，但在转化前不替代这些对象的字段契约、状态机或验收规则。
+Memo 是分流前的事实对象。它可以后续转化或关联到 Task、ADR、Intent、Pitfall、docs、管辖项目配置或其他事实源，但在转化前不替代这些对象的字段契约、状态机、验收规则或配置边界。
 
 ### 1.1 Memo 准入条件
 
@@ -104,7 +104,7 @@ resolved → archived
 
 Memo 可以分流为 Task，作为尚未任务化信息转化为可执行工作单元的路径。分流后，Memo 的 `resolved_to` 应记录 Task ID，Task 的 `source` 或 `related_docs` 可记录 Memo ID 或路径。
 
-Task 的准入、状态和字段契约由 `docs/specs/27-Task-任务.md` 定义。
+Task 的准入、状态和字段契约由 `docs/specs/26-Task-任务.md` 定义。
 
 ### 4.2 Memo 与 ADR
 
@@ -118,16 +118,16 @@ Memo 可以分流为 Intent，作为待讨论事项、目标线索或约束线�
 
 Intent 的准入、状态和字段契约由 `docs/specs/24-Intent-意图.md` 定义。
 
-### 4.4 Memo 与 Pitfall、Profile、docs
+### 4.4 Memo 与 Pitfall、管辖项目配置、docs
 
-Memo 可以分流或关联到 Pitfall、Profile 或 docs：
+Memo 可以分流或关联到 Pitfall、管辖项目配置或 docs：
 
 1. 已解决且有复用价值的踩坑线索，可转为 Pitfall；
-2. 项目身份、路径、接入配置或环境初始化记录路径，可转为 Profile；
+2. 项目路径、接入状态或管辖项目清单线索，可转为 `LDVH-GOVERNED-PROJECTS.yaml` 更新建议或项目文档更新建议；
 3. 项目正文、调研、说明或报告内容，可吸收到 docs；
 4. 外部引用或调研资料，应进入 refs 或 docs/refs。
 
-Pitfall 的准入、状态和字段契约由 `docs/specs/23-Pitfall-踩坑.md` 定义。Profile 的准入、状态和字段契约由 `docs/specs/26-Profile-项目画像.md` 定义。环境能力核验、环境适配映射和运行投影正文不得转入 Profile，应进入当前环境初始化记录或按 04 系列规范处理。
+Pitfall 的准入、状态和字段契约由 `docs/specs/23-Pitfall-踩坑.md` 定义。管辖项目配置的字段和边界由 `docs/specs/03.06-管辖项目配置规范.md` 定义。环境能力核验、环境适配映射和运行投影正文不得转入 Memo 或管辖项目配置，应进入 LDVH 自身环境初始化记录或按 04 系列规范处理。
 
 ### 4.5 Memo 与 Change
 
@@ -141,7 +141,7 @@ Memo 的创建、状态变化、分流和归档都应留下 Change。Change 的 
 1. 创建、删除或重命名 Memo 实例；
 2. 将对话输入、docs/evals 结论或执行发现写入 Memo；
 3. 将 `draft` Memo 确认为 `active`；
-4. 将 `active` Memo 分流为 Task、ADR、Intent、Pitfall、Profile、docs 或其他事实源；
+4. 将 `active` Memo 分流为 Task、ADR、Intent、Pitfall、docs、管辖项目配置更新或其他事实源；
 5. 将 Memo 归档，且归档会丢失后续跟踪入口；
 6. 修改 `resolved_to`、`category`、`priority` 或核心描述；
 7. 将 Memo 作为规避 Task、ADR 或 Intent 准入判断的长期替代物。
@@ -218,7 +218,7 @@ Memo 回写遵循以下规则：
 1. 创建 Memo 时，应写入 `ldvh-base/memos/`，并填写描述、来源、分类和状态；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
 3. 状态变化后应更新 `updated`，并向 `status_history` 追加记录；
-4. Memo 分流为 Task、ADR、Intent、Pitfall、Profile 或 docs 时，应更新 `resolved_to` 和 `resolved_at`；
+4. Memo 分流为 Task、ADR、Intent、Pitfall、docs、管辖项目配置更新或其他事实源时，应更新 `resolved_to` 和 `resolved_at`；
 5. Memo 创建、分流、归档或核心描述修改应通过 Change 留痕；
 6. Memo 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
 
@@ -278,7 +278,7 @@ Memo 创建、分流和归档的具体行动流程由后续 40-59 工作流程�
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Memo 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、分流规则和事实源边界 | 05、03.04、本文、20 集合索引、21 ADR、24 Intent、27 Task、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、分流或归档 Memo 时 |
+| 上位约束承接要求 | Memo 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、分流规则和事实源边界 | 05、03.04、本文、20 集合索引、21 ADR、24 Intent、26 Task、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、分流或归档 Memo 时 |
 | 入口可见要求 | AI 处理未任务化但有保留价值的信息、发现、提醒、问题或缺口时，应能定位本文 | 20 集合索引、运行入口摘要、Memo 分流流程入口 | AI 执行入口提示 | 信息保留、分流、归档或字段契约变化时 |
 | 确定性执行要求 | Memo 字段、状态、分类、优先级、引用、文件命名和条件必填应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、Memo 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、分类枚举、分流规则或引用关系变化时 |
 | Human 交互要求 | Memo 创建、确认、分流、归档、核心描述修改和用 Memo 规避对象准入时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |

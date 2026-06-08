@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LDVH 事实模型 CLI 工具：create / transition / delete / list / show / search / stats / related / link-rule / deprecate / supersede。
 
-对 LDVH 生产对象（intent, task, adr, pitfall, memo, profile）
+对 LDVH 生产对象（intent, task, adr, pitfall, memo）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
 Change 使用 Git commit 作为事实源，不通过本 CLI 管理。
 ADR 专属写入操作（link-rule / deprecate / supersede）必须携带 Human Gate 确认参数。
@@ -23,14 +23,13 @@ import yaml
 # ── 对象元数据（硬编码，与 fact_validate.py 保持一致） ──────────────
 
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "memo", "profile"}
+OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "memo"}
 
 ID_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}$"),
     "task": re.compile(r"^task-\d{4}$"),
     "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
-    "profile": re.compile(r"^profile-\d{4}$"),
     "memo": re.compile(r"^memo-\d{4}$"),
 }
 
@@ -39,7 +38,6 @@ FILENAME_PATTERNS = {
     "task": re.compile(r"^task-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "profile": re.compile(r"^profile-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
 }
 
@@ -48,7 +46,6 @@ VALID_STATUSES = {
     "task": {"planned", "executing", "verifying", "review_needed", "closed"},
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
-    "profile": {"draft", "active", "suspended", "archived"},
     "memo": {"draft", "active", "resolved", "archived"},
 }
 
@@ -79,12 +76,6 @@ VALID_TRANSITIONS = {
         "superseded": set(),
         "archived": set(),
     },
-    "profile": {
-        "draft": {"active"},
-        "active": {"suspended", "archived"},
-        "suspended": {"active", "archived"},
-        "archived": set(),
-    },
     "memo": {
         "draft": {"active", "archived"},
         "active": {"resolved", "archived"},
@@ -98,7 +89,6 @@ REQUIRED_FIELDS = {
     "task": ["id", "type", "title", "status", "created", "updated", "description", "source", "acceptance"],
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
-    "profile": ["id", "type", "title", "status", "created", "updated", "description", "project_name", "project_path", "ldvh_base_path"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category"],
 }
 
@@ -107,7 +97,6 @@ DEFAULT_STATUS = {
     "task": "planned",
     "adr": "proposed",
     "pitfall": "draft",
-    "profile": "draft",
     "memo": "draft",
 }
 
@@ -116,7 +105,6 @@ DIRECTORY_MAP = {
     "task": "ldvh-base/tasks/",
     "adr": "ldvh-base/adrs/",
     "pitfall": "ldvh-base/pitfalls/",
-    "profile": "ldvh-base/profiles/",
     "memo": "ldvh-base/memos/",
 }
 
