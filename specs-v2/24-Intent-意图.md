@@ -144,7 +144,7 @@ Memo 的准入、状态和字段契约由 `specs-v2/25-Memo-备忘.md` 定义。
 
 ### 4.4 Intent 与 Pitfall
 
-Intent 可以通过 `related_pitfalls` 记录执行该目标过程中形成的可复用踩坑经验。Pitfall 迁入 v2 前，相关引用可先保留为待补齐关系。
+Intent 可以通过 `related_pitfalls` 记录执行该目标过程中形成或需要参考的可复用踩坑经验。Pitfall 的准入、状态和字段契约由 `specs-v2/23-Pitfall-踩坑.md` 定义。
 
 ### 4.5 Intent 与 TaskSet
 
@@ -348,5 +348,4 @@ Intent 规范检查至少包括：
 1. Intent 校验 Code 待字段契约稳定后补齐正反样例；
 2. Intent Web 展示和受控编辑入口待 Web 实现规划时补齐；
 3. Intent 创建、拆解、完成和关闭的具体工作流程待 40-59 迁入后承接；
-4. ADR、Memo、Pitfall 迁入后，应回查本文中的对象关系字段是否需要同步；
-5. `success_criteria` 是否强制使用 Checklist，待更多实例实践后评估。
+4. `success_criteria` 是否强制使用 Checklist，待更多实例实践后评估。

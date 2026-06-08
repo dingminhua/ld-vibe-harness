@@ -123,11 +123,11 @@ Intent 的准入、状态和字段契约由 `specs-v2/24-Intent-意图.md` 定�
 Memo 可以分流或关联到 Pitfall、Profile 或 docs：
 
 1. 已解决且有复用价值的踩坑线索，可转为 Pitfall；
-2. 项目身份、路径、接入配置或环境信息，可转为 Profile；
+2. 项目身份、路径、接入配置或环境初始化记录路径，可转为 Profile；
 3. 项目正文、调研、说明或报告内容，可吸收到 docs；
 4. 外部引用或调研资料，应进入 refs 或 docs/refs。
 
-Pitfall 和 Profile 迁入 v2 前，相关引用可先保留为待补齐关系。
+Pitfall 的准入、状态和字段契约由 `specs-v2/23-Pitfall-踩坑.md` 定义。Profile 的准入、状态和字段契约由 `specs-v2/26-Profile-项目画像.md` 定义。环境能力核验、环境适配映射和运行投影正文不得转入 Profile，应进入当前环境初始化记录或按 04 系列规范处理。
 
 ### 4.5 Memo 与 Change
 
@@ -308,5 +308,4 @@ Memo 规范检查至少包括：
 1. Memo 校验 Code 待字段契约稳定后补齐正反样例；
 2. Memo Web 展示和受控编辑入口待 Web 实现规划时补齐；
 3. Memo 创建、分流和归档的具体工作流程待 40-59 迁入后承接；
-4. Pitfall、Profile 迁入后，应回查本文中的对象关系字段是否需要同步；
-5. `category` 枚举是否需要扩展，待更多实例实践后评估。
+4. `category` 枚举是否需要扩展，待更多实例实践后评估。

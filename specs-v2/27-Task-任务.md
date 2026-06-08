@@ -386,5 +386,4 @@ Task 规范检查至少包括：
 1. Task 校验 Code 待字段契约稳定后补齐正反样例；
 2. Task Web 展示和受控编辑入口待 Web 实现规划时补齐；
 3. Task 执行、验证、关闭和审计的具体工作流程待 40-59 迁入后承接；
-4. Intent、ADR、Change、Memo 和 Pitfall 迁入后，应回查本文中的对象关系字段是否需要同步；
-5. `risk_assessment` 的字段内容格式是否需要从 Narrative / Checklist 细化为专用格式，待更多实例实践后评估。
+4. `risk_assessment` 的字段内容格式是否需要从 Narrative / Checklist 细化为专用格式，待更多实例实践后评估。

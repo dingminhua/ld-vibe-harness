@@ -113,7 +113,7 @@ Intent 的创建、完成、关闭、成功标准变更和关联 Task 调整都�
 
 ### 4.4 Change 与 Memo、Pitfall、Profile
 
-Memo 的准入、状态和字段契约由 `specs-v2/25-Memo-备忘.md` 定义。Pitfall 和 Profile 迁入 v2 前，Change 可通过 `Refs:` 或 body 暂时记录相关 ID、路径或摘要。对应工作模型迁入后，应回查引用格式是否需要收敛。
+Memo 的准入、状态和字段契约由 `specs-v2/25-Memo-备忘.md` 定义。Pitfall 的准入、状态和字段契约由 `specs-v2/23-Pitfall-踩坑.md` 定义。Profile 的准入、状态和字段契约由 `specs-v2/26-Profile-项目画像.md` 定义。Change 可通过 `Refs:` 或 body 记录相关 Memo、Pitfall、Profile ID、路径或摘要。
 
 ### 4.5 Change 与规范、Code、Web
 
@@ -347,8 +347,7 @@ Change 规范检查至少包括：
 ---
 ## 11. 待补齐事项
 
-1. Change 与 ADR、Memo、Pitfall、Profile 的 Refs 规则待对应工作模型迁入后回查；
-2. Change Web 信息同步能力待 Web 实现规划时补齐；
-3. commit message 是否继续强制包含中文，需在更通用的管辖项目场景中评估；
-4. 任务关闭、Intent 完成和提交之间的工作流程待 40-59 迁入后承接；
-5. `tools/commit_validate.py` 的正反样例应随本文 commit message 契约变化持续维护。
+1. Change Web 信息同步能力待 Web 实现规划时补齐；
+2. commit message 是否继续强制包含中文，需在更通用的管辖项目场景中评估；
+3. 任务关闭、Intent 完成和提交之间的工作流程待 40-59 迁入后承接；
+4. `tools/commit_validate.py` 的正反样例应随本文 commit message 契约变化持续维护。
