@@ -370,3 +370,10 @@ LD Vibe Harness：给 Vibe Coding 装上可追溯的项目事实源和行动治�
 2. 本文结论如何影响 05 LDVH 工具基础规范（如上下文包、Human Gate 可见化、事实源健康检查）待工具规范稳定后确定；
 3. 本文结论如何影响 10-39 事实模型规范（如 Task evidence、verification、closure_evidence）待对象规范稳定后确定；
 4. 本文结论如何影响 40-69 行动模型规范（如执行循环、Gate 判断、反馈沉淀）待行动模型规范稳定后确定。
+
+---
+
+## 11. 待补齐事项
+
+1. 本文结论如何影响 LDVH Agent 机制设计待行动模型规范稳定后确定；
+2. 本文结论如何影响 Skill 与 Agent 边界待 Trae Solo 环境机制规范稳定后确定。

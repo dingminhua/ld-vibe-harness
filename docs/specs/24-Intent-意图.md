@@ -11,7 +11,7 @@
 
 Intent / 意图是人的目标、范围、成功标准和约束的结构化事实。Intent 用于沉淀需要跨任务追踪的目标入口，为 Task 拆解、ADR 决策、Memo 转化和最终完成判断提供上游依据。
 
-Intent 同时承接旧 TaskSet / 任务集取消后的任务集合职责。LDVH v2 不再创建独立 TaskSet 工作模型；围绕同一目标、主题、阶段或治理域组织的一组 Task，应通过 Intent 的 `related_tasks`、`success_criteria` 和完成证据承载。
+Intent 同时承接旧 TaskSet / 任务集取消后的任务集合职责。LDVH 不再创建独立 TaskSet 工作模型；围绕同一目标、主题、阶段或治理域组织的一组 Task，应通过 Intent 的 `related_tasks`、`success_criteria` 和完成证据承载。
 
 ### 1.1 Intent 准入条件
 
@@ -57,7 +57,7 @@ ldvh-base/intents/intent-{NNNN}-short-title.yaml
 | Intent 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
 | Intent 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
-旧 `specs/24-Intent-意图.md` 只作为迁移素材。v2 生效后，Intent 的稳定规则以本文为准。
+对应旧规范已吸收。Intent 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机
@@ -150,7 +150,7 @@ Intent 可以通过 `related_pitfalls` 记录执行该目标过程中形成或�
 
 TaskSet 已取消独立工作模型。Intent 承接 TaskSet 的目标分组和完成判断职责：
 
-| 原 TaskSet 职责 | v2 承接方式 |
+| 原 TaskSet 职责 | 当前承接方式 |
 |---|---|
 | 组织同一目标下的一组任务 | Intent `related_tasks` |
 | 描述任务集合目标 | Intent `description` |
@@ -210,12 +210,12 @@ Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影�
 ```yaml
 id: intent-0001
 type: intent
-title: 建立 LDVH v2 工作模型最小闭环
+title: 建立 LDVH 工作模型最小闭环
 status: active
 created: 2026-06-09
 updated: 2026-06-09
 description: |
-  将工作模型集合索引、Intent 和 Task 迁入 v2，使 AI 可以围绕目标、任务、验收和关闭证据形成最小可追踪闭环。
+  将工作模型集合索引、Intent 和 Task 纳入当前正式规范，使 AI 可以围绕目标、任务、验收和关闭证据形成最小可追踪闭环。
 success_criteria: |
   - [ ] 20 工作模型集合索引已迁入
   - [ ] 24 Intent 已迁入

@@ -38,7 +38,7 @@ Git commit 是 Change 事实实例的权威承载。每个符合本文 commit me
 规则如下：
 
 1. Git commit 是 Change 的权威事实源，不是 Change 的替代品；
-2. 并非所有历史 commit 都自动符合当前 Change v2 格式；
+2. 并非所有历史 commit 都自动符合当前 Change 格式；
 3. Change 查询通过 `git log`、Code 解析或 Web 派生视图实现，不创建额外索引文件；
 4. commit 创建后即不可变；如需修正，应创建新的修正或 revert commit；
 5. 一个工作可能涉及多个 Git 仓库时，每个受影响仓库应独立提交，分别形成 Change。
@@ -63,7 +63,7 @@ Git commit 历史
 
 Change 不使用 `ldvh-base/changes/` 目录。`ldvh-base/changes/` 不创建，不作为 Change 事实源。
 
-旧 `specs/22-Change-变更.md` 只作为迁移素材。v2 生效后，Change 的稳定规则以本文为准。
+对应旧规范已吸收。Change 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机
@@ -155,7 +155,7 @@ Refs: <object-refs>
 |---|---|---|---|
 | `type` | 是 | 变更类型 | `docs` |
 | `scope` | 否 | 影响范围 | `specs` |
-| `subject` | 是 | 简短说明，推荐不超过 72 字符 | `迁移 Change 工作模型到 v2` |
+| `subject` | 是 | 简短说明，推荐不超过 72 字符 | `更新 Change 工作模型` |
 | `body` | 否 | 说明变更原因、内容、风险和 Human Gate 结果 | `新增 docs/specs/22...` |
 | `Refs` | 建议 | 关联对象、规范编号、commit hash 或任务 ID | `Refs: Task-0001, 22-Change-变更` |
 
@@ -216,14 +216,14 @@ Risk、Dependency、Artifact、Checklist 当前不是独立工作模型，不应
 2. `type` 必须属于 §6.2 枚举；
 3. `subject` 必须非空，推荐不超过 72 字符；
 4. body 应说明关键变更原因、影响范围或 Human Gate 结果；
-5. `Refs` 中的工作对象应引用已存在对象；对象尚未迁入 v2 时，可先保留规范编号、路径或说明；
+5. `Refs` 中的工作对象应引用已存在对象；对象尚未创建或尚未生效时，可先保留规范编号、路径或说明；
 6. `revert` 类型 commit 应在 `Refs` 或 body 中关联被回退的 commit hash；
 7. 当前 LDVH 自身项目的 `tools/commit_validate.py` 要求 commit message 的 subject 或 body 包含中文字符；这是当前 Code 实现纪律，后续是否泛化为所有管辖项目规则需单独评估。
 
 ### 6.6 示例
 
 ```text
-docs(specs): 迁移 Change 工作模型到 v2
+docs(specs): 更新 Change 工作模型
 
 新增 docs/specs/22-Change-变更.md，明确 Change 以 Git
 commit 历史作为事实实例，不创建 ldvh-base/changes/。
@@ -232,9 +232,9 @@ Refs: 22-Change-变更
 ```
 
 ```text
-fix(tools): 修正 commit message 校验路径
+fix(tools): 修正 commit message 校验引用
 
-将 commit_validate.py 中的旧 specs/22 引用更新到
+将 commit_validate.py 中的 Change 规范引用更新到
 docs/specs/22-Change-变更.md。
 
 Refs: 22-Change-变更
@@ -300,7 +300,7 @@ Code 可依据本文实现以下能力：
 5. 检查 Task、Intent 等对象是否缺少关联 Change；
 6. 诊断 Code 实现自身与本文格式约束之间的漂移。
 
-当前 `tools/commit_validate.py` 是既有 Code 消费方，已随本文迁入同步到 v2 规范路径。后续 commit message 契约变化时，应同步更新该实现和对应测试。
+当前 `tools/commit_validate.py` 是既有 Code 消费方，已同步到 `docs/specs/22-Change-变更.md` 规范路径。后续 commit message 契约变化时，应同步更新该实现和对应测试。
 
 ### 8.3 Web 信息同步
 

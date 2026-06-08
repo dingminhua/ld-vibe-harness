@@ -7,7 +7,7 @@
 
 ---
 
-## 1. 核心思想
+## 1. 本文解决的问题
 
 **specs 是唯一权威源，Rules/Skill 是派生产物。**
 
@@ -248,3 +248,10 @@ ldvh-gen-rules 和 ldvh-gen-skills 自身也是 Skill，它们的 SKILL.md 是�
 3. 生成的 Rules/Skill 是否应该提交到 git？还是作为运行时生成物不提交？
 4. 多项目场景下，共享的 Skill（如 ldvh-commit）和项目特定的 Skill（如 ldvh-gen-rules）如何区分？
 5. specs 结构化标记的粒度：YAML front matter 够用，还是需要更细粒度的标记（如 HTML 注释标记可提取区域）？
+
+---
+
+## 8. 待补齐事项
+
+1. 本文结论如何影响 Rules 与 Skill 自动生成机制待 Trae Solo 环境机制规范稳定后确定；
+2. 本文结论如何影响规范落地自动化待环境适配规范稳定后确定。

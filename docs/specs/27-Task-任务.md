@@ -58,7 +58,7 @@ ldvh-base/tasks/task-{NNNN}-short-title.yaml
 | Task 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
 | Task 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
-旧 `specs/27-Task-任务.md` 只作为迁移素材。v2 生效后，Task 的稳定规则以本文为准。
+对应旧规范已吸收。Task 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机
@@ -221,12 +221,12 @@ Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影�
 ```yaml
 id: task-0001
 type: task
-title: 迁移 Task 工作模型到 v2
+title: 更新 Task 工作模型
 status: planned
 created: 2026-06-09
 updated: 2026-06-09
 description: |
-  将旧 specs/27-Task-任务.md 迁入 docs/specs，并按 v2 工作模型文档规范校准字段、状态和 Human Gate。
+  将 Task 工作模型纳入 docs/specs，并按当前工作模型文档规范校准字段、状态和 Human Gate。
 source: 用户直接指示
 source_intent:
 parent_task:

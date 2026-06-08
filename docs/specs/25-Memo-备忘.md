@@ -57,7 +57,7 @@ ldvh-base/memos/memo-{NNNN}-short-title.yaml
 | Memo 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
 | Memo 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
-旧 `specs/25-Memo-备忘.md` 只作为迁移素材。v2 生效后，Memo 的稳定规则以本文为准。
+对应旧规范已吸收。Memo 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机

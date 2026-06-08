@@ -65,7 +65,7 @@ ldvh-base/pitfalls/pitfall-{NNNN}-short-title.yaml
 | Pitfall 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
 | Pitfall 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
-旧 `specs/23-Pitfall-踩坑.md` 只作为迁移素材。v2 生效后，Pitfall 的稳定规则以本文为准。
+对应旧规范已吸收。Pitfall 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机
@@ -216,26 +216,26 @@ Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影�
 ```yaml
 id: pitfall-0001
 type: pitfall
-title: 把旧 specs 直接当成 v2 权威规范
+title: 把历史素材直接当成当前权威规范
 status: active
 created: 2026-06-09
 updated: 2026-06-09
 symptoms: |
-  AI 在迁移过程中引用旧 specs/ 文档中的规则，未先判断该内容是否已经吸收到 docs/specs。
+  AI 在吸收历史旧规范或临时参考中的规则时，未先判断该内容是否已经吸收到 docs/specs。
 trigger_conditions: |
-  - [x] 旧文档内容比 v2 文档更完整
-  - [x] 当前 v2 文档仍处于迁移期
+  - [x] 历史材料内容比当前正式规范更详细
+  - [x] 当前主题存在候选事项或待补齐事项
 root_cause: |
-  旧 specs 是迁移素材库，不是 v2 权威事实源；直接引用会绕过 v2 的吸收和重写边界。
+  历史材料不是当前权威事实源；直接引用会绕过正式规范的吸收和重写边界。
 resolution: |
-  先读取 docs/specs 的对应正文和集合索引，再把旧 specs 只作为迁移素材比较和吸收。
+  先读取 docs/specs 的对应正文和集合索引，再把历史材料只作为输入材料比较和吸收。
 verification: |
   已通过 01、03、09 和 20 的旧规范边界检查。
 avoidance: |
-  - [x] 修改 v2 文档前先确认对应规范是否已迁入
-  - [x] 旧 specs 只在迁移素材语境下引用
+  - [x] 修改正式规范前先确认对应规范是否已经存在或登记为候选事项
+  - [x] 历史材料只在输入材料语境下引用
 applicability: |
-  适用于 docs/specs 重建期、旧规范迁移和工作模型迁移任务。
+  适用于 docs/specs 维护、旧规范迁移收尾和历史材料吸收任务。
 severity: high
 repeatability: recurring
 tags:
@@ -259,7 +259,7 @@ status_history:
     from:
     to: active
     actor: AI
-    reason: 迁移 Pitfall 工作模型到 v2
+    reason: 更新 Pitfall 工作模型
 notes:
 ```
 

@@ -72,7 +72,7 @@ ldvh-base/profiles/profile-{NNNN}-project-name.yaml
 | 当前环境初始化记录 | 项目根目录 `LDVH-ENVIRONMENT-INITIALIZATION.md` |
 | Profile 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
-旧 `specs/26-Profile-项目画像.md` 只作为迁移素材。v2 生效后，Profile 的稳定规则以本文为准。
+对应旧规范已吸收。Profile 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机
@@ -253,7 +253,7 @@ status_history:
     from:
     to: active
     actor: AI
-    reason: 迁移 Profile 工作模型到 v2
+    reason: 更新 Profile 工作模型
 notes: |
   环境能力核验和运行投影正文以 environment_record_path 指向的根目录记录为准。
 ```

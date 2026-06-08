@@ -15,7 +15,7 @@ acceptance: |
   - [ ] 运行事实源校验并确认无本任务新增错误
 blocked_by: []
 deliverables:
-- specs/evals/20-Hermes-Agent深度调研-调用任务生成与执行机制.md
+- specs/evals/04-LDVH对Hermes-Agent的借鉴评估与深度调研.md
 source_intent: intent-0009
 verification: 检查源码目录、关键源码文件和生成的参考文档；运行事实源校验；必要时由独立 agent 审查 acceptance。
 title_en: Hermes Agent Code Research
@@ -26,4 +26,4 @@ related_pitfalls: []
 related_docs:
 - specs/refs/07-竞品测试任务安排分析与最佳实践调研.md
 affected_docs:
-- specs/evals/20-Hermes-Agent深度调研-调用任务生成与执行机制.md
+- specs/evals/04-LDVH对Hermes-Agent的借鉴评估与深度调研.md

@@ -31,7 +31,7 @@ closure_evidence: |
 blocked_by: []
 related_adrs: []
 related_docs:
-- specs/evals/16-Gstack深度调研-人工确认-测试流程-使用说明与LDVH对比.md
+- specs/evals/02-LDVH对Gstack的借鉴评估与深度调研.md
 - specs/evals/17-Superpowers深度调研-TDD强制-工程纪律与LDVH借鉴.md
 - specs/evals/18-BMAD-METHOD深度调研-企业级方法论-微文件架构与LDVH借鉴.md
 affected_docs:

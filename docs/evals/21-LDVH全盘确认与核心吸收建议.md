@@ -741,3 +741,5 @@ specs 定义产品 DNA，Rules、Skill、Tools、Web、Tests 是派生能力；�
 8. 为第三方 Skill 治理接管制定最小检查清单；
 9. 为 Trae Spec Ingest 做一次真实 Dogfood，再判断是否正式 Skill 化；
 10. 为工具权限面建立最小分级，先覆盖 Intake、Plan、Execute、Verify、Review、Close。
+11. 本文确认结论的逐项吸收状态待各对应规范稳定后持续更新；
+12. 本文核心吸收建议的落地优先级待产品路线图确定后调整。

@@ -65,7 +65,7 @@ ldvh-base/adrs/adr-{NNNN}-short-title.yaml
 | ADR 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
 | ADR 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
 
-旧 `specs/21-ADR-决策.md` 只作为迁移素材。v2 生效后，ADR 的稳定规则以本文为准。
+对应旧规范已吸收。ADR 的当前稳定规则以本文为准。
 
 ---
 ## 3. 状态机
