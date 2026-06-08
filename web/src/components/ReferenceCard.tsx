@@ -11,7 +11,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   intent: { zh: '意图', en: 'Intent' },
   task: { zh: '任务', en: 'Task' },
   adr: { zh: 'ADR', en: 'ADR' },
-  pitfall: { zh: 'BUG', en: 'Bug' },
+  pitfall: { zh: '踩坑', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
   profile: { zh: '画像', en: 'Profile' },
   change: { zh: '变更', en: 'Change' },

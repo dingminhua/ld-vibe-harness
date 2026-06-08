@@ -46,4 +46,4 @@ tags:
 - verification
 - ai-collaboration
 severity: high
-repeatability: always
+repeatability: recurring

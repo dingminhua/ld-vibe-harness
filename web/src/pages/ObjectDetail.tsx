@@ -19,21 +19,56 @@ import { CATEGORY_COLORS } from '@/utils/categoryColors';
 /** 字段分组定义 */
 const META_KEYS = ['id', 'type', 'status', 'created', 'updated', 'closed_at', 'title', 'title_en', 'title_zh', 'aggregated_deliverables', 'aggregated_docs'];
 const TASK_AUXILIARY_META_KEYS = ['category', 'priority', 'severity', 'tags', 'scope', 'impact', 'assignee'];
+const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
+  task: TASK_AUXILIARY_META_KEYS,
+  profile: ['project_name', 'project_kind', 'language', 'framework'],
+  pitfall: ['severity', 'repeatability', 'tags'],
+};
 /** 长文本字段（用 SummaryText 组件渲染，支持展开/收起） */
-const SUMMARY_TEXT_FIELDS = ['description', 'context', 'consequences', 'success_criteria', 'constraints', 'rationale', 'observation', 'analysis', 'mitigation', 'resolution', 'verification', 'notes', 'transition_reasons'];
+const SUMMARY_TEXT_FIELDS = [
+  'description', 'context', 'consequences', 'success_criteria', 'constraints',
+  'rationale', 'observation', 'analysis', 'mitigation', 'resolution',
+  'symptoms', 'trigger_conditions', 'root_cause', 'avoidance', 'applicability',
+  'governance_scope', 'archive_reason', 'notes', 'transition_reasons',
+];
 /** 引用字段（用 ReferenceCard 组件渲染） */
-const REFERENCE_FIELDS = ['blocked_by', 'source_intent', 'parent_task', 'related_tasks', 'related_adrs'];
+const REFERENCE_FIELDS = [
+  'blocked_by', 'source_intent', 'parent_task', 'related_intents', 'related_tasks',
+  'related_adrs', 'related_memos', 'related_pitfalls', 'related_profiles',
+  'source_tasks', 'source_memos', 'superseded_by',
+];
+const DOC_LINK_FIELDS = ['related_docs', 'deliverables', 'affected_docs', 'related_rules', 'superseded_by'];
+const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 'environment_record_path', 'rules_path', 'skills_path'];
 /** 可折叠的关联内容字段（intent 类型默认展开，其他类型默认折叠） */
-const COLLAPSIBLE_FIELDS = ['related_tasks', 'related_docs', 'related_adrs', 'deliverables', 'blocked_by'];
+const COLLAPSIBLE_FIELDS = [
+  'related_intents', 'related_tasks', 'related_docs', 'related_adrs', 'related_memos',
+  'related_pitfalls', 'related_profiles', 'deliverables', 'affected_docs', 'related_rules',
+  'source_tasks', 'source_memos', 'blocked_by',
+];
 /** Task 类型字段展示优先顺序 */
 const TASK_FIELD_ORDER = ['acceptance', 'blocked_by', 'related_docs', 'deliverables'];
+const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
+  task: TASK_FIELD_ORDER,
+  profile: [
+    'description', 'project_path', 'ldvh_base_path', 'docs_path', 'environment_record_path',
+    'governance_scope', 'related_intents', 'related_tasks', 'related_adrs',
+    'related_memos', 'related_pitfalls', 'related_docs', 'related_changes',
+    'status_history', 'notes',
+  ],
+  pitfall: [
+    'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
+    'avoidance', 'applicability', 'source_tasks', 'source_memos', 'related_intents',
+    'related_adrs', 'related_profiles', 'related_docs', 'related_rules',
+    'related_changes', 'superseded_by', 'archive_reason', 'status_history', 'notes',
+  ],
+};
 
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   intent: { zh: '意图', en: 'Intent' },
   task: { zh: '任务', en: 'Task' },
   adr: { zh: 'ADR', en: 'ADR' },
-  pitfall: { zh: 'BUG', en: 'Bug' },
+  pitfall: { zh: '踩坑', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
   profile: { zh: '画像', en: 'Profile' },
   change: { zh: '变更', en: 'Change' },
@@ -48,6 +83,12 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   acceptance: { zh: '验收标准', en: 'Acceptance' },
   verification: { zh: '验证方式', en: 'Verification' },
   notes: { zh: '备注', en: 'Notes' },
+  symptoms: { zh: '问题现象', en: 'Symptoms' },
+  trigger_conditions: { zh: '触发条件', en: 'Trigger Conditions' },
+  root_cause: { zh: '根因', en: 'Root Cause' },
+  avoidance: { zh: '规避策略', en: 'Avoidance' },
+  applicability: { zh: '适用范围', en: 'Applicability' },
+  archive_reason: { zh: '归档原因', en: 'Archive Reason' },
   rationale: { zh: '理由', en: 'Rationale' },
   context: { zh: '背景', en: 'Context' },
   consequences: { zh: '影响', en: 'Consequences' },
@@ -64,6 +105,14 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   decision: { zh: '决策', en: 'Decision' },
   related_tasks: { zh: '关联任务', en: 'Related Tasks' },
   related_adrs: { zh: '关联 ADR', en: 'Related ADRs' },
+  related_intents: { zh: '关联意图', en: 'Related Intents' },
+  related_memos: { zh: '关联备忘', en: 'Related Memos' },
+  related_pitfalls: { zh: '关联踩坑', en: 'Related Pitfalls' },
+  related_profiles: { zh: '关联画像', en: 'Related Profiles' },
+  source_tasks: { zh: '来源任务', en: 'Source Tasks' },
+  source_memos: { zh: '来源备忘', en: 'Source Memos' },
+  superseded_by: { zh: '替代来源', en: 'Superseded By' },
+  related_changes: { zh: '关联变更', en: 'Related Changes' },
   scope: { zh: '范围', en: 'Scope' },
   impact: { zh: '影响范围', en: 'Impact' },
   severity: { zh: '严重程度', en: 'Severity' },
@@ -72,6 +121,18 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   assignee: { zh: '执行者', en: 'Assignee' },
   tags: { zh: '标签', en: 'Tags' },
   path: { zh: '路径', en: 'Path' },
+  project_name: { zh: '项目名称', en: 'Project Name' },
+  project_kind: { zh: '项目类型', en: 'Project Kind' },
+  project_path: { zh: '项目路径', en: 'Project Path' },
+  ldvh_base_path: { zh: '事实实例路径', en: 'LDVH Base Path' },
+  docs_path: { zh: '文档路径', en: 'Docs Path' },
+  environment_record_path: { zh: '环境初始化记录', en: 'Environment Record' },
+  governance_scope: { zh: '管辖范围', en: 'Governance Scope' },
+  language: { zh: '语言', en: 'Language' },
+  framework: { zh: '框架', en: 'Framework' },
+  repeatability: { zh: '复现概率', en: 'Repeatability' },
+  related_rules: { zh: '承接规则', en: 'Related Rules' },
+  status_history: { zh: '状态历史', en: 'Status History' },
   changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
   deliverables: { zh: '产出物', en: 'Deliverables' },
@@ -177,15 +238,17 @@ export default function ObjectDetail() {
   const hasAggregatedDocs = aggregatedDocs.length > 0;
 
   // 内容字段（排除元信息）
+  const auxiliaryMetaKeys = AUXILIARY_META_KEYS_BY_TYPE[objType] || [];
   const contentEntries = Object.entries(obj).filter(
-    ([key]) => !META_KEYS.includes(key)
+    ([key]) => !META_KEYS.includes(key) && !auxiliaryMetaKeys.includes(key)
   );
 
-  // Task 类型字段排序：acceptance → blocked_by → related_docs → 其余按原顺序
-  if (objType === 'task') {
+  // 对有明确契约顺序的对象类型做语义排序
+  const fieldOrder = FIELD_ORDER_BY_TYPE[objType] || [];
+  if (fieldOrder.length > 0) {
     contentEntries.sort((a, b) => {
-      const aIdx = TASK_FIELD_ORDER.indexOf(a[0]);
-      const bIdx = TASK_FIELD_ORDER.indexOf(b[0]);
+      const aIdx = fieldOrder.indexOf(a[0]);
+      const bIdx = fieldOrder.indexOf(b[0]);
       if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
       if (aIdx !== -1) return -1;
       if (bIdx !== -1) return 1;
@@ -193,7 +256,7 @@ export default function ObjectDetail() {
     });
   }
 
-  const taskAuxiliaryMetaEntries = objType === 'task' ? getTaskAuxiliaryMetaEntries(obj) : [];
+  const auxiliaryMetaEntries = getAuxiliaryMetaEntries(obj, objType);
 
   // 生成真正的 YAML 源码
   const yamlSource = objectToYaml(obj);
@@ -246,7 +309,7 @@ export default function ObjectDetail() {
             <MetaChip label={t('objectDetail.created')} value={obj.created as string || '-'} />
             <MetaChip label={t('objectDetail.updated')} value={obj.updated as string || '-'} />
             {obj.closed_at && <MetaChip label={t('objectDetail.closedAt')} value={obj.closed_at as string} />}
-            {taskAuxiliaryMetaEntries.map(([key, value]) => (
+            {auxiliaryMetaEntries.map(([key, value]) => (
               <MetaChip key={key} label={getFieldLabel(key, locale)} value={formatAuxiliaryMetaValue(value)} />
             ))}
           </div>
@@ -391,8 +454,9 @@ function TaskReadingLayout({ obj, locale, objType, objId, onRefresh }: { obj: Re
   );
 }
 
-function getTaskAuxiliaryMetaEntries(obj: Record<string, unknown>) {
-  return TASK_AUXILIARY_META_KEYS
+function getAuxiliaryMetaEntries(obj: Record<string, unknown>, objType: string) {
+  const keys = AUXILIARY_META_KEYS_BY_TYPE[objType] || [];
+  return keys
     .map((key) => [key, obj[key]] as [string, unknown])
     .filter(([, value]) => value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0));
 }
@@ -440,6 +504,41 @@ function TaskDocGroup({ label, docs }: { label: string; docs?: string[] }) {
     <div className="rounded-lg border border-ldvh-border bg-ldvh-bg/40 p-3">
       <div className="mb-2 text-[11px] font-medium tracking-wide text-ldvh-text-secondary">{label}</div>
       {docs && docs.length > 0 ? <DocPreviewLink docs={docs} /> : <EmptyHint text="空" />}
+    </div>
+  );
+}
+
+function isPreviewableDocPath(value: string) {
+  return value.startsWith('http://') || value.startsWith('https://') || /^(docs\/|specs\/|web\/docs\/)/.test(value);
+}
+
+function PathText({ value }: { value: string }) {
+  return (
+    <span className="break-all rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 font-mono text-xs text-ldvh-text-primary">
+      {value}
+    </span>
+  );
+}
+
+function StringList({ items }: { items: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item, i) => (
+        <span key={i} className="rounded-md bg-ldvh-bg px-2 py-0.5 text-xs text-ldvh-text-primary border border-ldvh-border">
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function DocumentOrTextList({ items }: { items: string[] }) {
+  const docs = items.filter(isPreviewableDocPath);
+  const rest = items.filter((item) => !isPreviewableDocPath(item));
+  return (
+    <div className="flex flex-col gap-2">
+      {docs.length > 0 && <DocPreviewLink docs={docs} />}
+      {rest.length > 0 && <StringList items={rest} />}
     </div>
   );
 }
@@ -508,6 +607,14 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
     // verification 字段使用 EvidenceBlock 组件（嵌入模式）
     if (fieldKey === 'verification') {
       return <EvidenceBlock value={value} embedded />;
+    }
+
+    if (DOC_LINK_FIELDS.includes(fieldKey) && isPreviewableDocPath(value)) {
+      return <DocPreviewLink docs={[value]} />;
+    }
+
+    if (PATH_TEXT_FIELDS.includes(fieldKey)) {
+      return <PathText value={value} />;
     }
 
     // success_criteria 含 checklist 时使用 ChecklistCard（12-工作模型字段内容格式规范 §5）
@@ -598,26 +705,14 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
     // 字符串数组
     if (typeof value[0] === 'string') {
       // related_docs 字段使用 DocPreviewLink 组件
-      if (fieldKey === 'related_docs') {
-        return <DocPreviewLink docs={value as string[]} />;
-      }
-      // deliverables 字段使用 DocPreviewLink 组件
-      if (fieldKey === 'deliverables') {
-        return <DocPreviewLink docs={value as string[]} />;
+      if (DOC_LINK_FIELDS.includes(fieldKey)) {
+        return <DocumentOrTextList items={value as string[]} />;
       }
       // 引用字段使用 ReferenceCard 组件
       if (REFERENCE_FIELDS.includes(fieldKey)) {
         return <ReferenceCard refs={value as string[]} />;
       }
-      return (
-        <div className="flex flex-wrap gap-1.5">
-          {value.map((item, i) => (
-            <span key={i} className="rounded-md bg-ldvh-bg px-2 py-0.5 text-xs text-ldvh-text-primary border border-ldvh-border">
-              {item}
-            </span>
-          ))}
-        </div>
-      );
+      return <StringList items={value as string[]} />;
     }
 
     // 对象数组

@@ -44,15 +44,22 @@ REQUIRED_FIELDS = {
     "task": ["id", "type", "title", "status", "created", "updated", "description", "source", "acceptance"],
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
-    "profile": ["id", "type", "title", "status", "created", "updated", "description", "project_name", "project_path", "ldvh_base_path"],
+    "profile": ["id", "type", "title", "status", "created", "updated", "description", "project_name", "project_kind", "project_path", "ldvh_base_path"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category"],
 }
 LIST_FIELDS = {
     "intent": {"related_tasks", "related_adrs", "related_pitfalls", "related_docs"},
     "task": {"related_adrs", "sub_tasks", "blocked_by", "related_docs", "affected_docs", "deliverables"},
     "adr": {"related_tasks", "related_adrs"},
-    "pitfall": {"source_objects", "related_objects", "related_rules", "tags"},
-    "profile": {"related_tasks", "related_adrs"},
+    "pitfall": {
+        "source_objects", "related_objects", "related_rules", "tags",
+        "source_tasks", "source_memos", "related_intents", "related_adrs",
+        "related_profiles", "related_changes", "related_docs",
+    },
+    "profile": {
+        "related_intents", "related_tasks", "related_adrs", "related_memos",
+        "related_pitfalls", "related_docs", "related_changes", "status_history",
+    },
     "memo": {"related_tasks", "related_adrs", "related_docs"},
 }
 
@@ -67,7 +74,7 @@ LONG_TEXT_FIELDS = {
 }
 
 # 12-工作模型字段内容格式规范：路径引用字段定义
-PATH_FIELDS = {"related_docs", "deliverables", "affected_docs"}
+PATH_FIELDS = {"related_docs", "deliverables", "affected_docs", "related_rules"}
 
 # 12-工作模型字段内容格式规范：Evidence 字段定义
 EVIDENCE_FIELDS = {"verification", "closure_evidence"}
@@ -214,7 +221,7 @@ def validate_long_text_block_scalar(path: Path, data: dict[str, Any], object_typ
 def validate_path_fields_exist(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
     """12-工作模型字段内容格式规范 §6.1：路径引用字段中的相对路径不存在时报 error。"""
     issues = []
-    project_root = path.parent.parent.parent  # ldvh-base/xxx/ -> ldvh-base/ -> project root
+    project_root = infer_project_root(path)
     for field in sorted(PATH_FIELDS):
         items = data.get(field)
         if not isinstance(items, list):
@@ -230,13 +237,90 @@ def validate_path_fields_exist(path: Path, data: dict[str, Any], object_type: st
             # 只校验看起来像文件路径的字符串（含 / 或以 . 开头或含扩展名）
             if "/" not in item and not item.startswith(".") and "." not in item.split("/")[-1]:
                 continue
-            resolved = project_root / item
+            path_part = item.split(" §", 1)[0].strip()
+            resolved = project_root / path_part
             if not resolved.exists():
+                level = "warning" if field == "related_rules" else "error"
                 issues.append(Issue(
-                    str(path), "error", "PATH_NOT_FOUND",
+                    str(path), level, "PATH_NOT_FOUND",
                     f"字段 {field} 中引用的路径不存在: {item}",
                     field=field,
                 ))
+    return issues
+
+
+def infer_project_root(path: Path) -> Path:
+    resolved = path.resolve()
+    parts = resolved.parts
+    if "ldvh-base" in parts:
+        index = parts.index("ldvh-base")
+        if index > 0:
+            return Path(*parts[:index])
+    return resolved.parent
+
+
+def resolve_fact_path(path: Path, raw_value: str) -> Path:
+    value_path = Path(raw_value).expanduser()
+    if value_path.is_absolute():
+        return value_path
+    return infer_project_root(path) / value_path
+
+
+def validate_path_value(path: Path, field: str, raw_value: Any, *, required_existing: bool = True) -> list[Issue]:
+    if is_empty(raw_value):
+        return []
+    if not isinstance(raw_value, str):
+        return [Issue(str(path), "error", "INVALID_PATH_FIELD", f"字段必须是路径字符串: {field}", field=field)]
+    resolved = resolve_fact_path(path, raw_value)
+    if required_existing and not resolved.exists():
+        return [Issue(str(path), "error", "PATH_NOT_FOUND", f"字段 {field} 指向的路径不存在: {raw_value}", field=field)]
+    return []
+
+
+def validate_enum_field(path: Path, data: dict[str, Any], field: str, allowed_values: set[str], *, level: str = "error") -> list[Issue]:
+    value = data.get(field)
+    if value is None:
+        return []
+    if value not in allowed_values:
+        valid_values = ", ".join(sorted(allowed_values))
+        code = f"INVALID_{field.upper()}"
+        return [Issue(str(path), level, code, f"{field} 必须是以下值之一: {valid_values}", field=field)]
+    return []
+
+
+def validate_id_list_format(path: Path, data: dict[str, Any], field: str, object_type: str) -> list[Issue]:
+    items = data.get(field)
+    if not isinstance(items, list):
+        return []
+    issues = []
+    pattern = ID_PATTERNS[object_type]
+    for item in items:
+        if not isinstance(item, str) or not pattern.match(item):
+            issues.append(Issue(
+                str(path),
+                "error",
+                "INVALID_OBJECT_REFERENCE",
+                f"{field} 中必须使用 {object_type}-{{NNNN}} 格式的对象 ID: {item}",
+                field=field,
+            ))
+    return issues
+
+
+def validate_any_object_id_list_format(path: Path, data: dict[str, Any], field: str) -> list[Issue]:
+    items = data.get(field)
+    if not isinstance(items, list):
+        return []
+    issues = []
+    legacy_object_id_pattern = re.compile(r"^[a-z]+-\d{4}$")
+    for item in items:
+        if not isinstance(item, str) or not legacy_object_id_pattern.match(item):
+            issues.append(Issue(
+                str(path),
+                "error",
+                "INVALID_OBJECT_REFERENCE",
+                f"{field} 中必须使用已知工作对象 ID 格式: {item}",
+                field=field,
+            ))
     return issues
 
 
@@ -387,26 +471,60 @@ def validate_task(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 
 VALID_SEVERITY = {"low", "medium", "high", "critical"}
-VALID_REPEATABILITY = {"always", "conditional", "rare", "once"}
+VALID_REPEATABILITY = {"unknown", "once", "recurring"}
+VALID_PROJECT_KINDS = {"ldvh_self", "governed_project", "management_project"}
 VALID_MEMO_CATEGORIES = {"discovery", "reminder", "question", "gap", "preference"}
 VALID_MEMO_PRIORITIES = {"low", "medium", "high"}
+
+ID_LIST_FIELDS = {
+    "related_intents": "intent",
+    "related_tasks": "task",
+    "related_adrs": "adr",
+    "related_memos": "memo",
+    "related_pitfalls": "pitfall",
+    "related_profiles": "profile",
+    "source_tasks": "task",
+    "source_memos": "memo",
+}
 
 
 def validate_pitfall(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "pitfall")
-    severity = data.get("severity")
-    if severity is not None and severity not in VALID_SEVERITY:
-        valid_values = ", ".join(sorted(VALID_SEVERITY))
-        issues.append(Issue(str(path), "warning", "INVALID_SEVERITY", f"severity 必须是以下值之一: {valid_values}"))
-    repeatability = data.get("repeatability")
-    if repeatability is not None and repeatability not in VALID_REPEATABILITY:
-        valid_values = ", ".join(sorted(VALID_REPEATABILITY))
-        issues.append(Issue(str(path), "warning", "INVALID_REPEATABILITY", f"repeatability 必须是以下值之一: {valid_values}"))
+    issues.extend(validate_enum_field(path, data, "severity", VALID_SEVERITY))
+    issues.extend(validate_enum_field(path, data, "repeatability", VALID_REPEATABILITY))
+    for field, target_type in ID_LIST_FIELDS.items():
+        issues.extend(validate_id_list_format(path, data, field, target_type))
+    issues.extend(validate_any_object_id_list_format(path, data, "source_objects"))
+    issues.extend(validate_any_object_id_list_format(path, data, "related_objects"))
+    if data.get("status") == "superseded" and is_empty(data.get("superseded_by")):
+        issues.append(Issue(str(path), "error", "MISSING_SUPERSEDED_BY", "superseded 状态必须提供非空字段: superseded_by", field="superseded_by"))
+    if data.get("status") == "archived" and is_empty(data.get("archive_reason")) and is_empty(data.get("superseded_by")):
+        issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态未被替代时必须提供归档原因: archive_reason", field="archive_reason"))
     return issues
 
 
 def validate_profile(path: Path, data: dict[str, Any]) -> list[Issue]:
-    return validate_common(path, data, "profile")
+    issues = validate_common(path, data, "profile")
+    issues.extend(validate_enum_field(path, data, "project_kind", VALID_PROJECT_KINDS))
+    for field, target_type in ID_LIST_FIELDS.items():
+        issues.extend(validate_id_list_format(path, data, field, target_type))
+    for field in ("project_path", "ldvh_base_path", "docs_path", "environment_record_path"):
+        issues.extend(validate_path_value(path, field, data.get(field)))
+    if data.get("status") in {"active", "suspended"}:
+        for field in ("project_path", "ldvh_base_path", "environment_record_path"):
+            if is_empty(data.get(field)):
+                issues.append(Issue(str(path), "error", "MISSING_ACTIVE_PROFILE_PATH", f"{data.get('status')} 状态必须提供非空字段: {field}", field=field))
+    environment_record_path = data.get("environment_record_path")
+    if isinstance(environment_record_path, str) and environment_record_path:
+        if Path(environment_record_path).name != "LDVH-ENVIRONMENT-INITIALIZATION.md":
+            issues.append(Issue(
+                str(path),
+                "error",
+                "INVALID_ENVIRONMENT_RECORD_PATH",
+                "environment_record_path 必须指向 LDVH-ENVIRONMENT-INITIALIZATION.md",
+                field="environment_record_path",
+            ))
+    return issues
 
 
 def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:

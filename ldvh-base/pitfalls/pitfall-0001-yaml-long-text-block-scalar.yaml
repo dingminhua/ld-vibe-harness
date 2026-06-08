@@ -39,4 +39,4 @@ tags:
 - fact-model
 - ai-collaboration
 severity: medium
-repeatability: always
+repeatability: recurring

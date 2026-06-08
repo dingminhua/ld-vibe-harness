@@ -19,7 +19,7 @@ export default function EvidenceBlock({ value, embedded = false }: EvidenceBlock
             code: ({ className, children, ...props }) => {
               const text = String(children);
               const isCommand = /^(python3?|npx|npm|yarn|pip|cargo|go\s+(?:run|test|build))\s/.test(text);
-              const isPath = /^(specs\/|src\/|tools\/|web\/|config\/|\.\/|\/)/.test(text);
+              const isPath = /^(docs\/|specs\/|src\/|tools\/|web\/|config\/|\.\/|\/)/.test(text);
 
               if (isCommand || isPath) {
                 return (
@@ -82,7 +82,7 @@ export default function EvidenceBlock({ value, embedded = false }: EvidenceBlock
             code: ({ className, children, ...props }) => {
               const text = String(children);
               const isCommand = /^(python3?|npx|npm|yarn|pip|cargo|go\s+(?:run|test|build))\s/.test(text);
-              const isPath = /^(specs\/|src\/|tools\/|web\/|config\/|\.\/|\/)/.test(text);
+              const isPath = /^(docs\/|specs\/|src\/|tools\/|web\/|config\/|\.\/|\/)/.test(text);
 
               if (isCommand || isPath) {
                 return (
