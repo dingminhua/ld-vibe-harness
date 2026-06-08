@@ -14,8 +14,10 @@ from pathlib import Path
 # ── 通用常量 ──
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SPECS_DIR = PROJECT_ROOT / "specs"
-SPECS_V2_DIR = PROJECT_ROOT / "specs-v2"
+SPECS_DIR = PROJECT_ROOT / "docs" / "specs"
+LEGACY_SPECS_DIR = PROJECT_ROOT / "specs"
+DOCS_DIR = PROJECT_ROOT / "docs"
+DOCS_SPECS_DIR = DOCS_DIR / "specs"
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 
 
@@ -244,13 +246,15 @@ def refs_build_document_map(paths):
     scan_paths = list(paths)
     if SPECS_DIR.exists():
         scan_paths.append(SPECS_DIR)
+    if LEGACY_SPECS_DIR.exists():
+        scan_paths.append(LEGACY_SPECS_DIR)
     for path in iter_markdown_files(scan_paths):
         documents[path.resolve()] = Document(path.resolve(), refs_extract_sections(path))
     return documents
 
 
 def refs_resolve_markdown_path(raw_path, current_path):
-    if raw_path.startswith("specs/") or raw_path.startswith("specs-v2/"):
+    if raw_path.startswith("specs/") or raw_path.startswith("docs/"):
         return (PROJECT_ROOT / raw_path).resolve()
     if raw_path.startswith("./") or raw_path.startswith("../"):
         return (current_path.parent / raw_path).resolve()
@@ -379,8 +383,8 @@ LANDING_ALLOWED_TYPES = {
 
 
 def landing_default_check_paths():
-    if SPECS_V2_DIR.exists():
-        return [str(path) for path in sorted(SPECS_V2_DIR.glob("*.md"))]
+    if DOCS_SPECS_DIR.exists():
+        return [str(path) for path in sorted(DOCS_SPECS_DIR.glob("*.md"))]
     return []
 
 
@@ -390,7 +394,7 @@ def landing_is_formal_spec(path):
         rel = resolved.relative_to(PROJECT_ROOT)
     except ValueError:
         return False
-    return len(rel.parts) == 2 and rel.parts[0] == "specs-v2" and path.suffix == ".md"
+    return len(rel.parts) == 3 and rel.parts[:2] == ("docs", "specs") and path.suffix == ".md"
 
 
 def landing_strip_section_number(title):
@@ -686,7 +690,9 @@ INDEX_INPUT_PATTERNS = ("*.md",)
 INDEX_NUMBERED_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?(?:\s+|$)")
 INDEX_HEADER_FIELD_RE = re.compile(r"^>\s*([^：:]+)[：:]\s*(.*)\s*$")
 INDEX_BACKTICK_MD_RE = re.compile(r"`([^`]+\.md)`")
-INDEX_PLAIN_SPECS_MD_RE = re.compile(r"(?<![`\w./-])((?:specs|specs-v2)/(?:evals/|refs/)?[^\s`，。；、)）]+\.md)")
+INDEX_PLAIN_SPECS_MD_RE = re.compile(
+    r"(?<![`\w./-])((?:specs/(?:evals/|refs/)?|docs/(?:specs|evals|refs)/)[^\s`，。；、)）]+\.md)"
+)
 INDEX_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\d]+(?:\.\d+)*)")
 INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
 
@@ -1018,7 +1024,7 @@ class SpecsChecker:
 
     def resolve_target_path(self, raw_path, current_path):
         raw = str(raw_path)
-        if raw.startswith("specs/") or raw.startswith("specs-v2/"):
+        if raw.startswith("specs/") or raw.startswith("docs/"):
             return (self.root / raw).resolve()
         if raw.startswith("./") or raw.startswith("../"):
             return (current_path.parent / raw).resolve()
@@ -1038,9 +1044,13 @@ class SpecsChecker:
     def infer_doc_kind(self, path, title, header):
         rel = path.relative_to(self.root)
         parts = rel.parts
-        if len(parts) >= 3 and parts[1] == "evals":
+        if len(parts) >= 2 and parts[0] == "docs" and parts[1] == "evals":
             return "evals"
-        if len(parts) >= 3 and parts[1] == "refs":
+        if len(parts) >= 2 and parts[0] == "docs" and parts[1] == "refs":
+            return "refs"
+        if len(parts) >= 2 and parts[0] == "specs" and parts[1] == "evals":
+            return "evals"
+        if len(parts) >= 2 and parts[0] == "specs" and parts[1] == "refs":
             return "refs"
         if header.get("所属主文档"):
             return "subdocument"
@@ -1097,6 +1107,10 @@ def write_outputs(indexes, out_dir):
 
 def index_main(root, out=None, fail_on_diagnostics=False, specs_dir="specs"):
     checker = SpecsChecker(root, specs_dir)
+    if not checker.specs_dir.exists() and specs_dir == "docs/specs":
+        legacy_checker = SpecsChecker(root, "specs")
+        if legacy_checker.specs_dir.exists():
+            checker = legacy_checker
     if not checker.specs_dir.exists():
         raise SpecsIndexError(f"规范目录不存在: {checker.specs_dir}")
     indexes = checker.build()
@@ -1114,7 +1128,7 @@ def index_main(root, out=None, fail_on_diagnostics=False, specs_dir="specs"):
 
 def infer_specs_dir_from_paths(paths):
     if not paths:
-        return "specs"
+        return "docs/specs"
     resolved_dirs = []
     for raw_path in paths:
         path = Path(raw_path)
@@ -1123,10 +1137,12 @@ def infer_specs_dir_from_paths(paths):
             rel = resolved.relative_to(PROJECT_ROOT)
         except ValueError:
             continue
-        if rel.parts:
+        if rel.parts[:2] == ("docs", "specs"):
+            resolved_dirs.append("docs/specs")
+        elif rel.parts:
             resolved_dirs.append(rel.parts[0])
-    if resolved_dirs and all(item == "specs-v2" for item in resolved_dirs):
-        return "specs-v2"
+    if resolved_dirs and all(item == "docs/specs" for item in resolved_dirs):
+        return "docs/specs"
     return "specs"
 
 
@@ -1140,15 +1156,15 @@ def build_parser():
 
     # doc
     doc_parser = subparsers.add_parser("doc", help="检查 specs Markdown 文档是否符合 03 文档基础规范的章节编号要求。")
-    doc_parser.add_argument("paths", nargs="*", default=[str(SPECS_DIR)], help="要检查的 Markdown 文件或目录，默认检查 specs/。")
+    doc_parser.add_argument("paths", nargs="*", default=[str(SPECS_DIR)], help="要检查的 Markdown 文件或目录，默认检查 docs/specs/。")
 
     # refs
     refs_parser = subparsers.add_parser("refs", help="检查 specs Markdown 文档中的 § 引用是否存在。")
-    refs_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
+    refs_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/specs/ 根目录正式规范。")
 
     # landing
-    landing_parser = subparsers.add_parser("landing", help="检查 specs-v2 正式规范的规范落地要求表。")
-    landing_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs-v2/ 根目录正式规范。")
+    landing_parser = subparsers.add_parser("landing", help="检查 docs/specs 正式规范的规范落地要求表。")
+    landing_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/specs/ 根目录正式规范。")
 
     # env-init
     env_init_parser = subparsers.add_parser("env-init", help="检查项目根目录 LDVH 环境初始化记录的中文模板结构。")
@@ -1157,13 +1173,13 @@ def build_parser():
     # index
     index_parser = subparsers.add_parser("index", help="生成 specs 文档派生索引和诊断结果（03.01 规范文档剖面）。")
     index_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
-    index_parser.add_argument("--specs-dir", default="specs", help="要生成索引的规范目录，默认 specs；v2 可传 specs-v2。")
+    index_parser.add_argument("--specs-dir", default="docs/specs", help="要生成索引的规范目录，默认 docs/specs；旧迁移素材可传 specs。")
     index_parser.add_argument("--out", default=None, help="输出目录；未提供时将完整索引输出到 stdout。")
     index_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")
 
     # all
     all_parser = subparsers.add_parser("all", help="运行所有检查（doc + refs + landing + index）。")
-    all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/，landing 默认检查 specs-v2/。")
+    all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/specs/。")
     all_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录（用于 index 子命令）。")
     all_parser.add_argument("--specs-dir", default=None, help="要生成索引的规范目录；未提供时根据 paths 推断，默认 specs。")
     all_parser.add_argument("--out", default=None, help="输出目录（用于 index 子命令）；未提供时将完整索引输出到 stdout。")

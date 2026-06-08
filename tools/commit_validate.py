@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""检查 Git commit message 是否符合 specs-v2/22-Change-变更.md 格式。
+"""检查 Git commit message 是否符合 docs/specs/22-Change-变更.md 格式。
 
 功能：
   - 默认模式：检查最近 N 条 git commit 历史
@@ -17,13 +17,13 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-# specs-v2/22-Change-变更.md type 枚举
+# docs/specs/22-Change-变更.md type 枚举
 VALID_TYPES = {"feat", "fix", "docs", "refactor", "test", "chore", "spec", "rule", "adr", "revert"}
 
-# specs-v2/22-Change-变更.md scope 枚举（推荐值，非强制）
+# docs/specs/22-Change-变更.md scope 枚举（推荐值，非强制）
 RECOMMENDED_SCOPES = {"specs", "docs", "rules", "adr", "tools", "web", "tests", "config", "evals", "refs"}
 
-# specs-v2/22-Change-变更.md: subject 推荐不超过 72 字符
+# docs/specs/22-Change-变更.md: subject 推荐不超过 72 字符
 MAX_SUBJECT_LEN = 72
 
 # 第一行格式: <type>(<scope>): <subject>
@@ -36,7 +36,7 @@ REFS_RE = re.compile(r"^Refs:\s*(.+)$", re.MULTILINE)
 HAS_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
 
 FORMAT_HELP = """\
-正确的 commit message 格式（specs-v2/22-Change-变更.md）：
+正确的 commit message 格式（docs/specs/22-Change-变更.md）：
 
     <type>(<scope>): <subject>
 
@@ -54,7 +54,7 @@ FORMAT_HELP = """\
 示例：
   docs(specs): 迁移 Change 工作模型到 v2
 
-  新增 specs-v2/22-Change-变更.md，明确 Change
+  新增 docs/specs/22-Change-变更.md，明确 Change
   以 Git commit 历史作为事实实例。
 
   Refs: 22-Change-变更
@@ -201,7 +201,7 @@ def check_message(message_text: str) -> list[Issue]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="检查 Git commit message 是否符合 specs-v2/22-Change-变更.md 格式"
+        description="检查 Git commit message 是否符合 docs/specs/22-Change-变更.md 格式"
     )
     parser.add_argument(
         "--show-format", action="store_true",
@@ -267,7 +267,7 @@ def main():
                 error_count += 1
 
     if total_issues == 0:
-        print(f"最近 {args.count} 条 commit 格式均符合 specs-v2/22-Change-变更.md 要求")
+        print(f"最近 {args.count} 条 commit 格式均符合 docs/specs/22-Change-变更.md 要求")
     else:
         print(f"\n共 {total_issues} 个问题（{error_count} 个 error），检查了 {len(commits)} 条 commit")
         if error_count > 0:
