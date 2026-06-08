@@ -109,7 +109,7 @@ Intent 的创建、完成、关闭、成功标准变更和关联 Task 调整都�
 
 ### 4.3 Change 与 ADR
 
-当 Change 涉及长期决策、事实源边界、架构方向或高影响规则变化时，应创建或关联 ADR。ADR 迁入 v2 前，相关引用可先保留为待补齐关系。
+当 Change 涉及长期决策、事实源边界、架构方向或高影响规则变化时，应创建或关联 ADR。ADR 的准入、状态和字段契约由 `specs-v2/21-ADR-决策.md` 定义。
 
 ### 4.4 Change 与 Memo、Pitfall、Profile
 

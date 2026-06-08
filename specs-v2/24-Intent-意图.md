@@ -129,7 +129,7 @@ Intent 通过 `related_tasks` 组织承接该目标的一组 Task。Task 通过 
 
 ### 4.2 Intent 与 ADR
 
-Intent 可以通过 `related_adrs` 引用多个 ADR，表示目标实现过程中产生或需要遵守的长期决策。ADR 迁入 v2 前，引用关系可先保留 ID 或路径，但不得反向定义 ADR 字段。
+Intent 可以通过 `related_adrs` 引用多个 ADR，表示目标实现过程中产生或需要遵守的长期决策。ADR 的准入、状态和字段契约由 `specs-v2/21-ADR-决策.md` 定义。
 
 ### 4.3 Intent 与 Memo
 

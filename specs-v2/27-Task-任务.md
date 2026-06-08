@@ -121,7 +121,7 @@ Task 可以关联一个 Intent，作为该 Intent 的执行单元。关联字段
 
 ### 4.2 Task 与 ADR
 
-Task 可以通过 `related_adrs` 引用多个 ADR，表示执行时需要遵守或参考的决策。ADR 迁入 v2 前，引用关系可先保留 ID 或路径，但不得反向定义 ADR 字段。
+Task 可以通过 `related_adrs` 引用多个 ADR，表示执行时需要遵守或参考的长期决策。ADR 的准入、状态和字段契约由 `specs-v2/21-ADR-决策.md` 定义。
 
 ### 4.3 Task 与 Change
 
