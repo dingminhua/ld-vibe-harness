@@ -132,7 +132,7 @@ Memo 中的输入满足 ADR 准入条件后，可以转化为 ADR。转化时应
 3. 评估 Human Gate；
 4. 不在 ADR 中复制 Memo 全文，只保留摘要和引用。
 
-Memo 迁入 v2 前，相关引用可先保留为待补齐关系。
+Memo 的准入、状态和字段契约由 `specs-v2/25-Memo-备忘.md` 定义。
 
 ### 4.5 ADR 与 specs-v2 / Rules
 

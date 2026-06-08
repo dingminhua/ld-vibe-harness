@@ -113,7 +113,7 @@ Intent 的创建、完成、关闭、成功标准变更和关联 Task 调整都�
 
 ### 4.4 Change 与 Memo、Pitfall、Profile
 
-Memo、Pitfall 和 Profile 迁入 v2 前，Change 可通过 `Refs:` 或 body 暂时记录相关 ID、路径或摘要。对应工作模型迁入后，应回查引用格式是否需要收敛。
+Memo 的准入、状态和字段契约由 `specs-v2/25-Memo-备忘.md` 定义。Pitfall 和 Profile 迁入 v2 前，Change 可通过 `Refs:` 或 body 暂时记录相关 ID、路径或摘要。对应工作模型迁入后，应回查引用格式是否需要收敛。
 
 ### 4.5 Change 与规范、Code、Web
 

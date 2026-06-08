@@ -140,7 +140,7 @@ Memo 中的输入满足 Intent 准入条件后，可以转化为 Intent。转化
 3. 评估 Human Gate；
 4. 不在 Intent 中复制 Memo 全文，只保留摘要和引用。
 
-Memo 迁入 v2 前，相关引用可先保留为待补齐关系。
+Memo 的准入、状态和字段契约由 `specs-v2/25-Memo-备忘.md` 定义。
 
 ### 4.4 Intent 与 Pitfall
 
