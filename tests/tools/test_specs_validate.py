@@ -733,6 +733,56 @@ def test_broken_markdown_path_is_reported(tmp_path):
     assert any("specs/missing.md" in message for message in messages)
 
 
+def test_root_environment_initialization_path_is_resolved(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(tmp_path / "LDVH-ENVIRONMENT-INITIALIZATION.md", "# LDVH 环境初始化记录")
+    write_md(
+        specs / "04-Test.md",
+        """
+# Test
+
+> 创建日期：2026-06-01
+> 定位：测试
+> 适用范围：测试
+> 上位依据：`specs/00-Test.md`
+
+## 1. 第一章
+
+检查根目录 `LDVH-ENVIRONMENT-INITIALIZATION.md`。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    assert not any(
+        item["code"] == "BROKEN_MARKDOWN_PATH" and "LDVH-ENVIRONMENT-INITIALIZATION.md" in item["message"]
+        for item in indexes["diagnostics"]
+    )
+
+
+def test_00_document_does_not_require_parent_basis(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "00-总纲.md",
+        """
+# 总纲
+
+> 创建日期：2026-06-01
+> 定位：测试总纲
+> 适用范围：测试
+
+## 1. 第一章
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    assert not any(
+        item["code"] == "MISSING_HEADER_FIELD" and "上位依据" in item["message"]
+        for item in indexes["diagnostics"]
+    )
+
+
 def test_write_outputs_creates_expected_json_files(tmp_path):
     root = build_fixture(tmp_path)
     indexes = checker.SpecsChecker(root).build()
@@ -787,6 +837,8 @@ def write_env_init(root, extra_status_rows="", heading_override=None):
 | 记录适用环境 | Codex |
 | 用户当前项目 | 示例项目 |
 | 用户当前开发平台 | Codex |
+| 权限边界 | 示例权限 |
+| Human 授权状态 | 示例授权 |
 | 适配状态 | 已适配当前项目与当前环境 |
 | 最近 Human 确认 | 2026-06-08 |
 {extra_status_rows}

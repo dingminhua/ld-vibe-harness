@@ -550,6 +550,8 @@ ENV_INIT_REQUIRED_STATUS_FIELDS = [
     "记录适用环境",
     "用户当前项目",
     "用户当前开发平台",
+    "权限边界",
+    "Human 授权状态",
     "适配状态",
     "最近 Human 确认",
 ]
@@ -950,6 +952,8 @@ class SpecsChecker:
         if not title:
             diagnostics.append(self.diagnostic(rel_path, 1, "error", "MISSING_TITLE", "文档缺少一级标题"))
         required = self.required_header_fields(doc_kind)
+        if self.extract_doc_number(path) == "00":
+            required = [field for field in required if field != "上位依据"]
         for field in required:
             if not header.get(field):
                 diagnostics.append(self.diagnostic(rel_path, 1, "warning", "MISSING_HEADER_FIELD", f"头部字段缺失: {field}"))
@@ -1018,6 +1022,8 @@ class SpecsChecker:
             return (self.root / raw).resolve()
         if raw.startswith("./") or raw.startswith("../"):
             return (current_path.parent / raw).resolve()
+        if raw in {ENV_INIT_FILENAME, "README.md"}:
+            return (self.root / raw).resolve()
         return (self.specs_dir / raw).resolve()
 
     def required_header_fields(self, doc_kind):
