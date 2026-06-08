@@ -117,7 +117,7 @@ Task 进入 `closed` 前必须同时满足：
 
 ### 4.1 Task 与 Intent
 
-Task 可以关联一个 Intent，作为该 Intent 的执行单元。关联字段为 `source_intent`。Intent 迁入 v2 前，AI 只能把旧 Intent 文档作为迁移素材，不得把旧规范当成 v2 权威。
+Task 可以关联一个 Intent，作为该 Intent 的执行单元。关联字段为 `source_intent`。Intent 的目标、约束、成功标准、任务集合职责和完成判断由 `specs-v2/24-Intent-意图.md` 定义。
 
 ### 4.2 Task 与 ADR
 
