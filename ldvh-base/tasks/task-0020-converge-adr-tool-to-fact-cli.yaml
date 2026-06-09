@@ -33,14 +33,22 @@ verification: |
   python3 -m pytest tests/ -q → 153 passed；
   python3 tools/fact_validate.py ldvh-base/ → files=35 errors=8（均为历史遗留）；
   grep 确认 specs/、.trae/skills/ 中无 adr_index.py 工具文件名残留引用（仅 test_adr_index.py 测试文件名保留）。
+
+  ## 验证结果
+
+  pytest 153 passed，fact_validate 校验通过，grep 确认无 adr_index.py 残留引用。
+
+  ## 结论
+
+  验证通过。
 assignee: AI
 related_adrs: []
 related_changes: []
 blocked_by:
 - task-0019
 affected_docs:
-- specs/06-Python与Web工具规范.md
-- specs/21-ADR-决策.md
+- docs/specs/07-Code实现规范.md
+- docs/specs/21-ADR-决策.md
 closure_evidence: |
   fact_cli.py 已新增 6 个 ADR 专属子命令：search、stats、related、link-rule、deprecate、supersede。
   ADR create/transition 已强制 Human Gate 参数检查，支持 --write-change 生成 Change 记录。
@@ -48,3 +56,11 @@ closure_evidence: |
   21.04-Tools.md、21-ADR-决策.md、21.05-Web.md、ldvh-adr Skill、docs/ 中所有 adr_index.py 引用已更新为 fact_cli.py。
   test_adr_index.py 已重写为测试 fact_cli.py 的 ADR 子命令。
   153 个测试全部通过。
+
+  ## 验证结果
+
+  fact_cli.py 已新增 6 个 ADR 专属子命令，adr_index.py 已删除，引用已更新，153 个测试全部通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。

@@ -26,6 +26,14 @@ closure_evidence: |
   Dashboard态势摘要行按状态分组计数actionItems，待推进区域executing/verifying/review_needed
   加粗+黄色色条+高亮背景，校验失败红色边框+提示文案，Changelog Refs解析为可点击链接。
   独立agent验证6项acceptance全部通过。
+
+  ## 验证结果
+
+  Dashboard 态势摘要行、待推进区域信号强化、校验失败红色提示、Changelog Refs 可点击链接均已实现，6 项 acceptance 全部验证通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 affected_docs:
 - web/docs/02-Dashboard.md
 closed_at: '2026-06-05T23:01:17.062265'

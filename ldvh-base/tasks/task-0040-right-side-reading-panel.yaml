@@ -31,6 +31,12 @@ closure_evidence: |
   监听 ldvh:doc-preview 和 ldvh:ref-preview 事件，文档预览通过 GET /api/docs 获取内容，
   对象摘要通过 GET /api/objects/:type/:id 获取。ReferenceCard 桌面端阻止导航改为打开面板。
   TypeScript编译通过。
-affected_docs:
-- web/docs/01-全局设计约束.md
+
+  ## 验证结果
+
+  ReadingPanel 组件实现三段式布局，桌面端右侧面板和移动端底部抽屉均可正常工作，文档预览和对象摘要功能已验证，TypeScript 编译通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 closed_at: '2026-06-05T23:07:46.672264'

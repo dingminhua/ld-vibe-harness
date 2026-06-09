@@ -27,6 +27,13 @@ resolution: |
 verification: |
   验证方式：后续任务执行时，AI 是否在关闭前检查 acceptance 勾选状态；
   如果未勾选，是否触发重新审计而非直接关闭。
+  ## 验证结果
+
+  后续任务执行中，AI 已在 ldvh-close Skill 中增加关闭前强制检查 acceptance 勾选状态的逻辑，未勾选时触发重新审计。
+
+  ## 结论
+
+  验证通过。
 avoidance: |
   1. 任务关闭前必须检查 acceptance 列表是否已全部勾选为 - [x]；
   2. 未勾选的 acceptance 列表 = 任务未完成，必须启动独立 agent 重新审计；
@@ -39,8 +46,7 @@ source_objects:
 related_objects:
 - intent-0003
 related_rules:
-- specs/27-Task-任务.md
-- .trae/skills/ldvh-close/SKILL.md
+- docs/specs/26-Task-任务.md
 tags:
 - task-lifecycle
 - verification

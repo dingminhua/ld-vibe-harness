@@ -947,7 +947,7 @@ def human_gate_main(paths):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# governed-projects — 根目录管辖项目配置检查
+# governed-projects — 工作区根目录管辖项目配置检查
 # ══════════════════════════════════════════════════════════════════════
 
 GOVERNED_PROJECTS_FILENAME = "LDVH-GOVERNED-PROJECTS.yaml"
@@ -965,7 +965,7 @@ def governed_projects_check_root(root):
             Issue(
                 path,
                 1,
-                f"LDVH 项目根目录缺少管辖项目配置: {GOVERNED_PROJECTS_FILENAME}",
+                f"工作区根目录缺少管辖项目配置: {GOVERNED_PROJECTS_FILENAME}",
                 code="GOVERNED_PROJECTS_MISSING",
             )
         ]
@@ -1530,8 +1530,8 @@ def build_parser():
     human_gate_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/ 和 ldvh-base/。")
 
     # governed-projects
-    governed_projects_parser = subparsers.add_parser("governed-projects", help="检查 LDVH 根目录管辖项目配置。")
-    governed_projects_parser.add_argument("--root", default=str(PROJECT_ROOT), help="LDVH 项目根目录，默认使用当前工具所在项目。")
+    governed_projects_parser = subparsers.add_parser("governed-projects", help="检查工作区根目录管辖项目配置。")
+    governed_projects_parser.add_argument("--root", default=str(PROJECT_ROOT), help="工作区根目录，默认使用当前工具所在项目。")
 
     # index
     index_parser = subparsers.add_parser("index", help="生成 specs 文档派生索引和诊断结果（03.01 规范文档剖面）。")

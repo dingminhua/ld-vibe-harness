@@ -33,6 +33,14 @@ closure_evidence: |
   SummaryText（150字符截断+展开/收起）、DocPreviewLink（自定义事件ldvh:doc-preview）、
   EvidenceBlock（命令和路径高亮）。Task类型字段顺序调整为acceptance→blocked_by→related_docs优先。
   独立agent验证8项acceptance全部通过，ESLint未使用变量已修复。
+
+  ## 验证结果
+
+  5 个语义化组件（ChecklistCard、ReferenceCard、SummaryText、DocPreviewLink、EvidenceBlock）已实现，Task 类型字段顺序调整完成，8 项 acceptance 全部验证通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 affected_docs:
 - web/docs/04-ObjectDetail.md
 closed_at: '2026-06-05T23:01:16.997442'

@@ -65,6 +65,14 @@ verification: |
   - task-0021 已完成合并回写、运行入口收敛、删除/归档候选清单沉淀和阻塞项记录。
   - task-0021 尚未直接删除或归档历史机制文件；经用户确认，具体删除或归档动作已拆分到 task-0022-delete-work-model-subdocs.yaml，不再作为 task-0021 的直接执行范围。
   - 具体删除或归档阶段已按用户确认拆分到 task-0022-delete-work-model-subdocs.yaml；task-0022 blocked_by task-0021，执行前必须重新进行引用检查和 Human Gate。
+
+  ## 验证结果
+
+  已完成 specs/20-39 历史机制子文档逐文件分类和合并回写，运行入口已收敛，fact_validate 和 specs_validate 校验通过，后续删除/归档候选清单已沉淀。
+
+  ## 结论
+
+  验证通过。
 assignee: null
 related_adrs: []
 related_changes: []
@@ -80,6 +88,14 @@ closure_evidence: |
   - 已按用户要求创建后续任务 task-0022-delete-work-model-subdocs.yaml，用于承接具体删除或归档动作；task-0022 设置 blocked_by: task-0021，执行前必须重新引用检查并通过 Human Gate。
   - 已完成独立审计，结论为 Task 21 acceptance 和 Task 22 handoff 通过，Task 21 可进入 review_needed；用户已确认进入审查。
   - 已执行事实源校验：python3 tools/fact_validate.py ldvh-base/tasks/task-0021-work-model-subdocs-cleanup.yaml ldvh-base/tasks/task-0022-delete-work-model-subdocs.yaml，结果为 files=2 errors=0 warnings=0。
+
+  ## 验证结果
+
+  已完成合并回写、运行入口收敛、删除/归档候选清单沉淀和阻塞项记录，fact_validate 校验 0 error。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 transition_reasons:
 - from: verifying
   to: executing

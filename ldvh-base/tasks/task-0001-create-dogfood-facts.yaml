@@ -11,10 +11,27 @@ acceptance: |
   - [ ] Intent、Task、Evidence YAML 均存在
   - [ ] 通过 tools/check_fact_model.py 校验
   - [ ] 验证结果可作为后续 ldvh-close 的关闭依据
-verification: python3 tools/check_fact_model.py ldvh-base/intents/ ldvh-base/tasks/ ldvh-base/evidence/
+verification: |-
+  python3 tools/check_fact_model.py ldvh-base/intents/ ldvh-base/tasks/ ldvh-base/evidence/
+
+  ## 验证结果
+
+  第一组 Intent/Task/Evidence 事实实例已创建并通过 Fact Validator 校验，files=3 errors=0 warnings=0。
+
+  ## 结论
+
+  验证通过。
 assignee: AI
 related_adrs: []
 related_changes: []
 closed_at: 2026-06-04
-closure_evidence: ev-0001 记录第一组 Intent / Task / Evidence 事实实例通过最小 Fact Validator 校验，最终结果为 files=3 errors=0 warnings=0。
+closure_evidence: |-
+  ev-0001 记录第一组 Intent / Task / Evidence 事实实例通过最小 Fact Validator 校验，最终结果为 files=3 errors=0 warnings=0。
+  ## 验证结果
+
+  第一组 Intent/Task/Evidence 事实实例已创建并通过 Fact Validator 校验，files=3 errors=0 warnings=0。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 blocked_by: []

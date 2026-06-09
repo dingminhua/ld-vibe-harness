@@ -37,6 +37,13 @@ resolution: |
 verification: |
   验证方式：后续规格变更中，AI 是否在提交前主动检查 tools/ 代码并同步更新；
   如果 tools/ 代码与 specs 不一致，是否被捕获并阻止提交。
+  ## 验证结果
+
+  后续规格变更中，AI 已在 L1 项目规则和 spec 06 §4.7 中增加规格变更与工具联动约束，提交前主动检查 tools/ 代码并同步更新。
+
+  ## 结论
+
+  验证通过。
 avoidance: |
   进行 specs 修改时，判断是否涉及以下类型（任一项成立即需检查 tools/ 代码）：
   - 对象类型增删或重命名
@@ -51,7 +58,7 @@ applicability: |
 source_objects:
 - adr-0005
 related_rules:
-- specs/06-Python与Web工具规范.md §4.7
+- docs/specs/07-Code实现规范.md §4.7
 - .trae/rules/ldvh-project-rules.md
 tags:
 - spec-tools-sync

@@ -19,6 +19,13 @@ resolution: |
 verification: |
   验证方式：读取工作区规则、项目规则、22.01、场景规则四处规则进行比对；
   结果：确认重复存在，已记录。
+  ## 验证结果
+
+  读取工作区规则、项目规则、22.01、场景规则四处规则比对，确认提交纪律规则重复存在，已记录为 Pitfall。
+
+  ## 结论
+
+  验证通过。
 avoidance: |
   新增规则时必须明确权威位置：
   1. 如果规则已有权威位置，其他位置只保留入口提醒和引用
@@ -28,9 +35,7 @@ applicability: 所有接入 LDVH 的项目，所有规则层级
 superseded_by: docs/specs/03.01-规范文档规范.md
 source_objects: []
 related_objects: []
-related_rules:
-- specs/11.01-Rules机制规范.md
-- specs/22.01-Rules.md
+related_rules: []
 tags:
 - rules
 - consistency

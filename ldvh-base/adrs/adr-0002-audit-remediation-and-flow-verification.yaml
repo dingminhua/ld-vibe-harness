@@ -15,5 +15,4 @@ affects:
 - ldvh-base/adrs/adr-0001-adr-mechanism-initialization.yaml
 related_objects: []
 related_rules:
-- specs/21-ADR-决策.md
-- specs/21.02-Skill.md
+- docs/specs/21-ADR-决策.md

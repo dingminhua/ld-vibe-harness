@@ -31,7 +31,15 @@ acceptance: |
   - [x] ldvh-intake Skill 调用 PyTools create 命令而非直接写 YAML
   - [x] ldvh-close Skill 调用 PyTools transition 命令而非直接写 YAML
   - [x] 现有 tests/tools/ 下有对应测试用例
-verification: python3 -m pytest tests/tools/ && python3 tools/check_fact_model.py ldvh-base/
+verification: |-
+  python3 -m pytest tests/tools/ && python3 tools/check_fact_model.py ldvh-base/
+  ## 验证结果
+
+  22 个测试用例全部通过；Fact Validator 校验通过；fact_model_cli.py create/transition/delete 三个子命令覆盖 7 类对象。
+
+  ## 结论
+
+  验证通过。
 assignee: null
 related_adrs: []
 related_changes: []
@@ -40,6 +48,13 @@ closure_evidence: |
   ADR create 原子创建关联 Change YAML。
   ldvh-intake 和 ldvh-close Skill 已更新为调用 PyTools 命令。
   22 个测试用例全部通过。
+  ## 验证结果
+
+  fact_model_cli.py 已实现 create/transition/delete 三个子命令覆盖 7 类对象；ADR create 原子创建关联 Change YAML；ldvh-intake/ldvh-close Skill 已更新为调用 PyTools 命令；22 个测试用例全部通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 blocked_by: []
 affected_docs:
-- specs/06-Python与Web工具规范.md
+- docs/specs/07-Code实现规范.md

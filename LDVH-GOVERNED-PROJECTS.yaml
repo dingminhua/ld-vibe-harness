@@ -1,7 +1,9 @@
 # LDVH 管辖项目配置
 #
 # 这个文件用于说明当前 LDVH 管理实例是什么，以及它要管辖哪些项目。
+# 它应放在安装或使用 LDVH 的工作区根目录。
 # 它不是工作对象，不放在 ldvh-base/ 下，也不替代 Task / ADR / Memo 等事实对象。
+# 它不记录初始化状态、落地状态、检查状态、过程报告正文、缺口处理状态或项目执行状态。
 #
 # 根字段：
 # - product_name: 当前 LDVH 管理实例或产品名称，必填。
@@ -16,7 +18,7 @@
 # - name: 项目名称，给 Human 和 AI 阅读。
 # - description: 项目说明，写一句话或一小段，帮助 AI 判断项目性质。
 #
-# 不要填写 type、status、docs_path、ldvh_base_path 或其他字段。
+# 不要填写 type、status、docs_path、ldvh_base_path、initialized、audit_state 或其他字段。
 # 这些信息由 LDVH 固定推导：
 # - 所有条目都是管辖项目。
 # - docs 路径固定为 {path}/docs。

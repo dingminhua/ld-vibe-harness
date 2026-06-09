@@ -15,4 +15,12 @@ blocked_by: []
 closure_evidence: |
   Dashboard.tsx 布局调整为：第一行待推进+最近变更，第二行最近活动+校验状态。
   待推进位于上方左侧优先展示，各区域内部逻辑未改动。TypeScript编译通过。
+
+  ## 验证结果
+
+  Dashboard 布局已调整，待推进位于上方优先展示，TypeScript 编译通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 closed_at: '2026-06-05T23:22:44.272308'

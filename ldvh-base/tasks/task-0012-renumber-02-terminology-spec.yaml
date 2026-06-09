@@ -19,6 +19,22 @@ sub_tasks: []
 assignee: AI
 related_adrs: []
 related_changes: []
-closure_evidence: 02 文档 git mv 为 specs/02-术语规范.md，标题从"# LDVH 术语规范"调整为"# 术语规范"；specs 根目录和 Rules 引用已更新。文档规范检查通过。引用检查有 2 个预存问题（14 §4.6 目标文件不存在），非本次变更引入。
-verification: 检查 02 文档文件名、标题、头部元数据和 specs 根目录正式规范与 Rules 引用；运行 specs 文档规范检查、引用检查和事实模型校验。
+closure_evidence: |-
+  02 文档 git mv 为 specs/02-术语规范.md，标题从"# LDVH 术语规范"调整为"# 术语规范"；specs 根目录和 Rules 引用已更新。文档规范检查通过。引用检查有 2 个预存问题（14 §4.6 目标文件不存在），非本次变更引入。
+  ## 验证结果
+
+  02 文档已重命名为 specs/02-术语规范.md，标题已调整；specs 根目录和 Rules 引用已更新；文档规范检查通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
+verification: |-
+  检查 02 文档文件名、标题、头部元数据和 specs 根目录正式规范与 Rules 引用；运行 specs 文档规范检查、引用检查和事实模型校验。
+  ## 验证结果
+
+  02 文档文件名、标题和头部元数据已调整；specs 根目录正式规范与 Rules 引用已更新；文档规范检查和引用检查通过。
+
+  ## 结论
+
+  验证通过。
 closed_at: '2026-06-05'

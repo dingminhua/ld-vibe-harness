@@ -13,7 +13,15 @@ acceptance: |
   - [ ] ldvh-intake、ldvh-close 或相关写入说明明确提示长文本字段优先使用 YAML 块标量
   - [ ] Fact Validator 或测试覆盖含冒号长文本的合法样例
   - [ ] 相关验证命令通过
-verification: python3 tools/check_fact_model.py ldvh-base/intents/ ldvh-base/tasks/ ldvh-base/evidence/ && python3 -m pytest tests/tools/test_check_fact_model.py
+verification: |-
+  python3 tools/check_fact_model.py ldvh-base/intents/ ldvh-base/tasks/ ldvh-base/evidence/ && python3 -m pytest tests/tools/test_check_fact_model.py
+  ## 验证结果
+
+  Fact Validator files=5 errors=0 warnings=0；test_check_fact_model.py 13 passed；tests/tools 98 passed。
+
+  ## 结论
+
+  验证通过。
 assignee: AI
 related_adrs: []
 related_changes: []
@@ -21,4 +29,11 @@ closed_at: 2026-06-04
 closure_evidence: |
   ev-0002 记录 task-0002 验证通过：ldvh-intake/ldvh-close 已加入 YAML 长文本块标量写入要求；Fact Validator 已增强 YAML_PARSE_ERROR 提示；测试已覆盖含冒号长文本块标量合法样例。
   验证结果：Fact Validator files=5 errors=0 warnings=0；test_check_fact_model.py 13 passed；tests/tools 98 passed。
+  ## 验证结果
+
+  ldvh-intake/ldvh-close 已加入 YAML 长文本块标量写入要求；Fact Validator 已增强提示；测试覆盖含冒号长文本合法样例；Fact Validator files=5 errors=0 warnings=0。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 blocked_by: []

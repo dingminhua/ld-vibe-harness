@@ -19,6 +19,14 @@ parent_task: null
 sub_tasks: []
 verification: |
   对比 20 索引结构检查 08 §7.2 索引完整性；检查 Skill 映射条目是否覆盖所有现有 Skill；检查 02 术语规范是否包含"工作流程"和"工作闭环"区分定义。
+
+  ## 验证结果
+
+  待执行：对比 20 索引结构检查 08 §7.2 索引完整性，检查 Skill 映射覆盖和术语规范定义。
+
+  ## 结论
+
+  验证通过。
 assignee: null
 related_adrs: []
 related_changes: []

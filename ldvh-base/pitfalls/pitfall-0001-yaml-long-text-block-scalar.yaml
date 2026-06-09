@@ -19,6 +19,13 @@ resolution: |
 verification: |
   验证方式：运行 Fact Validator 和测试套件；
   结果：Fact Validator files=5 errors=0 warnings=0；test_check_fact_model.py 13 passed；tests/tools 98 passed。
+  ## 验证结果
+
+  Fact Validator 校验 files=5 errors=0 warnings=0；test_check_fact_model.py 13 passed；tests/tools 98 passed，YAML 长文本块标量写入规则已生效。
+
+  ## 结论
+
+  验证通过。
 avoidance: |
   创建或编辑事实实例 YAML 时，以下字段如包含中文标点、英文冒号、换行、命令、列表式说明或超过一短句，
   应优先使用 YAML 块标量 |：
@@ -32,8 +39,7 @@ source_objects:
 - ev-0002
 related_objects: []
 related_rules:
-- specs/29-Evidence-验证证据.md
-- specs/27-Task-任务.md
+- docs/specs/26-Task-任务.md
 tags:
 - yaml
 - fact-model

@@ -24,4 +24,12 @@ closure_evidence: |
   后端 objects.ts GET /:type/:id 路由在 type=intent 时聚合 related_tasks 中每个 task 的 deliverables 和 related_docs，使用 Set 去重，返回 aggregated_deliverables 和 aggregated_docs。
   前端 ObjectDetail.tsx 在 objType=intent 时新增"关联产出"和"关联文档"聚合区域，复用 DocPreviewLink 组件渲染，支持点击预览。
   独立 agent 验证全部 5 项 acceptance 检查项通过。
+
+  ## 验证结果
+
+  后端聚合 API 和前端聚合区域已实现，去重逻辑正确，5 项 acceptance 全部通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 closed_at: '2026-06-05T23:29:43.534154'

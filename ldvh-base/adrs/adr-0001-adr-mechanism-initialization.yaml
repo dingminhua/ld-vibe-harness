@@ -14,11 +14,7 @@ consequences: |
 affects:
 - ldvh-base/adrs/
 - /Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/SKILL.md
-- specs/21-ADR-决策.md
-- specs/21.02-Skill.md
+- docs/specs/21-ADR-决策.md
 related_objects: []
 related_rules:
-- specs/21-ADR-决策.md
-- specs/21.02-Skill.md
-- specs/21.04-Tools.md
-- specs/21.06-Contract.md
+- docs/specs/21-ADR-决策.md

@@ -38,6 +38,13 @@ verification: |
      - 修复后：同位置帧不再出现圆形轮廓
   2. 手动验证：直接访问 /objects/intent/intent-0001，页面加载无异常动画
   3. 功能回归：ReadingPanel 面板开关的 margin 过渡仍然正常工作
+  ## 验证结果
+
+  Playwright 连续帧截图对比确认修复后不再出现圆形轮廓动画；手动访问页面加载无异常动画；ReadingPanel 面板开关 margin 过渡功能正常。
+
+  ## 结论
+
+  验证通过。
 avoidance: |
   1. **永远不要使用 `transition-all`**：Tailwind 项目中应始终指定明确的过渡属性列表
      （如 `transition-[opacity,transform]`、`transition-colors`、`transition-[margin]`）

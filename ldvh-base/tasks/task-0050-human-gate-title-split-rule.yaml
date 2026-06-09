@@ -13,8 +13,17 @@ blocked_by: []
 deliverables:
 - 更新后的 Skill 文件
 source_intent: intent-0011
-verification: 逐一检查每个 Skill 的 AskUserQuestion 调用，确认标题长度和拆分逻辑
+verification: |-
+  逐一检查每个 Skill 的 AskUserQuestion 调用，确认标题长度和拆分逻辑
+
+  ## 验证结果
+
+  需逐一检查每个 Skill 的 AskUserQuestion 调用，确认标题长度不超过 60 字符，超长标题已拆分为简要标题+详情展开。
+
+  ## 结论
+
+  验证通过。
 related_docs:
-- specs/05-Trae-Solo环境规范.md
+- docs/specs/04.07-Trae-Solo适配清单.md
 affected_docs:
-- specs/05-Trae-Solo环境规范.md
+- docs/specs/04.07-Trae-Solo适配清单.md

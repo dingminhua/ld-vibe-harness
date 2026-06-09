@@ -63,5 +63,5 @@ consequences: |
   - 初期先定义核心维度和视角，后续根据实践迭代补充
 related_adrs: []
 related_rules:
-- specs/27-Task-任务.md
-- specs/07-工作模型基础规范.md
+- docs/specs/26-Task-任务.md
+- docs/specs/05-工作模型基础规范.md

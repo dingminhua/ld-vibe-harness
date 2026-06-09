@@ -21,12 +21,12 @@ related_tasks: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
-- specs/evals/02-LDVH对Gstack的借鉴评估与深度调研.md
-- specs/evals/17-Superpowers深度调研-TDD强制-工程纪律与LDVH借鉴.md
-- specs/evals/18-BMAD-METHOD深度调研-企业级方法论-微文件架构与LDVH借鉴.md
-- specs/refs/07-竞品测试任务安排分析与最佳实践调研.md
+- docs/evals/02-LDVH对Gstack的借鉴评估与深度调研.md
+- docs/evals/07-LDVH对Superpowers的借鉴评估与深度调研.md
+- docs/evals/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
+- docs/refs/06-竞品测试任务安排分析与最佳实践调研.md
 deliverables:
-- specs/refs/07-竞品测试任务安排分析与最佳实践调研.md
+- docs/refs/06-竞品测试任务安排分析与最佳实践调研.md
 closure_evidence: |
   独立 agent 逐项验证 5 条 acceptance 全部通过：
   1. specs/evals/16、17、18 均包含测试任务安排相关章节
@@ -34,4 +34,12 @@ closure_evidence: |
   3. 报告第2章包含三竞品五维度对比及各自优劣分析
   4. specs/refs/07 报告已写入，共221行5章节
   5. 报告覆盖竞品对比、最佳实践总结、5条LDVH改进建议
+
+  ## 验证结果
+
+  5 条 acceptance 全部通过，竞品对比报告已写入 specs/refs/，覆盖竞品对比、最佳实践和改进建议。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 closed_at: '2026-06-06T00:01:18.379280'

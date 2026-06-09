@@ -44,5 +44,5 @@ acceptance: |
 blocked_by:
 - task-0037
 affected_docs:
-- specs/27-Task-任务.md
-- specs/06-Python与Web工具规范.md
+- docs/specs/26-Task-任务.md
+- docs/specs/07-Code实现规范.md

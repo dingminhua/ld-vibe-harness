@@ -20,6 +20,13 @@ resolution: |
 verification: |
   验证方式：读取 22 主文档 §14 和 22.01/22.04 实际文件内容进行比对；
   结果：确认矛盾存在，已记录。
+  ## 验证结果
+
+  读取 22 主文档 §14 与 22.01/22.04 实际文件内容比对，确认状态声明与文件内容矛盾，已记录为 Pitfall。
+
+  ## 结论
+
+  验证通过。
 avoidance: |
   修改子文档状态声明时，必须同步验证实际文件内容是否匹配：
   - not-created：文件应只包含定位、不创建理由和检查项（04 §6.1 骨架）
@@ -30,7 +37,7 @@ superseded_by: docs/specs/03.01-规范文档规范.md
 source_objects: []
 related_objects: []
 related_rules:
-- specs/22-Change-变更.md
+- docs/specs/22-Change-变更.md
 tags:
 - subdocument
 - consistency

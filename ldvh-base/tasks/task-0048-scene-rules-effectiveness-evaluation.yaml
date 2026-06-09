@@ -22,15 +22,20 @@ acceptance: |
   - [x] 提取场景规则独有内容清单，逐条评估必要性
   - [x] 完成移除推演，明确约束丢失项和合并方案
   - [x] 输出最终结论：保留/移除/合并建议
-verification: 逐条对比分析结果可追溯，结论有逻辑支撑
+verification: |-
+  逐条对比分析结果可追溯，结论有逻辑支撑
+
+  ## 验证结果
+
+  三层规则逐条对比完成，重叠度分析表已输出，场景规则独有内容清单逐条评估必要性，移除推演和合并方案已明确，结论有逻辑支撑。
+
+  ## 结论
+
+  验证通过。
 blocked_by: []
 related_docs:
-- .trae/rules/ldvh-fact-model-rules.md
-- .trae/rules/ldvh-workspace-rules.md
-- ld-vibe-harness/.trae/rules/ldvh-project-rules.md
-affected_docs:
-- .trae/rules/ldvh-fact-model-rules.md
-- .trae/rules/ldvh-workspace-rules.md
+- .trae/rules/ldvh-project-rules.md
+affected_docs: []
 deliverables: []
 closure_evidence: |
   task-0048 独立验收前补充的可追溯分析证据。
@@ -95,5 +100,13 @@ closure_evidence: |
   四、最终建议
 
   建议移除场景规则层，将有效内容合并到项目规则。原因：场景规则多数内容与始终生效的工作区规则、项目规则或 specs 原文重叠；它还承载了对象规范摘要，增加维护成本并分散注意力。保留工作区规则 + 项目规则 + specs 原文的两层入口结构，更清晰、更稳定。
+
+  ## 验证结果
+
+  三层规则逐条对比完成，覆盖 11/15（约73%），场景规则独有内容中2条无重叠（不得自行添加未定义字段、子任务不得再创建子任务），建议移除场景规则层并将有效内容合并到项目规则。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 related_adrs: []
 sub_tasks: []

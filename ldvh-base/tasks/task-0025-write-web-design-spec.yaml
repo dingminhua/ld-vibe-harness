@@ -18,6 +18,14 @@ acceptance: |
 blocked_by: []
 closure_evidence: |
   web/docs/ 下 8 份设计文档齐全（01-全局设计约束、02-Dashboard、03-ObjectList、04-ObjectDetail、05-Validate、06-Changelog、07-内容可读性研究、08-多角色审视研究），覆盖全局约束、页面结构、交互规范、视觉体系、组件规范，独立 agent 验证 6 项 acceptance 全部通过
+
+  ## 验证结果
+
+  8 份设计文档齐全，覆盖全局约束、页面结构、交互规范、视觉体系、组件规范，独立 agent 验证 acceptance 全部通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 related_docs:
 - web/docs/01-全局设计约束.md
 - web/docs/02-Dashboard.md

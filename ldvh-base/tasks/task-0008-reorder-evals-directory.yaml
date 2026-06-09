@@ -18,10 +18,24 @@ acceptance: |
   - [x] 已更新相关引用和索引（6 处 evals 内部交叉引用已更新）
 verification: |
   ls specs/evals 确认 15 个文件编号连续 01-15；检查所有 evals 内部引用已更新为新编号。
+  ## 验证结果
+
+  specs/evals 目录 15 个文件编号连续 01-15；所有 evals 内部交叉引用已更新为新编号。
+
+  ## 结论
+
+  验证通过。
 assignee: null
 related_adrs: []
 related_changes: []
 closure_evidence: |
   已完成 evals 目录重排：15 个文件从编号有缺口的 [01-09,11,17,21-24] 整理为连续 [01-15]；6 处内部交叉引用已更新；evals/12 引用的 evals/16（不存在）已记录。
+  ## 验证结果
+
+  evals 目录 15 个文件编号已从 [01-09,11,17,21-24] 重排为连续 [01-15]；6 处内部交叉引用已更新；evals/12 引用的 evals/16（不存在）已记录。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 blocked_by: []
 closed_at: '2026-06-05'

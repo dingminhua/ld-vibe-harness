@@ -21,7 +21,15 @@ closure_evidence: |
   specs/27 已有 deliverables 定义，fact_cli.py 新增 --deliverables 参数和骨架默认值，
   fact_validate.py 新增元素类型校验，ObjectDetail 用 DocPreviewLink 渲染 deliverables，
   task-0028 已有 deliverables 字段。TypeScript编译和fact_validate通过。
+
+  ## 验证结果
+
+  deliverables 字段已在规范、CLI、校验和 Web 渲染中完整实现，TypeScript 编译和 fact_validate 通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 affected_docs:
-- specs/27-Task-任务.md
-- specs/06-Python与Web工具规范.md
+- docs/specs/26-Task-任务.md
+- docs/specs/07-Code实现规范.md
 closed_at: '2026-06-05T23:23:13.144451'

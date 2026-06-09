@@ -29,5 +29,5 @@ acceptance: |
   - [ ] 已有 Task 实例补充 affected_docs 或相关文档关联
 blocked_by: []
 affected_docs:
-- specs/27-Task-任务.md
+- docs/specs/26-Task-任务.md
 deliverables: []

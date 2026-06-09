@@ -27,27 +27,23 @@ blocked_by: []
 related_docs:
   - ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
   - ldvh-base/tasks/task-0058-rules-scene-layer-spec-alignment.yaml
-  - specs/01-目录说明.md
-  - specs/02-术语规范.md
-  - specs/03-文档基础规范.md
-  - specs/05-Trae-Solo环境规范.md
-  - specs/07-工作模型基础规范.md
-  - specs/09-LDVH特别说明.md
-  - specs/20-工作模型集合索引.md
-  - specs/41.01-Rules.md
-  - ../.trae/rules/ldvh-workspace-rules.md
+  - docs/specs/01-目录说明.md
+  - docs/specs/02-术语规范.md
+  - docs/specs/03-文档基础规范.md
+  - docs/specs/04.07-Trae-Solo适配清单.md
+  - docs/specs/05-工作模型基础规范.md
+  - docs/specs/04.04-LDVH落地特别要求规范.md
+  - docs/specs/20-工作模型集合索引.md
   - .trae/rules/ldvh-project-rules.md
 affected_docs:
   - ldvh-base/intents/intent-0008-rules-specs-review.yaml
-  - specs/01-目录说明.md
-  - specs/02-术语规范.md
-  - specs/03-文档基础规范.md
-  - specs/05-Trae-Solo环境规范.md
-  - specs/07-工作模型基础规范.md
-  - specs/09-LDVH特别说明.md
-  - specs/20-工作模型集合索引.md
-  - specs/41.01-Rules.md
-  - ../.trae/rules/ldvh-workspace-rules.md
+  - docs/specs/01-目录说明.md
+  - docs/specs/02-术语规范.md
+  - docs/specs/03-文档基础规范.md
+  - docs/specs/04.07-Trae-Solo适配清单.md
+  - docs/specs/05-工作模型基础规范.md
+  - docs/specs/04.04-LDVH落地特别要求规范.md
+  - docs/specs/20-工作模型集合索引.md
   - .trae/rules/ldvh-project-rules.md
 deliverables: []
 closure_evidence: |

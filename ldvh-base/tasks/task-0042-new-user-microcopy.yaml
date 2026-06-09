@@ -27,6 +27,14 @@ closure_evidence: |
   新增 TYPE_DESCRIPTION_LOCALES（7种对象类型说明）和 STATUS_HINT_LOCALES（9种状态提示），
   ObjectDetail 顶部显示类型说明和状态行动提示，StatusBadge 增加 title tooltip，
   review_needed 状态显示琥珀色 Human Gate 提示条。TypeScript编译通过。
+
+  ## 验证结果
+
+  TYPE_DESCRIPTION_LOCALES 和 STATUS_HINT_LOCALES 已实现，ObjectDetail 顶部显示类型说明和状态行动提示，StatusBadge 增加 tooltip，review_needed 状态显示 Human Gate 提示条，TypeScript 编译通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 affected_docs:
 - web/docs/01-全局设计约束.md
 closed_at: '2026-06-05T23:07:46.734998'

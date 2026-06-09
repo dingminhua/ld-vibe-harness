@@ -29,4 +29,12 @@ closure_evidence: |-
 
   验证结果：Playwright 帧截图对比确认修复后无圆形轮廓；ReadingPanel margin 过渡正常。
   经验已沉淀至 pitfall-0007。
+
+  ## 验证结果
+
+  根因确认为 transition-all 导致 border-radius 动画，修复后 Playwright 帧截图对比确认无圆形轮廓，ReadingPanel margin 过渡正常。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 closed_at: '2026-06-06T02:10:00'

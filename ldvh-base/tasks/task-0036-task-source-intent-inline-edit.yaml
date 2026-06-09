@@ -31,6 +31,14 @@ closure_evidence: |
   source_intent 更新时自动同步双向关联（旧Intent移除+新Intent添加related_tasks），
   前端 IntentSelector 组件支持搜索过滤和选择，ObjectDetail 集成铅笔图标+选择器。
   TypeScript编译通过。
+
+  ## 验证结果
+
+  PATCH API 实现字段白名单安全边界，source_intent 更新自动同步双向关联，前端 IntentSelector 组件和编辑按钮集成完成，TypeScript 编译通过。
+
+  ## 结论
+
+  任务完成，人工确认关闭。
 affected_docs:
 - web/docs/04-ObjectDetail.md
 closed_at: '2026-06-05T23:23:14.612339'
