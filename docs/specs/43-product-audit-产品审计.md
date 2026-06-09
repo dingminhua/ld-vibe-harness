@@ -4,7 +4,7 @@
 > 定位：定义 LDVH 产品审计工作流程，说明 AI 如何检查安装与接入初始化结果是否真实存在、持续有效、未漂移、未绕过 Human Gate，并把审计结论和缺口分流到正确事实源
 > 适用范围：已接入或准备接入 LDVH 的管理实例、LDVH 自身 dogfood 管辖项目、平台适配清单、现场环境确认、管辖项目配置、项目初始化结果、docs/ldvh-base、AI 入口、Code/Web 和运行投影持续有效性检查
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.02-管辖项目文档规范.md`、`docs/specs/03.06-管辖项目配置规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/04.06-平台适配清单规范.md`、`docs/specs/04.07-Trae-Solo适配清单.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-product-initialization-产品初始化.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.02-管辖项目文档规范.md`、`docs/specs/03.06-管辖项目配置规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/04.06-平台适配清单规范.md`、`docs/specs/04.07-Trae-Solo适配清单.md`、`docs/specs/04.08-Codex适配清单.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-product-initialization-产品初始化.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -67,6 +67,7 @@
 | 当前 LDVH 管理实例和管辖项目清单 | `LDVH-GOVERNED-PROJECTS.yaml` |
 | 平台适配清单规则 | `docs/specs/04.06-平台适配清单规范.md` |
 | Trae Solo 当前适配清单 | `docs/specs/04.07-Trae-Solo适配清单.md` |
+| Codex 当前适配清单 | `docs/specs/04.08-Codex适配清单.md` |
 | AI 统一入口运行投影 | LDVH-AI-ENTRY.md |
 | 管辖项目文档事实 | `{project.path}/docs/` |
 | 管辖项目产品初始化结果 | {project.path}/docs/ldvh-product-initialization.md 或 42 记录的等价路径 |
@@ -97,7 +98,7 @@
 | 管辖项目配置规则 | `docs/specs/03.06-管辖项目配置规范.md` |
 | 环境适配和运行投影规则 | `docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力承接边界规范.md` |
 | 平台适配清单规则 | `docs/specs/04.06-平台适配清单规范.md` |
-| 当前平台适配清单 | 当前平台对应清单；Trae Solo 读取 `docs/specs/04.07-Trae-Solo适配清单.md` |
+| 当前平台适配清单 | 当前平台对应清单；Trae Solo 读取 `docs/specs/04.07-Trae-Solo适配清单.md`；Codex CLI 读取 `docs/specs/04.08-Codex适配清单.md` |
 | 事实源边界 | `docs/specs/09-事实源边界与承载规范.md` |
 | 工作模型集合 | `docs/specs/20-工作模型集合索引.md` |
 | 工作流程集合 | `docs/specs/40-工作流程集合索引.md` |
@@ -159,7 +160,7 @@ AI 应先审计当前平台适配清单中的要求响应矩阵：
 
 1. 当前平台是否有对应清单；
 2. 清单是否遵守 `docs/specs/04.06-平台适配清单规范.md`；
-3. 当前平台为 Trae Solo 时，是否读取 `docs/specs/04.07-Trae-Solo适配清单.md`；
+3. 当前平台为 Trae Solo 时，是否读取 `docs/specs/04.07-Trae-Solo适配清单.md`；当前平台为 Codex CLI 时，是否读取 `docs/specs/04.08-Codex适配清单.md`；
 4. 清单是否逐项覆盖 AI-S1 至 AI-S15 和 LR-1 至 LR-7；
 5. 每项要求是否具备承接方法、平台实体、refs 依据、状态、降级方式、43 审计证据和 Open Items；
 6. 每项要求的 status 是否与 refs 证据、实测证据和降级说明匹配；
