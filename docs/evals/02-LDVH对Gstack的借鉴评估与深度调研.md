@@ -7,7 +7,7 @@
 > 执行效力：无；规范规则需进入 docs/specs 正文区，决策或工作事实需进入对应工作对象后才生效
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
 > 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/01-目录说明.md`、`docs/specs/04-事实源边界与承载规范.md`
-> 代码调研来源：`/Users/dmh2002/trae_projects/gstack`（完整代码库）
+> 来源：`/Users/dmh2002/trae_projects/gstack`（完整代码库）
 
 ---
 

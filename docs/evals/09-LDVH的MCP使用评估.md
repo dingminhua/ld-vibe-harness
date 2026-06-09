@@ -6,7 +6,7 @@
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
 > 相关规范：`specs/04-事实源边界与承载规范.md`、`specs/05-Trae-Solo环境规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/08-工作流程基础规范.md`
-> 参考来源：`specs/refs/02-Trae-MCP用法调研.md`、`specs/refs/03-社区推荐Rules-Skills-MCP与自定义Agent调研.md`、`specs/refs/01-Sequential-Thinking使用模板.md`、`specs/refs/02-Context7使用模板.md`
+> 来源：`specs/refs/02-Trae-MCP用法调研.md`、`specs/refs/03-社区推荐Rules-Skills-MCP与自定义Agent调研.md`、`specs/refs/01-Sequential-Thinking使用模板.md`、`specs/refs/02-Context7使用模板.md`
 
 ---
 

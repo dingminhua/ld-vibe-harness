@@ -7,6 +7,7 @@
 > 使用边界：本文提供可复制使用的提示词模板，不直接构成 LD Vibe Harness 强制规则；实际执行仍以 `specs/00-79`、项目 Rules 和 `ldvh-base/` 事实实例为准
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`
 > 相关规范：`specs/05-Trae-Solo环境规范.md`、`specs/08-工作流程基础规范.md`、`specs/41-multi-role-thinking-多角色思考.md`、`specs/41.06-Contract.md`
+> 来源：LDVH 提示词实践与常用模板整理
 
 ---
 

@@ -4,7 +4,9 @@
 > 类型：evals  
 > 关联意图：intent-0009  
 > 关联任务：task-0051  
-> 调研日期：2026-06-06  
+> 创建日期：2026-06-06
+> 定位：LD Vibe Harness 对外部开源项目 Web 页面构成的项目级调研
+> 来源：外部开源项目 Web 页面调研
 > 调研范围：mcp-shrimp-task-manager、BMAD-METHOD、gstack、superpowers
 
 ## 1. 本文解决的问题

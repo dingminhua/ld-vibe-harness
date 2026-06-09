@@ -7,7 +7,7 @@
 > 执行效力：无；稳定结论需进入 docs/specs 正文区、工作对象、Code、Web、测试、运行投影或最佳实践后才具备对应效力
 > 来源：原 `docs/evals/18-LDVH候选事项承接评估.md`、`docs/evals/19-LDVH规范落地统筹机制与闭环缺口评估.md`、`docs/evals/20-LDVH规范落地统筹执行缺口清单.md`、`docs/evals/21-LDVH面向AI执行者需求的推进评估.md` 合并重建
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-product-landing-check-产品落地与检查.md`
+> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
 
 ---
 
@@ -29,9 +29,9 @@
 | 落地项 | 当前状态 | 已进入位置 | 备注 |
 |---|---|---|---|
 | 00 总纲表达收敛 | 已落地 | `docs/specs/00-LD-Vibe-Harness理念与纲要.md` | 已补充“启动有序少读、推理有据少猜、行止有规可依、结果有证可验”的总纲表达，并形成 V1-V10 价值实现标准 |
-| AI 统一入口与场景路由 | 已落地基础入口 | `LDVH-AI-ENTRY.md` | 已形成最小启动顺序、场景路由、常用查询命令和 STOP 点；入口已提示产品落地与检查读取 42，specs 变更、落地缺口或运行投影漂移优先进入 41 |
+| AI 统一入口与场景路由 | 已落地基础入口 | `LDVH-AI-ENTRY.md` | 已形成最小启动顺序、场景路由、常用查询命令和 STOP 点；入口已提示LDVH落地与检查读取 42，specs 变更、落地缺口或运行投影漂移优先进入 41 |
 | 工作模型集合重组 | 已落地 | `docs/specs/20-工作模型集合索引.md`、`docs/specs/21-26` | ADR、Change、Pitfall、Intent、Memo、Task 已成为 active 工作模型；Profile、TaskSet、Evidence 已取消独立对象化，Dependency/Risk/Artifact/Checklist/Roadmap 已降级为字段、模板或文档承载 |
-| 工作流程集合重组 | 已落地基础索引 | `docs/specs/40-工作流程集合索引.md`、`docs/specs/41-44` | 41 规范落地统筹、42 产品落地与检查、44 多角色思考已 active；43 已并入 42 并作为 removed 槽位保留；45-58 仍为 candidate，不得当作已生效主文档 |
+| 工作流程集合重组 | 已落地基础索引 | `docs/specs/40-工作流程集合索引.md`、`docs/specs/41-44` | 41 规范落地统筹、42 LDVH落地与检查、44 多角色思考已 active；43 已并入 42 并作为 removed 槽位保留；45-58 仍为 candidate，不得当作已生效主文档 |
 | 反合理化、失败暂停和完成证据 | 已落地基础规则 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 已明确未验证不得关闭、失败需暂停分流、closure evidence 需可追溯 |
 | Code 可验证先行 | 已落地 | `docs/specs/07-Code实现规范.md` | 不强制经典 TDD，但强制新增、扩展或修改 Code 前明确成功条件、失败条件、正反样例、边界样例、测试命令或等价验证方式 |
 | landing report 基础实现 | 已落地 | `tools/specs_validate.py landing-report`、`tests/test_specs_validate.py`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 当前输出 41 篇来源文件、191 条落地要求：closed 116、open 14、degraded 35、needs_human_gate 26；报告状态为 Code 派生启发式，不是事实源 |
@@ -80,7 +80,7 @@ Web 协调 Human
 | 明确边界 | 当前任务场景、应读事实源、可改范围、只能参考的内容、必须暂停的时机 |
 | 稳定事实 | 能回到 Git 可追踪文件的事实，而非聊天记录、模型记忆或工具缓存 |
 | 关联信息 | 当前任务关联的规范、Task、ADR、Memo、Pitfall、Code、Web 或运行投影 |
-| 可见状态 | 任务、决策、缺口、产品落地与检查和验证的当前状态 |
+| 可见状态 | 任务、决策、缺口、LDVH落地与检查和验证的当前状态 |
 | 可用工具 | 可机械化的检查、索引、聚合、验证和受控写入应交给 Code |
 | 停顿机制 | 明确知道何时不能自行继续 |
 | 验证反馈 | 可复现反馈，而非"看起来可以"等自述 |
@@ -92,7 +92,7 @@ Web 协调 Human
 |---|---|---|
 | AI 入口方向 | LDVH-AI-ENTRY.md 提供最小读取顺序和场景路由 | 快速定位 |
 | 五类构成要素分工 | 00 拆成开发环境、工作模型、工作流程、Code、Web | 边界判断 |
-| 工作流程逐步成型 | 41 统筹、42 产品落地与检查、44 多角色思考 | 稳定执行 |
+| 工作流程逐步成型 | 41 统筹、42 LDVH落地与检查、44 多角色思考 | 稳定执行 |
 | 工作模型承载事实 | ADR、Task、Intent、Memo、Pitfall 围绕同一组事实追踪 | 无状态补偿 |
 | Code 方向正确 | 结构校验、对象校验、commit 校验和 landing report 已部分覆盖 | 确定性反馈 |
 | Human Gate 逐步成型 | 多规范明确高影响写入、入口变更、状态关闭需 Gate | 停顿机制 |
@@ -133,8 +133,8 @@ Web 协调 Human
 |---|---|---|---|---|
 | G-01 | 缺少规范落地要求全局聚合报告命令 | closed-basic | 基础命令已落地，AI 不再必须手工跨文件聚合；但验证状态、运行投影漂移和事实证据仍需扩展 | 已由 `tools/specs_validate.py landing-report` 承接；后续接入验证证据、工作对象证据、Human 确认和漂移检查 |
 | G-02 | 运行投影漂移检查 Code 缺失 | open | 规范变化后，不知道 Rules/Skill/Agent/Hook/CI/Web/Code 入口是否过期 | Code + 04.02：新增 drift / projection 检查能力 |
-| G-03 | AI 统一入口已指向 42 和 41，但持久运行投影仍需检查 | closed-basic | `LDVH-AI-ENTRY.md` 已提示产品落地与检查进入 42，specs 变更、落地缺口或运行投影漂移进入 41；但工作区级薄入口、平台入口或管辖项目入口是否同步仍需 42 现场检查 | 42 + 运行投影：检查所有已授权入口是否只保留薄引用且未复制正文 |
-| G-04 | 42 产品落地与检查已合并但需 dogfood | open | 42 已成为统一工作流程，但尚未对 LDVH 自身执行一次完整只读检查、授权落地、复检和报告 | 工作流程：dogfood 42 |
+| G-03 | AI 统一入口已指向 42 和 41，但持久运行投影仍需检查 | closed-basic | `LDVH-AI-ENTRY.md` 已提示LDVH落地与检查进入 42，specs 变更、落地缺口或运行投影漂移进入 41；但工作区级薄入口、平台入口或管辖项目入口是否同步仍需 42 现场检查 | 42 + 运行投影：检查所有已授权入口是否只保留薄引用且未复制正文 |
+| G-04 | 42 LDVH落地与检查已合并但需 dogfood | open | 42 已成为统一工作流程，但尚未对 LDVH 自身执行一次完整只读检查、授权落地、复检和报告 | 工作流程：dogfood 42 |
 | G-05 | 43 独立产品审计已取消 | removed | 原 43 职责已并入 42；不得把 43 当作后置独立审计流程恢复 | 40 保留 removed 槽位；后续检查回到 42 |
 | G-06 | 生命周期触发仍以人工降级为主 | degraded | specs 变更、commit 前后、会话停止前等触发依赖 AI 记忆 | 运行投影 + Code：Hook / CI / 人工降级清单逐步承接 |
 | G-07 | 运行闭环测试用例事实源位置未稳定 | open | 具体流程的可测试性锚点无法沉淀为长期测试用例 | 10 + Code：确定测试用例事实源或先以 tests 承接 |
@@ -274,7 +274,7 @@ Web 协调 Human
 
 2. **扩展规范落地要求聚合报告**：基础 `landing-report` 已落地；下一步应接入验证状态、工作对象证据、Human 确认记录、运行投影漂移检查和更明确的回写建议。
 
-3. **Dogfood 42**：使用 42 产品落地与检查检查 LDVH 自身，先输出只读检查结果，再按 Human 授权逐项补齐，最后复检 AI 入口、管辖项目配置、平台适配清单、现场环境确认、docs/specs 校验、ldvh-base 校验、active 工作模型和工作流程可定位性、Code/Web 闭环支撑、open/degraded 缺口分流。
+3. **Dogfood 42**：使用 42 LDVH落地与检查检查 LDVH 自身，先输出只读检查结果，再按 Human 授权逐项补齐，最后复检 AI 入口、管辖项目配置、平台适配清单、现场环境确认、docs/specs 校验、ldvh-base 校验、active 工作模型和工作流程可定位性、Code/Web 闭环支撑、open/degraded 缺口分流。
 
 4. **推进 Human Gate 证据回写消费**：最小证据结构已进入 06、08、21、26 和 41，Code 已能检查已写出的 `Human Gate 记录`；下一步不追求复杂 Web UI，优先让 Gate 证据稳定进入 Git 文件事实源，并让 Web 或受控写入链路能导出、回写和展示确认事项、影响范围、确认人、确认时间、确认依据、确认后执行动作、验证结果、回写位置和残留风险。
 

@@ -5,6 +5,7 @@
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/07-工作模型基础规范.md`、`specs/08-工作流程基础规范.md`、`specs/20-工作模型集合索引.md`、`specs/24-Intent-意图.md`、`specs/27-Task-任务.md`
 > 相关评估：`docs/evals/18-LDVH推进评估与候选事项总览.md`、`specs/refs/trae/06-Spec与Plan工作流.md`
 > 调研边界：评估文档，不直接构成强制规则；稳定规则需进入正式 specs、Rules、Skill 或 ADR 后生效
+> 来源：Trae Spec 工作流实践与 Task 治理分析
 
 ---
 

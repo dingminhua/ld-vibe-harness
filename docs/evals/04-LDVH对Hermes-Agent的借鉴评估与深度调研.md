@@ -9,7 +9,7 @@
 > 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/01-目录说明.md`、`docs/specs/04-事实源边界与承载规范.md`
 > 调研对象：NousResearch/hermes-agent
 > 源码位置：`/Users/dmh2002/trae_projects/hermes-agent`
-> 仓库来源：`https://github.com/NousResearch/hermes-agent.git`
+> 来源：`https://github.com/NousResearch/hermes-agent.git`
 > 调研 HEAD：`e375c33f7090c329e6a6a741e26fc9082b27d728`
 
 ---

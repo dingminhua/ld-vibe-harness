@@ -4,6 +4,7 @@
 > 定位：项目评估文档，评估 Rules 和 Skill 从 specs 自动生成的可行性、收益和前提条件
 > 适用范围：LD Vibe Harness Rules/Skill 自动生成机制的设计评估
 > 上位依据：`specs/05-Trae-Solo环境规范.md` §6、`specs/05-Trae-Solo环境规范.md` §7
+> 来源：LDVH Rules 与 Skill 机制实践
 
 ---
 

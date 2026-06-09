@@ -6,6 +6,7 @@
 > 执行效力：无，结论需进入 00-79 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
 > 相关规范：`specs/02-术语规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`
+> 来源：Agent-Harness 项目仓库与代码
 
 ---
 
