@@ -9,7 +9,7 @@
 
 这个文件用于告诉 AI：进入 LDVH 时先查什么、如何判断场景、何时读取权威原文、遇到缺口时在哪里暂停。
 
-它不是最终事实源。正式规则以 `docs/specs/` 为准，管辖项目清单以 `LDVH-GOVERNED-PROJECTS.yaml` 为准，LDVH 自身环境适配以 `LDVH-ENVIRONMENT-INITIALIZATION.md` 为准，工作对象事实以对应 Git 文件为准。
+它不是最终事实源。正式规则以 `docs/specs/` 为准，管辖项目清单以 `LDVH-GOVERNED-PROJECTS.yaml` 为准，平台适配方法以当前平台适配清单为准，初始化与审计结论以 42/43 输出和对应 Git 文件事实源为准，工作对象事实以对应 Git 文件为准。
 
 平台入口、项目规则、工作区配置或会话提示只应指向本文件，不应复制本文正文或 docs/specs 正文。
 
@@ -21,7 +21,7 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 最小启动顺序如下：
 
 1. 读取本文件，确认当前任务属于哪个场景；
-2. 运行对应查询命令，定位规范、工作对象、环境记录或管辖项目配置；
+2. 运行对应查询命令，定位规范、工作对象、平台清单或管辖项目配置；
 3. 按查询结果读取最小必要的权威文件原文；
 4. 涉及写入、状态流转、关闭、删除、长期降级或高影响判断时，回到对应规范、工作对象和 Human Gate；
 5. 修改完成后运行对应校验命令，并把稳定结论写回权威事实源。
@@ -36,7 +36,6 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | specs 章节引用 | `python3 tools/specs_validate.py refs docs/specs` | 检查正式规范中的章节引用 |
 | specs 落地要求表 | `python3 tools/specs_validate.py landing docs/specs` | 检查规范落地要求表结构 |
 | specs 综合检查 | `python3 tools/specs_validate.py all` | 执行 docs/specs 综合校验 |
-| 环境初始化记录 | `python3 tools/specs_validate.py env-init` | 检查 LDVH 自身环境初始化记录 |
 | 管辖项目配置 | `python3 tools/specs_validate.py governed-projects` | 检查根目录管辖项目配置 |
 | 工作对象列表 | `python3 tools/fact_cli.py list <type>` | 查询 ADR、Intent、Memo、Pitfall 或 Task 摘要 |
 | 工作对象详情 | `python3 tools/fact_cli.py show <id>` | 查询单个工作对象详情 |
@@ -57,11 +56,11 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | 判断术语、命名或不推荐表达 | `index` | `docs/specs/02-术语规范.md` |
 | 判断目录、编号或文件归属 | `index` | `docs/specs/01-目录说明.md`、`docs/specs/03-文档基础规范.md` |
 | 判断管辖项目 | `governed-projects` | `LDVH-GOVERNED-PROJECTS.yaml`、`docs/specs/03.06-管辖项目配置规范.md` |
-| 执行产品初始化 | `governed-projects`、`env-init`、`landing-report` | `docs/specs/42-product-initialization-产品初始化.md`、当前平台适配清单 |
-| 执行产品审计 | `governed-projects`、`env-init`、`landing-report`、`fact_cli.py stats` | `docs/specs/43-product-audit-产品审计.md`、`docs/specs/42-product-initialization-产品初始化.md`、当前平台适配清单、`docs/specs/40-工作流程集合索引.md` |
+| 执行产品初始化 | `governed-projects`、`landing-report` | `docs/specs/42-product-initialization-产品初始化.md`、当前平台适配清单 |
+| 执行产品审计 | `governed-projects`、`landing-report`、`fact_cli.py stats` | `docs/specs/43-product-audit-产品审计.md`、`docs/specs/42-product-initialization-产品初始化.md`、当前平台适配清单、`docs/specs/40-工作流程集合索引.md` |
 | 处理工作模型或工作对象 | `fact_cli.py list/search/show/stats`、`index` | `docs/specs/05-工作模型基础规范.md`、`docs/specs/20-工作模型集合索引.md` 和对应 `docs/specs/21-39` 工作模型规范 |
 | 处理工作流程 | `index`、`landing-report` | `docs/specs/06-工作流程基础规范.md`、`docs/specs/40-工作流程集合索引.md` 和对应 `docs/specs/41-59` 工作流程规范 |
-| 处理规范落地、环境适配、平台清单或运行投影 | `landing-report`、`env-init`、`index` | `docs/specs/04-规范落地与环境适配基础规范.md`、04 系列环境适配规范、当前平台适配清单和 `docs/specs/41-landing-orchestration-规范落地统筹.md` |
+| 处理规范落地、环境适配、平台清单或运行投影 | `landing-report`、`index` | `docs/specs/04-规范落地与环境适配基础规范.md`、04 系列环境适配规范、当前平台适配清单和 `docs/specs/41-landing-orchestration-规范落地统筹.md` |
 | 处理 Code、工具、脚本或校验 | 对应工具帮助、测试命令 | `docs/specs/07-Code实现规范.md`、`docs/specs/10-运行闭环测试规范.md`、对应 `tools/` 实现和 `tests/` |
 | 处理 Web 或 Human-facing 入口 | `index`、相关后端或 Web 校验 | `docs/specs/08-Web信息同步规范.md` |
 
@@ -87,7 +86,7 @@ LDVH 自身项目级入口可以随本项目提交，但也只应指向本文件
 2. 要修改工作区级入口、平台入口、项目规则或等价配置；
 3. 要为管辖项目创建平台入口或项目级 AI 指令；
 4. `LDVH-GOVERNED-PROJECTS.yaml` 缺失、格式异常或无法定位目标管辖项目；
-5. 要创建、修改或删除 LDVH 自身项目的持久运行投影，但 `LDVH-ENVIRONMENT-INITIALIZATION.md` 不存在或不匹配当前环境；
+5. 要创建、修改或删除 LDVH 自身项目的持久运行投影，但尚未现场确认当前平台、权限边界、Human 授权和必要降级方式；
 6. 入口内容与 docs/specs 正式规范、管辖项目配置、工作对象事实或 Code 校验结果冲突；
 7. 需要接受长期降级、关闭关键缺口、绕过 Human Gate 或改变事实源边界。
 
@@ -97,11 +96,11 @@ LDVH 自身项目级入口可以随本项目提交，但也只应指向本文件
 修改本文后，应检查：
 
 1. `docs/specs/04.02-环境适配与运行投影规范.md`；
-2. `docs/specs/04.05-LDVH落地特别要求规范.md`；
+2. `docs/specs/04.04-LDVH落地特别要求规范.md`；
 3. `docs/specs/04.02-环境适配与运行投影规范.md`；
 4. `docs/specs/01-目录说明.md`；
 5. `docs/specs/41-landing-orchestration-规范落地统筹.md`；
-6. `LDVH-ENVIRONMENT-INITIALIZATION.md`；
-7. 已登记的平台薄入口。
+6. 当前平台适配清单；
+7. 已授权的平台薄入口。
 
 若发现入口漂移，应进入 `docs/specs/41-landing-orchestration-规范落地统筹.md` 判断缺口归属，不得直接把本文件中的旧摘要当成正式规则。

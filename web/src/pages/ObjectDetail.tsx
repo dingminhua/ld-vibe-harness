@@ -38,7 +38,7 @@ const REFERENCE_FIELDS = [
   'source_tasks', 'source_memos', 'superseded_by',
 ];
 const DOC_LINK_FIELDS = ['related_docs', 'deliverables', 'affected_docs', 'related_rules', 'superseded_by'];
-const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 'environment_record_path', 'rules_path', 'skills_path'];
+const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 'rules_path', 'skills_path'];
 /** 可折叠的关联内容字段（intent 类型默认展开，其他类型默认折叠） */
 const COLLAPSIBLE_FIELDS = [
   'related_intents', 'related_tasks', 'related_docs', 'related_adrs', 'related_memos',
@@ -50,7 +50,7 @@ const TASK_FIELD_ORDER = ['acceptance', 'blocked_by', 'related_docs', 'deliverab
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   task: TASK_FIELD_ORDER,
   profile: [
-    'description', 'project_path', 'ldvh_base_path', 'docs_path', 'environment_record_path',
+    'description', 'project_path', 'ldvh_base_path', 'docs_path',
     'governance_scope', 'related_intents', 'related_tasks', 'related_adrs',
     'related_memos', 'related_pitfalls', 'related_docs', 'related_changes',
     'status_history', 'notes',
@@ -126,7 +126,6 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   project_path: { zh: '项目路径', en: 'Project Path' },
   ldvh_base_path: { zh: '事实实例路径', en: 'LDVH Base Path' },
   docs_path: { zh: '文档路径', en: 'Docs Path' },
-  environment_record_path: { zh: '环境初始化记录', en: 'Environment Record' },
   governance_scope: { zh: '管辖范围', en: 'Governance Scope' },
   language: { zh: '语言', en: 'Language' },
   framework: { zh: '框架', en: 'Framework' },

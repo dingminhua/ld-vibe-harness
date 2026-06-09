@@ -4,7 +4,7 @@
 > 定位：定义多角色思考工作流程，包括行动定位、准入条件、事实源边界、Context、Scenario、执行流程、Gate、Skill 和 Agent 调度、工具协作、事实源回写、证据留存、机制适配边界和行动特有检查
 > 适用范围：所有接入 LDVH 且需要对复杂变更、决策、风险、规范治理或跨模块影响进行多视角分析的项目
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`
+> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -54,7 +54,7 @@
 | 多角色思考工作流程 | 本文 |
 | 工作流程基础规则 | `docs/specs/06-工作流程基础规范.md` |
 | 工作流程集合状态 | `docs/specs/40-工作流程集合索引.md` |
-| Skill、Agent、Rules / Instructions、Code、Web 等能力承接边界 | `docs/specs/04.04-环境能力承接边界规范.md` |
+| Skill、Agent、Rules / Instructions、Code、Web 等能力承接边界 | `docs/specs/04.03-环境能力承接边界规范.md` |
 | 多角色分析过程输出 | 当前对话或 Agent 输出，默认不是最终事实源 |
 | 稳定结论、任务、决策、变更、经验或项目身份信息 | 按 20-39 工作模型规范写入对应工作对象，或按 03、03.06、09 写入 docs 正文或管辖项目配置 |
 | 来源材料与机制子文档 | 有效内容已并入本文；输入材料不作为当前读取入口 |
@@ -72,14 +72,14 @@
 4. `docs/specs/06-工作流程基础规范.md`；
 5. `docs/specs/40-工作流程集合索引.md`；
 6. 需要判断事实源回写时，读取 `docs/specs/09-事实源边界与承载规范.md` 和对应工作模型规范；
-7. 需要判断能力承接时，读取 `docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/07-Code实现规范.md` 或 `docs/specs/08-Web信息同步规范.md`。
+7. 需要判断能力承接时，读取 `docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/07-Code实现规范.md` 或 `docs/specs/08-Web信息同步规范.md`。
 
 根据主题复杂度，可增加以下 Context：
 
 1. `docs/evals/` 中与本次主题相关的内部评估文档；
 2. `docs/refs/` 中与平台、第三方能力或外部资料相关的引用文档；
 3. 已存在的 Task、ADR、Memo、Pitfall、Change、Intent 实例，或管辖项目配置；
-4. 当前环境中可调用 Agent、结构化问询、Hook、CI、Code 或 Web 能力的 LDVH 自身环境初始化记录；若主题属于管辖项目，还应读取 `LDVH-GOVERNED-PROJECTS.yaml` 和对应项目事实源。
+4. 当前平台适配清单、42/43 流程输出，以及当前环境中可调用 Agent、结构化问询、Hook、CI、Code 或 Web 能力的现场证据；若主题属于管辖项目，还应读取 `LDVH-GOVERNED-PROJECTS.yaml` 和对应项目事实源。
 
 可选 Context 只能作为输入材料，不能覆盖 `docs/specs/` 正式规范，也不能被当作当前项目已经存在对应 Skill、Agent、工具或 Web 实体的证据。
 
@@ -477,6 +477,6 @@ human_gate_rules: 本次需要特别关注的 Human Gate 条件，选填
 
 1. 多角色思考的运行闭环测试用例待 10 的测试用例事实源位置稳定后补齐；
 2. 角色集合是否需要删减、合并或扩展，待更多执行实践后通过 Human Gate 判断；
-3. Rules / Instructions 薄入口、LDVH 自身环境初始化记录、管辖项目配置、项目事实源和实际运行投影的同步检查，待产品初始化和产品审计流程稳定后统一校准；
+3. Rules / Instructions 薄入口、平台适配清单、管辖项目配置、项目事实源和实际运行投影的同步检查，待产品初始化和产品审计流程稳定后统一校准；
 4. 若未来发现多角色报告结构需要机械校验，再按 07 形成最小 Code 需求和正反样例；
 5. 若后续发现多角色思考相关输入材料仍有遗漏，应先按 40 的集合闸门判断，再决定是否补入本文、04、07、08、10 或工作对象。

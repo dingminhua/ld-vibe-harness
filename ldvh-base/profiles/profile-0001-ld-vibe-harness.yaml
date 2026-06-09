@@ -10,7 +10,6 @@ project_kind: ldvh_self
 project_path: /Users/dmh2002/codex_projects/ld-vibe-harness
 ldvh_base_path: /Users/dmh2002/codex_projects/ld-vibe-harness/ldvh-base
 docs_path: /Users/dmh2002/codex_projects/ld-vibe-harness/docs
-environment_record_path: /Users/dmh2002/codex_projects/ld-vibe-harness/LDVH-ENVIRONMENT-INITIALIZATION.md
 language: Python
 framework: ""
 related_tasks:

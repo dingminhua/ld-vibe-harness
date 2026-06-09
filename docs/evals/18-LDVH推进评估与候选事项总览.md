@@ -7,7 +7,7 @@
 > 执行效力：无；稳定结论需进入 docs/specs 正文区、工作对象、Code、Web、测试、运行投影或最佳实践后才具备对应效力
 > 来源：原 `docs/evals/18-LDVH候选事项承接评估.md`、`docs/evals/19-LDVH规范落地统筹机制与闭环缺口评估.md`、`docs/evals/20-LDVH规范落地统筹执行缺口清单.md`、`docs/evals/21-LDVH面向AI执行者需求的推进评估.md` 合并重建
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-product-initialization-产品初始化.md`、`docs/specs/43-product-audit-产品审计.md`
+> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-product-initialization-产品初始化.md`、`docs/specs/43-product-audit-产品审计.md`
 
 ---
 
@@ -33,7 +33,7 @@
 | Code 可验证先行 | 已落地 | `docs/specs/07-Code实现规范.md` | 不强制经典 TDD，但强制新增、扩展或修改 Code 前明确成功条件、失败条件、正反样例、边界样例、测试命令或等价验证方式 |
 | landing report 基础实现 | 已落地 | `tools/specs_validate.py landing-report`、`tests/test_specs_validate.py`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 已提交 `65f1986 feat: add specs landing report`；报告状态为 Code 派生启发式，不是事实源 |
 | Human Gate 最小证据结构 | 已落地基础规则与 Code 检查 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`tools/specs_validate.py human-gate`、`tests/test_specs_validate.py` | 已形成通用最小记录块，并让 Task、ADR、Web UI 和 landing orchestration 引用同一结构；Code 已能检查已写出的 `Human Gate 记录` 文本块，后续仍需 Web/事实源回写消费 |
-| 规范落地治理吸收 | 已落地 | `docs/specs/00`、`06`、`07`、`10`、`26`、`41` 及 04 系列命名/引用收敛的一部分 | 已提交 `f55130c docs: update specs landing governance`；剩余 04.07/04.08/04.09 编号收敛由其他 AI 继续处理 |
+| 规范落地治理吸收 | 已落地 | `docs/specs/00`、`06`、`07`、`10`、`26`、`41` 及 04 系列命名/引用收敛的一部分 | 已提交 `f55130c docs: update specs landing governance`；剩余 04.06/04.07/04.09 编号收敛由其他 AI 继续处理 |
 
 仍在推进中的事项不因本文标注而自动关闭。本文只记录“已进入正式承接位置或 Code 实现”的事实，后续验收仍应回到对应规范、Code 测试、运行投影、工作对象或 Human Gate 证据。
 
@@ -173,7 +173,7 @@ Web 协调 Human
 | 反合理化红旗与失败暂停 | 06、10、12、26、47、53 | 已进入 06、10、26、41 的基础规则；后续 47/53/12 可继续补具体执行与审查场景 |
 | closure_evidence 结构化证据层 | 05.01、10、26、47、08 | 26 已补关闭证据最低要求，10/41 已补验证与证据边界；后续再判断是否需要结构化字段和 Web 展示 |
 | 独立审计 Agent 与只读审阅边界 | 06、41、47、53、10 | 高风险任务、规范变更、事实源状态流转和关闭判断可要求独立、专项或并行审阅 |
-| 工具权限面和阶段化能力暴露 | 04.04、06、07、10、41 | Intake、Plan、Execute、Verify、Review、Close 不应默认暴露同一套写入与执行能力 |
+| 工具权限面和阶段化能力暴露 | 04.03、06、07、10、41 | Intake、Plan、Execute、Verify、Review、Close 不应默认暴露同一套写入与执行能力 |
 | 渐进式上下文加载与 Context Pack | 06、07、10、40、54 | 06 已补 Context 派生输入边界和“少读不是不读”；后续由 Code/Web/54 继续承接最小上下文生成 |
 | 第三方 Skill 脚手架与治理接管 | 11、11.01、40、56 | 第三方 Skill 可作为能力供给方，持续开发和正式产物必须回到 LDVH 主控、验证和事实源回写 |
 | Trae Spec 或其他平台规划产物纳入 Task 治理 | 11、26、40、45、46、56 | 平台规划产物不是执行授权；被 LDVH 吸收后才可作为执行依据；不得形成第二权威事实源 |
@@ -263,7 +263,7 @@ Web 协调 Human
 
 2. **扩展规范落地要求聚合报告**：基础 `landing-report` 已落地；下一步应接入验证状态、工作对象证据、Human 确认记录、运行投影漂移检查和更明确的回写建议。
 
-3. **Dogfood 42 和 43**：使用 LDVH 审计 LDVH 自身，检查 AI 入口、管辖项目配置、环境初始化记录、docs/specs 校验、ldvh-base 校验、active 工作模型和工作流程可定位性、Code/Web 闭环支撑、open/degraded 缺口分流。
+3. **Dogfood 42 和 43**：使用 LDVH 审计 LDVH 自身，检查 AI 入口、管辖项目配置、平台适配清单、现场环境确认、docs/specs 校验、ldvh-base 校验、active 工作模型和工作流程可定位性、Code/Web 闭环支撑、open/degraded 缺口分流。
 
 4. **推进 Human Gate 证据回写消费**：最小证据结构已进入 06、08、21、26 和 41，Code 已能检查已写出的 `Human Gate 记录`；下一步不追求复杂 Web UI，优先让 Gate 证据稳定进入 Git 文件事实源，并让 Web 或受控写入链路能导出、回写和展示确认事项、影响范围、确认人、确认时间、确认依据、确认后执行动作、验证结果、回写位置和残留风险。
 

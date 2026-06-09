@@ -733,9 +733,9 @@ def test_broken_markdown_path_is_reported(tmp_path):
     assert any("specs/missing.md" in message for message in messages)
 
 
-def test_root_environment_initialization_path_is_resolved(tmp_path):
+def test_root_readme_path_is_resolved(tmp_path):
     specs = tmp_path / "specs"
-    write_md(tmp_path / "LDVH-ENVIRONMENT-INITIALIZATION.md", "# LDVH 环境初始化记录")
+    write_md(tmp_path / "README.md", "# README")
     write_md(
         specs / "04-Test.md",
         """
@@ -748,14 +748,14 @@ def test_root_environment_initialization_path_is_resolved(tmp_path):
 
 ## 1. 第一章
 
-检查根目录 `LDVH-ENVIRONMENT-INITIALIZATION.md`。
+检查根目录 `README.md`。
 """,
     )
 
     indexes = checker.SpecsChecker(tmp_path).build()
 
     assert not any(
-        item["code"] == "BROKEN_MARKDOWN_PATH" and "LDVH-ENVIRONMENT-INITIALIZATION.md" in item["message"]
+        item["code"] == "BROKEN_MARKDOWN_PATH" and "README.md" in item["message"]
         for item in indexes["diagnostics"]
     )
 
@@ -1036,139 +1036,6 @@ Human Gate 记录：
     assert exit_code == 1
     assert "Human Gate 最小证据结构检查失败" in output
     assert "HUMAN_GATE_FIELD_MISSING" in output
-
-
-# ══════════════════════════════════════════════════════════════════════
-# env-init — LDVH 自身项目根目录环境初始化记录检查
-# ══════════════════════════════════════════════════════════════════════
-
-
-def write_env_init(root, extra_status_rows="", heading_override=None):
-    title = heading_override or "LDVH 环境初始化记录"
-    return write_md(
-        root / "LDVH-ENVIRONMENT-INITIALIZATION.md",
-        f"""
-# {title}
-
-## 1. 这个文件是什么
-
-说明。
-
-## 2. 适配状态与持续提醒
-
-| 检查项 | 当前记录 |
-|---|---|
-| 记录适用项目 | 示例项目 |
-| 记录适用环境 | Codex |
-| LDVH 当前项目 | 示例项目 |
-| 当前开发环境 | Codex |
-| 权限边界 | 示例权限 |
-| Human 授权状态 | 示例授权 |
-| 适配状态 | 已适配 LDVH 自身项目与当前开发环境 |
-| 最近 Human 确认 | 2026-06-08 |
-{extra_status_rows}
-
-## 3. 初始化摘要
-
-内容。
-
-## 4. 能力核验来源
-
-内容。
-
-## 5. 环境适配映射
-
-内容。
-
-## 6. 当前运行投影状态
-
-内容。
-
-## 7. 初始化动作
-
-内容。
-
-## 8. 更新规则
-
-内容。
-
-## 9. Human Gate 与检查
-
-内容。
-
-## 10. 未决限制与后续事项
-
-内容。
-""",
-    )
-
-
-def env_init_codes(issues):
-    return [issue.code for issue in issues]
-
-
-def test_env_init_valid_root_record_passes(tmp_path):
-    write_env_init(tmp_path)
-
-    assert checker.env_init_check_root(tmp_path) == []
-
-
-def test_env_init_missing_root_record_is_reported(tmp_path):
-    issues = checker.env_init_check_root(tmp_path)
-
-    assert env_init_codes(issues) == ["ENV_INIT_MISSING"]
-    assert "先按 04.03 模板创建并完成 LDVH 自身项目与当前开发环境适配" in issues[0].message
-
-
-def test_env_init_missing_status_field_is_reported(tmp_path):
-    write_md(
-        tmp_path / "LDVH-ENVIRONMENT-INITIALIZATION.md",
-        """
-# LDVH 环境初始化记录
-
-## 1. 这个文件是什么
-
-## 2. 适配状态与持续提醒
-
-| 检查项 | 当前记录 |
-|---|---|
-| 记录适用项目 | 示例项目 |
-| 记录适用环境 | Codex |
-
-## 3. 初始化摘要
-
-## 4. 能力核验来源
-
-## 5. 环境适配映射
-
-## 6. 当前运行投影状态
-
-## 7. 初始化动作
-
-## 8. 更新规则
-
-## 9. Human Gate 与检查
-
-## 10. 未决限制与后续事项
-""",
-    )
-
-    issues = checker.env_init_check_root(tmp_path)
-
-    assert "ENV_INIT_STATUS_FIELD_MISSING" in env_init_codes(issues)
-    assert any("当前开发环境" in issue.message for issue in issues)
-
-
-def test_env_init_legacy_english_heading_is_reported(tmp_path):
-    write_env_init(tmp_path)
-    path = tmp_path / "LDVH-ENVIRONMENT-INITIALIZATION.md"
-    text = path.read_text(encoding="utf-8").replace("## 1. 这个文件是什么", "## 1. What This File Is")
-    path.write_text(text, encoding="utf-8")
-
-    issues = checker.env_init_check_root(tmp_path)
-
-    assert "ENV_INIT_LEGACY_HEADING" in env_init_codes(issues)
-    assert "ENV_INIT_SECTION_MISSING" in env_init_codes(issues)
 
 
 # ══════════════════════════════════════════════════════════════════════
