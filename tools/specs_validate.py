@@ -800,6 +800,153 @@ def landing_main(paths):
 
 
 # ══════════════════════════════════════════════════════════════════════
+# human-gate — Human Gate 最小证据结构检查
+# ══════════════════════════════════════════════════════════════════════
+
+HUMAN_GATE_HEADER_RE = re.compile(r"^Human Gate\s*记录[:：]\s*$", re.IGNORECASE)
+HUMAN_GATE_FIELD_RE = re.compile(r"^\s*[-*]\s*(?P<label>[^:：]+?)\s*[:：]\s*(?P<value>.*)$")
+HUMAN_GATE_REQUIRED_FIELDS = [
+    ("触发原因", ["触发原因", "Gate 触发原因"]),
+    ("确认事项", ["确认事项", "确认对象", "确认对象或确认事项"]),
+    ("影响范围", ["影响范围"]),
+    ("确认依据", ["确认依据", "确认上下文", "依据"]),
+    ("Human 决策", ["Human 决策", "Human 选择", "确认结果", "用户选择"]),
+    ("确认人/时间", ["确认人/时间", "确认人和时间", "确认来源和时间", "确认人及时间"]),
+    ("后续动作", ["后续动作", "后续执行动作", "确认后的执行动作"]),
+    ("验证方式", ["验证方式", "验证结果", "验证方式或结果"]),
+    ("回写位置", ["回写位置"]),
+    ("残留风险", ["残留风险", "残留风险或后续 Task"]),
+]
+
+
+def human_gate_default_check_paths():
+    paths = []
+    for path in [DOCS_DIR, PROJECT_ROOT / "ldvh-base"]:
+        if path.exists():
+            paths.append(str(path))
+    return paths
+
+
+def human_gate_normalize_label(label):
+    return label.strip().strip("*").strip("`").strip()
+
+
+def human_gate_alias_map():
+    aliases = {}
+    for canonical, labels in HUMAN_GATE_REQUIRED_FIELDS:
+        for label in labels:
+            aliases[label] = canonical
+    return aliases
+
+
+def human_gate_parse_field_line(line):
+    match = HUMAN_GATE_FIELD_RE.match(line)
+    if not match:
+        return None
+    label = human_gate_normalize_label(match.group("label"))
+    value = match.group("value").strip().strip("*").strip()
+    return label, value
+
+
+def human_gate_collect_record(lines, start_index):
+    block = []
+    for index in range(start_index + 1, len(lines)):
+        line = lines[index]
+        stripped = line.strip()
+        if not stripped:
+            if block:
+                break
+            continue
+        if HEADING_RE.match(line) or stripped == "---" or HUMAN_GATE_HEADER_RE.match(stripped):
+            break
+        if block and not stripped.startswith(("-", "*")) and not line.startswith((" ", "\t")):
+            break
+        block.append((index + 1, line))
+    return block
+
+
+def human_gate_record_fields(block):
+    aliases = human_gate_alias_map()
+    fields = {}
+    field_lines = {}
+
+    for position, (line_number, line) in enumerate(block):
+        parsed = human_gate_parse_field_line(line)
+        if not parsed:
+            continue
+        label, value = parsed
+        canonical = aliases.get(label)
+        if not canonical:
+            continue
+
+        continuation = []
+        for _, next_line in block[position + 1 :]:
+            next_parsed = human_gate_parse_field_line(next_line)
+            if next_parsed and aliases.get(next_parsed[0]):
+                break
+            if next_line.strip():
+                continuation.append(next_line.strip())
+
+        text = "\n".join(item for item in [value, *continuation] if item).strip()
+        fields[canonical] = text
+        field_lines[canonical] = line_number
+
+    return fields, field_lines
+
+
+def human_gate_check_file(path):
+    issues = []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    in_code_block = False
+
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block:
+            continue
+        if not HUMAN_GATE_HEADER_RE.match(stripped):
+            continue
+
+        block = human_gate_collect_record(lines, index)
+        fields, field_lines = human_gate_record_fields(block)
+        if not fields:
+            issues.append(Issue(path, index + 1, "Human Gate 记录缺少可识别字段", code="HUMAN_GATE_RECORD_EMPTY"))
+
+        for canonical, _ in HUMAN_GATE_REQUIRED_FIELDS:
+            if canonical not in fields:
+                issues.append(
+                    Issue(path, index + 1, f"Human Gate 记录缺少字段: {canonical}", code="HUMAN_GATE_FIELD_MISSING")
+                )
+            elif not fields[canonical]:
+                issues.append(
+                    Issue(path, field_lines[canonical], f"Human Gate 记录字段为空: {canonical}", code="HUMAN_GATE_FIELD_EMPTY")
+                )
+
+    return issues
+
+
+def human_gate_check_paths(paths):
+    issues = []
+    for path in iter_markdown_files(paths):
+        issues.extend(human_gate_check_file(path))
+    return issues
+
+
+def human_gate_main(paths):
+    check_paths = paths if paths else human_gate_default_check_paths()
+    issues = human_gate_check_paths(check_paths)
+    if issues:
+        print(f"Human Gate 最小证据结构检查失败，共 {len(issues)} 个问题：")
+        for issue in issues:
+            print(f"- {issue.format(PROJECT_ROOT)}")
+        return 1
+    print("Human Gate 最小证据结构检查通过。")
+    return 0
+
+
+# ══════════════════════════════════════════════════════════════════════
 # env-init — LDVH 自身项目根目录环境初始化记录检查
 # ══════════════════════════════════════════════════════════════════════
 
@@ -1529,6 +1676,10 @@ def build_parser():
     landing_report_parser.add_argument("paths", nargs="*", default=None, help="要聚合的 Markdown 文件或目录，默认检查 docs/specs/ 根目录正式规范。")
     landing_report_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
+    # human-gate
+    human_gate_parser = subparsers.add_parser("human-gate", help="检查 Markdown 中的 Human Gate 记录是否符合 06 最小证据结构。")
+    human_gate_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/ 和 ldvh-base/。")
+
     # env-init
     env_init_parser = subparsers.add_parser("env-init", help="检查 LDVH 自身项目根目录环境初始化记录的中文模板结构。")
     env_init_parser.add_argument("--root", default=str(PROJECT_ROOT), help="LDVH 项目根目录，默认使用当前工具所在项目。")
@@ -1545,7 +1696,7 @@ def build_parser():
     index_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")
 
     # all
-    all_parser = subparsers.add_parser("all", help="运行所有检查（doc + refs + landing + index）。")
+    all_parser = subparsers.add_parser("all", help="运行所有检查（doc + refs + landing + human-gate + index）。")
     all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/specs/。")
     all_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录（用于 index 子命令）。")
     all_parser.add_argument("--specs-dir", default=None, help="要生成索引的规范目录；未提供时根据 paths 推断，默认 specs。")
@@ -1571,6 +1722,9 @@ def main(argv=None):
 
     if command == "landing-report":
         return landing_report_main(args.paths, args.format)
+
+    if command == "human-gate":
+        return human_gate_main(args.paths)
 
     if command == "env-init":
         return env_init_main(args.root)
@@ -1598,6 +1752,10 @@ def main(argv=None):
         # landing
         landing_paths = args.paths if args.paths else landing_default_check_paths()
         if landing_main(landing_paths) != 0:
+            exit_code = 1
+        # human-gate
+        human_gate_paths = args.paths if args.paths else human_gate_default_check_paths()
+        if human_gate_main(human_gate_paths) != 0:
             exit_code = 1
         # env-init
         if env_init_main(args.root) != 0:

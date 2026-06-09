@@ -290,7 +290,7 @@ Agent 输出必须回到主控汇总。稳定结论只有写回事实源后才�
 
 工具不得替代 AI 判断，不得直接决定 Human Gate，不得把工具输出作为最终事实源。工具报告中的 closed/open/degraded 状态只有能回指正式规范、事实源、测试或工作对象证据时，才可作为统筹证据使用。
 
-若 AI 发现现有工具不足，应按 `07` 形成最小 Code 需求、实现或扩展工具并验证；工具规范缺失时，应先补齐必要规范或测试要求。`tools/specs_validate.py landing-report` 已形成规范落地要求全局聚合报告的基础 Code 实现；报告状态属于派生启发式，AI 仍必须按本文流程验证、回写缺口，不得把工具输出当作唯一事实源或最终关闭证据。
+若 AI 发现现有工具不足，应按 `07` 形成最小 Code 需求、实现或扩展工具并验证；工具规范缺失时，应先补齐必要规范或测试要求。`tools/specs_validate.py landing-report` 已形成规范落地要求全局聚合报告的基础 Code 实现，`tools/specs_validate.py human-gate` 已形成 Human Gate 最小证据结构的基础检查；这些工具输出属于派生检查结果，AI 仍必须按本文流程验证、回写缺口，不得把工具输出当作唯一事实源或最终关闭证据。
 
 ---
 ## 10. 事实源回写与证据留存
@@ -405,7 +405,7 @@ Agent 输出必须回到主控汇总。稳定结论只有写回事实源后才�
 ---
 ## 15. 待补齐事项
 
-1. 规范落地要求聚合报告已由 `tools/specs_validate.py landing-report` 形成基础实现；后续应按 07 扩展验证状态、建议回写位置、运行投影漂移检查和 40-59 集合状态检查；
+1. 规范落地要求聚合报告已由 `tools/specs_validate.py landing-report` 形成基础实现；Human Gate 最小证据结构检查已由 `tools/specs_validate.py human-gate` 形成基础实现；后续应按 07 扩展验证状态、建议回写位置、运行投影漂移检查、Human Gate 证据回写消费和 40-59 集合状态检查；
 2. landing report 的 closed/open/degraded/needs_human_gate 状态目前是 Code 派生启发式；后续应接入测试证据、工作对象证据或 Human 确认记录，避免把报告状态误当事实源；
 3. 测试用例事实源承载位置待 10 后续稳定后补齐；
 4. 产品初始化和产品审计执行后，应明确如何调用本文并消费本文输出，并回看 open/degraded 缺口是否已被正式承接；

@@ -904,6 +904,141 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
 
 
 # ══════════════════════════════════════════════════════════════════════
+# human-gate — Human Gate 最小证据结构检查
+# ══════════════════════════════════════════════════════════════════════
+
+def human_gate_codes(issues):
+    return [issue.code for issue in issues]
+
+
+def test_human_gate_complete_record_passes(tmp_path):
+    path = write_md(
+        tmp_path / "gate.md",
+        """
+# Gate
+
+Human Gate 记录：
+- 触发原因：关闭关键 degraded 缺口
+- 确认事项：是否接受当前关闭方案
+- 影响范围：docs/specs/41、docs/evals/18
+- 确认依据：验证命令通过，剩余 Web 消费未实现
+- Human 决策：确认推进
+- 确认人/时间：Human，2026-06-10
+- 后续动作：写回评估并提交
+- 验证方式：运行 specs_validate 和 pytest
+- 回写位置：docs/evals/18 与 Git commit
+- 残留风险：Web 消费仍待后续 Task
+""",
+    )
+
+    assert checker.human_gate_check_file(path) == []
+
+
+def test_human_gate_missing_fields_are_reported(tmp_path):
+    path = write_md(
+        tmp_path / "gate-missing.md",
+        """
+# Gate
+
+Human Gate 记录：
+- Human 决策：用户同意
+""",
+    )
+
+    issues = checker.human_gate_check_file(path)
+
+    assert "HUMAN_GATE_FIELD_MISSING" in human_gate_codes(issues)
+    assert any("触发原因" in issue.message for issue in issues)
+    assert any("影响范围" in issue.message for issue in issues)
+
+
+def test_human_gate_empty_field_is_reported(tmp_path):
+    path = write_md(
+        tmp_path / "gate-empty.md",
+        """
+# Gate
+
+Human Gate 记录：
+- 触发原因：
+- 确认事项：是否关闭
+- 影响范围：docs
+- 确认依据：人工确认
+- Human 决策：确认
+- 确认人/时间：Human，2026-06-10
+- 后续动作：提交
+- 验证方式：pytest
+- 回写位置：commit
+- 残留风险：无
+""",
+    )
+
+    issues = checker.human_gate_check_file(path)
+
+    assert "HUMAN_GATE_FIELD_EMPTY" in human_gate_codes(issues)
+    assert any("触发原因" in issue.message for issue in issues)
+
+
+def test_human_gate_continuation_satisfies_field_value(tmp_path):
+    path = write_md(
+        tmp_path / "gate-continuation.md",
+        """
+# Gate
+
+Human Gate 记录：
+- 触发原因：
+  需要关闭关键 open 缺口
+- 确认事项：是否接受降级
+- 影响范围：Task 和 docs/evals/18
+- 确认依据：测试通过
+- 确认结果：暂缓
+- 确认人和时间：Human，2026-06-10
+- 后续执行动作：记录 follow-up
+- 验证结果：无需写入代码
+- 回写位置：docs/evals/18
+- 残留风险：后续仍需 Web
+""",
+    )
+
+    assert checker.human_gate_check_file(path) == []
+
+
+def test_human_gate_template_in_code_block_is_ignored(tmp_path):
+    path = write_md(
+        tmp_path / "gate-template.md",
+        """
+# Gate
+
+```text
+Human Gate 记录：
+- 触发原因：
+- 确认事项：
+```
+""",
+    )
+
+    assert checker.human_gate_check_file(path) == []
+
+
+def test_human_gate_cli_reports_issues(tmp_path, capsys):
+    path = write_md(
+        tmp_path / "gate-cli.md",
+        """
+# Gate
+
+Human Gate 记录：
+- Human 决策：确认
+""",
+    )
+
+    exit_code = checker.main(["human-gate", str(path)])
+
+    output = capsys.readouterr().out
+    assert exit_code == 1
+    assert "Human Gate 最小证据结构检查失败" in output
+    assert "HUMAN_GATE_FIELD_MISSING" in output
+
+
+# ══════════════════════════════════════════════════════════════════════
 # env-init — LDVH 自身项目根目录环境初始化记录检查
 # ══════════════════════════════════════════════════════════════════════
 

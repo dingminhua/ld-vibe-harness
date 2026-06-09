@@ -32,7 +32,7 @@
 | 反合理化、失败暂停和完成证据 | 已落地基础规则 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 已明确未验证不得关闭、失败需暂停分流、closure evidence 需可追溯 |
 | Code 可验证先行 | 已落地 | `docs/specs/07-Code实现规范.md` | 不强制经典 TDD，但强制新增、扩展或修改 Code 前明确成功条件、失败条件、正反样例、边界样例、测试命令或等价验证方式 |
 | landing report 基础实现 | 已落地 | `tools/specs_validate.py landing-report`、`tests/test_specs_validate.py`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 已提交 `65f1986 feat: add specs landing report`；报告状态为 Code 派生启发式，不是事实源 |
-| Human Gate 最小证据结构 | 已落地基础规则 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 已形成通用最小记录块，并让 Task、ADR、Web UI 和 landing orchestration 引用同一结构；后续仍需 Code/Web 实现消费 |
+| Human Gate 最小证据结构 | 已落地基础规则与 Code 检查 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`tools/specs_validate.py human-gate`、`tests/test_specs_validate.py` | 已形成通用最小记录块，并让 Task、ADR、Web UI 和 landing orchestration 引用同一结构；Code 已能检查已写出的 `Human Gate 记录` 文本块，后续仍需 Web/事实源回写消费 |
 | 规范落地治理吸收 | 已落地 | `docs/specs/00`、`06`、`07`、`10`、`26`、`41` 及 04 系列命名/引用收敛的一部分 | 已提交 `f55130c docs: update specs landing governance`；剩余 04.07/04.08/04.09 编号收敛由其他 AI 继续处理 |
 
 仍在推进中的事项不因本文标注而自动关闭。本文只记录“已进入正式承接位置或 Code 实现”的事实，后续验收仍应回到对应规范、Code 测试、运行投影、工作对象或 Human Gate 证据。
@@ -101,7 +101,7 @@ Web 协调 Human
 | AI 仍需读太多 | 复杂任务可能需同时读取 10+ 规范 | 明确边界、可用工具 |
 | 规范落地要求已有基础聚合视图但缺验证证据接入 | `landing-report` 已能聚合正式规范落地要求，但状态仍为启发式，尚未接入测试证据、工作对象证据或 Human 确认记录 | 可见状态、可用工具、验证反馈 |
 | 工作对象事实源存在历史漂移风险 | 旧路径、缺失引用会制造看似稳定但实际失效的依据 | 稳定事实 |
-| Human Gate 证据机制仍需实现消费 | 最小证据结构已进入 06、08、21、26、41，但 Code/Web 尚未消费并回写 | 停顿机制、验证反馈 |
+| Human Gate 证据机制仍需回写消费 | 最小证据结构已进入 06、08、21、26、41，Code 已能检查已写出的记录块，但 Web 和事实源回写链路尚未消费 | 停顿机制、验证反馈 |
 | Web 尚未充分承担 AI-Human 桥接 | Human 看不见 AI 的方向、风险、状态和待确认事项 | 可见状态 |
 | 继续抽象存在负担风险 | 过多流程/对象/规则增加选择和上下文负担 | 明确边界 |
 | 规范落地要求存在形式化风险 | 填表不等于落地，有保障机制描述不等于已实例化 | 验证反馈 |
@@ -135,7 +135,7 @@ Web 协调 Human
 | G-06 | 生命周期触发仍以人工降级为主 | degraded | specs 变更、commit 前后、会话停止前等触发依赖 AI 记忆 | 运行投影 + Code：Hook / CI / 人工降级清单逐步承接 |
 | G-07 | 运行闭环测试用例事实源位置未稳定 | open | 具体流程的可测试性锚点无法沉淀为长期测试用例 | 10 + Code：确定测试用例事实源或先以 tests 承接 |
 | G-08 | 工作流程 45-58 仍为候选 | open | 意图接入、任务规划、任务执行、验证关闭等最小运作流程尚未 formalize | 工作流程：逐个讨论并创建或降级 |
-| G-09 | Human Gate 最小证据结构已定义，消费与回写仍待实现 | closed-basic | 06 已定义最小记录块，Task、ADR、Web UI 和 41 已引用；但 Code/Web 尚未形成自动消费、导出或回写链路 | Code + Web / 工作对象：实现 Gate 证据回写与消费检查 |
+| G-09 | Human Gate 最小证据结构已定义，Code 已能检查记录块 | closed-basic | 06 已定义最小记录块，Task、ADR、Web UI 和 41 已引用；`tools/specs_validate.py human-gate` 已能检查已写出的 `Human Gate 记录` 是否缺字段或字段为空；但 Web 尚未形成自动导出、受控写入或事实源回写链路 | Web / 工作对象：实现 Gate 证据导出、回写与消费检查 |
 | G-10 | Web 信息同步仍停留在规范层 | open | Human-facing 闭环、受控编辑和 Gate UI 未形成稳定运行面 | Web：待 08、10、42、43 稳定后实现或校准 |
 
 ---
@@ -265,7 +265,7 @@ Web 协调 Human
 
 3. **Dogfood 42 和 43**：使用 LDVH 审计 LDVH 自身，检查 AI 入口、管辖项目配置、环境初始化记录、docs/specs 校验、ldvh-base 校验、active 工作模型和工作流程可定位性、Code/Web 闭环支撑、open/degraded 缺口分流。
 
-4. **推进 Human Gate 证据消费**：最小证据结构已进入 06、08、21、26 和 41；下一步不追求复杂 Web UI，优先让 Gate 证据进入 Git 文件事实源，并让 Code/Web 能识别确认事项、影响范围、确认人、确认时间、确认依据、确认后执行动作、验证结果、回写位置和残留风险。
+4. **推进 Human Gate 证据回写消费**：最小证据结构已进入 06、08、21、26 和 41，Code 已能检查已写出的 `Human Gate 记录`；下一步不追求复杂 Web UI，优先让 Gate 证据稳定进入 Git 文件事实源，并让 Web 或受控写入链路能导出、回写和展示确认事项、影响范围、确认人、确认时间、确认依据、确认后执行动作、验证结果、回写位置和残留风险。
 
 5. **增强 Web 的 Human-facing 审计面**：优先展示当前风险、待确认事项、验证证据、缺口状态、事实源漂移、Task 关闭条件、ADR 决策影响。
 
@@ -278,7 +278,7 @@ Web 协调 Human
 | AI 需求维度 | 00 或最佳实践 |
 | 最小上下文生成 | 07、41 或后续 Code Task |
 | landing report | 基础实现已进入 Code、测试和 41；后续吸收验证状态、证据来源、漂移检查和 Web 消费入口 |
-| Human Gate 证据结构 | 基础结构已进入 06、08、21、26、41；后续由 Code/Web/42/43 消费 |
+| Human Gate 证据结构 | 基础结构已进入 06、08、21、26、41；Code 检查已由 `tools/specs_validate.py human-gate` 承接；后续由 Web/42/43 和工作对象回写链路消费 |
 | Web Human-facing 审计面 | 08 和 Web 实现 Task |
 | 事实源漂移修复 | Task 或产品审计发现 |
 | 少新增抽象、多跑闭环 | 00 防递归建设原则、12 最佳实践或 41/43 审计建议 |
