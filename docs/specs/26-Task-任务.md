@@ -281,6 +281,35 @@ closed_at:
 closure_evidence:
 ```
 
+### 6.3 Human Gate 记录回写样例
+
+Task 创建、删除、验收改写、关闭豁免、终态修改、高风险事实源写入或人工验收时，Human Gate 记录可以摘要写入 `closure_evidence`、`status_history`、相关 Memo / ADR / Task 或 Change / commit 证据中。Task 关闭时若依赖 Human Gate，`closure_evidence` 应能直接嵌入或定位以下信息：
+
+```yaml
+closure_evidence: |
+  ## 验证结果
+
+  已完成 acceptance 检查，相关命令通过。
+
+  ## Human Gate 记录
+
+  Human Gate 记录：
+  - 触发原因：关闭高风险 Task，且涉及 affected_docs 无实际变更豁免
+  - 确认事项：是否允许以豁免理由关闭该 Task
+  - 影响范围：目标 Task、affected_docs、相关规范和后续审计
+  - 确认依据：验收清单、验证命令结果、diff 摘要和豁免理由
+  - Human 决策：确认关闭
+  - 确认人/时间：Human，2026-06-10
+  - 后续动作：填写 closed_at 与 closure_evidence，并提交 Change
+  - 验证方式：运行 Task / specs 校验并检查 Git diff
+  - 回写位置：本 Task 的 closure_evidence、相关 Change / commit
+  - 残留风险：后续若发现 affected_docs 漏同步，应创建 follow-up Task
+
+  ## 结论
+
+  Task 满足关闭条件；残留风险已记录。
+```
+
 ---
 ## 7. 事实源回写与证据留存
 

@@ -229,6 +229,27 @@ status_history:
     reason: 确认 Change 以 Git commit 作为事实实例
 ```
 
+### 6.3 Human Gate 记录回写样例
+
+ADR 创建、接受、废弃、替代、核心决策改写或升级为规范时，Human Gate 记录可以摘要写入 `context`、`consequences`、`status_history`、相关 Task / Memo 或 Change / commit 证据中。若直接写入 ADR 字段，推荐使用以下文本块：
+
+```yaml
+context: |
+  本 ADR 将改变 accepted 决策的事实源承载方式，需 Human Gate。
+
+  Human Gate 记录：
+  - 触发原因：accepted ADR 的核心决策将被修改
+  - 确认事项：是否接受新的决策内容并保留原 ADR 追溯
+  - 影响范围：目标 ADR、相关规范、后续 Task 和 Change 记录
+  - 确认依据：原 ADR、替代方案、影响范围说明和验证结果
+  - Human 决策：确认修改
+  - 确认人/时间：Human，2026-06-10
+  - 后续动作：更新 ADR 字段并提交 Change
+  - 验证方式：运行 ADR / specs 相关校验并检查 Git diff
+  - 回写位置：本 ADR、相关 Change / commit
+  - 残留风险：后续 Web 展示需同步消费变更
+```
+
 ---
 ## 7. 事实源回写与证据留存
 
