@@ -29,7 +29,7 @@
 | 落地项 | 当前状态 | 已进入位置 | 备注 |
 |---|---|---|---|
 | 00 总纲表达收敛 | 已落地 | `docs/specs/00-LD-Vibe-Harness理念与纲要.md` | 已补充“启动有序少读、推理有据少猜、行止有规可依、结果有证可验”的总纲表达，并形成 V1-V10 价值实现标准 |
-| AI 统一入口与场景路由 | 已落地基础入口 | `LDVH-AI-ENTRY.md` | 已形成最小启动顺序、场景路由、常用查询命令和 STOP 点；入口已提示LDVH落地与检查读取 42，specs 变更、落地缺口或运行投影漂移优先进入 41 |
+| AI 统一入口与场景路由 | 已落地基础入口 | `LDVH-AI-ENTRY.md` | 已形成最小启动顺序、场景路由、常用查询命令和 STOP 点；入口已提示 LDVH落地与检查读取 42，specs 变更、落地缺口或运行投影漂移优先进入 41 |
 | 工作模型集合重组 | 已落地 | `docs/specs/20-工作模型集合索引.md`、`docs/specs/21-26` | ADR、Change、Pitfall、Intent、Memo、Task 已成为 active 工作模型；Profile、TaskSet、Evidence 已取消独立对象化，Dependency/Risk/Artifact/Checklist/Roadmap 已降级为字段、模板或文档承载 |
 | 工作流程集合重组 | 已落地基础索引 | `docs/specs/40-工作流程集合索引.md`、`docs/specs/41-44` | 41 规范落地统筹、42 LDVH落地与检查、44 多角色思考已 active；43 已并入 42 并作为 removed 槽位保留；45-58 仍为 candidate，不得当作已生效主文档 |
 | 反合理化、失败暂停和完成证据 | 已落地基础规则 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 已明确未验证不得关闭、失败需暂停分流、closure evidence 需可追溯 |
@@ -133,7 +133,7 @@ Web 协调 Human
 |---|---|---|---|---|
 | G-01 | 缺少规范落地要求全局聚合报告命令 | closed-basic | 基础命令已落地，AI 不再必须手工跨文件聚合；但验证状态、运行投影漂移和事实证据仍需扩展 | 已由 `tools/specs_validate.py landing-report` 承接；后续接入验证证据、工作对象证据、Human 确认和漂移检查 |
 | G-02 | 运行投影漂移检查 Code 缺失 | open | 规范变化后，不知道 Rules/Skill/Agent/Hook/CI/Web/Code 入口是否过期 | Code + 04.02：新增 drift / projection 检查能力 |
-| G-03 | AI 统一入口已指向 42 和 41，但持久运行投影仍需检查 | closed-basic | `LDVH-AI-ENTRY.md` 已提示LDVH落地与检查进入 42，specs 变更、落地缺口或运行投影漂移进入 41；但工作区级薄入口、平台入口或管辖项目入口是否同步仍需 42 现场检查 | 42 + 运行投影：检查所有已授权入口是否只保留薄引用且未复制正文 |
+| G-03 | AI 统一入口已指向 42 和 41，但持久运行投影仍需检查 | closed-basic | `LDVH-AI-ENTRY.md` 已提示 LDVH落地与检查进入 42，specs 变更、落地缺口或运行投影漂移进入 41；但工作区级薄入口、平台入口或管辖项目入口是否同步仍需 42 现场检查 | 42 + 运行投影：检查所有已授权入口是否只保留薄引用且未复制正文 |
 | G-04 | 42 LDVH落地与检查已合并但需 dogfood | open | 42 已成为统一工作流程，但尚未对 LDVH 自身执行一次完整只读检查、授权落地、复检和报告 | 工作流程：dogfood 42 |
 | G-05 | 43 独立产品审计已取消 | removed | 原 43 职责已并入 42；不得把 43 当作后置独立审计流程恢复 | 40 保留 removed 槽位；后续检查回到 42 |
 | G-06 | 生命周期触发仍以人工降级为主 | degraded | specs 变更、commit 前后、会话停止前等触发依赖 AI 记忆 | 运行投影 + Code：Hook / CI / 人工降级清单逐步承接 |
