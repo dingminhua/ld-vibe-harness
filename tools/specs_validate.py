@@ -382,6 +382,53 @@ LANDING_ALLOWED_TYPES = {
     "Human 交互要求",
     "生命周期触发要求",
 }
+LANDING_REPORT_OWNER_AREAS = {
+    "上位约束承接要求": "specs",
+    "入口可见要求": "runtime_projection",
+    "流程复用要求": "workflow",
+    "子 Agent 思考要求": "agent",
+    "确定性执行要求": "code",
+    "Human 交互要求": "human_gate",
+    "生命周期触发要求": "runtime_projection",
+}
+LANDING_REPORT_WRITEBACK_AREAS = {
+    "specs": "specs",
+    "runtime_projection": "runtime_projection_or_env_record",
+    "workflow": "workflow_or_skill_candidate",
+    "agent": "agent_or_44",
+    "code": "code_request_or_test",
+    "human_gate": "human_gate_or_task",
+}
+LANDING_REPORT_DEGRADED_MARKERS = [
+    "open-degraded",
+    "degraded",
+    "人工降级",
+    "降级原因",
+    "降级说明",
+    "降级方式",
+    "记录降级",
+]
+LANDING_REPORT_OPEN_MARKERS = [
+    "TODO",
+    "待补齐",
+    "待创建",
+    "待讨论",
+    "待实现",
+    "尚未",
+    "未稳定",
+    "未完成",
+    "后续 Code",
+    "open item",
+]
+LANDING_REPORT_OPEN_PATTERNS = [
+    re.compile(r"后续[^|。；;]*?(补齐|扩展|创建|讨论|稳定|校准|补充|形成|沉淀)"),
+    re.compile(r"(需要|需|应)[^|。；;]*?(补齐|扩展|创建|讨论|稳定|校准|形成缺口)"),
+    re.compile(r"缺口[^|。；;]*?(待|未|open)"),
+]
+LANDING_REPORT_HUMAN_GATE_PATTERNS = [
+    re.compile(r"(必须|应|需|需要|触发|进入|经|通过|完成)[^|。；;]*?Human Gate"),
+    re.compile(r"Human Gate[^|。；;]*?(确认|前|后|授权|暂停|等待)"),
+]
 
 
 def landing_default_check_paths():
@@ -409,6 +456,225 @@ def landing_split_cells(line):
 
 def landing_is_separator(cells):
     return all(set(cell) <= {"-", ":", " "} for cell in cells)
+
+
+def landing_clean_cell(value):
+    text = str(value).strip()
+    if len(text) >= 2 and text.startswith("`") and text.endswith("`"):
+        return text[1:-1]
+    return text
+
+
+def landing_relative_path(path):
+    try:
+        return str(Path(path).resolve().relative_to(PROJECT_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def landing_extract_requirements_file(path):
+    requirements = []
+    if not landing_is_formal_spec(path):
+        return requirements
+
+    lines = path.read_text(encoding="utf-8").splitlines()
+    in_code_block = False
+    in_landing_section = False
+    header_seen = False
+    in_table = False
+
+    for index, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block:
+            continue
+
+        heading = HEADING_RE.match(line)
+        if heading:
+            level = len(heading.group(1))
+            title = landing_strip_section_number(heading.group(2).strip())
+            in_landing_section = level == 2 and title == LANDING_SECTION_TITLE
+            header_seen = False
+            in_table = False
+            continue
+
+        if not in_landing_section:
+            continue
+        if not stripped:
+            if in_table:
+                break
+            continue
+        if not stripped.startswith("|"):
+            if in_table:
+                break
+            continue
+
+        cells = landing_split_cells(stripped)
+        if landing_is_separator(cells):
+            continue
+        if not header_seen:
+            header_seen = True
+            in_table = True
+            continue
+        if len(cells) < len(LANDING_REQUIRED_COLUMNS):
+            continue
+
+        requirements.append(
+            {
+                "source": landing_relative_path(path),
+                "line": index,
+                "requirement_type": landing_clean_cell(cells[0]),
+                "content": landing_clean_cell(cells[1]),
+                "guarantee_mechanism": landing_clean_cell(cells[2]),
+                "sync_type": landing_clean_cell(cells[3]),
+                "trigger": landing_clean_cell(cells[4]),
+            }
+        )
+
+    return requirements
+
+
+def landing_report_match_marker(text, markers):
+    for marker in markers:
+        if marker in text:
+            return marker
+    return None
+
+
+def landing_report_infer_status(requirement):
+    text = " | ".join(
+        [
+            requirement.get("requirement_type", ""),
+            requirement.get("content", ""),
+            requirement.get("guarantee_mechanism", ""),
+            requirement.get("sync_type", ""),
+            requirement.get("trigger", ""),
+        ]
+    )
+
+    marker = landing_report_match_marker(text, LANDING_REPORT_DEGRADED_MARKERS)
+    if marker:
+        return "degraded", f"matched degraded marker: {marker}"
+
+    marker = landing_report_match_marker(text, LANDING_REPORT_OPEN_MARKERS)
+    if marker:
+        return "open", f"matched open marker: {marker}"
+
+    for pattern in LANDING_REPORT_OPEN_PATTERNS:
+        match = pattern.search(text)
+        if match:
+            return "open", f"matched open pattern: {match.group(0)}"
+
+    for pattern in LANDING_REPORT_HUMAN_GATE_PATTERNS:
+        match = pattern.search(text)
+        if match:
+            return "needs_human_gate", f"matched Human Gate pattern: {match.group(0)}"
+
+    return "closed", "no open/degraded/Human Gate marker matched"
+
+
+def landing_report_count_by(requirements, key):
+    counts = {}
+    for requirement in requirements:
+        value = requirement.get(key) or "(empty)"
+        counts[value] = counts.get(value, 0) + 1
+    return dict(sorted(counts.items(), key=lambda item: item[0]))
+
+
+def landing_report_build(paths=None):
+    check_paths = paths if paths else landing_default_check_paths()
+    markdown_files = iter_markdown_files(check_paths)
+    formal_files = [path for path in markdown_files if landing_is_formal_spec(path)]
+    requirements = []
+    for path in formal_files:
+        requirements.extend(landing_extract_requirements_file(path))
+
+    for requirement in requirements:
+        status, reason = landing_report_infer_status(requirement)
+        owner_area = LANDING_REPORT_OWNER_AREAS.get(requirement["requirement_type"], "unknown")
+        requirement["status"] = status
+        requirement["status_reason"] = reason
+        requirement["owner_area"] = owner_area
+        requirement["suggested_writeback"] = LANDING_REPORT_WRITEBACK_AREAS.get(owner_area, "manual_review")
+
+    source_files = sorted({requirement["source"] for requirement in requirements})
+    return {
+        "metadata": {
+            "tool": "tools/specs_validate.py",
+            "report": "landing-report",
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "source_of_truth": False,
+            "status_source": "derived heuristic",
+            "checked_file_count": len(formal_files),
+            "source_count": len(source_files),
+            "requirement_count": len(requirements),
+        },
+        "summary": {
+            "by_status": landing_report_count_by(requirements, "status"),
+            "by_type": landing_report_count_by(requirements, "requirement_type"),
+            "by_sync_type": landing_report_count_by(requirements, "sync_type"),
+            "by_owner_area": landing_report_count_by(requirements, "owner_area"),
+        },
+        "requirements": requirements,
+    }
+
+
+def landing_report_shorten(text, limit=96):
+    text = str(text).strip()
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3].rstrip() + "..."
+
+
+def landing_report_format_text(report):
+    lines = ["规范落地要求聚合报告"]
+    metadata = report["metadata"]
+    lines.append(f"- 检查文件数: {metadata['checked_file_count']}")
+    lines.append(f"- 来源文件数: {metadata['source_count']}")
+    lines.append(f"- 要求数: {metadata['requirement_count']}")
+    lines.append("- 状态判断: Code 派生启发式，非事实源")
+
+    for title, key in [
+        ("按状态", "by_status"),
+        ("按落地要求类型", "by_type"),
+        ("按同步类型", "by_sync_type"),
+        ("按承接区域", "by_owner_area"),
+    ]:
+        lines.append("")
+        lines.append(f"{title}:")
+        counts = report["summary"][key]
+        if not counts:
+            lines.append("- 无")
+            continue
+        for name, count in counts.items():
+            lines.append(f"- {name}: {count}")
+
+    actionable = [item for item in report["requirements"] if item["status"] != "closed"]
+    lines.append("")
+    lines.append("需关注项:")
+    if not actionable:
+        lines.append("- 无")
+    else:
+        for item in actionable:
+            content = landing_report_shorten(item["content"])
+            lines.append(
+                f"- {item['source']}:{item['line']} "
+                f"[{item['status']}/{item['requirement_type']}/{item['owner_area']}] "
+                f"{content} -> {item['status_reason']}; suggested_writeback: {item['suggested_writeback']}"
+            )
+
+    return "\n".join(lines)
+
+
+def landing_report_main(paths=None, output_format="text"):
+    report = landing_report_build(paths)
+    if output_format == "json":
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        print(landing_report_format_text(report))
+    return 0
 
 
 def landing_check_file(path):
@@ -1258,6 +1524,11 @@ def build_parser():
     landing_parser = subparsers.add_parser("landing", help="检查 docs/specs 正式规范的规范落地要求表。")
     landing_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/specs/ 根目录正式规范。")
 
+    # landing-report
+    landing_report_parser = subparsers.add_parser("landing-report", help="生成 docs/specs 规范落地要求聚合报告。")
+    landing_report_parser.add_argument("paths", nargs="*", default=None, help="要聚合的 Markdown 文件或目录，默认检查 docs/specs/ 根目录正式规范。")
+    landing_report_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+
     # env-init
     env_init_parser = subparsers.add_parser("env-init", help="检查 LDVH 自身项目根目录环境初始化记录的中文模板结构。")
     env_init_parser.add_argument("--root", default=str(PROJECT_ROOT), help="LDVH 项目根目录，默认使用当前工具所在项目。")
@@ -1297,6 +1568,9 @@ def main(argv=None):
 
     if command == "landing":
         return landing_main(args.paths)
+
+    if command == "landing-report":
+        return landing_report_main(args.paths, args.format)
 
     if command == "env-init":
         return env_init_main(args.root)

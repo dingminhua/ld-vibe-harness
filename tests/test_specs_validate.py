@@ -814,6 +814,96 @@ def test_index_main_outputs_json_to_stdout(tmp_path, capsys):
 
 
 # ══════════════════════════════════════════════════════════════════════
+# landing-report — 规范落地要求聚合报告
+# ══════════════════════════════════════════════════════════════════════
+
+def build_landing_report_fixture(tmp_path, monkeypatch):
+    docs_specs = tmp_path / "docs" / "specs"
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(checker, "DOCS_DIR", tmp_path / "docs")
+    monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
+
+    write_md(
+        docs_specs / "00-Test.md",
+        """
+# Landing Report Test
+
+## 1. 规范落地要求
+
+| 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+|---|---|---|---|---|
+| 上位约束承接要求 | 后续正式规范不得违背本文的价值实现标准 | 规范检查 | 文档治理 | 审计时 |
+| 确定性执行要求 | 后续 Code 应能生成 landing report | `tools/specs_validate.py` 扩展、正反样例 | 校验实现 | 规范落地要求变化时 |
+| Human 交互要求 | 高影响变更应触发 Human Gate | Human Gate、确认记录 | 工作流程治理 | 变更前 |
+| 生命周期触发要求 | 运行投影不可用时应记录降级说明 | 人工降级检查 | 触发保障 | 工具不可用时 |
+""",
+    )
+    write_md(
+        tmp_path / "docs" / "evals" / "18-评估.md",
+        """
+# 评估
+
+## 1. 规范落地要求
+
+| 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+|---|---|---|---|---|
+| 确定性执行要求 | 不应进入正式报告 | Code | 校验实现 | 任意 |
+""",
+    )
+    return docs_specs
+
+
+def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
+    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+
+    report = checker.landing_report_build([str(docs_specs)])
+
+    assert report["metadata"]["source_of_truth"] is False
+    assert report["metadata"]["checked_file_count"] == 1
+    assert report["metadata"]["source_count"] == 1
+    assert report["metadata"]["requirement_count"] == 4
+    assert report["summary"]["by_status"] == {
+        "closed": 1,
+        "degraded": 1,
+        "needs_human_gate": 1,
+        "open": 1,
+    }
+    assert report["summary"]["by_owner_area"]["code"] == 1
+
+    statuses = {item["content"]: item["status"] for item in report["requirements"]}
+    assert statuses["后续正式规范不得违背本文的价值实现标准"] == "closed"
+    assert statuses["后续 Code 应能生成 landing report"] == "open"
+    assert statuses["高影响变更应触发 Human Gate"] == "needs_human_gate"
+    assert statuses["运行投影不可用时应记录降级说明"] == "degraded"
+    assert next(item for item in report["requirements"] if item["owner_area"] == "code")["suggested_writeback"] == "code_request_or_test"
+
+
+def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
+    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+
+    exit_code = checker.main(["landing-report", str(docs_specs), "--format", "json"])
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["metadata"]["report"] == "landing-report"
+    assert payload["summary"]["by_status"]["open"] == 1
+    assert payload["requirements"][0]["source"] == "docs/specs/00-Test.md"
+
+
+def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
+    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+
+    exit_code = checker.main(["landing-report", str(docs_specs)])
+
+    assert exit_code == 0
+    output = capsys.readouterr().out
+    assert "规范落地要求聚合报告" in output
+    assert "需关注项:" in output
+    assert "后续 Code 应能生成 landing report" in output
+    assert "suggested_writeback: code_request_or_test" in output
+
+
+# ══════════════════════════════════════════════════════════════════════
 # env-init — LDVH 自身项目根目录环境初始化记录检查
 # ══════════════════════════════════════════════════════════════════════
 
