@@ -7,7 +7,7 @@
 > 执行效力：无；稳定结论需进入 docs/specs 正文区、工作对象、Code、Web、测试、运行投影或最佳实践后才具备对应效力
 > 来源：原 `docs/evals/18-LDVH候选事项承接评估.md`、`docs/evals/19-LDVH规范落地统筹机制与闭环缺口评估.md`、`docs/evals/20-LDVH规范落地统筹执行缺口清单.md`、`docs/evals/21-LDVH面向AI执行者需求的推进评估.md` 合并重建
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-product-initialization-产品初始化.md`、`docs/specs/43-product-audit-产品审计.md`
+> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-product-landing-check-产品落地与检查.md`
 
 ---
 
@@ -29,15 +29,15 @@
 | 落地项 | 当前状态 | 已进入位置 | 备注 |
 |---|---|---|---|
 | 00 总纲表达收敛 | 已落地 | `docs/specs/00-LD-Vibe-Harness理念与纲要.md` | 已补充“启动有序少读、推理有据少猜、行止有规可依、结果有证可验”的总纲表达，并形成 V1-V10 价值实现标准 |
-| AI 统一入口与场景路由 | 已落地基础入口 | `LDVH-AI-ENTRY.md` | 已形成最小启动顺序、场景路由、常用查询命令和 STOP 点；入口已提示 specs 变更、落地缺口、运行投影漂移或产品审计输入优先进入 41 |
+| AI 统一入口与场景路由 | 已落地基础入口 | `LDVH-AI-ENTRY.md` | 已形成最小启动顺序、场景路由、常用查询命令和 STOP 点；入口已提示产品落地与检查读取 42，specs 变更、落地缺口或运行投影漂移优先进入 41 |
 | 工作模型集合重组 | 已落地 | `docs/specs/20-工作模型集合索引.md`、`docs/specs/21-26` | ADR、Change、Pitfall、Intent、Memo、Task 已成为 active 工作模型；Profile、TaskSet、Evidence 已取消独立对象化，Dependency/Risk/Artifact/Checklist/Roadmap 已降级为字段、模板或文档承载 |
-| 工作流程集合重组 | 已落地基础索引 | `docs/specs/40-工作流程集合索引.md`、`docs/specs/41-44` | 41 规范落地统筹、42 产品初始化、43 产品审计、44 多角色思考已 active；45-58 仍为 candidate，不得当作已生效主文档 |
+| 工作流程集合重组 | 已落地基础索引 | `docs/specs/40-工作流程集合索引.md`、`docs/specs/41-44` | 41 规范落地统筹、42 产品落地与检查、44 多角色思考已 active；43 已并入 42 并作为 removed 槽位保留；45-58 仍为 candidate，不得当作已生效主文档 |
 | 反合理化、失败暂停和完成证据 | 已落地基础规则 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 已明确未验证不得关闭、失败需暂停分流、closure evidence 需可追溯 |
 | Code 可验证先行 | 已落地 | `docs/specs/07-Code实现规范.md` | 不强制经典 TDD，但强制新增、扩展或修改 Code 前明确成功条件、失败条件、正反样例、边界样例、测试命令或等价验证方式 |
 | landing report 基础实现 | 已落地 | `tools/specs_validate.py landing-report`、`tests/test_specs_validate.py`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 当前输出 41 篇来源文件、191 条落地要求：closed 116、open 14、degraded 35、needs_human_gate 26；报告状态为 Code 派生启发式，不是事实源 |
 | Human Gate 最小证据结构 | 已落地基础规则与 Code 检查 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`tools/specs_validate.py human-gate`、`tests/test_specs_validate.py` | 已形成通用最小记录块，并让 Task、ADR、Web UI 和 landing orchestration 引用同一结构；Code 已能检查已写出的 `Human Gate 记录` 文本块，后续仍需 Web/事实源回写消费 |
 | 规范落地治理吸收 | 已落地 | `docs/specs/00`、`04` 系列、`06`、`07`、`10`、`26`、`41` | 规范落地要求、环境适配、运行投影、平台清单、LDVH/个人特别要求已重组为 04 系列链路 |
-| Web 语义化与阅读体验改进 | 已部分落地 | `web/`、`web/docs/`、`docs/specs/08-Web信息同步规范.md` | 已有 Dashboard、ObjectList、ObjectDetail、Validate、Changelog、ReadingPanel 等实现与设计文档；Human Gate 证据导出、受控回写和审计面仍未闭环 |
+| Web 语义化与阅读体验改进 | 已部分落地 | `web/`、`web/docs/`、`docs/specs/08-Web信息同步规范.md` | 已有 Dashboard、ObjectList、ObjectDetail、Validate、Changelog、ReadingPanel 等实现与设计文档；Human Gate 证据导出、受控回写和检查面仍未闭环 |
 
 仍在推进中的事项不因本文标注而自动关闭。本文只记录“已进入正式承接位置或 Code 实现”的事实，后续验收仍应回到对应规范、Code 测试、运行投影、工作对象或 Human Gate 证据。
 
@@ -80,7 +80,7 @@ Web 协调 Human
 | 明确边界 | 当前任务场景、应读事实源、可改范围、只能参考的内容、必须暂停的时机 |
 | 稳定事实 | 能回到 Git 可追踪文件的事实，而非聊天记录、模型记忆或工具缓存 |
 | 关联信息 | 当前任务关联的规范、Task、ADR、Memo、Pitfall、Code、Web 或运行投影 |
-| 可见状态 | 任务、决策、缺口、初始化、审计和验证的当前状态 |
+| 可见状态 | 任务、决策、缺口、产品落地与检查和验证的当前状态 |
 | 可用工具 | 可机械化的检查、索引、聚合、验证和受控写入应交给 Code |
 | 停顿机制 | 明确知道何时不能自行继续 |
 | 验证反馈 | 可复现反馈，而非"看起来可以"等自述 |
@@ -92,7 +92,7 @@ Web 协调 Human
 |---|---|---|
 | AI 入口方向 | LDVH-AI-ENTRY.md 提供最小读取顺序和场景路由 | 快速定位 |
 | 五类构成要素分工 | 00 拆成开发环境、工作模型、工作流程、Code、Web | 边界判断 |
-| 工作流程逐步成型 | 41 统筹、42 初始化、43 审计、44 多角色思考 | 稳定执行 |
+| 工作流程逐步成型 | 41 统筹、42 产品落地与检查、44 多角色思考 | 稳定执行 |
 | 工作模型承载事实 | ADR、Task、Intent、Memo、Pitfall 围绕同一组事实追踪 | 无状态补偿 |
 | Code 方向正确 | 结构校验、对象校验、commit 校验和 landing report 已部分覆盖 | 确定性反馈 |
 | Human Gate 逐步成型 | 多规范明确高影响写入、入口变更、状态关闭需 Gate | 停顿机制 |
@@ -114,7 +114,7 @@ Web 协调 Human
 
 ## 4. 当前缺口清单
 
-以下为按 `docs/specs/41-landing-orchestration-规范落地统筹.md` 执行审计后的主要缺口。原手工审计范围为 37 篇正式规范、157 条规范落地要求；`tools/specs_validate.py landing-report` 基础实现落地后，当前 Code 派生聚合范围为 41 篇正式规范、191 条规范落地要求。
+以下为按 `docs/specs/41-landing-orchestration-规范落地统筹.md` 执行检查后的主要缺口。原手工检查范围为 37 篇正式规范、157 条规范落地要求；`tools/specs_validate.py landing-report` 基础实现落地后，当前 Code 派生聚合范围为 41 篇正式规范、191 条规范落地要求。
 
 当前 `landing-report` 输出摘要为：
 
@@ -133,15 +133,15 @@ Web 协调 Human
 |---|---|---|---|---|
 | G-01 | 缺少规范落地要求全局聚合报告命令 | closed-basic | 基础命令已落地，AI 不再必须手工跨文件聚合；但验证状态、运行投影漂移和事实证据仍需扩展 | 已由 `tools/specs_validate.py landing-report` 承接；后续接入验证证据、工作对象证据、Human 确认和漂移检查 |
 | G-02 | 运行投影漂移检查 Code 缺失 | open | 规范变化后，不知道 Rules/Skill/Agent/Hook/CI/Web/Code 入口是否过期 | Code + 04.02：新增 drift / projection 检查能力 |
-| G-03 | AI 统一入口已指向 41，但持久运行投影仍需审计 | closed-basic | `LDVH-AI-ENTRY.md` 已提示 specs 变更、落地缺口、运行投影漂移或产品审计输入优先进入 41；但工作区级薄入口、平台入口或管辖项目入口是否同步仍需 42/43 审计 | 42/43 + 运行投影：检查所有已授权入口是否只保留薄引用且未复制正文 |
-| G-04 | 产品初始化 42 已创建但需 dogfood | open | 42 已有正式规范，但尚未对 LDVH 自身执行一次完整初始化 | 工作流程：dogfood 42 |
-| G-05 | 产品审计 43 已创建但需 dogfood | open | 43 已有正式规范，但尚未对 LDVH 自身执行一次完整审计 | 工作流程：dogfood 43 |
+| G-03 | AI 统一入口已指向 42 和 41，但持久运行投影仍需检查 | closed-basic | `LDVH-AI-ENTRY.md` 已提示产品落地与检查进入 42，specs 变更、落地缺口或运行投影漂移进入 41；但工作区级薄入口、平台入口或管辖项目入口是否同步仍需 42 现场检查 | 42 + 运行投影：检查所有已授权入口是否只保留薄引用且未复制正文 |
+| G-04 | 42 产品落地与检查已合并但需 dogfood | open | 42 已成为统一工作流程，但尚未对 LDVH 自身执行一次完整只读检查、授权落地、复检和报告 | 工作流程：dogfood 42 |
+| G-05 | 43 独立产品审计已取消 | removed | 原 43 职责已并入 42；不得把 43 当作后置独立审计流程恢复 | 40 保留 removed 槽位；后续检查回到 42 |
 | G-06 | 生命周期触发仍以人工降级为主 | degraded | specs 变更、commit 前后、会话停止前等触发依赖 AI 记忆 | 运行投影 + Code：Hook / CI / 人工降级清单逐步承接 |
 | G-07 | 运行闭环测试用例事实源位置未稳定 | open | 具体流程的可测试性锚点无法沉淀为长期测试用例 | 10 + Code：确定测试用例事实源或先以 tests 承接 |
 | G-08 | 工作流程 45-58 仍为候选 | open | 意图接入、任务规划、任务执行、验证关闭等最小运作流程尚未 formalize | 工作流程：逐个讨论并创建或降级 |
 | G-09 | Human Gate 最小证据结构已定义，Code 已能检查记录块 | closed-basic | 06 已定义最小记录块，Task、ADR、Web UI 和 41 已引用；`tools/specs_validate.py human-gate` 已能检查已写出的 `Human Gate 记录` 是否缺字段或字段为空；但 Web 尚未形成自动导出、受控写入或事实源回写链路 | Web / 工作对象：实现 Gate 证据导出、回写与消费检查 |
-| G-10 | Web 信息同步仍未形成 Human Gate 和审计闭环 | open | Human-facing 闭环、受控编辑、Gate UI、审计面和事实源回写未形成稳定运行面 | Web：优先展示风险、待确认事项、验证证据、缺口状态、事实源漂移、Task 关闭条件和 ADR 影响 |
-| G-11 | 工作对象事实源存在历史路径漂移 | open | `python3 tools/fact_validate.py ldvh-base` 当前报告 103 个路径错误、91 个证据格式提示，旧路径和缺失引用会削弱 AI 对工作对象事实源的信任 | Task / 43：优先修复或分流历史路径、缺失 deliverables/related_docs/affected_docs 和证据格式问题 |
+| G-10 | Web 信息同步仍未形成 Human Gate 和检查闭环 | open | Human-facing 闭环、受控编辑、Gate UI、检查面和事实源回写未形成稳定运行面 | Web：优先展示风险、待确认事项、验证证据、缺口状态、事实源漂移、Task 关闭条件和 ADR 影响 |
+| G-11 | 工作对象事实源存在历史路径漂移 | open | `python3 tools/fact_validate.py ldvh-base` 当前报告 103 个路径错误、91 个证据格式提示，旧路径和缺失引用会削弱 AI 对工作对象事实源的信任 | Task / 42 / Code：优先修复或分流历史路径、缺失 deliverables/related_docs/affected_docs 和证据格式问题 |
 
 ---
 
@@ -185,12 +185,12 @@ Web 协调 Human
 | 渐进式上下文加载与 Context Pack | 06、07、10、40、55 | 06 已补 Context 派生输入边界和“少读不是不读”；后续由 Code/Web/55 继续承接最小上下文生成 |
 | 第三方 Skill 脚手架与治理接管 | 11、11.01、40、57 | 第三方 Skill 可作为能力供给方，持续开发和正式产物必须回到 LDVH 主控、验证和事实源回写；57 已登记为 candidate |
 | Trae Spec 或其他平台规划产物纳入 Task 治理 | 11、26、40、45、46、57 | 平台规划产物不是执行授权；被 LDVH 吸收后才可作为执行依据；不得形成第二权威事实源 |
-| 多项目边界与管辖项目配置校准 | 03.06、40、52、42、43 | 当前以根目录管辖项目配置承接，不恢复 Profile 工作模型或 Profile tags 字段路线；52 已登记为 candidate |
-| Web 三层信息架构 | 08、Web 实现文档、10、43 | Workbench、Docs、Runtime Panel 可作为设计参考；正式实现不得绕过 08 和 Git 文件事实源；优先与审计面、Gate 证据和风险呈现对齐 |
+| 多项目边界与管辖项目配置校准 | 03.06、40、52、42 | 当前以根目录管辖项目配置承接，不恢复 Profile 工作模型或 Profile tags 字段路线；52 已登记为 candidate |
+| Web 三层信息架构 | 08、Web 实现文档、10、42 | Workbench、Docs、Runtime Panel 可作为设计参考；正式实现不得绕过 08 和 Git 文件事实源；优先与检查面、Gate 证据和风险呈现对齐 |
 | 最佳实践升级流程 | 12、40、58 | 当最佳实践反复承担强制规则功能时，必须按内容性质升级到正式规范、工作模型、工作流程、Code、Web 或测试；58 已登记为 candidate |
-| 工作对象历史路径漂移修复 | Task、43、Code | 应优先处理 `fact_validate.py ldvh-base` 暴露的路径不存在和证据格式提示，避免旧路径继续误导 AI |
-| landing-report 证据接入 | 07、10、41、43、Code | 在现有状态聚合上接入验证结果、工作对象证据、Human Gate 记录、运行投影漂移和回写建议 |
-| Human Gate 证据导出与消费 | 08、21、26、41、43、Web | 在最小证据结构和 Code 检查基础上，补 Web 展示、导出、受控回写和事实源消费链路 |
+| 工作对象历史路径漂移修复 | Task、42、Code | 应优先处理 `fact_validate.py ldvh-base` 暴露的路径不存在和证据格式提示，避免旧路径继续误导 AI |
+| landing-report 证据接入 | 07、10、41、42、Code | 在现有状态聚合上接入验证结果、工作对象证据、Human Gate 记录、运行投影漂移和回写建议 |
+| Human Gate 证据导出与消费 | 08、21、26、41、42、Web | 在最小证据结构和 Code 检查基础上，补 Web 展示、导出、受控回写和事实源消费链路 |
 
 ### 5.3 暂缓事项
 
@@ -262,7 +262,7 @@ Web 协调 Human
 | 让 AI 少读 | 优先建设聚合、索引、摘要和最小上下文能力，而非减少事实源 |
 | 让 AI 少猜 | 能机械检查的内容应交给 Code |
 | 让 AI 停得准 | Human Gate 按类型分层：澄清/授权/风险/验收/决策 |
-| 让 AI 做完后能证明 | Task、ADR、审计结果应能回答做了什么、为什么、依据、验证、结果、回写、谁确认、残留风险 |
+| 让 AI 做完后能证明 | Task、ADR、检查结果应能回答做了什么、为什么、依据、验证、结果、回写、谁确认、残留风险 |
 | 少新增抽象，多跑闭环 | 每新增一层抽象后，应优先安排一次实例化验证 |
 | 规范落地要求少形式、多实例 | 每项要求应能被追问：是否降低 AI 负担、是否有保障机制、是否已映射到可定位实体、是否有验证方式 |
 
@@ -274,11 +274,11 @@ Web 协调 Human
 
 2. **扩展规范落地要求聚合报告**：基础 `landing-report` 已落地；下一步应接入验证状态、工作对象证据、Human 确认记录、运行投影漂移检查和更明确的回写建议。
 
-3. **Dogfood 42 和 43**：使用 LDVH 审计 LDVH 自身，检查 AI 入口、管辖项目配置、平台适配清单、现场环境确认、docs/specs 校验、ldvh-base 校验、active 工作模型和工作流程可定位性、Code/Web 闭环支撑、open/degraded 缺口分流。
+3. **Dogfood 42**：使用 42 产品落地与检查检查 LDVH 自身，先输出只读检查结果，再按 Human 授权逐项补齐，最后复检 AI 入口、管辖项目配置、平台适配清单、现场环境确认、docs/specs 校验、ldvh-base 校验、active 工作模型和工作流程可定位性、Code/Web 闭环支撑、open/degraded 缺口分流。
 
 4. **推进 Human Gate 证据回写消费**：最小证据结构已进入 06、08、21、26 和 41，Code 已能检查已写出的 `Human Gate 记录`；下一步不追求复杂 Web UI，优先让 Gate 证据稳定进入 Git 文件事实源，并让 Web 或受控写入链路能导出、回写和展示确认事项、影响范围、确认人、确认时间、确认依据、确认后执行动作、验证结果、回写位置和残留风险。
 
-5. **增强 Web 的 Human-facing 审计面**：优先展示当前风险、待确认事项、验证证据、缺口状态、事实源漂移、Task 关闭条件、ADR 决策影响。
+5. **增强 Web 的 Human-facing 检查面**：优先展示当前风险、待确认事项、验证证据、缺口状态、事实源漂移、Task 关闭条件、ADR 决策影响。
 
 ---
 
@@ -289,10 +289,10 @@ Web 协调 Human
 | AI 需求维度 | 00 或最佳实践 |
 | 最小上下文生成 | 07、41 或后续 Code Task |
 | landing report | 基础实现已进入 Code、测试和 41；后续吸收验证状态、证据来源、漂移检查和 Web 消费入口 |
-| Human Gate 证据结构 | 基础结构已进入 06、08、21、26、41；Code 检查已由 `tools/specs_validate.py human-gate` 承接；后续由 Web/42/43 和工作对象回写链路消费 |
-| Web Human-facing 审计面 | 08 和 Web 实现 Task |
-| 事实源漂移修复 | Task 或产品审计发现 |
-| 少新增抽象、多跑闭环 | 00 防递归建设原则、12 最佳实践或 41/43 审计建议 |
+| Human Gate 证据结构 | 基础结构已进入 06、08、21、26、41；Code 检查已由 `tools/specs_validate.py human-gate` 承接；后续由 Web/42 和工作对象回写链路消费 |
+| Web Human-facing 检查面 | 08 和 Web 实现 Task |
+| 事实源漂移修复 | Task 或 42 检查发现 |
+| 少新增抽象、多跑闭环 | 00 防递归建设原则、12 最佳实践或 41/42 检查建议 |
 | 规范落地要求价值边界与形式化风险 | 00 价值一致性判断、04.01、41、Code 校验诊断 |
 | specs 主干稳定与局部重组 | 01、03、04、20、40、41 或后续重构 Task |
 | 文档治理与事实源关系 | 03、09、01 |
@@ -344,7 +344,7 @@ Web 协调 Human
 3. Web 实现文档稳定后，应重新评估 Web 三层信息架构是否仍需保留在 candidate 清单中；
 4. Code 校验能力增强后，可补充 candidate、deferred、rejected 误用检查；
 5. Code 聚合报告基础实现已完成；后续应继续扩展验证状态、证据来源、运行投影漂移和 candidate/deferred/rejected 误用检查；
-6. Dogfood 42/43 后，应回看 §4 缺口清单并标注哪些已被正式承接；
+6. Dogfood 42 后，应回看 §4 缺口清单并标注哪些已被正式承接；
 7. 本文中的稳定结论被正式规范、工作流程或 Code 吸收后，应持续标注已吸收状态；
-8. `fact_validate.py ldvh-base` 暴露的历史路径漂移和证据格式提示，应进入 Task 或 43 审计输出分流；
-9. Human Gate 证据回写消费、Web 审计面和受控轻写入，应按 08、41、43 和 Web 实现文档继续补齐。
+8. `fact_validate.py ldvh-base` 暴露的历史路径漂移和证据格式提示，应进入 Task、42 检查输出或 Code 修复分流；
+9. Human Gate 证据回写消费、Web 检查面和受控轻写入，应按 08、41、42 和 Web 实现文档继续补齐。
