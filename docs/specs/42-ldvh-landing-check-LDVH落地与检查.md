@@ -98,6 +98,7 @@ LDVH落地与检查的最小 Context 包括：
 | 管辖项目配置规则 | `docs/specs/03.06-管辖项目配置规范.md` |
 | 环境适配和运行投影规则 | `docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/04.06-平台适配清单规范.md` |
 | 当前平台适配清单 | 当前平台对应清单；Trae Solo 读取 `docs/specs/04.07-Trae-Solo适配清单.md`；Codex CLI 读取 `docs/specs/04.08-Codex适配清单.md`；其他平台按 04.06 待填模板处理 |
+| 当前个人落地特别要求 | `docs/specs/04.05-个人落地特别要求规范.md`；仅用于当前个人执行环境，不得提升为 LDVH 通用规则 |
 | 事实源边界 | `docs/specs/09-事实源边界与承载规范.md` |
 | 工作模型集合 | `docs/specs/20-工作模型集合索引.md` |
 | 工作流程集合 | `docs/specs/40-工作流程集合索引.md` |
