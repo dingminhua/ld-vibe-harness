@@ -4,7 +4,7 @@
 > 定位：定义 LDVH 产品审计工作流程，说明 AI 如何检查安装与接入初始化结果是否真实存在、持续有效、未漂移、未绕过 Human Gate，并把审计结论和缺口分流到正确事实源
 > 适用范围：已接入或准备接入 LDVH 的管理实例、LDVH 自身 dogfood 管辖项目、平台适配清单、管辖项目配置、环境初始化记录、项目初始化结果、docs/ldvh-base、AI 入口、Code/Web 和运行投影持续有效性检查
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.02-管辖项目文档规范.md`、`docs/specs/03.06-管辖项目配置规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境初始化与适配记录规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/04.07-AI统一入口运行投影规范.md`、`docs/specs/04.08-平台适配清单规范.md`、`docs/specs/04.09-Trae-Solo适配清单.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-product-initialization-产品初始化.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.02-管辖项目文档规范.md`、`docs/specs/03.06-管辖项目配置规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境初始化与适配记录规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/04.07-平台适配清单规范.md`、`docs/specs/04.08-Trae-Solo适配清单.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-product-initialization-产品初始化.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -38,7 +38,7 @@
 
 1. 能定位 LDVH 自身项目根目录；
 2. 能读取 LDVH-AI-ENTRY.md、`LDVH-GOVERNED-PROJECTS.yaml`、`LDVH-ENVIRONMENT-INITIALIZATION.md` 或能明确记录其缺失；
-3. 能读取 42 安装与接入初始化流程、40 工作流程集合索引和 04.08 平台适配清单规范；
+3. 能读取 42 安装与接入初始化流程、40 工作流程集合索引和 04.07 平台适配清单规范；
 4. 能明确本次审计范围是 LDVH 管理实例、单个管辖项目、多个管辖项目、环境投影、配置文件、目录事实源、入口机制、Code/Web，还是全链路审计；
 5. 能区分审计发现、稳定事实、缺口分流和受控写入；
 6. 若需要读取目标管辖项目，能确认目标项目 `id`、`path` 和访问权限；
@@ -66,8 +66,8 @@
 | 工作流程集合状态 | `docs/specs/40-工作流程集合索引.md` |
 | 当前 LDVH 管理实例和管辖项目清单 | `LDVH-GOVERNED-PROJECTS.yaml` |
 | 当前环境初始化结果 | `LDVH-ENVIRONMENT-INITIALIZATION.md` |
-| 平台适配清单规则 | `docs/specs/04.08-平台适配清单规范.md` |
-| Trae Solo 当前适配清单 | `docs/specs/04.09-Trae-Solo适配清单.md` |
+| 平台适配清单规则 | `docs/specs/04.07-平台适配清单规范.md` |
+| Trae Solo 当前适配清单 | `docs/specs/04.08-Trae-Solo适配清单.md` |
 | AI 统一入口运行投影 | LDVH-AI-ENTRY.md |
 | 管辖项目文档事实 | `{project.path}/docs/` |
 | 管辖项目产品初始化结果 | {project.path}/docs/ldvh-product-initialization.md 或 42 记录的等价路径 |
@@ -96,9 +96,9 @@
 | 审计范围和触发原因 | 用户输入、任务背景、文件变化或上游流程输出 |
 | LDVH 目录和术语边界 | `docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md` |
 | 管辖项目配置规则 | `docs/specs/03.06-管辖项目配置规范.md` |
-| 环境适配和运行投影规则 | `docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境初始化与适配记录规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/04.07-AI统一入口运行投影规范.md` |
-| 平台适配清单规则 | `docs/specs/04.08-平台适配清单规范.md` |
-| 当前平台适配清单 | 当前平台对应清单；Trae Solo 读取 `docs/specs/04.09-Trae-Solo适配清单.md` |
+| 环境适配和运行投影规则 | `docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境初始化与适配记录规范.md`、`docs/specs/04.04-环境能力承接边界规范.md` |
+| 平台适配清单规则 | `docs/specs/04.07-平台适配清单规范.md` |
+| 当前平台适配清单 | 当前平台对应清单；Trae Solo 读取 `docs/specs/04.08-Trae-Solo适配清单.md` |
 | 事实源边界 | `docs/specs/09-事实源边界与承载规范.md` |
 | 工作模型集合 | `docs/specs/20-工作模型集合索引.md` |
 | 工作流程集合 | `docs/specs/40-工作流程集合索引.md` |
@@ -159,8 +159,8 @@ AI 应先明确本次审计范围：
 AI 应先审计当前平台适配清单中的要求响应矩阵：
 
 1. 当前平台是否有对应清单；
-2. 清单是否遵守 `docs/specs/04.08-平台适配清单规范.md`；
-3. 当前平台为 Trae Solo 时，是否读取 `docs/specs/04.09-Trae-Solo适配清单.md`；
+2. 清单是否遵守 `docs/specs/04.07-平台适配清单规范.md`；
+3. 当前平台为 Trae Solo 时，是否读取 `docs/specs/04.08-Trae-Solo适配清单.md`；
 4. 清单是否逐项覆盖 AI-S1 至 AI-S15 和 LR-1 至 LR-7；
 5. 每项要求是否具备承接方法、平台实体、refs 依据、状态、降级方式、43 审计证据和 Open Items；
 6. 每项要求的 status 是否与 refs 证据、实测证据和降级说明匹配；
@@ -376,13 +376,13 @@ Agent 输出只是审计输入，不是最终事实源。主控必须汇总、�
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | 产品审计应遵守 06 工作流程通用规则、03.05 文档骨架、03.06 配置边界、04 环境适配、运行投影和平台清单规则、09 事实源边界、40 集合索引和 42 初始化流程 | 06、03.05、03.06、04.02、04.03、04.04、04.07、04.08、04.09、09、40、42、Human Gate | 工作流程治理 | 新增、修改、审计或执行产品审计时 |
+| 上位约束承接要求 | 产品审计应遵守 06 工作流程通用规则、03.05 文档骨架、03.06 配置边界、04 环境适配、运行投影和平台清单规则、09 事实源边界、40 集合索引和 42 初始化流程 | 06、03.05、03.06、04.02、04.03、04.04、04.07、04.08、09、40、42、Human Gate | 工作流程治理 | 新增、修改、审计或执行产品审计时 |
 | 入口可见要求 | AI 在用户询问 LDVH 是否可用、是否完成接入、是否漂移或是否可审计时，应能定位本文 | LDVH-AI-ENTRY.md、40 集合索引、运行入口摘要 | AI 执行入口提示 | 本文路径、Scenario、入口摘要或 40 状态变化时 |
 | 流程复用要求 | 产品审计可以复用 Code 检查、上下文准备、候选缺口分流和多项目并行检查，但必须由主控汇总结论 | 本文 §6-§11、Code、Agent、Human Gate | 审计复用 | 审计范围扩大、重复执行或需要批量检查时 |
 | 子 Agent 思考要求 | 多项目、多入口、多机制或高影响审计结论不清时，可按 44 使用独立或并行视角辅助判断 | 44、主控调度、Human Gate、主控汇总 | 子 Agent 审查 | 范围、风险、事实源、入口或长期降级存在分歧时 |
 | 确定性执行要求 | 可机械化的要求响应矩阵、配置字段、路径、目录、初始化结果、入口引用和索引一致性应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、`tools/specs_validate.py` 扩展、正反样例 | 校验实现 | 本文结构、审计项、要求响应矩阵、配置字段、目录规则或入口规则变化时 |
 | Human 交互要求 | 修改事实源、扩展审计范围、接受长期降级、关闭关键缺口或确认审计结论时，应触发 Human Gate | Human Gate、影响说明、审计结论、缺口清单 | 审计确认 | §7 中任一 Gate 条件发生时 |
-| 生命周期触发要求 | 平台适配清单、环境初始化记录、管辖项目配置、入口、项目目录、初始化结果、Code/Web、active 模型或 active 流程变化后，应检查是否需要执行产品审计 | 04.08、04.09、40、42、41、Code/Web、Hook/CI 或人工降级检查 | 触发保障 | 平台清单、配置、目录、入口、运行投影、Code/Web 或集合索引变化时 |
+| 生命周期触发要求 | 平台适配清单、环境初始化记录、管辖项目配置、入口、项目目录、初始化结果、Code/Web、active 模型或 active 流程变化后，应检查是否需要执行产品审计 | 04.07、04.08、40、42、41、Code/Web、Hook/CI 或人工降级检查 | 触发保障 | 平台清单、配置、目录、入口、运行投影、Code/Web 或集合索引变化时 |
 
 ---
 ## 14. 检查要求

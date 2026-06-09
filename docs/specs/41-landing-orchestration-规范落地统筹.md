@@ -5,7 +5,7 @@
 > 定位：定义规范落地统筹工作流程，说明 AI 如何在新增、修改、审计或执行正式规范时收集规范落地要求、分流承接机制、判断环境适配和运行投影缺口、安排验证并回写结果
 > 适用范围：所有接入 LDVH 且涉及 docs/specs 正式规范新增、修改、审计、运行投影同步、Code/Web/Skill/Agent/Hook/CI 承接判断或规范落地缺口处理的项目
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/04.07-AI统一入口运行投影规范.md`、`docs/specs/04.08-平台适配清单规范.md`、`docs/specs/04.09-Trae-Solo适配清单.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
+> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/04.07-平台适配清单规范.md`、`docs/specs/04.08-Trae-Solo适配清单.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -57,8 +57,8 @@
 | 规范落地要求类型、字段和声明规则 | `docs/specs/04.01-规范落地声明规范.md` |
 | 环境适配映射和运行投影规则 | `docs/specs/04.02-环境适配与运行投影规范.md` |
 | 环境能力承接边界 | `docs/specs/04.04-环境能力承接边界规范.md` |
-| 平台适配清单结构、状态和证据规则 | `docs/specs/04.08-平台适配清单规范.md` |
-| Trae Solo 当前平台适配清单 | `docs/specs/04.09-Trae-Solo适配清单.md` |
+| 平台适配清单结构、状态和证据规则 | `docs/specs/04.07-平台适配清单规范.md` |
+| Trae Solo 当前平台适配清单 | `docs/specs/04.08-Trae-Solo适配清单.md` |
 | Code 需求、工具和校验实现规则 | `docs/specs/07-Code实现规范.md` |
 | Web / Human-facing 同步规则 | `docs/specs/08-Web信息同步规范.md` |
 | 事实源回写边界 | `docs/specs/09-事实源边界与承载规范.md` |
@@ -78,7 +78,7 @@
 4. `docs/specs/04.01-规范落地声明规范.md`；
 5. `docs/specs/04.02-环境适配与运行投影规范.md`；
 6. `docs/specs/04.04-环境能力承接边界规范.md`；
-7. 涉及平台差异、初始化、审计、运行投影状态或环境支持判断时，读取 `docs/specs/04.08-平台适配清单规范.md`；当前平台为 Trae Solo 时，同时读取 `docs/specs/04.09-Trae-Solo适配清单.md`；
+7. 涉及平台差异、初始化、审计、运行投影状态或环境支持判断时，读取 `docs/specs/04.07-平台适配清单规范.md`；当前平台为 Trae Solo 时，同时读取 `docs/specs/04.08-Trae-Solo适配清单.md`；
 8. 本次涉及的正式规范原文；
 9. 需要判断回写时，读取 `docs/specs/09-事实源边界与承载规范.md` 和对应工作模型或文档规范；
 10. 需要判断 Code、Web 或测试时，读取 `docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md` 或 `docs/specs/10-运行闭环测试规范.md`。
@@ -179,7 +179,7 @@ AI 应按 `04.01` 的落地要求类型分流处理：
 3. 是否已有运行投影；
 4. 运行投影是否只做入口、提醒、调用或降级，不复制权威规范正文；
 5. 运行投影是否与正式规范一致；
-6. 当前平台适配清单是否已按 `04.08` 声明支持状态、证据、降级和 open_items；当前平台为 Trae Solo 时，是否与 `04.09` 的响应矩阵一致；
+6. 当前平台适配清单是否已按 `04.07` 声明支持状态、证据、降级和 open_items；当前平台为 Trae Solo 时，是否与 `04.08` 的响应矩阵一致；
 7. 缺口应进入环境初始化记录、Task、Memo、Code 需求、Web 需求、运行投影记录、平台适配清单 open_items 或人工降级说明。
 
 运行投影不是最终事实源。运行投影输出中的稳定事实必须按 `09` 回写后才生效。

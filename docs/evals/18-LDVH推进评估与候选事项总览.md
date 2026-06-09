@@ -6,7 +6,7 @@
 > 执行效力：无；稳定结论需进入 docs/specs 正文区、工作对象、Code、Web、测试、运行投影或最佳实践后才具备对应效力
 > 来源：原 `docs/evals/18-LDVH候选事项承接评估.md`、`docs/evals/19-LDVH规范落地统筹机制与闭环缺口评估.md`、`docs/evals/20-LDVH规范落地统筹执行缺口清单.md`、`docs/evals/21-LDVH面向AI执行者需求的推进评估.md` 合并重建
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地要求规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.04-环境能力承接边界.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-product-initialization-产品初始化.md`、`docs/specs/43-product-audit-产品审计.md`
+> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-product-initialization-产品初始化.md`、`docs/specs/43-product-audit-产品审计.md`
 
 ---
 
