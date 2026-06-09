@@ -1,0 +1,62 @@
+id: task-0061
+type: task
+title: 补齐 41 规范落地统筹闭环提醒与证据承接
+status: planned
+created: '2026-06-10T00:00:00'
+updated: '2026-06-10T00:00:00'
+description: |
+  41-landing-orchestration-规范落地统筹已在 40 工作流程集合索引中标记为 active，并已有 landing-report 基础 Code 承接，但 active 只表示流程正式存在，不等于建设完成或运行闭环。
+
+  当前缺口是：AI 和检查工具容易把“41 active”误读为“41 已完成”。需要建立明确提醒和证据承接，使 41 的状态被表达为“已正式化但未闭环”，并在 42 dogfood、landing-report、Code/Web 检查面或后续运行投影中持续暴露该建设缺口。
+source: 用户直接指示：41 未闭环需要标记，不能误判为建设完成
+source_intent:
+parent_task:
+sub_tasks: []
+blocked_by: []
+acceptance: |
+  - [ ] 明确 41 当前状态表达：active but not closed-loop / 已正式化但未闭环
+  - [ ] landing-report 或等价 Code 输出能提示 41 自身闭环缺口
+  - [ ] 42 dogfood 检查能把 41 未闭环列为缺口，而非误判为完成
+  - [ ] Human Gate 证据、验证证据、运行投影漂移至少有明确承接或降级说明
+  - [ ] Web 或后续检查面能展示该类“流程 active 但建设未闭环”的状态
+  - [ ] specs / Task / Code / Web 的同步边界已复核
+verification: |
+  ## 验证计划
+
+  - 运行 `python3 tools/specs_validate.py landing-report`，确认 41 相关缺口可被聚合或有明确后续 Code 缺口。
+  - 执行 42 LDVH 自身 dogfood 只读检查，确认报告能表达 41 未闭环状态。
+  - 运行 `python3 tools/fact_validate.py ldvh-base/tasks/task-0061-landing-orchestration-closure-loop.yaml`，确认本 Task 结构有效。
+
+  ## 验证结果
+
+  当前仅完成 Task 创建后的结构校验；41 闭环建设本身尚未执行，后续按 acceptance 逐项验证。
+
+  ## 结论
+
+  本 Task 用于追踪 41 未闭环建设缺口，不能作为 41 已闭环证据。
+risk_assessment: |
+  - 避免把 40 中的 active 集合状态误解释为建设完成状态。
+  - 避免用聊天结论、landing-report 派生输出或 Web 状态替代 Git 文件事实源。
+  - 后续如要修改 41、42、Code、Web 或运行投影，应按对应规范触发 Human Gate。
+assignee: AI
+related_adrs: []
+related_changes: []
+related_docs:
+  - docs/specs/40-工作流程集合索引.md
+  - docs/specs/41-landing-orchestration-规范落地统筹.md
+  - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+  - docs/evals/18-LDVH推进评估与候选事项总览.md
+affected_docs:
+  - docs/specs/41-landing-orchestration-规范落地统筹.md
+  - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+  - tools/specs_validate.py
+  - web/
+deliverables: []
+status_history:
+  - at: '2026-06-10T00:00:00'
+    from:
+    to: planned
+    actor: AI
+    reason: 用户确认创建 Task，用于标记 41 已 active 但建设未闭环的状态和后续承接缺口。
+closed_at:
+closure_evidence:
