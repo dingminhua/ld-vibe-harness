@@ -1,10 +1,11 @@
 # landing-orchestration-规范落地统筹
 
 > 创建日期：2026-06-09
+> 更新日期：2026-06-09
 > 定位：定义规范落地统筹工作流程，说明 AI 如何在新增、修改、审计或执行正式规范时收集规范落地要求、分流承接机制、判断环境适配和运行投影缺口、安排验证并回写结果
 > 适用范围：所有接入 LDVH 且涉及 docs/specs 正式规范新增、修改、审计、运行投影同步、Code/Web/Skill/Agent/Hook/CI 承接判断或规范落地缺口处理的项目
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.01-规范落地要求规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.04-环境能力承接边界.md`、`docs/specs/04.07-AI统一入口运行投影规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
+> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/04.07-AI统一入口运行投影规范.md`、`docs/specs/04.08-平台适配清单规范.md`、`docs/specs/04.09-Trae-Solo适配清单.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -53,9 +54,11 @@
 | 规范落地统筹工作流程 | 本文 |
 | 工作流程通用规则 | `docs/specs/06-工作流程基础规范.md` |
 | 工作流程集合状态 | `docs/specs/40-工作流程集合索引.md` |
-| 规范落地要求类型、字段和声明规则 | `docs/specs/04.01-规范落地要求规范.md` |
+| 规范落地要求类型、字段和声明规则 | `docs/specs/04.01-规范落地声明规范.md` |
 | 环境适配映射和运行投影规则 | `docs/specs/04.02-环境适配与运行投影规范.md` |
-| 环境能力承接边界 | `docs/specs/04.04-环境能力承接边界.md` |
+| 环境能力承接边界 | `docs/specs/04.04-环境能力承接边界规范.md` |
+| 平台适配清单结构、状态和证据规则 | `docs/specs/04.08-平台适配清单规范.md` |
+| Trae Solo 当前平台适配清单 | `docs/specs/04.09-Trae-Solo适配清单.md` |
 | Code 需求、工具和校验实现规则 | `docs/specs/07-Code实现规范.md` |
 | Web / Human-facing 同步规则 | `docs/specs/08-Web信息同步规范.md` |
 | 事实源回写边界 | `docs/specs/09-事实源边界与承载规范.md` |
@@ -72,12 +75,13 @@
 1. 本次统筹范围和触发原因；
 2. `docs/specs/06-工作流程基础规范.md`；
 3. `docs/specs/40-工作流程集合索引.md`；
-4. `docs/specs/04.01-规范落地要求规范.md`；
+4. `docs/specs/04.01-规范落地声明规范.md`；
 5. `docs/specs/04.02-环境适配与运行投影规范.md`；
-6. `docs/specs/04.04-环境能力承接边界.md`；
-7. 本次涉及的正式规范原文；
-8. 需要判断回写时，读取 `docs/specs/09-事实源边界与承载规范.md` 和对应工作模型或文档规范；
-9. 需要判断 Code、Web 或测试时，读取 `docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md` 或 `docs/specs/10-运行闭环测试规范.md`。
+6. `docs/specs/04.04-环境能力承接边界规范.md`；
+7. 涉及平台差异、初始化、审计、运行投影状态或环境支持判断时，读取 `docs/specs/04.08-平台适配清单规范.md`；当前平台为 Trae Solo 时，同时读取 `docs/specs/04.09-Trae-Solo适配清单.md`；
+8. 本次涉及的正式规范原文；
+9. 需要判断回写时，读取 `docs/specs/09-事实源边界与承载规范.md` 和对应工作模型或文档规范；
+10. 需要判断 Code、Web 或测试时，读取 `docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md` 或 `docs/specs/10-运行闭环测试规范.md`。
 
 根据主题复杂度，可增加以下 Context：
 
@@ -168,14 +172,15 @@ AI 应按 `04.01` 的落地要求类型分流处理：
 
 ### 6.5 判断环境适配和运行投影
 
-涉及环境能力时，AI 应按 `04.02` 和 `04.04` 判断：
+涉及环境能力时，AI 应按 `04.02`、`04.04` 和必要的平台适配清单判断：
 
 1. 是否需要环境适配映射；
 2. 当前环境是否具备对应能力；
 3. 是否已有运行投影；
 4. 运行投影是否只做入口、提醒、调用或降级，不复制权威规范正文；
 5. 运行投影是否与正式规范一致；
-6. 缺口应进入环境初始化记录、Task、Memo、Code 需求、Web 需求、运行投影记录或人工降级说明。
+6. 当前平台适配清单是否已按 `04.08` 声明支持状态、证据、降级和 open_items；当前平台为 Trae Solo 时，是否与 `04.09` 的响应矩阵一致；
+7. 缺口应进入环境初始化记录、Task、Memo、Code 需求、Web 需求、运行投影记录、平台适配清单 open_items 或人工降级说明。
 
 运行投影不是最终事实源。运行投影输出中的稳定事实必须按 `09` 回写后才生效。
 
@@ -188,6 +193,8 @@ AI 应按 `10` 判断每项要求是否有验证方式：
 3. 回写和证据可由事实源检查、工作对象校验或 Change 记录验证；
 4. 运行投影漂移可由 Code、CI、Hook 或人工降级检查发现；
 5. 测试用例事实源尚未稳定时，应记录缺口，不得把聊天结论或临时脚本作为长期测试依据。
+
+验证不足、证据不可复现、只凭 AI 自述、工具输出无法回指事实源、或跳过应执行检查时，对应落地要求不得标记为 `closed`。AI 应按 06 §6.10.1 和 10 §8.4 判断是否记录为 `open`、`degraded`、`needs_human_gate`，或分流到 Task、Memo、ADR、Pitfall、Code 需求、测试用例缺口或运行投影缺口。
 
 ### 6.7 输出统筹结果
 
@@ -207,6 +214,12 @@ landing_orchestration_result:
       environment_mapping: exists | missing | not_required | degraded
       runtime_projection: exists | missing | not_required | degraded
       verification: exists | missing | degraded
+      evidence:
+        sources:
+          - docs/specs/example.md
+        summary: 证据摘要
+      residual_risk: none | 风险说明
+      failure_handling: none | open | degraded | needs_human_gate | follow_up
       writeback: specs | Task | Memo | ADR | Pitfall | Change | env_record | none
       status: closed | open | degraded | needs_human_gate
       notes: 说明
@@ -239,7 +252,8 @@ landing_orchestration_result:
 4. 创建、启用、删除或改变 Skill、Agent、Hook、CI、Web 受控写入或高影响 Code 工具；
 5. 接受能力缺口的长期降级方式；
 6. 关闭仍有 open 或 degraded 状态的关键落地要求；
-7. 产品初始化或产品审计要把当前状态判定为已闭环。
+7. 跳过验证、只凭 AI 自述关闭要求、或把不可复现证据视为通过；
+8. 产品初始化或产品审计要把当前状态判定为已闭环。
 
 ---
 ## 8. Skill 和 Agent 调度
@@ -272,7 +286,9 @@ Agent 输出必须回到主控汇总。稳定结论只有写回事实源后才�
 5. 生成缺口清单、验证报告或受控写入候选；
 6. 执行运行闭环测试或正反样例。
 
-工具不得替代 AI 判断，不得直接决定 Human Gate，不得把工具输出作为最终事实源。若 AI 发现现有工具不足，应按 `07` 形成最小 Code 需求、实现或扩展工具并验证；工具规范缺失时，应先补齐必要规范或测试要求。
+工具不得替代 AI 判断，不得直接决定 Human Gate，不得把工具输出作为最终事实源。工具报告中的 closed/open/degraded 状态只有能回指正式规范、事实源、测试或工作对象证据时，才可作为统筹证据使用。
+
+若 AI 发现现有工具不足，应按 `07` 形成最小 Code 需求、实现或扩展工具并验证；工具规范缺失时，应先补齐必要规范或测试要求。`tools/specs_validate.py landing-report` 已形成规范落地要求全局聚合报告的基础 Code 实现；报告状态属于派生启发式，AI 仍必须按本文流程验证、回写缺口，不得把工具输出当作唯一事实源或最终关闭证据。
 
 ---
 ## 10. 事实源回写与证据留存
@@ -301,7 +317,10 @@ Agent 输出必须回到主控汇总。稳定结论只有写回事实源后才�
 5. 保障机制、环境适配、运行投影和验证状态；
 6. 缺口清单、降级方式和残留风险；
 7. Human Gate 判断；
-8. 若发生写入，记录写入文件、验证结果和 Change / commit 关联。
+8. open、degraded 或 needs_human_gate 状态的原因和后续分流；
+9. 若发生写入，记录写入文件、验证结果和 Change / commit 关联。
+
+统筹结果不得用“看起来已闭环”“应该已经承接”“工具会检查”等推测性表述替代证据。需要关闭关键缺口时，应能说明关闭依据、验证方式、回写位置、残留风险和 Human Gate 状态；不能说明时，应保持 open、degraded 或 needs_human_gate。
 
 ---
 ## 11. 机制适配边界
@@ -331,6 +350,7 @@ Agent 输出必须回到主控汇总。稳定结论只有写回事实源后才�
 | Gate 场景 | 编号重排、保障机制变化、长期降级、运行投影创建、Code/Web/Skill/Agent/Hook/CI 高影响变更应暂停确认 |
 | 回写场景 | 缺口应按性质分流到 specs、Task、Memo、ADR、Pitfall、Change、Code、Web、环境记录或待补齐事项 |
 | 失败降级 | 缺少事实源、工具失败、环境能力不足或测试事实源未稳定时，应记录 degraded 或 open 状态 |
+| 反合理化 | 统筹结论只凭 AI 自述、不可复现证据或未实现工具能力时，应保持 open/degraded 或触发 Human Gate |
 | 回归风险 | 修改本文后，应检查 40 索引、04 系列、07、08、09、10、运行投影和相关工作流程是否需要同步 |
 
 具体测试用例、预期行为矩阵、失败诊断和回归用例不写入本文，应按 `docs/specs/10-运行闭环测试规范.md` 进入测试用例事实源或 Code 测试实现。
@@ -364,6 +384,7 @@ Agent 输出必须回到主控汇总。稳定结论只有写回事实源后才�
 | 分流判断 | 每条要求已判断 Code、Web、Skill、Agent、Hook、CI、Rules / Instructions、Human Gate 或人工降级关系 |
 | 环境适配 | 需要环境能力时，已判断环境适配映射和运行投影状态 |
 | 验证方式 | 已判断验证、测试、Code 校验、人工降级或缺口状态 |
+| 证据质量 | closed 状态有可追溯证据，open/degraded/needs_human_gate 有原因、风险和后续分流 |
 | 回写建议 | 缺口按 09 和相关工作模型/文档规范分流 |
 | Human Gate | 高影响写入、降级、编号、运行投影和闭环判断已暂停确认 |
 | 事实源边界 | 未把聊天、evals/refs、工具输出、Web 状态或运行投影当成最终事实源 |
@@ -382,8 +403,9 @@ Agent 输出必须回到主控汇总。稳定结论只有写回事实源后才�
 ---
 ## 15. 待补齐事项
 
-1. 规范落地要求聚合校验、运行投影漂移检查和 40-59 集合状态检查待按 07 形成最小 Code 实现和测试；
-2. 测试用例事实源承载位置待 10 后续稳定后补齐；
-3. 产品初始化和产品审计创建后，应明确如何调用本文并消费本文输出；
-4. AI 统一入口、Rules / Instructions 薄入口、LDVH 自身环境初始化记录、管辖项目配置、项目事实源和实际运行投影的同步检查，待产品初始化和产品审计流程稳定后统一校准；
-5. 若未来发现本流程的稳定子步骤适合 Skill、命令或 Web 页面，应先按 04.04、07、08 和 10 判断准入、测试、降级和 Human Gate。
+1. 规范落地要求聚合报告已由 `tools/specs_validate.py landing-report` 形成基础实现；后续应按 07 扩展验证状态、建议回写位置、运行投影漂移检查和 40-59 集合状态检查；
+2. landing report 的 closed/open/degraded/needs_human_gate 状态目前是 Code 派生启发式；后续应接入测试证据、工作对象证据或 Human 确认记录，避免把报告状态误当事实源；
+3. 测试用例事实源承载位置待 10 后续稳定后补齐；
+4. 产品初始化和产品审计执行后，应明确如何调用本文并消费本文输出，并回看 open/degraded 缺口是否已被正式承接；
+5. AI 统一入口、Rules / Instructions 薄入口、LDVH 自身环境初始化记录、管辖项目配置、项目事实源和实际运行投影的同步检查，待产品初始化和产品审计流程稳定后统一校准；
+6. 若未来发现本流程的稳定子步骤适合 Skill、命令或 Web 页面，应先按 04.04、07、08 和 10 判断准入、测试、降级和 Human Gate。

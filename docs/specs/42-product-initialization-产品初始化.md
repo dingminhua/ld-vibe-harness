@@ -4,7 +4,7 @@
 > 定位：定义 LDVH 安装与接入初始化工作流程，说明 AI 如何把环境适配、管辖项目配置、产品初始化、缺口分流和审计输入串成用户首次接入 LDVH 的受控链路
 > 适用范围：用户首次安装或接入 LDVH、LDVH 自身环境初始化、管辖项目配置发现与确认、管辖项目初始化、LDVH 自身 dogfood 管辖、初始化缺口补齐和初始化结果回写
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.02-管辖项目文档规范.md`、`docs/specs/03.06-管辖项目配置规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境适配映射与运行投影记录模板.md`、`docs/specs/04.04-环境能力承接边界.md`、`docs/specs/04.07-AI统一入口运行投影规范.md`、`docs/specs/04.08-平台适配清单规范.md`、`docs/specs/04.09-Trae-Solo适配清单.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/43-product-audit-产品审计.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.02-管辖项目文档规范.md`、`docs/specs/03.06-管辖项目配置规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境初始化与适配记录规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/04.07-AI统一入口运行投影规范.md`、`docs/specs/04.08-平台适配清单规范.md`、`docs/specs/04.09-Trae-Solo适配清单.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/43-product-audit-产品审计.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -125,7 +125,7 @@ LDVH-GOVERNED-PROJECTS.yaml
 | 术语边界 | `docs/specs/02-术语规范.md` |
 | 管辖项目文档规则 | `docs/specs/03.02-管辖项目文档规范.md` |
 | 管辖项目配置规则 | `docs/specs/03.06-管辖项目配置规范.md` |
-| 环境适配与运行投影规则 | `docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境适配映射与运行投影记录模板.md`、`docs/specs/04.04-环境能力承接边界.md`、`docs/specs/04.07-AI统一入口运行投影规范.md`、`docs/specs/04.08-平台适配清单规范.md` |
+| 环境适配与运行投影规则 | `docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境初始化与适配记录规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/04.07-AI统一入口运行投影规范.md`、`docs/specs/04.08-平台适配清单规范.md` |
 | 当前平台适配清单 | 当前平台对应清单；Trae Solo 读取 `docs/specs/04.09-Trae-Solo适配清单.md`；其他平台按 04.08 要求响应矩阵待填模板或后续清单处理 |
 | 当前平台要求响应矩阵 | 平台清单中的 AI-S1 至 AI-S15 和 LR-1 至 LR-7；初始化应读取每项要求的承接方法、状态、降级方式、审计证据和 Open Items |
 | 当前平台适配方案 | 平台适配清单、要求响应矩阵、`LDVH-ENVIRONMENT-INITIALIZATION.md`、已生效平台薄入口、Human 明确选择或当前会话环境上下文 |
@@ -457,7 +457,7 @@ Agent 输出必须回到主控汇总。稳定结论只有写入初始化结果�
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | 安装与接入初始化应遵守 `docs/specs/06-工作流程基础规范.md` 的工作流程通用规则、`docs/specs/03.06-管辖项目配置规范.md` 的管辖项目配置边界、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境适配映射与运行投影记录模板.md`、`docs/specs/04.04-环境能力承接边界.md`、`docs/specs/04.07-AI统一入口运行投影规范.md`、`docs/specs/04.08-平台适配清单规范.md`、`docs/specs/04.09-Trae-Solo适配清单.md` 的环境、入口与平台清单规则、`docs/specs/09-事实源边界与承载规范.md` 的事实源边界、`docs/specs/20-工作模型集合索引.md` 和 `docs/specs/40-工作流程集合索引.md` 的集合索引，以及 `docs/specs/41-landing-orchestration-规范落地统筹.md` 的缺口统筹 | 06、03.06、04.02、04.03、04.04、04.07、04.08、04.09、09、20、40、41、Human Gate | 工作流程治理 | 新增、修改、审计或执行安装与接入初始化时 |
+| 上位约束承接要求 | 安装与接入初始化应遵守 `docs/specs/06-工作流程基础规范.md` 的工作流程通用规则、`docs/specs/03.06-管辖项目配置规范.md` 的管辖项目配置边界、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境初始化与适配记录规范.md`、`docs/specs/04.04-环境能力承接边界规范.md`、`docs/specs/04.07-AI统一入口运行投影规范.md`、`docs/specs/04.08-平台适配清单规范.md`、`docs/specs/04.09-Trae-Solo适配清单.md` 的环境、入口与平台清单规则、`docs/specs/09-事实源边界与承载规范.md` 的事实源边界、`docs/specs/20-工作模型集合索引.md` 和 `docs/specs/40-工作流程集合索引.md` 的集合索引，以及 `docs/specs/41-landing-orchestration-规范落地统筹.md` 的缺口统筹 | 06、03.06、04.02、04.03、04.04、04.07、04.08、04.09、09、20、40、41、Human Gate | 工作流程治理 | 新增、修改、审计或执行安装与接入初始化时 |
 | 入口可见要求 | AI 从统一入口、管辖项目配置或用户初始化请求进入时，应能定位本文作为安装与接入初始化流程 | LDVH-AI-ENTRY.md、40 集合索引、管辖项目配置、运行入口摘要 | AI 执行入口提示 | 本文路径、Scenario、入口文件、管辖项目配置或工作区级入口变化时 |
 | 流程复用要求 | 初始化检查、目录确认、缺口聚合和初始化结果生成可评估为 Skill、命令流程或 Code 检查，但必须交还主控 | 04.04、07、本文 §6-§11、Human Gate | 流程复用 | 初始化步骤稳定、重复执行或需要批量管辖项目检查时 |
 | 子 Agent 思考要求 | 初始化边界、入口写入、目录创建、长期降级或跨项目影响不清时，应按 `docs/specs/44-multi-role-thinking-多角色思考.md` 使用独立、专项或并行视角辅助判断 | 44、主控调度、Human Gate、主控汇总 | 子 Agent 审查 | 路径、权限、入口、事实源边界、运行投影或长期降级存在分歧时 |

@@ -1,10 +1,11 @@
 # Task-任务
 
 > 创建日期：2026-06-09
+> 更新日期：2026-06-09
 > 定位：定义 Task / 任务工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理 AI 可执行工作单元、验收标准、状态追踪和关闭证据的项目
 > 上位依据：`docs/specs/05-工作模型基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`
 
 ---
 ## 1. 对象定位与准入条件
@@ -107,10 +108,26 @@ Task 进入 `closed` 前必须同时满足：
 
 1. `acceptance` 字段中所有检查项已标记为 `- [x]`；
 2. `sub_tasks` 中所有子任务均为 `closed`；
-3. `closure_evidence` 已填写，并能追溯到 Git 文件事实源、验证命令、结果物或人工确认；
-4. `affected_docs` 非空时，已完成文档同步检查或在 `closure_evidence` 中说明豁免理由；
-5. `closed_at` 已填写；
-6. 需要 Human Gate 的场景已完成确认。
+3. `verification` 已说明验证方式、验证命令、人工审查方式或无法自动验证的降级方式；
+4. `closure_evidence` 已填写，并能追溯到 Git 文件事实源、验证命令、结果物、人工确认或审计结论；
+5. `closure_evidence` 已说明验证结果、关键证据、残留风险和无法验证事项；不得只写“done”“已完成”“看起来没问题”等无证据结论；
+6. 验证失败、证据不足、结果不可复现或需要长期降级时，已按 `docs/specs/06-工作流程基础规范.md` §6.10.1 暂停并完成分流，不得关闭为 `closed`；
+7. `affected_docs` 非空时，已完成文档同步检查或在 `closure_evidence` 中说明豁免理由；
+8. `closed_at` 已填写；
+9. 需要 Human Gate 的场景已完成确认。
+
+### 3.4 关闭证据最低要求
+
+`closure_evidence` 是 Task 关闭判断的证据摘要，不是过程日志全文。关闭证据至少应覆盖：
+
+1. 完成了哪些 acceptance 项；
+2. 执行了哪些验证、审查或人工确认；
+3. 关键验证结果、输出摘要或结果物路径；
+4. 受影响事实源、文档或产物是否已回写或同步；
+5. 发现的问题如何修复、分流或降级；
+6. 是否仍有残留风险、无法验证事项或需要后续 Task。
+
+无法提供上述证据时，Task 应停留在 `executing`、`verifying` 或 `review_needed`，并按问题性质进入 blocking、follow-up、Memo、Pitfall、ADR、Human Gate 或具体工作流程。
 
 ---
 ## 4. 对象关系
@@ -212,7 +229,7 @@ Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影�
 | `deliverables` | 产物、报告、截图、构建产物或导出文件路径列表 | list[string] | 否 | 结果物应可追溯 | Reference | AI、Code、Web |
 | `status_history` | 状态变化记录 | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
 | `closed_at` | 关闭日期 | date | 条件必填 | `status: closed` 时必须填写 | Reference | AI、Code、Web |
-| `closure_evidence` | 关闭证据摘要 | string | 条件必填 | `status: closed` 时必须填写 | Evidence | AI、Code、Web |
+| `closure_evidence` | 关闭证据摘要 | string | 条件必填 | `status: closed` 时必须填写，并符合 §3.4 最低要求 | Evidence | AI、Code、Web |
 
 字段内容格式按 `docs/specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、关闭条件不满足或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 
@@ -307,6 +324,18 @@ Task 证据至少包括：
 
 聊天内容、临时命令输出、Web 页面状态和工具缓存不得单独作为关闭证据。需要长期保留时，应摘要写入 `closure_evidence`、产物文件或对应事实源。
 
+### 7.4 关闭证据与失败暂停
+
+Task 关闭证据必须支持“结果有证可验”。AI 不得把以下内容单独作为关闭证据：
+
+1. “已完成”“done”“应该通过”“看起来没问题”等结论性自述；
+2. 未说明命令、输入、输出或结果物位置的验证描述；
+3. 只存在于聊天、临时终端输出、Web 页面状态或工具缓存中的过程信息；
+4. 未经回写的 Agent、Skill 或工具输出；
+5. 未说明影响范围和确认结果的 Human Gate 对话。
+
+若验证失败、结果不可复现、证据不足或需要跳过部分验证，Task 不得进入 `closed`。AI 应先记录失败原因、已尝试修复、剩余风险和后续分流；修复后必须重新执行相关验证，或在 `closure_evidence` 中明确说明无法验证的原因、Human Gate 确认和后续 Task。
+
 ---
 ## 8. 适配规则
 
@@ -318,9 +347,10 @@ AI 处理 Task 时应遵守：
 2. 创建、更新、关闭或删除 Task 前评估 Human Gate；
 3. 执行前检查 `blocked_by`、`status`、`acceptance`、`related_docs` 和 `affected_docs`；
 4. 执行完成后进入验证阶段，按 `verification` 和 `acceptance` 检查；
-5. 关闭前确认 §3.3 关闭条件全部满足；
+5. 关闭前确认 §3.3 关闭条件和 §3.4 关闭证据最低要求全部满足；
 6. 发现范围内 bug、缺口或规范遗漏时，按 §4.4 判断是否创建子任务；
-7. 不得把 20 中 removed 或 deferred 的概念自动升级为独立工作模型。
+7. 验证失败、证据不足、结果不可复现或需要长期降级时，按 06 §6.10.1 暂停并分流，不得用推测性表述替代证据；
+8. 不得把 20 中 removed 或 deferred 的概念自动升级为独立工作模型。
 
 ### 8.2 Code 辅助
 
@@ -331,8 +361,9 @@ Code 可依据本文实现以下能力：
 3. 校验状态枚举和合法流转；
 4. 校验 `blocked_by`、`parent_task`、`sub_tasks` 和相关对象引用；
 5. 校验 `acceptance` checklist 是否全部完成；
-6. 校验 `affected_docs` 的变更或豁免说明；
-7. 聚合 Task 状态、依赖、风险判断、产物和关闭证据。
+6. 校验 `verification` 和 `closure_evidence` 在 closed 状态下不为空，并逐步检查是否包含验证结果、证据归属和豁免说明；
+7. 校验 `affected_docs` 的变更或豁免说明；
+8. 聚合 Task 状态、依赖、风险判断、产物和关闭证据。
 
 Code 不得自行创建、关闭或删除 Task，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/tasks/` 权威事实源。
 
@@ -357,7 +388,7 @@ Task 执行、验证、关闭和审计的具体行动流程由后续 40-59 工�
 |---|---|---|---|---|
 | 上位约束承接要求 | Task 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、关闭条件和事实源边界 | 05、03.04、本文、20 集合索引、Human Gate | 工作模型治理 | 创建、修改、搬移、审计或关闭 Task 时 |
 | 入口可见要求 | AI 处理可执行工作单元、验收标准、证据、依赖、风险、产物或检查项时，应能定位本文 | 20 集合索引、运行入口摘要、Task 执行流程入口 | AI 执行入口提示 | 任务入口、事实实例目录、状态流转或字段契约变化时 |
-| 确定性执行要求 | Task 字段、状态、引用、文件命名、验收清单、关闭条件和文档同步检查应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、Task 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、关闭条件或 affected_docs 规则变化时 |
+| 确定性执行要求 | Task 字段、状态、引用、文件命名、验收清单、关闭条件、关闭证据和文档同步检查应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、`docs/specs/10-运行闭环测试规范.md`、Task 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、关闭条件、closure_evidence 或 affected_docs 规则变化时 |
 | Human 交互要求 | Task 创建、删除、高风险事实源写入、验收改写、关闭豁免和终态修改应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
 | 生命周期触发要求 | Task 规范变化后，应检查 20、05.01、Code、Web、运行投影和相关工作流程是否需要同步 | 集合索引维护、字段格式映射、Code/Web 联动检查、人工降级检查 | 触发保障 | Task 字段、状态、事实源边界、适配规则或检查要求变化时 |
 
@@ -373,11 +404,13 @@ Task 规范检查至少包括：
 | 字段完整性 | 必填字段、条件必填字段和字段类型符合 §6 |
 | 状态合法性 | 状态属于枚举，流转符合 §3.2 |
 | 关闭条件 | 关闭前满足 §3.3 |
+| 关闭证据 | `closure_evidence` 符合 §3.4，包含验证结果、关键证据、回写位置、失败处理和残留风险 |
 | 子任务关系 | 子任务不超过一层，父任务关闭前子任务已关闭 |
 | 前置依赖 | `blocked_by` 引用存在、无自引用，执行前均已关闭 |
 | 暂缓对象化 | 证据、依赖、风险、产物和检查项由字段承接，未误建独立对象 |
 | 文档同步 | `affected_docs` 已检查变更或填写豁免理由 |
 | Human Gate | §5 场景已完成确认或记录降级 |
+| 失败暂停 | 验证失败、证据不足、结果不可复现或长期降级时，Task 未被关闭且已按 06 §6.10.1 分流 |
 | Code / Web 边界 | 派生输出未替代 Git 文件事实源 |
 
 ---
@@ -386,4 +419,5 @@ Task 规范检查至少包括：
 1. Task 校验 Code 待字段契约稳定后补齐正反样例；
 2. Task Web 展示和受控编辑入口待 Web 实现规划时补齐；
 3. Task 执行、验证、关闭和审计的具体工作流程待 40-59 承接；
-4. `risk_assessment` 的字段内容格式是否需要从 Narrative / Checklist 细化为专用格式，待更多实例实践后评估。
+4. `closure_evidence` 的结构化子字段是否需要从 Evidence 文本升级为更细字段，待 Task 验证与关闭流程稳定后评估；
+5. `risk_assessment` 的字段内容格式是否需要从 Narrative / Checklist 细化为专用格式，待更多实例实践后评估。
