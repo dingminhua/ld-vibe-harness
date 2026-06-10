@@ -1,0 +1,10 @@
+id: adr-0007
+type: adr
+title: LDVH 采用受控落地执行链路而非独立安装器
+status: proposed
+created: '2026-06-11T00:37:55.017113'
+updated: '2026-06-11T00:37:55.017113'
+context: '[Human Gate 确认记录: 确认人=用户, 确认时间=2026-06-11T00:37:55.017113, 确认上下文=用户确认根据
+  21 号文档创建 proposed ADR、Intent 和 Task 批次，用于承接受控落地执行闭环方向]'
+decision: ''
+consequences: ''

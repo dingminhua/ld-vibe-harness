@@ -4,6 +4,8 @@ import ReadingPanel from './ReadingPanel';
 import { PanelProvider, usePanel } from '@/utils/panelContext';
 
 const SIDEBAR_STORAGE_KEY = 'ldvh-sidebar-collapsed';
+// Default: expanded. Only collapse when user has explicitly chosen to.
+const SIDEBAR_DEFAULT_EXPANDED = false;
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,9 +16,11 @@ function LayoutInner({ children }: LayoutProps) {
   const { isOpen: panelOpen, closePanel } = usePanel();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
+      const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+      if (stored === null) return SIDEBAR_DEFAULT_EXPANDED;
       return localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
     } catch {
-      return false;
+      return SIDEBAR_DEFAULT_EXPANDED;
     }
   });
 
