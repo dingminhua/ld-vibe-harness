@@ -1,9 +1,0 @@
-- [x] ldvh-intake Skill 文件存在且包含 11.02 §5 要求的全部段落（YAML 头部、定位、触发条件、不适用场景、必读文件、编排流程、输出格式、Human Gate、事实源回写、Agent 边界）
-- [x] ldvh-intake Skill 编排流程覆盖：识别场景 → 创建草案 → Human Gate → 写入事实源 → 记录 Change
-- [x] ldvh-close Skill 文件存在且包含 11.02 §5 要求的全部段落
-- [x] ldvh-close Skill 编排流程覆盖：校验关闭条件 → 提示补充或退回 → Human Gate → 更新状态 → 记录 Change
-- [x] L0 工作区规则包含 Core Loop 阶段识别入口
-- [x] L1 项目规则包含 Core Loop 阶段与 Skill 路由关系
-- [x] Skill 命名符合 11.02 §4 规则（ldvh- 前缀、小写连字符）
-- [x] Skill 必读文件路径区分了 LDVH 项目规范和管辖项目事实源
-- [x] Skill 不调度 Agent，不承载 Human Gate 判断本身
