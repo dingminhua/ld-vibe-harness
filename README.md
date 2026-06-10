@@ -23,6 +23,28 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，由 LaoDing 基
 → 转化为可规划、可执行、可验证、可沉淀的 AI 工程闭环
 ```
 
+## Web 启动
+
+LDVH Web 位于 `web/` 目录，用于查看和操作 LDVH 事实对象展示面板。
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+启动后访问：
+
+- 前端：http://localhost:5173
+- 后端：http://localhost:3001
+
+如果端口被占用，使用项目自带脚本自动清理并重启：
+
+```bash
+cd web
+./restart.sh
+```
+
 ## 项目状态
 
 当前处于 v0.x 早期开发阶段，随时可能变更，不承诺稳定。

@@ -14,7 +14,7 @@ import {
   Sun,
   Moon,
   Monitor,
-  PanelTop,
+  PanelLeft,
   ShieldCheck,
 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
@@ -41,76 +41,115 @@ function ThemeIcon({ mode }: { mode: 'system' | 'light' | 'dark' }) {
   return <Monitor size={16} />;
 }
 
-export default function Sidebar() {
+function IconTooltip({ label }: { label: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-xs font-medium text-ldvh-text-primary opacity-0 shadow-lg shadow-black/10 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+    >
+      {label}
+    </span>
+  );
+}
+
+interface SidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+}
+
+export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { locale, setLocale, t } = useI18n();
   const { mode, cycleTheme } = useTheme();
+  const languageLabel = locale === 'zh' ? t('language.switchToEnglish') : t('language.switchToChinese');
+  const themeLabel =
+    mode === 'system' ? t('theme.system') :
+    mode === 'light' ? t('theme.light') :
+    t('theme.dark');
 
   return (
-    <aside className="flex h-screen w-56 flex-shrink-0 flex-col border-r border-ldvh-border bg-ldvh-panel">
-      <div className="border-b border-ldvh-border px-4 py-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-ldvh-accent/15">
-            <Shield size={18} className="text-ldvh-accent" />
-          </div>
-          <div>
-            <div className="font-mono text-sm font-bold text-ldvh-text-primary tracking-wide">LDVH</div>
-            <div className="text-[10px] leading-tight text-ldvh-text-secondary">
-              {t('logo.tagline')}
+    <aside
+      className={`flex h-screen flex-shrink-0 flex-col border-r border-ldvh-border bg-ldvh-panel transition-[width] duration-200 ease-in-out ${
+        collapsed ? 'w-14' : 'w-56'
+      }`}
+    >
+      <div className={`border-b border-ldvh-border ${collapsed ? 'px-2 py-3' : 'px-3 py-4'}`}>
+        <div className={collapsed ? 'flex flex-col items-center gap-2' : 'flex items-center justify-between gap-2'}>
+          <div className={`flex min-w-0 items-center ${collapsed ? 'justify-center' : 'gap-2'}`}>
+            <div className="group relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-ldvh-accent/15" title={collapsed ? 'LDVH' : undefined}>
+              <Shield size={18} className="text-ldvh-accent" />
+              {collapsed && <IconTooltip label="LDVH" />}
             </div>
+            {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <div className="font-mono text-sm font-bold text-ldvh-text-primary tracking-wide">LDVH</div>
+                <div className="text-[10px] leading-tight text-ldvh-text-secondary whitespace-normal break-keep">
+                  {t('logo.tagline')}
+                </div>
+              </div>
+            )}
           </div>
+          <button
+            onClick={onToggle}
+            title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+            aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+            className="group relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+          >
+            <PanelLeft size={16} className={collapsed ? 'rotate-180' : ''} />
+            {collapsed && <IconTooltip label={t('nav.expandSidebar')} />}
+          </button>
         </div>
       </div>
-      <nav className="flex-1 overflow-y-auto px-2 py-3">
+      <nav className={`flex-1 px-2 py-3 ${collapsed ? 'overflow-visible' : 'overflow-y-auto'}`}>
         <ul className="flex flex-col gap-0.5">
           {NAV_ITEMS.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
                 end={item.to === '/'}
+                title={collapsed ? t(item.labelKey) : undefined}
+                aria-label={collapsed ? t(item.labelKey) : undefined}
                 className={({ isActive }) =>
-                  `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
+                  `group relative flex items-center rounded-md text-sm transition-colors ${
+                    collapsed ? 'h-10 justify-center px-0' : 'gap-2.5 px-3 py-2'
+                  } ${
                     isActive
                       ? 'bg-ldvh-accent/10 text-ldvh-accent'
                       : 'text-ldvh-text-secondary hover:bg-ldvh-border/50 hover:text-ldvh-text-primary'
                   }`
                 }
               >
-                <item.icon size={16} />
-                {t(item.labelKey)}
+                <item.icon size={16} className="flex-shrink-0" />
+                {!collapsed && <span className="truncate">{t(item.labelKey)}</span>}
+                {collapsed && <IconTooltip label={t(item.labelKey)} />}
               </NavLink>
             </li>
           ))}
         </ul>
       </nav>
-      <div className="border-t border-ldvh-border px-3 py-3">
-        <div className="flex items-center gap-1">
+      <div className={`border-t border-ldvh-border ${collapsed ? 'px-2 py-3' : 'px-3 py-3'}`}>
+        <div className={collapsed ? 'flex flex-col items-center gap-1' : 'flex items-center gap-1'}>
           <button
             onClick={() => setLocale(locale === 'zh' ? 'en' : 'zh')}
-            title={locale === 'zh' ? 'Switch to English' : '切换到中文'}
-            className="flex flex-1 items-center gap-2 rounded-md px-3 py-1.5 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+            title={languageLabel}
+            aria-label={languageLabel}
+            className={`group relative flex items-center rounded-md text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary ${
+              collapsed ? 'h-9 w-9 justify-center px-0' : 'flex-1 gap-2 px-3 py-1.5'
+            }`}
           >
             <Globe size={16} />
-            {locale === 'zh' ? 'English' : '中文'}
+            {!collapsed && (locale === 'zh' ? 'English' : '中文')}
+            {collapsed && <IconTooltip label={languageLabel} />}
           </button>
           <button
             onClick={cycleTheme}
-            title={
-              mode === 'system' ? '跟随系统' :
-              mode === 'light' ? '浅色模式' : '深色模式'
-            }
-            className="flex items-center justify-center rounded-md p-1.5 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+            title={themeLabel}
+            aria-label={themeLabel}
+            className="group relative flex h-9 w-9 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
           >
             <ThemeIcon mode={mode} />
+            {collapsed && <IconTooltip label={themeLabel} />}
           </button>
         </div>
-        <button
-          onClick={() => { window.location.href = window.location.pathname + '?layout=topnav'; }}
-          title={t('nav.switchLayout')}
-          className="mt-1.5 flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
-        >
-          <PanelTop size={16} />
-          {t('nav.switchLayout')}
-        </button>
       </div>
     </aside>
   );
