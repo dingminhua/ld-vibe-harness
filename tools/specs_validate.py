@@ -7,7 +7,6 @@ import json
 import re
 import subprocess
 import sys
-import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -2239,11 +2238,6 @@ def landing_plan_build(workspace_root=None):
     landing_report = landing_report_build()
     ldvh_check = ldvh_landing_check_build(workspace_root)
     gap_categories = landing_report.get("gap_categories", {})
-    verify_commands = [
-        "python3 tools/specs_validate.py landing-report --format json",
-        "python3 tools/specs_validate.py ldvh-landing-check",
-        "python3 tools/fact_validate.py ldvh-base",
-    ]
 
     facts_read = []
     for req in landing_report.get("requirements", []):
@@ -2254,12 +2248,6 @@ def landing_plan_build(workspace_root=None):
         src = cap.get("source", "capability_gaps")
         if src and src not in [f["path"] for f in facts_read]:
             facts_read.append({"path": src, "type": "capability"})
-    for path in [
-        "docs/specs/41-landing-orchestration-规范落地统筹.md",
-        "docs/specs/42-ldvh-landing-check-LDVH落地与检查.md",
-    ]:
-        if path not in [f["path"] for f in facts_read]:
-            facts_read.append({"path": path, "type": "contract"})
 
     capabilities = []
     for check in ldvh_check.get("checks", []):
@@ -2324,7 +2312,6 @@ def landing_plan_build(workspace_root=None):
             if wb not in ("manual_review", "none")
         )),
     }
-    write_targets = writes_required["targets"]
 
     human_gate = {
         "total_gaps": gap_categories.get("human_gate", {}).get("total", 0),
@@ -2349,7 +2336,6 @@ def landing_plan_build(workspace_root=None):
         "fact_validate_status": ldvh_check.get("checks", [{}])[4].get("status", "unknown") if len(ldvh_check.get("checks", [])) > 4 else "unknown",
         "runtime_projection_status": ldvh_check.get("checks", [{}])[2].get("status", "unknown") if len(ldvh_check.get("checks", [])) > 2 else "unknown",
         "human_gate_status": ldvh_check.get("checks", [{}])[3].get("status", "unknown") if len(ldvh_check.get("checks", [])) > 3 else "unknown",
-        "verify_commands": verify_commands,
     }
 
     writeback_targets = sorted(set(
@@ -2367,21 +2353,6 @@ def landing_plan_build(workspace_root=None):
             "source_of_truth": False,
             "status_source": "derived heuristic",
             "read_only": True,
-            "contract_version": "landing-plan/v1",
-        },
-        "contract": {
-            "required_fields": [
-                "facts_read",
-                "proposed_actions",
-                "test_design",
-                "human_gate",
-                "write_targets",
-                "verify_commands",
-                "review_targets",
-                "writeback_targets",
-            ],
-            "source_of_truth": False,
-            "write_policy": "read_only_plan_before_human_gate",
         },
         "scope": {
             "project_root": str(PROJECT_ROOT),
@@ -2403,38 +2374,8 @@ def landing_plan_build(workspace_root=None):
         },
         "proposed_actions": proposed_actions,
         "writes_required": writes_required,
-        "write_targets": write_targets,
         "human_gate": human_gate,
-        "test_design": {
-            "required": True,
-            "success_conditions": [
-                "landing plan 包含事实源、建议行动、Human Gate、写入目标、验证命令、审核目标和回写目标",
-                "授权前不会执行 apply 或 repair 写入",
-                "每个后续 apply / repair 任务能从 plan 中读取测试设计和验证命令",
-            ],
-            "failure_conditions": [
-                "缺少 Human Gate 或写入边界时仍允许自动写入",
-                "缺少正反样例、验证命令或 review_needed 目标时进入 apply / repair",
-                "Web、CLI 或缓存输出被解释为 Git 文件事实源",
-            ],
-            "positive_examples": [
-                {
-                    "id": "authorized_read_only_plan",
-                    "given": "landing-report 存在 open/degraded 缺口",
-                    "expected": "输出 write_targets、verify_commands、review_targets 和 writeback_targets，但不写入事实源",
-                }
-            ],
-            "negative_examples": [
-                {
-                    "id": "missing_human_gate_for_write",
-                    "given": "计划包含需要写入的目标但没有 Human Gate 授权",
-                    "expected": "只输出计划和阻断原因，不进入 apply / repair",
-                }
-            ],
-        },
         "validation_plan": validation_plan,
-        "verify_commands": verify_commands,
-        "review_targets": ["review_needed", "web_validate", "human_gate_record"],
         "writeback_targets": writeback_targets,
     }
 
@@ -2505,410 +2446,6 @@ def landing_plan_main(workspace_root=None, output_format="text"):
     return 1 if has_open else 0
 
 
-def landing_apply_load_json(path):
-    with Path(path).open(encoding="utf-8") as file:
-        return json.load(file)
-
-
-def landing_apply_load_patch(path):
-    payload = landing_apply_load_json(path)
-    if isinstance(payload, dict) and "writes" in payload:
-        payload = payload["writes"]
-    if not isinstance(payload, dict):
-        raise ValueError("apply patch 必须是 target -> content 的 JSON 对象，或包含 writes 对象")
-    return {str(target): str(content) for target, content in payload.items()}
-
-
-def landing_apply_is_project_local(path):
-    try:
-        path.resolve().relative_to(PROJECT_ROOT.resolve())
-        return True
-    except ValueError:
-        return False
-
-
-def landing_apply_has_human_gate(plan):
-    human_gate = plan.get("human_gate") or {}
-    records = human_gate.get("records") or human_gate.get("record") or []
-    if isinstance(records, dict):
-        records = [records]
-    if human_gate.get("authorized") is True and records:
-        return True
-    if human_gate.get("status") in {"approved", "authorized", "accepted"} and records:
-        return True
-    for record in records:
-        decision = str(record.get("decision") or record.get("result") or "").lower()
-        if decision in {"approved", "authorized", "accepted", "approve", "accept"}:
-            return True
-    return False
-
-
-def landing_apply_has_test_design(plan):
-    test_design = plan.get("test_design")
-    if not isinstance(test_design, dict):
-        return False
-    required_fields = ["success_conditions", "failure_conditions", "positive_examples", "negative_examples"]
-    return all(test_design.get(field) for field in required_fields)
-
-
-def landing_apply_allowed_targets(plan):
-    targets = set()
-    for raw_target in plan.get("write_targets") or []:
-        if isinstance(raw_target, dict):
-            value = raw_target.get("path") or raw_target.get("target") or raw_target.get("name")
-        else:
-            value = raw_target
-        if value:
-            targets.add(str(value))
-    return targets
-
-
-def landing_apply_blocked_reasons(plan, patch):
-    reasons = []
-    if not isinstance(plan, dict):
-        return ["missing_plan"]
-    if plan.get("metadata", {}).get("contract_version") != "landing-plan/v1":
-        reasons.append("invalid_plan_contract")
-    if not landing_apply_has_human_gate(plan):
-        reasons.append("missing_human_gate")
-    if not landing_apply_has_test_design(plan):
-        reasons.append("missing_test_design")
-    allowed_targets = landing_apply_allowed_targets(plan)
-    if not allowed_targets:
-        reasons.append("missing_write_targets")
-    if not patch:
-        reasons.append("missing_patch")
-    for target in patch:
-        target_path = PROJECT_ROOT / target
-        if target not in allowed_targets:
-            reasons.append("target_outside_plan")
-        if Path(target).is_absolute() or ".." in Path(target).parts or not landing_apply_is_project_local(target_path):
-            reasons.append("target_outside_project")
-    return sorted(set(reasons))
-
-
-def landing_apply_write_file(target, content):
-    path = PROJECT_ROOT / target
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=str(path.parent), delete=False) as temp_file:
-        temp_file.write(content)
-        temp_name = temp_file.name
-    Path(temp_name).replace(path)
-
-
-def landing_apply_build(plan, patch, dry_run=True):
-    blocked_reasons = landing_apply_blocked_reasons(plan, patch)
-    if blocked_reasons:
-        return {
-            "metadata": {
-                "tool": "tools/specs_validate.py",
-                "report": "landing-apply",
-                "generated_at": datetime.now().isoformat(timespec="seconds"),
-                "source_of_truth": False,
-                "status_source": "controlled write guard",
-                "contract_version": "landing-apply/v1",
-                "dry_run": dry_run,
-            },
-            "summary": {
-                "status": "blocked",
-                "blocked_reasons": blocked_reasons,
-                "write_count": 0,
-            },
-            "writes": [],
-            "next_steps": {
-                "verify_commands": plan.get("verify_commands", []) if isinstance(plan, dict) else [],
-                "review_targets": plan.get("review_targets", []) if isinstance(plan, dict) else [],
-                "writeback_targets": plan.get("writeback_targets", []) if isinstance(plan, dict) else [],
-                "task_status": "review_needed",
-            },
-        }
-
-    writes = []
-    for target, content in sorted(patch.items()):
-        before_exists = (PROJECT_ROOT / target).exists()
-        if not dry_run:
-            landing_apply_write_file(target, content)
-        writes.append(
-            {
-                "target": target,
-                "applied": not dry_run,
-                "dry_run": dry_run,
-                "bytes": len(content.encode("utf-8")),
-                "before_exists": before_exists,
-            }
-        )
-
-    return {
-        "metadata": {
-            "tool": "tools/specs_validate.py",
-            "report": "landing-apply",
-            "generated_at": datetime.now().isoformat(timespec="seconds"),
-            "source_of_truth": False,
-            "status_source": "controlled write guard",
-            "contract_version": "landing-apply/v1",
-            "dry_run": dry_run,
-        },
-        "summary": {
-            "status": "dry_run" if dry_run else "applied",
-            "blocked_reasons": [],
-            "write_count": len(writes),
-        },
-        "writes": writes,
-        "next_steps": {
-            "verify_commands": plan.get("verify_commands", []),
-            "review_targets": plan.get("review_targets", []),
-            "writeback_targets": plan.get("writeback_targets", []),
-            "task_status": "review_needed",
-        },
-    }
-
-
-def landing_apply_format_text(result):
-    lines = ["Landing Apply"]
-    lines.append(f"- 状态: {result['summary']['status']}")
-    lines.append(f"- dry-run: {'是' if result['metadata']['dry_run'] else '否'}")
-    if result["summary"].get("blocked_reasons"):
-        lines.append(f"- 阻断原因: {', '.join(result['summary']['blocked_reasons'])}")
-    lines.append(f"- 写入数: {result['summary']['write_count']}")
-    lines.append("")
-    lines.append("写入摘要:")
-    if not result["writes"]:
-        lines.append("- 无")
-    else:
-        for item in result["writes"]:
-            state = "applied" if item["applied"] else "dry-run"
-            lines.append(f"- [{state}] {item['target']} ({item['bytes']} bytes)")
-    lines.append("")
-    lines.append("待验证事项:")
-    verify_commands = result["next_steps"].get("verify_commands", [])
-    if not verify_commands:
-        lines.append("- 无")
-    else:
-        for command in verify_commands:
-            lines.append(f"- {command}")
-    return "\n".join(lines)
-
-
-def landing_apply_main(plan_path, patch_path, dry_run=True, output_format="text"):
-    try:
-        plan = landing_apply_load_json(plan_path)
-        patch = landing_apply_load_patch(patch_path)
-        result = landing_apply_build(plan, patch, dry_run)
-    except (OSError, ValueError, json.JSONDecodeError) as exc:
-        result = {
-            "metadata": {
-                "tool": "tools/specs_validate.py",
-                "report": "landing-apply",
-                "generated_at": datetime.now().isoformat(timespec="seconds"),
-                "source_of_truth": False,
-                "status_source": "controlled write guard",
-                "contract_version": "landing-apply/v1",
-                "dry_run": dry_run,
-            },
-            "summary": {"status": "blocked", "blocked_reasons": ["invalid_input"], "write_count": 0},
-            "writes": [],
-            "next_steps": {"verify_commands": [], "review_targets": [], "writeback_targets": [], "task_status": "review_needed"},
-            "error": str(exc),
-        }
-    if output_format == "json":
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-    else:
-        print(landing_apply_format_text(result))
-    return 0 if result["summary"]["status"] in {"dry_run", "applied"} else 1
-
-
-def landing_repair_load_json(path):
-    with Path(path).open(encoding="utf-8") as file:
-        return json.load(file)
-
-
-def landing_repair_load_patch(path):
-    payload = landing_repair_load_json(path)
-    if isinstance(payload, dict) and "repairs" in payload:
-        payload = payload["repairs"]
-    if not isinstance(payload, dict):
-        raise ValueError("repair patch 必须是 target -> content 的 JSON 对象，或包含 repairs 对象")
-    return {str(target): str(content) for target, content in payload.items()}
-
-
-def landing_repair_normalize_patch(payload):
-    if isinstance(payload, dict) and "repairs" in payload:
-        payload = payload["repairs"]
-    if not isinstance(payload, dict):
-        return {}
-    return {str(target): str(content) for target, content in payload.items()}
-
-
-def landing_repair_is_forbidden_target(target, content):
-    target_path = Path(target)
-    parts = target_path.parts
-    if len(parts) >= 3 and parts[0] == "ldvh-base" and parts[1] == "adrs" and "status: accepted" in content:
-        return True
-    if len(parts) >= 3 and parts[0] == "ldvh-base" and parts[1] == "tasks" and "status: closed" in content:
-        return True
-    if len(parts) >= 2 and parts[0] == "docs" and parts[1] == "specs":
-        risk_terms = ["核心决策", "长期决策", "上位依据", "事实源边界", "Human Gate"]
-        if any(term in content for term in risk_terms):
-            return True
-    return False
-
-
-def landing_repair_allowed_targets(plan):
-    return landing_apply_allowed_targets(plan)
-
-
-def landing_repair_blocked_reasons(plan, repairs, execute=False):
-    reasons = []
-    if not isinstance(plan, dict):
-        return ["missing_plan"]
-    if plan.get("metadata", {}).get("contract_version") != "landing-plan/v1":
-        reasons.append("invalid_plan_contract")
-    if execute and not landing_apply_has_human_gate(plan):
-        reasons.append("missing_human_gate")
-    if not landing_apply_has_test_design(plan):
-        reasons.append("missing_test_design")
-    if not plan.get("verify_commands"):
-        reasons.append("missing_verify_commands")
-    allowed_targets = landing_repair_allowed_targets(plan)
-    if not allowed_targets:
-        reasons.append("missing_write_targets")
-    if not repairs:
-        reasons.append("missing_repair_patch")
-    for target, content in repairs.items():
-        target_path = PROJECT_ROOT / target
-        if target not in allowed_targets:
-            reasons.append("target_outside_plan")
-        if Path(target).is_absolute() or ".." in Path(target).parts or not landing_apply_is_project_local(target_path):
-            reasons.append("target_outside_project")
-        if landing_repair_is_forbidden_target(target, content):
-            reasons.append("forbidden_high_risk_target")
-    return sorted(set(reasons))
-
-
-def landing_repair_build(plan, repairs, execute=False):
-    repairs = landing_repair_normalize_patch(repairs)
-    blocked_reasons = landing_repair_blocked_reasons(plan, repairs, execute)
-    if blocked_reasons:
-        return {
-            "metadata": {
-                "tool": "tools/specs_validate.py",
-                "report": "landing-repair",
-                "generated_at": datetime.now().isoformat(timespec="seconds"),
-                "source_of_truth": False,
-                "status_source": "controlled repair guard",
-                "contract_version": "landing-repair/v1",
-                "execute": execute,
-            },
-            "summary": {
-                "status": "blocked",
-                "blocked_reasons": blocked_reasons,
-                "repair_count": 0,
-            },
-            "repairs": [],
-            "next_steps": {
-                "verify_commands": plan.get("verify_commands", []) if isinstance(plan, dict) else [],
-                "review_targets": plan.get("review_targets", []) if isinstance(plan, dict) else [],
-                "writeback_targets": plan.get("writeback_targets", []) if isinstance(plan, dict) else [],
-                "task_status": "review_needed",
-            },
-        }
-
-    repair_items = []
-    for target, content in sorted(repairs.items()):
-        before_exists = (PROJECT_ROOT / target).exists()
-        if execute:
-            landing_apply_write_file(target, content)
-        repair_items.append(
-            {
-                "target": target,
-                "applied": execute,
-                "candidate": not execute,
-                "bytes": len(content.encode("utf-8")),
-                "before_exists": before_exists,
-            }
-        )
-
-    return {
-        "metadata": {
-            "tool": "tools/specs_validate.py",
-            "report": "landing-repair",
-            "generated_at": datetime.now().isoformat(timespec="seconds"),
-            "source_of_truth": False,
-            "status_source": "controlled repair guard",
-            "contract_version": "landing-repair/v1",
-            "execute": execute,
-        },
-        "summary": {
-            "status": "applied" if execute else "candidate",
-            "blocked_reasons": [],
-            "repair_count": len(repair_items),
-        },
-        "repairs": repair_items,
-        "next_steps": {
-            "verify_commands": plan.get("verify_commands", []),
-            "review_targets": plan.get("review_targets", []),
-            "writeback_targets": plan.get("writeback_targets", []),
-            "task_status": "review_needed",
-        },
-    }
-
-
-def landing_repair_format_text(result):
-    lines = ["Landing Repair"]
-    lines.append(f"- 状态: {result['summary']['status']}")
-    lines.append(f"- execute: {'是' if result['metadata']['execute'] else '否'}")
-    if result["summary"].get("blocked_reasons"):
-        lines.append(f"- 阻断原因: {', '.join(result['summary']['blocked_reasons'])}")
-    lines.append(f"- 修复数: {result['summary']['repair_count']}")
-    lines.append("")
-    lines.append("候选/执行摘要:")
-    if not result["repairs"]:
-        lines.append("- 无")
-    else:
-        for item in result["repairs"]:
-            state = "applied" if item["applied"] else "candidate"
-            lines.append(f"- [{state}] {item['target']} ({item['bytes']} bytes)")
-    lines.append("")
-    lines.append("待验证事项:")
-    verify_commands = result["next_steps"].get("verify_commands", [])
-    if not verify_commands:
-        lines.append("- 无")
-    else:
-        for command in verify_commands:
-            lines.append(f"- {command}")
-    lines.append("")
-    lines.append(f"Task 后续状态: {result['next_steps'].get('task_status')}")
-    return "\n".join(lines)
-
-
-def landing_repair_main(plan_path, patch_path, execute=False, output_format="text"):
-    try:
-        plan = landing_repair_load_json(plan_path)
-        repairs = landing_repair_load_patch(patch_path)
-        result = landing_repair_build(plan, repairs, execute)
-    except (OSError, ValueError, json.JSONDecodeError) as exc:
-        result = {
-            "metadata": {
-                "tool": "tools/specs_validate.py",
-                "report": "landing-repair",
-                "generated_at": datetime.now().isoformat(timespec="seconds"),
-                "source_of_truth": False,
-                "status_source": "controlled repair guard",
-                "contract_version": "landing-repair/v1",
-                "execute": execute,
-            },
-            "summary": {"status": "blocked", "blocked_reasons": ["invalid_input"], "repair_count": 0},
-            "repairs": [],
-            "next_steps": {"verify_commands": [], "review_targets": [], "writeback_targets": [], "task_status": "review_needed"},
-            "error": str(exc),
-        }
-    if output_format == "json":
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-    else:
-        print(landing_repair_format_text(result))
-    return 0 if result["summary"]["status"] in {"candidate", "applied"} else 1
-
-
 def ldvh_landing_check_format_text(report):
     lines = ["LDVH落地与检查派生报告"]
     lines.append(f"- 状态: {report['summary']['status']}")
@@ -2934,136 +2471,6 @@ def ldvh_landing_check_main(workspace_root=None, output_format="text"):
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
         print(ldvh_landing_check_format_text(report))
-    return 0 if report["summary"]["status"] in {"closed", "degraded"} else 1
-
-
-LANDING_VERIFY_STATUS_ORDER = {
-    "closed": 0,
-    "degraded": 1,
-    "needs_human_gate": 2,
-    "open": 3,
-    "blocked": 4,
-}
-
-
-def landing_verify_status(items):
-    status = "closed"
-    for item in items:
-        item_status = item.get("status", "closed")
-        if LANDING_VERIFY_STATUS_ORDER.get(item_status, 3) > LANDING_VERIFY_STATUS_ORDER.get(status, 0):
-            status = item_status
-    return status
-
-
-def landing_verify_normalize_check(item):
-    status = item.get("status", "closed")
-    return {
-        "id": item.get("id", "unknown"),
-        "source_area": item.get("source_area", "unknown"),
-        "status": status,
-        "issue_count": int(item.get("issue_count", 0)),
-        "evidence": item.get("evidence", ""),
-        "suggested_writeback": item.get("suggested_writeback", "manual_review"),
-        "issues": item.get("issues", []),
-    }
-
-
-def landing_verify_pytest_check(pytest_result=None):
-    if pytest_result is None:
-        return None
-    if isinstance(pytest_result, dict):
-        status = pytest_result.get("status", "closed")
-        issue_count = int(pytest_result.get("issue_count", 0))
-        evidence = pytest_result.get("evidence") or f"pytest status: {status}, issues: {issue_count}"
-        issues = pytest_result.get("issues", [])
-    else:
-        status = "closed" if int(pytest_result) == 0 else "open"
-        issue_count = 0 if status == "closed" else 1
-        evidence = f"pytest exit code: {pytest_result}"
-        issues = []
-    return landing_verify_normalize_check(
-        {
-            "id": "pytest",
-            "source_area": "test",
-            "status": status,
-            "issue_count": issue_count,
-            "evidence": evidence,
-            "suggested_writeback": "test_or_code_fix",
-            "issues": issues,
-        }
-    )
-
-
-def landing_verify_review_status(status):
-    if status == "needs_human_gate":
-        return "human_gate_required"
-    if status in {"open", "blocked"}:
-        return "blocked"
-    return "ready"
-
-
-def landing_verify_build(workspace_root=None, checks=None, ldvh_check=None, pytest_result=None):
-    if checks is None:
-        if ldvh_check is None:
-            ldvh_check = ldvh_landing_check_build(workspace_root)
-        checks = ldvh_check.get("checks", [])
-    normalized_checks = [landing_verify_normalize_check(item) for item in checks]
-    pytest_check = landing_verify_pytest_check(pytest_result)
-    if pytest_check is not None:
-        normalized_checks.append(pytest_check)
-    status = landing_verify_status(normalized_checks)
-    review_items = [item for item in normalized_checks if item["status"] != "closed"]
-    return {
-        "metadata": {
-            "tool": "tools/specs_validate.py",
-            "report": "landing-verify",
-            "generated_at": datetime.now().isoformat(timespec="seconds"),
-            "source_of_truth": False,
-            "status_source": "derived verification aggregate",
-            "contract_version": "landing-verify/v1",
-            "workspace_root": str(Path(workspace_root) if workspace_root else PROJECT_ROOT),
-        },
-        "summary": {
-            "status": status,
-            "by_status": landing_report_count_by(normalized_checks, "status"),
-            "check_count": len(normalized_checks),
-            "remaining_gap_count": len(review_items),
-        },
-        "checks": normalized_checks,
-        "review_queue": {
-            "status": landing_verify_review_status(status),
-            "target": "review_needed",
-            "items": review_items,
-        },
-        "next_steps": {
-            "task_status": "review_needed",
-            "can_close": status == "closed",
-            "review_targets": ["review_needed", "web_validate", "human_gate_record"],
-        },
-    }
-
-
-def landing_verify_format_text(report):
-    lines = ["Landing Verify"]
-    lines.append(f"- 状态: {report['summary']['status']}")
-    lines.append(f"- 检查数: {report['summary']['check_count']}")
-    lines.append(f"- 剩余缺口数: {report['summary']['remaining_gap_count']}")
-    lines.append(f"- Review 队列: {report['review_queue']['status']}")
-    lines.append("")
-    lines.append("检查项:")
-    for item in report["checks"]:
-        lines.append(f"- [{item['status']}/{item['source_area']}] {item['id']} -> {item['evidence']}; issues: {item['issue_count']}")
-    lines.append("")
-    lines.append(f"Task 后续状态: {report['next_steps']['task_status']}")
-    return "\n".join(lines)
-
-
-def landing_verify_main(workspace_root=None, output_format="text"):
-    report = landing_verify_build(workspace_root)
-    if output_format == "json":
-        print(json.dumps(report, ensure_ascii=False, indent=2))
-    else:
-        print(landing_verify_format_text(report))
     return 0 if report["summary"]["status"] in {"closed", "degraded"} else 1
 
 
@@ -3720,25 +3127,6 @@ def build_parser():
     landing_plan_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
     landing_plan_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
-    # landing-apply
-    landing_apply_parser = subparsers.add_parser("landing-apply", help="执行 landing-plan 授权范围内的最小受控写入。")
-    landing_apply_parser.add_argument("--plan", required=True, help="landing-plan/v1 JSON 文件。")
-    landing_apply_parser.add_argument("--patch", required=True, help="target -> content JSON 文件，或包含 writes 对象的 JSON 文件。")
-    landing_apply_parser.add_argument("--write", action="store_true", help="执行真实写入；默认只 dry-run。")
-    landing_apply_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
-
-    # landing-repair
-    landing_repair_parser = subparsers.add_parser("landing-repair", help="生成或执行 landing-plan 授权范围内的最小候选修复。")
-    landing_repair_parser.add_argument("--plan", required=True, help="landing-plan/v1 JSON 文件。")
-    landing_repair_parser.add_argument("--patch", required=True, help="target -> content JSON 文件，或包含 repairs 对象的 JSON 文件。")
-    landing_repair_parser.add_argument("--execute", action="store_true", help="执行真实修复；默认只输出候选修复。")
-    landing_repair_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
-
-    # landing-verify
-    landing_verify_parser = subparsers.add_parser("landing-verify", help="聚合 fact/spec/test 验证结果并输出 review_needed 证据。")
-    landing_verify_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
-    landing_verify_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
-
     # web-validate
     web_validate_parser = subparsers.add_parser("web-validate", help="生成 Web Validate 页面只读数据合同。")
     web_validate_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
@@ -3802,15 +3190,6 @@ def main(argv=None):
 
     if command == "landing-plan":
         return landing_plan_main(args.workspace_root, args.format)
-
-    if command == "landing-apply":
-        return landing_apply_main(args.plan, args.patch, not args.write, args.format)
-
-    if command == "landing-repair":
-        return landing_repair_main(args.plan, args.patch, args.execute, args.format)
-
-    if command == "landing-verify":
-        return landing_verify_main(args.workspace_root, args.format)
 
     if command == "web-validate":
         return web_validate_main(args.workspace_root, args.format)
