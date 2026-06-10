@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useState } from 'react';
 import {
   LayoutDashboard,
   Target,
@@ -41,11 +42,13 @@ function ThemeIcon({ mode }: { mode: 'system' | 'light' | 'dark' }) {
   return <Monitor size={16} />;
 }
 
-function IconTooltip({ label }: { label: string }) {
+function IconTooltip({ label, visible }: { label: string; visible: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className="ldvh-chip pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-ldvh-text-primary opacity-0 shadow-lg shadow-black/10 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+      className={`ldvh-chip pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-ldvh-text-primary shadow-lg shadow-black/10 transition-opacity ${
+        visible ? 'opacity-100' : 'opacity-0'
+      }`}
     >
       {label}
     </span>
@@ -60,6 +63,7 @@ interface SidebarProps {
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { locale, setLocale, t } = useI18n();
   const { mode, cycleTheme } = useTheme();
+  const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
   const languageLabel = locale === 'zh' ? t('language.switchToEnglish') : t('language.switchToChinese');
   const themeLabel =
     mode === 'system' ? t('theme.system') :
@@ -75,9 +79,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className={`border-b border-ldvh-border ${collapsed ? 'px-2 py-3' : 'px-3 py-4'}`}>
         <div className={collapsed ? 'flex flex-col items-center gap-2' : 'flex items-center justify-between gap-2'}>
           <div className={`flex min-w-0 items-center ${collapsed ? 'justify-center' : 'gap-2'}`}>
-            <div className="group relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-ldvh-accent/15" title={collapsed ? 'LDVH' : undefined}>
+            <div
+              className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-ldvh-accent/15"
+              onMouseEnter={() => setVisibleTooltip('brand')}
+              onMouseLeave={() => setVisibleTooltip(null)}
+            >
               <Shield size={18} className="text-ldvh-accent" />
-              {collapsed && <IconTooltip label="LDVH" />}
+              {collapsed && <IconTooltip label="LDVH" visible={visibleTooltip === 'brand'} />}
             </div>
             {!collapsed && (
             <div className="min-w-0 flex-1">
@@ -89,13 +97,19 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             )}
           </div>
           <button
-            onClick={onToggle}
-            title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+            onClick={() => {
+              setVisibleTooltip(null);
+              onToggle();
+            }}
+            onMouseEnter={() => setVisibleTooltip('toggle')}
+            onMouseLeave={() => setVisibleTooltip(null)}
+            onFocus={() => setVisibleTooltip('toggle')}
+            onBlur={() => setVisibleTooltip(null)}
             aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-            className="group relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+            className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
           >
             <PanelLeft size={16} className={collapsed ? 'rotate-180' : ''} />
-            {collapsed && <IconTooltip label={t('nav.expandSidebar')} />}
+            <IconTooltip label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')} visible={visibleTooltip === 'toggle'} />
           </button>
         </div>
       </div>
@@ -106,10 +120,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <NavLink
                 to={item.to}
                 end={item.to === '/'}
-                title={collapsed ? t(item.labelKey) : undefined}
                 aria-label={collapsed ? t(item.labelKey) : undefined}
+                onMouseEnter={() => setVisibleTooltip(`nav-${item.to}`)}
+                onMouseLeave={() => setVisibleTooltip(null)}
+                onFocus={() => setVisibleTooltip(`nav-${item.to}`)}
+                onBlur={() => setVisibleTooltip(null)}
+                onClick={() => setVisibleTooltip(null)}
                 className={({ isActive }) =>
-                  `ldvh-card-title group relative flex items-center rounded-md transition-colors ${
+                  `ldvh-card-title relative flex items-center rounded-md transition-colors ${
                     collapsed ? 'h-10 justify-center px-0' : 'gap-2.5 px-3 py-2'
                   } ${
                     isActive
@@ -120,7 +138,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               >
                 <item.icon size={16} className="flex-shrink-0" />
                 {!collapsed && <span className="truncate">{t(item.labelKey)}</span>}
-                {collapsed && <IconTooltip label={t(item.labelKey)} />}
+                {collapsed && <IconTooltip label={t(item.labelKey)} visible={visibleTooltip === `nav-${item.to}`} />}
               </NavLink>
             </li>
           ))}
@@ -129,25 +147,37 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className={`border-t border-ldvh-border ${collapsed ? 'px-2 py-3' : 'px-3 py-3'}`}>
         <div className={collapsed ? 'flex flex-col items-center gap-1' : 'flex items-center gap-1'}>
           <button
-            onClick={() => setLocale(locale === 'zh' ? 'en' : 'zh')}
-            title={languageLabel}
+            onClick={() => {
+              setVisibleTooltip(null);
+              setLocale(locale === 'zh' ? 'en' : 'zh');
+            }}
+            onMouseEnter={() => setVisibleTooltip('language')}
+            onMouseLeave={() => setVisibleTooltip(null)}
+            onFocus={() => setVisibleTooltip('language')}
+            onBlur={() => setVisibleTooltip(null)}
             aria-label={languageLabel}
-            className={`ldvh-card-title group relative flex items-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary ${
+            className={`ldvh-card-title relative flex items-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary ${
               collapsed ? 'h-9 w-9 justify-center px-0' : 'flex-1 gap-2 px-3 py-1.5'
             }`}
           >
             <Globe size={16} />
             {!collapsed && (locale === 'zh' ? t('language.english') : t('language.chinese'))}
-            {collapsed && <IconTooltip label={languageLabel} />}
+            {collapsed && <IconTooltip label={languageLabel} visible={visibleTooltip === 'language'} />}
           </button>
           <button
-            onClick={cycleTheme}
-            title={themeLabel}
+            onClick={() => {
+              setVisibleTooltip(null);
+              cycleTheme();
+            }}
+            onMouseEnter={() => setVisibleTooltip('theme')}
+            onMouseLeave={() => setVisibleTooltip(null)}
+            onFocus={() => setVisibleTooltip('theme')}
+            onBlur={() => setVisibleTooltip(null)}
             aria-label={themeLabel}
-            className="group relative flex h-9 w-9 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+            className="relative flex h-9 w-9 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
           >
             <ThemeIcon mode={mode} />
-            {collapsed && <IconTooltip label={themeLabel} />}
+            <IconTooltip label={themeLabel} visible={visibleTooltip === 'theme'} />
           </button>
         </div>
       </div>
