@@ -1,6 +1,6 @@
 import { useTheme } from '@/hooks/useTheme';
 import { getStatusColor } from '@/utils/statusColors';
-import { getStatusHint } from '@/i18n/locales';
+import { getStatusHint, getStatusLocale } from '@/i18n/locales';
 import { useI18n } from '@/i18n/context';
 
 interface StatusBadgeProps {
@@ -14,7 +14,7 @@ export default function StatusBadge({ status, statusLabel, size = 'sm' }: Status
   const { locale } = useI18n();
   const color = getStatusColor(status);
   const sizeClasses = size === 'sm' ? 'px-2 py-0.5' : 'px-2.5 py-1';
-  const display = statusLabel || status;
+  const display = statusLabel || getStatusLocale(status, locale);
   const tooltip = getStatusHint(status, locale);
 
   return (

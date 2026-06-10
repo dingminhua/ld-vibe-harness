@@ -72,6 +72,13 @@ const PREVIEW_META_KEYS = new Set([
 
 const PREVIEW_FIELD_LABELS: Record<string, { zh: string; en: string }> = {
   description: { zh: '描述', en: 'Description' },
+  summary: { zh: '摘要', en: 'Summary' },
+  details: { zh: '详情', en: 'Details' },
+  background: { zh: '背景', en: 'Background' },
+  motivation: { zh: '动机', en: 'Motivation' },
+  outcome: { zh: '结果', en: 'Outcome' },
+  next_steps: { zh: '后续步骤', en: 'Next Steps' },
+  lessons: { zh: '经验教训', en: 'Lessons' },
   source: { zh: '来源', en: 'Source' },
   source_intent: { zh: '来源意图', en: 'Source Intent' },
   success_criteria: { zh: '成功标准', en: 'Success Criteria' },
@@ -676,7 +683,7 @@ function DocPreview({ content }: { content: PanelContent }) {
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-ldvh-accent border-t-transparent" />
         </div>
       ) : isMarkdown ? (
-        <article className="rounded-lg border border-ldvh-border bg-ldvh-panel px-6 py-5 shadow-sm shadow-black/10">
+        <article className="rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-4 shadow-sm shadow-black/10">
           <MarkdownPreview content={docContent} />
           {truncated && <p className="ldvh-caption mt-3">{t('readingPanel.truncated')}</p>}
         </article>

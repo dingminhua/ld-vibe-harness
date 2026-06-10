@@ -81,7 +81,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </div>
             {!collapsed && (
             <div className="min-w-0 flex-1">
-              <div className="ldvh-card-title font-mono font-bold tracking-wide">LDVH</div>
+              <div className="ldvh-card-title font-mono font-bold">LDVH</div>
                 <div className="ldvh-caption whitespace-normal break-keep">
                   {t('logo.tagline')}
                 </div>

@@ -403,7 +403,7 @@ export default function Dashboard() {
                     strokeLinecap="round"
                   />
                 </svg>
-                <span className="absolute font-mono text-lg font-semibold text-ldvh-text-primary">{compliancePercent}%</span>
+                <span className="ldvh-card-title absolute font-mono text-ldvh-text-primary">{compliancePercent}%</span>
               </div>
             </div>
             <div className="ldvh-dashboard-mini-grid text-center">

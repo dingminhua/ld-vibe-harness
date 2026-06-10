@@ -26,6 +26,7 @@ import {
   REFERENCE_FIELDS,
   SUMMARY_TEXT_FIELDS,
   hasChecklist,
+  isObjectRef,
   isPreviewableDocPath,
 } from '@/utils/fieldFormats';
 
@@ -72,6 +73,13 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
 const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   source: { zh: '来源', en: 'Source' },
   description: { zh: '描述', en: 'Description' },
+  summary: { zh: '摘要', en: 'Summary' },
+  details: { zh: '详情', en: 'Details' },
+  background: { zh: '背景', en: 'Background' },
+  motivation: { zh: '动机', en: 'Motivation' },
+  outcome: { zh: '结果', en: 'Outcome' },
+  next_steps: { zh: '后续步骤', en: 'Next Steps' },
+  lessons: { zh: '经验教训', en: 'Lessons' },
   success_criteria: { zh: '成功标准', en: 'Success Criteria' },
   constraints: { zh: '约束', en: 'Constraints' },
   acceptance: { zh: '验收标准', en: 'Acceptance' },
@@ -367,7 +375,7 @@ export default function ObjectDetail() {
                 <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <FileText size={13} className="text-ldvh-accent" />
-                    <h4 className="ldvh-caption-strong tracking-wide">
+                    <h4 className="ldvh-caption-strong">
                       {t('objectDetail.aggregatedDeliverables')}
                     </h4>
                   </div>
@@ -378,7 +386,7 @@ export default function ObjectDetail() {
                 <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <FileText size={13} className="text-ldvh-accent" />
-                    <h4 className="ldvh-caption-strong tracking-wide">
+                    <h4 className="ldvh-caption-strong">
                       {t('objectDetail.aggregatedDocs')}
                     </h4>
                   </div>
@@ -556,7 +564,7 @@ function TaskSection({ title, tone, children }: { title: string; tone: 'primary'
 function TaskInlineField({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-bg/40 p-3">
-      <div className="ldvh-caption-strong mb-1 tracking-wide">{label}</div>
+      <div className="ldvh-caption-strong mb-1">{label}</div>
       {value}
     </div>
   );
@@ -566,7 +574,7 @@ function TaskDocGroup({ label, docs }: { label: string; docs?: string[] }) {
   const { t } = useI18n();
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-bg/40 p-3">
-      <div className="ldvh-caption-strong mb-2 tracking-wide">{label}</div>
+      <div className="ldvh-caption-strong mb-2">{label}</div>
       {docs && docs.length > 0 ? <DocPreviewLink docs={docs} /> : <EmptyHint text={t('objectDetail.emptyValue')} />}
     </div>
   );
@@ -628,7 +636,7 @@ function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { 
         onClick={isCollapsible ? () => setCollapsed(c => !c) : undefined}
       >
         <FileText size={13} className="text-ldvh-accent" />
-        <h4 className="ldvh-caption-strong tracking-wide">{label}</h4>
+        <h4 className="ldvh-caption-strong">{label}</h4>
         {isCollapsible && (
           <span className="ml-auto text-ldvh-text-secondary">
             {collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
@@ -809,6 +817,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
 
 /** 从引用 ID 解析对象类型（如 task-0001 → task） */
 function parseRefType(refId: string): string | null {
+  if (!isObjectRef(refId)) return null;
   const m = refId.match(/^([a-z]+)-\d+$/);
   return m ? m[1] : null;
 }

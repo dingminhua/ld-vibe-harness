@@ -5,16 +5,18 @@ export const SUMMARY_TEXT_FIELDS = [
   'symptoms', 'trigger_conditions', 'root_cause', 'avoidance', 'applicability',
   'governance_scope', 'archive_reason', 'notes', 'transition_reasons',
   'risk_assessment', 'status_history', 'alternatives', 'reason',
+  'scope', 'impact', 'summary', 'details', 'outcome', 'next_steps',
+  'lessons', 'background', 'motivation',
 ];
 
 /** Markdown fields that should switch to ChecklistCard when the value is a GFM task list. */
 export const CHECKLIST_COMPAT_FIELDS = [
   'success_criteria', 'constraints', 'verification', 'risk_assessment',
-  'trigger_conditions', 'avoidance',
+  'trigger_conditions', 'avoidance', 'next_steps',
 ];
 
 /** Evidence fields use the EvidenceBlock renderer. */
-export const EVIDENCE_FIELDS = ['closure_evidence', 'verification', 'completion_evidence'];
+export const EVIDENCE_FIELDS = ['closure_evidence', 'verification', 'completion_evidence', 'evidence'];
 
 /** Object ID reference fields render through ReferenceCard when values look like LDVH object IDs. */
 export const REFERENCE_FIELDS = [
@@ -40,7 +42,7 @@ export const COLLAPSIBLE_FIELDS = [
 ];
 
 export function isPreviewableDocPath(value: string) {
-  return value.startsWith('http://') || value.startsWith('https://') || /^(docs\/|specs\/|web\/docs\/)/.test(value);
+  return value.startsWith('http://') || value.startsWith('https://') || /^(docs\/|specs\/|web\/docs\/|rules\/|skills\/|tools\/|web\/)/.test(value);
 }
 
 export function hasChecklist(value: string) {
@@ -48,5 +50,7 @@ export function hasChecklist(value: string) {
 }
 
 export function isObjectRef(refId: string) {
-  return /^([a-z]+)-\d+$/.test(refId);
+  const match = refId.match(/^([a-z]+)-\d+$/);
+  if (!match) return false;
+  return ['intent', 'task', 'adr', 'pitfall', 'memo', 'profile'].includes(match[1]);
 }

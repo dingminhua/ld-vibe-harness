@@ -227,34 +227,46 @@ input::-moz-focus-inner {
   --focus-outlineColor: rgb(var(--ldvh-accent));
   background: transparent;
   color: rgb(var(--ldvh-text-primary));
-  font-size: 15px;
-  line-height: 1.75;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 .ldvh-markdown-preview h1 {
   margin-top: 0;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.6rem;
   border-bottom-color: rgb(var(--ldvh-border));
-  font-size: 1.55rem;
-  line-height: 1.28;
+  font-size: 1.25rem;
+  line-height: 1.35;
   letter-spacing: 0;
 }
 
 .ldvh-markdown-preview h2 {
-  margin-top: 2rem;
-  margin-bottom: 0.85rem;
-  padding-bottom: 0.45rem;
+  margin-top: 1.65rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
   border-bottom-color: rgb(var(--ldvh-border) / 0.72);
-  font-size: 1.18rem;
+  font-size: 1rem;
   line-height: 1.35;
   letter-spacing: 0;
 }
 
 .ldvh-markdown-preview h3 {
-  margin-top: 1.45rem;
+  margin-top: 1.25rem;
   margin-bottom: 0.55rem;
-  font-size: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+.ldvh-markdown-preview h4,
+.ldvh-markdown-preview h5,
+.ldvh-markdown-preview h6 {
+  margin-top: 1rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.875rem;
+  font-weight: 600;
   line-height: 1.45;
   letter-spacing: 0;
 }
@@ -270,7 +282,11 @@ input::-moz-focus-inner {
 }
 
 .ldvh-markdown-preview table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
   border-radius: 8px;
+  font-size: 0.875rem;
 }
 
 .ldvh-markdown-preview table th {
@@ -294,6 +310,8 @@ input::-moz-focus-inner {
 }
 
 .ldvh-markdown-preview pre {
+  max-width: 100%;
+  overflow-x: auto;
   border: 1px solid rgb(var(--ldvh-border));
   border-radius: 8px;
   background: rgb(var(--ldvh-bg));
@@ -308,8 +326,26 @@ input::-moz-focus-inner {
 }
 
 .ldvh-markdown-preview blockquote {
+  border-left-width: 3px;
   border-left-color: rgb(var(--ldvh-accent));
+  background: rgb(var(--ldvh-accent) / 0.06);
   color: rgb(var(--ldvh-text-secondary));
+  padding: 0.65rem 0.85rem;
+  border-radius: 0 8px 8px 0;
+}
+
+.ldvh-markdown-preview :where(ul, ol) {
+  padding-left: 1.35rem;
+}
+
+.ldvh-markdown-preview :where(li) {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.ldvh-markdown-preview :where(input[type="checkbox"]) {
+  margin-right: 0.45rem;
+  vertical-align: -0.1em;
 }
 
 .ldvh-inline-markdown :where(p, ul, ol, pre, blockquote) {
@@ -365,4 +401,30 @@ input::-moz-focus-inner {
   background: transparent;
   padding: 0;
   color: inherit;
+}
+
+.ldvh-inline-markdown :where(blockquote) {
+  border-left: 3px solid rgb(var(--ldvh-accent));
+  border-radius: 0 6px 6px 0;
+  background: rgb(var(--ldvh-accent) / 0.06);
+  padding: 0.5rem 0.75rem;
+  color: rgb(var(--ldvh-text-secondary));
+}
+
+.ldvh-inline-markdown :where(table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.ldvh-inline-markdown :where(th, td) {
+  border: 1px solid rgb(var(--ldvh-border));
+  padding: 0.4rem 0.6rem;
+  vertical-align: top;
+}
+
+.ldvh-inline-markdown :where(th) {
+  background: rgb(var(--ldvh-border) / 0.28);
 }

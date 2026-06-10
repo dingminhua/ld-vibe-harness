@@ -69,6 +69,8 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 | 路径文本 | `PathText` | 等宽、可换行的路径标签 |
 | 其他短文本 | `ldvh-body` | 普通文本 |
 
+当前可点击对象引用仅覆盖 Web 支持的工作对象类型：Intent、Task、ADR、Pitfall、Memo、Profile。类似 `ev-0002` 这类尚未进入当前对象路由的引用，只作为普通引用文本展示，不跳转到无效详情页。
+
 ## 7. 右侧扩展阅读区
 
 - 由 App Shell 的 `ReadingPanel` 提供。
@@ -78,6 +80,7 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 - 对象预览按对象类型展示关键字段，并复用 `fieldFormats.ts`。
 - 对象预览头部提供复制完整路径图标，复制对象详情 API 返回的 `target`。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。
+- Markdown 正文基准字号为 14px；表格横向滚动，代码块、引用块、任务列表由全局 Markdown 样式统一控制。
 
 ## 8. YAML 源码
 

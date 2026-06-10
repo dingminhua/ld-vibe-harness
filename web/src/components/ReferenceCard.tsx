@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Link2 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import { fetchObjectDetail } from '@/utils/api';
+import { isObjectRef } from '@/utils/fieldFormats';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import StatusBadge from '@/components/StatusBadge';
 import CopyPathButton from '@/components/CopyPathButton';
@@ -20,6 +21,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
 
 /** 从引用 ID 解析对象类型（如 task-0001 → task） */
 function parseRefType(refId: string): string | null {
+  if (!isObjectRef(refId)) return null;
   const m = refId.match(/^([a-z]+)-\d+$/);
   return m ? m[1] : null;
 }
@@ -84,7 +86,7 @@ function ReferenceItem({ refId }: { refId: string }) {
 
   return (
     <div
-      role="button"
+      role={refType ? 'button' : undefined}
       tabIndex={refType ? 0 : -1}
       onClick={handleClick}
       onKeyDown={(event) => {
@@ -94,7 +96,7 @@ function ReferenceItem({ refId }: { refId: string }) {
           handleClick();
         }
       }}
-      className={`ldvh-body flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors hover:bg-ldvh-border/30 ${refType ? 'cursor-pointer' : 'cursor-default'}`}
+      className={`ldvh-body flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors ${refType ? 'cursor-pointer hover:bg-ldvh-border/30' : 'cursor-default'}`}
     >
       <Link2 size={13} className="shrink-0" style={{ color: typeColor }} />
       <span className="ldvh-meta shrink-0 text-ldvh-accent">{refId}</span>

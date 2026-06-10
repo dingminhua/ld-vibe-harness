@@ -23,6 +23,7 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   open: { zh: '未关闭', en: 'Open' },
   degraded: { zh: '降级', en: 'Degraded' },
   needs_human_gate: { zh: '需确认', en: 'Needs Gate' },
+  unknown: { zh: '未知', en: 'Unknown' },
   // ADR
   pending_review: { zh: '待评审', en: 'Pending Review' },
   implemented: { zh: '已实施', en: 'Implemented' },
