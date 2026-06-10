@@ -1,16 +1,19 @@
 id: task-0068
 type: task
 title: 实现最小 landing repair 候选修复入口
-status: planned
+status: closed
 created: '2026-06-11T00:38:21.949105'
-updated: '2026-06-11T00:48:45.907689'
+updated: '2026-06-11T00:00:00'
 description: 实现最小 landing repair 候选修复入口，将可机械修复的问题转成候选修复或授权后执行，并默认进入 review_needed。
 source: intent-0012；docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md；用户确认创建任务批次。
-acceptance: '- [ ] repair 区分候选建议和授权执行；- [ ] repair 不自动 closed；- [ ] repair 输出 review_needed
-  材料；- [ ] repair 禁止修改 ADR accepted、Task closed 或正式规范核心决策等高风险对象；- [ ] 测试覆盖候选模式、授权模式、禁止项和失败验证。'
+acceptance: '- [x] repair 区分候选建议和授权执行；- [x] repair 不自动 closed；- [x] repair 输出 review_needed
+  材料；- [x] repair 禁止修改 ADR accepted、Task closed 或正式规范核心决策等高风险对象；- [x] 测试覆盖候选模式、授权模式、禁止项和失败验证。'
 blocked_by:
 - task-0066
-deliverables: []
+deliverables:
+- tools/specs_validate.py
+- tests/test_specs_validate.py
+- .trae/specs/minimal-landing-repair-entry/tasks.md
 source_intent: intent-0012
 related_adrs:
 - adr-0007
@@ -23,8 +26,23 @@ verification: |
 
   ## 验证结果
 
-  待执行。
+  - `python3 -m pytest tests/test_specs_validate.py -k landing_repair` 先失败于 `landing_repair_build` 缺失，完成实现后结果 5 passed。
+  - `python3 -m pytest` 结果 197 passed。
+  - `python3 tools/fact_validate.py ldvh-base` 结果 files=104 errors=0 warnings=0。
+  - `python3 tools/specs_validate.py all docs/specs --specs-dir docs/specs` 因既有平台入口 Markdown 路径 warning 返回 1，未发现本次 landing-repair 相关错误。
 
   ## 结论
 
-  待执行。
+  最小 landing-repair 入口已实现候选模式、授权执行、高风险对象阻断、验证命令守卫和 review_needed 输出，并通过核心自动化验证；残留 spec warning 属于既有平台入口路径引用问题。
+closed_at: '2026-06-11T00:00:00'
+closure_evidence: |
+  ## 验证结果
+
+  - `python3 -m pytest tests/test_specs_validate.py -k landing_repair` 结果 5 passed。
+  - `python3 -m pytest` 结果 197 passed。
+  - `python3 tools/fact_validate.py ldvh-base` 结果 files=104 errors=0 warnings=0。
+  - `python3 tools/specs_validate.py all docs/specs --specs-dir docs/specs` 因既有平台入口 Markdown 路径 warning 返回 1，未发现本次 landing-repair 相关错误。
+
+  ## 结论
+
+  task-0068 已完成；最小 landing-repair 入口已覆盖候选修复、授权执行、高风险对象阻断、失败验证和 review_needed 后续材料。

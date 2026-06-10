@@ -1763,3 +1763,104 @@ def test_web_validate_cli_outputs_json_without_failing_on_open_status(tmp_path, 
     assert exit_code == 0
     assert payload["command"] == "web_validate"
     assert payload["reports"]["landingCheck"]["summary"]["status"] == "open"
+
+
+# ══════════════════════════════════════════════════════════════════════
+# landing-repair — 候选修复与授权执行入口
+# ══════════════════════════════════════════════════════════════════════
+
+def landing_repair_plan(authorized=False, write_targets=None, verify_commands=None):
+    plan = {
+        "metadata": {"contract_version": "landing-plan/v1"},
+        "write_targets": write_targets or [".trae/rules/project_rules.md"],
+        "test_design": {
+            "success_conditions": ["生成 review_needed 候选修复"],
+            "failure_conditions": ["禁止高风险对象写入"],
+            "positive_examples": [{"id": "candidate"}],
+            "negative_examples": [{"id": "accepted_adr"}],
+        },
+        "verify_commands": verify_commands if verify_commands is not None else ["python3 -m pytest tests/test_specs_validate.py -k landing_repair"],
+        "review_targets": ["review_needed"],
+        "writeback_targets": ["ldvh-base/tasks"],
+    }
+    if authorized:
+        plan["human_gate"] = {"authorized": True, "records": [{"decision": "approved"}]}
+    return plan
+
+
+def test_landing_repair_candidate_mode_suggests_without_writing(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    target = tmp_path / ".trae" / "rules" / "project_rules.md"
+    target.parent.mkdir(parents=True)
+    target.write_text("old\n", encoding="utf-8")
+
+    result = checker.landing_repair_build(
+        landing_repair_plan(),
+        {"repairs": {".trae/rules/project_rules.md": "new\n"}},
+        execute=False,
+    )
+
+    assert result["summary"]["status"] == "candidate"
+    assert result["summary"]["repair_count"] == 1
+    assert result["repairs"][0]["applied"] is False
+    assert result["next_steps"]["task_status"] == "review_needed"
+    assert target.read_text(encoding="utf-8") == "old\n"
+
+
+def test_landing_repair_execute_mode_requires_human_gate(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+
+    result = checker.landing_repair_build(
+        landing_repair_plan(),
+        {"repairs": {".trae/rules/project_rules.md": "new\n"}},
+        execute=True,
+    )
+
+    assert result["summary"]["status"] == "blocked"
+    assert "missing_human_gate" in result["summary"]["blocked_reasons"]
+    assert result["next_steps"]["task_status"] == "review_needed"
+
+
+def test_landing_repair_execute_mode_writes_authorized_repair(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    target = tmp_path / ".trae" / "rules" / "project_rules.md"
+    target.parent.mkdir(parents=True)
+    target.write_text("old\n", encoding="utf-8")
+
+    result = checker.landing_repair_build(
+        landing_repair_plan(authorized=True),
+        {"repairs": {".trae/rules/project_rules.md": "new\n"}},
+        execute=True,
+    )
+
+    assert result["summary"]["status"] == "applied"
+    assert result["repairs"][0]["applied"] is True
+    assert result["next_steps"]["task_status"] == "review_needed"
+    assert target.read_text(encoding="utf-8") == "new\n"
+
+
+def test_landing_repair_blocks_high_risk_objects(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+
+    result = checker.landing_repair_build(
+        landing_repair_plan(authorized=True, write_targets=["ldvh-base/adrs/adr-0001-risk.yaml"]),
+        {"repairs": {"ldvh-base/adrs/adr-0001-risk.yaml": "id: adr-0001\nstatus: accepted\n"}},
+        execute=True,
+    )
+
+    assert result["summary"]["status"] == "blocked"
+    assert "forbidden_high_risk_target" in result["summary"]["blocked_reasons"]
+    assert result["summary"]["repair_count"] == 0
+
+
+def test_landing_repair_blocks_missing_verify_commands(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+
+    result = checker.landing_repair_build(
+        landing_repair_plan(verify_commands=[]),
+        {"repairs": {".trae/rules/project_rules.md": "new\n"}},
+        execute=False,
+    )
+
+    assert result["summary"]["status"] == "blocked"
+    assert "missing_verify_commands" in result["summary"]["blocked_reasons"]
