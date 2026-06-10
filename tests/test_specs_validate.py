@@ -822,11 +822,26 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(checker, "DOCS_DIR", tmp_path / "docs")
     monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
+    monkeypatch.setattr(checker, "RUNTIME_PROJECTION_DEFAULT_PATHS", ["LDVH-AI-ENTRY.md"])
 
+    write_md(
+        tmp_path / "LDVH-AI-ENTRY.md",
+        """
+# Runtime Projection
+
+规范来源：`docs/specs/00-Test.md`
+""",
+    )
     write_md(
         docs_specs / "00-Test.md",
         """
 # Landing Report Test
+
+## 章节索引
+
+| 章节 | 主题 |
+|---|---|
+| 1 | 规范落地要求 |
 
 ## 1. 规范落地要求
 
@@ -863,6 +878,9 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert report["metadata"]["checked_file_count"] == 1
     assert report["metadata"]["source_count"] == 1
     assert report["metadata"]["requirement_count"] == 5
+    assert report["metadata"]["runtime_projection_checked_file_count"] == 1
+    assert report["metadata"]["runtime_projection_issue_count"] == 0
+    assert report["summary"]["runtime_projection_status"] == "closed"
     assert report["summary"]["by_status"] == {
         "closed": 1,
         "degraded": 1,
@@ -870,8 +888,7 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
         "open": 1,
     }
     assert report["summary"]["by_capability_status"] == {
-        "degraded": 3,
-        "open": 1,
+        "degraded": 4,
     }
     assert report["summary"]["by_owner_area"]["code"] == 1
     assert [item["id"] for item in report["capability_gaps"]] == [
@@ -898,6 +915,7 @@ def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert exit_code == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["metadata"]["report"] == "landing-report"
+    assert payload["metadata"]["runtime_projection_checked_file_count"] == 1
     assert payload["summary"]["by_status"]["open"] == 1
     assert payload["summary"]["by_status"]["needs_human_gate"] == 2
     assert payload["requirements"][0]["source"] == "docs/specs/00-Test.md"
@@ -915,8 +933,101 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "需关注项:" in output
     assert "能力缺口:" in output
     assert "后续 Code 应能生成 landing report" in output
+    assert "运行投影检查文件数: 1" in output
     assert "运行投影漂移检查" in output
+    assert "runtime-projection checked 1 project-local files" in output
     assert "suggested_writeback: code_request_or_test" in output
+
+
+def test_runtime_projection_reports_missing_authority_and_spec_ref(tmp_path, monkeypatch):
+    docs_specs = tmp_path / "docs" / "specs"
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
+    projection = write_md(
+        tmp_path / "LDVH-AI-ENTRY.md",
+        """
+# Runtime Projection
+
+无权威来源引用
+""",
+    )
+    missing_ref_projection = write_md(
+        tmp_path / "runtime-missing-ref.md",
+        """
+# Runtime Projection
+
+规范来源：`docs/specs/99-Missing.md`
+""",
+    )
+
+    report = checker.runtime_projection_report_build([str(projection), str(missing_ref_projection)])
+
+    assert report["summary"]["status"] == "open"
+    assert report["metadata"]["checked_file_count"] == 2
+    assert {item["code"] for item in report["issues"]} == {
+        "RUNTIME_PROJECTION_AUTHORITY_MISSING",
+        "RUNTIME_PROJECTION_SPEC_REF_MISSING",
+    }
+
+
+def test_runtime_projection_reports_copied_formal_body(tmp_path, monkeypatch):
+    docs_specs = tmp_path / "docs" / "specs"
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
+    write_md(
+        docs_specs / "04.02-Test.md",
+        """
+# Runtime Source
+
+这是一段足够长的正式规范正文，用于触发运行投影复制正文风险检查第一行。
+这是一段足够长的正式规范正文，用于触发运行投影复制正文风险检查第二行。
+这是一段足够长的正式规范正文，用于触发运行投影复制正文风险检查第三行。
+""",
+    )
+    projection = write_md(
+        tmp_path / "LDVH-AI-ENTRY.md",
+        """
+# Runtime Projection
+
+规范来源：`docs/specs/04.02-Test.md`
+
+这是一段足够长的正式规范正文，用于触发运行投影复制正文风险检查第一行。
+这是一段足够长的正式规范正文，用于触发运行投影复制正文风险检查第二行。
+这是一段足够长的正式规范正文，用于触发运行投影复制正文风险检查第三行。
+""",
+    )
+
+    report = checker.runtime_projection_report_build([str(projection)])
+
+    assert report["summary"]["status"] == "degraded"
+    assert report["issues"][0]["code"] == "RUNTIME_PROJECTION_BODY_COPIED"
+
+
+def test_runtime_projection_cli_outputs_json(tmp_path, monkeypatch, capsys):
+    docs_specs = tmp_path / "docs" / "specs"
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
+    write_md(
+        docs_specs / "04.02-Test.md",
+        """
+# Runtime Source
+""",
+    )
+    projection = write_md(
+        tmp_path / "LDVH-AI-ENTRY.md",
+        """
+# Runtime Projection
+
+规范来源：`docs/specs/04.02-Test.md`
+""",
+    )
+
+    exit_code = checker.main(["runtime-projection", str(projection), "--format", "json"])
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["metadata"]["report"] == "runtime-projection"
+    assert payload["summary"]["status"] == "closed"
 
 
 # ══════════════════════════════════════════════════════════════════════

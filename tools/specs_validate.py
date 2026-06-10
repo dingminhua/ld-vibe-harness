@@ -55,6 +55,190 @@ def iter_markdown_files(paths):
     return sorted(set(files))
 
 
+RUNTIME_PROJECTION_DEFAULT_PATHS = [
+    "LDVH-AI-ENTRY.md",
+    ".trae/rules",
+    ".trae/skills",
+]
+RUNTIME_PROJECTION_SPEC_REF_RE = re.compile(r"docs/specs/[^`\s，。；、)）]+\.md")
+RUNTIME_PROJECTION_AUTHORITY_TERMS = ["docs/specs/", "规范来源", "权威来源", "上位依据", "相关规范"]
+RUNTIME_PROJECTION_DEGRADATION_TERMS = ["降级", "人工降级", "degradation"]
+RUNTIME_PROJECTION_AUTHORITY_RE = re.compile(r"(docs/specs/|规范来源|权威来源|上位依据|相关规范|降级|人工降级|degradation)")
+RUNTIME_PROJECTION_NEGATIVE_AUTHORITY_RE = re.compile(r"(无|没有|缺少|未).{0,8}(权威来源|规范来源|上位依据|相关规范|docs/specs/|降级)")
+
+
+def runtime_projection_default_paths():
+    paths = []
+    for raw_path in RUNTIME_PROJECTION_DEFAULT_PATHS:
+        path = PROJECT_ROOT / raw_path
+        if path.exists():
+            paths.append(str(path))
+    return paths
+
+
+def runtime_projection_is_project_local(path):
+    try:
+        Path(path).resolve().relative_to(PROJECT_ROOT.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def runtime_projection_iter_files(paths):
+    files = []
+    for raw_path in paths:
+        path = Path(raw_path)
+        if not path.exists():
+            continue
+        if not runtime_projection_is_project_local(path):
+            continue
+        if path.is_file() and path.suffix in {".md", ".yaml", ".yml", ".json", ".toml"}:
+            files.append(path)
+        elif path.is_dir():
+            for child in path.rglob("*"):
+                if child.is_file() and child.suffix in {".md", ".yaml", ".yml", ".json", ".toml"}:
+                    files.append(child)
+    return sorted(set(files))
+
+
+def runtime_projection_has_authority(text):
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if RUNTIME_PROJECTION_NEGATIVE_AUTHORITY_RE.search(stripped):
+            continue
+        if RUNTIME_PROJECTION_AUTHORITY_RE.search(stripped):
+            return True
+    return False
+
+
+def runtime_projection_spec_refs(text):
+    return sorted(set(RUNTIME_PROJECTION_SPEC_REF_RE.findall(text)))
+
+
+def runtime_projection_spec_path_exists(ref):
+    return (PROJECT_ROOT / ref).exists()
+
+
+def runtime_projection_formal_spec_lines():
+    lines = {}
+    if not DOCS_SPECS_DIR.exists():
+        return lines
+    for spec_path in sorted(DOCS_SPECS_DIR.glob("*.md")):
+        for line in spec_path.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if len(stripped) < 32:
+                continue
+            if stripped.startswith("|") or stripped.startswith(">") or stripped.startswith("#"):
+                continue
+            lines.setdefault(stripped, landing_relative_path(spec_path))
+    return lines
+
+
+def runtime_projection_detect_copied_formal_lines(text, formal_lines):
+    matches = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        source = formal_lines.get(stripped)
+        if source:
+            matches.append({"source": source, "text": stripped})
+    return matches[:5]
+
+
+def runtime_projection_check_file(path, formal_lines=None):
+    formal_lines = formal_lines if formal_lines is not None else runtime_projection_formal_spec_lines()
+    text = path.read_text(encoding="utf-8")
+    issues = []
+    if not runtime_projection_has_authority(text):
+        issues.append(Issue(path, 1, "运行投影缺少 docs/specs 权威来源引用或明确降级来源", code="RUNTIME_PROJECTION_AUTHORITY_MISSING"))
+    for ref in runtime_projection_spec_refs(text):
+        if not runtime_projection_spec_path_exists(ref):
+            issues.append(Issue(path, 1, f"运行投影引用的正式规范不存在: {ref}", code="RUNTIME_PROJECTION_SPEC_REF_MISSING"))
+    copied = runtime_projection_detect_copied_formal_lines(text, formal_lines)
+    if len(copied) >= 3:
+        sources = ", ".join(sorted({item["source"] for item in copied}))
+        issues.append(Issue(path, 1, f"运行投影疑似复制正式规范正文，可能产生漂移: {sources}", code="RUNTIME_PROJECTION_BODY_COPIED"))
+    return issues
+
+
+def runtime_projection_issue_status(issue):
+    if issue.code == "RUNTIME_PROJECTION_BODY_COPIED":
+        return "degraded"
+    return "open"
+
+
+def runtime_projection_report_build(paths=None):
+    check_paths = paths if paths is not None else runtime_projection_default_paths()
+    files = runtime_projection_iter_files(check_paths)
+    formal_lines = runtime_projection_formal_spec_lines()
+    issues = []
+    for file_path in files:
+        issues.extend(runtime_projection_check_file(file_path, formal_lines))
+    issue_items = []
+    for issue in issues:
+        issue_items.append(
+            {
+                "source": landing_relative_path(issue.path),
+                "line": issue.line,
+                "code": issue.code,
+                "status": runtime_projection_issue_status(issue),
+                "message": issue.message,
+            }
+        )
+    status = "closed"
+    if any(item["status"] == "open" for item in issue_items):
+        status = "open"
+    elif any(item["status"] == "degraded" for item in issue_items):
+        status = "degraded"
+    elif not files:
+        status = "open"
+    return {
+        "metadata": {
+            "tool": "tools/specs_validate.py",
+            "report": "runtime-projection",
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "source_of_truth": False,
+            "status_source": "derived heuristic",
+            "checked_file_count": len(files),
+            "issue_count": len(issue_items),
+            "scope": "project-local runtime projections only",
+        },
+        "summary": {
+            "status": status,
+            "by_status": landing_report_count_by(issue_items, "status"),
+            "by_code": landing_report_count_by(issue_items, "code"),
+        },
+        "issues": issue_items,
+    }
+
+
+def runtime_projection_format_text(report):
+    lines = ["运行投影漂移检查"]
+    metadata = report["metadata"]
+    lines.append(f"- 检查文件数: {metadata['checked_file_count']}")
+    lines.append(f"- 问题数: {metadata['issue_count']}")
+    lines.append(f"- 状态: {report['summary']['status']}")
+    lines.append("- 状态判断: Code 派生启发式，非事实源")
+    lines.append("")
+    lines.append("问题:")
+    if not report["issues"]:
+        lines.append("- 无")
+    else:
+        for item in report["issues"]:
+            lines.append(f"- {item['source']}:{item['line']} [{item['status']}/{item['code']}] {item['message']}")
+    return "\n".join(lines)
+
+
+def runtime_projection_main(paths=None, output_format="text"):
+    report = runtime_projection_report_build(paths if paths else None)
+    if output_format == "json":
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        print(runtime_projection_format_text(report))
+    return 0 if report["summary"]["status"] == "closed" else 1
+
+
 # ══════════════════════════════════════════════════════════════════════
 # doc — 文档编号/标题规范检查
 # ══════════════════════════════════════════════════════════════════════
@@ -636,7 +820,7 @@ def landing_report_terms_present(text, terms):
     return all(term in text for term in terms)
 
 
-def landing_report_build_capability_gaps(formal_files):
+def landing_report_build_capability_gaps(formal_files, runtime_projection_report=None):
     text = landing_report_document_text(formal_files)
     gaps = []
 
@@ -644,6 +828,21 @@ def landing_report_build_capability_gaps(formal_files):
         terms_present = landing_report_terms_present(text, check["required_terms"])
         status = check["status"] if terms_present else "open"
         reason = check["degraded_reason"] if terms_present else check["missing_reason"]
+        evidence = "matched formal spec terms" if terms_present else "required terms missing from formal specs"
+        if check["id"] == "runtime_projection_drift_check" and runtime_projection_report is not None:
+            runtime_status = runtime_projection_report["summary"]["status"]
+            runtime_issue_count = runtime_projection_report["metadata"]["issue_count"]
+            runtime_file_count = runtime_projection_report["metadata"]["checked_file_count"]
+            evidence = f"runtime-projection checked {runtime_file_count} project-local files, issues: {runtime_issue_count}, status: {runtime_status}"
+            if runtime_status == "open":
+                status = "open"
+                reason = "runtime-projection 检查发现 open 漂移问题，landing-report 已接入该诊断"
+            elif runtime_status == "degraded":
+                status = "degraded"
+                reason = "runtime-projection 检查发现 degraded 漂移风险，landing-report 已接入该诊断"
+            elif terms_present:
+                status = "degraded"
+                reason = "runtime-projection 检查当前未发现项目内问题，但仍是项目局部启发式，尚不能证明所有运行投影完整覆盖"
         gaps.append(
             {
                 "id": check["id"],
@@ -652,7 +851,7 @@ def landing_report_build_capability_gaps(formal_files):
                 "status_reason": reason,
                 "owner_area": check["owner_area"],
                 "suggested_writeback": check["suggested_writeback"],
-                "evidence": "matched formal spec terms" if terms_present else "required terms missing from formal specs",
+                "evidence": evidence,
             }
         )
 
@@ -666,7 +865,8 @@ def landing_report_build(paths=None):
     requirements = []
     for path in formal_files:
         requirements.extend(landing_extract_requirements_file(path))
-    capability_gaps = landing_report_build_capability_gaps(formal_files)
+    runtime_projection_report = runtime_projection_report_build()
+    capability_gaps = landing_report_build_capability_gaps(formal_files, runtime_projection_report)
 
     for requirement in requirements:
         status, reason = landing_report_infer_status(requirement)
@@ -687,16 +887,21 @@ def landing_report_build(paths=None):
             "checked_file_count": len(formal_files),
             "source_count": len(source_files),
             "requirement_count": len(requirements),
+            "runtime_projection_checked_file_count": runtime_projection_report["metadata"]["checked_file_count"],
+            "runtime_projection_issue_count": runtime_projection_report["metadata"]["issue_count"],
         },
         "summary": {
             "by_status": landing_report_count_by(requirements, "status"),
             "by_capability_status": landing_report_count_by(capability_gaps, "status"),
+            "runtime_projection_status": runtime_projection_report["summary"]["status"],
+            "runtime_projection_by_status": runtime_projection_report["summary"]["by_status"],
             "by_type": landing_report_count_by(requirements, "requirement_type"),
             "by_sync_type": landing_report_count_by(requirements, "sync_type"),
             "by_owner_area": landing_report_count_by(requirements, "owner_area"),
         },
         "requirements": requirements,
         "capability_gaps": capability_gaps,
+        "runtime_projection": runtime_projection_report,
     }
 
 
@@ -713,6 +918,8 @@ def landing_report_format_text(report):
     lines.append(f"- 检查文件数: {metadata['checked_file_count']}")
     lines.append(f"- 来源文件数: {metadata['source_count']}")
     lines.append(f"- 要求数: {metadata['requirement_count']}")
+    lines.append(f"- 运行投影检查文件数: {metadata['runtime_projection_checked_file_count']}")
+    lines.append(f"- 运行投影问题数: {metadata['runtime_projection_issue_count']}")
     lines.append("- 状态判断: Code 派生启发式，非事实源")
 
     for title, key in [
@@ -720,6 +927,7 @@ def landing_report_format_text(report):
         ("按落地要求类型", "by_type"),
         ("按同步类型", "by_sync_type"),
         ("按承接区域", "by_owner_area"),
+        ("运行投影问题状态", "runtime_projection_by_status"),
     ]:
         lines.append("")
         lines.append(f"{title}:")
@@ -753,7 +961,7 @@ def landing_report_format_text(report):
         for item in capability_gaps:
             lines.append(
                 f"- [{item['status']}/{item['owner_area']}] {item['capability']} -> "
-                f"{item['status_reason']}; suggested_writeback: {item['suggested_writeback']}"
+                f"{item['status_reason']}; evidence: {item['evidence']}; suggested_writeback: {item['suggested_writeback']}"
             )
 
     return "\n".join(lines)
@@ -1616,6 +1824,11 @@ def build_parser():
     landing_report_parser.add_argument("paths", nargs="*", default=None, help="要聚合的 Markdown 文件或目录，默认检查 docs/specs/ 根目录正式规范。")
     landing_report_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
+    # runtime-projection
+    runtime_projection_parser = subparsers.add_parser("runtime-projection", help="检查项目内运行投影是否存在漂移风险。")
+    runtime_projection_parser.add_argument("paths", nargs="*", default=None, help="要检查的运行投影文件或目录，默认检查项目内授权运行投影。")
+    runtime_projection_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+
     # human-gate
     human_gate_parser = subparsers.add_parser("human-gate", help="检查 Markdown 中的 Human Gate 记录是否符合 06 最小证据结构。")
     human_gate_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/ 和 ldvh-base/。")
@@ -1659,6 +1872,9 @@ def main(argv=None):
     if command == "landing-report":
         return landing_report_main(args.paths, args.format)
 
+    if command == "runtime-projection":
+        return runtime_projection_main(args.paths, args.format)
+
     if command == "human-gate":
         return human_gate_main(args.paths)
 
@@ -1689,6 +1905,9 @@ def main(argv=None):
         # human-gate
         human_gate_paths = args.paths if args.paths else human_gate_default_check_paths()
         if human_gate_main(human_gate_paths) != 0:
+            exit_code = 1
+        # runtime-projection
+        if runtime_projection_main(None) != 0:
             exit_code = 1
         # governed-projects
         if governed_projects_main(args.root) != 0:
