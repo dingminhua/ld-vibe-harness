@@ -1028,6 +1028,42 @@ def test_landing_plan_text_output(tmp_path, monkeypatch):
     assert "回写目标" in text
 
 
+def test_runtime_projection_remediation_classification(tmp_path, monkeypatch):
+    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+    plan = checker.landing_plan_build(str(tmp_path))
+    rp_action = None
+    for action in plan["proposed_actions"]:
+        if action["owner_area"] == "runtime_projection":
+            rp_action = action
+            break
+    assert rp_action is not None
+    assert "remediation" in rp_action
+    remediation = rp_action["remediation"]
+    assert "doc_crossref_check" in remediation
+    assert remediation["doc_crossref_check"]["total"] >= 1
+    assert remediation["doc_crossref_check"]["label"] == "文档交叉引用检查"
+    total_remediation = sum(r["total"] for r in remediation.values())
+    assert total_remediation == rp_action["gap_count"]
+
+
+def test_classify_runtime_projection_remediation():
+    assert checker._classify_runtime_projection_remediation(
+        {"content": "正式规范变化后应检查本文是否需要同步", "title": "", "id": ""}
+    ) == "doc_crossref_check"
+    assert checker._classify_runtime_projection_remediation(
+        {"content": "入口变化后应检查配置同步", "title": "", "id": ""}
+    ) == "entry_sync_check"
+    assert checker._classify_runtime_projection_remediation(
+        {"content": "", "title": "", "id": "runtime_projection_drift_check"}
+    ) == "drift_diagnostic"
+    assert checker._classify_runtime_projection_remediation(
+        {"content": "平台适配清单变化后应检查", "title": "", "id": ""}
+    ) == "platform_mapping_check"
+    assert checker._classify_runtime_projection_remediation(
+        {"content": "第三方 Skill 接管后应检查同步", "title": "", "id": ""}
+    ) == "skill_projection_check"
+
+
 def test_runtime_projection_reports_missing_authority_and_spec_ref(tmp_path, monkeypatch):
     docs_specs = tmp_path / "docs" / "specs"
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)

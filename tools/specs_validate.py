@@ -620,6 +620,30 @@ LANDING_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS = {
     "projection_coverage_diagnostic": "投影覆盖诊断降级",
     "third_party_skill_projection": "第三方 Skill 投影",
 }
+
+RUNTIME_PROJECTION_REMEDIATION_LABELS = {
+    "doc_crossref_check": "文档交叉引用检查",
+    "entry_sync_check": "入口/配置同步检查",
+    "platform_mapping_check": "平台能力映射检查",
+    "drift_diagnostic": "漂移诊断",
+    "skill_projection_check": "Skill 投影检查",
+}
+
+RUNTIME_PROJECTION_REMEDIATION_TERMS = {
+    "drift_diagnostic": [
+        "漂移", "drift",
+    ],
+    "skill_projection_check": [
+        "第三方 Skill", "包装 Skill", "third_party_skill",
+    ],
+    "platform_mapping_check": [
+        "平台清单", "适配清单", "平台适配", "platform_capability",
+    ],
+    "entry_sync_check": [
+        "入口", "Hook", "配置", "Rules", "Agent", "Command",
+        "MCP", "AGENTS.md", "config.toml", "sandbox", "approval",
+    ],
+}
 LANDING_REPORT_HUMAN_GATE_DECISION_TERMS = [
     "接受长期降级",
     "关闭",
@@ -998,6 +1022,18 @@ def landing_report_runtime_projection_subcategory(item):
     if any(term in text for term in LANDING_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS):
         return "platform_capability_sync"
     return "lifecycle_trigger_sync"
+
+
+def _classify_runtime_projection_remediation(item):
+    text = " ".join([
+        str(item.get("content", "")),
+        str(item.get("title", "")),
+        str(item.get("id", "")),
+    ])
+    for remediation_type, terms in RUNTIME_PROJECTION_REMEDIATION_TERMS.items():
+        if any(term in text for term in terms):
+            return remediation_type
+    return "doc_crossref_check"
 
 
 def landing_report_build_gap_categories(requirements, capability_gaps):
@@ -2242,6 +2278,25 @@ def landing_plan_build(workspace_root=None):
                 k: {"label": v["label"], "total": v["total"]}
                 for k, v in category["subcategories"].items()
             }
+            # remediation aggregation for runtime projection gaps
+            rp_items = [
+                r for r in landing_report.get("requirements", [])
+                if r.get("owner_area") == "runtime_projection" and landing_report_is_gap(r)
+            ] + [
+                c for c in landing_report.get("capability_gaps", [])
+                if c.get("owner_area") == "runtime_projection" and landing_report_is_gap(c)
+            ]
+            remediation_counts = {}
+            for item in rp_items:
+                rtype = _classify_runtime_projection_remediation(item)
+                remediation_counts[rtype] = remediation_counts.get(rtype, 0) + 1
+            action["remediation"] = {
+                rtype: {
+                    "label": RUNTIME_PROJECTION_REMEDIATION_LABELS.get(rtype, rtype),
+                    "total": count,
+                }
+                for rtype, count in sorted(remediation_counts.items(), key=lambda x: -x[1])
+            }
         proposed_actions.append(action)
 
     writes_required = {
@@ -2349,6 +2404,9 @@ def landing_plan_format_text(plan):
         if "subcategories" in action:
             for sk, sv in action["subcategories"].items():
                 lines.append(f"  - {sv['label']} ({sk}): {sv['total']}")
+        if "remediation" in action:
+            for rk, rv in action["remediation"].items():
+                lines.append(f"  - {rv['label']} ({rk}): {rv['total']}")
     lines.append("")
 
     lines.append("## 写入需求")
