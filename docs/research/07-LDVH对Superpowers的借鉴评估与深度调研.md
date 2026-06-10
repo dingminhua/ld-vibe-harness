@@ -413,5 +413,5 @@ LDVH 可借鉴此模式：当同一 Task 反复修复失败时，不是继续尝
 
 ### 9.2 内部参考
 
-- `docs/research/18-LDVH推进评估与候选事项总览.md`
+- `docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md`
 - `docs/research/02-LDVH对Gstack的借鉴评估与深度调研.md`

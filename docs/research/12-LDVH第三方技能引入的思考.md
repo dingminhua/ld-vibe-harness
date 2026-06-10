@@ -5,7 +5,7 @@
 > 调研边界：不直接构成强制规则
 > 执行效力：无，结论需进入正式 specs、ADR 或 Task 后才成为稳定执行依据
 > 上位依据：`specs/05-Trae-Solo环境规范.md` §7、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`、`specs/14-Code实现与工具规范.md`、`specs/15-Web信息同步规范.md`（已删除 12.02）
-> 相关参考：`docs/research/18-LDVH推进评估与候选事项总览.md`
+> 相关参考：`docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md`
 > 来源：第三方 AI 技能生态调研
 
 ---

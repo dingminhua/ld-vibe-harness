@@ -1003,16 +1003,38 @@ def test_landing_plan_build(tmp_path, monkeypatch):
     plan = checker.landing_plan_build(str(tmp_path))
     assert plan["metadata"]["report"] == "landing-plan"
     assert plan["metadata"]["read_only"] is True
+    assert plan["metadata"]["contract_version"] == "landing-plan/v1"
     assert plan["scope"]["landing_report_requirements"] >= 1
     assert plan["requirements"]["gap_total"] >= 1
     assert "gaps" in plan
+    assert "facts_read" in plan
     assert "proposed_actions" in plan
     assert "writes_required" in plan
     assert "human_gate" in plan
+    assert "test_design" in plan
     assert "validation_plan" in plan
+    assert "review_targets" in plan
     assert "writeback_targets" in plan
     assert "capabilities" in plan
     assert len(plan["capabilities"]) >= 1
+    assert plan["contract"]["required_fields"] == [
+        "facts_read",
+        "proposed_actions",
+        "test_design",
+        "human_gate",
+        "write_targets",
+        "verify_commands",
+        "review_targets",
+        "writeback_targets",
+    ]
+    assert plan["test_design"]["required"] is True
+    assert plan["test_design"]["success_conditions"]
+    assert plan["test_design"]["failure_conditions"]
+    assert plan["test_design"]["positive_examples"]
+    assert plan["test_design"]["negative_examples"]
+    assert any(item["path"] == "docs/specs/41-landing-orchestration-规范落地统筹.md" for item in plan["facts_read"])
+    assert "python3 tools/specs_validate.py landing-report --format json" in plan["validation_plan"]["verify_commands"]
+    assert "review_needed" in plan["review_targets"]
 
 
 def test_landing_plan_text_output(tmp_path, monkeypatch):

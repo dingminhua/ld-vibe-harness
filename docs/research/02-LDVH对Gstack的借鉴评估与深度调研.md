@@ -1078,7 +1078,7 @@ LD Vibe Harness：让项目事实源和 AI 协作治理更像一个可操作的�
 
 ### 16.3 内部参考
 
-- `docs/research/18-LDVH推进评估与候选事项总览.md`
+- `docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md`
 
 ---
 

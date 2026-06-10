@@ -2238,6 +2238,11 @@ def landing_plan_build(workspace_root=None):
     landing_report = landing_report_build()
     ldvh_check = ldvh_landing_check_build(workspace_root)
     gap_categories = landing_report.get("gap_categories", {})
+    verify_commands = [
+        "python3 tools/specs_validate.py landing-report --format json",
+        "python3 tools/specs_validate.py ldvh-landing-check",
+        "python3 tools/fact_validate.py ldvh-base",
+    ]
 
     facts_read = []
     for req in landing_report.get("requirements", []):
@@ -2248,6 +2253,12 @@ def landing_plan_build(workspace_root=None):
         src = cap.get("source", "capability_gaps")
         if src and src not in [f["path"] for f in facts_read]:
             facts_read.append({"path": src, "type": "capability"})
+    for path in [
+        "docs/specs/41-landing-orchestration-规范落地统筹.md",
+        "docs/specs/42-ldvh-landing-check-LDVH落地与检查.md",
+    ]:
+        if path not in [f["path"] for f in facts_read]:
+            facts_read.append({"path": path, "type": "contract"})
 
     capabilities = []
     for check in ldvh_check.get("checks", []):
@@ -2312,6 +2323,7 @@ def landing_plan_build(workspace_root=None):
             if wb not in ("manual_review", "none")
         )),
     }
+    write_targets = writes_required["targets"]
 
     human_gate = {
         "total_gaps": gap_categories.get("human_gate", {}).get("total", 0),
@@ -2336,6 +2348,7 @@ def landing_plan_build(workspace_root=None):
         "fact_validate_status": ldvh_check.get("checks", [{}])[4].get("status", "unknown") if len(ldvh_check.get("checks", [])) > 4 else "unknown",
         "runtime_projection_status": ldvh_check.get("checks", [{}])[2].get("status", "unknown") if len(ldvh_check.get("checks", [])) > 2 else "unknown",
         "human_gate_status": ldvh_check.get("checks", [{}])[3].get("status", "unknown") if len(ldvh_check.get("checks", [])) > 3 else "unknown",
+        "verify_commands": verify_commands,
     }
 
     writeback_targets = sorted(set(
@@ -2353,6 +2366,21 @@ def landing_plan_build(workspace_root=None):
             "source_of_truth": False,
             "status_source": "derived heuristic",
             "read_only": True,
+            "contract_version": "landing-plan/v1",
+        },
+        "contract": {
+            "required_fields": [
+                "facts_read",
+                "proposed_actions",
+                "test_design",
+                "human_gate",
+                "write_targets",
+                "verify_commands",
+                "review_targets",
+                "writeback_targets",
+            ],
+            "source_of_truth": False,
+            "write_policy": "read_only_plan_before_human_gate",
         },
         "scope": {
             "project_root": str(PROJECT_ROOT),
@@ -2374,8 +2402,38 @@ def landing_plan_build(workspace_root=None):
         },
         "proposed_actions": proposed_actions,
         "writes_required": writes_required,
+        "write_targets": write_targets,
         "human_gate": human_gate,
+        "test_design": {
+            "required": True,
+            "success_conditions": [
+                "landing plan 包含事实源、建议行动、Human Gate、写入目标、验证命令、审核目标和回写目标",
+                "授权前不会执行 apply 或 repair 写入",
+                "每个后续 apply / repair 任务能从 plan 中读取测试设计和验证命令",
+            ],
+            "failure_conditions": [
+                "缺少 Human Gate 或写入边界时仍允许自动写入",
+                "缺少正反样例、验证命令或 review_needed 目标时进入 apply / repair",
+                "Web、CLI 或缓存输出被解释为 Git 文件事实源",
+            ],
+            "positive_examples": [
+                {
+                    "id": "authorized_read_only_plan",
+                    "given": "landing-report 存在 open/degraded 缺口",
+                    "expected": "输出 write_targets、verify_commands、review_targets 和 writeback_targets，但不写入事实源",
+                }
+            ],
+            "negative_examples": [
+                {
+                    "id": "missing_human_gate_for_write",
+                    "given": "计划包含需要写入的目标但没有 Human Gate 授权",
+                    "expected": "只输出计划和阻断原因，不进入 apply / repair",
+                }
+            ],
+        },
         "validation_plan": validation_plan,
+        "verify_commands": verify_commands,
+        "review_targets": ["review_needed", "web_validate", "human_gate_record"],
         "writeback_targets": writeback_targets,
     }
 

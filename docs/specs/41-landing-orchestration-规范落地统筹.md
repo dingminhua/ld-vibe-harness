@@ -275,7 +275,12 @@ landing_orchestration_result:
 5. `requirements` 汇总规范落地要求总量、状态分布、未关闭缺口数量和 owner_area 分布；
 6. `gaps` 按 owner_area、子类、状态、建议回写位置和缺失能力组织缺口，不维护固定实体清单；
 7. `proposed_actions` 给出候选行动、owner_area、优先级、缺口数量、建议回写位置和必要的运行投影 remediation 分类；其中的运行投影类行动对应 `docs/specs/04.02-环境适配与运行投影规范.md` §3.3 定义的"候选运行投影"，仅属过程输出，不代表已落地；
-8. `writes_required`、`writeback_targets`、`human_gate` 和 `validation_plan` 分别说明是否需要事实源写入、候选回写目标、Human Gate 子类和后续验证计划。
+8. `test_design` 必须在授权和执行前说明测试先行要求，包括成功条件、失败条件、正例、反例和边界样例；无法先写自动化测试时，应说明等价验证方式和残留风险；
+9. `writes_required` 和 `write_targets` 分别说明是否需要事实源写入以及候选写入目标；写入目标只能作为授权前候选，不得自动执行；
+10. `human_gate` 说明 Human Gate 子类、触发原因和待确认事项；涉及写入、长期降级、关键缺口关闭或通过声明时，必须在执行前确认；
+11. `validation_plan` 和 `verify_commands` 分别说明验证状态、验证命令和复检方式；验证失败、不可复现或缺少命令时，不得进入 `closed`；
+12. `review_targets` 说明后续审核承接位置，至少应能表达 `review_needed`、Web / Human-facing 审核面或 Human Gate 记录；
+13. `writeback_targets` 说明稳定结论应回写到哪些权威事实源，不能回写时必须保持 open、degraded 或 needs_human_gate。
 
 当 Code 提供 `tools/specs_validate.py landing-plan` 或等价实现时，其输出必须符合上述合同。42 消费 landing-plan 时应以本文合同为准校验输入结构，格式不符时降级为人工检查并报告 41/42 联动缺口。
 
