@@ -576,13 +576,22 @@ LANDING_REPORT_OWNER_AREAS = {
     "Human 交互要求": "human_gate",
     "生命周期触发要求": "runtime_projection",
 }
+LANDING_REPORT_AREA_LABELS = {
+    "agent": "Agent",
+    "code": "Code / Test",
+    "human_gate": "Human Gate",
+    "runtime_projection": "运行投影",
+    "specs": "Specs",
+    "unknown": "未知",
+    "workflow": "Workflow / Skill",
+}
 LANDING_REPORT_WRITEBACK_AREAS = {
     "specs": "specs",
     "runtime_projection": "runtime_projection_or_env_record",
     "workflow": "workflow_or_skill_candidate",
     "agent": "agent_or_44",
     "code": "code_request_or_test",
-    "human_gate": "human_gate_or_task",
+    "human_gate": "human_gate_record",
 }
 LANDING_REPORT_DEGRADED_MARKERS = [
     "open-degraded",
@@ -653,7 +662,7 @@ LANDING_REPORT_CAPABILITY_CHECKS = [
         "required_terms": ["Human Gate", "证据"],
         "missing_reason": "landing-report 未发现 Human Gate 证据消费声明，无法支持降级、关闭或通过声明",
         "degraded_reason": "landing-report 能识别 Human Gate 证据消费要求，但尚未把 Human Gate 记录校验结果并入状态判断",
-        "suggested_writeback": "human_gate_or_task",
+        "suggested_writeback": "human_gate_record",
     },
 ]
 
@@ -810,6 +819,58 @@ def landing_report_count_by(requirements, key):
     return dict(sorted(counts.items(), key=lambda item: item[0]))
 
 
+def landing_report_is_gap(item):
+    return item.get("status") != "closed"
+
+
+def landing_report_build_gap_categories(requirements, capability_gaps):
+    categories = {}
+    for item in list(requirements) + list(capability_gaps):
+        if not landing_report_is_gap(item):
+            continue
+        owner_area = item.get("owner_area") or "unknown"
+        if owner_area not in categories:
+            categories[owner_area] = {
+                "owner_area": owner_area,
+                "label": LANDING_REPORT_AREA_LABELS.get(owner_area, owner_area),
+                "total": 0,
+                "by_status": {},
+                "by_suggested_writeback": {},
+                "requirement_count": 0,
+                "capability_gap_count": 0,
+                "examples": [],
+            }
+        category = categories[owner_area]
+        status = item.get("status") or "unknown"
+        suggested_writeback = item.get("suggested_writeback") or "manual_review"
+        category["total"] += 1
+        category["by_status"][status] = category["by_status"].get(status, 0) + 1
+        category["by_suggested_writeback"][suggested_writeback] = category["by_suggested_writeback"].get(suggested_writeback, 0) + 1
+        if "capability" in item:
+            category["capability_gap_count"] += 1
+            title = item.get("capability", "")
+            source = "capability_gaps"
+        else:
+            category["requirement_count"] += 1
+            title = item.get("content", "")
+            source = f"{item.get('source')}:{item.get('line')}"
+        if len(category["examples"]) < 3:
+            category["examples"].append(
+                {
+                    "source": source,
+                    "status": status,
+                    "title": landing_report_shorten(title, 120),
+                    "suggested_writeback": suggested_writeback,
+                }
+            )
+    for category in categories.values():
+        category["by_status"] = dict(sorted(category["by_status"].items(), key=lambda item: item[0]))
+        category["by_suggested_writeback"] = dict(
+            sorted(category["by_suggested_writeback"].items(), key=lambda item: item[0])
+        )
+    return dict(sorted(categories.items(), key=lambda item: item[0]))
+
+
 def landing_report_document_text(paths):
     parts = []
     for path in paths:
@@ -891,6 +952,7 @@ def landing_report_build(paths=None):
         requirement["suggested_writeback"] = LANDING_REPORT_WRITEBACK_AREAS.get(owner_area, "manual_review")
 
     source_files = sorted({requirement["source"] for requirement in requirements})
+    gap_categories = landing_report_build_gap_categories(requirements, capability_gaps)
     return {
         "metadata": {
             "tool": "tools/specs_validate.py",
@@ -910,6 +972,8 @@ def landing_report_build(paths=None):
         "summary": {
             "by_status": landing_report_count_by(requirements, "status"),
             "by_capability_status": landing_report_count_by(capability_gaps, "status"),
+            "gap_total": sum(category["total"] for category in gap_categories.values()),
+            "gap_by_owner_area": {area: category["total"] for area, category in gap_categories.items()},
             "runtime_projection_status": runtime_projection_report["summary"]["status"],
             "runtime_projection_by_status": runtime_projection_report["summary"]["by_status"],
             "human_gate_status": human_gate_report["summary"]["status"],
@@ -920,6 +984,7 @@ def landing_report_build(paths=None):
         },
         "requirements": requirements,
         "capability_gaps": capability_gaps,
+        "gap_categories": gap_categories,
         "runtime_projection": runtime_projection_report,
         "human_gate": human_gate_report,
     }
@@ -987,6 +1052,23 @@ def landing_report_format_text(report):
                 f"- [{item['status']}/{item['owner_area']}] {item['capability']} -> "
                 f"{item['status_reason']}; evidence: {item['evidence']}; suggested_writeback: {item['suggested_writeback']}"
             )
+
+    lines.append("")
+    lines.append("缺口分类:")
+    gap_categories = report.get("gap_categories", {})
+    if not gap_categories:
+        lines.append("- 无")
+    else:
+        for category in gap_categories.values():
+            lines.append(
+                f"- {category['label']} ({category['owner_area']}): "
+                f"total={category['total']}; requirements={category['requirement_count']}; "
+                f"capabilities={category['capability_gap_count']}; status={category['by_status']}"
+            )
+            for example in category.get("examples", []):
+                lines.append(
+                    f"  - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
+                )
 
     return "\n".join(lines)
 
@@ -1699,7 +1781,7 @@ def ldvh_landing_check_build(workspace_root=None):
             "status": human_gate_report["summary"]["status"],
             "issue_count": human_gate_report["metadata"]["issue_count"],
             "evidence": f"human-gate checked {human_gate_report['metadata']['checked_file_count']} project-local files and {human_gate_report['metadata']['record_count']} records",
-            "suggested_writeback": "human_gate_or_task",
+            "suggested_writeback": "human_gate_record",
             "issues": human_gate_report.get("issues", []),
         },
         {
