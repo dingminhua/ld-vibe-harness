@@ -3,9 +3,29 @@ type: task
 title: 沉淀 Trae 平台落地映射试点
 status: planned
 created: '2026-06-11T00:38:52.295454'
-updated: '2026-06-11T00:38:52.295454'
-description: ''
-source: ''
-acceptance: ''
-blocked_by: []
+updated: '2026-06-11T00:49:31.882857'
+description: 以当前 Trae 环境为试点，记录受控落地执行闭环各阶段由哪些平台能力承接，并形成平台映射样表。
+source: intent-0012；docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md；用户确认创建任务批次。
+acceptance: '- [ ] 映射 Entry、Plan、Test Design、Approve、Apply、Repair、Verify、Review、Writeback、Recheck、Degrade；-
+  [ ] 明确 Trae 当前可承接能力和人工降级方式；- [ ] 不创建大而全跨平台抽象；- [ ] 为后续 Codex 对照保留字段；- [ ] 映射结果回指
+  21 号文档和相关规范。'
+blocked_by:
+- task-0065
 deliverables: []
+source_intent: intent-0012
+related_adrs:
+- adr-0007
+related_docs:
+- docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md
+verification: |
+  ## 验证计划
+
+  检查映射表引用路径有效，运行 docs/specs 校验或等价文档检查。
+
+  ## 验证结果
+
+  待执行。
+
+  ## 结论
+
+  待执行。

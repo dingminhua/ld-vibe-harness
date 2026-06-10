@@ -3,9 +3,28 @@ type: task
 title: 清理 18 19 20 调研文档引用并迁移到 21
 status: planned
 created: '2026-06-11T00:38:52.406787'
-updated: '2026-06-11T00:38:52.406787'
-description: ''
-source: ''
-acceptance: ''
-blocked_by: []
+updated: '2026-06-11T00:49:32.016750'
+description: 在 21 号文档成为主要 research 参考后，清理或迁移 18、19、20 的引用，确认删除或归档不会造成事实源断链。
+source: intent-0012；docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md；用户确认创建任务批次。
+acceptance: '- [ ] 列出 18、19、20 被引用位置；- [ ] 确认 21 已吸收必要结论；- [ ] 决定删除、归档或保留 refs 的处理方式；-
+  [ ] 更新受影响引用；- [ ] 删除或迁移后运行文档引用检查。'
+blocked_by:
+- task-0065
 deliverables: []
+source_intent: intent-0012
+related_adrs:
+- adr-0007
+related_docs:
+- docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md
+verification: |
+  ## 验证计划
+
+  运行 grep/文档引用检查、specs_validate doc/refs；确认无断链或已记录豁免。
+
+  ## 验证结果
+
+  待执行。
+
+  ## 结论
+
+  待执行。

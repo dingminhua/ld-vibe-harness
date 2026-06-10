@@ -3,9 +3,29 @@ type: task
 title: 实现最小 landing apply 受控写入入口
 status: planned
 created: '2026-06-11T00:38:21.829407'
-updated: '2026-06-11T00:38:21.829407'
-description: ''
-source: ''
-acceptance: ''
-blocked_by: []
+updated: '2026-06-11T00:48:02.848544'
+description: 实现最小 landing apply 受控写入入口，只执行 plan 中明确授权的写入目标，并在写入前检查 Human Gate、测试设计和事实源边界。
+source: intent-0012；docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md；用户确认创建任务批次。
+acceptance: '- [ ] apply 默认拒绝无 plan、无授权或无测试设计的写入；- [ ] apply 只允许写入 plan 中列明目标；- [
+  ] apply 能输出执行摘要和待验证事项；- [ ] 失败时不静默通过且不自动关闭 Task；- [ ] 测试覆盖无授权、目标越界、成功写入或 dry-run
+  场景。'
+blocked_by:
+- task-0066
 deliverables: []
+source_intent: intent-0012
+related_adrs:
+- adr-0007
+related_docs:
+- docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md
+verification: |
+  ## 验证计划
+
+  先补失败/阻断测试，再实现最小 apply；运行 pytest、fact_validate 和相关 specs_validate 命令。
+
+  ## 验证结果
+
+  待执行。
+
+  ## 结论
+
+  待执行。
