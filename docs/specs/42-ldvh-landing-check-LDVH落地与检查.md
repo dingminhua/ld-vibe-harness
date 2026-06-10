@@ -254,7 +254,7 @@ Human 授权后，AI 只能执行授权范围内的落地动作。未授权事�
 2. 从 `capabilities`、`requirements`、`gaps`、`proposed_actions`、`writes_required`、`writeback_targets`、`human_gate` 和 `validation_plan` 中提取本次检查范围内的落地要求状态、缺口、候选行动、Human Gate 和验证计划；
 3. 将 `landing-plan` 中的 open / degraded / needs_human_gate / follow_up 项映射为 42 报告中的 todo / degraded / needs_human_gate / blocked / out-of-scope 状态，并保留来源字段或来源摘要；
 4. 当 `landing-plan` 标明 41 自身聚合能力、实例化判断、验证证据消费、运行投影漂移检查或 Human Gate 回写消费不足时，42 应报告为 41/42 联动缺口，不得把缺口吞并为 42 已处理；
-5. 当 `landing-plan` 缺失、字段不完整、来源不可追溯或覆盖范围不足时，42 可以降级为人工检查，但必须在报告中说明降级原因、未覆盖范围、残留风险和建议分流；
+5. 当 `landing-plan` 缺失、字段不完整、来源不可追溯或覆盖范围不足时，42 应显式标注"41 输出缺失/不足"，将 41 自身的落地统筹能力列为 blocked/todo 缺口项，并以人工降级检查继续；不得在 41 输出缺失时宣称落地需求聚合已覆盖；
 6. 42 不得因为 `landing-plan` 生成成功而宣称 LDVH落地与检查通过；通过结论仍必须由 42 结合当前现场检查、证据、授权范围、复检结果和 Human Gate 状态给出。
 
 42 自身产生的检查报告、检查结果聚合和缺口诊断均属于过程输出。它们的输出边界如下：
