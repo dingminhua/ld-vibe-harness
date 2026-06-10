@@ -54,7 +54,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
         reset();
       }, 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '创建失败');
+      setError(err instanceof Error ? err.message : t('memo.createFailed'));
     } finally {
       setSubmitting(false);
     }

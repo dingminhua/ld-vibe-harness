@@ -1,4 +1,6 @@
 import { CheckSquare, Square } from 'lucide-react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ChecklistCardProps {
   value: string;
@@ -27,8 +29,7 @@ export default function ChecklistCard({ value }: ChecklistCardProps) {
   const totalCount = items.length;
 
   if (items.length === 0) {
-    // Fallback: no checklist items found, render as plain text
-    return <span className="ldvh-body">{value}</span>;
+    return <MarkdownText value={value} />;
   }
 
   const ratio = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
@@ -65,11 +66,34 @@ export default function ChecklistCard({ value }: ChecklistCardProps) {
                   : 'text-ldvh-text-primary'
               }`}
             >
-              {item.text}
+              <InlineMarkdown value={item.text} />
             </span>
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function InlineMarkdown({ value }: { value: string }) {
+  return (
+    <span className="ldvh-inline-markdown inline max-w-none">
+      <Markdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          p: ({ children }) => <span>{children}</span>,
+        }}
+      >
+        {value}
+      </Markdown>
+    </span>
+  );
+}
+
+function MarkdownText({ value }: { value: string }) {
+  return (
+    <div className="ldvh-inline-markdown max-w-none">
+      <Markdown remarkPlugins={[remarkGfm]}>{value}</Markdown>
     </div>
   );
 }

@@ -137,7 +137,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             }`}
           >
             <Globe size={16} />
-            {!collapsed && (locale === 'zh' ? 'English' : '中文')}
+            {!collapsed && (locale === 'zh' ? t('language.english') : t('language.chinese'))}
             {collapsed && <IconTooltip label={languageLabel} />}
           </button>
           <button

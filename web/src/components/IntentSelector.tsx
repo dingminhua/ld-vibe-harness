@@ -63,7 +63,7 @@ export default function IntentSelector({ currentIntentId, onSelect, onClose }: I
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={locale === 'en' ? 'Search intents...' : '搜索意图...'}
+            placeholder={t('intentSelector.searchPlaceholder')}
             className="ldvh-caption w-full bg-transparent text-ldvh-text-primary outline-none placeholder:text-ldvh-text-secondary"
             autoFocus
           />
@@ -79,7 +79,7 @@ export default function IntentSelector({ currentIntentId, onSelect, onClose }: I
           </div>
         ) : filtered.length === 0 ? (
           <div className="ldvh-caption py-4 text-center">
-            {locale === 'en' ? 'No intents found' : '未找到意图'}
+            {t('intentSelector.noResults')}
           </div>
         ) : (
           filtered.map((item) => {
@@ -105,7 +105,7 @@ export default function IntentSelector({ currentIntentId, onSelect, onClose }: I
                 <span className="min-w-0 flex-1 truncate">{displayTitle || item.id}</span>
                 {isCurrent && (
                   <span className="ldvh-caption shrink-0">
-                    {locale === 'en' ? 'Current' : '当前'}
+                    {t('intentSelector.current')}
                   </span>
                 )}
               </button>

@@ -15,36 +15,29 @@ import { fetchObjectDetail, patchObjectField, type ObjectDetail } from '@/utils/
 import { useI18n } from '@/i18n/context';
 import { getTypeDescription, getStatusHint } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
+import { formatDateTime } from '@/utils/dateFormat';
+import {
+  CHECKLIST_COMPAT_FIELDS,
+  COLLAPSIBLE_FIELDS,
+  DOC_LINK_FIELDS,
+  EVIDENCE_FIELDS,
+  PATH_TEXT_FIELDS,
+  REFERENCE_FIELDS,
+  SUMMARY_TEXT_FIELDS,
+  hasChecklist,
+  isPreviewableDocPath,
+} from '@/utils/fieldFormats';
 
 /** 字段分组定义 */
 const META_KEYS = ['id', 'type', 'status', 'created', 'updated', 'closed_at', 'title', 'title_en', 'title_zh', 'aggregated_deliverables', 'aggregated_docs'];
 const TASK_AUXILIARY_META_KEYS = ['category', 'priority', 'severity', 'tags', 'scope', 'impact', 'assignee'];
+const COMMON_AUXILIARY_META_KEYS = ['category', 'priority', 'severity', 'repeatability', 'tags', 'scope', 'impact', 'assignee'];
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
   task: TASK_AUXILIARY_META_KEYS,
+  memo: ['category', 'priority', 'tags'],
   profile: ['project_name', 'project_kind', 'language', 'framework'],
   pitfall: ['severity', 'repeatability', 'tags'],
 };
-/** 长文本字段（用 SummaryText 组件渲染，支持展开/收起） */
-const SUMMARY_TEXT_FIELDS = [
-  'description', 'context', 'consequences', 'success_criteria', 'constraints',
-  'rationale', 'observation', 'analysis', 'mitigation', 'resolution',
-  'symptoms', 'trigger_conditions', 'root_cause', 'avoidance', 'applicability',
-  'governance_scope', 'archive_reason', 'notes', 'transition_reasons',
-];
-/** 引用字段（用 ReferenceCard 组件渲染） */
-const REFERENCE_FIELDS = [
-  'blocked_by', 'source_intent', 'parent_task', 'related_intents', 'related_tasks',
-  'related_adrs', 'related_memos', 'related_pitfalls', 'related_profiles',
-  'source_tasks', 'source_memos', 'superseded_by',
-];
-const DOC_LINK_FIELDS = ['related_docs', 'deliverables', 'affected_docs', 'related_rules', 'superseded_by'];
-const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 'rules_path', 'skills_path'];
-/** 可折叠的关联内容字段（intent 类型默认展开，其他类型默认折叠） */
-const COLLAPSIBLE_FIELDS = [
-  'related_intents', 'related_tasks', 'related_docs', 'related_adrs', 'related_memos',
-  'related_pitfalls', 'related_profiles', 'deliverables', 'affected_docs', 'related_rules',
-  'source_tasks', 'source_memos', 'blocked_by',
-];
 /** Task 类型字段展示优先顺序 */
 const TASK_FIELD_ORDER = ['acceptance', 'blocked_by', 'related_docs', 'deliverables'];
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
@@ -100,21 +93,30 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   source_intent: { zh: '来源意图', en: 'Source Intent' },
   parent_task: { zh: '父任务', en: 'Parent Task' },
   closure_evidence: { zh: '关闭证据', en: 'Closure Evidence' },
+  completion_evidence: { zh: '完成证据', en: 'Completion Evidence' },
   transition_reasons: { zh: '流转记录', en: 'Transition Reasons' },
   options: { zh: '选项', en: 'Options' },
   decision: { zh: '决策', en: 'Decision' },
+  alternatives: { zh: '替代方案', en: 'Alternatives' },
   related_tasks: { zh: '关联任务', en: 'Related Tasks' },
+  sub_tasks: { zh: '子任务', en: 'Subtasks' },
   related_adrs: { zh: '关联 ADR', en: 'Related ADRs' },
   related_intents: { zh: '关联意图', en: 'Related Intents' },
   related_memos: { zh: '关联备忘', en: 'Related Memos' },
   related_pitfalls: { zh: '关联踩坑', en: 'Related Pitfalls' },
   related_profiles: { zh: '关联画像', en: 'Related Profiles' },
+  source_objects: { zh: '来源对象', en: 'Source Objects' },
+  related_objects: { zh: '关联对象', en: 'Related Objects' },
   source_tasks: { zh: '来源任务', en: 'Source Tasks' },
   source_memos: { zh: '来源备忘', en: 'Source Memos' },
+  resolved_to: { zh: '分流目标', en: 'Resolved To' },
+  resolved_at: { zh: '分流时间', en: 'Resolved At' },
   superseded_by: { zh: '替代来源', en: 'Superseded By' },
   related_changes: { zh: '关联变更', en: 'Related Changes' },
+  affects: { zh: '影响对象', en: 'Affects' },
   scope: { zh: '范围', en: 'Scope' },
   impact: { zh: '影响范围', en: 'Impact' },
+  risk_assessment: { zh: '风险判断', en: 'Risk Assessment' },
   severity: { zh: '严重程度', en: 'Severity' },
   category: { zh: '分类', en: 'Category' },
   priority: { zh: '优先级', en: 'Priority' },
@@ -135,6 +137,53 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
   deliverables: { zh: '产出物', en: 'Deliverables' },
+  at: { zh: '时间', en: 'At' },
+  from: { zh: '前状态', en: 'From' },
+  to: { zh: '后状态', en: 'To' },
+  actor: { zh: '执行者', en: 'Actor' },
+  reason: { zh: '原因', en: 'Reason' },
+};
+
+const FIELD_VALUE_LOCALES: Record<string, Record<string, { zh: string; en: string }>> = {
+  category: {
+    question: { zh: '问题', en: 'Question' },
+    discovery: { zh: '发现', en: 'Discovery' },
+    gap: { zh: '缺口', en: 'Gap' },
+  },
+  priority: {
+    high: { zh: '高', en: 'High' },
+    medium: { zh: '中', en: 'Medium' },
+    low: { zh: '低', en: 'Low' },
+  },
+  severity: {
+    critical: { zh: '严重', en: 'Critical' },
+    high: { zh: '高', en: 'High' },
+    medium: { zh: '中', en: 'Medium' },
+    low: { zh: '低', en: 'Low' },
+  },
+  repeatability: {
+    recurring: { zh: '反复出现', en: 'Recurring' },
+    occasional: { zh: '偶发', en: 'Occasional' },
+    one_off: { zh: '一次性', en: 'One-off' },
+  },
+  tags: {
+    'ai-collaboration': { zh: 'AI 协作', en: 'AI Collaboration' },
+    'border-radius': { zh: '圆角', en: 'Border Radius' },
+    consistency: { zh: '一致性', en: 'Consistency' },
+    'fact-model': { zh: '事实模型', en: 'Fact Model' },
+    'frontend-gotcha': { zh: '前端问题', en: 'Frontend Gotcha' },
+    'process-improvement': { zh: '流程改进', en: 'Process Improvement' },
+    rules: { zh: '规则', en: 'Rules' },
+    'single-authority': { zh: '单一权威源', en: 'Single Authority' },
+    'spec-tools-sync': { zh: '规范工具同步', en: 'Spec/Tools Sync' },
+    specs: { zh: '规范', en: 'Specs' },
+    subdocument: { zh: '子文档', en: 'Subdocument' },
+    'tailwind-css': { zh: 'Tailwind CSS', en: 'Tailwind CSS' },
+    'task-lifecycle': { zh: '任务生命周期', en: 'Task Lifecycle' },
+    'transition-animation': { zh: '过渡动画', en: 'Transition Animation' },
+    verification: { zh: '验证', en: 'Verification' },
+    yaml: { zh: 'YAML', en: 'YAML' },
+  },
 };
 
 export default function ObjectDetail() {
@@ -200,7 +249,7 @@ export default function ObjectDetail() {
   const hasAggregatedDocs = aggregatedDocs.length > 0;
 
   // 内容字段（排除元信息）
-  const auxiliaryMetaKeys = AUXILIARY_META_KEYS_BY_TYPE[objType] || [];
+  const auxiliaryMetaKeys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
   const contentEntries = Object.entries(obj).filter(
     ([key]) => !META_KEYS.includes(key) && !auxiliaryMetaKeys.includes(key)
   );
@@ -240,7 +289,7 @@ export default function ObjectDetail() {
     <div className="flex h-full">
       {/* Main content area */}
       <div className="flex-1 overflow-y-auto rounded-none transition-[margin] duration-300">
-        <div className="mx-auto max-w-4xl p-6">
+        <div className="mx-auto max-w-4xl p-4 sm:p-6">
           <ObjectStatusFilter
             type={objType}
             activeStatus={activeStatus}
@@ -288,11 +337,11 @@ export default function ObjectDetail() {
 
           {/* Metadata row */}
           <div className="mb-6 flex flex-wrap gap-2">
-            <MetaChip label={t('objectDetail.created')} value={obj.created as string || '-'} />
-            <MetaChip label={t('objectDetail.updated')} value={obj.updated as string || '-'} />
-            {obj.closed_at && <MetaChip label={t('objectDetail.closedAt')} value={obj.closed_at as string} />}
+            <MetaChip label={t('objectDetail.created')} value={formatDateTime(obj.created as string | undefined)} />
+            <MetaChip label={t('objectDetail.updated')} value={formatDateTime(obj.updated as string | undefined)} />
+            {obj.closed_at && <MetaChip label={t('objectDetail.closedAt')} value={formatDateTime(obj.closed_at as string)} />}
             {auxiliaryMetaEntries.map(([key, value]) => (
-              <MetaChip key={key} label={getFieldLabel(key, locale)} value={formatAuxiliaryMetaValue(value)} />
+              <MetaChip key={key} label={getFieldLabel(key, locale)} value={formatAuxiliaryMetaValue(key, value, locale)} />
             ))}
           </div>
 
@@ -367,63 +416,65 @@ export default function ObjectDetail() {
 }
 
 /** 元信息小标签 */
-function MetaChip({ label, value }: { label: string; value: string }) {
+function MetaChip({ label, value }: { label: string; value: ReactNode }) {
+  const valueClassName = typeof value === 'string' ? 'ldvh-meta-primary min-w-0' : 'min-w-0';
   return (
-    <div className="flex items-center gap-1.5 rounded-md border border-ldvh-border bg-ldvh-panel px-2.5 py-1">
-      <span className="ldvh-caption">{label}</span>
-      <span className="ldvh-meta-primary">{value}</span>
+    <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-ldvh-border bg-ldvh-panel px-2.5 py-1">
+      <span className="ldvh-caption shrink-0">{label}</span>
+      <span className={valueClassName}>{value}</span>
     </div>
   );
 }
 
 function TaskReadingLayout({ obj, locale, objType, objId, onRefresh }: { obj: Record<string, unknown>; locale: string; objType: string; objId: string; onRefresh: () => void }) {
-  const hidden = new Set(['source', 'description', 'source_intent', 'acceptance', 'verification', 'closure_evidence', 'deliverables', 'related_docs', 'affected_docs', 'blocked_by', ...TASK_AUXILIARY_META_KEYS, ...META_KEYS]);
+  const { t } = useI18n();
+  const hidden = new Set(['source', 'description', 'source_intent', 'acceptance', 'verification', 'closure_evidence', 'deliverables', 'related_docs', 'affected_docs', 'blocked_by', ...TASK_AUXILIARY_META_KEYS, ...COMMON_AUXILIARY_META_KEYS, ...META_KEYS]);
   const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && value !== null && value !== undefined && value !== '');
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      <TaskSection title="任务目标" tone="primary">
-        {obj.description ? <SummaryText value={String(obj.description)} /> : <EmptyHint text="未记录任务描述" />}
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          {obj.source && <TaskInlineField label="来源" value={<SummaryText value={String(obj.source)} />} />}
+      <TaskSection title={t('objectDetail.taskGoal')} tone="primary">
+        {obj.description ? <SummaryText value={String(obj.description)} /> : <EmptyHint text={t('objectDetail.noTaskDescription')} />}
+        <div className="ldvh-panel-grid mt-4">
+          {obj.source && <TaskInlineField label={getFieldLabel('source', locale)} value={<SummaryText value={String(obj.source)} />} />}
           {obj.source_intent && (
             <TaskInlineField
-              label="来源意图"
+              label={t('objectDetail.sourceIntent')}
               value={<FieldValue fieldKey="source_intent" value={obj.source_intent} depth={0} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />}
             />
           )}
         </div>
       </TaskSection>
 
-      <TaskSection title="验收标准" tone="checklist">
-        {obj.acceptance ? <ChecklistCard value={String(obj.acceptance)} /> : <EmptyHint text="未记录验收标准" />}
+      <TaskSection title={getFieldLabel('acceptance', locale)} tone="checklist">
+        {obj.acceptance ? <ChecklistCard value={String(obj.acceptance)} /> : <EmptyHint text={t('objectDetail.noAcceptance')} />}
       </TaskSection>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <TaskSection title="验证方式" tone="evidence">
-          {obj.verification ? <EvidenceBlock value={String(obj.verification)} /> : <EmptyHint text="未记录验证方式" />}
+      <div className="ldvh-panel-grid">
+        <TaskSection title={getFieldLabel('verification', locale)} tone="evidence">
+          {obj.verification ? <EvidenceBlock value={String(obj.verification)} /> : <EmptyHint text={t('objectDetail.noVerification')} />}
         </TaskSection>
-        <TaskSection title="关闭证据" tone="evidence">
-          {obj.closure_evidence ? <EvidenceBlock value={String(obj.closure_evidence)} /> : <EmptyHint text="尚未记录关闭证据" />}
+        <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
+          {obj.closure_evidence ? <EvidenceBlock value={String(obj.closure_evidence)} /> : <EmptyHint text={t('objectDetail.noClosureEvidence')} />}
         </TaskSection>
       </div>
 
-      <TaskSection title="产出与文档" tone="docs">
-        <div className="grid gap-4 lg:grid-cols-3">
-          <TaskDocGroup label="产出物" docs={obj.deliverables as string[] | undefined} />
-          <TaskDocGroup label="关联文档" docs={obj.related_docs as string[] | undefined} />
-          <TaskDocGroup label="影响文档" docs={obj.affected_docs as string[] | undefined} />
+      <TaskSection title={t('objectDetail.deliverablesAndDocs')} tone="docs">
+        <div className="ldvh-section-grid">
+          <TaskDocGroup label={t('objectDetail.deliverables')} docs={obj.deliverables as string[] | undefined} />
+          <TaskDocGroup label={t('objectDetail.relatedDocs')} docs={obj.related_docs as string[] | undefined} />
+          <TaskDocGroup label={t('objectDetail.affectedDocs')} docs={obj.affected_docs as string[] | undefined} />
         </div>
       </TaskSection>
 
       {obj.blocked_by && Array.isArray(obj.blocked_by) && obj.blocked_by.length > 0 && (
-        <TaskSection title="前置依赖" tone="default">
+        <TaskSection title={t('objectDetail.dependencies')} tone="default">
           <ReferenceCard refs={obj.blocked_by as string[]} />
         </TaskSection>
       )}
 
       {otherEntries.length > 0 && (
-        <TaskSection title="其他字段" tone="default">
+        <TaskSection title={t('objectDetail.otherFields')} tone="default">
           <div className="flex flex-col gap-3">
             {otherEntries.map(([key, value]) => (
               <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />
@@ -436,7 +487,7 @@ function TaskReadingLayout({ obj, locale, objType, objId, onRefresh }: { obj: Re
 }
 
 function getAuxiliaryMetaEntries(obj: Record<string, unknown>, objType: string) {
-  const keys = AUXILIARY_META_KEYS_BY_TYPE[objType] || [];
+  const keys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
   return keys
     .map((key) => [key, obj[key]] as [string, unknown])
     .filter(([, value]) => value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0));
@@ -447,8 +498,35 @@ function getFieldLabel(fieldKey: string, locale: string) {
   return labelEntry ? (locale === 'en' ? labelEntry.en : labelEntry.zh) : fieldKey.replace(/_/g, ' ');
 }
 
-function formatAuxiliaryMetaValue(value: unknown) {
-  return Array.isArray(value) ? value.join(' · ') : String(value);
+function localizeMetaValue(fieldKey: string, rawValue: string, locale: string) {
+  const normalized = rawValue.trim();
+  const entry = FIELD_VALUE_LOCALES[fieldKey]?.[normalized];
+  if (entry) return locale === 'en' ? entry.en : entry.zh;
+  return normalized.replace(/_/g, ' ');
+}
+
+function MetaValueChip({ children }: { children: ReactNode }) {
+  return (
+    <span className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-0.5 font-sans text-ldvh-text-primary">
+      {children}
+    </span>
+  );
+}
+
+function formatAuxiliaryMetaValue(fieldKey: string, value: unknown, locale: string): ReactNode {
+  if (Array.isArray(value)) {
+    return (
+      <span className="flex flex-wrap gap-1.5">
+        {value.map((item, index) => (
+          <MetaValueChip key={`${fieldKey}-${index}`}>
+            {localizeMetaValue(fieldKey, String(item), locale)}
+          </MetaValueChip>
+        ))}
+      </span>
+    );
+  }
+
+  return <MetaValueChip>{localizeMetaValue(fieldKey, String(value), locale)}</MetaValueChip>;
 }
 
 function TaskSection({ title, tone, children }: { title: string; tone: 'primary' | 'checklist' | 'evidence' | 'docs' | 'default'; children: ReactNode }) {
@@ -481,16 +559,13 @@ function TaskInlineField({ label, value }: { label: string; value: ReactNode }) 
 }
 
 function TaskDocGroup({ label, docs }: { label: string; docs?: string[] }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-bg/40 p-3">
       <div className="ldvh-caption-strong mb-2 tracking-wide">{label}</div>
-      {docs && docs.length > 0 ? <DocPreviewLink docs={docs} /> : <EmptyHint text="空" />}
+      {docs && docs.length > 0 ? <DocPreviewLink docs={docs} /> : <EmptyHint text={t('objectDetail.emptyValue')} />}
     </div>
   );
-}
-
-function isPreviewableDocPath(value: string) {
-  return value.startsWith('http://') || value.startsWith('https://') || /^(docs\/|specs\/|web\/docs\/)/.test(value);
 }
 
 function PathText({ value }: { value: string }) {
@@ -579,14 +654,8 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
       return <ChecklistCard value={value} />;
     }
 
-    // closure_evidence 字段使用 EvidenceBlock 组件（嵌入模式）
-    if (fieldKey === 'closure_evidence') {
-      return <EvidenceBlock value={value} embedded />;
-    }
-
-    // verification 字段使用 EvidenceBlock 组件（嵌入模式）
-    if (fieldKey === 'verification') {
-      return <EvidenceBlock value={value} embedded />;
+    if (CHECKLIST_COMPAT_FIELDS.includes(fieldKey) && hasChecklist(value)) {
+      return <ChecklistCard value={value} />;
     }
 
     if (DOC_LINK_FIELDS.includes(fieldKey) && isPreviewableDocPath(value)) {
@@ -597,9 +666,8 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
       return <PathText value={value} />;
     }
 
-    // success_criteria 含 checklist 时使用 ChecklistCard（12-工作模型字段内容格式规范 §5）
-    if (fieldKey === 'success_criteria' && /^\s*- \[[ xX]\]/m.test(value)) {
-      return <ChecklistCard value={value} />;
+    if (EVIDENCE_FIELDS.includes(fieldKey)) {
+      return <EvidenceBlock value={value} embedded />;
     }
 
     // 长文本字段使用 SummaryText 组件
@@ -635,7 +703,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
                 onClick={() => setEditingSourceIntent(true)}
                 disabled={saving}
                 className="shrink-0 rounded-md border border-ldvh-border p-1.5 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary disabled:opacity-50"
-                title={locale === 'en' ? 'Edit source intent' : '编辑来源意图'}
+                title={t('objectDetail.editSourceIntent')}
               >
                 <Pencil size={13} />
               </button>

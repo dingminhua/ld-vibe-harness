@@ -57,6 +57,44 @@
     @apply text-sm leading-6 text-ldvh-text-primary;
   }
 
+  .ldvh-page-frame {
+    @apply p-4 sm:p-6;
+  }
+
+  .ldvh-page-toolbar {
+    @apply flex flex-wrap items-start justify-between gap-4;
+  }
+
+  .ldvh-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: 0.75rem;
+  }
+
+  .ldvh-panel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: 1.5rem;
+  }
+
+  .ldvh-section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: 1.5rem;
+  }
+
+  .ldvh-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.5rem), 1fr));
+    gap: 0.75rem;
+  }
+
+  .ldvh-compact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+    gap: 0.75rem;
+  }
+
   .ldvh-dashboard-lead-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));

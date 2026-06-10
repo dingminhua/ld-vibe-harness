@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import { fetchObjects, type ObjectItem } from '@/utils/api';
+import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 
 function getLocalizedTitle(item: ObjectItem, locale: string): string {
@@ -48,7 +49,7 @@ export default function ObjectList() {
   const detailSearch = searchParams.toString();
 
   return (
-    <div className="p-6">
+    <div className="ldvh-page-frame">
       <ObjectStatusFilter
         type={currentType}
         activeStatus={activeStatus}
@@ -62,16 +63,16 @@ export default function ObjectList() {
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-ldvh-accent border-t-transparent" />
         </div>
       ) : error ? (
-        <div className="py-20 text-center text-ldvh-text-secondary">
-          <p>{t('common.loadFailed')}</p>
+        <div className="py-20 text-center">
+          <p className="ldvh-body-muted">{t('common.loadFailed')}</p>
           <p className="ldvh-meta text-red-400">{error}</p>
         </div>
       ) : items.length === 0 ? (
-        <div className="py-20 text-center text-ldvh-text-secondary">
+        <div className="ldvh-body-muted py-20 text-center">
           {t('objectList.noObjects', { type: currentType })}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="ldvh-section-grid">
           {items.map((obj) => (
             <button
               key={obj.id}
@@ -86,7 +87,7 @@ export default function ObjectList() {
                 {getLocalizedTitle(obj, locale)}
               </span>
               <span className="ldvh-meta">
-                {obj.updated}
+                {formatDateTime(obj.updated)}
               </span>
             </button>
           ))}

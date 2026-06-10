@@ -71,8 +71,8 @@ export default function Workbench() {
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
           <AlertCircle size={32} className="mx-auto mb-2 text-red-400" />
-          <p className="text-ldvh-text-secondary">{t('common.loadFailed')}</p>
-          <p className="font-mono text-xs text-red-400">{error}</p>
+          <p className="ldvh-body-muted">{t('common.loadFailed')}</p>
+          <p className="ldvh-meta text-red-400">{error}</p>
         </div>
       </div>
     );
@@ -87,10 +87,10 @@ export default function Workbench() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div className="ldvh-page-frame">
+      <div className="ldvh-page-toolbar">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-ldvh-accent/30 bg-ldvh-accent/10 px-3 py-1 text-xs font-medium text-ldvh-accent">
+          <div className="ldvh-chip mb-2 inline-flex items-center gap-2 rounded-full border border-ldvh-accent/30 bg-ldvh-accent/10 px-3 py-1 text-ldvh-accent">
             <Sparkles size={13} />
             {t('workbench.badge')}
           </div>
@@ -98,25 +98,25 @@ export default function Workbench() {
         </div>
         <button
           onClick={() => navigate('/')}
-          className="rounded-md border border-ldvh-border px-3 py-2 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/40 hover:text-ldvh-text-primary"
+          className="ldvh-body-muted rounded-md border border-ldvh-border px-3 py-2 transition-colors hover:bg-ldvh-border/40 hover:text-ldvh-text-primary"
         >
           {t('workbench.backToDashboard')}
         </button>
       </div>
 
-      <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="ldvh-metric-grid mb-6">
         <MetricCard icon={<Target size={16} className="text-ldvh-accent" />} label={t('workbench.openTasks')} value={taskStats?.total ?? 0} detail={t('workbench.taskSignal')} />
         <MetricCard icon={<ClipboardCheck size={16} className="text-ldvh-accent" />} label={t('workbench.actionItems')} value={data.actionItems.length} detail={t('workbench.actionSignal')} />
         <MetricCard icon={<GitCommit size={16} className="text-ldvh-accent" />} label={t('workbench.recentChanges')} value={data.recentChanges.length} detail={t('workbench.changeSignal')} />
         <MetricCard icon={<ShieldCheck size={16} className="text-ldvh-accent" />} label={t('workbench.validation')} value={data.validation.ok ? t('dashboard.pass') : t('dashboard.fail')} detail={`${data.validation.errors} ${t('dashboard.errors')} · ${data.validation.warnings} ${t('dashboard.warnings')}`} tone={data.validation.ok ? 'green' : 'red'} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+      <div className="ldvh-panel-grid">
         <section className="rounded-lg border border-ldvh-border bg-ldvh-panel p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Layers3 size={16} className="text-ldvh-accent" />
-              <h2 className="text-sm font-medium text-ldvh-text-primary">{t('workbench.caseFile')}</h2>
+              <h2 className="ldvh-section-title">{t('workbench.caseFile')}</h2>
             </div>
             {selectedTask && <StatusBadge status={selectedTask.status} statusLabel={getStatus(selectedTask.status)} size="md" />}
           </div>
@@ -128,26 +128,26 @@ export default function Workbench() {
                 className="mb-5 block w-full rounded-lg border border-ldvh-border bg-ldvh-bg p-4 text-left transition-colors hover:border-ldvh-accent/40"
               >
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <p className="font-mono text-xs text-ldvh-text-secondary">{selectedTask.id}</p>
+                  <p className="ldvh-meta">{selectedTask.id}</p>
                   <ArrowRight size={16} className="text-ldvh-text-secondary" />
                 </div>
-                <h3 className="text-base font-semibold text-ldvh-text-primary">{getLocalizedTitle(selectedTask, locale) || selectedTask.id}</h3>
-                <p className="mt-2 text-xs text-ldvh-text-secondary">{selectedTask.relativeTime}</p>
+                <h3 className="ldvh-reading-title">{getLocalizedTitle(selectedTask, locale) || selectedTask.id}</h3>
+                <p className="ldvh-caption mt-2">{selectedTask.relativeTime}</p>
               </button>
 
-              <div className="grid gap-4 lg:grid-cols-3">
+              <div className="ldvh-section-grid">
                 <InfoPanel title={t('workbench.acceptance')} icon={<CheckCircle2 size={16} className="text-ldvh-accent" />}>
                   <ProgressRow label={t('workbench.known')} value={activeTasks.length > 0 ? 1 : 0} total={Math.max(activeTasks.length, 1)} />
-                  <p className="mt-3 text-xs text-ldvh-text-secondary">{t('workbench.acceptanceHint')}</p>
+                  <p className="ldvh-caption mt-3">{t('workbench.acceptanceHint')}</p>
                 </InfoPanel>
                 <InfoPanel title={t('workbench.evidence')} icon={<GitCommit size={16} className="text-ldvh-accent" />}>
                   <div className="flex flex-col gap-2">
                     {data.recentChanges.slice(0, 3).map((entry) => (
-                      <button key={entry.hash} onClick={() => navigate('/changelog')} className="rounded-md bg-ldvh-bg px-3 py-2 text-left text-xs transition-colors hover:bg-ldvh-border/30">
-                        <span className="mb-1 inline-flex rounded px-1.5 py-0.5 font-medium" style={{ backgroundColor: `${CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other}20`, color: CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other }}>
+                      <button key={entry.hash} onClick={() => navigate('/changelog')} className="rounded-md bg-ldvh-bg px-3 py-2 text-left transition-colors hover:bg-ldvh-border/30">
+                        <span className="ldvh-chip mb-1 inline-flex rounded px-1.5 py-0.5" style={{ backgroundColor: `${CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other}20`, color: CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other }}>
                           {getCategoryLocale(entry.category, locale)}
                         </span>
-                        <p className="line-clamp-2 text-ldvh-text-primary">{entry.description}</p>
+                        <p className="ldvh-body line-clamp-2">{entry.description}</p>
                       </button>
                     ))}
                   </div>
@@ -155,7 +155,7 @@ export default function Workbench() {
                 <InfoPanel title={t('workbench.actions')} icon={<MousePointer2 size={16} className="text-ldvh-accent" />}>
                   <div className="flex flex-col gap-2">
                     {[t('workbench.actionAddEvidence'), t('workbench.actionLinkTask'), t('workbench.actionReview')].map((label) => (
-                      <button key={label} disabled className="cursor-not-allowed rounded-md border border-dashed border-ldvh-border px-3 py-2 text-left text-xs text-ldvh-text-secondary opacity-75">
+                      <button key={label} disabled className="ldvh-caption cursor-not-allowed rounded-md border border-dashed border-ldvh-border px-3 py-2 text-left opacity-75">
                         {label}
                       </button>
                     ))}
@@ -164,7 +164,7 @@ export default function Workbench() {
               </div>
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed border-ldvh-border bg-ldvh-bg p-6 text-center text-sm text-ldvh-text-secondary">
+            <div className="ldvh-body-muted rounded-lg border border-dashed border-ldvh-border bg-ldvh-bg p-6 text-center">
               {t('workbench.noTask')}
             </div>
           )}
@@ -173,7 +173,7 @@ export default function Workbench() {
         <section className="rounded-lg border border-ldvh-border bg-ldvh-panel p-5">
           <div className="mb-4 flex items-center gap-2">
             <Network size={16} className="text-ldvh-accent" />
-            <h2 className="text-sm font-medium text-ldvh-text-primary">{t('workbench.relationships')}</h2>
+            <h2 className="ldvh-section-title">{t('workbench.relationships')}</h2>
           </div>
           <div className="flex flex-col gap-3">
             {relatedObjects.length > 0 ? relatedObjects.map((item) => (
@@ -187,17 +187,17 @@ export default function Workbench() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="rounded px-1.5 py-0.5 text-[10px] font-medium" style={{ backgroundColor: `${item.typeColor}20`, color: item.typeColor }}>
+                    <span className="ldvh-chip rounded px-1.5 py-0.5" style={{ backgroundColor: `${item.typeColor}20`, color: item.typeColor }}>
                       {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
                     </span>
                     <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
                   </div>
-                  <p className="truncate text-sm text-ldvh-text-primary">{getLocalizedTitle(item, locale) || item.id}</p>
-                  <p className="mt-1 font-mono text-[11px] text-ldvh-text-secondary">{item.id}</p>
+                  <p className="ldvh-body truncate">{getLocalizedTitle(item, locale) || item.id}</p>
+                  <p className="ldvh-meta mt-1">{item.id}</p>
                 </div>
               </button>
             )) : (
-              <p className="rounded-lg border border-dashed border-ldvh-border bg-ldvh-bg p-4 text-sm text-ldvh-text-secondary">{t('workbench.noRelationships')}</p>
+              <p className="ldvh-body-muted rounded-lg border border-dashed border-ldvh-border bg-ldvh-bg p-4">{t('workbench.noRelationships')}</p>
             )}
           </div>
         </section>
@@ -206,14 +206,13 @@ export default function Workbench() {
       <section className="mt-6 rounded-lg border border-ldvh-border bg-ldvh-panel p-5">
         <div className="mb-4 flex items-center gap-2">
           <GitBranch size={16} className="text-ldvh-accent" />
-          <h2 className="text-sm font-medium text-ldvh-text-primary">{t('workbench.traceability')}</h2>
+          <h2 className="ldvh-section-title">{t('workbench.traceability')}</h2>
         </div>
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="ldvh-metric-grid">
           {[t('nav.intents'), t('nav.tasks'), t('nav.changelog'), t('workbench.evidence')].map((label, index) => (
             <div key={label} className="relative rounded-lg border border-ldvh-border bg-ldvh-bg p-4">
-              <p className="text-xs text-ldvh-text-secondary">{t('workbench.step')} {index + 1}</p>
-              <p className="mt-1 text-sm font-medium text-ldvh-text-primary">{label}</p>
-              {index < 3 && <ArrowRight size={16} className="absolute right-[-18px] top-1/2 hidden -translate-y-1/2 text-ldvh-text-secondary md:block" />}
+              <p className="ldvh-caption">{t('workbench.step')} {index + 1}</p>
+              <p className="ldvh-card-title mt-1">{label}</p>
             </div>
           ))}
         </div>
@@ -228,7 +227,7 @@ function InfoPanel({ title, icon, children }: { title: string; icon: ReactNode; 
     <div className="rounded-lg border border-ldvh-border bg-ldvh-bg p-4">
       <div className="mb-3 flex items-center gap-2">
         {icon}
-        <h3 className="text-sm font-medium text-ldvh-text-primary">{title}</h3>
+        <h3 className="ldvh-card-title">{title}</h3>
       </div>
       {children}
     </div>
@@ -239,8 +238,8 @@ function ProgressRow({ label, value, total }: { label: string; value: number; to
   const percent = total === 0 ? 0 : Math.min(100, Math.round((value / total) * 100));
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between text-xs">
-        <span className="text-ldvh-text-secondary">{label}</span>
+      <div className="ldvh-caption mb-2 flex items-center justify-between">
+        <span>{label}</span>
         <span className="font-mono text-ldvh-text-primary">{value}/{total}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-ldvh-border">

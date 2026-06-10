@@ -4,6 +4,7 @@ import { GitCommit, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react'
 import { fetchChangelog, fetchCommitDetail, type ChangelogEntry } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import PageHeader from '@/components/PageHeader';
+import { formatDateTime } from '@/utils/dateFormat';
 
 /** 从对象 ID 推断类型，如 task-0041 → task, intent-0004 → intent, adr-0003 → adr */
 function inferTypeFromId(id: string): string | null {
@@ -115,28 +116,13 @@ export default function Changelog() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr);
-      return d.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
   if (error) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
           <AlertCircle size={32} className="mx-auto mb-2 text-red-400" />
-          <p className="text-ldvh-text-secondary">{t('changelog.loadFailed')}</p>
-          <p className="font-mono text-xs text-red-400">{error}</p>
+          <p className="ldvh-body-muted">{t('changelog.loadFailed')}</p>
+          <p className="ldvh-meta text-red-400">{error}</p>
         </div>
       </div>
     );
@@ -151,13 +137,8 @@ export default function Changelog() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <PageHeader title={t('changelog.title')} subtitle={t('changelog.subtitle')} />
-        <p className="mt-1 text-sm text-ldvh-text-secondary">
-          {t('changelog.subtitle')}
-        </p>
-      </div>
+    <div className="ldvh-page-frame">
+      <PageHeader title={t('changelog.title')} subtitle={t('changelog.subtitle')} />
 
       <div className="flex flex-col gap-1">
         {entries.map((entry) => {
@@ -180,16 +161,16 @@ export default function Changelog() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-ldvh-accent">
+                    <span className="ldvh-meta text-ldvh-accent">
                       {entry.shortHash}
                     </span>
-                    <span className="truncate text-sm text-ldvh-text-primary">
+                    <span className="ldvh-body truncate">
                       <RenderMessage message={entry.message} onNavigate={(path) => navigate(path)} />
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center gap-3 text-xs text-ldvh-text-secondary">
+                  <div className="ldvh-caption mt-1 flex items-center gap-3">
                     <span>{entry.author}</span>
-                    <span>{formatDate(entry.date)}</span>
+                    <span>{formatDateTime(entry.date)}</span>
                   </div>
                 </div>
                 <GitCommit size={14} className="mt-1 flex-shrink-0 text-ldvh-text-secondary" />
@@ -200,10 +181,10 @@ export default function Changelog() {
                   {loadingDetail ? (
                     <div className="flex items-center gap-2">
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-ldvh-accent border-t-transparent" />
-                      <span className="text-xs text-ldvh-text-secondary">{t('common.loading')}</span>
+                      <span className="ldvh-caption">{t('common.loading')}</span>
                     </div>
                   ) : (
-                    <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-ldvh-text-secondary">
+                    <pre className="ldvh-meta overflow-x-auto whitespace-pre-wrap">
                       {commitDetail}
                     </pre>
                   )}

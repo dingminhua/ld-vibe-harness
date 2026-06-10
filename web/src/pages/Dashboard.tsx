@@ -170,9 +170,9 @@ export default function Dashboard() {
                 )}
               </div>
               <div className="ldvh-caption mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="text-emerald-300">{capClosedCount} closed</span>
-                {capDegradedCount > 0 && <span className="text-yellow-300">{capDegradedCount} degraded</span>}
-                {capOpenCount > 0 && <span className="text-red-300">{capOpenCount} open</span>}
+                <span className="text-emerald-300">{capClosedCount} {getStatus('closed')}</span>
+                {capDegradedCount > 0 && <span className="text-yellow-300">{capDegradedCount} {getStatus('degraded')}</span>}
+                {capOpenCount > 0 && <span className="text-red-300">{capOpenCount} {getStatus('open')}</span>}
               </div>
             </div>
 
@@ -239,7 +239,7 @@ export default function Dashboard() {
                           color: item.typeColor,
                         }}
                       >
-                        {item.type}
+                        {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
                       </span>
                       <span className="ldvh-body truncate">
                         {getLocalizedTitle(item, locale) || item.id}
@@ -437,12 +437,12 @@ export default function Dashboard() {
               <p className="ldvh-caption">{t('dashboard.landingGaps')}</p>
             </div>
             <div className="rounded-md bg-ldvh-bg p-3">
-              <p className="font-mono text-xl font-semibold text-ldvh-text-primary">{capOpenCount > 0 ? `${capOpenCount} open` : 'OK'}</p>
+              <p className="font-mono text-xl font-semibold text-ldvh-text-primary">{capOpenCount > 0 ? `${capOpenCount} ${getStatus('open')}` : getStatus('closed')}</p>
               <p className="ldvh-caption">{t('dashboard.landingCapStatus')}</p>
             </div>
             <div className="rounded-md bg-ldvh-bg p-3">
               <p className={`font-mono text-xl font-semibold ${landing.humanGateStatus === 'closed' ? 'text-emerald-300' : landing.humanGateStatus === 'open' ? 'text-red-300' : 'text-yellow-300'}`}>
-                {landing.humanGateStatus || '—'}
+                {landing.humanGateStatus ? getStatus(landing.humanGateStatus) : '—'}
               </p>
               <p className="ldvh-caption">{t('dashboard.landingHGStatus')}</p>
             </div>

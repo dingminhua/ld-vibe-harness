@@ -7,8 +7,19 @@ import EvidenceBlock from '@/components/EvidenceBlock';
 import MarkdownPreview from '@/components/MarkdownPreview';
 import ReferenceCard from '@/components/ReferenceCard';
 import StatusBadge from '@/components/StatusBadge';
+import SummaryText from '@/components/SummaryText';
 import { useI18n } from '@/i18n/context';
 import { fetchDocContent, fetchObjectDetail, type DocContent, type ObjectDetail as ApiObjectDetail } from '@/utils/api';
+import {
+  CHECKLIST_COMPAT_FIELDS,
+  DOC_LINK_FIELDS,
+  EVIDENCE_FIELDS,
+  REFERENCE_FIELDS,
+  SUMMARY_TEXT_FIELDS,
+  hasChecklist,
+  isObjectRef,
+  isPreviewableDocPath,
+} from '@/utils/fieldFormats';
 
 const MIN_WIDTH = 280;
 const MAX_WIDTH_RATIO = 0.58;
@@ -17,8 +28,104 @@ const DEFAULT_DOC_WIDTH = 680;
 const SNAP_THRESHOLD = 40;
 const MOBILE_BREAKPOINT = 768;
 
+const PREVIEW_FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
+  task: [
+    'description', 'source', 'source_intent', 'acceptance', 'verification',
+    'risk_assessment', 'closure_evidence', 'blocked_by', 'sub_tasks',
+    'deliverables', 'related_docs', 'affected_docs', 'related_adrs',
+    'related_changes', 'status_history',
+  ],
+  intent: [
+    'description', 'source', 'success_criteria', 'constraints',
+    'completion_evidence', 'related_tasks', 'related_adrs', 'related_memos',
+    'related_pitfalls', 'related_docs', 'status_history',
+  ],
+  adr: [
+    'context', 'decision', 'consequences', 'alternatives', 'affects',
+    'related_tasks', 'related_intents', 'related_memos', 'related_rules',
+    'superseded_by', 'status_history',
+  ],
+  pitfall: [
+    'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
+    'avoidance', 'applicability', 'source_objects', 'source_tasks',
+    'source_memos', 'related_intents', 'related_adrs', 'related_rules',
+    'superseded_by', 'archive_reason', 'status_history', 'notes',
+  ],
+  memo: [
+    'description', 'source', 'archive_reason', 'resolved_to', 'related_tasks',
+    'related_adrs', 'related_intents', 'related_docs', 'status_history',
+  ],
+  profile: [
+    'description', 'project_path', 'ldvh_base_path', 'docs_path',
+    'governance_scope', 'related_intents', 'related_tasks', 'related_adrs',
+    'related_memos', 'related_pitfalls', 'related_docs', 'status_history',
+    'notes',
+  ],
+};
+
+const PREVIEW_META_KEYS = new Set([
+  'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
+  'closed_at', 'completed_at', 'resolved_at', 'category', 'priority', 'severity',
+  'repeatability', 'tags', 'assignee', 'scope', 'impact',
+]);
+
+const PREVIEW_FIELD_LABELS: Record<string, { zh: string; en: string }> = {
+  description: { zh: '描述', en: 'Description' },
+  source: { zh: '来源', en: 'Source' },
+  source_intent: { zh: '来源意图', en: 'Source Intent' },
+  success_criteria: { zh: '成功标准', en: 'Success Criteria' },
+  constraints: { zh: '约束', en: 'Constraints' },
+  acceptance: { zh: '验收标准', en: 'Acceptance' },
+  verification: { zh: '验证方式', en: 'Verification' },
+  risk_assessment: { zh: '风险判断', en: 'Risk Assessment' },
+  closure_evidence: { zh: '关闭证据', en: 'Closure Evidence' },
+  completion_evidence: { zh: '完成证据', en: 'Completion Evidence' },
+  blocked_by: { zh: '前置依赖', en: 'Blocked By' },
+  sub_tasks: { zh: '子任务', en: 'Subtasks' },
+  deliverables: { zh: '产出物', en: 'Deliverables' },
+  related_docs: { zh: '关联文档', en: 'Related Docs' },
+  affected_docs: { zh: '受影响文档', en: 'Affected Docs' },
+  related_tasks: { zh: '关联任务', en: 'Related Tasks' },
+  related_adrs: { zh: '关联 ADR', en: 'Related ADRs' },
+  related_intents: { zh: '关联意图', en: 'Related Intents' },
+  related_memos: { zh: '关联备忘', en: 'Related Memos' },
+  related_pitfalls: { zh: '关联踩坑', en: 'Related Pitfalls' },
+  related_profiles: { zh: '关联画像', en: 'Related Profiles' },
+  related_rules: { zh: '承接规则', en: 'Related Rules' },
+  related_changes: { zh: '关联变更', en: 'Related Changes' },
+  context: { zh: '背景', en: 'Context' },
+  decision: { zh: '决策', en: 'Decision' },
+  consequences: { zh: '影响', en: 'Consequences' },
+  alternatives: { zh: '替代方案', en: 'Alternatives' },
+  affects: { zh: '影响对象', en: 'Affects' },
+  superseded_by: { zh: '替代来源', en: 'Superseded By' },
+  symptoms: { zh: '问题现象', en: 'Symptoms' },
+  trigger_conditions: { zh: '触发条件', en: 'Trigger Conditions' },
+  root_cause: { zh: '根因', en: 'Root Cause' },
+  resolution: { zh: '解决方案', en: 'Resolution' },
+  avoidance: { zh: '规避策略', en: 'Avoidance' },
+  applicability: { zh: '适用范围', en: 'Applicability' },
+  source_objects: { zh: '来源对象', en: 'Source Objects' },
+  source_tasks: { zh: '来源任务', en: 'Source Tasks' },
+  source_memos: { zh: '来源备忘', en: 'Source Memos' },
+  archive_reason: { zh: '归档原因', en: 'Archive Reason' },
+  resolved_to: { zh: '分流目标', en: 'Resolved To' },
+  status_history: { zh: '状态记录', en: 'Status History' },
+  notes: { zh: '备注', en: 'Notes' },
+  project_path: { zh: '项目路径', en: 'Project Path' },
+  ldvh_base_path: { zh: '事实实例路径', en: 'LDVH Base Path' },
+  docs_path: { zh: '文档路径', en: 'Docs Path' },
+  governance_scope: { zh: '管辖范围', en: 'Governance Scope' },
+  at: { zh: '时间', en: 'At' },
+  from: { zh: '前状态', en: 'From' },
+  to: { zh: '后状态', en: 'To' },
+  actor: { zh: '执行者', en: 'Actor' },
+  reason: { zh: '原因', en: 'Reason' },
+};
+
 export default function ReadingPanel() {
   const { isOpen, content, canGoBack, canGoForward, goBack, goForward, closePanel } = usePanel();
+  const { t } = useI18n();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isDragging, setIsDragging] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -129,7 +236,7 @@ export default function ReadingPanel() {
 
   if (!isOpen && !content) return null;
 
-  const panelTitle = content?.title || '扩展阅读';
+  const panelTitle = content?.title || t('readingPanel.title');
   const preview = content ? <PanelContentRenderer content={content} /> : <EmptyPanelPreview />;
   const navigationControls = (
     <div className="flex shrink-0 items-center gap-1">
@@ -138,8 +245,8 @@ export default function ReadingPanel() {
         onClick={goBack}
         disabled={!canGoBack}
         className="rounded p-1 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary disabled:cursor-default disabled:opacity-35"
-        title="上一个访问对象"
-        aria-label="上一个访问对象"
+        title={t('readingPanel.previous')}
+        aria-label={t('readingPanel.previous')}
       >
         <ChevronLeft size={14} />
       </button>
@@ -148,8 +255,8 @@ export default function ReadingPanel() {
         onClick={goForward}
         disabled={!canGoForward}
         className="rounded p-1 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary disabled:cursor-default disabled:opacity-35"
-        title="下一个访问对象"
-        aria-label="下一个访问对象"
+        title={t('readingPanel.next')}
+        aria-label={t('readingPanel.next')}
       >
         <ChevronRight size={14} />
       </button>
@@ -178,7 +285,13 @@ export default function ReadingPanel() {
               {navigationControls}
               <h3 className="ldvh-card-title truncate">{panelTitle}</h3>
             </div>
-            <button onClick={closePanel} className="rounded p-1 text-ldvh-text-secondary hover:bg-ldvh-border/30">
+            <button
+              type="button"
+              onClick={closePanel}
+              title={t('readingPanel.close')}
+              aria-label={t('readingPanel.close')}
+              className="rounded p-1 text-ldvh-text-secondary hover:bg-ldvh-border/30"
+            >
               <X size={14} />
             </button>
           </div>
@@ -211,7 +324,13 @@ export default function ReadingPanel() {
           {navigationControls}
           <h3 className="ldvh-card-title truncate">{panelTitle}</h3>
         </div>
-        <button onClick={closePanel} className="rounded p-1 text-ldvh-text-secondary hover:bg-ldvh-border/30">
+        <button
+          type="button"
+          onClick={closePanel}
+          title={t('readingPanel.close')}
+          aria-label={t('readingPanel.close')}
+          className="rounded p-1 text-ldvh-text-secondary hover:bg-ldvh-border/30"
+        >
           <X size={14} />
         </button>
       </div>
@@ -223,9 +342,10 @@ export default function ReadingPanel() {
 }
 
 function EmptyPanelPreview() {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <p className="ldvh-body-muted">选择一个对象或文档以在此预览</p>
+      <p className="ldvh-body-muted">{t('readingPanel.empty')}</p>
     </div>
   );
 }
@@ -239,16 +359,14 @@ function PanelContentRenderer({ content }: { content: PanelContent }) {
     case 'diff': return <DiffPreview content={content} />;
     default:
       return (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="ldvh-body-muted">选择一个对象或文档以在此预览</p>
-        </div>
+        <EmptyPanelPreview />
       );
   }
 }
 
 function ObjectPreview({ content }: { content: PanelContent }) {
   const { objectType, objectId, data } = content;
-  const { locale, getStatus } = useI18n();
+  const { locale, getStatus, t } = useI18n();
   const [detail, setDetail] = useState<ApiObjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const obj = (data as Record<string, unknown> | undefined) ?? detail?.data;
@@ -290,7 +408,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   if (error) {
     return (
       <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
-        <p className="ldvh-body text-red-300">加载失败</p>
+        <p className="ldvh-body text-red-300">{t('readingPanel.loadFailed')}</p>
         <p className="ldvh-meta mt-1 text-red-300/80">{error}</p>
       </div>
     );
@@ -304,11 +422,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
       </div>
       <h3 className="ldvh-reading-title">{title}</h3>
       {objectId && <p className="ldvh-meta">{objectId}</p>}
-      {objectType === 'task' && obj ? (
-        <TaskObjectPreview obj={obj} />
-      ) : (
-        <GenericObjectPreview obj={obj} />
-      )}
+      {obj && <SemanticObjectPreview objectType={objectType} obj={obj} />}
     </div>
   );
 }
@@ -321,65 +435,171 @@ function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: stri
   return (obj.title_zh as string) || (obj.title as string) || objectId || '—';
 }
 
-function TaskObjectPreview({ obj }: { obj: Record<string, unknown> }) {
+function SemanticObjectPreview({ objectType, obj }: { objectType?: string; obj: Record<string, unknown> }) {
+  const entries = getPreviewEntries(objectType, obj);
+  if (entries.length === 0) return null;
+
   return (
-    <div className="space-y-4">
-      <PreviewSection title="任务目标">
-        {typeof obj.description === 'string' && obj.description ? (
-          <PreviewText value={obj.description} />
-        ) : (
-          <EmptyPreview text="未记录任务描述" />
-        )}
-        {typeof obj.source_intent === 'string' && obj.source_intent && (
-          <div className="mt-3">
-            <PreviewLabel>来源意图</PreviewLabel>
-            <ReferenceCard refs={[obj.source_intent]} />
-          </div>
-        )}
-      </PreviewSection>
-
-      {typeof obj.acceptance === 'string' && obj.acceptance && (
-        <PreviewSection title="验收标准">
-          <ChecklistCard value={obj.acceptance} />
-        </PreviewSection>
-      )}
-
-      {typeof obj.verification === 'string' && obj.verification && (
-        <PreviewSection title="验证方式">
-          <EvidenceBlock value={obj.verification} embedded />
-        </PreviewSection>
-      )}
-
-      {typeof obj.closure_evidence === 'string' && obj.closure_evidence && (
-        <PreviewSection title="关闭证据">
-          <EvidenceBlock value={obj.closure_evidence} embedded />
-        </PreviewSection>
-      )}
-
-      <PreviewDocGroup title="产出物" docs={obj.deliverables} />
-      <PreviewDocGroup title="关联文档" docs={obj.related_docs} />
-
-      {Array.isArray(obj.blocked_by) && obj.blocked_by.length > 0 && (
-        <PreviewSection title="前置依赖">
-          <ReferenceCard refs={obj.blocked_by as string[]} />
-        </PreviewSection>
-      )}
+    <div className="space-y-3">
+      {entries.map(([fieldKey, value]) => (
+        <PreviewField key={fieldKey} fieldKey={fieldKey} value={value} />
+      ))}
     </div>
   );
 }
 
-function GenericObjectPreview({ obj }: { obj: Record<string, unknown> | undefined }) {
-  if (!obj) return null;
+function getPreviewEntries(objectType: string | undefined, obj: Record<string, unknown>) {
+  const order = objectType ? PREVIEW_FIELD_ORDER_BY_TYPE[objectType] || [] : [];
+  const orderedKeys = order.filter((key) => hasPreviewValue(obj[key]));
+  const orderedSet = new Set(orderedKeys);
+  const restEntries = Object.entries(obj).filter(
+    ([key, value]) => !orderedSet.has(key) && !PREVIEW_META_KEYS.has(key) && hasPreviewValue(value),
+  );
+
+  return [
+    ...orderedKeys.map((key) => [key, obj[key]] as [string, unknown]),
+    ...restEntries,
+  ];
+}
+
+function hasPreviewValue(value: unknown) {
+  if (value === null || value === undefined || value === '') return false;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+function PreviewField({ fieldKey, value }: { fieldKey: string; value: unknown }) {
+  const { locale } = useI18n();
   return (
-    <div className="space-y-4">
-      {typeof obj.description === 'string' && obj.description && <PreviewText value={obj.description} />}
-      {Array.isArray(obj.related_tasks) && obj.related_tasks.length > 0 && (
-        <PreviewSection title="关联任务">
-          <ReferenceCard refs={obj.related_tasks as string[]} />
-        </PreviewSection>
-      )}
+    <PreviewSection title={getPreviewFieldLabel(fieldKey, locale)}>
+      <PreviewValue fieldKey={fieldKey} value={value} depth={0} />
+    </PreviewSection>
+  );
+}
+
+function PreviewValue({ fieldKey, value, depth }: { fieldKey: string; value: unknown; depth: number }) {
+  const { t, locale } = useI18n();
+
+  if (value === null || value === undefined || value === '') {
+    return <EmptyPreview text={t('objectDetail.emptyValue')} />;
+  }
+
+  if (typeof value === 'string') {
+    if (fieldKey === 'acceptance') {
+      return <ChecklistCard value={value} />;
+    }
+
+    if (CHECKLIST_COMPAT_FIELDS.includes(fieldKey) && hasChecklist(value)) {
+      return <ChecklistCard value={value} />;
+    }
+
+    if (DOC_LINK_FIELDS.includes(fieldKey) && isPreviewableDocPath(value)) {
+      return <DocPreviewLink docs={[value]} />;
+    }
+
+    if (EVIDENCE_FIELDS.includes(fieldKey)) {
+      return <EvidenceBlock value={value} embedded />;
+    }
+
+    if (REFERENCE_FIELDS.includes(fieldKey) && isObjectRef(value)) {
+      return <ReferenceCard refs={[value]} />;
+    }
+
+    if (SUMMARY_TEXT_FIELDS.includes(fieldKey) || value.includes('\n') || value.length > 160) {
+      return <PreviewText value={value} />;
+    }
+
+    return <span className="ldvh-body">{value}</span>;
+  }
+
+  if (typeof value === 'boolean') {
+    return (
+      <span className={`ldvh-chip rounded px-1.5 py-0.5 ${value ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+        {value ? t('common.true') : t('common.false')}
+      </span>
+    );
+  }
+
+  if (typeof value === 'number') {
+    return <span className="ldvh-meta-primary text-ldvh-accent">{value}</span>;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <EmptyPreview text={t('common.empty')} />;
+    if (typeof value[0] === 'string') {
+      return <PreviewReferenceList fieldKey={fieldKey} items={value as string[]} />;
+    }
+
+    return (
+      <div className="space-y-2">
+        {value.map((item, index) => (
+          <div key={index} className="rounded-md border border-ldvh-border bg-ldvh-panel p-2.5">
+            <PreviewValue fieldKey={fieldKey} value={item} depth={depth + 1} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).filter(([, v]) => hasPreviewValue(v));
+    if (entries.length === 0) return <EmptyPreview text={t('common.empty')} />;
+
+    return (
+      <div className="space-y-2">
+        {entries.map(([key, nestedValue]) => (
+          <div key={key} className="flex gap-2">
+            <span className="ldvh-caption shrink-0 rounded border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5">
+              {getPreviewFieldLabel(key, locale)}
+            </span>
+            <div className="min-w-0 flex-1">
+              <PreviewValue fieldKey={key} value={nestedValue} depth={depth + 1} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return <span className="ldvh-body">{String(value)}</span>;
+}
+
+function PreviewReferenceList({ fieldKey, items }: { fieldKey: string; items: string[] }) {
+  const docs = items.filter(isPreviewableDocPath);
+  const objectRefs = items.filter(isObjectRef);
+  const rest = items.filter((item) => !isPreviewableDocPath(item) && !isObjectRef(item));
+  const shouldPreferDocs = DOC_LINK_FIELDS.includes(fieldKey);
+  const shouldPreferRefs = REFERENCE_FIELDS.includes(fieldKey);
+
+  if (shouldPreferDocs || shouldPreferRefs) {
+    return (
+      <div className="space-y-2">
+        {objectRefs.length > 0 && <ReferenceCard refs={objectRefs} />}
+        {docs.length > 0 && <DocPreviewLink docs={docs} />}
+        {rest.length > 0 && <PreviewStringList items={rest} />}
+      </div>
+    );
+  }
+
+  return <PreviewStringList items={items} />;
+}
+
+function PreviewStringList({ items }: { items: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item, index) => (
+        <span key={`${item}-${index}`} className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-0.5 text-ldvh-text-primary">
+          {item}
+        </span>
+      ))}
     </div>
   );
+}
+
+function getPreviewFieldLabel(fieldKey: string, locale: string) {
+  const label = PREVIEW_FIELD_LABELS[fieldKey];
+  if (label) return locale === 'en' ? label.en : label.zh;
+  return fieldKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -396,27 +616,15 @@ function PreviewLabel({ children }: { children: React.ReactNode }) {
 }
 
 function PreviewText({ value }: { value: string }) {
-  return (
-    <p className="ldvh-body-muted whitespace-pre-wrap">
-      {value}
-    </p>
-  );
+  return <SummaryText value={value} />;
 }
 
 function EmptyPreview({ text }: { text: string }) {
   return <span className="ldvh-body-muted italic">{text}</span>;
 }
 
-function PreviewDocGroup({ title, docs }: { title: string; docs: unknown }) {
-  if (!Array.isArray(docs) || docs.length === 0) return null;
-  return (
-    <PreviewSection title={title}>
-      <DocPreviewLink docs={docs as string[]} />
-    </PreviewSection>
-  );
-}
-
 function DocPreview({ content }: { content: PanelContent }) {
+  const { t } = useI18n();
   const { docPath, data } = content;
   const [doc, setDoc] = useState<DocContent | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -451,7 +659,7 @@ function DocPreview({ content }: { content: PanelContent }) {
     return (
       <div className="space-y-3">
         <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
-          <p className="ldvh-body text-red-300">文档加载失败</p>
+          <p className="ldvh-body text-red-300">{t('readingPanel.docLoadFailed')}</p>
           <p className="ldvh-meta mt-1 text-red-300/80">{error}</p>
         </div>
       </div>
@@ -467,14 +675,14 @@ function DocPreview({ content }: { content: PanelContent }) {
       ) : isMarkdown ? (
         <article className="rounded-lg border border-ldvh-border bg-ldvh-panel px-6 py-5 shadow-sm shadow-black/10">
           <MarkdownPreview content={docContent} />
-          {truncated && <p className="ldvh-caption mt-3">内容已截断</p>}
+          {truncated && <p className="ldvh-caption mt-3">{t('readingPanel.truncated')}</p>}
         </article>
       ) : (
         <div className="rounded-md bg-ldvh-bg p-3">
           <pre className="ldvh-meta-primary whitespace-pre-wrap">
             {docContent}
           </pre>
-          {truncated && <p className="ldvh-caption mt-3">内容已截断</p>}
+          {truncated && <p className="ldvh-caption mt-3">{t('readingPanel.truncated')}</p>}
         </div>
       )}
     </div>
@@ -496,16 +704,17 @@ function YamlPreview({ content }: { content: PanelContent }) {
 }
 
 function EvidencePreview({ content }: { content: PanelContent }) {
+  const { t } = useI18n();
   const { title, data } = content;
   const items = (data as Array<{ label: string; value: string }>) || [];
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <FileText size={14} className="text-ldvh-text-secondary" />
-        <h4 className="ldvh-card-title">{title || '关闭证据'}</h4>
+        <h4 className="ldvh-card-title">{title || t('objectDetail.closureEvidence')}</h4>
       </div>
       {items.length === 0 ? (
-        <p className="ldvh-caption">暂无证据信息</p>
+        <p className="ldvh-caption">{t('readingPanel.noEvidence')}</p>
       ) : (
         <div className="space-y-2">
           {items.map((item, i) => (
@@ -521,6 +730,7 @@ function EvidencePreview({ content }: { content: PanelContent }) {
 }
 
 function DiffPreview({ content }: { content: PanelContent }) {
+  const { t } = useI18n();
   const { title, data } = content;
   const diffText = typeof data === 'string' ? data : '';
   const lines = diffText.split('\n');
@@ -528,7 +738,7 @@ function DiffPreview({ content }: { content: PanelContent }) {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <FileDiff size={14} className="text-ldvh-text-secondary" />
-        <h4 className="ldvh-card-title">{title || '变更详情'}</h4>
+        <h4 className="ldvh-card-title">{title || t('readingPanel.changeDetail')}</h4>
       </div>
       <div className="rounded-md bg-ldvh-bg p-3">
         <pre className="ldvh-meta-primary max-h-[600px] overflow-y-auto whitespace-pre-wrap">
