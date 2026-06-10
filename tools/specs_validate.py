@@ -2937,6 +2937,136 @@ def ldvh_landing_check_main(workspace_root=None, output_format="text"):
     return 0 if report["summary"]["status"] in {"closed", "degraded"} else 1
 
 
+LANDING_VERIFY_STATUS_ORDER = {
+    "closed": 0,
+    "degraded": 1,
+    "needs_human_gate": 2,
+    "open": 3,
+    "blocked": 4,
+}
+
+
+def landing_verify_status(items):
+    status = "closed"
+    for item in items:
+        item_status = item.get("status", "closed")
+        if LANDING_VERIFY_STATUS_ORDER.get(item_status, 3) > LANDING_VERIFY_STATUS_ORDER.get(status, 0):
+            status = item_status
+    return status
+
+
+def landing_verify_normalize_check(item):
+    status = item.get("status", "closed")
+    return {
+        "id": item.get("id", "unknown"),
+        "source_area": item.get("source_area", "unknown"),
+        "status": status,
+        "issue_count": int(item.get("issue_count", 0)),
+        "evidence": item.get("evidence", ""),
+        "suggested_writeback": item.get("suggested_writeback", "manual_review"),
+        "issues": item.get("issues", []),
+    }
+
+
+def landing_verify_pytest_check(pytest_result=None):
+    if pytest_result is None:
+        return None
+    if isinstance(pytest_result, dict):
+        status = pytest_result.get("status", "closed")
+        issue_count = int(pytest_result.get("issue_count", 0))
+        evidence = pytest_result.get("evidence") or f"pytest status: {status}, issues: {issue_count}"
+        issues = pytest_result.get("issues", [])
+    else:
+        status = "closed" if int(pytest_result) == 0 else "open"
+        issue_count = 0 if status == "closed" else 1
+        evidence = f"pytest exit code: {pytest_result}"
+        issues = []
+    return landing_verify_normalize_check(
+        {
+            "id": "pytest",
+            "source_area": "test",
+            "status": status,
+            "issue_count": issue_count,
+            "evidence": evidence,
+            "suggested_writeback": "test_or_code_fix",
+            "issues": issues,
+        }
+    )
+
+
+def landing_verify_review_status(status):
+    if status == "needs_human_gate":
+        return "human_gate_required"
+    if status in {"open", "blocked"}:
+        return "blocked"
+    return "ready"
+
+
+def landing_verify_build(workspace_root=None, checks=None, ldvh_check=None, pytest_result=None):
+    if checks is None:
+        if ldvh_check is None:
+            ldvh_check = ldvh_landing_check_build(workspace_root)
+        checks = ldvh_check.get("checks", [])
+    normalized_checks = [landing_verify_normalize_check(item) for item in checks]
+    pytest_check = landing_verify_pytest_check(pytest_result)
+    if pytest_check is not None:
+        normalized_checks.append(pytest_check)
+    status = landing_verify_status(normalized_checks)
+    review_items = [item for item in normalized_checks if item["status"] != "closed"]
+    return {
+        "metadata": {
+            "tool": "tools/specs_validate.py",
+            "report": "landing-verify",
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "source_of_truth": False,
+            "status_source": "derived verification aggregate",
+            "contract_version": "landing-verify/v1",
+            "workspace_root": str(Path(workspace_root) if workspace_root else PROJECT_ROOT),
+        },
+        "summary": {
+            "status": status,
+            "by_status": landing_report_count_by(normalized_checks, "status"),
+            "check_count": len(normalized_checks),
+            "remaining_gap_count": len(review_items),
+        },
+        "checks": normalized_checks,
+        "review_queue": {
+            "status": landing_verify_review_status(status),
+            "target": "review_needed",
+            "items": review_items,
+        },
+        "next_steps": {
+            "task_status": "review_needed",
+            "can_close": status == "closed",
+            "review_targets": ["review_needed", "web_validate", "human_gate_record"],
+        },
+    }
+
+
+def landing_verify_format_text(report):
+    lines = ["Landing Verify"]
+    lines.append(f"- 状态: {report['summary']['status']}")
+    lines.append(f"- 检查数: {report['summary']['check_count']}")
+    lines.append(f"- 剩余缺口数: {report['summary']['remaining_gap_count']}")
+    lines.append(f"- Review 队列: {report['review_queue']['status']}")
+    lines.append("")
+    lines.append("检查项:")
+    for item in report["checks"]:
+        lines.append(f"- [{item['status']}/{item['source_area']}] {item['id']} -> {item['evidence']}; issues: {item['issue_count']}")
+    lines.append("")
+    lines.append(f"Task 后续状态: {report['next_steps']['task_status']}")
+    return "\n".join(lines)
+
+
+def landing_verify_main(workspace_root=None, output_format="text"):
+    report = landing_verify_build(workspace_root)
+    if output_format == "json":
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        print(landing_verify_format_text(report))
+    return 0 if report["summary"]["status"] in {"closed", "degraded"} else 1
+
+
 # ══════════════════════════════════════════════════════════════════════
 # web-validate — Web Validate 页面只读数据合同
 # ══════════════════════════════════════════════════════════════════════
@@ -3604,6 +3734,11 @@ def build_parser():
     landing_repair_parser.add_argument("--execute", action="store_true", help="执行真实修复；默认只输出候选修复。")
     landing_repair_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
+    # landing-verify
+    landing_verify_parser = subparsers.add_parser("landing-verify", help="聚合 fact/spec/test 验证结果并输出 review_needed 证据。")
+    landing_verify_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
+    landing_verify_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+
     # web-validate
     web_validate_parser = subparsers.add_parser("web-validate", help="生成 Web Validate 页面只读数据合同。")
     web_validate_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
@@ -3673,6 +3808,9 @@ def main(argv=None):
 
     if command == "landing-repair":
         return landing_repair_main(args.plan, args.patch, args.execute, args.format)
+
+    if command == "landing-verify":
+        return landing_verify_main(args.workspace_root, args.format)
 
     if command == "web-validate":
         return web_validate_main(args.workspace_root, args.format)

@@ -1864,3 +1864,91 @@ def test_landing_repair_blocks_missing_verify_commands(tmp_path, monkeypatch):
 
     assert result["summary"]["status"] == "blocked"
     assert "missing_verify_commands" in result["summary"]["blocked_reasons"]
+
+
+def landing_verify_check(check_id, status="closed", issue_count=0, source_area="fact/spec"):
+    return {
+        "id": check_id,
+        "source_area": source_area,
+        "status": status,
+        "issue_count": issue_count,
+        "evidence": f"{check_id} evidence",
+        "suggested_writeback": "manual_review",
+        "issues": [],
+    }
+
+
+def test_landing_verify_aggregates_successful_results():
+    result = checker.landing_verify_build(
+        checks=[
+            landing_verify_check("fact_validate"),
+            landing_verify_check("spec_validate"),
+            landing_verify_check("pytest"),
+        ]
+    )
+
+    assert result["metadata"]["report"] == "landing-verify"
+    assert result["summary"]["status"] == "closed"
+    assert result["summary"]["by_status"] == {"closed": 3}
+    assert result["next_steps"]["task_status"] == "review_needed"
+    assert result["review_queue"]["status"] == "ready"
+    assert result["review_queue"]["items"] == []
+
+
+def test_landing_verify_reports_failed_results_without_closed():
+    result = checker.landing_verify_build(
+        checks=[
+            landing_verify_check("fact_validate"),
+            landing_verify_check("spec_validate", status="open", issue_count=2),
+            landing_verify_check("pytest"),
+        ]
+    )
+
+    assert result["summary"]["status"] == "open"
+    assert result["next_steps"]["task_status"] == "review_needed"
+    assert result["review_queue"]["status"] == "blocked"
+    assert result["review_queue"]["items"][0]["id"] == "spec_validate"
+
+
+def test_landing_verify_preserves_degraded_and_human_gate_statuses():
+    result = checker.landing_verify_build(
+        checks=[
+            landing_verify_check("fact_validate"),
+            landing_verify_check("runtime_projection", status="degraded", source_area="runtime-projection"),
+            landing_verify_check("human_gate", status="needs_human_gate", source_area="human-gate"),
+        ]
+    )
+
+    assert result["summary"]["status"] == "needs_human_gate"
+    assert result["summary"]["by_status"] == {"closed": 1, "degraded": 1, "needs_human_gate": 1}
+    assert result["review_queue"]["status"] == "human_gate_required"
+    assert {item["id"] for item in result["review_queue"]["items"]} == {"runtime_projection", "human_gate"}
+
+
+def test_landing_verify_can_consume_ldvh_check_and_pytest_result():
+    ldvh_check = {
+        "checks": [
+            landing_verify_check("fact_validate"),
+            landing_verify_check("spec_validate"),
+        ]
+    }
+    result = checker.landing_verify_build(ldvh_check=ldvh_check, pytest_result={"status": "open", "issue_count": 1})
+
+    assert [item["id"] for item in result["checks"]] == ["fact_validate", "spec_validate", "pytest"]
+    assert result["summary"]["status"] == "open"
+    assert result["checks"][2]["source_area"] == "test"
+
+
+def test_landing_verify_cli_outputs_json(monkeypatch, capsys):
+    monkeypatch.setattr(
+        checker,
+        "ldvh_landing_check_build",
+        lambda workspace_root=None: {"checks": [landing_verify_check("fact_validate")]},
+    )
+
+    exit_code = checker.main(["landing-verify", "--format", "json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["metadata"]["report"] == "landing-verify"
+    assert payload["summary"]["status"] == "closed"
