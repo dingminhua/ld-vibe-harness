@@ -6,8 +6,10 @@ import {
 } from 'lucide-react';
 import StatsCard from '@/components/StatsCard';
 import StatusBadge from '@/components/StatusBadge';
+import StatusBanner from '@/components/StatusBanner';
 import MemoCreate from '@/components/MemoCreate';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
+import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
 import type { LocaleKey } from '@/i18n/locales';
 import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
@@ -35,6 +37,7 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { t, locale, getStatus } = useI18n();
+  const { openPanel } = usePanel();
 
   useEffect(() => {
     fetchDashboard(locale)
@@ -109,6 +112,18 @@ export default function Dashboard() {
   return (
     <div className="p-6">
       <h1 className="mb-2 text-xl font-semibold text-ldvh-text-primary">{t('dashboard.title')}</h1>
+
+      {/* 关键状态信号 */}
+      {data.validation.errors > 0 && (
+        <div className="mb-4">
+          <StatusBanner
+            status="open"
+            title={t('dashboard.validationErrorHint')}
+            description={t('dashboard.summary.validationErrors', { count: String(data.validation.errors) })}
+            action={{ label: t('dashboard.landingGuideAction'), onClick: () => navigate('/validate') }}
+          />
+        </div>
+      )}
 
       {/* 态势摘要行 */}
       {parts.length > 0 && (
@@ -214,7 +229,7 @@ export default function Dashboard() {
                   <li
                     key={`${item.type}-${item.id}`}
                     className={`flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30 ${isHighlight ? 'border-l-2 border-ldvh-accent' : ''}`}
-                    onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
+                    onClick={() => openPanel({ type: 'object', title: getLocalizedTitle(item, locale) || item.id, objectType: item.type, objectId: item.id })}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-3">
                       <span
@@ -297,7 +312,7 @@ export default function Dashboard() {
                 <li
                   key={`${item.type}-${item.id}`}
                   className="flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30"
-                  onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
+                  onClick={() => openPanel({ type: 'object', title: getLocalizedTitle(item, locale) || item.id, objectType: item.type, objectId: item.id })}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <span

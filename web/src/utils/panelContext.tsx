@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 
-export type PanelContentType = 'object' | 'doc' | 'yaml' | 'empty';
+export type PanelContentType = 'object' | 'doc' | 'yaml' | 'evidence' | 'diff' | 'empty';
 
 export interface PanelContent {
   type: PanelContentType;

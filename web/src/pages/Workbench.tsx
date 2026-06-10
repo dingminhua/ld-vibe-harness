@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
+import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
 import type { LocaleKey } from '@/i18n/locales';
 import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
@@ -41,6 +42,7 @@ export default function Workbench() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { t, locale, getStatus } = useI18n();
+  const { openPanel } = usePanel();
 
   useEffect(() => {
     fetchDashboard(locale)
@@ -177,7 +179,7 @@ export default function Workbench() {
             {relatedObjects.length > 0 ? relatedObjects.map((item) => (
               <button
                 key={`${item.type}-${item.id}`}
-                onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
+                onClick={() => openPanel({ type: 'object', title: getLocalizedTitle(item, locale) || item.id, objectType: item.type, objectId: item.id })}
                 className="flex items-center gap-3 rounded-lg border border-ldvh-border bg-ldvh-bg p-3 text-left transition-colors hover:border-ldvh-accent/40"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ldvh-accent/10 text-ldvh-accent">
