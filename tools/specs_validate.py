@@ -2475,6 +2475,160 @@ def ldvh_landing_check_main(workspace_root=None, output_format="text"):
 
 
 # ══════════════════════════════════════════════════════════════════════
+# web-validate — Web Validate 页面只读数据合同
+# ══════════════════════════════════════════════════════════════════════
+
+def web_validate_compact_landing_check(report):
+    return {
+        "metadata": {
+            "generated_at": report.get("metadata", {}).get("generated_at"),
+            "status_source": report.get("metadata", {}).get("status_source"),
+            "scope": report.get("metadata", {}).get("scope"),
+        },
+        "summary": {
+            "status": report.get("summary", {}).get("status"),
+            "remaining_gap_count": report.get("summary", {}).get("remaining_gap_count", 0),
+            "by_status": report.get("summary", {}).get("by_status", {}),
+        },
+        "checks": [
+            {
+                "id": item.get("id"),
+                "status": item.get("status"),
+                "issue_count": item.get("issue_count", 0),
+                "evidence": item.get("evidence"),
+                "suggested_writeback": item.get("suggested_writeback"),
+            }
+            for item in report.get("checks", [])
+        ],
+        "remaining_gaps": [
+            {
+                "id": item.get("id"),
+                "status": item.get("status"),
+                "message": item.get("message"),
+                "suggested_writeback": item.get("suggested_writeback"),
+            }
+            for item in report.get("remaining_gaps", [])
+        ],
+    }
+
+
+def web_validate_compact_landing_report(report):
+    return {
+        "metadata": {
+            "generated_at": report.get("metadata", {}).get("generated_at"),
+            "requirement_count": report.get("metadata", {}).get("requirement_count", 0),
+            "human_gate_record_count": report.get("metadata", {}).get("human_gate_record_count", 0),
+            "runtime_projection_issue_count": report.get("metadata", {}).get("runtime_projection_issue_count", 0),
+            "human_gate_issue_count": report.get("metadata", {}).get("human_gate_issue_count", 0),
+            "status_source": report.get("metadata", {}).get("status_source"),
+        },
+        "summary": {
+            "by_status": report.get("summary", {}).get("by_status", {}),
+            "gap_total": report.get("summary", {}).get("gap_total", 0),
+            "runtime_projection_status": report.get("summary", {}).get("runtime_projection_status"),
+            "human_gate_status": report.get("summary", {}).get("human_gate_status"),
+            "gap_by_owner_area": report.get("summary", {}).get("gap_by_owner_area", {}),
+        },
+        "capability_gaps": [
+            {
+                "id": item.get("id"),
+                "capability": item.get("capability"),
+                "status": item.get("status"),
+                "owner_area": item.get("owner_area"),
+                "suggested_writeback": item.get("suggested_writeback"),
+                "evidence": item.get("evidence"),
+            }
+            for item in report.get("capability_gaps", [])
+        ],
+        "gap_categories": [
+            {
+                "key": key,
+                "label": category.get("label"),
+                "total": category.get("total", 0),
+                "by_status": category.get("by_status", {}),
+                "examples": [
+                    {
+                        "source": example.get("source"),
+                        "status": example.get("status"),
+                        "title": example.get("title"),
+                        "suggested_writeback": example.get("suggested_writeback"),
+                    }
+                    for example in category.get("examples", [])
+                ],
+            }
+            for key, category in report.get("gap_categories", {}).items()
+        ],
+    }
+
+
+def web_validate_compact_human_gate_report(report):
+    return {
+        "metadata": {
+            "generated_at": report.get("metadata", {}).get("generated_at"),
+            "checked_file_count": report.get("metadata", {}).get("checked_file_count", 0),
+            "record_count": report.get("metadata", {}).get("record_count", 0),
+            "issue_count": report.get("metadata", {}).get("issue_count", 0),
+            "status_source": report.get("metadata", {}).get("status_source"),
+            "scope": report.get("metadata", {}).get("scope"),
+        },
+        "summary": {
+            "status": report.get("summary", {}).get("status"),
+        },
+        "issues": report.get("issues", []),
+    }
+
+
+def web_validate_build(workspace_root=None):
+    fact_report = ldvh_landing_check_fact_validate()
+    landing_check = ldvh_landing_check_build(workspace_root)
+    landing_report = landing_report_build()
+    human_gate_report = landing_report.get("human_gate")
+    if human_gate_report is None:
+        human_gate_report = human_gate_report_build()
+
+    return {
+        "ok": fact_report.get("error_count", 0) == 0,
+        "command": "web_validate",
+        "action": "validate",
+        "target": "ldvh-base",
+        "summary": {
+            "files": fact_report.get("checked_file_count", 0),
+            "errors": fact_report.get("error_count", 0),
+            "warnings": fact_report.get("warning_count", 0),
+        },
+        "issues": fact_report.get("issues", []),
+        "reports": {
+            "landingCheck": web_validate_compact_landing_check(landing_check),
+            "landingReport": web_validate_compact_landing_report(landing_report),
+            "humanGateReport": web_validate_compact_human_gate_report(human_gate_report),
+        },
+    }
+
+
+def web_validate_format_text(report):
+    landing = report.get("reports", {}).get("landingCheck", {})
+    landing_report = report.get("reports", {}).get("landingReport", {})
+    human_gate = report.get("reports", {}).get("humanGateReport", {})
+    lines = ["Web Validate 派生报告"]
+    lines.append(f"- fact files: {report.get('summary', {}).get('files', 0)}")
+    lines.append(f"- fact errors: {report.get('summary', {}).get('errors', 0)}")
+    lines.append(f"- fact warnings: {report.get('summary', {}).get('warnings', 0)}")
+    lines.append(f"- 42 status: {landing.get('summary', {}).get('status')}")
+    lines.append(f"- landing gaps: {landing_report.get('summary', {}).get('gap_total', 0)}")
+    lines.append(f"- Human Gate records: {human_gate.get('metadata', {}).get('record_count', 0)}")
+    return "\n".join(lines)
+
+
+def web_validate_main(workspace_root=None, output_format="text"):
+    report = web_validate_build(workspace_root)
+    if output_format == "json":
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        print(web_validate_format_text(report))
+    return 0
+
+
+# ══════════════════════════════════════════════════════════════════════
 # index — 生成索引
 # ══════════════════════════════════════════════════════════════════════
 
@@ -2973,6 +3127,11 @@ def build_parser():
     landing_plan_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
     landing_plan_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
+    # web-validate
+    web_validate_parser = subparsers.add_parser("web-validate", help="生成 Web Validate 页面只读数据合同。")
+    web_validate_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
+    web_validate_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+
     # runtime-projection
     runtime_projection_parser = subparsers.add_parser("runtime-projection", help="检查项目内运行投影是否存在漂移风险。")
     runtime_projection_parser.add_argument("paths", nargs="*", default=None, help="要检查的运行投影文件或目录，默认检查项目内授权运行投影。")
@@ -3031,6 +3190,9 @@ def main(argv=None):
 
     if command == "landing-plan":
         return landing_plan_main(args.workspace_root, args.format)
+
+    if command == "web-validate":
+        return web_validate_main(args.workspace_root, args.format)
 
     if command == "runtime-projection":
         return runtime_projection_main(args.paths, args.format)

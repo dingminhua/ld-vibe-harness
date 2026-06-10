@@ -1628,3 +1628,36 @@ def test_ldvh_landing_check_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["metadata"]["report"] == "ldvh-landing-check"
     assert payload["summary"]["status"] == "open"
     assert payload["remaining_gaps"]
+
+
+# ══════════════════════════════════════════════════════════════════════
+# web-validate — Web Validate 页面只读数据合同
+# ══════════════════════════════════════════════════════════════════════
+
+def test_web_validate_builds_web_contract_from_code(tmp_path, monkeypatch):
+    build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
+
+    report = checker.web_validate_build(str(tmp_path))
+
+    assert report["command"] == "web_validate"
+    assert report["action"] == "validate"
+    assert report["target"] == "ldvh-base"
+    assert report["summary"]["files"] == 1
+    assert report["summary"]["errors"] == 0
+    assert "landingCheck" in report["reports"]
+    assert "landingReport" in report["reports"]
+    assert "humanGateReport" in report["reports"]
+    assert report["reports"]["landingCheck"]["summary"]["status"] == "open"
+    assert report["reports"]["landingReport"]["summary"]["gap_total"] >= 1
+    assert report["reports"]["humanGateReport"]["metadata"]["record_count"] == 0
+
+
+def test_web_validate_cli_outputs_json_without_failing_on_open_status(tmp_path, monkeypatch, capsys):
+    build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
+
+    exit_code = checker.main(["web-validate", "--workspace-root", str(tmp_path), "--format", "json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 0
+    assert payload["command"] == "web_validate"
+    assert payload["reports"]["landingCheck"]["summary"]["status"] == "open"
