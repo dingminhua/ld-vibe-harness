@@ -604,6 +604,10 @@ LANDING_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS = {
     "future_trigger_record": "未来触发时记录",
     "rule_condition_only": "只保留为规则条件",
 }
+LANDING_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS = {
+    "future_evaluation": "未来触发时评估",
+    "workflow_design_discussion": "流程创建前讨论",
+}
 LANDING_REPORT_HUMAN_GATE_DECISION_TERMS = [
     "接受长期降级",
     "关闭",
@@ -628,6 +632,10 @@ LANDING_REPORT_HUMAN_GATE_DECISION_TERMS = [
 LANDING_REPORT_HUMAN_GATE_POLICY_TERMS = [
     "评估 Human Gate",
     "应评估 Human Gate",
+    "应先讨论",
+    "讨论是否",
+]
+LANDING_REPORT_HUMAN_GATE_POLICY_DISCUSSION_TERMS = [
     "应先讨论",
     "讨论是否",
 ]
@@ -922,6 +930,21 @@ def landing_report_human_gate_decision_flow(item):
     return "rule_condition_only"
 
 
+def landing_report_human_gate_policy_flow(item):
+    text = " | ".join(
+        [
+            item.get("content", ""),
+            item.get("guarantee_mechanism", ""),
+            item.get("sync_type", ""),
+            item.get("trigger", ""),
+            item.get("status_reason", ""),
+        ]
+    )
+    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_POLICY_DISCUSSION_TERMS):
+        return "workflow_design_discussion"
+    return "future_evaluation"
+
+
 def landing_report_build_gap_categories(requirements, capability_gaps):
     categories = {}
     for item in list(requirements) + list(capability_gaps):
@@ -976,6 +999,8 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                 }
                 if subcategory_key == "decision_record_required":
                     subcategories[subcategory_key]["decision_flows"] = {}
+                if subcategory_key == "policy_clarification":
+                    subcategories[subcategory_key]["policy_flows"] = {}
             subcategory = subcategories[subcategory_key]
             subcategory["total"] += 1
             subcategory["by_status"][status] = subcategory["by_status"].get(status, 0) + 1
@@ -997,6 +1022,22 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                 flow["by_status"][status] = flow["by_status"].get(status, 0) + 1
                 if len(flow["examples"]) < 3:
                     flow["examples"].append(example)
+            if subcategory_key == "policy_clarification":
+                flow_key = landing_report_human_gate_policy_flow(item)
+                policy_flows = subcategory["policy_flows"]
+                if flow_key not in policy_flows:
+                    policy_flows[flow_key] = {
+                        "id": flow_key,
+                        "label": LANDING_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS.get(flow_key, flow_key),
+                        "total": 0,
+                        "by_status": {},
+                        "examples": [],
+                    }
+                flow = policy_flows[flow_key]
+                flow["total"] += 1
+                flow["by_status"][status] = flow["by_status"].get(status, 0) + 1
+                if len(flow["examples"]) < 3:
+                    flow["examples"].append(example)
     for category in categories.values():
         category["by_status"] = dict(sorted(category["by_status"].items(), key=lambda item: item[0]))
         category["by_suggested_writeback"] = dict(
@@ -1009,6 +1050,10 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                     for flow in subcategory["decision_flows"].values():
                         flow["by_status"] = dict(sorted(flow["by_status"].items(), key=lambda item: item[0]))
                     subcategory["decision_flows"] = dict(sorted(subcategory["decision_flows"].items(), key=lambda item: item[0]))
+                if subcategory.get("policy_flows"):
+                    for flow in subcategory["policy_flows"].values():
+                        flow["by_status"] = dict(sorted(flow["by_status"].items(), key=lambda item: item[0]))
+                    subcategory["policy_flows"] = dict(sorted(subcategory["policy_flows"].items(), key=lambda item: item[0]))
             category["subcategories"] = dict(sorted(category["subcategories"].items(), key=lambda item: item[0]))
     return dict(sorted(categories.items(), key=lambda item: item[0]))
 
@@ -1221,6 +1266,15 @@ def landing_report_format_text(report):
                         f"    - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
                     )
                 for flow in subcategory.get("decision_flows", {}).values():
+                    lines.append(
+                        f"    - {flow['label']} ({flow['id']}): "
+                        f"total={flow['total']}; status={flow['by_status']}"
+                    )
+                    for example in flow.get("examples", []):
+                        lines.append(
+                            f"      - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
+                        )
+                for flow in subcategory.get("policy_flows", {}).values():
                     lines.append(
                         f"    - {flow['label']} ({flow['id']}): "
                         f"total={flow['total']}; status={flow['by_status']}"
