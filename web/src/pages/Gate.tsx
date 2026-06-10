@@ -22,14 +22,6 @@ interface GateIssue {
   message?: string
 }
 
-interface GateRecord {
-  source?: string
-  decision_type?: string
-  decision?: string
-  scope?: string
-  timestamp?: string
-  constraints?: string
-}
 
 interface GateReport {
   metadata?: {
@@ -51,28 +43,7 @@ function dateText(value?: string): string {
   return value.replace('T', ' ').slice(0, 16)
 }
 
-function statusClasses(status?: string): string {
-  switch (status) {
-    case 'closed':
-      return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-    case 'open':
-      return 'border-red-500/30 bg-red-500/10 text-red-300'
-    case 'degraded':
-      return 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
-    case 'needs_human_gate':
-      return 'border-sky-500/30 bg-sky-500/10 text-sky-300'
-    default:
-      return 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary'
-  }
-}
 
-function StatusPill({ status, label }: { status?: string; label: string }) {
-  return (
-    <span className={`inline-flex max-w-full items-center rounded-md border px-2 py-1 text-xs font-medium ${statusClasses(status)}`}>
-      <span className="truncate">{label}</span>
-    </span>
-  )
-}
 
 
 export default function Gate() {
@@ -202,8 +173,6 @@ export default function Gate() {
 
           {/* 按问题码分组展示 */}
           {Object.entries(issuesByCode).map(([code, codeIssues]) => {
-            const byStatus = summary.by_code || {}
-            const countByCode = byStatus[code] || 0
             return (
               <div key={code} className="mb-4 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 last:mb-0">
                 <div className="mb-3 flex items-center justify-between gap-3">

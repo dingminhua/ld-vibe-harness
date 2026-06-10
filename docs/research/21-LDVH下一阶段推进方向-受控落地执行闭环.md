@@ -58,6 +58,7 @@ LDVH 当前不应继续只停留在“能检查、能诊断、能展示”的阶
 ```text
 Read Entry
 → Landing Plan
+→ Test Design
 → Human Approve
 → Auto Apply / Repair
 → Verify
@@ -133,7 +134,34 @@ Plan 只读
 
 这意味着自动执行不是问题，自动授权才是问题。Human Gate 的职责不是让人手工完成所有改动，而是让 Human 决定是否允许 AI/Code 在明确边界内自动执行。
 
-### 3.3 不要大而全 CLI，但要最小统一 CLI
+### 3.3 不要把测试放到实现之后补票，要测试先行
+
+受控落地执行闭环如果只强调 apply / repair，很容易滑向“先改了再说”的模式。LDVH 下一阶段必须把测试先行写入执行链路：任何新的 apply、repair、verify、CLI、Web 审核或事实源回写能力，在进入实现前都应先明确它要证明什么、失败时如何暴露、通过后留下什么证据。
+
+本文所说的测试先行不等于所有场景都机械套用经典 TDD，也不要求所有判断都先写自动化测试代码；它要求的是可验证先行：
+
+1. 先明确规则来源、成功条件和失败条件；
+2. 先定义正例、反例和边界样例；
+3. 先确定自动化测试、校验命令或等价验证方式；
+4. 修复已知 bug 时，优先先补能复现失败的测试或最小复现样例；
+5. 无法先写自动化测试时，必须说明原因、等价验证方式和残留风险；
+6. 未完成验证设计的 apply / repair 不应进入自动执行阶段。
+
+因此，受控落地执行链路应从：
+
+```text
+plan → approve → apply/repair → verify
+```
+
+进一步收紧为：
+
+```text
+plan → test design → approve → apply/repair → verify → review
+```
+
+测试先行要服务的不是测试形式，而是防止 AI 在没有失败条件、没有验收标准、没有可复现证据的情况下自动修改、自动修复或宣称完成。
+
+### 3.4 不要大而全 CLI，但要最小统一 CLI
 
 LDVH 不应一次性设计庞大的命令树，也不应绕开现有 `tools/` 重造一套产品化 CLI。
 
@@ -154,7 +182,7 @@ ldvh specs index/validate
 
 CLI 的首要定位不是产品门面，而是 Code 构成要素的稳定运行入口。每个命令都必须有输入、输出、exit code、事实源回指、写入边界、Human Gate 条件和验证方式。
 
-### 3.4 不要长期第二状态源，但要派生状态视图
+### 3.5 不要长期第二状态源，但要派生状态视图
 
 长期状态源是指脱离 Git 文件事实源、却开始承载权威状态的机制，例如：
 
@@ -182,7 +210,7 @@ LDVH 可以拥有：
 可回指 Git 文件事实源；不替代 Task、ADR、specs、Human Gate 记录或验证证据；稳定结论必须回写权威事实源。
 ```
 
-### 3.5 不要先抽象平台映射，要由落地闭环反推平台映射
+### 3.6 不要先抽象平台映射，要由落地闭环反推平台映射
 
 平台映射不能脱离实际流程凭空设计。它要回答的是：
 
@@ -252,6 +280,7 @@ LDVH 下一阶段应围绕以下流程推进：
 ```text
 Read Entry
 → Landing Plan
+→ Test Design
 → Human Approve
 → Auto Apply / Repair
 → Verify
@@ -267,7 +296,8 @@ Read Entry
 |---|---|---|---|
 | Read Entry | 识别当前项目、入口、平台、事实源、管辖关系和任务场景 | AI 入口、Code 查询 | 只读 |
 | Landing Plan | 生成范围、事实源、缺口、建议动作、Human Gate、验证和回写目标 | 41、42、Code | 只读 |
-| Human Approve | Human 确认执行范围、风险、目标文件、授权方式 | AskUserQuestion、Web、手工确认 | 写入授权记录或当前会话证据 |
+| Test Design | 在授权和实现前定义成功条件、失败条件、正反样例、边界样例、测试命令或等价验证方式 | 07、10、tests、Code、Task | 只读，形成测试设计或测试用例需按事实源边界回写 |
+| Human Approve | Human 确认执行范围、风险、目标文件、授权方式和验证方案 | AskUserQuestion、Web、手工确认 | 写入授权记录或当前会话证据 |
 | Auto Apply / Repair | 在授权边界内自动补齐文件、修复结构、生成记录或执行工具 | Code、AI、CLI | 只写 plan 中允许目标 |
 | Verify | 执行测试、校验、复检和结果聚合 | Code、tests、CLI | 通常只读，必要时写验证产物需授权 |
 | Review Needed | 将执行结果转入待审核状态 | Task、Web、派生队列 | 稳定状态应回 Task 或对应事实源 |
@@ -282,14 +312,16 @@ Read Entry
 1. 能生成 landing plan；
 2. plan 能列出要读、要改、要验证、要回写的对象；
 3. plan 能明确是否需要 Human Gate；
-4. Human 能确认执行边界；
-5. 授权后能自动执行一个安全、可回滚、可验证的补齐或修复；
-6. 执行后能自动验证；
-7. 结果能进入 review_needed；
-8. Web 或 AI 能展示审核材料；
-9. Human 审核结论能留下最小证据；
-10. 稳定结果能回写 Git 文件事实源；
-11. 复跑 42 或相关校验能消费结果。
+4. 在 Human 授权和自动执行前，能定义成功条件、失败条件、正反样例、边界样例、测试命令或等价验证方式；
+5. 修复已知问题时，能优先补出失败复现测试或最小复现样例；
+6. Human 能确认执行边界和验证方案；
+7. 授权后能自动执行一个安全、可回滚、可验证的补齐或修复；
+8. 执行后能自动验证；
+9. 结果能进入 review_needed；
+10. Web 或 AI 能展示审核材料；
+11. Human 审核结论能留下最小证据；
+12. 稳定结果能回写 Git 文件事实源；
+13. 复跑 42 或相关校验能消费结果。
 
 ---
 
@@ -468,6 +500,7 @@ review_needed 的来源可以包括：
 |---|---|---|
 | Entry | 入口在哪里加载 | Rules、AGENTS、README、薄入口 |
 | Plan | 计划在哪里生成 | CLI、Code、AI 工具 |
+| Test Design | 验证方案在哪里定义 | tests、Code、Task、10 运行闭环测试 |
 | Approve | Human 如何确认 | AskUserQuestion、Web、手工确认 |
 | Apply | 写入如何执行 | Code、AI 编辑工具、CLI |
 | Repair | 修复如何执行 | Code、AI 编辑工具、CLI |
@@ -486,19 +519,20 @@ review_needed 的来源可以包括：
 P0 不是继续写更多抽象文档，而是打通最小链路：
 
 ```text
-plan → approve → apply/repair → verify → review_needed → review → writeback → recheck
+plan → test design → approve → apply/repair → verify → review_needed → review → writeback → recheck
 ```
 
 P0 子项：
 
 1. 明确 landing plan 输出合同中的写入边界、Human Gate、验证和回写字段；
-2. 实现最小 landing apply；
-3. 实现最小 landing repair；
-4. 实现 landing verify；
-5. 定义 review_needed 的承载方式；
-6. 让 Web Validate 或新检查面展示待审核项；
-7. 让 Human Gate 证据能导出或回写；
-8. 复跑 42 消费结果。
+2. 在每个 apply / repair 实现前，先定义成功条件、失败条件、正反样例和测试命令；
+3. 实现最小 landing apply；
+4. 实现最小 landing repair；
+5. 实现 landing verify；
+6. 定义 review_needed 的承载方式；
+7. 让 Web Validate 或新检查面展示待审核项；
+8. 让 Human Gate 证据能导出或回写；
+9. 复跑 42 消费结果。
 
 ### 10.2 P1：最小统一 CLI
 
@@ -587,7 +621,8 @@ ADR 应记录的决策：
 4. repair 完成后默认进入 review_needed，不自动 closed；
 5. Web/CLI/status 只能作为派生视图，不能成为第二事实源；
 6. 最小统一 CLI 是 AI 应用入口，不是安装器；
-7. 平台映射由最小落地试点反向沉淀。
+7. 平台映射由最小落地试点反向沉淀；
+8. 受控落地执行链路必须测试先行：在 apply / repair 实现前先定义成功条件、失败条件、正反样例和验证方式。
 
 ### 11.2 建议进入 Task
 
@@ -600,14 +635,16 @@ ADR 应记录的决策：
 验收标准：
 
 1. landing plan 能列明读、写、验证、Human Gate 和回写目标；
-2. Human 能确认执行边界；
-3. apply / repair 能在授权边界内自动执行；
-4. verify 能自动复检；
-5. 执行结果进入 review_needed；
-6. Web 能展示待审核项和证据；
-7. Human 审核结果能回写；
-8. 42 能消费回写结果；
-9. 不引入第二事实源。
+2. 在 Human 授权和自动执行前，能定义成功条件、失败条件、正反样例和测试命令；
+3. 修复已知问题时，能优先补出失败复现测试或最小复现样例；
+4. Human 能确认执行边界和验证方案；
+5. apply / repair 能在授权边界内自动执行；
+6. verify 能自动复检；
+7. 执行结果进入 review_needed；
+8. Web 能展示待审核项和证据；
+9. Human 审核结果能回写；
+10. 42 能消费回写结果；
+11. 不引入第二事实源。
 
 ---
 
@@ -637,6 +674,7 @@ LDVH 下一阶段的关键不是继续证明“应该只读诊断”，也不是
 以 AI 执行者为第一服务对象，
 以 Git 文件为最终事实源，
 以 Human Gate 划定授权边界，
+以测试先行防止无验证自动执行，
 以 Code 执行自动 apply / repair / verify，
 以 Web 承接 Human 审核和证据回写，
 以 Task / ADR / specs 承载稳定结论，
@@ -647,5 +685,5 @@ LDVH 下一阶段的关键不是继续证明“应该只读诊断”，也不是
 一句话结论：
 
 ```text
-LDVH 不做安装器，但必须打通受控落地执行链路；不做无授权自动修复，但必须支持授权后的自动 apply / repair；不做第二事实源，但必须让状态、审核和验证可见、可追溯、可复检。
+LDVH 不做安装器，但必须打通受控落地执行链路；不做无授权自动修复，但必须支持授权后的自动 apply / repair；不做第二事实源，但必须让状态、审核和验证可见、可追溯、可复检；不做无验证自动执行，但必须在实现前先定义失败条件、成功条件和验证方式。
 ```

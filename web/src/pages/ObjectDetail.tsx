@@ -147,31 +147,6 @@ export default function ObjectDetail() {
 
 
 
-  const closePanel = useCallback(() => {
-  }, []);
-
-  // Listen for ldvh:doc-preview and ldvh:ref-preview custom events
-  useEffect(() => {
-    const handleDocPreview = (e: Event) => {
-      const customEvent = e as CustomEvent<{ path: string }>;
-    };
-
-    const handleRefPreview = (e: Event) => {
-      const customEvent = e as CustomEvent<{ refType: string; refId: string }>;
-      // On desktop, prevent navigation and open panel instead
-      if (window.innerWidth >= 1024) {
-        e.preventDefault();
-      }
-    };
-
-    document.addEventListener('ldvh:doc-preview', handleDocPreview);
-    document.addEventListener('ldvh:ref-preview', handleRefPreview);
-    return () => {
-      document.removeEventListener('ldvh:doc-preview', handleDocPreview);
-      document.removeEventListener('ldvh:ref-preview', handleRefPreview);
-    };
-  }, []);
-
   const refreshDetail = useCallback(() => {
     if (!type || !id) return;
     fetchObjectDetail(type, id)
@@ -592,7 +567,6 @@ function ClickableRefs({ refs }: { refs: string[] }) {
 function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh }: { fieldKey: string; value: unknown; depth: number; locale: string; objType?: string; objId?: string; onRefresh?: () => void }) {
   const { t } = useI18n();
   const [editingSourceIntent, setEditingSourceIntent] = useState(false);
-  const [editingStatus, setEditingStatus] = useState(false);
   const [saving, setSaving] = useState(false);
   if (value === null || value === undefined) {
     return <span className="text-xs text-ldvh-text-secondary italic">{t('common.null')}</span>;

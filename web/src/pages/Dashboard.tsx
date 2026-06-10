@@ -7,7 +7,6 @@ import {
 import StatsCard from '@/components/StatsCard';
 import StatusBadge from '@/components/StatusBadge';
 import StatusBanner from '@/components/StatusBanner';
-import MemoCreate from '@/components/MemoCreate';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
 import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';

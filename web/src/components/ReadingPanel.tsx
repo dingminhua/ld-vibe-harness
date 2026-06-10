@@ -67,8 +67,7 @@ export default function ReadingPanel() {
 
   useEffect(() => {
     const onResize = () => {
-      const newMax = Math.floor(window.innerWidth * MAX_WIDTH_RATIO);
-      setWidth(prev => clamp(prev));
+      setWidth(prev => Math.min(prev, Math.floor(window.innerWidth * 0.50)));
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
