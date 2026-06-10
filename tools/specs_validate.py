@@ -637,12 +637,12 @@ LANDING_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS = [
     "承接 06 §6.3.1",
 ]
 LANDING_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS = [
-    "当前",
-    "本次",
-    "现场确认",
-    "接受长期降级",
-    "判定 LDVH落地与检查闭环",
-    "声明 Human",
+    "当前已",
+    "本次已",
+    "已现场确认",
+    "已接受长期降级",
+    "已判定 LDVH落地与检查闭环",
+    "已声明 Human",
 ]
 LANDING_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS = [
     "前",
@@ -915,7 +915,7 @@ def landing_report_human_gate_decision_flow(item):
             item.get("status_reason", ""),
         ]
     )
-    if item.get("status") == "degraded" or any(term in text for term in LANDING_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS):
+    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS):
         return "current_record_required"
     if any(term in text for term in LANDING_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS):
         return "future_trigger_record"

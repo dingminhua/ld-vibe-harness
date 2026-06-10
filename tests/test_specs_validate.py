@@ -942,6 +942,7 @@ def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["gap_categories"]["human_gate"]["subcategories"]["decision_record_required"]["total"] == 1
     assert payload["gap_categories"]["human_gate"]["subcategories"]["diagnostic_coverage"]["total"] == 1
     assert payload["gap_categories"]["human_gate"]["subcategories"]["decision_record_required"]["decision_flows"]["future_trigger_record"]["total"] == 1
+    assert "current_record_required" not in payload["gap_categories"]["human_gate"]["subcategories"]["decision_record_required"]["decision_flows"]
     assert payload["requirements"][0]["source"] == "docs/specs/00-Test.md"
     assert payload["capability_gaps"][0]["capability"] == "41 触发保障"
 
