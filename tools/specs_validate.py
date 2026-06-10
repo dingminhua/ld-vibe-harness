@@ -608,6 +608,12 @@ LANDING_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS = {
     "future_evaluation": "未来触发时评估",
     "workflow_design_discussion": "流程创建前讨论",
 }
+LANDING_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS = {
+    "web_human_facing_support": "Web / Human-facing 承接",
+}
+LANDING_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS = {
+    "coverage_degraded": "覆盖范围降级",
+}
 LANDING_REPORT_HUMAN_GATE_DECISION_TERMS = [
     "接受长期降级",
     "关闭",
@@ -945,6 +951,14 @@ def landing_report_human_gate_policy_flow(item):
     return "future_evaluation"
 
 
+def landing_report_human_gate_support_flow(item):
+    return "web_human_facing_support"
+
+
+def landing_report_human_gate_diagnostic_flow(item):
+    return "coverage_degraded"
+
+
 def landing_report_build_gap_categories(requirements, capability_gaps):
     categories = {}
     for item in list(requirements) + list(capability_gaps):
@@ -1001,6 +1015,10 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                     subcategories[subcategory_key]["decision_flows"] = {}
                 if subcategory_key == "policy_clarification":
                     subcategories[subcategory_key]["policy_flows"] = {}
+                if subcategory_key == "implementation_support":
+                    subcategories[subcategory_key]["support_flows"] = {}
+                if subcategory_key == "diagnostic_coverage":
+                    subcategories[subcategory_key]["diagnostic_flows"] = {}
             subcategory = subcategories[subcategory_key]
             subcategory["total"] += 1
             subcategory["by_status"][status] = subcategory["by_status"].get(status, 0) + 1
@@ -1018,6 +1036,38 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                         "examples": [],
                     }
                 flow = decision_flows[flow_key]
+                flow["total"] += 1
+                flow["by_status"][status] = flow["by_status"].get(status, 0) + 1
+                if len(flow["examples"]) < 3:
+                    flow["examples"].append(example)
+            if subcategory_key == "implementation_support":
+                flow_key = landing_report_human_gate_support_flow(item)
+                support_flows = subcategory["support_flows"]
+                if flow_key not in support_flows:
+                    support_flows[flow_key] = {
+                        "id": flow_key,
+                        "label": LANDING_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS.get(flow_key, flow_key),
+                        "total": 0,
+                        "by_status": {},
+                        "examples": [],
+                    }
+                flow = support_flows[flow_key]
+                flow["total"] += 1
+                flow["by_status"][status] = flow["by_status"].get(status, 0) + 1
+                if len(flow["examples"]) < 3:
+                    flow["examples"].append(example)
+            if subcategory_key == "diagnostic_coverage":
+                flow_key = landing_report_human_gate_diagnostic_flow(item)
+                diagnostic_flows = subcategory["diagnostic_flows"]
+                if flow_key not in diagnostic_flows:
+                    diagnostic_flows[flow_key] = {
+                        "id": flow_key,
+                        "label": LANDING_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS.get(flow_key, flow_key),
+                        "total": 0,
+                        "by_status": {},
+                        "examples": [],
+                    }
+                flow = diagnostic_flows[flow_key]
                 flow["total"] += 1
                 flow["by_status"][status] = flow["by_status"].get(status, 0) + 1
                 if len(flow["examples"]) < 3:
@@ -1054,6 +1104,14 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                     for flow in subcategory["policy_flows"].values():
                         flow["by_status"] = dict(sorted(flow["by_status"].items(), key=lambda item: item[0]))
                     subcategory["policy_flows"] = dict(sorted(subcategory["policy_flows"].items(), key=lambda item: item[0]))
+                if subcategory.get("support_flows"):
+                    for flow in subcategory["support_flows"].values():
+                        flow["by_status"] = dict(sorted(flow["by_status"].items(), key=lambda item: item[0]))
+                    subcategory["support_flows"] = dict(sorted(subcategory["support_flows"].items(), key=lambda item: item[0]))
+                if subcategory.get("diagnostic_flows"):
+                    for flow in subcategory["diagnostic_flows"].values():
+                        flow["by_status"] = dict(sorted(flow["by_status"].items(), key=lambda item: item[0]))
+                    subcategory["diagnostic_flows"] = dict(sorted(subcategory["diagnostic_flows"].items(), key=lambda item: item[0]))
             category["subcategories"] = dict(sorted(category["subcategories"].items(), key=lambda item: item[0]))
     return dict(sorted(categories.items(), key=lambda item: item[0]))
 
@@ -1275,6 +1333,24 @@ def landing_report_format_text(report):
                             f"      - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
                         )
                 for flow in subcategory.get("policy_flows", {}).values():
+                    lines.append(
+                        f"    - {flow['label']} ({flow['id']}): "
+                        f"total={flow['total']}; status={flow['by_status']}"
+                    )
+                    for example in flow.get("examples", []):
+                        lines.append(
+                            f"      - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
+                        )
+                for flow in subcategory.get("support_flows", {}).values():
+                    lines.append(
+                        f"    - {flow['label']} ({flow['id']}): "
+                        f"total={flow['total']}; status={flow['by_status']}"
+                    )
+                    for example in flow.get("examples", []):
+                        lines.append(
+                            f"      - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
+                        )
+                for flow in subcategory.get("diagnostic_flows", {}).values():
                     lines.append(
                         f"    - {flow['label']} ({flow['id']}): "
                         f"total={flow['total']}; status={flow['by_status']}"

@@ -852,6 +852,7 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
 | Human 交互要求 | 高影响变更应触发 Human Gate | Human Gate、确认记录 | 工作流程治理 | 变更前 |
 | Human 交互要求 | 新增管辖项目条目时，应评估 Human Gate | Human Gate、影响范围说明 | 工作流程治理 | 管辖项目清单变化时 |
 | Human 交互要求 | candidate 流程正式创建前，应先讨论是否独立成流程 | Human Gate、流程讨论 | 工作流程治理 | 从候选项创建流程前 |
+| Human 交互要求 | Human Gate UI 应清楚展示确认对象和影响范围 | Human Gate UI、承接 06 §6.3.1 | 工作流程治理 | Human Gate UI 变化时 |
 | 生命周期触发要求 | 运行投影不可用时应记录降级说明 | 人工降级检查 | 触发保障 | 工具不可用时 |
 | 生命周期触发要求 | 41 触发保障应被 42 消费，并覆盖运行投影漂移检查和 Human Gate 证据消费 | 41 分层触发保障、42 消费检查、运行投影漂移检查、Human Gate 证据消费 | 触发保障 | 正式规范、运行投影或 Human Gate 证据变化时 |
 """,
@@ -879,7 +880,7 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert report["metadata"]["source_of_truth"] is False
     assert report["metadata"]["checked_file_count"] == 1
     assert report["metadata"]["source_count"] == 1
-    assert report["metadata"]["requirement_count"] == 7
+    assert report["metadata"]["requirement_count"] == 8
     assert report["metadata"]["runtime_projection_checked_file_count"] == 1
     assert report["metadata"]["runtime_projection_issue_count"] == 0
     assert report["metadata"]["human_gate_checked_file_count"] >= 2
@@ -890,7 +891,7 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert report["summary"]["by_status"] == {
         "closed": 1,
         "degraded": 1,
-        "needs_human_gate": 3,
+        "needs_human_gate": 4,
         "open": 2,
     }
     assert report["summary"]["by_capability_status"] == {
@@ -936,9 +937,9 @@ def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["metadata"]["human_gate_record_count"] == 0
     assert payload["summary"]["human_gate_status"] == "degraded"
     assert payload["summary"]["by_status"]["open"] == 2
-    assert payload["summary"]["by_status"]["needs_human_gate"] == 3
-    assert payload["summary"]["gap_total"] == 10
-    assert payload["summary"]["gap_by_owner_area"]["human_gate"] == 4
+    assert payload["summary"]["by_status"]["needs_human_gate"] == 4
+    assert payload["summary"]["gap_total"] == 11
+    assert payload["summary"]["gap_by_owner_area"]["human_gate"] == 5
     assert payload["gap_categories"]["code"]["requirement_count"] == 1
     assert payload["gap_categories"]["runtime_projection"]["capability_gap_count"] == 1
     assert payload["gap_categories"]["human_gate"]["subcategories"]["decision_record_required"]["total"] == 1
@@ -948,6 +949,8 @@ def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["gap_categories"]["human_gate"]["subcategories"]["policy_clarification"]["total"] == 2
     assert payload["gap_categories"]["human_gate"]["subcategories"]["policy_clarification"]["policy_flows"]["future_evaluation"]["total"] == 1
     assert payload["gap_categories"]["human_gate"]["subcategories"]["policy_clarification"]["policy_flows"]["workflow_design_discussion"]["total"] == 1
+    assert payload["gap_categories"]["human_gate"]["subcategories"]["implementation_support"]["support_flows"]["web_human_facing_support"]["total"] == 1
+    assert payload["gap_categories"]["human_gate"]["subcategories"]["diagnostic_coverage"]["diagnostic_flows"]["coverage_degraded"]["total"] == 1
     assert payload["requirements"][0]["source"] == "docs/specs/00-Test.md"
     assert payload["capability_gaps"][0]["capability"] == "41 触发保障"
 
@@ -970,7 +973,10 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "规范口径说明 (policy_clarification):" in output
     assert "未来触发时评估 (future_evaluation):" in output
     assert "流程创建前讨论 (workflow_design_discussion):" in output
+    assert "承接实现支持 (implementation_support):" in output
+    assert "Web / Human-facing 承接 (web_human_facing_support):" in output
     assert "Code 降级提示/覆盖 (diagnostic_coverage):" in output
+    assert "覆盖范围降级 (coverage_degraded):" in output
     assert "后续 Code 应能生成 landing report" in output
     assert "运行投影检查文件数: 1" in output
     assert "Human Gate 记录数: 0" in output
