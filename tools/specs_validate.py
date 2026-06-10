@@ -614,6 +614,12 @@ LANDING_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS = {
 LANDING_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS = {
     "coverage_degraded": "覆盖范围降级",
 }
+LANDING_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS = {
+    "lifecycle_trigger_sync": "生命周期触发同步",
+    "platform_capability_sync": "平台能力承接同步",
+    "projection_coverage_diagnostic": "投影覆盖诊断降级",
+    "third_party_skill_projection": "第三方 Skill 投影",
+}
 LANDING_REPORT_HUMAN_GATE_DECISION_TERMS = [
     "接受长期降级",
     "关闭",
@@ -667,6 +673,22 @@ LANDING_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS = [
     "任一",
     "§",
     "从候选项创建",
+]
+LANDING_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS = [
+    "平台清单",
+    "平台能力",
+    "Trae Solo",
+    "Codex",
+    "AGENTS.md",
+    "config.toml",
+    "sandbox",
+    "approval",
+    "MCP",
+    "refs",
+]
+LANDING_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS = [
+    "第三方 Skill",
+    "包装 Skill",
 ]
 LANDING_REPORT_DEGRADED_MARKERS = [
     "open-degraded",
@@ -959,6 +981,25 @@ def landing_report_human_gate_diagnostic_flow(item):
     return "coverage_degraded"
 
 
+def landing_report_runtime_projection_subcategory(item):
+    if "capability" in item:
+        return "projection_coverage_diagnostic"
+    text = " | ".join(
+        [
+            item.get("content", ""),
+            item.get("guarantee_mechanism", ""),
+            item.get("sync_type", ""),
+            item.get("trigger", ""),
+            item.get("status_reason", ""),
+        ]
+    )
+    if any(term in text for term in LANDING_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS):
+        return "third_party_skill_projection"
+    if any(term in text for term in LANDING_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS):
+        return "platform_capability_sync"
+    return "lifecycle_trigger_sync"
+
+
 def landing_report_build_gap_categories(requirements, capability_gaps):
     categories = {}
     for item in list(requirements) + list(capability_gaps):
@@ -977,6 +1018,8 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                 "examples": [],
             }
             if owner_area == "human_gate":
+                categories[owner_area]["subcategories"] = {}
+            if owner_area == "runtime_projection":
                 categories[owner_area]["subcategories"] = {}
         category = categories[owner_area]
         status = item.get("status") or "unknown"
@@ -1040,6 +1083,22 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                 flow["by_status"][status] = flow["by_status"].get(status, 0) + 1
                 if len(flow["examples"]) < 3:
                     flow["examples"].append(example)
+            if subcategory_key == "policy_clarification":
+                flow_key = landing_report_human_gate_policy_flow(item)
+                policy_flows = subcategory["policy_flows"]
+                if flow_key not in policy_flows:
+                    policy_flows[flow_key] = {
+                        "id": flow_key,
+                        "label": LANDING_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS.get(flow_key, flow_key),
+                        "total": 0,
+                        "by_status": {},
+                        "examples": [],
+                    }
+                flow = policy_flows[flow_key]
+                flow["total"] += 1
+                flow["by_status"][status] = flow["by_status"].get(status, 0) + 1
+                if len(flow["examples"]) < 3:
+                    flow["examples"].append(example)
             if subcategory_key == "implementation_support":
                 flow_key = landing_report_human_gate_support_flow(item)
                 support_flows = subcategory["support_flows"]
@@ -1072,22 +1131,22 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                 flow["by_status"][status] = flow["by_status"].get(status, 0) + 1
                 if len(flow["examples"]) < 3:
                     flow["examples"].append(example)
-            if subcategory_key == "policy_clarification":
-                flow_key = landing_report_human_gate_policy_flow(item)
-                policy_flows = subcategory["policy_flows"]
-                if flow_key not in policy_flows:
-                    policy_flows[flow_key] = {
-                        "id": flow_key,
-                        "label": LANDING_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS.get(flow_key, flow_key),
-                        "total": 0,
-                        "by_status": {},
-                        "examples": [],
-                    }
-                flow = policy_flows[flow_key]
-                flow["total"] += 1
-                flow["by_status"][status] = flow["by_status"].get(status, 0) + 1
-                if len(flow["examples"]) < 3:
-                    flow["examples"].append(example)
+        if owner_area == "runtime_projection":
+            subcategory_key = landing_report_runtime_projection_subcategory(item)
+            subcategories = category["subcategories"]
+            if subcategory_key not in subcategories:
+                subcategories[subcategory_key] = {
+                    "id": subcategory_key,
+                    "label": LANDING_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS.get(subcategory_key, subcategory_key),
+                    "total": 0,
+                    "by_status": {},
+                    "examples": [],
+                }
+            subcategory = subcategories[subcategory_key]
+            subcategory["total"] += 1
+            subcategory["by_status"][status] = subcategory["by_status"].get(status, 0) + 1
+            if len(subcategory["examples"]) < 3:
+                subcategory["examples"].append(example)
     for category in categories.values():
         category["by_status"] = dict(sorted(category["by_status"].items(), key=lambda item: item[0]))
         category["by_suggested_writeback"] = dict(
@@ -1359,6 +1418,17 @@ def landing_report_format_text(report):
                         lines.append(
                             f"      - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
                         )
+            for subcategory in category.get("subcategories", {}).values():
+                if category["owner_area"] != "runtime_projection":
+                    continue
+                lines.append(
+                    f"  - {subcategory['label']} ({subcategory['id']}): "
+                    f"total={subcategory['total']}; status={subcategory['by_status']}"
+                )
+                for example in subcategory.get("examples", []):
+                    lines.append(
+                        f"    - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
+                    )
 
     return "\n".join(lines)
 
