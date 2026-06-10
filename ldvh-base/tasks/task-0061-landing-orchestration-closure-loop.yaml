@@ -29,11 +29,15 @@ verification: |
 
   ## 验证结果
 
-  当前仅完成 Task 创建后的结构校验；41 闭环建设本身尚未执行，后续按 acceptance 逐项验证。
+  2026-06-10 Task 3 验证已运行 `python3 tools/specs_validate.py landing-report` 和 `python3 tools/specs_validate.py landing-report --format json`，确认报告输出包含 41 触发保障、42 消费 41 触发状态、运行投影漂移检查、Human Gate 证据消费四类能力缺口。
+
+  已运行 41/42 文档结构、引用和落地要求校验，已运行 `python3 tools/specs_validate.py all`、`python3 -m pytest tests/test_specs_validate.py` 和 `python3 -m pytest`，结果均通过。
+
+  剩余缺口仍由本文 Task 承载：landing-report 尚不能验证所有触发场景是否实际进入 41，尚不能证明 42 现场检查已经消费本次报告，尚不能读取真实运行投影并比对正式规范，尚未把 Human Gate 记录校验结果并入状态判断。
 
   ## 结论
 
-  本 Task 用于追踪 41 未闭环建设缺口，不能作为 41 已闭环证据。
+  本 Task 用于追踪 41 未闭环建设缺口；本次验证证明缺口已被 42/landing-report 消费和暴露，但不能作为 41 已闭环证据。
 risk_assessment: |
   - 避免把 40 中的 active 集合状态误解释为建设完成状态。
   - 避免用聊天结论、landing-report 派生输出或 Web 状态替代 Git 文件事实源。
@@ -51,7 +55,9 @@ affected_docs:
   - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
   - tools/specs_validate.py
   - web/
-deliverables: []
+deliverables:
+  - .trae/specs/strengthen-41-trigger-guardrails/tasks.md
+  - .trae/specs/strengthen-41-trigger-guardrails/checklist.md
 status_history:
   - at: '2026-06-10T00:00:00'
     from:

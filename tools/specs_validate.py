@@ -429,6 +429,48 @@ LANDING_REPORT_HUMAN_GATE_PATTERNS = [
     re.compile(r"(必须|应|需|需要|触发|进入|经|通过|完成)[^|。；;]*?Human Gate"),
     re.compile(r"Human Gate[^|。；;]*?(确认|前|后|授权|暂停|等待)"),
 ]
+LANDING_REPORT_CAPABILITY_CHECKS = [
+    {
+        "id": "41_trigger_safeguard",
+        "capability": "41 触发保障",
+        "status": "degraded",
+        "owner_area": "code",
+        "required_terms": ["41", "触发保障"],
+        "missing_reason": "landing-report 未发现 41 触发保障声明，无法判断正式规范或运行投影变化是否应进入 41",
+        "degraded_reason": "landing-report 只能聚合 41 触发保障要求，尚不能验证所有触发场景是否实际进入 41",
+        "suggested_writeback": "code_request_or_test",
+    },
+    {
+        "id": "42_consumes_41",
+        "capability": "42 消费 41 触发状态",
+        "status": "degraded",
+        "owner_area": "workflow",
+        "required_terms": ["42", "41", "消费"],
+        "missing_reason": "landing-report 未发现 42 消费 41 触发状态声明，无法作为 LDVH落地与检查输入",
+        "degraded_reason": "landing-report 能暴露 41/42 联动要求，但尚不能证明 42 现场检查已经消费本次报告",
+        "suggested_writeback": "workflow_or_skill_candidate",
+    },
+    {
+        "id": "runtime_projection_drift_check",
+        "capability": "运行投影漂移检查",
+        "status": "open",
+        "owner_area": "runtime_projection",
+        "required_terms": ["运行投影", "漂移检查"],
+        "missing_reason": "landing-report 未发现运行投影漂移检查声明，无法诊断入口、Skill、Hook、CI、Web 或 Code 投影漂移",
+        "degraded_reason": "landing-report 只能识别运行投影漂移检查要求，尚不能读取真实运行投影并比对正式规范",
+        "suggested_writeback": "runtime_projection_or_env_record",
+    },
+    {
+        "id": "human_gate_evidence_consumption",
+        "capability": "Human Gate 证据消费",
+        "status": "degraded",
+        "owner_area": "human_gate",
+        "required_terms": ["Human Gate", "证据"],
+        "missing_reason": "landing-report 未发现 Human Gate 证据消费声明，无法支持降级、关闭或通过声明",
+        "degraded_reason": "landing-report 能识别 Human Gate 证据消费要求，但尚未把 Human Gate 记录校验结果并入状态判断",
+        "suggested_writeback": "human_gate_or_task",
+    },
+]
 
 
 def landing_default_check_paths():
@@ -583,6 +625,40 @@ def landing_report_count_by(requirements, key):
     return dict(sorted(counts.items(), key=lambda item: item[0]))
 
 
+def landing_report_document_text(paths):
+    parts = []
+    for path in paths:
+        parts.append(path.read_text(encoding="utf-8"))
+    return "\n".join(parts)
+
+
+def landing_report_terms_present(text, terms):
+    return all(term in text for term in terms)
+
+
+def landing_report_build_capability_gaps(formal_files):
+    text = landing_report_document_text(formal_files)
+    gaps = []
+
+    for check in LANDING_REPORT_CAPABILITY_CHECKS:
+        terms_present = landing_report_terms_present(text, check["required_terms"])
+        status = check["status"] if terms_present else "open"
+        reason = check["degraded_reason"] if terms_present else check["missing_reason"]
+        gaps.append(
+            {
+                "id": check["id"],
+                "capability": check["capability"],
+                "status": status,
+                "status_reason": reason,
+                "owner_area": check["owner_area"],
+                "suggested_writeback": check["suggested_writeback"],
+                "evidence": "matched formal spec terms" if terms_present else "required terms missing from formal specs",
+            }
+        )
+
+    return gaps
+
+
 def landing_report_build(paths=None):
     check_paths = paths if paths else landing_default_check_paths()
     markdown_files = iter_markdown_files(check_paths)
@@ -590,6 +666,7 @@ def landing_report_build(paths=None):
     requirements = []
     for path in formal_files:
         requirements.extend(landing_extract_requirements_file(path))
+    capability_gaps = landing_report_build_capability_gaps(formal_files)
 
     for requirement in requirements:
         status, reason = landing_report_infer_status(requirement)
@@ -613,11 +690,13 @@ def landing_report_build(paths=None):
         },
         "summary": {
             "by_status": landing_report_count_by(requirements, "status"),
+            "by_capability_status": landing_report_count_by(capability_gaps, "status"),
             "by_type": landing_report_count_by(requirements, "requirement_type"),
             "by_sync_type": landing_report_count_by(requirements, "sync_type"),
             "by_owner_area": landing_report_count_by(requirements, "owner_area"),
         },
         "requirements": requirements,
+        "capability_gaps": capability_gaps,
     }
 
 
@@ -663,6 +742,18 @@ def landing_report_format_text(report):
                 f"- {item['source']}:{item['line']} "
                 f"[{item['status']}/{item['requirement_type']}/{item['owner_area']}] "
                 f"{content} -> {item['status_reason']}; suggested_writeback: {item['suggested_writeback']}"
+            )
+
+    lines.append("")
+    lines.append("能力缺口:")
+    capability_gaps = report.get("capability_gaps", [])
+    if not capability_gaps:
+        lines.append("- 无")
+    else:
+        for item in capability_gaps:
+            lines.append(
+                f"- [{item['status']}/{item['owner_area']}] {item['capability']} -> "
+                f"{item['status_reason']}; suggested_writeback: {item['suggested_writeback']}"
             )
 
     return "\n".join(lines)

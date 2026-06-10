@@ -836,6 +836,7 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
 | 确定性执行要求 | 后续 Code 应能生成 landing report | `tools/specs_validate.py` 扩展、正反样例 | 校验实现 | 规范落地要求变化时 |
 | Human 交互要求 | 高影响变更应触发 Human Gate | Human Gate、确认记录 | 工作流程治理 | 变更前 |
 | 生命周期触发要求 | 运行投影不可用时应记录降级说明 | 人工降级检查 | 触发保障 | 工具不可用时 |
+| 生命周期触发要求 | 41 触发保障应被 42 消费，并覆盖运行投影漂移检查和 Human Gate 证据消费 | 41 分层触发保障、42 消费检查、运行投影漂移检查、Human Gate 证据消费 | 触发保障 | 正式规范、运行投影或 Human Gate 证据变化时 |
 """,
     )
     write_md(
@@ -861,20 +862,31 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert report["metadata"]["source_of_truth"] is False
     assert report["metadata"]["checked_file_count"] == 1
     assert report["metadata"]["source_count"] == 1
-    assert report["metadata"]["requirement_count"] == 4
+    assert report["metadata"]["requirement_count"] == 5
     assert report["summary"]["by_status"] == {
         "closed": 1,
         "degraded": 1,
-        "needs_human_gate": 1,
+        "needs_human_gate": 2,
+        "open": 1,
+    }
+    assert report["summary"]["by_capability_status"] == {
+        "degraded": 3,
         "open": 1,
     }
     assert report["summary"]["by_owner_area"]["code"] == 1
+    assert [item["id"] for item in report["capability_gaps"]] == [
+        "41_trigger_safeguard",
+        "42_consumes_41",
+        "runtime_projection_drift_check",
+        "human_gate_evidence_consumption",
+    ]
 
     statuses = {item["content"]: item["status"] for item in report["requirements"]}
     assert statuses["后续正式规范不得违背本文的价值实现标准"] == "closed"
     assert statuses["后续 Code 应能生成 landing report"] == "open"
     assert statuses["高影响变更应触发 Human Gate"] == "needs_human_gate"
     assert statuses["运行投影不可用时应记录降级说明"] == "degraded"
+    assert statuses["41 触发保障应被 42 消费，并覆盖运行投影漂移检查和 Human Gate 证据消费"] == "needs_human_gate"
     assert next(item for item in report["requirements"] if item["owner_area"] == "code")["suggested_writeback"] == "code_request_or_test"
 
 
@@ -887,7 +899,9 @@ def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["metadata"]["report"] == "landing-report"
     assert payload["summary"]["by_status"]["open"] == 1
+    assert payload["summary"]["by_status"]["needs_human_gate"] == 2
     assert payload["requirements"][0]["source"] == "docs/specs/00-Test.md"
+    assert payload["capability_gaps"][0]["capability"] == "41 触发保障"
 
 
 def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
@@ -899,7 +913,9 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     output = capsys.readouterr().out
     assert "规范落地要求聚合报告" in output
     assert "需关注项:" in output
+    assert "能力缺口:" in output
     assert "后续 Code 应能生成 landing report" in output
+    assert "运行投影漂移检查" in output
     assert "suggested_writeback: code_request_or_test" in output
 
 

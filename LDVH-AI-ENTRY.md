@@ -79,7 +79,7 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | 处理 Code、工具、脚本或校验 | LDVH 管理入口 | 对应工具帮助、测试命令 | `docs/specs/04.05-个人落地特别要求规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/10-运行闭环测试规范.md`、对应 `tools/` 实现和 `tests/` |
 | 处理 Web 或 Human-facing 入口 | LDVH 管理入口 | `index`、相关后端或 Web 校验 | `docs/specs/08-Web信息同步规范.md` |
 
-场景同时命中多个入口时，选择最小足够查询和读取集。只要涉及正式规范变更、落地缺口、运行投影漂移或 LDVH落地与检查输入，应优先进入 `docs/specs/41-landing-orchestration-规范落地统筹.md`。
+场景同时命中多个入口时，选择最小足够查询和读取集。只要涉及正式规范变更、规范落地要求变化、落地缺口、运行投影漂移、Code/Web/Skill/Agent/Hook/CI 边界变化或 LDVH落地与检查输入，应优先进入 `docs/specs/41-landing-orchestration-规范落地统筹.md`。41 触发保障按入口路由、规范 Scenario、40 索引、Code 检查、42 消费、运行投影和 Human Gate 分层抽象机制判断，不维护具体 Skill、入口、Hook、CI、Web 页面或 Code 命令清单。
 
 遇到“对应 `docs/specs/21-39` 工作模型规范”时，应先读 `docs/specs/20-工作模型集合索引.md` 定位具体文件；遇到“对应 `docs/specs/41-59` 工作流程规范”时，应先读 `docs/specs/40-工作流程集合索引.md` 定位具体文件。不得凭编号区段、标题记忆或聊天上下文猜测文件。
 
