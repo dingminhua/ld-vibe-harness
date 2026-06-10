@@ -1,4 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import MetricCard from '@/components/MetricCard';
+import StatusBanner from '@/components/StatusBanner';
+import { useEffect, useState } from 'react'
 import {
   AlertCircle,
   CheckCircle,
@@ -6,8 +8,6 @@ import {
   ExternalLink,
   FileWarning,
   GitPullRequest,
-  ShieldAlert,
-  ShieldCheck,
   XCircle,
 } from 'lucide-react'
 import { useI18n } from '@/i18n/context'
@@ -74,27 +74,6 @@ function StatusPill({ status, label }: { status?: string; label: string }) {
   )
 }
 
-function MetricCard({
-  icon,
-  value,
-  label,
-  valueClassName = 'text-ldvh-text-primary',
-}: {
-  icon: ReactNode
-  value: string | number
-  label: string
-  valueClassName?: string
-}) {
-  return (
-    <div className="flex min-w-0 items-center gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-      <div className="flex-shrink-0">{icon}</div>
-      <div className="min-w-0">
-        <p className={`font-mono text-2xl font-semibold ${valueClassName}`}>{value}</p>
-        <p className="truncate text-xs text-ldvh-text-secondary">{label}</p>
-      </div>
-    </div>
-  )
-}
 
 export default function Gate() {
   const [report, setReport] = useState<GateReport | null>(null)
@@ -139,6 +118,7 @@ export default function Gate() {
   const issueCount = meta.issue_count || 0
   const checkedFileCount = meta.checked_file_count || 0
 
+
   // 按 code 分组
   const issuesByCode: Record<string, GateIssue[]> = {}
   for (const issue of issues) {
@@ -166,33 +146,23 @@ export default function Gate() {
       </div>
 
       {/* 状态横幅 */}
-      <div className={`rounded-lg border p-4 ${status === 'closed' ? 'border-emerald-500/30 bg-emerald-500/10' : status === 'open' ? 'border-red-500/30 bg-red-500/10' : 'border-yellow-500/30 bg-yellow-500/10'}`}>
-        <div className="flex items-start gap-3">
-          {status === 'closed' ? (
-            <ShieldCheck size={20} className="mt-0.5 flex-shrink-0 text-emerald-400" />
-          ) : status === 'open' ? (
-            <ShieldAlert size={20} className="mt-0.5 flex-shrink-0 text-red-400" />
-          ) : (
-            <AlertCircle size={20} className="mt-0.5 flex-shrink-0 text-yellow-400" />
-          )}
-          <div className="min-w-0">
-            <p className="font-semibold text-ldvh-text-primary">
-              {status === 'closed'
-                ? t('gate.statusAllClear')
-                : status === 'open'
-                ? t('gate.statusNeedsConfirm')
-                : t('gate.statusDegraded')}
-            </p>
-            <p className="mt-1 text-sm text-ldvh-text-secondary">
-              {status === 'closed'
-                ? t('gate.statusAllClearDesc')
-                : status === 'open'
-                ? t('gate.statusNeedsConfirmDesc')
-                : t('gate.statusDegradedDesc', { count: String(issueCount) })}
-            </p>
-          </div>
-        </div>
-      </div>
+      <StatusBanner
+        status={status === 'closed' ? 'closed' as const : status === 'open' ? 'open' as const : 'degraded' as const}
+        title={
+          status === 'closed'
+            ? t('gate.statusAllClear')
+            : status === 'open'
+            ? t('gate.statusNeedsConfirm')
+            : t('gate.statusDegraded')
+        }
+        description={
+          status === 'closed'
+            ? t('gate.statusAllClearDesc')
+            : status === 'open'
+            ? t('gate.statusNeedsConfirmDesc')
+            : t('gate.statusDegradedDesc', { count: String(issueCount) })
+        }
+      />
 
       {/* 摘要卡片 */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -205,19 +175,19 @@ export default function Gate() {
           icon={<GitPullRequest size={20} className="text-sky-400" />}
           value={recordCount}
           label={t('gate.records')}
-          valueClassName={recordCount > 0 ? 'text-sky-400' : 'text-yellow-400'}
+          tone={recordCount > 0 ? 'default' : 'default'}
         />
         <MetricCard
           icon={<AlertCircle size={20} className="text-red-400" />}
           value={issueCount}
           label={t('gate.issues')}
-          valueClassName={issueCount > 0 ? 'text-red-400' : 'text-emerald-400'}
+          tone={issueCount > 0 ? 'red' : 'green'}
         />
         <MetricCard
           icon={status === 'closed' ? <CheckCircle size={20} className="text-emerald-400" /> : <XCircle size={20} className="text-red-400" />}
           value={status}
           label={t('gate.status')}
-          valueClassName={status === 'closed' ? 'text-emerald-400' : status === 'open' ? 'text-red-400' : 'text-yellow-400'}
+          tone={status === 'closed' ? 'green' : status === 'open' ? 'red' : 'default'}
         />
       </div>
 

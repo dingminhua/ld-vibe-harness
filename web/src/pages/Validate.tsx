@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import MetricCard from '@/components/MetricCard';
 import {
   Activity,
   AlertCircle,
@@ -78,28 +79,6 @@ function StatusPill({ status, label }: { status?: string; label: string }) {
     <span className={`inline-flex max-w-full items-center rounded-md border px-2 py-1 text-xs font-medium ${statusClasses(status)}`}>
       <span className="truncate">{label}</span>
     </span>
-  )
-}
-
-function MetricCard({
-  icon,
-  value,
-  label,
-  valueClassName = 'text-ldvh-text-primary',
-}: {
-  icon: ReactNode
-  value: string
-  label: string
-  valueClassName?: string
-}) {
-  return (
-    <div className="flex min-w-0 items-center gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-      <div className="flex-shrink-0">{icon}</div>
-      <div className="min-w-0">
-        <p className={`font-mono text-2xl font-semibold ${valueClassName}`}>{value}</p>
-        <p className="truncate text-xs text-ldvh-text-secondary">{label}</p>
-      </div>
-    </div>
   )
 }
 
@@ -410,18 +389,19 @@ export default function Validate() {
               icon={<FileWarning size={20} className="text-ldvh-text-secondary" />}
               value={countText(data.summary.files)}
               label={t('validate.filesChecked')}
+              tone="default"
             />
             <MetricCard
               icon={<AlertCircle size={20} className="text-red-400" />}
               value={countText(data.summary.errors)}
               label={t('validate.errors')}
-              valueClassName="text-red-400"
+              tone="red"
             />
             <MetricCard
               icon={<AlertTriangle size={20} className="text-yellow-400" />}
               value={countText(data.summary.warnings)}
               label={t('validate.warnings')}
-              valueClassName="text-yellow-400"
+              tone="default"
             />
           </div>
 
@@ -532,7 +512,7 @@ export default function Validate() {
               icon={<AlertCircle size={20} className="text-red-400" />}
               value={countText(landingPlan?.requirements?.gap_total)}
               label={t('lp.openGaps')}
-              valueClassName="text-red-400"
+              tone="red"
             />
             <MetricCard
               icon={<GitPullRequest size={20} className="text-ldvh-text-secondary" />}

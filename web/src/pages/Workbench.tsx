@@ -1,3 +1,4 @@
+import MetricCard from '@/components/MetricCard';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -102,10 +103,10 @@ export default function Workbench() {
       </div>
 
       <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <SignalCard icon={Target} label={t('workbench.openTasks')} value={taskStats?.total ?? 0} detail={t('workbench.taskSignal')} />
-        <SignalCard icon={ClipboardCheck} label={t('workbench.actionItems')} value={data.actionItems.length} detail={t('workbench.actionSignal')} />
-        <SignalCard icon={GitCommit} label={t('workbench.recentChanges')} value={data.recentChanges.length} detail={t('workbench.changeSignal')} />
-        <SignalCard icon={ShieldCheck} label={t('workbench.validation')} value={data.validation.ok ? t('dashboard.pass') : t('dashboard.fail')} detail={`${data.validation.errors} ${t('dashboard.errors')} · ${data.validation.warnings} ${t('dashboard.warnings')}`} tone={data.validation.ok ? 'green' : 'red'} />
+        <MetricCard icon={<Target size={16} className="text-ldvh-accent" />} label={t('workbench.openTasks')} value={taskStats?.total ?? 0} detail={t('workbench.taskSignal')} />
+        <MetricCard icon={<ClipboardCheck size={16} className="text-ldvh-accent" />} label={t('workbench.actionItems')} value={data.actionItems.length} detail={t('workbench.actionSignal')} />
+        <MetricCard icon={<GitCommit size={16} className="text-ldvh-accent" />} label={t('workbench.recentChanges')} value={data.recentChanges.length} detail={t('workbench.changeSignal')} />
+        <MetricCard icon={<ShieldCheck size={16} className="text-ldvh-accent" />} label={t('workbench.validation')} value={data.validation.ok ? t('dashboard.pass') : t('dashboard.fail')} detail={`${data.validation.errors} ${t('dashboard.errors')} · ${data.validation.warnings} ${t('dashboard.warnings')}`} tone={data.validation.ok ? 'green' : 'red'} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
@@ -133,11 +134,11 @@ export default function Workbench() {
               </button>
 
               <div className="grid gap-4 lg:grid-cols-3">
-                <InfoPanel title={t('workbench.acceptance')} icon={CheckCircle2}>
+                <InfoPanel title={t('workbench.acceptance')} icon={<CheckCircle2 size={16} className="text-ldvh-accent" />}>
                   <ProgressRow label={t('workbench.known')} value={activeTasks.length > 0 ? 1 : 0} total={Math.max(activeTasks.length, 1)} />
                   <p className="mt-3 text-xs text-ldvh-text-secondary">{t('workbench.acceptanceHint')}</p>
                 </InfoPanel>
-                <InfoPanel title={t('workbench.evidence')} icon={GitCommit}>
+                <InfoPanel title={t('workbench.evidence')} icon={<GitCommit size={16} className="text-ldvh-accent" />}>
                   <div className="flex flex-col gap-2">
                     {data.recentChanges.slice(0, 3).map((entry) => (
                       <button key={entry.hash} onClick={() => navigate('/changelog')} className="rounded-md bg-ldvh-bg px-3 py-2 text-left text-xs transition-colors hover:bg-ldvh-border/30">
@@ -149,7 +150,7 @@ export default function Workbench() {
                     ))}
                   </div>
                 </InfoPanel>
-                <InfoPanel title={t('workbench.actions')} icon={MousePointer2}>
+                <InfoPanel title={t('workbench.actions')} icon={<MousePointer2 size={16} className="text-ldvh-accent" />}>
                   <div className="flex flex-col gap-2">
                     {[t('workbench.actionAddEvidence'), t('workbench.actionLinkTask'), t('workbench.actionReview')].map((label) => (
                       <button key={label} disabled className="cursor-not-allowed rounded-md border border-dashed border-ldvh-border px-3 py-2 text-left text-xs text-ldvh-text-secondary opacity-75">
@@ -219,25 +220,12 @@ export default function Workbench() {
   );
 }
 
-function SignalCard({ icon: Icon, label, value, detail, tone = 'default' }: { icon: typeof Target; label: string; value: string | number; detail: string; tone?: 'default' | 'green' | 'red' }) {
-  const valueClass = tone === 'green' ? 'text-green-400' : tone === 'red' ? 'text-red-400' : 'text-ldvh-text-primary';
-  return (
-    <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-      <div className="mb-3 flex items-center gap-2 text-ldvh-text-secondary">
-        <Icon size={16} className="text-ldvh-accent" />
-        <span className="text-xs">{label}</span>
-      </div>
-      <p className={`font-mono text-2xl font-semibold ${valueClass}`}>{value}</p>
-      <p className="mt-1 text-xs text-ldvh-text-secondary">{detail}</p>
-    </div>
-  );
-}
 
-function InfoPanel({ title, icon: Icon, children }: { title: string; icon: typeof Target; children: ReactNode }) {
+function InfoPanel({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-bg p-4">
       <div className="mb-3 flex items-center gap-2">
-        <Icon size={15} className="text-ldvh-accent" />
+        {icon}
         <h3 className="text-sm font-medium text-ldvh-text-primary">{title}</h3>
       </div>
       {children}

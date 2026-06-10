@@ -1,0 +1,17 @@
+id: task-0063
+type: task
+title: 统一页面框架
+status: planned
+created: '2026-06-11T00:00:00.000000'
+updated: '2026-06-11T00:00:00.000000'
+description: |
+  所有页面的外层结构统一为「页面头部 + 态势信号条(可选) + 关键指标区(可选) + 详情浏览区」。
+  页面头部包含标题和副标题，态势信号条在出现阻塞/Gate待确认/校验失败时显示。
+source: 用户指示（Web 中间区域设计语言统一）
+acceptance: |
+  - [ ] 所有 7 个页面头部结构统一
+  - [ ] Dashboard/Workbench 支持态势信号条
+  - [ ] ObjectDetail 支持对象类型差异化阅读重点
+  - [ ] 移动端响应式布局完整
+  - [ ] npm run check 通过
+  - [ ] npm run build 通过
