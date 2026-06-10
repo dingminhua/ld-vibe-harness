@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from datetime import datetime
@@ -1447,6 +1448,240 @@ def governed_projects_main(root):
     return 0
 
 
+LDVH_LANDING_CHECK_STATUS_ORDER = {"closed": 0, "degraded": 1, "open": 2, "blocked": 3}
+
+
+def ldvh_landing_check_status(items):
+    status = "closed"
+    for item in items:
+        item_status = item.get("status", "closed")
+        if LDVH_LANDING_CHECK_STATUS_ORDER.get(item_status, 0) > LDVH_LANDING_CHECK_STATUS_ORDER.get(status, 0):
+            status = item_status
+    return status
+
+
+def ldvh_landing_check_fact_files():
+    facts_dir = PROJECT_ROOT / "ldvh-base"
+    if not facts_dir.exists():
+        return []
+    return sorted(facts_dir.rglob("*.yaml"))
+
+
+def ldvh_landing_check_fact_validate():
+    fact_files = ldvh_landing_check_fact_files()
+    if not fact_files:
+        return {
+            "status": "degraded",
+            "issue_count": 0,
+            "error_count": 0,
+            "warning_count": 0,
+            "checked_file_count": 0,
+            "evidence": "no ldvh-base YAML fact files found in project scope",
+            "issues": [],
+        }
+    command = [
+        sys.executable,
+        str(Path(__file__).resolve().parent / "fact_validate.py"),
+        *[str(path) for path in fact_files],
+        "--format",
+        "json",
+    ]
+    completed = subprocess.run(command, cwd=PROJECT_ROOT, text=True, capture_output=True, check=False)
+    try:
+        payload = json.loads(completed.stdout)
+        summary = payload.get("summary", {})
+        issues = payload.get("issues", [])
+        errors = int(summary.get("errors", 0))
+        warnings = int(summary.get("warnings", 0))
+        status = "closed"
+        if errors or completed.returncode in {1, 2}:
+            status = "open"
+        elif warnings:
+            status = "degraded"
+        return {
+            "status": status,
+            "issue_count": len(issues),
+            "error_count": errors,
+            "warning_count": warnings,
+            "checked_file_count": int(summary.get("files", len(fact_files))),
+            "evidence": f"fact_validate checked {summary.get('files', len(fact_files))} fact files, errors: {errors}, warnings: {warnings}",
+            "issues": issues,
+        }
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return {
+            "status": "open",
+            "issue_count": 1,
+            "error_count": 1,
+            "warning_count": 0,
+            "checked_file_count": len(fact_files),
+            "evidence": "fact_validate output could not be parsed as JSON",
+            "issues": [
+                {
+                    "level": "error",
+                    "code": "FACT_VALIDATE_OUTPUT_INVALID",
+                    "message": completed.stderr.strip() or completed.stdout.strip() or "fact_validate failed without parseable output",
+                    "path": str(PROJECT_ROOT / "ldvh-base"),
+                }
+            ],
+        }
+
+
+def ldvh_landing_check_spec_validate():
+    doc_issues = doc_check_paths([str(SPECS_DIR)])
+    refs_issues = refs_check_paths(refs_default_check_paths())
+    landing_issues = landing_check_paths(landing_default_check_paths())
+    issues = doc_issues + refs_issues + landing_issues
+    return {
+        "status": "open" if issues else "closed",
+        "issue_count": len(issues),
+        "doc_issue_count": len(doc_issues),
+        "refs_issue_count": len(refs_issues),
+        "landing_issue_count": len(landing_issues),
+        "checked_file_count": len(iter_markdown_files([str(SPECS_DIR)])),
+        "evidence": f"spec checks found doc={len(doc_issues)}, refs={len(refs_issues)}, landing={len(landing_issues)} issues",
+        "issues": [
+            {
+                "source": landing_relative_path(issue.path),
+                "line": issue.line,
+                "code": issue.code,
+                "message": issue.message,
+            }
+            for issue in issues
+        ],
+    }
+
+
+def ldvh_landing_check_build(workspace_root=None):
+    workspace_root = Path(workspace_root) if workspace_root else PROJECT_ROOT
+    governed_issues = governed_projects_check_root(workspace_root)
+    landing_report = landing_report_build()
+    runtime_report = landing_report["runtime_projection"]
+    human_gate_report = landing_report["human_gate"]
+    fact_report = ldvh_landing_check_fact_validate()
+    spec_report = ldvh_landing_check_spec_validate()
+    capability_status = ldvh_landing_check_status(landing_report.get("capability_gaps", []))
+    requirement_status = ldvh_landing_check_status(landing_report.get("requirements", []))
+    checks = [
+        {
+            "id": "governed_projects",
+            "source_area": "governed-projects",
+            "status": "open" if governed_issues else "closed",
+            "issue_count": len(governed_issues),
+            "evidence": f"governed-projects checked at {landing_relative_path(workspace_root / GOVERNED_PROJECTS_FILENAME)}",
+            "suggested_writeback": "governed_projects_config",
+            "issues": [
+                {"source": landing_relative_path(issue.path), "line": issue.line, "code": issue.code, "message": issue.message}
+                for issue in governed_issues
+            ],
+        },
+        {
+            "id": "landing_report",
+            "source_area": "landing-report",
+            "status": ldvh_landing_check_status([{"status": capability_status}, {"status": requirement_status}]),
+            "issue_count": len([item for item in landing_report.get("requirements", []) if item.get("status") != "closed"]) + len([item for item in landing_report.get("capability_gaps", []) if item.get("status") != "closed"]),
+            "evidence": f"landing-report consumed {landing_report['metadata']['requirement_count']} requirements and {len(landing_report.get('capability_gaps', []))} capability checks",
+            "suggested_writeback": "landing_report_followup",
+            "issues": [],
+        },
+        {
+            "id": "runtime_projection",
+            "source_area": "runtime-projection",
+            "status": runtime_report["summary"]["status"],
+            "issue_count": runtime_report["metadata"]["issue_count"],
+            "evidence": f"runtime-projection checked {runtime_report['metadata']['checked_file_count']} project-local files",
+            "suggested_writeback": "runtime_projection_or_env_record",
+            "issues": runtime_report.get("issues", []),
+        },
+        {
+            "id": "human_gate",
+            "source_area": "human-gate",
+            "status": human_gate_report["summary"]["status"],
+            "issue_count": human_gate_report["metadata"]["issue_count"],
+            "evidence": f"human-gate checked {human_gate_report['metadata']['checked_file_count']} project-local files and {human_gate_report['metadata']['record_count']} records",
+            "suggested_writeback": "human_gate_or_task",
+            "issues": human_gate_report.get("issues", []),
+        },
+        {
+            "id": "fact_validate",
+            "source_area": "fact/spec",
+            "status": fact_report["status"],
+            "issue_count": fact_report["issue_count"],
+            "evidence": fact_report["evidence"],
+            "suggested_writeback": "fact_yaml_fix_or_task",
+            "issues": fact_report["issues"],
+        },
+        {
+            "id": "spec_validate",
+            "source_area": "fact/spec",
+            "status": spec_report["status"],
+            "issue_count": spec_report["issue_count"],
+            "evidence": spec_report["evidence"],
+            "suggested_writeback": "spec_fix_or_task",
+            "issues": spec_report["issues"],
+        },
+    ]
+    remaining_gaps = []
+    for check in checks:
+        if check["status"] == "closed":
+            continue
+        remaining_gaps.append(
+            {
+                "id": check["id"],
+                "status": check["status"],
+                "source_area": check["source_area"],
+                "message": check["evidence"],
+                "suggested_writeback": check["suggested_writeback"],
+            }
+        )
+    return {
+        "metadata": {
+            "tool": "tools/specs_validate.py",
+            "report": "ldvh-landing-check",
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "source_of_truth": False,
+            "status_source": "derived heuristic",
+            "project_root": str(PROJECT_ROOT),
+            "workspace_root": str(workspace_root),
+            "scope": "project-local Git facts plus explicit workspace governed-projects config",
+        },
+        "summary": {
+            "status": ldvh_landing_check_status(checks),
+            "by_status": landing_report_count_by(checks, "status"),
+            "remaining_gap_count": len(remaining_gaps),
+        },
+        "checks": checks,
+        "remaining_gaps": remaining_gaps,
+    }
+
+
+def ldvh_landing_check_format_text(report):
+    lines = ["LDVH落地与检查派生报告"]
+    lines.append(f"- 状态: {report['summary']['status']}")
+    lines.append(f"- 剩余缺口数: {report['summary']['remaining_gap_count']}")
+    lines.append("- 状态判断: Code 派生启发式，非事实源")
+    lines.append("")
+    lines.append("检查项:")
+    for item in report["checks"]:
+        lines.append(f"- [{item['status']}/{item['source_area']}] {item['id']} -> {item['evidence']}; issues: {item['issue_count']}; suggested_writeback: {item['suggested_writeback']}")
+    lines.append("")
+    lines.append("剩余缺口:")
+    if not report["remaining_gaps"]:
+        lines.append("- 无")
+    else:
+        for item in report["remaining_gaps"]:
+            lines.append(f"- [{item['status']}/{item['source_area']}] {item['id']} -> {item['message']}; suggested_writeback: {item['suggested_writeback']}")
+    return "\n".join(lines)
+
+
+def ldvh_landing_check_main(workspace_root=None, output_format="text"):
+    report = ldvh_landing_check_build(workspace_root)
+    if output_format == "json":
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        print(ldvh_landing_check_format_text(report))
+    return 0 if report["summary"]["status"] in {"closed", "degraded"} else 1
+
+
 # ══════════════════════════════════════════════════════════════════════
 # index — 生成索引
 # ══════════════════════════════════════════════════════════════════════
@@ -1936,6 +2171,11 @@ def build_parser():
     landing_report_parser.add_argument("paths", nargs="*", default=None, help="要聚合的 Markdown 文件或目录，默认检查 docs/specs/ 根目录正式规范。")
     landing_report_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
+    # ldvh-landing-check
+    ldvh_landing_check_parser = subparsers.add_parser("ldvh-landing-check", help="生成 42 LDVH落地与检查派生报告。")
+    ldvh_landing_check_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="包含 LDVH-GOVERNED-PROJECTS.yaml 的工作区根目录，默认项目根。")
+    ldvh_landing_check_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+
     # runtime-projection
     runtime_projection_parser = subparsers.add_parser("runtime-projection", help="检查项目内运行投影是否存在漂移风险。")
     runtime_projection_parser.add_argument("paths", nargs="*", default=None, help="要检查的运行投影文件或目录，默认检查项目内授权运行投影。")
@@ -1988,6 +2228,9 @@ def main(argv=None):
 
     if command == "landing-report":
         return landing_report_main(args.paths, args.format)
+
+    if command == "ldvh-landing-check":
+        return ldvh_landing_check_main(args.workspace_root, args.format)
 
     if command == "runtime-projection":
         return runtime_projection_main(args.paths, args.format)

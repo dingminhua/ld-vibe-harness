@@ -39,6 +39,8 @@ verification: |
 
   2026-06-10 consume-human-gate-evidence 阶段已补齐 `python3 tools/specs_validate.py human-gate-report` 派生报告，并接入 `landing-report` 的 metadata、summary、capability_gaps 和 human_gate 明细。该检查默认只读取项目内 Git Markdown 事实源，能够区分未发现 Human Gate 记录、Human Gate 记录字段缺失或为空、Human Gate 记录结构检查通过三类状态。当前默认检查未发现项目内 Human Gate 记录，因此 landing-report 继续将该能力保持为 degraded；这表示 Code 已能消费结构检查结果，但不能证明所有高影响写入、长期降级、关键缺口关闭或通过声明均已有 Human Gate，也不能证明 42 现场报告已经消费本次输出。
 
+  2026-06-10 add-ldvh-landing-check-report 阶段已补齐 `python3 tools/specs_validate.py ldvh-landing-check` 派生报告，最小消费 governed-projects、landing-report、runtime-projection、human-gate-report、fact_validate 和 specs doc/refs/landing 校验结果，并输出 checks 与 remaining_gaps。该报告默认只读项目内 Git 文件和显式 workspace root 的 `LDVH-GOVERNED-PROJECTS.yaml`，不写用户级目录、不处理旧 `.trae` 删除、不修改 LDVH-GOVERNED。当前真实项目报告状态为 open，主要因为 `landing-report` 仍有未关闭的能力/要求缺口，且 `fact_validate` 对既有事实源报告 errors/warnings；这说明 42 已有最小 Code 消费入口，但不能证明现场 42 流程、Web/Human-facing 展示、所有运行投影和生命周期触发均已闭环。
+
   ## 结论
 
   本 Task 用于追踪 41 未闭环建设缺口；本次验证证明运行投影漂移检查和 Human Gate 证据结构检查已被 landing-report 作为 Code 派生证据消费和暴露，但不能作为 41 已闭环证据。

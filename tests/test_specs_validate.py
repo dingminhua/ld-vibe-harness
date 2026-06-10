@@ -1363,3 +1363,106 @@ projects:
 
     assert "GOVERNED_PROJECTS_ROOT_FIELD_FORBIDDEN" in codes
     assert "GOVERNED_PROJECT_FIELD_FORBIDDEN" in codes
+
+# ══════════════════════════════════════════════════════════════════════
+# ldvh-landing-check — 42 LDVH落地与检查派生报告
+# ══════════════════════════════════════════════════════════════════════
+
+def build_ldvh_landing_check_fixture(tmp_path, monkeypatch):
+    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(checker, "SPECS_DIR", docs_specs)
+    write_governed_projects(
+        tmp_path,
+        """
+product_name: LD Vibe Harness
+product_description: |
+  测试管辖项目配置。
+projects:
+  - id: ldvh-test
+    path: /tmp/ldvh-test
+""",
+    )
+    task_dir = tmp_path / "ldvh-base" / "tasks"
+    task_dir.mkdir(parents=True, exist_ok=True)
+    (task_dir / "task-0001-test.yaml").write_text(
+        """
+id: task-0001
+type: task
+title: 测试任务
+status: planned
+created: '2026-06-10T00:00:00'
+updated: '2026-06-10T00:00:00'
+description: |
+  测试任务说明。
+source: 测试
+acceptance: |
+  - [ ] 可验证条件
+sub_tasks: []
+blocked_by: []
+related_adrs: []
+related_docs: []
+affected_docs: []
+deliverables: []
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    return docs_specs
+
+
+def test_ldvh_landing_check_consumes_existing_reports(tmp_path, monkeypatch):
+    build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
+
+    report = checker.ldvh_landing_check_build(tmp_path)
+
+    assert report["metadata"]["report"] == "ldvh-landing-check"
+    assert report["metadata"]["source_of_truth"] is False
+    assert {item["id"] for item in report["checks"]} == {
+        "governed_projects",
+        "landing_report",
+        "runtime_projection",
+        "human_gate",
+        "fact_validate",
+        "spec_validate",
+    }
+    assert report["summary"]["status"] == "open"
+    assert next(item for item in report["checks"] if item["id"] == "governed_projects")["status"] == "closed"
+    assert next(item for item in report["checks"] if item["id"] == "fact_validate")["status"] == "closed"
+    assert any(item["id"] == "human_gate" and item["status"] == "degraded" for item in report["remaining_gaps"])
+
+
+def test_ldvh_landing_check_reports_missing_governed_projects(tmp_path, monkeypatch):
+    build_landing_report_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(checker, "SPECS_DIR", tmp_path / "docs" / "specs")
+
+    report = checker.ldvh_landing_check_build(tmp_path)
+
+    governed = next(item for item in report["checks"] if item["id"] == "governed_projects")
+    assert report["summary"]["status"] == "open"
+    assert governed["status"] == "open"
+    assert governed["issues"][0]["code"] == "GOVERNED_PROJECTS_MISSING"
+
+
+def test_ldvh_landing_check_reports_fact_validation_issues(tmp_path, monkeypatch):
+    build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
+    bad_task = tmp_path / "ldvh-base" / "tasks" / "task-0002-bad.yaml"
+    bad_task.write_text("id: bad\ntype: task\n", encoding="utf-8")
+
+    report = checker.ldvh_landing_check_build(tmp_path)
+
+    fact_check = next(item for item in report["checks"] if item["id"] == "fact_validate")
+    assert report["summary"]["status"] == "open"
+    assert fact_check["status"] == "open"
+    assert fact_check["issue_count"] > 0
+
+
+def test_ldvh_landing_check_cli_outputs_json(tmp_path, monkeypatch, capsys):
+    build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
+
+    exit_code = checker.main(["ldvh-landing-check", "--workspace-root", str(tmp_path), "--format", "json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 1
+    assert payload["metadata"]["report"] == "ldvh-landing-check"
+    assert payload["summary"]["status"] == "open"
+    assert payload["remaining_gaps"]
