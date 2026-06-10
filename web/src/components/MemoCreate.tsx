@@ -64,7 +64,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-ldvh-border px-3 py-1.5 text-xs text-ldvh-text-secondary transition-colors hover:border-ldvh-accent/40 hover:text-ldvh-accent"
+        className="ldvh-chip inline-flex items-center gap-1.5 rounded-md border border-dashed border-ldvh-border px-3 py-1.5 text-ldvh-text-secondary transition-colors hover:border-ldvh-accent/40 hover:text-ldvh-accent"
         title={t('memo.create')}
       >
         <Plus size={14} />
@@ -78,7 +78,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
       <div className="w-full max-w-lg rounded-lg border border-ldvh-border bg-ldvh-panel shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between gap-2 border-b border-ldvh-border px-4 py-3">
-          <h2 className="text-sm font-semibold text-ldvh-text-primary">{t('memo.create')}</h2>
+          <h2 className="ldvh-section-title">{t('memo.create')}</h2>
           <button
             onClick={() => { setIsOpen(false); reset(); }}
             className="rounded p-1 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
@@ -91,53 +91,53 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
         {success ? (
           <div className="flex flex-col items-center justify-center py-10">
             <div className="mb-3 h-8 w-8 animate-spin rounded-full border-2 border-ldvh-accent border-t-transparent" />
-            <p className="text-sm text-emerald-400">{t('memo.created')}</p>
+            <p className="ldvh-body text-emerald-400">{t('memo.created')}</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 p-4">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ldvh-text-secondary">{t('memo.title')}</label>
+              <label className="ldvh-caption-strong mb-1 block">{t('memo.title')}</label>
               <input
                 type="text"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 required
                 placeholder={t('memo.titlePlaceholder')}
-                className="w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 text-sm text-ldvh-text-primary placeholder:text-ldvh-text-secondary focus:border-ldvh-accent/40 focus:outline-none"
+                className="ldvh-body w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 placeholder:text-ldvh-text-secondary focus:border-ldvh-accent/40 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-ldvh-text-secondary">{t('memo.description')}</label>
+              <label className="ldvh-caption-strong mb-1 block">{t('memo.description')}</label>
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 required
                 rows={3}
                 placeholder={t('memo.descriptionPlaceholder')}
-                className="w-full resize-none rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 text-sm text-ldvh-text-primary placeholder:text-ldvh-text-secondary focus:border-ldvh-accent/40 focus:outline-none"
+                className="ldvh-body w-full resize-none rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 placeholder:text-ldvh-text-secondary focus:border-ldvh-accent/40 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-ldvh-text-secondary">{t('memo.source')}</label>
+              <label className="ldvh-caption-strong mb-1 block">{t('memo.source')}</label>
               <input
                 type="text"
                 value={source}
                 onChange={e => setSource(e.target.value)}
                 required
                 placeholder={t('memo.sourcePlaceholder')}
-                className="w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 text-sm text-ldvh-text-primary placeholder:text-ldvh-text-secondary focus:border-ldvh-accent/40 focus:outline-none"
+                className="ldvh-body w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 placeholder:text-ldvh-text-secondary focus:border-ldvh-accent/40 focus:outline-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-xs font-medium text-ldvh-text-secondary">{t('memo.category')}</label>
+                <label className="ldvh-caption-strong mb-1 block">{t('memo.category')}</label>
                 <select
                   value={category}
                   onChange={e => setCategory(e.target.value)}
-                  className="w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 text-sm text-ldvh-text-primary focus:border-ldvh-accent/40 focus:outline-none"
+                  className="ldvh-body w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 focus:border-ldvh-accent/40 focus:outline-none"
                 >
                   <option value="discovery">{t('memo.catDisco')}</option>
                   <option value="reminder">{t('memo.catRemind')}</option>
@@ -147,11 +147,11 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-ldvh-text-secondary">{t('memo.priority')}</label>
+                <label className="ldvh-caption-strong mb-1 block">{t('memo.priority')}</label>
                 <select
                   value={priority}
                   onChange={e => setPriority(e.target.value)}
-                  className="w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 text-sm text-ldvh-text-primary focus:border-ldvh-accent/40 focus:outline-none"
+                  className="ldvh-body w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 focus:border-ldvh-accent/40 focus:outline-none"
                 >
                   <option value="low">{t('memo.pLow')}</option>
                   <option value="medium">{t('memo.pMed')}</option>
@@ -162,14 +162,14 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
 
             {error && (
               <div className="rounded-md bg-red-500/10 px-3 py-2">
-                <p className="text-xs text-red-400">{error}</p>
+                <p className="ldvh-caption text-red-400">{error}</p>
               </div>
             )}
 
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-md bg-ldvh-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-ldvh-accent/80 disabled:opacity-50"
+              className="ldvh-card-title w-full rounded-md bg-ldvh-accent px-4 py-2 text-white transition-colors hover:bg-ldvh-accent/80 disabled:opacity-50"
             >
               {submitting ? (
                 <span className="inline-flex items-center gap-2">

@@ -64,7 +64,7 @@ export default function IntentSelector({ currentIntentId, onSelect, onClose }: I
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={locale === 'en' ? 'Search intents...' : '搜索意图...'}
-            className="w-full bg-transparent text-xs text-ldvh-text-primary outline-none placeholder:text-ldvh-text-secondary"
+            className="ldvh-caption w-full bg-transparent text-ldvh-text-primary outline-none placeholder:text-ldvh-text-secondary"
             autoFocus
           />
         </div>
@@ -75,10 +75,10 @@ export default function IntentSelector({ currentIntentId, onSelect, onClose }: I
         {loading ? (
           <div className="flex items-center justify-center py-6">
             <Loader2 size={16} className="animate-spin text-ldvh-text-secondary" />
-            <span className="ml-2 text-xs text-ldvh-text-secondary">{t('common.loading')}</span>
+            <span className="ldvh-caption ml-2">{t('common.loading')}</span>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-4 text-center text-xs text-ldvh-text-secondary">
+          <div className="ldvh-caption py-4 text-center">
             {locale === 'en' ? 'No intents found' : '未找到意图'}
           </div>
         ) : (
@@ -95,16 +95,16 @@ export default function IntentSelector({ currentIntentId, onSelect, onClose }: I
                   else onClose();
                 }}
                 disabled={isCurrent}
-                className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                className={`ldvh-body flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors ${
                   isCurrent
                     ? 'bg-ldvh-accent/10 text-ldvh-accent cursor-default'
                     : 'text-ldvh-text-primary hover:bg-ldvh-border/30'
                 }`}
               >
-                <span className="shrink-0 font-mono text-xs text-ldvh-accent">{item.id}</span>
+                <span className="ldvh-meta shrink-0 text-ldvh-accent">{item.id}</span>
                 <span className="min-w-0 flex-1 truncate">{displayTitle || item.id}</span>
                 {isCurrent && (
-                  <span className="shrink-0 text-[10px] text-ldvh-text-secondary">
+                  <span className="ldvh-caption shrink-0">
                     {locale === 'en' ? 'Current' : '当前'}
                   </span>
                 )}

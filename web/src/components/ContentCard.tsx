@@ -22,7 +22,7 @@ export default function ContentCard({ title, icon, headerExtra, collapsible = fa
           <div className="flex min-w-0 items-center gap-2">
             {icon && <span className="flex-shrink-0 text-ldvh-text-secondary">{icon}</span>}
             {title && (
-              <h3 className="truncate text-sm font-semibold text-ldvh-text-primary">{title}</h3>
+              <h3 className="ldvh-card-title truncate">{title}</h3>
             )}
           </div>
           <div className="flex flex-shrink-0 items-center gap-2">

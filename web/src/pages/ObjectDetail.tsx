@@ -167,7 +167,7 @@ export default function ObjectDetail() {
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
           <p className="text-ldvh-text-secondary">{t('common.loadFailed')}</p>
-          <p className="font-mono text-xs text-red-400">{error}</p>
+          <p className="ldvh-meta text-red-400">{error}</p>
         </div>
       </div>
     );
@@ -252,36 +252,36 @@ export default function ObjectDetail() {
           <div className="mb-6">
             <button
               onClick={() => navigate(listPath)}
-              className="mb-3 flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+              className="ldvh-body-muted mb-3 flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
             >
               <ArrowLeft size={14} />
               {t('objectDetail.back')}
             </button>
             <div className="flex items-start gap-3">
               <span
-                className="mt-1 shrink-0 rounded px-2 py-0.5 text-xs font-medium"
+                className="ldvh-chip mt-1 shrink-0 rounded px-2 py-0.5"
                 style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
               >
                 {TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
               </span>
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl font-semibold text-ldvh-text-primary">{displayTitle}</h1>
-                <p className="mt-0.5 font-mono text-xs text-ldvh-text-secondary">{objId}</p>
+                <h1 className="ldvh-page-title">{displayTitle}</h1>
+                <p className="ldvh-meta mt-0.5">{objId}</p>
                 {typeDesc && (
-                  <p className="mt-1 text-xs text-ldvh-text-secondary">{typeDesc}</p>
+                  <p className="ldvh-caption mt-1">{typeDesc}</p>
                 )}
               </div>
               <div className="flex flex-col items-end gap-1.5">
                 <StatusBadge status={objStatus} statusLabel={getStatus(objStatus)} size="md" />
                 {statusHint && (
-                  <span className="text-[11px] text-ldvh-text-secondary">{statusHint}</span>
+                  <span className="ldvh-caption">{statusHint}</span>
                 )}
               </div>
             </div>
             {objStatus === 'review_needed' && (
               <div className="mt-3 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
                 <Info size={14} className="shrink-0 text-amber-400" />
-                <span className="text-xs text-amber-300">{t('objectDetail.humanGateTip')}</span>
+                <span className="ldvh-caption text-amber-300">{t('objectDetail.humanGateTip')}</span>
               </div>
             )}
           </div>
@@ -314,7 +314,7 @@ export default function ObjectDetail() {
                 <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <FileText size={13} className="text-ldvh-accent" />
-                    <h4 className="text-xs font-medium tracking-wide text-ldvh-text-secondary">
+                    <h4 className="ldvh-caption-strong tracking-wide">
                       {t('objectDetail.aggregatedDeliverables')}
                     </h4>
                   </div>
@@ -325,7 +325,7 @@ export default function ObjectDetail() {
                 <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <FileText size={13} className="text-ldvh-accent" />
-                    <h4 className="text-xs font-medium tracking-wide text-ldvh-text-secondary">
+                    <h4 className="ldvh-caption-strong tracking-wide">
                       {t('objectDetail.aggregatedDocs')}
                     </h4>
                   </div>
@@ -339,7 +339,7 @@ export default function ObjectDetail() {
           <div className="rounded-lg border border-ldvh-border bg-ldvh-panel overflow-hidden">
             <button
               onClick={() => setShowYaml(!showYaml)}
-              className="flex w-full items-center gap-2 p-3 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
+              className="ldvh-body-muted flex w-full items-center gap-2 p-3 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
             >
               <Code2 size={14} />
               <span>{t('objectDetail.yamlSource')}</span>
@@ -370,8 +370,8 @@ export default function ObjectDetail() {
 function MetaChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-1.5 rounded-md border border-ldvh-border bg-ldvh-panel px-2.5 py-1">
-      <span className="text-[10px] text-ldvh-text-secondary">{label}</span>
-      <span className="font-mono text-xs text-ldvh-text-primary">{value}</span>
+      <span className="ldvh-caption">{label}</span>
+      <span className="ldvh-meta-primary">{value}</span>
     </div>
   );
 }
@@ -462,7 +462,7 @@ function TaskSection({ title, tone, children }: { title: string; tone: 'primary'
 
   return (
     <section className={`rounded-xl border p-4 ${toneClass}`}>
-      <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ldvh-text-primary">
+      <h2 className="ldvh-section-title mb-3 flex items-center gap-2">
         <span className="h-1.5 w-1.5 rounded-full bg-ldvh-accent" />
         {title}
       </h2>
@@ -474,7 +474,7 @@ function TaskSection({ title, tone, children }: { title: string; tone: 'primary'
 function TaskInlineField({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-bg/40 p-3">
-      <div className="mb-1 text-[11px] font-medium tracking-wide text-ldvh-text-secondary">{label}</div>
+      <div className="ldvh-caption-strong mb-1 tracking-wide">{label}</div>
       {value}
     </div>
   );
@@ -483,7 +483,7 @@ function TaskInlineField({ label, value }: { label: string; value: ReactNode }) 
 function TaskDocGroup({ label, docs }: { label: string; docs?: string[] }) {
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-bg/40 p-3">
-      <div className="mb-2 text-[11px] font-medium tracking-wide text-ldvh-text-secondary">{label}</div>
+      <div className="ldvh-caption-strong mb-2 tracking-wide">{label}</div>
       {docs && docs.length > 0 ? <DocPreviewLink docs={docs} /> : <EmptyHint text="空" />}
     </div>
   );
@@ -495,7 +495,7 @@ function isPreviewableDocPath(value: string) {
 
 function PathText({ value }: { value: string }) {
   return (
-    <span className="break-all rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 font-mono text-xs text-ldvh-text-primary">
+    <span className="ldvh-meta-primary break-all rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1">
       {value}
     </span>
   );
@@ -505,7 +505,7 @@ function StringList({ items }: { items: string[] }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((item, i) => (
-        <span key={i} className="rounded-md bg-ldvh-bg px-2 py-0.5 text-xs text-ldvh-text-primary border border-ldvh-border">
+        <span key={i} className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-0.5 text-ldvh-text-primary">
           {item}
         </span>
       ))}
@@ -525,7 +525,7 @@ function DocumentOrTextList({ items }: { items: string[] }) {
 }
 
 function EmptyHint({ text }: { text: string }) {
-  return <span className="text-sm text-ldvh-text-secondary">{text}</span>;
+  return <span className="ldvh-body-muted">{text}</span>;
 }
 
 /** 内容字段：根据字段类型选择渲染方式和样式 */
@@ -549,7 +549,7 @@ function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { 
         onClick={isCollapsible ? () => setCollapsed(c => !c) : undefined}
       >
         <FileText size={13} className="text-ldvh-accent" />
-        <h4 className="text-xs font-medium tracking-wide text-ldvh-text-secondary">{label}</h4>
+        <h4 className="ldvh-caption-strong tracking-wide">{label}</h4>
         {isCollapsible && (
           <span className="ml-auto text-ldvh-text-secondary">
             {collapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
@@ -566,7 +566,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
   const [editingSourceIntent, setEditingSourceIntent] = useState(false);
   const [saving, setSaving] = useState(false);
   if (value === null || value === undefined) {
-    return <span className="text-xs text-ldvh-text-secondary italic">{t('common.null')}</span>;
+    return <span className="ldvh-caption italic">{t('common.null')}</span>;
   }
 
   // 字符串
@@ -659,13 +659,13 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
     }
 
     // 短文本
-    return <span className="text-sm text-ldvh-text-primary">{value}</span>;
+    return <span className="ldvh-body">{value}</span>;
   }
 
   // 布尔值
   if (typeof value === 'boolean') {
     return (
-      <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${value ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+      <span className={`ldvh-chip rounded px-1.5 py-0.5 ${value ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
         {value ? t('common.true') : t('common.false')}
       </span>
     );
@@ -673,13 +673,13 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
 
   // 数字
   if (typeof value === 'number') {
-    return <span className="font-mono text-sm text-ldvh-accent">{value}</span>;
+    return <span className="ldvh-meta-primary text-ldvh-accent">{value}</span>;
   }
 
   // 数组
   if (Array.isArray(value)) {
     if (value.length === 0) {
-      return <span className="text-xs text-ldvh-text-secondary italic">{t('common.empty')}</span>;
+      return <span className="ldvh-caption italic">{t('common.empty')}</span>;
     }
 
     // 字符串数组
@@ -719,7 +719,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
             : k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
           return (
             <div key={k} className="flex gap-2">
-              <span className="shrink-0 rounded bg-ldvh-bg px-1.5 py-0.5 text-[11px] text-ldvh-text-secondary border border-ldvh-border">
+              <span className="ldvh-caption shrink-0 rounded border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5">
                 {displayKey}
               </span>
               <div className="min-w-0 flex-1">
@@ -732,7 +732,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
     );
   }
 
-  return <span className="text-sm text-ldvh-text-primary">{String(value)}</span>;
+  return <span className="ldvh-body">{String(value)}</span>;
 }
 
 /** 从引用 ID 解析对象类型（如 task-0001 → task） */

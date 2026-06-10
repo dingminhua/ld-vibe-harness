@@ -12,7 +12,7 @@ export default function EvidenceBlock({ value, embedded = false }: EvidenceBlock
   // 嵌入模式：不额外包裹边框和背景，因为外层已有容器
   if (embedded) {
     return (
-      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-li:my-0.5 prose-ul:my-1 prose-pre:my-2">
+      <div className="ldvh-inline-markdown max-w-none">
         <Markdown
           remarkPlugins={[remarkGfm]}
           components={{
@@ -55,12 +55,12 @@ export default function EvidenceBlock({ value, embedded = false }: EvidenceBlock
               </pre>
             ),
             h2: ({ children, ...props }) => (
-              <h2 className="text-sm font-semibold text-ldvh-text-primary mt-3 mb-1 first:mt-0" {...props}>
+              <h2 className="ldvh-section-title mt-3 mb-1 first:mt-0" {...props}>
                 {children}
               </h2>
             ),
             h3: ({ children, ...props }) => (
-              <h3 className="text-sm font-medium text-ldvh-text-primary mt-2 mb-1" {...props}>
+              <h3 className="ldvh-card-title mt-2 mb-1" {...props}>
                 {children}
               </h3>
             ),
@@ -75,7 +75,7 @@ export default function EvidenceBlock({ value, embedded = false }: EvidenceBlock
   // 独立模式：带边框和背景
   return (
     <div className="rounded-lg border border-ldvh-accent/20 bg-ldvh-accent/5 p-3">
-      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-li:my-0.5 prose-ul:my-1 prose-pre:my-2">
+      <div className="ldvh-inline-markdown max-w-none">
         <Markdown
           remarkPlugins={[remarkGfm]}
           components={{
@@ -118,12 +118,12 @@ export default function EvidenceBlock({ value, embedded = false }: EvidenceBlock
               </pre>
             ),
             h2: ({ children, ...props }) => (
-              <h2 className="text-sm font-semibold text-ldvh-text-primary mt-3 mb-1 first:mt-0" {...props}>
+              <h2 className="ldvh-section-title mt-3 mb-1 first:mt-0" {...props}>
                 {children}
               </h2>
             ),
             h3: ({ children, ...props }) => (
-              <h3 className="text-sm font-medium text-ldvh-text-primary mt-2 mb-1" {...props}>
+              <h3 className="ldvh-card-title mt-2 mb-1" {...props}>
                 {children}
               </h3>
             ),

@@ -28,7 +28,7 @@ export default function ChecklistCard({ value }: ChecklistCardProps) {
 
   if (items.length === 0) {
     // Fallback: no checklist items found, render as plain text
-    return <span className="text-sm text-ldvh-text-primary">{value}</span>;
+    return <span className="ldvh-body">{value}</span>;
   }
 
   const ratio = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
@@ -37,7 +37,7 @@ export default function ChecklistCard({ value }: ChecklistCardProps) {
     <div className="flex flex-col gap-2">
       {/* Progress header */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-medium text-ldvh-accent">
+        <span className="ldvh-chip text-ldvh-accent">
           {doneCount}/{totalCount}
         </span>
         <div className="h-1.5 flex-1 rounded-full bg-ldvh-border overflow-hidden">
@@ -46,7 +46,7 @@ export default function ChecklistCard({ value }: ChecklistCardProps) {
             style={{ width: `${ratio}%` }}
           />
         </div>
-        <span className="text-[10px] text-ldvh-text-secondary">{ratio}%</span>
+        <span className="ldvh-caption">{ratio}%</span>
       </div>
 
       {/* Checklist items */}
@@ -59,7 +59,7 @@ export default function ChecklistCard({ value }: ChecklistCardProps) {
               <Square size={14} className="mt-0.5 shrink-0 text-ldvh-accent" />
             )}
             <span
-              className={`text-sm leading-5 ${
+              className={`ldvh-body ${
                 item.checked
                   ? 'text-ldvh-text-secondary line-through opacity-60'
                   : 'text-ldvh-text-primary'

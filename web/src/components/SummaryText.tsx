@@ -37,7 +37,7 @@ export default function SummaryText({ value }: SummaryTextProps) {
 
   return (
     <div>
-      <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-p:leading-relaxed prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1 prose-pre:my-2 prose-headings:mt-3 prose-headings:mb-1.5 prose-h2:text-base prose-h2:font-semibold prose-h3:text-sm prose-h3:font-medium prose-code:text-ldvh-accent">
+      <div className="ldvh-inline-markdown max-w-none">
         <Markdown remarkPlugins={[remarkGfm]}>
           {needsTruncation && !expanded ? displayText + '…' : value}
         </Markdown>
@@ -45,7 +45,7 @@ export default function SummaryText({ value }: SummaryTextProps) {
       {needsTruncation && (
         <button
           onClick={() => setExpanded(v => !v)}
-          className="mt-1.5 flex items-center gap-1 text-xs text-ldvh-accent transition-colors hover:text-ldvh-accent/80"
+          className="ldvh-caption mt-1.5 flex items-center gap-1 text-ldvh-accent transition-colors hover:text-ldvh-accent/80"
         >
           {expanded ? (
             <>

@@ -1,6 +1,98 @@
+@import "github-markdown-css/github-markdown.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .ldvh-page-title {
+    @apply text-xl font-semibold leading-7 text-ldvh-text-primary;
+  }
+
+  .ldvh-page-subtitle {
+    @apply text-sm leading-6 text-ldvh-text-secondary;
+  }
+
+  .ldvh-section-title {
+    @apply text-sm font-semibold leading-5 text-ldvh-text-primary;
+  }
+
+  .ldvh-card-title {
+    @apply text-sm font-medium leading-5 text-ldvh-text-primary;
+  }
+
+  .ldvh-body {
+    @apply text-sm leading-6 text-ldvh-text-primary;
+  }
+
+  .ldvh-body-muted {
+    @apply text-sm leading-6 text-ldvh-text-secondary;
+  }
+
+  .ldvh-caption {
+    @apply text-xs leading-5 text-ldvh-text-secondary;
+  }
+
+  .ldvh-caption-strong {
+    @apply text-xs font-medium leading-5 text-ldvh-text-secondary;
+  }
+
+  .ldvh-meta {
+    @apply font-mono text-xs leading-5 text-ldvh-text-secondary;
+  }
+
+  .ldvh-meta-primary {
+    @apply font-mono text-xs leading-5 text-ldvh-text-primary;
+  }
+
+  .ldvh-chip {
+    @apply text-xs font-medium leading-4;
+  }
+
+  .ldvh-reading-title {
+    @apply text-base font-semibold leading-6 text-ldvh-text-primary;
+  }
+
+  .ldvh-inline-markdown {
+    @apply text-sm leading-6 text-ldvh-text-primary;
+  }
+
+  .ldvh-dashboard-lead-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: 1rem;
+  }
+
+  .ldvh-dashboard-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: 0.75rem;
+  }
+
+  .ldvh-dashboard-panel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: 1.5rem;
+  }
+
+  .ldvh-dashboard-section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: 1.5rem;
+  }
+
+  .ldvh-dashboard-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+    gap: 0.75rem;
+  }
+
+  .ldvh-dashboard-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.5rem), 1fr));
+    gap: 0.75rem;
+  }
+}
 
 :root {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
@@ -80,4 +172,159 @@ input::-moz-focus-inner {
 
 ::-webkit-scrollbar-thumb:hover {
   opacity: 0.8;
+}
+
+/* Markdown reading surface. GitHub Markdown CSS provides the base renderer styles;
+   these variables bind it to the LDVH theme without reimplementing Markdown tags. */
+.ldvh-markdown-preview {
+  --bgColor-default: transparent;
+  --bgColor-muted: rgb(var(--ldvh-panel));
+  --bgColor-neutral-muted: rgb(var(--ldvh-border) / 0.22);
+  --borderColor-default: rgb(var(--ldvh-border));
+  --borderColor-muted: rgb(var(--ldvh-border) / 0.72);
+  --fgColor-default: rgb(var(--ldvh-text-primary));
+  --fgColor-muted: rgb(var(--ldvh-text-secondary));
+  --fgColor-accent: rgb(var(--ldvh-accent));
+  --fgColor-attention: #d29922;
+  --focus-outlineColor: rgb(var(--ldvh-accent));
+  background: transparent;
+  color: rgb(var(--ldvh-text-primary));
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.ldvh-markdown-preview h1 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom-color: rgb(var(--ldvh-border));
+  font-size: 1.55rem;
+  line-height: 1.28;
+  letter-spacing: 0;
+}
+
+.ldvh-markdown-preview h2 {
+  margin-top: 2rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.45rem;
+  border-bottom-color: rgb(var(--ldvh-border) / 0.72);
+  font-size: 1.18rem;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.ldvh-markdown-preview h3 {
+  margin-top: 1.45rem;
+  margin-bottom: 0.55rem;
+  font-size: 1rem;
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+.ldvh-markdown-preview p,
+.ldvh-markdown-preview ul,
+.ldvh-markdown-preview ol,
+.ldvh-markdown-preview blockquote,
+.ldvh-markdown-preview table,
+.ldvh-markdown-preview pre {
+  margin-top: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.ldvh-markdown-preview table {
+  border-radius: 8px;
+}
+
+.ldvh-markdown-preview table th {
+  background: rgb(var(--ldvh-border) / 0.28);
+  white-space: nowrap;
+}
+
+.ldvh-markdown-preview table th,
+.ldvh-markdown-preview table td {
+  border-color: rgb(var(--ldvh-border));
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+}
+
+.ldvh-markdown-preview code {
+  border: 1px solid rgb(var(--ldvh-border) / 0.72);
+  border-radius: 5px;
+  background: rgb(var(--ldvh-border) / 0.32);
+  color: rgb(var(--ldvh-accent));
+  font-size: 0.88em;
+}
+
+.ldvh-markdown-preview pre {
+  border: 1px solid rgb(var(--ldvh-border));
+  border-radius: 8px;
+  background: rgb(var(--ldvh-bg));
+  padding: 0.9rem 1rem;
+}
+
+.ldvh-markdown-preview pre code {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 0.86rem;
+}
+
+.ldvh-markdown-preview blockquote {
+  border-left-color: rgb(var(--ldvh-accent));
+  color: rgb(var(--ldvh-text-secondary));
+}
+
+.ldvh-inline-markdown :where(p, ul, ol, pre, blockquote) {
+  margin-top: 0.375rem;
+  margin-bottom: 0.375rem;
+}
+
+.ldvh-inline-markdown :where(ul, ol) {
+  padding-left: 1.25rem;
+}
+
+.ldvh-inline-markdown :where(li) {
+  margin-top: 0.125rem;
+  margin-bottom: 0.125rem;
+}
+
+.ldvh-inline-markdown :where(h2) {
+  margin-top: 0.75rem;
+  margin-bottom: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  color: rgb(var(--ldvh-text-primary));
+}
+
+.ldvh-inline-markdown :where(h3) {
+  margin-top: 0.625rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  color: rgb(var(--ldvh-text-primary));
+}
+
+.ldvh-inline-markdown :where(code) {
+  border-radius: 4px;
+  background: rgb(var(--ldvh-border) / 0.42);
+  padding: 0.05rem 0.25rem;
+  color: rgb(var(--ldvh-accent));
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.88em;
+}
+
+.ldvh-inline-markdown :where(pre) {
+  overflow-x: auto;
+  border: 1px solid rgb(var(--ldvh-border));
+  border-radius: 8px;
+  background: rgb(var(--ldvh-bg));
+  padding: 0.75rem;
+}
+
+.ldvh-inline-markdown :where(pre code) {
+  background: transparent;
+  padding: 0;
+  color: inherit;
 }

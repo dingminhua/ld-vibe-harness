@@ -24,7 +24,7 @@ function getStatusOptions(items: ObjectItem[]): StatusOption[] {
 }
 
 function getButtonClass(active: boolean): string {
-  return `rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+  return `ldvh-chip rounded-full px-3 py-1 transition-colors ${
     active
       ? 'bg-ldvh-accent/15 text-ldvh-accent'
       : 'bg-ldvh-border/50 text-ldvh-text-secondary hover:text-ldvh-text-primary'

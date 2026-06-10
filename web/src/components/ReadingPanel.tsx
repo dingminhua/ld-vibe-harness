@@ -11,9 +11,9 @@ import { useI18n } from '@/i18n/context';
 import { fetchDocContent, fetchObjectDetail, type DocContent, type ObjectDetail as ApiObjectDetail } from '@/utils/api';
 
 const MIN_WIDTH = 280;
-const MAX_WIDTH_RATIO = 0.50;
+const MAX_WIDTH_RATIO = 0.58;
 const DEFAULT_WIDTH = 380;
-const DEFAULT_DOC_WIDTH = 520;
+const DEFAULT_DOC_WIDTH = 680;
 const SNAP_THRESHOLD = 40;
 const MOBILE_BREAKPOINT = 768;
 
@@ -82,7 +82,7 @@ export default function ReadingPanel() {
 
   useEffect(() => {
     const onResize = () => {
-      setWidth(prev => Math.min(prev, Math.floor(window.innerWidth * 0.50)));
+      setWidth(prev => Math.min(prev, Math.floor(window.innerWidth * MAX_WIDTH_RATIO)));
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -176,7 +176,7 @@ export default function ReadingPanel() {
           <div className="flex items-center justify-between gap-2 px-4 py-2">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               {navigationControls}
-              <h3 className="truncate text-sm font-medium text-ldvh-text-primary">{panelTitle}</h3>
+              <h3 className="ldvh-card-title truncate">{panelTitle}</h3>
             </div>
             <button onClick={closePanel} className="rounded p-1 text-ldvh-text-secondary hover:bg-ldvh-border/30">
               <X size={14} />
@@ -209,7 +209,7 @@ export default function ReadingPanel() {
         <div className="flex min-w-0 items-center gap-2">
           <GripVertical size={14} className="flex-shrink-0 text-ldvh-text-secondary" />
           {navigationControls}
-          <h3 className="truncate text-sm font-medium text-ldvh-text-primary">{panelTitle}</h3>
+          <h3 className="ldvh-card-title truncate">{panelTitle}</h3>
         </div>
         <button onClick={closePanel} className="rounded p-1 text-ldvh-text-secondary hover:bg-ldvh-border/30">
           <X size={14} />
@@ -225,7 +225,7 @@ export default function ReadingPanel() {
 function EmptyPanelPreview() {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <p className="text-sm text-ldvh-text-secondary">选择一个对象或文档以在此预览</p>
+      <p className="ldvh-body-muted">选择一个对象或文档以在此预览</p>
     </div>
   );
 }
@@ -240,7 +240,7 @@ function PanelContentRenderer({ content }: { content: PanelContent }) {
     default:
       return (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-sm text-ldvh-text-secondary">选择一个对象或文档以在此预览</p>
+          <p className="ldvh-body-muted">选择一个对象或文档以在此预览</p>
         </div>
       );
   }
@@ -290,8 +290,8 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   if (error) {
     return (
       <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
-        <p className="text-sm text-red-300">加载失败</p>
-        <p className="mt-1 font-mono text-xs text-red-300/80">{error}</p>
+        <p className="ldvh-body text-red-300">加载失败</p>
+        <p className="ldvh-meta mt-1 text-red-300/80">{error}</p>
       </div>
     );
   }
@@ -299,11 +299,11 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <span className="rounded bg-ldvh-accent/20 px-2 py-0.5 text-xs font-medium text-ldvh-accent">{objectType}</span>
+        <span className="ldvh-chip rounded bg-ldvh-accent/20 px-2 py-0.5 text-ldvh-accent">{objectType}</span>
         {status && <StatusBadge status={status} statusLabel={getStatus(status)} size="sm" />}
       </div>
-      <h3 className="text-base font-semibold text-ldvh-text-primary">{title}</h3>
-      {objectId && <p className="font-mono text-xs text-ldvh-text-secondary">{objectId}</p>}
+      <h3 className="ldvh-reading-title">{title}</h3>
+      {objectId && <p className="ldvh-meta">{objectId}</p>}
       {objectType === 'task' && obj ? (
         <TaskObjectPreview obj={obj} />
       ) : (
@@ -392,19 +392,19 @@ function PreviewSection({ title, children }: { title: string; children: React.Re
 }
 
 function PreviewLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs font-medium text-ldvh-text-secondary">{children}</p>;
+  return <p className="ldvh-caption-strong">{children}</p>;
 }
 
 function PreviewText({ value }: { value: string }) {
   return (
-    <p className="whitespace-pre-wrap text-sm leading-relaxed text-ldvh-text-secondary">
+    <p className="ldvh-body-muted whitespace-pre-wrap">
       {value}
     </p>
   );
 }
 
 function EmptyPreview({ text }: { text: string }) {
-  return <span className="text-sm italic text-ldvh-text-secondary">{text}</span>;
+  return <span className="ldvh-body-muted italic">{text}</span>;
 }
 
 function PreviewDocGroup({ title, docs }: { title: string; docs: unknown }) {
@@ -450,47 +450,35 @@ function DocPreview({ content }: { content: PanelContent }) {
   if (error) {
     return (
       <div className="space-y-3">
-        {docPath && <p className="break-all font-mono text-xs text-ldvh-text-secondary">{docPath}</p>}
         <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3">
-          <p className="text-sm text-red-300">文档加载失败</p>
-          <p className="mt-1 font-mono text-xs text-red-300/80">{error}</p>
+          <p className="ldvh-body text-red-300">文档加载失败</p>
+          <p className="ldvh-meta mt-1 text-red-300/80">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {docPath && (
-        <div>
-          <h3 className="truncate text-sm font-semibold text-ldvh-text-primary">{getPathTitle(docPath)}</h3>
-          <p className="mt-1 break-all font-mono text-xs text-ldvh-text-secondary">{docPath}</p>
-        </div>
-      )}
+    <div className="space-y-4">
       {!docContent ? (
         <div className="flex items-center justify-center rounded-md bg-ldvh-bg py-16">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-ldvh-accent border-t-transparent" />
         </div>
       ) : isMarkdown ? (
-        <div className="rounded-md bg-ldvh-bg p-4">
+        <article className="rounded-lg border border-ldvh-border bg-ldvh-panel px-6 py-5 shadow-sm shadow-black/10">
           <MarkdownPreview content={docContent} />
-          {truncated && <p className="mt-3 text-xs text-ldvh-text-secondary">内容已截断</p>}
-        </div>
+          {truncated && <p className="ldvh-caption mt-3">内容已截断</p>}
+        </article>
       ) : (
         <div className="rounded-md bg-ldvh-bg p-3">
-          <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-ldvh-text-primary">
+          <pre className="ldvh-meta-primary whitespace-pre-wrap">
             {docContent}
           </pre>
-          {truncated && <p className="mt-3 text-xs text-ldvh-text-secondary">内容已截断</p>}
+          {truncated && <p className="ldvh-caption mt-3">内容已截断</p>}
         </div>
       )}
     </div>
   );
-}
-
-function getPathTitle(path: string) {
-  const parts = path.split('/');
-  return parts[parts.length - 1] || path;
 }
 
 function YamlPreview({ content }: { content: PanelContent }) {
@@ -499,7 +487,7 @@ function YamlPreview({ content }: { content: PanelContent }) {
   return (
     <div className="space-y-3">
       <div className="rounded-md bg-ldvh-bg p-3">
-        <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-ldvh-text-primary max-h-[600px] overflow-y-auto">
+        <pre className="ldvh-meta-primary max-h-[600px] overflow-y-auto whitespace-pre-wrap">
           {yamlText}
         </pre>
       </div>
@@ -514,16 +502,16 @@ function EvidencePreview({ content }: { content: PanelContent }) {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <FileText size={14} className="text-ldvh-text-secondary" />
-        <h4 className="text-sm font-medium text-ldvh-text-primary">{title || '关闭证据'}</h4>
+        <h4 className="ldvh-card-title">{title || '关闭证据'}</h4>
       </div>
       {items.length === 0 ? (
-        <p className="text-xs text-ldvh-text-secondary">暂无证据信息</p>
+        <p className="ldvh-caption">暂无证据信息</p>
       ) : (
         <div className="space-y-2">
           {items.map((item, i) => (
             <div key={i} className="rounded-md bg-ldvh-bg p-3">
-              <p className="mb-1 text-xs font-medium text-ldvh-text-secondary">{item.label}</p>
-              <p className="font-mono text-xs leading-relaxed text-ldvh-text-primary whitespace-pre-wrap">{item.value}</p>
+              <p className="ldvh-caption-strong mb-1">{item.label}</p>
+              <p className="ldvh-meta-primary whitespace-pre-wrap">{item.value}</p>
             </div>
           ))}
         </div>
@@ -540,10 +528,10 @@ function DiffPreview({ content }: { content: PanelContent }) {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <FileDiff size={14} className="text-ldvh-text-secondary" />
-        <h4 className="text-sm font-medium text-ldvh-text-primary">{title || '变更详情'}</h4>
+        <h4 className="ldvh-card-title">{title || '变更详情'}</h4>
       </div>
       <div className="rounded-md bg-ldvh-bg p-3">
-        <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-ldvh-text-primary max-h-[600px] overflow-y-auto">
+        <pre className="ldvh-meta-primary max-h-[600px] overflow-y-auto whitespace-pre-wrap">
           {lines.map((line, i) => {
             let cls = 'text-ldvh-text-primary';
             if (line.startsWith('+')) cls = 'text-emerald-400';

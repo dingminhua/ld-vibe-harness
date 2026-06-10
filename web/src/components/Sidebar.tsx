@@ -45,7 +45,7 @@ function IconTooltip({ label }: { label: string }) {
   return (
     <span
       aria-hidden="true"
-      className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-xs font-medium text-ldvh-text-primary opacity-0 shadow-lg shadow-black/10 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+      className="ldvh-chip pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-ldvh-text-primary opacity-0 shadow-lg shadow-black/10 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
     >
       {label}
     </span>
@@ -81,8 +81,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </div>
             {!collapsed && (
             <div className="min-w-0 flex-1">
-              <div className="font-mono text-sm font-bold text-ldvh-text-primary tracking-wide">LDVH</div>
-                <div className="text-[10px] leading-tight text-ldvh-text-secondary whitespace-normal break-keep">
+              <div className="ldvh-card-title font-mono font-bold tracking-wide">LDVH</div>
+                <div className="ldvh-caption whitespace-normal break-keep">
                   {t('logo.tagline')}
                 </div>
               </div>
@@ -109,7 +109,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 title={collapsed ? t(item.labelKey) : undefined}
                 aria-label={collapsed ? t(item.labelKey) : undefined}
                 className={({ isActive }) =>
-                  `group relative flex items-center rounded-md text-sm transition-colors ${
+                  `ldvh-card-title group relative flex items-center rounded-md transition-colors ${
                     collapsed ? 'h-10 justify-center px-0' : 'gap-2.5 px-3 py-2'
                   } ${
                     isActive
@@ -132,7 +132,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             onClick={() => setLocale(locale === 'zh' ? 'en' : 'zh')}
             title={languageLabel}
             aria-label={languageLabel}
-            className={`group relative flex items-center rounded-md text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary ${
+            className={`ldvh-card-title group relative flex items-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary ${
               collapsed ? 'h-9 w-9 justify-center px-0' : 'flex-1 gap-2 px-3 py-1.5'
             }`}
           >

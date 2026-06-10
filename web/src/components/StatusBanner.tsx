@@ -36,12 +36,12 @@ export default function StatusBanner({ status, title, description, action, child
       <div className="flex items-start gap-3">
         <StatusIcon status={status} />
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-ldvh-text-primary">{title}</p>
-          {description && <p className="mt-1 text-sm text-ldvh-text-secondary">{description}</p>}
+          <p className="ldvh-section-title">{title}</p>
+          {description && <p className="ldvh-body-muted mt-1">{description}</p>}
           {action && (
             <button
               onClick={action.onClick}
-              className="mt-2 rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-1.5 text-xs text-ldvh-text-primary transition-colors hover:bg-ldvh-border/50"
+              className="ldvh-chip mt-2 rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-1.5 text-ldvh-text-primary transition-colors hover:bg-ldvh-border/50"
             >
               {action.label}
             </button>

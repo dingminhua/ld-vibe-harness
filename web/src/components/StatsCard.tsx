@@ -21,8 +21,8 @@ export default function StatsCard({ type, label, count, byStatus, getStatus, onC
       className="group flex flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left transition-colors hover:border-ldvh-accent/40"
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-ldvh-text-primary">{label ?? type}</span>
-        <span className="font-mono text-lg font-semibold text-ldvh-accent">{total}</span>
+        <span className="ldvh-card-title">{label ?? type}</span>
+        <span className="font-mono text-xl font-semibold text-ldvh-accent">{total}</span>
       </div>
       {/* Status distribution bar */}
       {entries.length > 0 && (
@@ -46,7 +46,7 @@ export default function StatsCard({ type, label, count, byStatus, getStatus, onC
           {entries.map(([status, statusCount]) => (
             <span
               key={status}
-              className="font-mono text-[10px]"
+              className="ldvh-meta"
               style={{ color: getStatusColor(status) }}
             >
               {getStatus ? getStatus(status) : status} {statusCount}

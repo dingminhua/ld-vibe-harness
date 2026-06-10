@@ -51,7 +51,7 @@ export default function Dashboard() {
         <div className="text-center">
           <AlertCircle size={32} className="mx-auto mb-2 text-red-400" />
           <p className="text-ldvh-text-secondary">{t('common.loadFailed')}</p>
-          <p className="font-mono text-xs text-red-400">{error}</p>
+          <p className="ldvh-meta text-red-400">{error}</p>
         </div>
       </div>
     );
@@ -110,7 +110,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <PageHeader title={t('dashboard.title')} />
 
       {/* 关键状态信号 */}
@@ -127,20 +127,20 @@ export default function Dashboard() {
 
       {/* 态势摘要行 */}
       {parts.length > 0 && (
-        <p className="mb-4 text-xs text-ldvh-text-secondary">{parts.join(locale === 'zh' ? '，' : ', ')}</p>
+        <p className="ldvh-caption mb-4">{parts.join(locale === 'zh' ? '，' : ', ')}</p>
       )}
 
       {/* Profile card + Landing Health 引导卡片 */}
-      <div className="mb-6 grid gap-4 lg:grid-cols-2">
+      <div className="ldvh-dashboard-lead-grid mb-6">
         {/* Profile card */}
         {data.profile && (
           <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-ldvh-text-primary">
+                <h2 className="ldvh-section-title">
                   {getLocalizedTitle(data.profile, locale)}
                 </h2>
-                <p className="font-mono text-xs text-ldvh-text-secondary">{data.profile.id}</p>
+                <p className="ldvh-meta">{data.profile.id}</p>
               </div>
               <StatusBadge status={data.profile.status} size="md" />
             </div>
@@ -152,9 +152,9 @@ export default function Dashboard() {
           <div className="rounded-lg border border-ldvh-accent/30 bg-ldvh-accent/5 p-4">
             <div className="mb-3 flex items-center gap-2">
               <Target size={16} className="text-ldvh-accent" />
-              <h2 className="text-sm font-semibold text-ldvh-text-primary">{t('dashboard.landingGuide')}</h2>
+              <h2 className="ldvh-section-title">{t('dashboard.landingGuide')}</h2>
             </div>
-            <p className="mb-3 text-xs text-ldvh-text-secondary">{t('dashboard.landingGuideDesc')}</p>
+            <p className="ldvh-caption mb-3">{t('dashboard.landingGuideDesc')}</p>
 
             {/* 能力状态条 */}
             <div className="mb-3">
@@ -169,7 +169,7 @@ export default function Dashboard() {
                   <div className="h-full bg-red-500/70" style={{ width: `${(capOpenCount / (capClosedCount + capOpenCount + capDegradedCount || 1)) * 100}%` }} />
                 )}
               </div>
-              <div className="mt-1.5 flex items-center gap-3 text-[10px] text-ldvh-text-secondary">
+              <div className="ldvh-caption mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="text-emerald-300">{capClosedCount} closed</span>
                 {capDegradedCount > 0 && <span className="text-yellow-300">{capDegradedCount} degraded</span>}
                 {capOpenCount > 0 && <span className="text-red-300">{capOpenCount} open</span>}
@@ -177,16 +177,16 @@ export default function Dashboard() {
             </div>
 
             {hasLandingGaps ? (
-              <p className="mb-3 text-xs font-medium text-orange-300">
+              <p className="ldvh-caption-strong mb-3 text-orange-300">
                 {t('dashboard.landingNeedsWork', { count: String(totalGaps) })}
               </p>
             ) : (
-              <p className="mb-3 text-xs font-medium text-emerald-300">{t('dashboard.landingAllClosed')}</p>
+              <p className="ldvh-caption-strong mb-3 text-emerald-300">{t('dashboard.landingAllClosed')}</p>
             )}
 
             <button
               onClick={() => navigate('/validate')}
-              className="w-full rounded-md border border-ldvh-accent/40 bg-ldvh-accent/10 px-3 py-1.5 text-xs text-ldvh-accent transition-colors hover:bg-ldvh-accent/20"
+              className="ldvh-chip w-full rounded-md border border-ldvh-accent/40 bg-ldvh-accent/10 px-3 py-1.5 text-ldvh-accent transition-colors hover:bg-ldvh-accent/20"
             >
               {t('dashboard.landingGuideAction')}
             </button>
@@ -195,7 +195,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats grid */}
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-7">
+      <div className="ldvh-dashboard-stats-grid mb-6">
         {TYPE_ORDER.map((type) => {
           const stat = data.stats.find(s => s.type === type);
           return (
@@ -212,15 +212,15 @@ export default function Dashboard() {
         })}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="ldvh-dashboard-panel-grid">
         {/* Action Items */}
         <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
             <ArrowRightCircle size={16} className="text-ldvh-accent" />
-            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.actionItems')}</h3>
+            <h3 className="ldvh-section-title">{t('dashboard.actionItems')}</h3>
           </div>
           {data.actionItems.length === 0 ? (
-            <p className="text-sm text-ldvh-text-secondary">{t('dashboard.noActionItems')}</p>
+            <p className="ldvh-body-muted">{t('dashboard.noActionItems')}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {data.actionItems.map((item) => {
@@ -233,7 +233,7 @@ export default function Dashboard() {
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-3">
                       <span
-                        className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                        className="ldvh-chip shrink-0 rounded px-1.5 py-0.5"
                         style={{
                           backgroundColor: `${item.typeColor}20`,
                           color: item.typeColor,
@@ -241,13 +241,13 @@ export default function Dashboard() {
                       >
                         {item.type}
                       </span>
-                      <span className="truncate text-sm text-ldvh-text-primary">
+                      <span className="ldvh-body truncate">
                         {getLocalizedTitle(item, locale) || item.id}
                       </span>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
-                      <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
+                      <span className="ldvh-caption whitespace-nowrap">
                         {item.relativeTime}
                       </span>
                     </div>
@@ -262,10 +262,10 @@ export default function Dashboard() {
         <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
             <GitCommit size={16} className="text-ldvh-accent" />
-            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.recentChanges')}</h3>
+            <h3 className="ldvh-section-title">{t('dashboard.recentChanges')}</h3>
           </div>
           {data.recentChanges.length === 0 ? (
-            <p className="text-sm text-ldvh-text-secondary">{t('dashboard.noRecentChanges')}</p>
+            <p className="ldvh-body-muted">{t('dashboard.noRecentChanges')}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {data.recentChanges.map((entry) => (
@@ -276,7 +276,7 @@ export default function Dashboard() {
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <span
-                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                      className="ldvh-chip shrink-0 rounded px-1.5 py-0.5"
                       style={{
                         backgroundColor: `${CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other}20`,
                         color: CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other,
@@ -284,9 +284,9 @@ export default function Dashboard() {
                     >
                       {getCategoryLocale(entry.category, locale)}
                     </span>
-                    <span className="truncate text-sm text-ldvh-text-primary">{entry.description}</span>
+                    <span className="ldvh-body truncate">{entry.description}</span>
                   </div>
-                  <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
+                  <span className="ldvh-caption whitespace-nowrap">
                     {entry.relativeTime}
                   </span>
                 </li>
@@ -297,15 +297,15 @@ export default function Dashboard() {
       </div>
 
       {/* Recent activity + Validation status + Landing compliance */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+      <div className="ldvh-dashboard-section-grid mt-6">
         {/* Recent activity */}
         <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
             <Activity size={16} className="text-ldvh-accent" />
-            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.recentActivity')}</h3>
+            <h3 className="ldvh-section-title">{t('dashboard.recentActivity')}</h3>
           </div>
           {data.recentItems.length === 0 ? (
-            <p className="text-sm text-ldvh-text-secondary">{t('dashboard.noRecentActivity')}</p>
+            <p className="ldvh-body-muted">{t('dashboard.noRecentActivity')}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {data.recentItems.map((item) => (
@@ -316,7 +316,7 @@ export default function Dashboard() {
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <span
-                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                      className="ldvh-chip shrink-0 rounded px-1.5 py-0.5"
                       style={{
                         backgroundColor: `${item.typeColor}20`,
                         color: item.typeColor,
@@ -324,13 +324,13 @@ export default function Dashboard() {
                     >
                       {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
                     </span>
-                    <span className="truncate text-sm text-ldvh-text-primary">
+                    <span className="ldvh-body truncate">
                       {getLocalizedTitle(item, locale) || item.id}
                     </span>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
-                    <span className="whitespace-nowrap text-xs text-ldvh-text-secondary">
+                    <span className="ldvh-caption whitespace-nowrap">
                       {item.relativeTime}
                     </span>
                   </div>
@@ -344,9 +344,9 @@ export default function Dashboard() {
         <div className={`rounded-lg border bg-ldvh-panel p-4 ${data.validation.ok ? 'border-ldvh-border' : 'border-red-500'}`}>
           <div className="mb-3 flex items-center gap-2">
             <Shield size={16} className="text-ldvh-accent" />
-            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.validationStatus')}</h3>
+            <h3 className="ldvh-section-title">{t('dashboard.validationStatus')}</h3>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="ldvh-dashboard-mini-grid">
             <div className={`flex flex-col items-center rounded-md p-3 ${data.validation.ok ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
               {data.validation.ok ? (
                 <CheckCircle size={20} className="mb-1 text-green-400" />
@@ -356,21 +356,21 @@ export default function Dashboard() {
               <span className={`font-mono text-xl font-semibold ${data.validation.ok ? 'text-green-400' : 'text-red-400'}`}>
                 {data.validation.ok ? t('dashboard.pass') : t('dashboard.fail')}
               </span>
-              <span className="text-xs text-ldvh-text-secondary">{t('dashboard.status')}</span>
+              <span className="ldvh-caption">{t('dashboard.status')}</span>
             </div>
             <div className="flex flex-col items-center rounded-md bg-red-500/10 p-3">
               <AlertCircle size={20} className="mb-1 text-red-400" />
               <span className="font-mono text-xl font-semibold text-red-400">{data.validation.errors}</span>
-              <span className="text-xs text-ldvh-text-secondary">{t('dashboard.errors')}</span>
+              <span className="ldvh-caption">{t('dashboard.errors')}</span>
             </div>
             <div className="flex flex-col items-center rounded-md bg-yellow-500/10 p-3">
               <AlertTriangle size={20} className="mb-1 text-yellow-400" />
               <span className="font-mono text-xl font-semibold text-yellow-400">{data.validation.warnings}</span>
-              <span className="text-xs text-ldvh-text-secondary">{t('dashboard.warnings')}</span>
+              <span className="ldvh-caption">{t('dashboard.warnings')}</span>
             </div>
           </div>
           {!data.validation.ok && (
-            <p className="mt-3 text-xs font-medium text-red-400">
+            <p className="ldvh-caption-strong mt-3 text-red-400">
               {t('dashboard.validationErrorHint')}
             </p>
           )}
@@ -381,7 +381,7 @@ export default function Dashboard() {
           <div className={`rounded-lg border bg-ldvh-panel p-4 ${compliancePercent >= 80 ? 'border-ldvh-border' : 'border-orange-500/50'}`}>
             <div className="mb-3 flex items-center gap-2">
               <Layers size={16} className="text-ldvh-accent" />
-              <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.complianceHeader')}</h3>
+              <h3 className="ldvh-section-title">{t('dashboard.complianceHeader')}</h3>
             </div>
             {/* 合规百分比环 */}
             <div className="mb-3 flex items-center justify-center">
@@ -400,18 +400,18 @@ export default function Dashboard() {
                 <span className="absolute font-mono text-lg font-semibold text-ldvh-text-primary">{compliancePercent}%</span>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-center text-xs">
+            <div className="ldvh-dashboard-mini-grid text-center">
               <div className="rounded-md bg-ldvh-bg p-2">
                 <p className="font-mono text-ldvh-text-primary">{totalReqs}</p>
-                <p className="text-ldvh-text-secondary">{t('dashboard.complianceTotal', { total: String(totalReqs) })}</p>
+                <p className="ldvh-caption">{t('dashboard.complianceTotal', { total: String(totalReqs) })}</p>
               </div>
               <div className="rounded-md bg-ldvh-bg p-2">
                 <p className="font-mono text-emerald-300">{closedReqs}</p>
-                <p className="text-ldvh-text-secondary">{t('dashboard.complianceClosed', { count: String(closedReqs) })}</p>
+                <p className="ldvh-caption">{t('dashboard.complianceClosed', { count: String(closedReqs) })}</p>
               </div>
             </div>
             {totalGaps > 0 && (
-              <p className="mt-2 text-center text-xs text-orange-300">
+              <p className="ldvh-caption mt-2 text-center text-orange-300">
                 {t('dashboard.complianceDegraded', { count: String(totalGaps) })}
               </p>
             )}
@@ -424,27 +424,27 @@ export default function Dashboard() {
         <div className="mt-6 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
             <TrendingUp size={16} className="text-ldvh-accent" />
-            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.landingHealth')}</h3>
+            <h3 className="ldvh-section-title">{t('dashboard.landingHealth')}</h3>
           </div>
-          <p className="mb-3 text-xs text-ldvh-text-secondary">{t('dashboard.landingHealthDesc')}</p>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <p className="ldvh-caption mb-3">{t('dashboard.landingHealthDesc')}</p>
+          <div className="ldvh-dashboard-metric-grid">
             <div className="rounded-md bg-ldvh-bg p-3">
               <p className="font-mono text-xl font-semibold text-ldvh-text-primary">{totalReqs}</p>
-              <p className="text-xs text-ldvh-text-secondary">{t('dashboard.landingRequirements')}</p>
+              <p className="ldvh-caption">{t('dashboard.landingRequirements')}</p>
             </div>
             <div className="rounded-md bg-ldvh-bg p-3">
               <p className={`font-mono text-xl font-semibold ${totalGaps > 0 ? 'text-red-300' : 'text-emerald-300'}`}>{totalGaps}</p>
-              <p className="text-xs text-ldvh-text-secondary">{t('dashboard.landingGaps')}</p>
+              <p className="ldvh-caption">{t('dashboard.landingGaps')}</p>
             </div>
             <div className="rounded-md bg-ldvh-bg p-3">
               <p className="font-mono text-xl font-semibold text-ldvh-text-primary">{capOpenCount > 0 ? `${capOpenCount} open` : 'OK'}</p>
-              <p className="text-xs text-ldvh-text-secondary">{t('dashboard.landingCapStatus')}</p>
+              <p className="ldvh-caption">{t('dashboard.landingCapStatus')}</p>
             </div>
             <div className="rounded-md bg-ldvh-bg p-3">
               <p className={`font-mono text-xl font-semibold ${landing.humanGateStatus === 'closed' ? 'text-emerald-300' : landing.humanGateStatus === 'open' ? 'text-red-300' : 'text-yellow-300'}`}>
                 {landing.humanGateStatus || '—'}
               </p>
-              <p className="text-xs text-ldvh-text-secondary">{t('dashboard.landingHGStatus')}</p>
+              <p className="ldvh-caption">{t('dashboard.landingHGStatus')}</p>
             </div>
           </div>
         </div>

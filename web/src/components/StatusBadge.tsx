@@ -13,14 +13,14 @@ export default function StatusBadge({ status, statusLabel, size = 'sm' }: Status
   const { resolved } = useTheme();
   const { locale } = useI18n();
   const color = getStatusColor(status);
-  const sizeClasses = size === 'sm' ? 'text-xs px-2 py-0.5' : 'text-sm px-2.5 py-1';
+  const sizeClasses = size === 'sm' ? 'px-2 py-0.5' : 'px-2.5 py-1';
   const display = statusLabel || status;
   const tooltip = getStatusHint(status, locale);
 
   return (
     <span
       key={resolved}
-      className={`inline-flex items-center whitespace-nowrap rounded-full font-mono font-medium ${sizeClasses}`}
+      className={`ldvh-chip inline-flex items-center whitespace-nowrap rounded-full font-mono ${sizeClasses}`}
       style={{
         color,
         backgroundColor: `${color}18`,

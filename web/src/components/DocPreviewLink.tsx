@@ -31,18 +31,18 @@ export default function DocPreviewLink({ docs }: DocPreviewLinkProps) {
           <button
             key={i}
             onClick={() => handleClick(doc)}
-            className="flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left text-sm transition-colors hover:bg-ldvh-border/30"
+            className="ldvh-body flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors hover:bg-ldvh-border/30"
           >
             {isExternal ? (
               <ExternalLink size={13} className="shrink-0 text-ldvh-accent" />
             ) : (
               <FileText size={13} className="shrink-0 text-ldvh-accent" />
             )}
-            <span className="min-w-0 flex-1 truncate text-ldvh-text-primary font-mono text-xs">
+            <span className="ldvh-meta-primary min-w-0 flex-1 truncate">
               {doc}
             </span>
             {isExternal && (
-              <span className="shrink-0 text-[10px] text-ldvh-text-secondary">↗</span>
+              <span className="ldvh-caption shrink-0">↗</span>
             )}
           </button>
         );

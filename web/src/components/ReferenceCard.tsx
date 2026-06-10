@@ -85,13 +85,13 @@ function ReferenceItem({ refId }: { refId: string }) {
     <button
       onClick={handleClick}
       disabled={!refType}
-      className="flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left text-sm transition-colors hover:bg-ldvh-border/30 disabled:cursor-default"
+      className="ldvh-body flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors hover:bg-ldvh-border/30 disabled:cursor-default"
     >
       <Link2 size={13} className="shrink-0" style={{ color: typeColor }} />
-      <span className="shrink-0 font-mono text-xs text-ldvh-accent">{refId}</span>
+      <span className="ldvh-meta shrink-0 text-ldvh-accent">{refId}</span>
       {typeLabel && (
         <span
-          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+          className="ldvh-chip shrink-0 rounded px-1.5 py-0.5"
           style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
         >
           {typeLabel}

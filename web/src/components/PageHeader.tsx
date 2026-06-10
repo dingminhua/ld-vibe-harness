@@ -10,8 +10,8 @@ interface PageHeaderProps {
 export default function PageHeader({ title, subtitle, children }: PageHeaderProps) {
   return (
     <div className="mb-6">
-      <h1 className="text-xl font-semibold text-ldvh-text-primary">{title}</h1>
-      {subtitle && <p className="mt-1 text-sm text-ldvh-text-secondary">{subtitle}</p>}
+      <h1 className="ldvh-page-title">{title}</h1>
+      {subtitle && <p className="ldvh-page-subtitle mt-1">{subtitle}</p>}
       {children && <div className="mt-3">{children}</div>}
     </div>
   );

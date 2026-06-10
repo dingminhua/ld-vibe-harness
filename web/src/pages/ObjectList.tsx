@@ -64,7 +64,7 @@ export default function ObjectList() {
       ) : error ? (
         <div className="py-20 text-center text-ldvh-text-secondary">
           <p>{t('common.loadFailed')}</p>
-          <p className="font-mono text-xs text-red-400">{error}</p>
+          <p className="ldvh-meta text-red-400">{error}</p>
         </div>
       ) : items.length === 0 ? (
         <div className="py-20 text-center text-ldvh-text-secondary">
@@ -79,13 +79,13 @@ export default function ObjectList() {
               className="group flex flex-col gap-2 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left transition-colors hover:border-ldvh-accent/40"
             >
               <div className="flex items-start justify-between gap-2">
-                <span className="font-mono text-xs text-ldvh-text-secondary">{obj.id}</span>
+                <span className="ldvh-meta">{obj.id}</span>
                 <StatusBadge status={obj.status} statusLabel={getStatus(obj.status)} />
               </div>
-              <span className="text-sm text-ldvh-text-primary group-hover:text-ldvh-accent transition-colors">
+              <span className="ldvh-card-title transition-colors group-hover:text-ldvh-accent">
                 {getLocalizedTitle(obj, locale)}
               </span>
-              <span className="font-mono text-xs text-ldvh-text-secondary">
+              <span className="ldvh-meta">
                 {obj.updated}
               </span>
             </button>

@@ -26,8 +26,8 @@ export default function MetricCard({ icon, value, label, href, onClick, tone = '
         <p className={`font-mono font-semibold ${size === 'compact' ? 'text-xl' : 'text-2xl'} ${TONE_CLASS[tone]}`}>
           {value}
         </p>
-        <p className="truncate text-xs text-ldvh-text-secondary">{label}</p>
-        {detail && <p className={`mt-1 text-xs text-ldvh-text-secondary ${detailClassName || ''}`}>{detail}</p>}
+        <p className="ldvh-caption truncate">{label}</p>
+        {detail && <p className={`ldvh-caption mt-1 ${detailClassName || ''}`}>{detail}</p>}
       </div>
     </>
   );
