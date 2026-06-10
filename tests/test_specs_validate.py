@@ -1050,6 +1050,86 @@ def test_landing_plan_text_output(tmp_path, monkeypatch):
     assert "回写目标" in text
 
 
+def minimal_landing_apply_plan(write_targets=None, authorized=True, include_test_design=True):
+    plan = {
+        "metadata": {"contract_version": "landing-plan/v1", "read_only": True},
+        "human_gate": {
+            "authorized": authorized,
+            "records": [
+                {
+                    "confirmed_at": "2026-06-11T01:00:00",
+                    "decision": "approved",
+                    "scope": "landing apply fixture",
+                    "constraints": "仅允许写入 write_targets",
+                }
+            ] if authorized else [],
+        },
+        "write_targets": write_targets or ["docs/specs/generated.md"],
+        "verify_commands": ["python3 -m pytest tests/test_specs_validate.py -k landing_apply"],
+        "review_targets": ["review_needed"],
+        "writeback_targets": ["Task"],
+    }
+    if include_test_design:
+        plan["test_design"] = {
+            "required": True,
+            "success_conditions": ["授权目标可 dry-run 或写入"],
+            "failure_conditions": ["无授权或目标越界时拒绝"],
+            "positive_examples": [{"id": "authorized_write"}],
+            "negative_examples": [{"id": "unauthorized_write"}],
+        }
+    return plan
+
+
+def test_landing_apply_rejects_missing_human_gate(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    plan = minimal_landing_apply_plan(authorized=False)
+
+    result = checker.landing_apply_build(plan, {"docs/specs/generated.md": "# Generated\n"}, dry_run=True)
+
+    assert result["summary"]["status"] == "blocked"
+    assert "missing_human_gate" in result["summary"]["blocked_reasons"]
+    assert result["writes"] == []
+
+
+def test_landing_apply_rejects_target_outside_plan(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    plan = minimal_landing_apply_plan(write_targets=["docs/specs/allowed.md"])
+
+    result = checker.landing_apply_build(plan, {"docs/specs/other.md": "# Other\n"}, dry_run=True)
+
+    assert result["summary"]["status"] == "blocked"
+    assert "target_outside_plan" in result["summary"]["blocked_reasons"]
+    assert result["writes"] == []
+
+
+def test_landing_apply_dry_run_summarizes_authorized_write(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    target = "docs/specs/generated.md"
+    plan = minimal_landing_apply_plan(write_targets=[target])
+
+    result = checker.landing_apply_build(plan, {target: "# Generated\n"}, dry_run=True)
+
+    assert result["summary"]["status"] == "dry_run"
+    assert result["summary"]["write_count"] == 1
+    assert result["writes"][0]["target"] == target
+    assert result["writes"][0]["applied"] is False
+    assert not (tmp_path / target).exists()
+    assert result["next_steps"]["verify_commands"]
+    assert result["next_steps"]["review_targets"] == ["review_needed"]
+
+
+def test_landing_apply_writes_authorized_target(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    target = "docs/specs/generated.md"
+    plan = minimal_landing_apply_plan(write_targets=[target])
+
+    result = checker.landing_apply_build(plan, {target: "# Generated\n"}, dry_run=False)
+
+    assert result["summary"]["status"] == "applied"
+    assert result["writes"][0]["applied"] is True
+    assert (tmp_path / target).read_text(encoding="utf-8") == "# Generated\n"
+
+
 def test_runtime_projection_remediation_classification(tmp_path, monkeypatch):
     docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
     plan = checker.landing_plan_build(str(tmp_path))

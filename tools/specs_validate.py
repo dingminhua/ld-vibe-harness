@@ -7,6 +7,7 @@ import json
 import re
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -2504,6 +2505,218 @@ def landing_plan_main(workspace_root=None, output_format="text"):
     return 1 if has_open else 0
 
 
+def landing_apply_load_json(path):
+    with Path(path).open(encoding="utf-8") as file:
+        return json.load(file)
+
+
+def landing_apply_load_patch(path):
+    payload = landing_apply_load_json(path)
+    if isinstance(payload, dict) and "writes" in payload:
+        payload = payload["writes"]
+    if not isinstance(payload, dict):
+        raise ValueError("apply patch 必须是 target -> content 的 JSON 对象，或包含 writes 对象")
+    return {str(target): str(content) for target, content in payload.items()}
+
+
+def landing_apply_is_project_local(path):
+    try:
+        path.resolve().relative_to(PROJECT_ROOT.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def landing_apply_has_human_gate(plan):
+    human_gate = plan.get("human_gate") or {}
+    records = human_gate.get("records") or human_gate.get("record") or []
+    if isinstance(records, dict):
+        records = [records]
+    if human_gate.get("authorized") is True and records:
+        return True
+    if human_gate.get("status") in {"approved", "authorized", "accepted"} and records:
+        return True
+    for record in records:
+        decision = str(record.get("decision") or record.get("result") or "").lower()
+        if decision in {"approved", "authorized", "accepted", "approve", "accept"}:
+            return True
+    return False
+
+
+def landing_apply_has_test_design(plan):
+    test_design = plan.get("test_design")
+    if not isinstance(test_design, dict):
+        return False
+    required_fields = ["success_conditions", "failure_conditions", "positive_examples", "negative_examples"]
+    return all(test_design.get(field) for field in required_fields)
+
+
+def landing_apply_allowed_targets(plan):
+    targets = set()
+    for raw_target in plan.get("write_targets") or []:
+        if isinstance(raw_target, dict):
+            value = raw_target.get("path") or raw_target.get("target") or raw_target.get("name")
+        else:
+            value = raw_target
+        if value:
+            targets.add(str(value))
+    return targets
+
+
+def landing_apply_blocked_reasons(plan, patch):
+    reasons = []
+    if not isinstance(plan, dict):
+        return ["missing_plan"]
+    if plan.get("metadata", {}).get("contract_version") != "landing-plan/v1":
+        reasons.append("invalid_plan_contract")
+    if not landing_apply_has_human_gate(plan):
+        reasons.append("missing_human_gate")
+    if not landing_apply_has_test_design(plan):
+        reasons.append("missing_test_design")
+    allowed_targets = landing_apply_allowed_targets(plan)
+    if not allowed_targets:
+        reasons.append("missing_write_targets")
+    if not patch:
+        reasons.append("missing_patch")
+    for target in patch:
+        target_path = PROJECT_ROOT / target
+        if target not in allowed_targets:
+            reasons.append("target_outside_plan")
+        if Path(target).is_absolute() or ".." in Path(target).parts or not landing_apply_is_project_local(target_path):
+            reasons.append("target_outside_project")
+    return sorted(set(reasons))
+
+
+def landing_apply_write_file(target, content):
+    path = PROJECT_ROOT / target
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=str(path.parent), delete=False) as temp_file:
+        temp_file.write(content)
+        temp_name = temp_file.name
+    Path(temp_name).replace(path)
+
+
+def landing_apply_build(plan, patch, dry_run=True):
+    blocked_reasons = landing_apply_blocked_reasons(plan, patch)
+    if blocked_reasons:
+        return {
+            "metadata": {
+                "tool": "tools/specs_validate.py",
+                "report": "landing-apply",
+                "generated_at": datetime.now().isoformat(timespec="seconds"),
+                "source_of_truth": False,
+                "status_source": "controlled write guard",
+                "contract_version": "landing-apply/v1",
+                "dry_run": dry_run,
+            },
+            "summary": {
+                "status": "blocked",
+                "blocked_reasons": blocked_reasons,
+                "write_count": 0,
+            },
+            "writes": [],
+            "next_steps": {
+                "verify_commands": plan.get("verify_commands", []) if isinstance(plan, dict) else [],
+                "review_targets": plan.get("review_targets", []) if isinstance(plan, dict) else [],
+                "writeback_targets": plan.get("writeback_targets", []) if isinstance(plan, dict) else [],
+                "task_status": "review_needed",
+            },
+        }
+
+    writes = []
+    for target, content in sorted(patch.items()):
+        before_exists = (PROJECT_ROOT / target).exists()
+        if not dry_run:
+            landing_apply_write_file(target, content)
+        writes.append(
+            {
+                "target": target,
+                "applied": not dry_run,
+                "dry_run": dry_run,
+                "bytes": len(content.encode("utf-8")),
+                "before_exists": before_exists,
+            }
+        )
+
+    return {
+        "metadata": {
+            "tool": "tools/specs_validate.py",
+            "report": "landing-apply",
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "source_of_truth": False,
+            "status_source": "controlled write guard",
+            "contract_version": "landing-apply/v1",
+            "dry_run": dry_run,
+        },
+        "summary": {
+            "status": "dry_run" if dry_run else "applied",
+            "blocked_reasons": [],
+            "write_count": len(writes),
+        },
+        "writes": writes,
+        "next_steps": {
+            "verify_commands": plan.get("verify_commands", []),
+            "review_targets": plan.get("review_targets", []),
+            "writeback_targets": plan.get("writeback_targets", []),
+            "task_status": "review_needed",
+        },
+    }
+
+
+def landing_apply_format_text(result):
+    lines = ["Landing Apply"]
+    lines.append(f"- 状态: {result['summary']['status']}")
+    lines.append(f"- dry-run: {'是' if result['metadata']['dry_run'] else '否'}")
+    if result["summary"].get("blocked_reasons"):
+        lines.append(f"- 阻断原因: {', '.join(result['summary']['blocked_reasons'])}")
+    lines.append(f"- 写入数: {result['summary']['write_count']}")
+    lines.append("")
+    lines.append("写入摘要:")
+    if not result["writes"]:
+        lines.append("- 无")
+    else:
+        for item in result["writes"]:
+            state = "applied" if item["applied"] else "dry-run"
+            lines.append(f"- [{state}] {item['target']} ({item['bytes']} bytes)")
+    lines.append("")
+    lines.append("待验证事项:")
+    verify_commands = result["next_steps"].get("verify_commands", [])
+    if not verify_commands:
+        lines.append("- 无")
+    else:
+        for command in verify_commands:
+            lines.append(f"- {command}")
+    return "\n".join(lines)
+
+
+def landing_apply_main(plan_path, patch_path, dry_run=True, output_format="text"):
+    try:
+        plan = landing_apply_load_json(plan_path)
+        patch = landing_apply_load_patch(patch_path)
+        result = landing_apply_build(plan, patch, dry_run)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        result = {
+            "metadata": {
+                "tool": "tools/specs_validate.py",
+                "report": "landing-apply",
+                "generated_at": datetime.now().isoformat(timespec="seconds"),
+                "source_of_truth": False,
+                "status_source": "controlled write guard",
+                "contract_version": "landing-apply/v1",
+                "dry_run": dry_run,
+            },
+            "summary": {"status": "blocked", "blocked_reasons": ["invalid_input"], "write_count": 0},
+            "writes": [],
+            "next_steps": {"verify_commands": [], "review_targets": [], "writeback_targets": [], "task_status": "review_needed"},
+            "error": str(exc),
+        }
+    if output_format == "json":
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        print(landing_apply_format_text(result))
+    return 0 if result["summary"]["status"] in {"dry_run", "applied"} else 1
+
+
 def ldvh_landing_check_format_text(report):
     lines = ["LDVH落地与检查派生报告"]
     lines.append(f"- 状态: {report['summary']['status']}")
@@ -3185,6 +3398,13 @@ def build_parser():
     landing_plan_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
     landing_plan_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
+    # landing-apply
+    landing_apply_parser = subparsers.add_parser("landing-apply", help="执行 landing-plan 授权范围内的最小受控写入。")
+    landing_apply_parser.add_argument("--plan", required=True, help="landing-plan/v1 JSON 文件。")
+    landing_apply_parser.add_argument("--patch", required=True, help="target -> content JSON 文件，或包含 writes 对象的 JSON 文件。")
+    landing_apply_parser.add_argument("--write", action="store_true", help="执行真实写入；默认只 dry-run。")
+    landing_apply_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+
     # web-validate
     web_validate_parser = subparsers.add_parser("web-validate", help="生成 Web Validate 页面只读数据合同。")
     web_validate_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
@@ -3248,6 +3468,9 @@ def main(argv=None):
 
     if command == "landing-plan":
         return landing_plan_main(args.workspace_root, args.format)
+
+    if command == "landing-apply":
+        return landing_apply_main(args.plan, args.patch, not args.write, args.format)
 
     if command == "web-validate":
         return web_validate_main(args.workspace_root, args.format)
