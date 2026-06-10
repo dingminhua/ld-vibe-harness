@@ -15,6 +15,7 @@ import {
   Moon,
   Monitor,
   PanelTop,
+  ShieldCheck,
 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import { useTheme } from '@/hooks/useTheme';
@@ -30,6 +31,7 @@ const NAV_ITEMS: { to: string; labelKey: LocaleKey; icon: typeof LayoutDashboard
   { to: '/objects/memo', labelKey: 'nav.memos', icon: StickyNote },
   { to: '/objects/profile', labelKey: 'nav.profiles', icon: BookOpen },
   { to: '/validate', labelKey: 'nav.validate', icon: Shield },
+  { to: '/gate', labelKey: 'nav.gate', icon: ShieldCheck },
   { to: '/changelog', labelKey: 'nav.changelog', icon: ClipboardCheck },
 ];
 

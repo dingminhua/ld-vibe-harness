@@ -7,6 +7,7 @@ import ObjectList from '@/pages/ObjectList';
 import ObjectDetail from '@/pages/ObjectDetail';
 import Workbench from '@/pages/Workbench';
 import Validate from '@/pages/Validate';
+import Gate from '@/pages/Gate'
 import Changelog from '@/pages/Changelog';
 
 function AppRoutes() {
@@ -22,6 +23,7 @@ function AppRoutes() {
         <Route path="/objects/:type" element={<ObjectList />} />
         <Route path="/objects/:type/:id" element={<ObjectDetail />} />
         <Route path="/validate" element={<Validate />} />
+        <Route path="/gate" element={<Gate />} />
         <Route path="/changelog" element={<Changelog />} />
       </Routes>
     </ActiveLayout>

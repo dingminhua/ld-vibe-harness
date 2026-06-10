@@ -583,6 +583,7 @@ function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { 
 function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh }: { fieldKey: string; value: unknown; depth: number; locale: string; objType?: string; objId?: string; onRefresh?: () => void }) {
   const { t } = useI18n();
   const [editingSourceIntent, setEditingSourceIntent] = useState(false);
+  const [editingStatus, setEditingStatus] = useState(false);
   const [saving, setSaving] = useState(false);
   if (value === null || value === undefined) {
     return <span className="text-xs text-ldvh-text-secondary italic">{t('common.null')}</span>;

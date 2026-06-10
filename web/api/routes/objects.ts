@@ -12,7 +12,7 @@ const router = Router()
 
 /** 允许通过 PATCH 更新的字段白名单 */
 const FIELD_UPDATE_WHITELIST: Record<string, string[]> = {
-  task: ['source_intent'],
+  task: ['source_intent', 'status', 'acceptance'],
 }
 
 /**

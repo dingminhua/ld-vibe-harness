@@ -1,6 +1,14 @@
 const API_BASE = '/api';
 
 export interface DashboardData {
+  landing?: {
+    totalRequirements: number;
+    gapTotal: number;
+    gapByArea: Record<string, number>;
+    capabilityStatus: Record<string, string>;
+    humanGateStatus: string;
+    validationPlanStatus: Record<string, string>;
+  } | null;
   profile: {
     id: string;
     title: string;

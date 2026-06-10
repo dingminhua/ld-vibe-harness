@@ -40,16 +40,12 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   cancelled: { zh: '已取消', en: 'Cancelled' },
 };
 
-/** 根据状态返回当前语言的翻译，未知状态回退到原值 */
 export function getStatusLocale(status: string, locale: string): string {
   const entry = STATUS_LOCALES[status];
   if (!entry) return status;
   return locale === 'en' ? entry.en : entry.zh;
 }
 
-// ============================================================
-// 对象类型一句话说明
-// ============================================================
 export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }> = {
   intent: { zh: '跨任务追踪的目标', en: 'Cross-task tracking goal' },
   task: { zh: '可执行的工作单元', en: 'Executable work unit' },
@@ -60,44 +56,34 @@ export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }
   change: { zh: '变更记录', en: 'Change record' },
 };
 
-/** 根据类型返回一句话说明，未知类型回退到空字符串 */
 export function getTypeDescription(type: string, locale: string): string {
   const entry = TYPE_DESCRIPTION_LOCALES[type];
   if (!entry) return '';
   return locale === 'en' ? entry.en : entry.zh;
 }
 
-// ============================================================
-// 状态行动提示
-// ============================================================
 export const STATUS_HINT_LOCALES: Record<string, { zh: string; en: string }> = {
   planned: { zh: '等待执行', en: 'Waiting to start' },
   active: { zh: '进行中', en: 'In progress' },
   executing: { zh: '执行中', en: 'Executing' },
-  verifying: { zh: '验证中，等待独立审查', en: 'Verifying, awaiting independent review' },
-  review_needed: { zh: '待审查，需要确认后关闭', en: 'Pending review, confirm to close' },
+  verifying: { zh: '验证中', en: 'Verifying' },
+  review_needed: { zh: '待审查', en: 'Pending review' },
   draft: { zh: '草稿中', en: 'In draft' },
-  proposed: { zh: '提案中，待讨论', en: 'Proposed, pending discussion' },
+  proposed: { zh: '提案中', en: 'Proposed' },
   completed: { zh: '已完成', en: 'Completed' },
   closed: { zh: '已关闭', en: 'Closed' },
 };
 
-/** 根据状态返回行动提示，未知状态回退到空字符串 */
 export function getStatusHint(status: string, locale: string): string {
   const entry = STATUS_HINT_LOCALES[status];
   if (!entry) return '';
   return locale === 'en' ? entry.en : entry.zh;
 }
 
-// ============================================================
-// UI 文案词汇表
-// ============================================================
 export const UI_LOCALES = {
   zh: {
-    // Logo
     'logo.tagline': '让 Vibe Coding 更高效、更稳定、更可控',
 
-    // Sidebar
     'nav.dashboard': '仪表盘',
     'nav.intents': '意图',
     'nav.tasks': '任务',
@@ -109,13 +95,29 @@ export const UI_LOCALES = {
     'nav.validate': '校验',
     'nav.changelog': '变更',
     'nav.workbench': '工作台',
+    'nav.gate': '确认台',
     'nav.switchLayout': '切换布局',
 
-    // Dashboard
     'dashboard.title': '仪表盘',
     'dashboard.recentActivity': '最近活动',
     'dashboard.recentChanges': '最近变更',
     'dashboard.validationStatus': '校验状态',
+    'dashboard.landingHealth': 'LDVH 落地健康度',
+    'dashboard.landingHealthDesc': '42 落地检查 + 规范落地要求缺口',
+    'dashboard.landingGaps': '落地缺口',
+    'dashboard.landingRequirements': '落地要求',
+    'dashboard.landingCapStatus': '能力状态',
+    'dashboard.landingHGStatus': 'HG 状态',
+    'dashboard.landingVpStatus': '验证计划',
+    'dashboard.landingAllClosed': '全部已关闭',
+    'dashboard.landingNeedsWork': '{count} 项待处理',
+    'dashboard.landingGuide': 'LDVH 落地引导',
+    'dashboard.landingGuideDesc': '检查 42 落地链路、规范落地要求和 Human Gate，发现并补齐缺口',
+    'dashboard.landingGuideAction': '进入校验查看详情',
+    'dashboard.complianceHeader': '规范落地要求合规',
+    'dashboard.complianceTotal': '{total} 条落地要求',
+    'dashboard.complianceClosed': '{count} 条已达成',
+    'dashboard.complianceDegraded': '{count} 条降级',
     'dashboard.noRecentActivity': '暂无最近活动',
     'dashboard.noRecentChanges': '暂无最近变更',
     'dashboard.noActionItems': '所有事项已完成',
@@ -132,10 +134,9 @@ export const UI_LOCALES = {
     'dashboard.summary.validationErrors': '{count} 个校验错误',
     'dashboard.validationErrorHint': '存在校验错误，请查看详情',
 
-    // Workbench
     'workbench.badge': '实验视图 · 不替换主页',
     'workbench.title': 'LDVH 工作台',
-    'workbench.subtitle': '把事实对象组织成任务、关系、证据和动作的只读实验入口，用来验证交互结构。',
+    'workbench.subtitle': '将事实对象组织为任务、关系、证据和动作，提供人机协同执行指挥入口',
     'workbench.backToDashboard': '返回仪表盘',
     'workbench.openTasks': '任务总数',
     'workbench.taskSignal': '来自任务事实对象统计',
@@ -144,6 +145,8 @@ export const UI_LOCALES = {
     'workbench.recentChanges': '近期变更',
     'workbench.changeSignal': '可作为证据线索',
     'workbench.validation': '校验',
+    'workbench.landingCheck': '落地检查',
+    'workbench.landingSignal': '42 检查状态',
     'workbench.caseFile': '任务案卷',
     'workbench.acceptance': '验收',
     'workbench.known': '已识别',
@@ -159,11 +162,9 @@ export const UI_LOCALES = {
     'workbench.traceability': '追踪链路',
     'workbench.step': '步骤',
 
-    // Object List
     'objectList.noObjects': '未找到 {type} 对象',
     'objectList.all': '全部',
 
-    // Object Detail
     'objectDetail.back': '返回',
     'objectDetail.content': '内容',
     'objectDetail.yamlSource': 'YAML 源码',
@@ -177,13 +178,13 @@ export const UI_LOCALES = {
     'objectDetail.collapse': '收起',
     'objectDetail.aggregatedDeliverables': '关联产出',
     'objectDetail.aggregatedDocs': '关联文档',
+    'objectDetail.editStatus': '点击修改状态',
+    'objectDetail.editAcceptance': '点击编辑验收标准',
 
-    // Reading Panel
     'readingPanel.truncated': '内容已截断',
     'readingPanel.close': '关闭',
     'objectDetail.humanGateTip': '此对象需要确认后才能关闭',
 
-    // Validate
     'validate.title': '校验',
     'validate.filesChecked': '已检查文件',
     'validate.errors': '错误',
@@ -205,14 +206,54 @@ export const UI_LOCALES = {
     'validate.checks': '检查项',
     'validate.issues': '问题',
     'validate.gapTotal': '缺口总数',
+    'validate.tabValidate': '校验视图',
+    'validate.tabLanding': '落地计划',
 
-    // Changelog
+    'gt.filesChecked': '检查文件',
+    'gt.issues': '问题',
+
+    'lp.totalRequirements': '落地要求总数',
+    'lp.openGaps': '未关闭缺口',
+    'lp.sourceFiles': '来源文件',
+    'lp.humanGateGaps': 'HG 缺口',
+    'lp.writesNeeded': '需要数据回写',
+    'lp.writesNeededTargets': '回写目标',
+    'lp.gapsByOwner': '按承接区域分组',
+    'lp.gapCount': '{count} 缺口',
+    'lp.subcategories': '子类别',
+    'lp.remediation': '补救类型',
+    'lp.validationStatus': '验证计划状态',
+    'lp.noGaps': '暂无落地缺口',
+
+    'gate.title': 'Human Gate 确认工作台',
+    'gate.subtitle': '需要人类决策的确认节点——基于 Code 提供的 Human Gate 报告',
+    'gate.statusAllClear': '所有检查通过',
+    'gate.statusAllClearDesc': '未发现需要人类确认的节点，Human Gate 证据结构完整。',
+    'gate.statusNeedsConfirm': '需要人类确认',
+    'gate.statusNeedsConfirmDesc': '存在 Human Gate 证据结构问题，需要人类确认后决定下一步。',
+    'gate.statusDegraded': 'Human Gate 证据缺位',
+    'gate.statusDegradedDesc': '当前项目内未发现 Human Gate 记录（{count} 个问题）。这不代表没有应触发 Gate 的场景，可能需要补录历史记录。',
+    'gate.filesChecked': '已检查',
+    'gate.records': 'Gate 记录',
+    'gate.issues': '结构问题',
+    'gate.status': '总体状态',
+    'gate.confirmPanel': '待确认清单',
+    'gate.confirmPanelDesc': '以下是 Code 检查到的问题，请逐条确认后决定处理方式。确认和暂缓按钮为实验占位。',
+    'gate.confirm': '确认',
+    'gate.defer': '暂缓',
+    'gate.confirmTitle': '实验占位：确认后触发受控写入',
+    'gate.deferTitle': '实验占位：暂缓到下次检查',
+    'gate.codeCount': '{count} 条',
+    'gate.needsDecision': '需要人工决策',
+    'gate.needsDecisionDesc': '当前 Human Gate 记录为空或降级状态，可能需要你决定是否需要补录。',
+    'gate.allClear': '确认台无待处理项',
+    'gate.allClearDesc': 'Human Gate 证据齐全，所有检查通过。',
+
     'changelog.title': '变更',
     'changelog.subtitle': 'Git 提交记录，点击查看详情',
     'changelog.loadFailed': '加载变更日志失败',
     'changelog.detailFailed': '加载提交详情失败',
 
-    // Common
     'common.loading': '加载中...',
     'common.loadFailed': '加载失败',
     'common.language': '语言',
@@ -222,10 +263,8 @@ export const UI_LOCALES = {
     'common.null': '—',
   },
   en: {
-    // Logo
     'logo.tagline': 'Making Vibe Coding more efficient, stable, and controllable',
 
-    // Sidebar
     'nav.dashboard': 'Dashboard',
     'nav.intents': 'Intents',
     'nav.tasks': 'Tasks',
@@ -237,13 +276,29 @@ export const UI_LOCALES = {
     'nav.validate': 'Validate',
     'nav.changelog': 'Changes',
     'nav.workbench': 'Workbench',
+    'nav.gate': 'Gate',
     'nav.switchLayout': 'Switch Layout',
 
-    // Dashboard
     'dashboard.title': 'Dashboard',
     'dashboard.recentActivity': 'Recent Activity',
     'dashboard.recentChanges': 'Recent Changes',
     'dashboard.validationStatus': 'Validation Status',
+    'dashboard.landingHealth': 'LDVH Landing Health',
+    'dashboard.landingHealthDesc': '42 check + spec landing requirement gaps',
+    'dashboard.landingGaps': 'Landing Gaps',
+    'dashboard.landingRequirements': 'Requirements',
+    'dashboard.landingCapStatus': 'Cap Status',
+    'dashboard.landingHGStatus': 'HG Status',
+    'dashboard.landingVpStatus': 'Validation Plan',
+    'dashboard.landingAllClosed': 'All closed',
+    'dashboard.landingNeedsWork': '{count} items need action',
+    'dashboard.landingGuide': 'LDVH Landing Guide',
+    'dashboard.landingGuideDesc': 'Check 42 landing chain, spec requirements, and Human Gate. Discover and fill gaps.',
+    'dashboard.landingGuideAction': 'Go to Validate for details',
+    'dashboard.complianceHeader': 'Spec Compliance',
+    'dashboard.complianceTotal': '{total} requirements',
+    'dashboard.complianceClosed': '{count} satisfied',
+    'dashboard.complianceDegraded': '{count} degraded',
     'dashboard.noRecentActivity': 'No recent activity',
     'dashboard.noRecentChanges': 'No recent changes',
     'dashboard.noActionItems': 'All items completed',
@@ -262,7 +317,7 @@ export const UI_LOCALES = {
 
     'workbench.badge': 'Experimental · Dashboard unchanged',
     'workbench.title': 'LDVH Workbench',
-    'workbench.subtitle': 'A read-only experiment that organizes facts into tasks, relationships, evidence, and actions.',
+    'workbench.subtitle': 'Organize facts into tasks, relationships, evidence, and actions for human-AI collaboration.',
     'workbench.backToDashboard': 'Back to Dashboard',
     'workbench.openTasks': 'Total Tasks',
     'workbench.taskSignal': 'From task fact statistics',
@@ -271,6 +326,8 @@ export const UI_LOCALES = {
     'workbench.recentChanges': 'Recent Changes',
     'workbench.changeSignal': 'Evidence candidates',
     'workbench.validation': 'Validation',
+    'workbench.landingCheck': 'Landing Check',
+    'workbench.landingSignal': '42 check status',
     'workbench.caseFile': 'Task Case File',
     'workbench.acceptance': 'Acceptance',
     'workbench.known': 'Known',
@@ -286,11 +343,9 @@ export const UI_LOCALES = {
     'workbench.traceability': 'Traceability Chain',
     'workbench.step': 'Step',
 
-    // Object List
     'objectList.noObjects': 'No {type} found',
     'objectList.all': 'All',
 
-    // Object Detail
     'objectDetail.back': 'Back',
     'objectDetail.content': 'Content',
     'objectDetail.yamlSource': 'YAML Source',
@@ -304,13 +359,13 @@ export const UI_LOCALES = {
     'objectDetail.collapse': 'Collapse',
     'objectDetail.aggregatedDeliverables': 'Aggregated Deliverables',
     'objectDetail.aggregatedDocs': 'Aggregated Docs',
+    'objectDetail.editStatus': 'Click to change status',
+    'objectDetail.editAcceptance': 'Click to edit acceptance criteria',
 
-    // Reading Panel
     'readingPanel.truncated': 'Content truncated',
     'readingPanel.close': 'Close',
     'objectDetail.humanGateTip': 'This object requires confirmation before closing',
 
-    // Validate
     'validate.title': 'Validation',
     'validate.filesChecked': 'Files Checked',
     'validate.errors': 'Errors',
@@ -332,14 +387,54 @@ export const UI_LOCALES = {
     'validate.checks': 'Checks',
     'validate.issues': 'Issues',
     'validate.gapTotal': 'Gap Total',
+    'validate.tabValidate': 'Validate',
+    'validate.tabLanding': 'Landing Plan',
 
-    // Changelog
+    'gt.filesChecked': 'Files',
+    'gt.issues': 'Issues',
+
+    'lp.totalRequirements': 'Total Requirements',
+    'lp.openGaps': 'Open Gaps',
+    'lp.sourceFiles': 'Source Files',
+    'lp.humanGateGaps': 'HG Gaps',
+    'lp.writesNeeded': 'Writes Required',
+    'lp.writesNeededTargets': 'Writeback targets',
+    'lp.gapsByOwner': 'Gaps by Owner Area',
+    'lp.gapCount': '{count} gaps',
+    'lp.subcategories': 'Subcategories',
+    'lp.remediation': 'Remediation',
+    'lp.validationStatus': 'Validation Plan Status',
+    'lp.noGaps': 'No landing gaps',
+
+    'gate.title': 'Human Gate Confirmation',
+    'gate.subtitle': 'Decision nodes requiring human confirmation — powered by Human Gate report from Code',
+    'gate.statusAllClear': 'All checks passed',
+    'gate.statusAllClearDesc': 'No Human Gate confirmation nodes found. Evidence structure is complete.',
+    'gate.statusNeedsConfirm': 'Human confirmation needed',
+    'gate.statusNeedsConfirmDesc': 'Human Gate structure issues found. Needs human decision.',
+    'gate.statusDegraded': 'Human Gate evidence lacking',
+    'gate.statusDegradedDesc': 'No Human Gate records found ({count} issues). This may mean historical records are missing.',
+    'gate.filesChecked': 'Checked',
+    'gate.records': 'Gate Records',
+    'gate.issues': 'Structure Issues',
+    'gate.status': 'Status',
+    'gate.confirmPanel': 'Confirmation Checklist',
+    'gate.confirmPanelDesc': 'Below are issues detected by Code. Please review each item. Confirm/Defer buttons are experimental placeholders.',
+    'gate.confirm': 'Confirm',
+    'gate.defer': 'Defer',
+    'gate.confirmTitle': 'Placeholder: triggered controlled write on confirm',
+    'gate.deferTitle': 'Placeholder: defer to next check',
+    'gate.codeCount': '{count} items',
+    'gate.needsDecision': 'Human decision needed',
+    'gate.needsDecisionDesc': 'Human Gate records are empty or degraded. You may need to decide whether backfill is required.',
+    'gate.allClear': 'No items pending',
+    'gate.allClearDesc': 'All Human Gate evidence is complete and verified.',
+
     'changelog.title': 'Changes',
     'changelog.subtitle': 'Git commit history, click to view details',
     'changelog.loadFailed': 'Failed to load changes',
     'changelog.detailFailed': 'Failed to load commit detail',
 
-    // Common
     'common.loading': 'Loading...',
     'common.loadFailed': 'Failed to load',
     'common.language': 'Language',

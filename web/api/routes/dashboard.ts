@@ -1,9 +1,9 @@
 /**
- * Dashboard API 路由：聚合所有对象类型统计、最近更新项和校验结果
+ * Dashboard API 路由：聚合所有对象类型统计、最近更新项、校验结果和 landing 健康度
  */
 
 import { Router, type Request, type Response } from 'express'
-import { listObjects, validate, OBJECT_TYPES } from '../services/pytools.js'
+import { listObjects, validate, OBJECT_TYPES, runPyToolsJson } from '../services/pytools.js'
 import { getGitLog } from '../services/git.js'
 import { getRelativeTime } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
@@ -26,11 +26,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       return { type, result }
     })
 
-    // 同时请求校验结果和 git log
-    const [listResults, validationResult, gitLog] = await Promise.all([
+    // 同时请求校验结果、git log 和 landing-plan 摘要
+    const [listResults, validationResult, gitLog, landingPlanResult] = await Promise.all([
       Promise.all(listPromises),
       validate(),
       getGitLog(10, locale).catch(() => []),
+      runPyToolsJson('specs_validate.py', ['landing-plan', '--format', 'json']).catch(() => null),
     ])
 
     // 聚合 profile（取第一个 profile 对象）
@@ -76,7 +77,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const sortedByUpdated = [...allItems].sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')))
     const recentItems = sortedByUpdated.slice(0, 10)
 
-    // 待推进项：筛选非终态，按 updated 时间倒序排列（最近更新的排在最前面）
+    // 待推进项：筛选非终态，按 updated 时间倒序排列
     const actionItems = allItems
       .filter(item => isActionableStatus(String(item.status || '')))
       .sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')))
@@ -93,6 +94,31 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       }
     }
 
+    // landing 健康度摘要
+    let landing: {
+      totalRequirements: number
+      gapTotal: number
+      gapByArea: Record<string, number>
+      capabilityStatus: Record<string, string>
+      humanGateStatus: string
+      validationPlanStatus: Record<string, string>
+    } | null = null
+    if (landingPlanResult && typeof landingPlanResult === 'object' && 'requirements' in landingPlanResult) {
+      const lp = landingPlanResult as Record<string, unknown>
+      const reqs = lp.requirements as Record<string, unknown> | undefined
+      const caps = (lp.capabilities as Array<{ id: string; status: string }> | undefined) || []
+      const hg = lp.human_gate as Record<string, unknown> | undefined
+      const vp = lp.validation_plan as Record<string, string> | undefined
+      landing = {
+        totalRequirements: (reqs?.total as number) ?? 0,
+        gapTotal: (reqs?.gap_total as number) ?? 0,
+        gapByArea: (lp.gaps as Record<string, unknown>)?.by_owner_area as Record<string, number> ?? {},
+        capabilityStatus: Object.fromEntries(caps.map(c => [c.id, c.status])),
+        humanGateStatus: (hg as Record<string, unknown>)?.summary_label as string ?? 'unknown',
+        validationPlanStatus: vp || {},
+      }
+    }
+
     res.json({
       profile,
       stats,
@@ -100,6 +126,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       actionItems,
       recentChanges: gitLog,
       validation,
+      landing,
     })
   } catch (err) {
     void err

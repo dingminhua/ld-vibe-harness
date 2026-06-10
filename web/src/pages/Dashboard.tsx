@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, CheckCircle, AlertCircle, AlertTriangle, Shield, GitCommit, ArrowRightCircle } from 'lucide-react';
+import {
+  Activity, CheckCircle, AlertCircle, AlertTriangle, Shield, GitCommit, ArrowRightCircle,
+  Layers, TrendingUp, Target,
+} from 'lucide-react';
 import StatsCard from '@/components/StatsCard';
 import StatusBadge from '@/components/StatusBadge';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
@@ -19,14 +22,10 @@ const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
 
 const TYPE_ORDER = ['intent', 'task', 'adr', 'pitfall', 'memo', 'profile'];
 
-/** 需要在待推进区域突出显示的关键状态 */
 const HIGHLIGHT_STATUSES = new Set(['executing', 'verifying', 'review_needed']);
 
-/** 根据语言获取标题（优先 title_en，回退 title 中文） */
 function getLocalizedTitle(item: { title?: string; title_en?: string; title_zh?: string }, locale: string): string {
-  if (locale === 'en') {
-    return (item as { title_en?: string }).title_en || item.title || '';
-  }
+  if (locale === 'en') return (item as { title_en?: string }).title_en || item.title || '';
   return (item as { title_zh?: string }).title_zh || item.title || '';
 }
 
@@ -62,51 +61,122 @@ export default function Dashboard() {
     );
   }
 
+  // 计算规范落地合规摘要
+  const landing = (data as DashboardData & { landing?: {
+    totalRequirements: number
+    gapTotal: number
+    gapByArea: Record<string, number>
+    capabilityStatus: Record<string, string>
+    humanGateStatus: string
+    validationPlanStatus: Record<string, string>
+  } | null }).landing;
+
+  const totalReqs = landing?.totalRequirements ?? 0;
+  const totalGaps = landing?.gapTotal ?? 0;
+  const closedReqs = totalReqs - totalGaps;
+  const compliancePercent = totalReqs > 0 ? Math.round((closedReqs / totalReqs) * 100) : 0;
+  const hasLandingGaps = totalGaps > 0;
+
+  // 能力状态汇总
+  const capStatuses = landing?.capabilityStatus || {};
+  const capOpenCount = Object.values(capStatuses).filter(s => s === 'open').length;
+  const capClosedCount = Object.values(capStatuses).filter(s => s === 'closed').length;
+  const capDegradedCount = Object.values(capStatuses).filter(s => s === 'degraded').length;
+
+  // 态势摘要
+  const statusCounts: Record<string, number> = {};
+  for (const item of data.actionItems) {
+    statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
+  }
+  const parts: string[] = [];
+  const statusKeys: Array<{ status: string; key: 'dashboard.summary.executing' | 'dashboard.summary.verifying' | 'dashboard.summary.reviewNeeded' | 'dashboard.summary.planned' }> = [
+    { status: 'executing', key: 'dashboard.summary.executing' },
+    { status: 'verifying', key: 'dashboard.summary.verifying' },
+    { status: 'review_needed', key: 'dashboard.summary.reviewNeeded' },
+    { status: 'planned', key: 'dashboard.summary.planned' },
+  ];
+  for (const { status, key } of statusKeys) {
+    const count = statusCounts[status];
+    if (count) {
+      parts.push(t(key, { count: String(count) }));
+    }
+  }
+  if (data.validation.errors > 0) {
+    parts.push(t('dashboard.summary.validationErrors', { count: String(data.validation.errors) }));
+  }
+
   return (
     <div className="p-6">
       <h1 className="mb-2 text-xl font-semibold text-ldvh-text-primary">{t('dashboard.title')}</h1>
 
-      {/* 项目态势摘要行 */}
-      {(() => {
-        const statusCounts: Record<string, number> = {};
-        for (const item of data.actionItems) {
-          statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
-        }
-        const parts: string[] = [];
-        const statusKeys: Array<{ status: string; key: 'dashboard.summary.executing' | 'dashboard.summary.verifying' | 'dashboard.summary.reviewNeeded' | 'dashboard.summary.planned' }> = [
-          { status: 'executing', key: 'dashboard.summary.executing' },
-          { status: 'verifying', key: 'dashboard.summary.verifying' },
-          { status: 'review_needed', key: 'dashboard.summary.reviewNeeded' },
-          { status: 'planned', key: 'dashboard.summary.planned' },
-        ];
-        for (const { status, key } of statusKeys) {
-          const count = statusCounts[status];
-          if (count) {
-            parts.push(t(key, { count: String(count) }));
-          }
-        }
-        if (data.validation.errors > 0) {
-          parts.push(t('dashboard.summary.validationErrors', { count: String(data.validation.errors) }));
-        }
-        return parts.length > 0 ? (
-          <p className="mb-4 text-xs text-ldvh-text-secondary">{parts.join(locale === 'zh' ? '，' : ', ')}</p>
-        ) : null;
-      })()}
-
-      {/* Profile card */}
-      {data.profile && (
-        <div className="mb-6 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-ldvh-text-primary">
-                {getLocalizedTitle(data.profile, locale)}
-              </h2>
-              <p className="font-mono text-xs text-ldvh-text-secondary">{data.profile.id}</p>
-            </div>
-            <StatusBadge status={data.profile.status} size="md" />
-          </div>
-        </div>
+      {/* 态势摘要行 */}
+      {parts.length > 0 && (
+        <p className="mb-4 text-xs text-ldvh-text-secondary">{parts.join(locale === 'zh' ? '，' : ', ')}</p>
       )}
+
+      {/* Profile card + Landing Health 引导卡片 */}
+      <div className="mb-6 grid gap-4 lg:grid-cols-2">
+        {/* Profile card */}
+        {data.profile && (
+          <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-ldvh-text-primary">
+                  {getLocalizedTitle(data.profile, locale)}
+                </h2>
+                <p className="font-mono text-xs text-ldvh-text-secondary">{data.profile.id}</p>
+              </div>
+              <StatusBadge status={data.profile.status} size="md" />
+            </div>
+          </div>
+        )}
+
+        {/* 42 Landing 健康度引导卡片 */}
+        {landing && (
+          <div className="rounded-lg border border-ldvh-accent/30 bg-ldvh-accent/5 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Target size={16} className="text-ldvh-accent" />
+              <h2 className="text-sm font-semibold text-ldvh-text-primary">{t('dashboard.landingGuide')}</h2>
+            </div>
+            <p className="mb-3 text-xs text-ldvh-text-secondary">{t('dashboard.landingGuideDesc')}</p>
+
+            {/* 能力状态条 */}
+            <div className="mb-3">
+              <div className="flex h-1.5 overflow-hidden rounded-full bg-ldvh-border">
+                {capClosedCount > 0 && (
+                  <div className="h-full bg-emerald-500/70" style={{ width: `${(capClosedCount / (capClosedCount + capOpenCount + capDegradedCount || 1)) * 100}%` }} />
+                )}
+                {capDegradedCount > 0 && (
+                  <div className="h-full bg-yellow-500/70" style={{ width: `${(capDegradedCount / (capClosedCount + capOpenCount + capDegradedCount || 1)) * 100}%` }} />
+                )}
+                {capOpenCount > 0 && (
+                  <div className="h-full bg-red-500/70" style={{ width: `${(capOpenCount / (capClosedCount + capOpenCount + capDegradedCount || 1)) * 100}%` }} />
+                )}
+              </div>
+              <div className="mt-1.5 flex items-center gap-3 text-[10px] text-ldvh-text-secondary">
+                <span className="text-emerald-300">{capClosedCount} closed</span>
+                {capDegradedCount > 0 && <span className="text-yellow-300">{capDegradedCount} degraded</span>}
+                {capOpenCount > 0 && <span className="text-red-300">{capOpenCount} open</span>}
+              </div>
+            </div>
+
+            {hasLandingGaps ? (
+              <p className="mb-3 text-xs font-medium text-orange-300">
+                {t('dashboard.landingNeedsWork', { count: String(totalGaps) })}
+              </p>
+            ) : (
+              <p className="mb-3 text-xs font-medium text-emerald-300">{t('dashboard.landingAllClosed')}</p>
+            )}
+
+            <button
+              onClick={() => navigate('/validate')}
+              className="w-full rounded-md border border-ldvh-accent/40 bg-ldvh-accent/10 px-3 py-1.5 text-xs text-ldvh-accent transition-colors hover:bg-ldvh-accent/20"
+            >
+              {t('dashboard.landingGuideAction')}
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Stats grid */}
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-7">
@@ -142,7 +212,7 @@ export default function Dashboard() {
                 return (
                   <li
                     key={`${item.type}-${item.id}`}
-                    className={`flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30 ${isHighlight ? 'border-l-2 border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/20' : ''}`}
+                    className={`flex cursor-pointer items-center justify-between gap-4 rounded-md px-3 py-2 transition-colors hover:bg-ldvh-border/30 ${isHighlight ? 'border-l-2 border-ldvh-accent' : ''}`}
                     onClick={() => navigate(`/objects/${item.type}/${item.id}`)}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -153,9 +223,9 @@ export default function Dashboard() {
                           color: item.typeColor,
                         }}
                       >
-                        {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
+                        {item.type}
                       </span>
-                      <span className={`truncate text-sm text-ldvh-text-primary ${isHighlight ? 'font-semibold' : ''}`}>
+                      <span className="truncate text-sm text-ldvh-text-primary">
                         {getLocalizedTitle(item, locale) || item.id}
                       </span>
                     </div>
@@ -172,7 +242,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Recent changes */}
+        {/* Recent Changes */}
         <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
             <GitCommit size={16} className="text-ldvh-accent" />
@@ -210,8 +280,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Recent activity + Validation status - side by side */}
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      {/* Recent activity + Validation status + Landing compliance */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
         {/* Recent activity */}
         <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
@@ -289,7 +359,80 @@ export default function Dashboard() {
             </p>
           )}
         </div>
+
+        {/* P3: 规范落地合规标识 */}
+        {landing && (
+          <div className={`rounded-lg border bg-ldvh-panel p-4 ${compliancePercent >= 80 ? 'border-ldvh-border' : 'border-orange-500/50'}`}>
+            <div className="mb-3 flex items-center gap-2">
+              <Layers size={16} className="text-ldvh-accent" />
+              <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.complianceHeader')}</h3>
+            </div>
+            {/* 合规百分比环 */}
+            <div className="mb-3 flex items-center justify-center">
+              <div className="relative flex h-20 w-20 items-center justify-center">
+                <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" className="text-ldvh-border" strokeWidth="3" />
+                  <circle
+                    cx="18" cy="18" r="15.5"
+                    fill="none"
+                    stroke={compliancePercent >= 80 ? '#34d399' : compliancePercent >= 50 ? '#fbbf24' : '#f87171'}
+                    strokeWidth="3"
+                    strokeDasharray={`${compliancePercent} ${100 - compliancePercent}`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="absolute font-mono text-lg font-semibold text-ldvh-text-primary">{compliancePercent}%</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-center text-xs">
+              <div className="rounded-md bg-ldvh-bg p-2">
+                <p className="font-mono text-ldvh-text-primary">{totalReqs}</p>
+                <p className="text-ldvh-text-secondary">{t('dashboard.complianceTotal', { total: String(totalReqs) })}</p>
+              </div>
+              <div className="rounded-md bg-ldvh-bg p-2">
+                <p className="font-mono text-emerald-300">{closedReqs}</p>
+                <p className="text-ldvh-text-secondary">{t('dashboard.complianceClosed', { count: String(closedReqs) })}</p>
+              </div>
+            </div>
+            {totalGaps > 0 && (
+              <p className="mt-2 text-center text-xs text-orange-300">
+                {t('dashboard.complianceDegraded', { count: String(totalGaps) })}
+              </p>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Landing Health mini section (only if landing data but not shown in card above) */}
+      {landing && (
+        <div className="mt-6 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <TrendingUp size={16} className="text-ldvh-accent" />
+            <h3 className="text-sm font-medium text-ldvh-text-primary">{t('dashboard.landingHealth')}</h3>
+          </div>
+          <p className="mb-3 text-xs text-ldvh-text-secondary">{t('dashboard.landingHealthDesc')}</p>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="rounded-md bg-ldvh-bg p-3">
+              <p className="font-mono text-xl font-semibold text-ldvh-text-primary">{totalReqs}</p>
+              <p className="text-xs text-ldvh-text-secondary">{t('dashboard.landingRequirements')}</p>
+            </div>
+            <div className="rounded-md bg-ldvh-bg p-3">
+              <p className={`font-mono text-xl font-semibold ${totalGaps > 0 ? 'text-red-300' : 'text-emerald-300'}`}>{totalGaps}</p>
+              <p className="text-xs text-ldvh-text-secondary">{t('dashboard.landingGaps')}</p>
+            </div>
+            <div className="rounded-md bg-ldvh-bg p-3">
+              <p className="font-mono text-xl font-semibold text-ldvh-text-primary">{capOpenCount > 0 ? `${capOpenCount} open` : 'OK'}</p>
+              <p className="text-xs text-ldvh-text-secondary">{t('dashboard.landingCapStatus')}</p>
+            </div>
+            <div className="rounded-md bg-ldvh-bg p-3">
+              <p className={`font-mono text-xl font-semibold ${landing.humanGateStatus === 'closed' ? 'text-emerald-300' : landing.humanGateStatus === 'open' ? 'text-red-300' : 'text-yellow-300'}`}>
+                {landing.humanGateStatus || '—'}
+              </p>
+              <p className="text-xs text-ldvh-text-secondary">{t('dashboard.landingHGStatus')}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

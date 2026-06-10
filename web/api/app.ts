@@ -15,6 +15,8 @@ import objectsRoutes from './routes/objects.js'
 import validateRoutes from './routes/validate.js'
 import changelogRoutes from './routes/changelog.js'
 import docsRoutes from './routes/docs.js'
+import gateRoutes from './routes/gate.js'
+import landingPlanRoutes from './routes/landing-plan.js'
 
 dotenv.config()
 
@@ -35,6 +37,8 @@ app.use('/api/auth', authRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/objects', objectsRoutes)
 app.use('/api/validate', validateRoutes)
+app.use('/api/gate', gateRoutes)
+app.use('/api/landing-plan', landingPlanRoutes)
 app.use('/api/changelog', changelogRoutes)
 app.use('/api/docs', docsRoutes)
 
