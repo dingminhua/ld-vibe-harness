@@ -880,7 +880,11 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert report["metadata"]["requirement_count"] == 5
     assert report["metadata"]["runtime_projection_checked_file_count"] == 1
     assert report["metadata"]["runtime_projection_issue_count"] == 0
+    assert report["metadata"]["human_gate_checked_file_count"] >= 2
+    assert report["metadata"]["human_gate_record_count"] == 0
+    assert report["metadata"]["human_gate_issue_count"] == 0
     assert report["summary"]["runtime_projection_status"] == "closed"
+    assert report["summary"]["human_gate_status"] == "degraded"
     assert report["summary"]["by_status"] == {
         "closed": 1,
         "degraded": 1,
@@ -916,6 +920,8 @@ def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["metadata"]["report"] == "landing-report"
     assert payload["metadata"]["runtime_projection_checked_file_count"] == 1
+    assert payload["metadata"]["human_gate_record_count"] == 0
+    assert payload["summary"]["human_gate_status"] == "degraded"
     assert payload["summary"]["by_status"]["open"] == 1
     assert payload["summary"]["by_status"]["needs_human_gate"] == 2
     assert payload["requirements"][0]["source"] == "docs/specs/00-Test.md"
@@ -934,8 +940,11 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "能力缺口:" in output
     assert "后续 Code 应能生成 landing report" in output
     assert "运行投影检查文件数: 1" in output
+    assert "Human Gate 记录数: 0" in output
+    assert "Human Gate 问题状态" in output
     assert "运行投影漂移检查" in output
     assert "runtime-projection checked 1 project-local files" in output
+    assert "human-gate checked" in output
     assert "suggested_writeback: code_request_or_test" in output
 
 
@@ -1163,6 +1172,94 @@ Human Gate 记录：
     assert exit_code == 1
     assert "Human Gate 最小证据结构检查失败" in output
     assert "HUMAN_GATE_FIELD_MISSING" in output
+
+
+def test_human_gate_report_degraded_when_no_records(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    path = write_md(
+        tmp_path / "notes.md",
+        """
+# Notes
+
+No gate records.
+""",
+    )
+
+    report = checker.human_gate_report_build([str(path)])
+
+    assert report["summary"]["status"] == "degraded"
+    assert report["metadata"]["record_count"] == 0
+    assert report["metadata"]["issue_count"] == 0
+
+
+def test_human_gate_report_open_when_record_incomplete(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    path = write_md(
+        tmp_path / "gate-incomplete.md",
+        """
+# Gate
+
+Human Gate 记录：
+- Human 决策：确认
+""",
+    )
+
+    report = checker.human_gate_report_build([str(path)])
+
+    assert report["summary"]["status"] == "open"
+    assert report["metadata"]["record_count"] == 1
+    assert report["metadata"]["issue_count"] > 0
+    assert {item["status"] for item in report["issues"]} == {"open"}
+    assert "HUMAN_GATE_FIELD_MISSING" in {item["code"] for item in report["issues"]}
+
+
+def test_human_gate_report_closed_when_record_complete(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    path = write_md(
+        tmp_path / "gate-complete.md",
+        """
+# Gate
+
+Human Gate 记录：
+- 触发原因：关闭关键 degraded 缺口
+- 确认事项：是否接受当前关闭方案
+- 影响范围：docs/specs/41、docs/evals/18
+- 确认依据：验证命令通过，剩余 Web 消费未实现
+- Human 决策：确认推进
+- 确认人/时间：Human，2026-06-10
+- 后续动作：写回评估并提交
+- 验证方式：运行 specs_validate 和 pytest
+- 回写位置：docs/evals/18 与 Git commit
+- 残留风险：Web 消费仍待后续 Task
+""",
+    )
+
+    report = checker.human_gate_report_build([str(path)])
+
+    assert report["summary"]["status"] == "closed"
+    assert report["metadata"]["record_count"] == 1
+    assert report["issues"] == []
+
+
+def test_human_gate_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    path = write_md(
+        tmp_path / "gate-cli-report.md",
+        """
+# Gate
+
+Human Gate 记录：
+- Human 决策：确认
+""",
+    )
+
+    exit_code = checker.main(["human-gate-report", str(path), "--format", "json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert exit_code == 1
+    assert payload["metadata"]["report"] == "human-gate"
+    assert payload["summary"]["status"] == "open"
+    assert payload["metadata"]["record_count"] == 1
 
 
 # ══════════════════════════════════════════════════════════════════════

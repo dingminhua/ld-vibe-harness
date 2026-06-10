@@ -820,7 +820,7 @@ def landing_report_terms_present(text, terms):
     return all(term in text for term in terms)
 
 
-def landing_report_build_capability_gaps(formal_files, runtime_projection_report=None):
+def landing_report_build_capability_gaps(formal_files, runtime_projection_report=None, human_gate_report=None):
     text = landing_report_document_text(formal_files)
     gaps = []
 
@@ -843,6 +843,18 @@ def landing_report_build_capability_gaps(formal_files, runtime_projection_report
             elif terms_present:
                 status = "degraded"
                 reason = "runtime-projection 检查当前未发现项目内问题，但仍是项目局部启发式，尚不能证明所有运行投影完整覆盖"
+        if check["id"] == "human_gate_evidence_consumption" and human_gate_report is not None:
+            gate_status = human_gate_report["summary"]["status"]
+            gate_issue_count = human_gate_report["metadata"]["issue_count"]
+            gate_record_count = human_gate_report["metadata"]["record_count"]
+            gate_file_count = human_gate_report["metadata"]["checked_file_count"]
+            evidence = f"human-gate checked {gate_file_count} project-local files, records: {gate_record_count}, issues: {gate_issue_count}, status: {gate_status}"
+            if gate_status == "open":
+                status = "open"
+                reason = "human-gate 检查发现 open 证据结构问题，landing-report 已接入该诊断"
+            elif terms_present:
+                status = "degraded"
+                reason = "human-gate 检查已接入，但仍是项目局部结构检查，尚不能证明所有 Human Gate 触发与 42 现场消费均已覆盖"
         gaps.append(
             {
                 "id": check["id"],
@@ -866,7 +878,8 @@ def landing_report_build(paths=None):
     for path in formal_files:
         requirements.extend(landing_extract_requirements_file(path))
     runtime_projection_report = runtime_projection_report_build()
-    capability_gaps = landing_report_build_capability_gaps(formal_files, runtime_projection_report)
+    human_gate_report = human_gate_report_build()
+    capability_gaps = landing_report_build_capability_gaps(formal_files, runtime_projection_report, human_gate_report)
 
     for requirement in requirements:
         status, reason = landing_report_infer_status(requirement)
@@ -889,12 +902,17 @@ def landing_report_build(paths=None):
             "requirement_count": len(requirements),
             "runtime_projection_checked_file_count": runtime_projection_report["metadata"]["checked_file_count"],
             "runtime_projection_issue_count": runtime_projection_report["metadata"]["issue_count"],
+            "human_gate_checked_file_count": human_gate_report["metadata"]["checked_file_count"],
+            "human_gate_record_count": human_gate_report["metadata"]["record_count"],
+            "human_gate_issue_count": human_gate_report["metadata"]["issue_count"],
         },
         "summary": {
             "by_status": landing_report_count_by(requirements, "status"),
             "by_capability_status": landing_report_count_by(capability_gaps, "status"),
             "runtime_projection_status": runtime_projection_report["summary"]["status"],
             "runtime_projection_by_status": runtime_projection_report["summary"]["by_status"],
+            "human_gate_status": human_gate_report["summary"]["status"],
+            "human_gate_by_status": human_gate_report["summary"]["by_status"],
             "by_type": landing_report_count_by(requirements, "requirement_type"),
             "by_sync_type": landing_report_count_by(requirements, "sync_type"),
             "by_owner_area": landing_report_count_by(requirements, "owner_area"),
@@ -902,6 +920,7 @@ def landing_report_build(paths=None):
         "requirements": requirements,
         "capability_gaps": capability_gaps,
         "runtime_projection": runtime_projection_report,
+        "human_gate": human_gate_report,
     }
 
 
@@ -920,6 +939,9 @@ def landing_report_format_text(report):
     lines.append(f"- 要求数: {metadata['requirement_count']}")
     lines.append(f"- 运行投影检查文件数: {metadata['runtime_projection_checked_file_count']}")
     lines.append(f"- 运行投影问题数: {metadata['runtime_projection_issue_count']}")
+    lines.append(f"- Human Gate 检查文件数: {metadata['human_gate_checked_file_count']}")
+    lines.append(f"- Human Gate 记录数: {metadata['human_gate_record_count']}")
+    lines.append(f"- Human Gate 问题数: {metadata['human_gate_issue_count']}")
     lines.append("- 状态判断: Code 派生启发式，非事实源")
 
     for title, key in [
@@ -928,6 +950,7 @@ def landing_report_format_text(report):
         ("按同步类型", "by_sync_type"),
         ("按承接区域", "by_owner_area"),
         ("运行投影问题状态", "runtime_projection_by_status"),
+        ("Human Gate 问题状态", "human_gate_by_status"),
     ]:
         lines.append("")
         lines.append(f"{title}:")
@@ -1231,6 +1254,95 @@ def human_gate_check_paths(paths):
     for path in iter_markdown_files(paths):
         issues.extend(human_gate_check_file(path))
     return issues
+
+
+def human_gate_count_records_file(path):
+    count = 0
+    lines = path.read_text(encoding="utf-8").splitlines()
+    in_code_block = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_code_block = not in_code_block
+            continue
+        if in_code_block:
+            continue
+        if HUMAN_GATE_HEADER_RE.match(stripped):
+            count += 1
+    return count
+
+
+def human_gate_report_build(paths=None):
+    check_paths = paths if paths is not None else human_gate_default_check_paths()
+    markdown_files = iter_markdown_files(check_paths)
+    files = [path for path in markdown_files if runtime_projection_is_project_local(path)]
+    issues = []
+    record_count = 0
+    for file_path in files:
+        record_count += human_gate_count_records_file(file_path)
+        issues.extend(human_gate_check_file(file_path))
+    issue_items = []
+    for issue in issues:
+        issue_items.append(
+            {
+                "source": landing_relative_path(issue.path),
+                "line": issue.line,
+                "code": issue.code,
+                "status": "open",
+                "message": issue.message,
+            }
+        )
+    status = "closed"
+    if issue_items:
+        status = "open"
+    elif record_count == 0:
+        status = "degraded"
+    return {
+        "metadata": {
+            "tool": "tools/specs_validate.py",
+            "report": "human-gate",
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "source_of_truth": False,
+            "status_source": "derived heuristic",
+            "checked_file_count": len(files),
+            "record_count": record_count,
+            "issue_count": len(issue_items),
+            "scope": "project-local Markdown facts only",
+        },
+        "summary": {
+            "status": status,
+            "by_status": landing_report_count_by(issue_items, "status"),
+            "by_code": landing_report_count_by(issue_items, "code"),
+        },
+        "issues": issue_items,
+    }
+
+
+def human_gate_report_format_text(report):
+    lines = ["Human Gate 证据结构检查"]
+    metadata = report["metadata"]
+    lines.append(f"- 检查文件数: {metadata['checked_file_count']}")
+    lines.append(f"- 记录数: {metadata['record_count']}")
+    lines.append(f"- 问题数: {metadata['issue_count']}")
+    lines.append(f"- 状态: {report['summary']['status']}")
+    lines.append("- 状态判断: Code 派生启发式，非事实源")
+    lines.append("")
+    lines.append("问题:")
+    if not report["issues"]:
+        lines.append("- 无")
+    else:
+        for item in report["issues"]:
+            lines.append(f"- {item['source']}:{item['line']} [{item['status']}/{item['code']}] {item['message']}")
+    return "\n".join(lines)
+
+
+def human_gate_report_main(paths=None, output_format="text"):
+    report = human_gate_report_build(paths if paths else None)
+    if output_format == "json":
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        print(human_gate_report_format_text(report))
+    return 0 if report["summary"]["status"] == "closed" else 1
 
 
 def human_gate_main(paths):
@@ -1833,6 +1945,11 @@ def build_parser():
     human_gate_parser = subparsers.add_parser("human-gate", help="检查 Markdown 中的 Human Gate 记录是否符合 06 最小证据结构。")
     human_gate_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/ 和 ldvh-base/。")
 
+    # human-gate-report
+    human_gate_report_parser = subparsers.add_parser("human-gate-report", help="生成 Human Gate 证据结构派生报告。")
+    human_gate_report_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/ 和 ldvh-base/。")
+    human_gate_report_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+
     # governed-projects
     governed_projects_parser = subparsers.add_parser("governed-projects", help="检查工作区根目录管辖项目配置。")
     governed_projects_parser.add_argument("--root", default=str(PROJECT_ROOT), help="工作区根目录，默认使用当前工具所在项目。")
@@ -1877,6 +1994,9 @@ def main(argv=None):
 
     if command == "human-gate":
         return human_gate_main(args.paths)
+
+    if command == "human-gate-report":
+        return human_gate_report_main(args.paths, args.format)
 
     if command == "governed-projects":
         return governed_projects_main(args.root)

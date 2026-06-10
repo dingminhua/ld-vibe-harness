@@ -37,9 +37,11 @@ verification: |
 
   剩余缺口仍由本文 Task 承载：landing-report 尚不能验证所有触发场景是否实际进入 41，尚不能证明 42 现场检查已经消费本次报告，runtime-projection 只完成项目内最小启发式检查、尚不能覆盖用户级薄入口、真实环境配置、Skill、Hook、CI、Web 和所有运行投影，尚未把 Human Gate 记录校验结果并入状态判断。
 
+  2026-06-10 consume-human-gate-evidence 阶段已补齐 `python3 tools/specs_validate.py human-gate-report` 派生报告，并接入 `landing-report` 的 metadata、summary、capability_gaps 和 human_gate 明细。该检查默认只读取项目内 Git Markdown 事实源，能够区分未发现 Human Gate 记录、Human Gate 记录字段缺失或为空、Human Gate 记录结构检查通过三类状态。当前默认检查未发现项目内 Human Gate 记录，因此 landing-report 继续将该能力保持为 degraded；这表示 Code 已能消费结构检查结果，但不能证明所有高影响写入、长期降级、关键缺口关闭或通过声明均已有 Human Gate，也不能证明 42 现场报告已经消费本次输出。
+
   ## 结论
 
-  本 Task 用于追踪 41 未闭环建设缺口；本次验证证明缺口已被 42/landing-report 消费和暴露，但不能作为 41 已闭环证据。
+  本 Task 用于追踪 41 未闭环建设缺口；本次验证证明运行投影漂移检查和 Human Gate 证据结构检查已被 landing-report 作为 Code 派生证据消费和暴露，但不能作为 41 已闭环证据。
 risk_assessment: |
   - 避免把 40 中的 active 集合状态误解释为建设完成状态。
   - 避免用聊天结论、landing-report 派生输出或 Web 状态替代 Git 文件事实源。
