@@ -1123,23 +1123,19 @@ def landing_main(paths):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# human-gate — Human Gate 最小证据结构检查
+# human-gate — Human Gate 轻量人类决策记录结构检查
 # ══════════════════════════════════════════════════════════════════════
 
 HUMAN_GATE_HEADER_RE = re.compile(r"^Human Gate\s*记录[:：]\s*$", re.IGNORECASE)
 HUMAN_GATE_FIELD_RE = re.compile(r"^\s*[-*]\s*(?P<label>[^:：]+?)\s*[:：]\s*(?P<value>.*)$")
+HUMAN_GATE_FILE_SUFFIXES = {".md", ".yaml", ".yml"}
 HUMAN_GATE_REQUIRED_FIELDS = [
-    ("触发原因", ["触发原因", "Gate 触发原因"]),
-    ("确认事项", ["确认事项", "确认对象", "确认对象或确认事项"]),
-    ("影响范围", ["影响范围"]),
-    ("确认依据", ["确认依据", "确认上下文", "依据"]),
-    ("Human 决策", ["Human 决策", "Human 选择", "确认结果", "用户选择"]),
-    ("确认人/时间", ["确认人/时间", "确认人和时间", "确认来源和时间", "确认人及时间"]),
-    ("后续动作", ["后续动作", "后续执行动作", "确认后的执行动作"]),
-    ("验证方式", ["验证方式", "验证结果", "验证方式或结果"]),
-    ("回写位置", ["回写位置"]),
-    ("残留风险", ["残留风险", "残留风险或后续 Task"]),
+    ("时间", ["时间", "确认人/时间", "确认人和时间", "确认来源和时间", "确认人及时间", "time", "date", "confirmed_at"]),
+    ("决策", ["决策", "Human 决策", "Human 选择", "确认结果", "用户选择", "decision", "result"]),
+    ("范围", ["范围", "影响范围", "确认事项", "确认对象", "确认对象或确认事项", "scope"]),
+    ("约束", ["约束", "确认依据", "依据", "确认上下文", "后续动作", "后续执行动作", "确认后的执行动作", "验证方式", "验证结果", "验证方式或结果", "回写位置", "残留风险", "残留风险或后续 Task", "constraints"]),
 ]
+HUMAN_GATE_YAML_KEYS = {"human_gate", "human_gates", "human_gate_records"}
 
 
 def human_gate_default_check_paths():
@@ -1150,15 +1146,28 @@ def human_gate_default_check_paths():
     return paths
 
 
+def human_gate_iter_files(paths):
+    files = []
+    for raw_path in paths:
+        path = Path(raw_path)
+        if path.is_file() and path.suffix in HUMAN_GATE_FILE_SUFFIXES:
+            files.append(path)
+        elif path.is_dir():
+            for child in path.rglob("*"):
+                if child.is_file() and child.suffix in HUMAN_GATE_FILE_SUFFIXES:
+                    files.append(child)
+    return sorted(set(files))
+
+
 def human_gate_normalize_label(label):
-    return label.strip().strip("*").strip("`").strip()
+    return str(label).strip().strip("*").strip("`").strip()
 
 
 def human_gate_alias_map():
     aliases = {}
     for canonical, labels in HUMAN_GATE_REQUIRED_FIELDS:
         for label in labels:
-            aliases[label] = canonical
+            aliases[human_gate_normalize_label(label)] = canonical
     return aliases
 
 
@@ -1210,14 +1219,27 @@ def human_gate_record_fields(block):
             if next_line.strip():
                 continuation.append(next_line.strip())
 
-        text = "\n".join(item for item in [value, *continuation] if item).strip()
+        text = "\n".join(item for item in [fields.get(canonical, ""), value, *continuation] if item).strip()
         fields[canonical] = text
-        field_lines[canonical] = line_number
+        field_lines.setdefault(canonical, line_number)
 
     return fields, field_lines
 
 
-def human_gate_check_file(path):
+def human_gate_check_record_fields(path, line, fields, field_lines):
+    issues = []
+    if not fields:
+        issues.append(Issue(path, line, "Human Gate 记录缺少可识别字段", code="HUMAN_GATE_RECORD_EMPTY"))
+
+    for canonical, _ in HUMAN_GATE_REQUIRED_FIELDS:
+        if canonical not in fields:
+            issues.append(Issue(path, line, f"Human Gate 记录缺少字段: {canonical}", code="HUMAN_GATE_FIELD_MISSING"))
+        elif not str(fields[canonical]).strip():
+            issues.append(Issue(path, field_lines.get(canonical, line), f"Human Gate 记录字段为空: {canonical}", code="HUMAN_GATE_FIELD_EMPTY"))
+    return issues
+
+
+def human_gate_check_markdown_file(path):
     issues = []
     lines = path.read_text(encoding="utf-8").splitlines()
     in_code_block = False
@@ -1234,30 +1256,91 @@ def human_gate_check_file(path):
 
         block = human_gate_collect_record(lines, index)
         fields, field_lines = human_gate_record_fields(block)
-        if not fields:
-            issues.append(Issue(path, index + 1, "Human Gate 记录缺少可识别字段", code="HUMAN_GATE_RECORD_EMPTY"))
-
-        for canonical, _ in HUMAN_GATE_REQUIRED_FIELDS:
-            if canonical not in fields:
-                issues.append(
-                    Issue(path, index + 1, f"Human Gate 记录缺少字段: {canonical}", code="HUMAN_GATE_FIELD_MISSING")
-                )
-            elif not fields[canonical]:
-                issues.append(
-                    Issue(path, field_lines[canonical], f"Human Gate 记录字段为空: {canonical}", code="HUMAN_GATE_FIELD_EMPTY")
-                )
+        issues.extend(human_gate_check_record_fields(path, index + 1, fields, field_lines))
 
     return issues
+
+
+def human_gate_yaml_records(data):
+    records = []
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if key in HUMAN_GATE_YAML_KEYS:
+                if isinstance(value, list):
+                    records.extend(item for item in value if isinstance(item, dict))
+                elif isinstance(value, dict):
+                    records.append(value)
+            elif isinstance(value, (dict, list)):
+                records.extend(human_gate_yaml_records(value))
+    elif isinstance(data, list):
+        for item in data:
+            records.extend(human_gate_yaml_records(item))
+    return records
+
+
+def human_gate_yaml_line_map(text):
+    aliases = human_gate_alias_map()
+    lines = {}
+    for index, line in enumerate(text.splitlines(), start=1):
+        match = re.match(r"^\s*([A-Za-z_\-/\u4e00-\u9fff ]+)\s*:", line)
+        if not match:
+            continue
+        canonical = aliases.get(human_gate_normalize_label(match.group(1)))
+        if canonical and canonical not in lines:
+            lines[canonical] = index
+    return lines
+
+
+def human_gate_yaml_record_fields(record):
+    aliases = human_gate_alias_map()
+    fields = {}
+    for key, value in record.items():
+        canonical = aliases.get(human_gate_normalize_label(key))
+        if not canonical:
+            continue
+        if isinstance(value, (dict, list)):
+            text = json.dumps(value, ensure_ascii=False)
+        elif value is None:
+            text = ""
+        else:
+            text = str(value).strip()
+        fields[canonical] = "\n".join(item for item in [fields.get(canonical, ""), text] if item).strip()
+    return fields
+
+
+def human_gate_check_yaml_file(path):
+    text = path.read_text(encoding="utf-8")
+    if not any(key in text for key in HUMAN_GATE_YAML_KEYS):
+        return []
+    try:
+        data = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        return [Issue(path, 1, f"Human Gate YAML 解析失败: {exc}", code="HUMAN_GATE_YAML_INVALID")]
+    records = human_gate_yaml_records(data)
+    line_map = human_gate_yaml_line_map(text)
+    issues = []
+    for record in records:
+        fields = human_gate_yaml_record_fields(record)
+        issues.extend(human_gate_check_record_fields(path, 1, fields, line_map))
+    return issues
+
+
+def human_gate_check_file(path):
+    if path.suffix == ".md":
+        return human_gate_check_markdown_file(path)
+    if path.suffix in {".yaml", ".yml"}:
+        return human_gate_check_yaml_file(path)
+    return []
 
 
 def human_gate_check_paths(paths):
     issues = []
-    for path in iter_markdown_files(paths):
+    for path in human_gate_iter_files(paths):
         issues.extend(human_gate_check_file(path))
     return issues
 
 
-def human_gate_count_records_file(path):
+def human_gate_count_markdown_records_file(path):
     count = 0
     lines = path.read_text(encoding="utf-8").splitlines()
     in_code_block = False
@@ -1273,10 +1356,28 @@ def human_gate_count_records_file(path):
     return count
 
 
+def human_gate_count_yaml_records_file(path):
+    text = path.read_text(encoding="utf-8")
+    if not any(key in text for key in HUMAN_GATE_YAML_KEYS):
+        return 0
+    try:
+        data = yaml.safe_load(text)
+    except yaml.YAMLError:
+        return 0
+    return len(human_gate_yaml_records(data))
+
+
+def human_gate_count_records_file(path):
+    if path.suffix == ".md":
+        return human_gate_count_markdown_records_file(path)
+    if path.suffix in {".yaml", ".yml"}:
+        return human_gate_count_yaml_records_file(path)
+    return 0
+
+
 def human_gate_report_build(paths=None):
     check_paths = paths if paths is not None else human_gate_default_check_paths()
-    markdown_files = iter_markdown_files(check_paths)
-    files = [path for path in markdown_files if runtime_projection_is_project_local(path)]
+    files = [path for path in human_gate_iter_files(check_paths) if runtime_projection_is_project_local(path)]
     issues = []
     record_count = 0
     for file_path in files:
@@ -1308,7 +1409,7 @@ def human_gate_report_build(paths=None):
             "checked_file_count": len(files),
             "record_count": record_count,
             "issue_count": len(issue_items),
-            "scope": "project-local Markdown facts only",
+            "scope": "project-local Markdown/YAML facts only",
         },
         "summary": {
             "status": status,
@@ -1350,7 +1451,7 @@ def human_gate_main(paths):
     check_paths = paths if paths else human_gate_default_check_paths()
     issues = human_gate_check_paths(check_paths)
     if issues:
-        print(f"Human Gate 最小证据结构检查失败，共 {len(issues)} 个问题：")
+        print(f"Human Gate 轻量人类决策记录结构检查失败，共 {len(issues)} 个问题：")
         for issue in issues:
             print(f"- {issue.format(PROJECT_ROOT)}")
         return 1

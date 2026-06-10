@@ -1040,7 +1040,7 @@ def test_runtime_projection_cli_outputs_json(tmp_path, monkeypatch, capsys):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# human-gate — Human Gate 最小证据结构检查
+# human-gate — Human Gate 轻量人类决策记录结构检查
 # ══════════════════════════════════════════════════════════════════════
 
 def human_gate_codes(issues):
@@ -1054,16 +1054,10 @@ def test_human_gate_complete_record_passes(tmp_path):
 # Gate
 
 Human Gate 记录：
-- 触发原因：关闭关键 degraded 缺口
-- 确认事项：是否接受当前关闭方案
-- 影响范围：docs/specs/41、docs/evals/18
-- 确认依据：验证命令通过，剩余 Web 消费未实现
-- Human 决策：确认推进
-- 确认人/时间：Human，2026-06-10
-- 后续动作：写回评估并提交
-- 验证方式：运行 specs_validate 和 pytest
-- 回写位置：docs/evals/18 与 Git commit
-- 残留风险：Web 消费仍待后续 Task
+- 时间：2026-06-10
+- 决策：确认推进
+- 范围：docs/specs/41、docs/evals/18
+- 约束：验证命令通过，剩余 Web 消费未实现，后续写回评估
 """,
     )
 
@@ -1084,8 +1078,8 @@ Human Gate 记录：
     issues = checker.human_gate_check_file(path)
 
     assert "HUMAN_GATE_FIELD_MISSING" in human_gate_codes(issues)
-    assert any("触发原因" in issue.message for issue in issues)
-    assert any("影响范围" in issue.message for issue in issues)
+    assert any("时间" in issue.message for issue in issues)
+    assert any("范围" in issue.message for issue in issues)
 
 
 def test_human_gate_empty_field_is_reported(tmp_path):
@@ -1095,23 +1089,17 @@ def test_human_gate_empty_field_is_reported(tmp_path):
 # Gate
 
 Human Gate 记录：
-- 触发原因：
-- 确认事项：是否关闭
-- 影响范围：docs
-- 确认依据：人工确认
-- Human 决策：确认
-- 确认人/时间：Human，2026-06-10
-- 后续动作：提交
-- 验证方式：pytest
-- 回写位置：commit
-- 残留风险：无
+- 时间：
+- 决策：是否关闭
+- 范围：docs
+- 约束：人工确认
 """,
     )
 
     issues = checker.human_gate_check_file(path)
 
     assert "HUMAN_GATE_FIELD_EMPTY" in human_gate_codes(issues)
-    assert any("触发原因" in issue.message for issue in issues)
+    assert any("时间" in issue.message for issue in issues)
 
 
 def test_human_gate_continuation_satisfies_field_value(tmp_path):
@@ -1121,17 +1109,11 @@ def test_human_gate_continuation_satisfies_field_value(tmp_path):
 # Gate
 
 Human Gate 记录：
-- 触发原因：
-  需要关闭关键 open 缺口
-- 确认事项：是否接受降级
-- 影响范围：Task 和 docs/evals/18
-- 确认依据：测试通过
-- 确认结果：暂缓
-- 确认人和时间：Human，2026-06-10
-- 后续执行动作：记录 follow-up
-- 验证结果：无需写入代码
-- 回写位置：docs/evals/18
-- 残留风险：后续仍需 Web
+- 时间：
+  2026-06-10
+- 决策：暂缓
+- 范围：Task 和 docs/evals/18
+- 约束：测试通过，后续仍需 Web
 """,
     )
 
@@ -1146,8 +1128,8 @@ def test_human_gate_template_in_code_block_is_ignored(tmp_path):
 
 ```text
 Human Gate 记录：
-- 触发原因：
-- 确认事项：
+- 时间：
+- 决策：
 ```
 """,
     )
@@ -1170,7 +1152,7 @@ Human Gate 记录：
 
     output = capsys.readouterr().out
     assert exit_code == 1
-    assert "Human Gate 最小证据结构检查失败" in output
+    assert "Human Gate 轻量人类决策记录结构检查失败" in output
     assert "HUMAN_GATE_FIELD_MISSING" in output
 
 
@@ -1221,16 +1203,10 @@ def test_human_gate_report_closed_when_record_complete(tmp_path, monkeypatch):
 # Gate
 
 Human Gate 记录：
-- 触发原因：关闭关键 degraded 缺口
-- 确认事项：是否接受当前关闭方案
-- 影响范围：docs/specs/41、docs/evals/18
-- 确认依据：验证命令通过，剩余 Web 消费未实现
-- Human 决策：确认推进
-- 确认人/时间：Human，2026-06-10
-- 后续动作：写回评估并提交
-- 验证方式：运行 specs_validate 和 pytest
-- 回写位置：docs/evals/18 与 Git commit
-- 残留风险：Web 消费仍待后续 Task
+- 时间：2026-06-10
+- 决策：确认推进
+- 范围：docs/specs/41、docs/evals/18
+- 约束：验证命令通过，剩余 Web 消费未实现，后续写回评估
 """,
     )
 
@@ -1239,6 +1215,76 @@ Human Gate 记录：
     assert report["summary"]["status"] == "closed"
     assert report["metadata"]["record_count"] == 1
     assert report["issues"] == []
+
+
+def test_human_gate_report_counts_multiple_markdown_records(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    path = write_md(
+        tmp_path / "gate-multiple.md",
+        """
+# Gate
+
+Human Gate 记录：
+- 时间：2026-06-10
+- 决策：确认推进
+- 范围：docs/specs/41
+- 约束：需要验证
+
+Human Gate 记录：
+- 时间：2026-06-11
+- 决策：暂缓
+- 范围：docs/specs/42
+- 约束：等待补充证据
+""",
+    )
+
+    report = checker.human_gate_report_build([str(path)])
+
+    assert report["summary"]["status"] == "closed"
+    assert report["metadata"]["record_count"] == 2
+    assert report["issues"] == []
+
+
+def test_human_gate_report_accepts_yaml_records(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    path = write_md(
+        tmp_path / "gate.yaml",
+        """
+human_gate:
+  - time: 2026-06-10
+    decision: 确认推进
+    scope: docs/specs/41
+    constraints: 需要验证
+  - time: 2026-06-11
+    decision: 暂缓
+    scope: docs/specs/42
+    constraints: 等待补充证据
+""",
+    )
+
+    report = checker.human_gate_report_build([str(path)])
+
+    assert report["summary"]["status"] == "closed"
+    assert report["metadata"]["record_count"] == 2
+    assert report["metadata"]["scope"] == "project-local Markdown/YAML facts only"
+    assert report["issues"] == []
+
+
+def test_human_gate_yaml_missing_fields_are_reported(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    path = write_md(
+        tmp_path / "gate-incomplete.yaml",
+        """
+human_gates:
+  - decision: 确认推进
+""",
+    )
+
+    report = checker.human_gate_report_build([str(path)])
+
+    assert report["summary"]["status"] == "open"
+    assert report["metadata"]["record_count"] == 1
+    assert "HUMAN_GATE_FIELD_MISSING" in {item["code"] for item in report["issues"]}
 
 
 def test_human_gate_report_cli_outputs_json(tmp_path, monkeypatch, capsys):

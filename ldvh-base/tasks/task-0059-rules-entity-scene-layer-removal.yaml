@@ -34,7 +34,7 @@ related_docs:
   - docs/specs/05-工作模型基础规范.md
   - docs/specs/04.04-LDVH落地特别要求规范.md
   - docs/specs/20-工作模型集合索引.md
-  - .trae/rules/ldvh-project-rules.md
+  - LDVH-AI-ENTRY.md
 affected_docs:
   - ldvh-base/intents/intent-0008-rules-specs-review.yaml
   - docs/specs/01-目录说明.md
@@ -44,7 +44,7 @@ affected_docs:
   - docs/specs/05-工作模型基础规范.md
   - docs/specs/04.04-LDVH落地特别要求规范.md
   - docs/specs/20-工作模型集合索引.md
-  - .trae/rules/ldvh-project-rules.md
+  - LDVH-AI-ENTRY.md
 deliverables: []
 closure_evidence: |
   ## 验证结果
