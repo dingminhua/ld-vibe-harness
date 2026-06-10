@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
+import CopyPathButton from '@/components/CopyPathButton';
 import { fetchObjects, type ObjectItem } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
@@ -47,6 +48,9 @@ export default function ObjectList() {
   };
 
   const detailSearch = searchParams.toString();
+  const openObject = (objId: string) => {
+    navigate(`/objects/${currentType}/${objId}${detailSearch ? `?${detailSearch}` : ''}`);
+  };
 
   return (
     <div className="ldvh-page-frame">
@@ -74,14 +78,25 @@ export default function ObjectList() {
       ) : (
         <div className="ldvh-section-grid">
           {items.map((obj) => (
-            <button
+            <div
               key={obj.id}
-              onClick={() => navigate(`/objects/${currentType}/${obj.id}${detailSearch ? `?${detailSearch}` : ''}`)}
-              className="group flex flex-col gap-2 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left transition-colors hover:border-ldvh-accent/40"
+              role="button"
+              tabIndex={0}
+              onClick={() => openObject(obj.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  openObject(obj.id);
+                }
+              }}
+              className="group flex cursor-pointer flex-col gap-2 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left transition-colors hover:border-ldvh-accent/40"
             >
               <div className="flex items-start justify-between gap-2">
-                <span className="ldvh-meta">{obj.id}</span>
-                <StatusBadge status={obj.status} statusLabel={getStatus(obj.status)} />
+                <span className="ldvh-meta min-w-0 truncate">{obj.id}</span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <CopyPathButton path={obj.path} />
+                  <StatusBadge status={obj.status} statusLabel={getStatus(obj.status)} />
+                </div>
               </div>
               <span className="ldvh-card-title transition-colors group-hover:text-ldvh-accent">
                 {getLocalizedTitle(obj, locale)}
@@ -89,7 +104,7 @@ export default function ObjectList() {
               <span className="ldvh-meta">
                 {formatDateTime(obj.updated)}
               </span>
-            </button>
+            </div>
           ))}
         </div>
       )}

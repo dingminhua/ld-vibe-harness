@@ -5,6 +5,7 @@ import { useI18n } from '@/i18n/context';
 import { fetchObjectDetail } from '@/utils/api';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import StatusBadge from '@/components/StatusBadge';
+import CopyPathButton from '@/components/CopyPathButton';
 
 /** 对象类型中英映射（与 ObjectDetail 页面保持一致） */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
@@ -42,7 +43,7 @@ export default function ReferenceCard({ refs }: ReferenceCardProps) {
 function ReferenceItem({ refId }: { refId: string }) {
   const navigate = useNavigate();
   const { locale, getStatus } = useI18n();
-  const [info, setInfo] = useState<{ title: string; status: string } | null>(null);
+  const [info, setInfo] = useState<{ title: string; status: string; path: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refType = parseRefType(refId);
@@ -55,7 +56,7 @@ function ReferenceItem({ refId }: { refId: string }) {
         const title = (locale === 'en'
           ? (obj.title_en as string || obj.title as string)
           : (obj.title_zh as string || obj.title as string)) || refId;
-        setInfo({ title, status: detail.summary.status });
+        setInfo({ title, status: detail.summary.status, path: detail.target });
       })
       .catch(() => setInfo(null))
       .finally(() => setLoading(false));
@@ -82,10 +83,18 @@ function ReferenceItem({ refId }: { refId: string }) {
   };
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={refType ? 0 : -1}
       onClick={handleClick}
-      disabled={!refType}
-      className="ldvh-body flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors hover:bg-ldvh-border/30 disabled:cursor-default"
+      onKeyDown={(event) => {
+        if (!refType) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          handleClick();
+        }
+      }}
+      className={`ldvh-body flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors hover:bg-ldvh-border/30 ${refType ? 'cursor-pointer' : 'cursor-default'}`}
     >
       <Link2 size={13} className="shrink-0" style={{ color: typeColor }} />
       <span className="ldvh-meta shrink-0 text-ldvh-accent">{refId}</span>
@@ -105,6 +114,7 @@ function ReferenceItem({ refId }: { refId: string }) {
           <StatusBadge status={info.status} statusLabel={getStatus(info.status)} size="sm" />
         </span>
       )}
-    </button>
+      <CopyPathButton path={info?.path} />
+    </div>
   );
 }

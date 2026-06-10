@@ -23,8 +23,8 @@
 可选校验错误横幅
 Profile 卡片（如存在） + LDVH 落地引导卡片
 对象统计网格（intent/task/adr/pitfall/memo/profile）
-待推进 + 最近变更
-最近活动 + 校验状态
+待推进（含复制路径图标） + 最近变更
+最近活动（含复制路径图标） + 校验状态
 规范落地要求合规 + LDVH 落地健康度
 ```
 
@@ -55,6 +55,7 @@ Profile 卡片（如存在） + LDVH 落地引导卡片
 - 位于第一组主面板左侧。
 - 展示非终态对象，重点状态使用左侧 accent 边线。
 - 点击条目打开右侧扩展阅读区，不直接离开仪表盘。
+- 每条右侧提供复制完整路径图标，复制 API 返回的对象 `path`，不得触发扩展阅读。
 
 ### 3.5 最近变更
 
@@ -67,6 +68,7 @@ Profile 卡片（如存在） + LDVH 落地引导卡片
 - 位于第二组主面板左侧。
 - 每条展示对象类型、标题、状态和相对时间。
 - 点击条目打开右侧扩展阅读区。
+- 每条右侧提供复制完整路径图标，复制 API 返回的对象 `path`，不得触发扩展阅读。
 
 ### 3.7 校验状态
 
@@ -88,6 +90,7 @@ Profile 卡片（如存在） + LDVH 落地引导卡片
 | 点击统计卡片 | 跳转到对应对象列表 |
 | 点击待推进条目 | 打开右侧扩展阅读区预览对象 |
 | 点击最近活动条目 | 打开右侧扩展阅读区预览对象 |
+| 点击对象条目复制路径图标 | 复制对象 YAML 文件完整路径，不改变当前页面 |
 | 点击最近变更条目 | 跳转到变更日志 |
 | 点击落地引导按钮 | 跳转到校验页 |
 | 切换语言 | 页面框架、标签、状态、相对时间同步切换 |
@@ -99,6 +102,7 @@ Profile 卡片（如存在） + LDVH 落地引导卡片
 3. 不在仪表盘中展示 raw status、raw type 或 raw enum。
 4. 不使用固定 `lg:grid-cols-*` 作为唯一布局依据；继续使用 `ldvh-dashboard-*` 自适应网格。
 5. 不重复展示同一副标题或同一页面说明。
+6. Profile、待推进和最近活动中的工作对象必须保留复制完整路径入口。
 
 ## 6. API 数据结构
 
@@ -112,10 +116,10 @@ interface DashboardData {
     humanGateStatus: string;
     validationPlanStatus: Record<string, string>;
   } | null;
-  profile: { id: string; title: string; title_en?: string; title_zh?: string; status: string } | null;
+  profile: { id: string; title: string; title_en?: string; title_zh?: string; status: string; path: string } | null;
   stats: { type: string; total: number; byStatus: Record<string, number> }[];
-  recentItems: { type: string; id: string; title: string; title_en?: string; title_zh?: string; status: string; relativeTime: string; typeColor: string }[];
-  actionItems: { type: string; id: string; title: string; title_en?: string; title_zh?: string; status: string; relativeTime: string; typeColor: string }[];
+  recentItems: { type: string; id: string; title: string; title_en?: string; title_zh?: string; status: string; path: string; relativeTime: string; typeColor: string }[];
+  actionItems: { type: string; id: string; title: string; title_en?: string; title_zh?: string; status: string; path: string; relativeTime: string; typeColor: string }[];
   recentChanges: { hash: string; shortHash: string; message: string; description: string; category: string; author: string; date: string; relativeTime: string }[];
   validation: { ok: boolean; errors: number; warnings: number };
 }

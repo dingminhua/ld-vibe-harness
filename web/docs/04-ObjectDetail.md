@@ -14,7 +14,7 @@
 ```text
 状态筛选（与对象列表一致，保留 query）
 返回按钮
-对象头部：类型标签 + 标题 + ID + 类型说明 + 状态徽章 + 状态提示
+对象头部：类型标签 + 标题 + ID + 类型说明 + 复制路径图标 + 状态徽章 + 状态提示
 元信息行：创建时间、更新时间、关闭时间、辅助属性
 内容区：
   Task：语义阅读布局
@@ -31,6 +31,7 @@ YAML 源码折叠区
 - 类型标签使用对象类型颜色，显示本地化类型名。
 - 标题优先使用 `title_zh/title_en`，回退 `title`，再回退 ID。
 - ID 使用 `ldvh-meta`，不做大号标题。
+- 头部右侧提供 `CopyPathButton`，复制对象详情 API 返回的 `target`。
 - 状态徽章使用 `StatusBadge`；状态提示来自 `getStatusHint()`。
 - 元信息行使用 `MetaChip`，时间统一 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`。
 - priority、severity、repeatability、category、tags 等辅助属性在元信息行降权展示，不进入主阅读流。
@@ -63,7 +64,7 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 | 检查清单 | `ChecklistCard` | 进度条 + 勾选/未勾选图标 + inline Markdown |
 | 兼容检查清单字段 | `ChecklistCard` 或 `SummaryText` | 只有内容包含 `- [ ]` / `- [x]` 时才按检查清单渲染 |
 | 验证证据 | `EvidenceBlock` | Markdown 渲染，命令、路径和代码突出显示 |
-| 对象 ID 引用 | `ReferenceCard` | 点击在右侧扩展阅读区打开对象 |
+| 对象 ID 引用 | `ReferenceCard` | 点击在右侧扩展阅读区打开对象；卡片内提供复制完整路径图标 |
 | 文档路径 / URL | `DocPreviewLink` | 本地 Markdown 文档在右侧扩展阅读区预览；外部 URL 新窗口打开 |
 | 路径文本 | `PathText` | 等宽、可换行的路径标签 |
 | 其他短文本 | `ldvh-body` | 普通文本 |
@@ -75,6 +76,7 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 - 顶部只保留上一个访问对象、下一个访问对象和关闭按钮。
 - 不展示对象列表式导航。
 - 对象预览按对象类型展示关键字段，并复用 `fieldFormats.ts`。
+- 对象预览头部提供复制完整路径图标，复制对象详情 API 返回的 `target`。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。
 
 ## 8. YAML 源码
@@ -92,6 +94,7 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 4. 不把辅助属性提升为主阅读流大字段。
 5. 不恢复右侧“关联对象列表导航”；右侧只做访问历史前进/后退。
 6. 不在业务组件里新增另一套字段格式判断；新增字段先更新 `fieldFormats.ts` 和 `05.01`。
+7. 对象详情头部、对象引用卡片和扩展区对象预览必须保留复制完整路径入口。
 
 ## 10. API 数据结构
 

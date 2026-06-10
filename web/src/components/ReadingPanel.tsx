@@ -8,6 +8,7 @@ import MarkdownPreview from '@/components/MarkdownPreview';
 import ReferenceCard from '@/components/ReferenceCard';
 import StatusBadge from '@/components/StatusBadge';
 import SummaryText from '@/components/SummaryText';
+import CopyPathButton from '@/components/CopyPathButton';
 import { useI18n } from '@/i18n/context';
 import { fetchDocContent, fetchObjectDetail, type DocContent, type ObjectDetail as ApiObjectDetail } from '@/utils/api';
 import {
@@ -372,6 +373,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   const obj = (data as Record<string, unknown> | undefined) ?? detail?.data;
   const status = detail?.summary.status ?? (obj?.status as string | undefined);
   const title = getObjectTitle(obj, objectId, locale);
+  const targetPath = detail?.target;
   const loading = !obj && !error && Boolean(objectType && objectId);
 
   useEffect(() => {
@@ -419,6 +421,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
       <div className="flex items-center gap-2">
         <span className="ldvh-chip rounded bg-ldvh-accent/20 px-2 py-0.5 text-ldvh-accent">{objectType}</span>
         {status && <StatusBadge status={status} statusLabel={getStatus(status)} size="sm" />}
+        <CopyPathButton path={targetPath} className="ml-auto" />
       </div>
       <h3 className="ldvh-reading-title">{title}</h3>
       {objectId && <p className="ldvh-meta">{objectId}</p>}

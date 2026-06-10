@@ -18,6 +18,7 @@ import {
   Target,
 } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
+import CopyPathButton from '@/components/CopyPathButton';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
 import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
@@ -65,6 +66,9 @@ export default function Workbench() {
     () => data?.recentItems.filter((item) => selectedTask ? item.id !== selectedTask.id : item.type !== 'task').slice(0, 5) ?? [],
     [data, selectedTask]
   );
+  const openSelectedTask = () => {
+    if (selectedTask) navigate(`/objects/task/${selectedTask.id}`);
+  };
 
   if (error) {
     return (
@@ -123,17 +127,28 @@ export default function Workbench() {
 
           {selectedTask ? (
             <div>
-              <button
-                onClick={() => navigate(`/objects/task/${selectedTask.id}`)}
-                className="mb-5 block w-full rounded-lg border border-ldvh-border bg-ldvh-bg p-4 text-left transition-colors hover:border-ldvh-accent/40"
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={openSelectedTask}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openSelectedTask();
+                  }
+                }}
+                className="mb-5 block w-full cursor-pointer rounded-lg border border-ldvh-border bg-ldvh-bg p-4 text-left transition-colors hover:border-ldvh-accent/40"
               >
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <p className="ldvh-meta">{selectedTask.id}</p>
-                  <ArrowRight size={16} className="text-ldvh-text-secondary" />
+                  <div className="flex shrink-0 items-center gap-2">
+                    <CopyPathButton path={selectedTask.path} />
+                    <ArrowRight size={16} className="text-ldvh-text-secondary" />
+                  </div>
                 </div>
                 <h3 className="ldvh-reading-title">{getLocalizedTitle(selectedTask, locale) || selectedTask.id}</h3>
                 <p className="ldvh-caption mt-2">{selectedTask.relativeTime}</p>
-              </button>
+              </div>
 
               <div className="ldvh-section-grid">
                 <InfoPanel title={t('workbench.acceptance')} icon={<CheckCircle2 size={16} className="text-ldvh-accent" />}>
@@ -177,10 +192,18 @@ export default function Workbench() {
           </div>
           <div className="flex flex-col gap-3">
             {relatedObjects.length > 0 ? relatedObjects.map((item) => (
-              <button
+              <div
                 key={`${item.type}-${item.id}`}
+                role="button"
+                tabIndex={0}
                 onClick={() => openPanel({ type: 'object', title: getLocalizedTitle(item, locale) || item.id, objectType: item.type, objectId: item.id })}
-                className="flex items-center gap-3 rounded-lg border border-ldvh-border bg-ldvh-bg p-3 text-left transition-colors hover:border-ldvh-accent/40"
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openPanel({ type: 'object', title: getLocalizedTitle(item, locale) || item.id, objectType: item.type, objectId: item.id });
+                  }
+                }}
+                className="flex cursor-pointer items-center gap-3 rounded-lg border border-ldvh-border bg-ldvh-bg p-3 text-left transition-colors hover:border-ldvh-accent/40"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ldvh-accent/10 text-ldvh-accent">
                   <Link2 size={14} />
@@ -195,7 +218,8 @@ export default function Workbench() {
                   <p className="ldvh-body truncate">{getLocalizedTitle(item, locale) || item.id}</p>
                   <p className="ldvh-meta mt-1">{item.id}</p>
                 </div>
-              </button>
+                <CopyPathButton path={item.path} />
+              </div>
             )) : (
               <p className="ldvh-body-muted rounded-lg border border-dashed border-ldvh-border bg-ldvh-bg p-4">{t('workbench.noRelationships')}</p>
             )}

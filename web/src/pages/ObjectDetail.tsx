@@ -11,6 +11,7 @@ import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import IntentSelector from '@/components/IntentSelector';
+import CopyPathButton from '@/components/CopyPathButton';
 import { fetchObjectDetail, patchObjectField, type ObjectDetail } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getTypeDescription, getStatusHint } from '@/i18n/locales';
@@ -321,7 +322,10 @@ export default function ObjectDetail() {
                 )}
               </div>
               <div className="flex flex-col items-end gap-1.5">
-                <StatusBadge status={objStatus} statusLabel={getStatus(objStatus)} size="md" />
+                <div className="flex items-center gap-2">
+                  <CopyPathButton path={detail.target} />
+                  <StatusBadge status={objStatus} statusLabel={getStatus(objStatus)} size="md" />
+                </div>
                 {statusHint && (
                   <span className="ldvh-caption">{statusHint}</span>
                 )}

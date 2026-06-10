@@ -8,6 +8,7 @@ import StatsCard from '@/components/StatsCard';
 import StatusBadge from '@/components/StatusBadge';
 import StatusBanner from '@/components/StatusBanner';
 import PageHeader from '@/components/PageHeader';
+import CopyPathButton from '@/components/CopyPathButton';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
 import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
@@ -135,14 +136,17 @@ export default function Dashboard() {
         {/* Profile card */}
         {data.profile && (
           <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="ldvh-section-title">
                   {getLocalizedTitle(data.profile, locale)}
                 </h2>
                 <p className="ldvh-meta">{data.profile.id}</p>
               </div>
-              <StatusBadge status={data.profile.status} size="md" />
+              <div className="flex shrink-0 items-center gap-2">
+                <CopyPathButton path={data.profile.path} />
+                <StatusBadge status={data.profile.status} size="md" />
+              </div>
             </div>
           </div>
         )}
@@ -246,6 +250,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
+                      <CopyPathButton path={item.path} />
                       <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
                       <span className="ldvh-caption whitespace-nowrap">
                         {item.relativeTime}
@@ -329,6 +334,7 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
+                    <CopyPathButton path={item.path} />
                     <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
                     <span className="ldvh-caption whitespace-nowrap">
                       {item.relativeTime}

@@ -322,6 +322,8 @@ export const UI_LOCALES = {
     'common.false': '否',
     'common.empty': '空',
     'common.null': '—',
+    'common.copyPath': '复制完整路径',
+    'common.copiedPath': '已复制路径',
   },
   en: {
     'logo.tagline': 'Making Vibe Coding more efficient, stable, and controllable',
@@ -564,6 +566,8 @@ export const UI_LOCALES = {
     'common.false': 'No',
     'common.empty': 'Empty',
     'common.null': '—',
+    'common.copyPath': 'Copy full path',
+    'common.copiedPath': 'Path copied',
   },
 } as const;
 

@@ -27,6 +27,7 @@ export interface DashboardData {
     title_en?: string;
     title_zh?: string;
     status: string;
+    path: string;
     updated: string;
     relativeTime: string;
     typeColor: string;
@@ -38,6 +39,7 @@ export interface DashboardData {
     title_en?: string;
     title_zh?: string;
     status: string;
+    path: string;
     updated: string;
     relativeTime: string;
     typeColor: string;

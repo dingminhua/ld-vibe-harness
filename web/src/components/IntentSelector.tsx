@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { fetchObjects, type ObjectItem } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
+import CopyPathButton from '@/components/CopyPathButton';
 
 interface IntentSelectorProps {
   currentIntentId: string;
@@ -87,18 +88,26 @@ export default function IntentSelector({ currentIntentId, onSelect, onClose }: I
               ? (item.title_en || item.title)
               : (item.title_zh || item.title);
             const isCurrent = item.id === currentIntentId;
+            const handleSelect = () => {
+              if (!isCurrent) onSelect(item.id);
+              else onClose();
+            };
             return (
-              <button
+              <div
                 key={item.id}
-                onClick={() => {
-                  if (!isCurrent) onSelect(item.id);
-                  else onClose();
+                role="button"
+                tabIndex={0}
+                onClick={handleSelect}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    handleSelect();
+                  }
                 }}
-                disabled={isCurrent}
                 className={`ldvh-body flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors ${
                   isCurrent
                     ? 'bg-ldvh-accent/10 text-ldvh-accent cursor-default'
-                    : 'text-ldvh-text-primary hover:bg-ldvh-border/30'
+                    : 'cursor-pointer text-ldvh-text-primary hover:bg-ldvh-border/30'
                 }`}
               >
                 <span className="ldvh-meta shrink-0 text-ldvh-accent">{item.id}</span>
@@ -108,7 +117,8 @@ export default function IntentSelector({ currentIntentId, onSelect, onClose }: I
                     {t('intentSelector.current')}
                   </span>
                 )}
-              </button>
+                <CopyPathButton path={item.path} />
+              </div>
             );
           })
         )}
