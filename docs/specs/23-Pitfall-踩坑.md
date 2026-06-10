@@ -37,7 +37,7 @@ Pitfall 的目标是让 AI 和 Human 在后续执行中提前识别同类陷阱�
 5. 已由 docs/specs、Rules / Instructions、ADR、Task 或 Code 明确约束，且没有新增经验的信息；
 6. 没有规避策略的抱怨、复盘感想或笼统提醒。
 
-不形成 Pitfall 的内容，应按性质留在当前执行上下文，或进入 Memo、Task、ADR、Change、docs、refs、evals、Code 测试或其他权威位置。
+不形成 Pitfall 的内容，应按性质留在当前执行上下文，或进入 Memo、Task、ADR、Change、docs、refs、research、Code 测试或其他权威位置。
 
 ### 1.3 Pitfall 与规范、运行入口和实现的边界
 
@@ -157,7 +157,7 @@ Pitfall 的创建、状态变化、核心经验改写、归档、替代和被吸
 以下情况应评估 Human Gate：
 
 1. 创建、删除或重命名 Pitfall 实例；
-2. 将 Task 过程发现、Memo、docs/evals 结论或对话输入升级为 Pitfall；
+2. 将 Task 过程发现、Memo、docs/research 结论或对话输入升级为 Pitfall；
 3. 将 `draft` Pitfall 确认为 `active`；
 4. 将 `active` Pitfall 标记为 `superseded` 或 `archived`；
 5. 修改 `root_cause`、`resolution`、`verification` 或 `avoidance` 等核心经验字段；

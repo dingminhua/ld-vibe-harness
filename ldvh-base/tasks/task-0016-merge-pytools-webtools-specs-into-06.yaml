@@ -12,7 +12,7 @@ acceptance: |-
   - [x] 12.01 与 12.02 的必要权威内容已精简并入 06（PyTools 规则 §4，WebTools 规则 §5），重复内容已去重
   - [x] 原 12.01 与 12.02 文档已改为迁移说明，不形成第二事实源
   - [x] specs 根目录正式规范和 Rules 中对原 12、12.01、12.02 的引用已更新
-  - [x] 不处理 specs/evals、specs/refs、tools/tests/web 等非本轮确认范围引用
+  - [x] 不处理 docs/research、specs/refs、tools/tests/web 等非本轮确认范围引用
   - [x] 可用文档规范检查和引用检查通过
 blocked_by: []
 parent_task: null

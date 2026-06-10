@@ -5,12 +5,12 @@ status: review_needed
 created: '2026-06-07T03:50:46.134796'
 updated: '2026-06-07T04:03:13.614312'
 description: |
-  根据 LDVH 当前规范体系和 docs/evals/12-LDVH第三方技能引入的思考.md 的判断，创建 docs/specs/11.01-第三方Skill接管落地选项.md，沉淀第三方平台 Skill 在 LDVH 中的使用边界、准入判断、治理接管、Human Gate、机制落地和验证要求。
+  根据 LDVH 当前规范体系和 docs/research/12-LDVH第三方技能引入的思考.md 的判断，创建 docs/specs/11.01-第三方Skill接管落地选项.md，沉淀第三方平台 Skill 在 LDVH 中的使用边界、准入判断、治理接管、Human Gate、机制落地和验证要求。
 source: 用户直接指示
 acceptance: |
   - [x] 已创建 docs/specs/11.01-第三方Skill接管落地选项.md，且作为 docs/specs 根目录正式规范文档
-  - [x] 文档内容吸收 evals/12 关于第三方 Skill 的能力供给方、脚手架先行、治理接管和包装策略判断
-  - [x] 文档遵守 docs/specs/01、02、03 的编号、术语和文档骨架要求，不在正式规范中直接引用 evals 文档
+  - [x] 文档内容吸收 research/12 关于第三方 Skill 的能力供给方、脚手架先行、治理接管和包装策略判断
+  - [x] 文档遵守 docs/specs/01、02、03 的编号、术语和文档骨架要求，不在正式规范中直接引用 research 文档
   - [x] 文档明确第三方 Skill 与 LDVH 自建 Skill、Rules、Agent、Tools、Human Gate、Core Loop 的边界
   - [x] 已检查相关 Tools 或校验器是否因新增 13 号规范需要同步更新，并完成必要验证
 verification: |
@@ -27,7 +27,7 @@ verification: |
   specs/13 文档编号、章节、引用与 Task 单实例校验通过；全量校验和全量 pytest 存在既有遗留问题，不阻塞本次文档交付。
 blocked_by: []
 related_docs:
-- docs/evals/12-LDVH第三方技能引入的思考.md
+- docs/research/12-LDVH第三方技能引入的思考.md
 - docs/specs/01-目录说明.md
 - docs/specs/02-术语规范.md
 - docs/specs/03-文档基础规范.md

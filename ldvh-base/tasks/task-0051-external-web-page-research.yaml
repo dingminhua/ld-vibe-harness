@@ -13,17 +13,17 @@ description: |
   3. gstack/extension — Chrome Extension side panel / popup / inspector
   4. superpowers/skills/brainstorming/scripts/frame-template.html — 轻量 HTML 交互模板
 
-  调研结果需形成对 LDVH Web 页面构建的建议，并写入 docs/evals/16-LDVH外部开源项目Web页面构成调研.md。
+  调研结果需形成对 LDVH Web 页面构建的建议，并写入 docs/research/16-LDVH外部开源项目Web页面构成调研.md。
 source: intent-0009
 source_intent: intent-0009
 acceptance: |
   - [x] 至少完成四个外部开源项目 Web 相关页面构成调研
-  - [x] 调研报告写入 docs/evals/16-LDVH外部开源项目Web页面构成调研.md
+  - [x] 调研报告写入 docs/research/16-LDVH外部开源项目Web页面构成调研.md
   - [x] 报告覆盖页面入口、导航结构、页面类型、组件模式和技术栈
   - [x] 报告提炼出对 LDVH Web 页面构建的可执行建议
   - [x] intent-0009 的 related_tasks 已关联 task-0051
 verification: |
-  已完成独立审查：5 项 acceptance 实质全部通过。审查证据包括 docs/evals/16-LDVH外部开源项目Web页面构成调研.md 已存在并覆盖 mcp-shrimp-task-manager、BMAD-METHOD、gstack、superpowers 四个项目；报告包含页面入口、导航结构、页面类型、组件模式、技术栈和 LDVH Web 页面构建建议；intent-0009 的 related_tasks 已包含 task-0051。
+  已完成独立审查：5 项 acceptance 实质全部通过。审查证据包括 docs/research/16-LDVH外部开源项目Web页面构成调研.md 已存在并覆盖 mcp-shrimp-task-manager、BMAD-METHOD、gstack、superpowers 四个项目；报告包含页面入口、导航结构、页面类型、组件模式、技术栈和 LDVH Web 页面构建建议；intent-0009 的 related_tasks 已包含 task-0051。
 
   ## 验证结果
 
@@ -33,7 +33,7 @@ verification: |
 
   验证通过。
 closure_evidence: |
-  交付物：docs/evals/16-LDVH外部开源项目Web页面构成调研.md。
+  交付物：docs/research/16-LDVH外部开源项目Web页面构成调研.md。
   事实源：ldvh-base/tasks/task-0051-external-web-page-research.yaml；ldvh-base/intents/intent-0009-competitive-research.yaml 已关联 task-0051。
   验证：独立审查确认 5 项 acceptance 全部通过；Fact Validator 已运行，新建 task-0051 不再产生命名或字段校验错误，当前剩余校验错误为既有历史文件问题。
 
@@ -47,11 +47,11 @@ closure_evidence: |
 blocked_by: []
 related_adrs: []
 related_docs:
-- docs/evals/02-LDVH对Gstack的借鉴评估与深度调研.md
-- docs/evals/07-LDVH对Superpowers的借鉴评估与深度调研.md
-- docs/evals/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
+- docs/research/02-LDVH对Gstack的借鉴评估与深度调研.md
+- docs/research/07-LDVH对Superpowers的借鉴评估与深度调研.md
+- docs/research/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
 affected_docs:
-- docs/evals/16-LDVH外部开源项目Web页面构成调研.md
+- docs/research/16-LDVH外部开源项目Web页面构成调研.md
 deliverables:
-- docs/evals/16-LDVH外部开源项目Web页面构成调研.md
+- docs/research/16-LDVH外部开源项目Web页面构成调研.md
 closed_at: '2026-06-06T01:31:31.699938'

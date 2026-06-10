@@ -35,7 +35,7 @@ Intent 同时承接 TaskSet / 任务集取消后的任务集合职责。LDVH 不
 4. 已由现有 Intent 或 Task 完全覆盖的重复输入；
 5. 只是资料、观察、提醒或未决想法。
 
-不形成 Intent 的内容，应按性质留在当前执行上下文，或进入 Task、Memo、docs、refs、evals、ADR 或其他权威位置。
+不形成 Intent 的内容，应按性质留在当前执行上下文，或进入 Task、Memo、docs、refs、research、ADR 或其他权威位置。
 
 ---
 ## 2. 事实源边界

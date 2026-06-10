@@ -67,7 +67,7 @@ LDVH落地与检查涉及多个事实源，必须按以下边界处理：
 | AI 统一入口运行投影 | LDVH-AI-ENTRY.md |
 | 平台适配清单与要求响应矩阵 | `docs/specs/04.06-平台适配清单规范.md` 和当前平台清单 |
 | 管辖项目文档事实 | `{project.path}/docs/` |
-| 管辖项目内部分析 | `{project.path}/docs/evals/` |
+| 管辖项目内部分析 | `{project.path}/docs/research/` |
 | 管辖项目外部引用 | `{project.path}/docs/refs/` |
 | 管辖项目工作对象实例 | `{project.path}/ldvh-base/` |
 | Code 实现和校验命令 | `tools/` |
@@ -158,7 +158,7 @@ AI 应先执行只读检查，并在写入前输出当前检查结果。只读�
 2. 目标项目 `path` 是否可定位、是否与用户意图匹配、是否有读取权限；
 3. 当前平台是否能定位到平台适配清单，清单是否覆盖 AI-S1 至 AI-S15 和 LR-1 至 LR-7；
 4. LDVH-AI-ENTRY.md 是否存在，平台用户级 / 系统级薄入口、项目级例外入口或降级入口是否能引导 AI 进入 LDVH；
-5. 目标项目 `docs/`、`docs/evals/`、`docs/refs/` 是否存在或有合理降级；
+5. 目标项目 `docs/`、`docs/research/`、`docs/refs/` 是否存在或有合理降级；
 6. 目标项目 `ldvh-base/` 是否存在，且只为 active 或已授权例外模型创建事实源承载；
 7. 20 active 工作模型和 40 active 工作流程是否可定位；
 8. Code 校验命令、Web 展示或 Human-facing 入口是否满足本次目标，或是否可降级；
@@ -382,7 +382,7 @@ LDVH落地与检查至少应能派生以下测试锚点：
 | 先检后做 | 写入前已先输出当前检查结果和缺口 |
 | 配置有效 | `LDVH-GOVERNED-PROJECTS.yaml` 符合 03.06，未承载状态或报告正文 |
 | 路径确认 | 目标项目路径存在或缺失已触发 Gate，未误写其他项目 |
-| 文档工作区 | `docs/`、`docs/evals/`、`docs/refs/` 已检查或记录缺口 |
+| 文档工作区 | `docs/`、`docs/research/`、`docs/refs/` 已检查或记录缺口 |
 | 工作对象承载 | `ldvh-base/` 和 active 工作模型事实源目录按 20 和具体模型规范检查，未创建 removed/deferred/reserved 默认目录 |
 | 工作流程入口 | active 工作流程按 40 定位，planned/candidate 未被当作已生效 |
 | 落地需求来源 | 已从正式规范、平台适配清单和 41 聚合结果中提取本次范围内的落地要求，未用 42 自身固定清单替代 |

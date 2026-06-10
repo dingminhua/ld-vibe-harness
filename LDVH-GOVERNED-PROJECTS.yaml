@@ -59,7 +59,7 @@ product_description: |
   LD Vibe Harness 自身源码仓库的 dogfood 管理实例。用于在开发 LDVH 时，用 LDVH 规范体系管理 LDVH 自己的规范、Code、Web、测试和事实源。
 projects:
   - id: ld-vibe-harness
-    path: /Users/dmh2002/codex_projects/ld-vibe-harness
+    path: /Users/dmh2002/poker_hud_projects/ld-vibe-harness
     name: LD Vibe Harness
     description: |
       LDVH 自身源码仓库。该条目只表示本仓库开发过程采用 LDVH 自我管理，不代表用户安装 LDVH 后默认管辖 LDVH 本体。

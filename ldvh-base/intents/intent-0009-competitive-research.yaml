@@ -12,9 +12,9 @@ title_en: Competitive Research
 title_zh: 竞品调研
 related_pitfalls: []
 related_docs:
-- docs/evals/02-LDVH对Gstack的借鉴评估与深度调研.md
-- docs/evals/07-LDVH对Superpowers的借鉴评估与深度调研.md
-- docs/evals/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
+- docs/research/02-LDVH对Gstack的借鉴评估与深度调研.md
+- docs/research/07-LDVH对Superpowers的借鉴评估与深度调研.md
+- docs/research/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
 related_tasks:
 - task-0028
 - task-0043

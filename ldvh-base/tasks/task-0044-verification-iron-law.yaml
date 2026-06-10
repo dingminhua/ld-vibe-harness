@@ -26,7 +26,7 @@ related_adrs: []
 related_pitfalls: []
 related_docs:
 - docs/refs/06-竞品测试任务安排分析与最佳实践调研.md
-- docs/evals/07-LDVH对Superpowers的借鉴评估与深度调研.md
+- docs/research/07-LDVH对Superpowers的借鉴评估与深度调研.md
 deliverables:
 - ldvh-base/adrs/adr-0007（新建）
 - docs/specs/26-Task-任务.md（修订）

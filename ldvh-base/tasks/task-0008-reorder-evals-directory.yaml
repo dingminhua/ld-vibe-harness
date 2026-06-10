@@ -1,26 +1,26 @@
 id: task-0008
 type: task
-title: 整理 evals 目录
+title: 整理 research 目录
 status: closed
 created: '2026-06-04'
 updated: '2026-06-05'
 description: |
-  重新排列 evals 目录下文档序号，检查引用关系，确保编号连续且引用正确。本任务是 task-0007（梳理 50 号工作流基础规范）的前置任务，task-0007 应在本任务完成后执行。
+  重新排列 research 目录下文档序号，检查引用关系，确保编号连续且引用正确。本任务是 task-0007（梳理 50 号工作流基础规范）的前置任务，task-0007 应在本任务完成后执行。
 source_intent: intent-0004
 source: intent-0004
 parent_task: null
 sub_tasks: []
 acceptance: |
-  - [x] 已读取 evals 目录下所有文档，梳理当前编号和内容
+  - [x] 已读取 research 目录下所有文档，梳理当前编号和内容
   - [x] 已识别编号不连续、重复或需要调整的文档（3 段缺口：09→11、11→17、17→21）
-  - [x] 已检查 evals 文档对 specs 目录的引用是否正确（全部有效；evals/12 引用不存在的 evals/16 已记录）
+  - [x] 已检查 research 文档对 specs 目录的引用是否正确（全部有效；research/12 引用不存在的 research/16 已记录）
   - [x] 已形成编号重排方案并通过 Human Gate 确认（11→10, 17→11, 21→12, 22→13, 23→14, 24→15）
-  - [x] 已更新相关引用和索引（6 处 evals 内部交叉引用已更新）
+  - [x] 已更新相关引用和索引（6 处 research 内部交叉引用已更新）
 verification: |
-  ls specs/evals 确认 15 个文件编号连续 01-15；检查所有 evals 内部引用已更新为新编号。
+  ls docs/research 确认 15 个文件编号连续 01-15；检查所有 research 内部引用已更新为新编号。
   ## 验证结果
 
-  specs/evals 目录 15 个文件编号连续 01-15；所有 evals 内部交叉引用已更新为新编号。
+  docs/research 目录 15 个文件编号连续 01-15；所有 research 内部交叉引用已更新为新编号。
 
   ## 结论
 
@@ -29,10 +29,10 @@ assignee: null
 related_adrs: []
 related_changes: []
 closure_evidence: |
-  已完成 evals 目录重排：15 个文件从编号有缺口的 [01-09,11,17,21-24] 整理为连续 [01-15]；6 处内部交叉引用已更新；evals/12 引用的 evals/16（不存在）已记录。
+  已完成 research 目录重排：15 个文件从编号有缺口的 [01-09,11,17,21-24] 整理为连续 [01-15]；6 处内部交叉引用已更新；research/12 引用的 research/16（不存在）已记录。
   ## 验证结果
 
-  evals 目录 15 个文件编号已从 [01-09,11,17,21-24] 重排为连续 [01-15]；6 处内部交叉引用已更新；evals/12 引用的 evals/16（不存在）已记录。
+  research 目录 15 个文件编号已从 [01-09,11,17,21-24] 重排为连续 [01-15]；6 处内部交叉引用已更新；research/12 引用的 research/16（不存在）已记录。
 
   ## 结论
 

@@ -11,7 +11,7 @@ acceptance: |-
   - [x] 原 10 文档文件名、标题和头部定位调整为新编号 04
   - [x] specs 根目录正式规范中对原 10 文档的引用已更新为新路径和新编号
   - [x] Rules 中对原 10 文档的引用已更新为新路径和新编号
-  - [x] 不处理 specs/evals、specs/refs、tools/tests/web 等非本轮确认范围引用
+  - [x] 不处理 docs/research、specs/refs、tools/tests/web 等非本轮确认范围引用
   - [x] 可用文档规范检查和引用检查通过
 blocked_by: []
 parent_task: null

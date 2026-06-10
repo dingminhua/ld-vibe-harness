@@ -3,7 +3,7 @@
 > 创建日期：2026-06-01
 > 更新日期：2026-06-01
 > 定位：LD Vibe Harness 内部常用提示词模板集合，用于在临时对话中快速发起规范检查、调研、审查和多角色思考
-> 编号归属：`specs/evals/` 项目评估与内部辅助文档，编号仅用于排序和引用便利，不属于 specs 正式规范编号体系
+> 编号归属：`docs/research/` 项目评估与内部辅助文档，编号仅用于排序和引用便利，不属于 specs 正式规范编号体系
 > 使用边界：本文提供可复制使用的提示词模板，不直接构成 LD Vibe Harness 强制规则；实际执行仍以 `specs/00-79`、项目 Rules 和 `ldvh-base/` 事实实例为准
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档规范.md`、`specs/04-事实源边界与承载规范.md`
 > 相关规范：`specs/05-Trae-Solo环境规范.md`、`specs/08-工作流程基础规范.md`、`specs/41-multi-role-thinking-多角色思考.md`、`specs/41.06-Contract.md`
@@ -28,7 +28,7 @@
 ### 2.2 可复制提示词
 
 ```markdown
-请对 `/Users/dmh2002/trae_projects/ld-vibe-harness/specs` 根目录下的 Markdown 文件执行一次“自身规范符合性”检查，不检查 `specs/evals/` 和 `specs/refs/` 子目录，除非它们被根目录文件引用且必须作为背景读取。
+请对 `/Users/dmh2002/trae_projects/ld-vibe-harness/specs` 根目录下的 Markdown 文件执行一次“自身规范符合性”检查，不检查 `docs/research/` 和 `specs/refs/` 子目录，除非它们被根目录文件引用且必须作为背景读取。
 
 目标：判断 specs 根目录正式规范文件是否符合 LDVH 自身规范体系要求，并输出可执行的整改建议。不要直接修改文件，先只做审查报告；如发现必须修改的事项，请列为建议动作，等待我确认。
 

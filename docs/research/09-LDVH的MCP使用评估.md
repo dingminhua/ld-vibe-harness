@@ -307,9 +307,9 @@ Memory 类、文件系统类、云服务 / 数据库 / 支付类 MCP 不进入 L
 
 ---
 
-## 8. 与现有 evals 的关系
+## 8. 与现有 research 的关系
 
-| 现有 evals | 与本文的关系 |
+| 现有 research | 与本文的关系 |
 |---|---|
 | 01-LDVH对Linear的借鉴评估 | 01 §4.1 速度感和 §4.5 状态流动体验可由 MCP 辅助实现（如 Sequential Thinking 辅助复杂场景识别），但 MCP 不是实现速度感的主要手段 |
 | 02-LDVH对Gstack的借鉴评估与深度调研 | 无直接关联 |

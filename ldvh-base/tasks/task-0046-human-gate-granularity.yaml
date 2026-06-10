@@ -27,7 +27,7 @@ related_adrs: []
 related_pitfalls: []
 related_docs:
 - docs/refs/06-竞品测试任务安排分析与最佳实践调研.md
-- docs/evals/02-LDVH对Gstack的借鉴评估与深度调研.md
+- docs/research/02-LDVH对Gstack的借鉴评估与深度调研.md
 deliverables:
 - ldvh-base/adrs/adr-0008（新建）
 - docs/specs/05-工作模型基础规范.md（修订）

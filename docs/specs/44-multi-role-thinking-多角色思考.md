@@ -76,7 +76,7 @@
 
 根据主题复杂度，可增加以下 Context：
 
-1. `docs/evals/` 中与本次主题相关的内部评估文档；
+1. `docs/research/` 中与本次主题相关的内部评估文档；
 2. `docs/refs/` 中与平台、第三方能力或外部资料相关的引用文档；
 3. 已存在的 Task、ADR、Memo、Pitfall、Change、Intent 实例，或管辖项目配置；
 4. 当前平台适配清单、42 落地与检查报告，以及当前环境中可调用 Agent、结构化问询、Hook、CI、Code 或 Web 能力的现场证据；若主题属于管辖项目，还应读取工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 和对应项目事实源。

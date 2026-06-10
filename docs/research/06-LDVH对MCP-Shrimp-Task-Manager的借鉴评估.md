@@ -3,7 +3,7 @@
 > 创建日期：2026-05-30
 > 更新日期：2026-05-30
 > 定位：LD Vibe Harness 对 MCP Shrimp Task Manager 的源码级借鉴评估
-> 编号归属：`specs/evals/` 项目评估文档，编号仅用于排序和引用便利，不属于 specs 正式规范编号体系
+> 编号归属：`docs/research/` 项目评估文档，编号仅用于排序和引用便利，不属于 specs 正式规范编号体系
 > 调研边界：基于 `/Users/dmh2002/trae_projects/mcp-shrimp-task-manager` 本地仓库的 README、docs、src、tools/task-viewer 与配置文件进行分析，重点评估其对 LD Vibe Harness 的可借鉴方向
 > 执行效力：本文为内部调研和方案比较，不直接构成 LD Vibe Harness 强制规则；结论进入 `specs/00-79` 正式规范区间或 ADR 后才成为稳定规则
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/01-目录说明.md`、`specs/04-事实源边界与承载规范.md`
@@ -223,7 +223,7 @@ Shrimp 有两套 Web 能力。
 | Shrimp 能力 | LDVH 映射位置 | 可借鉴方式 | 边界要求 |
 |---|---|---|---|
 | MCP Server 工具接口 | LDVH 工具 | 将任务查询、任务拆分、状态切换、验证、上下文包生成等能力工具化 | MCP Server 只能是工具实现形态，不能定义新的事实源权威位置 |
-| `plan_task` / `analyze_task` / `reflect_task` | LDVH 行动模型、Skill | 将计划、分析、反思拆成可识别阶段 | 分析结论只有写入 evals、ADR、Task 或 Evidence 后才成为稳定事实 |
+| `plan_task` / `analyze_task` / `reflect_task` | LDVH 行动模型、Skill | 将计划、分析、反思拆成可识别阶段 | 分析结论只有写入 research、ADR、Task 或 Evidence 后才成为稳定事实 |
 | `split_tasks` | Task / TaskSet 对象、需求转任务行动 | 借鉴任务拆分、依赖解析、实现指南和验证标准 | 自动拆分不得绕过 Human Gate，不得擅自扩大范围 |
 | Task 模型 | Task 事实模型 | 借鉴依赖、关联文件、实现指南、验证标准、完成摘要、Agent 建议字段 | 字段契约需由 LDVH 12 Task 规范定义，实例应在 `ldvh-base/` |
 | `execute_task` | Task 执行动作 | 借鉴执行前依赖检查、状态切换、相关文件读取和执行 Prompt | 执行状态变更应先写入权威 Task 实例，不能只在工具缓存中变更 |
@@ -234,7 +234,7 @@ Shrimp 有两套 Web 能力。
 | Agent 自动匹配 | Agent 调度辅助、Web 建议 | 借鉴基于任务内容的 Agent 建议 | Agent 调度须服从 11 §8，不能自动创建或授权 Agent |
 | 内嵌 WebGUI | Web 信息同步层 | 借鉴轻量任务展示和 SSE 刷新 | WebGUI 状态不能替代文件事实源 |
 | 独立 Task Viewer | Web 信息同步层 + Tools 辅助层 | 借鉴任务表格、详情、历史、模板、Agent 管理和人类工作台 | Web 写入必须受控，写入后回读 Git 文件事实源并记录 Change |
-| research_mode | specs/evals、ADR、Memo、行动模型 | 借鉴研究状态整合和后续步骤约束 | 研究过程不等于结论，稳定结论需进入 evals、ADR 或正式规范 |
+| research_mode | docs/research、ADR、Memo、行动模型 | 借鉴研究状态整合和后续步骤约束 | 研究过程不等于结论，稳定结论需进入 research、ADR 或正式规范 |
 | init_project_rules | 项目初始化行动、Rules 机制 | 借鉴项目入口规则初始化思路 | 规则变更触发 Human Gate，不能自动泛滥生成规则 |
 
 ---
@@ -298,7 +298,7 @@ Shrimp 的 `tasks.json`、memory 备份和本地 git history 都服务于跨会�
 |---|---|
 | 稳定规范 | `specs/00-79` |
 | 外部资料摘录 | `specs/refs/` |
-| 项目级评估 | `specs/evals/` |
+| 项目级评估 | `docs/research/` |
 | 任务状态与执行字段 | `ldvh-base/tasks/`或未来 Task 实例目录 |
 | 决策结论 | `ldvh-base/adrs/`或对应 ADR 实例目录 |
 | 执行证据 | `ldvh-base/evidence/`或未来 Evidence 实例目录 |
@@ -322,9 +322,9 @@ Shrimp 的 Prompt 模板系统说明，AI 工具不只是 API 返回 JSON，也�
 
 ### 4.6 将研究模式规范化
 
-Shrimp 的 `research_mode` 要求输入 topic、previousState、currentState 和 nextSteps，用于整合阶段性研究状态。这对 LDVH 的 `specs/evals/` 有直接借鉴价值。
+Shrimp 的 `research_mode` 要求输入 topic、previousState、currentState 和 nextSteps，用于整合阶段性研究状态。这对 LDVH 的 `docs/research/` 有直接借鉴价值。
 
-LDVH 可形成“研究模式行动模型”或 evals 写作骨架：
+LDVH 可形成“研究模式行动模型”或 research 写作骨架：
 
 1. 识别调研问题；
 2. 声明调研边界和执行效力；
@@ -469,7 +469,7 @@ Shrimp Task Viewer 中的多 profile、任务历史、模板管理、Agent 管�
 
 ### 6.6 建立研究模式实践路径
 
-建议将 `specs/evals/` 作为研究模式主要落点，并形成固定评估骨架：
+建议将 `docs/research/` 作为研究模式主要落点，并形成固定评估骨架：
 
 1. 调研对象；
 2. 调研边界；
@@ -482,7 +482,7 @@ Shrimp Task Viewer 中的多 profile、任务历史、模板管理、Agent 管�
 9. 候选正式规范或 ADR；
 10. 后续行动。
 
-本文即按该方向重写，后续可进一步沉淀为 evals 模板或研究模式行动模型。
+本文即按该方向重写，后续可进一步沉淀为 research 模板或研究模式行动模型。
 
 ---
 
@@ -498,7 +498,7 @@ Shrimp Task Viewer 中的多 profile、任务历史、模板管理、Agent 管�
 | Task 执行动作 | `specs/45-Task执行` | 约束状态前置、依赖检查、执行证据和验证 | 创建 planned 行动正式规范需确认 |
 | Task 阻塞处理 | `specs/46-Task阻塞处理` | 处理依赖未满足、外部等待和 Human Gate 阻塞 | 创建 planned 行动正式规范需确认 |
 | Review 执行动作 | `specs/47-Review执行` | 区分工具验证、AI 自检、人类验收和 Human Gate | 创建 planned 行动正式规范需确认 |
-| 研究模式行动模型或 evals 模板 | `specs/50-79` 或 `specs/evals/` 模板 | 将外部调研转为可复用工程活动 | 若进入正式行动规范需确认 |
+| 研究模式行动模型或 research 模板 | `specs/50-79` 或 `docs/research/` 模板 | 将外部调研转为可复用工程活动 | 若进入正式行动规范需确认 |
 | MCP 工具接入 ADR | `ldvh-base/adrs/` | 判断 LDVH 是否以 MCP Server 形式提供 LDVH 工具 | ADR 创建和工具方向确认需评估 |
 | Web Tools 任务工作台设计 | `web/` 实现规划或工具设计文档 | 提升人类确认质量 | 若写入或改变事实源链路需确认 |
 | Prompt 模板治理规则 | `specs/12` 子文档、Skill/Tools 实践文档 | 防止模板与规范冲突 | 影响 AI 行动入口时需确认 |

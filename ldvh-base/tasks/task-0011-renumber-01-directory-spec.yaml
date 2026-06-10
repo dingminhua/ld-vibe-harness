@@ -11,7 +11,7 @@ acceptance: |-
   - [x] 01 文档文件名、标题和头部定位调整为"目录说明"
   - [x] specs 根目录正式规范中对原 01 文档的引用已更新为新路径和新标题
   - [x] Rules 中对原 01 文档的引用已更新为新路径和新标题
-  - [x] 不处理 specs/evals、specs/refs、tools/tests/web 等非本轮确认范围引用
+  - [x] 不处理 docs/research、specs/refs、tools/tests/web 等非本轮确认范围引用
   - [x] 可用文档规范检查和引用检查通过
 blocked_by: []
 parent_task: null
@@ -20,7 +20,7 @@ assignee: AI
 related_adrs: []
 related_changes: []
 closure_evidence: |-
-  01 文档 git mv 为 specs/01-目录说明.md，标题从"# LDVH 目录说明"调整为"# 目录说明"；specs 根目录 14 个文件和 Rules 2 处引用已更新；specs/evals 引用未处理（范围外）。文档规范和引用检查皆通过。
+  01 文档 git mv 为 specs/01-目录说明.md，标题从"# LDVH 目录说明"调整为"# 目录说明"；specs 根目录 14 个文件和 Rules 2 处引用已更新；docs/research 引用未处理（范围外）。文档规范和引用检查皆通过。
   ## 验证结果
 
   01 文档已重命名为 specs/01-目录说明.md，标题已调整；specs 根目录 14 个文件和 Rules 2 处引用已更新；文档规范和引用检查通过。

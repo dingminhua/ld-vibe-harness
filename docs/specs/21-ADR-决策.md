@@ -37,7 +37,7 @@ ADR 不是所有判断的默认归宿。AI 可以在当前任务中做临时判�
 4. 已由 docs/specs、Rules / Instructions 或其他正式规范明确约束的重复判断；
 5. 仅属于风险判断、依赖关系、产物引用或检查结果的字段内容。
 
-不形成 ADR 的内容，应按性质进入 Task 字段、Memo、docs/evals、docs/refs、当前执行上下文或对应事实源。
+不形成 ADR 的内容，应按性质进入 Task 字段、Memo、docs/research、docs/refs、当前执行上下文或对应事实源。
 
 ### 1.3 ADR 与规范的边界
 
@@ -150,7 +150,7 @@ ADR 中的决策升级为稳定规则时，应：
 以下情况应评估 Human Gate：
 
 1. 创建、删除或重命名 ADR 实例；
-2. 将 Memo、Task 过程判断、临时讨论或 docs/evals 结论升级为 ADR；
+2. 将 Memo、Task 过程判断、临时讨论或 docs/research 结论升级为 ADR；
 3. 将 `proposed` ADR 确认为 `accepted`；
 4. 将 `accepted` ADR 标记为 `deprecated` 或 `superseded`；
 5. 修改 `accepted` ADR 的 `decision` 字段；

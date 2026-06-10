@@ -17,8 +17,8 @@ Change 是工作模型中的特殊对象：它不使用 `ldvh-base/changes/` 下
 
 以下修改应通过符合本文 §6 的 commit message 记录为 Change：
 
-1. 修改 docs/specs 正式规范、evals 吸收结果、refs 摘要或输入材料吸收结论；
-2. 修改 docs 正文、docs/evals 或 docs/refs 中的稳定项目事实；
+1. 修改 docs/specs 正式规范、research 吸收结果、refs 摘要或输入材料吸收结论；
+2. 修改 docs 正文、docs/research 或 docs/refs 中的稳定项目事实；
 3. 修改 `ldvh-base/` 下的事实实例；
 4. 修改 Rules / Instructions、Skill、Agent、环境适配记录或运行投影；
 5. 修改 Code、Web、测试、配置或会影响 LDVH 行为的实现文件；
@@ -188,7 +188,7 @@ Refs: <object-refs>
 | `web` | Web 实现 |
 | `tests` | 测试代码 |
 | `config` | 项目配置 |
-| `evals` | 内部评估 |
+| `research` | 内部评估 |
 | `refs` | 外部引用资料 |
 
 scope 为推荐值，项目可以在不破坏解析的前提下扩展。

@@ -35,7 +35,7 @@ Memo 是分流前的事实对象。它可以后续转化或关联到 Task、ADR�
 3. 已经满足长期决策准入的判断，应创建 ADR；
 4. 已经满足目标入口准入的输入，应创建 Intent；
 5. 纯闲聊、寒暄或无后续价值的信息；
-6. 已由 docs、refs、evals 或现有对象完整承载的信息。
+6. 已由 docs、refs、research 或现有对象完整承载的信息。
 
 ---
 ## 2. 事实源边界
@@ -139,7 +139,7 @@ Memo 的创建、状态变化、分流和归档都应留下 Change。Change 的 
 以下情况应评估 Human Gate：
 
 1. 创建、删除或重命名 Memo 实例；
-2. 将对话输入、docs/evals 结论或执行发现写入 Memo；
+2. 将对话输入、docs/research 结论或执行发现写入 Memo；
 3. 将 `draft` Memo 确认为 `active`；
 4. 将 `active` Memo 分流为 Task、ADR、Intent、Pitfall、docs、管辖项目配置更新或其他事实源；
 5. 将 Memo 归档，且归档会丢失后续跟踪入口；
