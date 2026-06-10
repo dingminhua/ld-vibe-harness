@@ -1,7 +1,7 @@
 # LDVH 推进评估与候选事项总览
 
 > 创建日期：2026-06-09
-> 更新日期：2026-06-10（第三次更新）
+> 更新日期：2026-06-10（第四次更新）
 > 定位：LDVH 对 AI 执行者需求匹配、规范落地缺口、候选事项分流和推进方向的内部评估与行动参考
 > 调研边界：不直接构成强制规则
 > 执行效力：无；稳定结论需进入 docs/specs 正文区、工作对象、Code、Web、测试、运行投影或最佳实践后才具备对应效力
@@ -35,11 +35,12 @@
 | 工作流程集合重组 | 已落地基础索引 | `docs/specs/40-工作流程集合索引.md`、`docs/specs/41-44` | 41 规范落地统筹、42 LDVH落地与检查、44 多角色思考已 active；43 已并入 42 并作为 removed 槽位保留；45-58 仍为 candidate，不得当作已生效主文档 |
 | 反合理化、失败暂停和完成证据 | 已落地基础规则 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 已明确未验证不得关闭、失败需暂停分流、closure evidence 需可追溯 |
 | Code 可验证先行 | 已落地 | `docs/specs/07-Code实现规范.md` | 不强制经典 TDD，但强制新增、扩展或修改 Code 前明确成功条件、失败条件、正反样例、边界样例、测试命令或等价验证方式 |
-| landing report 基础实现 | 已落地 | `tools/specs_validate.py landing-report`、`tests/test_specs_validate.py`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 当前输出 41 篇来源文件、184 条落地要求 + 4 条能力缺口；未关闭缺口 77 个，按 owner_area 分类：code 16、human_gate 28、runtime_projection 28、specs 1、workflow 4；报告状态为 Code 派生启发式，不是事实源 |
+| landing report 基础实现 | 已落地 | `tools/specs_validate.py landing-report`、`tests/test_specs_validate.py`、`docs/specs/41-landing-orchestration-规范落地统筹.md` | 当前输出 41 篇来源文件、185 条落地要求 + 4 条能力缺口；未关闭缺口 78 个，按 owner_area 分类：code 16、human_gate 28、runtime_projection 29、specs 1、workflow 4；报告状态为 Code 派生启发式，不是事实源 |
 | Human Gate 最小证据结构 | 已落地基础规则与 Code 检查 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`tools/specs_validate.py human-gate-report`、`tests/test_specs_validate.py` | 已形成通用最小记录块（时间/决策/范围/约束），并让 Task、ADR、Web UI 和 landing orchestration 引用同一结构；Human Gate 已收敛为轻量人类决策记录，不强制关联 Task；Code 已能检查已写出的 `Human Gate 记录` 文本块和 YAML 结构；landing-report 已能按 Human Gate 子类分流缺口（必须人类决策记录 21、规范口径说明 5、承接实现支持 1、Code 降级提示/覆盖 1）；后续仍需 Web/事实源回写消费 |
 | 规范落地治理吸收 | 已落地 | `docs/specs/00`、`04` 系列、`06`、`07`、`10`、`26`、`41` | 规范落地要求、环境适配、运行投影、平台清单、LDVH/个人特别要求已重组为 04 系列链路 |
 | Web 语义化与阅读体验改进 | 已部分落地 | `web/`、`web/docs/`、`docs/specs/08-Web信息同步规范.md` | 已有 Dashboard、ObjectList、ObjectDetail、Validate、Changelog、ReadingPanel 等实现与设计文档；Human Gate 证据导出、受控回写和检查面仍未闭环 |
-| ECC 运行系统经验对照 | 已形成路线调整 | `docs/research/19-LDVH对ECC运行系统机制的暂停自研与学习评估.md`、`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、ECC 本地项目 `scripts/ecc.js`、`scripts/install-plan.js`、`scripts/status.js`、`scripts/doctor.js`、`manifests/` | 研读后确认 LDVH 应学习 ECC 的运行系统组织方法，而非内容规模或安装器；当前最高优先级调整为只读 `landing-plan` 最小输出，暂缓 apply/repair、长期状态源、大规模 CLI、多平台自动分发和大量 Skill/Agent 化 |
+| ECC 运行系统经验对照 | 已形成路线调整并完成第一轮规范承接 | `docs/research/19-LDVH对ECC运行系统机制的暂停自研与学习评估.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`、ECC 本地项目 `scripts/ecc.js`、`scripts/install-plan.js`、`scripts/status.js`、`scripts/doctor.js`、`manifests/` | 研读后确认 LDVH 应学习 ECC 的组织方法，但不新增“运行系统层”作为 00 全局概念；已收敛为“工作流程过程输出”规则：06 定义通用边界，41 定义 `landing-plan`，42 消费 `landing-plan`，44 定义多视角模式选择与汇总输出；apply/repair、长期状态源、大规模 CLI、多平台自动分发和大量 Skill/Agent 化继续暂缓 |
+| Web Validate 落地检查摘要 | 已落地基础展示 | `tools/specs_validate.py web-validate`、`web/api/routes/validate.ts`、`web/src/pages/Validate.tsx`、`web/docs/05-Validate.md` | Validate 页面已消费 Code 只读数据合同，展示 `landingCheck`、`landingReport`、`humanGateReport` 摘要、剩余缺口和能力缺口；当前仍为展示和诊断面，不替代事实源或 Human Gate |
 
 仍在推进中的事项不因本文标注而自动关闭。本文只记录“已进入正式承接位置或 Code 实现”的事实，后续验收仍应回到对应规范、Code 测试、运行投影、工作对象或 Human Gate 证据。
 
@@ -73,18 +74,19 @@ Web 协调 Human
 
 ### 2.1 ECC 对照后的路线调整
 
-研读工作区 ECC 项目和 00 总纲后，当前推进路线需要从“继续细挖单类缺口”调整为“先形成只读运行计划视图”。
+研读工作区 ECC 项目、00 总纲和 06 工作流程基础规范后，当前推进路线需要从“继续细挖单类缺口”调整为“先把复杂工作流程的过程输出规范化，再由具体流程定义自己的只读计划、状态、诊断或汇总输出”。
 
-ECC 值得学习的不是大量 Rules、Skills、Commands、Agents 或完整安装器，而是运行系统组织方法：用 manifest 描述能力边界，用 plan 先只读解析操作，用统一入口降低发现成本，用 status/doctor 聚合健康状态，用跨平台 target/adapters 组织运行投影。
+ECC 值得学习的不是大量 Rules、Skills、Commands、Agents 或完整安装器，而是组织方法：用 manifest 描述能力边界，用 plan 先只读解析操作，用统一入口降低发现成本，用 status/doctor 聚合健康状态，用跨平台 target/adapters 组织运行投影。
 
-LDVH 吸收这些经验时必须受 00 总纲约束：
+LDVH 吸收这些经验时必须受 00 总纲和 06 工作流程基础规范约束：
 
 1. 以 AI 执行者为第一服务对象，优先降低 AI 定位、判断、验证和回写成本；
 2. 维持开发环境、工作模型、工作流程、Code、Web 五类构成要素边界，不把 ECC 的运行资产形态原样搬入 LDVH；
 3. 事实源必须回 Git 文件，不能引入 SQLite、缓存、工具输出或 Web 状态作为最终事实源；
-4. 遵守防递归建设原则，先做能服务当前 41/42 dogfood 的最小只读闭环，不扩张为完整 CLI、安装器、repair、长期状态源或多平台分发系统。
+4. 遵守防递归建设原则，先做能服务当前 41/42 dogfood 的最小只读过程输出，不扩张为完整 CLI、安装器、repair、长期状态源或多平台分发系统；
+5. `landing-plan`、status、doctor、多视角汇总等都应被视为具体工作流程的过程输出，默认不是事实源，不得隐式触发写入、apply、repair 或缺口关闭。
 
-因此当前最高优先级调整为：先设计并实现只读 `landing-plan` 最小输出合同，把 `landing-report`、`runtime-projection`、`human-gate-report`、`ldvh-landing-check`、`fact_validate` 和 `specs_validate` 聚合成 AI/Human 可消费的计划视图，再基于该 plan 继续治理运行投影、Human Gate、Code/Web 和回写目标。
+因此当前路线已调整为：06 先定义工作流程过程输出的通用边界；41 将 `landing-plan` 定义为规范落地统筹流程的只读过程输出合同；42 消费 `landing-plan` 做检查、状态聚合和缺口诊断；44 将“多视角”收敛为模式选择与汇总输出，而不套用 `landing-plan`；07/08/09/10 分别约束 Code 实现、Web 展示、事实源回写和验证。下一步应基于这条路线重构 04 系列，而不是继续把 `landing-plan` 解释为 00 级新层。
 
 ---
 
@@ -131,7 +133,7 @@ LDVH 吸收这些经验时必须受 00 总纲约束：
 
 ## 4. 当前缺口清单
 
-以下为按 `docs/specs/41-landing-orchestration-规范落地统筹.md` 执行检查后的主要缺口。当前 `tools/specs_validate.py landing-report` Code 派生聚合范围为 41 篇正式规范、184 条规范落地要求 + 4 条能力缺口。
+以下为按 `docs/specs/41-landing-orchestration-规范落地统筹.md` 执行检查后的主要缺口。当前 `tools/specs_validate.py landing-report` Code 派生聚合范围为 41 篇正式规范、185 条规范落地要求 + 4 条能力缺口。
 
 当前 `landing-report` 输出摘要为：
 
@@ -139,10 +141,10 @@ LDVH 吸收这些经验时必须受 00 总纲约束：
 |---|---:|
 | closed | 111 |
 | open | 14 |
-| degraded | 34 |
+| degraded | 35 |
 | needs_human_gate | 25 |
 | 能力缺口（degraded） | 4 |
-| **未关闭缺口总计** | **77** |
+| **未关闭缺口总计** | **78** |
 
 未关闭缺口按 owner_area 分类：
 
@@ -150,13 +152,13 @@ LDVH 吸收这些经验时必须受 00 总纲约束：
 |---|---:|---|
 | Code / Test | 16 | degraded 4、open 12 |
 | Human Gate | 28 | degraded 3、needs_human_gate 24、open 1 |
-| 运行投影 | 28 | degraded 28 |
+| 运行投影 | 29 | degraded 29 |
 | Specs | 1 | needs_human_gate 1 |
 | Workflow / Skill | 4 | degraded 3、open 1 |
 
 上述状态是 Code 派生启发式，不是最终事实源。关闭、降级或转入 Human Gate 仍需回到正式规范、验证证据、工作对象或 Human 确认记录。
 
-运行投影 28 个 degraded 缺口已经被进一步分为生命周期触发同步 22、平台能力承接同步 4、第三方 Skill 投影 1、投影覆盖诊断降级 1。经 ECC 对照后，这些缺口不应继续只按单项逐条修复，而应先进入 `landing-plan` 的 `gaps` 与 `proposed_actions`，由 plan 判断是补入口、补 Code、补 Web、补 docs、补 Task，还是保持 degraded。
+运行投影 29 个 degraded 缺口已经进入 `landing-plan` 的 `gaps` 与 `proposed_actions`，并由 remediation 分类给出初步行动方向。经 ECC 对照和 06 过程输出规范化后，这些缺口不应继续只按单项逐条修复，而应由 41/42 过程输出判断是补入口、补 Code、补 Web、补 docs、补 Task，还是保持 degraded。
 
 状态说明：`closed-basic` 表示基础实现已落地，但仍存在增强或证据接入后续项。
 
@@ -171,7 +173,7 @@ LDVH 吸收这些经验时必须受 00 总纲约束：
 | G-07 | 运行闭环测试用例事实源位置未稳定 | open | 具体流程的可测试性锚点无法沉淀为长期测试用例 | 10 + Code：确定测试用例事实源或先以 tests 承接 |
 | G-08 | 工作流程 45-58 仍为候选 | open | 意图接入、任务规划、任务执行、验证关闭等最小运作流程尚未 formalize | 工作流程：逐个讨论并创建或降级 |
 | G-09 | Human Gate 最小证据结构已定义，Code 已能检查记录块 | closed-basic | 06 已定义最小记录块（时间/决策/范围/约束），Task、ADR、Web UI 和 41 已引用；Human Gate 已收敛为轻量人类决策记录，不强制关联 Task；`tools/specs_validate.py human-gate-report` 已能检查已写出的 `Human Gate 记录` 是否缺字段或字段为空；landing-report 已能按 Human Gate 子类分流缺口（必须人类决策记录 21、规范口径说明 5、承接实现支持 1、Code 降级提示/覆盖 1）；但 Web 尚未形成自动导出、受控写入或事实源回写链路 | Web / 工作对象：实现 Gate 证据导出、回写与消费检查 |
-| G-10 | Web 信息同步仍未形成 Human Gate 和检查闭环 | open | Human-facing 闭环、受控编辑、Gate UI、检查面和事实源回写未形成稳定运行面 | Web：优先展示风险、待确认事项、验证证据、缺口状态、事实源漂移、Task 关闭条件和 ADR 影响 |
+| G-10 | Web 信息同步已形成基础检查摘要，Human Gate 和回写闭环仍未完成 | degraded | Validate 页面已消费 `web-validate` 只读数据合同，展示 42 检查、landing-report、Human Gate、剩余缺口和能力缺口摘要；但 Human-facing 确认、受控编辑、Gate UI、证据导出和事实源回写未形成稳定运行面 | Web：继续展示风险、待确认事项、验证证据、缺口状态、事实源漂移、Task 关闭条件和 ADR 影响，并补 Human Gate 证据导出与受控回写 |
 | G-11 | 工作对象事实源历史路径漂移 | closed-basic | `python3 tools/fact_validate.py ldvh-base` 当前报告 files=89 errors=0 warnings=0；旧路径引用已修复为当前规范路径，历史引用已保留为描述性历史叙事；后续新增事实源仍需持续校验 | 已由 `tools/fact_validate.py` 承接；后续需在 42 检查中持续消费 |
 
 ---
@@ -301,19 +303,21 @@ LDVH 吸收这些经验时必须受 00 总纲约束：
 
 ## 7. 建议优先行动
 
-1. **设计并实现只读 `landing-plan` 最小输出**：当前最高优先级。第一版应聚合 `landing-report`、`runtime-projection`、`human-gate-report`、`ldvh-landing-check`、`fact_validate` 和 `specs_validate`，输出 `scope`、`facts_read`、`capabilities`、`requirements`、`gaps`、`proposed_actions`、`writes_required`、`human_gate`、`validation_plan` 和 `writeback_targets`；默认只读，不写入、不 repair、不创建长期状态源。
+1. **~~设计并实现只读 `landing-plan` 最小输出~~**：已完成基础版。第一版已聚合 `landing-report`、`runtime-projection`、`human-gate-report`、`ldvh-landing-check`、`fact_validate` 和 `specs_validate`，输出 `scope`、`facts_read`、`capabilities`、`requirements`、`gaps`、`proposed_actions`、`writes_required`、`human_gate`、`validation_plan` 和 `writeback_targets`；默认只读，不写入、不 repair、不创建长期状态源。
 
-2. **基于 `landing-plan` 继续治理运行投影 28 个 degraded 缺口**：运行投影已分为生命周期触发同步 22、平台能力承接同步 4、第三方 Skill 投影 1、投影覆盖诊断降级 1；下一步不再仅继续细挖单项，而是先让 plan 判断每类缺口应补入口、补 Code、补 Web、补 docs、补 Task，还是保持 degraded。
+2. **~~规范工作流程过程输出边界~~**：已完成第一轮承接。06 已定义“工作流程过程输出”通用规则；41 定义 `landing-plan` 合同；42 定义消费 `landing-plan` 和自身检查/状态/诊断输出边界；44 定义多视角触发、模式选择和汇总输出；07/08/09/10 分别约束实现、展示、回写和验证。
 
-3. **建立平台能力映射表作为辅助线**：吸收 ECC 跨平台 target/adapters 的组织方法，但不直接创建多平台持久入口；先映射入口可见、流程复用、子 Agent、生命周期触发、确定性反馈、Human 确认在 Trae/Codex 等环境中的候选承接与降级边界。
+3. **重构 04 系列主轴**：在 06/41/42 已明确过程输出边界后，下一步应校准 04 父规范、04.01、04.02、04.03 和 04.06，明确规范落地要求如何进入 41/42，运行投影与 `landing-plan` 的边界是什么，平台能力映射如何成为检查输入，而不是把 `landing-plan` 当作运行投影本体。
 
-4. **~~修复或分流工作对象事实源漂移~~**：已完成。`fact_validate.py ldvh-base` 当前报告 files=89 errors=0 warnings=0。
+4. **建立平台能力映射表作为辅助线**：吸收 ECC 跨平台 target/adapters 的组织方法，但不直接创建多平台持久入口；先映射入口可见、流程复用、子 Agent、生命周期触发、确定性反馈、Human 确认在 Trae/Codex 等环境中的候选承接与降级边界。
 
-5. **~~Dogfood 42~~**：已完成。`tools/specs_validate.py ldvh-landing-check` 已能对 LDVH 自身执行只读检查；当前 dogfood 结果为 landing_report open、human_gate degraded，其余 closed。
+5. **~~修复或分流工作对象事实源漂移~~**：已完成。`fact_validate.py ldvh-base` 当前报告 files=89 errors=0 warnings=0。
 
-6. **推进 Human Gate 证据回写消费**：最小证据结构已进入 06、08、21、26 和 41，Human Gate 已收敛为轻量人类决策记录，Code 已能检查已写出的 `Human Gate 记录`；landing-report 已能按 Human Gate 子类分流缺口；当前 28 个 Human Gate 缺口中 21 个为"未来触发时记录"，不需要现在补记录；下一步应接入 `landing-plan` 和 Web/Human-facing 检查面，明确哪些需要当前确认、哪些只是未来触发条件。
+6. **~~Dogfood 42~~**：已完成。`tools/specs_validate.py ldvh-landing-check` 已能对 LDVH 自身执行只读检查；当前 dogfood 结果为 landing_report open、human_gate degraded，其余 closed。
 
-7. **暂缓完整 CLI、apply/repair 和规模化资产库**：统一 CLI、受控写入、repair、多平台自动分发、大量 Skill/Agent 化都不作为当前第一步；先在现有 Code 中形成 `landing-plan` 输出合同，dogfood 稳定后再讨论是否包装为统一 `ldvh` 命令。
+7. **推进 Human Gate 证据回写消费**：最小证据结构已进入 06、08、21、26 和 41，Human Gate 已收敛为轻量人类决策记录，Code 已能检查已写出的 `Human Gate 记录`；landing-report 已能按 Human Gate 子类分流缺口；当前 28 个 Human Gate 缺口中 21 个为"未来触发时记录"，不需要现在补记录；Validate 已展示 Human Gate 摘要，但 Web/Human-facing 确认、导出和事实源回写仍需补齐。
+
+8. **暂缓完整 CLI、apply/repair 和规模化资产库**：统一 CLI、受控写入、repair、多平台自动分发、大量 Skill/Agent 化都不作为当前第一步；先在现有 Code 和 Web 中稳定只读过程输出，dogfood 稳定后再讨论是否包装为统一 `ldvh` 命令。
 
 ---
 
@@ -324,6 +328,9 @@ LDVH 吸收这些经验时必须受 00 总纲约束：
 | AI 需求维度 | 00 或最佳实践 |
 | 最小上下文生成 | 07、41 或后续 Code Task |
 | landing report | 基础实现已进入 Code、测试和 41；后续吸收验证状态、证据来源、漂移检查和 Web 消费入口 |
+| 工作流程过程输出 | 已进入 06、41、42、44、07、08、09、10；后续由具体流程按需定义输出合同 |
+| landing-plan | 已进入 41 过程输出合同和 Code 最小实现；后续应由 42、Web 和 04 系列继续消费，不作为事实源或 00 级新层 |
+| Web Validate 检查摘要 | 已进入 Code 合同、Web API、Validate 页面和 Web 文档；后续补 Human Gate 确认、证据导出和受控回写 |
 | Human Gate 证据结构 | 基础结构已进入 06、08、21、26、41；Code 检查已由 `tools/specs_validate.py human-gate-report` 承接；后续由 Web/42 和工作对象回写链路消费 |
 | Web Human-facing 检查面 | 08 和 Web 实现 Task |
 | 事实源漂移修复 | Task 或 42 检查发现 |
@@ -374,15 +381,16 @@ LDVH 吸收这些经验时必须受 00 总纲约束：
 
 ## 10. 待补齐事项
 
-1. `landing-plan` 最小输出合同是当前最高优先候选事项，应先在现有 `tools/specs_validate.py` 中形成只读 JSON 与文本报告，不写入、不 repair、不创建长期状态源；
+1. ~~`landing-plan` 最小输出合同~~：已在 `tools/specs_validate.py` 中形成只读 JSON 与文本报告，并由 41 定义为过程输出合同；后续应继续校准字段语义、证据来源和 Web 消费，不写入、不 repair、不创建长期状态源；
 2. 42-58 工作流程逐步创建后，应同步检查 §5.2 的候选事项是否已被承接或需要降级；
 3. Task 执行、验证与关闭流程稳定后，应重新评估 closure_evidence 结构化证据层是否需要进入 26、47 或 48 的强规则；
 4. Web 实现文档稳定后，应重新评估 Web 三层信息架构是否仍需保留在 candidate 清单中；
 5. Code 校验能力增强后，可补充 candidate、deferred、rejected 误用检查；
-6. Code 聚合报告已增加缺口分类输出（gap_categories）、运行投影漂移检查（runtime-projection）、Human Gate 报告（human-gate-report）和 LDVH dogfood 检查（ldvh-landing-check）；后续应继续扩展验证状态、证据来源和 candidate/deferred/rejected 误用检查，并优先接入 `landing-plan`；
+6. Code 聚合报告已增加缺口分类输出（gap_categories）、运行投影漂移检查（runtime-projection）、Human Gate 报告（human-gate-report）、LDVH dogfood 检查（ldvh-landing-check）、`landing-plan` 和 `web-validate`；后续应继续扩展验证状态、证据来源和 candidate/deferred/rejected 误用检查；
 7. Dogfood 42 已完成，当前 dogfood 结果为 landing_report open、human_gate degraded，其余 closed；后续应回看 §4 缺口清单并标注哪些已被正式承接；
-8. 本文中已完成的缺口（G-02、G-04、G-11）和优先行动（§7 第 4、5 项）已标注完成状态；后续稳定结论被正式规范、工作流程或 Code 吸收后，应持续标注已吸收状态；
+8. 本文中已完成的缺口（G-02、G-04、G-11）和优先行动（§7 第 1、2、5、6 项）已标注完成状态；后续稳定结论被正式规范、工作流程或 Code 吸收后，应持续标注已吸收状态；
 9. ~~`fact_validate.py ldvh-base` 暴露的历史路径漂移和证据格式提示~~：已修复，当前 files=89 errors=0 warnings=0；
-10. Human Gate 证据回写消费、Web 检查面和受控轻写入，应按 08、41、42 和 Web 实现文档继续补齐，但应先接入 `landing-plan` 聚合视图；
-11. 运行投影 28 个 degraded 缺口需先进入 `landing-plan.gaps` 和 `landing-plan.proposed_actions`，再逐类判断是入口缺失、证据不足、平台能力限制还是规范口径问题；
-12. ECC manifest 经验只先转译为能力/运行投影最小索引，不作为安装器；平台能力映射先作为诊断表，不直接创建多平台入口；完整 CLI、apply/repair、长期状态源、多平台自动分发和大量 Skill/Agent 化暂缓。
+10. Human Gate 证据回写消费、Web 检查面和受控轻写入，应按 08、41、42 和 Web 实现文档继续补齐；当前 Validate 已展示 Human Gate 摘要，但尚未形成确认和回写闭环；
+11. 运行投影 29 个 degraded 缺口需继续通过 `landing-plan.gaps` 和 `landing-plan.proposed_actions` 判断是入口缺失、证据不足、平台能力限制还是规范口径问题；
+12. ECC manifest 经验只先转译为能力/运行投影最小索引，不作为安装器；平台能力映射先作为诊断表，不直接创建多平台入口；完整 CLI、apply/repair、长期状态源、多平台自动分发和大量 Skill/Agent 化暂缓；
+13. 04 系列是下一轮主要重构对象：在不改 00 顶层结构的前提下，明确规范落地要求、环境适配、运行投影、平台能力映射与 41/42 过程输出的关系。
