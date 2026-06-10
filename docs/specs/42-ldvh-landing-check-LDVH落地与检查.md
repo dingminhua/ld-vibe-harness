@@ -246,6 +246,27 @@ Human 授权后，AI 只能执行授权范围内的落地动作。未授权事�
 
 报告不得只写"正常""已完成"或"没问题"。必须说明证据、范围、状态、缺口和分流去向。报告默认不写入文档事实源。
 
+当 41 已提供 `landing-plan` 或等价过程输出时，42 应把它作为只读输入消费，而不是把它当成事实源状态或落地完成证明。消费过程应满足以下边界：
+
+1. 先确认 `metadata.report`、`metadata.read_only`、`metadata.source_of_truth`、`scope` 和 `facts_read`，确保输入确实来自 41 的过程输出合同或等价降级报告；
+2. 从 `capabilities`、`requirements`、`gaps`、`proposed_actions`、`writes_required`、`writeback_targets`、`human_gate` 和 `validation_plan` 中提取本次检查范围内的落地要求状态、缺口、候选行动、Human Gate 和验证计划；
+3. 将 `landing-plan` 中的 open / degraded / needs_human_gate / follow_up 项映射为 42 报告中的 todo / degraded / needs_human_gate / blocked / out-of-scope 状态，并保留来源字段或来源摘要；
+4. 当 `landing-plan` 标明 41 自身聚合能力、实例化判断、验证证据消费、运行投影漂移检查或 Human Gate 回写消费不足时，42 应报告为 41/42 联动缺口，不得把缺口吞并为 42 已处理；
+5. 当 `landing-plan` 缺失、字段不完整、来源不可追溯或覆盖范围不足时，42 可以降级为人工检查，但必须在报告中说明降级原因、未覆盖范围、残留风险和建议分流；
+6. 42 不得因为 `landing-plan` 生成成功而宣称 LDVH落地与检查通过；通过结论仍必须由 42 结合当前现场检查、证据、授权范围、复检结果和 Human Gate 状态给出。
+
+42 自身产生的检查报告、状态聚合和缺口诊断均属于过程输出。它们的输出边界如下：
+
+| 过程输出 | 内容边界 | 不得表达为 | 稳定化路径 |
+|---|---|---|---|
+| 检查报告 | 本次范围、读取事实源、现场检查、授权范围、验证、Gate、缺口和结论 | 初始化状态、检查状态、长期报告事实源或项目配置状态 | 当前对话或调用结果；需要沉淀时经 Human Gate 后按 09 分流 |
+| 状态聚合 | 将 41、Code、配置、目录、运行投影、Human Gate、验证和人工检查结果汇总为 done / todo / needs_human_gate / degraded / blocked / out-of-scope | 工作对象状态流转、规范闭环状态、平台支持状态或缺口关闭事实 | 回写到对应 Task、ADR、Memo、Pitfall、Change、平台适配清单、Code/Web 或正式规范后才稳定 |
+| 缺口诊断 | 描述缺失能力、证据不足、覆盖范围不足、降级原因、残留风险和建议分流 | 自动创建任务、自动接受降级、自动关闭缺口或授权写入 | 按缺口性质进入 41、Task、Memo、ADR、Pitfall、平台适配清单 open_items、Code/Web 需求或规范修改 |
+
+42 输出过程报告时，应显式区分“已检查到的事实”“从 41 或 Code 派生的状态”“候选建议”“需要 Human Gate 的写入或关闭动作”和“已回写的稳定事实”。若报告中包含候选任务、候选决策、候选缺口关闭、降级接受、验证结论或回写目标，AI 必须说明它们尚未稳定化，除非已按对应事实源完成受控写入、复检并记录证据。
+
+42 的状态聚合只服务于本次落地与检查结论，不拥有其他事实源的状态机。聚合时应遵循以下优先级：blocked 高于 needs_human_gate，needs_human_gate 高于 todo，todo 高于 degraded，degraded 高于 done；out-of-scope 不参与通过判断。任一关键范围存在 blocked、needs_human_gate 或未解释的 degraded 时，42 不得输出 pass，只能输出 blocked、degraded 或 pass-with-warnings，并说明原因。
+
 ---
 ## 7. Gate 触发条件
 

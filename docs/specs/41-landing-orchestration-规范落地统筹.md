@@ -264,6 +264,21 @@ landing_orchestration_result:
 
 当结果供 42 消费时，应额外说明：本次是否覆盖了 42 声明的检查范围；是否存在 41 自身无法完成的聚合、实例化判断、验证证据消费或运行投影漂移检查缺口；这些缺口不得被 42 解释为已通过。
 
+`landing-plan` 是 41 的只读过程输出合同，用于把 `landing-report`、运行投影检查、Human Gate 检查、事实源检查、LDVH落地与检查和验证状态聚合成 AI / Human 可消费的计划视图。`landing-plan` 不是稳定事实源，不得直接写入规范状态、工作对象状态、平台适配清单、Code/Web 状态或 Human Gate 结论；其中形成的任务、决策、缺口、降级接受、验证结论或回写目标，必须按 `09`、相关工作模型和本文 §10 分流回写后才成为稳定事实。
+
+`landing-plan` 至少应满足以下合同：
+
+1. `metadata.report` 固定为 `landing-plan`，`metadata.read_only` 为 `true`，`metadata.source_of_truth` 为 `false`，并说明状态来源是派生启发式或等价降级口径；
+2. `scope` 说明项目根、工作区根、读取的规范来源数量和规范落地要求数量；
+3. `facts_read` 列出本次聚合读取的报告、事实源、运行投影、Human Gate、LDVH落地与检查或其他输入来源；
+4. `capabilities` 说明当前 Code、运行投影、Human Gate、事实源、验证或回写消费能力的状态、证据和缺口；
+5. `requirements` 汇总规范落地要求总量、状态分布、未关闭缺口数量和 owner_area 分布；
+6. `gaps` 按 owner_area、子类、状态、建议回写位置和缺失能力组织缺口，不维护固定实体清单；
+7. `proposed_actions` 给出候选行动、owner_area、优先级、缺口数量、建议回写位置和必要的运行投影 remediation 分类；
+8. `writes_required`、`writeback_targets`、`human_gate` 和 `validation_plan` 分别说明是否需要事实源写入、候选回写目标、Human Gate 子类和后续验证计划。
+
+当 Code 提供 `tools/specs_validate.py landing-plan` 或等价实现时，其输出必须符合上述合同。文本展示可以为 Human 阅读优化，但不得省略只读边界、缺口分流、Human Gate、验证计划和回写目标；JSON 展示应保留可被后续工具、Web 或 AI 主控消费的结构化字段。若当前实现无法生成完整合同，应在 `capabilities`、`gaps` 或 `validation_plan` 中显式标记 open / degraded，而不得把缺失字段默认为通过。
+
 ---
 ## 7. Gate 触发条件
 
