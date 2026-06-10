@@ -998,6 +998,36 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "suggested_writeback: code_request_or_test" in output
 
 
+def test_landing_plan_build(tmp_path, monkeypatch):
+    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+    plan = checker.landing_plan_build(str(tmp_path))
+    assert plan["metadata"]["report"] == "landing-plan"
+    assert plan["metadata"]["read_only"] is True
+    assert plan["scope"]["landing_report_requirements"] >= 1
+    assert plan["requirements"]["gap_total"] >= 1
+    assert "gaps" in plan
+    assert "proposed_actions" in plan
+    assert "writes_required" in plan
+    assert "human_gate" in plan
+    assert "validation_plan" in plan
+    assert "writeback_targets" in plan
+    assert "capabilities" in plan
+    assert len(plan["capabilities"]) >= 1
+
+
+def test_landing_plan_text_output(tmp_path, monkeypatch):
+    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+    plan = checker.landing_plan_build(str(tmp_path))
+    text = checker.landing_plan_format_text(plan)
+    assert "Landing Plan (只读)" in text
+    assert "能力状态" in text
+    assert "建议行动" in text
+    assert "写入需求" in text
+    assert "Human Gate" in text
+    assert "验证计划" in text
+    assert "回写目标" in text
+
+
 def test_runtime_projection_reports_missing_authority_and_spec_ref(tmp_path, monkeypatch):
     docs_specs = tmp_path / "docs" / "specs"
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)

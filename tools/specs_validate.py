@@ -2197,6 +2197,197 @@ def ldvh_landing_check_build(workspace_root=None):
     }
 
 
+def landing_plan_build(workspace_root=None):
+    workspace_root = Path(workspace_root) if workspace_root else PROJECT_ROOT
+    landing_report = landing_report_build()
+    ldvh_check = ldvh_landing_check_build(workspace_root)
+    gap_categories = landing_report.get("gap_categories", {})
+
+    facts_read = []
+    for req in landing_report.get("requirements", []):
+        src = req.get("source", "")
+        if src and src not in [f["path"] for f in facts_read]:
+            facts_read.append({"path": src, "type": "spec"})
+    for cap in landing_report.get("capability_gaps", []):
+        src = cap.get("source", "capability_gaps")
+        if src and src not in [f["path"] for f in facts_read]:
+            facts_read.append({"path": src, "type": "capability"})
+
+    capabilities = []
+    for check in ldvh_check.get("checks", []):
+        capabilities.append({
+            "id": check["id"],
+            "source_area": check["source_area"],
+            "status": check["status"],
+            "issue_count": check["issue_count"],
+            "evidence": check["evidence"],
+        })
+
+    proposed_actions = []
+    for area, category in gap_categories.items():
+        action = {
+            "owner_area": area,
+            "label": category.get("label", area),
+            "gap_count": category["total"],
+            "by_status": category.get("by_status", {}),
+            "suggested_writebacks": list(category.get("by_suggested_writeback", {}).keys()),
+        }
+        if area == "human_gate" and "subcategories" in category:
+            action["subcategories"] = {
+                k: {"label": v["label"], "total": v["total"]}
+                for k, v in category["subcategories"].items()
+            }
+        if area == "runtime_projection" and "subcategories" in category:
+            action["subcategories"] = {
+                k: {"label": v["label"], "total": v["total"]}
+                for k, v in category["subcategories"].items()
+            }
+        proposed_actions.append(action)
+
+    writes_required = {
+        "required": any(
+            cat.get("by_suggested_writeback", {})
+            for cat in gap_categories.values()
+            if any(k not in ("manual_review", "none") for k in cat.get("by_suggested_writeback", {}))
+        ),
+        "targets": sorted(set(
+            wb
+            for cat in gap_categories.values()
+            for wb in cat.get("by_suggested_writeback", {})
+            if wb not in ("manual_review", "none")
+        )),
+    }
+
+    human_gate = {
+        "total_gaps": gap_categories.get("human_gate", {}).get("total", 0),
+        "subcategories": {},
+    }
+    hg_cat = gap_categories.get("human_gate", {})
+    if "subcategories" in hg_cat:
+        for sk, sv in hg_cat["subcategories"].items():
+            entry = {"label": sv["label"], "total": sv["total"], "by_status": sv.get("by_status", {})}
+            if "decision_flows" in sv:
+                entry["decision_flows"] = {fk: {"label": fv["label"], "total": fv["total"]} for fk, fv in sv["decision_flows"].items()}
+            if "policy_flows" in sv:
+                entry["policy_flows"] = {fk: {"label": fv["label"], "total": fv["total"]} for fk, fv in sv["policy_flows"].items()}
+            if "support_flows" in sv:
+                entry["support_flows"] = {fk: {"label": fv["label"], "total": fv["total"]} for fk, fv in sv["support_flows"].items()}
+            if "diagnostic_flows" in sv:
+                entry["diagnostic_flows"] = {fk: {"label": fv["label"], "total": fv["total"]} for fk, fv in sv["diagnostic_flows"].items()}
+            human_gate["subcategories"][sk] = entry
+
+    validation_plan = {
+        "spec_validate_status": ldvh_check.get("checks", [{}])[5].get("status", "unknown") if len(ldvh_check.get("checks", [])) > 5 else "unknown",
+        "fact_validate_status": ldvh_check.get("checks", [{}])[4].get("status", "unknown") if len(ldvh_check.get("checks", [])) > 4 else "unknown",
+        "runtime_projection_status": ldvh_check.get("checks", [{}])[2].get("status", "unknown") if len(ldvh_check.get("checks", [])) > 2 else "unknown",
+        "human_gate_status": ldvh_check.get("checks", [{}])[3].get("status", "unknown") if len(ldvh_check.get("checks", [])) > 3 else "unknown",
+    }
+
+    writeback_targets = sorted(set(
+        wb
+        for cat in gap_categories.values()
+        for wb in cat.get("by_suggested_writeback", {})
+        if wb not in ("manual_review", "none")
+    ))
+
+    return {
+        "metadata": {
+            "tool": "tools/specs_validate.py",
+            "report": "landing-plan",
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "source_of_truth": False,
+            "status_source": "derived heuristic",
+            "read_only": True,
+        },
+        "scope": {
+            "project_root": str(PROJECT_ROOT),
+            "workspace_root": str(workspace_root),
+            "landing_report_sources": landing_report["metadata"]["source_count"],
+            "landing_report_requirements": landing_report["metadata"]["requirement_count"],
+        },
+        "facts_read": facts_read,
+        "capabilities": capabilities,
+        "requirements": {
+            "total": landing_report["metadata"]["requirement_count"],
+            "by_status": landing_report["summary"]["by_status"],
+            "gap_total": landing_report["summary"]["gap_total"],
+            "gap_by_owner_area": landing_report["summary"]["gap_by_owner_area"],
+        },
+        "gaps": {
+            "by_owner_area": {area: cat["total"] for area, cat in gap_categories.items()},
+            "categories": gap_categories,
+        },
+        "proposed_actions": proposed_actions,
+        "writes_required": writes_required,
+        "human_gate": human_gate,
+        "validation_plan": validation_plan,
+        "writeback_targets": writeback_targets,
+    }
+
+
+def landing_plan_format_text(plan):
+    lines = []
+    lines.append("# Landing Plan (只读)")
+    lines.append("")
+    scope = plan.get("scope", {})
+    lines.append(f"项目: {scope.get('project_root', '')}")
+    lines.append(f"规范来源: {scope.get('landing_report_sources', 0)} 篇")
+    lines.append(f"规范落地要求: {scope.get('landing_report_requirements', 0)} 条")
+    req = plan.get("requirements", {})
+    lines.append(f"未关闭缺口: {req.get('gap_total', 0)}")
+    lines.append(f"缺口分布: {req.get('gap_by_owner_area', {})}")
+    lines.append("")
+
+    lines.append("## 能力状态")
+    for cap in plan.get("capabilities", []):
+        lines.append(f"- {cap['id']}: {cap['status']} (issues: {cap['issue_count']})")
+    lines.append("")
+
+    lines.append("## 建议行动")
+    for action in plan.get("proposed_actions", []):
+        lines.append(f"- {action['label']} ({action['owner_area']}): {action['gap_count']} 缺口, status={action['by_status']}")
+        if "subcategories" in action:
+            for sk, sv in action["subcategories"].items():
+                lines.append(f"  - {sv['label']} ({sk}): {sv['total']}")
+    lines.append("")
+
+    lines.append("## 写入需求")
+    wr = plan.get("writes_required", {})
+    lines.append(f"需要写入: {'是' if wr.get('required') else '否'}")
+    if wr.get("targets"):
+        lines.append(f"写入目标: {', '.join(wr['targets'])}")
+    lines.append("")
+
+    lines.append("## Human Gate")
+    hg = plan.get("human_gate", {})
+    lines.append(f"总缺口: {hg.get('total_gaps', 0)}")
+    for sk, sv in hg.get("subcategories", {}).items():
+        lines.append(f"- {sv['label']} ({sk}): {sv['total']}, status={sv.get('by_status', {})}")
+    lines.append("")
+
+    lines.append("## 验证计划")
+    vp = plan.get("validation_plan", {})
+    for k, v in vp.items():
+        lines.append(f"- {k}: {v}")
+    lines.append("")
+
+    lines.append("## 回写目标")
+    for target in plan.get("writeback_targets", []):
+        lines.append(f"- {target}")
+
+    return "\n".join(lines)
+
+
+def landing_plan_main(workspace_root=None, output_format="text"):
+    plan = landing_plan_build(workspace_root)
+    if output_format == "json":
+        json.dump(plan, sys.stdout, ensure_ascii=False, indent=2)
+    else:
+        print(landing_plan_format_text(plan))
+    has_open = plan.get("requirements", {}).get("gap_total", 0) > 0
+    return 1 if has_open else 0
+
+
 def ldvh_landing_check_format_text(report):
     lines = ["LDVH落地与检查派生报告"]
     lines.append(f"- 状态: {report['summary']['status']}")
@@ -2719,6 +2910,11 @@ def build_parser():
     ldvh_landing_check_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="包含 LDVH-GOVERNED-PROJECTS.yaml 的工作区根目录，默认项目根。")
     ldvh_landing_check_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
+    # landing-plan
+    landing_plan_parser = subparsers.add_parser("landing-plan", help="生成只读 landing-plan 聚合计划视图。")
+    landing_plan_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
+    landing_plan_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+
     # runtime-projection
     runtime_projection_parser = subparsers.add_parser("runtime-projection", help="检查项目内运行投影是否存在漂移风险。")
     runtime_projection_parser.add_argument("paths", nargs="*", default=None, help="要检查的运行投影文件或目录，默认检查项目内授权运行投影。")
@@ -2774,6 +2970,9 @@ def main(argv=None):
 
     if command == "ldvh-landing-check":
         return ldvh_landing_check_main(args.workspace_root, args.format)
+
+    if command == "landing-plan":
+        return landing_plan_main(args.workspace_root, args.format)
 
     if command == "runtime-projection":
         return runtime_projection_main(args.paths, args.format)
