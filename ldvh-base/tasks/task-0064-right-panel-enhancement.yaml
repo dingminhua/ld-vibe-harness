@@ -1,0 +1,16 @@
+id: task-0064
+type: task
+title: 增强右侧扩展阅读面板
+status: review_needed
+created: '2026-06-11T00:00:00.000000'
+updated: '2026-06-11T00:00:00.000000'
+description: |
+  补充 evidence、diff 内容类型；Dashboard/Workbench/Changelog 的对象引用改为 openPanel 而非整页跳转；移动端底部抽屉实现。
+source: 用户指示（右侧扩展阅读区 + 移动端体验）
+acceptance: |
+  - [ ] 新增 evidence 内容类型（展示 closure_evidence 文件路径和命令）
+  - [ ] 新增 diff 内容类型（展示 Changelog 文件变更）
+  - [ ] Dashboard/Workbench/Changelog 的对象引用改用 openPanel
+  - [ ] 移动端底部抽屉实现（50vh + 拖拽关闭）
+  - [ ] npm run check 通过
+  - [ ] npm run build 通过
