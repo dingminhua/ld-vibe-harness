@@ -71,7 +71,7 @@ function ReferenceItem({ refId }: { refId: string }) {
     // Emit custom event for reading panel; if preventDefault is called (desktop),
     // open the panel instead of navigating
     const event = new CustomEvent('ldvh:ref-preview', {
-      detail: { refType, refId },
+      detail: { refType, refId, title: info?.title || refId },
       bubbles: true,
       cancelable: true,
     });

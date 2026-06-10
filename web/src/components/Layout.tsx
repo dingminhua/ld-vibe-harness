@@ -13,7 +13,7 @@ interface LayoutProps {
 
 /** Inner layout that consumes panel context */
 function LayoutInner({ children }: LayoutProps) {
-  const { isOpen: panelOpen, closePanel } = usePanel();
+  const { isOpen: panelOpen, closePanel, openPanel } = usePanel();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
       const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
@@ -34,6 +34,28 @@ function LayoutInner({ children }: LayoutProps) {
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [panelOpen, closePanel]);
+
+  useEffect(() => {
+    const onRefPreview = (event: Event) => {
+      const { refType, refId, title } = (event as CustomEvent<{ refType?: string; refId?: string; title?: string }>).detail ?? {};
+      if (!refType || !refId) return;
+      event.preventDefault();
+      openPanel({ type: 'object', title: title || refId, objectType: refType, objectId: refId });
+    };
+    document.addEventListener('ldvh:ref-preview', onRefPreview);
+    return () => document.removeEventListener('ldvh:ref-preview', onRefPreview);
+  }, [openPanel]);
+
+  useEffect(() => {
+    const onDocPreview = (event: Event) => {
+      const { path } = (event as CustomEvent<{ path?: string }>).detail ?? {};
+      if (!path || path.startsWith('http')) return;
+      event.preventDefault();
+      openPanel({ type: 'doc', title: path, docPath: path });
+    };
+    document.addEventListener('ldvh:doc-preview', onDocPreview);
+    return () => document.removeEventListener('ldvh:doc-preview', onDocPreview);
+  }, [openPanel]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => {

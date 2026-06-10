@@ -170,6 +170,7 @@ export const UI_LOCALES = {
 
     'objectList.noObjects': '未找到 {type} 对象',
     'objectList.all': '全部',
+    'objectList.statusFilter': '状态筛选',
 
     'objectDetail.back': '返回',
     'objectDetail.content': '内容',
@@ -379,6 +380,7 @@ export const UI_LOCALES = {
 
     'objectList.noObjects': 'No {type} found',
     'objectList.all': 'All',
+    'objectList.statusFilter': 'Status filter',
 
     'objectDetail.back': 'Back',
     'objectDetail.content': 'Content',

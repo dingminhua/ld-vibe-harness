@@ -13,11 +13,12 @@ export default function DocPreviewLink({ docs }: DocPreviewLinkProps) {
     const event = new CustomEvent('ldvh:doc-preview', {
       detail: { path: docPath },
       bubbles: true,
+      cancelable: true,
     });
-    document.dispatchEvent(event);
+    const notPrevented = document.dispatchEvent(event);
 
     // External links open in new tab
-    if (docPath.startsWith('http')) {
+    if (docPath.startsWith('http') && notPrevented) {
       window.open(docPath, '_blank', 'noopener,noreferrer');
     }
   };

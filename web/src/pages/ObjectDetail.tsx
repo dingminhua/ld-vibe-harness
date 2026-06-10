@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback, type ReactNode } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2, Info, Pencil } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
+import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import ChecklistCard from '@/components/ChecklistCard';
 import ReferenceCard from '@/components/ReferenceCard';
 import SummaryText from '@/components/SummaryText';
@@ -12,7 +13,6 @@ import EvidenceBlock from '@/components/EvidenceBlock';
 import IntentSelector from '@/components/IntentSelector';
 import { fetchObjectDetail, patchObjectField, type ObjectDetail } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
-import { usePanel } from '@/utils/panelContext';
 import { getTypeDescription, getStatusHint } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 
@@ -140,6 +140,7 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
 export default function ObjectDetail() {
   const { type, id } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
@@ -221,16 +222,36 @@ export default function ObjectDetail() {
 
   // 生成真正的 YAML 源码
   const yamlSource = objectToYaml(obj);
+  const activeStatus = searchParams.get('status');
+  const listSearch = searchParams.toString();
+  const listPath = `/objects/${objType}${listSearch ? `?${listSearch}` : ''}`;
+  const navigateToListWithStatus = (status: string | null) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (status) {
+      nextParams.set('status', status);
+    } else {
+      nextParams.delete('status');
+    }
+    const nextSearch = nextParams.toString();
+    navigate(`/objects/${objType}${nextSearch ? `?${nextSearch}` : ''}`);
+  };
 
   return (
     <div className="flex h-full">
       {/* Main content area */}
-      <div className={`flex-1 overflow-y-auto rounded-none transition-[margin] duration-300 $`}>
-        <div className={`mx-auto p-6 $max-w-4xl`}>
+      <div className="flex-1 overflow-y-auto rounded-none transition-[margin] duration-300">
+        <div className="mx-auto max-w-4xl p-6">
+          <ObjectStatusFilter
+            type={objType}
+            activeStatus={activeStatus}
+            onChange={navigateToListWithStatus}
+            className="mb-4"
+          />
+
           {/* Header */}
           <div className="mb-6">
             <button
-              onClick={() => navigate(`/objects/${type}`)}
+              onClick={() => navigate(listPath)}
               className="mb-3 flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
             >
               <ArrowLeft size={14} />
@@ -540,30 +561,6 @@ function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { 
   );
 }
 
-/** 递归渲染字段值 */
-/** Clickable reference IDs that open right panel */
-function ClickableRefs({ refs }: { refs: string[] }) {
-  const { openPanel } = usePanel();
-  if (!refs || refs.length === 0) return <span className="text-xs text-ldvh-text-secondary italic">—</span>;
-  return (
-    <span className="inline-flex flex-wrap gap-2">
-      {refs.map((refId) => {
-        const m = refId.match(/^([a-z]+)-\d+$/);
-        const objType = m ? m[1] : null;
-        return (
-          <button
-            key={refId}
-            onClick={() => { if (objType) openPanel({ type: 'object', title: refId, objectType: objType, objectId: refId }); }}
-            className="inline-flex items-center rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-xs font-mono text-ldvh-text-primary transition-colors hover:border-ldvh-accent/40 hover:bg-ldvh-accent/10 hover:text-ldvh-accent cursor-pointer"
-          >
-            {refId}
-          </button>
-        );
-      })}
-    </span>
-  );
-}
-
 function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh }: { fieldKey: string; value: unknown; depth: number; locale: string; objType?: string; objId?: string; onRefresh?: () => void }) {
   const { t } = useI18n();
   const [editingSourceIntent, setEditingSourceIntent] = useState(false);
@@ -653,7 +650,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
           </div>
         );
       }
-      return <ClickableRefs refs={[value]} />;
+      return <ReferenceCard refs={[value]} />;
     }
 
     // 长文本（含换行）使用 SummaryText
@@ -693,7 +690,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
       }
       // 引用字段使用 ReferenceCard 组件
       if (REFERENCE_FIELDS.includes(fieldKey)) {
-        return <ClickableRefs refs={value as string[]} />;
+        return <ReferenceCard refs={value as string[]} />;
       }
       return <StringList items={value as string[]} />;
     }
