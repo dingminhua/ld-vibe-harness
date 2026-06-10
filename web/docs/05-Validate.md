@@ -2,11 +2,11 @@
 
 > 路由：`/validate`
 > 源码：`web/src/pages/Validate.tsx`
-> API：`GET /api/validation`
+> API：`GET /api/validate`
 
 ## 1. 页面目标
 
-让用户快速了解 ldvh-base/ 下所有 YAML 文件的校验结果，定位错误和警告。
+让用户快速了解 `ldvh-base/` 下所有 YAML 文件的校验结果，并看到 42 LDVH落地与检查、landing-report 和 Human Gate 证据消费的当前摘要。页面数据由 Code 工具 `python3 tools/specs_validate.py web-validate --format json` 生成，Web API 只负责调用并返回该合同。
 
 ## 2. 布局结构
 
@@ -20,6 +20,13 @@
 │ │  12      │ │  2       │ │  3       │ │
 │ │ 文件     │ │ 错误     │ │ 警告     │ │
 │ └──────────┘ └──────────┘ └──────────┘ │
+├─────────────────────────────────────────┤
+│ LDVH 落地检查摘要                        │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │42 检查   │ │落地要求  │ │HumanGate │ │
+│ │ open     │ │ 77 gaps  │ │ 0 records│ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│ 剩余缺口 / 能力缺口                      │
 ├─────────────────────────────────────────┤
 │ 问题列表（按文件分组）                   │
 │ ┌─────────────────────────────────────┐ │
@@ -61,6 +68,13 @@
 - 条件：issues 为空
 - 显示：CheckCircle 绿色大图标 + "所有校验通过" + "未发现错误或警告"
 
+### 3.4 LDVH 落地检查摘要
+
+- 42 检查：由 `web-validate` 合同中的 `reports.landingCheck` 提供，展示状态、剩余缺口数和检查项数量。
+- 落地要求：由 `web-validate` 合同中的 `reports.landingReport` 提供，展示 open、degraded、needs_human_gate 和 gap total。
+- Human Gate：由 `web-validate` 合同中的 `reports.humanGateReport` 提供，展示记录数、检查文件数和问题数。
+- 剩余缺口和能力缺口只展示摘要、证据和建议回写位置，不展开全部规范落地要求。
+
 ## 4. 交互
 
 | 操作 | 行为 |
@@ -73,6 +87,11 @@
 interface ValidationData {
   summary: { files: number; errors: number; warnings: number };
   issues: ValidationIssue[];
+  reports?: {
+    landingCheck?: LdvhLandingCheckReport | LdvhReportError;
+    landingReport?: LdvhLandingReport | LdvhReportError;
+    humanGateReport?: LdvhHumanGateReport | LdvhReportError;
+  };
 }
 
 interface ValidationIssue {
@@ -91,3 +110,5 @@ interface ValidationIssue {
 - [ ] 缺少按级别筛选（只看错误/只看警告）
 - [ ] 文件路径可考虑只显示相对路径（去掉 ldvh-base/ 前缀）
 - [ ] 缺少校验规则的说明链接
+- [ ] 42 派生报告目前只读展示，不执行受控写入
+- [ ] Human Gate 记录数为 0 时只能说明当前项目内未发现记录，不能代表没有任何应触发 Gate 的历史场景

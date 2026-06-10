@@ -22,7 +22,7 @@ export const LDVH_BASE_DIR = path.join(LDVH_ROOT, 'ldvh-base')
 export const OBJECT_TYPES = ['intent', 'task', 'adr', 'pitfall', 'memo', 'profile', 'change'] as const
 export type ObjectType = (typeof OBJECT_TYPES)[number]
 
-interface PyToolsResult {
+export interface PyToolsResult {
   ok: boolean
   command: string
   action: string
@@ -32,11 +32,28 @@ interface PyToolsResult {
   data: Record<string, unknown>
 }
 
-interface PyToolsError {
+export interface PyToolsError {
   ok: false
   error: string
   stderr: string
   exitCode: number | string | null
+}
+
+export type PyToolsJson = Record<string, unknown>
+
+function parseJson(stdout: string): PyToolsJson | null {
+  const trimmed = stdout.trim()
+  if (!trimmed) return null
+
+  try {
+    const parsed = JSON.parse(trimmed)
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as PyToolsJson
+    }
+    return { value: parsed } as PyToolsJson
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -47,6 +64,12 @@ export async function runPyTools(tool: string, args: string[]): Promise<PyToolsR
 
   return new Promise((resolve) => {
     execFile('python3', [toolPath, ...args], { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+      const parsed = parseJson(stdout)
+      if (parsed) {
+        resolve(parsed as unknown as PyToolsResult)
+        return
+      }
+
       if (error) {
         resolve({
           ok: false,
@@ -73,6 +96,40 @@ export async function runPyTools(tool: string, args: string[]): Promise<PyToolsR
 }
 
 /**
+ * 执行 PyTools CLI 工具并返回原始 JSON 结果，允许非零退出码但要求 stdout 可解析
+ */
+export async function runPyToolsJson(tool: string, args: string[]): Promise<PyToolsJson | PyToolsError> {
+  const toolPath = path.join(TOOLS_DIR, tool)
+
+  return new Promise((resolve) => {
+    execFile('python3', [toolPath, ...args], { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+      const parsed = parseJson(stdout)
+      if (parsed) {
+        resolve(parsed)
+        return
+      }
+
+      if (error) {
+        resolve({
+          ok: false,
+          error: error.message,
+          stderr: stderr?.trim() || '',
+          exitCode: error.code ?? null,
+        })
+        return
+      }
+
+      resolve({
+        ok: false,
+        error: 'JSON parse failed: empty or invalid stdout',
+        stderr: stderr?.trim() || '',
+        exitCode: null,
+      })
+    })
+  })
+}
+
+/**
  * 列出指定类型的事实对象
  */
 export async function listObjects(type: ObjectType, baseDir: string = LDVH_ROOT, status?: string): Promise<PyToolsResult | PyToolsError> {
@@ -94,5 +151,5 @@ export async function showObject(id: string, baseDir: string = LDVH_ROOT): Promi
  * 校验 ldvh-base 目录下所有事实对象
  */
 export async function validate(baseDir: string = LDVH_BASE_DIR): Promise<PyToolsResult | PyToolsError> {
-  return runPyTools('fact_validate.py', [baseDir, '--format', 'json'])
+  return runPyToolsJson('fact_validate.py', [baseDir, '--format', 'json']) as Promise<PyToolsResult | PyToolsError>
 }
