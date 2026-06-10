@@ -1,4 +1,5 @@
 import MetricCard from '@/components/MetricCard';
+import PageHeader from '@/components/PageHeader';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -93,8 +94,7 @@ export default function Workbench() {
             <Sparkles size={13} />
             {t('workbench.badge')}
           </div>
-          <h1 className="text-xl font-semibold text-ldvh-text-primary">{t('workbench.title')}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-ldvh-text-secondary">{t('workbench.subtitle')}</p>
+          <PageHeader title={t('workbench.title')} subtitle={t('workbench.subtitle')} />
         </div>
         <button
           onClick={() => navigate('/')}

@@ -1,5 +1,6 @@
 import MetricCard from '@/components/MetricCard';
 import StatusBanner from '@/components/StatusBanner';
+import PageHeader from '@/components/PageHeader';
 import { useEffect, useState } from 'react'
 import {
   AlertCircle,
@@ -106,8 +107,8 @@ export default function Gate() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-ldvh-text-primary">{t('gate.title')}</h1>
-          <p className="mt-1 text-sm text-ldvh-text-secondary">{t('gate.subtitle')}</p>
+          <PageHeader title={t('gate.title')} subtitle={t('gate.subtitle')} />
+
         </div>
         {meta.generated_at && (
           <span className="truncate font-mono text-xs text-ldvh-text-secondary">

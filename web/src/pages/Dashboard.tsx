@@ -7,6 +7,7 @@ import {
 import StatsCard from '@/components/StatsCard';
 import StatusBadge from '@/components/StatusBadge';
 import StatusBanner from '@/components/StatusBanner';
+import PageHeader from '@/components/PageHeader';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
 import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
@@ -110,7 +111,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-6">
-      <h1 className="mb-2 text-xl font-semibold text-ldvh-text-primary">{t('dashboard.title')}</h1>
+      <PageHeader title={t('dashboard.title')} />
 
       {/* 关键状态信号 */}
       {data.validation.errors > 0 && (

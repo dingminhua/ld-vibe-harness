@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import MetricCard from '@/components/MetricCard';
+import PageHeader from '@/components/PageHeader';
 import {
   Activity,
   AlertCircle,
@@ -355,7 +356,7 @@ export default function Validate() {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-ldvh-text-primary">{t('validate.title')}</h1>
+        <PageHeader title={t('validate.title')} />
         {/* 视图切换 */}
         <div className="flex rounded-lg border border-ldvh-border bg-ldvh-bg p-0.5">
           <button

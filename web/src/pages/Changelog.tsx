@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { GitCommit, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { fetchChangelog, fetchCommitDetail, type ChangelogEntry } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
+import PageHeader from '@/components/PageHeader';
 
 /** 从对象 ID 推断类型，如 task-0041 → task, intent-0004 → intent, adr-0003 → adr */
 function inferTypeFromId(id: string): string | null {
@@ -152,7 +153,7 @@ export default function Changelog() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-ldvh-text-primary">{t('changelog.title')}</h1>
+        <PageHeader title={t('changelog.title')} subtitle={t('changelog.subtitle')} />
         <p className="mt-1 text-sm text-ldvh-text-secondary">
           {t('changelog.subtitle')}
         </p>
