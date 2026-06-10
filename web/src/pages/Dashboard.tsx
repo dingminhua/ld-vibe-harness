@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import StatsCard from '@/components/StatsCard';
 import StatusBadge from '@/components/StatusBadge';
+import MemoCreate from '@/components/MemoCreate';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import type { LocaleKey } from '@/i18n/locales';

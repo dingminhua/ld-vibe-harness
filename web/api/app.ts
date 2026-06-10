@@ -15,6 +15,7 @@ import objectsRoutes from './routes/objects.js'
 import validateRoutes from './routes/validate.js'
 import changelogRoutes from './routes/changelog.js'
 import docsRoutes from './routes/docs.js'
+import memosRoutes from './routes/memos.js'
 import gateRoutes from './routes/gate.js'
 import landingPlanRoutes from './routes/landing-plan.js'
 
@@ -41,6 +42,7 @@ app.use('/api/gate', gateRoutes)
 app.use('/api/landing-plan', landingPlanRoutes)
 app.use('/api/changelog', changelogRoutes)
 app.use('/api/docs', docsRoutes)
+app.use('/api/memos', memosRoutes)
 
 /**
  * health

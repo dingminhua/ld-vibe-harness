@@ -9,10 +9,10 @@ import ReferenceCard from '@/components/ReferenceCard';
 import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
-import ReadingPanel, { type PanelContent } from '@/components/ReadingPanel';
 import IntentSelector from '@/components/IntentSelector';
 import { fetchObjectDetail, patchObjectField, type ObjectDetail } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
+import { usePanel } from '@/utils/panelContext';
 import { getTypeDescription, getStatusHint } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 
@@ -143,29 +143,17 @@ export default function ObjectDetail() {
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [panelContent, setPanelContent] = useState<PanelContent | null>(null);
   const { t, getStatus, locale } = useI18n();
 
-  const openDocPanel = useCallback((path: string) => {
-    setPanelContent({ type: 'doc', path });
-    setPanelOpen(true);
-  }, []);
 
-  const openRefPanel = useCallback((refType: string, refId: string) => {
-    setPanelContent({ type: 'object', refType, refId });
-    setPanelOpen(true);
-  }, []);
 
   const closePanel = useCallback(() => {
-    setPanelOpen(false);
   }, []);
 
   // Listen for ldvh:doc-preview and ldvh:ref-preview custom events
   useEffect(() => {
     const handleDocPreview = (e: Event) => {
       const customEvent = e as CustomEvent<{ path: string }>;
-      openDocPanel(customEvent.detail.path);
     };
 
     const handleRefPreview = (e: Event) => {
@@ -173,7 +161,6 @@ export default function ObjectDetail() {
       // On desktop, prevent navigation and open panel instead
       if (window.innerWidth >= 1024) {
         e.preventDefault();
-        openRefPanel(customEvent.detail.refType, customEvent.detail.refId);
       }
     };
 
@@ -183,7 +170,7 @@ export default function ObjectDetail() {
       document.removeEventListener('ldvh:doc-preview', handleDocPreview);
       document.removeEventListener('ldvh:ref-preview', handleRefPreview);
     };
-  }, [openDocPanel, openRefPanel]);
+  }, []);
 
   const refreshDetail = useCallback(() => {
     if (!type || !id) return;
@@ -263,8 +250,8 @@ export default function ObjectDetail() {
   return (
     <div className="flex h-full">
       {/* Main content area */}
-      <div className={`flex-1 overflow-y-auto rounded-none transition-[margin] duration-300 ${panelOpen ? 'lg:mr-0' : ''}`}>
-        <div className={`mx-auto p-6 ${panelOpen ? 'max-w-4xl' : 'max-w-4xl'}`}>
+      <div className={`flex-1 overflow-y-auto rounded-none transition-[margin] duration-300 $`}>
+        <div className={`mx-auto p-6 $max-w-4xl`}>
           {/* Header */}
           <div className="mb-6">
             <button
@@ -379,7 +366,6 @@ export default function ObjectDetail() {
       </div>
 
       {/* Right reading panel */}
-      <ReadingPanel open={panelOpen} onClose={closePanel} content={panelContent} />
     </div>
   );
 }
@@ -580,6 +566,29 @@ function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { 
 }
 
 /** 递归渲染字段值 */
+/** Clickable reference IDs that open right panel */
+function ClickableRefs({ refs }: { refs: string[] }) {
+  const { openPanel } = usePanel();
+  if (!refs || refs.length === 0) return <span className="text-xs text-ldvh-text-secondary italic">—</span>;
+  return (
+    <span className="inline-flex flex-wrap gap-2">
+      {refs.map((refId) => {
+        const m = refId.match(/^([a-z]+)-\d+$/);
+        const objType = m ? m[1] : null;
+        return (
+          <button
+            key={refId}
+            onClick={() => { if (objType) openPanel({ type: 'object', title: refId, objectType: objType, objectId: refId }); }}
+            className="inline-flex items-center rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-xs font-mono text-ldvh-text-primary transition-colors hover:border-ldvh-accent/40 hover:bg-ldvh-accent/10 hover:text-ldvh-accent cursor-pointer"
+          >
+            {refId}
+          </button>
+        );
+      })}
+    </span>
+  );
+}
+
 function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh }: { fieldKey: string; value: unknown; depth: number; locale: string; objType?: string; objId?: string; onRefresh?: () => void }) {
   const { t } = useI18n();
   const [editingSourceIntent, setEditingSourceIntent] = useState(false);
@@ -670,7 +679,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
           </div>
         );
       }
-      return <ReferenceCard refs={[value]} />;
+      return <ClickableRefs refs={[value]} />;
     }
 
     // 长文本（含换行）使用 SummaryText
@@ -710,7 +719,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
       }
       // 引用字段使用 ReferenceCard 组件
       if (REFERENCE_FIELDS.includes(fieldKey)) {
-        return <ReferenceCard refs={value as string[]} />;
+        return <ClickableRefs refs={value as string[]} />;
       }
       return <StringList items={value as string[]} />;
     }
