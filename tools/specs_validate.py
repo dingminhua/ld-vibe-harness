@@ -599,6 +599,11 @@ LANDING_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS = {
     "implementation_support": "承接实现支持",
     "diagnostic_coverage": "Code 降级提示/覆盖",
 }
+LANDING_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS = {
+    "current_record_required": "当前需要记录",
+    "future_trigger_record": "未来触发时记录",
+    "rule_condition_only": "只保留为规则条件",
+}
 LANDING_REPORT_HUMAN_GATE_DECISION_TERMS = [
     "接受长期降级",
     "关闭",
@@ -630,6 +635,24 @@ LANDING_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS = [
     "Human Gate UI",
     "展示确认对象",
     "承接 06 §6.3.1",
+]
+LANDING_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS = [
+    "当前",
+    "本次",
+    "现场确认",
+    "接受长期降级",
+    "判定 LDVH落地与检查闭环",
+    "声明 Human",
+]
+LANDING_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS = [
+    "前",
+    "时",
+    "发生",
+    "变化",
+    "用户请求",
+    "任一",
+    "§",
+    "从候选项创建",
 ]
 LANDING_REPORT_DEGRADED_MARKERS = [
     "open-degraded",
@@ -882,6 +905,23 @@ def landing_report_human_gate_subcategory(item):
     return "policy_clarification"
 
 
+def landing_report_human_gate_decision_flow(item):
+    text = " | ".join(
+        [
+            item.get("content", ""),
+            item.get("guarantee_mechanism", ""),
+            item.get("sync_type", ""),
+            item.get("trigger", ""),
+            item.get("status_reason", ""),
+        ]
+    )
+    if item.get("status") == "degraded" or any(term in text for term in LANDING_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS):
+        return "current_record_required"
+    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS):
+        return "future_trigger_record"
+    return "rule_condition_only"
+
+
 def landing_report_build_gap_categories(requirements, capability_gaps):
     categories = {}
     for item in list(requirements) + list(capability_gaps):
@@ -934,11 +974,29 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                     "by_status": {},
                     "examples": [],
                 }
+                if subcategory_key == "decision_record_required":
+                    subcategories[subcategory_key]["decision_flows"] = {}
             subcategory = subcategories[subcategory_key]
             subcategory["total"] += 1
             subcategory["by_status"][status] = subcategory["by_status"].get(status, 0) + 1
             if len(subcategory["examples"]) < 3:
                 subcategory["examples"].append(example)
+            if subcategory_key == "decision_record_required":
+                flow_key = landing_report_human_gate_decision_flow(item)
+                decision_flows = subcategory["decision_flows"]
+                if flow_key not in decision_flows:
+                    decision_flows[flow_key] = {
+                        "id": flow_key,
+                        "label": LANDING_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS.get(flow_key, flow_key),
+                        "total": 0,
+                        "by_status": {},
+                        "examples": [],
+                    }
+                flow = decision_flows[flow_key]
+                flow["total"] += 1
+                flow["by_status"][status] = flow["by_status"].get(status, 0) + 1
+                if len(flow["examples"]) < 3:
+                    flow["examples"].append(example)
     for category in categories.values():
         category["by_status"] = dict(sorted(category["by_status"].items(), key=lambda item: item[0]))
         category["by_suggested_writeback"] = dict(
@@ -947,6 +1005,10 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
         if category.get("subcategories"):
             for subcategory in category["subcategories"].values():
                 subcategory["by_status"] = dict(sorted(subcategory["by_status"].items(), key=lambda item: item[0]))
+                if subcategory.get("decision_flows"):
+                    for flow in subcategory["decision_flows"].values():
+                        flow["by_status"] = dict(sorted(flow["by_status"].items(), key=lambda item: item[0]))
+                    subcategory["decision_flows"] = dict(sorted(subcategory["decision_flows"].items(), key=lambda item: item[0]))
             category["subcategories"] = dict(sorted(category["subcategories"].items(), key=lambda item: item[0]))
     return dict(sorted(categories.items(), key=lambda item: item[0]))
 
@@ -1158,6 +1220,15 @@ def landing_report_format_text(report):
                     lines.append(
                         f"    - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
                     )
+                for flow in subcategory.get("decision_flows", {}).values():
+                    lines.append(
+                        f"    - {flow['label']} ({flow['id']}): "
+                        f"total={flow['total']}; status={flow['by_status']}"
+                    )
+                    for example in flow.get("examples", []):
+                        lines.append(
+                            f"      - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
+                        )
 
     return "\n".join(lines)
 
@@ -1963,7 +2034,7 @@ INDEX_NUMBERED_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?(?:\s+|$)")
 INDEX_HEADER_FIELD_RE = re.compile(r"^>\s*([^：:]+)[：:]\s*(.*)\s*$")
 INDEX_BACKTICK_MD_RE = re.compile(r"`([^`]+\.md)`")
 INDEX_PLAIN_SPECS_MD_RE = re.compile(
-    r"(?<![`\w./-])((?:specs/(?:evals/|refs/)?|docs/(?:specs|evals|refs)/)[^\s`，。；、)）]+\.md)"
+    r"(?<![`\w./-])((?:specs/(?:research/|refs/)?|docs/(?:specs|research|refs)/)[^\s`，。；、)）]+\.md)"
 )
 INDEX_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\d]+(?:\.\d+)*)")
 INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
@@ -2305,7 +2376,7 @@ class SpecsChecker:
         return (self.specs_dir / raw).resolve()
 
     def required_header_fields(self, doc_kind):
-        if doc_kind == "evals":
+        if doc_kind == "research":
             return ["创建日期", "定位", "调研边界", "执行效力", "编号归属"]
         if doc_kind == "refs":
             return ["创建日期", "来源", "定位"]
@@ -2316,12 +2387,12 @@ class SpecsChecker:
     def infer_doc_kind(self, path, title, header):
         rel = path.relative_to(self.root)
         parts = rel.parts
-        if len(parts) >= 2 and parts[0] == "docs" and parts[1] == "evals":
-            return "evals"
+        if len(parts) >= 2 and parts[0] == "docs" and parts[1] == "research":
+            return "research"
         if len(parts) >= 2 and parts[0] == "docs" and parts[1] == "refs":
             return "refs"
-        if len(parts) >= 2 and parts[0] == "specs" and parts[1] == "evals":
-            return "evals"
+        if len(parts) >= 2 and parts[0] == "specs" and parts[1] == "research":
+            return "research"
         if len(parts) >= 2 and parts[0] == "specs" and parts[1] == "refs":
             return "refs"
         if header.get("所属主文档"):

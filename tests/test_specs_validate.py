@@ -615,7 +615,7 @@ def build_fixture(tmp_path):
 """,
     )
     write_md(
-        specs / "evals" / "01-评估.md",
+        specs / "research" / "01-评估.md",
         """
 # 评估
 
@@ -623,7 +623,7 @@ def build_fixture(tmp_path):
 > 定位：评估
 > 调研边界：内部评估
 > 执行效力：无
-> 编号归属：evals
+> 编号归属：research
 
 ## 1. 结论
 """,
@@ -855,7 +855,7 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
 """,
     )
     write_md(
-        tmp_path / "docs" / "evals" / "18-评估.md",
+        tmp_path / "docs" / "research" / "18-评估.md",
         """
 # 评估
 
@@ -903,6 +903,7 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert report["gap_categories"]
     assert all("examples" in category for category in report["gap_categories"].values())
     assert report["gap_categories"]["human_gate"]["subcategories"]
+    assert report["gap_categories"]["human_gate"]["subcategories"]["decision_record_required"]["decision_flows"]
     assert report["runtime_projection"]["summary"]["status"] == report["summary"]["runtime_projection_status"]
     assert report["summary"]["by_owner_area"]["code"] == 1
     assert [item["id"] for item in report["capability_gaps"]] == [
@@ -940,6 +941,7 @@ def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["gap_categories"]["runtime_projection"]["capability_gap_count"] == 1
     assert payload["gap_categories"]["human_gate"]["subcategories"]["decision_record_required"]["total"] == 1
     assert payload["gap_categories"]["human_gate"]["subcategories"]["diagnostic_coverage"]["total"] == 1
+    assert payload["gap_categories"]["human_gate"]["subcategories"]["decision_record_required"]["decision_flows"]["future_trigger_record"]["total"] == 1
     assert payload["requirements"][0]["source"] == "docs/specs/00-Test.md"
     assert payload["capability_gaps"][0]["capability"] == "41 触发保障"
 
@@ -958,6 +960,7 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "Code / Test (code):" in output
     assert "Human Gate (human_gate):" in output
     assert "必须人类决策记录 (decision_record_required):" in output
+    assert "未来触发时记录 (future_trigger_record):" in output
     assert "Code 降级提示/覆盖 (diagnostic_coverage):" in output
     assert "后续 Code 应能生成 landing report" in output
     assert "运行投影检查文件数: 1" in output
@@ -1077,7 +1080,7 @@ def test_human_gate_complete_record_passes(tmp_path):
 Human Gate 记录：
 - 时间：2026-06-10
 - 决策：确认推进
-- 范围：docs/specs/41、docs/evals/18
+- 范围：docs/specs/41、docs/research/18
 - 约束：验证命令通过，剩余 Web 消费未实现，后续写回评估
 """,
     )
@@ -1133,7 +1136,7 @@ Human Gate 记录：
 - 时间：
   2026-06-10
 - 决策：暂缓
-- 范围：Task 和 docs/evals/18
+- 范围：Task 和 docs/research/18
 - 约束：测试通过，后续仍需 Web
 """,
     )
@@ -1226,7 +1229,7 @@ def test_human_gate_report_closed_when_record_complete(tmp_path, monkeypatch):
 Human Gate 记录：
 - 时间：2026-06-10
 - 决策：确认推进
-- 范围：docs/specs/41、docs/evals/18
+- 范围：docs/specs/41、docs/research/18
 - 约束：验证命令通过，剩余 Web 消费未实现，后续写回评估
 """,
     )
