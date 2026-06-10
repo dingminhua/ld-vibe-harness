@@ -2,171 +2,105 @@
 
 > 路由：`/objects/:type/:id`
 > 源码：`web/src/pages/ObjectDetail.tsx`
+> 字段格式规则：`web/src/utils/fieldFormats.ts`
 > API：`GET /api/objects/:type/:id`
 
 ## 1. 页面目标
 
-让用户完整查看一个事实对象的所有信息，包括元数据、内容字段和 YAML 源码。
+对象详情页是事实对象阅读器，不是 YAML 文件查看器。页面应按字段语义展示对象目标、证据、引用、状态和产出，并把 YAML 源码作为折叠兜底。
 
-## 2. 布局结构
+## 2. 当前页面结构
 
-```
-┌─────────────────────────────────────────┐
-│ ← 返回                                  │
-│ [类型标签]  标题                    状态  │
-│             ID                           │
-├─────────────────────────────────────────┤
-│ 元信息行                                 │
-│ [创建时间: xxx] [更新时间: xxx] [关闭时间]│
-├─────────────────────────────────────────┤
-│ 内容字段（每个字段一个卡片）              │
-│ ┌─────────────────────────────────────┐ │
-│ │ 📄 描述 / Description               │ │
-│ │ Markdown 渲染内容...                │ │
-│ └─────────────────────────────────────┘ │
-│ ┌─────────────────────────────────────┐ │
-│ │ 📄 验收标准 / Acceptance            │ │
-│ │ ☑ 条件1  ☐ 条件2                   │ │
-│ └─────────────────────────────────────┘ │
-│ ┌─────────────────────────────────────┐ │
-│ │ 📄 前置依赖 / Blocked By            │ │
-│ │ [task-0001] [task-0003]             │ │
-│ └─────────────────────────────────────┘ │
-│ ...                                     │
-├─────────────────────────────────────────┤
-│ ▶ YAML 源码 / YAML Source              │
-│ ┌─────────────────────────────────────┐ │
-│ │ 1 | id: intent-0001                 │ │
-│ │ 2 | title: ...                      │ │
-│ │ （语法高亮，可滚动，最大高度400px）   │ │
-│ └─────────────────────────────────────┘ │
-└─────────────────────────────────────────┘
+```text
+状态筛选（与对象列表一致，保留 query）
+返回按钮
+对象头部：类型标签 + 标题 + ID + 类型说明 + 状态徽章 + 状态提示
+元信息行：创建时间、更新时间、关闭时间、辅助属性
+内容区：
+  Task：语义阅读布局
+  其他对象：字段卡片布局
+Intent 聚合产出/文档（仅 Intent）
+YAML 源码折叠区
+右侧扩展阅读区（App Shell 提供，不属于本页卡片）
 ```
 
-## 3. 区域详细设计
+## 3. 头部与元信息
 
-### 3.1 头部
+- 顶部状态筛选使用 `ObjectStatusFilter`，点击后回到同类型列表并带上对应状态 query。
+- 返回按钮回到 `/objects/{type}`，保留当前 query。
+- 类型标签使用对象类型颜色，显示本地化类型名。
+- 标题优先使用 `title_zh/title_en`，回退 `title`，再回退 ID。
+- ID 使用 `ldvh-meta`，不做大号标题。
+- 状态徽章使用 `StatusBadge`；状态提示来自 `getStatusHint()`。
+- 元信息行使用 `MetaChip`，时间统一 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`。
+- priority、severity、repeatability、category、tags 等辅助属性在元信息行降权展示，不进入主阅读流。
 
-- 返回按钮：`← 返回 / ← Back`，点击回到列表
-- 类型标签：带颜色背景（20% 透明度），中英双语
-- 标题：中英切换（优先 title_en/title_zh，回退 title）
-- ID：等宽小字
-- 状态徽章：右侧，md 尺寸
+## 4. Task 语义阅读布局
 
-### 3.2 元信息行
+Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 
-- 横向排列，flex-wrap
-- 每个元信息为 MetaChip：标签（小字灰色）+ 值（等宽小字）
-- 固定显示：创建时间、更新时间
-- 条件显示：关闭时间（仅 closed_at 存在时）
-- 标签文案中英切换
+1. 任务目标：`description` + `source` + `source_intent`。
+2. 验收标准：`acceptance`，用 `ChecklistCard` 展示进度和每项状态。
+3. 验证方式与关闭证据：`verification`、`closure_evidence`，用 `EvidenceBlock` 展示 Markdown、命令和路径。
+4. 产出与文档：`deliverables`、`related_docs`、`affected_docs`，用 `DocPreviewLink`。
+5. 前置依赖：`blocked_by`，用 `ReferenceCard`。
+6. 其他字段：按 `fieldFormats.ts` 继续语义化渲染。
 
-### 3.3 内容字段
+## 5. 非 Task 对象字段布局
 
-每个字段一个卡片，字段名中英双语。
+- 每个字段一个轻量卡片，字段标题用 `ldvh-caption-strong`。
+- 关联类字段可折叠；Intent 的关联字段默认展开，其他类型默认折叠。
+- Pitfall、ADR、Memo、Intent 等长文本字段必须按 Markdown 渲染。
+- Intent 的 `aggregated_deliverables` 和 `aggregated_docs` 作为聚合区域显示，不混入普通字段卡片。
 
-**字段渲染规则**：
+## 6. 字段渲染规则
 
-| 值类型 | 渲染方式 |
-|---|---|
-| Markdown 字段 | react-markdown + remark-gfm 渲染 |
-| Checklist 字段 | GFM 渲染（含复选框） |
-| 长文本（含换行或 >200 字） | Markdown 渲染 |
-| 短文本 | 纯文本 |
-| 布尔值 | 绿色/红色标签（true/false） |
-| 数字 | 等宽 accent 色 |
-| 字符串数组 | 标签列表（圆角边框小标签） |
-| 对象数组 | 每个对象一个嵌套卡片 |
-| 对象 | 键值对列表，键名也用 FIELD_LABEL_LOCALES 国际化 |
-| null/undefined | 灰色斜体 "—" |
+字段分类由 `web/src/utils/fieldFormats.ts` 统一维护，详情页和右侧扩展阅读区必须共同消费同一套规则。
 
-**Markdown 字段列表**：description, success_criteria, constraints, acceptance, verification, notes, rationale, context, consequences, observation, analysis, mitigation, resolution
-
-**Checklist 字段列表**：acceptance, blocked_by
-
-**元信息字段（不显示在内容区）**：id, type, status, created, updated, closed_at, title, title_en, title_zh
-
-### 3.4 YAML 源码
-
-- 折叠/展开按钮：Code2 图标 + "YAML 源码" + 箭头
-- 展开后：react-syntax-highlighter 渲染，YAML 语法 + oneDark 主题
-- 显示行号
-- 最大高度 400px，可滚动
-- 源码由 `objectToYaml()` 函数从对象数据生成（非 JSON.stringify）
-
-## 4. 字段名国际化映射
-
-### 4.1 类型标签
-
-| 类型 | 中文 | 英文 |
+| 字段类型 | 渲染组件 | 当前行为 |
 |---|---|---|
-| intent | 意图 | Intent |
-| task | 任务 | Task |
-| adr | ADR | ADR |
-| pitfall | BUG | Bug |
-| memo | 备忘 | Memo |
-| profile | 画像 | Profile |
-| change | 变更 | Change |
+| 叙述说明 / 决策 / 过程记录 | `SummaryText` | Markdown 渲染，长内容按段落摘要/展开 |
+| 检查清单 | `ChecklistCard` | 进度条 + 勾选/未勾选图标 + inline Markdown |
+| 兼容检查清单字段 | `ChecklistCard` 或 `SummaryText` | 只有内容包含 `- [ ]` / `- [x]` 时才按检查清单渲染 |
+| 验证证据 | `EvidenceBlock` | Markdown 渲染，命令、路径和代码突出显示 |
+| 对象 ID 引用 | `ReferenceCard` | 点击在右侧扩展阅读区打开对象 |
+| 文档路径 / URL | `DocPreviewLink` | 本地 Markdown 文档在右侧扩展阅读区预览；外部 URL 新窗口打开 |
+| 路径文本 | `PathText` | 等宽、可换行的路径标签 |
+| 其他短文本 | `ldvh-body` | 普通文本 |
 
-### 4.2 字段名（29 个已映射）
+## 7. 右侧扩展阅读区
 
-| 字段键 | 中文 | 英文 |
-|---|---|---|
-| description | 描述 | Description |
-| success_criteria | 成功标准 | Success Criteria |
-| constraints | 约束 | Constraints |
-| acceptance | 验收标准 | Acceptance |
-| verification | 验证方式 | Verification |
-| notes | 备注 | Notes |
-| rationale | 理由 | Rationale |
-| context | 背景 | Context |
-| consequences | 影响 | Consequences |
-| observation | 观察 | Observation |
-| analysis | 分析 | Analysis |
-| mitigation | 缓解措施 | Mitigation |
-| resolution | 解决方案 | Resolution |
-| blocked_by | 前置依赖 | Blocked By |
-| source_intent | 来源意图 | Source Intent |
-| parent_task | 父任务 | Parent Task |
-| closure_evidence | 关闭证据 | Closure Evidence |
-| transition_reasons | 流转记录 | Transition Reasons |
-| options | 选项 | Options |
-| decision | 决策 | Decision |
-| related_tasks | 关联任务 | Related Tasks |
-| related_adrs | 关联 ADR | Related ADRs |
-| scope | 范围 | Scope |
-| impact | 影响范围 | Impact |
-| severity | 严重程度 | Severity |
-| category | 分类 | Category |
-| tags | 标签 | Tags |
-| path | 路径 | Path |
-| changes | 变更列表 | Changes |
+- 由 App Shell 的 `ReadingPanel` 提供。
+- 触发来源：对象引用、文档引用、Dashboard / Workbench 的对象条目。
+- 顶部只保留上一个访问对象、下一个访问对象和关闭按钮。
+- 不展示对象列表式导航。
+- 对象预览按对象类型展示关键字段，并复用 `fieldFormats.ts`。
+- Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。
 
-未映射的字段回退为：`field_key` → `Field Key`（下划线替换+首字母大写）
+## 8. YAML 源码
 
-## 5. 交互
+- 默认折叠。
+- 展开后使用 `react-syntax-highlighter` + YAML + oneDark。
+- 显示行号，最大高度 400px。
+- YAML 源码是事实完整性兜底，不作为主阅读体验。
 
-| 操作 | 行为 |
-|---|---|
-| 点击返回 | 回到 `/objects/{type}` |
-| 点击 YAML 折叠按钮 | 展开/收起 YAML 源码 |
-| 语言切换 | 类型标签、字段名、元信息标签、YAML 按钮文案跟随切换 |
+## 9. 实现约束
 
-## 6. API 数据结构
+1. 不把关联任务显示成只有 ID 的标签；对象引用必须可点击并能在扩展区查看详情。
+2. 不把 Markdown 字段当纯文本展示。
+3. 不把文档产出只显示路径；本地 Markdown 文档必须可在扩展区预览。
+4. 不把辅助属性提升为主阅读流大字段。
+5. 不恢复右侧“关联对象列表导航”；右侧只做访问历史前进/后退。
+6. 不在业务组件里新增另一套字段格式判断；新增字段先更新 `fieldFormats.ts` 和 `05.01`。
+
+## 10. API 数据结构
 
 ```typescript
 interface ObjectDetail {
+  ok: boolean;
+  action: string;
+  target: string;
   summary: { id: string; type: string; status: string };
-  data: Record<string, unknown>;  // 完整 YAML 内容
+  data: Record<string, unknown>;
 }
 ```
-
-## 7. 已知问题与改进方向
-
-- [ ] 缺少编辑入口（当前只读）
-- [ ] 缺少对象间导航（如从 task 跳转到 blocked_by 的 task）
-- [ ] YAML 源码缺少复制按钮
-- [ ] 长页面缺少目录/锚点导航
-- [ ] 嵌套对象的键名宽度不统一，可考虑对齐
-- [ ] 布尔值 true/false 可考虑中英双语（是/否 / Yes/No）
-- [ ] 空数组显示 "empty" 未国际化

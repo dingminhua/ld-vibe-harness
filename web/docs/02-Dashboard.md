@@ -6,118 +6,117 @@
 
 ## 1. 页面目标
 
-让用户一眼掌握项目全局状态：对象统计、最近活动、最近变更、校验结果、待推进事项。
+仪表盘是 LDVH 的全局态势页，用于快速判断：
 
-## 2. 布局结构
+- 当前有哪些对象需要推进；
+- 最近发生了哪些变更；
+- 校验和 42 落地检查是否存在缺口；
+- 规范落地要求、能力状态和 Human Gate 是否处于健康状态。
 
-```
-┌─────────────────────────────────────────┐
-│ 页面标题：仪表盘 / Dashboard            │
-├─────────────────────────────────────────┤
-│ Profile 卡片（如有）                     │
-│ ┌─────────────────────────────────────┐ │
-│ │ 项目名 + ID          状态徽章       │ │
-│ └─────────────────────────────────────┘ │
-├─────────────────────────────────────────┤
-│ 统计网格                                │
-│ ┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐  │
-│ │意图││任务││ADR ││BUG ││备忘││画像│  │
-│ └────┘└────┘└────┘└────┘└────┘└────┘  │
-│ grid-cols-2 sm:3 md:4 lg:5 xl:7       │
-├──────────────────┬──────────────────────┤
-│ 最近活动         │ 最近变更             │
-│ ┌──────────────┐ │ ┌──────────────────┐ │
-│ │ 类型标签     │ │ │ 分类标签         │ │
-│ │ 标题 状态 时间│ │ │ 描述      时间   │ │
-│ │ ...          │ │ │ ...              │ │
-│ └──────────────┘ │ └──────────────────┘ │
-├──────────────────┼──────────────────────┤
-│ 校验状态         │ 待推进               │
-│ ┌────┬────┬────┐ │ ┌──────────────────┐ │
-│ │状态│错误│警告│ │ │ 类型 标题 状态 时间│ │
-│ └────┴────┴────┘ │ │ ...              │ │
-│                   │ └──────────────────┘ │
-└──────────────────┴──────────────────────┘
+仪表盘不是营销首页，不使用 hero、介绍区或大面积装饰图形。
+
+## 2. 当前页面结构
+
+```text
+页面标题：仪表盘
+态势摘要行（如：1 个任务执行中，6 个待审查，1 个计划中）
+可选校验错误横幅
+Profile 卡片（如存在） + LDVH 落地引导卡片
+对象统计网格（intent/task/adr/pitfall/memo/profile）
+待推进 + 最近变更
+最近活动 + 校验状态
+规范落地要求合规 + LDVH 落地健康度
 ```
 
-## 3. 区域详细设计
+## 3. 关键区域
 
-### 3.1 Profile 卡片
+### 3.1 态势摘要
 
-- 条件：仅当 `data.profile` 存在时显示
-- 内容：项目标题（中英切换）+ ID + 状态徽章
-- 样式：圆角边框卡片，左对齐标题，右对齐状态
+- 位于页面标题下方。
+- 只展示非零关键状态，例如 executing、verifying、review_needed、planned 和校验错误。
+- 使用 `ldvh-caption`，不得做成大号 banner 或重复统计卡。
 
-### 3.2 统计网格
+### 3.2 LDVH 落地引导
 
-- 组件：`StatsCard`
-- 固定顺序：intent → task → adr → pitfall → memo → profile
-- 每张卡片：类型标签 + 计数 + 按状态分布
-- 标题文字 `truncate`，数字 `shrink-0`
-- 点击跳转：`/objects/{type}`
-- 响应式列数：`grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7`
+- 与 Profile 卡片共同处于 `ldvh-dashboard-lead-grid`。
+- 展示 42 落地检查、规范落地要求和 Human Gate 的能力状态。
+- 使用细进度条区分 closed / degraded / open。
+- 主操作按钮进入 `/validate`。
 
-### 3.3 最近活动
+### 3.3 对象统计网格
 
-- 标题图标：Activity
-- 每条：类型标签（带颜色）+ 标题（中英）+ 状态徽章 + 相对时间
-- 类型标签颜色：按 1.5 颜色体系
-- 相对时间：双语，最小"1分钟前"
-- 点击跳转：`/objects/{type}/{id}`
-- 空态：`暂无最近活动 / No recent activity`
+- 使用 `ldvh-dashboard-stats-grid`。
+- 固定顺序：intent → task → adr → pitfall → memo → profile。
+- 每张卡片展示类型名称、总数和状态分布。
+- 点击统计卡片跳转到 `/objects/{type}`。
 
-### 3.4 最近变更
+### 3.4 待推进
 
-- 标题图标：GitCommit
-- 每条：分类标签（带颜色+双语）+ 描述 + 相对时间
-- 不显示 hash
-- 分类标签：conventional commit 类型，双语（如 功能/Feature）
-- 点击跳转：`/changelog`
-- 空态：`暂无最近变更 / No recent changes`
+- 位于第一组主面板左侧。
+- 展示非终态对象，重点状态使用左侧 accent 边线。
+- 点击条目打开右侧扩展阅读区，不直接离开仪表盘。
 
-### 3.5 校验状态
+### 3.5 最近变更
 
-- 标题图标：Shield
-- 三列：状态（通过/未通过）+ 错误数 + 警告数
-- 状态图标：CheckCircle（绿）/ AlertCircle（红）
-- 数字使用大号等宽字体
+- 位于第一组主面板右侧。
+- 每条展示提交分类标签、描述和相对时间。
+- 点击条目进入 `/changelog`。
 
-### 3.6 待推进
+### 3.6 最近活动
 
-- 标题图标：ArrowRightCircle
-- 数据：所有非终态对象，按优先级排序
-  - verifying > review_needed > executing > planned > active > proposed
-- 每条：类型标签（带颜色）+ 标题（中英）+ 状态徽章 + 相对时间
-- 最多显示 8 条
-- 点击跳转：`/objects/{type}/{id}`
-- 空态：`所有事项已完成 / All items completed`
+- 位于第二组主面板左侧。
+- 每条展示对象类型、标题、状态和相对时间。
+- 点击条目打开右侧扩展阅读区。
+
+### 3.7 校验状态
+
+- 位于第二组主面板右侧。
+- 展示通过/未通过、错误数、警告数。
+- 数字和状态必须使用统一语义排版类，不使用页面级大标题字号。
+
+### 3.8 规范落地要求合规与落地健康度
+
+- 位于页面底部的总结区。
+- 合规摘要展示落地要求数量、已达成、降级、待处理等状态。
+- 健康度区展示 42 / landing-report / Human Gate 等能力状态。
+- 该区域只展示派生态势，不替代 Git 文件事实源。
 
 ## 4. 交互
 
 | 操作 | 行为 |
 |---|---|
-| 点击统计卡片 | 跳转到对应类型列表 |
-| 点击活动条目 | 跳转到对象详情 |
-| 点击变更条目 | 跳转到变更日志 |
-| 点击待推进条目 | 跳转到对象详情 |
-| 语言切换 | 所有文案、标题、标签、时间跟随切换 |
+| 点击统计卡片 | 跳转到对应对象列表 |
+| 点击待推进条目 | 打开右侧扩展阅读区预览对象 |
+| 点击最近活动条目 | 打开右侧扩展阅读区预览对象 |
+| 点击最近变更条目 | 跳转到变更日志 |
+| 点击落地引导按钮 | 跳转到校验页 |
+| 切换语言 | 页面框架、标签、状态、相对时间同步切换 |
 
-## 5. API 数据结构
+## 5. 实现约束
+
+1. 不把仪表盘改成卡片堆叠的营销首页。
+2. 不把待推进和最近活动改回详情页直接跳转；当前主流程是右侧扩展阅读。
+3. 不在仪表盘中展示 raw status、raw type 或 raw enum。
+4. 不使用固定 `lg:grid-cols-*` 作为唯一布局依据；继续使用 `ldvh-dashboard-*` 自适应网格。
+5. 不重复展示同一副标题或同一页面说明。
+
+## 6. API 数据结构
 
 ```typescript
 interface DashboardData {
+  landing?: {
+    totalRequirements: number;
+    gapTotal: number;
+    gapByArea: Record<string, number>;
+    capabilityStatus: Record<string, string>;
+    humanGateStatus: string;
+    validationPlanStatus: Record<string, string>;
+  } | null;
   profile: { id: string; title: string; title_en?: string; title_zh?: string; status: string } | null;
   stats: { type: string; total: number; byStatus: Record<string, number> }[];
   recentItems: { type: string; id: string; title: string; title_en?: string; title_zh?: string; status: string; relativeTime: string; typeColor: string }[];
+  actionItems: { type: string; id: string; title: string; title_en?: string; title_zh?: string; status: string; relativeTime: string; typeColor: string }[];
   recentChanges: { hash: string; shortHash: string; message: string; description: string; category: string; author: string; date: string; relativeTime: string }[];
   validation: { ok: boolean; errors: number; warnings: number };
-  actionItems: { type: string; id: string; title: string; title_en?: string; title_zh?: string; status: string; relativeTime: string; typeColor: string }[];
 }
 ```
-
-## 6. 已知问题与改进方向
-
-- [ ] Profile 卡片信息量少，可考虑展示项目描述
-- [ ] 统计卡片在手机端只有 2 列，信息密度低
-- [ ] 校验状态区域可增加"立即校验"按钮
-- [ ] 待推进区域缺少优先级视觉区分（如颜色深浅）
