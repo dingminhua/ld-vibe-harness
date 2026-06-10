@@ -593,6 +593,44 @@ LANDING_REPORT_WRITEBACK_AREAS = {
     "code": "code_request_or_test",
     "human_gate": "human_gate_record",
 }
+LANDING_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS = {
+    "decision_record_required": "必须人类决策记录",
+    "policy_clarification": "规范口径说明",
+    "implementation_support": "承接实现支持",
+    "diagnostic_coverage": "Code 降级提示/覆盖",
+}
+LANDING_REPORT_HUMAN_GATE_DECISION_TERMS = [
+    "接受长期降级",
+    "关闭",
+    "创建",
+    "删除",
+    "修改",
+    "写入",
+    "改变",
+    "状态流转",
+    "事实源",
+    "高影响",
+    "授权",
+    "权限",
+    "危险权限",
+    "宣称",
+    "完整支持",
+    "通过",
+    "闭环",
+    "核心",
+    "降级",
+]
+LANDING_REPORT_HUMAN_GATE_POLICY_TERMS = [
+    "评估 Human Gate",
+    "应评估 Human Gate",
+    "应先讨论",
+    "讨论是否",
+]
+LANDING_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS = [
+    "Human Gate UI",
+    "展示确认对象",
+    "承接 06 §6.3.1",
+]
 LANDING_REPORT_DEGRADED_MARKERS = [
     "open-degraded",
     "degraded",
@@ -823,6 +861,27 @@ def landing_report_is_gap(item):
     return item.get("status") != "closed"
 
 
+def landing_report_human_gate_subcategory(item):
+    if "capability" in item:
+        return "diagnostic_coverage"
+    text = " | ".join(
+        [
+            item.get("content", ""),
+            item.get("guarantee_mechanism", ""),
+            item.get("sync_type", ""),
+            item.get("trigger", ""),
+            item.get("status_reason", ""),
+        ]
+    )
+    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS):
+        return "implementation_support"
+    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_POLICY_TERMS):
+        return "policy_clarification"
+    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_DECISION_TERMS):
+        return "decision_record_required"
+    return "policy_clarification"
+
+
 def landing_report_build_gap_categories(requirements, capability_gaps):
     categories = {}
     for item in list(requirements) + list(capability_gaps):
@@ -840,6 +899,8 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                 "capability_gap_count": 0,
                 "examples": [],
             }
+            if owner_area == "human_gate":
+                categories[owner_area]["subcategories"] = {}
         category = categories[owner_area]
         status = item.get("status") or "unknown"
         suggested_writeback = item.get("suggested_writeback") or "manual_review"
@@ -854,20 +915,39 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
             category["requirement_count"] += 1
             title = item.get("content", "")
             source = f"{item.get('source')}:{item.get('line')}"
+        example = {
+            "source": source,
+            "status": status,
+            "title": landing_report_shorten(title, 120),
+            "suggested_writeback": suggested_writeback,
+        }
         if len(category["examples"]) < 3:
-            category["examples"].append(
-                {
-                    "source": source,
-                    "status": status,
-                    "title": landing_report_shorten(title, 120),
-                    "suggested_writeback": suggested_writeback,
+            category["examples"].append(example)
+        if owner_area == "human_gate":
+            subcategory_key = landing_report_human_gate_subcategory(item)
+            subcategories = category["subcategories"]
+            if subcategory_key not in subcategories:
+                subcategories[subcategory_key] = {
+                    "id": subcategory_key,
+                    "label": LANDING_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS.get(subcategory_key, subcategory_key),
+                    "total": 0,
+                    "by_status": {},
+                    "examples": [],
                 }
-            )
+            subcategory = subcategories[subcategory_key]
+            subcategory["total"] += 1
+            subcategory["by_status"][status] = subcategory["by_status"].get(status, 0) + 1
+            if len(subcategory["examples"]) < 3:
+                subcategory["examples"].append(example)
     for category in categories.values():
         category["by_status"] = dict(sorted(category["by_status"].items(), key=lambda item: item[0]))
         category["by_suggested_writeback"] = dict(
             sorted(category["by_suggested_writeback"].items(), key=lambda item: item[0])
         )
+        if category.get("subcategories"):
+            for subcategory in category["subcategories"].values():
+                subcategory["by_status"] = dict(sorted(subcategory["by_status"].items(), key=lambda item: item[0]))
+            category["subcategories"] = dict(sorted(category["subcategories"].items(), key=lambda item: item[0]))
     return dict(sorted(categories.items(), key=lambda item: item[0]))
 
 
@@ -1069,6 +1149,15 @@ def landing_report_format_text(report):
                 lines.append(
                     f"  - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
                 )
+            for subcategory in category.get("subcategories", {}).values():
+                lines.append(
+                    f"  - {subcategory['label']} ({subcategory['id']}): "
+                    f"total={subcategory['total']}; status={subcategory['by_status']}"
+                )
+                for example in subcategory.get("examples", []):
+                    lines.append(
+                        f"    - [{example['status']}] {example['title']} -> {example['suggested_writeback']}"
+                    )
 
     return "\n".join(lines)
 

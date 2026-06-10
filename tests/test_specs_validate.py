@@ -902,6 +902,7 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     }
     assert report["gap_categories"]
     assert all("examples" in category for category in report["gap_categories"].values())
+    assert report["gap_categories"]["human_gate"]["subcategories"]
     assert report["runtime_projection"]["summary"]["status"] == report["summary"]["runtime_projection_status"]
     assert report["summary"]["by_owner_area"]["code"] == 1
     assert [item["id"] for item in report["capability_gaps"]] == [
@@ -937,6 +938,8 @@ def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["summary"]["gap_by_owner_area"]["human_gate"] == 2
     assert payload["gap_categories"]["code"]["requirement_count"] == 1
     assert payload["gap_categories"]["runtime_projection"]["capability_gap_count"] == 1
+    assert payload["gap_categories"]["human_gate"]["subcategories"]["decision_record_required"]["total"] == 1
+    assert payload["gap_categories"]["human_gate"]["subcategories"]["diagnostic_coverage"]["total"] == 1
     assert payload["requirements"][0]["source"] == "docs/specs/00-Test.md"
     assert payload["capability_gaps"][0]["capability"] == "41 触发保障"
 
@@ -954,6 +957,8 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "缺口分类:" in output
     assert "Code / Test (code):" in output
     assert "Human Gate (human_gate):" in output
+    assert "必须人类决策记录 (decision_record_required):" in output
+    assert "Code 降级提示/覆盖 (diagnostic_coverage):" in output
     assert "后续 Code 应能生成 landing report" in output
     assert "运行投影检查文件数: 1" in output
     assert "Human Gate 记录数: 0" in output
