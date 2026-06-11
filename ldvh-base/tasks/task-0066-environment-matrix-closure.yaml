@@ -1,0 +1,67 @@
+id: task-0066
+type: task
+title: 闭合 04.06 三环境承接矩阵前置缺口
+status: planned
+created: '2026-06-11T00:00:00'
+updated: '2026-06-11T00:00:00'
+description: |
+  当前 04.06 正文已实质承担 Trae Work CN、Codex App、Claude Code CLI 三环境承接矩阵入口，但矩阵字段、证据来源、04.07/04.08 迁移、Claude Code CLI refs、42 消费口径和 Code 校验尚未闭合。
+
+  本 Task 用于从 ECC 参考体系中提取可迁移的环境承接矩阵设计依据，明确 LDVH 04.06 应如何闭合，而不是直接把 ECC 结论复制为 LDVH 事实源。
+source: 用户直接指示：04 矩阵以及具体怎么做还需要从 ECC 找答案，需要生成 Task 分别推进
+source_intent:
+parent_task:
+sub_tasks: []
+blocked_by: []
+acceptance: |
+  - [ ] 找到 ECC 中与平台适配、环境承接、矩阵、支持状态、open_items、检查方式、降级方式相关的依据
+  - [ ] 明确 ECC 机制中哪些可迁移到 LDVH，哪些不能迁移，哪些需要改名为 LDVH 术语
+  - [ ] 明确 04.06 是否作为三环境承接矩阵唯一入口，以及该判断是否需要 ADR
+  - [ ] 明确 04.06 矩阵卡片字段，包括承接对象、三环境承接类型、来源、承接检查、承接降级、待补齐事项和验证证据
+  - [ ] 明确 04.07 / 04.08 作为 refs-only 迁移输入的吸收清单和退场条件
+  - [ ] 明确 Claude Code CLI refs 与实测证据补齐路径
+  - [ ] 明确 42 应如何消费 04.06，避免继续把 04.07 / 04.08 当作长期独立清单
+  - [ ] 明确 Code 校验应如何从三环境名称存在性检查扩展为矩阵字段级校验
+  - [ ] 输出后续正式修改 04 系列和 Code 校验的 Task 边界
+verification: |
+  ## 验证计划
+
+  - 只读检索 ECC 相关 refs、research、specs 或历史材料，记录来源路径和关键结论。
+  - 对照 LDVH `docs/specs/04.06-平台适配清单规范.md`、04.07、04.08、42 和 `tools/specs_validate.py` 当前实现，形成缺口清单。
+  - 运行必要的只读检查命令，例如 `python3 tools/specs_validate.py ldvh-landing-check --format json`，确认矩阵相关缺口如何暴露。
+
+  ## 验证结果
+
+  待执行。
+risk_assessment: |
+  - 避免把 ECC 机制直接当作 LDVH 事实源；ECC 只能作为参考依据。
+  - 避免在证据不足时宣称任一环境完整承接。
+  - 避免直接删除 04.07 / 04.08 或重命名 04.06；这些动作需后续 Human Gate 和独立执行 Task。
+  - 避免把 Code、Web、证据回写误归类为环境能力项。
+assignee: AI
+related_adrs: []
+related_changes: []
+related_docs:
+  - docs/specs/04-规范落地与环境适配基础规范.md
+  - docs/specs/04.06-平台适配清单规范.md
+  - docs/specs/04.07-Trae-Solo适配清单.md
+  - docs/specs/04.08-Codex适配清单.md
+  - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+  - docs/research/23-LDVH资产层与04系列重构计划.md
+affected_docs:
+  - docs/specs/04-规范落地与环境适配基础规范.md
+  - docs/specs/04.06-平台适配清单规范.md
+  - docs/specs/04.07-Trae-Solo适配清单.md
+  - docs/specs/04.08-Codex适配清单.md
+  - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+  - tools/specs_validate.py
+  - tests/test_specs_validate.py
+deliverables: []
+status_history:
+  - at: '2026-06-11T00:00:00'
+    from:
+    to: planned
+    actor: AI
+    reason: 用户确认 04 矩阵前置问题需要从 ECC 找答案，并要求生成独立 Task。
+closed_at:
+closure_evidence:

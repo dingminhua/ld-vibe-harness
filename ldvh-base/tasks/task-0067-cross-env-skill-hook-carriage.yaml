@@ -1,0 +1,64 @@
+id: task-0067
+type: task
+title: 研究跨环境 Skill 与 Hook 能力承接差异
+status: planned
+created: '2026-06-11T00:00:00'
+updated: '2026-06-11T00:00:00'
+description: |
+  用户指出当前仍不清楚具体跨环境能力差异如何处理，例如 Codex 里的 Skill + Hook 效果到 Trae 里只有 Skill 时，LDVH 应如何承接、降级、拆分、补偿或记录缺口。
+
+  本 Task 用于从 ECC 中寻找能力承接差异处理依据，研究 Skill、Hook、Agent、Rules / Instructions、Code、Web 等能力在不同 AI 开发环境中的等价、降级、替代和缺口记录方法，并为 LDVH 04 矩阵与相关规范提供前置答案。
+source: 用户直接指示：Codex 中 Skill + Hook 效果到 Trae 中只有 Skill 时怎么办，需要从 ECC 找答案，并生成独立 Task
+source_intent:
+parent_task:
+sub_tasks: []
+blocked_by: []
+acceptance: |
+  - [ ] 找到 ECC 中关于 Skill、Hook、Agent、Rules / Instructions、触发机制、自动化承接或降级补偿的依据
+  - [ ] 梳理 Codex App、Trae Work CN、Claude Code CLI 对 Skill、Hook 或等价机制的能力差异
+  - [ ] 明确“一个环境的 Skill + Hook 组合效果，在另一个环境只有 Skill 时”应如何表达承接类型
+  - [ ] 明确哪些能力可以等价迁移，哪些需要人工降级，哪些需要 Code / Task / 运行投影补偿
+  - [ ] 明确能力组合拆分规则：Skill 负责什么、Hook 负责什么、主控 AI 负责什么、Task 承载什么
+  - [ ] 明确矩阵中应如何记录组合能力、缺失能力、替代能力、待补齐事项和验证证据
+  - [ ] 明确是否需要修改 04.03、04.06、11.01、01 目录说明或相关 Code 校验
+  - [ ] 输出后续正式修改 specs / Code / tests 的 Task 边界
+verification: |
+  ## 验证计划
+
+  - 只读检索 ECC 相关 refs、research、specs 或历史材料，优先查找能力适配、触发机制、Hook、Skill、自动化承接、降级和运行投影相关内容。
+  - 对照 LDVH `skills/`、`hooks/`、`agents/`、`rules/` 资产定位，以及 04.03、04.06、11.01 当前表述，形成跨环境能力差异处理方案。
+  - 至少给出一个具体案例：Codex 的 Skill + Hook 组合如何在 Trae 只有 Skill 的情况下承接或降级。
+
+  ## 验证结果
+
+  待执行。
+risk_assessment: |
+  - 避免把某环境的专有机制直接当作 LDVH 抽象能力。
+  - 避免把只有 Skill 的环境误判为完整承接 Skill + Hook 组合效果。
+  - 避免自动启用 Hook 或自动写入运行投影；持久投影和自动化触发需 Human Gate。
+  - 避免用 plan 类输出替代 Task；正式安排、执行拆分、验收和关闭证据应进入 Task。
+assignee: AI
+related_adrs: []
+related_changes: []
+related_docs:
+  - docs/specs/01-目录说明.md
+  - docs/specs/04.03-环境能力承接边界规范.md
+  - docs/specs/04.06-平台适配清单规范.md
+  - docs/specs/11.01-第三方Skill接管落地选项.md
+  - docs/specs/26-Task-任务.md
+affected_docs:
+  - docs/specs/01-目录说明.md
+  - docs/specs/04.03-环境能力承接边界规范.md
+  - docs/specs/04.06-平台适配清单规范.md
+  - docs/specs/11.01-第三方Skill接管落地选项.md
+  - tools/specs_validate.py
+  - tests/test_specs_validate.py
+deliverables: []
+status_history:
+  - at: '2026-06-11T00:00:00'
+    from:
+    to: planned
+    actor: AI
+    reason: 用户指出跨环境 Skill + Hook 与 Skill-only 差异仍未明确，需要从 ECC 找答案，并要求生成独立 Task。
+closed_at:
+closure_evidence:
