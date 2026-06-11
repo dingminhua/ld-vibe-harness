@@ -20,7 +20,7 @@ Change 是工作模型中的特殊对象：它不使用 `ldvh-base/changes/` 下
 1. 修改 docs/specs 正式规范、research 吸收结果、refs 摘要或输入材料吸收结论；
 2. 修改 docs 正文、docs/research 或 docs/refs 中的稳定项目事实；
 3. 修改 `ldvh-base/` 下的事实实例；
-4. 修改 Rules / Instructions、Skill、Agent、环境适配记录或运行投影；
+4. 修改 Rules / Instructions、Skill、Agent、环境适配记录或适配措施；
 5. 修改 Code、Web、测试、配置或会影响 LDVH 行为的实现文件；
 6. 完成 WorkArea、TaskPlan、Task、SubTask、ADR、Memo、Pitfall 等对象的创建、状态变化、关闭或删除；
 7. 影响其他对象、规范入口、事实源边界或需要跨会话追溯的修改。
@@ -117,7 +117,7 @@ Memo 的准入、状态和字段契约由 `docs/specs/25-Memo-备忘.md` 定义�
 
 ### 4.5 Change 与规范、Code、Web
 
-修改 docs/specs、Code、Web、测试、环境适配记录或运行投影时，Change 应在 `type`、`scope`、subject 或 body 中说明影响范围。Change 只记录变更事实，不定义规范规则、Code 行为或 Web 状态。
+修改 docs/specs、Code、Web、测试、环境适配记录或适配措施时，Change 应在 `type`、`scope`、subject 或 body 中说明影响范围。Change 只记录变更事实，不定义规范规则、Code 行为或 Web 状态。
 
 ---
 ## 5. Human Gate
@@ -128,7 +128,7 @@ Change 自身不为“记录变更”额外触发 Human Gate。Human Gate 由被
 
 1. 修改 docs/specs 正式规范、事实源边界、工作模型字段契约或状态机；
 2. 修改 `ldvh-base/` 中高影响事实实例；
-3. 修改 Rules / Instructions、Skill、Agent 或环境运行投影；
+3. 修改 Rules / Instructions、Skill、Agent 或环境适配措施；
 4. 修改 Code 受控写入、校验、Human Gate 或 Web 受控编辑能力；
 5. 进行破坏性 Git 操作，例如改写已共享提交记录、强推或删除分支；
 6. 试图把 Change 从 Git commit 记录改为 `ldvh-base/changes/` YAML 实例；
@@ -326,7 +326,7 @@ Web 不得把数据库缓存、页面状态或派生索引替代 Git commit 记�
 | 入口可见要求 | AI 执行事实源修改、关闭 Task、关闭任务计划或准备提交时，应能定位本文 | 20 集合索引、commit 流程入口、运行入口摘要 | AI 执行入口提示 | Git 提交、任务关闭、任务计划关闭、规范吸收、Code/Web 修改或多仓库变更时 |
 | 确定性执行要求 | commit message 格式、type、scope、Refs、subject 长度和中文约束应由 Code 校验或记录缺口 | `tools/commit_validate.py`、`docs/specs/07-Code确定性执行实现规范.md`、正反样例 | 校验实现 | commit 格式、枚举、Refs 规则或校验实现变化时 |
 | Human 交互要求 | 高影响事实源修改、提交记录改写、强推、删除校验或改变 Change 承载方式应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | Change 规范变化后，应检查 commit_validate、测试、WorkArea、TaskPlan、Task、SubTask、Web、运行投影和相关工作流程是否需要同步 | Code 测试、对象关系检查、Web 联动检查、人工降级检查 | 触发保障 | Change 字段契约、事实源边界、提交纪律或适配规则变化时 |
+| 生命周期触发要求 | Change 规范变化后，应检查 commit_validate、测试、WorkArea、TaskPlan、Task、SubTask、Web、适配措施和相关工作流程是否需要同步 | Code 测试、对象关系检查、Web 联动检查、人工降级检查 | 触发保障 | Change 字段契约、事实源边界、提交纪律或适配规则变化时 |
 
 ---
 ## 10. 检查要求
