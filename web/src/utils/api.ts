@@ -283,6 +283,7 @@ export interface ProjectFileEntriesData {
   project: GovernedProject;
   dir: string;
   parent: string;
+  showHidden: boolean;
   truncated: boolean;
   entries: ProjectFileEntry[];
 }
@@ -325,14 +326,16 @@ export async function fetchProjectFilesProjects(): Promise<ProjectFilesProjectsD
   return request<ProjectFilesProjectsData>('/project-files/projects');
 }
 
-export async function fetchProjectFileEntries(projectId: string, dir = ''): Promise<ProjectFileEntriesData> {
+export async function fetchProjectFileEntries(projectId: string, dir = '', showHidden = false): Promise<ProjectFileEntriesData> {
   const params = new URLSearchParams({ projectId });
   if (dir) params.set('dir', dir);
+  if (showHidden) params.set('showHidden', 'true');
   return request<ProjectFileEntriesData>(`/project-files/entries?${params.toString()}`);
 }
 
-export async function fetchProjectFileContent(projectId: string, filePath: string): Promise<ProjectFileContentData> {
+export async function fetchProjectFileContent(projectId: string, filePath: string, showHidden = false): Promise<ProjectFileContentData> {
   const params = new URLSearchParams({ projectId, path: filePath });
+  if (showHidden) params.set('showHidden', 'true');
   return request<ProjectFileContentData>(`/project-files/content?${params.toString()}`);
 }
 

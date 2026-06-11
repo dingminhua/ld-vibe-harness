@@ -3,6 +3,7 @@ import {
   AlertCircle,
   ChevronRight,
   Code2,
+  Columns2,
   Diff,
   FileCode2,
   FileText,
@@ -11,6 +12,7 @@ import {
   GitPullRequestArrow,
   Loader2,
   RefreshCcw,
+  Rows3,
 } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
 import MarkdownPreview from '@/components/MarkdownPreview';
@@ -44,6 +46,17 @@ type DiffPanelState = {
 
 type EntryKind = ProjectFileEntry['kind'];
 type ActiveProjectFilesTab = 'files' | 'changes';
+type DiffViewMode = 'unified' | 'split';
+
+type SplitDiffCell = {
+  kind: 'context' | 'delete' | 'add' | 'empty';
+  lineNumber?: number;
+  text?: string;
+};
+
+type SplitDiffRow =
+  | { kind: 'meta' | 'hunk'; text: string }
+  | { kind: 'line'; oldCell: SplitDiffCell; newCell: SplitDiffCell };
 
 function pickCopy<T>(locale: string, zh: T, en: T): T {
   return locale === 'en' ? en : zh;
@@ -65,6 +78,10 @@ function getFileName(filePath?: string): string {
   if (!filePath) return '';
   const parts = filePath.split('/').filter(Boolean);
   return parts[parts.length - 1] || filePath;
+}
+
+function isHiddenRelativePath(filePath: string): boolean {
+  return filePath.split('/').some((part) => part.startsWith('.') && part.length > 1);
 }
 
 function getKindLabel(kind: EntryKind, locale: string): string {
@@ -102,6 +119,72 @@ function getDiffLineClass(line: string): string {
   if (line.startsWith('@@')) return 'text-ldvh-accent';
   if (line.startsWith('diff ') || line.startsWith('index ')) return 'text-sky-300';
   return 'text-ldvh-text-primary';
+}
+
+function getSplitDiffCellClass(cell: SplitDiffCell): string {
+  if (cell.kind === 'delete') return 'bg-red-500/10 text-red-300';
+  if (cell.kind === 'add') return 'bg-emerald-500/10 text-emerald-300';
+  if (cell.kind === 'empty') return 'bg-ldvh-panel/60 text-ldvh-text-secondary';
+  return 'text-ldvh-text-primary';
+}
+
+function parseSplitDiff(diff: string): SplitDiffRow[] {
+  const rows: SplitDiffRow[] = [];
+  let oldLineNumber: number | null = null;
+  let newLineNumber: number | null = null;
+  let pendingDeletes: SplitDiffCell[] = [];
+
+  const flushDeletes = () => {
+    if (pendingDeletes.length === 0) return;
+    pendingDeletes.forEach((oldCell) => {
+      rows.push({ kind: 'line', oldCell, newCell: { kind: 'empty' } });
+    });
+    pendingDeletes = [];
+  };
+
+  diff.split('\n').forEach((line) => {
+    const hunkMatch = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+    if (hunkMatch) {
+      flushDeletes();
+      oldLineNumber = Number(hunkMatch[1]);
+      newLineNumber = Number(hunkMatch[2]);
+      rows.push({ kind: 'hunk', text: line });
+      return;
+    }
+
+    if (oldLineNumber === null || newLineNumber === null) {
+      flushDeletes();
+      rows.push({ kind: 'meta', text: line });
+      return;
+    }
+
+    if (line.startsWith('-') && !line.startsWith('---')) {
+      pendingDeletes.push({ kind: 'delete', lineNumber: oldLineNumber, text: line.slice(1) });
+      oldLineNumber += 1;
+      return;
+    }
+
+    if (line.startsWith('+') && !line.startsWith('+++')) {
+      const newCell: SplitDiffCell = { kind: 'add', lineNumber: newLineNumber, text: line.slice(1) };
+      newLineNumber += 1;
+      const oldCell = pendingDeletes.shift() ?? { kind: 'empty' };
+      rows.push({ kind: 'line', oldCell, newCell });
+      return;
+    }
+
+    flushDeletes();
+    const text = line.startsWith(' ') ? line.slice(1) : line;
+    rows.push({
+      kind: 'line',
+      oldCell: { kind: 'context', lineNumber: oldLineNumber, text },
+      newCell: { kind: 'context', lineNumber: newLineNumber, text },
+    });
+    oldLineNumber += 1;
+    newLineNumber += 1;
+  });
+
+  flushDeletes();
+  return rows;
 }
 
 function FileIcon({ entry }: { entry: ProjectFileEntry }) {
@@ -180,6 +263,8 @@ export default function ProjectFiles() {
   const [gitError, setGitError] = useState<string | null>(null);
   const [diffPanel, setDiffPanel] = useState<DiffPanelState>({ data: null, loading: false, error: null });
   const [activeTab, setActiveTab] = useState<ActiveProjectFilesTab>('files');
+  const [diffViewMode, setDiffViewMode] = useState<DiffViewMode>('unified');
+  const [showHiddenFiles, setShowHiddenFiles] = useState(false);
 
   const copy = {
     title: pickCopy(locale, '项目文件', 'Project Files'),
@@ -190,12 +275,16 @@ export default function ProjectFiles() {
     ),
     project: pickCopy(locale, '管辖项目', 'Governed Project'),
     quickRoots: pickCopy(locale, '常用目录', 'Quick Roots'),
+    showHiddenFiles: pickCopy(locale, '显示隐藏文件', 'Show hidden files'),
     filesTab: pickCopy(locale, '文件浏览', 'Files'),
     changesTab: pickCopy(locale, '待提交文件', 'Pending'),
     fileBrowser: pickCopy(locale, '项目文件浏览', 'Project File Browser'),
     preview: pickCopy(locale, '文件预览', 'File Preview'),
     pending: pickCopy(locale, '待提交文件', 'Pending Files'),
     diff: pickCopy(locale, '文件差异', 'File Diff'),
+    diffMode: pickCopy(locale, '差异显示方式', 'Diff display mode'),
+    unifiedDiff: pickCopy(locale, '统一', 'Unified'),
+    splitDiff: pickCopy(locale, '分栏', 'Split'),
     reload: pickCopy(locale, '刷新', 'Refresh'),
     loading: pickCopy(locale, '加载中', 'Loading'),
     noProjects: pickCopy(locale, '没有读取到管辖项目。', 'No governed projects found.'),
@@ -216,6 +305,11 @@ export default function ProjectFiles() {
     [projects, projectId],
   );
 
+  const splitDiffRows = useMemo(
+    () => (diffPanel.data ? parseSplitDiff(diffPanel.data.diff) : []),
+    [diffPanel.data],
+  );
+
   const loadProjects = useCallback(() => {
     setProjectsLoading(true);
     setProjectsError(null);
@@ -228,11 +322,11 @@ export default function ProjectFiles() {
       .finally(() => setProjectsLoading(false));
   }, []);
 
-  const loadEntries = useCallback((nextDir: string) => {
+  const loadEntries = useCallback((nextDir: string, nextShowHidden: boolean) => {
     if (!projectId) return;
     setEntriesLoading(true);
     setEntriesError(null);
-    fetchProjectFileEntries(projectId, nextDir)
+    fetchProjectFileEntries(projectId, nextDir, nextShowHidden)
       .then((result) => {
         setEntries(result.entries ?? []);
         setCurrentDir(result.dir ?? nextDir);
@@ -259,9 +353,10 @@ export default function ProjectFiles() {
     if (!projectId) return;
     setCurrentDir('');
     setEntries([]);
+    setShowHiddenFiles(false);
     setFilePanel({ data: null, loading: false, error: null });
     setDiffPanel({ data: null, loading: false, error: null });
-    loadEntries('');
+    loadEntries('', false);
     loadGitStatus();
   }, [loadEntries, loadGitStatus, projectId]);
 
@@ -273,7 +368,7 @@ export default function ProjectFiles() {
   const handleNavigateDir = (nextDir: string) => {
     setActiveTab('files');
     setFilePanel({ data: null, loading: false, error: null });
-    loadEntries(nextDir);
+    loadEntries(nextDir, showHiddenFiles);
   };
 
   const handleOpenEntry = (entry: ProjectFileEntry) => {
@@ -284,7 +379,7 @@ export default function ProjectFiles() {
     }
 
     setFilePanel({ data: null, loading: true, error: null });
-    fetchProjectFileContent(projectId, entry.path)
+    fetchProjectFileContent(projectId, entry.path, showHiddenFiles)
       .then((data) => setFilePanel({ data, loading: false, error: null }))
       .catch((err) => {
         setFilePanel({ data: null, loading: false, error: err instanceof Error ? err.message : String(err) });
@@ -302,8 +397,15 @@ export default function ProjectFiles() {
   };
 
   const handleRefresh = () => {
-    loadEntries(currentDir);
+    loadEntries(currentDir, showHiddenFiles);
     loadGitStatus();
+  };
+
+  const handleShowHiddenChange = (nextShowHidden: boolean) => {
+    setShowHiddenFiles(nextShowHidden);
+    setFilePanel({ data: null, loading: false, error: null });
+    const nextDir = !nextShowHidden && isHiddenRelativePath(currentDir) ? '' : currentDir;
+    loadEntries(nextDir, nextShowHidden);
   };
 
   const quickDirs = [
@@ -341,8 +443,8 @@ export default function ProjectFiles() {
   }
 
   return (
-    <div className="ldvh-page-frame min-w-0 overflow-x-hidden">
-      <div className="ldvh-page-toolbar mb-6 min-w-0">
+    <div className="ldvh-page-frame flex min-h-full min-w-0 flex-col overflow-x-hidden xl:h-full">
+      <div className="ldvh-page-toolbar mb-6 min-w-0 shrink-0">
         <PageHeader title={copy.title} subtitle={copy.subtitle} />
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="ldvh-chip rounded-full border border-ldvh-accent/30 bg-ldvh-accent/10 px-3 py-1 text-ldvh-accent">
@@ -359,7 +461,7 @@ export default function ProjectFiles() {
         </div>
       </div>
 
-      <section className="mb-6 min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+      <section className="mb-6 min-w-0 shrink-0 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(16rem,26rem)_minmax(0,1fr)]">
           <label className="min-w-0">
             <span className="ldvh-caption-strong mb-1 block">{copy.project}</span>
@@ -420,8 +522,8 @@ export default function ProjectFiles() {
       </section>
 
       {activeTab === 'files' ? (
-        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(18rem,28rem)_minmax(0,1fr)]">
-          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
+        <div className="grid min-w-0 gap-6 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(18rem,28rem)_minmax(0,1fr)]">
+          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel xl:flex xl:min-h-0 xl:flex-col">
             <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">
                 <FolderOpen size={16} className="shrink-0 text-ldvh-accent" />
@@ -430,25 +532,36 @@ export default function ProjectFiles() {
               <span className="ldvh-meta-primary shrink-0">{entries.length}</span>
             </div>
             <div className="space-y-2 border-b border-ldvh-border px-4 py-3">
-              <div className="flex min-w-0 flex-wrap gap-2">
-                {quickDirs.map((item) => (
-                  <button
-                    key={item.path || 'root'}
-                    type="button"
-                    onClick={() => handleNavigateDir(item.path)}
-                    className={`ldvh-chip rounded-md border px-3 py-1.5 transition-colors ${
-                      currentDir === item.path
-                        ? 'border-ldvh-accent/40 bg-ldvh-accent/10 text-ldvh-accent'
-                        : 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary hover:border-ldvh-accent/40 hover:text-ldvh-text-primary'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 flex-wrap gap-2">
+                  {quickDirs.map((item) => (
+                    <button
+                      key={item.path || 'root'}
+                      type="button"
+                      onClick={() => handleNavigateDir(item.path)}
+                      className={`ldvh-chip rounded-md border px-3 py-1.5 transition-colors ${
+                        currentDir === item.path
+                          ? 'border-ldvh-accent/40 bg-ldvh-accent/10 text-ldvh-accent'
+                          : 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary hover:border-ldvh-accent/40 hover:text-ldvh-text-primary'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                <label className="ldvh-chip inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-1.5 text-ldvh-text-secondary transition-colors hover:text-ldvh-text-primary">
+                  <input
+                    type="checkbox"
+                    checked={showHiddenFiles}
+                    onChange={(event) => handleShowHiddenChange(event.target.checked)}
+                    className="h-3.5 w-3.5 accent-ldvh-accent"
+                  />
+                  {copy.showHiddenFiles}
+                </label>
               </div>
               <Breadcrumbs dir={currentDir} onNavigate={handleNavigateDir} />
             </div>
-            <div className="max-h-[42rem] min-w-0 overflow-y-auto p-3">
+            <div className="min-w-0 overflow-y-auto p-3 xl:min-h-0 xl:flex-1">
               {entriesLoading ? (
                 <LoadingState text={copy.loading} />
               ) : entriesError ? (
@@ -490,7 +603,7 @@ export default function ProjectFiles() {
             </div>
           </section>
 
-          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
+          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel xl:flex xl:min-h-0 xl:flex-col">
             <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">
                 <FileText size={16} className="shrink-0 text-ldvh-accent" />
@@ -501,7 +614,7 @@ export default function ProjectFiles() {
               </div>
               <CopyPathButton path={filePanel.data?.absolutePath} />
             </div>
-            <div className="min-h-[36rem] min-w-0 p-4">
+            <div className="min-h-[36rem] min-w-0 p-4 xl:min-h-0 xl:flex-1 xl:overflow-hidden">
               {filePanel.loading ? (
                 <LoadingState text={copy.loading} />
               ) : filePanel.error ? (
@@ -511,7 +624,7 @@ export default function ProjectFiles() {
               ) : filePanel.data.kind === 'binary' ? (
                 <EmptyState text={`${copy.binary} ${formatBytes(filePanel.data.size)}`} />
               ) : (
-                <div className="min-w-0">
+                <div className="min-w-0 xl:flex xl:h-full xl:flex-col">
                   <div className="mb-3 flex min-w-0 flex-wrap items-center gap-2">
                     <span className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-ldvh-text-secondary">
                       {getKindLabel(filePanel.data.kind, locale)}
@@ -524,11 +637,11 @@ export default function ProjectFiles() {
                     )}
                   </div>
                   {filePanel.data.kind === 'markdown' ? (
-                    <article className="min-w-0 overflow-x-auto rounded-md bg-ldvh-bg px-4 py-4">
+                    <article className="min-w-0 overflow-auto rounded-md bg-ldvh-bg px-4 py-4 xl:min-h-0 xl:flex-1">
                       <MarkdownPreview content={filePanel.data.content} />
                     </article>
                   ) : (
-                    <pre className="ldvh-meta-primary max-h-[52rem] min-w-0 overflow-auto whitespace-pre-wrap rounded-md bg-ldvh-bg p-4">
+                    <pre className="ldvh-meta-primary min-w-0 overflow-auto whitespace-pre-wrap rounded-md bg-ldvh-bg p-4 xl:min-h-0 xl:flex-1">
                       {filePanel.data.content}
                     </pre>
                   )}
@@ -538,8 +651,8 @@ export default function ProjectFiles() {
           </section>
         </div>
       ) : (
-        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(18rem,28rem)_minmax(0,1fr)]">
-          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
+        <div className="grid min-w-0 gap-6 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(18rem,28rem)_minmax(0,1fr)]">
+          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel xl:flex xl:min-h-0 xl:flex-col">
             <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">
                 <GitPullRequestArrow size={16} className="shrink-0 text-ldvh-accent" />
@@ -547,7 +660,7 @@ export default function ProjectFiles() {
               </div>
               <span className="ldvh-meta-primary">{gitEntries.length}</span>
             </div>
-            <div className="max-h-[42rem] min-w-0 overflow-y-auto p-3">
+            <div className="min-w-0 overflow-y-auto p-3 xl:min-h-0 xl:flex-1">
               {gitLoading ? (
                 <LoadingState text={copy.loading} />
               ) : gitError ? (
@@ -588,7 +701,7 @@ export default function ProjectFiles() {
             </div>
           </section>
 
-          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
+          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel xl:flex xl:min-h-0 xl:flex-col">
             <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">
                 <Diff size={16} className="shrink-0 text-ldvh-accent" />
@@ -597,23 +710,104 @@ export default function ProjectFiles() {
                   {diffPanel.data && <p className="ldvh-meta truncate">{diffPanel.data.path}</p>}
                 </div>
               </div>
-              <CopyPathButton path={diffPanel.data?.absolutePath} />
+              <div className="flex shrink-0 items-center gap-2">
+                <div
+                  role="group"
+                  aria-label={copy.diffMode}
+                  className="grid grid-cols-2 rounded-md border border-ldvh-border bg-ldvh-bg p-0.5"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={diffViewMode === 'unified'}
+                    onClick={() => setDiffViewMode('unified')}
+                    className={`ldvh-chip inline-flex items-center justify-center gap-1 rounded px-2 py-1 transition-colors ${
+                      diffViewMode === 'unified'
+                        ? 'bg-ldvh-panel text-ldvh-accent'
+                        : 'text-ldvh-text-secondary hover:text-ldvh-text-primary'
+                    }`}
+                  >
+                    <Rows3 size={13} />
+                    {copy.unifiedDiff}
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={diffViewMode === 'split'}
+                    onClick={() => setDiffViewMode('split')}
+                    className={`ldvh-chip inline-flex items-center justify-center gap-1 rounded px-2 py-1 transition-colors ${
+                      diffViewMode === 'split'
+                        ? 'bg-ldvh-panel text-ldvh-accent'
+                        : 'text-ldvh-text-secondary hover:text-ldvh-text-primary'
+                    }`}
+                  >
+                    <Columns2 size={13} />
+                    {copy.splitDiff}
+                  </button>
+                </div>
+                <CopyPathButton path={diffPanel.data?.absolutePath} />
+              </div>
             </div>
-            <div className="min-h-[36rem] min-w-0 p-4">
+            <div className="min-h-[36rem] min-w-0 p-4 xl:min-h-0 xl:flex-1 xl:overflow-hidden">
               {diffPanel.loading ? (
                 <LoadingState text={copy.loading} />
               ) : diffPanel.error ? (
                 <EmptyState text={diffPanel.error} />
               ) : !diffPanel.data ? (
                 <EmptyState text={copy.chooseDiff} />
-              ) : (
-                <pre className="ldvh-meta-primary max-h-[52rem] min-w-0 overflow-auto rounded-md bg-ldvh-bg p-4">
+              ) : diffViewMode === 'unified' ? (
+                <pre className="ldvh-meta-primary h-full min-w-0 overflow-auto rounded-md bg-ldvh-bg p-4">
                   {diffPanel.data.diff.split('\n').map((line, index) => (
                     <span key={`${index}-${line.slice(0, 12)}`} className={`${getDiffLineClass(line)} block min-w-max whitespace-pre`}>
                       {line || ' '}
                     </span>
                   ))}
                 </pre>
+              ) : (
+                <div className="h-full min-w-0 overflow-y-auto overflow-x-hidden rounded-md bg-ldvh-bg">
+                  <div className="min-w-0">
+                    <div className="ldvh-meta sticky top-0 z-10 grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border bg-ldvh-panel/95 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]">
+                      <div className="border-r border-ldvh-border px-2 py-2 text-right">-</div>
+                      <div className="border-r border-ldvh-border px-3 py-2">{pickCopy(locale, '旧内容', 'Before')}</div>
+                      <div className="border-r border-ldvh-border px-2 py-2 text-right">+</div>
+                      <div className="px-3 py-2">{pickCopy(locale, '新内容', 'After')}</div>
+                    </div>
+                    <div className="ldvh-meta-primary">
+                      {splitDiffRows.map((row, index) => {
+                        if (row.kind !== 'line') {
+                          return (
+                            <div
+                              key={`${row.kind}-${index}-${row.text.slice(0, 12)}`}
+                              className={`whitespace-pre-wrap break-words border-b border-ldvh-border/40 px-3 py-1 ${
+                                row.kind === 'hunk' ? 'bg-ldvh-accent/10 text-ldvh-accent' : 'text-sky-300'
+                              }`}
+                            >
+                              {row.text || ' '}
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={`line-${index}-${row.oldCell.lineNumber ?? 'x'}-${row.newCell.lineNumber ?? 'x'}`}
+                            className="grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border/20 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]"
+                          >
+                            <div className="border-r border-ldvh-border/40 px-2 py-1 text-right text-ldvh-text-secondary">
+                              {row.oldCell.lineNumber ?? ''}
+                            </div>
+                            <div className={`${getSplitDiffCellClass(row.oldCell)} border-r border-ldvh-border/40 px-3 py-1`}>
+                              <span className="block whitespace-pre-wrap break-words">{row.oldCell.text ?? ' '}</span>
+                            </div>
+                            <div className="border-r border-ldvh-border/40 px-2 py-1 text-right text-ldvh-text-secondary">
+                              {row.newCell.lineNumber ?? ''}
+                            </div>
+                            <div className={`${getSplitDiffCellClass(row.newCell)} px-3 py-1`}>
+                              <span className="block whitespace-pre-wrap break-words">{row.newCell.text ?? ' '}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </section>

@@ -118,6 +118,10 @@ function detectKind(name: string, isDirectory: boolean, sample?: Buffer): FileKi
   return sample?.includes(0) ? 'binary' : 'text'
 }
 
+function isHiddenPath(relativePath: string): boolean {
+  return relativePath.split('/').some((part) => part.startsWith('.') && part.length > 1)
+}
+
 function parseGitStatusLine(project: GovernedProject, line: string) {
   const status = line.slice(0, 2)
   const rawPath = line.slice(3).trim()
@@ -155,6 +159,7 @@ router.get('/entries', async (req: Request, res: Response): Promise<void> => {
   try {
     const projectId = String(req.query.projectId || '')
     const dir = String(req.query.dir || '')
+    const showHidden = String(req.query.showHidden || '') === 'true'
     const project = await getProject(projectId)
     if (!project) {
       res.status(404).json({ ok: false, error: 'Project not found' })
@@ -174,9 +179,11 @@ router.get('/entries', async (req: Request, res: Response): Promise<void> => {
     }
 
     const rawEntries = await readdir(target, { withFileTypes: true })
+    const visibleEntries = rawEntries
+      .filter((entry) => !EXCLUDED_DIRS.has(entry.name))
+      .filter((entry) => showHidden || !entry.name.startsWith('.'))
     const entries = await Promise.all(
-      rawEntries
-        .filter((entry) => !EXCLUDED_DIRS.has(entry.name))
+      visibleEntries
         .slice(0, MAX_DIRECTORY_ENTRIES)
         .map(async (entry) => {
           const absolutePath = path.join(target, entry.name)
@@ -204,7 +211,8 @@ router.get('/entries', async (req: Request, res: Response): Promise<void> => {
       project,
       dir: toProjectRelative(project, target),
       parent: toProjectRelative(project, target) ? toProjectRelative(project, path.dirname(target)) : '',
-      truncated: rawEntries.length > MAX_DIRECTORY_ENTRIES,
+      showHidden,
+      truncated: visibleEntries.length > MAX_DIRECTORY_ENTRIES,
       entries,
     })
   } catch (err) {
@@ -217,6 +225,7 @@ router.get('/content', async (req: Request, res: Response): Promise<void> => {
   try {
     const projectId = String(req.query.projectId || '')
     const filePath = String(req.query.path || '')
+    const showHidden = String(req.query.showHidden || '') === 'true'
     const project = await getProject(projectId)
     if (!project) {
       res.status(404).json({ ok: false, error: 'Project not found' })
@@ -226,6 +235,12 @@ router.get('/content', async (req: Request, res: Response): Promise<void> => {
     const target = resolveProjectTarget(project, filePath)
     if (!target) {
       res.status(403).json({ ok: false, error: 'Invalid file path' })
+      return
+    }
+
+    const relativePath = toProjectRelative(project, target)
+    if (!showHidden && isHiddenPath(relativePath)) {
+      res.status(403).json({ ok: false, error: 'Hidden file is not visible' })
       return
     }
 
@@ -241,7 +256,7 @@ router.get('/content', async (req: Request, res: Response): Promise<void> => {
       res.json({
         ok: true,
         project,
-        path: toProjectRelative(project, target),
+        path: relativePath,
         absolutePath: target,
         kind,
         size: fileStat.size,
@@ -256,7 +271,7 @@ router.get('/content', async (req: Request, res: Response): Promise<void> => {
     res.json({
       ok: true,
       project,
-      path: toProjectRelative(project, target),
+      path: relativePath,
       absolutePath: target,
       kind,
       size: fileStat.size,
