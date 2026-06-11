@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import MetricCard from '@/components/MetricCard';
+import ContentCard from '@/components/ContentCard';
 import PageHeader from '@/components/PageHeader';
 import {
   Activity,
@@ -93,16 +94,13 @@ function ReportCard({
   children: ReactNode
 }) {
   return (
-    <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-      <div className="mb-4 flex min-w-0 items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="flex-shrink-0 text-ldvh-text-secondary">{icon}</span>
-          <h2 className="ldvh-section-title truncate">{title}</h2>
-        </div>
-        <StatusPill status={status} label={statusLabel} />
-      </div>
+    <ContentCard
+      title={title}
+      icon={icon}
+      headerExtra={<StatusPill status={status} label={statusLabel} />}
+    >
       {children}
-    </div>
+    </ContentCard>
   )
 }
 

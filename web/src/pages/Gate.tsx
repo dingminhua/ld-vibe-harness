@@ -1,5 +1,6 @@
 import MetricCard from '@/components/MetricCard';
 import StatusBanner from '@/components/StatusBanner';
+import ContentCard from '@/components/ContentCard';
 import PageHeader from '@/components/PageHeader';
 import { useEffect, useState } from 'react'
 import {
@@ -166,45 +167,45 @@ export default function Gate() {
           <p className="ldvh-body-muted mb-4">{t('gate.confirmPanelDesc')}</p>
 
           {/* 按问题码分组展示 */}
-          {Object.entries(issuesByCode).map(([code, codeIssues]) => {
-            return (
-              <div key={code} className="mb-4 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 last:mb-0">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="ldvh-meta rounded bg-red-500/20 px-2 py-0.5 text-red-300">{code}</span>
-                    <span className="ldvh-caption">{t('gate.codeCount', { count: String(codeIssues.length) })}</span>
+          <div className="space-y-4">
+            {Object.entries(issuesByCode).map(([code, codeIssues]) => {
+              return (
+                <ContentCard
+                  key={code}
+                  title={code}
+                  headerExtra={<span className="ldvh-caption">{t('gate.codeCount', { count: String(codeIssues.length) })}</span>}
+                >
+                  <ul className="flex flex-col gap-2">
+                    {codeIssues.map((issue, i) => (
+                      <li key={i} className="rounded-md bg-ldvh-bg px-3 py-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="ldvh-meta">{issue.source}</span>
+                          {issue.line && <span className="ldvh-meta">:{issue.line}</span>}
+                        </div>
+                        <p className="ldvh-body mt-1">{issue.message}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      disabled
+                      className="ldvh-caption rounded-md border border-dashed border-ldvh-border px-3 py-1.5 opacity-60"
+                      title={t('gate.confirmTitle')}
+                    >
+                      <CheckCircle size={14} className="inline-block" /> {t('gate.confirm')}
+                    </button>
+                    <button
+                      disabled
+                      className="ldvh-caption rounded-md border border-dashed border-ldvh-border px-3 py-1.5 opacity-60"
+                      title={t('gate.deferTitle')}
+                    >
+                      <Clock size={14} className="inline-block" /> {t('gate.defer')}
+                    </button>
                   </div>
-                </div>
-                <ul className="flex flex-col gap-2">
-                  {codeIssues.map((issue, i) => (
-                    <li key={i} className="rounded-md bg-ldvh-bg px-3 py-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="ldvh-meta">{issue.source}</span>
-                        {issue.line && <span className="ldvh-meta">:{issue.line}</span>}
-                      </div>
-                      <p className="ldvh-body mt-1">{issue.message}</p>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-3 flex gap-2">
-                  <button
-                    disabled
-                    className="ldvh-caption rounded-md border border-dashed border-ldvh-border px-3 py-1.5 opacity-60"
-                    title={t('gate.confirmTitle')}
-                  >
-                    <CheckCircle size={14} className="inline-block" /> {t('gate.confirm')}
-                  </button>
-                  <button
-                    disabled
-                    className="ldvh-caption rounded-md border border-dashed border-ldvh-border px-3 py-1.5 opacity-60"
-                    title={t('gate.deferTitle')}
-                  >
-                    <Clock size={14} className="inline-block" /> {t('gate.defer')}
-                  </button>
-                </div>
-              </div>
-            )
-          })}
+                </ContentCard>
+              )
+            })}
+          </div>
         </div>
       )}
 

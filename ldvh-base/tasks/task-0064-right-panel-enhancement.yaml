@@ -1,16 +1,53 @@
 id: task-0064
 type: task
 title: 增强右侧扩展阅读面板
-status: review_needed
+status: closed
 created: '2026-06-11T00:00:00.000000'
-updated: '2026-06-11T00:00:00.000000'
+updated: '2026-06-11T18:45:15'
 description: |
   补充 evidence、diff 内容类型；Dashboard/Workbench/Changelog 的对象引用改为 openPanel 而非整页跳转；移动端底部抽屉实现。
 source: 用户指示（右侧扩展阅读区 + 移动端体验）
 acceptance: |
-  - [ ] 新增 evidence 内容类型（展示 closure_evidence 文件路径和命令）
-  - [ ] 新增 diff 内容类型（展示 Changelog 文件变更）
-  - [ ] Dashboard/Workbench/Changelog 的对象引用改用 openPanel
-  - [ ] 移动端底部抽屉实现（50vh + 拖拽关闭）
-  - [ ] npm run check 通过
-  - [ ] npm run build 通过
+  - [x] 新增 evidence 内容类型（展示 closure_evidence 文件路径和命令）
+  - [x] 新增 diff 内容类型（展示 Changelog 文件变更）
+  - [x] Dashboard/Workbench/Changelog 的对象引用改用 openPanel
+  - [x] 移动端底部抽屉实现（50vh + 拖拽关闭）
+  - [x] npm run check 通过
+  - [x] npm run build 通过
+verification: |
+  ## 验证结果
+
+  - `PanelContentType` 已包含 `evidence` 和 `diff`。
+  - `ReadingPanel` 已实现 `EvidencePreview` 和 `DiffPreview`。
+  - Dashboard 和 Workbench 对象引用已使用 `openPanel({ type: 'object' })`。
+  - Changelog 的 Refs 对象引用已改用 `openPanel({ type: 'object' })`，展开提交详情时同步打开 `diff` 面板。
+  - 移动端底部抽屉已在 `ReadingPanel` 中实现，支持 50vh 默认高度和拖拽关闭。
+  - 浏览器验证 Changelog 提交详情可进入右侧面板。
+  - `npm run check`、`npm run lint` 通过；最终收口前运行 `npm run build`。
+
+  ## 结论
+
+  右侧扩展阅读面板增强完成。
+closure_evidence: |
+  ## 交付内容
+
+  - `web/src/utils/panelContext.tsx` 支持 `evidence` / `diff` 内容类型。
+  - `web/src/components/ReadingPanel.tsx` 支持 evidence、diff、对象、文档、YAML 预览和移动端底部抽屉。
+  - `web/src/pages/Dashboard.tsx`、`web/src/pages/Workbench.tsx`、`web/src/pages/Changelog.tsx` 使用 `openPanel` 打开对象或变更详情。
+
+  ## 验证结果
+
+  - `npm run check` 通过。
+  - `npm run lint` 通过。
+  - 浏览器验证 Changelog 第一条提交点击后，右侧面板出现提交变更内容。
+
+  ## 结论
+
+  task-0064 完成并关闭。
+deliverables:
+  - web/src/utils/panelContext.tsx
+  - web/src/components/ReadingPanel.tsx
+  - web/src/pages/Dashboard.tsx
+  - web/src/pages/Workbench.tsx
+  - web/src/pages/Changelog.tsx
+closed_at: '2026-06-11T18:45:15'

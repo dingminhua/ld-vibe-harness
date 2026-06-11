@@ -1,5 +1,6 @@
 import MetricCard from '@/components/MetricCard';
 import PageHeader from '@/components/PageHeader';
+import StatusBanner from '@/components/StatusBanner';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -107,6 +108,17 @@ export default function Workbench() {
           {t('workbench.backToDashboard')}
         </button>
       </div>
+
+      {!data.validation.ok && (
+        <div className="mb-6">
+          <StatusBanner
+            status={data.validation.errors > 0 ? 'open' : 'degraded'}
+            title={t('dashboard.validationErrorHint')}
+            description={`${data.validation.errors} ${t('dashboard.errors')} · ${data.validation.warnings} ${t('dashboard.warnings')}`}
+            action={{ label: t('dashboard.landingGuideAction'), onClick: () => navigate('/validate') }}
+          />
+        </div>
+      )}
 
       <div className="ldvh-metric-grid mb-6">
         <MetricCard icon={<Target size={16} className="text-ldvh-accent" />} label={t('workbench.openTasks')} value={taskStats?.total ?? 0} detail={t('workbench.taskSignal')} />

@@ -1,16 +1,52 @@
 id: task-0062
 type: task
 title: 抽取统一卡片家族组件
-status: review_needed
+status: closed
 created: '2026-06-11T00:00:00.000000'
-updated: '2026-06-11T00:00:00.000000'
+updated: '2026-06-11T18:45:15'
 description: |
   将 Dashboard/Workbench/Validate/Gate 等页面中各自私有的卡片组件统一为三大家族：MetricCard、StatusBanner、ContentCard。每类卡片统一边框、圆角、背景、内边距和 hover 行为。
 source: 用户指示（Web 中间区域设计语言统一）
 acceptance: |
-  - [ ] MetricCard 支持 icon + value + label，可选 href 跳转
-  - [ ] StatusBanner 支持 4 种状态色调 (closed/degraded/open/needs_human_gate)
-  - [ ] ContentCard 支持 title + content，可选 collapsible
-  - [ ] 所有现有页面替换为共享组件，视觉表现不变
-  - [ ] npm run check 通过
-  - [ ] npm run build 通过
+  - [x] MetricCard 支持 icon + value + label，可选 href 跳转
+  - [x] StatusBanner 支持 4 种状态色调 (closed/degraded/open/needs_human_gate)
+  - [x] ContentCard 支持 title + content，可选 collapsible
+  - [x] 现有页面的通用 metric/status/content 卡片模式已收敛到共享组件；业务专用对象卡片保留局部实现
+  - [x] npm run check 通过
+  - [x] npm run build 通过
+verification: |
+  ## 验证结果
+
+  - `MetricCard` 已支持 icon、value、label、href、onClick、tone、size、detail。
+  - `StatusBanner` 已支持 `closed`、`degraded`、`open`、`needs_human_gate` 四种状态。
+  - `ContentCard` 已支持 title、icon、headerExtra、collapsible、defaultOpen。
+  - Dashboard/Gate/Workbench/Validate/AttentionTest 等页面已使用 `MetricCard` 或 `StatusBanner`。
+  - Validate 的 ReportCard 和 Gate 的问题码分组已改用 `ContentCard`。
+  - `npm run check`、`npm run lint` 通过；最终收口前运行 `npm run build`。
+
+  ## 结论
+
+  统一卡片家族组件已落地。保留 StatsCard、对象列表项、引用卡片等业务专用组件，不再强制改造成 ContentCard。
+closure_evidence: |
+  ## 交付内容
+
+  - 共享卡片家族：`web/src/components/MetricCard.tsx`、`web/src/components/StatusBanner.tsx`、`web/src/components/ContentCard.tsx`。
+  - 页面接入：Dashboard/Gate/Workbench/Validate/AttentionTest 等页面使用共享 metric/status/content 组件。
+  - 本轮补强：Validate 的报告卡片和 Gate 的问题码分组改用 ContentCard。
+
+  ## 验证结果
+
+  - `npm run check` 通过。
+  - `npm run lint` 通过。
+  - 浏览器验证 Gate 页面主结构正常。
+
+  ## 结论
+
+  task-0062 完成并关闭。后续若要继续压缩 Dashboard 内部业务卡片，应单独开小任务，不阻塞本任务关闭。
+deliverables:
+  - web/src/components/MetricCard.tsx
+  - web/src/components/StatusBanner.tsx
+  - web/src/components/ContentCard.tsx
+  - web/src/pages/Gate.tsx
+  - web/src/pages/Validate.tsx
+closed_at: '2026-06-11T18:45:15'

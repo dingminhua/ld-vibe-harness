@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { GitCommit, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { fetchChangelog, fetchCommitDetail, type ChangelogEntry } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import PageHeader from '@/components/PageHeader';
 import { formatDateTime } from '@/utils/dateFormat';
+import { usePanel } from '@/utils/panelContext';
 
 /** 从对象 ID 推断类型，如 task-0041 → task, intent-0004 → intent, adr-0003 → adr */
 function inferTypeFromId(id: string): string | null {
@@ -23,8 +23,8 @@ function parseRefs(message: string): string[] {
     .filter((s) => s.length > 0);
 }
 
-/** 渲染 commit message，将 Refs 中的对象 ID 变为可点击链接 */
-function RenderMessage({ message, onNavigate }: { message: string; onNavigate: (path: string) => void }) {
+/** 渲染 commit message，将 Refs 中的对象 ID 变为右侧阅读面板入口 */
+function RenderMessage({ message, onOpenRef }: { message: string; onOpenRef: (type: string, id: string) => void }) {
   const refs = parseRefs(message);
   if (refs.length === 0) {
     return <>{message}</>;
@@ -50,12 +50,12 @@ function RenderMessage({ message, onNavigate }: { message: string; onNavigate: (
           const type = inferTypeFromId(trimmed);
           if (type) {
             elements.push(
-              <span
+            <span
                 key={`ref-${i}-${j}`}
                 className="cursor-pointer text-ldvh-accent hover:underline"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onNavigate(`/objects/${type}/${trimmed}`);
+                  onOpenRef(type, trimmed);
                 }}
               >
                 {part}
@@ -81,8 +81,8 @@ function RenderMessage({ message, onNavigate }: { message: string; onNavigate: (
 }
 
 export default function Changelog() {
-  const navigate = useNavigate();
   const { locale, t } = useI18n();
+  const { openPanel } = usePanel();
   const [entries, setEntries] = useState<ChangelogEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [expandedHash, setExpandedHash] = useState<string | null>(null);
@@ -95,7 +95,8 @@ export default function Changelog() {
       .catch((e) => setError(e.message));
   }, [locale]);
 
-  const handleToggle = async (hash: string) => {
+  const handleToggle = async (entry: ChangelogEntry) => {
+    const hash = entry.hash;
     if (expandedHash === hash) {
       setExpandedHash(null);
       setCommitDetail(null);
@@ -109,6 +110,11 @@ export default function Changelog() {
     try {
       const detail = await fetchCommitDetail(hash);
       setCommitDetail(detail.stat);
+      openPanel({
+        type: 'diff',
+        title: `${entry.shortHash} ${entry.description}`,
+        data: detail.stat,
+      });
     } catch {
       setCommitDetail(t('changelog.detailFailed'));
     } finally {
@@ -150,7 +156,7 @@ export default function Changelog() {
             >
               <button
                 className="flex w-full items-start gap-3 px-4 py-3 text-left"
-                onClick={() => handleToggle(entry.hash)}
+                onClick={() => handleToggle(entry)}
               >
                 <span className="mt-0.5 flex-shrink-0 text-ldvh-text-secondary">
                   {isExpanded ? (
@@ -165,7 +171,10 @@ export default function Changelog() {
                       {entry.shortHash}
                     </span>
                     <span className="ldvh-body truncate">
-                      <RenderMessage message={entry.message} onNavigate={(path) => navigate(path)} />
+                      <RenderMessage
+                        message={entry.message}
+                        onOpenRef={(type, id) => openPanel({ type: 'object', title: id, objectType: type, objectId: id })}
+                      />
                     </span>
                   </div>
                   <div className="ldvh-caption mt-1 flex items-center gap-3">
