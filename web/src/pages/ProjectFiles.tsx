@@ -43,6 +43,7 @@ type DiffPanelState = {
 };
 
 type EntryKind = ProjectFileEntry['kind'];
+type ActiveProjectFilesTab = 'files' | 'changes';
 
 function pickCopy<T>(locale: string, zh: T, en: T): T {
   return locale === 'en' ? en : zh;
@@ -178,6 +179,7 @@ export default function ProjectFiles() {
   const [gitLoading, setGitLoading] = useState(false);
   const [gitError, setGitError] = useState<string | null>(null);
   const [diffPanel, setDiffPanel] = useState<DiffPanelState>({ data: null, loading: false, error: null });
+  const [activeTab, setActiveTab] = useState<ActiveProjectFilesTab>('files');
 
   const copy = {
     title: pickCopy(locale, '项目文件', 'Project Files'),
@@ -188,6 +190,8 @@ export default function ProjectFiles() {
     ),
     project: pickCopy(locale, '管辖项目', 'Governed Project'),
     quickRoots: pickCopy(locale, '常用目录', 'Quick Roots'),
+    filesTab: pickCopy(locale, '文件浏览', 'Files'),
+    changesTab: pickCopy(locale, '待提交文件', 'Pending'),
     fileBrowser: pickCopy(locale, '项目文件浏览', 'Project File Browser'),
     preview: pickCopy(locale, '文件预览', 'File Preview'),
     pending: pickCopy(locale, '待提交文件', 'Pending Files'),
@@ -267,11 +271,13 @@ export default function ProjectFiles() {
   };
 
   const handleNavigateDir = (nextDir: string) => {
+    setActiveTab('files');
     setFilePanel({ data: null, loading: false, error: null });
     loadEntries(nextDir);
   };
 
   const handleOpenEntry = (entry: ProjectFileEntry) => {
+    setActiveTab('files');
     if (entry.type === 'directory') {
       handleNavigateDir(entry.path);
       return;
@@ -286,6 +292,7 @@ export default function ProjectFiles() {
   };
 
   const handleOpenDiff = (entry: ProjectGitStatusEntry) => {
+    setActiveTab('changes');
     setDiffPanel({ data: null, loading: true, error: null });
     fetchProjectGitDiff(entry.projectId, entry.path, entry.status)
       .then((data) => setDiffPanel({ data, loading: false, error: null }))
@@ -353,7 +360,7 @@ export default function ProjectFiles() {
       </div>
 
       <section className="mb-6 min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(16rem,26rem)_minmax(0,1fr)]">
           <label className="min-w-0">
             <span className="ldvh-caption-strong mb-1 block">{copy.project}</span>
             <select
@@ -367,209 +374,251 @@ export default function ProjectFiles() {
                 </option>
               ))}
             </select>
-          </label>
-          <div className="min-w-0">
-            <p className="ldvh-caption-strong mb-1">{copy.quickRoots}</p>
-            <div className="flex min-w-0 flex-wrap gap-2">
-              {quickDirs.map((item) => (
-                <button
-                  key={item.path || 'root'}
-                  type="button"
-                  onClick={() => handleNavigateDir(item.path)}
-                  className={`ldvh-chip rounded-md border px-3 py-1.5 transition-colors ${
-                    currentDir === item.path
-                      ? 'border-ldvh-accent/40 bg-ldvh-accent/10 text-ldvh-accent'
-                      : 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary hover:border-ldvh-accent/40 hover:text-ldvh-text-primary'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
             {selectedProject && (
               <div className="mt-2 flex min-w-0 items-center gap-2">
                 <p className="ldvh-meta min-w-0 truncate">{selectedProject.path}</p>
                 <CopyPathButton path={selectedProject.path} />
               </div>
             )}
+          </label>
+          <div className="flex min-w-0 flex-col justify-end gap-2">
+            <p className="ldvh-caption-strong">{pickCopy(locale, '视图', 'View')}</p>
+            <div role="tablist" aria-label={pickCopy(locale, '项目文件视图', 'Project file view')} className="grid max-w-md grid-cols-2 rounded-lg border border-ldvh-border bg-ldvh-bg p-1">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'files'}
+                onClick={() => setActiveTab('files')}
+                className={`ldvh-card-title flex min-w-0 items-center justify-center gap-2 rounded-md px-3 py-2 transition-colors ${
+                  activeTab === 'files'
+                    ? 'bg-ldvh-panel text-ldvh-accent shadow-sm shadow-black/10'
+                    : 'text-ldvh-text-secondary hover:text-ldvh-text-primary'
+                }`}
+              >
+                <FolderOpen size={15} className="shrink-0" />
+                <span className="truncate">{copy.filesTab}</span>
+                <span className="ldvh-meta-primary shrink-0">{entries.length}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'changes'}
+                onClick={() => setActiveTab('changes')}
+                className={`ldvh-card-title flex min-w-0 items-center justify-center gap-2 rounded-md px-3 py-2 transition-colors ${
+                  activeTab === 'changes'
+                    ? 'bg-ldvh-panel text-ldvh-accent shadow-sm shadow-black/10'
+                    : 'text-ldvh-text-secondary hover:text-ldvh-text-primary'
+                }`}
+              >
+                <GitPullRequestArrow size={15} className="shrink-0" />
+                <span className="truncate">{copy.changesTab}</span>
+                <span className="ldvh-meta-primary shrink-0">{gitEntries.length}</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(18rem,28rem)_minmax(0,1fr)]">
-        <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
-          <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <FolderOpen size={16} className="shrink-0 text-ldvh-accent" />
-              <h2 className="ldvh-section-title shrink-0">{copy.fileBrowser}</h2>
+      {activeTab === 'files' ? (
+        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(18rem,28rem)_minmax(0,1fr)]">
+          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
+            <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <FolderOpen size={16} className="shrink-0 text-ldvh-accent" />
+                <h2 className="ldvh-section-title shrink-0">{copy.fileBrowser}</h2>
+              </div>
+              <span className="ldvh-meta-primary shrink-0">{entries.length}</span>
             </div>
-            <span className="ldvh-meta-primary shrink-0">{entries.length}</span>
-          </div>
-          <div className="border-b border-ldvh-border px-4 py-2">
-            <Breadcrumbs dir={currentDir} onNavigate={handleNavigateDir} />
-          </div>
-          <div className="max-h-[34rem] min-w-0 overflow-y-auto p-3">
-            {entriesLoading ? (
-              <LoadingState text={copy.loading} />
-            ) : entriesError ? (
-              <EmptyState text={entriesError} />
-            ) : entries.length === 0 ? (
-              <EmptyState text={copy.noEntries} />
-            ) : (
-              <div className="space-y-1">
-                {entries.map((entry) => (
+            <div className="space-y-2 border-b border-ldvh-border px-4 py-3">
+              <div className="flex min-w-0 flex-wrap gap-2">
+                {quickDirs.map((item) => (
                   <button
-                    key={entry.path || entry.name}
+                    key={item.path || 'root'}
                     type="button"
-                    onClick={() => handleOpenEntry(entry)}
-                    className={`group flex w-full min-w-0 items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/30 ${
-                      filePanel.data?.path === entry.path ? 'bg-ldvh-accent/10 text-ldvh-accent' : ''
+                    onClick={() => handleNavigateDir(item.path)}
+                    className={`ldvh-chip rounded-md border px-3 py-1.5 transition-colors ${
+                      currentDir === item.path
+                        ? 'border-ldvh-accent/40 bg-ldvh-accent/10 text-ldvh-accent'
+                        : 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary hover:border-ldvh-accent/40 hover:text-ldvh-text-primary'
                     }`}
                   >
-                    <FileIcon entry={entry} />
-                    <span className="min-w-0 flex-1">
-                      <span className="ldvh-card-title block truncate transition-colors group-hover:text-ldvh-accent">
-                        {entry.name}
-                      </span>
-                      <span className="ldvh-meta block truncate">
-                        {getKindLabel(entry.kind, locale)}
-                        {entry.type === 'file' ? ` · ${formatBytes(entry.size)}` : ''}
-                        {' · '}
-                        {formatDateTime(entry.updated)}
-                      </span>
-                    </span>
-                    <CopyPathButton path={entry.absolutePath} />
+                    {item.label}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-        </section>
-
-        <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
-          <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <FileText size={16} className="shrink-0 text-ldvh-accent" />
-              <div className="min-w-0">
-                <h2 className="ldvh-section-title">{copy.preview}</h2>
-                {filePanel.data && <p className="ldvh-meta truncate">{filePanel.data.path}</p>}
-              </div>
+              <Breadcrumbs dir={currentDir} onNavigate={handleNavigateDir} />
             </div>
-            <CopyPathButton path={filePanel.data?.absolutePath} />
-          </div>
-          <div className="min-h-[28rem] min-w-0 p-4">
-            {filePanel.loading ? (
-              <LoadingState text={copy.loading} />
-            ) : filePanel.error ? (
-              <EmptyState text={filePanel.error} />
-            ) : !filePanel.data ? (
-              <EmptyState text={copy.chooseFile} />
-            ) : filePanel.data.kind === 'binary' ? (
-              <EmptyState text={`${copy.binary} ${formatBytes(filePanel.data.size)}`} />
-            ) : (
-              <div className="min-w-0">
-                <div className="mb-3 flex min-w-0 flex-wrap items-center gap-2">
-                  <span className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-ldvh-text-secondary">
-                    {getKindLabel(filePanel.data.kind, locale)}
-                  </span>
-                  <span className="ldvh-meta">{formatBytes(filePanel.data.size)}</span>
-                  {filePanel.data.truncated && (
-                    <span className="ldvh-chip rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-300">
-                      {copy.truncated}
+            <div className="max-h-[42rem] min-w-0 overflow-y-auto p-3">
+              {entriesLoading ? (
+                <LoadingState text={copy.loading} />
+              ) : entriesError ? (
+                <EmptyState text={entriesError} />
+              ) : entries.length === 0 ? (
+                <EmptyState text={copy.noEntries} />
+              ) : (
+                <div className="space-y-1">
+                  {entries.map((entry) => (
+                    <div
+                      key={entry.path || entry.name}
+                      className={`group flex w-full min-w-0 items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/30 ${
+                        filePanel.data?.path === entry.path ? 'bg-ldvh-accent/10 text-ldvh-accent' : ''
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEntry(entry)}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      >
+                        <FileIcon entry={entry} />
+                        <span className="min-w-0 flex-1">
+                          <span className="ldvh-card-title block truncate transition-colors group-hover:text-ldvh-accent">
+                            {entry.name}
+                          </span>
+                          <span className="ldvh-meta block truncate">
+                            {getKindLabel(entry.kind, locale)}
+                            {entry.type === 'file' ? ` · ${formatBytes(entry.size)}` : ''}
+                            {' · '}
+                            {formatDateTime(entry.updated)}
+                          </span>
+                        </span>
+                      </button>
+                      <CopyPathButton path={entry.absolutePath} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
+            <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <FileText size={16} className="shrink-0 text-ldvh-accent" />
+                <div className="min-w-0">
+                  <h2 className="ldvh-section-title">{copy.preview}</h2>
+                  {filePanel.data && <p className="ldvh-meta truncate">{filePanel.data.path}</p>}
+                </div>
+              </div>
+              <CopyPathButton path={filePanel.data?.absolutePath} />
+            </div>
+            <div className="min-h-[36rem] min-w-0 p-4">
+              {filePanel.loading ? (
+                <LoadingState text={copy.loading} />
+              ) : filePanel.error ? (
+                <EmptyState text={filePanel.error} />
+              ) : !filePanel.data ? (
+                <EmptyState text={copy.chooseFile} />
+              ) : filePanel.data.kind === 'binary' ? (
+                <EmptyState text={`${copy.binary} ${formatBytes(filePanel.data.size)}`} />
+              ) : (
+                <div className="min-w-0">
+                  <div className="mb-3 flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-ldvh-text-secondary">
+                      {getKindLabel(filePanel.data.kind, locale)}
                     </span>
+                    <span className="ldvh-meta">{formatBytes(filePanel.data.size)}</span>
+                    {filePanel.data.truncated && (
+                      <span className="ldvh-chip rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-300">
+                        {copy.truncated}
+                      </span>
+                    )}
+                  </div>
+                  {filePanel.data.kind === 'markdown' ? (
+                    <article className="min-w-0 overflow-x-auto rounded-md bg-ldvh-bg px-4 py-4">
+                      <MarkdownPreview content={filePanel.data.content} />
+                    </article>
+                  ) : (
+                    <pre className="ldvh-meta-primary max-h-[52rem] min-w-0 overflow-auto whitespace-pre-wrap rounded-md bg-ldvh-bg p-4">
+                      {filePanel.data.content}
+                    </pre>
                   )}
                 </div>
-                {filePanel.data.kind === 'markdown' ? (
-                  <article className="min-w-0 overflow-x-auto rounded-md bg-ldvh-bg px-4 py-4">
-                    <MarkdownPreview content={filePanel.data.content} />
-                  </article>
-                ) : (
-                  <pre className="ldvh-meta-primary max-h-[44rem] min-w-0 overflow-auto whitespace-pre-wrap rounded-md bg-ldvh-bg p-4">
-                    {filePanel.data.content}
-                  </pre>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
-
-      <div className="mt-6 grid min-w-0 gap-6 xl:grid-cols-[minmax(18rem,28rem)_minmax(0,1fr)]">
-        <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
-          <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <GitPullRequestArrow size={16} className="shrink-0 text-ldvh-accent" />
-              <h2 className="ldvh-section-title">{copy.pending}</h2>
+              )}
             </div>
-            <span className="ldvh-meta-primary">{gitEntries.length}</span>
-          </div>
-          <div className="max-h-[30rem] min-w-0 overflow-y-auto p-3">
-            {gitLoading ? (
-              <LoadingState text={copy.loading} />
-            ) : gitError ? (
-              <EmptyState text={gitError} />
-            ) : gitEntries.length === 0 ? (
-              <EmptyState text={copy.noChanges} />
-            ) : (
-              <div className="space-y-1">
-                {gitEntries.map((entry) => (
-                  <button
-                    key={`${entry.projectId}:${entry.status}:${entry.path}`}
-                    type="button"
-                    onClick={() => handleOpenDiff(entry)}
-                    className={`group flex w-full min-w-0 items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/30 ${
-                      diffPanel.data?.path === entry.path ? 'bg-ldvh-accent/10 text-ldvh-accent' : ''
-                    }`}
-                  >
-                    <span className="ldvh-meta-primary w-8 shrink-0 rounded bg-ldvh-bg px-1.5 py-0.5 text-center">
-                      {entry.status}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="ldvh-card-title block truncate transition-colors group-hover:text-ldvh-accent">
-                        {getFileName(entry.path)}
-                      </span>
-                      <span className="ldvh-meta block truncate">
-                        {getStatusLabel(entry.status, locale)} · {entry.path}
-                      </span>
-                    </span>
-                    <CopyPathButton path={entry.absolutePath} />
-                  </button>
-                ))}
+          </section>
+        </div>
+      ) : (
+        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(18rem,28rem)_minmax(0,1fr)]">
+          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
+            <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <GitPullRequestArrow size={16} className="shrink-0 text-ldvh-accent" />
+                <h2 className="ldvh-section-title">{copy.pending}</h2>
               </div>
-            )}
-          </div>
-        </section>
-
-        <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
-          <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <Diff size={16} className="shrink-0 text-ldvh-accent" />
-              <div className="min-w-0">
-                <h2 className="ldvh-section-title">{copy.diff}</h2>
-                {diffPanel.data && <p className="ldvh-meta truncate">{diffPanel.data.path}</p>}
-              </div>
+              <span className="ldvh-meta-primary">{gitEntries.length}</span>
             </div>
-            <CopyPathButton path={diffPanel.data?.absolutePath} />
-          </div>
-          <div className="min-h-[24rem] min-w-0 p-4">
-            {diffPanel.loading ? (
-              <LoadingState text={copy.loading} />
-            ) : diffPanel.error ? (
-              <EmptyState text={diffPanel.error} />
-            ) : !diffPanel.data ? (
-              <EmptyState text={copy.chooseDiff} />
-            ) : (
-              <pre className="ldvh-meta-primary max-h-[42rem] min-w-0 overflow-auto rounded-md bg-ldvh-bg p-4">
-                {diffPanel.data.diff.split('\n').map((line, index) => (
-                  <span key={`${index}-${line.slice(0, 12)}`} className={`${getDiffLineClass(line)} block min-w-max whitespace-pre`}>
-                    {line || ' '}
-                  </span>
-                ))}
-              </pre>
-            )}
-          </div>
-        </section>
-      </div>
+            <div className="max-h-[42rem] min-w-0 overflow-y-auto p-3">
+              {gitLoading ? (
+                <LoadingState text={copy.loading} />
+              ) : gitError ? (
+                <EmptyState text={gitError} />
+              ) : gitEntries.length === 0 ? (
+                <EmptyState text={copy.noChanges} />
+              ) : (
+                <div className="space-y-1">
+                  {gitEntries.map((entry) => (
+                    <div
+                      key={`${entry.projectId}:${entry.status}:${entry.path}`}
+                      className={`group flex w-full min-w-0 items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/30 ${
+                        diffPanel.data?.path === entry.path ? 'bg-ldvh-accent/10 text-ldvh-accent' : ''
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDiff(entry)}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      >
+                        <span className="ldvh-meta-primary w-8 shrink-0 rounded bg-ldvh-bg px-1.5 py-0.5 text-center">
+                          {entry.status}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="ldvh-card-title block truncate transition-colors group-hover:text-ldvh-accent">
+                            {getFileName(entry.path)}
+                          </span>
+                          <span className="ldvh-meta block truncate">
+                            {getStatusLabel(entry.status, locale)} · {entry.path}
+                          </span>
+                        </span>
+                      </button>
+                      <CopyPathButton path={entry.absolutePath} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel">
+            <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <Diff size={16} className="shrink-0 text-ldvh-accent" />
+                <div className="min-w-0">
+                  <h2 className="ldvh-section-title">{copy.diff}</h2>
+                  {diffPanel.data && <p className="ldvh-meta truncate">{diffPanel.data.path}</p>}
+                </div>
+              </div>
+              <CopyPathButton path={diffPanel.data?.absolutePath} />
+            </div>
+            <div className="min-h-[36rem] min-w-0 p-4">
+              {diffPanel.loading ? (
+                <LoadingState text={copy.loading} />
+              ) : diffPanel.error ? (
+                <EmptyState text={diffPanel.error} />
+              ) : !diffPanel.data ? (
+                <EmptyState text={copy.chooseDiff} />
+              ) : (
+                <pre className="ldvh-meta-primary max-h-[52rem] min-w-0 overflow-auto rounded-md bg-ldvh-bg p-4">
+                  {diffPanel.data.diff.split('\n').map((line, index) => (
+                    <span key={`${index}-${line.slice(0, 12)}`} className={`${getDiffLineClass(line)} block min-w-max whitespace-pre`}>
+                      {line || ' '}
+                    </span>
+                  ))}
+                </pre>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
