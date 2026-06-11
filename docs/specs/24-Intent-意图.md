@@ -187,8 +187,8 @@ Human Gate 的具体环境实体由 04 系列环境投射和运行投影记录�
 | `type` | 对象类型 | string | 是 | 固定为 `intent` | Reference | AI、Code、Web |
 | `title` | 意图标题 | string | 是 | 应简短可读 | Narrative | AI、Web |
 | `status` | 当前状态 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
-| `created` | 创建日期 | date | 是 | `YYYY-MM-DD` | Reference | AI、Code、Web |
-| `updated` | 最近更新日期 | date | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
+| `updated` | 最近更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `description` | 目标背景、范围和问题说明 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `success_criteria` | 成功标准 | string | 是 | 应能支持完成判断 | Narrative / Checklist | AI、Code、Web |
 | `constraints` | 约束、边界、禁止事项和偏好 | string | 否 | 高影响目标应填写 | Narrative / Checklist | AI、Human |
@@ -212,8 +212,8 @@ id: intent-0001
 type: intent
 title: 建立 LDVH 工作模型最小闭环
 status: active
-created: 2026-06-09
-updated: 2026-06-09
+created: '2026-06-09T00:00:00'
+updated: '2026-06-09T00:00:00'
 description: |
   将工作模型集合索引、Intent 和 Task 纳入当前正式规范，使 AI 可以围绕目标、任务、验收和关闭证据形成最小可追踪闭环。
 success_criteria: |

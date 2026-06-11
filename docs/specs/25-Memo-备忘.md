@@ -159,8 +159,8 @@ Human Gate 的具体环境实体由 04 系列环境投射和运行投影记录�
 | `type` | 对象类型 | string | 是 | 固定为 `memo` | Reference | AI、Code、Web |
 | `title` | 备忘标题 | string | 是 | 应简短可读 | Narrative | AI、Web |
 | `status` | 当前状态 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
-| `created` | 创建日期 | date | 是 | `YYYY-MM-DD` | Reference | AI、Code、Web |
-| `updated` | 最近更新日期 | date | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
+| `updated` | 最近更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `description` | 备忘内容描述 | string | 是 | 使用 YAML 块标量 | Narrative / Decision / Reference / Log | AI、Web |
 | `source` | 来源 | string | 是 | 谁在什么场景下表达或发现 | Reference / Narrative | AI、Web |
 | `category` | 分类 | string | 是 | `discovery`、`reminder`、`question`、`gap`、`preference` | Reference | AI、Code、Web |
@@ -184,8 +184,8 @@ id: memo-0001
 type: memo
 title: 规范文档中缺少错误处理章节
 status: resolved
-created: 2026-06-09
-updated: 2026-06-09
+created: '2026-06-09T00:00:00'
+updated: '2026-06-09T00:00:00'
 description: |
   在审查工作流程规范时发现错误处理和异常场景尚未形成统一规则，需要后续补充。
 source: 执行 task-0003 过程中的发现

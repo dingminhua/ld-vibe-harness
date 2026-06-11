@@ -216,8 +216,8 @@ Task 语境下的 Human Gate 记录应遵守 `docs/specs/06-工作流程基础�
 | `type` | 对象类型 | string | 是 | 固定为 `task` | Reference | AI、Code、Web |
 | `title` | 任务标题 | string | 是 | 应简短可读 | Narrative | AI、Web |
 | `status` | 当前状态 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
-| `created` | 创建日期 | date | 是 | `YYYY-MM-DD` | Reference | AI、Code、Web |
-| `updated` | 最近更新日期 | date | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
+| `updated` | 最近更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `description` | 任务背景、目标和范围 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `source` | 任务来源 | string | 是 | Intent ID、用户直接指示或其他可追溯来源 | Reference / Narrative | AI、Web |
 | `source_intent` | 关联 Intent ID | string | 否 | 为空表示非 Intent 拆解任务 | Reference | AI、Code、Web |
@@ -246,8 +246,8 @@ id: task-0001
 type: task
 title: 更新 Task 工作模型
 status: planned
-created: 2026-06-09
-updated: 2026-06-09
+created: '2026-06-09T00:00:00'
+updated: '2026-06-09T00:00:00'
 description: |
   将 Task 工作模型纳入 docs/specs，并按当前工作模型文档规范校准字段、状态和 Human Gate。
 source: 用户直接指示

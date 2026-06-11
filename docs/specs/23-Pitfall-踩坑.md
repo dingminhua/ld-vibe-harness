@@ -178,8 +178,8 @@ Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影�
 | `type` | 对象类型 | string | 是 | 固定为 `pitfall` | Reference | AI、Code、Web |
 | `title` | 踩坑标题 | string | 是 | 应简短可读 | Narrative | AI、Web |
 | `status` | 当前状态 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
-| `created` | 创建日期 | date | 是 | `YYYY-MM-DD` | Reference | AI、Code、Web |
-| `updated` | 最近更新日期 | date | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
+| `updated` | 最近更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `symptoms` | 问题现象、错误表现或误判结果 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `trigger_conditions` | 触发条件、上下文或复现场景 | string | 是 | 应说明何时可能复现 | Narrative / Checklist | AI、Code、Web |
 | `root_cause` | 根因或误判原因 | string | 是 | active 时必须明确 | Narrative | AI、Human、Web |
@@ -211,8 +211,8 @@ id: pitfall-0001
 type: pitfall
 title: 把输入材料直接当成当前权威规范
 status: active
-created: 2026-06-09
-updated: 2026-06-09
+created: '2026-06-09T00:00:00'
+updated: '2026-06-09T00:00:00'
 symptoms: |
   AI 在吸收输入材料或临时参考中的规则时，未先判断该内容是否已经吸收到 docs/specs。
 trigger_conditions: |
@@ -266,7 +266,7 @@ notes:
 7. `severity` 如填写，必须属于 `low`、`medium`、`high`、`critical`；
 8. `repeatability` 如填写，必须属于 `unknown`、`once`、`recurring`；
 9. `related_*` 和 `source_*` 列表应引用已存在对象、commit 或路径；引用无效时应报告校验警告；
-10. `created` 和 `updated` 使用 ISO 8601 日期格式（`YYYY-MM-DD`）；
+10. `created` 和 `updated` 使用 ISO 8601 时间戳格式；
 11. 列表字段可为空列表，不得省略字段后以 null 替代空列表。
 
 ### 6.4 文件命名契约

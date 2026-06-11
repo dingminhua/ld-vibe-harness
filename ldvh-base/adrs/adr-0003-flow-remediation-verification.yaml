@@ -2,8 +2,8 @@ id: adr-0003
 type: adr
 title: ADR 流程整改验证
 status: rejected
-created: '2026-06-03'
-updated: '2026-06-03'
+created: '2026-06-03T00:00:00'
+updated: '2026-06-03T00:00:00'
 date: '2026-06-03'
 context: |-
   修复了 Tools 解析失败检测、命令调用示例缺失和 Human Gate 确认记录持久化三个流程缺失后，需验证完整生命周期。
@@ -12,5 +12,8 @@ context: |-
 decision: 创建本 ADR 后走 proposed→rejected 流程，验证 Human Gate 确认记录是否持久化到 ADR YAML context 字段。
 consequences: 验证完成后 ADR 进入 rejected 终态，保留历史记录。
 affects: []
-related_objects: []
+related_intents: []
+related_tasks: []
+related_changes: []
+related_memos: []
 related_rules: []

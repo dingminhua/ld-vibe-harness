@@ -2,8 +2,8 @@ id: adr-0001
 type: adr
 title: ADR 机制补齐落地初始化
 status: rejected
-created: '2026-06-03'
-updated: '2026-06-03'
+created: '2026-06-03T00:00:00'
+updated: '2026-06-03T00:00:00'
 date: '2026-06-03'
 context: |
   ADR 主规范、21.01-21.06 子文档、ADR Tools 和测试已具备基础能力；项目实际落地曾处于子文档已声明但事实源未建立、Skill 实体未创建的状态。本次经 Human Gate 确认推进完整落地初始化。 [Human Gate 确认记录: 确认人=user, 确认时间=2026-06-03, 确认上下文=用户在对话中确认推进 ADR 机制补齐落地初始化]
@@ -15,6 +15,9 @@ affects:
 - ldvh-base/adrs/
 - /Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/SKILL.md
 - docs/specs/21-ADR-决策.md
-related_objects: []
+related_intents: []
+related_tasks: []
+related_changes: []
+related_memos: []
 related_rules:
 - docs/specs/21-ADR-决策.md

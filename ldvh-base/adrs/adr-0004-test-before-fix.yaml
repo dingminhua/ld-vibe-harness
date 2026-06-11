@@ -2,8 +2,8 @@ id: adr-0004
 type: adr
 title: 先完善机制或测试再修复问题
 status: accepted
-created: '2026-06-03'
-updated: '2026-06-03'
+created: '2026-06-03T00:00:00'
+updated: '2026-06-03T00:00:00'
 date: '2026-06-03'
 context: |-
   当前修复 bug 或代码问题时，AI 可能直接修改代码而不先补充测试或完善机制，导致修复缺乏回归保护、相同问题可能重复出现、修复方案未经人类审查就执行。
@@ -14,6 +14,9 @@ consequences: 所有 bug 修复和代码问题修改必须先有测试或机制�
 alternatives: 直接修复不补充测试（缺乏回归保护）；仅对高风险问题补充测试（边界模糊难以判断）
 affects:
 - 所有 bug 修复和代码问题修改场景
-related_objects: []
+related_intents: []
+related_tasks: []
+related_changes: []
+related_memos: []
 related_rules:
 - docs/specs/21-ADR-决策.md

@@ -175,9 +175,9 @@ ADR 语境下的 Human Gate 记录应遵守 `docs/specs/06-工作流程基础规
 | `type` | 对象类型 | string | 是 | 固定为 `adr` | Reference | AI、Code、Web |
 | `title` | 决策标题 | string | 是 | 应简短可读 | Narrative | AI、Web |
 | `status` | 当前状态 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
-| `created` | 创建日期 | date | 是 | `YYYY-MM-DD` | Reference | AI、Code、Web |
-| `updated` | 最近更新日期 | date | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
-| `date` | 决策日期 | date | 是 | 通常与 accepted 日期一致，proposed 时可为提出日期 | Reference | AI、Web |
+| `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
+| `updated` | 最近更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `date` | 决策日期 | date | 是 | `YYYY-MM-DD`，通常与 accepted 日期一致，proposed 时可为提出日期 | Reference | AI、Web |
 | `context` | 决策背景、问题和来源 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `decision` | 决策内容 | string | 是 | accepted 后核心内容变更需 Human Gate | Decision | AI、Human、Web |
 | `consequences` | 决策后果、影响和约束 | string | 是 | 应说明正负影响 | Decision / Narrative | AI、Web |
@@ -200,8 +200,8 @@ id: adr-0001
 type: adr
 title: Change 使用 Git commit 记录承载
 status: accepted
-created: 2026-06-09
-updated: 2026-06-09
+created: '2026-06-09T00:00:00'
+updated: '2026-06-09T00:00:00'
 date: 2026-06-09
 context: |
   LDVH 需要记录事实源变更，但不希望为每次变更额外创建 YAML 实例。
