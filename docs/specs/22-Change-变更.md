@@ -17,7 +17,7 @@ Change 是工作模型中的特殊对象：它不使用 `ldvh-base/changes/` 下
 
 以下修改应通过符合本文 §6 的 commit message 记录为 Change：
 
-1. 修改 docs/specs 正式规范、research 吸收结果、refs 摘要或输入材料吸收结论；
+1. 修改 docs/specs 正式规范、research 吸收结果、refs 摘要或参考与研究材料吸收结论；
 2. 修改 docs 正文、docs/research 或 docs/refs 中的稳定项目事实；
 3. 修改 `ldvh-base/` 下的事实实例；
 4. 修改 Rules / Instructions、Skill、Agent、环境适配记录或适配措施；

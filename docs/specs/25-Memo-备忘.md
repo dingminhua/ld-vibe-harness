@@ -11,7 +11,7 @@
 
 Memo / 备忘承载尚未任务化但有保留价值的输入、发现、提醒、问题、缺口和偏好。Memo 的目标是降低误创建 WorkArea、TaskPlan、Task 或 ADR 的冲动，同时避免有价值的信息只留在聊天记忆中。
 
-Memo 是分流前的事实对象。它可以后续转化或关联到 WorkArea、TaskPlan、Task、ADR、Pitfall、docs、管辖项目配置或其他事实源，但在转化前不替代这些对象的字段契约、状态机、验收规则或配置边界。
+Memo 是分流前的工作对象。它可以后续转化或关联到 WorkArea、TaskPlan、Task、ADR、Pitfall、docs、管辖项目配置或其他事实源，但在转化前不替代这些对象的字段契约、状态机、验收规则或配置边界。
 
 ### 1.1 Memo 准入条件
 
