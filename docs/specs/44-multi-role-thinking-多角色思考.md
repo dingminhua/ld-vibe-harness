@@ -4,7 +4,7 @@
 > 定位：定义多角色思考工作流程，包括行动定位、准入条件、事实源边界、Context、Scenario、执行流程、Gate、Skill 和 Agent 调度、工具协作、事实源回写、证据留存、机制适配边界和行动特有检查
 > 适用范围：所有接入 LDVH 且需要对复杂变更、决策、风险、规范治理或跨模块影响进行多视角分析的项目
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/08-Web信息同步实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`
+> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.03-环境适配规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/08-Web信息同步实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -54,7 +54,7 @@
 | 多角色思考工作流程 | 本文 |
 | 工作流程基础规则 | `docs/specs/06-工作流程基础规范.md` |
 | 工作流程集合状态 | `docs/specs/40-工作流程集合索引.md` |
-| Skill、Agent、Rules / Instructions、Code、Web 等环境适配边界 | `docs/specs/04.03-环境能力清单与环境适配规范.md` |
+| Skill、Agent、Rules / Instructions、Code、Web 等环境适配边界 | `docs/specs/04.03-环境适配规范.md` |
 | 多角色分析过程输出 | 当前对话或 Agent 输出，默认不是最终事实源 |
 | 稳定结论、任务、决策、变更、经验或项目身份信息 | 按 20-39 工作模型规范写入对应工作对象，或按 03、03.06、09 写入 docs 正文或管辖项目配置 |
 | 来源材料与机制子文档 | 有效内容已并入本文；输入材料不作为当前读取入口 |
@@ -72,7 +72,7 @@
 4. `docs/specs/06-工作流程基础规范.md`；
 5. `docs/specs/40-工作流程集合索引.md`；
 6. 需要判断事实源回写时，读取 `docs/specs/09-事实源边界与承载规范.md` 和对应工作模型规范；
-7. 需要判断环境适配时，读取 `docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/07-Code确定性执行实现规范.md` 或 `docs/specs/08-Web信息同步实现规范.md`。
+7. 需要判断环境适配时，读取 `docs/specs/04.03-环境适配规范.md`、`docs/specs/07-Code确定性执行实现规范.md` 或 `docs/specs/08-Web信息同步实现规范.md`。
 
 根据主题复杂度，可增加以下 Context：
 
@@ -409,7 +409,7 @@ human_gate_rules: 本次需要特别关注的 Human Gate 条件，选填
 | 风险判断 | 写入 Task、Memo、ADR、Pitfall 或 docs 报告中的对应字段或段落，不创建独立 Risk 对象 |
 | 验证证据、检查结果或关闭依据 | 写入 Task 的验证/关闭字段、被引用结果物、Change、Pitfall 或 docs 报告，不创建独立 Evidence 对象 |
 | 对事实源产生影响的实际修改 | 按 Change 规范通过 Git commit 记录 |
-| 管辖项目正式报告或经授权的报告正文 | Human Gate 后写入 docs/ 对应正文或报告；42 LDVH落地与检查默认只输出当前过程报告，不自行创建文档 |
+| 管辖项目正式报告或经授权的报告正文 | Human Gate 后写入 docs/ 对应正文或报告；42 LDVH落地与检查默认只输出当前落地与检查报告，不自行创建文档 |
 | 规范或规则正文 | 写入 `docs/specs/` 或运行投影入口，并评估 Human Gate |
 
 未写入权威事实源前，多角色思考报告不能被后续 AI 当作稳定事实引用。
