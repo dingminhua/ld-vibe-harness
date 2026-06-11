@@ -78,7 +78,7 @@
 
 1. `docs/research/` 中与本次主题相关的内部评估文档；
 2. `docs/refs/` 中与环境、第三方能力或外部资料相关的引用文档；
-3. 已存在的 Task、ADR、Memo、Pitfall、Change、Intent 实例，或管辖项目配置；
+3. 已存在的 WorkArea、TaskPlan、Task、SubTask、ADR、Memo、Pitfall、Change 实例，或管辖项目配置；
 4. 当前环境能力清单、42 落地与检查报告，以及当前环境中可调用 Agent、结构化问询、Hook、CI、Code 或 Web 能力的现场证据；若主题属于管辖项目，还应读取工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 和对应项目事实源。
 
 可选 Context 只能作为参考与研究材料，不能覆盖 `docs/specs/` 正式规范，也不能被当作当前项目已经存在对应 Skill、Agent、工具或 Web 实体的证据。
