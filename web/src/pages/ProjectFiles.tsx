@@ -9,6 +9,7 @@ import {
   FileText,
   Folder,
   FolderOpen,
+  GitCommit,
   GitPullRequestArrow,
   Loader2,
   RefreshCcw,
@@ -22,12 +23,18 @@ import {
   fetchProjectFileContent,
   fetchProjectFileEntries,
   fetchProjectFilesProjects,
+  fetchProjectGitCommitDetail,
+  fetchProjectGitCommitFileDiff,
+  fetchProjectGitCommits,
   fetchProjectGitDiff,
   fetchProjectGitStatus,
   type GovernedProject,
   type ProjectFileContentData,
   type ProjectFileEntry,
   type ProjectGitDiffData,
+  type ProjectGitCommitDetail,
+  type ProjectGitCommitEntry,
+  type ProjectGitCommitFile,
   type ProjectGitStatusEntry,
 } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
@@ -45,8 +52,14 @@ type DiffPanelState = {
 };
 
 type EntryKind = ProjectFileEntry['kind'];
-type ActiveProjectFilesTab = 'files' | 'changes';
+type ActiveProjectFilesTab = 'files' | 'changes' | 'history';
 type DiffViewMode = 'unified' | 'split';
+
+type CommitPanelState = {
+  data: ProjectGitCommitDetail | null;
+  loading: boolean;
+  error: string | null;
+};
 
 type SplitDiffCell = {
   kind: 'context' | 'delete' | 'add' | 'empty';
@@ -107,6 +120,20 @@ function getStatusLabel(status: string, locale: string): string {
     U: { zh: '冲突', en: 'Conflict' },
   };
   const key = trimmed === '??' ? '??' : trimmed.replace(/\s/g, '').charAt(0);
+  const label = labels[key];
+  if (!label) return status;
+  return locale === 'en' ? label.en : label.zh;
+}
+
+function getCommitFileStatusLabel(status: string, locale: string): string {
+  const key = status.trim().charAt(0);
+  const labels: Record<string, { zh: string; en: string }> = {
+    A: { zh: '新增', en: 'Added' },
+    M: { zh: '修改', en: 'Modified' },
+    D: { zh: '删除', en: 'Deleted' },
+    R: { zh: '重命名', en: 'Renamed' },
+    C: { zh: '复制', en: 'Copied' },
+  };
   const label = labels[key];
   if (!label) return status;
   return locale === 'en' ? label.en : label.zh;
@@ -261,6 +288,10 @@ export default function ProjectFiles() {
   const [gitEntries, setGitEntries] = useState<ProjectGitStatusEntry[]>([]);
   const [gitLoading, setGitLoading] = useState(false);
   const [gitError, setGitError] = useState<string | null>(null);
+  const [commitEntries, setCommitEntries] = useState<ProjectGitCommitEntry[]>([]);
+  const [commitsLoading, setCommitsLoading] = useState(false);
+  const [commitsError, setCommitsError] = useState<string | null>(null);
+  const [commitPanel, setCommitPanel] = useState<CommitPanelState>({ data: null, loading: false, error: null });
   const [diffPanel, setDiffPanel] = useState<DiffPanelState>({ data: null, loading: false, error: null });
   const [activeTab, setActiveTab] = useState<ActiveProjectFilesTab>('files');
   const [diffViewMode, setDiffViewMode] = useState<DiffViewMode>('unified');
@@ -278,9 +309,14 @@ export default function ProjectFiles() {
     showHiddenFiles: pickCopy(locale, '显示隐藏文件', 'Show hidden files'),
     filesTab: pickCopy(locale, '文件浏览', 'Files'),
     changesTab: pickCopy(locale, '待提交文件', 'Pending'),
+    historyTab: pickCopy(locale, '提交历史', 'History'),
     fileBrowser: pickCopy(locale, '项目文件浏览', 'Project File Browser'),
     preview: pickCopy(locale, '文件预览', 'File Preview'),
     pending: pickCopy(locale, '待提交文件', 'Pending Files'),
+    history: pickCopy(locale, '提交历史', 'Commit History'),
+    commitDetail: pickCopy(locale, '提交详情', 'Commit Detail'),
+    changedFiles: pickCopy(locale, '改动文件', 'Changed Files'),
+    selectedCommitFiles: pickCopy(locale, '当前提交改动', 'Selected Commit Changes'),
     diff: pickCopy(locale, '文件差异', 'File Diff'),
     diffMode: pickCopy(locale, '差异显示方式', 'Diff display mode'),
     unifiedDiff: pickCopy(locale, '统一', 'Unified'),
@@ -291,7 +327,11 @@ export default function ProjectFiles() {
     noEntries: pickCopy(locale, '当前目录没有可展示文件。', 'No displayable files in this directory.'),
     chooseFile: pickCopy(locale, '选择左侧文件后在这里阅读。', 'Select a file on the left to read it here.'),
     chooseDiff: pickCopy(locale, '选择待提交文件后在这里查看差异。', 'Select a pending file to view its diff here.'),
+    chooseCommit: pickCopy(locale, '选择左侧提交后查看详情。', 'Select a commit on the left to view details.'),
+    chooseCommitFile: pickCopy(locale, '选择改动文件后查看该提交中的差异。', 'Select a changed file to view its diff in this commit.'),
     noChanges: pickCopy(locale, '当前项目没有待提交文件。', 'This project has no pending files.'),
+    noCommits: pickCopy(locale, '当前项目没有提交历史。', 'This project has no commit history.'),
+    mergeCommit: pickCopy(locale, '合并提交', 'Merge'),
     binary: pickCopy(locale, '这是二进制文件，Web 仅展示路径和大小。', 'This is a binary file; the web view only shows path and size.'),
     truncated: pickCopy(locale, '内容已按安全上限截断。', 'Content was truncated at the safety limit.'),
     readOnly: pickCopy(locale, '只读', 'Read-only'),
@@ -345,6 +385,16 @@ export default function ProjectFiles() {
       .finally(() => setGitLoading(false));
   }, [projectId]);
 
+  const loadCommits = useCallback(() => {
+    if (!projectId) return;
+    setCommitsLoading(true);
+    setCommitsError(null);
+    fetchProjectGitCommits(projectId, 80)
+      .then((result) => setCommitEntries(result.entries ?? []))
+      .catch((err) => setCommitsError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setCommitsLoading(false));
+  }, [projectId]);
+
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
@@ -353,12 +403,15 @@ export default function ProjectFiles() {
     if (!projectId) return;
     setCurrentDir('');
     setEntries([]);
+    setCommitEntries([]);
     setShowHiddenFiles(false);
     setFilePanel({ data: null, loading: false, error: null });
+    setCommitPanel({ data: null, loading: false, error: null });
     setDiffPanel({ data: null, loading: false, error: null });
     loadEntries('', false);
     loadGitStatus();
-  }, [loadEntries, loadGitStatus, projectId]);
+    loadCommits();
+  }, [loadCommits, loadEntries, loadGitStatus, projectId]);
 
   const handleProjectChange = (nextProjectId: string) => {
     if (nextProjectId === projectId) return;
@@ -396,9 +449,32 @@ export default function ProjectFiles() {
       });
   };
 
+  const handleOpenCommit = (entry: ProjectGitCommitEntry) => {
+    setActiveTab('history');
+    setCommitPanel({ data: null, loading: true, error: null });
+    setDiffPanel({ data: null, loading: false, error: null });
+    fetchProjectGitCommitDetail(projectId, entry.hash)
+      .then((result) => setCommitPanel({ data: result.commit, loading: false, error: null }))
+      .catch((err) => {
+        setCommitPanel({ data: null, loading: false, error: err instanceof Error ? err.message : String(err) });
+      });
+  };
+
+  const handleOpenCommitFileDiff = (file: ProjectGitCommitFile) => {
+    if (!commitPanel.data) return;
+    setActiveTab('history');
+    setDiffPanel({ data: null, loading: true, error: null });
+    fetchProjectGitCommitFileDiff(projectId, commitPanel.data.hash, file.path)
+      .then((data) => setDiffPanel({ data, loading: false, error: null }))
+      .catch((err) => {
+        setDiffPanel({ data: null, loading: false, error: err instanceof Error ? err.message : String(err) });
+      });
+  };
+
   const handleRefresh = () => {
     loadEntries(currentDir, showHiddenFiles);
     loadGitStatus();
+    loadCommits();
   };
 
   const handleShowHiddenChange = (nextShowHidden: boolean) => {
@@ -485,7 +561,7 @@ export default function ProjectFiles() {
           </label>
           <div className="flex min-w-0 flex-col justify-end gap-2">
             <p className="ldvh-caption-strong">{pickCopy(locale, '视图', 'View')}</p>
-            <div role="tablist" aria-label={pickCopy(locale, '项目文件视图', 'Project file view')} className="grid max-w-md grid-cols-2 rounded-lg border border-ldvh-border bg-ldvh-bg p-1">
+            <div role="tablist" aria-label={pickCopy(locale, '项目文件视图', 'Project file view')} className="grid max-w-2xl grid-cols-3 rounded-lg border border-ldvh-border bg-ldvh-bg p-1">
               <button
                 type="button"
                 role="tab"
@@ -515,6 +591,21 @@ export default function ProjectFiles() {
                 <GitPullRequestArrow size={15} className="shrink-0" />
                 <span className="truncate">{copy.changesTab}</span>
                 <span className="ldvh-meta-primary shrink-0">{gitEntries.length}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'history'}
+                onClick={() => setActiveTab('history')}
+                className={`ldvh-card-title flex min-w-0 items-center justify-center gap-2 rounded-md px-3 py-2 transition-colors ${
+                  activeTab === 'history'
+                    ? 'bg-ldvh-panel text-ldvh-accent shadow-sm shadow-black/10'
+                    : 'text-ldvh-text-secondary hover:text-ldvh-text-primary'
+                }`}
+              >
+                <GitCommit size={15} className="shrink-0" />
+                <span className="truncate">{copy.historyTab}</span>
+                <span className="ldvh-meta-primary shrink-0">{commitEntries.length}</span>
               </button>
             </div>
           </div>
@@ -650,7 +741,7 @@ export default function ProjectFiles() {
             </div>
           </section>
         </div>
-      ) : (
+      ) : activeTab === 'changes' ? (
         <div className="grid min-w-0 gap-6 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(18rem,28rem)_minmax(0,1fr)]">
           <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel xl:flex xl:min-h-0 xl:flex-col">
             <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
@@ -808,6 +899,294 @@ export default function ProjectFiles() {
                     </div>
                   </div>
                 </div>
+              )}
+            </div>
+          </section>
+        </div>
+      ) : (
+        <div className="grid min-w-0 gap-6 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(18rem,28rem)_minmax(0,1fr)]">
+          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel xl:flex xl:min-h-0 xl:flex-col">
+            <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <GitCommit size={16} className="shrink-0 text-ldvh-accent" />
+                <h2 className="ldvh-section-title">{copy.history}</h2>
+              </div>
+              <span className="ldvh-meta-primary">{commitEntries.length}</span>
+            </div>
+            <div className="min-w-0 overflow-y-auto p-3 xl:min-h-0 xl:flex-1">
+              {commitsLoading ? (
+                <LoadingState text={copy.loading} />
+              ) : commitsError ? (
+                <EmptyState text={commitsError} />
+              ) : commitEntries.length === 0 ? (
+                <EmptyState text={copy.noCommits} />
+              ) : (
+                <div className="space-y-0">
+                  {commitEntries.map((entry, index) => {
+                    const isSelected = commitPanel.data?.hash === entry.hash;
+                    const selectedFiles = isSelected ? commitPanel.data?.files ?? [] : [];
+                    return (
+                      <div key={entry.hash} className="relative min-w-0 pl-8">
+                        {index < commitEntries.length - 1 && (
+                          <span className="absolute left-[0.875rem] top-7 bottom-0 w-px bg-ldvh-accent/50" aria-hidden="true" />
+                        )}
+                        <span
+                          className={`absolute left-1.5 top-3 flex h-4 w-4 items-center justify-center rounded-full border ${
+                            isSelected
+                              ? 'border-ldvh-accent bg-ldvh-accent shadow-sm shadow-ldvh-accent/30'
+                              : 'border-ldvh-accent bg-ldvh-panel'
+                          }`}
+                          aria-hidden="true"
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-ldvh-panel' : 'bg-ldvh-accent'}`} />
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCommit(entry)}
+                          className={`group flex w-full min-w-0 items-start rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/30 ${
+                            isSelected ? 'bg-ldvh-accent/10 text-ldvh-accent' : ''
+                          }`}
+                        >
+                          <span className="min-w-0 flex-1">
+                            <span className="ldvh-card-title block truncate transition-colors group-hover:text-ldvh-accent">
+                              {entry.message}
+                            </span>
+                            <span className="ldvh-meta block truncate">
+                              {entry.shortHash} · {entry.author} · {formatDateTime(entry.date)}
+                            </span>
+                            <span className="mt-1 flex min-w-0 flex-wrap gap-1">
+                              {entry.refs && (
+                                <span className="ldvh-chip rounded border border-ldvh-accent/30 bg-ldvh-accent/10 px-1.5 py-0.5 text-ldvh-accent">
+                                  {entry.refs}
+                                </span>
+                              )}
+                              {entry.isMerge && (
+                                <span className="ldvh-chip rounded border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-secondary">
+                                  {copy.mergeCommit}
+                                </span>
+                              )}
+                            </span>
+                          </span>
+                        </button>
+                        {isSelected && (
+                          <div className="mb-2 ml-2 min-w-0 rounded-md border border-ldvh-border/70 bg-ldvh-bg/80 p-2">
+                            <div className="mb-1 flex min-w-0 items-center justify-between gap-2 px-1">
+                              <span className="ldvh-caption-strong text-ldvh-text-secondary">{copy.selectedCommitFiles}</span>
+                              <span className="ldvh-meta-primary">{selectedFiles.length}</span>
+                            </div>
+                            {commitPanel.loading ? (
+                              <div className="ldvh-meta px-1 py-2">{copy.loading}</div>
+                            ) : selectedFiles.length === 0 ? (
+                              <div className="ldvh-meta px-1 py-2">{copy.chooseCommit}</div>
+                            ) : (
+                              <div className="space-y-1">
+                                {selectedFiles.slice(0, 8).map((file) => (
+                                  <button
+                                    key={`${entry.hash}:graph:${file.status}:${file.path}`}
+                                    type="button"
+                                    onClick={() => handleOpenCommitFileDiff(file)}
+                                    className={`flex w-full min-w-0 items-center gap-2 rounded px-1.5 py-1 text-left transition-colors hover:bg-ldvh-border/30 ${
+                                      diffPanel.data?.hash === entry.hash && diffPanel.data?.path === file.path
+                                        ? 'bg-ldvh-accent/10 text-ldvh-accent'
+                                        : ''
+                                    }`}
+                                  >
+                                    <span className="ldvh-meta-primary w-7 shrink-0 text-center">{file.status}</span>
+                                    <span className="ldvh-meta min-w-0 flex-1 truncate">{file.path}</span>
+                                  </button>
+                                ))}
+                                {selectedFiles.length > 8 && (
+                                  <div className="ldvh-meta px-1.5 py-1">
+                                    {pickCopy(locale, `还有 ${selectedFiles.length - 8} 个文件`, `${selectedFiles.length - 8} more files`)}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel xl:flex xl:min-h-0 xl:flex-col">
+            <div className="flex min-w-0 items-center justify-between gap-3 border-b border-ldvh-border px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <Diff size={16} className="shrink-0 text-ldvh-accent" />
+                <div className="min-w-0">
+                  <h2 className="ldvh-section-title">{copy.commitDetail}</h2>
+                  {commitPanel.data && <p className="ldvh-meta truncate">{commitPanel.data.hash}</p>}
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <div
+                  role="group"
+                  aria-label={copy.diffMode}
+                  className="grid grid-cols-2 rounded-md border border-ldvh-border bg-ldvh-bg p-0.5"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={diffViewMode === 'unified'}
+                    onClick={() => setDiffViewMode('unified')}
+                    className={`ldvh-chip inline-flex items-center justify-center gap-1 rounded px-2 py-1 transition-colors ${
+                      diffViewMode === 'unified'
+                        ? 'bg-ldvh-panel text-ldvh-accent'
+                        : 'text-ldvh-text-secondary hover:text-ldvh-text-primary'
+                    }`}
+                  >
+                    <Rows3 size={13} />
+                    {copy.unifiedDiff}
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={diffViewMode === 'split'}
+                    onClick={() => setDiffViewMode('split')}
+                    className={`ldvh-chip inline-flex items-center justify-center gap-1 rounded px-2 py-1 transition-colors ${
+                      diffViewMode === 'split'
+                        ? 'bg-ldvh-panel text-ldvh-accent'
+                        : 'text-ldvh-text-secondary hover:text-ldvh-text-primary'
+                    }`}
+                  >
+                    <Columns2 size={13} />
+                    {copy.splitDiff}
+                  </button>
+                </div>
+                <CopyPathButton path={diffPanel.data?.absolutePath} />
+              </div>
+            </div>
+            <div className="min-h-[36rem] min-w-0 space-y-4 p-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+              {commitPanel.loading ? (
+                <LoadingState text={copy.loading} />
+              ) : commitPanel.error ? (
+                <EmptyState text={commitPanel.error} />
+              ) : !commitPanel.data ? (
+                <EmptyState text={copy.chooseCommit} />
+              ) : (
+                <>
+                  <div className="rounded-md border border-ldvh-border bg-ldvh-bg p-3">
+                    <p className="ldvh-body font-medium">{commitPanel.data.message.split('\n')[0] || commitPanel.data.shortHash}</p>
+                    {commitPanel.data.message.split('\n').slice(1).join('\n').trim() && (
+                      <pre className="ldvh-body-muted mt-2 whitespace-pre-wrap">{commitPanel.data.message.split('\n').slice(1).join('\n').trim()}</pre>
+                    )}
+                    <div className="ldvh-meta mt-3 flex min-w-0 flex-wrap gap-x-3 gap-y-1">
+                      <span>{commitPanel.data.shortHash}</span>
+                      <span>{commitPanel.data.author}</span>
+                      <span>{formatDateTime(commitPanel.data.date)}</span>
+                      {commitPanel.data.refs && <span>{commitPanel.data.refs}</span>}
+                    </div>
+                  </div>
+
+                  <div className="rounded-md border border-ldvh-border bg-ldvh-bg">
+                    <div className="flex items-center justify-between gap-3 border-b border-ldvh-border px-3 py-2">
+                      <h3 className="ldvh-section-title">{copy.changedFiles}</h3>
+                      <span className="ldvh-meta-primary">{commitPanel.data.files.length}</span>
+                    </div>
+                    <div className="max-h-52 overflow-y-auto p-2">
+                      {commitPanel.data.files.map((file) => (
+                        <div
+                          key={`${commitPanel.data?.hash}:${file.status}:${file.path}`}
+                          className={`group flex w-full min-w-0 items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/30 ${
+                            diffPanel.data?.hash === commitPanel.data?.hash && diffPanel.data?.path === file.path ? 'bg-ldvh-accent/10 text-ldvh-accent' : ''
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleOpenCommitFileDiff(file)}
+                            className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                          >
+                            <span className="ldvh-meta-primary w-8 shrink-0 rounded bg-ldvh-panel px-1.5 py-0.5 text-center">
+                              {file.status}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="ldvh-card-title block truncate transition-colors group-hover:text-ldvh-accent">
+                                {getFileName(file.path)}
+                              </span>
+                              <span className="ldvh-meta block truncate">
+                                {getCommitFileStatusLabel(file.status, locale)} · {file.path}
+                              </span>
+                            </span>
+                          </button>
+                          <CopyPathButton path={file.absolutePath} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="min-h-[28rem] min-w-0">
+                    {diffPanel.data?.hash === commitPanel.data.hash && (
+                      <div className="mb-2 flex min-w-0 items-center gap-2">
+                        <Diff size={14} className="shrink-0 text-ldvh-accent" />
+                        <h3 className="ldvh-section-title shrink-0">{copy.diff}</h3>
+                        <p className="ldvh-meta min-w-0 truncate">{diffPanel.data.path}</p>
+                      </div>
+                    )}
+                    {diffPanel.loading ? (
+                      <LoadingState text={copy.loading} />
+                    ) : diffPanel.error ? (
+                      <EmptyState text={diffPanel.error} />
+                    ) : !diffPanel.data || diffPanel.data.hash !== commitPanel.data.hash ? (
+                      <EmptyState text={copy.chooseCommitFile} />
+                    ) : diffViewMode === 'unified' ? (
+                      <pre className="ldvh-meta-primary max-h-[44rem] min-w-0 overflow-auto rounded-md bg-ldvh-bg p-4">
+                        {diffPanel.data.diff.split('\n').map((line, index) => (
+                          <span key={`${index}-${line.slice(0, 12)}`} className={`${getDiffLineClass(line)} block min-w-max whitespace-pre`}>
+                            {line || ' '}
+                          </span>
+                        ))}
+                      </pre>
+                    ) : (
+                      <div className="max-h-[44rem] min-w-0 overflow-y-auto overflow-x-hidden rounded-md bg-ldvh-bg">
+                        <div className="min-w-0">
+                          <div className="ldvh-meta sticky top-0 z-10 grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border bg-ldvh-panel/95 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]">
+                            <div className="border-r border-ldvh-border px-2 py-2 text-right">-</div>
+                            <div className="border-r border-ldvh-border px-3 py-2">{pickCopy(locale, '旧内容', 'Before')}</div>
+                            <div className="border-r border-ldvh-border px-2 py-2 text-right">+</div>
+                            <div className="px-3 py-2">{pickCopy(locale, '新内容', 'After')}</div>
+                          </div>
+                          <div className="ldvh-meta-primary">
+                            {splitDiffRows.map((row, index) => {
+                              if (row.kind !== 'line') {
+                                return (
+                                  <div
+                                    key={`${row.kind}-${index}-${row.text.slice(0, 12)}`}
+                                    className={`whitespace-pre-wrap break-words border-b border-ldvh-border/40 px-3 py-1 ${
+                                      row.kind === 'hunk' ? 'bg-ldvh-accent/10 text-ldvh-accent' : 'text-sky-300'
+                                    }`}
+                                  >
+                                    {row.text || ' '}
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div
+                                  key={`line-${index}-${row.oldCell.lineNumber ?? 'x'}-${row.newCell.lineNumber ?? 'x'}`}
+                                  className="grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border/20 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]"
+                                >
+                                  <div className="border-r border-ldvh-border/40 px-2 py-1 text-right text-ldvh-text-secondary">
+                                    {row.oldCell.lineNumber ?? ''}
+                                  </div>
+                                  <div className={`${getSplitDiffCellClass(row.oldCell)} border-r border-ldvh-border/40 px-3 py-1`}>
+                                    <span className="block whitespace-pre-wrap break-words">{row.oldCell.text ?? ' '}</span>
+                                  </div>
+                                  <div className="border-r border-ldvh-border/40 px-2 py-1 text-right text-ldvh-text-secondary">
+                                    {row.newCell.lineNumber ?? ''}
+                                  </div>
+                                  <div className={`${getSplitDiffCellClass(row.newCell)} px-3 py-1`}>
+                                    <span className="block whitespace-pre-wrap break-words">{row.newCell.text ?? ' '}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </section>

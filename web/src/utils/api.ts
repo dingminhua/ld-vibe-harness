@@ -316,10 +316,44 @@ export interface ProjectGitStatusData {
 export interface ProjectGitDiffData {
   ok: boolean;
   project: GovernedProject;
+  hash?: string;
   path: string;
   absolutePath: string;
   status: string;
   diff: string;
+}
+
+export interface ProjectGitCommitEntry {
+  hash: string;
+  shortHash: string;
+  parents: string[];
+  author: string;
+  date: string;
+  refs: string;
+  message: string;
+  isMerge: boolean;
+}
+
+export interface ProjectGitCommitFile {
+  status: string;
+  path: string;
+  absolutePath: string;
+}
+
+export interface ProjectGitCommitDetail extends ProjectGitCommitEntry {
+  files: ProjectGitCommitFile[];
+}
+
+export interface ProjectGitCommitsData {
+  ok: boolean;
+  project: GovernedProject;
+  entries: ProjectGitCommitEntry[];
+}
+
+export interface ProjectGitCommitDetailData {
+  ok: boolean;
+  project: GovernedProject;
+  commit: ProjectGitCommitDetail;
 }
 
 export async function fetchProjectFilesProjects(): Promise<ProjectFilesProjectsData> {
@@ -349,4 +383,19 @@ export async function fetchProjectGitStatus(projectId?: string): Promise<Project
 export async function fetchProjectGitDiff(projectId: string, filePath: string, status: string): Promise<ProjectGitDiffData> {
   const params = new URLSearchParams({ projectId, path: filePath, status });
   return request<ProjectGitDiffData>(`/project-files/git/diff?${params.toString()}`);
+}
+
+export async function fetchProjectGitCommits(projectId: string, count = 50): Promise<ProjectGitCommitsData> {
+  const params = new URLSearchParams({ projectId, count: String(count) });
+  return request<ProjectGitCommitsData>(`/project-files/git/commits?${params.toString()}`);
+}
+
+export async function fetchProjectGitCommitDetail(projectId: string, hash: string): Promise<ProjectGitCommitDetailData> {
+  const params = new URLSearchParams({ projectId });
+  return request<ProjectGitCommitDetailData>(`/project-files/git/commit/${encodeURIComponent(hash)}?${params.toString()}`);
+}
+
+export async function fetchProjectGitCommitFileDiff(projectId: string, hash: string, filePath: string): Promise<ProjectGitDiffData> {
+  const params = new URLSearchParams({ projectId, path: filePath });
+  return request<ProjectGitDiffData>(`/project-files/git/commit/${encodeURIComponent(hash)}/diff?${params.toString()}`);
 }

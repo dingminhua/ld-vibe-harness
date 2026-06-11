@@ -40,6 +40,10 @@ type GovernedProject = {
 
 type FileKind = 'directory' | 'markdown' | 'yaml' | 'text' | 'binary'
 
+function isValidCommitHash(hash: string): boolean {
+  return /^[0-9a-f]{7,40}$/i.test(hash)
+}
+
 function runCommand(command: string, args: string[], cwd: string): Promise<string> {
   return new Promise((resolve, reject) => {
     execFile(command, args, { cwd, maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
@@ -134,6 +138,16 @@ function parseGitStatusLine(project: GovernedProject, line: string) {
     absolutePath: path.join(project.path, filePath),
     staged: status[0] !== ' ' && status[0] !== '?',
     unstaged: status[1] !== ' ' || status === '??',
+  }
+}
+
+function parseCommitFileLine(project: GovernedProject, line: string) {
+  const [status = '', ...pathParts] = line.split('\t')
+  const filePath = pathParts[pathParts.length - 1] || ''
+  return {
+    status,
+    path: filePath,
+    absolutePath: path.join(project.path, filePath),
   }
 }
 
@@ -367,6 +381,135 @@ router.get('/git/diff', async (req: Request, res: Response): Promise<void> => {
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to read git diff'
+    res.status(500).json({ ok: false, error: message })
+  }
+})
+
+router.get('/git/commits', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const projectId = String(req.query.projectId || '')
+    const count = Math.min(Math.max(parseInt(String(req.query.count || '50'), 10) || 50, 1), 200)
+    const project = await getProject(projectId)
+    if (!project) {
+      res.status(404).json({ ok: false, error: 'Project not found' })
+      return
+    }
+
+    await runCommand('git', ['rev-parse', '--is-inside-work-tree'], project.path)
+    const stdout = await runCommand(
+      'git',
+      ['log', `-${count}`, '--date=iso-strict', '--format=%H%x1f%h%x1f%P%x1f%an%x1f%ai%x1f%D%x1f%s'],
+      project.path,
+    )
+    const entries = stdout
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const [hash, shortHash, parentsRaw, author, date, refs, message] = line.split('\x1f')
+        const parents = parentsRaw ? parentsRaw.split(' ').filter(Boolean) : []
+        return {
+          hash,
+          shortHash,
+          parents,
+          author,
+          date,
+          refs,
+          message,
+          isMerge: parents.length > 1,
+        }
+      })
+
+    res.json({ ok: true, project, entries })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to read git commits'
+    res.status(500).json({ ok: false, error: message })
+  }
+})
+
+router.get('/git/commit/:hash', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const projectId = String(req.query.projectId || '')
+    const { hash } = req.params
+    const project = await getProject(projectId)
+    if (!project) {
+      res.status(404).json({ ok: false, error: 'Project not found' })
+      return
+    }
+    if (!isValidCommitHash(hash)) {
+      res.status(400).json({ ok: false, error: 'Invalid hash format' })
+      return
+    }
+
+    await runCommand('git', ['rev-parse', '--is-inside-work-tree'], project.path)
+    const meta = await runCommand('git', ['show', '-s', '--date=iso-strict', '--format=%H%n%h%n%P%n%an%n%ai%n%D%n%B', hash], project.path)
+    const [fullHash = hash, shortHash = hash.slice(0, 7), parentsRaw = '', author = '', date = '', refs = '', ...messageLines] = meta.split('\n')
+    const filesStdout = await runCommand('git', ['show', '--name-status', '--format=', '--find-renames', '--root', hash], project.path)
+    const files = filesStdout
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => parseCommitFileLine(project, line))
+      .filter((file) => Boolean(file.path))
+
+    const parents = parentsRaw ? parentsRaw.split(' ').filter(Boolean) : []
+    res.json({
+      ok: true,
+      project,
+      commit: {
+        hash: fullHash,
+        shortHash,
+        parents,
+        author,
+        date,
+        refs,
+        message: messageLines.join('\n').trim(),
+        isMerge: parents.length > 1,
+        files,
+      },
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to read git commit'
+    res.status(500).json({ ok: false, error: message })
+  }
+})
+
+router.get('/git/commit/:hash/diff', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const projectId = String(req.query.projectId || '')
+    const filePath = String(req.query.path || '')
+    const { hash } = req.params
+    const project = await getProject(projectId)
+    if (!project) {
+      res.status(404).json({ ok: false, error: 'Project not found' })
+      return
+    }
+    if (!isValidCommitHash(hash)) {
+      res.status(400).json({ ok: false, error: 'Invalid hash format' })
+      return
+    }
+
+    const target = resolveProjectTarget(project, filePath)
+    if (!target) {
+      res.status(403).json({ ok: false, error: 'Invalid file path' })
+      return
+    }
+
+    const relativePath = toProjectRelative(project, target)
+    const diff = await runCommand('git', ['show', '--format=', '--find-renames', hash, '--', relativePath], project.path)
+      .catch(() => '')
+
+    res.json({
+      ok: true,
+      project,
+      hash,
+      path: relativePath,
+      absolutePath: target,
+      status: 'commit',
+      diff: diff || `No diff available for ${relativePath} in ${hash}`,
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to read commit file diff'
     res.status(500).json({ ok: false, error: message })
   }
 })
