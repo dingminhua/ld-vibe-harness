@@ -1,0 +1,67 @@
+id: task-0065
+type: task
+title: 补齐 42 Bootstrap Code 基线能力
+status: planned
+created: '2026-06-11T00:00:00'
+updated: '2026-06-11T00:00:00'
+description: |
+  42-LDVH落地与检查已定义 Bootstrap Code 基线能力。现有 tools/specs_validate.py 和 tests/test_specs_validate.py 已具备部分能力，但尚未形成严格按 42 十项基线能力组织的 Code 入口、报告结构、缺口分类和测试矩阵。
+
+  本 Task 用于承载 42 Bootstrap Code 基线能力补齐工作。Code 需求来源归属 42；07 只约束实现方式，10 只约束测试方式。
+source: 用户直接指示：code需求在42，建立 Task 承载 Bootstrap Code 基线能力补齐
+source_intent:
+parent_task:
+sub_tasks: []
+blocked_by: []
+acceptance: |
+  - [ ] Code 入口能按 42 定义输出 Bootstrap Code 基线能力覆盖报告
+  - [ ] 报告覆盖 specs 完整性检查
+  - [ ] 报告覆盖资产目录检查
+  - [ ] 报告覆盖管辖项目配置检查
+  - [ ] 报告覆盖工作模型和工作流程索引检查
+  - [ ] 报告覆盖环境承接矩阵检查
+  - [ ] 报告覆盖运行投影入口检查
+  - [ ] 报告覆盖 Code 自检
+  - [ ] 报告覆盖 Web 资产检查，且不要求 Web 运行态作为 bootstrap 前置条件
+  - [ ] 报告覆盖 42 报告结构输出
+  - [ ] 报告覆盖缺口分类与分流，并能区分规范、Code、Web、Task、事实源、环境承接和 Human Gate 缺口
+  - [ ] tests 中有对应测试证明上述基线能力输出结构和关键缺口分类
+  - [ ] 运行 `python3 -m pytest tests/test_specs_validate.py -q` 通过
+  - [ ] 运行 Bootstrap Code 基线检查命令并记录结果
+verification: |
+  ## 验证计划
+
+  - 运行 `python3 -m pytest tests/test_specs_validate.py -q`。
+  - 运行最终确定的 Bootstrap Code 基线检查命令，例如 `python3 tools/specs_validate.py ldvh-landing-check --format json` 或新增的等价命令。
+  - 检查输出是否按 42 的十项 Bootstrap Code 基线能力组织，并包含缺口分类与分流建议。
+
+  ## 验证结果
+
+  待执行。
+risk_assessment: |
+  - 避免把 42 的 Code 需求转移给 07；07 只约束实现方式。
+  - 避免把 Web 运行态作为 bootstrap 前置条件；Web 在此处只作为资产检查对象。
+  - 避免把 41、landing-plan、候选 change-plan 或其他 plan 类输出作为 bootstrap 前置条件。
+  - 避免新增 Code 自动写入事实源、自动创建 Task 或自动关闭缺口。
+assignee: AI
+related_adrs: []
+related_changes: []
+related_docs:
+  - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+  - docs/specs/07-Code实现规范.md
+  - docs/specs/10-运行闭环测试规范.md
+affected_docs:
+  - tools/specs_validate.py
+  - tests/test_specs_validate.py
+  - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+deliverables:
+  - tools/specs_validate.py
+  - tests/test_specs_validate.py
+status_history:
+  - at: '2026-06-11T00:00:00'
+    from:
+    to: planned
+    actor: AI
+    reason: 用户确认 42 承载 Bootstrap Code 需求，并要求创建 Task 承载 Code 基线能力补齐。
+closed_at:
+closure_evidence:
