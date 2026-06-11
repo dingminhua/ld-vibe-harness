@@ -1,0 +1,35 @@
+id: workarea-0006
+type: workarea
+title: Web展示管理
+status: active
+created: '2026-06-05T17:19:37.632834'
+updated: '2026-06-11T17:56:14'
+description: |
+  为 LDVH Web 展示层建立统一的设计思想框架，涵盖信息架构、交互模式、视觉规范和组件体系，确保各页面设计一致性和可扩展性。
+  当前 Web 展示层已实现 Dashboard、ObjectList、ObjectDetail、Validate、Changelog 五个页面，但缺乏整体设计规划，各页面设计决策分散在实现过程中，需要系统性地梳理和固化。
+source: 用户在 Web 开发过程中发现缺少整体设计思想框架，需要系统性规划
+scope: |
+  历史成功标准（由旧 Intent 迁移保留，不作为工作域完成条件）：
+  Web 设计规划文档完成编写并通过评审，覆盖信息架构、页面结构、交互规范、视觉体系和组件规范，后续页面开发可据此展开。
+constraints: |
+  不脱离现有技术栈（React + Tailwind + Express），不引入新的 UI 框架；设计需兼容侧边栏和顶部导航两种布局；移动端采用一套代码响应式渐进增强方案，不做独立移动站，所有页面需覆盖 375px（iPhone SE 最低视口）到桌面端体验。
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+legacy_intent:
+  id: intent-0006
+  status: active
+  related_tasks:
+  - task-0025
+  - task-0029
+  - task-0030
+  - task-0031
+  - task-0033
+  - task-0035
+  - task-0036
+  - task-0034
+  - task-0057
+  - task-0068
+  review_requested_at: null
+  closed_at: null

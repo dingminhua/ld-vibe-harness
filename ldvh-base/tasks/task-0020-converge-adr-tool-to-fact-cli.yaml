@@ -17,8 +17,7 @@ description: |
   - Change 记录生成：fact_cli.py 的 ADR create/transition 已支持 --write-change
   本任务将 adr_index.py 的 ADR 专属能力合并进 fact_cli.py，然后删除 adr_index.py。
   同时更新 21.04-Tools.md 规范引用和 ADR Skill 中的工具调用路径。
-source: intent-0002
-source_intent: intent-0002
+source: workarea-0002
 acceptance: |
   - [x] fact_cli.py 已新增 ADR 专属子命令（search、stats、related、link-rule、deprecate、supersede）
   - [x] fact_cli.py 的 ADR create/transition 已包含 Human Gate 参数强制检查
@@ -64,3 +63,4 @@ closure_evidence: |
   ## 结论
 
   任务完成，人工确认关闭。
+taskplan: taskplan-0019

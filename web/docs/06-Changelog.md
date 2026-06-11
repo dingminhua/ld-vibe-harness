@@ -35,7 +35,7 @@
 ## 4. Refs 行引用
 
 - commit message 中的 `Refs:` 行会被解析。
-- 形如 `task-0061`、`intent-0006`、`adr-0006` 的对象 ID 变成可点击文本。
+- 形如 `workarea-0001`、`taskplan-0006`、`task-0061`、`subtask-0001`、`adr-0006` 的对象 ID 变成可点击文本。
 - 点击对象 ID 跳转到对应对象详情页。
 - 非对象 ID 的文本原样展示。
 

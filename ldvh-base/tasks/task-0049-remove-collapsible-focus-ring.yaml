@@ -7,8 +7,7 @@ updated: '2026-06-06T00:32:24.729918'
 description: |
   ObjectDetail 页面在加载/路由切换时，内容区会出现一个巨大的白色圆形轮廓动画（从圆→圆角矩形→消失），影响视觉体验。
   根因：ObjectDetail 主容器的 transition-all duration-300 导致 border-radius（浏览器默认值 8251.97px）在页面加载时做动画过渡。
-source_intent: intent-0006
-source: intent-0006
+source: workarea-0006
 acceptance: |
   - [x] 页面加载/路由切换时不再出现白色圆形轮廓动画
   - [x] ReadingPanel 面板开关的 margin 过渡正常工作
@@ -46,3 +45,4 @@ closure_evidence: |-
 
   任务完成，人工确认关闭。
 closed_at: '2026-06-06T02:10:00'
+taskplan: taskplan-0049

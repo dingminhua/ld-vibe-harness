@@ -11,7 +11,6 @@ description: |
   2. 中风险操作（Task 状态流转、字段更新）默认确认但可配置
   3. 低风险操作（文档格式调整、注释修改）可自动通过
   此任务涉及 Human Gate 机制变更，需先产出 ADR 再修订规范。
-source_intent: intent-0009
 source: 竞品调研报告 docs/refs/06 建议4
 acceptance: |
   - [ ] 产出 ADR 论证 Human Gate 粒度配置方案
@@ -31,3 +30,4 @@ related_docs:
 deliverables:
 - ldvh-base/adrs/adr-0008（新建）
 - docs/specs/05-工作模型基础规范.md（修订）
+taskplan: taskplan-0046

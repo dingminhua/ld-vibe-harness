@@ -1,0 +1,26 @@
+id: taskplan-0021
+type: taskplan
+title: 实际清理工作模型子文档体系 等 2 个关联任务
+status: closed
+created: '2026-06-05T06:20:49.877841'
+updated: '2026-06-05T09:08:00.685366'
+workarea: workarea-0004
+description: 由历史 Task task-0021 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: |-
+  - [x] 关联任务 task-0021 满足其 acceptance、verification 和 closure_evidence。
+  - [x] 关联任务 task-0022 满足其 acceptance、verification 和 closure_evidence。
+source: '历史 Task task-0021 迁移生成；旧 source_intent: intent-0004'
+tasks:
+- task-0021
+- task-0022
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-05T09:08:00.685374'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0021: Task 21 已完成当前审计和拆分范围内的关闭条件：
+  - task-0022: Task 22 已完成全部历史机制子文档删除和引用修正：
+closed_at: '2026-06-05T09:08:00.685374'

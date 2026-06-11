@@ -3,8 +3,10 @@
  */
 
 export const TYPE_COLORS: Record<string, string> = {
-  intent: '#3b82f6',    // blue
+  workarea: '#3b82f6',  // blue
+  taskplan: '#14b8a6',  // teal
   task: '#22c55e',      // green
+  subtask: '#84cc16',   // lime
   adr: '#a855f7',       // purple
   pitfall: '#ef4444',   // red
   memo: '#eab308',      // yellow

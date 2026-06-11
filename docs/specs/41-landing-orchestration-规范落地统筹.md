@@ -6,7 +6,7 @@
 > 定位：历史定义规范落地统筹工作流程，说明 AI 如何在新增、修改、检查或执行正式规范时收集规范落地要求、分流保障机制、判断环境投射和运行投影缺口、安排验证并回写结果；当前定位待重新确认
 > 适用范围：所有接入 LDVH 且涉及 docs/specs 正式规范新增、修改、检查、运行投影同步、Code/Web/Skill/Agent/Hook/CI 承接判断或规范落地缺口处理的项目
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力清单与投射规范.md`、`docs/specs/04.06-环境能力清单规范.md`、`docs/specs/04.07-Trae-Solo适配清单.md`、`docs/specs/04.08-Codex适配清单.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
+> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -72,11 +72,11 @@
 | 工作流程通用规则 | `docs/specs/06-工作流程基础规范.md` |
 | 工作流程集合状态 | `docs/specs/40-工作流程集合索引.md` |
 | 规范落地要求类型、字段和声明规则 | `docs/specs/04.01-规范落地声明规范.md` |
-| LDVH 能力保障和运行投影规则 | `docs/specs/04.02-环境适配与运行投影规范.md` |
-| 环境投射边界 | `docs/specs/04.03-环境能力清单与投射规范.md` |
-| 环境能力清单、投射卡片和投射降级规则 | `docs/specs/04.03-环境能力清单与投射规范.md` |
-| 旧环境清单迁移输入 | `docs/specs/04.06-环境能力清单规范.md` |
-| Trae / Codex 旧资料迁移输入 | `docs/specs/04.07-Trae-Solo适配清单.md`、`docs/specs/04.08-Codex适配清单.md` |
+| LDVH 能力保障和运行投影规则 | `docs/specs/04.02-LDVH能力保障规范.md` |
+| 环境投射边界 | `docs/specs/04.03-环境能力清单与环境适配规范.md` |
+| 环境能力清单、投射卡片和投射降级规则 | `docs/specs/04.03-环境能力清单与环境适配规范.md` |
+| 旧环境清单迁移输入 | `docs/specs/04.03-环境能力清单与环境适配规范.md` |
+| Trae / Codex 旧资料迁移输入 | `docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md` |
 | Code 需求、工具和校验实现规则 | `docs/specs/07-Code实现规范.md` |
 | Web / Human-facing 同步规则 | `docs/specs/08-Web信息同步规范.md` |
 | 事实源回写边界 | `docs/specs/09-事实源边界与承载规范.md` |
@@ -94,9 +94,9 @@
 2. `docs/specs/06-工作流程基础规范.md`；
 3. `docs/specs/40-工作流程集合索引.md`；
 4. `docs/specs/04.01-规范落地声明规范.md`；
-5. `docs/specs/04.02-环境适配与运行投影规范.md`；
-6. `docs/specs/04.03-环境能力清单与投射规范.md`；
-7. 涉及环境差异、LDVH落地与检查、运行投影状态或环境投射判断时，读取 `docs/specs/04.03-环境能力清单与投射规范.md`；需要追溯旧资料时，再读取 `docs/specs/04.06-环境能力清单规范.md`、`docs/specs/04.07-Trae-Solo适配清单.md` 或 `docs/specs/04.08-Codex适配清单.md`；
+5. `docs/specs/04.02-LDVH能力保障规范.md`；
+6. `docs/specs/04.03-环境能力清单与环境适配规范.md`；
+7. 涉及环境差异、LDVH落地与检查、运行投影状态或环境投射判断时，读取 `docs/specs/04.03-环境能力清单与环境适配规范.md`；需要追溯旧资料时，再读取 `docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md` 或 `docs/specs/04.03-环境能力清单与环境适配规范.md`；
 8. 本次涉及的正式规范原文；
 9. 需要判断回写时，读取 `docs/specs/09-事实源边界与承载规范.md` 和对应工作模型或文档规范；
 10. 需要判断 Code、Web 或测试时，读取 `docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md` 或 `docs/specs/10-运行闭环测试规范.md`。
@@ -277,7 +277,7 @@ landing_orchestration_result:
 4. `capabilities` 说明当前 Code、运行投影、Human Gate、事实源、验证或回写消费能力的状态、证据和缺口；
 5. `requirements` 汇总规范落地要求总量、状态分布、未关闭缺口数量和 owner_area 分布；
 6. `gaps` 按 owner_area、子类、状态、建议回写位置和缺失能力组织缺口，不维护固定实体清单；
-7. `proposed_actions` 给出候选行动、owner_area、优先级、缺口数量、建议回写位置和必要的运行投影 remediation 分类；其中的运行投影类行动对应 `docs/specs/04.02-环境适配与运行投影规范.md` 定义的运行投影边界，仅属过程输出，不代表已落地；
+7. `proposed_actions` 给出候选行动、owner_area、优先级、缺口数量、建议回写位置和必要的运行投影 remediation 分类；其中的运行投影类行动对应 `docs/specs/04.02-LDVH能力保障规范.md` 定义的运行投影边界，仅属过程输出，不代表已落地；
 8. `test_design` 必须在授权和执行前说明测试先行要求，包括成功条件、失败条件、正例、反例和边界样例；无法先写自动化测试时，应说明等价验证方式和残留风险；
 9. `writes_required` 和 `write_targets` 分别说明是否需要事实源写入以及候选写入目标；写入目标只能作为授权前候选，不得自动执行；
 10. `human_gate` 说明 Human Gate 子类、触发原因和待确认事项；涉及写入、长期降级、关键缺口关闭或通过声明时，必须在执行前确认；

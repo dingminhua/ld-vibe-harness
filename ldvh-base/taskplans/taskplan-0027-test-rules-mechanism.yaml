@@ -1,0 +1,17 @@
+id: taskplan-0027
+type: taskplan
+title: 测试当前规则机制有效性
+status: active
+created: '2026-06-05T17:57:47.201963'
+updated: '2026-06-05T17:57:59.958448'
+workarea: workarea-0008
+description: 由历史 Task task-0027 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [ ] 关联任务 task-0027 满足其 acceptance、verification 和 closure_evidence。'
+source: '历史 Task task-0027 迁移生成；旧 source_intent: intent-0008'
+tasks:
+- task-0027
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []

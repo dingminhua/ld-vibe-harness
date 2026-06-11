@@ -45,9 +45,10 @@ closure_evidence: |
 
   task-0064 完成并关闭。
 deliverables:
-  - web/src/utils/panelContext.tsx
-  - web/src/components/ReadingPanel.tsx
-  - web/src/pages/Dashboard.tsx
-  - web/src/pages/Workbench.tsx
-  - web/src/pages/Changelog.tsx
+- web/src/utils/panelContext.tsx
+- web/src/components/ReadingPanel.tsx
+- web/src/pages/Dashboard.tsx
+- web/src/pages/Workbench.tsx
+- web/src/pages/Changelog.tsx
 closed_at: '2026-06-11T18:45:15'
+taskplan: taskplan-0064

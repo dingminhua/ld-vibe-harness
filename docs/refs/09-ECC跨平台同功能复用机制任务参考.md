@@ -246,8 +246,8 @@ ECC 对 LDVH 04 系列的启发应限制在平台适配内部规则，不应扩�
 ### 6.3 建议输入
 
 1. `docs/specs/04.06-平台适配清单规范.md`
-2. `docs/specs/04.07-Trae-Solo适配清单.md`
-3. `docs/specs/04.08-Codex适配清单.md`
+2. `docs/specs/04.03-环境能力清单与环境适配规范.md`
+3. `docs/specs/04.03-环境能力清单与环境适配规范.md`
 4. `docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
 5. `tools/specs_validate.py landing-plan`
 6. ECC `docs/architecture/harness-adapter-compliance.md`

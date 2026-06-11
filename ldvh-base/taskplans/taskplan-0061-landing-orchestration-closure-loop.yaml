@@ -1,0 +1,21 @@
+id: taskplan-0061
+type: taskplan
+title: 补齐 41 规范落地统筹闭环提醒与证据承接
+status: active
+created: '2026-06-10T00:00:00'
+updated: '2026-06-10T00:00:00'
+workarea: workarea-0012
+description: 由历史 Task task-0061 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [ ] 关联任务 task-0061 满足其 acceptance、verification 和 closure_evidence。'
+source: '历史 Task task-0061 迁移生成；旧 source_intent: 无'
+tasks:
+- task-0061
+related_docs:
+- docs/specs/40-工作流程集合索引.md
+- docs/specs/41-landing-orchestration-规范落地统筹.md
+- docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+- docs/research/18-LDVH推进评估与候选事项总览.md
+related_adrs: []
+related_memos: []
+related_pitfalls: []

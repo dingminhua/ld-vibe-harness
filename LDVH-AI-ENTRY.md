@@ -1,7 +1,7 @@
 # LDVH AI 统一入口
 
 > 文件性质：AI 统一入口运行投影，不是 docs/specs 正式规范
-> 规范来源：`docs/specs/04.02-环境适配与运行投影规范.md`
+> 规范来源：`docs/specs/04.02-LDVH能力保障规范.md`
 > 适用范围：AI 进入 LDVH 自身项目、用户工作区级入口或管辖项目接入判断时的最小导航
 
 ---
@@ -23,7 +23,7 @@
 | 工作区入口 | 所有接入 LDVH 的管辖项目，以及指向 LDVH 的工作区级薄入口 | 识别当前管辖项目，定位 `LDVH-GOVERNED-PROJECTS.yaml`、管辖项目自身 `docs/`、`ldvh-base/`、当前平台适配清单、42 LDVH落地与检查流程和必要 STOP 点 | 不接管用户项目原有入口，不维护管辖项目规则正文，不默认修改 LDVH 自身规范 |
 | LDVH 管理入口 | 维护 LDVH 自身项目时使用 | 管理 `docs/specs/`、`tools/`、`tests/`、`web/`、根目录配置、平台适配清单、运行投影和 LDVH 自身项目的工作对象实例 | 不把 LDVH 自身维护规则默认强加给管辖项目 |
 
-当前平台适配清单按 `docs/specs/04.06-平台适配清单规范.md` 定位；当前平台为 Trae Solo 时读取 `docs/specs/04.07-Trae-Solo适配清单.md`，当前平台为 Codex CLI 时读取 `docs/specs/04.08-Codex适配清单.md`。
+当前平台适配清单按 `docs/specs/04.06-平台适配清单规范.md` 定位；当前平台为 Trae Solo 时读取 `docs/specs/04.03-环境能力清单与环境适配规范.md`，当前平台为 Codex CLI 时读取 `docs/specs/04.03-环境能力清单与环境适配规范.md`。
 
 AI 进入本文件后，应先判断当前任务是“管辖项目工作区使用 LDVH”，还是“维护 LDVH 自身项目”。若当前目录或用户目标不清楚，应先查询管辖项目配置并说明判断依据；不能判断时暂停请求 Human 确认。
 
@@ -65,7 +65,7 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | 场景 | 入口视角 | 先用工具 | 必读权威入口 |
 |---|---|---|---|
 | 判断当前是否为管辖项目 | 工作区入口 | `governed-projects` | `LDVH-GOVERNED-PROJECTS.yaml`、`docs/specs/03.06-管辖项目配置规范.md` |
-| 执行 LDVH落地与检查 | 工作区入口 | `governed-projects`、`landing-report`、必要时 `fact_cli.py stats` | `docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`、当前平台适配清单、`docs/specs/04.05-个人落地特别要求规范.md`、`docs/specs/40-工作流程集合索引.md` |
+| 执行 LDVH落地与检查 | 工作区入口 | `governed-projects`、`landing-report`、必要时 `fact_cli.py stats` | `docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`、当前平台适配清单、`docs/specs/04.04-个人环境特别要求规范.md`、`docs/specs/40-工作流程集合索引.md` |
 | 处理管辖项目工作对象 | 工作区入口 | `fact_cli.py list/search/show/stats` | 对应管辖项目自身 `ldvh-base/`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/20-工作模型集合索引.md` 和对应工作模型规范 |
 | 理解 LDVH 总体规则 | 共同入口 | `index` | `docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md` |
 | 判断事实源、证据或回写出口 | 共同入口 | `index`、`fact_cli.py search/show` | `docs/specs/09-事实源边界与承载规范.md`、对应工作模型或文档规范 |
@@ -76,7 +76,7 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | 处理 LDVH 自身项目工作对象 | LDVH 管理入口 | `fact_cli.py list/search/show/stats` | LDVH 自身项目 `ldvh-base/`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/20-工作模型集合索引.md` 和对应工作模型规范 |
 | 处理工作流程 | LDVH 管理入口 | `index`、`landing-report` | `docs/specs/06-工作流程基础规范.md`、`docs/specs/40-工作流程集合索引.md` 和对应 `docs/specs/41-59` 工作流程规范 |
 | 处理规范落地、环境适配、平台清单或运行投影 | LDVH 管理入口 | `landing-report`、`index` | `docs/specs/04-规范落地与环境适配基础规范.md`、04 系列环境适配规范、当前平台适配清单和 `docs/specs/41-landing-orchestration-规范落地统筹.md` |
-| 处理 Code、工具、脚本或校验 | LDVH 管理入口 | 对应工具帮助、测试命令 | `docs/specs/04.05-个人落地特别要求规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/10-运行闭环测试规范.md`、对应 `tools/` 实现和 `tests/` |
+| 处理 Code、工具、脚本或校验 | LDVH 管理入口 | 对应工具帮助、测试命令 | `docs/specs/04.04-个人环境特别要求规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/10-运行闭环测试规范.md`、对应 `tools/` 实现和 `tests/` |
 | 处理 Web 或 Human-facing 入口 | LDVH 管理入口 | `index`、相关后端或 Web 校验 | `docs/specs/08-Web信息同步规范.md` |
 
 场景同时命中多个入口时，选择最小足够查询和读取集。只要涉及正式规范变更、规范落地要求变化、落地缺口、运行投影漂移、Code/Web/Skill/Agent/Hook/CI 边界变化或 LDVH落地与检查输入，应优先进入 `docs/specs/41-landing-orchestration-规范落地统筹.md`。41 触发保障按入口路由、规范 Scenario、40 索引、Code 检查、42 消费、运行投影和 Human Gate 分层抽象机制判断，不维护具体 Skill、入口、Hook、CI、Web 页面或 Code 命令清单。
@@ -110,8 +110,8 @@ LDVH 管理入口视角随本文件提交，用于维护 LDVH 自身项目。该
 
 修改本文后，应检查：
 
-1. `docs/specs/04.02-环境适配与运行投影规范.md`；
-2. `docs/specs/04.04-LDVH落地特别要求规范.md`；
+1. `docs/specs/04.02-LDVH能力保障规范.md`；
+2. `docs/specs/04.02-LDVH能力保障规范.md`；
 3. `docs/specs/01-目录说明.md`；
 4. `docs/specs/41-landing-orchestration-规范落地统筹.md`；
 5. `docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`；

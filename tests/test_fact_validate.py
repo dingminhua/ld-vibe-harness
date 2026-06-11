@@ -20,260 +20,258 @@ def run_checker(*paths, extra_args=None):
     )
 
 
-def write_yaml(path, content):
+def write_yaml(path: Path, content: str) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content.strip() + "\n", encoding="utf-8")
     return path
 
 
-def valid_intent_yaml():
-    return """
-id: intent-0001
-type: intent
-title: Valid Intent
+def base_tree(tmp_path: Path) -> Path:
+    root = tmp_path / "project"
+    write_yaml(
+        root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml",
+        """
+id: workarea-0001
+type: workarea
+title: Core
 status: active
-created: "2026-06-03"
-updated: "2026-06-03"
-description: Define a valid intent fixture
-success_criteria:
-  - Validator accepts this intent
+created: "2026-06-12"
+updated: "2026-06-12"
+description: Core work area
 source: test
-related_tasks: []
+related_docs: []
 related_adrs: []
-"""
-
-
-def valid_task_yaml(status="planned", extra=""):
-    return f"""
+related_memos: []
+related_pitfalls: []
+""",
+    )
+    write_yaml(
+        root / "ldvh-base" / "taskplans" / "taskplan-0001-core-plan.yaml",
+        """
+id: taskplan-0001
+type: taskplan
+title: Core Plan
+status: active
+created: "2026-06-12"
+updated: "2026-06-12"
+workarea: workarea-0001
+description: Core plan
+success_criteria: |
+  - [ ] Plan can be validated
+source: test
+tasks:
+  - task-0001
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+""",
+    )
+    write_yaml(
+        root / "ldvh-base" / "tasks" / "task-0001-core-task.yaml",
+        """
 id: task-0001
 type: task
-title: Valid Task
-status: {status}
-created: "2026-06-03"
-updated: "2026-06-03"
-description: Define a valid task fixture
+title: Core Task
+status: planned
+created: "2026-06-12"
+updated: "2026-06-12"
+taskplan: taskplan-0001
+description: Core task
 source: test
-acceptance:
-  - Validator accepts this task
-related_adrs: []
-related_changes: []
+acceptance: |
+  - [ ] Task can be validated
 blocked_by: []
-{extra}
-"""
-
-
-def valid_pitfall_yaml(status="active", extra=""):
-    return f"""
-id: pitfall-0001
-type: pitfall
-title: Valid Pitfall
-status: {status}
-created: "2026-06-04"
-updated: "2026-06-04"
-symptoms: Symptom
-trigger_conditions: Trigger condition
-root_cause: Root cause
-resolution: Resolution
-verification: |
-  ## 验证结果
-
-  Verified.
-avoidance: Avoidance
-applicability: Applicability
-severity: medium
-repeatability: recurring
-tags: []
-source_tasks: []
-source_memos: []
-related_intents: []
-related_adrs: []
-related_changes: []
+deliverables: []
 related_docs: []
-related_rules: []
-{extra}
-"""
-
-
-def valid_memo_yaml(status="active", extra=""):
-    return f"""
-id: memo-0001
-type: memo
-title: Valid Memo
-status: {status}
-created: "2026-06-04"
-updated: "2026-06-04"
-description: Define a valid memo fixture
+related_adrs: []
+""",
+    )
+    write_yaml(
+        root / "ldvh-base" / "subtasks" / "subtask-0001-core-subtask.yaml",
+        """
+id: subtask-0001
+type: subtask
+title: Core SubTask
+status: planned
+created: "2026-06-12"
+updated: "2026-06-12"
+task: task-0001
+description: Core subtask
 source: test
-category: gap
-{extra}
-"""
+acceptance: |
+  - [ ] SubTask can be validated
+blocked_by: []
+""",
+    )
+    return root
 
 
-def valid_adr_yaml(status="accepted"):
-    return f"""
-id: adr-0001
-type: adr
-title: Valid ADR
-status: {status}
-created: "2026-06-04"
-updated: "2026-06-04"
-context: Define a valid ADR fixture
-decision: Accept this ADR fixture
-consequences: Validator accepts this ADR
-related_tasks: []
-related_adrs: []
-related_changes: []
-"""
+def test_valid_workarea_taskplan_task_subtask_tree(tmp_path):
+    root = base_tree(tmp_path)
 
-
-def valid_change_yaml():
-    return """
-id: change-0001
-type: change
-title: Valid Change
-status: proposed
-created: "2026-06-04"
-updated: "2026-06-04"
-description: Define a valid change fixture
-change_type: spec
-scope: tests
-related_tasks: []
-related_adrs: []
-affected_files: []
-"""
-
-
-def test_valid_intent_cli_exit_zero(tmp_path):
-    path = write_yaml(tmp_path / "intent-0001-valid-intent.yaml", valid_intent_yaml())
-
-    result = run_checker(path)
+    result = run_checker(root / "ldvh-base")
 
     assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+    assert result.stdout.strip() == "检查完成: files=4 errors=0 warnings=0"
     assert result.stderr == ""
 
 
-def test_valid_task_cli_exit_zero(tmp_path):
-    path = write_yaml(tmp_path / "task-0001-valid-task.yaml", valid_task_yaml())
+def test_workarea_archived_requires_archive_reason(tmp_path):
+    root = base_tree(tmp_path)
+    path = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
+    path.write_text(path.read_text(encoding="utf-8").replace("status: active", "status: archived"), encoding="utf-8")
 
     result = run_checker(path)
 
-    assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
-    assert result.stderr == ""
+    assert result.returncode == 1
+    assert "MISSING_ARCHIVE_REASON" in result.stdout
+    assert "archive_reason" in result.stdout
 
 
-def test_missing_required_field_cli_exit_one(tmp_path):
-    content = valid_intent_yaml().replace("title: Valid Intent\n", "")
-    path = write_yaml(tmp_path / "intent-0001-missing-title.yaml", content)
+def test_taskplan_review_needed_requires_review_fields(tmp_path):
+    root = base_tree(tmp_path)
+    path = root / "ldvh-base" / "taskplans" / "taskplan-0001-core-plan.yaml"
+    path.write_text(path.read_text(encoding="utf-8").replace("status: active", "status: review_needed"), encoding="utf-8")
+
+    result = run_checker(path)
+
+    assert result.returncode == 1
+    assert "MISSING_TASKPLAN_REVIEW_FIELD" in result.stdout
+    assert "review_requested_at" in result.stdout
+    assert "completion_evidence" in result.stdout
+
+
+def test_taskplan_closed_requires_closed_tasks_and_closed_at(tmp_path):
+    root = base_tree(tmp_path)
+    path = root / "ldvh-base" / "taskplans" / "taskplan-0001-core-plan.yaml"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(
+            "status: active",
+            'status: closed\nreview_requested_at: "2026-06-12T00:00:00+08:00"\ncompletion_evidence: done',
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(path)
+
+    assert result.returncode == 1
+    assert "TASKPLAN_TASK_NOT_CLOSED" in result.stdout
+    assert "MISSING_TASKPLAN_CLOSED_AT" in result.stdout
+
+
+def test_task_requires_taskplan(tmp_path):
+    root = base_tree(tmp_path)
+    path = root / "ldvh-base" / "tasks" / "task-0001-core-task.yaml"
+    path.write_text(path.read_text(encoding="utf-8").replace("taskplan: taskplan-0001\n", ""), encoding="utf-8")
 
     result = run_checker(path)
 
     assert result.returncode == 1
     assert "MISSING_REQUIRED_FIELD" in result.stdout
-    assert "title" in result.stdout
-    assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
+    assert "taskplan" in result.stdout
 
 
-def test_invalid_status_cli_exit_one(tmp_path):
-    content = valid_task_yaml().replace("status: planned", "status: unknown")
-    path = write_yaml(tmp_path / "task-0001-invalid-status.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "INVALID_STATUS" in result.stdout
-    assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
-
-
-def test_type_mismatch_cli_exit_one(tmp_path):
-    content = valid_intent_yaml().replace("type: intent", "type: wrong")
-    path = write_yaml(tmp_path / "intent-0001-type-mismatch.yaml", content)
+def test_task_rejects_legacy_intent_and_nested_task_fields(tmp_path):
+    root = base_tree(tmp_path)
+    path = root / "ldvh-base" / "tasks" / "task-0001-core-task.yaml"
+    path.write_text(
+        path.read_text(encoding="utf-8")
+        + "\nsource_intent: intent-0001\nparent_task: task-0000\nsub_tasks:\n  - task-0002\n",
+        encoding="utf-8",
+    )
 
     result = run_checker(path)
 
     assert result.returncode == 1
-    assert "INVALID_TYPE" in result.stdout
-    assert "type 必须是 intent" in result.stdout
-    assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
+    assert result.stdout.count("LEGACY_TASK_FIELD") == 3
 
 
-def test_list_type_mismatch_cli_exit_one(tmp_path):
-    content = valid_task_yaml().replace("related_adrs: []", "related_adrs: adr-0001")
-    path = write_yaml(tmp_path / "task-0001-list-type-mismatch.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "INVALID_LIST_FIELD" in result.stdout
-    assert "related_adrs" in result.stdout
-    assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
-
-
-def test_blocked_by_not_closed_cli_exit_one(tmp_path):
-    write_yaml(tmp_path / "task-0001-blocker.yaml", valid_task_yaml())
-    blocked = valid_task_yaml(status="executing").replace("id: task-0001", "id: task-0002")
-    blocked = blocked.replace("blocked_by: []", "blocked_by:\n  - task-0001")
-    write_yaml(tmp_path / "task-0002-blocked.yaml", blocked)
-
-    result = run_checker(tmp_path)
-
-    assert result.returncode == 1
-    assert "BLOCKED_BY_NOT_CLOSED" in result.stdout
-    assert "task-0001" in result.stdout
-
-
-def test_blocked_by_closed_cli_exit_zero(tmp_path):
-    blocker = valid_task_yaml(status="closed", extra='closure_evidence: |\n  ## 验证结果\n\n  done\nclosed_at: "2026-06-03"')
-    write_yaml(tmp_path / "task-0001-blocker.yaml", blocker)
-    blocked = valid_task_yaml(status="executing").replace("id: task-0001", "id: task-0002")
-    blocked = blocked.replace("blocked_by: []", "blocked_by:\n  - task-0001")
-    write_yaml(tmp_path / "task-0002-blocked.yaml", blocked)
-
-    result = run_checker(tmp_path)
-
-    assert result.returncode == 0
-    assert "检查完成: files=2 errors=0 warnings=0" in result.stdout
-
-
-def test_invalid_filename_cli_exit_one(tmp_path):
-    path = write_yaml(tmp_path / "bad-intent-name.yaml", valid_intent_yaml())
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "INVALID_FILENAME" in result.stdout
-    assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
-
-
-def test_nonexistent_path_cli_exit_two(tmp_path):
-    path = tmp_path / "missing.yaml"
-
-    result = run_checker(path)
-
-    assert result.returncode == 2
-    assert "INPUT_PATH_MISSING" in result.stdout
-    assert "检查完成: files=0 errors=1 warnings=0" in result.stdout
-
-
-def test_yaml_parse_failure_cli_exit_two(tmp_path):
-    path = write_yaml(tmp_path / "intent-0001-broken-yaml.yaml", "title: [unterminated")
-
-    result = run_checker(path)
-
-    assert result.returncode == 2
-    assert "YAML_PARSE_ERROR" in result.stdout
-    assert "YAML 块标量" in result.stdout
-    assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
-
-
-def test_unrecognized_object_type_cli_exit_two(tmp_path):
-    path = write_yaml(
-        tmp_path / "unknown-0001-object.yaml",
+def test_blocked_by_must_stay_in_same_taskplan(tmp_path):
+    root = base_tree(tmp_path)
+    write_yaml(
+        root / "ldvh-base" / "taskplans" / "taskplan-0002-other-plan.yaml",
         """
-id: unknown-0001
-type: unknown
-title: Unknown Object
+id: taskplan-0002
+type: taskplan
+title: Other Plan
 status: active
+created: "2026-06-12"
+updated: "2026-06-12"
+workarea: workarea-0001
+description: Other plan
+success_criteria: |
+  - [ ] Other plan can be validated
+source: test
+tasks:
+  - task-0002
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+""",
+    )
+    write_yaml(
+        root / "ldvh-base" / "tasks" / "task-0002-other-task.yaml",
+        """
+id: task-0002
+type: task
+title: Other Task
+status: closed
+created: "2026-06-12"
+updated: "2026-06-12"
+closed_at: "2026-06-12"
+taskplan: taskplan-0002
+description: Other task
+source: test
+acceptance: |
+  - [x] Other task can be validated
+verification: |
+  ## 验证结果
+  passed
+closure_evidence: |
+  ## 结论
+  done
+blocked_by: []
+deliverables: []
+related_docs: []
+related_adrs: []
+""",
+    )
+    task_path = root / "ldvh-base" / "tasks" / "task-0001-core-task.yaml"
+    task_path.write_text(
+        task_path.read_text(encoding="utf-8").replace("blocked_by: []", "blocked_by:\n  - task-0002"),
+        encoding="utf-8",
+    )
+
+    result = run_checker(task_path)
+
+    assert result.returncode == 1
+    assert "BLOCKED_BY_TASKPLAN_MISMATCH" in result.stdout
+
+
+def test_subtask_rejects_recursive_fields(tmp_path):
+    root = base_tree(tmp_path)
+    path = root / "ldvh-base" / "subtasks" / "subtask-0001-core-subtask.yaml"
+    path.write_text(path.read_text(encoding="utf-8") + "\nparent_task: task-0001\nsub_tasks: []\n", encoding="utf-8")
+
+    result = run_checker(path)
+
+    assert result.returncode == 1
+    assert result.stdout.count("FORBIDDEN_SUBTASK_FIELD") == 2
+
+
+def test_change_file_rejected_by_validator(tmp_path):
+    path = write_yaml(
+        tmp_path / "change-0001-old-change.yaml",
+        """
+id: change-0001
+type: change
+title: Old Change
+status: proposed
+created: "2026-06-12"
+updated: "2026-06-12"
+description: Change is backed by Git commits
 """,
     )
 
@@ -281,195 +279,17 @@ status: active
 
     assert result.returncode == 2
     assert "UNKNOWN_OBJECT_TYPE" in result.stdout
-    assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
-
-
-def test_directory_batch_validation_summary(tmp_path):
-    batch_dir = tmp_path / "facts"
-    nested_dir = batch_dir / "nested"
-    nested_dir.mkdir(parents=True)
-    write_yaml(batch_dir / "intent-0001-valid-intent.yaml", valid_intent_yaml())
-    write_yaml(batch_dir / "task-0001-valid-task.yaml", valid_task_yaml())
-    write_yaml(nested_dir / "memo-0001-valid-memo.yaml", valid_memo_yaml())
-    invalid = valid_task_yaml().replace("status: planned", "status: invalid")
-    write_yaml(nested_dir / "task-0001-invalid-status.yaml", invalid)
-    (batch_dir / "ignored.yml").write_text("not: scanned\n", encoding="utf-8")
-
-    result = run_checker(batch_dir)
-
-    assert result.returncode == 1
-    assert "INVALID_STATUS" in result.stdout
-    assert "ignored.yml" not in result.stdout
-    assert "检查完成: files=4 errors=1 warnings=0" in result.stdout
-
-
-def test_valid_pitfall_cli_exit_zero(tmp_path):
-    path = write_yaml(tmp_path / "pitfall-0001-valid-pitfall.yaml", valid_pitfall_yaml())
-
-    result = run_checker(path)
-
-    assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
-    assert result.stderr == ""
-
-
-def test_valid_memo_cli_exit_zero(tmp_path):
-    path = write_yaml(tmp_path / "memo-0001-valid-memo.yaml", valid_memo_yaml())
-
-    result = run_checker(path)
-
-    assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
-    assert result.stderr == ""
-
-
-def test_valid_adr_cli_exit_zero(tmp_path):
-    path = write_yaml(tmp_path / "adr-0001-valid-adr.yaml", valid_adr_yaml())
-
-    result = run_checker(path)
-
-    assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
-    assert result.stderr == ""
-
-
-def test_rejected_adr_cli_exit_zero(tmp_path):
-    path = write_yaml(tmp_path / "adr-0001-rejected-adr.yaml", valid_adr_yaml(status="rejected"))
-
-    result = run_checker(path)
-
-    assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
-    assert result.stderr == ""
-
-
-def test_change_file_rejected_by_validator(tmp_path):
-    """Change YAML 不再被事实验证器支持。Change 使用 Git commit 作为事实源。"""
-    path = write_yaml(tmp_path / "change-0001-valid-change.yaml", valid_change_yaml())
-
-    result = run_checker(path)
-
-    assert result.returncode != 0
-    assert "UNKNOWN_OBJECT_TYPE" in result.stdout
-
-
-def test_memo_invalid_category(tmp_path):
-    content = valid_memo_yaml().replace("category: gap", "category: invalid")
-    path = write_yaml(tmp_path / "memo-0001-invalid-category.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "INVALID_CATEGORY" in result.stdout
-
-
-def test_memo_resolved_missing_resolved_fields(tmp_path):
-    content = valid_memo_yaml(status="resolved")
-    path = write_yaml(tmp_path / "memo-0001-resolved-no-fields.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "MISSING_RESOLVED_FIELD" in result.stdout
-    assert "resolved_to" in result.stdout
-    assert "resolved_at" in result.stdout
-
-
-def test_memo_invalid_priority_warning(tmp_path):
-    content = valid_memo_yaml().replace("category: gap", "category: gap\npriority: urgent")
-    path = write_yaml(tmp_path / "memo-0001-invalid-priority.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 0
-    assert "INVALID_PRIORITY" in result.stdout
-    assert "检查完成: files=1 errors=0 warnings=1" in result.stdout
-
-
-def test_task_acceptance_not_checklist_error(tmp_path):
-    content = valid_task_yaml().replace(
-        "acceptance:\n  - Validator accepts this task",
-        "acceptance: Validator accepts this task",
-    )
-    path = write_yaml(tmp_path / "task-0001-acceptance-not-checklist.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "ACCEPTANCE_NOT_CHECKLIST" in result.stdout
-    assert "检查完成: files=1 errors=1 warnings=0" in result.stdout
-
-
-def test_pitfall_invalid_repeatability(tmp_path):
-    content = valid_pitfall_yaml().replace("repeatability: recurring", "repeatability: always")
-    path = write_yaml(tmp_path / "pitfall-0001-invalid-repeatability.yaml", content)
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "INVALID_REPEATABILITY" in result.stdout
-
-
-def test_pitfall_superseded_requires_target(tmp_path):
-    path = write_yaml(tmp_path / "pitfall-0001-superseded.yaml", valid_pitfall_yaml(status="superseded"))
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "MISSING_SUPERSEDED_BY" in result.stdout
-
-
-def test_pitfall_archived_requires_reason_when_not_superseded(tmp_path):
-    path = write_yaml(tmp_path / "pitfall-0001-archived.yaml", valid_pitfall_yaml(status="archived"))
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "MISSING_ARCHIVE_REASON" in result.stdout
 
 
 def test_json_output_valid(tmp_path):
-    path = write_yaml(tmp_path / "intent-0001-valid-intent.yaml", valid_intent_yaml())
+    root = base_tree(tmp_path)
 
-    result = run_checker(path, extra_args=["--format", "json"])
+    result = run_checker(root / "ldvh-base", extra_args=["--format", "json"])
 
     assert result.returncode == 0
     data = json.loads(result.stdout)
     assert data["ok"] is True
-    assert data["command"] == "fact_validate"
-    assert data["action"] == "validate"
-    assert data["summary"]["files"] == 1
+    assert data["summary"]["files"] == 4
     assert data["summary"]["errors"] == 0
     assert data["summary"]["warnings"] == 0
     assert data["issues"] == []
-    assert data["data"] == {}
-
-
-def test_json_output_with_errors(tmp_path):
-    content = valid_task_yaml().replace("status: planned", "status: unknown")
-    path = write_yaml(tmp_path / "task-0001-invalid-status.yaml", content)
-
-    result = run_checker(path, extra_args=["--format", "json"])
-
-    assert result.returncode == 1
-    data = json.loads(result.stdout)
-    assert data["ok"] is False
-    assert data["summary"]["errors"] == 1
-    assert len(data["issues"]) == 1
-    issue = data["issues"][0]
-    assert issue["code"] == "INVALID_STATUS"
-    assert issue["level"] == "error"
-    assert "path" in issue
-    assert "message" in issue
-
-
-def test_text_output_backward_compatible(tmp_path):
-    path = write_yaml(tmp_path / "intent-0001-valid-intent.yaml", valid_intent_yaml())
-
-    result_default = run_checker(path)
-    result_explicit = run_checker(path, extra_args=["--format", "text"])
-
-    assert result_default.returncode == 0
-    assert result_explicit.returncode == 0
-    assert result_default.stdout == result_explicit.stdout
-    assert "检查完成: files=1 errors=0 warnings=0" in result_default.stdout

@@ -1,0 +1,13 @@
+id: workarea-0012
+type: workarea
+title: LDVH 内部治理
+status: active
+created: '2026-06-12T00:00:00+08:00'
+updated: '2026-06-12T00:00:00+08:00'
+description: 承载迁移时缺少旧 Intent 归属的 LDVH 内部治理、实现和落地相关工作。
+scope: 迁移兜底工作域；后续可按任务计划实际范围拆分或调整归属。
+source: WorkArea/TaskPlan 模型迁移时为无旧 source_intent 的历史 Task 建立。
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []

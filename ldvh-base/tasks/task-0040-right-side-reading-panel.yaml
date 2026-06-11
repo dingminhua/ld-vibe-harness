@@ -14,8 +14,7 @@ description: |
   - 查看 YAML 原文
   移动端（< 1024px）将右侧扩展区降级为底部抽屉。
   右侧面板只读取 API 或已有文件内容，不成为新事实源。
-source_intent: intent-0006
-source: intent-0006
+source: workarea-0006
 acceptance: |
   - [x] 桌面端 ObjectDetail 页面布局改为三段式：左侧导航 + 中间主内容 + 右侧扩展阅读区
   - [x] 点击 related_docs 条目时右侧面板预览 Markdown 文件内容
@@ -48,3 +47,4 @@ closure_evidence: |
 
   任务完成，人工确认关闭。
 closed_at: '2026-06-05T23:07:46.672264'
+taskplan: taskplan-0039

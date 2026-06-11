@@ -4,7 +4,7 @@
 > 定位：定义 Change / 变更工作模型，包括对象定位、准入条件、事实源边界、commit message 字段契约、对象关系、Human Gate、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要追踪 Git 文件事实源变更、提交纪律、变更证据和对象关联的项目
 > 上位依据：`docs/specs/05-工作模型基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/24-Intent-意图.md`、`docs/specs/26-Task-任务.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/24-WorkArea-工作域.md`、`docs/specs/26-Task-任务.md`、`docs/specs/27-TaskPlan-任务计划.md`、`docs/specs/28-SubTask-子任务.md`
 
 ---
 ## 1. 对象定位与准入条件
@@ -22,7 +22,7 @@ Change 是工作模型中的特殊对象：它不使用 `ldvh-base/changes/` 下
 3. 修改 `ldvh-base/` 下的事实实例；
 4. 修改 Rules / Instructions、Skill、Agent、环境适配记录或运行投影；
 5. 修改 Code、Web、测试、配置或会影响 LDVH 行为的实现文件；
-6. 完成 Task、Intent、ADR、Memo、Pitfall 等对象的创建、状态变化、关闭或删除；
+6. 完成 WorkArea、TaskPlan、Task、SubTask、ADR、Memo、Pitfall 等对象的创建、状态变化、关闭或删除；
 7. 影响其他对象、规范入口、事实源边界或需要跨会话追溯的修改。
 
 以下修改通常不需要单独作为 Change 强制记录，但如果被提交，commit message 仍应符合本文格式：
@@ -103,9 +103,9 @@ Task 的创建、状态变化、关闭和关键事实源修改都应留下 Chang
 
 Task 规范由 `docs/specs/26-Task-任务.md` 定义。Change 不替代 Task 的验收标准、关闭证据或状态机。
 
-### 4.2 Change 与 Intent
+### 4.2 Change 与 WorkArea 和 TaskPlan
 
-Intent 的创建、完成、关闭、成功标准变更和关联 Task 调整都应留下 Change。Intent 完成证据可以摘要引用相关 Change，但完成判断仍由 `docs/specs/24-Intent-意图.md` 定义。
+WorkArea 的创建、归档、恢复和范围变更都应留下 Change。TaskPlan 的创建、状态变化、关闭审查、成功标准变更和任务列表调整都应留下 Change。工作域边界由 `docs/specs/24-WorkArea-工作域.md` 定义；任务计划关闭判断由 `docs/specs/27-TaskPlan-任务计划.md` 定义。
 
 ### 4.3 Change 与 ADR
 
@@ -199,8 +199,10 @@ scope 为推荐值，项目可以在不破坏解析的前提下扩展。
 
 | 引用类型 | 格式示例 |
 |---|---|
+| WorkArea | `workarea-0001` |
+| TaskPlan | `taskplan-0001` |
 | Task | `task-0001` |
-| Intent | `intent-0001` |
+| SubTask | `subtask-0001` |
 | ADR | `adr-0001` |
 | Memo | `memo-0001` |
 | Pitfall | `pitfall-0001` |
@@ -296,7 +298,7 @@ Code 可依据本文实现以下能力：
 2. 扫描 Git 记录并报告格式不合规 commit；
 3. 按 type、scope、Refs、时间、文件路径聚合 Change；
 4. 生成对象关联的 Change 列表；
-5. 检查 Task、Intent 等对象是否缺少关联 Change；
+5. 检查 WorkArea、TaskPlan、Task、SubTask 等对象是否缺少关联 Change；
 6. 诊断 Code 实现自身与本文格式约束之间的漂移。
 
 当前 `tools/commit_validate.py` 是既有 Code 消费方，已同步到 `docs/specs/22-Change-变更.md` 规范路径。后续 commit message 契约变化时，应同步更新该实现和对应测试。
@@ -321,10 +323,10 @@ Web 不得把数据库缓存、页面状态或派生索引替代 Git commit 记�
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 上位约束承接要求 | 后续工作模型、工作流程和提交实践应遵守本文定义的 Change 事实源边界、commit message 契约和 Git 记录不可变原则 | 05、本文、20 集合索引、Human Gate | 工作模型治理 | 创建、提交、回退、审计或查询 Change 时 |
-| 入口可见要求 | AI 执行事实源修改、关闭 Task、完成 Intent 或准备提交时，应能定位本文 | 20 集合索引、commit 流程入口、运行入口摘要 | AI 执行入口提示 | Git 提交、任务关闭、规范吸收、Code/Web 修改或多仓库变更时 |
+| 入口可见要求 | AI 执行事实源修改、关闭 Task、关闭任务计划或准备提交时，应能定位本文 | 20 集合索引、commit 流程入口、运行入口摘要 | AI 执行入口提示 | Git 提交、任务关闭、任务计划关闭、规范吸收、Code/Web 修改或多仓库变更时 |
 | 确定性执行要求 | commit message 格式、type、scope、Refs、subject 长度和中文约束应由 Code 校验或记录缺口 | `tools/commit_validate.py`、`docs/specs/07-Code实现规范.md`、正反样例 | 校验实现 | commit 格式、枚举、Refs 规则或校验实现变化时 |
 | Human 交互要求 | 高影响事实源修改、提交记录改写、强推、删除校验或改变 Change 承载方式应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | Change 规范变化后，应检查 commit_validate、测试、Task、Intent、Web、运行投影和相关工作流程是否需要同步 | Code 测试、对象关系检查、Web 联动检查、人工降级检查 | 触发保障 | Change 字段契约、事实源边界、提交纪律或适配规则变化时 |
+| 生命周期触发要求 | Change 规范变化后，应检查 commit_validate、测试、WorkArea、TaskPlan、Task、SubTask、Web、运行投影和相关工作流程是否需要同步 | Code 测试、对象关系检查、Web 联动检查、人工降级检查 | 触发保障 | Change 字段契约、事实源边界、提交纪律或适配规则变化时 |
 
 ---
 ## 10. 检查要求
@@ -337,7 +339,7 @@ Change 规范检查至少包括：
 | 事实源位置 | Change 实例由 Git commit 记录承载，不创建 `ldvh-base/changes/` |
 | 字段契约 | commit message 符合 §6 |
 | 状态例外 | 已说明 Change 无 YAML 状态流转，派生状态不写入事实源 |
-| 对象关系 | Task、Intent、ADR、Memo、Pitfall 引用边界清晰 |
+| 对象关系 | WorkArea、TaskPlan、Task、SubTask、ADR、Memo、Pitfall 引用边界清晰 |
 | 暂缓对象化 | Risk、Dependency、Artifact、Checklist 未作为默认 Refs 对象前缀 |
 | Human Gate | 高影响修改和破坏性 Git 操作已评估 Human Gate |
 | Code 边界 | commit_validate 等 Code 只校验和诊断，不替代 Git commit 记录 |
@@ -348,5 +350,5 @@ Change 规范检查至少包括：
 
 1. Change Web 信息同步能力待 Web 实现规划时补齐；
 2. commit message 是否继续强制包含中文，需在更通用的管辖项目场景中评估；
-3. 任务关闭、Intent 完成和提交之间的工作流程待 40-59 承接；
+3. 任务关闭、任务计划关闭和提交之间的工作流程待 40-59 承接；
 4. `tools/commit_validate.py` 的正反样例应随本文 commit message 契约变化持续维护。

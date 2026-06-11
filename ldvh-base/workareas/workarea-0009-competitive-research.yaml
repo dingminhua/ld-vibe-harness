@@ -1,0 +1,33 @@
+id: workarea-0009
+type: workarea
+title: 竞品调研
+status: active
+created: '2026-06-05T17:58:39.443728'
+updated: '2026-06-06T09:59:48.709247'
+description: 深入研究 Gstack、Superpowers、BMAD-METHOD 等竞品的方法论、测试任务安排和工程纪律机制，结合行业最佳实践，为
+  LDVH 提供改进方向
+source: 用户要求深入调研竞品测试任务安排及最佳实践
+scope: |-
+  历史成功标准（由旧 Intent 迁移保留，不作为工作域完成条件）：
+  完成竞品测试任务安排的深度分析；完成行业最佳实践联网调研；产出分析报告进入 specs/refs/ 参考文档
+related_docs:
+- docs/research/02-LDVH对Gstack的借鉴评估与深度调研.md
+- docs/research/07-LDVH对Superpowers的借鉴评估与深度调研.md
+- docs/research/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+legacy_intent:
+  id: intent-0009
+  status: active
+  related_tasks:
+  - task-0028
+  - task-0043
+  - task-0044
+  - task-0045
+  - task-0046
+  - task-0047
+  - task-0051
+  - task-0055
+  review_requested_at: null
+  closed_at: null

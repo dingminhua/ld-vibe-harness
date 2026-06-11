@@ -6,10 +6,7 @@ created: '2026-06-04'
 updated: '2026-06-05'
 description: |
   在 Task 事实模型中正式添加前置依赖字段（如 blocked_by），使任务间的前置关系可结构化表达和校验，而非仅通过描述文本标注。涉及修改 specs/27 主文档、27.06-Contract、PyTools 校验和 CLI，以及工作区规则/项目规则中相关提醒。
-source_intent: intent-0004
-source: intent-0004
-parent_task: null
-sub_tasks: []
+source: workarea-0004
 acceptance: |
   - [x] 已读取 specs/27-Task-任务.md 和 specs/27.06-Contract.md 中与字段契约相关的章节
   - [x] 已设计 blocked_by 字段的类型、约束和引用校验规则
@@ -46,3 +43,4 @@ affected_docs:
 - docs/specs/26-Task-任务.md
 - docs/specs/07-Code实现规范.md
 closed_at: '2026-06-05'
+taskplan: taskplan-0009

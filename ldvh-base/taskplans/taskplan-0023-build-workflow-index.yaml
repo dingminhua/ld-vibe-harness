@@ -1,0 +1,17 @@
+id: taskplan-0023
+type: taskplan
+title: 建立 40 工作流索引文档
+status: active
+created: '2026-06-05T09:55:15.026662'
+updated: '2026-06-05T09:56:00'
+workarea: workarea-0005
+description: 由历史 Task task-0023 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [ ] 关联任务 task-0023 满足其 acceptance、verification 和 closure_evidence。'
+source: '历史 Task task-0023 迁移生成；旧 source_intent: intent-0005'
+tasks:
+- task-0023
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []

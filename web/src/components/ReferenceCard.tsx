@@ -10,8 +10,10 @@ import CopyPathButton from '@/components/CopyPathButton';
 
 /** 对象类型中英映射（与 ObjectDetail 页面保持一致） */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
-  intent: { zh: '意图', en: 'Intent' },
+  workarea: { zh: '工作域', en: 'Work Area' },
+  taskplan: { zh: '任务计划', en: 'Task Plan' },
   task: { zh: '任务', en: 'Task' },
+  subtask: { zh: '子任务', en: 'SubTask' },
   adr: { zh: 'ADR', en: 'ADR' },
   pitfall: { zh: '踩坑', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },

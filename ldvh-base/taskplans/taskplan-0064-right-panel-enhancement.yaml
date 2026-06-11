@@ -1,0 +1,22 @@
+id: taskplan-0064
+type: taskplan
+title: 增强右侧扩展阅读面板
+status: closed
+created: '2026-06-11T00:00:00.000000'
+updated: '2026-06-11T18:45:15'
+workarea: workarea-0012
+description: 由历史 Task task-0064 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0064 满足其 acceptance、verification 和 closure_evidence。'
+source: '历史 Task task-0064 迁移生成；旧 source_intent: 无'
+tasks:
+- task-0064
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-11T18:45:15'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0064: ## 交付内容
+closed_at: '2026-06-11T18:45:15'

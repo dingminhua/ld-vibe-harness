@@ -7,7 +7,7 @@
 > 执行效力：无；稳定结论需进入 docs/specs 正文区、工作对象、Code、Web、测试、运行投影或最佳实践后才具备对应效力
 > 来源：原 `docs/research/18-LDVH候选事项承接评估.md`、`docs/research/19-LDVH规范落地统筹机制与闭环缺口评估.md`、`docs/research/20-LDVH规范落地统筹执行缺口清单.md`、`docs/research/21-LDVH面向AI执行者需求的推进评估.md` 合并重建
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力清单与投射规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
+> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
 
 ---
 
@@ -39,7 +39,7 @@
 | Human Gate 最小证据结构 | 已落地基础规则与 Code 检查 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`tools/specs_validate.py human-gate-report`、`tests/test_specs_validate.py` | 已形成通用最小记录块（时间/决策/范围/约束），并让 Task、ADR、Web UI 和 landing orchestration 引用同一结构；Human Gate 已收敛为轻量人类决策记录，不强制关联 Task；Code 已能检查已写出的 `Human Gate 记录` 文本块和 YAML 结构；landing-report 已能按 Human Gate 子类分流缺口（必须人类决策记录 21、规范口径说明 5、承接实现支持 1、Code 降级提示/覆盖 1）；后续仍需 Web/事实源回写消费 |
 | 规范落地治理吸收 | 已落地 | `docs/specs/00`、`04` 系列、`06`、`07`、`10`、`26`、`41` | 规范落地要求、环境适配、运行投影、平台清单、LDVH/个人特别要求已重组为 04 系列链路 |
 | Web 语义化与阅读体验改进 | 已部分落地 | `web/`、`web/docs/`、`docs/specs/08-Web信息同步规范.md` | 已有 Dashboard、ObjectList、ObjectDetail、Validate、Changelog、ReadingPanel 等实现与设计文档；Human Gate 证据导出、受控回写和检查面仍未闭环 |
-| ECC 运行系统经验对照 | 已形成最终结论并完成规范对齐 | §2.2、`docs/specs/04.06-环境能力清单规范.md` §6 | 最终结论见 §2.2：LDVH 安装模型与 ECC 完全不同，唯一保留 target adapter 思想落地为 04.06 §6；04 主轴已收回 5 层 |
+| ECC 运行系统经验对照 | 已形成最终结论并完成规范对齐 | §2.2、`docs/specs/04.03-环境能力清单与环境适配规范.md` §6 | 最终结论见 §2.2：LDVH 安装模型与 ECC 完全不同，唯一保留 target adapter 思想落地为 04.06 §6；04 主轴已收回 5 层 |
 | Web Validate 落地检查摘要 | 已落地基础展示 | `tools/specs_validate.py web-validate`、`web/api/routes/validate.ts`、`web/src/pages/Validate.tsx`、`web/docs/05-Validate.md` | Validate 页面已消费 Code 只读数据合同，展示 `landingCheck`、`landingReport`、`humanGateReport` 摘要、剩余缺口和能力缺口；当前仍为展示和诊断面，不替代事实源或 Human Gate |
 
 仍在推进中的事项不因本文标注而自动关闭。本文只记录“已进入正式承接位置或 Code 实现”的事实，后续验收仍应回到对应规范、Code 测试、运行投影、工作对象或 Human Gate 证据。

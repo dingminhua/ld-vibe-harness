@@ -1,0 +1,22 @@
+id: taskplan-0057
+type: taskplan
+title: Task 详情元信息呈现重构
+status: closed
+created: '2026-06-07T01:02:37.865113'
+updated: '2026-06-07T01:43:20.448467'
+workarea: workarea-0006
+description: 由历史 Task task-0057 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0057 满足其 acceptance、verification 和 closure_evidence。'
+source: '历史 Task task-0057 迁移生成；旧 source_intent: intent-0006'
+tasks:
+- task-0057
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-07T01:43:20.448474'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0057: ## 验证结果
+closed_at: '2026-06-07T01:43:20.448474'

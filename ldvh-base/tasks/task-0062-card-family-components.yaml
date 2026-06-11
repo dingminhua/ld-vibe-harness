@@ -44,9 +44,10 @@ closure_evidence: |
 
   task-0062 完成并关闭。后续若要继续压缩 Dashboard 内部业务卡片，应单独开小任务，不阻塞本任务关闭。
 deliverables:
-  - web/src/components/MetricCard.tsx
-  - web/src/components/StatusBanner.tsx
-  - web/src/components/ContentCard.tsx
-  - web/src/pages/Gate.tsx
-  - web/src/pages/Validate.tsx
+- web/src/components/MetricCard.tsx
+- web/src/components/StatusBanner.tsx
+- web/src/components/ContentCard.tsx
+- web/src/pages/Gate.tsx
+- web/src/pages/Validate.tsx
 closed_at: '2026-06-11T18:45:15'
+taskplan: taskplan-0062

@@ -30,7 +30,6 @@ acceptance: |
   - [x] 运行 TypeScript 类型检查通过
 blocked_by: []
 deliverables: []
-source_intent: intent-0006
 verification: |
   打开 Task 详情页，检查分类、优先级及同类元信息是否已从主阅读流中降权，确认任务目标、验收、验证、证据和产出仍是页面主线；运行 npx tsc --noEmit。
 
@@ -59,3 +58,4 @@ closure_evidence: |
 
   task-0057 已完成：分类、优先级及类似辅助元信息不再作为 Task 主阅读流中的独立大行呈现，而是降权为顶部紧凑上下文信息。
 closed_at: '2026-06-07T01:43:20.448474'
+taskplan: taskplan-0057

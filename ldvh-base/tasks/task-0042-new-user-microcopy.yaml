@@ -12,8 +12,7 @@ description: |
   - 各状态使用一致的说明文案（如 planned=等待执行，executing=执行中）
   - Human Gate 相关状态在 UI 中保留提示（但不绕过执行规则）
   - 各对象类型增加一句话说明（如"意图：跨任务追踪的目标"）
-source_intent: intent-0006
-source: intent-0006
+source: workarea-0006
 acceptance: |
   - [x] ObjectDetail 页面顶部增加对象类型一句话说明（中英双语）
   - [x] ObjectDetail 页面顶部增加"下一步"行动提示（基于当前状态，如"等待执行"/"待审查"）
@@ -46,3 +45,4 @@ closure_evidence: |
 affected_docs:
 - web/docs/01-全局设计约束.md
 closed_at: '2026-06-05T23:07:46.734998'
+taskplan: taskplan-0039

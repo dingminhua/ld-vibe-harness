@@ -2,8 +2,8 @@
  * Memos API 路由：备忘速记创建入口（仅 Memo 允许 Web 创建，其他类型由 AI 创建）
  *
  * 依据：
- * - docs/specs/25-Memo-备忘.md §8.3 Web 受控编辑
- * - docs/specs/08-Web信息同步规范.md §10.3 备忘速记入口
+ * - docs/specs/25-Memo-备忘.md §8.3 Web 信息同步
+ * - docs/specs/08-Web信息同步规范.md §8.2 Web 事实源写入白名单
  */
 
 import { Router, type Request, type Response } from 'express'
@@ -89,9 +89,10 @@ router.post('/', (req: Request, res: Response): void => {
       resolved_to: '',
       resolved_at: '',
       archive_reason: '',
+      related_workareas: [] as string[],
+      related_taskplans: [] as string[],
       related_tasks: [] as string[],
       related_adrs: [] as string[],
-      related_intents: [] as string[],
       related_changes: [] as string[],
       related_docs: [] as string[],
       status_history: [

@@ -20,8 +20,7 @@ description: |
   9. 更新 06 §4.3 命名规则：从 ldvh_<domain>_<capability>.py 改为 <domain>_<capability>.py
   10. 更新所有 specs、Rules、Skill 中对旧工具文件名的引用
   11. 更新 tests/tools/ 中对旧文件名的 import 和调用
-source: intent-0002
-source_intent: intent-0002
+source: workarea-0002
 acceptance: |
   - [x] fact_cli.py 和 fact_validate.py 已重命名（去掉 ldvh_ 前缀）
   - [x] check_03_specs_doc_standard.py 已重命名为 specs_doc_validate.py
@@ -68,3 +67,4 @@ closure_evidence: |
   ## 结论
 
   任务完成，人工确认关闭。
+taskplan: taskplan-0019

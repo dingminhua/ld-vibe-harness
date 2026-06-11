@@ -27,12 +27,13 @@ import type { LocaleKey } from '@/i18n/locales';
 import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
 
 const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
-  intent: 'nav.intents',
+  workarea: 'nav.workareas',
+  taskplan: 'nav.taskplans',
   task: 'nav.tasks',
+  subtask: 'nav.subtasks',
   adr: 'nav.adrs',
   pitfall: 'nav.pitfalls',
   memo: 'nav.memos',
-  profile: 'nav.profiles',
 };
 
 function getLocalizedTitle(item: { title?: string; title_en?: string; title_zh?: string }, locale: string): string {
@@ -245,7 +246,7 @@ export default function Workbench() {
           <h2 className="ldvh-section-title">{t('workbench.traceability')}</h2>
         </div>
         <div className="ldvh-metric-grid">
-          {[t('nav.intents'), t('nav.tasks'), t('nav.changelog'), t('workbench.evidence')].map((label, index) => (
+          {[t('nav.workareas'), t('nav.taskplans'), t('nav.tasks'), t('workbench.evidence')].map((label, index) => (
             <div key={label} className="relative rounded-lg border border-ldvh-border bg-ldvh-bg p-4">
               <p className="ldvh-caption">{t('workbench.step')} {index + 1}</p>
               <p className="ldvh-card-title mt-1">{label}</p>

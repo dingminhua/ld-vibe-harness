@@ -5,7 +5,7 @@
 > 定位：定义 LDVH落地与检查工作流程，说明 AI 如何先检查当前链路、输出缺口报告、在 Human 授权下逐项落地、复检并给出当前过程报告
 > 适用范围：用户首次安装或接入 LDVH、当前环境确认、管辖项目配置发现与确认、项目落地、缺口补齐、漂移检查、可用性检查、LDVH 自身 dogfood 管辖和落地与检查报告
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.02-管辖项目文档规范.md`、`docs/specs/03.06-管辖项目配置规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力清单与投射规范.md`、`docs/specs/04.06-环境能力清单规范.md`、`docs/specs/04.07-Trae-Solo适配清单.md`、`docs/specs/04.08-Codex适配清单.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.02-管辖项目文档规范.md`、`docs/specs/03.06-管辖项目配置规范.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -89,7 +89,7 @@ LDVH落地与检查涉及多个事实源，必须按以下边界处理：
 | LDVH 正式规范 | `docs/specs/` |
 | 当前 LDVH 管理实例和管辖项目清单 | 工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` |
 | AI 统一入口运行投影 | LDVH-AI-ENTRY.md |
-| 环境能力清单与投射规则 | `docs/specs/04.03-环境能力清单与投射规范.md` |
+| 环境能力清单与投射规则 | `docs/specs/04.03-环境能力清单与环境适配规范.md` |
 | 管辖项目文档事实 | `{project.path}/docs/` |
 | 管辖项目内部分析 | `{project.path}/docs/research/` |
 | 管辖项目外部引用 | `{project.path}/docs/refs/` |
@@ -122,9 +122,9 @@ LDVH落地与检查的最小 Context 包括：
 | LDVH 总纲、目录和术语边界 | `docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md` |
 | 管辖项目文档规则 | `docs/specs/03.02-管辖项目文档规范.md` |
 | 管辖项目配置规则 | `docs/specs/03.06-管辖项目配置规范.md` |
-| LDVH 能力保障、运行投影和环境投射规则 | `docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力清单与投射规范.md` |
-| 旧环境清单迁移输入 | 仅在追溯旧资料时读取 `docs/specs/04.06-环境能力清单规范.md`、`docs/specs/04.07-Trae-Solo适配清单.md` 或 `docs/specs/04.08-Codex适配清单.md`；不得作为当前环境投射事实源 |
-| 当前个人落地特别要求 | `docs/specs/04.05-个人落地特别要求规范.md`；仅用于当前个人执行环境，不得提升为 LDVH 通用规则 |
+| LDVH 能力保障、运行投影和环境投射规则 | `docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md` |
+| 旧环境清单迁移输入 | 仅在追溯旧资料时读取 `docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md` 或 `docs/specs/04.03-环境能力清单与环境适配规范.md`；不得作为当前环境投射事实源 |
+| 当前个人落地特别要求 | `docs/specs/04.04-个人环境特别要求规范.md`；仅用于当前个人执行环境，不得提升为 LDVH 通用规则 |
 | 事实源边界 | `docs/specs/09-事实源边界与承载规范.md` |
 | 工作模型集合 | `docs/specs/20-工作模型集合索引.md` |
 | 工作流程集合 | `docs/specs/40-工作流程集合索引.md` |
@@ -181,7 +181,7 @@ AI 应先确认：
 AI 应先执行只读检查，并在写入前输出当前检查结果。只读检查至少包括：
 
 1. 工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 是否存在、结构是否符合 03.06、是否错误承载状态；
-2. 目标项目 `path` 是否可定位、是否与用户意图匹配、是否有读取权限；
+2. 目标项目 `path` 是否可定位、是否与用户目标匹配、是否有读取权限；
 3. 当前环境是否能定位到 04.03 环境能力清单与投射规则，投射卡片是否覆盖本次检查依赖的入口、能力、检查、降级和待补齐事项；
 4. LDVH-AI-ENTRY.md 是否存在，环境用户级 / 系统级薄入口、项目级例外入口或降级入口是否能引导 AI 进入 LDVH；
 5. 目标项目 `docs/`、`docs/research/`、`docs/refs/` 是否存在或有合理降级；
@@ -448,7 +448,7 @@ LDVH落地与检查至少应能派生以下测试锚点：
 | 子 Agent 思考要求 | 边界、入口写入、目录创建、长期降级、多项目范围或高影响结论不清时，应按 44 使用独立、专项或并行视角辅助判断 | 44、主控调度、Human Gate、主控汇总 | 子 Agent 审查 | 路径、权限、入口、事实源边界、运行投影或长期降级存在分歧时 |
 | 确定性执行要求 | 可机械化的管辖项目配置、路径、目录、工作对象目录、入口引用、索引一致性、规范落地要求聚合消费和运行投影漂移应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`tools/specs_validate.py` 扩展、正反样例 | 校验实现 | 本文结构、目录规则、管辖项目配置、入口规则、41 输出结构或检查规则变化时 |
 | Human 交互要求 | 修改事实源、创建或删除目录、写入入口、接受长期降级、沉淀报告、关闭关键缺口或宣称通过时，应触发 Human Gate | Human Gate、变更前影响说明、检查报告、缺口清单 | 落地确认 | §7 中任一 Gate 条件发生时 |
-| 生命周期触发要求 | 管辖项目配置、环境能力清单、目录、AI 入口、工作模型、工作流程、Code、Web、运行投影或任一正式规范的落地要求变化后，应检查是否需要重新执行本文并调用 41 重新统筹；检查时应消费 41 的入口路由、规范 Scenario、40 索引、Code 检查、运行投影和 Human Gate 分层保障状态 | `docs/specs/04.03-环境能力清单与投射规范.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、Code 检查、人工降级检查 | 触发保障 | 配置、环境清单、目录、入口、active 模型/流程、Code/Web、运行投影、Skill、Agent、Hook、CI 或规范落地要求变化时 |
+| 生命周期触发要求 | 管辖项目配置、环境能力清单、目录、AI 入口、工作模型、工作流程、Code、Web、运行投影或任一正式规范的落地要求变化后，应检查是否需要重新执行本文并调用 41 重新统筹；检查时应消费 41 的入口路由、规范 Scenario、40 索引、Code 检查、运行投影和 Human Gate 分层保障状态 | `docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、Code 检查、人工降级检查 | 触发保障 | 配置、环境清单、目录、入口、active 模型/流程、Code/Web、运行投影、Skill、Agent、Hook、CI 或规范落地要求变化时 |
 
 ---
 ## 14. 检查要求

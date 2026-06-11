@@ -10,8 +10,7 @@ closed_at: '2026-06-04'
 description: |
   在 specs 中先建立事实对象接口契约与 PyTools 接口治理的公共原语，再以 Task 和 Change 为试点补全对象 Contract 与 Tools 子文档。
   本任务不直接推进 Web 呈现，也不立即大规模重写 Python 工具；目标是先让 specs 成为可推理源头。
-source_intent: intent-0002
-source: intent-0002
+source: workarea-0002
 acceptance: |
   - [x] 13-LDVH事实模型基础规范新增事实对象接口公共原语
   - [x] 12.01-Tools辅助规范新增 PyTools 命名、CLI、ToolResult、ToolIssue、exit code、测试和契约同步规则
@@ -43,3 +42,4 @@ closure_evidence: |
 blocked_by: []
 affected_docs:
 - docs/specs/07-Code实现规范.md
+taskplan: taskplan-0003

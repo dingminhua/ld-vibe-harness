@@ -1,0 +1,22 @@
+id: taskplan-0056
+type: taskplan
+title: Task 详情语义阅读结构重构
+status: closed
+created: '2026-06-07T00:39:37.004998'
+updated: '2026-06-07T00:51:45.709239'
+workarea: workarea-0006
+description: 由历史 Task task-0056 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0056 满足其 acceptance、verification 和 closure_evidence。'
+source: '历史 Task task-0056 迁移生成；旧 source_intent: intent-0006'
+tasks:
+- task-0056
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-07T00:51:45.709245'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0056: ## 完成证据
+closed_at: '2026-06-07T00:51:45.709245'

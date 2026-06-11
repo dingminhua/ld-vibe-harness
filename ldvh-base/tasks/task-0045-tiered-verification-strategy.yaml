@@ -10,7 +10,6 @@ description: |
   2. 中等 Task（功能开发、Bug 修复）：验收标准 + 自动测试 + 代码审查
   3. 复杂 Task（架构变更、跨模块影响）：验收标准 + 自动测试 + 代码审查 + 集成验证
   分层策略写入 Task 规范和最佳实践文档。
-source_intent: intent-0009
 source: 竞品调研报告 docs/refs/06 建议3
 acceptance: |
   - [ ] 定义 Task 复杂度分级标准（简单/中等/复杂）
@@ -27,3 +26,4 @@ related_docs:
 - docs/refs/06-竞品测试任务安排分析与最佳实践调研.md
 deliverables:
 - docs/specs/26-Task-任务.md（修订）或独立验证策略文档
+taskplan: taskplan-0045

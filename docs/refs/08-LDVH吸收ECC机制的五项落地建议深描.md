@@ -5,7 +5,7 @@
 > 性质：参考文档，不直接构成 LDVH 正式规范或实施承诺
 > 前置材料：`docs/refs/07-LDVH对ECC-Claude-Code插件的借鉴评估.md`
 > ECC 本地副本：`/Users/dmh2002/poker_hud_projects/临时参考/ecc/ECC`
-> 相关 LDVH 规范：`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/11.01-第三方Skill接管落地选项.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
+> 相关 LDVH 规范：`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/11.01-第三方Skill接管落地选项.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
 
 ---
 
@@ -81,7 +81,7 @@ source:
   type: formal_reference
   paths:
     - docs/specs/00-LD-Vibe-Harness理念与纲要.md
-    - docs/specs/04.02-环境适配与运行投影规范.md
+    - docs/specs/04.02-LDVH能力保障规范.md
 targets:
   - platform: generic
     path: LDVH-AI-ENTRY.md
@@ -178,7 +178,7 @@ LDVH 的 plan 不应只是“我要做 1、2、3”。它应尽量结构化，�
 ```yaml
 scope: ldvh-runtime-projection-manifest
 facts_read:
-  - docs/specs/04.02-环境适配与运行投影规范.md
+  - docs/specs/04.02-LDVH能力保障规范.md
   - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
   - docs/refs/07-LDVH对ECC-Claude-Code插件的借鉴评估.md
 gaps:
@@ -378,7 +378,7 @@ LDVH 后续如果要沉淀 commands、skills 或平台指令，也应采用“�
 command: ldvh landing plan
 purpose: 只读生成 LDVH 落地计划
 source_of_truth:
-  - docs/specs/04.02-环境适配与运行投影规范.md
+  - docs/specs/04.02-LDVH能力保障规范.md
   - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
   - LDVH-AI-ENTRY.md
 allowed_tools:
@@ -583,7 +583,7 @@ python3 tools/specs_validate.py runtime-projection
 
 当参考草案、只读报告和平台试点都能跑通后，再通过 Human Gate 决定是否更新：
 
-1. `docs/specs/04.02-环境适配与运行投影规范.md`；
+1. `docs/specs/04.02-LDVH能力保障规范.md`；
 2. `docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`；
 3. `docs/specs/07-Code实现规范.md`；
 4. `tools/` 和 `tests/`。

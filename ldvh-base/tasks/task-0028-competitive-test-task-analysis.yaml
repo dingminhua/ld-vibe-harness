@@ -6,7 +6,6 @@ created: '2026-06-05T17:59:00.102418'
 updated: '2026-06-06T00:01:18.379272'
 description: |
   深入分析 Gstack(16)、Superpowers(17)、BMAD-METHOD(18) 三个竞品如何安排测试任务，联网调研行业最佳实践，最终产出分析报告进入 specs/refs/ 参考文档。
-source_intent: intent-0009
 source: 用户要求深入调研竞品测试任务安排及最佳实践
 acceptance: |
   - [x] 深入阅读 docs/research/16、17、18 中关于测试任务安排的内容
@@ -51,3 +50,4 @@ closure_evidence: |
 
   任务完成，人工确认关闭。
 closed_at: '2026-06-06T00:01:18.379280'
+taskplan: taskplan-0028

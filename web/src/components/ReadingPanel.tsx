@@ -30,35 +30,44 @@ const SNAP_THRESHOLD = 40;
 const MOBILE_BREAKPOINT = 768;
 
 const PREVIEW_FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
+  workarea: [
+    'description', 'source', 'scope', 'constraints', 'related_docs',
+    'related_adrs', 'related_memos', 'related_pitfalls', 'archive_reason',
+    'status_history',
+  ],
+  taskplan: [
+    'workarea', 'description', 'success_criteria', 'source', 'tasks',
+    'completion_evidence', 'review_requested_at', 'related_docs',
+    'related_adrs', 'related_memos', 'related_pitfalls', 'status_history',
+  ],
   task: [
-    'description', 'source', 'source_intent', 'acceptance', 'verification',
-    'risk_assessment', 'closure_evidence', 'blocked_by', 'sub_tasks',
+    'taskplan', 'description', 'source', 'acceptance', 'verification',
+    'risk_assessment', 'closure_evidence', 'blocked_by',
     'deliverables', 'related_docs', 'affected_docs', 'related_adrs',
     'related_changes', 'status_history',
   ],
-  intent: [
-    'description', 'source', 'success_criteria', 'constraints',
-    'completion_evidence', 'related_tasks', 'related_adrs', 'related_memos',
-    'related_pitfalls', 'related_docs', 'status_history',
+  subtask: [
+    'task', 'description', 'source', 'acceptance', 'verification',
+    'closure_evidence', 'blocked_by', 'status_history',
   ],
   adr: [
     'context', 'decision', 'consequences', 'alternatives', 'affects',
-    'related_tasks', 'related_intents', 'related_memos', 'related_rules',
+    'related_tasks', 'related_taskplans', 'related_workareas', 'related_memos', 'related_rules',
     'superseded_by', 'status_history',
   ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
     'avoidance', 'applicability', 'source_objects', 'source_tasks',
-    'source_memos', 'related_intents', 'related_adrs', 'related_rules',
+    'source_memos', 'related_workareas', 'related_taskplans', 'related_adrs', 'related_rules',
     'superseded_by', 'archive_reason', 'status_history', 'notes',
   ],
   memo: [
     'description', 'source', 'archive_reason', 'resolved_to', 'related_tasks',
-    'related_adrs', 'related_intents', 'related_docs', 'status_history',
+    'related_taskplans', 'related_workareas', 'related_adrs', 'related_docs', 'status_history',
   ],
   profile: [
     'description', 'project_path', 'ldvh_base_path', 'docs_path',
-    'governance_scope', 'related_intents', 'related_tasks', 'related_adrs',
+    'governance_scope', 'related_workareas', 'related_taskplans', 'related_tasks', 'related_adrs',
     'related_memos', 'related_pitfalls', 'related_docs', 'status_history',
     'notes',
   ],
@@ -66,7 +75,7 @@ const PREVIEW_FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
 
 const PREVIEW_META_KEYS = new Set([
   'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
-  'closed_at', 'completed_at', 'resolved_at', 'category', 'priority', 'severity',
+  'closed_at', 'review_requested_at', 'resolved_at', 'category', 'priority', 'severity',
   'repeatability', 'tags', 'assignee', 'scope', 'impact',
 ]);
 
@@ -80,7 +89,10 @@ const PREVIEW_FIELD_LABELS: Record<string, { zh: string; en: string }> = {
   next_steps: { zh: '后续步骤', en: 'Next Steps' },
   lessons: { zh: '经验教训', en: 'Lessons' },
   source: { zh: '来源', en: 'Source' },
-  source_intent: { zh: '来源意图', en: 'Source Intent' },
+  workarea: { zh: '工作域', en: 'Work Area' },
+  taskplan: { zh: '任务计划', en: 'Task Plan' },
+  task: { zh: '所属任务', en: 'Task' },
+  tasks: { zh: '任务', en: 'Tasks' },
   success_criteria: { zh: '成功标准', en: 'Success Criteria' },
   constraints: { zh: '约束', en: 'Constraints' },
   acceptance: { zh: '验收标准', en: 'Acceptance' },
@@ -88,14 +100,16 @@ const PREVIEW_FIELD_LABELS: Record<string, { zh: string; en: string }> = {
   risk_assessment: { zh: '风险判断', en: 'Risk Assessment' },
   closure_evidence: { zh: '关闭证据', en: 'Closure Evidence' },
   completion_evidence: { zh: '完成证据', en: 'Completion Evidence' },
+  review_requested_at: { zh: '请求关闭确认时间', en: 'Review Requested At' },
   blocked_by: { zh: '前置依赖', en: 'Blocked By' },
-  sub_tasks: { zh: '子任务', en: 'Subtasks' },
   deliverables: { zh: '产出物', en: 'Deliverables' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
   affected_docs: { zh: '受影响文档', en: 'Affected Docs' },
   related_tasks: { zh: '关联任务', en: 'Related Tasks' },
+  related_subtasks: { zh: '关联子任务', en: 'Related SubTasks' },
+  related_workareas: { zh: '关联工作域', en: 'Related Work Areas' },
+  related_taskplans: { zh: '关联任务计划', en: 'Related Task Plans' },
   related_adrs: { zh: '关联 ADR', en: 'Related ADRs' },
-  related_intents: { zh: '关联意图', en: 'Related Intents' },
   related_memos: { zh: '关联备忘', en: 'Related Memos' },
   related_pitfalls: { zh: '关联踩坑', en: 'Related Pitfalls' },
   related_profiles: { zh: '关联画像', en: 'Related Profiles' },

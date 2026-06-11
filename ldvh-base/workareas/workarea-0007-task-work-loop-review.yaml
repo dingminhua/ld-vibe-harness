@@ -1,0 +1,25 @@
+id: workarea-0007
+type: workarea
+title: 流程闭环梳理
+status: active
+created: '2026-06-05T17:46:21.082842'
+updated: '2026-06-06T00:26:37.051556'
+description: 梳理 LDVH 任务工作闭环机制，确保从任务创建、执行、验证到关闭的完整流程可运行、可审计、可追溯。包括规则机制验证、Task 对象字段完善、文档同步机制和工具接口变更同步机制
+source: 用户要求梳理任务工作闭环
+scope: |-
+  历史成功标准（由旧 Intent 迁移保留，不作为工作域完成条件）：
+  Task 工作闭环全流程可运行且经过验证；规则机制有效性测试通过；Task 字段契约覆盖产出物和文档同步需求；工具接口变更与规范同步机制建立
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+legacy_intent:
+  id: intent-0007
+  status: active
+  related_tasks:
+  - task-0027
+  - task-0032
+  - task-0037
+  - task-0038
+  review_requested_at: null
+  closed_at: null

@@ -1,0 +1,22 @@
+id: taskplan-0010
+type: taskplan
+title: 精简 11 号 Trae Solo 环境规范
+status: closed
+created: '2026-06-05'
+updated: '2026-06-05'
+workarea: workarea-0004
+description: 由历史 Task task-0010 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0010 满足其 acceptance、verification 和 closure_evidence。'
+source: '历史 Task task-0010 迁移生成；旧 source_intent: intent-0004'
+tasks:
+- task-0010
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-05'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0010: 已完成 specs/11-LDVH-Trae-Solo-环境规范.md 重写：Trae 平台客观事实改为引用 specs/refs/trae/ 权威入口，正文收敛为 LDVH 对 Rules、Skill、Agent、AskUserQuestion、RunCommand、Schedule、MCP、Commands/Plan/Spec 的特殊使用约定。
+closed_at: '2026-06-05'

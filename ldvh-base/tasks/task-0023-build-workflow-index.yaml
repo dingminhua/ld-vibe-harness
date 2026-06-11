@@ -14,9 +14,6 @@ acceptance: |
   - [ ] 已将"工作流程"和"工作闭环"术语区分写入 02 术语规范
   - [ ] 已运行 Fact Validator 校验
 blocked_by: []
-source_intent: intent-0005
-parent_task: null
-sub_tasks: []
 verification: |
   对比 20 索引结构检查 08 §7.2 索引完整性；检查 Skill 映射条目是否覆盖所有现有 Skill；检查 02 术语规范是否包含"工作流程"和"工作闭环"区分定义。
 
@@ -32,3 +29,4 @@ related_adrs: []
 related_changes: []
 closed_at: null
 closure_evidence: null
+taskplan: taskplan-0023

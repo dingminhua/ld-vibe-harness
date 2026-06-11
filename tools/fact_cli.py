@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LDVH 事实模型 CLI 工具：create / transition / delete / list / show / search / stats / related / link-rule / deprecate / supersede。
 
-对 LDVH 生产对象（intent, task, adr, pitfall, memo）
+对 LDVH 生产对象（workarea, taskplan, task, subtask, adr, pitfall, memo）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
 Change 使用 Git commit 作为事实源，不通过本 CLI 管理。
 ADR 专属写入操作（link-rule / deprecate / supersede）必须携带 Human Gate 确认参数。
@@ -23,42 +23,59 @@ import yaml
 # ── 对象元数据（硬编码，与 fact_validate.py 保持一致） ──────────────
 
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "memo"}
+OBJECT_TYPES = {"workarea", "taskplan", "task", "subtask", "adr", "pitfall", "memo"}
 
 LIST_SUMMARY_FIELDS = ("category", "priority", "severity", "repeatability")
 
 ID_PATTERNS = {
-    "intent": re.compile(r"^intent-\d{4}$"),
+    "workarea": re.compile(r"^workarea-\d{4}$"),
+    "taskplan": re.compile(r"^taskplan-\d{4}$"),
     "task": re.compile(r"^task-\d{4}$"),
+    "subtask": re.compile(r"^subtask-\d{4}$"),
     "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
     "memo": re.compile(r"^memo-\d{4}$"),
 }
 
 FILENAME_PATTERNS = {
-    "intent": re.compile(r"^intent-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "workarea": re.compile(r"^workarea-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "taskplan": re.compile(r"^taskplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "task": re.compile(r"^task-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "subtask": re.compile(r"^subtask-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
 }
 
 VALID_STATUSES = {
-    "intent": {"draft", "active", "review_needed", "closed"},
+    "workarea": {"active", "archived"},
+    "taskplan": {"draft", "active", "review_needed", "closed"},
     "task": {"planned", "executing", "verifying", "review_needed", "closed"},
+    "subtask": {"planned", "executing", "verifying", "review_needed", "closed"},
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "memo": {"draft", "active", "resolved", "archived"},
 }
 
 VALID_TRANSITIONS = {
-    "intent": {
+    "workarea": {
+        "active": {"archived"},
+        "archived": {"active"},
+    },
+    "taskplan": {
         "draft": {"active"},
         "active": {"review_needed"},
         "review_needed": {"closed", "active"},
         "closed": set(),
     },
     "task": {
+        "planned": {"executing"},
+        "executing": {"verifying"},
+        "verifying": {"review_needed", "executing"},
+        "review_needed": {"closed", "executing"},
+        "closed": set(),
+    },
+    "subtask": {
         "planned": {"executing"},
         "executing": {"verifying"},
         "verifying": {"review_needed", "executing"},
@@ -87,24 +104,30 @@ VALID_TRANSITIONS = {
 }
 
 REQUIRED_FIELDS = {
-    "intent": ["id", "type", "title", "status", "created", "updated", "description", "success_criteria", "source"],
-    "task": ["id", "type", "title", "status", "created", "updated", "description", "source", "acceptance"],
+    "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
+    "taskplan": ["id", "type", "title", "status", "created", "updated", "workarea", "description", "success_criteria", "source", "tasks"],
+    "task": ["id", "type", "title", "status", "created", "updated", "taskplan", "description", "source", "acceptance"],
+    "subtask": ["id", "type", "title", "status", "created", "updated", "task", "description", "source", "acceptance"],
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category"],
 }
 
 DEFAULT_STATUS = {
-    "intent": "draft",
+    "workarea": "active",
+    "taskplan": "draft",
     "task": "planned",
+    "subtask": "planned",
     "adr": "proposed",
     "pitfall": "draft",
     "memo": "draft",
 }
 
 DIRECTORY_MAP = {
-    "intent": "ldvh-base/intents/",
+    "workarea": "ldvh-base/workareas/",
+    "taskplan": "ldvh-base/taskplans/",
     "task": "ldvh-base/tasks/",
+    "subtask": "ldvh-base/subtasks/",
     "adr": "ldvh-base/adrs/",
     "pitfall": "ldvh-base/pitfalls/",
     "memo": "ldvh-base/memos/",
@@ -425,12 +448,25 @@ def cmd_create(args: argparse.Namespace) -> int:
         else:
             # 其他必填字段默认为空字符串占位
             data[field] = ""
+    if object_type == "workarea":
+        data["related_docs"] = []
+        data["related_adrs"] = []
+        data["related_memos"] = []
+        data["related_pitfalls"] = []
+    if object_type == "taskplan":
+        data["tasks"] = []
+        data["related_docs"] = []
+        data["related_adrs"] = []
+        data["related_memos"] = []
+        data["related_pitfalls"] = []
     if object_type == "task":
         data["blocked_by"] = []
         data["deliverables"] = []
         deliverables_val = getattr(args, "deliverables", None)
         if deliverables_val:
             data["deliverables"] = _parse_list_values(deliverables_val)
+    if object_type == "subtask":
+        data["blocked_by"] = []
 
     # ADR 创建时回写 Human Gate 记录到 context
     if object_type == "adr":
@@ -518,20 +554,6 @@ def cmd_transition(args: argparse.Namespace) -> int:
             if unchecked:
                 error(f"acceptance 存在未完成项（{len(unchecked)} 项未勾选），无法关闭")
                 return 1
-        # 校验 sub_tasks 全部 closed
-        sub_tasks = data.get("sub_tasks", [])
-        if isinstance(sub_tasks, list) and sub_tasks:
-            for sub_task_id in sub_tasks:
-                if not isinstance(sub_task_id, str) or not ID_PATTERNS["task"].match(sub_task_id):
-                    error(f"sub_tasks 中必须使用 task-{{NNNN}} 格式的 Task ID: {sub_task_id}")
-                    return 1
-                sub_task_path, sub_task_data = find_task_by_id(yaml_file.parent, sub_task_id)
-                if sub_task_path is None or sub_task_data is None:
-                    error(f"sub_tasks 引用的 Task 不存在: {sub_task_id}")
-                    return 1
-                if sub_task_data.get("status") != "closed":
-                    error(f"子 Task 未关闭，当前 Task 不得关闭: {sub_task_id}")
-                    return 1
         # 校验 verification 已填写
         verification = data.get("verification")
         if not verification or (isinstance(verification, str) and not verification.strip()):
@@ -543,21 +565,34 @@ def cmd_transition(args: argparse.Namespace) -> int:
             error("closure_evidence 未填写，无法关闭 Task")
             return 1
 
-    # Intent 待关闭确认条件校验（active → review_needed）
-    if object_type == "intent" and current_status == "active" and new_status == "review_needed":
+    # TaskPlan 待关闭审查条件校验（active → review_needed）
+    if object_type == "taskplan" and current_status == "active" and new_status == "review_needed":
         completion_evidence = data.get("completion_evidence")
         if not completion_evidence or (isinstance(completion_evidence, str) and not completion_evidence.strip()):
-            error("completion_evidence 未填写，无法将 Intent 标记为 review_needed")
+            error("completion_evidence 未填写，无法将 TaskPlan 标记为 review_needed")
             return 1
         if not data.get("review_requested_at"):
             data["review_requested_at"] = datetime.now().isoformat()
 
-    # Intent 关闭条件校验（review_needed → closed）
-    if object_type == "intent" and current_status == "review_needed" and new_status == "closed":
+    # TaskPlan 关闭条件校验（review_needed → closed）
+    if object_type == "taskplan" and current_status == "review_needed" and new_status == "closed":
         for field in ("review_requested_at", "completion_evidence"):
             value = data.get(field)
             if not value or (isinstance(value, str) and not value.strip()):
-                error(f"{field} 未填写，无法关闭 Intent")
+                error(f"{field} 未填写，无法关闭 TaskPlan")
+                return 1
+
+    if object_type == "workarea" and new_status == "archived":
+        archive_reason = data.get("archive_reason")
+        if not archive_reason or (isinstance(archive_reason, str) and not archive_reason.strip()):
+            error("archive_reason 未填写，无法归档 WorkArea")
+            return 1
+
+    if object_type == "subtask" and current_status == "review_needed" and new_status == "closed":
+        for field in ("verification", "closure_evidence"):
+            value = data.get(field)
+            if not value or (isinstance(value, str) and not value.strip()):
+                error(f"{field} 未填写，无法关闭 SubTask")
                 return 1
 
     # Memo 分流条件校验（active → resolved）
@@ -588,7 +623,9 @@ def cmd_transition(args: argparse.Namespace) -> int:
     data["updated"] = datetime.now().isoformat()
     if object_type == "task" and new_status == "closed":
         data["closed_at"] = datetime.now().isoformat()
-    if object_type == "intent" and new_status == "closed":
+    if object_type == "taskplan" and new_status == "closed":
+        data["closed_at"] = datetime.now().isoformat()
+    if object_type == "subtask" and new_status == "closed":
         data["closed_at"] = datetime.now().isoformat()
 
     # ADR 流转时回写 Human Gate 记录到 context
@@ -1148,9 +1185,10 @@ def cmd_update(args: argparse.Namespace) -> int:
         # 处理字符串转义：\n → 换行, \\ → 反斜杠
         value = value.replace("\\n", "\n").replace("\\\\", "\\")
         # 列表类型字段：逗号分隔
-        if key in ("related_tasks", "related_adrs", "related_pitfalls", "related_docs",
-                    "affected_docs", "deliverables",
-                    "blocked_by", "sub_tasks", "affects", "related_objects", "related_rules"):
+        if key in ("related_workareas", "related_taskplans", "related_tasks", "related_adrs",
+                    "related_memos", "related_pitfalls", "related_docs",
+                    "affected_docs", "deliverables", "tasks",
+                    "blocked_by", "affects", "related_objects", "related_rules"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
         else:
             updates[key] = value
@@ -1285,7 +1323,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # update 子命令
     update_parser = subparsers.add_parser("update", help="更新事实对象的指定字段")
-    update_parser.add_argument("target", help="对象 ID（如 intent-0002）或 YAML 文件路径")
+    update_parser.add_argument("target", help="对象 ID（如 taskplan-0002）或 YAML 文件路径")
     update_parser.add_argument("--set", action="append", default=None, help="设置字段值（key=value，可多次指定，列表字段用逗号分隔）")
     update_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
 

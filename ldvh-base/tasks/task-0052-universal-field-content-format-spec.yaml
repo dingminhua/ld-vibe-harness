@@ -20,8 +20,7 @@ description: |
   - 不创建 Narrative / Checklist / Evidence 等独立工作模型
   - 不修改对象状态机或字段契约定义（仍由 21-27 各对象规范负责）
   - 如执行中发现需改变事实源边界，应另建 ADR
-source: intent-0004
-source_intent: intent-0004
+source: workarea-0004
 acceptance: |
   - [x] 创建 docs/specs/05.01-工作字段内容格式规范.md
   - [x] 定义 Narrative / Checklist / Evidence / Decision / Reference / Log 六种内容格式的边界和书写规则
@@ -64,3 +63,4 @@ related_docs:
 - docs/specs/20-工作模型集合索引.md
 - web/docs/07-内容可读性深度研究.md
 closed_at: '2026-06-06T18:40:33.152760'
+taskplan: taskplan-0052

@@ -1,0 +1,29 @@
+id: taskplan-0039
+type: taskplan
+title: ObjectDetail 字段语义化渲染升级 等 3 个关联任务
+status: closed
+created: '2026-06-05T22:04:53.452736'
+updated: '2026-06-05T23:01:16.997434'
+workarea: workarea-0006
+description: 由历史 Task task-0039 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: |-
+  - [x] 关联任务 task-0039 满足其 acceptance、verification 和 closure_evidence。
+  - [x] 关联任务 task-0040 满足其 acceptance、verification 和 closure_evidence。
+  - [x] 关联任务 task-0042 满足其 acceptance、verification 和 closure_evidence。
+source: '历史 Task task-0039 迁移生成；旧 source_intent: intent-0006'
+tasks:
+- task-0039
+- task-0040
+- task-0042
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-05T23:01:16.997442'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0039: 5 个语义化组件已实现：ChecklistCard（完成比例+进度条）、ReferenceCard（ID+标题+状态徽章）、
+  - task-0040: ReadingPanel 组件实现三段式布局，桌面端右侧320px面板滑出，移动端底部抽屉50vh+拖拽关闭。
+  - task-0042: 新增 TYPE_DESCRIPTION_LOCALES（7种对象类型说明）和 STATUS_HINT_LOCALES（9种状态提示），
+closed_at: '2026-06-05T23:01:16.997442'

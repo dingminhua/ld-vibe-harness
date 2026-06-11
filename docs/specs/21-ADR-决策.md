@@ -4,7 +4,7 @@
 > 定位：定义 ADR / 决策工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理长期决策、事实源边界、规范判断和后续执行约束的项目
 > 上位依据：`docs/specs/05-工作模型基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/22-Change-变更.md`、`docs/specs/24-Intent-意图.md`、`docs/specs/26-Task-任务.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/22-Change-变更.md`、`docs/specs/24-WorkArea-工作域.md`、`docs/specs/27-TaskPlan-任务计划.md`、`docs/specs/26-Task-任务.md`
 
 ---
 ## 1. 对象定位与准入条件
@@ -17,7 +17,7 @@ ADR 不是所有判断的默认归宿。AI 可以在当前任务中做临时判�
 
 一个判断满足以下条件之一时，应考虑形成 ADR：
 
-1. 影响多个 Task、Intent、工作模型、工作流程或项目阶段；
+1. 影响多个 WorkArea、TaskPlan、Task、工作模型、工作流程或项目阶段；
 2. 改变长期执行方式、协作方式、事实源归属或 Human Gate 边界；
 3. 改变 docs/specs、Rules / Instructions、Skill、Agent、Code、Web 或运行投影的长期规则；
 4. 对后续 AI 或 Human 执行具有持续约束；
@@ -107,11 +107,11 @@ accepted → superseded
 ---
 ## 4. 对象关系
 
-### 4.1 ADR 与 Intent
+### 4.1 ADR 与 WorkArea / TaskPlan
 
-Intent 的实现涉及长期决策、方案选择或事实源边界时，应创建或关联 ADR。ADR 可通过 `related_intents` 引用来源 Intent。
+工作域或任务计划涉及长期决策、方案选择或事实源边界时，应创建或关联 ADR。ADR 可通过 `related_workareas` 引用来源工作域，通过 `related_taskplans` 引用来源任务计划。
 
-ADR 不替代 Intent 的目标、成功标准、约束或完成判断。
+ADR 不替代 WorkArea 的长期范围，也不替代 TaskPlan 的目标、成功标准、任务序列或关闭判断。
 
 ### 4.2 ADR 与 Task
 
@@ -183,7 +183,8 @@ ADR 语境下的 Human Gate 记录应遵守 `docs/specs/06-工作流程基础规
 | `consequences` | 决策后果、影响和约束 | string | 是 | 应说明正负影响 | Decision / Narrative | AI、Web |
 | `alternatives` | 考虑过但未采纳的替代方案 | string | 否 | 可为空 | Narrative / Decision | AI、Web |
 | `affects` | 受影响范围、文件、规范或机制 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_intents` | 关联 Intent ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workareas` | 关联 WorkArea ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_taskplans` | 关联 TaskPlan ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_tasks` | 关联 Task ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_changes` | 关联 Change commit 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 来源或关联 Memo ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -214,7 +215,8 @@ alternatives: |
   曾考虑创建 changes YAML 实例，但会与 Git 记录形成重复事实源。
 affects:
   - docs/specs/22-Change-变更.md
-related_intents: []
+related_workareas: []
+related_taskplans: []
 related_tasks: []
 related_changes: []
 related_memos: []
@@ -274,7 +276,7 @@ ADR 证据至少包括：
 4. 决策后果；
 5. 影响范围；
 6. Human Gate 确认记录；
-7. 相关 Change、Task、Intent、Memo 或规范引用。
+7. 相关 Change、WorkArea、TaskPlan、Task、Memo 或规范引用。
 
 聊天内容、临时命令输出、Web 页面状态和工具缓存不得单独作为 ADR 证据。需要长期保留时，应摘要写入 ADR 字段或相关事实源。
 

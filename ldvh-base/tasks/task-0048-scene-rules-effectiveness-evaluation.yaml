@@ -15,8 +15,7 @@ description: |
   4. 最终结论：保留/移除/合并建议
 
   背景：用户发现场景规则似乎没有效果且分散了注意力，需要验证这一判断。
-source: intent-0008
-source_intent: intent-0008
+source: workarea-0008
 acceptance: |
   - [x] 完成三层规则逐条对比，输出重叠度分析表
   - [x] 提取场景规则独有内容清单，逐条评估必要性
@@ -34,8 +33,8 @@ verification: |-
   验证通过。
 blocked_by: []
 related_docs:
-- docs/specs/04.02-环境适配与运行投影规范.md
-- docs/specs/04.07-Trae-Solo适配清单.md
+- docs/specs/04.02-LDVH能力保障规范.md
+- docs/specs/04.03-环境能力清单与环境适配规范.md
 affected_docs: []
 deliverables: []
 closure_evidence: |
@@ -110,4 +109,4 @@ closure_evidence: |
 
   任务完成，人工确认关闭。
 related_adrs: []
-sub_tasks: []
+taskplan: taskplan-0048

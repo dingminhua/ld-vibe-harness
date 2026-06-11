@@ -1546,6 +1546,51 @@ projects:
     )
     task_dir = tmp_path / "ldvh-base" / "tasks"
     task_dir.mkdir(parents=True, exist_ok=True)
+    workarea_dir = tmp_path / "ldvh-base" / "workareas"
+    workarea_dir.mkdir(parents=True, exist_ok=True)
+    (workarea_dir / "workarea-0001-test.yaml").write_text(
+        """
+id: workarea-0001
+type: workarea
+title: 测试工作域
+status: active
+created: '2026-06-10T00:00:00'
+updated: '2026-06-10T00:00:00'
+description: 测试工作域说明
+source: 测试
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    taskplan_dir = tmp_path / "ldvh-base" / "taskplans"
+    taskplan_dir.mkdir(parents=True, exist_ok=True)
+    (taskplan_dir / "taskplan-0001-test.yaml").write_text(
+        """
+id: taskplan-0001
+type: taskplan
+title: 测试计划
+status: active
+created: '2026-06-10T00:00:00'
+updated: '2026-06-10T00:00:00'
+workarea: workarea-0001
+description: 测试计划说明
+success_criteria: |
+  - [ ] 可验证条件
+source: 测试
+tasks:
+  - task-0001
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
     (task_dir / "task-0001-test.yaml").write_text(
         """
 id: task-0001
@@ -1554,12 +1599,12 @@ title: 测试任务
 status: planned
 created: '2026-06-10T00:00:00'
 updated: '2026-06-10T00:00:00'
+taskplan: taskplan-0001
 description: |
   测试任务说明。
 source: 测试
 acceptance: |
   - [ ] 可验证条件
-sub_tasks: []
 blocked_by: []
 related_adrs: []
 related_docs: []
@@ -1665,7 +1710,7 @@ def test_web_validate_builds_web_contract_from_code(tmp_path, monkeypatch):
     assert report["command"] == "web_validate"
     assert report["action"] == "validate"
     assert report["target"] == "ldvh-base"
-    assert report["summary"]["files"] == 1
+    assert report["summary"]["files"] == 3
     assert report["summary"]["errors"] == 0
     assert "landingCheck" in report["reports"]
     assert "landingReport" in report["reports"]

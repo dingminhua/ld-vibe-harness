@@ -1,0 +1,23 @@
+id: taskplan-0048
+type: taskplan
+title: scene-rules-effectiveness-evaluation
+status: review_needed
+created: '2026-06-06T00:24:12.418786'
+updated: '2026-06-06T08:24:15.000000'
+workarea: workarea-0008
+description: 由历史 Task task-0048 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [ ] 关联任务 task-0048 满足其 acceptance、verification 和 closure_evidence。'
+source: '历史 Task task-0048 迁移生成；旧 source_intent: intent-0008'
+tasks:
+- task-0048
+related_docs:
+- docs/specs/04.02-LDVH能力保障规范.md
+- docs/specs/04.03-环境能力清单与环境适配规范.md
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-06T08:24:15.000000'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0048: task-0048 独立验收前补充的可追溯分析证据。

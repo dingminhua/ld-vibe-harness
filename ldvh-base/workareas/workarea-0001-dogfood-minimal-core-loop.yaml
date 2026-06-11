@@ -1,0 +1,29 @@
+id: workarea-0001
+type: workarea
+title: Dogfood LDVH 最小 Core Loop
+status: archived
+created: 2026-06-04
+updated: '2026-06-11T06:44:19+08:00'
+description: 在 LDVH 自身项目中跑通第一条最小 Core Loop，验证 Intent、Task、Evidence、Fact Validator、ldvh-intake
+  和 ldvh-close 能否协同工作。
+source: 用户要求 AI 安排第一条 Dogfood Task
+scope: |-
+  历史成功标准（由旧 Intent 迁移保留，不作为工作域完成条件）：
+  创建真实 Intent、Task 和 Evidence 实例，并通过 tools/check_fact_model.py 校验；后续可用 ldvh-close 关闭 Task。
+constraints: 不扩展新框架分支；不先做 Web；只验证最小可运行闭环。
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+archive_reason: |
+  由旧 Intent intent-0001（状态 review_needed）迁移为工作域后归档。
+
+  历史完成证据：
+  关联任务 task-0001 已关闭；该 Intent 的最小闭环验证结论已记录在 Task 关闭证据中。按新的 Intent 状态机，该对象处于待关闭确认状态，等待最终关闭判断。
+legacy_intent:
+  id: intent-0001
+  status: review_needed
+  related_tasks:
+  - task-0001
+  review_requested_at: '2026-06-11T06:44:19+08:00'
+  closed_at: null

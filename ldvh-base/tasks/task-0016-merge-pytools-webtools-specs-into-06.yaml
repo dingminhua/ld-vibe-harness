@@ -4,9 +4,11 @@ title: merge pytools webtools specs into 06
 status: closed
 created: '2026-06-05'
 updated: '2026-06-05'
-description: 将现有 specs/12-LDVH工具基础规范.md 调整为新编号体系下的 06-PyTools与WebTools规范，并将 specs/12.01-Tools辅助规范.md 与 specs/12.02-Web信息同步规范.md 的必要权威内容精简并入 06；同步更新 specs 根目录正式规范与 Rules 中相关引用。本任务不执行实际合并，只记录执行计划。
-source_intent: intent-0004
-source: 用户指示：新增任务，将 01 文档改为目录说明，02 文档改为术语规范，03 文档改为文档规范并强行并入 03.01，10 改为 04，11 改为 05，12 改为 06-PyTools与WebTools规范并合并 12.01/12.02，13 改为 07，50 改为 08；确认口径：按目标 8 项拆分，只建任务不执行，合并采用精简并入，引用范围先限 specs 根目录正式规范与 Rules。
+description: 将现有 specs/12-LDVH工具基础规范.md 调整为新编号体系下的 06-PyTools与WebTools规范，并将 specs/12.01-Tools辅助规范.md
+  与 specs/12.02-Web信息同步规范.md 的必要权威内容精简并入 06；同步更新 specs 根目录正式规范与 Rules 中相关引用。本任务不执行实际合并，只记录执行计划。
+source: 用户指示：新增任务，将 01 文档改为目录说明，02 文档改为术语规范，03 文档改为文档规范并强行并入 03.01，10 改为 04，11 改为
+  05，12 改为 06-PyTools与WebTools规范并合并 12.01/12.02，13 改为 07，50 改为 08；确认口径：按目标 8 项拆分，只建任务不执行，合并采用精简并入，引用范围先限
+  specs 根目录正式规范与 Rules。
 acceptance: |-
   - [x] 原 12 文档文件名、标题和头部定位调整为"06-PyTools与WebTools规范"
   - [x] 12.01 与 12.02 的必要权威内容已精简并入 06（PyTools 规则 §4，WebTools 规则 §5），重复内容已去重
@@ -15,8 +17,6 @@ acceptance: |-
   - [x] 不处理 docs/research、specs/refs、tools/tests/web 等非本轮确认范围引用
   - [x] 可用文档规范检查和引用检查通过
 blocked_by: []
-parent_task: null
-sub_tasks: []
 assignee: AI
 related_adrs: []
 related_changes: []
@@ -41,3 +41,4 @@ verification: |-
 
   验证通过。
 closed_at: '2026-06-05'
+taskplan: taskplan-0016

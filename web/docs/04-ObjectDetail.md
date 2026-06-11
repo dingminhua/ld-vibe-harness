@@ -17,9 +17,9 @@
 对象头部：类型标签 + 标题 + ID + 类型说明 + 复制路径图标 + 状态徽章 + 状态提示
 元信息行：创建时间、更新时间、关闭时间、辅助属性
 内容区：
-  Task：语义阅读布局
+  Task / SubTask：语义阅读布局
   其他对象：字段卡片布局
-Intent 聚合产出/文档（仅 Intent）
+TaskPlan 聚合产出/文档（仅 TaskPlan）
 YAML 源码折叠区
 右侧扩展阅读区（App Shell 提供，不属于本页卡片）
 ```
@@ -40,7 +40,7 @@ YAML 源码折叠区
 
 Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 
-1. 任务目标：`description` + `source` + `source_intent`。
+1. 任务目标：Task 使用 `description` + `source` + `taskplan`，SubTask 使用 `description` + `source` + `task`。
 2. 验收标准：`acceptance`，用 `ChecklistCard` 展示进度和每项状态。
 3. 验证方式与关闭证据：`verification`、`closure_evidence`，用 `EvidenceBlock` 展示 Markdown、命令和路径。
 4. 产出与文档：`deliverables`、`related_docs`、`affected_docs`，用 `DocPreviewLink`。
@@ -50,9 +50,9 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 ## 5. 非 Task 对象字段布局
 
 - 每个字段一个轻量卡片，字段标题用 `ldvh-caption-strong`。
-- 关联类字段可折叠；Intent 的关联字段默认展开，其他类型默认折叠。
-- Pitfall、ADR、Memo、Intent 等长文本字段必须按 Markdown 渲染。
-- Intent 的 `aggregated_deliverables` 和 `aggregated_docs` 作为聚合区域显示，不混入普通字段卡片。
+- 关联类字段可折叠；TaskPlan 的关联字段默认展开，其他类型默认折叠。
+- Pitfall、ADR、Memo、WorkArea、TaskPlan 等长文本字段必须按 Markdown 渲染。
+- TaskPlan 的 `aggregated_deliverables` 和 `aggregated_docs` 作为聚合区域显示，不混入普通字段卡片。
 
 ## 6. 字段渲染规则
 
@@ -69,7 +69,7 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 | 路径文本 | `PathText` | 等宽、可换行的路径标签 |
 | 其他短文本 | `ldvh-body` | 普通文本 |
 
-当前可点击对象引用仅覆盖 Web 支持的工作对象类型：Intent、Task、ADR、Pitfall、Memo、Profile。类似 `ev-0002` 这类尚未进入当前对象路由的引用，只作为普通引用文本展示，不跳转到无效详情页。
+当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、TaskPlan、Task、SubTask、ADR、Pitfall、Memo。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
 
 ## 7. 右侧扩展阅读区
 

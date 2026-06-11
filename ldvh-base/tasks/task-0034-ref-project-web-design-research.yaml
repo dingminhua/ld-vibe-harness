@@ -6,14 +6,13 @@ created: '2026-06-05T19:53:16.820993'
 updated: '2026-06-05T20:12:00.000000'
 description: |
   调研工作区内外部参考项目的前端 Web 设计，提取可借鉴的设计模式、布局方案、主题系统和组件架构，
-  输出结构化参考文档到 specs/refs/ 目录，为 LDVH Web 展示层（intent-0006）提供设计参考。
+  输出结构化参考文档到 specs/refs/ 目录，为 LDVH Web 展示层（workarea-0006）提供设计参考。
 
   调研范围：
   1. gstack — 浏览器扩展 + 设计工具链，TypeScript + Bun 技术栈
   2. mcp-shrimp-task-manager/tools/task-viewer — React + Vite + Tailwind 任务查看器
   3. trae-pm-kit/pm-kit-web — 原生 HTML/CSS/JS 项目管理 Web 应用
-source: intent-0006
-source_intent: intent-0006
+source: workarea-0006
 acceptance: |
   - [x] 三个参考项目的前端设计调研完成
   - [x] 参考文档写入 specs/refs/ 目录
@@ -43,3 +42,4 @@ closure_evidence: |
   ## 结论
 
   任务完成，人工确认关闭。
+taskplan: taskplan-0034

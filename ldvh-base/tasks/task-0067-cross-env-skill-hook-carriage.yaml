@@ -9,9 +9,6 @@ description: |
 
   本 Task 用于从 ECC 中寻找能力承接差异处理依据，研究 Skill、Hook、Agent、Rules / Instructions、Code、Web 等能力在不同 AI 开发环境中的等价、降级、替代和缺口记录方法，并为 LDVH 04 矩阵与相关规范提供前置答案。
 source: 用户直接指示：Codex 中 Skill + Hook 效果到 Trae 中只有 Skill 时怎么办，需要从 ECC 找答案，并生成独立 Task
-source_intent:
-parent_task:
-sub_tasks: []
 blocked_by: []
 acceptance: |
   - [x] 找到 ECC 中关于 Skill、Hook、Agent、Rules / Instructions、触发机制、自动化承接或降级补偿的依据
@@ -40,54 +37,58 @@ verification: |
   具体案例：Codex/Claude Code 风格的 verification-loop Skill + Stop/PostToolUse Hook，在 Trae Skill-only 中应改为 Trae Skill 说明最终响应前验收流程，配合 Rule 要求修改后显式运行校验，可选 Command 封装 `/verify-before-final`，并明确这不是 Stop/PostToolUse Hook，不会自动触发。
 
   后续 Task 边界：修改 04.03，补充跨环境组合能力必须拆分到具体能力面；修改 04.06，新增组合能力矩阵卡片或字段级校验要求；修改 11.01，补充第三方 Skill 不得冒充 Hook/自动触发能力；扩展 Code 校验，检查 Hook/lifecycle 承接项是否包含承接降级、不可模拟能力、验证命令或待补齐事项。
-risk_assessment: |
-  - 避免把某环境的专有机制直接当作 LDVH 抽象能力。
+risk_assessment: '- 避免把某环境的专有机制直接当作 LDVH 抽象能力。
+
   - 避免把只有 Skill 的环境误判为完整承接 Skill + Hook 组合效果。
+
   - 避免自动启用 Hook 或自动写入运行投影；持久投影和自动化触发需 Human Gate。
+
   - 避免用 plan 类输出替代 Task；正式安排、执行拆分、验收和关闭证据应进入 Task。
+
+  '
 assignee: AI
 related_adrs: []
 related_changes: []
 related_docs:
-  - docs/specs/01-目录说明.md
-  - docs/specs/04.03-环境能力清单与投射规范.md
-  - docs/specs/04.06-环境能力清单规范.md
-  - docs/specs/11.01-第三方Skill接管落地选项.md
-  - docs/specs/26-Task-任务.md
+- docs/specs/01-目录说明.md
+- docs/specs/04.03-环境能力清单与环境适配规范.md
+- docs/specs/04.03-环境能力清单与环境适配规范.md
+- docs/specs/11.01-第三方Skill接管落地选项.md
+- docs/specs/26-Task-任务.md
 affected_docs:
-  - docs/specs/01-目录说明.md
-  - docs/specs/04.03-环境能力清单与投射规范.md
-  - docs/specs/04.06-环境能力清单规范.md
-  - docs/specs/11.01-第三方Skill接管落地选项.md
-  - tools/specs_validate.py
-  - tests/test_specs_validate.py
+- docs/specs/01-目录说明.md
+- docs/specs/04.03-环境能力清单与环境适配规范.md
+- docs/specs/04.03-环境能力清单与环境适配规范.md
+- docs/specs/11.01-第三方Skill接管落地选项.md
+- tools/specs_validate.py
+- tests/test_specs_validate.py
 deliverables: []
 status_history:
-  - at: '2026-06-11T00:00:00'
-    from:
-    to: planned
-    actor: AI
-    reason: 用户指出跨环境 Skill + Hook 与 Skill-only 差异仍未明确，需要从 ECC 找答案，并要求生成独立 Task。
-  - at: '2026-06-11T00:00:00'
-    from: planned
-    to: executing
-    actor: AI
-    reason: 开始执行 ECC 与 LDVH 只读研究。
-  - at: '2026-06-11T00:00:00'
-    from: executing
-    to: verifying
-    actor: AI
-    reason: 已完成资料检索和结论整理。
-  - at: '2026-06-11T00:00:00'
-    from: verifying
-    to: review_needed
-    actor: AI
-    reason: 验收项均已覆盖，等待关闭记录。
-  - at: '2026-06-11T00:00:00'
-    from: review_needed
-    to: closed
-    actor: AI
-    reason: 研究结论已写入验证结果和关闭证据。
+- at: '2026-06-11T00:00:00'
+  from: null
+  to: planned
+  actor: AI
+  reason: 用户指出跨环境 Skill + Hook 与 Skill-only 差异仍未明确，需要从 ECC 找答案，并要求生成独立 Task。
+- at: '2026-06-11T00:00:00'
+  from: planned
+  to: executing
+  actor: AI
+  reason: 开始执行 ECC 与 LDVH 只读研究。
+- at: '2026-06-11T00:00:00'
+  from: executing
+  to: verifying
+  actor: AI
+  reason: 已完成资料检索和结论整理。
+- at: '2026-06-11T00:00:00'
+  from: verifying
+  to: review_needed
+  actor: AI
+  reason: 验收项均已覆盖，等待关闭记录。
+- at: '2026-06-11T00:00:00'
+  from: review_needed
+  to: closed
+  actor: AI
+  reason: 研究结论已写入验证结果和关闭证据。
 closed_at: '2026-06-11T00:00:00'
 closure_evidence: |
   ## 验证结果
@@ -97,3 +98,4 @@ closure_evidence: |
   ## 结论
 
   本 Task 只产出研究结论，不直接修改 04.03、04.06、11.01 或 Code 校验。后续应通过独立 Task 把组合能力拆分规则写入规范和校验，且不得把 Trae Skill-only 标为 Hook 等价或原生承接。
+taskplan: taskplan-0067

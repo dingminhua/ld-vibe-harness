@@ -6,7 +6,7 @@
 > 执行效力：无；稳定结论需进入正式 specs、Skill、Task、ADR、Code、Web 或测试后才具备对应效力
 > 来源：2026-06-11 关于 41、42、Skill、Task 字段变更联动、tools / web 同步、bootstrap 依赖和 00 价值判断的讨论
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/06-工作流程基础规范.md`
-> 相关文档：`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`、`docs/specs/04-规范落地与环境适配基础规范.md`、`docs/specs/04.06-环境能力清单规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/26-Task-任务.md`
+> 相关文档：`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`、`docs/specs/04-规范落地与环境适配基础规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/26-Task-任务.md`
 
 ---
 

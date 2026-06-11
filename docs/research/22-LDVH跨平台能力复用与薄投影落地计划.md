@@ -6,7 +6,7 @@
 > 执行效力：无；稳定结论需进入正式 specs、ADR、Task、Code、Web、测试、运行投影或最佳实践后才具备对应效力
 > 来源：`docs/refs/09-ECC跨环境同功能复用机制任务参考.md`、`docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md`、2026-06-11 关于 Trae Work CN / Codex App / Claude Code CLI 三环境复用范围的讨论
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力清单与投射规范.md`、`docs/specs/04.06-环境能力清单规范.md`、`docs/specs/04.07-Trae-Solo适配清单.md`、`docs/specs/04.08-Codex适配清单.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
+> 相关规范：`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
 
 ---
 
@@ -35,8 +35,8 @@
 
 | 环境 | 本轮定位 | 当前材料 |
 |---|---|---|
-| Trae Work CN | 当前主执行环境和优先试点环境 | 既有 `docs/specs/04.07-Trae-Solo适配清单.md`，后续吸收到 04.06 三环境承接矩阵 |
-| Codex App | App / AGENTS / approval 对照环境 | 既有 `docs/specs/04.08-Codex适配清单.md`，后续吸收到 04.06 三环境承接矩阵 |
+| Trae Work CN | 当前主执行环境和优先试点环境 | 既有 `docs/specs/04.03-环境能力清单与环境适配规范.md`，后续吸收到 04.06 三环境承接矩阵 |
+| Codex App | App / AGENTS / approval 对照环境 | 既有 `docs/specs/04.03-环境能力清单与环境适配规范.md`，后续吸收到 04.06 三环境承接矩阵 |
 | Claude Code CLI | 第三个跨环境验证环境 | 后续吸收现有 refs 后直接进入 04.06 三环境承接矩阵，不再新增独立 04.09 清单 |
 
 选择这三个平台的原因是：
@@ -303,9 +303,9 @@ P3 子项：
 
 | 落地对象 | 目标位置 | 落地内容 |
 |---|---|---|
-| 三环境承接矩阵 | `docs/specs/04.06-环境能力清单规范.md` | 承接类型、Trae Work CN / Codex App / Claude Code CLI 对比矩阵、承接检查、风险说明、来源和承接降级字段 |
-| Trae 既有材料 | `docs/specs/04.07-Trae-Solo适配清单.md` | 作为迁移输入吸收到 04.06，迁移后标记为历史参考、待合并或删除候选 |
-| Codex 既有材料 | `docs/specs/04.08-Codex适配清单.md` | 作为迁移输入吸收到 04.06，迁移后标记为历史参考、待合并或删除候选 |
+| 三环境承接矩阵 | `docs/specs/04.03-环境能力清单与环境适配规范.md` | 承接类型、Trae Work CN / Codex App / Claude Code CLI 对比矩阵、承接检查、风险说明、来源和承接降级字段 |
+| Trae 既有材料 | `docs/specs/04.03-环境能力清单与环境适配规范.md` | 作为迁移输入吸收到 04.06，迁移后标记为历史参考、待合并或删除候选 |
+| Codex 既有材料 | `docs/specs/04.03-环境能力清单与环境适配规范.md` | 作为迁移输入吸收到 04.06，迁移后标记为历史参考、待合并或删除候选 |
 | Claude Code CLI 材料 | 后续 refs 调研与 04.06 矩阵列 | Claude Code CLI refs、薄入口、commands / hooks / MCP / permission 承接方式，不新增独立 04.09 清单 |
 | 42 检查 | `docs/specs/42-ldvh-landing-check-LDVH落地与检查.md` 和对应 Code | 检查环境承接声明无承接检查、入口复制正文、承接项误标原生承接、缺少承接降级说明等漂移 |
 | landing-plan | `tools/specs_validate.py landing-plan` 或后续 `ldvh landing plan` | 输出 platform_capabilities、degradations、proposed_actions 和 verification_commands |

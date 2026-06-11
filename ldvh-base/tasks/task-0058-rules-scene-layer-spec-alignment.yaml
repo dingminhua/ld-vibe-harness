@@ -8,8 +8,7 @@ description: |
   根据 task-0048 的评估结论，先修改 LDVH 相关正式规范文件，使规则体系口径从“工作区规则 → 项目规则 → 场景规则”调整为“工作区规则 + 项目规则 + specs 原文”。
 
   本任务只修改 specs 正式规范，不直接删除或修改 .trae/rules/ 实体文件。后续 Rules 实体调整应在规范口径统一后另行执行。
-source: intent-0008
-source_intent: intent-0008
+source: workarea-0008
 acceptance: |
   - [x] 05-Trae-Solo环境规范.md 已取消将场景规则作为 LDVH 默认规则层的表述
   - [x] 02/07/09/12 中对工作区场景规则或 ldvh-fact-model-rules.md 的旧口径已同步调整
@@ -27,20 +26,20 @@ verification: |
   验证通过。
 blocked_by: []
 related_docs:
-  - docs/specs/04.07-Trae-Solo适配清单.md
-  - docs/specs/02-术语规范.md
-  - docs/specs/05-工作模型基础规范.md
-  - docs/specs/04.04-LDVH落地特别要求规范.md
-  - docs/specs/05.01-工作字段内容格式规范.md
-  - docs/specs/44-multi-role-thinking-多角色思考.md
-  - ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
+- docs/specs/04.03-环境能力清单与环境适配规范.md
+- docs/specs/02-术语规范.md
+- docs/specs/05-工作模型基础规范.md
+- docs/specs/04.02-LDVH能力保障规范.md
+- docs/specs/05.01-工作字段内容格式规范.md
+- docs/specs/44-multi-role-thinking-多角色思考.md
+- ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
 affected_docs:
-  - docs/specs/04.07-Trae-Solo适配清单.md
-  - docs/specs/02-术语规范.md
-  - docs/specs/05-工作模型基础规范.md
-  - docs/specs/04.04-LDVH落地特别要求规范.md
-  - docs/specs/05.01-工作字段内容格式规范.md
-  - docs/specs/44-multi-role-thinking-多角色思考.md
+- docs/specs/04.03-环境能力清单与环境适配规范.md
+- docs/specs/02-术语规范.md
+- docs/specs/05-工作模型基础规范.md
+- docs/specs/04.02-LDVH能力保障规范.md
+- docs/specs/05.01-工作字段内容格式规范.md
+- docs/specs/44-multi-role-thinking-多角色思考.md
 deliverables: []
 closure_evidence: |
   ## 验证结果
@@ -72,4 +71,4 @@ closure_evidence: |
 
   本轮已完成“先修改相关规范文件”的目标：正式 specs 口径已经从默认三层规则结构收敛为“工作区规则 + 项目规则 + specs 原文”，场景规则仅作为非默认例外机制。后续可另起任务修改 .trae/rules 实体并删除或迁移 ldvh-fact-model-rules.md。
 related_adrs: []
-sub_tasks: []
+taskplan: taskplan-0058

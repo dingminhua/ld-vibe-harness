@@ -12,5 +12,5 @@ priority: medium
 related_tasks: []
 related_adrs: []
 related_docs:
-- docs/specs/04.07-Trae-Solo适配清单.md
+- docs/specs/04.03-环境能力清单与环境适配规范.md
 - docs/specs/06-工作流程基础规范.md

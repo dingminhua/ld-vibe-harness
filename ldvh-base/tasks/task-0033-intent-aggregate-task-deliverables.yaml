@@ -10,8 +10,7 @@ description: |
   实现方式为数据聚合：后端根据 Intent 的 related_tasks 逐个查询 Task 详情，提取每个 Task 的 deliverables 和 related_docs，合并去重后返回前端；前端在 Intent 详情页新增"关联产出"和"关联文档"聚合区域，复用现有的 ReferenceList 和 RelatedDocsList 组件渲染。
 
   前置依赖：task-0032（Task 对象新增 deliverables 字段）。
-source_intent: intent-0006
-source: intent-0006
+source: workarea-0006
 acceptance: |
   - [x] 后端 API 返回 Intent 详情时聚合关联 Task 的 deliverables 和 related_docs
   - [x] Intent 详情页新增"关联产出"聚合区域，展示所有关联 Task 的产出物
@@ -41,3 +40,4 @@ closure_evidence: |
 
   任务完成，人工确认关闭。
 closed_at: '2026-06-05T23:29:43.534154'
+taskplan: taskplan-0032

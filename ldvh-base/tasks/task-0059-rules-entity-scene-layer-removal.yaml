@@ -8,8 +8,7 @@ description: |
   在 task-0048 已确认独立场景规则层不必要、task-0058 已先行调整 specs 口径后，继续按用户最新纠正执行更严格的规则体系收敛：LDVH 不使用场景规则，不保留“例外场景规则”概念。
 
   本任务同步清理 specs 中残留的例外场景规则口径，迁移 .trae/rules 实体中的有效入口摘要与事实实例编辑硬约束到工作区规则和项目规则，并按用户确认删除独立场景规则文件。
-source: intent-0008
-source_intent: intent-0008
+source: workarea-0008
 acceptance: |
   - [x] specs 根目录正式规范不再保留“例外场景规则”或“满足例外条件才同步到场景规则”的口径
   - [x] 工作区规则明确 LDVH 不使用场景规则层，且不再引用 ldvh-fact-model-rules.md 或“按场景规则入口”作为流程
@@ -25,26 +24,26 @@ verification: |
   旧场景规则入口和例外场景规则口径不得残留在正式 specs 根目录、工作区规则或项目规则中。
 blocked_by: []
 related_docs:
-  - ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
-  - ldvh-base/tasks/task-0058-rules-scene-layer-spec-alignment.yaml
-  - docs/specs/01-目录说明.md
-  - docs/specs/02-术语规范.md
-  - docs/specs/03-文档基础规范.md
-  - docs/specs/04.07-Trae-Solo适配清单.md
-  - docs/specs/05-工作模型基础规范.md
-  - docs/specs/04.04-LDVH落地特别要求规范.md
-  - docs/specs/20-工作模型集合索引.md
-  - LDVH-AI-ENTRY.md
+- ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
+- ldvh-base/tasks/task-0058-rules-scene-layer-spec-alignment.yaml
+- docs/specs/01-目录说明.md
+- docs/specs/02-术语规范.md
+- docs/specs/03-文档基础规范.md
+- docs/specs/04.03-环境能力清单与环境适配规范.md
+- docs/specs/05-工作模型基础规范.md
+- docs/specs/04.02-LDVH能力保障规范.md
+- docs/specs/20-工作模型集合索引.md
+- LDVH-AI-ENTRY.md
 affected_docs:
-  - ldvh-base/intents/intent-0008-rules-specs-review.yaml
-  - docs/specs/01-目录说明.md
-  - docs/specs/02-术语规范.md
-  - docs/specs/03-文档基础规范.md
-  - docs/specs/04.07-Trae-Solo适配清单.md
-  - docs/specs/05-工作模型基础规范.md
-  - docs/specs/04.04-LDVH落地特别要求规范.md
-  - docs/specs/20-工作模型集合索引.md
-  - LDVH-AI-ENTRY.md
+- ldvh-base/workareas/workarea-0008-rules-specs-review.yaml
+- docs/specs/01-目录说明.md
+- docs/specs/02-术语规范.md
+- docs/specs/03-文档基础规范.md
+- docs/specs/04.03-环境能力清单与环境适配规范.md
+- docs/specs/05-工作模型基础规范.md
+- docs/specs/04.02-LDVH能力保障规范.md
+- docs/specs/20-工作模型集合索引.md
+- LDVH-AI-ENTRY.md
 deliverables: []
 closure_evidence: |
   ## 验证结果
@@ -77,4 +76,4 @@ closure_evidence: |
 
   独立子 Agent 复验结论：通过。复验范围为 specs 根目录直属正式规范 Markdown、工作区 .trae/rules、LDVH 项目 .trae/rules；确认未发现 ldvh-fact-model-rules.md、ldvh-specs-rules.md 或例外场景规则正向引用。全仓历史任务、research、docs 中的追溯性引用不作为本轮正式规范和运行 Rules 的残留入口。
 related_adrs: []
-sub_tasks: []
+taskplan: taskplan-0059

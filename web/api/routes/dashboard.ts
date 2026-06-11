@@ -11,8 +11,9 @@ import { getTypeColor } from '../services/typeColors.js'
 const router = Router()
 
 /** 判断状态是否为"可推进"（非终态） */
-function isActionableStatus(status: string): boolean {
-  const terminalStatuses = ['closed', 'completed', 'rejected', 'superseded', 'deprecated', 'archived', 'resolved', 'implemented', 'applied', 'cancelled', 'filed']
+function isActionableStatus(type: string, status: string): boolean {
+  if (type === 'workarea' && status === 'active') return false
+  const terminalStatuses = ['closed', 'accepted', 'rejected', 'superseded', 'deprecated', 'archived', 'resolved']
   return !terminalStatuses.includes(status)
 }
 
@@ -33,16 +34,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       getGitLog(10, locale).catch(() => []),
       runPyToolsJson('specs_validate.py', ['landing-plan', '--format', 'json']).catch(() => null),
     ])
-
-    // 聚合 profile（取第一个 profile 对象）
-    let profile = null
-    const profileResult = listResults.find(r => r.type === 'profile')
-    if (profileResult && profileResult.result.ok && 'data' in profileResult.result) {
-      const items = (profileResult.result.data as { items: Array<Record<string, unknown>> }).items
-      if (items && items.length > 0) {
-        profile = items[0]
-      }
-    }
 
     // 聚合统计信息
     const stats = listResults.map(({ type, result }) => {
@@ -79,7 +70,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
     // 待推进项：筛选非终态，按 updated 时间倒序排列
     const actionItems = allItems
-      .filter(item => isActionableStatus(String(item.status || '')))
+      .filter(item => isActionableStatus(String(item.type || ''), String(item.status || '')))
       .sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')))
       .slice(0, 8)
 
@@ -120,7 +111,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     }
 
     res.json({
-      profile,
+      profile: null,
       stats,
       recentItems,
       actionItems,

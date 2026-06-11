@@ -43,16 +43,19 @@ const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
 /** Task 类型字段展示优先顺序 */
 const TASK_FIELD_ORDER = ['acceptance', 'blocked_by', 'related_docs', 'deliverables'];
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
+  workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls'],
+  taskplan: ['workarea', 'description', 'success_criteria', 'source', 'tasks', 'completion_evidence', 'related_docs'],
   task: TASK_FIELD_ORDER,
+  subtask: ['task', 'description', 'source', 'acceptance', 'blocked_by', 'verification', 'closure_evidence'],
   profile: [
     'description', 'project_path', 'ldvh_base_path', 'docs_path',
-    'governance_scope', 'related_intents', 'related_tasks', 'related_adrs',
+    'governance_scope', 'related_workareas', 'related_taskplans', 'related_tasks', 'related_adrs',
     'related_memos', 'related_pitfalls', 'related_docs', 'related_changes',
     'status_history', 'notes',
   ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
-    'avoidance', 'applicability', 'source_tasks', 'source_memos', 'related_intents',
+    'avoidance', 'applicability', 'source_tasks', 'source_memos', 'related_workareas', 'related_taskplans',
     'related_adrs', 'related_profiles', 'related_docs', 'related_rules',
     'related_changes', 'superseded_by', 'archive_reason', 'status_history', 'notes',
   ],
@@ -60,8 +63,10 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
 
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
-  intent: { zh: '意图', en: 'Intent' },
+  workarea: { zh: '工作域', en: 'Work Area' },
+  taskplan: { zh: '任务计划', en: 'Task Plan' },
   task: { zh: '任务', en: 'Task' },
+  subtask: { zh: '子任务', en: 'SubTask' },
   adr: { zh: 'ADR', en: 'ADR' },
   pitfall: { zh: '踩坑', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
@@ -98,19 +103,23 @@ const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   analysis: { zh: '分析', en: 'Analysis' },
   mitigation: { zh: '缓解措施', en: 'Mitigation' },
   resolution: { zh: '解决方案', en: 'Resolution' },
+  workarea: { zh: '工作域', en: 'Work Area' },
+  taskplan: { zh: '任务计划', en: 'Task Plan' },
+  task: { zh: '所属任务', en: 'Task' },
+  tasks: { zh: '任务', en: 'Tasks' },
   blocked_by: { zh: '前置依赖', en: 'Blocked By' },
-  source_intent: { zh: '来源意图', en: 'Source Intent' },
-  parent_task: { zh: '父任务', en: 'Parent Task' },
   closure_evidence: { zh: '关闭证据', en: 'Closure Evidence' },
   completion_evidence: { zh: '完成证据', en: 'Completion Evidence' },
+  review_requested_at: { zh: '请求关闭确认时间', en: 'Review Requested At' },
   transition_reasons: { zh: '流转记录', en: 'Transition Reasons' },
   options: { zh: '选项', en: 'Options' },
   decision: { zh: '决策', en: 'Decision' },
   alternatives: { zh: '替代方案', en: 'Alternatives' },
   related_tasks: { zh: '关联任务', en: 'Related Tasks' },
-  sub_tasks: { zh: '子任务', en: 'Subtasks' },
+  related_subtasks: { zh: '关联子任务', en: 'Related SubTasks' },
+  related_workareas: { zh: '关联工作域', en: 'Related Work Areas' },
+  related_taskplans: { zh: '关联任务计划', en: 'Related Task Plans' },
   related_adrs: { zh: '关联 ADR', en: 'Related ADRs' },
-  related_intents: { zh: '关联意图', en: 'Related Intents' },
   related_memos: { zh: '关联备忘', en: 'Related Memos' },
   related_pitfalls: { zh: '关联踩坑', en: 'Related Pitfalls' },
   related_profiles: { zh: '关联画像', en: 'Related Profiles' },
@@ -244,7 +253,7 @@ export default function ObjectDetail() {
     ? ((obj.title_en as string) || obj.title as string)
     : ((obj.title_zh as string) || obj.title as string)) || objId;
 
-  // 聚合字段（仅 Intent 类型使用）
+  // 聚合字段（仅 TaskPlan 类型使用）
   const aggregatedDeliverables = (obj.aggregated_deliverables as string[]) || [];
   const aggregatedDocs = (obj.aggregated_docs as string[]) || [];
   const hasAggregatedDeliverables = aggregatedDeliverables.length > 0;
@@ -351,7 +360,7 @@ export default function ObjectDetail() {
           </div>
 
           {/* Content fields */}
-          {objType === 'task' ? (
+          {objType === 'task' || objType === 'subtask' ? (
             <TaskReadingLayout obj={obj} locale={locale} objType={objType} />
           ) : (
             <div className="mb-6 flex flex-col gap-5">
@@ -361,8 +370,8 @@ export default function ObjectDetail() {
             </div>
           )}
 
-          {/* 聚合区域 - 仅 Intent 类型显示 */}
-          {objType === 'intent' && (hasAggregatedDeliverables || hasAggregatedDocs) && (
+          {/* 聚合区域 - 仅 TaskPlan 类型显示 */}
+          {objType === 'taskplan' && (hasAggregatedDeliverables || hasAggregatedDocs) && (
             <div className="mb-6 flex flex-col gap-5">
               {hasAggregatedDeliverables && (
                 <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
@@ -433,7 +442,7 @@ function MetaChip({ label, value }: { label: string; value: ReactNode }) {
 
 function TaskReadingLayout({ obj, locale, objType }: { obj: Record<string, unknown>; locale: string; objType: string }) {
   const { t } = useI18n();
-  const hidden = new Set(['source', 'description', 'source_intent', 'acceptance', 'verification', 'closure_evidence', 'deliverables', 'related_docs', 'affected_docs', 'blocked_by', ...TASK_AUXILIARY_META_KEYS, ...COMMON_AUXILIARY_META_KEYS, ...META_KEYS]);
+  const hidden = new Set(['source', 'description', 'taskplan', 'task', 'acceptance', 'verification', 'closure_evidence', 'deliverables', 'related_docs', 'affected_docs', 'blocked_by', ...TASK_AUXILIARY_META_KEYS, ...COMMON_AUXILIARY_META_KEYS, ...META_KEYS]);
   const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && value !== null && value !== undefined && value !== '');
 
   return (
@@ -442,10 +451,16 @@ function TaskReadingLayout({ obj, locale, objType }: { obj: Record<string, unkno
         {obj.description ? <SummaryText value={String(obj.description)} /> : <EmptyHint text={t('objectDetail.noTaskDescription')} />}
         <div className="ldvh-panel-grid mt-4">
           {obj.source && <TaskInlineField label={getFieldLabel('source', locale)} value={<SummaryText value={String(obj.source)} />} />}
-          {obj.source_intent && (
+          {obj.taskplan && (
             <TaskInlineField
-              label={t('objectDetail.sourceIntent')}
-              value={<FieldValue fieldKey="source_intent" value={obj.source_intent} depth={0} locale={locale} />}
+              label={t('objectDetail.taskPlan')}
+              value={<FieldValue fieldKey="taskplan" value={obj.taskplan} depth={0} locale={locale} />}
+            />
+          )}
+          {obj.task && (
+            <TaskInlineField
+              label={getFieldLabel('task', locale)}
+              value={<FieldValue fieldKey="task" value={obj.task} depth={0} locale={locale} />}
             />
           )}
         </div>
@@ -621,7 +636,7 @@ function EmptyHint({ text }: { text: string }) {
 /** 内容字段：根据字段类型选择渲染方式和样式 */
 function ContentField({ fieldKey, value, locale, objType }: { fieldKey: string; value: unknown; locale: string; objType: string }) {
   const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
-  const [collapsed, setCollapsed] = useState(isCollapsible ? objType !== 'intent' : false);
+  const [collapsed, setCollapsed] = useState(isCollapsible ? objType !== 'taskplan' : false);
 
   if (value === null || value === undefined) return null;
   if (value === '') return null;
@@ -688,7 +703,7 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
       return <SummaryText value={value} />;
     }
 
-    // 单字符串引用字段（source_intent、parent_task）使用 ReferenceCard
+    // 单字符串引用字段使用 ReferenceCard
     if (REFERENCE_FIELDS.includes(fieldKey) && parseRefType(value)) {
       return <ReferenceCard refs={[value]} />;
     }

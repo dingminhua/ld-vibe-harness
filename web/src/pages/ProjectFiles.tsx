@@ -291,6 +291,7 @@ export default function ProjectFiles() {
   const [commitEntries, setCommitEntries] = useState<ProjectGitCommitEntry[]>([]);
   const [commitsLoading, setCommitsLoading] = useState(false);
   const [commitsError, setCommitsError] = useState<string | null>(null);
+  const [selectedCommitHash, setSelectedCommitHash] = useState('');
   const [commitPanel, setCommitPanel] = useState<CommitPanelState>({ data: null, loading: false, error: null });
   const [diffPanel, setDiffPanel] = useState<DiffPanelState>({ data: null, loading: false, error: null });
   const [activeTab, setActiveTab] = useState<ActiveProjectFilesTab>('files');
@@ -314,8 +315,7 @@ export default function ProjectFiles() {
     preview: pickCopy(locale, '文件预览', 'File Preview'),
     pending: pickCopy(locale, '待提交文件', 'Pending Files'),
     history: pickCopy(locale, '提交历史', 'Commit History'),
-    commitDetail: pickCopy(locale, '提交详情', 'Commit Detail'),
-    changedFiles: pickCopy(locale, '改动文件', 'Changed Files'),
+    changeDetail: pickCopy(locale, '改动详情', 'Change Detail'),
     selectedCommitFiles: pickCopy(locale, '当前提交改动', 'Selected Commit Changes'),
     diff: pickCopy(locale, '文件差异', 'File Diff'),
     diffMode: pickCopy(locale, '差异显示方式', 'Diff display mode'),
@@ -404,6 +404,7 @@ export default function ProjectFiles() {
     setCurrentDir('');
     setEntries([]);
     setCommitEntries([]);
+    setSelectedCommitHash('');
     setShowHiddenFiles(false);
     setFilePanel({ data: null, loading: false, error: null });
     setCommitPanel({ data: null, loading: false, error: null });
@@ -451,6 +452,7 @@ export default function ProjectFiles() {
 
   const handleOpenCommit = (entry: ProjectGitCommitEntry) => {
     setActiveTab('history');
+    setSelectedCommitHash(entry.hash);
     setCommitPanel({ data: null, loading: true, error: null });
     setDiffPanel({ data: null, loading: false, error: null });
     fetchProjectGitCommitDetail(projectId, entry.hash)
@@ -923,8 +925,9 @@ export default function ProjectFiles() {
               ) : (
                 <div className="space-y-0">
                   {commitEntries.map((entry, index) => {
-                    const isSelected = commitPanel.data?.hash === entry.hash;
-                    const selectedFiles = isSelected ? commitPanel.data?.files ?? [] : [];
+                    const isSelected = selectedCommitHash === entry.hash;
+                    const selectedCommit = isSelected && commitPanel.data?.hash === entry.hash ? commitPanel.data : null;
+                    const selectedFiles = selectedCommit?.files ?? [];
                     return (
                       <div key={entry.hash} className="relative min-w-0 pl-8">
                         {index < commitEntries.length - 1 && (
@@ -969,38 +972,77 @@ export default function ProjectFiles() {
                           </span>
                         </button>
                         {isSelected && (
-                          <div className="mb-2 ml-2 min-w-0 rounded-md border border-ldvh-border/70 bg-ldvh-bg/80 p-2">
-                            <div className="mb-1 flex min-w-0 items-center justify-between gap-2 px-1">
-                              <span className="ldvh-caption-strong text-ldvh-text-secondary">{copy.selectedCommitFiles}</span>
-                              <span className="ldvh-meta-primary">{selectedFiles.length}</span>
-                            </div>
+                          <div className="mb-2 ml-2 min-w-0 space-y-3 rounded-md border border-ldvh-border/70 bg-ldvh-bg/80 p-3">
                             {commitPanel.loading ? (
                               <div className="ldvh-meta px-1 py-2">{copy.loading}</div>
-                            ) : selectedFiles.length === 0 ? (
+                            ) : commitPanel.error ? (
+                              <div className="ldvh-meta px-1 py-2 text-red-300">{commitPanel.error}</div>
+                            ) : !selectedCommit ? (
                               <div className="ldvh-meta px-1 py-2">{copy.chooseCommit}</div>
-                            ) : (
-                              <div className="space-y-1">
-                                {selectedFiles.slice(0, 8).map((file) => (
-                                  <button
-                                    key={`${entry.hash}:graph:${file.status}:${file.path}`}
-                                    type="button"
-                                    onClick={() => handleOpenCommitFileDiff(file)}
-                                    className={`flex w-full min-w-0 items-center gap-2 rounded px-1.5 py-1 text-left transition-colors hover:bg-ldvh-border/30 ${
-                                      diffPanel.data?.hash === entry.hash && diffPanel.data?.path === file.path
-                                        ? 'bg-ldvh-accent/10 text-ldvh-accent'
-                                        : ''
-                                    }`}
-                                  >
-                                    <span className="ldvh-meta-primary w-7 shrink-0 text-center">{file.status}</span>
-                                    <span className="ldvh-meta min-w-0 flex-1 truncate">{file.path}</span>
-                                  </button>
-                                ))}
-                                {selectedFiles.length > 8 && (
-                                  <div className="ldvh-meta px-1.5 py-1">
-                                    {pickCopy(locale, `还有 ${selectedFiles.length - 8} 个文件`, `${selectedFiles.length - 8} more files`)}
+                            ) : selectedFiles.length === 0 ? (
+                              <>
+                                <div className="min-w-0">
+                                  <div className="mb-1 flex min-w-0 items-center justify-between gap-2">
+                                    <span className="ldvh-caption-strong text-ldvh-text-secondary">{copy.changeDetail}</span>
+                                    <span className="ldvh-meta-primary">{selectedCommit.shortHash}</span>
                                   </div>
-                                )}
-                              </div>
+                                  <p className="ldvh-body font-medium text-ldvh-text-primary">{selectedCommit.message.split('\n')[0] || selectedCommit.shortHash}</p>
+                                  <div className="ldvh-meta mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1">
+                                    <span>{selectedCommit.author}</span>
+                                    <span>{formatDateTime(selectedCommit.date)}</span>
+                                    {selectedCommit.refs && <span>{selectedCommit.refs}</span>}
+                                  </div>
+                                </div>
+                                <div className="ldvh-meta px-1 py-2">{copy.chooseCommitFile}</div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="min-w-0">
+                                  <div className="mb-1 flex min-w-0 items-center justify-between gap-2">
+                                    <span className="ldvh-caption-strong text-ldvh-text-secondary">{copy.changeDetail}</span>
+                                    <span className="ldvh-meta-primary">{selectedCommit.shortHash}</span>
+                                  </div>
+                                  <p className="ldvh-body font-medium text-ldvh-text-primary">{selectedCommit.message.split('\n')[0] || selectedCommit.shortHash}</p>
+                                  {selectedCommit.message.split('\n').slice(1).join('\n').trim() && (
+                                    <pre className="ldvh-body-muted mt-2 whitespace-pre-wrap break-words">
+                                      {selectedCommit.message.split('\n').slice(1).join('\n').trim()}
+                                    </pre>
+                                  )}
+                                  <div className="ldvh-meta mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1">
+                                    <span>{selectedCommit.author}</span>
+                                    <span>{formatDateTime(selectedCommit.date)}</span>
+                                    {selectedCommit.refs && <span>{selectedCommit.refs}</span>}
+                                  </div>
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="mb-1 flex min-w-0 items-center justify-between gap-2">
+                                    <span className="ldvh-caption-strong text-ldvh-text-secondary">{copy.selectedCommitFiles}</span>
+                                    <span className="ldvh-meta-primary">{selectedFiles.length}</span>
+                                  </div>
+                                  <div className="max-h-72 space-y-1 overflow-y-auto pr-1">
+                                    {selectedFiles.map((file) => (
+                                      <button
+                                        key={`${entry.hash}:graph:${file.status}:${file.path}`}
+                                        type="button"
+                                        onClick={() => handleOpenCommitFileDiff(file)}
+                                        className={`flex w-full min-w-0 items-center gap-2 rounded px-1.5 py-1 text-left transition-colors hover:bg-ldvh-border/30 ${
+                                          diffPanel.data?.hash === entry.hash && diffPanel.data?.path === file.path
+                                            ? 'bg-ldvh-accent/10 text-ldvh-accent'
+                                            : ''
+                                        }`}
+                                      >
+                                        <span className="ldvh-meta-primary w-7 shrink-0 text-center">{file.status}</span>
+                                        <span className="min-w-0 flex-1">
+                                          <span className="ldvh-card-title block truncate">{getFileName(file.path)}</span>
+                                          <span className="ldvh-meta block truncate">
+                                            {getCommitFileStatusLabel(file.status, locale)} · {file.path}
+                                          </span>
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </>
                             )}
                           </div>
                         )}
@@ -1017,8 +1059,10 @@ export default function ProjectFiles() {
               <div className="flex min-w-0 items-center gap-2">
                 <Diff size={16} className="shrink-0 text-ldvh-accent" />
                 <div className="min-w-0">
-                  <h2 className="ldvh-section-title">{copy.commitDetail}</h2>
-                  {commitPanel.data && <p className="ldvh-meta truncate">{commitPanel.data.hash}</p>}
+                  <h2 className="ldvh-section-title">{copy.diff}</h2>
+                  {diffPanel.data && commitPanel.data && diffPanel.data.hash === commitPanel.data.hash && (
+                    <p className="ldvh-meta truncate">{diffPanel.data.path}</p>
+                  )}
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -1057,136 +1101,74 @@ export default function ProjectFiles() {
                 <CopyPathButton path={diffPanel.data?.absolutePath} />
               </div>
             </div>
-            <div className="min-h-[36rem] min-w-0 space-y-4 p-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+            <div className="min-h-[36rem] min-w-0 p-4 xl:min-h-0 xl:flex-1 xl:overflow-hidden">
               {commitPanel.loading ? (
                 <LoadingState text={copy.loading} />
               ) : commitPanel.error ? (
                 <EmptyState text={commitPanel.error} />
               ) : !commitPanel.data ? (
                 <EmptyState text={copy.chooseCommit} />
+              ) : diffPanel.loading ? (
+                <LoadingState text={copy.loading} />
+              ) : diffPanel.error ? (
+                <EmptyState text={diffPanel.error} />
+              ) : !diffPanel.data || diffPanel.data.hash !== commitPanel.data.hash ? (
+                <EmptyState text={copy.chooseCommitFile} />
+              ) : diffViewMode === 'unified' ? (
+                <pre className="ldvh-meta-primary h-full min-w-0 overflow-auto rounded-md bg-ldvh-bg p-4">
+                  {diffPanel.data.diff.split('\n').map((line, index) => (
+                    <span key={`${index}-${line.slice(0, 12)}`} className={`${getDiffLineClass(line)} block min-w-max whitespace-pre`}>
+                      {line || ' '}
+                    </span>
+                  ))}
+                </pre>
               ) : (
-                <>
-                  <div className="rounded-md border border-ldvh-border bg-ldvh-bg p-3">
-                    <p className="ldvh-body font-medium">{commitPanel.data.message.split('\n')[0] || commitPanel.data.shortHash}</p>
-                    {commitPanel.data.message.split('\n').slice(1).join('\n').trim() && (
-                      <pre className="ldvh-body-muted mt-2 whitespace-pre-wrap">{commitPanel.data.message.split('\n').slice(1).join('\n').trim()}</pre>
-                    )}
-                    <div className="ldvh-meta mt-3 flex min-w-0 flex-wrap gap-x-3 gap-y-1">
-                      <span>{commitPanel.data.shortHash}</span>
-                      <span>{commitPanel.data.author}</span>
-                      <span>{formatDateTime(commitPanel.data.date)}</span>
-                      {commitPanel.data.refs && <span>{commitPanel.data.refs}</span>}
+                <div className="h-full min-w-0 overflow-y-auto overflow-x-hidden rounded-md bg-ldvh-bg">
+                  <div className="min-w-0">
+                    <div className="ldvh-meta sticky top-0 z-10 grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border bg-ldvh-panel/95 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]">
+                      <div className="border-r border-ldvh-border px-2 py-2 text-right">-</div>
+                      <div className="border-r border-ldvh-border px-3 py-2">{pickCopy(locale, '旧内容', 'Before')}</div>
+                      <div className="border-r border-ldvh-border px-2 py-2 text-right">+</div>
+                      <div className="px-3 py-2">{pickCopy(locale, '新内容', 'After')}</div>
                     </div>
-                  </div>
+                    <div className="ldvh-meta-primary">
+                      {splitDiffRows.map((row, index) => {
+                        if (row.kind !== 'line') {
+                          return (
+                            <div
+                              key={`${row.kind}-${index}-${row.text.slice(0, 12)}`}
+                              className={`whitespace-pre-wrap break-words border-b border-ldvh-border/40 px-3 py-1 ${
+                                row.kind === 'hunk' ? 'bg-ldvh-accent/10 text-ldvh-accent' : 'text-sky-300'
+                              }`}
+                            >
+                              {row.text || ' '}
+                            </div>
+                          );
+                        }
 
-                  <div className="rounded-md border border-ldvh-border bg-ldvh-bg">
-                    <div className="flex items-center justify-between gap-3 border-b border-ldvh-border px-3 py-2">
-                      <h3 className="ldvh-section-title">{copy.changedFiles}</h3>
-                      <span className="ldvh-meta-primary">{commitPanel.data.files.length}</span>
-                    </div>
-                    <div className="max-h-52 overflow-y-auto p-2">
-                      {commitPanel.data.files.map((file) => (
-                        <div
-                          key={`${commitPanel.data?.hash}:${file.status}:${file.path}`}
-                          className={`group flex w-full min-w-0 items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/30 ${
-                            diffPanel.data?.hash === commitPanel.data?.hash && diffPanel.data?.path === file.path ? 'bg-ldvh-accent/10 text-ldvh-accent' : ''
-                          }`}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => handleOpenCommitFileDiff(file)}
-                            className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        return (
+                          <div
+                            key={`line-${index}-${row.oldCell.lineNumber ?? 'x'}-${row.newCell.lineNumber ?? 'x'}`}
+                            className="grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border/20 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]"
                           >
-                            <span className="ldvh-meta-primary w-8 shrink-0 rounded bg-ldvh-panel px-1.5 py-0.5 text-center">
-                              {file.status}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="ldvh-card-title block truncate transition-colors group-hover:text-ldvh-accent">
-                                {getFileName(file.path)}
-                              </span>
-                              <span className="ldvh-meta block truncate">
-                                {getCommitFileStatusLabel(file.status, locale)} · {file.path}
-                              </span>
-                            </span>
-                          </button>
-                          <CopyPathButton path={file.absolutePath} />
-                        </div>
-                      ))}
+                            <div className="border-r border-ldvh-border/40 px-2 py-1 text-right text-ldvh-text-secondary">
+                              {row.oldCell.lineNumber ?? ''}
+                            </div>
+                            <div className={`${getSplitDiffCellClass(row.oldCell)} border-r border-ldvh-border/40 px-3 py-1`}>
+                              <span className="block whitespace-pre-wrap break-words">{row.oldCell.text ?? ' '}</span>
+                            </div>
+                            <div className="border-r border-ldvh-border/40 px-2 py-1 text-right text-ldvh-text-secondary">
+                              {row.newCell.lineNumber ?? ''}
+                            </div>
+                            <div className={`${getSplitDiffCellClass(row.newCell)} px-3 py-1`}>
+                              <span className="block whitespace-pre-wrap break-words">{row.newCell.text ?? ' '}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-
-                  <div className="min-h-[28rem] min-w-0">
-                    {diffPanel.data?.hash === commitPanel.data.hash && (
-                      <div className="mb-2 flex min-w-0 items-center gap-2">
-                        <Diff size={14} className="shrink-0 text-ldvh-accent" />
-                        <h3 className="ldvh-section-title shrink-0">{copy.diff}</h3>
-                        <p className="ldvh-meta min-w-0 truncate">{diffPanel.data.path}</p>
-                      </div>
-                    )}
-                    {diffPanel.loading ? (
-                      <LoadingState text={copy.loading} />
-                    ) : diffPanel.error ? (
-                      <EmptyState text={diffPanel.error} />
-                    ) : !diffPanel.data || diffPanel.data.hash !== commitPanel.data.hash ? (
-                      <EmptyState text={copy.chooseCommitFile} />
-                    ) : diffViewMode === 'unified' ? (
-                      <pre className="ldvh-meta-primary max-h-[44rem] min-w-0 overflow-auto rounded-md bg-ldvh-bg p-4">
-                        {diffPanel.data.diff.split('\n').map((line, index) => (
-                          <span key={`${index}-${line.slice(0, 12)}`} className={`${getDiffLineClass(line)} block min-w-max whitespace-pre`}>
-                            {line || ' '}
-                          </span>
-                        ))}
-                      </pre>
-                    ) : (
-                      <div className="max-h-[44rem] min-w-0 overflow-y-auto overflow-x-hidden rounded-md bg-ldvh-bg">
-                        <div className="min-w-0">
-                          <div className="ldvh-meta sticky top-0 z-10 grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border bg-ldvh-panel/95 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]">
-                            <div className="border-r border-ldvh-border px-2 py-2 text-right">-</div>
-                            <div className="border-r border-ldvh-border px-3 py-2">{pickCopy(locale, '旧内容', 'Before')}</div>
-                            <div className="border-r border-ldvh-border px-2 py-2 text-right">+</div>
-                            <div className="px-3 py-2">{pickCopy(locale, '新内容', 'After')}</div>
-                          </div>
-                          <div className="ldvh-meta-primary">
-                            {splitDiffRows.map((row, index) => {
-                              if (row.kind !== 'line') {
-                                return (
-                                  <div
-                                    key={`${row.kind}-${index}-${row.text.slice(0, 12)}`}
-                                    className={`whitespace-pre-wrap break-words border-b border-ldvh-border/40 px-3 py-1 ${
-                                      row.kind === 'hunk' ? 'bg-ldvh-accent/10 text-ldvh-accent' : 'text-sky-300'
-                                    }`}
-                                  >
-                                    {row.text || ' '}
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <div
-                                  key={`line-${index}-${row.oldCell.lineNumber ?? 'x'}-${row.newCell.lineNumber ?? 'x'}`}
-                                  className="grid grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] border-b border-ldvh-border/20 sm:grid-cols-[4rem_minmax(0,1fr)_4rem_minmax(0,1fr)]"
-                                >
-                                  <div className="border-r border-ldvh-border/40 px-2 py-1 text-right text-ldvh-text-secondary">
-                                    {row.oldCell.lineNumber ?? ''}
-                                  </div>
-                                  <div className={`${getSplitDiffCellClass(row.oldCell)} border-r border-ldvh-border/40 px-3 py-1`}>
-                                    <span className="block whitespace-pre-wrap break-words">{row.oldCell.text ?? ' '}</span>
-                                  </div>
-                                  <div className="border-r border-ldvh-border/40 px-2 py-1 text-right text-ldvh-text-secondary">
-                                    {row.newCell.lineNumber ?? ''}
-                                  </div>
-                                  <div className={`${getSplitDiffCellClass(row.newCell)} px-3 py-1`}>
-                                    <span className="block whitespace-pre-wrap break-words">{row.newCell.text ?? ' '}</span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </>
+                </div>
               )}
             </div>
           </section>

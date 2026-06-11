@@ -7,7 +7,7 @@
 > 来源仓库：`https://github.com/affaan-m/ECC`
 > 本地副本：`/Users/dmh2002/poker_hud_projects/临时参考/ecc/ECC`
 > 参考基线：下载时 HEAD 为 `10c303e609a6769c565de9cc7ec288b7afdefb6c`
-> 相关 LDVH 规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
+> 相关 LDVH 规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
 
 ---
 
@@ -102,7 +102,7 @@ ECC 最值得 LDVH 借鉴的结构之一，是 `manifests/` 下的三层安装�
 
 ECC 的 `install-modules.json` 中，一个 module 会声明真实路径、目标平台、依赖、默认安装、成本和稳定性。这比单纯“复制某个目录”更适合治理，因为它让安装行为成为可解释、可 dry-run、可验证的结构化计划。
 
-LDVH 目前已经在 `docs/specs/04.02-环境适配与运行投影规范.md` 中定义了“正式规范 → 规范落地要求 → 保障机制 → 环境适配映射 → 运行投影 → 漂移检查与事实源回写”的链路。ECC 的 manifest 三层结构可作为 LDVH 未来把这条链路 Code 化的参考模型。
+LDVH 目前已经在 `docs/specs/04.02-LDVH能力保障规范.md` 中定义了“正式规范 → 规范落地要求 → 保障机制 → 环境适配映射 → 运行投影 → 漂移检查与事实源回写”的链路。ECC 的 manifest 三层结构可作为 LDVH 未来把这条链路 Code 化的参考模型。
 
 ---
 

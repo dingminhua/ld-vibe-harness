@@ -1,0 +1,26 @@
+id: taskplan-0032
+type: taskplan
+title: Task 对象新增产出字段 等 2 个关联任务
+status: closed
+created: '2026-06-05T18:22:37.530515'
+updated: '2026-06-05T23:23:13.144445'
+workarea: workarea-0007
+description: 由历史 Task task-0032 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: |-
+  - [x] 关联任务 task-0032 满足其 acceptance、verification 和 closure_evidence。
+  - [x] 关联任务 task-0033 满足其 acceptance、verification 和 closure_evidence。
+source: '历史 Task task-0032 迁移生成；旧 source_intent: intent-0007'
+tasks:
+- task-0032
+- task-0033
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-05T23:23:13.144451'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0032: specs/27 已有 deliverables 定义，fact_cli.py 新增 --deliverables 参数和骨架默认值，
+  - task-0033: 后端 objects.ts GET /:type/:id 路由在 type=intent 时聚合 related_tasks 中每个 task 的 deliverables 和 related_docs，使用 Set 去重，返回 aggregated_deliverables 和 aggregated_docs。
+closed_at: '2026-06-05T23:23:13.144451'

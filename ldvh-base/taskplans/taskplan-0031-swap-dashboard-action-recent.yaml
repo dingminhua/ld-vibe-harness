@@ -1,0 +1,22 @@
+id: taskplan-0031
+type: taskplan
+title: 仪表盘待推进与最近活动位置互换
+status: closed
+created: '2026-06-05T18:11:55.653424'
+updated: '2026-06-05T23:22:44.272302'
+workarea: workarea-0006
+description: 由历史 Task task-0031 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0031 满足其 acceptance、verification 和 closure_evidence。'
+source: '历史 Task task-0031 迁移生成；旧 source_intent: intent-0006'
+tasks:
+- task-0031
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-05T23:22:44.272308'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0031: Dashboard.tsx 布局调整为：第一行待推进+最近变更，第二行最近活动+校验状态。
+closed_at: '2026-06-05T23:22:44.272308'

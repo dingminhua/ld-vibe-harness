@@ -44,7 +44,7 @@ source_objects:
 - task-0004
 - task-0005
 related_objects:
-- intent-0003
+- workarea-0003
 related_rules:
 - docs/specs/26-Task-任务.md
 tags:

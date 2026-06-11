@@ -4,7 +4,7 @@
 > 定位：定义 Pitfall / 踩坑工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要沉淀已解决、已验证且具有复用价值的踩坑经验的项目
 > 上位依据：`docs/specs/05-工作模型基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/22-Change-变更.md`、`docs/specs/24-Intent-意图.md`、`docs/specs/25-Memo-备忘.md`、`docs/specs/26-Task-任务.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/22-Change-变更.md`、`docs/specs/24-WorkArea-工作域.md`、`docs/specs/27-TaskPlan-任务计划.md`、`docs/specs/25-Memo-备忘.md`、`docs/specs/26-Task-任务.md`
 
 ---
 ## 1. 对象定位与准入条件
@@ -19,7 +19,7 @@ Pitfall 的目标是让 AI 和 Human 在后续执行中提前识别同类陷阱�
 
 1. 问题已经解决，且解决方式已验证；
 2. 问题具有反直觉性，AI 或 Human 后续容易重复误判；
-3. 问题跨 Task、Intent、项目阶段或管辖项目具有复用价值；
+3. 问题跨 WorkArea、TaskPlan、Task、项目阶段或管辖项目具有复用价值；
 4. 问题暴露了事实源读取、字段契约、Code 使用、Web 派生视图、环境适配、运行投影或工作流程中的稳定陷阱；
 5. 同类问题已经出现多次，需要形成规避策略；
 6. 问题可作为后续规范、Rules / Instructions、Skill、Agent、Code、Web、ADR 或工作流程改进的输入。
@@ -118,11 +118,11 @@ Memo 中保留的发现、提醒、复盘线索或问题线索满足 Pitfall 准
 
 Memo 的准入、状态和字段契约由 `docs/specs/25-Memo-备忘.md` 定义。
 
-### 4.3 Pitfall 与 Intent
+### 4.3 Pitfall 与 WorkArea / TaskPlan
 
-Intent 可以通过 `related_pitfalls` 引用目标执行过程中形成或需要参考的踩坑经验。Pitfall 可通过 `related_intents` 记录关联 Intent。
+工作域和任务计划可以通过 `related_pitfalls` 引用执行过程中形成或需要参考的踩坑经验。Pitfall 可通过 `related_workareas` 记录关联工作域，通过 `related_taskplans` 记录关联任务计划。
 
-Intent 的准入、状态和字段契约由 `docs/specs/24-Intent-意图.md` 定义。Pitfall 不替代 Intent 的目标、约束、成功标准或完成判断。
+WorkArea 的准入、状态和字段契约由 `docs/specs/24-WorkArea-工作域.md` 定义；TaskPlan 的准入、状态和字段契约由 `docs/specs/27-TaskPlan-任务计划.md` 定义。Pitfall 不替代 WorkArea 的长期范围，也不替代 TaskPlan 的目标、成功标准、任务序列或关闭判断。
 
 ### 4.4 Pitfall 与 ADR
 
@@ -192,7 +192,8 @@ Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影�
 | `tags` | 标签列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `source_tasks` | 来源 Task ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `source_memos` | 来源 Memo ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_intents` | 关联 Intent ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workareas` | 关联 WorkArea ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_taskplans` | 关联 TaskPlan ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联 ADR ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_changes` | 关联 Change commit 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -236,7 +237,8 @@ tags:
   - fact-source
 source_tasks: []
 source_memos: []
-related_intents: []
+related_workareas: []
+related_taskplans: []
 related_adrs: []
 related_changes: []
 related_docs:
@@ -273,7 +275,7 @@ notes:
 
 Pitfall 实例文件命名规则为 `pitfall-{NNNN}-short-title.yaml`。编号从 `0001` 起递增，固定 4 位；英文短标题使用小写短横线命名；文件存放位置为 `ldvh-base/pitfalls/`。
 
-文件名变化必须同步检查引用该 Pitfall 的 Intent、Task、Memo、ADR、Change、Web 派生视图和 Code 聚合结果。
+文件名变化必须同步检查引用该 Pitfall 的 WorkArea、TaskPlan、Task、Memo、ADR、Change、Web 派生视图和 Code 聚合结果。
 
 ---
 ## 7. 事实源回写与证据留存

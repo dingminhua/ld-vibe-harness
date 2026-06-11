@@ -6,8 +6,7 @@ created: '2026-06-05T17:19:47.322096'
 updated: '2026-06-05T21:05:05.791024'
 description: |
   关联 web/docs/ 下已有的 Web 设计规划文档，作为后续 Web 展现工作的设计依据。文档已覆盖全局设计约束、各页面设计规范等内容。
-source_intent: intent-0006
-source: intent-0006
+source: workarea-0006
 acceptance: |
   - [x] 设计规划文档已存在于 web/docs/ 目录
   - [x] 文档覆盖全局设计约束和页面结构
@@ -56,3 +55,4 @@ deliverables:
 - web/docs/05-Validate.md
 - web/docs/06-Changelog.md
 closed_at: '2026-06-05T21:05:05.791030'
+taskplan: taskplan-0025

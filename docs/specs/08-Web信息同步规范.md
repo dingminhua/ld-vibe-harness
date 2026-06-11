@@ -168,7 +168,7 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 
 ### 8.2 Web 事实源写入白名单
 
-当前唯一允许 Web 直接写入 Git 文件事实源的能力是 Memo 快速创建。除下表外，Web 对 Intent、Task、ADR、Pitfall、Profile、Change、docs/specs、Rules、Skill、Agent、Code 和其它 Git 文件事实源均只能读取、展示、筛选、复制路径或提供跳转，不得修改字段、状态、关系、内容或文件。
+当前唯一允许 Web 直接写入 Git 文件事实源的能力是 Memo 快速创建。除下表外，Web 对 WorkArea、TaskPlan、Task、SubTask、ADR、Pitfall、Profile、Change、docs/specs、Rules、Skill、Agent、Code 和其它 Git 文件事实源均只能读取、展示、筛选、复制路径或提供跳转，不得修改字段、状态、关系、内容或文件。
 
 | 能力 | API | 写入目标 | 允许字段 | 约束 |
 |---|---|---|---|---|
@@ -177,9 +177,9 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 白名单规则如下：
 
 1. Web 不得提供对象字段通用 `PATCH`、`PUT`、`DELETE` 或任意 YAML 写回接口；
-2. Task 的 `status`、`source_intent`、`acceptance`、`verification`、`closure_evidence`、`deliverables` 等字段在 Web 中均为只读展示；
-3. Intent、ADR、Pitfall、Profile 和 Change 在 Web 中均为只读展示；
-4. Memo 快速创建只用于捕获尚未任务化但值得保留的信息，不得用来绕过 Task、ADR、Intent 或 Pitfall 的准入规则；
+2. Task 的 `status`、`taskplan`、`acceptance`、`verification`、`closure_evidence`、`deliverables` 等字段在 Web 中均为只读展示；
+3. WorkArea、TaskPlan、SubTask、ADR、Pitfall、Profile 和 Change 在 Web 中均为只读展示；
+4. Memo 快速创建只用于捕获尚未任务化但值得保留的信息，不得用来绕过 WorkArea、TaskPlan、Task、ADR 或 Pitfall 的准入规则；
 5. 未来如需新增 Web 写入能力，必须先修改本文白名单和对应对象规范，补齐校验、测试、Human Gate 影响评估和降级路径，再实现代码。
 
 ---
@@ -312,9 +312,9 @@ Web 相关规格变更后，AI 应检查：
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 服务对象分工要求 | LDVH 整体以 AI 执行者为第一服务对象；Web 的直接服务对象是 Human，Web 信息架构和交互必须服务人的理解、判断、确认、验收和方向校正需求 | 00 总纲、06 工作流程、07 Code、09 事实源边界、Human Gate | 设计治理 | Web 信息架构、页面优先级、导航、确认入口或白名单写入体验变化时 |
+| Human 交互要求 | LDVH 整体以 AI 执行者为第一服务对象；Web 的直接服务对象是 Human，Web 信息架构和交互必须服务人的理解、判断、确认、验收和方向校正需求 | 00 总纲、06 工作流程、07 Code、09 事实源边界、Human Gate | 设计治理 | Web 信息架构、页面优先级、导航、确认入口或白名单写入体验变化时 |
 | 上位约束承接要求 | Web 只能承接 Human-facing 信息同步、确认、验收和白名单内受控轻写入，不得替代事实源或规范正文 | 09 事实源边界、07 Code、工作模型与工作流程规范、Human Gate | Web 治理 | Web 边界、信息同步、缓存数据库或 Web 写入规则变化时 |
-| Code 单一实现要求 | Web 获取事实源和派生数据必须通过 Code 入口或后端薄封装，不得与 Code 创造第二套事实源读取、解析、校验或聚合代码 | 07 Code、09 事实源边界、Code 输出合同、Web API 薄封装 | 实现承接 | Web 新增或修改事实源读取、对象展示、校验展示、聚合统计、状态派生或白名单写入入口时 |
+| 确定性执行要求 | Web 获取事实源和派生数据必须通过 Code 入口或后端薄封装，不得与 Code 创造第二套事实源读取、解析、校验或聚合代码 | 07 Code、09 事实源边界、Code 输出合同、Web API 薄封装 | 实现承接 | Web 新增或修改事实源读取、对象展示、校验展示、聚合统计、状态派生或白名单写入入口时 |
 | 确定性执行要求 | Web 消费的事实源解析、校验、聚合和受控写入应由 Code 或后端确定性逻辑提供 | `docs/specs/07-Code实现规范.md`、测试或等价验证、输出契约 | 实现承接 | Web 消费 Code 输出、展示工具诊断或触发受控写入时 |
 | Human 交互要求 | Human Gate UI 应清楚展示确认对象、影响范围、风险和用户选择，并能承接 06 §6.3.1 的最小证据结构 | Web / Human 入口、Human Gate、受控写入链路 | Human 协同 | Human Gate UI、确认流程、白名单写入入口或验收入口变化时 |
 | 生命周期触发要求 | Web 页面、API、缓存、写入白名单或 Code 输出消费变化后，应检查 Web 测试和文档是否同步 | Web 测试、Code 回归、文档联动检查 | 触发保障 | Web 页面、API、状态呈现、写入白名单或 Code 输出消费变化时 |

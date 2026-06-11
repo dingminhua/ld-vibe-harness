@@ -6,8 +6,7 @@ created: '2026-06-05T18:11:55.653424'
 updated: '2026-06-05T23:22:44.272302'
 description: |
   将 Dashboard 页面中"待推进"和"最近活动"两个区域的位置互换，使最近活动显示在待推进上方，优先展示动态信息。
-source_intent: intent-0006
-source: intent-0006
+source: workarea-0006
 acceptance: |
   - [x] Dashboard 页面待推进区域位于最近活动区域上方
   - [x] 两个区域内容和功能不受影响
@@ -32,3 +31,4 @@ closure_evidence: |
 
   任务完成，人工确认关闭。
 closed_at: '2026-06-05T23:22:44.272308'
+taskplan: taskplan-0031

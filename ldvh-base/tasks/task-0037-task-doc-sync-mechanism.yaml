@@ -19,8 +19,7 @@ description: |
   - 区分 related_docs（任务参考的输入文档）和 affected_docs（任务影响的输出文档）
   - Task 关闭时校验 affected_docs 是否已更新
   - 文档中可标注变更来源（如 updated-by: task-0036）
-source_intent: intent-0007
-source: intent-0007
+source: workarea-0007
 acceptance: |
   - [x] 明确 Task 关闭流程中文档同步的规范要求
   - [x] Task acceptance 模板增加"相关文档已同步"检查项
@@ -31,3 +30,4 @@ blocked_by: []
 affected_docs:
 - docs/specs/26-Task-任务.md
 deliverables: []
+taskplan: taskplan-0037

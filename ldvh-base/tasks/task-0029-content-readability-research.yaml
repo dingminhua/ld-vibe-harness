@@ -6,8 +6,7 @@ created: '2026-06-05T18:06:38.418387'
 updated: '2026-06-05T23:20:48.731279'
 description: |
   深度思考 Web 展示中各章节内容的阅读体验问题。当前很多字段内容是整段纯文本，缺乏结构化呈现，不利于快速获取关键信息。研究如何解析和渲染长文本内容，使其更方便阅读，例如：分段、折叠、摘要/详情、结构化卡片、关键信息提取等方案。
-source_intent: intent-0006
-source: intent-0006
+source: workarea-0006
 acceptance: |
   - [x] 完成内容可读性问题分析，识别当前各字段内容呈现的痛点
   - [x] 提出至少 3 种改善方案并对比优劣
@@ -37,3 +36,4 @@ closure_evidence: |
 deliverables:
 - web/docs/07-内容可读性深度研究.md
 closed_at: '2026-06-05T23:20:48.731286'
+taskplan: taskplan-0029

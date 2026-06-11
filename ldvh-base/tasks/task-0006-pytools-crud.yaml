@@ -18,10 +18,7 @@ description: |
   2. 命令封装多文件写入（如 ADR YAML + Change YAML）为原子操作
   3. 命令消费 Contract 子文档做字段校验和状态机校验
   4. Skill 流程中调用 PyTools 命令替代直接写 YAML
-source_intent: intent-0003
-source: intent-0003
-parent_task: null
-sub_tasks: []
+source: workarea-0003
 acceptance: |
   - [x] tools/ 下有统一的 fact_model_cli.py 或等价入口，支持 create/transition/delete 子命令
   - [x] create 命令对 7 类对象生成符合 Contract 的 YAML 骨架
@@ -58,3 +55,4 @@ closure_evidence: |
 blocked_by: []
 affected_docs:
 - docs/specs/07-Code实现规范.md
+taskplan: taskplan-0006

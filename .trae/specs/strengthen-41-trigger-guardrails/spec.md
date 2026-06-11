@@ -11,7 +11,7 @@
 - 对用户级/系统级入口、Rules / Instructions、Skill、运行投影漂移和 Human Gate 证据建立抽象检查口径，不维护具体实体清单。
 
 ## Impact
-- Affected specs: `docs/specs/41-landing-orchestration-规范落地统筹.md`, `docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`, `docs/specs/04.02-环境适配与运行投影规范.md`, `docs/specs/04.04-LDVH落地特别要求规范.md`, `docs/specs/04.07-Trae-Solo适配清单.md`, `docs/specs/04.08-Codex适配清单.md`, `docs/specs/07-Code实现规范.md`, `docs/specs/10-运行闭环测试规范.md`, `LDVH-AI-ENTRY.md`
+- Affected specs: `docs/specs/41-landing-orchestration-规范落地统筹.md`, `docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`, `docs/specs/04.02-LDVH能力保障规范.md`, `docs/specs/04.02-LDVH能力保障规范.md`, `docs/specs/04.03-环境能力清单与环境适配规范.md`, `docs/specs/04.03-环境能力清单与环境适配规范.md`, `docs/specs/07-Code实现规范.md`, `docs/specs/10-运行闭环测试规范.md`, `LDVH-AI-ENTRY.md`
 - Affected code: `tools/specs_validate.py`, related tests or command-line validation paths if present
 
 ## ADDED Requirements

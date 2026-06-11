@@ -21,8 +21,8 @@
 页面标题：仪表盘
 态势摘要行（如：1 个任务执行中，6 个待审查，1 个计划中）
 可选校验错误横幅
-Profile 卡片（如存在） + LDVH 落地引导卡片
-对象统计网格（intent/task/adr/pitfall/memo/profile）
+LDVH 落地引导卡片
+对象统计网格（workarea/taskplan/task/subtask/adr/pitfall/memo）
 待推进（含复制路径图标） + 最近变更
 最近活动（含复制路径图标） + 校验状态
 规范落地要求合规 + LDVH 落地健康度
@@ -38,7 +38,7 @@ Profile 卡片（如存在） + LDVH 落地引导卡片
 
 ### 3.2 LDVH 落地引导
 
-- 与 Profile 卡片共同处于 `ldvh-dashboard-lead-grid`。
+- 处于 `ldvh-dashboard-lead-grid`。
 - 展示 42 落地检查、规范落地要求和 Human Gate 的能力状态。
 - 使用细进度条区分 closed / degraded / open。
 - 主操作按钮进入 `/validate`。
@@ -46,7 +46,7 @@ Profile 卡片（如存在） + LDVH 落地引导卡片
 ### 3.3 对象统计网格
 
 - 使用 `ldvh-dashboard-stats-grid`。
-- 固定顺序：intent → task → adr → pitfall → memo → profile。
+- 固定顺序：workarea → taskplan → task → subtask → adr → pitfall → memo。
 - 每张卡片展示类型名称、总数和状态分布。
 - 点击统计卡片跳转到 `/objects/{type}`。
 
@@ -102,7 +102,7 @@ Profile 卡片（如存在） + LDVH 落地引导卡片
 3. 不在仪表盘中展示 raw status、raw type 或 raw enum。
 4. 不使用固定 `lg:grid-cols-*` 作为唯一布局依据；继续使用 `ldvh-dashboard-*` 自适应网格。
 5. 不重复展示同一副标题或同一页面说明。
-6. Profile、待推进和最近活动中的工作对象必须保留复制完整路径入口。
+6. 待推进和最近活动中的工作对象必须保留复制完整路径入口。
 
 ## 6. API 数据结构
 

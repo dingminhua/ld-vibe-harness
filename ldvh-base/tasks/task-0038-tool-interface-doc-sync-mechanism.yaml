@@ -31,8 +31,7 @@ description: |
      - PyTools：规范已同步、示例命令已更新、validator 已覆盖
      - Web API：路由已更新、前端已同步、返回结构有文档、错误码有说明
      - 事实字段：对象规范已更新、fact_cli 已支持、fact_validate 已支持、Web 已展示、老实例迁移策略已说明
-source_intent: intent-0007
-source: intent-0007
+source: workarea-0007
 acceptance: |
   - [ ] specs/27-Task-任务.md 新增 affected_docs 字段定义
   - [ ] 明确 related_docs / affected_docs / deliverables 三者语义区分
@@ -46,3 +45,4 @@ blocked_by:
 affected_docs:
 - docs/specs/26-Task-任务.md
 - docs/specs/07-Code实现规范.md
+taskplan: taskplan-0037

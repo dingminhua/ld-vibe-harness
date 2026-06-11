@@ -30,7 +30,6 @@ acceptance: |
   - [x] 运行 TypeScript 类型检查通过
 blocked_by: []
 deliverables: []
-source_intent: intent-0006
 verification: |
   打开 /objects/task/task-0052 和 /objects/task/task-0056，检查 Task 页面是否能按目标、验收、验证、证据、产出形成清晰阅读结构；运行 npx tsc --noEmit。
 
@@ -62,3 +61,4 @@ closure_evidence: |
 
   任务完成，人工确认关闭。
 closed_at: '2026-06-07T00:51:45.709245'
+taskplan: taskplan-0056

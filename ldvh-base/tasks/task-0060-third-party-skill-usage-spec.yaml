@@ -31,10 +31,11 @@ related_docs:
 - docs/specs/01-目录说明.md
 - docs/specs/02-术语规范.md
 - docs/specs/03-文档基础规范.md
-- docs/specs/04.07-Trae-Solo适配清单.md
+- docs/specs/04.03-环境能力清单与环境适配规范.md
 - docs/specs/07-Code实现规范.md
 - docs/specs/06-工作流程基础规范.md
 affected_docs:
 - docs/specs/11.01-第三方Skill接管落地选项.md
 deliverables:
 - docs/specs/11.01-第三方Skill接管落地选项.md
+taskplan: taskplan-0060

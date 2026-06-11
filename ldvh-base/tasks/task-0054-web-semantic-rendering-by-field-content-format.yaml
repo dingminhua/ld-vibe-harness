@@ -23,8 +23,7 @@ description: |
   - 只改 web/ 下前端代码，不改 specs 或 tools
   - 不改变 Web 信息同步层边界（仍是派生视图，不回写事实源）
   - 不引入新的 Web 编辑能力
-source: intent-0006
-source_intent: intent-0006
+source: workarea-0006
 acceptance: |
   - [x] verification 字段改用 EvidenceBlock 渲染
   - [x] success_criteria 含 checklist 时自动走 ChecklistCard 渲染
@@ -56,3 +55,4 @@ closure_evidence: |
 
   4项渲染优化全部实现，TypeScript 编译通过，事实源校验无新增错误。
 closed_at: '2026-06-06T18:28:52.910508'
+taskplan: taskplan-0054

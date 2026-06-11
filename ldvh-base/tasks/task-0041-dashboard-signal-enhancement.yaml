@@ -12,8 +12,7 @@ description: |
   - 待推进区域突出 executing、verifying、review_needed 状态，使用更醒目的视觉样式
   - 校验失败时在 Dashboard 形成强提示（红色边框或横幅）
   - Changelog 与任务详情形成互链，commit message 中的 Refs 可跳转到对应对象
-source_intent: intent-0006
-source: intent-0006
+source: workarea-0006
 acceptance: |
   - [x] Dashboard 顶部增加项目态势摘要行，显示关键数字（如"3 个任务执行中，2 个待审查"）
   - [x] 待推进区域中 executing/verifying/review_needed 状态条目使用加粗或高亮背景
@@ -45,3 +44,4 @@ closure_evidence: |
 affected_docs:
 - web/docs/02-Dashboard.md
 closed_at: '2026-06-05T23:01:17.062265'
+taskplan: taskplan-0041

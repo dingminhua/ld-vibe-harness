@@ -9,9 +9,6 @@ description: |
 
   当前缺口是：AI 和检查工具容易把“41 active”误读为“41 已完成”。需要建立明确提醒和证据承接，使 41 的状态被表达为“已正式化但未闭环”，并在 42 dogfood、landing-report、Code/Web 检查面或后续运行投影中持续暴露该建设缺口。
 source: 用户直接指示：41 未闭环需要标记，不能误判为建设完成
-source_intent:
-parent_task:
-sub_tasks: []
 blocked_by: []
 acceptance: |
   - [ ] 明确 41 当前状态表达：active but not closed-loop / 已正式化但未闭环
@@ -44,31 +41,35 @@ verification: |
   ## 结论
 
   本 Task 用于追踪 41 未闭环建设缺口；本次验证证明运行投影漂移检查和 Human Gate 证据结构检查已被 landing-report 作为 Code 派生证据消费和暴露，但不能作为 41 已闭环证据。
-risk_assessment: |
-  - 避免把 40 中的 active 集合状态误解释为建设完成状态。
+risk_assessment: '- 避免把 40 中的 active 集合状态误解释为建设完成状态。
+
   - 避免用聊天结论、landing-report 派生输出或 Web 状态替代 Git 文件事实源。
+
   - 后续如要修改 41、42、Code、Web 或运行投影，应按对应规范触发 Human Gate。
+
+  '
 assignee: AI
 related_adrs: []
 related_changes: []
 related_docs:
-  - docs/specs/40-工作流程集合索引.md
-  - docs/specs/41-landing-orchestration-规范落地统筹.md
-  - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
-  - docs/research/18-LDVH推进评估与候选事项总览.md
+- docs/specs/40-工作流程集合索引.md
+- docs/specs/41-landing-orchestration-规范落地统筹.md
+- docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+- docs/research/18-LDVH推进评估与候选事项总览.md
 affected_docs:
-  - docs/specs/41-landing-orchestration-规范落地统筹.md
-  - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
-  - tools/specs_validate.py
-  - web/
+- docs/specs/41-landing-orchestration-规范落地统筹.md
+- docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+- tools/specs_validate.py
+- web/
 deliverables:
-  - .trae/specs/strengthen-41-trigger-guardrails/tasks.md
-  - .trae/specs/strengthen-41-trigger-guardrails/checklist.md
+- .trae/specs/strengthen-41-trigger-guardrails/tasks.md
+- .trae/specs/strengthen-41-trigger-guardrails/checklist.md
 status_history:
-  - at: '2026-06-10T00:00:00'
-    from:
-    to: planned
-    actor: AI
-    reason: 用户确认创建 Task，用于标记 41 已 active 但建设未闭环的状态和后续承接缺口。
-closed_at:
-closure_evidence:
+- at: '2026-06-10T00:00:00'
+  from: null
+  to: planned
+  actor: AI
+  reason: 用户确认创建 Task，用于标记 41 已 active 但建设未闭环的状态和后续承接缺口。
+closed_at: null
+closure_evidence: null
+taskplan: taskplan-0061

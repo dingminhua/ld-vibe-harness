@@ -6,7 +6,7 @@
 > 执行效力：无；稳定结论需进入正式 specs、ADR、Task、Code、Web、测试、运行投影或最佳实践后才具备对应效力
 > 来源：18、19、20 号历史调研文档、2026-06-11 关于安装、自动执行、CLI、长期状态源与平台映射的讨论；跨环境相关事项已收敛到 `docs/research/22-LDVH跨环境能力复用与薄投影落地计划.md`
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`docs/specs/04-规范落地与环境适配基础规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力清单与投射规范.md`、`docs/specs/04.06-环境能力清单规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/26-Task-任务.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
+> 相关规范：`docs/specs/04-规范落地与环境适配基础规范.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/26-Task-任务.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
 
 ---
 

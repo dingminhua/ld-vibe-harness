@@ -1,0 +1,22 @@
+id: taskplan-0053
+type: taskplan
+title: validator content format rules
+status: closed
+created: '2026-06-06T17:40:10.845698'
+updated: '2026-06-06T18:30:40.647886'
+workarea: workarea-0004
+description: 由历史 Task task-0053 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0053 满足其 acceptance、verification 和 closure_evidence。'
+source: '历史 Task task-0053 迁移生成；旧 source_intent: intent-0004'
+tasks:
+- task-0053
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-06T18:30:40.647893'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0053: ## 验证结果
+closed_at: '2026-06-06T18:30:40.647893'

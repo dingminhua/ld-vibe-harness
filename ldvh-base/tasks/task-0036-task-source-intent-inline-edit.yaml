@@ -15,8 +15,7 @@ description: |
   5. 选择后调用 API 更新，页面实时刷新
 
   这是 Web 展示层从纯只读向可交互演进的第一步，需要谨慎设计 API 安全边界。
-source_intent: intent-0006
-source: intent-0006
+source: workarea-0006
 acceptance: |
   - [x] 后端新增 PATCH /api/objects/:type/:id/field API
   - [x] API 支持更新 source_intent 字段，校验目标 Intent 存在性
@@ -50,3 +49,4 @@ closure_evidence: |
 affected_docs:
 - web/docs/04-ObjectDetail.md
 closed_at: '2026-06-05T23:23:14.612339'
+taskplan: taskplan-0036

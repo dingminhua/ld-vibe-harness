@@ -16,15 +16,16 @@ import type { LocaleKey } from '@/i18n/locales';
 import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
 
 const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
-  intent: 'nav.intents',
+  workarea: 'nav.workareas',
+  taskplan: 'nav.taskplans',
   task: 'nav.tasks',
+  subtask: 'nav.subtasks',
   adr: 'nav.adrs',
   pitfall: 'nav.pitfalls',
   memo: 'nav.memos',
-  profile: 'nav.profiles',
 };
 
-const TYPE_ORDER = ['intent', 'task', 'adr', 'pitfall', 'memo', 'profile'];
+const TYPE_ORDER = ['workarea', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo'];
 
 const HIGHLIGHT_STATUSES = new Set(['executing', 'verifying', 'review_needed']);
 

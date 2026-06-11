@@ -1,9 +1,9 @@
 // ============================================================
 // 状态词汇表 — 所有 LDVH 事实对象状态的中英对照
-// 来源：specs/13-LDVH事实模型基础规范 §5 状态机
+// 来源：specs/05-工作模型基础规范 §5 状态机
 // ============================================================
 export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
-  // Intent
+  // WorkArea / TaskPlan / ADR
   draft: { zh: '草稿', en: 'Draft' },
   proposed: { zh: '已提议', en: 'Proposed' },
   accepted: { zh: '已采纳', en: 'Accepted' },
@@ -13,32 +13,18 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   archived: { zh: '已归档', en: 'Archived' },
   active: { zh: '活跃', en: 'Active' },
   suspended: { zh: '已暂停', en: 'Suspended' },
-  completed: { zh: '已完成', en: 'Completed' },
   // Task
   planned: { zh: '计划中', en: 'Planned' },
   executing: { zh: '执行中', en: 'Executing' },
   verifying: { zh: '验证中', en: 'Verifying' },
-  review_needed: { zh: '待审核', en: 'Review Needed' },
+  review_needed: { zh: '待关闭', en: 'Pending Close' },
   closed: { zh: '已关闭', en: 'Closed' },
   open: { zh: '未关闭', en: 'Open' },
   degraded: { zh: '降级', en: 'Degraded' },
   needs_human_gate: { zh: '需确认', en: 'Needs Gate' },
   unknown: { zh: '未知', en: 'Unknown' },
-  // ADR
-  pending_review: { zh: '待评审', en: 'Pending Review' },
-  implemented: { zh: '已实施', en: 'Implemented' },
   // Pitfall
-  observed: { zh: '已观测', en: 'Observed' },
-  confirmed: { zh: '已确认', en: 'Confirmed' },
   resolved: { zh: '已解决', en: 'Resolved' },
-  // Memo
-  filed: { zh: '已归档', en: 'Filed' },
-  // Profile
-  // Change
-  proposed_change: { zh: '提议中', en: 'Proposed' },
-  approved: { zh: '已批准', en: 'Approved' },
-  applied: { zh: '已应用', en: 'Applied' },
-  cancelled: { zh: '已取消', en: 'Cancelled' },
 };
 
 export function getStatusLocale(status: string, locale: string): string {
@@ -48,8 +34,10 @@ export function getStatusLocale(status: string, locale: string): string {
 }
 
 export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }> = {
-  intent: { zh: '跨任务追踪的目标', en: 'Cross-task tracking goal' },
+  workarea: { zh: '长期工作范围', en: 'Long-lived work area' },
+  taskplan: { zh: '人机沟通和关闭判断的计划', en: 'Plan for human-AI coordination and closure' },
   task: { zh: '可执行的工作单元', en: 'Executable work unit' },
+  subtask: { zh: '任务内的原子执行单元', en: 'Atomic execution unit within a task' },
   adr: { zh: '架构决策记录', en: 'Architecture Decision Record' },
   pitfall: { zh: '已知问题或陷阱', en: 'Known issue or pitfall' },
   memo: { zh: '待任务化的备忘', en: 'Memo pending taskification' },
@@ -68,10 +56,9 @@ export const STATUS_HINT_LOCALES: Record<string, { zh: string; en: string }> = {
   active: { zh: '进行中', en: 'In progress' },
   executing: { zh: '执行中', en: 'Executing' },
   verifying: { zh: '验证中', en: 'Verifying' },
-  review_needed: { zh: '待审查', en: 'Pending review' },
+  review_needed: { zh: '待完成关闭判断', en: 'Pending close decision' },
   draft: { zh: '草稿中', en: 'In draft' },
   proposed: { zh: '提案中', en: 'Proposed' },
-  completed: { zh: '已完成', en: 'Completed' },
   closed: { zh: '已关闭', en: 'Closed' },
 };
 
@@ -81,13 +68,31 @@ export function getStatusHint(status: string, locale: string): string {
   return locale === 'en' ? entry.en : entry.zh;
 }
 
+export function getObjectStatusHint(type: string, status: string, locale: string): string {
+  if (status === 'review_needed') {
+    if (type === 'taskplan') {
+      return locale === 'en'
+        ? 'Completion evidence is ready; confirm whether this plan can close.'
+        : '完成证据已就绪，待确认计划是否可关闭';
+    }
+    if (type === 'task' || type === 'subtask') {
+      return locale === 'en'
+        ? 'Verification passed; finish the close check.'
+        : '验证已通过，待完成关闭检查';
+    }
+  }
+  return getStatusHint(status, locale);
+}
+
 export const UI_LOCALES = {
   zh: {
     'logo.tagline': '让 Vibe Coding 更高效、更稳定、更可控',
 
     'nav.dashboard': '仪表盘',
-    'nav.intents': '意图',
+    'nav.workareas': '工作域',
+    'nav.taskplans': '计划',
     'nav.tasks': '任务',
+    'nav.subtasks': '子任务',
     'nav.adrs': 'ADR',
     'nav.pitfalls': 'BUG',
     'nav.memos': '备忘',
@@ -138,7 +143,7 @@ export const UI_LOCALES = {
     'dashboard.fail': '未通过',
     'dashboard.summary.executing': '{count} 个任务执行中',
     'dashboard.summary.verifying': '{count} 个验证中',
-    'dashboard.summary.reviewNeeded': '{count} 个待审查',
+    'dashboard.summary.reviewNeeded': '{count} 个待关闭',
     'dashboard.summary.planned': '{count} 个计划中',
     'dashboard.summary.validationErrors': '{count} 个校验错误',
     'dashboard.validationErrorHint': '存在校验错误，请查看详情',
@@ -192,7 +197,7 @@ export const UI_LOCALES = {
     'objectDetail.editAcceptance': '点击编辑验收标准',
     'objectDetail.taskGoal': '任务目标',
     'objectDetail.noTaskDescription': '未记录任务描述',
-    'objectDetail.sourceIntent': '来源意图',
+    'objectDetail.taskPlan': '所属计划',
     'objectDetail.acceptance': '验收标准',
     'objectDetail.verification': '验证方式',
     'objectDetail.closureEvidence': '关闭证据',
@@ -207,7 +212,7 @@ export const UI_LOCALES = {
     'objectDetail.dependencies': '前置依赖',
     'objectDetail.otherFields': '其他字段',
     'objectDetail.emptyValue': '空',
-    'objectDetail.editSourceIntent': '编辑来源意图',
+    'objectDetail.workArea': '所属工作域',
 
     'readingPanel.truncated': '内容已截断',
     'readingPanel.close': '关闭',
@@ -219,10 +224,7 @@ export const UI_LOCALES = {
     'readingPanel.docLoadFailed': '文档加载失败',
     'readingPanel.noEvidence': '暂无证据信息',
     'readingPanel.changeDetail': '变更详情',
-    'objectDetail.humanGateTip': '此对象需要确认后才能关闭',
-    'intentSelector.searchPlaceholder': '搜索意图...',
-    'intentSelector.noResults': '未找到意图',
-    'intentSelector.current': '当前',
+    'objectDetail.humanGateTip': '此对象待关闭',
 
     'validate.title': '校验',
     'validate.filesChecked': '已检查文件',
@@ -330,8 +332,10 @@ export const UI_LOCALES = {
     'logo.tagline': 'Making Vibe Coding more efficient, stable, and controllable',
 
     'nav.dashboard': 'Dashboard',
-    'nav.intents': 'Intents',
+    'nav.workareas': 'Work Areas',
+    'nav.taskplans': 'Plans',
     'nav.tasks': 'Tasks',
+    'nav.subtasks': 'SubTasks',
     'nav.adrs': 'ADRs',
     'nav.pitfalls': 'Bugs',
     'nav.memos': 'Memos',
@@ -382,7 +386,7 @@ export const UI_LOCALES = {
     'dashboard.fail': 'FAIL',
     'dashboard.summary.executing': '{count} tasks executing',
     'dashboard.summary.verifying': '{count} verifying',
-    'dashboard.summary.reviewNeeded': '{count} pending review',
+    'dashboard.summary.reviewNeeded': '{count} pending close',
     'dashboard.summary.planned': '{count} planned',
     'dashboard.summary.validationErrors': '{count} validation errors',
     'dashboard.validationErrorHint': 'Validation errors found, check details',
@@ -436,7 +440,7 @@ export const UI_LOCALES = {
     'objectDetail.editAcceptance': 'Click to edit acceptance criteria',
     'objectDetail.taskGoal': 'Task Goal',
     'objectDetail.noTaskDescription': 'No task description recorded',
-    'objectDetail.sourceIntent': 'Source Intent',
+    'objectDetail.taskPlan': 'Task Plan',
     'objectDetail.acceptance': 'Acceptance',
     'objectDetail.verification': 'Verification',
     'objectDetail.closureEvidence': 'Closure Evidence',
@@ -451,7 +455,7 @@ export const UI_LOCALES = {
     'objectDetail.dependencies': 'Dependencies',
     'objectDetail.otherFields': 'Other Fields',
     'objectDetail.emptyValue': 'Empty',
-    'objectDetail.editSourceIntent': 'Edit source intent',
+    'objectDetail.workArea': 'Work Area',
 
     'readingPanel.truncated': 'Content truncated',
     'readingPanel.close': 'Close',
@@ -463,10 +467,7 @@ export const UI_LOCALES = {
     'readingPanel.docLoadFailed': 'Failed to load document',
     'readingPanel.noEvidence': 'No evidence available',
     'readingPanel.changeDetail': 'Change Detail',
-    'objectDetail.humanGateTip': 'This object requires confirmation before closing',
-    'intentSelector.searchPlaceholder': 'Search intents...',
-    'intentSelector.noResults': 'No intents found',
-    'intentSelector.current': 'Current',
+    'objectDetail.humanGateTip': 'This object is pending close',
 
     'validate.title': 'Validation',
     'validate.filesChecked': 'Files Checked',

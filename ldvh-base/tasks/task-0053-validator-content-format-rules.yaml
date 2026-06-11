@@ -18,8 +18,7 @@ description: |
   - 只改 tools/fact_validate.py，不改 specs 或 web
   - 不改变现有 error 级别校验的行为
   - 新增校验按 12 号规范 §6.2 和 §6.3 的级别分类
-source: intent-0004
-source_intent: intent-0004
+source: workarea-0004
 acceptance: |
   - [x] 新增长文本字段 YAML 块标量提示：description 等字段含冒号/换行但未用 | 时报 warning
   - [x] 新增内部路径存在性校验：related_docs / deliverables 中相对路径不存在时报 error
@@ -50,3 +49,4 @@ closure_evidence: |
 
   4项校验增强全部实现，fact_validate.py 功能完整运行。
 closed_at: '2026-06-06T18:30:40.647893'
+taskplan: taskplan-0053

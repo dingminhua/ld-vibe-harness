@@ -7,15 +7,15 @@ updated: '2026-06-03T00:00:00'
 date: '2026-06-03'
 context: 落地审计发现项目规则缺少 ADR 入口摘要、Human Gate 确认记录可追溯性不足、adr-0001 仍为 proposed 状态。已完成整改并需通过流程验证
   ADR 创建和拒绝的生命周期。
-decision: 1) 项目规则补充 ADR 读取提醒和写入 Human Gate 入口摘要；2) adr-0001 context 补充结构化确认记录；3)
-  创建本 ADR 后走 proposed→rejected 流程验证拒绝生命周期；4) 同步将 adr-0001 也走 proposed→rejected 流程。
+decision: 1) 项目规则补充 ADR 读取提醒和写入 Human Gate 入口摘要；2) adr-0001 context 补充结构化确认记录；3) 创建本
+  ADR 后走 proposed→rejected 流程验证拒绝生命周期；4) 同步将 adr-0001 也走 proposed→rejected 流程。
 consequences: 整改项落地；adr-0001 和 0002 均进入 rejected 终态，保留历史记录不删除。
 affects:
 - 历史运行投影：.trae/rules/ldvh-project-rules.md（已移除）
 - ldvh-base/adrs/adr-0001-adr-mechanism-initialization.yaml
-related_intents: []
 related_tasks: []
 related_changes: []
 related_memos: []
 related_rules:
 - docs/specs/21-ADR-决策.md
+related_workareas: []

@@ -10,7 +10,6 @@ description: |
   1. Pitfall 关闭时提示是否需要创建 ADR 固化经验
   2. Change 记录中标注是否源自 Pitfall 修复
   3. ldvh-close Skill 在关闭 Pitfall 时增加 ADR 推荐步骤
-source_intent: intent-0009
 source: 竞品调研报告 docs/refs/06 建议5
 acceptance: |
   - [ ] 修改 Pitfall 规范（docs/specs/26），增加关闭时 ADR 推荐流程
@@ -28,3 +27,4 @@ related_docs:
 deliverables:
 - docs/specs/26-Pitfall-陷阱.md（修订）
 - docs/specs/22-Change-变更.md（修订）
+taskplan: taskplan-0047

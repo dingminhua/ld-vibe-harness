@@ -6,7 +6,7 @@ import PageHeader from '@/components/PageHeader';
 import { formatDateTime } from '@/utils/dateFormat';
 import { usePanel } from '@/utils/panelContext';
 
-/** 从对象 ID 推断类型，如 task-0041 → task, intent-0004 → intent, adr-0003 → adr */
+/** 从对象 ID 推断类型，如 task-0041 → task, taskplan-0004 → taskplan, adr-0003 → adr */
 function inferTypeFromId(id: string): string | null {
   const match = id.match(/^([a-z]+)-\d+$/i);
   return match ? match[1].toLowerCase() : null;

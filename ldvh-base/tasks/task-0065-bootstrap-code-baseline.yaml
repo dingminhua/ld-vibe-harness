@@ -9,9 +9,6 @@ description: |
 
   本 Task 用于承载 42 Bootstrap Code 基线能力补齐工作。Code 需求来源归属 42；07 只约束实现方式，10 只约束测试方式。
 source: 用户直接指示：code需求在42，建立 Task 承载 Bootstrap Code 基线能力补齐
-source_intent:
-parent_task:
-sub_tasks: []
 blocked_by: []
 acceptance: |
   - [x] Code 入口能按 42 定义输出 Bootstrap Code 基线能力覆盖报告
@@ -44,51 +41,55 @@ verification: |
   已运行 `python3 -m pytest tests/test_specs_validate.py -q`，结果为 `70 passed in 0.96s`。
 
   已运行 `python3 tools/specs_validate.py ldvh-landing-check --format json` 并抽取结果：`bootstrap_baseline.summary.item_count=10`，`bootstrap_baseline.summary.status=open`，`open_item_count=1`，十项基线能力均能输出状态。当前 open 项为 `specs_integrity`，属于当前规范检查发现的既有规范缺口，不是 Bootstrap Code 报告能力缺失。
-risk_assessment: |
-  - 避免把 42 的 Code 需求转移给 07；07 只约束实现方式。
+risk_assessment: '- 避免把 42 的 Code 需求转移给 07；07 只约束实现方式。
+
   - 避免把 Web 运行态作为 bootstrap 前置条件；Web 在此处只作为资产检查对象。
+
   - 避免把 41、landing-plan、候选 change-plan 或其他 plan 类输出作为 bootstrap 前置条件。
+
   - 避免新增 Code 自动写入事实源、自动创建 Task 或自动关闭缺口。
+
+  '
 assignee: AI
 related_adrs: []
 related_changes: []
 related_docs:
-  - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
-  - docs/specs/07-Code实现规范.md
-  - docs/specs/10-运行闭环测试规范.md
+- docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+- docs/specs/07-Code实现规范.md
+- docs/specs/10-运行闭环测试规范.md
 affected_docs:
-  - tools/specs_validate.py
-  - tests/test_specs_validate.py
-  - docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+- tools/specs_validate.py
+- tests/test_specs_validate.py
+- docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
 deliverables:
-  - tools/specs_validate.py
-  - tests/test_specs_validate.py
+- tools/specs_validate.py
+- tests/test_specs_validate.py
 status_history:
-  - at: '2026-06-11T00:00:00'
-    from:
-    to: planned
-    actor: AI
-    reason: 用户确认 42 承载 Bootstrap Code 需求，并要求创建 Task 承载 Code 基线能力补齐。
-  - at: '2026-06-11T00:00:00'
-    from: planned
-    to: executing
-    actor: AI
-    reason: 用户要求完成本 Task，开始实现 Bootstrap Code 基线报告能力。
-  - at: '2026-06-11T00:00:00'
-    from: executing
-    to: verifying
-    actor: AI
-    reason: 已完成 tools 和 tests 修改，进入验证。
-  - at: '2026-06-11T00:00:00'
-    from: verifying
-    to: review_needed
-    actor: AI
-    reason: pytest、ldvh-landing-check JSON 抽样和 diff 空白检查已通过。
-  - at: '2026-06-11T00:00:00'
-    from: review_needed
-    to: closed
-    actor: AI
-    reason: acceptance 已全部满足，验证结果和关闭证据已记录。
+- at: '2026-06-11T00:00:00'
+  from: null
+  to: planned
+  actor: AI
+  reason: 用户确认 42 承载 Bootstrap Code 需求，并要求创建 Task 承载 Code 基线能力补齐。
+- at: '2026-06-11T00:00:00'
+  from: planned
+  to: executing
+  actor: AI
+  reason: 用户要求完成本 Task，开始实现 Bootstrap Code 基线报告能力。
+- at: '2026-06-11T00:00:00'
+  from: executing
+  to: verifying
+  actor: AI
+  reason: 已完成 tools 和 tests 修改，进入验证。
+- at: '2026-06-11T00:00:00'
+  from: verifying
+  to: review_needed
+  actor: AI
+  reason: pytest、ldvh-landing-check JSON 抽样和 diff 空白检查已通过。
+- at: '2026-06-11T00:00:00'
+  from: review_needed
+  to: closed
+  actor: AI
+  reason: acceptance 已全部满足，验证结果和关闭证据已记录。
 closed_at: '2026-06-11T00:00:00'
 closure_evidence: |
   ## 验证结果
@@ -100,3 +101,4 @@ closure_evidence: |
   ## 结论
 
   残留风险：当前真实项目的 Bootstrap Code 基线报告状态仍为 open，因为 specs 完整性检查存在既有规范缺口；这不影响本 Task 的 Code 能力补齐结论。后续应由对应规范修复 Task 或现场 42 检查继续分流。
+taskplan: taskplan-0065

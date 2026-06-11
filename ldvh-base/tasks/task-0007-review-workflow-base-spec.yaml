@@ -5,10 +5,7 @@ status: closed
 created: '2026-06-04'
 updated: '2026-06-05'
 description: 读取并梳理 specs/08-LDVH工作流基础规范.md，分析其定位、章节结构、与 00-08 基础规范及 51-79 具体工作流规范的关系，识别文档组织重构需要保留、调整、拆分、归并或后续建任务的事项。
-source_intent: intent-0004
-source: intent-0004
-parent_task: null
-sub_tasks: []
+source: workarea-0004
 acceptance: |
   - [x] 已按标题定位和行范围读取 specs/08-LDVH工作流基础规范.md 的关键章节
   - [x] 已梳理 08 号文档的当前定位、章节结构和权威边界
@@ -39,3 +36,4 @@ closure_evidence: |-
 blocked_by:
 - task-0008
 closed_at: '2026-06-05'
+taskplan: taskplan-0007

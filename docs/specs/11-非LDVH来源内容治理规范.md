@@ -4,7 +4,7 @@
 > 定位：定义环境提供、第三方提供、用户既有、项目既有和自动生成等非 LDVH 来源内容进入 LDVH 管辖时的识别、准入、隔离、接管、验证、回写和废弃规则
 > 适用范围：LDVH 自身项目和管辖项目中所有非 LDVH 来源内容、能力、资产、产物和候选输入
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.03-环境能力清单与投射规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11.01-第三方Skill接管落地选项.md`
+> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11.01-第三方Skill接管落地选项.md`
 
 ---
 ## 1. 本文解决的问题

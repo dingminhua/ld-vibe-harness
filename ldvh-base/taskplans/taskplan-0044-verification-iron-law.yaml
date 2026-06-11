@@ -1,0 +1,19 @@
+id: taskplan-0044
+type: taskplan
+title: 引入验证铁律
+status: active
+created: '2026-06-06T00:02:55.419926'
+updated: '2026-06-06T00:02:55.419926'
+workarea: workarea-0009
+description: 由历史 Task task-0044 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [ ] 关联任务 task-0044 满足其 acceptance、verification 和 closure_evidence。'
+source: '历史 Task task-0044 迁移生成；旧 source_intent: intent-0009'
+tasks:
+- task-0044
+related_docs:
+- docs/refs/06-竞品测试任务安排分析与最佳实践调研.md
+- docs/research/07-LDVH对Superpowers的借鉴评估与深度调研.md
+related_adrs: []
+related_memos: []
+related_pitfalls: []

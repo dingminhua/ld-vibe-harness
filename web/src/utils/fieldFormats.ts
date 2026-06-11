@@ -20,8 +20,8 @@ export const EVIDENCE_FIELDS = ['closure_evidence', 'verification', 'completion_
 
 /** Object ID reference fields render through ReferenceCard when values look like LDVH object IDs. */
 export const REFERENCE_FIELDS = [
-  'blocked_by', 'source_intent', 'parent_task', 'sub_tasks', 'related_intents',
-  'related_tasks', 'related_adrs', 'related_memos', 'related_pitfalls',
+  'blocked_by', 'workarea', 'taskplan', 'task', 'tasks', 'related_workareas',
+  'related_taskplans', 'related_tasks', 'related_subtasks', 'related_adrs', 'related_memos', 'related_pitfalls',
   'related_profiles', 'source_tasks', 'source_memos', 'source_objects',
   'related_objects', 'superseded_by', 'resolved_to',
 ];
@@ -36,7 +36,8 @@ export const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 
 
 /** Fields that can be folded in detail view. */
 export const COLLAPSIBLE_FIELDS = [
-  'related_intents', 'related_tasks', 'related_docs', 'related_adrs', 'related_memos',
+  'tasks', 'related_workareas', 'related_taskplans', 'related_tasks', 'related_subtasks',
+  'related_docs', 'related_adrs', 'related_memos',
   'related_pitfalls', 'related_profiles', 'deliverables', 'affected_docs', 'related_rules',
   'source_tasks', 'source_memos', 'blocked_by',
 ];
@@ -52,5 +53,5 @@ export function hasChecklist(value: string) {
 export function isObjectRef(refId: string) {
   const match = refId.match(/^([a-z]+)-\d+$/);
   if (!match) return false;
-  return ['intent', 'task', 'adr', 'pitfall', 'memo', 'profile'].includes(match[1]);
+  return ['workarea', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo', 'profile'].includes(match[1]);
 }
