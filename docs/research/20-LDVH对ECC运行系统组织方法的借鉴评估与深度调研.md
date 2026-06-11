@@ -23,7 +23,7 @@ ECC 的价值不在于它有多少 agents、skills、commands、rules，而在�
 而不是：
 
 ```text
-如何复制 ECC 的安装器、CLI、Skills 库、Rules 库或跨平台分发系统
+如何复制 ECC 的安装器、CLI、Skills 库、Rules 库或跨环境分发系统
 ```
 
 ---
@@ -102,7 +102,7 @@ LDVH 可学习的核心方法：
 1. 不应先做完整安装器
 2. 不应把 ECC 的 components/modules/profiles 原样复制
 3. 不应把 manifest 输出当作最终事实源
-4. 不应做跨平台自动分发
+4. 不应做跨环境自动分发
 
 **当前落地状态**：04.06 §6 平台实体映射规则已吸收 target adapter 分层思想；`landing-plan` 输出合同已在 `tools/specs_validate.py` 中实现基础版。
 
@@ -213,7 +213,7 @@ LDVH status 可聚合的内容：
 |---|---|
 | 工作对象状态分布 | `ldvh-base/` + fact_cli |
 | 规范落地要求缺口 | `docs/specs/` + landing-report |
-| 平台适配 open_items | 平台适配清单 |
+| 环境适配 open_items | 环境适配清单 |
 | 运行投影漂移风险 | 04.02、平台清单、实际入口 |
 | Human Gate 待确认事项 | Task、ADR、Web、当前流程输出 |
 | 最近验证结果 | Code 输出、测试结果、closure evidence |
@@ -230,11 +230,11 @@ LDVH status 可聚合的内容：
 
 ---
 
-### 3.5 方法五：跨平台运行投影组织
+### 3.5 方法五：跨环境运行投影组织
 
 **ECC 做了什么**
 
-ECC 面向多个 harness 组织不同平台表面，包括 Claude、Codex、Cursor、OpenCode、Gemini、Zed 等。它通过 session adapter 机制实现跨平台适配：定义 canonical interface（`canOpen`、`open`、`getSnapshot`），每个平台实现自己的 adapter，系统通过 adapter registry 统一调度。
+ECC 面向多个 harness 组织不同平台表面，包括 Claude、Codex、Cursor、OpenCode、Gemini、Zed 等。它通过 session adapter 机制实现跨环境适配：定义 canonical interface（`canOpen`、`open`、`getSnapshot`），每个平台实现自己的 adapter，系统通过 adapter registry 统一调度。
 
 **LDVH 应学什么**
 
@@ -242,7 +242,7 @@ LDVH 也需要适配不同 AI 开发环境，但 LDVH 的原则是适配不绑�
 
 1. **target adapter 分层**：每个平台声明自己的实体在哪、有什么约束，不创建安装器、不保存安装状态
 2. **薄入口模式**：平台目录只做投影和加载说明，不复制核心规范正文
-3. **平台差异留在适配清单**：跨平台差异不写进 00 或通用规范正文
+3. **平台差异留在适配清单**：跨环境差异不写进 00 或通用规范正文
 
 LDVH 平台能力映射表：
 
@@ -310,7 +310,7 @@ LDVH 应按 04.03 的环境能力承接边界吸收这种分层，但用 LDVH �
   → 目标：AI 不再记忆多个脚本，通过稳定入口获得规范索引、工作对象查询和落地缺口报告
 
 第三阶段：运行投影映射
-  → 学习 ECC 跨平台表面，转译为 LDVH 平台适配清单和运行投影映射矩阵
+  → 学习 ECC 跨环境表面，转译为 LDVH 环境适配清单和运行投影映射矩阵
   → 目标：明确不同平台如何承接入口可见、流程复用、子 Agent 思考、生命周期触发和 Human 交互
 
 第四阶段：受控写入
@@ -340,7 +340,7 @@ LDVH 应按 04.03 的环境能力承接边界吸收这种分层，但用 LDVH �
 | 优先级 | 推进项 | 理由 |
 |---|---|---|
 | P0 | 完善 `landing-plan` 输出合同，接入验证证据、工作对象证据和 Human Gate 记录 | 直接服务 41/42 dogfood，是当前最小闭环的核心 |
-| P0 | 起草 LDVH manifest schema 候选 | 为平台适配、落地检查和漂移检测提供基础数据结构 |
+| P0 | 起草 LDVH manifest schema 候选 | 为环境适配、落地检查和漂移检测提供基础数据结构 |
 | P1 | 定义 `ldvh status` 只读输出边界 | 提升 Human 与 AI 对当前健康状态的可见性 |
 | P1 | 定义 landing audit 固定 rubric | 防止 AI 临时发明评分维度 |
 | P1 | 命令输出合同模板化 | 让 CLI、Skill、平台命令都能稳定执行 |
@@ -391,7 +391,7 @@ LDVH 应按 04.03 的环境能力承接边界吸收这种分层，但用 LDVH �
 | T2 受限调用 | 在明确范围内辅助生成候选内容 | 生成草稿、提出检查项 | 不自动采纳、不直接生效 |
 | T3 主控审查 | LDVH 主控逐条判断是否符合边界 | 改写、裁剪、标注来源 | 不保留第三方优先级 |
 | T4 写入事实源 | 通过 Human Gate 后进入 LDVH 文件 | 写 specs、tools、web、ldvh-base | 不保留"外部权威"身份 |
-| T5 稳定复用 | 多次验证后成为稳定机制 | 进入工具、测试、平台入口 | 不跳过持续验证 |
+| T5 稳定复用 | 多次验证后成为稳定机制 | 进入工具、测试、环境入口 | 不跳过持续验证 |
 
 ### 6.2 接管流程中的证据要求
 
@@ -485,7 +485,7 @@ LDVH 应向 ECC 学习的不是目标、规模或内容库，而是运行系统�
 2. **用 plan 先做只读诊断**——把"看清楚要做什么"和"真正写入执行"分开
 3. **用统一入口降低发现成本**——让 AI 不再记忆多个脚本和参数
 4. **用 status / audit / doctor 做聚合视图和缺口分流**——让 AI 和 Human 快速判断当前系统是否健康
-5. **用跨平台表面经验完善平台适配清单**——让 LDVH 能在不同 AI 协作环境中被看见、被触发和被执行
+5. **用跨环境表面经验完善环境适配清单**——让 LDVH 能在不同 AI 协作环境中被看见、被触发和被执行
 6. **用资产分层原则约束 Rules、Skills、Commands、Agents 的边界**——让每种资产形态只承担自己适合的职责
 
 当前最不该做的六件事：
@@ -495,6 +495,6 @@ LDVH 应向 ECC 学习的不是目标、规模或内容库，而是运行系统�
 3. 先做大而全 CLI
 4. 先做长期状态源
 5. 先复制 ECC 的 Skills / Commands / Rules
-6. 脱离当前 Dogfood 闭环做跨平台投影扩张
+6. 脱离当前 Dogfood 闭环做跨环境投影扩张
 
 最小下一步是完善 `landing-plan` 输出合同，让 41、42、04、07、09 的判断结果可以被 AI、Human、Code 和 Web 共同消费，并且始终回指 Git 文件事实源。

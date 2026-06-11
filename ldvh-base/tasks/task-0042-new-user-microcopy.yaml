@@ -23,6 +23,14 @@ acceptance: |
   - [x] TypeScript 编译和 ESLint 通过
 blocked_by:
 - task-0039
+verification: |
+  ## 验证结果
+
+  历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+  ## 结论
+
+  历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
 closure_evidence: |
   新增 TYPE_DESCRIPTION_LOCALES（7种对象类型说明）和 STATUS_HINT_LOCALES（9种状态提示），
   ObjectDetail 顶部显示类型说明和状态行动提示，StatusBadge 增加 title tooltip，

@@ -18,6 +18,14 @@ deliverables:
 - web/src/index.css
 related_pitfalls:
 - pitfall-0007
+verification: |
+  ## 验证结果
+
+  历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+  ## 结论
+
+  历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
 closure_evidence: |-
   根因定位：通过 Playwright 连续帧截图 + CSS dump 确认，白色圆圈动画由 ObjectDetail.tsx
   主容器（第198行）的 `transition-all duration-300` 导致。Chrome 对该元素设置默认 border-radius=8251.97px，

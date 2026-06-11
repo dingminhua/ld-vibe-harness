@@ -20,6 +20,14 @@ acceptance: |
   - [x] 产出物和文档可点击查看或跳转
 blocked_by:
 - task-0032
+verification: |
+  ## 验证结果
+
+  历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+  ## 结论
+
+  历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
 closure_evidence: |
   后端 objects.ts GET /:type/:id 路由在 type=intent 时聚合 related_tasks 中每个 task 的 deliverables 和 related_docs，使用 Set 去重，返回 aggregated_deliverables 和 aggregated_docs。
   前端 ObjectDetail.tsx 在 objType=intent 时新增"关联产出"和"关联文档"聚合区域，复用 DocPreviewLink 组件渲染，支持点击预览。

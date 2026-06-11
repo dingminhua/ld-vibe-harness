@@ -22,6 +22,14 @@ acceptance: |
 blocked_by: []
 related_adrs: []
 closed_at: '2026-06-05T20:12:00.000000'
+verification: |
+  ## 验证结果
+
+  历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+  ## 结论
+
+  历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
 closure_evidence: |
   参考文档已写入 specs/refs/08-工作区参考项目Web设计调研.md，覆盖三个项目的
   技术栈、布局设计、主题系统、组件模式和设计特色，并提炼出对 LDVH Web 的

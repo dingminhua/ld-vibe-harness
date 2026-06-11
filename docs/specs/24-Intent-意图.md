@@ -70,7 +70,7 @@ Intent 标准状态如下：
 |---|---|
 | `draft` | 已记录，尚未完成分析、边界确认或任务拆解 |
 | `active` | 已分析并可作为 Task 拆解、执行或决策上游依据 |
-| `completed` | 关联 Task 已完成，成功标准已满足或已说明豁免 |
+| `review_needed` | 关联 Task 已关闭，成功标准已有完成证据，待最终关闭确认 |
 | `closed` | 完成结论已确认并沉淀，Intent 不再继续追踪 |
 
 `closed` 是稳定终态。终态 Intent 不得直接重开；如目标重新启动、扩大范围或改变成功标准，应新建 Intent，并在新 Intent 中引用原 Intent。
@@ -79,9 +79,9 @@ Intent 标准状态如下：
 
 ```text
 draft → active
-active → completed
-completed → closed
-completed → active
+active → review_needed
+review_needed → closed
+review_needed → active
 ```
 
 合法流转规则如下：
@@ -89,25 +89,25 @@ completed → active
 | 流转 | 触发条件 | 说明 |
 |---|---|---|
 | `draft` → `active` | 目标、范围、成功标准和约束已足够明确，可拆解或关联 Task | `draft` 不应作为稳定 Task 拆解依据 |
-| `active` → `completed` | `related_tasks` 中应完成的 Task 已关闭，成功标准已满足或有豁免说明 | 应填写 `completion_evidence` |
-| `completed` → `closed` | Human 已确认完成结论，或工作流程明确允许关闭 | 应填写 `closed_at` |
-| `completed` → `active` | 完成检查或人工审查不通过，需要继续拆解或执行 | 应记录退回原因 |
+| `active` → `review_needed` | `related_tasks` 中应完成的 Task 已关闭，成功标准已满足或有豁免说明 | 应填写 `review_requested_at` 和 `completion_evidence` |
+| `review_needed` → `closed` | Human 已确认完成结论，或工作流程明确允许关闭 | 应填写 `closed_at` |
+| `review_needed` → `active` | 完成检查或人工审查不通过，需要继续拆解或执行 | 应记录退回原因 |
 
 未列出的状态流转为非法流转。Code 和 Web 不得绕过本文状态机直接修改状态。
 
-### 3.3 完成条件
+### 3.3 待关闭确认条件
 
-Intent 进入 `completed` 前必须同时满足：
+Intent 进入 `review_needed` 前必须同时满足：
 
 1. `success_criteria` 已逐项检查；
 2. `related_tasks` 中应完成的 Task 均已 `closed`，或在 `completion_evidence` 中说明无需关闭的原因；
 3. 约束条件没有被未授权突破，或已记录 Human Gate 确认；
 4. `completion_evidence` 已填写，并能追溯到 Task 关闭证据、产物、文档或人工确认；
-5. `completed_at` 已填写。
+5. `review_requested_at` 已填写。
 
 Intent 进入 `closed` 前必须满足：
 
-1. 已处于 `completed`；
+1. 已处于 `review_needed`；
 2. 完成结论已确认；
 3. `closed_at` 已填写；
 4. 需要 Human Gate 的场景已完成确认。
@@ -156,7 +156,7 @@ TaskSet 已取消独立工作模型。Intent 承接 TaskSet 的目标分组和�
 | 描述任务集合目标 | Intent `description` |
 | 描述完成标准 | Intent `success_criteria` |
 | 描述约束和范围 | Intent `constraints` |
-| 判断集合完成 | Intent `completed` 状态和 `completion_evidence` |
+| 判断集合完成 | Intent `review_needed` 状态、`completion_evidence` 和最终 `closed` 状态 |
 
 Intent 不承接 Task 的执行状态细节。每个 Task 的执行、验证、关闭和证据仍由 `docs/specs/26-Task-任务.md` 定义。
 
@@ -167,14 +167,14 @@ Intent 不承接 Task 的执行状态细节。每个 Task 的执行、验证、�
 
 1. 创建、删除或重命名 Intent 实例；
 2. 将用户输入、Memo 或临时讨论升级为 Intent；
-3. 将 Intent 从 `active` 流转为 `completed`；
-4. 将 Intent 从 `completed` 流转为 `closed`；
+3. 将 Intent 从 `active` 流转为 `review_needed`；
+4. 将 Intent 从 `review_needed` 流转为 `closed`；
 5. 改写 `success_criteria`、`constraints` 或完成证据；
 6. 在关联 Task 未全部关闭时通过豁免方式完成 Intent；
 7. 关闭高风险 Intent，或用户明确要求人工验收；
 8. 将 TaskSet 恢复为独立工作模型，或把 Intent 的任务集合职责拆出为新对象。
 
-Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影记录承接。本文只规定 Intent 语境下需要确认的事实和影响范围。
+Human Gate 的具体环境实体由 04 系列环境投射和运行投影记录承接。本文只规定 Intent 语境下需要确认的事实和影响范围。
 
 ---
 ## 6. 字段契约
@@ -199,8 +199,8 @@ Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影�
 | `related_pitfalls` | 关联 Pitfall ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `status_history` | 状态变化记录 | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
-| `completed_at` | 完成日期 | date | 条件必填 | `status: completed` 或 `closed` 时必须填写 | Reference | AI、Code、Web |
-| `completion_evidence` | 完成证据摘要 | string | 条件必填 | `status: completed` 或 `closed` 时必须填写 | Evidence | AI、Code、Web |
+| `review_requested_at` | 请求关闭确认日期 | date | 条件必填 | `status: review_needed` 或 `closed` 时必须填写 | Reference | AI、Code、Web |
+| `completion_evidence` | 完成证据摘要 | string | 条件必填 | `status: review_needed` 或 `closed` 时必须填写 | Evidence | AI、Code、Web |
 | `closed_at` | 关闭日期 | date | 条件必填 | `status: closed` 时必须填写 | Reference | AI、Code、Web |
 
 字段内容格式按 `docs/specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、完成条件不满足或文件命名不匹配时，Code 应报告诊断，不得静默通过。
@@ -239,7 +239,7 @@ status_history:
     to: active
     actor: AI
     reason: 用户确认继续完善工作模型
-completed_at:
+review_requested_at:
 completion_evidence:
 closed_at:
 ```
@@ -255,7 +255,7 @@ Intent 回写遵循以下规则：
 2. 状态变化前应检查合法流转、关联 Task、完成条件和 Human Gate；
 3. 状态变化后应更新 `updated`，并向 `status_history` 追加记录；
 4. 创建或关联 Task、ADR、Memo、Pitfall 时，应同步检查 Intent 关系字段；
-5. Intent 进入 `completed` 时必须填写 `completed_at` 和 `completion_evidence`；
+5. Intent 进入 `review_needed` 时必须填写 `review_requested_at` 和 `completion_evidence`；
 6. Intent 进入 `closed` 时必须填写 `closed_at`；
 7. 关键事实源修改应按 `docs/specs/22-Change-变更.md` 形成 Git 可追溯记录。
 8. Intent 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。

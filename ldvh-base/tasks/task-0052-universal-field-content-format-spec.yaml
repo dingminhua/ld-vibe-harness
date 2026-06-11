@@ -31,6 +31,14 @@ acceptance: |
   - [x] 判断并记录是否需要同步修改 03 / 07 / 14 / 15 / 21-27 等相关规范
   - [x] 运行事实源校验通过（16个error均为历史遗留）
 blocked_by: []
+verification: |
+  ## 验证结果
+
+  历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+  ## 结论
+
+  历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
 closure_evidence: |
   ## 验证结果
 

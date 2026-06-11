@@ -16,6 +16,14 @@ acceptance: |
   - [x] 文档覆盖组件规范和复用策略
   - [x] 文档内容可作为后续页面开发的设计依据
 blocked_by: []
+verification: |
+  ## 验证结果
+
+  历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+  ## 结论
+
+  历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
 closure_evidence: |
   web/docs/ 下 8 份设计文档齐全（01-全局设计约束、02-Dashboard、03-ObjectList、04-ObjectDetail、05-Validate、06-Changelog、07-内容可读性研究、08-多角色审视研究），覆盖全局约束、页面结构、交互规范、视觉体系、组件规范，独立 agent 验证 6 项 acceptance 全部通过
 

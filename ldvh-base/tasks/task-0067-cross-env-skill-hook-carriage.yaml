@@ -50,14 +50,14 @@ related_adrs: []
 related_changes: []
 related_docs:
   - docs/specs/01-目录说明.md
-  - docs/specs/04.03-环境能力承接边界规范.md
-  - docs/specs/04.06-平台适配清单规范.md
+  - docs/specs/04.03-环境能力清单与投射规范.md
+  - docs/specs/04.06-环境能力清单规范.md
   - docs/specs/11.01-第三方Skill接管落地选项.md
   - docs/specs/26-Task-任务.md
 affected_docs:
   - docs/specs/01-目录说明.md
-  - docs/specs/04.03-环境能力承接边界规范.md
-  - docs/specs/04.06-平台适配清单规范.md
+  - docs/specs/04.03-环境能力清单与投射规范.md
+  - docs/specs/04.06-环境能力清单规范.md
   - docs/specs/11.01-第三方Skill接管落地选项.md
   - tools/specs_validate.py
   - tests/test_specs_validate.py

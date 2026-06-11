@@ -29,6 +29,14 @@ acceptance: |
 blocked_by: []
 deliverables:
 - tools/fact_validate.py
+verification: |
+  ## 验证结果
+
+  历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+  ## 结论
+
+  历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
 closure_evidence: |
   ## 验证结果
 

@@ -7,7 +7,7 @@
 > 执行效力：无；稳定结论需进入 docs/specs 正文区、工作对象、Code、Web、测试、运行投影或最佳实践后才具备对应效力
 > 来源：原 `docs/research/18-LDVH候选事项承接评估.md`、`docs/research/19-LDVH规范落地统筹机制与闭环缺口评估.md`、`docs/research/20-LDVH规范落地统筹执行缺口清单.md`、`docs/research/21-LDVH面向AI执行者需求的推进评估.md` 合并重建
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
+> 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力清单与投射规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/12-最佳实践.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
 
 ---
 
@@ -39,7 +39,7 @@
 | Human Gate 最小证据结构 | 已落地基础规则与 Code 检查 | `docs/specs/06-工作流程基础规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/26-Task-任务.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`tools/specs_validate.py human-gate-report`、`tests/test_specs_validate.py` | 已形成通用最小记录块（时间/决策/范围/约束），并让 Task、ADR、Web UI 和 landing orchestration 引用同一结构；Human Gate 已收敛为轻量人类决策记录，不强制关联 Task；Code 已能检查已写出的 `Human Gate 记录` 文本块和 YAML 结构；landing-report 已能按 Human Gate 子类分流缺口（必须人类决策记录 21、规范口径说明 5、承接实现支持 1、Code 降级提示/覆盖 1）；后续仍需 Web/事实源回写消费 |
 | 规范落地治理吸收 | 已落地 | `docs/specs/00`、`04` 系列、`06`、`07`、`10`、`26`、`41` | 规范落地要求、环境适配、运行投影、平台清单、LDVH/个人特别要求已重组为 04 系列链路 |
 | Web 语义化与阅读体验改进 | 已部分落地 | `web/`、`web/docs/`、`docs/specs/08-Web信息同步规范.md` | 已有 Dashboard、ObjectList、ObjectDetail、Validate、Changelog、ReadingPanel 等实现与设计文档；Human Gate 证据导出、受控回写和检查面仍未闭环 |
-| ECC 运行系统经验对照 | 已形成最终结论并完成规范对齐 | §2.2、`docs/specs/04.06-平台适配清单规范.md` §6 | 最终结论见 §2.2：LDVH 安装模型与 ECC 完全不同，唯一保留 target adapter 思想落地为 04.06 §6；04 主轴已收回 5 层 |
+| ECC 运行系统经验对照 | 已形成最终结论并完成规范对齐 | §2.2、`docs/specs/04.06-环境能力清单规范.md` §6 | 最终结论见 §2.2：LDVH 安装模型与 ECC 完全不同，唯一保留 target adapter 思想落地为 04.06 §6；04 主轴已收回 5 层 |
 | Web Validate 落地检查摘要 | 已落地基础展示 | `tools/specs_validate.py web-validate`、`web/api/routes/validate.ts`、`web/src/pages/Validate.tsx`、`web/docs/05-Validate.md` | Validate 页面已消费 Code 只读数据合同，展示 `landingCheck`、`landingReport`、`humanGateReport` 摘要、剩余缺口和能力缺口；当前仍为展示和诊断面，不替代事实源或 Human Gate |
 
 仍在推进中的事项不因本文标注而自动关闭。本文只记录“已进入正式承接位置或 Code 实现”的事实，后续验收仍应回到对应规范、Code 测试、运行投影、工作对象或 Human Gate 证据。
@@ -76,7 +76,7 @@ Web 协调 Human
 
 研读工作区 ECC 项目、00 总纲和 06 工作流程基础规范后，当前推进路线需要从“继续细挖单类缺口”调整为“先把复杂工作流程的过程输出规范化，再由具体流程定义自己的只读计划、状态、诊断或汇总输出”。
 
-ECC 值得学习的不是大量 Rules、Skills、Commands、Agents 或完整安装器，而是组织方法：用 manifest 描述能力边界，用 plan 先只读解析操作，用统一入口降低发现成本，用 status/doctor 聚合健康状态，用跨平台 target/adapters 组织运行投影。
+ECC 值得学习的不是大量 Rules、Skills、Commands、Agents 或完整安装器，而是组织方法：用 manifest 描述能力边界，用 plan 先只读解析操作，用统一入口降低发现成本，用 status/doctor 聚合健康状态，用跨环境 target/adapters 组织运行投影。
 
 LDVH 吸收这些经验时必须受 00 总纲和 06 工作流程基础规范约束：
 
@@ -127,7 +127,7 @@ LDVH 不装多个扩展能力，没有配置选择需求。后续如需扩展技
 正式规范 → 规范落地要求 → 保障机制 → 环境适配映射 → 运行投影
 ```
 
-多出来的概念各回各家：落地承接单元归 04.03 内部规则，平台适配规则归 04.06 内部规则，候选/实际证据区分归 41/42 内部规则，分流/事实源回写归 09 内部规则。ECC 借鉴已完成，不应让转译痕迹留在 04 主轴中。
+多出来的概念各回各家：落地承接单元归 04.03 内部规则，环境适配规则归 04.06 内部规则，候选/实际证据区分归 41/42 内部规则，分流/事实源回写归 09 内部规则。ECC 借鉴已完成，不应让转译痕迹留在 04 主轴中。
 
 ---
 
@@ -207,7 +207,7 @@ LDVH 不装多个扩展能力，没有配置选择需求。后续如需扩展技
 |---|---|---|---|---|
 | G-01 | 缺少规范落地要求全局聚合报告命令 | closed-basic | 基础命令已落地，AI 不再必须手工跨文件聚合；但验证状态、运行投影漂移和事实证据仍需扩展 | 已由 `tools/specs_validate.py landing-report` 承接；后续接入验证证据、工作对象证据、Human 确认和漂移检查 |
 | G-02 | 运行投影漂移检查 Code | closed-basic | `tools/specs_validate.py runtime-projection` 已能检查项目内运行投影是否缺少权威来源、引用不存在规范、复制规范正文或路径漂移；当前项目内检查结果为 closed | 已由 `tools/specs_validate.py runtime-projection` 承接；后续需扩展到用户级运行投影检查 |
-| G-03 | AI 统一入口已指向 42 和 41，但持久运行投影仍需检查 | closed-basic | `LDVH-AI-ENTRY.md` 已提示 LDVH落地与检查进入 42，specs 变更、落地缺口或运行投影漂移进入 41；但工作区级薄入口、平台入口或管辖项目入口是否同步仍需 42 现场检查 | 42 + 运行投影：检查所有已授权入口是否只保留薄引用且未复制正文 |
+| G-03 | AI 统一入口已指向 42 和 41，但持久运行投影仍需检查 | closed-basic | `LDVH-AI-ENTRY.md` 已提示 LDVH落地与检查进入 42，specs 变更、落地缺口或运行投影漂移进入 41；但工作区级薄入口、环境入口或管辖项目入口是否同步仍需 42 现场检查 | 42 + 运行投影：检查所有已授权入口是否只保留薄引用且未复制正文 |
 | G-04 | 42 LDVH落地与检查 dogfood | closed-basic | `tools/specs_validate.py ldvh-landing-check` 已能对 LDVH 自身执行只读检查，汇总 governed-projects、landing-report、runtime-projection、human-gate-report、fact_validate 和 spec_validate；当前 dogfood 结果：governed_projects closed、landing_report open、runtime_projection closed、human_gate degraded、fact_validate closed、spec_validate closed | 已由 `tools/specs_validate.py ldvh-landing-check` 承接；后续需持续复检并补齐 human_gate 和 landing_report 缺口 |
 | G-05 | 43 独立产品审计已取消 | removed | 原 43 职责已并入 42；不得把 43 当作后置独立审计流程恢复 | 40 保留 removed 槽位；后续检查回到 42 |
 | G-06 | 生命周期触发仍以人工降级为主 | degraded | specs 变更、commit 前后、会话停止前等触发依赖 AI 记忆 | 运行投影 + Code：Hook / CI / 人工降级清单逐步承接 |
@@ -245,7 +245,7 @@ LDVH 不装多个扩展能力，没有配置选择需求。后续如需扩展技
 | 非 LDVH 来源内容必须先接管再生效 | 11、11.01、40 的 57 candidate |
 | 工作模型集合索引和对象状态边界 | 20；21-26 active，27-29 removed，30-34 deferred，35-39 reserved |
 | 工作流程集合索引和候选状态边界 | 40；41-44 active，45-58 candidate，59 reserved |
-| 运行投影和平台适配链路 | 04.02、04.03、04.06、04.07、04.08、LDVH-AI-ENTRY.md |
+| 运行投影和环境适配链路 | 04.02、04.03、04.06、04.07、04.08、LDVH-AI-ENTRY.md |
 
 ### 5.2 需要继续承接的候选事项
 
@@ -255,7 +255,7 @@ LDVH 不装多个扩展能力，没有配置选择需求。后续如需扩展技
 | 反合理化红旗与失败暂停 | 06、10、12、26、47、53 | 已进入 06、10、26、41 的基础规则；后续 47/53/12 可继续补具体执行与审查场景 |
 | closure_evidence 结构化证据层 | 05.01、10、26、47、48、08 | 26 已补关闭证据最低要求，10/41 已补验证与证据边界；后续再判断是否需要结构化字段、47/48 流程规则和 Web 展示 |
 | 独立审计 Agent 与只读审阅边界 | 06、41、44、47、53、54、10 | 44 已提供多角色思考流程；高风险任务、规范变更、事实源状态流转和关闭判断仍需在 47/54 中细化审阅边界 |
-| 工具权限面和阶段化能力暴露 | 04.03、06、07、10、41 | Intake、Plan、Execute、Verify、Review、Close 不应默认暴露同一套写入与执行能力；应由平台适配清单、运行投影和工具实现共同承接 |
+| 工具权限面和阶段化能力暴露 | 04.03、06、07、10、41 | Intake、Plan、Execute、Verify、Review、Close 不应默认暴露同一套写入与执行能力；应由环境适配清单、运行投影和工具实现共同承接 |
 | 渐进式上下文加载与 Context Pack | 06、07、10、40、55 | 06 已补 Context 派生输入边界和“少读不是不读”；后续由 Code/Web/55 继续承接最小上下文生成 |
 | 第三方 Skill 脚手架与治理接管 | 11、11.01、40、57 | 第三方 Skill 可作为能力供给方，持续开发和正式产物必须回到 LDVH 主控、验证和事实源回写；57 已登记为 candidate |
 | Trae Spec 或其他平台规划产物纳入 Task 治理 | 11、26、40、45、46、57 | 平台规划产物不是执行授权；被 LDVH 吸收后才可作为执行依据；不得形成第二权威事实源 |
@@ -348,9 +348,9 @@ LDVH 不装多个扩展能力，没有配置选择需求。后续如需扩展技
 
 2. **~~规范工作流程过程输出边界~~**：已完成第一轮承接。06 已定义“工作流程过程输出”通用规则；41 定义 `landing-plan` 合同；42 定义消费 `landing-plan` 和自身检查/状态/诊断输出边界；44 定义多视角触发、模式选择和汇总输出；07/08/09/10 分别约束实现、展示、回写和验证。
 
-3. **~~重构 04 系列主轴~~**：已完成。第一轮 ECC 对照后主轴重构为 9 层；经逐模块对照和 LDVH 实际安装模型确认后，最终结论为收回 5 层（正式规范→落地要求→保障机制→环境适配→运行投影）。ECC 唯一保留的 target adapter 思想已落地为 04.06 §6 平台实体映射规则。其余概念（落地承接单元、平台适配规则、候选/实际证据区分、分流/回写）归入各子文档或工作流程内部规则，不挂在 04 主轴。详见 §2.2。
+3. **~~重构 04 系列主轴~~**：已完成。第一轮 ECC 对照后主轴重构为 9 层；经逐模块对照和 LDVH 实际安装模型确认后，最终结论为收回 5 层（正式规范→落地要求→保障机制→环境适配→运行投影）。ECC 唯一保留的 target adapter 思想已落地为 04.06 §6 平台实体映射规则。其余概念（落地承接单元、环境适配规则、候选/实际证据区分、分流/回写）归入各子文档或工作流程内部规则，不挂在 04 主轴。详见 §2.2。
 
-4. **建立平台能力映射表作为辅助线**：吸收 ECC 跨平台 target/adapters 的组织方法，但不直接创建多平台持久入口；先映射入口可见、流程复用、子 Agent、生命周期触发、确定性反馈、Human 确认在 Trae/Codex 等环境中的候选承接与降级边界。
+4. **建立平台能力映射表作为辅助线**：吸收 ECC 跨环境 target/adapters 的组织方法，但不直接创建多平台持久入口；先映射入口可见、流程复用、子 Agent、生命周期触发、确定性反馈、Human 确认在 Trae/Codex 等环境中的候选承接与降级边界。
 
 5. **~~修复或分流工作对象事实源漂移~~**：已完成。`fact_validate.py ldvh-base` 当前报告 files=89 errors=0 warnings=0。
 
@@ -433,5 +433,5 @@ LDVH 不装多个扩展能力，没有配置选择需求。后续如需扩展技
 9. ~~`fact_validate.py ldvh-base` 暴露的历史路径漂移和证据格式提示~~：已修复，当前 files=89 errors=0 warnings=0；
 10. Human Gate 证据回写消费、Web 检查面和受控轻写入，应按 08、41、42 和 Web 实现文档继续补齐；当前 Validate 已展示 Human Gate 摘要，但尚未形成确认和回写闭环；
 11. 运行投影 29 个 degraded 缺口需继续通过 `landing-plan.gaps` 和 `landing-plan.proposed_actions` 判断是入口缺失、证据不足、平台能力限制还是规范口径问题；
-12. ECC manifest 经验只先转译为能力/运行投影最小索引，不作为安装器；平台能力映射先作为诊断表，不直接创建多平台入口；完整 CLI、apply/repair、长期状态源、多平台自动分发和大量 Skill/Agent 化暂缓；
+12. ECC manifest 经验只先转译为能力/运行投影最小索引，不作为安装器；平台能力映射先作为诊断表，不直接创建多环境入口；完整 CLI、apply/repair、长期状态源、多平台自动分发和大量 Skill/Agent 化暂缓；
 13. ~~04 系列是下一轮主要重构对象~~：已完成主轴重构并收回为 5 层（§2.2）。后续 04.04/04.05 校准和 04.07/04.08 实测补齐按需进行，不构成紧急重构项。

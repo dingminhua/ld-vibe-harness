@@ -3,9 +3,9 @@ type: intent
 title: 工作模型管理
 title_en: Work Model Management
 title_zh: 工作模型管理
-status: completed
+status: review_needed
 created: 2026-06-04
-updated: '2026-06-05T17:46:02.417998'
+updated: '2026-06-11T06:44:19+08:00'
 description: |
   LDVH 生产对象的增删改查、模型收敛和机制分层治理。
   已完成决策：取消 TaskSet 和 Evidence 作为独立 active fact model，由 Intent 承接目标/背景/约束/成功标准/关联任务和完成判断，由 Task 直接引用结果物和关闭证据。
@@ -25,3 +25,6 @@ related_tasks:
 related_adrs: []
 related_pitfalls: []
 related_docs: []
+review_requested_at: '2026-06-11T06:44:19+08:00'
+completion_evidence: |
+  关联任务 task-0004、task-0005、task-0006 已关闭；TaskSet 与 Evidence 的取消路径已进入工作模型集合和工具链事实源。按新的 Intent 状态机，该对象处于待关闭确认状态，等待最终关闭判断。

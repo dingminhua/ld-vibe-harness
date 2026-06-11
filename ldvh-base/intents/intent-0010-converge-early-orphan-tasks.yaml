@@ -3,7 +3,7 @@ type: intent
 title: 收敛早期零散任务
 status: closed
 created: '2026-06-05T20:05:33.868116'
-updated: '2026-06-05T20:20:00'
+updated: '2026-06-11T06:44:19+08:00'
 description: |
   早期创建的 13 个任务缺少 source_intent 关联，属于项目初期用户直接指示产生的零散任务。
   本意图将这些任务收敛归组，建立统一的意图追踪，补齐意图-任务关联关系。
@@ -31,3 +31,7 @@ related_tasks:
 related_adrs: []
 related_pitfalls: []
 related_docs: []
+review_requested_at: '2026-06-05T20:20:00'
+completion_evidence: |
+  本 Intent 的成功标准是补齐早期零散任务的 source_intent 归组关系，而不是等待所有关联任务完成。原关闭记录表明 task-0010~0018、task-0024、task-0026、task-0027、task-0028 已归组到 intent-0010；本次迁移只补齐新状态机要求的关闭证据字段。
+closed_at: '2026-06-05T20:20:00'

@@ -14,7 +14,7 @@
 
 本文直接回答：LDVH 现在应向 ECC 学习什么。
 
-ECC 的价值不在于它有多少 agents、skills、commands、rules，也不在于 LDVH 要复制一套类似系统。ECC 对 LDVH 最有价值的部分，是它已经实践过一组运行系统工程化方法：如何描述可安装能力、如何先计划再执行、如何统一命令入口、如何做运行状态聚合、如何跨平台组织运行投影、如何分层管理 Rules / Skills / Commands / Agents。
+ECC 的价值不在于它有多少 agents、skills、commands、rules，也不在于 LDVH 要复制一套类似系统。ECC 对 LDVH 最有价值的部分，是它已经实践过一组运行系统工程化方法：如何描述可安装能力、如何先计划再执行、如何统一命令入口、如何做运行状态聚合、如何跨环境组织运行投影、如何分层管理 Rules / Skills / Commands / Agents。
 
 LDVH 应学习这些方法，但必须按 LDVH 的目标转译：服务 AI 执行者，服务 V1-V10 价值标准，进入 Intent → Plan → Execute → Verify → Record → Learn 运行闭环，回到 Git 文件事实源，并遵守 Human Gate、Code 验证和防递归建设原则。
 
@@ -28,7 +28,7 @@ LDVH 应向 ECC 学习六类机制：
 2. Plan / Apply / Verify 分段执行；
 3. 统一 CLI 门面；
 4. Status / Doctor 诊断聚合；
-5. 跨平台运行投影组织；
+5. 跨环境运行投影组织；
 6. Rules / Skills / Commands / Agents 资产分层。
 
 学习顺序应是：
@@ -36,7 +36,7 @@ LDVH 应向 ECC 学习六类机制：
 ```text
 先学只读描述和诊断
 → 再学命令入口和输出合同
-→ 再学跨平台投影映射
+→ 再学跨环境投影映射
 → 最后才评估 apply、repair、自动分发和规模化资产库
 ```
 
@@ -92,7 +92,7 @@ LDVH 可学习 ECC manifest，形成自己的候选描述结构：
 ### 3.4 不应做什么
 
 1. 不应先做完整安装器；
-2. 不应先做跨平台自动分发；
+2. 不应先做跨环境自动分发；
 3. 不应把 manifest 输出当作最终事实源；
 4. 不应把 ECC 的 components/modules/profiles 原样复制成 LDVH 规范。
 
@@ -225,7 +225,7 @@ LDVH 的 status / doctor 应是派生聚合视图，不是状态事实源。
 |---|---|
 | 工作对象状态分布 | `ldvh-base/` + fact_cli |
 | 规范落地要求缺口 | `docs/specs/` + landing-report |
-| 平台适配 open_items | 平台适配清单 |
+| 环境适配 open_items | 环境适配清单 |
 | 运行投影漂移风险 | 04.02、平台清单、实际入口 |
 | Human Gate 待确认事项 | Task、ADR、Web、当前流程输出 |
 | 最近验证结果 | Code 输出、测试结果、closure evidence |
@@ -247,7 +247,7 @@ LDVH 的 status / doctor 应是派生聚合视图，不是状态事实源。
 
 ---
 
-## 7. 学习五：跨平台运行投影组织
+## 7. 学习五：跨环境运行投影组织
 
 ### 7.1 ECC 值得学习什么
 
@@ -257,7 +257,7 @@ LDVH 也需要适配不同 AI 开发环境，但 LDVH 的原则是适配不绑�
 
 ### 7.2 LDVH 应如何转译
 
-LDVH 应把 ECC 的跨平台经验转译为平台适配清单和运行投影映射。
+LDVH 应把 ECC 的跨环境经验转译为环境适配清单和运行投影映射。
 
 建议形成映射表：
 
@@ -273,9 +273,9 @@ LDVH 应把 ECC 的跨平台经验转译为平台适配清单和运行投影映�
 ### 7.3 LDVH 当前应做什么
 
 1. 先整理 ECC 各平台表面作为 refs 或 research 输入；
-2. 更新或补充平台适配清单 open_items；
+2. 更新或补充环境适配清单 open_items；
 3. 只在当前平台做最小运行投影验证；
-4. 将跨平台差异留在平台适配清单，不写进 00 或通用规范正文。
+4. 将跨环境差异留在环境适配清单，不写进 00 或通用规范正文。
 
 ### 7.4 不应做什么
 
@@ -339,7 +339,7 @@ LDVH 应按 04.03 的环境能力承接边界吸收这种分层。
 
 ### 9.3 第三阶段：运行投影映射
 
-学习 ECC 跨平台表面，转译为 LDVH 平台适配清单和运行投影映射矩阵。
+学习 ECC 跨环境表面，转译为 LDVH 环境适配清单和运行投影映射矩阵。
 
 目标：明确不同平台如何承接入口可见、流程复用、子 Agent 思考、生命周期触发、确定性执行和 Human 交互。
 
@@ -365,7 +365,7 @@ LDVH 应按 04.03 的环境能力承接边界吸收这种分层。
 | ECC manifest 字段转译表 | research 或 ADR | 作为 LDVH schema 候选，不直接安装 |
 | 统一 CLI 最小命令树 | ADR、Task、Code | 包装现有高频只读能力 |
 | status / doctor 边界 | ADR、Task、Web docs | 明确聚合视图与事实源边界 |
-| ECC 平台表面映射矩阵 | docs/refs 或 research | 作为平台适配清单输入材料 |
+| ECC 平台表面映射矩阵 | docs/refs 或 research | 作为环境适配清单输入材料 |
 | 第三方 Skill 接管策略 | docs/specs/11、11.01 或 Task | 与非 LDVH 来源内容治理合并判断 |
 
 ---
@@ -380,7 +380,7 @@ LDVH 应向 ECC 学习的不是目标、规模或内容库，而是运行系统�
 2. 用 plan 先做只读诊断；
 3. 用统一 CLI 降低发现成本；
 4. 用 status / doctor 做聚合视图和缺口分流；
-5. 用跨平台表面经验完善平台适配清单；
+5. 用跨环境表面经验完善环境适配清单；
 6. 用资产分层原则约束 Rules、Skills、Commands、Agents 的边界。
 
 当前最不该做的是：
@@ -390,6 +390,6 @@ LDVH 应向 ECC 学习的不是目标、规模或内容库，而是运行系统�
 3. 先做大而全 CLI；
 4. 先做长期状态源；
 5. 先复制 ECC 的 Skills / Commands / Rules；
-6. 脱离当前 Dogfood 闭环做跨平台投影扩张。
+6. 脱离当前 Dogfood 闭环做跨环境投影扩张。
 
 最小下一步是设计 `ldvh landing plan --json`，让 41、42、04、07、09 的判断结果可以被 AI、Human、Code 和 Web 共同消费，并且始终回指 Git 文件事实源。

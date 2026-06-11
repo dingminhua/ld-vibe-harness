@@ -4,9 +4,9 @@
 > 定位：收敛 LDVH 在 Trae Work CN、Codex App、Claude Code CLI 三个 AI 开发环境上的跨环境承接复用、环境薄入口、承接矩阵、承接检查、跨环境融合落地方式和后续融合计划
 > 性质：内部调研与推进计划文档，不直接构成正式规范或实施承诺
 > 执行效力：无；稳定结论需进入正式 specs、ADR、Task、Code、Web、测试、运行投影或最佳实践后才具备对应效力
-> 来源：`docs/refs/09-ECC跨平台同功能复用机制任务参考.md`、`docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md`、2026-06-11 关于 Trae Work CN / Codex App / Claude Code CLI 三环境复用范围的讨论
+> 来源：`docs/refs/09-ECC跨环境同功能复用机制任务参考.md`、`docs/research/21-LDVH下一阶段推进方向-受控落地执行闭环.md`、2026-06-11 关于 Trae Work CN / Codex App / Claude Code CLI 三环境复用范围的讨论
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力承接边界规范.md`、`docs/specs/04.06-平台适配清单规范.md`、`docs/specs/04.07-Trae-Solo适配清单.md`、`docs/specs/04.08-Codex适配清单.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
+> 相关规范：`docs/specs/04.02-环境适配与运行投影规范.md`、`docs/specs/04.03-环境能力清单与投射规范.md`、`docs/specs/04.06-环境能力清单规范.md`、`docs/specs/04.07-Trae-Solo适配清单.md`、`docs/specs/04.08-Codex适配清单.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
 
 ---
 
@@ -16,7 +16,7 @@
 
 本文集中回答：
 
-1. LDVH 如何吸收 ECC 的跨平台组织方法；
+1. LDVH 如何吸收 ECC 的跨环境组织方法；
 2. LDVH 如何先用 Trae Work CN、Codex App、Claude Code CLI 三个 AI 开发环境验证跨环境承接复用；
 3. 哪些内容必须留在 LDVH 共享内核，哪些内容只能作为环境薄入口或三环境承接矩阵；
 4. 环境承接如何声明、检查和防止虚假承接；
@@ -303,7 +303,7 @@ P3 子项：
 
 | 落地对象 | 目标位置 | 落地内容 |
 |---|---|---|
-| 三环境承接矩阵 | `docs/specs/04.06-平台适配清单规范.md` | 承接类型、Trae Work CN / Codex App / Claude Code CLI 对比矩阵、承接检查、风险说明、来源和承接降级字段 |
+| 三环境承接矩阵 | `docs/specs/04.06-环境能力清单规范.md` | 承接类型、Trae Work CN / Codex App / Claude Code CLI 对比矩阵、承接检查、风险说明、来源和承接降级字段 |
 | Trae 既有材料 | `docs/specs/04.07-Trae-Solo适配清单.md` | 作为迁移输入吸收到 04.06，迁移后标记为历史参考、待合并或删除候选 |
 | Codex 既有材料 | `docs/specs/04.08-Codex适配清单.md` | 作为迁移输入吸收到 04.06，迁移后标记为历史参考、待合并或删除候选 |
 | Claude Code CLI 材料 | 后续 refs 调研与 04.06 矩阵列 | Claude Code CLI refs、薄入口、commands / hooks / MCP / permission 承接方式，不新增独立 04.09 清单 |
@@ -334,7 +334,7 @@ P3 子项：
 1. 环境映射鸡蛋问题；
 2. Trae Work CN / Codex App / Claude Code CLI 的承接对照；
 3. manifest 或能力索引的详细字段；
-4. ECC 跨平台机制的详细吸收；
+4. ECC 跨环境机制的详细吸收；
 5. 04.06 三环境承接矩阵以及 04.07 / 04.08 迁移处理的具体改造计划。
 
 这些内容由本文承接。21 只需要保留一条引用：跨环境承接复用和环境薄入口计划见本文。
@@ -380,7 +380,7 @@ ADR 应记录的决策：
 5. 42 能发现环境承接声明无承接检查、入口复制正文、承接项误标原生承接和缺少承接降级说明；
 6. landing-plan 能输出环境承接差异和 proposed_actions；
 7. 不新增安装器、长期状态源或多环境自动分发；
-8. 21 中跨平台展开内容已移出并引用本文。
+8. 21 中跨环境展开内容已移出并引用本文。
 
 ---
 

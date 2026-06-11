@@ -16,6 +16,14 @@ acceptance: |
   - [x] 提出整体性改进方案
   - [x] 输出审视报告到 web/docs/
 blocked_by: []
+verification: |
+  ## 验证结果
+
+  历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+  ## 结论
+
+  历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
 closure_evidence: |
   研究文档 web/docs/08-网站整体性多角色审视研究.md 已完成，覆盖三段式布局方案、
   4种角色（新用户/管理者/开发者/AI协作者）问题与改进、整体性改进方案，并给出落地顺序。
