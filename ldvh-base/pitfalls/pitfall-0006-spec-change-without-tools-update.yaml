@@ -58,7 +58,7 @@ applicability: |
 source_objects:
 - adr-0005
 related_rules:
-- docs/specs/07-Code实现规范.md §4.7
+- docs/specs/07-Code确定性执行实现规范.md §4.7
 - docs/specs/04.02-LDVH能力保障规范.md
 - docs/specs/04.03-环境能力清单与环境适配规范.md
 tags:

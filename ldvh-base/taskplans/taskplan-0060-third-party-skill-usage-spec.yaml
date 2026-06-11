@@ -17,7 +17,7 @@ related_docs:
 - docs/specs/02-术语规范.md
 - docs/specs/03-文档基础规范.md
 - docs/specs/04.03-环境能力清单与环境适配规范.md
-- docs/specs/07-Code实现规范.md
+- docs/specs/07-Code确定性执行实现规范.md
 - docs/specs/06-工作流程基础规范.md
 related_adrs: []
 related_memos: []

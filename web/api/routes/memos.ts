@@ -3,7 +3,7 @@
  *
  * 依据：
  * - docs/specs/25-Memo-备忘.md §8.3 Web 信息同步
- * - docs/specs/08-Web信息同步规范.md §8.2 Web 事实源写入白名单
+ * - docs/specs/08-Web信息同步实现规范.md §8.2 Web 事实源写入白名单
  */
 
 import { Router, type Request, type Response } from 'express'

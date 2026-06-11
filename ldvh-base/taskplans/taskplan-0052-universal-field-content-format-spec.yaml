@@ -14,8 +14,8 @@ tasks:
 related_docs:
 - docs/specs/03-文档基础规范.md
 - docs/specs/09-事实源边界与承载规范.md
-- docs/specs/07-Code实现规范.md
-- docs/specs/08-Web信息同步规范.md
+- docs/specs/07-Code确定性执行实现规范.md
+- docs/specs/08-Web信息同步实现规范.md
 - docs/specs/05-工作模型基础规范.md
 - docs/specs/20-工作模型集合索引.md
 - web/docs/07-内容可读性深度研究.md

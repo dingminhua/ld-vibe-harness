@@ -4,7 +4,7 @@
 > 定位：定义多角色思考工作流程，包括行动定位、准入条件、事实源边界、Context、Scenario、执行流程、Gate、Skill 和 Agent 调度、工具协作、事实源回写、证据留存、机制适配边界和行动特有检查
 > 适用范围：所有接入 LDVH 且需要对复杂变更、决策、风险、规范治理或跨模块影响进行多视角分析的项目
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`
+> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/08-Web信息同步实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -72,7 +72,7 @@
 4. `docs/specs/06-工作流程基础规范.md`；
 5. `docs/specs/40-工作流程集合索引.md`；
 6. 需要判断事实源回写时，读取 `docs/specs/09-事实源边界与承载规范.md` 和对应工作模型规范；
-7. 需要判断环境投射时，读取 `docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/07-Code实现规范.md` 或 `docs/specs/08-Web信息同步规范.md`。
+7. 需要判断环境投射时，读取 `docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/07-Code确定性执行实现规范.md` 或 `docs/specs/08-Web信息同步实现规范.md`。
 
 根据主题复杂度，可增加以下 Context：
 

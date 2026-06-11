@@ -5,7 +5,7 @@
 > 性质：参考文档，不直接构成 LDVH 正式规范或实施承诺
 > 前置材料：`docs/refs/07-LDVH对ECC-Claude-Code插件的借鉴评估.md`
 > ECC 本地副本：`/Users/dmh2002/poker_hud_projects/临时参考/ecc/ECC`
-> 相关 LDVH 规范：`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/11.01-第三方Skill接管落地选项.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
+> 相关 LDVH 规范：`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/11.01-第三方Skill接管落地选项.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
 
 ---
 
@@ -585,7 +585,7 @@ python3 tools/specs_validate.py runtime-projection
 
 1. `docs/specs/04.02-LDVH能力保障规范.md`；
 2. `docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`；
-3. `docs/specs/07-Code实现规范.md`；
+3. `docs/specs/07-Code确定性执行实现规范.md`；
 4. `tools/` 和 `tests/`。
 
 这样可以避免一次性把 ECC 机制引入过深。

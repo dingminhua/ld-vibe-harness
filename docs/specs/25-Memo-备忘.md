@@ -4,7 +4,7 @@
 > 定位：定义 Memo / 备忘工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理尚未任务化但有保留价值的输入、发现、提醒、问题、缺口和偏好的项目
 > 上位依据：`docs/specs/05-工作模型基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/22-Change-变更.md`、`docs/specs/24-WorkArea-工作域.md`、`docs/specs/26-Task-任务.md`、`docs/specs/27-TaskPlan-任务计划.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/08-Web信息同步实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/21-ADR-决策.md`、`docs/specs/22-Change-变更.md`、`docs/specs/24-WorkArea-工作域.md`、`docs/specs/26-Task-任务.md`、`docs/specs/27-TaskPlan-任务计划.md`
 
 ---
 ## 1. 对象定位与准入条件
@@ -265,7 +265,7 @@ Code 不得自行创建、分流、归档或删除 Memo，不得绕过 Human Gat
 
 Web 可展示 Memo 状态、分类、优先级、来源、分流目标、归档原因和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。
 
-当前唯一允许的 Memo Web 写入是快速创建：Web 可通过 `POST /api/memos` 创建 `status: draft` 的新 Memo，并写入 `title`、`description`、`source`、`category`、`priority` 和 `status_history`。该能力是 `docs/specs/08-Web信息同步规范.md` §8.2 的当前唯一 Web 事实源写入白名单。
+当前唯一允许的 Memo Web 写入是快速创建：Web 可通过 `POST /api/memos` 创建 `status: draft` 的新 Memo，并写入 `title`、`description`、`source`、`category`、`priority` 和 `status_history`。该能力是 `docs/specs/08-Web信息同步实现规范.md` §8.2 的当前唯一 Web 事实源写入白名单。
 
 Web 不得在页面状态、缓存或数据库中维护独立 Memo 权威状态。Memo 创建后的字段编辑、状态流转、分流、归档和删除不得通过 Web 直接执行；如未来需要开放，必须先更新 08 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 
@@ -284,7 +284,7 @@ Memo 创建、分流和归档的具体行动流程由后续 40-59 工作流程�
 |---|---|---|---|---|
 | 上位约束承接要求 | Memo 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、分流规则和事实源边界 | 05、03.04、本文、20 集合索引、21 ADR、24 WorkArea、26 Task、27 TaskPlan、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、分流或归档 Memo 时 |
 | 入口可见要求 | AI 处理未任务化但有保留价值的信息、发现、提醒、问题或缺口时，应能定位本文 | 20 集合索引、运行入口摘要、Memo 分流流程入口 | AI 执行入口提示 | 信息保留、分流、归档或字段契约变化时 |
-| 确定性执行要求 | Memo 字段、状态、分类、优先级、引用、文件命名和条件必填应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、Memo 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、分类枚举、分流规则或引用关系变化时 |
+| 确定性执行要求 | Memo 字段、状态、分类、优先级、引用、文件命名和条件必填应由 Code 校验或记录缺口 | `docs/specs/07-Code确定性执行实现规范.md`、Memo 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、分类枚举、分流规则或引用关系变化时 |
 | Human 交互要求 | Memo 创建、确认、分流、归档、核心描述修改和用 Memo 规避对象准入时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
 | 生命周期触发要求 | Memo 规范变化后，应检查 20、05.01、ADR、WorkArea、TaskPlan、Task、Code、Web、运行投影和相关工作流程是否需要同步 | 集合索引维护、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Memo 字段、状态、事实源边界、适配规则或检查要求变化时 |
 

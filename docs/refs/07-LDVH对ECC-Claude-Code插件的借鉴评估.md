@@ -7,7 +7,7 @@
 > 来源仓库：`https://github.com/affaan-m/ECC`
 > 本地副本：`/Users/dmh2002/poker_hud_projects/临时参考/ecc/ECC`
 > 参考基线：下载时 HEAD 为 `10c303e609a6769c565de9cc7ec288b7afdefb6c`
-> 相关 LDVH 规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
+> 相关 LDVH 规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/11-非LDVH来源内容治理规范.md`、`docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`
 
 ---
 

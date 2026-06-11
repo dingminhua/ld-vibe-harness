@@ -50,7 +50,7 @@ related_adrs: []
 related_changes: []
 blocked_by: []
 affected_docs:
-- docs/specs/07-Code实现规范.md
+- docs/specs/07-Code确定性执行实现规范.md
 closure_evidence: |
   所有文件重命名完成：ldvh_fact_cli.py→fact_cli.py, ldvh_fact_validate.py→fact_validate.py,
   check_03_specs_doc_standard.py→specs_doc_validate.py, check_03_specs_references.py→specs_refs_validate.py,

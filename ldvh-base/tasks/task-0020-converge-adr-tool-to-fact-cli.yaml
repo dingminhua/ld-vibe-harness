@@ -46,7 +46,7 @@ related_changes: []
 blocked_by:
 - task-0019
 affected_docs:
-- docs/specs/07-Code实现规范.md
+- docs/specs/07-Code确定性执行实现规范.md
 - docs/specs/21-ADR-决策.md
 closure_evidence: |
   fact_cli.py 已新增 6 个 ADR 专属子命令：search、stats、related、link-rule、deprecate、supersede。

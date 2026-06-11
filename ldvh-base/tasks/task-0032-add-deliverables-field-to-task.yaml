@@ -38,6 +38,6 @@ closure_evidence: |
   任务完成，人工确认关闭。
 affected_docs:
 - docs/specs/26-Task-任务.md
-- docs/specs/07-Code实现规范.md
+- docs/specs/07-Code确定性执行实现规范.md
 closed_at: '2026-06-05T23:23:13.144451'
 taskplan: taskplan-0032

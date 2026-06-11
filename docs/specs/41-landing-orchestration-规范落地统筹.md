@@ -6,7 +6,7 @@
 > 定位：历史定义规范落地统筹工作流程，说明 AI 如何在新增、修改、检查或执行正式规范时收集规范落地要求、分流保障机制、判断环境投射和运行投影缺口、安排验证并回写结果；当前定位待重新确认
 > 适用范围：所有接入 LDVH 且涉及 docs/specs 正式规范新增、修改、检查、运行投影同步、Code/Web/Skill/Agent/Hook/CI 承接判断或规范落地缺口处理的项目
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
+> 相关规范：`docs/specs/02-术语规范.md`、`docs/specs/03.05-工作流程文档规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/08-Web信息同步实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/26-Task-任务.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -77,8 +77,8 @@
 | 环境能力清单、投射卡片和投射降级规则 | `docs/specs/04.03-环境能力清单与环境适配规范.md` |
 | 旧环境清单迁移输入 | `docs/specs/04.03-环境能力清单与环境适配规范.md` |
 | Trae / Codex 旧资料迁移输入 | `docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md` |
-| Code 需求、工具和校验实现规则 | `docs/specs/07-Code实现规范.md` |
-| Web / Human-facing 同步规则 | `docs/specs/08-Web信息同步规范.md` |
+| Code 需求、工具和校验实现规则 | `docs/specs/07-Code确定性执行实现规范.md` |
+| Web / Human-facing 同步规则 | `docs/specs/08-Web信息同步实现规范.md` |
 | 事实源回写边界 | `docs/specs/09-事实源边界与承载规范.md` |
 | 运行闭环测试和测试用例事实源边界 | `docs/specs/10-运行闭环测试规范.md` |
 | 多角色判断和子 Agent 审查 | `docs/specs/44-multi-role-thinking-多角色思考.md` |
@@ -99,7 +99,7 @@
 7. 涉及环境差异、LDVH落地与检查、运行投影状态或环境投射判断时，读取 `docs/specs/04.03-环境能力清单与环境适配规范.md`；需要追溯旧资料时，再读取 `docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md` 或 `docs/specs/04.03-环境能力清单与环境适配规范.md`；
 8. 本次涉及的正式规范原文；
 9. 需要判断回写时，读取 `docs/specs/09-事实源边界与承载规范.md` 和对应工作模型或文档规范；
-10. 需要判断 Code、Web 或测试时，读取 `docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md` 或 `docs/specs/10-运行闭环测试规范.md`。
+10. 需要判断 Code、Web 或测试时，读取 `docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/08-Web信息同步实现规范.md` 或 `docs/specs/10-运行闭环测试规范.md`。
 
 根据主题复杂度，可增加以下 Context：
 
@@ -425,7 +425,7 @@ Agent 输出必须回到主控汇总。稳定结论只有写回事实源后才�
 | 入口可见要求 | AI 处理正式规范变更、落地缺口、运行投影漂移、LDVH落地与检查输入时，应能通过薄入口或 AI 统一入口定位本文 | 40 集合索引、LDVH-AI-ENTRY.md、运行入口摘要、Rules / Instructions 摘要 | AI 执行入口提示 | Scenario 条件、入口摘要、AI 统一入口、运行投影或集合索引变化时 |
 | 流程复用要求 | 规范落地统筹中的稳定子步骤可以评估为 Skill、命令流程或 Code 检查，但必须交还主控；本文只定义抽象分流和判断规则，不维护具体实体清单 | 04.03、07、本文 §8-§9、运行投影检查 | 流程复用 | 提取、校验、聚合、漂移检查或报告生成步骤稳定后 |
 | 子 Agent 思考要求 | 规范边界、机制选择或高影响缺口存在分歧时，应按 44 使用独立、专项或并行视角辅助判断 | 44、主控调度、Human Gate、主控汇总 | 子 Agent 审查 | 编号、机制、权限、跨模块影响或长期降级判断不清时 |
-| 确定性执行要求 | 可机械化的落地要求提取、字段检查、编号检查、引用检查、承接机制实例化判断、运行投影漂移和测试锚点检查应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、`tools/specs_validate.py` 扩展、正反样例、运行闭环测试 | 校验实现 | 本文结构、04.01 字段、40 状态、运行投影、42 消费结构或测试锚点变化时 |
+| 确定性执行要求 | 可机械化的落地要求提取、字段检查、编号检查、引用检查、承接机制实例化判断、运行投影漂移和测试锚点检查应由 Code 校验或记录缺口 | `docs/specs/07-Code确定性执行实现规范.md`、`tools/specs_validate.py` 扩展、正反样例、运行闭环测试 | 校验实现 | 本文结构、04.01 字段、40 状态、运行投影、42 消费结构或测试锚点变化时 |
 | Human 交互要求 | 关闭关键 open/degraded 缺口、接受长期降级、创建高影响运行投影、判定 LDVH落地与检查闭环，或声明 Human 提出的稳定需求、治理思想或验收口径已完成时，应触发 Human Gate，并按 06 §6.3.1 留下轻量人类决策记录 | Human Gate、变更前影响说明、缺口清单、提出者或授权代表验收结论 | 工作流程治理 | 缺口关闭、长期降级、运行投影创建、Code/Web/Skill/Agent/Hook/CI 高影响变更、Human 需求完成声明时 |
 | 生命周期触发要求 | 正式规范、04 系列、运行投影、Code、Web、工作模型或工作流程变化后，应检查是否需要进入规范落地统筹，并按入口路由、规范 Scenario、40 索引、Code 检查、42 消费、运行投影和 Human Gate 的分层抽象机制保障触发 | 40 集合索引、AI 统一入口、Code/Web 联动检查、42 消费检查、运行闭环测试检查、人工降级检查 | 触发保障 | specs、规范落地要求、运行投影、Code、Web、测试、工作模型、工作流程、Skill、Agent、Hook、CI 或入口变化时 |
 

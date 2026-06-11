@@ -76,8 +76,8 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | 处理 LDVH 自身项目工作对象 | LDVH 管理入口 | `fact_cli.py list/search/show/stats` | LDVH 自身项目 `ldvh-base/`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/20-工作模型集合索引.md` 和对应工作模型规范 |
 | 处理工作流程 | LDVH 管理入口 | `index`、`landing-report` | `docs/specs/06-工作流程基础规范.md`、`docs/specs/40-工作流程集合索引.md` 和对应 `docs/specs/41-59` 工作流程规范 |
 | 处理规范落地、环境适配、平台清单或运行投影 | LDVH 管理入口 | `landing-report`、`index` | `docs/specs/04-规范落地与环境适配基础规范.md`、04 系列环境适配规范、当前平台适配清单和 `docs/specs/41-landing-orchestration-规范落地统筹.md` |
-| 处理 Code、工具、脚本或校验 | LDVH 管理入口 | 对应工具帮助、测试命令 | `docs/specs/04.04-个人环境特别要求规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/10-运行闭环测试规范.md`、对应 `tools/` 实现和 `tests/` |
-| 处理 Web 或 Human-facing 入口 | LDVH 管理入口 | `index`、相关后端或 Web 校验 | `docs/specs/08-Web信息同步规范.md` |
+| 处理 Code、工具、脚本或校验 | LDVH 管理入口 | 对应工具帮助、测试命令 | `docs/specs/04.04-个人环境特别要求规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/10-运行闭环测试规范.md`、对应 `tools/` 实现和 `tests/` |
+| 处理 Web 或 Human-facing 入口 | LDVH 管理入口 | `index`、相关后端或 Web 校验 | `docs/specs/08-Web信息同步实现规范.md` |
 
 场景同时命中多个入口时，选择最小足够查询和读取集。只要涉及正式规范变更、规范落地要求变化、落地缺口、运行投影漂移、Code/Web/Skill/Agent/Hook/CI 边界变化或 LDVH落地与检查输入，应优先进入 `docs/specs/41-landing-orchestration-规范落地统筹.md`。41 触发保障按入口路由、规范 Scenario、40 索引、Code 检查、42 消费、运行投影和 Human Gate 分层抽象机制判断，不维护具体 Skill、入口、Hook、CI、Web 页面或 Code 命令清单。
 

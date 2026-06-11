@@ -5,7 +5,7 @@
 > 定位：定义 LDVH落地与检查工作流程，说明 AI 如何先检查当前链路、输出缺口报告、在 Human 授权下逐项落地、复检并给出当前过程报告
 > 适用范围：用户首次安装或接入 LDVH、当前环境确认、管辖项目配置发现与确认、项目落地、缺口补齐、漂移检查、可用性检查、LDVH 自身 dogfood 管辖和落地与检查报告
 > 上位依据：`docs/specs/06-工作流程基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.02-管辖项目文档规范.md`、`docs/specs/03.06-管辖项目配置规范.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/07-Code实现规范.md`、`docs/specs/08-Web信息同步规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.02-管辖项目文档规范.md`、`docs/specs/03.06-管辖项目配置规范.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/08-Web信息同步实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`docs/specs/44-multi-role-thinking-多角色思考.md`
 
 ---
 ## 1. 行动定位与适用场景
@@ -336,7 +336,7 @@ LDVH落地与检查可以使用 Code、命令、Web、搜索和文件检查协�
 5. 搜索和文件读取用于定位现有项目文档、目录和事实实例，不得把搜索结果直接写成稳定事实；
 6. 工具无法覆盖的判断，应记录人工降级检查和残留风险。
 
-若发现缺少非基线工具，应按 `docs/specs/07-Code实现规范.md` 判断是否形成 Code 需求；Code 自身规范或测试缺失时，应先建立最小可验证能力，再声明机械验证完成。
+若发现缺少非基线工具，应按 `docs/specs/07-Code确定性执行实现规范.md` 判断是否形成 Code 需求；Code 自身规范或测试缺失时，应先建立最小可验证能力，再声明机械验证完成。
 
 42 使用工具时，可以消费 Task、上游统筹流程的过程输出或等价 Code 输出。若当前工具只能抽取影响或落地要求，但不能判断承接机制是否实例化、验证证据是否存在、运行投影是否漂移或 Human Gate 是否可回写，42 应把这些能力差距作为 Code / 上游统筹能力缺口报告给 Human，而不是把临时人工判断写成已闭环。
 
@@ -446,7 +446,7 @@ LDVH落地与检查至少应能派生以下测试锚点：
 | 入口可见要求 | AI 从统一入口、管辖项目配置、用户安装请求、用户检查请求或漂移问题进入时，应能定位本文 | LDVH-AI-ENTRY.md、40 集合索引、管辖项目配置、运行入口摘要 | AI 执行入口提示 | 本文路径、Scenario、入口文件、管辖项目配置或环境入口变化时 |
 | 流程复用要求 | 只读检查、目录确认、落地要求消费、缺口聚合、复检和报告生成可评估为 Skill、命令流程或 Code 检查，但必须交还主控，不得在本文维护具体实体清单 | 04.03、07、41、本文 §6-§12、Human Gate | 流程复用 | 检查步骤稳定、重复执行或需要批量管辖项目检查时 |
 | 子 Agent 思考要求 | 边界、入口写入、目录创建、长期降级、多项目范围或高影响结论不清时，应按 44 使用独立、专项或并行视角辅助判断 | 44、主控调度、Human Gate、主控汇总 | 子 Agent 审查 | 路径、权限、入口、事实源边界、运行投影或长期降级存在分歧时 |
-| 确定性执行要求 | 可机械化的管辖项目配置、路径、目录、工作对象目录、入口引用、索引一致性、规范落地要求聚合消费和运行投影漂移应由 Code 校验或记录缺口 | `docs/specs/07-Code实现规范.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`tools/specs_validate.py` 扩展、正反样例 | 校验实现 | 本文结构、目录规则、管辖项目配置、入口规则、41 输出结构或检查规则变化时 |
+| 确定性执行要求 | 可机械化的管辖项目配置、路径、目录、工作对象目录、入口引用、索引一致性、规范落地要求聚合消费和运行投影漂移应由 Code 校验或记录缺口 | `docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、`tools/specs_validate.py` 扩展、正反样例 | 校验实现 | 本文结构、目录规则、管辖项目配置、入口规则、41 输出结构或检查规则变化时 |
 | Human 交互要求 | 修改事实源、创建或删除目录、写入入口、接受长期降级、沉淀报告、关闭关键缺口或宣称通过时，应触发 Human Gate | Human Gate、变更前影响说明、检查报告、缺口清单 | 落地确认 | §7 中任一 Gate 条件发生时 |
 | 生命周期触发要求 | 管辖项目配置、环境能力清单、目录、AI 入口、工作模型、工作流程、Code、Web、运行投影或任一正式规范的落地要求变化后，应检查是否需要重新执行本文并调用 41 重新统筹；检查时应消费 41 的入口路由、规范 Scenario、40 索引、Code 检查、运行投影和 Human Gate 分层保障状态 | `docs/specs/04.03-环境能力清单与环境适配规范.md`、`docs/specs/40-工作流程集合索引.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、Code 检查、人工降级检查 | 触发保障 | 配置、环境清单、目录、入口、active 模型/流程、Code/Web、运行投影、Skill、Agent、Hook、CI 或规范落地要求变化时 |
 
