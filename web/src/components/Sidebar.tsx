@@ -11,7 +11,9 @@ import {
   StickyNote,
   Globe,
   ClipboardCheck,
+  ClipboardList,
   FlaskConical,
+  FolderTree,
   Sun,
   Moon,
   Monitor,
@@ -22,8 +24,10 @@ import { useI18n } from '@/i18n/context';
 import { useTheme } from '@/hooks/useTheme';
 import type { LocaleKey } from '@/i18n/locales';
 
-const NAV_ITEMS: { to: string; labelKey: LocaleKey; icon: typeof LayoutDashboard }[] = [
+const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: string }; icon: typeof LayoutDashboard }[] = [
   { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard },
+  { to: '/attention-test', label: { zh: '测试', en: 'Test' }, icon: ClipboardList },
+  { to: '/project-files', label: { zh: '文件', en: 'Files' }, icon: FolderTree },
   { to: '/workbench', labelKey: 'nav.workbench', icon: FlaskConical },
   { to: '/objects/intent', labelKey: 'nav.intents', icon: Lightbulb },
   { to: '/objects/task', labelKey: 'nav.tasks', icon: Target },
@@ -35,6 +39,11 @@ const NAV_ITEMS: { to: string; labelKey: LocaleKey; icon: typeof LayoutDashboard
   { to: '/gate', labelKey: 'nav.gate', icon: ShieldCheck },
   { to: '/changelog', labelKey: 'nav.changelog', icon: ClipboardCheck },
 ];
+
+function getNavItemLabel(item: (typeof NAV_ITEMS)[number], locale: string, t: (key: LocaleKey) => string): string {
+  if (item.labelKey) return t(item.labelKey);
+  return locale === 'en' ? item.label?.en ?? '' : item.label?.zh ?? '';
+}
 
 function ThemeIcon({ mode }: { mode: 'system' | 'light' | 'dark' }) {
   if (mode === 'light') return <Sun size={16} />;
@@ -120,7 +129,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <NavLink
                 to={item.to}
                 end={item.to === '/'}
-                aria-label={collapsed ? t(item.labelKey) : undefined}
+                aria-label={collapsed ? getNavItemLabel(item, locale, t) : undefined}
                 onMouseEnter={() => setVisibleTooltip(`nav-${item.to}`)}
                 onMouseLeave={() => setVisibleTooltip(null)}
                 onFocus={() => setVisibleTooltip(`nav-${item.to}`)}
@@ -137,8 +146,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 }
               >
                 <item.icon size={16} className="flex-shrink-0" />
-                {!collapsed && <span className="truncate">{t(item.labelKey)}</span>}
-                {collapsed && <IconTooltip label={t(item.labelKey)} visible={visibleTooltip === `nav-${item.to}`} />}
+                {!collapsed && <span className="truncate">{getNavItemLabel(item, locale, t)}</span>}
+                {collapsed && <IconTooltip label={getNavItemLabel(item, locale, t)} visible={visibleTooltip === `nav-${item.to}`} />}
               </NavLink>
             </li>
           ))}

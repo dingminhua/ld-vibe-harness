@@ -18,6 +18,7 @@ import docsRoutes from './routes/docs.js'
 import memosRoutes from './routes/memos.js'
 import gateRoutes from './routes/gate.js'
 import landingPlanRoutes from './routes/landing-plan.js'
+import projectFilesRoutes from './routes/project-files.js'
 
 dotenv.config()
 
@@ -43,6 +44,7 @@ app.use('/api/landing-plan', landingPlanRoutes)
 app.use('/api/changelog', changelogRoutes)
 app.use('/api/docs', docsRoutes)
 app.use('/api/memos', memosRoutes)
+app.use('/api/project-files', projectFilesRoutes)
 
 /**
  * health

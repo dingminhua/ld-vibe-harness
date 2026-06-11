@@ -25,6 +25,8 @@ import yaml
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
 OBJECT_TYPES = {"intent", "task", "adr", "pitfall", "memo"}
 
+LIST_SUMMARY_FIELDS = ("category", "priority", "severity", "repeatability")
+
 ID_PATTERNS = {
     "intent": re.compile(r"^intent-\d{4}$"),
     "task": re.compile(r"^task-\d{4}$"),
@@ -42,7 +44,7 @@ FILENAME_PATTERNS = {
 }
 
 VALID_STATUSES = {
-    "intent": {"draft", "active", "completed", "closed"},
+    "intent": {"draft", "active", "review_needed", "closed"},
     "task": {"planned", "executing", "verifying", "review_needed", "closed"},
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
@@ -52,8 +54,8 @@ VALID_STATUSES = {
 VALID_TRANSITIONS = {
     "intent": {
         "draft": {"active"},
-        "active": {"completed", "closed"},
-        "completed": {"closed"},
+        "active": {"review_needed"},
+        "review_needed": {"closed", "active"},
         "closed": set(),
     },
     "task": {
@@ -64,7 +66,7 @@ VALID_TRANSITIONS = {
         "closed": set(),
     },
     "adr": {
-        "proposed": {"accepted", "rejected", "deprecated"},
+        "proposed": {"accepted", "rejected"},
         "accepted": {"deprecated", "superseded"},
         "rejected": set(),
         "deprecated": set(),
@@ -79,7 +81,7 @@ VALID_TRANSITIONS = {
     "memo": {
         "draft": {"active", "archived"},
         "active": {"resolved", "archived"},
-        "resolved": set(),
+        "resolved": {"archived"},
         "archived": set(),
     },
 }
@@ -519,17 +521,74 @@ def cmd_transition(args: argparse.Namespace) -> int:
         # 校验 sub_tasks 全部 closed
         sub_tasks = data.get("sub_tasks", [])
         if isinstance(sub_tasks, list) and sub_tasks:
-            pass
+            for sub_task_id in sub_tasks:
+                if not isinstance(sub_task_id, str) or not ID_PATTERNS["task"].match(sub_task_id):
+                    error(f"sub_tasks 中必须使用 task-{{NNNN}} 格式的 Task ID: {sub_task_id}")
+                    return 1
+                sub_task_path, sub_task_data = find_task_by_id(yaml_file.parent, sub_task_id)
+                if sub_task_path is None or sub_task_data is None:
+                    error(f"sub_tasks 引用的 Task 不存在: {sub_task_id}")
+                    return 1
+                if sub_task_data.get("status") != "closed":
+                    error(f"子 Task 未关闭，当前 Task 不得关闭: {sub_task_id}")
+                    return 1
+        # 校验 verification 已填写
+        verification = data.get("verification")
+        if not verification or (isinstance(verification, str) and not verification.strip()):
+            error("verification 未填写，无法关闭 Task")
+            return 1
         # 校验 closure_evidence 已填写
         closure_evidence = data.get("closure_evidence")
         if not closure_evidence or (isinstance(closure_evidence, str) and not closure_evidence.strip()):
             error("closure_evidence 未填写，无法关闭 Task")
             return 1
 
+    # Intent 待关闭确认条件校验（active → review_needed）
+    if object_type == "intent" and current_status == "active" and new_status == "review_needed":
+        completion_evidence = data.get("completion_evidence")
+        if not completion_evidence or (isinstance(completion_evidence, str) and not completion_evidence.strip()):
+            error("completion_evidence 未填写，无法将 Intent 标记为 review_needed")
+            return 1
+        if not data.get("review_requested_at"):
+            data["review_requested_at"] = datetime.now().isoformat()
+
+    # Intent 关闭条件校验（review_needed → closed）
+    if object_type == "intent" and current_status == "review_needed" and new_status == "closed":
+        for field in ("review_requested_at", "completion_evidence"):
+            value = data.get(field)
+            if not value or (isinstance(value, str) and not value.strip()):
+                error(f"{field} 未填写，无法关闭 Intent")
+                return 1
+
+    # Memo 分流条件校验（active → resolved）
+    if object_type == "memo" and current_status == "active" and new_status == "resolved":
+        resolved_to = data.get("resolved_to")
+        if not resolved_to or (isinstance(resolved_to, str) and not resolved_to.strip()):
+            error("resolved_to 未填写，无法将 Memo 标记为 resolved")
+            return 1
+        if not data.get("resolved_at"):
+            data["resolved_at"] = datetime.now().isoformat()
+
+    # Memo 归档条件校验。resolved → archived 依赖既有分流关系，不强制 archive_reason。
+    if object_type == "memo" and current_status == "resolved" and new_status == "archived":
+        for field in ("resolved_to", "resolved_at"):
+            value = data.get(field)
+            if not value or (isinstance(value, str) and not value.strip()):
+                error(f"{field} 未填写，无法归档已 resolved 的 Memo")
+                return 1
+
+    if object_type == "memo" and current_status in {"draft", "active"} and new_status == "archived":
+        archive_reason = data.get("archive_reason")
+        if not archive_reason or (isinstance(archive_reason, str) and not archive_reason.strip()):
+            error("archive_reason 未填写，无法归档 Memo")
+            return 1
+
     # 执行流转
     data["status"] = new_status
     data["updated"] = datetime.now().isoformat()
     if object_type == "task" and new_status == "closed":
+        data["closed_at"] = datetime.now().isoformat()
+    if object_type == "intent" and new_status == "closed":
         data["closed_at"] = datetime.now().isoformat()
 
     # ADR 流转时回写 Human Gate 记录到 context
@@ -543,6 +602,7 @@ def cmd_transition(args: argparse.Namespace) -> int:
 
     # 退回流转记录 reason
     backward_pairs = {
+        ("review_needed", "active"),
         ("verifying", "executing"),
         ("review_needed", "executing"),
     }
@@ -643,6 +703,9 @@ def cmd_list(args: argparse.Namespace) -> int:
                 item_data["title_en"] = data["title_en"]
             if "title_zh" in data:
                 item_data["title_zh"] = data["title_zh"]
+            for field in LIST_SUMMARY_FIELDS:
+                if field in data:
+                    item_data[field] = data[field]
             items.append(item_data)
 
     if fmt == "json":

@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2, Info, Pencil } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2, Info } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
@@ -10,13 +10,13 @@ import ReferenceCard from '@/components/ReferenceCard';
 import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
-import IntentSelector from '@/components/IntentSelector';
 import CopyPathButton from '@/components/CopyPathButton';
-import { fetchObjectDetail, patchObjectField, type ObjectDetail } from '@/utils/api';
+import { fetchObjectDetail, type ObjectDetail } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
-import { getTypeDescription, getStatusHint } from '@/i18n/locales';
+import { getObjectStatusHint, getTypeDescription } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { formatDateTime } from '@/utils/dateFormat';
+import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import {
   CHECKLIST_COMPAT_FIELDS,
   COLLAPSIBLE_FIELDS,
@@ -206,13 +206,6 @@ export default function ObjectDetail() {
 
 
 
-  const refreshDetail = useCallback(() => {
-    if (!type || !id) return;
-    fetchObjectDetail(type, id)
-      .then(setDetail)
-      .catch((e) => setError(e.message));
-  }, [type, id]);
-
   useEffect(() => {
     if (!type || !id) return;
     fetchObjectDetail(type, id)
@@ -245,7 +238,7 @@ export default function ObjectDetail() {
   const objStatus = detail.summary.status;
   const typeColor = CATEGORY_COLORS[objType] || CATEGORY_COLORS.other;
   const typeDesc = getTypeDescription(objType, locale);
-  const statusHint = getStatusHint(objStatus, locale);
+  const statusHint = getObjectStatusHint(objType, objStatus, locale);
 
   const displayTitle = (locale === 'en'
     ? ((obj.title_en as string) || obj.title as string)
@@ -359,11 +352,11 @@ export default function ObjectDetail() {
 
           {/* Content fields */}
           {objType === 'task' ? (
-            <TaskReadingLayout obj={obj} locale={locale} objType={objType} objId={objId} onRefresh={refreshDetail} />
+            <TaskReadingLayout obj={obj} locale={locale} objType={objType} />
           ) : (
             <div className="mb-6 flex flex-col gap-5">
               {contentEntries.map(([key, value]) => (
-                <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} objId={objId} onRefresh={refreshDetail} />
+                <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} />
               ))}
             </div>
           )}
@@ -438,7 +431,7 @@ function MetaChip({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-function TaskReadingLayout({ obj, locale, objType, objId, onRefresh }: { obj: Record<string, unknown>; locale: string; objType: string; objId: string; onRefresh: () => void }) {
+function TaskReadingLayout({ obj, locale, objType }: { obj: Record<string, unknown>; locale: string; objType: string }) {
   const { t } = useI18n();
   const hidden = new Set(['source', 'description', 'source_intent', 'acceptance', 'verification', 'closure_evidence', 'deliverables', 'related_docs', 'affected_docs', 'blocked_by', ...TASK_AUXILIARY_META_KEYS, ...COMMON_AUXILIARY_META_KEYS, ...META_KEYS]);
   const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && value !== null && value !== undefined && value !== '');
@@ -452,7 +445,7 @@ function TaskReadingLayout({ obj, locale, objType, objId, onRefresh }: { obj: Re
           {obj.source_intent && (
             <TaskInlineField
               label={t('objectDetail.sourceIntent')}
-              value={<FieldValue fieldKey="source_intent" value={obj.source_intent} depth={0} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />}
+              value={<FieldValue fieldKey="source_intent" value={obj.source_intent} depth={0} locale={locale} />}
             />
           )}
         </div>
@@ -489,7 +482,7 @@ function TaskReadingLayout({ obj, locale, objType, objId, onRefresh }: { obj: Re
         <TaskSection title={t('objectDetail.otherFields')} tone="default">
           <div className="flex flex-col gap-3">
             {otherEntries.map(([key, value]) => (
-              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />
+              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} />
             ))}
           </div>
         </TaskSection>
@@ -511,15 +504,21 @@ function getFieldLabel(fieldKey: string, locale: string) {
 }
 
 function localizeMetaValue(fieldKey: string, rawValue: string, locale: string) {
+  if (isSignalField(fieldKey)) {
+    return getSignalText(fieldKey, rawValue, locale) || rawValue.trim();
+  }
   const normalized = rawValue.trim();
   const entry = FIELD_VALUE_LOCALES[fieldKey]?.[normalized];
   if (entry) return locale === 'en' ? entry.en : entry.zh;
   return normalized.replace(/_/g, ' ');
 }
 
-function MetaValueChip({ children }: { children: ReactNode }) {
+function MetaValueChip({ fieldKey, value, children }: { fieldKey?: string; value?: unknown; children: ReactNode }) {
+  const signalClass = fieldKey && isSignalField(fieldKey)
+    ? getSignalClassName(fieldKey, value)
+    : 'border-ldvh-border bg-ldvh-bg text-ldvh-text-primary';
   return (
-    <span className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-0.5 font-sans text-ldvh-text-primary">
+    <span className={`ldvh-chip rounded-md border px-2 py-0.5 font-sans ${signalClass}`}>
       {children}
     </span>
   );
@@ -530,7 +529,7 @@ function formatAuxiliaryMetaValue(fieldKey: string, value: unknown, locale: stri
     return (
       <span className="flex flex-wrap gap-1.5">
         {value.map((item, index) => (
-          <MetaValueChip key={`${fieldKey}-${index}`}>
+          <MetaValueChip key={`${fieldKey}-${index}`} fieldKey={fieldKey} value={item}>
             {localizeMetaValue(fieldKey, String(item), locale)}
           </MetaValueChip>
         ))}
@@ -538,7 +537,11 @@ function formatAuxiliaryMetaValue(fieldKey: string, value: unknown, locale: stri
     );
   }
 
-  return <MetaValueChip>{localizeMetaValue(fieldKey, String(value), locale)}</MetaValueChip>;
+  return (
+    <MetaValueChip fieldKey={fieldKey} value={value}>
+      {localizeMetaValue(fieldKey, String(value), locale)}
+    </MetaValueChip>
+  );
 }
 
 function TaskSection({ title, tone, children }: { title: string; tone: 'primary' | 'checklist' | 'evidence' | 'docs' | 'default'; children: ReactNode }) {
@@ -616,7 +619,7 @@ function EmptyHint({ text }: { text: string }) {
 }
 
 /** 内容字段：根据字段类型选择渲染方式和样式 */
-function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { fieldKey: string; value: unknown; locale: string; objType: string; objId: string; onRefresh: () => void }) {
+function ContentField({ fieldKey, value, locale, objType }: { fieldKey: string; value: unknown; locale: string; objType: string }) {
   const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
   const [collapsed, setCollapsed] = useState(isCollapsible ? objType !== 'intent' : false);
 
@@ -643,15 +646,13 @@ function ContentField({ fieldKey, value, locale, objType, objId, onRefresh }: { 
           </span>
         )}
       </div>
-      {!collapsed && <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />}
+      {!collapsed && <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />}
     </div>
   );
 }
 
-function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh }: { fieldKey: string; value: unknown; depth: number; locale: string; objType?: string; objId?: string; onRefresh?: () => void }) {
+function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; value: unknown; depth: number; locale: string }) {
   const { t } = useI18n();
-  const [editingSourceIntent, setEditingSourceIntent] = useState(false);
-  const [saving, setSaving] = useState(false);
   if (value === null || value === undefined) {
     return <span className="ldvh-caption italic">{t('common.null')}</span>;
   }
@@ -689,47 +690,6 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
 
     // 单字符串引用字段（source_intent、parent_task）使用 ReferenceCard
     if (REFERENCE_FIELDS.includes(fieldKey) && parseRefType(value)) {
-      // source_intent 字段在 task 类型下支持内联编辑
-      const canEdit = fieldKey === 'source_intent' && objType === 'task' && objId && onRefresh;
-      if (canEdit) {
-        const handleSelect = async (intentId: string) => {
-          if (!objId || !onRefresh) return;
-          setSaving(true);
-          try {
-            await patchObjectField('task', objId, 'source_intent', intentId);
-            setEditingSourceIntent(false);
-            onRefresh();
-          } catch {
-            // keep selector open on error
-          } finally {
-            setSaving(false);
-          }
-        };
-        return (
-          <div className="relative">
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
-                <ReferenceCard refs={[value]} />
-              </div>
-              <button
-                onClick={() => setEditingSourceIntent(true)}
-                disabled={saving}
-                className="shrink-0 rounded-md border border-ldvh-border p-1.5 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary disabled:opacity-50"
-                title={t('objectDetail.editSourceIntent')}
-              >
-                <Pencil size={13} />
-              </button>
-            </div>
-            {editingSourceIntent && (
-              <IntentSelector
-                currentIntentId={value}
-                onSelect={handleSelect}
-                onClose={() => setEditingSourceIntent(false)}
-              />
-            )}
-          </div>
-        );
-      }
       return <ReferenceCard refs={[value]} />;
     }
 
@@ -780,7 +740,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
       <div className="flex flex-col gap-2">
         {value.map((item, i) => (
           <div key={i} className="rounded-md border border-ldvh-border bg-ldvh-bg p-3">
-            <FieldValue fieldKey={fieldKey} value={item} depth={depth + 1} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />
+            <FieldValue fieldKey={fieldKey} value={item} depth={depth + 1} locale={locale} />
           </div>
         ))}
       </div>
@@ -803,7 +763,7 @@ function FieldValue({ fieldKey, value, depth, locale, objType, objId, onRefresh 
                 {displayKey}
               </span>
               <div className="min-w-0 flex-1">
-                <FieldValue fieldKey={k} value={v} depth={depth + 1} locale={locale} objType={objType} objId={objId} onRefresh={onRefresh} />
+                <FieldValue fieldKey={k} value={v} depth={depth + 1} locale={locale} />
               </div>
             </div>
           );

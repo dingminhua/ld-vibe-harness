@@ -215,6 +215,52 @@ def test_transition_valid(tmp_path):
     assert data["status"] == "active"
 
 
+def test_transition_intent_review_needed_and_closed(tmp_path):
+    result = run_cli("create", "intent", "--title", "Intent Review", base_dir=str(tmp_path))
+    intent_path = Path(result.stdout.strip().splitlines()[0])
+    run_cli("transition", str(intent_path), "--to", "active")
+
+    result = run_cli("transition", str(intent_path), "--to", "review_needed")
+    assert result.returncode == 1
+    assert "completion_evidence" in result.stderr
+
+    data = yaml.safe_load(intent_path.read_text(encoding="utf-8"))
+    data["completion_evidence"] = "Related tasks are closed and success criteria are met."
+    intent_path.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False), encoding="utf-8")
+
+    result = run_cli("transition", str(intent_path), "--to", "review_needed")
+    assert result.returncode == 0
+    assert "active → review_needed" in result.stdout
+    data = yaml.safe_load(intent_path.read_text(encoding="utf-8"))
+    assert data["status"] == "review_needed"
+    assert data["review_requested_at"]
+
+    result = run_cli("transition", str(intent_path), "--to", "closed")
+    assert result.returncode == 0
+    assert "review_needed → closed" in result.stdout
+    data = yaml.safe_load(intent_path.read_text(encoding="utf-8"))
+    assert data["status"] == "closed"
+    assert data["closed_at"]
+
+
+def test_transition_intent_review_needed_to_active_needs_reason(tmp_path):
+    result = run_cli("create", "intent", "--title", "Intent Return", base_dir=str(tmp_path))
+    intent_path = Path(result.stdout.strip().splitlines()[0])
+    run_cli("transition", str(intent_path), "--to", "active")
+    data = yaml.safe_load(intent_path.read_text(encoding="utf-8"))
+    data["completion_evidence"] = "Ready for review."
+    intent_path.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False), encoding="utf-8")
+    run_cli("transition", str(intent_path), "--to", "review_needed")
+
+    result = run_cli("transition", str(intent_path), "--to", "active")
+    assert result.returncode == 1
+    assert "需要提供 --reason" in result.stderr
+
+    result = run_cli("transition", str(intent_path), "--to", "active", "--reason", "needs more tasks")
+    assert result.returncode == 0
+    assert "review_needed → active" in result.stdout
+
+
 def test_transition_invalid_disallowed(tmp_path):
     # Create a task (status: planned)
     result = run_cli("create", "task", "--title", "Bad Transition", base_dir=str(tmp_path))
@@ -272,11 +318,15 @@ def test_transition_task_close_requires_acceptance_and_evidence(tmp_path):
     run_cli("transition", str(task_path), "--to", "review_needed", "--reason", "ready")
 
     # Try closing without closure_evidence
+    data = yaml.safe_load(task_path.read_text(encoding="utf-8"))
+    data["verification"] = "pytest"
+    task_path.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False),
+                         encoding="utf-8")
     result = run_cli("transition", str(task_path), "--to", "closed")
     assert result.returncode == 1
     assert "closure_evidence" in result.stderr
 
-    # Set closure_evidence but leave acceptance with unchecked items
+    # Set verification and closure_evidence but leave acceptance with unchecked items
     data = yaml.safe_load(task_path.read_text(encoding="utf-8"))
     data["closure_evidence"] = "All tests pass"
     data["acceptance"] = "- [ ] Item one\n- [ ] Item two"
@@ -299,6 +349,56 @@ def test_transition_task_close_requires_acceptance_and_evidence(tmp_path):
     assert data["closed_at"]
 
 
+def test_transition_task_close_requires_verification(tmp_path):
+    result = run_cli("create", "task", "--title", "Close Needs Verification", base_dir=str(tmp_path))
+    task_path = Path(result.stdout.strip().splitlines()[0])
+    run_cli("transition", str(task_path), "--to", "executing")
+    run_cli("transition", str(task_path), "--to", "verifying")
+    run_cli("transition", str(task_path), "--to", "review_needed", "--reason", "ready")
+
+    data = yaml.safe_load(task_path.read_text(encoding="utf-8"))
+    data["acceptance"] = "- [x] Item one"
+    data["closure_evidence"] = "All tests pass"
+    task_path.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False), encoding="utf-8")
+
+    result = run_cli("transition", str(task_path), "--to", "closed")
+    assert result.returncode == 1
+    assert "verification" in result.stderr
+
+
+def test_transition_task_close_requires_closed_subtasks(tmp_path):
+    parent_result = run_cli("create", "task", "--title", "Parent", base_dir=str(tmp_path))
+    parent_path = Path(parent_result.stdout.strip().splitlines()[0])
+    child_result = run_cli("create", "task", "--title", "Child", base_dir=str(tmp_path))
+    child_path = Path(child_result.stdout.strip().splitlines()[0])
+
+    parent_data = yaml.safe_load(parent_path.read_text(encoding="utf-8"))
+    parent_data["sub_tasks"] = ["task-0002"]
+    parent_data["acceptance"] = "- [x] Item one"
+    parent_data["verification"] = "pytest"
+    parent_data["closure_evidence"] = "All tests pass"
+    parent_path.write_text(yaml.dump(parent_data, allow_unicode=True, default_flow_style=False, sort_keys=False), encoding="utf-8")
+
+    run_cli("transition", str(parent_path), "--to", "executing")
+    run_cli("transition", str(parent_path), "--to", "verifying")
+    run_cli("transition", str(parent_path), "--to", "review_needed", "--reason", "ready")
+
+    result = run_cli("transition", str(parent_path), "--to", "closed")
+    assert result.returncode == 1
+    assert "子 Task 未关闭" in result.stderr
+
+    child_data = yaml.safe_load(child_path.read_text(encoding="utf-8"))
+    child_data["status"] = "closed"
+    child_data["acceptance"] = "- [x] Item one"
+    child_data["verification"] = "pytest"
+    child_data["closure_evidence"] = "done"
+    child_data["closed_at"] = "2026-06-11"
+    child_path.write_text(yaml.dump(child_data, allow_unicode=True, default_flow_style=False, sort_keys=False), encoding="utf-8")
+
+    result = run_cli("transition", str(parent_path), "--to", "closed")
+    assert result.returncode == 0
+
+
 def test_transition_invalid_target_status(tmp_path):
     result = run_cli("create", "intent", "--title", "Bad Target", base_dir=str(tmp_path))
     intent_path = Path(result.stdout.strip().splitlines()[0])
@@ -307,6 +407,74 @@ def test_transition_invalid_target_status(tmp_path):
     result = run_cli("transition", str(intent_path), "--to", "executing")
     assert result.returncode == 1
     assert "目标状态不合法" in result.stderr
+
+
+def test_transition_adr_proposed_to_deprecated_disallowed(tmp_path):
+    result = run_cli(
+        "create", "adr", "--title", "ADR Drift",
+        "--human-gate-confirmed", "--confirmed-by", "tester",
+        "--confirmation-context", "test",
+        base_dir=str(tmp_path),
+    )
+    adr_path = Path(result.stdout.strip().splitlines()[0])
+
+    result = run_cli(
+        "transition", str(adr_path), "--to", "deprecated",
+        "--human-gate-confirmed", "--confirmed-by", "tester",
+        "--confirmation-context", "test",
+    )
+
+    assert result.returncode == 1
+    assert "不允许的流转" in result.stderr
+
+
+def test_transition_memo_resolved_to_archived(tmp_path):
+    result = run_cli("create", "memo", "--title", "Memo Archive", base_dir=str(tmp_path))
+    memo_path = Path(result.stdout.strip().splitlines()[0])
+    run_cli("transition", str(memo_path), "--to", "active")
+    data = yaml.safe_load(memo_path.read_text(encoding="utf-8"))
+    data["resolved_to"] = "task-0001"
+    memo_path.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False), encoding="utf-8")
+    run_cli("transition", str(memo_path), "--to", "resolved")
+
+    result = run_cli("transition", str(memo_path), "--to", "archived")
+
+    assert result.returncode == 0
+    assert "resolved → archived" in result.stdout
+
+
+def test_transition_memo_resolved_to_archived_requires_route(tmp_path):
+    result = run_cli("create", "memo", "--title", "Memo Bad Archive", base_dir=str(tmp_path))
+    memo_path = Path(result.stdout.strip().splitlines()[0])
+    data = yaml.safe_load(memo_path.read_text(encoding="utf-8"))
+    data["status"] = "resolved"
+    memo_path.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False, sort_keys=False), encoding="utf-8")
+
+    result = run_cli("transition", str(memo_path), "--to", "archived")
+
+    assert result.returncode == 1
+    assert "resolved_to" in result.stderr
+
+
+def test_transition_memo_resolved_requires_target(tmp_path):
+    result = run_cli("create", "memo", "--title", "Memo Resolve", base_dir=str(tmp_path))
+    memo_path = Path(result.stdout.strip().splitlines()[0])
+    run_cli("transition", str(memo_path), "--to", "active")
+
+    result = run_cli("transition", str(memo_path), "--to", "resolved")
+
+    assert result.returncode == 1
+    assert "resolved_to" in result.stderr
+
+
+def test_transition_memo_archive_requires_reason(tmp_path):
+    result = run_cli("create", "memo", "--title", "Memo Archive", base_dir=str(tmp_path))
+    memo_path = Path(result.stdout.strip().splitlines()[0])
+
+    result = run_cli("transition", str(memo_path), "--to", "archived")
+
+    assert result.returncode == 1
+    assert "archive_reason" in result.stderr
 
 
 def test_transition_task_blocked_by_requires_closed_predecessor(tmp_path):
@@ -475,6 +643,32 @@ def test_list_json_output(tmp_path):
     assert item["id"] == "task-0001"
     assert item["status"] == "planned"
     assert item["title"] == "List JSON Task"
+
+
+def test_list_json_includes_attention_summary_fields(tmp_path):
+    memo_dir = tmp_path / "ldvh-base" / "memos"
+    memo_dir.mkdir(parents=True)
+    (memo_dir / "memo-0001-important-gap.yaml").write_text(
+        """\
+id: memo-0001
+type: memo
+title: Important Gap
+status: draft
+created: "2026-06-03"
+updated: "2026-06-03"
+description: Something to preserve
+source: test
+category: gap
+priority: high
+""",
+        encoding="utf-8",
+    )
+
+    result = run_cli("list", "memo", "--format", "json", base_dir=str(tmp_path))
+    assert result.returncode == 0
+    item = json.loads(result.stdout)["data"]["items"][0]
+    assert item["category"] == "gap"
+    assert item["priority"] == "high"
 
 
 def test_list_status_filter(tmp_path):

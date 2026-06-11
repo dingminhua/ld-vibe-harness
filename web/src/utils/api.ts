@@ -70,6 +70,10 @@ export interface ObjectItem {
   status: string;
   path: string;
   updated: string;
+  category?: string;
+  priority?: string;
+  severity?: string;
+  repeatability?: string;
 }
 
 export interface ObjectDetail {
@@ -249,16 +253,97 @@ export async function fetchDocContent(docPath: string): Promise<DocContent> {
   return request<DocContent>(`/docs?path=${encodeURIComponent(docPath)}`);
 }
 
-/** 更新对象指定字段 */
-export async function patchObjectField(type: string, id: string, field: string, value: string): Promise<ObjectDetail> {
-  const res = await fetch(`${API_BASE}/objects/${type}/${encodeURIComponent(id)}/field`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ field, value }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => null);
-    throw new Error(err?.error || `API error: ${res.status} ${res.statusText}`);
-  }
-  return res.json();
+export interface GovernedProject {
+  id: string;
+  name: string;
+  description: string;
+  path: string;
+  docsPath: string;
+  ldvhBasePath: string;
+}
+
+export interface ProjectFilesProjectsData {
+  ok: boolean;
+  workspaceRoot: string;
+  projects: GovernedProject[];
+}
+
+export interface ProjectFileEntry {
+  name: string;
+  path: string;
+  absolutePath: string;
+  type: 'directory' | 'file';
+  kind: 'directory' | 'markdown' | 'yaml' | 'text' | 'binary';
+  size: number;
+  updated: string;
+}
+
+export interface ProjectFileEntriesData {
+  ok: boolean;
+  project: GovernedProject;
+  dir: string;
+  parent: string;
+  truncated: boolean;
+  entries: ProjectFileEntry[];
+}
+
+export interface ProjectFileContentData {
+  ok: boolean;
+  project: GovernedProject;
+  path: string;
+  absolutePath: string;
+  kind: 'markdown' | 'yaml' | 'text' | 'binary';
+  size: number;
+  content: string;
+  truncated: boolean;
+}
+
+export interface ProjectGitStatusEntry {
+  projectId: string;
+  status: string;
+  path: string;
+  absolutePath: string;
+  staged: boolean;
+  unstaged: boolean;
+}
+
+export interface ProjectGitStatusData {
+  ok: boolean;
+  entries: ProjectGitStatusEntry[];
+}
+
+export interface ProjectGitDiffData {
+  ok: boolean;
+  project: GovernedProject;
+  path: string;
+  absolutePath: string;
+  status: string;
+  diff: string;
+}
+
+export async function fetchProjectFilesProjects(): Promise<ProjectFilesProjectsData> {
+  return request<ProjectFilesProjectsData>('/project-files/projects');
+}
+
+export async function fetchProjectFileEntries(projectId: string, dir = ''): Promise<ProjectFileEntriesData> {
+  const params = new URLSearchParams({ projectId });
+  if (dir) params.set('dir', dir);
+  return request<ProjectFileEntriesData>(`/project-files/entries?${params.toString()}`);
+}
+
+export async function fetchProjectFileContent(projectId: string, filePath: string): Promise<ProjectFileContentData> {
+  const params = new URLSearchParams({ projectId, path: filePath });
+  return request<ProjectFileContentData>(`/project-files/content?${params.toString()}`);
+}
+
+export async function fetchProjectGitStatus(projectId?: string): Promise<ProjectGitStatusData> {
+  const params = new URLSearchParams();
+  if (projectId) params.set('projectId', projectId);
+  const qs = params.toString();
+  return request<ProjectGitStatusData>(`/project-files/git/status${qs ? `?${qs}` : ''}`);
+}
+
+export async function fetchProjectGitDiff(projectId: string, filePath: string, status: string): Promise<ProjectGitDiffData> {
+  const params = new URLSearchParams({ projectId, path: filePath, status });
+  return request<ProjectGitDiffData>(`/project-files/git/diff?${params.toString()}`);
 }
