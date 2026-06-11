@@ -1588,9 +1588,30 @@ def test_ldvh_landing_check_consumes_existing_reports(tmp_path, monkeypatch):
         "spec_validate",
     }
     assert report["summary"]["status"] == "open"
+    assert report["summary"]["bootstrap_baseline_status"] == "open"
+    assert report["summary"]["bootstrap_baseline_open_item_count"] >= 1
     assert next(item for item in report["checks"] if item["id"] == "governed_projects")["status"] == "closed"
     assert next(item for item in report["checks"] if item["id"] == "fact_validate")["status"] == "closed"
     assert any(item["id"] == "human_gate" and item["status"] == "degraded" for item in report["remaining_gaps"])
+    baseline = report["bootstrap_baseline"]
+    assert [item["id"] for item in baseline["definitions"]] == [
+        "specs_integrity",
+        "asset_directories",
+        "governed_projects_config",
+        "work_model_workflow_indexes",
+        "environment_matrix",
+        "runtime_projection_entry",
+        "code_self_check",
+        "web_asset",
+        "report_structure",
+        "gap_classification_routing",
+    ]
+    assert {item["id"] for item in baseline["items"]} == {item["id"] for item in baseline["definitions"]}
+    assert baseline["summary"]["item_count"] == 10
+    assert next(item for item in baseline["items"] if item["id"] == "web_asset")["status"] == "open"
+    assert next(item for item in baseline["items"] if item["id"] == "report_structure")["status"] == "closed"
+    assert "环境承接" in next(item for item in baseline["items"] if item["id"] == "environment_matrix")["gap_categories"]
+    assert set(baseline["summary"]["gap_categories"]) <= {"规范", "Code", "Web", "Task", "事实源", "环境承接", "Human Gate"}
 
 
 def test_ldvh_landing_check_reports_missing_governed_projects(tmp_path, monkeypatch):
@@ -1627,6 +1648,8 @@ def test_ldvh_landing_check_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert exit_code == 1
     assert payload["metadata"]["report"] == "ldvh-landing-check"
     assert payload["summary"]["status"] == "open"
+    assert payload["metadata"]["bootstrap_baseline_source"] == "docs/specs/42-ldvh-landing-check-LDVH落地与检查.md"
+    assert payload["bootstrap_baseline"]["summary"]["item_count"] == 10
     assert payload["remaining_gaps"]
 
 

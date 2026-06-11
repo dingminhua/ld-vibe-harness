@@ -1,7 +1,7 @@
 id: task-0065
 type: task
 title: 补齐 42 Bootstrap Code 基线能力
-status: planned
+status: closed
 created: '2026-06-11T00:00:00'
 updated: '2026-06-11T00:00:00'
 description: |
@@ -14,20 +14,20 @@ parent_task:
 sub_tasks: []
 blocked_by: []
 acceptance: |
-  - [ ] Code 入口能按 42 定义输出 Bootstrap Code 基线能力覆盖报告
-  - [ ] 报告覆盖 specs 完整性检查
-  - [ ] 报告覆盖资产目录检查
-  - [ ] 报告覆盖管辖项目配置检查
-  - [ ] 报告覆盖工作模型和工作流程索引检查
-  - [ ] 报告覆盖环境承接矩阵检查
-  - [ ] 报告覆盖运行投影入口检查
-  - [ ] 报告覆盖 Code 自检
-  - [ ] 报告覆盖 Web 资产检查，且不要求 Web 运行态作为 bootstrap 前置条件
-  - [ ] 报告覆盖 42 报告结构输出
-  - [ ] 报告覆盖缺口分类与分流，并能区分规范、Code、Web、Task、事实源、环境承接和 Human Gate 缺口
-  - [ ] tests 中有对应测试证明上述基线能力输出结构和关键缺口分类
-  - [ ] 运行 `python3 -m pytest tests/test_specs_validate.py -q` 通过
-  - [ ] 运行 Bootstrap Code 基线检查命令并记录结果
+  - [x] Code 入口能按 42 定义输出 Bootstrap Code 基线能力覆盖报告
+  - [x] 报告覆盖 specs 完整性检查
+  - [x] 报告覆盖资产目录检查
+  - [x] 报告覆盖管辖项目配置检查
+  - [x] 报告覆盖工作模型和工作流程索引检查
+  - [x] 报告覆盖环境承接矩阵检查
+  - [x] 报告覆盖运行投影入口检查
+  - [x] 报告覆盖 Code 自检
+  - [x] 报告覆盖 Web 资产检查，且不要求 Web 运行态作为 bootstrap 前置条件
+  - [x] 报告覆盖 42 报告结构输出
+  - [x] 报告覆盖缺口分类与分流，并能区分规范、Code、Web、Task、事实源、环境承接和 Human Gate 缺口
+  - [x] tests 中有对应测试证明上述基线能力输出结构和关键缺口分类
+  - [x] 运行 `python3 -m pytest tests/test_specs_validate.py -q` 通过
+  - [x] 运行 Bootstrap Code 基线检查命令并记录结果
 verification: |
   ## 验证计划
 
@@ -37,7 +37,13 @@ verification: |
 
   ## 验证结果
 
-  待执行。
+  2026-06-11 已补齐 `tools/specs_validate.py` 中 `ldvh-landing-check` 的 `bootstrap_baseline` 输出，报告按 42 定义的十项 Bootstrap Code 基线能力组织，并包含 `definitions`、`items`、`summary`、状态、issue_count、gap_categories 和 issues。
+
+  已补充 `tests/test_specs_validate.py` 中的测试断言，验证十项基线能力 ID、报告项数量、Web 资产检查不要求运行态、42 报告结构输出、环境承接矩阵缺口分类和缺口分类集合。
+
+  已运行 `python3 -m pytest tests/test_specs_validate.py -q`，结果为 `70 passed in 0.96s`。
+
+  已运行 `python3 tools/specs_validate.py ldvh-landing-check --format json` 并抽取结果：`bootstrap_baseline.summary.item_count=10`，`bootstrap_baseline.summary.status=open`，`open_item_count=1`，十项基线能力均能输出状态。当前 open 项为 `specs_integrity`，属于当前规范检查发现的既有规范缺口，不是 Bootstrap Code 报告能力缺失。
 risk_assessment: |
   - 避免把 42 的 Code 需求转移给 07；07 只约束实现方式。
   - 避免把 Web 运行态作为 bootstrap 前置条件；Web 在此处只作为资产检查对象。
@@ -63,5 +69,34 @@ status_history:
     to: planned
     actor: AI
     reason: 用户确认 42 承载 Bootstrap Code 需求，并要求创建 Task 承载 Code 基线能力补齐。
-closed_at:
-closure_evidence:
+  - at: '2026-06-11T00:00:00'
+    from: planned
+    to: executing
+    actor: AI
+    reason: 用户要求完成本 Task，开始实现 Bootstrap Code 基线报告能力。
+  - at: '2026-06-11T00:00:00'
+    from: executing
+    to: verifying
+    actor: AI
+    reason: 已完成 tools 和 tests 修改，进入验证。
+  - at: '2026-06-11T00:00:00'
+    from: verifying
+    to: review_needed
+    actor: AI
+    reason: pytest、ldvh-landing-check JSON 抽样和 diff 空白检查已通过。
+  - at: '2026-06-11T00:00:00'
+    from: review_needed
+    to: closed
+    actor: AI
+    reason: acceptance 已全部满足，验证结果和关闭证据已记录。
+closed_at: '2026-06-11T00:00:00'
+closure_evidence: |
+  ## 验证结果
+
+  已完成 Bootstrap Code 基线能力补齐：`tools/specs_validate.py` 的 `ldvh-landing-check` 输出新增 `bootstrap_baseline`，按 42 定义的十项基线能力组织覆盖状态、缺口分类和分流元数据；`tests/test_specs_validate.py` 已补充对应测试断言。
+
+  验证已运行：`python3 -m pytest tests/test_specs_validate.py -q`，结果 `70 passed in 0.96s`；`python3 tools/specs_validate.py ldvh-landing-check --format json` 可输出十项 Bootstrap Code 基线能力，当前 `item_count=10`、`open_item_count=1`，open 项为 specs 完整性检查发现的既有规范缺口；`git diff --check -- tools/specs_validate.py tests/test_specs_validate.py` 通过。
+
+  ## 结论
+
+  残留风险：当前真实项目的 Bootstrap Code 基线报告状态仍为 open，因为 specs 完整性检查存在既有规范缺口；这不影响本 Task 的 Code 能力补齐结论。后续应由对应规范修复 Task 或现场 42 检查继续分流。

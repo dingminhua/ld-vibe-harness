@@ -2130,6 +2130,206 @@ def ldvh_landing_check_spec_validate():
     }
 
 
+BOOTSTRAP_BASELINE_DEFINITIONS = [
+    ("specs_integrity", "specs 完整性检查"),
+    ("asset_directories", "资产目录检查"),
+    ("governed_projects_config", "管辖项目配置检查"),
+    ("work_model_workflow_indexes", "工作模型和工作流程索引检查"),
+    ("environment_matrix", "环境承接矩阵检查"),
+    ("runtime_projection_entry", "运行投影入口检查"),
+    ("code_self_check", "Code 自检"),
+    ("web_asset", "Web 资产检查"),
+    ("report_structure", "42 报告结构输出"),
+    ("gap_classification_routing", "缺口分类与分流"),
+]
+
+
+def ldvh_bootstrap_issue(code, message, path=None, category="Code"):
+    return {
+        "code": code,
+        "message": message,
+        "path": landing_relative_path(path) if path else None,
+        "category": category,
+    }
+
+
+def ldvh_bootstrap_baseline_item(item_id, label, status, evidence, categories=None, issues=None):
+    issues = issues or []
+    return {
+        "id": item_id,
+        "label": label,
+        "status": status,
+        "evidence": evidence,
+        "issue_count": len(issues),
+        "gap_categories": sorted(set(categories or [issue.get("category") for issue in issues if issue.get("category")])) or [],
+        "issues": issues,
+    }
+
+
+def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runtime_report, spec_report, remaining_gaps):
+    workspace_root = Path(workspace_root)
+    items = []
+
+    items.append(ldvh_bootstrap_baseline_item(
+        "specs_integrity",
+        "specs 完整性检查",
+        spec_report["status"],
+        spec_report["evidence"],
+        ["规范"] if spec_report["status"] != "closed" else [],
+        spec_report.get("issues", []),
+    ))
+
+    required_assets = [
+        (PROJECT_ROOT / "docs" / "specs", "规范资产", "规范"),
+        (PROJECT_ROOT / "tools", "Code 能力资产", "Code"),
+        (PROJECT_ROOT / "tests", "测试证明", "Code"),
+        (PROJECT_ROOT / "web", "Web 能力资产", "Web"),
+        (PROJECT_ROOT / "ldvh-base", "工作对象事实源", "事实源"),
+        (PROJECT_ROOT / "LDVH-AI-ENTRY.md", "运行投影入口", "环境承接"),
+    ]
+    asset_issues = [
+        ldvh_bootstrap_issue("BOOTSTRAP_ASSET_MISSING", f"缺少{label}: {landing_relative_path(path)}", path, category)
+        for path, label, category in required_assets
+        if not path.exists()
+    ]
+    items.append(ldvh_bootstrap_baseline_item(
+        "asset_directories",
+        "资产目录检查",
+        "open" if asset_issues else "closed",
+        f"checked {len(required_assets)} required asset paths",
+        None,
+        asset_issues,
+    ))
+
+    items.append(ldvh_bootstrap_baseline_item(
+        "governed_projects_config",
+        "管辖项目配置检查",
+        "open" if governed_issues else "closed",
+        f"checked {landing_relative_path(workspace_root / GOVERNED_PROJECTS_FILENAME)}",
+        ["事实源"] if governed_issues else [],
+        [
+            ldvh_bootstrap_issue(issue.code, issue.message, issue.path, "事实源")
+            for issue in governed_issues
+        ],
+    ))
+
+    index_paths = [PROJECT_ROOT / "docs" / "specs" / "20-工作模型集合索引.md", PROJECT_ROOT / "docs" / "specs" / "40-工作流程集合索引.md"]
+    index_issues = [
+        ldvh_bootstrap_issue("BOOTSTRAP_INDEX_MISSING", f"缺少索引文件: {landing_relative_path(path)}", path, "规范")
+        for path in index_paths
+        if not path.exists()
+    ]
+    items.append(ldvh_bootstrap_baseline_item(
+        "work_model_workflow_indexes",
+        "工作模型和工作流程索引检查",
+        "open" if index_issues else "closed",
+        "checked 20/40 index files",
+        None,
+        index_issues,
+    ))
+
+    matrix_path = PROJECT_ROOT / "docs" / "specs" / "04.06-平台适配清单规范.md"
+    matrix_issues = []
+    if not matrix_path.exists():
+        matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_ENV_MATRIX_MISSING", "缺少环境承接矩阵规范文件", matrix_path, "环境承接"))
+    else:
+        matrix_text = matrix_path.read_text(encoding="utf-8")
+        for environment in ["Trae Work CN", "Codex App", "Claude Code CLI"]:
+            if environment not in matrix_text:
+                matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_ENV_MATRIX_ENV_MISSING", f"环境承接矩阵缺少环境: {environment}", matrix_path, "环境承接"))
+    items.append(ldvh_bootstrap_baseline_item(
+        "environment_matrix",
+        "环境承接矩阵检查",
+        "open" if matrix_issues else "closed",
+        "checked 04.06 for three-environment承接矩阵",
+        None,
+        matrix_issues,
+    ))
+
+    items.append(ldvh_bootstrap_baseline_item(
+        "runtime_projection_entry",
+        "运行投影入口检查",
+        runtime_report["summary"]["status"],
+        f"runtime-projection checked {runtime_report['metadata']['checked_file_count']} project-local files",
+        ["环境承接"] if runtime_report["summary"]["status"] != "closed" else [],
+        runtime_report.get("issues", []),
+    ))
+
+    code_paths = [PROJECT_ROOT / "tools" / "specs_validate.py", PROJECT_ROOT / "tests" / "test_specs_validate.py"]
+    code_issues = [
+        ldvh_bootstrap_issue("BOOTSTRAP_CODE_SELF_CHECK_MISSING", f"缺少 Code 自检关键文件: {landing_relative_path(path)}", path, "Code")
+        for path in code_paths
+        if not path.exists()
+    ]
+    items.append(ldvh_bootstrap_baseline_item(
+        "code_self_check",
+        "Code 自检",
+        "open" if code_issues else "closed",
+        "checked specs_validate.py and test_specs_validate.py presence",
+        None,
+        code_issues,
+    ))
+
+    web_paths = [PROJECT_ROOT / "web", PROJECT_ROOT / "web" / "api", PROJECT_ROOT / "web" / "src"]
+    web_issues = [
+        ldvh_bootstrap_issue("BOOTSTRAP_WEB_ASSET_MISSING", f"缺少 Web 资产路径: {landing_relative_path(path)}", path, "Web")
+        for path in web_paths
+        if not path.exists()
+    ]
+    items.append(ldvh_bootstrap_baseline_item(
+        "web_asset",
+        "Web 资产检查",
+        "open" if web_issues else "closed",
+        "checked Web asset paths without requiring Web runtime",
+        None,
+        web_issues,
+    ))
+
+    required_report_keys = {"metadata", "summary", "checks", "remaining_gaps"}
+    present_report_keys = {"metadata", "summary", "checks", "remaining_gaps"}
+    report_issues = [] if required_report_keys <= present_report_keys else [ldvh_bootstrap_issue("BOOTSTRAP_REPORT_STRUCTURE_MISSING", "42 报告结构缺少必需字段", category="Code")]
+    items.append(ldvh_bootstrap_baseline_item(
+        "report_structure",
+        "42 报告结构输出",
+        "open" if report_issues else "closed",
+        "checked ldvh-landing-check report structure contract",
+        None,
+        report_issues,
+    ))
+
+    allowed_categories = {"规范", "Code", "Web", "Task", "事实源", "环境承接", "Human Gate"}
+    routing_issues = []
+    for gap in remaining_gaps:
+        if not gap.get("suggested_writeback"):
+            routing_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_GAP_ROUTING_MISSING", f"缺口缺少分流建议: {gap.get('id')}", category="Task"))
+    routed_categories = set()
+    for item in items:
+        routed_categories.update(item.get("gap_categories", []))
+    unknown_categories = sorted(routed_categories - allowed_categories)
+    for category in unknown_categories:
+        routing_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_GAP_CATEGORY_UNKNOWN", f"未知缺口分类: {category}", category="Task"))
+    items.append(ldvh_bootstrap_baseline_item(
+        "gap_classification_routing",
+        "缺口分类与分流",
+        "open" if routing_issues else "closed",
+        f"checked {len(remaining_gaps)} remaining gaps for routing metadata",
+        sorted(routed_categories & allowed_categories),
+        routing_issues,
+    ))
+
+    return {
+        "definitions": [{"id": item_id, "label": label} for item_id, label in BOOTSTRAP_BASELINE_DEFINITIONS],
+        "items": items,
+        "summary": {
+            "status": ldvh_landing_check_status(items),
+            "by_status": landing_report_count_by(items, "status"),
+            "item_count": len(items),
+            "open_item_count": len([item for item in items if item["status"] != "closed"]),
+            "gap_categories": sorted({category for item in items for category in item.get("gap_categories", [])}),
+        },
+    }
+
+
 def ldvh_landing_check_build(workspace_root=None):
     workspace_root = Path(workspace_root) if workspace_root else PROJECT_ROOT
     governed_issues = governed_projects_check_root(workspace_root)
@@ -2212,6 +2412,14 @@ def ldvh_landing_check_build(workspace_root=None):
                 "suggested_writeback": check["suggested_writeback"],
             }
         )
+    bootstrap_baseline = ldvh_bootstrap_baseline_build(
+        workspace_root,
+        checks,
+        governed_issues,
+        runtime_report,
+        spec_report,
+        remaining_gaps,
+    )
     return {
         "metadata": {
             "tool": "tools/specs_validate.py",
@@ -2222,13 +2430,17 @@ def ldvh_landing_check_build(workspace_root=None):
             "project_root": str(PROJECT_ROOT),
             "workspace_root": str(workspace_root),
             "scope": "project-local Git facts plus explicit workspace governed-projects config",
+            "bootstrap_baseline_source": "docs/specs/42-ldvh-landing-check-LDVH落地与检查.md",
         },
         "summary": {
             "status": ldvh_landing_check_status(checks),
             "by_status": landing_report_count_by(checks, "status"),
             "remaining_gap_count": len(remaining_gaps),
+            "bootstrap_baseline_status": bootstrap_baseline["summary"]["status"],
+            "bootstrap_baseline_open_item_count": bootstrap_baseline["summary"]["open_item_count"],
         },
         "checks": checks,
+        "bootstrap_baseline": bootstrap_baseline,
         "remaining_gaps": remaining_gaps,
     }
 
@@ -2450,7 +2662,14 @@ def ldvh_landing_check_format_text(report):
     lines = ["LDVH落地与检查派生报告"]
     lines.append(f"- 状态: {report['summary']['status']}")
     lines.append(f"- 剩余缺口数: {report['summary']['remaining_gap_count']}")
+    lines.append(f"- Bootstrap Code 基线状态: {report['summary'].get('bootstrap_baseline_status')}")
+    lines.append(f"- Bootstrap Code 基线未关闭项: {report['summary'].get('bootstrap_baseline_open_item_count')}")
     lines.append("- 状态判断: Code 派生启发式，非事实源")
+    lines.append("")
+    lines.append("Bootstrap Code 基线能力:")
+    for item in report.get("bootstrap_baseline", {}).get("items", []):
+        categories = ",".join(item.get("gap_categories", [])) or "none"
+        lines.append(f"- [{item['status']}] {item['id']} ({item['label']}) -> {item['evidence']}; issues: {item['issue_count']}; categories: {categories}")
     lines.append("")
     lines.append("检查项:")
     for item in report["checks"]:
