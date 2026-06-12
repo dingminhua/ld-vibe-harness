@@ -12,8 +12,8 @@ const __dirname = path.dirname(__filename)
 /** LDVH 项目根目录 */
 export const LDVH_ROOT = process.env.LDVH_ROOT || path.resolve(__dirname, '../../..')
 
-/** tools 目录 */
-export const TOOLS_DIR = path.join(LDVH_ROOT, 'tools')
+/** code 目录 */
+export const CODE_DIR = path.join(LDVH_ROOT, 'code')
 
 /** ldvh-base 目录 */
 export const LDVH_BASE_DIR = path.join(LDVH_ROOT, 'ldvh-base')
@@ -60,7 +60,7 @@ function parseJson(stdout: string): PyToolsJson | null {
  * 执行 PyTools CLI 工具并返回 JSON 结果
  */
 export async function runPyTools(tool: string, args: string[]): Promise<PyToolsResult | PyToolsError> {
-  const toolPath = path.join(TOOLS_DIR, tool)
+  const toolPath = path.join(CODE_DIR, tool)
 
   return new Promise((resolve) => {
     execFile('python3', [toolPath, ...args], { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
@@ -99,7 +99,7 @@ export async function runPyTools(tool: string, args: string[]): Promise<PyToolsR
  * 执行 PyTools CLI 工具并返回原始 JSON 结果，允许非零退出码但要求 stdout 可解析
  */
 export async function runPyToolsJson(tool: string, args: string[]): Promise<PyToolsJson | PyToolsError> {
-  const toolPath = path.join(TOOLS_DIR, tool)
+  const toolPath = path.join(CODE_DIR, tool)
 
   return new Promise((resolve) => {
     execFile('python3', [toolPath, ...args], { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {

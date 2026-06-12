@@ -58,12 +58,12 @@ related_docs:
 - docs/specs/07-Code确定性执行实现规范.md
 - docs/specs/10-运行闭环测试规范.md
 affected_docs:
-- tools/specs_validate.py
-- tests/test_specs_validate.py
+- code/specs_validate.py
+- tests/code/test_specs_validate.py
 - docs/research/42-ldvh-landing-check-LDVH落地与检查.md
 deliverables:
-- tools/specs_validate.py
-- tests/test_specs_validate.py
+- code/specs_validate.py
+- tests/code/test_specs_validate.py
 status_history:
 - at: '2026-06-11T00:00:00'
   from: null
@@ -96,7 +96,7 @@ closure_evidence: |
 
   已完成 Bootstrap Code 基线能力补齐：`tools/specs_validate.py` 的 `ldvh-landing-check` 输出新增 `bootstrap_baseline`，按 42 定义的十项基线能力组织覆盖状态、缺口分类和分流元数据；`tests/test_specs_validate.py` 已补充对应测试断言。
 
-  验证已运行：`python3 -m pytest tests/test_specs_validate.py -q`，结果 `70 passed in 0.96s`；`python3 tools/specs_validate.py ldvh-landing-check --format json` 可输出十项 Bootstrap Code 基线能力，当前 `item_count=10`、`open_item_count=1`，open 项为 specs 完整性检查发现的既有规范缺口；`git diff --check -- tools/specs_validate.py tests/test_specs_validate.py` 通过。
+  验证已运行：`python3 -m pytest tests/test_specs_validate.py -q`，结果 `70 passed in 0.96s`；`python3 tools/specs_validate.py ldvh-landing-check --format json` 可输出十项 Bootstrap Code 基线能力，当前 `item_count=10`、`open_item_count=1`，open 项为 specs 完整性检查发现的既有规范缺口；`git diff --check -- code/specs_validate.py tests/test_specs_validate.py` 通过。
 
   ## 结论
 

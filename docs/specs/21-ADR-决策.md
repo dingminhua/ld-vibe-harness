@@ -63,7 +63,7 @@ ldvh-base/adrs/adr-{NNNN}-short-title.yaml
 | ADR 工作模型规范 | `docs/specs/21-ADR-决策.md` |
 | ADR 实例 | `ldvh-base/adrs/` |
 | ADR 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
-| ADR 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
+| ADR 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 ADR 的当前稳定规则以本文为准。
 

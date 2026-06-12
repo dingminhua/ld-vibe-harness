@@ -55,7 +55,7 @@ ldvh-base/memos/memo-{NNNN}-short-title.yaml
 | Memo 工作模型规范 | `docs/specs/25-Memo-备忘.md` |
 | Memo 实例 | `ldvh-base/memos/` |
 | Memo 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
-| Memo 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
+| Memo 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 Memo 的当前稳定规则以本文为准。
 

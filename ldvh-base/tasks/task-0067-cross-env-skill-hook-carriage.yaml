@@ -60,8 +60,8 @@ affected_docs:
 - docs/specs/04.03-环境能力清单与环境适配规范.md
 - docs/specs/04.03-环境能力清单与环境适配规范.md
 - docs/specs/11.01-第三方Skill接管落地选项.md
-- tools/specs_validate.py
-- tests/test_specs_validate.py
+- code/specs_validate.py
+- tests/code/test_specs_validate.py
 deliverables: []
 status_history:
 - at: '2026-06-11T00:00:00'

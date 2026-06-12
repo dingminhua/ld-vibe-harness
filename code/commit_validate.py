@@ -21,7 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 VALID_TYPES = {"feat", "fix", "docs", "refactor", "test", "chore", "spec", "rule", "adr", "revert"}
 
 # docs/specs/22-Change-变更.md scope 枚举（推荐值，非强制）
-RECOMMENDED_SCOPES = {"specs", "docs", "rules", "adr", "tools", "web", "tests", "config", "research", "refs"}
+RECOMMENDED_SCOPES = {"specs", "docs", "rules", "adr", "code", "web", "tests", "config", "research", "refs"}
 
 # docs/specs/22-Change-变更.md: subject 推荐不超过 72 字符
 MAX_SUBJECT_LEN = 72

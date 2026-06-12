@@ -53,7 +53,7 @@ ldvh-base/workareas/workarea-{NNNN}-short-title.yaml
 | 工作域工作模型规范 | `docs/specs/24-WorkArea-工作域.md` |
 | 工作域实例 | `ldvh-base/workareas/` |
 | 工作域字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
-| 工作域展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
+| 工作域展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 ---
 ## 3. 状态机

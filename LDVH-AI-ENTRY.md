@@ -21,7 +21,7 @@
 | 入口视角 | 适用对象 | 主要职责 | 不应做什么 |
 |---|---|---|---|
 | 工作区入口 | 所有接入 LDVH 的管辖项目，以及指向 LDVH 的工作区级薄入口 | 识别当前管辖项目，定位 `LDVH-GOVERNED-PROJECTS.yaml`、管辖项目自身 `docs/`、`ldvh-base/`、环境适配规范、42 LDVH落地与检查流程和必要 STOP 点 | 不接管用户项目原有入口，不维护管辖项目规则正文，不默认修改 LDVH 自身规范 |
-| LDVH 管理入口 | 维护 LDVH 自身项目时使用 | 管理 `docs/specs/`、`tools/`、`tests/`、`web/`、根目录配置、环境适配、适配措施和 LDVH 自身项目的工作对象实例 | 不把 LDVH 自身维护规则默认强加给管辖项目 |
+| LDVH 管理入口 | 维护 LDVH 自身项目时使用 | 管理 `docs/specs/`、`code/`、`tests/`、`web/`、根目录配置、环境适配、适配措施和 LDVH 自身项目的工作对象实例 | 不把 LDVH 自身维护规则默认强加给管辖项目 |
 
 当前环境适配规则按 `docs/specs/04.03-环境适配规范.md` 定位；Trae Work CN 与 Codex App 的具体适配措施按 `docs/specs/04.04-环境适配措施实践.md` 定位；个人环境特别要求按 `docs/specs/04.05-个人环境特别要求规范.md` 定位。
 
@@ -44,18 +44,18 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 
 | 查询目标 | 优先命令 | 用途 |
 |---|---|---|
-| specs 规范入口和章节 | `python3 tools/specs_validate.py index` | 生成规范派生索引，辅助定位文件、章节、引用和诊断 |
-| 规范落地要求状态 | `python3 tools/specs_validate.py landing-report` | 聚合正式规范的落地要求、状态和建议回写方向 |
-| specs 文档结构 | `python3 tools/specs_validate.py doc docs/specs` | 检查正式规范文档结构 |
-| specs 章节引用 | `python3 tools/specs_validate.py refs docs/specs` | 检查正式规范中的章节引用 |
-| specs 落地要求表 | `python3 tools/specs_validate.py landing docs/specs` | 检查规范落地要求表结构 |
-| specs 综合检查 | `python3 tools/specs_validate.py all` | 执行 docs/specs 综合校验 |
-| 管辖项目配置 | `python3 tools/specs_validate.py governed-projects` | 检查工作区根目录管辖项目配置 |
-| 工作对象列表 | `python3 tools/fact_cli.py list <type>` | 查询 ADR、Intent、Memo、Pitfall 或 Task 摘要 |
-| 工作对象详情 | `python3 tools/fact_cli.py show <id>` | 查询单个工作对象详情 |
-| 工作对象搜索 | `python3 tools/fact_cli.py search <keyword>` | 按关键词搜索工作对象事实源 |
-| 工作对象统计 | `python3 tools/fact_cli.py stats` | 统计工作对象状态分布 |
-| 规范关联对象 | `python3 tools/fact_cli.py related <spec_path>` | 查询与指定 specs 路径关联的 ADR |
+| specs 规范入口和章节 | `python3 code/specs_validate.py index` | 生成规范派生索引，辅助定位文件、章节、引用和诊断 |
+| 规范落地要求状态 | `python3 code/specs_validate.py landing-report` | 聚合正式规范的落地要求、状态和建议回写方向 |
+| specs 文档结构 | `python3 code/specs_validate.py doc docs/specs` | 检查正式规范文档结构 |
+| specs 章节引用 | `python3 code/specs_validate.py refs docs/specs` | 检查正式规范中的章节引用 |
+| specs 落地要求表 | `python3 code/specs_validate.py landing docs/specs` | 检查规范落地要求表结构 |
+| specs 综合检查 | `python3 code/specs_validate.py all` | 执行 docs/specs 综合校验 |
+| 管辖项目配置 | `python3 code/specs_validate.py governed-projects` | 检查工作区根目录管辖项目配置 |
+| 工作对象列表 | `python3 code/fact_cli.py list <type>` | 查询 ADR、Intent、Memo、Pitfall 或 Task 摘要 |
+| 工作对象详情 | `python3 code/fact_cli.py show <id>` | 查询单个工作对象详情 |
+| 工作对象搜索 | `python3 code/fact_cli.py search <keyword>` | 按关键词搜索工作对象事实源 |
+| 工作对象统计 | `python3 code/fact_cli.py stats` | 统计工作对象状态分布 |
+| 规范关联对象 | `python3 code/fact_cli.py related <spec_path>` | 查询与指定 specs 路径关联的 ADR |
 
 当工具不可用、输出无法回指事实源、结果与原文冲突或当前场景超出工具能力时，应退回 Git 文件事实源、对应规范和人工降级检查，不得把工具输出当作最终事实。
 
@@ -76,7 +76,7 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | 处理 LDVH 自身项目工作对象 | LDVH 管理入口 | `fact_cli.py list/search/show/stats` | LDVH 自身项目 `ldvh-base/`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/20-工作模型集合索引.md` 和对应工作模型规范 |
 | 处理工作流程 | LDVH 管理入口 | `index`、`landing-report` | `docs/specs/06-工作流程基础规范.md`、`docs/specs/40-工作流程集合索引.md` 和对应 `docs/specs/41-59` 工作流程规范 |
 | 处理规范落地、环境适配或适配措施 | LDVH 管理入口 | `landing-report`、`index` | `docs/specs/04-规范落地与环境适配基础规范.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境适配规范.md`、`docs/specs/04.04-环境适配措施实践.md` |
-| 处理 Code、工具、脚本或校验 | LDVH 管理入口 | 对应工具帮助、测试命令 | `docs/specs/04.05-个人环境特别要求规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、对应 `tools/` 实现和 `tests/`；原运行闭环测试机制已退回 docs/research/，不作为当前校验入口 |
+| 处理 Code、工具、脚本或校验 | LDVH 管理入口 | 对应工具帮助、测试命令 | `docs/specs/04.05-个人环境特别要求规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、对应 `code/` 实现和 `tests/`；原运行闭环测试机制已退回 docs/research/，不作为当前校验入口 |
 | 处理 Web 或 Human-facing 入口 | LDVH 管理入口 | `index`、相关后端或 Web 校验 | `docs/specs/08-Web信息同步实现规范.md` |
 
 场景同时命中多个入口时，选择最小足够查询和读取集。涉及正式规范变更、规范落地要求变化、落地缺口、适配措施漂移或 Code/Web/Skill/Agent/Hook/CI 边界变化时，应先读取 `docs/specs/40-工作流程集合索引.md` 确认当前 active 工作流程，再按对应规范执行。
@@ -88,7 +88,7 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 
 工作区级入口属于用户自己的开发环境配置。初始化时只应在 Human 授权下加入一条醒目的薄引用，把 AI 引向本文件，并使用本文件中的工作区入口视角，不应复制规则正文。
 
-LDVH 管理入口视角随本文件提交，用于维护 LDVH 自身项目。该视角可以指向 `docs/specs/`、`tools/`、`tests/`、`web/`、根目录配置和适配措施治理，但不得被误用为所有管辖项目的项目级规则正文。
+LDVH 管理入口视角随本文件提交，用于维护 LDVH 自身项目。该视角可以指向 `docs/specs/`、`code/`、`tests/`、`web/`、根目录配置和适配措施治理，但不得被误用为所有管辖项目的项目级规则正文。
 
 管辖项目和 LDVH 自身项目均不创建项目级环境入口或项目级 AI 指令。所有项目统一通过工作区级薄入口进入 LDVH 治理链路；管辖项目通过工作区根目录管辖项目配置、自身 `docs/`、自身 `ldvh-base/` 承载项目事实；项目事实仍由管辖项目自身内容事实源承载。
 

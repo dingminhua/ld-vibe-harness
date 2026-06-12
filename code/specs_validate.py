@@ -196,7 +196,7 @@ def runtime_projection_report_build(paths=None):
         status = "open"
     return {
         "metadata": {
-            "tool": "tools/specs_validate.py",
+            "tool": "code/specs_validate.py",
             "report": "runtime-projection",
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "source_of_truth": False,
@@ -1780,7 +1780,7 @@ def landing_report_build(paths=None):
     gap_categories = landing_report_build_gap_categories(requirements, capability_gaps)
     return {
         "metadata": {
-            "tool": "tools/specs_validate.py",
+            "tool": "code/specs_validate.py",
             "report": "landing-report",
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "source_of_truth": False,
@@ -2364,7 +2364,7 @@ def human_gate_report_build(paths=None):
         status = "degraded"
     return {
         "metadata": {
-            "tool": "tools/specs_validate.py",
+            "tool": "code/specs_validate.py",
             "report": "human-gate",
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "source_of_truth": False,
@@ -2666,7 +2666,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
 
     required_assets = [
         (PROJECT_ROOT / "docs" / "specs", "规范资产", "规范"),
-        (PROJECT_ROOT / "tools", "Code 能力资产", "Code"),
+        (PROJECT_ROOT / "code", "Code 能力资产", "Code"),
         (PROJECT_ROOT / "tests", "测试证明", "Code"),
         (PROJECT_ROOT / "web", "Web 能力资产", "Web"),
         (PROJECT_ROOT / "ldvh-base", "工作对象事实源", "事实源"),
@@ -2740,7 +2740,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         runtime_report.get("issues", []),
     ))
 
-    code_paths = [PROJECT_ROOT / "tools" / "specs_validate.py", PROJECT_ROOT / "tests" / "tools" / "test_specs_validate.py"]
+    code_paths = [PROJECT_ROOT / "code" / "specs_validate.py", PROJECT_ROOT / "tests" / "code" / "test_specs_validate.py"]
     code_issues = [
         ldvh_bootstrap_issue("BOOTSTRAP_CODE_SELF_CHECK_MISSING", f"缺少 Code 自检关键文件: {landing_relative_path(path)}", path, "Code")
         for path in code_paths
@@ -2750,7 +2750,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         "code_self_check",
         "Code 自检",
         "open" if code_issues else "closed",
-        "checked specs_validate.py and tests/tools/test_specs_validate.py presence",
+        "checked specs_validate.py and tests/code/test_specs_validate.py presence",
         None,
         code_issues,
     ))
@@ -2907,7 +2907,7 @@ def ldvh_landing_check_build(workspace_root=None):
     )
     return {
         "metadata": {
-            "tool": "tools/specs_validate.py",
+            "tool": "code/specs_validate.py",
             "report": "ldvh-landing-check",
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "source_of_truth": False,
@@ -3044,7 +3044,7 @@ def landing_plan_build(workspace_root=None):
 
     return {
         "metadata": {
-            "tool": "tools/specs_validate.py",
+            "tool": "code/specs_validate.py",
             "report": "landing-plan",
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "source_of_truth": False,
@@ -3383,7 +3383,7 @@ class SpecsChecker:
                 "derived": True,
                 "source_of_truth": False,
                 "generated_at": datetime.now().isoformat(timespec="seconds"),
-                "tool": "tools/specs_validate.py",
+                "tool": "code/specs_validate.py",
                 "input_patterns": list(INDEX_INPUT_PATTERNS),
                 "root": str(self.root),
             },

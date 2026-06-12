@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).resolve().parents[2] / "tools" / "specs_validate.py"
+MODULE_PATH = Path(__file__).resolve().parents[2] / "code" / "specs_validate.py"
 spec = importlib.util.spec_from_file_location("specs_validate", MODULE_PATH)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
@@ -1201,7 +1201,7 @@ def test_index_main_outputs_json_to_stdout(tmp_path, capsys):
 
     assert exit_code == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["metadata"]["tool"] == "tools/specs_validate.py"
+    assert payload["metadata"]["tool"] == "code/specs_validate.py"
     assert payload["docs"]
 
 
@@ -1240,7 +1240,7 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 上位约束承接要求 | 后续正式规范不得违背本文的价值实现标准 | 规范检查 | 文档治理 | 审计时 |
-| 确定性执行要求 | 后续 Code 应能生成 landing report | `tools/specs_validate.py` 扩展、正反样例 | 校验实现 | 规范落地要求变化时 |
+| 确定性执行要求 | 后续 Code 应能生成 landing report | `code/specs_validate.py` 扩展、正反样例 | 校验实现 | 规范落地要求变化时 |
 | Human 交互要求 | 高影响变更应触发 Human Gate | Human Gate、确认记录 | 工作流程治理 | 变更前 |
 | Human 交互要求 | 新增管辖项目条目时，应评估 Human Gate | Human Gate、影响范围说明 | 工作流程治理 | 管辖项目清单变化时 |
 | Human 交互要求 | candidate 流程正式创建前，应先讨论是否独立成流程 | Human Gate、流程讨论 | 工作流程治理 | 从候选项创建流程前 |

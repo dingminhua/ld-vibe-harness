@@ -1,4 +1,4 @@
-"""Tests for tools/fact_cli.py under the WorkArea -> TaskPlan -> Task -> SubTask model."""
+"""Tests for code/fact_cli.py under the WorkArea -> TaskPlan -> Task -> SubTask model."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import yaml
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SCRIPT_PATH = PROJECT_ROOT / "tools" / "fact_cli.py"
+SCRIPT_PATH = PROJECT_ROOT / "code" / "fact_cli.py"
 
 
 def run_cli(*args, base_dir: Optional[str] = None):

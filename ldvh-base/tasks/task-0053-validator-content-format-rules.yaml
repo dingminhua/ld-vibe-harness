@@ -27,7 +27,7 @@ acceptance: |
   - [x] 运行事实源校验通过
 blocked_by: []
 deliverables:
-- tools/fact_validate.py
+- code/fact_validate.py
 verification: |
   ## 验证结果
 

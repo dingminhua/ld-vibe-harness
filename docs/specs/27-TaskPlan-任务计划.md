@@ -40,7 +40,7 @@ ldvh-base/taskplans/taskplan-{NNNN}-short-title.yaml
 | 任务计划工作模型规范 | `docs/specs/27-TaskPlan-任务计划.md` |
 | 任务计划实例 | `ldvh-base/taskplans/` |
 | 任务计划字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
-| 任务计划展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
+| 任务计划展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 ---
 ## 3. 状态机

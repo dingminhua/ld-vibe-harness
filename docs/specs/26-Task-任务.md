@@ -41,7 +41,7 @@ ldvh-base/tasks/task-{NNNN}-short-title.yaml
 | Task 工作模型规范 | `docs/specs/26-Task-任务.md` |
 | Task 实例 | `ldvh-base/tasks/` |
 | Task 字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
-| Task 展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
+| Task 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 ---
 ## 3. 状态机

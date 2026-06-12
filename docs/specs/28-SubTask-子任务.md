@@ -38,7 +38,7 @@ ldvh-base/subtasks/subtask-{NNNN}-short-title.yaml
 | 子任务工作模型规范 | `docs/specs/28-SubTask-子任务.md` |
 | 子任务实例 | `ldvh-base/subtasks/` |
 | 子任务字段内容格式 | `docs/specs/05.01-工作字段内容格式规范.md` |
-| 子任务展示、聚合或查询结果 | `web/` 或 `tools/` 的派生输出，不作为最终事实源 |
+| 子任务展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 ---
 ## 3. 状态机

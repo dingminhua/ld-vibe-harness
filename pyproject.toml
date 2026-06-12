@@ -12,6 +12,6 @@ test = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests/tools", "tests/web"]
+testpaths = ["tests/code", "tests/web"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
