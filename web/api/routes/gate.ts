@@ -1,5 +1,5 @@
 /**
- * Human Gate API 路由：返回 Human Gate 结构化数据供 Web 确认工作台消费
+ * Human Gate API 路由：返回 Human Gate 结构化数据供 Web 确认台消费
  */
 
 import { Router, type Request, type Response } from 'express'

@@ -87,7 +87,7 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 ## 8. 右侧扩展阅读区
 
 - 由 App Shell 的 `ReadingPanel` 提供。
-- 触发来源：对象引用、文档引用、Dashboard / Workbench 的对象条目。
+- 触发来源：对象引用、文档引用、Dashboard / Changelog 的对象条目。
 - 顶部只保留上一个访问对象、下一个访问对象和关闭按钮。
 - 不展示对象列表式导航。
 - 对象预览按对象类型展示关键字段，并复用 `fieldFormats.ts`。

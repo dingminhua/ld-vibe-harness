@@ -11,7 +11,7 @@
 ## 2. 当前页面结构
 
 ```text
-页面标题：Human Gate 确认工作台
+页面标题：Human Gate 确认台
 副标题：需要人类决策的确认节点——基于 Code 提供的 Human Gate 报告
 生成时间
 状态横幅

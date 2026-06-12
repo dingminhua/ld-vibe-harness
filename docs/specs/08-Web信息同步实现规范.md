@@ -2,7 +2,7 @@
 
 > 创建日期：2026-06-07
 > 更新日期：2026-06-12
-> 定位：LDVH Web 信息同步构成要素的实现边界、派生视图、人类确认工作台、受控轻写入白名单和 Web 实现文档边界的权威规范
+> 定位：LDVH Web 信息同步构成要素的实现边界、派生视图、Human Gate UI、受控轻写入白名单和 Web 实现文档边界的权威规范
 > 适用范围：LDVH 项目及所有接入 LDVH 的管辖项目中的 `web/`、Web 信息同步实现、Web 文档、派生视图和 Human Gate UI
 > 上位依据：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`
 > 相关规范：`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md`、`docs/specs/03-文档基础规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code确定性执行实现规范.md`
@@ -12,7 +12,7 @@
 
 ## 1. 本文解决的问题
 
-本文解决 LD Vibe Harness 中 Web 构成要素如何承载信息同步、派生视图、状态和缺口呈现、Human Gate UI、受控轻写入白名单、人类确认工作台和 Web 实现文档的问题。
+本文解决 LD Vibe Harness 中 Web 构成要素如何承载信息同步、派生视图、状态和缺口呈现、Human Gate UI、受控轻写入白名单和 Web 实现文档的问题。
 
 Web 的目标不是替代 specs、Code、Rules、Skill、Agent 或事实实例，而是把 Git 文件事实源及其派生状态以人可读、可确认、可操作的方式同步给人，并仅在规范白名单允许时提供受控写入和确认入口。
 
@@ -72,7 +72,7 @@ Web 治理原则如下：
 
 ## 5. Web 信息同步层规则
 
-Web 信息同步层面向人可读、可确认、可操作的界面，包括派生视图、状态和缺口呈现、Human Gate UI、白名单内受控轻写入入口和人类确认工作台。
+Web 信息同步层面向人可读、可确认、可操作的界面，包括派生视图、状态和缺口呈现、Human Gate UI 和白名单内受控轻写入入口。
 
 ### 5.1 允许职责
 
@@ -197,7 +197,7 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 2. Task 的 `status`、`taskplan`、`acceptance`、`verification`、`closure_evidence`、`deliverables` 等字段在 Web 中均为只读展示；
 3. WorkArea、TaskPlan、SubTask、ADR、Pitfall、Profile 和 Change 在 Web 中均为只读展示；
 4. Memo 快速创建只用于捕获尚未任务化但值得保留的信息，不得用来绕过 WorkArea、TaskPlan、Task、ADR 或 Pitfall 的准入规则；
-5. 短期不扩展 Web 写入白名单；Gate、Validate、Workbench、ProjectFiles、ObjectDetail 和 Dashboard 均不得据页面需要新增写入入口；
+5. 短期不扩展 Web 写入白名单；Gate、Validate、ProjectFiles、ObjectDetail 和 Dashboard 均不得据页面需要新增写入入口；
 6. 未来如需新增 Web 写入能力，必须先修改本文白名单和对应对象规范，补齐校验、测试、Human Gate 影响评估和降级路径，再实现代码。
 
 Memo 快速创建作为当前唯一 Web 写入样例，应满足：
@@ -209,14 +209,13 @@ Memo 快速创建作为当前唯一 Web 写入样例，应满足：
 5. 必须在 `tests/web/api/` 或等价 Web API 测试分区中覆盖成功、字段错误、冲突和写后验证路径；
 6. 不得扩展为通用 YAML 编辑器，不得修改既有 Memo 字段或状态。
 
-### 8.3 Gate / Validate / Workbench 阶段边界
+### 8.3 Gate / Validate 阶段边界
 
-在对应回写合同、对象规范和 Human Gate 证据落点明确前，Gate、Validate 和 Workbench 的阶段边界如下：
+在对应回写合同、对象规范和 Human Gate 证据落点明确前，Gate 和 Validate 的阶段边界如下：
 
 1. Gate 可以展示待确认项、确认对象、影响范围、风险和可选操作，但确认、取消、暂缓和修改反馈动作只可作为占位或候选过程输出，不得直接回写事实源；
 2. Validate 只展示验证结果、错误态、降级说明、来源命令和修复线索，不得自动修复、自动关闭任务或自动写入验证结论；
-3. Workbench 只作为实验性态势视图或 Human-facing 工作台候选，不得反向定义 AI 默认流程、对象状态机或写入白名单；
-4. 三者如需从只读展示升级为受控写入，必须先补齐 §8.2 白名单、对应对象规范、Human Gate 最小证据结构、回写位置和 Web 测试要求。
+3. 二者如需从只读展示升级为受控写入，必须先补齐 §8.2 白名单、对应对象规范、Human Gate 最小证据结构、回写位置和 Web 测试要求。
 
 ---
 
@@ -402,7 +401,7 @@ Web 一致性检查至少包括：
 | 检查项 | 标准 |
 |---|---|
 | 服务对象分工 | LDVH 整体仍以 AI 执行者为第一服务对象；Web 设计明确服务 Human 的理解、判断、确认、验收和方向校正 |
-| Web 边界 | Web 只承载信息同步、派生视图、Human Gate UI、白名单内受控轻写入和人类确认工作台 |
+| Web 边界 | Web 只承载信息同步、派生视图、Human Gate UI 和白名单内受控轻写入 |
 | 事实源边界 | 页面状态、缓存、数据库和 UI 展示未替代 Git 文件事实源 |
 | Code / Web 同源协作 | Web 与 Code 均基于同一 Git 文件事实源和同一 specs 契约；允许各自实现读取、解析、聚合和校验；未创建第二事实源、第二字段契约、第二状态机或第二验收规则 |
 | 数据来源 | 派生视图标注数据来源、同步时间或可追溯依据 |

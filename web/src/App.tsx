@@ -6,7 +6,6 @@ import AttentionTest from '@/pages/AttentionTest';
 import ProjectFiles from '@/pages/ProjectFiles';
 import ObjectList from '@/pages/ObjectList';
 import ObjectDetail from '@/pages/ObjectDetail';
-import Workbench from '@/pages/Workbench';
 import Validate from '@/pages/Validate';
 import Gate from '@/pages/Gate'
 import Changelog from '@/pages/Changelog';
@@ -18,7 +17,6 @@ function AppRoutes() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/attention-test" element={<AttentionTest />} />
         <Route path="/project-files" element={<ProjectFiles />} />
-        <Route path="/workbench" element={<Workbench />} />
         <Route path="/objects/:type" element={<ObjectList />} />
         <Route path="/objects/:type/:id" element={<ObjectDetail />} />
         <Route path="/validate" element={<Validate />} />
