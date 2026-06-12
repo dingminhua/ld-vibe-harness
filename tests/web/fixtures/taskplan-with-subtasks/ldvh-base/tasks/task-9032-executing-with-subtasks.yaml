@@ -6,7 +6,7 @@ created: '2026-06-12T11:16:00'
 updated: '2026-06-12T11:25:00'
 taskplan: taskplan-9003
 description: |
-  并行子任务计划的核心 Task，包含多个 SubTask。
+  并行子任务计划的核心任务，包含多个子任务。
 source: taskplan-9003
 blocked_by:
   - task-9031

@@ -6,7 +6,7 @@ created: '2026-06-12T10:05:00'
 updated: '2026-06-12T10:30:00'
 taskplan: taskplan-9001
 description: |
-  持有多种状态的 SubTask，用于验证 Task 详情页和派生阅读布局。
+  持有多种状态的子任务，用于验证任务详情页和派生阅读布局。
 source: taskplan-9001
 blocked_by:
   - task-9001

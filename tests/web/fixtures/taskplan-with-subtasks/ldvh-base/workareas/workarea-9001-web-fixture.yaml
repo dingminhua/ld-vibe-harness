@@ -7,8 +7,7 @@ updated: '2026-06-12T10:00:00'
 description: |
   用于 Web 列表、详情和派生关系测试的合成工作域。
 scope: |
-  覆盖 TaskPlan、Task 和 SubTask 的常见状态与依赖关系。
+  覆盖任务计划、任务和子任务的常见状态与依赖关系。
 constraints: |
   只作为测试夹具使用，不参与真实 LDVH 事实源治理。
 archive_reason: ''
-

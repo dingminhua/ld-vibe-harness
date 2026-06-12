@@ -6,7 +6,7 @@ created: '2026-06-12T10:45:00'
 updated: '2026-06-12T11:05:00'
 taskplan: taskplan-9001
 description: |
-  Task 和内部 SubTask 均已关闭，用于观察历史完成项在计划卡片中的弱化呈现。
+  任务和内部子任务均已关闭，用于观察历史完成项在计划卡片中的弱化呈现。
 source: taskplan-9001
 blocked_by:
   - task-9001
@@ -15,7 +15,7 @@ acceptance: |
 verification: |
   - [x] 子任务组验证通过
 closure_evidence: |
-  子任务组和 Task 均已关闭。
+  子任务组和任务均已关闭。
 closed_at: '2026-06-12T11:05:00'
 related_adrs: []
 related_changes: []

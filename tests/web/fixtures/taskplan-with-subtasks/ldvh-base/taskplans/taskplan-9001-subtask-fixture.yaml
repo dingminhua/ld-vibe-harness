@@ -6,12 +6,12 @@ created: '2026-06-12T10:00:00'
 updated: '2026-06-12T10:00:00'
 workarea: workarea-9001
 description: |
-  合成一个包含 10 条 Task、多组 SubTask、多状态和前置依赖的计划，方便 Web 页面统一判断计划卡片中的任务态势呈现。
+  合成一个包含 10 条任务、多组子任务、多状态和前置依赖的计划，方便 Web 页面统一判断计划卡片中的任务态势呈现。
 success_criteria: |
-  - [ ] Task 五种状态均可被读取和展示
-  - [ ] SubTask 五种状态均可被读取和展示
-  - [ ] Task 与 SubTask 的 blocked_by 均可被派生为等待关系
-  - [ ] 有 SubTask 和无 SubTask 的 Task 在计划卡片中保持同一任务层级
+  - [ ] 任务五种状态均可被读取和展示
+  - [ ] 子任务五种状态均可被读取和展示
+  - [ ] 任务与子任务的 blocked_by 均可被派生为等待关系
+  - [ ] 有子任务和无子任务的任务在计划卡片中保持同一任务层级
 source: Web 测试夹具
 tasks:
   - task-9001

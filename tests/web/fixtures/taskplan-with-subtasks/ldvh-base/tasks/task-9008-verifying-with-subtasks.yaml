@@ -6,7 +6,7 @@ created: '2026-06-12T10:35:00'
 updated: '2026-06-12T10:55:00'
 taskplan: taskplan-9001
 description: |
-  Task 已进入验证阶段，内部仍保留验证中、已验证和已关闭的 SubTask。
+  任务已进入验证阶段，内部仍保留验证中、已验证和已关闭的子任务。
 source: taskplan-9001
 blocked_by:
   - task-9006

@@ -107,7 +107,7 @@ const PREVIEW_FIELD_LABELS: Record<string, { zh: string; en: string }> = {
   related_docs: { zh: '关联文档', en: 'Related Docs' },
   affected_docs: { zh: '受影响文档', en: 'Affected Docs' },
   related_tasks: { zh: '关联任务', en: 'Related Tasks' },
-  related_subtasks: { zh: '关联子任务', en: 'Related SubTasks' },
+  related_subtasks: { zh: '关联子任务', en: 'Related Subtasks' },
   related_workareas: { zh: '关联工作域', en: 'Related Work Areas' },
   related_taskplans: { zh: '关联任务计划', en: 'Related Task Plans' },
   related_adrs: { zh: '关联 ADR', en: 'Related ADRs' },
@@ -144,6 +144,18 @@ const PREVIEW_FIELD_LABELS: Record<string, { zh: string; en: string }> = {
   to: { zh: '后状态', en: 'To' },
   actor: { zh: '执行者', en: 'Actor' },
   reason: { zh: '原因', en: 'Reason' },
+};
+
+const OBJECT_TYPE_LABELS: Record<string, { zh: string; en: string }> = {
+  workarea: { zh: '工作域', en: 'Work Area' },
+  taskplan: { zh: '任务计划', en: 'Task Plan' },
+  task: { zh: '任务', en: 'Task' },
+  subtask: { zh: '子任务', en: 'Subtask' },
+  adr: { zh: 'ADR', en: 'ADR' },
+  pitfall: { zh: '踩坑', en: 'Pitfall' },
+  memo: { zh: '备忘', en: 'Memo' },
+  profile: { zh: '画像', en: 'Profile' },
+  change: { zh: '变更', en: 'Change' },
 };
 
 export default function ReadingPanel() {
@@ -444,7 +456,9 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <span className="ldvh-chip rounded bg-ldvh-accent/20 px-2 py-0.5 text-ldvh-accent">{objectType}</span>
+        <span className="ldvh-chip rounded bg-ldvh-accent/20 px-2 py-0.5 text-ldvh-accent">
+          {getObjectTypeLabel(objectType, locale)}
+        </span>
         {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(objectType, status, locale)} size="sm" />}
         <CopyPathButton path={targetPath} className="ml-auto" />
       </div>
@@ -461,6 +475,13 @@ function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: stri
     return (obj.title_en as string) || (obj.title as string) || objectId || '—';
   }
   return (obj.title_zh as string) || (obj.title as string) || objectId || '—';
+}
+
+function getObjectTypeLabel(objectType: string | undefined, locale: string) {
+  if (!objectType) return '—';
+  const labels = OBJECT_TYPE_LABELS[objectType];
+  if (!labels) return objectType;
+  return locale === 'en' ? labels.en : labels.zh;
 }
 
 function SemanticObjectPreview({ objectType, obj }: { objectType?: string; obj: Record<string, unknown> }) {

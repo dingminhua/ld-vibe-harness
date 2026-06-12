@@ -6,7 +6,7 @@ created: '2026-06-12T10:25:00'
 updated: '2026-06-12T10:45:00'
 taskplan: taskplan-9001
 description: |
-  模拟一个 Task 下存在多个并行执行 SubTask，并有一个子任务等待前置解除。
+  模拟一个任务下存在多个并行执行子任务，并有一个子任务等待前置解除。
 source: taskplan-9001
 blocked_by:
   - task-9001

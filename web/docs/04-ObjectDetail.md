@@ -18,9 +18,10 @@
 元信息行：创建时间、更新时间、关闭时间、辅助属性
 内容区：
   WorkArea：计划态势 + 属性 + 关联材料
-  Task / SubTask：语义阅读布局
+  TaskPlan：计划目标 + 任务态势 + 成功标准 + 关闭判断 + 产出与文档 + 关联材料
+  Task：任务目标 + 子任务态势 + 验收标准 + 验证/关闭证据 + 产出/依赖
+  SubTask：任务目标 + 验收标准 + 验证/关闭证据 + 产出/依赖
   其他对象：字段卡片布局
-TaskPlan 聚合产出/文档（仅 TaskPlan）
 YAML 源码折叠区
 右侧扩展阅读区（App Shell 提供，不属于本页卡片）
 ```
@@ -49,26 +50,39 @@ WorkArea 不使用普通字段卡片堆叠，而作为“工作域入口”展�
 5. 属性：按目标、来源、范围、约束展示 `description/source/scope/constraints`，不把 `scope` 放进顶部元信息 chip；标题使用与计划态势一致的图标+标题样式。
 6. 关联材料：只有 `related_docs/related_adrs/related_memos/related_pitfalls` 非空时显示。
 
-## 5. Task 语义阅读布局
+## 5. TaskPlan 语义阅读布局
+
+TaskPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行态势”展示：
+
+1. 计划目标：展示 `description/source/workarea`；工作域入口只打开右侧辅助阅读，不切换主路由。
+2. 任务态势：展示整体 Task 态势条，并按与列表一致的队列顺序展示 Task 行；队列顺序与态势条空间方向对应，态势条最右侧状态在上，最左侧状态在下。
+3. Task 行展示主任务状态图标、同色弱背景、标题、ID、复制路径和辅助阅读入口；有 SubTask 时只展示 compact 子任务态势条，不在 TaskPlan 详情展开子任务行。
+4. 成功标准：`success_criteria` 使用 `ChecklistCard`。
+5. 关闭判断：展示成功标准、关闭请求、完成证据和 closed 计划关闭时间的记录状态，并展示 `completion_evidence`。
+6. 产出与文档：展示聚合产出、聚合文档和计划直接关联文档。
+7. 关联材料：仅在 `related_adrs/related_memos/related_pitfalls` 非空时显示。
+8. TaskPlan 详情页点击 Task 行只打开右侧辅助阅读区，不切换主路由到 Task 详情；主路由跳转只属于对象列表卡片。
+
+## 6. Task 语义阅读布局
 
 Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 
 1. 任务目标：Task 使用 `description` + `source` + `taskplan`，SubTask 使用 `description` + `source` + `task`。
-2. 验收标准：`acceptance`，用 `ChecklistCard` 展示进度和每项状态。
-3. 验证方式与关闭证据：`verification`、`closure_evidence`，用 `EvidenceBlock` 展示 Markdown、命令和路径。
-4. 产出与文档：`deliverables`、`related_docs`、`affected_docs`，用 `DocPreviewLink`。
-5. 前置依赖：`blocked_by`，用 `ReferenceCard`。
-6. 其他字段：按 `fieldFormats.ts` 继续语义化渲染。
+2. Task 如果存在 SubTask，展示子任务态势：整体 SubTask 态势条 + SubTask 行；SubTask 行只打开右侧辅助阅读，不切换主路由。
+3. 验收标准：`acceptance`，用 `ChecklistCard` 展示进度和每项状态。
+4. 验证方式与关闭证据：`verification`、`closure_evidence`，用 `EvidenceBlock` 展示 Markdown、命令和路径。
+5. 产出与文档：`deliverables`、`related_docs`、`affected_docs`，用 `DocPreviewLink`。
+6. 前置依赖：`blocked_by`，用 `ReferenceCard`。
+7. 其他字段：按 `fieldFormats.ts` 继续语义化渲染。
 
-## 6. 非 Task 对象字段布局
+## 7. 非工作主线对象字段布局
 
 - 每个字段一个轻量卡片，字段标题用 `ldvh-caption-strong`。
-- 关联类字段可折叠；TaskPlan 的关联字段默认展开，其他类型默认折叠。
+- 关联类字段可折叠；默认折叠长关联集合，避免压过主阅读路径。
 - Pitfall、ADR、Memo、WorkArea、TaskPlan 等长文本字段必须按 Markdown 渲染。
-- TaskPlan 的 `aggregated_deliverables` 和 `aggregated_docs` 作为聚合区域显示，不混入普通字段卡片。
-- TaskPlan 后续应从普通字段卡片升级为语义阅读布局，按全局设计语言围绕“计划目标、关闭判断、任务拆解、证据/产出、关联材料”组织，而不是直接展开工作域属性或任务细节。
+- TaskPlan、Task 和 SubTask 已使用专用语义布局，不进入普通字段卡片路径。
 
-## 7. 字段渲染规则
+## 8. 字段渲染规则
 
 字段分类由 `web/src/utils/fieldFormats.ts` 统一维护，详情页和右侧扩展阅读区必须共同消费同一套规则。
 
@@ -85,7 +99,7 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 
 当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、TaskPlan、Task、SubTask、ADR、Pitfall、Memo。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
 
-## 8. 右侧扩展阅读区
+## 9. 右侧扩展阅读区
 
 - 由 App Shell 的 `ReadingPanel` 提供。
 - 触发来源：对象引用、文档引用、Dashboard / Changelog 的对象条目。
@@ -97,14 +111,14 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。
 - Markdown 正文基准字号为 14px；表格横向滚动，代码块、引用块、任务列表由全局 Markdown 样式统一控制。
 
-## 9. YAML 源码
+## 10. YAML 源码
 
 - 默认折叠。
 - 展开后使用 `react-syntax-highlighter` + YAML + oneDark。
 - 显示行号，最大高度 400px。
 - YAML 源码是事实完整性兜底，不作为主阅读体验。
 
-## 10. 实现约束
+## 11. 实现约束
 
 1. 不把关联任务显示成只有 ID 的标签；对象引用必须可点击并能在扩展区查看详情。
 2. 不把 Markdown 字段当纯文本展示。
@@ -115,7 +129,7 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 7. 不在业务组件里新增另一套字段格式判断；新增字段先更新 `fieldFormats.ts` 和 `05.01`。
 8. 对象详情头部、对象引用卡片和扩展区对象预览必须保留复制完整路径入口。
 
-## 11. API 数据结构
+## 12. API 数据结构
 
 ```typescript
 interface ObjectDetail {
@@ -126,3 +140,5 @@ interface ObjectDetail {
   data: Record<string, unknown>;
 }
 ```
+
+TaskPlan 和 Task 详情页会额外消费 `GET /api/objects/taskplan` 的只读派生摘要，用于展示 Task / SubTask 态势、阻塞关系和复制路径。该摘要仍来自 Git 文件事实源的确定性读取，不写回事实源，也不作为第二事实源。
