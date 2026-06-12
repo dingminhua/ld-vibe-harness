@@ -1,0 +1,22 @@
+id: task-9008
+type: task
+title: 验证中的任务组
+status: verifying
+created: '2026-06-12T10:35:00'
+updated: '2026-06-12T10:55:00'
+taskplan: taskplan-9001
+description: |
+  Task 已进入验证阶段，内部仍保留验证中、已验证和已关闭的 SubTask。
+source: taskplan-9001
+blocked_by:
+  - task-9006
+acceptance: |
+  - [x] 子任务实现步骤已完成
+  - [ ] 验证结果待吸收
+verification: |
+  - [ ] 正在验证子任务组整体结果
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs: []
+deliverables: []

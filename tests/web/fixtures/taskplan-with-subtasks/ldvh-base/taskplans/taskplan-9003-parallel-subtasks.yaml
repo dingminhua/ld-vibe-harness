@@ -1,0 +1,22 @@
+id: taskplan-9003
+type: taskplan
+title: 并行任务计划
+status: active
+created: '2026-06-12T11:15:00'
+updated: '2026-06-12T11:25:00'
+workarea: workarea-9002
+description: |
+  中等复杂度计划，包含一个并行子任务组和一个等待前置任务。
+success_criteria: |
+  - [ ] 并行子任务组可读
+  - [ ] 等待前置任务不抢占主线
+source: Web 测试夹具
+tasks:
+  - task-9031
+  - task-9032
+  - task-9033
+  - task-9034
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []

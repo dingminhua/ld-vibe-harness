@@ -10,7 +10,7 @@ import { listObjects, showObject, OBJECT_TYPES, LDVH_BASE_DIR, readFactData, typ
 
 const router = Router()
 
-interface ListedObject {
+export interface ListedObject {
   id: string
   type: string
   status: string
@@ -33,6 +33,7 @@ interface RelatedObjectSummary {
   updated: string
   blockedBy?: string[]
   openBlockers?: RelatedObjectSummary[]
+  subtasks?: RelatedObjectSummary[]
 }
 
 interface RelatedPlanSummary extends RelatedObjectSummary {
@@ -138,21 +139,29 @@ function toRelatedSummary(item: ListedObject, type = item.type): RelatedObjectSu
   }
 }
 
-function toTaskSummary(item: ListedObject): RelatedObjectSummary {
+function toBlockedSummary(item: ListedObject, type: 'task' | 'subtask'): RelatedObjectSummary {
   const data = readFactData(item.path)
   const blockedBy = toStringArray(data.blocked_by)
   return {
-    ...toRelatedSummary(item, 'task'),
+    ...toRelatedSummary(item, type),
     ...(blockedBy.length > 0 ? { blockedBy } : {}),
   }
 }
 
-function toMissingTaskSummary(taskId: string): RelatedObjectSummary {
+function toTaskSummary(item: ListedObject): RelatedObjectSummary {
+  return toBlockedSummary(item, 'task')
+}
+
+function toSubtaskSummary(item: ListedObject): RelatedObjectSummary {
+  return toBlockedSummary(item, 'subtask')
+}
+
+function toMissingRelatedSummary(id: string, type: 'task' | 'subtask'): RelatedObjectSummary {
   return {
-    id: taskId,
-    type: 'task',
+    id,
+    type,
     status: 'unknown',
-    title: taskId,
+    title: id,
     path: '',
     updated: '',
   }
@@ -176,16 +185,16 @@ function hasOpenBlockers(item: RelatedObjectSummary): boolean {
   return !TERMINAL_STATUSES.has(item.status) && (item.openBlockers?.length ?? 0) > 0
 }
 
-function enrichTaskBlockers(tasks: RelatedObjectSummary[]): RelatedObjectSummary[] {
-  const tasksById = new Map(tasks.map((task) => [task.id, task]))
+function enrichBlockers(items: RelatedObjectSummary[], type: 'task' | 'subtask'): RelatedObjectSummary[] {
+  const itemsById = new Map(items.map((item) => [item.id, item]))
 
-  return tasks.map((task) => {
-    const openBlockers = (task.blockedBy ?? [])
-      .map((blockerId) => tasksById.get(blockerId) ?? toMissingTaskSummary(blockerId))
+  return items.map((item) => {
+    const openBlockers = (item.blockedBy ?? [])
+      .map((blockerId) => itemsById.get(blockerId) ?? toMissingRelatedSummary(blockerId, type))
       .filter((blocker) => !TERMINAL_STATUSES.has(blocker.status))
       .map(stripDerivedSummary)
 
-    return openBlockers.length > 0 ? { ...task, openBlockers } : task
+    return openBlockers.length > 0 ? { ...item, openBlockers } : item
   })
 }
 
@@ -223,25 +232,44 @@ function getStatusOptions(items: ListedObject[]): StatusOption[] {
     })
 }
 
-async function listObjectSummaries(type: ObjectType): Promise<ListedObject[]> {
-  const result = await listObjects(type)
+async function listObjectSummaries(type: ObjectType, baseDir?: string): Promise<ListedObject[]> {
+  const result = await listObjects(type, baseDir)
   if (!result.ok) return []
   return getResultItems(result)
 }
 
-async function buildPlanSummaries(planItems: ListedObject[]): Promise<RelatedPlanSummary[]> {
+export async function buildPlanSummaries(planItems: ListedObject[], baseDir?: string): Promise<RelatedPlanSummary[]> {
   if (planItems.length === 0) return []
 
-  const taskItems = await listObjectSummaries('task')
+  const [taskItems, subtaskItems] = await Promise.all([
+    listObjectSummaries('task', baseDir),
+    listObjectSummaries('subtask', baseDir),
+  ])
   const tasksById = new Map(taskItems.map((item) => [item.id, item]))
+  const subtasksByTask = new Map<string, RelatedObjectSummary[]>()
+
+  for (const subtaskItem of subtaskItems) {
+    const data = readFactData(subtaskItem.path)
+    const taskId = toStringValue(data.task)
+    if (!taskId) continue
+    const current = subtasksByTask.get(taskId) ?? []
+    current.push(toSubtaskSummary(subtaskItem))
+    subtasksByTask.set(taskId, current)
+  }
 
   return planItems.map((item) => {
     const data = readFactData(item.path)
     const taskIds = toStringArray(data.tasks)
-    const tasks = enrichTaskBlockers(taskIds.map((taskId) => {
+    const tasks = enrichBlockers(taskIds.map((taskId) => {
       const taskItem = tasksById.get(taskId)
-      return taskItem ? toTaskSummary(taskItem) : toMissingTaskSummary(taskId)
-    }))
+      if (!taskItem) return toMissingRelatedSummary(taskId, 'task')
+
+      const subtasks = sortRelatedObjects(enrichBlockers(subtasksByTask.get(taskId) ?? [], 'subtask'))
+      return {
+        ...toTaskSummary(taskItem),
+        ...(subtasks.length > 0 ? { subtasks } : {}),
+      }
+    }), 'task')
 
     return {
       ...toRelatedSummary(item, 'taskplan'),

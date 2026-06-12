@@ -1,0 +1,23 @@
+id: task-9009
+type: task
+title: 已验证的任务组
+status: review_needed
+created: '2026-06-12T10:40:00'
+updated: '2026-06-12T11:00:00'
+taskplan: taskplan-9001
+description: |
+  Task 已验证，内部子任务也进入已验证或已关闭，用于观察关闭前的层级呈现。
+source: taskplan-9001
+blocked_by:
+  - task-9008
+acceptance: |
+  - [x] 子任务组验收完成
+verification: |
+  - [x] 子任务组验证通过
+closure_evidence: |
+  子任务组已验证，等待 Task 层关闭检查吸收。
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs: []
+deliverables: []

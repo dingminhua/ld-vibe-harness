@@ -1,0 +1,23 @@
+id: task-9043
+type: task
+title: 验证计划已验证任务
+status: review_needed
+created: '2026-06-12T11:23:00'
+updated: '2026-06-12T11:30:00'
+taskplan: taskplan-9004
+description: |
+  已验证但尚未关闭的 Task。
+source: taskplan-9004
+blocked_by:
+  - task-9041
+acceptance: |
+  - [x] 验收完成
+verification: |
+  - [x] 验证通过
+closure_evidence: |
+  等待关闭检查。
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs: []
+deliverables: []

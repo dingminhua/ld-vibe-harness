@@ -1,0 +1,18 @@
+id: subtask-9034
+type: subtask
+title: 已关闭的并行准备子任务
+status: closed
+created: '2026-06-12T11:19:00'
+updated: '2026-06-12T11:25:00'
+task: task-9032
+description: |
+  已关闭的并行准备子任务。
+source: task-9032
+acceptance: |
+  - [x] 准备完成
+blocked_by: []
+verification: |
+  - [x] 已验证
+closure_evidence: |
+  子任务已关闭。
+closed_at: '2026-06-12T11:25:00'

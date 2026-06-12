@@ -1,0 +1,13 @@
+id: workarea-9003
+type: workarea
+title: 验证与关闭工作域
+status: active
+created: '2026-06-12T11:05:00'
+updated: '2026-06-12T11:05:00'
+description: |
+  用于对比验证、已验证、待关闭和关闭材料信号。
+scope: |
+  覆盖验证收口计划和待关闭计划。
+constraints: |
+  只作为 Web 测试夹具使用。
+archive_reason: ''

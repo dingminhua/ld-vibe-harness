@@ -1,13 +1,13 @@
 import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck, Flag, GitBranch, Layers3, ListTree, MapPinned } from 'lucide-react';
+import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck, GitBranch, Layers3, MapPinned } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
 import MemoCreate from '@/components/MemoCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import { TaskFlowBar, TaskFlowLegend, TaskFlowMarker } from '@/components/TaskFlowStatus';
-import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks } from '@/utils/taskFlowStatus';
+import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowRowClass } from '@/utils/taskFlowStatus';
 import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
@@ -209,87 +209,6 @@ function WorkAreaPlanSection({
   );
 }
 
-function SubtaskQueueRow({
-  item,
-  locale,
-  getStatus,
-  t,
-  onOpen,
-}: {
-  item: RelatedObjectSummary;
-  locale: string;
-  getStatus: (status: string) => string;
-  t: Translate;
-  onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
-}) {
-  const flowTone = getTaskFlowTone(item);
-  const flowLabel = getTaskFlowLabel(item, t, getStatus);
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={(event) => onOpen(event, item)}
-      onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-      className="group/subtask flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-ldvh-border/35"
-    >
-      <TaskFlowMarker tone={flowTone} label={flowLabel} compact />
-      <span className="ldvh-caption min-w-0 flex-1 truncate text-ldvh-text-primary/85 transition-colors group-hover/subtask:text-ldvh-accent">
-        {getLocalizedTitle(item, locale)}
-      </span>
-      <span className="ldvh-meta-muted ml-auto shrink-0 text-right">{item.id}</span>
-      <ArrowRight size={12} className="shrink-0 text-ldvh-text-secondary transition-colors group-hover/subtask:text-ldvh-accent" />
-    </div>
-  );
-}
-
-function SubtaskQueue({
-  subtasks,
-  locale,
-  getStatus,
-  t,
-  onOpen,
-}: {
-  subtasks: RelatedObjectSummary[];
-  locale: string;
-  getStatus: (status: string) => string;
-  t: Translate;
-  onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
-}) {
-  const orderedSubtasks = sortPlanTasks(subtasks);
-  const visibleSubtasks = orderedSubtasks.slice(0, 5);
-  const moreCount = Math.max(0, orderedSubtasks.length - visibleSubtasks.length);
-
-  return (
-    <div className="ml-5 min-w-0 border-l border-ldvh-border/70 pb-2 pl-3 pr-2">
-      <div className="mb-1.5 flex min-w-0 items-center gap-2">
-        <span className="ldvh-meta-muted inline-flex min-w-0 shrink-0 items-center gap-1.5">
-          <ListTree size={12} className="shrink-0 text-ldvh-text-secondary" />
-          <span>{t('objectList.subtaskCount', { count: String(subtasks.length) })}</span>
-        </span>
-        <div className="min-w-[4rem] flex-1">
-          <TaskFlowBar tasks={subtasks} t={t} getStatus={getStatus} />
-        </div>
-      </div>
-      <div className="grid min-w-0 gap-0.5">
-        {visibleSubtasks.map((subtask) => (
-          <SubtaskQueueRow
-            key={subtask.id}
-            item={subtask}
-            locale={locale}
-            getStatus={getStatus}
-            t={t}
-            onOpen={onOpen}
-          />
-        ))}
-      </div>
-      {moreCount > 0 && (
-        <span className="ldvh-caption mt-1.5 block px-1.5 text-ldvh-text-secondary">{t('objectList.moreSubtasks', { count: String(moreCount) })}</span>
-      )}
-    </div>
-  );
-}
-
 function TaskQueueRow({
   item,
   locale,
@@ -308,33 +227,31 @@ function TaskQueueRow({
   const subtasks = item.subtasks ?? [];
 
   return (
-    <div className="min-w-0 rounded-md transition-colors">
+    <div className="min-w-0 py-1 first:pt-0 last:pb-0">
       <div
         role="button"
         tabIndex={0}
         onClick={(event) => onOpen(event, item)}
         onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-        className="group/row flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/35"
+        className={`group/row min-w-0 cursor-pointer rounded-md border px-2 py-2 text-left transition-colors ${taskFlowRowClass[flowTone]}`}
       >
-        <div className="min-w-0 flex-1">
-          <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/row:text-ldvh-accent">
-            {getLocalizedTitle(item, locale)}
-          </span>
-          <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <TaskFlowMarker tone={flowTone} label={flowLabel} />
+          <div className="min-w-0 flex-1">
+            <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/row:text-ldvh-accent">
+              {getLocalizedTitle(item, locale)}
+            </span>
+            <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
+          </div>
+          <CopyPathButton path={item.path} />
+          <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-colors group-hover/row:text-ldvh-accent" />
         </div>
-        <TaskFlowMarker tone={flowTone} label={flowLabel} />
-        <CopyPathButton path={item.path} />
-        <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-colors group-hover/row:text-ldvh-accent" />
+        {subtasks.length > 0 && (
+          <div className="ml-9 mt-2 min-w-0">
+            <TaskFlowBar tasks={subtasks} t={t} getStatus={getStatus} compact />
+          </div>
+        )}
       </div>
-      {subtasks.length > 0 && (
-        <SubtaskQueue
-          subtasks={subtasks}
-          locale={locale}
-          getStatus={getStatus}
-          t={t}
-          onOpen={onOpen}
-        />
-      )}
     </div>
   );
 }
@@ -572,16 +489,6 @@ export default function ObjectList() {
             onOpen={openRelatedObject}
           />
 
-          <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-3">
-            <div className="mb-2 flex min-w-0 items-center gap-1.5">
-              <span className="ldvh-caption-strong inline-flex min-w-0 items-center gap-1.5 truncate">
-                <Flag size={13} className="shrink-0 text-ldvh-accent" />
-                {t('objectList.planProgress')}
-              </span>
-            </div>
-            <TaskFlowBar tasks={tasks} t={t} getStatus={getStatus} />
-          </div>
-
           {shouldShowCloseDecision && (
             <div className={`min-w-0 rounded-md border p-3 ${
               hasClosedIntegrityIssue
@@ -608,6 +515,11 @@ export default function ObjectList() {
                 {t('objectList.planTaskQueue')}
               </span>
             </div>
+            {tasks.length > 0 && (
+              <div className="mb-2 min-w-0">
+                <TaskFlowBar tasks={tasks} t={t} getStatus={getStatus} />
+              </div>
+            )}
             <div className="min-w-0 divide-y divide-ldvh-border/60">
               {visibleTasks.length > 0 ? (
                 visibleTasks.map((task) => (

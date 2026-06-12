@@ -1,0 +1,21 @@
+id: task-9044
+type: task
+title: 验证计划后续等待任务
+status: planned
+created: '2026-06-12T11:24:00'
+updated: '2026-06-12T11:30:00'
+taskplan: taskplan-9004
+description: |
+  验证计划中的后续 planned 任务。
+source: taskplan-9004
+blocked_by:
+  - task-9042
+acceptance: |
+  - [ ] 验证任务完成后启动
+verification: |
+  等待启动后补齐验证。
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs: []
+deliverables: []

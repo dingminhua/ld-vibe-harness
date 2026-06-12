@@ -1,0 +1,18 @@
+id: subtask-9043
+type: subtask
+title: 验证收口已关闭子任务
+status: closed
+created: '2026-06-12T11:24:00'
+updated: '2026-06-12T11:30:00'
+task: task-9042
+description: |
+  验证收口计划中的已关闭子任务。
+source: task-9042
+acceptance: |
+  - [x] 局部验收完成
+blocked_by: []
+verification: |
+  - [x] 局部验证通过
+closure_evidence: |
+  子任务已关闭。
+closed_at: '2026-06-12T11:30:00'

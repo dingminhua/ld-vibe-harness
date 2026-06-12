@@ -1,0 +1,22 @@
+id: task-9051
+type: task
+title: 待关闭计划已验证任务
+status: review_needed
+created: '2026-06-12T11:25:00'
+updated: '2026-06-12T11:35:00'
+taskplan: taskplan-9005
+description: |
+  待关闭计划中的已验证任务。
+source: taskplan-9005
+blocked_by: []
+acceptance: |
+  - [x] 验收完成
+verification: |
+  - [x] 验证通过
+closure_evidence: |
+  等待计划关闭吸收。
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs: []
+deliverables: []

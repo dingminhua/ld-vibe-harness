@@ -31,8 +31,20 @@ export const taskFlowToneClass = {
 
 export type TaskFlowTone = keyof typeof taskFlowToneClass;
 
+export const taskFlowRowClass: Record<TaskFlowTone, string> = {
+  ready: 'border-sky-500/20 bg-sky-500/10 hover:bg-sky-500/15',
+  executing: 'border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/15',
+  verifying: 'border-blue-500/25 bg-blue-500/10 hover:bg-blue-500/15',
+  absorbing: 'border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/15',
+  closed: 'border-zinc-500/25 bg-zinc-500/10 hover:bg-zinc-500/15',
+  blocked: 'border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/15',
+  risk: 'border-red-500/25 bg-red-500/10 hover:bg-red-500/15',
+  neutral: 'border-ldvh-border bg-ldvh-bg hover:bg-ldvh-border/35',
+};
+
 export const TASK_FLOW_ORDER: TaskFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'blocked', 'risk', 'neutral'];
 export const TASK_FLOW_LEGEND_ORDER: TaskFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'blocked'];
+const TASK_FLOW_QUEUE_ORDER: TaskFlowTone[] = [...TASK_FLOW_ORDER].reverse();
 
 export const taskFlowBarClass: Record<TaskFlowTone, string> = {
   ready: 'bg-sky-500',
@@ -116,14 +128,8 @@ export function getTaskFlowCounts(tasks: RelatedObjectSummary[]): Record<TaskFlo
 
 function getTaskFlowPriority(item: RelatedObjectSummary): number {
   const tone = getTaskFlowTone(item);
-  if (tone === 'executing') return 0;
-  if (tone === 'verifying') return 1;
-  if (tone === 'absorbing') return 2;
-  if (tone === 'blocked') return 3;
-  if (tone === 'ready') return 4;
-  if (tone === 'risk') return 5;
-  if (tone === 'closed') return 8;
-  return 5;
+  const priority = TASK_FLOW_QUEUE_ORDER.indexOf(tone);
+  return priority === -1 ? TASK_FLOW_QUEUE_ORDER.length : priority;
 }
 
 export function sortPlanTasks(tasks: RelatedObjectSummary[]): RelatedObjectSummary[] {

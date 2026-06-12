@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-export const LDVH_ROOT = process.env.LDVH_ROOT || path.resolve(__dirname, '../../..')
+export const LDVH_ROOT = path.resolve(process.env.LDVH_ROOT || path.resolve(__dirname, '../../..'))
 export const LDVH_BASE_DIR = path.join(LDVH_ROOT, 'ldvh-base')
 
 export const OBJECT_TYPES = ['workarea', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo'] as const

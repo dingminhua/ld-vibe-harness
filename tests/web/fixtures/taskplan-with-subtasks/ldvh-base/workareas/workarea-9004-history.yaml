@@ -1,0 +1,13 @@
+id: workarea-9004
+type: workarea
+title: 历史归档工作域
+status: archived
+created: '2026-06-12T11:10:00'
+updated: '2026-06-12T11:10:00'
+description: |
+  用于观察已关闭计划与已归档工作域之间的视觉弱化关系。
+scope: |
+  覆盖已关闭计划和已关闭任务组。
+constraints: |
+  只作为 Web 测试夹具使用。
+archive_reason: Web 测试夹具历史态样例

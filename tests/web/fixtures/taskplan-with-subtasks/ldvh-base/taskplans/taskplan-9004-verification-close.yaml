@@ -1,0 +1,22 @@
+id: taskplan-9004
+type: taskplan
+title: 验证收口对比计划
+status: active
+created: '2026-06-12T11:20:00'
+updated: '2026-06-12T11:30:00'
+workarea: workarea-9003
+description: |
+  以验证中和已验证任务为主，用于观察态势条左侧完成段和中段验证段。
+success_criteria: |
+  - [ ] 验证中任务和已验证任务都能区分
+  - [ ] 子任务组不会遮蔽 Task 主线
+source: Web 测试夹具
+tasks:
+  - task-9041
+  - task-9042
+  - task-9043
+  - task-9044
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []

@@ -1,16 +1,17 @@
 id: taskplan-9001
 type: taskplan
-title: Web 子任务状态展示测试计划
+title: Web 任务状态展示测试计划
 status: active
 created: '2026-06-12T10:00:00'
 updated: '2026-06-12T10:00:00'
 workarea: workarea-9001
 description: |
-  合成一个包含多状态 Task 和 SubTask 的计划，方便 Web 页面验证状态、前置依赖和子任务关系展示。
+  合成一个包含 10 条 Task、多组 SubTask、多状态和前置依赖的计划，方便 Web 页面统一判断计划卡片中的任务态势呈现。
 success_criteria: |
   - [ ] Task 五种状态均可被读取和展示
   - [ ] SubTask 五种状态均可被读取和展示
   - [ ] Task 与 SubTask 的 blocked_by 均可被派生为等待关系
+  - [ ] 有 SubTask 和无 SubTask 的 Task 在计划卡片中保持同一任务层级
 source: Web 测试夹具
 tasks:
   - task-9001
@@ -18,8 +19,12 @@ tasks:
   - task-9003
   - task-9004
   - task-9005
+  - task-9006
+  - task-9007
+  - task-9008
+  - task-9009
+  - task-9010
 related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
-

@@ -1,0 +1,22 @@
+id: task-9034
+type: task
+title: 并行计划验证任务
+status: verifying
+created: '2026-06-12T11:18:00'
+updated: '2026-06-12T11:25:00'
+taskplan: taskplan-9003
+description: |
+  并行计划中已完成执行、正在验证的任务。
+source: taskplan-9003
+blocked_by:
+  - task-9031
+acceptance: |
+  - [x] 执行完成
+  - [ ] 验证确认
+verification: |
+  - [ ] 正在验证
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs: []
+deliverables: []

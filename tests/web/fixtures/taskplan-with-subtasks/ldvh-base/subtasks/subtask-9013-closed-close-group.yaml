@@ -1,0 +1,18 @@
+id: subtask-9013
+type: subtask
+title: 已关闭的关闭组子任务
+status: closed
+created: '2026-06-12T10:42:00'
+updated: '2026-06-12T11:02:00'
+task: task-9009
+description: |
+  已关闭的子任务，用于和已验证子任务形成对比。
+source: task-9009
+acceptance: |
+  - [x] 局部验收完成
+blocked_by: []
+verification: |
+  - [x] 局部验证通过
+closure_evidence: |
+  子任务已关闭。
+closed_at: '2026-06-12T11:02:00'

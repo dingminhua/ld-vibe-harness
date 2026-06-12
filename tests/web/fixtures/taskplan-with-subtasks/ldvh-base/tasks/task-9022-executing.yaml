@@ -1,0 +1,21 @@
+id: task-9022
+type: task
+title: 串行计划执行中任务
+status: executing
+created: '2026-06-12T11:12:00'
+updated: '2026-06-12T11:20:00'
+taskplan: taskplan-9002
+description: |
+  轻量串行计划的当前执行任务。
+source: taskplan-9002
+blocked_by:
+  - task-9021
+acceptance: |
+  - [ ] 执行步骤完成
+verification: |
+  执行完成后补齐验证。
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs: []
+deliverables: []

@@ -1,0 +1,22 @@
+id: task-9006
+type: task
+title: 并行执行任务组
+status: executing
+created: '2026-06-12T10:25:00'
+updated: '2026-06-12T10:45:00'
+taskplan: taskplan-9001
+description: |
+  模拟一个 Task 下存在多个并行执行 SubTask，并有一个子任务等待前置解除。
+source: taskplan-9001
+blocked_by:
+  - task-9001
+acceptance: |
+  - [ ] 并行子任务状态可以同时展示
+  - [ ] 等待中的子任务可以弱化但可见
+verification: |
+  执行完成后统一验证并行子任务结果。
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs: []
+deliverables: []

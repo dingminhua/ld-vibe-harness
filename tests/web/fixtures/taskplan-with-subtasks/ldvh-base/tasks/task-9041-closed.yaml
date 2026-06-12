@@ -1,0 +1,23 @@
+id: task-9041
+type: task
+title: 验证计划已关闭基线
+status: closed
+created: '2026-06-12T11:20:00'
+updated: '2026-06-12T11:24:00'
+taskplan: taskplan-9004
+description: |
+  验证收口计划的已关闭基线任务。
+source: taskplan-9004
+blocked_by: []
+acceptance: |
+  - [x] 基线完成
+verification: |
+  - [x] 已验证
+closure_evidence: |
+  基线任务已关闭。
+closed_at: '2026-06-12T11:24:00'
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs: []
+deliverables: []

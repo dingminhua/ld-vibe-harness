@@ -1,0 +1,16 @@
+id: subtask-9041
+type: subtask
+title: 验证收口子任务 A
+status: verifying
+created: '2026-06-12T11:22:00'
+updated: '2026-06-12T11:30:00'
+task: task-9042
+description: |
+  验证收口计划中的验证中子任务。
+source: task-9042
+acceptance: |
+  - [x] 执行完成
+  - [ ] 验证确认
+blocked_by: []
+verification: |
+  - [ ] 正在验证

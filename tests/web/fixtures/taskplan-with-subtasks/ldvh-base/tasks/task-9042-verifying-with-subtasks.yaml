@@ -1,0 +1,22 @@
+id: task-9042
+type: task
+title: 验证计划任务组
+status: verifying
+created: '2026-06-12T11:22:00'
+updated: '2026-06-12T11:30:00'
+taskplan: taskplan-9004
+description: |
+  验证收口计划中带子任务的验证中 Task。
+source: taskplan-9004
+blocked_by:
+  - task-9041
+acceptance: |
+  - [x] 实现完成
+  - [ ] 验证吸收
+verification: |
+  - [ ] 正在验证子任务组
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs: []
+deliverables: []
