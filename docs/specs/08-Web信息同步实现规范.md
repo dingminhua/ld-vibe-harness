@@ -257,7 +257,15 @@ LDVH 在 `web/` 下提供了一套参考实现和 `web/docs/` 下的参考实现
 
 ## 12. Web 测试与验证要求
 
-Web 变更应根据影响范围执行测试和验证。测试不通过时不得提交相关 Web 变更。
+Web 变更应根据影响范围执行测试和验证。Code 与 Web 已分属不同构成要素，因此测试也必须按构成要素分区承接；Web 测试不得混入 Code 工具测试目录，Code 工具测试也不得混入 Web 测试目录。对应风险层级的测试或等价验证不通过时，不得提交相关 Web 变更。
+
+Web 测试目录规则如下：
+
+1. Web 信息同步、Web API、Web 组件、Web 页面、Human Gate UI、白名单轻写入体验、文件浏览、diff 展示和 Validate 页面相关测试应放在 `tests/web/` 下；
+2. `tests/web/` 可按实现需要继续分为 `api/`、`components/`、`pages/`、`fixtures/` 或等价子目录；
+3. Web 测试可以调用 Web 自身的 TypeScript、Node、Playwright、构建检查或等价验证入口，但测试文件和长期测试夹具的归属仍以 `tests/web/` 为准；
+4. Web 测试只验证 Web 面向 Human 的读取、呈现、交互、错误态、写入边界和敏感信息边界，不承载 Code 工具测试；
+5. 与 Web 测试对应的 npm script、Playwright 配置或测试运行入口可以保留在 `web/` 中，但不得把 `web/` 下的缓存、截图、覆盖率或测试产物提升为稳定事实。
 
 Web 测试至少关注：
 

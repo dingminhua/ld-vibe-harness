@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 
-MODULE_PATH = Path(__file__).resolve().parents[1] / "tools" / "specs_validate.py"
+MODULE_PATH = Path(__file__).resolve().parents[2] / "tools" / "specs_validate.py"
 spec = importlib.util.spec_from_file_location("specs_validate", MODULE_PATH)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
@@ -485,7 +485,7 @@ def test_consistency_reports_bare_term(tmp_path):
         """
 # 测试文档
 
-这个 机制 需要被限定。
+机制，应被限定。
 """,
     )
 

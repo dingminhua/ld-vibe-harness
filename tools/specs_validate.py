@@ -2740,7 +2740,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         runtime_report.get("issues", []),
     ))
 
-    code_paths = [PROJECT_ROOT / "tools" / "specs_validate.py", PROJECT_ROOT / "tests" / "test_specs_validate.py"]
+    code_paths = [PROJECT_ROOT / "tools" / "specs_validate.py", PROJECT_ROOT / "tests" / "tools" / "test_specs_validate.py"]
     code_issues = [
         ldvh_bootstrap_issue("BOOTSTRAP_CODE_SELF_CHECK_MISSING", f"缺少 Code 自检关键文件: {landing_relative_path(path)}", path, "Code")
         for path in code_paths
@@ -2750,7 +2750,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         "code_self_check",
         "Code 自检",
         "open" if code_issues else "closed",
-        "checked specs_validate.py and test_specs_validate.py presence",
+        "checked specs_validate.py and tests/tools/test_specs_validate.py presence",
         None,
         code_issues,
     ))
