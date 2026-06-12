@@ -1635,6 +1635,92 @@ def test_runtime_projection_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["summary"]["status"] == "closed"
 
 
+def write_deployment_entries_fixture(tmp_path):
+    write_md(
+        tmp_path / "rules" / "LDVH-AI-ENTRY.md",
+        """
+# LDVH AI 统一入口
+
+四类必备部署入口的当前仓库资产清单见 `rules/LDVH-DEPLOYMENT-ENTRIES.md`。
+""",
+    )
+    write_md(tmp_path / "skills" / "ldvh-spec-change-check" / "SKILL.md", "# Skill")
+    write_md(tmp_path / "agents" / "ldvh-spec-semantic-review.md", "# Agent")
+    write_md(tmp_path / "hooks" / "ldvh-lifecycle-check.md", "# Hook")
+    return write_md(
+        tmp_path / "rules" / "LDVH-DEPLOYMENT-ENTRIES.md",
+        """
+# LDVH 部署入口资产清单
+
+规范来源：`specs/04.02-Test.md`
+
+| 入口类型 | 当前资产 | 位置 | 当前资产状态 | 何时使用 | 降级方式 |
+|---|---|---|---|---|---|
+| Rules | LDVH AI 统一入口 | `rules/LDVH-AI-ENTRY.md` | 已有 | 进入 LDVH 时 | 人工提供入口摘要 |
+| Skill | LDVH 规范变更检查 Skill | `skills/ldvh-spec-change-check/SKILL.md` | 已有 | 修改 specs 后 | 主控 AI 手动执行 SOP |
+| Agent | LDVH 规范语义审查 Agent | `agents/ldvh-spec-semantic-review.md` | 已有 | 专项语义审查时 | 主控 AI 顺序模拟 |
+| Hook | LDVH 生命周期检查 Hook | `hooks/ldvh-lifecycle-check.md` | 已有 | 生命周期检查时 | Skill 模拟或人工检查 |
+""",
+    )
+
+
+def deployment_entry_codes(issues):
+    return [issue.code for issue in issues]
+
+
+def test_deployment_entries_valid_fixture_passes(tmp_path):
+    write_deployment_entries_fixture(tmp_path)
+
+    assert checker.deployment_entries_check(tmp_path) == []
+
+
+def test_deployment_entries_reports_missing_list(tmp_path):
+    issues = checker.deployment_entries_check(tmp_path)
+
+    assert deployment_entry_codes(issues) == ["DEPLOYMENT_ENTRIES_LIST_MISSING"]
+
+
+def test_deployment_entries_reports_required_type_and_asset_problems(tmp_path):
+    write_deployment_entries_fixture(tmp_path)
+    (tmp_path / "hooks" / "ldvh-lifecycle-check.md").unlink()
+    list_path = tmp_path / "rules" / "LDVH-DEPLOYMENT-ENTRIES.md"
+    text = list_path.read_text(encoding="utf-8")
+    text = text.replace("| Agent | LDVH 规范语义审查 Agent | `agents/ldvh-spec-semantic-review.md` | 已有 | 专项语义审查时 | 主控 AI 顺序模拟 |\n", "")
+    list_path.write_text(text, encoding="utf-8")
+
+    codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
+
+    assert "DEPLOYMENT_ENTRIES_REQUIRED_TYPE_MISSING" in codes
+    assert "DEPLOYMENT_ENTRIES_ASSET_MISSING" in codes
+    assert "DEPLOYMENT_ENTRIES_REQUIRED_ASSET_MISSING" in codes
+
+
+def test_deployment_entries_reports_forbidden_type_and_ai_entry_ref_missing(tmp_path):
+    list_path = write_deployment_entries_fixture(tmp_path)
+    ai_entry = tmp_path / "rules" / "LDVH-AI-ENTRY.md"
+    ai_entry.write_text("# LDVH AI 统一入口\n", encoding="utf-8")
+    with list_path.open("a", encoding="utf-8") as file:
+        file.write("| Code | Code 检查 | `code/specs_validate.py` | 已有 | 检查时 | 不适用 |\n")
+
+    codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
+
+    assert "DEPLOYMENT_ENTRIES_FORBIDDEN_TYPE" in codes
+    assert "DEPLOYMENT_ENTRIES_AI_ENTRY_REF_MISSING" in codes
+
+
+def test_deployment_entries_cli_is_in_all(tmp_path, monkeypatch, capsys):
+    write_deployment_entries_fixture(tmp_path)
+    monkeypatch.setattr(checker, "SPECS_DIR", tmp_path / "specs")
+    monkeypatch.setattr(checker, "FORMAL_SPECS_DIR", tmp_path / "specs")
+    monkeypatch.setattr(checker, "DOCS_DIR", tmp_path / "docs")
+    monkeypatch.setattr(checker, "RUNTIME_PROJECTION_DEFAULT_PATHS", ["rules/LDVH-AI-ENTRY.md", "rules/LDVH-DEPLOYMENT-ENTRIES.md"])
+
+    exit_code = checker.main(["deployment-entries", "--root", str(tmp_path)])
+
+    assert exit_code == 0
+    assert "部署入口资产清单一致性检查通过" in capsys.readouterr().out
+
+
 # ══════════════════════════════════════════════════════════════════════
 # human-gate — Human Gate 轻量人类决策记录结构检查
 # ══════════════════════════════════════════════════════════════════════
