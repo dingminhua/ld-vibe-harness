@@ -1,11 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { fetchObjects, type ObjectItem } from '@/utils/api';
+import { useMemo } from 'react';
+import type { ObjectStatusOption } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
-
-interface StatusOption {
-  status: string;
-  count: number;
-}
 
 const STATUS_FILTER_ORDER = [
   'active',
@@ -41,16 +36,14 @@ interface ObjectStatusFilterProps {
   type: string;
   activeStatus: string | null;
   onChange: (status: string | null) => void;
+  options?: ObjectStatusOption[];
+  total?: number;
+  loading?: boolean;
   className?: string;
 }
 
-function getStatusOptions(items: ObjectItem[]): StatusOption[] {
-  const counts = new Map<string, number>();
-  for (const item of items) {
-    if (!item.status) continue;
-    counts.set(item.status, (counts.get(item.status) ?? 0) + 1);
-  }
-  return Array.from(counts, ([status, count]) => ({ status, count })).sort((a, b) => {
+function sortStatusOptions(options: ObjectStatusOption[]): ObjectStatusOption[] {
+  return [...options].sort((a, b) => {
     const aIndex = statusOrderIndex.get(a.status) ?? Number.MAX_SAFE_INTEGER;
     const bIndex = statusOrderIndex.get(b.status) ?? Number.MAX_SAFE_INTEGER;
     if (aIndex !== bIndex) return aIndex - bIndex;
@@ -87,35 +80,17 @@ export default function ObjectStatusFilter({
   type,
   activeStatus,
   onChange,
+  options = [],
+  total = 0,
+  loading = false,
   className = '',
 }: ObjectStatusFilterProps) {
-  const [items, setItems] = useState<ObjectItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const { t, getStatus } = useI18n();
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetchObjects(type)
-      .then((result) => {
-        if (!cancelled) setItems(result.data?.items ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setItems([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [type]);
-
-  const options = useMemo(() => getStatusOptions(items), [items]);
+  const sortedOptions = useMemo(() => sortStatusOptions(options), [options]);
   const fallbackStatuses = useMemo(() => getFallbackStatuses(type, activeStatus), [type, activeStatus]);
-  const total = items.length;
 
-  if (loading && options.length === 0) {
+  if (loading && sortedOptions.length === 0) {
     return (
       <div className={`flex min-h-7 flex-wrap gap-1.5 ${className}`} aria-label={t('objectList.statusFilter')} aria-busy="true">
         {fallbackStatuses.map((status) => (
@@ -141,11 +116,11 @@ export default function ObjectStatusFilter({
     );
   }
 
-  if (options.length <= 1) return null;
+  if (sortedOptions.length <= 1) return null;
 
   return (
     <div className={`flex min-h-7 flex-wrap gap-1.5 ${className}`} aria-label={t('objectList.statusFilter')}>
-      {options.map((option) => (
+      {sortedOptions.map((option) => (
         <button
           key={option.status}
           type="button"

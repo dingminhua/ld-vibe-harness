@@ -6,7 +6,7 @@ import { Router, type Request, type Response } from 'express'
 import fs from 'fs'
 import path from 'path'
 import yaml from 'js-yaml'
-import { listObjects, showObject, OBJECT_TYPES, LDVH_BASE_DIR, type ObjectType } from '../services/pytools.js'
+import { listObjects, showObject, OBJECT_TYPES, LDVH_BASE_DIR, readFactData, type ObjectType } from '../services/facts.js'
 
 const router = Router()
 
@@ -43,6 +43,11 @@ interface RelatedPlanSummary extends RelatedObjectSummary {
   tasks: RelatedObjectSummary[]
   hasSuccessCriteria: boolean
   hasCompletionEvidence: boolean
+}
+
+interface StatusOption {
+  status: string
+  count: number
 }
 
 const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded'])
@@ -151,6 +156,17 @@ function sortRelatedObjects<T extends { status: string; updated: string; id: str
   })
 }
 
+function getStatusOptions(items: ListedObject[]): StatusOption[] {
+  return Object.entries(countByStatus(items))
+    .map(([status, count]) => ({ status, count }))
+    .sort((a, b) => {
+      const statusDelta = (STATUS_PRIORITY[a.status] ?? 50) - (STATUS_PRIORITY[b.status] ?? 50)
+      if (statusDelta !== 0) return statusDelta
+      if (a.count !== b.count) return b.count - a.count
+      return a.status.localeCompare(b.status)
+    })
+}
+
 async function listObjectSummaries(type: ObjectType): Promise<ListedObject[]> {
   const result = await listObjects(type)
   if (!result.ok) return []
@@ -162,11 +178,9 @@ async function buildPlanSummaries(planItems: ListedObject[]): Promise<RelatedPla
 
   const taskItems = await listObjectSummaries('task')
   const tasksById = new Map(taskItems.map((item) => [item.id, item]))
-  const detailResults = await Promise.all(planItems.map((item) => showObject(item.id)))
 
-  return planItems.map((item, index) => {
-    const detail = detailResults[index]
-    const data = detail.ok && isRecord(detail.data) ? detail.data : {}
+  return planItems.map((item) => {
+    const data = readFactData(item.path)
     const taskIds = toStringArray(data.tasks)
     const tasks = taskIds.map((taskId) => {
       const taskItem = tasksById.get(taskId)
@@ -270,6 +284,11 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   }
 
   const items = getResultItems(result)
+  if (isRecord(result.data)) {
+    const statusItems = status ? await listObjectSummaries(type) : items
+    result.data.statusOptions = getStatusOptions(statusItems)
+    result.data.statusTotal = statusItems.length
+  }
   if (isRecord(result.data) && type === 'workarea') {
     result.data.items = await enrichWorkareas(items)
   }

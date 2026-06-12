@@ -1,4 +1,5 @@
 const API_BASE = '/api';
+const inFlightRequests = new Map<string, Promise<unknown>>();
 
 export interface DashboardData {
   landing?: {
@@ -91,6 +92,11 @@ export interface ObjectItem {
   hasSuccessCriteria?: boolean;
   hasCompletionEvidence?: boolean;
   workarea?: string;
+}
+
+export interface ObjectStatusOption {
+  status: string;
+  count: number;
 }
 
 export interface RelatedObjectSummary {
@@ -233,11 +239,23 @@ export interface ValidationData {
 }
 
 async function request<T>(url: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${url}`);
-  if (!res.ok) {
-    throw new Error(`API error: ${res.status} ${res.statusText}`);
-  }
-  return res.json();
+  const fullUrl = `${API_BASE}${url}`;
+  const existing = inFlightRequests.get(fullUrl);
+  if (existing) return existing as Promise<T>;
+
+  const promise = fetch(fullUrl)
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status} ${res.statusText}`);
+      }
+      return res.json() as Promise<T>;
+    })
+    .finally(() => {
+      inFlightRequests.delete(fullUrl);
+    });
+
+  inFlightRequests.set(fullUrl, promise);
+  return promise;
 }
 
 export async function fetchDashboard(locale?: string): Promise<DashboardData> {
@@ -245,7 +263,10 @@ export async function fetchDashboard(locale?: string): Promise<DashboardData> {
   return request<DashboardData>(`/dashboard${params}`);
 }
 
-export async function fetchObjects(type: string, status?: string): Promise<{ ok: boolean; summary: { count: number }; data: { items: ObjectItem[] } }> {
+export async function fetchObjects(
+  type: string,
+  status?: string
+): Promise<{ ok: boolean; summary: { count: number }; data: { items: ObjectItem[]; statusOptions?: ObjectStatusOption[]; statusTotal?: number } }> {
   const params = new URLSearchParams();
   if (status) params.set('status', status);
   const qs = params.toString();

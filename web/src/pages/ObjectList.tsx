@@ -6,7 +6,7 @@ import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
 import MemoCreate from '@/components/MemoCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
-import { fetchObjects, type ObjectItem, type RelatedObjectSummary } from '@/utils/api';
+import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getObjectSignalAccent } from '@/utils/objectSignals';
@@ -325,6 +325,8 @@ export default function ObjectList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState<ObjectItem[]>([]);
+  const [statusOptions, setStatusOptions] = useState<ObjectStatusOption[]>([]);
+  const [statusTotal, setStatusTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -337,9 +339,14 @@ export default function ObjectList() {
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setStatusOptions([]);
+    setStatusTotal(0);
     fetchObjects(currentType, activeStatus ?? undefined)
       .then((result) => {
-        setItems(result.data?.items ?? []);
+        const nextItems = result.data?.items ?? [];
+        setItems(nextItems);
+        setStatusOptions(result.data?.statusOptions ?? []);
+        setStatusTotal(result.data?.statusTotal ?? nextItems.length);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -486,6 +493,9 @@ export default function ObjectList() {
           type={currentType}
           activeStatus={activeStatus}
           onChange={handleStatusChange}
+          options={statusOptions}
+          total={statusTotal}
+          loading={loading}
         />
         {currentType === 'memo' && (
           <MemoCreate onCreated={() => setReloadKey((value) => value + 1)} />

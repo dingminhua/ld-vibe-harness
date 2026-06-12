@@ -3,7 +3,8 @@
  */
 
 import { Router, type Request, type Response } from 'express'
-import { listObjects, validate, OBJECT_TYPES, runPyToolsJson } from '../services/pytools.js'
+import { validate, runPyToolsJson } from '../services/pytools.js'
+import { listObjects, OBJECT_TYPES } from '../services/facts.js'
 import { getGitLog } from '../services/git.js'
 import { getRelativeTime } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
