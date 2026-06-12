@@ -4,6 +4,7 @@
 > 源码：`web/src/pages/ObjectDetail.tsx`
 > 字段格式规则：`web/src/utils/fieldFormats.ts`
 > API：`GET /api/objects/:type/:id`
+> 全局设计语言：`web/docs/01-全局设计约束.md` §1.10
 
 ## 1. 页面目标
 
@@ -64,6 +65,7 @@ Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 - 关联类字段可折叠；TaskPlan 的关联字段默认展开，其他类型默认折叠。
 - Pitfall、ADR、Memo、WorkArea、TaskPlan 等长文本字段必须按 Markdown 渲染。
 - TaskPlan 的 `aggregated_deliverables` 和 `aggregated_docs` 作为聚合区域显示，不混入普通字段卡片。
+- TaskPlan 后续应从普通字段卡片升级为语义阅读布局，按全局设计语言围绕“计划目标、关闭判断、任务拆解、证据/产出、关联材料”组织，而不是直接展开工作域属性或任务细节。
 
 ## 7. 字段渲染规则
 
