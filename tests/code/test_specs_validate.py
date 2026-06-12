@@ -1211,13 +1211,14 @@ def test_index_main_outputs_json_to_stdout(tmp_path, capsys):
 
 def build_landing_report_fixture(tmp_path, monkeypatch):
     docs_specs = tmp_path / "docs" / "specs"
+    (tmp_path / "rules").mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(checker, "DOCS_DIR", tmp_path / "docs")
     monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
-    monkeypatch.setattr(checker, "RUNTIME_PROJECTION_DEFAULT_PATHS", ["LDVH-AI-ENTRY.md"])
+    monkeypatch.setattr(checker, "RUNTIME_PROJECTION_DEFAULT_PATHS", ["rules/LDVH-AI-ENTRY.md"])
 
     write_md(
-        tmp_path / "LDVH-AI-ENTRY.md",
+        tmp_path / "rules" / "LDVH-AI-ENTRY.md",
         """
 # Runtime Projection
 
@@ -1458,10 +1459,11 @@ def test_classify_runtime_projection_remediation():
 
 def test_runtime_projection_reports_missing_authority_and_spec_ref(tmp_path, monkeypatch):
     docs_specs = tmp_path / "docs" / "specs"
+    (tmp_path / "rules").mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
     projection = write_md(
-        tmp_path / "LDVH-AI-ENTRY.md",
+        tmp_path / "rules" / "LDVH-AI-ENTRY.md",
         """
 # Runtime Projection
 
@@ -1489,6 +1491,7 @@ def test_runtime_projection_reports_missing_authority_and_spec_ref(tmp_path, mon
 
 def test_runtime_projection_reports_copied_formal_body(tmp_path, monkeypatch):
     docs_specs = tmp_path / "docs" / "specs"
+    (tmp_path / "rules").mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
     write_md(
@@ -1502,7 +1505,7 @@ def test_runtime_projection_reports_copied_formal_body(tmp_path, monkeypatch):
 """,
     )
     projection = write_md(
-        tmp_path / "LDVH-AI-ENTRY.md",
+        tmp_path / "rules" / "LDVH-AI-ENTRY.md",
         """
 # Runtime Projection
 
@@ -1522,6 +1525,7 @@ def test_runtime_projection_reports_copied_formal_body(tmp_path, monkeypatch):
 
 def test_runtime_projection_cli_outputs_json(tmp_path, monkeypatch, capsys):
     docs_specs = tmp_path / "docs" / "specs"
+    (tmp_path / "rules").mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
     write_md(
@@ -1531,7 +1535,7 @@ def test_runtime_projection_cli_outputs_json(tmp_path, monkeypatch, capsys):
 """,
     )
     projection = write_md(
-        tmp_path / "LDVH-AI-ENTRY.md",
+        tmp_path / "rules" / "LDVH-AI-ENTRY.md",
         """
 # Runtime Projection
 
