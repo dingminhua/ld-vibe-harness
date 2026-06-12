@@ -272,6 +272,398 @@ def test_doc_main_returns_zero_when_no_issues(tmp_path, capsys):
     assert "检查通过" in capsys.readouterr().out
 
 
+def test_consistency_reports_retired_workflow_consumption(tmp_path):
+    path = write_md(
+        tmp_path / "40-工作流程集合索引.md",
+        """
+# 工作流程集合索引
+
+## 1. 本文解决的问题
+
+LDVH落地与检查读取本文时，应至少确认 active 工作流程输入。
+""",
+    )
+
+    issues = checker.consistency_retired_semantic_issues([str(tmp_path)])
+
+    assert any(issue.code == "RETIRED_WORKFLOW_CONSUMPTION" and issue.path == path for issue in issues)
+
+
+def test_consistency_reports_retired_test_source_consumption(tmp_path):
+    path = write_md(
+        tmp_path / "03.05-工作流程文档规范.md",
+        """
+# 工作流程文档规范
+
+## 1. 本文解决的问题
+
+具体测试用例进入 10 定义的测试用例事实源或 Code 测试实现。
+""",
+    )
+
+    issues = checker.consistency_retired_semantic_issues([str(tmp_path)])
+
+    assert any(issue.code == "RETIRED_TEST_SOURCE_CONSUMPTION" and issue.path == path for issue in issues)
+
+
+def test_consistency_ignores_retired_historical_boundary(tmp_path):
+    write_md(
+        tmp_path / "02-术语规范.md",
+        """
+# 术语规范
+
+## 1. 本文解决的问题
+
+LDVH落地与检查已退回，待重新设计，只能作为候选输入或历史背景。
+""",
+    )
+
+    assert checker.consistency_retired_semantic_issues([str(tmp_path)]) == []
+
+
+# ── 工作模型骨架检查 ──────────────────────────────────────────────
+
+
+def test_consistency_reports_work_model_section_missing(tmp_path):
+    entry_path = tmp_path / "21-Test-测试.md"
+    write_md(
+        entry_path,
+        """
+# Test-测试
+
+> 定位：测试
+
+---
+
+## 1. 对象定位与准入条件
+
+## 2. 事实源边界
+""",
+    )
+    entries = [{"number": "21", "title": "21-Test-测试.md", "type": "具体工作模型规范", "status": "active", "path": entry_path, "line": 1}]
+
+    issues = checker.consistency_work_model_skeleton_issues(entries)
+
+    assert any(issue.code == "WORK_MODEL_SECTION_MISSING" for issue in issues)
+
+
+def test_consistency_reports_work_model_section_title_mismatch(tmp_path):
+    entry_path = tmp_path / "21-Test-测试.md"
+    write_md(
+        entry_path,
+        """
+# Test-测试
+
+> 定位：测试
+
+---
+
+## 1. 错误的标题名称
+""",
+    )
+    entries = [{"number": "21", "title": "21-Test-测试.md", "type": "具体工作模型规范", "status": "active", "path": entry_path, "line": 1}]
+
+    issues = checker.consistency_work_model_skeleton_issues(entries)
+
+    assert any(issue.code == "WORK_MODEL_SECTION_TITLE_MISMATCH" for issue in issues)
+
+
+def test_consistency_skips_non_active_work_model(tmp_path):
+    entries = [{"number": "21", "title": "21-Test-测试.md", "type": "具体工作模型规范", "status": "removed", "path": tmp_path / "x.md", "line": 1}]
+
+    assert checker.consistency_work_model_skeleton_issues(entries) == []
+
+
+def test_consistency_reports_work_model_doc_missing(tmp_path):
+    entry_path = tmp_path / "21-Not-Exists.md"
+    entries = [{"number": "21", "title": "21-Not-Exists.md", "type": "具体工作模型规范", "status": "active", "path": entry_path, "line": 1}]
+
+    issues = checker.consistency_work_model_skeleton_issues(entries)
+
+    assert any(issue.code == "WORK_MODEL_DOC_MISSING" for issue in issues)
+
+
+# ── 工作流程骨架检查 ──────────────────────────────────────────────
+
+
+def test_consistency_reports_workflow_section_missing(tmp_path):
+    entry_path = tmp_path / "50-Test-测试.md"
+    write_md(
+        entry_path,
+        """
+# Test-测试
+
+> 定位：测试
+
+---
+
+## 1. 行动定位与适用场景
+
+## 2. 准入条件
+""",
+    )
+    entries = [{"number": "50", "title": "50-Test-测试.md", "type": "具体工作流程规范", "status": "active", "path": entry_path, "line": 1}]
+
+    issues = checker.consistency_workflow_skeleton_issues(entries)
+
+    assert any(issue.code == "WORKFLOW_SECTION_MISSING" for issue in issues)
+
+
+def test_consistency_skips_non_active_workflow(tmp_path):
+    entries = [{"number": "50", "title": "50-Test-测试.md", "type": "具体工作流程规范", "status": "removed", "path": tmp_path / "x.md", "line": 1}]
+
+    assert checker.consistency_workflow_skeleton_issues(entries) == []
+
+
+# ── 索引文档强制章节检查 ──────────────────────────────────────────
+
+
+def test_consistency_reports_index_section_missing(tmp_path):
+    write_md(
+        tmp_path / "20-工作模型集合索引.md",
+        """
+# 工作模型集合索引
+
+> 定位：测试
+
+---
+
+## 1. 本文解决的问题
+
+## 2. 与 00 总纲的关系
+""",
+    )
+
+    issues = checker.consistency_index_skeleton_issues([str(tmp_path)])
+
+    assert any(issue.code == "INDEX_SECTION_MISSING" for issue in issues)
+
+
+def test_consistency_index_passes_when_required_sections_present(tmp_path):
+    write_md(
+        tmp_path / "20-工作模型集合索引.md",
+        """
+# 工作模型集合索引
+
+> 定位：测试
+
+---
+
+## 1. 本文解决的问题
+
+## 2. 与 00 总纲的关系
+
+## 3. 索引范围
+
+## 4. 文档清单
+
+## 5. 维护边界
+
+## 6. 集合关系
+
+## 7. 落地与检查输入
+
+## 8. 集合一致性检查
+
+## 9. 规范落地要求
+
+## 10. Human Gate 与检查要求
+
+## 11. 待补齐事项
+""",
+    )
+
+    assert checker.consistency_index_skeleton_issues([str(tmp_path)]) == []
+
+
+# ── 不推荐裸词检查 ────────────────────────────────────────────────
+
+
+def test_consistency_reports_bare_term(tmp_path):
+    write_md(
+        tmp_path / "99-测试.md",
+        """
+# 测试文档
+
+这个 机制 需要被限定。
+""",
+    )
+
+    issues = checker.consistency_bare_term_issues([str(tmp_path)])
+
+    assert any(issue.code == "BARE_TERM_USAGE" and "机制" in issue.message for issue in issues)
+
+
+def test_consistency_skips_bare_term_with_modifier(tmp_path):
+    write_md(
+        tmp_path / "99-测试.md",
+        """
+# 测试文档
+
+保障机制不应被替代。
+""",
+    )
+
+    issues = checker.consistency_bare_term_issues([str(tmp_path)])
+
+    assert not any("机制" in issue.message for issue in issues)
+
+
+def test_consistency_skips_bare_term_in_terminology_spec(tmp_path):
+    write_md(
+        tmp_path / "02-术语规范.md",
+        """
+# 术语规范
+
+这个 机制 不得裸用。
+""",
+    )
+
+    assert checker.consistency_bare_term_issues([str(tmp_path)]) == []
+
+
+# ── 不推荐表达检查 ────────────────────────────────────────────────
+
+
+def test_consistency_reports_deprecated_expression(tmp_path):
+    write_md(
+        tmp_path / "99-测试.md",
+        """
+# 测试文档
+
+承接项应改为适配项。
+""",
+    )
+
+    issues = checker.consistency_deprecated_expression_issues([str(tmp_path)])
+
+    assert any(issue.code == "DEPRECATED_EXPRESSION" and "承接项" in issue.message for issue in issues)
+
+
+def test_consistency_skips_deprecated_in_negative_context(tmp_path):
+    write_md(
+        tmp_path / "99-测试.md",
+        """
+# 测试文档
+
+不再使用承接项作为正式术语。
+""",
+    )
+
+    issues = checker.consistency_deprecated_expression_issues([str(tmp_path)])
+
+    assert not any("承接项" in issue.message for issue in issues)
+
+
+def test_consistency_skips_deprecated_in_terminology_spec(tmp_path):
+    write_md(
+        tmp_path / "02-术语规范.md",
+        """
+# 术语规范
+
+承接项应改为适配项。
+""",
+    )
+
+    assert checker.consistency_deprecated_expression_issues([str(tmp_path)]) == []
+
+
+# ── 04 系列文件存在性/标题检查 ────────────────────────────────────
+
+
+def test_consistency_reports_04_series_file_missing(monkeypatch, tmp_path):
+    """模拟 04 系列文件缺失场景"""
+    original = checker.CONSISTENCY_04_SERIES_FILES
+    checker.CONSISTENCY_04_SERIES_FILES = {
+        "99-Not-Exists.md": "不存在的文件",
+    }
+
+    issues = checker.consistency_04_series_issues()
+
+    assert any(issue.code == "04_SERIES_FILE_MISSING" for issue in issues)
+
+    checker.CONSISTENCY_04_SERIES_FILES = original
+
+
+def test_consistency_reports_04_series_title_mismatch(monkeypatch, tmp_path):
+    """模拟 04 系列文件标题不匹配场景"""
+    # 创建一个临时文件，标题不匹配
+    fake_file = tmp_path / "04-规范落地与环境适配基础规范.md"
+    fake_file.write_text("# 错误的标题\n\n内容", encoding="utf-8")
+
+    original = checker.SPECS_DIR
+    checker.SPECS_DIR = tmp_path
+
+    issues = checker.consistency_04_series_issues()
+
+    assert any(issue.code == "04_SERIES_TITLE_MISMATCH" for issue in issues)
+
+    checker.SPECS_DIR = original
+
+
+def test_consistency_04_series_passes_for_existing_files():
+    """实际 04 系列文件都应通过检查"""
+    issues = checker.consistency_04_series_issues()
+
+    assert not any(issue.code == "04_SERIES_FILE_MISSING" for issue in issues)
+    assert not any(issue.code == "04_SERIES_TITLE_MISMATCH" for issue in issues)
+
+
+# ── web-validate 子命令测试 ──────────────────────────────────────
+
+
+def test_web_validate_build_returns_dict():
+    """web_validate_build 应返回包含必要字段的字典"""
+    report = checker.web_validate_build()
+
+    assert isinstance(report, dict)
+    assert "ok" in report
+    assert "command" in report
+    assert "summary" in report
+    assert "issues" in report
+    assert "reports" in report
+
+
+def test_web_validate_build_has_reports():
+    """web_validate_build 的 reports 应包含 landingCheck、landingReport 和 humanGateReport"""
+    report = checker.web_validate_build()
+
+    reports = report.get("reports", {})
+
+    assert "landingCheck" in reports
+    assert "landingReport" in reports
+    assert "humanGateReport" in reports
+
+
+def test_web_validate_format_text():
+    """web_validate_format_text 应生成可读文本"""
+    report = checker.web_validate_build()
+    text = checker.web_validate_format_text(report)
+
+    assert isinstance(text, str)
+    assert len(text) > 0
+
+
+def test_web_validate_main_text_output(capsys):
+    """web_validate_main text 模式应输出并返回 0"""
+    exit_code = checker.web_validate_main(output_format="text")
+
+    captured = capsys.readouterr()
+    assert exit_code in (0, 1)  # 取决于事实模型是否有错误
+    assert captured.out != ""
+
+
+def test_web_validate_main_json_output(capsys):
+    """web_validate_main json 模式应输出合法 JSON"""
+    exit_code = checker.web_validate_main(output_format="json")
+
+    captured = capsys.readouterr()
+    report = json.loads(captured.out)  # 不应抛异常
+
+    assert "ok" in report
+    assert "summary" in report
+
+
 # ══════════════════════════════════════════════════════════════════════
 # refs — 引用完整性检查
 # ══════════════════════════════════════════════════════════════════════

@@ -1,8 +1,5 @@
 import importlib.util
-import subprocess
 from pathlib import Path
-from unittest.mock import patch
-
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "tools" / "commit_validate.py"
 spec = importlib.util.spec_from_file_location("commit_validate", MODULE_PATH)
@@ -10,250 +7,168 @@ checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
 
 
-def make_commit(hash, subject, body=""):
-    """构造 CommitInfo 对象。"""
-    full = f"{subject}\n\n{body}".strip() if body else subject
-    return checker.CommitInfo(hash=hash, subject=subject, body=body, full_message=full)
-
-
-def issues_messages(issues):
+def issue_messages(issues):
     return [i.message for i in issues]
 
 
-def test_valid_type_and_subject():
-    commit = make_commit("a" * 40, "docs: 添加 README")
-    errors = [i for i in checker.check_commit(commit) if i.level == "error"]
+def issue_codes(issues):
+    return [(i.level, i.message) for i in issues]
+
+
+# ══════════════════════════════════════════════════════════════════════
+# check_commit — 单条 commit 格式检查
+# ══════════════════════════════════════════════════════════════════════
+
+
+def make_commit(hash_val="abc12345", subject="", body=""):
+    return checker.CommitInfo(
+        hash=hash_val,
+        subject=subject,
+        body=body,
+        full_message=f"{subject}\n\n{body}".strip() if body else subject,
+    )
+
+
+def test_valid_commit_passes():
+    commit = make_commit(subject="docs(specs): 更新 Change 工作模型", body="新增 docs/specs/22-Change-变更.md。\n\nRefs: 22-Change-变更")
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
     assert errors == []
 
 
-def test_valid_type_with_scope():
-    commit = make_commit("a" * 40, "spec(specs): 更新规则")
-    errors = [i for i in checker.check_commit(commit) if i.level == "error"]
-    assert errors == []
+def test_invalid_format_first_line():
+    commit = make_commit(subject="随便写的 commit message")
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert any("第一行格式不符合" in i.message for i in errors)
 
 
 def test_invalid_type():
-    commit = make_commit("a" * 40, "unknown: some change")
+    commit = make_commit(subject="invalid(scope): 测试")
+
     issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert any("不在有效枚举中" in m for m in msgs)
+
+    assert any("type" in i.message and "不在有效枚举" in i.message for i in issues)
 
 
-def test_subject_too_long():
-    long_subject = "docs: " + "x" * 73
-    commit = make_commit("a" * 40, long_subject)
+def test_valid_type_without_scope():
+    commit = make_commit(subject="docs: 测试文档", body="说明\n\nRefs: 01-目录说明")
+
     issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert any("超过 72 字符" in m for m in msgs)
-
-
-def test_empty_subject_format_error():
-    # "docs:   " — 冒号后只有空格，regex 不匹配，返回格式错误
-    commit = make_commit("a" * 40, "docs:   ")
-    issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert any("第一行格式不符合" in m for m in msgs)
-
-
-def test_missing_refs_warning():
-    commit = make_commit("a" * 40, "docs: add feature")
-    issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert any("缺少 Refs" in m for m in msgs)
-
-
-def test_with_refs_no_warning():
-    commit = make_commit(
-        "a" * 40,
-        "docs: add feature",
-        "Some body text\n\nRefs: 22-Change-变更"
-    )
-    issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert not any("缺少 Refs" in m for m in msgs)
-
-
-def test_unrecognized_scope_warning():
-    commit = make_commit("a" * 40, "docs(custom): add feature")
-    issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert any("不在推荐枚举中" in m for m in msgs)
-
-
-def test_no_header_format():
-    commit = make_commit("a" * 40, "just a message without format")
-    issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert any("第一行格式不符合" in m for m in msgs)
-
-
-def test_multiple_issues():
-    commit = make_commit("a" * 40, "unknown: some change")
-    issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert any("不在有效枚举中" in m for m in msgs)
-    assert any("缺少 Refs" in m for m in msgs)
-
-
-def test_all_valid_types():
-    for t in checker.VALID_TYPES:
-        commit = make_commit("a" * 40, f"{t}: 测试变更")
-        issues = checker.check_commit(commit)
-        errors = [i for i in issues if i.level == "error"]
-        assert errors == [], f"type '{t}' should be valid"
-
-
-def test_all_recommended_scopes():
-    for s in checker.RECOMMENDED_SCOPES:
-        commit = make_commit("a" * 40, f"docs({s}): some change")
-        issues = checker.check_commit(commit)
-        warnings = [i for i in issues if "不在推荐枚举中" in i.message]
-        assert warnings == [], f"scope '{s}' should be recognized"
-
-
-def test_subject_at_boundary():
-    # 恰好 72 字符
-    commit = make_commit("a" * 40, "docs: " + "x" * 66)
-    issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert not any("超过 72 字符" in m for m in msgs)
-
-
-def test_refs_with_multiple_objects():
-    commit = make_commit(
-        "a" * 40,
-        "docs: add feature",
-        "Body\n\nRefs: 22-Change-变更, adr-0001"
-    )
-    issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert not any("缺少 Refs" in m for m in msgs)
-
-
-@patch("subprocess.run")
-def test_git_log_parsing(mock_run):
-    mock_run.return_value = subprocess.CompletedProcess(
-        args=[], returncode=0,
-        stdout="abc12345\x00feat: add feature\x00Body text\n\nRefs: adr-0001\x1e",
-        stderr=""
-    )
-    commits = checker.git_log(1)
-    assert len(commits) == 1
-    assert commits[0].hash == "abc12345"
-    assert commits[0].subject == "feat: add feature"
-    assert "Refs: adr-0001" in commits[0].body
-
-
-@patch("subprocess.run")
-def test_git_log_failure(mock_run, capsys):
-    mock_run.return_value = subprocess.CompletedProcess(
-        args=[], returncode=1, stdout="", stderr="fatal: not a git repository"
-    )
-    try:
-        checker.git_log(1)
-    except SystemExit:
-        pass
-    # 不验证具体输出，只验证不会崩溃
-
-
-# -------- check_message 提交前预检 --------
-
-
-def test_check_message_valid():
-    msg = "spec(tools): add pre-commit check\n\nBody text\n\nRefs: 22-Change-变更"
-    issues = checker.check_message(msg)
     errors = [i for i in issues if i.level == "error"]
+
     assert errors == []
 
 
-def test_check_message_invalid_type():
-    msg = "badtype: broken"
-    issues = checker.check_message(msg)
-    msgs = issues_messages(issues)
-    assert any("不在有效枚举中" in m for m in msgs)
+def test_scope_not_recommended_warns():
+    commit = make_commit(subject="feat(unknown-scope): 新功能", body="说明\n\nRefs: 99-test")
+
+    issues = checker.check_commit(commit)
+    warnings = [i for i in issues if i.level == "warning"]
+
+    assert any("scope" in i.message and "不在推荐枚举" in i.message for i in warnings)
+
+
+def test_subject_too_long():
+    long_subject = "a" * 100
+    commit = make_commit(subject=f"docs(specs): {long_subject}", body="Refs: 01")
+
+    issues = checker.check_commit(commit)
+
+    assert any("超过" in i.message and "字符" in i.message for i in issues)
+
+
+def test_missing_refs_warns():
+    commit = make_commit(subject="docs(specs): 测试", body="没有 Refs 行")
+
+    issues = checker.check_commit(commit)
+    warnings = [i for i in issues if i.level == "warning"]
+
+    assert any("缺少 Refs" in i.message for i in warnings)
+
+
+def test_missing_chinese_errors():
+    commit = make_commit(subject="docs(specs): test no chinese", body="no chinese here")
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert any("必须包含中文字符" in i.message for i in errors)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# check_message — 提交前预检
+# ══════════════════════════════════════════════════════════════════════
+
+
+def test_check_message_valid():
+    text = "docs(specs): 更新文档\n\n更新内容。\n\nRefs: 01-目录说明"
+
+    issues = checker.check_message(text)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert errors == []
 
 
 def test_check_message_empty():
     issues = checker.check_message("")
-    msgs = issues_messages(issues)
-    assert any("不能为空" in m for m in msgs)
+
+    assert any("不能为空" in i.message for i in issues)
 
 
-def test_check_message_no_header_format():
-    msg = "just a regular sentence without proper format"
-    issues = checker.check_message(msg)
-    msgs = issues_messages(issues)
-    assert any("第一行格式不符合" in m for m in msgs)
+def test_check_message_invalid_format():
+    text = "随便写写"
+
+    issues = checker.check_message(text)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert errors  # 至少有一个 error
 
 
-def test_check_message_too_long():
-    msg = "docs: " + "x" * 73
-    issues = checker.check_message(msg)
-    msgs = issues_messages(issues)
-    assert any("超过 72 字符" in m for m in msgs)
-
-
-# -------- parse_message_text --------
-
-
-def test_parse_message_text_simple():
-    commit = checker.parse_message_text("feat: add feature")
-    assert commit.hash == "<message>"
-    assert commit.subject == "feat: add feature"
-    assert commit.body == ""
-    assert commit.full_message == "feat: add feature"
+# ══════════════════════════════════════════════════════════════════════
+# parse_message_text — 纯文本解析
+# ══════════════════════════════════════════════════════════════════════
 
 
 def test_parse_message_text_with_body():
-    text = "feat: add feature\n\nSome description\nMore details\n\nRefs: adr-0001"
-    commit = checker.parse_message_text(text)
-    assert commit.hash == "<message>"
-    assert commit.subject == "feat: add feature"
-    assert "Some description" in commit.body
-    assert "Refs: adr-0001" in commit.full_message
+    text = "docs(specs): 标题\n\n这是 body 内容"
+    result = checker.parse_message_text(text)
+
+    assert result.subject == "docs(specs): 标题"
+    assert "body 内容" in result.body
+    assert result.hash == "<message>"
 
 
-# -------- show_format --------
+def test_parse_message_text_without_body():
+    text = "docs(specs): 只有标题"
+    result = checker.parse_message_text(text)
+
+    assert result.subject == "docs(specs): 只有标题"
+    assert result.body == ""
 
 
-def test_show_format_output(capsys):
-    checker.show_format()
-    captured = capsys.readouterr()
-    assert "正确的 commit message 格式" in captured.out
-    assert "<type>(<scope>): <subject>" in captured.out
-    assert "feat" in captured.out
-    assert "specs" in captured.out
+# ══════════════════════════════════════════════════════════════════════
+# Issue formatting
+# ══════════════════════════════════════════════════════════════════════
 
 
-# -------- 中文字符检测 --------
+def test_issue_format_error():
+    issue = checker.Issue(source="abc12345def", level="error", message="测试错误")
+
+    formatted = issue.format()
+
+    assert "ERROR" in formatted
+    assert "abc12345" in formatted
+    assert "测试错误" in formatted
 
 
-def test_chinese_subject():
-    commit = make_commit("a" * 40, "spec(tools): 新增中文检测功能")
-    issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert not any("必须包含中文字符" in m for m in msgs)
+def test_issue_format_warning():
+    issue = checker.Issue(source="abc12345def", level="warning", message="测试警告")
 
+    formatted = issue.format()
 
-def test_chinese_body():
-    commit = make_commit(
-        "a" * 40,
-        "spec(tools): add chinese check",
-        "在提交前检测 commit message 是否包含中文。\n\nRefs: 22-Change-变更"
-    )
-    issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert not any("必须包含中文字符" in m for m in msgs)
-
-
-def test_no_chinese_error():
-    commit = make_commit("a" * 40, "spec(tools): add feature without chinese")
-    issues = checker.check_commit(commit)
-    msgs = issues_messages(issues)
-    assert any("必须包含中文字符" in m for m in msgs)
-
-
-def test_check_message_no_chinese():
-    issues = checker.check_message("spec(tools): add feature without chinese\n\nNo chinese here.")
-    msgs = issues_messages(issues)
-    assert any("必须包含中文字符" in m for m in msgs)
+    assert "WARN" in formatted

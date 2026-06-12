@@ -19,7 +19,7 @@ ADR 不是所有判断的默认归宿。AI 可以在当前任务中做临时判�
 
 1. 影响多个 WorkArea、TaskPlan、Task、工作模型、工作流程或项目阶段；
 2. 改变长期执行方式、协作方式、事实源归属或 Human Gate 边界；
-3. 改变 docs/specs、Rules / Instructions、Skill、Agent、Code、Web 或运行投影的长期规则；
+3. 改变 docs/specs、Rules / Instructions、Skill、Agent、Code、Web 或适配措施的长期规则；
 4. 对后续 AI 或 Human 执行具有持续约束；
 5. 多次重复出现，需要稳定记录选择理由；
 6. 存在多个可行方案，需要保留选择与取舍；
@@ -154,13 +154,13 @@ ADR 中的决策升级为稳定规则时，应：
 3. 将 `proposed` ADR 确认为 `accepted`；
 4. 将 `accepted` ADR 标记为 `deprecated` 或 `superseded`；
 5. 修改 `accepted` ADR 的 `decision` 字段；
-6. 将 ADR 决策升级为 docs/specs、Rules / Instructions、Skill、Agent、Code、Web 或运行投影规则；
+6. 将 ADR 决策升级为 docs/specs、Rules / Instructions、Skill、Agent、Code、Web 或适配措施规则；
 7. 改变 ADR 的事实源载体、状态机、升级路径或终态语义；
 8. 删除原 ADR 而不是通过状态表达废弃或替代。
 
 推翻原决策时，不得删除原 ADR 文件。应将原 ADR 标记为 `superseded`，在 `superseded_by` 中引用新 ADR，并在新 ADR 的 `context` 中说明替代原因。废弃决策时，应将原 ADR 标记为 `deprecated`，并记录废弃原因。
 
-Human Gate 的具体环境实体由 04 系列环境适配映射和运行投影记录承接。本文只规定 ADR 语境下需要确认的事实、影响范围和证据承接要求。
+Human Gate 的具体环境实体由 04 系列环境适配映射和适配措施记录承接。本文只规定 ADR 语境下需要确认的事实、影响范围和证据承接要求。
 
 ADR 语境下的 Human Gate 记录应遵守 `docs/specs/06-工作流程基础规范.md` §6.3.1。创建、接受、废弃、替代、核心决策改写或升级为规范等场景中，确认记录至少应说明目标 ADR、决策变化、影响范围、确认依据、Human 决策、后续回写位置和残留风险。确认记录可以写入 ADR 的 `context`、`consequences`、`status_history`、相关 Task / Memo 或 Change / commit 证据中，但不得只停留在对话结论里。
 
@@ -330,7 +330,7 @@ ADR 创建、确认、废弃、替代和升级为规范的具体行动流程由�
 | 入口可见要求 | AI 处理长期决策、规范判断、事实源边界、方案取舍或执行约束时，应能定位本文 | 20 集合索引、运行入口摘要、ADR 决策流程入口 | AI 执行入口提示 | 决策入口、规范升级、状态流转或字段契约变化时 |
 | 确定性执行要求 | ADR 字段、状态、引用、文件命名、替代链和条件必填应由 Code 校验或记录缺口 | `docs/specs/07-Code确定性执行实现规范.md`、ADR 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、替代规则或相关规范路径变化时 |
 | Human 交互要求 | ADR 创建、接受、废弃、替代、核心决策改写和升级为规范应触发 Human Gate，并按 06 §6.3.1 留下最小证据记录 | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | ADR 规范变化后，应检查 20、05.01、Change、Code、Web、运行投影和相关工作流程是否需要同步 | 集合索引维护、字段格式映射、Change 追溯、Code/Web 联动检查、人工降级检查 | 触发保障 | ADR 字段、状态、事实源边界、适配规则或检查要求变化时 |
+| 生命周期触发要求 | ADR 规范变化后，应检查 20、05.01、Change、Code、Web、适配措施和相关工作流程是否需要同步 | 集合索引维护、字段格式映射、Change 追溯、Code/Web 联动检查、人工降级检查 | 触发保障 | ADR 字段、状态、事实源边界、适配规则或检查要求变化时 |
 
 ---
 ## 10. 检查要求
