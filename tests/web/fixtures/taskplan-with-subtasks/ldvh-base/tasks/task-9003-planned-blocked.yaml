@@ -1,0 +1,21 @@
+id: task-9003
+type: task
+title: 等待中的计划任务
+status: planned
+created: '2026-06-12T10:10:00'
+updated: '2026-06-12T10:30:00'
+taskplan: taskplan-9001
+description: |
+  该任务仍处于 planned，但前置 task-9002 未关闭，因此 Web 应派生为等待中。
+source: taskplan-9001
+blocked_by:
+  - task-9002
+acceptance: |
+  - [ ] 前置任务关闭后才可执行
+verification: |
+  等待解除后补齐验证方式。
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs: []
+deliverables: []

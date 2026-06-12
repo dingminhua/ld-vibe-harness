@@ -12,7 +12,7 @@ import CopyPathButton from '@/components/CopyPathButton';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
 import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
-import type { LocaleKey } from '@/i18n/locales';
+import { getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
 import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
 
 const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
@@ -252,7 +252,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <CopyPathButton path={item.path} />
-                      <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
+                      <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(item.type, item.status, locale)} />
                       <span className="ldvh-caption whitespace-nowrap">
                         {item.relativeTime}
                       </span>
@@ -336,7 +336,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <CopyPathButton path={item.path} />
-                    <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
+                    <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(item.type, item.status, locale)} />
                     <span className="ldvh-caption whitespace-nowrap">
                       {item.relativeTime}
                     </span>

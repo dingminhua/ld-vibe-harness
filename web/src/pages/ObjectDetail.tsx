@@ -12,7 +12,7 @@ import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
 import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedPlanSummary } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
-import { getObjectStatusHint, getTypeDescription } from '@/i18n/locales';
+import { getObjectStatusHint, getObjectStatusLocale, getTypeDescription } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { formatDateTime } from '@/utils/dateFormat';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
@@ -338,7 +338,7 @@ export default function ObjectDetail() {
                 id={objId}
                 target={detail.target}
                 status={objStatus}
-                statusLabel={getStatus(objStatus)}
+                statusLabel={getObjectStatusLocale(objType, objStatus, locale)}
                 typeColor={typeColor}
                 typeLabel={TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
                 created={formatDateTime(obj.created as string | undefined)}
@@ -363,14 +363,14 @@ export default function ObjectDetail() {
                   <div className="flex flex-col items-end gap-1.5">
                     <div className="flex items-center gap-2">
                       <CopyPathButton path={detail.target} />
-                      <StatusBadge status={objStatus} statusLabel={getStatus(objStatus)} size="md" />
+                      <StatusBadge status={objStatus} statusLabel={getObjectStatusLocale(objType, objStatus, locale)} size="md" />
                     </div>
                     {statusHint && (
                       <span className="ldvh-caption">{statusHint}</span>
                     )}
                   </div>
                 </div>
-                {objStatus === 'review_needed' && (
+                {objType === 'taskplan' && objStatus === 'review_needed' && (
                   <div className="mt-3 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
                     <Info size={14} className="shrink-0 text-amber-400" />
                     <span className="ldvh-caption text-amber-300">{t('objectDetail.humanGateTip')}</span>

@@ -7,6 +7,7 @@ import { isObjectRef } from '@/utils/fieldFormats';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import StatusBadge from '@/components/StatusBadge';
 import CopyPathButton from '@/components/CopyPathButton';
+import { getObjectStatusLocale } from '@/i18n/locales';
 
 /** 对象类型中英映射（与 ObjectDetail 页面保持一致） */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
@@ -46,8 +47,8 @@ export default function ReferenceCard({ refs }: ReferenceCardProps) {
 
 function ReferenceItem({ refId }: { refId: string }) {
   const navigate = useNavigate();
-  const { locale, getStatus } = useI18n();
-  const [info, setInfo] = useState<{ title: string; status: string; path: string } | null>(null);
+  const { locale } = useI18n();
+  const [info, setInfo] = useState<{ type: string; title: string; status: string; path: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refType = parseRefType(refId);
@@ -60,7 +61,7 @@ function ReferenceItem({ refId }: { refId: string }) {
         const title = (locale === 'en'
           ? (obj.title_en as string || obj.title as string)
           : (obj.title_zh as string || obj.title as string)) || refId;
-        setInfo({ title, status: detail.summary.status, path: detail.target });
+        setInfo({ type: refType, title, status: detail.summary.status, path: detail.target });
       })
       .catch(() => setInfo(null))
       .finally(() => setLoading(false));
@@ -115,7 +116,7 @@ function ReferenceItem({ refId }: { refId: string }) {
       </span>
       {info?.status && (
         <span className="shrink-0">
-          <StatusBadge status={info.status} statusLabel={getStatus(info.status)} size="sm" />
+          <StatusBadge status={info.status} statusLabel={getObjectStatusLocale(info.type, info.status, locale)} size="sm" />
         </span>
       )}
       <CopyPathButton path={info?.path} />

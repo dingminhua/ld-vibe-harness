@@ -87,11 +87,15 @@ export interface ObjectItem {
   taskClosed?: number;
   taskReviewNeeded?: number;
   taskActive?: number;
+  taskBlocked?: number;
   taskRisk?: number;
   taskByStatus?: Record<string, number>;
   hasSuccessCriteria?: boolean;
+  hasReviewRequestedAt?: boolean;
   hasCompletionEvidence?: boolean;
+  hasClosedAt?: boolean;
   workarea?: string;
+  workareaSummary?: RelatedObjectSummary;
 }
 
 export interface ObjectStatusOption {
@@ -108,6 +112,8 @@ export interface RelatedObjectSummary {
   status: string;
   path: string;
   updated: string;
+  blockedBy?: string[];
+  openBlockers?: RelatedObjectSummary[];
 }
 
 export interface RelatedPlanSummary extends RelatedObjectSummary {
@@ -116,10 +122,13 @@ export interface RelatedPlanSummary extends RelatedObjectSummary {
   taskClosed: number;
   taskReviewNeeded: number;
   taskActive: number;
+  taskBlocked: number;
   taskRisk: number;
   tasks: RelatedObjectSummary[];
   hasSuccessCriteria: boolean;
+  hasReviewRequestedAt: boolean;
   hasCompletionEvidence: boolean;
+  hasClosedAt: boolean;
 }
 
 export interface ObjectDetail {

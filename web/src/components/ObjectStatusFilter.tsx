@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { ObjectStatusOption } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
+import { getObjectStatusLocale } from '@/i18n/locales';
 
 const STATUS_FILTER_ORDER = [
   'active',
@@ -85,7 +86,7 @@ export default function ObjectStatusFilter({
   loading = false,
   className = '',
 }: ObjectStatusFilterProps) {
-  const { t, getStatus } = useI18n();
+  const { t, locale } = useI18n();
 
   const sortedOptions = useMemo(() => sortStatusOptions(options), [options]);
   const fallbackStatuses = useMemo(() => getFallbackStatuses(type, activeStatus), [type, activeStatus]);
@@ -100,7 +101,7 @@ export default function ObjectStatusFilter({
             onClick={() => onChange(status)}
             className={getButtonClass(activeStatus === status)}
           >
-            {getStatus(status)}
+            {getObjectStatusLocale(type, status, locale)}
             <CountPlaceholder />
           </button>
         ))}
@@ -127,7 +128,7 @@ export default function ObjectStatusFilter({
           onClick={() => onChange(option.status)}
           className={getButtonClass(activeStatus === option.status)}
         >
-          {getStatus(option.status)}
+          {getObjectStatusLocale(type, option.status, locale)}
           <span className="ml-1 inline-block min-w-4 text-center opacity-70">{option.count}</span>
         </button>
       ))}

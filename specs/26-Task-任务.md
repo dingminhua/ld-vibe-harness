@@ -53,7 +53,7 @@ ldvh-base/tasks/task-{NNNN}-short-title.yaml
 | `planned` | 已创建，待执行 |
 | `executing` | 正在执行 |
 | `verifying` | 执行完成，正在进行验证 |
-| `review_needed` | 验证通过，待任务计划层关闭审查吸收 |
+| `review_needed` | 已验证，待完成关闭检查 |
 | `closed` | 关闭条件满足，已关闭 |
 
 `closed` 是稳定终态。终态 Task 不得直接重开；如需重新处理，应在同一任务计划或新任务计划下创建新 Task。

@@ -31,6 +31,8 @@ interface RelatedObjectSummary {
   title_zh?: string
   path: string
   updated: string
+  blockedBy?: string[]
+  openBlockers?: RelatedObjectSummary[]
 }
 
 interface RelatedPlanSummary extends RelatedObjectSummary {
@@ -39,10 +41,13 @@ interface RelatedPlanSummary extends RelatedObjectSummary {
   taskClosed: number
   taskReviewNeeded: number
   taskActive: number
+  taskBlocked: number
   taskRisk: number
   tasks: RelatedObjectSummary[]
   hasSuccessCriteria: boolean
+  hasReviewRequestedAt: boolean
   hasCompletionEvidence: boolean
+  hasClosedAt: boolean
 }
 
 interface StatusOption {
@@ -133,6 +138,57 @@ function toRelatedSummary(item: ListedObject, type = item.type): RelatedObjectSu
   }
 }
 
+function toTaskSummary(item: ListedObject): RelatedObjectSummary {
+  const data = readFactData(item.path)
+  const blockedBy = toStringArray(data.blocked_by)
+  return {
+    ...toRelatedSummary(item, 'task'),
+    ...(blockedBy.length > 0 ? { blockedBy } : {}),
+  }
+}
+
+function toMissingTaskSummary(taskId: string): RelatedObjectSummary {
+  return {
+    id: taskId,
+    type: 'task',
+    status: 'unknown',
+    title: taskId,
+    path: '',
+    updated: '',
+  }
+}
+
+function stripDerivedSummary(item: RelatedObjectSummary): RelatedObjectSummary {
+  return {
+    id: item.id,
+    type: item.type,
+    status: item.status,
+    title: item.title,
+    title_en: item.title_en,
+    title_zh: item.title_zh,
+    path: item.path,
+    updated: item.updated,
+    blockedBy: item.blockedBy,
+  }
+}
+
+function hasOpenBlockers(item: RelatedObjectSummary): boolean {
+  return !TERMINAL_STATUSES.has(item.status) && (item.openBlockers?.length ?? 0) > 0
+}
+
+function enrichTaskBlockers(tasks: RelatedObjectSummary[]): RelatedObjectSummary[] {
+  const tasksById = new Map(tasks.map((task) => [task.id, task]))
+
+  return tasks.map((task) => {
+    const openBlockers = (task.blockedBy ?? [])
+      .map((blockerId) => tasksById.get(blockerId) ?? toMissingTaskSummary(blockerId))
+      .filter((blocker) => !TERMINAL_STATUSES.has(blocker.status))
+      .map(stripDerivedSummary)
+
+    return openBlockers.length > 0 ? { ...task, openBlockers } : task
+  })
+}
+
 function countByStatus(items: Array<{ status: string }>): Record<string, number> {
   return items.reduce<Record<string, number>>((counts, item) => {
     counts[item.status] = (counts[item.status] ?? 0) + 1
@@ -182,19 +238,10 @@ async function buildPlanSummaries(planItems: ListedObject[]): Promise<RelatedPla
   return planItems.map((item) => {
     const data = readFactData(item.path)
     const taskIds = toStringArray(data.tasks)
-    const tasks = taskIds.map((taskId) => {
+    const tasks = enrichTaskBlockers(taskIds.map((taskId) => {
       const taskItem = tasksById.get(taskId)
-      return taskItem
-        ? toRelatedSummary(taskItem, 'task')
-        : {
-            id: taskId,
-            type: 'task',
-            status: 'unknown',
-            title: taskId,
-            path: '',
-            updated: '',
-          }
-    })
+      return taskItem ? toTaskSummary(taskItem) : toMissingTaskSummary(taskId)
+    }))
 
     return {
       ...toRelatedSummary(item, 'taskplan'),
@@ -203,10 +250,13 @@ async function buildPlanSummaries(planItems: ListedObject[]): Promise<RelatedPla
       taskClosed: countMatching(tasks, TERMINAL_STATUSES),
       taskReviewNeeded: countMatching(tasks, REVIEW_STATUSES),
       taskActive: countMatching(tasks, ACTIVE_STATUSES),
+      taskBlocked: tasks.filter(hasOpenBlockers).length,
       taskRisk: countMatching(tasks, RISK_STATUSES),
       tasks: sortRelatedObjects(tasks),
       hasSuccessCriteria: hasContent(data.success_criteria),
+      hasReviewRequestedAt: hasContent(data.review_requested_at),
       hasCompletionEvidence: hasContent(data.completion_evidence),
+      hasClosedAt: hasContent(data.closed_at),
     }
   })
 }
@@ -241,21 +291,28 @@ async function enrichWorkareas(items: ListedObject[]): Promise<ListedObject[]> {
 async function enrichTaskPlans(items: ListedObject[]): Promise<ListedObject[]> {
   const planSummaries = await buildPlanSummaries(items)
   const summariesById = new Map(planSummaries.map((plan) => [plan.id, plan]))
+  const workareaItems = await listObjectSummaries('workarea')
+  const workareasById = new Map(workareaItems.map((item) => [item.id, item]))
 
   return items.map((item) => {
     const summary = summariesById.get(item.id)
     if (!summary) return item
+    const workarea = summary.workarea ? workareasById.get(summary.workarea) : undefined
     return {
       ...item,
       workarea: summary.workarea,
+      workareaSummary: workarea ? toRelatedSummary(workarea, 'workarea') : undefined,
       tasks: summary.tasks,
       taskTotal: summary.taskTotal,
       taskClosed: summary.taskClosed,
       taskReviewNeeded: summary.taskReviewNeeded,
       taskActive: summary.taskActive,
+      taskBlocked: summary.taskBlocked,
       taskRisk: summary.taskRisk,
       hasSuccessCriteria: summary.hasSuccessCriteria,
+      hasReviewRequestedAt: summary.hasReviewRequestedAt,
       hasCompletionEvidence: summary.hasCompletionEvidence,
+      hasClosedAt: summary.hasClosedAt,
       taskByStatus: countByStatus(summary.tasks),
     }
   })

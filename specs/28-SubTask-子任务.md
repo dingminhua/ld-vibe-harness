@@ -50,7 +50,7 @@ ldvh-base/subtasks/subtask-{NNNN}-short-title.yaml
 | `planned` | 已创建，待执行 |
 | `executing` | 正在执行 |
 | `verifying` | 执行完成，正在验证 |
-| `review_needed` | 验证通过，待并入 Task 关闭检查 |
+| `review_needed` | 已验证，待并入 Task 关闭检查 |
 | `closed` | 关闭条件满足，已关闭 |
 
 `closed` 是稳定终态。需要重新处理时，应创建新的子任务或回到 Task 重新拆分。

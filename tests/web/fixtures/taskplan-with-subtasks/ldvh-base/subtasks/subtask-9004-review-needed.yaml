@@ -1,0 +1,18 @@
+id: subtask-9004
+type: subtask
+title: 已验证待并入任务关闭检查的子任务
+status: review_needed
+created: '2026-06-12T10:09:00'
+updated: '2026-06-12T10:19:00'
+task: task-9002
+description: |
+  子任务已验证但尚未并入 Task 关闭检查的样例。
+source: task-9002
+acceptance: |
+  - [x] 局部验收已完成
+blocked_by:
+  - subtask-9001
+verification: |
+  - [x] 局部验证已通过
+closure_evidence: |
+  子任务已验证，等待并入 Task 关闭检查。

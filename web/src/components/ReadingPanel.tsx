@@ -10,6 +10,7 @@ import StatusBadge from '@/components/StatusBadge';
 import SummaryText from '@/components/SummaryText';
 import CopyPathButton from '@/components/CopyPathButton';
 import { useI18n } from '@/i18n/context';
+import { getObjectStatusLocale } from '@/i18n/locales';
 import { fetchDocContent, fetchObjectDetail, type DocContent, type ObjectDetail as ApiObjectDetail } from '@/utils/api';
 import {
   CHECKLIST_COMPAT_FIELDS,
@@ -388,7 +389,7 @@ function PanelContentRenderer({ content }: { content: PanelContent }) {
 
 function ObjectPreview({ content }: { content: PanelContent }) {
   const { objectType, objectId, data } = content;
-  const { locale, getStatus, t } = useI18n();
+  const { locale, t } = useI18n();
   const [detail, setDetail] = useState<ApiObjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const obj = (data as Record<string, unknown> | undefined) ?? detail?.data;
@@ -441,7 +442,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <span className="ldvh-chip rounded bg-ldvh-accent/20 px-2 py-0.5 text-ldvh-accent">{objectType}</span>
-        {status && <StatusBadge status={status} statusLabel={getStatus(status)} size="sm" />}
+        {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(objectType, status, locale)} size="sm" />}
         <CopyPathButton path={targetPath} className="ml-auto" />
       </div>
       <h3 className="ldvh-reading-title">{title}</h3>

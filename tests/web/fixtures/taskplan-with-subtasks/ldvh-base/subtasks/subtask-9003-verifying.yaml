@@ -1,0 +1,18 @@
+id: subtask-9003
+type: subtask
+title: 验证中的子任务
+status: verifying
+created: '2026-06-12T10:08:00'
+updated: '2026-06-12T10:18:00'
+task: task-9002
+description: |
+  子任务验证态样例。
+source: task-9002
+acceptance: |
+  - [x] 执行步骤完成
+  - [ ] 验证结果确认
+blocked_by:
+  - subtask-9001
+verification: |
+  - [ ] 正在验证局部结果
+

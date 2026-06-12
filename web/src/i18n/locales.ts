@@ -33,6 +33,13 @@ export function getStatusLocale(status: string, locale: string): string {
   return locale === 'en' ? entry.en : entry.zh;
 }
 
+export function getObjectStatusLocale(type: string, status: string, locale: string): string {
+  if ((type === 'task' || type === 'subtask') && status === 'review_needed') {
+    return locale === 'en' ? 'Verified' : '已验证';
+  }
+  return getStatusLocale(status, locale);
+}
+
 export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '长期工作范围', en: 'Long-lived work area' },
   taskplan: { zh: '人机沟通和关闭判断的计划', en: 'Plan for human-AI coordination and closure' },
@@ -56,7 +63,7 @@ export const STATUS_HINT_LOCALES: Record<string, { zh: string; en: string }> = {
   active: { zh: '进行中', en: 'In progress' },
   executing: { zh: '执行中', en: 'Executing' },
   verifying: { zh: '验证中', en: 'Verifying' },
-  review_needed: { zh: '待完成关闭判断', en: 'Pending close decision' },
+  review_needed: { zh: '待后续处理', en: 'Needs follow-up' },
   draft: { zh: '草稿中', en: 'In draft' },
   proposed: { zh: '提案中', en: 'Proposed' },
   closed: { zh: '已关闭', en: 'Closed' },
@@ -77,8 +84,8 @@ export function getObjectStatusHint(type: string, status: string, locale: string
     }
     if (type === 'task' || type === 'subtask') {
       return locale === 'en'
-        ? 'Verification passed; finish the close check.'
-        : '验证已通过，待完成关闭检查';
+        ? 'Verified; finish the close check.'
+        : '已验证，待完成关闭检查';
     }
   }
   return getStatusHint(status, locale);
@@ -142,7 +149,7 @@ export const UI_LOCALES = {
     'dashboard.fail': '未通过',
     'dashboard.summary.executing': '{count} 个任务执行中',
     'dashboard.summary.verifying': '{count} 个验证中',
-    'dashboard.summary.reviewNeeded': '{count} 个待关闭',
+    'dashboard.summary.reviewNeeded': '{count} 个待处理',
     'dashboard.summary.planned': '{count} 个计划中',
     'dashboard.summary.validationErrors': '{count} 个校验错误',
     'dashboard.validationErrorHint': '存在校验错误，请查看详情',
@@ -154,10 +161,24 @@ export const UI_LOCALES = {
     'objectList.relatedTasks': '关联任务',
     'objectList.planCount': '{count} 个计划',
     'objectList.taskCount': '{count} 个任务',
-    'objectList.closedProgress': '{closed}/{total} 已关闭',
     'objectList.activePlanCount': '{count} 个活跃计划',
     'objectList.pendingClosePlanCount': '{count} 个待关闭计划',
     'objectList.closedPlanCount': '{count} 个已闭合计划',
+    'objectList.noWorkarea': '未关联工作域',
+    'objectList.planProgress': '执行态势',
+    'objectList.closeDecision': '关闭判断',
+    'objectList.closureIssue': '收口异常',
+    'objectList.planTaskQueue': '任务队列',
+    'objectList.planTaskRisk': '风险',
+    'objectList.taskFlowExecuting': '执行中',
+    'objectList.taskFlowVerifying': '验证中',
+    'objectList.taskFlowAbsorbing': '已验证',
+    'objectList.taskFlowBlocked': '等待中',
+    'objectList.taskFlowReady': '待执行',
+    'objectList.taskFlowRisk': '异常',
+    'objectList.taskFlowOther': '其他',
+    'objectList.taskFlowCount': '{status} {count} 个',
+    'objectList.taskFlowLegend': '任务态势图例',
     'objectList.activeCount': '{count} 进行中',
     'objectList.reviewCount': '{count} 待关闭',
     'objectList.riskCount': '{count} 有风险',
@@ -166,9 +187,11 @@ export const UI_LOCALES = {
     'objectList.morePlans': '还有 {count} 个计划',
     'objectList.moreTasks': '还有 {count} 个任务',
     'objectList.successCriteria': '成功标准',
+    'objectList.reviewRequestedAt': '关闭请求',
     'objectList.completionEvidence': '完成证据',
+    'objectList.closedAt': '关闭时间',
     'objectList.hasRecord': '已记录',
-    'objectList.missingRecord': '未记录',
+    'objectList.missingRecord': '未完成',
 
     'objectDetail.back': '返回',
     'objectDetail.content': '内容',
@@ -221,7 +244,7 @@ export const UI_LOCALES = {
     'readingPanel.docLoadFailed': '文档加载失败',
     'readingPanel.noEvidence': '暂无证据信息',
     'readingPanel.changeDetail': '变更详情',
-    'objectDetail.humanGateTip': '此对象待关闭',
+    'objectDetail.humanGateTip': '此计划待关闭审查',
 
     'validate.title': '校验',
     'validate.filesChecked': '已检查文件',
@@ -382,7 +405,7 @@ export const UI_LOCALES = {
     'dashboard.fail': 'FAIL',
     'dashboard.summary.executing': '{count} tasks executing',
     'dashboard.summary.verifying': '{count} verifying',
-    'dashboard.summary.reviewNeeded': '{count} pending close',
+    'dashboard.summary.reviewNeeded': '{count} need follow-up',
     'dashboard.summary.planned': '{count} planned',
     'dashboard.summary.validationErrors': '{count} validation errors',
     'dashboard.validationErrorHint': 'Validation errors found, check details',
@@ -394,10 +417,24 @@ export const UI_LOCALES = {
     'objectList.relatedTasks': 'Related Tasks',
     'objectList.planCount': '{count} plans',
     'objectList.taskCount': '{count} tasks',
-    'objectList.closedProgress': '{closed}/{total} closed',
     'objectList.activePlanCount': '{count} active plans',
     'objectList.pendingClosePlanCount': '{count} pending-close plans',
     'objectList.closedPlanCount': '{count} closed plans',
+    'objectList.noWorkarea': 'No WorkArea',
+    'objectList.planProgress': 'Execution',
+    'objectList.closeDecision': 'Close Decision',
+    'objectList.closureIssue': 'Closure Issue',
+    'objectList.planTaskQueue': 'Task Queue',
+    'objectList.planTaskRisk': 'Risk',
+    'objectList.taskFlowExecuting': 'Executing',
+    'objectList.taskFlowVerifying': 'Verifying',
+    'objectList.taskFlowAbsorbing': 'Verified',
+    'objectList.taskFlowBlocked': 'Waiting prerequisite',
+    'objectList.taskFlowReady': 'To execute',
+    'objectList.taskFlowRisk': 'Risk',
+    'objectList.taskFlowOther': 'Other',
+    'objectList.taskFlowCount': '{status}: {count}',
+    'objectList.taskFlowLegend': 'Task flow legend',
     'objectList.activeCount': '{count} active',
     'objectList.reviewCount': '{count} pending close',
     'objectList.riskCount': '{count} at risk',
@@ -406,9 +443,11 @@ export const UI_LOCALES = {
     'objectList.morePlans': '{count} more plans',
     'objectList.moreTasks': '{count} more tasks',
     'objectList.successCriteria': 'Success Criteria',
+    'objectList.reviewRequestedAt': 'Review Request',
     'objectList.completionEvidence': 'Completion Evidence',
+    'objectList.closedAt': 'Closed At',
     'objectList.hasRecord': 'Recorded',
-    'objectList.missingRecord': 'Missing',
+    'objectList.missingRecord': 'Incomplete',
 
     'objectDetail.back': 'Back',
     'objectDetail.content': 'Content',
@@ -461,7 +500,7 @@ export const UI_LOCALES = {
     'readingPanel.docLoadFailed': 'Failed to load document',
     'readingPanel.noEvidence': 'No evidence available',
     'readingPanel.changeDetail': 'Change Detail',
-    'objectDetail.humanGateTip': 'This object is pending close',
+    'objectDetail.humanGateTip': 'This plan is pending close review',
 
     'validate.title': 'Validation',
     'validate.filesChecked': 'Files Checked',

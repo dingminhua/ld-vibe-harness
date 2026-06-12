@@ -1,6 +1,6 @@
 import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, CircleDot, ClipboardCheck, Layers3, ListChecks, ShieldAlert } from 'lucide-react';
+import { ArrowRight, BadgeCheck, CheckCircle2, CircleAlert, CircleDashed, CirclePlay, Clock3, ClipboardCheck, Flag, GitBranch, Hourglass, Layers3, MapPinned } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
@@ -9,15 +9,19 @@ import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
+import { getObjectStatusLocale } from '@/i18n/locales';
 import { getObjectSignalAccent } from '@/utils/objectSignals';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 
 type LocalizedTitleItem = Pick<ObjectItem, 'id'> & Partial<Pick<ObjectItem, 'title' | 'title_en' | 'title_zh'>>;
 
 type OpenEvent = MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>;
+type Translate = ReturnType<typeof useI18n>['t'];
+type PlanRecordState = 'recorded' | 'missing';
 
 const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded']);
 const PENDING_CLOSE_STATUSES = new Set(['review_needed']);
+const TASK_RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected', 'deprecated', 'unknown']);
 
 const TITLE_ACCENT_CLASS: Record<string, string> = {
   active: 'border-emerald-400/80',
@@ -56,11 +60,6 @@ function isPendingCloseStatus(status: string): boolean {
   return PENDING_CLOSE_STATUSES.has(status);
 }
 
-function getProgressPercent(closed: number, total: number): number {
-  if (total <= 0) return 0;
-  return Math.round((closed / total) * 100);
-}
-
 function handleKeyboardOpen(event: KeyboardEvent<HTMLElement>, onOpen: () => void) {
   if (event.key === 'Enter' || event.key === ' ') {
     event.preventDefault();
@@ -69,83 +68,230 @@ function handleKeyboardOpen(event: KeyboardEvent<HTMLElement>, onOpen: () => voi
   }
 }
 
-const pillToneClass: Record<string, string> = {
-  neutral: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
-  active: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
-  review: 'border-violet-500/30 bg-violet-500/10 text-violet-500',
+const taskFlowToneClass = {
+  ready: 'border-sky-500/25 bg-sky-500/10 text-sky-500',
+  executing: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
+  verifying: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
+  absorbing: 'border-violet-500/30 bg-violet-500/10 text-violet-500',
+  closed: 'border-zinc-500/30 bg-zinc-500/10 text-ldvh-text-secondary',
+  blocked: 'border-amber-500/35 bg-amber-500/10 text-amber-500',
   risk: 'border-red-500/30 bg-red-500/10 text-red-500',
-  done: 'border-zinc-500/30 bg-zinc-500/10 text-ldvh-text-secondary',
+  neutral: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
 };
 
-function SummaryPill({
-  icon,
-  label,
-  tone = 'neutral',
-}: {
-  icon: ReactNode;
-  label: string;
-  tone?: keyof typeof pillToneClass;
-}) {
-  return (
-    <span className={`ldvh-chip inline-flex min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1 ${pillToneClass[tone]}`}>
-      <span className="shrink-0">{icon}</span>
-      <span className="min-w-0 truncate">{label}</span>
-    </span>
-  );
+type TaskFlowTone = keyof typeof taskFlowToneClass;
+
+const TASK_FLOW_ORDER: TaskFlowTone[] = ['ready', 'executing', 'verifying', 'absorbing', 'closed', 'blocked', 'risk', 'neutral'];
+const TASK_FLOW_LEGEND_ORDER: TaskFlowTone[] = ['ready', 'executing', 'verifying', 'absorbing', 'closed', 'blocked'];
+
+const taskFlowBarClass: Record<TaskFlowTone, string> = {
+  ready: 'bg-sky-500',
+  executing: 'bg-emerald-500',
+  verifying: 'bg-blue-500',
+  absorbing: 'bg-violet-500',
+  closed: 'bg-zinc-500',
+  blocked: 'bg-amber-500',
+  risk: 'bg-red-500',
+  neutral: 'bg-ldvh-border',
+};
+
+const taskFlowIconClass: Record<TaskFlowTone, string> = {
+  ready: 'text-sky-500',
+  executing: 'text-emerald-500',
+  verifying: 'text-blue-400',
+  absorbing: 'text-violet-500',
+  closed: 'text-zinc-500',
+  blocked: 'text-amber-500',
+  risk: 'text-red-500',
+  neutral: 'text-ldvh-text-secondary',
+};
+
+function getTaskFlowIcon(tone: TaskFlowTone) {
+  if (tone === 'ready') return CircleDashed;
+  if (tone === 'executing') return CirclePlay;
+  if (tone === 'verifying') return ClipboardCheck;
+  if (tone === 'absorbing') return BadgeCheck;
+  if (tone === 'blocked') return Hourglass;
+  if (tone === 'closed') return CheckCircle2;
+  if (tone === 'risk') return CircleAlert;
+  return Clock3;
 }
 
-function RecordPill({ label, recorded, t }: { label: string; recorded: boolean; t: (key: 'objectList.hasRecord' | 'objectList.missingRecord') => string }) {
+function isTaskWaitingForBlocker(item: RelatedObjectSummary): boolean {
+  return item.status === 'planned' && (item.openBlockers?.length ?? 0) > 0;
+}
+
+function getTaskFlowTone(item: RelatedObjectSummary): TaskFlowTone {
+  if (isTaskWaitingForBlocker(item)) return 'blocked';
+  if (item.status === 'executing') return 'executing';
+  if (item.status === 'verifying') return 'verifying';
+  if (isPendingCloseStatus(item.status)) return 'absorbing';
+  if (isTerminalStatus(item.status)) return 'closed';
+  if (item.status === 'planned') return 'ready';
+  if (TASK_RISK_STATUSES.has(item.status)) return 'risk';
+  return 'neutral';
+}
+
+function getTaskFlowLabel(item: RelatedObjectSummary, t: Translate, getStatus: (status: string) => string): string {
+  const tone = getTaskFlowTone(item);
+  if (tone === 'blocked') return t('objectList.taskFlowBlocked');
+  if (tone === 'executing') return t('objectList.taskFlowExecuting');
+  if (tone === 'verifying') return t('objectList.taskFlowVerifying');
+  if (tone === 'absorbing') return t('objectList.taskFlowAbsorbing');
+  if (tone === 'closed') return getStatus(item.status);
+  if (tone === 'ready') return t('objectList.taskFlowReady');
+  return getStatus(item.status);
+}
+
+function getTaskFlowToneLabel(tone: TaskFlowTone, t: Translate, getStatus: (status: string) => string): string {
+  if (tone === 'blocked') return t('objectList.taskFlowBlocked');
+  if (tone === 'executing') return t('objectList.taskFlowExecuting');
+  if (tone === 'verifying') return t('objectList.taskFlowVerifying');
+  if (tone === 'absorbing') return t('objectList.taskFlowAbsorbing');
+  if (tone === 'closed') return getStatus('closed');
+  if (tone === 'ready') return t('objectList.taskFlowReady');
+  if (tone === 'risk') return t('objectList.taskFlowRisk');
+  return t('objectList.taskFlowOther');
+}
+
+function getTaskFlowCounts(tasks: RelatedObjectSummary[]): Record<TaskFlowTone, number> {
+  return tasks.reduce<Record<TaskFlowTone, number>>((counts, task) => {
+    const tone = getTaskFlowTone(task);
+    counts[tone] += 1;
+    return counts;
+  }, {
+    ready: 0,
+    executing: 0,
+    verifying: 0,
+    absorbing: 0,
+    blocked: 0,
+    closed: 0,
+    risk: 0,
+    neutral: 0,
+  });
+}
+
+function getTaskFlowPriority(item: RelatedObjectSummary): number {
+  const tone = getTaskFlowTone(item);
+  if (tone === 'executing') return 0;
+  if (tone === 'verifying') return 1;
+  if (tone === 'absorbing') return 2;
+  if (tone === 'blocked') return 3;
+  if (tone === 'ready') return 4;
+  if (tone === 'risk') return 5;
+  if (tone === 'closed') return 8;
+  return 5;
+}
+
+function sortPlanTasks(tasks: RelatedObjectSummary[]): RelatedObjectSummary[] {
+  return [...tasks].sort((a, b) => {
+    const priorityDelta = getTaskFlowPriority(a) - getTaskFlowPriority(b);
+    if (priorityDelta !== 0) return priorityDelta;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+function getPlanRecordStateLabel(state: PlanRecordState, t: Translate): string {
+  if (state === 'recorded') return t('objectList.hasRecord');
+  return t('objectList.missingRecord');
+}
+
+function getPlanRecordClassName(state: PlanRecordState): string {
+  if (state === 'recorded') return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500';
+  return 'border-red-500/60 bg-red-500/15 text-red-400 ring-1 ring-inset ring-red-500/20';
+}
+
+function getPlanRecordIcon(state: PlanRecordState) {
+  if (state === 'recorded') return CheckCircle2;
+  return CircleAlert;
+}
+
+function PlanRecordItem({ label, state, t }: { label: string; state: PlanRecordState; t: Translate }) {
+  const stateLabel = getPlanRecordStateLabel(state, t);
+  const StateIcon = getPlanRecordIcon(state);
   return (
     <span
-      className={`ldvh-chip inline-flex min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1 ${
-        recorded
-          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
-          : 'border-amber-500/30 bg-amber-500/10 text-amber-500'
-      }`}
+      aria-label={`${label} ${stateLabel}`}
+      title={`${label} ${stateLabel}`}
+      className={`ldvh-chip inline-flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 ${getPlanRecordClassName(state)}`}
     >
       <ClipboardCheck size={12} className="shrink-0" />
       <span className="min-w-0 truncate">{label}</span>
-      <span className="shrink-0 opacity-80">{recorded ? t('objectList.hasRecord') : t('objectList.missingRecord')}</span>
+      <StateIcon size={state === 'missing' ? 13 : 12} strokeWidth={state === 'missing' ? 2.6 : 2} className="shrink-0 opacity-95" />
     </span>
   );
 }
 
-function ProgressBar({ closed, total }: { closed: number; total: number }) {
-  const percent = getProgressPercent(closed, total);
+function TaskFlowBar({
+  tasks,
+  t,
+  getStatus,
+}: {
+  tasks: RelatedObjectSummary[];
+  t: Translate;
+  getStatus: (status: string) => string;
+}) {
+  const total = tasks.length;
+  const counts = getTaskFlowCounts(tasks);
+  const entries = TASK_FLOW_ORDER
+    .map((tone) => ({
+      tone,
+      count: counts[tone],
+      label: getTaskFlowToneLabel(tone, t, getStatus),
+    }))
+    .filter((entry) => entry.count > 0);
+  const summary = entries.length > 0
+    ? entries.map((entry) => t('objectList.taskFlowCount', { status: entry.label, count: String(entry.count) })).join(' · ')
+    : t('objectList.noTasks');
+
   return (
-    <div
-      className="h-1.5 overflow-hidden rounded-full bg-ldvh-border/60"
-      role="progressbar"
-      aria-valuenow={percent}
-      aria-valuemin={0}
-      aria-valuemax={100}
-    >
-      <div className="h-full rounded-full bg-ldvh-accent transition-[width]" style={{ width: `${percent}%` }} />
+    <div className="min-w-0" role="group" aria-label={summary} title={summary}>
+      <div className="flex h-2.5 min-w-0 rounded-full bg-ldvh-border/45">
+        {entries.length > 0 ? (
+          entries.map((entry, index) => {
+            const tooltip = t('objectList.taskFlowCount', { status: entry.label, count: String(entry.count) });
+            const roundedClass = entries.length === 1
+              ? 'rounded-full'
+              : `${index === 0 ? 'rounded-l-full' : ''} ${index === entries.length - 1 ? 'rounded-r-full' : ''}`;
+            return (
+              <div
+                key={entry.tone}
+                tabIndex={0}
+                aria-label={tooltip}
+                title={tooltip}
+                data-tooltip={tooltip}
+                className={`relative h-full min-w-1 outline-none transition-[filter] after:pointer-events-none after:absolute after:bottom-full after:left-1/2 after:z-20 after:mb-1 after:hidden after:-translate-x-1/2 after:whitespace-nowrap after:rounded-md after:border after:border-ldvh-border after:bg-ldvh-panel after:px-2 after:py-1 after:text-xs after:leading-5 after:text-ldvh-text-primary after:shadow-lg after:shadow-black/20 after:content-[attr(data-tooltip)] hover:brightness-110 hover:after:block focus:after:block focus-visible:ring-2 focus-visible:ring-ldvh-accent/70 ${taskFlowBarClass[entry.tone]} ${roundedClass}`}
+                style={{ width: `${(entry.count / total) * 100}%` }}
+              />
+            );
+          })
+        ) : (
+          <div className="h-full w-full rounded-full bg-ldvh-border/45" />
+        )}
+      </div>
     </div>
   );
 }
 
-function StatusCountChips({
-  counts,
+function TaskFlowLegend({
+  t,
   getStatus,
 }: {
-  counts?: Record<string, number>;
+  t: Translate;
   getStatus: (status: string) => string;
 }) {
-  const entries = Object.entries(counts ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 4);
-  if (entries.length === 0) return null;
-
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {entries.map(([status, count]) => (
-        <span
-          key={status}
-          className="ldvh-chip inline-flex max-w-full items-center gap-1 rounded-full border border-ldvh-border bg-ldvh-bg px-2 py-0.5 text-ldvh-text-secondary"
-        >
-          <span className="min-w-0 truncate">{getStatus(status)}</span>
-          <span className="font-mono text-ldvh-text-primary">{count}</span>
-        </span>
-      ))}
+    <div className="flex min-h-7 flex-wrap items-center justify-end gap-x-2.5 gap-y-1" aria-label={t('objectList.taskFlowLegend')}>
+      {TASK_FLOW_LEGEND_ORDER.map((tone) => {
+        const label = getTaskFlowToneLabel(tone, t, getStatus);
+        const Icon = getTaskFlowIcon(tone);
+        return (
+          <span key={tone} className="ldvh-caption inline-flex items-center gap-1.5 text-ldvh-text-secondary">
+            <Icon size={12} strokeWidth={2.2} className={taskFlowIconClass[tone]} />
+            <span>{label}</span>
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -242,38 +388,107 @@ function WorkAreaPlanSection({
   );
 }
 
-function RelatedObjectRow({
+function TaskFlowMarker({
+  tone,
+  label,
+}: {
+  tone: TaskFlowTone;
+  label: string;
+}) {
+  const Icon = getTaskFlowIcon(tone);
+  return (
+    <span
+      aria-label={label}
+      title={label}
+      className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border ${taskFlowToneClass[tone]}`}
+    >
+      <Icon size={14} strokeWidth={2.2} />
+    </span>
+  );
+}
+
+function TaskQueueRow({
   item,
   locale,
   getStatus,
-  muted = false,
+  t,
   onOpen,
 }: {
   item: RelatedObjectSummary;
   locale: string;
   getStatus: (status: string) => string;
-  muted?: boolean;
+  t: Translate;
   onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
 }) {
+  const flowTone = getTaskFlowTone(item);
+  const flowLabel = getTaskFlowLabel(item, t, getStatus);
+
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={(event) => onOpen(event, item)}
       onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-      className={`group/row flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/35 ${
-        muted ? 'opacity-70' : ''
-      }`}
+      className="group/row flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/35"
     >
       <div className="min-w-0 flex-1">
-        <span className="ldvh-card-title block min-w-0 truncate transition-colors group-hover/row:text-ldvh-accent">
+        <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/row:text-ldvh-accent">
           {getLocalizedTitle(item, locale)}
         </span>
         <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
       </div>
-      <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
+      <TaskFlowMarker tone={flowTone} label={flowLabel} />
       <CopyPathButton path={item.path} />
       <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-colors group-hover/row:text-ldvh-accent" />
+    </div>
+  );
+}
+
+function PlanWorkareaRow({
+  workarea,
+  fallbackId,
+  locale,
+  emptyLabel,
+  onOpen,
+}: {
+  workarea?: RelatedObjectSummary;
+  fallbackId?: string;
+  locale: string;
+  emptyLabel: string;
+  onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
+}) {
+  const item = workarea ?? (fallbackId ? {
+    id: fallbackId,
+    type: 'workarea',
+    title: fallbackId,
+    status: 'unknown',
+    path: '',
+    updated: '',
+  } : undefined);
+
+  if (!item) {
+    return (
+      <div className="ldvh-caption flex min-w-0 items-center gap-1.5 px-1 text-ldvh-text-secondary">
+        <MapPinned size={12} className="shrink-0" />
+        <span className="min-w-0 truncate">{emptyLabel}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={(event) => onOpen(event, item)}
+      onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
+      className="ldvh-caption group/workarea flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/35 hover:text-ldvh-text-primary"
+    >
+      <MapPinned size={12} className="shrink-0" />
+      <span className="min-w-0 flex-1 truncate text-ldvh-text-primary/85 transition-colors group-hover/workarea:text-ldvh-accent">
+        {getLocalizedTitle(item, locale)}
+      </span>
+      <span className="ldvh-meta-muted ml-auto shrink-0 text-right">{item.id}</span>
+      <ArrowRight size={12} className="shrink-0 transition-colors group-hover/workarea:text-ldvh-accent" />
     </div>
   );
 }
@@ -281,13 +496,11 @@ function RelatedObjectRow({
 function ObjectCardFrame({
   obj,
   locale,
-  getStatus,
   onOpen,
   children,
 }: {
   obj: ObjectItem;
   locale: string;
-  getStatus: (status: string) => string;
   onOpen: (objId: string) => void;
   children: ReactNode;
 }) {
@@ -306,7 +519,7 @@ function ObjectCardFrame({
         <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
         <div className="flex shrink-0 items-center gap-2">
           <CopyPathButton path={obj.path} />
-          <StatusBadge status={obj.status} statusLabel={getStatus(obj.status)} />
+          <StatusBadge status={obj.status} statusLabel={getObjectStatusLocale(obj.type, obj.status, locale)} />
         </div>
       </div>
       <div className={`-mx-1 min-w-0 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover:bg-ldvh-bg/85 ${titleAccentClass}`}>
@@ -379,7 +592,7 @@ export default function ObjectList() {
       const closedPlanCount = obj.planClosed ?? closedPlans.length;
 
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} getStatus={getStatus} onOpen={openObject}>
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
           {planTotal === 0 ? (
             <p className="ldvh-body-muted rounded-md border border-dashed border-ldvh-border bg-ldvh-bg px-3 py-4 text-center">
               {t('objectList.noPlans')}
@@ -420,48 +633,83 @@ export default function ObjectList() {
 
     if (currentType === 'taskplan') {
       const tasks = obj.tasks ?? [];
-      const visibleTasks = tasks.slice(0, 5);
+      const orderedTasks = sortPlanTasks(tasks);
+      const visibleTasks = orderedTasks.slice(0, 4);
       const moreCount = Math.max(0, tasks.length - visibleTasks.length);
-      const taskTotal = obj.taskTotal ?? tasks.length;
-      const taskClosed = obj.taskClosed ?? 0;
+      const needsCloseDecision = obj.status === 'review_needed';
+      const isClosedPlan = obj.status === 'closed';
+      const successCriteriaState: PlanRecordState = obj.hasSuccessCriteria ? 'recorded' : 'missing';
+      const reviewRequestedState: PlanRecordState = obj.hasReviewRequestedAt ? 'recorded' : 'missing';
+      const completionEvidenceState: PlanRecordState = obj.hasCompletionEvidence ? 'recorded' : 'missing';
+      const closedAtState: PlanRecordState = obj.hasClosedAt ? 'recorded' : 'missing';
+      const closeDecisionFields = [
+        { label: t('objectList.successCriteria'), state: successCriteriaState },
+        { label: t('objectList.reviewRequestedAt'), state: reviewRequestedState },
+        { label: t('objectList.completionEvidence'), state: completionEvidenceState },
+      ];
+      const closedIntegrityFields = [...closeDecisionFields, { label: t('objectList.closedAt'), state: closedAtState }];
+      const hasClosedIntegrityIssue = isClosedPlan && closedIntegrityFields.some((field) => field.state === 'missing');
+      const shouldShowCloseDecision = needsCloseDecision || hasClosedIntegrityIssue;
+      const closeDecisionTitle = hasClosedIntegrityIssue && !needsCloseDecision
+        ? t('objectList.closureIssue')
+        : t('objectList.closeDecision');
+      const visibleCloseFields = isClosedPlan ? closedIntegrityFields : closeDecisionFields;
 
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} getStatus={getStatus} onOpen={openObject}>
-          <div className="flex flex-wrap gap-2">
-            <SummaryPill icon={<ListChecks size={12} />} label={t('objectList.taskCount', { count: String(taskTotal) })} />
-            {(obj.taskActive ?? 0) > 0 && (
-              <SummaryPill icon={<CircleDot size={12} />} label={t('objectList.activeCount', { count: String(obj.taskActive) })} tone="active" />
-            )}
-            {(obj.taskReviewNeeded ?? 0) > 0 && (
-              <SummaryPill icon={<CheckCircle2 size={12} />} label={t('objectList.reviewCount', { count: String(obj.taskReviewNeeded) })} tone="review" />
-            )}
-            {(obj.taskRisk ?? 0) > 0 && (
-              <SummaryPill icon={<ShieldAlert size={12} />} label={t('objectList.riskCount', { count: String(obj.taskRisk) })} tone="risk" />
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <RecordPill label={t('objectList.successCriteria')} recorded={Boolean(obj.hasSuccessCriteria)} t={t} />
-            <RecordPill label={t('objectList.completionEvidence')} recorded={Boolean(obj.hasCompletionEvidence)} t={t} />
-          </div>
-          <StatusCountChips counts={obj.taskByStatus} getStatus={getStatus} />
-          <div className="min-w-0">
-            <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
-              <span className="ldvh-caption-strong min-w-0 truncate">{t('objectList.relatedTasks')}</span>
-              {taskTotal > 0 && (
-                <span className="ldvh-meta shrink-0">
-                  {t('objectList.closedProgress', { closed: String(taskClosed), total: String(taskTotal) })}
-                </span>
-              )}
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
+          <PlanWorkareaRow
+            workarea={obj.workareaSummary}
+            fallbackId={obj.workarea}
+            locale={locale}
+            emptyLabel={t('objectList.noWorkarea')}
+            onOpen={openRelatedObject}
+          />
+
+          <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-3">
+            <div className="mb-2 flex min-w-0 items-center gap-1.5">
+              <span className="ldvh-caption-strong inline-flex min-w-0 items-center gap-1.5 truncate">
+                <Flag size={13} className="shrink-0 text-ldvh-accent" />
+                {t('objectList.planProgress')}
+              </span>
             </div>
-            <ProgressBar closed={taskClosed} total={taskTotal} />
-            <div className="mt-2 min-w-0 divide-y divide-ldvh-border/60">
+            <TaskFlowBar tasks={tasks} t={t} getStatus={getStatus} />
+          </div>
+
+          {shouldShowCloseDecision && (
+            <div className={`min-w-0 rounded-md border p-3 ${
+              hasClosedIntegrityIssue
+                ? 'border-red-500/30 bg-red-500/5'
+                : 'border-violet-500/25 bg-violet-500/5'
+            }`}
+            >
+              <div className="mb-2 flex min-w-0 items-center gap-1.5">
+                <ClipboardCheck size={13} className={`shrink-0 ${hasClosedIntegrityIssue ? 'text-red-400' : 'text-violet-400'}`} />
+                <span className="ldvh-caption-strong min-w-0 truncate">{closeDecisionTitle}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {visibleCloseFields.map((field) => (
+                  <PlanRecordItem key={field.label} label={field.label} state={field.state} t={t} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-3">
+            <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
+              <span className="ldvh-caption-strong inline-flex min-w-0 items-center gap-1.5 truncate">
+                <GitBranch size={13} className="shrink-0 text-ldvh-accent" />
+                {t('objectList.planTaskQueue')}
+              </span>
+            </div>
+            <div className="min-w-0 divide-y divide-ldvh-border/60">
               {visibleTasks.length > 0 ? (
                 visibleTasks.map((task) => (
-                  <RelatedObjectRow
+                  <TaskQueueRow
                     key={task.id}
                     item={task}
                     locale={locale}
                     getStatus={getStatus}
+                    t={t}
                     onOpen={openRelatedObject}
                   />
                 ))
@@ -480,7 +728,7 @@ export default function ObjectList() {
     }
 
     return (
-      <ObjectCardFrame key={obj.id} obj={obj} locale={locale} getStatus={getStatus} onOpen={openObject}>
+      <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
         <ObjectSignalBadges source={obj} locale={locale} />
       </ObjectCardFrame>
     );
@@ -497,6 +745,9 @@ export default function ObjectList() {
           total={statusTotal}
           loading={loading}
         />
+        {currentType === 'taskplan' && (
+          <TaskFlowLegend t={t} getStatus={getStatus} />
+        )}
         {currentType === 'memo' && (
           <MemoCreate onCreated={() => setReloadKey((value) => value + 1)} />
         )}

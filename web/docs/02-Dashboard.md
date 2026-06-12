@@ -19,7 +19,7 @@
 
 ```text
 页面标题：仪表盘
-态势摘要行（如：1 个任务执行中，6 个待审查，1 个计划中）
+态势摘要行（如：1 个任务执行中，6 个待处理，1 个计划中）
 可选校验错误横幅
 LDVH 落地引导卡片
 对象统计网格（workarea/taskplan/task/subtask/adr/pitfall/memo）
