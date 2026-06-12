@@ -240,6 +240,227 @@ def runtime_projection_main(paths=None, output_format="text"):
     return 0 if report["summary"]["status"] == "closed" else 1
 
 
+CONSISTENCY_WORK_MODEL_REQUIRED_SECTIONS = {
+    "1": "对象定位与准入条件",
+    "2": "事实源边界",
+    "3": "状态机",
+    "4": "对象关系",
+    "5": "Human Gate",
+    "6": "字段契约",
+    "7": "事实源回写与证据留存",
+    "8": "适配规则",
+    "9": "规范落地要求",
+    "10": "检查要求",
+    "11": "待补齐事项",
+}
+CONSISTENCY_NEGATIVE_TERMS = ("不得", "不应", "不能", "不可", "不是", "不具备", "不再", "已退回", "候选", "历史", "removed", "取消", "不作为", "待重新设计")
+CONSISTENCY_DANGEROUS_TERMS = ("active", "统一流程", "默认流程", "默认保障机制", "可执行入口", "默认对象", "独立工作模型", "当前权威工作流程入口")
+
+
+def consistency_clean_cell(value):
+    text = str(value).strip()
+    if len(text) >= 2 and text.startswith("`") and text.endswith("`"):
+        return text[1:-1]
+    return text
+
+
+def consistency_table_rows(path, heading_title):
+    rows = []
+    lines = path.read_text(encoding="utf-8").splitlines()
+    in_section = False
+    header_seen = False
+    for line_number, line in enumerate(lines, start=1):
+        heading = HEADING_RE.match(line)
+        if heading:
+            title = heading.group(2).strip()
+            in_section = heading_title in title
+            header_seen = False
+            continue
+        if not in_section:
+            continue
+        stripped = line.strip()
+        if not stripped:
+            if header_seen:
+                break
+            continue
+        if not stripped.startswith("|"):
+            if header_seen:
+                break
+            continue
+        cells = [consistency_clean_cell(cell) for cell in stripped.strip("|").split("|")]
+        if all(set(cell) <= {"-", ":", " "} for cell in cells):
+            continue
+        if not header_seen:
+            header_seen = True
+            continue
+        rows.append((line_number, cells))
+    return rows
+
+
+def consistency_collection_entries(path, collection_kind):
+    entries = []
+    for line_number, cells in consistency_table_rows(path, "文档清单"):
+        if collection_kind == "model" and len(cells) >= 5:
+            number, title, item_type, status, position = cells[:5]
+            source = None
+        elif collection_kind == "workflow" and len(cells) >= 6:
+            number, title, item_type, status, source, position = cells[:6]
+        else:
+            continue
+        entries.append(
+            {
+                "path": path,
+                "line": line_number,
+                "number": number,
+                "title": title,
+                "type": item_type,
+                "status": status,
+                "source": source,
+                "position": position,
+                "aliases": consistency_entry_aliases(number, title, position),
+            }
+        )
+    return entries
+
+
+def consistency_entry_aliases(number, title, position):
+    aliases = {str(number).strip()}
+    for text in (title, position):
+        cleaned = re.sub(r"（不建文档）", "", text)
+        cleaned = re.sub(r"^\d+\s*", "", cleaned)
+        cleaned = re.sub(r"^\d+\s*已退回\s*", "", cleaned)
+        cleaned = re.sub(r"^\d+\s*已取消\s*", "", cleaned)
+        cleaned = cleaned.strip()
+        if cleaned and not cleaned.startswith("待定") and cleaned != "待占用":
+            aliases.add(cleaned)
+        for part in re.split(r"\s*/\s*| / |、|，|,|\(|（", cleaned):
+            part = part.strip(" )）")
+            if len(part) >= 2 and not part.startswith("已") and part not in {"不建文档"}:
+                aliases.add(part)
+    return sorted(aliases, key=len, reverse=True)
+
+
+def consistency_h2_sections(path):
+    sections = {}
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        match = re.match(r"^##\s+(\d+)\.\s*(.+?)\s*$", line)
+        if match:
+            sections[match.group(1)] = {"title": match.group(2).strip(), "line": line_number}
+    return sections
+
+
+def consistency_work_model_skeleton_issues(entries):
+    issues = []
+    for entry in entries:
+        if entry["status"] != "active" or "具体工作模型规范" not in entry["type"]:
+            continue
+        try:
+            number = int(entry["number"])
+        except ValueError:
+            continue
+        if number < 21 or number > 39:
+            continue
+        doc_name = entry["title"]
+        path = SPECS_DIR / doc_name
+        if not path.exists():
+            issues.append(Issue(entry["path"], entry["line"], f"active 工作模型主文档不存在: {doc_name}", code="WORK_MODEL_DOC_MISSING"))
+            continue
+        sections = consistency_h2_sections(path)
+        for section_number, expected_title in CONSISTENCY_WORK_MODEL_REQUIRED_SECTIONS.items():
+            actual = sections.get(section_number)
+            if actual is None:
+                issues.append(Issue(path, 1, f"工作模型缺少 03.04 强制章节: ## {section_number}. {expected_title}", code="WORK_MODEL_SECTION_MISSING"))
+            elif actual["title"] != expected_title:
+                issues.append(
+                    Issue(
+                        path,
+                        actual["line"],
+                        f"工作模型章节标题不符合 03.04: ## {section_number}. {actual['title']}，应为 ## {section_number}. {expected_title}",
+                        code="WORK_MODEL_SECTION_TITLE_MISMATCH",
+                    )
+                )
+    return issues
+
+
+def consistency_line_has_removed_alias(line, aliases):
+    return any(alias and alias in line for alias in aliases)
+
+
+def consistency_line_is_negative(line):
+    return any(term in line for term in CONSISTENCY_NEGATIVE_TERMS)
+
+
+def consistency_line_is_dangerous(line):
+    if "active 时" in line or "`active` 时" in line:
+        return False
+    return any(term in line for term in CONSISTENCY_DANGEROUS_TERMS)
+
+
+def consistency_removed_consumption_issues(entries, paths, code):
+    issues = []
+    removed = [entry for entry in entries if entry["status"] == "removed"]
+    for path in iter_markdown_files(paths):
+        if path.name in {"20-工作模型集合索引.md", "40-工作流程集合索引.md"}:
+            continue
+        in_code = False
+        for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            stripped = line.strip()
+            if stripped.startswith("```") or stripped.startswith("~~~"):
+                in_code = not in_code
+                continue
+            if in_code or consistency_line_is_negative(stripped) or not consistency_line_is_dangerous(stripped):
+                continue
+            for entry in removed:
+                if consistency_line_has_removed_alias(stripped, entry["aliases"]):
+                    issues.append(Issue(path, line_number, f"removed 集合项疑似被当作当前生效项消费: {entry['number']} {entry['title']}", code=code))
+    return issues
+
+
+def consistency_terminology_status_issues(model_entries, workflow_entries):
+    path = SPECS_DIR / "02-术语规范.md"
+    if not path.exists():
+        return [Issue(path, 1, "02 术语规范不存在，无法检查术语与集合状态一致性", code="TERMINOLOGY_DOC_MISSING")]
+    entries = [entry for entry in model_entries + workflow_entries if entry["status"] == "removed"]
+    issues = []
+    in_code = False
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_code = not in_code
+            continue
+        if in_code or consistency_line_is_negative(stripped) or not consistency_line_is_dangerous(stripped):
+            continue
+        for entry in entries:
+            if consistency_line_has_removed_alias(stripped, entry["aliases"]):
+                issues.append(Issue(path, line_number, f"02 术语疑似把 removed 集合项定义为当前生效概念: {entry['number']} {entry['title']}", code="TERMINOLOGY_REMOVED_STATUS_CONFLICT"))
+    return issues
+
+
+def consistency_check(paths=None):
+    check_paths = paths if paths else [str(SPECS_DIR)]
+    model_index = SPECS_DIR / "20-工作模型集合索引.md"
+    workflow_index = SPECS_DIR / "40-工作流程集合索引.md"
+    issues = []
+    model_entries = consistency_collection_entries(model_index, "model") if model_index.exists() else []
+    workflow_entries = consistency_collection_entries(workflow_index, "workflow") if workflow_index.exists() else []
+    issues.extend(consistency_work_model_skeleton_issues(model_entries))
+    issues.extend(consistency_removed_consumption_issues(model_entries, check_paths, "MODEL_REMOVED_CONSUMPTION"))
+    issues.extend(consistency_removed_consumption_issues(workflow_entries, check_paths, "WORKFLOW_REMOVED_CONSUMPTION"))
+    issues.extend(consistency_terminology_status_issues(model_entries, workflow_entries))
+    return issues
+
+
+def consistency_main(paths=None):
+    issues = consistency_check(paths)
+    if issues:
+        print(f"集合状态与工作模型骨架一致性检查失败，共 {len(issues)} 个问题：")
+        for issue in issues:
+            print(f"- {issue.format(PROJECT_ROOT)}")
+        return 1
+    print("集合状态与工作模型骨架一致性检查通过。")
+    return 0
+
+
 # ══════════════════════════════════════════════════════════════════════
 # doc — 文档编号/标题规范检查
 # ══════════════════════════════════════════════════════════════════════
@@ -3371,6 +3592,10 @@ def build_parser():
     human_gate_report_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/ 和 ldvh-base/。")
     human_gate_report_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
+    # consistency
+    consistency_parser = subparsers.add_parser("consistency", help="检查集合状态消费、工作模型骨架和 02 术语状态一致性。")
+    consistency_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/specs/。")
+
     # governed-projects
     governed_projects_parser = subparsers.add_parser("governed-projects", help="检查工作区根目录管辖项目配置。")
     governed_projects_parser.add_argument("--root", default=str(PROJECT_ROOT), help="工作区根目录，默认使用当前工具所在项目。")
@@ -3428,6 +3653,9 @@ def main(argv=None):
     if command == "human-gate-report":
         return human_gate_report_main(args.paths, args.format)
 
+    if command == "consistency":
+        return consistency_main(args.paths)
+
     if command == "governed-projects":
         return governed_projects_main(args.root)
 
@@ -3458,6 +3686,10 @@ def main(argv=None):
             exit_code = 1
         # runtime-projection
         if runtime_projection_main(None) != 0:
+            exit_code = 1
+        # consistency
+        consistency_paths = args.paths if args.paths else [str(SPECS_DIR)]
+        if consistency_main(consistency_paths) != 0:
             exit_code = 1
         # governed-projects
         if governed_projects_main(args.root) != 0:

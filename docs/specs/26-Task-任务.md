@@ -5,7 +5,7 @@
 > 定位：定义 Task / 任务工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理 AI 可执行工作单元、验收标准、状态追踪和关闭证据的项目
 > 上位依据：`docs/specs/05-工作模型基础规范.md`
-> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/08-Web信息同步实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/10-运行闭环测试规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/27-TaskPlan-任务计划.md`、`docs/specs/28-SubTask-子任务.md`
+> 相关规范：`docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/02-术语规范.md`、`docs/specs/03.04-工作模型文档规范.md`、`docs/specs/05.01-工作字段内容格式规范.md`、`docs/specs/06-工作流程基础规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/08-Web信息同步实现规范.md`、`docs/specs/09-事实源边界与承载规范.md`、`docs/specs/20-工作模型集合索引.md`、`docs/specs/27-TaskPlan-任务计划.md`、`docs/specs/28-SubTask-子任务.md`
 
 ---
 ## 1. 对象定位与准入条件
@@ -191,12 +191,12 @@ deliverables: []
 ```
 
 ---
-## 7. 事实源回写
+## 7. 事实源回写与证据留存
 
 Task 的执行、验收、验证和关闭证据回写到 Task YAML。任务计划只摘要引用 Task 结果，不复制 Task 的权威事实。
 
 ---
-## 8. Code 与 Web 适配
+## 8. 适配规则
 
 Code 应检查：
 
@@ -228,3 +228,8 @@ Web 可以展示 Task，但应把 TaskPlan 作为 Human 直接确认和关闭审
 | 无旧 Intent 字段 | Task 不包含 `source_intent` |
 | 前置依赖 | `blocked_by` 只引用同一任务计划内 Task |
 | 关闭证据 | closed Task 具备验证和关闭证据 |
+
+---
+## 11. 待补齐事项
+
+暂无额外待补齐事项；后续随字段契约、Code 校验或 Web 消费变化更新。
