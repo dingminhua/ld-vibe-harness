@@ -3341,10 +3341,11 @@ INDEX_NUMBERED_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?(?:\s+|$)")
 INDEX_HEADER_FIELD_RE = re.compile(r"^>\s*([^：:]+)[：:]\s*(.*)\s*$")
 INDEX_BACKTICK_MD_RE = re.compile(r"`([^`]+\.md)`")
 INDEX_PLAIN_SPECS_MD_RE = re.compile(
-    r"(?<![`\w./-])((?:specs/|docs/(?:studies|sources|research|refs)/)[^\s`，。；、)）]+\.md)"
+    r"(?<![`\w./-])((?:specs/[^\s`，。；、)）]+\.md|docs/(?:studies|sources|research|refs)/[^\s`，。；、)）]+\.md|docs/[^/\s`，。；、)）]+\.md))"
 )
 INDEX_RESEARCH_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?((?:specs/research/|docs/research/)[^`\s，。；、)）]+\.md)(?:`)?")
 INDEX_DOCS_MATERIAL_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?((?:docs/(?:studies|sources|research|refs)/)[^`\s，。；、)）]+\.md)(?:`)?")
+INDEX_DOCS_ROOT_ASSET_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?(docs/[^/`\s，。；、)）]+\.md)(?:`)?")
 INDEX_EXTERNAL_URL_RE = re.compile(r"https?://[^\s`，。；、)）]+")
 INDEX_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\d]+(?:\.\d+)*)")
 INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
@@ -3649,6 +3650,11 @@ class SpecsChecker:
                 target = match.group(1)
                 diagnostics.append(
                     self.diagnostic(rel_path, line_number, "warning", "DOCS_PATH_REFERENCE_IN_SPEC", f"正式规范不得引用 docs 可变资料路径: {target}")
+                )
+            for match in INDEX_DOCS_ROOT_ASSET_REF_RE.finditer(line):
+                target = match.group(1)
+                diagnostics.append(
+                    self.diagnostic(rel_path, line_number, "warning", "DOCS_ROOT_ASSET_REFERENCE_IN_SPEC", f"正式规范不得引用 docs 根目录用户资产路径: {target}")
                 )
             for match in INDEX_EXTERNAL_URL_RE.finditer(line):
                 target = match.group(0)

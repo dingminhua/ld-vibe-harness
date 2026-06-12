@@ -967,6 +967,38 @@ def test_specs_document_reports_docs_path_reference(tmp_path):
     assert any(item["code"] == "DOCS_PATH_REFERENCE_IN_SPEC" for item in diagnostics)
 
 
+def test_specs_document_reports_docs_root_asset_reference(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        tmp_path / "docs" / "README.md",
+        """
+# 项目文档
+""",
+    )
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+不得依赖 `docs/README.md`。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "DOCS_ROOT_ASSET_REFERENCE_IN_SPEC" for item in diagnostics)
+
+
 def test_specs_document_reports_external_url_reference(tmp_path):
     specs = tmp_path / "specs"
     write_md(
