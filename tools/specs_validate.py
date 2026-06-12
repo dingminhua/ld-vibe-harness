@@ -325,6 +325,11 @@ CONSISTENCY_INDEX_REQUIRED_SECTIONS = {
     "10": "Human Gate 与检查要求",
     "11": "待补齐事项",
 }
+CONSISTENCY_HUMAN_GATE_CHECK_TITLES = {
+    "Human Gate 与检查要求",
+    "Human Gate 与总纲一致性检查",
+    "检查要求",
+}
 
 # 来自 02-术语规范 §11 的不推荐裸词列表
 CONSISTENCY_BARE_TERMS = ("规则", "技能", "代理", "智能体", "工具", "程序", "展示", "机制")
@@ -610,6 +615,23 @@ def consistency_index_skeleton_issues(paths):
     return issues
 
 
+def consistency_human_gate_check_section_issues(paths):
+    issues = []
+    for path in iter_markdown_files(paths):
+        if not landing_is_formal_spec(path):
+            continue
+        sections = consistency_h2_sections(path)
+        titles = {section["title"] for section in sections.values()}
+        if "规范落地要求" not in titles:
+            continue
+        if titles & CONSISTENCY_HUMAN_GATE_CHECK_TITLES:
+            continue
+        if "Human Gate" in titles and "检查要求" in titles:
+            continue
+        issues.append(Issue(path, 1, "正式规范文档缺少 Human Gate / 检查要求兼容章节", code="HUMAN_GATE_CHECK_SECTION_MISSING"))
+    return issues
+
+
 def consistency_bare_term_issues(paths):
     """检查 docs/specs 中是否存在不推荐裸词的未限定使用"""
     issues = []
@@ -636,10 +658,10 @@ def consistency_bare_term_issues(paths):
                 for match in re.finditer(re.escape(term), stripped):
                     start = match.start()
                     end = match.end()
-                    # 如果裸词前面是中文字符，说明有定语修饰，跳过
-                    has_prefix_modifier = start > 0 and re.match(r"[\u4e00-\u9fff]", stripped[start - 1])
-                    # 如果裸词后面是中文字符，说明有后置修饰，跳过
-                    has_suffix_modifier = end < len(stripped) and re.match(r"[\u4e00-\u9fff]", stripped[end])
+                    prefix = stripped[:start].rstrip()
+                    suffix = stripped[end:].lstrip()
+                    has_prefix_modifier = bool(prefix) and re.match(r"[A-Za-z0-9_/\-\u4e00-\u9fff]", prefix[-1])
+                    has_suffix_modifier = bool(suffix) and re.match(r"[A-Za-z0-9_/\-\u4e00-\u9fff]", suffix[0])
                     if has_prefix_modifier or has_suffix_modifier:
                         continue
                     issues.append(Issue(path, line_number, f"疑似不推荐裸词: '{term}'（02 §11 要求中文术语不得裸用）", code="BARE_TERM_USAGE"))
@@ -685,6 +707,7 @@ def consistency_check(paths=None):
     issues.extend(consistency_retired_semantic_issues(check_paths))
     issues.extend(consistency_workflow_skeleton_issues(workflow_entries))
     issues.extend(consistency_index_skeleton_issues(check_paths))
+    issues.extend(consistency_human_gate_check_section_issues(check_paths))
     issues.extend(consistency_bare_term_issues(check_paths))
     issues.extend(consistency_deprecated_expression_issues(check_paths))
     issues.extend(consistency_04_series_issues())
