@@ -2858,6 +2858,7 @@ INDEX_BACKTICK_MD_RE = re.compile(r"`([^`]+\.md)`")
 INDEX_PLAIN_SPECS_MD_RE = re.compile(
     r"(?<![`\w./-])((?:specs/(?:research/|refs/)?|docs/(?:specs|research|refs)/)[^\s`，。；、)）]+\.md)"
 )
+INDEX_RESEARCH_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?((?:specs/research/|docs/research/)[^`\s，。；、)）]+\.md)(?:`)?")
 INDEX_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\d]+(?:\.\d+)*)")
 INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
 
@@ -3152,6 +3153,11 @@ class SpecsChecker:
                     diagnostics.append(
                         self.diagnostic(rel_path, line_number, "warning", "BROKEN_MARKDOWN_PATH", f"Markdown 路径引用不存在: {target}")
                     )
+            for match in INDEX_RESEARCH_REF_RE.finditer(line):
+                target = match.group(1)
+                diagnostics.append(
+                    self.diagnostic(rel_path, line_number, "warning", "RESEARCH_REFERENCE_IN_SPEC", f"正式规范不得引用 research 文档路径: {target}")
+                )
         return diagnostics
 
     def relation_record(self, path, line_number, relation_kind, target, content_hash, parse_method):
