@@ -94,6 +94,21 @@ Web 信息同步层面向人可读、可确认、可操作的界面，包括派�
 6. 在 Web 中维护独立于 Git 文件事实源的权威状态；
 7. 以 Web 页面表单、看板或人类项目管理习惯反向定义 AI 执行流程、对象契约或闭环规则。
 
+### 5.3 Web AI 承接边界
+
+并行 AI 或 Web AI 承接 Web 工作时，应先按本文做只读差距审计，再进入实现。只读差距审计至少按页面或 API 列出事实源来源、派生状态、Human Gate 状态、写入白名单状态、测试归属、错误态和需要 Human 决策的事项。
+
+Web AI 不得自行决定以下事项：
+
+1. 扩大 Web 写入白名单；
+2. 将 Gate 页面升级为审批系统；
+3. 通过 Web 页面反向定义 Task、TaskPlan、ADR、Pitfall、Change 或工作流程状态；
+4. 恢复已退回 research 的运行闭环测试机制；
+5. 把 `web/docs/`、页面文案、按钮状态、缓存或临时诊断当作 specs 权威来源；
+6. 在未补齐来源追溯、错误态和测试归属前，把派生聚合结果呈现为完整事实。
+
+Web AI 如发现上述事项需要推进，应先输出 owner 决策项或 specs 修改建议，不得直接实现。
+
 ---
 
 ## 6. 信息同步原则
@@ -182,7 +197,26 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 2. Task 的 `status`、`taskplan`、`acceptance`、`verification`、`closure_evidence`、`deliverables` 等字段在 Web 中均为只读展示；
 3. WorkArea、TaskPlan、SubTask、ADR、Pitfall、Profile 和 Change 在 Web 中均为只读展示；
 4. Memo 快速创建只用于捕获尚未任务化但值得保留的信息，不得用来绕过 WorkArea、TaskPlan、Task、ADR 或 Pitfall 的准入规则；
-5. 未来如需新增 Web 写入能力，必须先修改本文白名单和对应对象规范，补齐校验、测试、Human Gate 影响评估和降级路径，再实现代码。
+5. 短期不扩展 Web 写入白名单；Gate、Validate、Workbench、ProjectFiles、ObjectDetail 和 Dashboard 均不得据页面需要新增写入入口；
+6. 未来如需新增 Web 写入能力，必须先修改本文白名单和对应对象规范，补齐校验、测试、Human Gate 影响评估和降级路径，再实现代码。
+
+Memo 快速创建作为当前唯一 Web 写入样例，应满足：
+
+1. 写入前校验 `title`、`description`、`source`、`category`、`priority` 和 `status_history` 最小字段；
+2. 文件名、ID 和 slug 生成必须避免覆盖既有 Memo，冲突时返回明确错误；
+3. 写入后必须能重新读取目标文件并确认最小字段、`status: draft` 和 `status_history` 存在；
+4. API 响应必须区分成功、字段错误、冲突、写入失败和写后验证失败；
+5. 必须在 `tests/web/api/` 或等价 Web API 测试分区中覆盖成功、字段错误、冲突和写后验证路径；
+6. 不得扩展为通用 YAML 编辑器，不得修改既有 Memo 字段或状态。
+
+### 8.3 Gate / Validate / Workbench 阶段边界
+
+在对应回写合同、对象规范和 Human Gate 证据落点明确前，Gate、Validate 和 Workbench 的阶段边界如下：
+
+1. Gate 可以展示待确认项、确认对象、影响范围、风险和可选操作，但确认、取消、暂缓和修改反馈动作只可作为占位或候选过程输出，不得直接回写事实源；
+2. Validate 只展示验证结果、错误态、降级说明、来源命令和修复线索，不得自动修复、自动关闭任务或自动写入验证结论；
+3. Workbench 只作为实验性态势视图或 Human-facing 工作台候选，不得反向定义 AI 默认流程、对象状态机或写入白名单；
+4. 三者如需从只读展示升级为受控写入，必须先补齐 §8.2 白名单、对应对象规范、Human Gate 最小证据结构、回写位置和 Web 测试要求。
 
 ---
 
@@ -253,6 +287,13 @@ Web 实现文档应进入项目文档工作区或项目约定的实现文档位�
 
 LDVH 在 `web/` 下提供了一套参考实现和 `web/docs/` 下的参考实现文档，不作为权威规范；用户可根据本文约束自行选择实现方式。
 
+Web 文档吸收规则如下：
+
+1. `web/docs/` 可以记录页面结构、组件说明、API 使用、交互草案和实现限制；
+2. 涉及 Web 职责边界、写入权限、Human Gate 条件、测试归属、事实源边界、缓存数据库边界或长期页面约束的内容，应吸收到本文或对应正式规范后才具备规范效力；
+3. Web AI 可以审计 `web/docs/` 与本文的差异并提出吸收建议，但不得把 `web/docs/` 中的实现描述直接作为修改事实源、扩大权限或定义流程的依据；
+4. `web/docs/` 与 docs/specs 冲突时，以 docs/specs 为准，并应记录待吸收、待降级或待删除建议。
+
 ---
 
 ## 12. Web 测试与验证要求
@@ -276,6 +317,14 @@ Web 测试至少关注：
 5. Memo 快速创建是否调用校验和受控写入链路；
 6. 缓存或数据库派生视图是否不替代事实源；
 7. Web 独立实现事实源读取、对象解析、派生聚合、缓存策略或 API 聚合时，应同步检查其是否仍基于同一 Git 文件事实源、同一 specs 契约和同一对象状态定义。
+
+Web 测试优先级如下：
+
+1. API contract 测试优先于页面测试；
+2. 高风险 API 优先覆盖 `POST /api/memos`、ProjectFiles、Validate 和 Objects；
+3. 页面测试优先覆盖 Gate、Validate、ProjectFiles 和 ObjectDetail 的空态、错误态、降级态、只读边界和来源呈现；
+4. E2E、视觉回归和复杂浏览器流程后置，不作为当前 Web API contract 测试的前置条件；
+5. Web AI 新增或修改高风险 API 时，应同步补齐 `tests/web/api/` 下的最小测试或说明等价验证方式。
 
 Web 测试夹具、Mock 数据、缓存和截图不得成为稳定事实源。
 
