@@ -54,13 +54,13 @@ assignee: AI
 related_adrs: []
 related_changes: []
 related_docs:
-- docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+- docs/research/42-ldvh-landing-check-LDVH落地与检查.md
 - docs/specs/07-Code确定性执行实现规范.md
 - docs/specs/10-运行闭环测试规范.md
 affected_docs:
 - tools/specs_validate.py
 - tests/test_specs_validate.py
-- docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+- docs/research/42-ldvh-landing-check-LDVH落地与检查.md
 deliverables:
 - tools/specs_validate.py
 - tests/test_specs_validate.py

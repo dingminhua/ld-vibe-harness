@@ -65,21 +65,21 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | 场景 | 入口视角 | 先用工具 | 必读权威入口 |
 |---|---|---|---|
 | 判断当前是否为管辖项目 | 工作区入口 | `governed-projects` | `LDVH-GOVERNED-PROJECTS.yaml`、`docs/specs/03.06-管辖项目配置规范.md` |
-| 执行 LDVH落地与检查 | 工作区入口 | `governed-projects`、`landing-report`、必要时 `fact_cli.py stats` | `docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`、`docs/specs/04.03-环境适配规范.md`、`docs/specs/04.04-环境适配措施实践.md`、`docs/specs/04.05-个人环境特别要求规范.md`、`docs/specs/40-工作流程集合索引.md` |
+| 执行 LDVH落地与检查 | 工作区入口 | `governed-projects`、`landing-report`、必要时 `fact_cli.py stats` | `docs/specs/04.03-环境适配规范.md`、`docs/specs/04.04-环境适配措施实践.md`、`docs/specs/04.05-个人环境特别要求规范.md`、`docs/specs/40-工作流程集合索引.md` |
 | 处理管辖项目工作对象 | 工作区入口 | `fact_cli.py list/search/show/stats` | 对应管辖项目自身 `ldvh-base/`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/20-工作模型集合索引.md` 和对应工作模型规范 |
 | 理解 LDVH 总体规则 | 共同入口 | `index` | `docs/specs/00-LD-Vibe-Harness理念与纲要.md`、`docs/specs/01-目录说明.md`、`docs/specs/02-术语规范.md` |
 | 判断事实源、证据或回写出口 | 共同入口 | `index`、`fact_cli.py search/show` | `docs/specs/09-事实源边界与承载规范.md`、对应工作模型或文档规范 |
 | 判断术语、命名或不推荐表达 | 共同入口 | `index` | `docs/specs/02-术语规范.md` |
 | 判断目录、编号或文件归属 | 共同入口 | `index` | `docs/specs/01-目录说明.md`、`docs/specs/03-文档基础规范.md` |
-| 修改 docs/specs 正式规范 | LDVH 管理入口 | `index`、`doc`、`refs`、`landing` | `docs/specs/03-文档基础规范.md`、`docs/specs/03.01-规范文档规范.md`、`docs/specs/04.01-规范落地声明规范.md`、`docs/specs/41-landing-orchestration-规范落地统筹.md`、目标规范 |
+| 修改 docs/specs 正式规范 | LDVH 管理入口 | `index`、`doc`、`refs`、`landing` | `docs/specs/03-文档基础规范.md`、`docs/specs/03.01-规范文档规范.md`、`docs/specs/04.01-规范落地声明规范.md`、目标规范 |
 | 修改或理解工作模型规范 | LDVH 管理入口 | `index` | `docs/specs/05-工作模型基础规范.md`、`docs/specs/20-工作模型集合索引.md` 和对应 `docs/specs/21-39` 工作模型规范 |
 | 处理 LDVH 自身项目工作对象 | LDVH 管理入口 | `fact_cli.py list/search/show/stats` | LDVH 自身项目 `ldvh-base/`、`docs/specs/05-工作模型基础规范.md`、`docs/specs/20-工作模型集合索引.md` 和对应工作模型规范 |
 | 处理工作流程 | LDVH 管理入口 | `index`、`landing-report` | `docs/specs/06-工作流程基础规范.md`、`docs/specs/40-工作流程集合索引.md` 和对应 `docs/specs/41-59` 工作流程规范 |
-| 处理规范落地、环境适配或适配措施 | LDVH 管理入口 | `landing-report`、`index` | `docs/specs/04-规范落地与环境适配基础规范.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境适配规范.md`、`docs/specs/04.04-环境适配措施实践.md` 和 `docs/specs/41-landing-orchestration-规范落地统筹.md` |
+| 处理规范落地、环境适配或适配措施 | LDVH 管理入口 | `landing-report`、`index` | `docs/specs/04-规范落地与环境适配基础规范.md`、`docs/specs/04.02-LDVH能力保障规范.md`、`docs/specs/04.03-环境适配规范.md`、`docs/specs/04.04-环境适配措施实践.md` |
 | 处理 Code、工具、脚本或校验 | LDVH 管理入口 | 对应工具帮助、测试命令 | `docs/specs/04.05-个人环境特别要求规范.md`、`docs/specs/07-Code确定性执行实现规范.md`、`docs/specs/10-运行闭环测试规范.md`、对应 `tools/` 实现和 `tests/` |
 | 处理 Web 或 Human-facing 入口 | LDVH 管理入口 | `index`、相关后端或 Web 校验 | `docs/specs/08-Web信息同步实现规范.md` |
 
-场景同时命中多个入口时，选择最小足够查询和读取集。只要涉及正式规范变更、规范落地要求变化、落地缺口、适配措施漂移、Code/Web/Skill/Agent/Hook/CI 边界变化或 LDVH落地与检查输入，应优先进入 `docs/specs/41-landing-orchestration-规范落地统筹.md`。41 触发保障按入口路由、规范 Scenario、40 索引、Code 检查、42 消费、适配措施和 Human Gate 分层抽象机制判断，不维护具体 Skill、入口、Hook、CI、Web 页面或 Code 命令清单。
+场景同时命中多个入口时，选择最小足够查询和读取集。涉及正式规范变更、规范落地要求变化、落地缺口、适配措施漂移或 Code/Web/Skill/Agent/Hook/CI 边界变化时，应先读取 `docs/specs/40-工作流程集合索引.md` 确认当前 active 工作流程，再按对应规范执行。
 
 遇到“对应 `docs/specs/21-39` 工作模型规范”时，应先读 `docs/specs/20-工作模型集合索引.md` 定位具体文件；遇到“对应 `docs/specs/41-59` 工作流程规范”时，应先读 `docs/specs/40-工作流程集合索引.md` 定位具体文件。不得凭编号区段、标题记忆或聊天上下文猜测文件。
 
@@ -95,7 +95,7 @@ LDVH 管理入口视角随本文件提交，用于维护 LDVH 自身项目。该
 ---
 ## 6. STOP 点
 
-出现以下情况时，AI 应暂停并说明需要 Human 确认或进入 `docs/specs/41-landing-orchestration-规范落地统筹.md`：
+出现以下情况时，AI 应暂停并说明需要 Human 确认：
 
 1. 要创建、删除、移动或重命名 `LDVH-AI-ENTRY.md`；
 2. 要修改工作区级入口、环境入口、项目规则或等价配置；
@@ -113,9 +113,8 @@ LDVH 管理入口视角随本文件提交，用于维护 LDVH 自身项目。该
 1. `docs/specs/04.02-LDVH能力保障规范.md`；
 2. `docs/specs/04.02-LDVH能力保障规范.md`；
 3. `docs/specs/01-目录说明.md`；
-4. `docs/specs/41-landing-orchestration-规范落地统筹.md`；
-5. `docs/specs/42-ldvh-landing-check-LDVH落地与检查.md`；
-6. 当前环境适配规范和适配措施；
-7. 已授权的环境薄入口。
+4. `docs/specs/40-工作流程集合索引.md`；
+5. 当前环境适配规范和适配措施；
+6. 已授权的环境薄入口。
 
-若发现入口漂移，应进入 `docs/specs/41-landing-orchestration-规范落地统筹.md` 判断缺口归属，不得直接把本文件中的旧摘要当成正式规则。
+若发现入口漂移，应按 `docs/specs/40-工作流程集合索引.md` 确认当前 active 工作流程，不得直接把本文件中的旧摘要当成正式规则。

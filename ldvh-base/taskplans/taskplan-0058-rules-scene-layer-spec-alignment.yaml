@@ -17,7 +17,7 @@ related_docs:
 - docs/specs/05-工作模型基础规范.md
 - docs/specs/04.02-LDVH能力保障规范.md
 - docs/specs/05.01-工作字段内容格式规范.md
-- docs/specs/44-multi-role-thinking-多角色思考.md
+- docs/research/44-multi-role-thinking-多角色思考.md
 - ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
 related_adrs: []
 related_memos: []

@@ -12,7 +12,7 @@ source: '历史 Task task-0065 迁移生成；旧 source_intent: 无'
 tasks:
 - task-0065
 related_docs:
-- docs/specs/42-ldvh-landing-check-LDVH落地与检查.md
+- docs/research/42-ldvh-landing-check-LDVH落地与检查.md
 - docs/specs/07-Code确定性执行实现规范.md
 - docs/specs/10-运行闭环测试规范.md
 related_adrs: []

@@ -2430,7 +2430,7 @@ def ldvh_landing_check_build(workspace_root=None):
             "project_root": str(PROJECT_ROOT),
             "workspace_root": str(workspace_root),
             "scope": "project-local Git facts plus explicit workspace governed-projects config",
-            "bootstrap_baseline_source": "docs/specs/42-ldvh-landing-check-LDVH落地与检查.md",
+            "bootstrap_baseline_source": "docs/research/42-ldvh-landing-check-LDVH落地与检查.md (已退回 research，待重新设计)",
         },
         "summary": {
             "status": ldvh_landing_check_status(checks),

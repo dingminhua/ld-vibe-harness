@@ -1693,7 +1693,7 @@ def test_ldvh_landing_check_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert exit_code == 1
     assert payload["metadata"]["report"] == "ldvh-landing-check"
     assert payload["summary"]["status"] == "open"
-    assert payload["metadata"]["bootstrap_baseline_source"] == "docs/specs/42-ldvh-landing-check-LDVH落地与检查.md"
+    assert payload["metadata"]["bootstrap_baseline_source"] == "docs/research/42-ldvh-landing-check-LDVH落地与检查.md (已退回 research，待重新设计)"
     assert payload["bootstrap_baseline"]["summary"]["item_count"] == 10
     assert payload["remaining_gaps"]
 
