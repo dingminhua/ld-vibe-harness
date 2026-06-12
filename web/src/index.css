@@ -41,6 +41,13 @@
     @apply font-mono text-xs leading-5 text-ldvh-text-secondary;
   }
 
+  .ldvh-meta-muted {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    color: rgb(var(--ldvh-text-secondary) / 0.72);
+  }
+
   .ldvh-meta-primary {
     @apply font-mono text-xs leading-5 text-ldvh-text-primary;
   }

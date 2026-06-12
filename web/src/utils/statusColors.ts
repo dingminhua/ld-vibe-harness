@@ -12,7 +12,7 @@ export const STATUS_COLORS: Record<string, { light: string; dark: string }> = {
   rejected: { light: '#dc2626', dark: '#ef4444' },
   deprecated: { light: '#dc2626', dark: '#ef4444' },
   superseded: { light: '#dc2626', dark: '#ef4444' },
-  archived: { light: '#dc2626', dark: '#ef4444' },
+  archived: { light: '#6b7280', dark: '#6b7280' },
   suspended: { light: '#dc2626', dark: '#ef4444' },
 };
 

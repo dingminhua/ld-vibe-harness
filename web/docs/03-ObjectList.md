@@ -16,7 +16,7 @@
 状态筛选（ObjectStatusFilter）
 对象卡片自适应网格（ldvh-section-grid）
   通用卡片：ID + 复制路径图标 + 状态徽章 + 标题 + 信号标签 + 更新时间
-  WorkArea 卡片：工作域自身信息 + 关联计划摘要 + 计划关闭进度
+  WorkArea 卡片：工作域自身信息 + 按状态分组的计划入口
   TaskPlan 卡片：计划自身信息 + 关联任务摘要 + 任务关闭进度 + 关闭证据信号
 加载态 / 错误态 / 空态
 ```
@@ -27,38 +27,42 @@
 
 - 位于列表顶部。
 - 由 `ObjectStatusFilter` 根据当前类型聚合状态数量。
-- 展示“全部 + 各状态 + 数量”。
+- 展示“各状态 + 全部 + 数量”，“全部”固定在最后。
+- 数据返回前先渲染稳定的筛选占位，数字位置使用轻量加载动画，避免对象卡片先出现、顶部筛选后插入造成页面跳动。
+- 对有活跃态的主工作对象，URL 无 `status` 时默认视为 `active`；用户显式选择全部时写入 `?status=all`。
 - 当前状态写入 URL query：`?status=review_needed`。
-- 点击对象进入详情页时保留当前 query，使详情页顶部筛选和返回路径一致。
+- 点击对象进入详情页时保留当前 query，使详情页返回路径与列表筛选一致。
 
 ### 3.2 对象卡片
 
 - 使用 `ldvh-section-grid`，列数由容器宽度自动决定。
 - 不使用表格视图，不使用顶部类型标签页。
 - 通用卡片结构：
-  - 左上：对象 ID，`ldvh-meta`；
+  - 左上：对象 ID，`ldvh-meta-muted`；
   - 右上：`CopyPathButton` + `StatusBadge`；
-  - 中部：本地化标题，`ldvh-card-title`；
+  - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；
   - 可选信号：priority、severity、repeatability、category 等短标签；
   - 底部：`formatDateTime(updated)`，格式为 `YYYY-MM-DD HH:mm`。
 - 复制图标复制对象 YAML 文件完整路径，使用 API 返回的 `path`。
 - 点击复制图标不得进入详情页；点击卡片其他区域进入详情页。
 - hover 时边框变为 `border-ldvh-accent/40`，标题变 accent 色。
+- 卡片标题不得超过全局 `ldvh-card-title` 字号；标题强调优先使用轻量背景、位置、留白、状态语义短线和 hover 反馈。
 
 ### 3.3 WorkArea 卡片
 
-WorkArea 是“计划入口”卡片，帮助用户从工作域判断该范围下有哪些计划、计划大致状态如何，并快速进入计划。
+WorkArea 是“计划入口”卡片，帮助用户判断这个工作域下有哪些活跃/待关闭/已闭合计划，并快速进入仍需推进的计划。
 
 - 保留通用卡片头部：ID、复制路径、状态、标题。
-- 展示计划总数、进行中、待关闭、风险等摘要 chip。
-- 展示计划状态分布 chip，使用本地化状态名。
-- 展示关联计划区域：
-  - 标题为 `objectList.relatedPlans`；
-  - 关闭进度显示为 `{closed}/{total}`；
-  - 进度条表示已关闭计划占比；
-  - 默认展示最多 4 个计划，按“待关闭 / 执行中 / 风险 / 计划中 / 已关闭”优先级排序；
-  - 计划行包含计划标题、计划 ID、计划自身状态、计划内任务关闭进度、复制路径按钮和进入箭头；
-  - 点击计划行跳转 `/objects/taskplan/{id}`，不触发外层工作域卡片跳转。
+- 底部更新时间右对齐，工作域 ID 保持在左上角。
+- 按计划状态分组展示：
+  - 活跃计划组使用 `objectList.activePlanCount`，绿色背景，组标题使用 `ldvh-caption-strong`；
+  - 待关闭计划组使用 `objectList.pendingClosePlanCount`，紫色背景，组标题使用 `ldvh-caption-strong`；
+  - 已闭合计划只展示 `objectList.closedPlanCount` 汇总，不展开历史计划行，使用 `ldvh-caption-strong`。
+- 活跃/待关闭组内每一行是一个计划入口，计划名使用 `ldvh-body`，计划 ID 使用 `ldvh-meta-muted`，并只展示计划标题、计划 ID、复制路径按钮和进入箭头，不再重复展示状态标签。
+- WorkArea 卡片内不得出现大于工作域标题 `ldvh-card-title` 的文字；计划组和汇总都低于工作域标题层级。
+- 无计划时展示 `objectList.noPlans`。
+- WorkArea 不展示计划内任务数量或任务关闭进度；任务拆解留给 TaskPlan 卡片与详情页。
+- 点击计划行跳转 `/objects/taskplan/{id}`，不触发外层工作域卡片跳转。
 
 ### 3.4 TaskPlan 卡片
 
@@ -73,7 +77,7 @@ TaskPlan 是“任务进度”卡片，帮助用户从计划判断任务拆解�
   - 关闭进度显示为 `{closed}/{total}`；
   - 进度条表示已关闭任务占比；
   - 默认展示最多 5 个任务，按“待关闭 / 执行中 / 风险 / 计划中 / 已关闭”优先级排序；
-  - 任务行包含任务标题、任务 ID、任务状态、复制路径按钮和进入箭头；
+  - 任务行包含任务标题、任务 ID、任务状态、复制路径按钮和进入箭头，任务 ID 使用 `ldvh-meta-muted`；
   - 点击任务行跳转 `/objects/task/{id}`，不触发外层计划卡片跳转。
 
 ### 3.5 空态、加载态、错误态

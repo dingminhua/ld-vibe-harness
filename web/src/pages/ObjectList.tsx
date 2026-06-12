@@ -10,16 +10,50 @@ import { fetchObjects, type ObjectItem, type RelatedObjectSummary } from '@/util
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getObjectSignalAccent } from '@/utils/objectSignals';
+import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 
 type LocalizedTitleItem = Pick<ObjectItem, 'id'> & Partial<Pick<ObjectItem, 'title' | 'title_en' | 'title_zh'>>;
 
 type OpenEvent = MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>;
+
+const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded']);
+const PENDING_CLOSE_STATUSES = new Set(['review_needed']);
+
+const TITLE_ACCENT_CLASS: Record<string, string> = {
+  active: 'border-emerald-400/80',
+  executing: 'border-emerald-400/80',
+  accepted: 'border-emerald-400/70',
+  review_needed: 'border-violet-400/80',
+  verifying: 'border-violet-400/80',
+  draft: 'border-amber-400/75',
+  proposed: 'border-amber-400/75',
+  planned: 'border-amber-400/75',
+  closed: 'border-zinc-500/50',
+  resolved: 'border-zinc-500/50',
+  archived: 'border-zinc-500/50',
+  superseded: 'border-zinc-500/50',
+  rejected: 'border-red-400/75',
+  deprecated: 'border-red-400/75',
+  suspended: 'border-red-400/75',
+};
 
 function getLocalizedTitle(item: LocalizedTitleItem, locale: string): string {
   if (locale === 'en') {
     return item.title_en || item.title || item.id;
   }
   return item.title_zh || item.title || item.id;
+}
+
+function getTitleAccentClass(status: string): string {
+  return TITLE_ACCENT_CLASS[status] ?? 'border-ldvh-accent/70';
+}
+
+function isTerminalStatus(status: string): boolean {
+  return TERMINAL_STATUSES.has(status);
+}
+
+function isPendingCloseStatus(status: string): boolean {
+  return PENDING_CLOSE_STATUSES.has(status);
 }
 
 function getProgressPercent(closed: number, total: number): number {
@@ -116,17 +150,109 @@ function StatusCountChips({
   );
 }
 
+const workAreaSectionToneClass = {
+  active: {
+    section: 'border-emerald-500/30 bg-emerald-500/5',
+    header: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+    rowHover: 'hover:bg-emerald-500/10',
+    icon: 'text-emerald-400',
+  },
+  review: {
+    section: 'border-violet-500/30 bg-violet-500/5',
+    header: 'border-violet-500/30 bg-violet-500/10 text-violet-400',
+    rowHover: 'hover:bg-violet-500/10',
+    icon: 'text-violet-400',
+  },
+  closed: {
+    section: 'border-ldvh-border bg-ldvh-bg',
+    header: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
+    rowHover: 'hover:bg-ldvh-border/35',
+    icon: 'text-ldvh-text-secondary',
+  },
+};
+
+function WorkAreaPlanRow({
+  item,
+  locale,
+  tone,
+  onOpen,
+}: {
+  item: RelatedObjectSummary;
+  locale: string;
+  tone: keyof typeof workAreaSectionToneClass;
+  onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
+}) {
+  const toneClass = workAreaSectionToneClass[tone];
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={(event) => onOpen(event, item)}
+      onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
+      className={`group/workarea-row flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left transition-colors ${toneClass.rowHover}`}
+    >
+      <div className="min-w-0 flex-1">
+        <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/workarea-row:text-ldvh-accent">
+          {getLocalizedTitle(item, locale)}
+        </span>
+        <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
+      </div>
+      <CopyPathButton path={item.path} />
+      <ArrowRight size={14} className={`shrink-0 transition-transform group-hover/workarea-row:translate-x-0.5 ${toneClass.icon}`} />
+    </div>
+  );
+}
+
+function WorkAreaPlanSection({
+  title,
+  plans,
+  locale,
+  tone,
+  onOpen,
+}: {
+  title: string;
+  plans?: RelatedObjectSummary[];
+  locale: string;
+  tone: keyof typeof workAreaSectionToneClass;
+  onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
+}) {
+  const toneClass = workAreaSectionToneClass[tone];
+
+  return (
+    <div className={`min-w-0 overflow-hidden rounded-md border ${toneClass.section}`}>
+      <div className={`ldvh-caption-strong flex min-w-0 items-center gap-2 border px-3 py-2 ${toneClass.header}`}>
+        <Layers3 size={13} className="shrink-0" />
+        <span className="min-w-0 truncate">{title}</span>
+      </div>
+      {plans && plans.length > 0 && (
+        <div className="min-w-0 divide-y divide-ldvh-border/60 px-1 py-1">
+          {plans.map((plan) => (
+            <WorkAreaPlanRow
+              key={plan.id}
+              item={plan}
+              locale={locale}
+              tone={tone}
+              onOpen={onOpen}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RelatedObjectRow({
   item,
   locale,
   getStatus,
-  progressLabel,
+  muted = false,
   onOpen,
 }: {
   item: RelatedObjectSummary;
   locale: string;
   getStatus: (status: string) => string;
-  progressLabel?: string;
+  muted?: boolean;
   onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
 }) {
   return (
@@ -135,19 +261,16 @@ function RelatedObjectRow({
       tabIndex={0}
       onClick={(event) => onOpen(event, item)}
       onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-      className="group/row flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/35"
+      className={`group/row flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/35 ${
+        muted ? 'opacity-70' : ''
+      }`}
     >
       <div className="min-w-0 flex-1">
         <span className="ldvh-card-title block min-w-0 truncate transition-colors group-hover/row:text-ldvh-accent">
           {getLocalizedTitle(item, locale)}
         </span>
-        <span className="ldvh-meta block min-w-0 truncate">{item.id}</span>
+        <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
       </div>
-      {progressLabel && (
-        <span className="ldvh-chip hidden shrink-0 rounded-full border border-ldvh-border bg-ldvh-bg px-2 py-0.5 text-ldvh-text-secondary sm:inline-flex">
-          {progressLabel}
-        </span>
-      )}
       <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
       <CopyPathButton path={item.path} />
       <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-colors group-hover/row:text-ldvh-accent" />
@@ -169,6 +292,7 @@ function ObjectCardFrame({
   children: ReactNode;
 }) {
   const signalAccent = getObjectSignalAccent(obj);
+  const titleAccentClass = getTitleAccentClass(obj.status);
   return (
     <div
       role="button"
@@ -179,17 +303,19 @@ function ObjectCardFrame({
       style={signalAccent ? { borderLeftColor: signalAccent, borderLeftWidth: 3 } : undefined}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <span className="ldvh-meta min-w-0 truncate">{obj.id}</span>
+        <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
         <div className="flex shrink-0 items-center gap-2">
           <CopyPathButton path={obj.path} />
           <StatusBadge status={obj.status} statusLabel={getStatus(obj.status)} />
         </div>
       </div>
-      <span className="ldvh-card-title min-w-0 truncate transition-colors group-hover:text-ldvh-accent">
-        {getLocalizedTitle(obj, locale)}
-      </span>
+      <div className={`-mx-1 min-w-0 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover:bg-ldvh-bg/85 ${titleAccentClass}`}>
+        <span className="ldvh-card-title block min-w-0 truncate transition-colors group-hover:text-ldvh-accent">
+          {getLocalizedTitle(obj, locale)}
+        </span>
+      </div>
       {children}
-      <span className="ldvh-meta">{formatDateTime(obj.updated)}</span>
+      <span className="ldvh-meta self-end text-right">{formatDateTime(obj.updated)}</span>
     </div>
   );
 }
@@ -205,7 +331,8 @@ export default function ObjectList() {
   const { t, getStatus, locale } = useI18n();
 
   const currentType = type ?? 'task';
-  const activeStatus = searchParams.get('status');
+  const statusParam = searchParams.get('status');
+  const activeStatus = getEffectiveListStatus(currentType, statusParam);
 
   useEffect(() => {
     setLoading(true);
@@ -220,11 +347,7 @@ export default function ObjectList() {
 
   const handleStatusChange = (status: string | null) => {
     const nextParams = new URLSearchParams(searchParams);
-    if (status) {
-      nextParams.set('status', status);
-    } else {
-      nextParams.delete('status');
-    }
+    writeListStatusParam(currentType, nextParams, status);
     setSearchParams(nextParams);
   };
 
@@ -242,58 +365,48 @@ export default function ObjectList() {
   const renderObjectCard = (obj: ObjectItem) => {
     if (currentType === 'workarea') {
       const plans = obj.plans ?? [];
-      const visiblePlans = plans.slice(0, 4);
-      const moreCount = Math.max(0, plans.length - visiblePlans.length);
       const planTotal = obj.planTotal ?? plans.length;
-      const planClosed = obj.planClosed ?? 0;
+      const activePlans = plans.filter((plan) => !isPendingCloseStatus(plan.status) && !isTerminalStatus(plan.status));
+      const reviewPlans = plans.filter((plan) => isPendingCloseStatus(plan.status));
+      const closedPlans = plans.filter((plan) => isTerminalStatus(plan.status));
+      const closedPlanCount = obj.planClosed ?? closedPlans.length;
 
       return (
         <ObjectCardFrame key={obj.id} obj={obj} locale={locale} getStatus={getStatus} onOpen={openObject}>
-          <div className="flex flex-wrap gap-2">
-            <SummaryPill icon={<Layers3 size={12} />} label={t('objectList.planCount', { count: String(planTotal) })} />
-            {(obj.planActive ?? 0) > 0 && (
-              <SummaryPill icon={<CircleDot size={12} />} label={t('objectList.activeCount', { count: String(obj.planActive) })} tone="active" />
-            )}
-            {(obj.planReviewNeeded ?? 0) > 0 && (
-              <SummaryPill icon={<CheckCircle2 size={12} />} label={t('objectList.reviewCount', { count: String(obj.planReviewNeeded) })} tone="review" />
-            )}
-            {(obj.planRisk ?? 0) > 0 && (
-              <SummaryPill icon={<ShieldAlert size={12} />} label={t('objectList.riskCount', { count: String(obj.planRisk) })} tone="risk" />
-            )}
-          </div>
-          <StatusCountChips counts={obj.planByStatus} getStatus={getStatus} />
-          <div className="min-w-0">
-            <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
-              <span className="ldvh-caption-strong min-w-0 truncate">{t('objectList.relatedPlans')}</span>
-              {planTotal > 0 && (
-                <span className="ldvh-meta shrink-0">
-                  {t('objectList.closedProgress', { closed: String(planClosed), total: String(planTotal) })}
-                </span>
+          {planTotal === 0 ? (
+            <p className="ldvh-body-muted rounded-md border border-dashed border-ldvh-border bg-ldvh-bg px-3 py-4 text-center">
+              {t('objectList.noPlans')}
+            </p>
+          ) : (
+            <>
+              {activePlans.length > 0 && (
+                <WorkAreaPlanSection
+                  title={t('objectList.activePlanCount', { count: String(activePlans.length) })}
+                  plans={activePlans}
+                  locale={locale}
+                  tone="active"
+                  onOpen={openRelatedObject}
+                />
               )}
-            </div>
-            <ProgressBar closed={planClosed} total={planTotal} />
-            <div className="mt-2 min-w-0 divide-y divide-ldvh-border/60">
-              {visiblePlans.length > 0 ? (
-                visiblePlans.map((plan) => (
-                  <RelatedObjectRow
-                    key={plan.id}
-                    item={plan}
-                    locale={locale}
-                    getStatus={getStatus}
-                    progressLabel={t('objectList.closedProgress', { closed: String(plan.taskClosed), total: String(plan.taskTotal) })}
-                    onOpen={openRelatedObject}
-                  />
-                ))
-              ) : (
-                <p className="ldvh-body-muted rounded-md border border-dashed border-ldvh-border bg-ldvh-bg px-3 py-4 text-center">
-                  {t('objectList.noPlans')}
-                </p>
+              {reviewPlans.length > 0 && (
+                <WorkAreaPlanSection
+                  title={t('objectList.pendingClosePlanCount', { count: String(reviewPlans.length) })}
+                  plans={reviewPlans}
+                  locale={locale}
+                  tone="review"
+                  onOpen={openRelatedObject}
+                />
               )}
-            </div>
-            {moreCount > 0 && (
-              <span className="ldvh-caption mt-2 block">{t('objectList.morePlans', { count: String(moreCount) })}</span>
-            )}
-          </div>
+              {closedPlanCount > 0 && (
+                <WorkAreaPlanSection
+                  title={t('objectList.closedPlanCount', { count: String(closedPlanCount) })}
+                  locale={locale}
+                  tone="closed"
+                  onOpen={openRelatedObject}
+                />
+              )}
+            </>
+          )}
         </ObjectCardFrame>
       );
     }
@@ -368,7 +481,7 @@ export default function ObjectList() {
 
   return (
     <div className="ldvh-page-frame">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 flex min-h-8 flex-wrap items-center justify-between gap-3">
         <ObjectStatusFilter
           type={currentType}
           activeStatus={activeStatus}

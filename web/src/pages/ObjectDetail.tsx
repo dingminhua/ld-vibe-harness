@@ -4,7 +4,6 @@ import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2, Info } from 'luc
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
-import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import ChecklistCard from '@/components/ChecklistCard';
 import ReferenceCard from '@/components/ReferenceCard';
 import SummaryText from '@/components/SummaryText';
@@ -282,32 +281,14 @@ export default function ObjectDetail() {
 
   // 生成真正的 YAML 源码
   const yamlSource = objectToYaml(obj);
-  const activeStatus = searchParams.get('status');
   const listSearch = searchParams.toString();
   const listPath = `/objects/${objType}${listSearch ? `?${listSearch}` : ''}`;
-  const navigateToListWithStatus = (status: string | null) => {
-    const nextParams = new URLSearchParams(searchParams);
-    if (status) {
-      nextParams.set('status', status);
-    } else {
-      nextParams.delete('status');
-    }
-    const nextSearch = nextParams.toString();
-    navigate(`/objects/${objType}${nextSearch ? `?${nextSearch}` : ''}`);
-  };
 
   return (
     <div className="flex h-full">
       {/* Main content area */}
       <div className="flex-1 overflow-y-auto rounded-none transition-[margin] duration-300">
         <div className="mx-auto max-w-4xl p-4 sm:p-6">
-          <ObjectStatusFilter
-            type={objType}
-            activeStatus={activeStatus}
-            onChange={navigateToListWithStatus}
-            className="mb-4"
-          />
-
           {/* Header */}
           <div className="mb-6">
             <button
