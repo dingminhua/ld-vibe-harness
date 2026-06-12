@@ -34,7 +34,7 @@ verification: |-
 blocked_by: []
 related_docs:
 - specs/04.02-LDVH能力保障规范.md
-- specs/04.03-环境能力清单与环境适配规范.md
+- specs/04.03-环境适配规范.md
 affected_docs: []
 deliverables: []
 closure_evidence: |

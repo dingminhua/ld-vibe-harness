@@ -33,7 +33,7 @@ closure_evidence: |
 
   - `web/src/utils/panelContext.tsx` 支持 `evidence` / `diff` 内容类型。
   - `web/src/components/ReadingPanel.tsx` 支持 evidence、diff、对象、文档、YAML 预览和移动端底部抽屉。
-  - `web/src/pages/Dashboard.tsx`、`web/src/pages/Workbench.tsx`、`web/src/pages/Changelog.tsx` 使用 `openPanel` 打开对象或变更详情。
+  - `web/src/pages/Dashboard.tsx`、`web/src/pages/ObjectList.tsx`、`web/src/pages/Changelog.tsx` 使用 `openPanel` 打开对象或变更详情。
 
   ## 验证结果
 
@@ -48,7 +48,7 @@ deliverables:
 - web/src/utils/panelContext.tsx
 - web/src/components/ReadingPanel.tsx
 - web/src/pages/Dashboard.tsx
-- web/src/pages/Workbench.tsx
+- web/src/pages/ObjectList.tsx
 - web/src/pages/Changelog.tsx
 closed_at: '2026-06-11T18:45:15'
 taskplan: taskplan-0064

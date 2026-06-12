@@ -13,7 +13,7 @@ tasks:
 - task-0048
 related_docs:
 - specs/04.02-LDVH能力保障规范.md
-- specs/04.03-环境能力清单与环境适配规范.md
+- specs/04.03-环境适配规范.md
 related_adrs: []
 related_memos: []
 related_pitfalls: []

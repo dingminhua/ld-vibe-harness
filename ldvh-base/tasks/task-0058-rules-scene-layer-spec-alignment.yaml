@@ -26,7 +26,7 @@ verification: |
   验证通过。
 blocked_by: []
 related_docs:
-- specs/04.03-环境能力清单与环境适配规范.md
+- specs/04.03-环境适配规范.md
 - specs/02-术语规范.md
 - specs/05-工作模型基础规范.md
 - specs/04.02-LDVH能力保障规范.md
@@ -34,7 +34,7 @@ related_docs:
 - docs/studies/44-multi-role-thinking-多角色思考.md
 - ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
 affected_docs:
-- specs/04.03-环境能力清单与环境适配规范.md
+- specs/04.03-环境适配规范.md
 - specs/02-术语规范.md
 - specs/05-工作模型基础规范.md
 - specs/04.02-LDVH能力保障规范.md

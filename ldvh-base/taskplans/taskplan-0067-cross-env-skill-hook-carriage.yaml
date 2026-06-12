@@ -13,9 +13,9 @@ tasks:
 - task-0067
 related_docs:
 - specs/01-目录说明.md
-- specs/04.03-环境能力清单与环境适配规范.md
-- specs/04.03-环境能力清单与环境适配规范.md
-- specs/11.01-第三方Skill接管落地选项.md
+- specs/04.03-环境适配规范.md
+- specs/04.03-环境适配规范.md
+- docs/studies/12-LDVH第三方技能引入的思考.md
 - specs/26-Task-任务.md
 related_adrs: []
 related_memos: []
