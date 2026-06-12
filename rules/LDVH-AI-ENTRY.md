@@ -64,7 +64,7 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 
 | 场景 | 入口视角 | 先用工具 | 必读权威入口 |
 |---|---|---|---|
-| 判断当前是否为管辖项目 | 工作区入口 | `governed-projects` | `LDVH-GOVERNED-PROJECTS.yaml`、`specs/03.06-管辖项目配置规范.md` |
+| 判断当前是否为管辖项目 | 工作区入口 | `governed-projects` | `LDVH-GOVERNED-PROJECTS.yaml`、`specs/03.05-管辖项目配置规范.md` |
 | 执行 LDVH落地与检查 | 工作区入口 | `governed-projects`、`landing-report`、必要时 `fact_cli.py stats` | `specs/04.03-环境适配规范.md`、`specs/04.04-环境适配措施实践.md`、`specs/04.05-个人环境特别要求规范.md`、`specs/40-工作流程集合索引.md` |
 | 处理管辖项目工作对象 | 工作区入口 | `fact_cli.py list/search/show/stats` | 对应管辖项目自身 `ldvh-base/`、`specs/05-工作模型基础规范.md`、`specs/20-工作模型集合索引.md` 和对应工作模型规范 |
 | 理解 LDVH 总体规则 | 共同入口 | `index` | `specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-目录说明.md`、`specs/02-术语规范.md` |

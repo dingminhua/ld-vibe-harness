@@ -316,7 +316,7 @@ CONSISTENCY_WORKFLOW_REQUIRED_SECTIONS = {
     "15": "待补齐事项",
 }
 
-# 索引文档的强制章节（来自 03.03-索引文档规范 §7，不得省略的章节）
+# 索引文档的强制章节（来自 03.02-索引文档规范 §7，不得省略的章节）
 CONSISTENCY_INDEX_REQUIRED_SECTIONS = {
     "3": "索引范围",
     "4": "文档清单",
@@ -468,13 +468,13 @@ def consistency_work_model_skeleton_issues(entries):
         for section_number, expected_title in CONSISTENCY_WORK_MODEL_REQUIRED_SECTIONS.items():
             actual = sections.get(section_number)
             if actual is None:
-                issues.append(Issue(path, 1, f"工作模型缺少 03.04 强制章节: ## {section_number}. {expected_title}", code="WORK_MODEL_SECTION_MISSING"))
+                issues.append(Issue(path, 1, f"工作模型缺少 03.03 强制章节: ## {section_number}. {expected_title}", code="WORK_MODEL_SECTION_MISSING"))
             elif actual["title"] != expected_title:
                 issues.append(
                     Issue(
                         path,
                         actual["line"],
-                        f"工作模型章节标题不符合 03.04: ## {section_number}. {actual['title']}，应为 ## {section_number}. {expected_title}",
+                        f"工作模型章节标题不符合 03.03: ## {section_number}. {actual['title']}，应为 ## {section_number}. {expected_title}",
                         code="WORK_MODEL_SECTION_TITLE_MISMATCH",
                     )
                 )
@@ -556,7 +556,7 @@ def consistency_retired_semantic_issues(paths):
 
 
 def consistency_workflow_skeleton_issues(workflow_entries):
-    """检查工作流程文档是否覆盖 03.05 规定的强制章节"""
+    """检查工作流程文档是否覆盖 03.04 规定的强制章节"""
     issues = []
     for entry in workflow_entries:
         if entry["status"] != "active" or "具体工作流程规范" not in entry["type"]:
@@ -581,13 +581,13 @@ def consistency_workflow_skeleton_issues(workflow_entries):
         for section_number, expected_title in CONSISTENCY_WORKFLOW_REQUIRED_SECTIONS.items():
             actual = sections.get(section_number)
             if actual is None:
-                issues.append(Issue(path, 1, f"工作流程缺少 03.05 强制章节: ## {section_number}. {expected_title}", code="WORKFLOW_SECTION_MISSING"))
+                issues.append(Issue(path, 1, f"工作流程缺少 03.04 强制章节: ## {section_number}. {expected_title}", code="WORKFLOW_SECTION_MISSING"))
             elif actual["title"] != expected_title:
                 issues.append(
                     Issue(
                         path,
                         actual["line"],
-                        f"工作流程章节标题不符合 03.05: ## {section_number}. {actual['title']}，应为 ## {section_number}. {expected_title}",
+                        f"工作流程章节标题不符合 03.04: ## {section_number}. {actual['title']}，应为 ## {section_number}. {expected_title}",
                         code="WORKFLOW_SECTION_TITLE_MISMATCH",
                     )
                 )
@@ -595,7 +595,7 @@ def consistency_workflow_skeleton_issues(workflow_entries):
 
 
 def consistency_index_skeleton_issues(paths):
-    """检查 20 和 40 索引文档是否覆盖 03.03 规定的强制章节"""
+    """检查 20 和 40 索引文档是否覆盖 03.02 规定的强制章节"""
     issues = []
     # 从传入路径中查找索引文档，同时保留 SPECS_DIR 作为后备
     index_files = []
@@ -611,7 +611,7 @@ def consistency_index_skeleton_issues(paths):
         for section_number, expected_title in CONSISTENCY_INDEX_REQUIRED_SECTIONS.items():
             actual = sections.get(section_number)
             if actual is None:
-                issues.append(Issue(path, 1, f"索引文档缺少 03.03 强制章节: ## {section_number}. {expected_title}", code="INDEX_SECTION_MISSING"))
+                issues.append(Issue(path, 1, f"索引文档缺少 03.02 强制章节: ## {section_number}. {expected_title}", code="INDEX_SECTION_MISSING"))
     return issues
 
 
