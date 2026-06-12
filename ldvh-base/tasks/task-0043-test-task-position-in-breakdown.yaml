@@ -10,9 +10,9 @@ description: |
   1. acceptance 必须包含可测试的原子条件
   2. 复杂 Task（涉及代码变更）应拆出独立的验证子任务
   3. 验证子任务的 blocked_by 指向开发子任务，确保开发完成后才验证
-source: 竞品调研报告 docs/refs/06 建议1
+source: 竞品调研报告 docs/sources/06 建议1
 acceptance: |
-  - [ ] 修改 docs/specs/26-Task-任务.md，在 Task 拆解规则中补充测试 Task 的位置要求
+  - [ ] 修改 specs/26-Task-任务.md，在 Task 拆解规则中补充测试 Task 的位置要求
   - [ ] acceptance 原子条件规范写入 Task 规范
   - [ ] 验证子任务的 blocked_by 规则写入 Task 规范
   - [ ] 更新 ldvh-base/tasks/ 下至少一个现有 Task 实例作为示范
@@ -23,7 +23,7 @@ related_tasks: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
-- docs/refs/06-竞品测试任务安排分析与最佳实践调研.md
+- docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
 deliverables:
-- docs/specs/26-Task-任务.md（修订）
+- specs/26-Task-任务.md（修订）
 taskplan: taskplan-0043

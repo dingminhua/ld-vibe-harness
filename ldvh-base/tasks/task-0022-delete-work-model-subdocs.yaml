@@ -21,8 +21,8 @@ verification: |
   执行结果：
   1. 已删除全部 42 个历史机制子文档：21.01-21.06、22.01-22.06、23.01-23.06、24.01-24.06、25.01-25.06、26.01-26.06、27.01-27.06。
   2. 用户确认策略变更：不再区分"优先删除""优先归档""暂不删除"，合并后全部直接删除。
-  3. 已修正引用的文件： - specs/ 主规范：21-ADR、22-Change、23-Pitfall、24-Intent、25-Memo、26-Profile、27-Task、03-文档规范、08-工作流程基础规范 - docs/research/Gstack产品方向共识：契约列更新为"已回并到规范" - .trae/rules/：ldvh-project-rules.md、ldvh-specs-rules.md - tools/：commit_validate.py、fact_cli.py - tests/：test_fact_cli.py、test_specs_validate.py - ldvh-base/ README：tasks、profiles、memos、intents、pitfalls
-  4. 校验结果： - python3 tools/specs_validate.py all：0 error - python3 tools/fact_validate.py task-0022：0 error 0 warning - python3 -m pytest tests/tools/：122 passed
+  3. 已修正引用的文件： - specs/ 主规范：21-ADR、22-Change、23-Pitfall、24-Intent、25-Memo、26-Profile、27-Task、03-文档规范、08-工作流程基础规范 - docs/studies/Gstack产品方向共识：契约列更新为"已回并到规范" - .trae/rules/：ldvh-project-rules.md、ldvh-specs-rules.md - tools/：commit_validate.py、fact_cli.py - tests/：test_fact_cli.py、test_specs_validate.py - ldvh-base/ README：tasks、profiles、memos、intents、pitfalls
+  4. 校验结果： - python3 code/specs_validate.py all：0 error - python3 tools/fact_validate.py task-0022：0 error 0 warning - python3 -m pytest tests/tools/：122 passed
 
   ## 验证结果
 

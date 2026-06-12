@@ -32,7 +32,7 @@ avoidance: |
   2. 如果规则需要多层入口，在每层只写"见 XX"或简短提醒
   3. 定期审计规则一致性
 applicability: 所有接入 LDVH 的项目，所有规则层级
-superseded_by: docs/specs/03.01-规范文档规范.md
+superseded_by: specs/03.01-规范文档规范.md
 source_objects: []
 related_objects: []
 related_rules: []

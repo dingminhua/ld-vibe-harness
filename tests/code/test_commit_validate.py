@@ -30,7 +30,7 @@ def make_commit(hash_val="abc12345", subject="", body=""):
 
 
 def test_valid_commit_passes():
-    commit = make_commit(subject="docs(specs): 更新 Change 工作模型", body="新增 docs/specs/22-Change-变更.md。\n\nRefs: 22-Change-变更")
+    commit = make_commit(subject="docs(specs): 更新 Change 工作模型", body="新增 specs/22-Change-变更.md。\n\nRefs: 22-Change-变更")
 
     issues = checker.check_commit(commit)
     errors = [i for i in issues if i.level == "error"]

@@ -19,5 +19,5 @@ related_tasks: []
 related_changes: []
 related_memos: []
 related_rules:
-- docs/specs/21-ADR-决策.md
+- specs/21-ADR-决策.md
 related_workareas: []

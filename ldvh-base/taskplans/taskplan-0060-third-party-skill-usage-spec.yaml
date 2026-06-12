@@ -12,13 +12,13 @@ source: '历史 Task task-0060 迁移生成；旧 source_intent: 无'
 tasks:
 - task-0060
 related_docs:
-- docs/research/12-LDVH第三方技能引入的思考.md
-- docs/specs/01-目录说明.md
-- docs/specs/02-术语规范.md
-- docs/specs/03-文档基础规范.md
-- docs/specs/04.03-环境能力清单与环境适配规范.md
-- docs/specs/07-Code确定性执行实现规范.md
-- docs/specs/06-工作流程基础规范.md
+- docs/studies/12-LDVH第三方技能引入的思考.md
+- specs/01-目录说明.md
+- specs/02-术语规范.md
+- specs/03-文档基础规范.md
+- specs/04.03-环境能力清单与环境适配规范.md
+- specs/07-Code确定性执行实现规范.md
+- specs/06-工作流程基础规范.md
 related_adrs: []
 related_memos: []
 related_pitfalls: []

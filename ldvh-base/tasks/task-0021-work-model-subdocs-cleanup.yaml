@@ -38,7 +38,7 @@ verification: |
 
   已执行校验：
   - python3 tools/fact_validate.py ldvh-base/tasks/task-0021-work-model-subdocs-cleanup.yaml：通过。
-  - python3 tools/specs_validate.py all：无 error，仍有历史 warning。
+  - python3 code/specs_validate.py all：无 error，仍有历史 warning。
   - python3 -m pytest tests/tools/test_fact_validate.py tests/tools/test_fact_cli.py：88 passed。
 
   当前阻塞/后续项：

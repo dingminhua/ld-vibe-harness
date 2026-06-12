@@ -43,6 +43,6 @@ acceptance: |
 blocked_by:
 - task-0037
 affected_docs:
-- docs/specs/26-Task-任务.md
-- docs/specs/07-Code确定性执行实现规范.md
+- specs/26-Task-任务.md
+- specs/07-Code确定性执行实现规范.md
 taskplan: taskplan-0037

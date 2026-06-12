@@ -24,12 +24,12 @@ verification: |
   ## 验证计划
 
   - 只读检索 ECC 相关 refs、research、specs 或历史材料，记录来源路径和关键结论。
-  - 对照 LDVH `docs/specs/04.03-环境能力清单与环境适配规范.md`、04.07、04.08、42 和 `tools/specs_validate.py` 当前实现，形成缺口清单。
-  - 运行必要的只读检查命令，例如 `python3 tools/specs_validate.py ldvh-landing-check --format json`，确认矩阵相关缺口如何暴露。
+  - 对照 LDVH `specs/04.03-环境能力清单与环境适配规范.md`、04.07、04.08、42 和 `code/specs_validate.py` 当前实现，形成缺口清单。
+  - 运行必要的只读检查命令，例如 `python3 code/specs_validate.py ldvh-landing-check --format json`，确认矩阵相关缺口如何暴露。
 
   ## 验证结果
 
-  2026-06-11 已完成只读研究，覆盖 LDVH 04、04.06、04.07、04.08、42、`tools/specs_validate.py`、测试、Claude Code refs，以及 ECC 的 manifest、catalog、doctor、audit、Claude Code 指南等资料。
+  2026-06-11 已完成只读研究，覆盖 LDVH 04、04.06、04.07、04.08、42、`code/specs_validate.py`、测试、Claude Code refs，以及 ECC 的 manifest、catalog、doctor、audit、Claude Code 指南等资料。
 
   结论：04.06 应作为 Trae Work CN、Codex App、Claude Code CLI 三环境承接矩阵唯一入口；当前 04.06 正文已经具备三环境矩阵定位、承接类型、字段、42 使用规则和 04.07/04.08 迁移规则，缺口主要在内容吸收、Claude Code CLI refs 与实测证据、42 旧消费口径和 Code 字段级校验。
 
@@ -39,7 +39,7 @@ verification: |
 
   Claude Code CLI 当前 refs 仅能支撑 CLAUDE.md、commands/instructions、成本控制、上下文健康、安全配置和 Hook 候选字段；仍缺 commands、skills/plugins、subagents、MCP、settings.json、permissions、hooks 事件、doctor/status、CLI non-interactive、session/compaction 等更完整来源和实测证据。
 
-  后续 Task 边界：A 修改 04.06 并吸收 04.07/04.08；B 修改 42 消费口径；C 扩展 `tools/specs_validate.py` 和测试，实现矩阵字段级校验；D 补 Claude Code refs 与实测证据；E 引用迁移和校验通过后评估 04.07/04.08 历史化或删除候选。
+  后续 Task 边界：A 修改 04.06 并吸收 04.07/04.08；B 修改 42 消费口径；C 扩展 `code/specs_validate.py` 和测试，实现矩阵字段级校验；D 补 Claude Code refs 与实测证据；E 引用迁移和校验通过后评估 04.07/04.08 历史化或删除候选。
 risk_assessment: '- 避免把 ECC 机制直接当作 LDVH 事实源；ECC 只能作为参考依据。
 
   - 避免在证据不足时宣称任一环境完整承接。
@@ -53,18 +53,18 @@ assignee: AI
 related_adrs: []
 related_changes: []
 related_docs:
-- docs/specs/04-规范落地与环境适配基础规范.md
-- docs/specs/04.03-环境能力清单与环境适配规范.md
-- docs/specs/04.03-环境能力清单与环境适配规范.md
-- docs/specs/04.03-环境能力清单与环境适配规范.md
-- docs/research/42-ldvh-landing-check-LDVH落地与检查.md
-- docs/research/23-LDVH资产层与04系列重构计划.md
+- specs/04-规范落地与环境适配基础规范.md
+- specs/04.03-环境能力清单与环境适配规范.md
+- specs/04.03-环境能力清单与环境适配规范.md
+- specs/04.03-环境能力清单与环境适配规范.md
+- docs/studies/42-ldvh-landing-check-LDVH落地与检查.md
+- docs/studies/23-LDVH资产层与04系列重构计划.md
 affected_docs:
-- docs/specs/04-规范落地与环境适配基础规范.md
-- docs/specs/04.03-环境能力清单与环境适配规范.md
-- docs/specs/04.03-环境能力清单与环境适配规范.md
-- docs/specs/04.03-环境能力清单与环境适配规范.md
-- docs/research/42-ldvh-landing-check-LDVH落地与检查.md
+- specs/04-规范落地与环境适配基础规范.md
+- specs/04.03-环境能力清单与环境适配规范.md
+- specs/04.03-环境能力清单与环境适配规范.md
+- specs/04.03-环境能力清单与环境适配规范.md
+- docs/studies/42-ldvh-landing-check-LDVH落地与检查.md
 - code/specs_validate.py
 - tests/code/test_specs_validate.py
 deliverables: []

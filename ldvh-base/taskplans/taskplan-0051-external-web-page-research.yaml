@@ -12,14 +12,14 @@ source: '历史 Task task-0051 迁移生成；旧 source_intent: intent-0009'
 tasks:
 - task-0051
 related_docs:
-- docs/research/02-LDVH对Gstack的借鉴评估与深度调研.md
-- docs/research/07-LDVH对Superpowers的借鉴评估与深度调研.md
-- docs/research/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
+- docs/studies/02-LDVH对Gstack的借鉴评估与深度调研.md
+- docs/studies/07-LDVH对Superpowers的借鉴评估与深度调研.md
+- docs/studies/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
 related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-06T01:31:31.699938'
 completion_evidence: |-
   历史任务计划迁移聚合证据：
-  - task-0051: 交付物：docs/research/16-LDVH外部开源项目Web页面构成调研.md。
+  - task-0051: 交付物：docs/studies/16-LDVH外部开源项目Web页面构成调研.md。
 closed_at: '2026-06-06T01:31:31.699938'

@@ -41,5 +41,5 @@ closure_evidence: |
   任务完成，人工确认关闭。
 blocked_by: []
 affected_docs:
-- docs/specs/07-Code确定性执行实现规范.md
+- specs/07-Code确定性执行实现规范.md
 taskplan: taskplan-0003

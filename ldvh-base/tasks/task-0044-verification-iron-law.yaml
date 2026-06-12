@@ -10,11 +10,11 @@ description: |
   2. Task 关闭时 closure_evidence 必须引用验证结果
   3. 验证方式包括：手动测试、自动测试、代码审查、规范校验等
   此任务涉及 Task 模型字段变更，需先产出 ADR 再修订规范。
-source: 竞品调研报告 docs/refs/06 建议2
+source: 竞品调研报告 docs/sources/06 建议2
 acceptance: |
   - [ ] 产出 ADR 论证 verification 字段的引入
   - [ ] ADR 状态流转至 accepted
-  - [ ] 修改 docs/specs/26-Task-任务.md，增加 verification 字段契约
+  - [ ] 修改 specs/26-Task-任务.md，增加 verification 字段契约
   - [ ] 修改 tools/fact_cli.py 支持 verification 字段
   - [ ] 至少一个现有 Task 实例补充 verification 字段作为示范
 blocked_by: []
@@ -24,9 +24,9 @@ related_tasks: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
-- docs/refs/06-竞品测试任务安排分析与最佳实践调研.md
-- docs/research/07-LDVH对Superpowers的借鉴评估与深度调研.md
+- docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
+- docs/studies/07-LDVH对Superpowers的借鉴评估与深度调研.md
 deliverables:
 - ldvh-base/adrs/adr-0007（新建）
-- docs/specs/26-Task-任务.md（修订）
+- specs/26-Task-任务.md（修订）
 taskplan: taskplan-0044

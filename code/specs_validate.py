@@ -17,10 +17,10 @@ import yaml
 # ── 通用常量 ──
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SPECS_DIR = PROJECT_ROOT / "docs" / "specs"
-LEGACY_SPECS_DIR = PROJECT_ROOT / "specs"
+SPECS_DIR = PROJECT_ROOT / "specs"
+LEGACY_SPECS_DIR = PROJECT_ROOT / "docs" / "specs"
 DOCS_DIR = PROJECT_ROOT / "docs"
-DOCS_SPECS_DIR = DOCS_DIR / "specs"
+FORMAL_SPECS_DIR = SPECS_DIR
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 
 
@@ -61,11 +61,11 @@ RUNTIME_PROJECTION_DEFAULT_PATHS = [
     ".trae/rules",
     ".trae/skills",
 ]
-RUNTIME_PROJECTION_SPEC_REF_RE = re.compile(r"docs/specs/[^`\s，。；、)）]+\.md")
-RUNTIME_PROJECTION_AUTHORITY_TERMS = ["docs/specs/", "规范来源", "权威来源", "上位依据", "相关规范"]
+RUNTIME_PROJECTION_SPEC_REF_RE = re.compile(r"specs/[^`\s，。；、)）]+\.md")
+RUNTIME_PROJECTION_AUTHORITY_TERMS = ["specs/", "规范来源", "权威来源", "上位依据", "相关规范"]
 RUNTIME_PROJECTION_DEGRADATION_TERMS = ["降级", "人工降级", "degradation"]
-RUNTIME_PROJECTION_AUTHORITY_RE = re.compile(r"(docs/specs/|规范来源|权威来源|上位依据|相关规范|降级|人工降级|degradation)")
-RUNTIME_PROJECTION_NEGATIVE_AUTHORITY_RE = re.compile(r"(无|没有|缺少|未).{0,8}(权威来源|规范来源|上位依据|相关规范|docs/specs/|降级)")
+RUNTIME_PROJECTION_AUTHORITY_RE = re.compile(r"(specs/|规范来源|权威来源|上位依据|相关规范|降级|人工降级|degradation)")
+RUNTIME_PROJECTION_NEGATIVE_AUTHORITY_RE = re.compile(r"(无|没有|缺少|未).{0,8}(权威来源|规范来源|上位依据|相关规范|specs/|降级)")
 
 
 def runtime_projection_default_paths():
@@ -124,9 +124,9 @@ def runtime_projection_spec_path_exists(ref):
 
 def runtime_projection_formal_spec_lines():
     lines = {}
-    if not DOCS_SPECS_DIR.exists():
+    if not FORMAL_SPECS_DIR.exists():
         return lines
-    for spec_path in sorted(DOCS_SPECS_DIR.glob("*.md")):
+    for spec_path in sorted(FORMAL_SPECS_DIR.glob("*.md")):
         for line in spec_path.read_text(encoding="utf-8").splitlines():
             stripped = line.strip()
             if len(stripped) < 32:
@@ -152,7 +152,7 @@ def runtime_projection_check_file(path, formal_lines=None):
     text = path.read_text(encoding="utf-8")
     issues = []
     if not runtime_projection_has_authority(text):
-        issues.append(Issue(path, 1, "运行投影缺少 docs/specs 权威来源引用或明确降级来源", code="RUNTIME_PROJECTION_AUTHORITY_MISSING"))
+        issues.append(Issue(path, 1, "运行投影缺少 specs 权威来源引用或明确降级来源", code="RUNTIME_PROJECTION_AUTHORITY_MISSING"))
     for ref in runtime_projection_spec_refs(text):
         if not runtime_projection_spec_path_exists(ref):
             issues.append(Issue(path, 1, f"运行投影引用的正式规范不存在: {ref}", code="RUNTIME_PROJECTION_SPEC_REF_MISSING"))
@@ -263,7 +263,7 @@ CONSISTENCY_RETIRED_REFERENCE_RULES = (
         "message": "已退回工作流程疑似仍被作为当前消费入口、输入或上位口径",
     },
     {
-        "aliases": ("运行闭环测试机制", "10 定义", "docs/specs/10"),
+        "aliases": ("运行闭环测试机制", "10 定义", "specs/10"),
         "dangerous_terms": ("测试事实源", "测试用例事实源", "10 定义", "正式规范", "前置约束"),
         "code": "RETIRED_TEST_SOURCE_CONSUMPTION",
         "message": "已退回运行闭环测试机制疑似仍被作为当前测试事实源或正式约束",
@@ -633,7 +633,7 @@ def consistency_human_gate_check_section_issues(paths):
 
 
 def consistency_bare_term_issues(paths):
-    """检查 docs/specs 中是否存在不推荐裸词的未限定使用"""
+    """检查 specs 中是否存在不推荐裸词的未限定使用"""
     issues = []
     for path in iter_markdown_files(paths):
         # 跳过 02 术语规范自身
@@ -669,7 +669,7 @@ def consistency_bare_term_issues(paths):
 
 
 def consistency_deprecated_expression_issues(paths):
-    """检查 docs/specs 中是否使用了 02 §12 的不推荐表达"""
+    """检查 specs 中是否使用了 02 §12 的不推荐表达"""
     issues = []
     for path in iter_markdown_files(paths):
         # 跳过 02 术语规范自身
@@ -1274,8 +1274,8 @@ LANDING_REPORT_CAPABILITY_CHECKS = [
 
 
 def landing_default_check_paths():
-    if DOCS_SPECS_DIR.exists():
-        return [str(path) for path in sorted(DOCS_SPECS_DIR.glob("*.md"))]
+    if FORMAL_SPECS_DIR.exists():
+        return [str(path) for path in sorted(FORMAL_SPECS_DIR.glob("*.md"))]
     return []
 
 
@@ -1285,7 +1285,7 @@ def landing_is_formal_spec(path):
         rel = resolved.relative_to(PROJECT_ROOT)
     except ValueError:
         return False
-    return len(rel.parts) == 3 and rel.parts[:2] == ("docs", "specs") and path.suffix == ".md"
+    return len(rel.parts) == 2 and rel.parts[0] == "specs" and path.suffix == ".md"
 
 
 def landing_strip_section_number(title):
@@ -2103,7 +2103,7 @@ HUMAN_GATE_YAML_KEYS = {"human_gate", "human_gates", "human_gate_records"}
 
 def human_gate_default_check_paths():
     paths = []
-    for path in [DOCS_DIR, PROJECT_ROOT / "ldvh-base"]:
+    for path in [FORMAL_SPECS_DIR, DOCS_DIR, PROJECT_ROOT / "ldvh-base"]:
         if path.exists():
             paths.append(str(path))
     return paths
@@ -2915,7 +2915,7 @@ def ldvh_landing_check_build(workspace_root=None):
             "project_root": str(PROJECT_ROOT),
             "workspace_root": str(workspace_root),
             "scope": "project-local Git facts plus explicit workspace governed-projects config",
-            "bootstrap_baseline_source": "docs/research/42-ldvh-landing-check-LDVH落地与检查.md (已退回 research，待重新设计)",
+            "bootstrap_baseline_source": "docs/studies/42-ldvh-landing-check-LDVH落地与检查.md (已退回 studies，待重新设计)",
         },
         "summary": {
             "status": ldvh_landing_check_status(checks),
@@ -3341,9 +3341,11 @@ INDEX_NUMBERED_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?(?:\s+|$)")
 INDEX_HEADER_FIELD_RE = re.compile(r"^>\s*([^：:]+)[：:]\s*(.*)\s*$")
 INDEX_BACKTICK_MD_RE = re.compile(r"`([^`]+\.md)`")
 INDEX_PLAIN_SPECS_MD_RE = re.compile(
-    r"(?<![`\w./-])((?:specs/(?:research/|refs/)?|docs/(?:specs|research|refs)/)[^\s`，。；、)）]+\.md)"
+    r"(?<![`\w./-])((?:specs/|docs/(?:studies|sources|research|refs)/)[^\s`，。；、)）]+\.md)"
 )
 INDEX_RESEARCH_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?((?:specs/research/|docs/research/)[^`\s，。；、)）]+\.md)(?:`)?")
+INDEX_DOCS_MATERIAL_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?((?:docs/(?:studies|sources|research|refs)/)[^`\s，。；、)）]+\.md)(?:`)?")
+INDEX_EXTERNAL_URL_RE = re.compile(r"https?://[^\s`，。；、)）]+")
 INDEX_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\d]+(?:\.\d+)*)")
 INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
 
@@ -3641,7 +3643,17 @@ class SpecsChecker:
             for match in INDEX_RESEARCH_REF_RE.finditer(line):
                 target = match.group(1)
                 diagnostics.append(
-                    self.diagnostic(rel_path, line_number, "warning", "RESEARCH_REFERENCE_IN_SPEC", f"正式规范不得引用 research 文档路径: {target}")
+                    self.diagnostic(rel_path, line_number, "warning", "RESEARCH_REFERENCE_IN_SPEC", f"正式规范不得引用 studies 文档路径: {target}")
+                )
+            for match in INDEX_DOCS_MATERIAL_REF_RE.finditer(line):
+                target = match.group(1)
+                diagnostics.append(
+                    self.diagnostic(rel_path, line_number, "warning", "DOCS_PATH_REFERENCE_IN_SPEC", f"正式规范不得引用 docs 可变资料路径: {target}")
+                )
+            for match in INDEX_EXTERNAL_URL_RE.finditer(line):
+                target = match.group(0)
+                diagnostics.append(
+                    self.diagnostic(rel_path, line_number, "warning", "EXTERNAL_REFERENCE_IN_SPEC", f"正式规范不得引用外部 URL: {target}")
                 )
         return diagnostics
 
@@ -3763,7 +3775,7 @@ def write_outputs(indexes, out_dir):
 
 def index_main(root, out=None, fail_on_diagnostics=False, specs_dir="specs"):
     checker = SpecsChecker(root, specs_dir)
-    if not checker.specs_dir.exists() and specs_dir == "docs/specs":
+    if not checker.specs_dir.exists() and specs_dir == "specs":
         legacy_checker = SpecsChecker(root, "specs")
         if legacy_checker.specs_dir.exists():
             checker = legacy_checker
@@ -3784,7 +3796,7 @@ def index_main(root, out=None, fail_on_diagnostics=False, specs_dir="specs"):
 
 def infer_specs_dir_from_paths(paths):
     if not paths:
-        return "docs/specs"
+        return "specs"
     resolved_dirs = []
     for raw_path in paths:
         path = Path(raw_path)
@@ -3794,11 +3806,11 @@ def infer_specs_dir_from_paths(paths):
         except ValueError:
             continue
         if rel.parts[:2] == ("docs", "specs"):
-            resolved_dirs.append("docs/specs")
+            resolved_dirs.append("specs")
         elif rel.parts:
             resolved_dirs.append(rel.parts[0])
-    if resolved_dirs and all(item == "docs/specs" for item in resolved_dirs):
-        return "docs/specs"
+    if resolved_dirs and all(item == "specs" for item in resolved_dirs):
+        return "specs"
     return "specs"
 
 
@@ -3812,19 +3824,19 @@ def build_parser():
 
     # doc
     doc_parser = subparsers.add_parser("doc", help="检查 specs Markdown 文档是否符合 03 文档基础规范的章节编号要求。")
-    doc_parser.add_argument("paths", nargs="*", default=[str(SPECS_DIR)], help="要检查的 Markdown 文件或目录，默认检查 docs/specs/。")
+    doc_parser.add_argument("paths", nargs="*", default=[str(SPECS_DIR)], help="要检查的 Markdown 文件或目录，默认检查 specs/。")
 
     # refs
     refs_parser = subparsers.add_parser("refs", help="检查 specs Markdown 文档中的 § 引用是否存在。")
-    refs_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/specs/ 根目录正式规范。")
+    refs_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
 
     # landing
-    landing_parser = subparsers.add_parser("landing", help="检查 docs/specs 正式规范的规范落地要求表。")
-    landing_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/specs/ 根目录正式规范。")
+    landing_parser = subparsers.add_parser("landing", help="检查 specs 正式规范的规范落地要求表。")
+    landing_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
 
     # landing-report
-    landing_report_parser = subparsers.add_parser("landing-report", help="生成 docs/specs 规范落地要求聚合报告。")
-    landing_report_parser.add_argument("paths", nargs="*", default=None, help="要聚合的 Markdown 文件或目录，默认检查 docs/specs/ 根目录正式规范。")
+    landing_report_parser = subparsers.add_parser("landing-report", help="生成 specs 规范落地要求聚合报告。")
+    landing_report_parser.add_argument("paths", nargs="*", default=None, help="要聚合的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
     landing_report_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
     # ldvh-landing-check
@@ -3858,7 +3870,7 @@ def build_parser():
 
     # consistency
     consistency_parser = subparsers.add_parser("consistency", help="检查集合状态消费、工作模型骨架和 02 术语状态一致性。")
-    consistency_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/specs/。")
+    consistency_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
 
     # governed-projects
     governed_projects_parser = subparsers.add_parser("governed-projects", help="检查工作区根目录管辖项目配置。")
@@ -3867,13 +3879,13 @@ def build_parser():
     # index
     index_parser = subparsers.add_parser("index", help="生成 specs 文档派生索引和诊断结果（03.01 规范文档剖面）。")
     index_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
-    index_parser.add_argument("--specs-dir", default="docs/specs", help="要生成索引的规范目录，默认 docs/specs。")
+    index_parser.add_argument("--specs-dir", default="specs", help="要生成索引的规范目录，默认 specs。")
     index_parser.add_argument("--out", default=None, help="输出目录；未提供时将完整索引输出到 stdout。")
     index_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")
 
     # all
     all_parser = subparsers.add_parser("all", help="运行所有检查（doc + refs + landing + human-gate + index）。")
-    all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/specs/。")
+    all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
     all_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录（用于 index 子命令）。")
     all_parser.add_argument("--specs-dir", default=None, help="要生成索引的规范目录；未提供时根据 paths 推断，默认 specs。")
     all_parser.add_argument("--out", default=None, help="输出目录（用于 index 子命令）；未提供时将完整索引输出到 stdout。")

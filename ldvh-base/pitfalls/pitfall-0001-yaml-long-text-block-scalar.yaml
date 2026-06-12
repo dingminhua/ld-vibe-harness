@@ -38,7 +38,7 @@ source_objects:
 - task-0002
 related_objects: []
 related_rules:
-- docs/specs/26-Task-任务.md
+- specs/26-Task-任务.md
 tags:
 - yaml
 - fact-model

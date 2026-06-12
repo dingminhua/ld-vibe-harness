@@ -12,10 +12,10 @@ source: '历史 Task task-0068 迁移生成；旧 source_intent: intent-0006'
 tasks:
 - task-0068
 related_docs:
-- docs/specs/03.02-管辖项目文档规范.md
-- docs/specs/03.06-管辖项目配置规范.md
-- docs/specs/08-Web信息同步实现规范.md
-- docs/specs/22-Change-变更.md
+- specs/03.02-管辖项目文档规范.md
+- specs/03.06-管辖项目配置规范.md
+- specs/08-Web信息同步实现规范.md
+- specs/22-Change-变更.md
 related_adrs: []
 related_memos: []
 related_pitfalls: []

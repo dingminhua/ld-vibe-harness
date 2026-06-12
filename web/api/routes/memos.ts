@@ -2,8 +2,8 @@
  * Memos API 路由：备忘速记创建入口（仅 Memo 允许 Web 创建，其他类型由 AI 创建）
  *
  * 依据：
- * - docs/specs/25-Memo-备忘.md §8.3 Web 信息同步
- * - docs/specs/08-Web信息同步实现规范.md §8.2 Web 事实源写入白名单
+ * - specs/25-Memo-备忘.md §8.3 Web 信息同步
+ * - specs/08-Web信息同步实现规范.md §8.2 Web 事实源写入白名单
  */
 
 import { Router, type Request, type Response } from 'express'

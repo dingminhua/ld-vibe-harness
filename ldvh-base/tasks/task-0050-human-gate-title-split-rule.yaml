@@ -23,7 +23,7 @@ verification: |-
 
   验证通过。
 related_docs:
-- docs/specs/04.03-环境能力清单与环境适配规范.md
+- specs/04.03-环境能力清单与环境适配规范.md
 affected_docs:
-- docs/specs/04.03-环境能力清单与环境适配规范.md
+- specs/04.03-环境能力清单与环境适配规范.md
 taskplan: taskplan-0050

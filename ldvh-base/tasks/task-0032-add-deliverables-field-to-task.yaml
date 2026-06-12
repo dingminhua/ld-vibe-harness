@@ -7,7 +7,7 @@ updated: '2026-06-05T23:23:13.144445'
 description: |
   Task 对象缺少记录任务产出/结果物的字段。当前任务完成后产生的文件（如分析报告、代码文件等）无法在 Task 事实源中直接体现，只能通过 related_docs 间接关联，但 related_docs 语义是"参考文档"而非"产出物"。
 
-  需要在 Task 工作模型中新增 deliverables（产出物）字段，用于记录任务执行后产生的具体结果物路径，例如 specs/refs/07-竞品测试任务安排分析与最佳实践调研.md 是 task-0028 的产出。
+  需要在 Task 工作模型中新增 deliverables（产出物）字段，用于记录任务执行后产生的具体结果物路径，例如 docs/sources/07-竞品测试任务安排分析与最佳实践调研.md 是 task-0028 的产出。
 source: workarea-0007
 acceptance: |
   - [x] specs/27-Task-任务.md 字段契约新增 deliverables 字段定义
@@ -37,7 +37,7 @@ closure_evidence: |
 
   任务完成，人工确认关闭。
 affected_docs:
-- docs/specs/26-Task-任务.md
-- docs/specs/07-Code确定性执行实现规范.md
+- specs/26-Task-任务.md
+- specs/07-Code确定性执行实现规范.md
 closed_at: '2026-06-05T23:23:13.144451'
 taskplan: taskplan-0032

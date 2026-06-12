@@ -941,6 +941,58 @@ def test_explicit_specs_path_reference_resolves_unchecked_existing_file(tmp_path
     assert target.exists()
 
 
+def test_specs_document_reports_docs_path_reference(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+不得依赖 `docs/studies/01-LDVH评估.md`。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "DOCS_PATH_REFERENCE_IN_SPEC" for item in diagnostics)
+
+
+def test_specs_document_reports_external_url_reference(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+不得依赖 https://example.com/tool-doc 。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "EXTERNAL_REFERENCE_IN_SPEC" for item in diagnostics)
+
+
 # ══════════════════════════════════════════════════════════════════════
 # index — 生成索引
 # ══════════════════════════════════════════════════════════════════════
@@ -1007,7 +1059,7 @@ def build_fixture(tmp_path):
 """,
     )
     write_md(
-        specs / "research" / "01-评估.md",
+        tmp_path / "docs" / "studies" / "01-评估.md",
         """
 # 评估
 
@@ -1015,13 +1067,13 @@ def build_fixture(tmp_path):
 > 定位：评估
 > 调研边界：内部评估
 > 执行效力：无
-> 编号归属：research
+> 编号归属：studies
 
 ## 1. 结论
 """,
     )
     write_md(
-        specs / "refs" / "01-外部资料.md",
+        tmp_path / "docs" / "sources" / "01-外部资料.md",
         """
 # 外部资料
 
@@ -1210,11 +1262,11 @@ def test_index_main_outputs_json_to_stdout(tmp_path, capsys):
 # ══════════════════════════════════════════════════════════════════════
 
 def build_landing_report_fixture(tmp_path, monkeypatch):
-    docs_specs = tmp_path / "docs" / "specs"
+    docs_specs = tmp_path / "specs"
     (tmp_path / "rules").mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(checker, "DOCS_DIR", tmp_path / "docs")
-    monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
+    monkeypatch.setattr(checker, "FORMAL_SPECS_DIR", docs_specs)
     monkeypatch.setattr(checker, "RUNTIME_PROJECTION_DEFAULT_PATHS", ["rules/LDVH-AI-ENTRY.md"])
 
     write_md(
@@ -1222,7 +1274,7 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
         """
 # Runtime Projection
 
-规范来源：`docs/specs/00-Test.md`
+规范来源：`specs/00-Test.md`
 """,
     )
     write_md(
@@ -1253,7 +1305,7 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
 """,
     )
     write_md(
-        tmp_path / "docs" / "research" / "18-评估.md",
+        tmp_path / "docs" / "studies" / "18-评估.md",
         """
 # 评估
 
@@ -1350,7 +1402,7 @@ def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["gap_categories"]["human_gate"]["subcategories"]["policy_clarification"]["policy_flows"]["workflow_design_discussion"]["total"] == 1
     assert payload["gap_categories"]["human_gate"]["subcategories"]["implementation_support"]["support_flows"]["web_human_facing_support"]["total"] == 1
     assert payload["gap_categories"]["human_gate"]["subcategories"]["diagnostic_coverage"]["diagnostic_flows"]["coverage_degraded"]["total"] == 1
-    assert payload["requirements"][0]["source"] == "docs/specs/00-Test.md"
+    assert payload["requirements"][0]["source"] == "specs/00-Test.md"
     assert payload["capability_gaps"][0]["capability"] == "41 触发保障"
 
 
@@ -1458,10 +1510,10 @@ def test_classify_runtime_projection_remediation():
 
 
 def test_runtime_projection_reports_missing_authority_and_spec_ref(tmp_path, monkeypatch):
-    docs_specs = tmp_path / "docs" / "specs"
+    docs_specs = tmp_path / "specs"
     (tmp_path / "rules").mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
+    monkeypatch.setattr(checker, "FORMAL_SPECS_DIR", docs_specs)
     projection = write_md(
         tmp_path / "rules" / "LDVH-AI-ENTRY.md",
         """
@@ -1475,7 +1527,7 @@ def test_runtime_projection_reports_missing_authority_and_spec_ref(tmp_path, mon
         """
 # Runtime Projection
 
-规范来源：`docs/specs/99-Missing.md`
+规范来源：`specs/99-Missing.md`
 """,
     )
 
@@ -1490,10 +1542,10 @@ def test_runtime_projection_reports_missing_authority_and_spec_ref(tmp_path, mon
 
 
 def test_runtime_projection_reports_copied_formal_body(tmp_path, monkeypatch):
-    docs_specs = tmp_path / "docs" / "specs"
+    docs_specs = tmp_path / "specs"
     (tmp_path / "rules").mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
+    monkeypatch.setattr(checker, "FORMAL_SPECS_DIR", docs_specs)
     write_md(
         docs_specs / "04.02-Test.md",
         """
@@ -1509,7 +1561,7 @@ def test_runtime_projection_reports_copied_formal_body(tmp_path, monkeypatch):
         """
 # Runtime Projection
 
-规范来源：`docs/specs/04.02-Test.md`
+规范来源：`specs/04.02-Test.md`
 
 这是一段足够长的正式规范正文，用于触发运行投影复制正文风险检查第一行。
 这是一段足够长的正式规范正文，用于触发运行投影复制正文风险检查第二行。
@@ -1524,10 +1576,10 @@ def test_runtime_projection_reports_copied_formal_body(tmp_path, monkeypatch):
 
 
 def test_runtime_projection_cli_outputs_json(tmp_path, monkeypatch, capsys):
-    docs_specs = tmp_path / "docs" / "specs"
+    docs_specs = tmp_path / "specs"
     (tmp_path / "rules").mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(checker, "DOCS_SPECS_DIR", docs_specs)
+    monkeypatch.setattr(checker, "FORMAL_SPECS_DIR", docs_specs)
     write_md(
         docs_specs / "04.02-Test.md",
         """
@@ -1539,7 +1591,7 @@ def test_runtime_projection_cli_outputs_json(tmp_path, monkeypatch, capsys):
         """
 # Runtime Projection
 
-规范来源：`docs/specs/04.02-Test.md`
+规范来源：`specs/04.02-Test.md`
 """,
     )
 
@@ -1568,7 +1620,7 @@ def test_human_gate_complete_record_passes(tmp_path):
 Human Gate 记录：
 - 时间：2026-06-10
 - 决策：确认推进
-- 范围：docs/specs/41、docs/research/18
+- 范围：specs/41、docs/studies/18
 - 约束：验证命令通过，剩余 Web 消费未实现，后续写回评估
 """,
     )
@@ -1624,7 +1676,7 @@ Human Gate 记录：
 - 时间：
   2026-06-10
 - 决策：暂缓
-- 范围：Task 和 docs/research/18
+- 范围：Task 和 docs/studies/18
 - 约束：测试通过，后续仍需 Web
 """,
     )
@@ -1717,7 +1769,7 @@ def test_human_gate_report_closed_when_record_complete(tmp_path, monkeypatch):
 Human Gate 记录：
 - 时间：2026-06-10
 - 决策：确认推进
-- 范围：docs/specs/41、docs/research/18
+- 范围：specs/41、docs/studies/18
 - 约束：验证命令通过，剩余 Web 消费未实现，后续写回评估
 """,
     )
@@ -1739,13 +1791,13 @@ def test_human_gate_report_counts_multiple_markdown_records(tmp_path, monkeypatc
 Human Gate 记录：
 - 时间：2026-06-10
 - 决策：确认推进
-- 范围：docs/specs/41
+- 范围：specs/41
 - 约束：需要验证
 
 Human Gate 记录：
 - 时间：2026-06-11
 - 决策：暂缓
-- 范围：docs/specs/42
+- 范围：specs/42
 - 约束：等待补充证据
 """,
     )
@@ -1765,11 +1817,11 @@ def test_human_gate_report_accepts_yaml_records(tmp_path, monkeypatch):
 human_gate:
   - time: 2026-06-10
     decision: 确认推进
-    scope: docs/specs/41
+    scope: specs/41
     constraints: 需要验证
   - time: 2026-06-11
     decision: 暂缓
-    scope: docs/specs/42
+    scope: specs/42
     constraints: 等待补充证据
 """,
     )
@@ -2089,7 +2141,7 @@ def test_ldvh_landing_check_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert exit_code == 1
     assert payload["metadata"]["report"] == "ldvh-landing-check"
     assert payload["summary"]["status"] == "open"
-    assert payload["metadata"]["bootstrap_baseline_source"] == "docs/research/42-ldvh-landing-check-LDVH落地与检查.md (已退回 research，待重新设计)"
+    assert payload["metadata"]["bootstrap_baseline_source"] == "docs/studies/42-ldvh-landing-check-LDVH落地与检查.md (已退回 studies，待重新设计)"
     assert payload["bootstrap_baseline"]["summary"]["item_count"] == 10
     assert payload["remaining_gaps"]
 

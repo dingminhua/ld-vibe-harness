@@ -12,7 +12,7 @@ source: '历史 Task task-0055 迁移生成；旧 source_intent: intent-0009'
 tasks:
 - task-0055
 related_docs:
-- docs/refs/06-竞品测试任务安排分析与最佳实践调研.md
+- docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
 related_adrs: []
 related_memos: []
 related_pitfalls: []

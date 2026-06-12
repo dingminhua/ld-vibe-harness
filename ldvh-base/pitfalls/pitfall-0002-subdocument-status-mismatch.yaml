@@ -33,11 +33,11 @@ avoidance: |
   - active：文件应包含完整机制实践内容
   - active-prep：文件应包含正在准备的机制实践内容
 applicability: 所有接入 LDVH 的项目，所有事实模型子文档
-superseded_by: docs/specs/03.01-规范文档规范.md
+superseded_by: specs/03.01-规范文档规范.md
 source_objects: []
 related_objects: []
 related_rules:
-- docs/specs/22-Change-变更.md
+- specs/22-Change-变更.md
 tags:
 - subdocument
 - consistency
