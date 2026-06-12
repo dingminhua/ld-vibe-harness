@@ -8,7 +8,6 @@ description: |
   整理 LDVH 工作流程体系，建立 40 工作流索引文档（参考 20 工作模型集合索引），将现有 Skill 映射为待建工作流程，区分"工作流程"和"工作闭环"概念并写入术语规范。
 source: 用户在当前会话中表达
 scope: |
-  历史成功标准（由旧 Intent 迁移保留，不作为工作域完成条件）：
   40 工作流索引文档建立完成；现有 Skill 已映射为待建工作流程；"工作流程"和"工作闭环"术语区分写入 02 术语规范。
 constraints: |
   优先回到规范原文判断；不得凭记忆调整文档结构；涉及 specs、Rules、事实源或长期机制边界变更时按 Human Gate 和 Change 规则执行。
@@ -16,10 +15,3 @@ related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
-legacy_intent:
-  id: intent-0005
-  status: active
-  related_tasks:
-  - task-0023
-  review_requested_at: null
-  closed_at: null

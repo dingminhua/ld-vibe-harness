@@ -6,9 +6,8 @@ created: '2026-06-04'
 updated: '2026-06-05T17:46:06.716786'
 description: |
   围绕 LDVH 项目文档体系进行组织结构重构，先从 50 号文档“工作流基础规范”梳理开始，逐步识别文档定位、编号区段、引用关系、拆分或归并需求，并形成可执行的重构任务链。
-source: 用户在当前会话中要求“新建一个 LDVH项目文档组织重构的意图，第一个任务是梳理 50号文档，工作流规范”。
+source: 用户在当前会话中要求建立 LDVH 项目文档组织重构工作范围，第一个任务是梳理 50 号文档和工作流规范。
 scope: |
-  历史成功标准（由旧 Intent 迁移保留，不作为工作域完成条件）：
   完成 50 号文档梳理并形成后续文档组织重构的任务依据；重构过程中保持 specs 编号、引用边界、事实模型与工作流规范边界清晰；所有事实源变更可验证、可追溯并符合 LDVH Rules / Skill / Change 纪律。
 constraints: |
   优先回到规范原文判断；不得凭记忆调整文档结构；涉及 specs、Rules、事实源或长期机制边界变更时按 Human Gate 和 Change 规则执行。
@@ -16,25 +15,3 @@ related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
-legacy_intent:
-  id: intent-0004
-  status: active
-  related_tasks:
-  - task-0007
-  - task-0008
-  - task-0009
-  - task-0010
-  - task-0011
-  - task-0012
-  - task-0013
-  - task-0014
-  - task-0015
-  - task-0016
-  - task-0017
-  - task-0018
-  - task-0021
-  - task-0024
-  - task-0026
-  - task-0052
-  review_requested_at: null
-  closed_at: null

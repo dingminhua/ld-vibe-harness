@@ -5,40 +5,16 @@ status: archived
 created: '2026-06-05T20:05:33.868116'
 updated: '2026-06-11T06:44:19+08:00'
 description: |
-  早期创建的 13 个任务缺少 source_intent 关联，属于项目初期用户直接指示产生的零散任务。
-  本意图将这些任务收敛归组，建立统一的意图追踪，补齐意图-任务关联关系。
+  早期创建的 13 个任务缺少稳定工作范围关联，属于项目初期用户直接指示产生的零散任务。
+  该范围用于将这些任务收敛归组，建立统一的工作范围追踪，补齐任务归属关系。
   涉及任务：task-0010~0018（文档重编号批次）、task-0024（最佳实践文档）、
   task-0026（工作模型骨架统一）、task-0027（规则机制测试）、task-0028（竞品调研）
-source: AI 审计发现 13 个任务缺少意图关联，用户指示创建收敛意图
+source: AI 审计发现 13 个任务缺少稳定工作范围关联，用户指示创建收敛范围
 scope: |
-  历史成功标准（由旧 Intent 迁移保留，不作为工作域完成条件）：
-  所有 13 个任务的 source_intent 字段指向 intent-0010，
-  意图-任务关联关系完整可查
+  所有 13 个早期零散任务完成工作范围归组，任务归属关系完整可查。
 related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
 archive_reason: |
-  由旧 Intent intent-0010（状态 closed）迁移为工作域后归档。
-
-  历史完成证据：
-  本 Intent 的成功标准是补齐早期零散任务的 source_intent 归组关系，而不是等待所有关联任务完成。原关闭记录表明 task-0010~0018、task-0024、task-0026、task-0027、task-0028 已归组到 intent-0010；本次迁移只补齐新状态机要求的关闭证据字段。
-legacy_intent:
-  id: intent-0010
-  status: closed
-  related_tasks:
-  - task-0010
-  - task-0011
-  - task-0012
-  - task-0013
-  - task-0014
-  - task-0015
-  - task-0016
-  - task-0017
-  - task-0018
-  - task-0024
-  - task-0026
-  - task-0027
-  - task-0028
-  review_requested_at: '2026-06-05T20:20:00'
-  closed_at: '2026-06-05T20:20:00'
+  早期零散任务归组范围已完成收敛，当前不再承载新的任务计划。

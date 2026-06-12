@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, FileText, Code2, Info } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronRight, Code2, FileText, Info, Layers3 } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
@@ -10,7 +10,7 @@ import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
-import { fetchObjectDetail, type ObjectDetail } from '@/utils/api';
+import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedPlanSummary } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusHint, getTypeDescription } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
@@ -59,6 +59,9 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'related_changes', 'superseded_by', 'archive_reason', 'status_history', 'notes',
   ],
 };
+
+const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded']);
+const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
 
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
@@ -208,6 +211,8 @@ export default function ObjectDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
+  const [workareaSummary, setWorkareaSummary] = useState<ObjectItem | null>(null);
+  const [workareaSummaryLoading, setWorkareaSummaryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
   const { t, getStatus, locale } = useI18n();
@@ -216,9 +221,37 @@ export default function ObjectDetail() {
 
   useEffect(() => {
     if (!type || !id) return;
+    let cancelled = false;
+    setDetail(null);
+    setWorkareaSummary(null);
+    setWorkareaSummaryLoading(type === 'workarea');
+    setError(null);
+
     fetchObjectDetail(type, id)
-      .then(setDetail)
-      .catch((e) => setError(e.message));
+      .then((result) => {
+        if (!cancelled) setDetail(result);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e.message);
+      });
+
+    if (type === 'workarea') {
+      fetchObjects('workarea')
+        .then((result) => {
+          if (cancelled) return;
+          setWorkareaSummary(result.data?.items?.find((item) => item.id === id) ?? null);
+        })
+        .catch(() => {
+          if (!cancelled) setWorkareaSummary(null);
+        })
+        .finally(() => {
+          if (!cancelled) setWorkareaSummaryLoading(false);
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
   }, [type, id]);
 
   if (error) {
@@ -246,7 +279,8 @@ export default function ObjectDetail() {
   const objStatus = detail.summary.status;
   const typeColor = CATEGORY_COLORS[objType] || CATEGORY_COLORS.other;
   const typeDesc = getTypeDescription(objType, locale);
-  const statusHint = getObjectStatusHint(objType, objStatus, locale);
+  const statusHint = objType === 'workarea' ? '' : getObjectStatusHint(objType, objStatus, locale);
+  const isWorkArea = objType === 'workarea';
 
   const displayTitle = (locale === 'en'
     ? ((obj.title_en as string) || obj.title as string)
@@ -277,7 +311,7 @@ export default function ObjectDetail() {
     });
   }
 
-  const auxiliaryMetaEntries = getAuxiliaryMetaEntries(obj, objType);
+  const auxiliaryMetaEntries = objType === 'workarea' ? [] : getAuxiliaryMetaEntries(obj, objType);
 
   // 生成真正的 YAML 源码
   const yamlSource = objectToYaml(obj);
@@ -298,50 +332,76 @@ export default function ObjectDetail() {
               <ArrowLeft size={14} />
               {t('objectDetail.back')}
             </button>
-            <div className="flex items-start gap-3">
-              <span
-                className="ldvh-chip mt-1 shrink-0 rounded px-2 py-0.5"
-                style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
-              >
-                {TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
-              </span>
-              <div className="min-w-0 flex-1">
-                <h1 className="ldvh-page-title">{displayTitle}</h1>
-                <p className="ldvh-meta mt-0.5">{objId}</p>
-                {typeDesc && (
-                  <p className="ldvh-caption mt-1">{typeDesc}</p>
-                )}
-              </div>
-              <div className="flex flex-col items-end gap-1.5">
-                <div className="flex items-center gap-2">
-                  <CopyPathButton path={detail.target} />
-                  <StatusBadge status={objStatus} statusLabel={getStatus(objStatus)} size="md" />
+            {isWorkArea ? (
+              <WorkAreaDetailHeader
+                title={displayTitle}
+                id={objId}
+                target={detail.target}
+                status={objStatus}
+                statusLabel={getStatus(objStatus)}
+                typeColor={typeColor}
+                typeLabel={TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
+                created={formatDateTime(obj.created as string | undefined)}
+                updated={formatDateTime(obj.updated as string | undefined)}
+              />
+            ) : (
+              <>
+                <div className="flex items-start gap-3">
+                  <span
+                    className="ldvh-chip mt-1 shrink-0 rounded px-2 py-0.5"
+                    style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
+                  >
+                    {TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h1 className="ldvh-page-title">{displayTitle}</h1>
+                    <p className="ldvh-meta mt-0.5">{objId}</p>
+                    {typeDesc && (
+                      <p className="ldvh-caption mt-1">{typeDesc}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <CopyPathButton path={detail.target} />
+                      <StatusBadge status={objStatus} statusLabel={getStatus(objStatus)} size="md" />
+                    </div>
+                    {statusHint && (
+                      <span className="ldvh-caption">{statusHint}</span>
+                    )}
+                  </div>
                 </div>
-                {statusHint && (
-                  <span className="ldvh-caption">{statusHint}</span>
+                {objStatus === 'review_needed' && (
+                  <div className="mt-3 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                    <Info size={14} className="shrink-0 text-amber-400" />
+                    <span className="ldvh-caption text-amber-300">{t('objectDetail.humanGateTip')}</span>
+                  </div>
                 )}
-              </div>
-            </div>
-            {objStatus === 'review_needed' && (
-              <div className="mt-3 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
-                <Info size={14} className="shrink-0 text-amber-400" />
-                <span className="ldvh-caption text-amber-300">{t('objectDetail.humanGateTip')}</span>
-              </div>
+              </>
             )}
           </div>
 
           {/* Metadata row */}
-          <div className="mb-6 flex flex-wrap gap-2">
-            <MetaChip label={t('objectDetail.created')} value={formatDateTime(obj.created as string | undefined)} />
-            <MetaChip label={t('objectDetail.updated')} value={formatDateTime(obj.updated as string | undefined)} />
-            {obj.closed_at && <MetaChip label={t('objectDetail.closedAt')} value={formatDateTime(obj.closed_at as string)} />}
-            {auxiliaryMetaEntries.map(([key, value]) => (
-              <MetaChip key={key} label={getFieldLabel(key, locale)} value={formatAuxiliaryMetaValue(key, value, locale)} />
-            ))}
-          </div>
+          {!isWorkArea && (
+            <div className="mb-6 flex flex-wrap gap-2">
+              <MetaChip label={t('objectDetail.created')} value={formatDateTime(obj.created as string | undefined)} />
+              <MetaChip label={t('objectDetail.updated')} value={formatDateTime(obj.updated as string | undefined)} />
+              {obj.closed_at && <MetaChip label={t('objectDetail.closedAt')} value={formatDateTime(obj.closed_at as string)} />}
+              {auxiliaryMetaEntries.map(([key, value]) => (
+                <MetaChip key={key} label={getFieldLabel(key, locale)} value={formatAuxiliaryMetaValue(key, value, locale)} />
+              ))}
+            </div>
+          )}
 
           {/* Content fields */}
-          {objType === 'task' || objType === 'subtask' ? (
+          {objType === 'workarea' ? (
+            <WorkAreaReadingLayout
+              obj={obj}
+              summary={workareaSummary}
+              loading={workareaSummaryLoading}
+              locale={locale}
+              getStatus={getStatus}
+            />
+          ) : objType === 'task' || objType === 'subtask' ? (
             <TaskReadingLayout obj={obj} locale={locale} objType={objType} />
           ) : (
             <div className="mb-6 flex flex-col gap-5">
@@ -406,6 +466,394 @@ export default function ObjectDetail() {
       </div>
 
       {/* Right reading panel */}
+    </div>
+  );
+}
+
+type LocalizedTitleItem = {
+  id: string;
+  title?: string;
+  title_en?: string;
+  title_zh?: string;
+};
+
+function getLocalizedTitle(item: LocalizedTitleItem, locale: string): string {
+  if (locale === 'en') return item.title_en || item.title || item.id;
+  return item.title_zh || item.title || item.id;
+}
+
+function WorkAreaDetailHeader({
+  title,
+  id,
+  target,
+  status,
+  statusLabel,
+  typeColor,
+  typeLabel,
+  created,
+  updated,
+}: {
+  title: string;
+  id: string;
+  target?: string;
+  status: string;
+  statusLabel: string;
+  typeColor: string;
+  typeLabel: string;
+  created: string;
+  updated: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-3">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span
+              className="ldvh-chip shrink-0 rounded px-2 py-0.5"
+              style={{ backgroundColor: `${typeColor}18`, color: typeColor }}
+            >
+              {typeLabel}
+            </span>
+            <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
+          </div>
+          <h1 className="ldvh-page-title min-w-0 break-words">{title}</h1>
+          <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+            <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />
+            <HeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2 sm:pt-0.5">
+          <StatusBadge status={status} statusLabel={statusLabel} size="md" />
+          <CopyPathButton path={target} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeaderDateMeta({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-1.5">
+      <span className="ldvh-caption shrink-0">{label}</span>
+      <span className="ldvh-meta-muted min-w-0 truncate text-ldvh-text-secondary">{value}</span>
+    </span>
+  );
+}
+
+function isDetailTerminalStatus(status: string): boolean {
+  return DETAIL_TERMINAL_STATUSES.has(status);
+}
+
+function isDetailPendingCloseStatus(status: string): boolean {
+  return DETAIL_PENDING_CLOSE_STATUSES.has(status);
+}
+
+function WorkAreaReadingLayout({
+  obj,
+  summary,
+  loading,
+  locale,
+  getStatus,
+}: {
+  obj: Record<string, unknown>;
+  summary: ObjectItem | null;
+  loading: boolean;
+  locale: string;
+  getStatus: (status: string) => string;
+}) {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const plans = summary?.plans ?? [];
+  const activePlans = plans.filter((plan) => !isDetailPendingCloseStatus(plan.status) && !isDetailTerminalStatus(plan.status));
+  const pendingClosePlans = plans.filter((plan) => isDetailPendingCloseStatus(plan.status));
+  const closedPlans = plans.filter((plan) => isDetailTerminalStatus(plan.status));
+  const hasRelatedMaterials = [
+    obj.related_docs,
+    obj.related_adrs,
+    obj.related_memos,
+    obj.related_pitfalls,
+  ].some((value) => Array.isArray(value) && value.length > 0);
+
+  const openPlan = (plan: RelatedPlanSummary) => {
+    navigate(`/objects/taskplan/${plan.id}`);
+  };
+
+  return (
+    <div className="mb-6 flex flex-col gap-5">
+      <WorkAreaSection title={t('objectDetail.workareaPlanOverview')} icon={<Layers3 size={14} className="text-ldvh-accent" />}>
+        <div className="mb-3 flex flex-wrap gap-2">
+          <PlanCountPill tone="active" label={t('objectList.activePlanCount', { count: String(activePlans.length) })} loading={loading} />
+          <PlanCountPill tone="review" label={t('objectList.pendingClosePlanCount', { count: String(pendingClosePlans.length) })} loading={loading} />
+          <PlanCountPill tone="closed" label={t('objectList.closedPlanCount', { count: String(summary?.planClosed ?? closedPlans.length) })} loading={loading} />
+        </div>
+
+        {loading ? (
+          <div className="rounded-md border border-dashed border-ldvh-border bg-ldvh-bg/50 px-3 py-6 text-center">
+            <span className="ldvh-body-muted">{t('objectDetail.workareaPlansLoading')}</span>
+          </div>
+        ) : plans.length === 0 ? (
+          <div className="rounded-md border border-dashed border-ldvh-border bg-ldvh-bg/50 px-3 py-6 text-center">
+            <span className="ldvh-body-muted">{t('objectList.noPlans')}</span>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {activePlans.length > 0 && (
+              <WorkAreaPlanGroup
+                title={t('objectList.activePlanCount', { count: String(activePlans.length) })}
+                tone="active"
+                plans={activePlans}
+                locale={locale}
+                getStatus={getStatus}
+                onOpen={openPlan}
+              />
+            )}
+            {pendingClosePlans.length > 0 && (
+              <WorkAreaPlanGroup
+                title={t('objectList.pendingClosePlanCount', { count: String(pendingClosePlans.length) })}
+                tone="review"
+                plans={pendingClosePlans}
+                locale={locale}
+                getStatus={getStatus}
+                onOpen={openPlan}
+              />
+            )}
+            {closedPlans.length > 0 && (
+              <WorkAreaPlanGroup
+                title={t('objectList.closedPlanCount', { count: String(summary?.planClosed ?? closedPlans.length) })}
+                tone="closed"
+                plans={closedPlans}
+                locale={locale}
+                getStatus={getStatus}
+                onOpen={openPlan}
+                defaultCollapsed
+              />
+            )}
+          </div>
+        )}
+      </WorkAreaSection>
+
+      <WorkAreaSection title={t('objectDetail.workareaDefinition')} icon={<FileText size={14} className="text-ldvh-accent" />}>
+        <div className="divide-y divide-ldvh-border/70">
+          <DefinitionRow label={t('objectDetail.workareaGoal')} value={obj.description} />
+          <DefinitionRow label={getFieldLabel('source', locale)} value={obj.source} muted />
+          <DefinitionRow label={getFieldLabel('scope', locale)} value={obj.scope} />
+          <DefinitionRow label={getFieldLabel('constraints', locale)} value={obj.constraints} emphasis />
+        </div>
+      </WorkAreaSection>
+
+      {hasRelatedMaterials && (
+        <WorkAreaSection title={t('objectDetail.workareaRelatedMaterials')}>
+          <div className="divide-y divide-ldvh-border/70">
+            <MaterialRow fieldKey="related_docs" value={obj.related_docs} locale={locale} />
+            <MaterialRow fieldKey="related_adrs" value={obj.related_adrs} locale={locale} />
+            <MaterialRow fieldKey="related_memos" value={obj.related_memos} locale={locale} />
+            <MaterialRow fieldKey="related_pitfalls" value={obj.related_pitfalls} locale={locale} />
+          </div>
+        </WorkAreaSection>
+      )}
+    </div>
+  );
+}
+
+function WorkAreaSection({ title, icon, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
+  return (
+    <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+      <h2 className="ldvh-section-title mb-3 flex min-w-0 items-center gap-2">
+        {icon ?? <span className="h-1.5 w-1.5 rounded-full bg-ldvh-accent" />}
+        <span className="min-w-0 truncate">{title}</span>
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function PlanCountPill({ label, tone, loading }: { label: string; tone: 'active' | 'review' | 'closed'; loading: boolean }) {
+  const toneClass = {
+    active: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+    review: 'border-violet-500/30 bg-violet-500/10 text-violet-400',
+    closed: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
+  }[tone];
+
+  return (
+    <span className={`ldvh-chip inline-flex min-h-7 items-center rounded-full border px-2.5 py-1 ${toneClass}`}>
+      {loading ? (
+        <span aria-hidden="true" className="inline-flex items-center gap-0.5 px-1">
+          <span className="h-1 w-1 animate-pulse rounded-full bg-current opacity-35" />
+          <span className="h-1 w-1 animate-pulse rounded-full bg-current opacity-35 [animation-delay:150ms]" />
+          <span className="h-1 w-1 animate-pulse rounded-full bg-current opacity-35 [animation-delay:300ms]" />
+        </span>
+      ) : (
+        label
+      )}
+    </span>
+  );
+}
+
+function WorkAreaPlanGroup({
+  title,
+  tone,
+  plans,
+  locale,
+  getStatus,
+  onOpen,
+  defaultCollapsed = false,
+}: {
+  title: string;
+  tone: 'active' | 'review' | 'closed';
+  plans: RelatedPlanSummary[];
+  locale: string;
+  getStatus: (status: string) => string;
+  onOpen: (plan: RelatedPlanSummary) => void;
+  defaultCollapsed?: boolean;
+}) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const toneClass = {
+    active: {
+      section: 'border-emerald-500/30 bg-emerald-500/5',
+      header: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+      row: 'hover:bg-emerald-500/10',
+      icon: 'text-emerald-400',
+    },
+    review: {
+      section: 'border-violet-500/30 bg-violet-500/5',
+      header: 'border-violet-500/30 bg-violet-500/10 text-violet-400',
+      row: 'hover:bg-violet-500/10',
+      icon: 'text-violet-400',
+    },
+    closed: {
+      section: 'border-ldvh-border bg-ldvh-bg/60',
+      header: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
+      row: 'hover:bg-ldvh-border/35',
+      icon: 'text-ldvh-text-secondary',
+    },
+  }[tone];
+
+  return (
+    <div className={`min-w-0 overflow-hidden rounded-md border ${toneClass.section}`}>
+      <button
+        type="button"
+        onClick={() => setCollapsed((value) => !value)}
+        className={`ldvh-caption-strong flex w-full min-w-0 items-center gap-2 border px-3 py-2 text-left ${toneClass.header}`}
+      >
+        <Layers3 size={13} className="shrink-0" />
+        <span className="min-w-0 flex-1 truncate">{title}</span>
+        {collapsed ? <ChevronRight size={13} className="shrink-0" /> : <ChevronDown size={13} className="shrink-0" />}
+      </button>
+      {!collapsed && (
+        <div className="divide-y divide-ldvh-border/60 px-1 py-1">
+          {plans.map((plan) => (
+            <WorkAreaPlanRow
+              key={plan.id}
+              plan={plan}
+              locale={locale}
+              getStatus={getStatus}
+              toneClass={toneClass}
+              onOpen={onOpen}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WorkAreaPlanRow({
+  plan,
+  locale,
+  getStatus,
+  toneClass,
+  onOpen,
+}: {
+  plan: RelatedPlanSummary;
+  locale: string;
+  getStatus: (status: string) => string;
+  toneClass: { row: string; icon: string };
+  onOpen: (plan: RelatedPlanSummary) => void;
+}) {
+  const { t } = useI18n();
+  const open = () => onOpen(plan);
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={open}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          open();
+        }
+      }}
+      className={`group/workarea-plan-row flex min-w-0 cursor-pointer items-start gap-3 rounded-md px-2 py-2.5 text-left transition-colors ${toneClass.row}`}
+    >
+      <div className="min-w-0 flex-1">
+        <span className="ldvh-card-title block min-w-0 truncate transition-colors group-hover/workarea-plan-row:text-ldvh-accent">
+          {getLocalizedTitle(plan, locale)}
+        </span>
+        <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="ldvh-meta-muted min-w-0 truncate">{plan.id}</span>
+          <span className="ldvh-caption">{formatDateTime(plan.updated)}</span>
+        </div>
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          <RecordStateChip label={t('objectList.successCriteria')} recorded={plan.hasSuccessCriteria} />
+          <RecordStateChip label={t('objectList.completionEvidence')} recorded={plan.hasCompletionEvidence} />
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <StatusBadge status={plan.status} statusLabel={getStatus(plan.status)} />
+        <CopyPathButton path={plan.path} />
+        <ArrowRight size={14} className={`transition-transform group-hover/workarea-plan-row:translate-x-0.5 ${toneClass.icon}`} />
+      </div>
+    </div>
+  );
+}
+
+function RecordStateChip({ label, recorded }: { label: string; recorded: boolean }) {
+  const { t } = useI18n();
+  return (
+    <span
+      className={`ldvh-chip rounded-full border px-2 py-0.5 ${
+        recorded
+          ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
+          : 'border-amber-500/25 bg-amber-500/10 text-amber-400'
+      }`}
+    >
+      {label} · {recorded ? t('objectList.hasRecord') : t('objectList.missingRecord')}
+    </span>
+  );
+}
+
+function DefinitionRow({
+  label,
+  value,
+  muted = false,
+  emphasis = false,
+}: {
+  label: string;
+  value: unknown;
+  muted?: boolean;
+  emphasis?: boolean;
+}) {
+  if (!value || (typeof value === 'string' && value.trim().length === 0)) return null;
+  return (
+    <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]">
+      <div className="ldvh-caption-strong text-ldvh-text-secondary">{label}</div>
+      <div className={`min-w-0 ${muted ? 'opacity-85' : ''} ${emphasis ? 'rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2' : ''}`}>
+        <SummaryText value={String(value)} />
+      </div>
+    </div>
+  );
+}
+
+function MaterialRow({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  return (
+    <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]">
+      <div className="ldvh-caption-strong text-ldvh-text-secondary">{getFieldLabel(fieldKey, locale)}</div>
+      <div className="min-w-0">
+        <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />
+      </div>
     </div>
   );
 }
