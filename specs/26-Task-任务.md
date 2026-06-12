@@ -224,8 +224,8 @@ Web 可以展示 Task，但应把 TaskPlan 作为 Human 直接确认和关闭审
 | 检查项 | 标准 |
 |---|---|
 | 任务计划归属 | 每个 Task 必须引用一个存在的 TaskPlan |
-| 无旧子任务字段 | Task 不包含 `parent_task`、`sub_tasks` |
-| 无旧 Intent 字段 | Task 不包含 `source_intent` |
+| 无子任务冗余字段 | Task 不包含 `parent_task`、`sub_tasks` |
+| 无 Intent 字段 | Task 不包含 `source_intent` |
 | 前置依赖 | `blocked_by` 只引用同一任务计划内 Task |
 | 关闭证据 | closed Task 具备验证和关闭证据 |
 
