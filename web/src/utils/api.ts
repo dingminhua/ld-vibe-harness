@@ -74,6 +74,46 @@ export interface ObjectItem {
   priority?: string;
   severity?: string;
   repeatability?: string;
+  plans?: RelatedPlanSummary[];
+  planTotal?: number;
+  planClosed?: number;
+  planReviewNeeded?: number;
+  planActive?: number;
+  planRisk?: number;
+  planByStatus?: Record<string, number>;
+  tasks?: RelatedObjectSummary[];
+  taskTotal?: number;
+  taskClosed?: number;
+  taskReviewNeeded?: number;
+  taskActive?: number;
+  taskRisk?: number;
+  taskByStatus?: Record<string, number>;
+  hasSuccessCriteria?: boolean;
+  hasCompletionEvidence?: boolean;
+  workarea?: string;
+}
+
+export interface RelatedObjectSummary {
+  id: string;
+  type: string;
+  title: string;
+  title_en?: string;
+  title_zh?: string;
+  status: string;
+  path: string;
+  updated: string;
+}
+
+export interface RelatedPlanSummary extends RelatedObjectSummary {
+  workarea?: string;
+  taskTotal: number;
+  taskClosed: number;
+  taskReviewNeeded: number;
+  taskActive: number;
+  taskRisk: number;
+  tasks: RelatedObjectSummary[];
+  hasSuccessCriteria: boolean;
+  hasCompletionEvidence: boolean;
 }
 
 export interface ObjectDetail {

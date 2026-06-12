@@ -2,7 +2,6 @@ import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import {
   LayoutDashboard,
-  Target,
   Layers,
   GitBranch,
   Shield,
@@ -30,8 +29,6 @@ const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: s
   { to: '/workbench', labelKey: 'nav.workbench', icon: FlaskConical },
   { to: '/objects/workarea', labelKey: 'nav.workareas', icon: Layers },
   { to: '/objects/taskplan', labelKey: 'nav.taskplans', icon: ClipboardList },
-  { to: '/objects/task', labelKey: 'nav.tasks', icon: Target },
-  { to: '/objects/subtask', labelKey: 'nav.subtasks', icon: GitBranch },
   { to: '/objects/adr', labelKey: 'nav.adrs', icon: GitBranch },
   { to: '/objects/pitfall', labelKey: 'nav.pitfalls', icon: Bug },
   { to: '/objects/memo', labelKey: 'nav.memos', icon: StickyNote },
