@@ -1,12 +1,14 @@
 import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, BadgeCheck, CheckCircle2, CircleAlert, CircleDashed, CirclePlay, Clock3, ClipboardCheck, Flag, GitBranch, Hourglass, Layers3, MapPinned } from 'lucide-react';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck, Flag, GitBranch, Layers3, ListTree, MapPinned } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
 import MemoCreate from '@/components/MemoCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
-import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary } from '@/utils/api';
+import { TaskFlowBar, TaskFlowLegend, TaskFlowMarker } from '@/components/TaskFlowStatus';
+import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks } from '@/utils/taskFlowStatus';
+import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
@@ -21,8 +23,6 @@ type PlanRecordState = 'recorded' | 'missing';
 
 const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded']);
 const PENDING_CLOSE_STATUSES = new Set(['review_needed']);
-const TASK_RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected', 'deprecated', 'unknown']);
-
 const TITLE_ACCENT_CLASS: Record<string, string> = {
   active: 'border-emerald-400/80',
   executing: 'border-emerald-400/80',
@@ -68,129 +68,6 @@ function handleKeyboardOpen(event: KeyboardEvent<HTMLElement>, onOpen: () => voi
   }
 }
 
-const taskFlowToneClass = {
-  ready: 'border-sky-500/25 bg-sky-500/10 text-sky-500',
-  executing: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
-  verifying: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
-  absorbing: 'border-violet-500/30 bg-violet-500/10 text-violet-500',
-  closed: 'border-zinc-500/30 bg-zinc-500/10 text-ldvh-text-secondary',
-  blocked: 'border-amber-500/35 bg-amber-500/10 text-amber-500',
-  risk: 'border-red-500/30 bg-red-500/10 text-red-500',
-  neutral: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
-};
-
-type TaskFlowTone = keyof typeof taskFlowToneClass;
-
-const TASK_FLOW_ORDER: TaskFlowTone[] = ['ready', 'executing', 'verifying', 'absorbing', 'closed', 'blocked', 'risk', 'neutral'];
-const TASK_FLOW_LEGEND_ORDER: TaskFlowTone[] = ['ready', 'executing', 'verifying', 'absorbing', 'closed', 'blocked'];
-
-const taskFlowBarClass: Record<TaskFlowTone, string> = {
-  ready: 'bg-sky-500',
-  executing: 'bg-emerald-500',
-  verifying: 'bg-blue-500',
-  absorbing: 'bg-violet-500',
-  closed: 'bg-zinc-500',
-  blocked: 'bg-amber-500',
-  risk: 'bg-red-500',
-  neutral: 'bg-ldvh-border',
-};
-
-const taskFlowIconClass: Record<TaskFlowTone, string> = {
-  ready: 'text-sky-500',
-  executing: 'text-emerald-500',
-  verifying: 'text-blue-400',
-  absorbing: 'text-violet-500',
-  closed: 'text-zinc-500',
-  blocked: 'text-amber-500',
-  risk: 'text-red-500',
-  neutral: 'text-ldvh-text-secondary',
-};
-
-function getTaskFlowIcon(tone: TaskFlowTone) {
-  if (tone === 'ready') return CircleDashed;
-  if (tone === 'executing') return CirclePlay;
-  if (tone === 'verifying') return ClipboardCheck;
-  if (tone === 'absorbing') return BadgeCheck;
-  if (tone === 'blocked') return Hourglass;
-  if (tone === 'closed') return CheckCircle2;
-  if (tone === 'risk') return CircleAlert;
-  return Clock3;
-}
-
-function isTaskWaitingForBlocker(item: RelatedObjectSummary): boolean {
-  return item.status === 'planned' && (item.openBlockers?.length ?? 0) > 0;
-}
-
-function getTaskFlowTone(item: RelatedObjectSummary): TaskFlowTone {
-  if (isTaskWaitingForBlocker(item)) return 'blocked';
-  if (item.status === 'executing') return 'executing';
-  if (item.status === 'verifying') return 'verifying';
-  if (isPendingCloseStatus(item.status)) return 'absorbing';
-  if (isTerminalStatus(item.status)) return 'closed';
-  if (item.status === 'planned') return 'ready';
-  if (TASK_RISK_STATUSES.has(item.status)) return 'risk';
-  return 'neutral';
-}
-
-function getTaskFlowLabel(item: RelatedObjectSummary, t: Translate, getStatus: (status: string) => string): string {
-  const tone = getTaskFlowTone(item);
-  if (tone === 'blocked') return t('objectList.taskFlowBlocked');
-  if (tone === 'executing') return t('objectList.taskFlowExecuting');
-  if (tone === 'verifying') return t('objectList.taskFlowVerifying');
-  if (tone === 'absorbing') return t('objectList.taskFlowAbsorbing');
-  if (tone === 'closed') return getStatus(item.status);
-  if (tone === 'ready') return t('objectList.taskFlowReady');
-  return getStatus(item.status);
-}
-
-function getTaskFlowToneLabel(tone: TaskFlowTone, t: Translate, getStatus: (status: string) => string): string {
-  if (tone === 'blocked') return t('objectList.taskFlowBlocked');
-  if (tone === 'executing') return t('objectList.taskFlowExecuting');
-  if (tone === 'verifying') return t('objectList.taskFlowVerifying');
-  if (tone === 'absorbing') return t('objectList.taskFlowAbsorbing');
-  if (tone === 'closed') return getStatus('closed');
-  if (tone === 'ready') return t('objectList.taskFlowReady');
-  if (tone === 'risk') return t('objectList.taskFlowRisk');
-  return t('objectList.taskFlowOther');
-}
-
-function getTaskFlowCounts(tasks: RelatedObjectSummary[]): Record<TaskFlowTone, number> {
-  return tasks.reduce<Record<TaskFlowTone, number>>((counts, task) => {
-    const tone = getTaskFlowTone(task);
-    counts[tone] += 1;
-    return counts;
-  }, {
-    ready: 0,
-    executing: 0,
-    verifying: 0,
-    absorbing: 0,
-    blocked: 0,
-    closed: 0,
-    risk: 0,
-    neutral: 0,
-  });
-}
-
-function getTaskFlowPriority(item: RelatedObjectSummary): number {
-  const tone = getTaskFlowTone(item);
-  if (tone === 'executing') return 0;
-  if (tone === 'verifying') return 1;
-  if (tone === 'absorbing') return 2;
-  if (tone === 'blocked') return 3;
-  if (tone === 'ready') return 4;
-  if (tone === 'risk') return 5;
-  if (tone === 'closed') return 8;
-  return 5;
-}
-
-function sortPlanTasks(tasks: RelatedObjectSummary[]): RelatedObjectSummary[] {
-  return [...tasks].sort((a, b) => {
-    const priorityDelta = getTaskFlowPriority(a) - getTaskFlowPriority(b);
-    if (priorityDelta !== 0) return priorityDelta;
-    return a.id.localeCompare(b.id);
-  });
-}
-
 function getPlanRecordStateLabel(state: PlanRecordState, t: Translate): string {
   if (state === 'recorded') return t('objectList.hasRecord');
   return t('objectList.missingRecord');
@@ -222,80 +99,6 @@ function PlanRecordItem({ label, state, t }: { label: string; state: PlanRecordS
   );
 }
 
-function TaskFlowBar({
-  tasks,
-  t,
-  getStatus,
-}: {
-  tasks: RelatedObjectSummary[];
-  t: Translate;
-  getStatus: (status: string) => string;
-}) {
-  const total = tasks.length;
-  const counts = getTaskFlowCounts(tasks);
-  const entries = TASK_FLOW_ORDER
-    .map((tone) => ({
-      tone,
-      count: counts[tone],
-      label: getTaskFlowToneLabel(tone, t, getStatus),
-    }))
-    .filter((entry) => entry.count > 0);
-  const summary = entries.length > 0
-    ? entries.map((entry) => t('objectList.taskFlowCount', { status: entry.label, count: String(entry.count) })).join(' · ')
-    : t('objectList.noTasks');
-
-  return (
-    <div className="min-w-0" role="group" aria-label={summary} title={summary}>
-      <div className="flex h-2.5 min-w-0 rounded-full bg-ldvh-border/45">
-        {entries.length > 0 ? (
-          entries.map((entry, index) => {
-            const tooltip = t('objectList.taskFlowCount', { status: entry.label, count: String(entry.count) });
-            const roundedClass = entries.length === 1
-              ? 'rounded-full'
-              : `${index === 0 ? 'rounded-l-full' : ''} ${index === entries.length - 1 ? 'rounded-r-full' : ''}`;
-            return (
-              <div
-                key={entry.tone}
-                tabIndex={0}
-                aria-label={tooltip}
-                title={tooltip}
-                data-tooltip={tooltip}
-                className={`relative h-full min-w-1 outline-none transition-[filter] after:pointer-events-none after:absolute after:bottom-full after:left-1/2 after:z-20 after:mb-1 after:hidden after:-translate-x-1/2 after:whitespace-nowrap after:rounded-md after:border after:border-ldvh-border after:bg-ldvh-panel after:px-2 after:py-1 after:text-xs after:leading-5 after:text-ldvh-text-primary after:shadow-lg after:shadow-black/20 after:content-[attr(data-tooltip)] hover:brightness-110 hover:after:block focus:after:block focus-visible:ring-2 focus-visible:ring-ldvh-accent/70 ${taskFlowBarClass[entry.tone]} ${roundedClass}`}
-                style={{ width: `${(entry.count / total) * 100}%` }}
-              />
-            );
-          })
-        ) : (
-          <div className="h-full w-full rounded-full bg-ldvh-border/45" />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function TaskFlowLegend({
-  t,
-  getStatus,
-}: {
-  t: Translate;
-  getStatus: (status: string) => string;
-}) {
-  return (
-    <div className="flex min-h-7 flex-wrap items-center justify-end gap-x-2.5 gap-y-1" aria-label={t('objectList.taskFlowLegend')}>
-      {TASK_FLOW_LEGEND_ORDER.map((tone) => {
-        const label = getTaskFlowToneLabel(tone, t, getStatus);
-        const Icon = getTaskFlowIcon(tone);
-        return (
-          <span key={tone} className="ldvh-caption inline-flex items-center gap-1.5 text-ldvh-text-secondary">
-            <Icon size={12} strokeWidth={2.2} className={taskFlowIconClass[tone]} />
-            <span>{label}</span>
-          </span>
-        );
-      })}
-    </div>
-  );
-}
-
 const workAreaSectionToneClass = {
   active: {
     section: 'border-emerald-500/30 bg-emerald-500/5',
@@ -321,14 +124,19 @@ function WorkAreaPlanRow({
   item,
   locale,
   tone,
+  t,
+  getStatus,
   onOpen,
 }: {
-  item: RelatedObjectSummary;
+  item: RelatedPlanSummary;
   locale: string;
   tone: keyof typeof workAreaSectionToneClass;
+  t: Translate;
+  getStatus: (status: string) => string;
   onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
 }) {
   const toneClass = workAreaSectionToneClass[tone];
+  const tasks = item.tasks ?? [];
 
   return (
     <div
@@ -336,16 +144,23 @@ function WorkAreaPlanRow({
       tabIndex={0}
       onClick={(event) => onOpen(event, item)}
       onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-      className={`group/workarea-row flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left transition-colors ${toneClass.rowHover}`}
+      className={`group/workarea-row flex min-w-0 cursor-pointer flex-col gap-1.5 rounded-md px-2 py-2 text-left transition-colors ${toneClass.rowHover}`}
     >
-      <div className="min-w-0 flex-1">
-        <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/workarea-row:text-ldvh-accent">
-          {getLocalizedTitle(item, locale)}
-        </span>
-        <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
+      <div className="flex min-w-0 items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/workarea-row:text-ldvh-accent">
+            {getLocalizedTitle(item, locale)}
+          </span>
+          <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
+        </div>
+        <CopyPathButton path={item.path} />
+        <ArrowRight size={14} className={`shrink-0 transition-transform group-hover/workarea-row:translate-x-0.5 ${toneClass.icon}`} />
       </div>
-      <CopyPathButton path={item.path} />
-      <ArrowRight size={14} className={`shrink-0 transition-transform group-hover/workarea-row:translate-x-0.5 ${toneClass.icon}`} />
+      {tasks.length > 0 && (
+        <div className="min-w-0 self-stretch">
+          <TaskFlowBar tasks={tasks} t={t} getStatus={getStatus} compact />
+        </div>
+      )}
     </div>
   );
 }
@@ -355,12 +170,16 @@ function WorkAreaPlanSection({
   plans,
   locale,
   tone,
+  t,
+  getStatus,
   onOpen,
 }: {
   title: string;
-  plans?: RelatedObjectSummary[];
+  plans?: RelatedPlanSummary[];
   locale: string;
   tone: keyof typeof workAreaSectionToneClass;
+  t: Translate;
+  getStatus: (status: string) => string;
   onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
 }) {
   const toneClass = workAreaSectionToneClass[tone];
@@ -379,6 +198,8 @@ function WorkAreaPlanSection({
               item={plan}
               locale={locale}
               tone={tone}
+              t={t}
+              getStatus={getStatus}
               onOpen={onOpen}
             />
           ))}
@@ -388,26 +209,7 @@ function WorkAreaPlanSection({
   );
 }
 
-function TaskFlowMarker({
-  tone,
-  label,
-}: {
-  tone: TaskFlowTone;
-  label: string;
-}) {
-  const Icon = getTaskFlowIcon(tone);
-  return (
-    <span
-      aria-label={label}
-      title={label}
-      className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border ${taskFlowToneClass[tone]}`}
-    >
-      <Icon size={14} strokeWidth={2.2} />
-    </span>
-  );
-}
-
-function TaskQueueRow({
+function SubtaskQueueRow({
   item,
   locale,
   getStatus,
@@ -429,17 +231,110 @@ function TaskQueueRow({
       tabIndex={0}
       onClick={(event) => onOpen(event, item)}
       onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-      className="group/row flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/35"
+      className="group/subtask flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-ldvh-border/35"
     >
-      <div className="min-w-0 flex-1">
-        <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/row:text-ldvh-accent">
-          {getLocalizedTitle(item, locale)}
+      <TaskFlowMarker tone={flowTone} label={flowLabel} compact />
+      <span className="ldvh-caption min-w-0 flex-1 truncate text-ldvh-text-primary/85 transition-colors group-hover/subtask:text-ldvh-accent">
+        {getLocalizedTitle(item, locale)}
+      </span>
+      <span className="ldvh-meta-muted ml-auto shrink-0 text-right">{item.id}</span>
+      <ArrowRight size={12} className="shrink-0 text-ldvh-text-secondary transition-colors group-hover/subtask:text-ldvh-accent" />
+    </div>
+  );
+}
+
+function SubtaskQueue({
+  subtasks,
+  locale,
+  getStatus,
+  t,
+  onOpen,
+}: {
+  subtasks: RelatedObjectSummary[];
+  locale: string;
+  getStatus: (status: string) => string;
+  t: Translate;
+  onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
+}) {
+  const orderedSubtasks = sortPlanTasks(subtasks);
+  const visibleSubtasks = orderedSubtasks.slice(0, 5);
+  const moreCount = Math.max(0, orderedSubtasks.length - visibleSubtasks.length);
+
+  return (
+    <div className="ml-5 min-w-0 border-l border-ldvh-border/70 pb-2 pl-3 pr-2">
+      <div className="mb-1.5 flex min-w-0 items-center gap-2">
+        <span className="ldvh-meta-muted inline-flex min-w-0 shrink-0 items-center gap-1.5">
+          <ListTree size={12} className="shrink-0 text-ldvh-text-secondary" />
+          <span>{t('objectList.subtaskCount', { count: String(subtasks.length) })}</span>
         </span>
-        <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
+        <div className="min-w-[4rem] flex-1">
+          <TaskFlowBar tasks={subtasks} t={t} getStatus={getStatus} />
+        </div>
       </div>
-      <TaskFlowMarker tone={flowTone} label={flowLabel} />
-      <CopyPathButton path={item.path} />
-      <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-colors group-hover/row:text-ldvh-accent" />
+      <div className="grid min-w-0 gap-0.5">
+        {visibleSubtasks.map((subtask) => (
+          <SubtaskQueueRow
+            key={subtask.id}
+            item={subtask}
+            locale={locale}
+            getStatus={getStatus}
+            t={t}
+            onOpen={onOpen}
+          />
+        ))}
+      </div>
+      {moreCount > 0 && (
+        <span className="ldvh-caption mt-1.5 block px-1.5 text-ldvh-text-secondary">{t('objectList.moreSubtasks', { count: String(moreCount) })}</span>
+      )}
+    </div>
+  );
+}
+
+function TaskQueueRow({
+  item,
+  locale,
+  getStatus,
+  t,
+  onOpen,
+}: {
+  item: RelatedObjectSummary;
+  locale: string;
+  getStatus: (status: string) => string;
+  t: Translate;
+  onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
+}) {
+  const flowTone = getTaskFlowTone(item);
+  const flowLabel = getTaskFlowLabel(item, t, getStatus);
+  const subtasks = item.subtasks ?? [];
+
+  return (
+    <div className="min-w-0 rounded-md transition-colors">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={(event) => onOpen(event, item)}
+        onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
+        className="group/row flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/35"
+      >
+        <div className="min-w-0 flex-1">
+          <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/row:text-ldvh-accent">
+            {getLocalizedTitle(item, locale)}
+          </span>
+          <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
+        </div>
+        <TaskFlowMarker tone={flowTone} label={flowLabel} />
+        <CopyPathButton path={item.path} />
+        <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-colors group-hover/row:text-ldvh-accent" />
+      </div>
+      {subtasks.length > 0 && (
+        <SubtaskQueue
+          subtasks={subtasks}
+          locale={locale}
+          getStatus={getStatus}
+          t={t}
+          onOpen={onOpen}
+        />
+      )}
     </div>
   );
 }
@@ -536,6 +431,7 @@ function ObjectCardFrame({
 export default function ObjectList() {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState<ObjectItem[]>([]);
   const [statusOptions, setStatusOptions] = useState<ObjectStatusOption[]>([]);
@@ -572,14 +468,19 @@ export default function ObjectList() {
   };
 
   const detailSearch = searchParams.toString();
+  const returnToListPath = `${location.pathname}${location.search}`;
   const openObject = (objId: string) => {
-    navigate(`/objects/${currentType}/${objId}${detailSearch ? `?${detailSearch}` : ''}`);
+    navigate(`/objects/${currentType}/${objId}${detailSearch ? `?${detailSearch}` : ''}`, {
+      state: { from: returnToListPath },
+    });
   };
 
   const openRelatedObject = (event: OpenEvent, item: RelatedObjectSummary) => {
     event.preventDefault();
     event.stopPropagation();
-    navigate(`/objects/${item.type}/${item.id}`);
+    navigate(`/objects/${item.type}/${item.id}`, {
+      state: { from: returnToListPath },
+    });
   };
 
   const renderObjectCard = (obj: ObjectItem) => {
@@ -605,6 +506,8 @@ export default function ObjectList() {
                   plans={activePlans}
                   locale={locale}
                   tone="active"
+                  t={t}
+                  getStatus={getStatus}
                   onOpen={openRelatedObject}
                 />
               )}
@@ -614,6 +517,8 @@ export default function ObjectList() {
                   plans={reviewPlans}
                   locale={locale}
                   tone="review"
+                  t={t}
+                  getStatus={getStatus}
                   onOpen={openRelatedObject}
                 />
               )}
@@ -622,6 +527,8 @@ export default function ObjectList() {
                   title={t('objectList.closedPlanCount', { count: String(closedPlanCount) })}
                   locale={locale}
                   tone="closed"
+                  t={t}
+                  getStatus={getStatus}
                   onOpen={openRelatedObject}
                 />
               )}
@@ -634,7 +541,7 @@ export default function ObjectList() {
     if (currentType === 'taskplan') {
       const tasks = obj.tasks ?? [];
       const orderedTasks = sortPlanTasks(tasks);
-      const visibleTasks = orderedTasks.slice(0, 4);
+      const visibleTasks = orderedTasks.slice(0, 10);
       const moreCount = Math.max(0, tasks.length - visibleTasks.length);
       const needsCloseDecision = obj.status === 'review_needed';
       const isClosedPlan = obj.status === 'closed';
@@ -745,7 +652,7 @@ export default function ObjectList() {
           total={statusTotal}
           loading={loading}
         />
-        {currentType === 'taskplan' && (
+        {(currentType === 'taskplan' || currentType === 'workarea') && (
           <TaskFlowLegend t={t} getStatus={getStatus} />
         )}
         {currentType === 'memo' && (

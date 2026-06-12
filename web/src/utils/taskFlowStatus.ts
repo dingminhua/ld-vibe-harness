@@ -1,0 +1,135 @@
+import {
+  BadgeCheck,
+  CheckCircle2,
+  CircleAlert,
+  CircleDashed,
+  CirclePlay,
+  Clock3,
+  ClipboardCheck,
+  Hourglass,
+  type LucideIcon,
+} from 'lucide-react';
+import type { LocaleKey } from '@/i18n/locales';
+import type { RelatedObjectSummary } from '@/utils/api';
+
+export type TaskFlowTranslate = (key: LocaleKey, params?: Record<string, string>) => string;
+
+const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded']);
+const PENDING_CLOSE_STATUSES = new Set(['review_needed']);
+const TASK_RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected', 'deprecated', 'unknown']);
+
+export const taskFlowToneClass = {
+  ready: 'border-sky-500/25 bg-sky-500/10 text-sky-500',
+  executing: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
+  verifying: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
+  absorbing: 'border-violet-500/30 bg-violet-500/10 text-violet-500',
+  closed: 'border-zinc-500/30 bg-zinc-500/10 text-ldvh-text-secondary',
+  blocked: 'border-amber-500/35 bg-amber-500/10 text-amber-500',
+  risk: 'border-red-500/30 bg-red-500/10 text-red-500',
+  neutral: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
+};
+
+export type TaskFlowTone = keyof typeof taskFlowToneClass;
+
+export const TASK_FLOW_ORDER: TaskFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'blocked', 'risk', 'neutral'];
+export const TASK_FLOW_LEGEND_ORDER: TaskFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'blocked'];
+
+export const taskFlowBarClass: Record<TaskFlowTone, string> = {
+  ready: 'bg-sky-500',
+  executing: 'bg-emerald-500',
+  verifying: 'bg-blue-500',
+  absorbing: 'bg-violet-500',
+  closed: 'bg-zinc-500',
+  blocked: 'bg-amber-500',
+  risk: 'bg-red-500',
+  neutral: 'bg-ldvh-border',
+};
+
+export const taskFlowIconClass: Record<TaskFlowTone, string> = {
+  ready: 'text-sky-500',
+  executing: 'text-emerald-500',
+  verifying: 'text-blue-400',
+  absorbing: 'text-violet-500',
+  closed: 'text-zinc-500',
+  blocked: 'text-amber-500',
+  risk: 'text-red-500',
+  neutral: 'text-ldvh-text-secondary',
+};
+
+export function getTaskFlowIcon(tone: TaskFlowTone): LucideIcon {
+  if (tone === 'ready') return CircleDashed;
+  if (tone === 'executing') return CirclePlay;
+  if (tone === 'verifying') return ClipboardCheck;
+  if (tone === 'absorbing') return BadgeCheck;
+  if (tone === 'blocked') return Hourglass;
+  if (tone === 'closed') return CheckCircle2;
+  if (tone === 'risk') return CircleAlert;
+  return Clock3;
+}
+
+export function getTaskFlowTone(item: RelatedObjectSummary): TaskFlowTone {
+  if (item.status === 'executing') return 'executing';
+  if (item.status === 'verifying') return 'verifying';
+  if (PENDING_CLOSE_STATUSES.has(item.status)) return 'absorbing';
+  if (TERMINAL_STATUSES.has(item.status)) return 'closed';
+  if (item.status === 'planned') return 'blocked';
+  if (TASK_RISK_STATUSES.has(item.status)) return 'risk';
+  return 'neutral';
+}
+
+export function getTaskFlowLabel(item: RelatedObjectSummary, t: TaskFlowTranslate, getStatus: (status: string) => string): string {
+  const tone = getTaskFlowTone(item);
+  if (tone === 'blocked') return t('objectList.taskFlowBlocked');
+  if (tone === 'executing') return t('objectList.taskFlowExecuting');
+  if (tone === 'verifying') return t('objectList.taskFlowVerifying');
+  if (tone === 'absorbing') return t('objectList.taskFlowAbsorbing');
+  if (tone === 'closed') return getStatus(item.status);
+  return getStatus(item.status);
+}
+
+export function getTaskFlowToneLabel(tone: TaskFlowTone, t: TaskFlowTranslate, getStatus: (status: string) => string): string {
+  if (tone === 'blocked') return t('objectList.taskFlowBlocked');
+  if (tone === 'executing') return t('objectList.taskFlowExecuting');
+  if (tone === 'verifying') return t('objectList.taskFlowVerifying');
+  if (tone === 'absorbing') return t('objectList.taskFlowAbsorbing');
+  if (tone === 'closed') return getStatus('closed');
+  if (tone === 'risk') return t('objectList.taskFlowRisk');
+  return t('objectList.taskFlowOther');
+}
+
+export function getTaskFlowCounts(tasks: RelatedObjectSummary[]): Record<TaskFlowTone, number> {
+  return tasks.reduce<Record<TaskFlowTone, number>>((counts, task) => {
+    const tone = getTaskFlowTone(task);
+    counts[tone] += 1;
+    return counts;
+  }, {
+    ready: 0,
+    executing: 0,
+    verifying: 0,
+    absorbing: 0,
+    blocked: 0,
+    closed: 0,
+    risk: 0,
+    neutral: 0,
+  });
+}
+
+function getTaskFlowPriority(item: RelatedObjectSummary): number {
+  const tone = getTaskFlowTone(item);
+  if (tone === 'executing') return 0;
+  if (tone === 'verifying') return 1;
+  if (tone === 'absorbing') return 2;
+  if (tone === 'blocked') return 3;
+  if (tone === 'ready') return 4;
+  if (tone === 'risk') return 5;
+  if (tone === 'closed') return 8;
+  return 5;
+}
+
+export function sortPlanTasks(tasks: RelatedObjectSummary[]): RelatedObjectSummary[] {
+  return [...tasks].sort((a, b) => {
+    const priorityDelta = getTaskFlowPriority(a) - getTaskFlowPriority(b);
+    if (priorityDelta !== 0) return priorityDelta;
+    return a.id.localeCompare(b.id);
+  });
+}

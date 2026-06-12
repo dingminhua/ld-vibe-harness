@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronRight, Code2, FileText, Info, Layers3 } from 'lucide-react';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { ArrowLeft, ChevronDown, ChevronRight, Code2, FileText, Info, Layers3, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
@@ -10,12 +10,14 @@ import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
+import { TaskFlowBar } from '@/components/TaskFlowStatus';
 import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedPlanSummary } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusHint, getObjectStatusLocale, getTypeDescription } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { formatDateTime } from '@/utils/dateFormat';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
+import { usePanel } from '@/utils/panelContext';
 import {
   CHECKLIST_COMPAT_FIELDS,
   COLLAPSIBLE_FIELDS,
@@ -209,6 +211,7 @@ const FIELD_VALUE_LOCALES: Record<string, Record<string, { zh: string; en: strin
 export default function ObjectDetail() {
   const { type, id } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
   const [workareaSummary, setWorkareaSummary] = useState<ObjectItem | null>(null);
@@ -317,6 +320,8 @@ export default function ObjectDetail() {
   const yamlSource = objectToYaml(obj);
   const listSearch = searchParams.toString();
   const listPath = `/objects/${objType}${listSearch ? `?${listSearch}` : ''}`;
+  const currentPath = `${location.pathname}${location.search}`;
+  const returnPath = getReturnPath(location.state, currentPath) ?? listPath;
 
   return (
     <div className="flex h-full">
@@ -326,7 +331,7 @@ export default function ObjectDetail() {
           {/* Header */}
           <div className="mb-6">
             <button
-              onClick={() => navigate(listPath)}
+              onClick={() => navigate(returnPath)}
               className="ldvh-body-muted mb-3 flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
             >
               <ArrowLeft size={14} />
@@ -470,6 +475,15 @@ export default function ObjectDetail() {
   );
 }
 
+function getReturnPath(state: unknown, currentPath: string): string | null {
+  if (!state || typeof state !== 'object') return null;
+  const from = (state as { from?: unknown }).from;
+  if (typeof from !== 'string' || from.length === 0) return null;
+  if (from === currentPath) return null;
+  if (!from.startsWith('/')) return null;
+  return from;
+}
+
 type LocalizedTitleItem = {
   id: string;
   title?: string;
@@ -563,7 +577,7 @@ function WorkAreaReadingLayout({
   getStatus: (status: string) => string;
 }) {
   const { t } = useI18n();
-  const navigate = useNavigate();
+  const { openPanel } = usePanel();
   const plans = summary?.plans ?? [];
   const activePlans = plans.filter((plan) => !isDetailPendingCloseStatus(plan.status) && !isDetailTerminalStatus(plan.status));
   const pendingClosePlans = plans.filter((plan) => isDetailPendingCloseStatus(plan.status));
@@ -576,18 +590,17 @@ function WorkAreaReadingLayout({
   ].some((value) => Array.isArray(value) && value.length > 0);
 
   const openPlan = (plan: RelatedPlanSummary) => {
-    navigate(`/objects/taskplan/${plan.id}`);
+    openPanel({
+      type: 'object',
+      title: getLocalizedTitle(plan, locale),
+      objectType: 'taskplan',
+      objectId: plan.id,
+    });
   };
 
   return (
     <div className="mb-6 flex flex-col gap-5">
       <WorkAreaSection title={t('objectDetail.workareaPlanOverview')} icon={<Layers3 size={14} className="text-ldvh-accent" />}>
-        <div className="mb-3 flex flex-wrap gap-2">
-          <PlanCountPill tone="active" label={t('objectList.activePlanCount', { count: String(activePlans.length) })} loading={loading} />
-          <PlanCountPill tone="review" label={t('objectList.pendingClosePlanCount', { count: String(pendingClosePlans.length) })} loading={loading} />
-          <PlanCountPill tone="closed" label={t('objectList.closedPlanCount', { count: String(summary?.planClosed ?? closedPlans.length) })} loading={loading} />
-        </div>
-
         {loading ? (
           <div className="rounded-md border border-dashed border-ldvh-border bg-ldvh-bg/50 px-3 py-6 text-center">
             <span className="ldvh-body-muted">{t('objectDetail.workareaPlansLoading')}</span>
@@ -665,28 +678,6 @@ function WorkAreaSection({ title, icon, children }: { title: string; icon?: Reac
       </h2>
       {children}
     </section>
-  );
-}
-
-function PlanCountPill({ label, tone, loading }: { label: string; tone: 'active' | 'review' | 'closed'; loading: boolean }) {
-  const toneClass = {
-    active: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
-    review: 'border-violet-500/30 bg-violet-500/10 text-violet-400',
-    closed: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
-  }[tone];
-
-  return (
-    <span className={`ldvh-chip inline-flex min-h-7 items-center rounded-full border px-2.5 py-1 ${toneClass}`}>
-      {loading ? (
-        <span aria-hidden="true" className="inline-flex items-center gap-0.5 px-1">
-          <span className="h-1 w-1 animate-pulse rounded-full bg-current opacity-35" />
-          <span className="h-1 w-1 animate-pulse rounded-full bg-current opacity-35 [animation-delay:150ms]" />
-          <span className="h-1 w-1 animate-pulse rounded-full bg-current opacity-35 [animation-delay:300ms]" />
-        </span>
-      ) : (
-        label
-      )}
-    </span>
   );
 }
 
@@ -772,7 +763,11 @@ function WorkAreaPlanRow({
   onOpen: (plan: RelatedPlanSummary) => void;
 }) {
   const { t } = useI18n();
+  const { isOpen: panelOpen, content: panelContent } = usePanel();
   const open = () => onOpen(plan);
+  const tasks = plan.tasks ?? [];
+  const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === 'taskplan' && panelContent.objectId === plan.id;
+  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
 
   return (
     <div
@@ -785,42 +780,34 @@ function WorkAreaPlanRow({
           open();
         }
       }}
-      className={`group/workarea-plan-row flex min-w-0 cursor-pointer items-start gap-3 rounded-md px-2 py-2.5 text-left transition-colors ${toneClass.row}`}
+      className={`group/workarea-plan-row flex min-w-0 cursor-pointer flex-col gap-2 rounded-md px-2 py-2.5 text-left transition-colors ${toneClass.row}`}
     >
-      <div className="min-w-0 flex-1">
-        <span className="ldvh-card-title block min-w-0 truncate transition-colors group-hover/workarea-plan-row:text-ldvh-accent">
-          {getLocalizedTitle(plan, locale)}
-        </span>
-        <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="ldvh-meta-muted min-w-0 truncate">{plan.id}</span>
-          <span className="ldvh-caption">{formatDateTime(plan.updated)}</span>
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/workarea-plan-row:text-ldvh-accent">
+            {getLocalizedTitle(plan, locale)}
+          </span>
+          <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="ldvh-meta-muted min-w-0 truncate">{plan.id}</span>
+            <span className="ldvh-caption">{formatDateTime(plan.updated)}</span>
+          </div>
         </div>
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
-          <RecordStateChip label={t('objectList.successCriteria')} recorded={plan.hasSuccessCriteria} />
-          <RecordStateChip label={t('objectList.completionEvidence')} recorded={plan.hasCompletionEvidence} />
+        <div className="flex shrink-0 items-center gap-2">
+          <StatusBadge status={plan.status} statusLabel={getStatus(plan.status)} />
+          <CopyPathButton path={plan.path} />
+          <PanelIcon
+            size={14}
+            aria-hidden="true"
+            className={`transition-colors group-hover/workarea-plan-row:text-ldvh-accent ${isCurrentPanelOpen ? 'text-ldvh-accent' : toneClass.icon}`}
+          />
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <StatusBadge status={plan.status} statusLabel={getStatus(plan.status)} />
-        <CopyPathButton path={plan.path} />
-        <ArrowRight size={14} className={`transition-transform group-hover/workarea-plan-row:translate-x-0.5 ${toneClass.icon}`} />
-      </div>
+      {tasks.length > 0 && (
+        <div className="min-w-0 self-stretch">
+          <TaskFlowBar tasks={tasks} t={t} getStatus={getStatus} compact />
+        </div>
+      )}
     </div>
-  );
-}
-
-function RecordStateChip({ label, recorded }: { label: string; recorded: boolean }) {
-  const { t } = useI18n();
-  return (
-    <span
-      className={`ldvh-chip rounded-full border px-2 py-0.5 ${
-        recorded
-          ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
-          : 'border-amber-500/25 bg-amber-500/10 text-amber-400'
-      }`}
-    >
-      {label} · {recorded ? t('objectList.hasRecord') : t('objectList.missingRecord')}
-    </span>
   );
 }
 

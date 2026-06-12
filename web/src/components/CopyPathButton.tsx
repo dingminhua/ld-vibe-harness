@@ -43,6 +43,9 @@ export default function CopyPathButton({ path, className = '' }: CopyPathButtonP
   if (!path) return null;
 
   const label = copied ? t('common.copiedPath') : t('common.copyPath');
+  const buttonClassName = copied
+    ? 'bg-emerald-500/10 text-emerald-400'
+    : 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent';
 
   const handleClick = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -64,7 +67,7 @@ export default function CopyPathButton({ path, className = '' }: CopyPathButtonP
         onFocus={() => setShowTooltip(true)}
         onBlur={() => setShowTooltip(false)}
         onClick={handleClick}
-        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary transition-colors hover:border-ldvh-accent/40 hover:text-ldvh-accent"
+        className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent transition-colors focus-visible:border-ldvh-accent/50 focus-visible:outline-none ${buttonClassName}`}
         aria-label={label}
       >
         {copied ? <Check size={14} /> : <Copy size={14} />}

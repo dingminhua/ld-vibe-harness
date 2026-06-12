@@ -114,6 +114,7 @@ export interface RelatedObjectSummary {
   updated: string;
   blockedBy?: string[];
   openBlockers?: RelatedObjectSummary[];
+  subtasks?: RelatedObjectSummary[];
 }
 
 export interface RelatedPlanSummary extends RelatedObjectSummary {

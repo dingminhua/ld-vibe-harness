@@ -65,7 +65,7 @@ export function PanelProvider({ children }: { children: ReactNode }) {
       if (current && getPanelContentKey(current) === getPanelContentKey(c)) {
         const history = [...prev.history];
         history[prev.historyIndex] = c;
-        return { ...prev, isOpen: true, content: c, history };
+        return { ...prev, isOpen: !prev.isOpen, content: c, history };
       }
 
       const history = prev.history.slice(0, prev.historyIndex + 1);

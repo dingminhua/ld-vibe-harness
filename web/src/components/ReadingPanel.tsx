@@ -261,6 +261,9 @@ export default function ReadingPanel() {
 
   const panelTitle = content?.title || t('readingPanel.title');
   const preview = content ? <PanelContentRenderer content={content} /> : <EmptyPanelPreview />;
+
+  if (isMobile && !isOpen) return null;
+
   const navigationControls = (
     <div className="flex shrink-0 items-center gap-1">
       <button

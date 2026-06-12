@@ -10,6 +10,8 @@
 
 对象类型切换由左侧主导航完成，本页不再提供顶部类型标签页。
 
+对象列表页是主选择面，不承接详情页的右侧扩展阅读状态；进入 `/objects/:type` 时 App Shell 应主动关闭扩展阅读区。
+
 ## 2. 当前页面结构
 
 ```text
@@ -58,10 +60,11 @@ WorkArea 是“计划入口”卡片，帮助用户判断这个工作域下有�
   - 活跃计划组使用 `objectList.activePlanCount`，绿色背景，组标题使用 `ldvh-caption-strong`；
   - 待关闭计划组使用 `objectList.pendingClosePlanCount`，紫色背景，组标题使用 `ldvh-caption-strong`；
   - 已闭合计划只展示 `objectList.closedPlanCount` 汇总，不展开历史计划行，使用 `ldvh-caption-strong`。
-- 活跃/待关闭组内每一行是一个计划入口，计划名使用 `ldvh-body`，计划 ID 使用 `ldvh-meta-muted`，并只展示计划标题、计划 ID、复制路径按钮和进入箭头，不再重复展示状态标签。
+- 活跃/待关闭组内每一行是一个计划入口，计划名使用 `ldvh-body`，计划 ID 使用 `ldvh-meta-muted`，并展示计划标题、计划 ID、复制路径按钮和进入箭头，不再重复展示状态标签。
+- 计划行可展示一条 compact 任务态势条，复用 TaskPlan 的状态顺序和颜色：`已关闭 / 已验证 / 验证中 / 执行中 / 等待中`；态势条占满计划行宽度，态势段只用 hover / focus tooltip 显示数量，不在 WorkArea 卡片里展开任务或子任务。
 - WorkArea 卡片内不得出现大于工作域标题 `ldvh-card-title` 的文字；计划组和汇总都低于工作域标题层级。
 - 无计划时展示 `objectList.noPlans`。
-- WorkArea 不展示计划内任务数量或任务关闭进度；任务拆解留给 TaskPlan 卡片与详情页。
+- WorkArea 不展示计划内任务标题、子任务或关闭材料；任务拆解留给 TaskPlan 卡片与详情页。
 - 点击计划行跳转 `/objects/taskplan/{id}`，不触发外层工作域卡片跳转。
 
 ### 3.4 TaskPlan 卡片
@@ -73,11 +76,12 @@ TaskPlan 是“计划执行态势”卡片，帮助用户从计划判断任务�
 - 展示执行态势条，不再用 `{closed}/{total}` 文案重复解释；态势段 hover / focus 时显示状态和数量。
 - Task 状态图例在列表顶部右侧展示，卡片任务行只保留图标和颜色，不重复状态文字。
 - Task `review_needed` 在 Web 展示为“已验证”，表示已通过验证但尚未 `closed`；Plan 的 `review_needed` 仍表示待关闭审查。
-- `planned` 且存在未关闭 `blocked_by` 时，Web 派生为“等待中”，用等待图标表达；这不是 Task 原始状态。
+- TaskPlan 卡片态势按“已关闭 / 已验证 / 验证中 / 执行中 / 等待中”从左到右排列，越接近完成越靠左。
+- TaskPlan 卡片态势中，`planned` 统一归入“等待中”；若同时存在未关闭 `blocked_by`，这是 Web 基于前置关系派生的等待原因，不额外拆成第二个态势类别。
 - 仅当计划处于 `review_needed` 或已关闭计划缺少关闭字段时，展示关闭判断 / 收口异常区域。
 - 展示任务队列区域：
   - 标题为 `objectList.planTaskQueue`；
-  - 默认展示最多 4 个任务，按“执行中 / 验证中 / 已验证 / 等待中 / 待执行 / 风险 / 已关闭”优先级排序；
+  - 默认展示最多 10 个任务，按“执行中 / 验证中 / 已验证 / 等待中 / 风险 / 已关闭”优先级排序；
   - 任务行包含任务标题、任务 ID、状态图标、复制路径按钮和进入箭头，任务 ID 使用 `ldvh-meta-muted`；
   - 点击任务行跳转 `/objects/task/{id}`，不触发外层计划卡片跳转。
 
@@ -93,9 +97,10 @@ TaskPlan 是“计划执行态势”卡片，帮助用户从计划判断任务�
 |---|---|
 | 点击左侧导航类型 | 切换到对应 `/objects/:type` |
 | 点击状态筛选 | 更新 URL query 并刷新列表 |
-| 点击对象卡片 | 跳转到 `/objects/{type}/{id}`，保留当前 query |
-| 点击 WorkArea 卡片内计划行 | 跳转到 `/objects/taskplan/{id}` |
-| 点击 TaskPlan 卡片内任务行 | 跳转到 `/objects/task/{id}` |
+| 点击对象卡片 | 跳转到 `/objects/{type}/{id}`，保留当前 query，并把当前列表 URL 记录为详情页返回来源 |
+| 点击 WorkArea 卡片内计划行 | 跳转到 `/objects/taskplan/{id}`，并把当前 WorkArea 列表 URL 记录为详情页返回来源 |
+| 点击 TaskPlan 卡片内任务行 | 跳转到 `/objects/task/{id}`，并把当前 TaskPlan 列表 URL 记录为详情页返回来源 |
+| 从详情页返回对象列表 | 主内容回到 `/objects/:type`，并主动关闭右侧扩展阅读区 |
 | 点击复制路径图标 | 复制对象 YAML 文件完整路径，不改变当前页面 |
 | 切换语言 | 状态、标题和空态文案同步切换 |
 
@@ -136,6 +141,18 @@ interface ObjectItem {
   taskByStatus?: Record<string, number>;
   hasSuccessCriteria?: boolean;
   hasCompletionEvidence?: boolean;
+}
+
+interface RelatedObjectSummary {
+  id: string;
+  type: string;
+  title: string;
+  status: string;
+  path: string;
+  updated: string;
+  blockedBy?: string[];
+  openBlockers?: RelatedObjectSummary[];
+  subtasks?: RelatedObjectSummary[];  // TaskPlan 下的 Task 可携带 SubTask 摘要
 }
 ```
 

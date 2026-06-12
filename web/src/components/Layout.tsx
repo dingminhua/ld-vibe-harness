@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ReadingPanel from './ReadingPanel';
 import { PanelProvider, usePanel } from '@/utils/panelContext';
@@ -14,6 +15,7 @@ interface LayoutProps {
 /** Inner layout that consumes panel context */
 function LayoutInner({ children }: LayoutProps) {
   const { isOpen: panelOpen, closePanel, openPanel } = usePanel();
+  const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
       const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
@@ -34,6 +36,13 @@ function LayoutInner({ children }: LayoutProps) {
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [panelOpen, closePanel]);
+
+  useEffect(() => {
+    const isObjectListPage = /^\/objects\/[^/]+\/?$/.test(location.pathname);
+    if (isObjectListPage && panelOpen) {
+      closePanel();
+    }
+  }, [location.pathname, panelOpen, closePanel]);
 
   useEffect(() => {
     const onRefPreview = (event: Event) => {
