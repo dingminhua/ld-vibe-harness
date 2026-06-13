@@ -15,13 +15,13 @@
 
 ```text
 返回按钮
-工作对象头部：类型标签 + ID + 标题 + 创建/更新时间 + 状态徽章 + 复制路径图标
+工作对象头部：类型标签 + ID + 标题 + 创建/更新时间 + 复制路径图标
 非工作对象元信息行：创建时间、更新时间、关闭时间、辅助属性
 内容区：
   WorkArea：活跃计划 / 待关闭计划 / 已闭合计划 + 目标 / 范围 / 约束 / 来源 + 文档 / ADR / 备忘 / 踩坑
-  TaskPlan：任务队列 + 成功标准 / 完成证据 + 目标 / 工作域 / 来源 + 文档 / ADR / 备忘 / 踩坑 / 关联变更
-  Task：目标 / 来源 / 所属计划 + 推进状态 + 子任务态势 + 验收标准 + 验证方式 + 关闭证据 + 产出物 / 关联文档 / 影响文档 / ADR / 关联变更
-  SubTask：目标 / 来源 / 所属任务 + 推进状态 + 验收标准 + 验证方式 + 关闭证据
+  TaskPlan：任务队列 + 成功标准 / 完成证据 + 目标 / 所属工作域 / 来源 + 文档 / ADR / 备忘 / 踩坑 / 关联变更
+  Task：任务状态 + 子任务态势 + 验收标准 + 验证方式 + 目标 / 来源 / 所属计划 + 关闭证据 + 产出物 / 关联文档 / 影响文档 / ADR / 关联变更
+  SubTask：任务状态 + 验收标准 + 验证方式 + 目标 / 来源 / 所属任务 + 关闭证据
   其他对象：字段卡片布局
 YAML 源码折叠区
 右侧扩展阅读区（App Shell 提供，不属于本页卡片）
@@ -35,10 +35,10 @@ YAML 源码折叠区
 - 标题优先使用 `title_zh/title_en`，回退 `title`，再回退 ID；工作对象和普通对象标题前均使用 `ObjectTypeIcon(obj.type)` 识别对象身份。
 - ID 使用 `ldvh-meta`，不做大号标题。
 - 头部右侧提供 `CopyPathButton`，复制对象详情 API 返回的 `target`。
-- 状态徽章使用 `StatusBadge`；工作对象头部不展示通用状态提示，避免与事实状态重复。
+- 非工作对象状态徽章使用 `StatusBadge`；WorkArea、TaskPlan、Task、SubTask 头部不显示状态 chip，状态只在计划组、任务队列或任务状态等语义模块中表达，避免顶部事实状态和正文语义状态形成两套口径。
 - 非工作对象元信息行使用 `MetaChip`，时间统一 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`。
 - 对象字段必须以对应工作模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。Task 当前只允许 `assignee` 作为辅助元信息；Task / SubTask 不得把 `priority`、`severity`、`category`、`tags` 写入测试夹具或事实源。
-- WorkArea、TaskPlan、Task、SubTask 使用统一工作对象身份区：`类型 + ID + 标题 + 状态 + 创建/更新时间` 合并展示；状态只保留事实徽章，不显示“进行中”等通用解释文案，创建/更新时间不再作为独立 chip 行。
+- WorkArea、TaskPlan、Task、SubTask 使用统一工作对象身份区：`类型 + ID + 标题 + 创建/更新时间` 合并展示；不在头部显示状态徽章或“进行中”等通用解释文案，创建/更新时间不再作为独立 chip 行。
 
 ## 4. WorkArea 语义阅读布局
 
@@ -58,7 +58,7 @@ TaskPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 1. 任务队列：页面主区域第一块，展示整体 Task 态势条，并按与列表一致的队列顺序展示 Task 行；队列顺序与态势条空间方向对应，态势条最右侧状态在上，最左侧状态在下；区块标题只使用小圆点。
 2. 成功标准和完成证据不再收进“关闭判断”总区块；分别作为同级模块展示 `success_criteria/completion_evidence`。不展示额外顶部结论条，不单列待确认项或记录状态，未完成项由两个 checklist 自身表达。成功标准是关闭判断依据，但不再用外层总模块包住。
-3. 定义事实不再收进“属性”总区块；目标、工作域、来源分别作为同级模块展示 `description/workarea/source`。工作域入口使用模块内对象引用值，显示 WorkArea 对象图标和工作域标题，不显示 ID 或状态徽章，点击只打开右侧辅助阅读，不切换主路由。
+3. 定义事实不再收进“属性”总区块；目标、所属工作域、来源分别作为同级模块展示 `description/workarea/source`。所属工作域入口使用模块内对象引用值，显示 WorkArea 对象图标和工作域标题，不显示 ID 或状态徽章，点击只打开右侧辅助阅读，不切换主路由。
 4. Task 行在 TaskPlan 详情中与 WorkArea card 的动作体验保持一致：复用状态色弱背景、左侧状态图标、Task 对象图标、任务标题、ID、复制路径和辅助阅读入口；右侧操作图标默认中性，辅助阅读入口可随行 hover 切到该行背景对应的状态色，复制按钮只有自身 hover 时变色。有 SubTask 时只展示 compact 子任务态势条，不在 TaskPlan 详情展开子任务行。
 5. 关联材料不再收进“关联材料”总区块；文档、ADR、备忘、踩坑、关联变更按 `related_docs/related_adrs/related_memos/related_pitfalls/related_changes` 分别作为同级模块展示。材料来源仍聚合计划自身和计划内 Task，按 ID 或路径去重；不把 Task 的 `deliverables/affected_docs` 混入计划材料。
 6. TaskPlan 详情页点击 Task 行只打开右侧辅助阅读区，不切换主路由到 Task 详情；主路由跳转只属于对象列表卡片。
@@ -67,16 +67,17 @@ TaskPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 Task / SubTask 不使用普通字段卡片堆叠，而使用固定阅读主线。它们与 WorkArea / TaskPlan 共用同一条设计语言：不使用“属性”“关联材料”“上下文”“产出与引用”等外层聚合框，而是按事实语义拆成独立模块。这样主详情页和右侧扩展阅读区都能在狭长视口中逐块阅读。
 
-1. 定义事实不再收进“任务目标”或“上下文”总区块；目标、来源、所属计划或所属任务分别作为同级模块展示。所属计划/任务入口使用模块内对象引用值，点击只打开右侧辅助阅读。
-2. 推进状态：展示当前任务/子任务的态势图标与语义状态；`planned + blocked_by` 表达为等待中，并把前置对象作为“等待对象”提前展示。状态本身用独立状态块表达，不再伪装成普通字段行。
-3. Task 如果存在 SubTask，展示子任务态势：整体 SubTask 态势条 + SubTask 行；SubTask 行只打开右侧辅助阅读，不切换主路由。
+1. 任务状态：页面主区域第一块，展示当前任务/子任务的态势图标与语义状态；`planned + blocked_by` 表达为等待中，但不在状态模块里展开等待对象。状态本身用独立状态块表达，不再伪装成普通字段行。
+2. Task 如果存在 SubTask，子任务态势必须紧跟任务状态展示：整体 SubTask 态势条 + SubTask 行；SubTask 行只打开右侧辅助阅读，不切换主路由。
+3. 验收标准和验证方式紧跟子任务态势展示，先回答“是否满足”和“如何验证”，再进入目标与来源背景。
 4. 验收标准：`acceptance`，用 `ChecklistCard` 展示进度和每项状态。
-5. 验证方式与关闭证据分别作为同级模块展示 `verification/closure_evidence`，用 `EvidenceBlock` 展示 Markdown、命令和路径；`closure_evidence` 只有在事实源存在非空内容时显示，不用“尚未记录”占位模块暗示验证中对象已经具备关闭证据。
-6. Task 的产出与文档不再收进“产出与文档”总区块；产出物、关联文档、影响文档按 `deliverables/related_docs/affected_docs` 分别作为同级模块展示。
-7. Task 的关联材料不再收进“关联材料”总区块；ADR、关联变更按 `related_adrs/related_changes` 分别作为同级模块展示。材料只收纳当前 Task 自己的材料，不复制上层 TaskPlan 或 WorkArea 的材料。SubTask 字段契约当前不定义产出物、关联文档、影响文档、ADR 或关联变更；测试夹具不得为 SubTask 杜撰这些字段。
-8. 其他字段：只显示非空字段，避免把空数组、空关联或空产出提升到主阅读流；如果 Task / SubTask 经常出现“其他字段”，应优先回到字段规范和专用布局收敛，而不是把它视为正常主模块。
-9. Task / SubTask 详情页内的父计划、父任务、等待对象和子任务行只打开右侧辅助阅读区，不切换主路由。
-10. Task / SubTask 不继承上层对象的完整详情：Task 只回指所属 TaskPlan，SubTask 只回指所属 Task。WorkArea 的范围、约束和 TaskPlan 的成功标准、完成证据只在对应对象详情中阅读。
+5. 验证方式：`verification` 内容为 GFM checklist 时与验收标准保持同样的 `ChecklistCard` 样式；内容为命令、结论或证据段落时使用 embedded `EvidenceBlock`。关闭证据 `closure_evidence` 作为独立证据模块展示，且只有在事实源存在非空内容时显示，不用“尚未记录”占位模块暗示验证中对象已经具备关闭证据。
+6. 定义事实不再收进“任务目标”或“上下文”总区块；目标、来源、所属计划或所属任务分别作为同级模块展示。`source` 字段本身就是来源，不在字段内容里再写“来源：”或“用途：”二级标签；用途、测试目的等说明应进入目标或验收/验证字段。所属计划/任务入口使用模块内对象引用值，点击只打开右侧辅助阅读。
+7. Task 的产出与文档不再收进“产出与文档”总区块；产出物、关联文档、影响文档按 `deliverables/related_docs/affected_docs` 分别作为同级模块展示。
+8. Task 的关联材料不再收进“关联材料”总区块；ADR、关联变更按 `related_adrs/related_changes` 分别作为同级模块展示。材料只收纳当前 Task 自己的材料，不复制上层 TaskPlan 或 WorkArea 的材料。SubTask 字段契约当前不定义产出物、关联文档、影响文档、ADR 或关联变更；测试夹具不得为 SubTask 杜撰这些字段。
+9. 其他字段：只显示非空字段，避免把空数组、空关联或空产出提升到主阅读流；如果 Task / SubTask 经常出现“其他字段”，应优先回到字段规范和专用布局收敛，而不是把它视为正常主模块。
+10. Task / SubTask 详情页内的父计划、父任务和子任务行只打开右侧辅助阅读区，不切换主路由。
+11. Task / SubTask 不继承上层对象的完整详情：Task 只回指所属 TaskPlan，SubTask 只回指所属 Task。WorkArea 的范围、约束和 TaskPlan 的成功标准、完成证据只在对应对象详情中阅读。
 
 ## 7. 非工作主线对象字段布局
 
@@ -115,6 +116,7 @@ Task / SubTask 不使用普通字段卡片堆叠，而使用固定阅读主线�
 - 同一对象或文档入口再次点击关闭扩展阅读区；点击不同入口才切换右侧预览内容。
 - 对象预览不是“摘要卡片”，而是对象详情页阅读内容的右侧视口；同一个对象在详情页和扩展阅读区必须使用同一套字段顺序、字段标签、字段过滤和字段渲染。
 - WorkArea、TaskPlan、Task、SubTask 必须复用详情页导出的专用阅读布局：`WorkAreaReadingLayout`、`TaskPlanReadingLayout`、`TaskReadingLayout`。
+- WorkArea、TaskPlan、Task、SubTask 的扩展阅读头部同样不显示状态 chip；右侧面板按详情页身份区顺序展示 `类型 + ID + 标题 + 创建/更新时间 + 复制路径入口`，状态由复用的语义阅读布局表达。
 - ADR、Memo、Pitfall、Profile 等通用对象必须复用详情页导出的 `getObjectDetailContentEntries()` 和 `ContentField`；不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map 或独立字段渲染器。
 - 对象预览头部提供复制完整路径图标，复制对象详情 API 返回的 `target`。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。

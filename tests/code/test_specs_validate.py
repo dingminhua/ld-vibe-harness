@@ -586,19 +586,19 @@ def test_consistency_reports_forbidden_04_series_range(tmp_path):
     assert any(issue.code == "FORBIDDEN_04_SERIES_RANGE" for issue in issues)
 
 
-def test_consistency_reports_forbidden_trae_cn_user_rules_path(tmp_path):
+def test_consistency_reports_forbidden_trae_cn_rules_dir_path(tmp_path):
     write_md(
         tmp_path / "99-测试.md",
         """
 # 测试文档
 
-Trae CN 写入 .trae-cn/user_rules.md。
+Trae CN 写入 .trae-cn/rules/ldvh_rules.md。
 """,
     )
 
     issues = checker.consistency_forbidden_text_issues([str(tmp_path)])
 
-    assert any(issue.code == "FORBIDDEN_TRAE_CN_USER_RULES_PATH" for issue in issues)
+    assert any(issue.code == "FORBIDDEN_TRAE_CN_RULES_DIR_PATH" for issue in issues)
 
 
 def test_consistency_reports_bad_trae_cn_rules_path(tmp_path):
@@ -607,13 +607,28 @@ def test_consistency_reports_bad_trae_cn_rules_path(tmp_path):
         """
 # 测试文档
 
-Trae CN 写入 .trae-cn/rules/other_rules.md。
+Trae CN Rules 写入 .trae-cn/user_rules/other_rules.md。
 """,
     )
 
     issues = checker.consistency_forbidden_text_issues([str(tmp_path)])
 
     assert any(issue.code == "BAD_TRAE_CN_RULES_PATH" for issue in issues)
+
+
+def test_consistency_reports_bad_trae_global_rules_path(tmp_path):
+    write_md(
+        tmp_path / "99-测试.md",
+        """
+# 测试文档
+
+Trae 国际版写入 .trae/rules/other_rules.md。
+""",
+    )
+
+    issues = checker.consistency_forbidden_text_issues([str(tmp_path)])
+
+    assert any(issue.code == "BAD_TRAE_GLOBAL_RULES_PATH" for issue in issues)
 
 
 def test_consistency_reports_forbidden_research_refs_terms(tmp_path):

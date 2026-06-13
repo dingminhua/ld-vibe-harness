@@ -22,7 +22,6 @@ related_adrs: []
 related_changes: []
 related_docs:
   - docs/task-9101-history-archive.md
-affected_docs:
-  - web/src/pages/ObjectDetail.tsx
+affected_docs: []
 deliverables:
   - docs/task-9101-history-archive.md

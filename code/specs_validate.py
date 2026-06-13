@@ -354,9 +354,9 @@ CONSISTENCY_FORBIDDEN_TEXT_RULES = (
         "message": "04 系列只包含 04.01-04.03，不得引用 04.04、04.05 或 04.01-04.05 范围",
     },
     {
-        "pattern": re.compile(r"user_rules\.md"),
-        "code": "FORBIDDEN_TRAE_CN_USER_RULES_PATH",
-        "message": "Trae CN 用户级 Rules 入口不得使用 user_rules.md，应使用 .trae-cn/rules/ldvh_rules.md",
+        "pattern": re.compile(r"\.trae-cn/rules/"),
+        "code": "FORBIDDEN_TRAE_CN_RULES_DIR_PATH",
+        "message": "Trae CN 用户级 Rules 入口不得使用 rules 目录，应使用 .trae-cn/user_rules/ldvh_rules.md",
     },
     {
         "pattern": re.compile(r"research\s*(入口|结论|吸收|资料)|refs\s*(摘要|入口)|`research`|`refs`"),
@@ -446,13 +446,22 @@ def consistency_forbidden_text_issues(paths):
             for rule in CONSISTENCY_FORBIDDEN_TEXT_RULES:
                 if rule["pattern"].search(stripped):
                     issues.append(Issue(path, line_number, rule["message"], code=rule["code"]))
-            if ".trae-cn/" in stripped and "rules" in stripped and "ldvh_rules.md" not in stripped:
+            if ".trae-cn/" in stripped and "Rules" in stripped and "user_rules/ldvh_rules.md" not in stripped:
                 issues.append(
                     Issue(
                         path,
                         line_number,
-                        "Trae CN Rules 路径必须使用 .trae-cn/rules/ldvh_rules.md",
+                        "Trae CN Rules 路径必须使用 .trae-cn/user_rules/ldvh_rules.md",
                         code="BAD_TRAE_CN_RULES_PATH",
+                    )
+                )
+            if ".trae/" in stripped and "rules" in stripped and ".md" in stripped and "ldvh_rules.md" not in stripped:
+                issues.append(
+                    Issue(
+                        path,
+                        line_number,
+                        "Trae 国际版 Rules 路径必须使用 .trae/rules/ldvh_rules.md",
+                        code="BAD_TRAE_GLOBAL_RULES_PATH",
                     )
                 )
     return issues

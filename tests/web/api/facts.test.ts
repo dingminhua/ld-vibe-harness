@@ -129,6 +129,9 @@ function assertFixtureConformsToSpecs() {
     if (missing.length > 0) {
       issues.push(`${relativeFile} (${id}): missing required fields ${missing.join(', ')}`)
     }
+    if (typeof obj.source === 'string' && /^\s*(来源|用途)[:：]/m.test(obj.source)) {
+      issues.push(`${relativeFile} (${id}): source field must not repeat source/purpose labels`)
+    }
 
     if (type === 'workarea') {
       if (obj.status === 'archived' && isBlank(obj.archive_reason)) {

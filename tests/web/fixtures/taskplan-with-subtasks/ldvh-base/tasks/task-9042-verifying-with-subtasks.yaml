@@ -9,8 +9,7 @@ description: |
   验证收口计划中带子任务的验证中 Task。
   这个任务用于观察 Task 详情页在存在 SubTask、阻塞对象、验收标准、验证材料和产出文档时的完整呈现。
 source: |
-  来源：taskplan-9004 的任务拆解。
-  用途：覆盖 Task 详情页主线阅读结构和右侧扩展阅读入口。
+  taskplan-9004 的任务拆解。
 blocked_by:
   - task-9041
 acceptance: |
@@ -26,7 +25,6 @@ related_adrs:
 related_changes: []
 related_docs:
   - docs/task-9042-verification.md
-affected_docs:
-  - web/src/pages/ObjectDetail.tsx
+affected_docs: []
 deliverables:
   - docs/task-9042-verification.md

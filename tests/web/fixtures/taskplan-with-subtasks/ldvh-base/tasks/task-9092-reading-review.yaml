@@ -20,6 +20,5 @@ related_adrs: []
 related_changes: []
 related_docs:
   - docs/task-9092-reading-review.md
-affected_docs:
-  - web/src/pages/ObjectDetail.tsx
+affected_docs: []
 deliverables: []

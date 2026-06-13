@@ -399,8 +399,6 @@ export default function ObjectDetail() {
                 title={displayTitle}
                 id={objId}
                 target={detail.target}
-                status={objStatus}
-                statusLabel={getObjectStatusLocale(objType, objStatus, locale)}
                 objectType={objType}
                 typeColor={typeColor}
                 typeLabel={TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
@@ -549,8 +547,6 @@ function WorkObjectDetailHeader({
   title,
   id,
   target,
-  status,
-  statusLabel,
   objectType,
   typeColor,
   typeLabel,
@@ -560,8 +556,6 @@ function WorkObjectDetailHeader({
   title: string;
   id: string;
   target?: string;
-  status: string;
-  statusLabel: string;
   objectType: string;
   typeColor: string;
   typeLabel: string;
@@ -592,7 +586,6 @@ function WorkObjectDetailHeader({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:pt-0.5">
-          <StatusBadge status={status} statusLabel={statusLabel} size="md" />
           <CopyPathButton path={target} />
         </div>
       </div>
@@ -1156,7 +1149,7 @@ export function TaskPlanReadingLayout({
 
       <DetailDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
       <DetailObjectReferenceSection
-        title={t('objectDetail.workArea')}
+        title={t('objectDetail.parentWorkArea')}
         item={summary?.workareaSummary}
         fallbackId={typeof obj.workarea === 'string' ? obj.workarea : undefined}
         objectType="workarea"
@@ -1334,17 +1327,9 @@ export function buildCurrentFlowItem(
 
 export function TaskProgressSection({
   item,
-  blockedRefs,
-  currentTask,
-  parentPlan,
-  locale,
   getStatus,
 }: {
   item: RelatedObjectSummary;
-  blockedRefs: string[];
-  currentTask: RelatedObjectSummary | null;
-  parentPlan: ObjectItem | null;
-  locale: string;
   getStatus: (status: string) => string;
 }) {
   const { t } = useI18n();
@@ -1357,31 +1342,9 @@ export function TaskProgressSection({
         <div className={`flex min-w-0 items-center gap-2 rounded-md border px-3 py-2 ${taskFlowRowClass[flowTone]}`}>
           <TaskFlowMarker tone={flowTone} label={flowLabel} compact />
           <div className="min-w-0">
-            <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectDetail.currentState')}</div>
             <div className="ldvh-body min-w-0 truncate text-ldvh-text-primary">{flowLabel}</div>
           </div>
         </div>
-        {blockedRefs.length > 0 && (
-          <div className="min-w-0">
-            <div className="ldvh-caption-strong mb-1.5 text-ldvh-text-secondary">{t('objectDetail.waitingFor')}</div>
-            <div className="divide-y divide-ldvh-border/60">
-              {blockedRefs.map((refId) => {
-                const refType = getObjectRefType(refId) ?? 'task';
-                return (
-                  <DetailObjectRow
-                    key={refId}
-                    label={TYPE_LOCALES[refType] ? (locale === 'en' ? TYPE_LOCALES[refType].en : TYPE_LOCALES[refType].zh) : refType}
-                    item={findRelatedSummary(refId, currentTask, parentPlan)}
-                    fallbackId={refId}
-                    objectType={refType}
-                    locale={locale}
-                    compact
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
     </TaskSection>
   );
@@ -1603,40 +1566,15 @@ export function TaskReadingLayout({
     ? summary?.subtasks?.find((subtask) => subtask.id === obj.id) ?? null
     : summary;
   const currentFlowItem = buildCurrentFlowItem(obj, objType, locale, currentSummary);
-  const blockedRefs = Array.isArray(obj.blocked_by) ? (obj.blocked_by as string[]).filter(Boolean) : [];
+  const verificationValue = hasDetailContent(obj.verification) ? String(obj.verification) : '';
   const deliverables = (obj.deliverables as string[] | undefined) ?? [];
   const relatedDocs = (obj.related_docs as string[] | undefined) ?? [];
   const affectedDocs = (obj.affected_docs as string[] | undefined) ?? [];
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      <DetailDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
-      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
-      {obj.taskplan && (
-        <DetailObjectReferenceSection
-          title={t('objectDetail.taskPlan')}
-          item={parentPlan}
-          fallbackId={String(obj.taskplan)}
-          objectType="taskplan"
-          locale={locale}
-        />
-      )}
-      {obj.task && (
-        <DetailObjectReferenceSection
-          title={getFieldLabel('task', locale)}
-          item={summary}
-          fallbackId={String(obj.task)}
-          objectType="task"
-          locale={locale}
-        />
-      )}
-
       <TaskProgressSection
         item={currentFlowItem}
-        blockedRefs={blockedRefs}
-        currentTask={summary}
-        parentPlan={parentPlan}
-        locale={locale}
         getStatus={getStatus}
       />
 
@@ -1661,9 +1599,32 @@ export function TaskReadingLayout({
         {obj.acceptance ? <ChecklistCard value={String(obj.acceptance)} /> : <EmptyHint text={t('objectDetail.noAcceptance')} />}
       </TaskSection>
 
-      <TaskSection title={getFieldLabel('verification', locale)} tone="evidence">
-        {obj.verification ? <EvidenceBlock value={String(obj.verification)} embedded /> : <EmptyHint text={t('objectDetail.noVerification')} />}
+      <TaskSection title={getFieldLabel('verification', locale)} tone={verificationValue && hasChecklist(verificationValue) ? 'checklist' : 'evidence'}>
+        {verificationValue
+          ? (hasChecklist(verificationValue) ? <ChecklistCard value={verificationValue} /> : <EvidenceBlock value={verificationValue} embedded />)
+          : <EmptyHint text={t('objectDetail.noVerification')} />}
       </TaskSection>
+
+      <DetailDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
+      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
+      {obj.taskplan && (
+        <DetailObjectReferenceSection
+          title={t('objectDetail.taskPlan')}
+          item={parentPlan}
+          fallbackId={String(obj.taskplan)}
+          objectType="taskplan"
+          locale={locale}
+        />
+      )}
+      {obj.task && (
+        <DetailObjectReferenceSection
+          title={getFieldLabel('task', locale)}
+          item={summary}
+          fallbackId={String(obj.task)}
+          objectType="task"
+          locale={locale}
+        />
+      )}
       {hasDetailContent(obj.closure_evidence) && (
         <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
           <EvidenceBlock value={String(obj.closure_evidence)} embedded />
