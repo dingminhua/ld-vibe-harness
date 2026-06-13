@@ -16,9 +16,6 @@ acceptance: |
 verification: |
   - [x] 已完成桌面视口初查。
   - [ ] 仍需补移动视口和长文本场景复核。
-closure_evidence: |
-  - 状态：验证中，尚未形成关闭证据。
-  - 待办：完成移动视口复核后再进入 review_needed。
 related_adrs: []
 related_changes: []
 related_docs:

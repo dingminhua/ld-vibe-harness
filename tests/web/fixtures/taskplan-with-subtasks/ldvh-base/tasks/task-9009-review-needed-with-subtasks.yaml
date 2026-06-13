@@ -9,7 +9,7 @@ description: |
   Task 已验证，内部子任务也进入已验证或已关闭，用于观察关闭前的层级呈现。
 source: taskplan-9001
 blocked_by:
-  - task-9008
+  - task-9001
 acceptance: |
   - [x] 子任务组验收完成
 verification: |

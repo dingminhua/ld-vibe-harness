@@ -53,7 +53,7 @@ const META_KEYS = [
   'aggregated_related_pitfalls',
   'aggregated_related_changes',
 ];
-const TASK_AUXILIARY_META_KEYS = ['category', 'priority', 'severity', 'tags', 'scope', 'impact', 'assignee'];
+const TASK_AUXILIARY_META_KEYS = ['assignee'];
 const COMMON_AUXILIARY_META_KEYS = ['category', 'priority', 'severity', 'repeatability', 'tags', 'scope', 'impact', 'assignee'];
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
   task: TASK_AUXILIARY_META_KEYS,
@@ -1353,17 +1353,17 @@ export function TaskProgressSection({
 
   return (
     <TaskSection title={t('objectDetail.taskProgress')} tone="default">
-      <div className="divide-y divide-ldvh-border/70">
-        <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
-          <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectDetail.currentState')}</div>
-          <div className={`inline-flex w-fit min-w-0 items-center gap-2 rounded-md border px-2.5 py-1.5 ${taskFlowRowClass[flowTone]}`}>
-            <TaskFlowMarker tone={flowTone} label={flowLabel} compact />
-            <span className="ldvh-body text-ldvh-text-primary">{flowLabel}</span>
+      <div className="flex min-w-0 flex-col gap-3">
+        <div className={`flex min-w-0 items-center gap-2 rounded-md border px-3 py-2 ${taskFlowRowClass[flowTone]}`}>
+          <TaskFlowMarker tone={flowTone} label={flowLabel} compact />
+          <div className="min-w-0">
+            <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectDetail.currentState')}</div>
+            <div className="ldvh-body min-w-0 truncate text-ldvh-text-primary">{flowLabel}</div>
           </div>
         </div>
         {blockedRefs.length > 0 && (
-          <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
-            <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectDetail.waitingFor')}</div>
+          <div className="min-w-0">
+            <div className="ldvh-caption-strong mb-1.5 text-ldvh-text-secondary">{t('objectDetail.waitingFor')}</div>
             <div className="divide-y divide-ldvh-border/60">
               {blockedRefs.map((refId) => {
                 const refType = getObjectRefType(refId) ?? 'task';
@@ -1594,7 +1594,6 @@ export function TaskReadingLayout({
     'related_changes',
     'blocked_by',
     ...TASK_AUXILIARY_META_KEYS,
-    ...COMMON_AUXILIARY_META_KEYS,
     ...META_KEYS,
   ]);
   const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && hasDetailContent(value));
@@ -1612,7 +1611,7 @@ export function TaskReadingLayout({
   return (
     <div className="mb-6 flex flex-col gap-5">
       <DetailDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
-      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} muted />
+      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
       {obj.taskplan && (
         <DetailObjectReferenceSection
           title={t('objectDetail.taskPlan')}
@@ -1663,14 +1662,16 @@ export function TaskReadingLayout({
       </TaskSection>
 
       <TaskSection title={getFieldLabel('verification', locale)} tone="evidence">
-        {obj.verification ? <EvidenceBlock value={String(obj.verification)} /> : <EmptyHint text={t('objectDetail.noVerification')} />}
+        {obj.verification ? <EvidenceBlock value={String(obj.verification)} embedded /> : <EmptyHint text={t('objectDetail.noVerification')} />}
       </TaskSection>
-      <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
-        {obj.closure_evidence ? <EvidenceBlock value={String(obj.closure_evidence)} /> : <EmptyHint text={t('objectDetail.noClosureEvidence')} />}
-      </TaskSection>
+      {hasDetailContent(obj.closure_evidence) && (
+        <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
+          <EvidenceBlock value={String(obj.closure_evidence)} embedded />
+        </TaskSection>
+      )}
 
       <DetailDocumentSection title={t('objectDetail.deliverables')} docs={deliverables} />
-      <DetailDocumentSection title={t('objectDetail.relatedDocs')} docs={relatedDocs} />
+      <DetailMaterialSection fieldKey="related_docs" value={relatedDocs} locale={locale} />
       <DetailDocumentSection title={t('objectDetail.affectedDocs')} docs={affectedDocs} />
       <DetailMaterialSection fieldKey="related_adrs" value={obj.related_adrs} locale={locale} />
       <DetailMaterialSection fieldKey="related_changes" value={obj.related_changes} locale={locale} />

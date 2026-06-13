@@ -11,13 +11,6 @@ description: |
 source: |
   来源：taskplan-9004 的任务拆解。
   用途：覆盖 Task 详情页主线阅读结构和右侧扩展阅读入口。
-category: implementation
-priority: high
-severity: medium
-tags:
-  - web
-  - task-detail
-  - fixture
 blocked_by:
   - task-9041
 acceptance: |
@@ -27,11 +20,7 @@ acceptance: |
 verification: |
   - [x] 打开 `/objects/task/task-9042`，确认任务目标、推进状态和子任务态势可见。
   - [x] 打开右侧扩展阅读，确认阻塞任务和子任务引用不会改变主路由。
-  - [ ] 检查验收标准、验证方式和关闭证据的视觉层级是否一致。
-closure_evidence: |
-  - 路径：`docs/task-9042-verification.md`
-  - 状态：验证材料已补齐，等待 Human 检查页面读感。
-  - 风险：若文档和关联材料区域过度卡片化，会重新造成页面噪音。
+  - [ ] 检查验收标准、验证方式和关联材料的视觉层级是否一致。
 related_adrs:
   - adr-9002
 related_changes: []

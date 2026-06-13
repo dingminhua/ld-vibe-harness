@@ -35,7 +35,3 @@ status_history:
   from: active
   to: active
   reason: 补齐 WorkArea 全字段内容，便于观察详情页展示问题。
-archive_reason: |
-  当前工作域仍为 active，未发生归档。
-  该字段在真实对象中仅在 status 为 archived 时承担归档原因；
-  此处保留内容是为了测试详情页对条件字段的降权展示能力。

@@ -1,7 +1,7 @@
 id: task-9051
 type: task
 title: 待关闭计划已验证任务
-status: review_needed
+status: closed
 created: '2026-06-12T11:25:00'
 updated: '2026-06-12T11:35:00'
 taskplan: taskplan-9005
@@ -14,7 +14,8 @@ acceptance: |
 verification: |
   - [x] 验证通过
 closure_evidence: |
-  等待计划关闭吸收。
+  任务验收和验证已完成，可被 taskplan-9005 纳入计划关闭审查。
+closed_at: '2026-06-12T11:35:00'
 related_adrs: []
 related_changes: []
 related_docs: []

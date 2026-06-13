@@ -18,17 +18,6 @@ tasks:
   - task-9042
   - task-9043
   - task-9044
-review_requested_at: '2026-06-13T10:10:00'
-completion_evidence: |
-  - [x] 已补齐 TaskPlan 详情页的成功标准、关闭判断和关联材料预览。
-  - [x] 已补齐 task-9042 和 subtask-9041 的验证材料，用于观察下钻阅读。
-  - [ ] 仍需人工确认页面视觉层级是否满足 08 Web 信息同步规范。
-aggregated_deliverables:
-  - docs/taskplan-9004-close-review.md
-  - docs/task-9042-verification.md
-aggregated_docs:
-  - docs/workarea-9003-verification.md
-  - docs/subtask-9041-verification.md
 related_docs:
   - docs/taskplan-9004-close-review.md
 related_adrs:

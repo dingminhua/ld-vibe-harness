@@ -30,7 +30,7 @@ const TITLE_ACCENT_CLASS: Record<string, string> = {
   executing: 'border-emerald-400/80',
   accepted: 'border-emerald-400/70',
   review_needed: 'border-violet-400/80',
-  verifying: 'border-violet-400/80',
+  verifying: 'border-blue-400/80',
   draft: 'border-amber-400/75',
   proposed: 'border-amber-400/75',
   planned: 'border-amber-400/75',

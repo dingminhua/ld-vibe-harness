@@ -9,7 +9,7 @@ description: |
   任务已进入验证阶段，内部仍保留验证中、已验证和已关闭的子任务。
 source: taskplan-9001
 blocked_by:
-  - task-9006
+  - task-9001
 acceptance: |
   - [x] 子任务实现步骤已完成
   - [ ] 验证结果待吸收

@@ -6,8 +6,9 @@ created: '2026-06-12T11:00:00'
 updated: '2026-06-12T11:00:00'
 description: |
   用于对比多个活跃计划在同一工作域下的展示效果。
+source: |
+  Web 测试夹具初始化，用于覆盖同一工作域下多个活跃计划的并行呈现。
 scope: |
   覆盖轻量串行计划和并行子任务计划。
 constraints: |
   只作为 Web 测试夹具使用。
-archive_reason: ''

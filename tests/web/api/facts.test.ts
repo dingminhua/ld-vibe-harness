@@ -1,11 +1,288 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import yaml from 'js-yaml'
 import { listObjects, showObject } from '../../../web/api/services/facts.ts'
 import { buildPlanSummaries, type ListedObject } from '../../../web/api/routes/objects.ts'
 
 const fixtureRoot = fileURLToPath(new URL('../fixtures/taskplan-with-subtasks', import.meta.url))
+const projectRoot = path.resolve(fixtureRoot, '../../../..')
+
+const FIXTURE_ALLOWED_FIELDS: Record<string, Set<string>> = {
+  workarea: new Set([
+    'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
+    'description', 'scope', 'constraints', 'source',
+    'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
+    'status_history', 'archive_reason',
+  ]),
+  taskplan: new Set([
+    'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
+    'workarea', 'description', 'success_criteria', 'source', 'tasks',
+    'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
+    'status_history', 'review_requested_at', 'completion_evidence', 'closed_at',
+  ]),
+  task: new Set([
+    'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
+    'taskplan', 'description', 'source', 'blocked_by', 'acceptance', 'verification',
+    'risk_assessment', 'assignee', 'related_adrs', 'related_changes', 'related_docs',
+    'affected_docs', 'deliverables', 'status_history', 'closed_at', 'closure_evidence',
+  ]),
+  subtask: new Set([
+    'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
+    'task', 'description', 'source', 'acceptance', 'blocked_by', 'verification',
+    'closure_evidence', 'closed_at', 'status_history',
+  ]),
+}
+
+const FIXTURE_REQUIRED_FIELDS: Record<string, string[]> = {
+  workarea: ['id', 'type', 'title', 'status', 'created', 'updated', 'description', 'source'],
+  taskplan: ['id', 'type', 'title', 'status', 'created', 'updated', 'workarea', 'description', 'success_criteria', 'source', 'tasks'],
+  task: ['id', 'type', 'title', 'status', 'created', 'updated', 'taskplan', 'description', 'source', 'acceptance'],
+  subtask: ['id', 'type', 'title', 'status', 'created', 'updated', 'task', 'description', 'source', 'acceptance'],
+}
+
+const PLAN_CLOSE_REVIEW_STATUSES = new Set(['review_needed', 'closed'])
+const STARTED_TASK_STATUSES = new Set(['executing', 'verifying', 'review_needed', 'closed'])
+const OBJECT_CLOSURE_EVIDENCE_STATUSES = new Set(['review_needed', 'closed'])
+const PATH_REFERENCE_FIELDS = ['related_docs', 'affected_docs', 'deliverables'] as const
+const OBJECT_REFERENCE_FIELDS: Record<string, string> = {
+  related_adrs: 'adr',
+  related_memos: 'memo',
+  related_pitfalls: 'pitfall',
+}
+
+function listYamlFiles(dir: string): string[] {
+  return fs.existsSync(dir)
+    ? fs.readdirSync(dir)
+      .filter((file) => file.endsWith('.yaml') || file.endsWith('.yml'))
+      .map((file) => path.join(dir, file))
+    : []
+}
+
+interface FixtureRecord {
+  file: string
+  relativeFile: string
+  obj: Record<string, unknown>
+}
+
+function isBlank(value: unknown): boolean {
+  if (value === undefined || value === null) return true
+  if (typeof value === 'string') return value.trim().length === 0
+  if (Array.isArray(value)) return value.length === 0
+  return false
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+}
+
+function resolveFixturePath(reference: string): string {
+  if (path.isAbsolute(reference)) return reference
+  if (reference.startsWith('docs/')) return path.join(fixtureRoot, reference)
+  return path.join(projectRoot, reference)
+}
+
+function loadFixtureRecords(): FixtureRecord[] {
+  const files = ['workareas', 'taskplans', 'tasks', 'subtasks', 'adrs', 'memos', 'pitfalls']
+    .flatMap((dir) => listYamlFiles(path.join(fixtureRoot, 'ldvh-base', dir)))
+
+  return files.flatMap((file) => {
+    const obj = yaml.load(fs.readFileSync(file, 'utf8')) as Record<string, unknown> | null
+    if (!obj || typeof obj !== 'object') return []
+    return [{ file, relativeFile: path.relative(fixtureRoot, file), obj }]
+  })
+}
+
+function assertFixtureConformsToSpecs() {
+  const records = loadFixtureRecords()
+  const byId = new Map<string, FixtureRecord>()
+  for (const record of records) {
+    const id = typeof record.obj.id === 'string' ? record.obj.id : ''
+    if (id) byId.set(id, record)
+  }
+
+  const mainRecords = records.filter((record) => ['workarea', 'taskplan', 'task', 'subtask'].includes(String(record.obj.type ?? '')))
+  const tasks = mainRecords.filter((record) => record.obj.type === 'task')
+  const subtasks = mainRecords.filter((record) => record.obj.type === 'subtask')
+  const subtasksByTask = new Map<string, FixtureRecord[]>()
+  for (const subtask of subtasks) {
+    const taskId = String(subtask.obj.task ?? '')
+    const list = subtasksByTask.get(taskId) ?? []
+    list.push(subtask)
+    subtasksByTask.set(taskId, list)
+  }
+
+  const issues: string[] = []
+  for (const { relativeFile, obj } of mainRecords) {
+    const type = String(obj.type ?? '')
+    const allowed = FIXTURE_ALLOWED_FIELDS[type]
+    const required = FIXTURE_REQUIRED_FIELDS[type] ?? []
+    const id = String(obj.id ?? type)
+
+    const extra = allowed ? Object.keys(obj).filter((field) => !allowed.has(field)) : []
+    if (extra.length > 0) {
+      issues.push(`${relativeFile} (${id}): undefined fields ${extra.join(', ')}`)
+    }
+
+    const missing = required.filter((field) => isBlank(obj[field]))
+    if (missing.length > 0) {
+      issues.push(`${relativeFile} (${id}): missing required fields ${missing.join(', ')}`)
+    }
+
+    if (type === 'workarea') {
+      if (obj.status === 'archived' && isBlank(obj.archive_reason)) {
+        issues.push(`${relativeFile} (${id}): archived WorkArea requires archive_reason`)
+      }
+      if (obj.status !== 'archived' && !isBlank(obj.archive_reason)) {
+        issues.push(`${relativeFile} (${id}): archive_reason is only valid when status is archived`)
+      }
+    }
+
+    if (type === 'taskplan') {
+      const workarea = byId.get(String(obj.workarea ?? ''))
+      if (!workarea || workarea.obj.type !== 'workarea') {
+        issues.push(`${relativeFile} (${id}): workarea reference does not exist`)
+      }
+
+      const taskIds = stringArray(obj.tasks)
+      if (taskIds.length === 0) {
+        issues.push(`${relativeFile} (${id}): tasks must be a non-empty list`)
+      }
+      for (const taskId of taskIds) {
+        const task = byId.get(taskId)
+        if (!task || task.obj.type !== 'task') {
+          issues.push(`${relativeFile} (${id}): task reference ${taskId} does not exist`)
+          continue
+        }
+        if (task.obj.taskplan !== id) {
+          issues.push(`${relativeFile} (${id}): task ${taskId} must point back to this TaskPlan`)
+        }
+        if (PLAN_CLOSE_REVIEW_STATUSES.has(String(obj.status)) && task.obj.status !== 'closed') {
+          issues.push(`${relativeFile} (${id}): ${String(obj.status)} TaskPlan cannot contain non-closed task ${taskId}`)
+        }
+      }
+
+      if (PLAN_CLOSE_REVIEW_STATUSES.has(String(obj.status))) {
+        const closeFields = ['review_requested_at', 'completion_evidence']
+        const missingCloseFields = closeFields.filter((field) => isBlank(obj[field]))
+        if (missingCloseFields.length > 0) {
+          issues.push(`${relativeFile} (${id}): ${String(obj.status)} TaskPlan requires ${missingCloseFields.join(', ')}`)
+        }
+      } else if (!isBlank(obj.review_requested_at) || !isBlank(obj.completion_evidence)) {
+        issues.push(`${relativeFile} (${id}): active TaskPlan must not carry close-review fields`)
+      }
+      if (obj.status === 'closed' && isBlank(obj.closed_at)) {
+        issues.push(`${relativeFile} (${id}): closed TaskPlan requires closed_at`)
+      }
+    }
+
+    if (type === 'task') {
+      const plan = byId.get(String(obj.taskplan ?? ''))
+      if (!plan || plan.obj.type !== 'taskplan') {
+        issues.push(`${relativeFile} (${id}): taskplan reference does not exist`)
+      } else if (!stringArray(plan.obj.tasks).includes(id)) {
+        issues.push(`${relativeFile} (${id}): parent TaskPlan must include this Task`)
+      }
+
+      for (const blockerId of stringArray(obj.blocked_by)) {
+        const blocker = byId.get(blockerId)
+        if (!blocker || blocker.obj.type !== 'task') {
+          issues.push(`${relativeFile} (${id}): blocked_by ${blockerId} does not exist`)
+          continue
+        }
+        if (blocker.obj.taskplan !== obj.taskplan) {
+          issues.push(`${relativeFile} (${id}): blocked_by ${blockerId} must belong to the same TaskPlan`)
+        }
+        if (STARTED_TASK_STATUSES.has(String(obj.status)) && blocker.obj.status !== 'closed') {
+          issues.push(`${relativeFile} (${id}): started Task cannot be blocked by non-closed task ${blockerId}`)
+        }
+      }
+
+      const childSubtasks = subtasksByTask.get(id) ?? []
+      if (obj.status === 'closed') {
+        const missingCloseFields = ['closed_at', 'verification', 'closure_evidence'].filter((field) => isBlank(obj[field]))
+        if (missingCloseFields.length > 0) {
+          issues.push(`${relativeFile} (${id}): closed Task requires ${missingCloseFields.join(', ')}`)
+        }
+        for (const subtask of childSubtasks) {
+          if (subtask.obj.status !== 'closed') {
+            issues.push(`${relativeFile} (${id}): closed Task cannot contain non-closed SubTask ${String(subtask.obj.id ?? '')}`)
+          }
+        }
+      }
+      if (!OBJECT_CLOSURE_EVIDENCE_STATUSES.has(String(obj.status)) && !isBlank(obj.closure_evidence)) {
+        issues.push(`${relativeFile} (${id}): closure_evidence belongs to review_needed or closed Task states`)
+      }
+    }
+
+    if (type === 'subtask') {
+      const task = byId.get(String(obj.task ?? ''))
+      if (!task || task.obj.type !== 'task') {
+        issues.push(`${relativeFile} (${id}): task reference does not exist`)
+      }
+
+      for (const blockerId of stringArray(obj.blocked_by)) {
+        const blocker = byId.get(blockerId)
+        if (!blocker || blocker.obj.type !== 'subtask') {
+          issues.push(`${relativeFile} (${id}): blocked_by ${blockerId} does not exist`)
+          continue
+        }
+        if (blocker.obj.task !== obj.task) {
+          issues.push(`${relativeFile} (${id}): blocked_by ${blockerId} must belong to the same Task`)
+        }
+        if (STARTED_TASK_STATUSES.has(String(obj.status)) && blocker.obj.status !== 'closed') {
+          issues.push(`${relativeFile} (${id}): started SubTask cannot be blocked by non-closed subtask ${blockerId}`)
+        }
+      }
+
+      if (obj.status === 'closed') {
+        const missingCloseFields = ['closed_at', 'verification', 'closure_evidence'].filter((field) => isBlank(obj[field]))
+        if (missingCloseFields.length > 0) {
+          issues.push(`${relativeFile} (${id}): closed SubTask requires ${missingCloseFields.join(', ')}`)
+        }
+      }
+      if (!OBJECT_CLOSURE_EVIDENCE_STATUSES.has(String(obj.status)) && !isBlank(obj.closure_evidence)) {
+        issues.push(`${relativeFile} (${id}): closure_evidence belongs to review_needed or closed SubTask states`)
+      }
+    }
+
+    for (const field of PATH_REFERENCE_FIELDS) {
+      const value = obj[field]
+      if (value === undefined) continue
+      if (!Array.isArray(value)) {
+        issues.push(`${relativeFile} (${id}): ${field} must be a list`)
+        continue
+      }
+      for (const reference of stringArray(value)) {
+        if (!fs.existsSync(resolveFixturePath(reference))) {
+          issues.push(`${relativeFile} (${id}): ${field} reference not found: ${reference}`)
+        }
+      }
+    }
+
+    for (const [field, expectedType] of Object.entries(OBJECT_REFERENCE_FIELDS)) {
+      const value = obj[field]
+      if (value === undefined) continue
+      if (!Array.isArray(value)) {
+        issues.push(`${relativeFile} (${id}): ${field} must be a list`)
+        continue
+      }
+      for (const reference of stringArray(value)) {
+        const target = byId.get(reference)
+        if (!target || target.obj.type !== expectedType) {
+          issues.push(`${relativeFile} (${id}): ${field} reference not found: ${reference}`)
+        }
+      }
+    }
+  }
+
+  assert.deepEqual(issues, [], `Fixture data must match work model specs:\n${issues.join('\n')}`)
+}
 
 async function main() {
+  assertFixtureConformsToSpecs()
+
   const workareas = await listObjects('workarea')
   assert.equal(workareas.ok, true)
   assert.ok(Array.isArray(workareas.data.items))
