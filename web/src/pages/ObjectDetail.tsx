@@ -1148,13 +1148,11 @@ export function TaskPlanReadingLayout({
         )}
       </TaskSection>
 
-      <TaskSection title={t('objectDetail.planCloseReview')} tone="evidence">
-        <TaskPlanCloseDecision
-          successCriteria={obj.success_criteria}
-          completionEvidence={obj.completion_evidence}
-          locale={locale}
-        />
-      </TaskSection>
+      <TaskPlanCloseDecision
+        successCriteria={obj.success_criteria}
+        completionEvidence={obj.completion_evidence}
+        locale={locale}
+      />
 
       <DetailDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
       <DetailObjectReferenceSection
@@ -1214,22 +1212,18 @@ function TaskPlanCloseDecision({
   const hasEvidence = hasDetailContent(completionEvidence);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4">
-        <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/35 p-3">
-          <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{getFieldLabel('success_criteria', locale)}</div>
-          {hasCriteria ? <ChecklistCard value={String(successCriteria)} /> : <EmptyHint text={t('objectDetail.noSuccessCriteria')} />}
-        </div>
-        <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/35 p-3">
-          <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{getFieldLabel('completion_evidence', locale)}</div>
-          {hasEvidence
-            ? evidence.total > 0
-              ? <ChecklistCard value={String(completionEvidence)} />
-              : <EvidenceBlock value={String(completionEvidence)} embedded />
-            : <EmptyHint text={t('objectDetail.noCompletionEvidence')} />}
-        </div>
-      </div>
-    </div>
+    <>
+      <TaskSection title={getFieldLabel('success_criteria', locale)} tone="checklist">
+        {hasCriteria ? <ChecklistCard value={String(successCriteria)} /> : <EmptyHint text={t('objectDetail.noSuccessCriteria')} />}
+      </TaskSection>
+      <TaskSection title={getFieldLabel('completion_evidence', locale)} tone="evidence">
+        {hasEvidence
+          ? evidence.total > 0
+            ? <ChecklistCard value={String(completionEvidence)} />
+            : <EvidenceBlock value={String(completionEvidence)} embedded />
+          : <EmptyHint text={t('objectDetail.noCompletionEvidence')} />}
+      </TaskSection>
+    </>
   );
 }
 
