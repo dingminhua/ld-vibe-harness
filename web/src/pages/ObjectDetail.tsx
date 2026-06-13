@@ -742,13 +742,7 @@ function WorkAreaMaterialSection({ fieldKey, value, locale }: { fieldKey: string
   if (!Array.isArray(value) || value.length === 0) return null;
   return (
     <WorkAreaSection title={getMaterialLabel(fieldKey, locale)}>
-      <div className="min-w-0">
-        {DOC_LINK_FIELDS.includes(fieldKey) && typeof value[0] === 'string'
-          ? <DocumentOrTextList items={value as string[]} variant="plain" />
-          : REFERENCE_FIELDS.includes(fieldKey) && typeof value[0] === 'string'
-            ? <ReferenceCard refs={value as string[]} showType={false} showStatus={false} variant="plain" />
-            : <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />}
-      </div>
+      <MaterialValue fieldKey={fieldKey} value={value} locale={locale} referenceVariant="plain" />
     </WorkAreaSection>
   );
 }
@@ -1001,13 +995,29 @@ export function MaterialRow({
   return (
     <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
       <div className="ldvh-caption-strong text-ldvh-text-secondary">{getMaterialLabel(fieldKey, locale)}</div>
-      <div className="min-w-0">
-        {DOC_LINK_FIELDS.includes(fieldKey) && typeof value[0] === 'string'
-          ? <DocumentOrTextList items={value as string[]} variant={referenceVariant} />
-          : REFERENCE_FIELDS.includes(fieldKey) && typeof value[0] === 'string'
-            ? <ReferenceCard refs={value as string[]} showType={false} showStatus={false} variant={referenceVariant} />
-            : <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />}
-      </div>
+      <MaterialValue fieldKey={fieldKey} value={value} locale={locale} referenceVariant={referenceVariant} />
+    </div>
+  );
+}
+
+function MaterialValue({
+  fieldKey,
+  value,
+  locale,
+  referenceVariant = 'card',
+}: {
+  fieldKey: string;
+  value: unknown[];
+  locale: string;
+  referenceVariant?: 'card' | 'plain';
+}) {
+  return (
+    <div className="min-w-0">
+      {DOC_LINK_FIELDS.includes(fieldKey) && typeof value[0] === 'string'
+        ? <DocumentOrTextList items={value as string[]} variant={referenceVariant} />
+        : REFERENCE_FIELDS.includes(fieldKey) && typeof value[0] === 'string'
+          ? <ReferenceCard refs={value as string[]} showType={false} showStatus={false} variant={referenceVariant} />
+          : <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />}
     </div>
   );
 }
@@ -1086,13 +1096,6 @@ export function TaskPlanReadingLayout({
   const relatedMemos = ((obj.aggregated_related_memos as string[] | undefined) ?? (obj.related_memos as string[] | undefined)) || [];
   const relatedPitfalls = ((obj.aggregated_related_pitfalls as string[] | undefined) ?? (obj.related_pitfalls as string[] | undefined)) || [];
   const relatedChanges = ((obj.aggregated_related_changes as string[] | undefined) ?? (obj.related_changes as string[] | undefined)) || [];
-  const hasRelatedMaterials = [
-    relatedDocs,
-    relatedAdrs,
-    relatedMemos,
-    relatedPitfalls,
-    relatedChanges,
-  ].some((value) => value.length > 0);
   const hidden = new Set([
     ...META_KEYS,
     'workarea',
@@ -1153,32 +1156,20 @@ export function TaskPlanReadingLayout({
         />
       </TaskSection>
 
-      <TaskSection title={t('objectDetail.workareaDefinition')} tone="primary">
-        <div className="divide-y divide-ldvh-border/70">
-          <DefinitionRow label={t('objectDetail.workareaGoal')} value={obj.description} />
-          <DetailObjectRow
-            label={t('objectDetail.workArea')}
-            item={summary?.workareaSummary}
-            fallbackId={typeof obj.workarea === 'string' ? obj.workarea : undefined}
-            objectType="workarea"
-            locale={locale}
-            variant="property"
-          />
-          <DefinitionRow label={getFieldLabel('source', locale)} value={obj.source} />
-        </div>
-      </TaskSection>
-
-      {hasRelatedMaterials && (
-        <TaskSection title={t('objectDetail.relatedMaterials')} tone="default">
-          <div className="divide-y divide-ldvh-border/70">
-            <MaterialRow fieldKey="related_docs" value={relatedDocs} locale={locale} />
-            <MaterialRow fieldKey="related_adrs" value={relatedAdrs} locale={locale} />
-            <MaterialRow fieldKey="related_memos" value={relatedMemos} locale={locale} />
-            <MaterialRow fieldKey="related_pitfalls" value={relatedPitfalls} locale={locale} />
-            <MaterialRow fieldKey="related_changes" value={relatedChanges} locale={locale} />
-          </div>
-        </TaskSection>
-      )}
+      <DetailDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
+      <DetailObjectReferenceSection
+        title={t('objectDetail.workArea')}
+        item={summary?.workareaSummary}
+        fallbackId={typeof obj.workarea === 'string' ? obj.workarea : undefined}
+        objectType="workarea"
+        locale={locale}
+      />
+      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
+      <DetailMaterialSection fieldKey="related_docs" value={relatedDocs} locale={locale} />
+      <DetailMaterialSection fieldKey="related_adrs" value={relatedAdrs} locale={locale} />
+      <DetailMaterialSection fieldKey="related_memos" value={relatedMemos} locale={locale} />
+      <DetailMaterialSection fieldKey="related_pitfalls" value={relatedPitfalls} locale={locale} />
+      <DetailMaterialSection fieldKey="related_changes" value={relatedChanges} locale={locale} />
 
       {otherEntries.length > 0 && (
         <TaskSection title={t('objectDetail.otherFields')} tone="default">
@@ -1239,6 +1230,63 @@ function TaskPlanCloseDecision({
         </div>
       </div>
     </div>
+  );
+}
+
+function DetailDefinitionSection({ title, value, muted = false }: { title: string; value: unknown; muted?: boolean }) {
+  if (!hasDetailContent(value)) return null;
+  return (
+    <TaskSection title={title} tone="primary">
+      <div className={`ldvh-definition-text min-w-0 ${muted ? 'opacity-85' : ''}`}>
+        <DefinitionValue value={String(value)} muted={muted} />
+      </div>
+    </TaskSection>
+  );
+}
+
+function DetailDocumentSection({ title, docs }: { title: string; docs: string[] }) {
+  if (docs.length === 0) return null;
+  return (
+    <TaskSection title={title} tone="docs">
+      <DocumentOrTextList items={docs} variant="plain" />
+    </TaskSection>
+  );
+}
+
+function DetailMaterialSection({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  return (
+    <TaskSection title={getMaterialLabel(fieldKey, locale)} tone="default">
+      <MaterialValue fieldKey={fieldKey} value={value} locale={locale} referenceVariant="plain" />
+    </TaskSection>
+  );
+}
+
+function DetailObjectReferenceSection({
+  title,
+  item,
+  fallbackId,
+  objectType,
+  locale,
+}: {
+  title: string;
+  item?: RelatedObjectSummary | ObjectItem | null;
+  fallbackId?: string;
+  objectType: string;
+  locale: string;
+}) {
+  const objectId = item?.id ?? fallbackId;
+  if (!objectId) return null;
+
+  return (
+    <TaskSection title={title} tone="primary">
+      <DetailObjectReferenceValue
+        item={item}
+        fallbackId={fallbackId}
+        objectType={objectType}
+        locale={locale}
+      />
+    </TaskSection>
   );
 }
 
@@ -1415,6 +1463,50 @@ export function DetailObjectRow({
   );
 }
 
+function DetailObjectReferenceValue({
+  item,
+  fallbackId,
+  objectType,
+  locale,
+}: {
+  item?: RelatedObjectSummary | ObjectItem | null;
+  fallbackId?: string;
+  objectType: string;
+  locale: string;
+}) {
+  const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
+  const objectId = item?.id ?? fallbackId;
+  if (!objectId) return null;
+
+  const title = item ? getLocalizedTitle(item, locale) : objectId;
+  const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === objectType && panelContent.objectId === objectId;
+  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
+  const objectTypeColor = CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other;
+  const open = () => openPanel({ type: 'object', title, objectType, objectId });
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      data-detail-object-id={objectId}
+      data-detail-object-type={objectType}
+      onClick={open}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          open();
+        }
+      }}
+      className="group/detail-ref flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-ldvh-border/35"
+    >
+      <ObjectTypeIcon type={objectType} size={12} className="shrink-0" style={{ color: objectTypeColor }} />
+      <span className="ldvh-body min-w-0 flex-1 truncate transition-colors group-hover/detail-ref:text-ldvh-accent">{title}</span>
+      <CopyPathButton path={item?.path} />
+      <PanelIcon size={14} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
+    </div>
+  );
+}
+
 export function DetailTaskRow({
   item,
   locale,
@@ -1522,38 +1614,29 @@ export function TaskReadingLayout({
   const deliverables = (obj.deliverables as string[] | undefined) ?? [];
   const relatedDocs = (obj.related_docs as string[] | undefined) ?? [];
   const affectedDocs = (obj.affected_docs as string[] | undefined) ?? [];
-  const hasMaterials = deliverables.length > 0 || relatedDocs.length > 0 || affectedDocs.length > 0;
-  const hasRelatedMaterials = [
-    obj.related_adrs,
-    obj.related_changes,
-  ].some((value) => Array.isArray(value) && value.length > 0);
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      <TaskSection title={t('objectDetail.taskGoal')} tone="primary">
-        <div className="divide-y divide-ldvh-border/70">
-          <DefinitionRow label={t('objectDetail.workareaGoal')} value={obj.description} />
-          <DefinitionRow label={getFieldLabel('source', locale)} value={obj.source} muted />
-          {obj.taskplan && (
-            <DetailObjectRow
-              label={t('objectDetail.taskPlan')}
-              item={parentPlan}
-              fallbackId={String(obj.taskplan)}
-              objectType="taskplan"
-              locale={locale}
-            />
-          )}
-          {obj.task && (
-            <DetailObjectRow
-              label={getFieldLabel('task', locale)}
-              item={summary}
-              fallbackId={String(obj.task)}
-              objectType="task"
-              locale={locale}
-            />
-          )}
-        </div>
-      </TaskSection>
+      <DetailDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
+      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} muted />
+      {obj.taskplan && (
+        <DetailObjectReferenceSection
+          title={t('objectDetail.taskPlan')}
+          item={parentPlan}
+          fallbackId={String(obj.taskplan)}
+          objectType="taskplan"
+          locale={locale}
+        />
+      )}
+      {obj.task && (
+        <DetailObjectReferenceSection
+          title={getFieldLabel('task', locale)}
+          item={summary}
+          fallbackId={String(obj.task)}
+          objectType="task"
+          locale={locale}
+        />
+      )}
 
       <TaskProgressSection
         item={currentFlowItem}
@@ -1585,33 +1668,18 @@ export function TaskReadingLayout({
         {obj.acceptance ? <ChecklistCard value={String(obj.acceptance)} /> : <EmptyHint text={t('objectDetail.noAcceptance')} />}
       </TaskSection>
 
-      <div className="ldvh-panel-grid">
-        <TaskSection title={getFieldLabel('verification', locale)} tone="evidence">
-          {obj.verification ? <EvidenceBlock value={String(obj.verification)} /> : <EmptyHint text={t('objectDetail.noVerification')} />}
-        </TaskSection>
-        <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
-          {obj.closure_evidence ? <EvidenceBlock value={String(obj.closure_evidence)} /> : <EmptyHint text={t('objectDetail.noClosureEvidence')} />}
-        </TaskSection>
-      </div>
+      <TaskSection title={getFieldLabel('verification', locale)} tone="evidence">
+        {obj.verification ? <EvidenceBlock value={String(obj.verification)} /> : <EmptyHint text={t('objectDetail.noVerification')} />}
+      </TaskSection>
+      <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
+        {obj.closure_evidence ? <EvidenceBlock value={String(obj.closure_evidence)} /> : <EmptyHint text={t('objectDetail.noClosureEvidence')} />}
+      </TaskSection>
 
-      {hasMaterials && (
-        <TaskSection title={t('objectDetail.deliverablesAndDocs')} tone="docs">
-          <div className="ldvh-section-grid">
-            <TaskDocGroup label={t('objectDetail.deliverables')} docs={deliverables} />
-            <TaskDocGroup label={t('objectDetail.relatedDocs')} docs={relatedDocs} />
-            <TaskDocGroup label={t('objectDetail.affectedDocs')} docs={affectedDocs} />
-          </div>
-        </TaskSection>
-      )}
-
-      {hasRelatedMaterials && (
-        <TaskSection title={t('objectDetail.relatedMaterials')} tone="default">
-          <div className="divide-y divide-ldvh-border/70">
-            <MaterialRow fieldKey="related_adrs" value={obj.related_adrs} locale={locale} />
-            <MaterialRow fieldKey="related_changes" value={obj.related_changes} locale={locale} />
-          </div>
-        </TaskSection>
-      )}
+      <DetailDocumentSection title={t('objectDetail.deliverables')} docs={deliverables} />
+      <DetailDocumentSection title={t('objectDetail.relatedDocs')} docs={relatedDocs} />
+      <DetailDocumentSection title={t('objectDetail.affectedDocs')} docs={affectedDocs} />
+      <DetailMaterialSection fieldKey="related_adrs" value={obj.related_adrs} locale={locale} />
+      <DetailMaterialSection fieldKey="related_changes" value={obj.related_changes} locale={locale} />
 
       {otherEntries.length > 0 && (
         <TaskSection title={t('objectDetail.otherFields')} tone="default">
