@@ -95,6 +95,10 @@ function toStringArray(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
 }
 
+function addStringArray(target: Set<string>, value: unknown): void {
+  toStringArray(value).forEach((item) => target.add(item))
+}
+
 function hasContent(value: unknown): boolean {
   if (Array.isArray(value)) return value.length > 0
   if (typeof value === 'string') return value.trim().length > 0
@@ -406,9 +410,21 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
-  // TaskPlan 聚合：合并计划内 Task 的 deliverables 和 related_docs
+  // TaskPlan 派生阅读材料：计划自身优先，再合并计划内 Task 的关联材料并去重。
   if (type === 'taskplan' && result.data) {
     const tasks: string[] = (result.data.tasks as string[]) || []
+    const relatedDocsSet = new Set<string>()
+    const relatedAdrsSet = new Set<string>()
+    const relatedMemosSet = new Set<string>()
+    const relatedPitfallsSet = new Set<string>()
+    const relatedChangesSet = new Set<string>()
+
+    addStringArray(relatedDocsSet, result.data.related_docs)
+    addStringArray(relatedAdrsSet, result.data.related_adrs)
+    addStringArray(relatedMemosSet, result.data.related_memos)
+    addStringArray(relatedPitfallsSet, result.data.related_pitfalls)
+    addStringArray(relatedChangesSet, result.data.related_changes)
+
     if (tasks.length > 0) {
       const taskDir = path.join(LDVH_BASE_DIR, 'tasks')
       const deliverablesSet = new Set<string>()
@@ -425,6 +441,11 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
           const taskDocs = (taskObj.related_docs as string[]) || []
           taskDeliverables.forEach(d => deliverablesSet.add(d))
           taskDocs.forEach(d => docsSet.add(d))
+          addStringArray(relatedDocsSet, taskObj.related_docs)
+          addStringArray(relatedAdrsSet, taskObj.related_adrs)
+          addStringArray(relatedMemosSet, taskObj.related_memos)
+          addStringArray(relatedPitfallsSet, taskObj.related_pitfalls)
+          addStringArray(relatedChangesSet, taskObj.related_changes)
         } catch {
           // 单个 task 读取失败不影响整体聚合
         }
@@ -436,6 +457,11 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
       result.data.aggregated_deliverables = []
       result.data.aggregated_docs = []
     }
+    result.data.aggregated_related_docs = [...relatedDocsSet]
+    result.data.aggregated_related_adrs = [...relatedAdrsSet]
+    result.data.aggregated_related_memos = [...relatedMemosSet]
+    result.data.aggregated_related_pitfalls = [...relatedPitfallsSet]
+    result.data.aggregated_related_changes = [...relatedChangesSet]
   }
 
   res.json(result)

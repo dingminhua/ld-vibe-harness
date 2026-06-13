@@ -2,9 +2,10 @@ import { FileText, ExternalLink } from 'lucide-react';
 
 interface DocPreviewLinkProps {
   docs: string[];
+  variant?: 'card' | 'plain';
 }
 
-export default function DocPreviewLink({ docs }: DocPreviewLinkProps) {
+export default function DocPreviewLink({ docs, variant = 'card' }: DocPreviewLinkProps) {
 
   if (docs.length === 0) return null;
 
@@ -27,11 +28,14 @@ export default function DocPreviewLink({ docs }: DocPreviewLinkProps) {
     <div className="flex flex-col gap-1.5">
       {docs.map((doc, i) => {
         const isExternal = doc.startsWith('http');
+        const itemClassName = variant === 'plain'
+          ? 'ldvh-body flex w-full items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25'
+          : 'ldvh-body flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors hover:bg-ldvh-border/30';
         return (
           <button
             key={i}
             onClick={() => handleClick(doc)}
-            className="ldvh-body flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors hover:bg-ldvh-border/30"
+            className={itemClassName}
           >
             {isExternal ? (
               <ExternalLink size={13} className="shrink-0 text-ldvh-accent" />

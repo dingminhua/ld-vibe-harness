@@ -36,15 +36,16 @@ interface ReferenceCardProps {
   showType?: boolean;
   showStatus?: boolean;
   showPanelIcon?: boolean;
+  variant?: 'card' | 'plain';
 }
 
-export default function ReferenceCard({ refs, showType = true, showStatus = true, showPanelIcon = true }: ReferenceCardProps) {
+export default function ReferenceCard({ refs, showType = true, showStatus = true, showPanelIcon = true, variant = 'card' }: ReferenceCardProps) {
   if (refs.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-1.5">
       {refs.map((ref, i) => (
-        <ReferenceItem key={i} refId={ref} showType={showType} showStatus={showStatus} showPanelIcon={showPanelIcon} />
+        <ReferenceItem key={i} refId={ref} showType={showType} showStatus={showStatus} showPanelIcon={showPanelIcon} variant={variant} />
       ))}
     </div>
   );
@@ -55,11 +56,13 @@ function ReferenceItem({
   showType,
   showStatus,
   showPanelIcon,
+  variant,
 }: {
   refId: string;
   showType: boolean;
   showStatus: boolean;
   showPanelIcon: boolean;
+  variant: 'card' | 'plain';
 }) {
   const navigate = useNavigate();
   const { locale } = useI18n();
@@ -89,6 +92,9 @@ function ReferenceItem({
     : refType;
   const isCurrentPanelOpen = Boolean(panelOpen && refType && panelContent?.type === 'object' && panelContent.objectType === refType && panelContent.objectId === refId);
   const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
+  const itemClassName = variant === 'plain'
+    ? `ldvh-body group flex w-full items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors ${refType ? 'cursor-pointer hover:bg-ldvh-border/25' : 'cursor-default'}`
+    : `ldvh-body group flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors ${refType ? 'cursor-pointer hover:bg-ldvh-border/30' : 'cursor-default'}`;
 
   const handleClick = () => {
     if (!refType) return;
@@ -117,7 +123,7 @@ function ReferenceItem({
           handleClick();
         }
       }}
-      className={`ldvh-body group flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors ${refType ? 'cursor-pointer hover:bg-ldvh-border/30' : 'cursor-default'}`}
+      className={itemClassName}
     >
       <ObjectTypeIcon type={refType} size={13} className="shrink-0" style={{ color: typeColor }} />
       <span className="ldvh-meta shrink-0 text-ldvh-accent">{refId}</span>

@@ -21,9 +21,9 @@ const TASK_RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected',
 export const taskFlowToneClass = {
   ready: 'border-sky-500/25 bg-sky-500/10 text-sky-500',
   executing: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
-  verifying: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
+  verifying: 'border-blue-500/30 bg-blue-500/10 text-blue-500',
   absorbing: 'border-violet-500/30 bg-violet-500/10 text-violet-500',
-  closed: 'border-zinc-500/30 bg-zinc-500/10 text-ldvh-text-secondary',
+  closed: 'border-zinc-500/30 bg-zinc-500/10 text-zinc-500',
   blocked: 'border-amber-500/35 bg-amber-500/10 text-amber-500',
   risk: 'border-red-500/30 bg-red-500/10 text-red-500',
   neutral: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
@@ -60,12 +60,45 @@ export const taskFlowBarClass: Record<TaskFlowTone, string> = {
 export const taskFlowIconClass: Record<TaskFlowTone, string> = {
   ready: 'text-sky-500',
   executing: 'text-emerald-500',
-  verifying: 'text-blue-400',
+  verifying: 'text-blue-500',
   absorbing: 'text-violet-500',
   closed: 'text-zinc-500',
   blocked: 'text-amber-500',
   risk: 'text-red-500',
   neutral: 'text-ldvh-text-secondary',
+};
+
+export const taskFlowRowHoverTextClass: Record<TaskFlowTone, string> = {
+  ready: 'group-hover/row:text-sky-500',
+  executing: 'group-hover/row:text-emerald-500',
+  verifying: 'group-hover/row:text-blue-500',
+  absorbing: 'group-hover/row:text-violet-500',
+  closed: 'group-hover/row:text-zinc-500',
+  blocked: 'group-hover/row:text-amber-500',
+  risk: 'group-hover/row:text-red-500',
+  neutral: 'group-hover/row:text-ldvh-accent',
+};
+
+export const taskFlowDetailHoverTextClass: Record<TaskFlowTone, string> = {
+  ready: 'group-hover/detail-task:text-sky-500',
+  executing: 'group-hover/detail-task:text-emerald-500',
+  verifying: 'group-hover/detail-task:text-blue-500',
+  absorbing: 'group-hover/detail-task:text-violet-500',
+  closed: 'group-hover/detail-task:text-zinc-500',
+  blocked: 'group-hover/detail-task:text-amber-500',
+  risk: 'group-hover/detail-task:text-red-500',
+  neutral: 'group-hover/detail-task:text-ldvh-accent',
+};
+
+export const taskFlowActionClass: Record<TaskFlowTone, string> = {
+  ready: 'bg-transparent text-sky-500 hover:bg-sky-500/10',
+  executing: 'bg-transparent text-emerald-500 hover:bg-emerald-500/10',
+  verifying: 'bg-transparent text-blue-500 hover:bg-blue-500/10',
+  absorbing: 'bg-transparent text-violet-500 hover:bg-violet-500/10',
+  closed: 'bg-transparent text-zinc-500 hover:bg-zinc-500/10',
+  blocked: 'bg-transparent text-amber-500 hover:bg-amber-500/10',
+  risk: 'bg-transparent text-red-500 hover:bg-red-500/10',
+  neutral: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent',
 };
 
 export function getTaskFlowIcon(tone: TaskFlowTone): LucideIcon {

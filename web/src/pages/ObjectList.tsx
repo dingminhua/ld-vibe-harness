@@ -6,9 +6,9 @@ import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
 import MemoCreate from '@/components/MemoCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
-import { CollectionTitleIcon, ObjectTypeIcon } from '@/components/SemanticIcon';
+import { CollectionTitleIcon } from '@/components/SemanticIcon';
 import { TaskFlowBar, TaskFlowLegend, TaskFlowMarker } from '@/components/TaskFlowStatus';
-import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowRowClass } from '@/utils/taskFlowStatus';
+import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowActionClass, taskFlowRowClass, taskFlowRowHoverTextClass } from '@/utils/taskFlowStatus';
 import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
@@ -186,7 +186,10 @@ function WorkAreaPlanSection({
   const toneClass = workAreaSectionToneClass[tone];
 
   return (
-    <div className={`min-w-0 overflow-hidden rounded-md border ${toneClass.section}`}>
+    <div
+      onClick={(event) => event.stopPropagation()}
+      className={`min-w-0 cursor-default overflow-hidden rounded-md border ${toneClass.section}`}
+    >
       <div className={`ldvh-caption-strong flex min-w-0 items-center gap-2 border px-3 py-2 ${toneClass.header}`}>
         <CollectionTitleIcon type="taskplan" size={13} className="shrink-0" />
         <span className="min-w-0 truncate">{title}</span>
@@ -234,18 +237,18 @@ function TaskQueueRow({
         tabIndex={0}
         onClick={(event) => onOpen(event, item)}
         onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-        className={`group/row min-w-0 cursor-pointer rounded-md border px-2 py-2 text-left outline-none transition-colors hover:brightness-[1.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70 ${taskFlowRowClass[flowTone]}`}
+        className={`group/row min-w-0 cursor-pointer rounded-md border px-2 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70 ${taskFlowRowClass[flowTone]}`}
       >
         <div className="flex min-w-0 items-center gap-2">
           <TaskFlowMarker tone={flowTone} label={flowLabel} />
           <div className="min-w-0 flex-1">
-            <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/row:text-ldvh-accent">
+            <span className={`ldvh-body block min-w-0 truncate transition-colors ${taskFlowRowHoverTextClass[flowTone]}`}>
               {getLocalizedTitle(item, locale)}
             </span>
             <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
           </div>
-          <CopyPathButton path={item.path} />
-          <ArrowRight size={13} className="shrink-0 text-ldvh-text-secondary transition-all group-hover/row:translate-x-0.5 group-hover/row:text-ldvh-accent" />
+          <CopyPathButton path={item.path} toneClassName={taskFlowActionClass[flowTone]} />
+          <ArrowRight size={13} className={`shrink-0 text-ldvh-text-secondary transition-all group-hover/row:translate-x-0.5 ${taskFlowRowHoverTextClass[flowTone]}`} />
         </div>
         {subtasks.length > 0 && (
           <div className="ml-9 mt-2 min-w-0">
@@ -253,54 +256,6 @@ function TaskQueueRow({
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function PlanWorkareaRow({
-  workarea,
-  fallbackId,
-  locale,
-  emptyLabel,
-  onOpen,
-}: {
-  workarea?: RelatedObjectSummary;
-  fallbackId?: string;
-  locale: string;
-  emptyLabel: string;
-  onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
-}) {
-  const item = workarea ?? (fallbackId ? {
-    id: fallbackId,
-    type: 'workarea',
-    title: fallbackId,
-    status: 'unknown',
-    path: '',
-    updated: '',
-  } : undefined);
-
-  if (!item) {
-    return (
-      <div className="ldvh-caption flex min-w-0 items-center gap-1.5 px-1 text-ldvh-text-secondary">
-        <ObjectTypeIcon type="workarea" size={12} className="shrink-0" />
-        <span className="min-w-0 truncate">{emptyLabel}</span>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={(event) => onOpen(event, item)}
-      onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-      className="ldvh-caption group/workarea flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-ldvh-text-secondary outline-none transition-colors hover:bg-ldvh-border/35 hover:text-ldvh-text-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70"
-    >
-      <ObjectTypeIcon type="workarea" size={12} className="shrink-0" />
-      <span className="min-w-0 flex-1 truncate text-ldvh-text-primary/85 transition-colors group-hover/workarea:text-ldvh-accent">
-        {getLocalizedTitle(item, locale)}
-      </span>
-      <ArrowRight size={12} className="shrink-0 transition-all group-hover/workarea:translate-x-0.5 group-hover/workarea:text-ldvh-accent" />
     </div>
   );
 }
@@ -320,7 +275,11 @@ function ObjectCardFrame({
   const titleAccentClass = getTitleAccentClass(obj.status);
   return (
     <div
-      className="flex min-w-0 flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left"
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(obj.id)}
+      onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(obj.id))}
+      className="group/card flex min-w-0 cursor-pointer flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left outline-none transition-colors hover:border-ldvh-accent/40 hover:bg-ldvh-panel/95 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70"
       style={signalAccent ? { borderLeftColor: signalAccent, borderLeftWidth: 3 } : undefined}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
@@ -331,16 +290,12 @@ function ObjectCardFrame({
         </div>
       </div>
       <div
-        role="button"
-        tabIndex={0}
-        onClick={() => onOpen(obj.id)}
-        onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(obj.id))}
-        className={`group/card-title -mx-1 flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left outline-none ring-1 ring-inset ring-ldvh-border/50 transition-colors hover:bg-ldvh-bg/85 focus-visible:ring-2 focus-visible:ring-ldvh-accent/70 ${titleAccentClass}`}
+        className={`-mx-1 flex min-w-0 items-center gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover/card:bg-ldvh-bg/85 ${titleAccentClass}`}
       >
-        <span className="ldvh-card-title min-w-0 flex-1 truncate transition-colors group-hover/card-title:text-ldvh-accent">
+        <span className="ldvh-card-title min-w-0 flex-1 truncate transition-colors group-hover/card:text-ldvh-accent">
           {getLocalizedTitle(obj, locale)}
         </span>
-        <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-all group-hover/card-title:translate-x-0.5 group-hover/card-title:text-ldvh-accent" />
+        <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-all group-hover/card:translate-x-0.5 group-hover/card:text-ldvh-accent" />
       </div>
       {children}
       <span className="ldvh-meta self-end text-right">{formatDateTime(obj.updated)}</span>
@@ -415,7 +370,10 @@ export default function ObjectList() {
       return (
         <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
           {planTotal === 0 ? (
-            <p className="ldvh-body-muted rounded-md border border-dashed border-ldvh-border bg-ldvh-bg px-3 py-4 text-center">
+            <p
+              onClick={(event) => event.stopPropagation()}
+              className="ldvh-body-muted cursor-default rounded-md border border-dashed border-ldvh-border bg-ldvh-bg px-3 py-4 text-center"
+            >
               {t('objectList.noPlans')}
             </p>
           ) : (
@@ -484,16 +442,10 @@ export default function ObjectList() {
 
       return (
         <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
-          <PlanWorkareaRow
-            workarea={obj.workareaSummary}
-            fallbackId={obj.workarea}
-            locale={locale}
-            emptyLabel={t('objectList.noWorkarea')}
-            onOpen={openRelatedObject}
-          />
-
           {shouldShowCloseDecision && (
-            <div className={`min-w-0 rounded-md border p-3 ${
+            <div
+              onClick={(event) => event.stopPropagation()}
+              className={`min-w-0 cursor-default rounded-md border p-3 ${
               hasClosedIntegrityIssue
                 ? 'border-red-500/30 bg-red-500/5'
                 : 'border-violet-500/25 bg-violet-500/5'
@@ -511,7 +463,10 @@ export default function ObjectList() {
             </div>
           )}
 
-          <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-3">
+          <div
+            onClick={(event) => event.stopPropagation()}
+            className="min-w-0 cursor-default rounded-md border border-ldvh-border bg-ldvh-bg p-3"
+          >
             <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
               <span className="ldvh-caption-strong inline-flex min-w-0 items-center gap-1.5 truncate">
                 <CollectionTitleIcon type="taskQueue" size={13} className="shrink-0 text-ldvh-accent" />
