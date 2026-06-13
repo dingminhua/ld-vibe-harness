@@ -144,7 +144,7 @@ function WorkAreaPlanRow({
       tabIndex={0}
       onClick={(event) => onOpen(event, item)}
       onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-      className={`group/workarea-row flex min-w-0 cursor-pointer flex-col gap-1.5 rounded-md px-2 py-2 text-left transition-colors ${toneClass.rowHover}`}
+      className={`group/workarea-row flex min-w-0 cursor-pointer flex-col gap-1.5 rounded-md px-2 py-2 text-left outline-none transition-colors hover:brightness-[1.04] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70 ${toneClass.rowHover}`}
     >
       <div className="flex min-w-0 items-center gap-2">
         <div className="min-w-0 flex-1">
@@ -154,7 +154,7 @@ function WorkAreaPlanRow({
           <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
         </div>
         <CopyPathButton path={item.path} />
-        <ArrowRight size={14} className={`shrink-0 transition-transform group-hover/workarea-row:translate-x-0.5 ${toneClass.icon}`} />
+        <ArrowRight size={13} className={`shrink-0 transition-all group-hover/workarea-row:translate-x-0.5 ${toneClass.icon}`} />
       </div>
       {tasks.length > 0 && (
         <div className="min-w-0 self-stretch">
@@ -233,7 +233,7 @@ function TaskQueueRow({
         tabIndex={0}
         onClick={(event) => onOpen(event, item)}
         onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-        className={`group/row min-w-0 cursor-pointer rounded-md border px-2 py-2 text-left transition-colors ${taskFlowRowClass[flowTone]}`}
+        className={`group/row min-w-0 cursor-pointer rounded-md border px-2 py-2 text-left outline-none transition-colors hover:brightness-[1.03] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70 ${taskFlowRowClass[flowTone]}`}
       >
         <div className="flex min-w-0 items-center gap-2">
           <TaskFlowMarker tone={flowTone} label={flowLabel} />
@@ -244,7 +244,7 @@ function TaskQueueRow({
             <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
           </div>
           <CopyPathButton path={item.path} />
-          <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-colors group-hover/row:text-ldvh-accent" />
+          <ArrowRight size={13} className="shrink-0 text-ldvh-text-secondary transition-all group-hover/row:translate-x-0.5 group-hover/row:text-ldvh-accent" />
         </div>
         {subtasks.length > 0 && (
           <div className="ml-9 mt-2 min-w-0">
@@ -293,14 +293,14 @@ function PlanWorkareaRow({
       tabIndex={0}
       onClick={(event) => onOpen(event, item)}
       onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-      className="ldvh-caption group/workarea flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/35 hover:text-ldvh-text-primary"
+      className="ldvh-caption group/workarea flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-ldvh-text-secondary outline-none transition-colors hover:bg-ldvh-border/35 hover:text-ldvh-text-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70"
     >
       <MapPinned size={12} className="shrink-0" />
       <span className="min-w-0 flex-1 truncate text-ldvh-text-primary/85 transition-colors group-hover/workarea:text-ldvh-accent">
         {getLocalizedTitle(item, locale)}
       </span>
       <span className="ldvh-meta-muted ml-auto shrink-0 text-right">{item.id}</span>
-      <ArrowRight size={12} className="shrink-0 transition-colors group-hover/workarea:text-ldvh-accent" />
+      <ArrowRight size={12} className="shrink-0 transition-all group-hover/workarea:translate-x-0.5 group-hover/workarea:text-ldvh-accent" />
     </div>
   );
 }
@@ -320,11 +320,7 @@ function ObjectCardFrame({
   const titleAccentClass = getTitleAccentClass(obj.status);
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(obj.id)}
-      onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(obj.id))}
-      className="group flex min-w-0 cursor-pointer flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left transition-colors hover:border-ldvh-accent/40"
+      className="flex min-w-0 flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left"
       style={signalAccent ? { borderLeftColor: signalAccent, borderLeftWidth: 3 } : undefined}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
@@ -334,10 +330,17 @@ function ObjectCardFrame({
           <StatusBadge status={obj.status} statusLabel={getObjectStatusLocale(obj.type, obj.status, locale)} />
         </div>
       </div>
-      <div className={`-mx-1 min-w-0 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover:bg-ldvh-bg/85 ${titleAccentClass}`}>
-        <span className="ldvh-card-title block min-w-0 truncate transition-colors group-hover:text-ldvh-accent">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onOpen(obj.id)}
+        onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(obj.id))}
+        className={`group/card-title -mx-1 flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left outline-none ring-1 ring-inset ring-ldvh-border/50 transition-colors hover:bg-ldvh-bg/85 focus-visible:ring-2 focus-visible:ring-ldvh-accent/70 ${titleAccentClass}`}
+      >
+        <span className="ldvh-card-title min-w-0 flex-1 truncate transition-colors group-hover/card-title:text-ldvh-accent">
           {getLocalizedTitle(obj, locale)}
         </span>
+        <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-all group-hover/card-title:translate-x-0.5 group-hover/card-title:text-ldvh-accent" />
       </div>
       {children}
       <span className="ldvh-meta self-end text-right">{formatDateTime(obj.updated)}</span>

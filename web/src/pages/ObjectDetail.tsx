@@ -65,6 +65,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
 
 const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded']);
 const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
+const WORK_OBJECT_DETAIL_TYPES = new Set(['workarea', 'taskplan', 'task', 'subtask']);
 
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
@@ -322,7 +323,7 @@ export default function ObjectDetail() {
   const typeColor = CATEGORY_COLORS[objType] || CATEGORY_COLORS.other;
   const typeDesc = getTypeDescription(objType, locale);
   const statusHint = objType === 'workarea' ? '' : getObjectStatusHint(objType, objStatus, locale);
-  const isWorkArea = objType === 'workarea';
+  const isWorkObject = WORK_OBJECT_DETAIL_TYPES.has(objType);
 
   const displayTitle = (locale === 'en'
     ? ((obj.title_en as string) || obj.title as string)
@@ -370,8 +371,8 @@ export default function ObjectDetail() {
               <ArrowLeft size={14} />
               {t('objectDetail.back')}
             </button>
-            {isWorkArea ? (
-              <WorkAreaDetailHeader
+            {isWorkObject ? (
+              <WorkObjectDetailHeader
                 title={displayTitle}
                 id={objId}
                 target={detail.target}
@@ -419,7 +420,7 @@ export default function ObjectDetail() {
           </div>
 
           {/* Metadata row */}
-          {!isWorkArea && (
+          {!isWorkObject && (
             <div className="mb-6 flex flex-wrap gap-2">
               <MetaChip label={t('objectDetail.created')} value={formatDateTime(obj.created as string | undefined)} />
               <MetaChip label={t('objectDetail.updated')} value={formatDateTime(obj.updated as string | undefined)} />
@@ -517,7 +518,7 @@ function getLocalizedTitle(item: LocalizedTitleItem, locale: string): string {
   return item.title_zh || item.title || item.id;
 }
 
-function WorkAreaDetailHeader({
+function WorkObjectDetailHeader({
   title,
   id,
   target,
@@ -1041,18 +1042,115 @@ function LoadingHint({ text }: { text: string }) {
   );
 }
 
+function getObjectRefType(refId: string): string | null {
+  if (!isObjectRef(refId)) return null;
+  return refId.match(/^([a-z]+)-\d+$/)?.[1] ?? null;
+}
+
+function findRelatedSummary(
+  refId: string,
+  currentTask: RelatedObjectSummary | null,
+  parentPlan: ObjectItem | null,
+): RelatedObjectSummary | null {
+  if (currentTask?.id === refId) return currentTask;
+  const planTasks = parentPlan?.tasks ?? [];
+  const taskMatch = planTasks.find((task) => task.id === refId);
+  if (taskMatch) return taskMatch;
+  return [...(currentTask?.subtasks ?? []), ...planTasks.flatMap((task) => task.subtasks ?? [])]
+    .find((subtask) => subtask.id === refId) ?? null;
+}
+
+function buildCurrentFlowItem(
+  obj: Record<string, unknown>,
+  objType: string,
+  locale: string,
+  currentSummary: RelatedObjectSummary | null,
+): RelatedObjectSummary {
+  if (currentSummary) return currentSummary;
+  const title = (locale === 'en'
+    ? ((obj.title_en as string) || (obj.title as string))
+    : ((obj.title_zh as string) || (obj.title as string))) || String(obj.id ?? '');
+  return {
+    id: String(obj.id ?? ''),
+    type: objType,
+    title,
+    title_en: obj.title_en as string | undefined,
+    title_zh: obj.title_zh as string | undefined,
+    status: String(obj.status ?? 'unknown'),
+    path: String(obj.path ?? ''),
+    updated: String(obj.updated ?? ''),
+  };
+}
+
+function TaskProgressSection({
+  item,
+  blockedRefs,
+  currentTask,
+  parentPlan,
+  locale,
+  getStatus,
+}: {
+  item: RelatedObjectSummary;
+  blockedRefs: string[];
+  currentTask: RelatedObjectSummary | null;
+  parentPlan: ObjectItem | null;
+  locale: string;
+  getStatus: (status: string) => string;
+}) {
+  const { t } = useI18n();
+  const flowTone = getTaskFlowTone(item);
+  const flowLabel = getTaskFlowLabel(item, t, getStatus);
+
+  return (
+    <TaskSection title={t('objectDetail.taskProgress')} tone="default" icon={<GitBranch size={14} className="text-ldvh-accent" />}>
+      <div className="divide-y divide-ldvh-border/70">
+        <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]">
+          <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectDetail.currentState')}</div>
+          <div className={`inline-flex w-fit min-w-0 items-center gap-2 rounded-md border px-2.5 py-1.5 ${taskFlowRowClass[flowTone]}`}>
+            <TaskFlowMarker tone={flowTone} label={flowLabel} compact />
+            <span className="ldvh-body text-ldvh-text-primary">{flowLabel}</span>
+          </div>
+        </div>
+        {blockedRefs.length > 0 && (
+          <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]">
+            <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectDetail.waitingFor')}</div>
+            <div className="divide-y divide-ldvh-border/60">
+              {blockedRefs.map((refId) => {
+                const refType = getObjectRefType(refId) ?? 'task';
+                return (
+                  <DetailObjectRow
+                    key={refId}
+                    label={TYPE_LOCALES[refType] ? (locale === 'en' ? TYPE_LOCALES[refType].en : TYPE_LOCALES[refType].zh) : refType}
+                    item={findRelatedSummary(refId, currentTask, parentPlan)}
+                    fallbackId={refId}
+                    objectType={refType}
+                    locale={locale}
+                    compact
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </TaskSection>
+  );
+}
+
 function DetailObjectRow({
   label,
   item,
   fallbackId,
   objectType,
   locale,
+  compact = false,
 }: {
   label: string;
   item?: RelatedObjectSummary | ObjectItem | null;
   fallbackId?: string;
   objectType: string;
   locale: string;
+  compact?: boolean;
 }) {
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
   const objectId = item?.id ?? fallbackId;
@@ -1081,7 +1179,7 @@ function DetailObjectRow({
           open();
         }
       }}
-      className="group/detail-ref grid min-w-0 cursor-pointer gap-2 py-3 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]"
+      className={`group/detail-ref grid min-w-0 cursor-pointer gap-2 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr] ${compact ? 'py-2' : 'py-3'}`}
     >
       <div className="ldvh-caption-strong flex min-w-0 items-center gap-1.5 text-ldvh-text-secondary">
         {labelIcon}
@@ -1173,10 +1271,40 @@ function TaskReadingLayout({
   getStatus: (status: string) => string;
 }) {
   const { t } = useI18n();
-  const hidden = new Set(['source', 'description', 'taskplan', 'task', 'acceptance', 'verification', 'closure_evidence', 'deliverables', 'related_docs', 'affected_docs', 'blocked_by', ...TASK_AUXILIARY_META_KEYS, ...COMMON_AUXILIARY_META_KEYS, ...META_KEYS]);
-  const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && value !== null && value !== undefined && value !== '');
+  const hidden = new Set([
+    'source',
+    'description',
+    'taskplan',
+    'task',
+    'acceptance',
+    'verification',
+    'closure_evidence',
+    'deliverables',
+    'related_docs',
+    'affected_docs',
+    'related_adrs',
+    'related_changes',
+    'blocked_by',
+    ...TASK_AUXILIARY_META_KEYS,
+    ...COMMON_AUXILIARY_META_KEYS,
+    ...META_KEYS,
+  ]);
+  const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && hasDetailContent(value));
   const subtasks = sortPlanTasks(summary?.subtasks ?? []);
   const showSubtasks = objType === 'task' && (loading || subtasks.length > 0);
+  const currentSummary = objType === 'subtask'
+    ? summary?.subtasks?.find((subtask) => subtask.id === obj.id) ?? null
+    : summary;
+  const currentFlowItem = buildCurrentFlowItem(obj, objType, locale, currentSummary);
+  const blockedRefs = Array.isArray(obj.blocked_by) ? (obj.blocked_by as string[]).filter(Boolean) : [];
+  const deliverables = (obj.deliverables as string[] | undefined) ?? [];
+  const relatedDocs = (obj.related_docs as string[] | undefined) ?? [];
+  const affectedDocs = (obj.affected_docs as string[] | undefined) ?? [];
+  const hasMaterials = deliverables.length > 0 || relatedDocs.length > 0 || affectedDocs.length > 0;
+  const hasRelatedMaterials = [
+    obj.related_adrs,
+    obj.related_changes,
+  ].some((value) => Array.isArray(value) && value.length > 0);
 
   return (
     <div className="mb-6 flex flex-col gap-5">
@@ -1204,6 +1332,15 @@ function TaskReadingLayout({
           )}
         </div>
       </TaskSection>
+
+      <TaskProgressSection
+        item={currentFlowItem}
+        blockedRefs={blockedRefs}
+        currentTask={summary}
+        parentPlan={parentPlan}
+        locale={locale}
+        getStatus={getStatus}
+      />
 
       {showSubtasks && (
         <TaskSection title={t('objectDetail.subtaskExecution')} tone="default" icon={<Layers3 size={14} className="text-ldvh-accent" />}>
@@ -1235,17 +1372,22 @@ function TaskReadingLayout({
         </TaskSection>
       </div>
 
-      <TaskSection title={t('objectDetail.deliverablesAndDocs')} tone="docs" icon={<FileText size={14} className="text-violet-400" />}>
-        <div className="ldvh-section-grid">
-          <TaskDocGroup label={t('objectDetail.deliverables')} docs={obj.deliverables as string[] | undefined} />
-          <TaskDocGroup label={t('objectDetail.relatedDocs')} docs={obj.related_docs as string[] | undefined} />
-          <TaskDocGroup label={t('objectDetail.affectedDocs')} docs={obj.affected_docs as string[] | undefined} />
-        </div>
-      </TaskSection>
+      {hasMaterials && (
+        <TaskSection title={t('objectDetail.deliverablesAndDocs')} tone="docs" icon={<FileText size={14} className="text-violet-400" />}>
+          <div className="ldvh-section-grid">
+            <TaskDocGroup label={t('objectDetail.deliverables')} docs={deliverables} />
+            <TaskDocGroup label={t('objectDetail.relatedDocs')} docs={relatedDocs} />
+            <TaskDocGroup label={t('objectDetail.affectedDocs')} docs={affectedDocs} />
+          </div>
+        </TaskSection>
+      )}
 
-      {obj.blocked_by && Array.isArray(obj.blocked_by) && obj.blocked_by.length > 0 && (
-        <TaskSection title={t('objectDetail.dependencies')} tone="default" icon={<GitBranch size={14} className="text-ldvh-accent" />}>
-          <ReferenceCard refs={obj.blocked_by as string[]} />
+      {hasRelatedMaterials && (
+        <TaskSection title={t('objectDetail.relatedMaterials')} tone="default" icon={<Layers3 size={14} className="text-ldvh-accent" />}>
+          <div className="divide-y divide-ldvh-border/70">
+            <MaterialRow fieldKey="related_adrs" value={obj.related_adrs} locale={locale} />
+            <MaterialRow fieldKey="related_changes" value={obj.related_changes} locale={locale} />
+          </div>
         </TaskSection>
       )}
 
@@ -1327,10 +1469,10 @@ function TaskSection({
   children: ReactNode;
 }) {
   const toneClass = {
-    primary: 'border-ldvh-accent/30 bg-ldvh-panel',
-    checklist: 'border-emerald-500/25 bg-ldvh-panel',
-    evidence: 'border-sky-500/25 bg-ldvh-panel',
-    docs: 'border-violet-500/25 bg-ldvh-panel',
+    primary: 'border-ldvh-border bg-ldvh-panel',
+    checklist: 'border-ldvh-border bg-ldvh-panel',
+    evidence: 'border-ldvh-border bg-ldvh-panel',
+    docs: 'border-ldvh-border bg-ldvh-panel',
     default: 'border-ldvh-border bg-ldvh-panel',
   }[tone];
 
@@ -1355,11 +1497,11 @@ function TaskInlineField({ label, value }: { label: string; value: ReactNode }) 
 }
 
 function TaskDocGroup({ label, docs }: { label: string; docs?: string[] }) {
-  const { t } = useI18n();
+  if (!docs || docs.length === 0) return null;
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-bg/40 p-3">
       <div className="ldvh-caption-strong mb-2">{label}</div>
-      {docs && docs.length > 0 ? <DocPreviewLink docs={docs} /> : <EmptyHint text={t('objectDetail.emptyValue')} />}
+      <DocPreviewLink docs={docs} />
     </div>
   );
 }

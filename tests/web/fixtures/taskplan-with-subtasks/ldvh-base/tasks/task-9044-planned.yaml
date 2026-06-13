@@ -6,7 +6,7 @@ created: '2026-06-12T11:24:00'
 updated: '2026-06-12T11:30:00'
 taskplan: taskplan-9004
 description: |
-  验证计划中的后续 planned 任务。
+  验证计划中的后续等待任务。
 source: taskplan-9004
 blocked_by:
   - task-9042

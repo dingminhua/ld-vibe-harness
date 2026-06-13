@@ -14,13 +14,13 @@
 
 ```text
 返回按钮
-对象头部：类型标签 + 标题 + ID + 类型说明 + 复制路径图标 + 状态徽章 + 状态提示
-元信息行：创建时间、更新时间、关闭时间、辅助属性
+工作对象头部：类型标签 + ID + 标题 + 创建/更新时间 + 状态徽章 + 复制路径图标
+非工作对象元信息行：创建时间、更新时间、关闭时间、辅助属性
 内容区：
   WorkArea：计划态势 + 属性 + 关联材料
   TaskPlan：计划目标 + 任务态势 + 成功标准 + 关闭判断 + 产出与文档 + 关联材料
-  Task：任务目标 + 子任务态势 + 验收标准 + 验证/关闭证据 + 产出/依赖
-  SubTask：任务目标 + 验收标准 + 验证/关闭证据 + 产出/依赖
+  Task：任务目标 + 推进状态 + 子任务态势 + 验收标准 + 验证/关闭证据 + 产出/依赖
+  SubTask：任务目标 + 推进状态 + 验收标准 + 验证/关闭证据 + 产出/依赖
   其他对象：字段卡片布局
 YAML 源码折叠区
 右侧扩展阅读区（App Shell 提供，不属于本页卡片）
@@ -34,10 +34,10 @@ YAML 源码折叠区
 - 标题优先使用 `title_zh/title_en`，回退 `title`，再回退 ID。
 - ID 使用 `ldvh-meta`，不做大号标题。
 - 头部右侧提供 `CopyPathButton`，复制对象详情 API 返回的 `target`。
-- 状态徽章使用 `StatusBadge`；状态提示来自 `getStatusHint()`。
-- 元信息行使用 `MetaChip`，时间统一 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`。
+- 状态徽章使用 `StatusBadge`；工作对象头部不展示通用状态提示，避免与事实状态重复。
+- 非工作对象元信息行使用 `MetaChip`，时间统一 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`。
 - priority、severity、repeatability、category、tags 等辅助属性在元信息行降权展示，不进入主阅读流。
-- WorkArea 使用专用身份区：`工作域 + ID + 标题 + 状态 + 创建/更新时间` 合并展示；状态只保留 `活跃/已归档` 事实徽章，不显示“进行中”等通用解释文案，创建/更新时间不再作为独立 chip 行。
+- WorkArea、TaskPlan、Task、SubTask 使用统一工作对象身份区：`类型 + ID + 标题 + 状态 + 创建/更新时间` 合并展示；状态只保留事实徽章，不显示“进行中”等通用解释文案，创建/更新时间不再作为独立 chip 行。
 
 ## 4. WorkArea 语义阅读布局
 
@@ -68,12 +68,14 @@ TaskPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 Task 不使用普通字段卡片堆叠，而使用固定阅读主线：
 
 1. 任务目标：Task 使用 `description` + `source` + `taskplan`，SubTask 使用 `description` + `source` + `task`。
-2. Task 如果存在 SubTask，展示子任务态势：整体 SubTask 态势条 + SubTask 行；SubTask 行只打开右侧辅助阅读，不切换主路由。
-3. 验收标准：`acceptance`，用 `ChecklistCard` 展示进度和每项状态。
-4. 验证方式与关闭证据：`verification`、`closure_evidence`，用 `EvidenceBlock` 展示 Markdown、命令和路径。
-5. 产出与文档：`deliverables`、`related_docs`、`affected_docs`，用 `DocPreviewLink`。
-6. 前置依赖：`blocked_by`，用 `ReferenceCard`。
-7. 其他字段：按 `fieldFormats.ts` 继续语义化渲染。
+2. 推进状态：展示当前任务/子任务的态势图标与语义状态；`planned + blocked_by` 表达为等待中，并把前置对象作为“等待对象”提前展示。
+3. Task 如果存在 SubTask，展示子任务态势：整体 SubTask 态势条 + SubTask 行；SubTask 行只打开右侧辅助阅读，不切换主路由。
+4. 验收标准：`acceptance`，用 `ChecklistCard` 展示进度和每项状态。
+5. 验证方式与关闭证据：`verification`、`closure_evidence`，用 `EvidenceBlock` 展示 Markdown、命令和路径。
+6. 产出与文档：仅在 `deliverables/related_docs/affected_docs` 非空时显示，用 `DocPreviewLink`。
+7. 关联材料：仅在 `related_adrs/related_changes` 非空时显示。
+8. 其他字段：只显示非空字段，避免把空数组、空关联或空产出提升到主阅读流。
+9. Task / SubTask 详情页内的父计划、父任务、等待对象和子任务行只打开右侧辅助阅读区，不切换主路由。
 
 ## 7. 非工作主线对象字段布局
 
