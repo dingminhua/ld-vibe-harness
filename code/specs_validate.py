@@ -58,7 +58,6 @@ def iter_markdown_files(paths):
 
 RUNTIME_PROJECTION_DEFAULT_PATHS = [
     "rules/LDVH-AI-ENTRY.md",
-    "rules/LDVH-DEPLOYMENT-ENTRIES.md",
     ".trae/rules",
     ".trae/skills",
 ]
@@ -241,8 +240,8 @@ def runtime_projection_main(paths=None, output_format="text"):
     return 0 if report["summary"]["status"] == "closed" else 1
 
 
-DEPLOYMENT_ENTRIES_LIST_PATH = "rules/LDVH-DEPLOYMENT-ENTRIES.md"
 DEPLOYMENT_ENTRIES_AI_ENTRY_PATH = "rules/LDVH-AI-ENTRY.md"
+DEPLOYMENT_ENTRIES_SPEC_PATH = "specs/04.02-LDVH能力保障规范.md"
 DEPLOYMENT_ENTRIES_REQUIRED_ASSETS = {
     "Rules": "rules/LDVH-AI-ENTRY.md",
     "Skill": "skills/ldvh-spec-change-check/SKILL.md",
@@ -250,89 +249,60 @@ DEPLOYMENT_ENTRIES_REQUIRED_ASSETS = {
     "Hook": "hooks/ldvh-lifecycle-check.md",
 }
 DEPLOYMENT_ENTRIES_FORBIDDEN_TYPES = {"Code", "Web", "CLI", "MCP", "Command", "CI", "文档"}
-DEPLOYMENT_ENTRIES_TABLE_HEADERS = ["入口类型", "当前资产", "位置", "当前资产状态", "何时使用", "降级方式"]
 
 
-def deployment_entries_clean_cell(value):
-    text = str(value).strip()
-    text = re.sub(r"<br\s*/?>", " ", text, flags=re.IGNORECASE)
-    text = re.sub(r"`([^`]+)`", r"\1", text)
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
-
-
-def deployment_entries_split_cells(line):
-    return [deployment_entries_clean_cell(cell) for cell in line.strip().strip("|").split("|")]
-
-
-def deployment_entries_is_separator(cells):
-    return all(set(cell) <= {"-", ":", " "} for cell in cells)
-
-
-def deployment_entries_parse_rows(path):
-    rows = []
-    header = None
-    in_code_block = False
-    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+def deployment_entries_fixed_asset_section(text):
+    marker = "LDVH 自身固定部署入口资产如下"
+    start = text.find(marker)
+    if start < 0:
+        return ""
+    lines = text[start:].splitlines()
+    section = []
+    in_table = False
+    for line in lines:
         stripped = line.strip()
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            in_code_block = not in_code_block
+        if stripped.startswith("|"):
+            in_table = True
+            section.append(line)
             continue
-        if in_code_block or not stripped.startswith("|"):
-            continue
-        cells = deployment_entries_split_cells(stripped)
-        if deployment_entries_is_separator(cells):
-            continue
-        if cells[: len(DEPLOYMENT_ENTRIES_TABLE_HEADERS)] == DEPLOYMENT_ENTRIES_TABLE_HEADERS:
-            header = cells
-            continue
-        if header and len(cells) >= len(header):
-            rows.append((line_number, dict(zip(header, cells))))
-    return rows
+        if in_table:
+            break
+        section.append(line)
+    return "\n".join(section)
 
 
 def deployment_entries_check(root=None):
     root = Path(root) if root is not None else PROJECT_ROOT
-    list_path = root / DEPLOYMENT_ENTRIES_LIST_PATH
+    spec_path = root / DEPLOYMENT_ENTRIES_SPEC_PATH
     ai_entry_path = root / DEPLOYMENT_ENTRIES_AI_ENTRY_PATH
     issues = []
 
-    if not list_path.exists():
-        return [Issue(list_path, 1, f"缺少部署入口资产清单: {DEPLOYMENT_ENTRIES_LIST_PATH}", code="DEPLOYMENT_ENTRIES_LIST_MISSING")]
-    if not list_path.is_file():
-        return [Issue(list_path, 1, f"部署入口资产清单不是文件: {DEPLOYMENT_ENTRIES_LIST_PATH}", code="DEPLOYMENT_ENTRIES_LIST_NOT_FILE")]
-
-    rows = deployment_entries_parse_rows(list_path)
-    if not rows:
-        issues.append(Issue(list_path, 1, "部署入口资产清单缺少入口资产总表或数据行", code="DEPLOYMENT_ENTRIES_TABLE_MISSING"))
-
-    entries_by_type = {}
-    for line_number, row in rows:
-        entry_type = row.get("入口类型", "").strip()
-        asset_path = row.get("位置", "").strip()
-        if entry_type in DEPLOYMENT_ENTRIES_FORBIDDEN_TYPES:
-            issues.append(Issue(list_path, line_number, f"不得将非部署入口能力写成入口类型: {entry_type}", code="DEPLOYMENT_ENTRIES_FORBIDDEN_TYPE"))
-        if entry_type:
-            entries_by_type.setdefault(entry_type, []).append((line_number, row))
-        if asset_path and not (root / asset_path).exists():
-            issues.append(Issue(list_path, line_number, f"部署入口资产路径不存在: {asset_path}", code="DEPLOYMENT_ENTRIES_ASSET_MISSING"))
+    if not spec_path.exists():
+        issues.append(Issue(spec_path, 1, f"缺少固定部署入口资产定义规范: {DEPLOYMENT_ENTRIES_SPEC_PATH}", code="DEPLOYMENT_ENTRIES_SPEC_MISSING"))
+        spec_text = ""
+    else:
+        spec_text = spec_path.read_text(encoding="utf-8")
 
     for entry_type, expected_path in DEPLOYMENT_ENTRIES_REQUIRED_ASSETS.items():
-        typed_rows = entries_by_type.get(entry_type, [])
-        if not typed_rows:
-            issues.append(Issue(list_path, 1, f"部署入口资产清单缺少必备入口类型: {entry_type}", code="DEPLOYMENT_ENTRIES_REQUIRED_TYPE_MISSING"))
-            continue
-        if not any(row.get("位置", "").strip() == expected_path for _, row in typed_rows):
-            issues.append(Issue(list_path, typed_rows[0][0], f"{entry_type} 入口应指向当前必备资产: {expected_path}", code="DEPLOYMENT_ENTRIES_REQUIRED_ASSET_MISMATCH"))
+        if spec_text and entry_type not in spec_text:
+            issues.append(Issue(spec_path, 1, f"固定部署入口资产定义缺少必备入口类型: {entry_type}", code="DEPLOYMENT_ENTRIES_REQUIRED_TYPE_MISSING"))
+        if spec_text and expected_path not in spec_text:
+            issues.append(Issue(spec_path, 1, f"固定部署入口资产定义缺少必备资产路径: {expected_path}", code="DEPLOYMENT_ENTRIES_REQUIRED_ASSET_MISMATCH"))
         if not (root / expected_path).exists():
             issues.append(Issue(root / expected_path, 1, f"缺少必备部署入口资产: {expected_path}", code="DEPLOYMENT_ENTRIES_REQUIRED_ASSET_MISSING"))
+
+    fixed_asset_section = deployment_entries_fixed_asset_section(spec_text)
+    for forbidden_type in DEPLOYMENT_ENTRIES_FORBIDDEN_TYPES:
+        forbidden_pattern = f"| {forbidden_type} |"
+        if fixed_asset_section and forbidden_pattern in fixed_asset_section:
+            issues.append(Issue(spec_path, 1, f"不得将非部署入口能力写成固定入口资产: {forbidden_type}", code="DEPLOYMENT_ENTRIES_FORBIDDEN_TYPE"))
 
     if not ai_entry_path.exists():
         issues.append(Issue(ai_entry_path, 1, f"缺少 Rules 统一入口: {DEPLOYMENT_ENTRIES_AI_ENTRY_PATH}", code="DEPLOYMENT_ENTRIES_AI_ENTRY_MISSING"))
     else:
         ai_entry_text = ai_entry_path.read_text(encoding="utf-8")
-        if DEPLOYMENT_ENTRIES_LIST_PATH not in ai_entry_text:
-            issues.append(Issue(ai_entry_path, 1, f"Rules 统一入口未引用部署入口资产清单: {DEPLOYMENT_ENTRIES_LIST_PATH}", code="DEPLOYMENT_ENTRIES_AI_ENTRY_REF_MISSING"))
+        if DEPLOYMENT_ENTRIES_SPEC_PATH not in ai_entry_text:
+            issues.append(Issue(ai_entry_path, 1, f"Rules 统一入口未引用固定部署入口资产定义规范: {DEPLOYMENT_ENTRIES_SPEC_PATH}", code="DEPLOYMENT_ENTRIES_AI_ENTRY_REF_MISSING"))
 
     return issues
 
@@ -340,11 +310,11 @@ def deployment_entries_check(root=None):
 def deployment_entries_main(root=None):
     issues = deployment_entries_check(root)
     if issues:
-        print(f"部署入口资产清单一致性检查失败，共 {len(issues)} 个问题：")
+        print(f"固定部署入口资产检查失败，共 {len(issues)} 个问题：")
         for issue in issues:
             print(f"- {issue.format(PROJECT_ROOT)}")
         return 1
-    print("部署入口资产清单一致性检查通过。")
+    print("固定部署入口资产检查通过。")
     return 0
 
 
@@ -3974,7 +3944,7 @@ def build_parser():
     runtime_projection_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
     # deployment-entries
-    deployment_entries_parser = subparsers.add_parser("deployment-entries", help="检查部署入口资产清单与四类入口资产是否一致。")
+    deployment_entries_parser = subparsers.add_parser("deployment-entries", help="检查固定部署入口资产与 04.02 定义是否一致。")
     deployment_entries_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
 
     # human-gate
