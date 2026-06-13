@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Link2, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import { fetchObjectDetail } from '@/utils/api';
 import { isObjectRef } from '@/utils/fieldFormats';
@@ -9,6 +9,7 @@ import StatusBadge from '@/components/StatusBadge';
 import CopyPathButton from '@/components/CopyPathButton';
 import { getObjectStatusLocale } from '@/i18n/locales';
 import { usePanel } from '@/utils/panelContext';
+import { ObjectTypeIcon } from '@/components/SemanticIcon';
 
 /** 对象类型中英映射（与 ObjectDetail 页面保持一致） */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
@@ -118,7 +119,7 @@ function ReferenceItem({
       }}
       className={`ldvh-body group flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors ${refType ? 'cursor-pointer hover:bg-ldvh-border/30' : 'cursor-default'}`}
     >
-      <Link2 size={13} className="shrink-0" style={{ color: typeColor }} />
+      <ObjectTypeIcon type={refType} size={13} className="shrink-0" style={{ color: typeColor }} />
       <span className="ldvh-meta shrink-0 text-ldvh-accent">{refId}</span>
       {showType && typeLabel && (
         <span

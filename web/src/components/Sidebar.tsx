@@ -2,37 +2,32 @@ import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import {
   LayoutDashboard,
-  Layers,
-  GitBranch,
   Shield,
-  Bug,
-  StickyNote,
   Globe,
-  ClipboardCheck,
   ClipboardList,
   FolderTree,
   Sun,
   Moon,
   Monitor,
   PanelLeft,
-  ShieldCheck,
 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import { useTheme } from '@/hooks/useTheme';
 import type { LocaleKey } from '@/i18n/locales';
+import { OBJECT_TYPE_ICONS } from '@/components/SemanticIcon';
 
 const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: string }; icon: typeof LayoutDashboard }[] = [
   { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard },
   { to: '/attention-test', label: { zh: '测试', en: 'Test' }, icon: ClipboardList },
   { to: '/project-files', label: { zh: '文件', en: 'Files' }, icon: FolderTree },
-  { to: '/objects/workarea', labelKey: 'nav.workareas', icon: Layers },
-  { to: '/objects/taskplan', labelKey: 'nav.taskplans', icon: ClipboardList },
-  { to: '/objects/adr', labelKey: 'nav.adrs', icon: GitBranch },
-  { to: '/objects/pitfall', labelKey: 'nav.pitfalls', icon: Bug },
-  { to: '/objects/memo', labelKey: 'nav.memos', icon: StickyNote },
-  { to: '/validate', labelKey: 'nav.validate', icon: Shield },
-  { to: '/gate', labelKey: 'nav.gate', icon: ShieldCheck },
-  { to: '/changelog', labelKey: 'nav.changelog', icon: ClipboardCheck },
+  { to: '/objects/workarea', labelKey: 'nav.workareas', icon: OBJECT_TYPE_ICONS.workarea },
+  { to: '/objects/taskplan', labelKey: 'nav.taskplans', icon: OBJECT_TYPE_ICONS.taskplan },
+  { to: '/objects/adr', labelKey: 'nav.adrs', icon: OBJECT_TYPE_ICONS.adr },
+  { to: '/objects/pitfall', labelKey: 'nav.pitfalls', icon: OBJECT_TYPE_ICONS.pitfall },
+  { to: '/objects/memo', labelKey: 'nav.memos', icon: OBJECT_TYPE_ICONS.memo },
+  { to: '/validate', labelKey: 'nav.validate', icon: OBJECT_TYPE_ICONS.validate },
+  { to: '/gate', labelKey: 'nav.gate', icon: OBJECT_TYPE_ICONS.gate },
+  { to: '/changelog', labelKey: 'nav.changelog', icon: OBJECT_TYPE_ICONS.changelog },
 ];
 
 function getNavItemLabel(item: (typeof NAV_ITEMS)[number], locale: string, t: (key: LocaleKey) => string): string {

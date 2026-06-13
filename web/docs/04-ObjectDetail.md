@@ -5,6 +5,7 @@
 > 字段格式规则：`web/src/utils/fieldFormats.ts`
 > API：`GET /api/objects/:type/:id`
 > 全局设计语言：`web/docs/01-全局设计约束.md` §1.10
+> 图标规范：[`09-图标语义规范.md`](./09-图标语义规范.md)
 
 ## 1. 页面目标
 

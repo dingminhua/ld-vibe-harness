@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, ClipboardCheck, Code2, FileText, GitBranch, Info, Layers3, MapPinned, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, ClipboardCheck, Code2, FileText, Info, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
@@ -10,6 +10,7 @@ import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
+import { CollectionTitleIcon, ObjectTypeIcon } from '@/components/SemanticIcon';
 import { TaskFlowBar, TaskFlowMarker } from '@/components/TaskFlowStatus';
 import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowIconClass, taskFlowRowClass } from '@/utils/taskFlowStatus';
 import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
@@ -622,7 +623,7 @@ function WorkAreaReadingLayout({
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      <WorkAreaSection title={t('objectDetail.workareaPlanOverview')} icon={<Layers3 size={14} className="text-ldvh-accent" />}>
+      <WorkAreaSection title={t('objectDetail.workareaPlanOverview')} icon={<CollectionTitleIcon type="taskplan" size={14} className="text-ldvh-accent" />}>
         {loading ? (
           <div className="rounded-md border border-dashed border-ldvh-border bg-ldvh-bg/50 px-3 py-6 text-center">
             <span className="ldvh-body-muted">{t('objectDetail.workareaPlansLoading')}</span>
@@ -752,7 +753,7 @@ function WorkAreaPlanGroup({
         onClick={() => setCollapsed((value) => !value)}
         className={`ldvh-caption-strong flex w-full min-w-0 items-center gap-2 border px-3 py-2 text-left ${toneClass.header}`}
       >
-        <Layers3 size={13} className="shrink-0" />
+        <CollectionTitleIcon type="taskplan" size={13} className="shrink-0" />
         <span className="min-w-0 flex-1 truncate">{title}</span>
         {collapsed ? <ChevronRight size={13} className="shrink-0" /> : <ChevronDown size={13} className="shrink-0" />}
       </button>
@@ -1029,7 +1030,7 @@ export function TaskPlanReadingLayout({
         </div>
       </TaskSection>
 
-      <TaskSection title={t('objectDetail.planExecution')} tone="default" icon={<GitBranch size={14} className="text-ldvh-accent" />}>
+      <TaskSection title={t('objectDetail.planExecution')} tone="default" icon={<CollectionTitleIcon type="taskQueue" size={14} className="text-ldvh-accent" />}>
         {loading ? (
           <LoadingHint text={t('objectDetail.tasksLoading')} />
         ) : tasks.length > 0 ? (
@@ -1076,7 +1077,7 @@ export function TaskPlanReadingLayout({
       )}
 
       {hasRelatedMaterials && (
-        <TaskSection title={t('objectDetail.relatedMaterials')} tone="default" icon={<Layers3 size={14} className="text-ldvh-accent" />}>
+        <TaskSection title={t('objectDetail.relatedMaterials')} tone="default" icon={<CollectionTitleIcon type="related" size={14} className="text-ldvh-accent" />}>
           <div className="divide-y divide-ldvh-border/70">
             <MaterialRow fieldKey="related_adrs" value={obj.related_adrs} locale={locale} />
             <MaterialRow fieldKey="related_memos" value={obj.related_memos} locale={locale} />
@@ -1181,7 +1182,7 @@ export function TaskProgressSection({
   const flowLabel = getTaskFlowLabel(item, t, getStatus);
 
   return (
-    <TaskSection title={t('objectDetail.taskProgress')} tone="default" icon={<GitBranch size={14} className="text-ldvh-accent" />}>
+    <TaskSection title={t('objectDetail.taskProgress')} tone="default" icon={<CollectionTitleIcon type="progress" size={14} className="text-ldvh-accent" />}>
       <div className="divide-y divide-ldvh-border/70">
         <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
           <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectDetail.currentState')}</div>
@@ -1238,11 +1239,7 @@ export function DetailObjectRow({
   const title = item ? getLocalizedTitle(item, locale) : objectId;
   const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === objectType && panelContent.objectId === objectId;
   const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
-  const labelIcon = objectType === 'workarea'
-    ? <MapPinned size={12} className="shrink-0 text-ldvh-accent" />
-    : objectType === 'taskplan'
-      ? <GitBranch size={12} className="shrink-0 text-ldvh-accent" />
-      : <Layers3 size={12} className="shrink-0 text-ldvh-accent" />;
+  const labelIcon = <ObjectTypeIcon type={objectType} size={12} className="shrink-0 text-ldvh-accent" />;
   const open = () => openPanel({ type: 'object', title, objectType, objectId });
 
   return (
@@ -1423,7 +1420,7 @@ export function TaskReadingLayout({
       />
 
       {showSubtasks && (
-        <TaskSection title={t('objectDetail.subtaskExecution')} tone="default" icon={<Layers3 size={14} className="text-ldvh-accent" />}>
+        <TaskSection title={t('objectDetail.subtaskExecution')} tone="default" icon={<CollectionTitleIcon type="subtask" size={14} className="text-ldvh-accent" />}>
           {loading ? (
             <LoadingHint text={t('objectDetail.subtasksLoading')} />
           ) : (
@@ -1463,7 +1460,7 @@ export function TaskReadingLayout({
       )}
 
       {hasRelatedMaterials && (
-        <TaskSection title={t('objectDetail.relatedMaterials')} tone="default" icon={<Layers3 size={14} className="text-ldvh-accent" />}>
+        <TaskSection title={t('objectDetail.relatedMaterials')} tone="default" icon={<CollectionTitleIcon type="related" size={14} className="text-ldvh-accent" />}>
           <div className="divide-y divide-ldvh-border/70">
             <MaterialRow fieldKey="related_adrs" value={obj.related_adrs} locale={locale} />
             <MaterialRow fieldKey="related_changes" value={obj.related_changes} locale={locale} />

@@ -2,16 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
+  Archive,
   ArrowRightCircle,
   Boxes,
   CheckCircle2,
   Clock3,
-  ClipboardList,
-  GitBranch,
+  FlaskConical,
   ShieldAlert,
 } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
 import MetricCard from '@/components/MetricCard';
+import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import PageHeader from '@/components/PageHeader';
 import StatusBadge from '@/components/StatusBadge';
 import { useI18n } from '@/i18n/context';
@@ -209,7 +210,7 @@ export default function AttentionTest() {
       <div className="ldvh-page-toolbar mb-6 min-w-0">
         <div className="min-w-0">
           <div className="ldvh-chip mb-2 inline-flex items-center gap-2 rounded-full border border-ldvh-accent/30 bg-ldvh-accent/10 px-3 py-1 text-ldvh-accent">
-            <ClipboardList size={13} />
+            <FlaskConical size={13} />
             {copy.badge}
           </div>
           <PageHeader title={copy.title} subtitle={copy.subtitle} />
@@ -292,7 +293,7 @@ export default function AttentionTest() {
 
         <section className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-panel p-5">
           <div className="mb-4 flex items-center gap-2">
-            <GitBranch size={16} className="text-ldvh-accent" />
+            <Archive size={16} className="text-ldvh-accent" />
             <h2 className="ldvh-section-title">{copy.hiddenTerminal}</h2>
           </div>
           <div className="ldvh-mini-grid min-w-0">
@@ -331,6 +332,7 @@ function AttentionRow({
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <span className="ldvh-chip rounded px-1.5 py-0.5" style={{ backgroundColor: `${typeColor}20`, color: typeColor }}>
+            <ObjectTypeIcon type={item.type} size={12} className="mr-1.5 inline shrink-0 align-[-2px]" />
             {typeLabel}
           </span>
           <span className="ldvh-meta-primary">{item.id}</span>
@@ -380,7 +382,10 @@ function Lane({
                 onClick={() => openPanel({ type: 'object', title: titleText, objectType: item.type, objectId: item.id })}
                 className="flex min-w-0 items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-ldvh-border/30"
               >
-                <span className="ldvh-body min-w-0 flex-1 truncate">{titleText}</span>
+                <span className="ldvh-body flex min-w-0 flex-1 items-center gap-2 truncate">
+                  <ObjectTypeIcon type={item.type} size={13} className="shrink-0 text-ldvh-accent" />
+                  <span className="min-w-0 truncate">{titleText}</span>
+                </span>
                 <span className="shrink-0">
                   <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
                 </span>

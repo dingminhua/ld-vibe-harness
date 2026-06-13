@@ -9,8 +9,8 @@ import {
   CheckCircle,
   FileWarning,
   GitPullRequest,
-  Layers,
   ShieldCheck,
+  Target,
 } from 'lucide-react'
 import {
   fetchValidation,
@@ -564,7 +564,7 @@ export default function Validate() {
         <>
           <div className="ldvh-metric-grid">
             <MetricCard
-              icon={<Layers size={20} className="text-ldvh-text-secondary" />}
+              icon={<Target size={20} className="text-ldvh-text-secondary" />}
               value={countText(landingPlan?.requirements?.total)}
               label={t('lp.totalRequirements')}
             />

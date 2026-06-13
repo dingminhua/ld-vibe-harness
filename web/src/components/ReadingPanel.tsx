@@ -9,6 +9,7 @@ import ReferenceCard from '@/components/ReferenceCard';
 import StatusBadge from '@/components/StatusBadge';
 import SummaryText from '@/components/SummaryText';
 import CopyPathButton from '@/components/CopyPathButton';
+import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { useI18n } from '@/i18n/context';
 import { TaskPlanReadingLayout, TaskReadingLayout } from '@/pages/ObjectDetail';
 import { getObjectStatusLocale } from '@/i18n/locales';
@@ -457,7 +458,8 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <span className="ldvh-chip rounded bg-ldvh-accent/20 px-2 py-0.5 text-ldvh-accent">
+        <span className="ldvh-chip inline-flex items-center gap-1.5 rounded bg-ldvh-accent/20 px-2 py-0.5 text-ldvh-accent">
+          <ObjectTypeIcon type={objectType} size={12} className="shrink-0" />
           {getObjectTypeLabel(objectType, locale)}
         </span>
         {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(objectType, status, locale)} size="sm" />}

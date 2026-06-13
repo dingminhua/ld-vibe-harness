@@ -1,11 +1,12 @@
 import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck, GitBranch, Layers3, MapPinned } from 'lucide-react';
+import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
 import MemoCreate from '@/components/MemoCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
+import { CollectionTitleIcon, ObjectTypeIcon } from '@/components/SemanticIcon';
 import { TaskFlowBar, TaskFlowLegend, TaskFlowMarker } from '@/components/TaskFlowStatus';
 import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowRowClass } from '@/utils/taskFlowStatus';
 import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
@@ -187,7 +188,7 @@ function WorkAreaPlanSection({
   return (
     <div className={`min-w-0 overflow-hidden rounded-md border ${toneClass.section}`}>
       <div className={`ldvh-caption-strong flex min-w-0 items-center gap-2 border px-3 py-2 ${toneClass.header}`}>
-        <Layers3 size={13} className="shrink-0" />
+        <CollectionTitleIcon type="taskplan" size={13} className="shrink-0" />
         <span className="min-w-0 truncate">{title}</span>
       </div>
       {plans && plans.length > 0 && (
@@ -281,7 +282,7 @@ function PlanWorkareaRow({
   if (!item) {
     return (
       <div className="ldvh-caption flex min-w-0 items-center gap-1.5 px-1 text-ldvh-text-secondary">
-        <MapPinned size={12} className="shrink-0" />
+        <ObjectTypeIcon type="workarea" size={12} className="shrink-0" />
         <span className="min-w-0 truncate">{emptyLabel}</span>
       </div>
     );
@@ -295,11 +296,10 @@ function PlanWorkareaRow({
       onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
       className="ldvh-caption group/workarea flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-ldvh-text-secondary outline-none transition-colors hover:bg-ldvh-border/35 hover:text-ldvh-text-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70"
     >
-      <MapPinned size={12} className="shrink-0" />
+      <ObjectTypeIcon type="workarea" size={12} className="shrink-0" />
       <span className="min-w-0 flex-1 truncate text-ldvh-text-primary/85 transition-colors group-hover/workarea:text-ldvh-accent">
         {getLocalizedTitle(item, locale)}
       </span>
-      <span className="ldvh-meta-muted ml-auto shrink-0 text-right">{item.id}</span>
       <ArrowRight size={12} className="shrink-0 transition-all group-hover/workarea:translate-x-0.5 group-hover/workarea:text-ldvh-accent" />
     </div>
   );
@@ -514,7 +514,7 @@ export default function ObjectList() {
           <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-3">
             <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
               <span className="ldvh-caption-strong inline-flex min-w-0 items-center gap-1.5 truncate">
-                <GitBranch size={13} className="shrink-0 text-ldvh-accent" />
+                <CollectionTitleIcon type="taskQueue" size={13} className="shrink-0 text-ldvh-accent" />
                 {t('objectList.planTaskQueue')}
               </span>
             </div>

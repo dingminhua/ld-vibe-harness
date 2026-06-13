@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Activity, CheckCircle, AlertCircle, AlertTriangle, Shield, GitCommit, ArrowRightCircle,
-  Layers, TrendingUp, Target,
+  ShieldCheck, TrendingUp, Target,
 } from 'lucide-react';
 import StatsCard from '@/components/StatsCard';
 import StatusBadge from '@/components/StatusBadge';
 import StatusBanner from '@/components/StatusBanner';
 import PageHeader from '@/components/PageHeader';
 import CopyPathButton from '@/components/CopyPathButton';
+import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { fetchDashboard, type DashboardData } from '@/utils/api';
 import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
@@ -139,7 +140,8 @@ export default function Dashboard() {
           <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="ldvh-section-title">
+                <h2 className="ldvh-section-title flex min-w-0 items-center gap-2">
+                  <ObjectTypeIcon type="profile" size={14} className="shrink-0 text-ldvh-accent" />
                   {getLocalizedTitle(data.profile, locale)}
                 </h2>
                 <p className="ldvh-meta">{data.profile.id}</p>
@@ -238,12 +240,13 @@ export default function Dashboard() {
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-3">
                       <span
-                        className="ldvh-chip shrink-0 rounded px-1.5 py-0.5"
+                        className="ldvh-chip inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5"
                         style={{
                           backgroundColor: `${item.typeColor}20`,
                           color: item.typeColor,
                         }}
                       >
+                        <ObjectTypeIcon type={item.type} size={12} className="shrink-0" />
                         {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
                       </span>
                       <span className="ldvh-body truncate">
@@ -322,12 +325,13 @@ export default function Dashboard() {
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     <span
-                      className="ldvh-chip shrink-0 rounded px-1.5 py-0.5"
+                      className="ldvh-chip inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-0.5"
                       style={{
                         backgroundColor: `${item.typeColor}20`,
                         color: item.typeColor,
                       }}
                     >
+                      <ObjectTypeIcon type={item.type} size={12} className="shrink-0" />
                       {t(TYPE_LABEL_KEYS[item.type] || 'nav.dashboard')}
                     </span>
                     <span className="ldvh-body truncate">
@@ -387,7 +391,7 @@ export default function Dashboard() {
         {landing && (
           <div className={`rounded-lg border bg-ldvh-panel p-4 ${compliancePercent >= 80 ? 'border-ldvh-border' : 'border-orange-500/50'}`}>
             <div className="mb-3 flex items-center gap-2">
-              <Layers size={16} className="text-ldvh-accent" />
+              <ShieldCheck size={16} className="text-ldvh-accent" />
               <h3 className="ldvh-section-title">{t('dashboard.complianceHeader')}</h3>
             </div>
             {/* 合规百分比环 */}

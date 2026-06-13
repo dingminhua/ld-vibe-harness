@@ -1,4 +1,5 @@
 import { useTheme } from '@/hooks/useTheme';
+import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { getStatusColor } from '@/utils/statusColors';
 
 interface StatsCardProps {
@@ -21,7 +22,10 @@ export default function StatsCard({ type, label, count, byStatus, getStatus, onC
       className="group flex flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left transition-colors hover:border-ldvh-accent/40"
     >
       <div className="flex items-center justify-between">
-        <span className="ldvh-card-title">{label ?? type}</span>
+        <span className="ldvh-card-title flex min-w-0 items-center gap-2">
+          <ObjectTypeIcon type={type} size={14} className="shrink-0 text-ldvh-accent" />
+          <span className="min-w-0 truncate">{label ?? type}</span>
+        </span>
         <span className="font-mono text-xl font-semibold text-ldvh-accent">{total}</span>
       </div>
       {/* Status distribution bar */}
