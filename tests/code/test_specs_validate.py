@@ -607,6 +607,27 @@ def test_consistency_04_series_passes_for_existing_files():
 
     assert not any(issue.code == "04_SERIES_FILE_MISSING" for issue in issues)
     assert not any(issue.code == "04_SERIES_TITLE_MISMATCH" for issue in issues)
+    assert not any(issue.code == "04_SERIES_RETIRED_FILE_PRESENT" for issue in issues)
+
+
+def test_consistency_reports_retired_04_series_file(monkeypatch, tmp_path):
+    """模拟 04 系列退役文件仍存在场景"""
+    specs_dir = tmp_path / "specs"
+    specs_dir.mkdir()
+    retired_file = specs_dir / "04.04-个人环境特别要求规范.md"
+    retired_file.write_text("# 个人环境特别要求规范\n", encoding="utf-8")
+
+    original_specs_dir = checker.SPECS_DIR
+    original_files = checker.CONSISTENCY_04_SERIES_FILES
+    checker.SPECS_DIR = specs_dir
+    checker.CONSISTENCY_04_SERIES_FILES = {}
+
+    issues = checker.consistency_04_series_issues()
+
+    assert any(issue.code == "04_SERIES_RETIRED_FILE_PRESENT" for issue in issues)
+
+    checker.SPECS_DIR = original_specs_dir
+    checker.CONSISTENCY_04_SERIES_FILES = original_files
 
 
 # ── web-validate 子命令测试 ──────────────────────────────────────

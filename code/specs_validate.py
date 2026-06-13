@@ -354,7 +354,9 @@ CONSISTENCY_04_SERIES_FILES = {
     "04.01-规范落地声明规范.md": "规范落地声明规范",
     "04.02-LDVH能力资产与落地保障规范.md": "LDVH 能力资产与落地保障规范",
     "04.03-环境入口适配与部署规范.md": "环境入口适配与部署规范",
-    "04.04-个人环境特别要求规范.md": "个人环境特别要求规范",
+}
+CONSISTENCY_04_RETIRED_FILES = {
+    "04.04-个人环境特别要求规范.md": "个人环境特别要求已并入 04.03",
 }
 
 
@@ -372,6 +374,10 @@ def consistency_04_series_issues():
             issues.append(
                 Issue(path, 1, f"04 系列文件标题不符合预期: {first_line}，应包含 '{expected_title}'", code="04_SERIES_TITLE_MISMATCH")
             )
+    for filename, reason in CONSISTENCY_04_RETIRED_FILES.items():
+        path = SPECS_DIR / filename
+        if path.exists():
+            issues.append(Issue(path, 1, f"04 系列已退役文件不应存在: {filename}（{reason}）", code="04_SERIES_RETIRED_FILE_PRESENT"))
     return issues
 
 
