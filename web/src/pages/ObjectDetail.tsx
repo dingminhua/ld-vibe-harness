@@ -623,7 +623,7 @@ function WorkAreaReadingLayout({
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      <WorkAreaSection title={t('objectDetail.workareaPlanOverview')} icon={<CollectionTitleIcon type="taskplan" size={14} className="text-ldvh-accent" />}>
+      <WorkAreaSection title={t('objectDetail.workareaPlanOverview')}>
         {loading ? (
           <div className="rounded-md border border-dashed border-ldvh-border bg-ldvh-bg/50 px-3 py-6 text-center">
             <span className="ldvh-body-muted">{t('objectDetail.workareaPlansLoading')}</span>
@@ -669,7 +669,7 @@ function WorkAreaReadingLayout({
         )}
       </WorkAreaSection>
 
-      <WorkAreaSection title={t('objectDetail.workareaDefinition')} icon={<FileText size={14} className="text-ldvh-accent" />}>
+      <WorkAreaSection title={t('objectDetail.workareaDefinition')}>
         <div className="divide-y divide-ldvh-border/70">
           <DefinitionRow label={t('objectDetail.workareaGoal')} value={obj.description} />
           <DefinitionRow label={getFieldLabel('scope', locale)} value={obj.scope} />
@@ -692,11 +692,11 @@ function WorkAreaReadingLayout({
   );
 }
 
-function WorkAreaSection({ title, icon, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
+function WorkAreaSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
       <h2 className="ldvh-section-title mb-3 flex min-w-0 items-center gap-2">
-        {icon ?? <span className="h-1.5 w-1.5 rounded-full bg-ldvh-accent" />}
+        <span className="h-1.5 w-1.5 rounded-full bg-ldvh-accent" />
         <span className="min-w-0 truncate">{title}</span>
       </h2>
       {children}
