@@ -1606,7 +1606,6 @@ export function TaskReadingLayout({
       </TaskSection>
 
       <DetailDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
-      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
       {obj.taskplan && (
         <DetailObjectReferenceSection
           title={t('objectDetail.taskPlan')}
@@ -1625,6 +1624,7 @@ export function TaskReadingLayout({
           locale={locale}
         />
       )}
+      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
       {hasDetailContent(obj.closure_evidence) && (
         <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
           <EvidenceBlock value={String(obj.closure_evidence)} embedded />

@@ -46,6 +46,7 @@ const PLAN_CLOSE_REVIEW_STATUSES = new Set(['review_needed', 'closed'])
 const STARTED_TASK_STATUSES = new Set(['executing', 'verifying', 'review_needed', 'closed'])
 const OBJECT_CLOSURE_EVIDENCE_STATUSES = new Set(['review_needed', 'closed'])
 const PATH_REFERENCE_FIELDS = ['related_docs', 'affected_docs', 'deliverables'] as const
+const AFFECTED_DOC_PREFIXES = ['docs/', 'web/docs/', 'specs/'] as const
 const OBJECT_REFERENCE_FIELDS: Record<string, string> = {
   related_adrs: 'adr',
   related_memos: 'memo',
@@ -75,6 +76,12 @@ function isBlank(value: unknown): boolean {
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+}
+
+function isAffectedDocReference(reference: string): boolean {
+  const normalized = reference.replace(/\\/g, '/')
+  return /\.(md|mdx)$/i.test(normalized)
+    && AFFECTED_DOC_PREFIXES.some((prefix) => normalized.startsWith(prefix))
 }
 
 function resolveFixturePath(reference: string): string {
@@ -258,6 +265,9 @@ function assertFixtureConformsToSpecs() {
         continue
       }
       for (const reference of stringArray(value)) {
+        if (field === 'affected_docs' && !isAffectedDocReference(reference)) {
+          issues.push(`${relativeFile} (${id}): affected_docs must reference docs/, web/docs/, or specs/ Markdown documents: ${reference}`)
+        }
         if (!fs.existsSync(resolveFixturePath(reference))) {
           issues.push(`${relativeFile} (${id}): ${field} reference not found: ${reference}`)
         }
