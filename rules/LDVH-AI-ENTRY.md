@@ -1,7 +1,7 @@
 # LDVH AI 统一入口
 
 > 文件性质：AI 统一入口 Rules 资产运行投影，不是 specs 正式规范
-> 规范来源：`specs/04.02-LDVH能力保障规范.md`
+> 规范来源：`specs/04.02-LDVH能力资产与落地保障规范.md`
 > 适用范围：AI 进入 LDVH 自身项目、用户工作区级入口或管辖项目接入判断时的最小导航
 
 ---
@@ -9,7 +9,7 @@
 
 这个文件用于告诉 AI：进入 LDVH 时先查什么、如何判断场景、何时读取权威原文、遇到缺口时在哪里暂停。
 
-它不是最终事实源。正式规则以 `specs/` 为准，管辖项目清单以工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 为准，环境适配方法以 `specs/04.03-环境适配规范.md` 和 `specs/04.04-环境适配措施实践.md` 为准，42 LDVH落地与检查只输出当前落地与检查报告；需要长期保留的稳定事实必须按事实源归属进入对应 Git 文件。管辖项目内容事实以对应项目的 `docs/`、`ldvh-base/` 或其他权威 Git 文件为准。
+它不是最终事实源。正式规则以 `specs/` 为准，管辖项目清单以工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 为准，环境入口适配、部署和检查方法以 `specs/04.03-环境入口适配与部署规范.md` 为准，个人环境特别要求以 `specs/04.04-个人环境特别要求规范.md` 为准，42 LDVH落地与检查只输出当前落地与检查报告；需要长期保留的稳定事实必须按事实源归属进入对应 Git 文件。管辖项目内容事实以对应项目的 `docs/`、`ldvh-base/` 或其他权威 Git 文件为准。
 
 环境入口、项目规则、工作区配置或会话提示只应指向 `rules/LDVH-AI-ENTRY.md`，不应复制本文正文或 specs 正文。
 
@@ -20,16 +20,16 @@
 
 | 入口视角 | 适用对象 | 主要职责 | 不应做什么 |
 |---|---|---|---|
-| 工作区入口 | 所有接入 LDVH 的管辖项目，以及指向 LDVH 的工作区级薄入口 | 识别当前管辖项目，定位 `LDVH-GOVERNED-PROJECTS.yaml`、管辖项目自身 `docs/`、`ldvh-base/`、环境适配规范、42 LDVH落地与检查流程和必要 STOP 点 | 不接管用户项目原有入口，不维护管辖项目规则正文，不默认修改 LDVH 自身规范 |
+| 工作区入口 | 所有接入 LDVH 的管辖项目，以及指向 LDVH 的工作区级薄入口 | 识别当前管辖项目，定位 `LDVH-GOVERNED-PROJECTS.yaml`、管辖项目自身 `docs/`、`ldvh-base/`、环境入口适配与部署规范、42 LDVH落地与检查流程和必要 STOP 点 | 不接管用户项目原有入口，不维护管辖项目规则正文，不默认修改 LDVH 自身规范 |
 | LDVH 管理入口 | 维护 LDVH 自身项目时使用 | 管理 `specs/`、`code/`、`tests/`、`web/`、根目录配置、环境适配、适配措施和 LDVH 自身项目的工作对象实例 | 不把 LDVH 自身维护规则默认强加给管辖项目 |
 
-当前环境适配规则按 `specs/04.03-环境适配规范.md` 定位；Trae Work CN 与 Codex App 的具体适配措施按 `specs/04.04-环境适配措施实践.md` 定位；个人环境特别要求按 `specs/04.05-个人环境特别要求规范.md` 定位。
+当前环境入口适配、部署和适配检查规则按 `specs/04.03-环境入口适配与部署规范.md` 定位；个人环境特别要求按 `specs/04.04-个人环境特别要求规范.md` 定位。
 
-LDVH 当前面向 AI 开发环境的必备部署入口限定为 Rules、Skill、Agent、Hook。Rules 负责入口、边界、STOP 点和权威引用；Skill 负责可复用 SOP、检查步骤、失败处理和交还方式；Agent 负责独立上下文、专项审查、分角色判断和复杂争议分析；Hook 负责生命周期触发、检查提醒和高风险动作阻断。Code、Web、CLI、MCP、Command、CI 和文档可以支撑四类入口，但不是同一层级的部署入口，不得被记录为第五类部署入口。
+LDVH 当前固定文本能力资产包括 Rules、Skill、Agent、Hook。Rules 负责入口、边界、STOP 点和权威引用；Skill 负责可复用 SOP、检查步骤、失败处理和交还方式；Agent 负责独立上下文、专项审查、分角色判断和复杂争议分析；Hook 负责生命周期触发、检查提醒和高风险动作阻断。Code、Web、CLI、MCP、Command、CI 和文档可以支撑能力保障、环境适配或检查执行，但不得被记录为与 Rules、Skill、Agent、Hook 同级的文本能力资产类型。
 
 AI 判断当前环境能力时，应区分原生承载、配置适配、指令适配、人工降级和待确认。Skill 可以模拟 Hook 提醒或检查流程，但不得写成 Hook 原生完整支持；Hook 触发不等于检查通过，仍必须受 Code、Human Gate、事实源边界和降级记录约束。
 
-四类必备部署入口和 LDVH 固定入口资产定义见 `specs/04.02-LDVH能力保障规范.md`。这些固定入口资产是 LDVH 产品内容，不代表当前用户本地环境已经安装、启用或原生完整支持。
+LDVH 能力资产与落地保障定义见 `specs/04.02-LDVH能力资产与落地保障规范.md`。这些能力资产是 LDVH 产品内容，不代表当前用户本地环境已经安装、启用或原生完整支持。
 
 AI 进入本文件后，应先判断当前任务是“管辖项目工作区使用 LDVH”，还是“维护 LDVH 自身项目”。若当前目录或用户目标不清楚，应先查询管辖项目配置并说明判断依据；不能判断时暂停请求 Human 确认。
 
@@ -71,7 +71,7 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | 场景 | 入口视角 | 先用工具 | 必读权威入口 |
 |---|---|---|---|
 | 判断当前是否为管辖项目 | 工作区入口 | `governed-projects` | `LDVH-GOVERNED-PROJECTS.yaml`、`specs/03.05-管辖项目配置规范.md` |
-| 执行 LDVH落地与检查 | 工作区入口 | `governed-projects`、`landing-report`、必要时 `fact_cli.py stats` | `specs/04.03-环境适配规范.md`、`specs/04.04-环境适配措施实践.md`、`specs/04.05-个人环境特别要求规范.md`、`specs/40-工作流程集合索引.md` |
+| 执行 LDVH落地与检查 | 工作区入口 | `governed-projects`、`landing-report`、必要时 `fact_cli.py stats` | `specs/04.03-环境入口适配与部署规范.md`、`specs/04.04-个人环境特别要求规范.md`、`specs/40-工作流程集合索引.md` |
 | 处理管辖项目工作对象 | 工作区入口 | `fact_cli.py list/search/show/stats` | 对应管辖项目自身 `ldvh-base/`、`specs/05-工作模型基础规范.md`、`specs/20-工作模型集合索引.md` 和对应工作模型规范 |
 | 理解 LDVH 总体规则 | 共同入口 | `index` | `specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-目录说明.md`、`specs/02-术语规范.md` |
 | 判断事实源、证据或回写出口 | 共同入口 | `index`、`fact_cli.py search/show` | `specs/09-事实源边界与承载规范.md`、对应工作模型或文档规范 |
@@ -81,8 +81,8 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | 修改或理解工作模型规范 | LDVH 管理入口 | `index` | `specs/05-工作模型基础规范.md`、`specs/20-工作模型集合索引.md` 和对应 `specs/21-39` 工作模型规范 |
 | 处理 LDVH 自身项目工作对象 | LDVH 管理入口 | `fact_cli.py list/search/show/stats` | LDVH 自身项目 `ldvh-base/`、`specs/05-工作模型基础规范.md`、`specs/20-工作模型集合索引.md` 和对应工作模型规范 |
 | 处理工作流程 | LDVH 管理入口 | `index`、`landing-report` | `specs/06-工作流程基础规范.md`、`specs/40-工作流程集合索引.md` 和对应 `specs/41-59` 工作流程规范 |
-| 处理规范落地、环境适配或适配措施 | LDVH 管理入口 | `landing-report`、`index` | `specs/04-规范落地与环境适配基础规范.md`、`specs/04.02-LDVH能力保障规范.md`、`specs/04.03-环境适配规范.md`、`specs/04.04-环境适配措施实践.md` |
-| 处理 Code、工具、脚本或校验 | LDVH 管理入口 | 对应工具帮助、测试命令 | `specs/04.05-个人环境特别要求规范.md`、`specs/07-Code确定性执行实现规范.md`、对应 `code/` 实现和 `tests/`；原运行闭环测试机制已退回 docs/studies/，不作为当前校验入口 |
+| 处理规范落地、环境适配或适配措施 | LDVH 管理入口 | `landing-report`、`index` | `specs/04-规范落地与环境适配基础规范.md`、`specs/04.02-LDVH能力资产与落地保障规范.md`、`specs/04.03-环境入口适配与部署规范.md`、`specs/04.04-个人环境特别要求规范.md` |
+| 处理 Code、工具、脚本或校验 | LDVH 管理入口 | 对应工具帮助、测试命令 | `specs/04.04-个人环境特别要求规范.md`、`specs/07-Code确定性执行实现规范.md`、对应 `code/` 实现和 `tests/`；原运行闭环测试机制已退回 docs/studies/，不作为当前校验入口 |
 | 处理 Web 或 Human-facing 入口 | LDVH 管理入口 | `index`、相关后端或 Web 校验 | `specs/08-Web信息同步实现规范.md` |
 
 场景同时命中多个入口时，选择最小足够查询和读取集。涉及正式规范变更、规范落地要求变化、落地缺口、适配措施漂移或 Code/Web/Skill/Agent/Hook/CI 边界变化时，应先读取 `specs/40-工作流程集合索引.md` 确认当前 active 工作流程，再按对应规范执行。
@@ -116,8 +116,8 @@ LDVH 管理入口视角随 `rules/LDVH-AI-ENTRY.md` 提交，用于维护 LDVH �
 
 修改本文后，应检查：
 
-1. `specs/04.02-LDVH能力保障规范.md`；
-2. `specs/04.03-环境适配规范.md`；
+1. `specs/04.02-LDVH能力资产与落地保障规范.md`；
+2. `specs/04.03-环境入口适配与部署规范.md`；
 3. `specs/01-目录说明.md`；
 4. `specs/40-工作流程集合索引.md`；
 5. 当前环境适配规范和适配措施；

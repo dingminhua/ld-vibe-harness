@@ -1641,25 +1641,25 @@ def write_deployment_entries_fixture(tmp_path):
         """
 # LDVH AI 统一入口
 
-四类必备部署入口和 LDVH 固定入口资产定义见 `specs/04.02-LDVH能力保障规范.md`。
+LDVH 能力资产与落地保障定义见 `specs/04.02-LDVH能力资产与落地保障规范.md`。
 """,
     )
     write_md(tmp_path / "skills" / "ldvh-spec-change-check" / "SKILL.md", "# Skill")
     write_md(tmp_path / "agents" / "ldvh-spec-semantic-review.md", "# Agent")
     write_md(tmp_path / "hooks" / "ldvh-lifecycle-check.md", "# Hook")
     return write_md(
-        tmp_path / "specs" / "04.02-LDVH能力保障规范.md",
+        tmp_path / "specs" / "04.02-LDVH能力资产与落地保障规范.md",
         """
-# LDVH 能力保障规范
+# LDVH 能力资产与落地保障规范
 
-LDVH 自身固定部署入口资产如下。
+## 2. LDVH 能力资产
 
-| 部署入口 | 固定入口资产 | 资产职责 | 维护边界 |
-|---|---|---|---|
-| Rules | `rules/LDVH-AI-ENTRY.md` | AI 统一入口 | 只做薄入口 |
-| Skill | `skills/ldvh-spec-change-check/SKILL.md` | 治理检查 SOP | 不新增稳定规则 |
-| Agent | `agents/ldvh-spec-semantic-review.md` | 独立语义审查 | 输出回主控 |
-| Hook | `hooks/ldvh-lifecycle-check.md` | 生命周期检查入口 | 触发不等于通过 |
+| 能力资产类型 | 当前固定资产 | 适合保障 | 不适合保障 | 边界 |
+|---|---|---|---|---|
+| Rules 资产 | `rules/LDVH-AI-ENTRY.md` | AI 统一入口 | 完整规范正文 | 只做薄入口 |
+| Skill 资产 | `skills/ldvh-spec-change-check/SKILL.md` | 治理检查 SOP | 稳定规则正文 | 不新增稳定规则 |
+| Agent 资产 | `agents/ldvh-spec-semantic-review.md` | 独立语义审查 | 直接生效结论 | 输出回主控 |
+| Hook 资产 | `hooks/ldvh-lifecycle-check.md` | 生命周期检查入口 | 规范正文 | 触发不等于通过 |
 """,
     )
 
@@ -1683,9 +1683,9 @@ def test_deployment_entries_reports_missing_spec(tmp_path):
 def test_deployment_entries_reports_required_type_and_asset_problems(tmp_path):
     write_deployment_entries_fixture(tmp_path)
     (tmp_path / "hooks" / "ldvh-lifecycle-check.md").unlink()
-    spec_path = tmp_path / "specs" / "04.02-LDVH能力保障规范.md"
+    spec_path = tmp_path / "specs" / "04.02-LDVH能力资产与落地保障规范.md"
     text = spec_path.read_text(encoding="utf-8")
-    text = text.replace("| Agent | `agents/ldvh-spec-semantic-review.md` | 独立语义审查 | 输出回主控 |\n", "")
+    text = text.replace("| Agent 资产 | `agents/ldvh-spec-semantic-review.md` | 独立语义审查 | 直接生效结论 | 输出回主控 |\n", "")
     spec_path.write_text(text, encoding="utf-8")
 
     codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
@@ -1717,7 +1717,7 @@ def test_deployment_entries_cli_is_in_all(tmp_path, monkeypatch, capsys):
     exit_code = checker.main(["deployment-entries", "--root", str(tmp_path)])
 
     assert exit_code == 0
-    assert "固定部署入口资产检查通过" in capsys.readouterr().out
+    assert "LDVH 能力资产检查通过" in capsys.readouterr().out
 
 
 # ══════════════════════════════════════════════════════════════════════
