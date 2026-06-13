@@ -160,7 +160,7 @@ ADR 中的决策升级为稳定规则时，应：
 
 推翻原决策时，不得删除原 ADR 文件。应将原 ADR 标记为 `superseded`，在 `superseded_by` 中引用新 ADR，并在新 ADR 的 `context` 中说明替代原因。废弃决策时，应将原 ADR 标记为 `deprecated`，并记录废弃原因。
 
-Human Gate 的具体环境实体由 04 系列环境适配映射和适配措施记录承接。本文只规定 ADR 语境下需要确认的事实、影响范围和证据承接要求。
+Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记录承接。本文只规定 ADR 语境下需要确认的事实、影响范围和证据承接要求。
 
 ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.md` §6.3.1。创建、接受、废弃、替代、核心决策改写或升级为规范等场景中，确认记录至少应说明目标 ADR、决策变化、影响范围、确认依据、Human 决策、后续回写位置和残留风险。确认记录可以写入 ADR 的 `context`、`consequences`、`status_history`、相关 Task / Memo 或 Change / commit 证据中，但不得只停留在对话结论里。
 

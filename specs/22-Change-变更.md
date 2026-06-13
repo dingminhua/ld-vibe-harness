@@ -17,7 +17,7 @@ Change 是工作模型中的特殊对象：它不使用 `ldvh-base/changes/` 下
 
 以下修改应通过符合本文 §6 的 commit message 记录为 Change：
 
-1. 修改 specs 正式规范、research 吸收结果、refs 摘要或参考与研究材料吸收结论；
+1. 修改 specs 正式规范、docs/studies 吸收结果、docs/sources 摘要或参考与研究材料吸收结论；
 2. 修改 docs 正文、docs/studies 或 docs/sources 中的稳定项目事实；
 3. 修改 `ldvh-base/` 下的事实实例；
 4. 修改 Rules / Instructions、Skill、Agent、环境适配记录或适配措施；
@@ -188,10 +188,10 @@ Refs: <object-refs>
 | `web` | Web 实现 |
 | `tests` | 测试代码 |
 | `config` | 项目配置 |
-| `research` | 内部评估 |
-| `refs` | 外部引用资料 |
+| `studies` | 内部评估或 docs/studies 相关修改 |
+| `sources` | 外部引用资料或 docs/sources 相关修改 |
 
-scope 为推荐值，项目可以在不破坏解析的前提下扩展。
+scope 为推荐值，项目可以在不破坏解析的前提下扩展。若历史 commit 使用 `research` 或 `refs`，仅视为提交分类别名，不改变 docs/studies 与 docs/sources 的事实源归属。
 
 ### 6.4 Refs 格式
 
