@@ -1,0 +1,29 @@
+id: adr-9002
+type: adr
+title: TaskPlan Task SubTask 详情页语义展示决策
+status: accepted
+created: '2026-06-13T10:15:00'
+updated: '2026-06-13T10:15:00'
+date: '2026-06-13'
+context: |
+  TaskPlan、Task 和 SubTask 详情页需要在同一套设计语言下展示不同层级的事实。
+  如果所有对象都按 YAML 字段平铺，计划关闭判断、任务验收和子任务局部证据会互相淹没。
+decision: |
+  保持对象详情页的语义主线：TaskPlan 聚焦一次目标和关闭判断，Task 聚焦可执行单元和验收，SubTask 聚焦叶子执行事项。
+  关联材料只作为辅助阅读入口，不展开到上层主内容。
+consequences: |
+  Web fixture 必须至少保留一个计划、任务和子任务的全字段样本，便于持续观察页面层级是否稳定。
+affects:
+  - tests/web/fixtures/taskplan-with-subtasks/ldvh-base/taskplans/taskplan-9004-verification-close.yaml
+  - tests/web/fixtures/taskplan-with-subtasks/ldvh-base/tasks/task-9042-verifying-with-subtasks.yaml
+  - tests/web/fixtures/taskplan-with-subtasks/ldvh-base/subtasks/subtask-9041-verifying.yaml
+related_tasks:
+  - task-9042
+related_changes: []
+related_memos:
+  - memo-9002
+related_rules:
+  - specs/08-Web信息同步实现规范.md
+related_workareas:
+  - workarea-9003
+

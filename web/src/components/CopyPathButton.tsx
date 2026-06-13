@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 
 interface CopyPathButtonProps {
   path?: string;
   className?: string;
+  toneClassName?: string;
+  toneStyle?: CSSProperties;
 }
 
 async function copyText(text: string) {
@@ -28,7 +30,7 @@ async function copyText(text: string) {
   document.body.removeChild(textarea);
 }
 
-export default function CopyPathButton({ path, className = '' }: CopyPathButtonProps) {
+export default function CopyPathButton({ path, className = '', toneClassName, toneStyle }: CopyPathButtonProps) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -45,7 +47,7 @@ export default function CopyPathButton({ path, className = '' }: CopyPathButtonP
   const label = copied ? t('common.copiedPath') : t('common.copyPath');
   const buttonClassName = copied
     ? 'bg-emerald-500/10 text-emerald-400'
-    : 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent';
+    : toneClassName ?? 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent';
 
   const handleClick = async (event: MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -68,6 +70,7 @@ export default function CopyPathButton({ path, className = '' }: CopyPathButtonP
         onBlur={() => setShowTooltip(false)}
         onClick={handleClick}
         className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent transition-colors focus-visible:border-ldvh-accent/50 focus-visible:outline-none ${buttonClassName}`}
+        style={copied ? undefined : toneStyle}
         aria-label={label}
       >
         {copied ? <Check size={14} /> : <Copy size={14} />}

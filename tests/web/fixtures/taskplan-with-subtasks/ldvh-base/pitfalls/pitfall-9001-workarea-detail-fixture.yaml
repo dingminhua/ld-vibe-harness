@@ -1,0 +1,33 @@
+id: pitfall-9001
+type: pitfall
+title: WorkArea 详情页字段层级被任务语义淹没
+status: active
+created: '2026-06-13T09:27:00'
+updated: '2026-06-13T09:27:00'
+symptoms: |
+  当 WorkArea 测试数据字段不完整时，详情页只能看到计划态势和少量属性，
+  很难判断 description、scope、constraints、source、status_history 和关联材料的展示是否合理。
+trigger_conditions: |
+  使用字段稀疏的 WorkArea 测试夹具检查详情页，或者关联对象列表为空时。
+root_cause: |
+  测试数据没有覆盖完整字段契约，导致页面问题被数据缺口隐藏。
+resolution: |
+  补齐 workarea-9003 的全字段内容，并增加关联文档、ADR、Memo 和 Pitfall fixture。
+verification: |
+  在 Web 中打开 `/objects/workarea/workarea-9003`，确认属性和关联材料都能被观察到。
+avoidance: |
+  后续新增对象详情页测试时，至少保留一个全字段 fixture 和一个稀疏字段 fixture。
+applicability: WorkArea 详情页、右侧扩展阅读区和对象关联材料展示。
+source_objects:
+- workarea-9003
+related_objects:
+- adr-9001
+- memo-9001
+related_rules:
+- specs/24-WorkArea-工作域.md
+tags:
+- web
+- workarea
+- fixture
+severity: medium
+repeatability: recurring

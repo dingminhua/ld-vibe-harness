@@ -1,0 +1,25 @@
+id: adr-9001
+type: adr
+title: WorkArea 详情页全字段展示决策
+status: accepted
+created: '2026-06-13T09:25:00'
+updated: '2026-06-13T09:25:00'
+date: '2026-06-13'
+context: |
+  WorkArea 详情页需要同时展示长期背景、范围边界、约束、来源和关联材料。
+  测试夹具必须覆盖这些字段，才能观察页面是否把工作域误渲染成任务详情或 YAML 字段平铺。
+decision: |
+  在 workarea-9003 中补齐所有 WorkArea 字段，并通过 related_adrs 引用本 ADR，
+  用于验证关联 ADR 是否出现在工作域详情页的关联材料区域。
+consequences: |
+  Web 详情页应能把 ADR 作为辅助阅读材料展示，而不是把 ADR 内容展开到工作域主阅读路径中。
+affects:
+- tests/web/fixtures/taskplan-with-subtasks/ldvh-base/workareas/workarea-9003-verification.yaml
+related_tasks: []
+related_changes: []
+related_memos:
+- memo-9001
+related_rules:
+- specs/24-WorkArea-工作域.md
+related_workareas:
+- workarea-9003

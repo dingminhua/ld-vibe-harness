@@ -435,3 +435,15 @@ input::-moz-focus-inner {
 .ldvh-inline-markdown :where(th) {
   background: rgb(var(--ldvh-border) / 0.28);
 }
+
+.ldvh-definition-text .ldvh-inline-markdown :where(ul, ol) {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.ldvh-definition-text .ldvh-inline-markdown :where(li) {
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+}

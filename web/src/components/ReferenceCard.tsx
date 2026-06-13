@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Link2 } from 'lucide-react';
+import { Link2, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import { fetchObjectDetail } from '@/utils/api';
 import { isObjectRef } from '@/utils/fieldFormats';
@@ -8,6 +8,7 @@ import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import StatusBadge from '@/components/StatusBadge';
 import CopyPathButton from '@/components/CopyPathButton';
 import { getObjectStatusLocale } from '@/i18n/locales';
+import { usePanel } from '@/utils/panelContext';
 
 /** 对象类型中英映射（与 ObjectDetail 页面保持一致） */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
@@ -31,23 +32,37 @@ function parseRefType(refId: string): string | null {
 
 interface ReferenceCardProps {
   refs: string[];
+  showType?: boolean;
+  showStatus?: boolean;
+  showPanelIcon?: boolean;
 }
 
-export default function ReferenceCard({ refs }: ReferenceCardProps) {
+export default function ReferenceCard({ refs, showType = true, showStatus = true, showPanelIcon = true }: ReferenceCardProps) {
   if (refs.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-1.5">
       {refs.map((ref, i) => (
-        <ReferenceItem key={i} refId={ref} />
+        <ReferenceItem key={i} refId={ref} showType={showType} showStatus={showStatus} showPanelIcon={showPanelIcon} />
       ))}
     </div>
   );
 }
 
-function ReferenceItem({ refId }: { refId: string }) {
+function ReferenceItem({
+  refId,
+  showType,
+  showStatus,
+  showPanelIcon,
+}: {
+  refId: string;
+  showType: boolean;
+  showStatus: boolean;
+  showPanelIcon: boolean;
+}) {
   const navigate = useNavigate();
   const { locale } = useI18n();
+  const { isOpen: panelOpen, content: panelContent } = usePanel();
   const [info, setInfo] = useState<{ type: string; title: string; status: string; path: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,6 +86,8 @@ function ReferenceItem({ refId }: { refId: string }) {
   const typeLabel = TYPE_LOCALES[refType || '']
     ? (locale === 'en' ? TYPE_LOCALES[refType!].en : TYPE_LOCALES[refType!].zh)
     : refType;
+  const isCurrentPanelOpen = Boolean(panelOpen && refType && panelContent?.type === 'object' && panelContent.objectType === refType && panelContent.objectId === refId);
+  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
 
   const handleClick = () => {
     if (!refType) return;
@@ -99,11 +116,11 @@ function ReferenceItem({ refId }: { refId: string }) {
           handleClick();
         }
       }}
-      className={`ldvh-body flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors ${refType ? 'cursor-pointer hover:bg-ldvh-border/30' : 'cursor-default'}`}
+      className={`ldvh-body group flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors ${refType ? 'cursor-pointer hover:bg-ldvh-border/30' : 'cursor-default'}`}
     >
       <Link2 size={13} className="shrink-0" style={{ color: typeColor }} />
       <span className="ldvh-meta shrink-0 text-ldvh-accent">{refId}</span>
-      {typeLabel && (
+      {showType && typeLabel && (
         <span
           className="ldvh-chip shrink-0 rounded px-1.5 py-0.5"
           style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
@@ -114,12 +131,19 @@ function ReferenceItem({ refId }: { refId: string }) {
       <span className="min-w-0 flex-1 truncate text-ldvh-text-primary">
         {loading ? <span className="text-ldvh-text-secondary">{refId}</span> : (info?.title || refId)}
       </span>
-      {info?.status && (
+      {showStatus && info?.status && (
         <span className="shrink-0">
           <StatusBadge status={info.status} statusLabel={getObjectStatusLocale(info.type, info.status, locale)} size="sm" />
         </span>
       )}
       <CopyPathButton path={info?.path} />
+      {showPanelIcon && refType && (
+        <PanelIcon
+          size={14}
+          aria-hidden="true"
+          className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent"
+        />
+      )}
     </div>
   );
 }

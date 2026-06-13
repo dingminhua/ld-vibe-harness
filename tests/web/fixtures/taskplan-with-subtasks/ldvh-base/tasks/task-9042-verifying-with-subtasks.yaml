@@ -7,16 +7,37 @@ updated: '2026-06-12T11:30:00'
 taskplan: taskplan-9004
 description: |
   验证收口计划中带子任务的验证中 Task。
-source: taskplan-9004
+  这个任务用于观察 Task 详情页在存在 SubTask、阻塞对象、验收标准、验证材料和产出文档时的完整呈现。
+source: |
+  来源：taskplan-9004 的任务拆解。
+  用途：覆盖 Task 详情页主线阅读结构和右侧扩展阅读入口。
+category: implementation
+priority: high
+severity: medium
+tags:
+  - web
+  - task-detail
+  - fixture
 blocked_by:
   - task-9041
 acceptance: |
   - [x] 实现完成
-  - [ ] 验证吸收
+  - [x] 子任务组态势能在 Task 详情页中保持次级层级
+  - [ ] 验证材料、产出文档和关联 ADR 均可从主阅读路径进入扩展阅读
 verification: |
-  - [ ] 正在验证子任务组
-related_adrs: []
+  - [x] 打开 `/objects/task/task-9042`，确认任务目标、推进状态和子任务态势可见。
+  - [x] 打开右侧扩展阅读，确认阻塞任务和子任务引用不会改变主路由。
+  - [ ] 检查验收标准、验证方式和关闭证据的视觉层级是否一致。
+closure_evidence: |
+  - 路径：`docs/task-9042-verification.md`
+  - 状态：验证材料已补齐，等待 Human 检查页面读感。
+  - 风险：若文档和关联材料区域过度卡片化，会重新造成页面噪音。
+related_adrs:
+  - adr-9002
 related_changes: []
-related_docs: []
-affected_docs: []
-deliverables: []
+related_docs:
+  - docs/task-9042-verification.md
+affected_docs:
+  - web/src/pages/ObjectDetail.tsx
+deliverables:
+  - docs/task-9042-verification.md

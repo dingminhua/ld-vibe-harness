@@ -11,7 +11,7 @@ import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
 import { TaskFlowBar, TaskFlowMarker } from '@/components/TaskFlowStatus';
-import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowRowClass } from '@/utils/taskFlowStatus';
+import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowIconClass, taskFlowRowClass } from '@/utils/taskFlowStatus';
 import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusHint, getObjectStatusLocale, getTypeDescription } from '@/i18n/locales';
@@ -81,7 +81,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
 };
 
 /** 字段名中英映射 */
-const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
+export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   source: { zh: '来源', en: 'Source' },
   description: { zh: '描述', en: 'Description' },
   summary: { zh: '摘要', en: 'Summary' },
@@ -513,7 +513,7 @@ type LocalizedTitleItem = {
   title_zh?: string;
 };
 
-function getLocalizedTitle(item: LocalizedTitleItem, locale: string): string {
+export function getLocalizedTitle(item: LocalizedTitleItem, locale: string): string {
   if (locale === 'en') return item.title_en || item.title || item.id;
   return item.title_zh || item.title || item.id;
 }
@@ -671,9 +671,9 @@ function WorkAreaReadingLayout({
       <WorkAreaSection title={t('objectDetail.workareaDefinition')} icon={<FileText size={14} className="text-ldvh-accent" />}>
         <div className="divide-y divide-ldvh-border/70">
           <DefinitionRow label={t('objectDetail.workareaGoal')} value={obj.description} />
-          <DefinitionRow label={getFieldLabel('source', locale)} value={obj.source} muted />
           <DefinitionRow label={getFieldLabel('scope', locale)} value={obj.scope} />
-          <DefinitionRow label={getFieldLabel('constraints', locale)} value={obj.constraints} emphasis />
+          <DefinitionRow label={getFieldLabel('constraints', locale)} value={obj.constraints} />
+          <DefinitionRow label={getFieldLabel('source', locale)} value={obj.source} muted />
         </div>
       </WorkAreaSection>
 
@@ -727,18 +727,21 @@ function WorkAreaPlanGroup({
       header: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
       row: 'hover:bg-emerald-500/10',
       icon: 'text-emerald-400',
+      copy: 'bg-transparent text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300',
     },
     review: {
       section: 'border-violet-500/30 bg-violet-500/5',
       header: 'border-violet-500/30 bg-violet-500/10 text-violet-400',
       row: 'hover:bg-violet-500/10',
       icon: 'text-violet-400',
+      copy: 'bg-transparent text-violet-400 hover:bg-violet-500/10 hover:text-violet-300',
     },
     closed: {
       section: 'border-ldvh-border bg-ldvh-bg/60',
       header: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
       row: 'hover:bg-ldvh-border/35',
       icon: 'text-ldvh-text-secondary',
+      copy: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent',
     },
   }[tone];
 
@@ -781,7 +784,7 @@ function WorkAreaPlanRow({
   plan: RelatedPlanSummary;
   locale: string;
   getStatus: (status: string) => string;
-  toneClass: { row: string; icon: string };
+  toneClass: { row: string; icon: string; copy: string };
   onOpen: (plan: RelatedPlanSummary) => void;
 }) {
   const { t } = useI18n();
@@ -818,7 +821,7 @@ function WorkAreaPlanRow({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <StatusBadge status={plan.status} statusLabel={getStatus(plan.status)} />
-          <CopyPathButton path={plan.path} />
+          <CopyPathButton path={plan.path} toneClassName={toneClass.copy} />
           <PanelIcon
             size={14}
             aria-hidden="true"
@@ -835,7 +838,7 @@ function WorkAreaPlanRow({
   );
 }
 
-function DefinitionRow({
+export function DefinitionRow({
   label,
   value,
   muted = false,
@@ -848,25 +851,100 @@ function DefinitionRow({
 }) {
   if (!value || (typeof value === 'string' && value.trim().length === 0)) return null;
   return (
-    <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]">
+    <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
       <div className="ldvh-caption-strong text-ldvh-text-secondary">{label}</div>
-      <div className={`min-w-0 ${muted ? 'opacity-85' : ''} ${emphasis ? 'rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2' : ''}`}>
-        <SummaryText value={String(value)} />
+      <div className={`ldvh-definition-text min-w-0 ${muted ? 'opacity-85' : ''} ${emphasis ? 'rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2' : ''}`}>
+        <DefinitionValue value={String(value)} muted={muted} />
       </div>
     </div>
   );
 }
 
-function MaterialRow({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
+function DefinitionValue({ value, muted = false }: { value: string; muted?: boolean }) {
+  const lines = value
+    .split('\n')
+    .map((line) => normalizeDefinitionLine(line))
+    .filter(Boolean);
+
+  if (lines.length <= 1) {
+    return <p className={muted ? 'ldvh-body-muted' : 'ldvh-body'}>{value}</p>;
+  }
+
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      {lines.map((line, index) => (
+        <DefinitionStatement key={`${index}-${line}`} line={line} muted={muted} />
+      ))}
+    </div>
+  );
+}
+
+function DefinitionStatement({ line, muted = false }: { line: string; muted?: boolean }) {
+  const statement = splitDefinitionStatement(line);
+  const textClassName = muted ? 'ldvh-body-muted' : 'ldvh-body';
+
+  if (statement) {
+    const tone = statement.term === '不包含'
+      ? 'border-rose-500/20 bg-rose-500/5 text-rose-400'
+      : 'border-ldvh-accent/20 bg-ldvh-accent/5 text-ldvh-accent';
+    return (
+      <div className="grid min-w-0 gap-2 py-0.5 sm:grid-cols-[4rem_1fr]">
+        <span className={`ldvh-caption-strong inline-flex h-6 w-fit items-center rounded-md border px-1.5 ${tone}`}>
+          {statement.term}
+        </span>
+        <p className={textClassName}>{statement.content}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid min-w-0 gap-2 py-0.5 sm:grid-cols-[0.625rem_1fr]">
+      <span className="mt-2 h-1.5 w-1.5 rounded-full bg-ldvh-text-secondary/45" aria-hidden="true" />
+      <p className={textClassName}>{line}</p>
+    </div>
+  );
+}
+
+function splitDefinitionStatement(line: string): { term: string; content: string } | null {
+  const match = line.match(/^([^：:]{1,6})[：:]\s*(.+)$/);
+  if (!match) return null;
+  const [, term, content] = match;
+  return { term: term.trim(), content: content.trim() };
+}
+
+function normalizeDefinitionLine(line: string): string {
+  return line
+    .trim()
+    .replace(/^[-*]\s+/, '')
+    .replace(/^\d+[.)]\s+/, '')
+    .replace(/^\[[ xX]\]\s+/, '')
+    .trim();
+}
+
+export function MaterialRow({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
   if (!Array.isArray(value) || value.length === 0) return null;
   return (
-    <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]">
-      <div className="ldvh-caption-strong text-ldvh-text-secondary">{getFieldLabel(fieldKey, locale)}</div>
+    <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
+      <div className="ldvh-caption-strong text-ldvh-text-secondary">{getMaterialLabel(fieldKey, locale)}</div>
       <div className="min-w-0">
-        <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />
+        {REFERENCE_FIELDS.includes(fieldKey) && typeof value[0] === 'string'
+          ? <ReferenceCard refs={value as string[]} showType={false} showStatus={false} />
+          : <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />}
       </div>
     </div>
   );
+}
+
+function getMaterialLabel(fieldKey: string, locale: string) {
+  const labels: Record<string, { zh: string; en: string }> = {
+    related_docs: { zh: '文档', en: 'Docs' },
+    related_adrs: { zh: 'ADR', en: 'ADRs' },
+    related_memos: { zh: '备忘', en: 'Memos' },
+    related_pitfalls: { zh: '踩坑', en: 'Pitfalls' },
+  };
+  const entry = labels[fieldKey];
+  if (!entry) return getFieldLabel(fieldKey, locale);
+  return locale === 'en' ? entry.en : entry.zh;
 }
 
 /** 元信息小标签 */
@@ -880,13 +958,13 @@ function MetaChip({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-function hasDetailContent(value: unknown): boolean {
+export function hasDetailContent(value: unknown): boolean {
   if (Array.isArray(value)) return value.length > 0;
   if (typeof value === 'string') return value.trim().length > 0;
   return value !== null && value !== undefined;
 }
 
-function TaskPlanReadingLayout({
+export function TaskPlanReadingLayout({
   obj,
   summary,
   loading,
@@ -918,16 +996,17 @@ function TaskPlanReadingLayout({
   ];
   const hidden = new Set([
     ...META_KEYS,
-    'workarea',
-    'description',
-    'success_criteria',
-    'source',
-    'tasks',
-    'completion_evidence',
-    'review_requested_at',
-    'related_docs',
-    'related_adrs',
-    'related_memos',
+      'workarea',
+      'description',
+      'success_criteria',
+      'source',
+      'tasks',
+      'completion_evidence',
+      'review_requested_at',
+      'closed_at',
+      'related_docs',
+      'related_adrs',
+      'related_memos',
     'related_pitfalls',
     'aggregated_deliverables',
     'aggregated_docs',
@@ -937,8 +1016,8 @@ function TaskPlanReadingLayout({
   return (
     <div className="mb-6 flex flex-col gap-5">
       <TaskSection title={t('objectDetail.planGoal')} tone="primary" icon={<FileText size={14} className="text-ldvh-accent" />}>
-        {obj.description ? <SummaryText value={String(obj.description)} /> : <EmptyHint text={t('objectDetail.noPlanDescription')} />}
-        <div className="mt-4 divide-y divide-ldvh-border/70">
+        <div className="divide-y divide-ldvh-border/70">
+          <DefinitionRow label={t('objectDetail.workareaGoal')} value={obj.description} />
           <DefinitionRow label={getFieldLabel('source', locale)} value={obj.source} muted />
           <DetailObjectRow
             label={t('objectDetail.workArea')}
@@ -1019,7 +1098,7 @@ function TaskPlanReadingLayout({
   );
 }
 
-function DetailRecordItem({ label, recorded }: { label: string; recorded: boolean }) {
+export function DetailRecordItem({ label, recorded }: { label: string; recorded: boolean }) {
   const { t } = useI18n();
   return (
     <span className={`ldvh-caption-strong inline-flex items-center gap-1.5 rounded-md border px-2 py-1 ${
@@ -1034,7 +1113,7 @@ function DetailRecordItem({ label, recorded }: { label: string; recorded: boolea
   );
 }
 
-function LoadingHint({ text }: { text: string }) {
+export function LoadingHint({ text }: { text: string }) {
   return (
     <div className="rounded-md border border-dashed border-ldvh-border bg-ldvh-bg/50 px-3 py-6 text-center">
       <span className="ldvh-body-muted">{text}</span>
@@ -1042,12 +1121,12 @@ function LoadingHint({ text }: { text: string }) {
   );
 }
 
-function getObjectRefType(refId: string): string | null {
+export function getObjectRefType(refId: string): string | null {
   if (!isObjectRef(refId)) return null;
   return refId.match(/^([a-z]+)-\d+$/)?.[1] ?? null;
 }
 
-function findRelatedSummary(
+export function findRelatedSummary(
   refId: string,
   currentTask: RelatedObjectSummary | null,
   parentPlan: ObjectItem | null,
@@ -1060,7 +1139,7 @@ function findRelatedSummary(
     .find((subtask) => subtask.id === refId) ?? null;
 }
 
-function buildCurrentFlowItem(
+export function buildCurrentFlowItem(
   obj: Record<string, unknown>,
   objType: string,
   locale: string,
@@ -1082,7 +1161,7 @@ function buildCurrentFlowItem(
   };
 }
 
-function TaskProgressSection({
+export function TaskProgressSection({
   item,
   blockedRefs,
   currentTask,
@@ -1104,7 +1183,7 @@ function TaskProgressSection({
   return (
     <TaskSection title={t('objectDetail.taskProgress')} tone="default" icon={<GitBranch size={14} className="text-ldvh-accent" />}>
       <div className="divide-y divide-ldvh-border/70">
-        <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]">
+        <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
           <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectDetail.currentState')}</div>
           <div className={`inline-flex w-fit min-w-0 items-center gap-2 rounded-md border px-2.5 py-1.5 ${taskFlowRowClass[flowTone]}`}>
             <TaskFlowMarker tone={flowTone} label={flowLabel} compact />
@@ -1112,7 +1191,7 @@ function TaskProgressSection({
           </div>
         </div>
         {blockedRefs.length > 0 && (
-          <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]">
+          <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
             <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectDetail.waitingFor')}</div>
             <div className="divide-y divide-ldvh-border/60">
               {blockedRefs.map((refId) => {
@@ -1137,7 +1216,7 @@ function TaskProgressSection({
   );
 }
 
-function DetailObjectRow({
+export function DetailObjectRow({
   label,
   item,
   fallbackId,
@@ -1179,7 +1258,7 @@ function DetailObjectRow({
           open();
         }
       }}
-      className={`group/detail-ref grid min-w-0 cursor-pointer gap-2 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr] ${compact ? 'py-2' : 'py-3'}`}
+      className={`group/detail-ref grid min-w-0 cursor-pointer gap-2 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr] ${compact ? 'py-2' : 'py-3'}`}
     >
       <div className="ldvh-caption-strong flex min-w-0 items-center gap-1.5 text-ldvh-text-secondary">
         {labelIcon}
@@ -1196,7 +1275,7 @@ function DetailObjectRow({
   );
 }
 
-function DetailTaskRow({
+export function DetailTaskRow({
   item,
   locale,
   getStatus,
@@ -1211,6 +1290,7 @@ function DetailTaskRow({
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
   const flowTone = getTaskFlowTone(item);
   const flowLabel = getTaskFlowLabel(item, t, getStatus);
+  const actionIconClassName = `${taskFlowIconClass[flowTone]} bg-transparent hover:bg-ldvh-border/30`;
   const subtasks = item.subtasks ?? [];
   const objectType = item.type || 'task';
   const title = getLocalizedTitle(item, locale);
@@ -1240,8 +1320,8 @@ function DetailTaskRow({
             <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/detail-task:text-ldvh-accent">{title}</span>
             <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
           </div>
-          <CopyPathButton path={item.path} />
-          <PanelIcon size={14} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-task:text-ldvh-accent'}`} />
+          <CopyPathButton path={item.path} toneClassName={actionIconClassName} />
+          <PanelIcon size={14} className={`shrink-0 transition-colors ${taskFlowIconClass[flowTone]}`} />
         </div>
         {showSubtaskPosture && subtasks.length > 0 && (
           <div className="ml-8 mt-2 min-w-0">
@@ -1253,7 +1333,7 @@ function DetailTaskRow({
   );
 }
 
-function TaskReadingLayout({
+export function TaskReadingLayout({
   obj,
   locale,
   objType,
@@ -1309,9 +1389,9 @@ function TaskReadingLayout({
   return (
     <div className="mb-6 flex flex-col gap-5">
       <TaskSection title={t('objectDetail.taskGoal')} tone="primary" icon={<FileText size={14} className="text-ldvh-accent" />}>
-        {obj.description ? <SummaryText value={String(obj.description)} /> : <EmptyHint text={t('objectDetail.noTaskDescription')} />}
-        <div className="mt-4 divide-y divide-ldvh-border/70">
-          {obj.source && <TaskInlineField label={getFieldLabel('source', locale)} value={<SummaryText value={String(obj.source)} />} />}
+        <div className="divide-y divide-ldvh-border/70">
+          <DefinitionRow label={t('objectDetail.workareaGoal')} value={obj.description} />
+          <DefinitionRow label={getFieldLabel('source', locale)} value={obj.source} muted />
           {obj.taskplan && (
             <DetailObjectRow
               label={t('objectDetail.taskPlan')}
@@ -1411,7 +1491,7 @@ function getAuxiliaryMetaEntries(obj: Record<string, unknown>, objType: string) 
     .filter(([, value]) => value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0));
 }
 
-function getFieldLabel(fieldKey: string, locale: string) {
+export function getFieldLabel(fieldKey: string, locale: string) {
   const labelEntry = FIELD_LABEL_LOCALES[fieldKey];
   return labelEntry ? (locale === 'en' ? labelEntry.en : labelEntry.zh) : fieldKey.replace(/_/g, ' ');
 }
@@ -1457,7 +1537,7 @@ function formatAuxiliaryMetaValue(fieldKey: string, value: unknown, locale: stri
   );
 }
 
-function TaskSection({
+export function TaskSection({
   title,
   tone,
   icon,
@@ -1487,16 +1567,16 @@ function TaskSection({
   );
 }
 
-function TaskInlineField({ label, value }: { label: string; value: ReactNode }) {
+export function TaskInlineField({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[7rem_1fr]">
+    <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
       <div className="ldvh-caption-strong text-ldvh-text-secondary">{label}</div>
       <div className="min-w-0">{value}</div>
     </div>
   );
 }
 
-function TaskDocGroup({ label, docs }: { label: string; docs?: string[] }) {
+export function TaskDocGroup({ label, docs }: { label: string; docs?: string[] }) {
   if (!docs || docs.length === 0) return null;
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-bg/40 p-3">
@@ -1537,7 +1617,7 @@ function DocumentOrTextList({ items }: { items: string[] }) {
   );
 }
 
-function EmptyHint({ text }: { text: string }) {
+export function EmptyHint({ text }: { text: string }) {
   return <span className="ldvh-body-muted">{text}</span>;
 }
 

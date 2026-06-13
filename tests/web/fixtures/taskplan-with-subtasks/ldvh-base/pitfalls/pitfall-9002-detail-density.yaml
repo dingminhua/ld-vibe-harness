@@ -1,0 +1,35 @@
+id: pitfall-9002
+type: pitfall
+title: 计划任务子任务详情页信息层级被材料噪音淹没
+status: active
+created: '2026-06-13T10:17:00'
+updated: '2026-06-13T10:17:00'
+symptoms: |
+  当计划、任务和子任务都携带文档、证据和关联对象时，
+  页面容易把所有材料渲染成同一层级，导致 Human 无法先判断当前对象的主线。
+trigger_conditions: |
+  使用全字段测试夹具打开 TaskPlan、Task 或 SubTask 详情页。
+root_cause: |
+  页面只按字段存在与否渲染，缺少对象语义分工和操作 icon 层级规则。
+resolution: |
+  通过全局设计约束收敛操作 icon、颜色和语义内容顺序，并补齐完整测试数据持续观察。
+verification: |
+  打开 `/objects/taskplan/taskplan-9004`、`/objects/task/task-9042` 和 `/objects/subtask/subtask-9041`。
+avoidance: |
+  新增详情页字段时先判断它属于主线、证据、材料还是兜底字段，不直接塞进顶层。
+applicability: TaskPlan、Task、SubTask 详情页和右侧扩展阅读区。
+source_objects:
+  - taskplan-9004
+  - task-9042
+  - subtask-9041
+related_objects:
+  - adr-9002
+  - memo-9002
+related_rules:
+  - specs/08-Web信息同步实现规范.md
+tags:
+  - web
+  - detail
+  - fixture
+severity: medium
+repeatability: recurring

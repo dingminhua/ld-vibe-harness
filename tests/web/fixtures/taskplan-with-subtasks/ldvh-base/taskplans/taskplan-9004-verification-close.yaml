@@ -6,17 +6,36 @@ created: '2026-06-12T11:20:00'
 updated: '2026-06-12T11:30:00'
 workarea: workarea-9003
 description: |
-  以验证中和已验证任务为主，用于观察态势条左侧完成段和中段验证段。
+  以验证中和已验证任务为主，用于观察 TaskPlan 详情页的完整阅读路径。
+  该计划同时覆盖目标、来源、任务态势、成功标准、关闭判断、产出文档和关联材料。
 success_criteria: |
-  - [ ] 验证中任务和已验证任务都能区分
-  - [ ] 子任务组不会遮蔽 Task 主线
-source: Web 测试夹具
+  - [x] 验证中任务和已验证任务都能区分
+  - [x] 子任务组不会遮蔽 Task 主线
+  - [ ] 计划关闭前必须能看到完成证据、聚合文档和关联材料
+source: |
+  来源：用户要求完善计划、任务和子任务详情页的完整内容呈现。
+  用途：作为 Web TaskPlan 语义阅读布局的全字段展示夹具。
 tasks:
   - task-9041
   - task-9042
   - task-9043
   - task-9044
-related_docs: []
-related_adrs: []
-related_memos: []
-related_pitfalls: []
+review_requested_at: '2026-06-13T10:10:00'
+completion_evidence: |
+  - [x] 已补齐 TaskPlan 详情页的成功标准、关闭判断和关联材料预览。
+  - [x] 已补齐 task-9042 和 subtask-9041 的验证材料，用于观察下钻阅读。
+  - [ ] 仍需人工确认页面视觉层级是否满足 08 Web 信息同步规范。
+aggregated_deliverables:
+  - docs/taskplan-9004-close-review.md
+  - docs/task-9042-verification.md
+aggregated_docs:
+  - docs/workarea-9003-verification.md
+  - docs/subtask-9041-verification.md
+related_docs:
+  - docs/taskplan-9004-close-review.md
+related_adrs:
+  - adr-9002
+related_memos:
+  - memo-9002
+related_pitfalls:
+  - pitfall-9002

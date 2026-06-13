@@ -10,8 +10,9 @@ import StatusBadge from '@/components/StatusBadge';
 import SummaryText from '@/components/SummaryText';
 import CopyPathButton from '@/components/CopyPathButton';
 import { useI18n } from '@/i18n/context';
+import { TaskPlanReadingLayout, TaskReadingLayout } from '@/pages/ObjectDetail';
 import { getObjectStatusLocale } from '@/i18n/locales';
-import { fetchDocContent, fetchObjectDetail, type DocContent, type ObjectDetail as ApiObjectDetail } from '@/utils/api';
+import { fetchDocContent, fetchObjectDetail, fetchObjects, type DocContent, type ObjectDetail as ApiObjectDetail, type ObjectItem, type RelatedObjectSummary } from '@/utils/api';
 import {
   CHECKLIST_COMPAT_FIELDS,
   DOC_LINK_FIELDS,
@@ -464,9 +465,55 @@ function ObjectPreview({ content }: { content: PanelContent }) {
       </div>
       <h3 className="ldvh-reading-title">{title}</h3>
       {objectId && <p className="ldvh-meta">{objectId}</p>}
-      {obj && <SemanticObjectPreview objectType={objectType} obj={obj} />}
+      {obj && !['taskplan','task','subtask'].includes(objectType||'') && <SemanticObjectPreview objectType={objectType} obj={obj} />}
+      {obj && ['taskplan','task','subtask'].includes(objectType||'') && <ObjectSemanticPreview objectType={objectType} obj={obj} objectId={objectId} />}
     </div>
   );
+}
+
+function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: string; obj: Record<string, unknown>; objectId?: string }) {
+  const [summary, setSummary] = useState<ObjectItem | null>(null);
+  const [parentPlan, setParentPlan] = useState<ObjectItem | null>(null);
+  const [taskSummary, setTaskSummary] = useState<RelatedObjectSummary | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { locale, getStatus } = useI18n();
+
+  useEffect(() => {
+    if (!objectType || !objectId) return;
+    if (objectType !== 'taskplan' && objectType !== 'task' && objectType !== 'subtask') return;
+    let cancelled = false;
+    setLoading(true);
+    fetchObjects('taskplan')
+      .then((result) => {
+        if (cancelled) return;
+        const plans = result.data?.items ?? [];
+        if (objectType === 'taskplan') {
+          setSummary(plans.find((plan) => plan.id === objectId) ?? null);
+          return;
+        }
+        const plan = plans.find((candidate) => candidate.tasks?.some((task) => task.id === objectId
+          || task.subtasks?.some((subtask) => subtask.id === objectId))) ?? null;
+        const task = plan?.tasks?.find((candidate) => candidate.id === objectId
+          || candidate.subtasks?.some((subtask) => subtask.id === objectId)) ?? null;
+        setParentPlan(plan);
+        setTaskSummary(task);
+      })
+      .catch(() => {
+        if (!cancelled) { setSummary(null); setParentPlan(null); setTaskSummary(null); }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [objectType, objectId]);
+
+  if (objectType === 'taskplan') {
+    return <TaskPlanReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
+  }
+  if (objectType === 'task' || objectType === 'subtask') {
+    return <TaskReadingLayout obj={obj} locale={locale} objType={objectType} summary={taskSummary} parentPlan={parentPlan} loading={loading} getStatus={getStatus} />;
+  }
+  return null;
 }
 
 function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {

@@ -154,7 +154,7 @@ function WorkAreaPlanRow({
           <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
         </div>
         <CopyPathButton path={item.path} />
-        <ArrowRight size={13} className={`shrink-0 transition-all group-hover/workarea-row:translate-x-0.5 ${toneClass.icon}`} />
+        <ArrowRight size={13} className="shrink-0 text-ldvh-text-secondary/70 transition-all group-hover/workarea-row:translate-x-0.5 group-hover/workarea-row:text-ldvh-accent" />
       </div>
       {tasks.length > 0 && (
         <div className="min-w-0 self-stretch">
