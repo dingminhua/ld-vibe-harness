@@ -191,7 +191,7 @@ Refs: <object-refs>
 | `studies` | 内部评估或 docs/studies 相关修改 |
 | `sources` | 外部引用资料或 docs/sources 相关修改 |
 
-scope 为推荐值，项目可以在不破坏解析的前提下扩展。若历史 commit 使用 `research` 或 `refs`，仅视为提交分类别名，不改变 docs/studies 与 docs/sources 的事实源归属。
+scope 为推荐值，项目可以在不破坏解析的前提下扩展。若历史 commit 使用旧研究或旧引用分类，仅视为提交分类别名，不改变 docs/studies 与 docs/sources 的事实源归属。
 
 ### 6.4 Refs 格式
 
@@ -277,7 +277,7 @@ Git commit 本身是 Change 的完整证据，至少包含：
 Change 的派生列表、Web 看板、工具输出和统计结果不得替代 Git commit 记录。
 
 ---
-## 8. 适配规则
+## 8. 适配边界
 
 ### 8.1 AI 协作
 

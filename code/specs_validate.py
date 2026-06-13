@@ -326,7 +326,7 @@ CONSISTENCY_WORK_MODEL_REQUIRED_SECTIONS = {
     "5": "Human Gate",
     "6": "字段契约",
     "7": "事实源回写与证据留存",
-    "8": "适配规则",
+    "8": "适配边界",
     "9": "规范落地要求",
     "10": "检查要求",
     "11": "待补齐事项",
@@ -347,6 +347,33 @@ CONSISTENCY_RETIRED_REFERENCE_RULES = (
         "message": "已退回运行闭环测试机制疑似仍被作为当前测试事实源或正式约束",
     },
 )
+CONSISTENCY_FORBIDDEN_TEXT_RULES = (
+    {
+        "pattern": re.compile(r"04\.01-04\.05|04\.04|04\.05"),
+        "code": "FORBIDDEN_04_SERIES_RANGE",
+        "message": "04 系列只包含 04.01-04.03，不得引用 04.04、04.05 或 04.01-04.05 范围",
+    },
+    {
+        "pattern": re.compile(r"user_rules\.md"),
+        "code": "FORBIDDEN_TRAE_CN_USER_RULES_PATH",
+        "message": "Trae CN 用户级 Rules 入口不得使用 user_rules.md，应使用 .trae-cn/rules/ldvh_rules.md",
+    },
+    {
+        "pattern": re.compile(r"research\s*(入口|结论|吸收|资料)|refs\s*(摘要|入口)|`research`|`refs`"),
+        "code": "FORBIDDEN_RESEARCH_REFS_TERMS",
+        "message": "不得使用 research/refs 旧口径，应使用 docs/studies 或 docs/sources",
+    },
+    {
+        "pattern": re.compile(r"机制入口|机制事实源|机制适配|固定机制子文档|机制子文档|环境适配映射"),
+        "code": "FORBIDDEN_LEGACY_MECHANISM_TERMS",
+        "message": "不得使用旧机制口径，应使用环境入口、适配措施、固定能力子文档或环境适配项",
+    },
+    {
+        "pattern": re.compile(r"Agent\s*是|Agent 是"),
+        "code": "FORBIDDEN_AGENT_SECOND_DEFINITION",
+        "message": "Agent 定义应以 02 术语为准，其他文档不得使用二次定义式表达",
+    },
+)
 
 # 04 系列文件预期清单（文件名 → 预期标题，包含实际空格）
 CONSISTENCY_04_SERIES_FILES = {
@@ -355,14 +382,25 @@ CONSISTENCY_04_SERIES_FILES = {
     "04.02-LDVH能力资产与落地保障规范.md": "LDVH 能力资产与落地保障规范",
     "04.03-环境入口适配与部署规范.md": "环境入口适配与部署规范",
 }
+CONSISTENCY_04_SERIES_ORDER = list(CONSISTENCY_04_SERIES_FILES.keys())
+CONSISTENCY_04_REQUIRED_TAIL = ["规范落地要求", "Human Gate 与检查要求", "待补齐事项"]
 CONSISTENCY_04_RETIRED_FILES = {
     "04.04-个人环境特别要求规范.md": "个人环境特别要求已并入 04.03",
 }
 
 
 def consistency_04_series_issues():
-    """检查 04 系列文件是否存在、标题是否符合预期"""
+    """检查 04 系列文件是否存在、标题和章节骨架是否符合预期"""
     issues = []
+    actual_files = sorted(path.name for path in SPECS_DIR.glob("04*.md"))
+    unexpected_files = [name for name in actual_files if name not in CONSISTENCY_04_SERIES_FILES and name not in CONSISTENCY_04_RETIRED_FILES]
+    if unexpected_files:
+        issues.append(Issue(SPECS_DIR, 1, f"04 系列存在未登记文件: {unexpected_files}", code="04_SERIES_UNEXPECTED_FILE"))
+    active_files = [name for name in actual_files if name in CONSISTENCY_04_SERIES_FILES]
+    if active_files != CONSISTENCY_04_SERIES_ORDER:
+        issues.append(
+            Issue(SPECS_DIR, 1, f"04 系列 active 文件顺序不符合预期: {active_files}", code="04_SERIES_ORDER_MISMATCH")
+        )
     for filename, expected_title in CONSISTENCY_04_SERIES_FILES.items():
         path = SPECS_DIR / filename
         if not path.exists():
@@ -374,10 +412,49 @@ def consistency_04_series_issues():
             issues.append(
                 Issue(path, 1, f"04 系列文件标题不符合预期: {first_line}，应包含 '{expected_title}'", code="04_SERIES_TITLE_MISMATCH")
             )
+        sections = consistency_h2_sections(path)
+        ordered_titles = [sections[key]["title"] for key in sorted(sections, key=int)]
+        if len(ordered_titles) < len(CONSISTENCY_04_REQUIRED_TAIL) or ordered_titles[-3:] != CONSISTENCY_04_REQUIRED_TAIL:
+            issues.append(
+                Issue(
+                    path,
+                    1,
+                    "04 系列章节尾部应依次为：规范落地要求、Human Gate 与检查要求、待补齐事项",
+                    code="04_SERIES_SECTION_TAIL_MISMATCH",
+                )
+            )
     for filename, reason in CONSISTENCY_04_RETIRED_FILES.items():
         path = SPECS_DIR / filename
         if path.exists():
             issues.append(Issue(path, 1, f"04 系列已退役文件不应存在: {filename}（{reason}）", code="04_SERIES_RETIRED_FILE_PRESENT"))
+    return issues
+
+
+def consistency_forbidden_text_issues(paths):
+    issues = []
+    for path in iter_markdown_files(paths):
+        in_code = False
+        for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            stripped = line.strip()
+            if stripped.startswith("```") or stripped.startswith("~~~"):
+                in_code = not in_code
+                continue
+            if in_code:
+                continue
+            if Path(path).name.startswith("02-") and "不推荐表达" in stripped:
+                continue
+            for rule in CONSISTENCY_FORBIDDEN_TEXT_RULES:
+                if rule["pattern"].search(stripped):
+                    issues.append(Issue(path, line_number, rule["message"], code=rule["code"]))
+            if ".trae-cn/" in stripped and "rules" in stripped and "ldvh_rules.md" not in stripped:
+                issues.append(
+                    Issue(
+                        path,
+                        line_number,
+                        "Trae CN Rules 路径必须使用 .trae-cn/rules/ldvh_rules.md",
+                        code="BAD_TRAE_CN_RULES_PATH",
+                    )
+                )
     return issues
 
 
@@ -390,9 +467,9 @@ CONSISTENCY_WORKFLOW_REQUIRED_SECTIONS = {
     "6": "执行流程",
     "7": "Gate 触发条件",
     "8": "Skill 和 Agent 调度",
-    "9": "工具协作适配",
+    "9": "Code 与命令入口协作适配",
     "10": "事实源回写与证据留存",
-    "11": "机制适配边界",
+    "11": "环境适配边界",
     "12": "行动特有可测试性锚点",
     "13": "规范落地要求",
     "14": "检查要求",
@@ -793,6 +870,7 @@ def consistency_check(paths=None):
     issues.extend(consistency_human_gate_check_section_issues(check_paths))
     issues.extend(consistency_bare_term_issues(check_paths))
     issues.extend(consistency_deprecated_expression_issues(check_paths))
+    issues.extend(consistency_forbidden_text_issues(check_paths))
     issues.extend(consistency_04_series_issues())
     return issues
 

@@ -568,6 +568,99 @@ def test_consistency_skips_deprecated_in_terminology_spec(tmp_path):
     assert checker.consistency_deprecated_expression_issues([str(tmp_path)]) == []
 
 
+# ── 禁止旧口径检查 ────────────────────────────────────────────────
+
+
+def test_consistency_reports_forbidden_04_series_range(tmp_path):
+    write_md(
+        tmp_path / "99-测试.md",
+        """
+# 测试文档
+
+事实归属范围是 specs/04.01-04.05。
+""",
+    )
+
+    issues = checker.consistency_forbidden_text_issues([str(tmp_path)])
+
+    assert any(issue.code == "FORBIDDEN_04_SERIES_RANGE" for issue in issues)
+
+
+def test_consistency_reports_forbidden_trae_cn_user_rules_path(tmp_path):
+    write_md(
+        tmp_path / "99-测试.md",
+        """
+# 测试文档
+
+Trae CN 写入 .trae-cn/user_rules.md。
+""",
+    )
+
+    issues = checker.consistency_forbidden_text_issues([str(tmp_path)])
+
+    assert any(issue.code == "FORBIDDEN_TRAE_CN_USER_RULES_PATH" for issue in issues)
+
+
+def test_consistency_reports_bad_trae_cn_rules_path(tmp_path):
+    write_md(
+        tmp_path / "99-测试.md",
+        """
+# 测试文档
+
+Trae CN 写入 .trae-cn/rules/other_rules.md。
+""",
+    )
+
+    issues = checker.consistency_forbidden_text_issues([str(tmp_path)])
+
+    assert any(issue.code == "BAD_TRAE_CN_RULES_PATH" for issue in issues)
+
+
+def test_consistency_reports_forbidden_research_refs_terms(tmp_path):
+    write_md(
+        tmp_path / "99-测试.md",
+        """
+# 测试文档
+
+路线图进入 research 入口。
+""",
+    )
+
+    issues = checker.consistency_forbidden_text_issues([str(tmp_path)])
+
+    assert any(issue.code == "FORBIDDEN_RESEARCH_REFS_TERMS" for issue in issues)
+
+
+def test_consistency_reports_forbidden_legacy_mechanism_terms(tmp_path):
+    write_md(
+        tmp_path / "99-测试.md",
+        """
+# 测试文档
+
+这里定义机制入口。
+""",
+    )
+
+    issues = checker.consistency_forbidden_text_issues([str(tmp_path)])
+
+    assert any(issue.code == "FORBIDDEN_LEGACY_MECHANISM_TERMS" for issue in issues)
+
+
+def test_consistency_reports_forbidden_agent_second_definition(tmp_path):
+    write_md(
+        tmp_path / "99-测试.md",
+        """
+# 测试文档
+
+Agent 是某种能力。
+""",
+    )
+
+    issues = checker.consistency_forbidden_text_issues([str(tmp_path)])
+
+    assert any(issue.code == "FORBIDDEN_AGENT_SECOND_DEFINITION" for issue in issues)
+
+
 # ── 04 系列文件存在性/标题检查 ────────────────────────────────────
 
 
