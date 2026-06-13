@@ -1,0 +1,28 @@
+id: task-9101
+type: task
+title: 已关闭样本历史证据归档
+status: closed
+created: '2026-06-13T10:55:00'
+updated: '2026-06-13T11:02:00'
+taskplan: taskplan-9010
+description: |
+  将已关闭计划的历史验证记录整理为可追溯证据，供 TaskPlan 关闭摘要引用。
+source: taskplan-9010
+blocked_by: []
+acceptance: |
+  - [x] 历史验证记录已归档
+  - [x] TaskPlan 关闭摘要只引用归档结论
+verification: |
+  - [x] 打开 `/objects/task/task-9101`，确认归档证据完整。
+closure_evidence: |
+  - 路径：`docs/task-9101-history-archive.md`
+  - 结论：历史证据归档完成。
+closed_at: '2026-06-13T11:02:00'
+related_adrs: []
+related_changes: []
+related_docs:
+  - docs/task-9101-history-archive.md
+affected_docs:
+  - web/src/pages/ObjectDetail.tsx
+deliverables:
+  - docs/task-9101-history-archive.md

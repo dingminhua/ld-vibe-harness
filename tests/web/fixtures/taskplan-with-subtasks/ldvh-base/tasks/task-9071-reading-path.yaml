@@ -1,0 +1,29 @@
+id: task-9071
+type: task
+title: 关闭样本阅读路径核对
+status: closed
+created: '2026-06-13T10:20:00'
+updated: '2026-06-13T10:28:00'
+taskplan: taskplan-9007
+description: |
+  核对 TaskPlan 详情页从目标、成功标准到关闭证据的阅读路径，确保计划关闭审查能追溯到 Task 层证据。
+source: taskplan-9007
+blocked_by: []
+acceptance: |
+  - [x] 计划目标、成功标准和关闭证据能在主阅读路径中连续理解
+  - [x] Task 详情页保留完整验证记录，不让 TaskPlan 复制权威证据
+verification: |
+  - [x] 打开 `/objects/taskplan/taskplan-9007`，确认关闭判断可以看到 task-9071 的摘要引用。
+  - [x] 打开 `/objects/task/task-9071`，确认验收、验证和关闭证据完整。
+closure_evidence: |
+  - 路径：`docs/task-9071-reading-path.md`
+  - 结论：阅读路径核对通过，TaskPlan 可摘要引用本 Task 结果。
+closed_at: '2026-06-13T10:28:00'
+related_adrs: []
+related_changes: []
+related_docs:
+  - docs/task-9071-reading-path.md
+affected_docs:
+  - web/src/pages/ObjectDetail.tsx
+deliverables:
+  - docs/task-9071-reading-path.md

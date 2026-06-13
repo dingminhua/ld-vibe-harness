@@ -1,0 +1,30 @@
+id: task-9072
+type: task
+title: 关闭样本关联材料去重
+status: closed
+created: '2026-06-13T10:21:00'
+updated: '2026-06-13T10:29:00'
+taskplan: taskplan-9007
+description: |
+  核对计划自身材料和 Task 材料聚合时按 ID 去重，避免关闭审查区域重复显示同一份文档或对象。
+source: taskplan-9007
+blocked_by:
+  - task-9071
+acceptance: |
+  - [x] TaskPlan 关联材料包含计划自身材料
+  - [x] Task 关联材料进入聚合后按 ID 去重
+verification: |
+  - [x] 打开 `/objects/taskplan/taskplan-9007`，确认关联材料列表没有重复项。
+  - [x] 对照 task-9071 和 task-9072 的 related_docs，确认重复路径只出现一次。
+closure_evidence: |
+  - 路径：`docs/task-9072-material-dedupe.md`
+  - 结论：关联材料去重规则通过，计划关闭摘要可引用去重结果。
+closed_at: '2026-06-13T10:29:00'
+related_adrs: []
+related_changes: []
+related_docs:
+  - docs/task-9072-material-dedupe.md
+affected_docs:
+  - web/src/pages/ObjectDetail.tsx
+deliverables:
+  - docs/task-9072-material-dedupe.md

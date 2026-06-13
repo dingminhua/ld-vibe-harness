@@ -1,0 +1,28 @@
+id: task-9081
+type: task
+title: 缺证据样本字段核对
+status: closed
+created: '2026-06-13T10:35:00'
+updated: '2026-06-13T10:38:00'
+taskplan: taskplan-9008
+description: |
+  核对缺少计划完成证据样本中的目标、来源和工作域字段，证明 Task 层工作已经完成。
+source: taskplan-9008
+blocked_by: []
+acceptance: |
+  - [x] TaskPlan 属性字段具备可读标题
+  - [x] 来源保持为最后一个属性
+verification: |
+  - [x] 打开 `/objects/taskplan/taskplan-9008`，确认属性区域字段顺序正确。
+closure_evidence: |
+  - 路径：`docs/task-9081-field-check.md`
+  - 结论：字段核对完成，但计划层尚未整理 completion_evidence。
+closed_at: '2026-06-13T10:38:00'
+related_adrs: []
+related_changes: []
+related_docs:
+  - docs/task-9081-field-check.md
+affected_docs:
+  - web/src/pages/ObjectDetail.tsx
+deliverables:
+  - docs/task-9081-field-check.md

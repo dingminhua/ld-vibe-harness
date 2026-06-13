@@ -40,7 +40,7 @@ async function main() {
 
   const fixturePlans = await listObjects('taskplan', fixtureRoot)
   assert.equal(fixturePlans.ok, true)
-  assert.equal(fixturePlans.data.items.length, 6)
+  assert.equal(fixturePlans.data.items.length, 10)
   const fixturePlanIds = new Set((fixturePlans.data.items as Array<Record<string, unknown>>).map((item) => item.id))
   assert.deepEqual(fixturePlanIds, new Set([
     'taskplan-9001',
@@ -49,14 +49,18 @@ async function main() {
     'taskplan-9004',
     'taskplan-9005',
     'taskplan-9006',
+    'taskplan-9007',
+    'taskplan-9008',
+    'taskplan-9009',
+    'taskplan-9010',
   ]))
   const activeFixturePlans = await listObjects('taskplan', fixtureRoot, 'active')
   assert.equal(activeFixturePlans.ok, true)
-  assert.equal(activeFixturePlans.data.items.length, 4)
+  assert.equal(activeFixturePlans.data.items.length, 6)
 
   const fixtureTasks = await listObjects('task', fixtureRoot)
   assert.equal(fixtureTasks.ok, true)
-  assert.equal(fixtureTasks.data.items.length, 25)
+  assert.equal(fixtureTasks.data.items.length, 33)
   const taskStatuses = new Set((fixtureTasks.data.items as Array<Record<string, unknown>>).map((item) => item.status))
   assert.deepEqual(taskStatuses, new Set(['planned', 'executing', 'verifying', 'review_needed', 'closed']))
 
@@ -67,7 +71,7 @@ async function main() {
   assert.deepEqual(subtaskStatuses, new Set(['planned', 'executing', 'verifying', 'review_needed', 'closed']))
 
   const planSummaries = await buildPlanSummaries(fixturePlans.data.items as ListedObject[], fixtureRoot)
-  assert.equal(planSummaries.length, 6)
+  assert.equal(planSummaries.length, 10)
   const complexPlan = planSummaries.find((plan) => plan.id === 'taskplan-9001')
   assert.ok(complexPlan)
   assert.equal(complexPlan.tasks.length, 10)
@@ -90,6 +94,18 @@ async function main() {
   const verificationPlan = planSummaries.find((plan) => plan.id === 'taskplan-9004')
   assert.equal(verificationPlan?.workarea, 'workarea-9003')
   assert.equal(verificationPlan?.tasks.find((task) => task.id === 'task-9042')?.subtasks?.length, 3)
+  const closeReadyPlan = planSummaries.find((plan) => plan.id === 'taskplan-9007')
+  assert.equal(closeReadyPlan?.tasks.length, 2)
+  assert.deepEqual(new Set(closeReadyPlan?.tasks.map((task) => task.status)), new Set(['closed']))
+  const missingEvidencePlan = planSummaries.find((plan) => plan.id === 'taskplan-9008')
+  assert.equal(missingEvidencePlan?.tasks.length, 2)
+  assert.deepEqual(new Set(missingEvidencePlan?.tasks.map((task) => task.status)), new Set(['closed']))
+  const partialEvidencePlan = planSummaries.find((plan) => plan.id === 'taskplan-9009')
+  assert.equal(partialEvidencePlan?.tasks.length, 2)
+  assert.deepEqual(new Set(partialEvidencePlan?.tasks.map((task) => task.status)), new Set(['closed', 'verifying']))
+  const closedCompletePlan = planSummaries.find((plan) => plan.id === 'taskplan-9010')
+  assert.equal(closedCompletePlan?.tasks.length, 2)
+  assert.deepEqual(new Set(closedCompletePlan?.tasks.map((task) => task.status)), new Set(['closed']))
 }
 
 main().catch((error) => {

@@ -43,7 +43,7 @@
 - 通用卡片结构：
   - 左上：对象 ID，`ldvh-meta-muted`；
   - 右上：`CopyPathButton` + `StatusBadge`；
-  - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；
+  - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，标题前使用 `ObjectTypeIcon(obj.type)` 识别对象身份，左侧使用状态语义短线突出，不通过放大字号突出；
   - 可选信号：priority、severity、repeatability、category 等短标签；
   - 底部：`formatDateTime(updated)`，格式为 `YYYY-MM-DD HH:mm`。
 - 复制图标复制对象 YAML 文件完整路径，使用 API 返回的 `path`。
@@ -58,10 +58,10 @@ WorkArea 是“计划入口”卡片，帮助用户判断这个工作域下有�
 - 保留通用卡片头部：ID、复制路径、状态、标题；外层卡片可点击进入 WorkArea 详情，标题右侧加箭头作为对象入口提示；计划分组框本身不响应点击。
 - 底部更新时间右对齐，工作域 ID 保持在左上角。
 - 按计划状态分组展示：
-  - 活跃计划组使用 `objectList.activePlanCount`，绿色背景，组标题使用 `ldvh-caption-strong`；
-  - 待关闭计划组使用 `objectList.pendingClosePlanCount`，紫色背景，组标题使用 `ldvh-caption-strong`；
-  - 已闭合计划只展示 `objectList.closedPlanCount` 汇总，不展开历史计划行，使用 `ldvh-caption-strong`。
-- 活跃/待关闭组内每一行是一个计划入口，计划名使用 `ldvh-body`，计划 ID 使用 `ldvh-meta-muted`，并展示计划标题、计划 ID、复制路径按钮和进入箭头，不再重复展示状态标签。
+  - 活跃计划组使用 `objectList.activePlanCount`，文案为“活跃计划”，绿色背景，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
+  - 待关闭计划组使用 `objectList.pendingClosePlanCount`，文案为“待关闭计划”，紫色背景，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
+  - 已闭合计划只展示 `objectList.closedPlanCount` 汇总，文案为“已闭合计划”，不展开历史计划行，使用 `ldvh-caption-strong`，标题前只用小圆点。
+- 活跃/待关闭组内每一行是一个计划入口，计划名使用 `ldvh-body`，计划标题前使用 TaskPlan 对象图标，计划 ID 使用 `ldvh-meta-muted`，并展示计划标题、计划 ID、复制路径按钮和进入箭头，不再重复展示状态标签；右侧复制和进入箭头默认保持中性，复制按钮只有自身 hover 时切到该组背景对应的状态色。
 - 计划行可展示一条 compact 任务态势条，复用 TaskPlan 的状态顺序和颜色：`已关闭 / 已验证 / 验证中 / 执行中 / 等待中`；态势条占满计划行宽度，态势段只用 hover / focus tooltip 显示数量，不在 WorkArea 卡片里展开任务或子任务。
 - WorkArea 卡片内不得出现大于工作域标题 `ldvh-card-title` 的文字；计划组和汇总都低于工作域标题层级。
 - 无计划时展示 `objectList.noPlans`。
@@ -82,8 +82,9 @@ TaskPlan 是“计划执行态势”卡片，帮助用户从计划判断任务�
 - 仅当计划处于 `review_needed` 或已关闭计划缺少关闭字段时，展示关闭判断 / 收口异常区域。
 - 展示任务队列区域：
   - 标题为 `objectList.planTaskQueue`；
+  - 标题前只使用小圆点，不使用 Task 对象图标；对象身份由任务行标题前的 Task/SubTask 图标表达；
   - 默认展示最多 10 个任务，排序与态势条空间方向对应：态势条最右侧的状态在队列最上方，最左侧的状态在队列最下方；
-  - 任务行包含任务标题、任务 ID、主任务状态图标、同色弱背景、复制路径按钮和进入箭头，任务 ID 使用 `ldvh-meta-muted`；
+  - 任务行包含任务标题、任务 ID、主任务状态图标、任务对象图标、同色弱背景、复制路径按钮和进入箭头，任务 ID 使用 `ldvh-meta-muted`；右侧复制和进入箭头按 WorkArea card 的动作体验默认保持中性，复制按钮只有自身 hover 时切到该行背景对应的状态色；
   - 有子任务的任务行只在行内下方展示 compact 子任务态势条，态势段 hover / focus 时显示状态和数量；
   - 不展示子任务行、子任务标题、子任务 ID 或数量标签；子任务明细属于 Task 详情页或右侧辅助阅读层，不在 TaskPlan 卡片中展开；
   - 任务行整行可点击跳转 `/objects/task/{id}`；标题右侧加箭头作为可进入提示；任务队列框、态势条和普通信息区域不响应点击，避免误触外层卡片。

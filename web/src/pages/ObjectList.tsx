@@ -6,13 +6,14 @@ import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
 import MemoCreate from '@/components/MemoCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
-import { CollectionTitleIcon } from '@/components/SemanticIcon';
+import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { TaskFlowBar, TaskFlowLegend, TaskFlowMarker } from '@/components/TaskFlowStatus';
-import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowActionClass, taskFlowRowClass, taskFlowRowHoverTextClass } from '@/utils/taskFlowStatus';
+import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowRowActionClass, taskFlowRowClass, taskFlowRowHoverTextClass } from '@/utils/taskFlowStatus';
 import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
+import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getObjectSignalAccent } from '@/utils/objectSignals';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 
@@ -106,18 +107,24 @@ const workAreaSectionToneClass = {
     header: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
     rowHover: 'hover:bg-emerald-500/10',
     icon: 'text-emerald-400',
+    hoverText: 'group-hover/workarea-row:text-emerald-400',
+    action: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-emerald-500/10 hover:text-emerald-400',
   },
   review: {
     section: 'border-violet-500/30 bg-violet-500/5',
     header: 'border-violet-500/30 bg-violet-500/10 text-violet-400',
     rowHover: 'hover:bg-violet-500/10',
     icon: 'text-violet-400',
+    hoverText: 'group-hover/workarea-row:text-violet-400',
+    action: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-violet-500/10 hover:text-violet-400',
   },
   closed: {
     section: 'border-ldvh-border bg-ldvh-bg',
     header: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
     rowHover: 'hover:bg-ldvh-border/35',
     icon: 'text-ldvh-text-secondary',
+    hoverText: 'group-hover/workarea-row:text-ldvh-accent',
+    action: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent',
   },
 };
 
@@ -149,13 +156,14 @@ function WorkAreaPlanRow({
     >
       <div className="flex min-w-0 items-center gap-2">
         <div className="min-w-0 flex-1">
-          <span className="ldvh-body block min-w-0 truncate transition-colors group-hover/workarea-row:text-ldvh-accent">
-            {getLocalizedTitle(item, locale)}
+          <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${toneClass.hoverText}`}>
+            <ObjectTypeIcon type="taskplan" size={12} className="shrink-0" />
+            <span className="min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
           </span>
           <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
         </div>
-        <CopyPathButton path={item.path} />
-        <ArrowRight size={13} className="shrink-0 text-ldvh-text-secondary/70 transition-all group-hover/workarea-row:translate-x-0.5 group-hover/workarea-row:text-ldvh-accent" />
+        <CopyPathButton path={item.path} toneClassName={toneClass.action} />
+        <ArrowRight size={13} className={`shrink-0 text-ldvh-text-secondary/70 transition-all group-hover/workarea-row:translate-x-0.5 ${toneClass.hoverText}`} />
       </div>
       {tasks.length > 0 && (
         <div className="min-w-0 self-stretch">
@@ -191,7 +199,7 @@ function WorkAreaPlanSection({
       className={`min-w-0 cursor-default overflow-hidden rounded-md border ${toneClass.section}`}
     >
       <div className={`ldvh-caption-strong flex min-w-0 items-center gap-2 border px-3 py-2 ${toneClass.header}`}>
-        <CollectionTitleIcon type="taskplan" size={13} className="shrink-0" />
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-80" aria-hidden="true" />
         <span className="min-w-0 truncate">{title}</span>
       </div>
       {plans && plans.length > 0 && (
@@ -242,13 +250,14 @@ function TaskQueueRow({
         <div className="flex min-w-0 items-center gap-2">
           <TaskFlowMarker tone={flowTone} label={flowLabel} />
           <div className="min-w-0 flex-1">
-            <span className={`ldvh-body block min-w-0 truncate transition-colors ${taskFlowRowHoverTextClass[flowTone]}`}>
-              {getLocalizedTitle(item, locale)}
+            <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${taskFlowRowHoverTextClass[flowTone]}`}>
+              <ObjectTypeIcon type={item.type} size={12} className="shrink-0" />
+              <span className="min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
             </span>
             <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
           </div>
-          <CopyPathButton path={item.path} toneClassName={taskFlowActionClass[flowTone]} />
-          <ArrowRight size={13} className={`shrink-0 text-ldvh-text-secondary transition-all group-hover/row:translate-x-0.5 ${taskFlowRowHoverTextClass[flowTone]}`} />
+          <CopyPathButton path={item.path} toneClassName={taskFlowRowActionClass[flowTone]} />
+          <ArrowRight size={13} className={`shrink-0 text-ldvh-text-secondary/70 transition-all group-hover/row:translate-x-0.5 ${taskFlowRowHoverTextClass[flowTone]}`} />
         </div>
         {subtasks.length > 0 && (
           <div className="ml-9 mt-2 min-w-0">
@@ -273,6 +282,7 @@ function ObjectCardFrame({
 }) {
   const signalAccent = getObjectSignalAccent(obj);
   const titleAccentClass = getTitleAccentClass(obj.status);
+  const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
   return (
     <div
       role="button"
@@ -292,6 +302,7 @@ function ObjectCardFrame({
       <div
         className={`-mx-1 flex min-w-0 items-center gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover/card:bg-ldvh-bg/85 ${titleAccentClass}`}
       >
+        <ObjectTypeIcon type={obj.type} size={14} className="shrink-0" style={{ color: typeColor }} />
         <span className="ldvh-card-title min-w-0 flex-1 truncate transition-colors group-hover/card:text-ldvh-accent">
           {getLocalizedTitle(obj, locale)}
         </span>
@@ -469,7 +480,7 @@ export default function ObjectList() {
           >
             <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
               <span className="ldvh-caption-strong inline-flex min-w-0 items-center gap-1.5 truncate">
-                <CollectionTitleIcon type="taskQueue" size={13} className="shrink-0 text-ldvh-accent" />
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" aria-hidden="true" />
                 {t('objectList.planTaskQueue')}
               </span>
             </div>

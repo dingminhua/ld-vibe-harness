@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, ClipboardCheck, Code2, FileText, Info, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, Code2, FileText, Info, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
@@ -10,9 +10,9 @@ import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
-import { CollectionTitleIcon, ObjectTypeIcon } from '@/components/SemanticIcon';
+import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { TaskFlowBar, TaskFlowMarker } from '@/components/TaskFlowStatus';
-import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowActionClass, taskFlowDetailHoverTextClass, taskFlowIconClass, taskFlowRowClass } from '@/utils/taskFlowStatus';
+import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowDetailActionClass, taskFlowDetailHoverTextClass, taskFlowRowClass } from '@/utils/taskFlowStatus';
 import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusHint, getObjectStatusLocale, getTypeDescription } from '@/i18n/locales';
@@ -85,6 +85,27 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
 const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded']);
 const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
 const WORK_OBJECT_DETAIL_TYPES = new Set(['workarea', 'taskplan', 'task', 'subtask']);
+
+export function getObjectDetailContentEntries(obj: Record<string, unknown>, objType: string) {
+  const auxiliaryMetaKeys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
+  const contentEntries = Object.entries(obj).filter(
+    ([key]) => !META_KEYS.includes(key) && !auxiliaryMetaKeys.includes(key)
+  );
+
+  const fieldOrder = FIELD_ORDER_BY_TYPE[objType] || [];
+  if (fieldOrder.length > 0) {
+    contentEntries.sort((a, b) => {
+      const aIdx = fieldOrder.indexOf(a[0]);
+      const bIdx = fieldOrder.indexOf(b[0]);
+      if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+      if (aIdx !== -1) return -1;
+      if (bIdx !== -1) return 1;
+      return 0;
+    });
+  }
+
+  return contentEntries;
+}
 
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
@@ -348,24 +369,7 @@ export default function ObjectDetail() {
     ? ((obj.title_en as string) || obj.title as string)
     : ((obj.title_zh as string) || obj.title as string)) || objId;
 
-  // 内容字段（排除元信息）
-  const auxiliaryMetaKeys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
-  const contentEntries = Object.entries(obj).filter(
-    ([key]) => !META_KEYS.includes(key) && !auxiliaryMetaKeys.includes(key)
-  );
-
-  // 对有明确契约顺序的对象类型做语义排序
-  const fieldOrder = FIELD_ORDER_BY_TYPE[objType] || [];
-  if (fieldOrder.length > 0) {
-    contentEntries.sort((a, b) => {
-      const aIdx = fieldOrder.indexOf(a[0]);
-      const bIdx = fieldOrder.indexOf(b[0]);
-      if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
-      if (aIdx !== -1) return -1;
-      if (bIdx !== -1) return 1;
-      return 0;
-    });
-  }
+  const contentEntries = getObjectDetailContentEntries(obj, objType);
 
   const auxiliaryMetaEntries = objType === 'workarea' ? [] : getAuxiliaryMetaEntries(obj, objType);
 
@@ -397,6 +401,7 @@ export default function ObjectDetail() {
                 target={detail.target}
                 status={objStatus}
                 statusLabel={getObjectStatusLocale(objType, objStatus, locale)}
+                objectType={objType}
                 typeColor={typeColor}
                 typeLabel={TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
                 created={formatDateTime(obj.created as string | undefined)}
@@ -412,7 +417,10 @@ export default function ObjectDetail() {
                     {TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h1 className="ldvh-page-title">{displayTitle}</h1>
+                    <h1 className="ldvh-page-title flex min-w-0 items-center gap-2">
+                      <ObjectTypeIcon type={objType} size={18} className="shrink-0" style={{ color: typeColor }} />
+                      <span className="min-w-0 truncate">{displayTitle}</span>
+                    </h1>
                     <p className="ldvh-meta mt-0.5">{objId}</p>
                     {typeDesc && (
                       <p className="ldvh-caption mt-1">{typeDesc}</p>
@@ -543,6 +551,7 @@ function WorkObjectDetailHeader({
   target,
   status,
   statusLabel,
+  objectType,
   typeColor,
   typeLabel,
   created,
@@ -553,6 +562,7 @@ function WorkObjectDetailHeader({
   target?: string;
   status: string;
   statusLabel: string;
+  objectType: string;
   typeColor: string;
   typeLabel: string;
   created: string;
@@ -572,7 +582,10 @@ function WorkObjectDetailHeader({
             </span>
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
           </div>
-          <h1 className="ldvh-page-title min-w-0 break-words">{title}</h1>
+          <h1 className="ldvh-page-title flex min-w-0 items-center gap-2 break-words">
+            <ObjectTypeIcon type={objectType} size={18} className="shrink-0" style={{ color: typeColor }} />
+            <span className="min-w-0">{title}</span>
+          </h1>
           <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
             <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />
             <HeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />
@@ -604,7 +617,7 @@ function isDetailPendingCloseStatus(status: string): boolean {
   return DETAIL_PENDING_CLOSE_STATUSES.has(status);
 }
 
-function WorkAreaReadingLayout({
+export function WorkAreaReadingLayout({
   obj,
   summary,
   loading,
@@ -641,70 +654,62 @@ function WorkAreaReadingLayout({
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      <WorkAreaSection title={t('objectDetail.workareaPlanOverview')}>
-        {loading ? (
-          <div className="rounded-md border border-dashed border-ldvh-border bg-ldvh-bg/50 px-3 py-6 text-center">
-            <span className="ldvh-body-muted">{t('objectDetail.workareaPlansLoading')}</span>
-          </div>
-        ) : plans.length === 0 ? (
-          <div className="rounded-md border border-dashed border-ldvh-border bg-ldvh-bg/50 px-3 py-6 text-center">
-            <span className="ldvh-body-muted">{t('objectList.noPlans')}</span>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {activePlans.length > 0 && (
-              <WorkAreaPlanGroup
-                title={t('objectList.activePlanCount', { count: String(activePlans.length) })}
-                tone="active"
-                plans={activePlans}
-                locale={locale}
-                getStatus={getStatus}
-                onOpen={openPlan}
-              />
-            )}
-            {pendingClosePlans.length > 0 && (
-              <WorkAreaPlanGroup
-                title={t('objectList.pendingClosePlanCount', { count: String(pendingClosePlans.length) })}
-                tone="review"
-                plans={pendingClosePlans}
-                locale={locale}
-                getStatus={getStatus}
-                onOpen={openPlan}
-              />
-            )}
-            {closedPlans.length > 0 && (
-              <WorkAreaPlanGroup
-                title={t('objectList.closedPlanCount', { count: String(summary?.planClosed ?? closedPlans.length) })}
-                tone="closed"
-                plans={closedPlans}
-                locale={locale}
-                getStatus={getStatus}
-                onOpen={openPlan}
-                defaultCollapsed
-              />
-            )}
-          </div>
-        )}
-      </WorkAreaSection>
-
-      <WorkAreaSection title={t('objectDetail.workareaDefinition')}>
-        <div className="divide-y divide-ldvh-border/70">
-          <DefinitionRow label={t('objectDetail.workareaGoal')} value={obj.description} />
-          <DefinitionRow label={getFieldLabel('scope', locale)} value={obj.scope} />
-          <DefinitionRow label={getFieldLabel('constraints', locale)} value={obj.constraints} />
-          <DefinitionRow label={getFieldLabel('source', locale)} value={obj.source} muted />
+      {loading ? (
+        <div className="rounded-xl border border-dashed border-ldvh-border bg-ldvh-panel px-3 py-6 text-center">
+          <span className="ldvh-body-muted">{t('objectDetail.workareaPlansLoading')}</span>
         </div>
-      </WorkAreaSection>
+      ) : plans.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-ldvh-border bg-ldvh-panel px-3 py-6 text-center">
+          <span className="ldvh-body-muted">{t('objectList.noPlans')}</span>
+        </div>
+      ) : (
+        <>
+          {activePlans.length > 0 && (
+            <WorkAreaPlanGroup
+              title={t('objectList.activePlanCount', { count: String(activePlans.length) })}
+              tone="active"
+              plans={activePlans}
+              locale={locale}
+              getStatus={getStatus}
+              onOpen={openPlan}
+            />
+          )}
+          {pendingClosePlans.length > 0 && (
+            <WorkAreaPlanGroup
+              title={t('objectList.pendingClosePlanCount', { count: String(pendingClosePlans.length) })}
+              tone="review"
+              plans={pendingClosePlans}
+              locale={locale}
+              getStatus={getStatus}
+              onOpen={openPlan}
+            />
+          )}
+          {closedPlans.length > 0 && (
+            <WorkAreaPlanGroup
+              title={t('objectList.closedPlanCount', { count: String(summary?.planClosed ?? closedPlans.length) })}
+              tone="closed"
+              plans={closedPlans}
+              locale={locale}
+              getStatus={getStatus}
+              onOpen={openPlan}
+              defaultCollapsed
+            />
+          )}
+        </>
+      )}
+
+      <WorkAreaDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
+      <WorkAreaDefinitionSection title={getFieldLabel('scope', locale)} value={obj.scope} />
+      <WorkAreaDefinitionSection title={getFieldLabel('constraints', locale)} value={obj.constraints} />
+      <WorkAreaDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} muted />
 
       {hasRelatedMaterials && (
-        <WorkAreaSection title={t('objectDetail.workareaRelatedMaterials')}>
-          <div className="divide-y divide-ldvh-border/70">
-            <MaterialRow fieldKey="related_docs" value={obj.related_docs} locale={locale} referenceVariant="plain" />
-            <MaterialRow fieldKey="related_adrs" value={obj.related_adrs} locale={locale} referenceVariant="plain" />
-            <MaterialRow fieldKey="related_memos" value={obj.related_memos} locale={locale} referenceVariant="plain" />
-            <MaterialRow fieldKey="related_pitfalls" value={obj.related_pitfalls} locale={locale} referenceVariant="plain" />
-          </div>
-        </WorkAreaSection>
+        <>
+          <WorkAreaMaterialSection fieldKey="related_docs" value={obj.related_docs} locale={locale} />
+          <WorkAreaMaterialSection fieldKey="related_adrs" value={obj.related_adrs} locale={locale} />
+          <WorkAreaMaterialSection fieldKey="related_memos" value={obj.related_memos} locale={locale} />
+          <WorkAreaMaterialSection fieldKey="related_pitfalls" value={obj.related_pitfalls} locale={locale} />
+        </>
       )}
     </div>
   );
@@ -719,6 +724,32 @@ function WorkAreaSection({ title, children }: { title: string; children: ReactNo
       </h2>
       {children}
     </section>
+  );
+}
+
+function WorkAreaDefinitionSection({ title, value, muted = false }: { title: string; value: unknown; muted?: boolean }) {
+  if (!hasDetailContent(value)) return null;
+  return (
+    <WorkAreaSection title={title}>
+      <div className={`ldvh-definition-text min-w-0 ${muted ? 'opacity-85' : ''}`}>
+        <DefinitionValue value={String(value)} muted={muted} />
+      </div>
+    </WorkAreaSection>
+  );
+}
+
+function WorkAreaMaterialSection({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  return (
+    <WorkAreaSection title={getMaterialLabel(fieldKey, locale)}>
+      <div className="min-w-0">
+        {DOC_LINK_FIELDS.includes(fieldKey) && typeof value[0] === 'string'
+          ? <DocumentOrTextList items={value as string[]} variant="plain" />
+          : REFERENCE_FIELDS.includes(fieldKey) && typeof value[0] === 'string'
+            ? <ReferenceCard refs={value as string[]} showType={false} showStatus={false} variant="plain" />
+            : <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />}
+      </div>
+    </WorkAreaSection>
   );
 }
 
@@ -770,7 +801,7 @@ function WorkAreaPlanGroup({
   const headerClassName = `ldvh-caption-strong flex w-full min-w-0 items-center gap-2 border px-3 py-2 text-left ${toneClass.header}`;
   const headerContent = (
     <>
-      <CollectionTitleIcon type="taskplan" size={13} className="shrink-0" />
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-80" aria-hidden="true" />
       <span className="min-w-0 flex-1 truncate">{title}</span>
       {canCollapse && (collapsed ? <ChevronRight size={13} className="shrink-0" /> : <ChevronDown size={13} className="shrink-0" />)}
     </>
@@ -842,8 +873,9 @@ function WorkAreaPlanRow({
     >
       <div className="flex min-w-0 items-start gap-3">
         <div className="min-w-0 flex-1">
-          <span className={`ldvh-body block min-w-0 truncate transition-colors ${toneClass.titleHover}`}>
-            {getLocalizedTitle(plan, locale)}
+          <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${toneClass.titleHover}`}>
+            <ObjectTypeIcon type="taskplan" size={12} className="shrink-0" />
+            <span className="min-w-0 truncate">{getLocalizedTitle(plan, locale)}</span>
           </span>
           <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span className="ldvh-meta-muted min-w-0 truncate">{plan.id}</span>
@@ -851,7 +883,6 @@ function WorkAreaPlanRow({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <StatusBadge status={plan.status} statusLabel={getStatus(plan.status)} />
           <CopyPathButton
             path={plan.path}
             toneClassName="bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-text-secondary"
@@ -1010,6 +1041,31 @@ export function hasDetailContent(value: unknown): boolean {
   return value !== null && value !== undefined;
 }
 
+interface ParsedChecklistItem {
+  checked: boolean;
+  text: string;
+}
+
+function parseDetailChecklist(value: unknown): ParsedChecklistItem[] {
+  if (typeof value !== 'string') return [];
+  return value
+    .split('\n')
+    .map((line) => line.match(/^\s*- \[([ xX])\]\s*(.*)/))
+    .filter((match): match is RegExpMatchArray => Boolean(match))
+    .map((match) => ({ checked: match[1].toLowerCase() === 'x', text: match[2].trim() }));
+}
+
+function getChecklistProgress(value: unknown) {
+  const items = parseDetailChecklist(value);
+  const done = items.filter((item) => item.checked).length;
+  return {
+    items,
+    done,
+    total: items.length,
+    complete: items.length > 0 && done === items.length,
+  };
+}
+
 export function TaskPlanReadingLayout({
   obj,
   summary,
@@ -1037,12 +1093,6 @@ export function TaskPlanReadingLayout({
     relatedPitfalls,
     relatedChanges,
   ].some((value) => value.length > 0);
-  const closeFields = [
-    { label: t('objectList.successCriteria'), recorded: hasDetailContent(obj.success_criteria) },
-    { label: t('objectList.reviewRequestedAt'), recorded: hasDetailContent(obj.review_requested_at) },
-    { label: t('objectList.completionEvidence'), recorded: hasDetailContent(obj.completion_evidence) },
-    ...(obj.status === 'closed' ? [{ label: t('objectList.closedAt'), recorded: hasDetailContent(obj.closed_at) }] : []),
-  ];
   const hidden = new Set([
     ...META_KEYS,
     'workarea',
@@ -1070,39 +1120,14 @@ export function TaskPlanReadingLayout({
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      <TaskSection title={t('objectDetail.workareaDefinition')} tone="primary">
-        <div className="divide-y divide-ldvh-border/70">
-          <DefinitionRow label={t('objectDetail.workareaGoal')} value={obj.description} />
-          <DefinitionRow label={getFieldLabel('source', locale)} value={obj.source} muted />
-          <DetailObjectRow
-            label={t('objectDetail.workArea')}
-            item={summary?.workareaSummary}
-            fallbackId={typeof obj.workarea === 'string' ? obj.workarea : undefined}
-            objectType="workarea"
-            locale={locale}
-          />
-        </div>
-      </TaskSection>
-
-      <TaskSection title={t('objectDetail.planCloseReview')} tone="evidence" icon={<ClipboardCheck size={14} className="text-violet-400" />}>
-        <div className="mb-4">
-          <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{getFieldLabel('success_criteria', locale)}</div>
-          {obj.success_criteria ? <ChecklistCard value={String(obj.success_criteria)} /> : <EmptyHint text={t('objectDetail.noSuccessCriteria')} />}
-        </div>
-        <div className="mb-3 flex flex-wrap gap-2">
-          {closeFields.map((field) => (
-            <DetailRecordItem key={field.label} label={field.label} recorded={field.recorded} />
-          ))}
-        </div>
-        {obj.completion_evidence ? <EvidenceBlock value={String(obj.completion_evidence)} /> : <EmptyHint text={t('objectDetail.noCompletionEvidence')} />}
-      </TaskSection>
-
-      <TaskSection title={t('objectDetail.planExecution')} tone="default" icon={<CollectionTitleIcon type="taskQueue" size={14} className="text-ldvh-accent" />}>
+      <TaskSection title={t('objectDetail.planExecution')} tone="default">
         {loading ? (
           <LoadingHint text={t('objectDetail.tasksLoading')} />
         ) : tasks.length > 0 ? (
-          <div className="flex min-w-0 flex-col gap-3">
-            <TaskFlowBar tasks={tasks} t={t} getStatus={getStatus} />
+          <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-3">
+            <div className="mb-2 min-w-0">
+              <TaskFlowBar tasks={tasks} t={t} getStatus={getStatus} />
+            </div>
             <div className="divide-y divide-ldvh-border/60">
               {tasks.map((task) => (
                 <DetailTaskRow
@@ -1111,7 +1136,6 @@ export function TaskPlanReadingLayout({
                   locale={locale}
                   getStatus={getStatus}
                   showSubtaskPosture
-                  variant="subtle"
                 />
               ))}
             </div>
@@ -1121,8 +1145,31 @@ export function TaskPlanReadingLayout({
         )}
       </TaskSection>
 
+      <TaskSection title={t('objectDetail.planCloseReview')} tone="evidence">
+        <TaskPlanCloseDecision
+          successCriteria={obj.success_criteria}
+          completionEvidence={obj.completion_evidence}
+          locale={locale}
+        />
+      </TaskSection>
+
+      <TaskSection title={t('objectDetail.workareaDefinition')} tone="primary">
+        <div className="divide-y divide-ldvh-border/70">
+          <DefinitionRow label={t('objectDetail.workareaGoal')} value={obj.description} />
+          <DetailObjectRow
+            label={t('objectDetail.workArea')}
+            item={summary?.workareaSummary}
+            fallbackId={typeof obj.workarea === 'string' ? obj.workarea : undefined}
+            objectType="workarea"
+            locale={locale}
+            variant="property"
+          />
+          <DefinitionRow label={getFieldLabel('source', locale)} value={obj.source} />
+        </div>
+      </TaskSection>
+
       {hasRelatedMaterials && (
-        <TaskSection title={t('objectDetail.relatedMaterials')} tone="default" icon={<CollectionTitleIcon type="related" size={14} className="text-ldvh-accent" />}>
+        <TaskSection title={t('objectDetail.relatedMaterials')} tone="default">
           <div className="divide-y divide-ldvh-border/70">
             <MaterialRow fieldKey="related_docs" value={relatedDocs} locale={locale} />
             <MaterialRow fieldKey="related_adrs" value={relatedAdrs} locale={locale} />
@@ -1158,6 +1205,40 @@ export function DetailRecordItem({ label, recorded }: { label: string; recorded:
       <span>{label}</span>
       <span className="ldvh-meta-muted">{recorded ? t('objectList.hasRecord') : t('objectList.missingRecord')}</span>
     </span>
+  );
+}
+
+function TaskPlanCloseDecision({
+  successCriteria,
+  completionEvidence,
+  locale,
+}: {
+  successCriteria: unknown;
+  completionEvidence: unknown;
+  locale: string;
+}) {
+  const { t } = useI18n();
+  const evidence = getChecklistProgress(completionEvidence);
+  const hasCriteria = hasDetailContent(successCriteria);
+  const hasEvidence = hasDetailContent(completionEvidence);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
+        <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/35 p-3">
+          <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{getFieldLabel('success_criteria', locale)}</div>
+          {hasCriteria ? <ChecklistCard value={String(successCriteria)} /> : <EmptyHint text={t('objectDetail.noSuccessCriteria')} />}
+        </div>
+        <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg/35 p-3">
+          <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{getFieldLabel('completion_evidence', locale)}</div>
+          {hasEvidence
+            ? evidence.total > 0
+              ? <ChecklistCard value={String(completionEvidence)} />
+              : <EvidenceBlock value={String(completionEvidence)} embedded />
+            : <EmptyHint text={t('objectDetail.noCompletionEvidence')} />}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1229,7 +1310,7 @@ export function TaskProgressSection({
   const flowLabel = getTaskFlowLabel(item, t, getStatus);
 
   return (
-    <TaskSection title={t('objectDetail.taskProgress')} tone="default" icon={<CollectionTitleIcon type="progress" size={14} className="text-ldvh-accent" />}>
+    <TaskSection title={t('objectDetail.taskProgress')} tone="default">
       <div className="divide-y divide-ldvh-border/70">
         <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
           <div className="ldvh-caption-strong text-ldvh-text-secondary">{t('objectDetail.currentState')}</div>
@@ -1271,6 +1352,7 @@ export function DetailObjectRow({
   objectType,
   locale,
   compact = false,
+  variant = 'default',
 }: {
   label: string;
   item?: RelatedObjectSummary | ObjectItem | null;
@@ -1278,6 +1360,7 @@ export function DetailObjectRow({
   objectType: string;
   locale: string;
   compact?: boolean;
+  variant?: 'default' | 'property';
 }) {
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
   const objectId = item?.id ?? fallbackId;
@@ -1286,8 +1369,12 @@ export function DetailObjectRow({
   const title = item ? getLocalizedTitle(item, locale) : objectId;
   const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === objectType && panelContent.objectId === objectId;
   const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
-  const labelIcon = <ObjectTypeIcon type={objectType} size={12} className="shrink-0 text-ldvh-accent" />;
+  const objectTypeColor = CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other;
+  const labelIcon = <ObjectTypeIcon type={objectType} size={12} className="shrink-0" style={{ color: objectTypeColor }} />;
   const open = () => openPanel({ type: 'object', title, objectType, objectId });
+  const rowClassName = variant === 'property'
+    ? 'group/detail-ref grid min-w-0 cursor-pointer gap-2 py-3 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]'
+    : `group/detail-ref grid min-w-0 cursor-pointer gap-2 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr] ${compact ? 'py-2' : 'py-3'}`;
 
   return (
     <div
@@ -1302,16 +1389,25 @@ export function DetailObjectRow({
           open();
         }
       }}
-      className={`group/detail-ref grid min-w-0 cursor-pointer gap-2 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr] ${compact ? 'py-2' : 'py-3'}`}
+      className={rowClassName}
     >
-      <div className="ldvh-caption-strong flex min-w-0 items-center gap-1.5 text-ldvh-text-secondary">
-        {labelIcon}
+      <div className={`ldvh-caption-strong text-ldvh-text-secondary ${
+        variant === 'property' ? '' : 'flex min-w-0 items-center gap-1.5'
+      }`}
+      >
+        {variant !== 'property' && labelIcon}
         <span className="min-w-0 truncate">{label}</span>
       </div>
-      <div className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 transition-colors group-hover/detail-ref:bg-ldvh-border/35">
+      <div className={`flex min-w-0 items-center gap-2 transition-colors ${
+        variant === 'property'
+          ? 'ldvh-definition-text'
+          : 'rounded-md px-2 py-1.5 group-hover/detail-ref:bg-ldvh-border/35'
+      }`}
+      >
+        {variant === 'property' && labelIcon}
         <span className="ldvh-body min-w-0 flex-1 truncate transition-colors group-hover/detail-ref:text-ldvh-accent">{title}</span>
-        <span className="ldvh-meta-muted shrink-0">{objectId}</span>
-        {item?.status && <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(objectType, item.status, locale)} size="sm" />}
+        {variant !== 'property' && <span className="ldvh-meta-muted shrink-0">{objectId}</span>}
+        {variant !== 'property' && item?.status && <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(objectType, item.status, locale)} size="sm" />}
         <CopyPathButton path={item?.path} />
         <PanelIcon size={14} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
       </div>
@@ -1324,35 +1420,22 @@ export function DetailTaskRow({
   locale,
   getStatus,
   showSubtaskPosture = false,
-  variant = 'default',
 }: {
   item: RelatedObjectSummary;
   locale: string;
   getStatus: (status: string) => string;
   showSubtaskPosture?: boolean;
-  variant?: 'default' | 'subtle';
 }) {
   const { t } = useI18n();
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
   const flowTone = getTaskFlowTone(item);
   const flowLabel = getTaskFlowLabel(item, t, getStatus);
-  const isSubtle = variant === 'subtle';
-  const actionIconClassName = isSubtle
-    ? 'text-ldvh-text-secondary/70 bg-transparent hover:bg-ldvh-border/30 hover:text-ldvh-accent'
-    : taskFlowActionClass[flowTone];
   const subtasks = item.subtasks ?? [];
   const objectType = item.type || 'task';
   const title = getLocalizedTitle(item, locale);
   const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === objectType && panelContent.objectId === item.id;
   const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
   const open = () => openPanel({ type: 'object', title, objectType, objectId: item.id });
-  const rowClassName = isSubtle
-    ? 'border-ldvh-border bg-ldvh-bg/35 hover:border-ldvh-accent/30 hover:bg-ldvh-border/20'
-    : taskFlowRowClass[flowTone];
-  const panelIconClassName = isSubtle
-    ? (isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary/70 group-hover/detail-task:text-ldvh-accent')
-    : taskFlowIconClass[flowTone];
-  const titleHoverClassName = isSubtle ? 'group-hover/detail-task:text-ldvh-accent' : taskFlowDetailHoverTextClass[flowTone];
 
   return (
     <div className="py-1 first:pt-0 last:pb-0">
@@ -1368,19 +1451,22 @@ export function DetailTaskRow({
             open();
           }
         }}
-        className={`group/detail-task min-w-0 cursor-pointer rounded-md border px-2 py-2 text-left transition-colors ${rowClassName}`}
+        className={`group/detail-task min-w-0 cursor-pointer rounded-md border px-2 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70 ${taskFlowRowClass[flowTone]}`}
       >
         <div className="flex min-w-0 items-center gap-2">
           <TaskFlowMarker tone={flowTone} label={flowLabel} compact={objectType === 'subtask'} />
           <div className="min-w-0 flex-1">
-            <span className={`ldvh-body block min-w-0 truncate transition-colors ${titleHoverClassName}`}>{title}</span>
+            <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${taskFlowDetailHoverTextClass[flowTone]}`}>
+              <ObjectTypeIcon type={objectType} size={12} className="shrink-0" />
+              <span className="min-w-0 truncate">{title}</span>
+            </span>
             <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
           </div>
-          <CopyPathButton path={item.path} toneClassName={actionIconClassName} />
-          <PanelIcon size={14} className={`shrink-0 transition-colors ${panelIconClassName}`} />
+          <CopyPathButton path={item.path} toneClassName={taskFlowDetailActionClass[flowTone]} />
+          <PanelIcon size={14} className={`shrink-0 text-ldvh-text-secondary/70 transition-colors ${taskFlowDetailHoverTextClass[flowTone]}`} />
         </div>
         {showSubtaskPosture && subtasks.length > 0 && (
-          <div className="ml-8 mt-2 min-w-0">
+          <div className="ml-9 mt-2 min-w-0">
             <TaskFlowBar tasks={subtasks} t={t} getStatus={getStatus} compact />
           </div>
         )}
@@ -1444,7 +1530,7 @@ export function TaskReadingLayout({
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      <TaskSection title={t('objectDetail.taskGoal')} tone="primary" icon={<FileText size={14} className="text-ldvh-accent" />}>
+      <TaskSection title={t('objectDetail.taskGoal')} tone="primary">
         <div className="divide-y divide-ldvh-border/70">
           <DefinitionRow label={t('objectDetail.workareaGoal')} value={obj.description} />
           <DefinitionRow label={getFieldLabel('source', locale)} value={obj.source} muted />
@@ -1479,7 +1565,7 @@ export function TaskReadingLayout({
       />
 
       {showSubtasks && (
-        <TaskSection title={t('objectDetail.subtaskExecution')} tone="default" icon={<CollectionTitleIcon type="subtask" size={14} className="text-ldvh-accent" />}>
+        <TaskSection title={t('objectDetail.subtaskExecution')} tone="default">
           {loading ? (
             <LoadingHint text={t('objectDetail.subtasksLoading')} />
           ) : (
@@ -1495,21 +1581,21 @@ export function TaskReadingLayout({
         </TaskSection>
       )}
 
-      <TaskSection title={getFieldLabel('acceptance', locale)} tone="checklist" icon={<ClipboardCheck size={14} className="text-emerald-400" />}>
+      <TaskSection title={getFieldLabel('acceptance', locale)} tone="checklist">
         {obj.acceptance ? <ChecklistCard value={String(obj.acceptance)} /> : <EmptyHint text={t('objectDetail.noAcceptance')} />}
       </TaskSection>
 
       <div className="ldvh-panel-grid">
-        <TaskSection title={getFieldLabel('verification', locale)} tone="evidence" icon={<FileText size={14} className="text-sky-400" />}>
+        <TaskSection title={getFieldLabel('verification', locale)} tone="evidence">
           {obj.verification ? <EvidenceBlock value={String(obj.verification)} /> : <EmptyHint text={t('objectDetail.noVerification')} />}
         </TaskSection>
-        <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence" icon={<ClipboardCheck size={14} className="text-sky-400" />}>
+        <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
           {obj.closure_evidence ? <EvidenceBlock value={String(obj.closure_evidence)} /> : <EmptyHint text={t('objectDetail.noClosureEvidence')} />}
         </TaskSection>
       </div>
 
       {hasMaterials && (
-        <TaskSection title={t('objectDetail.deliverablesAndDocs')} tone="docs" icon={<FileText size={14} className="text-violet-400" />}>
+        <TaskSection title={t('objectDetail.deliverablesAndDocs')} tone="docs">
           <div className="ldvh-section-grid">
             <TaskDocGroup label={t('objectDetail.deliverables')} docs={deliverables} />
             <TaskDocGroup label={t('objectDetail.relatedDocs')} docs={relatedDocs} />
@@ -1519,7 +1605,7 @@ export function TaskReadingLayout({
       )}
 
       {hasRelatedMaterials && (
-        <TaskSection title={t('objectDetail.relatedMaterials')} tone="default" icon={<CollectionTitleIcon type="related" size={14} className="text-ldvh-accent" />}>
+        <TaskSection title={t('objectDetail.relatedMaterials')} tone="default">
           <div className="divide-y divide-ldvh-border/70">
             <MaterialRow fieldKey="related_adrs" value={obj.related_adrs} locale={locale} />
             <MaterialRow fieldKey="related_changes" value={obj.related_changes} locale={locale} />
@@ -1678,7 +1764,7 @@ export function EmptyHint({ text }: { text: string }) {
 }
 
 /** 内容字段：根据字段类型选择渲染方式和样式 */
-function ContentField({ fieldKey, value, locale, objType }: { fieldKey: string; value: unknown; locale: string; objType: string }) {
+export function ContentField({ fieldKey, value, locale, objType }: { fieldKey: string; value: unknown; locale: string; objType: string }) {
   const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
   const [collapsed, setCollapsed] = useState(isCollapsible ? objType !== 'taskplan' : false);
 

@@ -101,6 +101,28 @@ export const taskFlowActionClass: Record<TaskFlowTone, string> = {
   neutral: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent',
 };
 
+export const taskFlowRowActionClass: Record<TaskFlowTone, string> = {
+  ready: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-sky-500/10 hover:text-sky-500',
+  executing: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-emerald-500/10 hover:text-emerald-500',
+  verifying: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-blue-500/10 hover:text-blue-500',
+  absorbing: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-violet-500/10 hover:text-violet-500',
+  closed: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-zinc-500/10 hover:text-zinc-500',
+  blocked: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-amber-500/10 hover:text-amber-500',
+  risk: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-red-500/10 hover:text-red-500',
+  neutral: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent',
+};
+
+export const taskFlowDetailActionClass: Record<TaskFlowTone, string> = {
+  ready: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-sky-500/10 hover:text-sky-500',
+  executing: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-emerald-500/10 hover:text-emerald-500',
+  verifying: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-blue-500/10 hover:text-blue-500',
+  absorbing: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-violet-500/10 hover:text-violet-500',
+  closed: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-zinc-500/10 hover:text-zinc-500',
+  blocked: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-amber-500/10 hover:text-amber-500',
+  risk: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-red-500/10 hover:text-red-500',
+  neutral: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent',
+};
+
 export function getTaskFlowIcon(tone: TaskFlowTone): LucideIcon {
   if (tone === 'ready') return CircleDashed;
   if (tone === 'executing') return CirclePlay;
