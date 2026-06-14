@@ -1125,6 +1125,113 @@ def test_00_document_does_not_require_parent_basis(tmp_path):
     )
 
 
+def test_subdocument_contract_diagnostics_help_ai_review(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03.01-规范文档规范.md",
+        """
+# 规范文档规范
+
+> 创建日期：2026-06-01
+> 所属主文档：`specs/03-文档基础规范.md`
+> 关系：父规范扩展
+> 定位：规范文档应用剖面
+> 适用范围：LDVH specs
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+## 1. 本文解决的问题
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
+    codes = {item["code"] for item in diagnostics}
+
+    assert "SUBDOCUMENT_PARENT_NUMBER_NOT_FOUND" in codes
+    assert "SUBDOCUMENT_PARENT_DOC_NOT_FOUND" in codes
+    assert "SUBDOCUMENT_BASIS_MISSING_PARENT" in codes
+    assert "SUBDOCUMENT_RELATION_INVALID" in codes
+
+
+def test_related_spec_without_body_reference_is_reported(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+> 相关规范：`specs/21-ADR-决策记录.md`
+
+---
+## 1. 本文解决的问题
+
+本文定义文档基础规则。
+""",
+    )
+    write_md(
+        specs / "21-ADR-决策记录.md",
+        """
+# ADR 决策记录
+
+> 创建日期：2026-06-01
+> 定位：ADR 规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+## 1. 本文解决的问题
+""",
+    )
+
+    hints = checker.SpecsChecker(tmp_path).build()["review_hints"]
+
+    assert any(item["code"] == "RELATED_SPEC_WITHOUT_BODY_REFERENCE" for item in hints)
+
+
+def test_bidirectional_related_spec_weak_evidence_is_reported(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+> 相关规范：`specs/21-ADR-决策记录.md`
+
+---
+## 1. 本文解决的问题
+
+本文消费 `specs/21-ADR-决策记录.md`。
+""",
+    )
+    write_md(
+        specs / "21-ADR-决策记录.md",
+        """
+# ADR 决策记录
+
+> 创建日期：2026-06-01
+> 定位：ADR 规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+> 相关规范：`specs/03-文档基础规范.md`
+
+---
+## 1. 本文解决的问题
+""",
+    )
+
+    hints = checker.SpecsChecker(tmp_path).build()["review_hints"]
+
+    assert any(item["code"] == "BIDIRECTIONAL_RELATED_SPEC_WEAK_EVIDENCE" for item in hints)
+
+
 def test_write_outputs_creates_expected_json_files(tmp_path):
     root = build_fixture(tmp_path)
     indexes = checker.SpecsChecker(root).build()
@@ -1138,6 +1245,7 @@ def test_write_outputs_creates_expected_json_files(tmp_path):
         "specs-mechanism-index.json",
         "specs-members-index.json",
         "specs-relations-index.json",
+        "specs-review-hints.json",
         "specs-sections-index.json",
     ]
     payload = json.loads((out_dir / "specs-docs-index.json").read_text(encoding="utf-8"))
@@ -1154,4 +1262,3 @@ def test_index_main_outputs_json_to_stdout(tmp_path, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["metadata"]["tool"] == "code/specs_validate.py"
     assert payload["docs"]
-

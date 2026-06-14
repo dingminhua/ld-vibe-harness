@@ -29,6 +29,7 @@ INDEX_DEFINITION_SENTENCE_RE = re.compile(r"^(?:(?:在本文|在本规范|在本
 INDEX_FOOTNOTE_RE = re.compile(r"^\[\^[^\]]+\]:\s*(.+)$")
 INDEX_LDVH_MEMBER_RE = re.compile(r"```ya?ml\s*\n(.*?\n)```", re.DOTALL)
 INDEX_FORBIDDEN_DEFINITION_SECTION_TITLES = {"术语定义", "概念定义", "名词解释"}
+INDEX_ALLOWED_SUBDOCUMENT_RELATIONS = {"应用剖面", "专题子文档"}
 INDEX_GOVERNED_TERMS = {
     "LDVH 自身项目", "管辖项目", "管辖项目配置", "LDVH 文档工作区", "规范正文区", "管辖项目文档工作区", "正文区", "studies", "sources",
     "来源", "吸收", "参考与研究材料", "待补齐事项", "正式规范", "资产", "规范资产", "文本能力资产", "Code 能力资产", "Web 能力资产",
@@ -89,6 +90,7 @@ class SpecsChecker:
             diagnostics.extend(parsed["diagnostics"])
         diagnostics.extend(self.diagnose_cross_document(docs, relations))
         diagnostics.extend(self.diagnose_members(members))
+        review_hints = self.build_review_hints(docs, relations)
         return {
             "metadata": {
                 "derived": True,
@@ -104,6 +106,7 @@ class SpecsChecker:
             "mechanisms": mechanisms,
             "members": members,
             "diagnostics": diagnostics,
+            "review_hints": review_hints,
         }
 
     def parse_file(self, path):
@@ -451,6 +454,7 @@ class SpecsChecker:
         diagnostics = []
         docs_by_path = {doc["path"]: doc for doc in docs}
         for doc in docs:
+            diagnostics.extend(self.diagnose_subdocument_contract(doc, docs_by_path))
             related_specs = doc.get("related_specs") or []
             rel_path = doc.get("path")
             for target in related_specs:
@@ -467,6 +471,117 @@ class SpecsChecker:
                         )
                     )
         return diagnostics
+
+    def build_review_hints(self, docs, relations):
+        hints = []
+        docs_by_path = {doc["path"]: doc for doc in docs}
+        body_refs = self.body_reference_map(relations)
+        for doc in docs:
+            related_specs = doc.get("related_specs") or []
+            rel_path = doc.get("path")
+            if len(related_specs) > 5:
+                hints.append(
+                    self.diagnostic(
+                        rel_path,
+                        1,
+                        "info",
+                        "POSSIBLE_RELATED_SPEC_OVERLOAD",
+                        f"相关规范数量较多，需确认是否均存在真实读取、消费、同步或检查义务: {len(related_specs)}",
+                    )
+                )
+            for target in related_specs:
+                target_path = self.relative_path(self.resolve_target_path(target, self.root / rel_path))
+                if target_path not in body_refs.get(rel_path, set()):
+                    hints.append(
+                        self.diagnostic(
+                            rel_path,
+                            1,
+                            "info",
+                            "RELATED_SPEC_WITHOUT_BODY_REFERENCE",
+                            f"相关规范未在正文中出现路径消费证据: {target_path}",
+                        )
+                    )
+                if target_path in docs_by_path and rel_path in (docs_by_path[target_path].get("related_specs") or []):
+                    source_has_body = target_path in body_refs.get(rel_path, set())
+                    target_has_body = rel_path in body_refs.get(target_path, set())
+                    if not source_has_body or not target_has_body:
+                        hints.append(
+                            self.diagnostic(
+                                rel_path,
+                                1,
+                                "info",
+                                "BIDIRECTIONAL_RELATED_SPEC_WEAK_EVIDENCE",
+                                f"双向相关规范缺少双方正文消费证据: {rel_path} <-> {target_path}",
+                            )
+                        )
+        return hints
+
+    def diagnose_subdocument_contract(self, doc, docs_by_path):
+        diagnostics = []
+        if doc.get("doc_kind") != "subdocument":
+            return diagnostics
+        rel_path = doc.get("path")
+        doc_number = str(doc.get("doc_number") or "")
+        parent_docs = self.extract_paths_from_value(doc.get("parent_doc"))
+        basis = doc.get("basis") or []
+        relation = doc.get("relation")
+        if doc_number and "." in doc_number:
+            parent_number = doc_number.split(".", 1)[0]
+            if not any(item.get("doc_number") == parent_number for item in docs_by_path.values()):
+                diagnostics.append(
+                    self.diagnostic(
+                        rel_path,
+                        1,
+                        "warning",
+                        "SUBDOCUMENT_PARENT_NUMBER_NOT_FOUND",
+                        f"子文档编号缺少对应父规范编号: {parent_number}",
+                    )
+                )
+        for parent_doc in parent_docs:
+            parent_path = self.relative_path(self.resolve_target_path(parent_doc, self.root / rel_path))
+            if parent_path not in docs_by_path:
+                diagnostics.append(
+                    self.diagnostic(
+                        rel_path,
+                        1,
+                        "warning",
+                        "SUBDOCUMENT_PARENT_DOC_NOT_FOUND",
+                        f"所属主文档不存在或不在当前 specs 索引中: {parent_doc}",
+                    )
+                )
+            if parent_doc not in basis and parent_path not in [self.relative_path(self.resolve_target_path(item, self.root / rel_path)) for item in basis]:
+                diagnostics.append(
+                    self.diagnostic(
+                        rel_path,
+                        1,
+                        "warning",
+                        "SUBDOCUMENT_BASIS_MISSING_PARENT",
+                        f"子文档上位依据未包含所属主文档: {parent_doc}",
+                    )
+                )
+        if relation and relation not in INDEX_ALLOWED_SUBDOCUMENT_RELATIONS:
+            diagnostics.append(
+                self.diagnostic(
+                    rel_path,
+                    1,
+                    "warning",
+                    "SUBDOCUMENT_RELATION_INVALID",
+                    f"子文档关系字段不在稳定枚举中: {relation}",
+                )
+            )
+        return diagnostics
+
+    def body_reference_map(self, relations):
+        body_refs = {}
+        for relation in relations:
+            if relation.get("relation_kind") != "path_ref" or relation.get("parse_method") != "body_path":
+                continue
+            source_path = relation.get("source_path")
+            target_path = relation.get("target_path")
+            if not source_path or not target_path:
+                continue
+            body_refs.setdefault(source_path, set()).add(target_path)
+        return body_refs
 
     def extract_ldvh_member(self, path, text):
         rel_path = self.relative_path(path)
@@ -777,6 +892,7 @@ def write_outputs(indexes, out_dir):
         "specs-mechanism-index.json": {"metadata": metadata, "mechanisms": indexes["mechanisms"]},
             "specs-members-index.json": {"metadata": metadata, "members": indexes.get("members", [])},
         "specs-diagnostics.json": {"metadata": metadata, "diagnostics": indexes["diagnostics"]},
+            "specs-review-hints.json": {"metadata": metadata, "review_hints": indexes.get("review_hints", [])},
     }
     for name, payload in outputs.items():
         (out_path / name).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
