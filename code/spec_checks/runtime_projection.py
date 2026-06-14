@@ -2,9 +2,10 @@
 
 import json
 import re
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+
+from .common import Issue, count_by, is_project_local as common_is_project_local, relative_path as common_relative_path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -19,38 +20,8 @@ RUNTIME_PROJECTION_AUTHORITY_RE = re.compile(r"(specs/|规范来源|权威来源
 RUNTIME_PROJECTION_NEGATIVE_AUTHORITY_RE = re.compile(r"(无|没有|缺少|未).{0,8}(权威来源|规范来源|上位依据|相关规范|specs/|降级)")
 
 
-@dataclass
-class Issue:
-    path: Path
-    line: int
-    message: str
-    code: str = None
-
-    def format(self, root=None):
-        display_path = self.path
-        if root:
-            try:
-                display_path = self.path.relative_to(root)
-            except ValueError:
-                display_path = self.path
-        if self.code:
-            return f"{display_path}:{self.line}: [{self.code}] {self.message}"
-        return f"{display_path}:{self.line}: {self.message}"
-
-
 def relative_path(path):
-    try:
-        return str(Path(path).resolve().relative_to(PROJECT_ROOT))
-    except ValueError:
-        return str(path)
-
-
-def count_by(items, key):
-    counts = {}
-    for item in items:
-        value = item.get(key) or "(empty)"
-        counts[value] = counts.get(value, 0) + 1
-    return dict(sorted(counts.items(), key=lambda item: item[0]))
+    return common_relative_path(path, PROJECT_ROOT)
 
 
 def default_paths():
@@ -63,11 +34,7 @@ def default_paths():
 
 
 def is_project_local(path):
-    try:
-        Path(path).resolve().relative_to(PROJECT_ROOT.resolve())
-        return True
-    except ValueError:
-        return False
+    return common_is_project_local(path, PROJECT_ROOT)
 
 
 def iter_files(paths):

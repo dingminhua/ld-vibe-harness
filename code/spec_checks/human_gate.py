@@ -2,11 +2,12 @@
 
 import json
 import re
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 import yaml
+
+from .common import Issue, count_by, is_project_local as common_is_project_local, relative_path as common_relative_path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -25,46 +26,12 @@ HUMAN_GATE_REQUIRED_FIELDS = [
 HUMAN_GATE_YAML_KEYS = {"human_gate", "human_gates", "human_gate_records"}
 
 
-@dataclass
-class Issue:
-    path: Path
-    line: int
-    message: str
-    code: str = None
-
-    def format(self, root=None):
-        display_path = self.path
-        if root:
-            try:
-                display_path = self.path.relative_to(root)
-            except ValueError:
-                display_path = self.path
-        if self.code:
-            return f"{display_path}:{self.line}: [{self.code}] {self.message}"
-        return f"{display_path}:{self.line}: {self.message}"
-
-
 def relative_path(path):
-    try:
-        return str(Path(path).resolve().relative_to(PROJECT_ROOT))
-    except ValueError:
-        return str(path)
-
-
-def count_by(items, key):
-    counts = {}
-    for item in items:
-        value = item.get(key) or "(empty)"
-        counts[value] = counts.get(value, 0) + 1
-    return dict(sorted(counts.items(), key=lambda item: item[0]))
+    return common_relative_path(path, PROJECT_ROOT)
 
 
 def is_project_local(path):
-    try:
-        Path(path).resolve().relative_to(PROJECT_ROOT.resolve())
-        return True
-    except ValueError:
-        return False
+    return common_is_project_local(path, PROJECT_ROOT)
 
 
 def default_check_paths():

@@ -1,9 +1,10 @@
 """Governed projects configuration checks for LDVH."""
 
-from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
+
+from .common import Issue
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -11,25 +12,6 @@ GOVERNED_PROJECTS_FILENAME = "LDVH-GOVERNED-PROJECTS.yaml"
 GOVERNED_PROJECTS_ROOT_FIELDS = {"product_name", "product_description", "projects"}
 GOVERNED_PROJECTS_ITEM_FIELDS = {"id", "name", "description", "path"}
 GOVERNED_PROJECTS_REQUIRED_ITEM_FIELDS = {"id", "path"}
-
-
-@dataclass
-class Issue:
-    path: Path
-    line: int
-    message: str
-    code: str = None
-
-    def format(self, root=None):
-        display_path = self.path
-        if root:
-            try:
-                display_path = self.path.relative_to(root)
-            except ValueError:
-                display_path = self.path
-        if self.code:
-            return f"{display_path}:{self.line}: [{self.code}] {self.message}"
-        return f"{display_path}:{self.line}: {self.message}"
 
 
 def check_root(root):
