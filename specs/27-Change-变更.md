@@ -340,8 +340,8 @@ Web 不得把数据库缓存、页面状态或派生索引替代 Git commit 记�
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | 后续工作模型、工作流程和提交实践应遵守本文定义的 Change 事实源边界、commit message 契约和 Git 记录不可变原则 | 05、本文、20 集合索引、Human Gate | 工作模型治理 | 创建、提交、回退、审计或查询 Change 时 |
-| 入口可见要求 | AI 执行事实源修改、关闭 Task、关闭任务计划或准备提交时，应能定位本文 | 20 集合索引、commit 流程入口、运行入口摘要 | AI 执行入口提示 | Git 提交、任务关闭、任务计划关闭、规范吸收、Code/Web 修改或多仓库变更时 |
+| 上位约束承接要求 | 后续工作模型、工作流程和提交实践应遵守本文定义的 Change 事实源边界、commit message 契约和 Git 记录不可变原则 | 05、03.03、本文、Human Gate | 工作模型治理 | 创建、提交、回退、审计或查询 Change 时 |
+| 入口可见要求 | AI 执行事实源修改、关闭 Task、关闭任务计划或准备提交时，应能定位本文 | 成员自描述、commit 流程入口、运行入口摘要 | AI 执行入口提示 | Git 提交、任务关闭、任务计划关闭、规范吸收、Code/Web 修改或多仓库变更时 |
 | 确定性执行要求 | commit message 格式、type、scope、Refs、subject 长度和中文约束应由 Code 校验或记录缺口 | `code/commit_validate.py`、`specs/07-Code确定性执行实现规范.md`、正反样例 | 校验实现 | commit 格式、枚举、Refs 规则或校验实现变化时 |
 | Human 交互要求 | 高影响事实源修改、提交记录改写、强推、删除校验或改变 Change 承载方式应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
 | 生命周期触发要求 | Change 规范变化后，应检查 commit_validate、测试、WorkArea、TaskPlan、Task、SubTask、Web、适配措施和相关工作流程是否需要同步 | Code 测试、对象关系检查、Web 联动检查、人工降级检查 | 触发保障 | Change 字段契约、事实源边界、提交纪律或适配规则变化时 |

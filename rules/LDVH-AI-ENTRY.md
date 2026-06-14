@@ -74,23 +74,23 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | 场景 | 入口视角 | 先用工具 | 必读权威入口 |
 |---|---|---|---|
 | 判断当前是否为管辖项目 | 工作区入口 | `governed-projects` | `LDVH-GOVERNED-PROJECTS.yaml`、`specs/03.05-管辖项目配置规范.md` |
-| 执行 LDVH落地与检查 | 工作区入口 | `governed-projects`、`landing-report`、必要时 `fact_cli.py stats` | `specs/04.03-环境入口适配与部署规范.md`、`specs/40-工作流程集合索引.md` |
-| 处理管辖项目工作对象 | 工作区入口 | `fact_cli.py list/search/show/stats` | 对应管辖项目自身 `ldvh-base/`、`specs/05-工作模型基础规范.md`、`specs/20-工作模型集合索引.md` 和对应工作模型规范 |
+| 执行 LDVH落地与检查 | 工作区入口 | `governed-projects`、`landing-report`、必要时 `fact_cli.py stats` | `specs/04.03-环境入口适配与部署规范.md`、`specs/06-工作流程基础规范.md`、`specs/03.04-工作流程文档规范.md`、`specs/40-59` 中实际存在的 active 工作流程主文件 |
+| 处理管辖项目工作对象 | 工作区入口 | `fact_cli.py list/search/show/stats` | 对应管辖项目自身 `ldvh-base/`、`specs/05-工作模型基础规范.md`、`specs/03.03-工作模型文档规范.md` 和对应 `specs/20-39` 工作模型规范 |
 | 理解 LDVH 总体规则 | 共同入口 | `index` | `specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-目录说明.md`、`specs/02-术语规范.md` |
 | 判断事实源、证据或回写出口 | 共同入口 | `index`、`fact_cli.py search/show` | `specs/09-事实源边界与承载规范.md`、对应工作模型或文档规范 |
 | 判断术语、命名或不推荐表达 | 共同入口 | `index` | `specs/02-术语规范.md` |
 | 判断目录、编号或文件归属 | 共同入口 | `index` | `specs/01-目录说明.md`、`specs/03-文档基础规范.md` |
 | 修改 specs 正式规范 | LDVH 管理入口 | `index`、`doc`、`refs`、`landing` | `specs/03-文档基础规范.md`、`specs/03.01-规范文档规范.md`、`specs/04.01-规范落地声明规范.md`、目标规范 |
-| 修改或理解工作模型规范 | LDVH 管理入口 | `index` | `specs/05-工作模型基础规范.md`、`specs/20-工作模型集合索引.md` 和对应 `specs/21-39` 工作模型规范 |
-| 处理 LDVH 自身项目工作对象 | LDVH 管理入口 | `fact_cli.py list/search/show/stats` | LDVH 自身项目 `ldvh-base/`、`specs/05-工作模型基础规范.md`、`specs/20-工作模型集合索引.md` 和对应工作模型规范 |
-| 处理工作流程 | LDVH 管理入口 | `index`、`landing-report` | `specs/06-工作流程基础规范.md`、`specs/40-工作流程集合索引.md` 和对应 `specs/41-59` 工作流程规范 |
+| 修改或理解工作模型规范 | LDVH 管理入口 | `index` | `specs/05-工作模型基础规范.md`、`specs/03.03-工作模型文档规范.md` 和对应 `specs/20-39` 工作模型规范 |
+| 处理 LDVH 自身项目工作对象 | LDVH 管理入口 | `fact_cli.py list/search/show/stats` | LDVH 自身项目 `ldvh-base/`、`specs/05-工作模型基础规范.md`、`specs/03.03-工作模型文档规范.md` 和对应 `specs/20-39` 工作模型规范 |
+| 处理工作流程 | LDVH 管理入口 | `index`、`landing-report` | `specs/06-工作流程基础规范.md`、`specs/03.04-工作流程文档规范.md` 和对应 `specs/40-59` 工作流程规范 |
 | 处理规范落地、环境适配或适配措施 | LDVH 管理入口 | `landing-report`、`index` | `specs/04-规范落地与环境适配基础规范.md`、`specs/04.02-LDVH能力资产与落地保障规范.md`、`specs/04.03-环境入口适配与部署规范.md` |
 | 处理 Code、工具、脚本或校验 | LDVH 管理入口 | 对应工具帮助、测试命令 | `specs/04.03-环境入口适配与部署规范.md`、`specs/07-Code确定性执行实现规范.md`、对应 `code/` 实现和 `tests/`；原运行闭环测试机制已退回 docs/studies/，不作为当前校验入口 |
 | 处理 Web 或 Human-facing 入口 | LDVH 管理入口 | `index`、相关后端或 Web 校验 | `specs/08-Web信息同步实现规范.md` |
 
-场景同时命中多个入口时，选择最小足够查询和读取集。涉及正式规范变更、规范落地要求变化、落地缺口、适配措施漂移或 Code/Web/Skill/Agent/Hook/CI 边界变化时，应先读取 `specs/40-工作流程集合索引.md` 判断是否存在 active 具体工作流程；若无 active 主文档，只能按集合索引候选或非执行输入处理，再按对应规范执行。
+场景同时命中多个入口时，选择最小足够查询和读取集。涉及正式规范变更、规范落地要求变化、落地缺口、适配措施漂移或 Code/Web/Skill/Agent/Hook/CI 边界变化时，应读取 `specs/06-工作流程基础规范.md`、`specs/03.04-工作流程文档规范.md` 和 `specs/40-59` 中实际存在的工作流程主文件，判断是否存在 active 具体工作流程；若无 active 主文档，只能按候选或非执行输入处理，再按对应规范执行。
 
-遇到“对应 `specs/21-39` 工作模型规范”时，应先读 `specs/20-工作模型集合索引.md` 定位具体文件；遇到“对应 `specs/41-59` 工作流程规范”时，应先读 `specs/40-工作流程集合索引.md` 定位具体文件。不得凭编号区段、标题记忆或聊天上下文猜测文件。
+遇到“对应 `specs/20-39` 工作模型规范”时，应按 `specs/03.03-工作模型文档规范.md` 的成员自描述契约和成员主文件定位具体文件；遇到“对应 `specs/40-59` 工作流程规范”时，应按 `specs/03.04-工作流程文档规范.md` 的成员自描述契约和实际存在的成员主文件定位具体文件。不得凭编号区段、标题记忆或聊天上下文猜测文件。
 
 ---
 ## 5. 入口分层与使用边界
@@ -125,8 +125,8 @@ LDVH 管理入口视角随 `rules/LDVH-AI-ENTRY.md` 提交，用于维护 LDVH �
 2. `specs/04.03-环境入口适配与部署规范.md`；
 3. `specs/04-规范落地与环境适配基础规范.md`；
 4. `specs/01-目录说明.md`；
-5. `specs/40-工作流程集合索引.md`；
+5. `specs/03.04-工作流程文档规范.md`；
 6. 当前环境适配规范和适配措施；
 7. 已授权的环境薄入口。
 
-若发现入口漂移，应按 `specs/40-工作流程集合索引.md` 判断是否存在 active 具体工作流程；若无 active 主文档，只能按集合索引候选或非执行输入处理，不得直接把本文件中的旧摘要当成正式规则。
+若发现入口漂移，应按 `specs/06-工作流程基础规范.md`、`specs/03.04-工作流程文档规范.md` 和 `specs/40-59` 实际成员主文件判断是否存在 active 具体工作流程；若无 active 主文档，只能按候选或非执行输入处理，不得直接把本文件中的旧摘要当成正式规则。
