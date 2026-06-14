@@ -31,7 +31,7 @@ related_objects:
 - adr-9001
 - memo-9001
 related_rules:
-- specs/24-WorkArea-工作域.md
+- specs/20-WorkArea-工作域.md
 tags:
 - web
 - workarea

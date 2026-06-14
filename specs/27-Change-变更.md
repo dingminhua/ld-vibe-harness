@@ -4,7 +4,25 @@
 > 定位：定义 Change / 变更工作模型，包括对象定位、准入条件、事实源边界、commit message 字段契约、对象关系、Human Gate、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要追踪 Git 文件事实源变更、提交纪律、变更证据和对象关联的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-工作模型集合索引.md`、`specs/24-WorkArea-工作域.md`、`specs/26-Task-任务.md`、`specs/27-TaskPlan-任务计划.md`、`specs/28-SubTask-子任务.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-TaskPlan-任务计划.md`、`specs/22-Task-任务.md`、`specs/23-SubTask-子任务.md`
+
+```yaml
+ldvh_member:
+  spec_id: "27"
+  kind: work_model
+  name_en: Change
+  name_zh: 变更
+  collection_status: active
+  canonical_path: specs/27-Change-变更.md
+  instance_root: Git commit records
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - commit_message_contract
+    - relationship_refs
+    - instance_checks
+```
 
 ---
 ## 1. 对象定位与准入条件
@@ -56,7 +74,7 @@ Git commit 记录
 
 | 内容 | 权威位置 |
 |---|---|
-| Change 工作模型规范 | `specs/22-Change-变更.md` |
+| Change 工作模型规范 | `specs/27-Change-变更.md` |
 | Change 事实实例 | Git commit 记录 |
 | Change 字段契约 | commit message 格式 |
 | Change 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -101,19 +119,19 @@ Task 的创建、状态变化、关闭和关键事实源修改都应留下 Chang
 2. `closure_evidence` 已填写；
 3. 存在至少一个符合本文格式的 commit，其 `Refs:` 或 body 明确关联该 Task，或 Task 的 `related_changes` 记录该 commit。
 
-Task 规范由 `specs/26-Task-任务.md` 定义。Change 不替代 Task 的验收标准、关闭证据或状态机。
+Task 规范由 `specs/22-Task-任务.md` 定义。Change 不替代 Task 的验收标准、关闭证据或状态机。
 
 ### 4.2 Change 与 WorkArea 和 TaskPlan
 
-WorkArea 的创建、归档、恢复和范围变更都应留下 Change。TaskPlan 的创建、状态变化、关闭审查、成功标准变更和任务列表调整都应留下 Change。工作域边界由 `specs/24-WorkArea-工作域.md` 定义；任务计划关闭判断由 `specs/27-TaskPlan-任务计划.md` 定义。
+WorkArea 的创建、归档、恢复和范围变更都应留下 Change。TaskPlan 的创建、状态变化、关闭审查、成功标准变更和任务列表调整都应留下 Change。工作域边界由 `specs/20-WorkArea-工作域.md` 定义；任务计划关闭判断由 `specs/21-TaskPlan-任务计划.md` 定义。
 
 ### 4.3 Change 与 ADR
 
-当 Change 涉及长期决策、事实源边界、架构方向或高影响规则变化时，应创建或关联 ADR。ADR 的准入、状态和字段契约由 `specs/21-ADR-决策.md` 定义。
+当 Change 涉及长期决策、事实源边界、架构方向或高影响规则变化时，应创建或关联 ADR。ADR 的准入、状态和字段契约由 `specs/24-ADR-决策.md` 定义。
 
 ### 4.4 Change 与 Memo、Pitfall
 
-Memo 的准入、状态和字段契约由 `specs/25-Memo-备忘.md` 定义。Pitfall 的准入、状态和字段契约由 `specs/23-Pitfall-踩坑.md` 定义。Change 可通过 `Refs:` 或 body 记录相关 Memo、Pitfall ID、路径或摘要。
+Memo 的准入、状态和字段契约由 `specs/26-Memo-备忘.md` 定义。Pitfall 的准入、状态和字段契约由 `specs/25-Pitfall-踩坑.md` 定义。Change 可通过 `Refs:` 或 body 记录相关 Memo、Pitfall ID、路径或摘要。
 
 ### 4.5 Change 与规范、Code、Web
 
@@ -157,7 +175,7 @@ Refs: <object-refs>
 | `scope` | 否 | 影响范围 | `specs` |
 | `subject` | 是 | 简短说明，推荐不超过 72 字符 | `更新 Change 工作模型` |
 | `body` | 否 | 说明变更原因、内容、风险和 Human Gate 结果 | `新增 specs/22...` |
-| `Refs` | 建议 | 关联对象、规范编号、commit hash 或任务 ID | `Refs: task-0001, 22-Change-变更` |
+| `Refs` | 建议 | 关联对象、规范编号、commit hash 或任务 ID | `Refs: task-0001, 27-Change-变更` |
 
 `Refs` 暂为建议字段。没有明确对象可关联时，可以省略，但 Code 应给出 warning 而不是 error。
 
@@ -206,7 +224,7 @@ scope 为推荐值，项目可以在不破坏解析的前提下扩展。若历�
 | ADR | `adr-0001` |
 | Memo | `memo-0001` |
 | Pitfall | `pitfall-0001` |
-| 规范文档 | `22-Change-变更` |
+| 规范文档 | `27-Change-变更` |
 | commit hash | `abc1234` |
 
 Risk、Dependency、Artifact、Checklist 当前不是独立工作模型，不应作为默认 Refs 对象前缀。需要表达这些信息时，应通过 Task 字段、正文说明或对应产物路径承接。
@@ -226,19 +244,19 @@ Risk、Dependency、Artifact、Checklist 当前不是独立工作模型，不应
 ```text
 docs(specs): 更新 Change 工作模型
 
-新增 specs/22-Change-变更.md，明确 Change 以 Git
+新增 specs/27-Change-变更.md，明确 Change 以 Git
 commit 记录作为事实实例，不创建 ldvh-base/changes/。
 
-Refs: 22-Change-变更
+Refs: 27-Change-变更
 ```
 
 ```text
 fix(tools): 修正 commit message 校验引用
 
 将 commit_validate.py 中的 Change 规范引用更新到
-specs/22-Change-变更.md。
+specs/27-Change-变更.md。
 
-Refs: 22-Change-变更
+Refs: 27-Change-变更
 ```
 
 ```text
@@ -301,7 +319,7 @@ Code 可依据本文实现以下能力：
 5. 检查 WorkArea、TaskPlan、Task、SubTask 等对象是否缺少关联 Change；
 6. 诊断 Code 实现自身与本文格式约束之间的漂移。
 
-当前 `code/commit_validate.py` 是既有 Code 消费方，已同步到 `specs/22-Change-变更.md` 规范路径。后续 commit message 契约变化时，应同步更新该实现和对应测试。
+当前 `code/commit_validate.py` 是既有 Code 消费方，已同步到 `specs/27-Change-变更.md` 规范路径。后续 commit message 契约变化时，应同步更新该实现和对应测试。
 
 ### 8.3 Web 信息同步
 

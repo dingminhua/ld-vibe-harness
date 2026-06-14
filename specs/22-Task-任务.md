@@ -5,7 +5,25 @@
 > 定位：定义 Task / 任务工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理 AI 可执行工作单元、验收标准、状态追踪和关闭证据的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-工作模型集合索引.md`、`specs/27-TaskPlan-任务计划.md`、`specs/28-SubTask-子任务.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/21-TaskPlan-任务计划.md`、`specs/23-SubTask-子任务.md`
+
+```yaml
+ldvh_member:
+  spec_id: "22"
+  kind: work_model
+  name_en: Task
+  name_zh: 任务
+  collection_status: active
+  canonical_path: specs/22-Task-任务.md
+  instance_root: ldvh-base/tasks/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+    - status_machine
+    - instance_checks
+```
 
 ---
 ## 1. 对象定位与准入条件
@@ -38,7 +56,7 @@ ldvh-base/tasks/task-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| Task 工作模型规范 | `specs/26-Task-任务.md` |
+| Task 工作模型规范 | `specs/22-Task-任务.md` |
 | Task 实例 | `ldvh-base/tasks/` |
 | Task 字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | Task 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -122,7 +140,7 @@ Task 可以通过 `blocked_by` 声明同一任务计划内的前置 Task。`bloc
 
 ### 4.4 Task 与 ADR、Change、Memo、Pitfall
 
-Task 可以引用 ADR、Memo、Pitfall、文档和 Git commit。Change 的 commit message 契约和 Git 记录事实源边界由 `specs/22-Change-变更.md` 定义。
+Task 可以引用 ADR、Memo、Pitfall、文档和 Git commit。Change 的 commit message 契约和 Git 记录事实源边界由 `specs/27-Change-变更.md` 定义。
 
 ---
 ## 5. Human Gate

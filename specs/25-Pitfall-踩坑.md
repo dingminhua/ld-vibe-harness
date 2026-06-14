@@ -4,7 +4,25 @@
 > 定位：定义 Pitfall / 踩坑工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要沉淀已解决、已验证且具有复用价值的踩坑经验的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-工作模型集合索引.md`、`specs/21-ADR-决策.md`、`specs/22-Change-变更.md`、`specs/24-WorkArea-工作域.md`、`specs/27-TaskPlan-任务计划.md`、`specs/25-Memo-备忘.md`、`specs/26-Task-任务.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-TaskPlan-任务计划.md`、`specs/22-Task-任务.md`、`specs/24-ADR-决策.md`、`specs/26-Memo-备忘.md`、`specs/27-Change-变更.md`
+
+```yaml
+ldvh_member:
+  spec_id: "25"
+  kind: work_model
+  name_en: Pitfall
+  name_zh: 踩坑
+  collection_status: active
+  canonical_path: specs/25-Pitfall-踩坑.md
+  instance_root: ldvh-base/pitfalls/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+    - status_machine
+    - instance_checks
+```
 
 ---
 ## 1. 对象定位与准入条件
@@ -60,7 +78,7 @@ ldvh-base/pitfalls/pitfall-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| Pitfall 工作模型规范 | `specs/23-Pitfall-踩坑.md` |
+| Pitfall 工作模型规范 | `specs/25-Pitfall-踩坑.md` |
 | Pitfall 实例 | `ldvh-base/pitfalls/` |
 | Pitfall 字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | Pitfall 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -110,19 +128,19 @@ active → archived
 
 Task 执行、验证或关闭过程中发现的已解决且可复用经验，可以整理为 Pitfall。Pitfall 可通过 `source_tasks` 记录来源 Task。
 
-Task 的准入、状态和字段契约由 `specs/26-Task-任务.md` 定义。Pitfall 不替代 Task 的验收标准、验证证据、关闭证据、风险判断或缺陷修复动作。
+Task 的准入、状态和字段契约由 `specs/22-Task-任务.md` 定义。Pitfall 不替代 Task 的验收标准、验证证据、关闭证据、风险判断或缺陷修复动作。
 
 ### 4.2 Pitfall 与 Memo
 
 Memo 中保留的发现、提醒、复盘线索或问题线索满足 Pitfall 准入条件后，可以分流为 Pitfall。分流后，Pitfall 的 `source_memos` 应记录来源 Memo，Memo 的 `resolved_to` 可记录 Pitfall ID。
 
-Memo 的准入、状态和字段契约由 `specs/25-Memo-备忘.md` 定义。
+Memo 的准入、状态和字段契约由 `specs/26-Memo-备忘.md` 定义。
 
 ### 4.3 Pitfall 与 WorkArea / TaskPlan
 
 工作域和任务计划可以通过 `related_pitfalls` 引用执行过程中形成或需要参考的踩坑经验。Pitfall 可通过 `related_workareas` 记录关联工作域，通过 `related_taskplans` 记录关联任务计划。
 
-WorkArea 的准入、状态和字段契约由 `specs/24-WorkArea-工作域.md` 定义；TaskPlan 的准入、状态和字段契约由 `specs/27-TaskPlan-任务计划.md` 定义。Pitfall 不替代 WorkArea 的长期范围，也不替代 TaskPlan 的目标、成功标准、任务序列或关闭判断。
+WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` 定义；TaskPlan 的准入、状态和字段契约由 `specs/21-TaskPlan-任务计划.md` 定义。Pitfall 不替代 WorkArea 的长期范围，也不替代 TaskPlan 的目标、成功标准、任务序列或关闭判断。
 
 ### 4.4 Pitfall 与 ADR
 
@@ -130,11 +148,11 @@ Pitfall 和 ADR 是独立工作模型。经验是经验，决策是决策，两�
 
 当 Pitfall 暴露的问题需要形成长期决策、改变事实源归属、改变规范边界或影响多个工作模型时，应创建或关联 ADR。Pitfall 可通过 `related_adrs` 引用相关 ADR。
 
-ADR 的准入、状态和字段契约由 `specs/21-ADR-决策.md` 定义。
+ADR 的准入、状态和字段契约由 `specs/24-ADR-决策.md` 定义。
 
 ### 4.5 Pitfall 与 Change
 
-Pitfall 的创建、状态变化、核心经验改写、归档、替代和被吸收到规范、运行入口、Code、Web 或工作流程时，都应留下 Change。Change 的 commit message 契约由 `specs/22-Change-变更.md` 定义。
+Pitfall 的创建、状态变化、核心经验改写、归档、替代和被吸收到规范、运行入口、Code、Web 或工作流程时，都应留下 Change。Change 的 commit message 契约由 `specs/27-Change-变更.md` 定义。
 
 ### 4.6 Pitfall 与规范、Code、Web 和运行入口
 

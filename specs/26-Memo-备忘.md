@@ -4,7 +4,25 @@
 > 定位：定义 Memo / 备忘工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理尚未任务化但有保留价值的输入、发现、提醒、问题、缺口和偏好的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-工作模型集合索引.md`、`specs/21-ADR-决策.md`、`specs/22-Change-变更.md`、`specs/24-WorkArea-工作域.md`、`specs/26-Task-任务.md`、`specs/27-TaskPlan-任务计划.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-TaskPlan-任务计划.md`、`specs/22-Task-任务.md`、`specs/24-ADR-决策.md`、`specs/27-Change-变更.md`
+
+```yaml
+ldvh_member:
+  spec_id: "26"
+  kind: work_model
+  name_en: Memo
+  name_zh: 备忘
+  collection_status: active
+  canonical_path: specs/26-Memo-备忘.md
+  instance_root: ldvh-base/memos/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+    - status_machine
+    - instance_checks
+```
 
 ---
 ## 1. 对象定位与准入条件
@@ -52,7 +70,7 @@ ldvh-base/memos/memo-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| Memo 工作模型规范 | `specs/25-Memo-备忘.md` |
+| Memo 工作模型规范 | `specs/26-Memo-备忘.md` |
 | Memo 实例 | `ldvh-base/memos/` |
 | Memo 字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | Memo 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -104,19 +122,19 @@ resolved → archived
 
 Memo 可以分流为 Task，作为尚未任务化信息转化为可执行工作单元的路径。分流后，Memo 的 `resolved_to` 应记录 `{type: task, ref: <Task ID>}`，Task 的 `source` 或 `related_docs` 可记录 Memo ID 或路径。
 
-Task 的准入、状态和字段契约由 `specs/26-Task-任务.md` 定义。
+Task 的准入、状态和字段契约由 `specs/22-Task-任务.md` 定义。
 
 ### 4.2 Memo 与 ADR
 
 Memo 可以分流为 ADR，作为临时判断、偏好或方案取舍转化为长期决策的路径。分流后，Memo 的 `resolved_to` 应记录 `{type: adr, ref: <ADR ID>}`，ADR 的 `related_memos` 可记录来源 Memo。
 
-ADR 的准入、状态和字段契约由 `specs/21-ADR-决策.md` 定义。
+ADR 的准入、状态和字段契约由 `specs/24-ADR-决策.md` 定义。
 
 ### 4.3 Memo 与 WorkArea 和 TaskPlan
 
 Memo 可以分流为 WorkArea，作为长期范围、治理域或持续维护面的来源线索。Memo 也可以分流为 TaskPlan，作为一次目标、执行计划或关闭审查的来源线索。分流后，Memo 的 `resolved_to` 应记录 `{type: workarea, ref: <WorkArea ID>}` 或 `{type: taskplan, ref: <TaskPlan ID>}`，目标对象的 `related_memos` 可记录来源 Memo。
 
-WorkArea 的准入、状态和字段契约由 `specs/24-WorkArea-工作域.md` 定义；TaskPlan 的准入、状态和字段契约由 `specs/27-TaskPlan-任务计划.md` 定义。
+WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` 定义；TaskPlan 的准入、状态和字段契约由 `specs/21-TaskPlan-任务计划.md` 定义。
 
 ### 4.4 Memo 与 Pitfall、管辖项目配置、docs
 
@@ -127,11 +145,11 @@ Memo 可以分流或关联到 Pitfall、管辖项目配置或 docs：
 3. 项目正文、调研、说明或报告内容，可吸收到 docs；
 4. 外部引用或调研资料，应进入 docs/sources。
 
-Pitfall 的准入、状态和字段契约由 `specs/23-Pitfall-踩坑.md` 定义。管辖项目配置的字段和边界由 `specs/03.05-管辖项目配置规范.md` 定义。环境能力核验、环境适配和适配措施正文不得写入管辖项目配置；需要长期保留的稳定事实应进入环境适配待补齐事项、Task、Memo、ADR、正式规范或按 04 系列规范处理。当前具体检查结果只保留当前过程结论，不作为持久状态事实源。
+Pitfall 的准入、状态和字段契约由 `specs/25-Pitfall-踩坑.md` 定义。管辖项目配置的字段和边界由 `specs/03.05-管辖项目配置规范.md` 定义。环境能力核验、环境适配和适配措施正文不得写入管辖项目配置；需要长期保留的稳定事实应进入环境适配待补齐事项、Task、Memo、ADR、正式规范或按 04 系列规范处理。当前具体检查结果只保留当前过程结论，不作为持久状态事实源。
 
 ### 4.5 Memo 与 Change
 
-Memo 的创建、状态变化、分流和归档都应留下 Change。Change 的 commit message 契约由 `specs/22-Change-变更.md` 定义。
+Memo 的创建、状态变化、分流和归档都应留下 Change。Change 的 commit message 契约由 `specs/27-Change-变更.md` 定义。
 
 ---
 ## 5. Human Gate

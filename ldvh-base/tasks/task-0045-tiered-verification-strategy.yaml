@@ -14,7 +14,7 @@ source: 竞品调研报告 docs/sources/06 建议3
 acceptance: |
   - [ ] 定义 Task 复杂度分级标准（简单/中等/复杂）
   - [ ] 为每个级别定义验证要求清单
-  - [ ] 将分层验证策略写入 specs/26-Task-任务.md 或独立最佳实践文档
+  - [ ] 将分层验证策略写入 specs/22-Task-任务.md 或独立最佳实践文档
   - [ ] 更新 ldvh-plan Skill 在拆解步骤时参考复杂度分级
 blocked_by: []
 title_en: Tiered Verification Strategy
@@ -25,5 +25,5 @@ related_pitfalls: []
 related_docs:
 - docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
 deliverables:
-- specs/26-Task-任务.md（修订）或独立验证策略文档
+- specs/22-Task-任务.md（修订）或独立验证策略文档
 taskplan: taskplan-0045

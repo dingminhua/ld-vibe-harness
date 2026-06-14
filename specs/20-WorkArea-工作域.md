@@ -4,7 +4,25 @@
 > 定位：定义 WorkArea / 工作域工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写和适配规则
 > 适用范围：所有接入 LDVH 且需要长期管理工作范围、系统领域、治理域或产品域的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-工作模型集合索引.md`、`specs/27-TaskPlan-任务计划.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/21-TaskPlan-任务计划.md`
+
+```yaml
+ldvh_member:
+  spec_id: "20"
+  kind: work_model
+  name_en: WorkArea
+  name_zh: 工作域
+  collection_status: active
+  canonical_path: specs/20-WorkArea-工作域.md
+  instance_root: ldvh-base/workareas/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+    - status_machine
+    - instance_checks
+```
 
 ---
 ## 1. 对象定位与准入条件
@@ -50,7 +68,7 @@ ldvh-base/workareas/workarea-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| 工作域工作模型规范 | `specs/24-WorkArea-工作域.md` |
+| 工作域工作模型规范 | `specs/20-WorkArea-工作域.md` |
 | 工作域实例 | `ldvh-base/workareas/` |
 | 工作域字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | 工作域展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -209,4 +227,4 @@ Web 应显示工作域列表和详情，但不得把工作域展示为“待关�
 ---
 ## 11. 待补齐事项
 
-暂无额外待补齐事项；后续随字段契约、Code 校验或 Web 消费变化更新。
+暂无额外待补齐事项；后续随本模型字段规则、Code 校验或 Web 消费变化更新。

@@ -70,7 +70,7 @@ source_objects:
 related_objects:
 - workarea-0003
 related_rules:
-- specs/26-Task-任务.md
+- specs/22-Task-任务.md
 tags:
 - task-lifecycle
 - verification

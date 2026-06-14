@@ -20,6 +20,6 @@ related_changes: []
 related_memos:
 - memo-9001
 related_rules:
-- specs/24-WorkArea-工作域.md
+- specs/20-WorkArea-工作域.md
 related_workareas:
 - workarea-9003

@@ -4,7 +4,25 @@
 > 定位：定义 SubTask / 子任务工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写和适配规则
 > 适用范围：所有接入 LDVH 且需要在 Task 内拆分最小并行执行单元的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-工作模型集合索引.md`、`specs/26-Task-任务.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/22-Task-任务.md`
+
+```yaml
+ldvh_member:
+  spec_id: "23"
+  kind: work_model
+  name_en: SubTask
+  name_zh: 子任务
+  collection_status: active
+  canonical_path: specs/23-SubTask-子任务.md
+  instance_root: ldvh-base/subtasks/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+    - status_machine
+    - instance_checks
+```
 
 ---
 ## 1. 对象定位与准入条件
@@ -35,7 +53,7 @@ ldvh-base/subtasks/subtask-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| 子任务工作模型规范 | `specs/28-SubTask-子任务.md` |
+| 子任务工作模型规范 | `specs/23-SubTask-子任务.md` |
 | 子任务实例 | `ldvh-base/subtasks/` |
 | 子任务字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | 子任务展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |

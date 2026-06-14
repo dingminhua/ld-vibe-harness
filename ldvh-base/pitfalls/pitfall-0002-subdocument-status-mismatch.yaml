@@ -54,7 +54,7 @@ superseded_by: specs/03.01-规范文档规范.md
 source_objects: []
 related_objects: []
 related_rules:
-- specs/22-Change-变更.md
+- specs/27-Change-变更.md
 tags:
 - subdocument
 - consistency

@@ -4,7 +4,25 @@
 > 定位：定义 TaskPlan / 任务计划工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写和适配规则
 > 适用范围：所有接入 LDVH 且需要把一次目标拆解为可追踪任务序列、前置关系或并行执行单元的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-工作模型集合索引.md`、`specs/24-WorkArea-工作域.md`、`specs/26-Task-任务.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-WorkArea-工作域.md`、`specs/22-Task-任务.md`
+
+```yaml
+ldvh_member:
+  spec_id: "21"
+  kind: work_model
+  name_en: TaskPlan
+  name_zh: 任务计划
+  collection_status: active
+  canonical_path: specs/21-TaskPlan-任务计划.md
+  instance_root: ldvh-base/taskplans/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+    - status_machine
+    - instance_checks
+```
 
 ---
 ## 1. 对象定位与准入条件
@@ -37,7 +55,7 @@ ldvh-base/taskplans/taskplan-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| 任务计划工作模型规范 | `specs/27-TaskPlan-任务计划.md` |
+| 任务计划工作模型规范 | `specs/21-TaskPlan-任务计划.md` |
 | 任务计划实例 | `ldvh-base/taskplans/` |
 | 任务计划字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | 任务计划展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |

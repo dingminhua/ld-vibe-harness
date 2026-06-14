@@ -4,7 +4,25 @@
 > 定位：定义 ADR / 决策工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理长期决策、事实源边界、规范判断和后续执行约束的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-工作模型集合索引.md`、`specs/22-Change-变更.md`、`specs/24-WorkArea-工作域.md`、`specs/27-TaskPlan-任务计划.md`、`specs/26-Task-任务.md`
+> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-TaskPlan-任务计划.md`、`specs/22-Task-任务.md`、`specs/27-Change-变更.md`
+
+```yaml
+ldvh_member:
+  spec_id: "24"
+  kind: work_model
+  name_en: ADR
+  name_zh: 决策
+  collection_status: active
+  canonical_path: specs/24-ADR-决策.md
+  instance_root: ldvh-base/adrs/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+    - status_machine
+    - instance_checks
+```
 
 ---
 ## 1. 对象定位与准入条件
@@ -60,7 +78,7 @@ ldvh-base/adrs/adr-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| ADR 工作模型规范 | `specs/21-ADR-决策.md` |
+| ADR 工作模型规范 | `specs/24-ADR-决策.md` |
 | ADR 实例 | `ldvh-base/adrs/` |
 | ADR 字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | ADR 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -121,7 +139,7 @@ ADR 不替代 Task 的验收标准、验证证据、风险判断或关闭证据�
 
 ### 4.3 ADR 与 Change
 
-ADR 的创建、状态变化、核心决策改写、废弃、替代和升级为规范时，都应留下 Change。Change 的 commit message 契约由 `specs/22-Change-变更.md` 定义。
+ADR 的创建、状态变化、核心决策改写、废弃、替代和升级为规范时，都应留下 Change。Change 的 commit message 契约由 `specs/27-Change-变更.md` 定义。
 
 ### 4.4 ADR 与 Memo
 
@@ -132,7 +150,7 @@ Memo 中的输入满足 ADR 准入条件后，可以转化为 ADR。转化时应
 3. 评估 Human Gate；
 4. 不在 ADR 中复制 Memo 全文，只保留摘要和引用。
 
-Memo 的准入、状态和字段契约由 `specs/25-Memo-备忘.md` 定义。
+Memo 的准入、状态和字段契约由 `specs/26-Memo-备忘.md` 定义。
 
 ### 4.5 ADR 与 specs / Rules
 
@@ -217,7 +235,7 @@ consequences: |
 alternatives: |
   曾考虑创建 changes YAML 实例，但会与 Git 记录形成重复事实源。
 affects:
-  - specs/22-Change-变更.md
+  - specs/27-Change-变更.md
 related_workareas: []
 related_taskplans: []
 related_tasks: []
@@ -225,7 +243,7 @@ related_changes: []
 related_memos: []
 related_adrs: []
 related_rules:
-  - specs/22-Change-变更.md
+  - specs/27-Change-变更.md
 superseded_by:
 status_history:
   - at: 2026-06-09
