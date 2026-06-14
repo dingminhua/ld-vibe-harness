@@ -185,8 +185,8 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `symptoms` | 问题现象、错误表现或误判结果 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `trigger_conditions` | 触发条件、上下文或复现场景 | string | 是 | 应说明何时可能复现 | Narrative / Checklist | AI、Code、Web |
 | `root_cause` | 根因或误判原因 | string | 是 | active 时必须明确 | Narrative | AI、Human、Web |
-| `resolution` | 解决方式 | string | 是 | active 时必须可执行 | Narrative / Evidence | AI、Code、Web |
-| `verification` | active 时必须填写 | string | 是 | active 时必须填写 | Evidence | AI、Code、Web |
+| `resolution` | 解决方式 | string | 是 | active 时必须可执行 | Narrative / 验证证据 | AI、Code、Web |
+| `verification` | active 时必须填写 | string | 是 | active 时必须填写 | 验证证据 | AI、Code、Web |
 | `avoidance` | 后续规避策略 | string | 是 | active 时必须可复用 | Narrative / Checklist | AI、Human、Web |
 | `applicability` | 适用范围和不适用范围 | string | 是 | 应避免泛化过度 | Narrative | AI、Web |
 | `repeatability` | 复现或重复概率 | string | 否 | `unknown`、`once`、`recurring`，默认 `unknown` | Reference | AI、Code、Web |

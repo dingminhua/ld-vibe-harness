@@ -157,7 +157,7 @@ Task 不作为 Human 直接管理入口。以下情况应回到 TaskPlan 层评�
 | `source` | 任务来源 | string | 是 | 任务计划、用户指示或其他可追溯来源 | Reference / Narrative | AI、Web |
 | `blocked_by` | 同一任务计划内的前置 Task | list[string] | 否 | 默认为空列表；必须同属一个任务计划 | Reference | AI、Code、Web |
 | `acceptance` | 关闭前全部为 `- [x]` | string | 是 | 关闭前全部为 `- [x]` | Checklist | AI、Code、Web |
-| `verification` | 执行进入验证前应补齐 | string | 否 | 执行进入验证前应补齐 | Evidence / Checklist | AI、Code、Web |
+| `verification` | 执行进入验证前应补齐 | string | 否 | 执行进入验证前应补齐 | 验证证据 / Checklist | AI、Code、Web |
 | `assignee` | 执行者 | string | 否 | 可为 AI、Human 或角色名 | Reference | AI、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_changes` | 关联变更 | list[string] | 否 | 可记录 commit hash 或 Change 引用 | Reference | AI、Code、Web |
@@ -166,7 +166,7 @@ Task 不作为 Human 直接管理入口。以下情况应回到 TaskPlan 层评�
 | `deliverables` | 产物、报告、截图、构建产物或导出文件路径 | list[string] | 否 | 结果物应可追溯 | Reference | AI、Code、Web |
 | `status_history` | — | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
 | `closed_at` | — | date | 条件必填 | `status: closed` 时必须填写 | Reference | AI、Code、Web |
-| `closure_evidence` | — | string | 条件必填 | `status: closed` 时必须填写 | Evidence | AI、Code、Web |
+| `closure_evidence` | — | string | 条件必填 | `status: closed` 时必须填写 | 验证证据 | AI、Code、Web |
 
 ### 6.1 YAML 示例
 

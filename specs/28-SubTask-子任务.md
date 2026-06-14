@@ -124,8 +124,8 @@ review_needed -> executing
 | `source` | 子任务来源 | string | 是 | Task 内拆解、AI 发现或人工确认 | Reference / Narrative | AI、Web |
 | `acceptance` | 关闭前全部为 `- [x]` | string | 是 | 关闭前全部为 `- [x]` | Checklist | AI、Code、Web |
 | `blocked_by` | 同一 Task 下的前置 SubTask | list[string] | 否 | 默认为空列表；必须同属一个 Task | Reference | AI、Code、Web |
-| `verification` | 关闭前必须填写 | string | 否 | 关闭前必须填写 | Evidence / Checklist | AI、Code、Web |
-| `closure_evidence` | — | string | 条件必填 | `closed` 时必须填写 | Evidence | AI、Code、Web |
+| `verification` | 关闭前必须填写 | string | 否 | 关闭前必须填写 | 验证证据 / Checklist | AI、Code、Web |
+| `closure_evidence` | — | string | 条件必填 | `closed` 时必须填写 | 验证证据 | AI、Code、Web |
 | `closed_at` | — | date | 条件必填 | `closed` 时必须填写 | Reference | AI、Code、Web |
 | `status_history` | — | list[object] | 否 | 状态变化时追加 | Log | AI、Code |
 
