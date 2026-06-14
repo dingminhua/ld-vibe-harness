@@ -3605,7 +3605,8 @@ INDEX_DOCS_ROOT_ASSET_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?(docs/[^/`\s，�
 INDEX_EXTERNAL_URL_RE = re.compile(r"https?://[^\s`，。；、)）]+")
 INDEX_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\d]+(?:\.\d+)*)")
 INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
-INDEX_DEFINITION_SENTENCE_RE = re.compile(r"^(?:(?:在本文|在本规范|在本文档)中[，,]?\s*)?(?:[-*]\s*)?(?:\*\*)?([^|。；;，,\s`*]{2,24})(?:\*\*)?\s*(?:是|是指|定义为|包括且仅包括)")
+INDEX_DEFINITION_SENTENCE_RE = re.compile(r"^(?:(?:在本文|在本规范|在本文档)中[，,]?\s*)?(?:(?:[-*]|\d+[.、])\s*)?(?:\*\*)?([^|。；;，,\s`*是]{2,24})(?:\*\*)?\s*(?:是指|定义为|包括且仅包括|指(?!向|引|标|回|令|定|派|出|控|责|南|针|纹|挥|数|甲|望)|是(?!否))")
+INDEX_FOOTNOTE_RE = re.compile(r"^\[\^[^\]]+\]:\s*(.+)$")
 INDEX_FORBIDDEN_DEFINITION_SECTION_TITLES = {"术语定义", "概念定义", "名词解释"}
 INDEX_GOVERNED_TERMS = {
     "LDVH 自身项目", "管辖项目", "管辖项目配置", "LDVH 文档工作区", "规范正文区", "管辖项目文档工作区", "正文区", "studies", "sources",
@@ -3973,25 +3974,47 @@ class SpecsChecker:
 
     def diagnose_definition_sentences(self, rel_path, line_number, stripped):
         diagnostics = []
-        if not stripped or stripped.startswith("#") or stripped.startswith(">"):
+        if not stripped or stripped.startswith("#"):
             return diagnostics
         doc_number = self.extract_doc_number(Path(rel_path))
-        for match in INDEX_DEFINITION_SENTENCE_RE.finditer(stripped):
-            term = match.group(1).strip("`：:、（）() ")
-            if not term or term in INDEX_DEFINITION_WHITELIST_TERMS or term not in INDEX_GOVERNED_TERMS:
-                continue
-            if doc_number in INDEX_ALLOWED_DEFINITION_OWNERS.get(term, set()):
-                continue
-            diagnostics.append(
-                self.diagnostic(
-                    rel_path,
-                    line_number,
-                    "warning",
-                    "POSSIBLE_DUPLICATE_TERM_DEFINITION",
-                    f"非 02 术语规范疑似使用定义句式: {term}",
+        reported_terms = set()
+        for candidate in self.definition_sentence_candidates(stripped):
+            for match in INDEX_DEFINITION_SENTENCE_RE.finditer(candidate):
+                term = match.group(1).strip("`：:、（）() ")
+                if term in reported_terms:
+                    continue
+                if not term or term in INDEX_DEFINITION_WHITELIST_TERMS or term not in INDEX_GOVERNED_TERMS:
+                    continue
+                if doc_number in INDEX_ALLOWED_DEFINITION_OWNERS.get(term, set()):
+                    continue
+                reported_terms.add(term)
+                diagnostics.append(
+                    self.diagnostic(
+                        rel_path,
+                        line_number,
+                        "warning",
+                        "POSSIBLE_DUPLICATE_TERM_DEFINITION",
+                        f"非 02 术语规范疑似使用定义句式: {term}",
+                    )
                 )
-            )
         return diagnostics
+
+
+    def definition_sentence_candidates(self, stripped):
+        if not stripped:
+            return []
+        if stripped.startswith(">"):
+            match = INDEX_HEADER_FIELD_RE.match(stripped)
+            if match:
+                return [match.group(2).strip()]
+            return [stripped.lstrip("> ").strip()]
+        if stripped.startswith("|"):
+            cells = [self.clean_cell(cell) for cell in stripped.strip("|").split("|")]
+            return [cell for cell in cells if cell and not all(char in "-: " for char in cell)]
+        footnote = INDEX_FOOTNOTE_RE.match(stripped)
+        if footnote:
+            return [footnote.group(1).strip()]
+        return [stripped]
 
 
     def diagnose_cross_document(self, docs, relations):

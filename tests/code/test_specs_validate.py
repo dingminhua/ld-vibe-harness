@@ -1361,6 +1361,85 @@ def test_specs_subdocument_reports_forbidden_term_definition_section(tmp_path):
     assert any(item["code"] == "FORBIDDEN_TERM_DEFINITION_SECTION" and "术语定义" in item["message"] for item in diagnostics)
 
 
+def test_specs_subdocument_reports_definition_in_header_field(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03.01-规范文档规范.md",
+        """
+# 规范文档规范
+
+> 创建日期：2026-06-01
+> 所属主文档：`specs/03-文档基础规范.md`
+> 关系：应用剖面
+> 定位：适配措施是当前子文档重新给出的定义
+> 适用范围：LDVH specs
+> 上位依据：`specs/03-文档基础规范.md`
+
+---
+## 1. 本文解决的问题
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "适配措施" in item["message"] for item in diagnostics)
+
+
+def test_specs_subdocument_reports_definition_in_table_cell(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03.01-规范文档规范.md",
+        """
+# 规范文档规范
+
+> 创建日期：2026-06-01
+> 所属主文档：`specs/03-文档基础规范.md`
+> 关系：应用剖面
+> 适用范围：LDVH specs
+> 上位依据：`specs/03-文档基础规范.md`
+
+---
+## 1. 本文解决的问题
+
+| 术语 | 说明 |
+|---|---|
+| 适配措施 | 适配措施是当前子文档重新给出的定义 |
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "适配措施" in item["message"] for item in diagnostics)
+
+
+def test_specs_subdocument_reports_definition_in_footnote(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03.01-规范文档规范.md",
+        """
+# 规范文档规范
+
+> 创建日期：2026-06-01
+> 所属主文档：`specs/03-文档基础规范.md`
+> 关系：应用剖面
+> 适用范围：LDVH specs
+> 上位依据：`specs/03-文档基础规范.md`
+
+---
+## 1. 本文解决的问题
+
+[^term]: 适配措施是当前子文档重新给出的定义。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "适配措施" in item["message"] for item in diagnostics)
+
+
 def test_specs_document_reports_definition_with_prefix(tmp_path):
     specs = tmp_path / "specs"
     write_md(
@@ -1437,6 +1516,108 @@ def test_specs_document_reports_definition_with_shi_zhi(tmp_path):
 
     diagnostics = indexes["diagnostics"]
     assert any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "保障机制" in item["message"] for item in diagnostics)
+
+
+def test_specs_document_reports_definition_with_bare_zhi(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+适配措施指当前规范重新给出的定义。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "适配措施" in item["message"] for item in diagnostics)
+
+
+def test_specs_document_reports_definition_in_numbered_list(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+1. 适配措施是当前规范重新给出的定义。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "适配措施" in item["message"] for item in diagnostics)
+
+
+def test_specs_document_does_not_report_jiancha_shifou(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+检查是否需要更新规范落地要求。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    assert not any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" for item in indexes["diagnostics"])
+
+
+def test_specs_document_does_not_report_zhi_xiang(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+环境入口指向具体环境提供的位置或机制。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    assert not any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" for item in indexes["diagnostics"])
 
 
 def test_specs_document_reports_possible_reverse_related_spec(tmp_path):
