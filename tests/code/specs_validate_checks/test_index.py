@@ -1153,6 +1153,96 @@ def test_subdocument_contract_diagnostics_help_ai_review(tmp_path):
     assert "SUBDOCUMENT_RELATION_INVALID" in codes
 
 
+def test_parent_subdocument_registry_diagnostics(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "05-工作模型基础规范.md",
+        """
+# 工作模型基础规范
+
+> 创建日期：2026-06-01
+> 定位：工作模型基础规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+## 1. 本文解决的问题
+
+本文定义工作模型基础规则。
+""",
+    )
+    write_md(
+        specs / "05.01-工作字段内容格式规范.md",
+        """
+# 工作字段内容格式规范
+
+> 创建日期：2026-06-01
+> 所属主文档：`specs/05-工作模型基础规范.md`
+> 关系：专题子文档
+> 定位：字段内容格式规范
+> 适用范围：LDVH 工作模型字段
+> 上位依据：`specs/05-工作模型基础规范.md`
+
+---
+## 1. 本文解决的问题
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
+    codes = {item["code"] for item in diagnostics}
+
+    assert "PARENT_SUBDOCUMENT_BOUNDARY_SECTION_MISSING" in codes
+    assert "PARENT_SUBDOCUMENT_NOT_REGISTERED" in codes
+
+
+def test_parent_subdocument_registry_passes_when_boundary_lists_child(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "05-工作模型基础规范.md",
+        """
+# 工作模型基础规范
+
+> 创建日期：2026-06-01
+> 定位：工作模型基础规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+## 1. 本文解决的问题
+
+本文定义工作模型基础规则。
+
+## 2. 子文档清单与边界
+
+| 子文档 | 说明 |
+|---|---|
+| `specs/05.01-工作字段内容格式规范.md` | 字段内容格式规则 |
+""",
+    )
+    write_md(
+        specs / "05.01-工作字段内容格式规范.md",
+        """
+# 工作字段内容格式规范
+
+> 创建日期：2026-06-01
+> 所属主文档：`specs/05-工作模型基础规范.md`
+> 关系：专题子文档
+> 定位：字段内容格式规范
+> 适用范围：LDVH 工作模型字段
+> 上位依据：`specs/05-工作模型基础规范.md`
+
+---
+## 1. 本文解决的问题
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
+    codes = {item["code"] for item in diagnostics}
+
+    assert "PARENT_SUBDOCUMENT_BOUNDARY_SECTION_MISSING" not in codes
+    assert "PARENT_SUBDOCUMENT_NOT_REGISTERED" not in codes
+
+
 def test_related_spec_without_body_reference_is_reported(tmp_path):
     specs = tmp_path / "specs"
     write_md(

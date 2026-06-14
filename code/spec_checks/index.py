@@ -30,6 +30,7 @@ INDEX_FOOTNOTE_RE = re.compile(r"^\[\^[^\]]+\]:\s*(.+)$")
 INDEX_LDVH_MEMBER_RE = re.compile(r"```ya?ml\s*\n(.*?\n)```", re.DOTALL)
 INDEX_FORBIDDEN_DEFINITION_SECTION_TITLES = {"术语定义", "概念定义", "名词解释"}
 INDEX_ALLOWED_SUBDOCUMENT_RELATIONS = {"应用剖面", "专题子文档"}
+INDEX_SUBDOCUMENT_BOUNDARY_TITLE_TERMS = ("子文档", "应用剖面", "专题子文档")
 INDEX_GOVERNED_TERMS = {
     "LDVH 自身项目", "管辖项目", "管辖项目配置", "LDVH 文档工作区", "规范正文区", "管辖项目文档工作区", "正文区", "studies", "sources",
     "来源", "吸收", "参考与研究材料", "待补齐事项", "正式规范", "资产", "规范资产", "文本能力资产", "Code 能力资产", "Web 能力资产",
@@ -88,7 +89,7 @@ class SpecsChecker:
             if parsed.get("member"):
                 members.append(parsed["member"])
             diagnostics.extend(parsed["diagnostics"])
-        diagnostics.extend(self.diagnose_cross_document(docs, relations))
+        diagnostics.extend(self.diagnose_cross_document(docs, sections, relations))
         diagnostics.extend(self.diagnose_members(members))
         review_hints = self.build_review_hints(docs, relations)
         return {
@@ -450,9 +451,14 @@ class SpecsChecker:
         return [stripped]
 
 
-    def diagnose_cross_document(self, docs, relations):
+    def diagnose_cross_document(self, docs, sections, relations):
         diagnostics = []
         docs_by_path = {doc["path"]: doc for doc in docs}
+        sections_by_path = {}
+        for section in sections:
+            sections_by_path.setdefault(section.get("path"), []).append(section)
+        body_refs = self.body_reference_map(relations)
+        diagnostics.extend(self.diagnose_parent_subdocument_registry(docs, docs_by_path, sections_by_path, body_refs))
         for doc in docs:
             diagnostics.extend(self.diagnose_subdocument_contract(doc, docs_by_path))
             related_specs = doc.get("related_specs") or []
@@ -468,6 +474,46 @@ class SpecsChecker:
                             "warning",
                             "POSSIBLE_REVERSE_RELATED_SPEC",
                             f"相关规范可能基于反向、追溯或可发现性理由登记: {target_path}",
+                        )
+                    )
+        return diagnostics
+
+    def diagnose_parent_subdocument_registry(self, docs, docs_by_path, sections_by_path, body_refs):
+        diagnostics = []
+        children_by_parent = {}
+        for doc in docs:
+            if doc.get("doc_kind") != "subdocument":
+                continue
+            rel_path = doc.get("path")
+            for parent_doc in self.extract_paths_from_value(doc.get("parent_doc")):
+                parent_path = self.relative_path(self.resolve_target_path(parent_doc, self.root / rel_path))
+                children_by_parent.setdefault(parent_path, []).append(rel_path)
+        for parent_path, child_paths in sorted(children_by_parent.items()):
+            parent = docs_by_path.get(parent_path)
+            if not parent:
+                continue
+            parent_sections = sections_by_path.get(parent_path, [])
+            has_boundary_section = any(any(term in section.get("title", "") for term in INDEX_SUBDOCUMENT_BOUNDARY_TITLE_TERMS) for section in parent_sections)
+            if not has_boundary_section:
+                diagnostics.append(
+                    self.diagnostic(
+                        parent_path,
+                        1,
+                        "warning",
+                        "PARENT_SUBDOCUMENT_BOUNDARY_SECTION_MISSING",
+                        "父规范存在子文档，但正文缺少子文档清单或边界章节",
+                    )
+                )
+            parent_body_refs = body_refs.get(parent_path, set())
+            for child_path in sorted(child_paths):
+                if child_path not in parent_body_refs:
+                    diagnostics.append(
+                        self.diagnostic(
+                            parent_path,
+                            1,
+                            "warning",
+                            "PARENT_SUBDOCUMENT_NOT_REGISTERED",
+                            f"父规范未在正文子文档清单或边界中登记实际子文档: {child_path}",
                         )
                     )
         return diagnostics
