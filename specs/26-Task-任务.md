@@ -156,7 +156,6 @@ Task 不作为 Human 直接管理入口。以下情况应回到 TaskPlan 层评�
 | `blocked_by` | 前置 Task ID 列表 | list[string] | 否 | 默认为空列表；必须同属一个任务计划 | Reference | AI、Code、Web |
 | `acceptance` | 验收标准和检查项 | string | 是 | 关闭前全部为 `- [x]` | Checklist | AI、Code、Web |
 | `verification` | 验证方式、验证命令或验证计划 | string | 否 | 执行进入验证前应补齐 | Evidence / Checklist | AI、Code、Web |
-| `risk_assessment` | 风险判断、已知不确定性和降级方式 | string | 否 | 高风险任务应填写 | Narrative / Checklist | AI、Human |
 | `assignee` | 执行者 | string | 否 | 可为 AI、Human 或角色名 | Reference | AI、Web |
 | `related_adrs` | 关联 ADR ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_changes` | 关联 Change commit 列表 | list[string] | 否 | 可记录 commit hash 或 Change 引用 | Reference | AI、Code、Web |
@@ -201,8 +200,8 @@ Task 的执行、验收、验证和关闭证据回写到 Task YAML。任务计�
 Code 应检查：
 
 1. Task 必须引用存在的 TaskPlan；
-2. 被引用 TaskPlan 的 `tasks` 必须包含当前 Task；
-3. Task 不得包含 `source_intent`、`parent_task` 或 `sub_tasks` 字段；
+2. 被引用 TaskPlan 的 `tasks` 必须包含当前 Task；双向引用不一致时必须报告诊断，不得静默通过；
+3. Task 不得包含 `source_intent`、`parent_task`、`sub_tasks`、`priority`、`importance` 或 `risk_assessment` 字段；
 4. `blocked_by` 只能引用同一任务计划内的 Task；
 5. 关闭 Task 前，其所属 SubTask 均已关闭；
 6. `closed` Task 必须具备 `closed_at`、`verification` 和 `closure_evidence`。
@@ -226,6 +225,7 @@ Web 可以展示 Task，但应把 TaskPlan 作为 Human 直接确认和关闭审
 | 任务计划归属 | 每个 Task 必须引用一个存在的 TaskPlan |
 | 无子任务冗余字段 | Task 不包含 `parent_task`、`sub_tasks` |
 | 无 Intent 字段 | Task 不包含 `source_intent` |
+| 无废弃判断字段 | Task 不包含 `priority`、`importance` 或 `risk_assessment`；风险、约束和降级说明写入 `description`、`acceptance` 或 `verification` |
 | 前置依赖 | `blocked_by` 只引用同一任务计划内 Task |
 | 关闭证据 | closed Task 具备验证和关闭证据 |
 

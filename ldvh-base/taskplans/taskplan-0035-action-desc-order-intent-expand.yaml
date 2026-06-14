@@ -5,8 +5,7 @@ status: closed
 created: '2026-06-05T20:00:29.116009'
 updated: '2026-06-05T21:05:05.852207'
 workarea: workarea-0006
-description: 由历史 Task task-0035 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
-  为准，避免复制多个权威事实。
+description: 由历史 Task task-0035 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
 success_criteria: '- [x] 关联任务 task-0035 满足其 acceptance、verification 和 closure_evidence。'
 source: '历史 Task task-0035 迁移生成；旧 source_intent: intent-0006'
 tasks:
@@ -16,7 +15,9 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-05T21:05:05.852214'
-completion_evidence: |-
-  历史任务计划迁移聚合证据：
-  - task-0035: Dashboard 待推进排序改为 updated 时间倒序（dashboard.ts）；ObjectDetail 页面新增 COLLAPSIBLE_FIELDS 机制，intent 类型默认展开关联内容，其他类型默认折叠；TypeScript 编译和 ESLint 通过，独立 agent 验证 4 项 acceptance 全部通过
+completion_evidence: '历史任务计划迁移聚合证据：
+
+  - task-0035: Dashboard 待推进排序改为 updated 时间倒序（dashboard.ts）；ObjectDetail 页面新增 COLLAPSIBLE_FIELDS 机制，intent 类型默认展开关联内容，其他类型默认折叠；TypeScript 编译和 ESLint 通过，独立 agent 验证 4 项 acceptance 全部通过'
 closed_at: '2026-06-05T21:05:05.852214'
+priority: P2
+importance: medium

@@ -188,6 +188,7 @@ ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.m
 | `related_tasks` | 关联 Task ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_changes` | 关联 Change commit 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 来源或关联 Memo ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_adrs` | 关联 ADR ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_rules` | 决策已升级或承接的规范、Rules 路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `superseded_by` | 替代本决策的新 ADR ID | string | 条件必填 | `status: superseded` 时必须填写 | Reference | AI、Code、Web |
 | `status_history` | 状态变化记录 | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
@@ -220,6 +221,7 @@ related_taskplans: []
 related_tasks: []
 related_changes: []
 related_memos: []
+related_adrs: []
 related_rules:
   - specs/22-Change-变更.md
 superseded_by:

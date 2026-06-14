@@ -5,8 +5,7 @@ status: active
 created: '2026-06-06T00:03:22.830866'
 updated: '2026-06-06T00:03:22.830866'
 workarea: workarea-0009
-description: 由历史 Task task-0046 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
-  为准，避免复制多个权威事实。
+description: 由历史 Task task-0046 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
 success_criteria: '- [ ] 关联任务 task-0046 满足其 acceptance、verification 和 closure_evidence。'
 source: '历史 Task task-0046 迁移生成；旧 source_intent: intent-0009'
 tasks:
@@ -17,3 +16,5 @@ related_docs:
 related_adrs: []
 related_memos: []
 related_pitfalls: []
+priority: P2
+importance: medium

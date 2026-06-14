@@ -29,7 +29,7 @@ const DIRECTORY_MAP: Record<ObjectType, string> = {
   memo: 'memos',
 }
 
-const LIST_SUMMARY_FIELDS = ['category', 'priority', 'severity', 'repeatability'] as const
+const LIST_SUMMARY_FIELDS = ['category', 'priority', 'importance', 'repeatability'] as const
 
 export interface WebFactResult {
   ok: boolean

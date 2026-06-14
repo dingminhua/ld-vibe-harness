@@ -5,8 +5,7 @@ status: closed
 created: '2026-06-05T17:33:13.190649'
 updated: '2026-06-05T20:53:44.996541'
 workarea: workarea-0004
-description: 由历史 Task task-0026 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
-  为准，避免复制多个权威事实。
+description: 由历史 Task task-0026 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
 success_criteria: '- [x] 关联任务 task-0026 满足其 acceptance、verification 和 closure_evidence。'
 source: '历史 Task task-0026 迁移生成；旧 source_intent: intent-0004'
 tasks:
@@ -16,7 +15,9 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-05T20:53:44.996546'
-completion_evidence: |-
-  历史任务计划迁移聚合证据：
-  - task-0026: 7个工作模型主规范统一为9章骨架（§1-§9），从14-16章压缩；
+completion_evidence: '历史任务计划迁移聚合证据：
+
+  - task-0026: 7个工作模型主规范统一为9章骨架（§1-§9），从14-16章压缩；'
 closed_at: '2026-06-05T20:53:44.996546'
+priority: P2
+importance: medium

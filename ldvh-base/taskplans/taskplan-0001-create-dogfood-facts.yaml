@@ -5,8 +5,7 @@ status: closed
 created: 2026-06-04
 updated: 2026-06-04
 workarea: workarea-0001
-description: 由历史 Task task-0001 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
-  为准，避免复制多个权威事实。
+description: 由历史 Task task-0001 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
 success_criteria: '- [x] 关联任务 task-0001 满足其 acceptance、verification 和 closure_evidence。'
 source: '历史 Task task-0001 迁移生成；旧 source_intent: intent-0001'
 tasks:
@@ -16,7 +15,9 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: &id001 2026-06-04
-completion_evidence: |-
-  历史任务计划迁移聚合证据：
-  - task-0001: ev-0001 记录第一组 Intent / Task / Evidence 事实实例通过最小 Fact Validator 校验，最终结果为 files=3 errors=0 warnings=0。
+completion_evidence: '历史任务计划迁移聚合证据：
+
+  - task-0001: ev-0001 记录第一组 Intent / Task / Evidence 事实实例通过最小 Fact Validator 校验，最终结果为 files=3 errors=0 warnings=0。'
 closed_at: *id001
+priority: P2
+importance: medium

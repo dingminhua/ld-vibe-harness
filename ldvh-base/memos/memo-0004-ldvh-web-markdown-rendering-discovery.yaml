@@ -4,38 +4,56 @@ title: LDVH Web 长文本 Markdown 呈现发现
 status: draft
 created: '2026-06-06T01:35:34.203999'
 updated: '2026-06-06T01:35:34.203999'
-description: |
-  ## 发现
+description: '## 发现
+
 
   LDVH Web 呈现中，事实对象仍应以 YAML 作为结构化事实源，但大段叙述性字段不适合以原始 YAML 文本方式直接阅读。更合适的方向是：YAML 字段继续承载权威事实，字段内容采用 Markdown 语义书写，Web 端按 Markdown 渲染。
 
+
   ## 多角度判断
 
+
   - 阅读体验：Web 不应只是 YAML 文件查看器，而应成为事实对象阅读器。
+
   - 事实源边界：Web 和 tools 是派生视图，不应替代 ldvh-base 下 YAML 事实源。
+
   - 字段契约：description、acceptance、verification、closure_evidence、notes 等长文本 string 字段可作为 Markdown-capable 字段候选。
+
   - 工具校验：Validator 后续可检查 checklist、链接路径、危险 HTML、对象引用等最小规则。
+
   - ADR 边界：仅支持 YAML 字段内 Markdown 渲染可先作为规范和 Web 渲染规则处理；若引入外部 .md 正文引用机制，则会改变事实源组织方式，应进入 ADR。
+
 
   ## 职责边界
 
+
   本 Memo 只记录发现和未决设计分支，不直接创建 Task，不作为实施依据，也不改变事实源边界。后续若进入执行，应另建 Task；若决定支持外部 Markdown 正文文件，应另建 ADR。
+
 
   ## 执行与验收说明
 
+
   本发现已通过 task-0052 进入执行，产出 specs/12-工作模型字段内容格式规范.md。Task 执行完成后需要 Human Gate 验收，原因是：
 
+
   - 规范文档属于事实源变更，需要人确认内容准确性和边界合理性；
+
   - 规范一旦 accepted，将影响后续 AI 写入、Web 渲染和 Validator 校验；
+
   - Human Gate 确保规范在落地 tools 和 web 之前，先经过人审。
+
 
   验收后，应新建生产对象承接 tools 和 web 落地：
 
+
   - Tools 落地：增强 fact_validate.py 校验规则
+
   - Web 落地：优化 ObjectDetail 字段语义化渲染
+
+  '
 source: 用户在讨论 LDVH Web 呈现时提出：YAML 格式的大段文本内容是否应以 Markdown 语义存储并在 Web 上按 Markdown 呈现
 category: discovery
-priority: medium
 related_tasks: []
 related_adrs: []
 related_docs: []
+importance: medium

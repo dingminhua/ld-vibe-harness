@@ -6,39 +6,63 @@ title_zh: 规范变更后同一会话内执行任务跳过新规范要求
 status: active
 created: '2026-06-04'
 updated: '2026-06-04'
-symptoms: |
-  刚修改完规范（如增加验证流程、检查列表格式等），在同一会话内立即执行受影响的任务时，
+symptoms: '刚修改完规范（如增加验证流程、检查列表格式等），在同一会话内立即执行受影响的任务时，
+
   AI 按旧模式执行，跳过刚写入的新规范要求。具体表现为：
+
   - acceptance 检查列表未逐项验证和勾选
+
   - 独立 agent 验证未启动
+
   - 任务直接从 executing 跳到提交，未经 review_needed
-trigger_conditions: |
-  规范变更后同一会话内执行受影响的任务。
+
+  '
+trigger_conditions: '规范变更后同一会话内执行受影响的任务。
+
   AI 的行为惯性是"按当前上下文继续推进"，而不是"停下来重新读取刚写的规范并按新规范执行"。
-root_cause: |
-  1. 规范是声明式的（写了"应该做什么"），但缺少强制性的检查点（"做了之后必须检查是否做了"）；
+
+  '
+root_cause: '1. 规范是声明式的（写了"应该做什么"），但缺少强制性的检查点（"做了之后必须检查是否做了"）；
+
   2. 规范变更后没有触发点让 AI 重新加载并调整行为；
+
   3. "执行者"和"验证者"是同一个 AI，不会主动启动检查来约束自己；
+
   4. acceptance 列表勾选没有强制触发点，AI 倾向于跳过勾选直接提交。
-resolution: |
-  1. 在 ldvh-close Skill 中增加关闭前强制检查：acceptance 列表是否已全部勾选为 - [x]，未勾选则必须重新审计；
+
+  '
+resolution: '1. 在 ldvh-close Skill 中增加关闭前强制检查：acceptance 列表是否已全部勾选为 - [x]，未勾选则必须重新审计；
+
   2. 在项目规则中增加：规范变更后执行受影响任务前，必须重新读取变更后的规范；
+
   3. 在 27-Task 关闭条件中增加：acceptance 列表必须已勾选，否则不允许关闭。
-verification: |
-  验证方式：后续任务执行时，AI 是否在关闭前检查 acceptance 勾选状态；
+
+  '
+verification: '验证方式：后续任务执行时，AI 是否在关闭前检查 acceptance 勾选状态；
+
   如果未勾选，是否触发重新审计而非直接关闭。
+
   ## 验证结果
+
 
   后续任务执行中，AI 已在 ldvh-close Skill 中增加关闭前强制检查 acceptance 勾选状态的逻辑，未勾选时触发重新审计。
 
+
   ## 结论
 
+
   验证通过。
-avoidance: |
-  1. 任务关闭前必须检查 acceptance 列表是否已全部勾选为 - [x]；
+
+  '
+avoidance: '1. 任务关闭前必须检查 acceptance 列表是否已全部勾选为 - [x]；
+
   2. 未勾选的 acceptance 列表 = 任务未完成，必须启动独立 agent 重新审计；
+
   3. 规范变更后执行受影响任务前，重新读取变更后的规范并声明"已按新规范调整执行计划"；
+
   4. 规范变更和任务执行尽量在不同会话内进行，让 AI 重新加载 Rules 和 Skill。
+
+  '
 applicability: 所有接入 LDVH 的项目，所有任务执行和关闭场景
 source_objects:
 - task-0004
@@ -51,5 +75,8 @@ tags:
 - task-lifecycle
 - verification
 - ai-collaboration
-severity: high
 repeatability: recurring
+notes: '## 影响程度迁移说明
+
+
+  历史 severity 字段值为 `high`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。'

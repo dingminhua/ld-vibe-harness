@@ -102,19 +102,19 @@ resolved → archived
 
 ### 4.1 Memo 与 Task
 
-Memo 可以分流为 Task，作为尚未任务化信息转化为可执行工作单元的路径。分流后，Memo 的 `resolved_to` 应记录 Task ID，Task 的 `source` 或 `related_docs` 可记录 Memo ID 或路径。
+Memo 可以分流为 Task，作为尚未任务化信息转化为可执行工作单元的路径。分流后，Memo 的 `resolved_to` 应记录 `{type: task, ref: <Task ID>}`，Task 的 `source` 或 `related_docs` 可记录 Memo ID 或路径。
 
 Task 的准入、状态和字段契约由 `specs/26-Task-任务.md` 定义。
 
 ### 4.2 Memo 与 ADR
 
-Memo 可以分流为 ADR，作为临时判断、偏好或方案取舍转化为长期决策的路径。分流后，Memo 的 `resolved_to` 应记录 ADR ID，ADR 的 `related_memos` 可记录来源 Memo。
+Memo 可以分流为 ADR，作为临时判断、偏好或方案取舍转化为长期决策的路径。分流后，Memo 的 `resolved_to` 应记录 `{type: adr, ref: <ADR ID>}`，ADR 的 `related_memos` 可记录来源 Memo。
 
 ADR 的准入、状态和字段契约由 `specs/21-ADR-决策.md` 定义。
 
 ### 4.3 Memo 与 WorkArea 和 TaskPlan
 
-Memo 可以分流为 WorkArea，作为长期范围、治理域或持续维护面的来源线索。Memo 也可以分流为 TaskPlan，作为一次目标、执行计划或关闭审查的来源线索。分流后，Memo 的 `resolved_to` 应记录 WorkArea 或 TaskPlan ID，目标对象的 `related_memos` 可记录来源 Memo。
+Memo 可以分流为 WorkArea，作为长期范围、治理域或持续维护面的来源线索。Memo 也可以分流为 TaskPlan，作为一次目标、执行计划或关闭审查的来源线索。分流后，Memo 的 `resolved_to` 应记录 `{type: workarea, ref: <WorkArea ID>}` 或 `{type: taskplan, ref: <TaskPlan ID>}`，目标对象的 `related_memos` 可记录来源 Memo。
 
 WorkArea 的准入、状态和字段契约由 `specs/24-WorkArea-工作域.md` 定义；TaskPlan 的准入、状态和字段契约由 `specs/27-TaskPlan-任务计划.md` 定义。
 
@@ -143,7 +143,7 @@ Memo 的创建、状态变化、分流和归档都应留下 Change。Change 的 
 3. 将 `draft` Memo 确认为 `active`；
 4. 将 `active` Memo 分流为 WorkArea、TaskPlan、Task、ADR、Pitfall、docs、管辖项目配置更新或其他事实源；
 5. 将 Memo 归档，且归档会丢失后续跟踪入口；
-6. 修改 `resolved_to`、`category`、`priority` 或核心描述；
+6. 修改 `resolved_to`、`category`、`importance` 或核心描述；
 7. 将 Memo 作为规避 WorkArea、TaskPlan、Task 或 ADR 准入判断的长期替代物。
 
 Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录承接。本文只规定 Memo 语境下需要确认的事实和影响范围。
@@ -164,8 +164,8 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `description` | 备忘内容描述 | string | 是 | 使用 YAML 块标量 | Narrative / Decision / Reference / Log | AI、Web |
 | `source` | 来源 | string | 是 | 谁在什么场景下表达或发现 | Reference / Narrative | AI、Web |
 | `category` | 分类 | string | 是 | `discovery`、`reminder`、`question`、`gap`、`preference` | Reference | AI、Code、Web |
-| `priority` | 优先级 | string | 否 | `low`、`medium`、`high`，默认 `low` | Reference | AI、Code、Web |
-| `resolved_to` | 分流目标对象 ID、路径或说明 | string | 条件必填 | `status: resolved` 时必须填写 | Reference | AI、Code、Web |
+| `importance` | 重要程度 | string | 是 | `high`、`medium`、`low`；判断标准见 `specs/05-工作模型基础规范.md` §7.3.1 | Reference | AI、Code、Web |
+| `resolved_to` | 分流目标对象引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}` | Reference | AI、Code、Web |
 | `resolved_at` | 分流日期 | date | 条件必填 | `status: resolved` 时必须填写 | Reference | AI、Code、Web |
 | `archive_reason` | 归档原因 | string | 条件必填 | `status: archived` 且未 resolved 时应填写 | Narrative | AI、Human |
 | `related_tasks` | 关联 Task ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -191,8 +191,10 @@ description: |
   在审查工作流程规范时发现错误处理和异常场景尚未形成统一规则，需要后续补充。
 source: 执行 task-0003 过程中的发现
 category: gap
-priority: medium
-resolved_to: task-0012
+importance: medium
+resolved_to:
+  type: task
+  ref: task-0012
 resolved_at: 2026-06-09
 archive_reason:
 related_tasks:
@@ -217,7 +219,7 @@ status_history:
 
 Memo 回写遵循以下规则：
 
-1. 创建 Memo 时，应写入 `ldvh-base/memos/`，并填写标题、描述、来源、分类、优先级和状态；
+1. 创建 Memo 时，应写入 `ldvh-base/memos/`，并填写标题、描述、来源、分类、重要程度和状态；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
 3. 状态变化后应更新 `updated`，并向 `status_history` 追加记录；
 4. Memo 分流为 WorkArea、TaskPlan、Task、ADR、Pitfall、docs、管辖项目配置更新或其他事实源时，应更新 `resolved_to` 和 `resolved_at`；
@@ -229,7 +231,7 @@ Memo 回写遵循以下规则：
 Memo 证据至少包括：
 
 1. 创建原因和来源；
-2. 分类和优先级；
+2. 分类和重要程度；
 3. 分流目标或归档原因；
 4. Human Gate 确认记录；
 5. 相关 WorkArea、TaskPlan、Task、ADR、Change 或文档引用。
@@ -256,16 +258,16 @@ Code 可依据本文实现以下能力：
 1. 解析 Memo YAML；
 2. 校验文件命名、ID、字段类型、必填字段和条件必填字段；
 3. 校验状态枚举和合法流转；
-4. 校验 `category`、`priority`、`resolved_to` 和引用字段；
+4. 校验 `category`、`importance`、`resolved_to`（`type` 枚举和 `ref` 引用有效性）和引用字段；
 5. 聚合 active Memo、待分流 Memo、已归档 Memo 和分流目标。
 
 Code 不得自行创建、分流、归档或删除 Memo，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/memos/` 权威事实源。
 
 ### 8.3 Web 信息同步
 
-Web 可展示 Memo 状态、分类、优先级、来源、分流目标、归档原因和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。
+Web 可展示 Memo 状态、分类、重要程度、来源、分流目标、归档原因和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。
 
-当前唯一允许的 Memo Web 写入是快速创建：Web 可通过 `POST /api/memos` 创建 `status: draft` 的新 Memo，并写入 `title`、`description`、`source`、`category`、`priority` 和 `status_history`。该能力是 `specs/08-Web信息同步实现规范.md` §8.2 的当前唯一 Web 事实源写入白名单。
+当前唯一允许的 Memo Web 写入是快速创建：Web 可通过 `POST /api/memos` 创建 `status: draft` 的新 Memo，并写入 `title`、`description`、`source`、`category`、`importance` 和 `status_history`。该能力是 `specs/08-Web信息同步实现规范.md` §8.2 的当前唯一 Web 事实源写入白名单。
 
 Web 不得在页面状态、缓存或数据库中维护独立 Memo 权威状态。Memo 创建后的字段编辑、状态流转、分流、归档和删除不得通过 Web 直接执行；如未来需要开放，必须先更新 08 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 
@@ -284,7 +286,7 @@ Memo 创建、分流和归档的具体行动流程由后续 40-59 工作流程�
 |---|---|---|---|---|
 | 上位约束承接要求 | Memo 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、分流规则和事实源边界 | 05、03.03、本文、20 集合索引、21 ADR、24 WorkArea、26 Task、27 TaskPlan、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、分流或归档 Memo 时 |
 | 入口可见要求 | AI 处理未任务化但有保留价值的信息、发现、提醒、问题或缺口时，应能定位本文 | 20 集合索引、运行入口摘要、Memo 分流流程入口 | AI 执行入口提示 | 信息保留、分流、归档或字段契约变化时 |
-| 确定性执行要求 | Memo 字段、状态、分类、优先级、引用、文件命名和条件必填应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Memo 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、分类枚举、分流规则或引用关系变化时 |
+| 确定性执行要求 | Memo 字段、状态、分类、重要程度、引用、文件命名和条件必填应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Memo 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、分类枚举、分流规则或引用关系变化时 |
 | Human 交互要求 | Memo 创建、确认、分流、归档、核心描述修改和用 Memo 规避对象准入时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
 | 生命周期触发要求 | Memo 规范变化后，应检查 20、05.01、ADR、WorkArea、TaskPlan、Task、Code、Web、适配措施和相关工作流程是否需要同步 | 集合索引维护、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Memo 字段、状态、事实源边界、适配规则或检查要求变化时 |
 

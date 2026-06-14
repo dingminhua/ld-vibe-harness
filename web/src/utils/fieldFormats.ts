@@ -4,14 +4,14 @@ export const SUMMARY_TEXT_FIELDS = [
   'rationale', 'observation', 'analysis', 'mitigation', 'resolution', 'decision',
   'symptoms', 'trigger_conditions', 'root_cause', 'avoidance', 'applicability',
   'governance_scope', 'archive_reason', 'notes', 'transition_reasons',
-  'risk_assessment', 'status_history', 'alternatives', 'reason',
+  'status_history', 'alternatives', 'reason',
   'scope', 'impact', 'summary', 'details', 'outcome', 'next_steps',
   'lessons', 'background', 'motivation',
 ];
 
 /** Markdown fields that should switch to ChecklistCard when the value is a GFM task list. */
 export const CHECKLIST_COMPAT_FIELDS = [
-  'success_criteria', 'constraints', 'verification', 'risk_assessment',
+  'success_criteria', 'constraints', 'verification',
   'trigger_conditions', 'avoidance', 'next_steps',
 ];
 

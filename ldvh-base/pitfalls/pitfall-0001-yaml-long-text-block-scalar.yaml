@@ -4,35 +4,55 @@ title: YAML 长文本含冒号或换行时触发解析错误
 status: active
 created: '2026-06-04'
 updated: '2026-06-04'
-symptoms: |
-  Evidence / Task / closure_evidence 等 YAML 字段包含中文标点、英文冒号、换行、命令或列表式说明时，
+symptoms: 'Evidence / Task / closure_evidence 等 YAML 字段包含中文标点、英文冒号、换行、命令或列表式说明时，
+
   直接写成未加引号的普通单行字符串会触发 YAML 解析错误。
-trigger_conditions: |
-  在 ldvh-base/ 下创建或编辑事实实例 YAML 时，长文本字段包含冒号、换行或列表式说明。
-root_cause: |
-  YAML 规范中未加引号的字符串遇到冒号加空格会被解析为键值对，换行会破坏缩进结构。
+
+  '
+trigger_conditions: '在 ldvh-base/ 下创建或编辑事实实例 YAML 时，长文本字段包含冒号、换行或列表式说明。
+
+  '
+root_cause: 'YAML 规范中未加引号的字符串遇到冒号加空格会被解析为键值对，换行会破坏缩进结构。
+
   AI 生成 YAML 时默认使用单行字符串，未考虑长文本场景。
-resolution: |
-  1. 在 ldvh-intake 和 ldvh-close Skill 中增加 YAML 长文本字段优先使用块标量 | 的写入要求；
+
+  '
+resolution: '1. 在 ldvh-intake 和 ldvh-close Skill 中增加 YAML 长文本字段优先使用块标量 | 的写入要求；
+
   2. 在 tools/check_fact_model.py 的 YAML_PARSE_ERROR 输出中增加块标量提示；
+
   3. 在 tests/tools/test_check_fact_model.py 中新增含冒号长文本块标量合法样例。
-verification: |
-  验证方式：运行 Fact Validator 和测试套件；
+
+  '
+verification: '验证方式：运行 Fact Validator 和测试套件；
+
   结果：Fact Validator files=5 errors=0 warnings=0；test_check_fact_model.py 13 passed；tests/tools 98 passed。
+
   ## 验证结果
+
 
   Fact Validator 校验 files=5 errors=0 warnings=0；test_check_fact_model.py 13 passed；tests/tools 98 passed，YAML 长文本块标量写入规则已生效。
 
+
   ## 结论
 
+
   验证通过。
-avoidance: |
-  创建或编辑事实实例 YAML 时，以下字段如包含中文标点、英文冒号、换行、命令、列表式说明或超过一短句，
+
+  '
+avoidance: '创建或编辑事实实例 YAML 时，以下字段如包含中文标点、英文冒号、换行、命令、列表式说明或超过一短句，
+
   应优先使用 YAML 块标量 |：
+
   - WorkArea：description、scope、constraints、archive_reason
+
   - TaskPlan：description、success_criteria、completion_evidence
+
   - Task / SubTask：description、acceptance、verification、closure_evidence
+
   - Pitfall：symptoms、trigger_conditions、root_cause、resolution、verification、avoidance
+
+  '
 applicability: 所有接入 LDVH 的项目，所有事实模型类型
 source_objects:
 - task-0002
@@ -43,5 +63,8 @@ tags:
 - yaml
 - fact-model
 - ai-collaboration
-severity: medium
 repeatability: recurring
+notes: '## 影响程度迁移说明
+
+
+  历史 severity 字段值为 `medium`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。'

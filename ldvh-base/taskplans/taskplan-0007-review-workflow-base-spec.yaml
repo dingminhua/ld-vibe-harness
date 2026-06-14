@@ -5,11 +5,10 @@ status: closed
 created: '2026-06-04'
 updated: '2026-06-05'
 workarea: workarea-0004
-description: 由历史 Task task-0007 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
-  为准，避免复制多个权威事实。
-success_criteria: |-
-  - [x] 关联任务 task-0007 满足其 acceptance、verification 和 closure_evidence。
-  - [x] 关联任务 task-0008 满足其 acceptance、verification 和 closure_evidence。
+description: 由历史 Task task-0007 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0007 满足其 acceptance、verification 和 closure_evidence。
+
+  - [x] 关联任务 task-0008 满足其 acceptance、verification 和 closure_evidence。'
 source: '历史 Task task-0007 迁移生成；旧 source_intent: intent-0004'
 tasks:
 - task-0007
@@ -19,8 +18,11 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-05'
-completion_evidence: |-
-  历史任务计划迁移聚合证据：
+completion_evidence: '历史任务计划迁移聚合证据：
+
   - task-0007: 已完成 08 号文档梳理。发现 5 处旧编号引用需更新：lines 54/315/324/536 引用"11 系列"需改为"05 系列"，line 537 引用"12 系列"需改为"06 系列"。文档架构合理，与 00-08 基础规范及 51-79 工作流规范的关系清晰。22 项检查表完整覆盖工作流规范写作要求。未发现需要新建任务或 Human Gate 的重大重构需求；5 处引用更新可在后续维护中一并处理。
-  - task-0008: 已完成 research 目录重排：15 个文件从编号有缺口的 [01-09,11,17,21-24] 整理为连续 [01-15]；6 处内部交叉引用已更新；research/12 引用的 research/16（不存在）已记录。
+
+  - task-0008: 已完成 research 目录重排：15 个文件从编号有缺口的 [01-09,11,17,21-24] 整理为连续 [01-15]；6 处内部交叉引用已更新；research/12 引用的 research/16（不存在）已记录。'
 closed_at: '2026-06-05'
+priority: P2
+importance: medium

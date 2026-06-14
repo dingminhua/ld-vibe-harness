@@ -16,7 +16,7 @@ const router = Router()
 
 const MEMOS_DIR = path.join(LDVH_BASE_DIR, 'memos')
 const VALID_CATEGORIES = ['discovery', 'reminder', 'question', 'gap', 'preference']
-const VALID_PRIORITIES = ['low', 'medium', 'high']
+const VALID_IMPORTANCE = ['low', 'medium', 'high']
 
 /** 生成下一个 memo ID */
 function nextMemoId(): string {
@@ -46,7 +46,7 @@ function slugify(title: string): string {
 
 router.post('/', (req: Request, res: Response): void => {
   try {
-    const { title, description, source, category, priority } = req.body
+    const { title, description, source, category, importance } = req.body
 
     // 校验必填字段
     const errors: string[] = []
@@ -68,7 +68,7 @@ router.post('/', (req: Request, res: Response): void => {
       return
     }
 
-    const p = priority && VALID_PRIORITIES.includes(priority) ? priority : 'low'
+    const memoImportance = importance && VALID_IMPORTANCE.includes(importance) ? importance : 'low'
     const today = new Date().toISOString().slice(0, 10)
     const id = nextMemoId()
     const slug = slugify(title.trim())
@@ -85,7 +85,7 @@ router.post('/', (req: Request, res: Response): void => {
       description: description.trim(),
       source: source.trim(),
       category,
-      priority: p,
+      importance: memoImportance,
       resolved_to: '',
       resolved_at: '',
       archive_reason: '',

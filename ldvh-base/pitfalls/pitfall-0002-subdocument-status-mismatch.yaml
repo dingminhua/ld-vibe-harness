@@ -6,32 +6,49 @@ title_zh: 主文档声明子文档 not-created 但实际文件包含完整内容
 status: superseded
 created: '2026-06-04'
 updated: '2026-06-04'
-symptoms: |
-  specs/22 §14 声明 22.01-Rules.md 和 22.04-Tools.md 为 not-created 状态，
+symptoms: 'specs/22 §14 声明 22.01-Rules.md 和 22.04-Tools.md 为 not-created 状态，
+
   但实际文件包含完整 active 级别内容，与 not-created 子文档骨架约束矛盾。
-trigger_conditions: |
-  在 specs 主文档中声明子文档状态时，未同步检查实际文件内容是否与声明一致。
-root_cause: |
-  子文档状态声明与文件内容更新不同步。主文档更新时只修改了状态字段，
+
+  '
+trigger_conditions: '在 specs 主文档中声明子文档状态时，未同步检查实际文件内容是否与声明一致。
+
+  '
+root_cause: '子文档状态声明与文件内容更新不同步。主文档更新时只修改了状态字段，
+
   未验证实际文件内容是否匹配 not-created 骨架约束（04 §6.1）。
-resolution: |
-  识别矛盾后记录为 Pitfall，后续应通过规范审计流程统一修正：
+
+  '
+resolution: '识别矛盾后记录为 Pitfall，后续应通过规范审计流程统一修正：
+
   要么将主文档中的状态声明更新为 active，要么将文件内容降级为 not-created 骨架。
-verification: |
-  验证方式：读取 22 主文档 §14 和 22.01/22.04 实际文件内容进行比对；
+
+  '
+verification: '验证方式：读取 22 主文档 §14 和 22.01/22.04 实际文件内容进行比对；
+
   结果：确认矛盾存在，已记录。
+
   ## 验证结果
+
 
   读取 22 主文档 §14 与 22.01/22.04 实际文件内容比对，确认状态声明与文件内容矛盾，已记录为 Pitfall。
 
+
   ## 结论
 
+
   验证通过。
-avoidance: |
-  修改子文档状态声明时，必须同步验证实际文件内容是否匹配：
+
+  '
+avoidance: '修改子文档状态声明时，必须同步验证实际文件内容是否匹配：
+
   - not-created：文件应只包含定位、不创建理由和检查项（04 §6.1 骨架）
+
   - active：文件应包含完整机制实践内容
+
   - active-prep：文件应包含正在准备的机制实践内容
+
+  '
 applicability: 所有接入 LDVH 的项目，所有事实模型子文档
 superseded_by: specs/03.01-规范文档规范.md
 source_objects: []
@@ -42,5 +59,8 @@ tags:
 - subdocument
 - consistency
 - specs
-severity: high
 repeatability: recurring
+notes: '## 影响程度迁移说明
+
+
+  历史 severity 字段值为 `high`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。'

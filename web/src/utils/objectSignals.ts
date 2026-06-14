@@ -1,27 +1,27 @@
-type SignalField = 'priority' | 'severity' | 'repeatability' | 'category';
+type SignalField = 'priority' | 'importance' | 'repeatability' | 'category';
 
 export type ObjectSignalSource = Partial<Record<SignalField, unknown>>;
 
-export const SIGNAL_FIELDS: SignalField[] = ['priority', 'severity', 'repeatability', 'category'];
+export const SIGNAL_FIELDS: SignalField[] = ['priority', 'importance', 'repeatability', 'category'];
 
 const FIELD_LABELS: Record<SignalField, { zh: string; en: string }> = {
   priority: { zh: '优先级', en: 'Priority' },
-  severity: { zh: '严重程度', en: 'Severity' },
+  importance: { zh: '重要程度', en: 'Importance' },
   repeatability: { zh: '复现概率', en: 'Repeatability' },
   category: { zh: '分类', en: 'Category' },
 };
 
 const VALUE_LABELS: Partial<Record<SignalField, Record<string, { zh: string; en: string }>>> = {
   priority: {
-    high: { zh: '高优先级', en: 'High priority' },
-    medium: { zh: '中优先级', en: 'Medium priority' },
-    low: { zh: '低优先级', en: 'Low priority' },
+    P0: { zh: 'P0 优先级', en: 'P0 priority' },
+    P1: { zh: 'P1 优先级', en: 'P1 priority' },
+    P2: { zh: 'P2 优先级', en: 'P2 priority' },
+    P3: { zh: 'P3 优先级', en: 'P3 priority' },
   },
-  severity: {
-    critical: { zh: '严重', en: 'Critical' },
-    high: { zh: '高严重度', en: 'High severity' },
-    medium: { zh: '中严重度', en: 'Medium severity' },
-    low: { zh: '低严重度', en: 'Low severity' },
+  importance: {
+    high: { zh: '高重要程度', en: 'High importance' },
+    medium: { zh: '中重要程度', en: 'Medium importance' },
+    low: { zh: '低重要程度', en: 'Low importance' },
   },
   repeatability: {
     recurring: { zh: '反复出现', en: 'Recurring' },
@@ -41,12 +41,12 @@ const VALUE_LABELS: Partial<Record<SignalField, Record<string, { zh: string; en:
 
 const SIGNAL_CLASSES: Partial<Record<SignalField, Record<string, string>>> = {
   priority: {
-    high: 'border-red-500/35 bg-red-500/10 text-red-500',
-    medium: 'border-amber-500/35 bg-amber-500/10 text-amber-500',
-    low: 'border-zinc-500/25 bg-zinc-500/10 text-ldvh-text-secondary',
+    P0: 'border-red-500/35 bg-red-500/10 text-red-500',
+    P1: 'border-orange-500/35 bg-orange-500/10 text-orange-500',
+    P2: 'border-amber-500/35 bg-amber-500/10 text-amber-500',
+    P3: 'border-zinc-500/25 bg-zinc-500/10 text-ldvh-text-secondary',
   },
-  severity: {
-    critical: 'border-red-500/40 bg-red-500/10 text-red-500',
+  importance: {
     high: 'border-orange-500/40 bg-orange-500/10 text-orange-500',
     medium: 'border-amber-500/35 bg-amber-500/10 text-amber-500',
     low: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
@@ -69,11 +69,10 @@ const SIGNAL_CLASSES: Partial<Record<SignalField, Record<string, string>>> = {
 
 const ACCENT_COLORS: Partial<Record<SignalField, Record<string, string>>> = {
   priority: {
-    high: '#ef4444',
-    medium: '#f59e0b',
+    P0: '#ef4444',
+    P1: '#f97316',
   },
-  severity: {
-    critical: '#ef4444',
+  importance: {
     high: '#f97316',
     medium: '#f59e0b',
   },

@@ -18,14 +18,14 @@ const FIXTURE_ALLOWED_FIELDS: Record<string, Set<string>> = {
   ]),
   taskplan: new Set([
     'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
-    'workarea', 'description', 'success_criteria', 'source', 'tasks',
+    'workarea', 'priority', 'importance', 'description', 'success_criteria', 'source', 'tasks',
     'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
     'status_history', 'review_requested_at', 'completion_evidence', 'closed_at',
   ]),
   task: new Set([
     'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
     'taskplan', 'description', 'source', 'blocked_by', 'acceptance', 'verification',
-    'risk_assessment', 'assignee', 'related_adrs', 'related_changes', 'related_docs',
+    'assignee', 'related_adrs', 'related_changes', 'related_docs',
     'affected_docs', 'deliverables', 'status_history', 'closed_at', 'closure_evidence',
   ]),
   subtask: new Set([
@@ -37,7 +37,7 @@ const FIXTURE_ALLOWED_FIELDS: Record<string, Set<string>> = {
 
 const FIXTURE_REQUIRED_FIELDS: Record<string, string[]> = {
   workarea: ['id', 'type', 'title', 'status', 'created', 'updated', 'description', 'source'],
-  taskplan: ['id', 'type', 'title', 'status', 'created', 'updated', 'workarea', 'description', 'success_criteria', 'source', 'tasks'],
+  taskplan: ['id', 'type', 'title', 'status', 'created', 'updated', 'workarea', 'priority', 'importance', 'description', 'success_criteria', 'source', 'tasks'],
   task: ['id', 'type', 'title', 'status', 'created', 'updated', 'taskplan', 'description', 'source', 'acceptance'],
   subtask: ['id', 'type', 'title', 'status', 'created', 'updated', 'task', 'description', 'source', 'acceptance'],
 }

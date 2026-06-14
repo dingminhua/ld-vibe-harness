@@ -44,7 +44,7 @@
   - 左上：对象 ID，`ldvh-meta-muted`；
   - 右上：`CopyPathButton` + `StatusBadge`；
   - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，标题前使用 `ObjectTypeIcon(obj.type)` 识别对象身份，左侧使用状态语义短线突出，不通过放大字号突出；
-  - 可选信号：priority、severity、repeatability、category 等短标签；仅当对应对象的字段契约定义该字段时展示，不得为 Task / SubTask 杜撰 priority、severity、category 或 tags；
+  - 可选信号：priority、importance、repeatability、category 等短标签；仅当对应对象的字段契约定义该字段时展示，不得为 Task / SubTask 杜撰 priority、importance、category 或 tags；
   - 底部：`formatDateTime(updated)`，格式为 `YYYY-MM-DD HH:mm`。
 - 复制图标复制对象 YAML 文件完整路径，使用 API 返回的 `path`。
 - 点击复制图标不得进入详情页；点击卡片外层空白、标题带、ID、状态徽章或更新时间进入对象详情页。

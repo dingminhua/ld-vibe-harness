@@ -5,17 +5,22 @@ status: active
 created: '2026-06-12T11:10:00'
 updated: '2026-06-12T11:20:00'
 workarea: workarea-9002
-description: |
-  少量任务、无子任务的轻量计划，用于和复杂子任务计划对比卡片密度。
-success_criteria: |
-  - [ ] 轻量计划不被子任务区域撑高
+description: '少量任务、无子任务的轻量计划，用于和复杂子任务计划对比卡片密度。
+
+  '
+success_criteria: '- [ ] 轻量计划不被子任务区域撑高
+
   - [ ] 无子任务任务行保持紧凑
+
+  '
 source: Web 测试夹具
 tasks:
-  - task-9021
-  - task-9022
-  - task-9023
+- task-9021
+- task-9022
+- task-9023
 related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
+priority: P2
+importance: medium

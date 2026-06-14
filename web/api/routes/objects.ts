@@ -350,6 +350,29 @@ async function enrichTaskPlans(items: ListedObject[]): Promise<ListedObject[]> {
   })
 }
 
+async function enrichMemos(items: ListedObject[]): Promise<ListedObject[]> {
+  return items.map((item) => {
+    const data = readFactData(item.path)
+    return {
+      ...item,
+      source: toStringValue(data.source) || undefined,
+      description: toStringValue(data.description) || undefined,
+    }
+  })
+}
+
+async function enrichPitfalls(items: ListedObject[]): Promise<ListedObject[]> {
+  return items.map((item) => {
+    const data = readFactData(item.path)
+    return {
+      ...item,
+      resolution: toStringValue(data.resolution) || undefined,
+      source_tasks: toStringArray(data.source_tasks),
+      source_memos: toStringArray(data.source_memos),
+    }
+  })
+}
+
 /**
  * GET /api/objects/:type - 列出指定类型的对象
  */
@@ -384,10 +407,20 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   if (isRecord(result.data) && type === 'taskplan') {
     result.data.items = await enrichTaskPlans(items)
   }
+  if (isRecord(result.data) && type === 'adr') {
+    result.data.items = await enrichAdrs(items)
+  }
+  if (isRecord(result.data) && type === 'memo') {
+    result.data.items = await enrichMemos(items)
+  }
+  if (isRecord(result.data) && type === 'pitfall') {
+    result.data.items = await enrichPitfalls(items)
+  }
 
   res.json(result)
 })
 
+/**
 /**
  * GET /api/objects/:type/:id - 查看对象详情
  */
@@ -468,3 +501,20 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
 })
 
 export default router
+async function enrichAdrs(items: ListedObject[]): Promise<ListedObject[]> {
+  return items.map((item) => {
+    const data = readFactData(item.path)
+    return {
+      ...item,
+      date: toStringValue(data.date) || undefined,
+      decision: toStringValue(data.decision) || undefined,
+      consequences: toStringValue(data.consequences) || undefined,
+      affects: toStringArray(data.affects),
+      related_rules: toStringArray(data.related_rules),
+      superseded_by: toStringValue(data.superseded_by) || undefined,
+      alternatives: toStringValue(data.alternatives) || undefined,
+      status: toStringValue(data.status) || item.status,
+    }
+  })
+}
+

@@ -73,7 +73,7 @@ export interface ObjectItem {
   updated: string;
   category?: string;
   priority?: string;
-  severity?: string;
+  importance?: string;
   repeatability?: string;
   plans?: RelatedPlanSummary[];
   planTotal?: number;
@@ -94,8 +94,23 @@ export interface ObjectItem {
   hasReviewRequestedAt?: boolean;
   hasCompletionEvidence?: boolean;
   hasClosedAt?: boolean;
-  workarea?: string;
-  workareaSummary?: RelatedObjectSummary;
+ workarea?: string;
+ workareaSummary?: RelatedObjectSummary;
+  /** ADR-specific fields */
+  date?: string;
+  decision?: string;
+  consequences?: string;
+  affects?: string[];
+  related_rules?: string[];
+  superseded_by?: string;
+  alternatives?: string;
+  /** Memo-specific */
+  source?: string;
+  description?: string;
+  /** Pitfall-specific */
+  resolution?: string;
+  source_tasks?: string[];
+  source_memos?: string[];
 }
 
 export interface ObjectStatusOption {

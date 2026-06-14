@@ -515,6 +515,108 @@ export default function ObjectList() {
       );
     }
 
+    if (currentType === 'adr') {
+      const affects = obj.affects ?? [];
+      const relatedRules = obj.related_rules ?? [];
+      const supersededBy = obj.superseded_by ?? '';
+
+      return (
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
+          {(affects.length > 0 || relatedRules.length > 0) && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {affects.length > 0 && (
+                <span className="ldvh-caption-strong shrink-0 rounded-md border border-ldvh-border px-1.5 py-0.5 text-ldvh-text-secondary">
+                  {locale === 'en' ? 'Affects' : '影响范围'}
+                </span>
+              )}
+              {affects.map((item) => (
+                <span
+                  key={item}
+                  className="ldvh-chip max-w-[16rem] truncate rounded-md border border-ldvh-border/50 bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-primary"
+                  title={item}
+                >
+                  {item}
+                </span>
+              ))}
+              {relatedRules.map((item) => (
+                <span
+                  key={item}
+                  className="ldvh-chip max-w-[16rem] truncate rounded-md border border-violet-500/25 bg-violet-500/10 px-1.5 py-0.5 text-violet-400"
+                  title={item}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          )}
+          {supersededBy && (
+            <div className="flex items-center gap-1.5 rounded-md border border-dashed border-amber-500/30 bg-amber-500/5 px-2.5 py-1.5">
+              <ArrowRight size={12} className="shrink-0 text-amber-400" />
+              <span className="ldvh-caption text-amber-300">
+                {locale === 'en' ? 'Superseded by ' + supersededBy : '已被 ' + supersededBy + ' 替代'}
+              </span>
+            </div>
+          )}
+        </ObjectCardFrame>
+      );
+    }
+
+    if (currentType === 'pitfall') {
+      const hasResolution = obj.resolution || '';
+      const isResolved = hasResolution.length > 0;
+
+      return (
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
+          <ObjectSignalBadges source={obj} locale={locale} />
+          {isResolved && (
+            <div className="flex items-center gap-1.5 rounded-md border border-dashed border-emerald-500/30 bg-emerald-500/5 px-2.5 py-1.5">
+              <CheckCircle2 size={12} className="shrink-0 text-emerald-400" />
+              <span className="ldvh-caption text-emerald-300">
+                {locale === 'en' ? 'Resolved' : '已解决'}
+              </span>
+            </div>
+          )}
+          {!isResolved && obj.status !== 'closed' && obj.status !== 'resolved' && obj.status !== 'archived' && (
+            <div className="flex items-center gap-1.5 rounded-md border border-dashed border-amber-500/30 bg-amber-500/5 px-2.5 py-1.5">
+              <CircleAlert size={12} className="shrink-0 text-amber-400" />
+              <span className="ldvh-caption text-amber-300">
+                {locale === 'en' ? 'Unresolved' : '未解决'}
+              </span>
+            </div>
+          )}
+        </ObjectCardFrame>
+      );
+    }
+
+    if (currentType === 'memo') {
+      const memoSource = obj.source || '';
+      const description = obj.description || '';
+
+      return (
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
+          <ObjectSignalBadges source={obj} locale={locale} />
+          {memoSource && (
+            <div className="flex items-center gap-1.5">
+              <span className="ldvh-caption-strong shrink-0 rounded-md border border-ldvh-border px-1.5 py-0.5 text-ldvh-text-secondary">
+                {locale === 'en' ? 'Source' : '来源'}
+              </span>
+              <span
+                className="ldvh-chip max-w-[16rem] truncate rounded-md border border-ldvh-border/50 bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-primary"
+                title={memoSource}
+              >
+                {memoSource}
+              </span>
+            </div>
+          )}
+          {description && (
+            <p className="ldvh-body-muted line-clamp-2 border-l-2 border-ldvh-border/40 pl-2">
+              {description}
+            </p>
+          )}
+        </ObjectCardFrame>
+      );
+    }
+
     return (
       <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
         <ObjectSignalBadges source={obj} locale={locale} />

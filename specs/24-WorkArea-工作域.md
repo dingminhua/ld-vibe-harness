@@ -95,8 +95,9 @@ archived -> active
 1. 工作域不直接管理 Task 或 SubTask；
 2. 工作域不保存任务序列、执行步骤或关闭证据；
 3. 工作域可以通过派生展示聚合其下任务计划的状态、产物和风险；
-4. 任务计划关闭后不改变工作域状态；
-5. 一个工作域可以长期产生多个任务计划。
+4. 工作域的 `taskplans` 字段记录归属本工作域的 TaskPlan ID 列表，与 TaskPlan 的 `workarea` 字段构成双向引用；Code 发现双向引用不一致时应报告诊断；
+5. 任务计划关闭后不改变工作域状态；
+6. 一个工作域可以长期产生多个任务计划。
 
 ### 4.2 工作域与 ADR、Memo、Pitfall
 
@@ -135,6 +136,7 @@ ADR、Memo、Pitfall 可以引用工作域，用于表达某条决策、备忘�
 | `related_adrs` | 关联 ADR ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 关联 Memo ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联 Pitfall ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `taskplans` | 所属 TaskPlan ID 列表 | list[string] | 否 | 默认为空列表；由 TaskPlan 的 `workarea` 反向聚合 | Reference | AI、Code、Web |
 | `status_history` | 状态变化记录 | list[object] | 否 | 状态变化时追加 | Log | AI、Code |
 | `archive_reason` | 归档原因 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Code、Web |
 
@@ -159,6 +161,7 @@ related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
+taskplans: []
 ```
 
 ---
@@ -174,7 +177,8 @@ Code 应检查：
 1. 文件名、ID、type、status 合法；
 2. `archived` 状态必须提供 `archive_reason`；
 3. 工作域不出现任务计划、任务或子任务的执行状态字段；
-4. 引用字段格式和路径存在性。
+4. `taskplans` 中每个 TaskPlan 必须存在且 `workarea` 指回当前工作域；
+5. 引用字段格式和路径存在性。
 
 Web 应显示工作域列表和详情，但不得把工作域展示为“待关闭”对象。
 

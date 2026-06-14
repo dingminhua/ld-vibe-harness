@@ -66,6 +66,10 @@ review_needed -> closed
 review_needed -> executing
 ```
 
+| 流转 | 触发条件 | 说明 |
+|---|---|---|
+| `planned` -> `executing` | 开始执行；`blocked_by` 中所有 SubTask 必须为 `closed` | 硬前置约束，不满足时不得进入执行 |
+
 ---
 ## 4. 对象关系
 
@@ -83,7 +87,14 @@ review_needed -> executing
 
 ### 4.2 子任务依赖
 
-子任务可以通过 `blocked_by` 引用同一 Task 下的其他 SubTask，表示执行前置关系。不同 Task 下的执行关系应由 Task 的 `blocked_by` 表达。
+子任务可以通过 `blocked_by` 引用同一 Task 下的其他 SubTask，表示硬前置依赖。`blocked_by` 表示当前子任务进入执行态前必须等待的前置子任务列表。不同 Task 下的执行关系应由 Task 的 `blocked_by` 表达。
+
+前置依赖规则如下：
+
+1. `blocked_by` 为 SubTask ID 列表，可为空；
+2. 每个 SubTask ID 必须引用已存在且同属一个 Task 的 SubTask；
+3. 当前 SubTask 不得引用自身；
+4. 当前 SubTask 从 `planned` 进入 `executing` 前，`blocked_by` 中所有 SubTask 必须为 `closed`。
 
 ---
 ## 5. Human Gate
@@ -147,8 +158,9 @@ Code 应检查：
 1. 子任务必须引用存在的 Task；
 2. 子任务不得拥有子任务字段；
 3. `blocked_by` 只能引用同一 Task 下的 SubTask；
-4. `closed` 子任务必须具备 `closed_at`、`verification` 和 `closure_evidence`；
-5. 关闭 Task 前，其所属子任务必须关闭。
+4. 子任务从 `planned` 进入 `executing` 前，`blocked_by` 中所有 SubTask 必须为 `closed`；
+5. `closed` 子任务必须具备 `closed_at`、`verification` 和 `closure_evidence`；
+6. 关闭 Task 前，其所属子任务必须关闭。
 
 Web 可以展示子任务，但不应把子任务作为 Human 直接管理入口。
 
@@ -170,6 +182,7 @@ Web 可以展示子任务，但不应把子任务作为 Human 直接管理入口
 | 无递归 | 子任务没有 `sub_tasks` 或 `parent_task` 字段 |
 | 关闭证据 | closed 子任务具备验证和关闭证据 |
 | 同级依赖 | `blocked_by` 只引用同一 Task 下子任务 |
+| 前置约束 | `planned` → `executing` 前 `blocked_by` 中所有 SubTask 必须为 `closed` |
 
 ---
 ## 11. 待补齐事项

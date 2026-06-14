@@ -14,7 +14,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
   const [description, setDescription] = useState('');
   const [source, setSource] = useState('');
   const [category, setCategory] = useState('discovery');
-  const [priority, setPriority] = useState('low');
+  const [importance, setImportance] = useState('low');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -25,7 +25,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
     setDescription('');
     setSource('');
     setCategory('discovery');
-    setPriority('low');
+    setImportance('low');
     setError(null);
     setSuccess(false);
   };
@@ -39,7 +39,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
       const res = await fetch(`${API_BASE}/memos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, source, category, priority }),
+        body: JSON.stringify({ title, description, source, category, importance }),
       });
 
       if (!res.ok) {
@@ -147,10 +147,10 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
                 </select>
               </div>
               <div>
-                <label className="ldvh-caption-strong mb-1 block">{t('memo.priority')}</label>
+                <label className="ldvh-caption-strong mb-1 block">{t('memo.importance')}</label>
                 <select
-                  value={priority}
-                  onChange={e => setPriority(e.target.value)}
+                  value={importance}
+                  onChange={e => setImportance(e.target.value)}
                   className="ldvh-body w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 focus:border-ldvh-accent/40 focus:outline-none"
                 >
                   <option value="low">{t('memo.pLow')}</option>

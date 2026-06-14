@@ -6,14 +6,16 @@ title_zh: WorkArea 详情页字段展示观察备忘
 status: active
 created: '2026-06-13T09:26:00'
 updated: '2026-06-13T09:26:00'
-description: |
-  这个备忘用于验证 WorkArea 的 related_memos 字段是否能在关联材料区域展示，
+description: '这个备忘用于验证 WorkArea 的 related_memos 字段是否能在关联材料区域展示，
+
   并能在右侧扩展阅读区作为对象引用打开。
+
+  '
 source: WorkArea 全字段测试数据补齐
 category: discovery
-priority: medium
 related_tasks: []
 related_adrs:
 - adr-9001
 related_workareas:
 - workarea-9003
+importance: medium

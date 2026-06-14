@@ -5,19 +5,25 @@ status: active
 created: '2026-06-13T10:35:00'
 updated: '2026-06-13T10:40:00'
 workarea: workarea-9003
-description: |
-  用于观察计划内 Task 已经关闭，但计划层 completion_evidence 尚未整理时，关闭判断区域如何提示不能进入待关闭审查。
-success_criteria: |
-  - [x] task-9081 已关闭，并完成目标字段核对
+description: '用于观察计划内 Task 已经关闭，但计划层 completion_evidence 尚未整理时，关闭判断区域如何提示不能进入待关闭审查。
+
+  '
+success_criteria: '- [x] task-9081 已关闭，并完成目标字段核对
+
   - [x] task-9082 已关闭，并完成任务队列核对
+
   - [x] 两个 Task 均已有各自的关闭证据
+
+  '
 source: 用户要求保留一个“任务已完成但计划证据未整理”的反例，用于检查 active 计划不能被误判为可关闭。
 tasks:
-  - task-9081
-  - task-9082
+- task-9081
+- task-9082
 related_docs:
-  - docs/task-9081-field-check.md
-  - docs/task-9082-queue-check.md
+- docs/task-9081-field-check.md
+- docs/task-9082-queue-check.md
 related_adrs: []
 related_memos: []
 related_pitfalls: []
+priority: P2
+importance: medium

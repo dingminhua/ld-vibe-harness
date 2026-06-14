@@ -54,18 +54,18 @@ const META_KEYS = [
   'aggregated_related_changes',
 ];
 const TASK_AUXILIARY_META_KEYS = ['assignee'];
-const COMMON_AUXILIARY_META_KEYS = ['category', 'priority', 'severity', 'repeatability', 'tags', 'scope', 'impact', 'assignee'];
+const COMMON_AUXILIARY_META_KEYS = ['category', 'priority', 'importance', 'repeatability', 'tags', 'scope', 'impact', 'assignee'];
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
   task: TASK_AUXILIARY_META_KEYS,
-  memo: ['category', 'priority', 'tags'],
+  memo: ['category', 'importance', 'tags'],
   profile: ['project_name', 'project_kind', 'language', 'framework'],
-  pitfall: ['severity', 'repeatability', 'tags'],
+  pitfall: ['repeatability', 'tags'],
 };
 /** Task 类型字段展示优先顺序 */
 const TASK_FIELD_ORDER = ['acceptance', 'blocked_by', 'related_docs', 'deliverables'];
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls'],
-  taskplan: ['workarea', 'description', 'success_criteria', 'source', 'tasks', 'completion_evidence', 'related_docs'],
+  taskplan: ['workarea', 'priority', 'importance', 'description', 'success_criteria', 'source', 'tasks', 'completion_evidence', 'related_docs'],
   task: TASK_FIELD_ORDER,
   subtask: ['task', 'description', 'source', 'acceptance', 'blocked_by', 'verification', 'closure_evidence'],
   profile: [
@@ -180,10 +180,9 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   affects: { zh: '影响对象', en: 'Affects' },
   scope: { zh: '范围', en: 'Scope' },
   impact: { zh: '影响范围', en: 'Impact' },
-  risk_assessment: { zh: '风险判断', en: 'Risk Assessment' },
-  severity: { zh: '严重程度', en: 'Severity' },
   category: { zh: '分类', en: 'Category' },
   priority: { zh: '优先级', en: 'Priority' },
+  importance: { zh: '重要程度', en: 'Importance' },
   assignee: { zh: '执行者', en: 'Assignee' },
   tags: { zh: '标签', en: 'Tags' },
   path: { zh: '路径', en: 'Path' },
@@ -215,12 +214,12 @@ const FIELD_VALUE_LOCALES: Record<string, Record<string, { zh: string; en: strin
     gap: { zh: '缺口', en: 'Gap' },
   },
   priority: {
-    high: { zh: '高', en: 'High' },
-    medium: { zh: '中', en: 'Medium' },
-    low: { zh: '低', en: 'Low' },
+    P0: { zh: 'P0', en: 'P0' },
+    P1: { zh: 'P1', en: 'P1' },
+    P2: { zh: 'P2', en: 'P2' },
+    P3: { zh: 'P3', en: 'P3' },
   },
-  severity: {
-    critical: { zh: '严重', en: 'Critical' },
+  importance: {
     high: { zh: '高', en: 'High' },
     medium: { zh: '中', en: 'Medium' },
     low: { zh: '低', en: 'Low' },
