@@ -7,6 +7,7 @@ MODULE_PATH = Path(__file__).resolve().parents[2] / "code" / "specs_validate.py"
 spec = importlib.util.spec_from_file_location("specs_validate", MODULE_PATH)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
+from spec_checks import consistency as consistency_checks
 from spec_checks import deployment_entries as deployment_entries_checks
 from spec_checks import ldvh_landing as ldvh_landing_checks
 from spec_checks import web_validate as web_validate_checks
@@ -275,6 +276,12 @@ def test_doc_main_returns_zero_when_no_issues(tmp_path, capsys):
     assert "检查通过" in capsys.readouterr().out
 
 
+def test_consistency_core_implementation_lives_in_spec_checks():
+    assert checker.consistency_checks is consistency_checks
+    assert consistency_checks.consistency_check.__module__ == "spec_checks.consistency"
+    assert consistency_checks.consistency_main.__module__ == "spec_checks.consistency"
+
+
 def test_consistency_reports_retired_workflow_consumption(tmp_path):
     path = write_md(
         tmp_path / "40-工作流程集合索引.md",
@@ -429,7 +436,8 @@ def test_consistency_skips_non_active_workflow(tmp_path):
 # ── 索引文档强制章节检查 ──────────────────────────────────────────
 
 
-def test_consistency_reports_index_section_missing(tmp_path):
+def test_consistency_reports_index_section_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "SPECS_DIR", tmp_path)
     write_md(
         tmp_path / "20-工作模型集合索引.md",
         """
@@ -450,7 +458,8 @@ def test_consistency_reports_index_section_missing(tmp_path):
     assert any(issue.code == "INDEX_SECTION_MISSING" for issue in issues)
 
 
-def test_consistency_index_passes_when_required_sections_present(tmp_path):
+def test_consistency_index_passes_when_required_sections_present(tmp_path, monkeypatch):
+    monkeypatch.setattr(checker, "SPECS_DIR", tmp_path)
     write_md(
         tmp_path / "20-工作模型集合索引.md",
         """
