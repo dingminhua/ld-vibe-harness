@@ -5,7 +5,7 @@
 > 定位：LDVH Web 信息同步构成要素的实现边界、派生视图、Confirm UI、受控轻写入白名单和 Web 实现文档边界的权威规范
 > 适用范围：LDVH 项目及所有接入 LDVH 的管辖项目中的 `web/`、Web 信息同步实现、Web 文档、派生视图和 Confirm UI
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档基础规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/05-工作模型基础规范.md`、`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/10-测试基础规范.md`
+> 相关规范：`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/10-测试基础规范.md`
 > 参考实现：LDVH 在 `web/` 下提供了一套 Web 参考实现；LDVH 的核心是规范系统，用户可根据本文约束自行实现 Web
 
 ---

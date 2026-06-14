@@ -4,7 +4,7 @@
 > 定位：定义 WorkArea / 工作域工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写和适配规则
 > 适用范围：所有接入 LDVH 且需要长期管理工作范围、系统领域、治理域或产品域的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/03.03-工作模型文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/21-TaskPlan-任务计划.md`
+> 相关规范：`specs/05.01-工作字段内容格式规范.md`
 
 ```yaml
 ldvh_member:
