@@ -18,6 +18,7 @@ if str(CODE_DIR) not in sys.path:
 from spec_checks import doc_structure as doc_structure_checks
 from spec_checks import governed_projects as governed_projects_checks
 from spec_checks import human_gate as human_gate_checks
+from spec_checks import landing as landing_checks
 from spec_checks import refs as refs_checks
 from spec_checks import runtime_projection as runtime_projection_checks
 
@@ -926,17 +927,14 @@ def refs_main(paths):
 # landing — 规范落地要求表检查
 # ══════════════════════════════════════════════════════════════════════
 
-LANDING_SECTION_TITLE = "规范落地要求"
-LANDING_REQUIRED_COLUMNS = ["落地要求", "要求内容", "保障机制", "同步类型", "触发条件"]
-LANDING_ALLOWED_TYPES = {
-    "上位约束承接要求",
-    "入口可见要求",
-    "流程复用要求",
-    "子 Agent 思考要求",
-    "确定性执行要求",
-    "Human 交互要求",
-    "生命周期触发要求",
-}
+LANDING_SECTION_TITLE = landing_checks.LANDING_SECTION_TITLE
+LANDING_REQUIRED_COLUMNS = landing_checks.LANDING_REQUIRED_COLUMNS
+LANDING_ALLOWED_TYPES = landing_checks.LANDING_ALLOWED_TYPES
+
+
+def sync_landing_config():
+    landing_checks.PROJECT_ROOT = PROJECT_ROOT
+    landing_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
 LANDING_REPORT_OWNER_AREAS = {
     "上位约束承接要求": "specs",
     "入口可见要求": "runtime_projection",
@@ -1158,108 +1156,39 @@ LANDING_REPORT_CAPABILITY_CHECKS = [
 
 
 def landing_default_check_paths():
-    if FORMAL_SPECS_DIR.exists():
-        return [str(path) for path in sorted(FORMAL_SPECS_DIR.glob("*.md"))]
-    return []
+    sync_landing_config()
+    return landing_checks.default_check_paths()
 
 
 def landing_is_formal_spec(path):
-    resolved = path.resolve()
-    try:
-        rel = resolved.relative_to(PROJECT_ROOT)
-    except ValueError:
-        return False
-    return len(rel.parts) == 2 and rel.parts[0] == "specs" and path.suffix == ".md"
+    sync_landing_config()
+    return landing_checks.is_formal_spec(path)
 
 
 def landing_strip_section_number(title):
-    return DOC_NUMBERED_HEADING_RE.sub("", title, count=1).strip()
+    return landing_checks.strip_section_number(title)
 
 
 def landing_split_cells(line):
-    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+    return landing_checks.split_cells(line)
 
 
 def landing_is_separator(cells):
-    return all(set(cell) <= {"-", ":", " "} for cell in cells)
+    return landing_checks.is_separator(cells)
 
 
 def landing_clean_cell(value):
-    text = str(value).strip()
-    if len(text) >= 2 and text.startswith("`") and text.endswith("`"):
-        return text[1:-1]
-    return text
+    return landing_checks.clean_cell(value)
 
 
 def landing_relative_path(path):
-    try:
-        return str(Path(path).resolve().relative_to(PROJECT_ROOT))
-    except ValueError:
-        return str(path)
+    sync_landing_config()
+    return landing_checks.landing_relative_path(path)
 
 
 def landing_extract_requirements_file(path):
-    requirements = []
-    if not landing_is_formal_spec(path):
-        return requirements
-
-    lines = path.read_text(encoding="utf-8").splitlines()
-    in_code_block = False
-    in_landing_section = False
-    header_seen = False
-    in_table = False
-
-    for index, line in enumerate(lines, start=1):
-        stripped = line.strip()
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            in_code_block = not in_code_block
-            continue
-        if in_code_block:
-            continue
-
-        heading = HEADING_RE.match(line)
-        if heading:
-            level = len(heading.group(1))
-            title = landing_strip_section_number(heading.group(2).strip())
-            in_landing_section = level == 2 and title == LANDING_SECTION_TITLE
-            header_seen = False
-            in_table = False
-            continue
-
-        if not in_landing_section:
-            continue
-        if not stripped:
-            if in_table:
-                break
-            continue
-        if not stripped.startswith("|"):
-            if in_table:
-                break
-            continue
-
-        cells = landing_split_cells(stripped)
-        if landing_is_separator(cells):
-            continue
-        if not header_seen:
-            header_seen = True
-            in_table = True
-            continue
-        if len(cells) < len(LANDING_REQUIRED_COLUMNS):
-            continue
-
-        requirements.append(
-            {
-                "source": landing_relative_path(path),
-                "line": index,
-                "requirement_type": landing_clean_cell(cells[0]),
-                "content": landing_clean_cell(cells[1]),
-                "guarantee_mechanism": landing_clean_cell(cells[2]),
-                "sync_type": landing_clean_cell(cells[3]),
-                "trigger": landing_clean_cell(cells[4]),
-            }
-        )
-
-    return requirements
+    sync_landing_config()
+    return landing_checks.extract_requirements_file(path)
 
 
 def landing_report_match_marker(text, markers):
@@ -1848,125 +1777,18 @@ def landing_report_main(paths=None, output_format="text"):
 
 
 def landing_check_file(path):
-    issues = []
-    if not landing_is_formal_spec(path):
-        return issues
-
-    lines = path.read_text(encoding="utf-8").splitlines()
-    in_code_block = False
-    in_landing_section = False
-    section_line = None
-    header_seen = False
-    table_seen = False
-    row_seen = False
-
-    for index, line in enumerate(lines, start=1):
-        stripped = line.strip()
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            in_code_block = not in_code_block
-            continue
-        if in_code_block:
-            continue
-
-        heading = HEADING_RE.match(line)
-        if heading:
-            level = len(heading.group(1))
-            title = landing_strip_section_number(heading.group(2).strip())
-            if in_landing_section and not table_seen:
-                issues.append(Issue(path, section_line, "规范落地要求章节缺少表格", code="LANDING_TABLE_MISSING"))
-            elif in_landing_section and table_seen and not row_seen:
-                issues.append(Issue(path, section_line, "规范落地要求表格缺少数据行", code="LANDING_ROW_MISSING"))
-            in_landing_section = level == 2 and title == LANDING_SECTION_TITLE
-            section_line = index if in_landing_section else None
-            header_seen = False
-            table_seen = False
-            row_seen = False
-            continue
-
-        if not in_landing_section:
-            continue
-
-        if not stripped:
-            continue
-        if not stripped.startswith("|"):
-            if table_seen:
-                break
-            continue
-
-        cells = landing_split_cells(stripped)
-        if landing_is_separator(cells):
-            continue
-
-        if not header_seen:
-            header_seen = True
-            table_seen = True
-            if cells[: len(LANDING_REQUIRED_COLUMNS)] != LANDING_REQUIRED_COLUMNS:
-                expected = " | ".join(LANDING_REQUIRED_COLUMNS)
-                actual = " | ".join(cells)
-                issues.append(
-                    Issue(
-                        path,
-                        index,
-                        f"规范落地要求表头不符合 04.01 要求: 期望 {expected}，实际 {actual}",
-                        code="LANDING_HEADER_INVALID",
-                    )
-                )
-            continue
-
-        row_seen = True
-        if len(cells) < len(LANDING_REQUIRED_COLUMNS):
-            issues.append(Issue(path, index, "规范落地要求表格行缺少必填字段", code="LANDING_ROW_TOO_SHORT"))
-            continue
-
-        required_values = cells[: len(LANDING_REQUIRED_COLUMNS)]
-        for column, value in zip(LANDING_REQUIRED_COLUMNS, required_values):
-            if not value:
-                issues.append(Issue(path, index, f"规范落地要求表格字段为空: {column}", code="LANDING_FIELD_EMPTY"))
-
-        requirement_type = required_values[0]
-        if requirement_type and requirement_type not in LANDING_ALLOWED_TYPES:
-            allowed = "、".join(sorted(LANDING_ALLOWED_TYPES))
-            issues.append(
-                Issue(
-                    path,
-                    index,
-                    f"规范落地要求类型未在 04.01 中定义: {requirement_type}；允许值: {allowed}",
-                    code="LANDING_TYPE_INVALID",
-                )
-            )
-
-    if in_landing_section and not table_seen:
-        issues.append(Issue(path, section_line, "规范落地要求章节缺少表格", code="LANDING_TABLE_MISSING"))
-    elif in_landing_section and table_seen and not row_seen:
-        issues.append(Issue(path, section_line, "规范落地要求表格缺少数据行", code="LANDING_ROW_MISSING"))
-
-    if not any(
-        len(match.group(1)) == 2 and landing_strip_section_number(match.group(2).strip()) == LANDING_SECTION_TITLE
-        for match in (HEADING_RE.match(line) for line in lines)
-        if match
-    ):
-        issues.append(Issue(path, 1, "正式规范文档缺少规范落地要求章节", code="LANDING_SECTION_MISSING"))
-
-    return issues
+    sync_landing_config()
+    return landing_checks.check_file(path)
 
 
 def landing_check_paths(paths):
-    issues = []
-    for path in iter_markdown_files(paths):
-        issues.extend(landing_check_file(path))
-    return issues
+    sync_landing_config()
+    return landing_checks.check_paths(paths)
 
 
 def landing_main(paths):
-    check_paths = paths if paths else landing_default_check_paths()
-    issues = landing_check_paths(check_paths)
-    if issues:
-        print(f"规范落地要求检查失败，共 {len(issues)} 个问题：")
-        for issue in issues:
-            print(f"- {issue.format(PROJECT_ROOT)}")
-        return 1
-    print("规范落地要求检查通过。")
-    return 0
+    sync_landing_config()
+    return landing_checks.main(paths)
 
 
 # ══════════════════════════════════════════════════════════════════════
