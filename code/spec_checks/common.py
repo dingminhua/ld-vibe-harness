@@ -1,10 +1,12 @@
 """Shared helpers for LDVH specs checks."""
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 
 
 @dataclass
@@ -49,3 +51,14 @@ def is_project_local(path, root=None):
         return True
     except ValueError:
         return False
+
+
+def iter_markdown_files(paths):
+    files = []
+    for raw_path in paths:
+        path = Path(raw_path)
+        if path.is_file() and path.suffix == ".md":
+            files.append(path)
+        elif path.is_dir():
+            files.extend(child for child in path.rglob("*.md") if child.is_file())
+    return sorted(set(files))
