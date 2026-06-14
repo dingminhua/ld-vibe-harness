@@ -69,6 +69,9 @@
 | `python3 code/specs_validate.py all --fail-on-diagnostics` | 继续作为 specs 综合校验入口 |
 | `python3 code/specs_validate.py governed-projects` | 继续检查工作区管辖项目配置 |
 | `python3 code/specs_validate.py landing-report` | 继续聚合规范落地要求报告 |
+| `python3 code/specs_validate.py ldvh-landing-check` | 继续生成 LDVH 落地检查派生报告 |
+| `python3 code/specs_validate.py landing-plan` | 继续生成只读 landing-plan 聚合计划视图 |
+| `python3 code/specs_validate.py web-validate` | 继续输出 Web Validate 只读数据合同 |
 
 拆分模块时，CLI 参数、exit code、关键诊断 code 和默认输入范围不得无说明改变。确需改变时，应先更新 `specs/07-Code确定性执行实现规范.md`、本文、测试和下游调用方。
 
@@ -158,7 +161,7 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 1. 先提取无写入、依赖少、输出独立的能力域，例如 `runtime_projection`、`governed_projects`、`human_gate`；
 2. 再提取表格解析和 Markdown 结构类能力，例如 `doc_structure`、`refs`、`landing`；
-3. 再提取大型聚合报告，例如 `ldvh_landing`、`web_validate`；
+3. 再提取大型聚合报告；`ldvh_landing` 已迁入 `code/spec_checks/ldvh_landing.py`，后续优先提取 `web_validate`；
 4. 最后处理共享常量较多的 `consistency` 和 `index`，避免早期拆分制造循环依赖；
 5. 每次拆分后运行 `python3 code/specs_validate.py all --fail-on-diagnostics` 和对应 `tests/code` 测试。
 
@@ -166,7 +169,7 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 ## 8. 待补齐事项
 
-1. `runtime_projection`、`governed_projects`、`human_gate`、`doc_structure`、`refs`、`landing` 基础检查和 `landing_report` 已迁入 `code/spec_checks/`，后续迁移应沿用兼容包装、聚焦测试和综合校验的做法；
+1. `runtime_projection`、`governed_projects`、`human_gate`、`doc_structure`、`refs`、`landing` 基础检查、`landing_report` 和 `ldvh_landing` 已迁入 `code/spec_checks/`，后续迁移应沿用兼容包装、聚焦测试和综合校验的做法；
 2. `specs_validate.py` 的结构化输出字段、错误码和诊断格式仍需后续统一；
 3. `tests/code/test_specs_validate.py` 后续可按能力域拆分，避免测试文件继续膨胀；
 4. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。

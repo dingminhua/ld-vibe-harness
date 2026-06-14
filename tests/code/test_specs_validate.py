@@ -7,6 +7,7 @@ MODULE_PATH = Path(__file__).resolve().parents[2] / "code" / "specs_validate.py"
 spec = importlib.util.spec_from_file_location("specs_validate", MODULE_PATH)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
+from spec_checks import ldvh_landing as ldvh_landing_checks
 
 
 def write_md(path, content):
@@ -2853,6 +2854,12 @@ projects:
 # ══════════════════════════════════════════════════════════════════════
 # ldvh-landing-check — 42 LDVH落地与检查派生报告
 # ══════════════════════════════════════════════════════════════════════
+
+def test_ldvh_landing_core_implementation_lives_in_spec_checks():
+    assert checker.ldvh_landing_checks is ldvh_landing_checks
+    assert ldvh_landing_checks.ldvh_landing_check_build.__module__ == "spec_checks.ldvh_landing"
+    assert ldvh_landing_checks.landing_plan_build.__module__ == "spec_checks.ldvh_landing"
+
 
 def build_ldvh_landing_check_fixture(tmp_path, monkeypatch):
     docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
