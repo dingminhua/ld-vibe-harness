@@ -3597,7 +3597,7 @@ INDEX_NUMBERED_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?(?:\s+|$)")
 INDEX_HEADER_FIELD_RE = re.compile(r"^>\s*([^：:]+)[：:]\s*(.*)\s*$")
 INDEX_BACKTICK_MD_RE = re.compile(r"`([^`]+\.md)`")
 INDEX_PLAIN_SPECS_MD_RE = re.compile(
-    r"(?<![`\w./-])((?:specs/[^\s`，。；、)）]+\.md|docs/(?:studies|sources|research|refs)/[^\s`，。；、)）]+\.md|docs/[^/\s`，。；、)）]+\.md))"
+    r"(?<![`\w./-])((?:specs/[^\s`，。；、)）]+\.md|code/docs/[^\s`，。；、)）]+\.md|docs/(?:studies|sources|research|refs)/[^\s`，。；、)）]+\.md|docs/[^/\s`，。；、)）]+\.md))"
 )
 INDEX_RESEARCH_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?((?:specs/research/|docs/research/)[^`\s，。；、)）]+\.md)(?:`)?")
 INDEX_DOCS_MATERIAL_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?((?:docs/(?:studies|sources|research|refs)/)[^`\s，。；、)）]+\.md)(?:`)?")
@@ -4092,7 +4092,7 @@ class SpecsChecker:
 
     def resolve_target_path(self, raw_path, current_path):
         raw = str(raw_path)
-        if raw.startswith("specs/") or raw.startswith("docs/"):
+        if raw.startswith("specs/") or raw.startswith("docs/") or raw.startswith("code/docs/"):
             return (self.root / raw).resolve()
         if raw.startswith("./") or raw.startswith("../"):
             return (current_path.parent / raw).resolve()

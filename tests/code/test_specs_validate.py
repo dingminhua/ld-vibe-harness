@@ -1900,6 +1900,60 @@ def test_root_readme_path_is_resolved(tmp_path):
     )
 
 
+def test_code_docs_path_is_resolved(tmp_path):
+    specs = tmp_path / "specs"
+    code_docs = tmp_path / "code" / "docs"
+    write_md(code_docs / "01-Code参考实现结构规范.md", "# Code 参考实现结构规范")
+    write_md(
+        specs / "07-Code确定性执行实现规范.md",
+        """
+# Code 确定性执行实现规范
+
+> 创建日期：2026-06-01
+> 定位：Code 规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+## 1. 本文解决的问题
+
+Code 参考实现结构入口为 `code/docs/01-Code参考实现结构规范.md`。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    assert not any(
+        item["code"] == "BROKEN_MARKDOWN_PATH" and "code/docs/01-Code参考实现结构规范.md" in item["message"]
+        for item in indexes["diagnostics"]
+    )
+
+
+def test_missing_code_docs_path_reports_broken_path(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "07-Code确定性执行实现规范.md",
+        """
+# Code 确定性执行实现规范
+
+> 创建日期：2026-06-01
+> 定位：Code 规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+## 1. 本文解决的问题
+
+Code 参考实现结构入口为 `code/docs/missing.md`。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    assert any(
+        item["code"] == "BROKEN_MARKDOWN_PATH" and "code/docs/missing.md" in item["message"]
+        for item in indexes["diagnostics"]
+    )
+
+
 def test_environment_template_markdown_paths_do_not_require_repo_files(tmp_path):
     specs = tmp_path / "specs"
     write_md(
