@@ -511,12 +511,11 @@ def cmd_transition(args: argparse.Namespace) -> int:
         error(f"不支持的对象类型: {object_type}")
         return 1
 
-    # ADR 状态流转时强制 Human Gate
-    if object_type == "adr":
-        try:
-            _ensure_authorized(args)
-        except SystemExit:
-            return 1
+    # 状态流转属于既有事实源受控写入，必须先经过 Human Gate。
+    try:
+        _ensure_authorized(args)
+    except SystemExit:
+        return 1
 
     # 校验当前状态合法
     if current_status not in VALID_STATUSES[object_type]:
@@ -679,6 +678,11 @@ def cmd_delete(args: argparse.Namespace) -> int:
     # 读取 YAML
     data = load_yaml(yaml_file)
     if data is None:
+        return 1
+
+    try:
+        _ensure_authorized(args)
+    except SystemExit:
         return 1
 
     current_status = data.get("status")
@@ -1179,6 +1183,11 @@ def cmd_update(args: argparse.Namespace) -> int:
         error(f"不支持的对象类型: {object_type}")
         return 1
 
+    try:
+        _ensure_authorized(args)
+    except SystemExit:
+        return 1
+
     # 解析 --set 参数（key=value 格式）
     updates = {}
     for item in (args.set or []):
@@ -1269,6 +1278,7 @@ def build_parser() -> argparse.ArgumentParser:
     # delete 子命令
     delete_parser = subparsers.add_parser("delete", help="删除事实对象")
     delete_parser.add_argument("yaml_file", help="YAML 文件路径")
+    _add_authorization_args(delete_parser)
 
     # list 子命令
     list_parser = subparsers.add_parser("list", help="列出事实对象摘要")
@@ -1332,6 +1342,7 @@ def build_parser() -> argparse.ArgumentParser:
     update_parser.add_argument("target", help="对象 ID（如 taskplan-0002）或 YAML 文件路径")
     update_parser.add_argument("--set", action="append", default=None, help="设置字段值（key=value，可多次指定，列表字段用逗号分隔）")
     update_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
+    _add_authorization_args(update_parser)
 
     return parser
 

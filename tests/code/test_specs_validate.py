@@ -1188,6 +1188,34 @@ def test_specs_document_reports_possible_duplicate_term_definition(tmp_path):
     assert any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "适配措施" in item["message"] for item in diagnostics)
 
 
+def test_specs_document_allows_term_definition_in_owner_spec(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "05-工作模型基础规范.md",
+        """
+# 工作模型基础规范
+
+> 创建日期：2026-06-01
+> 定位：工作模型规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+工作模型是 LDVH 对工程事实的标准化建模结构。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    assert not any(
+        item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "工作模型" in item["message"]
+        for item in indexes["diagnostics"]
+    )
+
+
 def test_specs_document_skips_definition_sentence_in_terminology_spec(tmp_path):
     specs = tmp_path / "specs"
     write_md(
@@ -1547,6 +1575,46 @@ def test_root_readme_path_is_resolved(tmp_path):
     )
 
 
+def test_environment_template_markdown_paths_do_not_require_repo_files(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "04-规范落地与环境适配基础规范.md",
+        """
+# 规范落地与环境适配基础规范
+
+> 创建日期：2026-06-01
+> 定位：04 父规范
+> 适用范围：LDVH
+
+## 1. 本文解决的问题
+""",
+    )
+    write_md(
+        specs / "04.03-环境入口适配与部署规范.md",
+        """
+# 环境入口适配与部署规范
+
+> 创建日期：2026-06-01
+> 定位：环境入口
+> 适用范围：LDVH
+> 上位依据：`specs/04-规范落地与环境适配基础规范.md`
+
+## 1. 本文解决的问题
+
+Codex 用户级入口可写作 `~/.codex/AGENTS.md`。
+Trae 用户级入口可写作 `.trae-cn/user_rules/ldvh_rules.md`。
+模板变量可写作 `<LDVH_REPO_ROOT>/rules/LDVH-AI-ENTRY.md`。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    assert not any(
+        item["code"] == "BROKEN_MARKDOWN_PATH"
+        for item in indexes["diagnostics"]
+    )
+
+
 def test_00_document_does_not_require_parent_basis(tmp_path):
     specs = tmp_path / "specs"
     write_md(
@@ -1679,10 +1747,10 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert report["summary"]["runtime_projection_status"] == "closed"
     assert report["summary"]["human_gate_status"] == "degraded"
     assert report["summary"]["by_status"] == {
-        "closed": 1,
+        "closed": 2,
         "degraded": 3,
         "needs_human_gate": 4,
-        "open": 2,
+        "open": 1,
     }
     assert report["summary"]["by_capability_status"] == {
         "degraded": 4,
@@ -1708,7 +1776,7 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
 
     statuses = {item["content"]: item["status"] for item in report["requirements"]}
     assert statuses["后续正式规范不得违背本文的价值实现标准"] == "closed"
-    assert statuses["后续 Code 应能生成 landing report"] == "open"
+    assert statuses["后续 Code 应能生成 landing report"] == "closed"
     assert statuses["高影响变更应触发 Human Gate"] == "needs_human_gate"
     assert statuses["运行投影不可用时应记录降级说明"] == "degraded"
     assert statuses["41 触发保障应被 42 消费，并覆盖运行投影漂移检查和 Human Gate 证据消费"] == "needs_human_gate"
@@ -1726,11 +1794,12 @@ def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["metadata"]["runtime_projection_checked_file_count"] == 1
     assert payload["metadata"]["human_gate_record_count"] == 0
     assert payload["summary"]["human_gate_status"] == "degraded"
-    assert payload["summary"]["by_status"]["open"] == 2
+    assert payload["summary"]["by_status"]["open"] == 1
     assert payload["summary"]["by_status"]["needs_human_gate"] == 4
-    assert payload["summary"]["gap_total"] == 13
+    assert payload["summary"]["gap_total"] == 12
     assert payload["summary"]["gap_by_owner_area"]["human_gate"] == 5
-    assert payload["gap_categories"]["code"]["requirement_count"] == 1
+    assert payload["gap_categories"]["code"]["requirement_count"] == 0
+    assert payload["gap_categories"]["code"]["capability_gap_count"] == 1
     assert payload["gap_categories"]["runtime_projection"]["capability_gap_count"] == 1
     assert payload["gap_categories"]["runtime_projection"]["subcategories"]["lifecycle_trigger_sync"]["total"] == 2
     assert payload["gap_categories"]["runtime_projection"]["subcategories"]["platform_capability_sync"]["total"] == 1
@@ -1776,7 +1845,7 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "Web / Human-facing 承接 (web_human_facing_support):" in output
     assert "Code 降级提示/覆盖 (diagnostic_coverage):" in output
     assert "覆盖范围降级 (coverage_degraded):" in output
-    assert "后续 Code 应能生成 landing report" in output
+    assert "后续 Code 应能生成 landing report" not in output
     assert "运行投影检查文件数: 1" in output
     assert "Human Gate 记录数: 0" in output
     assert "Human Gate 问题状态" in output
@@ -2697,3 +2766,27 @@ def test_consistency_skips_index_overrun_in_negative_context(tmp_path):
     issues = checker.consistency_index_overrun_issues([str(tmp_path)])
 
     assert not any(issue.code == "INDEX_OVERRUN_KEYWORD" for issue in issues)
+
+
+def test_consistency_skips_index_overrun_in_boundary_context(tmp_path):
+    write_md(
+        tmp_path / "40-工作流程集合索引.md",
+        """
+# 工作流程集合索引
+
+## 1. 本文解决的问题
+
+本文不定义具体工作流程的 Context、Scenario、Gate、执行流程或事实源回写要求。
+让本文定义具体流程的 Context、Scenario、Gate 或执行流程时应触发 Human Gate。
+该流程的核心 Context、Scenario、Gate、执行和事实源回写是什么。
+""",
+    )
+
+    issues = checker.consistency_index_overrun_issues([str(tmp_path)])
+
+    assert not any(issue.code == "INDEX_OVERRUN_KEYWORD" for issue in issues)
+
+
+def test_consistency_removed_alias_does_not_match_number_range():
+    assert not checker.consistency_line_has_removed_alias("对应 41-59 active 工作流程规范", ["41"])
+    assert checker.consistency_line_has_removed_alias("对应 41 active 工作流程规范", ["41"])

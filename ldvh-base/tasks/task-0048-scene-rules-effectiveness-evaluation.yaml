@@ -33,8 +33,8 @@ verification: |-
   验证通过。
 blocked_by: []
 related_docs:
-- specs/04.02-LDVH能力保障规范.md
-- specs/04.03-环境适配规范.md
+- specs/04.02-LDVH能力资产与落地保障规范.md
+- specs/04.03-环境入口适配与部署规范.md
 affected_docs: []
 deliverables: []
 closure_evidence: |

@@ -17,6 +17,19 @@ const router = Router()
 const MEMOS_DIR = path.join(LDVH_BASE_DIR, 'memos')
 const VALID_CATEGORIES = ['discovery', 'reminder', 'question', 'gap', 'preference']
 const VALID_IMPORTANCE = ['low', 'medium', 'high']
+const MEMO_REQUIRED_FIELDS = [
+  'id',
+  'type',
+  'title',
+  'status',
+  'created',
+  'updated',
+  'description',
+  'source',
+  'category',
+  'importance',
+  'status_history',
+]
 
 /** 生成下一个 memo ID */
 function nextMemoId(): string {
@@ -42,6 +55,36 @@ function slugify(title: string): string {
     .replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 40) || 'untitled'
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function validatePersistedMemo(data: unknown, expectedId: string): string[] {
+  if (!isRecord(data)) {
+    return ['persisted memo is not an object']
+  }
+
+  const errors: string[] = []
+  for (const field of MEMO_REQUIRED_FIELDS) {
+    if (data[field] === undefined || data[field] === null || data[field] === '') {
+      errors.push(`${field} is missing`)
+    }
+  }
+  if (data.id !== expectedId) {
+    errors.push('id mismatch')
+  }
+  if (data.type !== 'memo') {
+    errors.push('type must be memo')
+  }
+  if (data.status !== 'draft') {
+    errors.push('status must be draft')
+  }
+  if (!Array.isArray(data.status_history) || data.status_history.length === 0) {
+    errors.push('status_history must be a non-empty list')
+  }
+  return errors
 }
 
 router.post('/', (req: Request, res: Response): void => {
@@ -75,6 +118,15 @@ router.post('/', (req: Request, res: Response): void => {
     const filename = `${id}-${slug}.yaml`
     const filePath = path.join(MEMOS_DIR, filename)
 
+    if (fs.existsSync(filePath)) {
+      res.status(409).json({
+        ok: false,
+        code: 'MEMO_FILE_CONFLICT',
+        error: `Memo 文件已存在: ${filename}`,
+      })
+      return
+    }
+
     const memo = {
       id,
       type: 'memo',
@@ -106,11 +158,48 @@ router.post('/', (req: Request, res: Response): void => {
       ],
     }
 
-    fs.writeFileSync(
-      filePath,
-      yaml.dump(memo, { lineWidth: -1, quotingType: '"', forceQuotes: false }),
-      'utf-8',
-    )
+    const yamlText = yaml.dump(memo, { lineWidth: -1, quotingType: '"', forceQuotes: false })
+    try {
+      fs.writeFileSync(filePath, yamlText, { encoding: 'utf-8', flag: 'wx' })
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code
+      if (code === 'EEXIST') {
+        res.status(409).json({
+          ok: false,
+          code: 'MEMO_FILE_CONFLICT',
+          error: `Memo 文件已存在: ${filename}`,
+        })
+        return
+      }
+      res.status(500).json({
+        ok: false,
+        code: 'MEMO_WRITE_FAILED',
+        error: err instanceof Error ? err.message : 'Memo 写入失败',
+      })
+      return
+    }
+
+    let persisted: unknown
+    try {
+      persisted = yaml.load(fs.readFileSync(filePath, 'utf-8'))
+    } catch (err) {
+      res.status(500).json({
+        ok: false,
+        code: 'MEMO_WRITE_VERIFY_FAILED',
+        error: err instanceof Error ? err.message : 'Memo 写后校验失败',
+      })
+      return
+    }
+
+    const verificationErrors = validatePersistedMemo(persisted, id)
+    if (verificationErrors.length > 0) {
+      res.status(500).json({
+        ok: false,
+        code: 'MEMO_WRITE_VERIFY_FAILED',
+        errors: verificationErrors,
+      })
+      return
+    }
 
     res.status(201).json({
       ok: true,

@@ -29,9 +29,9 @@ related_docs:
 - specs/01-目录说明.md
 - specs/02-术语规范.md
 - specs/03-文档基础规范.md
-- specs/04.03-环境适配规范.md
+- specs/04.03-环境入口适配与部署规范.md
 - specs/05-工作模型基础规范.md
-- specs/04.02-LDVH能力保障规范.md
+- specs/04.02-LDVH能力资产与落地保障规范.md
 - specs/20-工作模型集合索引.md
 - rules/LDVH-AI-ENTRY.md
 affected_docs:
@@ -39,9 +39,9 @@ affected_docs:
 - specs/01-目录说明.md
 - specs/02-术语规范.md
 - specs/03-文档基础规范.md
-- specs/04.03-环境适配规范.md
+- specs/04.03-环境入口适配与部署规范.md
 - specs/05-工作模型基础规范.md
-- specs/04.02-LDVH能力保障规范.md
+- specs/04.02-LDVH能力资产与落地保障规范.md
 - specs/20-工作模型集合索引.md
 - rules/LDVH-AI-ENTRY.md
 deliverables: []

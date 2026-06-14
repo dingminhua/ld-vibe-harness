@@ -59,8 +59,8 @@ source_objects:
 - adr-0005
 related_rules:
 - specs/07-Code确定性执行实现规范.md §4.7
-- specs/04.02-LDVH能力保障规范.md
-- specs/04.03-环境适配规范.md
+- specs/04.02-LDVH能力资产与落地保障规范.md
+- specs/04.03-环境入口适配与部署规范.md
 tags:
 - spec-tools-sync
 - process-improvement

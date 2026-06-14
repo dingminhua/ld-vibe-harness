@@ -15,7 +15,7 @@ related_docs:
 - specs/01-目录说明.md
 - specs/02-术语规范.md
 - specs/03-文档基础规范.md
-- specs/04.03-环境适配规范.md
+- specs/04.03-环境入口适配与部署规范.md
 - specs/07-Code确定性执行实现规范.md
 - specs/06-工作流程基础规范.md
 related_adrs: []

@@ -11,7 +11,7 @@ source: '历史 Task task-0050 迁移生成；旧 source_intent: intent-0011'
 tasks:
 - task-0050
 related_docs:
-- specs/04.03-环境适配规范.md
+- specs/04.03-环境入口适配与部署规范.md
 related_adrs: []
 related_memos: []
 related_pitfalls: []

@@ -71,8 +71,8 @@ verification: |
   任务完成。新增能力保持只读边界，没有新增 Git 写入、事实源写入、暂存、提交、回退或删除入口。
 blocked_by: []
 related_docs:
-- specs/03.02-管辖项目文档规范.md
-- specs/03.06-管辖项目配置规范.md
+- specs/03-文档基础规范.md
+- specs/03.05-管辖项目配置规范.md
 - specs/08-Web信息同步实现规范.md
 - specs/22-Change-变更.md
 affected_docs: []

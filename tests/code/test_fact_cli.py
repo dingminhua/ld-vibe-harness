@@ -12,6 +12,13 @@ import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = PROJECT_ROOT / "code" / "fact_cli.py"
+AUTH_ARGS = (
+    "--human-gate-confirmed",
+    "--confirmed-by",
+    "tester",
+    "--confirmation-context",
+    "pytest controlled write",
+)
 
 
 def run_cli(*args, base_dir: Optional[str] = None):
@@ -38,6 +45,10 @@ def read_yaml(path: Path):
 def write_yaml(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+
+def authorized(*args: str) -> tuple[str, ...]:
+    return (*args, *AUTH_ARGS)
 
 
 def test_create_workarea_taskplan_task_and_subtask(tmp_path):
@@ -78,7 +89,7 @@ def test_workarea_archive_requires_reason(tmp_path):
     result = run_cli("create", "workarea", "--title", "Archive Area", base_dir=str(tmp_path))
     path = Path(result.stdout.strip())
 
-    result = run_cli("transition", str(path), "--to", "archived")
+    result = run_cli(*authorized("transition", str(path), "--to", "archived"))
     assert result.returncode == 1
     assert "archive_reason" in result.stderr
 
@@ -86,7 +97,7 @@ def test_workarea_archive_requires_reason(tmp_path):
     data["archive_reason"] = "No longer used."
     write_yaml(path, data)
 
-    result = run_cli("transition", str(path), "--to", "archived")
+    result = run_cli(*authorized("transition", str(path), "--to", "archived"))
     assert result.returncode == 0
     assert "active → archived" in result.stdout
     assert read_yaml(path)["status"] == "archived"
@@ -96,10 +107,10 @@ def test_taskplan_review_and_close_flow(tmp_path):
     result = run_cli("create", "taskplan", "--title", "Review Plan", base_dir=str(tmp_path))
     path = Path(result.stdout.strip())
 
-    result = run_cli("transition", str(path), "--to", "active")
+    result = run_cli(*authorized("transition", str(path), "--to", "active"))
     assert result.returncode == 0
 
-    result = run_cli("transition", str(path), "--to", "review_needed")
+    result = run_cli(*authorized("transition", str(path), "--to", "review_needed"))
     assert result.returncode == 1
     assert "completion_evidence" in result.stderr
 
@@ -107,13 +118,13 @@ def test_taskplan_review_and_close_flow(tmp_path):
     data["completion_evidence"] = "Plan scope is complete."
     write_yaml(path, data)
 
-    result = run_cli("transition", str(path), "--to", "review_needed")
+    result = run_cli(*authorized("transition", str(path), "--to", "review_needed"))
     assert result.returncode == 0
     data = read_yaml(path)
     assert data["status"] == "review_needed"
     assert data["review_requested_at"]
 
-    result = run_cli("transition", str(path), "--to", "closed")
+    result = run_cli(*authorized("transition", str(path), "--to", "closed"))
     assert result.returncode == 0
     data = read_yaml(path)
     assert data["status"] == "closed"
@@ -132,17 +143,17 @@ def test_create_memo_uses_importance_not_priority(tmp_path):
 def test_taskplan_review_needed_to_active_needs_reason(tmp_path):
     result = run_cli("create", "taskplan", "--title", "Return Plan", base_dir=str(tmp_path))
     path = Path(result.stdout.strip())
-    run_cli("transition", str(path), "--to", "active")
+    run_cli(*authorized("transition", str(path), "--to", "active"))
     data = read_yaml(path)
     data["completion_evidence"] = "Ready for review."
     write_yaml(path, data)
-    run_cli("transition", str(path), "--to", "review_needed")
+    run_cli(*authorized("transition", str(path), "--to", "review_needed"))
 
-    result = run_cli("transition", str(path), "--to", "active")
+    result = run_cli(*authorized("transition", str(path), "--to", "active"))
     assert result.returncode == 1
     assert "需要提供 --reason" in result.stderr
 
-    result = run_cli("transition", str(path), "--to", "active", "--reason", "needs another task")
+    result = run_cli(*authorized("transition", str(path), "--to", "active", "--reason", "needs another task"))
     assert result.returncode == 0
     assert "review_needed → active" in result.stdout
 
@@ -150,16 +161,16 @@ def test_taskplan_review_needed_to_active_needs_reason(tmp_path):
 def test_task_close_requires_acceptance_verification_and_evidence(tmp_path):
     result = run_cli("create", "task", "--title", "Close Task", base_dir=str(tmp_path))
     path = Path(result.stdout.strip())
-    run_cli("transition", str(path), "--to", "executing")
-    run_cli("transition", str(path), "--to", "verifying")
-    run_cli("transition", str(path), "--to", "review_needed")
+    run_cli(*authorized("transition", str(path), "--to", "executing"))
+    run_cli(*authorized("transition", str(path), "--to", "verifying"))
+    run_cli(*authorized("transition", str(path), "--to", "review_needed"))
 
     data = read_yaml(path)
     data["acceptance"] = "- [x] Done"
     data["verification"] = "pytest"
     write_yaml(path, data)
 
-    result = run_cli("transition", str(path), "--to", "closed")
+    result = run_cli(*authorized("transition", str(path), "--to", "closed"))
     assert result.returncode == 1
     assert "closure_evidence" in result.stderr
 
@@ -167,7 +178,7 @@ def test_task_close_requires_acceptance_verification_and_evidence(tmp_path):
     data["closure_evidence"] = "All checks passed."
     write_yaml(path, data)
 
-    result = run_cli("transition", str(path), "--to", "closed")
+    result = run_cli(*authorized("transition", str(path), "--to", "closed"))
     assert result.returncode == 0
     assert read_yaml(path)["closed_at"]
 
@@ -175,11 +186,11 @@ def test_task_close_requires_acceptance_verification_and_evidence(tmp_path):
 def test_subtask_close_requires_verification_and_evidence(tmp_path):
     result = run_cli("create", "subtask", "--title", "Close SubTask", base_dir=str(tmp_path))
     path = Path(result.stdout.strip())
-    run_cli("transition", str(path), "--to", "executing")
-    run_cli("transition", str(path), "--to", "verifying")
-    run_cli("transition", str(path), "--to", "review_needed")
+    run_cli(*authorized("transition", str(path), "--to", "executing"))
+    run_cli(*authorized("transition", str(path), "--to", "verifying"))
+    run_cli(*authorized("transition", str(path), "--to", "review_needed"))
 
-    result = run_cli("transition", str(path), "--to", "closed")
+    result = run_cli(*authorized("transition", str(path), "--to", "closed"))
     assert result.returncode == 1
     assert "closure_evidence" in result.stderr
 
@@ -188,7 +199,7 @@ def test_subtask_close_requires_verification_and_evidence(tmp_path):
     data["closure_evidence"] = "done"
     write_yaml(path, data)
 
-    result = run_cli("transition", str(path), "--to", "closed")
+    result = run_cli(*authorized("transition", str(path), "--to", "closed"))
     assert result.returncode == 0
     assert read_yaml(path)["closed_at"]
 
@@ -214,10 +225,46 @@ def test_delete_draft_taskplan(tmp_path):
     result = run_cli("create", "taskplan", "--title", "Delete Plan", base_dir=str(tmp_path))
     path = Path(result.stdout.strip())
 
-    result = run_cli("delete", str(path))
+    result = run_cli(*authorized("delete", str(path)))
 
     assert result.returncode == 0
     assert not path.exists()
+
+
+def test_transition_requires_human_gate(tmp_path):
+    result = run_cli("create", "taskplan", "--title", "Gate Plan", base_dir=str(tmp_path))
+    path = Path(result.stdout.strip())
+
+    result = run_cli("transition", str(path), "--to", "active")
+
+    assert result.returncode == 1
+    assert "--human-gate-confirmed" in result.stderr
+    assert read_yaml(path)["status"] == "draft"
+
+
+def test_delete_requires_human_gate(tmp_path):
+    result = run_cli("create", "taskplan", "--title", "Gate Delete", base_dir=str(tmp_path))
+    path = Path(result.stdout.strip())
+
+    result = run_cli("delete", str(path))
+
+    assert result.returncode == 1
+    assert "--human-gate-confirmed" in result.stderr
+    assert path.exists()
+
+
+def test_update_requires_human_gate_and_updates_when_authorized(tmp_path):
+    result = run_cli("create", "taskplan", "--title", "Gate Update", base_dir=str(tmp_path))
+    path = Path(result.stdout.strip())
+
+    rejected = run_cli("update", str(path), "--set", "title=Rejected title")
+    assert rejected.returncode == 1
+    assert "--human-gate-confirmed" in rejected.stderr
+    assert read_yaml(path)["title"] == "Gate Update"
+
+    accepted = run_cli(*authorized("update", str(path), "--set", "title=Accepted title"))
+    assert accepted.returncode == 0
+    assert read_yaml(path)["title"] == "Accepted title"
 
 
 def test_legacy_intent_type_is_rejected(tmp_path):

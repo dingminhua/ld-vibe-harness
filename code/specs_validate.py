@@ -525,6 +525,28 @@ CONSISTENCY_DEPRECATED_EXPRESSIONS = {
 
 CONSISTENCY_INDEX_OVERRUN_KEYWORDS = ("字段契约", "状态机", "Scenario", "Gate 触发条件", "执行流程", "事实源回写", "对象关系")
 CONSISTENCY_INDEX_FILE_RE = re.compile(r"^(20|40)-")
+CONSISTENCY_INDEX_BOUNDARY_TERMS = (
+    "本文不定义",
+    "不定义",
+    "未定义",
+    "不替代",
+    "只提供",
+    "只说明",
+    "不承载",
+    "未承载",
+    "边界",
+    "检查",
+    "讨论",
+    "候选",
+    "是否",
+    "是什么",
+    "应至少确认",
+    "让本文定义",
+)
+
+
+def consistency_line_is_index_boundary_context(line):
+    return consistency_line_is_negative(line) or any(term in line for term in CONSISTENCY_INDEX_BOUNDARY_TERMS)
 
 
 def consistency_index_overrun_issues(paths):
@@ -542,7 +564,7 @@ def consistency_index_overrun_issues(paths):
                 continue
             if stripped.startswith("#") or stripped.startswith("|") or stripped.startswith(">"):
                 continue
-            if consistency_line_is_negative(stripped):
+            if consistency_line_is_index_boundary_context(stripped):
                 continue
             for keyword in CONSISTENCY_INDEX_OVERRUN_KEYWORDS:
                 if keyword in stripped:
@@ -696,7 +718,16 @@ def consistency_work_model_skeleton_issues(entries):
 
 
 def consistency_line_has_removed_alias(line, aliases):
-    return any(alias and alias in line for alias in aliases)
+    for alias in aliases:
+        if not alias:
+            continue
+        if alias.isdigit():
+            if re.search(rf"(?<![\d-]){re.escape(alias)}(?![\d-])", line):
+                return True
+            continue
+        if alias in line:
+            return True
+    return False
 
 
 def consistency_line_is_negative(line):
@@ -1435,7 +1466,6 @@ LANDING_REPORT_OPEN_MARKERS = [
     "尚未",
     "未稳定",
     "未完成",
-    "后续 Code",
     "open item",
 ]
 LANDING_REPORT_OPEN_PATTERNS = [
@@ -2838,7 +2868,7 @@ BOOTSTRAP_BASELINE_DEFINITIONS = [
     ("asset_directories", "资产目录检查"),
     ("governed_projects_config", "管辖项目配置检查"),
     ("work_model_workflow_indexes", "工作模型和工作流程索引检查"),
-    ("environment_matrix", "环境承接矩阵检查"),
+    ("environment_matrix", "环境入口与能力资产检查"),
     ("runtime_projection_entry", "运行投影入口检查"),
     ("code_self_check", "Code 自检"),
     ("web_asset", "Web 资产检查"),
@@ -2883,7 +2913,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
     ))
 
     required_assets = [
-        (PROJECT_ROOT / "docs" / "specs", "规范资产", "规范"),
+        (PROJECT_ROOT / "specs", "规范资产", "规范"),
         (PROJECT_ROOT / "code", "Code 能力资产", "Code"),
         (PROJECT_ROOT / "tests", "测试证明", "Code"),
         (PROJECT_ROOT / "web", "Web 能力资产", "Web"),
@@ -2916,7 +2946,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         ],
     ))
 
-    index_paths = [PROJECT_ROOT / "docs" / "specs" / "20-工作模型集合索引.md", PROJECT_ROOT / "docs" / "specs" / "40-工作流程集合索引.md"]
+    index_paths = [SPECS_DIR / "20-工作模型集合索引.md", SPECS_DIR / "40-工作流程集合索引.md"]
     index_issues = [
         ldvh_bootstrap_issue("BOOTSTRAP_INDEX_MISSING", f"缺少索引文件: {landing_relative_path(path)}", path, "规范")
         for path in index_paths
@@ -2931,20 +2961,28 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         index_issues,
     ))
 
-    matrix_path = PROJECT_ROOT / "docs" / "specs" / "04.06-平台适配清单规范.md"
+    capability_path = SPECS_DIR / "04.02-LDVH能力资产与落地保障规范.md"
+    environment_path = SPECS_DIR / "04.03-环境入口适配与部署规范.md"
     matrix_issues = []
-    if not matrix_path.exists():
-        matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_ENV_MATRIX_MISSING", "缺少环境承接矩阵规范文件", matrix_path, "环境承接"))
+    if not capability_path.exists():
+        matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_CAPABILITY_SPEC_MISSING", "缺少 LDVH 能力资产规范文件", capability_path, "环境承接"))
     else:
-        matrix_text = matrix_path.read_text(encoding="utf-8")
-        for environment in ["Trae Work CN", "Codex App", "Claude Code CLI"]:
-            if environment not in matrix_text:
-                matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_ENV_MATRIX_ENV_MISSING", f"环境承接矩阵缺少环境: {environment}", matrix_path, "环境承接"))
+        capability_text = capability_path.read_text(encoding="utf-8")
+        for asset_type in ["Rules 资产", "Skill 资产", "Agent 资产", "Hook 资产"]:
+            if asset_type not in capability_text:
+                matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_CAPABILITY_ASSET_MISSING", f"能力资产规范缺少固定资产类型: {asset_type}", capability_path, "环境承接"))
+    if not environment_path.exists():
+        matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_ENV_ENTRY_SPEC_MISSING", "缺少环境入口适配与部署规范文件", environment_path, "环境承接"))
+    else:
+        environment_text = environment_path.read_text(encoding="utf-8")
+        for environment in ["Trae CN", "Trae 国际版", "Codex App"]:
+            if environment not in environment_text:
+                matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_ENV_ENTRY_MISSING", f"环境入口适配规范缺少入口: {environment}", environment_path, "环境承接"))
     items.append(ldvh_bootstrap_baseline_item(
         "environment_matrix",
-        "环境承接矩阵检查",
+        "环境入口与能力资产检查",
         "open" if matrix_issues else "closed",
-        "checked 04.06 for three-environment承接矩阵",
+        "checked 04.02 capability assets and 04.03 environment entries",
         None,
         matrix_issues,
     ))
@@ -3581,6 +3619,15 @@ INDEX_GOVERNED_TERMS = {
     "环境确认", "LDVH落地与检查", "落地检查报告", "检查", "校验", "验证", "审计", "审阅", "审核", "写入", "回写", "事实源回写",
 }
 INDEX_DEFINITION_WHITELIST_TERMS = {"本文", "本规范", "00", "02", "Code", "Web", "Human Gate", "Rules", "Skill", "Agent", "Hook", "MCP"}
+INDEX_ALLOWED_DEFINITION_OWNERS = {
+    "开发环境": {"00"},
+    "工作模型": {"00", "05"},
+    "字段内容格式": {"00", "05.01"},
+    "管辖项目配置": {"03.05"},
+    "工作流程": {"00", "06"},
+    "Gate": {"06"},
+    "事实源回写": {"06", "09"},
+}
 INDEX_REVERSE_RELATED_TERMS = ("反向", "被下游", "被引用", "谁引用", "可发现性", "追溯", "影响面")
 
 
@@ -3906,9 +3953,12 @@ class SpecsChecker:
         diagnostics = []
         if not stripped or stripped.startswith("#") or stripped.startswith(">"):
             return diagnostics
+        doc_number = self.extract_doc_number(Path(rel_path))
         for match in INDEX_DEFINITION_SENTENCE_RE.finditer(stripped):
             term = match.group(1).strip("`：:、（）() ")
             if not term or term in INDEX_DEFINITION_WHITELIST_TERMS or term not in INDEX_GOVERNED_TERMS:
+                continue
+            if doc_number in INDEX_ALLOWED_DEFINITION_OWNERS.get(term, set()):
                 continue
             diagnostics.append(
                 self.diagnostic(
@@ -3971,10 +4021,18 @@ class SpecsChecker:
     def extract_markdown_paths(self, text):
         paths = []
         for match in INDEX_BACKTICK_MD_RE.finditer(text):
-            paths.append(match.group(1))
+            target = match.group(1)
+            if not self.is_environment_or_template_path(target):
+                paths.append(target)
         for match in INDEX_PLAIN_SPECS_MD_RE.finditer(text):
-            paths.append(match.group(1))
+            target = match.group(1)
+            if not self.is_environment_or_template_path(target):
+                paths.append(target)
         return sorted(set(paths), key=paths.index)
+
+    def is_environment_or_template_path(self, raw_path):
+        raw = str(raw_path).strip()
+        return raw.startswith(("~/", "<", ".trae", ".codex")) or raw in {"AGENTS.md", "CLAUDE.md"}
 
     def extract_paths_from_value(self, value):
         if not value:

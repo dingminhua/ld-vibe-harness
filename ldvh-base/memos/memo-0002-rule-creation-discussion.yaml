@@ -12,6 +12,6 @@ category: question
 related_tasks: []
 related_adrs: []
 related_docs:
-- specs/04.03-环境适配规范.md
+- specs/04.03-环境入口适配与部署规范.md
 - specs/06-工作流程基础规范.md
 importance: medium
