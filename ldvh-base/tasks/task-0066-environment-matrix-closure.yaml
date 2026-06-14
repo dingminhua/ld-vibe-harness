@@ -9,7 +9,16 @@ description: '当前 04.06 正文已实质承担 Trae Work CN、Codex App、Clau
 
   本 Task 用于从 ECC 参考体系中提取可迁移的环境承接矩阵设计依据，明确 LDVH 04.06 应如何闭合，而不是直接把 ECC 结论复制为 LDVH 事实源。
 
-  '
+
+  ## 风险、约束和降级说明
+
+  - 避免把 ECC 机制直接当作 LDVH 事实源；ECC 只能作为参考依据。
+
+  - 避免在证据不足时宣称任一环境完整承接。
+
+  - 避免直接删除 04.07 / 04.08 或重命名 04.06；这些动作需后续 Human Gate 和独立执行 Task。
+
+  - 避免把 Code、Web、证据回写误归类为环境能力项。'
 source: 用户直接指示：04 矩阵以及具体怎么做还需要从 ECC 找答案，需要生成 Task 分别推进
 blocked_by: []
 acceptance: '- [x] 找到 ECC 中与环境适配、环境承接、矩阵、支持状态、open_items、检查方式、降级方式相关的依据
@@ -59,19 +68,7 @@ verification: '## 验证计划
   Claude Code CLI 当前 refs 仅能支撑 CLAUDE.md、commands/instructions、成本控制、上下文健康、安全配置和 Hook 候选字段；仍缺 commands、skills/plugins、subagents、MCP、settings.json、permissions、hooks 事件、doctor/status、CLI non-interactive、session/compaction 等更完整来源和实测证据。
 
 
-  后续 Task 边界：A 修改 04.06 并吸收 04.07/04.08；B 修改 42 消费口径；C 扩展 `code/specs_validate.py` 和测试，实现矩阵字段级校验；D 补 Claude Code refs 与实测证据；E 引用迁移和校验通过后评估 04.07/04.08 历史化或删除候选。
-
-
-  ## 风险、约束和降级说明
-
-
-  - 避免把 ECC 机制直接当作 LDVH 事实源；ECC 只能作为参考依据。
-
-  - 避免在证据不足时宣称任一环境完整承接。
-
-  - 避免直接删除 04.07 / 04.08 或重命名 04.06；这些动作需后续 Human Gate 和独立执行 Task。
-
-  - 避免把 Code、Web、证据回写误归类为环境能力项。'
+  后续 Task 边界：A 修改 04.06 并吸收 04.07/04.08；B 修改 42 消费口径；C 扩展 `code/specs_validate.py` 和测试，实现矩阵字段级校验；D 补 Claude Code refs 与实测证据；E 引用迁移和校验通过后评估 04.07/04.08 历史化或删除候选。'
 assignee: AI
 related_adrs: []
 related_changes: []

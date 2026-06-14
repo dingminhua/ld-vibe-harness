@@ -181,7 +181,7 @@ def test_subtask_close_requires_verification_and_evidence(tmp_path):
 
     result = run_cli("transition", str(path), "--to", "closed")
     assert result.returncode == 1
-    assert "verification" in result.stderr
+    assert "closure_evidence" in result.stderr
 
     data = read_yaml(path)
     data["verification"] = "pytest"

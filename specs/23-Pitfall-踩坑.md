@@ -172,35 +172,37 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 
 ### 6.1 字段表
 
+公共字段语义定义见 `specs/05.01-工作字段内容格式规范.md` §3.5。本表只列出对象特有字段语义补充。
+
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
-| `id` | Pitfall ID，格式为 `pitfall-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
-| `type` | 对象类型 | string | 是 | 固定为 `pitfall` | Reference | AI、Code、Web |
-| `title` | 踩坑标题 | string | 是 | 应简短可读 | Narrative | AI、Web |
-| `status` | 当前状态 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
-| `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
-| `updated` | 最近更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `id` | 格式为 `pitfall-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
+| `type` | 固定为 `pitfall` | string | 是 | 固定为 `pitfall` | Reference | AI、Code、Web |
+| `title` | 踩坑一句话概括 | string | 是 | 应简短可读 | Narrative | AI、Web |
+| `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
+| `created` | — | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
+| `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `symptoms` | 问题现象、错误表现或误判结果 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `trigger_conditions` | 触发条件、上下文或复现场景 | string | 是 | 应说明何时可能复现 | Narrative / Checklist | AI、Code、Web |
 | `root_cause` | 根因或误判原因 | string | 是 | active 时必须明确 | Narrative | AI、Human、Web |
 | `resolution` | 解决方式 | string | 是 | active 时必须可执行 | Narrative / Evidence | AI、Code、Web |
-| `verification` | 验证方式、验证命令或验证结论 | string | 是 | active 时必须填写 | Evidence | AI、Code、Web |
+| `verification` | active 时必须填写 | string | 是 | active 时必须填写 | Evidence | AI、Code、Web |
 | `avoidance` | 后续规避策略 | string | 是 | active 时必须可复用 | Narrative / Checklist | AI、Human、Web |
 | `applicability` | 适用范围和不适用范围 | string | 是 | 应避免泛化过度 | Narrative | AI、Web |
 | `repeatability` | 复现或重复概率 | string | 否 | `unknown`、`once`、`recurring`，默认 `unknown` | Reference | AI、Code、Web |
 | `tags` | 标签列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `source_tasks` | 来源 Task ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `source_memos` | 来源 Memo ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_workareas` | 关联 WorkArea ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_taskplans` | 关联 TaskPlan ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_adrs` | 关联 ADR ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_changes` | 关联 Change commit 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_docs` | 关联文档路径列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `source_tasks` | 来源任务 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `source_memos` | 来源备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_taskplans` | 关联任务计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_rules` | 已吸收或承接该经验的规范、Rules、Skill、Agent、Code 或 Web 路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `superseded_by` | 替代本经验的新对象、规范或实现引用 | string | 条件必填 | `status: superseded` 时必须填写 | Reference | AI、Code、Web |
-| `archive_reason` | 归档原因 | string | 条件必填 | `status: archived` 时应填写 | Narrative | AI、Human |
-| `status_history` | 状态变化记录 | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
-| `notes` | 补充说明 | string | 否 | 不得承载规则正文第二事实源 | Narrative / Reference | AI、Web |
+| `superseded_by` | 替代本经验的新对象、规范或实现 | string | 条件必填 | `status: superseded` 时必须填写 | Reference | AI、Code、Web |
+| `archive_reason` | — | string | 条件必填 | `status: archived` 时应填写 | Narrative | AI、Human |
+| `status_history` | — | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
+| `notes` | 不得承载规则正文第二事实源 | string | 否 | 不得承载规则正文第二事实源 | Narrative / Reference | AI、Web |
 
 字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 

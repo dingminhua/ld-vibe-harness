@@ -142,29 +142,31 @@ Task 不作为 Human 直接管理入口。以下情况应回到 TaskPlan 层评�
 
 下表“消费方”表示读取、Web 展示、校验或执行时会消费该字段，不表示 Web 写入授权。
 
+公共字段语义定义见 `specs/05.01-工作字段内容格式规范.md` §3.5。本表只列出对象特有字段语义补充。
+
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
-| `id` | Task ID，格式为 `task-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
-| `type` | 对象类型 | string | 是 | 固定为 `task` | Reference | AI、Code、Web |
-| `title` | 任务标题 | string | 是 | 应简短可读 | Narrative | AI、Web |
-| `status` | 当前状态 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
-| `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
-| `updated` | 最近更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `id` | 格式为 `task-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
+| `type` | 固定为 `task` | string | 是 | 固定为 `task` | Reference | AI、Code、Web |
+| `title` | 任务一句话概括 | string | 是 | 应简短可读 | Narrative | AI、Web |
+| `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
+| `created` | — | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
+| `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `taskplan` | 所属任务计划 ID | string | 是 | 必须引用已存在 TaskPlan | Reference | AI、Code、Web |
 | `description` | 任务背景、目标和范围 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `source` | 任务来源 | string | 是 | 任务计划、用户指示或其他可追溯来源 | Reference / Narrative | AI、Web |
-| `blocked_by` | 前置 Task ID 列表 | list[string] | 否 | 默认为空列表；必须同属一个任务计划 | Reference | AI、Code、Web |
-| `acceptance` | 验收标准和检查项 | string | 是 | 关闭前全部为 `- [x]` | Checklist | AI、Code、Web |
-| `verification` | 验证方式、验证命令或验证计划 | string | 否 | 执行进入验证前应补齐 | Evidence / Checklist | AI、Code、Web |
+| `blocked_by` | 同一任务计划内的前置 Task | list[string] | 否 | 默认为空列表；必须同属一个任务计划 | Reference | AI、Code、Web |
+| `acceptance` | 关闭前全部为 `- [x]` | string | 是 | 关闭前全部为 `- [x]` | Checklist | AI、Code、Web |
+| `verification` | 执行进入验证前应补齐 | string | 否 | 执行进入验证前应补齐 | Evidence / Checklist | AI、Code、Web |
 | `assignee` | 执行者 | string | 否 | 可为 AI、Human 或角色名 | Reference | AI、Web |
-| `related_adrs` | 关联 ADR ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_changes` | 关联 Change commit 列表 | list[string] | 否 | 可记录 commit hash 或 Change 引用 | Reference | AI、Code、Web |
-| `related_docs` | 参考输入文档路径列表 | list[string] | 否 | 路径应可追溯 | Reference | AI、Code、Web |
-| `affected_docs` | 任务完成后应同步检查的文档路径列表 | list[string] | 否 | 关闭前检查是否变更或说明豁免 | Reference | AI、Code |
-| `deliverables` | 产物、报告、截图、构建产物或导出文件路径列表 | list[string] | 否 | 结果物应可追溯 | Reference | AI、Code、Web |
-| `status_history` | 状态变化记录 | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
-| `closed_at` | 关闭日期 | date | 条件必填 | `status: closed` 时必须填写 | Reference | AI、Code、Web |
-| `closure_evidence` | 关闭证据摘要 | string | 条件必填 | `status: closed` 时必须填写 | Evidence | AI、Code、Web |
+| `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_changes` | 关联变更 | list[string] | 否 | 可记录 commit hash 或 Change 引用 | Reference | AI、Code、Web |
+| `related_docs` | 参考输入文档路径 | list[string] | 否 | 路径应可追溯 | Reference | AI、Code、Web |
+| `affected_docs` | 任务完成后应同步检查的文档路径 | list[string] | 否 | 关闭前检查是否变更或说明豁免 | Reference | AI、Code |
+| `deliverables` | 产物、报告、截图、构建产物或导出文件路径 | list[string] | 否 | 结果物应可追溯 | Reference | AI、Code、Web |
+| `status_history` | — | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
+| `closed_at` | — | date | 条件必填 | `status: closed` 时必须填写 | Reference | AI、Code、Web |
+| `closure_evidence` | — | string | 条件必填 | `status: closed` 时必须填写 | Evidence | AI、Code、Web |
 
 ### 6.1 YAML 示例
 

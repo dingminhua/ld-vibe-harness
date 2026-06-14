@@ -120,25 +120,27 @@ ADR、Memo、Pitfall 可以引用工作域，用于表达某条决策、备忘�
 ---
 ## 6. 字段契约
 
+公共字段语义定义见 `specs/05.01-工作字段内容格式规范.md` §3.5。本表只列出对象特有字段语义补充。
+
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
-| `id` | 工作域 ID，格式为 `workarea-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
-| `type` | 对象类型 | string | 是 | 固定为 `workarea` | Reference | AI、Code、Web |
-| `title` | 工作域标题 | string | 是 | 应简短可读 | Narrative | AI、Web |
-| `status` | 当前状态 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
-| `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
-| `updated` | 最近更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `id` | 格式为 `workarea-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
+| `type` | 固定为 `workarea` | string | 是 | 固定为 `workarea` | Reference | AI、Code、Web |
+| `title` | 工作域一句话概括 | string | 是 | 应简短可读 | Narrative | AI、Web |
+| `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
+| `created` | — | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
+| `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `description` | 工作域背景、范围和长期上下文 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `scope` | 范围边界、包含和不包含的事项 | string | 否 | 高影响工作域应填写 | Narrative / Checklist | AI、Human |
 | `constraints` | 长期约束、偏好和禁止事项 | string | 否 | 可为空 | Narrative / Checklist | AI、Human |
-| `source` | 来源 | string | 是 | 谁在什么场景下确认 | Reference / Narrative | AI、Web |
-| `related_docs` | 关联文档路径列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_adrs` | 关联 ADR ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_memos` | 关联 Memo ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_pitfalls` | 关联 Pitfall ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `source` | 工作域来源 | string | 是 | 谁在什么场景下确认 | Reference / Narrative | AI、Web |
+| `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_memos` | 关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_pitfalls` | 关联踩坑 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `taskplans` | 所属 TaskPlan ID 列表 | list[string] | 否 | 默认为空列表；由 TaskPlan 的 `workarea` 反向聚合 | Reference | AI、Code、Web |
-| `status_history` | 状态变化记录 | list[object] | 否 | 状态变化时追加 | Log | AI、Code |
-| `archive_reason` | 归档原因 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Code、Web |
+| `status_history` | — | list[object] | 否 | 状态变化时追加 | Log | AI、Code |
+| `archive_reason` | — | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Code、Web |
 
 ### 6.1 YAML 示例
 

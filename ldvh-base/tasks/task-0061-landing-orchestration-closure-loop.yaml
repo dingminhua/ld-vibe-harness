@@ -7,9 +7,16 @@ updated: '2026-06-10T00:00:00'
 description: '41-landing-orchestration-规范落地统筹已在 40 工作流程集合索引中标记为 active，并已有 landing-report 基础 Code 承接，但 active 只表示流程正式存在，不等于建设完成或运行闭环。
 
 
-  当前缺口是：AI 和检查工具容易把“41 active”误读为“41 已完成”。需要建立明确提醒和证据承接，使 41 的状态被表达为“已正式化但未闭环”，并在 42 dogfood、landing-report、Code/Web 检查面或后续运行投影中持续暴露该建设缺口。
+  当前缺口是：AI 和检查工具容易把"41 active"误读为"41 已完成"。需要建立明确提醒和证据承接，使 41 的状态被表达为"已正式化但未闭环"，并在 42 dogfood、landing-report、Code/Web 检查面或后续运行投影中持续暴露该建设缺口。
 
-  '
+
+  ## 风险、约束和降级说明
+
+  - 避免把 40 中的 active 集合状态误解释为建设完成状态。
+
+  - 避免用聊天结论、landing-report 派生输出或 Web 状态替代 Git 文件事实源。
+
+  - 后续如要修改 41、42、Code、Web 或运行投影，应按对应规范触发 Human Gate。'
 source: 用户直接指示：41 未闭环需要标记，不能误判为建设完成
 blocked_by: []
 acceptance: '- [ ] 明确 41 当前状态表达：active but not closed-loop / 已正式化但未闭环
@@ -59,17 +66,7 @@ verification: '## 验证计划
   ## 结论
 
 
-  本 Task 用于追踪 41 未闭环建设缺口；本次验证证明运行投影漂移检查和 Human Gate 证据结构检查已被 landing-report 作为 Code 派生证据消费和暴露，但不能作为 41 已闭环证据。
-
-
-  ## 风险、约束和降级说明
-
-
-  - 避免把 40 中的 active 集合状态误解释为建设完成状态。
-
-  - 避免用聊天结论、landing-report 派生输出或 Web 状态替代 Git 文件事实源。
-
-  - 后续如要修改 41、42、Code、Web 或运行投影，应按对应规范触发 Human Gate。'
+  本 Task 用于追踪 41 未闭环建设缺口；本次验证证明运行投影漂移检查和 Human Gate 证据结构检查已被 landing-report 作为 Code 派生证据消费和暴露，但不能作为 41 已闭环证据。'
 assignee: AI
 related_adrs: []
 related_changes: []

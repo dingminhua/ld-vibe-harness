@@ -9,7 +9,16 @@ description: '用户指出当前仍不清楚具体跨环境能力差异如何处
 
   本 Task 用于从 ECC 中寻找能力承接差异处理依据，研究 Skill、Hook、Agent、Rules / Instructions、Code、Web 等能力在不同 AI 开发环境中的等价、降级、替代和缺口记录方法，并为 LDVH 04 矩阵与相关规范提供前置答案。
 
-  '
+
+  ## 风险、约束和降级说明
+
+  - 避免把某环境的专有机制直接当作 LDVH 抽象能力。
+
+  - 避免把只有 Skill 的环境误判为完整承接 Skill + Hook 组合效果。
+
+  - 避免自动启用 Hook 或自动写入运行投影；持久投影和自动化触发需 Human Gate。
+
+  - 避免用 plan 类输出替代 Task；正式安排、执行拆分、验收和关闭证据应进入 Task。'
 source: 用户直接指示：Codex 中 Skill + Hook 效果到 Trae 中只有 Skill 时怎么办，需要从 ECC 找答案，并生成独立 Task
 blocked_by: []
 acceptance: '- [x] 找到 ECC 中关于 Skill、Hook、Agent、Rules / Instructions、触发机制、自动化承接或降级补偿的依据
@@ -54,19 +63,7 @@ verification: '## 验证计划
   具体案例：Codex/Claude Code 风格的 verification-loop Skill + Stop/PostToolUse Hook，在 Trae Skill-only 中应改为 Trae Skill 说明最终响应前验收流程，配合 Rule 要求修改后显式运行校验，可选 Command 封装 `/verify-before-final`，并明确这不是 Stop/PostToolUse Hook，不会自动触发。
 
 
-  后续 Task 边界：修改 04.03，补充跨环境组合能力必须拆分到具体能力面；修改 04.06，新增组合能力矩阵卡片或字段级校验要求；修改 11.01，补充第三方 Skill 不得冒充 Hook/自动触发能力；扩展 Code 校验，检查 Hook/lifecycle 承接项是否包含承接降级、不可模拟能力、验证命令或待补齐事项。
-
-
-  ## 风险、约束和降级说明
-
-
-  - 避免把某环境的专有机制直接当作 LDVH 抽象能力。
-
-  - 避免把只有 Skill 的环境误判为完整承接 Skill + Hook 组合效果。
-
-  - 避免自动启用 Hook 或自动写入运行投影；持久投影和自动化触发需 Human Gate。
-
-  - 避免用 plan 类输出替代 Task；正式安排、执行拆分、验收和关闭证据应进入 Task。'
+  后续 Task 边界：修改 04.03，补充跨环境组合能力必须拆分到具体能力面；修改 04.06，新增组合能力矩阵卡片或字段级校验要求；修改 11.01，补充第三方 Skill 不得冒充 Hook/自动触发能力；扩展 Code 校验，检查 Hook/lifecycle 承接项是否包含承接降级、不可模拟能力、验证命令或待补齐事项。'
 assignee: AI
 related_adrs: []
 related_changes: []

@@ -109,23 +109,25 @@ review_needed -> executing
 ---
 ## 6. 字段契约
 
+公共字段语义定义见 `specs/05.01-工作字段内容格式规范.md` §3.5。本表只列出对象特有字段语义补充。
+
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
-| `id` | 子任务 ID，格式为 `subtask-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
-| `type` | 对象类型 | string | 是 | 固定为 `subtask` | Reference | AI、Code、Web |
-| `title` | 子任务标题 | string | 是 | 应简短可读 | Narrative | AI、Web |
-| `status` | 当前状态 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
-| `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
-| `updated` | 最近更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `id` | 格式为 `subtask-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
+| `type` | 固定为 `subtask` | string | 是 | 固定为 `subtask` | Reference | AI、Code、Web |
+| `title` | 子任务一句话概括 | string | 是 | 应简短可读 | Narrative | AI、Web |
+| `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
+| `created` | — | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
+| `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `task` | 所属 Task ID | string | 是 | 必须引用已存在 Task | Reference | AI、Code、Web |
 | `description` | 子任务目标、范围和步骤说明 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
-| `source` | 来源 | string | 是 | Task 内拆解、AI 发现或人工确认 | Reference / Narrative | AI、Web |
-| `acceptance` | 子任务验收标准 | string | 是 | 关闭前全部为 `- [x]` | Checklist | AI、Code、Web |
-| `blocked_by` | 前置 SubTask ID 列表 | list[string] | 否 | 默认为空列表；必须同属一个 Task | Reference | AI、Code、Web |
-| `verification` | 验证方式或验证结果 | string | 否 | 关闭前必须填写 | Evidence / Checklist | AI、Code、Web |
-| `closure_evidence` | 关闭证据摘要 | string | 条件必填 | `closed` 时必须填写 | Evidence | AI、Code、Web |
-| `closed_at` | 关闭时间 | date | 条件必填 | `closed` 时必须填写 | Reference | AI、Code、Web |
-| `status_history` | 状态变化记录 | list[object] | 否 | 状态变化时追加 | Log | AI、Code |
+| `source` | 子任务来源 | string | 是 | Task 内拆解、AI 发现或人工确认 | Reference / Narrative | AI、Web |
+| `acceptance` | 关闭前全部为 `- [x]` | string | 是 | 关闭前全部为 `- [x]` | Checklist | AI、Code、Web |
+| `blocked_by` | 同一 Task 下的前置 SubTask | list[string] | 否 | 默认为空列表；必须同属一个 Task | Reference | AI、Code、Web |
+| `verification` | 关闭前必须填写 | string | 否 | 关闭前必须填写 | Evidence / Checklist | AI、Code、Web |
+| `closure_evidence` | — | string | 条件必填 | `closed` 时必须填写 | Evidence | AI、Code、Web |
+| `closed_at` | — | date | 条件必填 | `closed` 时必须填写 | Reference | AI、Code、Web |
+| `status_history` | — | list[object] | 否 | 状态变化时追加 | Log | AI、Code |
 
 ### 6.1 YAML 示例
 

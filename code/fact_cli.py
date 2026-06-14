@@ -464,11 +464,13 @@ def cmd_create(args: argparse.Namespace) -> int:
     if object_type == "task":
         data["blocked_by"] = []
         data["deliverables"] = []
+        data["verification"] = "## 验证计划\n\n## 验证命令\n"
         deliverables_val = getattr(args, "deliverables", None)
         if deliverables_val:
             data["deliverables"] = _parse_list_values(deliverables_val)
     if object_type == "subtask":
         data["blocked_by"] = []
+        data["verification"] = "## 验证计划\n\n## 验证命令\n"
     if object_type == "memo":
         data["importance"] = "low"
 

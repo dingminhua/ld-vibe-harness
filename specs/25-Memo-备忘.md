@@ -153,28 +153,30 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 
 ### 6.1 字段表
 
+公共字段语义定义见 `specs/05.01-工作字段内容格式规范.md` §3.5。本表只列出对象特有字段语义补充。
+
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
-| `id` | Memo ID，格式为 `memo-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
-| `type` | 对象类型 | string | 是 | 固定为 `memo` | Reference | AI、Code、Web |
-| `title` | 备忘标题 | string | 是 | 应简短可读 | Narrative | AI、Web |
-| `status` | 当前状态 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
-| `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
-| `updated` | 最近更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
-| `description` | 备忘内容描述 | string | 是 | 使用 YAML 块标量 | Narrative / Decision / Reference / Log | AI、Web |
-| `source` | 来源 | string | 是 | 谁在什么场景下表达或发现 | Reference / Narrative | AI、Web |
+| `id` | 格式为 `memo-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
+| `type` | 固定为 `memo` | string | 是 | 固定为 `memo` | Reference | AI、Code、Web |
+| `title` | 备忘一句话概括 | string | 是 | 应简短可读 | Narrative | AI、Web |
+| `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
+| `created` | — | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
+| `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `description` | Memo 内容灵活，按实际需要选择格式 | string | 是 | 使用 YAML 块标量 | Narrative / Decision / Reference / Log | AI、Web |
+| `source` | 备忘来源 | string | 是 | 谁在什么场景下表达或发现 | Reference / Narrative | AI、Web |
 | `category` | 分类 | string | 是 | `discovery`、`reminder`、`question`、`gap`、`preference` | Reference | AI、Code、Web |
 | `importance` | 重要程度 | string | 是 | `high`、`medium`、`low`；判断标准见 `specs/05-工作模型基础规范.md` §7.3.1 | Reference | AI、Code、Web |
 | `resolved_to` | 分流目标对象引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}` | Reference | AI、Code、Web |
 | `resolved_at` | 分流日期 | date | 条件必填 | `status: resolved` 时必须填写 | Reference | AI、Code、Web |
-| `archive_reason` | 归档原因 | string | 条件必填 | `status: archived` 且未 resolved 时应填写 | Narrative | AI、Human |
-| `related_tasks` | 关联 Task ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_adrs` | 关联 ADR ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_workareas` | 关联 WorkArea ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_taskplans` | 关联 TaskPlan ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_changes` | 关联 Change commit 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_docs` | 关联文档路径列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `status_history` | 状态变化记录 | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
+| `archive_reason` | — | string | 条件必填 | `status: archived` 且未 resolved 时应填写 | Narrative | AI、Human |
+| `related_tasks` | 关联任务 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_taskplans` | 关联任务计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `status_history` | — | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
 
 字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 

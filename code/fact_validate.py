@@ -85,6 +85,14 @@ PATH_FIELDS = {"related_docs", "deliverables", "affected_docs", "related_rules"}
 # 12-工作模型字段内容格式规范：Evidence 字段定义
 EVIDENCE_FIELDS = {"verification", "closure_evidence"}
 
+# 05.01 §3.5.2：verification 字段不应包含的风险/约束/降级标题模式
+VERIFICATION_MISPLACED_HEADING_PATTERNS = [
+    re.compile(r"^##\s*风险", re.MULTILINE),
+    re.compile(r"^##\s*约束", re.MULTILINE),
+    re.compile(r"^##\s*降级", re.MULTILINE),
+    re.compile(r"^##\s*风险、约束和降级说明", re.MULTILINE),
+]
+
 # 危险 HTML 标签和属性模式
 DANGEROUS_HTML_PATTERNS = [
     re.compile(r"<\s*script", re.IGNORECASE),
@@ -362,6 +370,26 @@ def validate_dangerous_html(path: Path, data: dict[str, Any], object_type: str) 
     return issues
 
 
+def validate_verification_misplaced_content(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
+    """05.01 §3.5.2：verification 字段包含风险/约束/降级标题时报 warning，建议迁移到 description 或 notes。"""
+    issues = []
+    if object_type not in ("task", "subtask", "pitfall"):
+        return issues
+    value = data.get("verification")
+    if not isinstance(value, str) or not value.strip():
+        return issues
+    for pattern in VERIFICATION_MISPLACED_HEADING_PATTERNS:
+        if pattern.search(value):
+            issues.append(Issue(
+                str(path), "warning", "VERIFICATION_MISPLACED_CONTENT",
+                "verification 字段不应包含风险、约束或降级说明，建议迁移到 description 或 notes 字段",
+                field="verification",
+                suggestion="将风险、约束、降级内容从 verification 迁移到 description 或 notes",
+            ))
+            break  # 每个字段只报一次
+    return issues
+
+
 def validate_evidence_format(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
     """12-工作模型字段内容格式规范 §6.2：Evidence 字段非空但缺少验证结果或结论结构时报 warning。"""
     issues = []
@@ -409,6 +437,8 @@ def validate_common(path: Path, data: dict[str, Any], object_type: str) -> list[
     issues.extend(validate_dangerous_html(path, data, object_type))
     # 12-工作模型字段内容格式规范：Evidence 字段格式提示
     issues.extend(validate_evidence_format(path, data, object_type))
+    # 05.01 §3.5.2：verification 字段风险/约束/降级内容迁移提示
+    issues.extend(validate_verification_misplaced_content(path, data, object_type))
     return issues
 
 

@@ -169,29 +169,31 @@ ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.m
 
 ### 6.1 字段表
 
+公共字段语义定义见 `specs/05.01-工作字段内容格式规范.md` §3.5。本表只列出对象特有字段语义补充。
+
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
-| `id` | ADR ID，格式为 `adr-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
-| `type` | 对象类型 | string | 是 | 固定为 `adr` | Reference | AI、Code、Web |
-| `title` | 决策标题 | string | 是 | 应简短可读 | Narrative | AI、Web |
-| `status` | 当前状态 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
-| `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
-| `updated` | 最近更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `id` | 格式为 `adr-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
+| `type` | 固定为 `adr` | string | 是 | 固定为 `adr` | Reference | AI、Code、Web |
+| `title` | 决策一句话概括 | string | 是 | 应简短可读 | Narrative | AI、Web |
+| `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
+| `created` | — | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
+| `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `date` | 决策日期 | date | 是 | `YYYY-MM-DD`，通常与 accepted 日期一致，proposed 时可为提出日期 | Reference | AI、Web |
 | `context` | 决策背景、问题和来源 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `decision` | 决策内容 | string | 是 | accepted 后核心内容变更需 Human Gate | Decision | AI、Human、Web |
 | `consequences` | 决策后果、影响和约束 | string | 是 | 应说明正负影响 | Decision / Narrative | AI、Web |
 | `alternatives` | 考虑过但未采纳的替代方案 | string | 否 | 可为空 | Narrative / Decision | AI、Web |
 | `affects` | 受影响范围、文件、规范或机制 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_workareas` | 关联 WorkArea ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_taskplans` | 关联 TaskPlan ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_tasks` | 关联 Task ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_changes` | 关联 Change commit 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_memos` | 来源或关联 Memo ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_adrs` | 关联 ADR ID 列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_taskplans` | 关联任务计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_tasks` | 关联任务 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_memos` | 来源或关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_rules` | 决策已升级或承接的规范、Rules 路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `superseded_by` | 替代本决策的新 ADR ID | string | 条件必填 | `status: superseded` 时必须填写 | Reference | AI、Code、Web |
-| `status_history` | 状态变化记录 | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
+| `superseded_by` | 替代本决策的新 ADR | string | 条件必填 | `status: superseded` 时必须填写 | Reference | AI、Code、Web |
+| `status_history` | — | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
 
 字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 

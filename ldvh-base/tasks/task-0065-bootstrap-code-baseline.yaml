@@ -9,7 +9,16 @@ description: '42-LDVH落地与检查已定义 Bootstrap Code 基线能力。现�
 
   本 Task 用于承载 42 Bootstrap Code 基线能力补齐工作。Code 需求来源归属 42；07 只约束实现方式，10 只约束测试方式。
 
-  '
+
+  ## 风险、约束和降级说明
+
+  - 避免把 42 的 Code 需求转移给 07；07 只约束实现方式。
+
+  - 避免把 Web 运行态作为 bootstrap 前置条件；Web 在此处只作为资产检查对象。
+
+  - 避免把 41、landing-plan、候选 change-plan 或其他 plan 类输出作为 bootstrap 前置条件。
+
+  - 避免新增 Code 自动写入事实源、自动创建 Task 或自动关闭缺口。'
 source: 用户直接指示：code需求在42，建立 Task 承载 Bootstrap Code 基线能力补齐
 blocked_by: []
 acceptance: '- [x] Code 入口能按 42 定义输出 Bootstrap Code 基线能力覆盖报告
@@ -63,19 +72,7 @@ verification: '## 验证计划
   已运行 `python3 -m pytest tests/test_specs_validate.py -q`，结果为 `70 passed in 0.96s`。
 
 
-  已运行 `python3 code/specs_validate.py ldvh-landing-check --format json` 并抽取结果：`bootstrap_baseline.summary.item_count=10`，`bootstrap_baseline.summary.status=open`，`open_item_count=1`，十项基线能力均能输出状态。当前 open 项为 `specs_integrity`，属于当前规范检查发现的既有规范缺口，不是 Bootstrap Code 报告能力缺失。
-
-
-  ## 风险、约束和降级说明
-
-
-  - 避免把 42 的 Code 需求转移给 07；07 只约束实现方式。
-
-  - 避免把 Web 运行态作为 bootstrap 前置条件；Web 在此处只作为资产检查对象。
-
-  - 避免把 41、landing-plan、候选 change-plan 或其他 plan 类输出作为 bootstrap 前置条件。
-
-  - 避免新增 Code 自动写入事实源、自动创建 Task 或自动关闭缺口。'
+  已运行 `python3 code/specs_validate.py ldvh-landing-check --format json` 并抽取结果：`bootstrap_baseline.summary.item_count=10`，`bootstrap_baseline.summary.status=open`，`open_item_count=1`，十项基线能力均能输出状态。当前 open 项为 `specs_integrity`，属于当前规范检查发现的既有规范缺口，不是 Bootstrap Code 报告能力缺失。'
 assignee: AI
 related_adrs: []
 related_changes: []
