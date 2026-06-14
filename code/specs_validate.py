@@ -13,6 +13,12 @@ from pathlib import Path
 
 import yaml
 
+CODE_DIR = Path(__file__).resolve().parent
+if str(CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(CODE_DIR))
+
+from spec_checks import runtime_projection as runtime_projection_checks
+
 
 # ── 通用常量 ──
 
@@ -56,188 +62,28 @@ def iter_markdown_files(paths):
     return sorted(set(files))
 
 
-RUNTIME_PROJECTION_DEFAULT_PATHS = [
-    "rules/LDVH-AI-ENTRY.md",
-    ".trae/rules",
-    ".trae/skills",
-]
-RUNTIME_PROJECTION_SPEC_REF_RE = re.compile(r"specs/[^`\s，。；、)）]+\.md")
-RUNTIME_PROJECTION_AUTHORITY_TERMS = ["specs/", "规范来源", "权威来源", "上位依据", "相关规范"]
-RUNTIME_PROJECTION_DEGRADATION_TERMS = ["降级", "人工降级", "degradation"]
-RUNTIME_PROJECTION_AUTHORITY_RE = re.compile(r"(specs/|规范来源|权威来源|上位依据|相关规范|降级|人工降级|degradation)")
-RUNTIME_PROJECTION_NEGATIVE_AUTHORITY_RE = re.compile(r"(无|没有|缺少|未).{0,8}(权威来源|规范来源|上位依据|相关规范|specs/|降级)")
+RUNTIME_PROJECTION_DEFAULT_PATHS = list(runtime_projection_checks.RUNTIME_PROJECTION_DEFAULT_PATHS)
 
 
-def runtime_projection_default_paths():
-    paths = []
-    for raw_path in RUNTIME_PROJECTION_DEFAULT_PATHS:
-        path = PROJECT_ROOT / raw_path
-        if path.exists():
-            paths.append(str(path))
-    return paths
+def sync_runtime_projection_config():
+    runtime_projection_checks.PROJECT_ROOT = PROJECT_ROOT
+    runtime_projection_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
+    runtime_projection_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
 
 
 def runtime_projection_is_project_local(path):
-    try:
-        Path(path).resolve().relative_to(PROJECT_ROOT.resolve())
-        return True
-    except ValueError:
-        return False
-
-
-def runtime_projection_iter_files(paths):
-    files = []
-    for raw_path in paths:
-        path = Path(raw_path)
-        if not path.exists():
-            continue
-        if not runtime_projection_is_project_local(path):
-            continue
-        if path.is_file() and path.suffix in {".md", ".yaml", ".yml", ".json", ".toml"}:
-            files.append(path)
-        elif path.is_dir():
-            for child in path.rglob("*"):
-                if child.is_file() and child.suffix in {".md", ".yaml", ".yml", ".json", ".toml"}:
-                    files.append(child)
-    return sorted(set(files))
-
-
-def runtime_projection_has_authority(text):
-    for line in text.splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        if RUNTIME_PROJECTION_NEGATIVE_AUTHORITY_RE.search(stripped):
-            continue
-        if RUNTIME_PROJECTION_AUTHORITY_RE.search(stripped):
-            return True
-    return False
-
-
-def runtime_projection_spec_refs(text):
-    return sorted(set(RUNTIME_PROJECTION_SPEC_REF_RE.findall(text)))
-
-
-def runtime_projection_spec_path_exists(ref):
-    return (PROJECT_ROOT / ref).exists()
-
-
-def runtime_projection_formal_spec_lines():
-    lines = {}
-    if not FORMAL_SPECS_DIR.exists():
-        return lines
-    for spec_path in sorted(FORMAL_SPECS_DIR.glob("*.md")):
-        for line in spec_path.read_text(encoding="utf-8").splitlines():
-            stripped = line.strip()
-            if len(stripped) < 32:
-                continue
-            if stripped.startswith("|") or stripped.startswith(">") or stripped.startswith("#"):
-                continue
-            lines.setdefault(stripped, landing_relative_path(spec_path))
-    return lines
-
-
-def runtime_projection_detect_copied_formal_lines(text, formal_lines):
-    matches = []
-    for line in text.splitlines():
-        stripped = line.strip()
-        source = formal_lines.get(stripped)
-        if source:
-            matches.append({"source": source, "text": stripped})
-    return matches[:5]
-
-
-def runtime_projection_check_file(path, formal_lines=None):
-    formal_lines = formal_lines if formal_lines is not None else runtime_projection_formal_spec_lines()
-    text = path.read_text(encoding="utf-8")
-    issues = []
-    if not runtime_projection_has_authority(text):
-        issues.append(Issue(path, 1, "运行投影缺少 specs 权威来源引用或明确降级来源", code="RUNTIME_PROJECTION_AUTHORITY_MISSING"))
-    for ref in runtime_projection_spec_refs(text):
-        if not runtime_projection_spec_path_exists(ref):
-            issues.append(Issue(path, 1, f"运行投影引用的正式规范不存在: {ref}", code="RUNTIME_PROJECTION_SPEC_REF_MISSING"))
-    copied = runtime_projection_detect_copied_formal_lines(text, formal_lines)
-    if len(copied) >= 3:
-        sources = ", ".join(sorted({item["source"] for item in copied}))
-        issues.append(Issue(path, 1, f"运行投影疑似复制正式规范正文，可能产生漂移: {sources}", code="RUNTIME_PROJECTION_BODY_COPIED"))
-    return issues
-
-
-def runtime_projection_issue_status(issue):
-    if issue.code == "RUNTIME_PROJECTION_BODY_COPIED":
-        return "degraded"
-    return "open"
+    sync_runtime_projection_config()
+    return runtime_projection_checks.is_project_local(path)
 
 
 def runtime_projection_report_build(paths=None):
-    check_paths = paths if paths is not None else runtime_projection_default_paths()
-    files = runtime_projection_iter_files(check_paths)
-    formal_lines = runtime_projection_formal_spec_lines()
-    issues = []
-    for file_path in files:
-        issues.extend(runtime_projection_check_file(file_path, formal_lines))
-    issue_items = []
-    for issue in issues:
-        issue_items.append(
-            {
-                "source": landing_relative_path(issue.path),
-                "line": issue.line,
-                "code": issue.code,
-                "status": runtime_projection_issue_status(issue),
-                "message": issue.message,
-            }
-        )
-    status = "closed"
-    if any(item["status"] == "open" for item in issue_items):
-        status = "open"
-    elif any(item["status"] == "degraded" for item in issue_items):
-        status = "degraded"
-    elif not files:
-        status = "open"
-    return {
-        "metadata": {
-            "tool": "code/specs_validate.py",
-            "report": "runtime-projection",
-            "generated_at": datetime.now().isoformat(timespec="seconds"),
-            "source_of_truth": False,
-            "status_source": "derived heuristic",
-            "checked_file_count": len(files),
-            "issue_count": len(issue_items),
-            "scope": "project-local runtime projections only",
-        },
-        "summary": {
-            "status": status,
-            "by_status": landing_report_count_by(issue_items, "status"),
-            "by_code": landing_report_count_by(issue_items, "code"),
-        },
-        "issues": issue_items,
-    }
-
-
-def runtime_projection_format_text(report):
-    lines = ["运行投影漂移检查"]
-    metadata = report["metadata"]
-    lines.append(f"- 检查文件数: {metadata['checked_file_count']}")
-    lines.append(f"- 问题数: {metadata['issue_count']}")
-    lines.append(f"- 状态: {report['summary']['status']}")
-    lines.append("- 状态判断: Code 派生启发式，非事实源")
-    lines.append("")
-    lines.append("问题:")
-    if not report["issues"]:
-        lines.append("- 无")
-    else:
-        for item in report["issues"]:
-            lines.append(f"- {item['source']}:{item['line']} [{item['status']}/{item['code']}] {item['message']}")
-    return "\n".join(lines)
+    sync_runtime_projection_config()
+    return runtime_projection_checks.report_build(paths)
 
 
 def runtime_projection_main(paths=None, output_format="text"):
-    report = runtime_projection_report_build(paths if paths else None)
-    if output_format == "json":
-        print(json.dumps(report, ensure_ascii=False, indent=2))
-    else:
-        print(runtime_projection_format_text(report))
-    return 0 if report["summary"]["status"] == "closed" else 1
+    sync_runtime_projection_config()
+    return runtime_projection_checks.main(paths, output_format)
 
 
 DEPLOYMENT_ENTRIES_AI_ENTRY_PATH = "rules/LDVH-AI-ENTRY.md"
