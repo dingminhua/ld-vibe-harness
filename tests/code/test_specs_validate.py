@@ -8,6 +8,7 @@ spec = importlib.util.spec_from_file_location("specs_validate", MODULE_PATH)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
 from spec_checks import ldvh_landing as ldvh_landing_checks
+from spec_checks import web_validate as web_validate_checks
 
 
 def write_md(path, content):
@@ -748,6 +749,12 @@ def test_consistency_reports_retired_04_series_file(monkeypatch, tmp_path):
 
 
 # ── web-validate 子命令测试 ──────────────────────────────────────
+
+
+def test_web_validate_core_implementation_lives_in_spec_checks():
+    assert checker.web_validate_checks is web_validate_checks
+    assert web_validate_checks.web_validate_build.__module__ == "spec_checks.web_validate"
+    assert web_validate_checks.web_validate_main.__module__ == "spec_checks.web_validate"
 
 
 def test_web_validate_build_returns_dict():
