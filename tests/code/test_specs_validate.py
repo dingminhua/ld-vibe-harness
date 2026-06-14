@@ -9,6 +9,7 @@ checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
 from spec_checks import consistency as consistency_checks
 from spec_checks import deployment_entries as deployment_entries_checks
+from spec_checks import index as index_checks
 from spec_checks import ldvh_landing as ldvh_landing_checks
 from spec_checks import web_validate as web_validate_checks
 
@@ -1094,6 +1095,12 @@ def test_explicit_specs_path_reference_resolves_unchecked_existing_file(tmp_path
 
     assert checker.refs_check_paths([source]) == []
     assert target.exists()
+
+
+def test_index_core_implementation_lives_in_spec_checks():
+    assert checker.index_checks is index_checks
+    assert checker.SpecsChecker is index_checks.SpecsChecker
+    assert index_checks.index_main.__module__ == "spec_checks.index"
 
 
 def test_specs_document_reports_docs_path_reference(tmp_path):
