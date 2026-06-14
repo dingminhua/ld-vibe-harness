@@ -1216,6 +1216,18 @@ def test_specs_document_reports_possible_duplicate_term_definition(tmp_path):
 def test_specs_document_allows_term_definition_in_owner_spec(tmp_path):
     specs = tmp_path / "specs"
     write_md(
+        specs / "00-LD-Vibe-Harness理念与纲要.md",
+        """
+# LD Vibe Harness 理念与纲要
+
+> 创建日期：2026-06-15
+> 定位：总纲
+> 适用范围：LDVH
+
+## 1. 第一章
+""",
+    )
+    write_md(
         specs / "05-工作模型基础规范.md",
         """
 # 工作模型基础规范
@@ -1239,6 +1251,172 @@ def test_specs_document_allows_term_definition_in_owner_spec(tmp_path):
         item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "工作模型" in item["message"]
         for item in indexes["diagnostics"]
     )
+
+
+def test_index_extracts_ldvh_member_for_work_model(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "00-LD-Vibe-Harness理念与纲要.md",
+        """
+# LD Vibe Harness 理念与纲要
+
+> 创建日期：2026-06-15
+> 定位：总纲
+> 适用范围：LDVH
+
+## 1. 第一章
+""",
+    )
+    write_md(
+        specs / "05-工作模型基础规范.md",
+        """
+# 工作模型基础规范
+
+> 创建日期：2026-06-15
+> 定位：工作模型基础规则
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+## 1. 第一章
+""",
+    )
+    write_md(
+        specs / "22-Task-任务.md",
+        """
+# Task / 任务
+
+> 创建日期：2026-06-15
+> 定位：任务工作模型
+> 适用范围：LDVH
+> 上位依据：`specs/05-工作模型基础规范.md`
+
+```yaml
+ldvh_member:
+  spec_id: "22"
+  kind: work_model
+  name_en: Task
+  name_zh: 任务
+  collection_status: active
+  canonical_path: specs/22-Task-任务.md
+  instance_root: ldvh-base/tasks/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+    - status_machine
+```
+
+## 1. 第一章
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    members = indexes["members"]
+    assert len(members) == 1
+    assert members[0]["spec_id"] == "22"
+    assert members[0]["kind"] == "work_model"
+    assert members[0]["collection_status"] == "active"
+    assert members[0]["canonical_path"] == "specs/22-Task-任务.md"
+    assert members[0]["code_consumption"] == ["fields", "status_machine"]
+    assert not indexes["diagnostics"]
+
+
+def test_index_reports_ldvh_member_spec_id_mismatch(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "22-Task-任务.md",
+        """
+# Task / 任务
+
+> 创建日期：2026-06-15
+> 定位：任务工作模型
+> 适用范围：LDVH
+> 上位依据：`specs/05-工作模型基础规范.md`
+
+```yaml
+ldvh_member:
+  spec_id: "23"
+  kind: work_model
+  name_en: Task
+  name_zh: 任务
+  collection_status: active
+  canonical_path: specs/22-Task-任务.md
+  instance_root: ldvh-base/tasks/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+```
+
+## 1. 第一章
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
+
+    assert any(item["code"] == "LDVH_MEMBER_SPEC_ID_MISMATCH" for item in diagnostics)
+
+
+def test_index_reports_missing_ldvh_member_for_concrete_work_model(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "22-Task-任务.md",
+        """
+# Task / 任务
+
+> 创建日期：2026-06-15
+> 定位：任务工作模型
+> 适用范围：LDVH
+> 上位依据：`specs/05-工作模型基础规范.md`
+
+## 1. 第一章
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
+
+    assert any(item["code"] == "LDVH_MEMBER_MISSING" for item in diagnostics)
+
+
+def test_index_reports_duplicate_ldvh_member_spec_id(tmp_path):
+    specs = tmp_path / "specs"
+    for filename in ("22-Task-任务.md", "23-SubTask-子任务.md"):
+        write_md(
+            specs / filename,
+            f"""
+# 测试
+
+> 创建日期：2026-06-15
+> 定位：测试工作模型
+> 适用范围：LDVH
+> 上位依据：`specs/05-工作模型基础规范.md`
+
+```yaml
+ldvh_member:
+  spec_id: "22"
+  kind: work_model
+  name_en: Test
+  name_zh: 测试
+  collection_status: active
+  canonical_path: specs/{filename}
+  instance_root: ldvh-base/tasks/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+```
+
+## 1. 第一章
+""",
+        )
+
+    diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
+
+    assert any(item["code"] == "LDVH_MEMBER_DUPLICATE_SPEC_ID" for item in diagnostics)
 
 
 def test_specs_document_skips_definition_sentence_in_terminology_spec(tmp_path):
@@ -2053,6 +2231,7 @@ def test_write_outputs_creates_expected_json_files(tmp_path):
         "specs-diagnostics.json",
         "specs-docs-index.json",
         "specs-mechanism-index.json",
+        "specs-members-index.json",
         "specs-relations-index.json",
         "specs-sections-index.json",
     ]

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .common import HEADING_RE, Issue, iter_markdown_files
 from . import landing as landing_checks
+from .index import SpecsChecker
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -228,6 +229,7 @@ CONSISTENCY_DEPRECATED_EXPRESSIONS = {
 
 CONSISTENCY_INDEX_OVERRUN_KEYWORDS = ("字段契约", "状态机", "Scenario", "Gate 触发条件", "执行流程", "事实源回写", "对象关系")
 CONSISTENCY_INDEX_FILE_RE = re.compile(r"^(20|40)-")
+CONSISTENCY_DEPRECATED_INDEX_FILE_NAMES = {"20-工作模型集合索引.md", "40-工作流程集合索引.md"}
 CONSISTENCY_INDEX_BOUNDARY_TERMS = (
     "本文不定义",
     "不定义",
@@ -255,6 +257,8 @@ def consistency_line_is_index_boundary_context(line):
 def consistency_index_overrun_issues(paths):
     issues = []
     for path in iter_markdown_files(paths):
+        if consistency_is_current_deprecated_index(path):
+            continue
         if not CONSISTENCY_INDEX_FILE_RE.match(Path(path).name):
             continue
         in_code = False
@@ -391,7 +395,7 @@ def consistency_work_model_skeleton_issues(entries):
             number = int(entry["number"])
         except ValueError:
             continue
-        if number < 21 or number > 39:
+        if number < 20 or number > 39:
             continue
         doc_name = entry["title"]
         path = SPECS_DIR / doc_name
@@ -548,10 +552,14 @@ def consistency_index_skeleton_issues(paths):
     # 从传入路径中查找索引文档，同时保留 SPECS_DIR 作为后备
     index_files = []
     for p in iter_markdown_files(paths):
+        if consistency_is_current_deprecated_index(p):
+            continue
         if re.match(r"^(20|40)-", Path(p).name):
             index_files.append(Path(p))
     # 也检查 SPECS_DIR
     for f in SPECS_DIR.glob("*.md"):
+        if consistency_is_current_deprecated_index(f):
+            continue
         if re.match(r"^(20|40)-", f.name) and f not in index_files:
             index_files.append(f)
     for path in index_files:
@@ -561,6 +569,18 @@ def consistency_index_skeleton_issues(paths):
             if actual is None:
                 issues.append(Issue(path, 1, f"索引文档缺少 03.02 强制章节: ## {section_number}. {expected_title}", code="INDEX_SECTION_MISSING"))
     return issues
+
+
+def consistency_is_current_deprecated_index(path):
+    path = Path(path)
+    if path.name not in CONSISTENCY_DEPRECATED_INDEX_FILE_NAMES or path.parent.resolve() != SPECS_DIR.resolve():
+        return False
+    title = ""
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("# "):
+            title = line[2:].strip()
+            break
+    return "迁移待删除" in title
 
 
 def consistency_human_gate_check_section_issues(paths):
@@ -643,11 +663,10 @@ def consistency_deprecated_expression_issues(paths):
 
 def consistency_check(paths=None):
     check_paths = paths if paths else [str(SPECS_DIR)]
-    model_index = SPECS_DIR / "20-工作模型集合索引.md"
-    workflow_index = SPECS_DIR / "40-工作流程集合索引.md"
     issues = []
-    model_entries = consistency_collection_entries(model_index, "model") if model_index.exists() else []
-    workflow_entries = consistency_collection_entries(workflow_index, "workflow") if workflow_index.exists() else []
+    checker = SpecsChecker(PROJECT_ROOT)
+    model_entries = checker.members_as_collection_entries("work_model")
+    workflow_entries = checker.members_as_collection_entries("work_process")
     issues.extend(consistency_collection_range_issues(model_entries, "model"))
     issues.extend(consistency_collection_range_issues(workflow_entries, "workflow"))
     issues.extend(consistency_work_model_skeleton_issues(model_entries))

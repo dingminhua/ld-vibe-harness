@@ -27,6 +27,7 @@ INDEX_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\
 INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
 INDEX_DEFINITION_SENTENCE_RE = re.compile(r"^(?:(?:在本文|在本规范|在本文档)中[，,]?\s*)?(?:(?:[-*]|\d+[.、])\s*)?(?:\*\*)?([^|。；;，,\s`*是]{2,24})(?:\*\*)?\s*(?:是指|定义为|包括且仅包括|指(?!向|引|标|回|令|定|派|出|控|责|南|针|纹|挥|数|甲|望)|是(?!否))")
 INDEX_FOOTNOTE_RE = re.compile(r"^\[\^[^\]]+\]:\s*(.+)$")
+INDEX_LDVH_MEMBER_RE = re.compile(r"```ya?ml\s*\n(.*?\n)```", re.DOTALL)
 INDEX_FORBIDDEN_DEFINITION_SECTION_TITLES = {"术语定义", "概念定义", "名词解释"}
 INDEX_GOVERNED_TERMS = {
     "LDVH 自身项目", "管辖项目", "管辖项目配置", "LDVH 文档工作区", "规范正文区", "管辖项目文档工作区", "正文区", "studies", "sources",
@@ -75,6 +76,7 @@ class SpecsChecker:
         sections = []
         relations = []
         mechanisms = []
+        members = []
         diagnostics = []
         for path in files:
             parsed = self.parse_file(path)
@@ -82,8 +84,11 @@ class SpecsChecker:
             sections.extend(parsed["sections"])
             relations.extend(parsed["relations"])
             mechanisms.extend(parsed["mechanisms"])
+            if parsed.get("member"):
+                members.append(parsed["member"])
             diagnostics.extend(parsed["diagnostics"])
         diagnostics.extend(self.diagnose_cross_document(docs, relations))
+        diagnostics.extend(self.diagnose_members(members))
         return {
             "metadata": {
                 "derived": True,
@@ -97,6 +102,7 @@ class SpecsChecker:
             "sections": sections,
             "relations": relations,
             "mechanisms": mechanisms,
+            "members": members,
             "diagnostics": diagnostics,
         }
 
@@ -110,7 +116,10 @@ class SpecsChecker:
         title = self.extract_title(lines)
         doc_number = self.extract_doc_number(path)
         doc_kind = self.infer_doc_kind(path, title, header)
+        member, member_diagnostics = self.extract_ldvh_member(path, text) if self.is_member_candidate(path) else (None, [])
         diagnostics = self.diagnose_document(path, lines, title, header, headings, doc_kind)
+        diagnostics.extend(member_diagnostics)
+        diagnostics.extend(self.diagnose_member_document(path, member))
         return {
             "doc": {
                 "path": rel_path,
@@ -133,6 +142,7 @@ class SpecsChecker:
             "sections": headings,
             "relations": self.extract_relations(path, lines, header, content_hash),
             "mechanisms": self.extract_mechanisms(path, lines, content_hash),
+            "member": member,
             "diagnostics": diagnostics,
         }
 
@@ -458,6 +468,184 @@ class SpecsChecker:
                     )
         return diagnostics
 
+    def extract_ldvh_member(self, path, text):
+        rel_path = self.relative_path(path)
+        for match in INDEX_LDVH_MEMBER_RE.finditer(text):
+            block = match.group(1)
+            lines_before = text[:match.start(1)].splitlines()
+            line_start = len(lines_before) + 1
+            parsed = self.parse_ldvh_member_block(block)
+            if parsed is None:
+                continue
+            member = parsed.get("ldvh_member")
+            if not isinstance(member, dict):
+                return None, [self.diagnostic(rel_path, line_start, "error", "LDVH_MEMBER_INVALID", "ldvh_member 必须是映射结构")]
+            normalized = dict(member)
+            normalized["path"] = rel_path
+            normalized["line"] = line_start
+            normalized["doc_number"] = self.extract_doc_number(path)
+            return normalized, []
+        return None, []
+
+    def parse_ldvh_member_block(self, block):
+        raw_lines = block.splitlines()
+        root = {}
+        current_root_key = None
+        current_list_key = None
+        for raw_line in raw_lines:
+            if not raw_line.strip():
+                continue
+            indent = len(raw_line) - len(raw_line.lstrip(" "))
+            stripped = raw_line.strip()
+            if stripped.startswith("#"):
+                continue
+            if indent == 0:
+                if not stripped.endswith(":"):
+                    return None
+                current_root_key = stripped[:-1].strip()
+                root[current_root_key] = {}
+                current_list_key = None
+                continue
+            if current_root_key is None:
+                return None
+            current = root[current_root_key]
+            if stripped.startswith("- "):
+                if current_list_key is None:
+                    return None
+                current[current_list_key].append(self.parse_scalar(stripped[2:].strip()))
+                continue
+            if ":" not in stripped:
+                return None
+            key, value = stripped.split(":", 1)
+            key = key.strip()
+            value = value.strip()
+            if not value:
+                current[key] = []
+                current_list_key = key
+            else:
+                current[key] = self.parse_scalar(value)
+                current_list_key = None
+        return root if "ldvh_member" in root else None
+
+    def parse_scalar(self, value):
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+            return value[1:-1]
+        if value in {"true", "false"}:
+            return value == "true"
+        return value
+
+    def diagnose_member_document(self, path, member):
+        rel_path = self.relative_path(path)
+        doc_number = self.extract_doc_number(path)
+        if not self.is_member_candidate(path):
+            return []
+        if not member:
+            return [self.diagnostic(rel_path, 1, "error", "LDVH_MEMBER_MISSING", "20-39 / 40-59 具体成员主文件缺少 ldvh_member 自描述")]
+        diagnostics = []
+        line = member.get("line") or 1
+        required = self.required_member_fields(member.get("kind"))
+        for field in required:
+            if member.get(field) in (None, "", []):
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_FIELD_MISSING", f"ldvh_member 字段缺失: {field}"))
+        spec_id = str(member.get("spec_id") or "")
+        if spec_id != str(doc_number):
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_SPEC_ID_MISMATCH", f"ldvh_member spec_id 与文件编号不一致: {spec_id} != {doc_number}"))
+        expected_kind = self.expected_member_kind(doc_number)
+        if expected_kind and member.get("kind") != expected_kind:
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_KIND_MISMATCH", f"ldvh_member kind 与编号区段不一致: {member.get('kind')} != {expected_kind}"))
+        canonical_path = member.get("canonical_path")
+        if canonical_path and canonical_path != rel_path:
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_CANONICAL_PATH_MISMATCH", f"ldvh_member canonical_path 与实际路径不一致: {canonical_path} != {rel_path}"))
+        status = member.get("collection_status")
+        allowed_statuses = self.allowed_member_statuses(member.get("kind"))
+        if status and status not in allowed_statuses:
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_STATUS_INVALID", f"ldvh_member collection_status 非法: {status}"))
+        return diagnostics
+
+    def members_as_collection_entries(self, kind):
+        indexes = self.build()
+        entries = []
+        for member in indexes.get("members", []):
+            if member.get("kind") != kind:
+                continue
+            entries.append(
+                {
+                    "path": member.get("path"),
+                    "line": member.get("line") or 1,
+                    "number": str(member.get("spec_id") or ""),
+                    "title": member.get("canonical_path") or member.get("path") or "",
+                    "type": "具体工作模型规范" if kind == "work_model" else "具体工作流程规范",
+                    "status": member.get("collection_status") or "",
+                    "source": None,
+                    "position": " / ".join(part for part in (member.get("name_en"), member.get("name_zh")) if part),
+                    "aliases": [],
+                }
+            )
+        return entries
+
+    def diagnose_members(self, members):
+        diagnostics = []
+        by_spec_id = {}
+        by_path = {}
+        for member in members:
+            spec_id = str(member.get("spec_id") or "")
+            canonical_path = member.get("canonical_path")
+            if spec_id:
+                by_spec_id.setdefault((member.get("kind"), spec_id), []).append(member)
+            if canonical_path:
+                by_path.setdefault(canonical_path, []).append(member)
+        for (_, spec_id), items in by_spec_id.items():
+            if len(items) <= 1:
+                continue
+            paths = ", ".join(item.get("path", "") for item in items)
+            for item in items:
+                diagnostics.append(self.diagnostic(item.get("path"), item.get("line") or 1, "error", "LDVH_MEMBER_DUPLICATE_SPEC_ID", f"ldvh_member spec_id 重复: {spec_id} ({paths})"))
+        for canonical_path, items in by_path.items():
+            if len(items) <= 1:
+                continue
+            paths = ", ".join(item.get("path", "") for item in items)
+            for item in items:
+                diagnostics.append(self.diagnostic(item.get("path"), item.get("line") or 1, "error", "LDVH_MEMBER_DUPLICATE_CANONICAL_PATH", f"ldvh_member canonical_path 重复: {canonical_path} ({paths})"))
+        return diagnostics
+
+    def is_member_candidate(self, path):
+        doc_number = self.extract_doc_number(path)
+        if not doc_number or "." in doc_number:
+            return False
+        try:
+            number = int(doc_number)
+        except ValueError:
+            return False
+        title = self.extract_title(path.read_text(encoding="utf-8").splitlines()) or ""
+        if "迁移待删除" in title:
+            return False
+        return 20 <= number <= 39 or 40 <= number <= 59
+
+    def expected_member_kind(self, doc_number):
+        try:
+            number = int(doc_number)
+        except (TypeError, ValueError):
+            return None
+        if 20 <= number <= 39:
+            return "work_model"
+        if 40 <= number <= 59:
+            return "work_process"
+        return None
+
+    def required_member_fields(self, kind):
+        common = ["spec_id", "kind", "name_en", "name_zh", "collection_status", "canonical_path", "code_consumption"]
+        if kind == "work_model":
+            return common + ["instance_root", "schema_anchor", "state_machine_anchor", "human_gate_anchor"]
+        if kind == "work_process":
+            return common
+        return common
+
+    def allowed_member_statuses(self, kind):
+        if kind == "work_model":
+            return {"active", "candidate", "reserved", "removed"}
+        if kind == "work_process":
+            return {"active", "planned", "candidate", "reserved", "removed"}
+        return {"active", "planned", "candidate", "reserved", "removed"}
 
     def has_body_reference(self, relations, source_path, target_path):
         for relation in relations:
@@ -587,6 +775,7 @@ def write_outputs(indexes, out_dir):
         "specs-sections-index.json": {"metadata": metadata, "sections": indexes["sections"]},
         "specs-relations-index.json": {"metadata": metadata, "relations": indexes["relations"]},
         "specs-mechanism-index.json": {"metadata": metadata, "mechanisms": indexes["mechanisms"]},
+            "specs-members-index.json": {"metadata": metadata, "members": indexes.get("members", [])},
         "specs-diagnostics.json": {"metadata": metadata, "diagnostics": indexes["diagnostics"]},
     }
     for name, payload in outputs.items():

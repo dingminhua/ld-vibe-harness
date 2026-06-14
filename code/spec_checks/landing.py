@@ -34,7 +34,12 @@ def is_formal_spec(path):
         rel = resolved.relative_to(PROJECT_ROOT)
     except ValueError:
         return False
-    return len(rel.parts) == 2 and rel.parts[0] == "specs" and path.suffix == ".md"
+    if len(rel.parts) != 2 or rel.parts[0] != "specs" or path.suffix != ".md":
+        return False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("# "):
+            return "迁移待删除" not in line
+    return True
 
 
 def strip_section_number(title):
