@@ -7,6 +7,7 @@ MODULE_PATH = Path(__file__).resolve().parents[2] / "code" / "specs_validate.py"
 spec = importlib.util.spec_from_file_location("specs_validate", MODULE_PATH)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
+from spec_checks import deployment_entries as deployment_entries_checks
 from spec_checks import ldvh_landing as ldvh_landing_checks
 from spec_checks import web_validate as web_validate_checks
 
@@ -2433,6 +2434,12 @@ LDVH 能力资产与落地保障定义见 `specs/04.02-LDVH能力资产与落地
 
 def deployment_entry_codes(issues):
     return [issue.code for issue in issues]
+
+
+def test_deployment_entries_core_implementation_lives_in_spec_checks():
+    assert checker.deployment_entries_checks is deployment_entries_checks
+    assert deployment_entries_checks.deployment_entries_check.__module__ == "spec_checks.deployment_entries"
+    assert deployment_entries_checks.deployment_entries_main.__module__ == "spec_checks.deployment_entries"
 
 
 def test_deployment_entries_valid_fixture_passes(tmp_path):

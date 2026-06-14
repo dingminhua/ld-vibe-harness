@@ -169,7 +169,7 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 ## 8. 待补齐事项
 
-1. `runtime_projection`、`governed_projects`、`human_gate`、`doc_structure`、`refs`、`landing` 基础检查、`landing_report`、`ldvh_landing` 和 `web_validate` 已迁入 `code/spec_checks/`，后续迁移应沿用兼容包装、聚焦测试和综合校验的做法；
+1. `runtime_projection`、`deployment_entries`、`governed_projects`、`human_gate`、`doc_structure`、`refs`、`landing` 基础检查、`landing_report`、`ldvh_landing` 和 `web_validate` 已迁入 `code/spec_checks/`，后续迁移应沿用兼容包装、聚焦测试和综合校验的做法；
 2. `specs_validate.py` 的结构化输出字段、错误码和诊断格式仍需后续统一；
 3. `tests/code/test_specs_validate.py` 后续可按能力域拆分，避免测试文件继续膨胀；
 4. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。
