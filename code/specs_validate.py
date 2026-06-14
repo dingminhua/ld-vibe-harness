@@ -3606,6 +3606,7 @@ INDEX_EXTERNAL_URL_RE = re.compile(r"https?://[^\s`，。；、)）]+")
 INDEX_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\d]+(?:\.\d+)*)")
 INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
 INDEX_DEFINITION_SENTENCE_RE = re.compile(r"^(?:(?:在本文|在本规范|在本文档)中[，,]?\s*)?(?:[-*]\s*)?(?:\*\*)?([^|。；;，,\s`*]{2,24})(?:\*\*)?\s*(?:是|是指|定义为|包括且仅包括)")
+INDEX_FORBIDDEN_DEFINITION_SECTION_TITLES = {"术语定义", "概念定义", "名词解释"}
 INDEX_GOVERNED_TERMS = {
     "LDVH 自身项目", "管辖项目", "管辖项目配置", "LDVH 文档工作区", "规范正文区", "管辖项目文档工作区", "正文区", "studies", "sources",
     "来源", "吸收", "参考与研究材料", "待补齐事项", "正式规范", "资产", "规范资产", "文本能力资产", "Code 能力资产", "Web 能力资产",
@@ -3944,8 +3945,29 @@ class SpecsChecker:
                 diagnostics.append(
                     self.diagnostic(rel_path, line_number, "warning", "EXTERNAL_REFERENCE_IN_SPEC", f"正式规范不得引用外部 URL: {target}")
                 )
-            if doc_kind == "formal_spec" and not path.name.startswith("02-"):
+            if doc_kind in {"formal_spec", "subdocument"} and not path.name.startswith("02-"):
+                diagnostics.extend(self.diagnose_definition_section_heading(rel_path, line_number, stripped))
                 diagnostics.extend(self.diagnose_definition_sentences(rel_path, line_number, stripped))
+        return diagnostics
+
+
+    def diagnose_definition_section_heading(self, rel_path, line_number, stripped):
+        diagnostics = []
+        match = HEADING_RE.match(stripped)
+        if not match:
+            return diagnostics
+        title = self.strip_section_number(match.group(2).strip())
+        if title not in INDEX_FORBIDDEN_DEFINITION_SECTION_TITLES:
+            return diagnostics
+        diagnostics.append(
+            self.diagnostic(
+                rel_path,
+                line_number,
+                "warning",
+                "FORBIDDEN_TERM_DEFINITION_SECTION",
+                f"非 02 术语规范不得设置二次术语定义章节: {title}",
+            )
+        )
         return diagnostics
 
 
@@ -4075,7 +4097,8 @@ class SpecsChecker:
             return "research"
         if len(parts) >= 2 and parts[0] == "specs" and parts[1] == "refs":
             return "refs"
-        if header.get("所属主文档"):
+        doc_number = self.extract_doc_number(path)
+        if header.get("所属主文档") or (doc_number and "." in doc_number and parts[0] == "specs"):
             return "subdocument"
         if title and "集合索引" in title:
             return "collection_index"
