@@ -18,6 +18,7 @@ if str(CODE_DIR) not in sys.path:
 from spec_checks import doc_structure as doc_structure_checks
 from spec_checks import governed_projects as governed_projects_checks
 from spec_checks import human_gate as human_gate_checks
+from spec_checks import refs as refs_checks
 from spec_checks import runtime_projection as runtime_projection_checks
 
 
@@ -858,161 +859,67 @@ def doc_main(paths):
 # refs — 引用完整性检查
 # ══════════════════════════════════════════════════════════════════════
 
-REFS_SECTION_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?(?:\s+|$)")
-REFS_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\d]+(?:\.\d+)*)")
-REFS_EXPLICIT_PATH_RE = re.compile(r"`([^`]+\.md)`\s*$")
-REFS_SHORTHAND_RE = re.compile(r"(\d+(?:\.\d+)?)\s*$")
-REFS_CHINESE_SECTION_RE = re.compile(r"^[一二三四五六七八九十百千万]+(?:\.\d+)*$")
+REFS_SECTION_HEADING_RE = refs_checks.REFS_SECTION_HEADING_RE
+REFS_SECTION_REF_RE = refs_checks.REFS_SECTION_REF_RE
+REFS_EXPLICIT_PATH_RE = refs_checks.REFS_EXPLICIT_PATH_RE
+REFS_SHORTHAND_RE = refs_checks.REFS_SHORTHAND_RE
+REFS_CHINESE_SECTION_RE = refs_checks.REFS_CHINESE_SECTION_RE
+Document = refs_checks.Document
 
 
-@dataclass
-class Document:
-    path: Path
-    sections: set
+def sync_refs_config():
+    refs_checks.PROJECT_ROOT = PROJECT_ROOT
+    refs_checks.SPECS_DIR = SPECS_DIR
+    refs_checks.LEGACY_SPECS_DIR = LEGACY_SPECS_DIR
 
 
 def refs_extract_sections(path):
-    sections = set()
-    in_code_block = False
-    for line in path.read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            in_code_block = not in_code_block
-            continue
-        if in_code_block:
-            continue
-        match = HEADING_RE.match(line)
-        if not match:
-            continue
-        title = match.group(2).strip()
-        section_match = REFS_SECTION_HEADING_RE.match(title)
-        if section_match:
-            sections.add(section_match.group(1))
-    return sections
+    return refs_checks.extract_sections(path)
 
 
 def refs_build_document_map(paths):
-    documents = {}
-    scan_paths = list(paths)
-    if SPECS_DIR.exists():
-        scan_paths.append(SPECS_DIR)
-    if LEGACY_SPECS_DIR.exists():
-        scan_paths.append(LEGACY_SPECS_DIR)
-    for path in iter_markdown_files(scan_paths):
-        documents[path.resolve()] = Document(path.resolve(), refs_extract_sections(path))
-    return documents
+    sync_refs_config()
+    return refs_checks.build_document_map(paths)
 
 
 def refs_resolve_markdown_path(raw_path, current_path):
-    if raw_path.startswith("specs/") or raw_path.startswith("docs/"):
-        return (PROJECT_ROOT / raw_path).resolve()
-    if raw_path.startswith("./") or raw_path.startswith("../"):
-        return (current_path.parent / raw_path).resolve()
-    return (SPECS_DIR / raw_path).resolve()
+    sync_refs_config()
+    return refs_checks.resolve_markdown_path(raw_path, current_path)
 
 
 def refs_resolve_shorthand(prefix, documents):
-    candidates = sorted(documents)
-    exact_prefix = f"{prefix}-"
-    sub_prefix = f"{prefix}."
-    for path in candidates:
-        if path.parent == SPECS_DIR.resolve() and path.name.startswith(exact_prefix):
-            return path
-    for path in candidates:
-        if path.parent == SPECS_DIR.resolve() and path.name.startswith(sub_prefix):
-            return path
-    return None
+    sync_refs_config()
+    return refs_checks.resolve_shorthand(prefix, documents)
 
 
 def refs_resolve_parent_document(path, documents):
-    match = re.match(r"^(\d+)\.\d+-", path.name)
-    if not match:
-        return None
-    return refs_resolve_shorthand(match.group(1), documents)
+    sync_refs_config()
+    return refs_checks.resolve_parent_document(path, documents)
 
 
 def refs_default_check_paths():
-    return [str(path) for path in sorted(SPECS_DIR.glob("*.md"))]
+    sync_refs_config()
+    return refs_checks.default_check_paths()
 
 
 def refs_check_section_target(issues, source_path, line_number, target_path, section, documents, code):
-    document = documents.get(target_path)
-    if document is None:
-        issues.append(Issue(source_path, line_number, f"引用文件不存在: {target_path}", code="FILE_NOT_FOUND"))
-        return
-    if section not in document.sections:
-        try:
-            display_target = target_path.relative_to(PROJECT_ROOT)
-        except ValueError:
-            display_target = target_path
-        issues.append(Issue(source_path, line_number, f"引用章节不存在: {display_target} §{section}", code=code))
+    sync_refs_config()
+    refs_checks.check_section_target(issues, source_path, line_number, target_path, section, documents, code)
 
 
 def refs_check_file(path, documents):
-    issues = []
-    source_path = path.resolve()
-    source_document = documents.get(source_path, Document(source_path, refs_extract_sections(source_path)))
-    in_code_block = False
-
-    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        stripped = line.strip()
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            in_code_block = not in_code_block
-            continue
-        if in_code_block:
-            continue
-
-        for match in REFS_SECTION_REF_RE.finditer(line):
-            section = match.group(1)
-            original = match.group(0)
-            if REFS_CHINESE_SECTION_RE.match(section):
-                issues.append(Issue(source_path, line_number, f"§ 引用应使用阿拉伯数字: {original}", code="CHINESE_SECTION_REF"))
-                continue
-
-            before = line[: match.start()]
-            explicit_match = REFS_EXPLICIT_PATH_RE.search(before)
-            if explicit_match:
-                target_path = refs_resolve_markdown_path(explicit_match.group(1), source_path)
-                refs_check_section_target(issues, source_path, line_number, target_path, section, documents, "MISSING_EXTERNAL_SECTION")
-                continue
-
-            shorthand_match = REFS_SHORTHAND_RE.search(before)
-            if shorthand_match:
-                prefix = shorthand_match.group(1)
-                target_path = refs_resolve_shorthand(prefix, documents)
-                if target_path is None:
-                    issues.append(Issue(source_path, line_number, f"速记引用无法解析目标文件: {prefix} §{section}", code="SHORTHAND_UNRESOLVED"))
-                    continue
-                refs_check_section_target(issues, source_path, line_number, target_path, section, documents, "MISSING_SHORTHAND_SECTION")
-                continue
-
-            parent_path = refs_resolve_parent_document(source_path, documents)
-            if parent_path and section in documents[parent_path].sections:
-                continue
-
-            if section not in source_document.sections:
-                issues.append(Issue(source_path, line_number, f"内部引用章节不存在: §{section}", code="MISSING_INTERNAL_SECTION"))
-
-    return issues
+    sync_refs_config()
+    return refs_checks.check_file(path, documents)
 
 
 def refs_check_paths(paths):
-    documents = refs_build_document_map(paths)
-    issues = []
-    for path in iter_markdown_files(paths):
-        issues.extend(refs_check_file(path, documents))
-    return issues
+    sync_refs_config()
+    return refs_checks.check_paths(paths)
 
 
 def refs_main(paths):
-    issues = refs_check_paths(paths)
-    if issues:
-        print(f"Specs § 引用检查失败，共 {len(issues)} 个问题：")
-        for issue in issues:
-            print(f"- {issue.format(PROJECT_ROOT)}")
-        return 1
-    print("Specs § 引用检查通过。")
-    return 0
+    sync_refs_config()
+    return refs_checks.main(paths)
 
 
 # ══════════════════════════════════════════════════════════════════════
