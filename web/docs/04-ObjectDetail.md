@@ -18,9 +18,9 @@
 工作对象头部：类型标签 + ID + 标题 + 创建/更新时间 + 复制路径图标
 非工作对象元信息行：创建时间、更新时间、关闭时间、辅助属性
 内容区：
-  WorkArea：活跃计划 / 待关闭计划 / 已闭合计划 + 目标 / 范围 / 约束 / 来源 + 文档 / ADR / 备忘 / 踩坑
-  TaskPlan：任务队列 + 成功标准 / 完成证据 + 目标 / 所属工作域 / 来源 + 文档 / ADR / 备忘 / 踩坑 / 关联变更
-  Task：任务状态 + 子任务态势 + 验收标准 + 验证方式 + 目标 / 所属计划 / 来源 + 关闭证据 + 产出物 / 关联文档 / 影响文档 / ADR / 关联变更
+  WorkArea：活跃计划 / 待关闭计划 / 已闭合计划 + 目标 / 范围 / 约束 / 来源 + 文档 / 决策 / 备忘 / 踩坑经验
+  TaskPlan：任务队列 + 成功标准 / 完成证据 + 目标 / 所属工作域 / 来源 + 文档 / 决策 / 备忘 / 踩坑经验 / 关联变更
+  Task：任务状态 + 子任务态势 + 验收标准 + 验证方式 + 目标 / 所属计划 / 来源 + 关闭证据 + 产出物 / 关联文档 / 影响文档 / 决策 / 关联变更
   SubTask：任务状态 + 验收标准 + 验证方式 + 目标 / 所属任务 / 来源 + 关闭证据
   其他对象：字段卡片布局
 YAML 源码折叠区
@@ -49,7 +49,7 @@ WorkArea 不使用普通字段卡片堆叠，而作为“工作域入口”展�
 3. 计划组标题只使用小圆点，不使用 TaskPlan 对象图标；计划行展示 TaskPlan 对象图标、计划标题、计划 ID、更新时间、compact 任务态势条、复制路径和辅助阅读入口图标，不重复展示状态徽章；态势条占满计划行宽度；计划标题使用 `ldvh-body`，不使用 `ldvh-card-title`，避免越过组标题和区块标题层级；成功标准、完成证据等计划关闭材料留在 TaskPlan 详情中表达。复制路径图标默认和 hover 都保持中性 ghost；辅助阅读图标默认中性，在计划行 hover 或当前右侧阅读已打开时才使用该计划组状态色。
 4. WorkArea 详情页点击计划行只打开右侧辅助阅读区，不切换主路由到 TaskPlan 详情；主路由跳转只属于对象列表卡片。
 5. 定义事实不再收进“属性”总区块；目标、范围、约束、来源分别作为同级模块展示 `description/scope/constraints/source`，不把 `scope` 放进顶部元信息 chip。模块标题使用小圆点，降低装饰负担；多行内容渲染为语句列表，`包含` / `不包含` 等短前缀渲染为语义标签。
-6. 关联材料不再收进“关联材料”总区块；文档、ADR、备忘、踩坑按 `related_docs/related_adrs/related_memos/related_pitfalls` 分别作为同级模块展示，只有对应字段非空时显示。
+6. 关联材料不再收进“关联材料”总区块；文档、决策、备忘、踩坑经验按 `related_docs/related_adrs/related_memos/related_pitfalls` 分别作为同级模块展示，只有对应字段非空时显示。
 7. 关联材料模块内部使用 plain 引用行，不带状态色背景，也不再套小卡片边框；右侧复制路径和扩展阅读图标保持中性 ghost 表现，左侧对象类型图标、ID 或短标签承担对象类型识别。
 
 ## 5. TaskPlan 语义阅读布局
@@ -60,7 +60,7 @@ TaskPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 2. 成功标准和完成证据不再收进“关闭判断”总区块；分别作为同级模块展示 `success_criteria/completion_evidence`。不展示额外顶部结论条，不单列待确认项或记录状态，未完成项由两个 checklist 自身表达。成功标准是关闭判断依据，但不再用外层总模块包住。
 3. 定义事实不再收进“属性”总区块；目标、所属工作域、来源分别作为同级模块展示 `description/workarea/source`。所属工作域入口使用模块内对象引用值，显示 WorkArea 对象图标和工作域标题，不显示 ID 或状态徽章，点击只打开右侧辅助阅读，不切换主路由。
 4. Task 行在 TaskPlan 详情中与 WorkArea card 的动作体验保持一致：复用状态色弱背景、左侧状态图标、Task 对象图标、任务标题、ID、复制路径和辅助阅读入口；右侧操作图标默认中性，辅助阅读入口可随行 hover 切到该行背景对应的状态色，复制按钮只有自身 hover 时变色。有 SubTask 时只展示 compact 子任务态势条，不在 TaskPlan 详情展开子任务行。
-5. 关联材料不再收进“关联材料”总区块；文档、ADR、备忘、踩坑、关联变更按 `related_docs/related_adrs/related_memos/related_pitfalls/related_changes` 分别作为同级模块展示。材料来源仍聚合计划自身和计划内 Task，按 ID 或路径去重；不把 Task 的 `deliverables/affected_docs` 混入计划材料。
+5. 关联材料不再收进“关联材料”总区块；文档、决策、备忘、踩坑经验、关联变更按 `related_docs/related_adrs/related_memos/related_pitfalls/related_changes` 分别作为同级模块展示。材料来源仍聚合计划自身和计划内 Task，按 ID 或路径去重；不把 Task 的 `deliverables/affected_docs` 混入计划材料。
 6. TaskPlan 详情页点击 Task 行只打开右侧辅助阅读区，不切换主路由到 Task 详情；主路由跳转只属于对象列表卡片。
 
 ## 6. Task 语义阅读布局
@@ -74,7 +74,7 @@ Task / SubTask 不使用普通字段卡片堆叠，而使用固定阅读主线�
 5. 验证方式：`verification` 内容为 GFM checklist 时与验收标准保持同样的 `ChecklistCard` 样式；内容为命令、结论或证据段落时使用 embedded `EvidenceBlock`。关闭证据 `closure_evidence` 作为独立证据模块展示，且只有在事实源存在非空内容时显示，不用“尚未记录”占位模块暗示验证中对象已经具备关闭证据。
 6. 定义事实不再收进“任务目标”或“上下文”总区块；目标、所属计划或所属任务、来源分别作为同级模块展示，来源放在父对象引用之后。`source` 字段本身就是来源，不在字段内容里再写“来源：”或“用途：”二级标签；用途、测试目的等说明应进入目标或验收/验证字段。所属计划/任务入口使用模块内对象引用值，点击只打开右侧辅助阅读。
 7. Task 的产出与文档不再收进“产出与文档”总区块；产出物、关联文档、影响文档按 `deliverables/related_docs/affected_docs` 分别作为同级模块展示。`affected_docs` 只表示任务完成后需要同步检查的文档路径，应指向 `docs/`、`web/docs/` 或 `specs/` 下的 Markdown 文档，不得放入 `web/src/` 等实现源码路径。
-8. Task 的关联材料不再收进“关联材料”总区块；ADR、关联变更按 `related_adrs/related_changes` 分别作为同级模块展示。材料只收纳当前 Task 自己的材料，不复制上层 TaskPlan 或 WorkArea 的材料。SubTask 字段契约当前不定义产出物、关联文档、影响文档、ADR 或关联变更；测试夹具不得为 SubTask 杜撰这些字段。
+8. Task 的关联材料不再收进“关联材料”总区块；决策、关联变更按 `related_adrs/related_changes` 分别作为同级模块展示。材料只收纳当前 Task 自己的材料，不复制上层 TaskPlan 或 WorkArea 的材料。SubTask 字段契约当前不定义产出物、关联文档、影响文档、决策或关联变更；测试夹具不得为 SubTask 杜撰这些字段。
 9. 其他字段：只显示非空字段，避免把空数组、空关联或空产出提升到主阅读流；如果 Task / SubTask 经常出现“其他字段”，应优先回到字段规范和专用布局收敛，而不是把它视为正常主模块。
 10. Task / SubTask 详情页内的父计划、父任务和子任务行只打开右侧辅助阅读区，不切换主路由。
 11. Task / SubTask 不继承上层对象的完整详情：Task 只回指所属 TaskPlan，SubTask 只回指所属 Task。WorkArea 的范围、约束和 TaskPlan 的成功标准、完成证据只在对应对象详情中阅读。

@@ -60,7 +60,6 @@ related_docs:
 - specs/07-Code确定性执行实现规范.md
 - specs/08-Web信息同步实现规范.md
 - specs/05-工作模型基础规范.md
-- specs/20-工作模型集合索引.md
 - web/docs/07-内容可读性深度研究.md
 closed_at: '2026-06-06T18:40:33.152760'
 taskplan: taskplan-0052

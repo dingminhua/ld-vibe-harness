@@ -43,6 +43,8 @@ related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
+taskplans:
+  - taskplan-0001
 """,
     )
     write_yaml(
@@ -129,6 +131,34 @@ def test_workarea_archived_requires_archive_reason(tmp_path):
     assert result.returncode == 1
     assert "MISSING_ARCHIVE_REASON" in result.stdout
     assert "archive_reason" in result.stdout
+
+
+def test_workarea_taskplans_must_point_back_to_workarea(tmp_path):
+    root = base_tree(tmp_path)
+    write_yaml(
+        root / "ldvh-base" / "workareas" / "workarea-0002-other.yaml",
+        """
+id: workarea-0002
+type: workarea
+title: Other
+status: active
+created: "2026-06-12"
+updated: "2026-06-12"
+description: Other work area
+source: test
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+taskplans:
+  - taskplan-0001
+""",
+    )
+
+    result = run_checker(root / "ldvh-base" / "workareas" / "workarea-0002-other.yaml")
+
+    assert result.returncode == 1
+    assert "WORKAREA_BACKREF_MISMATCH" in result.stdout
 
 
 def test_taskplan_review_needed_requires_review_fields(tmp_path):

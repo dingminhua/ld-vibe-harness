@@ -4,9 +4,7 @@ title: 实际清理工作模型子文档体系
 status: closed
 created: '2026-06-05T06:20:49.877841'
 updated: '2026-06-05T09:08:00.685366'
-description: 直接清理 specs/20-39 范围内工作模型历史子文档体系：根据 07 §4.6、20 §6 和 06/05/08 的机制归属边界，对
-  Rules、Skill、Agent、Tools、Web、Contract 等子文档执行保留、合并、删除或上移，并同步修正引用关系；如遇规范冲突、权威边界不清或大规模删除风险，必须先提出问题并经
-  Human Gate 确认。
+description: 直接清理 specs/20-39 范围内工作模型历史子文档体系：根据 07 §4.6、20 §6 和 06/05/08 的机制归属边界，对 Rules、Skill、Agent、Tools、Web、Contract 等子文档执行保留、合并、删除或上移，并同步修正引用关系；如遇规范冲突、权威边界不清或大规模删除风险，必须先提出问题并经 Human Gate 确认。
 source: workarea-0004
 acceptance: |-
   - [x] 已列出待清理子文档清单，并按删除、合并回主规范、上移到机制规范、迁移到运行入口、过渡保留分类

@@ -6,9 +6,9 @@ created: '2026-06-05T05:00:28.812414'
 updated: '2026-06-05T05:30:00.000000'
 workarea: workarea-0002
 description: 由历史 Task task-0019 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
-success_criteria: '- [x] 关联任务 task-0019 满足其 acceptance、verification 和 closure_evidence。
-
-  - [x] 关联任务 task-0020 满足其 acceptance、verification 和 closure_evidence。'
+success_criteria: |-
+  - [x] 关联任务 task-0019 满足其 acceptance、verification 和 closure_evidence。
+  - [x] 关联任务 task-0020 满足其 acceptance、verification 和 closure_evidence。
 source: '历史 Task task-0019 迁移生成；旧 source_intent: intent-0002'
 tasks:
 - task-0019
@@ -18,11 +18,10 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-05T05:30:00.000000'
-completion_evidence: '历史任务计划迁移聚合证据：
-
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
   - task-0019: 所有文件重命名完成：ldvh_fact_cli.py→fact_cli.py, ldvh_fact_validate.py→fact_validate.py,
-
-  - task-0020: fact_cli.py 已新增 6 个 ADR 专属子命令：search、stats、related、link-rule、deprecate、supersede。'
+  - task-0020: fact_cli.py 已新增 6 个 ADR 专属子命令：search、stats、related、link-rule、deprecate、supersede。
 closed_at: '2026-06-05T05:30:00.000000'
 priority: P2
 importance: medium

@@ -6,15 +6,11 @@ title_zh: 22 主文档与子文档状态矛盾待修复
 status: active
 created: 2026-06-04
 updated: 2026-06-04
-description: 'specs/22 §14 声明 22.01-Rules.md 和 22.04-Tools.md 为 not-created 状态，
-
+description: |
+  specs/22 §14 声明 22.01-Rules.md 和 22.04-Tools.md 为 not-created 状态，
   但实际文件包含完整 active 级别内容，违反 not-created 子文档骨架约束。
-
   已记录为 pitfall-0002，需要后续修复：要么更新 22 §14 中的状态声明为 active，
-
   要么将子文档内容降级为 not-created 骨架。
-
-  '
 source: 执行规范审查过程中的发现
 category: gap
 related_tasks: []

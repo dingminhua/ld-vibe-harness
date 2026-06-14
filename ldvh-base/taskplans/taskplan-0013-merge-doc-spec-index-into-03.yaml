@@ -15,9 +15,9 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-05'
-completion_evidence: '历史任务计划迁移聚合证据：
-
-  - task-0013: 03 文档重命名并调整标题；03.01 必要内容精简并入 03 §8 索引规范章节，03.01 改为迁移说明；specs 根目录和 Rules 引用已更新。文档规范和引用检查均通过。'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0013: 03 文档重命名并调整标题；03.01 必要内容精简并入 03 §8 索引规范章节，03.01 改为迁移说明；specs 根目录和 Rules 引用已更新。文档规范和引用检查均通过。
 closed_at: '2026-06-05'
 priority: P2
 importance: medium

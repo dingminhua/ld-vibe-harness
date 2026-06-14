@@ -131,7 +131,7 @@ WorkArea 的创建、归档、恢复和范围变更都应留下 Change。TaskPla
 
 ### 4.4 Change 与 Memo、Pitfall
 
-Memo 的准入、状态和字段契约由 `specs/26-Memo-备忘.md` 定义。Pitfall 的准入、状态和字段契约由 `specs/25-Pitfall-踩坑.md` 定义。Change 可通过 `Refs:` 或 body 记录相关 Memo、Pitfall ID、路径或摘要。
+Memo 的准入、状态和字段契约由 `specs/26-Memo-备忘.md` 定义。Pitfall 的准入、状态和字段契约由 `specs/25-Pitfall-踩坑经验.md` 定义。Change 可通过 `Refs:` 或 body 记录相关 Memo、Pitfall ID、路径或摘要。
 
 ### 4.5 Change 与规范、Code、Web
 

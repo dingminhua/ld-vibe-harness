@@ -15,9 +15,9 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-05T20:12:00.000000'
-completion_evidence: '历史任务计划迁移聚合证据：
-
-  - task-0034: 参考文档已写入 docs/sources/08-工作区参考项目Web设计调研.md，覆盖三个项目的'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0034: 参考文档已写入 docs/sources/08-工作区参考项目Web设计调研.md，覆盖三个项目的
 closed_at: '2026-06-05T20:12:00.000000'
 priority: P2
 importance: medium

@@ -15,9 +15,9 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-05T23:01:17.062265'
-completion_evidence: '历史任务计划迁移聚合证据：
-
-  - task-0041: Dashboard态势摘要行按状态分组计数actionItems，待推进区域executing/verifying/review_needed'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0041: Dashboard态势摘要行按状态分组计数actionItems，待推进区域executing/verifying/review_needed
 closed_at: '2026-06-05T23:01:17.062265'
 priority: P2
 importance: medium

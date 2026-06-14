@@ -15,9 +15,9 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-05'
-completion_evidence: '历史任务计划迁移聚合证据：
-
-  - task-0016: 06 文档创建并合并 12.01/12.02 必要内容；PyTools 规则（§4）和 WebTools 规则（§5）已精简并入；12.01/12.02 改为迁移说明；specs 根目录和 Rules 引用已更新。文档规范和引用检查均通过。'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0016: 06 文档创建并合并 12.01/12.02 必要内容；PyTools 规则（§4）和 WebTools 规则（§5）已精简并入；12.01/12.02 改为迁移说明；specs 根目录和 Rules 引用已更新。文档规范和引用检查均通过。
 closed_at: '2026-06-05'
 priority: P2
 importance: medium

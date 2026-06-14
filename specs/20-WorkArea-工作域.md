@@ -155,7 +155,7 @@ ADR、Memo、Pitfall 可以引用工作域，用于表达某条决策、备忘�
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_pitfalls` | 关联踩坑 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `taskplans` | 所属 TaskPlan ID 列表 | list[string] | 否 | 默认为空列表；由 TaskPlan 的 `workarea` 反向聚合 | Reference | AI、Code、Web |
 | `status_history` | — | list[object] | 否 | 状态变化时追加 | Log | AI、Code |
 | `archive_reason` | — | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Code、Web |

@@ -52,7 +52,7 @@ REQUIRED_FIELDS = {
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category", "importance"],
 }
 LIST_FIELDS = {
-    "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs"},
+    "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "taskplans"},
     "taskplan": {"tasks", "related_adrs", "related_memos", "related_pitfalls", "related_docs"},
     "task": {"related_adrs", "blocked_by", "related_docs", "affected_docs", "deliverables"},
     "subtask": {"blocked_by"},
@@ -480,6 +480,23 @@ def validate_single_id_reference(path: Path, data: dict[str, Any], field: str, o
 
 def validate_workarea(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "workarea")
+    project_root = infer_project_root(path)
+    workarea_id = data.get("id")
+    taskplans = data.get("taskplans")
+    if isinstance(taskplans, list) and isinstance(workarea_id, str):
+        for taskplan_id in taskplans:
+            if not isinstance(taskplan_id, str) or not ID_PATTERNS["taskplan"].match(taskplan_id):
+                issues.append(Issue(str(path), "error", "INVALID_TASKPLAN_REFERENCE", f"taskplans 中必须使用 taskplan-{{NNNN}} 格式的 TaskPlan ID: {taskplan_id}", field="taskplans"))
+                continue
+            taskplan_path, taskplan_data, load_issue = find_object_by_id(project_root, "taskplan", taskplan_id)
+            if load_issue:
+                issues.append(load_issue)
+                continue
+            if taskplan_path is None or taskplan_data is None:
+                issues.append(Issue(str(path), "error", "TASKPLAN_NOT_FOUND", f"taskplans 引用的 TaskPlan 不存在: {taskplan_id}", field="taskplans"))
+                continue
+            if taskplan_data.get("workarea") != workarea_id:
+                issues.append(Issue(str(path), "error", "WORKAREA_BACKREF_MISMATCH", f"TaskPlan 未通过 workarea 指回当前工作域: {taskplan_id}", field="taskplans"))
     if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
         issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态必须提供非空字段: archive_reason", field="archive_reason"))
     return issues

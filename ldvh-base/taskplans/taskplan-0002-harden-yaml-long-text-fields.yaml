@@ -15,9 +15,9 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: &id001 2026-06-04
-completion_evidence: '历史任务计划迁移聚合证据：
-
-  - task-0002: ev-0002 记录 task-0002 验证通过：ldvh-intake/ldvh-close 已加入 YAML 长文本块标量写入要求；Fact Validator 已增强 YAML_PARSE_ERROR 提示；测试已覆盖含冒号长文本块标量合法样例。'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0002: ev-0002 记录 task-0002 验证通过：ldvh-intake/ldvh-close 已加入 YAML 长文本块标量写入要求；Fact Validator 已增强 YAML_PARSE_ERROR 提示；测试已覆盖含冒号长文本块标量合法样例。
 closed_at: *id001
 priority: P2
 importance: medium

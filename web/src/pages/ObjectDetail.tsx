@@ -113,8 +113,8 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   taskplan: { zh: '任务计划', en: 'Task Plan' },
   task: { zh: '任务', en: 'Task' },
   subtask: { zh: '子任务', en: 'Subtask' },
-  adr: { zh: 'ADR', en: 'ADR' },
-  pitfall: { zh: '踩坑', en: 'Pitfall' },
+  adr: { zh: '决策', en: 'ADR' },
+  pitfall: { zh: '踩坑经验', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
   profile: { zh: '画像', en: 'Profile' },
   change: { zh: '变更', en: 'Change' },
@@ -165,9 +165,9 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   related_subtasks: { zh: '关联子任务', en: 'Related Subtasks' },
   related_workareas: { zh: '关联工作域', en: 'Related Work Areas' },
   related_taskplans: { zh: '关联任务计划', en: 'Related Task Plans' },
-  related_adrs: { zh: '关联 ADR', en: 'Related ADRs' },
+  related_adrs: { zh: '关联决策', en: 'Related ADRs' },
   related_memos: { zh: '关联备忘', en: 'Related Memos' },
-  related_pitfalls: { zh: '关联踩坑', en: 'Related Pitfalls' },
+  related_pitfalls: { zh: '关联踩坑经验', en: 'Related Pitfalls' },
   related_profiles: { zh: '关联画像', en: 'Related Profiles' },
   source_objects: { zh: '来源对象', en: 'Source Objects' },
   related_objects: { zh: '关联对象', en: 'Related Objects' },
@@ -1017,9 +1017,9 @@ function MaterialValue({
 function getMaterialLabel(fieldKey: string, locale: string) {
   const labels: Record<string, { zh: string; en: string }> = {
     related_docs: { zh: '文档', en: 'Docs' },
-    related_adrs: { zh: 'ADR', en: 'ADRs' },
+    related_adrs: { zh: '决策', en: 'ADRs' },
     related_memos: { zh: '备忘', en: 'Memos' },
-    related_pitfalls: { zh: '踩坑', en: 'Pitfalls' },
+    related_pitfalls: { zh: '踩坑经验', en: 'Pitfalls' },
   };
   const entry = labels[fieldKey];
   if (!entry) return getFieldLabel(fieldKey, locale);

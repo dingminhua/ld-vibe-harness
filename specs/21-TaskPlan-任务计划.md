@@ -156,7 +156,7 @@ Human Gate 发生在任务计划层。Task 和 SubTask 不作为 Human 直接管
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 来源或关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_pitfalls` | 关联踩坑 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `status_history` | — | list[object] | 否 | 状态变化时追加 | Log | AI、Code |
 | `review_requested_at` | 请求关闭审查时间 | date | 条件必填 | `review_needed` 或 `closed` 时必须填写 | Reference | AI、Code、Web |
 | `completion_evidence` | — | string | 条件必填 | `review_needed` 或 `closed` 时必须填写 | 验证证据 | AI、Code、Web |

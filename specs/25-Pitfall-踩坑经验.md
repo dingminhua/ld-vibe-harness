@@ -1,7 +1,7 @@
-# Pitfall-踩坑
+# Pitfall-踩坑经验
 
 > 创建日期：2026-06-09
-> 定位：定义 Pitfall / 踩坑工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
+> 定位：定义 Pitfall / 踩坑经验工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要沉淀已解决、已验证且具有复用价值的踩坑经验的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
 > 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-TaskPlan-任务计划.md`、`specs/22-Task-任务.md`、`specs/24-ADR-决策.md`、`specs/26-Memo-备忘.md`、`specs/27-Change-变更.md`
@@ -11,9 +11,9 @@ ldvh_member:
   spec_id: "25"
   kind: work_model
   name_en: Pitfall
-  name_zh: 踩坑
+  name_zh: 踩坑经验
   collection_status: active
-  canonical_path: specs/25-Pitfall-踩坑.md
+  canonical_path: specs/25-Pitfall-踩坑经验.md
   instance_root: ldvh-base/pitfalls/
   schema_anchor: "§6"
   state_machine_anchor: "§3"
@@ -27,7 +27,7 @@ ldvh_member:
 ---
 ## 1. 对象定位与准入条件
 
-Pitfall / 踩坑是已解决、已验证且具有复用价值的经验事实，用于沉淀反直觉问题、误判原因、触发条件、根因、解决方式、验证结果和后续规避策略。
+Pitfall / 踩坑经验是已解决、已验证且具有复用价值的经验事实，用于沉淀反直觉问题、误判原因、触发条件、根因、解决方式、验证结果和后续规避策略。
 
 Pitfall 的目标是让 AI 和 Human 在后续执行中提前识别同类陷阱。它不是所有 bug、失败命令、临时阻塞、未验证猜测或复盘感想的默认归宿。只有问题已经被解决，且后续执行可能复现同类误判或重复踩坑时，才应进入 Pitfall 事实源。
 
@@ -78,7 +78,7 @@ ldvh-base/pitfalls/pitfall-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| Pitfall 工作模型规范 | `specs/25-Pitfall-踩坑.md` |
+| Pitfall 工作模型规范 | `specs/25-Pitfall-踩坑经验.md` |
 | Pitfall 实例 | `ldvh-base/pitfalls/` |
 | Pitfall 字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | Pitfall 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -196,7 +196,7 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 |---|---|---|---|---|---|---|
 | `id` | 格式为 `pitfall-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
 | `type` | 固定为 `pitfall` | string | 是 | 固定为 `pitfall` | Reference | AI、Code、Web |
-| `title` | 踩坑一句话概括 | string | 是 | 应简短可读 | Narrative | AI、Web |
+| `title` | 踩坑经验一句话概括 | string | 是 | 应简短可读 | Narrative | AI、Web |
 | `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
 | `created` | — | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
 | `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |

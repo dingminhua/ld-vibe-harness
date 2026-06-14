@@ -15,9 +15,9 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: &id001 2026-06-04
-completion_evidence: '历史任务计划迁移聚合证据：
-
-  - task-0001: ev-0001 记录第一组 Intent / Task / Evidence 事实实例通过最小 Fact Validator 校验，最终结果为 files=3 errors=0 warnings=0。'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0001: ev-0001 记录第一组 Intent / Task / Evidence 事实实例通过最小 Fact Validator 校验，最终结果为 files=3 errors=0 warnings=0。
 closed_at: *id001
 priority: P2
 importance: medium

@@ -15,9 +15,9 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: &id001 2026-06-04
-completion_evidence: '历史任务计划迁移聚合证据：
-
-  - task-0006: fact_model_cli.py 已实现 create/transition/delete 三个子命令，覆盖 7 类对象。'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0006: fact_model_cli.py 已实现 create/transition/delete 三个子命令，覆盖 7 类对象。
 closed_at: *id001
 priority: P2
 importance: medium

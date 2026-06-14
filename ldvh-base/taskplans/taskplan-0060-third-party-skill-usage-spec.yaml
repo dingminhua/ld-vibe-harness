@@ -22,8 +22,8 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-07T04:03:13.614312'
-completion_evidence: '历史任务计划迁移聚合证据：
-
-  - task-0060: ## 验证结果'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0060: ## 验证结果
 priority: P2
 importance: medium

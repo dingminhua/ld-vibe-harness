@@ -15,9 +15,9 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-05'
-completion_evidence: '历史任务计划迁移聚合证据：
-
-  - task-0010: 已完成 specs/11-LDVH-Trae-Solo-环境规范.md 重写：Trae 平台客观事实改为引用 docs/sources/trae/ 权威入口，正文收敛为 LDVH 对 Rules、Skill、Agent、AskUserQuestion、RunCommand、Schedule、MCP、Commands/Plan/Spec 的特殊使用约定。'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0010: 已完成 specs/11-LDVH-Trae-Solo-环境规范.md 重写：Trae 平台客观事实改为引用 docs/sources/trae/ 权威入口，正文收敛为 LDVH 对 Rules、Skill、Agent、AskUserQuestion、RunCommand、Schedule、MCP、Commands/Plan/Spec 的特殊使用约定。
 closed_at: '2026-06-05'
 priority: P2
 importance: medium

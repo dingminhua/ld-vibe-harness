@@ -4,8 +4,7 @@ title: 精简 11 号 Trae Solo 环境规范
 status: closed
 created: '2026-06-05'
 updated: '2026-06-05'
-description: 按用户直接指示调整 specs/11-LDVH-Trae-Solo-环境规范.md：避免重复 Trae 官方或 refs 外部资料已有内容，将
-  Trae 功能权威内容引用到 docs/sources/ 中的 Trae 文章，只保留 LDVH 对相关功能使用的特殊约定。
+description: 按用户直接指示调整 specs/11-LDVH-Trae-Solo-环境规范.md：避免重复 Trae 官方或 refs 外部资料已有内容，将 Trae 功能权威内容引用到 docs/sources/ 中的 Trae 文章，只保留 LDVH 对相关功能使用的特殊约定。
 source: 用户直接指示：ldvh的11号文档，不应该重复已有的内容，权威内容应该引用refs中的trae文章，只写LDVH中关于相关功能使用的特殊约定，你看看如何处理，将这个作为一个任务，且立即执行
 acceptance: |-
   - [x] 11 号文档不再复制 Trae 官方或 refs 外部文章可承载的通用功能说明

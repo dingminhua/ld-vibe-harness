@@ -19,14 +19,13 @@ related_docs:
 - specs/04.03-环境入口适配与部署规范.md
 - specs/05-工作模型基础规范.md
 - specs/04.02-LDVH能力资产与落地保障规范.md
-- specs/20-工作模型集合索引.md
 - rules/LDVH-AI-ENTRY.md
 related_adrs: []
 related_memos: []
 related_pitfalls: []
 review_requested_at: '2026-06-07T02:45:00.000000'
-completion_evidence: '历史任务计划迁移聚合证据：
-
-  - task-0059: ## 验证结果'
+completion_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0059: ## 验证结果
 priority: P2
 importance: medium

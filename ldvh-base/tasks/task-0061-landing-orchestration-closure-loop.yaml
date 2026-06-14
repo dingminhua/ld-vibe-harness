@@ -4,74 +4,54 @@ title: 补齐 41 规范落地统筹闭环提醒与证据承接
 status: planned
 created: '2026-06-10T00:00:00'
 updated: '2026-06-10T00:00:00'
-description: '41-landing-orchestration-规范落地统筹已在 40 工作流程集合索引中标记为 active，并已有 landing-report 基础 Code 承接，但 active 只表示流程正式存在，不等于建设完成或运行闭环。
-
+description: |-
+  41-landing-orchestration-规范落地统筹已在 40 工作流程集合索引中标记为 active，并已有 landing-report 基础 Code 承接，但 active 只表示流程正式存在，不等于建设完成或运行闭环。
 
   当前缺口是：AI 和检查工具容易把"41 active"误读为"41 已完成"。需要建立明确提醒和证据承接，使 41 的状态被表达为"已正式化但未闭环"，并在 42 dogfood、landing-report、Code/Web 检查面或后续运行投影中持续暴露该建设缺口。
 
-
   ## 风险、约束和降级说明
-
   - 避免把 40 中的 active 集合状态误解释为建设完成状态。
-
   - 避免用聊天结论、landing-report 派生输出或 Web 状态替代 Git 文件事实源。
-
-  - 后续如要修改 41、42、Code、Web 或运行投影，应按对应规范触发 Human Gate。'
+  - 后续如要修改 41、42、Code、Web 或运行投影，应按对应规范触发 Human Gate。
 source: 用户直接指示：41 未闭环需要标记，不能误判为建设完成
 blocked_by: []
-acceptance: '- [ ] 明确 41 当前状态表达：active but not closed-loop / 已正式化但未闭环
-
+acceptance: |
+  - [ ] 明确 41 当前状态表达：active but not closed-loop / 已正式化但未闭环
   - [ ] landing-report 或等价 Code 输出能提示 41 自身闭环缺口
-
   - [ ] 42 dogfood 检查能把 41 未闭环列为缺口，而非误判为完成
-
   - [ ] Human Gate 证据、验证证据、运行投影漂移至少有明确承接或降级说明
-
   - [ ] Web 或后续检查面能展示该类“流程 active 但建设未闭环”的状态
-
   - [ ] specs / Task / Code / Web 的同步边界已复核
-
-  '
-verification: '## 验证计划
-
+verification: |-
+  ## 验证计划
 
   - 运行 `python3 code/specs_validate.py landing-report`，确认 41 相关缺口可被聚合或有明确后续 Code 缺口。
-
   - 执行 42 LDVH 自身 dogfood 只读检查，确认报告能表达 41 未闭环状态。
-
   - 运行 `python3 tools/fact_validate.py ldvh-base/tasks/task-0061-landing-orchestration-closure-loop.yaml`，确认本 Task 结构有效。
-
 
   ## 验证结果
 
-
   2026-06-10 Task 3 验证已运行 `python3 code/specs_validate.py landing-report` 和 `python3 code/specs_validate.py landing-report --format json`，确认报告输出包含 41 触发保障、42 消费 41 触发状态、运行投影漂移检查、Human Gate 证据消费四类能力缺口。
-
 
   2026-06-10 add-runtime-projection-drift-check 阶段已补齐 `python3 code/specs_validate.py runtime-projection` 最小 Code 检查，并接入 `landing-report` 的 metadata、summary、capability_gaps 和 runtime_projection 明细。该检查默认只读取项目内授权运行投影，能够报告缺少权威来源引用、引用缺失正式规范、疑似复制正式规范正文三类派生诊断。当前默认检查 `rules/LDVH-AI-ENTRY.md` 未发现项目内运行投影问题，但 landing-report 仍将该能力保持为 degraded，因为它不能证明所有环境、用户级薄入口、Skill、Hook、CI、Web 和现场 42 报告均已覆盖。
 
-
   已运行 41/42 文档结构、引用和落地要求校验，已运行 `python3 code/specs_validate.py all`、`python3 -m pytest tests/test_specs_validate.py` 和 `python3 -m pytest`，结果均通过。
-
 
   剩余缺口仍由本文 Task 承载：landing-report 尚不能验证所有触发场景是否实际进入 41，尚不能证明 42 现场检查已经消费本次报告，runtime-projection 只完成项目内最小启发式检查、尚不能覆盖用户级薄入口、真实环境配置、Skill、Hook、CI、Web 和所有运行投影，尚未把 Human Gate 记录校验结果并入状态判断。
 
-
   2026-06-10 consume-human-gate-evidence 阶段已补齐 `python3 code/specs_validate.py human-gate-report` 派生报告，并接入 `landing-report` 的 metadata、summary、capability_gaps 和 human_gate 明细。该检查默认只读取项目内 Git Markdown 事实源，能够区分未发现 Human Gate 记录、Human Gate 记录字段缺失或为空、Human Gate 记录结构检查通过三类状态。当前默认检查未发现项目内 Human Gate 记录，因此 landing-report 继续将该能力保持为 degraded；这表示 Code 已能消费结构检查结果，但不能证明所有高影响写入、长期降级、关键缺口关闭或通过声明均已有 Human Gate，也不能证明 42 现场报告已经消费本次输出。
-
 
   2026-06-10 add-ldvh-landing-check-report 阶段已补齐 `python3 code/specs_validate.py ldvh-landing-check` 派生报告，最小消费 governed-projects、landing-report、runtime-projection、human-gate-report、fact_validate 和 specs doc/refs/landing 校验结果，并输出 checks 与 remaining_gaps。该报告默认只读项目内 Git 文件和显式 workspace root 的 `LDVH-GOVERNED-PROJECTS.yaml`，不写用户级目录、不处理旧 `.trae` 删除、不修改 LDVH-GOVERNED。当前真实项目报告状态为 open，主要因为 `landing-report` 仍有未关闭的能力/要求缺口，且 `fact_validate` 对既有事实源报告 errors/warnings；这说明 42 已有最小 Code 消费入口，但不能证明现场 42 流程、Web/Human-facing 展示、所有运行投影和生命周期触发均已闭环。
 
-
   ## 结论
 
-
-  本 Task 用于追踪 41 未闭环建设缺口；本次验证证明运行投影漂移检查和 Human Gate 证据结构检查已被 landing-report 作为 Code 派生证据消费和暴露，但不能作为 41 已闭环证据。'
+  本 Task 用于追踪 41 未闭环建设缺口；本次验证证明运行投影漂移检查和 Human Gate 证据结构检查已被 landing-report 作为 Code 派生证据消费和暴露，但不能作为 41 已闭环证据。
 assignee: AI
 related_adrs: []
 related_changes: []
 related_docs:
-- specs/40-工作流程集合索引.md
+- specs/06-工作流程基础规范.md
+- specs/03.04-工作流程文档规范.md
 - docs/studies/41-landing-orchestration-规范落地统筹.md
 - docs/studies/42-ldvh-landing-check-LDVH落地与检查.md
 - docs/studies/18-LDVH最佳实践的现状与回退考虑.md

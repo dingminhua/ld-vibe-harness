@@ -4,8 +4,7 @@ title: Hermes Agent源码级调用任务机制调研
 status: executing
 created: '2026-06-06T09:58:59.665870'
 updated: '2026-06-06T18:39:45.228054'
-description: 下载 NousResearch/hermes-agent 到工作区，通过真实源码调研 Hermes Agent 的调用任务生成、执行编排、工具调用、记忆/技能/上下文机制，并产出可进入
-  LDVH 参考文档体系的调研报告。
+description: 下载 NousResearch/hermes-agent 到工作区，通过真实源码调研 Hermes Agent 的调用任务生成、执行编排、工具调用、记忆/技能/上下文机制，并产出可进入 LDVH 参考文档体系的调研报告。
 source: 用户要求 Hermes Agent 调用这个产品生成调用任务，下载到工作区，通过调研代码获得真实信息，并生成文档加入参考文档
 acceptance: |
   - [ ] NousResearch/hermes-agent 源码已下载并记录真实源码位置与提交信息

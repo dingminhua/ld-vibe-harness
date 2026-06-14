@@ -9,8 +9,7 @@ context: |-
   修复了 Tools 解析失败检测、命令调用示例缺失和 Human Gate 确认记录持久化三个流程缺失后，需验证完整生命周期。
   [Human Gate 确认记录: 确认人=user, 确认时间=2026-06-03, 确认上下文=用户确认创建 ADR 0003 验证流程整改]
   [Human Gate 确认记录: 确认人=user, 确认时间=2026-06-03, 确认上下文=用户确认 reject adr-0003，流程验证完成]
-decision: 创建本 ADR 后走 proposed→rejected 流程，验证 Human Gate 确认记录是否持久化到 ADR YAML context
-  字段。
+decision: 创建本 ADR 后走 proposed→rejected 流程，验证 Human Gate 确认记录是否持久化到 ADR YAML context 字段。
 consequences: 验证完成后 ADR 进入 rejected 终态，保留历史记录。
 affects: []
 related_tasks: []

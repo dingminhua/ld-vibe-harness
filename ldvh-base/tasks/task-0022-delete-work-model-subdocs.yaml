@@ -4,9 +4,7 @@ title: 删除工作模型历史机制子文档
 status: closed
 created: '2026-06-05T08:45:51.992302'
 updated: '2026-06-05T10:22:27.728449'
-description: 依据 task-0021 已完成的“先合并、再审查、候选清单沉淀”结果，具体执行 specs/20-39 范围内历史机制子文档的删除或归档。执行前必须重新读取
-  task-0021 的 verification 清单，先做引用检查，确认 .trae/rules、.trae/skills、tools、tests、web 和
-  specs 根规范不再将候选文件作为权威入口或运行依赖；删除、归档或重命名任一 specs 文件前必须再次通过 Human Gate。
+description: 依据 task-0021 已完成的“先合并、再审查、候选清单沉淀”结果，具体执行 specs/20-39 范围内历史机制子文档的删除或归档。执行前必须重新读取 task-0021 的 verification 清单，先做引用检查，确认 .trae/rules、.trae/skills、tools、tests、web 和 specs 根规范不再将候选文件作为权威入口或运行依赖；删除、归档或重命名任一 specs 文件前必须再次通过 Human Gate。
 source: task-0021
 acceptance: |
   - [x] 已读取 task-0021 的后续删除/归档候选清单，并复核候选文件仍符合删除、归档或暂不处理分类
