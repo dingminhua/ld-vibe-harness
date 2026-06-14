@@ -31,7 +31,7 @@
 
 | 文件 | 当前职责 | 结构治理要求 |
 |---|---|---|
-| `code/specs_validate.py` | specs 文档结构、引用、落地要求、术语、Human Gate、管辖项目、运行投影、Web validate 派生检查等聚合入口 | 保持 CLI 兼容；新增检查不得默认继续堆入此文件；后续按能力域迁移到 `code/spec_checks/` |
+| `code/specs_validate.py` | specs 文档结构、引用、落地要求、术语、Human Gate、管辖项目、运行投影、Web validate 派生检查等聚合入口 | 作为 CLI 兼容层和跨模块配置同步层；新增检查不得默认继续堆入此文件，应进入 `code/spec_checks/` |
 | `code/fact_cli.py` | 工作对象事实源查询、展示、搜索和统计入口 | 查询能力扩展时应保持输出来源可追溯，必要时拆出共享读取层 |
 | `code/fact_validate.py` | 工作对象事实源校验入口 | 字段、状态和对象关系规则变化时同步测试；不得把 specs 规则复制为第二事实源 |
 | `code/commit_validate.py` | commit message 校验入口 | 保持轻量单一职责；规则变化应回到对应规范或工作流程 |
@@ -169,7 +169,7 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 ## 8. 待补齐事项
 
-1. `runtime_projection`、`deployment_entries`、`consistency`、`governed_projects`、`human_gate`、`doc_structure`、`refs`、`landing` 基础检查、`landing_report`、`ldvh_landing`、`web_validate` 和 `index` 已迁入 `code/spec_checks/`，后续迁移应沿用兼容包装、聚焦测试和综合校验的做法；
+1. `specs_validate.py` 的主要检查能力域已迁入 `code/spec_checks/`；该文件当前只应承担 CLI 兼容、配置同步、常量/函数兼容引用和跨模块编排；
 2. `specs_validate.py` 的结构化输出字段、错误码和诊断格式仍需后续统一；
 3. `tests/code/test_specs_validate.py` 后续可按能力域拆分，避免测试文件继续膨胀；
 4. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。

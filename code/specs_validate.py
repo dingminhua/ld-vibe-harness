@@ -2,18 +2,14 @@
 """Specs 文档结构、引用完整性和派生索引统一检查工具。"""
 
 import argparse
-import hashlib
-import json
-import re
 import sys
-from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 CODE_DIR = Path(__file__).resolve().parent
 if str(CODE_DIR) not in sys.path:
     sys.path.insert(0, str(CODE_DIR))
 
+from spec_checks import common as common_checks
 from spec_checks import doc_structure as doc_structure_checks
 from spec_checks import deployment_entries as deployment_entries_checks
 from spec_checks import consistency as consistency_checks
@@ -35,39 +31,9 @@ SPECS_DIR = PROJECT_ROOT / "specs"
 LEGACY_SPECS_DIR = PROJECT_ROOT / "docs" / "specs"
 DOCS_DIR = PROJECT_ROOT / "docs"
 FORMAL_SPECS_DIR = SPECS_DIR
-HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
-
-
-# ── 通用数据结构 ──
-
-@dataclass
-class Issue:
-    path: Path
-    line: int
-    message: str
-    code: str = None
-
-    def format(self, root=None):
-        display_path = self.path
-        if root:
-            try:
-                display_path = self.path.relative_to(root)
-            except ValueError:
-                display_path = self.path
-        if self.code:
-            return f"{display_path}:{self.line}: [{self.code}] {self.message}"
-        return f"{display_path}:{self.line}: {self.message}"
-
-
-def iter_markdown_files(paths):
-    files = []
-    for raw_path in paths:
-        path = Path(raw_path)
-        if path.is_file() and path.suffix == ".md":
-            files.append(path)
-        elif path.is_dir():
-            files.extend(sorted(path.rglob("*.md")))
-    return sorted(set(files))
+HEADING_RE = common_checks.HEADING_RE
+Issue = common_checks.Issue
+iter_markdown_files = common_checks.iter_markdown_files
 
 
 RUNTIME_PROJECTION_DEFAULT_PATHS = list(runtime_projection_checks.RUNTIME_PROJECTION_DEFAULT_PATHS)
