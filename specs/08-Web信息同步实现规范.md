@@ -5,7 +5,7 @@
 > 定位：LDVH Web 信息同步构成要素的实现边界、派生视图、Confirm UI、受控轻写入白名单和 Web 实现文档边界的权威规范
 > 适用范围：LDVH 项目及所有接入 LDVH 的管辖项目中的 `web/`、Web 信息同步实现、Web 文档、派生视图和 Confirm UI
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档基础规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/05-工作模型基础规范.md`、`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`
+> 相关规范：`specs/01-目录说明.md`、`specs/02-术语规范.md`、`specs/03-文档基础规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/05-工作模型基础规范.md`、`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/10-测试基础规范.md`
 > 参考实现：LDVH 在 `web/` 下提供了一套 Web 参考实现；LDVH 的核心是规范系统，用户可根据本文约束自行实现 Web
 
 ---
@@ -51,7 +51,7 @@ LDVH 的服务对象分工如下：
 
 本文是 LDVH Web 信息同步构成要素、Web 信息同步层、派生视图、状态和缺口呈现、Confirm UI、受控轻写入白名单、缓存和数据库边界、Web 与 Code 协作关系、Web 实现文档边界以及 Web Human Gate 检查要求的权威规范。
 
-本文不定义 Code 命名、CLI、输出结构、测试、更新维护或确定性校验算法；这些内容由 `specs/07-Code确定性执行实现规范.md` 承载。
+本文不定义 Code 命名、CLI、输出结构、更新维护或确定性校验算法；这些内容由 `specs/07-Code确定性执行实现规范.md` 承载。跨构成要素的测试治理、验证声明和测试证据边界由 `specs/10-测试基础规范.md` 承载。
 
 ---
 
@@ -335,13 +335,13 @@ Web 文档吸收规则如下：
 
 ## 12. Web 测试与验证要求
 
-Web 变更应根据影响范围执行测试和验证。Code 与 Web 已分属不同构成要素，因此测试也必须按构成要素分区承接；Web 测试不得混入 Code 工具测试目录，Code 工具测试也不得混入 Web 测试目录。对应风险层级的测试或等价验证不通过时，不得提交相关 Web 变更。
+Web 变更应根据影响范围执行测试和验证。Code 与 Web 已分属不同构成要素，因此测试也必须按构成要素分区承接；Web 测试不得混入 Code 工具测试目录，Code 工具测试也不得混入 Web 测试目录。对应风险层级的测试或等价验证不通过时，不得提交相关 Web 变更。Web 测试治理、验证声明、测试实现归属和测试证据事实源边界应同时遵守 `specs/10-测试基础规范.md`。
 
 Web 测试目录规则如下：
 
 1. Web 信息同步、Web API、Web 组件、Web 页面、Confirm UI、白名单轻写入体验、文件浏览、diff 展示和 Validate 页面相关测试应放在 `tests/web/` 下；
 2. `tests/web/` 可按实现需要继续分为 `api/`、`components/`、`pages/`、`fixtures/` 或等价子目录；
-3. Web 测试可以调用 Web 自身的 TypeScript、Node、Playwright、构建检查或等价验证入口，但测试文件和长期测试夹具的归属仍以 `tests/web/` 为准；
+3. Web 测试可以调用 Web 自身的 TypeScript、Node、Playwright、构建检查或等价验证入口，但测试文件和长期测试夹具的归属仍以 `tests/web/` 为准，具体测试入口、命令、夹具组织和页面/API 映射由 `web/docs/` 承载；
 4. Web 测试只验证 Web 面向 Human 的读取、呈现、交互、错误态、写入边界和敏感信息边界，不承载 Code 工具测试；
 5. 与 Web 测试对应的 npm script、Playwright 配置或测试运行入口可以保留在 `web/` 中，但不得把 `web/` 下的缓存、截图、覆盖率或测试产物提升为稳定事实。
 

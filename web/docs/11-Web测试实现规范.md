@@ -1,0 +1,99 @@
+# Web 测试实现规范
+
+> 版本：0.1
+> 更新：2026-06-15
+> 范围：`web/` 当前参考实现的测试入口、测试类型、测试映射和执行细则
+> 上位规范：[`specs/08-Web信息同步实现规范.md`](../../specs/08-Web信息同步实现规范.md)、[`specs/10-测试基础规范.md`](../../specs/10-测试基础规范.md)
+
+## 0. 上位规范
+
+`specs/08-Web信息同步实现规范.md` 是 LDVH Web 信息同步构成要素、派生视图、Human Gate UI、受控轻写入白名单和 Web 文档边界的权威规范。`specs/10-测试基础规范.md` 是跨构成要素测试治理、验证声明、测试实现归属和测试证据事实源边界的权威规范。
+
+本文只定义 `web/` 当前参考实现的测试入口、测试类型、测试映射、夹具组织和执行细则，不替代 specs、工作模型规范、工作流程规范、事实源对象契约或 Human Gate 条件。
+
+当本文与 specs 存在冲突或解释不一致时，以 specs 为准。Web 测试实现、测试夹具、截图、缓存、覆盖率和测试报告不得通过实现细节反向改写 specs 正文、对象字段契约、状态机、Human Gate 条件、测试治理规则或事实源归属。
+
+## 1. 本文解决的问题
+
+本文解决 LDVH 当前 `web/` 参考实现如何组织、执行和维护 Web 测试的问题。
+
+本文目标是让 AI 修改 Web 时能够稳定判断：
+
+1. 哪类 Web 变更需要哪类测试或等价验证；
+2. 测试代码和夹具应放入 `tests/web/` 的哪个区域；
+3. API contract、页面、组件、i18n、错误态和写入边界如何选择验证入口；
+4. 测试入口、页面文档和实现变更如何保持同步。
+
+## 2. 测试目录边界
+
+Web 测试实现使用以下目录边界：
+
+| 路径 | 用途 | 不应承载 |
+|---|---|---|
+| `tests/web/api/` | Web API contract、来源追溯、错误态、只读和写入边界测试 | Code CLI 单元测试、规范正文 |
+| `tests/web/components/` | 可独立验证的 UI 组件、状态展示、i18n 和交互测试 | 页面级路由流程和后端聚合规则 |
+| `tests/web/pages/` | 页面级渲染、空态、错误态、只读边界和来源呈现测试 | Web 构建产物、截图事实源 |
+| `tests/web/fixtures/` | Web 测试所需最小事实源夹具、API mock 和边界样例 | 长期事实源、完整项目副本 |
+| `web/` | Web 实现、配置、npm script、构建入口和测试运行入口 | 长期测试事实源、覆盖率或截图产物 |
+| `web/docs/` | Web 当前参考实现说明、页面文档和测试执行细则 | specs 稳定规则、对象字段契约、状态机 |
+
+若当前测试框架尚未创建上述子目录，新增测试时可以按最小需要创建对应目录。不得为了占位创建空测试目录或无消费方的夹具集合。
+
+## 3. 测试类型与优先级
+
+Web 测试按以下优先级选择：
+
+1. API contract 测试优先于页面测试；
+2. 高风险 API 优先覆盖 `POST /api/memos`、ProjectFiles、Validate、Objects、Gate 和 Changelog；
+3. 页面测试优先覆盖 Gate、Validate、ProjectFiles、ObjectDetail、ObjectList 和 Dashboard 的空态、错误态、降级态、只读边界和来源呈现；
+4. 组件测试优先覆盖状态徽章、对象卡片、Markdown 阅读、复制按钮、Confirm UI 占位和 i18n 映射；
+5. E2E、视觉回归和复杂浏览器流程后置，不作为当前 Web API contract 测试的前置条件。
+
+新增或修改高风险 API、白名单轻写入、Confirm UI、对象状态展示、Validate/Gate 派生结果展示或事实源读取逻辑时，应优先补齐 `tests/web/api/` 下的最小测试或说明等价验证方式。
+
+## 4. 页面与 API 测试映射
+
+当前 Web 参考实现测试映射如下：
+
+| 页面或能力 | 主要验证点 | 测试位置 |
+|---|---|---|
+| Dashboard | 项目态势、任务分布、来源追溯、空态和错误态 | `tests/web/pages/` 或 API 聚合测试 |
+| ObjectList | 对象列表、筛选、状态展示、计划态势和只读边界 | `tests/web/pages/`、`tests/web/components/` |
+| ObjectDetail | 字段展示、关联材料、验证方式、关闭证据和 Markdown 阅读 | `tests/web/pages/`、`tests/web/components/` |
+| Validate | `/api/validate`、`/api/landing-plan`、派生报告展示和失败降级 | `tests/web/api/`、`tests/web/pages/` |
+| Gate | `/api/gate`、Human Gate 派生报告、disabled 确认占位和降级提示 | `tests/web/api/`、`tests/web/pages/` |
+| Changelog | 变更记录展示、commit 类型映射和引用追溯 | `tests/web/api/`、`tests/web/pages/` |
+| Memo 快速创建 | 白名单写入、字段校验、受控写入链路和错误态 | `tests/web/api/` |
+| 全局 i18n | UI 文案、状态、枚举、字段名和空态中英文映射 | `tests/web/components/`、`tests/web/pages/` |
+
+页面文档新增或改变 API、路由、关键交互、状态语义、来源呈现、写入边界或 i18n 要求时，应同步检查本节映射是否需要更新。
+
+## 5. 夹具与 Mock 规则
+
+Web 测试夹具应遵守：
+
+1. 夹具只覆盖被验证行为所需的最小事实源字段；
+2. 夹具中的对象状态、字段名、枚举和路径必须来自 specs 或现有事实源契约，不得凭页面实现创造第二契约；
+3. API mock 应保留来源路径、同步状态、错误态或降级状态字段，以验证 Web 不把派生视图当成事实源；
+4. 测试不得依赖真实用户环境、全局本机路径或未声明的外部服务；
+5. 截图、覆盖率、trace 和缓存仅作为临时运行产物，不进入长期事实源。
+
+## 6. AI 修改 Web 的测试顺序
+
+AI 修改 `web/` 时，应按以下顺序执行：
+
+1. 读取 `specs/08-Web信息同步实现规范.md`、`specs/10-测试基础规范.md`、`web/docs/01-全局设计约束.md` 和当前页面对应文档；
+2. 定位变更属于 API、页面、组件、i18n、样式、写入边界、派生视图还是构建配置；
+3. 判断是否需要 API contract、组件测试、页面测试、构建检查或等价验证；
+4. 先补最小正例、反例、错误态、空态或只读边界样例，再修改实现；
+5. 运行对应测试、构建检查或等价验证；
+6. 若改变路由、API、页面结构、测试入口、夹具组织、状态语义或写入边界，同步更新 `web/docs/` 和必要 specs。
+
+无法补自动化测试时，应说明原因、采用的等价验证方式和残留风险，不得把该情况表述为完整验证。
+
+## 7. 待补齐事项
+
+1. 当前 Web 参考实现的 npm script、测试框架和 API contract 运行入口需要在测试实现稳定后补齐；
+2. Validate、Gate、Objects 和 Memo 快速创建的最小 API contract 样例需要随对应测试创建；
+3. 页面级测试与组件级测试的拆分边界需要在首批 `tests/web/` 用例落地后复核；
+4. Web 消费 Code 输出的数据合同需要在 Code 输出结构稳定后补齐测试样例。

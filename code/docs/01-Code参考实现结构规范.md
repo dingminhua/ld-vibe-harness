@@ -3,15 +3,15 @@
 > 版本：0.1
 > 更新：2026-06-15
 > 范围：`code/` 目录下 LDVH Code 参考实现、命令入口、模块结构和测试映射
-> 上位规范：[`specs/07-Code确定性执行实现规范.md`](../../specs/07-Code确定性执行实现规范.md)
+> 上位规范：[`specs/07-Code确定性执行实现规范.md`](../../specs/07-Code确定性执行实现规范.md)、[`specs/10-测试基础规范.md`](../../specs/10-测试基础规范.md)
 
 ## 0. 上位规范
 
-`specs/07-Code确定性执行实现规范.md` 是 LDVH Code 构成要素、确定性执行边界、需求准入、验证规则、维护规则和 Code 文档边界的权威规范。
+`specs/07-Code确定性执行实现规范.md` 是 LDVH Code 构成要素、确定性执行边界、需求准入、验证规则、维护规则和 Code 文档边界的权威规范。`specs/10-测试基础规范.md` 是跨构成要素测试治理、验证声明、测试实现归属和测试证据事实源边界的权威规范。
 
-本文只定义 `code/` 参考实现的目录结构、模块拆分、命令入口、测试映射和 AI 修改顺序，不替代 `specs/07-Code确定性执行实现规范.md`、工作模型规范、工作流程规范、事实源边界规范或具体对象契约。
+本文只定义 `code/` 参考实现的目录结构、模块拆分、命令入口、测试映射和 AI 修改顺序，不替代 `specs/07-Code确定性执行实现规范.md`、`specs/10-测试基础规范.md`、工作模型规范、工作流程规范、事实源边界规范或具体对象契约。
 
-当本文与 `specs/07-Code确定性执行实现规范.md` 存在冲突或解释不一致时，以 `specs/07-Code确定性执行实现规范.md` 为准；`code/` 实现和 `code/docs/` 文档不得通过实现细节反向改写 specs 正文、对象字段契约、状态机、Human Gate 条件或事实源归属。
+当本文与 `specs/07-Code确定性执行实现规范.md` 或 `specs/10-测试基础规范.md` 存在冲突或解释不一致时，以 specs 为准；`code/` 实现和 `code/docs/` 文档不得通过实现细节反向改写 specs 正文、对象字段契约、状态机、Human Gate 条件、测试治理规则或事实源归属。
 
 ## 1. 本文解决的问题
 
@@ -147,13 +147,27 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 | 实现入口或模块 | 测试位置 |
 |---|---|
-| `code/specs_validate.py` 和 `code/spec_checks/*` | `tests/code/test_specs_validate.py`；后续可按能力域拆分为 `tests/code/spec_checks/` |
+| `code/specs_validate.py` | `tests/code/test_specs_validate.py` 保留 CLI 兼容入口加载和聚合入口烟雾测试 |
+| `code/spec_checks/common.py` | `tests/code/specs_validate_checks/common.py` 提供 specs 校验测试共享加载和 Markdown 夹具 helper |
+| `code/spec_checks/doc_structure.py` | `tests/code/specs_validate_checks/test_doc_structure.py` |
+| `code/spec_checks/refs.py` | `tests/code/specs_validate_checks/test_refs.py` |
+| `code/spec_checks/landing_report.py` | `tests/code/specs_validate_checks/test_landing_report.py` |
+| `code/spec_checks/runtime_projection.py` | `tests/code/specs_validate_checks/test_runtime_projection.py` |
+| `code/spec_checks/deployment_entries.py` | `tests/code/specs_validate_checks/test_deployment_entries.py` |
+| `code/spec_checks/human_gate.py` | `tests/code/specs_validate_checks/test_human_gate.py` |
+| `code/spec_checks/governed_projects.py` | `tests/code/specs_validate_checks/test_governed_projects.py` |
+| `code/spec_checks/ldvh_landing.py` | `tests/code/specs_validate_checks/test_ldvh_landing.py` |
+| `code/spec_checks/web_validate.py` | `tests/code/specs_validate_checks/test_web_validate.py` |
+| `code/spec_checks/index.py` | `tests/code/specs_validate_checks/test_index.py` |
+| `code/spec_checks/consistency.py` | `tests/code/specs_validate_checks/test_consistency.py` |
 | `code/fact_validate.py` | `tests/code/test_fact_validate.py` 或对应事实模型测试 |
 | `code/fact_cli.py` | `tests/code/test_fact_cli.py` 或 CLI 行为测试 |
 | `code/commit_validate.py` | `tests/code/test_commit_validate.py` |
 | 受控写入或修复脚本 | 对应脚本名测试，并覆盖写入前阻断和写入后验证 |
 
 当实现模块拆分但 CLI 行为不变时，应保留原 CLI 集成测试，并补充必要的模块级单元测试。拆分提交不得以“只是搬文件”为理由跳过测试。
+
+`tests/code/specs_validate_checks/` 是 `specs_validate.py` 测试的能力域拆分目录。目录名不得使用 `tests/code/spec_checks/`，避免与实现包 `code/spec_checks/` 在 pytest import 解析中发生同名包冲突。
 
 ## 7. `specs_validate.py` 渐进拆分顺序
 
@@ -171,5 +185,4 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 1. `specs_validate.py` 的主要检查能力域已迁入 `code/spec_checks/`；该文件当前只应承担 CLI 兼容、配置同步、常量/函数兼容引用和跨模块编排；
 2. `specs_validate.py` 的结构化输出字段、错误码和诊断格式仍需后续统一；
-3. `tests/code/test_specs_validate.py` 后续可按能力域拆分，避免测试文件继续膨胀；
-4. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。
+3. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。
