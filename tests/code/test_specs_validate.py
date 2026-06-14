@@ -374,6 +374,14 @@ def test_consistency_skips_non_active_work_model(tmp_path):
     assert checker.consistency_work_model_skeleton_issues(entries) == []
 
 
+def test_consistency_reports_collection_index_range_mismatch(tmp_path):
+    entries = [{"number": "41", "title": "41-Test-测试.md", "type": "具体工作模型规范", "status": "active", "path": tmp_path / "20-工作模型集合索引.md", "line": 7}]
+
+    issues = checker.consistency_collection_range_issues(entries, "model")
+
+    assert any(issue.code == "COLLECTION_INDEX_RANGE_MISMATCH" for issue in issues)
+
+
 def test_consistency_reports_work_model_doc_missing(tmp_path):
     entry_path = tmp_path / "21-Not-Exists.md"
     entries = [{"number": "21", "title": "21-Not-Exists.md", "type": "具体工作模型规范", "status": "active", "path": entry_path, "line": 1}]
@@ -1152,6 +1160,180 @@ def test_specs_document_reports_external_url_reference(tmp_path):
 
     diagnostics = indexes["diagnostics"]
     assert any(item["code"] == "EXTERNAL_REFERENCE_IN_SPEC" for item in diagnostics)
+
+
+def test_specs_document_reports_possible_duplicate_term_definition(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+适配措施是当前规范重新给出的定义。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "适配措施" in item["message"] for item in diagnostics)
+
+
+def test_specs_document_skips_definition_sentence_in_terminology_spec(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "02-术语规范.md",
+        """
+# 术语规范
+
+> 创建日期：2026-06-01
+> 定位：术语规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+适配措施是正式术语。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert not any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" for item in diagnostics)
+
+
+def test_specs_document_reports_definition_with_prefix(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+在本文中，适配措施是指当前规范重新给出的定义。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "适配措施" in item["message"] for item in diagnostics)
+
+
+def test_specs_document_reports_definition_with_zai_ben_guifan_prefix(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+在本规范中，环境入口定义为某种入口机制。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "环境入口" in item["message"] for item in diagnostics)
+
+
+def test_specs_document_reports_definition_with_shi_zhi(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+保障机制是指确保规范落地的手段。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "POSSIBLE_DUPLICATE_TERM_DEFINITION" and "保障机制" in item["message"] for item in diagnostics)
+
+
+def test_specs_document_reports_possible_reverse_related_spec(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范，反向追溯和可发现性登记
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+> 相关规范：`specs/21-ADR-决策记录.md`
+
+---
+
+## 1. 本文解决的问题
+
+本文定义文档基础规则。
+""",
+    )
+    write_md(
+        specs / "21-ADR-决策记录.md",
+        """
+# ADR 决策记录
+
+> 创建日期：2026-06-01
+> 定位：ADR 规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+
+ADR 文档遵守 `specs/03-文档基础规范.md`。
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    diagnostics = indexes["diagnostics"]
+    assert any(item["code"] == "POSSIBLE_REVERSE_RELATED_SPEC" for item in diagnostics)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -2425,3 +2607,93 @@ def test_web_validate_cli_outputs_json_without_failing_on_open_status(tmp_path, 
     assert exit_code == 0
     assert payload["command"] == "web_validate"
     assert payload["reports"]["landingCheck"]["summary"]["status"] == "open"
+
+
+# ── 索引越界风险检查 ──────────────────────────────────────────────
+
+
+def test_consistency_reports_index_overrun_keyword(tmp_path):
+    write_md(
+        tmp_path / "20-工作模型集合索引.md",
+        """
+# 工作模型集合索引
+
+## 1. 本文解决的问题
+
+字段契约在此处出现属于越界。
+""",
+    )
+
+    issues = checker.consistency_index_overrun_issues([str(tmp_path)])
+
+    assert any(issue.code == "INDEX_OVERRUN_KEYWORD" and "字段契约" in issue.message for issue in issues)
+
+
+def test_consistency_reports_index_overrun_multiple_keywords(tmp_path):
+    write_md(
+        tmp_path / "40-工作流程集合索引.md",
+        """
+# 工作流程集合索引
+
+## 1. 本文解决的问题
+
+状态机和执行流程是索引文档中的越界内容。
+""",
+    )
+
+    issues = checker.consistency_index_overrun_issues([str(tmp_path)])
+
+    assert any(issue.code == "INDEX_OVERRUN_KEYWORD" and "状态机" in issue.message for issue in issues)
+
+
+def test_consistency_skips_index_overrun_in_non_index_doc(tmp_path):
+    write_md(
+        tmp_path / "21-ADR-决策记录.md",
+        """
+# ADR 决策记录
+
+## 1. 本文解决的问题
+
+字段契约和状态机是 ADR 的核心内容。
+""",
+    )
+
+    issues = checker.consistency_index_overrun_issues([str(tmp_path)])
+
+    assert not any(issue.code == "INDEX_OVERRUN_KEYWORD" for issue in issues)
+
+
+def test_consistency_skips_index_overrun_in_code_block(tmp_path):
+    write_md(
+        tmp_path / "20-工作模型集合索引.md",
+        """
+# 工作模型集合索引
+
+## 1. 本文解决的问题
+
+```markdown
+字段契约不应被检测。
+```
+""",
+    )
+
+    issues = checker.consistency_index_overrun_issues([str(tmp_path)])
+
+    assert not any(issue.code == "INDEX_OVERRUN_KEYWORD" for issue in issues)
+
+
+def test_consistency_skips_index_overrun_in_negative_context(tmp_path):
+    write_md(
+        tmp_path / "20-工作模型集合索引.md",
+        """
+# 工作模型集合索引
+
+## 1. 本文解决的问题
+
+索引文档不得包含字段契约定义。
+""",
+    )
+
+    issues = checker.consistency_index_overrun_issues([str(tmp_path)])
+
+    assert not any(issue.code == "INDEX_OVERRUN_KEYWORD" for issue in issues)

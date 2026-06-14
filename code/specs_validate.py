@@ -494,6 +494,10 @@ CONSISTENCY_INDEX_REQUIRED_SECTIONS = {
     "10": "Human Gate 与检查要求",
     "11": "待补齐事项",
 }
+CONSISTENCY_COLLECTION_NUMBER_RANGES = {
+    "model": (20, 39, "工作模型集合索引条目编号应位于 20-39 区段"),
+    "workflow": (40, 59, "工作流程集合索引条目编号应位于 40-59 区段"),
+}
 CONSISTENCY_HUMAN_GATE_CHECK_TITLES = {
     "Human Gate 与检查要求",
     "Human Gate 与总纲一致性检查",
@@ -518,6 +522,33 @@ CONSISTENCY_DEPRECATED_EXPRESSIONS = {
     "输入材料": "参考与研究材料",
     "待补齐项": "待补齐事项",
 }
+
+CONSISTENCY_INDEX_OVERRUN_KEYWORDS = ("字段契约", "状态机", "Scenario", "Gate 触发条件", "执行流程", "事实源回写", "对象关系")
+CONSISTENCY_INDEX_FILE_RE = re.compile(r"^(20|40)-")
+
+
+def consistency_index_overrun_issues(paths):
+    issues = []
+    for path in iter_markdown_files(paths):
+        if not CONSISTENCY_INDEX_FILE_RE.match(Path(path).name):
+            continue
+        in_code = False
+        for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            stripped = line.strip()
+            if stripped.startswith("```") or stripped.startswith("~~~"):
+                in_code = not in_code
+                continue
+            if in_code:
+                continue
+            if stripped.startswith("#") or stripped.startswith("|") or stripped.startswith(">"):
+                continue
+            if consistency_line_is_negative(stripped):
+                continue
+            for keyword in CONSISTENCY_INDEX_OVERRUN_KEYWORDS:
+                if keyword in stripped:
+                    issues.append(Issue(path, line_number, f"索引文档疑似越界包含具体工作模型/流程内容关键词: {keyword}", code="INDEX_OVERRUN_KEYWORD"))
+                    break
+    return issues
 
 
 def consistency_clean_cell(value):
@@ -584,6 +615,20 @@ def consistency_collection_entries(path, collection_kind):
             }
         )
     return entries
+
+
+def consistency_collection_range_issues(entries, collection_kind):
+    issues = []
+    lower, upper, message = CONSISTENCY_COLLECTION_NUMBER_RANGES[collection_kind]
+    for entry in entries:
+        try:
+            number = int(entry["number"])
+        except ValueError:
+            issues.append(Issue(entry["path"], entry["line"], f"集合索引条目编号不可解析: {entry['number']}", code="COLLECTION_INDEX_NUMBER_INVALID"))
+            continue
+        if number < lower or number > upper:
+            issues.append(Issue(entry["path"], entry["line"], f"{message}: {entry['number']} {entry['title']}", code="COLLECTION_INDEX_RANGE_MISMATCH"))
+    return issues
 
 
 def consistency_entry_aliases(number, title, position):
@@ -869,6 +914,8 @@ def consistency_check(paths=None):
     issues = []
     model_entries = consistency_collection_entries(model_index, "model") if model_index.exists() else []
     workflow_entries = consistency_collection_entries(workflow_index, "workflow") if workflow_index.exists() else []
+    issues.extend(consistency_collection_range_issues(model_entries, "model"))
+    issues.extend(consistency_collection_range_issues(workflow_entries, "workflow"))
     issues.extend(consistency_work_model_skeleton_issues(model_entries))
     issues.extend(consistency_removed_consumption_issues(model_entries, check_paths, "MODEL_REMOVED_CONSUMPTION"))
     issues.extend(consistency_removed_consumption_issues(workflow_entries, check_paths, "WORKFLOW_REMOVED_CONSUMPTION"))
@@ -881,6 +928,7 @@ def consistency_check(paths=None):
     issues.extend(consistency_deprecated_expression_issues(check_paths))
     issues.extend(consistency_forbidden_text_issues(check_paths))
     issues.extend(consistency_04_series_issues())
+    issues.extend(consistency_index_overrun_issues(check_paths))
     return issues
 
 
@@ -3519,6 +3567,21 @@ INDEX_DOCS_ROOT_ASSET_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?(docs/[^/`\s，�
 INDEX_EXTERNAL_URL_RE = re.compile(r"https?://[^\s`，。；、)）]+")
 INDEX_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\d]+(?:\.\d+)*)")
 INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
+INDEX_DEFINITION_SENTENCE_RE = re.compile(r"^(?:(?:在本文|在本规范|在本文档)中[，,]?\s*)?(?:[-*]\s*)?(?:\*\*)?([^|。；;，,\s`*]{2,24})(?:\*\*)?\s*(?:是|是指|定义为|包括且仅包括)")
+INDEX_GOVERNED_TERMS = {
+    "LDVH 自身项目", "管辖项目", "管辖项目配置", "LDVH 文档工作区", "规范正文区", "管辖项目文档工作区", "正文区", "studies", "sources",
+    "来源", "吸收", "参考与研究材料", "待补齐事项", "正式规范", "资产", "规范资产", "文本能力资产", "Code 能力资产", "Web 能力资产",
+    "工作对象事实源", "用户资产", "可变资料区", "候选事项", "索引文档", "说明性索引", "规范型集合索引", "规范落地要求", "能力保障",
+    "LDVH 能力资产", "保障机制", "环境入口", "环境适配", "环境能力清单", "适配措施", "适配措施状态", "环境", "AI 开发环境",
+    "环境实体", "环境能力", "适配边界", "适配检查", "适配降级", "工作区级入口", "项目级入口", "AI 统一入口", "LDVH 项目事实源",
+    "项目接入说明", "能力缺口", "环境缺口", "漂移", "LDVH 运行纪律", "启用", "薄引用", "开发环境", "工作模型", "工作对象", "工作字段",
+    "字段内容格式", "对象状态", "集合状态", "检查过程状态", "派生状态", "Change commit", "工作流程", "Code", "Web", "受控写入", "受控轻写入",
+    "Rules / Instructions", "Skill", "LDVH 自建 Skill", "LDVH 包装 Skill", "Agent", "Hook / 自动触发", "MCP / 模型上下文协议", "运行闭环", "具体工作流程",
+    "行动", "Scenario 识别条件", "适用场景", "步骤", "阶段标签", "Apply", "Verify", "Review", "Recheck", "Gate", "Human Gate 记录", "LDVH落地",
+    "环境确认", "LDVH落地与检查", "落地检查报告", "检查", "校验", "验证", "审计", "审阅", "审核", "写入", "回写", "事实源回写",
+}
+INDEX_DEFINITION_WHITELIST_TERMS = {"本文", "本规范", "00", "02", "Code", "Web", "Human Gate", "Rules", "Skill", "Agent", "Hook", "MCP"}
+INDEX_REVERSE_RELATED_TERMS = ("反向", "被下游", "被引用", "谁引用", "可发现性", "追溯", "影响面")
 
 
 class SpecsIndexError(Exception):
@@ -3551,6 +3614,7 @@ class SpecsChecker:
             relations.extend(parsed["relations"])
             mechanisms.extend(parsed["mechanisms"])
             diagnostics.extend(parsed["diagnostics"])
+        diagnostics.extend(self.diagnose_cross_document(docs, relations))
         return {
             "metadata": {
                 "derived": True,
@@ -3688,6 +3752,8 @@ class SpecsChecker:
                 in_code = not in_code
                 continue
             if in_code:
+                continue
+            if stripped.startswith(">"):
                 continue
             for target in self.extract_markdown_paths(line):
                 key = (line_number, "path", target)
@@ -3831,7 +3897,62 @@ class SpecsChecker:
                 diagnostics.append(
                     self.diagnostic(rel_path, line_number, "warning", "EXTERNAL_REFERENCE_IN_SPEC", f"正式规范不得引用外部 URL: {target}")
                 )
+            if doc_kind == "formal_spec" and not path.name.startswith("02-"):
+                diagnostics.extend(self.diagnose_definition_sentences(rel_path, line_number, stripped))
         return diagnostics
+
+
+    def diagnose_definition_sentences(self, rel_path, line_number, stripped):
+        diagnostics = []
+        if not stripped or stripped.startswith("#") or stripped.startswith(">"):
+            return diagnostics
+        for match in INDEX_DEFINITION_SENTENCE_RE.finditer(stripped):
+            term = match.group(1).strip("`：:、（）() ")
+            if not term or term in INDEX_DEFINITION_WHITELIST_TERMS or term not in INDEX_GOVERNED_TERMS:
+                continue
+            diagnostics.append(
+                self.diagnostic(
+                    rel_path,
+                    line_number,
+                    "warning",
+                    "POSSIBLE_DUPLICATE_TERM_DEFINITION",
+                    f"非 02 术语规范疑似使用定义句式: {term}",
+                )
+            )
+        return diagnostics
+
+
+    def diagnose_cross_document(self, docs, relations):
+        diagnostics = []
+        docs_by_path = {doc["path"]: doc for doc in docs}
+        for doc in docs:
+            related_specs = doc.get("related_specs") or []
+            rel_path = doc.get("path")
+            for target in related_specs:
+                target_path = self.relative_path(self.resolve_target_path(target, self.root / rel_path))
+                header_text = " | ".join(str(doc.get("header", {}).get(field, "")) for field in ("定位", "适用范围", "相关规范"))
+                if target_path in docs_by_path and any(term in header_text for term in INDEX_REVERSE_RELATED_TERMS) and not self.has_body_reference(relations, rel_path, target_path):
+                    diagnostics.append(
+                        self.diagnostic(
+                            rel_path,
+                            1,
+                            "warning",
+                            "POSSIBLE_REVERSE_RELATED_SPEC",
+                            f"相关规范可能基于反向、追溯或可发现性理由登记: {target_path}",
+                        )
+                    )
+        return diagnostics
+
+
+    def has_body_reference(self, relations, source_path, target_path):
+        for relation in relations:
+            if relation.get("source_path") != source_path:
+                continue
+            if relation.get("target_path") != target_path:
+                continue
+            if relation.get("relation_kind") == "path_ref" and relation.get("parse_method") == "body_path":
+                return True
+        return False
 
     def relation_record(self, path, line_number, relation_kind, target, content_hash, parse_method):
         resolved = self.resolve_target_path(target, path)
