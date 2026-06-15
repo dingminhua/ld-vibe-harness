@@ -1,23 +1,9 @@
-# TaskPlan With SubTasks Fixture
+本夹具覆盖 Web 对工作对象字段契约、TaskPlan / Task / SubTask 层级聚合、路径字段语义和信号字段展示边界的最小测试数据。
 
-This fixture is a synthetic LDVH fact source for Web/API tests.
+设计原则：
 
-Use the fixture root as `LDVH_ROOT` when running the Web app:
-
-```bash
-cd web
-LDVH_ROOT=../tests/web/fixtures/taskplan-with-subtasks npm run dev
-```
-
-The Web API test also reads this fixture directly.
-
-It intentionally covers:
-
-- 4 WorkArea records across active and archived status
-- 10 TaskPlan records across active, review_needed, and closed status
-- Task statuses: `planned`, `executing`, `verifying`, `review_needed`, `closed`
-- SubTask statuses: `planned`, `executing`, `verifying`, `review_needed`, `closed`
-- 33 Task records, including tasks with no subtasks, mixed subtasks, parallel subtasks, verification subtasks, verified subtasks, closed subtasks, planned tasks, blocked tasks, and close-decision evidence samples
-- TaskPlan close-decision cases: review-ready with all Tasks closed, active with missing plan evidence, active with partial Task evidence, and closed with complete evidence
-- Task-level `blocked_by` relationships
-- SubTask-level `blocked_by` relationships
+- TaskPlan 维护 `priority` 和 `importance`。
+- Memo 维护 `importance`，不维护 `priority`。
+- Task / SubTask 不维护 `priority`、`importance`、`category` 或 `tags`。
+- Task 的 `deliverables`、`related_docs`、`affected_docs` 分别表示结果物、参考输入文档和完成后需同步检查的文档。
+- SubTask 只承载局部执行字段，不承载文档、ADR、Memo、产出物或关联变更。

@@ -1,0 +1,31 @@
+id: taskplan-9002
+type: taskplan
+title: 关闭审查样例计划
+status: review_needed
+created: '2026-06-15T09:15:00'
+updated: '2026-06-15T09:55:00'
+workarea: workarea-9001
+priority: P2
+description: |
+  验证 review_needed TaskPlan 只能包含已关闭 Task，并具备关闭审查材料。
+success_criteria: |
+  - [x] 计划内 Task 均已关闭
+  - [x] 完成证据已记录
+source: workarea-9001
+tasks:
+  - task-9005
+related_docs:
+  - docs/review-ready.md
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-15'
+completion_evidence: |
+  - `task-9005` 已关闭并记录关闭证据
+  - Web 可展示待关闭审查态势
+status_history:
+  - at: '2026-06-15T09:55:00'
+    from: active
+    to: review_needed
+    actor: AI
+    reason: 计划内任务已全部关闭

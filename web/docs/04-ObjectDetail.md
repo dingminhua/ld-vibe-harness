@@ -37,7 +37,7 @@ YAML 源码折叠区
 - 头部右侧提供 `CopyPathButton`，复制对象详情 API 返回的 `target`。
 - 非工作对象状态徽章使用 `StatusBadge`；WorkArea、TaskPlan、Task、SubTask 头部不显示状态 chip，状态只在计划组、任务队列或任务状态等语义模块中表达，避免顶部事实状态和正文语义状态形成两套口径。
 - 非工作对象元信息行使用 `MetaChip`，时间统一 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`。
-- 对象字段必须以对应工作模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。Task 当前只允许 `assignee` 作为辅助元信息；Task / SubTask 不得把 `priority`、`importance`、`category`、`tags` 写入测试夹具或事实源。
+- 对象字段必须以对应工作模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。`priority` 只适用于 TaskPlan，`importance` 只适用于 TaskPlan 和 Memo。Task 当前只允许 `assignee` 作为辅助元信息；Task / SubTask 不得把 `priority`、`importance`、`category`、`tags` 写入测试夹具或事实源。
 - WorkArea、TaskPlan、Task、SubTask 使用统一工作对象身份区：`类型 + ID + 标题 + 创建/更新时间` 合并展示；不在头部显示状态徽章或“进行中”等通用解释文案，创建/更新时间不再作为独立 chip 行。
 
 ## 4. WorkArea 语义阅读布局
@@ -73,7 +73,7 @@ Task / SubTask 不使用普通字段卡片堆叠，而使用固定阅读主线�
 4. 验收标准：`acceptance`，用 `ChecklistCard` 展示进度和每项状态。
 5. 验证方式：`verification` 内容为 GFM checklist 时与验收标准保持同样的 `ChecklistCard` 样式；内容为命令、结论或证据段落时使用 embedded `EvidenceBlock`。关闭证据 `closure_evidence` 作为独立证据模块展示，且只有在事实源存在非空内容时显示，不用“尚未记录”占位模块暗示验证中对象已经具备关闭证据。
 6. 定义事实不再收进“任务目标”或“上下文”总区块；目标、所属计划或所属任务、来源分别作为同级模块展示，来源放在父对象引用之后。`source` 字段本身就是来源，不在字段内容里再写“来源：”或“用途：”二级标签；用途、测试目的等说明应进入目标或验收/验证字段。所属计划/任务入口使用模块内对象引用值，点击只打开右侧辅助阅读。
-7. Task 的产出与文档不再收进“产出与文档”总区块；产出物、关联文档、影响文档按 `deliverables/related_docs/affected_docs` 分别作为同级模块展示。`affected_docs` 只表示任务完成后需要同步检查的文档路径，应指向 `docs/`、`web/docs/` 或 `specs/` 下的 Markdown 文档，不得放入 `web/src/` 等实现源码路径。
+7. Task 的产出与文档不再收进“产出与文档”总区块；产出物、关联文档、影响文档按 `deliverables/related_docs/affected_docs` 分别作为同级模块展示。`deliverables` 表示可追溯结果物路径；`related_docs` 表示任务参考输入文档路径；`affected_docs` 只表示任务完成后需要同步检查的文档路径，应指向 `docs/`、`web/docs/` 或 `specs/` 下的 Markdown 文档，不得放入 `web/src/` 等实现源码路径。
 8. Task 的关联材料不再收进“关联材料”总区块；决策、关联变更按 `related_adrs/related_changes` 分别作为同级模块展示。材料只收纳当前 Task 自己的材料，不复制上层 TaskPlan 或 WorkArea 的材料。SubTask 字段契约当前不定义产出物、关联文档、影响文档、决策或关联变更；测试夹具不得为 SubTask 杜撰这些字段。
 9. 其他字段：只显示非空字段，避免把空数组、空关联或空产出提升到主阅读流；如果 Task / SubTask 经常出现“其他字段”，应优先回到字段规范和专用布局收敛，而不是把它视为正常主模块。
 10. Task / SubTask 详情页内的父计划、父任务和子任务行只打开右侧辅助阅读区，不切换主路由。
@@ -88,7 +88,7 @@ Task / SubTask 不使用普通字段卡片堆叠，而使用固定阅读主线�
 
 ## 8. 字段渲染规则
 
-字段分类由 `web/src/utils/fieldFormats.ts` 统一维护，详情页和右侧扩展阅读区必须共同消费同一套规则。
+字段分类由 `web/src/utils/fieldFormats.ts` 统一维护，详情页和右侧扩展阅读区必须共同消费同一套规则。字段分类只决定 Web 如何阅读和渲染字段，不定义字段是否存在、是否必填或适用于哪些对象；字段契约以 `specs/20-39` 对应工作模型主文件和 `specs/05.01-工作字段内容格式规范.md` 为准。
 
 同名字段在不同工作对象详情页中必须使用同一套标题、组件和基础视觉权重。例：`description` 统一显示为“目标”，`source` 统一显示为普通定义文本，`related_docs` 统一显示为“文档”材料模块。对象层级差异只允许体现在字段顺序、是否聚合派生数据和是否出现对象特有字段上，不允许同名字段在 TaskPlan 与 Task 中换标题、降权或换交互样式。
 
@@ -106,6 +106,8 @@ Task / SubTask 不使用普通字段卡片堆叠，而使用固定阅读主线�
 | 其他短文本 | `ldvh-body` | 普通文本 |
 
 当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、TaskPlan、Task、SubTask、ADR、Pitfall、Memo。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
+
+路径类字段应按字段语义区分：`related_docs` 指向引用文档，`affected_docs` 指向需同步检查的文档，`deliverables` 指向结果物，`related_rules` 指向规范、Rules、Skill、Agent、Code 或 Web 承接位置。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
 
 ## 9. 右侧扩展阅读区
 

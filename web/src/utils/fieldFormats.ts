@@ -46,6 +46,22 @@ export function isPreviewableDocPath(value: string) {
   return value.startsWith('http://') || value.startsWith('https://') || /^(docs\/|specs\/|web\/docs\/|rules\/|skills\/|tools\/|web\/)/.test(value);
 }
 
+export function isAffectedDocPath(value: string) {
+  return /\.(md|mdx)$/i.test(value) && /^(docs\/|specs\/|web\/docs\/)/.test(value);
+}
+
+export function isRelatedDocPath(value: string) {
+  return value.startsWith('http://')
+    || value.startsWith('https://')
+    || (/\.(md|mdx)$/i.test(value) && /^(docs\/|specs\/|web\/docs\/)/.test(value));
+}
+
+export function isPreviewablePathForField(fieldKey: string, value: string) {
+  if (fieldKey === 'affected_docs') return isAffectedDocPath(value);
+  if (fieldKey === 'related_docs') return isRelatedDocPath(value);
+  return isPreviewableDocPath(value);
+}
+
 export function hasChecklist(value: string) {
   return /^\s*- \[[ xX]\]/m.test(value);
 }

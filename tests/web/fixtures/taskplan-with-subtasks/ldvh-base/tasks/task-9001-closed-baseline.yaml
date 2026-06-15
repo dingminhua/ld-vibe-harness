@@ -1,0 +1,36 @@
+id: task-9001
+type: task
+title: 建立字段契约基线
+status: closed
+created: '2026-06-15T09:10:00'
+updated: '2026-06-15T09:20:00'
+taskplan: taskplan-9001
+description: |
+  建立 Web 测试夹具中 TaskPlan、Task、SubTask 和 Memo 的字段适用边界。
+source: taskplan-9001
+blocked_by: []
+acceptance: |
+  - [x] Task 不包含 priority、importance、category 或 tags
+  - [x] Memo 只使用 importance 表达重要程度
+verification: |
+  - 读取 specs/05、22、23、26 的字段契约
+assignee: AI
+related_adrs:
+  - adr-9001
+related_changes:
+  - abc1234
+related_docs:
+  - docs/task-baseline.md
+affected_docs:
+  - web/docs/03-ObjectList.md
+deliverables:
+  - tests/web/fixtures/taskplan-with-subtasks/docs/task-baseline.md
+closure_evidence: |
+  - 字段契约边界已写入测试夹具 README
+closed_at: '2026-06-15'
+status_history:
+  - at: '2026-06-15T09:20:00'
+    from: executing
+    to: closed
+    actor: AI
+    reason: 基线字段已确认

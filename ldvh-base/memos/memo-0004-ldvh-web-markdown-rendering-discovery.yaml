@@ -38,4 +38,4 @@ category: discovery
 related_tasks: []
 related_adrs: []
 related_docs: []
-importance: medium
+priority: P2

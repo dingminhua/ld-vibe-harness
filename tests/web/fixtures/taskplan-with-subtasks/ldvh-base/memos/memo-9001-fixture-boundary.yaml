@@ -1,0 +1,28 @@
+id: memo-9001
+type: memo
+title: 测试夹具需覆盖字段边界
+status: active
+created: '2026-06-15T09:05:00'
+updated: '2026-06-15T09:05:00'
+description: |
+  Web 测试夹具需要显式覆盖 TaskPlan 和 Memo 的 priority，以及 Task / SubTask 禁用信号字段的边界。
+source: 用户提出旧测试数据不够准确，需要清空重建
+category: reminder
+priority: P1
+related_tasks:
+  - task-9002
+related_adrs:
+  - adr-9001
+related_workareas:
+  - workarea-9001
+related_taskplans:
+  - taskplan-9001
+related_changes: []
+related_docs:
+  - docs/object-model-sync.md
+status_history:
+  - at: '2026-06-15T09:05:00'
+    from: null
+    to: active
+    actor: AI
+    reason: 记录测试夹具重建输入

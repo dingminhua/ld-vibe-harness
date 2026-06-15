@@ -18,7 +18,7 @@ import { useI18n } from '@/i18n/context';
 import { getObjectStatusHint, getObjectStatusLocale, getTypeDescription } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { formatDateTime } from '@/utils/dateFormat';
-import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
+import { getObjectSignals, getSignalClassName, getSignalDotClassName, getSignalFieldLabel, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
 import {
   CHECKLIST_COMPAT_FIELDS,
@@ -30,7 +30,7 @@ import {
   SUMMARY_TEXT_FIELDS,
   hasChecklist,
   isObjectRef,
-  isPreviewableDocPath,
+  isPreviewablePathForField,
 } from '@/utils/fieldFormats';
 
 /** 字段分组定义 */
@@ -57,15 +57,28 @@ const TASK_AUXILIARY_META_KEYS = ['assignee'];
 const COMMON_AUXILIARY_META_KEYS = ['category', 'priority', 'importance', 'repeatability', 'tags', 'scope', 'impact', 'assignee'];
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
   task: TASK_AUXILIARY_META_KEYS,
-  memo: ['category', 'importance', 'tags'],
+  memo: ['category', 'priority', 'tags'],
   profile: ['project_name', 'project_kind', 'language', 'framework'],
   pitfall: ['repeatability', 'tags'],
 };
 /** Task 类型字段展示优先顺序 */
-const TASK_FIELD_ORDER = ['acceptance', 'blocked_by', 'related_docs', 'deliverables'];
+export const TASK_FIELD_ORDER = [
+  'description',
+  'source',
+  'acceptance',
+  'blocked_by',
+  'verification',
+  'closure_evidence',
+  'deliverables',
+  'related_docs',
+  'affected_docs',
+  'related_adrs',
+  'related_changes',
+  'status_history',
+];
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls'],
-  taskplan: ['workarea', 'priority', 'importance', 'description', 'success_criteria', 'source', 'tasks', 'completion_evidence', 'related_docs'],
+  taskplan: ['workarea', 'priority', 'description', 'success_criteria', 'source', 'tasks', 'completion_evidence', 'related_docs'],
   task: TASK_FIELD_ORDER,
   subtask: ['task', 'description', 'source', 'acceptance', 'blocked_by', 'verification', 'closure_evidence'],
   profile: [
@@ -122,6 +135,16 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
 
 /** 字段名中英映射 */
 export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
+  id: { zh: 'ID', en: 'ID' },
+  type: { zh: '类型', en: 'Type' },
+  title: { zh: '标题', en: 'Title' },
+  title_en: { zh: '英文标题', en: 'English Title' },
+  title_zh: { zh: '中文标题', en: 'Chinese Title' },
+  status: { zh: '状态', en: 'Status' },
+  created: { zh: '创建时间', en: 'Created' },
+  updated: { zh: '更新时间', en: 'Updated' },
+  closed_at: { zh: '关闭时间', en: 'Closed At' },
+  date: { zh: '日期', en: 'Date' },
   source: { zh: '来源', en: 'Source' },
   description: { zh: '描述', en: 'Description' },
   summary: { zh: '摘要', en: 'Summary' },
@@ -199,7 +222,15 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   status_history: { zh: '状态记录', en: 'Status History' },
   changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
+  affected_docs: { zh: '影响文档', en: 'Affected Docs' },
   deliverables: { zh: '产出物', en: 'Deliverables' },
+  aggregated_deliverables: { zh: '聚合产出物', en: 'Aggregated Deliverables' },
+  aggregated_docs: { zh: '聚合文档', en: 'Aggregated Docs' },
+  aggregated_related_docs: { zh: '聚合关联文档', en: 'Aggregated Related Docs' },
+  aggregated_related_adrs: { zh: '聚合关联决策', en: 'Aggregated Related ADRs' },
+  aggregated_related_memos: { zh: '聚合关联备忘', en: 'Aggregated Related Memos' },
+  aggregated_related_pitfalls: { zh: '聚合关联踩坑经验', en: 'Aggregated Related Pitfalls' },
+  aggregated_related_changes: { zh: '聚合关联变更', en: 'Aggregated Related Changes' },
   at: { zh: '时间', en: 'At' },
   from: { zh: '前状态', en: 'From' },
   to: { zh: '后状态', en: 'To' },
@@ -401,6 +432,8 @@ export default function ObjectDetail() {
                 objectType={objType}
                 typeColor={typeColor}
                 typeLabel={TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
+                source={obj}
+                locale={locale}
                 created={formatDateTime(obj.created as string | undefined)}
                 updated={formatDateTime(obj.updated as string | undefined)}
               />
@@ -549,6 +582,8 @@ function WorkObjectDetailHeader({
   objectType,
   typeColor,
   typeLabel,
+  source,
+  locale,
   created,
   updated,
 }: {
@@ -558,10 +593,13 @@ function WorkObjectDetailHeader({
   objectType: string;
   typeColor: string;
   typeLabel: string;
+  source: Record<string, unknown>;
+  locale: string;
   created: string;
   updated: string;
 }) {
   const { t } = useI18n();
+  const signals = getObjectSignals(source, objectType);
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-3">
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -573,6 +611,21 @@ function WorkObjectDetailHeader({
             >
               {typeLabel}
             </span>
+            {signals.map(({ field, value }) => {
+              const fieldLabel = getSignalFieldLabel(field, locale);
+              const valueLabel = getSignalText(field, value, locale);
+              const dotClassName = getSignalDotClassName(field, value);
+              return (
+                <span
+                  key={`${field}-${value}`}
+                  className={`ldvh-caption inline-flex max-w-full items-center gap-1 rounded border px-1.5 py-0.5 font-sans ${getSignalClassName(field, value)}`}
+                  title={fieldLabel && valueLabel ? `${fieldLabel}: ${valueLabel}` : undefined}
+                >
+                  {dotClassName && <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotClassName}`} />}
+                  <span className="truncate">{valueLabel}</span>
+                </span>
+              );
+            })}
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
           </div>
           <h1 className="ldvh-page-title flex min-w-0 items-center gap-2 break-words">
@@ -1006,7 +1059,7 @@ function MaterialValue({
   return (
     <div className="min-w-0">
       {DOC_LINK_FIELDS.includes(fieldKey) && typeof value[0] === 'string'
-        ? <DocumentOrTextList items={value as string[]} variant={referenceVariant} />
+        ? <DocumentOrTextList items={value as string[]} fieldKey={fieldKey} variant={referenceVariant} />
         : REFERENCE_FIELDS.includes(fieldKey) && typeof value[0] === 'string'
           ? <ReferenceCard refs={value as string[]} showType={false} showStatus={false} variant={referenceVariant} />
           : <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />}
@@ -1234,7 +1287,7 @@ function DetailDocumentSection({ title, docs }: { title: string; docs: string[] 
   if (docs.length === 0) return null;
   return (
     <TaskSection title={title} tone="docs">
-      <DocumentOrTextList items={docs} variant="plain" />
+      <DocumentOrTextList items={docs} fieldKey="related_docs" variant="plain" />
     </TaskSection>
   );
 }
@@ -1771,9 +1824,9 @@ function StringList({ items }: { items: string[] }) {
   );
 }
 
-function DocumentOrTextList({ items, variant = 'card' }: { items: string[]; variant?: 'card' | 'plain' }) {
-  const docs = items.filter(isPreviewableDocPath);
-  const rest = items.filter((item) => !isPreviewableDocPath(item));
+function DocumentOrTextList({ items, fieldKey, variant = 'card' }: { items: string[]; fieldKey: string; variant?: 'card' | 'plain' }) {
+  const docs = items.filter((item) => isPreviewablePathForField(fieldKey, item));
+  const rest = items.filter((item) => !isPreviewablePathForField(fieldKey, item));
   return (
     <div className="flex flex-col gap-2">
       {docs.length > 0 && <DocPreviewLink docs={docs} variant={variant} />}
@@ -1839,7 +1892,7 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
       return <ChecklistCard value={value} />;
     }
 
-    if (DOC_LINK_FIELDS.includes(fieldKey) && isPreviewableDocPath(value)) {
+    if (DOC_LINK_FIELDS.includes(fieldKey) && isPreviewablePathForField(fieldKey, value)) {
       return <DocPreviewLink docs={[value]} />;
     }
 
@@ -1894,7 +1947,7 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
     if (typeof value[0] === 'string') {
       // related_docs 字段使用 DocPreviewLink 组件
       if (DOC_LINK_FIELDS.includes(fieldKey)) {
-        return <DocumentOrTextList items={value as string[]} />;
+        return <DocumentOrTextList items={value as string[]} fieldKey={fieldKey} />;
       }
       // 引用字段使用 ReferenceCard 组件
       if (REFERENCE_FIELDS.includes(fieldKey)) {

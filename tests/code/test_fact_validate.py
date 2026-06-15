@@ -58,7 +58,6 @@ created: "2026-06-12"
 updated: "2026-06-12"
 workarea: workarea-0001
 priority: P2
-importance: medium
 description: Core plan
 success_criteria: |
   - [ ] Plan can be validated

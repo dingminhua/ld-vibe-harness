@@ -20,4 +20,3 @@ completion_evidence: |-
   - task-0041: Dashboard态势摘要行按状态分组计数actionItems，待推进区域executing/verifying/review_needed
 closed_at: '2026-06-05T23:01:17.062265'
 priority: P2
-importance: medium

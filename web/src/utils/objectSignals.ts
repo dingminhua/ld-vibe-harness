@@ -1,8 +1,15 @@
 type SignalField = 'priority' | 'importance' | 'repeatability' | 'category';
 
 export type ObjectSignalSource = Partial<Record<SignalField, unknown>>;
+export type SignalObjectType = 'workarea' | 'taskplan' | 'task' | 'subtask' | 'adr' | 'pitfall' | 'memo' | 'change' | 'profile' | string;
 
 export const SIGNAL_FIELDS: SignalField[] = ['priority', 'importance', 'repeatability', 'category'];
+
+const SIGNAL_FIELDS_BY_TYPE: Record<string, SignalField[]> = {
+  taskplan: ['priority'],
+  memo: ['priority', 'category'],
+  pitfall: ['repeatability'],
+};
 
 const FIELD_LABELS: Record<SignalField, { zh: string; en: string }> = {
   priority: { zh: '优先级', en: 'Priority' },
@@ -13,15 +20,15 @@ const FIELD_LABELS: Record<SignalField, { zh: string; en: string }> = {
 
 const VALUE_LABELS: Partial<Record<SignalField, Record<string, { zh: string; en: string }>>> = {
   priority: {
-    P0: { zh: 'P0 优先级', en: 'P0 priority' },
-    P1: { zh: 'P1 优先级', en: 'P1 priority' },
-    P2: { zh: 'P2 优先级', en: 'P2 priority' },
-    P3: { zh: 'P3 优先级', en: 'P3 priority' },
+    P0: { zh: 'P0', en: 'P0' },
+    P1: { zh: 'P1', en: 'P1' },
+    P2: { zh: 'P2', en: 'P2' },
+    P3: { zh: 'P3', en: 'P3' },
   },
   importance: {
-    high: { zh: '高重要程度', en: 'High importance' },
-    medium: { zh: '中重要程度', en: 'Medium importance' },
-    low: { zh: '低重要程度', en: 'Low importance' },
+    high: { zh: '高', en: 'High' },
+    medium: { zh: '中', en: 'Medium' },
+    low: { zh: '低', en: 'Low' },
   },
   repeatability: {
     recurring: { zh: '反复出现', en: 'Recurring' },
@@ -41,15 +48,15 @@ const VALUE_LABELS: Partial<Record<SignalField, Record<string, { zh: string; en:
 
 const SIGNAL_CLASSES: Partial<Record<SignalField, Record<string, string>>> = {
   priority: {
-    P0: 'border-red-500/35 bg-red-500/10 text-red-500',
-    P1: 'border-orange-500/35 bg-orange-500/10 text-orange-500',
-    P2: 'border-amber-500/35 bg-amber-500/10 text-amber-500',
-    P3: 'border-zinc-500/25 bg-zinc-500/10 text-ldvh-text-secondary',
+    P0: 'border-rose-500/20 bg-transparent text-rose-300/90 font-medium',
+    P1: 'border-orange-500/20 bg-transparent text-orange-300/90 font-medium',
+    P2: 'border-amber-500/20 bg-transparent text-amber-300/90 font-medium',
+    P3: 'border-zinc-500/20 bg-transparent text-ldvh-text-secondary font-medium',
   },
   importance: {
-    high: 'border-orange-500/40 bg-orange-500/10 text-orange-500',
-    medium: 'border-amber-500/35 bg-amber-500/10 text-amber-500',
-    low: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
+    high: 'border-transparent bg-transparent text-ldvh-text-secondary',
+    medium: 'border-transparent bg-transparent text-ldvh-text-tertiary',
+    low: 'border-transparent bg-transparent text-ldvh-text-tertiary',
   },
   repeatability: {
     recurring: 'border-amber-500/35 bg-amber-500/10 text-amber-500',
@@ -64,6 +71,14 @@ const SIGNAL_CLASSES: Partial<Record<SignalField, Record<string, string>>> = {
     discovery: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
     reminder: 'border-violet-500/30 bg-violet-500/10 text-violet-500',
     preference: 'border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-500',
+  },
+};
+
+const SIGNAL_DOT_CLASSES: Partial<Record<SignalField, Record<string, string>>> = {
+  importance: {
+    high: 'bg-orange-300/80',
+    medium: 'bg-sky-300/70',
+    low: 'bg-zinc-400/70',
   },
 };
 
@@ -115,8 +130,20 @@ export function getSignalClassName(field: string, value: unknown): string {
   return SIGNAL_CLASSES[field]?.[normalized] ?? 'border-ldvh-border bg-ldvh-bg text-ldvh-text-primary';
 }
 
-export function getObjectSignalAccent(source: ObjectSignalSource): string | null {
-  for (const field of SIGNAL_FIELDS) {
+export function getSignalDotClassName(field: string, value: unknown): string | null {
+  if (!isSignalField(field)) return null;
+  const normalized = normalizeSignalValue(value);
+  if (!normalized) return null;
+  return SIGNAL_DOT_CLASSES[field]?.[normalized] ?? null;
+}
+
+function getAllowedSignalFields(type?: SignalObjectType): SignalField[] {
+  if (!type) return SIGNAL_FIELDS;
+  return SIGNAL_FIELDS_BY_TYPE[type] ?? [];
+}
+
+export function getObjectSignalAccent(source: ObjectSignalSource, type?: SignalObjectType): string | null {
+  for (const field of getAllowedSignalFields(type)) {
     const normalized = normalizeSignalValue(source[field]);
     if (!normalized) continue;
     const color = ACCENT_COLORS[field]?.[normalized];
@@ -125,8 +152,8 @@ export function getObjectSignalAccent(source: ObjectSignalSource): string | null
   return null;
 }
 
-export function getObjectSignals(source: ObjectSignalSource) {
-  return SIGNAL_FIELDS
+export function getObjectSignals(source: ObjectSignalSource, type?: SignalObjectType) {
+  return getAllowedSignalFields(type)
     .map((field) => ({ field, value: normalizeSignalValue(source[field]) }))
     .filter((signal): signal is { field: SignalField; value: string } => Boolean(signal.value));
 }

@@ -20,4 +20,3 @@ completion_evidence: |-
   - task-0029: 研究文档 web/docs/07-内容可读性深度研究.md 已完成，覆盖字段语义化渲染方案（6类组件）、
 closed_at: '2026-06-05T23:20:48.731286'
 priority: P2
-importance: medium

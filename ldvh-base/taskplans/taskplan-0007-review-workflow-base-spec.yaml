@@ -24,4 +24,3 @@ completion_evidence: |-
   - task-0008: 已完成 research 目录重排：15 个文件从编号有缺口的 [01-09,11,17,21-24] 整理为连续 [01-15]；6 处内部交叉引用已更新；research/12 引用的 research/16（不存在）已记录。
 closed_at: '2026-06-05'
 priority: P2
-importance: medium

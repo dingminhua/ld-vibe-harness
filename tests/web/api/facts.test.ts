@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url'
 import yaml from 'js-yaml'
 import { listObjects, showObject } from '../../../web/api/services/facts.ts'
 import { buildPlanSummaries, type ListedObject } from '../../../web/api/routes/objects.ts'
+import { isPreviewablePathForField } from '../../../web/src/utils/fieldFormats.ts'
+import { getObjectSignalAccent, getObjectSignals } from '../../../web/src/utils/objectSignals.ts'
 
 const fixtureRoot = fileURLToPath(new URL('../fixtures/taskplan-with-subtasks', import.meta.url))
 const projectRoot = path.resolve(fixtureRoot, '../../../..')
@@ -18,7 +20,7 @@ const FIXTURE_ALLOWED_FIELDS: Record<string, Set<string>> = {
   ]),
   taskplan: new Set([
     'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
-    'workarea', 'priority', 'importance', 'description', 'success_criteria', 'source', 'tasks',
+    'workarea', 'priority', 'description', 'success_criteria', 'source', 'tasks',
     'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
     'status_history', 'review_requested_at', 'completion_evidence', 'closed_at',
   ]),
@@ -37,7 +39,7 @@ const FIXTURE_ALLOWED_FIELDS: Record<string, Set<string>> = {
 
 const FIXTURE_REQUIRED_FIELDS: Record<string, string[]> = {
   workarea: ['id', 'type', 'title', 'status', 'created', 'updated', 'description', 'source'],
-  taskplan: ['id', 'type', 'title', 'status', 'created', 'updated', 'workarea', 'priority', 'importance', 'description', 'success_criteria', 'source', 'tasks'],
+  taskplan: ['id', 'type', 'title', 'status', 'created', 'updated', 'workarea', 'priority', 'description', 'success_criteria', 'source', 'tasks'],
   task: ['id', 'type', 'title', 'status', 'created', 'updated', 'taskplan', 'description', 'source', 'acceptance'],
   subtask: ['id', 'type', 'title', 'status', 'created', 'updated', 'task', 'description', 'source', 'acceptance'],
 }
@@ -293,8 +295,21 @@ function assertFixtureConformsToSpecs() {
   assert.deepEqual(issues, [], `Fixture data must match work model specs:\n${issues.join('\n')}`)
 }
 
+function assertFieldPathPreviewRules() {
+  assert.equal(isPreviewablePathForField('affected_docs', 'web/docs/04-ObjectDetail.md'), true)
+  assert.equal(isPreviewablePathForField('affected_docs', 'docs/object-model-sync.md'), true)
+  assert.equal(isPreviewablePathForField('affected_docs', 'specs/22-Task-任务.md'), true)
+  assert.equal(isPreviewablePathForField('affected_docs', 'web/src/pages/ObjectDetail.tsx'), false)
+  assert.equal(isPreviewablePathForField('affected_docs', 'tests/web/fixtures/taskplan-with-subtasks/docs/path-fields.md'), false)
+  assert.equal(isPreviewablePathForField('related_docs', 'docs/path-fields.md'), true)
+  assert.equal(isPreviewablePathForField('related_docs', 'https://example.com/reference'), true)
+  assert.equal(isPreviewablePathForField('related_docs', 'web/src/pages/ObjectDetail.tsx'), false)
+  assert.equal(isPreviewablePathForField('deliverables', 'tests/web/fixtures/taskplan-with-subtasks/docs/path-fields.md'), false)
+}
+
 async function main() {
   assertFixtureConformsToSpecs()
+  assertFieldPathPreviewRules()
 
   const workareas = await listObjects('workarea')
   assert.equal(workareas.ok, true)
@@ -324,78 +339,69 @@ async function main() {
 
   const fixtureWorkareas = await listObjects('workarea', fixtureRoot)
   assert.equal(fixtureWorkareas.ok, true)
-  assert.equal(fixtureWorkareas.data.items.length, 4)
+  assert.equal(fixtureWorkareas.data.items.length, 2)
   const fixtureWorkareaStatuses = new Set((fixtureWorkareas.data.items as Array<Record<string, unknown>>).map((item) => item.status))
   assert.deepEqual(fixtureWorkareaStatuses, new Set(['active', 'archived']))
 
   const fixturePlans = await listObjects('taskplan', fixtureRoot)
   assert.equal(fixturePlans.ok, true)
-  assert.equal(fixturePlans.data.items.length, 10)
+  assert.equal(fixturePlans.data.items.length, 3)
+  const highPriorityPlanItem = (fixturePlans.data.items as Array<Record<string, unknown>>).find((item) => item.id === 'taskplan-9001')
+  assert.ok(highPriorityPlanItem)
+  assert.deepEqual(getObjectSignals(highPriorityPlanItem, 'taskplan').map((signal) => signal.field), ['priority'])
+  assert.equal(getObjectSignalAccent(highPriorityPlanItem, 'taskplan'), '#f97316')
   const fixturePlanIds = new Set((fixturePlans.data.items as Array<Record<string, unknown>>).map((item) => item.id))
   assert.deepEqual(fixturePlanIds, new Set([
     'taskplan-9001',
     'taskplan-9002',
     'taskplan-9003',
-    'taskplan-9004',
-    'taskplan-9005',
-    'taskplan-9006',
-    'taskplan-9007',
-    'taskplan-9008',
-    'taskplan-9009',
-    'taskplan-9010',
   ]))
   const activeFixturePlans = await listObjects('taskplan', fixtureRoot, 'active')
   assert.equal(activeFixturePlans.ok, true)
-  assert.equal(activeFixturePlans.data.items.length, 6)
+  assert.equal(activeFixturePlans.data.items.length, 1)
 
   const fixtureTasks = await listObjects('task', fixtureRoot)
   assert.equal(fixtureTasks.ok, true)
-  assert.equal(fixtureTasks.data.items.length, 33)
+  assert.equal(fixtureTasks.data.items.length, 6)
+  assert.deepEqual(getObjectSignals({ priority: 'P0', importance: 'high', category: 'gap' }, 'task'), [])
   const taskStatuses = new Set((fixtureTasks.data.items as Array<Record<string, unknown>>).map((item) => item.status))
-  assert.deepEqual(taskStatuses, new Set(['planned', 'executing', 'verifying', 'review_needed', 'closed']))
+  assert.deepEqual(taskStatuses, new Set(['planned', 'executing', 'review_needed', 'closed']))
 
   const fixtureSubTasks = await listObjects('subtask', fixtureRoot)
   assert.equal(fixtureSubTasks.ok, true)
-  assert.equal(fixtureSubTasks.data.items.length, 22)
+  assert.equal(fixtureSubTasks.data.items.length, 3)
+  assert.deepEqual(getObjectSignals({ priority: 'P0', importance: 'high', category: 'gap' }, 'subtask'), [])
   const subtaskStatuses = new Set((fixtureSubTasks.data.items as Array<Record<string, unknown>>).map((item) => item.status))
-  assert.deepEqual(subtaskStatuses, new Set(['planned', 'executing', 'verifying', 'review_needed', 'closed']))
+  assert.deepEqual(subtaskStatuses, new Set(['planned', 'executing', 'closed']))
 
   const planSummaries = await buildPlanSummaries(fixturePlans.data.items as ListedObject[], fixtureRoot)
-  assert.equal(planSummaries.length, 10)
-  const complexPlan = planSummaries.find((plan) => plan.id === 'taskplan-9001')
-  assert.ok(complexPlan)
-  assert.equal(complexPlan.tasks.length, 10)
-  const taskWithSubtasks = complexPlan.tasks.find((task) => task.id === 'task-9002')
+  assert.equal(planSummaries.length, 3)
+  const activePlan = planSummaries.find((plan) => plan.id === 'taskplan-9001')
+  assert.ok(activePlan)
+  assert.equal(activePlan.workarea, 'workarea-9001')
+  assert.equal(activePlan.tasks.length, 4)
+  assert.equal(activePlan.taskClosed, 1)
+  assert.equal(activePlan.taskActive, 1)
+  assert.equal(activePlan.taskBlocked, 1)
+  const taskWithSubtasks = activePlan.tasks.find((task) => task.id === 'task-9004')
   assert.ok(taskWithSubtasks)
-  assert.equal(taskWithSubtasks.subtasks?.length, 5)
+  assert.equal(taskWithSubtasks.subtasks?.length, 3)
   const nestedStatuses = new Set(taskWithSubtasks.subtasks?.map((item) => item.status))
-  assert.deepEqual(nestedStatuses, new Set(['planned', 'executing', 'verifying', 'review_needed', 'closed']))
-  const waitingSubtask = taskWithSubtasks.subtasks?.find((item) => item.id === 'subtask-9005')
+  assert.deepEqual(nestedStatuses, new Set(['planned', 'executing', 'closed']))
+  const waitingSubtask = taskWithSubtasks.subtasks?.find((item) => item.id === 'subtask-9003')
   assert.equal(waitingSubtask?.openBlockers?.[0]?.id, 'subtask-9002')
-  const parallelTask = complexPlan.tasks.find((task) => task.id === 'task-9006')
-  assert.equal(parallelTask?.subtasks?.length, 3)
-  const verifyingTask = complexPlan.tasks.find((task) => task.id === 'task-9008')
-  assert.equal(verifyingTask?.subtasks?.length, 3)
-  const noSubtaskTask = complexPlan.tasks.find((task) => task.id === 'task-9007')
-  assert.equal(noSubtaskTask?.subtasks, undefined)
-  const parallelPlan = planSummaries.find((plan) => plan.id === 'taskplan-9003')
-  assert.equal(parallelPlan?.workarea, 'workarea-9002')
-  assert.equal(parallelPlan?.tasks.find((task) => task.id === 'task-9032')?.subtasks?.length, 4)
-  const verificationPlan = planSummaries.find((plan) => plan.id === 'taskplan-9004')
-  assert.equal(verificationPlan?.workarea, 'workarea-9003')
-  assert.equal(verificationPlan?.tasks.find((task) => task.id === 'task-9042')?.subtasks?.length, 3)
-  const closeReadyPlan = planSummaries.find((plan) => plan.id === 'taskplan-9007')
-  assert.equal(closeReadyPlan?.tasks.length, 2)
-  assert.deepEqual(new Set(closeReadyPlan?.tasks.map((task) => task.status)), new Set(['closed']))
-  const missingEvidencePlan = planSummaries.find((plan) => plan.id === 'taskplan-9008')
-  assert.equal(missingEvidencePlan?.tasks.length, 2)
-  assert.deepEqual(new Set(missingEvidencePlan?.tasks.map((task) => task.status)), new Set(['closed']))
-  const partialEvidencePlan = planSummaries.find((plan) => plan.id === 'taskplan-9009')
-  assert.equal(partialEvidencePlan?.tasks.length, 2)
-  assert.deepEqual(new Set(partialEvidencePlan?.tasks.map((task) => task.status)), new Set(['closed', 'verifying']))
-  const closedCompletePlan = planSummaries.find((plan) => plan.id === 'taskplan-9010')
-  assert.equal(closedCompletePlan?.tasks.length, 2)
-  assert.deepEqual(new Set(closedCompletePlan?.tasks.map((task) => task.status)), new Set(['closed']))
+  const reviewPlan = planSummaries.find((plan) => plan.id === 'taskplan-9002')
+  assert.equal(reviewPlan?.tasks.length, 1)
+  assert.deepEqual(new Set(reviewPlan?.tasks.map((task) => task.status)), new Set(['closed']))
+  const closedPlan = planSummaries.find((plan) => plan.id === 'taskplan-9003')
+  assert.equal(closedPlan?.tasks.length, 1)
+  assert.deepEqual(new Set(closedPlan?.tasks.map((task) => task.status)), new Set(['closed']))
+
+  const fixtureMemos = await listObjects('memo', fixtureRoot)
+  assert.equal(fixtureMemos.ok, true)
+  assert.equal(fixtureMemos.data.items.length, 1)
+  const firstMemoItem = fixtureMemos.data.items[0] as Record<string, unknown>
+  assert.deepEqual(getObjectSignals(firstMemoItem, 'memo').map((signal) => signal.field), ['priority', 'category'])
 }
 
 main().catch((error) => {

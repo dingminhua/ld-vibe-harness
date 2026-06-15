@@ -1,0 +1,30 @@
+id: task-9004
+type: task
+title: 验证子任务聚合
+status: executing
+created: '2026-06-15T09:35:00'
+updated: '2026-06-15T09:50:00'
+taskplan: taskplan-9001
+description: |
+  验证 Task 下 SubTask 的状态、同级阻塞和右侧阅读区摘要聚合。
+source: taskplan-9001
+blocked_by:
+  - task-9001
+acceptance: |
+  - [ ] SubTask 状态集合覆盖 planned、executing、closed
+  - [ ] TaskPlan 摘要可展示 SubTask 态势
+verification: |
+  - npm run test:web:api
+assignee: AI
+related_adrs: []
+related_changes: []
+related_docs: []
+affected_docs:
+  - web/docs/04-ObjectDetail.md
+deliverables: []
+status_history:
+  - at: '2026-06-15T09:50:00'
+    from: planned
+    to: executing
+    actor: AI
+    reason: 子任务数据已重建，进入执行

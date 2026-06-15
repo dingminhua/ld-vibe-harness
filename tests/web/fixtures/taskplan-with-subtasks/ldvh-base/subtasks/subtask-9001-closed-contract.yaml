@@ -1,0 +1,24 @@
+id: subtask-9001
+type: subtask
+title: 确认字段契约来源
+status: closed
+created: '2026-06-15T09:36:00'
+updated: '2026-06-15T09:42:00'
+task: task-9004
+description: |
+  确认字段契约来自 specs 而不是 Web 实现。
+source: task-9004
+acceptance: |
+  - [x] 已读取工作模型字段规范
+blocked_by: []
+verification: |
+  - 检查 specs/05.01 和 specs/20-27
+closure_evidence: |
+  - 字段契约来源已确认
+closed_at: '2026-06-15'
+status_history:
+  - at: '2026-06-15T09:42:00'
+    from: executing
+    to: closed
+    actor: AI
+    reason: 子任务验证完成

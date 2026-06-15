@@ -2,7 +2,7 @@
  * Memos API 路由：备忘速记创建入口（仅 Memo 允许 Web 创建，其他类型由 AI 创建）
  *
  * 依据：
- * - specs/25-Memo-备忘.md §8.3 Web 信息同步
+ * - specs/26-Memo-备忘.md §8.3 Web 信息同步
  * - specs/08-Web信息同步实现规范.md §8.2 Web 事实源写入白名单
  */
 
@@ -16,7 +16,7 @@ const router = Router()
 
 const MEMOS_DIR = path.join(LDVH_BASE_DIR, 'memos')
 const VALID_CATEGORIES = ['discovery', 'reminder', 'question', 'gap', 'preference']
-const VALID_IMPORTANCE = ['low', 'medium', 'high']
+const VALID_PRIORITY = ['P0', 'P1', 'P2', 'P3']
 const MEMO_REQUIRED_FIELDS = [
   'id',
   'type',
@@ -27,7 +27,7 @@ const MEMO_REQUIRED_FIELDS = [
   'description',
   'source',
   'category',
-  'importance',
+  'priority',
   'status_history',
 ]
 
@@ -89,7 +89,7 @@ function validatePersistedMemo(data: unknown, expectedId: string): string[] {
 
 router.post('/', (req: Request, res: Response): void => {
   try {
-    const { title, description, source, category, importance } = req.body
+    const { title, description, source, category, priority } = req.body
 
     // 校验必填字段
     const errors: string[] = []
@@ -105,13 +105,15 @@ router.post('/', (req: Request, res: Response): void => {
     if (!category || !VALID_CATEGORIES.includes(category)) {
       errors.push(`category must be one of: ${VALID_CATEGORIES.join(', ')}`)
     }
+    if (!priority || !VALID_PRIORITY.includes(priority)) {
+      errors.push(`priority must be one of: ${VALID_PRIORITY.join(', ')}`)
+    }
 
     if (errors.length > 0) {
       res.status(400).json({ ok: false, errors })
       return
     }
 
-    const memoImportance = importance && VALID_IMPORTANCE.includes(importance) ? importance : 'low'
     const today = new Date().toISOString().slice(0, 10)
     const id = nextMemoId()
     const slug = slugify(title.trim())
@@ -137,7 +139,7 @@ router.post('/', (req: Request, res: Response): void => {
       description: description.trim(),
       source: source.trim(),
       category,
-      importance: memoImportance,
+      priority,
       resolved_to: '',
       resolved_at: '',
       archive_reason: '',

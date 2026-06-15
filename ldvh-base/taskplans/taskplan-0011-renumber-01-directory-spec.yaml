@@ -20,4 +20,3 @@ completion_evidence: |-
   - task-0011: 01 文档 git mv 为 specs/01-目录说明.md，标题从"# LDVH 目录说明"调整为"# 目录说明"；specs 根目录 14 个文件和 Rules 2 处引用已更新；docs/research 引用未处理（范围外）。文档规范和引用检查皆通过。
 closed_at: '2026-06-05'
 priority: P2
-importance: medium

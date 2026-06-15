@@ -1,22 +1,32 @@
 id: task-9002
 type: task
-title: 执行中的任务编排
-status: executing
-created: '2026-06-12T10:05:00'
-updated: '2026-06-12T10:30:00'
+title: 实现信号字段过滤
+status: review_needed
+created: '2026-06-15T09:25:00'
+updated: '2026-06-15T09:40:00'
 taskplan: taskplan-9001
 description: |
-  持有多种状态的子任务，用于验证任务详情页和派生阅读布局。
+  调整 Web 信号标签，使其按对象类型过滤字段，避免脏数据中的禁用字段被强化展示。
 source: taskplan-9001
 blocked_by:
   - task-9001
 acceptance: |
-  - [ ] 子任务状态可以被读取
-  - [ ] 子任务依赖可以被读取
+  - [x] Task / SubTask 不展示 priority 或 importance 信号
+  - [x] TaskPlan 展示 priority 和 importance 信号
 verification: |
-  执行完成后验证子任务汇总。
+  - npm run test:web:api
+assignee: AI
 related_adrs: []
 related_changes: []
-related_docs: []
-affected_docs: []
-deliverables: []
+related_docs:
+  - docs/signal-filter.md
+affected_docs:
+  - web/docs/01-全局设计约束.md
+deliverables:
+  - tests/web/fixtures/taskplan-with-subtasks/docs/signal-filter.md
+status_history:
+  - at: '2026-06-15T09:40:00'
+    from: planned
+    to: review_needed
+    actor: AI
+    reason: 信号字段过滤进入审查

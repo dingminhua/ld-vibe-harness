@@ -1,21 +1,32 @@
 id: task-9003
 type: task
-title: 等待中的计划任务
+title: 增加字段级路径校验
 status: planned
-created: '2026-06-12T10:10:00'
-updated: '2026-06-12T10:30:00'
+created: '2026-06-15T09:30:00'
+updated: '2026-06-15T09:30:00'
 taskplan: taskplan-9001
 description: |
-  该任务仍处于 planned，但前置 task-9002 未关闭，因此 Web 应派生为等待中。
+  为 `affected_docs`、`related_docs` 和 `deliverables` 设计字段级路径语义检查。
 source: taskplan-9001
 blocked_by:
   - task-9002
 acceptance: |
-  - [ ] 前置任务关闭后才可执行
+  - [ ] affected_docs 只接受文档路径
+  - [ ] deliverables 可指向结果物路径
 verification: |
-  等待解除后补齐验证方式。
+  - npm run test:web:api
+assignee: AI
 related_adrs: []
 related_changes: []
-related_docs: []
-affected_docs: []
-deliverables: []
+related_docs:
+  - docs/path-fields.md
+affected_docs:
+  - web/docs/04-ObjectDetail.md
+deliverables:
+  - tests/web/fixtures/taskplan-with-subtasks/docs/path-fields.md
+status_history:
+  - at: '2026-06-15T09:30:00'
+    from: null
+    to: planned
+    actor: AI
+    reason: 等待信号字段过滤完成

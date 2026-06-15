@@ -20,4 +20,3 @@ completion_evidence: |-
   - task-0006: fact_model_cli.py 已实现 create/transition/delete 三个子命令，覆盖 7 类对象。
 closed_at: *id001
 priority: P2
-importance: medium

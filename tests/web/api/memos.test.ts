@@ -41,7 +41,7 @@ function validMemo(overrides: Record<string, unknown> = {}) {
     description: 'Captured from the Web memo quick entry.',
     source: 'human test',
     category: 'discovery',
-    importance: 'high',
+    priority: 'P1',
     ...overrides,
   }
 }
@@ -87,6 +87,7 @@ async function testFieldValidation() {
   assert.ok(payload.errors.includes('description is required'))
   assert.ok(payload.errors.includes('source is required'))
   assert.ok(payload.errors.some((error) => error.startsWith('category must be one of:')))
+  assert.ok(payload.errors.some((error) => error.startsWith('priority must be one of:')))
   assert.deepEqual(fs.readdirSync(memosDir), [])
 }
 

@@ -78,6 +78,8 @@ Web 测试夹具应遵守：
 4. 测试不得依赖真实用户环境、全局本机路径或未声明的外部服务；
 5. 截图、覆盖率、trace 和缓存仅作为临时运行产物，不进入长期事实源。
 
+字段契约夹具应覆盖当前工作对象属性边界：TaskPlan 可包含 `priority` 和 `importance`，Memo 可包含 `importance`，Task / SubTask 不得包含 `priority`、`importance`、`category` 或 `tags`；Task 的 `deliverables`、`related_docs`、`affected_docs` 应分别用于结果物、参考输入文档和完成后需同步检查的文档，不能在夹具中混用。
+
 ## 6. AI 修改 Web 的测试顺序
 
 AI 修改 `web/` 时，应按以下顺序执行：

@@ -27,4 +27,3 @@ completion_evidence: |-
   - task-0042: 新增 TYPE_DESCRIPTION_LOCALES（7种对象类型说明）和 STATUS_HINT_LOCALES（9种状态提示），
 closed_at: '2026-06-05T23:01:16.997442'
 priority: P2
-importance: medium

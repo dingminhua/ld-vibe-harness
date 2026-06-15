@@ -21,4 +21,3 @@ completion_evidence: |-
   - task-0049: 根因定位：通过 Playwright 连续帧截图 + CSS dump 确认，白色圆圈动画由 ObjectDetail.tsx
 closed_at: '2026-06-06T02:10:00'
 priority: P2
-importance: medium

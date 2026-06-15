@@ -44,12 +44,12 @@ VALID_STATUSES = {
 }
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
-    "taskplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "importance", "description", "success_criteria", "source", "tasks"],
+    "taskplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "tasks"],
     "task": ["id", "type", "title", "status", "created", "updated", "taskplan", "description", "source", "acceptance"],
     "subtask": ["id", "type", "title", "status", "created", "updated", "task", "description", "source", "acceptance"],
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
-    "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category", "importance"],
+    "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category", "priority"],
 }
 LIST_FIELDS = {
     "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "taskplans"},
@@ -505,7 +505,8 @@ def validate_workarea(path: Path, data: dict[str, Any]) -> list[Issue]:
 def validate_taskplan(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "taskplan")
     issues.extend(validate_enum_field(path, data, "priority", {"P0", "P1", "P2", "P3"}))
-    issues.extend(validate_enum_field(path, data, "importance", {"high", "medium", "low"}))
+    if "importance" in data:
+        issues.append(Issue(str(path), "error", "LEGACY_TASKPLAN_FIELD", "TaskPlan 不得继续使用旧字段 importance；请只维护 priority", field="importance"))
     issues.extend(validate_single_id_reference(path, data, "workarea", "workarea"))
     project_root = infer_project_root(path)
     taskplan_id = data.get("id")
@@ -696,7 +697,7 @@ def validate_subtask(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 VALID_REPEATABILITY = {"unknown", "once", "recurring"}
 VALID_MEMO_CATEGORIES = {"discovery", "reminder", "question", "gap", "preference"}
-VALID_IMPORTANCE = {"high", "medium", "low"}
+VALID_PRIORITY = {"P0", "P1", "P2", "P3"}
 
 ID_LIST_FIELDS = {
     "related_workareas": "workarea",
@@ -732,9 +733,9 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
     if category is not None and category not in VALID_MEMO_CATEGORIES:
         valid_values = ", ".join(sorted(VALID_MEMO_CATEGORIES))
         issues.append(Issue(str(path), "error", "INVALID_CATEGORY", f"category 必须是以下值之一: {valid_values}"))
-    if "priority" in data:
-        issues.append(Issue(str(path), "error", "LEGACY_MEMO_FIELD", "Memo 不得继续使用旧字段 priority；请迁移为 importance", field="priority"))
-    issues.extend(validate_enum_field(path, data, "importance", VALID_IMPORTANCE))
+    if "importance" in data:
+        issues.append(Issue(str(path), "error", "LEGACY_MEMO_FIELD", "Memo 不得继续使用旧字段 importance；请迁移为 priority", field="importance"))
+    issues.extend(validate_enum_field(path, data, "priority", VALID_PRIORITY))
     if data.get("status") == "resolved":
         for field in ["resolved_to", "resolved_at"]:
             if is_empty(data.get(field)):

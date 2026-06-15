@@ -16,4 +16,4 @@ related_tasks: []
 related_adrs: []
 related_docs:
 - docs/studies/14-LDVH多项目治理与项目集合缺失分析.md
-importance: high
+priority: P1

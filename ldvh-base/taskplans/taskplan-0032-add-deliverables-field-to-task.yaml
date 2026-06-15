@@ -24,4 +24,3 @@ completion_evidence: |-
   - task-0033: 后端 objects.ts GET /:type/:id 路由在 type=intent 时聚合 related_tasks 中每个 task 的 deliverables 和 related_docs，使用 Set 去重，返回 aggregated_deliverables 和 aggregated_docs。
 closed_at: '2026-06-05T23:23:13.144451'
 priority: P2
-importance: medium

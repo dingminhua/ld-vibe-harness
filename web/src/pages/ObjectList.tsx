@@ -14,7 +14,6 @@ import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
-import { getObjectSignalAccent } from '@/utils/objectSignals';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 
 type LocalizedTitleItem = Pick<ObjectItem, 'id'> & Partial<Pick<ObjectItem, 'title' | 'title_en' | 'title_zh'>>;
@@ -280,7 +279,6 @@ function ObjectCardFrame({
   onOpen: (objId: string) => void;
   children: ReactNode;
 }) {
-  const signalAccent = getObjectSignalAccent(obj);
   const titleAccentClass = getTitleAccentClass(obj.status);
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
   return (
@@ -290,7 +288,6 @@ function ObjectCardFrame({
       onClick={() => onOpen(obj.id)}
       onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(obj.id))}
       className="group/card flex min-w-0 cursor-pointer flex-col gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel p-4 text-left outline-none transition-colors hover:border-ldvh-accent/40 hover:bg-ldvh-panel/95 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70"
-      style={signalAccent ? { borderLeftColor: signalAccent, borderLeftWidth: 3 } : undefined}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
         <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
@@ -567,7 +564,7 @@ export default function ObjectList() {
 
       return (
         <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
-          <ObjectSignalBadges source={obj} locale={locale} />
+          <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
           {isResolved && (
             <div className="flex items-center gap-1.5 rounded-md border border-dashed border-emerald-500/30 bg-emerald-500/5 px-2.5 py-1.5">
               <CheckCircle2 size={12} className="shrink-0 text-emerald-400" />
@@ -594,7 +591,7 @@ export default function ObjectList() {
 
       return (
         <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
-          <ObjectSignalBadges source={obj} locale={locale} />
+          <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
           {memoSource && (
             <div className="flex items-center gap-1.5">
               <span className="ldvh-caption-strong shrink-0 rounded-md border border-ldvh-border px-1.5 py-0.5 text-ldvh-text-secondary">
@@ -619,7 +616,7 @@ export default function ObjectList() {
 
     return (
       <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
-        <ObjectSignalBadges source={obj} locale={locale} />
+        <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
       </ObjectCardFrame>
     );
   };

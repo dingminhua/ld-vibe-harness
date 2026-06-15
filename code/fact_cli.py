@@ -105,12 +105,12 @@ VALID_TRANSITIONS = {
 
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
-    "taskplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "importance", "description", "success_criteria", "source", "tasks"],
+    "taskplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "tasks"],
     "task": ["id", "type", "title", "status", "created", "updated", "taskplan", "description", "source", "acceptance"],
     "subtask": ["id", "type", "title", "status", "created", "updated", "task", "description", "source", "acceptance"],
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
-    "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category", "importance"],
+    "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category", "priority"],
 }
 
 DEFAULT_STATUS = {
@@ -455,7 +455,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_pitfalls"] = []
     if object_type == "taskplan":
         data["priority"] = "P2"
-        data["importance"] = "medium"
         data["tasks"] = []
         data["related_docs"] = []
         data["related_adrs"] = []
@@ -472,7 +471,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["blocked_by"] = []
         data["verification"] = "## 验证计划\n\n## 验证命令\n"
     if object_type == "memo":
-        data["importance"] = "low"
+        data["priority"] = "P3"
 
     # ADR 创建时回写 Human Gate 记录到 context
     if object_type == "adr":

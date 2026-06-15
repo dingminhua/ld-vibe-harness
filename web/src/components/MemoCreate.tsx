@@ -14,7 +14,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
   const [description, setDescription] = useState('');
   const [source, setSource] = useState('');
   const [category, setCategory] = useState('discovery');
-  const [importance, setImportance] = useState('low');
+  const [priority, setPriority] = useState('P3');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -25,7 +25,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
     setDescription('');
     setSource('');
     setCategory('discovery');
-    setImportance('low');
+    setPriority('P3');
     setError(null);
     setSuccess(false);
   };
@@ -39,7 +39,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
       const res = await fetch(`${API_BASE}/memos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, source, category, importance }),
+        body: JSON.stringify({ title, description, source, category, priority }),
       });
 
       if (!res.ok) {
@@ -147,15 +147,16 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
                 </select>
               </div>
               <div>
-                <label className="ldvh-caption-strong mb-1 block">{t('memo.importance')}</label>
+                <label className="ldvh-caption-strong mb-1 block">{t('memo.priority')}</label>
                 <select
-                  value={importance}
-                  onChange={e => setImportance(e.target.value)}
+                  value={priority}
+                  onChange={e => setPriority(e.target.value)}
                   className="ldvh-body w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 focus:border-ldvh-accent/40 focus:outline-none"
                 >
-                  <option value="low">{t('memo.pLow')}</option>
-                  <option value="medium">{t('memo.pMed')}</option>
-                  <option value="high">{t('memo.pHigh')}</option>
+                  <option value="P0">P0</option>
+                  <option value="P1">P1</option>
+                  <option value="P2">P2</option>
+                  <option value="P3">P3</option>
                 </select>
               </div>
             </div>

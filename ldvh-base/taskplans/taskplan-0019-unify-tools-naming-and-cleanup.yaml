@@ -24,4 +24,3 @@ completion_evidence: |-
   - task-0020: fact_cli.py 已新增 6 个 ADR 专属子命令：search、stats、related、link-rule、deprecate、supersede。
 closed_at: '2026-06-05T05:30:00.000000'
 priority: P2
-importance: medium

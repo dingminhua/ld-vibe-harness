@@ -1,0 +1,29 @@
+id: workarea-9001
+type: workarea
+title: Web 对象模型同步
+status: active
+created: '2026-06-15T09:00:00'
+updated: '2026-06-15T09:30:00'
+description: |
+  承载 Web 参考实现中对象列表、对象详情、右侧阅读区和测试夹具对工作对象字段契约的同步。
+scope: |
+  - 包含 Web 读取、展示、派生摘要和测试数据
+  - 不包含规范正文对字段契约的最终定义
+constraints: |
+  - Web 只能消费对象契约，不反向定义对象字段
+  - 测试夹具必须保持最小且可追溯
+source: 用户要求按新的对象内容重建 Web 测试数据
+related_docs:
+  - docs/object-model-sync.md
+related_adrs:
+  - adr-9001
+related_memos:
+  - memo-9001
+related_pitfalls:
+  - pitfall-9001
+status_history:
+  - at: '2026-06-15T09:00:00'
+    from: null
+    to: active
+    actor: AI
+    reason: 为 Web 对象模型同步测试创建工作域

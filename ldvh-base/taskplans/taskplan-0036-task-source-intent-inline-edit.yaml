@@ -20,4 +20,3 @@ completion_evidence: |-
   - task-0036: 后端 PATCH /api/objects/:type/:id/field API 实现字段白名单安全边界，
 closed_at: '2026-06-05T23:23:14.612339'
 priority: P2
-importance: medium

@@ -20,4 +20,3 @@ completion_evidence: |-
   - task-0031: Dashboard.tsx 布局调整为：第一行待推进+最近变更，第二行最近活动+校验状态。
 closed_at: '2026-06-05T23:22:44.272308'
 priority: P2
-importance: medium

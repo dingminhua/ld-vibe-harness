@@ -148,7 +148,6 @@ Human Gate 发生在任务计划层。Task 和 SubTask 不作为 Human 直接管
 | `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `workarea` | 所属工作域 ID | string | 是 | 必须引用已存在 WorkArea | Reference | AI、Code、Web |
 | `priority` | 执行优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05-工作模型基础规范.md` §7.3.1 | Reference | AI、Code、Web |
-| `importance` | 重要程度 | string | 是 | `high`、`medium`、`low`；判断标准见 `specs/05-工作模型基础规范.md` §7.3.1 | Reference | AI、Code、Web |
 | `description` | 目标背景、范围和问题说明 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `success_criteria` | 任务计划成功标准 | string | 是 | 应能支持关闭审查 | Narrative / Checklist | AI、Code、Web |
 | `source` | 任务计划来源 | string | 是 | 谁在什么场景下表达 | Reference / Narrative | AI、Web |
@@ -173,7 +172,6 @@ created: '2026-06-12T00:00:00'
 updated: '2026-06-12T00:00:00'
 workarea: workarea-0001
 priority: P1
-importance: high
 description: |
   将一次模型重构目标拆解为可执行任务，并在任务完成后进行关闭审查。
 success_criteria: |
@@ -201,7 +199,7 @@ Code 应检查：
 
 1. 任务计划必须引用存在的 WorkArea；
 2. `priority` 必须属于 `P0`、`P1`、`P2`、`P3`；
-3. `importance` 必须属于 `high`、`medium`、`low`；
+3. 不得维护 `importance` 字段；
 4. `draft` 状态下 `tasks` 可为空列表，`active` 及之后状态 `tasks` 必须非空；
 5. `tasks` 中每个 Task 必须存在并通过 `taskplan` 指回当前任务计划；双向引用不一致时必须报告诊断，不得静默通过；
 6. `review_needed` 和 `closed` 必须提供关闭审查字段；
@@ -216,7 +214,7 @@ Web 应把任务计划作为 Human 直接查看和确认的主对象。Task 和 
 |---|---|---|---|---|
 | 上位约束承接要求 | 任务计划必须遵守 05、20、24 和本文定义的人机职责边界 | 05、20、24、本文、Human Gate | 工作模型治理 | 创建、迁移、关闭或拆分任务计划时 |
 | 确定性执行要求 | 每个 Task 必须归属一个任务计划 | Validator、CLI、Web 展示 | 事实模型校验 | 创建或迁移 Task 时 |
-| 确定性执行要求 | 任务计划必须依据 05 的统一标准维护 `priority` 和 `importance` | Validator、CLI、Web 展示 | 字段契约同步 | 创建、更新、排序、筛选或展示任务计划时 |
+| 确定性执行要求 | 任务计划必须依据 05 的统一标准维护 `priority`，不得维护 `importance` | Validator、CLI、Web 展示 | 字段契约同步 | 创建、更新、排序、筛选或展示任务计划时 |
 | 生命周期触发要求 | 任务计划规范变化后应检查 Task、SubTask、Code、Web 和事实实例 | Code 测试、事实校验、Web 检查 | 触发保障 | 字段、状态或关系变化时 |
 
 ---
@@ -225,7 +223,7 @@ Web 应把任务计划作为 Human 直接查看和确认的主对象。Task 和 
 | 检查项 | 标准 |
 |---|---|
 | 工作域归属 | 每个任务计划必须引用一个存在的工作域 |
-| 优先级与重要程度 | `priority` 和 `importance` 已填写，且符合 05 统一标准 |
+| 优先级 | `priority` 已填写且符合 05 统一标准，未维护 `importance` |
 | 任务归属 | `active` 及之后状态 `tasks` 非空，且每个 Task 指回当前任务计划；`draft` 状态 `tasks` 可为空 |
 | 人类入口 | 关闭审查发生在任务计划层 |
 | 关闭证据 | review_needed / closed 具备关闭审查字段 |

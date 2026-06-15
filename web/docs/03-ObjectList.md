@@ -44,7 +44,7 @@
   - 左上：对象 ID，`ldvh-meta-muted`；
   - 右上：`CopyPathButton` + `StatusBadge`；
   - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，标题前使用 `ObjectTypeIcon(obj.type)` 识别对象身份，左侧使用状态语义短线突出，不通过放大字号突出；
-  - 可选信号：priority、importance、repeatability、category 等短标签；仅当对应对象的字段契约定义该字段时展示，不得为 Task / SubTask 杜撰 priority、importance、category 或 tags；
+  - 可选信号：priority、importance、repeatability、category 等短标签；仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 TaskPlan，`importance` 只适用于 TaskPlan 和 Memo，不得为 WorkArea、Task、SubTask、ADR、Pitfall 或 Change 杜撰 priority、importance、category 或 tags；
   - 底部：`formatDateTime(updated)`，格式为 `YYYY-MM-DD HH:mm`。
 - 复制图标复制对象 YAML 文件完整路径，使用 API 返回的 `path`。
 - 点击复制图标不得进入详情页；点击卡片外层空白、标题带、ID、状态徽章或更新时间进入对象详情页。
@@ -119,6 +119,8 @@ TaskPlan 是“计划执行态势”卡片，帮助用户从计划判断任务�
 7. 对象卡片外层可作为当前对象入口，提供统一 hover/focus 反馈；内部信息框必须显式阻止外层点击并使用默认光标。只有复制按钮、计划行、任务行等明确通向另一处的内部控件可以单独响应。
 
 ## 6. API 数据结构
+
+对象列表 API 返回的字段分为事实源字段和只读派生摘要。`priority`、`importance` 等信号字段只应来自对象 YAML 自身且必须符合对应工作模型字段契约；WorkArea 和 TaskPlan 列表项中的计划、任务、SubTask 态势字段属于 Express API 根据 Git 文件事实源关系派生的只读摘要，不写回事实源，也不作为对象字段契约来源。
 
 ```typescript
 interface ObjectItem {

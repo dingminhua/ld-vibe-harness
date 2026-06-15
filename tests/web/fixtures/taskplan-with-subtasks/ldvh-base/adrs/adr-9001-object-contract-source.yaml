@@ -1,0 +1,25 @@
+id: adr-9001
+type: adr
+title: Web 不定义对象字段契约
+status: accepted
+created: '2026-06-15T09:00:00'
+updated: '2026-06-15T09:00:00'
+date: '2026-06-15'
+decision: |
+  Web 测试夹具和展示逻辑必须消费 specs 定义的字段契约，不把页面信号、列表字段或派生摘要作为对象契约来源。
+consequences: |
+  - Web 可做只读聚合和展示过滤
+  - 字段适用范围变化时先同步 specs 和测试夹具
+related_rules:
+  - specs/05.01-工作字段内容格式规范.md
+  - specs/08-Web信息同步实现规范.md
+related_docs:
+  - docs/object-model-sync.md
+affects:
+  - web/docs/01-全局设计约束.md
+status_history:
+  - at: '2026-06-15T09:00:00'
+    from: proposed
+    to: accepted
+    actor: Human
+    reason: 测试夹具重建采用该边界

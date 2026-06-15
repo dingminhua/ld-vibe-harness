@@ -73,7 +73,7 @@ def test_create_workarea_taskplan_task_and_subtask(tmp_path):
     assert "sub_tasks" not in task_data
     taskplan_data = read_yaml(tmp_path / "ldvh-base" / "taskplans" / "taskplan-0001-create-taskplan.yaml")
     assert taskplan_data["priority"] == "P2"
-    assert taskplan_data["importance"] == "medium"
+    assert "importance" not in taskplan_data
 
 
 def test_create_auto_numbering_uses_new_workarea_prefix(tmp_path):
@@ -131,13 +131,13 @@ def test_taskplan_review_and_close_flow(tmp_path):
     assert data["closed_at"]
 
 
-def test_create_memo_uses_importance_not_priority(tmp_path):
+def test_create_memo_uses_priority_not_importance(tmp_path):
     result = run_cli("create", "memo", "--title", "Create memo", base_dir=str(tmp_path))
 
     assert result.returncode == 0, result.stderr
     data = read_yaml(Path(result.stdout.strip()))
-    assert data["importance"] == "low"
-    assert "priority" not in data
+    assert data["priority"] == "P3"
+    assert "importance" not in data
 
 
 def test_taskplan_review_needed_to_active_needs_reason(tmp_path):

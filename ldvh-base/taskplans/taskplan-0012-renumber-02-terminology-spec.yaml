@@ -20,4 +20,3 @@ completion_evidence: |-
   - task-0012: 02 文档 git mv 为 specs/02-术语规范.md，标题从"# LDVH 术语规范"调整为"# 术语规范"；specs 根目录和 Rules 引用已更新。文档规范检查通过。引用检查有 2 个预存问题（14 §4.6 目标文件不存在），非本次变更引入。
 closed_at: '2026-06-05'
 priority: P2
-importance: medium

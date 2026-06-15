@@ -1,0 +1,38 @@
+id: pitfall-9001
+type: pitfall
+title: 路径字段语义混用
+status: active
+created: '2026-06-15T09:10:00'
+updated: '2026-06-15T09:10:00'
+description: |
+  Web 测试数据容易把 `related_docs`、`affected_docs` 和 `deliverables` 都当成普通可预览路径，导致字段语义混用。
+symptoms: |
+  - affected_docs 中出现 web/src 等源码路径
+  - deliverables 被误当作参考文档
+trigger_conditions: |
+  - 只从页面渲染便利性设计夹具
+root_cause: |
+  没有按 Task 字段契约区分参考输入、同步检查文档和结果物。
+resolution: |
+  在夹具和测试中分别覆盖三类路径字段。
+verification: |
+  - npm run test:web:api
+avoidance: |
+  - 修改夹具前先读取对象字段规范
+applicability: |
+  适用于 Web 对象详情、右侧阅读区和 API 聚合测试。
+source_tasks:
+  - task-9003
+source_memos:
+  - memo-9001
+related_docs:
+  - docs/path-fields.md
+related_rules:
+  - specs/22-Task-任务.md
+related_changes: []
+status_history:
+  - at: '2026-06-15T09:10:00'
+    from: null
+    to: active
+    actor: AI
+    reason: 记录路径字段混用风险

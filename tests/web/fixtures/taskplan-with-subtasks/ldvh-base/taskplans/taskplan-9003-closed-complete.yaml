@@ -1,0 +1,31 @@
+id: taskplan-9003
+type: taskplan
+title: 已闭合样例计划
+status: closed
+created: '2026-06-15T09:20:00'
+updated: '2026-06-15T10:00:00'
+workarea: workarea-9001
+priority: P3
+description: |
+  验证 closed TaskPlan 的关闭字段、已闭合分组和 Task 全关闭约束。
+success_criteria: |
+  - [x] 所有任务已关闭
+  - [x] 关闭时间已记录
+source: workarea-9001
+tasks:
+  - task-9006
+related_docs:
+  - docs/closed-complete.md
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+review_requested_at: '2026-06-15'
+completion_evidence: |
+  - `task-9006` 已完成构建验证
+closed_at: '2026-06-15'
+status_history:
+  - at: '2026-06-15T10:00:00'
+    from: review_needed
+    to: closed
+    actor: AI
+    reason: Human-facing 关闭材料齐备

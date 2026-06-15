@@ -15,4 +15,4 @@ source: 执行规范审查过程中的发现
 category: gap
 related_tasks: []
 related_adrs: []
-importance: high
+priority: P1
