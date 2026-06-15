@@ -11,7 +11,7 @@ source: taskplan-9001
 blocked_by: []
 acceptance: |
   - [x] Task 不包含 priority、importance、category 或 tags
-  - [x] Memo 只使用 importance 表达重要程度
+  - [x] Memo 只使用 priority 表达重要程度
 verification: |
   - 读取 specs/05、22、23、26 的字段契约
 assignee: AI

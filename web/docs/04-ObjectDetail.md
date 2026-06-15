@@ -37,7 +37,7 @@ YAML 源码折叠区
 - 头部右侧提供 `CopyPathButton`，复制对象详情 API 返回的 `target`。
 - 非工作对象状态徽章使用 `StatusBadge`；WorkArea、TaskPlan、Task、SubTask 头部不显示状态 chip，状态只在计划组、任务队列或任务状态等语义模块中表达，避免顶部事实状态和正文语义状态形成两套口径。
 - 非工作对象元信息行使用 `MetaChip`，时间统一 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`。
-- 对象字段必须以对应工作模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。`priority` 只适用于 TaskPlan，`importance` 只适用于 TaskPlan 和 Memo。Task 当前只允许 `assignee` 作为辅助元信息；Task / SubTask 不得把 `priority`、`importance`、`category`、`tags` 写入测试夹具或事实源。
+- 对象字段必须以对应工作模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。`priority` 只适用于 TaskPlan 和 Memo；importance 已由 priority 统一承载，不再作为独立字段。Task 当前只允许 `assignee` 作为辅助元信息；Task / SubTask 不得把 `priority`、`importance`、`category`、`tags` 写入测试夹具或事实源。
 - WorkArea、TaskPlan、Task、SubTask 使用统一工作对象身份区：`类型 + ID + 标题 + 创建/更新时间` 合并展示；不在头部显示状态徽章或“进行中”等通用解释文案，创建/更新时间不再作为独立 chip 行。
 
 ## 4. WorkArea 语义阅读布局
