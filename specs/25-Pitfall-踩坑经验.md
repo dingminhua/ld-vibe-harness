@@ -20,7 +20,7 @@ ldvh_member:
   human_gate_anchor: "§5"
   code_consumption:
     - fields
-    - status_machine
+    - state_machine
     - instance_checks
 ```
 
@@ -190,7 +190,7 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 
 ### 6.1 字段表
 
-公共字段语义定义见 `specs/05.01-工作字段内容格式规范.md` §3.5。本表只列出对象特有字段语义补充。
+公共字段语义定义见 `specs/05.01-工作字段内容格式规范.md` §4。本表只列出对象特有字段语义补充。
 
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
