@@ -72,7 +72,7 @@ verification: |
 blocked_by: []
 related_docs:
 - specs/03-文档基础规范.md
-- specs/03.05-管辖项目配置规范.md
+- specs/03.04-管辖项目配置规范.md
 - specs/08-Web信息同步实现规范.md
 - specs/27-Change-变更.md
 affected_docs: []

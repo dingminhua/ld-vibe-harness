@@ -26,7 +26,7 @@ LDVH落地与检查读取本文时，应至少确认 active 工作流程输入�
 
 def test_consistency_reports_retired_test_source_consumption(tmp_path):
     path = write_md(
-        tmp_path / "03.04-工作流程文档规范.md",
+        tmp_path / "03.03-工作流程文档规范.md",
         """
 # 工作流程文档规范
 

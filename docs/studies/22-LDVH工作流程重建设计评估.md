@@ -7,7 +7,7 @@
 > 来源：Human 于 2026-06-15 要求 40 工作流程全部推倒重来，优先补齐 specs 审核、Code 审核和 LDVH Rules 入口资产审核等底层流程
 > 关联对象：
 > 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/01-目录说明.md`、`specs/03.01-规范文档规范.md`、`specs/03.04-工作流程文档规范.md`、`specs/04.02-LDVH能力资产与落地保障规范.md`、`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/40-工作流程集合索引.md`
+> 相关规范：`specs/01-目录说明.md`、`specs/03.01-规范文档规范.md`、`specs/03.03-工作流程文档规范.md`、`specs/04.02-LDVH能力资产与落地保障规范.md`、`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/40-工作流程集合索引.md`
 
 ---
 ## 1. 本文解决的问题
@@ -71,7 +71,7 @@ Rules 入口审核应检查 `rules/LDVH-AI-ENTRY.md` 是否保持薄入口、是
 
 变更影响审核应作为横切流程，检查 specs、Code、Rules、Skill、Agent、Hook、Web、目录、编号和集合状态变化后的同步、Human Gate、测试和入口更新。
 
-工作流程设计审核应反过来审查 41-59 流程自身，确认具体流程符合 06 和 03.04，不把流程写成泛化说明、Skill 正文或索引规则。
+工作流程设计审核应反过来审查 41-59 流程自身，确认具体流程符合 06 和 03.03，不把流程写成泛化说明、Skill 正文或索引规则。
 
 Dogfood 闭环应落实 00 的防递归建设原则。每新增一层抽象后，应用 LDVH 自己跑一次最小闭环，而不是继续补更多抽象。
 
@@ -91,7 +91,7 @@ Dogfood 闭环应落实 00 的防递归建设原则。每新增一层抽象后�
 
 原 review 不宜保留为泛化 Review，应拆入 specs 审核、Code 审核、Rules 入口审核、能力资产审核和工作流程设计审核。
 
-原 workflow test design 不宜过早独立成流程，应先由 03.04 的行动特有可测试性锚点和 Code 测试需求承接。
+原 workflow test design 不宜过早独立成流程，应先由 03.03 的行动特有可测试性锚点和 Code 测试需求承接。
 
 原 non-LDVH content handover 可作为后续接管行动候选保留。
 
@@ -124,7 +124,7 @@ Human Gate 记录：
 4. 为 specs audit 评估配套 Skill、Agent 和 Code 检查；
 5. 为 Code audit 先明确测试和等价验证边界，再判断是否需要 Skill；
 6. 为 Rules entry audit 评估固定检查 Skill 和路径/薄入口 Code 检查；
-7. 每创建一个 active 主流程后，同步检查 01、03.04、06、07、04.02、04.03 和 40 是否需要更新。
+7. 每创建一个 active 主流程后，同步检查 01、03.03、06、07、04.02、04.03 和 40 是否需要更新。
 
 ---
 ## 5. 待补齐事项
