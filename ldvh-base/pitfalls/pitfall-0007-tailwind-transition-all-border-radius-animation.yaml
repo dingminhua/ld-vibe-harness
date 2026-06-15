@@ -1,8 +1,6 @@
 id: pitfall-0007
 type: pitfall
 title: Tailwind transition-all 导致页面加载 border-radius 动画
-title_zh: Tailwind transition-all 导致页面加载 border-radius 动画
-title_en: Tailwind transition-all causes page-load border-radius animation
 status: active
 created: '2026-06-06T02:08:49.375414'
 updated: '2026-06-06T02:10:00'
@@ -55,8 +53,14 @@ avoidance: |
 applicability: |
   所有使用 Tailwind CSS 的前端项目，特别是 React + Vite + Tailwind 技术栈。
   任何涉及页面切换、路由变化或动态渲染容器的场景。
-source_objects:
+source_tasks:
 - task-0049
+source_memos: []
+related_workareas: []
+related_taskplans: []
+related_adrs: []
+related_changes: []
+related_docs: []
 related_rules:
 - web/docs/01-全局设计约束.md
 tags:
@@ -64,3 +68,5 @@ tags:
 - transition-animation
 - border-radius
 - frontend-gotcha
+repeatability: recurring
+status_history: []

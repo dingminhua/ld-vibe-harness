@@ -37,5 +37,9 @@ source: 用户在讨论 LDVH Web 呈现时提出：YAML 格式的大段文本内
 category: discovery
 related_tasks: []
 related_adrs: []
+related_workareas: []
+related_taskplans: []
+related_changes: []
 related_docs: []
+status_history: []
 priority: P2

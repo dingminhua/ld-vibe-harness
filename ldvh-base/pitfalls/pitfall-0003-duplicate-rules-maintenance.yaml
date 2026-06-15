@@ -33,14 +33,20 @@ avoidance: |
   3. 定期审计规则一致性
 applicability: 所有接入 LDVH 的项目，所有规则层级
 superseded_by: specs/03.01-规范文档规范.md
-source_objects: []
-related_objects: []
+source_tasks: []
+source_memos: []
+related_workareas: []
+related_taskplans: []
+related_adrs: []
+related_changes: []
+related_docs: []
 related_rules: []
 tags:
 - rules
 - consistency
 - single-authority
 repeatability: recurring
+status_history: []
 notes: '## 影响程度迁移说明
 
 

@@ -10,7 +10,11 @@ source: 用户提出“添加一个备忘，规则到底怎么建立合适”
 category: question
 related_tasks: []
 related_adrs: []
+related_workareas: []
+related_taskplans: []
+related_changes: []
 related_docs:
 - specs/04.03-环境入口适配与部署规范.md
 - specs/06-工作流程基础规范.md
+status_history: []
 priority: P2

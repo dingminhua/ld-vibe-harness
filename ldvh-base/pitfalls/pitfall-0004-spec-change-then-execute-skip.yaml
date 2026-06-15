@@ -1,8 +1,6 @@
 id: pitfall-0004
 type: pitfall
 title: 规范变更后同一会话内执行任务跳过新规范要求
-title_en: Spec change not synced causes execution skip
-title_zh: 规范变更后同一会话内执行任务跳过新规范要求
 status: active
 created: '2026-06-04'
 updated: '2026-06-04'
@@ -40,11 +38,16 @@ avoidance: |
   3. 规范变更后执行受影响任务前，重新读取变更后的规范并声明"已按新规范调整执行计划"；
   4. 规范变更和任务执行尽量在不同会话内进行，让 AI 重新加载 Rules 和 Skill。
 applicability: 所有接入 LDVH 的项目，所有任务执行和关闭场景
-source_objects:
+source_tasks:
 - task-0004
 - task-0005
-related_objects:
+source_memos: []
+related_workareas:
 - workarea-0003
+related_taskplans: []
+related_adrs: []
+related_changes: []
+related_docs: []
 related_rules:
 - specs/22-Task-任务.md
 tags:
@@ -52,6 +55,7 @@ tags:
 - verification
 - ai-collaboration
 repeatability: recurring
+status_history: []
 notes: '## 影响程度迁移说明
 
 

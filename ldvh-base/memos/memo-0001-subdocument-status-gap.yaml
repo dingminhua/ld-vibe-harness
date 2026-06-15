@@ -1,8 +1,6 @@
 id: memo-0001
 type: memo
 title: 22 主文档与子文档状态矛盾待修复
-title_en: Subdocument state machine synchronization gap
-title_zh: 22 主文档与子文档状态矛盾待修复
 status: active
 created: 2026-06-04
 updated: 2026-06-04
@@ -15,4 +13,9 @@ source: 执行规范审查过程中的发现
 category: gap
 related_tasks: []
 related_adrs: []
+related_workareas: []
+related_taskplans: []
+related_changes: []
+related_docs: []
+status_history: []
 priority: P1

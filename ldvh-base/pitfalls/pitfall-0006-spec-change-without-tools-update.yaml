@@ -1,8 +1,6 @@
 id: pitfall-0006
 type: pitfall
 title: 规格重构未同步更新 tools/ 代码实现
-title_zh: 规格重构未同步更新 tools/ 代码实现
-title_en: Spec refactor without tools/ code sync
 status: active
 created: '2026-06-05'
 updated: '2026-06-05'
@@ -55,8 +53,14 @@ avoidance: |
   并在提交前执行 grep 搜索 tools/ 中受影响的硬编码引用。
 applicability: |
   所有接入 LDVH 的管辖项目，所有涉及 specs 变更的 AI 操作。
-source_objects:
+source_tasks: []
+source_memos: []
+related_workareas: []
+related_taskplans: []
+related_adrs:
 - adr-0005
+related_changes: []
+related_docs: []
 related_rules:
 - specs/07-Code确定性执行实现规范.md §4.7
 - specs/04.02-LDVH能力资产与落地保障规范.md
@@ -64,3 +68,5 @@ related_rules:
 tags:
 - spec-tools-sync
 - process-improvement
+repeatability: recurring
+status_history: []

@@ -14,6 +14,10 @@ source: 用户提出"存在多个项目需要管理的情况，项目的定义�
 category: question
 related_tasks: []
 related_adrs: []
+related_workareas: []
+related_taskplans: []
+related_changes: []
 related_docs:
 - docs/studies/14-LDVH多项目治理与项目集合缺失分析.md
+status_history: []
 priority: P1

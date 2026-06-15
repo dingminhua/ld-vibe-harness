@@ -34,9 +34,14 @@ avoidance: |
   - Task / SubTask：description、acceptance、verification、closure_evidence
   - Pitfall：symptoms、trigger_conditions、root_cause、resolution、verification、avoidance
 applicability: 所有接入 LDVH 的项目，所有事实模型类型
-source_objects:
+source_tasks:
 - task-0002
-related_objects: []
+source_memos: []
+related_workareas: []
+related_taskplans: []
+related_adrs: []
+related_changes: []
+related_docs: []
 related_rules:
 - specs/22-Task-任务.md
 tags:
@@ -44,6 +49,7 @@ tags:
 - fact-model
 - ai-collaboration
 repeatability: recurring
+status_history: []
 notes: '## 影响程度迁移说明
 
 
