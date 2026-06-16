@@ -33,7 +33,7 @@ YAML 源码折叠区
 - 详情页不展示对象列表的状态筛选；状态筛选只属于列表页，详情页第一视觉层应是当前对象。
 - 类型标签使用对象类型颜色，显示本地化类型名。
 - 标题优先使用 `title_zh/title_en`，回退 `title`，再回退 ID；工作对象和普通对象标题前均使用 `ObjectTypeIcon(obj.type)` 识别对象身份。
-- TaskPlan 和 Memo 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色和 tooltip 表达优先级，不在头部或元信息行重复展示 priority 文字 chip。
+- TaskPlan 和 Memo 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色和 tooltip 表达优先级，不在头部、元信息行、正文模块或其他字段区重复展示 priority 文字 chip / 字段。
 - ID 使用 `ldvh-meta`，不做大号标题。
 - 头部右侧提供 `CopyPathButton`，复制对象详情 API 返回的 `target`。
 - 非工作对象状态徽章使用 `StatusBadge`；WorkArea、TaskPlan、Task、SubTask 头部不显示状态 chip，状态只在计划组、任务队列或任务状态等语义模块中表达，避免顶部事实状态和正文语义状态形成两套口径。

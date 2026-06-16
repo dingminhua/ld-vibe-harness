@@ -1,6 +1,6 @@
 import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, CircleAlert, ClipboardCheck } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ChevronDown, ChevronUp, CircleAlert, ClipboardCheck } from 'lucide-react';
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
@@ -183,6 +183,7 @@ function WorkAreaPlanSection({
   t,
   getStatus,
   onOpen,
+  defaultCollapsed = false,
 }: {
   title: string;
   plans?: RelatedPlanSummary[];
@@ -191,19 +192,46 @@ function WorkAreaPlanSection({
   t: Translate;
   getStatus: (status: string) => string;
   onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
+  defaultCollapsed?: boolean;
 }) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const toneClass = workAreaSectionToneClass[tone];
+  const canCollapse = defaultCollapsed || tone === 'closed';
+  const hasPlans = Boolean(plans && plans.length > 0);
+  const headerClassName = `ldvh-caption-strong flex w-full min-w-0 items-center gap-2 border px-3 py-2 text-left ${toneClass.header}`;
+  const headerContent = (
+    <>
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-80" aria-hidden="true" />
+      <span className="min-w-0 flex-1 truncate">{title}</span>
+      {canCollapse && hasPlans && (collapsed ? <ChevronDown size={13} className="shrink-0" /> : <ChevronUp size={13} className="shrink-0" />)}
+    </>
+  );
 
   return (
     <div
       onClick={(event) => event.stopPropagation()}
       className={`min-w-0 cursor-default overflow-hidden rounded-md border ${toneClass.section}`}
     >
-      <div className={`ldvh-caption-strong flex min-w-0 items-center gap-2 border px-3 py-2 ${toneClass.header}`}>
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-80" aria-hidden="true" />
-        <span className="min-w-0 truncate">{title}</span>
-      </div>
-      {plans && plans.length > 0 && (
+      {canCollapse && hasPlans ? (
+        <button
+          type="button"
+          aria-expanded={!collapsed}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setCollapsed((value) => !value);
+          }}
+          onKeyDown={(event) => event.stopPropagation()}
+          className={`${headerClassName} cursor-pointer`}
+        >
+          {headerContent}
+        </button>
+      ) : (
+        <div className={`${headerClassName} cursor-default`}>
+          {headerContent}
+        </div>
+      )}
+      {!collapsed && plans && plans.length > 0 && (
         <div className="min-w-0 divide-y divide-ldvh-border/60 px-1 py-1">
           {plans.map((plan) => (
             <WorkAreaPlanRow
@@ -414,11 +442,13 @@ export default function ObjectList() {
               {closedPlanCount > 0 && (
                 <WorkAreaPlanSection
                   title={t('objectList.closedPlanCount', { count: String(closedPlanCount) })}
+                  plans={closedPlans}
                   locale={locale}
                   tone="closed"
                   t={t}
                   getStatus={getStatus}
                   onOpen={openRelatedObject}
+                  defaultCollapsed
                 />
               )}
             </>

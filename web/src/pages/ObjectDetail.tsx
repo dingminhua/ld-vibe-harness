@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, Code2, FileText, Info, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, ChevronUp, Code2, FileText, Info, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
@@ -80,7 +80,7 @@ export const TASK_FIELD_ORDER = [
 ];
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls'],
-  taskplan: ['workarea', 'priority', 'description', 'success_criteria', 'source', 'tasks', 'completion_evidence', 'related_docs'],
+  taskplan: ['workarea', 'description', 'success_criteria', 'source', 'tasks', 'completion_evidence', 'related_docs'],
   task: TASK_FIELD_ORDER,
   subtask: ['task', 'description', 'source', 'acceptance', 'blocked_by', 'verification', 'closure_evidence'],
   profile: [
@@ -831,7 +831,7 @@ function WorkAreaPlanGroup({
     <>
       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-80" aria-hidden="true" />
       <span className="min-w-0 flex-1 truncate">{title}</span>
-      {canCollapse && (collapsed ? <ChevronRight size={13} className="shrink-0" /> : <ChevronDown size={13} className="shrink-0" />)}
+      {canCollapse && (collapsed ? <ChevronDown size={13} className="shrink-0" /> : <ChevronUp size={13} className="shrink-0" />)}
     </>
   );
 
@@ -1134,6 +1134,7 @@ export function TaskPlanReadingLayout({
   const hidden = new Set([
     ...META_KEYS,
     'workarea',
+    'priority',
     'description',
     'success_criteria',
     'source',
