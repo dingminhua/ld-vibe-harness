@@ -539,7 +539,7 @@ export default function ProjectFiles() {
         </div>
       </div>
 
-      <section className="mb-6 min-w-0 shrink-0 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
+      <section className="sticky top-0 z-20 mb-6 min-w-0 shrink-0 rounded-lg border border-ldvh-border bg-ldvh-panel/95 p-4 shadow-sm shadow-black/10 backdrop-blur">
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(16rem,26rem)_minmax(0,1fr)]">
           <label className="min-w-0">
             <span className="ldvh-caption-strong mb-1 block">{copy.project}</span>

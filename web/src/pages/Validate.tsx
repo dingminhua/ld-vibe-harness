@@ -414,11 +414,14 @@ export default function Validate() {
 
   return (
     <div className="ldvh-page-frame space-y-6">
-      <div className="ldvh-page-toolbar">
+      <div className="ldvh-page-toolbar sticky top-0 z-20 rounded-lg border border-ldvh-border bg-ldvh-bg/95 p-4 shadow-sm shadow-black/10 backdrop-blur">
         <PageHeader title={t('validate.title')} />
         {/* 视图切换 */}
-        <div className="flex rounded-lg border border-ldvh-border bg-ldvh-bg p-0.5">
+        <div role="tablist" aria-label={t('validate.title')} className="flex rounded-lg border border-ldvh-border bg-ldvh-bg p-0.5">
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'validate'}
             onClick={() => setActiveTab('validate')}
             className={`ldvh-chip rounded-md px-3 py-1.5 transition-colors ${
               activeTab === 'validate'
@@ -429,6 +432,9 @@ export default function Validate() {
             {t('validate.tabValidate')}
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'landing'}
             onClick={() => setActiveTab('landing')}
             className={`ldvh-chip rounded-md px-3 py-1.5 transition-colors ${
               activeTab === 'landing'

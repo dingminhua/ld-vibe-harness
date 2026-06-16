@@ -190,7 +190,7 @@ export default function ReadingPanel() {
           >
             <div className="h-1 w-10 rounded-full bg-ldvh-border" />
           </div>
-          <div className="flex items-center justify-between gap-2 px-4 py-2">
+          <div className="z-10 flex shrink-0 items-center justify-between gap-2 border-b border-ldvh-border bg-ldvh-panel/95 px-4 py-2 backdrop-blur">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               {navigationControls}
               <h3 className="ldvh-card-title truncate">{panelTitle}</h3>
@@ -205,7 +205,7 @@ export default function ReadingPanel() {
               <X size={14} />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {preview}
           </div>
         </div>
@@ -217,7 +217,7 @@ export default function ReadingPanel() {
   return (
     <div
       ref={panelRef}
-      className={`relative flex-shrink-0 border-l border-ldvh-border bg-ldvh-panel transition-[width,opacity] duration-200 ease-in-out ${
+      className={`relative flex h-full flex-shrink-0 flex-col border-l border-ldvh-border bg-ldvh-panel transition-[width,opacity] duration-200 ease-in-out ${
         isOpen ? 'opacity-100' : 'w-0 overflow-hidden opacity-0 border-l-0'
       }`}
       style={{ width: isOpen ? width : 0 }}
@@ -228,7 +228,7 @@ export default function ReadingPanel() {
       >
         <div className="flex h-12 w-1.5 flex-col items-center justify-center rounded-full bg-ldvh-border/50 opacity-0 transition-opacity hover:opacity-100" />
       </div>
-      <div className="flex items-center justify-between gap-2 border-b border-ldvh-border px-4 py-3">
+      <div className="z-10 flex shrink-0 items-center justify-between gap-2 border-b border-ldvh-border bg-ldvh-panel/95 px-4 py-3 backdrop-blur">
         <div className="flex min-w-0 items-center gap-2">
           <GripVertical size={14} className="flex-shrink-0 text-ldvh-text-secondary" />
           {navigationControls}
@@ -244,7 +244,7 @@ export default function ReadingPanel() {
           <X size={14} />
         </button>
       </div>
-      <div className="h-[calc(100%-49px)] overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {preview}
       </div>
     </div>
