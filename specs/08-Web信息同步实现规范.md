@@ -237,7 +237,7 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 
 ### 8.2 Web 事实源写入白名单
 
-当前唯一允许 Web 直接写入 Git 文件事实源的能力是 Memo 快速创建。除下表外，Web 对 WorkArea、TaskPlan、Task、SubTask、ADR、Pitfall、Profile、Change、specs、Rules、Skill、Agent、Code 和其它 Git 文件事实源均只能读取、展示、筛选、复制路径或提供跳转，不得修改字段、状态、关系、内容或文件。
+当前唯一允许 Web 直接写入 Git 文件事实源的能力是 Memo 快速创建。除下表外，Web 对 WorkArea、TaskPlan、Task、SubTask、ADR、Pitfall、Change、specs、Rules、Skill、Agent、Code 和其它 Git 文件事实源均只能读取、展示、筛选、复制路径或提供跳转，不得修改字段、状态、关系、内容或文件。
 
 | 能力 | API | 写入目标 | 允许字段 | 约束 |
 |---|---|---|---|---|
@@ -247,7 +247,7 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 
 1. Web 不得提供对象字段通用 `PATCH`、`PUT`、`DELETE` 或任意 YAML 写回接口；
 2. Task 的 `status`、`taskplan`、`acceptance`、`verification`、`closure_evidence`、`deliverables` 等字段在 Web 中均为只读展示；
-3. WorkArea、TaskPlan、SubTask、ADR、Pitfall、Profile 和 Change 在 Web 中均为只读展示；
+3. WorkArea、TaskPlan、SubTask、ADR、Pitfall 和 Change 在 Web 中均为只读展示；
 4. Memo 快速创建只用于捕获尚未任务化但值得保留的信息，不得用来绕过 WorkArea、TaskPlan、Task、ADR 或 Pitfall 的准入规则；
 5. 短期不扩展 Web 写入白名单；Gate、Validate、ProjectFiles、ObjectDetail 和 Dashboard 均不得据页面需要新增写入入口；
 6. 未来如需新增 Web 写入能力，必须先修改本文白名单和对应对象规范，补齐校验、测试、Human Gate 影响评估和降级路径，再实现代码。

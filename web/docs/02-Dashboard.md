@@ -127,7 +127,6 @@ interface DashboardData {
     humanGateStatus: string;
     validationPlanStatus: Record<string, string>;
   } | null;
-  profile: { id: string; title: string; title_en?: string; title_zh?: string; status: string; path: string } | null;
   stats: { type: string; total: number; byStatus: Record<string, number> }[];
   recentItems: { type: string; id: string; title: string; title_en?: string; title_zh?: string; status: string; path: string; relativeTime: string; typeColor: string }[];
   actionItems: { type: string; id: string; title: string; title_en?: string; title_zh?: string; status: string; path: string; relativeTime: string; typeColor: string }[];
@@ -135,3 +134,5 @@ interface DashboardData {
   validation: { ok: boolean; errors: number; warnings: number };
 }
 ```
+
+Profile 是历史残留概念，不属于当前 LDVH Dashboard 数据结构。后续 Web 实现应删除 `GET /api/dashboard` 的 `profile` 字段、Dashboard Profile card、`nav.profiles` 文案和相关 i18n，不得把管辖项目配置展示为项目画像卡片。

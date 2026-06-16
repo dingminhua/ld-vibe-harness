@@ -120,7 +120,7 @@ Task / SubTask 不使用普通字段卡片堆叠，而使用固定阅读主线�
 - 对象预览不是“摘要卡片”，而是对象详情页阅读内容的右侧视口；同一个对象在详情页和扩展阅读区必须使用同一套字段顺序、字段标签、字段过滤和字段渲染。
 - WorkArea、TaskPlan、Task、SubTask 必须复用详情页导出的专用阅读布局：`WorkAreaReadingLayout`、`TaskPlanReadingLayout`、`TaskReadingLayout`。
 - WorkArea、TaskPlan、Task、SubTask 的扩展阅读头部同样不显示状态 chip；右侧面板按详情页身份区顺序展示 `类型 + ID + 标题 + 创建/更新时间 + 复制路径入口`，状态由复用的语义阅读布局表达。
-- ADR、Memo、Pitfall、Profile 等通用对象必须复用详情页导出的 `getObjectDetailContentEntries()` 和 `ContentField`；不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map 或独立字段渲染器。
+- ADR、Memo、Pitfall 等通用对象必须复用详情页导出的 `getObjectDetailContentEntries()` 和 `ContentField`；不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map 或独立字段渲染器。
 - 对象预览头部提供复制完整路径图标，复制对象详情 API 返回的 `target`。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。
 - Markdown 正文基准字号为 14px；表格横向滚动，代码块、引用块、任务列表由全局 Markdown 样式统一控制。
@@ -143,6 +143,7 @@ Task / SubTask 不使用普通字段卡片堆叠，而使用固定阅读主线�
 7. 不在业务组件里新增另一套字段格式判断；新增字段先更新 `fieldFormats.ts` 和 `05.01`。
 8. 对象详情头部、对象引用卡片和扩展区对象预览必须保留复制完整路径入口。
 9. 不把扩展阅读对象内容实现成详情页之外的第二套摘要；右侧对象内容必须从详情页阅读布局或详情页字段组件派生。
+10. Profile 是历史残留概念，不属于当前 LDVH 工作对象、管辖配置或 Web 对象路由；后续 Web 实现应删除 `profile` 类型字段顺序、字段标签、详情路由、引用卡片和扩展阅读支持，不得以兼容展示为由继续保留项目画像入口。
 
 ## 12. API 数据结构
 
