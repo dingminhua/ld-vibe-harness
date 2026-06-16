@@ -538,6 +538,33 @@ def test_consistency_skips_index_overrun_in_non_index_doc(tmp_path):
     assert not any(issue.code == "INDEX_OVERRUN_KEYWORD" for issue in issues)
 
 
+def test_consistency_skips_index_overrun_in_current_20_40_main_docs(tmp_path):
+    write_md(
+        tmp_path / "20-WorkArea-工作域.md",
+        """
+# WorkArea-工作域
+
+## 1. 对象定位与准入条件
+
+字段契约和对象关系是具体工作模型主文件的正文内容。
+""",
+    )
+    write_md(
+        tmp_path / "40-workflow-design-audit-工作流程设计审核.md",
+        """
+# workflow-design-audit-工作流程设计审核
+
+## 1. 行动定位与适用场景
+
+Scenario、Gate 触发条件、执行流程和事实源回写是具体工作流程主文件的正文内容。
+""",
+    )
+
+    issues = checker.consistency_index_overrun_issues([str(tmp_path)])
+
+    assert not any(issue.code == "INDEX_OVERRUN_KEYWORD" for issue in issues)
+
+
 def test_consistency_skips_index_overrun_in_code_block(tmp_path):
     write_md(
         tmp_path / "20-工作模型集合索引.md",

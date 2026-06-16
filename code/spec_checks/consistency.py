@@ -228,7 +228,7 @@ CONSISTENCY_DEPRECATED_EXPRESSIONS = {
 }
 
 CONSISTENCY_INDEX_OVERRUN_KEYWORDS = ("字段契约", "状态机", "Scenario", "Gate 触发条件", "执行流程", "事实源回写", "对象关系")
-CONSISTENCY_INDEX_FILE_RE = re.compile(r"^(20|40)-")
+CONSISTENCY_INDEX_FILE_RE = re.compile(r"^(20-工作模型集合索引|40-工作流程集合索引)\.md$")
 CONSISTENCY_DEPRECATED_INDEX_FILE_NAMES = {"20-工作模型集合索引.md", "40-工作流程集合索引.md"}
 CONSISTENCY_INDEX_BOUNDARY_TERMS = (
     "本文不定义",
@@ -547,20 +547,20 @@ def consistency_workflow_skeleton_issues(workflow_entries):
 
 
 def consistency_index_skeleton_issues(paths):
-    """检查 20 和 40 索引文档是否覆盖原 03.02 规定的强制章节"""
+    """检查旧 20 和 40 索引文档是否覆盖原 03.02 规定的强制章节"""
     issues = []
     # 从传入路径中查找索引文档，同时保留 SPECS_DIR 作为后备
     index_files = []
     for p in iter_markdown_files(paths):
         if consistency_is_current_deprecated_index(p):
             continue
-        if re.match(r"^(20|40)-", Path(p).name):
+        if CONSISTENCY_INDEX_FILE_RE.match(Path(p).name):
             index_files.append(Path(p))
     # 也检查 SPECS_DIR
     for f in SPECS_DIR.glob("*.md"):
         if consistency_is_current_deprecated_index(f):
             continue
-        if re.match(r"^(20|40)-", f.name) and f not in index_files:
+        if CONSISTENCY_INDEX_FILE_RE.match(f.name) and f not in index_files:
             index_files.append(f)
     for path in index_files:
         sections = consistency_h2_sections(path)

@@ -62,7 +62,6 @@ created: '2026-06-10T00:00:00'
 updated: '2026-06-10T00:00:00'
 workarea: workarea-0001
 priority: P2
-importance: medium
 description: 测试计划说明
 success_criteria: |
   - [ ] 可验证条件
@@ -182,4 +181,3 @@ def test_ldvh_landing_check_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["metadata"]["bootstrap_baseline_source"] == "docs/studies/42-ldvh-landing-check-LDVH落地与检查.md (已退回 studies，待重新设计)"
     assert payload["bootstrap_baseline"]["summary"]["item_count"] == 10
     assert payload["remaining_gaps"]
-
