@@ -93,7 +93,7 @@ Code 输出、landing-report、命令输出、Web 视图、Skill 输出、Agent 
 
 执行本流程前，AI 应按最小可行动原则准备以下 Context：
 
-1. `../rules/LDVH-AI-ENTRY.md` 中与规范落地、环境适配、Code 查询入口、STOP 点和事实源边界相关的段落；
+1. `../rules/LDVH-MAINTAINER-ENTRY.md` 和 `../rules/LDVH-WORKSPACE-ENTRY.md` 中与规范落地、环境适配、Code 查询入口、STOP 点和事实源边界相关的段落；
 2. `specs/04.01-规范落地声明规范.md` 中落地要求类型、声明字段、类型选择规则、后续消费关系和检查要求；
 3. `specs/04.02-LDVH能力资产与落地保障规范.md` 中要求到能力资产的默认映射、能力资产边界、能力提供原则和缺口分流；
 4. `specs/04.03-环境入口适配与部署规范.md` 中环境入口、适配状态、部署前检查、部署后适配检查、声明完成前检查和 Human Gate；

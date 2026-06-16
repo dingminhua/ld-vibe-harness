@@ -1090,7 +1090,7 @@ def test_environment_template_markdown_paths_do_not_require_repo_files(tmp_path)
 
 Codex 用户级入口可写作 `~/.codex/AGENTS.md`。
 Trae 用户级入口可写作 `.trae-cn/user_rules/ldvh_rules.md`。
-模板变量可写作 `<LDVH_REPO_ROOT>/rules/LDVH-AI-ENTRY.md`。
+模板变量可写作 `<LDVH_REPO_ROOT>/rules/LDVH-WORKSPACE-ENTRY.md`。
 """,
     )
 

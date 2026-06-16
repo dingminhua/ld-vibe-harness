@@ -259,7 +259,9 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         (PROJECT_ROOT / "tests", "测试证明", "Code"),
         (PROJECT_ROOT / "web", "Web 能力资产", "Web"),
         (PROJECT_ROOT / "ldvh-base", "工作对象事实源", "事实源"),
-        (PROJECT_ROOT / "rules" / "LDVH-AI-ENTRY.md", "运行投影入口", "环境承接"),
+        (PROJECT_ROOT / "rules" / "LDVH-WORKSPACE-ENTRY.md", "工作区运行投影入口", "环境承接"),
+        (PROJECT_ROOT / "rules" / "LDVH-MAINTAINER-ENTRY.md", "LDVH 维护运行投影入口", "环境承接"),
+        (PROJECT_ROOT / "rules" / "LDVH-AI-ENTRY.md", "兼容运行投影入口", "环境承接"),
     ]
     asset_issues = [
         ldvh_bootstrap_issue("BOOTSTRAP_ASSET_MISSING", f"缺少{label}: {landing_relative_path(path)}", path, category)

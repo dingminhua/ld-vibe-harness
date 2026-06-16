@@ -96,7 +96,7 @@ Code 派生集合索引、命令输出、Skill 输出、Agent 输出、Web 视�
 
 执行本流程前，AI 应按最小可行动原则准备以下 Context：
 
-1. `../rules/LDVH-AI-ENTRY.md` 中与工作流程场景路由、Code 查询入口、STOP 点和维护规则相关的段落；
+1. `../rules/LDVH-MAINTAINER-ENTRY.md` 中与工作流程场景路由、Code 查询入口、STOP 点和维护规则相关的段落；
 2. `specs/06-工作流程基础规范.md` 中工作流程定义、标准组成、准入、Context、Scenario、Gate、能力协作、事实源回写、证据留存、40-59 关系和检查要求；
 3. `specs/03.03-工作流程文档规范.md` 中适用文件、成员自描述契约、文档骨架、可测试性锚点、环境适配边界和检查要求；
 4. `specs/01-目录说明.md` 中 40-59 编号区段、成员自描述与 Code 派生索引边界；

@@ -89,7 +89,7 @@ Code 派生索引、命令输出、Skill 输出、Agent 输出、Web 视图、�
 
 执行本流程前，AI 应按最小可行动原则准备以下 Context：
 
-1. `../rules/LDVH-AI-ENTRY.md` 中与 specs 场景路由、Code 查询入口、STOP 点和维护规则相关的段落；
+1. `../rules/LDVH-MAINTAINER-ENTRY.md` 中与 specs 场景路由、Code 查询入口、STOP 点和维护规则相关的段落；
 2. `specs/00-LD-Vibe-Harness理念与纲要.md` 中产品定位、价值实现标准（V1-V10）、事实源原则、运行闭环标准和总纲一致性检查相关段落；
 3. `specs/03-文档基础规范.md` 中工作区契约、命名、引用纪律、studies/sources 边界、引用类型与方向和文档治理相关段落；
 4. `specs/03.01-规范文档规范.md` 中正式规范骨架、编号、相关规范规则、规范落地要求段落和检查要求；

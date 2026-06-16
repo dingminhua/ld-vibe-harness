@@ -11,10 +11,10 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(checker, "DOCS_DIR", tmp_path / "docs")
     monkeypatch.setattr(checker, "FORMAL_SPECS_DIR", docs_specs)
-    monkeypatch.setattr(checker, "RUNTIME_PROJECTION_DEFAULT_PATHS", ["rules/LDVH-AI-ENTRY.md"])
+    monkeypatch.setattr(checker, "RUNTIME_PROJECTION_DEFAULT_PATHS", ["rules/LDVH-WORKSPACE-ENTRY.md"])
 
     write_md(
-        tmp_path / "rules" / "LDVH-AI-ENTRY.md",
+        tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md",
         """
 # Runtime Projection
 
@@ -252,4 +252,3 @@ def test_classify_runtime_projection_remediation():
     assert checker._classify_runtime_projection_remediation(
         {"content": "第三方 Skill 接管后应检查同步", "title": "", "id": ""}
     ) == "skill_projection_check"
-

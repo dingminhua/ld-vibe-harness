@@ -7,7 +7,7 @@ def test_runtime_projection_reports_missing_authority_and_spec_ref(tmp_path, mon
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(checker, "FORMAL_SPECS_DIR", docs_specs)
     projection = write_md(
-        tmp_path / "rules" / "LDVH-AI-ENTRY.md",
+        tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md",
         """
 # Runtime Projection
 
@@ -49,7 +49,7 @@ def test_runtime_projection_reports_copied_formal_body(tmp_path, monkeypatch):
 """,
     )
     projection = write_md(
-        tmp_path / "rules" / "LDVH-AI-ENTRY.md",
+        tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md",
         """
 # Runtime Projection
 
@@ -79,7 +79,7 @@ def test_runtime_projection_cli_outputs_json(tmp_path, monkeypatch, capsys):
 """,
     )
     projection = write_md(
-        tmp_path / "rules" / "LDVH-AI-ENTRY.md",
+        tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md",
         """
 # Runtime Projection
 
@@ -93,4 +93,3 @@ def test_runtime_projection_cli_outputs_json(tmp_path, monkeypatch, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["metadata"]["report"] == "runtime-projection"
     assert payload["summary"]["status"] == "closed"
-
