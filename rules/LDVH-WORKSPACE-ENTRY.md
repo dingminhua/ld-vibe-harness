@@ -95,5 +95,5 @@ AI 进入工作区入口后，应按以下顺序启动：
 2. `specs/03.04-管辖项目配置规范.md`；
 3. `specs/04.02-LDVH能力资产与落地保障规范.md`；
 4. `specs/04.03-环境入口适配与部署规范.md`；
-5. `rules/LDVH-AI-ENTRY.md` 兼容入口；
+5. `rules/LDVH-MAINTAINER-ENTRY.md`；
 6. 已授权的工作区级薄入口。

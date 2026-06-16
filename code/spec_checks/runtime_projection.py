@@ -13,7 +13,6 @@ FORMAL_SPECS_DIR = PROJECT_ROOT / "specs"
 RUNTIME_PROJECTION_DEFAULT_PATHS = [
     "rules/LDVH-WORKSPACE-ENTRY.md",
     "rules/LDVH-MAINTAINER-ENTRY.md",
-    "rules/LDVH-AI-ENTRY.md",
     ".trae/rules",
     ".trae/skills",
 ]

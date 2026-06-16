@@ -87,7 +87,7 @@ LDVH 能力资产摘要
 ### 3.9 LDVH 能力资产摘要
 
 - 展示 04.02 定义的 Rules、Skill、Agent、Hook、Code、Web 等 LDVH 能力资产、位置、资产职责、使用场景、降级方式和 Code 检查状态。
-- 数据来源优先指向 `specs/04.02-LDVH能力资产与落地保障规范.md`、`rules/LDVH-AI-ENTRY.md` 和 Code 的 LDVH 能力资产检查结果。
+- 数据来源优先指向 `specs/04.02-LDVH能力资产与落地保障规范.md`、Rules 入口分层和 Code 的 LDVH 能力资产检查结果。
 - 页面必须明确该区域是只读派生展示，不是用户可选配置，不代表当前外部 AI 开发环境已经安装、启用或原生完整支持这些能力资产。
 - 不展示 Code、Web、CLI、MCP、Command、CI 或文档为与 Rules、Skill、Agent、Hook 同级的文本能力资产类型；这些能力如出现，只能作为能力资产、支撑、检查、降级或展示来源说明。
 - 若 04.02 能力资产定义缺失、资产类型不齐、资产路径不存在、Rules 未引用 04.02 或 Code 检查失败，应展示错误态或降级提示，并引导 Human 回到 Validate、Code 输出或 Git 文件事实源查看详情。

@@ -76,7 +76,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 
 出现以下情况时，AI 应暂停并说明需要 Human 确认：
 
-1. 要创建、删除、移动或重命名 `rules/LDVH-WORKSPACE-ENTRY.md`、`rules/LDVH-MAINTAINER-ENTRY.md` 或兼容入口；
+1. 要创建、删除、移动或重命名 `rules/LDVH-WORKSPACE-ENTRY.md` 或 `rules/LDVH-MAINTAINER-ENTRY.md`；
 2. 要改变 `specs/`、`docs/`、`rules/`、`skills/`、`agents/`、`hooks/`、`code/`、`tests/` 或 `web/` 的定位；
 3. 要修改工作区级入口、环境入口、项目规则或等价配置；
 4. 要声明任一环境完整支持 LDVH，或把一次本地适配检查结果写成环境类型结论；
@@ -93,5 +93,4 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 2. `specs/04.02-LDVH能力资产与落地保障规范.md`;
 3. `specs/04.03-环境入口适配与部署规范.md`;
 4. `rules/LDVH-WORKSPACE-ENTRY.md`；
-5. `rules/LDVH-AI-ENTRY.md` 兼容入口；
-6. LDVH 仓库项目级薄入口。
+5. LDVH 仓库项目级薄入口。

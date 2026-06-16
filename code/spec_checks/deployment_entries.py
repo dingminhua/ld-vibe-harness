@@ -9,7 +9,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEPLOYMENT_ENTRIES_AI_ENTRY_PATHS = [
     "rules/LDVH-WORKSPACE-ENTRY.md",
     "rules/LDVH-MAINTAINER-ENTRY.md",
-    "rules/LDVH-AI-ENTRY.md",
 ]
 DEPLOYMENT_ENTRIES_AI_ENTRY_PATH = DEPLOYMENT_ENTRIES_AI_ENTRY_PATHS[0]
 DEPLOYMENT_ENTRIES_SPEC_PATH = "specs/04.02-LDVH能力资产与落地保障规范.md"
@@ -17,7 +16,6 @@ DEPLOYMENT_ENTRIES_REQUIRED_ASSETS = {
     "Rules": [
         "rules/LDVH-WORKSPACE-ENTRY.md",
         "rules/LDVH-MAINTAINER-ENTRY.md",
-        "rules/LDVH-AI-ENTRY.md",
     ],
     "Skill": "skills/ldvh-spec-change-check/SKILL.md",
     "Agent": "agents/ldvh-spec-semantic-review.md",
