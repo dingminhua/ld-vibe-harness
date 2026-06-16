@@ -63,7 +63,7 @@ WorkArea 是“计划入口”卡片，帮助用户判断这个工作域下有�
   - 待关闭计划组使用 `objectList.pendingClosePlanCount`，文案为“待关闭计划”，紫色背景，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
   - 已闭合计划只展示 `objectList.closedPlanCount` 汇总，文案为“已闭合计划”，不展开历史计划行，使用 `ldvh-caption-strong`，标题前只用小圆点。
 - 活跃/待关闭组内每一行是一个计划入口，计划名使用 `ldvh-body`；计划如存在 `priority`，在计划标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 TaskPlan 对象图标和标题；计划 ID 使用 `ldvh-meta-muted`，并展示计划标题、计划 ID、复制路径按钮和进入箭头，不再重复展示状态标签；右侧复制和进入箭头默认保持中性，复制按钮只有自身 hover 时切到该组背景对应的状态色。
-- 计划行可展示一条 compact 任务态势条，复用 TaskPlan 的状态顺序和颜色：`已关闭 / 已验证 / 验证中 / 执行中 / 等待中`；态势条占满计划行宽度，态势段只用 hover / focus tooltip 显示数量，不在 WorkArea 卡片里展开任务或子任务。
+- 计划行可展示一条 compact 任务态势条，复用 TaskPlan 的状态顺序和颜色：`已关闭 / 已验证 / 验证中 / 执行中 / 待执行 / 等待前置`；态势条占满计划行宽度，态势段只用 hover / focus tooltip 显示数量，不在 WorkArea 卡片里展开任务或子任务。
 - WorkArea 卡片内不得出现大于工作域标题 `ldvh-card-title` 的文字；计划组和汇总都低于工作域标题层级。
 - 无计划时展示 `objectList.noPlans`。
 - WorkArea 不展示计划内任务标题、子任务或关闭材料；任务拆解留给 TaskPlan 卡片与详情页。
@@ -78,8 +78,8 @@ TaskPlan 是“计划执行态势”卡片，帮助用户从计划判断任务�
 - 执行态势条归入任务队列区域，不再作为独立卡片；任务队列标题下直接展示整体态势条，态势段 hover / focus 时显示状态和数量。
 - Task 状态图例在列表顶部右侧展示，卡片任务行只保留图标和颜色，不重复状态文字。
 - Task `review_needed` 在 Web 展示为“已验证”，表示已通过验证但尚未 `closed`；Plan 的 `review_needed` 仍表示待关闭审查。
-- TaskPlan 卡片态势按“已关闭 / 已验证 / 验证中 / 执行中 / 等待中”从左到右排列，越接近完成越靠左。
-- TaskPlan 卡片态势中，`planned` 统一归入“等待中”；若同时存在未关闭 `blocked_by`，这是 Web 基于前置关系派生的等待原因，不额外拆成第二个态势类别。
+- TaskPlan 卡片态势按“已关闭 / 已验证 / 验证中 / 执行中 / 待执行 / 等待前置”从左到右排列，越接近完成越靠左。
+- TaskPlan 卡片态势中，`planned` 且不存在未关闭前置项时展示为“待执行”；`planned` 且存在 `openBlockers` 时展示为“等待前置”，等待对象来自事实源 `blocked_by` 的未关闭对象派生结果。
 - 仅当计划处于 `review_needed` 或已关闭计划缺少关闭字段时，展示关闭判断 / 收口异常区域。
 - 展示任务队列区域：
   - 标题为 `objectList.planTaskQueue`；

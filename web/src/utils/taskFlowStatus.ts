@@ -42,8 +42,8 @@ export const taskFlowRowClass: Record<TaskFlowTone, string> = {
   neutral: 'border-ldvh-border bg-ldvh-bg hover:bg-ldvh-border/35',
 };
 
-export const TASK_FLOW_ORDER: TaskFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'blocked', 'risk', 'neutral'];
-export const TASK_FLOW_LEGEND_ORDER: TaskFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'blocked'];
+export const TASK_FLOW_ORDER: TaskFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'ready', 'blocked', 'risk', 'neutral'];
+export const TASK_FLOW_LEGEND_ORDER: TaskFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'ready', 'blocked'];
 const TASK_FLOW_QUEUE_ORDER: TaskFlowTone[] = [...TASK_FLOW_ORDER].reverse();
 
 export const taskFlowBarClass: Record<TaskFlowTone, string> = {
@@ -139,7 +139,7 @@ export function getTaskFlowTone(item: RelatedObjectSummary): TaskFlowTone {
   if (item.status === 'verifying') return 'verifying';
   if (PENDING_CLOSE_STATUSES.has(item.status)) return 'absorbing';
   if (TERMINAL_STATUSES.has(item.status)) return 'closed';
-  if (item.status === 'planned') return 'blocked';
+  if (item.status === 'planned') return (item.openBlockers?.length ?? 0) > 0 ? 'blocked' : 'ready';
   if (TASK_RISK_STATUSES.has(item.status)) return 'risk';
   return 'neutral';
 }
@@ -147,6 +147,7 @@ export function getTaskFlowTone(item: RelatedObjectSummary): TaskFlowTone {
 export function getTaskFlowLabel(item: RelatedObjectSummary, t: TaskFlowTranslate, getStatus: (status: string) => string): string {
   const tone = getTaskFlowTone(item);
   if (tone === 'blocked') return t('objectList.taskFlowBlocked');
+  if (tone === 'ready') return t('objectList.taskFlowReady');
   if (tone === 'executing') return t('objectList.taskFlowExecuting');
   if (tone === 'verifying') return t('objectList.taskFlowVerifying');
   if (tone === 'absorbing') return t('objectList.taskFlowAbsorbing');
@@ -156,6 +157,7 @@ export function getTaskFlowLabel(item: RelatedObjectSummary, t: TaskFlowTranslat
 
 export function getTaskFlowToneLabel(tone: TaskFlowTone, t: TaskFlowTranslate, getStatus: (status: string) => string): string {
   if (tone === 'blocked') return t('objectList.taskFlowBlocked');
+  if (tone === 'ready') return t('objectList.taskFlowReady');
   if (tone === 'executing') return t('objectList.taskFlowExecuting');
   if (tone === 'verifying') return t('objectList.taskFlowVerifying');
   if (tone === 'absorbing') return t('objectList.taskFlowAbsorbing');

@@ -7,6 +7,7 @@ import { listObjects, showObject } from '../../../web/api/services/facts.ts'
 import { buildPlanSummaries, type ListedObject } from '../../../web/api/routes/objects.ts'
 import { isPreviewablePathForField } from '../../../web/src/utils/fieldFormats.ts'
 import { getObjectPriority, getObjectSignalAccent, getObjectSignals, getPriorityLabel } from '../../../web/src/utils/objectSignals.ts'
+import { getTaskFlowTone } from '../../../web/src/utils/taskFlowStatus.ts'
 
 const fixtureRoot = fileURLToPath(new URL('../fixtures/taskplan-with-subtasks', import.meta.url))
 const projectRoot = path.resolve(fixtureRoot, '../../../..')
@@ -394,6 +395,9 @@ async function main() {
   assert.deepEqual(nestedStatuses, new Set(['planned', 'executing', 'closed']))
   const waitingSubtask = taskWithSubtasks.subtasks?.find((item) => item.id === 'subtask-9003')
   assert.equal(waitingSubtask?.openBlockers?.[0]?.id, 'subtask-9002')
+  assert.equal(getTaskFlowTone({ id: 'task-ready', type: 'task', title: 'Ready', status: 'planned', path: '', updated: '' }), 'ready')
+  assert.equal(getTaskFlowTone({ id: 'task-blocked', type: 'task', title: 'Blocked', status: 'planned', path: '', updated: '', openBlockers: [{ id: 'task-open', type: 'task', title: 'Open blocker', status: 'executing', path: '', updated: '' }] }), 'blocked')
+  assert.equal(getTaskFlowTone(waitingSubtask!), 'blocked')
   const reviewPlan = planSummaries.find((plan) => plan.id === 'taskplan-9002')
   assert.equal(reviewPlan?.tasks.length, 1)
   assert.deepEqual(new Set(reviewPlan?.tasks.map((task) => task.status)), new Set(['closed']))
