@@ -18,7 +18,7 @@
 ```text
 状态筛选（ObjectStatusFilter）
 对象卡片自适应网格（ldvh-section-grid）
-  通用卡片：ID + 复制路径图标 + 状态徽章 + 标题 + 信号标签 + 更新时间
+  通用卡片：ID + 复制路径图标 + 状态徽章 + 优先级字符徽标 + 标题 + 信号标签 + 更新时间
   WorkArea 卡片：工作域自身信息 + 按状态分组的计划入口
   TaskPlan 卡片：计划自身信息 + 执行态势条 + 任务队列 + 关闭判断信号
 加载态 / 错误态 / 空态
@@ -43,8 +43,9 @@
 - 通用卡片结构：
   - 左上：对象 ID，`ldvh-meta-muted`；
   - 右上：`CopyPathButton` + `StatusBadge`；
-  - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，标题前使用 `ObjectTypeIcon(obj.type)` 识别对象身份，左侧使用状态语义短线突出，不通过放大字号突出；
-  - 可选信号：priority、repeatability、category 等短标签；仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 TaskPlan 和 Memo，不得为 WorkArea、Task、SubTask、ADR、Pitfall 或 Change 杜撰 priority、importance、category 或 tags；importance 字段已由 priority 统一承载，不作为独立字段使用
+  - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；
+  - 优先级字符徽标：TaskPlan 和 Memo 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
+  - 可选信号：repeatability、category 等短标签；仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 TaskPlan 和 Memo，不得为 WorkArea、Task、SubTask、ADR、Pitfall 或 Change 杜撰 priority、importance、category 或 tags；importance 字段已由 priority 统一承载，不作为独立字段使用
   - 底部：`formatDateTime(updated)`，格式为 `YYYY-MM-DD HH:mm`。
 - 复制图标复制对象 YAML 文件完整路径，使用 API 返回的 `path`。
 - 点击复制图标不得进入详情页；点击卡片外层空白、标题带、ID、状态徽章或更新时间进入对象详情页。
@@ -61,7 +62,7 @@ WorkArea 是“计划入口”卡片，帮助用户判断这个工作域下有�
   - 活跃计划组使用 `objectList.activePlanCount`，文案为“活跃计划”，绿色背景，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
   - 待关闭计划组使用 `objectList.pendingClosePlanCount`，文案为“待关闭计划”，紫色背景，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
   - 已闭合计划只展示 `objectList.closedPlanCount` 汇总，文案为“已闭合计划”，不展开历史计划行，使用 `ldvh-caption-strong`，标题前只用小圆点。
-- 活跃/待关闭组内每一行是一个计划入口，计划名使用 `ldvh-body`，计划标题前使用 TaskPlan 对象图标，计划 ID 使用 `ldvh-meta-muted`，并展示计划标题、计划 ID、复制路径按钮和进入箭头，不再重复展示状态标签；右侧复制和进入箭头默认保持中性，复制按钮只有自身 hover 时切到该组背景对应的状态色。
+- 活跃/待关闭组内每一行是一个计划入口，计划名使用 `ldvh-body`；计划如存在 `priority`，在计划标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 TaskPlan 对象图标和标题；计划 ID 使用 `ldvh-meta-muted`，并展示计划标题、计划 ID、复制路径按钮和进入箭头，不再重复展示状态标签；右侧复制和进入箭头默认保持中性，复制按钮只有自身 hover 时切到该组背景对应的状态色。
 - 计划行可展示一条 compact 任务态势条，复用 TaskPlan 的状态顺序和颜色：`已关闭 / 已验证 / 验证中 / 执行中 / 等待中`；态势条占满计划行宽度，态势段只用 hover / focus tooltip 显示数量，不在 WorkArea 卡片里展开任务或子任务。
 - WorkArea 卡片内不得出现大于工作域标题 `ldvh-card-title` 的文字；计划组和汇总都低于工作域标题层级。
 - 无计划时展示 `objectList.noPlans`。
@@ -157,6 +158,7 @@ interface RelatedObjectSummary {
   status: string;
   path: string;
   updated: string;
+  priority?: string;                  // TaskPlan / Memo 信号字段，只读展示
   blockedBy?: string[];
   openBlockers?: RelatedObjectSummary[];
   subtasks?: RelatedObjectSummary[];  // TaskPlan 下的 Task 可携带 SubTask 摘要

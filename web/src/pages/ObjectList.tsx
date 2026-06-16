@@ -6,6 +6,7 @@ import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
 import MemoCreate from '@/components/MemoCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
+import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { TaskFlowBar, TaskFlowLegend, TaskFlowMarker } from '@/components/TaskFlowStatus';
 import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowRowActionClass, taskFlowRowClass, taskFlowRowHoverTextClass } from '@/utils/taskFlowStatus';
@@ -156,6 +157,7 @@ function WorkAreaPlanRow({
       <div className="flex min-w-0 items-center gap-2">
         <div className="min-w-0 flex-1">
           <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${toneClass.hoverText}`}>
+            <PriorityIcon source={item} type="taskplan" locale={locale} size="sm" />
             <ObjectTypeIcon type="taskplan" size={12} className="shrink-0" />
             <span className="min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
           </span>
@@ -299,6 +301,7 @@ function ObjectCardFrame({
       <div
         className={`-mx-1 flex min-w-0 items-center gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover/card:bg-ldvh-bg/85 ${titleAccentClass}`}
       >
+        <PriorityIcon source={obj} type={obj.type} locale={locale} size="sm" />
         <ObjectTypeIcon type={obj.type} size={14} className="shrink-0" style={{ color: typeColor }} />
         <span className="ldvh-card-title min-w-0 flex-1 truncate transition-colors group-hover/card:text-ldvh-accent">
           {getLocalizedTitle(obj, locale)}

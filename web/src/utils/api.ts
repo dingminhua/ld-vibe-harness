@@ -127,6 +127,7 @@ export interface RelatedObjectSummary {
   status: string;
   path: string;
   updated: string;
+  priority?: string;
   blockedBy?: string[];
   openBlockers?: RelatedObjectSummary[];
   subtasks?: RelatedObjectSummary[];

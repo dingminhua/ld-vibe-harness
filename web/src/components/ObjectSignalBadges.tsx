@@ -20,11 +20,12 @@ export default function ObjectSignalBadges({
   className?: string;
 }) {
   const signals = getObjectSignals(source, type);
-  if (signals.length === 0) return null;
+  const visibleSignals = signals.filter((signal) => signal.field !== 'priority');
+  if (visibleSignals.length === 0) return null;
 
   return (
     <div className={`flex min-w-0 flex-wrap gap-1.5 ${className}`}>
-      {signals.map(({ field, value }) => {
+      {visibleSignals.map(({ field, value }) => {
         const fieldLabel = getSignalFieldLabel(field, locale);
         const valueLabel = getSignalText(field, value, locale);
         const dotClassName = getSignalDotClassName(field, value);

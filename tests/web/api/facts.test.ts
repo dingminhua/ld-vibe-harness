@@ -6,7 +6,7 @@ import yaml from 'js-yaml'
 import { listObjects, showObject } from '../../../web/api/services/facts.ts'
 import { buildPlanSummaries, type ListedObject } from '../../../web/api/routes/objects.ts'
 import { isPreviewablePathForField } from '../../../web/src/utils/fieldFormats.ts'
-import { getObjectSignalAccent, getObjectSignals } from '../../../web/src/utils/objectSignals.ts'
+import { getObjectPriority, getObjectSignalAccent, getObjectSignals, getPriorityLabel } from '../../../web/src/utils/objectSignals.ts'
 
 const fixtureRoot = fileURLToPath(new URL('../fixtures/taskplan-with-subtasks', import.meta.url))
 const projectRoot = path.resolve(fixtureRoot, '../../../..')
@@ -349,6 +349,8 @@ async function main() {
   const highPriorityPlanItem = (fixturePlans.data.items as Array<Record<string, unknown>>).find((item) => item.id === 'taskplan-9001')
   assert.ok(highPriorityPlanItem)
   assert.deepEqual(getObjectSignals(highPriorityPlanItem, 'taskplan').map((signal) => signal.field), ['priority'])
+  assert.equal(getObjectPriority(highPriorityPlanItem, 'taskplan'), 'P1')
+  assert.equal(getPriorityLabel('P1', 'zh'), '优先级: P1')
   assert.equal(getObjectSignalAccent(highPriorityPlanItem, 'taskplan'), '#f97316')
   const fixturePlanIds = new Set((fixturePlans.data.items as Array<Record<string, unknown>>).map((item) => item.id))
   assert.deepEqual(fixturePlanIds, new Set([
@@ -364,6 +366,7 @@ async function main() {
   assert.equal(fixtureTasks.ok, true)
   assert.equal(fixtureTasks.data.items.length, 6)
   assert.deepEqual(getObjectSignals({ priority: 'P0', importance: 'high', category: 'gap' }, 'task'), [])
+  assert.equal(getObjectPriority({ priority: 'P0' }, 'task'), null)
   const taskStatuses = new Set((fixtureTasks.data.items as Array<Record<string, unknown>>).map((item) => item.status))
   assert.deepEqual(taskStatuses, new Set(['planned', 'executing', 'review_needed', 'closed']))
 
@@ -379,6 +382,7 @@ async function main() {
   const activePlan = planSummaries.find((plan) => plan.id === 'taskplan-9001')
   assert.ok(activePlan)
   assert.equal(activePlan.workarea, 'workarea-9001')
+  assert.equal(activePlan.priority, 'P1')
   assert.equal(activePlan.tasks.length, 4)
   assert.equal(activePlan.taskClosed, 1)
   assert.equal(activePlan.taskActive, 1)
@@ -402,6 +406,7 @@ async function main() {
   assert.equal(fixtureMemos.data.items.length, 1)
   const firstMemoItem = fixtureMemos.data.items[0] as Record<string, unknown>
   assert.deepEqual(getObjectSignals(firstMemoItem, 'memo').map((signal) => signal.field), ['priority', 'category'])
+  assert.equal(getObjectPriority(firstMemoItem, 'memo'), 'P1')
 }
 
 main().catch((error) => {

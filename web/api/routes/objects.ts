@@ -31,6 +31,7 @@ interface RelatedObjectSummary {
   title_zh?: string
   path: string
   updated: string
+  priority?: string
   blockedBy?: string[]
   openBlockers?: RelatedObjectSummary[]
   subtasks?: RelatedObjectSummary[]
@@ -140,6 +141,7 @@ function toRelatedSummary(item: ListedObject, type = item.type): RelatedObjectSu
     title_zh: item.title_zh,
     path: item.path,
     updated: item.updated,
+    priority: typeof item.priority === 'string' ? item.priority : undefined,
   }
 }
 
@@ -517,4 +519,3 @@ async function enrichAdrs(items: ListedObject[]): Promise<ListedObject[]> {
     }
   })
 }
-

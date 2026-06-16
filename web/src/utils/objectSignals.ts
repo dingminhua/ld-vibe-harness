@@ -96,6 +96,13 @@ const ACCENT_COLORS: Partial<Record<SignalField, Record<string, string>>> = {
   },
 };
 
+const PRIORITY_ICON_CLASSES: Record<string, string> = {
+  P0: 'border-rose-400/45 bg-rose-500/10 text-rose-400',
+  P1: 'border-orange-400/45 bg-orange-500/10 text-orange-400',
+  P2: 'border-amber-400/45 bg-amber-500/10 text-amber-400',
+  P3: 'border-zinc-400/35 bg-zinc-500/10 text-zinc-400',
+};
+
 function normalizeSignalValue(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   const normalized = String(value).trim();
@@ -121,6 +128,27 @@ export function getSignalText(field: string, value: unknown, locale: string): st
   if (!normalized) return null;
   const entry = VALUE_LABELS[field]?.[normalized];
   return entry ? localize(entry, locale) : normalized.replace(/_/g, ' ');
+}
+
+export function getObjectPriority(source: ObjectSignalSource, type?: SignalObjectType): string | null {
+  if (type !== 'taskplan' && type !== 'memo') return null;
+  return normalizeSignalValue(source.priority);
+}
+
+export function getPriorityLabel(value: unknown, locale: string): string | null {
+  const normalized = normalizeSignalValue(value);
+  if (!normalized) return null;
+  const fieldLabel = localize(FIELD_LABELS.priority, locale);
+  const valueLabel = VALUE_LABELS.priority?.[normalized]
+    ? localize(VALUE_LABELS.priority[normalized], locale)
+    : normalized;
+  return `${fieldLabel}: ${valueLabel}`;
+}
+
+export function getPriorityIconClassName(value: unknown): string {
+  const normalized = normalizeSignalValue(value);
+  if (!normalized) return 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary';
+  return PRIORITY_ICON_CLASSES[normalized] ?? 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary';
 }
 
 export function getSignalClassName(field: string, value: unknown): string {

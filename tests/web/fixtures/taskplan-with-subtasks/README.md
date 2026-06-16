@@ -2,8 +2,8 @@
 
 设计原则：
 
-- TaskPlan 维护 `priority` 和 `importance`。
-- Memo 维护 `importance`，不维护 `priority`。
+- TaskPlan 和 Memo 维护 `priority`。
+- `importance` 已由 `priority` 统一承载，不再作为独立字段维护。
 - Task / SubTask 不维护 `priority`、`importance`、`category` 或 `tags`。
 - Task 的 `deliverables`、`related_docs`、`affected_docs` 分别表示结果物、参考输入文档和完成后需同步检查的文档。
 - SubTask 只承载局部执行字段，不承载文档、ADR、Memo、产出物或关联变更。

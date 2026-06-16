@@ -10,6 +10,8 @@ import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
+import ObjectSignalBadges from '@/components/ObjectSignalBadges';
+import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { TaskFlowBar, TaskFlowMarker } from '@/components/TaskFlowStatus';
 import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowDetailActionClass, taskFlowDetailHoverTextClass, taskFlowRowClass } from '@/utils/taskFlowStatus';
@@ -18,7 +20,7 @@ import { useI18n } from '@/i18n/context';
 import { getObjectStatusHint, getObjectStatusLocale, getTypeDescription } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { formatDateTime } from '@/utils/dateFormat';
-import { getObjectSignals, getSignalClassName, getSignalDotClassName, getSignalFieldLabel, getSignalText, isSignalField } from '@/utils/objectSignals';
+import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
 import {
   CHECKLIST_COMPAT_FIELDS,
@@ -448,6 +450,7 @@ export default function ObjectDetail() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <h1 className="ldvh-page-title flex min-w-0 items-center gap-2">
+                      <PriorityIcon source={obj} type={objType} locale={locale} size="lg" />
                       <ObjectTypeIcon type={objType} size={18} className="shrink-0" style={{ color: typeColor }} />
                       <span className="min-w-0 truncate">{displayTitle}</span>
                     </h1>
@@ -599,7 +602,6 @@ function WorkObjectDetailHeader({
   updated: string;
 }) {
   const { t } = useI18n();
-  const signals = getObjectSignals(source, objectType);
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-3">
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -611,24 +613,11 @@ function WorkObjectDetailHeader({
             >
               {typeLabel}
             </span>
-            {signals.map(({ field, value }) => {
-              const fieldLabel = getSignalFieldLabel(field, locale);
-              const valueLabel = getSignalText(field, value, locale);
-              const dotClassName = getSignalDotClassName(field, value);
-              return (
-                <span
-                  key={`${field}-${value}`}
-                  className={`ldvh-caption inline-flex max-w-full items-center gap-1 rounded border px-1.5 py-0.5 font-sans ${getSignalClassName(field, value)}`}
-                  title={fieldLabel && valueLabel ? `${fieldLabel}: ${valueLabel}` : undefined}
-                >
-                  {dotClassName && <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotClassName}`} />}
-                  <span className="truncate">{valueLabel}</span>
-                </span>
-              );
-            })}
+            <ObjectSignalBadges source={source} type={objectType} locale={locale} />
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
           </div>
           <h1 className="ldvh-page-title flex min-w-0 items-center gap-2 break-words">
+            <PriorityIcon source={source} type={objectType} locale={locale} size="lg" />
             <ObjectTypeIcon type={objectType} size={18} className="shrink-0" style={{ color: typeColor }} />
             <span className="min-w-0">{title}</span>
           </h1>
@@ -913,6 +902,7 @@ function WorkAreaPlanRow({
       <div className="flex min-w-0 items-start gap-3">
         <div className="min-w-0 flex-1">
           <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${toneClass.titleHover}`}>
+            <PriorityIcon source={plan} type="taskplan" locale={locale} size="sm" />
             <ObjectTypeIcon type="taskplan" size={12} className="shrink-0" />
             <span className="min-w-0 truncate">{getLocalizedTitle(plan, locale)}</span>
           </span>
@@ -1705,6 +1695,7 @@ export function TaskReadingLayout({
 function getAuxiliaryMetaEntries(obj: Record<string, unknown>, objType: string) {
   const keys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
   return keys
+    .filter((key) => key !== 'priority' || (objType !== 'taskplan' && objType !== 'memo'))
     .map((key) => [key, obj[key]] as [string, unknown])
     .filter(([, value]) => value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0));
 }
