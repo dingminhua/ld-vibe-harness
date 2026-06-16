@@ -59,7 +59,7 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 | specs 落地要求表 | `python3 code/specs_validate.py landing specs` | 检查规范落地要求表结构 |
 | specs 综合检查 | `python3 code/specs_validate.py all` | 执行 specs 综合校验 |
 | 管辖项目配置 | `python3 code/specs_validate.py governed-projects` | 检查工作区根目录管辖项目配置 |
-| Rules 环境入口部署 | 按 `specs/04.03-环境入口适配与部署规范.md` §4.1-§4.4 执行 | 只检查 Trae CN、Trae 国际版和 Codex 三类用户级环境入口；发现入口后通过 Human Gate 多选确认，不得默认全选或静默写入 |
+| Rules 环境入口接入 | 按 `specs/04.03-环境入口适配与部署规范.md` §4.1-§4.4 执行 | 官方维护 Codex App 适配路径；默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口。AI 代写、覆盖或删除入口前必须 Human Gate；非 Codex 环境只提供自助适配方向 |
 | 工作对象列表 | `python3 code/fact_cli.py list <type>` | 查询 ADR、Intent、Memo、Pitfall 或 Task 摘要 |
 | 工作对象详情 | `python3 code/fact_cli.py show <id>` | 查询单个工作对象详情 |
 | 工作对象搜索 | `python3 code/fact_cli.py search <keyword>` | 按关键词搜索工作对象事实源 |
@@ -95,7 +95,7 @@ AI 进入 LDVH 时，先读取本文件确认事实源边界、查询入口、�
 ---
 ## 5. 入口分层与使用边界
 
-工作区级入口属于用户自己的开发环境配置。初始化时只应在 Human 授权下加入一条醒目的薄引用，把 AI 引向本文件，并使用本文件中的工作区入口视角，不应复制规则正文。Trae 用户级 Rules 薄引用和 Codex 用户级 AGENTS 薄引用应分别采用 `specs/04.03-环境入口适配与部署规范.md` 中的模板；Codex 场景应包含 `/compact`、自动上下文压缩、线程恢复或上下文恢复后的重读提示。
+工作区级入口属于用户自己的开发环境配置。初始化时默认只应生成一条醒目的 Codex 薄引用文本，把 AI 引向本文件，并使用本文件中的工作区入口视角，不应复制规则正文。用户自行把该薄引用加入 Codex 用户级、工作区级或项目级入口；AI 只有在 Human 明确授权、目标入口已定位、已有内容已保护且影响范围已说明时，才可代写。Codex 薄引用应采用 `specs/04.03-环境入口适配与部署规范.md` 中的模板，并包含 `/compact`、自动上下文压缩、线程恢复或上下文恢复后的重读提示。非 Codex 环境只按 04.03 的自助适配方向处理。
 
 LDVH 管理入口视角随 `rules/LDVH-AI-ENTRY.md` 提交，用于维护 LDVH 自身项目。该视角可以指向 `specs/`、`code/`、`tests/`、`web/`、根目录配置和适配措施治理，但不得被误用为所有管辖项目的项目级规则正文。
 
