@@ -79,7 +79,7 @@ TaskPlan 是“计划执行态势”卡片，帮助用户从计划判断任务�
 - Task 状态图例在列表顶部右侧展示，卡片任务行只保留图标和颜色，不重复状态文字。
 - Task `review_needed` 在 Web 展示为“已验证”，表示已通过验证但尚未 `closed`；Plan 的 `review_needed` 仍表示待关闭审查。
 - TaskPlan 卡片态势按“已关闭 / 已验证 / 验证中 / 执行中 / 待执行 / 等待前置”从左到右排列，越接近完成越靠左。
-- TaskPlan 卡片态势中，`planned` 且不存在未关闭前置项时展示为“待执行”；`planned` 且存在 `openBlockers` 时展示为“等待前置”，等待对象来自事实源 `blocked_by` 的未关闭对象派生结果。
+- TaskPlan 卡片态势遵守 `specs/08-Web信息同步实现规范.md` §5.5 的派生态势原因语义规则。`planned` 且不存在未关闭前置项时展示为“待执行”；`planned` 且存在 `openBlockers` 时展示为“等待前置”，等待对象来自事实源 `blocked_by` 的未关闭对象派生结果。
 - 仅当计划处于 `review_needed` 或已关闭计划缺少关闭字段时，展示关闭判断 / 收口异常区域。
 - 展示任务队列区域：
   - 标题为 `objectList.planTaskQueue`；
