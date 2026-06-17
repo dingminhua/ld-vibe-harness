@@ -82,6 +82,7 @@ export interface ObjectItem {
   planRisk?: number;
   planByStatus?: Record<string, number>;
   tasks?: RelatedObjectSummary[];
+  executionItems?: RelatedObjectSummary[];
   taskTotal?: number;
   taskClosed?: number;
   taskReviewNeeded?: number;
@@ -89,9 +90,16 @@ export interface ObjectItem {
   taskBlocked?: number;
   taskRisk?: number;
   taskByStatus?: Record<string, number>;
+  executionItemTotal?: number;
+  executionItemDone?: number;
+  executionItemBlocked?: number;
+  executionItemOpen?: number;
+  executionItemByStatus?: Record<string, number>;
   hasSuccessCriteria?: boolean;
   hasReviewRequestedAt?: boolean;
   hasCompletionEvidence?: boolean;
+  hasVerificationEvidence?: boolean;
+  hasClosureEvidence?: boolean;
   hasClosedAt?: boolean;
  workarea?: string;
  workareaSummary?: RelatedObjectSummary;
@@ -138,6 +146,13 @@ export interface RelatedObjectSummary {
   blockedBy?: string[];
   openBlockers?: RelatedObjectSummary[];
   subtasks?: RelatedObjectSummary[];
+  role?: string;
+  mode?: string;
+  expectedOutput?: string;
+  resultSummary?: string;
+  blockingReason?: string;
+  inputRefs?: string[];
+  evidenceRefs?: string[];
 }
 
 export interface RelatedPlanSummary extends RelatedObjectSummary {
@@ -149,9 +164,16 @@ export interface RelatedPlanSummary extends RelatedObjectSummary {
   taskBlocked: number;
   taskRisk: number;
   tasks: RelatedObjectSummary[];
+  executionItems?: RelatedObjectSummary[];
+  executionItemTotal?: number;
+  executionItemDone?: number;
+  executionItemBlocked?: number;
+  executionItemOpen?: number;
   hasSuccessCriteria: boolean;
   hasReviewRequestedAt: boolean;
   hasCompletionEvidence: boolean;
+  hasVerificationEvidence?: boolean;
+  hasClosureEvidence?: boolean;
   hasClosedAt: boolean;
 }
 

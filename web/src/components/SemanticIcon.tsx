@@ -20,6 +20,7 @@ import {
 
 export const OBJECT_TYPE_ICONS: Record<string, LucideIcon> = {
   workarea: Focus,
+  workplan: Workflow,
   taskplan: ClipboardList,
   task: ListTodo,
   subtask: ListTree,
@@ -36,6 +37,7 @@ export const OBJECT_TYPE_ICONS: Record<string, LucideIcon> = {
 
 export const COLLECTION_ICONS: Record<string, LucideIcon> = {
   workarea: Focus,
+  workplan: Workflow,
   taskplan: ClipboardList,
   plan: ClipboardList,
   task: ListTodo,

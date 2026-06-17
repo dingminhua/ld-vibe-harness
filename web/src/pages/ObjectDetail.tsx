@@ -54,6 +54,7 @@ const META_KEYS = [
   'aggregated_related_memos',
   'aggregated_related_pitfalls',
   'aggregated_related_changes',
+  'aggregated_execution_refs',
 ];
 const TASK_AUXILIARY_META_KEYS = ['assignee'];
 const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'repeatability', 'tags', 'scope', 'impact', 'assignee'];
@@ -80,6 +81,11 @@ export const TASK_FIELD_ORDER = [
 ];
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls'],
+  workplan: [
+    'workarea', 'priority', 'description', 'success_criteria', 'source',
+    'orchestration', 'verification_evidence', 'closure_evidence', 'related_workplans',
+    'related_changes', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
+  ],
   taskplan: ['workarea', 'description', 'success_criteria', 'source', 'tasks', 'completion_evidence', 'related_docs'],
   task: TASK_FIELD_ORDER,
   subtask: ['task', 'description', 'source', 'acceptance', 'blocked_by', 'verification', 'closure_evidence'],
@@ -109,7 +115,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
 
 const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
 const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
-const WORK_OBJECT_DETAIL_TYPES = new Set(['workarea', 'taskplan', 'task', 'subtask']);
+const WORK_OBJECT_DETAIL_TYPES = new Set(['workarea', 'workplan', 'taskplan', 'task', 'subtask']);
 
 export function getObjectDetailContentEntries(obj: Record<string, unknown>, objType: string) {
   const auxiliaryMetaKeys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
@@ -135,6 +141,7 @@ export function getObjectDetailContentEntries(obj: Record<string, unknown>, objT
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '工作域', en: 'Work Area' },
+  workplan: { zh: '工作计划', en: 'Work Plan' },
   taskplan: { zh: '任务计划', en: 'Task Plan' },
   task: { zh: '任务', en: 'Task' },
   subtask: { zh: '子任务', en: 'Subtask' },
@@ -189,12 +196,23 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   mitigation: { zh: '缓解措施', en: 'Mitigation' },
   resolution: { zh: '解决方案', en: 'Resolution' },
   workarea: { zh: '工作域', en: 'Work Area' },
+  workplan: { zh: '工作计划', en: 'Work Plan' },
   taskplan: { zh: '任务计划', en: 'Task Plan' },
   task: { zh: '所属任务', en: 'Task' },
   tasks: { zh: '任务', en: 'Tasks' },
+  orchestration: { zh: '编排', en: 'Orchestration' },
+  execution_items: { zh: '执行项', en: 'Execution Items' },
+  mode: { zh: '模式', en: 'Mode' },
+  role: { zh: '角色', en: 'Role' },
+  input_refs: { zh: '输入引用', en: 'Input Refs' },
+  expected_output: { zh: '期望输出', en: 'Expected Output' },
+  result_summary: { zh: '结果摘要', en: 'Result Summary' },
+  evidence_refs: { zh: '证据引用', en: 'Evidence Refs' },
+  blocking_reason: { zh: '阻塞原因', en: 'Blocking Reason' },
   blocked_by: { zh: '前置依赖', en: 'Blocked By' },
   closure_evidence: { zh: '关闭证据', en: 'Closure Evidence' },
   completion_evidence: { zh: '完成证据', en: 'Completion Evidence' },
+  verification_evidence: { zh: '验证证据', en: 'Verification Evidence' },
   review_requested_at: { zh: '请求关闭确认时间', en: 'Review Requested At' },
   transition_reasons: { zh: '流转记录', en: 'Transition Reasons' },
   options: { zh: '选项', en: 'Options' },
@@ -203,6 +221,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   related_tasks: { zh: '关联任务', en: 'Related Tasks' },
   related_subtasks: { zh: '关联子任务', en: 'Related Subtasks' },
   related_workareas: { zh: '关联工作域', en: 'Related Work Areas' },
+  related_workplans: { zh: '关联工作计划', en: 'Related Work Plans' },
   related_taskplans: { zh: '关联任务计划', en: 'Related Task Plans' },
   related_adrs: { zh: '关联决策', en: 'Related ADRs' },
   related_memos: { zh: '关联备忘', en: 'Related Memos' },
@@ -218,6 +237,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   discard_reason: { zh: '废弃原因', en: 'Discard Reason' },
   superseded_by: { zh: '替代来源', en: 'Superseded By' },
   related_changes: { zh: '关联变更', en: 'Related Changes' },
+  aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
   affects: { zh: '影响对象', en: 'Affects' },
   scope: { zh: '范围', en: 'Scope' },
   impact: { zh: '影响范围', en: 'Impact' },
@@ -323,7 +343,7 @@ export default function ObjectDetail() {
     setRelatedPlanSummary(null);
     setRelatedTaskSummary(null);
     setWorkareaSummaryLoading(type === 'workarea');
-    setRelatedSummaryLoading(type === 'taskplan' || type === 'task' || type === 'subtask');
+    setRelatedSummaryLoading(type === 'workplan' || type === 'taskplan' || type === 'task' || type === 'subtask');
     setError(null);
 
     fetchObjectDetail(type, id)
@@ -345,6 +365,20 @@ export default function ObjectDetail() {
         })
         .finally(() => {
           if (!cancelled) setWorkareaSummaryLoading(false);
+        });
+    }
+
+    if (type === 'workplan') {
+      fetchObjects('workplan')
+        .then((result) => {
+          if (cancelled) return;
+          setRelatedPlanSummary(result.data?.items?.find((plan) => plan.id === id) ?? null);
+        })
+        .catch(() => {
+          if (!cancelled) setRelatedPlanSummary(null);
+        })
+        .finally(() => {
+          if (!cancelled) setRelatedSummaryLoading(false);
         });
     }
 
@@ -515,6 +549,14 @@ export default function ObjectDetail() {
               obj={obj}
               summary={workareaSummary}
               loading={workareaSummaryLoading}
+              locale={locale}
+              getStatus={getStatus}
+            />
+          ) : objType === 'workplan' ? (
+            <WorkPlanReadingLayout
+              obj={obj}
+              summary={relatedPlanSummary}
+              loading={relatedSummaryLoading}
               locale={locale}
               getStatus={getStatus}
             />
@@ -699,7 +741,7 @@ export function WorkAreaReadingLayout({
     openPanel({
       type: 'object',
       title: getLocalizedTitle(plan, locale),
-      objectType: 'taskplan',
+      objectType: plan.type || 'taskplan',
       objectId: plan.id,
     });
   };
@@ -899,7 +941,8 @@ function WorkAreaPlanRow({
   const { isOpen: panelOpen, content: panelContent } = usePanel();
   const open = () => onOpen(plan);
   const tasks = plan.tasks ?? [];
-  const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === 'taskplan' && panelContent.objectId === plan.id;
+  const planType = plan.type || 'taskplan';
+  const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === planType && panelContent.objectId === plan.id;
   const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
 
   return (
@@ -907,7 +950,7 @@ function WorkAreaPlanRow({
       role="button"
       tabIndex={0}
       data-detail-object-id={plan.id}
-      data-detail-object-type="taskplan"
+      data-detail-object-type={planType}
       onClick={open}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -920,8 +963,8 @@ function WorkAreaPlanRow({
       <div className="flex min-w-0 items-start gap-3">
         <div className="min-w-0 flex-1">
           <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${toneClass.titleHover}`}>
-            <PriorityIcon source={plan} type="taskplan" locale={locale} size="sm" />
-            <ObjectTypeIcon type="taskplan" size={12} className="shrink-0" />
+            <PriorityIcon source={plan} type={planType} locale={locale} size="sm" />
+            <ObjectTypeIcon type={planType} size={12} className="shrink-0" />
             <span className="min-w-0 truncate">{getLocalizedTitle(plan, locale)}</span>
           </span>
           <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -1081,6 +1124,9 @@ function getMaterialLabel(fieldKey: string, locale: string) {
     related_adrs: { zh: '决策', en: 'ADRs' },
     related_memos: { zh: '备忘', en: 'Memos' },
     related_pitfalls: { zh: '踩坑经验', en: 'Pitfalls' },
+    related_changes: { zh: '变更', en: 'Changes' },
+    related_workplans: { zh: '工作计划', en: 'Work Plans' },
+    aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
   };
   const entry = labels[fieldKey];
   if (!entry) return getFieldLabel(fieldKey, locale);
@@ -1127,6 +1173,170 @@ function getChecklistProgress(value: unknown) {
     total: items.length,
     complete: items.length > 0 && done === items.length,
   };
+}
+
+export function WorkPlanReadingLayout({
+  obj,
+  summary,
+  loading,
+  locale,
+  getStatus,
+}: {
+  obj: Record<string, unknown>;
+  summary: ObjectItem | null;
+  loading: boolean;
+  locale: string;
+  getStatus: (status: string) => string;
+}) {
+  const { t } = useI18n();
+  const executionItems = summary?.executionItems ?? [];
+  const relatedDocs = ((obj.aggregated_related_docs as string[] | undefined) ?? (obj.related_docs as string[] | undefined)) || [];
+  const relatedAdrs = ((obj.aggregated_related_adrs as string[] | undefined) ?? (obj.related_adrs as string[] | undefined)) || [];
+  const relatedMemos = ((obj.aggregated_related_memos as string[] | undefined) ?? (obj.related_memos as string[] | undefined)) || [];
+  const relatedPitfalls = ((obj.aggregated_related_pitfalls as string[] | undefined) ?? (obj.related_pitfalls as string[] | undefined)) || [];
+  const relatedChanges = ((obj.aggregated_related_changes as string[] | undefined) ?? (obj.related_changes as string[] | undefined)) || [];
+  const executionRefs = (obj.aggregated_execution_refs as string[] | undefined) || [];
+  const hidden = new Set([
+    ...META_KEYS,
+    'workarea',
+    'priority',
+    'description',
+    'success_criteria',
+    'source',
+    'orchestration',
+    'verification_evidence',
+    'closure_evidence',
+    'review_requested_at',
+    'closed_at',
+    'related_docs',
+    'related_adrs',
+    'related_memos',
+    'related_pitfalls',
+    'related_workplans',
+    'related_changes',
+    'aggregated_execution_refs',
+    'aggregated_related_docs',
+    'aggregated_related_adrs',
+    'aggregated_related_memos',
+    'aggregated_related_pitfalls',
+    'aggregated_related_changes',
+  ]);
+  const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && hasDetailContent(value));
+
+  return (
+    <div className="mb-6 flex flex-col gap-5">
+      <TaskSection title={t('objectDetail.workplanExecution')} tone="default">
+        {loading ? (
+          <LoadingHint text={t('objectDetail.tasksLoading')} />
+        ) : executionItems.length > 0 ? (
+          <div className="divide-y divide-ldvh-border/60 rounded-md border border-ldvh-border bg-ldvh-bg p-2">
+            {executionItems.map((item) => (
+              <ExecutionItemRow
+                key={item.id}
+                item={item}
+                locale={locale}
+                getStatus={getStatus}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyHint text={t('objectList.noExecutionItems')} />
+        )}
+      </TaskSection>
+
+      <TaskSection title={getFieldLabel('success_criteria', locale)} tone="checklist">
+        {hasDetailContent(obj.success_criteria) ? <ChecklistCard value={String(obj.success_criteria)} /> : <EmptyHint text={t('objectDetail.noSuccessCriteria')} />}
+      </TaskSection>
+      <TaskSection title={getFieldLabel('verification_evidence', locale)} tone="evidence">
+        {hasDetailContent(obj.verification_evidence) ? <EvidenceBlock value={String(obj.verification_evidence)} embedded /> : <EmptyHint text={t('objectDetail.noVerificationEvidence')} />}
+      </TaskSection>
+      <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
+        {hasDetailContent(obj.closure_evidence) ? <EvidenceBlock value={String(obj.closure_evidence)} embedded /> : <EmptyHint text={t('objectDetail.noClosureEvidenceForPlan')} />}
+      </TaskSection>
+
+      <DetailNarrativeSection title={t('objectDetail.workareaGoal')} value={obj.description} />
+      <DetailObjectReferenceSection
+        title={t('objectDetail.parentWorkArea')}
+        item={summary?.workareaSummary}
+        fallbackId={typeof obj.workarea === 'string' ? obj.workarea : undefined}
+        objectType="workarea"
+        locale={locale}
+      />
+      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
+      <DetailMaterialSection fieldKey="related_workplans" value={obj.related_workplans} locale={locale} />
+      <DetailMaterialSection fieldKey="related_docs" value={relatedDocs} locale={locale} />
+      <DetailMaterialSection fieldKey="related_adrs" value={relatedAdrs} locale={locale} />
+      <DetailMaterialSection fieldKey="related_memos" value={relatedMemos} locale={locale} />
+      <DetailMaterialSection fieldKey="related_pitfalls" value={relatedPitfalls} locale={locale} />
+      <DetailMaterialSection fieldKey="related_changes" value={relatedChanges} locale={locale} />
+      <DetailMaterialSection fieldKey="aggregated_execution_refs" value={executionRefs} locale={locale} />
+
+      {otherEntries.length > 0 && (
+        <TaskSection title={t('objectDetail.otherFields')} tone="default">
+          <div className="flex flex-col gap-3">
+            {otherEntries.map(([key, value]) => (
+              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType="workplan" />
+            ))}
+          </div>
+        </TaskSection>
+      )}
+    </div>
+  );
+}
+
+function ExecutionItemRow({
+  item,
+  locale,
+  getStatus,
+}: {
+  item: RelatedObjectSummary;
+  locale: string;
+  getStatus: (status: string) => string;
+}) {
+  const label = getObjectStatusLocale('workplan', item.status, locale) || getStatus(item.status);
+  const toneClass = item.status === 'blocked'
+    ? 'border-amber-500/30 bg-amber-500/5'
+    : item.status === 'done'
+      ? 'border-emerald-500/25 bg-emerald-500/5'
+      : item.status === 'skipped'
+        ? 'border-ldvh-border bg-ldvh-bg/70'
+        : 'border-sky-500/25 bg-sky-500/5';
+
+  return (
+    <div className={`my-1 rounded-md border px-3 py-2.5 ${toneClass}`}>
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <ObjectTypeIcon type="workplan" size={13} className="shrink-0 text-sky-400" />
+            <span className="ldvh-body min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
+          </div>
+          <div className="mt-0.5 flex min-w-0 flex-wrap gap-x-3 gap-y-1">
+            <span className="ldvh-meta-muted">{item.role || item.id}</span>
+            {item.mode && <span className="ldvh-caption">{item.mode}</span>}
+          </div>
+        </div>
+        <StatusBadge status={item.status} statusLabel={label} size="sm" />
+      </div>
+      {item.expectedOutput && (
+        <p className="ldvh-body-muted mt-2 border-l-2 border-ldvh-border/50 pl-2">{item.expectedOutput}</p>
+      )}
+      {item.resultSummary && (
+        <p className="ldvh-body mt-2 border-l-2 border-emerald-500/40 pl-2">{item.resultSummary}</p>
+      )}
+      {item.blockingReason && (
+        <p className="ldvh-body mt-2 border-l-2 border-amber-500/60 pl-2 text-amber-300">{item.blockingReason}</p>
+      )}
+      {(item.inputRefs?.length || item.evidenceRefs?.length) && (
+        <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
+          {[...(item.inputRefs ?? []), ...(item.evidenceRefs ?? [])].map((ref) => (
+            <span key={ref} className="ldvh-chip max-w-full truncate rounded-md border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-secondary">
+              {ref}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function TaskPlanReadingLayout({

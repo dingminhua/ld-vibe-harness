@@ -7,6 +7,7 @@ export const SIGNAL_FIELDS: SignalField[] = ['priority', 'importance', 'repeatab
 
 const SIGNAL_FIELDS_BY_TYPE: Record<string, SignalField[]> = {
   taskplan: ['priority'],
+  workplan: ['priority'],
   memo: ['priority'],
   pitfall: ['repeatability'],
 };
@@ -131,7 +132,7 @@ export function getSignalText(field: string, value: unknown, locale: string): st
 }
 
 export function getObjectPriority(source: ObjectSignalSource, type?: SignalObjectType): string | null {
-  if (type !== 'taskplan' && type !== 'memo') return null;
+  if (type !== 'workplan' && type !== 'taskplan' && type !== 'memo') return null;
   return normalizeSignalValue(source.priority);
 }
 

@@ -147,6 +147,7 @@ function WorkAreaPlanRow({
 }) {
   const toneClass = workAreaSectionToneClass[tone];
   const tasks = item.tasks ?? [];
+  const planType = item.type || 'taskplan';
 
   return (
     <div
@@ -159,8 +160,8 @@ function WorkAreaPlanRow({
       <div className="flex min-w-0 items-center gap-2">
         <div className="min-w-0 flex-1">
           <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${toneClass.hoverText}`}>
-            <PriorityIcon source={item} type="taskplan" locale={locale} size="sm" />
-            <ObjectTypeIcon type="taskplan" size={12} className="shrink-0" />
+            <PriorityIcon source={item} type={planType} locale={locale} size="sm" />
+            <ObjectTypeIcon type={planType} size={12} className="shrink-0" />
             <span className="min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
           </span>
           <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
@@ -462,6 +463,98 @@ export default function ObjectList() {
               )}
             </>
           )}
+        </ObjectCardFrame>
+      );
+    }
+
+    if (currentType === 'workplan') {
+      const executionItems = obj.executionItems ?? [];
+      const visibleExecutionItems = executionItems.slice(0, 8);
+      const moreCount = Math.max(0, executionItems.length - visibleExecutionItems.length);
+      const needsCloseDecision = obj.status === 'review_needed';
+      const isClosedPlan = obj.status === 'closed';
+      const successCriteriaState: PlanRecordState = obj.hasSuccessCriteria ? 'recorded' : 'missing';
+      const reviewRequestedState: PlanRecordState = obj.hasReviewRequestedAt ? 'recorded' : 'missing';
+      const verificationEvidenceState: PlanRecordState = obj.hasVerificationEvidence ? 'recorded' : 'missing';
+      const closureEvidenceState: PlanRecordState = obj.hasClosureEvidence ? 'recorded' : 'missing';
+      const closedAtState: PlanRecordState = obj.hasClosedAt ? 'recorded' : 'missing';
+      const closeDecisionFields = [
+        { label: t('objectList.successCriteria'), state: successCriteriaState },
+        { label: t('objectList.reviewRequestedAt'), state: reviewRequestedState },
+        { label: t('objectList.verificationEvidence'), state: verificationEvidenceState },
+        { label: t('objectList.closureEvidence'), state: closureEvidenceState },
+      ];
+      const closedIntegrityFields = [...closeDecisionFields, { label: t('objectList.closedAt'), state: closedAtState }];
+      const hasClosedIntegrityIssue = isClosedPlan && closedIntegrityFields.some((field) => field.state === 'missing');
+      const shouldShowCloseDecision = needsCloseDecision || hasClosedIntegrityIssue;
+      const closeDecisionTitle = hasClosedIntegrityIssue && !needsCloseDecision
+        ? t('objectList.closureIssue')
+        : t('objectList.closeDecision');
+      const visibleCloseFields = isClosedPlan ? closedIntegrityFields : closeDecisionFields;
+
+      return (
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
+          {shouldShowCloseDecision && (
+            <div
+              onClick={(event) => event.stopPropagation()}
+              className={`min-w-0 cursor-default rounded-md border p-3 ${
+              hasClosedIntegrityIssue
+                ? 'border-red-500/30 bg-red-500/5'
+                : 'border-sky-500/25 bg-sky-500/5'
+            }`}
+            >
+              <div className="mb-2 flex min-w-0 items-center gap-1.5">
+                <ClipboardCheck size={13} className={`shrink-0 ${hasClosedIntegrityIssue ? 'text-red-400' : 'text-sky-400'}`} />
+                <span className="ldvh-caption-strong min-w-0 truncate">{closeDecisionTitle}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {visibleCloseFields.map((field) => (
+                  <PlanRecordItem key={field.label} label={field.label} state={field.state} t={t} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div
+            onClick={(event) => event.stopPropagation()}
+            className="min-w-0 cursor-default rounded-md border border-ldvh-border bg-ldvh-bg p-3"
+          >
+            <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
+              <span className="ldvh-caption-strong inline-flex min-w-0 items-center gap-1.5 truncate">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" aria-hidden="true" />
+                {t('objectList.planExecutionItems')}
+              </span>
+              {executionItems.length > 0 && (
+                <span className="ldvh-caption shrink-0 text-ldvh-text-secondary">
+                  {obj.executionItemDone ?? 0}/{obj.executionItemTotal ?? executionItems.length}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 divide-y divide-ldvh-border/60">
+              {visibleExecutionItems.length > 0 ? (
+                visibleExecutionItems.map((item) => (
+                  <div key={item.id} className="flex min-w-0 items-center gap-2 py-2">
+                    <ObjectTypeIcon type="workplan" size={12} className="shrink-0 text-sky-400" />
+                    <div className="min-w-0 flex-1">
+                      <span className="ldvh-body block min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
+                      <span className="ldvh-meta-muted block min-w-0 truncate">{item.role || item.id}</span>
+                    </div>
+                    {item.blockingReason && (
+                      <CircleAlert size={13} className="shrink-0 text-amber-400" />
+                    )}
+                    <StatusBadge status={item.status} statusLabel={getObjectStatusLocale('workplan', item.status, locale)} size="sm" />
+                  </div>
+                ))
+              ) : (
+                <p className="ldvh-body-muted rounded-md border border-dashed border-ldvh-border bg-ldvh-bg px-3 py-4 text-center">
+                  {t('objectList.noExecutionItems')}
+                </p>
+              )}
+            </div>
+            {moreCount > 0 && (
+              <span className="ldvh-caption mt-2 block">{t('objectList.moreExecutionItems', { count: String(moreCount) })}</span>
+            )}
+          </div>
         </ObjectCardFrame>
       );
     }

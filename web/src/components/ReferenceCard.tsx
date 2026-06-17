@@ -14,6 +14,7 @@ import { ObjectTypeIcon } from '@/components/SemanticIcon';
 /** 对象类型中英映射（与 ObjectDetail 页面保持一致） */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '工作域', en: 'Work Area' },
+  workplan: { zh: '工作计划', en: 'Work Plan' },
   taskplan: { zh: '任务计划', en: 'Task Plan' },
   task: { zh: '任务', en: 'Task' },
   subtask: { zh: '子任务', en: 'Subtask' },

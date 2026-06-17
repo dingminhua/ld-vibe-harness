@@ -35,6 +35,13 @@ interface RelatedObjectSummary {
   blockedBy?: string[]
   openBlockers?: RelatedObjectSummary[]
   subtasks?: RelatedObjectSummary[]
+  role?: string
+  mode?: string
+  expectedOutput?: string
+  resultSummary?: string
+  blockingReason?: string
+  inputRefs?: string[]
+  evidenceRefs?: string[]
 }
 
 interface RelatedPlanSummary extends RelatedObjectSummary {
@@ -46,9 +53,16 @@ interface RelatedPlanSummary extends RelatedObjectSummary {
   taskBlocked: number
   taskRisk: number
   tasks: RelatedObjectSummary[]
+  executionItems?: RelatedObjectSummary[]
+  executionItemTotal?: number
+  executionItemDone?: number
+  executionItemBlocked?: number
+  executionItemOpen?: number
   hasSuccessCriteria: boolean
   hasReviewRequestedAt: boolean
   hasCompletionEvidence: boolean
+  hasVerificationEvidence?: boolean
+  hasClosureEvidence?: boolean
   hasClosedAt: boolean
 }
 
@@ -164,6 +178,29 @@ function toSubtaskSummary(item: ListedObject): RelatedObjectSummary {
   return toBlockedSummary(item, 'subtask')
 }
 
+function toExecutionItemSummary(value: unknown, plan: ListedObject, index: number): RelatedObjectSummary | null {
+  if (!isRecord(value)) return null
+  const id = toStringValue(value.id) || `execution-item-${index + 1}`
+  const status = toStringValue(value.status, 'unknown')
+  const title = toStringValue(value.title, id)
+
+  return {
+    id,
+    type: 'execution_item',
+    status,
+    title,
+    path: plan.path,
+    updated: plan.updated,
+    role: toStringValue(value.role) || undefined,
+    mode: toStringValue(value.mode) || undefined,
+    expectedOutput: toStringValue(value.expected_output) || undefined,
+    resultSummary: toStringValue(value.result_summary) || undefined,
+    blockingReason: toStringValue(value.blocking_reason) || undefined,
+    inputRefs: toStringArray(value.input_refs),
+    evidenceRefs: toStringArray(value.evidence_refs),
+  }
+}
+
 function toMissingRelatedSummary(id: string, type: 'task' | 'subtask'): RelatedObjectSummary {
   return {
     id,
@@ -217,6 +254,10 @@ function countMatching(items: Array<{ status: string }>, statuses: Set<string>):
   return items.filter((item) => statuses.has(item.status)).length
 }
 
+function countOpenExecutionItems(items: Array<{ status: string }>): number {
+  return items.filter((item) => item.status === 'pending' || item.status === 'in_progress' || item.status === 'blocked').length
+}
+
 function sortRelatedObjects<T extends { status: string; updated: string; id: string }>(items: T[]): T[] {
   return [...items].sort((a, b) => {
     const statusDelta = (STATUS_PRIORITY[a.status] ?? 50) - (STATUS_PRIORITY[b.status] ?? 50)
@@ -267,6 +308,38 @@ export async function buildPlanSummaries(planItems: ListedObject[], baseDir?: st
 
   return planItems.map((item) => {
     const data = readFactData(item.path)
+    if (item.type === 'workplan' || data.type === 'workplan') {
+      const orchestration = isRecord(data.orchestration) ? data.orchestration : {}
+      const executionItems = Array.isArray(orchestration.execution_items)
+        ? orchestration.execution_items
+          .map((executionItem, index) => toExecutionItemSummary(executionItem, item, index))
+          .filter((executionItem): executionItem is RelatedObjectSummary => Boolean(executionItem))
+        : []
+
+      return {
+        ...toRelatedSummary(item, 'workplan'),
+        workarea: toStringValue(data.workarea) || undefined,
+        taskTotal: 0,
+        taskClosed: 0,
+        taskReviewNeeded: 0,
+        taskActive: 0,
+        taskBlocked: 0,
+        taskRisk: 0,
+        tasks: [],
+        executionItems: sortRelatedObjects(executionItems),
+        executionItemTotal: executionItems.length,
+        executionItemDone: executionItems.filter((executionItem) => executionItem.status === 'done').length,
+        executionItemBlocked: executionItems.filter((executionItem) => executionItem.status === 'blocked').length,
+        executionItemOpen: countOpenExecutionItems(executionItems),
+        hasSuccessCriteria: hasContent(data.success_criteria),
+        hasReviewRequestedAt: hasContent(data.review_requested_at),
+        hasCompletionEvidence: false,
+        hasVerificationEvidence: hasContent(data.verification_evidence),
+        hasClosureEvidence: hasContent(data.closure_evidence),
+        hasClosedAt: hasContent(data.closed_at),
+      }
+    }
+
     const taskIds = toStringArray(data.tasks)
     const tasks = enrichBlockers(taskIds.map((taskId) => {
       const taskItem = tasksById.get(taskId)
@@ -298,8 +371,11 @@ export async function buildPlanSummaries(planItems: ListedObject[], baseDir?: st
 }
 
 async function enrichWorkareas(items: ListedObject[]): Promise<ListedObject[]> {
-  const allPlanItems = await listObjectSummaries('taskplan')
-  const plans = await buildPlanSummaries(allPlanItems)
+  const [workPlanItems, taskPlanItems] = await Promise.all([
+    listObjectSummaries('workplan'),
+    listObjectSummaries('taskplan'),
+  ])
+  const plans = await buildPlanSummaries([...workPlanItems, ...taskPlanItems])
   const plansByWorkarea = new Map<string, RelatedPlanSummary[]>()
 
   for (const plan of plans) {
@@ -350,6 +426,35 @@ async function enrichTaskPlans(items: ListedObject[]): Promise<ListedObject[]> {
       hasCompletionEvidence: summary.hasCompletionEvidence,
       hasClosedAt: summary.hasClosedAt,
       taskByStatus: countByStatus(summary.tasks),
+    }
+  })
+}
+
+async function enrichWorkPlans(items: ListedObject[]): Promise<ListedObject[]> {
+  const planSummaries = await buildPlanSummaries(items)
+  const summariesById = new Map(planSummaries.map((plan) => [plan.id, plan]))
+  const workareaItems = await listObjectSummaries('workarea')
+  const workareasById = new Map(workareaItems.map((item) => [item.id, item]))
+
+  return items.map((item) => {
+    const summary = summariesById.get(item.id)
+    if (!summary) return item
+    const workarea = summary.workarea ? workareasById.get(summary.workarea) : undefined
+    return {
+      ...item,
+      workarea: summary.workarea,
+      workareaSummary: workarea ? toRelatedSummary(workarea, 'workarea') : undefined,
+      executionItems: summary.executionItems ?? [],
+      executionItemTotal: summary.executionItemTotal ?? 0,
+      executionItemDone: summary.executionItemDone ?? 0,
+      executionItemBlocked: summary.executionItemBlocked ?? 0,
+      executionItemOpen: summary.executionItemOpen ?? 0,
+      hasSuccessCriteria: summary.hasSuccessCriteria,
+      hasReviewRequestedAt: summary.hasReviewRequestedAt,
+      hasVerificationEvidence: summary.hasVerificationEvidence,
+      hasClosureEvidence: summary.hasClosureEvidence,
+      hasClosedAt: summary.hasClosedAt,
+      executionItemByStatus: countByStatus(summary.executionItems ?? []),
     }
   })
 }
@@ -410,6 +515,9 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   }
   if (isRecord(result.data) && type === 'taskplan') {
     result.data.items = await enrichTaskPlans(items)
+  }
+  if (isRecord(result.data) && type === 'workplan') {
+    result.data.items = await enrichWorkPlans(items)
   }
   if (isRecord(result.data) && type === 'adr') {
     result.data.items = await enrichAdrs(items)
@@ -499,6 +607,37 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     result.data.aggregated_related_memos = [...relatedMemosSet]
     result.data.aggregated_related_pitfalls = [...relatedPitfallsSet]
     result.data.aggregated_related_changes = [...relatedChangesSet]
+  }
+
+  // WorkPlan 派生阅读材料：计划自身材料 + execution_items 的输入和证据引用。
+  if (type === 'workplan' && result.data) {
+    const relatedDocsSet = new Set<string>()
+    const relatedAdrsSet = new Set<string>()
+    const relatedMemosSet = new Set<string>()
+    const relatedPitfallsSet = new Set<string>()
+    const relatedChangesSet = new Set<string>()
+    const executionRefsSet = new Set<string>()
+    const orchestration = isRecord(result.data.orchestration) ? result.data.orchestration : {}
+    const executionItems = Array.isArray(orchestration.execution_items) ? orchestration.execution_items : []
+
+    addStringArray(relatedDocsSet, result.data.related_docs)
+    addStringArray(relatedAdrsSet, result.data.related_adrs)
+    addStringArray(relatedMemosSet, result.data.related_memos)
+    addStringArray(relatedPitfallsSet, result.data.related_pitfalls)
+    addStringArray(relatedChangesSet, result.data.related_changes)
+
+    for (const executionItem of executionItems) {
+      if (!isRecord(executionItem)) continue
+      addStringArray(executionRefsSet, executionItem.input_refs)
+      addStringArray(executionRefsSet, executionItem.evidence_refs)
+    }
+
+    result.data.aggregated_related_docs = [...relatedDocsSet]
+    result.data.aggregated_related_adrs = [...relatedAdrsSet]
+    result.data.aggregated_related_memos = [...relatedMemosSet]
+    result.data.aggregated_related_pitfalls = [...relatedPitfallsSet]
+    result.data.aggregated_related_changes = [...relatedChangesSet]
+    result.data.aggregated_execution_refs = [...executionRefsSet]
   }
 
   res.json(result)

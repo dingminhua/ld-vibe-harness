@@ -21,7 +21,7 @@ export const EVIDENCE_FIELDS = ['closure_evidence', 'verification_evidence', 've
 
 /** Object ID reference fields render through ReferenceCard when values look like LDVH object IDs. */
 export const REFERENCE_FIELDS = [
-  'blocked_by', 'workarea', 'taskplan', 'task', 'tasks', 'related_workareas',
+  'blocked_by', 'workarea', 'workplan', 'taskplan', 'task', 'tasks', 'related_workareas',
   'related_workplans', 'related_taskplans', 'related_tasks', 'related_subtasks', 'related_adrs', 'related_memos', 'related_pitfalls',
   'related_studies', 'related_profiles', 'source_tasks', 'source_memos',
   'superseded_by', 'resolved_to',
@@ -70,5 +70,5 @@ export function hasChecklist(value: string) {
 export function isObjectRef(refId: string) {
   const match = refId.match(/^([a-z]+)-\d+$/);
   if (!match) return false;
-  return ['workarea', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo', 'study', 'profile'].includes(match[1]);
+  return ['workarea', 'workplan', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo', 'study', 'profile'].includes(match[1]);
 }

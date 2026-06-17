@@ -5,6 +5,8 @@ import { getObjectStatusLocale } from '@/i18n/locales';
 
 const STATUS_FILTER_ORDER = [
   'active',
+  'in_progress',
+  'blocked',
   'executing',
   'review_needed',
   'verifying',
@@ -14,6 +16,8 @@ const STATUS_FILTER_ORDER = [
   'proposed',
   'accepted',
   'closed',
+  'done',
+  'skipped',
   'resolved',
   'discarded',
   'archived',
@@ -27,6 +31,7 @@ const statusOrderIndex = new Map(STATUS_FILTER_ORDER.map((status, index) => [sta
 
 const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   workarea: ['active', 'archived'],
+  workplan: ['draft', 'active', 'review_needed', 'closed'],
   taskplan: ['active', 'review_needed', 'closed'],
   task: ['executing', 'planned', 'review_needed', 'closed'],
   subtask: ['planned', 'review_needed', 'closed'],

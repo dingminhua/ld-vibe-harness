@@ -4,6 +4,7 @@
 
 export const TYPE_COLORS: Record<string, string> = {
   workarea: '#3b82f6',  // blue
+  workplan: '#0ea5e9',  // sky
   taskplan: '#14b8a6',  // teal
   task: '#22c55e',      // green
   subtask: '#84cc16',   // lime

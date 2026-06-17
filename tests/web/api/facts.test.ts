@@ -28,6 +28,13 @@ const FIXTURE_ALLOWED_FIELDS: Record<string, Set<string>> = {
     'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
     'review_requested_at', 'completion_evidence', 'closed_at',
   ]),
+  workplan: new Set([
+    'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
+    'workarea', 'priority', 'description', 'success_criteria', 'source', 'orchestration',
+    'verification_evidence', 'closure_evidence', 'review_requested_at', 'closed_at',
+    'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
+    'related_workplans', 'related_changes',
+  ]),
   task: new Set([
     'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
     'taskplan', 'description', 'source', 'blocked_by', 'acceptance', 'verification',
@@ -58,6 +65,7 @@ const FIXTURE_ALLOWED_FIELDS: Record<string, Set<string>> = {
 const FIXTURE_REQUIRED_FIELDS: Record<string, string[]> = {
   workarea: ['id', 'type', 'title', 'status', 'created', 'updated', 'description', 'source'],
   taskplan: ['id', 'type', 'title', 'status', 'created', 'updated', 'workarea', 'priority', 'description', 'success_criteria', 'source', 'tasks'],
+  workplan: ['id', 'type', 'title', 'status', 'created', 'updated', 'workarea', 'priority', 'description', 'success_criteria', 'source', 'orchestration'],
   task: ['id', 'type', 'title', 'status', 'created', 'updated', 'taskplan', 'description', 'source', 'acceptance'],
   subtask: ['id', 'type', 'title', 'status', 'created', 'updated', 'task', 'description', 'source', 'acceptance'],
   memo: ['id', 'type', 'title', 'status', 'created', 'updated', 'description', 'source', 'priority'],
@@ -114,7 +122,7 @@ function resolveFixturePath(reference: string): string {
 }
 
 function loadFixtureRecords(): FixtureRecord[] {
-  const files = ['workareas', 'taskplans', 'tasks', 'subtasks', 'adrs', 'memos', 'pitfalls', 'studies']
+  const files = ['workareas', 'workplans', 'taskplans', 'tasks', 'subtasks', 'adrs', 'memos', 'pitfalls', 'studies']
     .flatMap((dir) => listYamlFiles(path.join(fixtureRoot, 'ldvh-base', dir)))
 
   return files.flatMap((file) => {
@@ -139,7 +147,7 @@ function assertFixtureConformsToSpecs() {
     if (id) byId.set(id, record)
   }
 
-  const mainRecords = records.filter((record) => ['workarea', 'taskplan', 'task', 'subtask', 'memo', 'study'].includes(String(record.obj.type ?? '')))
+  const mainRecords = records.filter((record) => ['workarea', 'workplan', 'taskplan', 'task', 'subtask', 'memo', 'study'].includes(String(record.obj.type ?? '')))
   const tasks = mainRecords.filter((record) => record.obj.type === 'task')
   const subtasks = mainRecords.filter((record) => record.obj.type === 'subtask')
   const subtasksByTask = new Map<string, FixtureRecord[]>()
@@ -176,6 +184,63 @@ function assertFixtureConformsToSpecs() {
       }
       if (obj.status !== 'archived' && !isBlank(obj.archive_reason)) {
         issues.push(`${relativeFile} (${id}): archive_reason is only valid when status is archived`)
+      }
+    }
+
+    if (type === 'workplan') {
+      const workarea = byId.get(String(obj.workarea ?? ''))
+      if (!workarea || workarea.obj.type !== 'workarea') {
+        issues.push(`${relativeFile} (${id}): workarea reference does not exist`)
+      }
+      if (!/^P[0-3]$/.test(String(obj.priority ?? ''))) {
+        issues.push(`${relativeFile} (${id}): priority must be P0-P3`)
+      }
+      if (!isBlank(obj.tasks) || !isBlank(obj.completion_evidence)) {
+        issues.push(`${relativeFile} (${id}): WorkPlan must not carry legacy tasks or completion_evidence`)
+      }
+
+      const orchestration = obj.orchestration && typeof obj.orchestration === 'object' && !Array.isArray(obj.orchestration)
+        ? obj.orchestration as Record<string, unknown>
+        : null
+      if (!orchestration) {
+        issues.push(`${relativeFile} (${id}): orchestration must be an object`)
+      } else {
+        const executionItems = Array.isArray(orchestration.execution_items) ? orchestration.execution_items : []
+        if (['active', 'review_needed', 'closed'].includes(String(obj.status)) && executionItems.length === 0) {
+          issues.push(`${relativeFile} (${id}): ${String(obj.status)} WorkPlan requires execution_items`)
+        }
+        for (const [index, item] of executionItems.entries()) {
+          if (!item || typeof item !== 'object' || Array.isArray(item)) {
+            issues.push(`${relativeFile} (${id}): execution item ${index + 1} must be an object`)
+            continue
+          }
+          const executionItem = item as Record<string, unknown>
+          const missingExecutionFields = ['id', 'title', 'role', 'mode', 'input_refs', 'expected_output', 'status']
+            .filter((field) => isBlank(executionItem[field]))
+          if (missingExecutionFields.length > 0) {
+            issues.push(`${relativeFile} (${id}): execution item ${index + 1} missing ${missingExecutionFields.join(', ')}`)
+          }
+          if (!['pending', 'in_progress', 'blocked', 'done', 'skipped'].includes(String(executionItem.status ?? ''))) {
+            issues.push(`${relativeFile} (${id}): execution item ${index + 1} has invalid status`)
+          }
+          if (executionItem.status === 'blocked' && isBlank(executionItem.blocking_reason)) {
+            issues.push(`${relativeFile} (${id}): blocked execution item ${String(executionItem.id ?? index + 1)} requires blocking_reason`)
+          }
+          if ((executionItem.status === 'done' || executionItem.status === 'skipped') && isBlank(executionItem.result_summary)) {
+            issues.push(`${relativeFile} (${id}): ${String(executionItem.status)} execution item ${String(executionItem.id ?? index + 1)} requires result_summary`)
+          }
+        }
+      }
+
+      if (PLAN_CLOSE_REVIEW_STATUSES.has(String(obj.status))) {
+        const closeFields = ['review_requested_at', 'verification_evidence', 'closure_evidence']
+        const missingCloseFields = closeFields.filter((field) => isBlank(obj[field]))
+        if (missingCloseFields.length > 0) {
+          issues.push(`${relativeFile} (${id}): ${String(obj.status)} WorkPlan requires ${missingCloseFields.join(', ')}`)
+        }
+      }
+      if (obj.status === 'closed' && isBlank(obj.closed_at)) {
+        issues.push(`${relativeFile} (${id}): closed WorkPlan requires closed_at`)
       }
     }
 
@@ -403,6 +468,18 @@ async function main() {
   assert.equal(activeFixturePlans.ok, true)
   assert.equal(activeFixturePlans.data.items.length, 1)
 
+  const fixtureWorkPlans = await listObjects('workplan', fixtureRoot)
+  assert.equal(fixtureWorkPlans.ok, true)
+  assert.equal(fixtureWorkPlans.data.items.length, 1)
+  const fixtureWorkPlan = fixtureWorkPlans.data.items[0] as Record<string, unknown>
+  assert.equal(fixtureWorkPlan.id, 'workplan-9001')
+  assert.equal(fixtureWorkPlan.type, 'workplan')
+  assert.deepEqual(getObjectSignals(fixtureWorkPlan, 'workplan').map((signal) => signal.field), ['priority'])
+  assert.equal(getObjectPriority(fixtureWorkPlan, 'workplan'), 'P1')
+  const workPlanDetail = await showObject('workplan-9001', fixtureRoot)
+  assert.equal(workPlanDetail.ok, true)
+  assert.equal(workPlanDetail.data.type, 'workplan')
+
   const fixtureTasks = await listObjects('task', fixtureRoot)
   assert.equal(fixtureTasks.ok, true)
   assert.equal(fixtureTasks.data.items.length, 6)
@@ -444,6 +521,20 @@ async function main() {
   const closedPlan = planSummaries.find((plan) => plan.id === 'taskplan-9003')
   assert.equal(closedPlan?.tasks.length, 1)
   assert.deepEqual(new Set(closedPlan?.tasks.map((task) => task.status)), new Set(['closed']))
+
+  const workPlanSummaries = await buildPlanSummaries(fixtureWorkPlans.data.items as ListedObject[], fixtureRoot)
+  assert.equal(workPlanSummaries.length, 1)
+  assert.equal(workPlanSummaries[0].id, 'workplan-9001')
+  assert.equal(workPlanSummaries[0].type, 'workplan')
+  assert.equal(workPlanSummaries[0].workarea, 'workarea-9001')
+  assert.equal(workPlanSummaries[0].tasks.length, 0)
+  assert.equal(workPlanSummaries[0].executionItemTotal, 2)
+  assert.equal(workPlanSummaries[0].executionItemDone, 1)
+  assert.equal(workPlanSummaries[0].executionItemBlocked, 1)
+  assert.equal(workPlanSummaries[0].executionItemOpen, 1)
+  assert.equal(workPlanSummaries[0].hasVerificationEvidence, true)
+  assert.equal(workPlanSummaries[0].hasClosureEvidence, true)
+  assert.deepEqual(new Set(workPlanSummaries[0].executionItems?.map((item) => item.role)), new Set(['code', 'web']))
 
   const fixtureMemos = await listObjects('memo', fixtureRoot)
   assert.equal(fixtureMemos.ok, true)
