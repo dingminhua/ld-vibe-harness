@@ -239,15 +239,14 @@ description: |
   - Role Contract 对应专业子 Agent 的输入、权限、输出和交还边界。
   - 00 修改应把体系从“对象化任务管理”修正为“面向 AI 协作的事实源治理”。
 evolution: []
-source: ai
+source: web
 source_detail: 我发现的
 priority: P1
 resolved_to: ""
 resolved_at: ""
 discard_reason: ""
 related_workareas: []
-related_taskplans: []
-related_tasks: []
+related_workplans: []
 related_adrs:
   - adr-0010
 related_studies: []
@@ -255,6 +254,4 @@ related_docs:
   - specs/05-工作模型基础规范.md
   - specs/05.01-工作字段内容格式规范.md
   - specs/06-工作流程基础规范.md
-  - specs/21-TaskPlan-任务计划.md
-  - specs/22-Task-任务.md
-  - specs/23-SubTask-子任务.md
+  - specs/21-WorkPlan-工作计划.md

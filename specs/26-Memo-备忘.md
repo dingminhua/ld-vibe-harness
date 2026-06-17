@@ -188,7 +188,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `description` | 当前可读摘要、问题焦点和阶段性收敛方向 | string | 是 | 使用 YAML 块标量；不写完整报告正文或流水账 | Narrative | AI、Web |
 | `evolution` | 关键语义转折 | list[object] | 否 | 默认为空列表；元素至少包含 `at` 和 `summary` | Log / Narrative | AI、Code、Web |
-| `source` | 备忘来源类型 | enum | 是 | `human` 或 `ai`；Web 创建固定为 `human`，AI 创建固定为 `ai` | Reference | AI、Code、Web |
+| `source` | 备忘进入事实源的入口来源 | enum | 是 | `web` 或 `conversation`；Web 快速创建固定为 `web`，对话中由 Human 或 AI 确认记录固定为 `conversation` | Reference | AI、Code、Web |
 | `source_detail` | 来源说明、触发场景或原始输入摘要 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
 | `priority` | 优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05-工作模型基础规范.md` §7.3.1 | Reference | AI、Code、Web |
 | `resolved_to` | 分流目标对象引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}` | Reference | AI、Code、Web |
@@ -197,7 +197,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_studies` | 关联研究报告 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_taskplans` | 关联任务计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 
 字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
@@ -216,7 +216,7 @@ description: |
 evolution:
   - at: 2026-06-09
     summary: 发现错误处理章节缺失，先作为备忘保留。
-source: ai
+source: conversation
 source_detail: 执行 workplan-0003 过程中的发现
 priority: P2
 resolved_to:
@@ -227,7 +227,7 @@ discard_reason:
 related_adrs: []
 related_studies: []
 related_workareas: []
-related_taskplans: []
+related_workplans: []
 related_docs: []
 ```
 
@@ -289,7 +289,7 @@ Code 不得自行创建、分流、废弃或删除 Memo，不得绕过 Human Gat
 
 Web 可展示 Memo 状态、优先级、来源类型、来源说明、关键演变、分流目标、废弃原因和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。
 
-当前唯一允许的 Memo Web 写入是快速创建：Web 可通过 `POST /api/memos` 创建 `status: pending` 的新 Memo，并写入 `title`、`description` 和 `priority`。Web 创建时 `source` 固定写入 `human`，不得要求用户在页面上填写来源类型。该能力是 `specs/08-Web信息同步实现规范.md` §8.2 的当前唯一 Web 事实源写入白名单。
+当前唯一允许的 Memo Web 写入是快速创建：Web 可通过 `POST /api/memos` 创建 `status: pending` 的新 Memo，并写入 `title`、`description` 和 `priority`。Web 创建时 `source` 固定写入 `web`，不得要求用户在页面上填写来源类型。对话中创建或由 AI 根据对话整理的 Memo 固定写入 `conversation`。该能力是 `specs/08-Web信息同步实现规范.md` §8.2 的当前唯一 Web 事实源写入白名单。
 
 Web 不得在页面状态、缓存或数据库中维护独立 Memo 权威状态。Memo 创建后的字段编辑、状态流转、分流、废弃和删除不得通过 Web 直接执行；如未来需要开放，必须先更新 08 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 

@@ -74,7 +74,7 @@ async function testCreateMemo() {
   ) as Record<string, unknown>
   assert.equal(persisted.id, 'memo-0001')
   assert.equal(persisted.status, 'pending')
-  assert.equal(persisted.source, 'human')
+  assert.equal(persisted.source, 'web')
   assert.equal(persisted.source_detail, '')
   assert.deepEqual(persisted.evolution, [])
   assert.deepEqual(persisted.related_studies, [])

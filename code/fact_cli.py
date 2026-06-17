@@ -523,15 +523,14 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["verification"] = "## 验证计划\n\n## 验证命令\n"
     if object_type == "memo":
         data["priority"] = "P3"
-        data["source"] = "ai"
+        data["source"] = "conversation"
         data["source_detail"] = ""
         data["evolution"] = []
         data["resolved_to"] = ""
         data["resolved_at"] = ""
         data["discard_reason"] = ""
         data["related_workareas"] = []
-        data["related_taskplans"] = []
-        data["related_tasks"] = []
+        data["related_workplans"] = []
         data["related_adrs"] = []
         data["related_studies"] = []
         data["related_docs"] = []
@@ -543,8 +542,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["source_docs"] = []
         data["related_memos"] = []
         data["related_workareas"] = []
-        data["related_taskplans"] = []
-        data["related_tasks"] = []
+        data["related_workplans"] = []
         data["related_adrs"] = []
         data["related_pitfalls"] = []
         data["related_docs"] = []
@@ -1285,7 +1283,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         # 处理字符串转义：\n → 换行, \\ → 反斜杠
         value = value.replace("\\n", "\n").replace("\\\\", "\\")
         # 列表类型字段：逗号分隔
-        if key in ("related_workareas", "related_taskplans", "related_tasks", "related_adrs",
+        if key in ("related_workareas", "related_workplans", "related_taskplans", "related_tasks", "related_adrs",
                     "related_memos", "related_studies", "related_pitfalls", "related_docs",
                     "source_docs", "affected_docs", "deliverables", "tasks",
                     "blocked_by", "affects", "related_objects", "related_rules"):

@@ -10,12 +10,11 @@ description: |
   已记录为 pitfall-0002，需要后续修复：要么更新 22 §14 中的状态声明为 active，
   要么将子文档内容降级为 not-created 骨架。
 evolution: []
-source: ai
+source: conversation
 source_detail: 执行规范审查过程中的发现
-related_tasks: []
 related_adrs: []
 related_studies: []
 related_workareas: []
-related_taskplans: []
+related_workplans: []
 related_docs: []
 priority: P1

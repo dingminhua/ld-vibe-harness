@@ -7,13 +7,12 @@ updated: '2026-06-05T06:23:44.941983'
 description: |
   记录关于 LDVH 中规则应如何建立、何时进入 Rules、如何避免过度抽象并服务最近可运行闭环的待讨论问题。
 evolution: []
-source: human
+source: conversation
 source_detail: 用户提出“添加一个备忘，规则到底怎么建立合适”
-related_tasks: []
 related_adrs: []
 related_studies: []
 related_workareas: []
-related_taskplans: []
+related_workplans: []
 related_docs:
 - specs/04.03-环境入口适配与部署规范.md
 - specs/06-工作流程基础规范.md

@@ -78,8 +78,8 @@ function validatePersistedMemo(data: unknown, expectedId: string): string[] {
   if (data.status !== 'pending') {
     errors.push('status must be pending')
   }
-  if (data.source !== 'human') {
-    errors.push('source must be human for Web memo creation')
+  if (data.source !== 'web') {
+    errors.push('source must be web for Web memo creation')
   }
   if ('status_history' in data) {
     errors.push('status_history must not be written by Web memo creation')
@@ -132,15 +132,14 @@ router.post('/', (req: Request, res: Response): void => {
       updated: today,
       description: description.trim(),
       evolution: [] as Array<Record<string, string>>,
-      source: 'human',
+      source: 'web',
       source_detail: '',
       priority,
       resolved_to: '',
       resolved_at: '',
       discard_reason: '',
       related_workareas: [] as string[],
-      related_taskplans: [] as string[],
-      related_tasks: [] as string[],
+      related_workplans: [] as string[],
       related_adrs: [] as string[],
       related_studies: [] as string[],
       related_docs: [] as string[],

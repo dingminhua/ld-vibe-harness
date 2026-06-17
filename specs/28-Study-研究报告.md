@@ -167,8 +167,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `source_docs` | 输入资料、临时研究或外部资料路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_taskplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_tasks` | 关联任务 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 后续引用或承接文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -207,8 +206,7 @@ source_docs: []
 related_memos:
   - memo-0001
 related_workareas: []
-related_taskplans: []
-related_tasks: []
+related_workplans: []
 related_adrs: []
 related_pitfalls: []
 related_docs: []

@@ -17,12 +17,12 @@ export const CHECKLIST_COMPAT_FIELDS = [
 ];
 
 /** Evidence fields use the EvidenceBlock renderer. */
-export const EVIDENCE_FIELDS = ['closure_evidence', 'verification', 'completion_evidence', 'evidence'];
+export const EVIDENCE_FIELDS = ['closure_evidence', 'verification_evidence', 'verification', 'evidence'];
 
 /** Object ID reference fields render through ReferenceCard when values look like LDVH object IDs. */
 export const REFERENCE_FIELDS = [
   'blocked_by', 'workarea', 'taskplan', 'task', 'tasks', 'related_workareas',
-  'related_taskplans', 'related_tasks', 'related_subtasks', 'related_adrs', 'related_memos', 'related_pitfalls',
+  'related_workplans', 'related_taskplans', 'related_tasks', 'related_subtasks', 'related_adrs', 'related_memos', 'related_pitfalls',
   'related_studies', 'related_profiles', 'source_tasks', 'source_memos',
   'superseded_by', 'resolved_to',
 ];
@@ -37,7 +37,7 @@ export const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 
 
 /** Fields that can be folded in detail view. */
 export const COLLAPSIBLE_FIELDS = [
-  'tasks', 'related_workareas', 'related_taskplans', 'related_tasks', 'related_subtasks',
+  'tasks', 'related_workareas', 'related_workplans', 'related_taskplans', 'related_tasks', 'related_subtasks',
   'related_docs', 'related_adrs', 'related_memos', 'related_studies',
   'related_pitfalls', 'related_profiles', 'deliverables', 'affected_docs', 'related_rules', 'source_docs',
   'source_tasks', 'source_memos', 'blocked_by',

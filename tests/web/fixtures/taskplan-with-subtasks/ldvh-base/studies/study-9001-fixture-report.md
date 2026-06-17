@@ -16,10 +16,8 @@ related_memos:
   - memo-9001
 related_workareas:
   - workarea-9001
-related_taskplans:
+related_workplans:
   - taskplan-9001
-related_tasks:
-  - task-9002
 related_adrs:
   - adr-9001
 related_pitfalls: []

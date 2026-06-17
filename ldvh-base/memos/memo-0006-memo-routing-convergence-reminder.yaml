@@ -1,0 +1,36 @@
+id: memo-0006
+type: memo
+title: Memo 分流与收敛提醒机制待设计
+status: pending
+created: "2026-06-18"
+updated: "2026-06-18"
+description: |
+  Memo 中的话题可能部分已经转移、落地或形成决策，但剩余内容仍未完全收敛。需要设计一套机制提醒 AI 判断：
+
+  - 哪些内容仍应保留在 Memo pending；
+  - 哪些内容应分流到 ADR、WorkPlan、Study、Pitfall、docs 或其他事实源；
+  - 何时只更新 evolution 和关联引用，而不把 Memo 直接标记为 resolved；
+  - 何时 Memo 已被完整承接，可以填写 resolved_to / resolved_at 并转为 resolved；
+  - Code 或 Web 是否应提示“已有关联对象但 Memo 仍 pending，是否还有未收敛内容”。
+
+  当前倾向是后续形成一个 40-59 工作流程，例如 Memo 分流与收敛流程，并补充 Code warning 与 Web 分流状态提示。
+
+  后续落地拆分：
+
+  1. 新增或补充工作流程规范，定义 AI 处理 Memo 时如何判断继续 pending、追加 evolution、关联目标对象、resolved 或 discarded。
+  2. 增加 Code 检查：pending Memo 如果已经存在 related_adrs、related_workplans、related_studies 或 related_docs，但 evolution 没有说明分流/收敛状态，应给出 warning。
+  3. 增加 Web 提示：Memo 详情页应展示轻量分流状态，例如“仍待收敛”“已有相关对象，可能需要确认是否部分分流”“已分流到目标对象”。
+evolution:
+  - at: 2026-06-18
+    summary: 明确后续应拆成工作流程规范、Code warning 和 Web 分流状态提示三项落地动作。
+source: conversation
+source_detail: 用户提出“如果 memo 部分话题已经转移或者落地，需要怎么做，以及通过什么提醒 AI”
+priority: P2
+resolved_to: ""
+resolved_at: ""
+discard_reason: ""
+related_workareas: []
+related_workplans: []
+related_adrs: []
+related_studies: []
+related_docs: []

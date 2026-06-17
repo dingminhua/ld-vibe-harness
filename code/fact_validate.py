@@ -69,9 +69,9 @@ LIST_FIELDS = {
         "source_tasks", "source_memos", "related_workareas", "related_taskplans", "related_adrs",
         "related_changes", "related_docs",
     },
-    "memo": {"evolution", "related_workareas", "related_taskplans", "related_tasks", "related_adrs", "related_studies", "related_docs"},
+    "memo": {"evolution", "related_workareas", "related_workplans", "related_adrs", "related_studies", "related_docs"},
     "study": {
-        "source_docs", "related_workareas", "related_taskplans", "related_tasks", "related_adrs",
+        "source_docs", "related_workareas", "related_workplans", "related_adrs",
         "related_memos", "related_pitfalls", "related_docs",
     },
 }
@@ -741,7 +741,8 @@ def validate_subtask(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 VALID_REPEATABILITY = {"unknown", "once", "recurring"}
 VALID_PRIORITY = {"P0", "P1", "P2", "P3"}
-VALID_SOURCE = {"human", "ai"}
+VALID_MEMO_SOURCE = {"web", "conversation"}
+VALID_STUDY_SOURCE = {"human", "ai"}
 
 ID_LIST_FIELDS = {
     "related_workareas": "workarea",
@@ -778,7 +779,7 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
         issues.append(Issue(str(path), "error", "LEGACY_MEMO_FIELD", "Memo 不得维护 category；请删除该字段", field="category"))
     if "importance" in data:
         issues.append(Issue(str(path), "error", "LEGACY_MEMO_FIELD", "Memo 不得继续使用旧字段 importance；请迁移为 priority", field="importance"))
-    issues.extend(validate_enum_field(path, data, "source", VALID_SOURCE))
+    issues.extend(validate_enum_field(path, data, "source", VALID_MEMO_SOURCE))
     issues.extend(validate_enum_field(path, data, "priority", VALID_PRIORITY))
     if "evolution" in data:
         evolution = data.get("evolution")
@@ -799,7 +800,7 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 def validate_study(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "study")
-    issues.extend(validate_enum_field(path, data, "source", VALID_SOURCE))
+    issues.extend(validate_enum_field(path, data, "source", VALID_STUDY_SOURCE))
     if is_empty(data.get("report_body")):
         issues.append(Issue(str(path), "error", "MISSING_REPORT_BODY", "Study Markdown 必须包含非空报告正文", field="report_body"))
     if data.get("status") == "superseded" and is_empty(data.get("superseded_by")):

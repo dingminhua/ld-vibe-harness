@@ -43,13 +43,13 @@ const FIXTURE_ALLOWED_FIELDS: Record<string, Set<string>> = {
     'id', 'type', 'title', 'status', 'created', 'updated',
     'description', 'evolution', 'source', 'source_detail', 'priority',
     'resolved_to', 'resolved_at', 'discard_reason',
-    'related_tasks', 'related_adrs', 'related_studies', 'related_workareas',
-    'related_taskplans', 'related_docs',
+    'related_adrs', 'related_studies', 'related_workareas',
+    'related_workplans', 'related_docs',
   ]),
   study: new Set([
     'id', 'type', 'title', 'status', 'created', 'updated',
     'summary', 'source', 'source_detail', 'conclusion', 'source_docs',
-    'related_memos', 'related_workareas', 'related_taskplans', 'related_tasks',
+    'related_memos', 'related_workareas', 'related_workplans',
     'related_adrs', 'related_pitfalls', 'related_docs',
     'superseded_by', 'archive_reason', 'report_body',
   ]),
@@ -188,8 +188,8 @@ function assertFixtureConformsToSpecs() {
       }
     }
 
-    if (type === 'memo' && obj.source !== 'human' && obj.source !== 'ai') {
-      issues.push(`${relativeFile} (${id}): Memo source must be human or ai`)
+    if (type === 'memo' && obj.source !== 'web' && obj.source !== 'conversation') {
+      issues.push(`${relativeFile} (${id}): Memo source must be web or conversation`)
     }
 
     if (type === 'taskplan') {

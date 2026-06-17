@@ -146,7 +146,7 @@ def test_create_memo_uses_priority_not_importance(tmp_path):
     data = read_yaml(Path(result.stdout.strip()))
     assert data["status"] == "pending"
     assert data["priority"] == "P3"
-    assert data["source"] == "ai"
+    assert data["source"] == "conversation"
     assert data["evolution"] == []
     assert data["related_studies"] == []
     assert "related_changes" not in data
