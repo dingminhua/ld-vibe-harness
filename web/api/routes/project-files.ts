@@ -9,11 +9,11 @@ import { existsSync } from 'fs'
 import { lstat, readdir, readFile, stat } from 'fs/promises'
 import path from 'path'
 import yaml from 'js-yaml'
-import { LDVH_ROOT } from '../services/pytools.js'
+import { LDVH_WORKSPACE_ROOT } from '../services/pytools.js'
 
 const router = Router()
 
-const GOVERNED_CONFIG = path.join(LDVH_ROOT, 'LDVH-GOVERNED-PROJECTS.yaml')
+const GOVERNED_CONFIG = path.join(LDVH_WORKSPACE_ROOT, 'LDVH-GOVERNED-PROJECTS.yaml')
 const MAX_FILE_BYTES = 300 * 1024
 const MAX_DIRECTORY_ENTRIES = 500
 const TEXT_SAMPLE_BYTES = 8192
@@ -63,8 +63,8 @@ function isInside(basePath: string, targetPath: string): boolean {
 
 function normalizeProjectPath(rawPath: unknown): string {
   const value = String(rawPath || '').trim()
-  if (!value) return LDVH_ROOT
-  return path.resolve(path.isAbsolute(value) ? value : path.join(LDVH_ROOT, value))
+  if (!value) return LDVH_WORKSPACE_ROOT
+  return path.resolve(path.isAbsolute(value) ? value : path.join(LDVH_WORKSPACE_ROOT, value))
 }
 
 async function loadProjects(): Promise<GovernedProject[]> {
@@ -73,7 +73,7 @@ async function loadProjects(): Promise<GovernedProject[]> {
       id: 'workspace',
       name: 'Workspace',
       description: 'Current LDVH workspace',
-      path: LDVH_ROOT,
+      path: LDVH_WORKSPACE_ROOT,
     }]
   }
 
@@ -156,7 +156,7 @@ router.get('/projects', async (_req: Request, res: Response): Promise<void> => {
     const projects = await loadProjects()
     res.json({
       ok: true,
-      workspaceRoot: LDVH_ROOT,
+      workspaceRoot: LDVH_WORKSPACE_ROOT,
       projects: projects.map((project) => ({
         ...project,
         docsPath: path.join(project.path, 'docs'),

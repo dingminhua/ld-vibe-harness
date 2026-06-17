@@ -2,6 +2,7 @@
 """Specs 文档结构、引用完整性和派生索引统一检查工具。"""
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -28,6 +29,20 @@ from spec_checks import web_validate as web_validate_checks
 # ── 通用常量 ──
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+GOVERNED_PROJECTS_FILENAME = governed_projects_checks.GOVERNED_PROJECTS_FILENAME
+
+
+def default_workspace_root():
+    env_root = os.environ.get("LDVH_WORKSPACE_ROOT")
+    if env_root:
+        return Path(env_root)
+    parent_root = PROJECT_ROOT.parent
+    if (parent_root / GOVERNED_PROJECTS_FILENAME).exists():
+        return parent_root
+    return PROJECT_ROOT
+
+
+DEFAULT_WORKSPACE_ROOT = default_workspace_root()
 SPECS_DIR = PROJECT_ROOT / "specs"
 LEGACY_SPECS_DIR = PROJECT_ROOT / "docs" / "specs"
 DOCS_DIR = PROJECT_ROOT / "docs"
@@ -651,9 +666,6 @@ def human_gate_main(paths):
 # governed-projects — 工作区根目录管辖项目配置检查
 # ══════════════════════════════════════════════════════════════════════
 
-GOVERNED_PROJECTS_FILENAME = governed_projects_checks.GOVERNED_PROJECTS_FILENAME
-
-
 def governed_projects_check_root(root):
     return governed_projects_checks.check_root(root)
 
@@ -866,17 +878,17 @@ def build_parser():
 
     # ldvh-landing-check
     ldvh_landing_check_parser = subparsers.add_parser("ldvh-landing-check", help="生成 42 LDVH落地与检查派生报告。")
-    ldvh_landing_check_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="包含 LDVH-GOVERNED-PROJECTS.yaml 的工作区根目录，默认项目根。")
+    ldvh_landing_check_parser.add_argument("--workspace-root", default=str(DEFAULT_WORKSPACE_ROOT), help="包含 LDVH-GOVERNED-PROJECTS.yaml 的工作区根目录，默认自动定位。")
     ldvh_landing_check_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
     # landing-plan
     landing_plan_parser = subparsers.add_parser("landing-plan", help="生成只读 landing-plan 聚合计划视图。")
-    landing_plan_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
+    landing_plan_parser.add_argument("--workspace-root", default=str(DEFAULT_WORKSPACE_ROOT), help="工作区根目录，默认自动定位。")
     landing_plan_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
     # web-validate
     web_validate_parser = subparsers.add_parser("web-validate", help="生成 Web Validate 页面只读数据合同。")
-    web_validate_parser.add_argument("--workspace-root", default=str(PROJECT_ROOT), help="工作区根目录，默认项目根。")
+    web_validate_parser.add_argument("--workspace-root", default=str(DEFAULT_WORKSPACE_ROOT), help="工作区根目录，默认自动定位。")
     web_validate_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
     # runtime-projection
@@ -907,7 +919,7 @@ def build_parser():
 
     # governed-projects
     governed_projects_parser = subparsers.add_parser("governed-projects", help="检查工作区根目录管辖项目配置。")
-    governed_projects_parser.add_argument("--root", default=str(PROJECT_ROOT), help="工作区根目录，默认使用当前工具所在项目。")
+    governed_projects_parser.add_argument("--root", default=str(DEFAULT_WORKSPACE_ROOT), help="工作区根目录，默认自动定位。")
 
     # index
     index_parser = subparsers.add_parser("index", help="生成 specs 文档派生索引和诊断结果（03.01 规范文档剖面）。")
@@ -920,6 +932,7 @@ def build_parser():
     all_parser = subparsers.add_parser("all", help="运行所有检查（doc + refs + landing + human-gate + index）。")
     all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
     all_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录（用于 index 子命令）。")
+    all_parser.add_argument("--workspace-root", default=str(DEFAULT_WORKSPACE_ROOT), help="工作区根目录（用于 governed-projects 检查），默认自动定位。")
     all_parser.add_argument("--specs-dir", default=None, help="要生成索引的规范目录；未提供时根据 paths 推断，默认 specs。")
     all_parser.add_argument("--out", default=None, help="输出目录（用于 index 子命令）；未提供时将完整索引输出到 stdout。")
     all_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态（用于 index 子命令）。")
@@ -1014,7 +1027,7 @@ def main(argv=None):
         if field_registry_main(field_registry_paths) != 0:
             exit_code = 1
         # governed-projects
-        if governed_projects_main(args.root) != 0:
+        if governed_projects_main(args.workspace_root) != 0:
             exit_code = 1
         # index
         try:

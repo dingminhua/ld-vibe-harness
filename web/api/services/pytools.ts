@@ -12,6 +12,9 @@ const __dirname = path.dirname(__filename)
 /** LDVH 项目根目录 */
 export const LDVH_ROOT = process.env.LDVH_ROOT || path.resolve(__dirname, '../../..')
 
+/** 安装或使用 LDVH 的工作区根目录 */
+export const LDVH_WORKSPACE_ROOT = process.env.LDVH_WORKSPACE_ROOT || path.dirname(LDVH_ROOT)
+
 /** code 目录 */
 export const CODE_DIR = path.join(LDVH_ROOT, 'code')
 
