@@ -12,7 +12,7 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，由 LaoDing 基
 | 事实源 | 沉淀记忆：Git 文件事实源，不依赖模型记忆 |
 | 工具链 | 连接能力：文件读写、Shell、Git、浏览器、API |
 | 工作流 | 驱动执行：Skill、任务拆分、执行循环、验证闭环 |
-| 任务治理 | 守住交付：Task 状态机、Review Gate、Human Gate |
+| 工作计划治理 | 守住交付：WorkPlan 状态机、Review Gate、Human Gate |
 | 可视化工具 | 桥接信息：AI 优先的结构化信息，人可读可操作 |
 
 ## 闭环流转

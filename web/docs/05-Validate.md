@@ -80,7 +80,7 @@
 ## 6. 实现约束
 
 1. 不新增“立即校验”按钮，除非后端提供明确的受控执行合同。
-2. 不把派生报告当作事实源；写回只能通过后续 Task / Human Gate / Git 文件完成。
+2. 不把派生报告当作事实源；写回只能通过后续 WorkPlan / Human Gate / Git 文件完成。
 3. 不展示 raw `owner_area`、`remediation`、`writeback_targets`，必须走本地化映射。
 4. 不把校验页拆成多个路由；当前是同一路由内的双视图。
 
