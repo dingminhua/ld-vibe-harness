@@ -236,6 +236,18 @@ def test_workplan_execution_item_contract_is_checked(tmp_path):
     assert "EXECUTION_ITEM_OPEN_IN_REVIEW" in result.stdout
 
 
+def test_workplan_related_workplans_must_exist(tmp_path):
+    _, path = write_valid_workplan_tree(tmp_path)
+    text = path.read_text(encoding="utf-8").replace("related_workplans: []", "related_workplans:\n  - workplan-9999")
+    path.write_text(text, encoding="utf-8")
+
+    result = run_checker(path)
+
+    assert result.returncode == 1
+    assert "OBJECT_REFERENCE_NOT_FOUND" in result.stdout
+    assert "workplan-9999" in result.stdout
+
+
 def test_workarea_archived_requires_archive_reason(tmp_path):
     root = base_tree(tmp_path)
     path = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"

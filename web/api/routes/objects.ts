@@ -554,6 +554,15 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     res.status(404).json(result)
     return
   }
+  if (isRecord(result.data) && result.data.type !== type) {
+    res.status(404).json({
+      ok: false,
+      error: `Object not found for type ${type}: ${id}`,
+      stderr: '',
+      exitCode: 1,
+    })
+    return
+  }
 
   // TaskPlan 派生阅读材料：计划自身优先，再合并计划内 Task 的关联材料并去重。
   if (type === 'taskplan' && result.data) {

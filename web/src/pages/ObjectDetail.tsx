@@ -942,6 +942,7 @@ function WorkAreaPlanRow({
   const open = () => onOpen(plan);
   const tasks = plan.tasks ?? [];
   const planType = plan.type || 'taskplan';
+  const flowItems = planType === 'workplan' ? plan.executionItems ?? [] : tasks;
   const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === planType && panelContent.objectId === plan.id;
   const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
 
@@ -984,9 +985,9 @@ function WorkAreaPlanRow({
           />
         </div>
       </div>
-      {tasks.length > 0 && (
+      {flowItems.length > 0 && (
         <div className="min-w-0 self-stretch">
-          <TaskFlowBar tasks={tasks} t={t} getStatus={getStatus} compact />
+          <TaskFlowBar tasks={flowItems} t={t} getStatus={getStatus} compact />
         </div>
       )}
     </div>

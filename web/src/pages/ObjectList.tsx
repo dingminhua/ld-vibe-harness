@@ -148,6 +148,7 @@ function WorkAreaPlanRow({
   const toneClass = workAreaSectionToneClass[tone];
   const tasks = item.tasks ?? [];
   const planType = item.type || 'taskplan';
+  const flowItems = planType === 'workplan' ? item.executionItems ?? [] : tasks;
 
   return (
     <div
@@ -169,9 +170,9 @@ function WorkAreaPlanRow({
         <CopyPathButton path={item.path} toneClassName={toneClass.action} />
         <ArrowRight size={13} className={`shrink-0 text-ldvh-text-secondary/70 transition-all group-hover/workarea-row:translate-x-0.5 ${toneClass.hoverText}`} />
       </div>
-      {tasks.length > 0 && (
+      {flowItems.length > 0 && (
         <div className="min-w-0 self-stretch">
-          <TaskFlowBar tasks={tasks} t={t} getStatus={getStatus} compact />
+          <TaskFlowBar tasks={flowItems} t={t} getStatus={getStatus} compact />
         </div>
       )}
     </div>

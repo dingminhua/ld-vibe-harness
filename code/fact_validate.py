@@ -382,6 +382,24 @@ def validate_id_list_format(path: Path, data: dict[str, Any], field: str, object
     return issues
 
 
+def validate_id_list_references(path: Path, data: dict[str, Any], field: str, object_type: str) -> list[Issue]:
+    issues = validate_id_list_format(path, data, field, object_type)
+    items = data.get(field)
+    if not isinstance(items, list):
+        return issues
+
+    project_root = infer_project_root(path)
+    for item in items:
+        if not isinstance(item, str) or not ID_PATTERNS[object_type].match(item):
+            continue
+        ref_path, ref_data, load_issue = find_object_by_id(project_root, object_type, item)
+        if load_issue:
+            issues.append(load_issue)
+        elif ref_path is None or ref_data is None:
+            issues.append(Issue(str(path), "error", "OBJECT_REFERENCE_NOT_FOUND", f"{field} 引用的 {object_type} 不存在: {item}", field=field))
+    return issues
+
+
 def validate_any_object_id_list_format(path: Path, data: dict[str, Any], field: str) -> list[Issue]:
     items = data.get(field)
     if not isinstance(items, list):
@@ -627,7 +645,7 @@ def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
         if legacy_field in data:
             issues.append(Issue(str(path), "error", "LEGACY_WORKPLAN_FIELD", f"WorkPlan 不得继续使用旧字段: {legacy_field}", field=legacy_field))
     issues.extend(validate_single_id_reference(path, data, "workarea", "workarea"))
-    issues.extend(validate_id_list_format(path, data, "related_workplans", "workplan"))
+    issues.extend(validate_id_list_references(path, data, "related_workplans", "workplan"))
 
     related_changes = data.get("related_changes")
     if isinstance(related_changes, list):

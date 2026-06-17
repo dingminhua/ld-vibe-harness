@@ -25,6 +25,23 @@ import yaml
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
 OBJECT_TYPES = {"workarea", "workplan", "taskplan", "task", "subtask", "adr", "pitfall", "memo", "study"}
 
+
+class BlockScalarDumper(yaml.SafeDumper):
+    pass
+
+
+class LiteralString(str):
+    pass
+
+
+def _string_representer(dumper: yaml.Dumper, data: str) -> yaml.Node:
+    style = "|" if "\n" in data else None
+    return dumper.represent_scalar("tag:yaml.org,2002:str", str(data), style=style)
+
+
+BlockScalarDumper.add_representer(str, _string_representer)
+BlockScalarDumper.add_representer(LiteralString, _string_representer)
+
 LIST_SUMMARY_FIELDS = ("priority", "importance", "repeatability")
 
 ID_PATTERNS = {
@@ -252,13 +269,23 @@ def save_yaml(path: Path, data: dict) -> None:
             body = f"# {data.get('title', '研究报告')}\n\n## 研究问题\n\n待补充。"
         with open(path, "w", encoding="utf-8") as f:
             f.write("---\n")
-            yaml.dump(frontmatter, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            yaml.dump(blockify_multiline(frontmatter), f, Dumper=BlockScalarDumper, allow_unicode=True, default_flow_style=False, sort_keys=False)
             f.write("---\n\n")
             f.write(body)
             f.write("\n")
         return
     with open(path, "w", encoding="utf-8") as f:
-        yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        yaml.dump(blockify_multiline(data), f, Dumper=BlockScalarDumper, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+
+def blockify_multiline(value: Any) -> Any:
+    if isinstance(value, str) and "\n" in value:
+        return LiteralString(value)
+    if isinstance(value, dict):
+        return {key: blockify_multiline(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [blockify_multiline(item) for item in value]
+    return value
 
 
 def find_task_by_id(tasks_dir: Path, task_id: str) -> tuple[Path | None, dict[str, Any] | None]:
@@ -1350,7 +1377,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         if key in ("related_workareas", "related_workplans", "related_taskplans", "related_tasks", "related_adrs",
                     "related_memos", "related_studies", "related_pitfalls", "related_docs",
                     "source_docs", "affected_docs", "deliverables", "tasks",
-                    "blocked_by", "affects", "related_objects", "related_rules"):
+                    "blocked_by", "affects", "related_objects", "related_rules", "related_changes"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
         else:
             updates[key] = value

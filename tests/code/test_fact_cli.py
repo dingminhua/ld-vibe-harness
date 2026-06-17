@@ -136,6 +136,30 @@ def test_create_and_transition_workplan_contract(tmp_path):
     assert read_yaml(path)["closed_at"]
 
 
+def test_update_workplan_list_fields_and_block_scalars(tmp_path):
+    result = run_cli("create", "workplan", "--title", "Update WorkPlan", base_dir=str(tmp_path))
+    path = Path(result.stdout.strip())
+
+    accepted = run_cli(
+        *authorized(
+            "update",
+            str(path),
+            "--set",
+            "related_changes=abc1234,def5678",
+            "--set",
+            "verification_evidence=## 验证结果\\npassed",
+        )
+    )
+
+    assert accepted.returncode == 0, accepted.stderr
+    data = read_yaml(path)
+    assert data["related_changes"] == ["abc1234", "def5678"]
+    assert data["verification_evidence"] == "## 验证结果\npassed"
+    text = path.read_text(encoding="utf-8")
+    assert "verification_evidence: |" in text
+    assert "related_changes:\n- abc1234\n- def5678" in text
+
+
 def test_create_auto_numbering_uses_new_workarea_prefix(tmp_path):
     run_cli("create", "workarea", "--title", "First", base_dir=str(tmp_path))
     result = run_cli("create", "workarea", "--title", "Second", base_dir=str(tmp_path))
