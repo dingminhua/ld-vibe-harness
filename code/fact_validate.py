@@ -60,7 +60,7 @@ REQUIRED_FIELDS = {
     "study": ["id", "type", "title", "status", "created", "updated", "summary", "source"],
 }
 LIST_FIELDS = {
-    "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "taskplans"},
+    "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "workplans", "taskplans"},
     "workplan": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "related_workplans", "related_changes"},
     "taskplan": {"tasks", "related_adrs", "related_memos", "related_pitfalls", "related_docs"},
     "task": {"related_adrs", "blocked_by", "related_docs", "affected_docs", "deliverables"},
@@ -545,8 +545,24 @@ def validate_workarea(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "workarea")
     project_root = infer_project_root(path)
     workarea_id = data.get("id")
+    workplans = data.get("workplans")
+    if isinstance(workplans, list) and isinstance(workarea_id, str):
+        for workplan_id in workplans:
+            if not isinstance(workplan_id, str) or not ID_PATTERNS["workplan"].match(workplan_id):
+                issues.append(Issue(str(path), "error", "INVALID_WORKPLAN_REFERENCE", f"workplans 中必须使用 workplan-{{NNNN}} 格式的 WorkPlan ID: {workplan_id}", field="workplans"))
+                continue
+            workplan_path, workplan_data, load_issue = find_object_by_id(project_root, "workplan", workplan_id)
+            if load_issue:
+                issues.append(load_issue)
+                continue
+            if workplan_path is None or workplan_data is None:
+                issues.append(Issue(str(path), "error", "WORKPLAN_NOT_FOUND", f"workplans 引用的 WorkPlan 不存在: {workplan_id}", field="workplans"))
+                continue
+            if workplan_data.get("workarea") != workarea_id:
+                issues.append(Issue(str(path), "error", "WORKAREA_BACKREF_MISMATCH", f"WorkPlan 未通过 workarea 指回当前工作域: {workplan_id}", field="workplans"))
     taskplans = data.get("taskplans")
     if isinstance(taskplans, list) and isinstance(workarea_id, str):
+        issues.append(Issue(str(path), "warning", "LEGACY_WORKAREA_FIELD", "WorkArea 的 taskplans 字段已废弃；请使用 workplans", field="taskplans"))
         for taskplan_id in taskplans:
             if not isinstance(taskplan_id, str) or not ID_PATTERNS["taskplan"].match(taskplan_id):
                 issues.append(Issue(str(path), "error", "INVALID_TASKPLAN_REFERENCE", f"taskplans 中必须使用 taskplan-{{NNNN}} 格式的 TaskPlan ID: {taskplan_id}", field="taskplans"))

@@ -516,6 +516,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_adrs"] = []
         data["related_memos"] = []
         data["related_pitfalls"] = []
+        data["workplans"] = []
     if object_type == "workplan":
         data["priority"] = "P2"
         data["orchestration"] = {

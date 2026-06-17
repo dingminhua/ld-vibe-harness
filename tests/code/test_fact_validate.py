@@ -43,8 +43,6 @@ related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
-taskplans:
-  - taskplan-0001
 """,
     )
     write_yaml(
@@ -68,6 +66,8 @@ related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
+workplans:
+  - workplan-0001
 """,
     )
     write_yaml(
@@ -248,8 +248,8 @@ def test_workarea_archived_requires_archive_reason(tmp_path):
     assert "archive_reason" in result.stdout
 
 
-def test_workarea_taskplans_must_point_back_to_workarea(tmp_path):
-    root = base_tree(tmp_path)
+def test_workarea_workplans_must_point_back_to_workarea(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
     write_yaml(
         root / "ldvh-base" / "workareas" / "workarea-0002-other.yaml",
         """
@@ -265,8 +265,8 @@ related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
-taskplans:
-  - taskplan-0001
+workplans:
+  - workplan-0001
 """,
     )
 
@@ -274,6 +274,17 @@ taskplans:
 
     assert result.returncode == 1
     assert "WORKAREA_BACKREF_MISMATCH" in result.stdout
+
+
+def test_workarea_taskplans_legacy_field_warns(tmp_path):
+    root = base_tree(tmp_path)
+    path = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
+    path.write_text(path.read_text(encoding="utf-8") + "taskplans:\n  - taskplan-0001\n", encoding="utf-8")
+
+    result = run_checker(path)
+
+    assert result.returncode == 0
+    assert "LEGACY_WORKAREA_FIELD" in result.stdout
 
 
 def test_taskplan_review_needed_requires_review_fields(tmp_path):

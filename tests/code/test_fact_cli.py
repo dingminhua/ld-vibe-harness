@@ -73,6 +73,8 @@ def test_create_workarea_taskplan_task_and_subtask(tmp_path):
         assert data["id"] == f"{object_type}-0001"
         assert data["type"] == object_type
         assert data["status"] == expected_status
+        if object_type == "workarea":
+            assert data["workplans"] == []
 
     task_data = read_yaml(tmp_path / "ldvh-base" / "tasks" / "task-0001-create-task.yaml")
     assert "taskplan" in task_data

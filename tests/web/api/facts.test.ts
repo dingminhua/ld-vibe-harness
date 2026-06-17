@@ -20,6 +20,7 @@ const FIXTURE_ALLOWED_FIELDS: Record<string, Set<string>> = {
     'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
     'description', 'scope', 'constraints', 'source',
     'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
+    'workplans',
     'archive_reason',
   ]),
   taskplan: new Set([
@@ -184,6 +185,16 @@ function assertFixtureConformsToSpecs() {
       }
       if (obj.status !== 'archived' && !isBlank(obj.archive_reason)) {
         issues.push(`${relativeFile} (${id}): archive_reason is only valid when status is archived`)
+      }
+      for (const workplanId of stringArray(obj.workplans)) {
+        const workplan = byId.get(workplanId)
+        if (!workplan || workplan.obj.type !== 'workplan') {
+          issues.push(`${relativeFile} (${id}): workplans reference ${workplanId} does not exist`)
+          continue
+        }
+        if (workplan.obj.workarea !== id) {
+          issues.push(`${relativeFile} (${id}): WorkPlan ${workplanId} must point back to this WorkArea`)
+        }
       }
     }
 

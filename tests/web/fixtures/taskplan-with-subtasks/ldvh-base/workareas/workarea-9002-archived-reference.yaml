@@ -11,5 +11,6 @@ related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
+workplans: []
 archive_reason: |
   旧版夹具已被新的对象契约测试数据替代。
