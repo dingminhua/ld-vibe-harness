@@ -14,9 +14,10 @@ import yaml
 
 
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"workarea", "taskplan", "task", "subtask", "adr", "pitfall", "memo", "study"}
+OBJECT_TYPES = {"workarea", "workplan", "taskplan", "task", "subtask", "adr", "pitfall", "memo", "study"}
 FILENAME_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "workplan": re.compile(r"^workplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "taskplan": re.compile(r"^taskplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "task": re.compile(r"^task-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "subtask": re.compile(r"^subtask-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
@@ -27,6 +28,7 @@ FILENAME_PATTERNS = {
 }
 ID_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}$"),
+    "workplan": re.compile(r"^workplan-\d{4}$"),
     "taskplan": re.compile(r"^taskplan-\d{4}$"),
     "task": re.compile(r"^task-\d{4}$"),
     "subtask": re.compile(r"^subtask-\d{4}$"),
@@ -37,6 +39,7 @@ ID_PATTERNS = {
 }
 VALID_STATUSES = {
     "workarea": {"active", "archived"},
+    "workplan": {"draft", "active", "review_needed", "closed"},
     "taskplan": {"draft", "active", "review_needed", "closed"},
     "task": {"planned", "executing", "verifying", "review_needed", "closed"},
     "subtask": {"planned", "executing", "verifying", "review_needed", "closed"},
@@ -47,6 +50,7 @@ VALID_STATUSES = {
 }
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
+    "workplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
     "taskplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "tasks"],
     "task": ["id", "type", "title", "status", "created", "updated", "taskplan", "description", "source", "acceptance"],
     "subtask": ["id", "type", "title", "status", "created", "updated", "task", "description", "source", "acceptance"],
@@ -57,6 +61,7 @@ REQUIRED_FIELDS = {
 }
 LIST_FIELDS = {
     "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "taskplans"},
+    "workplan": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "related_workplans", "related_changes"},
     "taskplan": {"tasks", "related_adrs", "related_memos", "related_pitfalls", "related_docs"},
     "task": {"related_adrs", "blocked_by", "related_docs", "affected_docs", "deliverables"},
     "subtask": {"blocked_by"},
@@ -79,6 +84,7 @@ LIST_FIELDS = {
 # 12-工作模型字段内容格式规范：长文本字段定义
 LONG_TEXT_FIELDS = {
     "workarea": {"description", "scope", "constraints", "archive_reason"},
+    "workplan": {"description", "success_criteria", "verification_evidence", "closure_evidence"},
     "taskplan": {"description", "success_criteria", "completion_evidence"},
     "task": {"description", "acceptance", "verification", "closure_evidence"},
     "subtask": {"description", "acceptance", "verification", "closure_evidence"},
@@ -97,7 +103,12 @@ LEGACY_REMOVED_SPEC_PATHS = {
 }
 
 # 12-工作模型字段内容格式规范：Evidence 字段定义
-EVIDENCE_FIELDS = {"verification", "closure_evidence"}
+EVIDENCE_FIELDS = {"verification", "verification_evidence", "closure_evidence"}
+
+WORKPLAN_ORCHESTRATION_MODES = {"single", "sequential", "parallel", "mixed"}
+WORKPLAN_EXECUTION_ITEM_MODES = {"single", "sequential", "parallel"}
+WORKPLAN_EXECUTION_ITEM_STATUSES = {"pending", "in_progress", "blocked", "done", "skipped"}
+COMMITISH_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{6,}$")
 
 # 05.01 §3.5.2：verification 字段不应包含的风险/约束/降级标题模式
 VERIFICATION_MISPLACED_HEADING_PATTERNS = [
@@ -234,6 +245,8 @@ def infer_object_type(path: Path, data: dict[str, Any]) -> str | None:
     name = path.name
     if name.startswith("workarea-"):
         return "workarea"
+    if name.startswith("workplan-"):
+        return "workplan"
     if name.startswith("taskplan-"):
         return "taskplan"
     if name.startswith("task-"):
@@ -492,6 +505,7 @@ def validate_common(path: Path, data: dict[str, Any], object_type: str) -> list[
 def find_object_by_id(project_root: Path, object_type: str, object_id: str) -> tuple[Path | None, dict[str, Any] | None, Issue | None]:
     directory_name = {
         "workarea": "workareas",
+        "workplan": "workplans",
         "taskplan": "taskplans",
         "task": "tasks",
         "subtask": "subtasks",
@@ -584,6 +598,106 @@ def validate_taskplan(path: Path, data: dict[str, Any]) -> list[Issue]:
                 issues.append(Issue(str(path), "error", "MISSING_TASKPLAN_REVIEW_FIELD", f"{data.get('status')} 状态必须提供非空字段: {field}", field=field))
     if data.get("status") == "closed" and is_empty(data.get("closed_at")):
         issues.append(Issue(str(path), "error", "MISSING_TASKPLAN_CLOSED_AT", "closed 状态必须提供非空字段: closed_at", field="closed_at"))
+    return issues
+
+
+def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
+    issues = validate_common(path, data, "workplan")
+    status = data.get("status")
+    issues.extend(validate_enum_field(path, data, "priority", {"P0", "P1", "P2", "P3"}))
+    if "importance" in data:
+        issues.append(Issue(str(path), "error", "LEGACY_WORKPLAN_FIELD", "WorkPlan 不得继续使用旧字段 importance；请只维护 priority", field="importance"))
+    for legacy_field in ("tasks", "completion_evidence"):
+        if legacy_field in data:
+            issues.append(Issue(str(path), "error", "LEGACY_WORKPLAN_FIELD", f"WorkPlan 不得继续使用旧字段: {legacy_field}", field=legacy_field))
+    issues.extend(validate_single_id_reference(path, data, "workarea", "workarea"))
+    issues.extend(validate_id_list_format(path, data, "related_workplans", "workplan"))
+
+    related_changes = data.get("related_changes")
+    if isinstance(related_changes, list):
+        for item in related_changes:
+            if not isinstance(item, str) or not COMMITISH_RE.match(item):
+                issues.append(Issue(str(path), "error", "INVALID_RELATED_CHANGE", f"related_changes 必须使用 Git commit hash、短 hash 或可回指 commit 的引用: {item}", field="related_changes"))
+
+    orchestration = data.get("orchestration")
+    if not isinstance(orchestration, dict):
+        issues.append(Issue(str(path), "error", "INVALID_ORCHESTRATION", "orchestration 必须是 object", field="orchestration"))
+        return issues
+
+    mode = orchestration.get("mode")
+    if mode not in WORKPLAN_ORCHESTRATION_MODES:
+        valid_modes = ", ".join(sorted(WORKPLAN_ORCHESTRATION_MODES))
+        issues.append(Issue(str(path), "error", "INVALID_ORCHESTRATION_MODE", f"orchestration.mode 必须是以下值之一: {valid_modes}", field="orchestration.mode"))
+
+    execution_items = orchestration.get("execution_items")
+    if not isinstance(execution_items, list):
+        issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEMS", "orchestration.execution_items 必须是 list", field="orchestration.execution_items"))
+        execution_items = []
+    elif status in {"active", "review_needed", "closed"} and not execution_items:
+        issues.append(Issue(str(path), "error", "EXECUTION_ITEMS_EMPTY", f"{status} 状态下 orchestration.execution_items 不得为空", field="orchestration.execution_items"))
+
+    seen_item_ids: set[str] = set()
+    for index, item in enumerate(execution_items, start=1):
+        item_field = f"orchestration.execution_items[{index}]"
+        if not isinstance(item, dict):
+            issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM", f"{item_field} 必须是 object", field="orchestration.execution_items"))
+            continue
+
+        for field in ("id", "title", "role", "mode", "input_refs", "expected_output", "status"):
+            if is_empty(item.get(field)):
+                issues.append(Issue(str(path), "error", "MISSING_EXECUTION_ITEM_FIELD", f"{item_field} 缺少非空字段: {field}", field=f"{item_field}.{field}"))
+
+        item_id = item.get("id")
+        if isinstance(item_id, str):
+            if item_id in seen_item_ids:
+                issues.append(Issue(str(path), "error", "DUPLICATE_EXECUTION_ITEM_ID", f"执行项 id 在当前 WorkPlan 内重复: {item_id}", field=f"{item_field}.id"))
+            seen_item_ids.add(item_id)
+
+        item_mode = item.get("mode")
+        if item_mode and item_mode not in WORKPLAN_EXECUTION_ITEM_MODES:
+            valid_modes = ", ".join(sorted(WORKPLAN_EXECUTION_ITEM_MODES))
+            issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_MODE", f"{item_field}.mode 必须是以下值之一: {valid_modes}", field=f"{item_field}.mode"))
+
+        item_status = item.get("status")
+        if item_status and item_status not in WORKPLAN_EXECUTION_ITEM_STATUSES:
+            valid_statuses = ", ".join(sorted(WORKPLAN_EXECUTION_ITEM_STATUSES))
+            issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_STATUS", f"{item_field}.status 必须是以下值之一: {valid_statuses}", field=f"{item_field}.status"))
+        if status in {"review_needed", "closed"} and item_status in {"pending", "in_progress"}:
+            issues.append(Issue(str(path), "error", "EXECUTION_ITEM_OPEN_IN_REVIEW", f"{status} 状态下执行项不得仍为 {item_status}", field=f"{item_field}.status"))
+        if item_status == "blocked" and is_empty(item.get("blocking_reason")):
+            issues.append(Issue(str(path), "error", "MISSING_EXECUTION_ITEM_BLOCKING_REASON", "blocked 执行项必须填写 blocking_reason", field=f"{item_field}.blocking_reason"))
+        if item_status in {"done", "skipped"} and is_empty(item.get("result_summary")):
+            issues.append(Issue(str(path), "error", "MISSING_EXECUTION_ITEM_RESULT_SUMMARY", "done 或 skipped 执行项必须填写 result_summary", field=f"{item_field}.result_summary"))
+
+        for list_field in ("input_refs", "evidence_refs"):
+            if list_field in item and not isinstance(item[list_field], list):
+                issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_LIST_FIELD", f"{item_field}.{list_field} 必须是 list", field=f"{item_field}.{list_field}"))
+
+    review = orchestration.get("review")
+    if not isinstance(review, dict):
+        issues.append(Issue(str(path), "error", "INVALID_ORCHESTRATION_REVIEW", "orchestration.review 必须是 object", field="orchestration.review"))
+    else:
+        for field in ("controller_self_check", "human_closure_review"):
+            if not isinstance(review.get(field), bool):
+                issues.append(Issue(str(path), "error", "INVALID_REVIEW_BOOLEAN", f"orchestration.review.{field} 必须是 boolean", field=f"orchestration.review.{field}"))
+        specialist_review = review.get("specialist_review")
+        if not isinstance(specialist_review, dict):
+            issues.append(Issue(str(path), "error", "INVALID_SPECIALIST_REVIEW", "orchestration.review.specialist_review 必须是 object", field="orchestration.review.specialist_review"))
+        else:
+            required = specialist_review.get("required")
+            if not isinstance(required, bool):
+                issues.append(Issue(str(path), "error", "INVALID_SPECIALIST_REVIEW_REQUIRED", "orchestration.review.specialist_review.required 必须是 boolean", field="orchestration.review.specialist_review.required"))
+            if required is True:
+                for field in ("role", "expected_output"):
+                    if is_empty(specialist_review.get(field)):
+                        issues.append(Issue(str(path), "error", "MISSING_SPECIALIST_REVIEW_FIELD", f"specialist_review.required=true 时必须填写 {field}", field=f"orchestration.review.specialist_review.{field}"))
+
+    if status in {"review_needed", "closed"}:
+        for field in ("verification_evidence", "closure_evidence", "review_requested_at"):
+            if is_empty(data.get(field)):
+                issues.append(Issue(str(path), "error", "MISSING_WORKPLAN_REVIEW_FIELD", f"{status} 状态必须提供非空字段: {field}", field=field))
+    if status == "closed" and is_empty(data.get("closed_at")):
+        issues.append(Issue(str(path), "error", "MISSING_WORKPLAN_CLOSED_AT", "closed 状态必须提供非空字段: closed_at", field="closed_at"))
     return issues
 
 
@@ -824,6 +938,7 @@ def validate_file(path: Path) -> tuple[list[Issue], bool]:
         return [Issue(str(path), "error", "UNKNOWN_OBJECT_TYPE", "无法根据 YAML type 或文件名前缀识别对象类型")], True
     validators = {
         "workarea": validate_workarea,
+        "workplan": validate_workplan,
         "taskplan": validate_taskplan,
         "task": validate_task,
         "subtask": validate_subtask,

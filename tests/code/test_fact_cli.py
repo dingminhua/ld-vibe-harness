@@ -84,6 +84,56 @@ def test_create_workarea_taskplan_task_and_subtask(tmp_path):
     assert "importance" not in taskplan_data
 
 
+def test_create_and_transition_workplan_contract(tmp_path):
+    result = run_cli("create", "workplan", "--title", "Create WorkPlan", base_dir=str(tmp_path))
+    path = Path(result.stdout.strip())
+
+    assert result.returncode == 0, result.stderr
+    data = read_yaml(path)
+    assert data["id"] == "workplan-0001"
+    assert data["type"] == "workplan"
+    assert data["status"] == "draft"
+    assert data["priority"] == "P2"
+    assert data["orchestration"]["mode"] == "single"
+    assert data["orchestration"]["execution_items"] == []
+    assert data["related_workplans"] == []
+    assert data["related_changes"] == []
+
+    rejected = run_cli(*authorized("transition", str(path), "--to", "active"))
+    assert rejected.returncode == 1
+    assert "orchestration.execution_items" in rejected.stderr
+
+    data["orchestration"]["execution_items"] = [
+        {
+            "id": "item-1",
+            "title": "Run check",
+            "role": "code",
+            "mode": "single",
+            "input_refs": [],
+            "expected_output": "Check result",
+            "status": "done",
+            "result_summary": "Check passed.",
+            "evidence_refs": [],
+            "blocking_reason": None,
+        }
+    ]
+    data["verification_evidence"] = "## 验证结果\npassed"
+    data["closure_evidence"] = "## 结论\nready"
+    write_yaml(path, data)
+
+    accepted = run_cli(*authorized("transition", str(path), "--to", "active"))
+    assert accepted.returncode == 0, accepted.stderr
+
+    review = run_cli(*authorized("transition", str(path), "--to", "review_needed"))
+    assert review.returncode == 0, review.stderr
+    data = read_yaml(path)
+    assert data["review_requested_at"]
+
+    closed = run_cli(*authorized("transition", str(path), "--to", "closed"))
+    assert closed.returncode == 0, closed.stderr
+    assert read_yaml(path)["closed_at"]
+
+
 def test_create_auto_numbering_uses_new_workarea_prefix(tmp_path):
     run_cli("create", "workarea", "--title", "First", base_dir=str(tmp_path))
     result = run_cli("create", "workarea", "--title", "Second", base_dir=str(tmp_path))

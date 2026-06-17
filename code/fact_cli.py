@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LDVH 事实模型 CLI 工具：create / transition / delete / list / show / search / stats / related / link-rule / deprecate / supersede。
 
-对 LDVH 生产对象（workarea, taskplan, task, subtask, adr, pitfall, memo, study）
+对 LDVH 生产对象（workarea, workplan, taskplan, task, subtask, adr, pitfall, memo, study）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
 Change 使用 Git commit 作为事实源，不通过本 CLI 管理。
 ADR 专属写入操作（link-rule / deprecate / supersede）必须携带 Human Gate 确认参数。
@@ -23,12 +23,13 @@ import yaml
 # ── 对象元数据（硬编码，与 fact_validate.py 保持一致） ──────────────
 
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"workarea", "taskplan", "task", "subtask", "adr", "pitfall", "memo", "study"}
+OBJECT_TYPES = {"workarea", "workplan", "taskplan", "task", "subtask", "adr", "pitfall", "memo", "study"}
 
 LIST_SUMMARY_FIELDS = ("priority", "importance", "repeatability")
 
 ID_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}$"),
+    "workplan": re.compile(r"^workplan-\d{4}$"),
     "taskplan": re.compile(r"^taskplan-\d{4}$"),
     "task": re.compile(r"^task-\d{4}$"),
     "subtask": re.compile(r"^subtask-\d{4}$"),
@@ -40,6 +41,7 @@ ID_PATTERNS = {
 
 FILENAME_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "workplan": re.compile(r"^workplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "taskplan": re.compile(r"^taskplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "task": re.compile(r"^task-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "subtask": re.compile(r"^subtask-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
@@ -51,6 +53,7 @@ FILENAME_PATTERNS = {
 
 VALID_STATUSES = {
     "workarea": {"active", "archived"},
+    "workplan": {"draft", "active", "review_needed", "closed"},
     "taskplan": {"draft", "active", "review_needed", "closed"},
     "task": {"planned", "executing", "verifying", "review_needed", "closed"},
     "subtask": {"planned", "executing", "verifying", "review_needed", "closed"},
@@ -64,6 +67,12 @@ VALID_TRANSITIONS = {
     "workarea": {
         "active": {"archived"},
         "archived": {"active"},
+    },
+    "workplan": {
+        "draft": {"active"},
+        "active": {"review_needed"},
+        "review_needed": {"closed", "active"},
+        "closed": set(),
     },
     "taskplan": {
         "draft": {"active"},
@@ -113,6 +122,7 @@ VALID_TRANSITIONS = {
 
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
+    "workplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
     "taskplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "tasks"],
     "task": ["id", "type", "title", "status", "created", "updated", "taskplan", "description", "source", "acceptance"],
     "subtask": ["id", "type", "title", "status", "created", "updated", "task", "description", "source", "acceptance"],
@@ -124,6 +134,7 @@ REQUIRED_FIELDS = {
 
 DEFAULT_STATUS = {
     "workarea": "active",
+    "workplan": "draft",
     "taskplan": "draft",
     "task": "planned",
     "subtask": "planned",
@@ -135,6 +146,7 @@ DEFAULT_STATUS = {
 
 DIRECTORY_MAP = {
     "workarea": "ldvh-base/workareas/",
+    "workplan": "ldvh-base/workplans/",
     "taskplan": "ldvh-base/taskplans/",
     "task": "ldvh-base/tasks/",
     "subtask": "ldvh-base/subtasks/",
@@ -504,6 +516,31 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_adrs"] = []
         data["related_memos"] = []
         data["related_pitfalls"] = []
+    if object_type == "workplan":
+        data["priority"] = "P2"
+        data["orchestration"] = {
+            "mode": "single",
+            "execution_items": [],
+            "review": {
+                "controller_self_check": True,
+                "specialist_review": {
+                    "required": False,
+                    "role": None,
+                    "expected_output": None,
+                },
+                "human_closure_review": True,
+            },
+        }
+        data["verification_evidence"] = ""
+        data["closure_evidence"] = ""
+        data["review_requested_at"] = ""
+        data["closed_at"] = ""
+        data["related_docs"] = []
+        data["related_adrs"] = []
+        data["related_memos"] = []
+        data["related_pitfalls"] = []
+        data["related_workplans"] = []
+        data["related_changes"] = []
     if object_type == "taskplan":
         data["priority"] = "P2"
         data["tasks"] = []
@@ -621,6 +658,30 @@ def cmd_transition(args: argparse.Namespace) -> int:
             return 1
         data["superseded_by"] = args.superseded_by
 
+    # WorkPlan 激活和关闭审查条件校验（新 WorkPlan 契约）
+    if object_type == "workplan" and current_status == "draft" and new_status == "active":
+        orchestration = data.get("orchestration")
+        execution_items = orchestration.get("execution_items") if isinstance(orchestration, dict) else None
+        if not isinstance(execution_items, list) or not execution_items:
+            error("orchestration.execution_items 未填写，无法激活 WorkPlan")
+            return 1
+
+    if object_type == "workplan" and current_status == "active" and new_status == "review_needed":
+        for field in ("verification_evidence", "closure_evidence"):
+            value = data.get(field)
+            if not value or (isinstance(value, str) and not value.strip()):
+                error(f"{field} 未填写，无法将 WorkPlan 标记为 review_needed")
+                return 1
+        if not data.get("review_requested_at"):
+            data["review_requested_at"] = datetime.now().isoformat()
+
+    if object_type == "workplan" and current_status == "review_needed" and new_status == "closed":
+        for field in ("review_requested_at", "verification_evidence", "closure_evidence"):
+            value = data.get(field)
+            if not value or (isinstance(value, str) and not value.strip()):
+                error(f"{field} 未填写，无法关闭 WorkPlan")
+                return 1
+
     # Task 前置任务强制校验（planned → executing）
     if object_type == "task" and current_status == "planned" and new_status == "executing":
         if not validate_task_blockers_closed(yaml_file, data):
@@ -707,6 +768,8 @@ def cmd_transition(args: argparse.Namespace) -> int:
     # 执行流转
     data["status"] = new_status
     data["updated"] = datetime.now().isoformat()
+    if object_type == "workplan" and new_status == "closed":
+        data["closed_at"] = datetime.now().isoformat()
     if object_type == "task" and new_status == "closed":
         data["closed_at"] = datetime.now().isoformat()
     if object_type == "taskplan" and new_status == "closed":

@@ -120,6 +120,122 @@ def test_valid_workarea_taskplan_task_subtask_tree(tmp_path):
     assert result.stderr == ""
 
 
+def write_valid_workplan_tree(tmp_path: Path, *, status: str = "active") -> tuple[Path, Path]:
+    root = tmp_path / "project"
+    write_yaml(
+        root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml",
+        """
+id: workarea-0001
+type: workarea
+title: Core
+status: active
+created: "2026-06-12"
+updated: "2026-06-12"
+description: Core work area
+source: test
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+""",
+    )
+    review_fields = ""
+    if status in {"review_needed", "closed"}:
+        review_fields = """
+verification_evidence: |
+  ## 验证结果
+  passed
+closure_evidence: |
+  ## 结论
+  ready
+review_requested_at: "2026-06-12T00:00:00+08:00"
+"""
+    if status == "closed":
+        review_fields += 'closed_at: "2026-06-12T01:00:00+08:00"\n'
+    workplan_path = write_yaml(
+        root / "ldvh-base" / "workplans" / "workplan-0001-core-plan.yaml",
+        f"""
+id: workplan-0001
+type: workplan
+title: Core Plan
+status: {status}
+created: "2026-06-12"
+updated: "2026-06-12"
+workarea: workarea-0001
+priority: P2
+description: Core plan
+success_criteria: |
+  - [ ] Plan can be validated
+source: test
+orchestration:
+  mode: single
+  execution_items:
+    - id: item-1
+      title: Validate WorkPlan
+      role: code
+      mode: single
+      input_refs:
+        - specs/21-WorkPlan-工作计划.md
+      expected_output: Validator result
+      status: done
+      result_summary: Validator passed
+      evidence_refs:
+        - python3 code/fact_validate.py
+      blocking_reason:
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role:
+      expected_output:
+    human_closure_review: true
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_workplans: []
+related_changes:
+  - abc1234
+{review_fields}
+""",
+    )
+    return root, workplan_path
+
+
+def test_valid_workplan_execution_items_tree(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+
+    result = run_checker(root / "ldvh-base")
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
+
+
+def test_workplan_review_needed_requires_evidence_fields(tmp_path):
+    _, path = write_valid_workplan_tree(tmp_path, status="review_needed")
+    text = path.read_text(encoding="utf-8")
+    text = text.replace("verification_evidence: |\n  ## 验证结果\n  passed\n", "")
+    path.write_text(text, encoding="utf-8")
+
+    result = run_checker(path)
+
+    assert result.returncode == 1
+    assert "MISSING_WORKPLAN_REVIEW_FIELD" in result.stdout
+    assert "verification_evidence" in result.stdout
+
+
+def test_workplan_execution_item_contract_is_checked(tmp_path):
+    _, path = write_valid_workplan_tree(tmp_path, status="review_needed")
+    text = path.read_text(encoding="utf-8")
+    text = text.replace("status: done\n      result_summary: Validator passed", "status: pending\n      result_summary:")
+    path.write_text(text, encoding="utf-8")
+
+    result = run_checker(path)
+
+    assert result.returncode == 1
+    assert "EXECUTION_ITEM_OPEN_IN_REVIEW" in result.stdout
+
+
 def test_workarea_archived_requires_archive_reason(tmp_path):
     root = base_tree(tmp_path)
     path = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
