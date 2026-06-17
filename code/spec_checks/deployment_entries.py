@@ -17,9 +17,6 @@ DEPLOYMENT_ENTRIES_REQUIRED_ASSETS = {
         "rules/LDVH-WORKSPACE-ENTRY.md",
         "rules/LDVH-MAINTAINER-ENTRY.md",
     ],
-    "Skill": "skills/ldvh-spec-change-check/SKILL.md",
-    "Agent": "agents/ldvh-spec-semantic-review.md",
-    "Hook": "hooks/ldvh-lifecycle-check.md",
 }
 DEPLOYMENT_ENTRIES_FORBIDDEN_TYPES = {"Code", "Web", "CLI", "MCP", "Command", "CI", "文档"}
 

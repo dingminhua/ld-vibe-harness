@@ -14,9 +14,6 @@ def write_deployment_entries_fixture(tmp_path):
 LDVH 能力资产与落地保障定义见 `specs/04.02-LDVH能力资产与落地保障规范.md`。
 """,
         )
-    write_md(tmp_path / "skills" / "ldvh-spec-change-check" / "SKILL.md", "# Skill")
-    write_md(tmp_path / "agents" / "ldvh-spec-semantic-review.md", "# Agent")
-    write_md(tmp_path / "hooks" / "ldvh-lifecycle-check.md", "# Hook")
     return write_md(
         tmp_path / "specs" / "04.02-LDVH能力资产与落地保障规范.md",
         """
@@ -27,9 +24,6 @@ LDVH 能力资产与落地保障定义见 `specs/04.02-LDVH能力资产与落地
 | 能力资产类型 | 当前固定资产 | 适合保障 | 不适合保障 | 边界 |
 |---|---|---|---|---|
 | Rules 资产 | `rules/LDVH-WORKSPACE-ENTRY.md`、`rules/LDVH-MAINTAINER-ENTRY.md` | AI 入口分层 | 完整规范正文 | 只做薄入口 |
-| Skill 资产 | `skills/ldvh-spec-change-check/SKILL.md` | 治理检查 SOP | 稳定规则正文 | 不新增稳定规则 |
-| Agent 资产 | `agents/ldvh-spec-semantic-review.md` | 独立语义审查 | 直接生效结论 | 输出回主控 |
-| Hook 资产 | `hooks/ldvh-lifecycle-check.md` | 生命周期检查入口 | 规范正文 | 触发不等于通过 |
 """,
     )
 
@@ -58,10 +52,10 @@ def test_deployment_entries_reports_missing_spec(tmp_path):
 
 def test_deployment_entries_reports_required_type_and_asset_problems(tmp_path):
     write_deployment_entries_fixture(tmp_path)
-    (tmp_path / "hooks" / "ldvh-lifecycle-check.md").unlink()
+    (tmp_path / "rules" / "LDVH-MAINTAINER-ENTRY.md").unlink()
     spec_path = tmp_path / "specs" / "04.02-LDVH能力资产与落地保障规范.md"
     text = spec_path.read_text(encoding="utf-8")
-    text = text.replace("| Agent 资产 | `agents/ldvh-spec-semantic-review.md` | 独立语义审查 | 直接生效结论 | 输出回主控 |\n", "")
+    text = text.replace("| Rules 资产 | `rules/LDVH-WORKSPACE-ENTRY.md`、`rules/LDVH-MAINTAINER-ENTRY.md` | AI 入口分层 | 完整规范正文 | 只做薄入口 |\n", "")
     spec_path.write_text(text, encoding="utf-8")
 
     codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))

@@ -310,7 +310,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_CAPABILITY_SPEC_MISSING", "缺少 LDVH 能力资产规范文件", capability_path, "环境承接"))
     else:
         capability_text = capability_path.read_text(encoding="utf-8")
-        for asset_type in ["Rules 资产", "Skill 资产", "Agent 资产", "Hook 资产"]:
+        for asset_type in ["Rules 资产"]:
             if asset_type not in capability_text:
                 matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_CAPABILITY_ASSET_MISSING", f"能力资产规范缺少固定资产类型: {asset_type}", capability_path, "环境承接"))
     if not environment_path.exists():
