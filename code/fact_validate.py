@@ -90,6 +90,11 @@ LONG_TEXT_FIELDS = {
 
 # 12-工作模型字段内容格式规范：路径引用字段定义
 PATH_FIELDS = {"related_docs", "deliverables", "affected_docs", "related_rules", "source_docs"}
+LEGACY_REMOVED_SPEC_PATHS = {
+    "specs/21-TaskPlan-任务计划.md",
+    "specs/22-Task-任务.md",
+    "specs/23-SubTask-子任务.md",
+}
 
 # 12-工作模型字段内容格式规范：Evidence 字段定义
 EVIDENCE_FIELDS = {"verification", "closure_evidence"}
@@ -298,7 +303,7 @@ def validate_path_fields_exist(path: Path, data: dict[str, Any], object_type: st
             path_part = item.split(" §", 1)[0].strip()
             resolved = project_root / path_part
             if not resolved.exists():
-                level = "warning" if field == "related_rules" else "error"
+                level = "warning" if field == "related_rules" or path_part in LEGACY_REMOVED_SPEC_PATHS else "error"
                 issues.append(Issue(
                     str(path), level, "PATH_NOT_FOUND",
                     f"字段 {field} 中引用的路径不存在: {item}",

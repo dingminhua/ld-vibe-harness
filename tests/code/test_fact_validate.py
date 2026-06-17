@@ -218,6 +218,23 @@ def test_task_rejects_legacy_intent_and_nested_task_fields(tmp_path):
     assert result.stdout.count("LEGACY_TASK_FIELD") == 3
 
 
+def test_removed_task_spec_paths_warn_but_do_not_fail(tmp_path):
+    root = base_tree(tmp_path)
+    path = root / "ldvh-base" / "tasks" / "task-0001-core-task.yaml"
+    path.write_text(
+        path.read_text(encoding="utf-8")
+        + "\naffected_docs:\n  - specs/22-Task-任务.md\n",
+        encoding="utf-8",
+    )
+
+    result = run_checker(path)
+
+    assert result.returncode == 0
+    assert "PATH_NOT_FOUND" in result.stdout
+    assert "[warning]" in result.stdout
+    assert "errors=0 warnings=1" in result.stdout
+
+
 def test_blocked_by_must_stay_in_same_taskplan(tmp_path):
     root = base_tree(tmp_path)
     write_yaml(
