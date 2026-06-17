@@ -44,7 +44,8 @@ related_workareas: []
 related_workplans: []
 related_adrs:
   - adr-0010
-related_studies: []
+related_studies:
+  - study-0001
 related_docs:
   - specs/00-LD-Vibe-Harness理念与纲要.md
   - specs/05-工作模型基础规范.md

@@ -32,5 +32,6 @@ discard_reason: ""
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_studies: []
+related_studies:
+  - study-0001
 related_docs: []
