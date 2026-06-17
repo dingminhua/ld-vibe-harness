@@ -23,7 +23,7 @@ type OpenEvent = MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>;
 type Translate = ReturnType<typeof useI18n>['t'];
 type PlanRecordState = 'recorded' | 'missing';
 
-const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded']);
+const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
 const PENDING_CLOSE_STATUSES = new Set(['review_needed']);
 const TITLE_ACCENT_CLASS: Record<string, string> = {
   active: 'border-emerald-400/80',
@@ -34,9 +34,11 @@ const TITLE_ACCENT_CLASS: Record<string, string> = {
   draft: 'border-amber-400/75',
   proposed: 'border-amber-400/75',
   planned: 'border-amber-400/75',
+  pending: 'border-amber-400/75',
   closed: 'border-zinc-500/50',
   resolved: 'border-zinc-500/50',
   archived: 'border-zinc-500/50',
+  discarded: 'border-red-400/75',
   superseded: 'border-zinc-500/50',
   rejected: 'border-red-400/75',
   deprecated: 'border-red-400/75',
@@ -606,7 +608,7 @@ export default function ObjectList() {
               </span>
             </div>
           )}
-          {!isResolved && obj.status !== 'closed' && obj.status !== 'resolved' && obj.status !== 'archived' && (
+          {!isResolved && obj.status !== 'closed' && obj.status !== 'resolved' && obj.status !== 'archived' && obj.status !== 'discarded' && (
             <div className="flex items-center gap-1.5 rounded-md border border-dashed border-amber-500/30 bg-amber-500/5 px-2.5 py-1.5">
               <CircleAlert size={12} className="shrink-0 text-amber-400" />
               <span className="ldvh-caption text-amber-300">

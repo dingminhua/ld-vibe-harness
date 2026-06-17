@@ -9,11 +9,13 @@ const STATUS_FILTER_ORDER = [
   'review_needed',
   'verifying',
   'planned',
+  'pending',
   'draft',
   'proposed',
   'accepted',
   'closed',
   'resolved',
+  'discarded',
   'archived',
   'superseded',
   'rejected',
@@ -30,7 +32,7 @@ const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   subtask: ['planned', 'review_needed', 'closed'],
   adr: ['proposed', 'accepted', 'rejected'],
   pitfall: ['active', 'superseded'],
-  memo: ['active', 'draft'],
+  memo: ['pending', 'resolved', 'discarded'],
 };
 
 interface ObjectStatusFilterProps {

@@ -49,10 +49,10 @@ const TYPE_COLORS: Record<string, string> = {
   memo: '#eab308',
 };
 
-const TERMINAL_STATUSES = new Set(['closed', 'rejected', 'superseded', 'deprecated', 'archived', 'resolved', 'accepted']);
+const TERMINAL_STATUSES = new Set(['closed', 'rejected', 'superseded', 'deprecated', 'archived', 'discarded', 'resolved', 'accepted']);
 const REVIEW_STATUSES = new Set(['review_needed', 'proposed', 'needs_human_gate']);
 const DOING_STATUSES = new Set(['executing', 'verifying', 'active']);
-const PLANNED_STATUSES = new Set(['planned', 'draft']);
+const PLANNED_STATUSES = new Set(['planned', 'pending', 'draft']);
 const RISK_STATUSES = new Set(['open', 'degraded', 'suspended']);
 
 const ATTENTION_ORDER: Record<AttentionKind, number> = {

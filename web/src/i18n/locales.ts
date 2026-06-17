@@ -12,6 +12,7 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   deprecated: { zh: '已废弃', en: 'Deprecated' },
   archived: { zh: '已归档', en: 'Archived' },
   active: { zh: '活跃', en: 'Active' },
+  pending: { zh: '待处理', en: 'Pending' },
   suspended: { zh: '已暂停', en: 'Suspended' },
   // Task
   planned: { zh: '计划中', en: 'Planned' },
@@ -25,6 +26,7 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   unknown: { zh: '未知', en: 'Unknown' },
   // Pitfall
   resolved: { zh: '已解决', en: 'Resolved' },
+  discarded: { zh: '已废弃', en: 'Discarded' },
 };
 
 export function getStatusLocale(status: string, locale: string): string {
@@ -65,6 +67,7 @@ export const STATUS_HINT_LOCALES: Record<string, { zh: string; en: string }> = {
   verifying: { zh: '验证中', en: 'Verifying' },
   review_needed: { zh: '待后续处理', en: 'Needs follow-up' },
   draft: { zh: '草稿中', en: 'In draft' },
+  pending: { zh: '待分流处理', en: 'Pending routing' },
   proposed: { zh: '提案中', en: 'Proposed' },
   closed: { zh: '已关闭', en: 'Closed' },
 };

@@ -40,7 +40,7 @@ VALID_STATUSES = {
     "subtask": {"planned", "executing", "verifying", "review_needed", "closed"},
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
-    "memo": {"draft", "active", "resolved", "archived"},
+    "memo": {"pending", "resolved", "discarded"},
 }
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
@@ -76,7 +76,7 @@ LONG_TEXT_FIELDS = {
     "subtask": {"description", "acceptance", "verification", "closure_evidence"},
     "adr": {"context", "decision", "consequences"},
     "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
-    "memo": {"description"},
+    "memo": {"description", "discard_reason"},
 }
 
 # 12-工作模型字段内容格式规范：路径引用字段定义
@@ -740,10 +740,8 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
         for field in ["resolved_to", "resolved_at"]:
             if is_empty(data.get(field)):
                 issues.append(Issue(str(path), "error", "MISSING_RESOLVED_FIELD", f"resolved 状态必须提供非空字段: {field}"))
-    if data.get("status") == "archived":
-        has_resolved_route = not is_empty(data.get("resolved_to")) and not is_empty(data.get("resolved_at"))
-        if not has_resolved_route and is_empty(data.get("archive_reason")):
-            issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 且未 resolved 的 Memo 必须提供归档原因: archive_reason", field="archive_reason"))
+    if data.get("status") == "discarded" and is_empty(data.get("discard_reason")):
+        issues.append(Issue(str(path), "error", "MISSING_DISCARD_REASON", "discarded 状态必须提供非空字段: discard_reason", field="discard_reason"))
     return issues
 
 

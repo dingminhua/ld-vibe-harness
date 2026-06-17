@@ -14,7 +14,7 @@ import type { RelatedObjectSummary } from '@/utils/api';
 
 export type TaskFlowTranslate = (key: LocaleKey, params?: Record<string, string>) => string;
 
-const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded']);
+const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
 const PENDING_CLOSE_STATUSES = new Set(['review_needed']);
 const TASK_RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected', 'deprecated', 'unknown']);
 

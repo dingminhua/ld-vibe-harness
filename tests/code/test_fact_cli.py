@@ -136,8 +136,39 @@ def test_create_memo_uses_priority_not_importance(tmp_path):
 
     assert result.returncode == 0, result.stderr
     data = read_yaml(Path(result.stdout.strip()))
+    assert data["status"] == "pending"
     assert data["priority"] == "P3"
     assert "importance" not in data
+
+
+def test_memo_resolve_and_discard_require_supporting_fields(tmp_path):
+    result = run_cli("create", "memo", "--title", "Route memo", base_dir=str(tmp_path))
+    path = Path(result.stdout.strip())
+
+    result = run_cli(*authorized("transition", str(path), "--to", "resolved"))
+    assert result.returncode == 1
+    assert "resolved_to" in result.stderr
+
+    data = read_yaml(path)
+    data["resolved_to"] = {"type": "task", "ref": "task-0001"}
+    write_yaml(path, data)
+
+    result = run_cli(*authorized("transition", str(path), "--to", "resolved"))
+    assert result.returncode == 0
+    data = read_yaml(path)
+    assert data["status"] == "resolved"
+    assert data["resolved_at"]
+
+    result = run_cli(*authorized("transition", str(path), "--to", "discarded"))
+    assert result.returncode == 1
+    assert "discard_reason" in result.stderr
+
+    data["discard_reason"] = "分流记录已被目标对象承接。"
+    write_yaml(path, data)
+
+    result = run_cli(*authorized("transition", str(path), "--to", "discarded"))
+    assert result.returncode == 0
+    assert read_yaml(path)["status"] == "discarded"
 
 
 def test_taskplan_review_needed_to_active_needs_reason(tmp_path):

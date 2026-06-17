@@ -93,11 +93,11 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
     'avoidance', 'applicability', 'source_tasks', 'source_memos', 'related_workareas', 'related_taskplans',
     'related_adrs', 'related_profiles', 'related_docs', 'related_rules',
-    'related_changes', 'superseded_by', 'archive_reason', 'status_history', 'notes',
+    'related_changes', 'superseded_by', 'archive_reason', 'discard_reason', 'status_history', 'notes',
   ],
 };
 
-const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded']);
+const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
 const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
 const WORK_OBJECT_DETAIL_TYPES = new Set(['workarea', 'taskplan', 'task', 'subtask']);
 
@@ -200,6 +200,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   source_memos: { zh: '来源备忘', en: 'Source Memos' },
   resolved_to: { zh: '分流目标', en: 'Resolved To' },
   resolved_at: { zh: '分流时间', en: 'Resolved At' },
+  discard_reason: { zh: '废弃原因', en: 'Discard Reason' },
   superseded_by: { zh: '替代来源', en: 'Superseded By' },
   related_changes: { zh: '关联变更', en: 'Related Changes' },
   affects: { zh: '影响对象', en: 'Affects' },

@@ -17,7 +17,7 @@ LONG_TEXT_FIELDS = {
     "subtask": {"description", "acceptance", "verification", "closure_evidence"},
     "adr": {"context", "decision", "consequences"},
     "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
-    "memo": {"description"},
+    "memo": {"description", "discard_reason"},
 }
 
 

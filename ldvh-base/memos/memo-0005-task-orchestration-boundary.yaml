@@ -1,0 +1,156 @@
+id: memo-0005
+type: memo
+title: 任务相关的内容还要盘一下
+status: pending
+created: "2026-06-16"
+updated: "2026-06-17"
+description: |
+  ## 原始问题
+
+  任务计划是在主控，任务的编排现在看起来有点不太对。主控负责计划、验证、安排任务执行、安排子 Agent 检查，并在过程中积累沉淀内容。
+
+  ## 当前讨论形成的候选结论
+
+  TaskPlan / Task / SubTask 的边界需要收敛。当前更稳的方向是：
+
+  - TaskPlan 是从对话升级出的计划契约，承载目标、范围、成功标准、任务拆解、Human Gate 和关闭审查。
+  - Task 是 TaskPlan 下可委派、可验证、可关闭的执行单元，也是主控进行并行编排的基本单位。
+  - SubTask 不再作为 active 工作模型更合理；如果保留，应仅作为 removed 历史占位，说明其职责已由 Task 承接。
+  - 普通执行步骤不应成为工作对象，应写入 Task 的 description、acceptance、verification 或 closure_evidence。
+
+  ## 并行与串行设计
+
+  并行/串行不应设计为单个 Task 的固有属性，例如不建议在 Task 上增加 `parallel: true` 或 `mode: serial`。
+
+  更合理的设计是：TaskPlan.tasks 只表示计划内 Task 清单和人工阅读顺序，不表示执行顺序；实际执行顺序、并行可能性、fan-out / fan-in 由 Task.blocked_by 形成的依赖图派生。
+
+  示例：
+
+  ```yaml
+  # 可并行
+  task-0001:
+    blocked_by: []
+  task-0002:
+    blocked_by: []
+
+  # 串行
+  task-0002:
+    blocked_by:
+      - task-0001
+
+  # fan-out / fan-in
+  task-0005:
+    blocked_by:
+      - task-0001
+      - task-0002
+      - task-0003
+      - task-0004
+  ```
+
+  Code / Web 可由 `blocked_by` 派生 ready_tasks 和 parallel_layers，例如：planned 且 blocked_by 全部 closed 的 Task 是可执行 Task；多个可执行 Task 可作为并行候选。
+
+  ## 主控、子 Agent 与 Review 边界
+
+  主控拥有编排权：创建和更新 TaskPlan / Task，决定拆分、依赖和调度顺序，调用子 Agent，接收输出，判断是否回写事实源，推进状态流转并触发 Human Gate。
+
+  子 Agent 只执行主控分配的一个明确 Task 或审查动作，不创建下级 Agent，不直接关闭 Task，不直接修改 TaskPlan。子 Agent 输出结果、证据、风险和建议，必须回到主控判断后才生效。
+
+  Review 默认是流程动作，不是工作模型。简单 Review 写入 Task.verification 或 closure_evidence；复杂、独立、可验收的 Review 应作为同一 TaskPlan 下的并列 Task，而不是 SubTask。
+
+  ## 待分流方向
+
+  后续如进入正式规范修改，建议最小处理路径：
+
+  - 将 specs/23-SubTask-子任务.md 改为 removed 历史占位，而不是直接物理删除。
+  - 修改 21，明确 TaskPlan 下 Task 是主控编排单位，TaskPlan.tasks 顺序不代表执行顺序。
+  - 修改 22，强化 Task 是最小可委派、可验证、可关闭执行单元，删除 SubTask 关系和关闭条件。
+  - 修改 06，移除 blocking 问题创建 SubTask 的规则，改为必要时创建同一 TaskPlan 下的并列 Task。
+  - 修改 05 / 05.01 / Code / Web，移除 SubTask active 消费，保留 blocked_by 的 DAG 语义。
+
+  暂不建议给 Task 增加 blocked 状态。先使用 blocked_by、status_history 和同一 TaskPlan 下的 blocker Task 表达阻塞；如果真实执行反复证明不够，再评估 Task 状态机是否需要增加 blocked。
+
+  ## 对话到任务编排闭环候选流程
+
+  从行动编排看，AI 制定计划不是直接进入执行，而是应形成一个可审核的 Plan Draft。该草案至少包含三类内容：
+
+  - spec：面向 Human 的目标、背景、范围、约束和理解对齐文本。Human 通常主要审这一部分，判断是否符合人的真实意图。
+  - checklist：最终成功标准和关闭验收条件，必须可验证。
+  - task orchestration：面向 AI / 子 Agent 的任务编排，包含 Task 列表、依赖关系、并行可能性、执行者、Review 策略和 Human Gate。
+
+  候选流程如下：
+
+  ```text
+  Conversation
+  -> 主控提取目标、边界、约束、成功标准
+  -> 形成 Plan Draft（spec + checklist + task orchestration）
+  -> 多视角计划审核
+  -> Human Gate：Human 主要审 spec 和 checklist，必要时看任务编排摘要
+  -> TaskPlan active
+  -> 主控按 Task DAG 分派 Task 给子 Agent
+  -> 子 Agent 执行 Task，返回结果、证据、风险和建议
+  -> 主控整合结果并自检，发现问题先修复或追加同一 TaskPlan 下的 blocker Task
+  -> 子 Agent / Review Agent 独立复检
+  -> 主控形成关闭证据
+  -> Human Gate：关闭确认
+  -> Record：写回 TaskPlan / Task / Change
+  -> Learn：经验按性质分流到 Pitfall / Memo / ADR / specs / Code / Web
+  ```
+
+  计划审核应发生在 Human Gate 前。主控先从目标对齐、范围完整性、任务可执行性、依赖关系、验收可验证性、风险和 Human Gate 等视角审查计划；必要时可调用子 Agent 做计划复核。通过后，再把 Human 真正需要判断的 spec / checklist 交给人确认。
+
+  主控自检和子 Agent 复检应区分：
+
+  - 主控自检负责整合结果、发现明显遗漏、补充证据、修复已知问题或追加 blocker Task。
+  - 子 Agent / Review Agent 复检负责提供独立视角审查，不直接关闭 Task，不直接修改 TaskPlan，输出必须回到主控判断后才生效。
+
+  Learn 阶段不是统一写入“经验”对象，而是按性质分流：
+
+  - 重复踩坑、防错规则或操作经验 -> Pitfall
+  - 尚未决定如何处理的问题或线索 -> Memo
+  - 长期设计取舍或稳定决策 -> ADR
+  - 稳定规则变化 -> specs
+  - 校验、解析、受控写入或派生索引缺口 -> Code
+  - 展示、交互、Human Gate UI 或轻写入缺口 -> Web
+
+  这条流程可作为后续 40-59 具体工作流程候选，名称可考虑 `conversation-to-taskplan-and-task-orchestration` / `对话到任务计划与任务编排闭环`。
+
+  ## 仍未设计的信息承载缺口
+
+  TaskPlan 和 Task 作为信息承载对象还未完全准备好，尤其缺少以下两类角色相关结构：
+
+  1. 多角色审议计划
+     - 需要表达本次计划在执行前应从哪些视角审议，例如目标对齐、范围边界、风险、验证、事实源、Web/Code 影响、Human Gate 等。
+     - 需要表达这些角色是由主控自检承担、由子 Agent 辅助承担，还是只作为人工检查视角。
+     - 需要表达每个审议视角的输入、输出、停止条件和是否阻塞 Human Gate。
+     - 目前 TaskPlan 没有专门字段承载该计划；可暂存在 description 的计划审核章节，但长期可能需要 `plan_review` 或等价字段/格式规范。
+
+  2. 专业角色审核结果
+     - 需要表达某个专业角色或 Review Agent 审核了什么、依据是什么、发现了什么问题、是否通过、有哪些残留风险。
+     - 审核结果不应直接生效，必须回到主控判断后写入 Task.verification、Task.closure_evidence、TaskPlan.completion_evidence 或后续 Task / Memo / ADR / Pitfall。
+     - 目前 Task 没有明确的 Review 证据结构；可暂存在 verification 或 closure_evidence 的“独立复检 / Review 结论”章节，但长期需要 05.01 定义标准标题和写入格式。
+
+  这两类内容先作为信息承载缺口记录，不立即新增工作模型。后续应判断它们是否只是字段内容格式和工作流程规则，还是需要进入 40-59 具体工作流程。
+source: 我发现的
+category: question
+priority: P1
+resolved_to: ""
+resolved_at: ""
+discard_reason: ""
+related_workareas: []
+related_taskplans: []
+related_tasks: []
+related_adrs: []
+related_changes: []
+related_docs:
+  - specs/05-工作模型基础规范.md
+  - specs/05.01-工作字段内容格式规范.md
+  - specs/06-工作流程基础规范.md
+  - specs/21-TaskPlan-任务计划.md
+  - specs/22-Task-任务.md
+  - specs/23-SubTask-子任务.md
+status_history:
+  - at: "2026-06-16"
+    from: created
+    to: pending
+    actor: human
+    reason: 通过 Web 备忘速记入口创建

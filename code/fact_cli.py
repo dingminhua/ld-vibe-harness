@@ -54,7 +54,7 @@ VALID_STATUSES = {
     "subtask": {"planned", "executing", "verifying", "review_needed", "closed"},
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
-    "memo": {"draft", "active", "resolved", "archived"},
+    "memo": {"pending", "resolved", "discarded"},
 }
 
 VALID_TRANSITIONS = {
@@ -96,10 +96,9 @@ VALID_TRANSITIONS = {
         "archived": set(),
     },
     "memo": {
-        "draft": {"active", "archived"},
-        "active": {"resolved", "archived"},
-        "resolved": {"archived"},
-        "archived": set(),
+        "pending": {"resolved", "discarded"},
+        "resolved": {"discarded"},
+        "discarded": set(),
     },
 }
 
@@ -120,7 +119,7 @@ DEFAULT_STATUS = {
     "subtask": "planned",
     "adr": "proposed",
     "pitfall": "draft",
-    "memo": "draft",
+    "memo": "pending",
 }
 
 DIRECTORY_MAP = {
@@ -134,7 +133,7 @@ DIRECTORY_MAP = {
 }
 
 # 允许删除的状态集合
-DELETABLE_STATUSES = {"draft", "proposed"}
+DELETABLE_STATUSES = {"draft", "pending", "proposed"}
 
 # ADR 专属常量
 ADR_TERMINAL_STATUSES = {"deprecated", "superseded", "rejected"}
@@ -152,12 +151,12 @@ def title_to_short(title: str) -> str:
     """将标题转换为文件名短标识：小写、空格替换短横线、去掉非字母数字短横线。"""
     result = title.lower()
     result = result.replace(" ", "-")
-    result = re.sub(r"[^a-z0-9\u4e00-\u9fff-]", "", result)
+    result = re.sub(r"[^a-z0-9-]", "", result)
     # 去掉连续短横线
     result = re.sub(r"-+", "-", result)
     # 去掉首尾短横线
     result = result.strip("-")
-    return result
+    return result or "untitled"
 
 
 def next_number(directory: Path, prefix: str) -> int:
@@ -599,8 +598,8 @@ def cmd_transition(args: argparse.Namespace) -> int:
                 error(f"{field} 未填写，无法关闭 SubTask")
                 return 1
 
-    # Memo 分流条件校验（active → resolved）
-    if object_type == "memo" and current_status == "active" and new_status == "resolved":
+    # Memo 分流条件校验（pending → resolved）
+    if object_type == "memo" and current_status == "pending" and new_status == "resolved":
         resolved_to = data.get("resolved_to")
         if not resolved_to or (isinstance(resolved_to, str) and not resolved_to.strip()):
             error("resolved_to 未填写，无法将 Memo 标记为 resolved")
@@ -608,18 +607,10 @@ def cmd_transition(args: argparse.Namespace) -> int:
         if not data.get("resolved_at"):
             data["resolved_at"] = datetime.now().isoformat()
 
-    # Memo 归档条件校验。resolved → archived 依赖既有分流关系，不强制 archive_reason。
-    if object_type == "memo" and current_status == "resolved" and new_status == "archived":
-        for field in ("resolved_to", "resolved_at"):
-            value = data.get(field)
-            if not value or (isinstance(value, str) and not value.strip()):
-                error(f"{field} 未填写，无法归档已 resolved 的 Memo")
-                return 1
-
-    if object_type == "memo" and current_status in {"draft", "active"} and new_status == "archived":
-        archive_reason = data.get("archive_reason")
-        if not archive_reason or (isinstance(archive_reason, str) and not archive_reason.strip()):
-            error("archive_reason 未填写，无法归档 Memo")
+    if object_type == "memo" and new_status == "discarded":
+        discard_reason = data.get("discard_reason")
+        if not discard_reason or (isinstance(discard_reason, str) and not discard_reason.strip()):
+            error("discard_reason 未填写，无法废弃 Memo")
             return 1
 
     # 执行流转

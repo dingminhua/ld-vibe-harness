@@ -52,9 +52,9 @@ function nextMemoId(): string {
 function slugify(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-')
+    .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
-    .slice(0, 40) || 'untitled'
+    .slice(0, 40) || 'memo'
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -78,8 +78,8 @@ function validatePersistedMemo(data: unknown, expectedId: string): string[] {
   if (data.type !== 'memo') {
     errors.push('type must be memo')
   }
-  if (data.status !== 'draft') {
-    errors.push('status must be draft')
+  if (data.status !== 'pending') {
+    errors.push('status must be pending')
   }
   if (!Array.isArray(data.status_history) || data.status_history.length === 0) {
     errors.push('status_history must be a non-empty list')
@@ -133,7 +133,7 @@ router.post('/', (req: Request, res: Response): void => {
       id,
       type: 'memo',
       title: title.trim(),
-      status: 'draft',
+      status: 'pending',
       created: today,
       updated: today,
       description: description.trim(),
@@ -142,7 +142,7 @@ router.post('/', (req: Request, res: Response): void => {
       priority,
       resolved_to: '',
       resolved_at: '',
-      archive_reason: '',
+      discard_reason: '',
       related_workareas: [] as string[],
       related_taskplans: [] as string[],
       related_tasks: [] as string[],
@@ -153,7 +153,7 @@ router.post('/', (req: Request, res: Response): void => {
         {
           at: today,
           from: 'created',
-          to: 'draft',
+          to: 'pending',
           actor: 'human',
           reason: '通过 Web 备忘速记入口创建',
         },
@@ -207,7 +207,7 @@ router.post('/', (req: Request, res: Response): void => {
       ok: true,
       action: 'create',
       target: filename,
-      summary: { id, type: 'memo', status: 'draft' },
+      summary: { id, type: 'memo', status: 'pending' },
       data: memo,
     })
   } catch (err) {

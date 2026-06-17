@@ -1,7 +1,7 @@
 id: memo-9001
 type: memo
 title: 测试夹具需覆盖字段边界
-status: active
+status: pending
 created: '2026-06-15T09:05:00'
 updated: '2026-06-15T09:05:00'
 description: |
@@ -23,6 +23,6 @@ related_docs:
 status_history:
   - at: '2026-06-15T09:05:00'
     from: null
-    to: active
+    to: pending
     actor: AI
     reason: 记录测试夹具重建输入

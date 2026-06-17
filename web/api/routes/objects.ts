@@ -57,7 +57,7 @@ interface StatusOption {
   count: number
 }
 
-const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'superseded'])
+const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded'])
 const REVIEW_STATUSES = new Set(['review_needed', 'needs_human_gate', 'proposed'])
 const ACTIVE_STATUSES = new Set(['active', 'executing', 'verifying'])
 const RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected', 'deprecated'])
@@ -73,11 +73,13 @@ const STATUS_PRIORITY: Record<string, number> = {
   suspended: 7,
   proposed: 8,
   planned: 9,
+  pending: 10,
   draft: 10,
   closed: 20,
   resolved: 21,
   accepted: 22,
   archived: 23,
+  discarded: 24,
   superseded: 24,
   rejected: 25,
   deprecated: 26,

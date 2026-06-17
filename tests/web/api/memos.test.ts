@@ -64,7 +64,7 @@ async function testCreateMemo() {
   assert.equal(response.status, 201)
   assert.equal(payload.ok, true)
   assert.equal(payload.action, 'create')
-  assert.deepEqual(payload.summary, { id: 'memo-0001', type: 'memo', status: 'draft' })
+  assert.deepEqual(payload.summary, { id: 'memo-0001', type: 'memo', status: 'pending' })
 
   const files = fs.readdirSync(memosDir)
   assert.deepEqual(files, ['memo-0001-api-memo.yaml'])
@@ -72,7 +72,7 @@ async function testCreateMemo() {
     fs.readFileSync(path.join(memosDir, files[0]), 'utf-8'),
   ) as Record<string, unknown>
   assert.equal(persisted.id, 'memo-0001')
-  assert.equal(persisted.status, 'draft')
+  assert.equal(persisted.status, 'pending')
   assert.ok(Array.isArray(persisted.status_history))
 }
 
@@ -119,7 +119,7 @@ async function testWriteVerificationFailure() {
   const originalReadFileSync = fs.readFileSync
   mutableFs.readFileSync = ((target: fs.PathOrFileDescriptor, options?: unknown) => {
     if (typeof target === 'string' && target.endsWith(`${path.sep}memo-0001-verify-fail.yaml`)) {
-      return 'id: memo-0001\ntype: memo\nstatus: active\n'
+      return 'id: memo-0001\ntype: memo\nstatus: resolved\n'
     }
     return originalReadFileSync(target, options as never)
   }) as typeof fs.readFileSync
@@ -131,7 +131,7 @@ async function testWriteVerificationFailure() {
     assert.equal(response.status, 500)
     assert.equal(payload.ok, false)
     assert.equal(payload.code, 'MEMO_WRITE_VERIFY_FAILED')
-    assert.ok(payload.errors.includes('status must be draft'))
+    assert.ok(payload.errors.includes('status must be pending'))
   } finally {
     mutableFs.readFileSync = originalReadFileSync
   }
