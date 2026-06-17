@@ -29,9 +29,9 @@ ldvh_member:
 ---
 ## 1. 对象定位与准入条件
 
-WorkPlan / 工作计划是 Human 与 AI 围绕一次目标达成的工作事实契约。工作计划承载目标、范围、成功标准、所属工作域、执行编排、角色契约、验证证据、关闭审查和经验分流。
+WorkPlan / 工作计划是 Human 与 AI 围绕一次目标达成的工作事实契约。工作计划承载目标、范围、成功标准、所属工作域、执行编排、验证证据、关闭审查和经验分流。
 
-Human 主要确认工作计划是否对齐目标和关闭判断；AI 负责在工作计划内部安排执行项、调度角色、完成验证和整理证据。执行项只属于 WorkPlan 内部编排，不作为独立工作模型，不进入 20-39 集合，也不在 `ldvh-base/` 下形成独立事实实例。
+Human 主要确认工作计划是否对齐目标和关闭判断；AI 负责在工作计划内部安排执行项、调度角色或专业视角、完成验证和整理证据。执行项只属于 WorkPlan 内部编排，不作为独立工作模型，不进入 20-39 集合，也不在 `ldvh-base/` 下形成独立事实实例。
 
 ### 1.1 工作计划准入条件
 
@@ -76,7 +76,9 @@ ldvh-base/workplans/workplan-{NNNN}-short-title.yaml
 | `review_needed` | 验证证据和关闭证据已整理，待关闭审查 |
 | `closed` | 关闭判断已确认，工作计划终态稳定 |
 
-`closed` 是稳定终态。目标重新启动、扩大范围或改变成功标准时，应创建新的工作计划，并引用原工作计划。
+`closed` 是稳定终态，只表示该工作计划不再作为 active 计划推进，不等同于目标成功。关闭可以表示目标完成、被新工作计划承接、范围失效、终止、降级接受或其他经证据说明的关闭结果；关闭原因、完成程度、残留风险、未完成项分流和 Human Gate 结果必须写入 `closure_evidence` 或关联工作对象。
+
+目标重新启动、扩大范围或改变成功标准时，应创建新的工作计划，并引用原工作计划。
 
 `active` 状态的工作计划不得退回 `draft`。如果确认后发现目标、范围或成功标准需要大幅修改，应关闭当前工作计划并记录原因，或创建新工作计划承接。
 
@@ -92,9 +94,9 @@ review_needed -> active
 | 流转 | 触发条件 | 说明 |
 |---|---|---|
 | `draft` -> `active` | 工作域、目标、成功标准和初始执行编排已确认 | Human 直接确认的主要入口 |
-| `active` -> `review_needed` | 计划内应完成的执行项已完成，验证证据和关闭证据已整理 | 应填写 `review_requested_at` 和 `closure_evidence` |
-| `review_needed` -> `closed` | Human 完成关闭审查 | 应填写 `closed_at` |
-| `review_needed` -> `active` | 审查不通过或需要继续执行 | 应记录退回原因 |
+| `active` -> `review_needed` | 计划内应完成的执行项已完成，成功标准已检查，验证证据和关闭证据已整理 | 应填写 `review_requested_at`、`verification_evidence` 和 `closure_evidence` |
+| `review_needed` -> `closed` | Human 完成关闭审查 | 应填写 `closed_at`，并确认 `closure_evidence` 足以解释关闭结果 |
+| `review_needed` -> `active` | 审查不通过或需要继续执行 | 应在 `closure_evidence` 或执行编排中记录退回原因和继续执行方向 |
 
 ---
 ## 4. 对象关系
@@ -156,7 +158,7 @@ review_needed -> active
 7. 跳过未验证执行项或通过豁免关闭工作计划；
 8. 合并、拆分或重新组织工作计划。
 
-Human Gate 发生在工作计划层。执行项、角色契约、子 Agent 输出和工具结果不作为 Human 直接管理入口；它们必须回到工作计划证据或对应工作对象后才成为稳定事实。
+Human Gate 发生在工作计划层。执行项、角色说明、子 Agent 输出和工具结果不作为 Human 直接管理入口；它们必须回到工作计划证据或对应工作对象后才成为稳定事实。
 
 ---
 ## 6. 字段契约
@@ -174,14 +176,13 @@ Human Gate 发生在工作计划层。执行项、角色契约、子 Agent 输�
 | `workarea` | 所属工作域 ID | string | 是 | 必须引用已存在 WorkArea | Reference | AI、Code、Web |
 | `priority` | 执行优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05-工作模型基础规范.md` §7.3.1 | Reference | AI、Code、Web |
 | `description` | 目标背景、范围和问题说明 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
-| `success_criteria` | 工作计划成功标准 | string | 是 | 应能支持关闭审查 | Narrative / Checklist | AI、Code、Web |
+| `success_criteria` | 工作计划成功标准 | string | 是 | 应使用 checklist 或等价可验证条目支持关闭审查 | Checklist | AI、Code、Web |
 | `source` | 工作计划来源 | string | 是 | 谁在什么场景下表达 | Reference / Narrative | AI、Web |
 | `orchestration` | 执行编排对象 | object | 是 | 至少包含 `mode`、`execution_items` 和 `review` | Reference / Log | AI、Code、Web |
-| `role_contracts` | 本计划可用角色契约 | list[object] | 否 | 默认为空列表；由执行编排引用 | Reference / Narrative | AI、Code |
-| `verification_evidence` | 验证证据 | string | 条件必填 | `review_needed` 或 `closed` 时必须填写 | 验证证据 | AI、Code、Web |
-| `closure_evidence` | 关闭证据 | string | 条件必填 | `review_needed` 或 `closed` 时必须填写 | 验证证据 | AI、Code、Web |
-| `review_requested_at` | 请求关闭审查时间 | date | 条件必填 | `review_needed` 或 `closed` 时必须填写 | Reference | AI、Code、Web |
-| `closed_at` | 关闭时间 | date | 条件必填 | `closed` 时必须填写 | Reference | AI、Code、Web |
+| `verification_evidence` | 验证证据，说明成功标准如何被检查 | string | 条件必填 | `review_needed` 或 `closed` 时必须填写 | 验证证据 | AI、Code、Web |
+| `closure_evidence` | 关闭证据，说明为何可以关闭、残留风险和 Human Gate 结果 | string | 条件必填 | `review_needed` 或 `closed` 时必须填写 | 验证证据 | AI、Code、Web |
+| `review_requested_at` | 请求关闭审查时间 | datetime | 条件必填 | `review_needed` 或 `closed` 时必须填写 | Reference | AI、Code、Web |
+| `closed_at` | 关闭时间 | datetime | 条件必填 | `closed` 时必须填写 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 来源或关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -199,6 +200,14 @@ Human Gate 发生在工作计划层。执行项、角色契约、子 Agent 输�
 | `review` | 主控自检、专业复检和关闭检查安排 | object | 是 |
 
 `execution_items` 是工作计划内部字段，不得被提升为独立工作模型。并行执行项可以由不同子 Agent 或专业角色执行；子 Agent 不再继续创建子 Agent，所有结果回到主控汇总、自检和后续复检。
+
+`role` 只表达本执行项所需的专业视角、责任边界或子 Agent 类型，不在 WorkPlan 字段契约中提前定义完整角色规则。完整角色规则如需稳定化，应由工作流程、能力资产规范或后续专门规范承接；WorkPlan 只保留执行恢复所需的最小角色标识。
+
+`review` 只声明关闭前的检查安排，不承载稳定审查结论，也不形成独立 Review 工作对象。审查结论必须回到 `verification_evidence`、`closure_evidence` 或对应工作对象。`review` 至少应说明以下内容：
+
+1. `controller_self_check`：主控是否必须在申请关闭前自检；
+2. `specialist_review`：是否需要专业角色或独立子 Agent 复检；需要时应说明角色或输入输出边界；
+3. `human_closure_review`：是否需要 Human 关闭审查；工作计划从 `review_needed` 关闭为 `closed` 时默认需要。
 
 ### 6.2 YAML 示例
 
@@ -237,10 +246,11 @@ orchestration:
       blocking_reason:
   review:
     controller_self_check: true
-    specialist_review: true
-role_contracts:
-  - id: specs-editor
-    purpose: 维护正式规范正文和引用边界
+    specialist_review:
+      required: true
+      role: specs-reviewer
+      expected_output: 独立复检结论和需要回写的风险提示
+    human_closure_review: true
 related_docs: []
 related_adrs: []
 related_memos: []
@@ -296,7 +306,7 @@ Web 应把工作计划作为 Human 直接查看和确认的主对象。Web 可�
 | 执行编排 | `orchestration.execution_items` 是内部字段，不存在独立执行项事实源文件 |
 | 人类入口 | 关闭审查发生在工作计划层 |
 | 关闭证据 | review_needed / closed 具备验证证据和关闭证据 |
-| 角色契约 | 专业角色的输入、输出、权限和停止条件由工作计划或对应流程声明 |
+| 角色边界 | 执行项仅保留最小 `role` 标识；完整角色规则如需稳定化，由工作流程、能力资产规范或后续专门规范承接 |
 
 ---
 ## 11. 待补齐事项
