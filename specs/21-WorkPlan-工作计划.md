@@ -107,18 +107,31 @@ review_needed -> active
 
 工作计划通过 `execution_items` 字段承载内部执行编排。执行项用于说明 AI 当前如何安排工作、验证和角色分工；执行项没有独立状态机、编号区段或事实源文件。
 
-执行项至少应说明：
+执行项不是“更小的工作对象”。它只承载 WorkPlan 内部执行委派、恢复和关闭判断所需的最小信息；执行者拿到执行项后可以使用自身的临时 checklist、计划模式、工具调用和局部推理继续拆分，但这些执行期拆分不进入 LDVH 长期事实源。
+
+执行项至少应说明以下最小恢复信息：
 
 1. `id`：工作计划内局部唯一标识；
 2. `title`：一句话概括；
-3. `mode`：`sequential`、`parallel` 或 `single`；
-4. `role_contract`：使用的角色契约或专业视角；
-5. `status`：当前执行态，由工作计划内部使用；
-6. `acceptance`：该执行项完成判断；
-7. `verification`：该执行项验证方式或结果；
-8. `outputs`：稳定产物、证据或回写目标。
+3. `role`：承担该执行项的角色、子 Agent 类型或专业视角；
+4. `mode`：`sequential`、`parallel` 或 `single`；
+5. `input_refs`：该执行项读取或依赖的事实源、文件、对象或上下文入口；
+6. `expected_output`：该执行项应交还的结果类型、证据类型或判断；
+7. `status`：当前内部执行态，由工作计划内部使用；
+8. `result_summary`：已完成时的结果摘要；
+9. `evidence_refs`：稳定产物、验证证据、命令、路径或回写目标；
+10. `blocking_reason`：未完成或等待时的阻塞原因，可为空。
 
 执行项不得被其他工作对象直接引用为长期事实。需要长期追踪的结论，应按性质分流到 WorkPlan、ADR、Memo、Pitfall、Change、docs 或正式规范。
+
+当某个执行项出现以下任一情况时，应停止把它作为内部执行项继续推进，并按事实性质分流；若它仍是可执行工作，应创建新的 WorkPlan：
+
+1. 需要独立目标、独立范围或独立成功标准；
+2. 需要独立 Human Gate、独立验收或独立关闭判断；
+3. 需要跨会话长期治理或成为后续工作的事实源入口；
+4. 产生独立 ADR、Memo、Pitfall 或 Change 链路，且该链路已经超出当前 WorkPlan 的关闭判断；
+5. 范围扩大到当前 WorkPlan 无法清晰关闭；
+6. 继续作为执行项会迫使 Web、Code 或 Human 把它当成一级对象管理。
 
 ### 4.3 工作计划与 ADR、Memo、Pitfall、Change
 
@@ -210,15 +223,18 @@ orchestration:
   execution_items:
     - id: item-1
       title: 更新模型规范
+      role: specs-editor
       mode: sequential
-      role_contract: specs-editor
-      status: done
-      acceptance: |
-        - [x] 规范正文完成
-      verification: |
-        已运行 specs 校验。
-      outputs:
+      input_refs:
+        - specs/05-工作模型基础规范.md
         - specs/21-WorkPlan-工作计划.md
+      expected_output: 更新后的 WorkPlan 规范正文和可复查验证结果
+      status: done
+      result_summary: WorkPlan 规范已更新，执行项边界已收敛为内部恢复节点。
+      evidence_refs:
+        - specs/21-WorkPlan-工作计划.md
+        - python3 code/specs_validate.py all --fail-on-diagnostics
+      blocking_reason:
   review:
     controller_self_check: true
     specialist_review: true
