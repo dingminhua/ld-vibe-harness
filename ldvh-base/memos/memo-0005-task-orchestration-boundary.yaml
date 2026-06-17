@@ -238,7 +238,9 @@ description: |
   - ExecutionItem 对应 AI 当前执行所需的最小可恢复编排，不应上升为长期工作模型。
   - Role Contract 对应专业子 Agent 的输入、权限、输出和交还边界。
   - 00 修改应把体系从“对象化任务管理”修正为“面向 AI 协作的事实源治理”。
-source: 我发现的
+evolution: []
+source: ai
+source_detail: 我发现的
 priority: P1
 resolved_to: ""
 resolved_at: ""
@@ -248,7 +250,7 @@ related_taskplans: []
 related_tasks: []
 related_adrs:
   - adr-0010
-related_changes: []
+related_studies: []
 related_docs:
   - specs/05-工作模型基础规范.md
   - specs/05.01-工作字段内容格式规范.md

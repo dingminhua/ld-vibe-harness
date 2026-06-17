@@ -40,7 +40,7 @@ Change 是工作模型中的特殊对象：它不使用 `ldvh-base/changes/` 下
 3. 修改 `ldvh-base/` 下的事实实例；
 4. 修改 Rules / Instructions、Skill、Agent、环境适配记录或适配措施；
 5. 修改 Code、Web、测试、配置或会影响 LDVH 行为的实现文件；
-6. 完成 WorkArea、WorkPlan、ADR、Memo、Pitfall 等对象的创建、状态变化、关闭或删除；
+6. 完成 WorkArea、WorkPlan、ADR、Memo、Study、Pitfall 等对象的创建、状态变化、关闭或删除；
 7. 影响其他对象、规范入口、事实源边界或需要跨会话追溯的修改。
 
 以下修改通常不需要单独作为 Change 强制记录，但如果被提交，commit message 仍应符合本文格式：
@@ -129,9 +129,9 @@ WorkArea 的创建、归档、恢复和范围变更都应留下 Change。WorkPla
 
 当 Change 涉及长期决策、事实源边界、架构方向或高影响规则变化时，应创建或关联 ADR。ADR 的准入、状态和字段契约由 `specs/24-ADR-决策.md` 定义。
 
-### 4.4 Change 与 Memo、Pitfall
+### 4.4 Change 与 Memo、Study、Pitfall
 
-Memo 的准入、状态和字段契约由 `specs/26-Memo-备忘.md` 定义。Pitfall 的准入、状态和字段契约由 `specs/25-Pitfall-踩坑经验.md` 定义。Change 可通过 `Refs:` 或 body 记录相关 Memo、Pitfall ID、路径或摘要。
+Memo 的准入、状态和字段契约由 `specs/26-Memo-备忘.md` 定义。Study 的准入、状态和字段契约由 `specs/28-Study-研究报告.md` 定义。Pitfall 的准入、状态和字段契约由 `specs/25-Pitfall-踩坑经验.md` 定义。Change 可通过 `Refs:` 或 body 记录相关 Memo、Study、Pitfall ID、路径或摘要。
 
 ### 4.5 Change 与规范、Code、Web
 
@@ -221,6 +221,7 @@ scope 为推荐值，项目可以在不破坏解析的前提下扩展。若历�
 | WorkPlan | `workplan-0001` |
 | ADR | `adr-0001` |
 | Memo | `memo-0001` |
+| Study | `study-0001` |
 | Pitfall | `pitfall-0001` |
 | 规范文档 | `27-Change-变更` |
 | commit hash | `abc1234` |

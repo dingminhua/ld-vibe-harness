@@ -2,11 +2,11 @@
 
 ## 1. Positioning
 
-LDVH Web is the Human-facing surface for Git-backed LDVH fact objects. It does not replace specs, Code validation, or YAML fact sources.
+LDVH Web is the Human-facing surface for Git-backed LDVH fact objects. It does not replace specs, Code validation, YAML fact sources, Study Markdown fact sources, or Git-backed Change records.
 
 The repository intentionally keeps system tests under the root `tests/` directory because Web behavior often verifies the integration among:
 
-- `ldvh-base/` YAML fact objects
+- `ldvh-base/` YAML fact objects and Study Markdown fact objects
 - `code/` deterministic Python tools
 - `web/api/` Express routes
 - `web/src/` React views

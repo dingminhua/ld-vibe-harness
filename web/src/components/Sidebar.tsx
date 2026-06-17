@@ -25,6 +25,7 @@ const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: s
   { to: '/objects/adr', labelKey: 'nav.adrs', icon: OBJECT_TYPE_ICONS.adr },
   { to: '/objects/pitfall', labelKey: 'nav.pitfalls', icon: OBJECT_TYPE_ICONS.pitfall },
   { to: '/objects/memo', labelKey: 'nav.memos', icon: OBJECT_TYPE_ICONS.memo },
+  { to: '/objects/study', labelKey: 'nav.studies', icon: OBJECT_TYPE_ICONS.study },
   { to: '/validate', labelKey: 'nav.validate', icon: OBJECT_TYPE_ICONS.validate },
   { to: '/gate', labelKey: 'nav.gate', icon: OBJECT_TYPE_ICONS.gate },
   { to: '/changelog', labelKey: 'nav.changelog', icon: OBJECT_TYPE_ICONS.changelog },

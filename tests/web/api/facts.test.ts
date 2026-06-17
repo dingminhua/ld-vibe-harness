@@ -39,6 +39,20 @@ const FIXTURE_ALLOWED_FIELDS: Record<string, Set<string>> = {
     'task', 'description', 'source', 'acceptance', 'blocked_by', 'verification',
     'closure_evidence', 'closed_at',
   ]),
+  memo: new Set([
+    'id', 'type', 'title', 'status', 'created', 'updated',
+    'description', 'evolution', 'source', 'source_detail', 'priority',
+    'resolved_to', 'resolved_at', 'discard_reason',
+    'related_tasks', 'related_adrs', 'related_studies', 'related_workareas',
+    'related_taskplans', 'related_docs',
+  ]),
+  study: new Set([
+    'id', 'type', 'title', 'status', 'created', 'updated',
+    'summary', 'source', 'source_detail', 'conclusion', 'source_docs',
+    'related_memos', 'related_workareas', 'related_taskplans', 'related_tasks',
+    'related_adrs', 'related_pitfalls', 'related_docs',
+    'superseded_by', 'archive_reason', 'report_body',
+  ]),
 }
 
 const FIXTURE_REQUIRED_FIELDS: Record<string, string[]> = {
@@ -46,23 +60,26 @@ const FIXTURE_REQUIRED_FIELDS: Record<string, string[]> = {
   taskplan: ['id', 'type', 'title', 'status', 'created', 'updated', 'workarea', 'priority', 'description', 'success_criteria', 'source', 'tasks'],
   task: ['id', 'type', 'title', 'status', 'created', 'updated', 'taskplan', 'description', 'source', 'acceptance'],
   subtask: ['id', 'type', 'title', 'status', 'created', 'updated', 'task', 'description', 'source', 'acceptance'],
+  memo: ['id', 'type', 'title', 'status', 'created', 'updated', 'description', 'source', 'priority'],
+  study: ['id', 'type', 'title', 'status', 'created', 'updated', 'summary', 'source'],
 }
 
 const PLAN_CLOSE_REVIEW_STATUSES = new Set(['review_needed', 'closed'])
 const STARTED_TASK_STATUSES = new Set(['executing', 'verifying', 'review_needed', 'closed'])
 const OBJECT_CLOSURE_EVIDENCE_STATUSES = new Set(['review_needed', 'closed'])
-const PATH_REFERENCE_FIELDS = ['related_docs', 'affected_docs', 'deliverables'] as const
+const PATH_REFERENCE_FIELDS = ['related_docs', 'source_docs', 'affected_docs', 'deliverables'] as const
 const AFFECTED_DOC_PREFIXES = ['docs/', 'web/docs/', 'specs/'] as const
 const OBJECT_REFERENCE_FIELDS: Record<string, string> = {
   related_adrs: 'adr',
   related_memos: 'memo',
+  related_studies: 'study',
   related_pitfalls: 'pitfall',
 }
 
 function listYamlFiles(dir: string): string[] {
   return fs.existsSync(dir)
     ? fs.readdirSync(dir)
-      .filter((file) => file.endsWith('.yaml') || file.endsWith('.yml'))
+      .filter((file) => file.endsWith('.yaml') || file.endsWith('.yml') || file.startsWith('study-') && file.endsWith('.md'))
       .map((file) => path.join(dir, file))
     : []
 }
@@ -97,11 +114,18 @@ function resolveFixturePath(reference: string): string {
 }
 
 function loadFixtureRecords(): FixtureRecord[] {
-  const files = ['workareas', 'taskplans', 'tasks', 'subtasks', 'adrs', 'memos', 'pitfalls']
+  const files = ['workareas', 'taskplans', 'tasks', 'subtasks', 'adrs', 'memos', 'pitfalls', 'studies']
     .flatMap((dir) => listYamlFiles(path.join(fixtureRoot, 'ldvh-base', dir)))
 
   return files.flatMap((file) => {
-    const obj = yaml.load(fs.readFileSync(file, 'utf8')) as Record<string, unknown> | null
+    const content = fs.readFileSync(file, 'utf8')
+    const obj = file.endsWith('.md')
+      ? (() => {
+          const end = content.indexOf('\n---', 4)
+          const parsed = yaml.load(content.slice(4, end)) as Record<string, unknown> | null
+          return parsed ? { ...parsed, report_body: content.slice(end + 4).trim() } : null
+        })()
+      : yaml.load(content) as Record<string, unknown> | null
     if (!obj || typeof obj !== 'object') return []
     return [{ file, relativeFile: path.relative(fixtureRoot, file), obj }]
   })
@@ -115,7 +139,7 @@ function assertFixtureConformsToSpecs() {
     if (id) byId.set(id, record)
   }
 
-  const mainRecords = records.filter((record) => ['workarea', 'taskplan', 'task', 'subtask'].includes(String(record.obj.type ?? '')))
+  const mainRecords = records.filter((record) => ['workarea', 'taskplan', 'task', 'subtask', 'memo', 'study'].includes(String(record.obj.type ?? '')))
   const tasks = mainRecords.filter((record) => record.obj.type === 'task')
   const subtasks = mainRecords.filter((record) => record.obj.type === 'subtask')
   const subtasksByTask = new Map<string, FixtureRecord[]>()
@@ -153,6 +177,19 @@ function assertFixtureConformsToSpecs() {
       if (obj.status !== 'archived' && !isBlank(obj.archive_reason)) {
         issues.push(`${relativeFile} (${id}): archive_reason is only valid when status is archived`)
       }
+    }
+
+    if (type === 'study') {
+      if (obj.source !== 'human' && obj.source !== 'ai') {
+        issues.push(`${relativeFile} (${id}): Study source must be human or ai`)
+      }
+      if (isBlank(obj.report_body)) {
+        issues.push(`${relativeFile} (${id}): Study requires report_body`)
+      }
+    }
+
+    if (type === 'memo' && obj.source !== 'human' && obj.source !== 'ai') {
+      issues.push(`${relativeFile} (${id}): Memo source must be human or ai`)
     }
 
     if (type === 'taskplan') {
@@ -414,6 +451,14 @@ async function main() {
   const firstMemoItem = fixtureMemos.data.items[0] as Record<string, unknown>
   assert.deepEqual(getObjectSignals(firstMemoItem, 'memo').map((signal) => signal.field), ['priority'])
   assert.equal(getObjectPriority(firstMemoItem, 'memo'), 'P1')
+
+  const fixtureStudies = await listObjects('study', fixtureRoot)
+  assert.equal(fixtureStudies.ok, true)
+  assert.equal(fixtureStudies.data.items.length, 1)
+  const study = await showObject('study-9001', fixtureRoot)
+  assert.equal(study.ok, true)
+  assert.equal(study.data.type, 'study')
+  assert.match(String(study.data.report_body), /测试夹具字段边界研究/)
 }
 
 main().catch((error) => {

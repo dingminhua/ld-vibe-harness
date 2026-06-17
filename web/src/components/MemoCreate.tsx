@@ -12,7 +12,6 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [source, setSource] = useState('');
   const [priority, setPriority] = useState('P3');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +21,6 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
   const reset = () => {
     setTitle('');
     setDescription('');
-    setSource('');
     setPriority('P3');
     setError(null);
     setSuccess(false);
@@ -37,7 +35,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
       const res = await fetch(`${API_BASE}/memos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, source, priority }),
+        body: JSON.stringify({ title, description, priority }),
       });
 
       if (!res.ok) {
@@ -114,18 +112,6 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
                 rows={3}
                 placeholder={t('memo.descriptionPlaceholder')}
                 className="ldvh-body w-full resize-none rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 placeholder:text-ldvh-text-secondary focus:border-ldvh-accent/40 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="ldvh-caption-strong mb-1 block">{t('memo.source')}</label>
-              <input
-                type="text"
-                value={source}
-                onChange={e => setSource(e.target.value)}
-                required
-                placeholder={t('memo.sourcePlaceholder')}
-                className="ldvh-body w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 placeholder:text-ldvh-text-secondary focus:border-ldvh-accent/40 focus:outline-none"
               />
             </div>
 

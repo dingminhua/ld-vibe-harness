@@ -106,6 +106,14 @@ export interface ObjectItem {
   /** Memo-specific */
   source?: string;
   description?: string;
+  evolution?: Array<Record<string, unknown>>;
+  source_detail?: string;
+  related_studies?: string[];
+  /** Study-specific */
+  summary?: string;
+  conclusion?: string;
+  source_docs?: string[];
+  report_body?: string;
   /** Pitfall-specific */
   resolution?: string;
   source_tasks?: string[];

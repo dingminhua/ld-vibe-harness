@@ -14,7 +14,7 @@ import yaml
 
 
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"workarea", "taskplan", "task", "subtask", "adr", "pitfall", "memo"}
+OBJECT_TYPES = {"workarea", "taskplan", "task", "subtask", "adr", "pitfall", "memo", "study"}
 FILENAME_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "taskplan": re.compile(r"^taskplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
@@ -23,6 +23,7 @@ FILENAME_PATTERNS = {
     "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "study": re.compile(r"^study-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$"),
 }
 ID_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}$"),
@@ -32,6 +33,7 @@ ID_PATTERNS = {
     "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
     "memo": re.compile(r"^memo-\d{4}$"),
+    "study": re.compile(r"^study-\d{4}$"),
 }
 VALID_STATUSES = {
     "workarea": {"active", "archived"},
@@ -41,6 +43,7 @@ VALID_STATUSES = {
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "memo": {"pending", "resolved", "discarded"},
+    "study": {"draft", "active", "superseded", "archived"},
 }
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
@@ -50,6 +53,7 @@ REQUIRED_FIELDS = {
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
+    "study": ["id", "type", "title", "status", "created", "updated", "summary", "source"],
 }
 LIST_FIELDS = {
     "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "taskplans"},
@@ -65,7 +69,11 @@ LIST_FIELDS = {
         "source_tasks", "source_memos", "related_workareas", "related_taskplans", "related_adrs",
         "related_changes", "related_docs",
     },
-    "memo": {"related_workareas", "related_taskplans", "related_tasks", "related_adrs", "related_docs"},
+    "memo": {"evolution", "related_workareas", "related_taskplans", "related_tasks", "related_adrs", "related_studies", "related_docs"},
+    "study": {
+        "source_docs", "related_workareas", "related_taskplans", "related_tasks", "related_adrs",
+        "related_memos", "related_pitfalls", "related_docs",
+    },
 }
 
 # 12-工作模型字段内容格式规范：长文本字段定义
@@ -76,11 +84,12 @@ LONG_TEXT_FIELDS = {
     "subtask": {"description", "acceptance", "verification", "closure_evidence"},
     "adr": {"context", "decision", "consequences"},
     "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
-    "memo": {"description", "discard_reason"},
+    "memo": {"description", "source_detail", "discard_reason"},
+    "study": {"summary", "source_detail", "conclusion", "archive_reason"},
 }
 
 # 12-工作模型字段内容格式规范：路径引用字段定义
-PATH_FIELDS = {"related_docs", "deliverables", "affected_docs", "related_rules"}
+PATH_FIELDS = {"related_docs", "deliverables", "affected_docs", "related_rules", "source_docs"}
 
 # 12-工作模型字段内容格式规范：Evidence 字段定义
 EVIDENCE_FIELDS = {"verification", "closure_evidence"}
@@ -134,6 +143,12 @@ def is_empty(value: Any) -> bool:
     return False
 
 
+def is_fact_file(path: Path) -> bool:
+    if path.suffix == ".yaml":
+        return True
+    return path.suffix == ".md" and path.name.startswith("study-")
+
+
 def collect_yaml_files(paths: list[str]) -> tuple[list[Path], list[Issue]]:
     files = []
     issues = []
@@ -145,8 +160,8 @@ def collect_yaml_files(paths: list[str]) -> tuple[list[Path], list[Issue]]:
             issues.append(Issue(display_path, "error", "INPUT_PATH_MISSING", "路径不存在"))
             continue
         if path.is_file():
-            if path.suffix != ".yaml":
-                issues.append(Issue(display_path, "error", "INPUT_NOT_YAML", "输入文件必须是 .yaml 文件"))
+            if not is_fact_file(path):
+                issues.append(Issue(display_path, "error", "INPUT_NOT_FACT_FILE", "输入文件必须是 .yaml 工作对象或 study-*.md Study 文件"))
                 continue
             resolved = path.resolve()
             if resolved not in seen:
@@ -154,17 +169,42 @@ def collect_yaml_files(paths: list[str]) -> tuple[list[Path], list[Issue]]:
                 files.append(path)
             continue
         if path.is_dir():
-            for yaml_path in sorted(path.rglob("*.yaml"), key=lambda item: str(item)):
-                resolved = yaml_path.resolve()
+            candidates = list(path.rglob("*.yaml")) + list(path.rglob("study-*.md"))
+            for fact_path in sorted(candidates, key=lambda item: str(item)):
+                resolved = fact_path.resolve()
                 if resolved not in seen:
                     seen.add(resolved)
-                    files.append(yaml_path)
+                    files.append(fact_path)
             continue
-        issues.append(Issue(display_path, "error", "INPUT_UNSUPPORTED", "输入路径必须是 .yaml 文件或目录"))
+        issues.append(Issue(display_path, "error", "INPUT_UNSUPPORTED", "输入路径必须是工作对象文件或目录"))
     return files, issues
 
 
+def load_study_markdown(path: Path) -> tuple[dict[str, Any] | None, Issue | None]:
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return None, Issue(str(path), "error", "INPUT_READ_ERROR", f"读取失败: {exc}")
+    if not content.startswith("---\n"):
+        return None, Issue(str(path), "error", "FRONTMATTER_MISSING", "Study Markdown 必须以 YAML frontmatter 开始")
+    end = content.find("\n---", 4)
+    if end == -1:
+        return None, Issue(str(path), "error", "FRONTMATTER_MISSING", "Study Markdown 缺少 frontmatter 结束标记")
+    frontmatter = content[4:end]
+    body = content[end + 4:].lstrip("\n")
+    try:
+        data = yaml.safe_load(frontmatter)
+    except yaml.YAMLError as exc:
+        return None, Issue(str(path), "error", "YAML_PARSE_ERROR", f"frontmatter 解析失败: {exc}")
+    if not isinstance(data, dict):
+        return None, Issue(str(path), "error", "YAML_TYPE_ERROR", "frontmatter 顶层结构必须是映射对象")
+    data["report_body"] = body
+    return data, None
+
+
 def load_yaml(path: Path) -> tuple[dict[str, Any] | None, Issue | None]:
+    if path.suffix == ".md":
+        return load_study_markdown(path)
     try:
         with open(path, "r", encoding="utf-8") as handle:
             data = yaml.safe_load(handle)
@@ -201,6 +241,8 @@ def infer_object_type(path: Path, data: dict[str, Any]) -> str | None:
         return "pitfall"
     if name.startswith("memo-"):
         return "memo"
+    if name.startswith("study-"):
+        return "study"
     return None
 
 
@@ -451,11 +493,13 @@ def find_object_by_id(project_root: Path, object_type: str, object_id: str) -> t
         "adr": "adrs",
         "pitfall": "pitfalls",
         "memo": "memos",
+        "study": "studies",
     }.get(object_type)
     if directory_name is None:
         return None, None, None
     directory = project_root / "ldvh-base" / directory_name
-    matches = sorted(directory.glob(f"{object_id}-*.yaml"))
+    suffix = ".md" if object_type == "study" else ".yaml"
+    matches = sorted(directory.glob(f"{object_id}-*{suffix}"))
     if not matches:
         return None, None, None
     object_path = matches[0]
@@ -697,6 +741,7 @@ def validate_subtask(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 VALID_REPEATABILITY = {"unknown", "once", "recurring"}
 VALID_PRIORITY = {"P0", "P1", "P2", "P3"}
+VALID_SOURCE = {"human", "ai"}
 
 ID_LIST_FIELDS = {
     "related_workareas": "workarea",
@@ -704,6 +749,7 @@ ID_LIST_FIELDS = {
     "related_tasks": "task",
     "related_adrs": "adr",
     "related_memos": "memo",
+    "related_studies": "study",
     "related_pitfalls": "pitfall",
     "source_tasks": "task",
     "source_memos": "memo",
@@ -732,13 +778,34 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
         issues.append(Issue(str(path), "error", "LEGACY_MEMO_FIELD", "Memo 不得维护 category；请删除该字段", field="category"))
     if "importance" in data:
         issues.append(Issue(str(path), "error", "LEGACY_MEMO_FIELD", "Memo 不得继续使用旧字段 importance；请迁移为 priority", field="importance"))
+    issues.extend(validate_enum_field(path, data, "source", VALID_SOURCE))
     issues.extend(validate_enum_field(path, data, "priority", VALID_PRIORITY))
+    if "evolution" in data:
+        evolution = data.get("evolution")
+        if not isinstance(evolution, list):
+            issues.append(Issue(str(path), "error", "INVALID_EVOLUTION", "evolution 必须是 list", field="evolution"))
+        else:
+            for index, item in enumerate(evolution, start=1):
+                if not isinstance(item, dict) or is_empty(item.get("at")) or is_empty(item.get("summary")):
+                    issues.append(Issue(str(path), "error", "INVALID_EVOLUTION_ITEM", f"evolution 第 {index} 项至少需要 at 和 summary", field="evolution"))
     if data.get("status") == "resolved":
         for field in ["resolved_to", "resolved_at"]:
             if is_empty(data.get(field)):
                 issues.append(Issue(str(path), "error", "MISSING_RESOLVED_FIELD", f"resolved 状态必须提供非空字段: {field}"))
     if data.get("status") == "discarded" and is_empty(data.get("discard_reason")):
         issues.append(Issue(str(path), "error", "MISSING_DISCARD_REASON", "discarded 状态必须提供非空字段: discard_reason", field="discard_reason"))
+    return issues
+
+
+def validate_study(path: Path, data: dict[str, Any]) -> list[Issue]:
+    issues = validate_common(path, data, "study")
+    issues.extend(validate_enum_field(path, data, "source", VALID_SOURCE))
+    if is_empty(data.get("report_body")):
+        issues.append(Issue(str(path), "error", "MISSING_REPORT_BODY", "Study Markdown 必须包含非空报告正文", field="report_body"))
+    if data.get("status") == "superseded" and is_empty(data.get("superseded_by")):
+        issues.append(Issue(str(path), "error", "MISSING_SUPERSEDED_BY", "superseded 状态必须提供非空字段: superseded_by", field="superseded_by"))
+    if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
+        issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态必须提供归档原因: archive_reason", field="archive_reason"))
     return issues
 
 
@@ -757,6 +824,7 @@ def validate_file(path: Path) -> tuple[list[Issue], bool]:
         "adr": validate_adr,
         "pitfall": validate_pitfall,
         "memo": validate_memo,
+        "study": validate_study,
     }
     return validators[object_type](path, data), False
 
@@ -797,7 +865,7 @@ def print_json_result(result: dict[str, Any]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="校验 LDVH 工作对象事实模型 YAML 文件")
-    parser.add_argument("paths", nargs="+", help="一个或多个 .yaml 文件或目录")
+    parser.add_argument("paths", nargs="+", help="一个或多个 .yaml 工作对象、study-*.md 文件或目录")
     parser.add_argument("--format", choices={"text", "json"}, default="text", help="输出格式，默认 text")
     return parser.parse_args()
 

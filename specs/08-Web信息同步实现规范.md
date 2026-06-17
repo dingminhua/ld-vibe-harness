@@ -241,7 +241,7 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 
 | 能力 | API | 写入目标 | 允许字段 | 约束 |
 |---|---|---|---|---|
-| Memo 快速创建 | `POST /api/memos` | `ldvh-base/memos/memo-{NNNN}-{slug}.yaml` | `title`、`description`、`source`、`priority` | 只能创建 `status: pending` 的新 Memo；必须校验必填字段和优先级；不得写入 `status_history`；不得在创建后通过 Web 编辑 Memo 字段或状态 |
+| Memo 快速创建 | `POST /api/memos` | `ldvh-base/memos/memo-{NNNN}-{slug}.yaml` | `title`、`description`、`priority` | 只能创建 `status: pending` 的新 Memo；必须校验必填字段和优先级；`source` 固定写入 `human`；不得写入 `status_history`；不得在创建后通过 Web 编辑 Memo 字段或状态 |
 
 白名单规则如下：
 
@@ -254,9 +254,9 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 
 Memo 快速创建作为当前唯一 Web 写入样例，应满足：
 
-1. 写入前校验 `title`、`description`、`source` 和 `priority` 最小字段；
+1. 写入前校验 `title`、`description` 和 `priority` 最小字段；
 2. 文件名、ID 和 slug 生成必须避免覆盖既有 Memo，冲突时返回明确错误；
-3. 写入后必须能重新读取目标文件并确认最小字段和 `status: pending` 存在，且不得出现手写 `status_history`；
+3. 写入后必须能重新读取目标文件并确认最小字段、`source: human` 和 `status: pending` 存在，且不得出现手写 `status_history`；
 4. API 响应必须区分成功、字段错误、冲突、写入失败和写后验证失败；
 5. 必须在 `tests/web/api/` 或等价 Web API 测试分区中覆盖成功、字段错误、冲突和写后验证路径；
 6. 不得扩展为通用 YAML 编辑器，不得修改既有 Memo 字段或状态。

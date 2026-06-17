@@ -78,6 +78,9 @@ function validatePersistedMemo(data: unknown, expectedId: string): string[] {
   if (data.status !== 'pending') {
     errors.push('status must be pending')
   }
+  if (data.source !== 'human') {
+    errors.push('source must be human for Web memo creation')
+  }
   if ('status_history' in data) {
     errors.push('status_history must not be written by Web memo creation')
   }
@@ -86,7 +89,7 @@ function validatePersistedMemo(data: unknown, expectedId: string): string[] {
 
 router.post('/', (req: Request, res: Response): void => {
   try {
-    const { title, description, source, priority } = req.body
+    const { title, description, priority } = req.body
 
     // 校验必填字段
     const errors: string[] = []
@@ -95,9 +98,6 @@ router.post('/', (req: Request, res: Response): void => {
     }
     if (!description || typeof description !== 'string' || !description.trim()) {
       errors.push('description is required')
-    }
-    if (!source || typeof source !== 'string' || !source.trim()) {
-      errors.push('source is required')
     }
     if (!priority || !VALID_PRIORITY.includes(priority)) {
       errors.push(`priority must be one of: ${VALID_PRIORITY.join(', ')}`)
@@ -131,7 +131,9 @@ router.post('/', (req: Request, res: Response): void => {
       created: today,
       updated: today,
       description: description.trim(),
-      source: source.trim(),
+      evolution: [] as Array<Record<string, string>>,
+      source: 'human',
+      source_detail: '',
       priority,
       resolved_to: '',
       resolved_at: '',
@@ -140,7 +142,7 @@ router.post('/', (req: Request, res: Response): void => {
       related_taskplans: [] as string[],
       related_tasks: [] as string[],
       related_adrs: [] as string[],
-      related_changes: [] as string[],
+      related_studies: [] as string[],
       related_docs: [] as string[],
     }
 

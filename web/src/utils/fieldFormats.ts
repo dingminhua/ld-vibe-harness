@@ -4,6 +4,7 @@ export const SUMMARY_TEXT_FIELDS = [
   'rationale', 'observation', 'analysis', 'mitigation', 'resolution', 'decision',
   'symptoms', 'trigger_conditions', 'root_cause', 'avoidance', 'applicability',
   'governance_scope', 'archive_reason', 'discard_reason', 'notes', 'transition_reasons',
+  'source_detail', 'conclusion', 'report_body',
   'alternatives', 'reason',
   'scope', 'impact', 'summary', 'details', 'outcome', 'next_steps',
   'lessons', 'background', 'motivation',
@@ -22,7 +23,7 @@ export const EVIDENCE_FIELDS = ['closure_evidence', 'verification', 'completion_
 export const REFERENCE_FIELDS = [
   'blocked_by', 'workarea', 'taskplan', 'task', 'tasks', 'related_workareas',
   'related_taskplans', 'related_tasks', 'related_subtasks', 'related_adrs', 'related_memos', 'related_pitfalls',
-  'related_profiles', 'source_tasks', 'source_memos',
+  'related_studies', 'related_profiles', 'source_tasks', 'source_memos',
   'superseded_by', 'resolved_to',
 ];
 
@@ -37,8 +38,8 @@ export const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 
 /** Fields that can be folded in detail view. */
 export const COLLAPSIBLE_FIELDS = [
   'tasks', 'related_workareas', 'related_taskplans', 'related_tasks', 'related_subtasks',
-  'related_docs', 'related_adrs', 'related_memos',
-  'related_pitfalls', 'related_profiles', 'deliverables', 'affected_docs', 'related_rules',
+  'related_docs', 'related_adrs', 'related_memos', 'related_studies',
+  'related_pitfalls', 'related_profiles', 'deliverables', 'affected_docs', 'related_rules', 'source_docs',
   'source_tasks', 'source_memos', 'blocked_by',
 ];
 
@@ -69,5 +70,5 @@ export function hasChecklist(value: string) {
 export function isObjectRef(refId: string) {
   const match = refId.match(/^([a-z]+)-\d+$/);
   if (!match) return false;
-  return ['workarea', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo', 'profile'].includes(match[1]);
+  return ['workarea', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo', 'study', 'profile'].includes(match[1]);
 }

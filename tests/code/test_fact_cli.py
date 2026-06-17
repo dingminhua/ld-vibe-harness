@@ -42,6 +42,14 @@ def read_yaml(path: Path):
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
+def read_study(path: Path):
+    content = path.read_text(encoding="utf-8")
+    assert content.startswith("---\n")
+    end = content.index("\n---", 4)
+    frontmatter = yaml.safe_load(content[4:end])
+    return frontmatter, content[end + 4:].lstrip()
+
+
 def write_yaml(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
@@ -138,7 +146,27 @@ def test_create_memo_uses_priority_not_importance(tmp_path):
     data = read_yaml(Path(result.stdout.strip()))
     assert data["status"] == "pending"
     assert data["priority"] == "P3"
+    assert data["source"] == "ai"
+    assert data["evolution"] == []
+    assert data["related_studies"] == []
+    assert "related_changes" not in data
     assert "importance" not in data
+
+
+def test_create_study_uses_markdown_frontmatter(tmp_path):
+    result = run_cli("create", "study", "--title", "Create study", base_dir=str(tmp_path))
+
+    assert result.returncode == 0, result.stderr
+    created_path = Path(result.stdout.strip())
+    assert created_path.name == "study-0001-create-study.md"
+    frontmatter, body = read_study(created_path)
+    assert frontmatter["id"] == "study-0001"
+    assert frontmatter["type"] == "study"
+    assert frontmatter["status"] == "draft"
+    assert frontmatter["source"] == "ai"
+    assert frontmatter["related_memos"] == []
+    assert "related_changes" not in frontmatter
+    assert "# Create study" in body
 
 
 def test_memo_resolve_and_discard_require_supporting_fields(tmp_path):

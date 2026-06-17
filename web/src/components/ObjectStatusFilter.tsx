@@ -33,6 +33,7 @@ const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   adr: ['proposed', 'accepted', 'rejected'],
   pitfall: ['active', 'superseded'],
   memo: ['pending', 'resolved', 'discarded'],
+  study: ['active', 'draft', 'archived', 'superseded'],
 };
 
 interface ObjectStatusFilterProps {
@@ -93,7 +94,7 @@ export default function ObjectStatusFilter({
   const sortedOptions = useMemo(() => sortStatusOptions(options), [options]);
   const fallbackStatuses = useMemo(() => getFallbackStatuses(type, activeStatus), [type, activeStatus]);
   const displayOptions = useMemo(() => {
-    if (type !== 'memo') return sortedOptions;
+    if (type !== 'memo' && type !== 'study') return sortedOptions;
     const counts = new Map(sortedOptions.map((option) => [option.status, option.count]));
     return fallbackStatuses.map((status) => ({ status, count: counts.get(status) ?? 0 }));
   }, [fallbackStatuses, sortedOptions, type]);

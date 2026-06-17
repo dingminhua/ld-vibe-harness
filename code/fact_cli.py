@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LDVH 事实模型 CLI 工具：create / transition / delete / list / show / search / stats / related / link-rule / deprecate / supersede。
 
-对 LDVH 生产对象（workarea, taskplan, task, subtask, adr, pitfall, memo）
+对 LDVH 生产对象（workarea, taskplan, task, subtask, adr, pitfall, memo, study）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
 Change 使用 Git commit 作为事实源，不通过本 CLI 管理。
 ADR 专属写入操作（link-rule / deprecate / supersede）必须携带 Human Gate 确认参数。
@@ -23,7 +23,7 @@ import yaml
 # ── 对象元数据（硬编码，与 fact_validate.py 保持一致） ──────────────
 
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"workarea", "taskplan", "task", "subtask", "adr", "pitfall", "memo"}
+OBJECT_TYPES = {"workarea", "taskplan", "task", "subtask", "adr", "pitfall", "memo", "study"}
 
 LIST_SUMMARY_FIELDS = ("priority", "importance", "repeatability")
 
@@ -35,6 +35,7 @@ ID_PATTERNS = {
     "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
     "memo": re.compile(r"^memo-\d{4}$"),
+    "study": re.compile(r"^study-\d{4}$"),
 }
 
 FILENAME_PATTERNS = {
@@ -45,6 +46,7 @@ FILENAME_PATTERNS = {
     "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "study": re.compile(r"^study-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$"),
 }
 
 VALID_STATUSES = {
@@ -55,6 +57,7 @@ VALID_STATUSES = {
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "memo": {"pending", "resolved", "discarded"},
+    "study": {"draft", "active", "superseded", "archived"},
 }
 
 VALID_TRANSITIONS = {
@@ -100,6 +103,12 @@ VALID_TRANSITIONS = {
         "resolved": {"discarded"},
         "discarded": set(),
     },
+    "study": {
+        "draft": {"active", "archived"},
+        "active": {"superseded", "archived"},
+        "superseded": set(),
+        "archived": set(),
+    },
 }
 
 REQUIRED_FIELDS = {
@@ -110,6 +119,7 @@ REQUIRED_FIELDS = {
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
+    "study": ["id", "type", "title", "status", "created", "updated", "summary", "source"],
 }
 
 DEFAULT_STATUS = {
@@ -120,6 +130,7 @@ DEFAULT_STATUS = {
     "adr": "proposed",
     "pitfall": "draft",
     "memo": "pending",
+    "study": "draft",
 }
 
 DIRECTORY_MAP = {
@@ -130,6 +141,7 @@ DIRECTORY_MAP = {
     "adr": "ldvh-base/adrs/",
     "pitfall": "ldvh-base/pitfalls/",
     "memo": "ldvh-base/memos/",
+    "study": "ldvh-base/studies/",
 }
 
 # 允许删除的状态集合
@@ -165,7 +177,7 @@ def next_number(directory: Path, prefix: str) -> int:
         return 1
     max_num = 0
     for f in directory.iterdir():
-        if f.is_file() and f.suffix == ".yaml":
+        if f.is_file() and f.suffix in {".yaml", ".md"}:
             m = re.match(rf"^{prefix}-(\d{{4}})-", f.name)
             if m:
                 num = int(m.group(1))
@@ -176,6 +188,29 @@ def next_number(directory: Path, prefix: str) -> int:
 
 def load_yaml(path: Path) -> dict | None:
     """加载 YAML 文件，失败时输出错误并返回 None。"""
+    if path.suffix == ".md":
+        try:
+            content = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            error(f"读取文件失败: {exc}")
+            return None
+        if not content.startswith("---\n"):
+            error("Markdown Study 缺少 YAML frontmatter")
+            return None
+        end = content.find("\n---", 4)
+        if end == -1:
+            error("Markdown Study 缺少 frontmatter 结束标记")
+            return None
+        try:
+            data = yaml.safe_load(content[4:end])
+        except yaml.YAMLError as exc:
+            error(f"frontmatter 解析失败: {exc}")
+            return None
+        if not isinstance(data, dict):
+            error("frontmatter 顶层结构必须是映射对象")
+            return None
+        data["report_body"] = content[end + 4:].lstrip("\n")
+        return data
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
@@ -191,9 +226,25 @@ def load_yaml(path: Path) -> dict | None:
     return data
 
 
+def object_glob(object_type: str) -> str:
+    return f"{object_type}-*.md" if object_type == "study" else f"{object_type}-*.yaml"
+
+
 def save_yaml(path: Path, data: dict) -> None:
-    """将数据写入 YAML 文件。"""
+    """将数据写入 YAML 文件；Study Markdown 写入 frontmatter 和正文。"""
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.suffix == ".md":
+        frontmatter = {key: value for key, value in data.items() if key != "report_body"}
+        body = str(data.get("report_body") or "").strip()
+        if not body:
+            body = f"# {data.get('title', '研究报告')}\n\n## 研究问题\n\n待补充。"
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("---\n")
+            yaml.dump(frontmatter, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            f.write("---\n\n")
+            f.write(body)
+            f.write("\n")
+        return
     with open(path, "w", encoding="utf-8") as f:
         yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
@@ -322,7 +373,7 @@ def _load_all_of_type(object_type: str, base_dir: Path) -> tuple[list[dict], lis
         return [], []
     objects = []
     parse_errors = []
-    for filepath in sorted(directory.glob(f"{object_type}-*.yaml")):
+    for filepath in sorted(directory.glob(object_glob(object_type))):
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
@@ -400,7 +451,7 @@ def _build_adr_data(adr_id: str, args: argparse.Namespace, now: str) -> dict:
 # ── create 命令 ─────────────────────────────────────────────────────────
 
 def cmd_create(args: argparse.Namespace) -> int:
-    """创建 LDVH 事实对象 YAML 文件。"""
+    """创建 LDVH 事实对象文件。"""
     object_type = args.object_type
     title = args.title
     short_title = args.short_title or title_to_short(title)
@@ -422,7 +473,8 @@ def cmd_create(args: argparse.Namespace) -> int:
     directory = base_dir / DIRECTORY_MAP[object_type]
     obj_num = next_number(directory, object_type)
     obj_id = f"{object_type}-{obj_num:04d}"
-    filename = f"{obj_id}-{short_title}.yaml"
+    suffix = ".md" if object_type == "study" else ".yaml"
+    filename = f"{obj_id}-{short_title}{suffix}"
     filepath = directory / filename
 
     # 检查文件是否已存在
@@ -471,6 +523,34 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["verification"] = "## 验证计划\n\n## 验证命令\n"
     if object_type == "memo":
         data["priority"] = "P3"
+        data["source"] = "ai"
+        data["source_detail"] = ""
+        data["evolution"] = []
+        data["resolved_to"] = ""
+        data["resolved_at"] = ""
+        data["discard_reason"] = ""
+        data["related_workareas"] = []
+        data["related_taskplans"] = []
+        data["related_tasks"] = []
+        data["related_adrs"] = []
+        data["related_studies"] = []
+        data["related_docs"] = []
+    if object_type == "study":
+        data["source"] = "ai"
+        data["source_detail"] = ""
+        data["summary"] = f"{title} 的研究报告草稿。"
+        data["conclusion"] = ""
+        data["source_docs"] = []
+        data["related_memos"] = []
+        data["related_workareas"] = []
+        data["related_taskplans"] = []
+        data["related_tasks"] = []
+        data["related_adrs"] = []
+        data["related_pitfalls"] = []
+        data["related_docs"] = []
+        data["superseded_by"] = ""
+        data["archive_reason"] = ""
+        data["report_body"] = f"# {title}\n\n## 研究问题\n\n待补充。\n"
 
     # ADR 创建时回写 Human Gate 记录到 context
     if object_type == "adr":
@@ -613,6 +693,19 @@ def cmd_transition(args: argparse.Namespace) -> int:
             error("discard_reason 未填写，无法废弃 Memo")
             return 1
 
+    if object_type == "study" and new_status == "superseded":
+        superseded_by = getattr(args, "superseded_by", None) or data.get("superseded_by")
+        if not superseded_by or (isinstance(superseded_by, str) and not superseded_by.strip()):
+            error("superseded_by 未填写，无法将 Study 标记为 superseded")
+            return 1
+        data["superseded_by"] = superseded_by
+
+    if object_type == "study" and new_status == "archived":
+        archive_reason = data.get("archive_reason")
+        if not archive_reason or (isinstance(archive_reason, str) and not archive_reason.strip()):
+            error("archive_reason 未填写，无法归档 Study")
+            return 1
+
     # 执行流转
     data["status"] = new_status
     data["updated"] = datetime.now().isoformat()
@@ -662,7 +755,7 @@ def cmd_transition(args: argparse.Namespace) -> int:
 # ── delete 命令 ─────────────────────────────────────────────────────────
 
 def cmd_delete(args: argparse.Namespace) -> int:
-    """删除事实对象 YAML 文件。"""
+    """删除事实对象文件。"""
     yaml_file = Path(args.yaml_file)
 
     # 读取 YAML
@@ -713,7 +806,7 @@ def cmd_list(args: argparse.Namespace) -> int:
     if not directory.exists():
         pass
     else:
-        for yaml_path in sorted(directory.glob("*.yaml")):
+        for yaml_path in sorted(directory.glob(object_glob(object_type))):
             data = load_yaml(yaml_path)
             if data is None:
                 issues.append({
@@ -859,7 +952,8 @@ def cmd_show(args: argparse.Namespace) -> int:
             if pattern.match(target):
                 directory = base_dir / DIRECTORY_MAP[obj_type]
                 if directory.exists():
-                    for yaml_path in sorted(directory.glob(f"{target}-*.yaml")):
+                    suffix = ".md" if obj_type == "study" else ".yaml"
+                    for yaml_path in sorted(directory.glob(f"{target}-*{suffix}")):
                         yaml_file = yaml_path
                         matched = True
                         break
@@ -912,7 +1006,7 @@ def cmd_search(args: argparse.Namespace) -> int:
         directory = base_dir / DIRECTORY_MAP[otype]
         if not directory.exists():
             continue
-        for yaml_path in sorted(directory.glob(f"{otype}-*.yaml")):
+        for yaml_path in sorted(directory.glob(object_glob(otype))):
             data = load_yaml(yaml_path)
             if data is None:
                 continue
@@ -965,7 +1059,7 @@ def cmd_stats(args: argparse.Namespace) -> int:
         status_counts: dict[str, int] = {}
         total = 0
         if directory.exists():
-            for yaml_path in sorted(directory.glob(f"{otype}-*.yaml")):
+            for yaml_path in sorted(directory.glob(object_glob(otype))):
                 data = load_yaml(yaml_path)
                 if data is None:
                     continue
@@ -1155,7 +1249,8 @@ def cmd_update(args: argparse.Namespace) -> int:
             if pattern.match(target):
                 directory = base_dir / DIRECTORY_MAP[obj_type]
                 if directory.exists():
-                    for yp in sorted(directory.glob(f"{target}-*.yaml")):
+                    suffix = ".md" if obj_type == "study" else ".yaml"
+                    for yp in sorted(directory.glob(f"{target}-*{suffix}")):
                         yaml_file = yp
                         matched = True
                         break
@@ -1191,8 +1286,8 @@ def cmd_update(args: argparse.Namespace) -> int:
         value = value.replace("\\n", "\n").replace("\\\\", "\\")
         # 列表类型字段：逗号分隔
         if key in ("related_workareas", "related_taskplans", "related_tasks", "related_adrs",
-                    "related_memos", "related_pitfalls", "related_docs",
-                    "affected_docs", "deliverables", "tasks",
+                    "related_memos", "related_studies", "related_pitfalls", "related_docs",
+                    "source_docs", "affected_docs", "deliverables", "tasks",
                     "blocked_by", "affects", "related_objects", "related_rules"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
         else:

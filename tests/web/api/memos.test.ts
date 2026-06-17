@@ -42,7 +42,6 @@ function validMemo(overrides: Record<string, unknown> = {}) {
   return {
     title: 'API Memo',
     description: 'Captured from the Web memo quick entry.',
-    source: 'human test',
     priority: 'P1',
     ...overrides,
   }
@@ -75,6 +74,10 @@ async function testCreateMemo() {
   ) as Record<string, unknown>
   assert.equal(persisted.id, 'memo-0001')
   assert.equal(persisted.status, 'pending')
+  assert.equal(persisted.source, 'human')
+  assert.equal(persisted.source_detail, '')
+  assert.deepEqual(persisted.evolution, [])
+  assert.deepEqual(persisted.related_studies, [])
   assert.equal('category' in persisted, false)
   assert.equal('status_history' in persisted, false)
 }
@@ -88,7 +91,6 @@ async function testFieldValidation() {
   assert.equal(response.status, 400)
   assert.equal(payload.ok, false)
   assert.ok(payload.errors.includes('description is required'))
-  assert.ok(payload.errors.includes('source is required'))
   assert.ok(payload.errors.some((error) => error.startsWith('priority must be one of:')))
   assert.deepEqual(fs.readdirSync(memosDir), [])
 }

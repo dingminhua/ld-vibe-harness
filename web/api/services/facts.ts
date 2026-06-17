@@ -1,8 +1,9 @@
 /**
  * Web-native fact source reader.
  *
- * This service reads Git-backed YAML fact objects directly for Human-facing
- * Web views. It is read-only and does not replace specs or Code validation.
+ * This service reads Git-backed fact objects directly for Human-facing
+ * Web views. It supports YAML objects and Study Markdown frontmatter, and
+ * it is read-only and does not replace specs or Code validation.
  */
 
 import fs from 'fs'
@@ -16,7 +17,7 @@ const __dirname = path.dirname(__filename)
 export const LDVH_ROOT = path.resolve(process.env.LDVH_ROOT || path.resolve(__dirname, '../../..'))
 export const LDVH_BASE_DIR = path.join(LDVH_ROOT, 'ldvh-base')
 
-export const OBJECT_TYPES = ['workarea', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo'] as const
+export const OBJECT_TYPES = ['workarea', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo', 'study'] as const
 export type ObjectType = (typeof OBJECT_TYPES)[number]
 
 const DIRECTORY_MAP: Record<ObjectType, string> = {
@@ -27,6 +28,7 @@ const DIRECTORY_MAP: Record<ObjectType, string> = {
   adr: 'adrs',
   pitfall: 'pitfalls',
   memo: 'memos',
+  study: 'studies',
 }
 
 const LIST_SUMMARY_FIELDS = ['priority', 'importance', 'repeatability'] as const
@@ -66,6 +68,15 @@ function objectDir(type: ObjectType, baseDir = LDVH_ROOT): string {
 function readYamlFile(filePath: string): Record<string, unknown> | null {
   try {
     const content = fs.readFileSync(filePath, 'utf-8')
+    if (filePath.endsWith('.md')) {
+      if (!content.startsWith('---\n')) return null
+      const end = content.indexOf('\n---', 4)
+      if (end === -1) return null
+      const frontmatter = content.slice(4, end)
+      const body = content.slice(end + 4).replace(/^\n/, '')
+      const data = yaml.load(frontmatter)
+      return isRecord(data) ? { ...data, report_body: body } : null
+    }
     const data = yaml.load(content)
     return isRecord(data) ? data : null
   } catch {
@@ -79,7 +90,7 @@ function listYamlFiles(type: ObjectType, baseDir = LDVH_ROOT): string[] {
 
   return fs
     .readdirSync(dir)
-    .filter((filename) => filename.endsWith('.yaml') || filename.endsWith('.yml'))
+    .filter((filename) => filename.endsWith('.yaml') || filename.endsWith('.yml') || (type === 'study' && filename.endsWith('.md')))
     .sort()
     .map((filename) => path.join(dir, filename))
 }

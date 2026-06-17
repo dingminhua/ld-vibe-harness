@@ -60,6 +60,7 @@ const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'repeatability', '
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
   task: TASK_AUXILIARY_META_KEYS,
   memo: ['priority', 'tags'],
+  study: ['tags'],
   profile: ['project_name', 'project_kind', 'language', 'framework'],
   pitfall: ['repeatability', 'tags'],
 };
@@ -93,6 +94,16 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'avoidance', 'applicability', 'source_tasks', 'source_memos', 'related_workareas', 'related_taskplans',
     'related_adrs', 'related_profiles', 'related_docs', 'related_rules',
     'related_changes', 'superseded_by', 'archive_reason', 'discard_reason', 'notes',
+  ],
+  memo: [
+    'description', 'evolution', 'source', 'source_detail', 'resolved_to', 'resolved_at',
+    'discard_reason', 'related_studies', 'related_workareas', 'related_taskplans',
+    'related_tasks', 'related_adrs', 'related_docs',
+  ],
+  study: [
+    'summary', 'conclusion', 'report_body', 'source', 'source_detail', 'source_docs',
+    'related_memos', 'related_workareas', 'related_taskplans', 'related_tasks',
+    'related_adrs', 'related_pitfalls', 'related_docs', 'superseded_by', 'archive_reason',
   ],
 };
 
@@ -130,6 +141,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑经验', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
+  study: { zh: '研究报告', en: 'Study' },
   profile: { zh: '画像', en: 'Profile' },
   change: { zh: '变更', en: 'Change' },
 };
@@ -147,7 +159,10 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   closed_at: { zh: '关闭时间', en: 'Closed At' },
   date: { zh: '日期', en: 'Date' },
   source: { zh: '来源', en: 'Source' },
+  source_detail: { zh: '来源说明', en: 'Source Detail' },
   description: { zh: '描述', en: 'Description' },
+  evolution: { zh: '演变记录', en: 'Evolution' },
+  report_body: { zh: '报告正文', en: 'Report Body' },
   summary: { zh: '摘要', en: 'Summary' },
   details: { zh: '详情', en: 'Details' },
   background: { zh: '背景', en: 'Background' },
@@ -191,6 +206,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   related_taskplans: { zh: '关联任务计划', en: 'Related Task Plans' },
   related_adrs: { zh: '关联决策', en: 'Related ADRs' },
   related_memos: { zh: '关联备忘', en: 'Related Memos' },
+  related_studies: { zh: '关联研究报告', en: 'Related Studies' },
   related_pitfalls: { zh: '关联踩坑经验', en: 'Related Pitfalls' },
   related_profiles: { zh: '关联画像', en: 'Related Profiles' },
   source_objects: { zh: '来源对象', en: 'Source Objects' },
@@ -221,6 +237,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   framework: { zh: '框架', en: 'Framework' },
   repeatability: { zh: '复现概率', en: 'Repeatability' },
   related_rules: { zh: '承接规则', en: 'Related Rules' },
+  source_docs: { zh: '来源资料', en: 'Source Docs' },
   changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
   affected_docs: { zh: '影响文档', en: 'Affected Docs' },

@@ -50,6 +50,7 @@ export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }
   adr: { zh: '决策记录', en: 'Architecture Decision Record' },
   pitfall: { zh: '可复用踩坑经验', en: 'Reusable pitfall experience' },
   memo: { zh: '待任务化的备忘', en: 'Memo pending taskification' },
+  study: { zh: '稳定研究报告', en: 'Stable study report' },
   profile: { zh: '项目画像', en: 'Project profile' },
   change: { zh: '变更记录', en: 'Change record' },
 };
@@ -106,6 +107,7 @@ export const UI_LOCALES = {
     'nav.adrs': '决策',
     'nav.pitfalls': '踩坑经验',
     'nav.memos': '备忘',
+    'nav.studies': '研究报告',
     'nav.profiles': '画像',
     'nav.changes': '变更',
     'nav.validate': '校验',
@@ -376,6 +378,7 @@ export const UI_LOCALES = {
     'nav.adrs': 'ADRs',
     'nav.pitfalls': 'Pitfalls',
     'nav.memos': 'Memos',
+    'nav.studies': 'Studies',
     'nav.profiles': 'Profiles',
     'nav.changes': 'Changes',
     'nav.validate': 'Validate',
