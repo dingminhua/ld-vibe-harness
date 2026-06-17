@@ -1,246 +1,41 @@
 id: memo-0005
 type: memo
-title: 任务相关的内容还要盘一下
+title: WorkPlan 与执行编排边界待收敛
 status: pending
 created: "2026-06-16"
 updated: "2026-06-18"
 description: |
-  ## 原始问题
-
-  任务计划是在主控，任务的编排现在看起来有点不太对。主控负责计划、验证、安排任务执行、安排子 Agent 检查，并在过程中积累沉淀内容。
-
-  ## 当前讨论形成的候选结论
-
-  TaskPlan / Task / SubTask 的边界需要收敛。当前更稳的方向是：
-
-  - TaskPlan 是从对话升级出的计划契约，承载目标、范围、成功标准、任务拆解、Human Gate 和关闭审查。
-  - Task 是 TaskPlan 下可委派、可验证、可关闭的执行单元，也是主控进行并行编排的基本单位。
-  - SubTask 不再作为 active 工作模型更合理；如果保留，应仅作为 removed 历史占位，说明其职责已由 Task 承接。
-  - 普通执行步骤不应成为工作对象，应写入 Task 的 description、acceptance、verification 或 closure_evidence。
-
-  ## 并行与串行设计
-
-  并行/串行不应设计为单个 Task 的固有属性，例如不建议在 Task 上增加 `parallel: true` 或 `mode: serial`。
-
-  更合理的设计是：TaskPlan.tasks 只表示计划内 Task 清单和人工阅读顺序，不表示执行顺序；实际执行顺序、并行可能性、fan-out / fan-in 由 Task.blocked_by 形成的依赖图派生。
-
-  示例：
-
-  ```yaml
-  # 可并行
-  task-0001:
-    blocked_by: []
-  task-0002:
-    blocked_by: []
-
-  # 串行
-  task-0002:
-    blocked_by:
-      - task-0001
-
-  # fan-out / fan-in
-  task-0005:
-    blocked_by:
-      - task-0001
-      - task-0002
-      - task-0003
-      - task-0004
-  ```
-
-  Code / Web 可由 `blocked_by` 派生 ready_tasks 和 parallel_layers，例如：planned 且 blocked_by 全部 closed 的 Task 是可执行 Task；多个可执行 Task 可作为并行候选。
-
-  ## 主控、子 Agent 与 Review 边界
-
-  主控拥有编排权：创建和更新 TaskPlan / Task，决定拆分、依赖和调度顺序，调用子 Agent，接收输出，判断是否回写事实源，推进状态流转并触发 Human Gate。
-
-  子 Agent 只执行主控分配的一个明确 Task 或审查动作，不创建下级 Agent，不直接关闭 Task，不直接修改 TaskPlan。子 Agent 输出结果、证据、风险和建议，必须回到主控判断后才生效。
-
-  Review 默认是流程动作，不是工作模型。简单 Review 写入 Task.verification 或 closure_evidence；复杂、独立、可验收的 Review 应作为同一 TaskPlan 下的并列 Task，而不是 SubTask。
-
-  ## 待分流方向
-
-  后续如进入正式规范修改，建议最小处理路径：
-
-  - 将 specs/23-SubTask-子任务.md 改为 removed 历史占位，而不是直接物理删除。
-  - 修改 21，明确 TaskPlan 下 Task 是主控编排单位，TaskPlan.tasks 顺序不代表执行顺序。
-  - 修改 22，强化 Task 是最小可委派、可验证、可关闭执行单元，删除 SubTask 关系和关闭条件。
-  - 修改 06，移除 blocking 问题创建 SubTask 的规则，改为必要时创建同一 TaskPlan 下的并列 Task。
-  - 修改 05 / 05.01 / Code / Web，移除 SubTask active 消费，保留 blocked_by 的 DAG 语义。
-
-  暂不建议给 Task 增加 blocked 状态。先使用 blocked_by 和同一 TaskPlan 下的 blocker Task 表达阻塞；状态流转历史由 Git / Change 派生追溯。如果真实执行反复证明不够，再评估 Task 状态机是否需要增加 blocked。
-
-  ## 对话到任务编排闭环候选流程
-
-  从行动编排看，AI 制定计划不是直接进入执行，而是应形成一个可审核的 Plan Draft。该草案至少包含三类内容：
-
-  - spec：面向 Human 的目标、背景、范围、约束和理解对齐文本。Human 通常主要审这一部分，判断是否符合人的真实意图。
-  - checklist：最终成功标准和关闭验收条件，必须可验证。
-  - task orchestration：面向 AI / 子 Agent 的任务编排，包含 Task 列表、依赖关系、并行可能性、执行者、Review 策略和 Human Gate。
-
-  候选流程如下：
-
-  ```text
-  Conversation
-  -> 主控提取目标、边界、约束、成功标准
-  -> 形成 Plan Draft（spec + checklist + task orchestration）
-  -> 多视角计划审核
-  -> Human Gate：Human 主要审 spec 和 checklist，必要时看任务编排摘要
-  -> TaskPlan active
-  -> 主控按 Task DAG 分派 Task 给子 Agent
-  -> 子 Agent 执行 Task，返回结果、证据、风险和建议
-  -> 主控整合结果并自检，发现问题先修复或追加同一 TaskPlan 下的 blocker Task
-  -> 子 Agent / Review Agent 独立复检
-  -> 主控形成关闭证据
-  -> Human Gate：关闭确认
-  -> Record：写回 TaskPlan / Task / Change
-  -> Learn：经验按性质分流到 Pitfall / Memo / ADR / specs / Code / Web
-  ```
-
-  计划审核应发生在 Human Gate 前。主控先从目标对齐、范围完整性、任务可执行性、依赖关系、验收可验证性、风险和 Human Gate 等视角审查计划；必要时可调用子 Agent 做计划复核。通过后，再把 Human 真正需要判断的 spec / checklist 交给人确认。
-
-  主控自检和子 Agent 复检应区分：
-
-  - 主控自检负责整合结果、发现明显遗漏、补充证据、修复已知问题或追加 blocker Task。
-  - 子 Agent / Review Agent 复检负责提供独立视角审查，不直接关闭 Task，不直接修改 TaskPlan，输出必须回到主控判断后才生效。
-
-  Learn 阶段不是统一写入“经验”对象，而是按性质分流：
-
-  - 重复踩坑、防错规则或操作经验 -> Pitfall
-  - 尚未决定如何处理的问题或线索 -> Memo
-  - 长期设计取舍或稳定决策 -> ADR
-  - 稳定规则变化 -> specs
-  - 校验、解析、受控写入或派生索引缺口 -> Code
-  - 展示、交互、Human Gate UI 或轻写入缺口 -> Web
-
-  这条流程可作为后续 40-59 具体工作流程候选，名称可考虑 `conversation-to-taskplan-and-task-orchestration` / `对话到任务计划与任务编排闭环`。
-
-  ## 仍未设计的信息承载缺口
-
-  TaskPlan 和 Task 作为信息承载对象还未完全准备好，尤其缺少以下两类角色相关结构：
-
-  1. 多角色审议计划
-     - 需要表达本次计划在执行前应从哪些视角审议，例如目标对齐、范围边界、风险、验证、事实源、Web/Code 影响、Human Gate 等。
-     - 需要表达这些角色是由主控自检承担、由子 Agent 辅助承担，还是只作为人工检查视角。
-     - 需要表达每个审议视角的输入、输出、停止条件和是否阻塞 Human Gate。
-     - 目前 TaskPlan 没有专门字段承载该计划；可暂存在 description 的计划审核章节，但长期可能需要 `plan_review` 或等价字段/格式规范。
-
-  2. 专业角色审核结果
-     - 需要表达某个专业角色或 Review Agent 审核了什么、依据是什么、发现了什么问题、是否通过、有哪些残留风险。
-     - 审核结果不应直接生效，必须回到主控判断后写入 Task.verification、Task.closure_evidence、TaskPlan.completion_evidence 或后续 Task / Memo / ADR / Pitfall。
-     - 目前 Task 没有明确的 Review 证据结构；可暂存在 verification 或 closure_evidence 的“独立复检 / Review 结论”章节，但长期需要 05.01 定义标准标题和写入格式。
-
-  这两类内容先作为信息承载缺口记录，不立即新增工作模型。后续应判断它们是否只是字段内容格式和工作流程规则，还是需要进入 40-59 具体工作流程。
-
-  ## 本轮讨论形成的 6 条主线
-
-  当前不建议把以下 6 点拆成多个 Memo。它们共同指向同一个上层问题：LDVH 是否要把 vibe coding 的会话过程转化成可追溯事实源，以及 TaskPlan / Task 应该如何承载这些事实。
-
-  1. LDVH 的核心价值不是替代 vibe coding，而是补足事实源
-
-     主流 vibe coding 更偏向会话驱动和代码结果驱动，重视立即修改、运行反馈、Git diff、PR 和测试结果，但通常不会强制记录目标、取舍、验证、复检、关闭证据和经验沉淀。
-
-     LDVH 的意义不是记录全部过程，而是记录会影响未来判断的过程事实。
-
-  2. Task 不能独立存在，TaskPlan 才是任务事实源入口
-
-     Task 应永远属于某个 TaskPlan。即使是很小的事情，也应使用轻量 TaskPlan + 一个 Task，而不是让 Task 作为独立工作对象漂浮存在。
-
-     后续需要检查并消除 specs 中暗示 Task 可独立存在的表达，尤其是 00、20、21、22、26 等文档。
-
-  3. SubTask 没有必要作为正式模型保留
-
-     SubTask 会增加层级复杂度，而且当前执行模型中子 Agent 不能再调用子 Agent，因此不适合作为 active 工作模型。
-
-     并行工作应表达为同一 TaskPlan 下的多个 sibling Task；串行工作由 Task 之间的依赖表达；聚合结论可使用一个汇总 Task；普通步骤留在 Task 字段内容中。
-
-  4. 并行 / 串行不应该是 Task 自身属性，而应是 TaskPlan 内的 Task 关系
-
-     不建议在 Task 上增加 `parallel: true` 或 `mode: serial`。TaskPlan.tasks 只表示计划内 Task 清单和人工阅读顺序，实际执行顺序、并行可能性、fan-out / fan-in 由 Task.blocked_by 形成的 DAG 派生。
-
-  5. 完整工作流应包含计划、执行、自检、复检和沉淀
-
-     候选闭环是：对话 -> Plan Draft（spec + checklist + task orchestration）-> 多视角计划审核 -> Human Gate -> 子 Agent 执行 Task -> 主控整合自检 -> 独立复检 -> 关闭证据 -> Human Gate -> Record -> Learn。
-
-     其中需要继续判断哪些内容必须进入正式事实源，哪些只是运行过程。
-
-  6. 目前缺的不是单个字段，而是角色和边界
-
-     后续重点不是机械增加字段，而是设计清楚多角色计划审议、专业角色审核结果、Human Gate 审核对象、轻量 / 完整 TaskPlan 边界、Task 关闭证据最小集合，以及 Memo 如何分流到 TaskPlan / ADR / Pitfall / specs。
-
-  ## 后续分流原则
-
-  memo-0005 暂时作为任务编排讨论的集中暂存池。某条主线形成稳定结论后再分流：
-
-  - 形成长期设计取舍 -> ADR
-  - 形成正式规则 -> specs
-  - 形成可执行工作 -> TaskPlan
-  - 形成防错经验 -> Pitfall
-  - 仍未决定的问题 -> 继续留在 Memo
-
-  ## 最新收敛结论：从 Task 中心转向 WorkPlan 中心
-
-  经过后续讨论和独立子 Agent 审查，前文中“Task 作为 TaskPlan 下可委派执行单元”的候选口径需要进一步收敛。更稳的方向是：
-
-  - `TaskPlan` 改名为 `WorkPlan`，避免与 Codex / Claude / Trae 的运行时 Plan Mode 或普通临时计划混淆，同时避免继续把模型拉向 Task 中心。
-  - `Task` 不再作为 active 工作模型存在，其执行编排职责迁入 `WorkPlan.orchestration.execution_items`。
-  - `SubTask` 不再作为 active 工作模型存在，应转为 removed / historical placeholder。
-  - `Review`、`Audit`、`Decision Review` 是流程环节，不是工作模型。
-  - `Role Contract` 是专业子 Agent 的能力契约，定义角色目的、输入、必读材料、允许动作、禁止动作、输出格式、交还对象和停止条件。
-  - Human 主要审 `WorkPlan.spec`、`WorkPlan.checklist` 和关闭判断，不直接管理 AI 内部执行项。
-
-  执行过程不作为历史事实源的含义是：不记录 AI 搜了哪些文件、按什么顺序读、子 Agent 中间思考、临时 todo、无复盘价值的失败尝试或已被最终结论吸收的重复分析。它们只服务当前上下文。
-
-  WorkPlan 仍必须保留最小恢复、验证和关闭证据：
-
-  - 恢复证据：当前工作推进到哪里、下一步是什么、哪个执行项由哪个角色处理、依赖关系是什么、最近结果是什么。
-  - 验证证据：执行了哪些测试或检查、独立 Review 发现了什么、Human Gate 确认了什么、哪些验收项已满足。
-  - 关闭证据：为什么可以关闭、改了什么、还有什么残余风险、经验是否分流到 ADR / Pitfall / Memo / specs / Change。
-
-  后续正式规范修改时，应以 `WorkPlan` 为 active 工作模型，以 `ExecutionItem / 执行项` 为 WorkPlan 内部编排节点，避免使用 `Work` 或 `Task` 命名内部节点。`Work` 过泛，容易与 WorkArea、WorkPlan、工作对象和普通工作含义混淆；`Task` 会继承旧模型的独立工作对象语义。
-
-  ## 2026-06-18 联网复核：行业趋势与 00 核心价值对齐
-
-  修改 00 前重新联网复核后，当前 WorkPlan / ExecutionItem / Role Contract 方向被判断为符合行业趋势，也更贴合 00 的核心价值。复核资料只作为 Memo 讨论依据，不直接进入 specs 正文。
-
-  主要观察：
-
-  1. 主线程保持干净、过程噪音下沉是明确趋势。
-     - Codex Subagents 文档说明，subagent workflows 通过把探索、测试、日志分析等 noisy work 移出主线程，让 main agent 聚焦 requirements、decisions 和 final outputs，并由 subagent 返回 summaries。
-     - 来源：OpenAI Codex Subagents，https://developers.openai.com/codex/concepts/subagents
-
-  2. 专业角色 / 子 Agent 是主流多 Agent 设计方向。
-     - Codex、Claude Code、LangChain 和 Microsoft 的资料都强调 specialized agents、supervisor / orchestrator、worker agents、review / HITL 等模式。
-     - 来源：
-       - Claude Code Subagents，https://docs.anthropic.com/en/docs/claude-code/sub-agents
-       - LangChain Multi-agent，https://docs.langchain.com/oss/python/langchain/multi-agent
-       - Microsoft AI Agent Orchestration Patterns，https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns
-
-  3. 可复用流程按需加载，而不是常驻上下文。
-     - Codex Skills 和 Claude Skills 都强调 reusable workflow / domain expertise，并通过 progressive disclosure 或按需加载管理上下文。
-     - 来源：
-       - OpenAI Codex Skills，https://developers.openai.com/codex/skills
-       - Claude Skills，https://docs.anthropic.com/en/docs/claude-code/skills
-
-  4. 长期规则和事实不应依赖 memory。
-     - Codex Memories 文档明确说明，required team guidance 应放在 AGENTS.md 或 checked-in documentation，memory 只是 helpful local recall layer。
-     - 来源：
-       - OpenAI Codex Memories，https://developers.openai.com/codex/memories
-       - OpenAI Codex AGENTS.md，https://developers.openai.com/codex/guides/agents-md
-
-  5. Human-in-the-loop、验证、checkpoint 和观测是行业关注点。
-     - Microsoft 的多 Agent 编排资料强调 HITL approval / feedback、mandatory gates、持久化 checkpoint、agent output validation、observability 和 testing。
-     - 来源：Microsoft AI Agent Orchestration Patterns，https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns
-
-  对 LDVH 的判断：
-
-  - LDVH 当前方向不是逆行业，而是在把行业中分散的能力组织成项目事实源体系。
-  - WorkPlan 对应行业工具中通常缺失的“可持久计划、验收与关闭证据”层。
-  - ExecutionItem 对应 AI 当前执行所需的最小可恢复编排，不应上升为长期工作模型。
-  - Role Contract 对应专业子 Agent 的输入、权限、输出和交还边界。
-  - 00 修改应把体系从“对象化任务管理”修正为“面向 AI 协作的事实源治理”。
-evolution: []
-source: web
-source_detail: 我发现的
+  本 Memo 承载本轮关于 TaskPlan / Task / SubTask、WorkPlan、ExecutionItem、Role Contract、计划审核和执行证据边界的阶段性收敛。
+
+  当前候选结论是：LDVH 不再以独立 Task 作为 active 工作模型。Human 关心的是 WorkPlan 这一层的目标、范围、成功标准、关闭判断和证据；AI 在 WorkPlan 内部使用 `orchestration.execution_items` 安排执行、角色分工、并行/串行和最小恢复信息。ExecutionItem 不是工作对象，不进入 `ldvh-base/` 独立事实源，也不作为历史事实源长期追踪。
+
+  执行过程不作为历史事实源，含义是：不记录 AI 的临时 todo、工具读取顺序、子 Agent 中间过程、未采纳草稿或已被最终结论吸收的重复分析。WorkPlan 只保留足以恢复、验证和关闭的最小证据，包括当前推进位置、执行项结果摘要、稳定产物、测试/检查、独立复检结论、Human Gate 结果、关闭原因、残留风险和经验分流结果。
+
+  仍需继续讨论和核对的核心问题：
+
+  - `orchestration.execution_items` 的字段是否足以支持恢复、并行/串行编排、角色分派和关闭判断；
+  - `orchestration.review` 是否只声明复检安排，还是需要更明确的专业角色审核输出格式；
+  - Role Contract 应由 04 能力资产、06 流程基础、40-59 具体流程，还是其他规范承接；
+  - WorkPlan 的 `verification_evidence` 与 `closure_evidence` 如何避免混淆；
+  - Memo 中已经部分落地的议题，如何提示 AI 判断继续 pending、追加 evolution、分流或 resolved；
+  - Code / Web 中旧 TaskPlan、Task、SubTask 实现何时迁移，迁移前哪些兼容字段可以暂留。
+
+  建议新会话优先从 `specs/21-WorkPlan-工作计划.md` 逐段核对，然后回看 `specs/05-工作模型基础规范.md`、`specs/05.01-工作字段内容格式规范.md` 和 `specs/06-工作流程基础规范.md`，最后再处理 40-43 流程规范与 Code / Web 迁移。
+evolution:
+  - at: 2026-06-16
+    summary: 初始问题是 TaskPlan / Task / SubTask 的边界混乱，尤其是主控、子 Agent、复检和并行任务如何编排。
+  - at: 2026-06-17
+    summary: 曾形成候选口径：TaskPlan 承载计划契约，Task 承载可委派执行单元，SubTask 不再作为 active 模型；并行/串行由依赖关系推导。
+  - at: 2026-06-18
+    summary: 进一步收敛为 WorkPlan 中心：TaskPlan 改名为 WorkPlan，独立 Task 移出 active 工作模型，执行编排迁入 WorkPlan 内部的 execution_items。
+  - at: 2026-06-18
+    summary: 明确 ExecutionItem 不是更小的工作对象；执行者可以在自身上下文继续拆分，但这些执行期拆分不进入 LDVH 长期事实源。
+  - at: 2026-06-18
+    summary: 明确执行过程不作为历史事实源，只保留最小恢复、验证和关闭证据；Review / Audit / Decision Review 属于流程环节，不是工作模型。
+  - at: 2026-06-18
+    summary: 联网复核 Codex、Claude Code、LangChain 和 Microsoft 多 Agent / HITL / Skills / Memory 资料后，判断 WorkPlan + ExecutionItem + Role Contract 方向符合行业趋势，并已据此修改 00、02、05、05.01、21、26、28 等相关规范和局部 Code / Web。
+source: conversation
+source_detail: 本轮围绕 LDVH 工作流程、任务编排、执行证据、角色复检和 Memo 分流的连续讨论；包含一次联网复核结论。
 priority: P1
 resolved_to: ""
 resolved_at: ""
@@ -251,7 +46,10 @@ related_adrs:
   - adr-0010
 related_studies: []
 related_docs:
+  - specs/00-LD-Vibe-Harness理念与纲要.md
   - specs/05-工作模型基础规范.md
   - specs/05.01-工作字段内容格式规范.md
   - specs/06-工作流程基础规范.md
   - specs/21-WorkPlan-工作计划.md
+  - specs/26-Memo-备忘.md
+  - specs/28-Study-研究报告.md
