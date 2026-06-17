@@ -27,7 +27,7 @@ ldvh_member:
 ---
 ## 1. 对象定位与准入条件
 
-ADR / 决策是已确认或正在确认的长期决策记录，用于沉淀需要跨会话、跨任务、跨执行轮次或跨角色追溯的判断。ADR 记录为什么这样决定，specs、Rules / Instructions 或其他规范入口记录以后必须怎么做。
+ADR / 决策是已确认或正在确认的长期决策记录，用于沉淀需要跨会话、跨工作计划、跨执行轮次或跨角色追溯的判断。ADR 记录为什么这样决定，specs、Rules / Instructions 或其他规范入口记录以后必须怎么做。
 
 ADR 不是所有判断的默认归宿。AI 可以在当前任务中做临时判断、记录分析结论或选择局部执行策略；只有影响长期行为边界、事实源归属、协作方式或规范体系的判断，才应进入 ADR 事实源。
 
@@ -35,7 +35,7 @@ ADR 不是所有判断的默认归宿。AI 可以在当前任务中做临时判�
 
 一个判断满足以下条件之一时，应考虑形成 ADR：
 
-1. 影响多个 WorkArea、TaskPlan、Task、工作模型、工作流程或项目阶段；
+1. 影响多个 WorkArea、WorkPlan、工作模型、工作流程或项目阶段；
 2. 改变长期执行方式、协作方式、事实源归属或 Human Gate 边界；
 3. 改变 specs、Rules / Instructions、Skill、Agent、Code、Web 或适配措施的长期规则；
 4. 对后续 AI 或 Human 执行具有持续约束；
@@ -49,13 +49,13 @@ ADR 不是所有判断的默认归宿。AI 可以在当前任务中做临时判�
 
 以下内容通常不应单独形成 ADR：
 
-1. 当前 Task 内的一次性执行策略；
+1. 当前工作计划内的一次性执行策略；
 2. 不影响后续协作的局部技术选择；
 3. 尚未稳定的讨论、想法或资料；
 4. 已由 specs、Rules / Instructions 或其他正式规范明确约束的重复判断；
 5. 仅属于风险判断、依赖关系、产物引用或检查结果的字段内容。
 
-不形成 ADR 的内容，应按性质进入 Task 字段、Memo、docs/studies、docs/sources、当前执行上下文或对应事实源。
+不形成 ADR 的内容，应按性质进入 WorkPlan 字段、Memo、docs/studies、docs/sources、当前执行上下文或对应事实源。
 
 ### 1.3 ADR 与规范的边界
 
@@ -125,17 +125,17 @@ accepted → superseded
 ---
 ## 4. 对象关系
 
-### 4.1 ADR 与 WorkArea / TaskPlan
+### 4.1 ADR 与 WorkArea / WorkPlan
 
-工作域或任务计划涉及长期决策、方案选择或事实源边界时，应创建或关联 ADR。ADR 可通过 `related_workareas` 引用来源工作域，通过 `related_taskplans` 引用来源任务计划。
+工作域或工作计划涉及长期决策、方案选择或事实源边界时，应创建或关联 ADR。ADR 可通过 `related_workareas` 引用来源工作域，通过 `related_workplans` 引用来源工作计划。
 
-ADR 不替代 WorkArea 的长期范围，也不替代 TaskPlan 的目标、成功标准、任务序列或关闭判断。
+ADR 不替代 WorkArea 的长期范围，也不替代 WorkPlan 的目标、成功标准、执行编排或关闭判断。
 
-### 4.2 ADR 与 Task
+### 4.2 ADR 与 WorkPlan
 
-Task 执行过程中产生的判断满足 ADR 准入条件时，可升级为 ADR。ADR 可通过 `related_tasks` 引用来源 Task 或执行 Task。
+工作计划执行过程中产生的判断满足 ADR 准入条件时，可升级为 ADR。ADR 可通过 `related_workplans` 引用来源工作计划。
 
-ADR 不替代 Task 的验收标准、验证证据、风险判断或关闭证据。
+ADR 不替代 WorkPlan 的成功标准、验证证据、风险判断或关闭证据。
 
 ### 4.3 ADR 与 Change
 
@@ -146,7 +146,7 @@ ADR 的创建、状态变化、核心决策改写、废弃、替代和升级为�
 Memo 中的输入满足 ADR 准入条件后，可以转化为 ADR。转化时应：
 
 1. 保留 Memo 与 ADR 的引用关系；
-2. 说明为什么从未任务化输入升级为长期决策；
+2. 说明为什么从未计划化输入升级为长期决策；
 3. 评估 Human Gate；
 4. 不在 ADR 中复制 Memo 全文，只保留摘要和引用。
 
@@ -168,7 +168,7 @@ ADR 中的决策升级为稳定规则时，应：
 以下情况应评估 Human Gate：
 
 1. 创建、删除或重命名 ADR 实例；
-2. 将 Memo、Task 过程判断、临时讨论或 docs/studies 结论升级为 ADR；
+2. 将 Memo、WorkPlan 过程判断、临时讨论或 docs/studies 结论升级为 ADR；
 3. 将 `proposed` ADR 确认为 `accepted`；
 4. 将 `accepted` ADR 标记为 `deprecated` 或 `superseded`；
 5. 修改 `accepted` ADR 的 `decision` 字段；
@@ -180,7 +180,7 @@ ADR 中的决策升级为稳定规则时，应：
 
 Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记录承接。本文只规定 ADR 语境下需要确认的事实、影响范围和证据承接要求。
 
-ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.md` §6.3.1。创建、接受、废弃、替代、核心决策改写或升级为规范等场景中，确认记录至少应说明目标 ADR、决策变化、影响范围、确认依据、Human 决策、后续回写位置和残留风险。确认记录可以写入 ADR 的 `context`、`consequences`、`status_history`、相关 Task / Memo 或 Change / commit 证据中，但不得只停留在对话结论里。
+ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.md` §6.3.1。创建、接受、废弃、替代、核心决策改写或升级为规范等场景中，确认记录至少应说明目标 ADR、决策变化、影响范围、确认依据、Human 决策、后续回写位置和残留风险。确认记录可以写入 ADR 的 `context`、`consequences`、`status_history`、相关 WorkPlan / Memo 或 Change / commit 证据中，但不得只停留在对话结论里。
 
 ---
 ## 6. 字段契约
@@ -204,8 +204,7 @@ ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.m
 | `alternatives` | 考虑过但未采纳的替代方案 | string | 否 | 可为空 | Narrative / Decision | AI、Web |
 | `affects` | 受影响范围、文件、规范或机制 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_taskplans` | 关联任务计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_tasks` | 关联任务 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 来源或关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -237,8 +236,7 @@ alternatives: |
 affects:
   - specs/27-Change-变更.md
 related_workareas: []
-related_taskplans: []
-related_tasks: []
+related_workplans: []
 related_changes: []
 related_memos: []
 related_adrs: []
@@ -255,7 +253,7 @@ status_history:
 
 ### 6.3 Human Gate 记录回写样例
 
-ADR 创建、接受、废弃、替代、核心决策改写或升级为规范时，Human Gate 记录可以摘要写入 `context`、`consequences`、`status_history`、相关 Task / Memo 或 Change / commit 证据中。若直接写入 ADR 字段，推荐使用以下文本块：
+ADR 创建、接受、废弃、替代、核心决策改写或升级为规范时，Human Gate 记录可以摘要写入 `context`、`consequences`、`status_history`、相关 WorkPlan / Memo 或 Change / commit 证据中。若直接写入 ADR 字段，推荐使用以下文本块：
 
 ```yaml
 context: |
@@ -264,7 +262,7 @@ context: |
   Human Gate 记录：
   - 触发原因：accepted ADR 的核心决策将被修改
   - 确认事项：是否接受新的决策内容并保留原 ADR 追溯
-  - 影响范围：目标 ADR、相关规范、后续 Task 和 Change 记录
+  - 影响范围：目标 ADR、相关规范、后续 WorkPlan 和 Change 记录
   - 确认依据：原 ADR、替代方案、影响范围说明和验证结果
   - Human 决策：确认修改
   - 确认人/时间：Human，2026-06-10
@@ -298,7 +296,7 @@ ADR 证据至少包括：
 4. 决策后果；
 5. 影响范围；
 6. Human Gate 确认记录；
-7. 相关 Change、WorkArea、TaskPlan、Task、Memo 或规范引用。
+7. 相关 Change、WorkArea、WorkPlan、Memo 或规范引用。
 
 聊天内容、临时命令输出、Web 页面状态和工具缓存不得单独作为 ADR 证据。需要长期保留时，应摘要写入 ADR 字段或相关事实源。
 
@@ -314,7 +312,7 @@ AI 处理 ADR 时应遵守：
 3. `accepted` ADR 是后续执行应遵守的决策；
 4. 读取 `superseded` ADR 时，应继续追踪 `superseded_by` 指向的新 ADR；
 5. 创建、确认、废弃、替代、升级或删除 ADR 前评估 Human Gate；
-6. 不得把 Task 字段中的风险判断、依赖关系、产物引用或检查结果误升级为 ADR，除非满足本文准入条件。
+6. 不得把 WorkPlan 字段中的风险判断、依赖关系、产物引用或检查结果误升级为 ADR，除非满足本文准入条件。
 
 ### 8.2 Code 辅助
 

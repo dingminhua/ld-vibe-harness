@@ -2,9 +2,9 @@
 
 > 创建日期：2026-06-09
 > 定位：定义 Memo / 备忘工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
-> 适用范围：所有接入 LDVH 且需要管理尚未任务化但有保留价值的输入、发现、提醒、问题、缺口和偏好的项目
+> 适用范围：所有接入 LDVH 且需要管理尚未计划化但有保留价值的输入、发现、提醒、问题、缺口和偏好的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-TaskPlan-任务计划.md`、`specs/22-Task-任务.md`、`specs/24-ADR-决策.md`、`specs/27-Change-变更.md`
+> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-WorkPlan-工作计划.md`、`specs/24-ADR-决策.md`、`specs/27-Change-变更.md`
 
 ```yaml
 ldvh_member:
@@ -27,18 +27,18 @@ ldvh_member:
 ---
 ## 1. 对象定位与准入条件
 
-Memo / 备忘承载尚未任务化但有保留价值的输入、发现、提醒、问题、缺口和偏好。Memo 的目标是降低误创建 WorkArea、TaskPlan、Task 或 ADR 的冲动，同时避免有价值的信息只留在聊天记忆中。
+Memo / 备忘承载尚未计划化但有保留价值的输入、发现、提醒、问题、缺口和偏好。Memo 的目标是降低误创建 WorkArea、WorkPlan 或 ADR 的冲动，同时避免有价值的信息只留在聊天记忆中。
 
-Memo 是分流前的工作对象。它可以后续转化或关联到 WorkArea、TaskPlan、Task、ADR、Pitfall、docs、管辖项目配置或其他事实源，但在转化前不替代这些对象的字段契约、状态机、验收规则或配置边界。
+Memo 是分流前的工作对象。它可以后续转化或关联到 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置或其他事实源，但在转化前不替代这些对象的字段契约、状态机、验收规则或配置边界。
 
 ### 1.1 Memo 准入条件
 
 一个信息单元满足以下条件之一时，应考虑形成 Memo：
 
 1. 有保留价值，但尚未形成明确执行目标或验收标准；
-2. 不满足 Task 准入条件，但可能后续转为 Task；
+2. 不满足 WorkPlan 准入条件，但可能后续转为 WorkPlan；
 3. 不满足 ADR 准入条件，但属于可能影响后续判断的偏好、观察或临时判断；
-4. 不满足 WorkArea 或 TaskPlan 准入条件，但可能后续发展为长期范围、目标或约束；
+4. 不满足 WorkArea 或 WorkPlan 准入条件，但可能后续发展为长期范围、目标或约束；
 5. 执行过程中发现问题、缺口、风险线索、资料线索或待讨论事项，尚未决定如何处理；
 6. 不记录会导致后续遗忘、重复讨论或信息断裂。
 
@@ -49,9 +49,9 @@ Memo 是分流前的工作对象。它可以后续转化或关联到 WorkArea、
 以下内容通常不应单独形成 Memo：
 
 1. 当前对话中可以直接处理的信息；
-2. 已有明确目标和验收标准的工作，应创建 TaskPlan、Task 或写入现有对象；
+2. 已有明确目标和验收标准的工作，应创建 WorkPlan 或写入现有对象；
 3. 已经满足长期决策准入的判断，应创建 ADR；
-4. 已经满足长期范围或任务计划准入的输入，应创建 WorkArea 或 TaskPlan；
+4. 已经满足长期范围或工作计划准入的输入，应创建 WorkArea 或 WorkPlan；
 5. 纯闲聊、寒暄或无后续价值的信息；
 6. 已由 docs、sources、studies 或现有对象完整承载的信息。
 
@@ -87,7 +87,7 @@ Memo 标准状态如下：
 | 状态 | 含义 |
 |---|---|
 | `pending` | 待处理：已捕获，尚未决定是否分流、处理或废弃 |
-| `resolved` | 已分流到 WorkArea、TaskPlan、Task、ADR、docs 或其他事实源，或已明确处理 |
+| `resolved` | 已分流到 WorkArea、WorkPlan、ADR、docs 或其他事实源，或已明确处理 |
 | `discarded` | 已废弃：确认不再需要继续跟踪或作为分流入口 |
 
 `resolved` 和 `discarded` 是稳定终态。终态 Memo 不得直接重开；如需重新处理，应新建 Memo，并在新 Memo 中引用原 Memo。
@@ -113,11 +113,11 @@ resolved → discarded
 ---
 ## 4. 对象关系
 
-### 4.1 Memo 与 Task
+### 4.1 Memo 与 WorkPlan
 
-Memo 可以分流为 Task，作为尚未任务化信息转化为可执行工作单元的路径。分流后，Memo 的 `resolved_to` 应记录 `{type: task, ref: <Task ID>}`，Task 的 `source` 或 `related_docs` 可记录 Memo ID 或路径。
+Memo 可以分流为 WorkPlan，作为尚未计划化信息转化为可执行工作计划的路径。分流后，Memo 的 `resolved_to` 应记录 `{type: workplan, ref: <WorkPlan ID>}`，WorkPlan 的 `source` 或 `related_memos` 可记录 Memo ID 或路径。
 
-Task 的准入、状态和字段契约由 `specs/22-Task-任务.md` 定义。
+WorkPlan 的准入、状态和字段契约由 `specs/21-WorkPlan-工作计划.md` 定义。
 
 ### 4.2 Memo 与 ADR
 
@@ -125,11 +125,11 @@ Memo 可以分流为 ADR，作为临时判断、偏好或方案取舍转化为�
 
 ADR 的准入、状态和字段契约由 `specs/24-ADR-决策.md` 定义。
 
-### 4.3 Memo 与 WorkArea 和 TaskPlan
+### 4.3 Memo 与 WorkArea 和 WorkPlan
 
-Memo 可以分流为 WorkArea，作为长期范围、治理域或持续维护面的来源线索。Memo 也可以分流为 TaskPlan，作为一次目标、执行计划或关闭审查的来源线索。分流后，Memo 的 `resolved_to` 应记录 `{type: workarea, ref: <WorkArea ID>}` 或 `{type: taskplan, ref: <TaskPlan ID>}`，目标对象的 `related_memos` 可记录来源 Memo。
+Memo 可以分流为 WorkArea，作为长期范围、治理域或持续维护面的来源线索。Memo 也可以分流为 WorkPlan，作为一次目标、执行计划或关闭审查的来源线索。分流后，Memo 的 `resolved_to` 应记录 `{type: workarea, ref: <WorkArea ID>}` 或 `{type: workplan, ref: <WorkPlan ID>}`，目标对象的 `related_memos` 可记录来源 Memo。
 
-WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` 定义；TaskPlan 的准入、状态和字段契约由 `specs/21-TaskPlan-任务计划.md` 定义。
+WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` 定义；WorkPlan 的准入、状态和字段契约由 `specs/21-WorkPlan-工作计划.md` 定义。
 
 ### 4.4 Memo 与 Pitfall、管辖项目配置、docs
 
@@ -140,7 +140,7 @@ Memo 可以分流或关联到 Pitfall、管辖项目配置或 docs：
 3. 项目正文、调研、说明或报告内容，可吸收到 docs；
 4. 外部引用或调研资料，应进入 docs/sources。
 
-Pitfall 的准入、状态和字段契约由 `specs/25-Pitfall-踩坑经验.md` 定义。管辖项目配置的字段和边界由 `specs/03.04-管辖项目配置规范.md` 定义。环境能力核验、环境适配和适配措施正文不得写入管辖项目配置；需要长期保留的稳定事实应进入环境适配待补齐事项、Task、Memo、ADR、正式规范或按 04 系列规范处理。当前具体检查结果只保留当前过程结论，不作为持久状态事实源。
+Pitfall 的准入、状态和字段契约由 `specs/25-Pitfall-踩坑经验.md` 定义。管辖项目配置的字段和边界由 `specs/03.04-管辖项目配置规范.md` 定义。环境能力核验、环境适配和适配措施正文不得写入管辖项目配置；需要长期保留的稳定事实应进入环境适配待补齐事项、WorkPlan、Memo、ADR、正式规范或按 04 系列规范处理。当前具体检查结果只保留当前过程结论，不作为持久状态事实源。
 
 ### 4.5 Memo 与 Change
 
@@ -153,10 +153,10 @@ Memo 的创建、状态变化、分流和废弃都应留下 Change。Change 的 
 
 1. 创建、删除或重命名 Memo 实例；
 2. 将对话输入、docs/studies 结论或执行发现写入 Memo；
-3. 将 `pending` Memo 分流为 WorkArea、TaskPlan、Task、ADR、Pitfall、docs、管辖项目配置更新或其他事实源；
+3. 将 `pending` Memo 分流为 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置更新或其他事实源；
 4. 将 Memo 标记为 `discarded`，且废弃会丢失后续跟踪入口；
 6. 修改 `resolved_to`、`priority` 或核心描述；
-7. 将 Memo 作为规避 WorkArea、TaskPlan、Task 或 ADR 准入判断的长期替代物。
+7. 将 Memo 作为规避 WorkArea、WorkPlan 或 ADR 准入判断的长期替代物。
 
 Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录承接。本文只规定 Memo 语境下需要确认的事实和影响范围。
 
@@ -181,10 +181,9 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `resolved_to` | 分流目标对象引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}` | Reference | AI、Code、Web |
 | `resolved_at` | 分流日期 | date | 条件必填 | `status: resolved` 时必须填写 | Reference | AI、Code、Web |
 | `discard_reason` | 废弃原因 | string | 条件必填 | `status: discarded` 时必须填写 | Narrative | AI、Human |
-| `related_tasks` | 关联任务 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_taskplans` | 关联任务计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `status_history` | — | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
@@ -202,18 +201,16 @@ created: '2026-06-09T00:00:00'
 updated: '2026-06-09T00:00:00'
 description: |
   在审查工作流程规范时发现错误处理和异常场景尚未形成统一规则，需要后续补充。
-source: 执行 task-0003 过程中的发现
+source: 执行 workplan-0003 过程中的发现
 priority: P2
 resolved_to:
-  type: task
-  ref: task-0012
+  type: workplan
+  ref: workplan-0012
 resolved_at: 2026-06-09
 discard_reason:
-related_tasks:
-  - task-0003
 related_adrs: []
 related_workareas: []
-related_taskplans: []
+related_workplans: []
 related_changes: []
 related_docs: []
 status_history:
@@ -221,7 +218,7 @@ status_history:
     from: pending
     to: resolved
     actor: AI
-    reason: 已分流为 task-0012
+    reason: 已分流为 workplan-0012
 ```
 
 ---
@@ -234,7 +231,7 @@ Memo 回写遵循以下规则：
 1. 创建 Memo 时，应写入 `ldvh-base/memos/`，并填写标题、描述、来源、优先级和状态；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
 3. 状态变化后应更新 `updated`，并向 `status_history` 追加记录；
-4. Memo 分流为 WorkArea、TaskPlan、Task、ADR、Pitfall、docs、管辖项目配置更新或其他事实源时，应更新 `resolved_to` 和 `resolved_at`；
+4. Memo 分流为 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置更新或其他事实源时，应更新 `resolved_to` 和 `resolved_at`；
 5. Memo 创建、分流、废弃或核心描述修改应通过 Change 留痕；
 6. Memo 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
 
@@ -246,7 +243,7 @@ Memo 证据至少包括：
 2. 优先级；
 3. 分流目标或废弃原因；
 4. Human Gate 确认记录；
-5. 相关 WorkArea、TaskPlan、Task、ADR、Change 或文档引用。
+5. 相关 WorkArea、WorkPlan、ADR、Change 或文档引用。
 
 Memo 的分流证据应保留摘要和目标引用，不复制目标对象全文。
 
@@ -259,7 +256,7 @@ AI 处理 Memo 时应遵守：
 
 1. 先判断信息是否满足 Memo 准入条件；
 2. 创建、分流、废弃或删除 Memo 前评估 Human Gate；
-3. 不得用 Memo 长期替代已经满足准入条件的 WorkArea、TaskPlan、Task 或 ADR；
+3. 不得用 Memo 长期替代已经满足准入条件的 WorkArea、WorkPlan 或 ADR；
 4. 分流时应说明为什么目标类型合适；
 5. 分流后不再在 Memo 中维护目标对象的状态、验收或决策正文。
 
@@ -296,11 +293,11 @@ Memo 创建、分流和废弃的具体行动流程由后续 40-59 工作流程�
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Memo 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、分流规则和事实源边界 | 05、03.02、本文、24 ADR、20 WorkArea、22 Task、21 TaskPlan、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、分流或废弃 Memo 时 |
-| 入口可见要求 | AI 处理未任务化但有保留价值的信息、发现、提醒、问题或缺口时，应能定位本文 | 成员自描述、运行入口摘要、Memo 分流流程入口 | AI 执行入口提示 | 信息保留、分流、废弃或字段契约变化时 |
+| 上位约束承接要求 | Memo 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、分流规则和事实源边界 | 05、03.02、本文、24 ADR、20 WorkArea、21 WorkPlan、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、分流或废弃 Memo 时 |
+| 入口可见要求 | AI 处理未计划化但有保留价值的信息、发现、提醒、问题或缺口时，应能定位本文 | 成员自描述、运行入口摘要、Memo 分流流程入口 | AI 执行入口提示 | 信息保留、分流、废弃或字段契约变化时 |
 | 确定性执行要求 | Memo 字段、状态、优先级、引用、文件命名和条件必填应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Memo 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、分流规则或引用关系变化时 |
 | Human 交互要求 | Memo 创建、分流、废弃、核心描述修改和用 Memo 规避对象准入时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | Memo 规范变化后，应检查成员自描述、05.01、ADR、WorkArea、TaskPlan、Task、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Memo 字段、状态、事实源边界、适配规则或检查要求变化时 |
+| 生命周期触发要求 | Memo 规范变化后，应检查成员自描述、05.01、ADR、WorkArea、WorkPlan、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Memo 字段、状态、事实源边界、适配规则或检查要求变化时 |
 
 ---
 ## 10. 检查要求
@@ -315,7 +312,7 @@ Memo 规范检查至少包括：
 | 状态合法性 | 状态属于枚举，流转符合 §3.2 |
 | 分流规则 | resolved Memo 已填写 `resolved_to` 和 `resolved_at` |
 | 废弃规则 | discarded Memo 已说明废弃原因 |
-| 对象边界 | Memo 未长期替代 WorkArea、TaskPlan、Task 或 ADR |
+| 对象边界 | Memo 未长期替代 WorkArea、WorkPlan 或 ADR |
 | Human Gate | §5 场景已完成确认或记录降级 |
 | Change 追溯 | Memo 关键变化有 Git 可追溯记录 |
 | Code / Web 边界 | 派生输出未替代 Git 文件事实源 |

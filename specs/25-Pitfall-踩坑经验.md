@@ -4,7 +4,7 @@
 > 定位：定义 Pitfall / 踩坑经验工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要沉淀已解决、已验证且具有复用价值的踩坑经验的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-TaskPlan-任务计划.md`、`specs/22-Task-任务.md`、`specs/24-ADR-决策.md`、`specs/26-Memo-备忘.md`、`specs/27-Change-变更.md`
+> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-WorkPlan-工作计划.md`、`specs/24-ADR-决策.md`、`specs/26-Memo-备忘.md`、`specs/27-Change-变更.md`
 
 ```yaml
 ldvh_member:
@@ -37,7 +37,7 @@ Pitfall 的目标是让 AI 和 Human 在后续执行中提前识别同类陷阱�
 
 1. 问题已经解决，且解决方式已验证；
 2. 问题具有反直觉性，AI 或 Human 后续容易重复误判；
-3. 问题跨 WorkArea、TaskPlan、Task、项目阶段或管辖项目具有复用价值；
+3. 问题跨 WorkArea、WorkPlan、项目阶段或管辖项目具有复用价值；
 4. 问题暴露了事实源读取、字段契约、Code 使用、Web 派生视图、环境适配、适配措施或工作流程中的稳定陷阱；
 5. 同类问题已经出现多次，需要形成规避策略；
 6. 问题可作为后续规范、Rules / Instructions、Skill、Agent、Code、Web、ADR 或工作流程改进的输入。
@@ -52,10 +52,10 @@ Pitfall 的目标是让 AI 和 Human 在后续执行中提前识别同类陷阱�
 2. 未验证的猜测、假设或临时判断；
 3. 只影响当前一次执行且没有复用价值的错误；
 4. 单纯的命令输出、日志片段或失败记录；
-5. 已由 specs、Rules / Instructions、ADR、Task 或 Code 明确约束，且没有新增经验的信息；
+5. 已由 specs、Rules / Instructions、ADR、WorkPlan 或 Code 明确约束，且没有新增经验的信息；
 6. 没有规避策略的抱怨、复盘感想或笼统提醒。
 
-不形成 Pitfall 的内容，应按性质留在当前执行上下文，或进入 Memo、Task、ADR、Change、docs、sources、studies、Code 测试或其他权威位置。
+不形成 Pitfall 的内容，应按性质留在当前执行上下文，或进入 Memo、WorkPlan、ADR、Change、docs、sources、studies、Code 测试或其他权威位置。
 
 ### 1.3 Pitfall 与规范、运行入口和实现的边界
 
@@ -124,11 +124,11 @@ active → archived
 ---
 ## 4. 对象关系
 
-### 4.1 Pitfall 与 Task
+### 4.1 Pitfall 与 WorkPlan
 
-Task 执行、验证或关闭过程中发现的已解决且可复用经验，可以整理为 Pitfall。Pitfall 可通过 `source_tasks` 记录来源 Task。
+工作计划执行、验证或关闭过程中发现的已解决且可复用经验，可以整理为 Pitfall。Pitfall 可通过 `source_objects` 或 `related_workplans` 记录来源工作计划。
 
-Task 的准入、状态和字段契约由 `specs/22-Task-任务.md` 定义。Pitfall 不替代 Task 的验收标准、验证证据、关闭证据、风险判断或缺陷修复动作。
+Pitfall 不替代 WorkPlan 的成功标准、验证证据、关闭证据、风险判断或缺陷修复动作。
 
 ### 4.2 Pitfall 与 Memo
 
@@ -136,11 +136,11 @@ Memo 中保留的发现、提醒、复盘线索或问题线索满足 Pitfall 准
 
 Memo 的准入、状态和字段契约由 `specs/26-Memo-备忘.md` 定义。
 
-### 4.3 Pitfall 与 WorkArea / TaskPlan
+### 4.3 Pitfall 与 WorkArea / WorkPlan
 
-工作域和任务计划可以通过 `related_pitfalls` 引用执行过程中形成或需要参考的踩坑经验。Pitfall 可通过 `related_workareas` 记录关联工作域，通过 `related_taskplans` 记录关联任务计划。
+工作域和工作计划可以通过 `related_pitfalls` 引用执行过程中形成或需要参考的踩坑经验。Pitfall 可通过 `related_workareas` 记录关联工作域，通过 `related_workplans` 记录关联工作计划。
 
-WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` 定义；TaskPlan 的准入、状态和字段契约由 `specs/21-TaskPlan-任务计划.md` 定义。Pitfall 不替代 WorkArea 的长期范围，也不替代 TaskPlan 的目标、成功标准、任务序列或关闭判断。
+WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` 定义；WorkPlan 的准入、状态和字段契约由 `specs/21-WorkPlan-工作计划.md` 定义。Pitfall 不替代 WorkArea 的长期范围，也不替代 WorkPlan 的目标、成功标准、执行编排或关闭判断。
 
 ### 4.4 Pitfall 与 ADR
 
@@ -175,7 +175,7 @@ Pitfall 的创建、状态变化、核心经验改写、归档、替代和被吸
 以下情况应评估 Human Gate：
 
 1. 创建、删除或重命名 Pitfall 实例；
-2. 将 Task 过程发现、Memo、docs/studies 结论或对话输入升级为 Pitfall；
+2. 将 WorkPlan 过程发现、Memo、docs/studies 结论或对话输入升级为 Pitfall；
 3. 将 `draft` Pitfall 确认为 `active`；
 4. 将 `active` Pitfall 标记为 `superseded` 或 `archived`；
 5. 修改 `root_cause`、`resolution`、`verification` 或 `avoidance` 等核心经验字段；
@@ -209,10 +209,10 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `applicability` | 适用范围和不适用范围 | string | 是 | 应避免泛化过度 | Narrative | AI、Web |
 | `repeatability` | 复现或重复概率 | string | 否 | `unknown`、`once`、`recurring`，默认 `unknown` | Reference | AI、Code、Web |
 | `tags` | 标签列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `source_tasks` | 来源任务 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `source_objects` | 来源对象 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `source_memos` | 来源备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_taskplans` | 关联任务计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -253,10 +253,10 @@ repeatability: recurring
 tags:
   - input-material
   - fact-source
-source_tasks: []
+source_objects: []
 source_memos: []
 related_workareas: []
-related_taskplans: []
+related_workplans: []
 related_adrs: []
 related_changes: []
 related_docs:
@@ -293,7 +293,7 @@ notes:
 
 Pitfall 实例文件命名规则为 `pitfall-{NNNN}-short-title.yaml`。编号从 `0001` 起递增，固定 4 位；英文短标题使用小写短横线命名；文件存放位置为 `ldvh-base/pitfalls/`。
 
-文件名变化必须同步检查引用该 Pitfall 的 WorkArea、TaskPlan、Task、Memo、ADR、Change、Web 派生视图和 Code 聚合结果。
+文件名变化必须同步检查引用该 Pitfall 的 WorkArea、WorkPlan、Memo、ADR、Change、Web 派生视图和 Code 聚合结果。
 
 ---
 ## 7. 事实源回写与证据留存
@@ -321,7 +321,7 @@ Pitfall 证据至少包括：
 6. 规避策略；
 7. 适用范围和不适用范围；
 8. Human Gate 确认记录；
-9. 相关 Task、Memo、ADR、Change、docs、规范或 Code 引用。
+9. 相关 WorkPlan、Memo、ADR、Change、docs、规范或 Code 引用。
 
 证据摘要应足以支持经验复用判断，但不得复制大量日志、命令输出、代码片段或外部资料形成第二事实源。
 
@@ -338,7 +338,7 @@ AI 处理 Pitfall 时应遵守：
 4. 创建、激活、归档、替代或核心经验改写前评估 Human Gate；
 5. 进入代码、文档、规范、环境适配或工具修改前，可按任务类型、文件路径、技术栈、标签和事实源类型筛选 active Pitfall；
 6. 不得把未解决问题、未验证猜测或一次性失败直接写成 active Pitfall；
-7. 不得让 Pitfall 替代 Task、Memo、ADR、规范、Code 测试或 Change。
+7. 不得让 Pitfall 替代 WorkPlan、Memo、ADR、规范、Code 测试或 Change。
 
 ### 8.2 Code 辅助
 
@@ -372,11 +372,11 @@ Pitfall 识别、创建、激活、归档、替代和吸收到规范或实现的
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Pitfall 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、经验吸收边界和事实源边界 | 05、03.02、本文、24 ADR、26 Memo、22 Task、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、激活、归档或替代 Pitfall 时 |
+| 上位约束承接要求 | Pitfall 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、经验吸收边界和事实源边界 | 05、03.02、本文、24 ADR、26 Memo、21 WorkPlan、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、激活、归档或替代 Pitfall 时 |
 | 入口可见要求 | AI 处理已解决可复用经验、反直觉问题、重复误判或规避策略时，应能定位本文 | 成员自描述、运行入口摘要、Pitfall 检索或经验吸收流程入口 | AI 执行入口提示 | 经验沉淀、任务执行前检查、状态流转或字段契约变化时 |
 | 确定性执行要求 | Pitfall 字段、状态、引用、文件命名、条件必填、标签和替代链应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Pitfall 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、替代规则或标签规则变化时 |
 | Human 交互要求 | Pitfall 创建、激活、归档、替代、核心经验改写和吸收到规范或实现时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | Pitfall 规范变化后，应检查成员自描述、05.01、ADR、Memo、Task、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Pitfall 字段、状态、事实源边界、适配规则或检查要求变化时 |
+| 生命周期触发要求 | Pitfall 规范变化后，应检查成员自描述、05.01、ADR、Memo、WorkPlan、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Pitfall 字段、状态、事实源边界、适配规则或检查要求变化时 |
 
 ---
 ## 10. 检查要求
@@ -392,7 +392,7 @@ Pitfall 规范检查至少包括：
 | active 可用性 | active Pitfall 已解决、已验证、具备规避策略和适用范围 |
 | 终态处理 | superseded 和 archived 不得重开 |
 | 替代链 | superseded Pitfall 已填写 `superseded_by` |
-| 对象边界 | Pitfall 未替代 Task、Memo、ADR、规范、Code 测试或 Change |
+| 对象边界 | Pitfall 未替代 WorkPlan、Memo、ADR、规范、Code 测试或 Change |
 | 经验吸收边界 | 规避策略被吸收后只保留引用，不复制规则正文第二事实源 |
 | Human Gate | §5 场景已完成确认或记录降级 |
 | Change 追溯 | Pitfall 关键变化有 Git 可追溯记录 |

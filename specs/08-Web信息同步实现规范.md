@@ -103,7 +103,7 @@ Web AI 不得自行决定以下事项：
 
 1. 扩大 Web 写入白名单；
 2. 将 Gate 页面升级为审批系统；
-3. 通过 Web 页面反向定义 Task、TaskPlan、ADR、Pitfall、Change 或工作流程状态；
+3. 通过 Web 页面反向定义 WorkPlan、ADR、Pitfall、Change 或工作流程状态；
 4. 绕过 40-59 成员主文件自描述和 Code 派生工作流程集合索引恢复未标记为 active 的工作流程测试机制；
 5. 把 `web/docs/`、页面文案、按钮状态、缓存或临时诊断当作 specs 权威来源；
 6. 在未补齐来源追溯、错误态和测试归属前，把派生聚合结果呈现为完整事实。
@@ -116,9 +116,9 @@ Web 必须把项目的当前状态以事实可追溯的方式呈现给 Human，�
 
 项目当前事实态势呈现应至少回答：
 
-1. 当前有哪些 WorkArea 和 TaskPlan 处于活跃、待关闭、已闭合或异常状态；
-2. 每个活跃 TaskPlan 下有哪些 Task 正在执行、验证、已验证、等待前置、待执行或已关闭；
-3. 每个 Task 下如存在 SubTask，应能看见 SubTask 的并行执行、局部等待、验证和关闭状态；
+1. 当前有哪些 WorkArea 和 WorkPlan 处于活跃、待审查、已闭合或异常状态；
+2. 每个活跃 WorkPlan 下有哪些执行项正在执行、验证、已验证、等待前置、待执行或已关闭；
+3. 每个 WorkPlan 的执行项如存在并行关系，应能看见并行执行、局部等待、验证和关闭状态；
 4. 哪些阻塞来自事实源中的 `blocked_by`，哪些等待状态是 Web 基于未关闭前置项派生的展示结果；
 5. 哪些事项已经进入 Human Gate、计划关闭判断、验证证据补齐或其他需要 Human 配合的节点；
 6. 下一步最可能推进的对象、验证入口、风险或缺口在哪里；
@@ -126,7 +126,7 @@ Web 必须把项目的当前状态以事实可追溯的方式呈现给 Human，�
 
 该能力的设计目标是“事实态势同步”，不是恢复独立工作台、项目管理看板或 Web 权威状态。Web 可以用态势条、状态图标、层级卡片、筛选、关联跳转和只读摘要帮助 Human 扫描全局，但不得把页面排序、临时筛选、UI 展开状态或缓存结果解释为 AI 执行事实、任务完成事实或 Human 已授权事实。
 
-SubTask 的呈现应服务“人看见并行执行和局部进展”的需求。SubTask 不作为一级导航 tab；当它作为 TaskPlan / Task 的局部执行层出现时，应弱于 Task 主线，避免让 Human 误以为每个 SubTask 都需要人工介入。只有进入等待、验证、已验证、异常、Human Gate 或影响计划关闭判断时，SubTask 才应显著进入 Human 的注意力。
+执行项的呈现应服务“人看见并行执行和局部进展”的需求。执行项不作为一级导航 tab；当它作为 WorkPlan 的内部编排层出现时，应弱于 WorkPlan 主线，避免让 Human 误以为每个执行项都需要人工介入。只有进入等待、验证、已验证、异常、Human Gate 或影响计划关闭判断时，执行项才应显著进入 Human 的注意力。
 
 ### 5.5 派生态势原因语义规则
 
@@ -137,12 +137,12 @@ Web 呈现派生态势时，不得只使用不能回答原因的泛化状态词�
 1. Web 可以把事实源状态、关系和校验结果聚合为面向 Human 的态势标签，但标签不得反向定义事实源状态机；
 2. 同一个事实源状态在不同原因下需要拆分为不同 Human-facing 态势时，Web 应拆分为不同 Human-facing 态势呈现，不得用一个泛化词覆盖多个原因；
 3. 呈现“等待”“阻塞”“风险”“需要确认”“验证失败”“待执行”等态势时，应能追溯到 Git 文件事实源字段、Web 后端确定性聚合、Code 输出或明确 Human 输入；
-4. 等待类态势必须区分等待原因。没有未关闭前置项的 `planned` Task / SubTask 应表达为待执行或计划中；存在未关闭 `blocked_by` 派生对象时，才可表达为等待前置；
+4. 等待类态势必须区分等待原因。没有未关闭前置项的 `planned` WorkPlan 或执行项应表达为待执行或计划中；存在未关闭前置关系时，才可表达为等待前置；
 5. Human Gate、验证、关闭判断、证据缺失、同步失败、降级和异常等态势也应使用能表达原因的标签或辅助说明，不得仅使用“等待中”“处理中”“异常”等无法定位原因的泛词；
 6. 态势条、状态图标、列表卡片、对象详情和右侧扩展阅读区消费同一派生态势语义，不得在不同页面维护彼此冲突的标签、颜色、图标或排序；
 7. 新增或修改派生态势原因语义时，应同步检查 Web API 聚合字段、前端映射、i18n 文案、页面文档、图标语义文档和 `tests/web/` 覆盖。
 
-以 Task / SubTask 为例，`planned` 只是事实源状态；Web 不得直接把所有 `planned` 都表达为等待前置。Web 只有在确定性聚合出未关闭前置对象时，才可把它表达为等待前置；否则应表达为待执行。该表达仍是 Web 派生态势，不改变 Task / SubTask 的事实源 `status`。
+以 WorkPlan 或执行项为例，`planned` 只是事实源状态；Web 不得直接把所有 `planned` 都表达为等待前置。Web 只有在确定性聚合出未关闭前置对象或前置执行项时，才可把它表达为等待前置；否则应表达为待执行。该表达仍是 Web 派生态势，不改变 WorkPlan 或执行项的事实源状态。
 
 ---
 
@@ -237,7 +237,7 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 
 ### 8.2 Web 事实源写入白名单
 
-当前唯一允许 Web 直接写入 Git 文件事实源的能力是 Memo 快速创建。除下表外，Web 对 WorkArea、TaskPlan、Task、SubTask、ADR、Pitfall、Change、specs、Rules、Skill、Agent、Code 和其它 Git 文件事实源均只能读取、展示、筛选、复制路径或提供跳转，不得修改字段、状态、关系、内容或文件。
+当前唯一允许 Web 直接写入 Git 文件事实源的能力是 Memo 快速创建。除下表外，Web 对 WorkArea、WorkPlan、ADR、Pitfall、Change、specs、Rules、Skill、Agent、Code 和其它 Git 文件事实源均只能读取、展示、筛选、复制路径或提供跳转，不得修改字段、状态、关系、内容或文件。
 
 | 能力 | API | 写入目标 | 允许字段 | 约束 |
 |---|---|---|---|---|
@@ -246,9 +246,9 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 白名单规则如下：
 
 1. Web 不得提供对象字段通用 `PATCH`、`PUT`、`DELETE` 或任意 YAML 写回接口；
-2. Task 的 `status`、`taskplan`、`acceptance`、`verification`、`closure_evidence`、`deliverables` 等字段在 Web 中均为只读展示；
-3. WorkArea、TaskPlan、SubTask、ADR、Pitfall 和 Change 在 Web 中均为只读展示；
-4. Memo 快速创建只用于捕获尚未任务化但值得保留的信息，不得用来绕过 WorkArea、TaskPlan、Task、ADR 或 Pitfall 的准入规则；
+2. WorkPlan 的 `status`、`workarea`、`success_criteria`、`verification_evidence`、`closure_evidence`、`orchestration` 等字段在 Web 中均为只读展示；
+3. WorkArea、WorkPlan、ADR、Pitfall 和 Change 在 Web 中均为只读展示；
+4. Memo 快速创建只用于捕获尚未计划化但值得保留的信息，不得用来绕过 WorkArea、WorkPlan、ADR 或 Pitfall 的准入规则；
 5. 短期不扩展 Web 写入白名单；Gate、Validate、ProjectFiles、ObjectDetail 和 Dashboard 均不得据页面需要新增写入入口；
 6. 未来如需新增 Web 写入能力，必须先修改本文白名单和对应对象规范，补齐校验、测试、Human Gate 影响评估和降级路径，再实现代码。
 
@@ -304,7 +304,7 @@ Web 使用场景必须由对应规范、产品设计、工作流程或实现文�
 | Memo 快速创建 | 提供速记表单和创建结果反馈 | 校验并写入 Memo 事实源 |
 | 缺口审查 | 展示缺口和关联对象 | 生成缺口诊断 |
 | 运行态监控 | 展示同步状态和错误 | 提供可追溯输出 |
-| 项目当前事实态势 | 聚合展示 WorkArea、TaskPlan、Task、SubTask、阻塞、验证、Human Gate 和下一步信号，帮助 Human 看见 AI 正在做什么、将要做什么、需要配合什么 | 提供结构化事实、确定性校验、执行报告、状态回写和可追溯输出 |
+| 项目当前事实态势 | 聚合展示 WorkArea、WorkPlan、执行项、阻塞、验证、Human Gate 和下一步信号，帮助 Human 看见 AI 正在做什么、将要做什么、需要配合什么 | 提供结构化事实、确定性校验、执行报告、状态回写和可追溯输出 |
 | AI 执行态势理解 | 展示 AI 当前依据、风险、阻塞、验证证据和待 Human 决策点 | 提供结构化状态、报告和可追溯输出 |
 | LDVH 能力资产 | 只读展示 04.02 定义的 Rules、Skill、Agent、Hook、Code、Web 等能力资产、来源边界、使用场景、降级方式和 Code 检查状态 | 检查 04.02 能力资产定义、必备资产路径、支撑能力误列和 Rules 引用关系 |
 
@@ -427,7 +427,7 @@ Web 相关规格变更后，AI 应检查：
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | Human 交互要求 | LDVH 整体以 AI 执行者为第一服务对象；Web 的直接服务对象是 Human，Web 信息架构和交互必须服务人的理解、判断、确认、验收和方向校正需求 | 00 总纲、06 工作流程、07 Code、09 事实源边界、Human Gate | 设计治理 | Web 信息架构、页面优先级、导航、确认入口或白名单写入体验变化时 |
-| Human 交互要求 | Web 必须能以事实可追溯方式呈现项目当前态势，使 Human 清楚看见 AI 正在做什么、将要做什么、哪些 Task / SubTask 并行推进或等待前置、哪些事项需要 Human 配合或决策 | WorkArea / TaskPlan / Task / SubTask 事实源、Human Gate、Validate、Changelog、Web 对象聚合 API | 信息同步 | Dashboard、ObjectList、ObjectDetail、计划卡片、任务层级、Human Gate 或验证呈现变化时 |
+| Human 交互要求 | Web 必须能以事实可追溯方式呈现项目当前态势，使 Human 清楚看见 AI 正在做什么、将要做什么、哪些 WorkPlan 或执行项并行推进或等待前置、哪些事项需要 Human 配合或决策 | WorkArea / WorkPlan 事实源、Human Gate、Validate、Changelog、Web 对象聚合 API | 信息同步 | Dashboard、ObjectList、ObjectDetail、计划卡片、执行项层级、Human Gate 或验证呈现变化时 |
 | Human 交互要求 | Web 展示派生态势时应能表达原因语义和可追溯依据，等待、阻塞、风险、待执行、Human Gate、验证失败和证据缺失等态势不得被泛化为无法判断原因的标签 | Web API 聚合、前端态势映射、i18n、页面文档、图标语义文档、Web 测试 | 信息同步 | 派生态势标签、状态映射、颜色图标、排序、tooltip、文案或聚合依据变化时 |
 | 上位约束承接要求 | Web 只能承接 Human-facing 信息同步、确认、验收和白名单内受控轻写入，不得替代事实源或规范正文 | 09 事实源边界、07 Code、工作模型与工作流程规范、Human Gate | Web 治理 | Web 边界、信息同步、缓存数据库或 Web 写入规则变化时 |
 | 确定性执行要求 | Web 与 Code 可以各自实现事实源读取、对象解析、状态聚合、缓存和派生视图，但必须基于同一 Git 文件事实源、同一 specs 契约、同一对象字段契约和同一状态定义，不得创建第二事实源或第二规范 | 07 Code、09 事实源边界、对象规范、Web 测试、Code 测试 | 实现承接 | Web 或 Code 新增、修改事实源读取、对象展示、校验展示、聚合统计、状态派生、缓存策略或白名单写入入口时 |
