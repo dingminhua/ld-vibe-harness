@@ -22,3 +22,7 @@ related_memos: []
 related_pitfalls: []
 archive_reason: |
   TaskSet 与 Evidence 的模型收敛范围已完成阶段性决策，当前不再承载新的任务计划。
+workplans:
+- workplan-0004
+- workplan-0005
+- workplan-0006

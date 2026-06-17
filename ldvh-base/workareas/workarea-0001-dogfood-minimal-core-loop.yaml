@@ -14,3 +14,6 @@ related_memos: []
 related_pitfalls: []
 archive_reason: |
   最小 Core Loop 验证范围已完成阶段性验证，当前不再承载新的任务计划。
+workplans:
+- workplan-0001
+- workplan-0002

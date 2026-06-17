@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Preview legacy TaskPlan/Task facts as WorkPlan objects.
+"""Preview and optionally write legacy TaskPlan/Task facts as WorkPlan objects.
 
-This tool is intentionally read-only. It generates a deterministic migration
-preview so Human and AI reviewers can inspect the proposed WorkPlan contract
-before any ldvh-base facts are written.
+The default mode is read-only. Write mode requires explicit Human Gate
+confirmation flags and only creates WorkPlan facts plus WorkArea back-links; it
+does not delete or mutate legacy TaskPlan/Task facts.
 """
 
 from __future__ import annotations
@@ -29,6 +29,23 @@ TASK_STATUS_TO_EXECUTION_STATUS = {
     "review_needed": "done",
     "closed": "done",
 }
+
+
+class BlockScalarDumper(yaml.SafeDumper):
+    pass
+
+
+class LiteralString(str):
+    pass
+
+
+def _string_representer(dumper: yaml.Dumper, data: str) -> yaml.Node:
+    style = "|" if "\n" in data else None
+    return dumper.represent_scalar("tag:yaml.org,2002:str", str(data), style=style)
+
+
+BlockScalarDumper.add_representer(str, _string_representer)
+BlockScalarDumper.add_representer(LiteralString, _string_representer)
 
 
 def load_yaml(path: Path) -> dict[str, Any] | None:
@@ -75,6 +92,59 @@ def merge_unique_strings(*values: Any) -> list[str]:
     return result
 
 
+def blockify_multiline(value: Any) -> Any:
+    if isinstance(value, str) and "\n" in value:
+        return LiteralString(value)
+    if isinstance(value, dict):
+        return {key: blockify_multiline(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [blockify_multiline(item) for item in value]
+    return value
+
+
+def write_yaml(path: Path, data: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        yaml.dump(
+            blockify_multiline(data),
+            Dumper=BlockScalarDumper,
+            allow_unicode=True,
+            sort_keys=False,
+            default_flow_style=False,
+        ),
+        encoding="utf-8",
+    )
+
+
+def render_workplans_block(workplan_ids: list[str]) -> str:
+    if not workplan_ids:
+        return "workplans: []\n"
+    return "workplans:\n" + "".join(f"- {workplan_id}\n" for workplan_id in workplan_ids)
+
+
+def replace_workplans_block(text: str, workplan_ids: list[str]) -> str:
+    lines = text.splitlines(keepends=True)
+    for start, line in enumerate(lines):
+        if not re.match(r"^workplans\s*:", line):
+            continue
+        end = start + 1
+        while end < len(lines):
+            candidate = lines[end]
+            is_top_level_key = candidate == candidate.lstrip() and bool(re.match(r"^[A-Za-z_][A-Za-z0-9_-]*\s*:", candidate))
+            if is_top_level_key:
+                break
+            end += 1
+        return "".join(lines[:start]) + render_workplans_block(workplan_ids) + "".join(lines[end:])
+
+    suffix = "" if text.endswith("\n") or not text else "\n"
+    return text + suffix + render_workplans_block(workplan_ids)
+
+
+def update_workarea_workplans(path: Path, workplan_ids: list[str]) -> None:
+    text = path.read_text(encoding="utf-8")
+    path.write_text(replace_workplans_block(text, workplan_ids), encoding="utf-8")
+
+
 def target_id_for_taskplan(taskplan_id: str) -> str:
     match = TASKPLAN_ID_RE.match(taskplan_id)
     if not match:
@@ -98,6 +168,15 @@ def task_result_summary(task: dict[str, Any]) -> str:
     if parts:
         return "\n\n".join(parts)
     return f"Legacy task {task.get('id', '')} status was {task.get('status', 'unknown')}."
+
+
+def normalize_evidence_text(value: str) -> str:
+    stripped = value.strip()
+    if not stripped:
+        return ""
+    if re.search(r"##\s*验证结果|##\s*结果|##\s*Result|##\s*结论|##\s*Conclusion", stripped):
+        return stripped
+    return f"## 验证结果\n\n{stripped}"
 
 
 def execution_item_from_task(task_id: str, task: dict[str, Any] | None) -> tuple[dict[str, Any], list[dict[str, str]]]:
@@ -201,7 +280,7 @@ def build_workplan(
     proposed_status, status_warnings = workplan_status_for_taskplan(taskplan, execution_items)
     issues.extend(status_warnings)
     mode = "single" if len(execution_items) <= 1 else "sequential"
-    completion_evidence = as_string(taskplan.get("completion_evidence")).strip()
+    completion_evidence = normalize_evidence_text(as_string(taskplan.get("completion_evidence")))
     verification_evidence = completion_evidence
     closure_evidence = completion_evidence
     if completion_evidence:
@@ -222,7 +301,7 @@ def build_workplan(
         "priority": taskplan.get("priority", "P2"),
         "description": taskplan.get("description", ""),
         "success_criteria": taskplan.get("success_criteria", ""),
-        "source": f"Legacy TaskPlan migration preview from {taskplan_id}; source path: {source_path}",
+        "source": f"Legacy TaskPlan migration from {taskplan_id}; source path: {source_path}",
         "orchestration": {
             "mode": mode,
             "execution_items": execution_items,
@@ -258,7 +337,15 @@ def build_workplan(
     return workplan, issues
 
 
-def collect_objects(base_dir: Path) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, dict[str, Any]], dict[str, Path]]:
+def collect_objects(
+    base_dir: Path,
+) -> tuple[
+    list[tuple[Path, dict[str, Any]]],
+    dict[str, dict[str, Any]],
+    dict[str, Path],
+    dict[str, dict[str, Any]],
+    dict[str, Path],
+]:
     ldvh_base = base_dir / "ldvh-base"
     taskplans: list[tuple[Path, dict[str, Any]]] = []
     for path in sorted((ldvh_base / "taskplans").glob("taskplan-*.yaml")):
@@ -278,11 +365,19 @@ def collect_objects(base_dir: Path) -> tuple[list[tuple[Path, dict[str, Any]]], 
         if data and isinstance(data.get("id"), str):
             workplan_paths[data["id"]] = path
 
-    return taskplans, tasks_by_id, workplan_paths
+    workareas_by_id: dict[str, dict[str, Any]] = {}
+    workarea_paths: dict[str, Path] = {}
+    for path in sorted((ldvh_base / "workareas").glob("workarea-*.yaml")):
+        data = load_yaml(path)
+        if data and isinstance(data.get("id"), str):
+            workareas_by_id[data["id"]] = data
+            workarea_paths[data["id"]] = path
+
+    return taskplans, tasks_by_id, workplan_paths, workareas_by_id, workarea_paths
 
 
 def preview_migration(base_dir: Path, ids: list[str] | None = None, statuses: list[str] | None = None) -> dict[str, Any]:
-    taskplans, tasks_by_id, existing_workplans = collect_objects(base_dir)
+    taskplans, tasks_by_id, existing_workplans, workareas_by_id, _workarea_paths = collect_objects(base_dir)
     id_filter = set(ids or [])
     status_filter = set(statuses or [])
     target_dir = base_dir / "ldvh-base" / "workplans"
@@ -307,6 +402,13 @@ def preview_migration(base_dir: Path, ids: list[str] | None = None, statuses: li
                 "level": "error",
                 "code": "TARGET_WORKPLAN_EXISTS",
                 "message": f"Target WorkPlan already exists: {target_id}",
+            })
+        workarea_id = as_string(workplan.get("workarea"))
+        if not workarea_id or workarea_id not in workareas_by_id:
+            issues.append({
+                "level": "error",
+                "code": "WORKAREA_NOT_FOUND",
+                "message": f"Target WorkPlan references missing WorkArea: {workarea_id or '<empty>'}",
             })
 
         error_count = sum(1 for issue in issues if issue["level"] == "error")
@@ -350,18 +452,118 @@ def preview_migration(base_dir: Path, ids: list[str] | None = None, statuses: li
     }
 
 
+def confirmation_error_result(message: str) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "action": "write-taskplan-to-workplan",
+        "summary": {
+            "taskplan_count": 0,
+            "convertible_count": 0,
+            "blocked_count": 1,
+            "issue_count": 1,
+            "by_source_status": {},
+        },
+        "items": [],
+        "write": {
+            "written_count": 0,
+            "updated_workarea_count": 0,
+            "written_paths": [],
+            "updated_workarea_paths": [],
+        },
+        "issues": [{"level": "error", "code": "HUMAN_GATE_REQUIRED", "message": message}],
+    }
+
+
+def validate_write_confirmation(args: argparse.Namespace) -> str | None:
+    if not args.human_gate_confirmed:
+        return "Write mode requires --human-gate-confirmed."
+    if not as_string(args.confirmed_by).strip():
+        return "Write mode requires --confirmed-by."
+    if not as_string(args.confirmation_context).strip():
+        return "Write mode requires --confirmation-context."
+    return None
+
+
+def append_human_gate_source(workplan: dict[str, Any], args: argparse.Namespace) -> None:
+    confirmation = f"Human Gate confirmed by {args.confirmed_by}: {args.confirmation_context}"
+    existing_source = as_string(workplan.get("source")).rstrip()
+    workplan["source"] = f"{existing_source}\n{confirmation}" if existing_source else confirmation
+
+
+def workplan_sort_key(workplan_id: str) -> tuple[int, str]:
+    match = re.match(r"^workplan-(\d{4})$", workplan_id)
+    return (int(match.group(1)) if match else 9999, workplan_id)
+
+
+def write_migration(base_dir: Path, args: argparse.Namespace) -> dict[str, Any]:
+    confirmation_error = validate_write_confirmation(args)
+    if confirmation_error:
+        return confirmation_error_result(confirmation_error)
+
+    result = preview_migration(base_dir, ids=args.ids, statuses=args.statuses)
+    result["action"] = "write-taskplan-to-workplan"
+    result["write"] = {
+        "written_count": 0,
+        "updated_workarea_count": 0,
+        "written_paths": [],
+        "updated_workarea_paths": [],
+    }
+    if not result["ok"]:
+        return result
+
+    _taskplans, _tasks_by_id, _existing_workplans, workareas_by_id, workarea_paths = collect_objects(base_dir)
+    written_paths: list[str] = []
+    updated_workareas: set[str] = set()
+
+    for item in result["items"]:
+        workplan = item["workplan"]
+        append_human_gate_source(workplan, args)
+        target_path = Path(item["target_path"])
+        write_yaml(target_path, workplan)
+        written_paths.append(str(target_path))
+
+        workarea_id = as_string(workplan.get("workarea"))
+        workarea = workareas_by_id[workarea_id]
+        existing_refs = [ref for ref in as_list(workarea.get("workplans")) if isinstance(ref, str) and ref.strip()]
+        refs = sorted(set(existing_refs + [workplan["id"]]), key=workplan_sort_key)
+        if refs != existing_refs:
+            workarea["workplans"] = refs
+            updated_workareas.add(workarea_id)
+
+    updated_workarea_paths: list[str] = []
+    for workarea_id in sorted(updated_workareas):
+        path = workarea_paths[workarea_id]
+        update_workarea_workplans(path, workareas_by_id[workarea_id]["workplans"])
+        updated_workarea_paths.append(str(path))
+
+    result["write"] = {
+        "written_count": len(written_paths),
+        "updated_workarea_count": len(updated_workarea_paths),
+        "written_paths": written_paths,
+        "updated_workarea_paths": updated_workarea_paths,
+    }
+    return result
+
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Preview legacy TaskPlan facts as WorkPlan objects.")
+    parser = argparse.ArgumentParser(description="Preview or write legacy TaskPlan facts as WorkPlan objects.")
     parser.add_argument("--base-dir", default=".", help="Project root containing ldvh-base/")
     parser.add_argument("--id", action="append", dest="ids", help="Limit preview to a TaskPlan id; may be repeated.")
     parser.add_argument("--status", action="append", dest="statuses", help="Limit preview to a TaskPlan status; may be repeated.")
+    parser.add_argument("--write", action="store_true", help="Write generated WorkPlan facts and WorkArea back-links.")
+    parser.add_argument("--human-gate-confirmed", action="store_true", help="Required with --write after explicit Human Gate approval.")
+    parser.add_argument("--confirmed-by", help="Human or delegated approver identity for --write.")
+    parser.add_argument("--confirmation-context", help="Short context proving why --write was authorized.")
     parser.add_argument("--pretty", action="store_true", help="Pretty-print JSON output.")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
-    result = preview_migration(Path(args.base_dir), ids=args.ids, statuses=args.statuses)
+    if args.write:
+        result = write_migration(Path(args.base_dir), args)
+    else:
+        result = preview_migration(Path(args.base_dir), ids=args.ids, statuses=args.statuses)
     print(json.dumps(json_safe(result), ensure_ascii=False, indent=2 if args.pretty else None))
     return 0 if result["ok"] else 1
 

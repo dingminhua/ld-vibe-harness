@@ -1,0 +1,80 @@
+id: workplan-0057
+type: workplan
+title: Task 详情元信息呈现重构
+status: closed
+created: '2026-06-07T01:02:37.865113'
+updated: '2026-06-07T01:43:20.448467'
+workarea: workarea-0006
+priority: P2
+description: 由历史 Task task-0057 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0057 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0057; source path: ldvh-base/taskplans/taskplan-0057-task-detail-meta-presentation.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkPlan migration preview on 2026-06-18; write WorkPlan facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0057
+    title: Task 详情元信息呈现重构
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0057
+    expected_output: |
+      - [x] 梳理 Task 详情页中分类、优先级及类似元信息字段的实际呈现位置
+      - [x] 分类、优先级等辅助属性不再作为主阅读流中的独立大行或独立内容区呈现
+      - [x] 辅助属性被整合为更低权重的上下文信息，如顶部摘要、徽标、紧凑标签或折叠信息
+      - [x] 任务主阅读流仍以目标、验收、验证、关闭证据、产出与文档为核心结构
+      - [x] 其他字段区域不会重新把分类、优先级提升为高权重展示
+      - [x] 保持 YAML 源码折叠入口可查看完整事实源
+      - [x] 运行 TypeScript 类型检查通过
+    status: done
+    result_summary: |-
+      verification: 打开 Task 详情页，检查分类、优先级及同类元信息是否已从主阅读流中降权，确认任务目标、验收、验证、证据和产出仍是页面主线；运行 npx tsc --noEmit。
+
+      ## 验证结果
+
+      分类、优先级及类似辅助元信息已从主阅读流中降权为顶部紧凑上下文信息，任务目标、验收、验证、证据和产出仍是页面主线，npm run check 和 npm run lint 通过。
+
+      ## 结论
+
+      验证通过。
+
+      closure_evidence: ## 验证结果
+
+      1. ObjectDetail.tsx 新增 TASK_AUXILIARY_META_KEYS，将 category、priority、severity、tags、scope、impact、assignee 识别为 Task 辅助元信息
+      2. Task 页面顶部 metadata row 复用 MetaChip 展示辅助元信息，使其与 created/updated 同层级，降低阅读权重
+      3. TaskReadingLayout 的 hidden 集合排除了辅助元信息，避免它们进入其他字段区域形成独立大行
+      4. Task 主阅读流保持任务目标、验收标准、验证方式、关闭证据、产出与文档结构
+      5. YAML 源码折叠入口未修改，完整事实源仍可查看
+      6. npm run check 通过
+      7. npm run lint 0 error，仅保留既有 Fast Refresh warning
+      8. 独立审计确认 7 项 acceptance 全部通过
+
+      ## 结论
+
+      task-0057 已完成：分类、优先级及类似辅助元信息不再作为 Task 主阅读流中的独立大行呈现，而是降权为顶部紧凑上下文信息。
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0057: ## 验证结果
+closure_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0057: ## 验证结果
+review_requested_at: '2026-06-07T01:43:20.448474'
+closed_at: '2026-06-07T01:43:20.448474'
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_workplans: []
+related_changes: []

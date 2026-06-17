@@ -1,0 +1,74 @@
+id: workplan-0035
+type: workplan
+title: 待推进时间倒序和意图详情默认展开
+status: closed
+created: '2026-06-05T20:00:29.116009'
+updated: '2026-06-05T21:05:05.852207'
+workarea: workarea-0006
+priority: P2
+description: 由历史 Task task-0035 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0035 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0035; source path: ldvh-base/taskplans/taskplan-0035-action-desc-order-intent-expand.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkPlan migration preview on 2026-06-18; write WorkPlan facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0035
+    title: 待推进时间倒序和意图详情默认展开
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0035
+    expected_output: |
+      - [x] Dashboard 待推进列表按 updated 时间倒序排列
+      - [x] 意图类型对象详情页中关联任务列表默认展开
+      - [x] 意图类型对象详情页中关联文档默认展开
+      - [x] 其他类型对象详情页保持现有折叠行为不变
+    status: done
+    result_summary: |-
+      verification: ## 验证结果
+
+      历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+      ## 结论
+
+      历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
+
+      closure_evidence: Dashboard 待推进排序改为 updated 时间倒序（dashboard.ts）；ObjectDetail 页面新增 COLLAPSIBLE_FIELDS 机制，intent 类型默认展开关联内容，其他类型默认折叠；TypeScript 编译和 ESLint 通过，独立 agent 验证 4 项 acceptance 全部通过
+
+      ## 验证结果
+
+      Dashboard 待推进排序改为 updated 时间倒序，ObjectDetail 页面 intent 类型默认展开关联内容，TypeScript 编译和 ESLint 通过，4 项 acceptance 全部验证通过。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |-
+  ## 验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0035: Dashboard 待推进排序改为 updated 时间倒序（dashboard.ts）；ObjectDetail 页面新增 COLLAPSIBLE_FIELDS 机制，intent 类型默认展开关联内容，其他类型默认折叠；TypeScript 编译和 ESLint 通过，独立 agent 验证 4 项 acceptance 全部通过
+closure_evidence: |-
+  ## 验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0035: Dashboard 待推进排序改为 updated 时间倒序（dashboard.ts）；ObjectDetail 页面新增 COLLAPSIBLE_FIELDS 机制，intent 类型默认展开关联内容，其他类型默认折叠；TypeScript 编译和 ESLint 通过，独立 agent 验证 4 项 acceptance 全部通过
+review_requested_at: '2026-06-05T21:05:05.852214'
+closed_at: '2026-06-05T21:05:05.852214'
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_workplans: []
+related_changes: []

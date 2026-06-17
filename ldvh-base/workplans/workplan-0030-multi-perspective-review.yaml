@@ -1,0 +1,77 @@
+id: workplan-0030
+type: workplan
+title: 网站整体性多角色审视研究
+status: closed
+created: '2026-06-05T18:06:39.314569'
+updated: '2026-06-05T23:20:48.796221'
+workarea: workarea-0006
+priority: P2
+description: 由历史 Task task-0030 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0030 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0030; source path: ldvh-base/taskplans/taskplan-0030-multi-perspective-review.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkPlan migration preview on 2026-06-18; write WorkPlan facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0030
+    title: 网站整体性多角色审视研究
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0030
+    expected_output: |
+      - [x] 定义至少 3 种角色视角及其核心诉求
+      - [x] 从每个角色视角审视当前网站，记录发现的问题
+      - [x] 提出整体性改进方案
+      - [x] 输出审视报告到 web/docs/
+    status: done
+    result_summary: |-
+      verification: ## 验证结果
+
+      历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+      ## 结论
+
+      历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
+
+      closure_evidence: 研究文档 web/docs/08-网站整体性多角色审视研究.md 已完成，覆盖三段式布局方案、
+      4种角色（新用户/管理者/开发者/AI协作者）问题与改进、整体性改进方案，并给出落地顺序。
+      独立agent验证4项acceptance全部通过。
+
+      ## 验证结果
+
+      研究文档已完成，覆盖三段式布局方案、4 种角色审视和整体性改进方案，4 项 acceptance 全部通过。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+    evidence_refs:
+    - web/docs/08-网站整体性多角色审视研究.md
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |-
+  ## 验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0030: 研究文档 web/docs/08-网站整体性多角色审视研究.md 已完成，覆盖三段式布局方案、
+closure_evidence: |-
+  ## 验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0030: 研究文档 web/docs/08-网站整体性多角色审视研究.md 已完成，覆盖三段式布局方案、
+review_requested_at: '2026-06-05T23:20:48.796230'
+closed_at: '2026-06-05T23:20:48.796230'
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_workplans: []
+related_changes: []

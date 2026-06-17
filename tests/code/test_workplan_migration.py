@@ -25,7 +25,38 @@ def run_preview(root: Path, *args: str):
     )
 
 
+def run_fact_validate(root: Path):
+    return subprocess.run(
+        ["python3", str(PROJECT_ROOT / "code" / "fact_validate.py"), str(root / "ldvh-base")],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
 def write_legacy_tree(root: Path) -> None:
+    write_yaml(
+        root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml",
+        """
+id: workarea-0001
+type: workarea
+title: Core WorkArea
+status: active
+created: "2026-06-12"
+updated: "2026-06-13"
+description: Core test area.
+source: test
+owners: []
+tags: []
+workplans: []
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_changes: []
+""",
+    )
     write_yaml(
         root / "ldvh-base" / "taskplans" / "taskplan-0001-demo.yaml",
         """
@@ -53,6 +84,12 @@ completion_evidence: |
   ## 验证结果
   Legacy plan passed.
 closed_at: "2026-06-13T01:00:00+08:00"
+        """,
+    )
+    write_yaml(
+        root / "docs" / "demo.md",
+        """
+# Demo
 """,
     )
     write_yaml(
@@ -118,6 +155,27 @@ def test_preview_maps_taskplan_to_workplan_contract(tmp_path):
 
 def test_preview_blocks_missing_legacy_task(tmp_path):
     write_yaml(
+        tmp_path / "ldvh-base" / "workareas" / "workarea-0001-core.yaml",
+        """
+id: workarea-0001
+type: workarea
+title: Core WorkArea
+status: active
+created: "2026-06-12"
+updated: "2026-06-13"
+description: Core test area.
+source: test
+owners: []
+tags: []
+workplans: []
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_changes: []
+""",
+    )
+    write_yaml(
         tmp_path / "ldvh-base" / "taskplans" / "taskplan-0002-missing-task.yaml",
         """
 id: taskplan-0002
@@ -148,3 +206,48 @@ related_pitfalls: []
     assert payload["summary"]["blocked_count"] == 1
     assert payload["items"][0]["can_convert"] is False
     assert payload["items"][0]["issues"][0]["code"] == "TASK_NOT_FOUND"
+
+
+def test_write_creates_workplan_and_updates_workarea(tmp_path):
+    write_legacy_tree(tmp_path)
+
+    result = run_preview(
+        tmp_path,
+        "--write",
+        "--human-gate-confirmed",
+        "--confirmed-by",
+        "pytest",
+        "--confirmation-context",
+        "controlled migration test",
+        "--id",
+        "taskplan-0001",
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["action"] == "write-taskplan-to-workplan"
+    assert payload["write"]["written_count"] == 1
+    assert payload["write"]["updated_workarea_count"] == 1
+
+    workplan_path = tmp_path / "ldvh-base" / "workplans" / "workplan-0001-demo.yaml"
+    workarea_path = tmp_path / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
+    assert workplan_path.exists()
+    workplan_text = workplan_path.read_text(encoding="utf-8")
+    assert "Human Gate confirmed by pytest: controlled migration test" in workplan_text
+    assert "verification_evidence: |" in workplan_text
+
+    workarea_text = workarea_path.read_text(encoding="utf-8")
+    assert "description: Core test area.\nsource: test" in workarea_text
+    assert "workplans:\n- workplan-0001" in workarea_text
+
+    validation = run_fact_validate(tmp_path)
+    assert validation.returncode == 0, validation.stdout + validation.stderr
+
+
+def test_write_requires_human_gate_confirmation(tmp_path):
+    result = run_preview(tmp_path, "--write")
+
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is False
+    assert payload["issues"][0]["code"] == "HUMAN_GATE_REQUIRED"

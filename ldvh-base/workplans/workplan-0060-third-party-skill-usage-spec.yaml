@@ -1,0 +1,79 @@
+id: workplan-0060
+type: workplan
+title: 撰写第三方 Skill 使用规范
+status: review_needed
+created: '2026-06-07T03:50:46.134796'
+updated: '2026-06-07T04:03:13.614312'
+workarea: workarea-0012
+priority: P2
+description: 由历史 Task task-0060 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [ ] 关联任务 task-0060 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0060; source path: ldvh-base/taskplans/taskplan-0060-third-party-skill-usage-spec.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkPlan migration preview on 2026-06-18; write WorkPlan facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0060
+    title: 撰写第三方 Skill 使用规范
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0060
+    expected_output: |
+      - [x] 已创建 docs/studies/12-LDVH第三方技能引入的思考.md，且作为 docs/specs 根目录正式规范文档
+      - [x] 文档内容吸收 research/12 关于第三方 Skill 的能力供给方、脚手架先行、治理接管和包装策略判断
+      - [x] 文档遵守 specs/01、02、03 的编号、术语和文档骨架要求，不在正式规范中直接引用 research 文档
+      - [x] 文档明确第三方 Skill 与 LDVH 自建 Skill、Rules、Agent、Tools、Human Gate、Core Loop 的边界
+      - [x] 已检查相关 Tools 或校验器是否因新增 13 号规范需要同步更新，并完成必要验证
+    status: done
+    result_summary: |-
+      verification: ## 验证结果
+      - `python3 tools/fact_validate.py ldvh-base/tasks/task-0060-third-party-skill-usage-spec.yaml`：errors=0。
+      - `python3 code/specs_validate.py doc docs/studies/12-LDVH第三方技能引入的思考.md && python3 code/specs_validate.py refs docs/studies/12-LDVH第三方技能引入的思考.md`：通过。
+      - `python3 -m pytest tests/tools/test_specs_validate.py`：34 passed。
+      - `python3 -m pytest tests/tools/test_fact_cli.py tests/tools/test_commit_validate.py tests/tools/test_specs_validate.py`：125 passed。
+      - `npm run lint`：0 errors，1 个既有 warning（web/src/i18n/context.tsx fast-refresh）。
+      - `npm run check`：通过。
+      - `python3 -m pytest`：149 passed，1 failed；失败为 tests/tools/test_fact_validate.py::test_blocked_by_closed_cli_exit_zero 既有测试期望与 EVIDENCE_FORMAT_HINT warning 不一致，非本次新增文档导致。
+      - `python3 tools/fact_validate.py ldvh-base/`：存在既有 ADR 文件名、历史 closed Task 字段、历史路径缺失与 evidence 格式 warning；task-0060 无 error。
+      ## 结论
+      specs/13 文档编号、章节、引用与 Task 单实例校验通过；全量校验和全量 pytest 存在既有遗留问题，不阻塞本次文档交付。
+    evidence_refs:
+    - docs/studies/12-LDVH第三方技能引入的思考.md
+    - specs/01-目录说明.md
+    - specs/02-术语规范.md
+    - specs/03-文档基础规范.md
+    - specs/04.03-环境入口适配与部署规范.md
+    - specs/07-Code确定性执行实现规范.md
+    - specs/06-工作流程基础规范.md
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0060: ## 验证结果
+closure_evidence: |-
+  历史任务计划迁移聚合证据：
+  - task-0060: ## 验证结果
+review_requested_at: '2026-06-07T04:03:13.614312'
+closed_at: ''
+related_docs:
+- docs/studies/12-LDVH第三方技能引入的思考.md
+- specs/01-目录说明.md
+- specs/02-术语规范.md
+- specs/03-文档基础规范.md
+- specs/04.03-环境入口适配与部署规范.md
+- specs/07-Code确定性执行实现规范.md
+- specs/06-工作流程基础规范.md
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_workplans: []
+related_changes: []

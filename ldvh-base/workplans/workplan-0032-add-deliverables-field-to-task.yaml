@@ -1,0 +1,118 @@
+id: workplan-0032
+type: workplan
+title: Task 对象新增产出字段 等 2 个关联任务
+status: closed
+created: '2026-06-05T18:22:37.530515'
+updated: '2026-06-05T23:23:13.144445'
+workarea: workarea-0007
+priority: P2
+description: 由历史 Task task-0032 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: |-
+  - [x] 关联任务 task-0032 满足其 acceptance、verification 和 closure_evidence。
+  - [x] 关联任务 task-0033 满足其 acceptance、verification 和 closure_evidence。
+source: |-
+  Legacy TaskPlan migration from taskplan-0032; source path: ldvh-base/taskplans/taskplan-0032-add-deliverables-field-to-task.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkPlan migration preview on 2026-06-18; write WorkPlan facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: task-0032
+    title: Task 对象新增产出字段
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0032
+    expected_output: |
+      - [x] specs/27-Task-任务.md 字段契约新增 deliverables 字段定义
+      - [x] fact_cli.py 创建 Task 时支持 deliverables 字段
+      - [x] fact_validate.py 校验 deliverables 字段格式
+      - [x] Web ObjectDetail 页面渲染 deliverables 字段
+      - [x] 已有 Task 实例补充 deliverables 字段（如 task-0028）
+    status: done
+    result_summary: |-
+      verification: ## 验证结果
+
+      历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+      ## 结论
+
+      历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
+
+      closure_evidence: specs/27 已有 deliverables 定义，fact_cli.py 新增 --deliverables 参数和骨架默认值，
+      fact_validate.py 新增元素类型校验，ObjectDetail 用 DocPreviewLink 渲染 deliverables，
+      task-0028 已有 deliverables 字段。TypeScript编译和fact_validate通过。
+
+      ## 验证结果
+
+      deliverables 字段已在规范、CLI、校验和 Web 渲染中完整实现，TypeScript 编译和 fact_validate 通过。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+    evidence_refs:
+    - specs/22-Task-任务.md
+    - specs/07-Code确定性执行实现规范.md
+    blocking_reason: null
+  - id: task-0033
+    title: 意图详情页聚合关联任务产出和文档
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0033
+    expected_output: |
+      - [x] 后端 API 返回 Intent 详情时聚合关联 Task 的 deliverables 和 related_docs
+      - [x] Intent 详情页新增"关联产出"聚合区域，展示所有关联 Task 的产出物
+      - [x] Intent 详情页新增"关联文档"聚合区域，展示所有关联 Task 的关联文档
+      - [x] 聚合结果去重，避免同一文档重复显示
+      - [x] 产出物和文档可点击查看或跳转
+    status: done
+    result_summary: |-
+      verification: ## 验证结果
+
+      历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+      ## 结论
+
+      历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
+
+      closure_evidence: 后端 objects.ts GET /:type/:id 路由在 type=intent 时聚合 related_tasks 中每个 task 的 deliverables 和 related_docs，使用 Set 去重，返回 aggregated_deliverables 和 aggregated_docs。
+      前端 ObjectDetail.tsx 在 objType=intent 时新增"关联产出"和"关联文档"聚合区域，复用 DocPreviewLink 组件渲染，支持点击预览。
+      独立 agent 验证全部 5 项 acceptance 检查项通过。
+
+      ## 验证结果
+
+      后端聚合 API 和前端聚合区域已实现，去重逻辑正确，5 项 acceptance 全部通过。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |-
+  ## 验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0032: specs/27 已有 deliverables 定义，fact_cli.py 新增 --deliverables 参数和骨架默认值，
+  - task-0033: 后端 objects.ts GET /:type/:id 路由在 type=intent 时聚合 related_tasks 中每个 task 的 deliverables 和 related_docs，使用 Set 去重，返回 aggregated_deliverables 和 aggregated_docs。
+closure_evidence: |-
+  ## 验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0032: specs/27 已有 deliverables 定义，fact_cli.py 新增 --deliverables 参数和骨架默认值，
+  - task-0033: 后端 objects.ts GET /:type/:id 路由在 type=intent 时聚合 related_tasks 中每个 task 的 deliverables 和 related_docs，使用 Set 去重，返回 aggregated_deliverables 和 aggregated_docs。
+review_requested_at: '2026-06-05T23:23:13.144451'
+closed_at: '2026-06-05T23:23:13.144451'
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_workplans: []
+related_changes: []

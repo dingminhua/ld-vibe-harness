@@ -34,7 +34,7 @@
 | `code/specs_validate.py` | specs 文档结构、引用、落地要求、术语、Human Gate、管辖项目、运行投影、Web validate 派生检查等聚合入口 | 作为 CLI 兼容层和跨模块配置同步层；新增检查不得默认继续堆入此文件，应进入 `code/spec_checks/` |
 | `code/fact_cli.py` | 工作对象事实源查询、展示、搜索和统计入口 | 查询能力扩展时应保持输出来源可追溯，必要时拆出共享读取层 |
 | `code/fact_validate.py` | 工作对象事实源校验入口 | 字段、状态和对象关系规则变化时同步测试；不得把 specs 规则复制为第二事实源 |
-| `code/workplan_migration.py` | 旧 TaskPlan/Task 到 WorkPlan 的只读迁移预览入口 | 只生成 dry-run 映射、拟生成 WorkPlan 数据和风险诊断；不得直接写入 `ldvh-base/` |
+| `code/workplan_migration.py` | 旧 TaskPlan/Task 到 WorkPlan 的受控迁移预览/写入入口 | 默认只生成 dry-run 映射、拟生成 WorkPlan 数据和风险诊断；写入必须带显式 Human Gate 参数，只新增 WorkPlan 并补 WorkArea 反向索引，不删除旧 TaskPlan/Task |
 | `code/commit_validate.py` | commit message 校验入口 | 保持轻量单一职责；规则变化应回到对应规范或工作流程 |
 | `code/fix_block_scalar.py` | YAML block scalar 辅助修复脚本 | 只作为定向辅助脚本，不扩张为通用写入工具 |
 

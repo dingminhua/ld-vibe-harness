@@ -1,0 +1,81 @@
+id: workplan-0036
+type: workplan
+title: Task 意图归属内联编辑
+status: closed
+created: '2026-06-05T20:10:05.899771'
+updated: '2026-06-05T23:23:14.612332'
+workarea: workarea-0006
+priority: P2
+description: 由历史 Task task-0036 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0036 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0036; source path: ldvh-base/taskplans/taskplan-0036-task-source-intent-inline-edit.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkPlan migration preview on 2026-06-18; write WorkPlan facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0036
+    title: Task 意图归属内联编辑
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0036
+    expected_output: |
+      - [x] 后端新增 PATCH /api/objects/:type/:id/field API
+      - [x] API 支持更新 source_intent 字段，校验目标 Intent 存在性
+      - [x] 修改 source_intent 时自动同步双向关联（旧 Intent 移除、新 Intent 添加 related_tasks）
+      - [x] 前端 Task 详情页 source_intent 旁显示编辑按钮
+      - [x] 编辑按钮点击后弹出 Intent 选择器
+      - [x] 选择后调用 API 更新并刷新页面
+      - [x] API 有安全边界，仅允许更新白名单字段
+    status: done
+    result_summary: |-
+      verification: ## 验证结果
+
+      历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+      ## 结论
+
+      历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
+
+      closure_evidence: 后端 PATCH /api/objects/:type/:id/field API 实现字段白名单安全边界，
+      source_intent 更新时自动同步双向关联（旧Intent移除+新Intent添加related_tasks），
+      前端 IntentSelector 组件支持搜索过滤和选择，ObjectDetail 集成铅笔图标+选择器。
+      TypeScript编译通过。
+
+      ## 验证结果
+
+      PATCH API 实现字段白名单安全边界，source_intent 更新自动同步双向关联，前端 IntentSelector 组件和编辑按钮集成完成，TypeScript 编译通过。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+    evidence_refs:
+    - web/docs/04-ObjectDetail.md
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |-
+  ## 验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0036: 后端 PATCH /api/objects/:type/:id/field API 实现字段白名单安全边界，
+closure_evidence: |-
+  ## 验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0036: 后端 PATCH /api/objects/:type/:id/field API 实现字段白名单安全边界，
+review_requested_at: '2026-06-05T23:23:14.612339'
+closed_at: '2026-06-05T23:23:14.612339'
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_workplans: []
+related_changes: []

@@ -1,0 +1,80 @@
+id: workplan-0005
+type: workplan
+title: 取消 Evidence 独立事实模型并调整 Task 结果引用
+status: closed
+created: 2026-06-04
+updated: 2026-06-04
+workarea: workarea-0003
+priority: P2
+description: 由历史 Task task-0005 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0005 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0005; source path: ldvh-base/taskplans/taskplan-0005-remove-evidence-model.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkPlan migration preview on 2026-06-18; write WorkPlan facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0005
+    title: 取消 Evidence 独立事实模型并调整 Task 结果引用
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0005
+    expected_output: |
+      - [x] 20 事实模型集合索引中 Evidence 从 active 降级为 removed
+      - [x] 29-Evidence-验证证据.md 主规范删除
+      - [x] 29.06-Contract.md 删除
+      - [x] 29.01-Rules.md、29.02-Skill.md 等 Evidence 子文档删除
+      - [x] 27 Task 规范中 related_evidence 字段移除，Evidence 引用关系移除
+      - [x] 27.06-Contract.md 中 related_evidence 字段移除
+      - [x] check_fact_model.py 中 evidence 类型校验移除
+      - [x] ldvh-close SKILL.md 中 Evidence 验证结果检查移除
+      - [x] ev-0001 和 ev-0002 实例文件删除
+      - [x] 所有 Task 实例中 related_evidence 字段清空
+    status: done
+    result_summary: |-
+      verification: 运行事实模型校验、specs 检查、pytest 或相关验证命令，确认取消 Evidence 后 Task 仍能承载验证方式、关闭证据和结果物引用。
+      ## 验证结果
+
+      独立 agent 审计 10/10 项通过；pytest 102 passed；Fact Validator 0 新增错误；Task 仍能承载验证方式、关闭证据和结果物引用。
+
+      ## 结论
+
+      验证通过。
+
+      closure_evidence: 独立 agent 审计 10/10 项通过；pytest 102 passed；Fact Validator 0 新增错误。
+      ## 验证结果
+
+      独立 agent 审计 10/10 项通过；pytest 102 passed；Fact Validator 0 新增错误；Evidence 已从事实模型中移除。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |-
+  ## 验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0005: 独立 agent 审计 10/10 项通过；pytest 102 passed；Fact Validator 0 新增错误。
+closure_evidence: |-
+  ## 验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0005: 独立 agent 审计 10/10 项通过；pytest 102 passed；Fact Validator 0 新增错误。
+review_requested_at: &id001 2026-06-04
+closed_at: *id001
+related_docs: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_workplans: []
+related_changes: []
