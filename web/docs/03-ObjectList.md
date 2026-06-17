@@ -29,6 +29,7 @@
 ### 3.1 状态筛选
 
 - 位于列表顶部。
+- 状态筛选及同层任务态势图例属于列表切换控制区，必须固定在主滚动容器顶部；对象卡片列表在其下方滚动。
 - 由 `ObjectStatusFilter` 根据当前类型聚合状态数量。
 - 展示“各状态 + 全部 + 数量”，“全部”固定在最后。
 - 数据返回前先渲染稳定的筛选占位，数字位置使用轻量加载动画，避免对象卡片先出现、顶部筛选后插入造成页面跳动。
@@ -45,7 +46,7 @@
   - 右上：`CopyPathButton` + `StatusBadge`；
   - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；
   - 优先级字符徽标：TaskPlan 和 Memo 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
-  - 可选信号：repeatability、category 等短标签；仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 TaskPlan 和 Memo，不得为 WorkArea、Task、SubTask、ADR、Pitfall 或 Change 杜撰 priority、importance、category 或 tags；importance 字段已由 priority 统一承载，不作为独立字段使用
+  - 可选信号：repeatability 等短标签；仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 TaskPlan 和 Memo，不得为 WorkArea、Task、SubTask、ADR、Pitfall 或 Change 杜撰 priority、importance、category 或 tags；Memo 不维护 category；importance 字段已由 priority 统一承载，不作为独立字段使用
   - 底部：`formatDateTime(updated)`，格式为 `YYYY-MM-DD HH:mm`。
 - 复制图标复制对象 YAML 文件完整路径，使用 API 返回的 `path`。
 - 点击复制图标不得进入详情页；点击卡片外层空白、标题带、ID、状态徽章或更新时间进入对象详情页。
@@ -133,6 +134,7 @@ interface ObjectItem {
   status: string;
   path: string;
   updated: string;
+  priority?: string;                  // TaskPlan / Memo 信号字段，只读展示
   plans?: RelatedPlanSummary[];       // WorkArea 列表项
   planTotal?: number;
   planClosed?: number;
@@ -158,7 +160,7 @@ interface RelatedObjectSummary {
   status: string;
   path: string;
   updated: string;
-  priority?: string;                  // TaskPlan / Memo 信号字段，只读展示
+  priority?: string;                  // TaskPlan 信号字段，只读展示
   blockedBy?: string[];
   openBlockers?: RelatedObjectSummary[];
   subtasks?: RelatedObjectSummary[];  // TaskPlan 下的 Task 可携带 SubTask 摘要

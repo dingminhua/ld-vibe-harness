@@ -34,7 +34,6 @@ description: |
   - Tools 落地：增强 fact_validate.py 校验规则
   - Web 落地：优化 ObjectDetail 字段语义化渲染
 source: 用户在讨论 LDVH Web 呈现时提出：YAML 格式的大段文本内容是否应以 Markdown 语义存储并在 Web 上按 Markdown 呈现
-category: discovery
 related_tasks: []
 related_adrs: []
 related_workareas: []

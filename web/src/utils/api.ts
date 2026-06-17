@@ -71,7 +71,6 @@ export interface ObjectItem {
   status: string;
   path: string;
   updated: string;
-  category?: string;
   priority?: string;
   importance?: string;
   repeatability?: string;

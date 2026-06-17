@@ -15,7 +15,6 @@ import { LDVH_BASE_DIR } from '../services/pytools.js'
 const router = Router()
 
 const MEMOS_DIR = path.join(LDVH_BASE_DIR, 'memos')
-const VALID_CATEGORIES = ['discovery', 'reminder', 'question', 'gap', 'preference']
 const VALID_PRIORITY = ['P0', 'P1', 'P2', 'P3']
 const MEMO_REQUIRED_FIELDS = [
   'id',
@@ -26,7 +25,6 @@ const MEMO_REQUIRED_FIELDS = [
   'updated',
   'description',
   'source',
-  'category',
   'priority',
   'status_history',
 ]
@@ -89,7 +87,7 @@ function validatePersistedMemo(data: unknown, expectedId: string): string[] {
 
 router.post('/', (req: Request, res: Response): void => {
   try {
-    const { title, description, source, category, priority } = req.body
+    const { title, description, source, priority } = req.body
 
     // 校验必填字段
     const errors: string[] = []
@@ -101,9 +99,6 @@ router.post('/', (req: Request, res: Response): void => {
     }
     if (!source || typeof source !== 'string' || !source.trim()) {
       errors.push('source is required')
-    }
-    if (!category || !VALID_CATEGORIES.includes(category)) {
-      errors.push(`category must be one of: ${VALID_CATEGORIES.join(', ')}`)
     }
     if (!priority || !VALID_PRIORITY.includes(priority)) {
       errors.push(`priority must be one of: ${VALID_PRIORITY.join(', ')}`)
@@ -138,7 +133,6 @@ router.post('/', (req: Request, res: Response): void => {
       updated: today,
       description: description.trim(),
       source: source.trim(),
-      category,
       priority,
       resolved_to: '',
       resolved_at: '',

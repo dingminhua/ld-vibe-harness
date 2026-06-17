@@ -49,7 +49,7 @@ REQUIRED_FIELDS = {
     "subtask": ["id", "type", "title", "status", "created", "updated", "task", "description", "source", "acceptance"],
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
-    "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category", "priority"],
+    "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
 }
 LIST_FIELDS = {
     "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "taskplans"},
@@ -696,7 +696,6 @@ def validate_subtask(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 
 VALID_REPEATABILITY = {"unknown", "once", "recurring"}
-VALID_MEMO_CATEGORIES = {"discovery", "reminder", "question", "gap", "preference"}
 VALID_PRIORITY = {"P0", "P1", "P2", "P3"}
 
 ID_LIST_FIELDS = {
@@ -729,10 +728,8 @@ def validate_pitfall(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "memo")
-    category = data.get("category")
-    if category is not None and category not in VALID_MEMO_CATEGORIES:
-        valid_values = ", ".join(sorted(VALID_MEMO_CATEGORIES))
-        issues.append(Issue(str(path), "error", "INVALID_CATEGORY", f"category 必须是以下值之一: {valid_values}"))
+    if "category" in data:
+        issues.append(Issue(str(path), "error", "LEGACY_MEMO_FIELD", "Memo 不得维护 category；请删除该字段", field="category"))
     if "importance" in data:
         issues.append(Issue(str(path), "error", "LEGACY_MEMO_FIELD", "Memo 不得继续使用旧字段 importance；请迁移为 priority", field="importance"))
     issues.extend(validate_enum_field(path, data, "priority", VALID_PRIORITY))

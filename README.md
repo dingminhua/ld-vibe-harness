@@ -28,9 +28,8 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，由 LaoDing 基
 LDVH Web 位于 `web/` 目录，用于查看和操作 LDVH 事实对象展示面板。
 
 ```bash
-cd web
-npm install
-npm run dev
+npm --prefix web install
+npm run web:restart
 ```
 
 启动后访问：
@@ -41,8 +40,17 @@ npm run dev
 如果端口被占用，使用项目自带脚本自动清理并重启：
 
 ```bash
-cd web
-./restart.sh
+npm run web:restart
+```
+
+## 检查入口
+
+仓库根目录提供统一工程入口；测试仍统一放在根级 `tests/` 下。
+
+```bash
+npm run check
+npm run test:web:api
+npm run specs:check
 ```
 
 ## 项目状态

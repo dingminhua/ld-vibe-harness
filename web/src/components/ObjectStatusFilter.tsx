@@ -92,6 +92,11 @@ export default function ObjectStatusFilter({
 
   const sortedOptions = useMemo(() => sortStatusOptions(options), [options]);
   const fallbackStatuses = useMemo(() => getFallbackStatuses(type, activeStatus), [type, activeStatus]);
+  const displayOptions = useMemo(() => {
+    if (type !== 'memo') return sortedOptions;
+    const counts = new Map(sortedOptions.map((option) => [option.status, option.count]));
+    return fallbackStatuses.map((status) => ({ status, count: counts.get(status) ?? 0 }));
+  }, [fallbackStatuses, sortedOptions, type]);
 
   if (loading && sortedOptions.length === 0) {
     return (
@@ -119,11 +124,11 @@ export default function ObjectStatusFilter({
     );
   }
 
-  if (sortedOptions.length <= 1) return null;
+  if (displayOptions.length <= 1 && type !== 'memo') return null;
 
   return (
     <div className={`flex min-h-7 flex-wrap gap-1.5 ${className}`} aria-label={t('objectList.statusFilter')}>
-      {sortedOptions.map((option) => (
+      {displayOptions.map((option) => (
         <button
           key={option.status}
           type="button"

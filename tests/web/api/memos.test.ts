@@ -2,9 +2,12 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
-import yaml from 'js-yaml'
+
+const requireFromWeb = createRequire(new URL('../../../web/package.json', import.meta.url))
+const yaml = requireFromWeb('js-yaml') as typeof import('js-yaml')
 
 const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ldvh-memos-api-'))
 process.env.LDVH_ROOT = tempRoot
@@ -40,7 +43,6 @@ function validMemo(overrides: Record<string, unknown> = {}) {
     title: 'API Memo',
     description: 'Captured from the Web memo quick entry.',
     source: 'human test',
-    category: 'discovery',
     priority: 'P1',
     ...overrides,
   }
@@ -73,6 +75,7 @@ async function testCreateMemo() {
   ) as Record<string, unknown>
   assert.equal(persisted.id, 'memo-0001')
   assert.equal(persisted.status, 'pending')
+  assert.equal('category' in persisted, false)
   assert.ok(Array.isArray(persisted.status_history))
 }
 
@@ -86,7 +89,6 @@ async function testFieldValidation() {
   assert.equal(payload.ok, false)
   assert.ok(payload.errors.includes('description is required'))
   assert.ok(payload.errors.includes('source is required'))
-  assert.ok(payload.errors.some((error) => error.startsWith('category must be one of:')))
   assert.ok(payload.errors.some((error) => error.startsWith('priority must be one of:')))
   assert.deepEqual(fs.readdirSync(memosDir), [])
 }

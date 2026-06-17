@@ -1,0 +1,21 @@
+{
+  "name": "ld-vibe-harness",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "web"
+  ],
+  "scripts": {
+    "web:dev": "npm --workspace web run dev",
+    "web:restart": "cd web && ./restart.sh",
+    "web:check": "npm --workspace web run check",
+    "web:build": "npm --workspace web run build",
+    "test:web:api": "npm --workspace web run test:web:api",
+    "test:code": "python3 -m pytest tests/code",
+    "test": "npm run test:code && npm run test:web:api",
+    "specs:check": "python3 code/specs_validate.py all --fail-on-diagnostics",
+    "facts:check": "python3 code/fact_validate.py ldvh-base/",
+    "check": "npm run web:check && npm run web:build && npm run test:web:api && npm run test:code && npm run specs:check"
+  }
+}

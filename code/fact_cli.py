@@ -25,7 +25,7 @@ import yaml
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
 OBJECT_TYPES = {"workarea", "taskplan", "task", "subtask", "adr", "pitfall", "memo"}
 
-LIST_SUMMARY_FIELDS = ("category", "priority", "importance", "repeatability")
+LIST_SUMMARY_FIELDS = ("priority", "importance", "repeatability")
 
 ID_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}$"),
@@ -109,7 +109,7 @@ REQUIRED_FIELDS = {
     "subtask": ["id", "type", "title", "status", "created", "updated", "task", "description", "source", "acceptance"],
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
-    "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "category", "priority"],
+    "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
 }
 
 DEFAULT_STATUS = {

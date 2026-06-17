@@ -13,7 +13,6 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [source, setSource] = useState('');
-  const [category, setCategory] = useState('discovery');
   const [priority, setPriority] = useState('P3');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +23,6 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
     setTitle('');
     setDescription('');
     setSource('');
-    setCategory('discovery');
     setPriority('P3');
     setError(null);
     setSuccess(false);
@@ -39,7 +37,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
       const res = await fetch(`${API_BASE}/memos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, source, category, priority }),
+        body: JSON.stringify({ title, description, source, priority }),
       });
 
       if (!res.ok) {
@@ -131,22 +129,7 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="ldvh-caption-strong mb-1 block">{t('memo.category')}</label>
-                <select
-                  value={category}
-                  onChange={e => setCategory(e.target.value)}
-                  className="ldvh-body w-full rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 focus:border-ldvh-accent/40 focus:outline-none"
-                >
-                  <option value="discovery">{t('memo.catDisco')}</option>
-                  <option value="reminder">{t('memo.catRemind')}</option>
-                  <option value="question">{t('memo.catQuest')}</option>
-                  <option value="gap">{t('memo.catGap')}</option>
-                  <option value="preference">{t('memo.catPref')}</option>
-                </select>
-              </div>
-              <div>
+            <div>
                 <label className="ldvh-caption-strong mb-1 block">{t('memo.priority')}</label>
                 <select
                   value={priority}
@@ -158,7 +141,6 @@ export default function MemoCreate({ onCreated }: MemoCreateProps) {
                   <option value="P2">P2</option>
                   <option value="P3">P3</option>
                 </select>
-              </div>
             </div>
 
             {error && (

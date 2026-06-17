@@ -362,6 +362,13 @@ export default function ObjectList() {
   const activeStatus = getEffectiveListStatus(currentType, statusParam);
 
   useEffect(() => {
+    if (currentType !== 'memo' || !searchParams.has('category')) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('category');
+    setSearchParams(nextParams, { replace: true });
+  }, [currentType, searchParams, setSearchParams]);
+
+  useEffect(() => {
     setLoading(true);
     setError(null);
     setStatusOptions([]);
@@ -658,7 +665,7 @@ export default function ObjectList() {
 
   return (
     <div className="ldvh-page-frame">
-      <div className="mb-4 flex min-h-8 flex-wrap items-center justify-between gap-3">
+      <div className="sticky top-0 z-20 -mx-4 mb-4 flex min-h-8 flex-wrap items-center justify-between gap-3 border-b border-ldvh-border bg-ldvh-bg/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
         <ObjectStatusFilter
           type={currentType}
           activeStatus={activeStatus}

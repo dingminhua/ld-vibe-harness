@@ -7,7 +7,7 @@ export const SIGNAL_FIELDS: SignalField[] = ['priority', 'importance', 'repeatab
 
 const SIGNAL_FIELDS_BY_TYPE: Record<string, SignalField[]> = {
   taskplan: ['priority'],
-  memo: ['priority', 'category'],
+  memo: ['priority'],
   pitfall: ['repeatability'],
 };
 

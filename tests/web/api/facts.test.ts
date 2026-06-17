@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
+import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
-import yaml from 'js-yaml'
 import { listObjects, showObject } from '../../../web/api/services/facts.ts'
 import { buildPlanSummaries, type ListedObject } from '../../../web/api/routes/objects.ts'
 import { isPreviewablePathForField } from '../../../web/src/utils/fieldFormats.ts'
 import { getObjectPriority, getObjectSignalAccent, getObjectSignals, getPriorityLabel } from '../../../web/src/utils/objectSignals.ts'
 import { getTaskFlowTone } from '../../../web/src/utils/taskFlowStatus.ts'
+
+const requireFromWeb = createRequire(new URL('../../../web/package.json', import.meta.url))
+const yaml = requireFromWeb('js-yaml') as typeof import('js-yaml')
 
 const fixtureRoot = fileURLToPath(new URL('../fixtures/taskplan-with-subtasks', import.meta.url))
 const projectRoot = path.resolve(fixtureRoot, '../../../..')
@@ -409,7 +412,7 @@ async function main() {
   assert.equal(fixtureMemos.ok, true)
   assert.equal(fixtureMemos.data.items.length, 1)
   const firstMemoItem = fixtureMemos.data.items[0] as Record<string, unknown>
-  assert.deepEqual(getObjectSignals(firstMemoItem, 'memo').map((signal) => signal.field), ['priority', 'category'])
+  assert.deepEqual(getObjectSignals(firstMemoItem, 'memo').map((signal) => signal.field), ['priority'])
   assert.equal(getObjectPriority(firstMemoItem, 'memo'), 'P1')
 }
 

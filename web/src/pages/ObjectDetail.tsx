@@ -56,10 +56,10 @@ const META_KEYS = [
   'aggregated_related_changes',
 ];
 const TASK_AUXILIARY_META_KEYS = ['assignee'];
-const COMMON_AUXILIARY_META_KEYS = ['category', 'priority', 'importance', 'repeatability', 'tags', 'scope', 'impact', 'assignee'];
+const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'repeatability', 'tags', 'scope', 'impact', 'assignee'];
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
   task: TASK_AUXILIARY_META_KEYS,
-  memo: ['category', 'priority', 'tags'],
+  memo: ['priority', 'tags'],
   profile: ['project_name', 'project_kind', 'language', 'framework'],
   pitfall: ['repeatability', 'tags'],
 };
@@ -76,7 +76,6 @@ export const TASK_FIELD_ORDER = [
   'affected_docs',
   'related_adrs',
   'related_changes',
-  'status_history',
 ];
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls'],
@@ -1193,7 +1192,7 @@ export function TaskPlanReadingLayout({
         locale={locale}
       />
 
-      <DetailDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
+      <DetailNarrativeSection title={t('objectDetail.workareaGoal')} value={obj.description} />
       <DetailObjectReferenceSection
         title={t('objectDetail.parentWorkArea')}
         item={summary?.workareaSummary}
@@ -1273,6 +1272,15 @@ function DetailDefinitionSection({ title, value, muted = false }: { title: strin
       <div className={`ldvh-definition-text min-w-0 ${muted ? 'opacity-85' : ''}`}>
         <DefinitionValue value={String(value)} muted={muted} />
       </div>
+    </TaskSection>
+  );
+}
+
+function DetailNarrativeSection({ title, value }: { title: string; value: unknown }) {
+  if (!hasDetailContent(value)) return null;
+  return (
+    <TaskSection title={title} tone="primary">
+      <SummaryText value={String(value)} collapseThreshold={900} />
     </TaskSection>
   );
 }
@@ -1602,6 +1610,7 @@ export function TaskReadingLayout({
     'related_adrs',
     'related_changes',
     'blocked_by',
+    'status_history',
     ...TASK_AUXILIARY_META_KEYS,
     ...META_KEYS,
   ]);
@@ -1651,7 +1660,7 @@ export function TaskReadingLayout({
           : <EmptyHint text={t('objectDetail.noVerification')} />}
       </TaskSection>
 
-      <DetailDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
+      <DetailNarrativeSection title={t('objectDetail.workareaGoal')} value={obj.description} />
       {obj.taskplan && (
         <DetailObjectReferenceSection
           title={t('objectDetail.taskPlan')}
