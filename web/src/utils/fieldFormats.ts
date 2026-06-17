@@ -4,7 +4,7 @@ export const SUMMARY_TEXT_FIELDS = [
   'rationale', 'observation', 'analysis', 'mitigation', 'resolution', 'decision',
   'symptoms', 'trigger_conditions', 'root_cause', 'avoidance', 'applicability',
   'governance_scope', 'archive_reason', 'discard_reason', 'notes', 'transition_reasons',
-  'status_history', 'alternatives', 'reason',
+  'alternatives', 'reason',
   'scope', 'impact', 'summary', 'details', 'outcome', 'next_steps',
   'lessons', 'background', 'motivation',
 ];

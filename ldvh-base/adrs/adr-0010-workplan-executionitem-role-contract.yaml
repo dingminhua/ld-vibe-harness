@@ -113,9 +113,3 @@ related_rules:
   - specs/22-Task-任务.md
   - specs/23-SubTask-子任务.md
 superseded_by:
-status_history:
-  - at: 2026-06-17
-    from: proposed
-    to: accepted
-    actor: Human
-    reason: 用户确认 Task 具体执行属于 AI 内部过程，不需要作为历史事实源记录，并接受按 WorkPlan / ExecutionItem / Role Contract 方向推进。

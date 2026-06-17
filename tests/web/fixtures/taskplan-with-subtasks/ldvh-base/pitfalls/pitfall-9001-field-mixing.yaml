@@ -30,9 +30,3 @@ related_docs:
 related_rules:
   - specs/22-Task-任务.md
 related_changes: []
-status_history:
-  - at: '2026-06-15T09:10:00'
-    from: null
-    to: active
-    actor: AI
-    reason: 记录路径字段混用风险

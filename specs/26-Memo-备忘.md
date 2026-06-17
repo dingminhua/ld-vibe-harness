@@ -186,7 +186,6 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `status_history` | — | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
 
 字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 
@@ -213,12 +212,6 @@ related_workareas: []
 related_workplans: []
 related_changes: []
 related_docs: []
-status_history:
-  - at: 2026-06-09
-    from: pending
-    to: resolved
-    actor: AI
-    reason: 已分流为 workplan-0012
 ```
 
 ---
@@ -230,7 +223,7 @@ Memo 回写遵循以下规则：
 
 1. 创建 Memo 时，应写入 `ldvh-base/memos/`，并填写标题、描述、来源、优先级和状态；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
-3. 状态变化后应更新 `updated`，并向 `status_history` 追加记录；
+3. 状态变化后应更新 `updated`；状态变化历史由 Git commit / Change 派生，不在 Memo YAML 中手写维护；
 4. Memo 分流为 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置更新或其他事实源时，应更新 `resolved_to` 和 `resolved_at`；
 5. Memo 创建、分流、废弃或核心描述修改应通过 Change 留痕；
 6. Memo 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
@@ -276,7 +269,7 @@ Code 不得自行创建、分流、废弃或删除 Memo，不得绕过 Human Gat
 
 Web 可展示 Memo 状态、优先级、来源、分流目标、废弃原因和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。
 
-当前唯一允许的 Memo Web 写入是快速创建：Web 可通过 `POST /api/memos` 创建 `status: pending` 的新 Memo，并写入 `title`、`description`、`source`、`priority` 和 `status_history`。该能力是 `specs/08-Web信息同步实现规范.md` §8.2 的当前唯一 Web 事实源写入白名单。
+当前唯一允许的 Memo Web 写入是快速创建：Web 可通过 `POST /api/memos` 创建 `status: pending` 的新 Memo，并写入 `title`、`description`、`source` 和 `priority`。该能力是 `specs/08-Web信息同步实现规范.md` §8.2 的当前唯一 Web 事实源写入白名单。
 
 Web 不得在页面状态、缓存或数据库中维护独立 Memo 权威状态。Memo 创建后的字段编辑、状态流转、分流、废弃和删除不得通过 Web 直接执行；如未来需要开放，必须先更新 08 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 

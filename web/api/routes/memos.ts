@@ -26,7 +26,6 @@ const MEMO_REQUIRED_FIELDS = [
   'description',
   'source',
   'priority',
-  'status_history',
 ]
 
 /** 生成下一个 memo ID */
@@ -79,8 +78,8 @@ function validatePersistedMemo(data: unknown, expectedId: string): string[] {
   if (data.status !== 'pending') {
     errors.push('status must be pending')
   }
-  if (!Array.isArray(data.status_history) || data.status_history.length === 0) {
-    errors.push('status_history must be a non-empty list')
+  if ('status_history' in data) {
+    errors.push('status_history must not be written by Web memo creation')
   }
   return errors
 }
@@ -143,15 +142,6 @@ router.post('/', (req: Request, res: Response): void => {
       related_adrs: [] as string[],
       related_changes: [] as string[],
       related_docs: [] as string[],
-      status_history: [
-        {
-          at: today,
-          from: 'created',
-          to: 'pending',
-          actor: 'human',
-          reason: '通过 Web 备忘速记入口创建',
-        },
-      ],
     }
 
     const yamlText = yaml.dump(memo, { lineWidth: -1, quotingType: '"', forceQuotes: false })

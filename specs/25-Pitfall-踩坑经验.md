@@ -219,7 +219,6 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `related_rules` | 已吸收或承接该经验的规范、Rules、Skill、Agent、Code 或 Web 路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `superseded_by` | 替代本经验的新对象、规范或实现 | string | 条件必填 | `status: superseded` 时必须填写 | Reference | AI、Code、Web |
 | `archive_reason` | — | string | 条件必填 | `status: archived` 时应填写 | Narrative | AI、Human |
-| `status_history` | — | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
 | `notes` | 不得承载规则正文第二事实源 | string | 否 | 不得承载规则正文第二事实源 | Narrative / Reference | AI、Web |
 
 字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
@@ -266,12 +265,6 @@ related_rules:
   - specs/03.02-工作模型文档规范.md
 superseded_by:
 archive_reason:
-status_history:
-  - at: 2026-06-09
-    from:
-    to: active
-    actor: AI
-    reason: 更新 Pitfall 工作模型
 notes:
 ```
 
@@ -304,7 +297,7 @@ Pitfall 回写遵循以下规则：
 
 1. 创建 Pitfall 时，应写入 `ldvh-base/pitfalls/`，并填写问题现象、触发条件、根因、解决方式、验证方式、规避策略和适用范围；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
-3. 状态变化后应更新 `updated`，并向 `status_history` 追加记录；
+3. 状态变化后应更新 `updated`；状态变化历史由 Git commit / Change 派生，不在 Pitfall YAML 中手写维护；
 4. Pitfall 被吸收到规范、运行入口、Code、Web 或工作流程后，应更新 `related_rules` 或相关引用；
 5. Pitfall 创建、状态变化、核心经验改写、归档或替代应通过 Change 留痕；
 6. Pitfall 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。

@@ -13,9 +13,3 @@ related_memos: []
 related_pitfalls: []
 archive_reason: |
   旧版夹具已被新的对象契约测试数据替代。
-status_history:
-  - at: '2026-06-15T09:10:00'
-    from: active
-    to: archived
-    actor: AI
-    reason: 旧数据不再作为当前测试主线

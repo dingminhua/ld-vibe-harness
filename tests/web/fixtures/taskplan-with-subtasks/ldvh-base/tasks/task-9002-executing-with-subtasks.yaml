@@ -24,9 +24,3 @@ affected_docs:
   - web/docs/01-全局设计约束.md
 deliverables:
   - tests/web/fixtures/taskplan-with-subtasks/docs/signal-filter.md
-status_history:
-  - at: '2026-06-15T09:40:00'
-    from: planned
-    to: review_needed
-    actor: AI
-    reason: 信号字段过滤进入审查

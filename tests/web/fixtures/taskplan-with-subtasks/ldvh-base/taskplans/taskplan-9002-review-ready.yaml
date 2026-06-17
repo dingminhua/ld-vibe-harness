@@ -23,9 +23,3 @@ review_requested_at: '2026-06-15'
 completion_evidence: |
   - `task-9005` 已关闭并记录关闭证据
   - Web 可展示待关闭审查态势
-status_history:
-  - at: '2026-06-15T09:55:00'
-    from: active
-    to: review_needed
-    actor: AI
-    reason: 计划内任务已全部关闭

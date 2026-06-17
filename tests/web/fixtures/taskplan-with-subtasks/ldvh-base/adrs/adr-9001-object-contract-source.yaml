@@ -17,9 +17,3 @@ related_docs:
   - docs/object-model-sync.md
 affects:
   - web/docs/01-全局设计约束.md
-status_history:
-  - at: '2026-06-15T09:00:00'
-    from: proposed
-    to: accepted
-    actor: Human
-    reason: 测试夹具重建采用该边界

@@ -86,13 +86,13 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'description', 'project_path', 'ldvh_base_path', 'docs_path',
     'governance_scope', 'related_workareas', 'related_taskplans', 'related_tasks', 'related_adrs',
     'related_memos', 'related_pitfalls', 'related_docs', 'related_changes',
-    'status_history', 'notes',
+    'notes',
   ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
     'avoidance', 'applicability', 'source_tasks', 'source_memos', 'related_workareas', 'related_taskplans',
     'related_adrs', 'related_profiles', 'related_docs', 'related_rules',
-    'related_changes', 'superseded_by', 'archive_reason', 'discard_reason', 'status_history', 'notes',
+    'related_changes', 'superseded_by', 'archive_reason', 'discard_reason', 'notes',
   ],
 };
 
@@ -221,7 +221,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   framework: { zh: '框架', en: 'Framework' },
   repeatability: { zh: '复现概率', en: 'Repeatability' },
   related_rules: { zh: '承接规则', en: 'Related Rules' },
-  status_history: { zh: '状态记录', en: 'Status History' },
   changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
   affected_docs: { zh: '影响文档', en: 'Affected Docs' },
@@ -1610,7 +1609,6 @@ export function TaskReadingLayout({
     'related_adrs',
     'related_changes',
     'blocked_by',
-    'status_history',
     ...TASK_AUXILIARY_META_KEYS,
     ...META_KEYS,
   ]);

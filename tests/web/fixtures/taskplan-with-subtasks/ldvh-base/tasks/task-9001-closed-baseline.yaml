@@ -28,9 +28,3 @@ deliverables:
 closure_evidence: |
   - 字段契约边界已写入测试夹具 README
 closed_at: '2026-06-15'
-status_history:
-  - at: '2026-06-15T09:20:00'
-    from: executing
-    to: closed
-    actor: AI
-    reason: 基线字段已确认

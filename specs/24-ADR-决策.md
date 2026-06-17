@@ -180,7 +180,7 @@ ADR 中的决策升级为稳定规则时，应：
 
 Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记录承接。本文只规定 ADR 语境下需要确认的事实、影响范围和证据承接要求。
 
-ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.md` §6.3.1。创建、接受、废弃、替代、核心决策改写或升级为规范等场景中，确认记录至少应说明目标 ADR、决策变化、影响范围、确认依据、Human 决策、后续回写位置和残留风险。确认记录可以写入 ADR 的 `context`、`consequences`、`status_history`、相关 WorkPlan / Memo 或 Change / commit 证据中，但不得只停留在对话结论里。
+ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.md` §6.3.1。创建、接受、废弃、替代、核心决策改写或升级为规范等场景中，确认记录至少应说明目标 ADR、决策变化、影响范围、确认依据、Human 决策、后续回写位置和残留风险。确认记录可以写入 ADR 的 `context`、`consequences`、相关 WorkPlan / Memo 或 Change / commit 证据中，但不得只停留在对话结论里。
 
 ---
 ## 6. 字段契约
@@ -210,7 +210,6 @@ ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.m
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_rules` | 决策已升级或承接的规范、Rules 路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `superseded_by` | 替代本决策的新 ADR | string | 条件必填 | `status: superseded` 时必须填写 | Reference | AI、Code、Web |
-| `status_history` | — | list[object] | 否 | 状态变化时追加时间、前后状态、原因和执行者 | Log | AI、Code |
 
 字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 
@@ -243,17 +242,11 @@ related_adrs: []
 related_rules:
   - specs/27-Change-变更.md
 superseded_by:
-status_history:
-  - at: 2026-06-09
-    from: proposed
-    to: accepted
-    actor: Human
-    reason: 确认 Change 以 Git commit 作为事实实例
 ```
 
 ### 6.3 Human Gate 记录回写样例
 
-ADR 创建、接受、废弃、替代、核心决策改写或升级为规范时，Human Gate 记录可以摘要写入 `context`、`consequences`、`status_history`、相关 WorkPlan / Memo 或 Change / commit 证据中。若直接写入 ADR 字段，推荐使用以下文本块：
+ADR 创建、接受、废弃、替代、核心决策改写或升级为规范时，Human Gate 记录可以摘要写入 `context`、`consequences`、相关 WorkPlan / Memo 或 Change / commit 证据中。若直接写入 ADR 字段，推荐使用以下文本块：
 
 ```yaml
 context: |
@@ -281,7 +274,7 @@ ADR 回写遵循以下规则：
 
 1. 创建 ADR 时，应写入 `ldvh-base/adrs/`，并填写背景、决策、后果和影响范围；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
-3. 状态变化后应更新 `updated`，并向 `status_history` 追加记录；
+3. 状态变化后应更新 `updated`；状态变化历史由 Git commit / Change 派生，不在 ADR YAML 中手写维护；
 4. accepted ADR 的核心决策变更必须经 Human Gate，并通过 Change 留痕；
 5. ADR 升级为规范或 Rules 后，应同步更新 `related_rules` 或 `affects`；
 6. ADR 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。

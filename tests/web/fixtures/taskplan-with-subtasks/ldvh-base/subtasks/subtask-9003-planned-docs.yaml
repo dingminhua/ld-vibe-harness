@@ -14,9 +14,3 @@ blocked_by:
   - subtask-9002
 verification: |
   - 人工阅读 web/docs/11-Web测试实现规范.md
-status_history:
-  - at: '2026-06-15T09:40:00'
-    from: null
-    to: planned
-    actor: AI
-    reason: 等待前置子任务

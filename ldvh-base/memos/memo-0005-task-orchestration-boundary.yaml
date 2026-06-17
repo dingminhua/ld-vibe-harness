@@ -67,7 +67,7 @@ description: |
   - 修改 06，移除 blocking 问题创建 SubTask 的规则，改为必要时创建同一 TaskPlan 下的并列 Task。
   - 修改 05 / 05.01 / Code / Web，移除 SubTask active 消费，保留 blocked_by 的 DAG 语义。
 
-  暂不建议给 Task 增加 blocked 状态。先使用 blocked_by、status_history 和同一 TaskPlan 下的 blocker Task 表达阻塞；如果真实执行反复证明不够，再评估 Task 状态机是否需要增加 blocked。
+  暂不建议给 Task 增加 blocked 状态。先使用 blocked_by 和同一 TaskPlan 下的 blocker Task 表达阻塞；状态流转历史由 Git / Change 派生追溯。如果真实执行反复证明不够，再评估 Task 状态机是否需要增加 blocked。
 
   ## 对话到任务编排闭环候选流程
 
@@ -256,9 +256,3 @@ related_docs:
   - specs/21-TaskPlan-任务计划.md
   - specs/22-Task-任务.md
   - specs/23-SubTask-子任务.md
-status_history:
-  - at: "2026-06-16"
-    from: created
-    to: pending
-    actor: human
-    reason: 通过 Web 备忘速记入口创建

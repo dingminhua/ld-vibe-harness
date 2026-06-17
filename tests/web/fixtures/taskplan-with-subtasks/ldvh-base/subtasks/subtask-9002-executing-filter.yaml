@@ -14,9 +14,3 @@ blocked_by:
   - subtask-9001
 verification: |
   - npm run test:web:api
-status_history:
-  - at: '2026-06-15T09:48:00'
-    from: planned
-    to: executing
-    actor: AI
-    reason: 前置契约确认已完成

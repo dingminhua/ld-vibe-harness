@@ -16,9 +16,3 @@ verification: |
 closure_evidence: |
   - 字段契约来源已确认
 closed_at: '2026-06-15'
-status_history:
-  - at: '2026-06-15T09:42:00'
-    from: executing
-    to: closed
-    actor: AI
-    reason: 子任务验证完成

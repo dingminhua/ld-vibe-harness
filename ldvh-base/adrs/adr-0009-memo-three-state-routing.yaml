@@ -83,9 +83,3 @@ related_rules:
   - specs/05.01-工作字段内容格式规范.md
   - specs/08-Web信息同步实现规范.md
 superseded_by:
-status_history:
-  - at: 2026-06-17
-    from: proposed
-    to: accepted
-    actor: Human
-    reason: 用户确认 Memo 只需要待处理、已分流、已废弃三种状态，并要求创建 ADR 后修改。

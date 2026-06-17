@@ -26,9 +26,3 @@ deliverables:
 closure_evidence: |
   - 构建验证通过
 closed_at: '2026-06-15'
-status_history:
-  - at: '2026-06-15T09:58:00'
-    from: verifying
-    to: closed
-    actor: AI
-    reason: 构建验证完成

@@ -26,9 +26,3 @@ related_memos:
   - memo-9001
 related_pitfalls:
   - pitfall-9001
-status_history:
-  - at: '2026-06-15T09:05:00'
-    from: null
-    to: active
-    actor: AI
-    reason: 创建 Web 对象字段同步计划

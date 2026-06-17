@@ -174,7 +174,6 @@ Human Gate 发生在工作计划层。执行项、角色契约、子 Agent 输�
 | `related_memos` | 来源或关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `status_history` | 状态变化记录 | list[object] | 否 | 状态变化时追加 | Log | AI、Code |
 
 ### 6.1 orchestration 最小结构
 

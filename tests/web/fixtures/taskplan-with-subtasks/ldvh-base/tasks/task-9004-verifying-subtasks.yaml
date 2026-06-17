@@ -22,9 +22,3 @@ related_docs: []
 affected_docs:
   - web/docs/04-ObjectDetail.md
 deliverables: []
-status_history:
-  - at: '2026-06-15T09:50:00'
-    from: planned
-    to: executing
-    actor: AI
-    reason: 子任务数据已重建，进入执行

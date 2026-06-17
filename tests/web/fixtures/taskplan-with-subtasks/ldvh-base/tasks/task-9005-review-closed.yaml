@@ -26,9 +26,3 @@ deliverables:
 closure_evidence: |
   - 关闭审查材料已记录
 closed_at: '2026-06-15'
-status_history:
-  - at: '2026-06-15T09:54:00'
-    from: review_needed
-    to: closed
-    actor: AI
-    reason: 关闭材料齐备

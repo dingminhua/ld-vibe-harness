@@ -65,32 +65,6 @@ affected_docs:
 - code/specs_validate.py
 - tests/code/test_specs_validate.py
 deliverables: []
-status_history:
-- at: '2026-06-11T00:00:00'
-  from: null
-  to: planned
-  actor: AI
-  reason: 用户确认 04 矩阵前置问题需要从 ECC 找答案，并要求生成独立 Task。
-- at: '2026-06-11T00:00:00'
-  from: planned
-  to: executing
-  actor: AI
-  reason: 开始执行 ECC 与 LDVH 只读研究。
-- at: '2026-06-11T00:00:00'
-  from: executing
-  to: verifying
-  actor: AI
-  reason: 已完成资料检索和结论整理。
-- at: '2026-06-11T00:00:00'
-  from: verifying
-  to: review_needed
-  actor: AI
-  reason: 验收项均已覆盖，等待关闭记录。
-- at: '2026-06-11T00:00:00'
-  from: review_needed
-  to: closed
-  actor: AI
-  reason: 研究结论已写入验证结果和关闭证据。
 closed_at: '2026-06-11T00:00:00'
 closure_evidence: |
   ## 验证结果

@@ -19,9 +19,3 @@ related_taskplans:
 related_changes: []
 related_docs:
   - docs/object-model-sync.md
-status_history:
-  - at: '2026-06-15T09:05:00'
-    from: null
-    to: pending
-    actor: AI
-    reason: 记录测试夹具重建输入

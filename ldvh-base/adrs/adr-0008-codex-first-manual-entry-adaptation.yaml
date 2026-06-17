@@ -89,14 +89,3 @@ related_rules:
   - specs/04.02-LDVH能力资产与落地保障规范.md
   - specs/04.03-环境入口适配与部署规范.md
 superseded_by:
-status_history:
-  - at: 2026-06-17
-    from:
-    to: proposed
-    actor: Human
-    reason: 用户确认可以先建立 ADR 记录 Codex 优先适配和用户手动薄入口方向，暂不创建 Task。
-  - at: 2026-06-17
-    from: proposed
-    to: accepted
-    actor: Human
-    reason: 用户要求继续行动，确认将 Codex 官方适配和用户手动薄入口方向落地到 04 系列与 Rules 入口。

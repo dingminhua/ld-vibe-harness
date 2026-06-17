@@ -24,9 +24,3 @@ affected_docs:
   - web/docs/04-ObjectDetail.md
 deliverables:
   - tests/web/fixtures/taskplan-with-subtasks/docs/path-fields.md
-status_history:
-  - at: '2026-06-15T09:30:00'
-    from: null
-    to: planned
-    actor: AI
-    reason: 等待信号字段过滤完成

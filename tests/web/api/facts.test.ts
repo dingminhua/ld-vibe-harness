@@ -20,24 +20,24 @@ const FIXTURE_ALLOWED_FIELDS: Record<string, Set<string>> = {
     'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
     'description', 'scope', 'constraints', 'source',
     'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
-    'status_history', 'archive_reason',
+    'archive_reason',
   ]),
   taskplan: new Set([
     'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
     'workarea', 'priority', 'description', 'success_criteria', 'source', 'tasks',
     'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
-    'status_history', 'review_requested_at', 'completion_evidence', 'closed_at',
+    'review_requested_at', 'completion_evidence', 'closed_at',
   ]),
   task: new Set([
     'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
     'taskplan', 'description', 'source', 'blocked_by', 'acceptance', 'verification',
     'assignee', 'related_adrs', 'related_changes', 'related_docs',
-    'affected_docs', 'deliverables', 'status_history', 'closed_at', 'closure_evidence',
+    'affected_docs', 'deliverables', 'closed_at', 'closure_evidence',
   ]),
   subtask: new Set([
     'id', 'type', 'title', 'title_en', 'title_zh', 'status', 'created', 'updated',
     'task', 'description', 'source', 'acceptance', 'blocked_by', 'verification',
-    'closure_evidence', 'closed_at', 'status_history',
+    'closure_evidence', 'closed_at',
   ]),
 }
 

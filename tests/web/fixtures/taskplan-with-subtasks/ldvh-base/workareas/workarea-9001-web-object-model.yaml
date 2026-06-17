@@ -21,9 +21,3 @@ related_memos:
   - memo-9001
 related_pitfalls:
   - pitfall-9001
-status_history:
-  - at: '2026-06-15T09:00:00'
-    from: null
-    to: active
-    actor: AI
-    reason: 为 Web 对象模型同步测试创建工作域

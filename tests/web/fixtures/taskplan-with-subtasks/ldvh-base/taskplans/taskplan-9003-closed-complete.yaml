@@ -23,9 +23,3 @@ review_requested_at: '2026-06-15'
 completion_evidence: |
   - `task-9006` 已完成构建验证
 closed_at: '2026-06-15'
-status_history:
-  - at: '2026-06-15T10:00:00'
-    from: review_needed
-    to: closed
-    actor: AI
-    reason: Human-facing 关闭材料齐备

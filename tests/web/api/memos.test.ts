@@ -76,7 +76,7 @@ async function testCreateMemo() {
   assert.equal(persisted.id, 'memo-0001')
   assert.equal(persisted.status, 'pending')
   assert.equal('category' in persisted, false)
-  assert.ok(Array.isArray(persisted.status_history))
+  assert.equal('status_history' in persisted, false)
 }
 
 async function testFieldValidation() {
