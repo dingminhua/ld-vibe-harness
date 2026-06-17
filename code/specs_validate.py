@@ -13,6 +13,7 @@ from spec_checks import common as common_checks
 from spec_checks import doc_structure as doc_structure_checks
 from spec_checks import deployment_entries as deployment_entries_checks
 from spec_checks import consistency as consistency_checks
+from spec_checks import field_registry as field_registry_checks
 from spec_checks import governed_projects as governed_projects_checks
 from spec_checks import human_gate as human_gate_checks
 from spec_checks import index as index_checks
@@ -245,6 +246,21 @@ def consistency_check(paths=None):
 def consistency_main(paths=None):
     sync_consistency_config()
     return consistency_checks.consistency_main(paths)
+
+
+def sync_field_registry_config():
+    field_registry_checks.PROJECT_ROOT = PROJECT_ROOT
+    field_registry_checks.SPECS_DIR = SPECS_DIR
+
+
+def field_registry_check(paths=None):
+    sync_field_registry_config()
+    return field_registry_checks.check_paths(paths)
+
+
+def field_registry_main(paths=None):
+    sync_field_registry_config()
+    return field_registry_checks.main(paths)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -885,6 +901,10 @@ def build_parser():
     consistency_parser = subparsers.add_parser("consistency", help="检查集合状态消费、工作模型骨架和 02 术语状态一致性。")
     consistency_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
 
+    # field-registry
+    field_registry_parser = subparsers.add_parser("field-registry", help="检查 05.01 字段内容/消费注册表。")
+    field_registry_parser.add_argument("paths", nargs="*", default=None, help="要检查的 05.01 文件或目录，默认检查 specs/05.01。")
+
     # governed-projects
     governed_projects_parser = subparsers.add_parser("governed-projects", help="检查工作区根目录管辖项目配置。")
     governed_projects_parser.add_argument("--root", default=str(PROJECT_ROOT), help="工作区根目录，默认使用当前工具所在项目。")
@@ -948,6 +968,9 @@ def main(argv=None):
     if command == "consistency":
         return consistency_main(args.paths)
 
+    if command == "field-registry":
+        return field_registry_main(args.paths)
+
     if command == "governed-projects":
         return governed_projects_main(args.root)
 
@@ -985,6 +1008,10 @@ def main(argv=None):
         # consistency
         consistency_paths = args.paths if args.paths else [str(SPECS_DIR)]
         if consistency_main(consistency_paths) != 0:
+            exit_code = 1
+        # field-registry
+        field_registry_paths = args.paths if args.paths else None
+        if field_registry_main(field_registry_paths) != 0:
             exit_code = 1
         # governed-projects
         if governed_projects_main(args.root) != 0:

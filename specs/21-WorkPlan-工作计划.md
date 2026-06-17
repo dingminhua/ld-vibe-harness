@@ -107,7 +107,7 @@ review_needed -> active
 
 ### 4.2 工作计划与执行项
 
-工作计划通过 `execution_items` 字段承载内部执行编排。执行项用于说明 AI 当前如何安排工作、验证和角色分工；执行项没有独立状态机、编号区段或事实源文件。
+工作计划通过 `orchestration.execution_items` 字段承载内部执行编排。执行项用于说明 AI 当前如何安排工作、验证和角色分工；执行项没有独立状态机、编号区段或事实源文件。
 
 执行项不是“更小的工作对象”。它只承载 WorkPlan 内部执行委派、恢复和关闭判断所需的最小信息；执行者拿到执行项后可以使用自身的临时 checklist、计划模式、工具调用和局部推理继续拆分，但这些执行期拆分不进入 LDVH 长期事实源。
 
@@ -123,6 +123,16 @@ review_needed -> active
 8. `result_summary`：已完成时的结果摘要；
 9. `evidence_refs`：稳定产物、验证证据、命令、路径或回写目标；
 10. `blocking_reason`：未完成或等待时的阻塞原因，可为空。
+
+执行项内部状态只服务 WorkPlan 恢复、证据组织和关闭判断，允许值如下：
+
+| 状态 | 含义 | 条件要求 |
+|---|---|---|
+| `pending` | 尚未开始 | 可存在于 `draft` 或 `active`；进入 `review_needed` 前不得仍为该状态 |
+| `in_progress` | 正在执行 | 仅用于 `active`；进入 `review_needed` 前不得仍为该状态 |
+| `blocked` | 当前执行项受阻 | 必须填写 `blocking_reason`；进入 `review_needed` 前应分流、解决或在 `closure_evidence` 中说明接受原因 |
+| `done` | 执行项已完成 | 应填写 `result_summary`，并在有稳定证据时填写 `evidence_refs` |
+| `skipped` | 明确决定不执行 | 必须填写 `result_summary`；`closure_evidence` 可补充整体接受原因 |
 
 执行项不得被其他工作对象直接引用为长期事实。需要长期追踪的结论，应按性质分流到 WorkPlan、ADR、Memo、Pitfall、Change、docs 或正式规范。
 
@@ -178,7 +188,7 @@ Human Gate 发生在工作计划层。执行项、角色说明、子 Agent 输�
 | `description` | 目标背景、范围和问题说明 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `success_criteria` | 工作计划成功标准 | string | 是 | 应使用 checklist 或等价可验证条目支持关闭审查 | Checklist | AI、Code、Web |
 | `source` | 工作计划来源 | string | 是 | 谁在什么场景下表达 | Reference / Narrative | AI、Web |
-| `orchestration` | 执行编排对象 | object | 是 | 至少包含 `mode`、`execution_items` 和 `review` | Reference / Log | AI、Code、Web |
+| `orchestration` | 执行编排对象 | object | 是 | 至少包含 `mode`、`execution_items` 和 `review` | Structured | AI、Code、Web |
 | `verification_evidence` | 验证证据，说明成功标准如何被检查 | string | 条件必填 | `review_needed` 或 `closed` 时必须填写 | 验证证据 | AI、Code、Web |
 | `closure_evidence` | 关闭证据，说明为何可以关闭、残留风险和 Human Gate 结果 | string | 条件必填 | `review_needed` 或 `closed` 时必须填写 | 验证证据 | AI、Code、Web |
 | `review_requested_at` | 请求关闭审查时间 | datetime | 条件必填 | `review_needed` 或 `closed` 时必须填写 | Reference | AI、Code、Web |
@@ -187,7 +197,8 @@ Human Gate 发生在工作计划层。执行项、角色说明、子 Agent 输�
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 来源或关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表；承载 WorkPlan ID，不表示父子或阻塞关系 | Reference | AI、Code、Web |
+| `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表；承载 Git commit hash、短 hash 或可回指 Git commit 的引用 | Reference | AI、Code、Web |
 
 ### 6.1 orchestration 最小结构
 
@@ -199,7 +210,31 @@ Human Gate 发生在工作计划层。执行项、角色说明、子 Agent 输�
 | `execution_items` | 执行项列表 | list[object] | 是 |
 | `review` | 主控自检、专业复检和关闭检查安排 | object | 是 |
 
+`orchestration.mode` 的允许值如下：
+
+| 值 | 含义 |
+|---|---|
+| `single` | 单一执行项或单一执行路径 |
+| `sequential` | 多个执行项按顺序推进 |
+| `parallel` | 多个执行项可并行推进 |
+| `mixed` | 同时存在顺序和并行安排 |
+
 `execution_items` 是工作计划内部字段，不得被提升为独立工作模型。并行执行项可以由不同子 Agent 或专业角色执行；子 Agent 不再继续创建子 Agent，所有结果回到主控汇总、自检和后续复检。
+
+每个 `orchestration.execution_items` 对象的字段契约如下：
+
+| 字段路径 | 含义 | 类型 | 必填 | 状态条件 |
+|---|---|---|---|---|
+| `id` | WorkPlan 内局部唯一标识 | string | 是 | 当前 WorkPlan 内不得重复；不得作为全局对象 ID |
+| `title` | 执行项一句话概括 | string | 是 | 应能支持恢复上下文 |
+| `role` | 专业视角、责任边界或子 Agent 类型 | string | 是 | 只保留最小角色标识，不定义完整 Role Contract |
+| `mode` | 执行项编排方式，允许 `single`、`sequential`、`parallel` | string | 是 | 不得使用 `mixed`；混合编排只属于 `orchestration.mode` |
+| `input_refs` | 执行项输入引用 | list[string] | 是 | 可包含对象 ID、路径、URL、命令或说明性引用 |
+| `expected_output` | 执行项预期输出 | string | 是 | 应说明交还结果、证据或判断 |
+| `status` | 执行项内部执行态 | string | 是 | 必须属于 §4.2 执行项内部状态枚举 |
+| `result_summary` | 执行项结果摘要 | string 或 null | 条件必填 | `done` 或 `skipped` 时必须填写 |
+| `evidence_refs` | 执行项证据引用 | list[string] | 否 | 默认为空列表；有稳定产物、命令或变更时应填写 |
+| `blocking_reason` | 执行项阻塞原因 | string 或 null | 条件必填 | `blocked` 时必须填写 |
 
 `role` 只表达本执行项所需的专业视角、责任边界或子 Agent 类型，不在 WorkPlan 字段契约中提前定义完整角色规则。完整角色规则如需稳定化，应由工作流程、能力资产规范或后续专门规范承接；WorkPlan 只保留执行恢复所需的最小角色标识。
 
@@ -209,7 +244,27 @@ Human Gate 发生在工作计划层。执行项、角色说明、子 Agent 输�
 2. `specialist_review`：是否需要专业角色或独立子 Agent 复检；需要时应说明角色或输入输出边界；
 3. `human_closure_review`：是否需要 Human 关闭审查；工作计划从 `review_needed` 关闭为 `closed` 时默认需要。
 
-### 6.2 YAML 示例
+`orchestration.review` 的字段契约如下：
+
+| 字段路径 | 含义 | 类型 | 必填 | 条件 |
+|---|---|---|---|---|
+| `controller_self_check` | 主控是否必须自检 | boolean | 是 | 申请 `review_needed` 前必须完成自检并把结论写入证据字段 |
+| `specialist_review` | 专业复检安排 | object | 是 | 只声明安排，不承载稳定结论 |
+| `specialist_review.required` | 是否需要专业复检 | boolean | 是 | 为 `true` 时必须填写 `role` 和 `expected_output` |
+| `specialist_review.role` | 复检角色或专业视角 | string 或 null | 条件必填 | `required=true` 时必填 |
+| `specialist_review.expected_output` | 复检预期输出 | string 或 null | 条件必填 | `required=true` 时必填 |
+| `human_closure_review` | 是否需要 Human 关闭审查 | boolean | 是 | `review_needed` -> `closed` 默认需要；若豁免必须写入 `closure_evidence` |
+
+### 6.2 状态条件字段
+
+| 状态 | 必须满足的对象条件 |
+|---|---|
+| `draft` | 基础字段存在；目标、成功标准或执行编排可尚未最终确认 |
+| `active` | `workarea`、`priority`、`description`、`success_criteria`、`source`、`orchestration.mode`、`orchestration.execution_items`、`orchestration.review` 已确认；`execution_items` 不得为空 |
+| `review_needed` | `verification_evidence`、`closure_evidence`、`review_requested_at` 已填写；成功标准已检查；执行项不得仍为 `pending` 或 `in_progress`；`blocked` 执行项必须在 `closure_evidence` 中说明分流、接受或豁免原因 |
+| `closed` | 满足 `review_needed` 条件；`closed_at` 已填写；`closure_evidence` 足以说明关闭结果、残留风险、未完成项分流和 Human Gate 结果 |
+
+### 6.3 YAML 示例
 
 ```yaml
 id: workplan-0001
@@ -255,6 +310,7 @@ related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
+related_workplans: []
 related_changes: []
 ```
 
@@ -271,6 +327,8 @@ related_changes: []
 4. 验证命令、文件路径、产物引用或人工确认记录；
 5. 经验、决策、备忘或变更的分流结果。
 
+进入 `review_needed` 前，不要求所有执行项都必须成功，但必须让执行项状态、验证证据和关闭证据共同说明：哪些完成、哪些跳过、哪些阻塞被分流或接受、哪些风险仍需 Human 判断。`closed` 不代表目标必然成功，只代表该 WorkPlan 的推进责任已经依据证据和关闭判断稳定终止。
+
 ---
 ## 8. 适配边界
 
@@ -280,9 +338,14 @@ Code 应检查：
 2. `priority` 必须属于 `P0`、`P1`、`P2`、`P3`；
 3. 不得维护 `importance` 字段；
 4. `orchestration.execution_items` 中的 `id` 在当前工作计划内唯一；
-5. `review_needed` 和 `closed` 必须提供验证证据和关闭证据；
-6. `closed` 工作计划必须填写 `closed_at`；
-7. 执行项不得被其他工作对象作为独立对象引用。
+5. `orchestration.mode`、`orchestration.execution_items.mode` 和 `orchestration.execution_items.status` 必须属于本文定义的枚举；
+6. `review_needed` 和 `closed` 必须提供验证证据、关闭证据和 `review_requested_at`；
+7. `closed` 工作计划必须填写 `closed_at`；
+8. `blocked` 执行项必须填写 `blocking_reason`；
+9. `done` 或 `skipped` 执行项必须填写 `result_summary`；
+10. 执行项不得被其他工作对象作为独立对象引用；
+11. `related_workplans` 必须承载 WorkPlan ID；
+12. `related_changes` 必须承载 Git commit hash、短 hash 或可回指 Git commit 的引用。
 
 Web 应把工作计划作为 Human 直接查看和确认的主对象。Web 可以展示执行编排、验证证据和关闭证据，但不得把执行项提升为一级导航、独立对象详情页或可独立写入的权威事实。
 
