@@ -85,7 +85,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'related_adrs', 'related_docs',
   ],
   study: [
-    'user_intent', 'summary', 'conclusion', 'report_body', 'source_docs',
+    'user_intent', 'summary', 'conclusion', 'report_body', 'related_refs',
     'related_memos', 'related_workareas',
     'related_adrs', 'related_pitfalls', 'related_docs', 'archive_reason',
   ],
@@ -223,7 +223,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   language: { zh: '语言', en: 'Language' },
   framework: { zh: '框架', en: 'Framework' },
   related_rules: { zh: '承接规则', en: 'Related Rules' },
-  source_docs: { zh: '来源资料', en: 'Source Docs' },
+  related_refs: { zh: '关联引用', en: 'Related References' },
   changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
   aggregated_related_docs: { zh: '聚合关联文档', en: 'Aggregated Related Docs' },

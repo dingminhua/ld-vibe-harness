@@ -53,6 +53,7 @@ async function main() {
   assert.equal(isObjectRef('subtask-0001'), false)
   assert.equal(isPreviewablePathForField('related_docs', 'specs/21-WorkPlan-工作计划.md'), true)
   assert.equal(isPreviewablePathForField('related_rules', 'web/src/pages/ObjectDetail.tsx'), true)
+  assert.equal(isPreviewablePathForField('related_refs', 'https://developers.openai.com/codex/subagents'), true)
 
   const missing = await showObject('taskplan-9999')
   assert.equal(missing.ok, false)

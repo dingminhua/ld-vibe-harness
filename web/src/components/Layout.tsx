@@ -58,8 +58,12 @@ function LayoutInner({ children }: LayoutProps) {
   useEffect(() => {
     const onDocPreview = (event: Event) => {
       const { path } = (event as CustomEvent<{ path?: string }>).detail ?? {};
-      if (!path || path.startsWith('http')) return;
+      if (!path) return;
       event.preventDefault();
+      if (path.startsWith('http://') || path.startsWith('https://')) {
+        openPanel({ type: 'web', title: path, url: path });
+        return;
+      }
       openPanel({ type: 'doc', title: path, docPath: path });
     };
     document.addEventListener('ldvh:doc-preview', onDocPreview);

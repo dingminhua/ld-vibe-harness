@@ -4,7 +4,7 @@ export const SUMMARY_TEXT_FIELDS = [
   'rationale', 'observation', 'analysis', 'mitigation', 'resolution', 'decision',
   'symptoms', 'trigger_conditions', 'root_cause', 'avoidance', 'applicability',
   'governance_scope', 'archive_reason', 'discard_reason', 'notes', 'transition_reasons',
-  'source_detail', 'conclusion', 'report_body',
+  'source_detail', 'user_intent', 'conclusion', 'report_body',
   'alternatives', 'reason',
   'scope', 'impact', 'summary', 'details', 'outcome', 'next_steps',
   'lessons', 'background', 'motivation',
@@ -29,7 +29,7 @@ export const REFERENCE_FIELDS = [
 
 /** Path / URL reference fields render through DocPreviewLink when values are previewable paths. */
 export const DOC_LINK_FIELDS = [
-  'related_docs', 'related_rules', 'affects',
+  'related_docs', 'related_rules', 'related_refs', 'affects',
   'superseded_by',
 ];
 
@@ -39,7 +39,7 @@ export const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 
 export const COLLAPSIBLE_FIELDS = [
   'related_workareas', 'related_workplans',
   'related_docs', 'related_adrs', 'related_memos', 'related_studies',
-  'related_pitfalls', 'related_profiles', 'related_rules', 'source_docs',
+  'related_pitfalls', 'related_profiles', 'related_rules', 'related_refs',
   'source_memos',
 ];
 

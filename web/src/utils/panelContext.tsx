@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 
-export type PanelContentType = 'object' | 'doc' | 'yaml' | 'evidence' | 'diff' | 'empty';
+export type PanelContentType = 'object' | 'doc' | 'web' | 'yaml' | 'evidence' | 'diff' | 'empty';
 
 export interface PanelContent {
   type: PanelContentType;
@@ -8,6 +8,7 @@ export interface PanelContent {
   objectType?: string;
   objectId?: string;
   docPath?: string;
+  url?: string;
   data?: unknown;
 }
 
@@ -140,5 +141,6 @@ export function usePanel() {
 function getPanelContentKey(content: PanelContent) {
   if (content.type === 'object') return `object:${content.objectType ?? ''}:${content.objectId ?? ''}`;
   if (content.type === 'doc') return `doc:${content.docPath ?? ''}`;
+  if (content.type === 'web') return `web:${content.url ?? ''}`;
   return `${content.type}:${content.title ?? ''}`;
 }

@@ -91,7 +91,7 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、WorkPlan、ADR、Pitfall、Memo。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
 
-路径类字段应按字段语义区分：`related_docs` 指向引用文档，`source_docs` 指向输入资料，`related_rules` 指向规范、Rules、Skill、Agent、Code 或 Web 承接位置。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
+路径类字段应按字段语义区分：`related_docs` 指向关联文档，`related_refs` 指向报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明，`related_rules` 指向规范、Rules、Skill、Agent、Code 或 Web 承接位置。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
 
 ## 8. 右侧扩展阅读区
 

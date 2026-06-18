@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, X, GripVertical, FileText, FileDiff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, GripVertical, FileText, FileDiff, ExternalLink } from 'lucide-react';
 import { usePanel, type PanelContent } from '@/utils/panelContext';
 import MarkdownPreview from '@/components/MarkdownPreview';
 import CopyPathButton from '@/components/CopyPathButton';
@@ -56,7 +56,7 @@ export default function ReadingPanel() {
   );
 
   useEffect(() => {
-    if (!isMobile && content?.type === 'doc') {
+    if (!isMobile && (content?.type === 'doc' || content?.type === 'web')) {
       setWidth((prev) => clamp(Math.max(prev, DEFAULT_DOC_WIDTH)));
     }
   }, [clamp, content?.type, isMobile]);
@@ -262,6 +262,7 @@ function PanelContentRenderer({ content }: { content: PanelContent }) {
   switch (content.type) {
     case 'object': return <ObjectPreview content={content} />;
     case 'doc': return <DocPreview content={content} />;
+    case 'web': return <WebPreview content={content} />;
     case 'yaml': return <YamlPreview content={content} />;
     case 'evidence': return <EvidencePreview content={content} />;
     case 'diff': return <DiffPreview content={content} />;
@@ -270,6 +271,37 @@ function PanelContentRenderer({ content }: { content: PanelContent }) {
         <EmptyPanelPreview />
       );
   }
+}
+
+function WebPreview({ content }: { content: PanelContent }) {
+  const { locale } = useI18n();
+  const { url } = content;
+  if (!url) return <EmptyPanelPreview />;
+  const openLabel = locale === 'en' ? 'New Tab' : '新标签';
+
+  return (
+    <div className="flex h-full min-h-[520px] flex-col gap-3">
+      <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-ldvh-border bg-ldvh-panel px-3 py-2">
+        <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{url}</span>
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="ldvh-chip inline-flex shrink-0 items-center gap-1 rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-ldvh-text-primary hover:border-ldvh-accent hover:text-ldvh-accent"
+        >
+          <ExternalLink size={12} />
+          <span>{openLabel}</span>
+        </a>
+      </div>
+      <iframe
+        title={url}
+        src={url}
+        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+        referrerPolicy="no-referrer"
+        className="min-h-0 flex-1 rounded-lg border border-ldvh-border bg-white"
+      />
+    </div>
+  );
 }
 
 function ObjectPreview({ content }: { content: PanelContent }) {

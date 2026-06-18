@@ -115,9 +115,11 @@ Study 可以作为 WorkPlan 的资料输入、ADR 的决策依据或 Pitfall 的
 
 WorkPlan、ADR 和 Pitfall 的准入、状态和字段契约分别由 `specs/21-WorkPlan-工作计划.md`、`specs/22-ADR-决策.md` 和 `specs/23-Pitfall-踩坑经验.md` 定义。
 
-### 4.3 Study 与 docs/studies、docs/sources
+### 4.3 Study 与关联文档和关联引用
 
-docs/studies 和 docs/sources 可以作为 Study 的输入资料区。Study 一旦形成，应在 frontmatter 中通过 `source_docs` 或 `related_docs` 记录输入路径或后续引用路径。输入资料仍可整理、归档或删除；Study 本身作为工作对象保留稳定报告内容。
+docs/studies 和 docs/sources 可以作为 Study 的输入资料区，但不应成为 Study 的稳定事实源前提。Study 一旦形成，应把报告正文中需要复读的关键引用提炼到 `related_refs`，包括外部 URL、规范章节、代码位置、资料名称或必要的来源说明。`related_refs` 回答“这份报告依据或引用了哪些材料”。
+
+`related_docs` 只记录与 Study 相关的项目内文档路径，例如后续承接文档、被报告消费的本地 Markdown、或需要从 Study 页面直达的项目文档。它回答“这个 Study 与哪些项目文档有关”。如果某项只是报告正文中的外部资料、网页引用或说明性出处，应放入 `related_refs`，不放入 `related_docs`。
 
 ### 4.4 Study 与 Change
 
@@ -155,7 +157,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `user_intent` | 用户意图、调研出发点或最初想解决的问题 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
 | `summary` | 报告摘要和当前可引用结论 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `conclusion` | 报告结论、边界和残留不确定性 | string | 否 | 推荐填写 | Narrative / Decision | AI、Web |
-| `source_docs` | 输入资料、临时研究或外部资料路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_refs` | 报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -164,7 +166,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `related_docs` | 后续引用或承接文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `archive_reason` | 归档原因 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Human |
 
-字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。Study 不得维护 `source` 或 `source_detail`；用户侧调研出发点统一写入 `user_intent`。
+字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。Study 不得维护 `source`、`source_detail` 或 `source_docs`；用户侧调研出发点统一写入 `user_intent`，报告引用统一写入 `related_refs`。
 
 ### 6.2 正文契约
 
@@ -191,7 +193,8 @@ summary: |
   Memo 应承载议题的当前摘要和关键语义转折，完整调研报告应由 Study 承载。
 conclusion: |
   Study 适合承载稳定报告；Memo 保留演变摘要和分流关系。
-source_docs: []
+related_refs:
+  - specs/24-Memo-备忘.md §6
 related_memos:
   - memo-0001
 related_workareas: []
@@ -233,7 +236,7 @@ Study 证据至少包括：
 
 1. 研究问题和触发来源；
 2. 报告摘要和正文；
-3. 关键输入资料或来源路径；
+3. 关键关联引用；
 4. 结论、边界和残留不确定性；
 5. 相关 Memo、WorkPlan、ADR、Pitfall、Change 或文档引用。
 
@@ -259,7 +262,7 @@ Code 可依据本文实现以下能力：
 1. 解析 Study Markdown frontmatter 和正文；
 2. 校验文件命名、ID、字段类型、必填字段和条件必填字段；
 3. 校验状态枚举和合法流转；
-4. 校验 `source_docs`、`related_*` 引用字段；
+4. 校验 `related_refs`、`related_*` 引用字段；
 5. 聚合活跃 Study、已归档 Study 和关联 Memo。
 
 Code 不得自行创建、替代、归档或删除 Study，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/studies/` 权威事实源。

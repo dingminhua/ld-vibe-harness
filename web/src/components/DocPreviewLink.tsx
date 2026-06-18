@@ -1,4 +1,5 @@
 import { FileText, ExternalLink } from 'lucide-react';
+import { useI18n } from '@/i18n/context';
 
 interface DocPreviewLinkProps {
   docs: string[];
@@ -6,6 +7,8 @@ interface DocPreviewLinkProps {
 }
 
 export default function DocPreviewLink({ docs, variant = 'card' }: DocPreviewLinkProps) {
+  const { locale } = useI18n();
+  const readLabel = locale === 'en' ? 'Read' : '阅读';
 
   if (docs.length === 0) return null;
 
@@ -16,12 +19,7 @@ export default function DocPreviewLink({ docs, variant = 'card' }: DocPreviewLin
       bubbles: true,
       cancelable: true,
     });
-    const notPrevented = document.dispatchEvent(event);
-
-    // External links open in new tab
-    if (docPath.startsWith('http') && notPrevented) {
-      window.open(docPath, '_blank', 'noopener,noreferrer');
-    }
+    document.dispatchEvent(event);
   };
 
   return (
@@ -45,9 +43,7 @@ export default function DocPreviewLink({ docs, variant = 'card' }: DocPreviewLin
             <span className="ldvh-meta-primary min-w-0 flex-1 truncate">
               {doc}
             </span>
-            {isExternal && (
-              <span className="ldvh-caption shrink-0">↗</span>
-            )}
+            {isExternal && <span className="ldvh-caption shrink-0">{readLabel}</span>}
           </button>
         );
       })}

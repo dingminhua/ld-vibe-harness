@@ -166,7 +166,7 @@ status: draft
 created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 summary: Draft report.
-source_docs: []
+related_refs: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -203,7 +203,7 @@ status: superseded
 created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 summary: Superseded report.
-source_docs: []
+related_refs: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -245,7 +245,7 @@ updated: "2026-06-18T09:30:00"
 summary: Source report.
 source: ai
 user_intent: Trigger context remains here.
-source_docs: []
+related_refs: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -283,7 +283,7 @@ created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 source_detail: Old source detail field.
 summary: Source detail report.
-source_docs: []
+related_refs: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -305,6 +305,45 @@ This report should not validate because Study renamed source_detail to user_inte
     assert result.returncode == 1
     assert "REMOVED_OBJECT_FIELD" in result.stdout
     assert "source_detail" in result.stdout
+
+
+def test_study_source_docs_field_is_no_longer_allowed(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    study = root / "ldvh-base" / "studies" / "study-0001-source-docs-report.md"
+    study.parent.mkdir(parents=True, exist_ok=True)
+    study.write_text(
+        """---
+id: study-0001
+type: study
+title: Source Docs Report
+status: active
+created: "2026-06-18T09:00:00"
+updated: "2026-06-18T09:30:00"
+summary: Source docs report.
+source_docs:
+  - docs/studies/source.md
+related_refs: []
+related_workareas: []
+related_workplans: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_docs: []
+archive_reason:
+---
+
+# Source Docs Report
+
+This report should not validate because Study renamed source_docs to related_refs.
+""",
+        encoding="utf-8",
+    )
+
+    result = run_checker(study)
+
+    assert result.returncode == 1
+    assert "REMOVED_OBJECT_FIELD" in result.stdout
+    assert "source_docs" in result.stdout
 
 
 def test_pitfall_repeatability_field_is_no_longer_allowed(tmp_path):

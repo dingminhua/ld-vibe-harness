@@ -62,7 +62,7 @@ LIST_FIELDS = {
     },
     "memo": {"evolution", "related_workareas", "related_workplans", "related_adrs", "related_studies", "related_docs"},
     "study": {
-        "source_docs", "related_workareas", "related_workplans", "related_adrs",
+        "related_refs", "related_workareas", "related_workplans", "related_adrs",
         "related_memos", "related_pitfalls", "related_docs",
     },
 }
@@ -803,7 +803,7 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 def validate_study(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "study")
-    for removed_field in ("related_taskplans", "related_tasks", "superseded_by", "source", "source_detail"):
+    for removed_field in ("related_taskplans", "related_tasks", "superseded_by", "source", "source_detail", "source_docs"):
         if removed_field in data:
             issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 Study 不得维护旧对象关联字段: {removed_field}", field=removed_field))
     if is_empty(data.get("report_body")):

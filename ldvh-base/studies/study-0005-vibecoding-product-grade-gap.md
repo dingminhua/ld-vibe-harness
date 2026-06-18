@@ -4,13 +4,33 @@ type: study
 title: Vibe Coding 从 Demo 到产品级与 LDVH 增强方向调研
 status: active
 created: '2026-06-18T08:49:21'
-updated: '2026-06-18T08:49:21'
+updated: '2026-06-18T21:14:45+08:00'
 summary: |
   Vibe Coding 从 demo 到产品级的核心变化，不是“让 AI 多写代码”，而是把 AI 生成代码纳入产品工程闭环。产品级要求需求、架构、质量、安全、供应链、发布、运行、观测、事故、用户反馈和成本都可管理、可验证、可追溯。LDVH 当前已经有规范、工作模型、基础流程、Code 和 Web 的底盘，但仍需要增强产品需求层、架构治理、质量门禁、DevSecOps、生产就绪、运行观测、发布治理、AI 评测和 Human-facing 驾驶舱。
 user_intent: 用户要求调研 Vibe Coding 从 demo 到产品级需要哪些变化，以及 LDVH 未来面向产品级开发还需要增强哪些环节。
 conclusion: |
   LDVH 下一阶段应从“规范和基础事实源治理”升级为“AI 原生产品工程治理”。建议优先增强三条主线：一是产品级事实源，包括需求、用户旅程、架构、接口、数据、质量属性和发布对象；二是产品级门禁，包括测试策略、安全审查、供应链、生产就绪、SLO、回滚和事故复盘；三是 AI 原生执行保障，包括角色契约、子 Agent 审查、代码评测、上下文包、风险仪表盘和自动化校验。这样才能让 Vibe Coding 从快速 demo 进入可持续交付。
-source_docs: []
+related_refs:
+  - https://dora.dev/
+  - https://dora.dev/research/2024/dora-report/
+  - https://csrc.nist.gov/pubs/sp/800/218/final
+  - https://csrc.nist.gov/pubs/sp/800/218/r1/ipd
+  - https://owasp.org/www-project-application-security-verification-standard/
+  - https://owasp.org/www-project-samm/
+  - https://owaspsamm.org/
+  - https://owasp.org/www-project-top-10-ci-cd-security-risks/
+  - https://slsa.dev/
+  - https://sre.google/sre-book/evolving-sre-engagement-model/
+  - https://sre.google/sre-book/service-level-objectives/
+  - https://sre.google/workbook/implementing-slos/
+  - https://opentelemetry.io/docs/what-is-opentelemetry/
+  - https://opentelemetry.io/docs/concepts/observability-primer/
+  - https://12factor.net/
+  - https://www.iso.org/standard/72089.html
+  - https://iso25000.com/index.php/en/iso-25000-standards/iso-25010
+  - https://developers.openai.com/blog/run-long-horizon-tasks-with-codex
+  - https://docs.anthropic.com/en/docs/claude-code/common-workflows
+  - https://code.claude.com/docs/en/code-review
 related_memos:
   - memo-0008
 related_workareas: []

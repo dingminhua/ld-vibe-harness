@@ -473,7 +473,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["user_intent"] = ""
         data["summary"] = f"{title} 的稳定研究报告。"
         data["conclusion"] = ""
-        data["source_docs"] = []
+        data["related_refs"] = []
         data["related_memos"] = []
         data["related_workareas"] = []
         data["related_workplans"] = []
@@ -1109,7 +1109,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         # 列表类型字段：逗号分隔
         if key in ("related_workareas", "related_workplans", "related_adrs",
                     "related_memos", "related_studies", "related_pitfalls", "related_docs",
-                    "source_docs", "affects", "related_objects", "related_rules", "related_changes"):
+                    "related_refs", "source_docs", "affects", "related_objects", "related_rules", "related_changes"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
         else:
             updates[key] = value

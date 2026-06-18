@@ -110,7 +110,7 @@ export interface ObjectItem {
   /** Study-specific */
   summary?: string;
   conclusion?: string;
-  source_docs?: string[];
+  related_refs?: string[];
   report_body?: string;
   /** Pitfall-specific */
   resolution?: string;

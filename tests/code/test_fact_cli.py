@@ -68,8 +68,10 @@ def test_create_study_defaults_to_active(tmp_path):
     assert data["status"] == "active"
     assert data["user_intent"] == ""
     assert data["summary"] == "Stable Study 的稳定研究报告。"
+    assert data["related_refs"] == []
     assert "source" not in data
     assert "source_detail" not in data
+    assert "source_docs" not in data
     assert "研究报告草稿" not in path.read_text(encoding="utf-8")
 
 
