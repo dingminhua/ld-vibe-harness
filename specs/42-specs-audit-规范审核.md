@@ -362,8 +362,8 @@ python3 code/specs_validate.py all
 ---
 ## 15. 待补齐事项
 
-1. 本文当前 `collection_status` 为 candidate，需要在首次真实使用后由 Human Gate 决定是否升级为 active；
-2. specs 审核的正向/负向具体案例库尚未建立，首次执行时可同步沉淀 Pitfall 或 docs 报告；
+1. 本文当前 `collection_status` 为 candidate，已出现 dogfood 候选使用；是否升级为 active 仍需 Human Gate 判断；
+2. specs 审核的正向/负向具体案例库尚未建立，后续执行时可同步沉淀 Pitfall 或 docs 报告；
 3. 尚未定义跨规范引用一致性的自动化规则矩阵，目前依赖人工检查；
 4. 与后续 Code 审核、Rules 入口审核、能力资产审核的衔接细节待对应流程创建后再细化；
-5. specs 审核的 Skill SOP 和 Agent 辅助边界尚未固化，首次执行后可判断是否需要独立 Skill。
+5. specs 审核的 Skill SOP 和 Agent 辅助边界尚未固化，后续稳定复用后可判断是否需要独立 Skill。

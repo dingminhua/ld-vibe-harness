@@ -360,8 +360,8 @@ python3 code/specs_validate.py all
 ---
 ## 15. 待补齐事项
 
-1. 本文当前 `collection_status` 为 candidate，需要在首次真实使用后由 Human Gate 决定是否升级为 active；
-2. 落地准备度审核的 ready/partial/blocked 正反样例尚未建立，首次执行时可同步沉淀 Pitfall 或 docs 报告；
+1. 本文当前 `collection_status` 为 candidate，已出现 dogfood 候选使用；是否升级为 active 仍需 Human Gate 判断；
+2. 落地准备度审核的 ready/partial/blocked 正反样例尚未建立，后续执行时可同步沉淀 Pitfall 或 docs 报告；
 3. Code 尚未定义专门的准备度矩阵输出格式，目前可先复用 `landing specs`、`landing-report`、`index` 和人工检查；
 4. 与后续管辖项目接入检查、环境部署执行、Rules 入口审核、Code 审核、Web 审核的边界需在实际执行中继续细化；
 5. 若本流程反复执行且步骤稳定，可评估是否创建独立 Skill SOP，但 Skill 不得新增稳定规则。
