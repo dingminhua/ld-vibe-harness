@@ -35,7 +35,7 @@ class LiteralString(str):
 
 
 def _string_representer(dumper: yaml.Dumper, data: str) -> yaml.Node:
-    style = "|" if "\n" in data else None
+    style = "|" if isinstance(data, LiteralString) or "\n" in data else None
     return dumper.represent_scalar("tag:yaml.org,2002:str", str(data), style=style)
 
 
@@ -43,6 +43,9 @@ BlockScalarDumper.add_representer(str, _string_representer)
 BlockScalarDumper.add_representer(LiteralString, _string_representer)
 
 LIST_SUMMARY_FIELDS = ("priority", "importance")
+REMOVED_FIELDS_BY_TYPE = {
+    "study": {"related_taskplans", "related_tasks", "superseded_by", "source", "source_detail", "source_docs"},
+}
 
 ID_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}$"),
@@ -224,9 +227,24 @@ def save_yaml(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.suffix == ".md":
         frontmatter = {key: value for key, value in data.items() if key != "report_body"}
+        if frontmatter.get("type") == "study" and isinstance(frontmatter.get("summary"), str):
+            frontmatter["summary"] = LiteralString(frontmatter["summary"])
         body = str(data.get("report_body") or "").strip()
         if not body:
-            body = f"# {data.get('title', '研究报告')}\n\n## 研究问题\n\n待补充。"
+            title = data.get("title", "研究报告")
+            body = (
+                f"# {title}\n\n"
+                "## 研究问题\n\n"
+                "待补充。\n\n"
+                "## 输入与边界\n\n"
+                "待补充。\n\n"
+                "## 关键发现\n\n"
+                "待补充。\n\n"
+                "## 建议\n\n"
+                "待补充。\n\n"
+                "## 后续分流\n\n"
+                "待补充。"
+            )
         with open(path, "w", encoding="utf-8") as f:
             f.write("---\n")
             yaml.dump(blockify_multiline(frontmatter), f, Dumper=BlockScalarDumper, allow_unicode=True, default_flow_style=False, sort_keys=False)
@@ -1133,6 +1151,12 @@ def cmd_update(args: argparse.Namespace) -> int:
     # 禁止修改 id 和 type
     if "id" in updates or "type" in updates:
         error("不允许修改 id 和 type 字段")
+        return 1
+
+    removed_fields = REMOVED_FIELDS_BY_TYPE.get(str(object_type), set())
+    invalid_fields = sorted(field for field in updates if field in removed_fields)
+    if invalid_fields:
+        error(f"{object_type} 不允许写入已移除字段: {', '.join(invalid_fields)}")
         return 1
 
     # 应用更新

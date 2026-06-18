@@ -74,11 +74,25 @@ def test_create_study_defaults_to_active(tmp_path):
     assert "source_docs" not in data
     content = path.read_text(encoding="utf-8")
     assert "研究报告草稿" not in content
+    assert "summary: |" in content
     assert "## 研究问题" in content
     assert "## 输入与边界" in content
     assert "## 关键发现" in content
     assert "## 建议" in content
     assert "## 后续分流" in content
+
+
+def test_update_study_rejects_removed_fields(tmp_path):
+    created = run_cli("create", "study", "--title", "Stable Study", "--base-dir", str(tmp_path))
+    assert created.returncode == 0, created.stderr
+    path = Path(created.stdout.strip())
+
+    result = run_cli("update", str(path), "--set", "source=ai", *AUTH_ARGS)
+
+    assert result.returncode == 1
+    assert "已移除字段" in result.stderr
+    data = read_study_frontmatter(path)
+    assert "source" not in data
 
 
 def test_legacy_object_types_are_not_cli_choices(tmp_path):
