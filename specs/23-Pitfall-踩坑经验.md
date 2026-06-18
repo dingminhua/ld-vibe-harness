@@ -207,7 +207,6 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `verification` | active 时必须填写 | string | 是 | active 时必须填写 | 验证证据 | AI、Code、Web |
 | `avoidance` | 后续规避策略 | string | 是 | active 时必须可复用 | Narrative / Checklist | AI、Human、Web |
 | `applicability` | 适用范围和不适用范围 | string | 是 | 应避免泛化过度 | Narrative | AI、Web |
-| `repeatability` | 复现或重复概率 | string | 否 | `unknown`、`once`、`recurring`，默认 `unknown` | Reference | AI、Code、Web |
 | `tags` | 标签列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `source_objects` | 来源对象 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `source_memos` | 来源备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -248,7 +247,6 @@ avoidance: |
   - [x] 参考与研究材料只在参考与研究材料语境下引用
 applicability: |
   适用于 specs 维护、参考与研究材料吸收和规范边界检查任务。
-repeatability: recurring
 tags:
   - input-material
   - fact-source
@@ -276,7 +274,7 @@ notes:
 4. `active` Pitfall 必须具备 `symptoms`、`trigger_conditions`、`root_cause`、`resolution`、`verification`、`avoidance` 和 `applicability`；
 5. `status: superseded` 时必须填写 `superseded_by`；
 6. `status: archived` 且未被替代时，应填写 `archive_reason`；
-7. `repeatability` 如填写，必须属于 `unknown`、`once`、`recurring`；
+7. 不得使用 `repeatability` 字段；复现和重复踩坑判断应写入 `trigger_conditions`、`applicability` 和 `avoidance`；
 8. 不得使用 `severity` 字段；影响和后果应写入 `symptoms`、`applicability`、`avoidance` 或 `notes`；
 9. `related_*` 和 `source_*` 列表应引用已存在对象、commit 或路径；引用无效时应报告校验警告；
 10. `created` 和 `updated` 使用 ISO 8601 时间戳格式；
@@ -340,7 +338,7 @@ Code 可依据本文实现以下能力：
 1. 解析 Pitfall YAML；
 2. 校验文件命名、ID、字段类型、必填字段和条件必填字段；
 3. 校验状态枚举和合法流转；
-4. 校验 `repeatability`、`superseded_by` 和引用字段，并对旧字段 `severity` 报告迁移诊断；
+4. 校验 `superseded_by` 和引用字段，并对旧字段 `repeatability`、`severity` 报告迁移诊断；
 5. 按 tags、状态、适用范围、来源对象和相关文档聚合 Pitfall；
 6. 在任务执行前生成相关 active Pitfall 摘要。
 
@@ -396,5 +394,4 @@ Pitfall 规范检查至少包括：
 
 1. Pitfall Web 基础详情字段已同步，筛选和任务执行前提示入口待 Web 实现规划时补齐；
 2. Pitfall 识别、创建、激活、归档、替代和吸收的具体工作流程待 40-59 承接；
-3. `repeatability` 和 `tags` 的枚举范围待更多实例实践后评估；
-4. Pitfall 与工作流程中 Learn 阶段的关系，待 40-59 稳定后进一步校准。
+3. Pitfall 与工作流程中 Learn 阶段的关系，待 40-59 稳定后进一步校准。

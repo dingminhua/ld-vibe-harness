@@ -42,7 +42,7 @@ def _string_representer(dumper: yaml.Dumper, data: str) -> yaml.Node:
 BlockScalarDumper.add_representer(str, _string_representer)
 BlockScalarDumper.add_representer(LiteralString, _string_representer)
 
-LIST_SUMMARY_FIELDS = ("priority", "importance", "repeatability")
+LIST_SUMMARY_FIELDS = ("priority", "importance")
 
 ID_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}$"),

@@ -73,7 +73,6 @@ export interface ObjectItem {
   updated: string;
   priority?: string;
   importance?: string;
-  repeatability?: string;
   plans?: RelatedPlanSummary[];
   planTotal?: number;
   planClosed?: number;

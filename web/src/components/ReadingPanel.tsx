@@ -2,13 +2,12 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, X, GripVertical, FileText, FileDiff } from 'lucide-react';
 import { usePanel, type PanelContent } from '@/utils/panelContext';
 import MarkdownPreview from '@/components/MarkdownPreview';
-import StatusBadge from '@/components/StatusBadge';
 import CopyPathButton from '@/components/CopyPathButton';
-import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { useI18n } from '@/i18n/context';
-import { ContentField, WorkAreaReadingLayout, WorkPlanReadingLayout, getObjectDetailContentEntries } from '@/pages/ObjectDetail';
+import { ContentField, ObjectIdentityHeader, WorkAreaReadingLayout, WorkPlanReadingLayout, getObjectDetailContentEntries } from '@/pages/ObjectDetail';
 import { getObjectStatusLocale } from '@/i18n/locales';
 import { fetchDocContent, fetchObjectDetail, fetchObjects, type DocContent, type ObjectDetail as ApiObjectDetail, type ObjectItem } from '@/utils/api';
+import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { formatDateTime } from '@/utils/dateFormat';
 
 const MIN_WIDTH = 280;
@@ -280,11 +279,10 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   const [error, setError] = useState<string | null>(null);
   const obj = (data as Record<string, unknown> | undefined) ?? detail?.data;
   const status = detail?.summary.status ?? (obj?.status as string | undefined);
-  const isWorkObject = isObjectDetailLayoutType(objectType);
-  const showHeaderStatus = status && !isWorkObject;
   const title = getObjectTitle(obj, objectId, locale);
   const targetPath = detail?.target;
   const loading = !obj && !error && Boolean(objectType && objectId);
+  const typeColor = objectType ? (CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
 
   useEffect(() => {
     if (data || !objectType || !objectId) {
@@ -328,80 +326,25 @@ function ObjectPreview({ content }: { content: PanelContent }) {
 
   return (
     <div className="space-y-4">
-      {isWorkObject ? (
-        <WorkObjectPreviewHeader
-          objectType={objectType}
-          objectId={objectId}
-          title={title}
-          targetPath={targetPath}
-          created={formatDateTime(obj?.created as string | undefined)}
-          updated={formatDateTime(obj?.updated as string | undefined)}
-        />
-      ) : (
-        <>
-          <div className="flex items-center gap-2">
-            <span className="ldvh-chip inline-flex items-center gap-1.5 rounded bg-ldvh-accent/20 px-2 py-0.5 text-ldvh-accent">
-              <ObjectTypeIcon type={objectType} size={12} className="shrink-0" />
-              {getObjectTypeLabel(objectType, locale)}
-            </span>
-            {showHeaderStatus && <StatusBadge status={status} statusLabel={getObjectStatusLocale(objectType, status, locale)} size="sm" />}
-            <CopyPathButton path={targetPath} className="ml-auto" />
-          </div>
-          <h3 className="ldvh-reading-title">{title}</h3>
-          {objectId && <p className="ldvh-meta">{objectId}</p>}
-        </>
-      )}
+      <ObjectIdentityHeader
+        objectType={objectType || ''}
+        id={objectId || ''}
+        title={title}
+        target={targetPath}
+        typeColor={typeColor}
+        typeLabel={getObjectTypeLabel(objectType, locale)}
+        status={status}
+        statusLabel={status ? getObjectStatusLocale(objectType || '', status, locale) : undefined}
+        source={obj || {}}
+        locale={locale}
+        created={formatDateTime(obj?.created as string | undefined)}
+        updated={formatDateTime(obj?.updated as string | undefined)}
+        closedAt={obj?.closed_at ? formatDateTime(obj.closed_at as string) : undefined}
+        compact
+      />
       {obj && isObjectDetailLayoutType(objectType) && <ObjectSemanticPreview objectType={objectType} obj={obj} objectId={objectId} />}
       {obj && !isObjectDetailLayoutType(objectType) && <GenericObjectPreview objectType={objectType} obj={obj} />}
     </div>
-  );
-}
-
-function WorkObjectPreviewHeader({
-  objectType,
-  objectId,
-  title,
-  targetPath,
-  created,
-  updated,
-}: {
-  objectType?: string;
-  objectId?: string;
-  title: string;
-  targetPath?: string;
-  created: string;
-  updated: string;
-}) {
-  const { t, locale } = useI18n();
-  return (
-    <div className="min-w-0">
-      <div className="mb-1.5 flex min-w-0 items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="ldvh-chip shrink-0 rounded bg-ldvh-accent/20 px-2 py-0.5 text-ldvh-accent">
-            {getObjectTypeLabel(objectType, locale)}
-          </span>
-          {objectId && <span className="ldvh-meta-muted min-w-0 truncate">{objectId}</span>}
-        </div>
-        <CopyPathButton path={targetPath} className="shrink-0" />
-      </div>
-      <h3 className="ldvh-reading-title flex min-w-0 items-center gap-2">
-        <ObjectTypeIcon type={objectType} size={16} className="shrink-0 text-ldvh-accent" />
-        <span className="min-w-0 break-words">{title}</span>
-      </h3>
-      <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
-        <PanelHeaderDateMeta label={t('objectDetail.createdShort')} value={created} />
-        <PanelHeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />
-      </div>
-    </div>
-  );
-}
-
-function PanelHeaderDateMeta({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="inline-flex min-w-0 items-center gap-1.5">
-      <span className="ldvh-caption shrink-0">{label}</span>
-      <span className="ldvh-meta-muted min-w-0 truncate text-ldvh-text-secondary">{value}</span>
-    </span>
   );
 }
 

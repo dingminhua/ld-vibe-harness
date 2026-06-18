@@ -23,6 +23,14 @@ async function main() {
   assert.deepEqual(getObjectSignals(firstWorkplan, 'workplan').map((signal) => signal.field), ['priority'])
   assert.equal(getObjectPriority(firstWorkplan, 'workplan'), firstWorkplan.priority)
 
+  const pitfalls = await listObjects('pitfall')
+  assert.equal(pitfalls.ok, true)
+  assert.ok(Array.isArray(pitfalls.data.items))
+  const firstPitfall = pitfalls.data.items[0] as Record<string, unknown>
+  assert.equal(firstPitfall.type, 'pitfall')
+  assert.equal('repeatability' in firstPitfall, false)
+  assert.deepEqual(getObjectSignals(firstPitfall, 'pitfall'), [])
+
   const detail = await showObject(String(firstWorkplan.id))
   assert.equal(detail.ok, true)
   assert.equal(detail.data.id, firstWorkplan.id)

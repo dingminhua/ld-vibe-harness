@@ -740,7 +740,6 @@ def validate_adr(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues.extend(validate_any_object_id_list_format(path, data, "related_objects"))
     return issues
 
-VALID_REPEATABILITY = {"unknown", "once", "recurring"}
 VALID_PRIORITY = {"P0", "P1", "P2", "P3"}
 VALID_MEMO_SOURCE = {"web", "conversation"}
 VALID_STUDY_SOURCE = {"human", "ai"}
@@ -757,12 +756,11 @@ ID_LIST_FIELDS = {
 
 def validate_pitfall(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "pitfall")
-    for removed_field in ("source_tasks", "related_taskplans", "related_tasks"):
+    for removed_field in ("source_tasks", "related_taskplans", "related_tasks", "repeatability"):
         if removed_field in data:
             issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 Pitfall 不得维护旧对象关联字段: {removed_field}", field=removed_field))
     if "severity" in data:
         issues.append(Issue(str(path), "error", "LEGACY_PITFALL_FIELD", "Pitfall 不得继续使用旧字段 severity；影响和后果请迁移到 symptoms、applicability、avoidance 或 notes", field="severity"))
-    issues.extend(validate_enum_field(path, data, "repeatability", VALID_REPEATABILITY))
     for field, target_type in ID_LIST_FIELDS.items():
         issues.extend(validate_id_list_format(path, data, field, target_type))
     issues.extend(validate_any_object_id_list_format(path, data, "source_objects"))

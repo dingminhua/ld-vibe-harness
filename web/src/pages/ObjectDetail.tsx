@@ -10,15 +10,15 @@ import SummaryText from '@/components/SummaryText';
 import DocPreviewLink from '@/components/DocPreviewLink';
 import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
-import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { TaskFlowBar } from '@/components/TaskFlowStatus';
 import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
-import { getObjectStatusHint, getObjectStatusLocale, getTypeDescription } from '@/i18n/locales';
+import { getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { formatDateTime } from '@/utils/dateFormat';
+import { getStatusColor } from '@/utils/statusColors';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
 import {
@@ -53,12 +53,12 @@ const META_KEYS = [
   'aggregated_related_changes',
   'aggregated_execution_refs',
 ];
-const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'repeatability', 'tags', 'scope', 'impact', 'assignee'];
+const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'tags', 'scope', 'impact', 'assignee'];
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
   memo: ['priority', 'tags'],
   study: ['tags'],
   profile: ['project_name', 'project_kind', 'language', 'framework'],
-  pitfall: ['repeatability', 'tags'],
+  pitfall: ['tags'],
 };
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls'],
@@ -93,7 +93,6 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
 
 const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
 const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
-const WORK_OBJECT_DETAIL_TYPES = new Set(['workarea', 'workplan']);
 
 export function getObjectDetailContentEntries(obj: Record<string, unknown>, objType: string) {
   const auxiliaryMetaKeys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
@@ -146,6 +145,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   evolution: { zh: '演变记录', en: 'Evolution' },
   report_body: { zh: '报告正文', en: 'Report Body' },
   summary: { zh: '摘要', en: 'Summary' },
+  conclusion: { zh: '结论', en: 'Conclusion' },
   details: { zh: '详情', en: 'Details' },
   background: { zh: '背景', en: 'Background' },
   motivation: { zh: '动机', en: 'Motivation' },
@@ -221,7 +221,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   governance_scope: { zh: '管辖范围', en: 'Governance Scope' },
   language: { zh: '语言', en: 'Language' },
   framework: { zh: '框架', en: 'Framework' },
-  repeatability: { zh: '复现概率', en: 'Repeatability' },
   related_rules: { zh: '承接规则', en: 'Related Rules' },
   source_docs: { zh: '来源资料', en: 'Source Docs' },
   changes: { zh: '变更列表', en: 'Changes' },
@@ -254,11 +253,6 @@ const FIELD_VALUE_LOCALES: Record<string, Record<string, { zh: string; en: strin
     high: { zh: '高', en: 'High' },
     medium: { zh: '中', en: 'Medium' },
     low: { zh: '低', en: 'Low' },
-  },
-  repeatability: {
-    recurring: { zh: '反复出现', en: 'Recurring' },
-    occasional: { zh: '偶发', en: 'Occasional' },
-    one_off: { zh: '一次性', en: 'One-off' },
   },
   tags: {
     'ai-collaboration': { zh: 'AI 协作', en: 'AI Collaboration' },
@@ -370,9 +364,6 @@ export default function ObjectDetail() {
   const objType = detail.summary.type;
   const objStatus = detail.summary.status;
   const typeColor = CATEGORY_COLORS[objType] || CATEGORY_COLORS.other;
-  const typeDesc = getTypeDescription(objType, locale);
-  const statusHint = objType === 'workarea' ? '' : getObjectStatusHint(objType, objStatus, locale);
-  const isWorkObject = WORK_OBJECT_DETAIL_TYPES.has(objType);
 
   const displayTitle = (locale === 'en'
     ? ((obj.title_en as string) || obj.title as string)
@@ -404,64 +395,23 @@ export default function ObjectDetail() {
               <ArrowLeft size={14} />
               {t('objectDetail.back')}
             </button>
-            {isWorkObject ? (
-              <WorkObjectDetailHeader
+              <ObjectIdentityHeader
                 title={displayTitle}
                 id={objId}
                 target={detail.target}
                 objectType={objType}
                 typeColor={typeColor}
                 typeLabel={TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
+                status={objStatus}
+                statusLabel={getObjectStatusLocale(objType, objStatus, locale)}
                 source={obj}
                 locale={locale}
                 created={formatDateTime(obj.created as string | undefined)}
                 updated={formatDateTime(obj.updated as string | undefined)}
+                closedAt={obj.closed_at ? formatDateTime(obj.closed_at as string) : undefined}
+                auxiliaryMetaEntries={auxiliaryMetaEntries}
               />
-            ) : (
-              <>
-                <div className="flex items-start gap-3">
-                  <span
-                    className="ldvh-chip mt-1 shrink-0 rounded px-2 py-0.5"
-                    style={{ backgroundColor: `${typeColor}20`, color: typeColor }}
-                  >
-                    {TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h1 className="ldvh-page-title flex min-w-0 items-center gap-2">
-                      <PriorityIcon source={obj} type={objType} locale={locale} size="lg" />
-                      <ObjectTypeIcon type={objType} size={18} className="shrink-0" style={{ color: typeColor }} />
-                      <span className="min-w-0 truncate">{displayTitle}</span>
-                    </h1>
-                    <p className="ldvh-meta mt-0.5">{objId}</p>
-                    {typeDesc && (
-                      <p className="ldvh-caption mt-1">{typeDesc}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-end gap-1.5">
-                    <div className="flex items-center gap-2">
-                      <CopyPathButton path={detail.target} />
-                      <StatusBadge status={objStatus} statusLabel={getObjectStatusLocale(objType, objStatus, locale)} size="md" />
-                    </div>
-                    {statusHint && (
-                      <span className="ldvh-caption">{statusHint}</span>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
           </div>
-
-          {/* Metadata row */}
-          {!isWorkObject && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              <MetaChip label={t('objectDetail.created')} value={formatDateTime(obj.created as string | undefined)} />
-              <MetaChip label={t('objectDetail.updated')} value={formatDateTime(obj.updated as string | undefined)} />
-              {obj.closed_at && <MetaChip label={t('objectDetail.closedAt')} value={formatDateTime(obj.closed_at as string)} />}
-              {auxiliaryMetaEntries.map(([key, value]) => (
-                <MetaChip key={key} label={getFieldLabel(key, locale)} value={formatAuxiliaryMetaValue(key, value, locale)} />
-              ))}
-            </div>
-          )}
           </div>
 
           {/* Content fields */}
@@ -541,17 +491,22 @@ export function getLocalizedTitle(item: LocalizedTitleItem, locale: string): str
   return item.title_zh || item.title || item.id;
 }
 
-function WorkObjectDetailHeader({
+export function ObjectIdentityHeader({
   title,
   id,
   target,
   objectType,
   typeColor,
   typeLabel,
+  status,
+  statusLabel,
   source,
   locale,
   created,
   updated,
+  closedAt,
+  auxiliaryMetaEntries = [],
+  compact = false,
 }: {
   title: string;
   id: string;
@@ -559,14 +514,25 @@ function WorkObjectDetailHeader({
   objectType: string;
   typeColor: string;
   typeLabel: string;
+  status?: string;
+  statusLabel?: string;
   source: Record<string, unknown>;
   locale: string;
   created: string;
   updated: string;
+  closedAt?: string;
+  auxiliaryMetaEntries?: Array<[string, unknown]>;
+  compact?: boolean;
 }) {
   const { t } = useI18n();
+  const TitleTag = compact ? 'h3' : 'h1';
+  const titleClassName = compact ? 'ldvh-reading-title' : 'ldvh-page-title';
+  const iconSize = compact ? 16 : 18;
+  const statusColor = status ? getStatusColor(status) : null;
+  const tagMetaEntry = auxiliaryMetaEntries.find(([key]) => key === 'tags');
+  const remainingAuxiliaryMetaEntries = auxiliaryMetaEntries.filter(([key]) => key !== 'priority' && key !== 'tags');
   return (
-    <div className="rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-3">
+    <div className={compact ? 'min-w-0' : 'rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-3'}>
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -576,17 +542,43 @@ function WorkObjectDetailHeader({
             >
               {typeLabel}
             </span>
-            <ObjectSignalBadges source={source} type={objectType} locale={locale} />
+            {status && statusColor && (
+              <span
+                className="ldvh-chip shrink-0 rounded px-2 py-0.5 font-mono"
+                style={{
+                  color: statusColor,
+                  backgroundColor: `${statusColor}18`,
+                }}
+              >
+                {statusLabel || status}
+              </span>
+            )}
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
           </div>
-          <h1 className="ldvh-page-title flex min-w-0 items-center gap-2 break-words">
-            <PriorityIcon source={source} type={objectType} locale={locale} size="lg" />
-            <ObjectTypeIcon type={objectType} size={18} className="shrink-0" style={{ color: typeColor }} />
+          <TitleTag className={`${titleClassName} flex min-w-0 items-center gap-2 break-words`}>
+            <PriorityIcon source={source} type={objectType} locale={locale} size={compact ? 'sm' : 'lg'} />
+            <ObjectTypeIcon type={objectType} size={iconSize} className="shrink-0" style={{ color: typeColor }} />
             <span className="min-w-0">{title}</span>
-          </h1>
+          </TitleTag>
+          {tagMetaEntry && (
+            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+              <HeaderDateMeta
+                label={getFieldLabel(tagMetaEntry[0], locale)}
+                value={formatAuxiliaryMetaValue(tagMetaEntry[0], tagMetaEntry[1], locale)}
+              />
+            </div>
+          )}
           <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
             <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />
             <HeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />
+            {closedAt && <HeaderDateMeta label={t('objectDetail.closedAt')} value={closedAt} />}
+            {remainingAuxiliaryMetaEntries.map(([key, value]) => (
+              <HeaderDateMeta
+                key={key}
+                label={getFieldLabel(key, locale)}
+                value={formatAuxiliaryMetaValue(key, value, locale)}
+              />
+            ))}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:pt-0.5">
@@ -597,11 +589,14 @@ function WorkObjectDetailHeader({
   );
 }
 
-function HeaderDateMeta({ label, value }: { label: string; value: string }) {
+function HeaderDateMeta({ label, value }: { label: string; value: ReactNode }) {
+  const valueClassName = typeof value === 'string'
+    ? 'ldvh-meta-muted min-w-0 truncate text-ldvh-text-secondary'
+    : 'min-w-0';
   return (
     <span className="inline-flex min-w-0 items-center gap-1.5">
       <span className="ldvh-caption shrink-0">{label}</span>
-      <span className="ldvh-meta-muted min-w-0 truncate text-ldvh-text-secondary">{value}</span>
+      <span className={valueClassName}>{value}</span>
     </span>
   );
 }
@@ -1034,17 +1029,6 @@ function getMaterialLabel(fieldKey: string, locale: string) {
   const entry = labels[fieldKey];
   if (!entry) return getFieldLabel(fieldKey, locale);
   return locale === 'en' ? entry.en : entry.zh;
-}
-
-/** 元信息小标签 */
-function MetaChip({ label, value }: { label: string; value: ReactNode }) {
-  const valueClassName = typeof value === 'string' ? 'ldvh-meta-primary min-w-0' : 'min-w-0';
-  return (
-    <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-ldvh-border bg-ldvh-panel px-2.5 py-1">
-      <span className="ldvh-caption shrink-0">{label}</span>
-      <span className={valueClassName}>{value}</span>
-    </div>
-  );
 }
 
 export function hasDetailContent(value: unknown): boolean {
@@ -1486,7 +1470,7 @@ function DetailObjectReferenceValue({
 function getAuxiliaryMetaEntries(obj: Record<string, unknown>, objType: string) {
   const keys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
   return keys
-    .filter((key) => key !== 'priority' || objType !== 'memo')
+    .filter((key) => key !== 'priority' || (objType !== 'memo' && objType !== 'workplan'))
     .map((key) => [key, obj[key]] as [string, unknown])
     .filter(([, value]) => value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0));
 }

@@ -1,20 +1,18 @@
-type SignalField = 'priority' | 'importance' | 'repeatability' | 'category';
+type SignalField = 'priority' | 'importance' | 'category';
 
 export type ObjectSignalSource = Partial<Record<SignalField, unknown>>;
 export type SignalObjectType = 'workarea' | 'workplan' | 'adr' | 'pitfall' | 'memo' | 'study' | 'change' | 'profile' | string;
 
-export const SIGNAL_FIELDS: SignalField[] = ['priority', 'importance', 'repeatability', 'category'];
+export const SIGNAL_FIELDS: SignalField[] = ['priority', 'importance', 'category'];
 
 const SIGNAL_FIELDS_BY_TYPE: Record<string, SignalField[]> = {
   workplan: ['priority'],
   memo: ['priority'],
-  pitfall: ['repeatability'],
 };
 
 const FIELD_LABELS: Record<SignalField, { zh: string; en: string }> = {
   priority: { zh: '优先级', en: 'Priority' },
   importance: { zh: '重要程度', en: 'Importance' },
-  repeatability: { zh: '复现概率', en: 'Repeatability' },
   category: { zh: '分类', en: 'Category' },
 };
 
@@ -29,13 +27,6 @@ const VALUE_LABELS: Partial<Record<SignalField, Record<string, { zh: string; en:
     high: { zh: '高', en: 'High' },
     medium: { zh: '中', en: 'Medium' },
     low: { zh: '低', en: 'Low' },
-  },
-  repeatability: {
-    recurring: { zh: '反复出现', en: 'Recurring' },
-    occasional: { zh: '偶发', en: 'Occasional' },
-    one_off: { zh: '一次性', en: 'One-off' },
-    once: { zh: '一次性', en: 'Once' },
-    unknown: { zh: '未知', en: 'Unknown' },
   },
   category: {
     gap: { zh: '缺口', en: 'Gap' },
@@ -57,13 +48,6 @@ const SIGNAL_CLASSES: Partial<Record<SignalField, Record<string, string>>> = {
     high: 'border-transparent bg-transparent text-ldvh-text-secondary',
     medium: 'border-transparent bg-transparent text-ldvh-text-tertiary',
     low: 'border-transparent bg-transparent text-ldvh-text-tertiary',
-  },
-  repeatability: {
-    recurring: 'border-amber-500/35 bg-amber-500/10 text-amber-500',
-    occasional: 'border-sky-500/30 bg-sky-500/10 text-sky-500',
-    one_off: 'border-zinc-500/25 bg-zinc-500/10 text-ldvh-text-secondary',
-    once: 'border-zinc-500/25 bg-zinc-500/10 text-ldvh-text-secondary',
-    unknown: 'border-zinc-500/25 bg-zinc-500/10 text-ldvh-text-secondary',
   },
   category: {
     gap: 'border-red-500/30 bg-red-500/10 text-red-500',

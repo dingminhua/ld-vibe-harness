@@ -232,6 +232,54 @@ This report should not validate because Study has no superseded state.
     assert "superseded_by" in result.stdout
 
 
+def test_pitfall_repeatability_field_is_no_longer_allowed(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    pitfall = write_yaml(
+        root / "ldvh-base" / "pitfalls" / "pitfall-0001-repeatability.yaml",
+        """
+id: pitfall-0001
+type: pitfall
+title: Repeatability Legacy Field
+status: active
+created: "2026-06-18T09:00:00"
+updated: "2026-06-18T09:30:00"
+symptoms: |
+  Legacy repeatability field should not validate.
+trigger_conditions: |
+  Any Pitfall file includes repeatability.
+root_cause: |
+  repeatability no longer carries useful distinction.
+resolution: |
+  Move recurrence context into trigger_conditions, applicability, and avoidance.
+verification: |
+  Validator rejects the legacy field.
+avoidance: |
+  Do not write repeatability in Pitfall facts.
+applicability: |
+  Applies to Pitfall facts.
+repeatability: recurring
+tags: []
+source_objects: []
+source_memos: []
+related_workareas: []
+related_workplans: []
+related_adrs: []
+related_changes: []
+related_docs: []
+related_rules: []
+superseded_by:
+archive_reason:
+notes:
+""",
+    )
+
+    result = run_checker(pitfall)
+
+    assert result.returncode == 1
+    assert "REMOVED_OBJECT_FIELD" in result.stdout
+    assert "repeatability" in result.stdout
+
+
 def test_workarea_taskplans_field_is_no_longer_allowed(tmp_path):
     root, _ = write_valid_workplan_tree(tmp_path)
     workarea = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"

@@ -46,7 +46,7 @@
   - 右上：`CopyPathButton` + `StatusBadge`；
   - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；
   - 优先级字符徽标：WorkPlan 和 Memo 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
-  - 可选信号：repeatability 等短标签；仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkPlan 和 Memo，不得为 WorkArea、ADR、Pitfall 或 Change 杜撰 priority、importance、category 或 tags；Memo 不维护 category；importance 字段已由 priority 统一承载，不作为独立字段使用
+  - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkPlan 和 Memo，不得为 WorkArea、ADR、Pitfall 或 Change 杜撰 priority、importance、category 或 tags；Memo 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
   - 底部：`formatDateTime(updated)`，格式为 `YYYY-MM-DD HH:mm`。
 - 复制图标复制对象 YAML 文件完整路径，使用 API 返回的 `path`。
 - 点击复制图标不得进入详情页；点击卡片外层空白、标题带、ID、状态徽章或更新时间进入对象详情页。
