@@ -634,6 +634,20 @@ def landing_report_terms_present(text, terms):
     return all(term in text for term in terms)
 
 
+def landing_report_member_status(text, spec_id, kind):
+    for match in re.finditer(r"```ya?ml\s*\n(.*?\n)```", text, re.DOTALL):
+        block = match.group(1)
+        if "ldvh_member:" not in block:
+            continue
+        if not re.search(rf"^\s*spec_id:\s*[\"']?{re.escape(spec_id)}[\"']?\s*$", block, re.MULTILINE):
+            continue
+        if not re.search(rf"^\s*kind:\s*{re.escape(kind)}\s*$", block, re.MULTILINE):
+            continue
+        status_match = re.search(r"^\s*collection_status:\s*([A-Za-z0-9_-]+)\s*$", block, re.MULTILINE)
+        return status_match.group(1) if status_match else ""
+    return None
+
+
 def landing_report_build_capability_gaps(formal_files, runtime_projection_report=None, human_gate_report=None):
     text = landing_report_document_text(formal_files)
     gaps = []
@@ -643,6 +657,19 @@ def landing_report_build_capability_gaps(formal_files, runtime_projection_report
         status = check["status"] if terms_present else "open"
         reason = check["degraded_reason"] if terms_present else check["missing_reason"]
         evidence = "matched formal spec terms" if terms_present else "required terms missing from formal specs"
+        if check["id"] == "41_trigger_safeguard":
+            status_40 = landing_report_member_status(text, "40", "work_process")
+            status_41 = landing_report_member_status(text, "41", "work_process")
+            evidence = f"workflow 40 status={status_40 or 'missing'}; workflow 41 status={status_41 or 'missing'}"
+            if status_41 == "active":
+                status = "degraded" if terms_present else "open"
+                reason = "41 已是 active 工作流程，但 landing-report 仍只能诊断成员状态，尚不能验证所有触发场景是否实际进入 41"
+            elif status_41:
+                status = "degraded"
+                reason = f"41 当前 collection_status={status_41}，landing-report 已接入成员状态诊断，但候选流程仍不得被当作 active 触发保障"
+            else:
+                status = "open"
+                reason = "landing-report 未发现 41 工作流程成员自描述，无法提供 41 触发保障成员状态诊断"
         if check["id"] == "runtime_projection_drift_check" and runtime_projection_report is not None:
             runtime_status = runtime_projection_report["summary"]["status"]
             runtime_issue_count = runtime_projection_report["metadata"]["issue_count"]

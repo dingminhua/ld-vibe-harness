@@ -60,6 +60,8 @@ evolution:
     summary: 40-43 工作流程规范已承接 WorkPlan 回写契约：流程产生后续行动时必须回写为 WorkPlan / Memo 等现行对象，WorkPlan 必须使用 `success_criteria`、`orchestration.execution_items`、验证证据和关闭证据，不得新建 TaskPlan / Task / SubTask。
   - at: 2026-06-18
     summary: 41-43 候选流程的待补齐状态已从“等待首次真实使用”改为“已有 dogfood 候选使用，升级 active 仍需 Human Gate”，避免 candidate 流程被误读为未验证或被 AI 擅自升级。
+  - at: 2026-06-18
+    summary: landing-report 已能在 41 触发保障能力缺口中读取 40/41 工作流程成员状态；当前输出会明确显示 40 为 active、41 为 candidate，从 Code 侧防止候选流程被误当成 active 触发保障。
 source: conversation
 source_detail: 本轮围绕 LDVH 工作流程、任务编排、执行证据、角色复检和 Memo 分流的连续讨论；包含一次联网复核结论。
 priority: P1

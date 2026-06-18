@@ -86,7 +86,8 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
         "open": 1,
     }
     assert report["summary"]["by_capability_status"] == {
-        "degraded": 4,
+        "degraded": 3,
+        "open": 1,
     }
     assert report["summary"]["gap_total"] == sum(
         category["total"] for category in report["gap_categories"].values()
@@ -106,6 +107,7 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
         "runtime_projection_drift_check",
         "human_gate_evidence_consumption",
     ]
+    assert report["capability_gaps"][0]["status"] == "open"
 
     statuses = {item["content"]: item["status"] for item in report["requirements"]}
     assert statuses["后续正式规范不得违背本文的价值实现标准"] == "closed"
@@ -186,6 +188,49 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "runtime-projection checked 1 project-local files" in output
     assert "human-gate checked" in output
     assert "suggested_writeback: code_request_or_test" in output
+
+
+def test_landing_report_reports_41_member_status(tmp_path, monkeypatch):
+    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+    write_md(
+        docs_specs / "40-Workflow.md",
+        """
+# Workflow
+
+```yaml
+ldvh_member:
+  spec_id: 40
+  kind: work_process
+  name_en: workflow-design-audit
+  name_zh: 工作流程设计审核
+  collection_status: active
+  canonical_path: specs/40-Workflow.md
+```
+""",
+    )
+    write_md(
+        docs_specs / "41-Workflow.md",
+        """
+# Work Model Audit
+
+```yaml
+ldvh_member:
+  spec_id: 41
+  kind: work_process
+  name_en: work-model-audit
+  name_zh: 工作模型审核
+  collection_status: candidate
+  canonical_path: specs/41-Workflow.md
+```
+""",
+    )
+
+    report = checker.landing_report_build([str(docs_specs)])
+
+    gap = next(item for item in report["capability_gaps"] if item["id"] == "41_trigger_safeguard")
+    assert gap["status"] == "degraded"
+    assert gap["evidence"] == "workflow 40 status=active; workflow 41 status=candidate"
+    assert "collection_status=candidate" in gap["status_reason"]
 
 
 def test_landing_plan_build(tmp_path, monkeypatch):
