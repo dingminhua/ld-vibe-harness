@@ -30,7 +30,15 @@ const DIRECTORY_MAP: Record<ObjectType, string> = {
   study: 'studies',
 }
 
-const LIST_SUMMARY_FIELDS = ['priority', 'importance', 'repeatability'] as const
+const LIST_SUMMARY_FIELDS = [
+  'priority',
+  'importance',
+  'repeatability',
+  'archive_reason',
+  'deprecated_reason',
+  'discard_reason',
+  'closure_evidence',
+] as const
 
 export interface WebFactResult {
   ok: boolean

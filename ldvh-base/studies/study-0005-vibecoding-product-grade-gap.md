@@ -10,7 +10,7 @@ summary: |
 user_intent: 用户要求调研 Vibe Coding 从 demo 到产品级需要哪些变化，以及 LDVH 未来面向产品级开发还需要增强哪些环节。
 conclusion: |
   LDVH 下一阶段应从“规范和基础事实源治理”升级为“AI 原生产品工程治理”。建议优先增强三条主线：一是产品级事实源，包括需求、用户旅程、架构、接口、数据、质量属性和发布对象；二是产品级门禁，包括测试策略、安全审查、供应链、生产就绪、SLO、回滚和事故复盘；三是 AI 原生执行保障，包括角色契约、子 Agent 审查、代码评测、上下文包、风险仪表盘和自动化校验。这样才能让 Vibe Coding 从快速 demo 进入可持续交付。
-related_refs:
+urls:
   - ref: https://dora.dev/
     title: DORA / Google Cloud DevOps Research
     summary: 用于说明产品级交付需要用可度量的软件交付表现衡量，而不是只看 demo 是否跑通。

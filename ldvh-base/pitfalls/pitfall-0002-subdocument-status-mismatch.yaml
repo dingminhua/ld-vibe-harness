@@ -1,7 +1,7 @@
 id: pitfall-0002
 type: pitfall
 title: 主文档声明子文档 not-created 但实际文件包含完整内容
-status: superseded
+status: archived
 created: '2026-06-04T03:33:50'
 updated: '2026-06-04T03:33:50'
 symptoms: |
@@ -31,13 +31,13 @@ avoidance: |
   - active：文件应包含完整机制实践内容
   - active-prep：文件应包含正在准备的机制实践内容
 applicability: 所有接入 LDVH 的项目，所有事实模型子文档
-superseded_by: specs/03.01-规范文档规范.md
 source_memos: []
 related_workareas: []
 related_adrs: []
 related_changes: []
 related_docs: []
 related_rules:
+- specs/03.01-规范文档规范.md
 - specs/25-Change-变更.md
 tags:
 - subdocument
@@ -47,3 +47,5 @@ notes: '## 影响程度迁移说明
 
 
   历史 severity 字段值为 `high`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。'
+archive_reason: |
+  该经验已由 specs/03.01-规范文档规范.md 吸收为规范文档状态与内容一致性要求，不再作为常规 active Pitfall 参考。

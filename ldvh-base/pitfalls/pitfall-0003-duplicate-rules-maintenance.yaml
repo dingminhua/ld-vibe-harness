@@ -1,7 +1,7 @@
 id: pitfall-0003
 type: pitfall
 title: 提交纪律规则在多处重复维护违反单一权威位置原则
-status: superseded
+status: archived
 created: '2026-06-04T03:33:50'
 updated: '2026-06-04T03:33:50'
 symptoms: |
@@ -32,13 +32,13 @@ avoidance: |
   2. 如果规则需要多层入口，在每层只写"见 XX"或简短提醒
   3. 定期审计规则一致性
 applicability: 所有接入 LDVH 的项目，所有规则层级
-superseded_by: specs/03.01-规范文档规范.md
 source_memos: []
 related_workareas: []
 related_adrs: []
 related_changes: []
 related_docs: []
-related_rules: []
+related_rules:
+- specs/03.01-规范文档规范.md
 tags:
 - rules
 - consistency
@@ -47,3 +47,5 @@ notes: '## 影响程度迁移说明
 
 
   历史 severity 字段值为 `high`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。'
+archive_reason: |
+  该经验已由 specs/03.01-规范文档规范.md 吸收为单一权威位置与规范引用要求，不再作为常规 active Pitfall 参考。

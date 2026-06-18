@@ -21,6 +21,7 @@ type LocalizedTitleItem = Pick<ObjectItem, 'id'> & Partial<Pick<ObjectItem, 'tit
 type OpenEvent = MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>;
 type Translate = ReturnType<typeof useI18n>['t'];
 type PlanRecordState = 'recorded' | 'missing';
+type StatusReason = { label: string; text: string; missing?: boolean };
 
 const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
 const PENDING_CLOSE_STATUSES = new Set(['review_needed']);
@@ -53,6 +54,92 @@ function getLocalizedTitle(item: LocalizedTitleItem, locale: string): string {
 
 function getTitleAccentClass(status: string): string {
   return TITLE_ACCENT_CLASS[status] ?? 'border-ldvh-accent/70';
+}
+
+function formatReasonText(value: string): string {
+  return value
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line
+      .trim()
+      .replace(/^#{1,6}\s+/, '')
+      .replace(/\[[ xX]\]\s*/g, '')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .trim())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function statusRequiresReason(status: string): boolean {
+  return status === 'archived' || status === 'deprecated' || status === 'discarded' || status === 'closed';
+}
+
+function getNonActiveReason(obj: ObjectItem, locale: string): StatusReason | null {
+  if (obj.status === 'active') return null;
+  const labels = {
+    archive_reason: locale === 'en' ? 'Archive reason' : '归档原因',
+    deprecated_reason: locale === 'en' ? 'Deprecated reason' : '废弃原因',
+    discard_reason: locale === 'en' ? 'Discard reason' : '废弃原因',
+    closure_evidence: locale === 'en' ? 'Close reason' : '关闭原因',
+  };
+  const orderedFields = obj.status === 'archived'
+    ? ['archive_reason', 'closure_evidence', 'deprecated_reason', 'discard_reason']
+    : obj.status === 'deprecated'
+      ? ['deprecated_reason', 'archive_reason', 'closure_evidence', 'discard_reason']
+      : obj.status === 'discarded'
+        ? ['discard_reason', 'archive_reason', 'deprecated_reason', 'closure_evidence']
+        : obj.status === 'closed'
+          ? ['closure_evidence', 'archive_reason', 'deprecated_reason', 'discard_reason']
+          : ['archive_reason', 'deprecated_reason', 'discard_reason', 'closure_evidence'];
+
+  for (const field of orderedFields) {
+    const value = obj[field as keyof ObjectItem];
+    if (typeof value !== 'string' || !value.trim()) continue;
+    const text = formatReasonText(value);
+    if (!text) continue;
+    return { label: labels[field as keyof typeof labels], text };
+  }
+  if (statusRequiresReason(obj.status)) {
+    return {
+      label: locale === 'en' ? 'Missing reason' : '原因缺失',
+      text: locale === 'en'
+        ? 'This non-active object must record a reason in its fact source.'
+        : '该非活跃对象必须在事实源中记录原因。',
+      missing: true,
+    };
+  }
+  return null;
+}
+
+function StatusReasonNote({ reason }: { reason: StatusReason }) {
+  const isMissing = Boolean(reason.missing);
+  return (
+    <div
+      onClick={(event) => event.stopPropagation()}
+      className={`min-w-0 cursor-default px-1.5 py-1 ${
+        isMissing
+          ? 'rounded-md bg-red-500/5'
+          : ''
+      }`}
+    >
+      <div className={`ldvh-meta mb-1 flex min-w-0 items-center gap-1.5 ${
+        isMissing ? 'text-red-400' : 'text-ldvh-text-secondary/75'
+      }`}
+      >
+        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isMissing ? 'bg-red-400' : 'bg-ldvh-text-secondary/75'}`} aria-hidden="true" />
+        <span className="min-w-0 truncate">{reason.label}</span>
+      </div>
+      <p className={`whitespace-pre-wrap break-words text-[12px] leading-5 ${
+        isMissing ? 'text-red-400' : 'text-ldvh-text-secondary/75'
+      }`}
+      >
+        {reason.text}
+      </p>
+    </div>
+  );
 }
 
 function isTerminalStatus(status: string): boolean {
@@ -265,6 +352,7 @@ function ObjectCardFrame({
 }) {
   const titleAccentClass = getTitleAccentClass(obj.status);
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
+  const nonActiveReason = getNonActiveReason(obj, locale);
   return (
     <div
       role="button"
@@ -290,14 +378,10 @@ function ObjectCardFrame({
         </span>
         <ArrowRight size={14} className="mt-0.5 shrink-0 text-ldvh-text-secondary transition-all group-hover/card:translate-x-0.5 group-hover/card:text-ldvh-accent" />
       </div>
+      {nonActiveReason && <StatusReasonNote reason={nonActiveReason} />}
       {children}
-      <div className="flex min-w-0 flex-wrap justify-end gap-x-3 gap-y-1 text-right">
-        {obj.created && (
-          <span className="ldvh-meta-muted">
-            {locale === 'en' ? 'Created ' : '创建 '}{formatDateTime(obj.created)}
-          </span>
-        )}
-        <span className="ldvh-meta">
+      <div className="mt-auto flex min-w-0 justify-end pt-1 text-right">
+        <span className="ldvh-meta-muted">
           {locale === 'en' ? 'Updated ' : '更新 '}{formatDateTime(obj.updated)}
         </span>
       </div>

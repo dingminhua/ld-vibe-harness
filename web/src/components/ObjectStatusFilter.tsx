@@ -33,7 +33,7 @@ const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   workarea: ['active', 'archived'],
   workplan: ['draft', 'active', 'review_needed', 'closed'],
   adr: ['active', 'archived', 'deprecated'],
-  pitfall: ['active', 'superseded'],
+  pitfall: ['active', 'archived'],
   memo: ['pending', 'resolved', 'discarded'],
   study: ['active', 'archived'],
 };

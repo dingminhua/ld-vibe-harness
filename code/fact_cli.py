@@ -45,7 +45,7 @@ BlockScalarDumper.add_representer(LiteralString, _string_representer)
 LIST_SUMMARY_FIELDS = ("priority", "importance")
 REMOVED_FIELDS_BY_TYPE = {
     "adr": {"related_taskplans", "related_tasks", "related_objects", "superseded_by", "alternatives", "affects"},
-    "study": {"related_taskplans", "related_tasks", "superseded_by", "source", "source_detail", "source_docs"},
+    "study": {"related_taskplans", "related_tasks", "related_refs", "superseded_by", "source", "source_detail", "source_docs"},
 }
 
 ID_PATTERNS = {
@@ -70,7 +70,7 @@ VALID_STATUSES = {
     "workarea": {"active", "archived"},
     "workplan": {"draft", "active", "review_needed", "closed"},
     "adr": {"active", "archived", "deprecated"},
-    "pitfall": {"draft", "active", "superseded", "archived"},
+    "pitfall": {"active", "archived"},
     "memo": {"pending", "resolved", "discarded"},
     "study": {"active", "archived"},
 }
@@ -92,9 +92,7 @@ VALID_TRANSITIONS = {
         "deprecated": set(),
     },
     "pitfall": {
-        "draft": {"active", "archived"},
-        "active": {"superseded", "archived"},
-        "superseded": set(),
+        "active": {"archived"},
         "archived": set(),
     },
     "memo": {
@@ -121,7 +119,7 @@ DEFAULT_STATUS = {
     "workarea": "active",
     "workplan": "draft",
     "adr": "active",
-    "pitfall": "draft",
+    "pitfall": "active",
     "memo": "pending",
     "study": "active",
 }
@@ -516,11 +514,38 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_adrs"] = []
         data["related_studies"] = []
         data["related_docs"] = []
+    if object_type == "pitfall":
+        data["symptoms"] = "待补充已解决问题的具体现象。"
+        data["trigger_conditions"] = "待补充触发条件、上下文或复现场景。"
+        data["root_cause"] = "待补充根因或误判原因。"
+        data["resolution"] = "待补充已验证的解决方式。"
+        data["verification"] = (
+            "## 验证计划\n\n"
+            "待补充验证计划。\n\n"
+            "## 验证命令\n\n"
+            "待补充验证命令或人工验证方式。\n\n"
+            "## 验证结果\n\n"
+            "待补充验证结果。\n\n"
+            "## 结论\n\n"
+            "待补充是否具备复用价值。"
+        )
+        data["avoidance"] = "待补充后续规避策略。"
+        data["applicability"] = "待补充适用范围和不适用范围。"
+        data["tags"] = []
+        data["source_objects"] = []
+        data["source_memos"] = []
+        data["related_workareas"] = []
+        data["related_adrs"] = []
+        data["related_changes"] = []
+        data["related_docs"] = []
+        data["related_rules"] = []
+        data["archive_reason"] = ""
+        data["notes"] = ""
     if object_type == "study":
         data["user_intent"] = ""
         data["summary"] = f"{title} 的稳定研究报告。"
         data["conclusion"] = ""
-        data["related_refs"] = []
+        data["urls"] = []
         data["related_memos"] = []
         data["related_workareas"] = []
         data["related_workplans"] = []
@@ -677,7 +702,7 @@ def cmd_transition(args: argparse.Namespace) -> int:
             error("archive_reason 未填写，无法归档 Study")
             return 1
 
-    if object_type == "pitfall" and new_status == "active":
+    if object_type == "pitfall" and current_status != "active" and new_status == "active":
         for field in PITFALL_ACTIVE_REQUIRED_FIELDS:
             if is_empty(data.get(field)):
                 error(f"{field} 未填写，无法激活 Pitfall")
@@ -687,17 +712,10 @@ def cmd_transition(args: argparse.Namespace) -> int:
             error("verification 未按 05.01 四段式顺序填写，无法激活 Pitfall")
             return 1
 
-    if object_type == "pitfall" and new_status == "superseded":
-        if not getattr(args, "superseded_by", None):
-            error("状态流转被拒绝：Pitfall → superseded 必须提供 --superseded-by。")
-            return 1
-        data["superseded_by"] = args.superseded_by
-
     if object_type == "pitfall" and new_status == "archived":
         archive_reason = data.get("archive_reason")
-        superseded_by = data.get("superseded_by")
-        if is_empty(archive_reason) and is_empty(superseded_by):
-            error("archive_reason 未填写且 superseded_by 为空，无法归档 Pitfall")
+        if is_empty(archive_reason):
+            error("archive_reason 未填写，无法归档 Pitfall")
             return 1
 
     # 执行流转
@@ -1155,7 +1173,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         # 列表类型字段：逗号分隔
         if key in ("related_workareas", "related_workplans", "related_adrs",
                     "related_memos", "related_studies", "related_pitfalls", "related_docs",
-                    "related_refs", "source_docs", "related_rules", "related_changes"):
+                    "urls", "source_docs", "related_rules", "related_changes"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
         else:
             updates[key] = value
@@ -1214,7 +1232,6 @@ def build_parser() -> argparse.ArgumentParser:
     transition_parser.add_argument("yaml_file", help="YAML 文件路径")
     transition_parser.add_argument("--to", required=True, dest="to", help="目标状态")
     transition_parser.add_argument("--reason", default=None, help="退回流转原因")
-    transition_parser.add_argument("--superseded-by", default=None, help="被替代的新对象、规范或实现引用（Pitfall superseded 时必填）")
     transition_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     _add_authorization_args(transition_parser)
 

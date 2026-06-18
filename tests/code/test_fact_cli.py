@@ -69,7 +69,7 @@ def test_create_study_defaults_to_active(tmp_path):
     assert data["status"] == "active"
     assert data["user_intent"] == ""
     assert data["summary"] == "Stable Study 的稳定研究报告。"
-    assert data["related_refs"] == []
+    assert data["urls"] == []
     assert "source" not in data
     assert "source_detail" not in data
     assert "source_docs" not in data
@@ -81,6 +81,18 @@ def test_create_study_defaults_to_active(tmp_path):
     assert "## 关键发现" in content
     assert "## 建议" in content
     assert "## 后续分流" in content
+
+
+def test_create_pitfall_defaults_to_active(tmp_path):
+    result = run_cli("create", "pitfall", "--title", "Stable Pitfall", "--base-dir", str(tmp_path))
+
+    assert result.returncode == 0, result.stderr
+    path = Path(result.stdout.strip())
+    data = read_yaml(path)
+    assert data["id"] == "pitfall-0001"
+    assert data["type"] == "pitfall"
+    assert data["status"] == "active"
+    assert "superseded_by" not in data
 
 
 def write_adr(path: Path, *, status: str = "active", archive_reason: str = "", deprecated_reason: str = "") -> None:
@@ -271,7 +283,7 @@ def test_workplan_transition_requires_review_evidence(tmp_path):
     assert final["review_requested_at"]
 
 
-def write_pitfall(path: Path, *, status: str = "draft", verification: str | None = None, archive_reason: str = "") -> None:
+def write_pitfall(path: Path, *, status: str = "active", verification: str | None = None, archive_reason: str = "") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "id": "pitfall-0001",
@@ -295,7 +307,6 @@ def write_pitfall(path: Path, *, status: str = "draft", verification: str | None
         "related_changes": [],
         "related_docs": [],
         "related_rules": [],
-        "superseded_by": "",
         "archive_reason": archive_reason,
     }
     path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
@@ -313,36 +324,18 @@ PITFALL_VERIFICATION = (
 )
 
 
-def test_pitfall_transition_requires_verification_structure(tmp_path):
+def test_pitfall_transition_rejects_removed_superseded_status(tmp_path):
     path = tmp_path / "ldvh-base" / "pitfalls" / "pitfall-0001-transition-guard.yaml"
-    write_pitfall(path)
-
-    blocked = run_cli("transition", str(path), "--to", "active", *AUTH_ARGS)
-    assert blocked.returncode == 1
-    assert "verification" in blocked.stderr
-
-    data = read_yaml(path)
-    data["verification"] = PITFALL_VERIFICATION
-    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
-
-    activated = run_cli("transition", str(path), "--to", "active", *AUTH_ARGS)
-    assert activated.returncode == 0, activated.stderr
-    assert read_yaml(path)["status"] == "active"
-
-
-def test_pitfall_transition_requires_superseded_by(tmp_path):
-    path = tmp_path / "ldvh-base" / "pitfalls" / "pitfall-0001-transition-guard.yaml"
-    write_pitfall(path, status="active", verification=PITFALL_VERIFICATION)
+    write_pitfall(path, verification=PITFALL_VERIFICATION)
 
     blocked = run_cli("transition", str(path), "--to", "superseded", *AUTH_ARGS)
     assert blocked.returncode == 1
-    assert "--superseded-by" in blocked.stderr
+    assert "目标状态不合法" in blocked.stderr
+    assert "superseded" in blocked.stderr
 
-    superseded = run_cli("transition", str(path), "--to", "superseded", "--superseded-by", "specs/23-Pitfall-踩坑经验.md", *AUTH_ARGS)
-    assert superseded.returncode == 0, superseded.stderr
     data = read_yaml(path)
-    assert data["status"] == "superseded"
-    assert data["superseded_by"] == "specs/23-Pitfall-踩坑经验.md"
+    assert data["status"] == "active"
+    assert "superseded_by" not in data
 
 
 def test_pitfall_transition_requires_archive_reason(tmp_path):

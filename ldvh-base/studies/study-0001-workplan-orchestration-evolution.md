@@ -10,8 +10,7 @@ summary: |
 user_intent: 用户要求将本轮关于 specs 工作流程、WorkPlan、ExecutionItem、Memo 分流和事实源边界的长对话整理为 Study。
 conclusion: |
   WorkPlan 是面向 Human 与 AI 对齐的一次工作事实契约；ExecutionItem 是 WorkPlan 内部的最小恢复与编排节点，不是工作对象；Role Contract 应承接专业 AI 角色的输入、权限、输出和交还边界，但其规范归属仍需继续判断。后续应优先逐段核对 specs/21，再回看 05、05.01、06 和 40-43，最后同步 Code / Web 中旧 TaskPlan、Task、SubTask 实现。
-related_refs:
-  - 本轮 Human/AI 对话：TaskPlan、Task、SubTask 向 WorkPlan、ExecutionItem 收敛讨论（2026-06-18）
+urls: []
 related_memos:
   - memo-0005
   - memo-0006

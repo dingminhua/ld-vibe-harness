@@ -49,6 +49,7 @@ ALLOWED_REF_KINDS = {
     "commit_ref",
     "doc_path",
     "mixed_ref",
+    "url_ref",
     "local_id",
     "enum",
 }
@@ -61,6 +62,7 @@ ALLOWED_WEB_RENDER_KINDS = {
     "doc_link",
     "commit_ref",
     "mixed_ref",
+    "url_ref",
     "structured_area",
     "status_signal",
     "enum_signal",

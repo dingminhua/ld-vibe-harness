@@ -92,6 +92,10 @@ export interface ObjectItem {
   hasVerificationEvidence?: boolean;
   hasClosureEvidence?: boolean;
   hasClosedAt?: boolean;
+  archive_reason?: string;
+  deprecated_reason?: string;
+  discard_reason?: string;
+  closure_evidence?: string;
  workarea?: string;
  workareaSummary?: RelatedObjectSummary;
   /** ADR-specific fields */
@@ -99,8 +103,6 @@ export interface ObjectItem {
   decision?: string;
   consequences?: string;
   related_rules?: string[];
-  archive_reason?: string;
-  deprecated_reason?: string;
   /** Memo-specific */
   source?: string;
   description?: string;
@@ -110,14 +112,14 @@ export interface ObjectItem {
   /** Study-specific */
   summary?: string;
   conclusion?: string;
-  related_refs?: Array<string | RelatedReferenceItem>;
+  urls?: Array<string | UrlItem>;
   report_body?: string;
   /** Pitfall-specific */
   resolution?: string;
   source_memos?: string[];
 }
 
-export interface RelatedReferenceItem {
+export interface UrlItem {
   ref: string;
   title?: string;
   summary?: string;

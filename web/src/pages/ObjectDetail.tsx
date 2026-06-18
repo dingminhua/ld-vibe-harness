@@ -85,7 +85,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
     'avoidance', 'applicability', 'source_memos', 'related_workareas',
     'related_adrs', 'related_profiles', 'related_docs', 'related_rules',
-    'related_changes', 'superseded_by', 'archive_reason', 'discard_reason', 'notes',
+    'related_changes', 'archive_reason', 'discard_reason', 'notes',
   ],
   memo: [
     'description', 'evolution', 'source', 'source_detail', 'resolved_to', 'resolved_at',
@@ -93,7 +93,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'related_adrs', 'related_docs',
   ],
   study: [
-    'user_intent', 'summary', 'conclusion', 'report_body', 'related_refs',
+    'user_intent', 'summary', 'conclusion', 'report_body', 'urls',
     'related_memos', 'related_workareas',
     'related_adrs', 'related_pitfalls', 'related_docs', 'archive_reason',
   ],
@@ -131,7 +131,7 @@ function normalizeRelatedFieldKey(fieldKey: string) {
 
 function isRelatedContentField(fieldKey: string) {
   const normalized = normalizeRelatedFieldKey(fieldKey);
-  return normalized.startsWith('related_');
+  return normalized === 'urls' || normalized.startsWith('related_');
 }
 
 export function sortRelatedContentEntries(entries: RelatedContentEntry[]) {
@@ -277,7 +277,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   resolved_at: { zh: '分流时间', en: 'Resolved At' },
   discard_reason: { zh: '废弃原因', en: 'Discard Reason' },
   deprecated_reason: { zh: '废弃原因', en: 'Deprecated Reason' },
-  superseded_by: { zh: '替代来源', en: 'Superseded By' },
   related_changes: { zh: '关联变更', en: 'Related Changes' },
   aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
   scope: { zh: '范围', en: 'Scope' },
@@ -297,7 +296,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   language: { zh: '语言', en: 'Language' },
   framework: { zh: '框架', en: 'Framework' },
   related_rules: { zh: '规范', en: 'Specs' },
-  related_refs: { zh: '关联引用', en: 'Related References' },
+  urls: { zh: '网址', en: 'URLs' },
   changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
   aggregated_related_docs: { zh: '聚合关联文档', en: 'Aggregated Related Docs' },
@@ -1247,6 +1246,7 @@ function getMaterialLabel(fieldKey: string, locale: string) {
     related_pitfalls: { zh: '踩坑经验', en: 'Pitfalls' },
     related_changes: { zh: '变更', en: 'Changes' },
     related_rules: { zh: '规范', en: 'Specs' },
+    urls: { zh: '网址', en: 'URLs' },
     related_workplans: { zh: '工作计划', en: 'Work Plans' },
     aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
   };
@@ -1534,7 +1534,6 @@ const PITFALL_READING_NODES: Array<{ field: string; zh: string; en: string; kind
   { field: 'verification', zh: '验证', en: 'Verification', kind: 'evidence' },
   { field: 'avoidance', zh: '规避', en: 'Avoidance' },
   { field: 'applicability', zh: '范围', en: 'Scope' },
-  { field: 'superseded_by', zh: '替代来源', en: 'Superseded By' },
   { field: 'archive_reason', zh: '归档原因', en: 'Archive Reason' },
   { field: 'notes', zh: '备注', en: 'Notes' },
 ];

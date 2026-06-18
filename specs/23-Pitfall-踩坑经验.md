@@ -94,19 +94,16 @@ Pitfall 标准状态如下：
 
 | 状态 | 含义 |
 |---|---|
-| `draft` | 已记录草稿，尚未确认符合准入条件或字段完整性不足 |
-| `active` | 已确认，问题已解决且可作为后续执行参考 |
-| `superseded` | 已被新的 Pitfall、ADR、规范、运行入口、Code、Web 或工作流程替代 |
-| `archived` | 已归档，不再作为常规参考，但保留记录 |
+| `active` | 已确认，问题已解决、解决方式已验证，且可作为后续执行参考 |
+| `archived` | 已归档，不再作为常规参考，但保留历史经验、归档原因和必要关联 |
 
-`superseded` 和 `archived` 是稳定终态。终态 Pitfall 不得直接重开；如需重新沉淀，应新建 Pitfall，并在新 Pitfall 中引用原 Pitfall。
+Pitfall 不设 `draft` 状态。未解决、未验证或字段不完整的问题不得写成 Pitfall；应留在 Memo、WorkPlan、对话上下文或其他更合适的事实源中继续消化。
+
+`archived` 是稳定终态。终态 Pitfall 不得直接重开；如需重新沉淀，应新建 Pitfall，并在新 Pitfall 中引用原 Pitfall。
 
 ### 3.2 合法状态流转
 
 ```text
-draft → active
-draft → archived
-active → superseded
 active → archived
 ```
 
@@ -114,10 +111,7 @@ active → archived
 
 | 流转 | 触发条件 | 说明 |
 |---|---|---|
-| `draft` → `active` | 问题已解决、解决方式已验证、规避策略已可复用 | 只有 active Pitfall 可作为稳定执行参考 |
-| `draft` → `archived` | 记录后判断不满足准入条件或不需要继续保留 | 应记录归档原因 |
-| `active` → `superseded` | 已被新 Pitfall、ADR、规范、运行入口或实现替代 | `superseded_by` 条件必填 |
-| `active` → `archived` | 经验不再常规适用，但保留记录 | 应记录归档原因 |
+| `active` → `archived` | 经验不再常规适用、已被规范或实现吸收，或不再需要作为常规参考 | 必须记录归档原因；如已被吸收，应在 `archive_reason` 和关联字段中说明承接位置 |
 
 未列出的状态流转为非法流转。Code 和 Web 不得绕过本文状态机直接修改状态。
 
@@ -152,7 +146,7 @@ ADR 的准入、状态和字段契约由 `specs/22-ADR-决策.md` 定义。
 
 ### 4.5 Pitfall 与 Change
 
-Pitfall 的创建、状态变化、核心经验改写、归档、替代和被吸收到规范、运行入口、Code、Web 或工作流程时，都应留下 Change。Change 的 commit message 契约由 `specs/25-Change-变更.md` 定义。
+Pitfall 的创建、状态变化、核心经验改写、归档和被吸收到规范、运行入口、Code、Web 或工作流程时，都应留下 Change。Change 的 commit message 契约由 `specs/25-Change-变更.md` 定义。
 
 ### 4.6 Pitfall 与规范、Code、Web 和运行入口
 
@@ -176,12 +170,11 @@ Pitfall 的创建、状态变化、核心经验改写、归档、替代和被吸
 
 1. 创建、删除或重命名 Pitfall 实例；
 2. 将 WorkPlan 过程发现、Memo、docs/studies 结论或对话输入升级为 Pitfall；
-3. 将 `draft` Pitfall 确认为 `active`；
-4. 将 `active` Pitfall 标记为 `superseded` 或 `archived`；
+3. 将 `active` Pitfall 标记为 `archived`；
 5. 修改 `root_cause`、`resolution`、`verification` 或 `avoidance` 等核心经验字段；
 6. 将 Pitfall 的规避策略吸收到 specs、Rules / Instructions、Skill、Agent、Code、Web 或工作流程；
 7. 将未解决或未验证问题写成 `active` Pitfall；
-8. 删除原 Pitfall 而不是通过状态表达归档或替代。
+8. 删除原 Pitfall 而不是通过 `archived` 表达归档或吸收。
 
 Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记录承接。本文只规定 Pitfall 语境下需要确认的事实和影响范围。
 
@@ -216,8 +209,7 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_rules` | 已吸收或承接该经验的规范、Rules、Skill、Agent、Code 或 Web 路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `superseded_by` | 替代本经验的新对象、规范或实现 | string | 条件必填 | `status: superseded` 时必须填写 | Reference | AI、Code、Web |
-| `archive_reason` | — | string | 条件必填 | `status: archived` 时应填写 | Narrative | AI、Human |
+| `archive_reason` | 归档原因；如已被规范、Rules、Skill、Agent、Code、Web 或工作流程吸收，应说明承接位置 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Human |
 | `notes` | 不得承载规则正文第二事实源 | string | 否 | 不得承载规则正文第二事实源 | Narrative / Reference | AI、Web |
 
 字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
@@ -277,31 +269,29 @@ related_docs:
   - specs/09-事实源边界与承载规范.md
 related_rules:
   - specs/03.02-工作模型文档规范.md
-superseded_by:
 archive_reason:
 notes:
 ````
 
 ### 6.3 字段约束
 
-1. `status` 必须属于 Pitfall 标准状态枚举：`draft`、`active`、`superseded`、`archived`；
+1. `status` 必须属于 Pitfall 标准状态枚举：`active`、`archived`；
 2. `type` 必须固定为 `pitfall`；
 3. `id` 格式必须为 `pitfall-{NNNN}`，编号固定 4 位；
 4. `active` Pitfall 必须具备 `symptoms`、`trigger_conditions`、`root_cause`、`resolution`、`verification`、`avoidance` 和 `applicability`；
-5. `status: superseded` 时必须填写 `superseded_by`；
-6. `status: archived` 且未被替代时，应填写 `archive_reason`；
-7. 不得使用 `repeatability` 字段；复现和重复踩坑判断应写入 `trigger_conditions`、`applicability` 和 `avoidance`；
-8. 不得使用 `severity` 字段；影响和后果应写入 `symptoms`、`applicability`、`avoidance` 或 `notes`；
-9. `related_*` 和 `source_*` 列表应引用已存在对象、commit 或路径；引用无效时应报告校验警告；
-10. `created` 和 `updated` 使用 ISO 8601 时间戳格式；
-11. 列表字段可为空列表，不得省略字段后以 null 替代空列表；
-12. `tags` 必须使用英文 slug，推荐小写短横线格式；不得使用中文标签、空格、展示翻译或一次性临时短语；
-13. 写入或修改 Pitfall `tags` 前，Code 应提供当前事实源中已有标签清单，AI 应优先复用已有标签；已有标签无法表达当前经验时可以新增英文标签；
-14. `verification` 必须按 `specs/05.01-工作字段内容格式规范.md` §3.3 的四段式验证证据结构书写，不得只写“已验证”“通过”或把验证结果混入 `resolution`。
-15. `symptoms`、`trigger_conditions`、`root_cause`、`resolution`、`avoidance` 和 `applicability` 等阅读节点字段可以使用 Markdown 段落或列表，但不得通过手写前导空格模拟缩进排版；需要条目时使用标准 Markdown 列表，需要普通说明时使用顶格段落。
-16. `root_cause`、`resolution` 和 `avoidance` 应优先写成可独立阅读的原子条目；每个条目只表达一个原因、一个动作或一个规避规则，不应把多个判断用分号串成一段长句。
-17. `trigger_conditions` 可使用短段落描述触发上下文；当触发条件超过一个时，应改用 Markdown 列表，让 Web 能稳定呈现为条目化经验。
-18. 无明确顺序、步骤或优先级的经验条目应使用无序列表；只有表达必须按序执行、先后依赖或编号本身有事实含义时，才使用 `1.`、`2.`、`3.` 有序列表。
+5. `status: archived` 时必须填写 `archive_reason`；如果归档原因是已被规范或实现吸收，应同步填写 `related_rules`、`related_docs`、`related_adrs` 或其他关联字段；
+6. 不得使用 `repeatability` 字段；复现和重复踩坑判断应写入 `trigger_conditions`、`applicability` 和 `avoidance`；
+7. 不得使用 `severity` 字段；影响和后果应写入 `symptoms`、`applicability`、`avoidance` 或 `notes`；
+8. `related_*` 和 `source_*` 列表应引用已存在对象、commit 或路径；引用无效时应报告校验警告；
+9. `created` 和 `updated` 使用 ISO 8601 时间戳格式；
+10. 列表字段可为空列表，不得省略字段后以 null 替代空列表；
+11. `tags` 必须使用英文 slug，推荐小写短横线格式；不得使用中文标签、空格、展示翻译或一次性临时短语；
+12. 写入或修改 Pitfall `tags` 前，Code 应提供当前事实源中已有标签清单，AI 应优先复用已有标签；已有标签无法表达当前经验时可以新增英文标签；
+13. `verification` 必须按 `specs/05.01-工作字段内容格式规范.md` §3.3 的四段式验证证据结构书写，不得只写“已验证”“通过”或把验证结果混入 `resolution`。
+14. `symptoms`、`trigger_conditions`、`root_cause`、`resolution`、`avoidance` 和 `applicability` 等阅读节点字段可以使用 Markdown 段落或列表，但不得通过手写前导空格模拟缩进排版；需要条目时使用标准 Markdown 列表，需要普通说明时使用顶格段落。
+15. `root_cause`、`resolution` 和 `avoidance` 应优先写成可独立阅读的原子条目；每个条目只表达一个原因、一个动作或一个规避规则，不应把多个判断用分号串成一段长句。
+16. `trigger_conditions` 可使用短段落描述触发上下文；当触发条件超过一个时，应改用 Markdown 列表，让 Web 能稳定呈现为条目化经验。
+17. 无明确顺序、步骤或优先级的经验条目应使用无序列表；只有表达必须按序执行、先后依赖或编号本身有事实含义时，才使用 `1.`、`2.`、`3.` 有序列表。
 
 ### 6.4 文件命名契约
 
@@ -320,7 +310,7 @@ Pitfall 回写遵循以下规则：
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
 3. 状态变化后应更新 `updated`；状态变化历史由 Git commit / Change 派生，不在 Pitfall YAML 中手写维护；
 4. Pitfall 被吸收到规范、运行入口、Code、Web 或工作流程后，应更新 `related_rules` 或相关引用；
-5. Pitfall 创建、状态变化、核心经验改写、归档或替代应通过 Change 留痕；
+5. Pitfall 创建、状态变化、核心经验改写、归档或被吸收应通过 Change 留痕；
 6. Pitfall 事实源写入前，应查询并呈现当前已有 `tags`，供 AI/Human 选择复用或确认新增；
 7. Pitfall 事实源写入后，应重新校验文件命名、字段完整性、状态合法性、标签格式和引用有效性。
 
@@ -348,9 +338,9 @@ Pitfall 证据至少包括：
 AI 处理 Pitfall 时应遵守：
 
 1. 先判断经验是否满足 Pitfall 准入条件；
-2. `draft` Pitfall 不得作为稳定执行依据；
-3. 读取 `superseded` Pitfall 时，应继续追踪 `superseded_by` 指向的新对象、规范或实现；
-4. 创建、激活、归档、替代或核心经验改写前评估 Human Gate；
+2. 不得把未解决、未验证或字段不完整的问题写成 Pitfall；
+3. 读取 `archived` Pitfall 时，应查看 `archive_reason` 和关联字段，判断是否已被规范、运行入口或实现吸收；
+4. 创建、归档或核心经验改写前评估 Human Gate；
 5. 进入代码、文档、规范、环境适配或工具修改前，可按任务类型、文件路径、技术栈、标签和事实源类型筛选 active Pitfall；
 6. 不得把未解决问题、未验证猜测或一次性失败直接写成 active Pitfall；
 7. 写入或修改 `tags` 时，应先查看 Code 提供的已有标签清单，优先复用，必要时再新增英文 slug；
@@ -363,24 +353,24 @@ Code 可依据本文实现以下能力：
 1. 解析 Pitfall YAML；
 2. 校验文件命名、ID、字段类型、必填字段和条件必填字段；
 3. 校验状态枚举和合法流转；
-4. 校验 `superseded_by` 和引用字段，并对旧字段 `repeatability`、`severity` 报告迁移诊断；
+4. 校验引用字段、`archive_reason` 条件必填，并对旧字段 `repeatability`、`severity`、`superseded_by` 报告迁移诊断；
 5. 按 tags、状态、适用范围、来源对象和相关文档聚合 Pitfall；
 6. 在 Pitfall 写入或修改前提供当前已有 tags 清单，辅助 AI/Human 复用已有标签或确认新增英文标签；
 7. 在任务执行前生成相关 active Pitfall 摘要。
 
-Code 不得自行创建、激活、归档、替代或删除 Pitfall，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/pitfalls/` 权威事实源。
+Code 不得自行创建、归档、删除 Pitfall 或改写核心经验，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/pitfalls/` 权威事实源。
 
 ### 8.3 Web 信息同步
 
-Web 可展示 Pitfall 状态、症状、触发条件、根因、解决方式、验证结论、规避策略、适用范围、标签、替代链和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。Pitfall 详情页展示 `tags` 时应保留事实源中的英文原始值，不做中文翻译；列表卡片不展示 `tags`，避免把内部索引标签提升为外部卡片信号。
+Web 可展示 Pitfall 状态、症状、触发条件、根因、解决方式、验证结论、规避策略、适用范围、标签、归档原因、吸收关系和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。Pitfall 详情页展示 `tags` 时应保留事实源中的英文原始值，不做中文翻译；列表卡片不展示 `tags`，避免把内部索引标签提升为外部卡片信号。
 
-当前 Web 不得直接创建、编辑、激活、归档、替代或删除 Pitfall。Web 不得在页面状态、缓存或数据库中维护独立 Pitfall 权威状态。未来如需开放 Pitfall 写入，必须先更新 `specs/08-Web信息同步实现规范.md` 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
+当前 Web 不得直接创建、编辑、归档、删除 Pitfall 或改写核心经验。Web 不得在页面状态、缓存或数据库中维护独立 Pitfall 权威状态。未来如需开放 Pitfall 写入，必须先更新 `specs/08-Web信息同步实现规范.md` 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 
 ### 8.4 工作流程与环境适配
 
-Pitfall 识别、创建、激活、归档、替代和吸收到规范或实现的具体行动流程由后续 40-59 工作流程规范承接。本文只定义 Pitfall 实例的事实规则和状态约束。
+Pitfall 识别、创建、归档和吸收到规范或实现的具体行动流程由后续 40-59 工作流程规范承接。本文只定义 Pitfall 实例的事实规则和状态约束。
 
-环境不支持相关 Pitfall 检索、替代链聚合或受控编辑时，应记录降级方式，例如改用人工搜索、Code 校验或直接读取 Git 文件事实源；不得把未完成的环境能力表述为完整落地。
+环境不支持相关 Pitfall 检索、归档原因聚合或受控编辑时，应记录降级方式，例如改用人工搜索、Code 校验或直接读取 Git 文件事实源；不得把未完成的环境能力表述为完整落地。
 
 ---
 ## 9. 规范落地要求
@@ -389,10 +379,10 @@ Pitfall 识别、创建、激活、归档、替代和吸收到规范或实现的
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Pitfall 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、经验吸收边界和事实源边界 | 05、03.02、本文、22 ADR、24 Memo、21 WorkPlan、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、激活、归档或替代 Pitfall 时 |
+| 上位约束承接要求 | Pitfall 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、经验吸收边界和事实源边界 | 05、03.02、本文、22 ADR、24 Memo、21 WorkPlan、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、归档或吸收 Pitfall 时 |
 | 入口可见要求 | AI 处理已解决可复用经验、反直觉问题、重复误判或规避策略时，应能定位本文 | 成员自描述、运行入口摘要、Pitfall 检索或经验吸收流程入口 | AI 执行入口提示 | 经验沉淀、任务执行前检查、状态流转或字段契约变化时 |
-| 确定性执行要求 | Pitfall 字段、状态、引用、文件命名、条件必填、标签格式、已有标签清单和替代链应由 Code 校验、提供或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Pitfall 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、替代规则或标签规则变化时 |
-| Human 交互要求 | Pitfall 创建、激活、归档、替代、核心经验改写和吸收到规范或实现时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
+| 确定性执行要求 | Pitfall 字段、状态、引用、文件命名、条件必填、标签格式、已有标签清单和归档吸收关系应由 Code 校验、提供或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Pitfall 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、归档规则或标签规则变化时 |
+| Human 交互要求 | Pitfall 创建、归档、核心经验改写和吸收到规范或实现时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
 | 生命周期触发要求 | Pitfall 规范变化后，应检查成员自描述、05.01、ADR、Memo、WorkPlan、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Pitfall 字段、状态、事实源边界、适配规则或检查要求变化时 |
 
 ---
@@ -407,8 +397,8 @@ Pitfall 规范检查至少包括：
 | 字段完整性 | 必填字段、条件必填字段和字段类型符合 §6 |
 | 状态合法性 | 状态属于枚举，流转符合 §3.2 |
 | active 可用性 | active Pitfall 已解决、已验证、具备规避策略和适用范围 |
-| 终态处理 | superseded 和 archived 不得重开 |
-| 替代链 | superseded Pitfall 已填写 `superseded_by` |
+| 终态处理 | archived 不得重开 |
+| 吸收关系 | archived Pitfall 已填写 `archive_reason`；如被规范、运行入口、Code、Web 或工作流程吸收，已填写对应关联字段 |
 | 对象边界 | Pitfall 未替代 WorkPlan、Memo、ADR、规范、Code 测试或 Change |
 | 经验吸收边界 | 规避策略被吸收后只保留引用，不复制规则正文第二事实源 |
 | Human Gate | §5 场景已完成确认或记录降级 |
@@ -419,5 +409,5 @@ Pitfall 规范检查至少包括：
 ## 11. 待补齐事项
 
 1. Pitfall Web 基础详情字段已同步，筛选和任务执行前提示入口待 Web 实现规划时补齐；
-2. Pitfall 识别、创建、激活、归档、替代和吸收的具体工作流程待 40-59 承接；
+2. Pitfall 识别、创建、归档和吸收的具体工作流程待 40-59 承接；
 3. Pitfall 与工作流程中 Learn 阶段的关系，待 40-59 稳定后进一步校准。

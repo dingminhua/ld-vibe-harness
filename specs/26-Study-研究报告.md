@@ -115,13 +115,13 @@ Study 可以作为 WorkPlan 的资料输入、ADR 的决策依据或 Pitfall 的
 
 WorkPlan、ADR 和 Pitfall 的准入、状态和字段契约分别由 `specs/21-WorkPlan-工作计划.md`、`specs/22-ADR-决策.md` 和 `specs/23-Pitfall-踩坑经验.md` 定义。
 
-### 4.3 Study 与关联文档和关联引用
+### 4.3 Study 与关联文档和网址
 
-docs/studies 和 docs/sources 可以作为 Study 的输入资料区，但不应成为 Study 的稳定事实源前提。Study 一旦形成，应把报告正文中需要复读的关键引用提炼到 `related_refs`，包括外部 URL、规范章节、代码位置、资料名称或必要的来源说明。`related_refs` 回答“这份报告依据或引用了哪些材料，以及每条引用支撑了当前报告中的什么判断”。
+docs/studies 和 docs/sources 可以作为 Study 的输入资料区，但不应成为 Study 的稳定事实源前提。Study 一旦形成，应把报告正文中需要复读的外部网页资料提炼到 `urls`。`urls` 回答“这份报告依据了哪些外部网址，以及每个网址支撑了当前报告中的什么判断”。
 
-`related_refs` 不应只是裸 URL 列表。新写入的外部 URL、规范段落、代码位置或说明性引用应优先使用结构化条目：`ref` 记录引用目标，`title` 记录可读标题，`summary` 记录该引用在当前报告中的用途摘要。摘要属于关联引用区，用于帮助复读报告依据；报告正文只保留研究叙述本身，不应在正文中间堆叠引用摘要清单。历史字符串条目可以兼容读取，但新增或重写时应补齐摘要。
+`urls` 不得只是裸 URL 列表。每个外部网址必须使用结构化条目：`ref` 记录完整 `http(s)` URL，`summary` 用中文记录该网址在当前报告中的用途摘要，`title` 可记录可读标题。摘要属于“关联”下的“网址”分组，用于帮助复读报告依据；报告正文只保留研究叙述本身，不应在正文中间堆叠网址摘要清单。历史字符串 URL 条目应在维护时迁移为结构化条目，不得继续新增。
 
-`related_docs` 只记录与 Study 相关的项目内文档路径，例如后续承接文档、被报告消费的本地 Markdown、或需要从 Study 页面直达的项目文档。它回答“这个 Study 与哪些项目文档有关”。如果某项只是报告正文中的外部资料、网页引用或说明性出处，应放入 `related_refs`，不放入 `related_docs`。
+`related_docs` 只记录与 Study 相关的项目内文档路径，例如后续承接文档、被报告消费的本地 Markdown、或需要从 Study 页面直达的项目文档。它回答“这个 Study 与哪些项目文档有关”。如果某项是报告正文中的外部网页资料，应放入 `urls`；如果某项是项目内文档、规范路径或代码位置，应放入 `related_docs` 或对象规范定义的专属关联字段。
 
 ### 4.4 Study 与 Change
 
@@ -159,7 +159,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `user_intent` | 用户意图、调研出发点或最初想解决的问题 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
 | `summary` | 报告摘要和当前可引用结论 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `conclusion` | 报告结论、边界和残留不确定性 | string | 否 | 推荐填写 | Narrative / Decision | AI、Web |
-| `related_refs` | 报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明；新写入条目应使用 `{ref, title, summary}` 结构 | list[string/object] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `urls` | 报告正文中的外部网址及中文用途摘要；每项必须使用 `{ref, summary}` 或 `{ref, title, summary}` 结构，`ref` 必须是完整 `http(s)` URL，`summary` 必须是中文简介 | list[object] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -168,7 +168,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `related_docs` | 后续引用或承接文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `archive_reason` | 归档原因 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Human |
 
-字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。Study 不得维护 `source`、`source_detail` 或 `source_docs`；用户侧调研出发点统一写入 `user_intent`，报告引用统一写入 `related_refs`。
+字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。Study 不得维护 `source`、`source_detail` 或 `source_docs`；用户侧调研出发点统一写入 `user_intent`，外部网页资料统一写入 `urls`。
 
 ### 6.2 正文契约
 
@@ -208,7 +208,7 @@ summary: |
   Memo 应承载议题的当前摘要和关键语义转折，完整调研报告应由 Study 承载。
 conclusion: |
   Study 适合承载稳定报告；Memo 保留演变摘要和分流关系。
-related_refs:
+urls:
   - ref: specs/24-Memo-备忘.md §6
     title: Memo 字段契约
     summary: 用于说明 Memo 的演变记录和分流关系边界，支撑本报告对 Memo/Study 分工的判断。
@@ -265,7 +265,7 @@ Study 证据至少包括：
 
 1. 研究问题和触发来源；
 2. 报告摘要和正文；
-3. 关键关联引用；
+3. 关键网址；
 4. 结论、边界和残留不确定性；
 5. 相关 Memo、WorkPlan、ADR、Pitfall、Change 或文档引用。
 
@@ -291,7 +291,7 @@ Code 可依据本文实现以下能力：
 1. 解析 Study Markdown frontmatter 和正文；
 2. 校验文件命名、ID、字段类型、必填字段和条件必填字段；
 3. 校验状态枚举和合法流转；
-4. 校验 `related_refs`、`related_*` 引用字段；
+4. 校验 `urls`、`related_*` 引用字段；
 5. 聚合活跃 Study、已归档 Study 和关联 Memo。
 
 Code 不得自行创建、替代、归档或删除 Study，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/studies/` 权威事实源。

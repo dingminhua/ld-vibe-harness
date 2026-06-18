@@ -30,6 +30,11 @@ async function main() {
   assert.equal(firstPitfall.type, 'pitfall')
   assert.equal('repeatability' in firstPitfall, false)
   assert.deepEqual(getObjectSignals(firstPitfall, 'pitfall'), [])
+  const archivedPitfalls = await listObjects('pitfall', undefined, 'archived')
+  assert.equal(archivedPitfalls.ok, true)
+  const archivedPitfall = (archivedPitfalls.data.items as Array<Record<string, unknown>>)[0]
+  assert.equal(typeof archivedPitfall.archive_reason, 'string')
+  assert.ok(String(archivedPitfall.archive_reason).trim().length > 0)
 
   const detail = await showObject(String(firstWorkplan.id))
   assert.equal(detail.ok, true)
@@ -53,7 +58,7 @@ async function main() {
   assert.equal(isObjectRef('subtask-0001'), false)
   assert.equal(isPreviewablePathForField('related_docs', 'specs/21-WorkPlan-工作计划.md'), true)
   assert.equal(isPreviewablePathForField('related_rules', 'web/src/pages/ObjectDetail.tsx'), true)
-  assert.equal(isPreviewablePathForField('related_refs', 'https://developers.openai.com/codex/subagents'), true)
+  assert.equal(isPreviewablePathForField('urls', 'https://developers.openai.com/codex/subagents'), true)
 
   const missing = await showObject('taskplan-9999')
   assert.equal(missing.ok, false)

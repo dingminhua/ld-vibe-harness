@@ -47,8 +47,9 @@
   - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；标题必须允许换行完整显示，不得用截断省略代替阅读；
   - 优先级字符徽标：WorkPlan 和 Memo 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
   - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkPlan 和 Memo，不得为 WorkArea、ADR、Pitfall 或 Change 杜撰 priority、importance、category 或 tags；Memo 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
-  - Pitfall 卡片不展示 `tags`，也不展示“已解决/未解决”等冗余解决态；Pitfall 标签是事实源索引和详情页辅助信息，不作为列表卡片信号或二层筛选 tab。
-  - 底部：创建时间和更新时间均使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`；对象列表以更新时间排序，但卡片底部保留创建时间帮助判断对象起点。
+  - 非活跃原因：当对象状态不是 `active` 且事实源存在 `archive_reason`、`deprecated_reason`、`discard_reason` 或 `closure_evidence` 时，卡片标题下展示完整原因说明；原因必须弱于对象 ID、状态、标题和更新时间，不得使用醒目的外框、左侧强线或 section 样式。说明标签单独一行，使用“弱圆点 + 原因标签”，标签文字与正文使用同一弱阅读颜色；正文另起一行，使用小号阅读文本但仍弱于标题，保留换行、项目符号和数字顺序，不得压缩为单行标签，也不得截断为两行。`archived`、`deprecated`、`discarded` 和 `closed` 卡片如缺少对应原因字段，应展示“原因缺失”异常提示，但仍应弱于标题主视觉。
+  - Pitfall 状态筛选只认 `active / archived`，不得展示 `draft`、`superseded` 或“已替代”入口；Pitfall 卡片不展示 `tags`，也不展示“已解决/未解决”等冗余解决态；Pitfall 标签是事实源索引和详情页辅助信息，不作为列表卡片信号或二层筛选 tab。
+  - 底部：只展示更新时间，使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`，样式为弱化元信息 `ldvh-meta-muted`；更新时间行使用 `mt-auto` 贴近卡片下边距，避免不同标题行数或中部内容高度导致时间上浮；对象列表以更新时间排序，创建时间留在详情页身份区展示。
 - 复制图标复制对象 YAML 文件完整路径，使用 API 返回的 `path`。
 - 点击复制图标不得进入详情页；点击卡片外层空白、标题带、ID、状态徽章或更新时间进入对象详情页。
 - hover 时边框变为 `border-ldvh-accent/40`，标题变 accent 色。
@@ -59,8 +60,8 @@
 ADR 是“已确认但尚未完全吸收到 specs/rules/code/web/skill/agent/workflow 的决策补丁”。列表卡片只帮助用户定位当前补丁，不在卡片内展示补丁影响范围。
 
 - ADR 状态筛选只认 `active / archived / deprecated`。`active` 是当前有效补丁，`archived` 是已被稳定载体吸收，`deprecated` 是已废弃。
-- ADR 卡片使用通用卡片结构：ID、复制路径、状态、完整标题、创建/更新时间。
-- ADR 标题就是最好的摘要；卡片不展示 `context`、`decision`、`related_rules`、`archive_reason`、`deprecated_reason` 或未采纳备选摘要。
+- ADR 卡片使用通用卡片结构：ID、复制路径、状态、完整标题、非活跃原因、创建/更新时间。
+- ADR 标题就是最好的摘要；除通用非活跃原因阅读块外，卡片不展示 `context`、`decision`、`related_rules` 或未采纳备选摘要。
 - ADR 卡片标题必须允许换行完整显示，避免用截断标题替代决策识别。
 - ADR 卡片不展示 `related_rules` chip，也不展示 `superseded_by`、`proposed`、`accepted`、`rejected`、`superseded`、`alternatives` 或 `affects` 等旧生命周期和旧字段信息。
 
@@ -157,9 +158,14 @@ interface ObjectItem {
   executionItemBlocked?: number;
   executionItemOpen?: number;
   hasSuccessCriteria?: boolean;
+  hasReviewRequestedAt?: boolean;
   hasVerificationEvidence?: boolean;
   hasClosureEvidence?: boolean;
   hasClosedAt?: boolean;
+  archive_reason?: string;             // 非活跃归档原因，卡片完整原因阅读块展示
+  deprecated_reason?: string;          // 非活跃废弃原因，卡片完整原因阅读块展示
+  discard_reason?: string;             // 非活跃废弃原因，卡片完整原因阅读块展示
+  closure_evidence?: string;           // closed WorkPlan 关闭原因来源，卡片完整原因阅读块展示
 }
 
 interface RelatedObjectSummary {

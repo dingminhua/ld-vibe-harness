@@ -437,7 +437,7 @@ status: draft
 created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 summary: Draft report.
-related_refs: []
+urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -492,7 +492,7 @@ status: superseded
 created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 summary: Superseded report.
-related_refs: []
+urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -552,7 +552,7 @@ updated: "2026-06-18T09:30:00"
 summary: Source report.
 source: ai
 user_intent: Trigger context remains here.
-related_refs: []
+urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -608,7 +608,7 @@ created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 source_detail: Old source detail field.
 summary: Source detail report.
-related_refs: []
+urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -665,7 +665,9 @@ updated: "2026-06-18T09:30:00"
 summary: Source docs report.
 source_docs:
   - docs/studies/source.md
-related_refs: []
+related_refs:
+  - https://example.com/legacy
+urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -679,7 +681,7 @@ archive_reason:
 
 ## 研究问题
 
-This report should not validate because Study renamed source_docs to related_refs.
+This report should not validate because Study uses urls instead of legacy source/reference fields.
 
 ## 输入与边界
 
@@ -687,7 +689,7 @@ Test fixture.
 
 ## 关键发现
 
-Study renamed source_docs to related_refs.
+Study uses urls for external web sources.
 
 ## 建议
 
@@ -705,9 +707,10 @@ None.
     assert result.returncode == 1
     assert "REMOVED_OBJECT_FIELD" in result.stdout
     assert "source_docs" in result.stdout
+    assert "related_refs" in result.stdout
 
 
-def test_study_related_refs_accept_structured_items(tmp_path):
+def test_study_urls_accept_structured_items(tmp_path):
     root, _ = write_valid_workplan_tree(tmp_path)
     study = root / "ldvh-base" / "studies" / "study-0001-structured-refs.md"
     study.parent.mkdir(parents=True, exist_ok=True)
@@ -720,11 +723,12 @@ status: active
 created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 summary: Structured refs report.
-related_refs:
+urls:
   - ref: https://example.com/reference
     title: Reference title
-    summary: Explains why this reference matters to the report.
-  - specs/24-Memo-备忘.md §6
+    summary: 用于说明这个网址支撑报告中的核心判断。
+  - ref: https://example.com/second-reference
+    summary: 用于补充第二个外部网址的中文用途说明。
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -738,7 +742,7 @@ archive_reason:
 
 ## 研究问题
 
-This report should validate with structured related_refs items.
+This report should validate with structured urls items.
 
 ## 输入与边界
 
@@ -746,11 +750,11 @@ Test fixture.
 
 ## 关键发现
 
-Structured related_refs items are valid.
+Structured urls items are valid.
 
 ## 建议
 
-Accept structured related_refs items.
+Accept structured urls items.
 
 ## 后续分流
 
@@ -765,7 +769,7 @@ None.
     assert "errors=0" in result.stdout
 
 
-def test_study_related_refs_reject_invalid_structured_items(tmp_path):
+def test_study_urls_reject_invalid_structured_items(tmp_path):
     root, _ = write_valid_workplan_tree(tmp_path)
     study = root / "ldvh-base" / "studies" / "study-0001-invalid-refs.md"
     study.parent.mkdir(parents=True, exist_ok=True)
@@ -778,11 +782,18 @@ status: active
 created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 summary: Invalid refs report.
-related_refs:
+urls:
+  - https://example.com/bare-url
   - title: Missing ref
     summary: This item has no ref.
+  - ref: specs/26-Study-研究报告.md
+    title: Local path is not a URL.
   - ref: https://example.com/reference
     note: Unexpected field.
+  - ref: https://example.com/no-summary
+    title: Missing summary
+  - ref: https://example.com/english-summary
+    summary: English-only summary is not enough.
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -796,7 +807,7 @@ archive_reason:
 
 ## 研究问题
 
-This report should not validate because related_refs items are malformed.
+This report should not validate because urls items are malformed.
 
 ## 输入与边界
 
@@ -804,11 +815,11 @@ Test fixture.
 
 ## 关键发现
 
-Malformed related_refs items are invalid.
+Malformed urls items are invalid.
 
 ## 建议
 
-Reject malformed related_refs items.
+Reject malformed urls items.
 
 ## 后续分流
 
@@ -820,8 +831,8 @@ None.
     result = run_checker(study)
 
     assert result.returncode == 1
-    assert "INVALID_RELATED_REF" in result.stdout
-    assert "related_refs" in result.stdout
+    assert "INVALID_URL" in result.stdout
+    assert "urls" in result.stdout
 
 
 def test_study_report_body_requires_standard_headings(tmp_path):
@@ -837,7 +848,7 @@ status: active
 created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 summary: Bad body report.
-related_refs: []
+urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -913,7 +924,6 @@ related_adrs: []
 related_changes: []
 related_docs: []
 related_rules: []
-superseded_by:
 archive_reason:
 notes:
 """,
@@ -924,6 +934,67 @@ notes:
     assert result.returncode == 1
     assert "REMOVED_OBJECT_FIELD" in result.stdout
     assert "repeatability" in result.stdout
+
+
+def test_pitfall_superseded_status_and_field_are_invalid(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    pitfall = write_yaml(
+        root / "ldvh-base" / "pitfalls" / "pitfall-0001-superseded.yaml",
+        """
+id: pitfall-0001
+type: pitfall
+title: Superseded Pitfall
+status: superseded
+created: "2026-06-18T09:00:00"
+updated: "2026-06-18T09:30:00"
+symptoms: |
+  Superseded should no longer be a Pitfall status.
+trigger_conditions: |
+  A legacy fact uses superseded.
+root_cause: |
+  Pitfall lifecycle kept an old replacement state.
+resolution: |
+  Use archived with archive_reason and related references.
+verification: |
+  ## 验证计划
+
+  Confirm validator rejects superseded Pitfall state.
+
+  ## 验证命令
+
+  python3 code/fact_validate.py ldvh-base/pitfalls
+
+  ## 验证结果
+
+  Validator rejects the legacy state and field.
+
+  ## 结论
+
+  Pitfall lifecycle is active/archived only.
+avoidance: |
+  Do not write superseded Pitfall facts.
+applicability: |
+  Applies to Pitfall facts.
+tags: []
+source_objects: []
+source_memos: []
+related_workareas: []
+related_adrs: []
+related_changes: []
+related_docs: []
+related_rules: []
+superseded_by: specs/23-Pitfall-踩坑经验.md
+archive_reason:
+notes:
+""",
+    )
+
+    result = run_checker(pitfall)
+
+    assert result.returncode == 1
+    assert "INVALID_STATUS" in result.stdout
+    assert "superseded" in result.stdout
+    assert "superseded_by" in result.stdout
 
 
 def test_pitfall_tags_must_be_english_slugs(tmp_path):
@@ -975,7 +1046,6 @@ related_adrs: []
 related_changes: []
 related_docs: []
 related_rules: []
-superseded_by:
 archive_reason:
 notes:
 """,
@@ -1035,7 +1105,6 @@ related_adrs: []
 related_changes: []
 related_docs: []
 related_rules: []
-superseded_by:
 archive_reason:
 notes:
 """,

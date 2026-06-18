@@ -101,19 +101,21 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、WorkPlan、ADR、Pitfall、Memo、Study。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
 
-路径类字段应按字段语义区分：`related_docs` 指向关联文档，`related_refs` 指向报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明，`related_rules` 指向关联规范、Rules、Skill、Agent、Code 或 Web 路径。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
+路径类字段应按字段语义区分：`related_docs` 指向关联文档，`urls` 只指向报告正文提炼出的外部 `http(s)` 网址及用途摘要，`related_rules` 指向关联规范、Rules、Skill、Agent、Code 或 Web 路径。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 
-所有 `related_*` 和 `aggregated_related_*` 字段在对象详情中应统一收进上层“关联”区块，不得按字段名散落在正文、证据或其他字段之间。关联区块内部先展示工作对象关联，并按工作模型编号排序：WorkArea 20、WorkPlan 21、ADR 22、Pitfall 23、Memo 24、Change 25、Study 26；非工作对象关联再按字段英文名排序，例如 `related_docs`、`related_refs`、`related_rules`。
+所有 `related_*`、`aggregated_related_*` 和 Study `urls` 字段在对象详情中应统一收进上层“关联”区块，不得按字段名散落在正文、证据或其他字段之间。关联区块内部先展示工作对象关联，并按工作模型编号排序：WorkArea 20、WorkPlan 21、ADR 22、Pitfall 23、Memo 24、Change 25、Study 26；非工作对象关联再按字段英文名排序，例如 `related_docs`、`urls`、`related_rules`。
 
 关联区块内的工作对象引用不直接展示对象编号。对象编号属于打开后的对象详情、复制路径或 YAML 源码中的定位信息；列表态只展示对象类型图标、对象标题和必要操作图标，降低重复元信息对阅读的干扰。
 
-关联区块内每个具体条目必须使用统一行结构：左侧为语义图标和标题/路径/引用文本，右侧固定提供复制入口和扩展阅读入口。整行必须可点击并触发扩展阅读；复制入口只执行复制，不触发扩展阅读。对象引用、文档路径、外部 URL 和普通说明性引用不得各自使用不同的卡片、文字按钮或标签样式。
+关联区块内每个具体条目必须使用统一行结构：左侧为语义图标和标题/路径/网址文本，右侧固定提供复制入口和扩展阅读入口。整行必须可点击并触发扩展阅读；复制入口只执行复制，不触发扩展阅读。对象引用、文档路径和外部 URL 不得各自使用不同的卡片、文字按钮或标签样式。
 
-`related_refs` 可展示结构化引用条目。条目包含 `ref`、`title`、`summary` 时，列表主行显示 `title`，次行显示 `summary`，复制和扩展阅读仍作用于 `ref`。只有字符串时展示字符串本身。Web 不把 URL 摘要派生为事实；摘要必须来自 Study frontmatter 或其他权威事实源。
+`urls` 必须展示在“关联”区块下的“网址”分组。每个条目必须来自结构化网址对象；列表主行显示 `title`，没有 `title` 时显示 `ref`，次行必须显示中文 `summary`，复制和扩展阅读仍作用于 `ref`。Web 不把 URL 摘要派生为事实；摘要必须来自 Study frontmatter 或其他权威事实源。
 
-Study 详情页是报告阅读界面，不按普通字段卡片表达主内容。中文主节点标题固定为“意图、摘要、建议、正文、关联”，分别对应 `user_intent`、`summary`、`conclusion`、`report_body` 和关联区。`user_intent`、`summary`、`conclusion` 和 `report_body` 必须与“关联”使用同一层级的节点标题样式：标题前使用小圆点，标题字号和权重与关联区标题一致，内容区颜色低于标题。`report_body` 不在主页面直接铺开全文；“正文”节点下只展示当前 Study 文件名入口，点击整行或扩展阅读图标后在右侧扩展阅读区渲染正文 Markdown。结构化 `related_refs.summary` 是引用用途提示，应比 Study 主内容再弱一级，不承担正文结论表达。
+Study 详情页的 `urls` 分组标题显示为“网址”。字段名保持 `urls`，用于承载报告正文提炼出的外部 URL 及其用途摘要；UI 标题应避免使用“引用”这种过宽泛表达。
+
+Study 详情页是报告阅读界面，不按普通字段卡片表达主内容。中文主节点标题固定为“意图、摘要、建议、正文、关联”，分别对应 `user_intent`、`summary`、`conclusion`、`report_body` 和关联区。`user_intent`、`summary`、`conclusion` 和 `report_body` 必须与“关联”使用同一层级的节点标题样式：标题前使用小圆点，标题字号和权重与关联区标题一致，内容区颜色低于标题。`report_body` 不在主页面直接铺开全文；“正文”节点下只展示当前 Study 文件名入口，点击整行或扩展阅读图标后在右侧扩展阅读区渲染正文 Markdown。结构化 `urls.summary` 是引用用途提示，应比 Study 主内容再弱一级，不承担正文结论表达。
 
 Study 主节点标题栏整行可点击，不再在内容内部放“展开/收起”文字按钮。`user_intent`、`summary`、`conclusion`、`report_body` 和“关联”统一使用两态：默认全部打开，点击标题栏在 `expanded` 与 `collapsed` 之间切换。图标表达当前可执行动作：收拢状态使用 `ChevronDown`，表示可以向下打开；打开状态使用 `ChevronUp`，表示可以向上收起。
 

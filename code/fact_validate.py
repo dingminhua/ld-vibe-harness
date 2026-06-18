@@ -36,7 +36,7 @@ VALID_STATUSES = {
     "workarea": {"active", "archived"},
     "workplan": {"draft", "active", "review_needed", "closed"},
     "adr": {"active", "archived", "deprecated"},
-    "pitfall": {"draft", "active", "superseded", "archived"},
+    "pitfall": {"active", "archived"},
     "memo": {"pending", "resolved", "discarded"},
     "study": {"active", "archived"},
 }
@@ -62,7 +62,7 @@ LIST_FIELDS = {
     },
     "memo": {"evolution", "related_workareas", "related_workplans", "related_adrs", "related_studies", "related_docs"},
     "study": {
-        "related_refs", "related_workareas", "related_workplans", "related_adrs",
+        "urls", "related_workareas", "related_workplans", "related_adrs",
         "related_memos", "related_pitfalls", "related_docs",
     },
 }
@@ -98,7 +98,9 @@ COMMITISH_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{6,}$")
 ISO_DATETIME_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$"
 )
-RELATED_REF_ITEM_KEYS = {"ref", "title", "summary"}
+URL_ITEM_KEYS = {"ref", "title", "summary"}
+URL_REF_RE = re.compile(r"^https?://", re.IGNORECASE)
+CHINESE_TEXT_RE = re.compile(r"[\u4e00-\u9fff]")
 STUDY_REQUIRED_BODY_HEADINGS = ["研究问题", "输入与边界", "关键发现", "建议", "后续分流"]
 
 # 05.01 §3.5.2：verification 字段不应包含的风险/约束/降级标题模式
@@ -441,29 +443,35 @@ def validate_any_object_id_list_format(path: Path, data: dict[str, Any], field: 
     return issues
 
 
-def validate_related_refs(path: Path, data: dict[str, Any]) -> list[Issue]:
-    items = data.get("related_refs")
+def validate_urls(path: Path, data: dict[str, Any]) -> list[Issue]:
+    items = data.get("urls")
     if not isinstance(items, list):
         return []
     issues = []
     for index, item in enumerate(items, start=1):
         if isinstance(item, str):
-            if not item.strip():
-                issues.append(Issue(str(path), "error", "INVALID_RELATED_REF", f"related_refs 第 {index} 项不能为空字符串", field="related_refs"))
+            issues.append(Issue(str(path), "error", "INVALID_URL", f"urls 第 {index} 项必须使用包含 ref 和中文 summary 的对象", field="urls"))
             continue
         if not isinstance(item, dict):
-            issues.append(Issue(str(path), "error", "INVALID_RELATED_REF", f"related_refs 第 {index} 项必须是字符串或包含 ref/title/summary 的对象", field="related_refs"))
+            issues.append(Issue(str(path), "error", "INVALID_URL", f"urls 第 {index} 项必须是包含 ref 和中文 summary 的对象", field="urls"))
             continue
-        unknown_keys = sorted(set(item) - RELATED_REF_ITEM_KEYS)
+        unknown_keys = sorted(set(item) - URL_ITEM_KEYS)
         if unknown_keys:
-            issues.append(Issue(str(path), "error", "INVALID_RELATED_REF", f"related_refs 第 {index} 项包含未定义字段: {', '.join(unknown_keys)}", field="related_refs"))
+            issues.append(Issue(str(path), "error", "INVALID_URL", f"urls 第 {index} 项包含未定义字段: {', '.join(unknown_keys)}", field="urls"))
         ref = item.get("ref")
         if not isinstance(ref, str) or not ref.strip():
-            issues.append(Issue(str(path), "error", "INVALID_RELATED_REF", f"related_refs 第 {index} 项必须提供非空 ref", field="related_refs.ref"))
-        for optional_field in ("title", "summary"):
+            issues.append(Issue(str(path), "error", "INVALID_URL", f"urls 第 {index} 项必须提供非空 ref", field="urls.ref"))
+        elif not URL_REF_RE.match(ref.strip()):
+            issues.append(Issue(str(path), "error", "INVALID_URL", f"urls 第 {index} 项的 ref 必须是 http(s) URL", field="urls.ref"))
+        summary = item.get("summary")
+        if not isinstance(summary, str) or not summary.strip():
+            issues.append(Issue(str(path), "error", "INVALID_URL", f"urls 第 {index} 项必须提供中文 summary", field="urls.summary"))
+        elif not CHINESE_TEXT_RE.search(summary):
+            issues.append(Issue(str(path), "error", "INVALID_URL", f"urls 第 {index} 项的 summary 必须包含中文简介", field="urls.summary"))
+        for optional_field in ("title",):
             value = item.get(optional_field)
             if value is not None and not isinstance(value, str):
-                issues.append(Issue(str(path), "error", "INVALID_RELATED_REF", f"related_refs 第 {index} 项的 {optional_field} 必须是字符串", field=f"related_refs.{optional_field}"))
+                issues.append(Issue(str(path), "error", "INVALID_URL", f"urls 第 {index} 项的 {optional_field} 必须是字符串", field=f"urls.{optional_field}"))
     return issues
 
 
@@ -889,7 +897,7 @@ ID_LIST_FIELDS = {
 def validate_pitfall(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "pitfall")
     issues.extend(validate_pitfall_tags(path, data))
-    for removed_field in ("source_tasks", "related_taskplans", "related_tasks", "repeatability"):
+    for removed_field in ("source_tasks", "related_taskplans", "related_tasks", "repeatability", "superseded_by"):
         if removed_field in data:
             issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 Pitfall 不得维护旧对象关联字段: {removed_field}", field=removed_field))
     if "severity" in data:
@@ -898,10 +906,8 @@ def validate_pitfall(path: Path, data: dict[str, Any]) -> list[Issue]:
         issues.extend(validate_id_list_format(path, data, field, target_type))
     issues.extend(validate_any_object_id_list_format(path, data, "source_objects"))
     issues.extend(validate_any_object_id_list_format(path, data, "related_objects"))
-    if data.get("status") == "superseded" and is_empty(data.get("superseded_by")):
-        issues.append(Issue(str(path), "error", "MISSING_SUPERSEDED_BY", "superseded 状态必须提供非空字段: superseded_by", field="superseded_by"))
-    if data.get("status") == "archived" and is_empty(data.get("archive_reason")) and is_empty(data.get("superseded_by")):
-        issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态未被替代时必须提供归档原因: archive_reason", field="archive_reason"))
+    if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
+        issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态必须提供归档原因: archive_reason", field="archive_reason"))
     return issues
 
 
@@ -937,14 +943,14 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 def validate_study(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "study")
-    for removed_field in ("related_taskplans", "related_tasks", "superseded_by", "source", "source_detail", "source_docs"):
+    for removed_field in ("related_taskplans", "related_tasks", "related_refs", "superseded_by", "source", "source_detail", "source_docs"):
         if removed_field in data:
             issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 Study 不得维护旧对象关联字段: {removed_field}", field=removed_field))
     if is_empty(data.get("report_body")):
         issues.append(Issue(str(path), "error", "MISSING_REPORT_BODY", "Study Markdown 必须包含非空报告正文", field="report_body"))
     if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
         issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态必须提供归档原因: archive_reason", field="archive_reason"))
-    issues.extend(validate_related_refs(path, data))
+    issues.extend(validate_urls(path, data))
     issues.extend(validate_study_report_body_structure(path, data))
     return issues
 

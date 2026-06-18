@@ -29,7 +29,7 @@ export const REFERENCE_FIELDS = [
 
 /** Path / URL reference fields render through DocPreviewLink when values are previewable paths. */
 export const DOC_LINK_FIELDS = [
-  'related_docs', 'related_rules', 'related_refs',
+  'related_docs', 'related_rules', 'urls',
   'superseded_by',
 ];
 
@@ -39,7 +39,7 @@ export const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 
 export const COLLAPSIBLE_FIELDS = [
   'related_workareas', 'related_workplans',
   'related_docs', 'related_adrs', 'related_memos', 'related_studies',
-  'related_pitfalls', 'related_profiles', 'related_rules', 'related_refs',
+  'related_pitfalls', 'related_profiles', 'related_rules', 'urls',
   'source_memos',
 ];
 
