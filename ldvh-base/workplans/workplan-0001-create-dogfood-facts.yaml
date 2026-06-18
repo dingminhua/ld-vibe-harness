@@ -2,8 +2,8 @@ id: workplan-0001
 type: workplan
 title: 创建 Dogfood 最小闭环事实实例
 status: closed
-created: 2026-06-04
-updated: 2026-06-04
+created: '2026-06-18T07:40:04'
+updated: '2026-06-18T07:40:04'
 workarea: workarea-0001
 priority: P2
 description: 由历史 Task task-0001 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
@@ -64,8 +64,8 @@ closure_evidence: |-
 
   历史任务计划迁移聚合证据：
   - task-0001: ev-0001 记录第一组 Intent / Task / Evidence 事实实例通过最小 Fact Validator 校验，最终结果为 files=3 errors=0 warnings=0。
-review_requested_at: &id001 2026-06-04
-closed_at: *id001
+review_requested_at: '2026-06-18T07:40:04'
+closed_at: '2026-06-18T07:40:04'
 related_docs: []
 related_adrs: []
 related_memos: []

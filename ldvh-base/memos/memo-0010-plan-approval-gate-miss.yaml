@@ -2,8 +2,8 @@ id: memo-0010
 type: memo
 title: WorkPlan 拆分后的计划审批门漏检
 status: pending
-created: "2026-06-18"
-updated: "2026-06-18"
+created: '2026-06-18T09:26:05'
+updated: '2026-06-18T09:26:05'
 description: |
   2026-06-18，AI 在用户要求“把这些事拆成三个 WorkPlan，审批后依次执行”后，直接创建并提交
   workplan-0069、workplan-0070 和 workplan-0071，随后在未等待 Human 审批的情况下开始修改
@@ -37,17 +37,17 @@ description: |
   5. 阶段提交应发生在每个 WorkPlan 完成复审和必要事实回写之后，以便最终报告能够把每个阶段映射到稳定 Git 记录。
   6. 用户要求“中间不要停”只在计划已经完成审批、执行顺序清楚且未遇到 STOP 点时适用；它不能覆盖计划审核、Human 执行批准、事实源冲突和关键降级确认。
 evolution:
-  - at: 2026-06-18
+  - at: '2026-06-18T09:26:05'
     summary: 用户指出三个 WorkPlan 创建后缺少独立专业子 Agent 审批和 Human 审批；AI 撤回未授权代码改动，安排 0069/0070/0071 独立审批，并将该漏检记录为流程改进输入。
-  - at: 2026-06-18
+  - at: '2026-06-18T09:27:28'
     summary: 用户补充要求 WorkPlan 完成后也必须有独立专业子 Agent 检查，最终总结需要写入 Memo 或 Pitfall，整套流程应记录后用于打磨标准工作流程；AI 已将该要求同步到 workplan-0071 和本 Memo。
-  - at: 2026-06-18
+  - at: '2026-06-18T10:49:13'
     summary: workplan-0069 的完成后 Code/Web 复审先返回需修复问题，实际拦截了旧对象残留入口；修复后再复审通过。该案例证明完成后专业复审应成为关闭前硬 Gate。
-  - at: 2026-06-18
+  - at: '2026-06-18T10:49:13'
     summary: workplan-0070 的 Code/Web 复审确认文件头部元信息契约和 ldvh_member 边界清楚，同时把 docs/studies/sources 后续 Code 覆盖识别为未来候选而非当前阻塞。
-  - at: 2026-06-18
+  - at: '2026-06-18T10:49:13'
     summary: workplan-0071 将本轮总结分流规则固定为：流程候选和长期风险写 Memo，可复用错误模式写 Pitfall，普通完成证据写 closure_evidence，可执行后续目标另建 WorkPlan；本轮除计划审批门漏检外未新增独立 Pitfall。
-  - at: 2026-06-18
+  - at: '2026-06-18T10:49:13'
     summary: workplan-0071 的流程治理复审发现 evidence_refs 可指向不存在路径且 fact_validate 未捕获；该问题已在 0071 中修复，后续可考虑为 evidence_refs 增加路径存在性检查。
 source: conversation
 source_detail: 用户要求反思为什么漏掉计划审核和 Human 审批环节，并要求中间问题记录到 Memo。

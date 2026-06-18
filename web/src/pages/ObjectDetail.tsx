@@ -87,7 +87,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   study: [
     'summary', 'conclusion', 'report_body', 'source', 'source_detail', 'source_docs',
     'related_memos', 'related_workareas',
-    'related_adrs', 'related_pitfalls', 'related_docs', 'superseded_by', 'archive_reason',
+    'related_adrs', 'related_pitfalls', 'related_docs', 'archive_reason',
   ],
 };
 

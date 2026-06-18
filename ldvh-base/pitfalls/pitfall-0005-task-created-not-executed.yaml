@@ -2,8 +2,8 @@ id: pitfall-0005
 type: pitfall
 title: 创建任务后不立即执行，把任务当停止点
 status: active
-created: 2026-06-04
-updated: 2026-06-04
+created: '2026-06-04T08:59:56'
+updated: '2026-06-04T08:59:56'
 symptoms:
 - AI 在用户指示"执行X"时，创建了 Task 实例但停在 planned 状态，没有立即变更为 executing 并开始执行
 - 创建 Task 后状态停留在 planned，不自动进入 executing

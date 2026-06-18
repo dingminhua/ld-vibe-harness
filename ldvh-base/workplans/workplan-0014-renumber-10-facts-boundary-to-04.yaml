@@ -2,8 +2,8 @@ id: workplan-0014
 type: workplan
 title: renumber 10 facts boundary to 04
 status: closed
-created: '2026-06-05'
-updated: '2026-06-05'
+created: '2026-06-18T07:40:04'
+updated: '2026-06-18T07:40:04'
 workarea: workarea-0004
 priority: P2
 description: 由历史 Task task-0014 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
@@ -61,8 +61,8 @@ verification_evidence: |-
 closure_evidence: |-
   历史任务计划迁移聚合证据：
   - task-0014: ## 验证结果
-review_requested_at: '2026-06-05'
-closed_at: '2026-06-05'
+review_requested_at: '2026-06-18T07:40:04'
+closed_at: '2026-06-18T07:40:04'
 related_docs: []
 related_adrs: []
 related_memos: []

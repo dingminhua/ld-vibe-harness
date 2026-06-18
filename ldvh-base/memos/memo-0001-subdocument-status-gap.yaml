@@ -2,8 +2,8 @@ id: memo-0001
 type: memo
 title: 22 主文档与子文档状态矛盾待修复
 status: pending
-created: 2026-06-04
-updated: 2026-06-04
+created: '2026-06-04T03:51:41'
+updated: '2026-06-04T03:51:41'
 description: |
   specs/22 §14 声明 22.01-Rules.md 和 22.04-Tools.md 为 not-created 状态，
   但实际文件包含完整 active 级别内容，违反 not-created 子文档骨架约束。

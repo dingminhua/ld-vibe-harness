@@ -2,7 +2,7 @@ id: workarea-0003
 type: workarea
 title: 工作模型管理
 status: archived
-created: 2026-06-04
+created: '2026-06-04T07:12:15'
 updated: '2026-06-11T06:44:19+08:00'
 description: |
   LDVH 生产对象的增删改查、模型收敛和机制分层治理。

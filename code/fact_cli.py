@@ -68,7 +68,7 @@ VALID_STATUSES = {
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "memo": {"pending", "resolved", "discarded"},
-    "study": {"draft", "active", "superseded", "archived"},
+    "study": {"active", "archived"},
 }
 
 VALID_TRANSITIONS = {
@@ -101,9 +101,7 @@ VALID_TRANSITIONS = {
         "discarded": set(),
     },
     "study": {
-        "draft": {"active", "archived"},
-        "active": {"superseded", "archived"},
-        "superseded": set(),
+        "active": {"archived"},
         "archived": set(),
     },
 }
@@ -123,7 +121,7 @@ DEFAULT_STATUS = {
     "adr": "proposed",
     "pitfall": "draft",
     "memo": "pending",
-    "study": "draft",
+    "study": "active",
 }
 
 DIRECTORY_MAP = {
@@ -474,7 +472,7 @@ def cmd_create(args: argparse.Namespace) -> int:
     if object_type == "study":
         data["source"] = "ai"
         data["source_detail"] = ""
-        data["summary"] = f"{title} 的研究报告草稿。"
+        data["summary"] = f"{title} 的稳定研究报告。"
         data["conclusion"] = ""
         data["source_docs"] = []
         data["related_memos"] = []
@@ -483,7 +481,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_adrs"] = []
         data["related_pitfalls"] = []
         data["related_docs"] = []
-        data["superseded_by"] = ""
         data["archive_reason"] = ""
         data["report_body"] = f"# {title}\n\n## 研究问题\n\n待补充。\n"
 
@@ -602,13 +599,6 @@ def cmd_transition(args: argparse.Namespace) -> int:
         if not discard_reason or (isinstance(discard_reason, str) and not discard_reason.strip()):
             error("discard_reason 未填写，无法废弃 Memo")
             return 1
-
-    if object_type == "study" and new_status == "superseded":
-        superseded_by = getattr(args, "superseded_by", None) or data.get("superseded_by")
-        if not superseded_by or (isinstance(superseded_by, str) and not superseded_by.strip()):
-            error("superseded_by 未填写，无法将 Study 标记为 superseded")
-            return 1
-        data["superseded_by"] = superseded_by
 
     if object_type == "study" and new_status == "archived":
         archive_reason = data.get("archive_reason")

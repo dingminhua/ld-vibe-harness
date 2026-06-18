@@ -2,8 +2,8 @@ id: workplan-0010
 type: workplan
 title: 精简 11 号 Trae Solo 环境规范
 status: closed
-created: '2026-06-05'
-updated: '2026-06-05'
+created: '2026-06-18T07:40:04'
+updated: '2026-06-18T07:40:04'
 workarea: workarea-0004
 priority: P2
 description: 由历史 Task task-0010 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
@@ -67,8 +67,8 @@ closure_evidence: |-
 
   历史任务计划迁移聚合证据：
   - task-0010: 已完成 specs/11-LDVH-Trae-Solo-环境规范.md 重写：Trae 平台客观事实改为引用 docs/sources/trae/ 权威入口，正文收敛为 LDVH 对 Rules、Skill、Agent、AskUserQuestion、RunCommand、Schedule、MCP、Commands/Plan/Spec 的特殊使用约定。
-review_requested_at: '2026-06-05'
-closed_at: '2026-06-05'
+review_requested_at: '2026-06-18T07:40:04'
+closed_at: '2026-06-18T07:40:04'
 related_docs: []
 related_adrs: []
 related_memos: []

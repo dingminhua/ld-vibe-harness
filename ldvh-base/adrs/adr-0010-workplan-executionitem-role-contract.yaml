@@ -2,8 +2,8 @@ id: adr-0010
 type: adr
 title: 使用 WorkPlan 和 ExecutionItem 替代 TaskPlan / Task / SubTask
 status: accepted
-created: '2026-06-17'
-updated: '2026-06-17'
+created: '2026-06-18T00:30:45'
+updated: '2026-06-18T00:30:45'
 date: '2026-06-17'
 context: |
   Human 在讨论 LDVH 工作流程和工作模型时指出：人关心的是计划、验收、决策、审计和关闭证据；AI 具体如何拆分、并行、尝试和执行，多数属于当前运行过程，不应默认成为长期历史事实源。

@@ -2,8 +2,8 @@ id: adr-0009
 type: adr
 title: Memo 三态分流模型
 status: accepted
-created: '2026-06-17'
-updated: '2026-06-17'
+created: '2026-06-17T22:00:06'
+updated: '2026-06-17T22:00:06'
 date: '2026-06-17'
 context: |
   Human 在讨论 Memo 工作对象时指出，Memo 不需要 draft -> active -> resolved -> archived 这种偏生命周期的四态模型。

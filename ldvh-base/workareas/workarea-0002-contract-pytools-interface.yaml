@@ -2,7 +2,7 @@ id: workarea-0002
 type: workarea
 title: Python Tools 管理
 status: archived
-created: 2026-06-04
+created: '2026-06-04T06:47:28'
 updated: '2026-06-11T06:44:19+08:00'
 description: |
   建立 LDVH 9 个 active fact models 的对象接口契约，并同步定义 PyTools 命名、CLI、输出、测试与契约变更联动规则。

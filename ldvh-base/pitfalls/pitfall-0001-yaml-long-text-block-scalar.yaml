@@ -2,8 +2,8 @@ id: pitfall-0001
 type: pitfall
 title: YAML 长文本含冒号或换行时触发解析错误
 status: active
-created: '2026-06-04'
-updated: '2026-06-04'
+created: '2026-06-04T03:33:50'
+updated: '2026-06-04T03:33:50'
 symptoms: |
   Evidence / Task / closure_evidence 等 YAML 字段包含中文标点、英文冒号、换行、命令或列表式说明时，
   直接写成未加引号的普通单行字符串会触发 YAML 解析错误。

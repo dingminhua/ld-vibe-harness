@@ -37,8 +37,8 @@ id: workarea-0001
 type: workarea
 title: Core
 status: active
-created: "2026-06-12"
-updated: "2026-06-12"
+created: "2026-06-12T09:00:00"
+updated: "2026-06-12T09:30:00"
 description: Core work area
 source: test
 related_docs: []
@@ -56,8 +56,8 @@ id: workplan-0001
 type: workplan
 title: Core Plan
 status: {status}
-created: "2026-06-12"
-updated: "2026-06-12"
+created: "2026-06-12T09:00:00"
+updated: "2026-06-12T09:30:00"
 workarea: workarea-0001
 priority: P2
 description: Core plan
@@ -133,6 +133,103 @@ status: active
 
     assert result.returncode == 2
     assert "UNKNOWN_OBJECT_TYPE" in result.stdout
+
+
+def test_datetime_fields_reject_date_only_values(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    workarea = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
+    workarea.write_text(
+        workarea.read_text(encoding="utf-8")
+        .replace('created: "2026-06-12T09:00:00"', 'created: "2026-06-12"')
+        .replace('updated: "2026-06-12T09:30:00"', 'updated: "2026-06-12"'),
+        encoding="utf-8",
+    )
+
+    result = run_checker(workarea)
+
+    assert result.returncode == 1
+    assert "INVALID_DATETIME_FIELD" in result.stdout
+    assert "created" in result.stdout
+    assert "updated" in result.stdout
+
+
+def test_study_draft_status_is_invalid(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    study = root / "ldvh-base" / "studies" / "study-0001-draft-report.md"
+    study.parent.mkdir(parents=True, exist_ok=True)
+    study.write_text(
+        """---
+id: study-0001
+type: study
+title: Draft Report
+status: draft
+created: "2026-06-18T09:00:00"
+updated: "2026-06-18T09:30:00"
+summary: Draft report.
+source: ai
+source_docs: []
+related_workareas: []
+related_workplans: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_docs: []
+archive_reason:
+---
+
+# Draft Report
+
+This report should not validate because Study has no draft state.
+""",
+        encoding="utf-8",
+    )
+
+    result = run_checker(study)
+
+    assert result.returncode == 1
+    assert "INVALID_STATUS" in result.stdout
+    assert "draft" in result.stdout
+
+
+def test_study_superseded_status_and_field_are_invalid(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    study = root / "ldvh-base" / "studies" / "study-0001-superseded-report.md"
+    study.parent.mkdir(parents=True, exist_ok=True)
+    study.write_text(
+        """---
+id: study-0001
+type: study
+title: Superseded Report
+status: superseded
+created: "2026-06-18T09:00:00"
+updated: "2026-06-18T09:30:00"
+summary: Superseded report.
+source: ai
+source_docs: []
+related_workareas: []
+related_workplans: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_docs: []
+superseded_by: study-0002
+archive_reason:
+---
+
+# Superseded Report
+
+This report should not validate because Study has no superseded state.
+""",
+        encoding="utf-8",
+    )
+
+    result = run_checker(study)
+
+    assert result.returncode == 1
+    assert "INVALID_STATUS" in result.stdout
+    assert "superseded" in result.stdout
+    assert "REMOVED_OBJECT_FIELD" in result.stdout
+    assert "superseded_by" in result.stdout
 
 
 def test_workarea_taskplans_field_is_no_longer_allowed(tmp_path):

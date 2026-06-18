@@ -2,8 +2,8 @@ id: memo-0005
 type: memo
 title: WorkPlan 与执行编排边界待收敛
 status: pending
-created: "2026-06-16"
-updated: "2026-06-18"
+created: '2026-06-17T22:00:06'
+updated: '2026-06-18T00:30:45'
 description: |
   本 Memo 承载本轮关于 TaskPlan / Task / SubTask、WorkPlan、ExecutionItem、Role Contract、计划审核和执行证据边界的阶段性收敛。
 
@@ -28,43 +28,43 @@ description: |
 
   建议新会话优先从 `specs/21-WorkPlan-工作计划.md` 逐段核对，然后回看 `specs/05-工作模型基础规范.md`、`specs/05.01-工作字段内容格式规范.md` 和 `specs/06-工作流程基础规范.md`，最后再处理 40-43 流程规范与 Code / Web 迁移。
 evolution:
-  - at: 2026-06-16
+  - at: '2026-06-18T04:13:34'
     summary: 初始问题是 TaskPlan / Task / SubTask 的边界混乱，尤其是主控、子 Agent、复检和并行任务如何编排。
-  - at: 2026-06-17
+  - at: '2026-06-18T04:13:34'
     summary: 曾形成候选口径：TaskPlan 承载计划契约，Task 承载可委派执行单元，SubTask 不再作为 active 模型；并行/串行由依赖关系推导。
-  - at: 2026-06-18
+  - at: '2026-06-18T04:13:34'
     summary: 进一步收敛为 WorkPlan 中心：TaskPlan 改名为 WorkPlan，独立 Task 移出 active 工作模型，执行编排迁入 WorkPlan 内部的 execution_items。
-  - at: 2026-06-18
+  - at: '2026-06-18T04:13:34'
     summary: 明确 ExecutionItem 不是更小的工作对象；执行者可以在自身上下文继续拆分，但这些执行期拆分不进入 LDVH 长期事实源。
-  - at: 2026-06-18
+  - at: '2026-06-18T04:13:34'
     summary: 明确执行过程不作为历史事实源，只保留最小恢复、验证和关闭证据；Review / Audit / Decision Review 属于流程环节，不是工作模型。
-  - at: 2026-06-18
+  - at: '2026-06-18T04:13:34'
     summary: 联网复核 Codex、Claude Code、LangChain 和 Microsoft 多 Agent / HITL / Skills / Memory 资料后，判断 WorkPlan + ExecutionItem + Role Contract 方向符合行业趋势，并已据此修改 00、02、05、05.01、21、26、28 等相关规范和局部 Code / Web。
-  - at: 2026-06-18
+  - at: '2026-06-18T08:04:32'
     summary: 已将 61 个 legacy TaskPlan 迁移为 WorkPlan，补齐 11 个 WorkArea 的 workplans 反向索引；旧 TaskPlan / Task 保留为历史事实源。
-  - at: 2026-06-18
+  - at: '2026-06-18T08:04:32'
     summary: 已完成 code/web 双视角验收后的最小硬化：Code 能读、列、统计、展示、校验 WorkPlan，并强化 related_workplans 存在性、related_changes 列表写入和多行证据块标量；Web 能读取 WorkPlan、展示 execution_items，并在 Dashboard 待推进主队列中对 legacy TaskPlan / Task / SubTask 降权。
-  - at: 2026-06-18
+  - at: '2026-06-18T08:04:32'
     summary: 完成 05.01 全工作模型字段注册表升级；WorkArea、WorkPlan、ADR、Pitfall、Memo、Change、Study 的字段名、重要嵌套字段路径、Code/Web 消费元数据和旧字段废弃映射已进入统一注册入口。
-  - at: 2026-06-18
+  - at: '2026-06-18T08:04:32'
     summary: 完成 20-39 工作模型编号迁移：ADR、Pitfall、Memo、Change、Study 已从 24-28 迁移为 22-26，并同步 specs、rules、web 和事实源引用。
-  - at: 2026-06-18
+  - at: '2026-06-18T08:27:13'
     summary: 清理旧 TaskPlan / Task / SubTask 规范路径引用后，事实源校验收敛为 errors=0 warnings=0。
-  - at: 2026-06-18
+  - at: '2026-06-18T08:39:30'
     summary: 完成 legacy 工作对象默认入口降级：Code 拒绝新建 TaskPlan / Task / SubTask，Web 主导航、Dashboard 和默认关注队列只暴露 active 工作模型；历史对象保留读取、校验和直达展示兼容。
-  - at: 2026-06-18
+  - at: '2026-06-18T08:42:32'
     summary: 清理正式 specs 中的工作模型历史痕迹：`specs/01-目录说明.md` 的 active 工作模型表已同步为 20-26 当前编号，手写集合索引和能力材料残留措辞已改为当前规则态。
-  - at: 2026-06-18
+  - at: '2026-06-18T08:45:50'
     summary: 补齐 Code 防回归检查：`specs/01-目录说明.md` 的 active 工作模型人工目录表现在必须与 20-39 成员主文件自描述中的 active work_model 成员一致，防止编号表再次漂移。
-  - at: 2026-06-18
+  - at: '2026-06-18T08:49:46'
     summary: 40-43 工作流程规范已承接 WorkPlan 回写契约：流程产生后续行动时必须回写为 WorkPlan / Memo 等现行对象，WorkPlan 必须使用 `success_criteria`、`orchestration.execution_items`、验证证据和关闭证据，不得新建 TaskPlan / Task / SubTask。
-  - at: 2026-06-18
+  - at: '2026-06-18T08:53:08'
     summary: 41-43 候选流程的待补齐状态已从“等待首次真实使用”改为“已有 dogfood 候选使用，升级 active 仍需 Human Gate”，避免 candidate 流程被误读为未验证或被 AI 擅自升级。
-  - at: 2026-06-18
+  - at: '2026-06-18T08:56:46'
     summary: landing-report 已能在 41 触发保障能力缺口中读取 40/41 工作流程成员状态；当前输出会明确显示 40 为 active、41 为 candidate，从 Code 侧防止候选流程被误当成 active 触发保障。
-  - at: 2026-06-18
+  - at: '2026-06-18T09:00:36'
     summary: Human 已确认 41-43 可以升级为 active；对应工作流程成员自描述已从 candidate 改为 active，候选等待升级事项已从待补齐段移除。
-  - at: 2026-06-18
+  - at: '2026-06-18T10:49:13'
     summary: workplan-0069 完成旧 TaskPlan / Task / SubTask 事实源与兼容入口清退；当前 active 工作对象入口只保留 WorkArea、WorkPlan、ADR、Pitfall、Memo、Change 和 Study，旧对象事实只保留在 Git 历史和已迁移 WorkPlan 证据中。
 human_gate_records:
   - confirmed_at: "2026-06-18"

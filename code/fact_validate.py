@@ -7,6 +7,7 @@ import json
 import re
 import sys
 from dataclasses import dataclass
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +38,7 @@ VALID_STATUSES = {
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "memo": {"pending", "resolved", "discarded"},
-    "study": {"draft", "active", "superseded", "archived"},
+    "study": {"active", "archived"},
 }
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
@@ -86,6 +87,9 @@ WORKPLAN_ORCHESTRATION_MODES = {"single", "sequential", "parallel", "mixed"}
 WORKPLAN_EXECUTION_ITEM_MODES = {"single", "sequential", "parallel"}
 WORKPLAN_EXECUTION_ITEM_STATUSES = {"pending", "in_progress", "blocked", "done", "skipped"}
 COMMITISH_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{6,}$")
+ISO_DATETIME_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$"
+)
 
 # 05.01 §3.5.2：verification 字段不应包含的风险/约束/降级标题模式
 VERIFICATION_MISPLACED_HEADING_PATTERNS = [
@@ -502,6 +506,7 @@ def validate_common(path: Path, data: dict[str, Any], object_type: str) -> list[
     for field in REQUIRED_FIELDS[object_type]:
         if is_empty(data.get(field)):
             issues.append(Issue(display_path, "error", "MISSING_REQUIRED_FIELD", f"缺少必填字段或字段为空: {field}"))
+    issues.extend(validate_datetime_fields(path, data, ("created", "updated")))
     for field in sorted(LIST_FIELDS[object_type]):
         if field in data and not isinstance(data[field], list):
             issues.append(Issue(display_path, "error", "INVALID_LIST_FIELD", f"字段必须是 list: {field}"))
@@ -515,6 +520,23 @@ def validate_common(path: Path, data: dict[str, Any], object_type: str) -> list[
     issues.extend(validate_evidence_format(path, data, object_type))
     # 05.01 §3.5.2：verification 字段风险/约束/降级内容迁移提示
     issues.extend(validate_verification_misplaced_content(path, data, object_type))
+    return issues
+
+
+def validate_datetime_fields(path: Path, data: dict[str, Any], fields: tuple[str, ...]) -> list[Issue]:
+    issues = []
+    for field in fields:
+        value = data.get(field)
+        if is_empty(value):
+            continue
+        if isinstance(value, datetime):
+            continue
+        if isinstance(value, date):
+            issues.append(Issue(str(path), "error", "INVALID_DATETIME_FIELD", f"{field} 必须是 ISO 8601 时间戳，不得只写日期", field=field))
+            continue
+        if isinstance(value, str) and ISO_DATETIME_RE.match(value):
+            continue
+        issues.append(Issue(str(path), "error", "INVALID_DATETIME_FIELD", f"{field} 必须是 ISO 8601 时间戳，至少包含小时和分钟", field=field))
     return issues
 
 
@@ -582,6 +604,7 @@ def validate_workarea(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "workplan")
+    issues.extend(validate_datetime_fields(path, data, ("review_requested_at", "closed_at")))
     status = data.get("status")
     issues.extend(validate_enum_field(path, data, "priority", {"P0", "P1", "P2", "P3"}))
     if "importance" in data:
@@ -770,6 +793,8 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
             for index, item in enumerate(evolution, start=1):
                 if not isinstance(item, dict) or is_empty(item.get("at")) or is_empty(item.get("summary")):
                     issues.append(Issue(str(path), "error", "INVALID_EVOLUTION_ITEM", f"evolution 第 {index} 项至少需要 at 和 summary", field="evolution"))
+                elif validate_datetime_fields(path, item, ("at",)):
+                    issues.append(Issue(str(path), "error", "INVALID_EVOLUTION_ITEM", f"evolution 第 {index} 项的 at 必须是 ISO 8601 时间戳", field="evolution.at"))
     if data.get("status") == "resolved":
         for field in ["resolved_to", "resolved_at"]:
             if is_empty(data.get(field)):
@@ -781,14 +806,12 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 def validate_study(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "study")
-    for removed_field in ("related_taskplans", "related_tasks"):
+    for removed_field in ("related_taskplans", "related_tasks", "superseded_by"):
         if removed_field in data:
             issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 Study 不得维护旧对象关联字段: {removed_field}", field=removed_field))
     issues.extend(validate_enum_field(path, data, "source", VALID_STUDY_SOURCE))
     if is_empty(data.get("report_body")):
         issues.append(Issue(str(path), "error", "MISSING_REPORT_BODY", "Study Markdown 必须包含非空报告正文", field="report_body"))
-    if data.get("status") == "superseded" and is_empty(data.get("superseded_by")):
-        issues.append(Issue(str(path), "error", "MISSING_SUPERSEDED_BY", "superseded 状态必须提供非空字段: superseded_by", field="superseded_by"))
     if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
         issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态必须提供归档原因: archive_reason", field="archive_reason"))
     return issues

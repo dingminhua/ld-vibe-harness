@@ -2,8 +2,8 @@ id: workplan-0012
 type: workplan
 title: renumber 02 terminology spec
 status: closed
-created: '2026-06-05'
-updated: '2026-06-05'
+created: '2026-06-18T07:40:04'
+updated: '2026-06-18T07:40:04'
 workarea: workarea-0004
 priority: P2
 description: 由历史 Task task-0012 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
@@ -65,8 +65,8 @@ closure_evidence: |-
 
   历史任务计划迁移聚合证据：
   - task-0012: 02 文档 git mv 为 specs/02-术语规范.md，标题从"# LDVH 术语规范"调整为"# 术语规范"；specs 根目录和 Rules 引用已更新。文档规范检查通过。引用检查有 2 个预存问题（14 §4.6 目标文件不存在），非本次变更引入。
-review_requested_at: '2026-06-05'
-closed_at: '2026-06-05'
+review_requested_at: '2026-06-18T07:40:04'
+closed_at: '2026-06-18T07:40:04'
 related_docs: []
 related_adrs: []
 related_memos: []

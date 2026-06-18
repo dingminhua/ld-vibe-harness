@@ -34,6 +34,13 @@ def read_yaml(path: Path):
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
+def read_study_frontmatter(path: Path):
+    content = path.read_text(encoding="utf-8")
+    assert content.startswith("---\n")
+    end = content.index("\n---", 4)
+    return yaml.safe_load(content[4:end])
+
+
 def test_create_workplan_uses_current_contract(tmp_path):
     result = run_cli("create", "workplan", "--title", "Current Plan", "--base-dir", str(tmp_path))
 
@@ -48,6 +55,19 @@ def test_create_workplan_uses_current_contract(tmp_path):
     assert data["closure_evidence"] == ""
     assert "tasks" not in data
     assert "completion_evidence" not in data
+
+
+def test_create_study_defaults_to_active(tmp_path):
+    result = run_cli("create", "study", "--title", "Stable Study", "--base-dir", str(tmp_path))
+
+    assert result.returncode == 0, result.stderr
+    path = Path(result.stdout.strip())
+    data = read_study_frontmatter(path)
+    assert data["id"] == "study-0001"
+    assert data["type"] == "study"
+    assert data["status"] == "active"
+    assert data["summary"] == "Stable Study 的稳定研究报告。"
+    assert "研究报告草稿" not in path.read_text(encoding="utf-8")
 
 
 def test_legacy_object_types_are_not_cli_choices(tmp_path):

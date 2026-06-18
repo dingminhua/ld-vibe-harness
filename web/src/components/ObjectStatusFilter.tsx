@@ -35,7 +35,7 @@ const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   adr: ['proposed', 'accepted', 'rejected'],
   pitfall: ['active', 'superseded'],
   memo: ['pending', 'resolved', 'discarded'],
-  study: ['active', 'draft', 'archived', 'superseded'],
+  study: ['active', 'archived'],
 };
 
 interface ObjectStatusFilterProps {
@@ -66,7 +66,7 @@ function getButtonClass(active: boolean): string {
   }`;
 }
 
-function getFallbackStatuses(type: string, activeStatus: string | null): string[] {
+export function getFallbackStatuses(type: string, activeStatus: string | null): string[] {
   const fallback = FALLBACK_STATUSES_BY_TYPE[type] ?? [];
   if (!activeStatus || fallback.includes(activeStatus)) return fallback;
   return [activeStatus, ...fallback];

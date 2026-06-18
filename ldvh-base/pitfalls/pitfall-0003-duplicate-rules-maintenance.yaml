@@ -2,8 +2,8 @@ id: pitfall-0003
 type: pitfall
 title: 提交纪律规则在多处重复维护违反单一权威位置原则
 status: superseded
-created: '2026-06-04'
-updated: '2026-06-04'
+created: '2026-06-04T03:33:50'
+updated: '2026-06-04T03:33:50'
 symptoms: |
   提交纪律规则同时出现在工作区规则、项目规则、22.01-Rules.md 和场景规则中，
   违反 11.01 §5 中"同一规则只能有一个权威位置"的要求。

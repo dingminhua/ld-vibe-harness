@@ -3,8 +3,8 @@ id: study-0001
 type: study
 title: WorkPlan 与执行编排模型演变研究
 status: active
-created: "2026-06-18"
-updated: "2026-06-18"
+created: '2026-06-18T04:16:49'
+updated: '2026-06-18T04:16:49'
 summary: |
   本报告整理本轮从 TaskPlan / Task / SubTask 体系，收敛到 WorkPlan / ExecutionItem / Role Contract 方向的完整来龙去脉。核心结论是：LDVH 应把 Human 需要长期追踪的目标、范围、成功标准、验证和关闭证据保留在 WorkPlan；AI 的执行拆解、并行安排、角色分派和临时步骤应作为 WorkPlan 内部编排或运行期上下文处理，不再提升为独立 Task 工作模型。
 source: ai
@@ -28,7 +28,6 @@ related_docs:
   - specs/21-WorkPlan-工作计划.md
   - specs/24-Memo-备忘.md
   - specs/26-Study-研究报告.md
-superseded_by:
 archive_reason:
 ---
 

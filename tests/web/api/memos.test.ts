@@ -71,10 +71,13 @@ async function testCreateMemo() {
   assert.deepEqual(files, ['memo-0001-api-memo.yaml'])
   const persisted = yaml.load(
     fs.readFileSync(path.join(memosDir, files[0]), 'utf-8'),
+    { schema: yaml.JSON_SCHEMA },
   ) as Record<string, unknown>
   assert.equal(persisted.id, 'memo-0001')
   assert.equal(persisted.status, 'pending')
   assert.equal(persisted.source, 'web')
+  assert.match(String(persisted.created), /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
+  assert.match(String(persisted.updated), /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
   assert.equal(persisted.source_detail, '')
   assert.deepEqual(persisted.evolution, [])
   assert.deepEqual(persisted.related_studies, [])

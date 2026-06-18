@@ -2,8 +2,8 @@ id: workplan-0003
 type: workplan
 title: 建立 Contract 与 PyTools 接口公共原语并完成 Task/Change 试点
 status: closed
-created: 2026-06-04
-updated: '2026-06-04'
+created: '2026-06-18T07:40:04'
+updated: '2026-06-18T07:40:04'
 workarea: workarea-0002
 priority: P2
 description: 由历史 Task task-0003 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
@@ -67,8 +67,8 @@ closure_evidence: |-
 
   历史任务计划迁移聚合证据：
   - task-0003: 已完成最小试点：13-LDVH事实模型基础规范新增事实对象接口公共原语与 PyTools 消费原则；12.01-Tools辅助规范新增 PyTools 命名、CLI、ToolResult/ToolIssue、exit code、测试和 Contract 同步规则；27.06/22.06 完成 Task/Change 试点接口契约；27.04/22.04 记录 Tools 消费关系和同步要求。
-review_requested_at: '2026-06-04'
-closed_at: '2026-06-04'
+review_requested_at: '2026-06-18T07:40:04'
+closed_at: '2026-06-18T07:40:04'
 related_docs: []
 related_adrs: []
 related_memos: []

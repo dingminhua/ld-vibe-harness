@@ -2,8 +2,8 @@ id: workplan-0006
 type: workplan
 title: PyTools 承接生产对象增删改查
 status: closed
-created: 2026-06-04
-updated: 2026-06-04
+created: '2026-06-18T07:40:04'
+updated: '2026-06-18T07:40:04'
 workarea: workarea-0003
 priority: P2
 description: 由历史 Task task-0006 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
@@ -72,8 +72,8 @@ closure_evidence: |-
 
   历史任务计划迁移聚合证据：
   - task-0006: fact_model_cli.py 已实现 create/transition/delete 三个子命令，覆盖 7 类对象。
-review_requested_at: &id001 2026-06-04
-closed_at: *id001
+review_requested_at: '2026-06-18T07:40:04'
+closed_at: '2026-06-18T07:40:04'
 related_docs: []
 related_adrs: []
 related_memos: []

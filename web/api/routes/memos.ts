@@ -58,6 +58,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
+function pad2(value: number): string {
+  return String(value).padStart(2, '0')
+}
+
+function localIsoTimestamp(date = new Date()): string {
+  return [
+    date.getFullYear(),
+    pad2(date.getMonth() + 1),
+    pad2(date.getDate()),
+  ].join('-') + `T${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`
+}
+
 function validatePersistedMemo(data: unknown, expectedId: string): string[] {
   if (!isRecord(data)) {
     return ['persisted memo is not an object']
@@ -108,7 +120,7 @@ router.post('/', (req: Request, res: Response): void => {
       return
     }
 
-    const today = new Date().toISOString().slice(0, 10)
+    const now = localIsoTimestamp()
     const id = nextMemoId()
     const slug = slugify(title.trim())
     const filename = `${id}-${slug}.yaml`
@@ -128,8 +140,8 @@ router.post('/', (req: Request, res: Response): void => {
       type: 'memo',
       title: title.trim(),
       status: 'pending',
-      created: today,
-      updated: today,
+      created: now,
+      updated: now,
       description: description.trim(),
       evolution: [] as Array<Record<string, string>>,
       source: 'web',

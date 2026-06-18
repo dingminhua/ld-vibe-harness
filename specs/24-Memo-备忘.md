@@ -209,12 +209,12 @@ id: memo-0001
 type: memo
 title: 规范文档中缺少错误处理章节
 status: resolved
-created: '2026-06-09T00:00:00'
-updated: '2026-06-09T00:00:00'
+created: '2026-06-09T09:30:00+08:00'
+updated: '2026-06-09T10:00:00+08:00'
 description: |
   审查工作流程规范时发现错误处理和异常场景尚未形成统一规则。当前方向是先保留缺口，再决定是否分流为 WorkPlan 或 Study。
 evolution:
-  - at: 2026-06-09
+  - at: '2026-06-09T09:45:00+08:00'
     summary: 发现错误处理章节缺失，先作为备忘保留。
 source: conversation
 source_detail: 执行 workplan-0003 过程中的发现

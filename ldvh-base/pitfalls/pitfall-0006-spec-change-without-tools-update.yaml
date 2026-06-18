@@ -2,8 +2,8 @@ id: pitfall-0006
 type: pitfall
 title: 规格重构未同步更新 tools/ 代码实现
 status: active
-created: '2026-06-05'
-updated: '2026-06-05'
+created: '2026-06-05T06:22:10'
+updated: '2026-06-05T06:22:10'
 symptoms: |
   对 specs 进行架构级重构（工作流区段从 50-79 移至 40-59、生产对象区段从 20-49 收窄为 20-39、
   移除 Change YAML 管理、统一术语"契约子文档"→"结构化契约文件"等）后，tools/ 下的

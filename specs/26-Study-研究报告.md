@@ -83,28 +83,20 @@ Study 标准状态如下：
 
 | 状态 | 含义 |
 |---|---|
-| `draft` | 草稿：报告正在形成，尚未作为稳定结论引用 |
 | `active` | 活跃：报告是当前可引用的稳定研究产物 |
-| `superseded` | 已替代：报告被新 Study、ADR、规范或其他事实源替代 |
 | `archived` | 已归档：报告保留历史价值，但不再作为当前入口 |
 
 ### 3.2 合法状态流转
 
 ```text
-draft → active
-active → superseded
 active → archived
-draft → archived
 ```
 
 合法流转规则如下：
 
 | 流转 | 触发条件 | 说明 |
 |---|---|---|
-| `draft` → `active` | 报告内容已整理完成，并可作为后续讨论或决策输入 | 应确认摘要、正文和关联对象完整 |
-| `active` → `superseded` | 已有更准确的新报告、ADR、规范或其他事实源替代 | `superseded_by` 条件必填 |
 | `active` → `archived` | 报告不再作为当前入口，但仍有历史参考价值 | `archive_reason` 条件必填 |
-| `draft` → `archived` | 草稿不再继续整理 | `archive_reason` 条件必填 |
 
 未列出的状态流转为非法流转。Code 和 Web 不得绕过本文状态机直接修改状态。
 
@@ -129,7 +121,7 @@ docs/studies 和 docs/sources 可以作为 Study 的输入资料区。Study 一�
 
 ### 4.4 Study 与 Change
 
-Study 的创建、状态变化、核心报告改写、归档和替代都应留下 Change。Change 的 commit message 契约由 `specs/25-Change-变更.md` 定义。
+Study 的创建、状态变化、核心报告改写和归档都应留下 Change。Change 的 commit message 契约由 `specs/25-Change-变更.md` 定义。
 
 ---
 ## 5. Human Gate
@@ -138,7 +130,7 @@ Study 的创建、状态变化、核心报告改写、归档和替代都应留�
 
 1. 创建、删除或重命名 Study 实例；
 2. 将 docs/studies、docs/sources、外部资料或对话调研结果提升为 Study；
-3. 将 Study 标记为 `active`、`superseded` 或 `archived`；
+3. 将 Study 标记为 `archived`；
 4. 大幅改写 `summary`、`conclusion` 或报告正文；
 5. 将 Study 作为 ADR、WorkPlan 或 Memo 的关键依据；
 6. 接受报告中的不确定性、降级结论或高影响判断。
@@ -157,7 +149,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `id` | 格式为 `study-{NNNN}` | string | 是 | 与文件编号一致 | Reference | AI、Code、Web |
 | `type` | 固定为 `study` | string | 是 | 固定为 `study` | Reference | AI、Code、Web |
 | `title` | 研究报告一句话概括 | string | 是 | 应简短可读 | Narrative | AI、Web |
-| `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
+| `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举；创建 Study 时即应为 `active` | Reference | AI、Code、Web |
 | `created` | — | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
 | `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `summary` | 报告摘要和当前可引用结论 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
@@ -171,7 +163,6 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 后续引用或承接文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `superseded_by` | 替代本报告的新对象、规范或路径 | string | 条件必填 | `status: superseded` 时必须填写 | Reference | AI、Code、Web |
 | `archive_reason` | 归档原因 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Human |
 
 字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
@@ -194,8 +185,8 @@ id: study-0001
 type: study
 title: Memo 工作模型演变承载方式研究
 status: active
-created: '2026-06-18'
-updated: '2026-06-18'
+created: '2026-06-18T14:30:00+08:00'
+updated: '2026-06-18T15:00:00+08:00'
 summary: |
   Memo 应承载议题的当前摘要和关键语义转折，完整调研报告应由 Study 承载。
 source: ai
@@ -210,7 +201,6 @@ related_workplans: []
 related_adrs: []
 related_pitfalls: []
 related_docs: []
-superseded_by:
 archive_reason:
 ---
 
@@ -236,7 +226,7 @@ Study 回写遵循以下规则：
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
 3. 状态变化后应更新 `updated`；状态变化历史由 Git commit / Change 派生，不在 Study 中手写维护；
 4. Study 被 Memo、WorkPlan、ADR 或 Pitfall 消费时，应通过对应对象的引用字段建立关系；
-5. Study 创建、替代、归档或核心报告改写应通过 Change 留痕；
+5. Study 创建、归档或核心报告改写应通过 Change 留痕；
 6. Study 事实源写入后，应重新校验文件命名、frontmatter 字段完整性、状态合法性和引用有效性。
 
 ### 7.2 证据留存
@@ -259,7 +249,7 @@ Study 的报告正文应保留足以复读的结论和依据，但不复制外�
 AI 处理 Study 时应遵守：
 
 1. 先判断内容是否已经从临时资料整理为稳定报告；
-2. 创建、替代、归档或大幅改写 Study 前评估 Human Gate；
+2. 创建、归档或大幅改写 Study 前评估 Human Gate；
 3. 不得用 Study 替代 Memo 的议题演变、ADR 的长期决策或 WorkPlan 的执行计划；
 4. 引用 Study 时只引用 ID、路径或摘要，不复制报告全文；
 5. 报告结论被吸收到 specs、ADR 或 WorkPlan 后，应在 Study 或目标对象中保留引用关系。
@@ -272,7 +262,7 @@ Code 可依据本文实现以下能力：
 2. 校验文件命名、ID、字段类型、必填字段和条件必填字段；
 3. 校验状态枚举和合法流转；
 4. 校验 `source` 枚举、`source_docs`、`related_*` 引用字段；
-5. 聚合活跃 Study、已归档 Study、被替代 Study 和关联 Memo。
+5. 聚合活跃 Study、已归档 Study 和关联 Memo。
 
 Code 不得自行创建、替代、归档或删除 Study，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/studies/` 权威事实源。
 
@@ -295,10 +285,10 @@ Study 创建、报告整理、吸收和归档的具体行动流程由后续 40-5
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Study 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、24 Memo、25 Change、Human Gate | 工作模型治理 | 创建、修改、审计、引用、归档或替代 Study 时 |
-| 入口可见要求 | AI 处理需要长期保留的调研报告时，应能定位本文 | 成员自描述、运行入口摘要、Memo 分流规则 | AI 执行入口提示 | 报告创建、引用、吸收、替代或归档时 |
+| 上位约束承接要求 | Study 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、24 Memo、25 Change、Human Gate | 工作模型治理 | 创建、修改、审计、引用或归档 Study 时 |
+| 入口可见要求 | AI 处理需要长期保留的调研报告时，应能定位本文 | 成员自描述、运行入口摘要、Memo 分流规则 | AI 执行入口提示 | 报告创建、引用、吸收或归档时 |
 | 确定性执行要求 | Study frontmatter、状态、引用、文件命名和正文存在性应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Study 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、Markdown 承载或引用关系变化时 |
-| Human 交互要求 | Study 创建、提升为 active、核心报告改写、归档、替代和作为关键依据时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
+| Human 交互要求 | Study 创建、核心报告改写、归档和作为关键依据时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
 | 生命周期触发要求 | Study 规范变化后，应检查成员自描述、01、03.01、05、05.01、08、Memo、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Study 字段、状态、事实源边界、Markdown frontmatter 或检查要求变化时 |
 
 ---
@@ -313,7 +303,6 @@ Study 规范检查至少包括：
 | Frontmatter 完整性 | 必填字段、条件必填字段和字段类型符合 §6 |
 | 正文存在性 | Frontmatter 后存在非空 Markdown 报告正文 |
 | 状态合法性 | 状态属于枚举，流转符合 §3.2 |
-| 替代规则 | superseded Study 已填写 `superseded_by` |
 | 归档规则 | archived Study 已说明归档原因 |
 | 对象边界 | Study 未替代 Memo、ADR、WorkPlan、Pitfall 或 docs/sources |
 | Human Gate | §5 场景已完成确认或记录降级 |
@@ -324,5 +313,5 @@ Study 规范检查至少包括：
 ## 11. 待补齐事项
 
 1. Study 校验 Code、Web 读取和测试应在本文生效后同步补齐；
-2. Study 创建、吸收、替代和归档的具体工作流程待 40-59 承接；
+2. Study 创建、吸收和归档的具体工作流程待 40-59 承接；
 3. Study 与 docs/studies 的迁移样例、正反样例和 Human Gate 样例待真实报告落地后补齐。

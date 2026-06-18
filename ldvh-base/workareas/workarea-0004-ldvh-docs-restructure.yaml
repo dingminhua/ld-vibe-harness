@@ -2,7 +2,7 @@ id: workarea-0004
 type: workarea
 title: Specs文档重构
 status: active
-created: '2026-06-04'
+created: '2026-06-05T00:57:49'
 updated: '2026-06-05T17:46:06.716786'
 description: |
   围绕 LDVH 项目文档体系进行组织结构重构，先从 50 号文档“工作流基础规范”梳理开始，逐步识别文档定位、编号区段、引用关系、拆分或归并需求，并形成可执行的重构任务链。

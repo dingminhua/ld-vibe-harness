@@ -2,8 +2,8 @@ id: workplan-0015
 type: workplan
 title: renumber 11 trae solo env to 05
 status: closed
-created: '2026-06-05'
-updated: '2026-06-05'
+created: '2026-06-18T07:40:04'
+updated: '2026-06-18T07:40:04'
 workarea: workarea-0004
 priority: P2
 description: 由历史 Task task-0015 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
@@ -62,8 +62,8 @@ verification_evidence: |-
 closure_evidence: |-
   历史任务计划迁移聚合证据：
   - task-0015: ## 验证结果
-review_requested_at: '2026-06-05'
-closed_at: '2026-06-05'
+review_requested_at: '2026-06-18T07:40:04'
+closed_at: '2026-06-18T07:40:04'
 related_docs: []
 related_adrs: []
 related_memos: []

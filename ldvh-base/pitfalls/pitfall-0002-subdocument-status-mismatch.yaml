@@ -2,8 +2,8 @@ id: pitfall-0002
 type: pitfall
 title: 主文档声明子文档 not-created 但实际文件包含完整内容
 status: superseded
-created: '2026-06-04'
-updated: '2026-06-04'
+created: '2026-06-04T03:33:50'
+updated: '2026-06-04T03:33:50'
 symptoms: |
   specs/22 §14 声明 22.01-Rules.md 和 22.04-Tools.md 为 not-created 状态，
   但实际文件包含完整 active 级别内容，与 not-created 子文档骨架约束矛盾。

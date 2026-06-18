@@ -2,12 +2,14 @@ function pad2(value: number): string {
   return String(value).padStart(2, '0');
 }
 
-/** Format app timestamps as a single absolute UI convention: YYYY-MM-DD HH:mm. */
+/** Format app timestamps as YYYY-MM-DD HH:mm; date-only is a defensive fallback for invalid legacy facts. */
 export function formatDateTime(value?: string | null): string {
   if (!value) return '-';
 
   const raw = String(value).trim();
   if (!raw || raw === '-') return '-';
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
 
   const normalized = raw.replace(' ', 'T');
   const isoLike = normalized.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?)?/);

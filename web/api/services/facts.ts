@@ -73,10 +73,10 @@ function readYamlFile(filePath: string): Record<string, unknown> | null {
       if (end === -1) return null
       const frontmatter = content.slice(4, end)
       const body = content.slice(end + 4).replace(/^\n/, '')
-      const data = yaml.load(frontmatter)
+      const data = yaml.load(frontmatter, { schema: yaml.JSON_SCHEMA })
       return isRecord(data) ? { ...data, report_body: body } : null
     }
-    const data = yaml.load(content)
+    const data = yaml.load(content, { schema: yaml.JSON_SCHEMA })
     return isRecord(data) ? data : null
   } catch {
     return null

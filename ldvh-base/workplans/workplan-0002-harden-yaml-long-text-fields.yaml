@@ -2,8 +2,8 @@ id: workplan-0002
 type: workplan
 title: 固化 YAML 长文本字段安全写入规则
 status: closed
-created: 2026-06-04
-updated: 2026-06-04
+created: '2026-06-18T07:40:04'
+updated: '2026-06-18T07:40:04'
 workarea: workarea-0001
 priority: P2
 description: 由历史 Task task-0002 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
@@ -64,8 +64,8 @@ closure_evidence: |-
 
   历史任务计划迁移聚合证据：
   - task-0002: ev-0002 记录 task-0002 验证通过：ldvh-intake/ldvh-close 已加入 YAML 长文本块标量写入要求；Fact Validator 已增强 YAML_PARSE_ERROR 提示；测试已覆盖含冒号长文本块标量合法样例。
-review_requested_at: &id001 2026-06-04
-closed_at: *id001
+review_requested_at: '2026-06-18T07:40:04'
+closed_at: '2026-06-18T07:40:04'
 related_docs: []
 related_adrs: []
 related_memos: []

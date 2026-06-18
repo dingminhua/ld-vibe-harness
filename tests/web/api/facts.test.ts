@@ -3,6 +3,8 @@ import { listObjects, showObject } from '../../../web/api/services/facts.ts'
 import { buildPlanSummaries, type ListedObject } from '../../../web/api/routes/objects.ts'
 import { isObjectRef, isPreviewablePathForField } from '../../../web/src/utils/fieldFormats.ts'
 import { getObjectPriority, getObjectSignals } from '../../../web/src/utils/objectSignals.ts'
+import { getFallbackStatuses } from '../../../web/src/components/ObjectStatusFilter.tsx'
+import { formatDateTime } from '../../../web/src/utils/dateFormat.ts'
 
 async function main() {
   const workareas = await listObjects('workarea')
@@ -46,6 +48,19 @@ async function main() {
 
   const missing = await showObject('taskplan-9999')
   assert.equal(missing.ok, false)
+
+  assert.deepEqual(getFallbackStatuses('study', 'active'), ['active', 'archived'])
+  assert.equal(getFallbackStatuses('study', 'active').includes('draft'), false)
+  assert.equal(getFallbackStatuses('workplan', 'draft').includes('draft'), true)
+
+  const studies = await listObjects('study')
+  assert.equal(studies.ok, true)
+  assert.ok(Array.isArray(studies.data.items))
+  const firstStudy = studies.data.items[0] as Record<string, unknown>
+  assert.equal(typeof firstStudy.updated, 'string')
+  assert.match(String(firstStudy.updated), /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/)
+  assert.match(formatDateTime(String(firstStudy.updated)), /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)
+  assert.equal(formatDateTime('2026-06-18T17:10:00+08:00'), '2026-06-18 17:10')
 }
 
 main().catch((error) => {
