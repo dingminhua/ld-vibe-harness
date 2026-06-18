@@ -246,6 +246,8 @@ Code 输出只作为导航、聚合和诊断结果。Code 不判断流程是否�
 5. 审核形成研究报告或迁移说明时，回写 docs；
 6. 发生事实源修改时，按 25-Change 的 Git、commit message 和 Refs 追溯规则处理。
 
+凡回写为 WorkPlan 的后续行动，必须按 `specs/21-WorkPlan-工作计划.md` 和 `specs/05.01-工作字段内容格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkPlan 内部 `execution_items`。
+
 不得把聊天中的“看起来可以”“应该合格”“已审核”当作完成证据。关键结论必须能回指规范、目标文件、命令输出、Human Gate 或事实源差异。
 
 ---
