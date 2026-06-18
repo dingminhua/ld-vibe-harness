@@ -142,6 +142,16 @@ DELETABLE_STATUSES = {"draft", "pending", "proposed"}
 # ADR 专属常量
 ADR_TERMINAL_STATUSES = {"deprecated", "superseded", "rejected"}
 ADR_SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+PITFALL_ACTIVE_REQUIRED_FIELDS = (
+    "symptoms",
+    "trigger_conditions",
+    "root_cause",
+    "resolution",
+    "verification",
+    "avoidance",
+    "applicability",
+)
+EVIDENCE_REQUIRED_HEADINGS = ("验证计划", "验证命令", "验证结果", "结论")
 
 
 # ── 工具函数 ────────────────────────────────────────────────────────────
@@ -149,6 +159,26 @@ ADR_SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 def error(msg: str) -> None:
     """输出错误信息到 stderr。"""
     print(f"错误: {msg}", file=sys.stderr)
+
+
+def is_empty(value) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str) and not value.strip():
+        return True
+    if isinstance(value, (list, dict)) and not value:
+        return True
+    return False
+
+
+def evidence_headings(value: str) -> list[str]:
+    return [line[3:].strip() for line in value.splitlines() if re.match(r"^##\s+", line)]
+
+
+def evidence_has_required_structure(value: str) -> bool:
+    headings = evidence_headings(value)
+    ordered = [heading for heading in headings if heading in EVIDENCE_REQUIRED_HEADINGS]
+    return ordered == list(EVIDENCE_REQUIRED_HEADINGS)
 
 
 def title_to_short(title: str) -> str:
@@ -633,6 +663,29 @@ def cmd_transition(args: argparse.Namespace) -> int:
         archive_reason = data.get("archive_reason")
         if not archive_reason or (isinstance(archive_reason, str) and not archive_reason.strip()):
             error("archive_reason 未填写，无法归档 Study")
+            return 1
+
+    if object_type == "pitfall" and new_status == "active":
+        for field in PITFALL_ACTIVE_REQUIRED_FIELDS:
+            if is_empty(data.get(field)):
+                error(f"{field} 未填写，无法激活 Pitfall")
+                return 1
+        verification = data.get("verification")
+        if not isinstance(verification, str) or not evidence_has_required_structure(verification):
+            error("verification 未按 05.01 四段式顺序填写，无法激活 Pitfall")
+            return 1
+
+    if object_type == "pitfall" and new_status == "superseded":
+        if not getattr(args, "superseded_by", None):
+            error("状态流转被拒绝：Pitfall → superseded 必须提供 --superseded-by。")
+            return 1
+        data["superseded_by"] = args.superseded_by
+
+    if object_type == "pitfall" and new_status == "archived":
+        archive_reason = data.get("archive_reason")
+        superseded_by = data.get("superseded_by")
+        if is_empty(archive_reason) and is_empty(superseded_by):
+            error("archive_reason 未填写且 superseded_by 为空，无法归档 Pitfall")
             return 1
 
     # 执行流转
@@ -1212,7 +1265,7 @@ def build_parser() -> argparse.ArgumentParser:
     transition_parser.add_argument("yaml_file", help="YAML 文件路径")
     transition_parser.add_argument("--to", required=True, dest="to", help="目标状态")
     transition_parser.add_argument("--reason", default=None, help="退回流转原因")
-    transition_parser.add_argument("--superseded-by", default=None, help="被替代的新 ADR ID（ADR superseded 时必填）")
+    transition_parser.add_argument("--superseded-by", default=None, help="被替代的新对象、规范或实现引用（ADR/Pitfall superseded 时必填）")
     transition_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     _add_authorization_args(transition_parser)
 

@@ -39,6 +39,7 @@ ALLOWED_VALUE_SHAPES = {
     "object",
     "list_object",
     "list_string",
+    "list_mixed",
 }
 ALLOWED_REF_KINDS = {
     "none",

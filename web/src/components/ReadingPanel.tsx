@@ -4,7 +4,16 @@ import { usePanel, type PanelContent } from '@/utils/panelContext';
 import MarkdownPreview from '@/components/MarkdownPreview';
 import CopyPathButton from '@/components/CopyPathButton';
 import { useI18n } from '@/i18n/context';
-import { ContentField, ObjectIdentityHeader, WorkAreaReadingLayout, WorkPlanReadingLayout, getObjectDetailContentEntries } from '@/pages/ObjectDetail';
+import {
+  ContentField,
+  ObjectIdentityHeader,
+  PitfallReadingLayout,
+  RelatedContentSection,
+  WorkAreaReadingLayout,
+  WorkPlanReadingLayout,
+  getObjectDetailContentEntries,
+  splitRelatedContentEntries,
+} from '@/pages/ObjectDetail';
 import { getObjectStatusLocale } from '@/i18n/locales';
 import { fetchDocContent, fetchObjectDetail, fetchObjects, type DocContent, type ObjectDetail as ApiObjectDetail, type ObjectItem } from '@/utils/api';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
@@ -394,6 +403,11 @@ function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: str
   useEffect(() => {
     if (!objectType || !objectId) return;
     if (!isObjectDetailLayoutType(objectType)) return;
+    if (objectType === 'pitfall') {
+      setSummary(null);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     setSummary(null);
@@ -424,11 +438,16 @@ function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: str
   if (objectType === 'workplan') {
     return <WorkPlanReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
   }
+  if (objectType === 'pitfall') {
+    const entries = getObjectDetailContentEntries(obj, objectType);
+    const { relatedEntries } = splitRelatedContentEntries(entries);
+    return <PitfallReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
+  }
   return null;
 }
 
 function isObjectDetailLayoutType(objectType: string | undefined) {
-  return objectType === 'workarea' || objectType === 'workplan';
+  return objectType === 'workarea' || objectType === 'workplan' || objectType === 'pitfall';
 }
 
 function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {
@@ -449,13 +468,15 @@ function getObjectTypeLabel(objectType: string | undefined, locale: string) {
 function GenericObjectPreview({ objectType, obj, objectPath }: { objectType?: string; obj: Record<string, unknown>; objectPath?: string }) {
   const { locale } = useI18n();
   const entries = getObjectDetailContentEntries(obj, objectType || '');
+  const { primaryEntries, relatedEntries } = splitRelatedContentEntries(entries);
   if (entries.length === 0) return null;
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      {entries.map(([fieldKey, value]) => (
+      {primaryEntries.map(([fieldKey, value]) => (
         <ContentField key={fieldKey} fieldKey={fieldKey} value={value} locale={locale} objType={objectType || ''} objectPath={objectPath} />
       ))}
+      <RelatedContentSection entries={relatedEntries} locale={locale} />
     </div>
   );
 }

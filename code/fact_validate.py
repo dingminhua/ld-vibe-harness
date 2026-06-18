@@ -86,6 +86,7 @@ EVIDENCE_FIELDS_BY_TYPE = {
     "pitfall": {"verification"},
 }
 EVIDENCE_REQUIRED_HEADINGS = ["验证计划", "验证命令", "验证结果", "结论"]
+PITFALL_TAG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 WORKPLAN_ORCHESTRATION_MODES = {"single", "sequential", "parallel", "mixed"}
 WORKPLAN_EXECUTION_ITEM_MODES = {"single", "sequential", "parallel"}
@@ -548,6 +549,30 @@ def validate_evidence_format(path: Path, data: dict[str, Any], object_type: str)
                 f"字段 {field} 建议按 05.01 四段式结构书写，缺少: {', '.join(missing_headings)}",
                 field=field,
             ))
+            continue
+        ordered_headings = [heading for heading in headings if heading in EVIDENCE_REQUIRED_HEADINGS]
+        if ordered_headings != EVIDENCE_REQUIRED_HEADINGS:
+            issues.append(Issue(
+                str(path), "warning", "EVIDENCE_FORMAT_ORDER",
+                f"字段 {field} 的 05.01 四段式标题顺序应为: {', '.join(EVIDENCE_REQUIRED_HEADINGS)}",
+                field=field,
+            ))
+    return issues
+
+
+def validate_pitfall_tags(path: Path, data: dict[str, Any]) -> list[Issue]:
+    issues = []
+    tags = data.get("tags")
+    if tags is None:
+        return issues
+    if not isinstance(tags, list):
+        return issues
+    for index, tag in enumerate(tags, start=1):
+        if not isinstance(tag, str) or not tag.strip():
+            issues.append(Issue(str(path), "error", "INVALID_PITFALL_TAG", f"tags 第 {index} 项必须是非空英文 slug 字符串", field="tags"))
+            continue
+        if not PITFALL_TAG_RE.match(tag):
+            issues.append(Issue(str(path), "error", "INVALID_PITFALL_TAG", f"tags 第 {index} 项必须使用小写英文 slug: {tag}", field="tags"))
     return issues
 
 
@@ -818,6 +843,7 @@ ID_LIST_FIELDS = {
 
 def validate_pitfall(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "pitfall")
+    issues.extend(validate_pitfall_tags(path, data))
     for removed_field in ("source_tasks", "related_taskplans", "related_tasks", "repeatability"):
         if removed_field in data:
             issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 Pitfall 不得维护旧对象关联字段: {removed_field}", field=removed_field))

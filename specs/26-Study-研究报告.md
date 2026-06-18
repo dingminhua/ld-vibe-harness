@@ -331,7 +331,7 @@ Study 规范检查至少包括：
 | 准入判断 | 已说明为什么需要或不需要形成 Study |
 | 事实源位置 | 实例位于 `ldvh-base/studies/`，文件名采用 Study 四位编号加英文短标题的 Markdown 文件模式 |
 | Frontmatter 完整性 | 必填字段、条件必填字段和字段类型符合 §6 |
-| 正文存在性 | Frontmatter 后存在非空 Markdown 报告正文 |
+| 正文骨架 | Frontmatter 后存在非空 Markdown 报告正文；正文第一行是一级标题；二级标题按 §6.2 固定顺序出现 |
 | 状态合法性 | 状态属于枚举，流转符合 §3.2 |
 | 归档规则 | archived Study 已说明归档原因 |
 | 对象边界 | Study 未替代 Memo、ADR、WorkPlan、Pitfall 或 docs/sources |

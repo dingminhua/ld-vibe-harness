@@ -93,7 +93,7 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 | 路径文本 | `PathText` | 等宽、可换行的路径标签 |
 | 其他短文本 | `ldvh-body` | 普通文本 |
 
-当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、WorkPlan、ADR、Pitfall、Memo。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
+当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、WorkPlan、ADR、Pitfall、Memo、Study。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
 
 路径类字段应按字段语义区分：`related_docs` 指向关联文档，`related_refs` 指向报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明，`related_rules` 指向规范、Rules、Skill、Agent、Code 或 Web 承接位置。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
 
@@ -122,9 +122,9 @@ Pitfall、ADR、Memo 等非 Study 对象的长文本阅读组织应向 Study 的
 - 不展示对象列表式导航。
 - 同一对象或文档入口再次点击关闭扩展阅读区；点击不同入口才切换右侧预览内容。
 - 对象预览不是“摘要卡片”，而是对象详情页阅读内容的右侧视口；同一个对象在详情页和扩展阅读区必须使用同一套字段顺序、字段标签、字段过滤和字段渲染。
-- WorkArea、WorkPlan 必须复用详情页导出的专用阅读布局。
-- WorkArea、WorkPlan 的扩展阅读头部同样不显示状态 chip；右侧面板按详情页身份区顺序展示 `类型 + ID + 标题 + 创建/更新时间 + 复制路径入口`，状态由复用的语义阅读布局表达。
-- ADR、Memo、Pitfall 等通用对象必须复用详情页导出的 `getObjectDetailContentEntries()` 和 `ContentField`；不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map 或独立字段渲染器。
+- WorkArea、WorkPlan、Pitfall 必须复用详情页导出的专用阅读布局。
+- WorkArea、WorkPlan、Pitfall 的扩展阅读头部同样不显示状态 chip；右侧面板按详情页身份区顺序展示 `类型 + ID + 标题 + 创建/更新时间 + 复制路径入口`，状态由复用的语义阅读布局表达。
+- ADR、Memo、Study 等通用对象必须复用详情页导出的 `getObjectDetailContentEntries()`、`splitRelatedContentEntries()`、`ContentField` 和 `RelatedContentSection`；不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map、关联分组或独立字段渲染器。
 - 对象预览头部提供复制完整路径图标，复制对象详情 API 返回的 `target`。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。
 - Markdown 正文基准字号为 14px；表格横向滚动，代码块、引用块、任务列表由全局 Markdown 样式统一控制。

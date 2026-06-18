@@ -176,6 +176,97 @@ def test_workplan_transition_requires_review_evidence(tmp_path):
     assert final["review_requested_at"]
 
 
+def write_pitfall(path: Path, *, status: str = "draft", verification: str | None = None, archive_reason: str = "") -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "id": "pitfall-0001",
+        "type": "pitfall",
+        "title": "Pitfall Transition Guard",
+        "status": status,
+        "created": "2026-06-19T09:00:00",
+        "updated": "2026-06-19T09:00:00",
+        "symptoms": "Symptom.",
+        "trigger_conditions": "Trigger.",
+        "root_cause": "Root cause.",
+        "resolution": "Resolution.",
+        "verification": verification if verification is not None else "",
+        "avoidance": "Avoidance.",
+        "applicability": "Applicability.",
+        "tags": ["transition-guard"],
+        "source_objects": [],
+        "source_memos": [],
+        "related_workareas": [],
+        "related_adrs": [],
+        "related_changes": [],
+        "related_docs": [],
+        "related_rules": [],
+        "superseded_by": "",
+        "archive_reason": archive_reason,
+    }
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+
+PITFALL_VERIFICATION = (
+    "## 验证计划\n\n"
+    "检查 Pitfall 是否可激活。\n\n"
+    "## 验证命令\n\n"
+    "python3 code/fact_validate.py ldvh-base/pitfalls\n\n"
+    "## 验证结果\n\n"
+    "校验通过。\n\n"
+    "## 结论\n\n"
+    "经验可复用。"
+)
+
+
+def test_pitfall_transition_requires_verification_structure(tmp_path):
+    path = tmp_path / "ldvh-base" / "pitfalls" / "pitfall-0001-transition-guard.yaml"
+    write_pitfall(path)
+
+    blocked = run_cli("transition", str(path), "--to", "active", *AUTH_ARGS)
+    assert blocked.returncode == 1
+    assert "verification" in blocked.stderr
+
+    data = read_yaml(path)
+    data["verification"] = PITFALL_VERIFICATION
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    activated = run_cli("transition", str(path), "--to", "active", *AUTH_ARGS)
+    assert activated.returncode == 0, activated.stderr
+    assert read_yaml(path)["status"] == "active"
+
+
+def test_pitfall_transition_requires_superseded_by(tmp_path):
+    path = tmp_path / "ldvh-base" / "pitfalls" / "pitfall-0001-transition-guard.yaml"
+    write_pitfall(path, status="active", verification=PITFALL_VERIFICATION)
+
+    blocked = run_cli("transition", str(path), "--to", "superseded", *AUTH_ARGS)
+    assert blocked.returncode == 1
+    assert "--superseded-by" in blocked.stderr
+
+    superseded = run_cli("transition", str(path), "--to", "superseded", "--superseded-by", "specs/23-Pitfall-踩坑经验.md", *AUTH_ARGS)
+    assert superseded.returncode == 0, superseded.stderr
+    data = read_yaml(path)
+    assert data["status"] == "superseded"
+    assert data["superseded_by"] == "specs/23-Pitfall-踩坑经验.md"
+
+
+def test_pitfall_transition_requires_archive_reason(tmp_path):
+    path = tmp_path / "ldvh-base" / "pitfalls" / "pitfall-0001-transition-guard.yaml"
+    write_pitfall(path, status="active", verification=PITFALL_VERIFICATION)
+
+    blocked = run_cli("transition", str(path), "--to", "archived", *AUTH_ARGS)
+    assert blocked.returncode == 1
+    assert "archive_reason" in blocked.stderr
+
+    data = read_yaml(path)
+    data["archive_reason"] = "No longer useful."
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    archived = run_cli("transition", str(path), "--to", "archived", *AUTH_ARGS)
+    assert archived.returncode == 0, archived.stderr
+    assert read_yaml(path)["status"] == "archived"
+
+
 def test_list_json_only_reports_current_objects(tmp_path):
     run_cli("create", "workplan", "--title", "Listed Plan", "--base-dir", str(tmp_path))
 

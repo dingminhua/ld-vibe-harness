@@ -681,6 +681,128 @@ notes:
     assert "repeatability" in result.stdout
 
 
+def test_pitfall_tags_must_be_english_slugs(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    pitfall = write_yaml(
+        root / "ldvh-base" / "pitfalls" / "pitfall-0001-bad-tags.yaml",
+        """
+id: pitfall-0001
+type: pitfall
+title: Bad Tags
+status: active
+created: "2026-06-18T09:00:00"
+updated: "2026-06-18T09:30:00"
+symptoms: |
+  Invalid tag should not validate.
+trigger_conditions: |
+  Any tag includes spaces or non-English text.
+root_cause: |
+  Tag format is not constrained.
+resolution: |
+  Reject invalid tags.
+verification: |
+  ## 验证计划
+
+  Check tag validation.
+
+  ## 验证命令
+
+  python3 code/fact_validate.py ldvh-base/pitfalls
+
+  ## 验证结果
+
+  Validator rejects invalid tags.
+
+  ## 结论
+
+  Tags are constrained.
+avoidance: |
+  Use English slugs.
+applicability: |
+  Applies to Pitfall facts.
+tags:
+  - bad tag
+  - 中文
+source_objects: []
+source_memos: []
+related_workareas: []
+related_adrs: []
+related_changes: []
+related_docs: []
+related_rules: []
+superseded_by:
+archive_reason:
+notes:
+""",
+    )
+
+    result = run_checker(pitfall)
+
+    assert result.returncode == 1
+    assert "INVALID_PITFALL_TAG" in result.stdout
+
+
+def test_pitfall_verification_headings_must_be_ordered(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    pitfall = write_yaml(
+        root / "ldvh-base" / "pitfalls" / "pitfall-0001-bad-evidence-order.yaml",
+        """
+id: pitfall-0001
+type: pitfall
+title: Bad Evidence Order
+status: active
+created: "2026-06-18T09:00:00"
+updated: "2026-06-18T09:30:00"
+symptoms: |
+  Evidence headings are present but not ordered.
+trigger_conditions: |
+  Any verification field is rewritten with wrong order.
+root_cause: |
+  Heading presence alone is not enough.
+resolution: |
+  Warn about wrong order.
+verification: |
+  ## 验证计划
+
+  Check evidence order.
+
+  ## 验证结果
+
+  Result appears too early.
+
+  ## 验证命令
+
+  python3 code/fact_validate.py ldvh-base/pitfalls
+
+  ## 结论
+
+  Order should be reported.
+avoidance: |
+  Use 05.01 heading order.
+applicability: |
+  Applies to Pitfall facts.
+tags:
+  - evidence-order
+source_objects: []
+source_memos: []
+related_workareas: []
+related_adrs: []
+related_changes: []
+related_docs: []
+related_rules: []
+superseded_by:
+archive_reason:
+notes:
+""",
+    )
+
+    result = run_checker(pitfall)
+
+    assert result.returncode == 0
+    assert "EVIDENCE_FORMAT_ORDER" in result.stdout
+    assert "warnings=1" in result.stdout
+
+
 def test_workarea_taskplans_field_is_no_longer_allowed(tmp_path):
     root, _ = write_valid_workplan_tree(tmp_path)
     workarea = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"

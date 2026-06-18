@@ -113,7 +113,7 @@ const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
   related_changes: 25,
   related_studies: 26,
 };
-type RelatedContentEntry = [string, unknown[]];
+export type RelatedContentEntry = [string, unknown[]];
 type RelatedAssociationValue = {
   ref: string;
   title?: string;
@@ -129,7 +129,7 @@ function isRelatedContentField(fieldKey: string) {
   return normalized.startsWith('related_');
 }
 
-function sortRelatedContentEntries(entries: RelatedContentEntry[]) {
+export function sortRelatedContentEntries(entries: RelatedContentEntry[]) {
   return [...entries].sort((a, b) => {
     const aKey = normalizeRelatedFieldKey(a[0]);
     const bKey = normalizeRelatedFieldKey(b[0]);
@@ -145,7 +145,7 @@ function sortRelatedContentEntries(entries: RelatedContentEntry[]) {
   });
 }
 
-function splitRelatedContentEntries(entries: Array<[string, unknown]>) {
+export function splitRelatedContentEntries(entries: Array<[string, unknown]>) {
   const primaryEntries: Array<[string, unknown]> = [];
   const relatedEntries: RelatedContentEntry[] = [];
 
@@ -1625,7 +1625,7 @@ function DetailMaterialSection({ fieldKey, value, locale }: { fieldKey: string; 
   );
 }
 
-function RelatedContentSection({ entries, locale }: { entries: RelatedContentEntry[]; locale: string }) {
+export function RelatedContentSection({ entries, locale }: { entries: RelatedContentEntry[]; locale: string }) {
   const { t } = useI18n();
   const [state, setState] = useState<ReadingNodeState>('expanded');
   if (entries.length === 0) return null;

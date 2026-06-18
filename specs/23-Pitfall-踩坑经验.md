@@ -201,11 +201,11 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `created` | — | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
 | `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `symptoms` | 问题现象、错误表现或误判结果 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
-| `trigger_conditions` | 触发条件、上下文或复现场景 | string | 是 | 应说明何时可能复现 | Narrative / Checklist | AI、Code、Web |
+| `trigger_conditions` | 触发条件、上下文或复现场景 | string | 是 | 应说明何时可能复现 | Narrative | AI、Code、Web |
 | `root_cause` | 根因或误判原因 | string | 是 | active 时必须明确 | Narrative | AI、Human、Web |
-| `resolution` | 解决方式 | string | 是 | active 时必须可执行 | Narrative / 验证证据 | AI、Code、Web |
+| `resolution` | 解决方式 | string | 是 | active 时必须可执行 | Narrative | AI、Code、Web |
 | `verification` | 经验可用性的验证证据 | string | 是 | active 时必须填写；按 05.01 四段式验证证据结构书写 | 验证证据 | AI、Code、Web |
-| `avoidance` | 后续规避策略 | string | 是 | active 时必须可复用 | Narrative / Checklist | AI、Human、Web |
+| `avoidance` | 后续规避策略 | string | 是 | active 时必须可复用 | Narrative | AI、Human、Web |
 | `applicability` | 适用范围和不适用范围 | string | 是 | 应避免泛化过度 | Narrative | AI、Web |
 | `tags` | 英文标签列表 | list[string] | 否 | 默认为空列表；写入前应参考已有标签 | Reference | AI、Code、Web |
 | `source_objects` | 来源对象 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -374,7 +374,7 @@ Code 不得自行创建、激活、归档、替代或删除 Pitfall，不得绕�
 
 Web 可展示 Pitfall 状态、症状、触发条件、根因、解决方式、验证结论、规避策略、适用范围、标签、替代链和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。Pitfall 详情页展示 `tags` 时应保留事实源中的英文原始值，不做中文翻译；列表卡片不展示 `tags`，避免把内部索引标签提升为外部卡片信号。
 
-Web 不得在页面状态、缓存或数据库中维护独立 Pitfall 权威状态。受控编辑 Pitfall 字段时，应调用 Code 校验和受控写入链路，并遵守 Human Gate。
+当前 Web 不得直接创建、编辑、激活、归档、替代或删除 Pitfall。Web 不得在页面状态、缓存或数据库中维护独立 Pitfall 权威状态。未来如需开放 Pitfall 写入，必须先更新 `specs/08-Web信息同步实现规范.md` 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 
 ### 8.4 工作流程与环境适配
 
