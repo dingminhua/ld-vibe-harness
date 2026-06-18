@@ -93,6 +93,60 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
 
 const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
 const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
+const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
+  related_workareas: 20,
+  related_workplans: 21,
+  related_adrs: 22,
+  related_pitfalls: 23,
+  related_memos: 24,
+  related_changes: 25,
+  related_studies: 26,
+};
+type RelatedContentEntry = [string, unknown[]];
+
+function normalizeRelatedFieldKey(fieldKey: string) {
+  return fieldKey.startsWith('aggregated_') ? fieldKey.slice('aggregated_'.length) : fieldKey;
+}
+
+function isRelatedContentField(fieldKey: string) {
+  const normalized = normalizeRelatedFieldKey(fieldKey);
+  return normalized.startsWith('related_');
+}
+
+function sortRelatedContentEntries(entries: RelatedContentEntry[]) {
+  return [...entries].sort((a, b) => {
+    const aKey = normalizeRelatedFieldKey(a[0]);
+    const bKey = normalizeRelatedFieldKey(b[0]);
+    const aOrder = RELATED_OBJECT_FIELD_ORDER[aKey];
+    const bOrder = RELATED_OBJECT_FIELD_ORDER[bKey];
+    const aIsObject = aOrder !== undefined;
+    const bIsObject = bOrder !== undefined;
+
+    if (aIsObject && bIsObject) return aOrder - bOrder;
+    if (aIsObject) return -1;
+    if (bIsObject) return 1;
+    return aKey.localeCompare(bKey, 'en');
+  });
+}
+
+function splitRelatedContentEntries(entries: Array<[string, unknown]>) {
+  const primaryEntries: Array<[string, unknown]> = [];
+  const relatedEntries: RelatedContentEntry[] = [];
+
+  entries.forEach((entry) => {
+    if (isRelatedContentField(entry[0])) {
+      if (Array.isArray(entry[1]) && hasDetailContent(entry[1])) {
+        relatedEntries.push([entry[0], entry[1]]);
+      }
+    }
+    else primaryEntries.push(entry);
+  });
+
+  return {
+    primaryEntries,
+    relatedEntries: sortRelatedContentEntries(relatedEntries),
+  };
+}
 
 export function getObjectDetailContentEntries(obj: Record<string, unknown>, objType: string) {
   const auxiliaryMetaKeys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
@@ -371,6 +425,7 @@ export default function ObjectDetail() {
     : ((obj.title_zh as string) || obj.title as string)) || objId;
 
   const contentEntries = getObjectDetailContentEntries(obj, objType);
+  const { primaryEntries, relatedEntries } = splitRelatedContentEntries(contentEntries);
 
   const auxiliaryMetaEntries = objType === 'workarea' ? [] : getAuxiliaryMetaEntries(obj, objType);
 
@@ -434,9 +489,10 @@ export default function ObjectDetail() {
             />
           ) : (
             <div className="mb-6 flex flex-col gap-5">
-              {contentEntries.map(([key, value]) => (
+              {primaryEntries.map(([key, value]) => (
                 <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} />
               ))}
+              <RelatedContentSection entries={relatedEntries} locale={locale} />
             </div>
           )}
 
@@ -697,12 +753,15 @@ export function WorkAreaReadingLayout({
       <WorkAreaDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} muted />
 
       {hasRelatedMaterials && (
-        <>
-          <WorkAreaMaterialSection fieldKey="related_docs" value={obj.related_docs} locale={locale} />
-          <WorkAreaMaterialSection fieldKey="related_adrs" value={obj.related_adrs} locale={locale} />
-          <WorkAreaMaterialSection fieldKey="related_memos" value={obj.related_memos} locale={locale} />
-          <WorkAreaMaterialSection fieldKey="related_pitfalls" value={obj.related_pitfalls} locale={locale} />
-        </>
+        <RelatedContentSection
+          entries={sortRelatedContentEntries([
+            ['related_docs', obj.related_docs],
+            ['related_adrs', obj.related_adrs],
+            ['related_memos', obj.related_memos],
+            ['related_pitfalls', obj.related_pitfalls],
+          ].filter((entry): entry is RelatedContentEntry => Array.isArray(entry[1]) && hasDetailContent(entry[1])))}
+          locale={locale}
+        />
       )}
     </div>
   );
@@ -727,15 +786,6 @@ function WorkAreaDefinitionSection({ title, value, muted = false }: { title: str
       <div className={`ldvh-definition-text min-w-0 ${muted ? 'opacity-85' : ''}`}>
         <DefinitionValue value={String(value)} muted={muted} />
       </div>
-    </WorkAreaSection>
-  );
-}
-
-function WorkAreaMaterialSection({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
-  if (!Array.isArray(value) || value.length === 0) return null;
-  return (
-    <WorkAreaSection title={getMaterialLabel(fieldKey, locale)}>
-      <MaterialValue fieldKey={fieldKey} value={value} locale={locale} referenceVariant="plain" />
     </WorkAreaSection>
   );
 }
@@ -1151,12 +1201,17 @@ export function WorkPlanReadingLayout({
         locale={locale}
       />
       <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
-      <DetailMaterialSection fieldKey="related_workplans" value={obj.related_workplans} locale={locale} />
-      <DetailMaterialSection fieldKey="related_docs" value={relatedDocs} locale={locale} />
-      <DetailMaterialSection fieldKey="related_adrs" value={relatedAdrs} locale={locale} />
-      <DetailMaterialSection fieldKey="related_memos" value={relatedMemos} locale={locale} />
-      <DetailMaterialSection fieldKey="related_pitfalls" value={relatedPitfalls} locale={locale} />
-      <DetailMaterialSection fieldKey="related_changes" value={relatedChanges} locale={locale} />
+      <RelatedContentSection
+        entries={sortRelatedContentEntries([
+          ['related_workplans', obj.related_workplans],
+          ['related_docs', relatedDocs],
+          ['related_adrs', relatedAdrs],
+          ['related_memos', relatedMemos],
+          ['related_pitfalls', relatedPitfalls],
+          ['related_changes', relatedChanges],
+        ].filter((entry): entry is RelatedContentEntry => Array.isArray(entry[1]) && hasDetailContent(entry[1])))}
+        locale={locale}
+      />
       <DetailMaterialSection fieldKey="aggregated_execution_refs" value={executionRefs} locale={locale} />
 
       {otherEntries.length > 0 && (
@@ -1262,20 +1317,28 @@ function DetailNarrativeSection({ title, value }: { title: string; value: unknow
   );
 }
 
-function DetailDocumentSection({ title, docs }: { title: string; docs: string[] }) {
-  if (docs.length === 0) return null;
-  return (
-    <TaskSection title={title} tone="docs">
-      <DocumentOrTextList items={docs} fieldKey="related_docs" variant="plain" />
-    </TaskSection>
-  );
-}
-
 function DetailMaterialSection({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
   if (!Array.isArray(value) || value.length === 0) return null;
   return (
     <TaskSection title={getMaterialLabel(fieldKey, locale)} tone="default">
       <MaterialValue fieldKey={fieldKey} value={value} locale={locale} referenceVariant="plain" />
+    </TaskSection>
+  );
+}
+
+function RelatedContentSection({ entries, locale }: { entries: RelatedContentEntry[]; locale: string }) {
+  const { t } = useI18n();
+  if (entries.length === 0) return null;
+  return (
+    <TaskSection title={t('objectDetail.related')} tone="default">
+      <div className="divide-y divide-ldvh-border/60">
+        {entries.map(([fieldKey, value]) => (
+          <div key={fieldKey} className="py-3 first:pt-0 last:pb-0">
+            <div className="ldvh-caption-strong mb-2">{getMaterialLabel(fieldKey, locale)}</div>
+            <MaterialValue fieldKey={fieldKey} value={value} locale={locale} referenceVariant="plain" />
+          </div>
+        ))}
+      </div>
     </TaskSection>
   );
 }

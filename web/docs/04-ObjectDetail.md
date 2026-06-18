@@ -85,13 +85,15 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 | 兼容检查清单字段 | `ChecklistCard` 或 `SummaryText` | 只有内容包含 `- [ ]` / `- [x]` 时才按检查清单渲染 |
 | 验证证据 | `EvidenceBlock` | Markdown 渲染，命令、路径和代码突出显示；包含二级标题的计划/结果/结论证据派生为分段表格式证据视图 |
 | 对象 ID 引用 | `ReferenceCard` | 点击在右侧扩展阅读区打开对象；卡片内提供复制完整路径图标 |
-| 文档路径 / URL | `DocPreviewLink` | 本地 Markdown 文档在右侧扩展阅读区预览；外部 URL 新窗口打开 |
+| 文档路径 / URL | `DocPreviewLink` | 本地 Markdown 文档和外部 URL 均优先在右侧扩展阅读区预览；外部 URL 在扩展阅读区提供新标签降级入口 |
 | 路径文本 | `PathText` | 等宽、可换行的路径标签 |
 | 其他短文本 | `ldvh-body` | 普通文本 |
 
 当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、WorkPlan、ADR、Pitfall、Memo。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
 
 路径类字段应按字段语义区分：`related_docs` 指向关联文档，`related_refs` 指向报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明，`related_rules` 指向规范、Rules、Skill、Agent、Code 或 Web 承接位置。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
+
+所有 `related_*` 和 `aggregated_related_*` 字段在对象详情中应统一收进上层“关联”区块，不得按字段名散落在正文、证据或其他字段之间。关联区块内部先展示工作对象关联，并按工作模型编号排序：WorkArea 20、WorkPlan 21、ADR 22、Pitfall 23、Memo 24、Change 25、Study 26；非工作对象关联再按字段英文名排序，例如 `related_docs`、`related_refs`、`related_rules`。
 
 ## 8. 右侧扩展阅读区
 
