@@ -261,7 +261,7 @@ function ObjectCardFrame({
   obj: ObjectItem;
   locale: string;
   onOpen: (objId: string) => void;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const titleAccentClass = getTitleAccentClass(obj.status);
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
@@ -281,17 +281,26 @@ function ObjectCardFrame({
         </div>
       </div>
       <div
-        className={`-mx-1 flex min-w-0 items-center gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover/card:bg-ldvh-bg/85 ${titleAccentClass}`}
+        className={`-mx-1 flex min-w-0 items-start gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover/card:bg-ldvh-bg/85 ${titleAccentClass}`}
       >
         <PriorityIcon source={obj} type={obj.type} locale={locale} size="sm" />
-        <ObjectTypeIcon type={obj.type} size={14} className="shrink-0" style={{ color: typeColor }} />
-        <span className="ldvh-card-title min-w-0 flex-1 truncate transition-colors group-hover/card:text-ldvh-accent">
+        <ObjectTypeIcon type={obj.type} size={14} className="mt-0.5 shrink-0" style={{ color: typeColor }} />
+        <span className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words leading-snug transition-colors group-hover/card:text-ldvh-accent">
           {getLocalizedTitle(obj, locale)}
         </span>
-        <ArrowRight size={14} className="shrink-0 text-ldvh-text-secondary transition-all group-hover/card:translate-x-0.5 group-hover/card:text-ldvh-accent" />
+        <ArrowRight size={14} className="mt-0.5 shrink-0 text-ldvh-text-secondary transition-all group-hover/card:translate-x-0.5 group-hover/card:text-ldvh-accent" />
       </div>
       {children}
-      <span className="ldvh-meta self-end text-right">{formatDateTime(obj.updated)}</span>
+      <div className="flex min-w-0 flex-wrap justify-end gap-x-3 gap-y-1 text-right">
+        {obj.created && (
+          <span className="ldvh-meta-muted">
+            {locale === 'en' ? 'Created ' : '创建 '}{formatDateTime(obj.created)}
+          </span>
+        )}
+        <span className="ldvh-meta">
+          {locale === 'en' ? 'Updated ' : '更新 '}{formatDateTime(obj.updated)}
+        </span>
+      </div>
     </div>
   );
 }
@@ -511,48 +520,8 @@ export default function ObjectList() {
     }
 
     if (currentType === 'adr') {
-      const affects = obj.affects ?? [];
-      const relatedRules = obj.related_rules ?? [];
-      const supersededBy = obj.superseded_by ?? '';
-
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
-          {(affects.length > 0 || relatedRules.length > 0) && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {affects.length > 0 && (
-                <span className="ldvh-caption-strong shrink-0 rounded-md border border-ldvh-border px-1.5 py-0.5 text-ldvh-text-secondary">
-                  {locale === 'en' ? 'Affects' : '影响范围'}
-                </span>
-              )}
-              {affects.map((item) => (
-                <span
-                  key={item}
-                  className="ldvh-chip max-w-[16rem] truncate rounded-md border border-ldvh-border/50 bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-primary"
-                  title={item}
-                >
-                  {item}
-                </span>
-              ))}
-              {relatedRules.map((item) => (
-                <span
-                  key={item}
-                  className="ldvh-chip max-w-[16rem] truncate rounded-md border border-violet-500/25 bg-violet-500/10 px-1.5 py-0.5 text-violet-400"
-                  title={item}
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          )}
-          {supersededBy && (
-            <div className="flex items-center gap-1.5 rounded-md border border-dashed border-amber-500/30 bg-amber-500/5 px-2.5 py-1.5">
-              <ArrowRight size={12} className="shrink-0 text-amber-400" />
-              <span className="ldvh-caption text-amber-300">
-                {locale === 'en' ? 'Superseded by ' + supersededBy : '已被 ' + supersededBy + ' 替代'}
-              </span>
-            </div>
-          )}
-        </ObjectCardFrame>
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} />
       );
     }
 

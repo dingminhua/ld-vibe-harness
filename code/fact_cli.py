@@ -4,7 +4,7 @@
 对 LDVH 当前工作对象（workarea, workplan, adr, pitfall, memo, study）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
 Change 使用 Git commit 作为事实源，不通过本 CLI 管理。
-ADR 专属写入操作（link-rule / deprecate / supersede）必须携带 Human Gate 确认参数。
+ADR 专属写入操作（link-rule / deprecate）必须携带 Human Gate 确认参数。
 """
 
 from __future__ import annotations
@@ -44,6 +44,7 @@ BlockScalarDumper.add_representer(LiteralString, _string_representer)
 
 LIST_SUMMARY_FIELDS = ("priority", "importance")
 REMOVED_FIELDS_BY_TYPE = {
+    "adr": {"related_taskplans", "related_tasks", "related_objects", "superseded_by"},
     "study": {"related_taskplans", "related_tasks", "superseded_by", "source", "source_detail", "source_docs"},
 }
 
@@ -68,7 +69,7 @@ FILENAME_PATTERNS = {
 VALID_STATUSES = {
     "workarea": {"active", "archived"},
     "workplan": {"draft", "active", "review_needed", "closed"},
-    "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
+    "adr": {"active", "archived", "deprecated"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "memo": {"pending", "resolved", "discarded"},
     "study": {"active", "archived"},
@@ -86,11 +87,9 @@ VALID_TRANSITIONS = {
         "closed": set(),
     },
     "adr": {
-        "proposed": {"accepted", "rejected"},
-        "accepted": {"deprecated", "superseded"},
-        "rejected": set(),
+        "active": {"archived", "deprecated"},
+        "archived": set(),
         "deprecated": set(),
-        "superseded": set(),
     },
     "pitfall": {
         "draft": {"active", "archived"},
@@ -112,7 +111,7 @@ VALID_TRANSITIONS = {
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
     "workplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
-    "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
+    "adr": ["id", "type", "title", "status", "created", "updated", "date", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
     "study": ["id", "type", "title", "status", "created", "updated", "summary"],
@@ -121,7 +120,7 @@ REQUIRED_FIELDS = {
 DEFAULT_STATUS = {
     "workarea": "active",
     "workplan": "draft",
-    "adr": "proposed",
+    "adr": "active",
     "pitfall": "draft",
     "memo": "pending",
     "study": "active",
@@ -137,10 +136,10 @@ DIRECTORY_MAP = {
 }
 
 # 允许删除的状态集合
-DELETABLE_STATUSES = {"draft", "pending", "proposed"}
+DELETABLE_STATUSES = {"draft", "pending"}
 
 # ADR 专属常量
-ADR_TERMINAL_STATUSES = {"deprecated", "superseded", "rejected"}
+ADR_TERMINAL_STATUSES = {"archived", "deprecated"}
 ADR_SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 PITFALL_ACTIVE_REQUIRED_FIELDS = (
     "symptoms",
@@ -406,16 +405,17 @@ def _build_adr_data(adr_id: str, args: argparse.Namespace, now: str) -> dict:
         "id": adr_id,
         "type": "adr",
         "title": args.title,
-        "status": "proposed",
+        "status": "active",
         "created": now,
         "updated": now,
-        "date": getattr(args, "date", None) or now,
+        "date": getattr(args, "date", None) or date.today().isoformat(),
         "context": context_with_gate,
         "decision": args.decision,
         "consequences": args.consequences,
         "affects": _parse_list_values(getattr(args, "affects", None)),
-        "related_objects": _parse_list_values(getattr(args, "related_objects", None)),
         "related_rules": _parse_list_values(getattr(args, "related_rules", None)),
+        "archive_reason": "",
+        "deprecated_reason": "",
     }
     if getattr(args, "alternatives", None):
         data["alternatives"] = args.alternatives
@@ -470,6 +470,8 @@ def cmd_create(args: argparse.Namespace) -> int:
             data[field] = DEFAULT_STATUS[object_type]
         elif field in ("created", "updated"):
             data[field] = now
+        elif object_type == "adr" and field == "date":
+            data[field] = date.today().isoformat()
         else:
             # 其他必填字段默认为空字符串占位
             data[field] = ""
@@ -550,6 +552,15 @@ def cmd_create(args: argparse.Namespace) -> int:
             f"确认时间={now}, 确认上下文={getattr(args, 'confirmation_context', 'N/A')}]"
         )
         data["context"] = gate_record
+        data["affects"] = []
+        data["related_workareas"] = []
+        data["related_workplans"] = []
+        data["related_changes"] = []
+        data["related_memos"] = []
+        data["related_adrs"] = []
+        data["related_rules"] = []
+        data["archive_reason"] = ""
+        data["deprecated_reason"] = ""
 
     # 写入文件
     save_yaml(filepath, data)
@@ -607,12 +618,15 @@ def cmd_transition(args: argparse.Namespace) -> int:
         error(f"状态流转被拒绝：{current_status} 为终态，不得重开。")
         return 1
 
-    # ADR accepted → superseded 必须提供 --superseded-by
-    if object_type == "adr" and new_status == "superseded":
-        if not getattr(args, "superseded_by", None):
-            error("状态流转被拒绝：accepted → superseded 必须提供 --superseded-by。")
+    if object_type == "adr" and new_status == "archived":
+        if is_empty(data.get("archive_reason")):
+            error("archive_reason 未填写，无法归档 ADR")
             return 1
-        data["superseded_by"] = args.superseded_by
+
+    if object_type == "adr" and new_status == "deprecated":
+        if is_empty(data.get("deprecated_reason")):
+            error("deprecated_reason 未填写，无法废弃 ADR")
+            return 1
 
     # WorkPlan 激活和关闭审查条件校验（新 WorkPlan 契约）
     if object_type == "workplan" and current_status == "draft" and new_status == "active":
@@ -1054,7 +1068,7 @@ def cmd_link_rule(args: argparse.Namespace) -> int:
 # ── deprecate 命令 ─────────────────────────────────────────────────────
 
 def cmd_deprecate(args: argparse.Namespace) -> int:
-    """废弃 ADR（accepted → deprecated + 废弃原因回写）。"""
+    """废弃 ADR（active → deprecated + deprecated_reason 回写）。"""
     try:
         _ensure_authorized(args)
     except SystemExit:
@@ -1070,15 +1084,11 @@ def cmd_deprecate(args: argparse.Namespace) -> int:
         error(f"废弃被拒绝：{current} → deprecated 非法。")
         return 1
 
-    context = str(adr.get("context", ""))
-    consequences = str(adr.get("consequences", ""))
-    addition = f"废弃原因：{args.reason}"
-    reason_field = getattr(args, "reason_field", "consequences")
-    updates: dict[str, Any] = {"status": "deprecated", "updated": _today_iso()}
-    if reason_field == "context":
-        updates["context"] = f"{context}\n\n{addition}" if context else addition
-    else:
-        updates["consequences"] = f"{consequences}\n\n{addition}" if consequences else addition
+    updates: dict[str, Any] = {
+        "status": "deprecated",
+        "updated": _today_iso(),
+        "deprecated_reason": args.reason,
+    }
 
     path = _update_adr_file(adr, updates, base_dir)
     print(f"已废弃 ADR: {args.adr_id}")
@@ -1088,53 +1098,9 @@ def cmd_deprecate(args: argparse.Namespace) -> int:
 # ── supersede 命令 ─────────────────────────────────────────────────────
 
 def cmd_supersede(args: argparse.Namespace) -> int:
-    """推翻 ADR（创建新 ADR + 原 ADR 标记 superseded）。"""
-    try:
-        _ensure_authorized(args)
-    except SystemExit:
-        return 1
-
-    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
-    adrs, _ = _load_all_of_type("adr", base_dir)
-    old_adr = _find_adr_by_id(adrs, args.old_adr_id)
-
-    old_status = old_adr.get("status")
-    allowed = VALID_TRANSITIONS["adr"].get(old_status, set())
-    if "superseded" not in allowed:
-        error(f"推翻被拒绝：{old_status} → superseded 非法。")
-        return 1
-
-    # 计算新 ADR ID
-    adr_dir = base_dir / DIRECTORY_MAP["adr"]
-    new_num = next_number(adr_dir, "adr")
-    new_id = f"adr-{new_num:04d}"
-    now = _today_iso()
-
-    # 构建新 ADR 数据
-    new_adr = _build_adr_data(new_id, args, now)
-    related_objects = new_adr.get("related_objects", [])
-    if args.old_adr_id not in related_objects:
-        related_objects.append(args.old_adr_id)
-    new_adr["related_objects"] = related_objects
-
-    new_path = _adr_filepath(new_id, args.slug, base_dir)
-    if new_path.exists():
-        error(f"写入被拒绝：目标文件已存在 {new_path}")
-        return 1
-
-    # 写入新 ADR
-    save_yaml(new_path, new_adr)
-
-    # 更新原 ADR
-    old_path = _update_adr_file(
-        old_adr,
-        {"status": "superseded", "superseded_by": new_id, "updated": now},
-        base_dir,
-    )
-
-    print(f"已创建替代 ADR: {new_path}")
-    print(f"已更新原 ADR: {args.old_adr_id} → superseded_by {new_id}")
-    return 0
+    """兼容旧命令：ADR 不再使用 superseded 状态。"""
+    error("ADR 已取消 superseded 状态；请新建 active ADR，并在 related_adrs / related_rules / affects 中记录追溯关系。")
+    return 1
 
 
 # ── update 命令 ─────────────────────────────────────────────────────────
@@ -1192,7 +1158,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         # 列表类型字段：逗号分隔
         if key in ("related_workareas", "related_workplans", "related_adrs",
                     "related_memos", "related_studies", "related_pitfalls", "related_docs",
-                    "related_refs", "source_docs", "affects", "related_objects", "related_rules", "related_changes"):
+                    "related_refs", "source_docs", "affects", "related_rules", "related_changes"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
         else:
             updates[key] = value
@@ -1231,20 +1197,6 @@ def _add_authorization_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--confirmation-context", default=None, help="确认上下文")
 
 
-def _add_adr_content_args(parser: argparse.ArgumentParser) -> None:
-    """为 ADR 创建类子命令添加内容参数。"""
-    parser.add_argument("--slug", required=True, help="ADR 文件名 slug")
-    parser.add_argument("--title", required=True, help="ADR 标题")
-    parser.add_argument("--context", default="", help="ADR 背景")
-    parser.add_argument("--decision", required=True, help="ADR 决策")
-    parser.add_argument("--consequences", required=True, help="ADR 影响")
-    parser.add_argument("--date", default=None, help="决策日期")
-    parser.add_argument("--alternatives", default=None, help="替代方案")
-    parser.add_argument("--affects", action="append", default=None, help="影响文件（可多次指定）")
-    parser.add_argument("--related-objects", action="append", default=None, help="关联对象（可多次指定）")
-    parser.add_argument("--related-rules", action="append", default=None, help="关联规范（可多次指定）")
-
-
 def build_parser() -> argparse.ArgumentParser:
     """构建 argparse 解析器。"""
     parser = argparse.ArgumentParser(
@@ -1265,7 +1217,7 @@ def build_parser() -> argparse.ArgumentParser:
     transition_parser.add_argument("yaml_file", help="YAML 文件路径")
     transition_parser.add_argument("--to", required=True, dest="to", help="目标状态")
     transition_parser.add_argument("--reason", default=None, help="退回流转原因")
-    transition_parser.add_argument("--superseded-by", default=None, help="被替代的新对象、规范或实现引用（ADR/Pitfall superseded 时必填）")
+    transition_parser.add_argument("--superseded-by", default=None, help="被替代的新对象、规范或实现引用（Pitfall superseded 时必填）")
     transition_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     _add_authorization_args(transition_parser)
 
@@ -1314,14 +1266,12 @@ def build_parser() -> argparse.ArgumentParser:
     deprecate_parser = subparsers.add_parser("deprecate", help="废弃 ADR")
     deprecate_parser.add_argument("adr_id", help="ADR ID（如 adr-0001）")
     deprecate_parser.add_argument("--reason", required=True, help="废弃原因")
-    deprecate_parser.add_argument("--reason-field", choices=["context", "consequences"], default="consequences", help="废弃原因写入字段（默认 consequences）")
     deprecate_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     _add_authorization_args(deprecate_parser)
 
     # supersede 子命令
-    supersede_parser = subparsers.add_parser("supersede", help="推翻 ADR（创建新 ADR + 原 ADR 标记 superseded）")
+    supersede_parser = subparsers.add_parser("supersede", help="兼容旧命令：ADR 已取消 superseded 状态")
     supersede_parser.add_argument("--old-adr-id", required=True, help="被推翻的 ADR ID")
-    _add_adr_content_args(supersede_parser)
     supersede_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     _add_authorization_args(supersede_parser)
 

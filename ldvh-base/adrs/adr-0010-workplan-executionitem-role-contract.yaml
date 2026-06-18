@@ -1,7 +1,7 @@
 id: adr-0010
 type: adr
 title: 使用 WorkPlan 和 ExecutionItem 替代 TaskPlan / Task / SubTask
-status: accepted
+status: active
 created: '2026-06-18T00:30:45'
 updated: '2026-06-18T00:30:45'
 date: '2026-06-17'
@@ -110,4 +110,5 @@ related_rules:
   - specs/21-WorkPlan-工作计划.md
   - specs/21-WorkPlan-工作计划.md
   - specs/21-WorkPlan-工作计划.md
-superseded_by:
+archive_reason:
+deprecated_reason:

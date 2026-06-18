@@ -35,7 +35,7 @@ ID_PATTERNS = {
 VALID_STATUSES = {
     "workarea": {"active", "archived"},
     "workplan": {"draft", "active", "review_needed", "closed"},
-    "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
+    "adr": {"active", "archived", "deprecated"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "memo": {"pending", "resolved", "discarded"},
     "study": {"active", "archived"},
@@ -43,7 +43,7 @@ VALID_STATUSES = {
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
     "workplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
-    "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
+    "adr": ["id", "type", "title", "status", "created", "updated", "date", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
     "study": ["id", "type", "title", "status", "created", "updated", "summary"],
@@ -52,7 +52,7 @@ LIST_FIELDS = {
     "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "workplans"},
     "workplan": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "related_workplans", "related_changes"},
     "adr": {
-        "affects", "related_workareas",
+        "affects", "related_workareas", "related_workplans",
         "related_adrs", "related_memos", "related_changes", "related_rules",
     },
     "pitfall": {
@@ -71,7 +71,7 @@ LIST_FIELDS = {
 LONG_TEXT_FIELDS = {
     "workarea": {"description", "scope", "constraints", "archive_reason"},
     "workplan": {"description", "success_criteria", "verification_evidence", "closure_evidence"},
-    "adr": {"context", "decision", "consequences"},
+    "adr": {"context", "decision", "consequences", "archive_reason", "deprecated_reason"},
     "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
     "memo": {"description", "source_detail", "discard_reason"},
     "study": {"summary", "user_intent", "conclusion", "archive_reason"},
@@ -820,12 +820,15 @@ def validate_execution_item_evidence_refs(path: Path, evidence_refs: list[Any], 
 
 def validate_adr(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "adr")
-    for removed_field in ("related_taskplans", "related_tasks"):
+    for removed_field in ("related_taskplans", "related_tasks", "related_objects", "superseded_by"):
         if removed_field in data:
             issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 ADR 不得维护旧对象关联字段: {removed_field}", field=removed_field))
     for field, target_type in ID_LIST_FIELDS.items():
         issues.extend(validate_id_list_format(path, data, field, target_type))
-    issues.extend(validate_any_object_id_list_format(path, data, "related_objects"))
+    if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
+        issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态必须提供归档原因: archive_reason", field="archive_reason"))
+    if data.get("status") == "deprecated" and is_empty(data.get("deprecated_reason")):
+        issues.append(Issue(str(path), "error", "MISSING_DEPRECATED_REASON", "deprecated 状态必须提供废弃原因: deprecated_reason", field="deprecated_reason"))
     return issues
 
 VALID_PRIORITY = {"P0", "P1", "P2", "P3"}

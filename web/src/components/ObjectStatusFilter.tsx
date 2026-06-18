@@ -32,7 +32,7 @@ const statusOrderIndex = new Map(STATUS_FILTER_ORDER.map((status, index) => [sta
 const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   workarea: ['active', 'archived'],
   workplan: ['draft', 'active', 'review_needed', 'closed'],
-  adr: ['proposed', 'accepted', 'rejected'],
+  adr: ['active', 'archived', 'deprecated'],
   pitfall: ['active', 'superseded'],
   memo: ['pending', 'resolved', 'discarded'],
   study: ['active', 'archived'],

@@ -18,7 +18,7 @@
 ```text
 状态筛选（ObjectStatusFilter）
 对象卡片自适应网格（ldvh-section-grid）
-  通用卡片：ID + 复制路径图标 + 状态徽章 + 优先级字符徽标 + 标题 + 信号标签 + 更新时间
+  通用卡片：ID + 复制路径图标 + 状态徽章 + 优先级字符徽标 + 标题 + 信号标签 + 创建/更新时间
   WorkArea 卡片：工作域自身信息 + 按状态分组的计划入口
   WorkPlan 卡片：计划自身信息 + 执行态势条 + 关闭判断信号
 加载态 / 错误态 / 空态
@@ -44,17 +44,27 @@
 - 通用卡片结构：
   - 左上：对象 ID，`ldvh-meta-muted`；
   - 右上：`CopyPathButton` + `StatusBadge`；
-  - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；
+  - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；标题必须允许换行完整显示，不得用截断省略代替阅读；
   - 优先级字符徽标：WorkPlan 和 Memo 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
   - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkPlan 和 Memo，不得为 WorkArea、ADR、Pitfall 或 Change 杜撰 priority、importance、category 或 tags；Memo 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
   - Pitfall 卡片不展示 `tags`，也不展示“已解决/未解决”等冗余解决态；Pitfall 标签是事实源索引和详情页辅助信息，不作为列表卡片信号或二层筛选 tab。
-  - 底部：`formatDateTime(updated)`，格式为 `YYYY-MM-DD HH:mm`。
+  - 底部：创建时间和更新时间均使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`；对象列表以更新时间排序，但卡片底部保留创建时间帮助判断对象起点。
 - 复制图标复制对象 YAML 文件完整路径，使用 API 返回的 `path`。
 - 点击复制图标不得进入详情页；点击卡片外层空白、标题带、ID、状态徽章或更新时间进入对象详情页。
 - hover 时边框变为 `border-ldvh-accent/40`，标题变 accent 色。
 - 卡片标题不得超过全局 `ldvh-card-title` 字号；标题强调优先使用轻量背景、位置、留白、状态语义短线和 hover 反馈。
 
-### 3.3 WorkArea 卡片
+### 3.3 ADR 卡片
+
+ADR 是“已确认但尚未完全吸收到 specs/rules/code/web/skill/agent/workflow 的决策补丁”。列表卡片只帮助用户定位当前补丁，不在卡片内展示补丁影响范围。
+
+- ADR 状态筛选只认 `active / archived / deprecated`。`active` 是当前有效补丁，`archived` 是已被稳定载体吸收，`deprecated` 是已废弃。
+- ADR 卡片使用通用卡片结构：ID、复制路径、状态、完整标题、创建/更新时间。
+- ADR 标题就是最好的摘要；卡片不展示 `context`、`decision`、`affects`、`related_rules`、`archive_reason` 或 `deprecated_reason` 摘要。
+- ADR 卡片标题必须允许换行完整显示，避免用截断标题替代决策识别。
+- ADR 卡片不展示 `affects` / `related_rules` chip，也不展示 `superseded_by`、`proposed`、`accepted`、`rejected` 或 `superseded` 等旧生命周期信息。
+
+### 3.4 WorkArea 卡片
 
 WorkArea 是“计划入口”卡片，帮助用户判断这个工作域下有哪些活跃/待关闭/已闭合计划，并快速进入仍需推进的计划。
 
@@ -71,7 +81,7 @@ WorkArea 是“计划入口”卡片，帮助用户判断这个工作域下有�
 - WorkArea 不展示计划内执行项标题或关闭材料；执行编排留给 WorkPlan 卡片与详情页。
 - 点击计划行跳转 `/objects/workplan/{id}`，不触发外层工作域卡片跳转。
 
-### 3.4 WorkPlan 卡片
+### 3.5 WorkPlan 卡片
 
 WorkPlan 是“计划执行态势”卡片，帮助用户从计划判断当前执行处在哪个阶段、是否存在前置等待，以及关闭判断材料是否齐备。
 
@@ -90,7 +100,7 @@ WorkPlan 是“计划执行态势”卡片，帮助用户从计划判断当前�
   - 执行项行包含标题、内部编号、状态图标、同色弱背景和辅助阅读入口；执行项不得拥有独立对象详情路由；
   - 执行态势区域、态势条和普通信息区域不响应主路由跳转，避免误触外层卡片。
 
-### 3.5 空态、加载态、错误态
+### 3.6 空态、加载态、错误态
 
 - 加载态：居中旋转动画。
 - 错误态：`common.loadFailed` + 错误信息。

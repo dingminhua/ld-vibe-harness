@@ -133,6 +133,39 @@ related_changes: []
     return root, workplan
 
 
+def write_valid_adr(tmp_path: Path, *, status: str = "active", extra: str = "") -> Path:
+    return write_yaml(
+        tmp_path / "project" / "ldvh-base" / "adrs" / "adr-0001-current-decision.yaml",
+        f"""
+id: adr-0001
+type: adr
+title: Current Decision Patch
+status: {status}
+created: "2026-06-19T09:00:00"
+updated: "2026-06-19T09:30:00"
+date: "2026-06-19"
+context: |
+  Current context.
+decision: |
+  Current decision.
+consequences: |
+  Current consequences.
+alternatives: |
+  Current alternatives.
+affects: []
+related_workareas: []
+related_workplans: []
+related_adrs: []
+related_memos: []
+related_changes: []
+related_rules: []
+archive_reason:
+deprecated_reason:
+{extra}
+""",
+    )
+
+
 def test_valid_workplan_tree(tmp_path):
     root, _ = write_valid_workplan_tree(tmp_path)
 
@@ -177,6 +210,48 @@ def test_datetime_fields_reject_date_only_values(tmp_path):
     assert "INVALID_DATETIME_FIELD" in result.stdout
     assert "created" in result.stdout
     assert "updated" in result.stdout
+
+
+def test_adr_uses_current_three_state_contract(tmp_path):
+    adr = write_valid_adr(tmp_path)
+
+    result = run_checker(adr)
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+
+
+def test_adr_rejects_old_status_and_removed_fields(tmp_path):
+    adr = write_valid_adr(
+        tmp_path,
+        status="accepted",
+        extra="""
+superseded_by: adr-0002
+related_objects:
+  - memo-0001
+""",
+    )
+
+    result = run_checker(adr)
+
+    assert result.returncode == 1
+    assert "INVALID_STATUS" in result.stdout
+    assert "REMOVED_OBJECT_FIELD" in result.stdout
+    assert "superseded_by" in result.stdout
+    assert "related_objects" in result.stdout
+
+
+def test_adr_terminal_statuses_require_reasons(tmp_path):
+    archived = write_valid_adr(tmp_path / "archived", status="archived")
+    deprecated = write_valid_adr(tmp_path / "deprecated", status="deprecated")
+
+    archived_result = run_checker(archived)
+    deprecated_result = run_checker(deprecated)
+
+    assert archived_result.returncode == 1
+    assert "MISSING_ARCHIVE_REASON" in archived_result.stdout
+    assert deprecated_result.returncode == 1
+    assert "MISSING_DEPRECATED_REASON" in deprecated_result.stdout
 
 
 def test_study_draft_status_is_invalid(tmp_path):

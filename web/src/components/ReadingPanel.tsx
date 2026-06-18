@@ -6,6 +6,7 @@ import CopyPathButton from '@/components/CopyPathButton';
 import { useI18n } from '@/i18n/context';
 import {
   ContentField,
+  AdrReadingLayout,
   ObjectIdentityHeader,
   PitfallReadingLayout,
   RelatedContentSection,
@@ -403,7 +404,7 @@ function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: str
   useEffect(() => {
     if (!objectType || !objectId) return;
     if (!isObjectDetailLayoutType(objectType)) return;
-    if (objectType === 'pitfall') {
+    if (objectType === 'pitfall' || objectType === 'adr') {
       setSummary(null);
       setLoading(false);
       return;
@@ -443,11 +444,16 @@ function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: str
     const { relatedEntries } = splitRelatedContentEntries(entries);
     return <PitfallReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
   }
+  if (objectType === 'adr') {
+    const entries = getObjectDetailContentEntries(obj, objectType);
+    const { relatedEntries } = splitRelatedContentEntries(entries);
+    return <AdrReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
+  }
   return null;
 }
 
 function isObjectDetailLayoutType(objectType: string | undefined) {
-  return objectType === 'workarea' || objectType === 'workplan' || objectType === 'pitfall';
+  return objectType === 'workarea' || objectType === 'workplan' || objectType === 'pitfall' || objectType === 'adr';
 }
 
 function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {

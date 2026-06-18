@@ -104,6 +104,7 @@ function normalizeListItem(data: Record<string, unknown>, filePath: string, type
     status: toStringValue(data.status, 'unknown'),
     title: toStringValue(data.title, id),
     path: filePath,
+    created: toStringValue(data.created),
     updated: toStringValue(data.updated),
   }
 

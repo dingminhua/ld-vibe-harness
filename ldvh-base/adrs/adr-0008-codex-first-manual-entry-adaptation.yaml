@@ -1,7 +1,7 @@
 id: adr-0008
 type: adr
 title: Codex 优先适配与用户手动薄入口
-status: accepted
+status: active
 created: '2026-06-17T03:00:00'
 updated: '2026-06-17T03:20:00'
 date: '2026-06-17'
@@ -86,4 +86,5 @@ related_rules:
   - specs/04-规范落地与环境适配基础规范.md
   - specs/04.02-LDVH能力资产与落地保障规范.md
   - specs/04.03-环境入口适配与部署规范.md
-superseded_by:
+archive_reason:
+deprecated_reason:

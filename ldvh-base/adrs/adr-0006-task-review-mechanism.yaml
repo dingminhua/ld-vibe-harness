@@ -1,7 +1,7 @@
 id: adr-0006
 type: adr
 title: Task评审机制设计
-status: proposed
+status: deprecated
 created: '2026-06-06T00:22:10.893593'
 updated: '2026-06-06T00:22:10.893593'
 date: '2026-06-06'
@@ -66,3 +66,5 @@ related_adrs: []
 related_rules:
 - specs/21-WorkPlan-工作计划.md
 - specs/05-工作模型基础规范.md
+archive_reason:
+deprecated_reason: 该记录基于旧 Task 工作模型的 review_needed 机制，后续已由 WorkPlan / ExecutionItem / Role Contract 方向承接，不再作为当前决策补丁。

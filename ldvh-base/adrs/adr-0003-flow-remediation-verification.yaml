@@ -1,7 +1,7 @@
 id: adr-0003
 type: adr
 title: ADR 流程整改验证
-status: rejected
+status: deprecated
 created: '2026-06-03T00:00:00'
 updated: '2026-06-03T00:00:00'
 date: '2026-06-03'
@@ -16,3 +16,5 @@ related_changes: []
 related_memos: []
 related_rules: []
 related_workareas: []
+archive_reason:
+deprecated_reason: 历史 ADR 流程验证记录；当前 ADR 已收敛为已确认决策补丁，不再保留 rejected/proposed 生命周期。

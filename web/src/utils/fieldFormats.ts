@@ -3,7 +3,7 @@ export const SUMMARY_TEXT_FIELDS = [
   'description', 'source', 'context', 'consequences', 'success_criteria', 'constraints',
   'rationale', 'observation', 'analysis', 'mitigation', 'resolution', 'decision',
   'symptoms', 'trigger_conditions', 'root_cause', 'avoidance', 'applicability',
-  'governance_scope', 'archive_reason', 'discard_reason', 'notes', 'transition_reasons',
+  'governance_scope', 'archive_reason', 'deprecated_reason', 'discard_reason', 'notes', 'transition_reasons',
   'source_detail', 'user_intent', 'conclusion', 'report_body',
   'alternatives', 'reason',
   'scope', 'impact', 'summary', 'details', 'outcome', 'next_steps',

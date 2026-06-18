@@ -1,7 +1,7 @@
 id: adr-0004
 type: adr
 title: 先完善机制或测试再修复问题
-status: accepted
+status: active
 created: '2026-06-03T00:00:00'
 updated: '2026-06-03T00:00:00'
 date: '2026-06-03'
@@ -19,3 +19,5 @@ related_memos: []
 related_rules:
 - specs/22-ADR-决策.md
 related_workareas: []
+archive_reason:
+deprecated_reason:

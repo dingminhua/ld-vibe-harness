@@ -70,6 +70,7 @@ export interface ObjectItem {
   title_zh?: string;
   status: string;
   path: string;
+  created?: string;
   updated: string;
   priority?: string;
   importance?: string;
@@ -99,7 +100,8 @@ export interface ObjectItem {
   consequences?: string;
   affects?: string[];
   related_rules?: string[];
-  superseded_by?: string;
+  archive_reason?: string;
+  deprecated_reason?: string;
   alternatives?: string;
   /** Memo-specific */
   source?: string;

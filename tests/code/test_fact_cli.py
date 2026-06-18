@@ -82,6 +82,92 @@ def test_create_study_defaults_to_active(tmp_path):
     assert "## 后续分流" in content
 
 
+def write_adr(path: Path, *, status: str = "active", archive_reason: str = "", deprecated_reason: str = "") -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "id": "adr-0001",
+        "type": "adr",
+        "title": "Current ADR",
+        "status": status,
+        "created": "2026-06-19T09:00:00",
+        "updated": "2026-06-19T09:00:00",
+        "date": "2026-06-19",
+        "context": "Context.",
+        "decision": "Decision.",
+        "consequences": "Consequences.",
+        "alternatives": "Alternatives.",
+        "affects": [],
+        "related_workareas": [],
+        "related_workplans": [],
+        "related_adrs": [],
+        "related_memos": [],
+        "related_changes": [],
+        "related_rules": [],
+        "archive_reason": archive_reason,
+        "deprecated_reason": deprecated_reason,
+    }
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+
+def test_create_adr_defaults_to_active_contract(tmp_path):
+    result = run_cli(
+        "create",
+        "adr",
+        "--title",
+        "Current ADR",
+        "--base-dir",
+        str(tmp_path),
+        *AUTH_ARGS,
+    )
+
+    assert result.returncode == 0, result.stderr
+    data = read_yaml(Path(result.stdout.strip()))
+    assert data["status"] == "active"
+    assert data["date"]
+    assert data["related_workplans"] == []
+    assert data["archive_reason"] == ""
+    assert data["deprecated_reason"] == ""
+    assert "related_objects" not in data
+    assert "superseded_by" not in data
+
+
+def test_adr_transition_requires_terminal_reasons(tmp_path):
+    path = tmp_path / "ldvh-base" / "adrs" / "adr-0001-current-adr.yaml"
+    write_adr(path)
+
+    blocked_archive = run_cli("transition", str(path), "--to", "archived", *AUTH_ARGS)
+    assert blocked_archive.returncode == 1
+    assert "archive_reason" in blocked_archive.stderr
+
+    data = read_yaml(path)
+    data["archive_reason"] = "Decision absorbed into specs."
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    archived = run_cli("transition", str(path), "--to", "archived", *AUTH_ARGS)
+    assert archived.returncode == 0, archived.stderr
+    assert read_yaml(path)["status"] == "archived"
+
+    write_adr(path)
+    blocked_deprecated = run_cli("transition", str(path), "--to", "deprecated", *AUTH_ARGS)
+    assert blocked_deprecated.returncode == 1
+    assert "deprecated_reason" in blocked_deprecated.stderr
+
+
+def test_adr_deprecate_sets_deprecated_reason_and_supersede_is_removed(tmp_path):
+    path = tmp_path / "ldvh-base" / "adrs" / "adr-0001-current-adr.yaml"
+    write_adr(path)
+
+    supersede = run_cli("supersede", "--old-adr-id", "adr-0001", "--base-dir", str(tmp_path), *AUTH_ARGS)
+    assert supersede.returncode == 1
+    assert "取消 superseded" in supersede.stderr
+
+    deprecated = run_cli("deprecate", "adr-0001", "--reason", "No longer applicable.", "--base-dir", str(tmp_path), *AUTH_ARGS)
+    assert deprecated.returncode == 0, deprecated.stderr
+    data = read_yaml(path)
+    assert data["status"] == "deprecated"
+    assert data["deprecated_reason"] == "No longer applicable."
+
+
 def test_update_study_rejects_removed_fields(tmp_path):
     created = run_cli("create", "study", "--title", "Stable Study", "--base-dir", str(tmp_path))
     assert created.returncode == 0, created.stderr

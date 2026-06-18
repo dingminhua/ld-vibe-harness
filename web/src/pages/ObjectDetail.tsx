@@ -76,6 +76,11 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'related_memos', 'related_pitfalls', 'related_docs', 'related_changes',
     'notes',
   ],
+  adr: [
+    'context', 'decision', 'consequences', 'alternatives', 'affects',
+    'related_rules', 'archive_reason', 'deprecated_reason', 'related_workareas',
+    'related_workplans', 'related_adrs', 'related_memos', 'related_changes',
+  ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
     'avoidance', 'applicability', 'source_memos', 'related_workareas',
@@ -94,7 +99,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   ],
 };
 
-const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
+const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'archived', 'discarded', 'deprecated']);
 const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
 const STUDY_READING_NODE_FIELDS = new Set(['user_intent', 'summary', 'conclusion', 'report_body']);
 const STUDY_READING_NODE_LABELS_ZH: Record<string, string> = {
@@ -272,6 +277,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   resolved_to: { zh: '分流目标', en: 'Resolved To' },
   resolved_at: { zh: '分流时间', en: 'Resolved At' },
   discard_reason: { zh: '废弃原因', en: 'Discard Reason' },
+  deprecated_reason: { zh: '废弃原因', en: 'Deprecated Reason' },
   superseded_by: { zh: '替代来源', en: 'Superseded By' },
   related_changes: { zh: '关联变更', en: 'Related Changes' },
   aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
@@ -485,6 +491,12 @@ export default function ObjectDetail() {
               loading={relatedSummaryLoading}
               locale={locale}
               getStatus={getStatus}
+            />
+          ) : objType === 'adr' ? (
+            <AdrReadingLayout
+              obj={obj}
+              relatedEntries={relatedEntries}
+              locale={locale}
             />
           ) : objType === 'pitfall' ? (
             <PitfallReadingLayout
@@ -1239,6 +1251,7 @@ function getMaterialLabel(fieldKey: string, locale: string) {
     related_rules: { zh: '规范', en: 'Specs' },
     related_workplans: { zh: '工作计划', en: 'Work Plans' },
     aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
+    affects: { zh: '影响对象', en: 'Affects' },
   };
   const entry = labels[fieldKey];
   if (!entry) return getFieldLabel(fieldKey, locale);
@@ -1457,6 +1470,116 @@ export function DetailRecordItem({ label, recorded }: { label: string; recorded:
       <span>{label}</span>
       <span className="ldvh-meta-muted">{recorded ? t('objectList.hasRecord') : t('objectList.missingRecord')}</span>
     </span>
+  );
+}
+
+const ADR_READING_NODES: Array<{ field: string; zh: string; en: string }> = [
+  { field: 'context', zh: '背景', en: 'Context' },
+  { field: 'decision', zh: '决策', en: 'Decision' },
+  { field: 'consequences', zh: '影响', en: 'Consequences' },
+  { field: 'alternatives', zh: '备选', en: 'Alternatives' },
+];
+
+export function AdrReadingLayout({
+  obj,
+  relatedEntries,
+  locale,
+}: {
+  obj: Record<string, unknown>;
+  relatedEntries: RelatedContentEntry[];
+  locale: string;
+}) {
+  const relatedWithoutHandoff = relatedEntries.filter(([fieldKey]) => fieldKey !== 'related_rules');
+
+  return (
+    <div className="mb-6 flex flex-col gap-5">
+      {ADR_READING_NODES.map((node) => (
+        <AdrReadingNode
+          key={node.field}
+          title={locale === 'en' ? node.en : node.zh}
+          value={obj[node.field]}
+          locale={locale}
+        />
+      ))}
+      <AdrHandoffSection obj={obj} locale={locale} />
+      <RelatedContentSection entries={relatedWithoutHandoff} locale={locale} />
+    </div>
+  );
+}
+
+function AdrReadingNode({
+  title,
+  value,
+  locale,
+}: {
+  title: string;
+  value: unknown;
+  locale: string;
+}) {
+  const [state, setState] = useState<ReadingNodeState>('expanded');
+  if (!hasDetailContent(value)) return null;
+
+  return (
+    <ReadingNodeSection
+      title={title}
+      state={state}
+      locale={locale}
+      onToggle={() => setState((current) => getReadingNodeNextState(current))}
+    >
+      <StudyTextNodeContent value={value} />
+    </ReadingNodeSection>
+  );
+}
+
+function AdrHandoffSection({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
+  const [state, setState] = useState<ReadingNodeState>('expanded');
+  const hasAffects = Array.isArray(obj.affects) && obj.affects.length > 0;
+  const hasRules = Array.isArray(obj.related_rules) && obj.related_rules.length > 0;
+  const hasArchiveReason = hasDetailContent(obj.archive_reason);
+  const hasDeprecatedReason = hasDetailContent(obj.deprecated_reason);
+
+  if (!hasAffects && !hasRules && !hasArchiveReason && !hasDeprecatedReason) return null;
+
+  return (
+    <ReadingNodeSection
+      title={locale === 'en' ? 'Handoff' : '承接'}
+      state={state}
+      locale={locale}
+      onToggle={() => setState((current) => getReadingNodeNextState(current))}
+    >
+      <div className="divide-y divide-ldvh-border/60">
+        {hasAffects && (
+          <AdrHandoffRow fieldKey="affects" value={obj.affects as unknown[]} locale={locale} />
+        )}
+        {hasRules && (
+          <AdrHandoffRow fieldKey="related_rules" value={obj.related_rules as unknown[]} locale={locale} />
+        )}
+        {hasArchiveReason && (
+          <AdrReasonRow fieldKey="archive_reason" value={obj.archive_reason} locale={locale} />
+        )}
+        {hasDeprecatedReason && (
+          <AdrReasonRow fieldKey="deprecated_reason" value={obj.deprecated_reason} locale={locale} />
+        )}
+      </div>
+    </ReadingNodeSection>
+  );
+}
+
+function AdrHandoffRow({ fieldKey, value, locale }: { fieldKey: string; value: unknown[]; locale: string }) {
+  return (
+    <div className="py-3 first:pt-0 last:pb-0">
+      <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{getMaterialLabel(fieldKey, locale)}</div>
+      <RelatedMaterialValue fieldKey={fieldKey} value={value} locale={locale} />
+    </div>
+  );
+}
+
+function AdrReasonRow({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
+  return (
+    <div className="py-3 first:pt-0 last:pb-0">
+      <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{getFieldLabel(fieldKey, locale)}</div>
+      <StudyTextNodeContent value={value} />
+    </div>
   );
 }
 

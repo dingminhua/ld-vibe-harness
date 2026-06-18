@@ -15,6 +15,7 @@ export interface ListedObject {
   title_en?: string
   title_zh?: string
   path: string
+  created?: string
   updated: string
   [key: string]: unknown
 }

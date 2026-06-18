@@ -1,7 +1,7 @@
 id: adr-0005
 type: adr
 title: 工作流区段位移与工作模型区段收窄，取消逐对象落地组件
-status: superseded
+status: archived
 created: '2026-06-05T05:55:40.548374'
 updated: '2026-06-15T02:18:50.972816'
 date: '2026-06-05'
@@ -31,4 +31,7 @@ consequences: |-
   2. 42 产品初始化工作流程和 43 产品审计工作流程待创建，当前缺少这两个关键工作流程的正式规范；
   3. 历史机制文件（21.01-27.06 等）中可能仍有旧术语残留，需逐步审计；
   4. 现有工作模型主规范（21-27）的 Phase 表已清理旧行，但机制适配边界表格可能需要进一步对齐新术语。
-superseded_by: adr-0007
+related_adrs:
+- adr-0007
+archive_reason: 决策补丁已由 adr-0007 重新承接，集合索引与编号区段方向以 adr-0007 及后续规范为准。
+deprecated_reason:
