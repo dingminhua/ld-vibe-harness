@@ -1,9 +1,9 @@
 id: workplan-0070
 type: workplan
 title: 标准化 specs 文件元信息契约
-status: draft
+status: review_needed
 created: '2026-06-18T09:11:44'
-updated: '2026-06-18T09:11:44'
+updated: '2026-06-18T10:40:13.513389'
 workarea: workarea-0012
 priority: P1
 description: |
@@ -11,12 +11,12 @@ description: |
   可共同消费的稳定契约。变更重点是明确字段语义、适用文档类型、必填/可选规则和 Code 检查边界；
   不把头部改成 YAML frontmatter，不把 `ldvh_member` 字段搬进普通头部，也不重复成员自描述事实。
 success_criteria: |
-  - [ ] `specs/03-文档基础规范.md` 明确头部元信息是机器可读契约，而非普通文档装饰
-  - [ ] `specs/03.01-规范文档规范.md` 列出 specs 正式规范、子文档、studies、sources 的头部字段规则
-  - [ ] `specs/03.02-工作模型文档规范.md` 明确 20-39 普通头部不得重复 `ldvh_member` 成员自描述字段
-  - [ ] `specs/03.03-工作流程文档规范.md` 明确 40-59 普通头部不得重复 `ldvh_member` 成员自描述字段
-  - [ ] 设计结论写清头部元信息契约与成员自描述契约的边界
-  - [ ] 仅记录后续 Code 检查候选，不贸然扩大 `code/spec_checks/index.py` 判定范围
+  - [x] `specs/03-文档基础规范.md` 明确头部元信息是机器可读契约，而非普通文档装饰
+  - [x] `specs/03.01-规范文档规范.md` 列出 specs 正式规范、子文档、studies、sources 的头部字段规则
+  - [x] `specs/03.02-工作模型文档规范.md` 明确 20-39 普通头部不得重复 `ldvh_member` 成员自描述字段
+  - [x] `specs/03.03-工作流程文档规范.md` 明确 40-59 普通头部不得重复 `ldvh_member` 成员自描述字段
+  - [x] 设计结论写清头部元信息契约与成员自描述契约的边界
+  - [x] 仅记录后续 Code 检查候选，不贸然扩大 `code/spec_checks/index.py` 判定范围
 source: |
   Plan creation requested by dmh2002 on 2026-06-18:
   用户要求评估并设计 LDVH specs 文档的“标准文件元信息契约”，保持现有 `> 字段：值` 格式，
@@ -33,9 +33,13 @@ orchestration:
     input_refs:
     - code/spec_checks/index.py
     expected_output: 明确现有头部解析用于 doc_kind、引用、父子关系、索引和诊断，不把实现细节写成过度规则。
-    status: pending
-    result_summary: null
-    evidence_refs: []
+    status: done
+    result_summary: 已复核 index.py 当前消费：extract_header 解析 `> 字段：值`；派生 created_at、updated_at、positioning、scope、parent_doc、relation、basis、related_specs、index_scope，并用于
+      doc_kind、relations、required_header_fields 与诊断。0070 不修改 index.py，仅把现有消费边界写入规范。
+    evidence_refs:
+    - code/spec_checks/index.py
+    - specs/03-文档基础规范.md
+    - specs/03.01-规范文档规范.md
     blocking_reason: null
   - id: item-2
     title: 更新 03 与 03.01 头部字段契约
@@ -45,9 +49,12 @@ orchestration:
     - specs/03-文档基础规范.md
     - specs/03.01-规范文档规范.md
     expected_output: 头部字段语义、适用文档类型、必填/可选和消费边界写入正式规范。
-    status: pending
-    result_summary: null
-    evidence_refs: []
+    status: done
+    result_summary: 03 §5.1 已明确头部元信息是稳定机器接口，继续使用 `> 字段：值`，不得默认改 YAML frontmatter；03.01
+      已登记正式规范、子文档、studies、sources 的必填/可选字段规则。
+    evidence_refs:
+    - specs/03-文档基础规范.md
+    - specs/03.01-规范文档规范.md
     blocking_reason: null
   - id: item-3
     title: 更新 03.02 与 03.03 双层元信息边界
@@ -57,9 +64,12 @@ orchestration:
     - specs/03.02-工作模型文档规范.md
     - specs/03.03-工作流程文档规范.md
     expected_output: 20-39 / 40-59 普通头部只承载文档身份和引用边界，集合事实只由文件名与 `ldvh_member` 承载。
-    status: pending
-    result_summary: null
-    evidence_refs: []
+    status: done
+    result_summary: 03.02 / 03.03 已明确普通头部只承载文档身份、定位、范围和引用；文件名与 `ldvh_member` 承载 spec_id、kind、collection_status、canonical_path
+      和各类 anchor，普通头部不得重复这些成员事实。
+    evidence_refs:
+    - specs/03.02-工作模型文档规范.md
+    - specs/03.03-工作流程文档规范.md
     blocking_reason: null
   review:
     controller_self_check: true
@@ -68,8 +78,44 @@ orchestration:
       role: code-and-web-contract-review
       expected_output: 从 Code 可解析性和 Web 可表达性两个视角确认契约可消费且不重复事实源。
     human_closure_review: true
-verification_evidence: ''
-closure_evidence: ''
+verification_evidence: |
+  ## 验证结果
+
+  修改范围：
+  - `specs/03-文档基础规范.md`：将 Markdown 头部 `> 字段：值` 定义为人、AI、Code、Web 可共同消费的稳定机器接口，明确不默认改 YAML frontmatter。
+  - `specs/03.01-规范文档规范.md`：新增 specs 正式规范、子文档、docs/studies、docs/sources 的头部字段规则表。
+  - `specs/03.02-工作模型文档规范.md`：明确 20-39 普通头部与 `ldvh_member` 分工，禁止普通头部重复 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 和 anchor 字段。
+  - `specs/03.03-工作流程文档规范.md`：明确 40-59 普通头部与 `ldvh_member` 分工，禁止普通头部重复流程成员身份、集合状态和 Code 消费锚点。
+
+  确定性校验：
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过，diagnostics=0。
+  - `python3 code/fact_validate.py ldvh-base/`：files=108 errors=0 warnings=0。
+
+  ## 结论
+
+  0070 的规范修改已通过当前 Code 校验；未修改 `code/spec_checks/index.py`，后续更强检查只作为候选，不在本计划贸然扩大判定范围。
+closure_evidence: |
+  ## 关闭判断
+
+  0070 已完成规范正文修改、机器校验和独立专业复审。
+
+  设计结论：
+  - 头部元信息契约使用现有 `> 字段：值` 格式，作为人、AI、Code、Web 可共同消费的稳定机器接口。
+  - 普通头部登记字段名、语义、内容格式和引用关系，不承载对象完整 schema、集合状态、Code 消费锚点或执行过程。
+  - 20-39 / 40-59 保持双层元信息：普通头部承载标题、定位、适用范围、上位依据和相关规范等人可读入口；文件名与 `ldvh_member` 承载 spec_id、kind、collection_status、canonical_path 和各类 anchor。
+  - 本计划不修改 `code/spec_checks/index.py`，只记录后续检查候选。
+
+  独立子 Agent 复审结论：
+  - code 子 Agent：通过。确认 `> 字段：值` 已清楚定义为稳定机器接口，未把 `ldvh_member` 字段搬进普通头部，未扩大 index.py 判定范围；`specs_validate.py all --fail-on-diagnostics` 通过，`fact_validate.py ldvh-base --format json` 为 files=108 errors=0 warnings=0。
+  - web 子 Agent：通过。确认头部字段语义、适用文档类型、必填/可选规则足够 Web 展示和 AI 读取；双层元信息边界避免重复事实源；没有把 Web 展示需求反向变成多余字段。
+
+  后续候选：
+  - 可单独设计 Code 诊断：20-39 / 40-59 普通头部不得出现 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 或各类 anchor。
+  - `docs/studies`、`docs/sources` 的头部字段规则已经写入 03.01，但当前 index.py 默认扫描边界仍是 `specs/*.md`，且内部仍有旧 `research/refs` doc_kind 命名；若后续要让 Code 校验 docs 资料区，应另起计划设计索引范围和命名迁移。
+
+  ## 结论
+
+  0070 已完成执行和独立专业复审，可转入 review_needed 等待 Human closure review。
 related_docs:
 - specs/03-文档基础规范.md
 - specs/03.01-规范文档规范.md
@@ -83,3 +129,4 @@ related_pitfalls: []
 related_workplans:
 - workplan-0069
 related_changes: []
+review_requested_at: '2026-06-18T10:40:13.513379'
