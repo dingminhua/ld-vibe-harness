@@ -28,6 +28,7 @@ INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
 INDEX_DEFINITION_SENTENCE_RE = re.compile(r"^(?:(?:在本文|在本规范|在本文档)中[，,]?\s*)?(?:(?:[-*]|\d+[.、])\s*)?(?:\*\*)?([^|。；;，,\s`*是]{2,24})(?:\*\*)?\s*(?:是指|定义为|包括且仅包括|指(?!向|引|标|回|令|定|派|出|控|责|南|针|纹|挥|数|甲|望)|是(?!否))")
 INDEX_FOOTNOTE_RE = re.compile(r"^\[\^[^\]]+\]:\s*(.+)$")
 INDEX_LDVH_MEMBER_RE = re.compile(r"```ya?ml\s*\n(.*?\n)```", re.DOTALL)
+INDEX_WORK_MODEL_DIRECTORY_HEADER = ("当前编号", "工作模型", "事实实例承载")
 INDEX_FORBIDDEN_DEFINITION_SECTION_TITLES = {"术语定义", "概念定义", "名词解释"}
 INDEX_ALLOWED_SUBDOCUMENT_RELATIONS = {"应用剖面", "专题子文档"}
 INDEX_SUBDOCUMENT_BOUNDARY_TITLE_TERMS = ("子文档", "应用剖面", "专题子文档")
@@ -767,7 +768,89 @@ class SpecsChecker:
             paths = ", ".join(item.get("path", "") for item in items)
             for item in items:
                 diagnostics.append(self.diagnostic(item.get("path"), item.get("line") or 1, "error", "LDVH_MEMBER_DUPLICATE_CANONICAL_PATH", f"ldvh_member canonical_path 重复: {canonical_path} ({paths})"))
+        diagnostics.extend(self.diagnose_work_model_directory_table(members))
         return diagnostics
+
+    def diagnose_work_model_directory_table(self, members):
+        index_path = self.specs_dir / "01-目录说明.md"
+        if not index_path.exists():
+            return []
+        table_entries = self.extract_work_model_directory_table(index_path)
+        if not table_entries:
+            return []
+        diagnostics = []
+        table_by_number = {entry["number"]: entry for entry in table_entries}
+        active_work_models = {
+            str(member.get("spec_id") or ""): member
+            for member in members
+            if member.get("kind") == "work_model" and member.get("collection_status") == "active"
+        }
+        for number, member in sorted(active_work_models.items(), key=lambda item: item[0]):
+            entry = table_by_number.get(number)
+            if not entry:
+                diagnostics.append(
+                    self.diagnostic(
+                        self.relative_path(index_path),
+                        1,
+                        "error",
+                        "WORK_MODEL_DIRECTORY_ENTRY_MISSING",
+                        f"01 active 工作模型目录缺少成员: {number} {member.get('name_en') or ''}",
+                    )
+                )
+                continue
+            expected_label = self.member_directory_label(member)
+            if entry["label"] != expected_label:
+                diagnostics.append(
+                    self.diagnostic(
+                        self.relative_path(index_path),
+                        entry["line"],
+                        "error",
+                        "WORK_MODEL_DIRECTORY_ENTRY_MISMATCH",
+                        f"01 active 工作模型目录与成员自描述不一致: {number} {entry['label']} != {expected_label}",
+                    )
+                )
+        for number, entry in sorted(table_by_number.items(), key=lambda item: item[0]):
+            if number not in active_work_models:
+                diagnostics.append(
+                    self.diagnostic(
+                        self.relative_path(index_path),
+                        entry["line"],
+                        "error",
+                        "WORK_MODEL_DIRECTORY_ENTRY_STALE",
+                        f"01 active 工作模型目录包含非 active 成员编号: {number} {entry['label']}",
+                    )
+                )
+        return diagnostics
+
+    def extract_work_model_directory_table(self, path):
+        entries = []
+        lines = path.read_text(encoding="utf-8").splitlines()
+        in_table = False
+        separator_seen = False
+        for line_number, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if not stripped.startswith("|"):
+                if in_table and entries:
+                    break
+                continue
+            cells = [self.clean_cell(cell) for cell in stripped.strip("|").split("|")]
+            if len(cells) < 3:
+                continue
+            if not in_table:
+                if tuple(cells[:3]) == INDEX_WORK_MODEL_DIRECTORY_HEADER:
+                    in_table = True
+                    separator_seen = False
+                continue
+            if not separator_seen and all(set(cell) <= {"-", ":", " "} for cell in cells[:3]):
+                separator_seen = True
+                continue
+            if not separator_seen:
+                continue
+            entries.append({"number": cells[0], "label": cells[1], "instance_root": cells[2], "line": line_number})
+        return entries
+
+    def member_directory_label(self, member):
+        return " / ".join(part for part in (member.get("name_en"), member.get("name_zh")) if part)
 
     def is_member_candidate(self, path):
         doc_number = self.extract_doc_number(path)

@@ -324,6 +324,116 @@ ldvh_member:
     assert any(item["code"] == "LDVH_MEMBER_DUPLICATE_SPEC_ID" for item in diagnostics)
 
 
+def test_index_accepts_work_model_directory_matching_active_members(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "01-目录说明.md",
+        """
+# 目录说明
+
+> 创建日期：2026-06-08
+> 定位：目录说明
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+| 当前编号 | 工作模型 | 事实实例承载 |
+|---|---|---|
+| 20 | WorkArea / 工作域 | `ldvh-base/workareas/` |
+| 21 | WorkPlan / 工作计划 | `ldvh-base/workplans/` |
+""",
+    )
+    for filename, spec_id, name_en, name_zh, root in (
+        ("20-WorkArea-工作域.md", "20", "WorkArea", "工作域", "ldvh-base/workareas/"),
+        ("21-WorkPlan-工作计划.md", "21", "WorkPlan", "工作计划", "ldvh-base/workplans/"),
+    ):
+        write_md(
+            specs / filename,
+            f"""
+# {name_en} / {name_zh}
+
+> 创建日期：2026-06-15
+> 定位：测试工作模型
+> 适用范围：LDVH
+> 上位依据：`specs/05-工作模型基础规范.md`
+
+```yaml
+ldvh_member:
+  spec_id: "{spec_id}"
+  kind: work_model
+  name_en: {name_en}
+  name_zh: {name_zh}
+  collection_status: active
+  canonical_path: specs/{filename}
+  instance_root: {root}
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+```
+
+## 1. 第一章
+""",
+        )
+
+    diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
+
+    assert not any((item["code"] or "").startswith("WORK_MODEL_DIRECTORY_") for item in diagnostics)
+
+
+def test_index_reports_stale_work_model_directory_table(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "01-目录说明.md",
+        """
+# 目录说明
+
+> 创建日期：2026-06-08
+> 定位：目录说明
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+| 当前编号 | 工作模型 | 事实实例承载 |
+|---|---|---|
+| 24 | ADR / 决策 | `ldvh-base/adrs/` |
+""",
+    )
+    write_md(
+        specs / "22-ADR-决策.md",
+        """
+# ADR / 决策
+
+> 创建日期：2026-06-15
+> 定位：决策工作模型
+> 适用范围：LDVH
+> 上位依据：`specs/05-工作模型基础规范.md`
+
+```yaml
+ldvh_member:
+  spec_id: "22"
+  kind: work_model
+  name_en: ADR
+  name_zh: 决策
+  collection_status: active
+  canonical_path: specs/22-ADR-决策.md
+  instance_root: ldvh-base/adrs/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+```
+
+## 1. 第一章
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
+
+    assert any(item["code"] == "WORK_MODEL_DIRECTORY_ENTRY_MISSING" for item in diagnostics)
+    assert any(item["code"] == "WORK_MODEL_DIRECTORY_ENTRY_STALE" for item in diagnostics)
+
+
 def test_specs_document_skips_definition_sentence_in_terminology_spec(tmp_path):
     specs = tmp_path / "specs"
     write_md(
