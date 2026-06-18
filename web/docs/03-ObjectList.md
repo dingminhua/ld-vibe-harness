@@ -142,13 +142,13 @@ interface ObjectItem {
   planByStatus?: Record<string, number>;
   executionItems?: RelatedObjectSummary[]; // WorkPlan 列表项；字段名待 API 契约稳定
   executionItemTotal?: number;
-  executionItemClosed?: number;
-  executionItemReviewNeeded?: number;
-  executionItemActive?: number;
-  executionItemRisk?: number;
-  executionItemByStatus?: Record<string, number>;
+  executionItemDone?: number;
+  executionItemBlocked?: number;
+  executionItemOpen?: number;
   hasSuccessCriteria?: boolean;
-  hasCompletionEvidence?: boolean;
+  hasVerificationEvidence?: boolean;
+  hasClosureEvidence?: boolean;
+  hasClosedAt?: boolean;
 }
 
 interface RelatedObjectSummary {
@@ -159,8 +159,13 @@ interface RelatedObjectSummary {
   path: string;
   updated: string;
   priority?: string;                  // WorkPlan 信号字段，只读展示
-  blockedBy?: string[];
-  openBlockers?: RelatedObjectSummary[];
+  role?: string;
+  mode?: string;
+  expectedOutput?: string;
+  resultSummary?: string;
+  blockingReason?: string;
+  inputRefs?: string[];
+  evidenceRefs?: string[];
 }
 ```
 

@@ -19,10 +19,10 @@
 
 ```text
 页面标题：仪表盘
-态势摘要行（如：1 个任务执行中，6 个待处理，1 个计划中）
+态势摘要行（如：1 个工作计划待关闭，6 个备忘待处理）
 可选校验错误横幅
 LDVH 落地引导卡片
-对象统计网格（workarea/taskplan/task/subtask/adr/pitfall/memo）
+对象统计网格（workarea/workplan/adr/pitfall/memo/study）
 待推进（含复制路径图标） + 最近变更
 最近活动（含复制路径图标） + 校验状态
 规范落地要求合规 + LDVH 落地健康度
@@ -47,7 +47,7 @@ LDVH 能力资产摘要
 ### 3.3 对象统计网格
 
 - 使用 `ldvh-dashboard-stats-grid`。
-- 固定顺序：workarea → taskplan → task → subtask → adr → pitfall → memo。
+- 固定顺序：workarea → workplan → adr → pitfall → memo → study。
 - 每张卡片展示类型名称、总数和状态分布。
 - 点击统计卡片跳转到 `/objects/{type}`。
 

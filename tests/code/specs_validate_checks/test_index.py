@@ -186,24 +186,24 @@ def test_index_extracts_ldvh_member_for_work_model(tmp_path):
 """,
     )
     write_md(
-        specs / "22-Task-任务.md",
+        specs / "21-WorkPlan-工作计划.md",
         """
-# Task / 任务
+# WorkPlan / 工作计划
 
 > 创建日期：2026-06-15
-> 定位：任务工作模型
+> 定位：工作计划模型
 > 适用范围：LDVH
 > 上位依据：`specs/05-工作模型基础规范.md`
 
 ```yaml
 ldvh_member:
-  spec_id: "22"
+  spec_id: "21"
   kind: work_model
-  name_en: Task
-  name_zh: 任务
+  name_en: WorkPlan
+  name_zh: 工作计划
   collection_status: active
-  canonical_path: specs/22-Task-任务.md
-  instance_root: ldvh-base/tasks/
+  canonical_path: specs/21-WorkPlan-工作计划.md
+  instance_root: ldvh-base/workplans/
   schema_anchor: "§6"
   state_machine_anchor: "§3"
   human_gate_anchor: "§5"
@@ -220,10 +220,10 @@ ldvh_member:
 
     members = indexes["members"]
     assert len(members) == 1
-    assert members[0]["spec_id"] == "22"
+    assert members[0]["spec_id"] == "21"
     assert members[0]["kind"] == "work_model"
     assert members[0]["collection_status"] == "active"
-    assert members[0]["canonical_path"] == "specs/22-Task-任务.md"
+    assert members[0]["canonical_path"] == "specs/21-WorkPlan-工作计划.md"
     assert members[0]["code_consumption"] == ["fields", "status_machine"]
     assert not indexes["diagnostics"]
 
@@ -231,24 +231,24 @@ ldvh_member:
 def test_index_reports_ldvh_member_spec_id_mismatch(tmp_path):
     specs = tmp_path / "specs"
     write_md(
-        specs / "22-Task-任务.md",
+        specs / "21-WorkPlan-工作计划.md",
         """
-# Task / 任务
+# WorkPlan / 工作计划
 
 > 创建日期：2026-06-15
-> 定位：任务工作模型
+> 定位：工作计划模型
 > 适用范围：LDVH
 > 上位依据：`specs/05-工作模型基础规范.md`
 
 ```yaml
 ldvh_member:
-  spec_id: "23"
+  spec_id: "20"
   kind: work_model
-  name_en: Task
-  name_zh: 任务
+  name_en: WorkPlan
+  name_zh: 工作计划
   collection_status: active
-  canonical_path: specs/22-Task-任务.md
-  instance_root: ldvh-base/tasks/
+  canonical_path: specs/21-WorkPlan-工作计划.md
+  instance_root: ldvh-base/workplans/
   schema_anchor: "§6"
   state_machine_anchor: "§3"
   human_gate_anchor: "§5"
@@ -268,12 +268,12 @@ ldvh_member:
 def test_index_reports_missing_ldvh_member_for_concrete_work_model(tmp_path):
     specs = tmp_path / "specs"
     write_md(
-        specs / "22-Task-任务.md",
+        specs / "21-WorkPlan-工作计划.md",
         """
-# Task / 任务
+# WorkPlan / 工作计划
 
 > 创建日期：2026-06-15
-> 定位：任务工作模型
+> 定位：工作计划模型
 > 适用范围：LDVH
 > 上位依据：`specs/05-工作模型基础规范.md`
 
@@ -288,7 +288,7 @@ def test_index_reports_missing_ldvh_member_for_concrete_work_model(tmp_path):
 
 def test_index_reports_duplicate_ldvh_member_spec_id(tmp_path):
     specs = tmp_path / "specs"
-    for filename in ("22-Task-任务.md", "23-SubTask-子任务.md"):
+    for filename in ("20-WorkArea-工作域.md", "21-WorkPlan-工作计划.md"):
         write_md(
             specs / filename,
             f"""
@@ -301,13 +301,13 @@ def test_index_reports_duplicate_ldvh_member_spec_id(tmp_path):
 
 ```yaml
 ldvh_member:
-  spec_id: "22"
+  spec_id: "21"
   kind: work_model
   name_en: Test
   name_zh: 测试
   collection_status: active
   canonical_path: specs/{filename}
-  instance_root: ldvh-base/tasks/
+  instance_root: ldvh-base/workplans/
   schema_anchor: "§6"
   state_machine_anchor: "§3"
   human_gate_anchor: "§5"

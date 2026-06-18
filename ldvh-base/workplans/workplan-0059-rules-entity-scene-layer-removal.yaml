@@ -66,8 +66,8 @@ orchestration:
 
       独立子 Agent 复验结论：通过。复验范围为 specs 根目录直属正式规范 Markdown、工作区 .trae/rules、LDVH 项目 .trae/rules；确认未发现 ldvh-fact-model-rules.md、ldvh-specs-rules.md 或例外场景规则正向引用。全仓历史任务、research、docs 中的追溯性引用不作为本轮正式规范和运行 Rules 的残留入口。
     evidence_refs:
-    - ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
-    - ldvh-base/tasks/task-0058-rules-scene-layer-spec-alignment.yaml
+    - ldvh-base/workplans/workplan-0048-scene-rules-effectiveness-evaluation.yaml
+    - ldvh-base/workplans/workplan-0058-rules-scene-layer-spec-alignment.yaml
     - specs/01-目录说明.md
     - specs/02-术语规范.md
     - specs/03-文档基础规范.md
@@ -93,8 +93,8 @@ closure_evidence: |-
 review_requested_at: '2026-06-07T02:45:00.000000'
 closed_at: ''
 related_docs:
-- ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
-- ldvh-base/tasks/task-0058-rules-scene-layer-spec-alignment.yaml
+- ldvh-base/workplans/workplan-0048-scene-rules-effectiveness-evaluation.yaml
+- ldvh-base/workplans/workplan-0058-rules-scene-layer-spec-alignment.yaml
 - specs/01-目录说明.md
 - specs/02-术语规范.md
 - specs/03-文档基础规范.md

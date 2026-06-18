@@ -13,7 +13,6 @@ consequences: 整改项落地；adr-0001 和 0002 均进入 rejected 终态，�
 affects:
 - 历史运行投影：.trae/rules/ldvh-project-rules.md（已移除）
 - ldvh-base/adrs/adr-0001-adr-mechanism-initialization.yaml
-related_tasks: []
 related_changes: []
 related_memos: []
 related_rules:

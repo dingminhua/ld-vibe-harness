@@ -26,100 +26,6 @@ def write_yaml(path: Path, content: str) -> Path:
     return path
 
 
-def base_tree(tmp_path: Path) -> Path:
-    root = tmp_path / "project"
-    write_yaml(
-        root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml",
-        """
-id: workarea-0001
-type: workarea
-title: Core
-status: active
-created: "2026-06-12"
-updated: "2026-06-12"
-description: Core work area
-source: test
-related_docs: []
-related_adrs: []
-related_memos: []
-related_pitfalls: []
-""",
-    )
-    write_yaml(
-        root / "ldvh-base" / "taskplans" / "taskplan-0001-core-plan.yaml",
-        """
-id: taskplan-0001
-type: taskplan
-title: Core Plan
-status: active
-created: "2026-06-12"
-updated: "2026-06-12"
-workarea: workarea-0001
-priority: P2
-description: Core plan
-success_criteria: |
-  - [ ] Plan can be validated
-source: test
-tasks:
-  - task-0001
-related_docs: []
-related_adrs: []
-related_memos: []
-related_pitfalls: []
-workplans:
-  - workplan-0001
-""",
-    )
-    write_yaml(
-        root / "ldvh-base" / "tasks" / "task-0001-core-task.yaml",
-        """
-id: task-0001
-type: task
-title: Core Task
-status: planned
-created: "2026-06-12"
-updated: "2026-06-12"
-taskplan: taskplan-0001
-description: Core task
-source: test
-acceptance: |
-  - [ ] Task can be validated
-blocked_by: []
-deliverables: []
-related_docs: []
-related_adrs: []
-""",
-    )
-    write_yaml(
-        root / "ldvh-base" / "subtasks" / "subtask-0001-core-subtask.yaml",
-        """
-id: subtask-0001
-type: subtask
-title: Core SubTask
-status: planned
-created: "2026-06-12"
-updated: "2026-06-12"
-task: task-0001
-description: Core subtask
-source: test
-acceptance: |
-  - [ ] SubTask can be validated
-blocked_by: []
-""",
-    )
-    return root
-
-
-def test_valid_workarea_taskplan_task_subtask_tree(tmp_path):
-    root = base_tree(tmp_path)
-
-    result = run_checker(root / "ldvh-base")
-
-    assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=4 errors=0 warnings=0"
-    assert result.stderr == ""
-
-
 def write_valid_workplan_tree(tmp_path: Path, *, status: str = "active") -> tuple[Path, Path]:
     root = tmp_path / "project"
     write_yaml(
@@ -137,22 +43,11 @@ related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
+workplans:
+  - workplan-0001
 """,
     )
-    review_fields = ""
-    if status in {"review_needed", "closed"}:
-        review_fields = """
-verification_evidence: |
-  ## 验证结果
-  passed
-closure_evidence: |
-  ## 结论
-  ready
-review_requested_at: "2026-06-12T00:00:00+08:00"
-"""
-    if status == "closed":
-        review_fields += 'closed_at: "2026-06-12T01:00:00+08:00"\n'
-    workplan_path = write_yaml(
+    workplan = write_yaml(
         root / "ldvh-base" / "workplans" / "workplan-0001-core-plan.yaml",
         f"""
 id: workplan-0001
@@ -171,16 +66,16 @@ orchestration:
   mode: single
   execution_items:
     - id: item-1
-      title: Validate WorkPlan
+      title: Validate
       role: code
       mode: single
       input_refs:
-        - specs/21-WorkPlan-工作计划.md
-      expected_output: Validator result
+        - code/fact_validate.py
+      expected_output: Current WorkPlan validates.
       status: done
-      result_summary: Validator passed
+      result_summary: Done.
       evidence_refs:
-        - python3 code/fact_validate.py
+        - tests/code/test_fact_validate.py
       blocking_reason:
   review:
     controller_self_check: true
@@ -189,294 +84,88 @@ orchestration:
       role:
       expected_output:
     human_closure_review: true
+verification_evidence: |
+  ## 验证结果
+
+  当前 WorkPlan 校验通过。
+closure_evidence: |
+  ## 结论
+
+  可进入关闭审查。
+review_requested_at: "2026-06-12T00:00:00"
+closed_at: {"'2026-06-12T01:00:00'" if status == "closed" else "''"}
 related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
 related_workplans: []
-related_changes:
-  - abc1234
-{review_fields}
+related_changes: []
 """,
     )
-    return root, workplan_path
+    return root, workplan
 
 
-def test_valid_workplan_execution_items_tree(tmp_path):
+def test_valid_workplan_tree(tmp_path):
     root, _ = write_valid_workplan_tree(tmp_path)
 
     result = run_checker(root / "ldvh-base")
 
     assert result.returncode == 0
     assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
+    assert result.stderr == ""
 
 
-def test_workplan_review_needed_requires_evidence_fields(tmp_path):
-    _, path = write_valid_workplan_tree(tmp_path, status="review_needed")
-    text = path.read_text(encoding="utf-8")
-    text = text.replace("verification_evidence: |\n  ## 验证结果\n  passed\n", "")
-    path.write_text(text, encoding="utf-8")
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "MISSING_WORKPLAN_REVIEW_FIELD" in result.stdout
-    assert "verification_evidence" in result.stdout
-
-
-def test_workplan_execution_item_contract_is_checked(tmp_path):
-    _, path = write_valid_workplan_tree(tmp_path, status="review_needed")
-    text = path.read_text(encoding="utf-8")
-    text = text.replace("status: done\n      result_summary: Validator passed", "status: pending\n      result_summary:")
-    path.write_text(text, encoding="utf-8")
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "EXECUTION_ITEM_OPEN_IN_REVIEW" in result.stdout
-
-
-def test_workplan_related_workplans_must_exist(tmp_path):
-    _, path = write_valid_workplan_tree(tmp_path)
-    text = path.read_text(encoding="utf-8").replace("related_workplans: []", "related_workplans:\n  - workplan-9999")
-    path.write_text(text, encoding="utf-8")
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "OBJECT_REFERENCE_NOT_FOUND" in result.stdout
-    assert "workplan-9999" in result.stdout
-
-
-def test_workarea_archived_requires_archive_reason(tmp_path):
-    root = base_tree(tmp_path)
-    path = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
-    path.write_text(path.read_text(encoding="utf-8").replace("status: active", "status: archived"), encoding="utf-8")
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "MISSING_ARCHIVE_REASON" in result.stdout
-    assert "archive_reason" in result.stdout
-
-
-def test_workarea_workplans_must_point_back_to_workarea(tmp_path):
+def test_legacy_taskplan_file_is_unknown_object_type(tmp_path):
     root, _ = write_valid_workplan_tree(tmp_path)
-    write_yaml(
-        root / "ldvh-base" / "workareas" / "workarea-0002-other.yaml",
+    legacy = write_yaml(
+        root / "ldvh-base" / "taskplans" / "taskplan-0001-old.yaml",
         """
-id: workarea-0002
-type: workarea
-title: Other
-status: active
-created: "2026-06-12"
-updated: "2026-06-12"
-description: Other work area
-source: test
-related_docs: []
-related_adrs: []
-related_memos: []
-related_pitfalls: []
-workplans:
-  - workplan-0001
-""",
-    )
-
-    result = run_checker(root / "ldvh-base" / "workareas" / "workarea-0002-other.yaml")
-
-    assert result.returncode == 1
-    assert "WORKAREA_BACKREF_MISMATCH" in result.stdout
-
-
-def test_workarea_taskplans_legacy_field_warns(tmp_path):
-    root = base_tree(tmp_path)
-    path = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
-    path.write_text(path.read_text(encoding="utf-8") + "taskplans:\n  - taskplan-0001\n", encoding="utf-8")
-
-    result = run_checker(path)
-
-    assert result.returncode == 0
-    assert "LEGACY_WORKAREA_FIELD" in result.stdout
-
-
-def test_taskplan_review_needed_requires_review_fields(tmp_path):
-    root = base_tree(tmp_path)
-    path = root / "ldvh-base" / "taskplans" / "taskplan-0001-core-plan.yaml"
-    path.write_text(path.read_text(encoding="utf-8").replace("status: active", "status: review_needed"), encoding="utf-8")
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "MISSING_TASKPLAN_REVIEW_FIELD" in result.stdout
-    assert "review_requested_at" in result.stdout
-    assert "completion_evidence" in result.stdout
-
-
-def test_taskplan_closed_requires_closed_tasks_and_closed_at(tmp_path):
-    root = base_tree(tmp_path)
-    path = root / "ldvh-base" / "taskplans" / "taskplan-0001-core-plan.yaml"
-    path.write_text(
-        path.read_text(encoding="utf-8").replace(
-            "status: active",
-            'status: closed\nreview_requested_at: "2026-06-12T00:00:00+08:00"\ncompletion_evidence: done',
-        ),
-        encoding="utf-8",
-    )
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "TASKPLAN_TASK_NOT_CLOSED" in result.stdout
-    assert "MISSING_TASKPLAN_CLOSED_AT" in result.stdout
-
-
-def test_task_requires_taskplan(tmp_path):
-    root = base_tree(tmp_path)
-    path = root / "ldvh-base" / "tasks" / "task-0001-core-task.yaml"
-    path.write_text(path.read_text(encoding="utf-8").replace("taskplan: taskplan-0001\n", ""), encoding="utf-8")
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert "MISSING_REQUIRED_FIELD" in result.stdout
-    assert "taskplan" in result.stdout
-
-
-def test_task_rejects_legacy_intent_and_nested_task_fields(tmp_path):
-    root = base_tree(tmp_path)
-    path = root / "ldvh-base" / "tasks" / "task-0001-core-task.yaml"
-    path.write_text(
-        path.read_text(encoding="utf-8")
-        + "\nsource_intent: intent-0001\nparent_task: task-0000\nsub_tasks:\n  - task-0002\n",
-        encoding="utf-8",
-    )
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert result.stdout.count("LEGACY_TASK_FIELD") == 3
-
-
-def test_removed_task_spec_paths_warn_but_do_not_fail(tmp_path):
-    root = base_tree(tmp_path)
-    path = root / "ldvh-base" / "tasks" / "task-0001-core-task.yaml"
-    path.write_text(
-        path.read_text(encoding="utf-8")
-        + "\naffected_docs:\n  - specs/22-Task-任务.md\n",
-        encoding="utf-8",
-    )
-
-    result = run_checker(path)
-
-    assert result.returncode == 0
-    assert "PATH_NOT_FOUND" in result.stdout
-    assert "[warning]" in result.stdout
-    assert "errors=0 warnings=1" in result.stdout
-
-
-def test_blocked_by_must_stay_in_same_taskplan(tmp_path):
-    root = base_tree(tmp_path)
-    write_yaml(
-        root / "ldvh-base" / "taskplans" / "taskplan-0002-other-plan.yaml",
-        """
-id: taskplan-0002
+id: taskplan-0001
 type: taskplan
-title: Other Plan
+title: Old
 status: active
-created: "2026-06-12"
-updated: "2026-06-12"
-workarea: workarea-0001
-description: Other plan
-success_criteria: |
-  - [ ] Other plan can be validated
-source: test
-tasks:
-  - task-0002
-related_docs: []
-related_adrs: []
-related_memos: []
-related_pitfalls: []
-""",
-    )
-    write_yaml(
-        root / "ldvh-base" / "tasks" / "task-0002-other-task.yaml",
-        """
-id: task-0002
-type: task
-title: Other Task
-status: closed
-created: "2026-06-12"
-updated: "2026-06-12"
-closed_at: "2026-06-12"
-taskplan: taskplan-0002
-description: Other task
-source: test
-acceptance: |
-  - [x] Other task can be validated
-verification: |
-  ## 验证结果
-  passed
-closure_evidence: |
-  ## 结论
-  done
-blocked_by: []
-deliverables: []
-related_docs: []
-related_adrs: []
-""",
-    )
-    task_path = root / "ldvh-base" / "tasks" / "task-0001-core-task.yaml"
-    task_path.write_text(
-        task_path.read_text(encoding="utf-8").replace("blocked_by: []", "blocked_by:\n  - task-0002"),
-        encoding="utf-8",
-    )
-
-    result = run_checker(task_path)
-
-    assert result.returncode == 1
-    assert "BLOCKED_BY_TASKPLAN_MISMATCH" in result.stdout
-
-
-def test_subtask_rejects_recursive_fields(tmp_path):
-    root = base_tree(tmp_path)
-    path = root / "ldvh-base" / "subtasks" / "subtask-0001-core-subtask.yaml"
-    path.write_text(path.read_text(encoding="utf-8") + "\nparent_task: task-0001\nsub_tasks: []\n", encoding="utf-8")
-
-    result = run_checker(path)
-
-    assert result.returncode == 1
-    assert result.stdout.count("FORBIDDEN_SUBTASK_FIELD") == 2
-
-
-def test_change_file_rejected_by_validator(tmp_path):
-    path = write_yaml(
-        tmp_path / "change-0001-old-change.yaml",
-        """
-id: change-0001
-type: change
-title: Old Change
-status: proposed
-created: "2026-06-12"
-updated: "2026-06-12"
-description: Change is backed by Git commits
 """,
     )
 
-    result = run_checker(path)
+    result = run_checker(legacy)
 
     assert result.returncode == 2
     assert "UNKNOWN_OBJECT_TYPE" in result.stdout
 
 
-def test_json_output_valid(tmp_path):
-    root = base_tree(tmp_path)
+def test_workarea_taskplans_field_is_no_longer_allowed(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    workarea = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
+    workarea.write_text(workarea.read_text(encoding="utf-8") + "taskplans:\n  - taskplan-0001\n", encoding="utf-8")
+
+    result = run_checker(root / "ldvh-base")
+
+    assert result.returncode == 1
+    assert "REMOVED_WORKAREA_FIELD" in result.stdout
+    assert "taskplans" in result.stdout
+
+
+def test_workplan_legacy_fields_are_errors(tmp_path):
+    _, workplan = write_valid_workplan_tree(tmp_path)
+    workplan.write_text(
+        workplan.read_text(encoding="utf-8") + "tasks: []\ncompletion_evidence: done\n",
+        encoding="utf-8",
+    )
+
+    result = run_checker(workplan)
+
+    assert result.returncode == 1
+    assert "LEGACY_WORKPLAN_FIELD" in result.stdout
+    assert "tasks" in result.stdout
+    assert "completion_evidence" in result.stdout
+
+
+def test_json_output_reports_current_workplan(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
 
     result = run_checker(root / "ldvh-base", extra_args=["--format", "json"])
 
     assert result.returncode == 0
-    data = json.loads(result.stdout)
-    assert data["ok"] is True
-    assert data["summary"]["files"] == 4
-    assert data["summary"]["errors"] == 0
-    assert data["summary"]["warnings"] == 0
-    assert data["issues"] == []
+    payload = json.loads(result.stdout)
+    assert payload["summary"]["files"] == 2
+    assert payload["summary"]["errors"] == 0

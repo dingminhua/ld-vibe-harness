@@ -3,7 +3,7 @@
 // 来源：specs/05-工作模型基础规范 §5 状态机
 // ============================================================
 export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
-  // WorkArea / TaskPlan / ADR
+  // WorkArea / WorkPlan / ADR
   draft: { zh: '草稿', en: 'Draft' },
   proposed: { zh: '已提议', en: 'Proposed' },
   accepted: { zh: '已采纳', en: 'Accepted' },
@@ -18,7 +18,6 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   done: { zh: '已完成', en: 'Done' },
   skipped: { zh: '已跳过', en: 'Skipped' },
   suspended: { zh: '已暂停', en: 'Suspended' },
-  // Task
   planned: { zh: '计划中', en: 'Planned' },
   executing: { zh: '执行中', en: 'Executing' },
   verifying: { zh: '验证中', en: 'Verifying' },
@@ -40,18 +39,12 @@ export function getStatusLocale(status: string, locale: string): string {
 }
 
 export function getObjectStatusLocale(type: string, status: string, locale: string): string {
-  if ((type === 'task' || type === 'subtask') && status === 'review_needed') {
-    return locale === 'en' ? 'Verified' : '已验证';
-  }
   return getStatusLocale(status, locale);
 }
 
 export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '长期工作范围', en: 'Long-lived work area' },
   workplan: { zh: '人机编排和关闭判断的工作计划', en: 'Work plan for orchestration and closure' },
-  taskplan: { zh: '人机沟通和关闭判断的计划', en: 'Plan for human-AI coordination and closure' },
-  task: { zh: '可执行的工作单元', en: 'Executable work unit' },
-  subtask: { zh: '任务内的原子执行单元', en: 'Atomic execution unit within a task' },
   adr: { zh: '决策记录', en: 'Architecture Decision Record' },
   pitfall: { zh: '可复用踩坑经验', en: 'Reusable pitfall experience' },
   memo: { zh: '待任务化的备忘', en: 'Memo pending taskification' },
@@ -88,20 +81,10 @@ export function getStatusHint(status: string, locale: string): string {
 
 export function getObjectStatusHint(type: string, status: string, locale: string): string {
   if (status === 'review_needed') {
-    if (type === 'taskplan') {
-      return locale === 'en'
-        ? 'Completion evidence is ready; confirm whether this plan can close.'
-        : '完成证据已就绪，待确认计划是否可关闭';
-    }
     if (type === 'workplan') {
       return locale === 'en'
         ? 'Verification and closure evidence are ready; confirm whether this work plan can close.'
         : '验证证据和关闭证据已就绪，待确认工作计划是否可关闭';
-    }
-    if (type === 'task' || type === 'subtask') {
-      return locale === 'en'
-        ? 'Verified; finish the close check.'
-        : '已验证，待完成关闭检查';
     }
   }
   return getStatusHint(status, locale);
@@ -114,9 +97,6 @@ export const UI_LOCALES = {
     'nav.dashboard': '仪表盘',
     'nav.workareas': '工作域',
     'nav.workplans': '工作计划',
-    'nav.taskplans': '计划',
-    'nav.tasks': '任务',
-    'nav.subtasks': '子任务',
     'nav.adrs': '决策',
     'nav.pitfalls': '踩坑经验',
     'nav.memos': '备忘',
@@ -176,9 +156,7 @@ export const UI_LOCALES = {
     'objectList.all': '全部',
     'objectList.statusFilter': '状态筛选',
     'objectList.relatedPlans': '关联计划',
-    'objectList.relatedTasks': '关联任务',
     'objectList.planCount': '{count} 个计划',
-    'objectList.taskCount': '{count} 个任务',
     'objectList.activePlanCount': '活跃计划',
     'objectList.pendingClosePlanCount': '待关闭计划',
     'objectList.closedPlanCount': '已闭合计划',
@@ -195,15 +173,13 @@ export const UI_LOCALES = {
     'objectList.taskFlowRisk': '异常',
     'objectList.taskFlowOther': '其他',
     'objectList.taskFlowCount': '{status} {count} 个',
-    'objectList.taskFlowLegend': '任务态势图例',
+    'objectList.taskFlowLegend': '执行项态势图例',
     'objectList.activeCount': '{count} 进行中',
     'objectList.reviewCount': '{count} 待关闭',
     'objectList.riskCount': '{count} 有风险',
     'objectList.noPlans': '暂无关联计划',
-    'objectList.noTasks': '暂无关联任务',
     'objectList.noExecutionItems': '暂无执行项',
     'objectList.morePlans': '还有 {count} 个计划',
-    'objectList.moreTasks': '还有 {count} 个任务',
     'objectList.moreExecutionItems': '还有 {count} 个执行项',
     'objectList.successCriteria': '成功标准',
     'objectList.reviewRequestedAt': '请求确认',
@@ -240,12 +216,9 @@ export const UI_LOCALES = {
     'objectDetail.acceptance': '验收标准',
     'objectDetail.verification': '验证方式',
     'objectDetail.closureEvidence': '关闭证据',
-    'objectDetail.relatedTasks': '关联任务',
     'objectDetail.noAcceptance': '未记录验收标准',
     'objectDetail.noVerification': '未记录验证方式',
     'objectDetail.noClosureEvidence': '尚未记录关闭证据',
-    'objectDetail.deliverablesAndDocs': '产出与文档',
-    'objectDetail.deliverables': '产出物',
     'objectDetail.relatedDocs': '关联文档',
     'objectDetail.affectedDocs': '影响文档',
     'objectDetail.dependencies': '前置依赖',
@@ -262,7 +235,7 @@ export const UI_LOCALES = {
     'objectDetail.noPlanDescription': '未记录计划描述',
     'objectDetail.planExecution': '任务队列',
     'objectDetail.workplanExecution': '执行项',
-    'objectDetail.tasksLoading': '正在读取任务态势',
+    'objectDetail.executionItemsLoading': '正在读取执行项态势',
     'objectDetail.noSuccessCriteria': '未记录成功标准',
     'objectDetail.planCloseReview': '关闭判断',
     'objectDetail.closeDecisionReady': '满足关闭条件',
@@ -277,8 +250,6 @@ export const UI_LOCALES = {
     'objectDetail.noClosureEvidenceForPlan': '尚未记录关闭证据',
     'objectDetail.planMaterials': '产出与文档',
     'objectDetail.relatedMaterials': '关联材料',
-    'objectDetail.subtaskExecution': '子任务态势',
-    'objectDetail.subtasksLoading': '正在读取子任务态势',
 
     'readingPanel.truncated': '内容已截断',
     'readingPanel.close': '关闭',
@@ -394,9 +365,6 @@ export const UI_LOCALES = {
     'nav.dashboard': 'Dashboard',
     'nav.workareas': 'Work Areas',
     'nav.workplans': 'Work Plans',
-    'nav.taskplans': 'Plans',
-    'nav.tasks': 'Tasks',
-    'nav.subtasks': 'Subtasks',
     'nav.adrs': 'ADRs',
     'nav.pitfalls': 'Pitfalls',
     'nav.memos': 'Memos',
@@ -456,9 +424,7 @@ export const UI_LOCALES = {
     'objectList.all': 'All',
     'objectList.statusFilter': 'Status filter',
     'objectList.relatedPlans': 'Related Plans',
-    'objectList.relatedTasks': 'Related Tasks',
     'objectList.planCount': '{count} plans',
-    'objectList.taskCount': '{count} tasks',
     'objectList.activePlanCount': 'Active plans',
     'objectList.pendingClosePlanCount': 'Pending-close plans',
     'objectList.closedPlanCount': 'Closed plans',
@@ -475,15 +441,13 @@ export const UI_LOCALES = {
     'objectList.taskFlowRisk': 'Risk',
     'objectList.taskFlowOther': 'Other',
     'objectList.taskFlowCount': '{status}: {count}',
-    'objectList.taskFlowLegend': 'Task flow legend',
+    'objectList.taskFlowLegend': 'Execution item flow legend',
     'objectList.activeCount': '{count} active',
     'objectList.reviewCount': '{count} pending close',
     'objectList.riskCount': '{count} at risk',
     'objectList.noPlans': 'No related plans',
-    'objectList.noTasks': 'No related tasks',
     'objectList.noExecutionItems': 'No execution items',
     'objectList.morePlans': '{count} more plans',
-    'objectList.moreTasks': '{count} more tasks',
     'objectList.moreExecutionItems': '{count} more execution items',
     'objectList.successCriteria': 'Success Criteria',
     'objectList.reviewRequestedAt': 'Review Request',
@@ -520,12 +484,9 @@ export const UI_LOCALES = {
     'objectDetail.acceptance': 'Acceptance',
     'objectDetail.verification': 'Verification',
     'objectDetail.closureEvidence': 'Closure Evidence',
-    'objectDetail.relatedTasks': 'Related Tasks',
     'objectDetail.noAcceptance': 'No acceptance criteria recorded',
     'objectDetail.noVerification': 'No verification recorded',
     'objectDetail.noClosureEvidence': 'No closure evidence recorded',
-    'objectDetail.deliverablesAndDocs': 'Deliverables and Docs',
-    'objectDetail.deliverables': 'Deliverables',
     'objectDetail.relatedDocs': 'Related Docs',
     'objectDetail.affectedDocs': 'Affected Docs',
     'objectDetail.dependencies': 'Dependencies',
@@ -542,7 +503,7 @@ export const UI_LOCALES = {
     'objectDetail.noPlanDescription': 'No plan description recorded',
     'objectDetail.planExecution': 'Task Queue',
     'objectDetail.workplanExecution': 'Execution Items',
-    'objectDetail.tasksLoading': 'Loading task posture',
+    'objectDetail.executionItemsLoading': 'Loading execution item posture',
     'objectDetail.noSuccessCriteria': 'No success criteria recorded',
     'objectDetail.planCloseReview': 'Close Decision',
     'objectDetail.closeDecisionReady': 'Ready to close',
@@ -557,8 +518,6 @@ export const UI_LOCALES = {
     'objectDetail.noClosureEvidenceForPlan': 'No closure evidence recorded',
     'objectDetail.planMaterials': 'Deliverables and Docs',
     'objectDetail.relatedMaterials': 'Related Materials',
-    'objectDetail.subtaskExecution': 'Subtask Posture',
-    'objectDetail.subtasksLoading': 'Loading subtask posture',
 
     'readingPanel.truncated': 'Content truncated',
     'readingPanel.close': 'Close',

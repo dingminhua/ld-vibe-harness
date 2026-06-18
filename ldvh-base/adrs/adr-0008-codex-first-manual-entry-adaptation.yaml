@@ -79,8 +79,6 @@ affects:
   - rules/LDVH-AI-ENTRY.md
   - LDVH-GOVERNED-PROJECTS.yaml
 related_workareas: []
-related_taskplans: []
-related_tasks: []
 related_changes: []
 related_memos: []
 related_adrs: []

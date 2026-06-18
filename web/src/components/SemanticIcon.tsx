@@ -1,5 +1,4 @@
 import {
-  ClipboardList,
   FileText,
   BookOpenText,
   IdCard,
@@ -8,8 +7,6 @@ import {
   FileSignature,
   Lightbulb,
   Link2,
-  ListTodo,
-  ListTree,
   Shield,
   ShieldCheck,
   Pencil,
@@ -21,9 +18,6 @@ import {
 export const OBJECT_TYPE_ICONS: Record<string, LucideIcon> = {
   workarea: Focus,
   workplan: Workflow,
-  taskplan: ClipboardList,
-  task: ListTodo,
-  subtask: ListTree,
   adr: FileSignature,
   pitfall: Lightbulb,
   memo: Pencil,
@@ -38,11 +32,7 @@ export const OBJECT_TYPE_ICONS: Record<string, LucideIcon> = {
 export const COLLECTION_ICONS: Record<string, LucideIcon> = {
   workarea: Focus,
   workplan: Workflow,
-  taskplan: ClipboardList,
-  plan: ClipboardList,
-  task: ListTodo,
-  taskQueue: ListTodo,
-  subtask: ListTree,
+  plan: Workflow,
   properties: FileText,
   docs: FileText,
   related: Link2,

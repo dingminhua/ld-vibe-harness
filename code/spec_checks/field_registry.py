@@ -12,7 +12,6 @@ FIELD_REGISTRY_SPEC_NAME = "05.01-工作字段内容格式规范.md"
 WORKPLAN_SPEC_NAME = "21-WorkPlan-工作计划.md"
 REQUIRED_REGISTRY_SECTION_TITLES = {"通用字段注册", "对象特有字段注册"}
 REGISTRY_SECTION_TITLES = {*REQUIRED_REGISTRY_SECTION_TITLES, "WorkPlan 试点字段注册"}
-LEGACY_SECTION_TITLE = "旧 TaskPlan / Task 字段废弃与别名映射"
 
 REGISTRY_REQUIRED_COLUMNS = [
     "field_path",
@@ -28,8 +27,6 @@ REGISTRY_REQUIRED_COLUMNS = [
     "status",
     "replacement",
 ]
-LEGACY_REQUIRED_COLUMNS = ["旧字段或名称", "状态", "替代或迁移指向", "说明"]
-
 ALLOWED_FORMAT_KINDS = {"narrative", "checklist", "evidence", "decision", "reference", "log", "structured"}
 ALLOWED_VALUE_SHAPES = {
     "string",
@@ -70,7 +67,6 @@ ALLOWED_WEB_RENDER_KINDS = {
     "deprecated",
 }
 ALLOWED_REGISTRY_STATUSES = {"active", "deprecated", "removed", "alias"}
-ALLOWED_LEGACY_STATUSES = {"deprecated alias", "deprecated field", "removed work model"}
 OWNER_RE = re.compile(r"^(none|05\.01|20-39|2[0-9]|3[0-9])$")
 DOC_NUMBERED_HEADING_RE = re.compile(r"^\d+(?:\.\d+)*\.?(?:\s+|$)")
 
@@ -146,7 +142,7 @@ def extract_tables(path):
         if heading:
             flush_table()
             title = strip_section_number(heading.group(2).strip())
-            current_section = title if title in REGISTRY_SECTION_TITLES or title == LEGACY_SECTION_TITLE else None
+            current_section = title if title in REGISTRY_SECTION_TITLES else None
             continue
 
         if not current_section:
@@ -371,38 +367,6 @@ def check_registry_table(path, section_title, table, seen_keys):
     return issues
 
 
-def check_legacy_table(path, table):
-    issues = []
-    header = table.get("header") or []
-    if header[: len(LEGACY_REQUIRED_COLUMNS)] != LEGACY_REQUIRED_COLUMNS:
-        expected = " | ".join(LEGACY_REQUIRED_COLUMNS)
-        actual = " | ".join(header)
-        issues.append(
-            Issue(
-                path,
-                table.get("line") or 1,
-                f"旧字段废弃映射表头不符合 05.01 要求: 期望 {expected}，实际 {actual}",
-                code="FIELD_REGISTRY_LEGACY_HEADER_INVALID",
-            )
-        )
-        return issues
-
-    if not table.get("rows"):
-        issues.append(Issue(path, table.get("line") or 1, "旧字段废弃映射表缺少数据行", code="FIELD_REGISTRY_LEGACY_ROW_MISSING"))
-        return issues
-
-    for row in table["rows"]:
-        data = row_dict(header, row)
-        status = data.get("状态")
-        replacement = data.get("替代或迁移指向")
-        if status not in ALLOWED_LEGACY_STATUSES:
-            allowed = "、".join(sorted(ALLOWED_LEGACY_STATUSES))
-            issues.append(Issue(path, row["line"], f"旧字段状态无效: {status}；允许值: {allowed}", code="FIELD_REGISTRY_LEGACY_STATUS_INVALID"))
-        if not replacement:
-            issues.append(Issue(path, row["line"], "旧字段废弃映射缺少替代或迁移指向", code="FIELD_REGISTRY_LEGACY_REPLACEMENT_MISSING"))
-    return issues
-
-
 def check_workplan_coverage(path, tables):
     issues = []
     workplan_path = path.parent / WORKPLAN_SPEC_NAME
@@ -437,11 +401,6 @@ def check_file(path):
             continue
         issues.extend(check_registry_table(path, section_title, table, seen_keys))
 
-    legacy_table = tables.get(LEGACY_SECTION_TITLE)
-    if not legacy_table:
-        issues.append(Issue(path, 1, f"缺少旧字段废弃映射表章节或表格: {LEGACY_SECTION_TITLE}", code="FIELD_REGISTRY_LEGACY_TABLE_MISSING"))
-    else:
-        issues.extend(check_legacy_table(path, legacy_table))
     issues.extend(check_workplan_coverage(path, tables))
     return issues
 

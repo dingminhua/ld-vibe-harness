@@ -139,7 +139,7 @@ export function getTaskFlowTone(item: RelatedObjectSummary): TaskFlowTone {
   if (item.status === 'verifying') return 'verifying';
   if (PENDING_CLOSE_STATUSES.has(item.status)) return 'absorbing';
   if (TERMINAL_STATUSES.has(item.status)) return 'closed';
-  if (item.status === 'planned') return (item.openBlockers?.length ?? 0) > 0 ? 'blocked' : 'ready';
+  if (item.status === 'planned') return item.blockingReason ? 'blocked' : 'ready';
   if (TASK_RISK_STATUSES.has(item.status)) return 'risk';
   return 'neutral';
 }

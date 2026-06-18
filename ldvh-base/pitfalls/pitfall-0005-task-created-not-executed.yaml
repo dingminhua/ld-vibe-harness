@@ -36,11 +36,8 @@ avoidance: |
   3. 用户说"做X"时，期望从创建到执行是连续流程
 applicability: |
   适用于所有由用户明确执行意图触发的 Task 创建场景，尤其是当前会话可以直接进入执行、验证或修复的任务。
-source_tasks:
-- task-0006
 source_memos: []
 related_workareas: []
-related_taskplans: []
 related_adrs: []
 related_changes: []
 related_docs: []

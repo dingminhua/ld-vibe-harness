@@ -34,7 +34,7 @@ export function TaskFlowBar({
     .filter((entry) => entry.count > 0);
   const summary = entries.length > 0
     ? entries.map((entry) => t('objectList.taskFlowCount', { status: entry.label, count: String(entry.count) })).join(' · ')
-    : t('objectList.noTasks');
+    : t('objectList.noExecutionItems');
   const heightClass = compact ? 'h-1.5' : 'h-2.5';
   const minWidthClass = compact ? 'min-w-[3px]' : 'min-w-1';
 

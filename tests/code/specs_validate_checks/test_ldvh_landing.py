@@ -28,8 +28,6 @@ projects:
     path: /tmp/ldvh-test
 """,
     )
-    task_dir = tmp_path / "ldvh-base" / "tasks"
-    task_dir.mkdir(parents=True, exist_ok=True)
     workarea_dir = tmp_path / "ldvh-base" / "workareas"
     workarea_dir.mkdir(parents=True, exist_ok=True)
     (workarea_dir / "workarea-0001-test.yaml").write_text(
@@ -46,55 +44,60 @@ related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
+workplans:
+  - workplan-0001
 """.strip()
         + "\n",
         encoding="utf-8",
     )
-    taskplan_dir = tmp_path / "ldvh-base" / "taskplans"
-    taskplan_dir.mkdir(parents=True, exist_ok=True)
-    (taskplan_dir / "taskplan-0001-test.yaml").write_text(
+    workplan_dir = tmp_path / "ldvh-base" / "workplans"
+    workplan_dir.mkdir(parents=True, exist_ok=True)
+    (workplan_dir / "workplan-0001-test.yaml").write_text(
         """
-id: taskplan-0001
-type: taskplan
-title: 测试计划
+id: workplan-0001
+type: workplan
+title: 测试工作计划
 status: active
 created: '2026-06-10T00:00:00'
 updated: '2026-06-10T00:00:00'
 workarea: workarea-0001
 priority: P2
-description: 测试计划说明
+description: 测试工作计划说明
 success_criteria: |
   - [ ] 可验证条件
 source: 测试
-tasks:
-  - task-0001
+orchestration:
+  mode: single
+  execution_items:
+    - id: item-1
+      title: 测试执行项
+      role: code
+      mode: single
+      input_refs:
+        - code/specs_validate.py
+      expected_output: 测试落地检查。
+      status: done
+      result_summary: 已完成。
+      evidence_refs:
+        - tests/code/specs_validate_checks/test_ldvh_landing.py
+      blocking_reason:
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role:
+      expected_output:
+    human_closure_review: true
+verification_evidence: ''
+closure_evidence: ''
+review_requested_at: ''
+closed_at: ''
 related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
-""".strip()
-        + "\n",
-        encoding="utf-8",
-    )
-    (task_dir / "task-0001-test.yaml").write_text(
-        """
-id: task-0001
-type: task
-title: 测试任务
-status: planned
-created: '2026-06-10T00:00:00'
-updated: '2026-06-10T00:00:00'
-taskplan: taskplan-0001
-description: |
-  测试任务说明。
-source: 测试
-acceptance: |
-  - [ ] 可验证条件
-blocked_by: []
-related_adrs: []
-related_docs: []
-affected_docs: []
-deliverables: []
+related_workplans: []
+related_changes: []
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -158,8 +161,8 @@ def test_ldvh_landing_check_reports_missing_governed_projects(tmp_path, monkeypa
 
 def test_ldvh_landing_check_reports_fact_validation_issues(tmp_path, monkeypatch):
     build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
-    bad_task = tmp_path / "ldvh-base" / "tasks" / "task-0002-bad.yaml"
-    bad_task.write_text("id: bad\ntype: task\n", encoding="utf-8")
+    bad_workplan = tmp_path / "ldvh-base" / "workplans" / "workplan-0002-bad.yaml"
+    bad_workplan.write_text("id: bad\ntype: workplan\n", encoding="utf-8")
 
     report = checker.ldvh_landing_check_build(tmp_path)
 

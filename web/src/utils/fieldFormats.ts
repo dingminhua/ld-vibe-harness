@@ -21,15 +21,15 @@ export const EVIDENCE_FIELDS = ['closure_evidence', 'verification_evidence', 've
 
 /** Object ID reference fields render through ReferenceCard when values look like LDVH object IDs. */
 export const REFERENCE_FIELDS = [
-  'blocked_by', 'workarea', 'workplan', 'taskplan', 'task', 'tasks', 'related_workareas',
-  'related_workplans', 'related_taskplans', 'related_tasks', 'related_subtasks', 'related_adrs', 'related_memos', 'related_pitfalls',
-  'related_studies', 'related_profiles', 'source_tasks', 'source_memos',
+  'workarea', 'workplan', 'related_workareas',
+  'related_workplans', 'related_adrs', 'related_memos', 'related_pitfalls',
+  'related_studies', 'related_profiles', 'source_memos',
   'superseded_by', 'resolved_to',
 ];
 
 /** Path / URL reference fields render through DocPreviewLink when values are previewable paths. */
 export const DOC_LINK_FIELDS = [
-  'related_docs', 'deliverables', 'affected_docs', 'related_rules', 'affects',
+  'related_docs', 'related_rules', 'affects',
   'superseded_by',
 ];
 
@@ -37,10 +37,10 @@ export const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 
 
 /** Fields that can be folded in detail view. */
 export const COLLAPSIBLE_FIELDS = [
-  'tasks', 'related_workareas', 'related_workplans', 'related_taskplans', 'related_tasks', 'related_subtasks',
+  'related_workareas', 'related_workplans',
   'related_docs', 'related_adrs', 'related_memos', 'related_studies',
-  'related_pitfalls', 'related_profiles', 'deliverables', 'affected_docs', 'related_rules', 'source_docs',
-  'source_tasks', 'source_memos', 'blocked_by',
+  'related_pitfalls', 'related_profiles', 'related_rules', 'source_docs',
+  'source_memos',
 ];
 
 export function isPreviewableDocPath(value: string) {
@@ -58,7 +58,6 @@ export function isRelatedDocPath(value: string) {
 }
 
 export function isPreviewablePathForField(fieldKey: string, value: string) {
-  if (fieldKey === 'affected_docs') return isAffectedDocPath(value);
   if (fieldKey === 'related_docs') return isRelatedDocPath(value);
   return isPreviewableDocPath(value);
 }
@@ -70,5 +69,5 @@ export function hasChecklist(value: string) {
 export function isObjectRef(refId: string) {
   const match = refId.match(/^([a-z]+)-\d+$/);
   if (!match) return false;
-  return ['workarea', 'workplan', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo', 'study', 'profile'].includes(match[1]);
+  return ['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study', 'profile'].includes(match[1]);
 }

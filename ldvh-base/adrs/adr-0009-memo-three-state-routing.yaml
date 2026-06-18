@@ -72,8 +72,6 @@ affects:
   - web/src
   - tests
 related_workareas: []
-related_taskplans: []
-related_tasks: []
 related_changes: []
 related_memos:
   - memo-0005

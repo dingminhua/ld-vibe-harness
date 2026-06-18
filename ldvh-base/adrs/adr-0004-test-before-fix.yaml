@@ -14,7 +14,6 @@ consequences: 所有 bug 修复和代码问题修改必须先有测试或机制�
 alternatives: 直接修复不补充测试（缺乏回归保护）；仅对高风险问题补充测试（边界模糊难以判断）
 affects:
 - 所有 bug 修复和代码问题修改场景
-related_tasks: []
 related_changes: []
 related_memos: []
 related_rules:

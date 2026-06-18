@@ -73,7 +73,7 @@ orchestration:
     - specs/04.02-LDVH能力资产与落地保障规范.md
     - specs/05.01-工作字段内容格式规范.md
     - docs/studies/44-multi-role-thinking-多角色思考.md
-    - ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
+    - ldvh-base/workplans/workplan-0048-scene-rules-effectiveness-evaluation.yaml
     blocking_reason: null
   review:
     controller_self_check: true
@@ -97,7 +97,7 @@ related_docs:
 - specs/04.02-LDVH能力资产与落地保障规范.md
 - specs/05.01-工作字段内容格式规范.md
 - docs/studies/44-multi-role-thinking-多角色思考.md
-- ldvh-base/tasks/task-0048-scene-rules-effectiveness-evaluation.yaml
+- ldvh-base/workplans/workplan-0048-scene-rules-effectiveness-evaluation.yaml
 related_adrs: []
 related_memos: []
 related_pitfalls: []

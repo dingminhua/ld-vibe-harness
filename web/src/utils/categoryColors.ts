@@ -2,9 +2,6 @@
 export const CATEGORY_COLORS: Record<string, string> = {
   workarea: '#3b82f6',
   workplan: '#0ea5e9',
-  taskplan: '#14b8a6',
-  task: '#22c55e',
-  subtask: '#84cc16',
   adr: '#a855f7',
   pitfall: '#ef4444',
   memo: '#eab308',

@@ -76,7 +76,7 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 同名字段在不同工作对象详情页中必须使用同一套标题、组件和基础视觉权重。例：`description` 统一显示为“目标”，`source` 统一显示为普通定义文本，`related_docs` 统一显示为“文档”材料模块。对象层级差异只允许体现在字段顺序、是否聚合派生数据和是否出现对象特有字段上，不允许同名字段在 WorkPlan 与其他工作对象中换标题、降权或换交互样式。
 
-详情页专用阅读布局已经由 `TaskSection` 提供外层卡片边界；`verification`、`closure_evidence`、`completion_evidence` 等证据字段在这些模块内必须使用 embedded 证据渲染，不再额外套一层证据色边框。证据色边框只用于没有外层详情模块的独立证据块。
+详情页专用阅读布局已经由 `TaskSection` 提供外层卡片边界；`verification`、`verification_evidence`、`closure_evidence` 等证据字段在这些模块内必须使用 embedded 证据渲染，不再额外套一层证据色边框。证据色边框只用于没有外层详情模块的独立证据块。
 
 | 字段类型 | 渲染组件 | 当前行为 |
 |---|---|---|
@@ -91,7 +91,7 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、WorkPlan、ADR、Pitfall、Memo。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
 
-路径类字段应按字段语义区分：`related_docs` 指向引用文档，`affected_docs` 指向需同步检查的文档，`deliverables` 指向结果物，`related_rules` 指向规范、Rules、Skill、Agent、Code 或 Web 承接位置。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
+路径类字段应按字段语义区分：`related_docs` 指向引用文档，`source_docs` 指向输入资料，`related_rules` 指向规范、Rules、Skill、Agent、Code 或 Web 承接位置。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
 
 ## 8. 右侧扩展阅读区
 

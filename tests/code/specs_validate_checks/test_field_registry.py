@@ -12,25 +12,12 @@ def registry_table(rows):
     return "\n".join([REGISTRY_HEADER, "|---|---|---|---|---|---|---|---|---|---|---|---|", *rows])
 
 
-def legacy_table(rows):
-    return "\n".join(
-        [
-            "| 旧字段或名称 | 状态 | 替代或迁移指向 | 说明 |",
-            "|---|---|---|---|",
-            *rows,
-        ]
-    )
-
-
-def write_registry_doc(path, common_rows=None, object_rows=None, legacy_rows=None):
+def write_registry_doc(path, common_rows=None, object_rows=None):
     common_rows = common_rows or [
         "| `description` | common | 背景 | narrative | markdown | none | none | 05.01 | format | summary | active | none |"
     ]
     object_rows = object_rows or [
         "| `success_criteria` | workplan | 成功标准 | checklist | checklist_markdown | none | none | 21 | owner_state | checklist | active | none |"
-    ]
-    legacy_rows = legacy_rows or [
-        "| `tasks` | deprecated field | `orchestration.execution_items` | 旧 TaskPlan 下的 Task 列表 |"
     ]
     return write_md(
         path,
@@ -47,9 +34,6 @@ def write_registry_doc(path, common_rows=None, object_rows=None, legacy_rows=Non
 
 {registry_table(object_rows)}
 
-### 5.6 旧 TaskPlan / Task 字段废弃与别名映射
-
-{legacy_table(legacy_rows)}
 """,
     )
 
@@ -147,16 +131,3 @@ def test_field_registry_reports_workplan_field_missing_from_registry(tmp_path):
 
     assert any(issue.code == "FIELD_REGISTRY_WORKPLAN_FIELD_MISSING" for issue in issues)
     assert any("unregistered_field" in issue.message for issue in issues)
-
-
-def test_field_registry_reports_legacy_status_invalid(tmp_path):
-    path = write_registry_doc(
-        tmp_path / "05.01-工作字段内容格式规范.md",
-        legacy_rows=[
-            "| `tasks` | legacy | `orchestration.execution_items` | 旧 TaskPlan 下的 Task 列表 |"
-        ],
-    )
-
-    issues = checker.field_registry_check([str(path)])
-
-    assert any(issue.code == "FIELD_REGISTRY_LEGACY_STATUS_INVALID" for issue in issues)

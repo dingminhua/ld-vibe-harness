@@ -14,13 +14,10 @@ import yaml
 
 
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"workarea", "workplan", "taskplan", "task", "subtask", "adr", "pitfall", "memo", "study"}
+OBJECT_TYPES = {"workarea", "workplan", "adr", "pitfall", "memo", "study"}
 FILENAME_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "workplan": re.compile(r"^workplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "taskplan": re.compile(r"^taskplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "task": re.compile(r"^task-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "subtask": re.compile(r"^subtask-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
@@ -29,9 +26,6 @@ FILENAME_PATTERNS = {
 ID_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}$"),
     "workplan": re.compile(r"^workplan-\d{4}$"),
-    "taskplan": re.compile(r"^taskplan-\d{4}$"),
-    "task": re.compile(r"^task-\d{4}$"),
-    "subtask": re.compile(r"^subtask-\d{4}$"),
     "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
     "memo": re.compile(r"^memo-\d{4}$"),
@@ -40,9 +34,6 @@ ID_PATTERNS = {
 VALID_STATUSES = {
     "workarea": {"active", "archived"},
     "workplan": {"draft", "active", "review_needed", "closed"},
-    "taskplan": {"draft", "active", "review_needed", "closed"},
-    "task": {"planned", "executing", "verifying", "review_needed", "closed"},
-    "subtask": {"planned", "executing", "verifying", "review_needed", "closed"},
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "memo": {"pending", "resolved", "discarded"},
@@ -51,27 +42,21 @@ VALID_STATUSES = {
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
     "workplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
-    "taskplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "tasks"],
-    "task": ["id", "type", "title", "status", "created", "updated", "taskplan", "description", "source", "acceptance"],
-    "subtask": ["id", "type", "title", "status", "created", "updated", "task", "description", "source", "acceptance"],
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
     "study": ["id", "type", "title", "status", "created", "updated", "summary", "source"],
 }
 LIST_FIELDS = {
-    "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "workplans", "taskplans"},
+    "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "workplans"},
     "workplan": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "related_workplans", "related_changes"},
-    "taskplan": {"tasks", "related_adrs", "related_memos", "related_pitfalls", "related_docs"},
-    "task": {"related_adrs", "blocked_by", "related_docs", "affected_docs", "deliverables"},
-    "subtask": {"blocked_by"},
     "adr": {
-        "affects", "related_workareas", "related_taskplans", "related_tasks",
+        "affects", "related_workareas",
         "related_adrs", "related_memos", "related_changes", "related_rules",
     },
     "pitfall": {
         "source_objects", "related_objects", "related_rules", "tags",
-        "source_tasks", "source_memos", "related_workareas", "related_taskplans", "related_adrs",
+        "source_memos", "related_workareas", "related_adrs",
         "related_changes", "related_docs",
     },
     "memo": {"evolution", "related_workareas", "related_workplans", "related_adrs", "related_studies", "related_docs"},
@@ -85,9 +70,6 @@ LIST_FIELDS = {
 LONG_TEXT_FIELDS = {
     "workarea": {"description", "scope", "constraints", "archive_reason"},
     "workplan": {"description", "success_criteria", "verification_evidence", "closure_evidence"},
-    "taskplan": {"description", "success_criteria", "completion_evidence"},
-    "task": {"description", "acceptance", "verification", "closure_evidence"},
-    "subtask": {"description", "acceptance", "verification", "closure_evidence"},
     "adr": {"context", "decision", "consequences"},
     "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
     "memo": {"description", "source_detail", "discard_reason"},
@@ -95,15 +77,10 @@ LONG_TEXT_FIELDS = {
 }
 
 # 12-工作模型字段内容格式规范：路径引用字段定义
-PATH_FIELDS = {"related_docs", "deliverables", "affected_docs", "related_rules", "source_docs"}
-LEGACY_REMOVED_SPEC_PATHS = {
-    "specs/21-TaskPlan-任务计划.md",
-    "specs/22-Task-任务.md",
-    "specs/23-SubTask-子任务.md",
-}
+PATH_FIELDS = {"related_docs", "related_rules", "source_docs"}
 
 # 12-工作模型字段内容格式规范：Evidence 字段定义
-EVIDENCE_FIELDS = {"verification", "verification_evidence", "closure_evidence"}
+EVIDENCE_FIELDS = {"verification_evidence", "closure_evidence"}
 
 WORKPLAN_ORCHESTRATION_MODES = {"single", "sequential", "parallel", "mixed"}
 WORKPLAN_EXECUTION_ITEM_MODES = {"single", "sequential", "parallel"}
@@ -247,12 +224,6 @@ def infer_object_type(path: Path, data: dict[str, Any]) -> str | None:
         return "workarea"
     if name.startswith("workplan-"):
         return "workplan"
-    if name.startswith("taskplan-"):
-        return "taskplan"
-    if name.startswith("task-"):
-        return "task"
-    if name.startswith("subtask-"):
-        return "subtask"
     if name.startswith("adr-"):
         return "adr"
     if name.startswith("pitfall-"):
@@ -316,7 +287,7 @@ def validate_path_fields_exist(path: Path, data: dict[str, Any], object_type: st
             path_part = item.split(" §", 1)[0].strip()
             resolved = project_root / path_part
             if not resolved.exists():
-                level = "warning" if field == "related_rules" or path_part in LEGACY_REMOVED_SPEC_PATHS else "error"
+                level = "warning" if field == "related_rules" else "error"
                 issues.append(Issue(
                     str(path), level, "PATH_NOT_FOUND",
                     f"字段 {field} 中引用的路径不存在: {item}",
@@ -451,7 +422,7 @@ def validate_dangerous_html(path: Path, data: dict[str, Any], object_type: str) 
 def validate_verification_misplaced_content(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
     """05.01 §3.5.2：verification 字段包含风险/约束/降级标题时报 warning，建议迁移到 description 或 notes。"""
     issues = []
-    if object_type not in ("task", "subtask", "pitfall"):
+    if object_type != "pitfall":
         return issues
     value = data.get("verification")
     if not isinstance(value, str) or not value.strip():
@@ -524,9 +495,6 @@ def find_object_by_id(project_root: Path, object_type: str, object_id: str) -> t
     directory_name = {
         "workarea": "workareas",
         "workplan": "workplans",
-        "taskplan": "taskplans",
-        "task": "tasks",
-        "subtask": "subtasks",
         "adr": "adrs",
         "pitfall": "pitfalls",
         "memo": "memos",
@@ -561,6 +529,8 @@ def validate_single_id_reference(path: Path, data: dict[str, Any], field: str, o
 
 def validate_workarea(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "workarea")
+    if "taskplans" in data:
+        issues.append(Issue(str(path), "error", "REMOVED_WORKAREA_FIELD", "WorkArea 不得继续维护旧字段 taskplans；当前事实源只使用 workplans", field="taskplans"))
     project_root = infer_project_root(path)
     workarea_id = data.get("id")
     workplans = data.get("workplans")
@@ -578,60 +548,8 @@ def validate_workarea(path: Path, data: dict[str, Any]) -> list[Issue]:
                 continue
             if workplan_data.get("workarea") != workarea_id:
                 issues.append(Issue(str(path), "error", "WORKAREA_BACKREF_MISMATCH", f"WorkPlan 未通过 workarea 指回当前工作域: {workplan_id}", field="workplans"))
-    taskplans = data.get("taskplans")
-    if isinstance(taskplans, list) and isinstance(workarea_id, str):
-        issues.append(Issue(str(path), "warning", "LEGACY_WORKAREA_FIELD", "WorkArea 的 taskplans 字段已废弃；请使用 workplans", field="taskplans"))
-        for taskplan_id in taskplans:
-            if not isinstance(taskplan_id, str) or not ID_PATTERNS["taskplan"].match(taskplan_id):
-                issues.append(Issue(str(path), "error", "INVALID_TASKPLAN_REFERENCE", f"taskplans 中必须使用 taskplan-{{NNNN}} 格式的 TaskPlan ID: {taskplan_id}", field="taskplans"))
-                continue
-            taskplan_path, taskplan_data, load_issue = find_object_by_id(project_root, "taskplan", taskplan_id)
-            if load_issue:
-                issues.append(load_issue)
-                continue
-            if taskplan_path is None or taskplan_data is None:
-                issues.append(Issue(str(path), "error", "TASKPLAN_NOT_FOUND", f"taskplans 引用的 TaskPlan 不存在: {taskplan_id}", field="taskplans"))
-                continue
-            if taskplan_data.get("workarea") != workarea_id:
-                issues.append(Issue(str(path), "error", "WORKAREA_BACKREF_MISMATCH", f"TaskPlan 未通过 workarea 指回当前工作域: {taskplan_id}", field="taskplans"))
     if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
         issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态必须提供非空字段: archive_reason", field="archive_reason"))
-    return issues
-
-
-def validate_taskplan(path: Path, data: dict[str, Any]) -> list[Issue]:
-    issues = validate_common(path, data, "taskplan")
-    issues.extend(validate_enum_field(path, data, "priority", {"P0", "P1", "P2", "P3"}))
-    if "importance" in data:
-        issues.append(Issue(str(path), "error", "LEGACY_TASKPLAN_FIELD", "TaskPlan 不得继续使用旧字段 importance；请只维护 priority", field="importance"))
-    issues.extend(validate_single_id_reference(path, data, "workarea", "workarea"))
-    project_root = infer_project_root(path)
-    taskplan_id = data.get("id")
-    tasks = data.get("tasks")
-    if not isinstance(tasks, list) or not tasks:
-        issues.append(Issue(str(path), "error", "TASKPLAN_TASKS_EMPTY", "tasks 必须是非空 Task ID 列表", field="tasks"))
-    elif isinstance(taskplan_id, str):
-        for task_id in tasks:
-            if not isinstance(task_id, str) or not ID_PATTERNS["task"].match(task_id):
-                issues.append(Issue(str(path), "error", "INVALID_TASK_REFERENCE", f"tasks 中必须使用 task-{{NNNN}} 格式的 Task ID: {task_id}", field="tasks"))
-                continue
-            task_path, task_data, load_issue = find_object_by_id(project_root, "task", task_id)
-            if load_issue:
-                issues.append(load_issue)
-                continue
-            if task_path is None or task_data is None:
-                issues.append(Issue(str(path), "error", "TASK_NOT_FOUND", f"tasks 引用的 Task 不存在: {task_id}", field="tasks"))
-                continue
-            if task_data.get("taskplan") != taskplan_id:
-                issues.append(Issue(str(path), "error", "TASKPLAN_BACKREF_MISMATCH", f"Task 未通过 taskplan 指回当前任务计划: {task_id}", field="tasks"))
-            if data.get("status") == "closed" and task_data.get("status") != "closed":
-                issues.append(Issue(str(path), "error", "TASKPLAN_TASK_NOT_CLOSED", f"closed 任务计划中的 Task 未关闭: {task_id}", field="tasks"))
-    if data.get("status") in {"review_needed", "closed"}:
-        for field in ["review_requested_at", "completion_evidence"]:
-            if is_empty(data.get(field)):
-                issues.append(Issue(str(path), "error", "MISSING_TASKPLAN_REVIEW_FIELD", f"{data.get('status')} 状态必须提供非空字段: {field}", field=field))
-    if data.get("status") == "closed" and is_empty(data.get("closed_at")):
-        issues.append(Issue(str(path), "error", "MISSING_TASKPLAN_CLOSED_AT", "closed 状态必须提供非空字段: closed_at", field="closed_at"))
     return issues
 
 
@@ -737,160 +655,13 @@ def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 def validate_adr(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "adr")
+    for removed_field in ("related_taskplans", "related_tasks"):
+        if removed_field in data:
+            issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 ADR 不得维护旧对象关联字段: {removed_field}", field=removed_field))
     for field, target_type in ID_LIST_FIELDS.items():
         issues.extend(validate_id_list_format(path, data, field, target_type))
     issues.extend(validate_any_object_id_list_format(path, data, "related_objects"))
     return issues
-
-
-
-
-def find_task_by_id(tasks_dir: Path, task_id: str) -> tuple[Path | None, dict[str, Any] | None, Issue | None]:
-    matches = sorted(tasks_dir.glob(f"{task_id}-*.yaml"))
-    if not matches:
-        return None, None, None
-    task_path = matches[0]
-    task_data, load_issue = load_yaml(task_path)
-    return task_path, task_data, load_issue
-
-
-def validate_task_id_list(path: Path, field: str, value: Any) -> list[Issue]:
-    issues = []
-    if field not in value:
-        return issues
-    items = value.get(field)
-    if not isinstance(items, list):
-        return issues
-    for item in items:
-        if not isinstance(item, str) or not ID_PATTERNS["task"].match(item):
-            issues.append(Issue(str(path), "error", "INVALID_TASK_REFERENCE", f"{field} 中必须使用 task-{{NNNN}} 格式的 Task ID: {item}", field=field))
-    return issues
-
-
-def validate_task(path: Path, data: dict[str, Any]) -> list[Issue]:
-    issues = validate_common(path, data, "task")
-    task_id = data.get("id")
-    project_root = infer_project_root(path)
-    for legacy_field in ["source_intent", "parent_task", "sub_tasks", "priority", "importance", "risk_assessment"]:
-        if legacy_field in data:
-            issues.append(Issue(str(path), "error", "LEGACY_TASK_FIELD", f"Task 不得继续使用旧字段: {legacy_field}；风险、约束和降级说明请迁移到 description、acceptance 或 verification", field=legacy_field))
-    issues.extend(validate_single_id_reference(path, data, "taskplan", "taskplan"))
-    taskplan_id = data.get("taskplan")
-    if isinstance(taskplan_id, str) and ID_PATTERNS["taskplan"].match(taskplan_id) and isinstance(task_id, str):
-        taskplan_path, taskplan_data, load_issue = find_object_by_id(project_root, "taskplan", taskplan_id)
-        if load_issue:
-            issues.append(load_issue)
-        elif taskplan_path is not None and taskplan_data is not None:
-            taskplan_tasks = taskplan_data.get("tasks")
-            if isinstance(taskplan_tasks, list) and task_id not in taskplan_tasks:
-                issues.append(Issue(str(path), "error", "TASKPLAN_MISSING_TASK", f"所属 TaskPlan 的 tasks 未包含当前 Task: {task_id}", field="taskplan"))
-    # deliverables 元素类型校验
-    deliverables = data.get("deliverables")
-    if isinstance(deliverables, list):
-        for i, item in enumerate(deliverables):
-            if not isinstance(item, str):
-                issues.append(Issue(str(path), "error", "INVALID_DELIVERABLES_ELEMENT", f"deliverables 中每个元素必须是字符串，第 {i + 1} 项类型为 {type(item).__name__}", field="deliverables"))
-    issues.extend(validate_task_id_list(path, "blocked_by", data))
-    if data.get("status") == "closed":
-        for field in ["closed_at", "verification", "closure_evidence"]:
-            if is_empty(data.get(field)):
-                issues.append(Issue(str(path), "error", "MISSING_CLOSURE_FIELD", f"closed 状态必须提供非空字段: {field}"))
-        if isinstance(task_id, str):
-            for subtask_path, subtask_data, load_issue in find_subtasks_for_task(project_root, task_id):
-                if load_issue:
-                    issues.append(load_issue)
-                    continue
-                if subtask_data and subtask_data.get("status") != "closed":
-                    issues.append(Issue(str(path), "error", "SUBTASK_NOT_CLOSED", f"所属 SubTask 未关闭，当前 Task 不得关闭: {subtask_data.get('id', subtask_path.name)}", field="task"))
-    # acceptance 检查列表格式校验
-    acceptance_text = data.get("acceptance")
-    if acceptance_text and isinstance(acceptance_text, str):
-        unchecked_items = re.findall(r"^- \[ \]", acceptance_text, re.MULTILINE)
-        checked_items = re.findall(r"^- \[x\]", acceptance_text, re.MULTILINE)
-        if not unchecked_items and not checked_items:
-            issues.append(Issue(str(path), "error", "ACCEPTANCE_NOT_CHECKLIST",
-                "acceptance 字段应使用检查列表格式（- [ ] / - [x]），每项为可独立验证的原子条件"))
-    elif not acceptance_text:
-        issues.append(Issue(str(path), "error", "MISSING_REQUIRED_FIELD", "acceptance 字段为空"))
-    blocked_by = data.get("blocked_by", [])
-    if isinstance(blocked_by, list):
-        for blocker_id in blocked_by:
-            if not isinstance(blocker_id, str) or not ID_PATTERNS["task"].match(blocker_id):
-                continue
-            if blocker_id == task_id:
-                issues.append(Issue(str(path), "error", "SELF_BLOCKED_TASK", "blocked_by 不得引用当前 Task 自身", field="blocked_by"))
-                continue
-            blocker_path, blocker_data, load_issue = find_object_by_id(project_root, "task", blocker_id)
-            if load_issue:
-                issues.append(load_issue)
-                continue
-            if blocker_path is None or blocker_data is None:
-                issues.append(Issue(str(path), "error", "BLOCKED_BY_NOT_FOUND", f"blocked_by 引用的 Task 不存在: {blocker_id}", field="blocked_by"))
-                continue
-            if blocker_data.get("taskplan") != taskplan_id:
-                issues.append(Issue(str(path), "error", "BLOCKED_BY_TASKPLAN_MISMATCH", f"blocked_by 只能引用同一 TaskPlan 内的 Task: {blocker_id}", field="blocked_by"))
-            if blocker_data.get("status") != "closed" and data.get("status") in {"executing", "verifying", "review_needed", "closed"}:
-                issues.append(Issue(str(path), "error", "BLOCKED_BY_NOT_CLOSED", f"前置 Task 未关闭，当前 Task 不得执行或关闭: {blocker_id}", field="blocked_by"))
-    return issues
-
-
-def find_subtasks_for_task(project_root: Path, task_id: str) -> list[tuple[Path, dict[str, Any] | None, Issue | None]]:
-    subtasks_dir = project_root / "ldvh-base" / "subtasks"
-    if not subtasks_dir.exists():
-        return []
-    result = []
-    for subtask_path in sorted(subtasks_dir.glob("subtask-*.yaml")):
-        subtask_data, load_issue = load_yaml(subtask_path)
-        if load_issue:
-            result.append((subtask_path, None, load_issue))
-            continue
-        if subtask_data and subtask_data.get("task") == task_id:
-            result.append((subtask_path, subtask_data, None))
-    return result
-
-
-def validate_subtask(path: Path, data: dict[str, Any]) -> list[Issue]:
-    issues = validate_common(path, data, "subtask")
-    subtask_id = data.get("id")
-    project_root = infer_project_root(path)
-    for forbidden_field in ["parent_task", "sub_tasks"]:
-        if forbidden_field in data:
-            issues.append(Issue(str(path), "error", "FORBIDDEN_SUBTASK_FIELD", f"SubTask 不得拥有字段: {forbidden_field}", field=forbidden_field))
-    issues.extend(validate_single_id_reference(path, data, "task", "task"))
-    if data.get("status") == "closed":
-        for field in ["closed_at", "verification", "closure_evidence"]:
-            if is_empty(data.get(field)):
-                issues.append(Issue(str(path), "error", "MISSING_CLOSURE_FIELD", f"closed 状态必须提供非空字段: {field}", field=field))
-    acceptance_text = data.get("acceptance")
-    if acceptance_text and isinstance(acceptance_text, str):
-        unchecked_items = re.findall(r"^- \[ \]", acceptance_text, re.MULTILINE)
-        checked_items = re.findall(r"^- \[x\]", acceptance_text, re.MULTILINE)
-        if not unchecked_items and not checked_items:
-            issues.append(Issue(str(path), "error", "ACCEPTANCE_NOT_CHECKLIST",
-                "acceptance 字段应使用检查列表格式（- [ ] / - [x]），每项为可独立验证的原子条件"))
-    task_id = data.get("task")
-    blocked_by = data.get("blocked_by", [])
-    if isinstance(blocked_by, list):
-        for blocker_id in blocked_by:
-            if not isinstance(blocker_id, str) or not ID_PATTERNS["subtask"].match(blocker_id):
-                issues.append(Issue(str(path), "error", "INVALID_SUBTASK_REFERENCE", f"blocked_by 中必须使用 subtask-{{NNNN}} 格式的 SubTask ID: {blocker_id}", field="blocked_by"))
-                continue
-            if blocker_id == subtask_id:
-                issues.append(Issue(str(path), "error", "SELF_BLOCKED_SUBTASK", "blocked_by 不得引用当前 SubTask 自身", field="blocked_by"))
-                continue
-            blocker_path, blocker_data, load_issue = find_object_by_id(project_root, "subtask", blocker_id)
-            if load_issue:
-                issues.append(load_issue)
-                continue
-            if blocker_path is None or blocker_data is None:
-                issues.append(Issue(str(path), "error", "BLOCKED_BY_NOT_FOUND", f"blocked_by 引用的 SubTask 不存在: {blocker_id}", field="blocked_by"))
-                continue
-            if blocker_data.get("task") != task_id:
-                issues.append(Issue(str(path), "error", "BLOCKED_BY_TASK_MISMATCH", f"blocked_by 只能引用同一 Task 下的 SubTask: {blocker_id}", field="blocked_by"))
-            if blocker_data.get("status") != "closed" and data.get("status") in {"executing", "verifying", "review_needed", "closed"}:
-                issues.append(Issue(str(path), "error", "BLOCKED_BY_NOT_CLOSED", f"前置 SubTask 未关闭，当前 SubTask 不得执行或关闭: {blocker_id}", field="blocked_by"))
-    return issues
-
 
 VALID_REPEATABILITY = {"unknown", "once", "recurring"}
 VALID_PRIORITY = {"P0", "P1", "P2", "P3"}
@@ -899,19 +670,19 @@ VALID_STUDY_SOURCE = {"human", "ai"}
 
 ID_LIST_FIELDS = {
     "related_workareas": "workarea",
-    "related_taskplans": "taskplan",
-    "related_tasks": "task",
     "related_adrs": "adr",
     "related_memos": "memo",
     "related_studies": "study",
     "related_pitfalls": "pitfall",
-    "source_tasks": "task",
     "source_memos": "memo",
 }
 
 
 def validate_pitfall(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "pitfall")
+    for removed_field in ("source_tasks", "related_taskplans", "related_tasks"):
+        if removed_field in data:
+            issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 Pitfall 不得维护旧对象关联字段: {removed_field}", field=removed_field))
     if "severity" in data:
         issues.append(Issue(str(path), "error", "LEGACY_PITFALL_FIELD", "Pitfall 不得继续使用旧字段 severity；影响和后果请迁移到 symptoms、applicability、avoidance 或 notes", field="severity"))
     issues.extend(validate_enum_field(path, data, "repeatability", VALID_REPEATABILITY))
@@ -928,6 +699,9 @@ def validate_pitfall(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "memo")
+    for removed_field in ("related_taskplans", "related_tasks"):
+        if removed_field in data:
+            issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 Memo 不得维护旧对象关联字段: {removed_field}", field=removed_field))
     if "category" in data:
         issues.append(Issue(str(path), "error", "LEGACY_MEMO_FIELD", "Memo 不得维护 category；请删除该字段", field="category"))
     if "importance" in data:
@@ -953,6 +727,9 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 def validate_study(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "study")
+    for removed_field in ("related_taskplans", "related_tasks"):
+        if removed_field in data:
+            issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 Study 不得维护旧对象关联字段: {removed_field}", field=removed_field))
     issues.extend(validate_enum_field(path, data, "source", VALID_STUDY_SOURCE))
     if is_empty(data.get("report_body")):
         issues.append(Issue(str(path), "error", "MISSING_REPORT_BODY", "Study Markdown 必须包含非空报告正文", field="report_body"))
@@ -973,9 +750,6 @@ def validate_file(path: Path) -> tuple[list[Issue], bool]:
     validators = {
         "workarea": validate_workarea,
         "workplan": validate_workplan,
-        "taskplan": validate_taskplan,
-        "task": validate_task,
-        "subtask": validate_subtask,
         "adr": validate_adr,
         "pitfall": validate_pitfall,
         "memo": validate_memo,

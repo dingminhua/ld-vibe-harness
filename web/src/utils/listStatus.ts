@@ -1,4 +1,4 @@
-const DEFAULT_ACTIVE_TYPES = new Set(['workarea', 'workplan', 'taskplan', 'pitfall', 'study']);
+const DEFAULT_ACTIVE_TYPES = new Set(['workarea', 'workplan', 'pitfall', 'study']);
 
 export const ALL_STATUS_PARAM = 'all';
 

@@ -297,7 +297,7 @@ export default function AttentionTest() {
           <div className="ldvh-mini-grid min-w-0">
             <MetricCard value={terminalCount} label={copy.hiddenTerminal} detail={copy.hiddenTerminalDetail} size="compact" />
             <MetricCard value={copy.currentDashboard} label={copy.currentDashboardDetail} size="compact" onClick={() => navigate('/')} />
-            <MetricCard value={copy.objectLists} label={copy.objectListsDetail} size="compact" onClick={() => navigate('/objects/task')} />
+            <MetricCard value={copy.objectLists} label={copy.objectListsDetail} size="compact" onClick={() => navigate('/objects/workplan')} />
           </div>
         </section>
       </div>

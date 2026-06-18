@@ -8,8 +8,7 @@ import MemoCreate from '@/components/MemoCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { TaskFlowBar, TaskFlowLegend, TaskFlowMarker } from '@/components/TaskFlowStatus';
-import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowRowActionClass, taskFlowRowClass, taskFlowRowHoverTextClass } from '@/utils/taskFlowStatus';
+import { TaskFlowBar, TaskFlowLegend } from '@/components/TaskFlowStatus';
 import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
@@ -146,9 +145,8 @@ function WorkAreaPlanRow({
   onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
 }) {
   const toneClass = workAreaSectionToneClass[tone];
-  const tasks = item.tasks ?? [];
-  const planType = item.type || 'taskplan';
-  const flowItems = planType === 'workplan' ? item.executionItems ?? [] : tasks;
+  const planType = item.type || 'workplan';
+  const flowItems = item.executionItems ?? [];
 
   return (
     <div
@@ -254,54 +252,6 @@ function WorkAreaPlanSection({
   );
 }
 
-function TaskQueueRow({
-  item,
-  locale,
-  getStatus,
-  t,
-  onOpen,
-}: {
-  item: RelatedObjectSummary;
-  locale: string;
-  getStatus: (status: string) => string;
-  t: Translate;
-  onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
-}) {
-  const flowTone = getTaskFlowTone(item);
-  const flowLabel = getTaskFlowLabel(item, t, getStatus);
-  const subtasks = item.subtasks ?? [];
-
-  return (
-    <div className="min-w-0 py-1 first:pt-0 last:pb-0">
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={(event) => onOpen(event, item)}
-        onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-        className={`group/row min-w-0 cursor-pointer rounded-md border px-2 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70 ${taskFlowRowClass[flowTone]}`}
-      >
-        <div className="flex min-w-0 items-center gap-2">
-          <TaskFlowMarker tone={flowTone} label={flowLabel} />
-          <div className="min-w-0 flex-1">
-            <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${taskFlowRowHoverTextClass[flowTone]}`}>
-              <ObjectTypeIcon type={item.type} size={12} className="shrink-0" />
-              <span className="min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
-            </span>
-            <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
-          </div>
-          <CopyPathButton path={item.path} toneClassName={taskFlowRowActionClass[flowTone]} />
-          <ArrowRight size={13} className={`shrink-0 text-ldvh-text-secondary/70 transition-all group-hover/row:translate-x-0.5 ${taskFlowRowHoverTextClass[flowTone]}`} />
-        </div>
-        {subtasks.length > 0 && (
-          <div className="ml-9 mt-2 min-w-0">
-            <TaskFlowBar tasks={subtasks} t={t} getStatus={getStatus} compact />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function ObjectCardFrame({
   obj,
   locale,
@@ -359,7 +309,7 @@ export default function ObjectList() {
   const [reloadKey, setReloadKey] = useState(0);
   const { t, getStatus, locale } = useI18n();
 
-  const currentType = type ?? 'task';
+  const currentType = type ?? 'workplan';
   const statusParam = searchParams.get('status');
   const activeStatus = getEffectiveListStatus(currentType, statusParam);
 
@@ -560,94 +510,6 @@ export default function ObjectList() {
       );
     }
 
-    if (currentType === 'taskplan') {
-      const tasks = obj.tasks ?? [];
-      const orderedTasks = sortPlanTasks(tasks);
-      const visibleTasks = orderedTasks.slice(0, 10);
-      const moreCount = Math.max(0, tasks.length - visibleTasks.length);
-      const needsCloseDecision = obj.status === 'review_needed';
-      const isClosedPlan = obj.status === 'closed';
-      const successCriteriaState: PlanRecordState = obj.hasSuccessCriteria ? 'recorded' : 'missing';
-      const reviewRequestedState: PlanRecordState = obj.hasReviewRequestedAt ? 'recorded' : 'missing';
-      const completionEvidenceState: PlanRecordState = obj.hasCompletionEvidence ? 'recorded' : 'missing';
-      const closedAtState: PlanRecordState = obj.hasClosedAt ? 'recorded' : 'missing';
-      const closeDecisionFields = [
-        { label: t('objectList.successCriteria'), state: successCriteriaState },
-        { label: t('objectList.reviewRequestedAt'), state: reviewRequestedState },
-        { label: t('objectList.completionEvidence'), state: completionEvidenceState },
-      ];
-      const closedIntegrityFields = [...closeDecisionFields, { label: t('objectList.closedAt'), state: closedAtState }];
-      const hasClosedIntegrityIssue = isClosedPlan && closedIntegrityFields.some((field) => field.state === 'missing');
-      const shouldShowCloseDecision = needsCloseDecision || hasClosedIntegrityIssue;
-      const closeDecisionTitle = hasClosedIntegrityIssue && !needsCloseDecision
-        ? t('objectList.closureIssue')
-        : t('objectList.closeDecision');
-      const visibleCloseFields = isClosedPlan ? closedIntegrityFields : closeDecisionFields;
-
-      return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
-          {shouldShowCloseDecision && (
-            <div
-              onClick={(event) => event.stopPropagation()}
-              className={`min-w-0 cursor-default rounded-md border p-3 ${
-              hasClosedIntegrityIssue
-                ? 'border-red-500/30 bg-red-500/5'
-                : 'border-violet-500/25 bg-violet-500/5'
-            }`}
-            >
-              <div className="mb-2 flex min-w-0 items-center gap-1.5">
-                <ClipboardCheck size={13} className={`shrink-0 ${hasClosedIntegrityIssue ? 'text-red-400' : 'text-violet-400'}`} />
-                <span className="ldvh-caption-strong min-w-0 truncate">{closeDecisionTitle}</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {visibleCloseFields.map((field) => (
-                  <PlanRecordItem key={field.label} label={field.label} state={field.state} t={t} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div
-            onClick={(event) => event.stopPropagation()}
-            className="min-w-0 cursor-default rounded-md border border-ldvh-border bg-ldvh-bg p-3"
-          >
-            <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
-              <span className="ldvh-caption-strong inline-flex min-w-0 items-center gap-1.5 truncate">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" aria-hidden="true" />
-                {t('objectList.planTaskQueue')}
-              </span>
-            </div>
-            {tasks.length > 0 && (
-              <div className="mb-2 min-w-0">
-                <TaskFlowBar tasks={tasks} t={t} getStatus={getStatus} />
-              </div>
-            )}
-            <div className="min-w-0 divide-y divide-ldvh-border/60">
-              {visibleTasks.length > 0 ? (
-                visibleTasks.map((task) => (
-                  <TaskQueueRow
-                    key={task.id}
-                    item={task}
-                    locale={locale}
-                    getStatus={getStatus}
-                    t={t}
-                    onOpen={openRelatedObject}
-                  />
-                ))
-              ) : (
-                <p className="ldvh-body-muted rounded-md border border-dashed border-ldvh-border bg-ldvh-bg px-3 py-4 text-center">
-                  {t('objectList.noTasks')}
-                </p>
-              )}
-            </div>
-            {moreCount > 0 && (
-              <span className="ldvh-caption mt-2 block">{t('objectList.moreTasks', { count: String(moreCount) })}</span>
-            )}
-          </div>
-        </ObjectCardFrame>
-      );
-    }
-
     if (currentType === 'adr') {
       const affects = obj.affects ?? [];
       const relatedRules = obj.related_rules ?? [];
@@ -768,7 +630,7 @@ export default function ObjectList() {
           total={statusTotal}
           loading={loading}
         />
-        {(currentType === 'taskplan' || currentType === 'workarea') && (
+        {(currentType === 'workarea' || currentType === 'workplan') && (
           <TaskFlowLegend t={t} getStatus={getStatus} />
         )}
         {currentType === 'memo' && (

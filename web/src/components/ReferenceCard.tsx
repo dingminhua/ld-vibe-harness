@@ -15,9 +15,6 @@ import { ObjectTypeIcon } from '@/components/SemanticIcon';
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '工作域', en: 'Work Area' },
   workplan: { zh: '工作计划', en: 'Work Plan' },
-  taskplan: { zh: '任务计划', en: 'Task Plan' },
-  task: { zh: '任务', en: 'Task' },
-  subtask: { zh: '子任务', en: 'Subtask' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑经验', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
@@ -26,7 +23,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   change: { zh: '变更', en: 'Change' },
 };
 
-/** 从引用 ID 解析对象类型（如 task-0001 → task） */
+/** 从引用 ID 解析对象类型（如 workplan-0001 → workplan） */
 function parseRefType(refId: string): string | null {
   if (!isObjectRef(refId)) return null;
   const m = refId.match(/^([a-z]+)-\d+$/);

@@ -13,8 +13,7 @@ import CopyPathButton from '@/components/CopyPathButton';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { TaskFlowBar, TaskFlowMarker } from '@/components/TaskFlowStatus';
-import { getTaskFlowLabel, getTaskFlowTone, sortPlanTasks, taskFlowDetailActionClass, taskFlowDetailHoverTextClass, taskFlowRowClass } from '@/utils/taskFlowStatus';
+import { TaskFlowBar } from '@/components/TaskFlowStatus';
 import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusHint, getObjectStatusLocale, getTypeDescription } from '@/i18n/locales';
@@ -47,8 +46,6 @@ const META_KEYS = [
   'title_en',
   'title_zh',
   'path',
-  'aggregated_deliverables',
-  'aggregated_docs',
   'aggregated_related_docs',
   'aggregated_related_adrs',
   'aggregated_related_memos',
@@ -56,29 +53,13 @@ const META_KEYS = [
   'aggregated_related_changes',
   'aggregated_execution_refs',
 ];
-const TASK_AUXILIARY_META_KEYS = ['assignee'];
 const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'repeatability', 'tags', 'scope', 'impact', 'assignee'];
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
-  task: TASK_AUXILIARY_META_KEYS,
   memo: ['priority', 'tags'],
   study: ['tags'],
   profile: ['project_name', 'project_kind', 'language', 'framework'],
   pitfall: ['repeatability', 'tags'],
 };
-/** Task 类型字段展示优先顺序 */
-export const TASK_FIELD_ORDER = [
-  'description',
-  'source',
-  'acceptance',
-  'blocked_by',
-  'verification',
-  'closure_evidence',
-  'deliverables',
-  'related_docs',
-  'affected_docs',
-  'related_adrs',
-  'related_changes',
-];
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls'],
   workplan: [
@@ -86,36 +67,33 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'orchestration', 'verification_evidence', 'closure_evidence', 'related_workplans',
     'related_changes', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
   ],
-  taskplan: ['workarea', 'description', 'success_criteria', 'source', 'tasks', 'completion_evidence', 'related_docs'],
-  task: TASK_FIELD_ORDER,
-  subtask: ['task', 'description', 'source', 'acceptance', 'blocked_by', 'verification', 'closure_evidence'],
   profile: [
     'description', 'project_path', 'ldvh_base_path', 'docs_path',
-    'governance_scope', 'related_workareas', 'related_taskplans', 'related_tasks', 'related_adrs',
+    'governance_scope', 'related_workareas', 'related_adrs',
     'related_memos', 'related_pitfalls', 'related_docs', 'related_changes',
     'notes',
   ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
-    'avoidance', 'applicability', 'source_tasks', 'source_memos', 'related_workareas', 'related_taskplans',
+    'avoidance', 'applicability', 'source_memos', 'related_workareas',
     'related_adrs', 'related_profiles', 'related_docs', 'related_rules',
     'related_changes', 'superseded_by', 'archive_reason', 'discard_reason', 'notes',
   ],
   memo: [
     'description', 'evolution', 'source', 'source_detail', 'resolved_to', 'resolved_at',
-    'discard_reason', 'related_studies', 'related_workareas', 'related_taskplans',
-    'related_tasks', 'related_adrs', 'related_docs',
+    'discard_reason', 'related_studies', 'related_workareas',
+    'related_adrs', 'related_docs',
   ],
   study: [
     'summary', 'conclusion', 'report_body', 'source', 'source_detail', 'source_docs',
-    'related_memos', 'related_workareas', 'related_taskplans', 'related_tasks',
+    'related_memos', 'related_workareas',
     'related_adrs', 'related_pitfalls', 'related_docs', 'superseded_by', 'archive_reason',
   ],
 };
 
 const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
 const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
-const WORK_OBJECT_DETAIL_TYPES = new Set(['workarea', 'workplan', 'taskplan', 'task', 'subtask']);
+const WORK_OBJECT_DETAIL_TYPES = new Set(['workarea', 'workplan']);
 
 export function getObjectDetailContentEntries(obj: Record<string, unknown>, objType: string) {
   const auxiliaryMetaKeys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
@@ -142,9 +120,6 @@ export function getObjectDetailContentEntries(obj: Record<string, unknown>, objT
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '工作域', en: 'Work Area' },
   workplan: { zh: '工作计划', en: 'Work Plan' },
-  taskplan: { zh: '任务计划', en: 'Task Plan' },
-  task: { zh: '任务', en: 'Task' },
-  subtask: { zh: '子任务', en: 'Subtask' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑经验', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
@@ -197,9 +172,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   resolution: { zh: '解决方案', en: 'Resolution' },
   workarea: { zh: '工作域', en: 'Work Area' },
   workplan: { zh: '工作计划', en: 'Work Plan' },
-  taskplan: { zh: '任务计划', en: 'Task Plan' },
-  task: { zh: '所属任务', en: 'Task' },
-  tasks: { zh: '任务', en: 'Tasks' },
   orchestration: { zh: '编排', en: 'Orchestration' },
   execution_items: { zh: '执行项', en: 'Execution Items' },
   mode: { zh: '模式', en: 'Mode' },
@@ -209,20 +181,15 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   result_summary: { zh: '结果摘要', en: 'Result Summary' },
   evidence_refs: { zh: '证据引用', en: 'Evidence Refs' },
   blocking_reason: { zh: '阻塞原因', en: 'Blocking Reason' },
-  blocked_by: { zh: '前置依赖', en: 'Blocked By' },
   closure_evidence: { zh: '关闭证据', en: 'Closure Evidence' },
-  completion_evidence: { zh: '完成证据', en: 'Completion Evidence' },
   verification_evidence: { zh: '验证证据', en: 'Verification Evidence' },
   review_requested_at: { zh: '请求关闭确认时间', en: 'Review Requested At' },
   transition_reasons: { zh: '流转记录', en: 'Transition Reasons' },
   options: { zh: '选项', en: 'Options' },
   decision: { zh: '决策', en: 'Decision' },
   alternatives: { zh: '替代方案', en: 'Alternatives' },
-  related_tasks: { zh: '关联任务', en: 'Related Tasks' },
-  related_subtasks: { zh: '关联子任务', en: 'Related Subtasks' },
   related_workareas: { zh: '关联工作域', en: 'Related Work Areas' },
   related_workplans: { zh: '关联工作计划', en: 'Related Work Plans' },
-  related_taskplans: { zh: '关联任务计划', en: 'Related Task Plans' },
   related_adrs: { zh: '关联决策', en: 'Related ADRs' },
   related_memos: { zh: '关联备忘', en: 'Related Memos' },
   related_studies: { zh: '关联研究报告', en: 'Related Studies' },
@@ -230,7 +197,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   related_profiles: { zh: '关联画像', en: 'Related Profiles' },
   source_objects: { zh: '来源对象', en: 'Source Objects' },
   related_objects: { zh: '关联对象', en: 'Related Objects' },
-  source_tasks: { zh: '来源任务', en: 'Source Tasks' },
   source_memos: { zh: '来源备忘', en: 'Source Memos' },
   resolved_to: { zh: '分流目标', en: 'Resolved To' },
   resolved_at: { zh: '分流时间', en: 'Resolved At' },
@@ -260,10 +226,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   source_docs: { zh: '来源资料', en: 'Source Docs' },
   changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
-  affected_docs: { zh: '影响文档', en: 'Affected Docs' },
-  deliverables: { zh: '产出物', en: 'Deliverables' },
-  aggregated_deliverables: { zh: '聚合产出物', en: 'Aggregated Deliverables' },
-  aggregated_docs: { zh: '聚合文档', en: 'Aggregated Docs' },
   aggregated_related_docs: { zh: '聚合关联文档', en: 'Aggregated Related Docs' },
   aggregated_related_adrs: { zh: '聚合关联决策', en: 'Aggregated Related ADRs' },
   aggregated_related_memos: { zh: '聚合关联备忘', en: 'Aggregated Related Memos' },
@@ -311,7 +273,6 @@ const FIELD_VALUE_LOCALES: Record<string, Record<string, { zh: string; en: strin
     specs: { zh: '规范', en: 'Specs' },
     subdocument: { zh: '子文档', en: 'Subdocument' },
     'tailwind-css': { zh: 'Tailwind CSS', en: 'Tailwind CSS' },
-    'task-lifecycle': { zh: '任务生命周期', en: 'Task Lifecycle' },
     'transition-animation': { zh: '过渡动画', en: 'Transition Animation' },
     verification: { zh: '验证', en: 'Verification' },
     yaml: { zh: 'YAML', en: 'YAML' },
@@ -327,7 +288,6 @@ export default function ObjectDetail() {
   const [workareaSummary, setWorkareaSummary] = useState<ObjectItem | null>(null);
   const [workareaSummaryLoading, setWorkareaSummaryLoading] = useState(false);
   const [relatedPlanSummary, setRelatedPlanSummary] = useState<ObjectItem | null>(null);
-  const [relatedTaskSummary, setRelatedTaskSummary] = useState<RelatedObjectSummary | null>(null);
   const [relatedSummaryLoading, setRelatedSummaryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
@@ -341,9 +301,8 @@ export default function ObjectDetail() {
     setDetail(null);
     setWorkareaSummary(null);
     setRelatedPlanSummary(null);
-    setRelatedTaskSummary(null);
     setWorkareaSummaryLoading(type === 'workarea');
-    setRelatedSummaryLoading(type === 'workplan' || type === 'taskplan' || type === 'task' || type === 'subtask');
+    setRelatedSummaryLoading(type === 'workplan');
     setError(null);
 
     fetchObjectDetail(type, id)
@@ -376,38 +335,6 @@ export default function ObjectDetail() {
         })
         .catch(() => {
           if (!cancelled) setRelatedPlanSummary(null);
-        })
-        .finally(() => {
-          if (!cancelled) setRelatedSummaryLoading(false);
-        });
-    }
-
-    if (type === 'taskplan' || type === 'task' || type === 'subtask') {
-      fetchObjects('taskplan')
-        .then((result) => {
-          if (cancelled) return;
-          const plans = result.data?.items ?? [];
-          if (type === 'taskplan') {
-            setRelatedPlanSummary(plans.find((plan) => plan.id === id) ?? null);
-            return;
-          }
-
-          const plan = plans.find((candidate) => candidate.tasks?.some((task) => {
-            if (type === 'task') return task.id === id;
-            return task.subtasks?.some((subtask) => subtask.id === id);
-          })) ?? null;
-          const task = plan?.tasks?.find((candidate) => {
-            if (type === 'task') return candidate.id === id;
-            return candidate.subtasks?.some((subtask) => subtask.id === id);
-          }) ?? null;
-          setRelatedPlanSummary(plan);
-          setRelatedTaskSummary(task);
-        })
-        .catch(() => {
-          if (!cancelled) {
-            setRelatedPlanSummary(null);
-            setRelatedTaskSummary(null);
-          }
         })
         .finally(() => {
           if (!cancelled) setRelatedSummaryLoading(false);
@@ -520,12 +447,6 @@ export default function ObjectDetail() {
                     )}
                   </div>
                 </div>
-                {objType === 'taskplan' && objStatus === 'review_needed' && (
-                  <div className="mt-3 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
-                    <Info size={14} className="shrink-0 text-amber-400" />
-                    <span className="ldvh-caption text-amber-300">{t('objectDetail.humanGateTip')}</span>
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -558,24 +479,6 @@ export default function ObjectDetail() {
               summary={relatedPlanSummary}
               loading={relatedSummaryLoading}
               locale={locale}
-              getStatus={getStatus}
-            />
-          ) : objType === 'taskplan' ? (
-            <TaskPlanReadingLayout
-              obj={obj}
-              summary={relatedPlanSummary}
-              loading={relatedSummaryLoading}
-              locale={locale}
-              getStatus={getStatus}
-            />
-          ) : objType === 'task' || objType === 'subtask' ? (
-            <TaskReadingLayout
-              obj={obj}
-              locale={locale}
-              objType={objType}
-              summary={relatedTaskSummary}
-              parentPlan={relatedPlanSummary}
-              loading={relatedSummaryLoading}
               getStatus={getStatus}
             />
           ) : (
@@ -741,7 +644,7 @@ export function WorkAreaReadingLayout({
     openPanel({
       type: 'object',
       title: getLocalizedTitle(plan, locale),
-      objectType: plan.type || 'taskplan',
+      objectType: plan.type || 'workplan',
       objectId: plan.id,
     });
   };
@@ -940,9 +843,8 @@ function WorkAreaPlanRow({
   const { t } = useI18n();
   const { isOpen: panelOpen, content: panelContent } = usePanel();
   const open = () => onOpen(plan);
-  const tasks = plan.tasks ?? [];
-  const planType = plan.type || 'taskplan';
-  const flowItems = planType === 'workplan' ? plan.executionItems ?? [] : tasks;
+  const planType = plan.type || 'workplan';
+  const flowItems = plan.executionItems ?? [];
   const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === planType && panelContent.objectId === plan.id;
   const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
 
@@ -1228,7 +1130,7 @@ export function WorkPlanReadingLayout({
     <div className="mb-6 flex flex-col gap-5">
       <TaskSection title={t('objectDetail.workplanExecution')} tone="default">
         {loading ? (
-          <LoadingHint text={t('objectDetail.tasksLoading')} />
+          <LoadingHint text={t('objectDetail.executionItemsLoading')} />
         ) : executionItems.length > 0 ? (
           <div className="divide-y divide-ldvh-border/60 rounded-md border border-ldvh-border bg-ldvh-bg p-2">
             {executionItems.map((item) => (
@@ -1340,113 +1242,6 @@ function ExecutionItemRow({
   );
 }
 
-export function TaskPlanReadingLayout({
-  obj,
-  summary,
-  loading,
-  locale,
-  getStatus,
-}: {
-  obj: Record<string, unknown>;
-  summary: ObjectItem | null;
-  loading: boolean;
-  locale: string;
-  getStatus: (status: string) => string;
-}) {
-  const { t } = useI18n();
-  const tasks = sortPlanTasks(summary?.tasks ?? []);
-  const relatedDocs = ((obj.aggregated_related_docs as string[] | undefined) ?? (obj.related_docs as string[] | undefined)) || [];
-  const relatedAdrs = ((obj.aggregated_related_adrs as string[] | undefined) ?? (obj.related_adrs as string[] | undefined)) || [];
-  const relatedMemos = ((obj.aggregated_related_memos as string[] | undefined) ?? (obj.related_memos as string[] | undefined)) || [];
-  const relatedPitfalls = ((obj.aggregated_related_pitfalls as string[] | undefined) ?? (obj.related_pitfalls as string[] | undefined)) || [];
-  const relatedChanges = ((obj.aggregated_related_changes as string[] | undefined) ?? (obj.related_changes as string[] | undefined)) || [];
-  const hidden = new Set([
-    ...META_KEYS,
-    'workarea',
-    'priority',
-    'description',
-    'success_criteria',
-    'source',
-    'tasks',
-    'completion_evidence',
-    'review_requested_at',
-    'closed_at',
-    'related_docs',
-    'related_adrs',
-    'related_memos',
-    'related_pitfalls',
-    'related_changes',
-    'aggregated_deliverables',
-    'aggregated_docs',
-    'aggregated_related_docs',
-    'aggregated_related_adrs',
-    'aggregated_related_memos',
-    'aggregated_related_pitfalls',
-    'aggregated_related_changes',
-  ]);
-  const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && hasDetailContent(value));
-
-  return (
-    <div className="mb-6 flex flex-col gap-5">
-      <TaskSection title={t('objectDetail.planExecution')} tone="default">
-        {loading ? (
-          <LoadingHint text={t('objectDetail.tasksLoading')} />
-        ) : tasks.length > 0 ? (
-          <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-3">
-            <div className="mb-2 min-w-0">
-              <TaskFlowBar tasks={tasks} t={t} getStatus={getStatus} />
-            </div>
-            <div className="divide-y divide-ldvh-border/60">
-              {tasks.map((task) => (
-                <DetailTaskRow
-                  key={task.id}
-                  item={task}
-                  locale={locale}
-                  getStatus={getStatus}
-                  showSubtaskPosture
-                />
-              ))}
-            </div>
-          </div>
-        ) : (
-          <EmptyHint text={t('objectList.noTasks')} />
-        )}
-      </TaskSection>
-
-      <TaskPlanCloseDecision
-        successCriteria={obj.success_criteria}
-        completionEvidence={obj.completion_evidence}
-        locale={locale}
-      />
-
-      <DetailNarrativeSection title={t('objectDetail.workareaGoal')} value={obj.description} />
-      <DetailObjectReferenceSection
-        title={t('objectDetail.parentWorkArea')}
-        item={summary?.workareaSummary}
-        fallbackId={typeof obj.workarea === 'string' ? obj.workarea : undefined}
-        objectType="workarea"
-        locale={locale}
-      />
-      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
-      <DetailMaterialSection fieldKey="related_docs" value={relatedDocs} locale={locale} />
-      <DetailMaterialSection fieldKey="related_adrs" value={relatedAdrs} locale={locale} />
-      <DetailMaterialSection fieldKey="related_memos" value={relatedMemos} locale={locale} />
-      <DetailMaterialSection fieldKey="related_pitfalls" value={relatedPitfalls} locale={locale} />
-      <DetailMaterialSection fieldKey="related_changes" value={relatedChanges} locale={locale} />
-
-      {otherEntries.length > 0 && (
-        <TaskSection title={t('objectDetail.otherFields')} tone="default">
-          <div className="flex flex-col gap-3">
-            {otherEntries.map(([key, value]) => (
-              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType="taskplan" />
-            ))}
-          </div>
-        </TaskSection>
-      )}
-    </div>
-  );
-}
-
 export function DetailRecordItem({ label, recorded }: { label: string; recorded: boolean }) {
   const { t } = useI18n();
   return (
@@ -1459,36 +1254,6 @@ export function DetailRecordItem({ label, recorded }: { label: string; recorded:
       <span>{label}</span>
       <span className="ldvh-meta-muted">{recorded ? t('objectList.hasRecord') : t('objectList.missingRecord')}</span>
     </span>
-  );
-}
-
-function TaskPlanCloseDecision({
-  successCriteria,
-  completionEvidence,
-  locale,
-}: {
-  successCriteria: unknown;
-  completionEvidence: unknown;
-  locale: string;
-}) {
-  const { t } = useI18n();
-  const evidence = getChecklistProgress(completionEvidence);
-  const hasCriteria = hasDetailContent(successCriteria);
-  const hasEvidence = hasDetailContent(completionEvidence);
-
-  return (
-    <>
-      <TaskSection title={getFieldLabel('success_criteria', locale)} tone="checklist">
-        {hasCriteria ? <ChecklistCard value={String(successCriteria)} /> : <EmptyHint text={t('objectDetail.noSuccessCriteria')} />}
-      </TaskSection>
-      <TaskSection title={getFieldLabel('completion_evidence', locale)} tone="evidence">
-        {hasEvidence
-          ? evidence.total > 0
-            ? <ChecklistCard value={String(completionEvidence)} />
-            : <EvidenceBlock value={String(completionEvidence)} embedded />
-          : <EmptyHint text={t('objectDetail.noCompletionEvidence')} />}
-      </TaskSection>
-    </>
   );
 }
 
@@ -1576,12 +1341,10 @@ export function findRelatedSummary(
   currentTask: RelatedObjectSummary | null,
   parentPlan: ObjectItem | null,
 ): RelatedObjectSummary | null {
-  if (currentTask?.id === refId) return currentTask;
-  const planTasks = parentPlan?.tasks ?? [];
-  const taskMatch = planTasks.find((task) => task.id === refId);
-  if (taskMatch) return taskMatch;
-  return [...(currentTask?.subtasks ?? []), ...planTasks.flatMap((task) => task.subtasks ?? [])]
-    .find((subtask) => subtask.id === refId) ?? null;
+  void currentTask;
+  void parentPlan;
+  void refId;
+  return null;
 }
 
 export function buildCurrentFlowItem(
@@ -1604,31 +1367,6 @@ export function buildCurrentFlowItem(
     path: String(obj.path ?? ''),
     updated: String(obj.updated ?? ''),
   };
-}
-
-export function TaskProgressSection({
-  item,
-  getStatus,
-}: {
-  item: RelatedObjectSummary;
-  getStatus: (status: string) => string;
-}) {
-  const { t } = useI18n();
-  const flowTone = getTaskFlowTone(item);
-  const flowLabel = getTaskFlowLabel(item, t, getStatus);
-
-  return (
-    <TaskSection title={t('objectDetail.taskProgress')} tone="default">
-      <div className="flex min-w-0 flex-col gap-3">
-        <div className={`flex min-w-0 items-center gap-2 rounded-md border px-3 py-2 ${taskFlowRowClass[flowTone]}`}>
-          <TaskFlowMarker tone={flowTone} label={flowLabel} compact />
-          <div className="min-w-0">
-            <div className="ldvh-body min-w-0 truncate text-ldvh-text-primary">{flowLabel}</div>
-          </div>
-        </div>
-      </div>
-    </TaskSection>
-  );
 }
 
 export function DetailObjectRow({
@@ -1745,196 +1483,10 @@ function DetailObjectReferenceValue({
   );
 }
 
-export function DetailTaskRow({
-  item,
-  locale,
-  getStatus,
-  showSubtaskPosture = false,
-}: {
-  item: RelatedObjectSummary;
-  locale: string;
-  getStatus: (status: string) => string;
-  showSubtaskPosture?: boolean;
-}) {
-  const { t } = useI18n();
-  const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
-  const flowTone = getTaskFlowTone(item);
-  const flowLabel = getTaskFlowLabel(item, t, getStatus);
-  const subtasks = item.subtasks ?? [];
-  const objectType = item.type || 'task';
-  const title = getLocalizedTitle(item, locale);
-  const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === objectType && panelContent.objectId === item.id;
-  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
-  const open = () => openPanel({ type: 'object', title, objectType, objectId: item.id });
-
-  return (
-    <div className="py-1 first:pt-0 last:pb-0">
-      <div
-        role="button"
-        tabIndex={0}
-        data-detail-object-id={item.id}
-        data-detail-object-type={objectType}
-        onClick={open}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            open();
-          }
-        }}
-        className={`group/detail-task min-w-0 cursor-pointer rounded-md border px-2 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70 ${taskFlowRowClass[flowTone]}`}
-      >
-        <div className="flex min-w-0 items-center gap-2">
-          <TaskFlowMarker tone={flowTone} label={flowLabel} compact={objectType === 'subtask'} />
-          <div className="min-w-0 flex-1">
-            <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${taskFlowDetailHoverTextClass[flowTone]}`}>
-              <ObjectTypeIcon type={objectType} size={12} className="shrink-0" />
-              <span className="min-w-0 truncate">{title}</span>
-            </span>
-            <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
-          </div>
-          <CopyPathButton path={item.path} toneClassName={taskFlowDetailActionClass[flowTone]} />
-          <PanelIcon size={14} className={`shrink-0 text-ldvh-text-secondary/70 transition-colors ${taskFlowDetailHoverTextClass[flowTone]}`} />
-        </div>
-        {showSubtaskPosture && subtasks.length > 0 && (
-          <div className="ml-9 mt-2 min-w-0">
-            <TaskFlowBar tasks={subtasks} t={t} getStatus={getStatus} compact />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function TaskReadingLayout({
-  obj,
-  locale,
-  objType,
-  summary,
-  parentPlan,
-  loading,
-  getStatus,
-}: {
-  obj: Record<string, unknown>;
-  locale: string;
-  objType: string;
-  summary: RelatedObjectSummary | null;
-  parentPlan: ObjectItem | null;
-  loading: boolean;
-  getStatus: (status: string) => string;
-}) {
-  const { t } = useI18n();
-  const hidden = new Set([
-    'source',
-    'description',
-    'taskplan',
-    'task',
-    'acceptance',
-    'verification',
-    'closure_evidence',
-    'deliverables',
-    'related_docs',
-    'affected_docs',
-    'related_adrs',
-    'related_changes',
-    'blocked_by',
-    ...TASK_AUXILIARY_META_KEYS,
-    ...META_KEYS,
-  ]);
-  const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && hasDetailContent(value));
-  const subtasks = sortPlanTasks(summary?.subtasks ?? []);
-  const showSubtasks = objType === 'task' && (loading || subtasks.length > 0);
-  const currentSummary = objType === 'subtask'
-    ? summary?.subtasks?.find((subtask) => subtask.id === obj.id) ?? null
-    : summary;
-  const currentFlowItem = buildCurrentFlowItem(obj, objType, locale, currentSummary);
-  const verificationValue = hasDetailContent(obj.verification) ? String(obj.verification) : '';
-  const deliverables = (obj.deliverables as string[] | undefined) ?? [];
-  const relatedDocs = (obj.related_docs as string[] | undefined) ?? [];
-  const affectedDocs = (obj.affected_docs as string[] | undefined) ?? [];
-
-  return (
-    <div className="mb-6 flex flex-col gap-5">
-      <TaskProgressSection
-        item={currentFlowItem}
-        getStatus={getStatus}
-      />
-
-      {showSubtasks && (
-        <TaskSection title={t('objectDetail.subtaskExecution')} tone="default">
-          {loading ? (
-            <LoadingHint text={t('objectDetail.subtasksLoading')} />
-          ) : (
-            <div className="flex min-w-0 flex-col gap-3">
-              <TaskFlowBar tasks={subtasks} t={t} getStatus={getStatus} />
-              <div className="divide-y divide-ldvh-border/60">
-                {subtasks.map((subtask) => (
-                  <DetailTaskRow key={subtask.id} item={subtask} locale={locale} getStatus={getStatus} />
-                ))}
-              </div>
-            </div>
-          )}
-        </TaskSection>
-      )}
-
-      <TaskSection title={getFieldLabel('acceptance', locale)} tone="checklist">
-        {obj.acceptance ? <ChecklistCard value={String(obj.acceptance)} /> : <EmptyHint text={t('objectDetail.noAcceptance')} />}
-      </TaskSection>
-
-      <TaskSection title={getFieldLabel('verification', locale)} tone={verificationValue && hasChecklist(verificationValue) ? 'checklist' : 'evidence'}>
-        {verificationValue
-          ? (hasChecklist(verificationValue) ? <ChecklistCard value={verificationValue} /> : <EvidenceBlock value={verificationValue} embedded />)
-          : <EmptyHint text={t('objectDetail.noVerification')} />}
-      </TaskSection>
-
-      <DetailNarrativeSection title={t('objectDetail.workareaGoal')} value={obj.description} />
-      {obj.taskplan && (
-        <DetailObjectReferenceSection
-          title={t('objectDetail.taskPlan')}
-          item={parentPlan}
-          fallbackId={String(obj.taskplan)}
-          objectType="taskplan"
-          locale={locale}
-        />
-      )}
-      {obj.task && (
-        <DetailObjectReferenceSection
-          title={getFieldLabel('task', locale)}
-          item={summary}
-          fallbackId={String(obj.task)}
-          objectType="task"
-          locale={locale}
-        />
-      )}
-      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
-      {hasDetailContent(obj.closure_evidence) && (
-        <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
-          <EvidenceBlock value={String(obj.closure_evidence)} embedded />
-        </TaskSection>
-      )}
-
-      <DetailDocumentSection title={t('objectDetail.deliverables')} docs={deliverables} />
-      <DetailMaterialSection fieldKey="related_docs" value={relatedDocs} locale={locale} />
-      <DetailDocumentSection title={t('objectDetail.affectedDocs')} docs={affectedDocs} />
-      <DetailMaterialSection fieldKey="related_adrs" value={obj.related_adrs} locale={locale} />
-      <DetailMaterialSection fieldKey="related_changes" value={obj.related_changes} locale={locale} />
-
-      {otherEntries.length > 0 && (
-        <TaskSection title={t('objectDetail.otherFields')} tone="default">
-          <div className="flex flex-col gap-3">
-            {otherEntries.map(([key, value]) => (
-              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} />
-            ))}
-          </div>
-        </TaskSection>
-      )}
-    </div>
-  );
-}
-
 function getAuxiliaryMetaEntries(obj: Record<string, unknown>, objType: string) {
   const keys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
   return keys
-    .filter((key) => key !== 'priority' || (objType !== 'taskplan' && objType !== 'memo'))
+    .filter((key) => key !== 'priority' || objType !== 'memo')
     .map((key) => [key, obj[key]] as [string, unknown])
     .filter(([, value]) => value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0));
 }
@@ -2072,7 +1624,7 @@ export function EmptyHint({ text }: { text: string }) {
 /** 内容字段：根据字段类型选择渲染方式和样式 */
 export function ContentField({ fieldKey, value, locale, objType }: { fieldKey: string; value: unknown; locale: string; objType: string }) {
   const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
-  const [collapsed, setCollapsed] = useState(isCollapsible ? objType !== 'taskplan' : false);
+  const [collapsed, setCollapsed] = useState(Boolean(isCollapsible));
 
   if (value === null || value === undefined) return null;
   if (value === '') return null;
@@ -2226,7 +1778,7 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
   return <span className="ldvh-body">{String(value)}</span>;
 }
 
-/** 从引用 ID 解析对象类型（如 task-0001 → task） */
+/** 从引用 ID 解析对象类型（如 workplan-0001 → workplan） */
 function parseRefType(refId: string): string | null {
   if (!isObjectRef(refId)) return null;
   const m = refId.match(/^([a-z]+)-\d+$/);

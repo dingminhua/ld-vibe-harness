@@ -6,9 +6,9 @@ import StatusBadge from '@/components/StatusBadge';
 import CopyPathButton from '@/components/CopyPathButton';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { useI18n } from '@/i18n/context';
-import { ContentField, TaskPlanReadingLayout, TaskReadingLayout, WorkAreaReadingLayout, WorkPlanReadingLayout, getObjectDetailContentEntries } from '@/pages/ObjectDetail';
+import { ContentField, WorkAreaReadingLayout, WorkPlanReadingLayout, getObjectDetailContentEntries } from '@/pages/ObjectDetail';
 import { getObjectStatusLocale } from '@/i18n/locales';
-import { fetchDocContent, fetchObjectDetail, fetchObjects, type DocContent, type ObjectDetail as ApiObjectDetail, type ObjectItem, type RelatedObjectSummary } from '@/utils/api';
+import { fetchDocContent, fetchObjectDetail, fetchObjects, type DocContent, type ObjectDetail as ApiObjectDetail, type ObjectItem } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 
 const MIN_WIDTH = 280;
@@ -21,9 +21,6 @@ const MOBILE_BREAKPOINT = 768;
 const OBJECT_TYPE_LABELS: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '工作域', en: 'Work Area' },
   workplan: { zh: '工作计划', en: 'Work Plan' },
-  taskplan: { zh: '任务计划', en: 'Task Plan' },
-  task: { zh: '任务', en: 'Task' },
-  subtask: { zh: '子任务', en: 'Subtask' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑经验', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
@@ -410,8 +407,6 @@ function PanelHeaderDateMeta({ label, value }: { label: string; value: string })
 
 function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: string; obj: Record<string, unknown>; objectId?: string }) {
   const [summary, setSummary] = useState<ObjectItem | null>(null);
-  const [parentPlan, setParentPlan] = useState<ObjectItem | null>(null);
-  const [taskSummary, setTaskSummary] = useState<RelatedObjectSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const { locale, getStatus } = useI18n();
 
@@ -421,10 +416,8 @@ function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: str
     let cancelled = false;
     setLoading(true);
     setSummary(null);
-    setParentPlan(null);
-    setTaskSummary(null);
 
-    const summaryType = objectType === 'workarea' ? 'workarea' : objectType === 'workplan' ? 'workplan' : 'taskplan';
+    const summaryType = objectType === 'workarea' ? 'workarea' : 'workplan';
     fetchObjects(summaryType)
       .then((result) => {
         if (cancelled) return;
@@ -433,20 +426,10 @@ function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: str
           setSummary(items.find((workarea) => workarea.id === objectId) ?? null);
           return;
         }
-        const plans = items;
-        if (objectType === 'workplan' || objectType === 'taskplan') {
-          setSummary(plans.find((plan) => plan.id === objectId) ?? null);
-          return;
-        }
-        const plan = plans.find((candidate) => candidate.tasks?.some((task) => task.id === objectId
-          || task.subtasks?.some((subtask) => subtask.id === objectId))) ?? null;
-        const task = plan?.tasks?.find((candidate) => candidate.id === objectId
-          || candidate.subtasks?.some((subtask) => subtask.id === objectId)) ?? null;
-        setParentPlan(plan);
-        setTaskSummary(task);
+        setSummary(items.find((plan) => plan.id === objectId) ?? null);
       })
       .catch(() => {
-        if (!cancelled) { setSummary(null); setParentPlan(null); setTaskSummary(null); }
+        if (!cancelled) setSummary(null);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -457,20 +440,14 @@ function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: str
   if (objectType === 'workarea') {
     return <WorkAreaReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
   }
-  if (objectType === 'taskplan') {
-    return <TaskPlanReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
-  }
   if (objectType === 'workplan') {
     return <WorkPlanReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
-  }
-  if (objectType === 'task' || objectType === 'subtask') {
-    return <TaskReadingLayout obj={obj} locale={locale} objType={objectType} summary={taskSummary} parentPlan={parentPlan} loading={loading} getStatus={getStatus} />;
   }
   return null;
 }
 
 function isObjectDetailLayoutType(objectType: string | undefined) {
-  return objectType === 'workarea' || objectType === 'workplan' || objectType === 'taskplan' || objectType === 'task' || objectType === 'subtask';
+  return objectType === 'workarea' || objectType === 'workplan';
 }
 
 function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {

@@ -18,16 +18,12 @@ export const LDVH_ROOT = path.resolve(process.env.LDVH_ROOT || path.resolve(__di
 export const LDVH_BASE_DIR = path.join(LDVH_ROOT, 'ldvh-base')
 
 export const ACTIVE_OBJECT_TYPES = ['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study'] as const
-export const LEGACY_OBJECT_TYPES = ['taskplan', 'task', 'subtask'] as const
-export const OBJECT_TYPES = [...ACTIVE_OBJECT_TYPES, ...LEGACY_OBJECT_TYPES] as const
+export const OBJECT_TYPES = ACTIVE_OBJECT_TYPES
 export type ObjectType = (typeof OBJECT_TYPES)[number]
 
 const DIRECTORY_MAP: Record<ObjectType, string> = {
   workarea: 'workareas',
   workplan: 'workplans',
-  taskplan: 'taskplans',
-  task: 'tasks',
-  subtask: 'subtasks',
   adr: 'adrs',
   pitfall: 'pitfalls',
   memo: 'memos',

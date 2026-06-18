@@ -3,10 +3,7 @@
  */
 
 import { Router, type Request, type Response } from 'express'
-import fs from 'fs'
-import path from 'path'
-import yaml from 'js-yaml'
-import { listObjects, showObject, OBJECT_TYPES, LDVH_BASE_DIR, readFactData, type ObjectType } from '../services/facts.js'
+import { listObjects, showObject, OBJECT_TYPES, readFactData, type ObjectType } from '../services/facts.js'
 
 const router = Router()
 
@@ -32,9 +29,6 @@ interface RelatedObjectSummary {
   path: string
   updated: string
   priority?: string
-  blockedBy?: string[]
-  openBlockers?: RelatedObjectSummary[]
-  subtasks?: RelatedObjectSummary[]
   role?: string
   mode?: string
   expectedOutput?: string
@@ -46,13 +40,6 @@ interface RelatedObjectSummary {
 
 interface RelatedPlanSummary extends RelatedObjectSummary {
   workarea?: string
-  taskTotal: number
-  taskClosed: number
-  taskReviewNeeded: number
-  taskActive: number
-  taskBlocked: number
-  taskRisk: number
-  tasks: RelatedObjectSummary[]
   executionItems?: RelatedObjectSummary[]
   executionItemTotal?: number
   executionItemDone?: number
@@ -60,7 +47,6 @@ interface RelatedPlanSummary extends RelatedObjectSummary {
   executionItemOpen?: number
   hasSuccessCriteria: boolean
   hasReviewRequestedAt: boolean
-  hasCompletionEvidence: boolean
   hasVerificationEvidence?: boolean
   hasClosureEvidence?: boolean
   hasClosedAt: boolean
@@ -161,23 +147,6 @@ function toRelatedSummary(item: ListedObject, type = item.type): RelatedObjectSu
   }
 }
 
-function toBlockedSummary(item: ListedObject, type: 'task' | 'subtask'): RelatedObjectSummary {
-  const data = readFactData(item.path)
-  const blockedBy = toStringArray(data.blocked_by)
-  return {
-    ...toRelatedSummary(item, type),
-    ...(blockedBy.length > 0 ? { blockedBy } : {}),
-  }
-}
-
-function toTaskSummary(item: ListedObject): RelatedObjectSummary {
-  return toBlockedSummary(item, 'task')
-}
-
-function toSubtaskSummary(item: ListedObject): RelatedObjectSummary {
-  return toBlockedSummary(item, 'subtask')
-}
-
 function toExecutionItemSummary(value: unknown, plan: ListedObject, index: number): RelatedObjectSummary | null {
   if (!isRecord(value)) return null
   const id = toStringValue(value.id) || `execution-item-${index + 1}`
@@ -199,48 +168,6 @@ function toExecutionItemSummary(value: unknown, plan: ListedObject, index: numbe
     inputRefs: toStringArray(value.input_refs),
     evidenceRefs: toStringArray(value.evidence_refs),
   }
-}
-
-function toMissingRelatedSummary(id: string, type: 'task' | 'subtask'): RelatedObjectSummary {
-  return {
-    id,
-    type,
-    status: 'unknown',
-    title: id,
-    path: '',
-    updated: '',
-  }
-}
-
-function stripDerivedSummary(item: RelatedObjectSummary): RelatedObjectSummary {
-  return {
-    id: item.id,
-    type: item.type,
-    status: item.status,
-    title: item.title,
-    title_en: item.title_en,
-    title_zh: item.title_zh,
-    path: item.path,
-    updated: item.updated,
-    blockedBy: item.blockedBy,
-  }
-}
-
-function hasOpenBlockers(item: RelatedObjectSummary): boolean {
-  return !TERMINAL_STATUSES.has(item.status) && (item.openBlockers?.length ?? 0) > 0
-}
-
-function enrichBlockers(items: RelatedObjectSummary[], type: 'task' | 'subtask'): RelatedObjectSummary[] {
-  const itemsById = new Map(items.map((item) => [item.id, item]))
-
-  return items.map((item) => {
-    const openBlockers = (item.blockedBy ?? [])
-      .map((blockerId) => itemsById.get(blockerId) ?? toMissingRelatedSummary(blockerId, type))
-      .filter((blocker) => !TERMINAL_STATUSES.has(blocker.status))
-      .map(stripDerivedSummary)
-
-    return openBlockers.length > 0 ? { ...item, openBlockers } : item
-  })
 }
 
 function countByStatus(items: Array<{ status: string }>): Record<string, number> {
@@ -290,92 +217,35 @@ async function listObjectSummaries(type: ObjectType, baseDir?: string): Promise<
 export async function buildPlanSummaries(planItems: ListedObject[], baseDir?: string): Promise<RelatedPlanSummary[]> {
   if (planItems.length === 0) return []
 
-  const [taskItems, subtaskItems] = await Promise.all([
-    listObjectSummaries('task', baseDir),
-    listObjectSummaries('subtask', baseDir),
-  ])
-  const tasksById = new Map(taskItems.map((item) => [item.id, item]))
-  const subtasksByTask = new Map<string, RelatedObjectSummary[]>()
-
-  for (const subtaskItem of subtaskItems) {
-    const data = readFactData(subtaskItem.path)
-    const taskId = toStringValue(data.task)
-    if (!taskId) continue
-    const current = subtasksByTask.get(taskId) ?? []
-    current.push(toSubtaskSummary(subtaskItem))
-    subtasksByTask.set(taskId, current)
-  }
-
   return planItems.map((item) => {
     const data = readFactData(item.path)
-    if (item.type === 'workplan' || data.type === 'workplan') {
-      const orchestration = isRecord(data.orchestration) ? data.orchestration : {}
-      const executionItems = Array.isArray(orchestration.execution_items)
-        ? orchestration.execution_items
-          .map((executionItem, index) => toExecutionItemSummary(executionItem, item, index))
-          .filter((executionItem): executionItem is RelatedObjectSummary => Boolean(executionItem))
-        : []
-
-      return {
-        ...toRelatedSummary(item, 'workplan'),
-        workarea: toStringValue(data.workarea) || undefined,
-        taskTotal: 0,
-        taskClosed: 0,
-        taskReviewNeeded: 0,
-        taskActive: 0,
-        taskBlocked: 0,
-        taskRisk: 0,
-        tasks: [],
-        executionItems: sortRelatedObjects(executionItems),
-        executionItemTotal: executionItems.length,
-        executionItemDone: executionItems.filter((executionItem) => executionItem.status === 'done').length,
-        executionItemBlocked: executionItems.filter((executionItem) => executionItem.status === 'blocked').length,
-        executionItemOpen: countOpenExecutionItems(executionItems),
-        hasSuccessCriteria: hasContent(data.success_criteria),
-        hasReviewRequestedAt: hasContent(data.review_requested_at),
-        hasCompletionEvidence: false,
-        hasVerificationEvidence: hasContent(data.verification_evidence),
-        hasClosureEvidence: hasContent(data.closure_evidence),
-        hasClosedAt: hasContent(data.closed_at),
-      }
-    }
-
-    const taskIds = toStringArray(data.tasks)
-    const tasks = enrichBlockers(taskIds.map((taskId) => {
-      const taskItem = tasksById.get(taskId)
-      if (!taskItem) return toMissingRelatedSummary(taskId, 'task')
-
-      const subtasks = sortRelatedObjects(enrichBlockers(subtasksByTask.get(taskId) ?? [], 'subtask'))
-      return {
-        ...toTaskSummary(taskItem),
-        ...(subtasks.length > 0 ? { subtasks } : {}),
-      }
-    }), 'task')
+    const orchestration = isRecord(data.orchestration) ? data.orchestration : {}
+    const executionItems = Array.isArray(orchestration.execution_items)
+      ? orchestration.execution_items
+        .map((executionItem, index) => toExecutionItemSummary(executionItem, item, index))
+        .filter((executionItem): executionItem is RelatedObjectSummary => Boolean(executionItem))
+      : []
 
     return {
-      ...toRelatedSummary(item, 'taskplan'),
+      ...toRelatedSummary(item, 'workplan'),
       workarea: toStringValue(data.workarea) || undefined,
-      taskTotal: tasks.length,
-      taskClosed: countMatching(tasks, TERMINAL_STATUSES),
-      taskReviewNeeded: countMatching(tasks, REVIEW_STATUSES),
-      taskActive: countMatching(tasks, ACTIVE_STATUSES),
-      taskBlocked: tasks.filter(hasOpenBlockers).length,
-      taskRisk: countMatching(tasks, RISK_STATUSES),
-      tasks: sortRelatedObjects(tasks),
+      executionItems: sortRelatedObjects(executionItems),
+      executionItemTotal: executionItems.length,
+      executionItemDone: executionItems.filter((executionItem) => executionItem.status === 'done').length,
+      executionItemBlocked: executionItems.filter((executionItem) => executionItem.status === 'blocked').length,
+      executionItemOpen: countOpenExecutionItems(executionItems),
       hasSuccessCriteria: hasContent(data.success_criteria),
       hasReviewRequestedAt: hasContent(data.review_requested_at),
-      hasCompletionEvidence: hasContent(data.completion_evidence),
+      hasVerificationEvidence: hasContent(data.verification_evidence),
+      hasClosureEvidence: hasContent(data.closure_evidence),
       hasClosedAt: hasContent(data.closed_at),
     }
   })
 }
 
 async function enrichWorkareas(items: ListedObject[]): Promise<ListedObject[]> {
-  const [workPlanItems, taskPlanItems] = await Promise.all([
-    listObjectSummaries('workplan'),
-    listObjectSummaries('taskplan'),
-  ])
-  const plans = await buildPlanSummaries([...workPlanItems, ...taskPlanItems])
+  const workPlanItems = await listObjectSummaries('workplan')
+  const plans = await buildPlanSummaries(workPlanItems)
   const plansByWorkarea = new Map<string, RelatedPlanSummary[]>()
 
   for (const plan of plans) {
@@ -396,36 +266,6 @@ async function enrichWorkareas(items: ListedObject[]): Promise<ListedObject[]> {
       planActive: countMatching(relatedPlans, ACTIVE_STATUSES),
       planRisk: countMatching(relatedPlans, RISK_STATUSES),
       planByStatus: countByStatus(relatedPlans),
-    }
-  })
-}
-
-async function enrichTaskPlans(items: ListedObject[]): Promise<ListedObject[]> {
-  const planSummaries = await buildPlanSummaries(items)
-  const summariesById = new Map(planSummaries.map((plan) => [plan.id, plan]))
-  const workareaItems = await listObjectSummaries('workarea')
-  const workareasById = new Map(workareaItems.map((item) => [item.id, item]))
-
-  return items.map((item) => {
-    const summary = summariesById.get(item.id)
-    if (!summary) return item
-    const workarea = summary.workarea ? workareasById.get(summary.workarea) : undefined
-    return {
-      ...item,
-      workarea: summary.workarea,
-      workareaSummary: workarea ? toRelatedSummary(workarea, 'workarea') : undefined,
-      tasks: summary.tasks,
-      taskTotal: summary.taskTotal,
-      taskClosed: summary.taskClosed,
-      taskReviewNeeded: summary.taskReviewNeeded,
-      taskActive: summary.taskActive,
-      taskBlocked: summary.taskBlocked,
-      taskRisk: summary.taskRisk,
-      hasSuccessCriteria: summary.hasSuccessCriteria,
-      hasReviewRequestedAt: summary.hasReviewRequestedAt,
-      hasCompletionEvidence: summary.hasCompletionEvidence,
-      hasClosedAt: summary.hasClosedAt,
-      taskByStatus: countByStatus(summary.tasks),
     }
   })
 }
@@ -476,7 +316,6 @@ async function enrichPitfalls(items: ListedObject[]): Promise<ListedObject[]> {
     return {
       ...item,
       resolution: toStringValue(data.resolution) || undefined,
-      source_tasks: toStringArray(data.source_tasks),
       source_memos: toStringArray(data.source_memos),
     }
   })
@@ -512,9 +351,6 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   }
   if (isRecord(result.data) && type === 'workarea') {
     result.data.items = await enrichWorkareas(items)
-  }
-  if (isRecord(result.data) && type === 'taskplan') {
-    result.data.items = await enrichTaskPlans(items)
   }
   if (isRecord(result.data) && type === 'workplan') {
     result.data.items = await enrichWorkPlans(items)
@@ -562,60 +398,6 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
       exitCode: 1,
     })
     return
-  }
-
-  // TaskPlan 派生阅读材料：计划自身优先，再合并计划内 Task 的关联材料并去重。
-  if (type === 'taskplan' && result.data) {
-    const tasks: string[] = (result.data.tasks as string[]) || []
-    const relatedDocsSet = new Set<string>()
-    const relatedAdrsSet = new Set<string>()
-    const relatedMemosSet = new Set<string>()
-    const relatedPitfallsSet = new Set<string>()
-    const relatedChangesSet = new Set<string>()
-
-    addStringArray(relatedDocsSet, result.data.related_docs)
-    addStringArray(relatedAdrsSet, result.data.related_adrs)
-    addStringArray(relatedMemosSet, result.data.related_memos)
-    addStringArray(relatedPitfallsSet, result.data.related_pitfalls)
-    addStringArray(relatedChangesSet, result.data.related_changes)
-
-    if (tasks.length > 0) {
-      const taskDir = path.join(LDVH_BASE_DIR, 'tasks')
-      const deliverablesSet = new Set<string>()
-      const docsSet = new Set<string>()
-
-      for (const taskId of tasks) {
-        try {
-          if (!fs.existsSync(taskDir)) continue
-          const taskFiles = fs.readdirSync(taskDir).filter(f => f.startsWith(`${taskId}-`) && f.endsWith('.yaml'))
-          if (taskFiles.length === 0) continue
-          const taskContent = fs.readFileSync(path.join(taskDir, taskFiles[0]), 'utf-8')
-          const taskObj = yaml.load(taskContent) as Record<string, unknown>
-          const taskDeliverables = (taskObj.deliverables as string[]) || []
-          const taskDocs = (taskObj.related_docs as string[]) || []
-          taskDeliverables.forEach(d => deliverablesSet.add(d))
-          taskDocs.forEach(d => docsSet.add(d))
-          addStringArray(relatedDocsSet, taskObj.related_docs)
-          addStringArray(relatedAdrsSet, taskObj.related_adrs)
-          addStringArray(relatedMemosSet, taskObj.related_memos)
-          addStringArray(relatedPitfallsSet, taskObj.related_pitfalls)
-          addStringArray(relatedChangesSet, taskObj.related_changes)
-        } catch {
-          // 单个 task 读取失败不影响整体聚合
-        }
-      }
-
-      result.data.aggregated_deliverables = [...deliverablesSet]
-      result.data.aggregated_docs = [...docsSet]
-    } else {
-      result.data.aggregated_deliverables = []
-      result.data.aggregated_docs = []
-    }
-    result.data.aggregated_related_docs = [...relatedDocsSet]
-    result.data.aggregated_related_adrs = [...relatedAdrsSet]
-    result.data.aggregated_related_memos = [...relatedMemosSet]
-    result.data.aggregated_related_pitfalls = [...relatedPitfallsSet]
-    result.data.aggregated_related_changes = [...relatedChangesSet]
   }
 
   // WorkPlan 派生阅读材料：计划自身材料 + execution_items 的输入和证据引用。

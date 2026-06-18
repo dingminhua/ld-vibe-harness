@@ -32,10 +32,8 @@ avoidance: |
   - active-prep：文件应包含正在准备的机制实践内容
 applicability: 所有接入 LDVH 的项目，所有事实模型子文档
 superseded_by: specs/03.01-规范文档规范.md
-source_tasks: []
 source_memos: []
 related_workareas: []
-related_taskplans: []
 related_adrs: []
 related_changes: []
 related_docs: []

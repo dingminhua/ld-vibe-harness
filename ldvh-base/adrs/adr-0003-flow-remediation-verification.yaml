@@ -12,7 +12,6 @@ context: |-
 decision: 创建本 ADR 后走 proposed→rejected 流程，验证 Human Gate 确认记录是否持久化到 ADR YAML context 字段。
 consequences: 验证完成后 ADR 进入 rejected 终态，保留历史记录。
 affects: []
-related_tasks: []
 related_changes: []
 related_memos: []
 related_rules: []

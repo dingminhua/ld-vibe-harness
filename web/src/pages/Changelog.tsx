@@ -6,10 +6,14 @@ import PageHeader from '@/components/PageHeader';
 import { formatDateTime } from '@/utils/dateFormat';
 import { usePanel } from '@/utils/panelContext';
 
-/** 从对象 ID 推断类型，如 task-0041 → task, taskplan-0004 → taskplan, adr-0003 → adr */
+const CURRENT_OBJECT_TYPES = new Set(['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study']);
+
+/** 从当前对象 ID 推断类型，如 workplan-0004 → workplan, adr-0003 → adr */
 function inferTypeFromId(id: string): string | null {
   const match = id.match(/^([a-z]+)-\d+$/i);
-  return match ? match[1].toLowerCase() : null;
+  if (!match) return null;
+  const type = match[1].toLowerCase();
+  return CURRENT_OBJECT_TYPES.has(type) ? type : null;
 }
 
 /** 解析 commit message 中的 Refs 行，返回引用 ID 列表 */

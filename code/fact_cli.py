@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LDVH 事实模型 CLI 工具：create / transition / delete / list / show / search / stats / related / link-rule / deprecate / supersede。
 
-对 LDVH 生产对象（workarea, workplan, adr, pitfall, memo, study）和 legacy 兼容对象（taskplan, task, subtask）
+对 LDVH 当前工作对象（workarea, workplan, adr, pitfall, memo, study）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
 Change 使用 Git commit 作为事实源，不通过本 CLI 管理。
 ADR 专属写入操作（link-rule / deprecate / supersede）必须携带 Human Gate 确认参数。
@@ -23,8 +23,7 @@ import yaml
 # ── 对象元数据（硬编码，与 fact_validate.py 保持一致） ──────────────
 
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"workarea", "workplan", "taskplan", "task", "subtask", "adr", "pitfall", "memo", "study"}
-LEGACY_OBJECT_TYPES = {"taskplan", "task", "subtask"}
+OBJECT_TYPES = {"workarea", "workplan", "adr", "pitfall", "memo", "study"}
 
 
 class BlockScalarDumper(yaml.SafeDumper):
@@ -48,9 +47,6 @@ LIST_SUMMARY_FIELDS = ("priority", "importance", "repeatability")
 ID_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}$"),
     "workplan": re.compile(r"^workplan-\d{4}$"),
-    "taskplan": re.compile(r"^taskplan-\d{4}$"),
-    "task": re.compile(r"^task-\d{4}$"),
-    "subtask": re.compile(r"^subtask-\d{4}$"),
     "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
     "memo": re.compile(r"^memo-\d{4}$"),
@@ -60,9 +56,6 @@ ID_PATTERNS = {
 FILENAME_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "workplan": re.compile(r"^workplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "taskplan": re.compile(r"^taskplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "task": re.compile(r"^task-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "subtask": re.compile(r"^subtask-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
@@ -72,9 +65,6 @@ FILENAME_PATTERNS = {
 VALID_STATUSES = {
     "workarea": {"active", "archived"},
     "workplan": {"draft", "active", "review_needed", "closed"},
-    "taskplan": {"draft", "active", "review_needed", "closed"},
-    "task": {"planned", "executing", "verifying", "review_needed", "closed"},
-    "subtask": {"planned", "executing", "verifying", "review_needed", "closed"},
     "adr": {"proposed", "accepted", "rejected", "deprecated", "superseded"},
     "pitfall": {"draft", "active", "superseded", "archived"},
     "memo": {"pending", "resolved", "discarded"},
@@ -90,26 +80,6 @@ VALID_TRANSITIONS = {
         "draft": {"active"},
         "active": {"review_needed"},
         "review_needed": {"closed", "active"},
-        "closed": set(),
-    },
-    "taskplan": {
-        "draft": {"active"},
-        "active": {"review_needed"},
-        "review_needed": {"closed", "active"},
-        "closed": set(),
-    },
-    "task": {
-        "planned": {"executing"},
-        "executing": {"verifying"},
-        "verifying": {"review_needed", "executing"},
-        "review_needed": {"closed", "executing"},
-        "closed": set(),
-    },
-    "subtask": {
-        "planned": {"executing"},
-        "executing": {"verifying"},
-        "verifying": {"review_needed", "executing"},
-        "review_needed": {"closed", "executing"},
         "closed": set(),
     },
     "adr": {
@@ -141,9 +111,6 @@ VALID_TRANSITIONS = {
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
     "workplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
-    "taskplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "tasks"],
-    "task": ["id", "type", "title", "status", "created", "updated", "taskplan", "description", "source", "acceptance"],
-    "subtask": ["id", "type", "title", "status", "created", "updated", "task", "description", "source", "acceptance"],
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
@@ -153,9 +120,6 @@ REQUIRED_FIELDS = {
 DEFAULT_STATUS = {
     "workarea": "active",
     "workplan": "draft",
-    "taskplan": "draft",
-    "task": "planned",
-    "subtask": "planned",
     "adr": "proposed",
     "pitfall": "draft",
     "memo": "pending",
@@ -165,9 +129,6 @@ DEFAULT_STATUS = {
 DIRECTORY_MAP = {
     "workarea": "ldvh-base/workareas/",
     "workplan": "ldvh-base/workplans/",
-    "taskplan": "ldvh-base/taskplans/",
-    "task": "ldvh-base/tasks/",
-    "subtask": "ldvh-base/subtasks/",
     "adr": "ldvh-base/adrs/",
     "pitfall": "ldvh-base/pitfalls/",
     "memo": "ldvh-base/memos/",
@@ -287,79 +248,6 @@ def blockify_multiline(value: Any) -> Any:
     if isinstance(value, list):
         return [blockify_multiline(item) for item in value]
     return value
-
-
-def find_task_by_id(tasks_dir: Path, task_id: str) -> tuple[Path | None, dict[str, Any] | None]:
-    matches = sorted(tasks_dir.glob(f"{task_id}-*.yaml"))
-    if not matches:
-        return None, None
-    task_path = matches[0]
-    task_data = load_yaml(task_path)
-    return task_path, task_data
-
-
-def validate_task_blockers_closed(yaml_file: Path, data: dict[str, Any]) -> bool:
-    blocked_by = data.get("blocked_by", [])
-    if not blocked_by:
-        return True
-    if not isinstance(blocked_by, list):
-        error("blocked_by 必须是 Task ID 列表")
-        return False
-    for blocker_id in blocked_by:
-        if not isinstance(blocker_id, str) or not ID_PATTERNS["task"].match(blocker_id):
-            error(f"blocked_by 中必须使用 task-{{NNNN}} 格式的 Task ID: {blocker_id}")
-            return False
-        if blocker_id == data.get("id"):
-            error("blocked_by 不得引用当前 Task 自身")
-            return False
-        blocker_path, blocker_data = find_task_by_id(yaml_file.parent, blocker_id)
-        if blocker_path is None or blocker_data is None:
-            error(f"blocked_by 引用的 Task 不存在: {blocker_id}")
-            return False
-        if blocker_data.get("status") != "closed":
-            error(f"前置 Task 未关闭，当前 Task 不得进入执行态: {blocker_id}")
-            return False
-    return True
-
-
-def get_task_dependencies(tasks_dir: Path, task_id: str) -> dict[str, Any] | None:
-    task_path, task_data = find_task_by_id(tasks_dir, task_id)
-    if task_path is None or task_data is None:
-        return None
-    blocked_by = task_data.get("blocked_by", [])
-    blocks = []
-    if tasks_dir.exists():
-        for yaml_path in sorted(tasks_dir.glob("task-*.yaml")):
-            data = load_yaml(yaml_path)
-            if data is None:
-                continue
-            if task_id in (data.get("blocked_by") or []):
-                blocks.append({
-                    "id": data.get("id", ""),
-                    "status": data.get("status", ""),
-                    "title": data.get("title", ""),
-                    "path": str(yaml_path),
-                })
-    blockers = []
-    if isinstance(blocked_by, list):
-        for blocker_id in blocked_by:
-            blocker_path, blocker_data = find_task_by_id(tasks_dir, blocker_id) if isinstance(blocker_id, str) else (None, None)
-            blockers.append({
-                "id": blocker_id,
-                "status": blocker_data.get("status", "") if blocker_data else "",
-                "title": blocker_data.get("title", "") if blocker_data else "",
-                "path": str(blocker_path) if blocker_path else "",
-                "closed": bool(blocker_data and blocker_data.get("status") == "closed"),
-            })
-    return {
-        "id": task_data.get("id", task_id),
-        "status": task_data.get("status", ""),
-        "title": task_data.get("title", ""),
-        "path": str(task_path),
-        "blocked_by": blockers,
-        "blocks": blocks,
-        "ready_to_execute": all(item.get("closed") for item in blockers),
-    }
 
 
 def _json_safe(obj: Any) -> Any:
@@ -501,9 +389,6 @@ def cmd_create(args: argparse.Namespace) -> int:
     if object_type not in OBJECT_TYPES:
         error(f"不支持的对象类型: {object_type}，有效类型: {', '.join(sorted(OBJECT_TYPES))}")
         return 1
-    if object_type in LEGACY_OBJECT_TYPES:
-        error(f"{object_type} 已废弃，不得新建；请创建 workplan，并用 orchestration.execution_items 承载执行项。")
-        return 1
 
     # ADR 创建时强制 Human Gate
     if object_type == "adr":
@@ -573,23 +458,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_pitfalls"] = []
         data["related_workplans"] = []
         data["related_changes"] = []
-    if object_type == "taskplan":
-        data["priority"] = "P2"
-        data["tasks"] = []
-        data["related_docs"] = []
-        data["related_adrs"] = []
-        data["related_memos"] = []
-        data["related_pitfalls"] = []
-    if object_type == "task":
-        data["blocked_by"] = []
-        data["deliverables"] = []
-        data["verification"] = "## 验证计划\n\n## 验证命令\n"
-        deliverables_val = getattr(args, "deliverables", None)
-        if deliverables_val:
-            data["deliverables"] = _parse_list_values(deliverables_val)
-    if object_type == "subtask":
-        data["blocked_by"] = []
-        data["verification"] = "## 验证计划\n\n## 验证命令\n"
     if object_type == "memo":
         data["priority"] = "P3"
         data["source"] = "conversation"
@@ -714,60 +582,11 @@ def cmd_transition(args: argparse.Namespace) -> int:
                 error(f"{field} 未填写，无法关闭 WorkPlan")
                 return 1
 
-    # Task 前置任务强制校验（planned → executing）
-    if object_type == "task" and current_status == "planned" and new_status == "executing":
-        if not validate_task_blockers_closed(yaml_file, data):
-            return 1
-
-    # Task 关闭条件校验（review_needed → closed）
-    if object_type == "task" and current_status == "review_needed" and new_status == "closed":
-        # 校验 acceptance 全部 - [x]
-        acceptance = data.get("acceptance", "")
-        if isinstance(acceptance, str):
-            unchecked = re.findall(r"- \[ \]", acceptance)
-            if unchecked:
-                error(f"acceptance 存在未完成项（{len(unchecked)} 项未勾选），无法关闭")
-                return 1
-        # 校验 verification 已填写
-        verification = data.get("verification")
-        if not verification or (isinstance(verification, str) and not verification.strip()):
-            error("verification 未填写，无法关闭 Task")
-            return 1
-        # 校验 closure_evidence 已填写
-        closure_evidence = data.get("closure_evidence")
-        if not closure_evidence or (isinstance(closure_evidence, str) and not closure_evidence.strip()):
-            error("closure_evidence 未填写，无法关闭 Task")
-            return 1
-
-    # TaskPlan 待关闭审查条件校验（active → review_needed）
-    if object_type == "taskplan" and current_status == "active" and new_status == "review_needed":
-        completion_evidence = data.get("completion_evidence")
-        if not completion_evidence or (isinstance(completion_evidence, str) and not completion_evidence.strip()):
-            error("completion_evidence 未填写，无法将 TaskPlan 标记为 review_needed")
-            return 1
-        if not data.get("review_requested_at"):
-            data["review_requested_at"] = datetime.now().isoformat()
-
-    # TaskPlan 关闭条件校验（review_needed → closed）
-    if object_type == "taskplan" and current_status == "review_needed" and new_status == "closed":
-        for field in ("review_requested_at", "completion_evidence"):
-            value = data.get(field)
-            if not value or (isinstance(value, str) and not value.strip()):
-                error(f"{field} 未填写，无法关闭 TaskPlan")
-                return 1
-
     if object_type == "workarea" and new_status == "archived":
         archive_reason = data.get("archive_reason")
         if not archive_reason or (isinstance(archive_reason, str) and not archive_reason.strip()):
             error("archive_reason 未填写，无法归档 WorkArea")
             return 1
-
-    if object_type == "subtask" and current_status == "review_needed" and new_status == "closed":
-        for field in ("verification", "closure_evidence"):
-            value = data.get(field)
-            if not value or (isinstance(value, str) and not value.strip()):
-                error(f"{field} 未填写，无法关闭 SubTask")
-                return 1
 
     # Memo 分流条件校验（pending → resolved）
     if object_type == "memo" and current_status == "pending" and new_status == "resolved":
@@ -801,12 +620,6 @@ def cmd_transition(args: argparse.Namespace) -> int:
     data["status"] = new_status
     data["updated"] = datetime.now().isoformat()
     if object_type == "workplan" and new_status == "closed":
-        data["closed_at"] = datetime.now().isoformat()
-    if object_type == "task" and new_status == "closed":
-        data["closed_at"] = datetime.now().isoformat()
-    if object_type == "taskplan" and new_status == "closed":
-        data["closed_at"] = datetime.now().isoformat()
-    if object_type == "subtask" and new_status == "closed":
         data["closed_at"] = datetime.now().isoformat()
 
     # ADR 流转时回写 Human Gate 记录到 context
@@ -951,79 +764,6 @@ def cmd_list(args: argparse.Namespace) -> int:
             print(f"{item['id']}\t{item['status']}\t{item['title']}")
         if not items:
             print(f"未找到 {object_type} 对象")
-
-    return 0
-
-
-# ── deps 命令 ──────────────────────────────────────────────────────────
-
-def cmd_deps(args: argparse.Namespace) -> int:
-    """展示 Task 的前置依赖与被阻塞关系。"""
-    target = args.target
-    base_dir = Path(args.base_dir) if args.base_dir else Path(".")
-    fmt = args.format
-    tasks_dir = base_dir / DIRECTORY_MAP["task"]
-
-    target_path = Path(target)
-    if target_path.is_file():
-        data = load_yaml(target_path)
-        if data is None:
-            return 1
-        if data.get("type") != "task":
-            error(f"deps 仅支持 task 对象: {target}")
-            return 1
-        task_id = data.get("id")
-        if not isinstance(task_id, str) or not ID_PATTERNS["task"].match(task_id):
-            error(f"Task ID 不合法: {task_id}")
-            return 1
-        tasks_dir = target_path.parent
-    else:
-        task_id = target
-        if not ID_PATTERNS["task"].match(task_id):
-            error(f"Task ID 必须使用 task-{{NNNN}} 格式: {task_id}")
-            return 1
-
-    deps = get_task_dependencies(tasks_dir, task_id)
-    if deps is None:
-        error(f"找不到 Task: {task_id}")
-        return 1
-
-    if fmt == "json":
-        result = {
-            "ok": True,
-            "command": "fact_cli",
-            "action": "deps",
-            "target": task_id,
-            "summary": {
-                "id": deps.get("id", task_id),
-                "status": deps.get("status", ""),
-                "blocked_by_count": len(deps.get("blocked_by", [])),
-                "blocks_count": len(deps.get("blocks", [])),
-                "ready_to_execute": deps.get("ready_to_execute", False),
-            },
-            "issues": [],
-            "data": deps,
-        }
-        print(json.dumps(_json_safe(result), ensure_ascii=False, indent=2))
-    else:
-        print(f"{deps.get('id', task_id)}\t{deps.get('status', '')}\t{deps.get('title', '')}")
-        print(f"path: {deps.get('path', '')}")
-        print(f"ready_to_execute: {deps.get('ready_to_execute', False)}")
-        print("blocked_by:")
-        blockers = deps.get("blocked_by", [])
-        if blockers:
-            for item in blockers:
-                closed_mark = "closed" if item.get("closed") else "not_closed"
-                print(f"  - {item.get('id', '')}\t{item.get('status', '')}\t{closed_mark}\t{item.get('title', '')}")
-        else:
-            print("  (none)")
-        print("blocks:")
-        blocked = deps.get("blocks", [])
-        if blocked:
-            for item in blocked:
-                print(f"  - {item.get('id', '')}\t{item.get('status', '')}\t{item.get('title', '')}")
-        else:
-            print("  (none)")
 
     return 0
 
@@ -1378,10 +1118,9 @@ def cmd_update(args: argparse.Namespace) -> int:
         # 处理字符串转义：\n → 换行, \\ → 反斜杠
         value = value.replace("\\n", "\n").replace("\\\\", "\\")
         # 列表类型字段：逗号分隔
-        if key in ("related_workareas", "related_workplans", "related_taskplans", "related_tasks", "related_adrs",
+        if key in ("related_workareas", "related_workplans", "related_adrs",
                     "related_memos", "related_studies", "related_pitfalls", "related_docs",
-                    "source_docs", "affected_docs", "deliverables", "tasks",
-                    "blocked_by", "affects", "related_objects", "related_rules", "related_changes"):
+                    "source_docs", "affects", "related_objects", "related_rules", "related_changes"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
         else:
             updates[key] = value
@@ -1440,7 +1179,6 @@ def build_parser() -> argparse.ArgumentParser:
     create_parser.add_argument("object_type", choices=sorted(OBJECT_TYPES), help="对象类型")
     create_parser.add_argument("--title", required=True, help="对象标题")
     create_parser.add_argument("--short-title", default=None, help="文件名短标识（默认从标题自动生成）")
-    create_parser.add_argument("--deliverables", action="append", default=None, help="Task 产出物路径（可多次指定，支持逗号分隔）")
     create_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     _add_authorization_args(create_parser)
 
@@ -1465,15 +1203,9 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     list_parser.add_argument("--format", choices={"text", "json"}, default="text", help="输出格式，默认 text")
 
-    # deps 子命令
-    deps_parser = subparsers.add_parser("deps", help="查看 Task 依赖关系")
-    deps_parser.add_argument("target", help="Task ID（如 task-0001）或 Task YAML 文件路径")
-    deps_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
-    deps_parser.add_argument("--format", choices={"text", "json"}, default="text", help="输出格式，默认 text")
-
     # show 子命令
     show_parser = subparsers.add_parser("show", help="查看事实对象详情")
-    show_parser.add_argument("target", help="YAML 文件路径或对象 ID（如 task-0001）")
+    show_parser.add_argument("target", help="YAML 文件路径或对象 ID（如 workplan-0001）")
     show_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     show_parser.add_argument("--format", choices={"text", "json"}, default="text", help="输出格式，默认 text")
 
@@ -1517,7 +1249,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # update 子命令
     update_parser = subparsers.add_parser("update", help="更新事实对象的指定字段")
-    update_parser.add_argument("target", help="对象 ID（如 taskplan-0002）或 YAML 文件路径")
+    update_parser.add_argument("target", help="对象 ID（如 workplan-0002）或 YAML 文件路径")
     update_parser.add_argument("--set", action="append", default=None, help="设置字段值（key=value，可多次指定，列表字段用逗号分隔）")
     update_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     _add_authorization_args(update_parser)
@@ -1538,8 +1270,6 @@ def main() -> int:
         return cmd_delete(args)
     elif args.command == "list":
         return cmd_list(args)
-    elif args.command == "deps":
-        return cmd_deps(args)
     elif args.command == "show":
         return cmd_show(args)
     elif args.command == "search":
