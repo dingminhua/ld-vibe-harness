@@ -7,18 +7,24 @@ updated: "2026-06-18"
 description: |
   本 Memo 承载本轮关于 TaskPlan / Task / SubTask、WorkPlan、ExecutionItem、Role Contract、计划审核和执行证据边界的阶段性收敛。
 
-  当前候选结论是：LDVH 不再以独立 Task 作为 active 工作模型。Human 关心的是 WorkPlan 这一层的目标、范围、成功标准、关闭判断和证据；AI 在 WorkPlan 内部使用 `orchestration.execution_items` 安排执行、角色分工、并行/串行和最小恢复信息。ExecutionItem 不是工作对象，不进入 `ldvh-base/` 独立事实源，也不作为历史事实源长期追踪。
+  当前已落地的主结论是：LDVH 不再以独立 Task 作为 active 工作模型。Human 关心的是 WorkPlan 这一层的目标、范围、成功标准、关闭判断和证据；AI 在 WorkPlan 内部使用 `orchestration.execution_items` 安排执行、角色分工、并行/串行和最小恢复信息。ExecutionItem 不是工作对象，不进入 `ldvh-base/` 独立事实源，也不作为历史事实源长期追踪。
 
   执行过程不作为历史事实源，含义是：不记录 AI 的临时 todo、工具读取顺序、子 Agent 中间过程、未采纳草稿或已被最终结论吸收的重复分析。WorkPlan 只保留足以恢复、验证和关闭的最小证据，包括当前推进位置、执行项结果摘要、稳定产物、测试/检查、独立复检结论、Human Gate 结果、关闭原因、残留风险和经验分流结果。
 
+  截至 2026-06-18，旧 TaskPlan / Task 已批量迁移为 WorkPlan 事实源：`ldvh-base/workplans/` 中已有 61 个 WorkPlan，WorkArea 已补齐 `workplans` 反向索引；Code / Web 已能把 WorkPlan 作为一等对象读取、统计、展示和校验。Dashboard 待推进主队列已对 legacy TaskPlan / Task / SubTask 降权，WorkArea 聚合中的 WorkPlan 行已按 `execution_items` 展示执行流。旧 TaskPlan / Task 仍保留为历史事实源，不作为新工作主路径。
+
+  当前事实源结构校验为 `errors=0 warnings=13`。这些 warning 主要来自历史旧规范路径引用（如 `specs/21-TaskPlan-任务计划.md`、`specs/22-Task-任务.md`、`specs/23-SubTask-子任务.md`），不构成 WorkPlan 主路径的结构阻断；但若要达到“零噪音干净”，仍需单独做旧 specs 路径引用清理或降级说明。
+
+  下一轮建议形成一个明确的总收口工作：`Specs 编号与字段注册表总收口`。该工作应先把 `specs/05.01-工作字段内容格式规范.md` 从 WorkPlan 试点注册升级为全工作模型字段注册表，补齐 WorkArea、ADR、Pitfall、Memo、Change、Study 的字段名、语义、内容格式、Code/Web 消费元数据和废弃/别名关系；再处理 20-39 工作模型编号洞，将 24-28 迁移为 22-26，确保 ADR、Pitfall、Memo、Change、Study 连续编号；最后执行 specs 历史痕迹清理，消除“迁移完成前”“试点”“仍需迁移”等过期表述，并把旧 TaskPlan / Task / SubTask 路径引用按语义迁到 WorkPlan、05、05.01 或废弃映射说明，避免机械替换造成新编号语义错配。
+
   仍需继续讨论和核对的核心问题：
 
-  - `orchestration.execution_items` 的字段是否足以支持恢复、并行/串行编排、角色分派和关闭判断；
-  - `orchestration.review` 是否只声明复检安排，还是需要更明确的专业角色审核输出格式；
+  - `orchestration.execution_items` 的字段已足以支持当前恢复、并行/串行编排、角色分派和关闭判断；后续只需继续观察 `input_refs` / `evidence_refs` 是否需要更强引用解析；
+  - `orchestration.review` 目前只声明复检安排；若需要更明确的专业角色审核输出格式，应由 Role Contract、工作流程或能力资产规范承接；
   - Role Contract 应由 04 能力资产、06 流程基础、40-59 具体流程，还是其他规范承接；
-  - WorkPlan 的 `verification_evidence` 与 `closure_evidence` 如何避免混淆；
+  - WorkPlan 的 `verification_evidence` 与 `closure_evidence` 已在字段注册表和校验中分离，但旧迁移数据中仍可能存在语义重复，后续应在关闭新 WorkPlan 时持续强化证据写法；
   - Memo 中已经部分落地的议题，如何提示 AI 判断继续 pending、追加 evolution、分流或 resolved；
-  - Code / Web 中旧 TaskPlan、Task、SubTask 实现何时迁移，迁移前哪些兼容字段可以暂留。
+  - 旧 TaskPlan、Task、SubTask 作为 legacy/history 的降权策略还需继续收敛，包括何时停止新建、何时从主导航或默认聚合中进一步隐藏，以及是否需要旧事实源冻结说明。
 
   建议新会话优先从 `specs/21-WorkPlan-工作计划.md` 逐段核对，然后回看 `specs/05-工作模型基础规范.md`、`specs/05.01-工作字段内容格式规范.md` 和 `specs/06-工作流程基础规范.md`，最后再处理 40-43 流程规范与 Code / Web 迁移。
 evolution:
@@ -34,6 +40,14 @@ evolution:
     summary: 明确执行过程不作为历史事实源，只保留最小恢复、验证和关闭证据；Review / Audit / Decision Review 属于流程环节，不是工作模型。
   - at: 2026-06-18
     summary: 联网复核 Codex、Claude Code、LangChain 和 Microsoft 多 Agent / HITL / Skills / Memory 资料后，判断 WorkPlan + ExecutionItem + Role Contract 方向符合行业趋势，并已据此修改 00、02、05、05.01、21、26、28 等相关规范和局部 Code / Web。
+  - at: 2026-06-18
+    summary: 已将 61 个 legacy TaskPlan 迁移为 WorkPlan，补齐 11 个 WorkArea 的 workplans 反向索引；旧 TaskPlan / Task 保留为历史事实源。
+  - at: 2026-06-18
+    summary: 已完成 code/web 双视角验收后的最小硬化：Code 能读、列、统计、展示、校验 WorkPlan，并强化 related_workplans 存在性、related_changes 列表写入和多行证据块标量；Web 能读取 WorkPlan、展示 execution_items，并在 Dashboard 待推进主队列中对 legacy TaskPlan / Task / SubTask 降权。
+  - at: 2026-06-18
+    summary: 当前事实源校验为 errors=0 warnings=13；剩余 warning 是历史旧 specs 路径引用噪音，不阻断 WorkPlan 主路径，但后续若追求零噪音，应另行清理旧路径引用或写明降级关系。
+  - at: 2026-06-18
+    summary: 追加下一轮总收口范围：05.01 从 WorkPlan 试点升级为全工作模型字段注册表；20-39 编号迁移填补 22-23 空缺；specs 清理过期迁移痕迹和旧 TaskPlan / Task / SubTask 路径引用。
 source: conversation
 source_detail: 本轮围绕 LDVH 工作流程、任务编排、执行证据、角色复检和 Memo 分流的连续讨论；包含一次联网复核结论。
 priority: P1
