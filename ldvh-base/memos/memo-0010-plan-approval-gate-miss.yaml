@@ -24,9 +24,14 @@ description: |
   2. 0071 应把计划审核、Human 执行批准、过程 Memo 回写和最终复盘写成可复用流程经验；
   3. 后续流程规范候选应考虑增加“计划草案 -> 独立专业审批 -> Human 执行批准 -> 执行”的硬顺序；
   4. 凡用户明确说“审批后执行”，AI 不得把创建 WorkPlan、提交 WorkPlan 或子 Agent APPROVE 解释为执行批准。
+  5. 每个 WorkPlan 完成后应安排独立专业子 Agent 做完成后检查，检查对象包括成功标准、验证证据、关闭证据、残留风险和分流是否充分。
+  6. 每个 WorkPlan 关闭前应判断总结应进入 Memo、Pitfall、后续 WorkPlan 还是 closure_evidence：过程经验和流程候选进入 Memo；已解决且可复用的错误模式进入 Pitfall；需继续执行的目标进入后续 WorkPlan。
+  7. 整套“计划拆分 -> 子 Agent 审批 -> Human 执行批准 -> 执行 -> 完成后子 Agent 检查 -> 总结分流 -> Human 关闭审查”流程应作为后续标准工作流程候选继续打磨。
 evolution:
   - at: 2026-06-18
     summary: 用户指出三个 WorkPlan 创建后缺少独立专业子 Agent 审批和 Human 审批；AI 撤回未授权代码改动，安排 0069/0070/0071 独立审批，并将该漏检记录为流程改进输入。
+  - at: 2026-06-18
+    summary: 用户补充要求 WorkPlan 完成后也必须有独立专业子 Agent 检查，最终总结需要写入 Memo 或 Pitfall，整套流程应记录后用于打磨标准工作流程；AI 已将该要求同步到 workplan-0071 和本 Memo。
 source: conversation
 source_detail: 用户要求反思为什么漏掉计划审核和 Human 审批环节，并要求中间问题记录到 Memo。
 priority: P1

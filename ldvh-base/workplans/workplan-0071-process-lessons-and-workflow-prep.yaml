@@ -3,7 +3,7 @@ type: workplan
 title: 沉淀清退与契约化经验并准备流程规范
 status: draft
 created: '2026-06-18T09:11:44'
-updated: '2026-06-18T09:11:44'
+updated: '2026-06-18T09:23:40'
 workarea: workarea-0012
 priority: P2
 description: |
@@ -16,6 +16,8 @@ success_criteria: |
   - [ ] Code/Web/Specs 三方契约协同中的经验和问题已形成可复用总结
   - [ ] 对未来相关工作流程规范的候选要求已回写到 Memo、closure_evidence 或后续 WorkPlan，至少覆盖拆分、审批、执行、问题回写和最终复盘
   - [ ] 本轮“计划审核 / Human 执行审批漏检”已形成稳定记录，并作为后续流程规范候选输入
+  - [ ] 每个 WorkPlan 完成后均已安排独立专业子 Agent 做完成后检查，检查结论进入对应 WorkPlan 的 verification_evidence 或 closure_evidence
+  - [ ] 每个 WorkPlan 关闭前均已判断是否需要把经验写入 Memo、把可复用踩坑写入 Pitfall，或把流程改进候选分流为后续 WorkPlan
   - [ ] 最终回报中明确说明三个 WorkPlan 的完成情况、校验结果、残留风险和经验总结
 source: |
   Plan creation requested by dmh2002 on 2026-06-18:
@@ -23,6 +25,8 @@ source: |
   最后在回报中告知，并从过程中总结经验和问题，用于完善当前流程并为未来相关工作流程规范做准备。
   独立流程治理审批子 Agent 初审返回 REQUEST_CHANGES，要求明确计划审核和执行前批准门槛、过程 Memo 触发规则、
   流程改进候选稳定回写位置和专业复核要求。
+  用户随后补充要求：WorkPlan 完成后还需要独立子 Agent 检查；WorkPlan 最终总结要写入 Memo 或 Pitfall；
+  整个工作流程也要记录到 Memo，后续打磨成标准工作流程。
 orchestration:
   mode: sequential
   execution_items:
@@ -52,13 +56,40 @@ orchestration:
     evidence_refs: []
     blocking_reason: null
   - id: item-3
+    title: 安排完成后独立子 Agent 检查
+    role: reviewer
+    mode: single
+    input_refs:
+    - workplan-0069
+    - workplan-0070
+    - workplan-0071
+    expected_output: 每个 WorkPlan 完成后，按其专业领域安排独立子 Agent 复核完成证据、残留风险和关闭条件；复核结论回写到对应 WorkPlan 证据字段。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-4
+    title: 分流总结到 Memo 或 Pitfall
+    role: controller
+    mode: single
+    input_refs:
+    - ldvh-base/memos/
+    - ldvh-base/pitfalls/
+    - workplan-0069
+    - workplan-0070
+    expected_output: 将过程经验、流程候选和残留问题写入 Memo；将已解决且可复用的错误模式或操作陷阱写入 Pitfall；不让总结只停留在最终回报。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-5
     title: 最终回报与后续规范准备
     role: controller
     mode: single
     input_refs:
     - memo-0005
     - memo-0009
-    expected_output: 在最终回报中汇总三个 WorkPlan、校验、残留风险和流程改进候选。
+    expected_output: 在最终回报中汇总三个 WorkPlan、完成后子 Agent 检查、校验、残留风险、Memo/Pitfall 分流和流程改进候选。
     status: pending
     result_summary: null
     evidence_refs: []
