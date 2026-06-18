@@ -1,7 +1,7 @@
 id: workplan-0070
 type: workplan
 title: 标准化 specs 文件元信息契约
-status: active
+status: draft
 created: '2026-06-18T09:11:44'
 updated: '2026-06-18T09:11:44'
 workarea: workarea-0012
@@ -18,10 +18,11 @@ success_criteria: |
   - [ ] 设计结论写清头部元信息契约与成员自描述契约的边界
   - [ ] 仅记录后续 Code 检查候选，不贸然扩大 `code/spec_checks/index.py` 判定范围
 source: |
-  Human Gate confirmed by dmh2002 on 2026-06-18:
+  Plan creation requested by dmh2002 on 2026-06-18:
   用户要求评估并设计 LDVH specs 文档的“标准文件元信息契约”，保持现有 `> 字段：值` 格式，
   把它明确为稳定机器接口；同时要求注意 20+ / 40+ 双层元信息，不把 `ldvh_member` 字段搬进普通头部，
   不新增会与成员自描述冲突的头部字段。
+  独立 specs 元信息契约审批子 Agent 已返回 APPROVE；本计划仍需 Human 明确批准后才能开始执行。
 orchestration:
   mode: sequential
   execution_items:

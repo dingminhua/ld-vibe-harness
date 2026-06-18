@@ -1,7 +1,7 @@
 id: workplan-0071
 type: workplan
 title: 沉淀清退与契约化经验并准备流程规范
-status: active
+status: draft
 created: '2026-06-18T09:11:44'
 updated: '2026-06-18T09:11:44'
 workarea: workarea-0012
@@ -9,28 +9,32 @@ priority: P2
 description: |
   在旧对象清退和文件元信息契约标准化过程中，记录中间问题、残留风险、Code/Web/Specs 协同经验和
   后续流程规范候选。该 WorkPlan 不替代前两个执行计划，只负责把过程经验回写到 Memo、待补齐事项
-  或后续规范准备材料，避免执行中的经验只留在对话里。
+  或后续规范准备材料，避免执行中的经验只留在对话里。本计划处于待审状态，必须在独立流程治理复核
+  和 Human 明确批准后才能执行。
 success_criteria: |
   - [ ] 执行过程中遇到的阻塞、降级、残留风险或无法一次完成事项已记录到 Memo
   - [ ] Code/Web/Specs 三方契约协同中的经验和问题已形成可复用总结
-  - [ ] 对未来相关工作流程规范的候选要求已记录，至少覆盖拆分、审批、执行、问题回写和最终复盘
+  - [ ] 对未来相关工作流程规范的候选要求已回写到 Memo、closure_evidence 或后续 WorkPlan，至少覆盖拆分、审批、执行、问题回写和最终复盘
+  - [ ] 本轮“计划审核 / Human 执行审批漏检”已形成稳定记录，并作为后续流程规范候选输入
   - [ ] 最终回报中明确说明三个 WorkPlan 的完成情况、校验结果、残留风险和经验总结
 source: |
-  Human Gate confirmed by dmh2002 on 2026-06-18:
+  Plan creation requested by dmh2002 on 2026-06-18:
   用户要求把这些事拆成三个 WorkPlan，审批后依次执行，中间不要停；若发生问题记录到 Memo，
   最后在回报中告知，并从过程中总结经验和问题，用于完善当前流程并为未来相关工作流程规范做准备。
+  独立流程治理审批子 Agent 初审返回 REQUEST_CHANGES，要求明确计划审核和执行前批准门槛、过程 Memo 触发规则、
+  流程改进候选稳定回写位置和专业复核要求。
 orchestration:
   mode: sequential
   execution_items:
   - id: item-1
-    title: 维护过程问题 Memo
+    title: 贯穿执行期维护过程问题 Memo
     role: controller
     mode: single
     input_refs:
     - ldvh-base/memos/
     - workplan-0069
     - workplan-0070
-    expected_output: 对执行中无法立即处理或值得保留的问题形成 Memo 记录。
+    expected_output: 在 0069 和 0070 执行期间，凡遇到阻塞、降级、范围扩大、审批不确定或残留风险，立即形成或更新 Memo；不得等到最终复盘才补记。
     status: pending
     result_summary: null
     evidence_refs: []
@@ -42,7 +46,7 @@ orchestration:
     input_refs:
     - workplan-0069
     - workplan-0070
-    expected_output: 形成面向未来流程规范的经验、问题和候选要求。
+    expected_output: 形成面向未来流程规范的经验、问题和候选要求，并稳定回写到 Memo、closure_evidence 或后续 WorkPlan。
     status: pending
     result_summary: null
     evidence_refs: []
@@ -62,17 +66,23 @@ orchestration:
   review:
     controller_self_check: true
     specialist_review:
-      required: false
-      role: null
-      expected_output: null
+      required: true
+      role: process-governance-reviewer
+      expected_output: 独立复核计划审批、Human 执行批准、过程 Memo 回写和流程改进候选是否闭环。
     human_closure_review: true
 verification_evidence: ''
 closure_evidence: ''
-related_docs: []
+related_docs:
+- specs/21-WorkPlan-工作计划.md
+- specs/40-workflow-design-audit-工作流程设计审核.md
+- specs/41-work-model-audit-工作模型审核.md
+- specs/42-specs-audit-规范审核.md
+- specs/43-landing-readiness-audit-落地准备度审核.md
 related_adrs: []
 related_memos:
 - memo-0005
 - memo-0009
+- memo-0010
 related_pitfalls: []
 related_workplans:
 - workplan-0069

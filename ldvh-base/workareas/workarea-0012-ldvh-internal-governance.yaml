@@ -9,7 +9,8 @@ scope: LDVH 内部治理兜底工作域；后续可按任务计划实际范围�
 source: 用户确认建立 LDVH 内部治理工作域。
 related_docs: []
 related_adrs: []
-related_memos: []
+related_memos:
+- memo-0010
 related_pitfalls: []
 workplans:
 - workplan-0060

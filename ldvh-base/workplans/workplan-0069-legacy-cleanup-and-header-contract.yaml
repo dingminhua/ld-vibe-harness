@@ -1,7 +1,7 @@
 id: workplan-0069
 type: workplan
 title: 清退旧工作对象事实源与兼容入口
-status: active
+status: draft
 created: '2026-06-18T09:08:15'
 updated: '2026-06-18T09:11:44'
 workarea: workarea-0012
@@ -17,9 +17,10 @@ success_criteria: |
   - [ ] specs 中旧对象兼容、迁移保留、历史夹具维护等当前规则痕迹已清理或改写为当前事实规则
   - [ ] Python、Web 和事实源校验通过，删除造成的残留问题已分流到 Memo 或后续 WorkPlan
 source: |
-  Human Gate confirmed by dmh2002 on 2026-06-18:
+  Plan creation requested by dmh2002 on 2026-06-18:
   用户明确要求“不需要保留兼容能力，这个项目还没推广，没有其他人用”，并要求清理历史痕迹；
   后续又要求把事项拆成三个 WorkPlan，审批后依次执行，中间问题记录到 Memo，最后总结经验用于完善流程。
+  独立 Code/Web 清退审批子 Agent 已返回 APPROVE；本计划仍需 Human 明确批准后才能开始执行。
 orchestration:
   mode: sequential
   execution_items:
@@ -33,7 +34,7 @@ orchestration:
     - 用户 2026-06-18 明确授权
     expected_output: WorkPlan 记录旧对象清退目标、成功标准、授权和执行分解。
     status: done
-    result_summary: 已创建 workplan-0069，并根据用户要求缩窄为旧对象清退计划。
+    result_summary: 已创建 workplan-0069，并根据用户要求缩窄为旧对象清退计划；独立 Code/Web 清退审批子 Agent 已批准，等待 Human 执行批准。
     evidence_refs:
     - ldvh-base/workplans/workplan-0069-legacy-cleanup-and-header-contract.yaml
     - ldvh-base/workareas/workarea-0012-ldvh-internal-governance.yaml

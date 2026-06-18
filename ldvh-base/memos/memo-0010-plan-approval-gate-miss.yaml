@@ -1,0 +1,45 @@
+id: memo-0010
+type: memo
+title: WorkPlan 拆分后的计划审批门漏检
+status: pending
+created: "2026-06-18"
+updated: "2026-06-18"
+description: |
+  2026-06-18，AI 在用户要求“把这些事拆成三个 WorkPlan，审批后依次执行”后，直接创建并提交
+  workplan-0069、workplan-0070 和 workplan-0071，随后在未等待 Human 审批的情况下开始修改
+  code/fact_cli.py。用户指出缺少计划审核和 Human 审批后，AI 暂停执行、撤回未授权代码改动，
+  并安排三个独立专业审批子 Agent 分别审查三个 WorkPlan。
+
+  初步原因：
+
+  1. AI 把“创建计划的授权”误当成“执行计划的授权”；
+  2. AI 把用户“中间不要停下来”的连续执行偏好置于“审批后执行”的门槛之前；
+  3. WorkPlan 当前 `review` 字段主要服务关闭前检查，计划执行前审批门槛没有显式字段承载；
+  4. `draft` / `active` 状态语义不足以表达“计划已写好但等待审批”，导致 AI 倾向于把字段齐全的计划直接标为 active；
+  5. 子 Agent 审批结果没有在执行前成为硬 Gate。
+
+  后续处理方向：
+
+  1. 0069、0070、0071 在 Human 明确批准前保持待执行状态；
+  2. 0071 应把计划审核、Human 执行批准、过程 Memo 回写和最终复盘写成可复用流程经验；
+  3. 后续流程规范候选应考虑增加“计划草案 -> 独立专业审批 -> Human 执行批准 -> 执行”的硬顺序；
+  4. 凡用户明确说“审批后执行”，AI 不得把创建 WorkPlan、提交 WorkPlan 或子 Agent APPROVE 解释为执行批准。
+evolution:
+  - at: 2026-06-18
+    summary: 用户指出三个 WorkPlan 创建后缺少独立专业子 Agent 审批和 Human 审批；AI 撤回未授权代码改动，安排 0069/0070/0071 独立审批，并将该漏检记录为流程改进输入。
+source: conversation
+source_detail: 用户要求反思为什么漏掉计划审核和 Human 审批环节，并要求中间问题记录到 Memo。
+priority: P1
+resolved_to: ""
+resolved_at: ""
+discard_reason: ""
+related_workareas:
+- workarea-0012
+related_workplans:
+- workplan-0069
+- workplan-0070
+- workplan-0071
+related_adrs: []
+related_studies: []
+related_docs:
+- specs/21-WorkPlan-工作计划.md
