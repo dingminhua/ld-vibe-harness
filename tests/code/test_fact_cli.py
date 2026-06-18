@@ -145,8 +145,28 @@ def test_workplan_transition_requires_review_evidence(tmp_path):
     assert "verification_evidence" in blocked.stderr
 
     data = read_yaml(path)
-    data["verification_evidence"] = "## 验证结果\n\n通过。"
-    data["closure_evidence"] = "## 结论\n\n可提交关闭审查。"
+    data["verification_evidence"] = (
+        "## 验证计划\n\n"
+        "检查当前工作计划是否满足 review_needed 前置验证。\n\n"
+        "## 验证命令\n\n"
+        "```bash\n"
+        "python3 code/fact_validate.py ldvh-base/workplans\n"
+        "```\n\n"
+        "## 验证结果\n\n"
+        "通过。\n\n"
+        "## 结论\n\n"
+        "验证证据满足关闭审查要求。"
+    )
+    data["closure_evidence"] = (
+        "## 验证计划\n\n"
+        "检查关闭审查材料是否齐备。\n\n"
+        "## 验证命令\n\n"
+        "人工检查成功标准、验证证据和执行项状态。\n\n"
+        "## 验证结果\n\n"
+        "关闭审查材料已整理。\n\n"
+        "## 结论\n\n"
+        "可提交关闭审查。"
+    )
     path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
     reviewed = run_cli("transition", str(path), "--to", "review_needed", *AUTH_ARGS)

@@ -448,6 +448,63 @@ input::-moz-focus-inner {
   color: rgb(var(--ldvh-accent));
 }
 
+.ldvh-study-node-content .ldvh-inline-markdown :where(p) {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  line-height: 1.85;
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(p:last-child) {
+  margin-bottom: 0;
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(ul, ol) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 1.45rem;
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(li) {
+  margin-top: 0;
+  margin-bottom: 0;
+  min-height: 1.55rem;
+  padding-left: 0.1rem;
+  line-height: 1.75;
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(ul) {
+  padding-left: 0;
+  list-style: none;
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(ol) {
+  list-style: decimal;
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(ul > li) {
+  position: relative;
+  padding-left: 1.55rem;
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(ul > li)::before {
+  content: "";
+  position: absolute;
+  left: 0.35rem;
+  top: 0.72rem;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: rgb(var(--ldvh-text-secondary) / 0.55);
+  box-shadow: 0 0 0 3px rgb(var(--ldvh-text-secondary) / 0.08);
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(ol > li)::marker {
+  color: rgb(var(--ldvh-text-secondary) / 0.82);
+}
+
 .ldvh-definition-text .ldvh-inline-markdown :where(ul, ol) {
   margin-top: 0;
   margin-bottom: 0;

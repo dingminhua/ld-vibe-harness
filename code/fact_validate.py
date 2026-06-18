@@ -80,8 +80,12 @@ LONG_TEXT_FIELDS = {
 # 12-工作模型字段内容格式规范：路径引用字段定义
 PATH_FIELDS = {"related_docs", "related_rules", "source_docs"}
 
-# 12-工作模型字段内容格式规范：Evidence 字段定义
-EVIDENCE_FIELDS = {"verification_evidence", "closure_evidence"}
+# 05.01 工作字段内容格式规范：Evidence 字段定义
+EVIDENCE_FIELDS_BY_TYPE = {
+    "workplan": {"verification_evidence", "closure_evidence"},
+    "pitfall": {"verification"},
+}
+EVIDENCE_REQUIRED_HEADINGS = ["验证计划", "验证命令", "验证结果", "结论"]
 
 WORKPLAN_ORCHESTRATION_MODES = {"single", "sequential", "parallel", "mixed"}
 WORKPLAN_EXECUTION_ITEM_MODES = {"single", "sequential", "parallel"}
@@ -530,18 +534,18 @@ def validate_verification_misplaced_content(path: Path, data: dict[str, Any], ob
 
 
 def validate_evidence_format(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
-    """12-工作模型字段内容格式规范 §6.2：Evidence 字段非空但缺少验证结果或结论结构时报 warning。"""
+    """05.01 §3.3：Evidence 字段非空但缺少四段式结构时报 warning。"""
     issues = []
-    for field in sorted(EVIDENCE_FIELDS):
+    for field in sorted(EVIDENCE_FIELDS_BY_TYPE.get(object_type, set())):
         value = data.get(field)
         if not isinstance(value, str) or not value.strip():
             continue
-        has_result = bool(re.search(r"##\s*验证结果|##\s*结果|##\s*Result", value))
-        has_conclusion = bool(re.search(r"##\s*结论|##\s*Conclusion", value))
-        if not (has_result or has_conclusion):
+        headings = [line[3:].strip() for line in value.splitlines() if re.match(r"^##\s+", line)]
+        missing_headings = [heading for heading in EVIDENCE_REQUIRED_HEADINGS if heading not in headings]
+        if missing_headings:
             issues.append(Issue(
                 str(path), "warning", "EVIDENCE_FORMAT_HINT",
-                f"字段 {field} 建议包含验证结果（## 验证结果）和结论（## 结论）结构",
+                f"字段 {field} 建议按 05.01 四段式结构书写，缺少: {', '.join(missing_headings)}",
                 field=field,
             ))
     return issues

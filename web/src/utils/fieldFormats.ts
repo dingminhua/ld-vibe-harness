@@ -43,8 +43,17 @@ export const COLLAPSIBLE_FIELDS = [
   'source_memos',
 ];
 
+export function getPreviewableDocPath(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+
+  const markdownPath = trimmed.match(/^((?:docs|specs|web\/docs|rules|skills|tools|web)\/.+?\.(?:md|mdx))(?:\s.*)?$/i);
+  return markdownPath?.[1] || trimmed;
+}
+
 export function isPreviewableDocPath(value: string) {
-  return value.startsWith('http://') || value.startsWith('https://') || /^(docs\/|specs\/|web\/docs\/|rules\/|skills\/|tools\/|web\/)/.test(value);
+  const docPath = getPreviewableDocPath(value);
+  return docPath.startsWith('http://') || docPath.startsWith('https://') || /^(docs\/|specs\/|web\/docs\/|rules\/|skills\/|tools\/|web\/)/.test(docPath);
 }
 
 export function isAffectedDocPath(value: string) {
@@ -52,9 +61,10 @@ export function isAffectedDocPath(value: string) {
 }
 
 export function isRelatedDocPath(value: string) {
-  return value.startsWith('http://')
-    || value.startsWith('https://')
-    || (/\.(md|mdx)$/i.test(value) && /^(docs\/|specs\/|web\/docs\/)/.test(value));
+  const docPath = getPreviewableDocPath(value);
+  return docPath.startsWith('http://')
+    || docPath.startsWith('https://')
+    || (/\.(md|mdx)$/i.test(docPath) && /^(docs\/|specs\/|web\/docs\/)/.test(docPath));
 }
 
 export function isPreviewablePathForField(fieldKey: string, value: string) {

@@ -204,10 +204,10 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `trigger_conditions` | 触发条件、上下文或复现场景 | string | 是 | 应说明何时可能复现 | Narrative / Checklist | AI、Code、Web |
 | `root_cause` | 根因或误判原因 | string | 是 | active 时必须明确 | Narrative | AI、Human、Web |
 | `resolution` | 解决方式 | string | 是 | active 时必须可执行 | Narrative / 验证证据 | AI、Code、Web |
-| `verification` | active 时必须填写 | string | 是 | active 时必须填写 | 验证证据 | AI、Code、Web |
+| `verification` | 经验可用性的验证证据 | string | 是 | active 时必须填写；按 05.01 四段式验证证据结构书写 | 验证证据 | AI、Code、Web |
 | `avoidance` | 后续规避策略 | string | 是 | active 时必须可复用 | Narrative / Checklist | AI、Human、Web |
 | `applicability` | 适用范围和不适用范围 | string | 是 | 应避免泛化过度 | Narrative | AI、Web |
-| `tags` | 标签列表 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `tags` | 英文标签列表 | list[string] | 否 | 默认为空列表；写入前应参考已有标签 | Reference | AI、Code、Web |
 | `source_objects` | 来源对象 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `source_memos` | 来源备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -224,7 +224,7 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 
 ### 6.2 YAML 示例
 
-```yaml
+````yaml
 id: pitfall-0001
 type: pitfall
 title: 把参考与研究材料直接当成当前权威规范
@@ -241,7 +241,23 @@ root_cause: |
 resolution: |
   先读取 specs 的对应正文和集合索引，再把参考与研究材料只作为比较和吸收来源。
 verification: |
+  ## 验证计划
+
+  检查规范维护任务是否会先确认参考材料边界，再修改正式 specs。
+
+  ## 验证命令
+
+  ```bash
+  python3 code/specs_validate.py refs specs
+  ```
+
+  ## 验证结果
+
   已通过 01、03、09 和 20 的参考与研究材料边界检查。
+
+  ## 结论
+
+  该经验已具备复用价值，可作为 active Pitfall。
 avoidance: |
   - [x] 修改正式规范前先确认对应规范是否已经存在或登记为候选事项
   - [x] 参考与研究材料只在参考与研究材料语境下引用
@@ -264,7 +280,7 @@ related_rules:
 superseded_by:
 archive_reason:
 notes:
-```
+````
 
 ### 6.3 字段约束
 
@@ -278,7 +294,14 @@ notes:
 8. 不得使用 `severity` 字段；影响和后果应写入 `symptoms`、`applicability`、`avoidance` 或 `notes`；
 9. `related_*` 和 `source_*` 列表应引用已存在对象、commit 或路径；引用无效时应报告校验警告；
 10. `created` 和 `updated` 使用 ISO 8601 时间戳格式；
-11. 列表字段可为空列表，不得省略字段后以 null 替代空列表。
+11. 列表字段可为空列表，不得省略字段后以 null 替代空列表；
+12. `tags` 必须使用英文 slug，推荐小写短横线格式；不得使用中文标签、空格、展示翻译或一次性临时短语；
+13. 写入或修改 Pitfall `tags` 前，Code 应提供当前事实源中已有标签清单，AI 应优先复用已有标签；已有标签无法表达当前经验时可以新增英文标签；
+14. `verification` 必须按 `specs/05.01-工作字段内容格式规范.md` §3.3 的四段式验证证据结构书写，不得只写“已验证”“通过”或把验证结果混入 `resolution`。
+15. `symptoms`、`trigger_conditions`、`root_cause`、`resolution`、`avoidance` 和 `applicability` 等阅读节点字段可以使用 Markdown 段落或列表，但不得通过手写前导空格模拟缩进排版；需要条目时使用标准 Markdown 列表，需要普通说明时使用顶格段落。
+16. `root_cause`、`resolution` 和 `avoidance` 应优先写成可独立阅读的原子条目；每个条目只表达一个原因、一个动作或一个规避规则，不应把多个判断用分号串成一段长句。
+17. `trigger_conditions` 可使用短段落描述触发上下文；当触发条件超过一个时，应改用 Markdown 列表，让 Web 能稳定呈现为条目化经验。
+18. 无明确顺序、步骤或优先级的经验条目应使用无序列表；只有表达必须按序执行、先后依赖或编号本身有事实含义时，才使用 `1.`、`2.`、`3.` 有序列表。
 
 ### 6.4 文件命名契约
 
@@ -298,7 +321,8 @@ Pitfall 回写遵循以下规则：
 3. 状态变化后应更新 `updated`；状态变化历史由 Git commit / Change 派生，不在 Pitfall YAML 中手写维护；
 4. Pitfall 被吸收到规范、运行入口、Code、Web 或工作流程后，应更新 `related_rules` 或相关引用；
 5. Pitfall 创建、状态变化、核心经验改写、归档或替代应通过 Change 留痕；
-6. Pitfall 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
+6. Pitfall 事实源写入前，应查询并呈现当前已有 `tags`，供 AI/Human 选择复用或确认新增；
+7. Pitfall 事实源写入后，应重新校验文件命名、字段完整性、状态合法性、标签格式和引用有效性。
 
 ### 7.2 证据留存
 
@@ -329,7 +353,8 @@ AI 处理 Pitfall 时应遵守：
 4. 创建、激活、归档、替代或核心经验改写前评估 Human Gate；
 5. 进入代码、文档、规范、环境适配或工具修改前，可按任务类型、文件路径、技术栈、标签和事实源类型筛选 active Pitfall；
 6. 不得把未解决问题、未验证猜测或一次性失败直接写成 active Pitfall；
-7. 不得让 Pitfall 替代 WorkPlan、Memo、ADR、规范、Code 测试或 Change。
+7. 写入或修改 `tags` 时，应先查看 Code 提供的已有标签清单，优先复用，必要时再新增英文 slug；
+8. 不得让 Pitfall 替代 WorkPlan、Memo、ADR、规范、Code 测试或 Change。
 
 ### 8.2 Code 辅助
 
@@ -340,13 +365,14 @@ Code 可依据本文实现以下能力：
 3. 校验状态枚举和合法流转；
 4. 校验 `superseded_by` 和引用字段，并对旧字段 `repeatability`、`severity` 报告迁移诊断；
 5. 按 tags、状态、适用范围、来源对象和相关文档聚合 Pitfall；
-6. 在任务执行前生成相关 active Pitfall 摘要。
+6. 在 Pitfall 写入或修改前提供当前已有 tags 清单，辅助 AI/Human 复用已有标签或确认新增英文标签；
+7. 在任务执行前生成相关 active Pitfall 摘要。
 
 Code 不得自行创建、激活、归档、替代或删除 Pitfall，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/pitfalls/` 权威事实源。
 
 ### 8.3 Web 信息同步
 
-Web 可展示 Pitfall 状态、症状、触发条件、根因、解决方式、验证结论、规避策略、适用范围、标签、替代链和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。
+Web 可展示 Pitfall 状态、症状、触发条件、根因、解决方式、验证结论、规避策略、适用范围、标签、替代链和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。Pitfall 详情页展示 `tags` 时应保留事实源中的英文原始值，不做中文翻译；列表卡片不展示 `tags`，避免把内部索引标签提升为外部卡片信号。
 
 Web 不得在页面状态、缓存或数据库中维护独立 Pitfall 权威状态。受控编辑 Pitfall 字段时，应调用 Code 校验和受控写入链路，并遵守 Human Gate。
 
@@ -365,7 +391,7 @@ Pitfall 识别、创建、激活、归档、替代和吸收到规范或实现的
 |---|---|---|---|---|
 | 上位约束承接要求 | Pitfall 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、经验吸收边界和事实源边界 | 05、03.02、本文、22 ADR、24 Memo、21 WorkPlan、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、激活、归档或替代 Pitfall 时 |
 | 入口可见要求 | AI 处理已解决可复用经验、反直觉问题、重复误判或规避策略时，应能定位本文 | 成员自描述、运行入口摘要、Pitfall 检索或经验吸收流程入口 | AI 执行入口提示 | 经验沉淀、任务执行前检查、状态流转或字段契约变化时 |
-| 确定性执行要求 | Pitfall 字段、状态、引用、文件命名、条件必填、标签和替代链应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Pitfall 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、替代规则或标签规则变化时 |
+| 确定性执行要求 | Pitfall 字段、状态、引用、文件命名、条件必填、标签格式、已有标签清单和替代链应由 Code 校验、提供或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Pitfall 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、替代规则或标签规则变化时 |
 | Human 交互要求 | Pitfall 创建、激活、归档、替代、核心经验改写和吸收到规范或实现时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
 | 生命周期触发要求 | Pitfall 规范变化后，应检查成员自描述、05.01、ADR、Memo、WorkPlan、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Pitfall 字段、状态、事实源边界、适配规则或检查要求变化时 |
 

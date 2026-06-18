@@ -31,6 +31,7 @@ import {
   PATH_TEXT_FIELDS,
   REFERENCE_FIELDS,
   SUMMARY_TEXT_FIELDS,
+  getPreviewableDocPath,
   hasChecklist,
   isObjectRef,
   isPreviewablePathForField,
@@ -225,7 +226,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   success_criteria: { zh: '成功标准', en: 'Success Criteria' },
   constraints: { zh: '约束', en: 'Constraints' },
   acceptance: { zh: '验收标准', en: 'Acceptance' },
-  verification: { zh: '验证方式', en: 'Verification' },
+  verification: { zh: '验证', en: 'Verification' },
   notes: { zh: '备注', en: 'Notes' },
   symptoms: { zh: '问题现象', en: 'Symptoms' },
   trigger_conditions: { zh: '触发条件', en: 'Trigger Conditions' },
@@ -291,7 +292,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   governance_scope: { zh: '管辖范围', en: 'Governance Scope' },
   language: { zh: '语言', en: 'Language' },
   framework: { zh: '框架', en: 'Framework' },
-  related_rules: { zh: '承接规则', en: 'Related Rules' },
+  related_rules: { zh: '规范', en: 'Specs' },
   related_refs: { zh: '关联引用', en: 'Related References' },
   changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
@@ -323,23 +324,6 @@ const FIELD_VALUE_LOCALES: Record<string, Record<string, { zh: string; en: strin
     high: { zh: '高', en: 'High' },
     medium: { zh: '中', en: 'Medium' },
     low: { zh: '低', en: 'Low' },
-  },
-  tags: {
-    'ai-collaboration': { zh: 'AI 协作', en: 'AI Collaboration' },
-    'border-radius': { zh: '圆角', en: 'Border Radius' },
-    consistency: { zh: '一致性', en: 'Consistency' },
-    'fact-model': { zh: '事实模型', en: 'Fact Model' },
-    'frontend-gotcha': { zh: '前端问题', en: 'Frontend Gotcha' },
-    'process-improvement': { zh: '流程改进', en: 'Process Improvement' },
-    rules: { zh: '规则', en: 'Rules' },
-    'single-authority': { zh: '单一权威源', en: 'Single Authority' },
-    'spec-tools-sync': { zh: '规范工具同步', en: 'Spec/Tools Sync' },
-    specs: { zh: '规范', en: 'Specs' },
-    subdocument: { zh: '子文档', en: 'Subdocument' },
-    'tailwind-css': { zh: 'Tailwind CSS', en: 'Tailwind CSS' },
-    'transition-animation': { zh: '过渡动画', en: 'Transition Animation' },
-    verification: { zh: '验证', en: 'Verification' },
-    yaml: { zh: 'YAML', en: 'YAML' },
   },
 };
 
@@ -501,6 +485,12 @@ export default function ObjectDetail() {
               loading={relatedSummaryLoading}
               locale={locale}
               getStatus={getStatus}
+            />
+          ) : objType === 'pitfall' ? (
+            <PitfallReadingLayout
+              obj={obj}
+              relatedEntries={relatedEntries}
+              locale={locale}
             />
           ) : (
             <div className="mb-6 flex flex-col gap-5">
@@ -1133,6 +1123,7 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
   const objectColor = objectType ? (CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
   const isExternal = value.startsWith('http://') || value.startsWith('https://');
   const isDocPreview = DOC_LINK_FIELDS.includes(fieldKey) && isPreviewablePathForField(fieldKey, value);
+  const previewDocPath = isDocPreview ? getPreviewableDocPath(value) : value;
   const fallbackTitle = objectType
     ? (locale === 'en' ? 'Loading' : '读取中')
     : value;
@@ -1143,7 +1134,7 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
     panelOpen && (
       (objectType && panelContent?.type === 'object' && panelContent.objectType === objectType && panelContent.objectId === value)
       || (isExternal && panelContent?.type === 'web' && panelContent.url === value)
-      || (!isExternal && isDocPreview && panelContent?.type === 'doc' && panelContent.docPath === value)
+      || (!isExternal && isDocPreview && panelContent?.type === 'doc' && panelContent.docPath === previewDocPath)
       || (!isDocPreview && !objectType && panelContent?.type === 'doc' && panelContent.title === value)
     )
   );
@@ -1187,7 +1178,7 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
       return;
     }
     if (isDocPreview) {
-      openPanel({ type: 'doc', title: displayTitle, docPath: value });
+      openPanel({ type: 'doc', title: displayTitle, docPath: previewDocPath });
       return;
     }
     openPanel({ type: 'doc', title: displayTitle, data: reference.summary ? `${displayTitle}\n\n${reference.summary}\n\n${value}` : value });
@@ -1245,6 +1236,7 @@ function getMaterialLabel(fieldKey: string, locale: string) {
     related_memos: { zh: '备忘', en: 'Memos' },
     related_pitfalls: { zh: '踩坑经验', en: 'Pitfalls' },
     related_changes: { zh: '变更', en: 'Changes' },
+    related_rules: { zh: '规范', en: 'Specs' },
     related_workplans: { zh: '工作计划', en: 'Work Plans' },
     aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
   };
@@ -1466,6 +1458,142 @@ export function DetailRecordItem({ label, recorded }: { label: string; recorded:
       <span className="ldvh-meta-muted">{recorded ? t('objectList.hasRecord') : t('objectList.missingRecord')}</span>
     </span>
   );
+}
+
+const PITFALL_READING_NODES: Array<{ field: string; zh: string; en: string; kind?: 'evidence' }> = [
+  { field: 'symptoms', zh: '现象', en: 'Symptoms' },
+  { field: 'trigger_conditions', zh: '触发', en: 'Triggers' },
+  { field: 'root_cause', zh: '根因', en: 'Root Cause' },
+  { field: 'resolution', zh: '方案', en: 'Resolution' },
+  { field: 'verification', zh: '验证', en: 'Verification', kind: 'evidence' },
+  { field: 'avoidance', zh: '规避', en: 'Avoidance' },
+  { field: 'applicability', zh: '范围', en: 'Scope' },
+];
+
+export function PitfallReadingLayout({
+  obj,
+  relatedEntries,
+  locale,
+}: {
+  obj: Record<string, unknown>;
+  relatedEntries: RelatedContentEntry[];
+  locale: string;
+}) {
+  const sourceMemoEntries: RelatedContentEntry[] = Array.isArray(obj.source_memos) && hasDetailContent(obj.source_memos)
+    ? [['source_memos', obj.source_memos]]
+    : [];
+  const allRelatedEntries = sortRelatedContentEntries([...sourceMemoEntries, ...relatedEntries]);
+
+  return (
+    <div className="mb-6 flex flex-col gap-5">
+      {PITFALL_READING_NODES.map((node) => (
+        <PitfallReadingNode
+          key={node.field}
+          title={locale === 'en' ? node.en : node.zh}
+          value={obj[node.field]}
+          locale={locale}
+          kind={node.kind}
+        />
+      ))}
+      <RelatedContentSection entries={allRelatedEntries} locale={locale} />
+    </div>
+  );
+}
+
+function PitfallReadingNode({
+  title,
+  value,
+  locale,
+  kind,
+}: {
+  title: string;
+  value: unknown;
+  locale: string;
+  kind?: 'evidence';
+}) {
+  const [state, setState] = useState<ReadingNodeState>('expanded');
+  if (!hasDetailContent(value)) return null;
+
+  return (
+    <ReadingNodeSection
+      title={title}
+      state={state}
+      locale={locale}
+      onToggle={() => setState((current) => getReadingNodeNextState(current))}
+    >
+      {kind === 'evidence' ? (
+        <EvidenceReadingNodes value={String(value)} />
+      ) : (
+        <PitfallTextNodeContent value={value} />
+      )}
+    </ReadingNodeSection>
+  );
+}
+
+function PitfallTextNodeContent({ value }: { value: unknown }) {
+  return (
+    <div className="ldvh-study-node-content">
+      <div className="ldvh-inline-markdown max-w-none">
+        <Markdown remarkPlugins={[remarkGfm]}>{String(value)}</Markdown>
+      </div>
+    </div>
+  );
+}
+
+const EVIDENCE_NODE_ORDER = ['验证计划', '验证命令', '验证结果', '结论'];
+
+function EvidenceReadingNodes({ value }: { value: string }) {
+  const sections = parseEvidenceReadingSections(value);
+  if (sections.length === 0) {
+    return <PitfallTextNodeContent value={value} />;
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {sections.map((section) => (
+        <div key={section.title} className="min-w-0">
+          <div className="ldvh-caption-strong mb-1.5 flex items-center gap-2 text-ldvh-text-secondary">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/45" aria-hidden="true" />
+            <span>{section.title}</span>
+          </div>
+          <div className="ldvh-study-node-content pl-3">
+            <div className="ldvh-inline-markdown max-w-none">
+              <Markdown remarkPlugins={[remarkGfm]}>{section.body}</Markdown>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function parseEvidenceReadingSections(value: string): Array<{ title: string; body: string }> {
+  const lines = value.split('\n');
+  const sections: Array<{ title: string; body: string[] }> = [];
+  let current: { title: string; body: string[] } | null = null;
+
+  for (const line of lines) {
+    const heading = line.match(/^##\s+(.+?)\s*$/);
+    if (heading) {
+      current = { title: heading[1].trim(), body: [] };
+      sections.push(current);
+      continue;
+    }
+    current?.body.push(line);
+  }
+
+  if (sections.length === 0) return [];
+  return sections
+    .sort((a, b) => {
+      const aIndex = EVIDENCE_NODE_ORDER.indexOf(a.title);
+      const bIndex = EVIDENCE_NODE_ORDER.indexOf(b.title);
+      if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+      if (aIndex !== -1) return -1;
+      if (bIndex !== -1) return 1;
+      return 0;
+    })
+    .map((section) => ({ title: section.title, body: section.body.join('\n').trim() }))
+    .filter((section) => section.body.length > 0);
 }
 
 function DetailDefinitionSection({ title, value, muted = false }: { title: string; value: unknown; muted?: boolean }) {
@@ -1722,6 +1850,7 @@ export function getFieldLabel(fieldKey: string, locale: string) {
 }
 
 function localizeMetaValue(fieldKey: string, rawValue: string, locale: string) {
+  if (fieldKey === 'tags') return rawValue.trim();
   if (isSignalField(fieldKey)) {
     return getSignalText(fieldKey, rawValue, locale) || rawValue.trim();
   }

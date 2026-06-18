@@ -1,5 +1,6 @@
 import { FileText, ExternalLink } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
+import { getPreviewableDocPath } from '@/utils/fieldFormats';
 
 interface DocPreviewLinkProps {
   docs: string[];
@@ -26,13 +27,14 @@ export default function DocPreviewLink({ docs, variant = 'card' }: DocPreviewLin
     <div className="flex flex-col gap-1.5">
       {docs.map((doc, i) => {
         const isExternal = doc.startsWith('http');
+        const previewPath = getPreviewableDocPath(doc);
         const itemClassName = variant === 'plain'
           ? 'ldvh-body flex w-full items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25'
           : 'ldvh-body flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors hover:bg-ldvh-border/30';
         return (
           <button
             key={i}
-            onClick={() => handleClick(doc)}
+            onClick={() => handleClick(previewPath)}
             className={itemClassName}
           >
             {isExternal ? (

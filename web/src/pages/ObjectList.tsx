@@ -557,28 +557,9 @@ export default function ObjectList() {
     }
 
     if (currentType === 'pitfall') {
-      const hasResolution = obj.resolution || '';
-      const isResolved = hasResolution.length > 0;
-
       return (
         <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
           <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
-          {isResolved && (
-            <div className="flex items-center gap-1.5 rounded-md border border-dashed border-emerald-500/30 bg-emerald-500/5 px-2.5 py-1.5">
-              <CheckCircle2 size={12} className="shrink-0 text-emerald-400" />
-              <span className="ldvh-caption text-emerald-300">
-                {locale === 'en' ? 'Resolved' : '已解决'}
-              </span>
-            </div>
-          )}
-          {!isResolved && obj.status !== 'closed' && obj.status !== 'resolved' && obj.status !== 'archived' && obj.status !== 'discarded' && (
-            <div className="flex items-center gap-1.5 rounded-md border border-dashed border-amber-500/30 bg-amber-500/5 px-2.5 py-1.5">
-              <CircleAlert size={12} className="shrink-0 text-amber-400" />
-              <span className="ldvh-caption text-amber-300">
-                {locale === 'en' ? 'Unresolved' : '未解决'}
-              </span>
-            </div>
-          )}
         </ObjectCardFrame>
       );
     }

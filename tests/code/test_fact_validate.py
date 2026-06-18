@@ -87,10 +87,36 @@ orchestration:
       expected_output:
     human_closure_review: true
 verification_evidence: |
+  ## 验证计划
+
+  检查当前 WorkPlan 是否满足关闭审查前的验证条件。
+
+  ## 验证命令
+
+  ```bash
+  python3 code/fact_validate.py ldvh-base/workplans
+  ```
+
   ## 验证结果
 
   当前 WorkPlan 校验通过。
+
+  ## 结论
+
+  验证证据满足关闭审查要求。
 closure_evidence: |
+  ## 验证计划
+
+  检查是否具备进入关闭审查的最小证据。
+
+  ## 验证命令
+
+  人工检查 WorkPlan 成功标准、执行项和验证证据。
+
+  ## 验证结果
+
+  成功标准、执行项和验证证据均已整理。
+
   ## 结论
 
   可进入关闭审查。
@@ -611,7 +637,23 @@ root_cause: |
 resolution: |
   Move recurrence context into trigger_conditions, applicability, and avoidance.
 verification: |
-  Validator rejects the legacy field.
+  ## 验证计划
+
+  确认 Validator 会拒绝旧字段 repeatability。
+
+  ## 验证命令
+
+  ```bash
+  python3 code/fact_validate.py ldvh-base/pitfalls
+  ```
+
+  ## 验证结果
+
+  Validator 报告 REMOVED_OBJECT_FIELD。
+
+  ## 结论
+
+  旧字段不再允许写入 Pitfall。
 avoidance: |
   Do not write repeatability in Pitfall facts.
 applicability: |
