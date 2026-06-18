@@ -1,0 +1,124 @@
+id: workplan-0074
+type: workplan
+title: Git 提交记录与 Change 迁出收口
+status: active
+created: '2026-06-19T02:48:00+08:00'
+updated: '2026-06-19T02:48:00+08:00'
+workarea: workarea-0012
+priority: P1
+description: |
+  当前 LDVH 已确认 Change 不应继续作为工作对象存在，而应回到 Git commit records 作为变更追溯事实源。
+  后续需要把 `specs/25-Change-变更.md` 迁出工作模型集合，建立新的 Git 提交记录与变更追溯规范，并同步清理
+  specs、Code、Web、测试和文档中的 Change 工作对象痕迹。
+
+  本计划负责承接后续行动准备：明确迁出目标、提交记录格式、简体中文提交语言要求、Web 派生视图调整、
+  Code 校验和字段命名同步，确保迁出后工作模型集合保持自洽，Git 历史仍可被 AI 和 Human 高效使用。
+success_criteria: |
+  - [ ] specs 中 Change 不再作为工作对象出现在 20-39 工作模型集合中
+  - [ ] 新的 Git 提交记录与变更追溯规范明确提交结构、Refs、Human-Gate、Verification、Risk 和简体中文提交语言要求
+  - [ ] `related_changes` 字段收口为不再手填的 Git 派生追溯关系，必要字段命名完成一致性调整
+  - [ ] Code 校验、CLI、测试和索引不再把 Change 当作工作对象处理
+  - [ ] Web 中 `/changelog`、Dashboard 最近提交、ProjectFiles 提交历史和右侧阅读面板统一表达为 Git 提交记录派生视图
+  - [ ] Web 能读取并呈现完整 commit body 中的结构化追溯信息，而不是只读取提交标题
+  - [ ] 迁出完成后，现行 specs、Code、Web 和测试中不存在会误导 AI 的 Change 工作对象入口
+  - [ ] 相关 Python、Web 和 specs 校验通过
+source: |
+  用户在 2026-06-18 至 2026-06-19 围绕 Change 工作对象提出：变更更像提交记录规范，不应作为工作对象继续存在。
+  经讨论和多视角评估，建议将 Change 从工作模型集合迁出，改为 Git commit records 的追溯规范。
+  用户进一步要求提交语言必须为简体中文，并要求在行动前了解 Web 当前实现和影响面。
+
+  当前 Web 已存在 `/changelog` 和 ProjectFiles 两套 Git 相关入口：前者只读取提交标题，后者已能读取完整提交详情和文件 diff。
+  后续迁出必须同时处理 specs、Code、Web 和测试，避免只改文案而留下事实源边界漂移。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 收口迁出目标与规范归属
+    role: specs
+    mode: single
+    input_refs:
+    - specs/01-目录说明.md
+    - specs/05-工作模型基础规范.md
+    - specs/09-事实源边界与承载规范.md
+    - specs/25-Change-变更.md
+    expected_output: 明确 Change 退出工作模型集合，新 Git 提交记录规范的编号、名称、边界和上位引用关系。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-2
+    title: 定义 Git 提交记录契约
+    role: specs-code
+    mode: single
+    input_refs:
+    - code/commit_validate.py
+    - tests/code/test_commit_validate.py
+    expected_output: 提交格式、类型、scope、Refs、Human-Gate、Verification、Risk 和简体中文语言要求可被 Code 校验。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-3
+    title: 清理工作对象字段和工具入口
+    role: code
+    mode: single
+    input_refs:
+    - code/fact_cli.py
+    - code/fact_validate.py
+    - code/spec_checks/
+    - tests/code/
+    expected_output: Code 不再把 Change 作为工作对象；关联提交字段和校验诊断与新规范一致。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-4
+    title: 同步 Web Git 追溯视图
+    role: web
+    mode: single
+    input_refs:
+    - web/src/pages/Changelog.tsx
+    - web/api/routes/changelog.ts
+    - web/api/services/git.ts
+    - web/src/pages/Dashboard.tsx
+    - web/src/pages/ProjectFiles.tsx
+    - web/src/components/ReadingPanel.tsx
+    - web/docs/
+    expected_output: Web 用提交记录和 Git 追溯表达派生视图，读取完整 commit body，并与 ProjectFiles 提交详情能力收口。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-5
+    title: 全链路验证和迁移痕迹检查
+    role: reviewer
+    mode: single
+    input_refs:
+    - specs/
+    - code/
+    - tests/
+    - web/
+    expected_output: specs、Code、Web 和测试均通过；确认现行规范和 UI 不再暴露 Change 工作对象概念。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: true
+      role: specs-code-web
+      expected_output: 分别从规范边界、Code 校验和 Web 呈现确认 Change 迁出后自洽且无冲突。
+    human_closure_review: true
+verification_evidence: ''
+closure_evidence: ''
+review_requested_at: ''
+closed_at: ''
+related_docs:
+- specs/25-Change-变更.md
+- web/docs/06-Changelog.md
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_workplans: []
+related_changes: []
