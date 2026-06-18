@@ -11,7 +11,7 @@ description: |
 
   执行过程不作为历史事实源，含义是：不记录 AI 的临时 todo、工具读取顺序、子 Agent 中间过程、未采纳草稿或已被最终结论吸收的重复分析。WorkPlan 只保留足以恢复、验证和关闭的最小证据，包括当前推进位置、执行项结果摘要、稳定产物、测试/检查、独立复检结论、Human Gate 结果、关闭原因、残留风险和经验分流结果。
 
-  截至 2026-06-18，旧 TaskPlan / Task 已批量迁移为 WorkPlan 事实源：`ldvh-base/workplans/` 中已有 61 个 WorkPlan，WorkArea 已补齐 `workplans` 反向索引；Code / Web 已能把 WorkPlan 作为一等对象读取、统计、展示和校验。Code 新建入口已拒绝 TaskPlan / Task / SubTask，Web 主导航、Dashboard 和默认关注队列已仅使用 active 工作模型；旧 TaskPlan / Task / SubTask 仍保留历史读取、校验和直达展示兼容，不作为新工作主路径。
+  截至 2026-06-18，旧 TaskPlan / Task 已批量迁移为 WorkPlan 事实源：`ldvh-base/workplans/` 中已有 61 个 WorkPlan，WorkArea 已补齐 `workplans` 反向索引；Code / Web 已能把 WorkPlan 作为一等对象读取、统计、展示和校验。Code 新建入口已拒绝 TaskPlan / Task / SubTask，Web 主导航、Dashboard 和默认关注队列已仅使用 active 工作模型。随后 workplan-0069 已进一步清退旧 TaskPlan / Task / SubTask 事实源目录、迁移工具、测试夹具、API 兼容字段和 Web 直达入口；当前项目尚未推广，不保留旧对象兼容能力。
 
   当前事实源结构校验为 `errors=0 warnings=0`。此前 13 个 warning 来自历史旧规范路径引用，已按现行承接关系改向 `specs/21-WorkPlan-工作计划.md` 或相关现行规范，不再让旧 TaskPlan / Task / SubTask 规范路径形成事实源噪音。
 
@@ -24,7 +24,7 @@ description: |
   - Role Contract 应由 04 能力资产、06 流程基础、40-59 具体流程，还是其他规范承接；
   - WorkPlan 的 `verification_evidence` 与 `closure_evidence` 已在字段注册表和校验中分离，但旧迁移数据中仍可能存在语义重复，后续应在关闭新 WorkPlan 时持续强化证据写法；
   - Memo 中已经部分落地的议题，如何提示 AI 判断继续 pending、追加 evolution、分流或 resolved；
-  - 旧 TaskPlan、Task、SubTask 的默认入口降权已经落地；后续只需继续判断历史兼容面何时冻结、归档或删除，以及旧事实源是否需要单独冻结说明。
+  - 旧 TaskPlan、Task、SubTask 的当前兼容面已经清退；后续只需继续处理 Web 内部 `TaskFlow*` 命名债、历史叙述边界和需要保留为 Git 历史的证据说明。
 
   建议新会话优先从 `specs/21-WorkPlan-工作计划.md` 逐段核对，然后回看 `specs/05-工作模型基础规范.md`、`specs/05.01-工作字段内容格式规范.md` 和 `specs/06-工作流程基础规范.md`，最后再处理 40-43 流程规范与 Code / Web 迁移。
 evolution:
@@ -64,6 +64,8 @@ evolution:
     summary: landing-report 已能在 41 触发保障能力缺口中读取 40/41 工作流程成员状态；当前输出会明确显示 40 为 active、41 为 candidate，从 Code 侧防止候选流程被误当成 active 触发保障。
   - at: 2026-06-18
     summary: Human 已确认 41-43 可以升级为 active；对应工作流程成员自描述已从 candidate 改为 active，候选等待升级事项已从待补齐段移除。
+  - at: 2026-06-18
+    summary: workplan-0069 完成旧 TaskPlan / Task / SubTask 事实源与兼容入口清退；当前 active 工作对象入口只保留 WorkArea、WorkPlan、ADR、Pitfall、Memo、Change 和 Study，旧对象事实只保留在 Git 历史和已迁移 WorkPlan 证据中。
 human_gate_records:
   - confirmed_at: "2026-06-18"
     decision: Human 确认 41 work-model-audit、42 specs-audit、43 landing-readiness-audit 可以从 candidate 升级为 active。
