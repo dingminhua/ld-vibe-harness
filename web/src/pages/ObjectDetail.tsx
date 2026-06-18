@@ -1,6 +1,8 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, BookOpenText, ChevronDown, ChevronRight, ChevronUp, Code2, ExternalLink, FileText, Info, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
@@ -100,6 +102,7 @@ const STUDY_READING_NODE_LABELS_ZH: Record<string, string> = {
   conclusion: '建议',
   report_body: '正文',
 };
+type ReadingNodeState = 'collapsed' | 'expanded';
 const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
   related_workareas: 20,
   related_workplans: 21,
@@ -523,7 +526,7 @@ export default function ObjectDetail() {
             >
               <Code2 size={14} />
               <span>{t('objectDetail.yamlSource')}</span>
-              <span className="ml-auto">{showYaml ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
+              <span className="ml-auto">{showYaml ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
             </button>
             {showYaml && (
               <div className="border-t border-ldvh-border">
@@ -1496,9 +1499,15 @@ function DetailMaterialSection({ fieldKey, value, locale }: { fieldKey: string; 
 
 function RelatedContentSection({ entries, locale }: { entries: RelatedContentEntry[]; locale: string }) {
   const { t } = useI18n();
+  const [state, setState] = useState<ReadingNodeState>('expanded');
   if (entries.length === 0) return null;
   return (
-    <TaskSection title={t('objectDetail.related')} tone="default">
+    <ReadingNodeSection
+      title={t('objectDetail.related')}
+      state={state}
+      locale={locale}
+      onToggle={() => setState((current) => getReadingNodeNextState(current))}
+    >
       <div className="divide-y divide-ldvh-border/60">
         {entries.map(([fieldKey, value]) => (
           <div key={fieldKey} className="py-3 first:pt-0 last:pb-0">
@@ -1507,7 +1516,7 @@ function RelatedContentSection({ entries, locale }: { entries: RelatedContentEnt
           </div>
         ))}
       </div>
-    </TaskSection>
+    </ReadingNodeSection>
   );
 }
 
@@ -1783,6 +1792,57 @@ export function TaskSection({
   );
 }
 
+function getReadingNodeNextState(state: ReadingNodeState): ReadingNodeState {
+  return state === 'collapsed' ? 'expanded' : 'collapsed';
+}
+
+function getReadingNodeIcon(state: ReadingNodeState) {
+  if (state === 'collapsed') return ChevronDown;
+  return ChevronUp;
+}
+
+function getReadingNodeAriaLabel(title: string, state: ReadingNodeState, locale: string) {
+  const nextState = getReadingNodeNextState(state);
+  if (locale === 'en') {
+    const action = nextState === 'collapsed' ? 'Collapse' : 'Expand';
+    return `${action} ${title}`;
+  }
+  const action = nextState === 'collapsed' ? '收拢' : '展开';
+  return `${action}${title}`;
+}
+
+function ReadingNodeSection({
+  title,
+  state,
+  locale,
+  children,
+  onToggle,
+}: {
+  title: string;
+  state: ReadingNodeState;
+  locale: string;
+  children: ReactNode;
+  onToggle: () => void;
+}) {
+  const StateIcon = getReadingNodeIcon(state);
+
+  return (
+    <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={getReadingNodeAriaLabel(title, state, locale)}
+        className={`ldvh-section-title flex w-full min-w-0 items-center gap-2 text-left transition-colors hover:text-ldvh-accent ${state === 'collapsed' ? '' : 'mb-3'}`}
+      >
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" />
+        <span className="min-w-0 flex-1 truncate">{title}</span>
+        <StateIcon size={14} className="shrink-0 text-ldvh-text-secondary/80" aria-hidden="true" />
+      </button>
+      {state !== 'collapsed' && children}
+    </section>
+  );
+}
+
 export function TaskInlineField({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
@@ -1888,9 +1948,22 @@ function StudyReportBodyEntry({ value, objectPath, locale }: { value: unknown; o
   );
 }
 
+function StudyTextNodeContent({ value }: { value: unknown }) {
+  const text = String(value);
+
+  return (
+    <div className="ldvh-study-node-content">
+      <div className="ldvh-inline-markdown max-w-none">
+        <Markdown remarkPlugins={[remarkGfm]}>{text}</Markdown>
+      </div>
+    </div>
+  );
+}
+
 export function ContentField({ fieldKey, value, locale, objType, objectPath }: { fieldKey: string; value: unknown; locale: string; objType: string; objectPath?: string }) {
   const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
   const [collapsed, setCollapsed] = useState(Boolean(isCollapsible));
+  const [studyNodeState, setStudyNodeState] = useState<ReadingNodeState>('expanded');
 
   if (value === null || value === undefined) return null;
   if (value === '') return null;
@@ -1904,15 +1977,18 @@ export function ContentField({ fieldKey, value, locale, objType, objectPath }: {
   if (objType === 'study' && STUDY_READING_NODE_FIELDS.has(fieldKey)) {
     const studyLabel = locale === 'zh' ? (STUDY_READING_NODE_LABELS_ZH[fieldKey] || label) : label;
     return (
-      <TaskSection title={studyLabel} tone="default">
+      <ReadingNodeSection
+        title={studyLabel}
+        state={studyNodeState}
+        locale={locale}
+        onToggle={() => setStudyNodeState((current) => getReadingNodeNextState(current))}
+      >
         {fieldKey === 'report_body' ? (
           <StudyReportBodyEntry value={value} objectPath={objectPath} locale={locale} />
         ) : (
-          <div className="ldvh-study-node-content">
-            <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />
-          </div>
+          <StudyTextNodeContent value={value} />
         )}
-      </TaskSection>
+      </ReadingNodeSection>
     );
   }
 

@@ -103,6 +103,8 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 Study 详情页是报告阅读界面，不按普通字段卡片表达主内容。中文主节点标题固定为“意图、摘要、建议、正文、关联”，分别对应 `user_intent`、`summary`、`conclusion`、`report_body` 和关联区。`user_intent`、`summary`、`conclusion` 和 `report_body` 必须与“关联”使用同一层级的节点标题样式：标题前使用小圆点，标题字号和权重与关联区标题一致，内容区颜色低于标题。`report_body` 不在主页面直接铺开全文；“正文”节点下只展示当前 Study 文件名入口，点击整行或扩展阅读图标后在右侧扩展阅读区渲染正文 Markdown。结构化 `related_refs.summary` 是引用用途提示，应比 Study 主内容再弱一级，不承担正文结论表达。
 
+Study 主节点标题栏整行可点击，不再在内容内部放“展开/收起”文字按钮。`user_intent`、`summary`、`conclusion`、`report_body` 和“关联”统一使用两态：默认全部打开，点击标题栏在 `expanded` 与 `collapsed` 之间切换。图标表达当前可执行动作：收拢状态使用 `ChevronDown`，表示可以向下打开；打开状态使用 `ChevronUp`，表示可以向上收起。
+
 ## 8. 右侧扩展阅读区
 
 - 由 App Shell 的 `ReadingPanel` 提供。
@@ -124,6 +126,7 @@ Study 详情页是报告阅读界面，不按普通字段卡片表达主内容�
 - 默认折叠。
 - 展开后使用 `react-syntax-highlighter` + YAML + oneDark。
 - 显示行号，最大高度 400px。
+- 折叠图标与详情页主节点保持一致：收拢状态使用 `ChevronDown`，表示可以向下打开；打开状态使用 `ChevronUp`，表示可以向上收起。
 - YAML 源码是事实完整性兜底，不作为主阅读体验。
 
 ## 10. 实现约束
