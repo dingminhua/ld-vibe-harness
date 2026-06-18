@@ -17,6 +17,9 @@ def test_ldvh_landing_core_implementation_lives_in_spec_checks():
 def build_ldvh_landing_check_fixture(tmp_path, monkeypatch):
     docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
     monkeypatch.setattr(checker, "SPECS_DIR", docs_specs)
+    evidence_file = tmp_path / "tests" / "code" / "specs_validate_checks" / "test_ldvh_landing.py"
+    evidence_file.parent.mkdir(parents=True, exist_ok=True)
+    evidence_file.write_text("# evidence fixture\n", encoding="utf-8")
     write_governed_projects(
         tmp_path,
         """

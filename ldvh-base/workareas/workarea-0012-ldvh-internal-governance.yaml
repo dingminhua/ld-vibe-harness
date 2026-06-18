@@ -3,7 +3,7 @@ type: workarea
 title: LDVH 内部治理
 status: active
 created: '2026-06-12T00:00:00+08:00'
-updated: '2026-06-18T09:11:44'
+updated: '2026-06-18T16:28:38+0800'
 description: 承载 LDVH 内部治理、实现和落地相关工作。
 scope: LDVH 内部治理兜底工作域；后续可按任务计划实际范围拆分或调整归属。
 source: 用户确认建立 LDVH 内部治理工作域。
@@ -24,3 +24,4 @@ workplans:
 - workplan-0069
 - workplan-0070
 - workplan-0071
+- workplan-0072

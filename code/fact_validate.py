@@ -278,14 +278,10 @@ def validate_path_fields_exist(path: Path, data: dict[str, Any], object_type: st
                 continue
             if item.startswith("http://") or item.startswith("https://"):
                 continue  # 外部链接不校验
-            # 跳过明显不是路径的描述性文本（含中文括号、中文标点等）
-            if re.search(r"[（）\(\)「」【】]", item):
+            path_part = extract_checkable_path_ref(item, project_root)
+            if path_part is None:
                 continue
-            # 只校验看起来像文件路径的字符串（含 / 或以 . 开头或含扩展名）
-            if "/" not in item and not item.startswith(".") and "." not in item.split("/")[-1]:
-                continue
-            path_part = item.split(" §", 1)[0].strip()
-            resolved = project_root / path_part
+            resolved = resolve_path_ref(project_root, path_part)
             if not resolved.exists():
                 level = "warning" if field == "related_rules" else "error"
                 issues.append(Issue(
@@ -294,6 +290,37 @@ def validate_path_fields_exist(path: Path, data: dict[str, Any], object_type: st
                     field=field,
                 ))
     return issues
+
+
+def extract_checkable_path_ref(item: str, project_root: Path, *, allow_command_like: bool = True) -> str | None:
+    """Return the path-like portion of a reference that should be checked on disk."""
+    # 跳过明显不是纯路径的描述性文本（含括号、书名号或其他附注）。
+    if re.search(r"[（）\(\)「」【】]", item):
+        return None
+    # 支持 `path §section` 形式，只校验路径段。
+    path_part = item.split(" §", 1)[0].strip()
+    if not path_part:
+        return None
+    # evidence_refs 可能包含命令；带空白的片段不按路径校验，避免误伤 `python3 code/...`。
+    if not allow_command_like and re.search(r"\s", path_part):
+        return None
+    # 只校验看起来像文件或目录路径的字符串（含 /、以 . 开头或 basename 含扩展名）。
+    if "/" not in path_part and not path_part.startswith(".") and "." not in path_part.split("/")[-1]:
+        return None
+    candidate = Path(path_part).expanduser()
+    if candidate.is_absolute():
+        try:
+            candidate.relative_to(project_root)
+        except ValueError:
+            return None
+    return path_part
+
+
+def resolve_path_ref(project_root: Path, path_part: str) -> Path:
+    candidate = Path(path_part).expanduser()
+    if candidate.is_absolute():
+        return candidate
+    return project_root / candidate
 
 
 def infer_project_root(path: Path) -> Path:
@@ -624,6 +651,9 @@ def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
         for list_field in ("input_refs", "evidence_refs"):
             if list_field in item and not isinstance(item[list_field], list):
                 issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_LIST_FIELD", f"{item_field}.{list_field} 必须是 list", field=f"{item_field}.{list_field}"))
+        evidence_refs = item.get("evidence_refs")
+        if isinstance(evidence_refs, list):
+            issues.extend(validate_execution_item_evidence_refs(path, evidence_refs, item_field))
 
     review = orchestration.get("review")
     if not isinstance(review, dict):
@@ -650,6 +680,30 @@ def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
                 issues.append(Issue(str(path), "error", "MISSING_WORKPLAN_REVIEW_FIELD", f"{status} 状态必须提供非空字段: {field}", field=field))
     if status == "closed" and is_empty(data.get("closed_at")):
         issues.append(Issue(str(path), "error", "MISSING_WORKPLAN_CLOSED_AT", "closed 状态必须提供非空字段: closed_at", field="closed_at"))
+    return issues
+
+
+def validate_execution_item_evidence_refs(path: Path, evidence_refs: list[Any], item_field: str) -> list[Issue]:
+    """WorkPlan execution item evidence_refs: only path-like refs are checked."""
+    issues = []
+    project_root = infer_project_root(path)
+    for ref in evidence_refs:
+        if not isinstance(ref, str):
+            continue
+        if ref.startswith("http://") or ref.startswith("https://"):
+            continue
+        path_part = extract_checkable_path_ref(ref, project_root, allow_command_like=False)
+        if path_part is None:
+            continue
+        resolved = resolve_path_ref(project_root, path_part)
+        if not resolved.exists():
+            issues.append(Issue(
+                str(path),
+                "error",
+                "EVIDENCE_REF_PATH_NOT_FOUND",
+                f"{item_field}.evidence_refs 中引用的路径不存在: {ref}",
+                field=f"{item_field}.evidence_refs",
+            ))
     return issues
 
 

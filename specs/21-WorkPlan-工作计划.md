@@ -236,6 +236,8 @@ Human Gate 发生在工作计划层。执行项、角色说明、子 Agent 输�
 | `evidence_refs` | 执行项证据引用 | list[string] | 否 | 默认为空列表；有稳定产物、命令或变更时应填写 |
 | `blocking_reason` | 执行项阻塞原因 | string 或 null | 条件必填 | `blocked` 时必须填写 |
 
+`evidence_refs` 是混合引用字段，可以包含对象 ID、文件/目录路径、URL、命令、Git 变更引用或说明性文本。Code 应只对可判定为文件或目录路径的项做存在性检查；命令、对象 ID、提交号、外部 URL、仓库外临时路径和带附注的说明性文本不得被误判为必须存在的项目内路径。
+
 `role` 只表达本执行项所需的专业视角、责任边界或子 Agent 类型，不在 WorkPlan 字段契约中提前定义完整角色规则。完整角色规则如需稳定化，应由工作流程、能力资产规范或后续专门规范承接；WorkPlan 只保留执行恢复所需的最小角色标识。
 
 `review` 只声明关闭前的检查安排，不承载稳定审查结论，也不形成独立 Review 工作对象。审查结论必须回到 `verification_evidence`、`closure_evidence` 或对应工作对象。`review` 至少应说明以下内容：

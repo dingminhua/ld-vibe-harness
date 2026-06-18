@@ -28,6 +28,8 @@ def write_yaml(path: Path, content: str) -> Path:
 
 def write_valid_workplan_tree(tmp_path: Path, *, status: str = "active") -> tuple[Path, Path]:
     root = tmp_path / "project"
+    (root / "tests" / "code").mkdir(parents=True, exist_ok=True)
+    (root / "tests" / "code" / "test_fact_validate.py").write_text("# evidence fixture\n", encoding="utf-8")
     write_yaml(
         root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml",
         """
@@ -158,6 +160,68 @@ def test_workplan_legacy_fields_are_errors(tmp_path):
     assert "LEGACY_WORKPLAN_FIELD" in result.stdout
     assert "tasks" in result.stdout
     assert "completion_evidence" in result.stdout
+
+
+def test_workplan_evidence_refs_missing_path_is_error(tmp_path):
+    root, workplan = write_valid_workplan_tree(tmp_path)
+    content = workplan.read_text(encoding="utf-8")
+    workplan.write_text(
+        content.replace(
+            "        - tests/code/test_fact_validate.py",
+            "        - ldvh-base/workplans/workplan-9999-missing.yaml",
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(root / "ldvh-base")
+
+    assert result.returncode == 1
+    assert "EVIDENCE_REF_PATH_NOT_FOUND" in result.stdout
+    assert "workplan-9999-missing.yaml" in result.stdout
+
+
+def test_workplan_evidence_refs_non_paths_are_not_errors(tmp_path):
+    root, workplan = write_valid_workplan_tree(tmp_path)
+    content = workplan.read_text(encoding="utf-8")
+    workplan.write_text(
+        content.replace(
+            "        - tests/code/test_fact_validate.py",
+            "\n".join(
+                [
+                    "        - tests/code/test_fact_validate.py",
+                    "        - python3 code/fact_validate.py ldvh-base/",
+                    "        - workplan-0071",
+                    "        - 95a0604",
+                    "        - https://example.com/evidence",
+                    "        - /tmp/non-stable-external-evidence.txt",
+                    "        - specs/21-WorkPlan-工作计划.md（修订）",
+                ]
+            ),
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(root / "ldvh-base")
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
+
+
+def test_workplan_evidence_refs_section_suffix_checks_path_part(tmp_path):
+    root, workplan = write_valid_workplan_tree(tmp_path)
+    content = workplan.read_text(encoding="utf-8")
+    workplan.write_text(
+        content.replace(
+            "        - tests/code/test_fact_validate.py",
+            "        - tests/code/test_fact_validate.py §fixture",
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(root / "ldvh-base")
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
 
 
 def test_json_output_reports_current_workplan(tmp_path):
