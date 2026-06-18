@@ -24,7 +24,7 @@ orchestration:
     input_refs:
     - task-0032
     expected_output: |
-      - [x] specs/27-Task-任务.md 字段契约新增 deliverables 字段定义
+      - [x] specs/21-WorkPlan-工作计划.md 字段契约新增 deliverables 字段定义
       - [x] fact_cli.py 创建 Task 时支持 deliverables 字段
       - [x] fact_validate.py 校验 deliverables 字段格式
       - [x] Web ObjectDetail 页面渲染 deliverables 字段
@@ -51,7 +51,7 @@ orchestration:
 
       任务完成，人工确认关闭。
     evidence_refs:
-    - specs/22-Task-任务.md
+    - specs/21-WorkPlan-工作计划.md
     - specs/07-Code确定性执行实现规范.md
     blocking_reason: null
   - id: task-0033

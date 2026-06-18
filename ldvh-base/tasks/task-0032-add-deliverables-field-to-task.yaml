@@ -10,7 +10,7 @@ description: |
   需要在 Task 工作模型中新增 deliverables（产出物）字段，用于记录任务执行后产生的具体结果物路径，例如 docs/sources/07-竞品测试任务安排分析与最佳实践调研.md 是 task-0028 的产出。
 source: workarea-0007
 acceptance: |
-  - [x] specs/27-Task-任务.md 字段契约新增 deliverables 字段定义
+  - [x] specs/21-WorkPlan-工作计划.md 字段契约新增 deliverables 字段定义
   - [x] fact_cli.py 创建 Task 时支持 deliverables 字段
   - [x] fact_validate.py 校验 deliverables 字段格式
   - [x] Web ObjectDetail 页面渲染 deliverables 字段
@@ -37,7 +37,7 @@ closure_evidence: |
 
   任务完成，人工确认关闭。
 affected_docs:
-- specs/22-Task-任务.md
+- specs/21-WorkPlan-工作计划.md
 - specs/07-Code确定性执行实现规范.md
 closed_at: '2026-06-05T23:23:13.144451'
 taskplan: taskplan-0032

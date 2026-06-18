@@ -51,7 +51,7 @@ related_docs:
 - specs/04.03-环境入口适配与部署规范.md
 - specs/04.03-环境入口适配与部署规范.md
 - docs/studies/12-LDVH第三方技能引入的思考.md
-- specs/22-Task-任务.md
+- specs/21-WorkPlan-工作计划.md
 affected_docs:
 - specs/01-目录说明.md
 - specs/04.03-环境入口适配与部署规范.md

@@ -5,7 +5,7 @@ status: executing
 created: '2026-06-05T20:12:12.093436'
 updated: '2026-06-05T22:00:00'
 description: |
-  Task 完成后，涉及的文档（specs 规范、web/docs 设计文档）不会自动同步更新，导致文档与实现脱节。例如 task-0036 实现了内联编辑后，web/docs/04-ObjectDetail.md 不会反映新功能；task-0032 新增 deliverables 字段后，specs/27-Task-任务.md 需要更新字段契约。
+  Task 完成后，涉及的文档（specs 规范、web/docs 设计文档）不会自动同步更新，导致文档与实现脱节。例如 task-0036 实现了内联编辑后，web/docs/04-ObjectDetail.md 不会反映新功能；task-0032 新增 deliverables 字段后，specs/21-WorkPlan-工作计划.md 需要更新字段契约。
 
   需要建立任务完成后的文档同步机制，分两层实现：
 
@@ -28,6 +28,6 @@ acceptance: |
   - [ ] 已有 Task 实例补充 affected_docs 或相关文档关联
 blocked_by: []
 affected_docs:
-- specs/22-Task-任务.md
+- specs/21-WorkPlan-工作计划.md
 deliverables: []
 taskplan: taskplan-0037

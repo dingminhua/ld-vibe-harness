@@ -22,14 +22,14 @@ orchestration:
     input_refs:
     - task-0043
     expected_output: |
-      - [ ] 修改 specs/22-Task-任务.md，在 Task 拆解规则中补充测试 Task 的位置要求
+      - [ ] 修改 specs/21-WorkPlan-工作计划.md，在 Task 拆解规则中补充测试 Task 的位置要求
       - [ ] acceptance 原子条件规范写入 Task 规范
       - [ ] 验证子任务的 blocked_by 规则写入 Task 规范
       - [ ] 更新 ldvh-base/tasks/ 下至少一个现有 Task 实例作为示范
     status: pending
     result_summary: ''
     evidence_refs:
-    - specs/22-Task-任务.md（修订）
+    - specs/21-WorkPlan-工作计划.md（修订）
     - docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
     blocking_reason: Legacy Task is not closed; keep WorkPlan active after migration.
   review:

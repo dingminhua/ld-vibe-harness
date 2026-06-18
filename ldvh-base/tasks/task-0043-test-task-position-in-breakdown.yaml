@@ -12,7 +12,7 @@ description: |
   3. 验证子任务的 blocked_by 指向开发子任务，确保开发完成后才验证
 source: 竞品调研报告 docs/sources/06 建议1
 acceptance: |
-  - [ ] 修改 specs/22-Task-任务.md，在 Task 拆解规则中补充测试 Task 的位置要求
+  - [ ] 修改 specs/21-WorkPlan-工作计划.md，在 Task 拆解规则中补充测试 Task 的位置要求
   - [ ] acceptance 原子条件规范写入 Task 规范
   - [ ] 验证子任务的 blocked_by 规则写入 Task 规范
   - [ ] 更新 ldvh-base/tasks/ 下至少一个现有 Task 实例作为示范
@@ -25,5 +25,5 @@ related_pitfalls: []
 related_docs:
 - docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
 deliverables:
-- specs/22-Task-任务.md（修订）
+- specs/21-WorkPlan-工作计划.md（修订）
 taskplan: taskplan-0043

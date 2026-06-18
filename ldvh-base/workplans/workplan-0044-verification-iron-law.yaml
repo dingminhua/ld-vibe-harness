@@ -24,14 +24,14 @@ orchestration:
     expected_output: |
       - [ ] 产出 ADR 论证 verification 字段的引入
       - [ ] ADR 状态流转至 accepted
-      - [ ] 修改 specs/22-Task-任务.md，增加 verification 字段契约
+      - [ ] 修改 specs/21-WorkPlan-工作计划.md，增加 verification 字段契约
       - [ ] 修改 tools/fact_cli.py 支持 verification 字段
       - [ ] 至少一个现有 Task 实例补充 verification 字段作为示范
     status: pending
     result_summary: ''
     evidence_refs:
     - ldvh-base/adrs/adr-0007（新建）
-    - specs/22-Task-任务.md（修订）
+    - specs/21-WorkPlan-工作计划.md（修订）
     - docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
     - docs/studies/07-LDVH对Superpowers的借鉴评估与深度调研.md
     blocking_reason: Legacy Task is not closed; keep WorkPlan active after migration.

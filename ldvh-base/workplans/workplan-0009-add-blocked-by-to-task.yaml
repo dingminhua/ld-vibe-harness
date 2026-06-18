@@ -22,10 +22,10 @@ orchestration:
     input_refs:
     - task-0009
     expected_output: |
-      - [x] 已读取 specs/27-Task-任务.md 和 specs/27.06-Contract.md 中与字段契约相关的章节
+      - [x] 已读取 specs/21-WorkPlan-工作计划.md 和 specs/27.06-Contract.md 中与字段契约相关的章节
       - [x] 已设计 blocked_by 字段的类型、约束和引用校验规则
       - [x] 已通过 Human Gate 确认字段设计方案
-      - [x] 已更新 specs/27-Task-任务.md 的字段契约和对象关系章节
+      - [x] 已更新 specs/21-WorkPlan-工作计划.md 的字段契约和对象关系章节
       - [x] 已更新 specs/27.06-Contract.md 的 YAML schema、字段约束和引用关系接口
       - [x] 已更新 tools/ldvh_fact_validate.py 支持 blocked_by 字段校验
       - [x] 已更新 tools/ldvh_fact_cli.py 支持 blocked_by 字段创建和查询
@@ -51,7 +51,7 @@ orchestration:
 
       任务完成，人工确认关闭。
     evidence_refs:
-    - specs/22-Task-任务.md
+    - specs/21-WorkPlan-工作计划.md
     - specs/07-Code确定性执行实现规范.md
     blocking_reason: null
   review:
