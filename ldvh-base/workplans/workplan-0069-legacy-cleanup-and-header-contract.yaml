@@ -1,0 +1,121 @@
+id: workplan-0069
+type: workplan
+title: 清退旧工作对象并标准化 specs 文件元信息契约
+status: active
+created: '2026-06-18T09:08:15'
+updated: '2026-06-18T09:08:15'
+workarea: workarea-0012
+priority: P1
+description: |
+  清退旧 TaskPlan / Task / SubTask 工作对象事实源和兼容入口，并把 specs Markdown 头部 `> 字段：值`
+  元信息明确升级为人、AI、Code、Web 可共同消费的稳定契约。此次变更不保留旧对象兼容能力，
+  因为项目尚未推广且没有外部使用者；历史事实由 Git 历史承载，当前事实源只保留 active 工作模型。
+success_criteria: |
+  - [ ] `ldvh-base/taskplans/`、`ldvh-base/tasks/`、`ldvh-base/subtasks/` 不再作为当前事实源目录存在
+  - [ ] Code 不再把 `taskplan`、`task`、`subtask` 作为可读、可写、可校验或可迁移工作对象类型
+  - [ ] Web 不再暴露 TaskPlan / Task / SubTask 的默认入口、详情布局、兼容夹具或测试假设
+  - [ ] specs 中旧对象兼容、迁移保留、历史夹具维护等当前规则痕迹已清理或改写为当前事实规则
+  - [ ] `specs/03`、`03.01`、`03.02`、`03.03` 写清普通头部元信息契约与 `ldvh_member` 成员自描述契约的边界
+  - [ ] 规范和 Code/Web 校验通过，残留风险与后续 Code 检查候选已记录
+source: |
+  Human Gate confirmed by dmh2002 on 2026-06-18:
+  用户明确要求“不需要保留兼容能力，这个项目还没推广，没有其他人用”，并要求清理历史痕迹；
+  同时要求评估并设计 LDVH specs 文档的“标准文件元信息契约”，保持 `> 字段：值` 头部格式，
+  不把 `ldvh_member` 字段搬进普通头部，不新增与成员自描述冲突的头部字段。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 记录范围和 Human Gate
+    role: controller
+    mode: single
+    input_refs:
+    - rules/LDVH-WORKSPACE-ENTRY.md
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - 用户 2026-06-18 明确授权
+    expected_output: 新 WorkPlan 记录目标、成功标准、授权和执行分解。
+    status: done
+    result_summary: 已创建 workplan-0069，并在 workarea-0012 反向登记。
+    evidence_refs:
+    - ldvh-base/workplans/workplan-0069-legacy-cleanup-and-header-contract.yaml
+    - ldvh-base/workareas/workarea-0012-ldvh-internal-governance.yaml
+    blocking_reason: null
+  - id: item-2
+    title: 清退旧工作对象事实源和 Code 兼容入口
+    role: code
+    mode: sequential
+    input_refs:
+    - code/fact_cli.py
+    - code/fact_validate.py
+    - ldvh-base/taskplans/
+    - ldvh-base/tasks/
+    - ldvh-base/subtasks/
+    expected_output: 旧对象目录删除，CLI 和 Validator 不再接受旧对象类型，相关测试更新。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-3
+    title: 清退 Web 旧对象展示入口和测试夹具
+    role: web
+    mode: sequential
+    input_refs:
+    - web/src/pages/ObjectDetail.tsx
+    - web/src/components/ReadingPanel.tsx
+    - web/src/i18n/locales.ts
+    - tests/web/
+    expected_output: Web 默认对象集合和详情阅读布局只面向 active 工作模型，旧对象夹具删除或替换。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-4
+    title: 清理 specs 历史痕迹
+    role: specs
+    mode: sequential
+    input_refs:
+    - specs/05.01-工作字段内容格式规范.md
+    - specs/21-WorkPlan-工作计划.md
+    expected_output: 当前规则不再要求维护旧对象兼容、旧夹具或迁移保留能力。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-5
+    title: 标准化 specs 文件元信息契约
+    role: specs
+    mode: sequential
+    input_refs:
+    - specs/03-文档基础规范.md
+    - specs/03.01-规范文档规范.md
+    - specs/03.02-工作模型文档规范.md
+    - specs/03.03-工作流程文档规范.md
+    - code/spec_checks/index.py
+    expected_output: 头部元信息契约和 `ldvh_member` 成员自描述契约分工明确，Code 检查边界不过度扩大。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: true
+      role: code-and-web-contract-review
+      expected_output: 从 Code 可校验性和 Web 可表达性两个视角确认契约没有漂移。
+    human_closure_review: true
+verification_evidence: ''
+closure_evidence: ''
+related_docs:
+- specs/03-文档基础规范.md
+- specs/03.01-规范文档规范.md
+- specs/03.02-工作模型文档规范.md
+- specs/03.03-工作流程文档规范.md
+- specs/05.01-工作字段内容格式规范.md
+- specs/21-WorkPlan-工作计划.md
+related_adrs: []
+related_memos:
+- memo-0005
+- memo-0009
+related_pitfalls: []
+related_workplans: []
+related_changes: []
