@@ -11,7 +11,7 @@ description: |
 
   执行过程不作为历史事实源，含义是：不记录 AI 的临时 todo、工具读取顺序、子 Agent 中间过程、未采纳草稿或已被最终结论吸收的重复分析。WorkPlan 只保留足以恢复、验证和关闭的最小证据，包括当前推进位置、执行项结果摘要、稳定产物、测试/检查、独立复检结论、Human Gate 结果、关闭原因、残留风险和经验分流结果。
 
-  截至 2026-06-18，旧 TaskPlan / Task 已批量迁移为 WorkPlan 事实源：`ldvh-base/workplans/` 中已有 61 个 WorkPlan，WorkArea 已补齐 `workplans` 反向索引；Code / Web 已能把 WorkPlan 作为一等对象读取、统计、展示和校验。Dashboard 待推进主队列已对 legacy TaskPlan / Task / SubTask 降权，WorkArea 聚合中的 WorkPlan 行已按 `execution_items` 展示执行流。旧 TaskPlan / Task 仍保留为历史事实源，不作为新工作主路径。
+  截至 2026-06-18，旧 TaskPlan / Task 已批量迁移为 WorkPlan 事实源：`ldvh-base/workplans/` 中已有 61 个 WorkPlan，WorkArea 已补齐 `workplans` 反向索引；Code / Web 已能把 WorkPlan 作为一等对象读取、统计、展示和校验。Code 新建入口已拒绝 TaskPlan / Task / SubTask，Web 主导航、Dashboard 和默认关注队列已仅使用 active 工作模型；旧 TaskPlan / Task / SubTask 仍保留历史读取、校验和直达展示兼容，不作为新工作主路径。
 
   当前事实源结构校验为 `errors=0 warnings=0`。此前 13 个 warning 来自历史旧规范路径引用，已按现行承接关系改向 `specs/21-WorkPlan-工作计划.md` 或相关现行规范，不再让旧 TaskPlan / Task / SubTask 规范路径形成事实源噪音。
 
@@ -24,7 +24,7 @@ description: |
   - Role Contract 应由 04 能力资产、06 流程基础、40-59 具体流程，还是其他规范承接；
   - WorkPlan 的 `verification_evidence` 与 `closure_evidence` 已在字段注册表和校验中分离，但旧迁移数据中仍可能存在语义重复，后续应在关闭新 WorkPlan 时持续强化证据写法；
   - Memo 中已经部分落地的议题，如何提示 AI 判断继续 pending、追加 evolution、分流或 resolved；
-  - 旧 TaskPlan、Task、SubTask 作为 legacy/history 的降权策略还需继续收敛，包括兼容代码和 Web 测试夹具何时停止暴露旧命名、何时从主导航或默认聚合中进一步隐藏，以及是否需要旧事实源冻结说明。
+  - 旧 TaskPlan、Task、SubTask 的默认入口降权已经落地；后续只需继续判断历史兼容面何时冻结、归档或删除，以及旧事实源是否需要单独冻结说明。
 
   建议新会话优先从 `specs/21-WorkPlan-工作计划.md` 逐段核对，然后回看 `specs/05-工作模型基础规范.md`、`specs/05.01-工作字段内容格式规范.md` 和 `specs/06-工作流程基础规范.md`，最后再处理 40-43 流程规范与 Code / Web 迁移。
 evolution:
@@ -50,6 +50,8 @@ evolution:
     summary: 完成 20-39 工作模型编号迁移：ADR、Pitfall、Memo、Change、Study 已从 24-28 迁移为 22-26，并同步 specs、rules、web 和事实源引用。
   - at: 2026-06-18
     summary: 清理旧 TaskPlan / Task / SubTask 规范路径引用后，事实源校验收敛为 errors=0 warnings=0。
+  - at: 2026-06-18
+    summary: 完成 legacy 工作对象默认入口降级：Code 拒绝新建 TaskPlan / Task / SubTask，Web 主导航、Dashboard 和默认关注队列只暴露 active 工作模型；历史对象保留读取、校验和直达展示兼容。
 source: conversation
 source_detail: 本轮围绕 LDVH 工作流程、任务编排、执行证据、角色复检和 Memo 分流的连续讨论；包含一次联网复核结论。
 priority: P1
