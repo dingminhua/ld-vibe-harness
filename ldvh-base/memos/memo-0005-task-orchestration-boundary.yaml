@@ -56,6 +56,8 @@ evolution:
     summary: 清理正式 specs 中的工作模型历史痕迹：`specs/01-目录说明.md` 的 active 工作模型表已同步为 20-26 当前编号，手写集合索引和能力材料残留措辞已改为当前规则态。
   - at: 2026-06-18
     summary: 补齐 Code 防回归检查：`specs/01-目录说明.md` 的 active 工作模型人工目录表现在必须与 20-39 成员主文件自描述中的 active work_model 成员一致，防止编号表再次漂移。
+  - at: 2026-06-18
+    summary: 40-43 工作流程规范已承接 WorkPlan 回写契约：流程产生后续行动时必须回写为 WorkPlan / Memo 等现行对象，WorkPlan 必须使用 `success_criteria`、`orchestration.execution_items`、验证证据和关闭证据，不得新建 TaskPlan / Task / SubTask。
 source: conversation
 source_detail: 本轮围绕 LDVH 工作流程、任务编排、执行证据、角色复检和 Memo 分流的连续讨论；包含一次联网复核结论。
 priority: P1
