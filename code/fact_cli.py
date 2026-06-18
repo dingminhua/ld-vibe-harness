@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LDVH 事实模型 CLI 工具：create / transition / delete / list / show / search / stats / related / link-rule / deprecate / supersede。
 
-对 LDVH 生产对象（workarea, workplan, taskplan, task, subtask, adr, pitfall, memo, study）
+对 LDVH 生产对象（workarea, workplan, adr, pitfall, memo, study）和 legacy 兼容对象（taskplan, task, subtask）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
 Change 使用 Git commit 作为事实源，不通过本 CLI 管理。
 ADR 专属写入操作（link-rule / deprecate / supersede）必须携带 Human Gate 确认参数。
@@ -24,6 +24,7 @@ import yaml
 
 # Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
 OBJECT_TYPES = {"workarea", "workplan", "taskplan", "task", "subtask", "adr", "pitfall", "memo", "study"}
+LEGACY_OBJECT_TYPES = {"taskplan", "task", "subtask"}
 
 
 class BlockScalarDumper(yaml.SafeDumper):
@@ -499,6 +500,9 @@ def cmd_create(args: argparse.Namespace) -> int:
     # 校验 object_type
     if object_type not in OBJECT_TYPES:
         error(f"不支持的对象类型: {object_type}，有效类型: {', '.join(sorted(OBJECT_TYPES))}")
+        return 1
+    if object_type in LEGACY_OBJECT_TYPES:
+        error(f"{object_type} 已废弃，不得新建；请创建 workplan，并用 orchestration.execution_items 承载执行项。")
         return 1
 
     # ADR 创建时强制 Human Gate

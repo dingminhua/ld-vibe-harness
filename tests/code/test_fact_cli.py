@@ -1,4 +1,4 @@
-"""Tests for code/fact_cli.py under the WorkArea -> TaskPlan -> Task -> SubTask model."""
+"""Tests for code/fact_cli.py WorkPlan writes and legacy object compatibility."""
 
 from __future__ import annotations
 
@@ -59,31 +59,95 @@ def authorized(*args: str) -> tuple[str, ...]:
     return (*args, *AUTH_ARGS)
 
 
-def test_create_workarea_taskplan_task_and_subtask(tmp_path):
-    for object_type, expected_status in [
-        ("workarea", "active"),
-        ("taskplan", "draft"),
-        ("task", "planned"),
-        ("subtask", "planned"),
-    ]:
-        result = run_cli("create", object_type, "--title", f"Create {object_type}", base_dir=str(tmp_path))
-        assert result.returncode == 0, result.stderr
-        created_path = Path(result.stdout.strip())
-        data = read_yaml(created_path)
-        assert data["id"] == f"{object_type}-0001"
-        assert data["type"] == object_type
-        assert data["status"] == expected_status
-        if object_type == "workarea":
-            assert data["workplans"] == []
+def write_legacy_taskplan(tmp_path: Path, *, title: str = "Legacy Plan", status: str = "draft", suffix: str = "legacy-plan") -> Path:
+    path = tmp_path / "ldvh-base" / "taskplans" / f"taskplan-0001-{suffix}.yaml"
+    write_yaml(
+        path,
+        {
+            "id": "taskplan-0001",
+            "type": "taskplan",
+            "title": title,
+            "status": status,
+            "created": "2026-06-01T00:00:00",
+            "updated": "2026-06-01T00:00:00",
+            "workarea": "",
+            "priority": "P2",
+            "description": "Legacy plan fixture.",
+            "success_criteria": "- [x] Fixture ready",
+            "source": "pytest",
+            "tasks": [],
+            "completion_evidence": "",
+            "review_requested_at": "",
+            "closed_at": "",
+            "related_docs": [],
+            "related_adrs": [],
+            "related_memos": [],
+            "related_pitfalls": [],
+        },
+    )
+    return path
 
-    task_data = read_yaml(tmp_path / "ldvh-base" / "tasks" / "task-0001-create-task.yaml")
-    assert "taskplan" in task_data
-    assert "source_intent" not in task_data
-    assert "parent_task" not in task_data
-    assert "sub_tasks" not in task_data
-    taskplan_data = read_yaml(tmp_path / "ldvh-base" / "taskplans" / "taskplan-0001-create-taskplan.yaml")
-    assert taskplan_data["priority"] == "P2"
-    assert "importance" not in taskplan_data
+
+def write_legacy_task(tmp_path: Path, *, title: str = "Legacy Task", status: str = "planned", suffix: str = "legacy-task") -> Path:
+    path = tmp_path / "ldvh-base" / "tasks" / f"task-0001-{suffix}.yaml"
+    write_yaml(
+        path,
+        {
+            "id": "task-0001",
+            "type": "task",
+            "title": title,
+            "status": status,
+            "created": "2026-06-01T00:00:00",
+            "updated": "2026-06-01T00:00:00",
+            "taskplan": "taskplan-0001",
+            "description": "Legacy task fixture.",
+            "source": "pytest",
+            "acceptance": "- [x] Fixture ready",
+            "blocked_by": [],
+            "deliverables": [],
+            "verification": "## 验证计划\n\n## 验证命令\n",
+            "closure_evidence": "",
+        },
+    )
+    return path
+
+
+def write_legacy_subtask(tmp_path: Path, *, title: str = "Legacy SubTask", status: str = "planned") -> Path:
+    path = tmp_path / "ldvh-base" / "subtasks" / "subtask-0001-legacy-subtask.yaml"
+    write_yaml(
+        path,
+        {
+            "id": "subtask-0001",
+            "type": "subtask",
+            "title": title,
+            "status": status,
+            "created": "2026-06-01T00:00:00",
+            "updated": "2026-06-01T00:00:00",
+            "task": "task-0001",
+            "description": "Legacy subtask fixture.",
+            "source": "pytest",
+            "acceptance": "- [x] Fixture ready",
+            "blocked_by": [],
+            "verification": "## 验证计划\n\n## 验证命令\n",
+            "closure_evidence": "",
+        },
+    )
+    return path
+
+
+def test_create_workarea_and_reject_legacy_work_objects(tmp_path):
+    result = run_cli("create", "workarea", "--title", "Create workarea", base_dir=str(tmp_path))
+    assert result.returncode == 0, result.stderr
+    data = read_yaml(Path(result.stdout.strip()))
+    assert data["id"] == "workarea-0001"
+    assert data["type"] == "workarea"
+    assert data["status"] == "active"
+    assert data["workplans"] == []
+
+    for object_type in ("taskplan", "task", "subtask"):
+        rejected = run_cli("create", object_type, "--title", f"Create {object_type}", base_dir=str(tmp_path))
+        assert rejected.returncode == 1
+        assert "已废弃" in rejected.stderr
 
 
 def test_create_and_transition_workplan_contract(tmp_path):
@@ -188,8 +252,7 @@ def test_workarea_archive_requires_reason(tmp_path):
 
 
 def test_taskplan_review_and_close_flow(tmp_path):
-    result = run_cli("create", "taskplan", "--title", "Review Plan", base_dir=str(tmp_path))
-    path = Path(result.stdout.strip())
+    path = write_legacy_taskplan(tmp_path, title="Review Plan", suffix="review-plan")
 
     result = run_cli(*authorized("transition", str(path), "--to", "active"))
     assert result.returncode == 0
@@ -276,8 +339,7 @@ def test_memo_resolve_and_discard_require_supporting_fields(tmp_path):
 
 
 def test_taskplan_review_needed_to_active_needs_reason(tmp_path):
-    result = run_cli("create", "taskplan", "--title", "Return Plan", base_dir=str(tmp_path))
-    path = Path(result.stdout.strip())
+    path = write_legacy_taskplan(tmp_path, title="Return Plan", suffix="return-plan")
     run_cli(*authorized("transition", str(path), "--to", "active"))
     data = read_yaml(path)
     data["completion_evidence"] = "Ready for review."
@@ -294,8 +356,8 @@ def test_taskplan_review_needed_to_active_needs_reason(tmp_path):
 
 
 def test_task_close_requires_acceptance_verification_and_evidence(tmp_path):
-    result = run_cli("create", "task", "--title", "Close Task", base_dir=str(tmp_path))
-    path = Path(result.stdout.strip())
+    write_legacy_taskplan(tmp_path)
+    path = write_legacy_task(tmp_path, title="Close Task", suffix="close-task")
     run_cli(*authorized("transition", str(path), "--to", "executing"))
     run_cli(*authorized("transition", str(path), "--to", "verifying"))
     run_cli(*authorized("transition", str(path), "--to", "review_needed"))
@@ -319,8 +381,8 @@ def test_task_close_requires_acceptance_verification_and_evidence(tmp_path):
 
 
 def test_subtask_close_requires_verification_and_evidence(tmp_path):
-    result = run_cli("create", "subtask", "--title", "Close SubTask", base_dir=str(tmp_path))
-    path = Path(result.stdout.strip())
+    write_legacy_task(tmp_path)
+    path = write_legacy_subtask(tmp_path, title="Close SubTask")
     run_cli(*authorized("transition", str(path), "--to", "executing"))
     run_cli(*authorized("transition", str(path), "--to", "verifying"))
     run_cli(*authorized("transition", str(path), "--to", "review_needed"))
@@ -357,8 +419,7 @@ def test_list_and_show_workarea_json(tmp_path):
 
 
 def test_delete_draft_taskplan(tmp_path):
-    result = run_cli("create", "taskplan", "--title", "Delete Plan", base_dir=str(tmp_path))
-    path = Path(result.stdout.strip())
+    path = write_legacy_taskplan(tmp_path, title="Delete Plan", suffix="delete-plan")
 
     result = run_cli(*authorized("delete", str(path)))
 
@@ -367,8 +428,7 @@ def test_delete_draft_taskplan(tmp_path):
 
 
 def test_transition_requires_human_gate(tmp_path):
-    result = run_cli("create", "taskplan", "--title", "Gate Plan", base_dir=str(tmp_path))
-    path = Path(result.stdout.strip())
+    path = write_legacy_taskplan(tmp_path, title="Gate Plan", suffix="gate-plan")
 
     result = run_cli("transition", str(path), "--to", "active")
 
@@ -378,8 +438,7 @@ def test_transition_requires_human_gate(tmp_path):
 
 
 def test_delete_requires_human_gate(tmp_path):
-    result = run_cli("create", "taskplan", "--title", "Gate Delete", base_dir=str(tmp_path))
-    path = Path(result.stdout.strip())
+    path = write_legacy_taskplan(tmp_path, title="Gate Delete", suffix="gate-delete")
 
     result = run_cli("delete", str(path))
 
@@ -389,8 +448,7 @@ def test_delete_requires_human_gate(tmp_path):
 
 
 def test_update_requires_human_gate_and_updates_when_authorized(tmp_path):
-    result = run_cli("create", "taskplan", "--title", "Gate Update", base_dir=str(tmp_path))
-    path = Path(result.stdout.strip())
+    path = write_legacy_taskplan(tmp_path, title="Gate Update", suffix="gate-update")
 
     rejected = run_cli("update", str(path), "--set", "title=Rejected title")
     assert rejected.returncode == 1
@@ -410,16 +468,19 @@ def test_legacy_intent_type_is_rejected(tmp_path):
 
 
 def test_deps_outputs_structured_task_dependencies(tmp_path):
-    blocker = run_cli("create", "task", "--title", "Blocker", base_dir=str(tmp_path))
-    blocked = run_cli("create", "task", "--title", "Blocked", base_dir=str(tmp_path))
-    blocked_path = Path(blocked.stdout.strip())
+    write_legacy_taskplan(tmp_path)
+    blocker_path = write_legacy_task(tmp_path, title="Blocker", suffix="blocker")
+    blocked_path = tmp_path / "ldvh-base" / "tasks" / "task-0002-blocked.yaml"
+    blocked_data = read_yaml(blocker_path)
+    blocked_data["id"] = "task-0002"
+    blocked_data["title"] = "Blocked"
+    write_yaml(blocked_path, blocked_data)
     data = read_yaml(blocked_path)
     data["blocked_by"] = ["task-0001"]
     write_yaml(blocked_path, data)
 
     result = run_cli("deps", "task-0002", "--format", "json", base_dir=str(tmp_path))
 
-    assert blocker.returncode == 0
     assert result.returncode == 0
     payload = json.loads(result.stdout)
     assert payload["summary"]["blocked_by_count"] == 1

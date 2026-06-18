@@ -19,15 +19,13 @@ import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
 const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
   workarea: 'nav.workareas',
   workplan: 'nav.workplans',
-  taskplan: 'nav.taskplans',
-  task: 'nav.tasks',
-  subtask: 'nav.subtasks',
   adr: 'nav.adrs',
   pitfall: 'nav.pitfalls',
   memo: 'nav.memos',
+  study: 'nav.studies',
 };
 
-const TYPE_ORDER = ['workarea', 'workplan', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo'];
+const TYPE_ORDER = ['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study'];
 
 const HIGHLIGHT_STATUSES = new Set(['executing', 'verifying', 'review_needed']);
 

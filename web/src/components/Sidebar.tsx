@@ -22,7 +22,6 @@ const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: s
   { to: '/project-files', label: { zh: '文件', en: 'Files' }, icon: FolderTree },
   { to: '/objects/workarea', labelKey: 'nav.workareas', icon: OBJECT_TYPE_ICONS.workarea },
   { to: '/objects/workplan', labelKey: 'nav.workplans', icon: OBJECT_TYPE_ICONS.workplan },
-  { to: '/objects/taskplan', labelKey: 'nav.taskplans', icon: OBJECT_TYPE_ICONS.taskplan },
   { to: '/objects/adr', labelKey: 'nav.adrs', icon: OBJECT_TYPE_ICONS.adr },
   { to: '/objects/pitfall', labelKey: 'nav.pitfalls', icon: OBJECT_TYPE_ICONS.pitfall },
   { to: '/objects/memo', labelKey: 'nav.memos', icon: OBJECT_TYPE_ICONS.memo },

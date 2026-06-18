@@ -27,28 +27,24 @@ type AttentionItem = ObjectItem & {
   attentionKind: AttentionKind;
 };
 
-const ATTENTION_OBJECT_TYPES = ['workplan', 'taskplan', 'task', 'subtask', 'adr', 'pitfall', 'memo'];
+const ATTENTION_OBJECT_TYPES = ['workplan', 'adr', 'pitfall', 'memo', 'study'];
 
 const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
   workarea: 'nav.workareas',
   workplan: 'nav.workplans',
-  taskplan: 'nav.taskplans',
-  task: 'nav.tasks',
-  subtask: 'nav.subtasks',
   adr: 'nav.adrs',
   pitfall: 'nav.pitfalls',
   memo: 'nav.memos',
+  study: 'nav.studies',
 };
 
 const TYPE_COLORS: Record<string, string> = {
   workarea: '#3b82f6',
   workplan: '#0ea5e9',
-  taskplan: '#14b8a6',
-  task: '#22c55e',
-  subtask: '#84cc16',
   adr: '#a855f7',
   pitfall: '#ef4444',
   memo: '#eab308',
+  study: '#06b6d4',
 };
 
 const TERMINAL_STATUSES = new Set(['closed', 'rejected', 'superseded', 'deprecated', 'archived', 'discarded', 'resolved', 'accepted']);

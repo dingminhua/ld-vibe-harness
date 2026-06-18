@@ -4,7 +4,7 @@
 
 import { Router, type Request, type Response } from 'express'
 import { validate, runPyToolsJson } from '../services/pytools.js'
-import { listObjects, OBJECT_TYPES } from '../services/facts.js'
+import { listObjects, ACTIVE_OBJECT_TYPES } from '../services/facts.js'
 import { getGitLog } from '../services/git.js'
 import { getRelativeTime } from '../services/time.js'
 import { getTypeColor } from '../services/typeColors.js'
@@ -24,7 +24,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const locale = String(req.query.locale || 'zh')
 
     // 并行请求所有对象类型列表
-    const listPromises = OBJECT_TYPES.map(async (type) => {
+    const listPromises = ACTIVE_OBJECT_TYPES.map(async (type) => {
       const result = await listObjects(type)
       return { type, result }
     })
