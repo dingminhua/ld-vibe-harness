@@ -18,7 +18,7 @@
 ```text
 状态筛选（ObjectStatusFilter）
 对象卡片自适应网格（ldvh-section-grid）
-  通用卡片：ID + 复制路径图标 + 状态徽章 + 优先级字符徽标 + 标题 + 信号标签 + 创建/更新时间
+  通用卡片：ID + 复制路径图标 + 状态徽章 + 优先级字符徽标 + 标题 + 信号标签 + 更新时间
   WorkArea 卡片：工作域自身信息 + 按状态分组的计划入口
   WorkPlan 卡片：计划自身信息 + 执行态势条 + 关闭判断信号
 加载态 / 错误态 / 空态
@@ -60,7 +60,7 @@
 ADR 是“已确认但尚未完全吸收到 specs/rules/code/web/skill/agent/workflow 的决策补丁”。列表卡片只帮助用户定位当前补丁，不在卡片内展示补丁影响范围。
 
 - ADR 状态筛选只认 `active / archived / deprecated`。`active` 是当前有效补丁，`archived` 是已被稳定载体吸收，`deprecated` 是已废弃。
-- ADR 卡片使用通用卡片结构：ID、复制路径、状态、完整标题、非活跃原因、创建/更新时间。
+- ADR 卡片使用通用卡片结构：ID、复制路径、状态、完整标题、非活跃原因、更新时间。
 - ADR 标题就是最好的摘要；除通用非活跃原因阅读块外，卡片不展示 `context`、`decision`、`related_rules` 或未采纳备选摘要。
 - ADR 卡片标题必须允许换行完整显示，避免用截断标题替代决策识别。
 - ADR 卡片不展示 `related_rules` chip，也不展示 `superseded_by`、`proposed`、`accepted`、`rejected`、`superseded`、`alternatives` 或 `affects` 等旧生命周期和旧字段信息。
@@ -162,10 +162,10 @@ interface ObjectItem {
   hasVerificationEvidence?: boolean;
   hasClosureEvidence?: boolean;
   hasClosedAt?: boolean;
-  archive_reason?: string;             // 非活跃归档原因，卡片完整原因阅读块展示
-  deprecated_reason?: string;          // 非活跃废弃原因，卡片完整原因阅读块展示
-  discard_reason?: string;             // 非活跃废弃原因，卡片完整原因阅读块展示
-  closure_evidence?: string;           // closed WorkPlan 关闭原因来源，卡片完整原因阅读块展示
+  archive_reason?: string;             // 非活跃归档原因，卡片完整原因说明展示
+  deprecated_reason?: string;          // 非活跃废弃原因，卡片完整原因说明展示
+  discard_reason?: string;             // 非活跃废弃原因，卡片完整原因说明展示
+  closure_evidence?: string;           // closed WorkPlan 关闭原因来源，卡片完整原因说明展示
 }
 
 interface RelatedObjectSummary {

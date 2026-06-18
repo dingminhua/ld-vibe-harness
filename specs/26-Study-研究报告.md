@@ -300,6 +300,12 @@ Code 不得自行创建、替代、归档或删除 Study，不得绕过 Human Ga
 
 Web 可展示 Study 列表、状态、摘要、结论、正文和关联对象。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。
 
+Study 详情页是报告阅读界面，不按普通字段卡片表达主内容。中文主节点标题固定为“意图、摘要、建议、正文、关联”，分别对应 `user_intent`、`summary`、`conclusion`、frontmatter 后的 Markdown 报告正文和关联区。主节点标题应使用同一视觉层级，标题前使用小圆点，内容弱于标题；默认全部打开，点击标题栏在打开和收拢之间切换，收拢状态使用向下箭头表示可展开，打开状态使用向上箭头表示可收起。
+
+Study 正文不应在主页面直接铺开全文。“正文”节点下只展示当前 Study 文件入口，点击整行或扩展阅读入口后在右侧扩展阅读区渲染 Markdown 正文。右侧扩展阅读区应复用同一份 Study 事实源，不得维护第二套摘要或正文。
+
+Study 的所有关联内容必须进入上层“关联”区块。`urls` 显示在“关联”下的“网址”分组，每个条目必须显示可读标题或 URL，并显示中文 `summary`；该摘要是引用用途提示，应弱于 Study 主内容，不得替代报告正文结论。`related_docs`、`related_memos`、`related_workareas`、`related_workplans`、`related_adrs` 和 `related_pitfalls` 等关联字段不得散落在正文、证据或其他字段之间。
+
 当前 Web 不得直接创建、编辑、替代、归档或删除 Study。未来如需开放 Study 写入，必须先更新 `specs/08-Web信息同步实现规范.md` 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 
 ### 8.4 工作流程与环境适配
