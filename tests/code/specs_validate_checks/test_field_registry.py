@@ -22,11 +22,11 @@ def legacy_table(rows):
     )
 
 
-def write_registry_doc(path, common_rows=None, workplan_rows=None, legacy_rows=None):
+def write_registry_doc(path, common_rows=None, object_rows=None, legacy_rows=None):
     common_rows = common_rows or [
         "| `description` | common | 背景 | narrative | markdown | none | none | 05.01 | format | summary | active | none |"
     ]
-    workplan_rows = workplan_rows or [
+    object_rows = object_rows or [
         "| `success_criteria` | workplan | 成功标准 | checklist | checklist_markdown | none | none | 21 | owner_state | checklist | active | none |"
     ]
     legacy_rows = legacy_rows or [
@@ -43,9 +43,9 @@ def write_registry_doc(path, common_rows=None, workplan_rows=None, legacy_rows=N
 
 {registry_table(common_rows)}
 
-### 5.5 WorkPlan 试点字段注册
+### 5.5 对象特有字段注册
 
-{registry_table(workplan_rows)}
+{registry_table(object_rows)}
 
 ### 5.6 旧 TaskPlan / Task 字段废弃与别名映射
 
@@ -80,7 +80,7 @@ def test_field_registry_accepts_collection_owner(tmp_path):
 def test_field_registry_accepts_mixed_ref_and_enum_signal_web_kinds(tmp_path):
     path = write_registry_doc(
         tmp_path / "05.01-工作字段内容格式规范.md",
-        workplan_rows=[
+        object_rows=[
             "| `orchestration.mode` | workplan | 编排方式 | reference | string | enum | 21 | 21 | enum | enum_signal | active | none |",
             "| `orchestration.execution_items.input_refs` | workplan | 输入引用 | reference | list_string | mixed_ref | none | 21 | ref | mixed_ref | active | none |",
         ],

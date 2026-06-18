@@ -10,7 +10,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SPECS_DIR = PROJECT_ROOT / "specs"
 FIELD_REGISTRY_SPEC_NAME = "05.01-工作字段内容格式规范.md"
 WORKPLAN_SPEC_NAME = "21-WorkPlan-工作计划.md"
-REGISTRY_SECTION_TITLES = {"通用字段注册", "WorkPlan 试点字段注册"}
+REQUIRED_REGISTRY_SECTION_TITLES = {"通用字段注册", "对象特有字段注册"}
+REGISTRY_SECTION_TITLES = {*REQUIRED_REGISTRY_SECTION_TITLES, "WorkPlan 试点字段注册"}
 LEGACY_SECTION_TITLE = "旧 TaskPlan / Task 字段废弃与别名映射"
 
 REGISTRY_REQUIRED_COLUMNS = [
@@ -36,6 +37,7 @@ ALLOWED_VALUE_SHAPES = {
     "checklist_markdown",
     "evidence_markdown",
     "boolean",
+    "date",
     "datetime",
     "object",
     "list_object",
@@ -428,7 +430,7 @@ def check_file(path):
 
     tables = extract_tables(path)
     seen_keys = set()
-    for section_title in sorted(REGISTRY_SECTION_TITLES):
+    for section_title in sorted(REQUIRED_REGISTRY_SECTION_TITLES):
         table = tables.get(section_title)
         if not table:
             issues.append(Issue(path, 1, f"缺少 registry 表章节或表格: {section_title}", code="FIELD_REGISTRY_TABLE_MISSING"))
