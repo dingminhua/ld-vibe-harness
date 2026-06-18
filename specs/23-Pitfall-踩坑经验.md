@@ -4,7 +4,7 @@
 > 定位：定义 Pitfall / 踩坑经验工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要沉淀已解决、已验证且具有复用价值的踩坑经验的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-WorkPlan-工作计划.md`、`specs/22-ADR-决策.md`、`specs/24-Memo-备忘.md`、`specs/25-Change-变更.md`
+> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-WorkPlan-工作计划.md`、`specs/22-ADR-决策.md`、`specs/24-Memo-备忘.md`、`specs/09.01-Git提交记录与变更追溯规范.md`
 
 ```yaml
 ldvh_member:
@@ -55,7 +55,7 @@ Pitfall 的目标是让 AI 和 Human 在后续执行中提前识别同类陷阱�
 5. 已由 specs、Rules / Instructions、ADR、WorkPlan 或 Code 明确约束，且没有新增经验的信息；
 6. 没有规避策略的抱怨、复盘感想或笼统提醒。
 
-不形成 Pitfall 的内容，应按性质留在当前执行上下文，或进入 Memo、WorkPlan、ADR、Change、docs、sources、studies、Code 测试或其他权威位置。
+不形成 Pitfall 的内容，应按性质留在当前执行上下文，或进入 Memo、WorkPlan、ADR、docs、sources、studies、Code 测试、Git 提交记录或其他权威位置。
 
 ### 1.3 Pitfall 与规范、运行入口和实现的边界
 
@@ -144,9 +144,9 @@ Pitfall 和 ADR 是独立工作模型。经验是经验，决策是决策，两�
 
 ADR 的准入、状态和字段契约由 `specs/22-ADR-决策.md` 定义。
 
-### 4.5 Pitfall 与 Change
+### 4.5 Pitfall 与 Git 提交记录
 
-Pitfall 的创建、状态变化、核心经验改写、归档和被吸收到规范、运行入口、Code、Web 或工作流程时，都应留下 Change。Change 的 commit message 契约由 `specs/25-Change-变更.md` 定义。
+Pitfall 的创建、状态变化、核心经验改写、归档和被吸收到规范、运行入口、Code、Web 或工作流程时，都应留下 Git 提交记录。commit message 契约由 `specs/09.01-Git提交记录与变更追溯规范.md` 定义。
 
 ### 4.6 Pitfall 与规范、Code、Web 和运行入口
 
@@ -206,7 +206,6 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_rules` | 已吸收或承接该经验的规范、Rules、Skill、Agent、Code 或 Web 路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `archive_reason` | 归档原因；如已被规范、Rules、Skill、Agent、Code、Web 或工作流程吸收，应说明承接位置 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Human |
@@ -263,7 +262,6 @@ source_memos: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_changes: []
 related_docs:
   - specs/01-目录说明.md
   - specs/09-事实源边界与承载规范.md
@@ -297,7 +295,7 @@ notes:
 
 Pitfall 实例文件命名规则为 `pitfall-{NNNN}-short-title.yaml`。编号从 `0001` 起递增，固定 4 位；英文短标题使用小写短横线命名；文件存放位置为 `ldvh-base/pitfalls/`。
 
-文件名变化必须同步检查引用该 Pitfall 的 WorkArea、WorkPlan、Memo、ADR、Change、Web 派生视图和 Code 聚合结果。
+文件名变化必须同步检查引用该 Pitfall 的 WorkArea、WorkPlan、Memo、ADR、Web 派生视图、Git 提交记录和 Code 聚合结果。
 
 ---
 ## 7. 事实源回写与证据留存
@@ -308,9 +306,9 @@ Pitfall 回写遵循以下规则：
 
 1. 创建 Pitfall 时，应写入 `ldvh-base/pitfalls/`，并填写问题现象、触发条件、根因、解决方式、验证方式、规避策略和适用范围；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
-3. 状态变化后应更新 `updated`；状态变化历史由 Git commit / Change 派生，不在 Pitfall YAML 中手写维护；
+3. 状态变化后应更新 `updated`；状态变化历史由 Git commit 派生，不在 Pitfall YAML 中手写维护；
 4. Pitfall 被吸收到规范、运行入口、Code、Web 或工作流程后，应更新 `related_rules` 或相关引用；
-5. Pitfall 创建、状态变化、核心经验改写、归档或被吸收应通过 Change 留痕；
+5. Pitfall 创建、状态变化、核心经验改写、归档或被吸收应通过 Git 提交记录留痕；
 6. Pitfall 事实源写入前，应查询并呈现当前已有 `tags`，供 AI/Human 选择复用或确认新增；
 7. Pitfall 事实源写入后，应重新校验文件命名、字段完整性、状态合法性、标签格式和引用有效性。
 
@@ -326,7 +324,7 @@ Pitfall 证据至少包括：
 6. 规避策略；
 7. 适用范围和不适用范围；
 8. Human Gate 确认记录；
-9. 相关 WorkPlan、Memo、ADR、Change、docs、规范或 Code 引用。
+9. 相关 WorkPlan、Memo、ADR、docs、规范、Code 或 Git 提交引用。
 
 证据摘要应足以支持经验复用判断，但不得复制大量日志、命令输出、代码片段或外部资料形成第二事实源。
 
@@ -344,7 +342,7 @@ AI 处理 Pitfall 时应遵守：
 5. 进入代码、文档、规范、环境适配或工具修改前，可按任务类型、文件路径、技术栈、标签和事实源类型筛选 active Pitfall；
 6. 不得把未解决问题、未验证猜测或一次性失败直接写成 active Pitfall；
 7. 写入或修改 `tags` 时，应先查看 Code 提供的已有标签清单，优先复用，必要时再新增英文 slug；
-8. 不得让 Pitfall 替代 WorkPlan、Memo、ADR、规范、Code 测试或 Change。
+8. 不得让 Pitfall 替代 WorkPlan、Memo、ADR、规范、Code 测试或 Git 提交记录。
 
 ### 8.2 Code 辅助
 
@@ -405,10 +403,10 @@ Pitfall 规范检查至少包括：
 | active 可用性 | active Pitfall 已解决、已验证、具备规避策略和适用范围 |
 | 终态处理 | archived 不得重开 |
 | 吸收关系 | archived Pitfall 已填写 `archive_reason`；如被规范、运行入口、Code、Web 或工作流程吸收，已填写对应关联字段 |
-| 对象边界 | Pitfall 未替代 WorkPlan、Memo、ADR、规范、Code 测试或 Change |
+| 对象边界 | Pitfall 未替代 WorkPlan、Memo、ADR、规范、Code 测试或 Git 提交记录 |
 | 经验吸收边界 | 规避策略被吸收后只保留引用，不复制规则正文第二事实源 |
 | Human Gate | §5 场景已完成确认或记录降级 |
-| Change 追溯 | Pitfall 关键变化有 Git 可追溯记录 |
+| Git 追溯 | Pitfall 关键变化有 Git 可追溯记录 |
 | Code / Web 边界 | 派生输出未替代 Git 文件事实源 |
 
 ---

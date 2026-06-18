@@ -87,7 +87,7 @@ ldvh_member:
 | 测试治理和验证声明 | `specs/10-测试基础规范.md` |
 | 目标工作流程正文 | 对应 `specs/40-59` 成员主文件 |
 
-Code 派生集合索引、命令输出、Skill 输出、Agent 输出、Web 视图、聊天分析和 docs/studies 研究材料只能作为导航、诊断、候选建议或过程输出。审核结论形成稳定事实时，必须按事实类型选择唯一权威位置回写到目标工作流程主文件、相关工作对象、docs 报告、ADR、Memo、Pitfall 或 Git 变更记录，其他位置只保留引用或摘要。
+Code 派生集合索引、命令输出、Skill 输出、Agent 输出、Web 视图、聊天分析和 docs/studies 研究材料只能作为导航、诊断、候选建议或过程输出。审核结论形成稳定事实时，必须按事实类型选择唯一权威位置回写到目标工作流程主文件、相关工作对象、docs 报告、ADR、Memo、Pitfall 或 Git 提交记录，其他位置只保留引用或摘要。
 
 本流程不得恢复手写集合索引，不得把 `docs/studies/` 中的评估记录当作工作流程成员事实源，不得用 Code 派生索引替代成员主文件正文。
 
@@ -244,7 +244,7 @@ Code 输出只作为导航、聚合和诊断结果。Code 不判断流程是否�
 3. 审核形成长期决策时，回写 ADR；
 4. 审核形成可复用踩坑经验时，回写 Pitfall；
 5. 审核形成研究报告或迁移说明时，回写 docs；
-6. 发生事实源修改时，按 25-Change 的 Git、commit message 和 Refs 追溯规则处理。
+6. 发生事实源修改时，按 09.01 的 Git、commit message 和 Refs 追溯规则处理。
 
 凡回写为 WorkPlan 的后续行动，必须按 `specs/21-WorkPlan-工作计划.md` 和 `specs/05.01-工作字段内容格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkPlan 内部 `execution_items`。
 

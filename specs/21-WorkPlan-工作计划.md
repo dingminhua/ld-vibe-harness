@@ -134,25 +134,25 @@ review_needed -> active
 | `done` | 执行项已完成 | 应填写 `result_summary`，并在有稳定证据时填写 `evidence_refs` |
 | `skipped` | 明确决定不执行 | 必须填写 `result_summary`；`closure_evidence` 可补充整体接受原因 |
 
-执行项不得被其他工作对象直接引用为长期事实。需要长期追踪的结论，应按性质分流到 WorkPlan、ADR、Memo、Pitfall、Change、docs 或正式规范。
+执行项不得被其他工作对象直接引用为长期事实。需要长期追踪的结论，应按性质分流到 WorkPlan、ADR、Memo、Pitfall、docs、正式规范或 Git 提交记录。
 
 当某个执行项出现以下任一情况时，应停止把它作为内部执行项继续推进，并按事实性质分流；若它仍是可执行工作，应创建新的 WorkPlan：
 
 1. 需要独立目标、独立范围或独立成功标准；
 2. 需要独立 Human Gate、独立验收或独立关闭判断；
 3. 需要跨会话长期治理或成为后续工作的事实源入口；
-4. 产生独立 ADR、Memo、Pitfall 或 Change 链路，且该链路已经超出当前 WorkPlan 的关闭判断；
+4. 产生独立 ADR、Memo、Pitfall 或 Git 提交追溯链路，且该链路已经超出当前 WorkPlan 的关闭判断；
 5. 范围扩大到当前 WorkPlan 无法清晰关闭；
 6. 继续作为执行项会迫使 Web、Code 或 Human 把它当成一级对象管理。
 
-### 4.3 工作计划与 ADR、Memo、Pitfall、Change
+### 4.3 工作计划与 ADR、Memo、Pitfall 和 Git 提交记录
 
-工作计划可以关联 ADR、Memo、Pitfall 和 Change：
+工作计划可以关联 ADR、Memo、Pitfall，并通过 Git 提交记录追溯事实源修改：
 
 1. 长期决策进入 ADR；
 2. 暂存信息、待观察输入或分流线索进入 Memo；
 3. 已解决且可复用经验进入 Pitfall；
-4. Git 文件事实源修改由 Change 承载。
+4. Git 文件事实源修改由 Git commit records 承载，并按 `specs/09.01-Git提交记录与变更追溯规范.md` 追溯。
 
 ---
 ## 5. Human Gate
@@ -198,7 +198,6 @@ Human Gate 发生在工作计划层。执行项、角色说明、子 Agent 输�
 | `related_memos` | 来源或关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表；承载 WorkPlan ID，不表示父子或阻塞关系 | Reference | AI、Code、Web |
-| `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表；承载 Git commit hash、短 hash 或可回指 Git commit 的引用 | Reference | AI、Code、Web |
 
 ### 6.1 orchestration 最小结构
 
@@ -313,7 +312,6 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 related_workplans: []
-related_changes: []
 ```
 
 ---
@@ -327,7 +325,7 @@ related_changes: []
 2. 主控自检结论；
 3. 必要时的专业角色复检结论；
 4. 验证命令、文件路径、产物引用或人工确认记录；
-5. 经验、决策、备忘或变更的分流结果。
+5. 经验、决策、备忘或提交追溯的分流结果。
 
 进入 `review_needed` 前，不要求所有执行项都必须成功，但必须让执行项状态、验证证据和关闭证据共同说明：哪些完成、哪些跳过、哪些阻塞被分流或接受、哪些风险仍需 Human 判断。`closed` 不代表目标必然成功，只代表该 WorkPlan 的推进责任已经依据证据和关闭判断稳定终止。
 
@@ -347,7 +345,7 @@ Code 应检查：
 9. `done` 或 `skipped` 执行项必须填写 `result_summary`；
 10. 执行项不得被其他工作对象作为独立对象引用；
 11. `related_workplans` 必须承载 WorkPlan ID；
-12. `related_changes` 必须承载 Git commit hash、短 hash 或可回指 Git commit 的引用。
+12. 工作计划相关提交由 Git 历史、`Refs:`、对象 ID 和文件路径派生，不得手写维护 `related_changes`。
 
 Web 应把工作计划作为 Human 直接查看和确认的主对象。Web 可以展示执行编排、验证证据和关闭证据，但不得把执行项提升为一级导航、独立对象详情页或可独立写入的权威事实。
 

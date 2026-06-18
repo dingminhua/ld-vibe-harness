@@ -44,7 +44,7 @@ Web 测试实现使用以下目录边界：
 Web 测试按以下优先级选择：
 
 1. API contract 测试优先于页面测试；
-2. 高风险 API 优先覆盖 `POST /api/memos`、ProjectFiles、Validate、Objects、Gate 和 Changelog；
+2. 高风险 API 优先覆盖 `POST /api/memos`、ProjectFiles、Validate、Objects、Gate 和提交记录页；
 3. 页面测试优先覆盖 Gate、Validate、ProjectFiles、ObjectDetail、ObjectList 和 Dashboard 的空态、错误态、降级态、只读边界和来源呈现；
 4. 组件测试优先覆盖状态徽章、对象卡片、Markdown 阅读、复制按钮、Confirm UI 占位和 i18n 映射；
 5. E2E、视觉回归和复杂浏览器流程后置，不作为当前 Web API contract 测试的前置条件。
@@ -62,7 +62,7 @@ Web 测试按以下优先级选择：
 | ObjectDetail | 字段展示、关联材料、验证方式、关闭证据和 Markdown 阅读 | `tests/web/pages/`、`tests/web/components/` |
 | Validate | `/api/validate`、`/api/landing-plan`、派生报告展示和失败降级 | `tests/web/api/`、`tests/web/pages/` |
 | Gate | `/api/gate`、Human Gate 派生报告、disabled 确认占位和降级提示 | `tests/web/api/`、`tests/web/pages/` |
-| Changelog | 变更记录展示、commit 类型映射和引用追溯 | `tests/web/api/`、`tests/web/pages/` |
+| 提交记录页 | Git 提交记录展示、commit 类型映射和引用追溯 | `tests/web/api/`、`tests/web/pages/` |
 | Memo 快速创建 | 白名单写入、字段校验、受控写入链路和错误态 | `tests/web/api/` |
 | 全局 i18n | UI 文案、状态、枚举、字段名和空态中英文映射 | `tests/web/components/`、`tests/web/pages/` |
 

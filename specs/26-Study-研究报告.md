@@ -4,7 +4,7 @@
 > 定位：定义 Study / 研究报告工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要把 AI 调研、资料分析、方案比较或事实核验结果沉淀为稳定可阅读报告的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/03.01-规范文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/24-Memo-备忘.md`、`specs/25-Change-变更.md`
+> 相关规范：`specs/03.01-规范文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/09.01-Git提交记录与变更追溯规范.md`、`specs/24-Memo-备忘.md`
 
 ```yaml
 ldvh_member:
@@ -123,9 +123,9 @@ docs/studies 和 docs/sources 可以作为 Study 的输入资料区，但不应�
 
 `related_docs` 只记录与 Study 相关的项目内文档路径，例如后续承接文档、被报告消费的本地 Markdown、或需要从 Study 页面直达的项目文档。它回答“这个 Study 与哪些项目文档有关”。如果某项是报告正文中的外部网页资料，应放入 `urls`；如果某项是项目内文档、规范路径或代码位置，应放入 `related_docs` 或对象规范定义的专属关联字段。
 
-### 4.4 Study 与 Change
+### 4.4 Study 与 Git 提交记录
 
-Study 的创建、状态变化、核心报告改写和归档都应留下 Change。Change 的 commit message 契约由 `specs/25-Change-变更.md` 定义。
+Study 的创建、状态变化、核心报告改写和归档都应留下 Git 提交记录。commit message 契约由 `specs/09.01-Git提交记录与变更追溯规范.md` 定义。
 
 ---
 ## 5. Human Gate
@@ -254,9 +254,9 @@ Study 回写遵循以下规则：
 
 1. 创建 Study 时，应写入 `ldvh-base/studies/`，并填写 frontmatter 与 Markdown 正文；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
-3. 状态变化后应更新 `updated`；状态变化历史由 Git commit / Change 派生，不在 Study 中手写维护；
+3. 状态变化后应更新 `updated`；状态变化历史由 Git commit 派生，不在 Study 中手写维护；
 4. Study 被 Memo、WorkPlan、ADR 或 Pitfall 消费时，应通过对应对象的引用字段建立关系；
-5. Study 创建、归档或核心报告改写应通过 Change 留痕；
+5. Study 创建、归档或核心报告改写应通过 Git 提交记录留痕；
 6. Study 事实源写入后，应重新校验文件命名、frontmatter 字段完整性、状态合法性和引用有效性。
 
 ### 7.2 证据留存
@@ -267,7 +267,7 @@ Study 证据至少包括：
 2. 报告摘要和正文；
 3. 关键网址；
 4. 结论、边界和残留不确定性；
-5. 相关 Memo、WorkPlan、ADR、Pitfall、Change 或文档引用。
+5. 相关 Memo、WorkPlan、ADR、Pitfall、Git 提交记录或文档引用。
 
 Study 的报告正文应保留足以复读的结论和依据，但不复制外部资料全文，不记录讨论流水。
 
@@ -321,7 +321,7 @@ Study 创建、报告整理、吸收和归档的具体行动流程由后续 40-5
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Study 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、24 Memo、25 Change、Human Gate | 工作模型治理 | 创建、修改、审计、引用或归档 Study 时 |
+| 上位约束承接要求 | Study 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、24 Memo、09.01、Human Gate | 工作模型治理 | 创建、修改、审计、引用或归档 Study 时 |
 | 入口可见要求 | AI 处理需要长期保留的调研报告时，应能定位本文 | 成员自描述、运行入口摘要、Memo 分流规则 | AI 执行入口提示 | 报告创建、引用、吸收或归档时 |
 | 确定性执行要求 | Study frontmatter、状态、引用、文件命名和正文存在性应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Study 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、Markdown 承载或引用关系变化时 |
 | Human 交互要求 | Study 创建、核心报告改写、归档和作为关键依据时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
@@ -342,7 +342,7 @@ Study 规范检查至少包括：
 | 归档规则 | archived Study 已说明归档原因 |
 | 对象边界 | Study 未替代 Memo、ADR、WorkPlan、Pitfall 或 docs/sources |
 | Human Gate | §5 场景已完成确认或记录降级 |
-| Change 追溯 | Study 关键变化有 Git 可追溯记录 |
+| Git 追溯 | Study 关键变化有 Git 可追溯记录 |
 | Code / Web 边界 | 派生输出未替代 Git 文件事实源 |
 
 ---

@@ -50,7 +50,7 @@ export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }
   memo: { zh: '待任务化的备忘', en: 'Memo pending taskification' },
   study: { zh: '稳定研究报告', en: 'Stable study report' },
   profile: { zh: '项目画像', en: 'Project profile' },
-  change: { zh: '变更记录', en: 'Change record' },
+  change: { zh: '提交记录', en: 'Commit record' },
 };
 
 export function getTypeDescription(type: string, locale: string): string {
@@ -107,9 +107,9 @@ export const UI_LOCALES = {
     'nav.memos': '备忘',
     'nav.studies': '研究报告',
     'nav.profiles': '画像',
-    'nav.changes': '变更',
+    'nav.changes': '提交记录',
     'nav.validate': '校验',
-    'nav.changelog': '变更',
+    'nav.changelog': '提交记录',
     'nav.gate': '确认台',
     'nav.collapseSidebar': '收起侧栏',
     'nav.expandSidebar': '展开侧栏',
@@ -123,7 +123,7 @@ export const UI_LOCALES = {
 
     'dashboard.title': '仪表盘',
     'dashboard.recentActivity': '最近活动',
-    'dashboard.recentChanges': '最近变更',
+    'dashboard.recentChanges': '最近提交',
     'dashboard.validationStatus': '校验状态',
     'dashboard.landingHealth': 'LDVH 落地健康度',
     'dashboard.landingHealthDesc': '42 落地检查 + 规范落地要求缺口',
@@ -142,7 +142,7 @@ export const UI_LOCALES = {
     'dashboard.complianceClosed': '{count} 条已达成',
     'dashboard.complianceDegraded': '{count} 条降级',
     'dashboard.noRecentActivity': '暂无最近活动',
-    'dashboard.noRecentChanges': '暂无最近变更',
+    'dashboard.noRecentChanges': '暂无最近提交',
     'dashboard.noActionItems': '所有事项已完成',
     'dashboard.actionItems': '待推进',
     'dashboard.status': '状态',
@@ -266,7 +266,7 @@ export const UI_LOCALES = {
     'readingPanel.loadFailed': '加载失败',
     'readingPanel.docLoadFailed': '文档加载失败',
     'readingPanel.noEvidence': '暂无证据信息',
-    'readingPanel.changeDetail': '变更详情',
+    'readingPanel.changeDetail': '提交详情',
     'objectDetail.humanGateTip': '此计划待关闭审查',
 
     'validate.title': '校验',
@@ -350,9 +350,9 @@ export const UI_LOCALES = {
     'memo.created': '备忘已创建',
     'memo.createFailed': '创建失败',
 
-    'changelog.title': '变更',
+    'changelog.title': '提交记录',
     'changelog.subtitle': 'Git 提交记录，点击查看详情',
-    'changelog.loadFailed': '加载变更日志失败',
+    'changelog.loadFailed': '加载提交记录失败',
     'changelog.detailFailed': '加载提交详情失败',
 
     'common.loading': '加载中...',
@@ -376,9 +376,9 @@ export const UI_LOCALES = {
     'nav.memos': 'Memos',
     'nav.studies': 'Studies',
     'nav.profiles': 'Profiles',
-    'nav.changes': 'Changes',
+    'nav.changes': 'Commit Records',
     'nav.validate': 'Validate',
-    'nav.changelog': 'Changes',
+    'nav.changelog': 'Commit Records',
     'nav.gate': 'Gate',
     'nav.collapseSidebar': 'Collapse sidebar',
     'nav.expandSidebar': 'Expand sidebar',
@@ -392,7 +392,7 @@ export const UI_LOCALES = {
 
     'dashboard.title': 'Dashboard',
     'dashboard.recentActivity': 'Recent Activity',
-    'dashboard.recentChanges': 'Recent Changes',
+    'dashboard.recentChanges': 'Recent Commits',
     'dashboard.validationStatus': 'Validation Status',
     'dashboard.landingHealth': 'LDVH Landing Health',
     'dashboard.landingHealthDesc': '42 check + spec landing requirement gaps',
@@ -411,7 +411,7 @@ export const UI_LOCALES = {
     'dashboard.complianceClosed': '{count} satisfied',
     'dashboard.complianceDegraded': '{count} degraded',
     'dashboard.noRecentActivity': 'No recent activity',
-    'dashboard.noRecentChanges': 'No recent changes',
+    'dashboard.noRecentChanges': 'No recent commits',
     'dashboard.noActionItems': 'All items completed',
     'dashboard.actionItems': 'Action Items',
     'dashboard.status': 'Status',
@@ -535,7 +535,7 @@ export const UI_LOCALES = {
     'readingPanel.loadFailed': 'Failed to load',
     'readingPanel.docLoadFailed': 'Failed to load document',
     'readingPanel.noEvidence': 'No evidence available',
-    'readingPanel.changeDetail': 'Change Detail',
+    'readingPanel.changeDetail': 'Commit Detail',
     'objectDetail.humanGateTip': 'This plan is pending close review',
 
     'validate.title': 'Validation',
@@ -619,9 +619,9 @@ export const UI_LOCALES = {
     'memo.created': 'Memo created',
     'memo.createFailed': 'Failed to create memo',
 
-    'changelog.title': 'Changes',
+    'changelog.title': 'Commit Records',
     'changelog.subtitle': 'Git commit history, click to view details',
-    'changelog.loadFailed': 'Failed to load changes',
+    'changelog.loadFailed': 'Failed to load commits',
     'changelog.detailFailed': 'Failed to load commit detail',
 
     'common.loading': 'Loading...',

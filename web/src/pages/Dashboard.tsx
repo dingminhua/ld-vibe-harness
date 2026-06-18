@@ -266,7 +266,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Recent Changes */}
+        {/* Recent commits */}
         <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
             <GitCommit size={16} className="text-ldvh-accent" />

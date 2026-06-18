@@ -56,7 +56,6 @@ applicability: |
 source_memos: []
 related_workareas: []
 related_adrs: []
-related_changes: []
 related_docs: []
 related_rules:
 - web/docs/01-全局设计约束.md

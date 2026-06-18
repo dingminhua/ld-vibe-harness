@@ -18,7 +18,7 @@
 统一对象身份头部：类型标签 + 状态标签 + ID + 优先级字符徽标 + 标题 + 创建/更新时间 + 复制路径图标
 内容区：
   WorkArea：活跃计划 / 待关闭计划 / 已闭合计划 + 目标 / 范围 / 约束 / 来源 + 文档 / 决策 / 备忘 / 踩坑经验
-  WorkPlan：执行态势 + 成功标准 / 验证证据 / 关闭证据 + 目标 / 所属工作域 / 来源 + 文档 / 决策 / 备忘 / 踩坑经验 / 关联变更
+  WorkPlan：执行态势 + 成功标准 / 验证证据 / 关闭证据 + 目标 / 所属工作域 / 来源 + 文档 / 决策 / 备忘 / 踩坑经验
   ADR：背景 / 决策 / 影响 / 关联
   Pitfall：现象 / 触发 / 根因 / 方案 / 验证 / 规避 / 范围 / 关联
   其他对象：字段卡片布局
@@ -62,7 +62,7 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 2. 成功标准、验证证据和关闭证据不再收进“关闭判断”总区块；分别作为同级模块展示 `success_criteria/verification_evidence/closure_evidence`。不展示额外顶部结论条，不单列待确认项或记录状态，未完成项由 checklist 或证据模块自身表达。成功标准是关闭判断依据，但不再用外层总模块包住。
 3. 定义事实不再收进“属性”总区块；目标、所属工作域、来源分别作为同级模块展示 `description/workarea/source`。`description` 是目标叙述，必须按 Markdown 正文渲染，不得用定义行拆分、短前缀标签或字段 chip 重排原文。所属工作域入口使用模块内对象引用值，显示 WorkArea 对象图标和工作域标题，不显示 ID 或状态徽章，点击只打开右侧辅助阅读，不切换主路由。
 4. 执行项行在 WorkPlan 详情中与 WorkArea card 的动作体验保持一致：复用状态色弱背景、左侧状态图标、执行项标题、内部编号、证据入口和辅助阅读入口；右侧操作图标默认中性，辅助阅读入口可随行 hover 切到该行背景对应的状态色。
-5. 关联材料不再收进“关联材料”总区块；文档、决策、备忘、踩坑经验、关联变更按 `related_docs/related_adrs/related_memos/related_pitfalls/related_changes` 分别作为同级模块展示。材料来源只聚合 WorkPlan 自身和已明确纳入 WorkPlan 证据的引用，按 ID 或路径去重；不得从执行项派生出另一套对象级材料事实源。
+5. 关联材料不再收进“关联材料”总区块；文档、决策、备忘、踩坑经验按 `related_docs/related_adrs/related_memos/related_pitfalls` 分别作为同级模块展示。材料来源只聚合 WorkPlan 自身和已明确纳入 WorkPlan 证据的引用，按 ID 或路径去重；不得从执行项派生出另一套对象级材料事实源。关联提交由 Git 历史和 `Refs:` 派生，不从对象字段手写维护。
 6. WorkPlan 详情页点击执行项行只打开右侧辅助阅读区，不切换主路由到独立对象详情；主路由跳转只属于对象列表卡片。
 
 ## 6. 非工作主线对象字段布局
@@ -71,7 +71,7 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 - ADR 不使用普通字段卡片堆叠，而作为“决策补丁阅读页”展示。主节点固定为“背景、决策、影响、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。
 - ADR 的“影响”节点消费 `consequences` 字段。active ADR 必须按 `## 正向价值`、`## 逆向价值`、`## 实施成本`、`## 风险评估`、`## 注意事项` 五段式书写；有逆向价值时必须引用 V1-V10，无逆向价值时 `## 逆向价值` 填写 `当前决策无逆向价值`。Web 在节点内按 Markdown 分段展示，不把五段拆成独立工作对象字段。
 - ADR 不展示“备选”节点，也不维护 `alternatives` 字段。未采纳方案若来自 Memo，应保留在 Memo 的演变记录或讨论上下文中；若只来自临时对话且未进入决策，不进入 ADR。
-- ADR 不展示独立“承接”节点，也不维护 `affects` 字段。`related_rules`、`related_workareas`、`related_workplans`、`related_adrs`、`related_memos`、`related_changes` 等统一进入“关联”，按关联内容的通用行样式展示。
+- ADR 不展示独立“承接”节点，也不维护 `affects` 字段。`related_rules`、`related_workareas`、`related_workplans`、`related_adrs`、`related_memos` 等统一进入“关联”，按关联内容的通用行样式展示。关联提交由 Git 派生视图呈现。
 - ADR 状态只显示 `active / archived / deprecated`。详情页不得展示或派生 `proposed`、`accepted`、`rejected`、`superseded` 或 `superseded_by` 旧生命周期语义。
 - Pitfall `verification` 节点消费 05.01 四段式结构，但在 Pitfall 页面内渲染为轻量分段阅读，不使用表格左列重复“计划/记录/结果/结论”。验证节点内部按“验证计划、验证命令、验证结果、结论”顺序展示。
 - Pitfall `root_cause`、`resolution`、`avoidance` 等经验节点应把 Markdown 列表渲染为清晰的条目阅读，而不是使用浏览器默认列表缩进。无序列表只使用灰色圆点；有序列表应保留 Markdown 原文的普通 `1.`、`2.`、`3.` 文本编号，不得额外渲染为徽标、强调色或状态标记。
@@ -105,7 +105,7 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 
-所有 `related_*`、`aggregated_related_*` 和 Study `urls` 字段在对象详情中应统一收进上层“关联”区块，不得按字段名散落在正文、证据或其他字段之间。关联区块内部先展示工作对象关联，并按工作模型编号排序：WorkArea 20、WorkPlan 21、ADR 22、Pitfall 23、Memo 24、Change 25、Study 26；非工作对象关联再按字段英文名排序，例如 `related_docs`、`urls`、`related_rules`。
+所有 `related_*`、`aggregated_related_*` 和 Study `urls` 字段在对象详情中应统一收进上层“关联”区块，不得按字段名散落在正文、证据或其他字段之间。关联区块内部先展示工作对象关联，并按工作模型编号排序：WorkArea 20、WorkPlan 21、ADR 22、Pitfall 23、Memo 24、Study 26；非工作对象关联再按字段英文名排序，例如 `related_docs`、`urls`、`related_rules`。提交记录不是工作对象关联字段，应从 Git 提交记录视图派生。
 
 关联区块内的工作对象引用不直接展示对象编号。对象编号属于打开后的对象详情、复制路径或 YAML 源码中的定位信息；列表态只展示对象类型图标、对象标题和必要操作图标，降低重复元信息对阅读的干扰。
 
@@ -124,7 +124,7 @@ Pitfall、ADR、Memo 等非 Study 对象的长文本阅读组织应向 Study 的
 ## 8. 右侧扩展阅读区
 
 - 由 App Shell 的 `ReadingPanel` 提供。
-- 触发来源：对象引用、文档引用、Dashboard / Changelog 的对象条目。
+- 触发来源：对象引用、文档引用、Dashboard / 提交记录页的对象条目。
 - 顶部只保留上一个访问对象、下一个访问对象和关闭按钮。
 - 扩展阅读区顶部控制区必须固定在面板顶部，正文在面板内部独立滚动，避免长文档或对象详情滚动后无法切换历史对象或关闭面板。
 - 不展示对象列表式导航。

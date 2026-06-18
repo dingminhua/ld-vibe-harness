@@ -1,17 +1,17 @@
-# Changelog 变更日志
+# 提交记录页
 
 > 路由：`/changelog`
 > 源码：`web/src/pages/Changelog.tsx`
-> API：`GET /api/changelog?limit=50`、`GET /api/changelog/:hash`
+> API：`GET /api/changelog?count=50`、`GET /api/changelog/:hash`
 
 ## 1. 页面目标
 
-变更日志用于查看 Git 提交记录，并在需要时展开查看该提交的 `git diff --stat`。它是提交证据入口，不是完整 diff 浏览器。
+提交记录页用于查看 Git commit records，并在需要时展开查看该提交的 `git diff --stat`。它是提交证据入口，不是工作对象列表，也不是完整 diff 浏览器。
 
 ## 2. 当前页面结构
 
 ```text
-页面标题：变更
+页面标题：提交记录
 副标题：Git 提交记录，点击查看详情
 提交卡片列表
   折叠态：箭头 + shortHash + commit message + 作者 + YYYY-MM-DD HH:mm + GitCommit 图标
@@ -36,7 +36,7 @@
 
 - commit message 中的 `Refs:` 行会被解析。
 - 形如 `workarea-0001`、`workplan-0006`、`adr-0006`、`memo-0005`、`pitfall-0001`、`study-0001` 的当前对象 ID 变成可点击文本。
-- 点击对象 ID 跳转到对应对象详情页。
+- 点击对象 ID 在右侧扩展阅读区打开对应对象预览，不替换当前提交记录页。
 - 非对象 ID 的文本原样展示。
 
 ## 5. 日期格式
@@ -50,13 +50,13 @@
 | 操作 | 行为 |
 |---|---|
 | 点击提交卡片 | 展开/收起该提交的 diff stat |
-| 点击 Refs 对象 ID | 跳转到对象详情页 |
+| 点击 Refs 对象 ID | 在右侧扩展阅读区打开对象预览 |
 | 切换语言 | 页面标题、副标题、加载和错误文案同步切换 |
 
 ## 7. 实现约束
 
 1. 不重复显示页面副标题。
-2. 不把 Changelog 改成完整 diff 查看器；当前只展示 stat。
+2. 不把提交记录页改成完整 diff 查看器；当前只展示 stat。
 3. 不展示 raw ISO 时间，统一使用 `formatDateTime()`。
 4. 不把 commit message 强行翻译；它是 Git 事实内容。
 

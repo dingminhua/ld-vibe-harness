@@ -112,7 +112,6 @@ def write_adr(path: Path, *, status: str = "active", archive_reason: str = "", d
         "related_workplans": [],
         "related_adrs": [],
         "related_memos": [],
-        "related_changes": [],
         "related_rules": [],
         "archive_reason": archive_reason,
         "deprecated_reason": deprecated_reason,
@@ -200,6 +199,19 @@ def test_update_study_rejects_removed_fields(tmp_path):
     assert "已移除字段" in result.stderr
     data = read_study_frontmatter(path)
     assert "source" not in data
+
+
+def test_update_rejects_global_related_changes_field(tmp_path):
+    created = run_cli("create", "workplan", "--title", "Stable Plan", "--base-dir", str(tmp_path))
+    assert created.returncode == 0, created.stderr
+    path = Path(created.stdout.strip())
+
+    result = run_cli("update", str(path), "--set", "related_changes=abc1234", *AUTH_ARGS)
+
+    assert result.returncode == 1
+    assert "已移除字段" in result.stderr
+    data = read_yaml(path)
+    assert "related_changes" not in data
 
 
 def test_legacy_object_types_are_not_cli_choices(tmp_path):
@@ -304,7 +316,6 @@ def write_pitfall(path: Path, *, status: str = "active", verification: str | Non
         "source_memos": [],
         "related_workareas": [],
         "related_adrs": [],
-        "related_changes": [],
         "related_docs": [],
         "related_rules": [],
         "archive_reason": archive_reason,

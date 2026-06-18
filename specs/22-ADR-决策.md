@@ -4,7 +4,7 @@
 > 定位：定义 ADR / 决策工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理长期决策、事实源边界、规范判断和后续执行约束的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/25-Change-变更.md`
+> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/09.01-Git提交记录与变更追溯规范.md`
 
 ```yaml
 ldvh_member:
@@ -131,9 +131,9 @@ ADR 不替代 WorkArea 的长期范围，也不替代 WorkPlan 的目标、成�
 
 ADR 不替代 WorkPlan 的成功标准、验证证据、风险判断或关闭证据。
 
-### 4.3 ADR 与 Change
+### 4.3 ADR 与 Git 提交记录
 
-ADR 的创建、状态变化、核心决策改写、归档、废弃和升级为规范时，都应留下 Change。Change 的 commit message 契约由 `specs/25-Change-变更.md` 定义。
+ADR 的创建、状态变化、核心决策改写、归档、废弃和升级为规范时，都应留下 Git 提交记录。commit message 契约由 `specs/09.01-Git提交记录与变更追溯规范.md` 定义。
 
 ### 4.4 ADR 与 Memo
 
@@ -153,7 +153,7 @@ ADR 中的决策补丁升级为稳定规则时，应：
 1. 将规则正文写入对应 specs 正式规范、Rules / Instructions 或其他权威入口；
 2. 在 ADR 的 `related_rules` 或其他 `related_*` 字段中记录追溯关系；
 3. 保留 ADR 的背景、取舍和后果；
-4. 通过 Change 留下变更追溯；
+4. 通过 Git 提交记录留下变更追溯；
 5. 经 Human Gate 确认。
 
 ---
@@ -174,7 +174,7 @@ ADR 中的决策补丁升级为稳定规则时，应：
 
 Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记录。本文只规定 ADR 语境下需要确认的事实、影响范围和证据要求。
 
-ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.md` §6.3.1。创建、归档、废弃、核心决策改写或升级为规范等场景中，确认记录至少应说明目标 ADR、决策变化、影响范围、确认依据、Human 决策、后续回写位置和残留风险。确认记录可以摘要写入 ADR 的 `context`、`consequences`、`archive_reason`、`deprecated_reason`、相关 WorkPlan / Memo 或 Change / commit 证据中，但不得只停留在对话结论里，不得维护手写 `status_history`。
+ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.md` §6.3.1。创建、归档、废弃、核心决策改写或升级为规范等场景中，确认记录至少应说明目标 ADR、决策变化、影响范围、确认依据、Human 决策、后续回写位置和残留风险。确认记录可以摘要写入 ADR 的 `context`、`consequences`、`archive_reason`、`deprecated_reason`、相关 WorkPlan / Memo 或 Git commit 证据中，但不得只停留在对话结论里，不得维护手写 `status_history`。
 
 ---
 ## 6. 字段契约
@@ -197,7 +197,6 @@ ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.m
 | `consequences` | 决策影响闭环 | string | 是 | active ADR 必须按 `## 正向价值`、`## 逆向价值`、`## 实施成本`、`## 风险评估`、`## 注意事项` 五段式书写；有逆向价值时必须引用 V1-V10；无逆向价值时 `## 逆向价值` 填写 `当前决策无逆向价值` | Decision / Narrative | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_changes` | 关联变更 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 来源或关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_rules` | 关联规范或 Rules 路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -211,7 +210,7 @@ ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.m
 ```yaml
 id: adr-0001
 type: adr
-title: Change 使用 Git commit 记录承载
+title: Git 提交记录承载事实源修改追溯
 status: active
 created: '2026-06-09T00:00:00'
 updated: '2026-06-09T00:00:00'
@@ -219,42 +218,41 @@ date: 2026-06-09
 context: |
   LDVH 需要记录事实源变更，但不希望为每次变更额外创建 YAML 实例。
 decision: |
-  Change 事实实例直接由 Git commit 记录承载，不创建 ldvh-base/changes/。
+  Git 提交记录直接承载事实源修改追溯，不创建 ldvh-base/changes/。
 consequences: |
   ## 正向价值
 
-  - 服务 V8 可靠回写：Change 事实回到 Git commit，不额外制造 YAML 第二事实源。
+  - 服务 V8 可靠回写：事实源修改追溯回到 Git commit，不额外制造 YAML 第二事实源。
   - 服务 V6 强制验证：派生展示必须读取 Git 记录，避免用页面状态替代证据。
 
   ## 逆向价值
 
-  - 逆向削弱 V2 完整理解和 V9 人类确认质量：Change 不再有独立 YAML 实例，无法像其他工作对象一样通过对象文件承载补充字段。
+  - 逆向削弱 V2 完整理解和 V9 人类确认质量：Git 提交记录不是独立 YAML 实例，无法像工作对象一样通过对象文件承载补充字段。
 
   ## 实施成本
 
-  - Code 和 Web 需要从 Git commit 派生 Change 展示，而不是读取 `ldvh-base/changes/`。
+  - Code 和 Web 需要从 Git commit 派生提交记录展示，而不是读取 `ldvh-base/changes/`。
 
   ## 风险评估
 
-  - 若派生逻辑缺失，Human 可能在 Web 中看不到完整变更记录。
+  - 若派生逻辑缺失，Human 可能在 Web 中看不到完整提交记录。
 
   ## 注意事项
 
-  - `related_changes` 只记录可追溯变更引用；Code/Web 派生输出不得替代 Git 事实源。
+  - 对象不手写维护提交列表；Code/Web 派生输出不得替代 Git 事实源。
 related_workareas: []
 related_workplans: []
-related_changes: []
 related_memos: []
 related_adrs: []
 related_rules:
-  - specs/25-Change-变更.md
+  - specs/09.01-Git提交记录与变更追溯规范.md
 archive_reason:
 deprecated_reason:
 ```
 
 ### 6.3 Human Gate 记录回写样例
 
-ADR 创建、归档、废弃、核心决策改写或升级为规范时，Human Gate 记录可以摘要写入 `context`、`consequences`、`archive_reason`、`deprecated_reason`、相关 WorkPlan / Memo 或 Change / commit 证据中。若直接写入 ADR 字段，推荐使用以下文本块：
+ADR 创建、归档、废弃、核心决策改写或升级为规范时，Human Gate 记录可以摘要写入 `context`、`consequences`、`archive_reason`、`deprecated_reason`、相关 WorkPlan / Memo 或 Git commit 证据中。若直接写入 ADR 字段，推荐使用以下文本块：
 
 ```yaml
 context: |
@@ -263,13 +261,13 @@ context: |
   Human Gate 记录：
   - 触发原因：active ADR 的核心决策将被修改
   - 确认事项：是否接受新的决策内容并保留原 ADR 追溯
-  - 影响范围：目标 ADR、相关规范、后续 WorkPlan 和 Change 记录
+  - 影响范围：目标 ADR、相关规范、后续 WorkPlan 和 Git 提交记录
   - 确认依据：原 ADR、影响范围说明和验证结果
   - Human 决策：确认修改
   - 确认人/时间：Human，2026-06-10
-  - 后续动作：更新 ADR 字段并提交 Change
+  - 后续动作：更新 ADR 字段并提交 Git commit
   - 验证方式：运行 ADR / specs 相关校验并检查 Git diff
-  - 回写位置：本 ADR、相关 Change / commit
+  - 回写位置：本 ADR、相关 Git commit
   - 残留风险：后续 Web 展示需同步消费变更
 ```
 
@@ -282,8 +280,8 @@ ADR 回写遵循以下规则：
 
 1. 创建 ADR 时，应写入 `ldvh-base/adrs/`，并填写背景、决策、后果和影响范围；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
-3. 状态变化后应更新 `updated`；状态变化历史由 Git commit / Change 派生，不在 ADR YAML 中手写维护；
-4. active ADR 的核心决策变更必须经 Human Gate，并通过 Change 留痕；
+3. 状态变化后应更新 `updated`；状态变化历史由 Git commit 派生，不在 ADR YAML 中手写维护；
+4. active ADR 的核心决策变更必须经 Human Gate，并通过 Git 提交记录留痕；
 5. ADR 升级为规范或 Rules 后，应同步更新 `related_rules`；
 6. ADR 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
 
@@ -297,7 +295,7 @@ ADR 证据至少包括：
 4. 决策后果；
 5. 影响范围；
 6. Human Gate 确认记录；
-7. 相关 Change、WorkArea、WorkPlan、Memo 或规范引用。
+7. 相关 Git 提交记录、WorkArea、WorkPlan、Memo 或规范引用。
 
 active ADR 的 `consequences` 字段必须按以下五段式记录影响闭环：
 
@@ -334,7 +332,7 @@ Code 可依据本文实现以下能力：
 3. 校验状态枚举和合法流转；
 4. 校验 `archive_reason`、`deprecated_reason`、`related_rules` 和对象引用；
 5. 聚合 ADR 状态、关联对象和关联规范位置；
-6. 检查 active ADR 的决策变更是否有 Change 和 Human Gate 记录。
+6. 检查 active ADR 的决策变更是否有 Git 提交记录和 Human Gate 记录。
 
 Code 不得自行创建、归档、废弃或删除 ADR，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/adrs/` 权威事实源。
 
@@ -346,7 +344,7 @@ ADR 详情页应采用固定阅读节点：“背景、决策、影响、关联�
 
 ADR 列表卡片只展示身份信息、完整标题、非活跃原因、更新时间、复制和进入入口，不展示摘要、影响范围、关联规范 chip、`context`、`decision` 或未采纳备选提示。列表卡片标题必须允许换行完整显示；非活跃原因必须完整显示但弱于标题，使用“弱圆点 + 原因标签”和弱阅读正文，不得用醒目外框、强竖线、标签 chip 或截断摘要表达。
 
-ADR Web 不得展示或派生 `proposed`、`accepted`、`rejected`、`superseded`、`superseded_by`、`alternatives` 或 `affects` 等旧生命周期和旧字段语义。关联规范、工作域、工作计划、备忘、变更和其他 ADR 应统一进入“关联”节点，不单独形成“承接”或“影响范围”节点。
+ADR Web 不得展示或派生 `proposed`、`accepted`、`rejected`、`superseded`、`superseded_by`、`alternatives` 或 `affects` 等旧生命周期和旧字段语义。关联规范、工作域、工作计划、备忘、Git 提交记录和其他 ADR 应统一进入“关联”节点，不单独形成“承接”或“影响范围”节点。
 
 Web 不得在页面状态、缓存或数据库中维护独立 ADR 权威状态。受控编辑 ADR 字段时，应调用 Code 校验和受控写入链路，并遵守 Human Gate。
 
@@ -363,11 +361,11 @@ ADR 创建、归档、废弃和升级为规范的具体行动流程由后续 40-
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | ADR 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、终态规则和事实源边界 | 05、03.03、本文、25 Change、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、归档或废弃 ADR 时 |
+| 上位约束承接要求 | ADR 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、终态规则和事实源边界 | 05、03.03、本文、09.01、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、归档或废弃 ADR 时 |
 | 入口可见要求 | AI 处理长期决策、规范判断、事实源边界、方案取舍或执行约束时，应能定位本文 | 成员自描述、运行入口摘要、ADR 决策流程入口 | AI 执行入口提示 | 决策入口、规范升级、状态流转或字段契约变化时 |
 | 确定性执行要求 | ADR 字段、状态、引用、文件命名、关联关系和条件必填应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、ADR 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系或相关规范路径变化时 |
 | Human 交互要求 | ADR 创建、归档、废弃、核心决策改写和升级为规范应触发 Human Gate，并按 06 §6.3.1 留下最小证据记录 | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | ADR 规范变化后，应检查成员自描述、05.01、Change、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、Change 追溯、Code/Web 联动检查、人工降级检查 | 触发保障 | ADR 字段、状态、事实源边界、适配规则或检查要求变化时 |
+| 生命周期触发要求 | ADR 规范变化后，应检查成员自描述、05.01、Git 提交记录、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、Git 追溯、Code/Web 联动检查、人工降级检查 | 触发保障 | ADR 字段、状态、事实源边界、适配规则或检查要求变化时 |
 
 ---
 ## 10. 检查要求
@@ -385,7 +383,7 @@ ADR 规范检查至少包括：
 | 归档/废弃原因 | archived ADR 已填写 `archive_reason`；deprecated ADR 已填写 `deprecated_reason` |
 | 规范边界 | ADR 不替代 specs 或 Rules / Instructions 正文 |
 | Human Gate | §5 场景已完成确认并符合 06 §6.3.1，或记录降级 |
-| Change 追溯 | ADR 关键变化有 Git 可追溯记录 |
+| Git 追溯 | ADR 关键变化有 Git 可追溯记录 |
 | Code / Web 边界 | 派生输出未替代 Git 文件事实源 |
 
 ---

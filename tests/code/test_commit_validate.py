@@ -30,7 +30,16 @@ def make_commit(hash_val="abc12345", subject="", body=""):
 
 
 def test_valid_commit_passes():
-    commit = make_commit(subject="docs(specs): 更新 Change 工作模型", body="新增 specs/22-Change-变更.md。\n\nRefs: 22-Change-变更")
+    commit = make_commit(
+        subject="spec(specs): 建立 Git 提交记录规范",
+        body=(
+            "明确 Git 提交记录不再作为工作对象。\n\n"
+            "Refs: workplan-0074, specs/09.01-Git提交记录与变更追溯规范.md\n"
+            "Human-Gate: 用户确认提交记录不作为工作对象\n"
+            "Verification: python3 code/specs_validate.py all\n"
+            "Risk: 无已知残留风险"
+        ),
+    )
 
     issues = checker.check_commit(commit)
     errors = [i for i in issues if i.level == "error"]
@@ -56,7 +65,10 @@ def test_invalid_type():
 
 
 def test_valid_type_without_scope():
-    commit = make_commit(subject="docs: 测试文档", body="说明\n\nRefs: 01-目录说明")
+    commit = make_commit(
+        subject="docs: 测试文档",
+        body="说明\n\nRefs: 01-目录说明\nHuman-Gate: 不适用\nVerification: 未运行\nRisk: 无已知残留风险",
+    )
 
     issues = checker.check_commit(commit)
     errors = [i for i in issues if i.level == "error"]
@@ -106,7 +118,14 @@ def test_missing_chinese_errors():
 
 
 def test_check_message_valid():
-    text = "docs(specs): 更新文档\n\n更新内容。\n\nRefs: 01-目录说明"
+    text = (
+        "docs(specs): 更新文档\n\n"
+        "更新内容。\n\n"
+        "Refs: 01-目录说明\n"
+        "Human-Gate: 不适用\n"
+        "Verification: 未运行\n"
+        "Risk: 无已知残留风险"
+    )
 
     issues = checker.check_message(text)
     errors = [i for i in issues if i.level == "error"]

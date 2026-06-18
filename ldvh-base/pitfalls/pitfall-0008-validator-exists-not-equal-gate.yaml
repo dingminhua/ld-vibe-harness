@@ -1,0 +1,82 @@
+id: pitfall-0008
+type: pitfall
+title: 有校验器不等于提交门禁已落地
+status: active
+created: '2026-06-19T07:03:48+08:00'
+updated: '2026-06-19T07:03:48+08:00'
+symptoms: |
+  在 Git 提交记录规范收口过程中，已经定义了 commit message 格式，并更新了 `code/commit_validate.py`，
+  但最初没有把 `commit-msg` hook、CI 或等价提交前预检写入 `specs/09.01` 的规范落地要求。
+
+  结果是：规则和校验器都存在，但实际提交触发点仍可能缺失；Human 如果直接 `git commit`，Git 不会自动按新规则拦截旧格式。
+trigger_conditions: |
+  1. 规范新增了可机械校验的格式、字段、trailer 或状态约束；
+  2. Code 已经实现 validator 或检查命令；
+  3. AI 只确认“工具存在”和“手动验证通过”，没有继续追问该工具在哪个触发点稳定执行；
+  4. 规范落地要求表没有逐项检查入口可见、确定性执行、触发保障和 Human 交互边界。
+root_cause: |
+  根因是把“可校验”误判为“已门禁化”。在 LDVH 中，Code 校验器只是确定性执行能力，
+  不自动等同于流程闭环。只有把校验器接入提交前 hook、CI、工作流程步骤或明确的人工降级预检，
+  才能说明触发保障已经存在。
+
+  本次还暴露了一个次级问题：补规范时一度新增了不存在的“提交门禁要求”落地类型，
+  被 `specs_validate` 拦截后才改回 04.01 已定义的“确定性执行要求”。这说明新增落地语义时必须先受 04.01 约束。
+resolution: |
+  1. 已把提交前校验要求补入 `specs/09.01` 的“规范落地要求”：
+     - LDVH 自身仓库应提供或启用提交前 message 校验入口；
+     - 未启用 Git hook 时，AI 提交前必须手动运行等价预检；
+     - 保障机制包括 `commit-msg` hook、`code/commit_validate.py --check-message`、CI 或人工降级检查。
+  2. 已把同一要求补入 `specs/09.01` 的检查项和待补齐事项。
+  3. 已运行 `python3 code/specs_validate.py all --fail-on-diagnostics`，确认补写后的规范落地要求表符合 04.01 类型枚举。
+  4. 已在 `workplan-0074` 中保留后续执行项，继续跟踪真正的 hook/CI 实现，不把规范补写误判为实现完成。
+verification: |
+  ## 验证计划
+
+  验证本经验是否已经完成最小闭环：规范补写、规范校验通过、后续实现项回到当前 WorkPlan。
+
+  ## 验证命令
+
+  ```bash
+  python3 code/specs_validate.py all --fail-on-diagnostics
+  python3 code/fact_validate.py ldvh-base/pitfalls/pitfall-0008-validator-exists-not-equal-gate.yaml
+  python3 code/fact_validate.py ldvh-base/workplans/workplan-0074-git-commit-trace-contract.yaml
+  ```
+
+  ## 验证结果
+
+  `specs_validate` 已确认 09.01 的新增落地要求使用 04.01 允许的“确定性执行要求”类型。
+  本 Pitfall 记录了触发条件、根因、解决方式和后续规避策略；0074 保留 hook/CI 实现的后续执行项。
+
+  ## 结论
+
+  该问题已完成经验分流和规范补救，但提交门禁实现本身仍应由 0074 后续执行项继续推进。
+avoidance: |
+  以后新增任何 validator、格式检查、字段检查或提交检查时，必须同时回答四个问题：
+
+  - 入口在哪里：AI、Human 或工具什么时候会看到这条规则；
+  - 触发点在哪里：hook、CI、命令、工作流程步骤还是人工降级预检；
+  - 失败如何处理：error 阻断、warning 提醒，还是需要 Human 判断；
+  - 事实源在哪里：检查结果和例外说明应写回哪个规范、WorkPlan、Pitfall 或 Git 提交记录。
+
+  不能用“已有脚本”“测试通过”“我会记得运行”替代落地保障。
+applicability: |
+  适用于 LDVH 中所有从规范规则走向 Code 校验、Hook、CI、Web 提示或 AI 执行入口的场景。
+  尤其适用于 commit message、字段契约、状态机、Human Gate、验证证据格式和事实源边界这类需要稳定触发的规则。
+source_objects:
+- workplan-0074
+related_objects: []
+related_rules:
+- specs/09.01-Git提交记录与变更追溯规范.md
+- specs/04.01-规范落地声明规范.md
+- code/commit_validate.py
+tags:
+- validation-gate
+- workflow-closure
+- commit-message
+- specs-landing
+source_memos: []
+related_workareas:
+- workarea-0012
+related_adrs: []
+related_docs: []
+archive_reason:

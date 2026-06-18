@@ -1,5 +1,5 @@
 /**
- * Changelog API 路由：返回 git 提交日志和 commit 详情
+ * 提交记录 API 路由：返回 git 提交日志和 commit 详情
  */
 
 import { Router, type Request, type Response } from 'express'

@@ -34,7 +34,7 @@ orchestration:
 
       历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
 
-      closure_evidence: Dashboard.tsx 布局调整为：第一行待推进+最近变更，第二行最近活动+校验状态。
+      closure_evidence: Dashboard.tsx 布局调整为：第一行待推进+最近提交，第二行最近活动+校验状态。
       待推进位于上方左侧优先展示，各区域内部逻辑未改动。TypeScript编译通过。
 
       ## 验证结果
@@ -57,12 +57,12 @@ verification_evidence: |-
   ## 验证结果
 
   历史任务计划迁移聚合证据：
-  - task-0031: Dashboard.tsx 布局调整为：第一行待推进+最近变更，第二行最近活动+校验状态。
+  - task-0031: Dashboard.tsx 布局调整为：第一行待推进+最近提交，第二行最近活动+校验状态。
 closure_evidence: |-
   ## 验证结果
 
   历史任务计划迁移聚合证据：
-  - task-0031: Dashboard.tsx 布局调整为：第一行待推进+最近变更，第二行最近活动+校验状态。
+  - task-0031: Dashboard.tsx 布局调整为：第一行待推进+最近提交，第二行最近活动+校验状态。
 review_requested_at: '2026-06-05T23:22:44.272308'
 closed_at: '2026-06-05T23:22:44.272308'
 related_docs: []
@@ -70,4 +70,3 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 related_workplans: []
-related_changes: []

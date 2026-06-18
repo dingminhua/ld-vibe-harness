@@ -407,7 +407,6 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     const relatedAdrsSet = new Set<string>()
     const relatedMemosSet = new Set<string>()
     const relatedPitfallsSet = new Set<string>()
-    const relatedChangesSet = new Set<string>()
     const executionRefsSet = new Set<string>()
     const orchestration = isRecord(result.data.orchestration) ? result.data.orchestration : {}
     const executionItems = Array.isArray(orchestration.execution_items) ? orchestration.execution_items : []
@@ -416,7 +415,6 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     addStringArray(relatedAdrsSet, result.data.related_adrs)
     addStringArray(relatedMemosSet, result.data.related_memos)
     addStringArray(relatedPitfallsSet, result.data.related_pitfalls)
-    addStringArray(relatedChangesSet, result.data.related_changes)
 
     for (const executionItem of executionItems) {
       if (!isRecord(executionItem)) continue
@@ -428,7 +426,6 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     result.data.aggregated_related_adrs = [...relatedAdrsSet]
     result.data.aggregated_related_memos = [...relatedMemosSet]
     result.data.aggregated_related_pitfalls = [...relatedPitfallsSet]
-    result.data.aggregated_related_changes = [...relatedChangesSet]
     result.data.aggregated_execution_refs = [...executionRefsSet]
   }
 

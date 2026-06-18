@@ -14,7 +14,7 @@ from typing import Any
 import yaml
 
 
-# Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
+# Git 提交记录使用 Git commit records 作为事实源，不通过本 CLI 管理 YAML 文件
 OBJECT_TYPES = {"workarea", "workplan", "adr", "pitfall", "memo", "study"}
 FILENAME_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
@@ -50,21 +50,24 @@ REQUIRED_FIELDS = {
 }
 LIST_FIELDS = {
     "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "workplans"},
-    "workplan": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "related_workplans", "related_changes"},
+    "workplan": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "related_workplans"},
     "adr": {
         "related_workareas", "related_workplans",
-        "related_adrs", "related_memos", "related_changes", "related_rules",
+        "related_adrs", "related_memos", "related_rules",
     },
     "pitfall": {
         "source_objects", "related_objects", "related_rules", "tags",
         "source_memos", "related_workareas", "related_adrs",
-        "related_changes", "related_docs",
+        "related_docs",
     },
     "memo": {"evolution", "related_workareas", "related_workplans", "related_adrs", "related_studies", "related_docs"},
     "study": {
         "urls", "related_workareas", "related_workplans", "related_adrs",
         "related_memos", "related_pitfalls", "related_docs",
     },
+}
+GLOBAL_REMOVED_FIELDS = {
+    "related_changes": "related_changes 不再由工作对象手写维护；关联提交应由 Git 历史和 Refs 派生",
 }
 
 # 12-工作模型字段内容格式规范：长文本字段定义
@@ -609,6 +612,9 @@ def validate_common(path: Path, data: dict[str, Any], object_type: str) -> list[
     for field in sorted(LIST_FIELDS[object_type]):
         if field in data and not isinstance(data[field], list):
             issues.append(Issue(display_path, "error", "INVALID_LIST_FIELD", f"字段必须是 list: {field}"))
+    for field, message in GLOBAL_REMOVED_FIELDS.items():
+        if field in data:
+            issues.append(Issue(display_path, "error", "REMOVED_OBJECT_FIELD", message, field=field))
     # 12-工作模型字段内容格式规范：长文本字段 YAML 块标量提示
     issues.extend(validate_long_text_block_scalar(path, data, object_type))
     # 12-工作模型字段内容格式规范：路径引用字段存在性校验
@@ -713,12 +719,6 @@ def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
             issues.append(Issue(str(path), "error", "LEGACY_WORKPLAN_FIELD", f"WorkPlan 不得继续使用旧字段: {legacy_field}", field=legacy_field))
     issues.extend(validate_single_id_reference(path, data, "workarea", "workarea"))
     issues.extend(validate_id_list_references(path, data, "related_workplans", "workplan"))
-
-    related_changes = data.get("related_changes")
-    if isinstance(related_changes, list):
-        for item in related_changes:
-            if not isinstance(item, str) or not COMMITISH_RE.match(item):
-                issues.append(Issue(str(path), "error", "INVALID_RELATED_CHANGE", f"related_changes 必须使用 Git commit hash、短 hash 或可回指 commit 的引用: {item}", field="related_changes"))
 
     orchestration = data.get("orchestration")
     if not isinstance(orchestration, dict):

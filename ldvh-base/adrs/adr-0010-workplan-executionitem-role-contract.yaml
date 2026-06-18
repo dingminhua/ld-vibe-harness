@@ -17,12 +17,12 @@ context: |
   Human Gate 记录：
   - 触发原因：该决策改变工作模型集合、对象命名、执行编排承载方式、Review / Audit 定位和后续 specs / Code / Web 迁移方向。
   - 确认事项：是否以 WorkPlan 替代 TaskPlan，是否将 Task / SubTask 移出 active 工作模型，是否用 ExecutionItem 作为 WorkPlan 内部编排节点，是否引入 Role Contract 作为专业子 Agent 能力契约。
-  - 影响范围：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/05-工作模型基础规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/06-工作流程基础规范.md`、`specs/21-WorkPlan-工作计划.md`、`specs/21-WorkPlan-工作计划.md`、`specs/21-WorkPlan-工作计划.md`、`specs/24-Memo-备忘.md`、`specs/25-Change-变更.md`、40-59 工作流程、Code、Web 和既有工作对象实例。
+  - 影响范围：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/05-工作模型基础规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/06-工作流程基础规范.md`、`specs/21-WorkPlan-工作计划.md`、`specs/24-Memo-备忘.md`、`specs/09.01-Git提交记录与变更追溯规范.md`、40-59 工作流程、Code、Web 和既有工作对象实例。
   - 确认依据：用户明确表达 Task 具体如何执行并不关心，也不需要记录，是 AI 内部自己的事情；同时接受使用 WorkPlan / ExecutionItem 的方向，并要求按计划推进。
   - Human 决策：接受 WorkPlan 中心模型，取消 Task / SubTask 的 active 工作模型地位，将执行编排迁入 WorkPlan 内部，并用 Role Contract 规范专业子 Agent。
   - 确认人/时间：Human，2026-06-17
   - 后续动作：先记录 Memo 和 ADR，再系统修改 specs；待核心规范稳定后再迁移 Code、Web、测试和既有实例。
-  - 回写位置：本 ADR、memo-0005、后续 specs、Code / Web / tests 和 Change / commit。
+  - 回写位置：本 ADR、memo-0005、后续 specs、Code / Web / tests 和 Git 提交记录。
   - 残留风险：迁移期间旧规范、Code、Web 和既有实例仍会引用 TaskPlan / Task / SubTask，需要分阶段清理，避免一次性重构造成事实源和实现同时失稳。
 decision: |
   LDVH 工作模型重心从 TaskPlan / Task / SubTask 转为 WorkPlan / ExecutionItem / Role Contract。
@@ -86,7 +86,6 @@ consequences: |
   - WorkPlan 必须保留关闭证据：变更摘要、验收结果、残余风险和经验分流。
   - Role Contract 必须明确每类专业子 Agent 的输入、输出、权限和交还边界，避免子 Agent 输出直接成为最终事实。
 related_workareas: []
-related_changes: []
 related_memos:
   - memo-0005
 related_adrs:

@@ -11,7 +11,6 @@ context: |-
   [Human Gate 确认记录: 确认人=user, 确认时间=2026-06-03, 确认上下文=用户确认 reject adr-0003，流程验证完成]
 decision: 创建本 ADR 后走 proposed→rejected 流程，验证 Human Gate 确认记录是否持久化到 ADR YAML context 字段。
 consequences: 验证完成后 ADR 进入 rejected 终态，保留历史记录。
-related_changes: []
 related_memos: []
 related_rules: []
 related_workareas: []

@@ -76,7 +76,6 @@ source_memos: []
 related_workareas: []
 related_adrs:
 - adr-0005
-related_changes: []
 related_docs: []
 related_rules:
 - specs/07-Code确定性执行实现规范.md §4.7

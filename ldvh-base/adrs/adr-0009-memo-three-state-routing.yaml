@@ -64,7 +64,6 @@ consequences: |
   - 已接受迁移规则：`draft` -> `pending`，`active` -> `pending`，`resolved` -> `resolved`，`archived` -> `discarded`。
   - Code 校验、Web 状态筛选和既有 Memo 实例同步迁移，避免状态语义分叉。
 related_workareas: []
-related_changes: []
 related_memos:
   - memo-0005
 related_adrs: []

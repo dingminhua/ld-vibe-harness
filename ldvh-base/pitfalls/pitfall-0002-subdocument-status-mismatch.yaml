@@ -34,11 +34,9 @@ applicability: 所有接入 LDVH 的项目，所有事实模型子文档
 source_memos: []
 related_workareas: []
 related_adrs: []
-related_changes: []
 related_docs: []
 related_rules:
 - specs/03.01-规范文档规范.md
-- specs/25-Change-变更.md
 tags:
 - subdocument
 - consistency

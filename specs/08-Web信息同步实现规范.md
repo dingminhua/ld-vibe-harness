@@ -41,7 +41,7 @@ LDVH 的服务对象分工如下：
 
 1. Human 当前需要理解什么项目态势、风险、阻塞、证据或待决策点；
 2. Human 需要在哪里介入 AI 执行闭环、给出确认、取消、暂缓或修改反馈；
-3. Human 的判断如何通过受控链路回到事实源、工作对象、验证结果或 Change 记录；
+3. Human 的判断如何通过受控链路回到事实源、工作对象、验证结果或 Git 提交记录；
 4. 哪些信息应保留为 AI 可执行的结构化事实，哪些信息只需要面向 Human 页面呈现；
 5. 哪些交互会让 Web 越界成为事实源、绕过 Code 或弱化 AI 第一服务对象定位。
 
@@ -103,7 +103,7 @@ Web AI 不得自行决定以下事项：
 
 1. 扩大 Web 写入白名单；
 2. 将 Gate 页面升级为审批系统；
-3. 通过 Web 页面反向定义 WorkPlan、ADR、Pitfall、Change 或工作流程状态；
+3. 通过 Web 页面反向定义 WorkPlan、ADR、Pitfall 或工作流程状态；
 4. 绕过 40-59 成员主文件自描述和 Code 派生工作流程集合索引恢复未标记为 active 的工作流程测试机制；
 5. 把 `web/docs/`、页面文案、按钮状态、缓存或临时诊断当作 specs 权威来源；
 6. 在未补齐来源追溯、错误态和测试归属前，把派生聚合结果呈现为完整事实。
@@ -233,11 +233,11 @@ Web 侧至少应支持以下信息被 Human 看见或被确认结果记录：
 8. 验证结果、错误状态或降级说明；
 9. 回写位置和残留风险。
 
-Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或数据库记录提升为最终事实源。需要长期追溯的确认结果，应通过受控写入链路回写到工作对象、结果文件、Change / commit 记录或对应事实源。
+Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或数据库记录提升为最终事实源。需要长期追溯的确认结果，应通过受控写入链路回写到工作对象、结果文件、Git commit 记录或对应事实源。
 
 ### 8.2 Web 事实源写入白名单
 
-当前唯一允许 Web 直接写入 Git 文件事实源的能力是 Memo 快速创建。除下表外，Web 对 WorkArea、WorkPlan、ADR、Pitfall、Change、specs、Rules、Skill、Agent、Code 和其它 Git 文件事实源均只能读取、展示、筛选、复制路径或提供跳转，不得修改字段、状态、关系、内容或文件。
+当前唯一允许 Web 直接写入 Git 文件事实源的能力是 Memo 快速创建。除下表外，Web 对 WorkArea、WorkPlan、ADR、Pitfall、Study、specs、Rules、Skill、Agent、Code 和其它 Git 文件事实源均只能读取、展示、筛选、复制路径或提供跳转，不得修改字段、状态、关系、内容或文件。
 
 | 能力 | API | 写入目标 | 允许字段 | 约束 |
 |---|---|---|---|---|
@@ -247,7 +247,7 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 
 1. Web 不得提供对象字段通用 `PATCH`、`PUT`、`DELETE` 或任意 YAML 写回接口；
 2. WorkPlan 的 `status`、`workarea`、`success_criteria`、`verification_evidence`、`closure_evidence`、`orchestration` 等字段在 Web 中均为只读展示；
-3. WorkArea、WorkPlan、ADR、Pitfall 和 Change 在 Web 中均为只读展示；
+3. WorkArea、WorkPlan、ADR、Pitfall 和 Study 在 Web 中均为只读展示；
 4. Memo 快速创建只用于捕获尚未计划化但值得保留的信息，不得用来绕过 WorkArea、WorkPlan、ADR 或 Pitfall 的准入规则；
 5. 短期不扩展 Web 写入白名单；Gate、Validate、ProjectFiles、ObjectDetail 和 Dashboard 均不得据页面需要新增写入入口；
 6. 未来如需新增 Web 写入能力，必须先修改本文白名单和对应对象规范，补齐校验、测试、Human Gate 影响评估和降级路径，再实现代码。
@@ -336,7 +336,7 @@ Web 文档不得承载：
 5. 事实源最终结论；
 6. 与 specs 冲突的行为定义。
 
-Web 实现文档应进入项目文档工作区或项目约定的实现文档位置，并遵守 03 系列文档规范。`web/` 目录优先承载 Web 实现本身；`web/docs/` 只作为实现说明识别，不得替代 specs、docs 正文或工作对象。若 Web 文档中的内容具有长期规范效力，应回写 specs；若形成工作对象事实、决策、任务、经验或变更，应按 20-39 对应工作模型回写到 `ldvh-base/`、Git commit 记录或其他对应权威事实源。
+Web 实现文档应进入项目文档工作区或项目约定的实现文档位置，并遵守 03 系列文档规范。`web/` 目录优先承载 Web 实现本身；`web/docs/` 只作为实现说明识别，不得替代 specs、docs 正文或工作对象。若 Web 文档中的内容具有长期规范效力，应回写 specs；若形成工作对象事实、决策、任务或经验，应按 20-39 对应工作模型回写到 `ldvh-base/`；若形成事实源修改追溯，应按 `specs/09.01-Git提交记录与变更追溯规范.md` 回到 Git commit 记录。
 
 LDVH 在 `web/` 下提供了一套参考实现和 `web/docs/` 下的参考实现文档，不作为权威规范；用户可根据本文约束自行选择实现方式。
 

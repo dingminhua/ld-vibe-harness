@@ -42,7 +42,6 @@ source_memos: []
 related_workareas:
 - workarea-0003
 related_adrs: []
-related_changes: []
 related_docs: []
 related_rules:
 - specs/21-WorkPlan-工作计划.md

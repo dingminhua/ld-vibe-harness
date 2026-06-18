@@ -23,7 +23,7 @@
 | 读取工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` | 默认维护 LDVH 自身 `specs/`、`rules/`、`code/`、`web/` 等产品资产 |
 | 判断当前项目是否为管辖项目 | 把 LDVH 自身开发规则强加给用户项目 |
 | 定位管辖项目自身 `ldvh-base/`、项目文档和 Git 事实源 | 默认接管、创建、迁移或重排用户项目 docs |
-| 处理所有管辖项目的 WorkArea、WorkPlan、ADR、Memo、Pitfall 和 Change | 把工作区环境入口写成长期安装状态 |
+| 处理所有管辖项目的 WorkArea、WorkPlan、ADR、Memo、Pitfall 和 Study，并按 Git 提交记录追溯事实源修改 | 把工作区环境入口写成长期安装状态 |
 | 在 LDVH 自身被登记为 dogfood 管辖项目时，处理 LDVH 自身 `ldvh-base/` 工作对象 | 把 LDVH 安装用户的 LDVH 仓库默认视为管辖项目 |
 
 `ldvh-base/` 不因为位于 LDVH 仓库内就属于 LDVH 项目级维护入口。它始终是被管辖项目的工作对象事实源，归工作区级管辖治理入口处理；LDVH 自身源码仓库只有在 `LDVH-GOVERNED-PROJECTS.yaml` 中登记为 dogfood 管辖项目时，才按管辖项目处理其 `ldvh-base/`。
@@ -38,7 +38,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 1. 定位当前工作区根目录；
 2. 读取 `LDVH-GOVERNED-PROJECTS.yaml`，确认文件存在、结构有效并理解 `product_name` 与 `product_description`；
 3. 判断当前目录或用户目标是否命中某个 `projects[].path`；
-4. 命中管辖项目时，按该项目自身事实源工作：`ldvh-base/` 承载 YAML 工作对象，项目文档按项目约定、README、用户指令或任务上下文定位，Change 回到项目 Git commit records；
+4. 命中管辖项目时，按该项目自身事实源工作：`ldvh-base/` 承载工作对象，项目文档按项目约定、README、用户指令或任务上下文定位，事实源修改追溯回到项目 Git commit records；
 5. 未命中管辖项目时，不得静默决定接管项目；应说明当前观察，并在需要时生成候选配置草案交由 Human Gate；
 6. 涉及工作对象准入、状态流转、关闭、长期降级、项目清单修改或用户文档写入时，回到对应 specs、工作对象事实源和 Human Gate。
 
@@ -48,7 +48,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 |---|---|---|
 | 管辖项目配置 | `python3 code/specs_validate.py governed-projects` | 检查工作区根目录管辖项目配置 |
 | specs 规范入口和章节 | `python3 code/specs_validate.py index` | 生成规范派生索引，辅助定位文件、章节、引用和诊断 |
-| 工作对象列表 | `python3 code/fact_cli.py list <type>` | 查询当前项目 WorkArea、WorkPlan、ADR、Memo、Pitfall 或 Change 摘要 |
+| 工作对象列表 | `python3 code/fact_cli.py list <type>` | 查询当前项目 WorkArea、WorkPlan、ADR、Memo、Pitfall 或 Study 摘要 |
 | 工作对象详情 | `python3 code/fact_cli.py show <id>` | 查询单个工作对象详情 |
 | 工作对象搜索 | `python3 code/fact_cli.py search <keyword>` | 按关键词搜索工作对象事实源 |
 | 工作对象统计 | `python3 code/fact_cli.py stats` | 统计工作对象状态分布 |
@@ -64,7 +64,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 | 判断当前是否为管辖项目 | `governed-projects` | `LDVH-GOVERNED-PROJECTS.yaml`、`specs/03.04-管辖项目配置规范.md` |
 | 新增、删除或修改管辖项目条目 | `governed-projects` | `specs/03.04-管辖项目配置规范.md`、Human Gate |
 | 处理管辖项目工作对象 | `fact_cli.py list/search/show/stats` | 对应项目 `ldvh-base/`、`specs/05-工作模型基础规范.md`、`specs/03.02-工作模型文档规范.md` 和对应 `specs/20-39` 工作模型规范 |
-| 处理管辖项目 Change | Git 历史和必要校验 | 管辖项目 Git commit records、`specs/25-Change-变更.md` |
+| 处理管辖项目 Git 提交记录 | Git 历史和必要校验 | 管辖项目 Git commit records、`specs/09.01-Git提交记录与变更追溯规范.md` |
 | 读取或修改管辖项目文档 | 项目约定、README、用户指令 | 项目自有文档位置、`specs/03-文档基础规范.md`、`specs/09-事实源边界与承载规范.md` |
 | 执行 LDVH 落地或接入检查 | `governed-projects`、`landing-report` | `specs/04.03-环境入口适配与部署规范.md`、`specs/06-工作流程基础规范.md`、`specs/03.03-工作流程文档规范.md`、`specs/40-59` 中实际存在的 active 工作流程主文件 |
 | 维护 LDVH 产品资产 | `index` | 转入 `rules/LDVH-MAINTAINER-ENTRY.md` |

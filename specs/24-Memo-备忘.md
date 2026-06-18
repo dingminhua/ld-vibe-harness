@@ -4,7 +4,7 @@
 > 定位：定义 Memo / 备忘工作模型，包括对象定位、演变承载、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理尚未计划化但有保留价值的输入、发现、提醒、问题、缺口和偏好的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-WorkPlan-工作计划.md`、`specs/22-ADR-决策.md`、`specs/25-Change-变更.md`、`specs/26-Study-研究报告.md`
+> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-WorkPlan-工作计划.md`、`specs/22-ADR-决策.md`、`specs/09.01-Git提交记录与变更追溯规范.md`、`specs/26-Study-研究报告.md`
 
 ```yaml
 ldvh_member:
@@ -31,7 +31,7 @@ Memo / 备忘承载尚未计划化但有保留价值的输入、发现、提醒�
 
 Memo 是分流前的工作对象。它可以后续转化或关联到 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置或其他事实源，但在转化前不替代这些对象的字段契约、状态机、验收规则或配置边界。
 
-Memo 可以从一句话开始，随后逐步扩展和收敛。`description` 承载当前可读摘要，`evolution` 只记录关键语义转折、方向变化、阶段性收敛和重要分流，不记录逐条对话、完整报告正文或状态流转历史。完整研究报告由 Study 承载，状态流转历史由 Git / Change 派生。
+Memo 可以从一句话开始，随后逐步扩展和收敛。`description` 承载当前可读摘要，`evolution` 只记录关键语义转折、方向变化、阶段性收敛和重要分流，不记录逐条对话、完整报告正文或状态流转历史。完整研究报告由 Study 承载，状态流转历史由 Git 提交记录派生。
 
 ### 1.1 Memo 准入条件
 
@@ -153,9 +153,9 @@ Memo 可以分流或关联到 Pitfall、管辖项目配置或 docs：
 
 Pitfall 的准入、状态和字段契约由 `specs/23-Pitfall-踩坑经验.md` 定义。管辖项目配置的字段和边界由 `specs/03.04-管辖项目配置规范.md` 定义。环境能力核验、环境适配和适配措施正文不得写入管辖项目配置；需要长期保留的稳定事实应进入环境适配待补齐事项、WorkPlan、Memo、Study、ADR、正式规范或按 04 系列规范处理。当前具体检查结果只保留当前过程结论，不作为持久状态事实源。
 
-### 4.6 Memo 与 Change
+### 4.6 Memo 与 Git 提交记录
 
-Memo 的创建、状态变化、分流和废弃都应留下 Change。Change 的 commit message 契约由 `specs/25-Change-变更.md` 定义。
+Memo 的创建、状态变化、分流和废弃都应留下 Git 提交记录。commit message 契约由 `specs/09.01-Git提交记录与变更追溯规范.md` 定义。
 
 ---
 ## 5. Human Gate
@@ -240,10 +240,10 @@ Memo 回写遵循以下规则：
 
 1. 创建 Memo 时，应写入 `ldvh-base/memos/`，并填写标题、当前摘要、来源类型、优先级和状态；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
-3. 状态变化后应更新 `updated`；状态变化历史由 Git commit / Change 派生，不在 Memo YAML 中手写维护；
+3. 状态变化后应更新 `updated`；状态变化历史由 Git commit 派生，不在 Memo YAML 中手写维护；
 4. Memo 出现关键语义转折、方向变化或阶段性收敛时，应更新 `description` 并向 `evolution` 追加摘要；不得记录完整聊天流水；
 5. Memo 分流为 WorkArea、WorkPlan、ADR、Study、Pitfall、docs、管辖项目配置更新或其他事实源时，应更新 `resolved_to` 和 `resolved_at`；
-6. Memo 创建、分流、废弃、关键关联变化、核心摘要或演变记录修改应通过 Change 留痕；
+6. Memo 创建、分流、废弃、关键关联变化、核心摘要或演变记录修改应通过 Git 提交记录留痕；
 7. Memo 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
 
 ### 7.2 证据留存
@@ -255,7 +255,7 @@ Memo 证据至少包括：
 3. 当前摘要和关键语义转折；
 4. 分流目标或废弃原因；
 5. Human Gate 确认记录；
-6. 相关 WorkArea、WorkPlan、ADR、Study、Change 或文档引用。
+6. 相关 WorkArea、WorkPlan、ADR、Study、Git 提交记录或文档引用。
 
 Memo 的分流证据应保留摘要和目标引用，不复制目标对象全文。
 
@@ -328,7 +328,7 @@ Memo 规范检查至少包括：
 | 废弃规则 | discarded Memo 已说明废弃原因 |
 | 对象边界 | Memo 未长期替代 WorkArea、WorkPlan、ADR 或 Study |
 | Human Gate | §5 场景已完成确认或记录降级 |
-| Change 追溯 | Memo 关键变化有 Git 可追溯记录 |
+| Git 追溯 | Memo 关键变化有 Git 可追溯记录 |
 | Code / Web 边界 | 派生输出未替代 Git 文件事实源 |
 
 ---

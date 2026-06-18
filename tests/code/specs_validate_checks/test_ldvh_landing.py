@@ -100,7 +100,6 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 related_workplans: []
-related_changes: []
 """.strip()
         + "\n",
         encoding="utf-8",

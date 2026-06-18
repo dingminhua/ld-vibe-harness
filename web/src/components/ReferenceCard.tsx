@@ -20,7 +20,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   memo: { zh: '备忘', en: 'Memo' },
   study: { zh: '研究报告', en: 'Study' },
   profile: { zh: '画像', en: 'Profile' },
-  change: { zh: '变更', en: 'Change' },
+  change: { zh: '提交记录', en: 'Commit' },
 };
 
 /** 从引用 ID 解析对象类型（如 workplan-0001 → workplan） */

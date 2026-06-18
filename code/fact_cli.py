@@ -3,7 +3,7 @@
 
 对 LDVH 当前工作对象（workarea, workplan, adr, pitfall, memo, study）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
-Change 使用 Git commit 作为事实源，不通过本 CLI 管理。
+Git 提交记录使用 Git commit records 作为事实源，不通过本 CLI 管理。
 ADR 专属写入操作（link-rule / deprecate）必须携带 Human Gate 确认参数。
 """
 
@@ -22,7 +22,7 @@ import yaml
 
 # ── 对象元数据（硬编码，与 fact_validate.py 保持一致） ──────────────
 
-# Change 使用 Git commit 作为事实源，不通过本 CLI 管理 YAML 文件
+# Git 提交记录使用 Git commit records 作为事实源，不通过本 CLI 管理 YAML 文件
 OBJECT_TYPES = {"workarea", "workplan", "adr", "pitfall", "memo", "study"}
 
 
@@ -43,6 +43,7 @@ BlockScalarDumper.add_representer(str, _string_representer)
 BlockScalarDumper.add_representer(LiteralString, _string_representer)
 
 LIST_SUMMARY_FIELDS = ("priority", "importance")
+GLOBAL_REMOVED_FIELDS = {"related_changes"}
 REMOVED_FIELDS_BY_TYPE = {
     "adr": {"related_taskplans", "related_tasks", "related_objects", "superseded_by", "alternatives", "affects"},
     "study": {"related_taskplans", "related_tasks", "related_refs", "superseded_by", "source", "source_detail", "source_docs"},
@@ -500,7 +501,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_memos"] = []
         data["related_pitfalls"] = []
         data["related_workplans"] = []
-        data["related_changes"] = []
     if object_type == "memo":
         data["priority"] = "P3"
         data["source"] = "conversation"
@@ -536,7 +536,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["source_memos"] = []
         data["related_workareas"] = []
         data["related_adrs"] = []
-        data["related_changes"] = []
         data["related_docs"] = []
         data["related_rules"] = []
         data["archive_reason"] = ""
@@ -578,7 +577,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["consequences"] = "## 正向价值\n\n待补充。\n\n## 逆向价值\n\n当前决策无逆向价值\n\n## 实施成本\n\n待补充。\n\n## 风险评估\n\n待补充。\n\n## 注意事项\n\n待补充。\n"
         data["related_workareas"] = []
         data["related_workplans"] = []
-        data["related_changes"] = []
         data["related_memos"] = []
         data["related_adrs"] = []
         data["related_rules"] = []
@@ -1173,7 +1171,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         # 列表类型字段：逗号分隔
         if key in ("related_workareas", "related_workplans", "related_adrs",
                     "related_memos", "related_studies", "related_pitfalls", "related_docs",
-                    "urls", "source_docs", "related_rules", "related_changes"):
+                    "urls", "source_docs", "related_rules"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
         else:
             updates[key] = value
@@ -1187,7 +1185,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         error("不允许修改 id 和 type 字段")
         return 1
 
-    removed_fields = REMOVED_FIELDS_BY_TYPE.get(str(object_type), set())
+    removed_fields = GLOBAL_REMOVED_FIELDS | REMOVED_FIELDS_BY_TYPE.get(str(object_type), set())
     invalid_fields = sorted(field for field in updates if field in removed_fields)
     if invalid_fields:
         error(f"{object_type} 不允许写入已移除字段: {', '.join(invalid_fields)}")

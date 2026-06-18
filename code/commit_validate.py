@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""检查 Git commit message 是否符合 specs/22-Change-变更.md 格式。
+"""检查 Git commit message 是否符合 specs/09.01-Git提交记录与变更追溯规范.md 格式。
 
 功能：
   - 默认模式：检查最近 N 条 git commit 记录
@@ -17,47 +17,60 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-# specs/22-Change-变更.md type 枚举
+# specs/09.01-Git提交记录与变更追溯规范.md type 枚举
 VALID_TYPES = {"feat", "fix", "docs", "refactor", "test", "chore", "spec", "rule", "adr", "revert"}
 
-# specs/22-Change-变更.md scope 枚举（推荐值，非强制）
-RECOMMENDED_SCOPES = {"specs", "docs", "rules", "adr", "code", "web", "tests", "config", "research", "refs"}
+# specs/09.01-Git提交记录与变更追溯规范.md scope 枚举（推荐值，非强制）
+RECOMMENDED_SCOPES = {
+    "specs", "docs", "rules", "code", "web", "tests", "config",
+    "workarea", "workplan", "adr", "memo", "study", "pitfall",
+    "studies", "sources",
+}
 
-# specs/22-Change-变更.md: subject 推荐不超过 72 字符
+# specs/09.01-Git提交记录与变更追溯规范.md: subject 推荐不超过 72 字符
 MAX_SUBJECT_LEN = 72
 
 # 第一行格式: <type>(<scope>): <subject>
 HEADER_RE = re.compile(r"^([a-z]+)(?:\(([^)]+)\))?:\s+(.+)$")
 
-# Refs 行格式
-REFS_RE = re.compile(r"^Refs:\s*(.+)$", re.MULTILINE)
+# trailer 行格式
+TRAILER_RE = re.compile(r"^([A-Za-z][A-Za-z-]*):\s*(.+)$", re.MULTILINE)
+RECOMMENDED_TRAILERS = ("Refs", "Human-Gate", "Verification", "Risk")
 
 # 中文字符检测（当前 LDVH 自身项目 Code 实现纪律）
 HAS_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
 
 FORMAT_HELP = """\
-正确的 commit message 格式（specs/22-Change-变更.md）：
+正确的 commit message 格式（specs/09.01-Git提交记录与变更追溯规范.md）：
 
     <type>(<scope>): <subject>
 
     <body>
 
     Refs: <object-refs>
+    Human-Gate: <summary>
+    Verification: <commands-or-result>
+    Risk: <risk-summary>
 
 各部分说明：
   type      必填。变更类型：{valid_types}
   scope     可选。影响范围（推荐）：{valid_scopes}
   subject   必填。简短描述，不超过 72 字符
   body      可选。详细说明变更原因和内容
-  Refs      建议。关联对象，多个对象用逗号分隔
+  Refs      建议。关联对象、规范、路径或 commit，多个引用用逗号分隔
+  Human-Gate 建议。涉及 Human Gate 时记录确认摘要；不涉及时说明不适用
+  Verification 建议。记录验证命令、人工检查或未运行原因
+  Risk      建议。记录残留风险或无已知残留风险
 
 示例：
-  docs(specs): 更新 Change 工作模型
+  spec(specs): 建立 Git 提交记录规范
 
-  新增 specs/22-Change-变更.md，明确 Change
-  以 Git commit 记录作为事实实例。
+  明确 Git 提交记录不再作为工作对象，关联提交由 Refs 和 Git 历史派生。
 
-  Refs: 22-Change-变更
+  Refs: workplan-0074, specs/09.01-Git提交记录与变更追溯规范.md
+  Human-Gate: 用户确认提交记录不作为工作对象
+  Verification: python3 code/specs_validate.py all
+  Risk: 需要同步 Code/Web 旧文案和测试夹具
 """.format(
     valid_types=", ".join(sorted(VALID_TYPES)),
     valid_scopes=", ".join(sorted(RECOMMENDED_SCOPES)),
@@ -96,6 +109,11 @@ def parse_message_text(text: str) -> CommitInfo:
     body = lines[1] if len(lines) > 1 else ""
     full = f"{subject}\n\n{body}".strip() if body else subject
     return CommitInfo(hash="<message>", subject=subject, body=body, full_message=full)
+
+
+def parse_trailers(message: str) -> dict[str, str]:
+    """解析 commit message 中的 trailer 行。"""
+    return {key: value.strip() for key, value in TRAILER_RE.findall(message)}
 
 
 def git_log(n: int) -> list[CommitInfo]:
@@ -171,12 +189,14 @@ def check_commit(commit: CommitInfo) -> list[Issue]:
             "subject 不能为空"
         ))
 
-    # 检查是否存在 Refs 行（warning，非强制）
-    if not REFS_RE.search(commit.full_message):
-        issues.append(Issue(
-            commit.hash, "warning",
-            "缺少 Refs: 行（非强制但建议添加关联对象引用）"
-        ))
+    # 检查推荐 trailer（warning，非强制）
+    trailers = parse_trailers(commit.full_message)
+    for trailer in RECOMMENDED_TRAILERS:
+        if trailer not in trailers:
+            issues.append(Issue(
+                commit.hash, "warning",
+                f"缺少 {trailer}: 行（非强制但建议按 09.01 添加追溯信息）"
+            ))
 
     # 检查是否包含中文（error，强制）
     # subject 中 type(scope) 之后的内容 + body 全文
@@ -201,7 +221,7 @@ def check_message(message_text: str) -> list[Issue]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="检查 Git commit message 是否符合 specs/22-Change-变更.md 格式"
+        description="检查 Git commit message 是否符合 specs/09.01-Git提交记录与变更追溯规范.md 格式"
     )
     parser.add_argument(
         "--show-format", action="store_true",
@@ -267,7 +287,7 @@ def main():
                 error_count += 1
 
     if total_issues == 0:
-        print(f"最近 {args.count} 条 commit 格式均符合 specs/22-Change-变更.md 要求")
+        print(f"最近 {args.count} 条 commit 格式均符合 specs/09.01-Git提交记录与变更追溯规范.md 要求")
     else:
         print(f"\n共 {total_issues} 个问题（{error_count} 个 error），检查了 {len(commits)} 条 commit")
         if error_count > 0:

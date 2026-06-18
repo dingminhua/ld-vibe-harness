@@ -127,7 +127,6 @@ related_adrs: []
 related_memos: []
 related_pitfalls: []
 related_workplans: []
-related_changes: []
 """,
     )
     return root, workplan
@@ -172,10 +171,63 @@ related_workareas: []
 related_workplans: []
 related_adrs: []
 related_memos: []
-related_changes: []
 related_rules: []
 archive_reason:
 deprecated_reason:
+{extra}
+""",
+    )
+
+
+def write_valid_pitfall(tmp_path: Path, *, extra: str = "") -> Path:
+    return write_yaml(
+        tmp_path / "project" / "ldvh-base" / "pitfalls" / "pitfall-0001-current-pitfall.yaml",
+        f"""
+id: pitfall-0001
+type: pitfall
+title: Current Pitfall
+status: active
+created: "2026-06-19T09:00:00"
+updated: "2026-06-19T09:30:00"
+symptoms: |
+  Current symptoms.
+trigger_conditions: |
+  Current trigger conditions.
+root_cause: |
+  Current root cause.
+resolution: |
+  Current resolution.
+verification: |
+  ## 验证计划
+
+  Validate the pitfall fixture.
+
+  ## 验证命令
+
+  ```bash
+  python3 code/fact_validate.py ldvh-base/pitfalls
+  ```
+
+  ## 验证结果
+
+  Fixture can be checked.
+
+  ## 结论
+
+  Fixture is valid.
+avoidance: |
+  Current avoidance.
+applicability: |
+  Current applicability.
+source_objects: []
+related_objects: []
+related_rules: []
+tags: []
+source_memos: []
+related_workareas: []
+related_adrs: []
+related_docs: []
+archive_reason:
 {extra}
 """,
     )
@@ -189,6 +241,30 @@ def test_valid_workplan_tree(tmp_path):
     assert result.returncode == 0
     assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
     assert result.stderr == ""
+
+
+def test_related_changes_is_rejected_for_all_current_work_objects(tmp_path):
+    root, workplan = write_valid_workplan_tree(tmp_path / "workplan")
+    workplan.write_text(
+        workplan.read_text(encoding="utf-8") + "related_changes:\n  - abc1234\n",
+        encoding="utf-8",
+    )
+    adr = write_valid_adr(tmp_path / "adr", extra="related_changes:\n  - abc1234\n")
+    pitfall = write_valid_pitfall(tmp_path / "pitfall", extra="related_changes:\n  - abc1234\n")
+
+    workplan_result = run_checker(workplan)
+    adr_result = run_checker(adr)
+    pitfall_result = run_checker(pitfall)
+
+    assert workplan_result.returncode == 1
+    assert "REMOVED_OBJECT_FIELD" in workplan_result.stdout
+    assert "related_changes" in workplan_result.stdout
+    assert adr_result.returncode == 1
+    assert "REMOVED_OBJECT_FIELD" in adr_result.stdout
+    assert "related_changes" in adr_result.stdout
+    assert pitfall_result.returncode == 1
+    assert "REMOVED_OBJECT_FIELD" in pitfall_result.stdout
+    assert "related_changes" in pitfall_result.stdout
 
 
 def test_legacy_taskplan_file_is_unknown_object_type(tmp_path):
@@ -921,7 +997,6 @@ source_memos: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_changes: []
 related_docs: []
 related_rules: []
 archive_reason:
@@ -980,7 +1055,6 @@ source_objects: []
 source_memos: []
 related_workareas: []
 related_adrs: []
-related_changes: []
 related_docs: []
 related_rules: []
 superseded_by: specs/23-Pitfall-踩坑经验.md
@@ -1043,7 +1117,6 @@ source_objects: []
 source_memos: []
 related_workareas: []
 related_adrs: []
-related_changes: []
 related_docs: []
 related_rules: []
 archive_reason:
@@ -1102,7 +1175,6 @@ source_objects: []
 source_memos: []
 related_workareas: []
 related_adrs: []
-related_changes: []
 related_docs: []
 related_rules: []
 archive_reason:

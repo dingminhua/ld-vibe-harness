@@ -53,7 +53,6 @@ const META_KEYS = [
   'aggregated_related_adrs',
   'aggregated_related_memos',
   'aggregated_related_pitfalls',
-  'aggregated_related_changes',
   'aggregated_execution_refs',
 ];
 const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'tags', 'scope', 'impact', 'assignee'];
@@ -68,24 +67,24 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   workplan: [
     'workarea', 'priority', 'description', 'success_criteria', 'source',
     'orchestration', 'verification_evidence', 'closure_evidence', 'related_workplans',
-    'related_changes', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
+    'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
   ],
   profile: [
     'description', 'project_path', 'ldvh_base_path', 'docs_path',
     'governance_scope', 'related_workareas', 'related_adrs',
-    'related_memos', 'related_pitfalls', 'related_docs', 'related_changes',
+    'related_memos', 'related_pitfalls', 'related_docs',
     'notes',
   ],
   adr: [
     'context', 'decision', 'consequences',
     'related_rules', 'archive_reason', 'deprecated_reason', 'related_workareas',
-    'related_workplans', 'related_adrs', 'related_memos', 'related_changes',
+    'related_workplans', 'related_adrs', 'related_memos',
   ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
     'avoidance', 'applicability', 'source_memos', 'related_workareas',
     'related_adrs', 'related_profiles', 'related_docs', 'related_rules',
-    'related_changes', 'archive_reason', 'discard_reason', 'notes',
+    'archive_reason', 'discard_reason', 'notes',
   ],
   memo: [
     'description', 'evolution', 'source', 'source_detail', 'resolved_to', 'resolved_at',
@@ -115,7 +114,6 @@ const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
   related_adrs: 22,
   related_pitfalls: 23,
   related_memos: 24,
-  related_changes: 25,
   related_studies: 26,
 };
 export type RelatedContentEntry = [string, unknown[]];
@@ -199,7 +197,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   memo: { zh: '备忘', en: 'Memo' },
   study: { zh: '研究报告', en: 'Study' },
   profile: { zh: '画像', en: 'Profile' },
-  change: { zh: '变更', en: 'Change' },
+  change: { zh: '提交记录', en: 'Commit' },
 };
 
 /** 字段名中英映射 */
@@ -277,7 +275,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   resolved_at: { zh: '分流时间', en: 'Resolved At' },
   discard_reason: { zh: '废弃原因', en: 'Discard Reason' },
   deprecated_reason: { zh: '废弃原因', en: 'Deprecated Reason' },
-  related_changes: { zh: '关联变更', en: 'Related Changes' },
   aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
   scope: { zh: '范围', en: 'Scope' },
   impact: { zh: '影响范围', en: 'Impact' },
@@ -297,13 +294,11 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   framework: { zh: '框架', en: 'Framework' },
   related_rules: { zh: '规范', en: 'Specs' },
   urls: { zh: '网址', en: 'URLs' },
-  changes: { zh: '变更列表', en: 'Changes' },
   related_docs: { zh: '关联文档', en: 'Related Docs' },
   aggregated_related_docs: { zh: '聚合关联文档', en: 'Aggregated Related Docs' },
   aggregated_related_adrs: { zh: '聚合关联决策', en: 'Aggregated Related ADRs' },
   aggregated_related_memos: { zh: '聚合关联备忘', en: 'Aggregated Related Memos' },
   aggregated_related_pitfalls: { zh: '聚合关联踩坑经验', en: 'Aggregated Related Pitfalls' },
-  aggregated_related_changes: { zh: '聚合关联变更', en: 'Aggregated Related Changes' },
   at: { zh: '时间', en: 'At' },
   from: { zh: '前状态', en: 'From' },
   to: { zh: '后状态', en: 'To' },
@@ -1244,7 +1239,6 @@ function getMaterialLabel(fieldKey: string, locale: string) {
     related_adrs: { zh: '决策', en: 'ADRs' },
     related_memos: { zh: '备忘', en: 'Memos' },
     related_pitfalls: { zh: '踩坑经验', en: 'Pitfalls' },
-    related_changes: { zh: '变更', en: 'Changes' },
     related_rules: { zh: '规范', en: 'Specs' },
     urls: { zh: '网址', en: 'URLs' },
     related_workplans: { zh: '工作计划', en: 'Work Plans' },
@@ -1305,7 +1299,6 @@ export function WorkPlanReadingLayout({
   const relatedAdrs = ((obj.aggregated_related_adrs as string[] | undefined) ?? (obj.related_adrs as string[] | undefined)) || [];
   const relatedMemos = ((obj.aggregated_related_memos as string[] | undefined) ?? (obj.related_memos as string[] | undefined)) || [];
   const relatedPitfalls = ((obj.aggregated_related_pitfalls as string[] | undefined) ?? (obj.related_pitfalls as string[] | undefined)) || [];
-  const relatedChanges = ((obj.aggregated_related_changes as string[] | undefined) ?? (obj.related_changes as string[] | undefined)) || [];
   const executionRefs = (obj.aggregated_execution_refs as string[] | undefined) || [];
   const hidden = new Set([
     ...META_KEYS,
@@ -1324,13 +1317,11 @@ export function WorkPlanReadingLayout({
     'related_memos',
     'related_pitfalls',
     'related_workplans',
-    'related_changes',
     'aggregated_execution_refs',
     'aggregated_related_docs',
     'aggregated_related_adrs',
     'aggregated_related_memos',
     'aggregated_related_pitfalls',
-    'aggregated_related_changes',
   ]);
   const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && hasDetailContent(value));
 
@@ -1381,7 +1372,6 @@ export function WorkPlanReadingLayout({
           ['related_adrs', relatedAdrs],
           ['related_memos', relatedMemos],
           ['related_pitfalls', relatedPitfalls],
-          ['related_changes', relatedChanges],
         ].filter((entry): entry is RelatedContentEntry => Array.isArray(entry[1]) && hasDetailContent(entry[1])))}
         locale={locale}
       />
