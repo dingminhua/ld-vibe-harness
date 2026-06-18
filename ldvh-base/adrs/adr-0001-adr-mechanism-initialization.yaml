@@ -11,10 +11,6 @@ decision: |
   创建 .trae/skills/ldvh-adr/SKILL.md 作为 ADR 读取、创建、升级、推翻和废弃流程的运行时入口；初始化 ldvh-base/adrs/ 作为 ADR 实例事实源；ADR 写入遵循 Human Gate 先确认、Skill 负责编排、Tools 优先写入，Tools 不可用或不适用时才由 AI 按 21 主文档和 21.06 Contract 人工写入并记录降级原因。
 consequences: |
   ADR 机制从规范与工具就绪推进到项目补齐落地初始化状态；后续 ADR 实例应写入 ldvh-base/adrs/，Skill 实体、21.02-Skill.md、21.04-Tools.md 和 21.06-Contract.md 需要持续保持一致；本 ADR 初始状态为 proposed，accepted 仍需单独 Human Gate。
-affects:
-- ldvh-base/adrs/
-- /Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/SKILL.md
-- specs/22-ADR-决策.md
 related_changes: []
 related_memos: []
 related_rules:

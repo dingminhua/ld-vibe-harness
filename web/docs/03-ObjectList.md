@@ -60,9 +60,9 @@ ADR 是“已确认但尚未完全吸收到 specs/rules/code/web/skill/agent/wor
 
 - ADR 状态筛选只认 `active / archived / deprecated`。`active` 是当前有效补丁，`archived` 是已被稳定载体吸收，`deprecated` 是已废弃。
 - ADR 卡片使用通用卡片结构：ID、复制路径、状态、完整标题、创建/更新时间。
-- ADR 标题就是最好的摘要；卡片不展示 `context`、`decision`、`affects`、`related_rules`、`archive_reason` 或 `deprecated_reason` 摘要。
+- ADR 标题就是最好的摘要；卡片不展示 `context`、`decision`、`related_rules`、`archive_reason`、`deprecated_reason` 或未采纳备选摘要。
 - ADR 卡片标题必须允许换行完整显示，避免用截断标题替代决策识别。
-- ADR 卡片不展示 `affects` / `related_rules` chip，也不展示 `superseded_by`、`proposed`、`accepted`、`rejected` 或 `superseded` 等旧生命周期信息。
+- ADR 卡片不展示 `related_rules` chip，也不展示 `superseded_by`、`proposed`、`accepted`、`rejected`、`superseded`、`alternatives` 或 `affects` 等旧生命周期和旧字段信息。
 
 ### 3.4 WorkArea 卡片
 

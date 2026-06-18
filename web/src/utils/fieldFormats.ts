@@ -5,7 +5,7 @@ export const SUMMARY_TEXT_FIELDS = [
   'symptoms', 'trigger_conditions', 'root_cause', 'avoidance', 'applicability',
   'governance_scope', 'archive_reason', 'deprecated_reason', 'discard_reason', 'notes', 'transition_reasons',
   'source_detail', 'user_intent', 'conclusion', 'report_body',
-  'alternatives', 'reason',
+  'reason',
   'scope', 'impact', 'summary', 'details', 'outcome', 'next_steps',
   'lessons', 'background', 'motivation',
 ];
@@ -29,7 +29,7 @@ export const REFERENCE_FIELDS = [
 
 /** Path / URL reference fields render through DocPreviewLink when values are previewable paths. */
 export const DOC_LINK_FIELDS = [
-  'related_docs', 'related_rules', 'related_refs', 'affects',
+  'related_docs', 'related_rules', 'related_refs',
   'superseded_by',
 ];
 

@@ -277,7 +277,7 @@ function ObjectCardFrame({
         <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
         <div className="flex shrink-0 items-center gap-2">
           <CopyPathButton path={obj.path} />
-          <StatusBadge status={obj.status} statusLabel={getObjectStatusLocale(obj.type, obj.status, locale)} />
+          <StatusBadge status={obj.status} statusLabel={getObjectStatusLocale(obj.type, obj.status, locale)} objectType={obj.type} />
         </div>
       </div>
       <div
@@ -502,7 +502,7 @@ export default function ObjectList() {
                     {item.blockingReason && (
                       <CircleAlert size={13} className="shrink-0 text-amber-400" />
                     )}
-                    <StatusBadge status={item.status} statusLabel={getObjectStatusLocale('workplan', item.status, locale)} size="sm" />
+                    <StatusBadge status={item.status} statusLabel={getObjectStatusLocale('workplan', item.status, locale)} objectType="workplan" size="sm" />
                   </div>
                 ))
               ) : (

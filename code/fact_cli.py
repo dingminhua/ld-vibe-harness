@@ -44,7 +44,7 @@ BlockScalarDumper.add_representer(LiteralString, _string_representer)
 
 LIST_SUMMARY_FIELDS = ("priority", "importance")
 REMOVED_FIELDS_BY_TYPE = {
-    "adr": {"related_taskplans", "related_tasks", "related_objects", "superseded_by"},
+    "adr": {"related_taskplans", "related_tasks", "related_objects", "superseded_by", "alternatives", "affects"},
     "study": {"related_taskplans", "related_tasks", "superseded_by", "source", "source_detail", "source_docs"},
 }
 
@@ -412,13 +412,10 @@ def _build_adr_data(adr_id: str, args: argparse.Namespace, now: str) -> dict:
         "context": context_with_gate,
         "decision": args.decision,
         "consequences": args.consequences,
-        "affects": _parse_list_values(getattr(args, "affects", None)),
         "related_rules": _parse_list_values(getattr(args, "related_rules", None)),
         "archive_reason": "",
         "deprecated_reason": "",
     }
-    if getattr(args, "alternatives", None):
-        data["alternatives"] = args.alternatives
     return data
 
 
@@ -552,7 +549,7 @@ def cmd_create(args: argparse.Namespace) -> int:
             f"确认时间={now}, 确认上下文={getattr(args, 'confirmation_context', 'N/A')}]"
         )
         data["context"] = gate_record
-        data["affects"] = []
+        data["consequences"] = "## 正向价值\n\n待补充。\n\n## 逆向价值\n\n当前决策无逆向价值\n\n## 实施成本\n\n待补充。\n\n## 风险评估\n\n待补充。\n\n## 注意事项\n\n待补充。\n"
         data["related_workareas"] = []
         data["related_workplans"] = []
         data["related_changes"] = []
@@ -1009,9 +1006,8 @@ def cmd_related(args: argparse.Namespace) -> int:
     adrs, _ = _load_all_of_type("adr", base_dir)
     matched = []
     for adr in adrs:
-        affects = adr.get("affects", [])
         related_rules = adr.get("related_rules", [])
-        all_refs = [str(r) for r in (affects or []) + (related_rules or [])]
+        all_refs = [str(r) for r in (related_rules or [])]
         if any(spec_path in ref for ref in all_refs):
             matched.append(adr)
 
@@ -1099,7 +1095,7 @@ def cmd_deprecate(args: argparse.Namespace) -> int:
 
 def cmd_supersede(args: argparse.Namespace) -> int:
     """兼容旧命令：ADR 不再使用 superseded 状态。"""
-    error("ADR 已取消 superseded 状态；请新建 active ADR，并在 related_adrs / related_rules / affects 中记录追溯关系。")
+    error("ADR 已取消 superseded 状态；请新建 active ADR，并在 related_adrs / related_rules 中记录追溯关系。")
     return 1
 
 
@@ -1158,7 +1154,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         # 列表类型字段：逗号分隔
         if key in ("related_workareas", "related_workplans", "related_adrs",
                     "related_memos", "related_studies", "related_pitfalls", "related_docs",
-                    "related_refs", "source_docs", "affects", "related_rules", "related_changes"):
+                    "related_refs", "source_docs", "related_rules", "related_changes"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
         else:
             updates[key] = value

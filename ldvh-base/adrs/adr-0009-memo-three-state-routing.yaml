@@ -39,38 +39,30 @@ decision: |
 
   Memo 的废弃原因字段命名为 `discard_reason`，不再复用 `archive_reason`。`archive_reason` 保留给 WorkArea、Pitfall 等仍存在归档语义的对象。
 consequences: |
-  积极后果：
-  - Memo 的状态与对象定位一致，强调分流而不是执行生命周期。
-  - AI 和 Web 创建 Memo 时默认进入 `pending`，降低“草稿是否需要转活跃”的额外判断成本。
-  - `discarded` 比 `archived` 更准确表达“这条备忘不再需要处理”的语义。
-  - `discard_reason` 避免把废弃和归档混为一谈。
+  ## 正向价值
 
-  成本和风险：
+  - 服务 V2 完整理解：Memo 的状态与对象定位一致，强调分流而不是执行生命周期。
+  - 服务 V3 正确判断：AI 和 Web 创建 Memo 时默认进入 `pending`，降低“草稿是否需要转活跃”的额外判断成本。
+  - 服务 V8 可靠回写：`discarded` 和 `discard_reason` 避免把废弃和归档混为一谈。
+
+  ## 逆向价值
+
+  - 逆向削弱 V2 完整理解和 V3 正确判断：Memo 不再表达“活跃”语义，部分仍在讨论但已经被记录的内容需要通过 `pending` 和关联对象理解。
+
+  ## 实施成本
+
   - 现有规范、校验、Web API、测试夹具和 Memo 实例需要同步迁移。
   - Web 状态筛选、默认列表状态和颜色需要适配 `pending` / `discarded`。
+
+  ## 风险评估
+
   - 旧文件或外部用户若仍使用 `draft`、`active`、`archived`，会被新校验报告为非法状态。
+  - Memo 分流动作的具体工作流程仍需后续 40-59 工作流程规范定义。
 
-  已接受的迁移规则：
-  - `draft` -> `pending`
-  - `active` -> `pending`
-  - `resolved` -> `resolved`
-  - `archived` -> `discarded`
-alternatives: |
-  替代方案一：保留 draft -> active -> resolved -> archived。该方案与多数工作对象生命周期相似，但对 Memo 过重，会引入不必要的确认阶段。
+  ## 注意事项
 
-  替代方案二：只保留 pending / resolved 两态。该方案最简单，但无法表达“确认废弃且无需分流”的稳定结果。
-
-  替代方案三：继续使用 archived 表达废弃。该方案复用既有字段，但会把 Memo 的分流语义和其他对象的归档语义混在一起。
-affects:
-  - specs/24-Memo-备忘.md
-  - specs/05.01-工作字段内容格式规范.md
-  - specs/08-Web信息同步实现规范.md
-  - code/fact_validate.py
-  - code/fact_cli.py
-  - code/fix_block_scalar.py
-  - web/api/routes/memos.ts
-  - web/src
-  - tests
+  - 已接受迁移规则：`draft` -> `pending`，`active` -> `pending`，`resolved` -> `resolved`，`archived` -> `discarded`。
+  - Code 校验、Web 状态筛选和既有 Memo 实例同步迁移，避免状态语义分叉。
 related_workareas: []
 related_changes: []
 related_memos:

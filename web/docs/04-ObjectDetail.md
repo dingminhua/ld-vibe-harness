@@ -19,7 +19,7 @@
 内容区：
   WorkArea：活跃计划 / 待关闭计划 / 已闭合计划 + 目标 / 范围 / 约束 / 来源 + 文档 / 决策 / 备忘 / 踩坑经验
   WorkPlan：执行态势 + 成功标准 / 验证证据 / 关闭证据 + 目标 / 所属工作域 / 来源 + 文档 / 决策 / 备忘 / 踩坑经验 / 关联变更
-  ADR：背景 / 决策 / 影响 / 备选 / 承接 / 关联
+  ADR：背景 / 决策 / 影响 / 关联
   Pitfall：现象 / 触发 / 根因 / 方案 / 验证 / 规避 / 范围 / 关联
   其他对象：字段卡片布局
 YAML 源码折叠区
@@ -68,9 +68,10 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 ## 6. 非工作主线对象字段布局
 
 - Pitfall 不使用普通字段卡片堆叠，而作为“可复用经验阅读页”展示。主节点固定为“现象、触发、根因、方案、验证、规避、范围、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。
-- ADR 不使用普通字段卡片堆叠，而作为“决策补丁阅读页”展示。主节点固定为“背景、决策、影响、备选、承接、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。
-- ADR 的“承接”节点用于表达这条决策补丁落到哪里，包含 `affects`、`related_rules`、`archive_reason` 和 `deprecated_reason`；其中 `related_rules` 在 ADR 页面中属于承接，不再重复进入“关联”。
-- ADR 的“关联”节点只承载对象关系，例如 `related_workareas`、`related_workplans`、`related_adrs`、`related_memos`、`related_changes` 等。对象关系和规则承接必须分开，避免把“补丁影响范围”误读为普通关联材料。
+- ADR 不使用普通字段卡片堆叠，而作为“决策补丁阅读页”展示。主节点固定为“背景、决策、影响、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。
+- ADR 的“影响”节点消费 `consequences` 字段。active ADR 必须按 `## 正向价值`、`## 逆向价值`、`## 实施成本`、`## 风险评估`、`## 注意事项` 五段式书写；有逆向价值时必须引用 V1-V10，无逆向价值时 `## 逆向价值` 填写 `当前决策无逆向价值`。Web 在节点内按 Markdown 分段展示，不把五段拆成独立工作对象字段。
+- ADR 不展示“备选”节点，也不维护 `alternatives` 字段。未采纳方案若来自 Memo，应保留在 Memo 的演变记录或讨论上下文中；若只来自临时对话且未进入决策，不进入 ADR。
+- ADR 不展示独立“承接”节点，也不维护 `affects` 字段。`related_rules`、`related_workareas`、`related_workplans`、`related_adrs`、`related_memos`、`related_changes` 等统一进入“关联”，按关联内容的通用行样式展示。
 - ADR 状态只显示 `active / archived / deprecated`。详情页不得展示或派生 `proposed`、`accepted`、`rejected`、`superseded` 或 `superseded_by` 旧生命周期语义。
 - Pitfall `verification` 节点消费 05.01 四段式结构，但在 Pitfall 页面内渲染为轻量分段阅读，不使用表格左列重复“计划/记录/结果/结论”。验证节点内部按“验证计划、验证命令、验证结果、结论”顺序展示。
 - Pitfall `root_cause`、`resolution`、`avoidance` 等经验节点应把 Markdown 列表渲染为清晰的条目阅读，而不是使用浏览器默认列表缩进。无序列表只使用灰色圆点；有序列表应保留 Markdown 原文的普通 `1.`、`2.`、`3.` 文本编号，不得额外渲染为徽标、强调色或状态标记。
@@ -100,7 +101,7 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、WorkPlan、ADR、Pitfall、Memo、Study。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
 
-路径类字段应按字段语义区分：`related_docs` 指向关联文档，`related_refs` 指向报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明，`related_rules` 指向规范、Rules、Skill、Agent、Code 或 Web 承接位置。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
+路径类字段应按字段语义区分：`related_docs` 指向关联文档，`related_refs` 指向报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明，`related_rules` 指向关联规范、Rules、Skill 或 Agent 路径。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 

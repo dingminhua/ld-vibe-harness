@@ -56,47 +56,35 @@ decision: |
      - 不记录搜索顺序、阅读顺序、子 Agent 中间思考、临时 todo、无复盘价值的失败尝试或已被最终结论吸收的重复分析。
      - WorkPlan 只保留恢复当前工作、证明验收结果、支持关闭判断和分流长期经验所需的最小结构化证据。
 consequences: |
-  积极后果：
-  - 人和历史只需要围绕 WorkPlan 理解一次工作，不必阅读大量 Task / SubTask 过程对象。
-  - 避免 Task 独立存在带来的漂浮对象、重复分流和事实源噪音。
-  - 更符合主流 AI coding / multi-agent 实践：主控负责目标、决策和汇总，专业子 Agent 在隔离上下文中执行或审查，并将标准化结果交回主控。
-  - Role Contract 成为专业能力边界，能比独立 Task 更清楚地规定输入、权限、输出和停止条件。
-  - WorkPlan 可集中承载 spec、checklist、orchestration、verification、review、closure 和 learning routes，关闭判断更完整。
+  ## 正向价值
 
-  成本和风险：
+  - 服务 V2 完整理解：人和历史只需要围绕 WorkPlan 理解一次工作，不必阅读大量 Task / SubTask 过程对象。
+  - 服务 V3 正确判断：避免 Task 独立存在带来的漂浮对象、重复分流和事实源噪音。
+  - 服务 V4 稳定执行：主控负责目标、决策和汇总，专业子 Agent 在隔离上下文中执行或审查，并将标准化结果交回主控。
+  - 服务 V6 强制验证：WorkPlan 可集中承载 spec、checklist、orchestration、verification、review、closure 和 learning routes，关闭判断更完整。
+
+  ## 逆向价值
+
+  - 逆向削弱 V9 人类确认质量：Task / SubTask 移出 active 工作模型后，人类无法再通过独立 Task 对象追踪 AI 的细粒度执行过程。
+  - 逆向削弱 V1 快速定位和 V3 正确判断：ExecutionItem 只作为 WorkPlan 内部编排节点，会牺牲部分跨对象检索和独立状态管理能力。
+
+  ## 实施成本
+
   - 需要系统迁移 specs 中的 TaskPlan / Task / SubTask 用语、对象集合、关系、状态机、Human Gate 和字段契约。
   - Code / Web / tests 当前可能仍以 TaskPlan / Task / SubTask 为对象类型，后续需要适配 WorkPlan 和内部 ExecutionItem。
+
+  ## 风险评估
+
   - 如果 WorkPlan.orchestration 设计过薄，会损失上下文恢复、并行调度和审计能力。
   - 如果 WorkPlan.orchestration 设计过厚，又会重新制造过程噪音。
+  - Role Contract 若不清晰，专业子 Agent 输出可能被误当成最终事实。
 
-  补偿机制：
+  ## 注意事项
+
   - WorkPlan 必须保留最小恢复证据：execution item 状态、角色、依赖、最近结果、下一步和证据引用。
   - WorkPlan 必须保留验证证据：命令、测试、独立 Review、Human Gate 和验收项结果。
   - WorkPlan 必须保留关闭证据：变更摘要、验收结果、残余风险和经验分流。
   - Role Contract 必须明确每类专业子 Agent 的输入、输出、权限和交还边界，避免子 Agent 输出直接成为最终事实。
-alternatives: |
-  替代方案一：保留 TaskPlan / Task / SubTask 三层 active 工作模型。该方案执行恢复和并行调度直观，但会让事实源过度过程化，人和后续 AI 需要在大量 Task / SubTask 对象中重建一次工作的真实结论。
-
-  替代方案二：仅把 Task 约束为必须隶属 TaskPlan，但继续作为 active 工作模型。该方案比独立 Task 更安全，但仍保留了 Task 作为长期事实源对象的噪音，并不能彻底解决 Human 只关心计划与关闭证据的问题。
-
-  替代方案三：把 Task 改名为 Work。该方案试图避开 Task 语义，但 Work 过泛，容易与 WorkArea、WorkPlan、工作对象和普通工作含义混淆，不适合作为内部编排节点名称。
-
-  替代方案四：完全不记录执行编排。该方案最轻，但会损害上下文恢复、并行调度、审计和关闭证据，无法满足 LDVH 对可追溯事实源的要求。
-affects:
-  - specs/00-LD-Vibe-Harness理念与纲要.md
-  - specs/02-术语规范.md
-  - specs/05-工作模型基础规范.md
-  - specs/05.01-工作字段内容格式规范.md
-  - specs/06-工作流程基础规范.md
-  - specs/21-WorkPlan-工作计划.md
-  - specs/21-WorkPlan-工作计划.md
-  - specs/21-WorkPlan-工作计划.md
-  - specs/24-Memo-备忘.md
-  - specs/25-Change-变更.md
-  - specs/40-59
-  - code
-  - web
-  - tests
 related_workareas: []
 related_changes: []
 related_memos:

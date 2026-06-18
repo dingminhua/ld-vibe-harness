@@ -1,21 +1,22 @@
 import { useTheme } from '@/hooks/useTheme';
 import { getStatusColor } from '@/utils/statusColors';
-import { getStatusHint, getStatusLocale } from '@/i18n/locales';
+import { getObjectStatusHint, getStatusLocale } from '@/i18n/locales';
 import { useI18n } from '@/i18n/context';
 
 interface StatusBadgeProps {
   status: string;
   statusLabel?: string;  // Localized display text
+  objectType?: string;
   size?: 'sm' | 'md';
 }
 
-export default function StatusBadge({ status, statusLabel, size = 'sm' }: StatusBadgeProps) {
+export default function StatusBadge({ status, statusLabel, objectType = '', size = 'sm' }: StatusBadgeProps) {
   const { resolved } = useTheme();
   const { locale } = useI18n();
   const color = getStatusColor(status);
   const sizeClasses = size === 'sm' ? 'px-2 py-0.5' : 'px-2.5 py-1';
   const display = statusLabel || getStatusLocale(status, locale);
-  const tooltip = getStatusHint(status, locale);
+  const tooltip = getObjectStatusHint(objectType, status, locale);
 
   return (
     <span

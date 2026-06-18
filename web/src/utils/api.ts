@@ -98,11 +98,9 @@ export interface ObjectItem {
   date?: string;
   decision?: string;
   consequences?: string;
-  affects?: string[];
   related_rules?: string[];
   archive_reason?: string;
   deprecated_reason?: string;
-  alternatives?: string;
   /** Memo-specific */
   source?: string;
   description?: string;

@@ -95,8 +95,6 @@ def write_adr(path: Path, *, status: str = "active", archive_reason: str = "", d
         "context": "Context.",
         "decision": "Decision.",
         "consequences": "Consequences.",
-        "alternatives": "Alternatives.",
-        "affects": [],
         "related_workareas": [],
         "related_workplans": [],
         "related_adrs": [],
@@ -129,6 +127,8 @@ def test_create_adr_defaults_to_active_contract(tmp_path):
     assert data["deprecated_reason"] == ""
     assert "related_objects" not in data
     assert "superseded_by" not in data
+    assert "alternatives" not in data
+    assert "affects" not in data
 
 
 def test_adr_transition_requires_terminal_reasons(tmp_path):

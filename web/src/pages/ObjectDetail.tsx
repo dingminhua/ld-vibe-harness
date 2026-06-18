@@ -77,7 +77,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'notes',
   ],
   adr: [
-    'context', 'decision', 'consequences', 'alternatives', 'affects',
+    'context', 'decision', 'consequences',
     'related_rules', 'archive_reason', 'deprecated_reason', 'related_workareas',
     'related_workplans', 'related_adrs', 'related_memos', 'related_changes',
   ],
@@ -263,7 +263,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   transition_reasons: { zh: '流转记录', en: 'Transition Reasons' },
   options: { zh: '选项', en: 'Options' },
   decision: { zh: '决策', en: 'Decision' },
-  alternatives: { zh: '替代方案', en: 'Alternatives' },
   related_workareas: { zh: '关联工作域', en: 'Related Work Areas' },
   related_workplans: { zh: '关联工作计划', en: 'Related Work Plans' },
   related_adrs: { zh: '关联决策', en: 'Related ADRs' },
@@ -281,7 +280,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   superseded_by: { zh: '替代来源', en: 'Superseded By' },
   related_changes: { zh: '关联变更', en: 'Related Changes' },
   aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
-  affects: { zh: '影响对象', en: 'Affects' },
   scope: { zh: '范围', en: 'Scope' },
   impact: { zh: '影响范围', en: 'Impact' },
   category: { zh: '分类', en: 'Category' },
@@ -1251,7 +1249,6 @@ function getMaterialLabel(fieldKey: string, locale: string) {
     related_rules: { zh: '规范', en: 'Specs' },
     related_workplans: { zh: '工作计划', en: 'Work Plans' },
     aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
-    affects: { zh: '影响对象', en: 'Affects' },
   };
   const entry = labels[fieldKey];
   if (!entry) return getFieldLabel(fieldKey, locale);
@@ -1434,7 +1431,7 @@ function ExecutionItemRow({
             {item.mode && <span className="ldvh-caption">{item.mode}</span>}
           </div>
         </div>
-        <StatusBadge status={item.status} statusLabel={label} size="sm" />
+        <StatusBadge status={item.status} statusLabel={label} objectType="workplan" size="sm" />
       </div>
       {item.expectedOutput && (
         <p className="ldvh-body-muted mt-2 border-l-2 border-ldvh-border/50 pl-2">{item.expectedOutput}</p>
@@ -1477,7 +1474,6 @@ const ADR_READING_NODES: Array<{ field: string; zh: string; en: string }> = [
   { field: 'context', zh: '背景', en: 'Context' },
   { field: 'decision', zh: '决策', en: 'Decision' },
   { field: 'consequences', zh: '影响', en: 'Consequences' },
-  { field: 'alternatives', zh: '备选', en: 'Alternatives' },
 ];
 
 export function AdrReadingLayout({
@@ -1489,8 +1485,6 @@ export function AdrReadingLayout({
   relatedEntries: RelatedContentEntry[];
   locale: string;
 }) {
-  const relatedWithoutHandoff = relatedEntries.filter(([fieldKey]) => fieldKey !== 'related_rules');
-
   return (
     <div className="mb-6 flex flex-col gap-5">
       {ADR_READING_NODES.map((node) => (
@@ -1501,8 +1495,7 @@ export function AdrReadingLayout({
           locale={locale}
         />
       ))}
-      <AdrHandoffSection obj={obj} locale={locale} />
-      <RelatedContentSection entries={relatedWithoutHandoff} locale={locale} />
+      <RelatedContentSection entries={relatedEntries} locale={locale} />
     </div>
   );
 }
@@ -1528,58 +1521,6 @@ function AdrReadingNode({
     >
       <StudyTextNodeContent value={value} />
     </ReadingNodeSection>
-  );
-}
-
-function AdrHandoffSection({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
-  const [state, setState] = useState<ReadingNodeState>('expanded');
-  const hasAffects = Array.isArray(obj.affects) && obj.affects.length > 0;
-  const hasRules = Array.isArray(obj.related_rules) && obj.related_rules.length > 0;
-  const hasArchiveReason = hasDetailContent(obj.archive_reason);
-  const hasDeprecatedReason = hasDetailContent(obj.deprecated_reason);
-
-  if (!hasAffects && !hasRules && !hasArchiveReason && !hasDeprecatedReason) return null;
-
-  return (
-    <ReadingNodeSection
-      title={locale === 'en' ? 'Handoff' : '承接'}
-      state={state}
-      locale={locale}
-      onToggle={() => setState((current) => getReadingNodeNextState(current))}
-    >
-      <div className="divide-y divide-ldvh-border/60">
-        {hasAffects && (
-          <AdrHandoffRow fieldKey="affects" value={obj.affects as unknown[]} locale={locale} />
-        )}
-        {hasRules && (
-          <AdrHandoffRow fieldKey="related_rules" value={obj.related_rules as unknown[]} locale={locale} />
-        )}
-        {hasArchiveReason && (
-          <AdrReasonRow fieldKey="archive_reason" value={obj.archive_reason} locale={locale} />
-        )}
-        {hasDeprecatedReason && (
-          <AdrReasonRow fieldKey="deprecated_reason" value={obj.deprecated_reason} locale={locale} />
-        )}
-      </div>
-    </ReadingNodeSection>
-  );
-}
-
-function AdrHandoffRow({ fieldKey, value, locale }: { fieldKey: string; value: unknown[]; locale: string }) {
-  return (
-    <div className="py-3 first:pt-0 last:pb-0">
-      <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{getMaterialLabel(fieldKey, locale)}</div>
-      <RelatedMaterialValue fieldKey={fieldKey} value={value} locale={locale} />
-    </div>
-  );
-}
-
-function AdrReasonRow({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
-  return (
-    <div className="py-3 first:pt-0 last:pb-0">
-      <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{getFieldLabel(fieldKey, locale)}</div>
-      <StudyTextNodeContent value={value} />
-    </div>
   );
 }
 
@@ -1907,7 +1848,7 @@ export function DetailObjectRow({
         {variant === 'property' && labelIcon}
         <span className="ldvh-body min-w-0 flex-1 truncate transition-colors group-hover/detail-ref:text-ldvh-accent">{title}</span>
         {variant !== 'property' && <span className="ldvh-meta-muted shrink-0">{objectId}</span>}
-        {variant !== 'property' && item?.status && <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(objectType, item.status, locale)} size="sm" />}
+        {variant !== 'property' && item?.status && <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(objectType, item.status, locale)} objectType={objectType} size="sm" />}
         <CopyPathButton path={item?.path} />
         <PanelIcon size={14} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
       </div>

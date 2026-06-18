@@ -340,7 +340,7 @@ function AttentionRow({
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <CopyPathButton path={item.path} />
-        <StatusBadge status={item.status} statusLabel={statusLabel} />
+        <StatusBadge status={item.status} statusLabel={statusLabel} objectType={item.type} />
       </div>
     </button>
   );
@@ -385,7 +385,7 @@ function Lane({
                   <span className="min-w-0 truncate">{titleText}</span>
                 </span>
                 <span className="shrink-0">
-                  <StatusBadge status={item.status} statusLabel={getStatus(item.status)} />
+                  <StatusBadge status={item.status} statusLabel={getStatus(item.status)} objectType={item.type} />
                 </span>
               </button>
             );

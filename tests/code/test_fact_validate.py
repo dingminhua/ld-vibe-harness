@@ -149,10 +149,25 @@ context: |
 decision: |
   Current decision.
 consequences: |
-  Current consequences.
-alternatives: |
-  Current alternatives.
-affects: []
+  ## 正向价值
+
+  Current value.
+
+  ## 逆向价值
+
+  当前决策无逆向价值
+
+  ## 实施成本
+
+  Current cost.
+
+  ## 风险评估
+
+  Current risk.
+
+  ## 注意事项
+
+  Current notes.
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -229,6 +244,10 @@ def test_adr_rejects_old_status_and_removed_fields(tmp_path):
 superseded_by: adr-0002
 related_objects:
   - memo-0001
+alternatives: |
+  Old option.
+affects:
+  - code
 """,
     )
 
@@ -239,6 +258,125 @@ related_objects:
     assert "REMOVED_OBJECT_FIELD" in result.stdout
     assert "superseded_by" in result.stdout
     assert "related_objects" in result.stdout
+    assert "alternatives" in result.stdout
+    assert "affects" in result.stdout
+
+
+def test_active_adr_requires_consequences_impact_loop(tmp_path):
+    adr = write_valid_adr(
+        tmp_path,
+        extra="""
+consequences: |
+  积极后果：
+  - Missing required four-part impact loop.
+""",
+    )
+
+    result = run_checker(adr)
+
+    assert result.returncode == 1
+    assert "INVALID_ADR_CONSEQUENCES_STRUCTURE" in result.stdout
+    assert "正向价值" in result.stdout
+    assert "逆向价值" in result.stdout
+    assert "实施成本" in result.stdout
+    assert "风险评估" in result.stdout
+    assert "注意事项" in result.stdout
+
+
+def test_active_adr_requires_reverse_value_section(tmp_path):
+    adr = write_valid_adr(
+        tmp_path,
+        extra="""
+consequences: |
+  ## 正向价值
+
+  Current value.
+
+  ## 实施成本
+
+  Current cost.
+
+  ## 风险评估
+
+  Current risk.
+
+  ## 注意事项
+
+  Current notes.
+""",
+    )
+
+    result = run_checker(adr)
+
+    assert result.returncode == 1
+    assert "INVALID_ADR_CONSEQUENCES_STRUCTURE" in result.stdout
+    assert "逆向价值" in result.stdout
+
+
+def test_active_adr_accepts_explicit_reverse_value_statement(tmp_path):
+    adr = write_valid_adr(
+        tmp_path,
+        extra="""
+consequences: |
+  ## 正向价值
+
+  Current value.
+
+  ## 逆向价值
+
+  This decision weakens V2 by reducing direct readability.
+
+  ## 实施成本
+
+  Current cost.
+
+  ## 风险评估
+
+  Current risk.
+
+  ## 注意事项
+
+  Current notes.
+""",
+    )
+
+    result = run_checker(adr)
+
+    assert result.returncode == 0
+
+
+def test_active_adr_reverse_value_requires_00_value_reference(tmp_path):
+    adr = write_valid_adr(
+        tmp_path,
+        extra="""
+consequences: |
+  ## 正向价值
+
+  Current value.
+
+  ## 逆向价值
+
+  This decision has a tradeoff but does not cite the value standard.
+
+  ## 实施成本
+
+  Current cost.
+
+  ## 风险评估
+
+  Current risk.
+
+  ## 注意事项
+
+  Current notes.
+""",
+    )
+
+    result = run_checker(adr)
+
+    assert result.returncode == 1
+    assert "INVALID_ADR_REVERSE_VALUE" in result.stdout
+    assert "V1-V10" in result.stdout
 
 
 def test_adr_terminal_statuses_require_reasons(tmp_path):

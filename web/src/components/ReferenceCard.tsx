@@ -139,7 +139,7 @@ function ReferenceItem({
       </span>
       {showStatus && info?.status && (
         <span className="shrink-0">
-          <StatusBadge status={info.status} statusLabel={getObjectStatusLocale(info.type, info.status, locale)} size="sm" />
+          <StatusBadge status={info.status} statusLabel={getObjectStatusLocale(info.type, info.status, locale)} objectType={info.type} size="sm" />
         </span>
       )}
       <CopyPathButton path={info?.path} />

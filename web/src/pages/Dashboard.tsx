@@ -254,7 +254,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <CopyPathButton path={item.path} />
-                      <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(item.type, item.status, locale)} />
+                      <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(item.type, item.status, locale)} objectType={item.type} />
                       <span className="ldvh-caption whitespace-nowrap">
                         {item.relativeTime}
                       </span>
@@ -339,7 +339,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <CopyPathButton path={item.path} />
-                    <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(item.type, item.status, locale)} />
+                    <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(item.type, item.status, locale)} objectType={item.type} />
                     <span className="ldvh-caption whitespace-nowrap">
                       {item.relativeTime}
                     </span>

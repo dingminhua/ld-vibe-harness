@@ -80,6 +80,11 @@ export function getStatusHint(status: string, locale: string): string {
 }
 
 export function getObjectStatusHint(type: string, status: string, locale: string): string {
+  if (type === 'adr' && status === 'active') {
+    return locale === 'en'
+      ? 'Current effective decision patch'
+      : '当前有效的决策补丁';
+  }
   if (status === 'review_needed') {
     if (type === 'workplan') {
       return locale === 'en'

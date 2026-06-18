@@ -444,10 +444,7 @@ async function enrichAdrs(items: ListedObject[]): Promise<ListedObject[]> {
       date: toStringValue(data.date) || undefined,
       decision: toStringValue(data.decision) || undefined,
       consequences: toStringValue(data.consequences) || undefined,
-      affects: toStringArray(data.affects),
       related_rules: toStringArray(data.related_rules),
-      superseded_by: toStringValue(data.superseded_by) || undefined,
-      alternatives: toStringValue(data.alternatives) || undefined,
       status: toStringValue(data.status) || item.status,
     }
   })

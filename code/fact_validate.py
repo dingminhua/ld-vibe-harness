@@ -52,7 +52,7 @@ LIST_FIELDS = {
     "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "workplans"},
     "workplan": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "related_workplans", "related_changes"},
     "adr": {
-        "affects", "related_workareas", "related_workplans",
+        "related_workareas", "related_workplans",
         "related_adrs", "related_memos", "related_changes", "related_rules",
     },
     "pitfall": {
@@ -86,6 +86,9 @@ EVIDENCE_FIELDS_BY_TYPE = {
     "pitfall": {"verification"},
 }
 EVIDENCE_REQUIRED_HEADINGS = ["验证计划", "验证命令", "验证结果", "结论"]
+ADR_CONSEQUENCES_REQUIRED_HEADINGS = ["正向价值", "逆向价值", "实施成本", "风险评估", "注意事项"]
+ADR_NO_REVERSE_VALUE_TEXT = "当前决策无逆向价值"
+VALUE_STANDARD_REF_RE = re.compile(r"\bV(?:[1-9]|10)\b")
 PITFALL_TAG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 WORKPLAN_ORCHESTRATION_MODES = {"single", "sequential", "parallel", "mixed"}
@@ -820,9 +823,32 @@ def validate_execution_item_evidence_refs(path: Path, evidence_refs: list[Any], 
 
 def validate_adr(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "adr")
-    for removed_field in ("related_taskplans", "related_tasks", "related_objects", "superseded_by"):
+    for removed_field in ("related_taskplans", "related_tasks", "related_objects", "superseded_by", "alternatives", "affects"):
         if removed_field in data:
             issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 ADR 不得维护旧对象关联字段: {removed_field}", field=removed_field))
+    if data.get("status") == "active":
+        consequences = data.get("consequences")
+        headings = []
+        if isinstance(consequences, str):
+            headings = [line[3:].strip() for line in consequences.splitlines() if re.match(r"^##\s+", line)]
+        if headings != ADR_CONSEQUENCES_REQUIRED_HEADINGS:
+            issues.append(Issue(
+                str(path),
+                "error",
+                "INVALID_ADR_CONSEQUENCES_STRUCTURE",
+                "active ADR 的 consequences 必须按顺序固定为: " + "、".join(ADR_CONSEQUENCES_REQUIRED_HEADINGS),
+                field="consequences",
+            ))
+        elif isinstance(consequences, str):
+            reverse_value = extract_markdown_section(consequences, "逆向价值")
+            if reverse_value.strip() != ADR_NO_REVERSE_VALUE_TEXT and not VALUE_STANDARD_REF_RE.search(reverse_value):
+                issues.append(Issue(
+                    str(path),
+                    "error",
+                    "INVALID_ADR_REVERSE_VALUE",
+                    f"active ADR 的逆向价值必须引用 00 价值标准 V1-V10；无逆向价值时填写: {ADR_NO_REVERSE_VALUE_TEXT}",
+                    field="consequences",
+                ))
     for field, target_type in ID_LIST_FIELDS.items():
         issues.extend(validate_id_list_format(path, data, field, target_type))
     if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
@@ -830,6 +856,22 @@ def validate_adr(path: Path, data: dict[str, Any]) -> list[Issue]:
     if data.get("status") == "deprecated" and is_empty(data.get("deprecated_reason")):
         issues.append(Issue(str(path), "error", "MISSING_DEPRECATED_REASON", "deprecated 状态必须提供废弃原因: deprecated_reason", field="deprecated_reason"))
     return issues
+
+
+def extract_markdown_section(value: str, heading: str) -> str:
+    lines = value.splitlines()
+    body: list[str] = []
+    in_section = False
+    for line in lines:
+        match = re.match(r"^##\s+(.+?)\s*$", line)
+        if match:
+            if in_section:
+                break
+            in_section = match.group(1).strip() == heading
+            continue
+        if in_section:
+            body.append(line)
+    return "\n".join(body).strip()
 
 VALID_PRIORITY = {"P0", "P1", "P2", "P3"}
 VALID_MEMO_SOURCE = {"web", "conversation"}
