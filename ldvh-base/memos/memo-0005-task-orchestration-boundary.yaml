@@ -54,6 +54,8 @@ evolution:
     summary: 完成 legacy 工作对象默认入口降级：Code 拒绝新建 TaskPlan / Task / SubTask，Web 主导航、Dashboard 和默认关注队列只暴露 active 工作模型；历史对象保留读取、校验和直达展示兼容。
   - at: 2026-06-18
     summary: 清理正式 specs 中的工作模型历史痕迹：`specs/01-目录说明.md` 的 active 工作模型表已同步为 20-26 当前编号，手写集合索引和能力材料残留措辞已改为当前规则态。
+  - at: 2026-06-18
+    summary: 补齐 Code 防回归检查：`specs/01-目录说明.md` 的 active 工作模型人工目录表现在必须与 20-39 成员主文件自描述中的 active work_model 成员一致，防止编号表再次漂移。
 source: conversation
 source_detail: 本轮围绕 LDVH 工作流程、任务编排、执行证据、角色复检和 Memo 分流的连续讨论；包含一次联网复核结论。
 priority: P1
