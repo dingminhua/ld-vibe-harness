@@ -1,6 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, ChevronUp, Code2, FileText, Info, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, ChevronUp, Code2, ExternalLink, FileText, Info, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
@@ -103,6 +103,11 @@ const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
   related_studies: 26,
 };
 type RelatedContentEntry = [string, unknown[]];
+type RelatedAssociationValue = {
+  ref: string;
+  title?: string;
+  summary?: string;
+};
 
 function normalizeRelatedFieldKey(fieldKey: string) {
   return fieldKey.startsWith('aggregated_') ? fieldKey.slice('aggregated_'.length) : fieldKey;
@@ -1067,6 +1072,155 @@ function MaterialValue({
   );
 }
 
+function RelatedMaterialValue({
+  fieldKey,
+  value,
+  locale,
+}: {
+  fieldKey: string;
+  value: unknown[];
+  locale: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {value.map((item, index) => {
+        const reference = parseRelatedAssociationValue(item);
+        return reference ? (
+          <RelatedAssociationRow key={`${fieldKey}-${index}-${reference.ref}`} fieldKey={fieldKey} reference={reference} locale={locale} />
+        ) : (
+          <FieldValue key={`${fieldKey}-${index}`} fieldKey={fieldKey} value={item} depth={0} locale={locale} />
+        );
+      })}
+    </div>
+  );
+}
+
+function parseRelatedAssociationValue(item: unknown): RelatedAssociationValue | null {
+  if (typeof item === 'string') return { ref: item };
+  if (!item || typeof item !== 'object') return null;
+  const record = item as Record<string, unknown>;
+  if (typeof record.ref !== 'string' || record.ref.trim().length === 0) return null;
+  return {
+    ref: record.ref,
+    title: typeof record.title === 'string' && record.title.trim() ? record.title : undefined,
+    summary: typeof record.summary === 'string' && record.summary.trim() ? record.summary : undefined,
+  };
+}
+
+function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: string; reference: RelatedAssociationValue; locale: string }) {
+  const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
+  const [objectInfo, setObjectInfo] = useState<{ type: string; title: string; path: string } | null>(null);
+  const [objectMissing, setObjectMissing] = useState(false);
+  const value = reference.ref;
+  const objectType = parseRefType(value);
+  const objectColor = objectType ? (CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
+  const isExternal = value.startsWith('http://') || value.startsWith('https://');
+  const isDocPreview = DOC_LINK_FIELDS.includes(fieldKey) && isPreviewablePathForField(fieldKey, value);
+  const fallbackTitle = objectType
+    ? (locale === 'en' ? 'Loading' : '读取中')
+    : value;
+  const displayTitle = reference.title || objectInfo?.title || (objectMissing ? value : fallbackTitle);
+  const copyValue = objectInfo?.path || value;
+  const previewLabel = locale === 'en' ? 'Open in reading panel' : '扩展阅读';
+  const isCurrentPanelOpen = Boolean(
+    panelOpen && (
+      (objectType && panelContent?.type === 'object' && panelContent.objectType === objectType && panelContent.objectId === value)
+      || (isExternal && panelContent?.type === 'web' && panelContent.url === value)
+      || (!isExternal && isDocPreview && panelContent?.type === 'doc' && panelContent.docPath === value)
+      || (!isDocPreview && !objectType && panelContent?.type === 'doc' && panelContent.title === value)
+    )
+  );
+  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
+
+  useEffect(() => {
+    if (!objectType) {
+      setObjectInfo(null);
+      setObjectMissing(false);
+      return;
+    }
+
+    let cancelled = false;
+    setObjectInfo(null);
+    setObjectMissing(false);
+    fetchObjectDetail(objectType, value)
+      .then((detail) => {
+        if (cancelled) return;
+        const obj = detail.data;
+        const title = (locale === 'en'
+          ? ((obj.title_en as string) || obj.title as string)
+          : ((obj.title_zh as string) || obj.title as string)) || value;
+        setObjectInfo({ type: objectType, title, path: detail.target });
+      })
+      .catch(() => {
+        if (!cancelled) setObjectMissing(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, objectType, value]);
+
+  const openRelatedPreview = () => {
+    if (objectType) {
+      openPanel({ type: 'object', title: displayTitle, objectType, objectId: value });
+      return;
+    }
+    if (isExternal) {
+      openPanel({ type: 'web', title: displayTitle, url: value });
+      return;
+    }
+    if (isDocPreview) {
+      openPanel({ type: 'doc', title: displayTitle, docPath: value });
+      return;
+    }
+    openPanel({ type: 'doc', title: displayTitle, data: reference.summary ? `${displayTitle}\n\n${reference.summary}\n\n${value}` : value });
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openRelatedPreview();
+  };
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={openRelatedPreview}
+      onKeyDown={handleKeyDown}
+      title={previewLabel}
+      className="ldvh-body group flex w-full cursor-pointer items-start gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+    >
+      {objectType ? (
+        <ObjectTypeIcon type={objectType} size={13} className="mt-1 shrink-0" style={{ color: objectColor }} />
+      ) : isExternal ? (
+        <ExternalLink size={13} className="mt-1 shrink-0 text-ldvh-accent" />
+      ) : (
+        <FileText size={13} className="mt-1 shrink-0 text-ldvh-accent" />
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="ldvh-meta-primary truncate">{displayTitle}</div>
+        {reference.summary && (
+          <div className="ldvh-caption mt-1 line-clamp-2 text-ldvh-text-secondary">{reference.summary}</div>
+        )}
+      </div>
+      <CopyPathButton path={copyValue} />
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          openRelatedPreview();
+        }}
+        title={previewLabel}
+        aria-label={previewLabel}
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent text-ldvh-text-secondary/70 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-accent focus-visible:border-ldvh-accent/50 focus-visible:outline-none"
+      >
+        <PanelIcon size={14} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 function getMaterialLabel(fieldKey: string, locale: string) {
   const labels: Record<string, { zh: string; en: string }> = {
     related_docs: { zh: '文档', en: 'Docs' },
@@ -1335,7 +1489,7 @@ function RelatedContentSection({ entries, locale }: { entries: RelatedContentEnt
         {entries.map(([fieldKey, value]) => (
           <div key={fieldKey} className="py-3 first:pt-0 last:pb-0">
             <div className="ldvh-caption-strong mb-2">{getMaterialLabel(fieldKey, locale)}</div>
-            <MaterialValue fieldKey={fieldKey} value={value} locale={locale} referenceVariant="plain" />
+            <RelatedMaterialValue fieldKey={fieldKey} value={value} locale={locale} />
           </div>
         ))}
       </div>

@@ -90,6 +90,7 @@ COMMITISH_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]{6,}$")
 ISO_DATETIME_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$"
 )
+RELATED_REF_ITEM_KEYS = {"ref", "title", "summary"}
 
 # 05.01 §3.5.2：verification 字段不应包含的风险/约束/降级标题模式
 VERIFICATION_MISPLACED_HEADING_PATTERNS = [
@@ -428,6 +429,32 @@ def validate_any_object_id_list_format(path: Path, data: dict[str, Any], field: 
                 f"{field} 中必须使用已知工作对象 ID 格式: {item}",
                 field=field,
             ))
+    return issues
+
+
+def validate_related_refs(path: Path, data: dict[str, Any]) -> list[Issue]:
+    items = data.get("related_refs")
+    if not isinstance(items, list):
+        return []
+    issues = []
+    for index, item in enumerate(items, start=1):
+        if isinstance(item, str):
+            if not item.strip():
+                issues.append(Issue(str(path), "error", "INVALID_RELATED_REF", f"related_refs 第 {index} 项不能为空字符串", field="related_refs"))
+            continue
+        if not isinstance(item, dict):
+            issues.append(Issue(str(path), "error", "INVALID_RELATED_REF", f"related_refs 第 {index} 项必须是字符串或包含 ref/title/summary 的对象", field="related_refs"))
+            continue
+        unknown_keys = sorted(set(item) - RELATED_REF_ITEM_KEYS)
+        if unknown_keys:
+            issues.append(Issue(str(path), "error", "INVALID_RELATED_REF", f"related_refs 第 {index} 项包含未定义字段: {', '.join(unknown_keys)}", field="related_refs"))
+        ref = item.get("ref")
+        if not isinstance(ref, str) or not ref.strip():
+            issues.append(Issue(str(path), "error", "INVALID_RELATED_REF", f"related_refs 第 {index} 项必须提供非空 ref", field="related_refs.ref"))
+        for optional_field in ("title", "summary"):
+            value = item.get(optional_field)
+            if value is not None and not isinstance(value, str):
+                issues.append(Issue(str(path), "error", "INVALID_RELATED_REF", f"related_refs 第 {index} 项的 {optional_field} 必须是字符串", field=f"related_refs.{optional_field}"))
     return issues
 
 
@@ -810,6 +837,7 @@ def validate_study(path: Path, data: dict[str, Any]) -> list[Issue]:
         issues.append(Issue(str(path), "error", "MISSING_REPORT_BODY", "Study Markdown 必须包含非空报告正文", field="report_body"))
     if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
         issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态必须提供归档原因: archive_reason", field="archive_reason"))
+    issues.extend(validate_related_refs(path, data))
     return issues
 
 

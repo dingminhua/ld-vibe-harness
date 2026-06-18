@@ -346,6 +346,87 @@ This report should not validate because Study renamed source_docs to related_ref
     assert "source_docs" in result.stdout
 
 
+def test_study_related_refs_accept_structured_items(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    study = root / "ldvh-base" / "studies" / "study-0001-structured-refs.md"
+    study.parent.mkdir(parents=True, exist_ok=True)
+    study.write_text(
+        """---
+id: study-0001
+type: study
+title: Structured Refs Report
+status: active
+created: "2026-06-18T09:00:00"
+updated: "2026-06-18T09:30:00"
+summary: Structured refs report.
+related_refs:
+  - ref: https://example.com/reference
+    title: Reference title
+    summary: Explains why this reference matters to the report.
+  - specs/24-Memo-备忘.md §6
+related_workareas: []
+related_workplans: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_docs: []
+archive_reason:
+---
+
+# Structured Refs Report
+
+This report should validate with structured related_refs items.
+""",
+        encoding="utf-8",
+    )
+
+    result = run_checker(study)
+
+    assert result.returncode == 0
+    assert "errors=0" in result.stdout
+
+
+def test_study_related_refs_reject_invalid_structured_items(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    study = root / "ldvh-base" / "studies" / "study-0001-invalid-refs.md"
+    study.parent.mkdir(parents=True, exist_ok=True)
+    study.write_text(
+        """---
+id: study-0001
+type: study
+title: Invalid Refs Report
+status: active
+created: "2026-06-18T09:00:00"
+updated: "2026-06-18T09:30:00"
+summary: Invalid refs report.
+related_refs:
+  - title: Missing ref
+    summary: This item has no ref.
+  - ref: https://example.com/reference
+    note: Unexpected field.
+related_workareas: []
+related_workplans: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_docs: []
+archive_reason:
+---
+
+# Invalid Refs Report
+
+This report should not validate because related_refs items are malformed.
+""",
+        encoding="utf-8",
+    )
+
+    result = run_checker(study)
+
+    assert result.returncode == 1
+    assert "INVALID_RELATED_REF" in result.stdout
+    assert "related_refs" in result.stdout
+
+
 def test_pitfall_repeatability_field_is_no_longer_allowed(tmp_path):
     root, _ = write_valid_workplan_tree(tmp_path)
     pitfall = write_yaml(

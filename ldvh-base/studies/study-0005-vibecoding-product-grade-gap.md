@@ -4,33 +4,73 @@ type: study
 title: Vibe Coding 从 Demo 到产品级与 LDVH 增强方向调研
 status: active
 created: '2026-06-18T08:49:21'
-updated: '2026-06-18T21:14:45+08:00'
+updated: '2026-06-18T21:59:59+08:00'
 summary: |
   Vibe Coding 从 demo 到产品级的核心变化，不是“让 AI 多写代码”，而是把 AI 生成代码纳入产品工程闭环。产品级要求需求、架构、质量、安全、供应链、发布、运行、观测、事故、用户反馈和成本都可管理、可验证、可追溯。LDVH 当前已经有规范、工作模型、基础流程、Code 和 Web 的底盘，但仍需要增强产品需求层、架构治理、质量门禁、DevSecOps、生产就绪、运行观测、发布治理、AI 评测和 Human-facing 驾驶舱。
 user_intent: 用户要求调研 Vibe Coding 从 demo 到产品级需要哪些变化，以及 LDVH 未来面向产品级开发还需要增强哪些环节。
 conclusion: |
   LDVH 下一阶段应从“规范和基础事实源治理”升级为“AI 原生产品工程治理”。建议优先增强三条主线：一是产品级事实源，包括需求、用户旅程、架构、接口、数据、质量属性和发布对象；二是产品级门禁，包括测试策略、安全审查、供应链、生产就绪、SLO、回滚和事故复盘；三是 AI 原生执行保障，包括角色契约、子 Agent 审查、代码评测、上下文包、风险仪表盘和自动化校验。这样才能让 Vibe Coding 从快速 demo 进入可持续交付。
 related_refs:
-  - https://dora.dev/
-  - https://dora.dev/research/2024/dora-report/
-  - https://csrc.nist.gov/pubs/sp/800/218/final
-  - https://csrc.nist.gov/pubs/sp/800/218/r1/ipd
-  - https://owasp.org/www-project-application-security-verification-standard/
-  - https://owasp.org/www-project-samm/
-  - https://owaspsamm.org/
-  - https://owasp.org/www-project-top-10-ci-cd-security-risks/
-  - https://slsa.dev/
-  - https://sre.google/sre-book/evolving-sre-engagement-model/
-  - https://sre.google/sre-book/service-level-objectives/
-  - https://sre.google/workbook/implementing-slos/
-  - https://opentelemetry.io/docs/what-is-opentelemetry/
-  - https://opentelemetry.io/docs/concepts/observability-primer/
-  - https://12factor.net/
-  - https://www.iso.org/standard/72089.html
-  - https://iso25000.com/index.php/en/iso-25000-standards/iso-25010
-  - https://developers.openai.com/blog/run-long-horizon-tasks-with-codex
-  - https://docs.anthropic.com/en/docs/claude-code/common-workflows
-  - https://code.claude.com/docs/en/code-review
+  - ref: https://dora.dev/
+    title: DORA / Google Cloud DevOps Research
+    summary: 用于说明产品级交付需要用可度量的软件交付表现衡量，而不是只看 demo 是否跑通。
+  - ref: https://dora.dev/research/2024/dora-report/
+    title: 2024 DORA Report
+    summary: 用于支撑报告中关于 AI、平台工程、质量和交付效能需要进入持续改进闭环的判断。
+  - ref: https://csrc.nist.gov/pubs/sp/800/218/final
+    title: NIST SSDF SP 800-218
+    summary: 用于说明产品级开发必须把安全软件开发实践纳入需求、实现、验证和发布流程。
+  - ref: https://csrc.nist.gov/pubs/sp/800/218/r1/ipd
+    title: NIST SSDF SP 800-218 Revision Draft
+    summary: 用于补充安全开发框架仍在演进，LDVH 后续安全治理应保留可更新的规范承接入口。
+  - ref: https://owasp.org/www-project-application-security-verification-standard/
+    title: OWASP ASVS
+    summary: 用于说明产品级应用安全需要可验证的安全要求，而不是事后笼统审查。
+  - ref: https://owasp.org/www-project-samm/
+    title: OWASP SAMM Project
+    summary: 用于支撑安全成熟度应作为工程能力分阶段建设，而不是单次 checklist。
+  - ref: https://owaspsamm.org/
+    title: OWASP SAMM
+    summary: 用于补充安全成熟度模型可作为 LDVH 后续产品级门禁和路线图的参考输入。
+  - ref: https://owasp.org/www-project-top-10-ci-cd-security-risks/
+    title: OWASP Top 10 CI/CD Security Risks
+    summary: 用于说明 AI 原生开发进入产品级后，CI/CD 和供应链路径本身也需要风险治理。
+  - ref: https://slsa.dev/
+    title: SLSA
+    summary: 用于支撑供应链完整性、构建来源和发布可信度应成为产品级工程的一部分。
+  - ref: https://sre.google/sre-book/evolving-sre-engagement-model/
+    title: Google SRE Production Readiness Review
+    summary: 用于说明上线前需要生产就绪审查，覆盖服务可靠性、交接和运行风险。
+  - ref: https://sre.google/sre-book/service-level-objectives/
+    title: Google SRE Service Level Objectives
+    summary: 用于支撑产品级系统需要用 SLO 表达可靠性目标，并指导发布和运营判断。
+  - ref: https://sre.google/workbook/implementing-slos/
+    title: Google SRE Implementing SLOs
+    summary: 用于说明 SLO 不只是概念，还需要落到指标选择、告警和迭代机制。
+  - ref: https://opentelemetry.io/docs/what-is-opentelemetry/
+    title: OpenTelemetry Overview
+    summary: 用于支撑产品级开发需要标准化遥测能力，让运行状态可观察、可追踪。
+  - ref: https://opentelemetry.io/docs/concepts/observability-primer/
+    title: OpenTelemetry Observability Primer
+    summary: 用于说明日志、指标和追踪应共同服务运行理解，而不是只保留零散日志。
+  - ref: https://12factor.net/
+    title: The Twelve-Factor App
+    summary: 用于支撑配置、依赖、构建、发布和运行分离等产品级应用基础约束。
+  - ref: https://www.iso.org/standard/72089.html
+    title: ISO/IEC/IEEE 29148 Requirements Engineering
+    summary: 用于说明产品级开发需要更稳定的需求工程承载，而不是只依赖一次性提示词。
+  - ref: https://iso25000.com/index.php/en/iso-25000-standards/iso-25010
+    title: ISO/IEC 25010 Quality Model
+    summary: 用于支撑质量属性应覆盖性能、可靠性、安全性、可维护性等多个维度。
+  - ref: https://developers.openai.com/blog/run-long-horizon-tasks-with-codex
+    title: Codex Long-Horizon Tasks
+    summary: 用于说明 AI 执行复杂工程任务时需要更长周期的上下文、验证和任务分解机制。
+  - ref: https://docs.anthropic.com/en/docs/claude-code/common-workflows
+    title: Claude Code Common Workflows
+    summary: 用于补充 AI 编程工具中的常见工作流形态，支撑 LDVH 对执行入口和协作方式的抽象。
+  - ref: https://code.claude.com/docs/en/code-review
+    title: Claude Code Review
+    summary: 用于说明 AI 编程进入产品级后，代码审查应成为常规工作流，而不是可选补充。
 related_memos:
   - memo-0008
 related_workareas: []

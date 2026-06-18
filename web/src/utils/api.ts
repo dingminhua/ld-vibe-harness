@@ -110,11 +110,17 @@ export interface ObjectItem {
   /** Study-specific */
   summary?: string;
   conclusion?: string;
-  related_refs?: string[];
+  related_refs?: Array<string | RelatedReferenceItem>;
   report_body?: string;
   /** Pitfall-specific */
   resolution?: string;
   source_memos?: string[];
+}
+
+export interface RelatedReferenceItem {
+  ref: string;
+  title?: string;
+  summary?: string;
 }
 
 export interface ObjectStatusOption {

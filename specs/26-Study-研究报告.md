@@ -117,7 +117,9 @@ WorkPlan、ADR 和 Pitfall 的准入、状态和字段契约分别由 `specs/21-
 
 ### 4.3 Study 与关联文档和关联引用
 
-docs/studies 和 docs/sources 可以作为 Study 的输入资料区，但不应成为 Study 的稳定事实源前提。Study 一旦形成，应把报告正文中需要复读的关键引用提炼到 `related_refs`，包括外部 URL、规范章节、代码位置、资料名称或必要的来源说明。`related_refs` 回答“这份报告依据或引用了哪些材料”。
+docs/studies 和 docs/sources 可以作为 Study 的输入资料区，但不应成为 Study 的稳定事实源前提。Study 一旦形成，应把报告正文中需要复读的关键引用提炼到 `related_refs`，包括外部 URL、规范章节、代码位置、资料名称或必要的来源说明。`related_refs` 回答“这份报告依据或引用了哪些材料，以及每条引用支撑了当前报告中的什么判断”。
+
+`related_refs` 不应只是裸 URL 列表。新写入的外部 URL、规范段落、代码位置或说明性引用应优先使用结构化条目：`ref` 记录引用目标，`title` 记录可读标题，`summary` 记录该引用在当前报告中的用途摘要。摘要属于关联引用区，用于帮助复读报告依据；报告正文只保留研究叙述本身，不应在正文中间堆叠引用摘要清单。历史字符串条目可以兼容读取，但新增或重写时应补齐摘要。
 
 `related_docs` 只记录与 Study 相关的项目内文档路径，例如后续承接文档、被报告消费的本地 Markdown、或需要从 Study 页面直达的项目文档。它回答“这个 Study 与哪些项目文档有关”。如果某项只是报告正文中的外部资料、网页引用或说明性出处，应放入 `related_refs`，不放入 `related_docs`。
 
@@ -157,7 +159,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `user_intent` | 用户意图、调研出发点或最初想解决的问题 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
 | `summary` | 报告摘要和当前可引用结论 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `conclusion` | 报告结论、边界和残留不确定性 | string | 否 | 推荐填写 | Narrative / Decision | AI、Web |
-| `related_refs` | 报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_refs` | 报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明；新写入条目应使用 `{ref, title, summary}` 结构 | list[string/object] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -194,7 +196,9 @@ summary: |
 conclusion: |
   Study 适合承载稳定报告；Memo 保留演变摘要和分流关系。
 related_refs:
-  - specs/24-Memo-备忘.md §6
+  - ref: specs/24-Memo-备忘.md §6
+    title: Memo 字段契约
+    summary: 用于说明 Memo 的演变记录和分流关系边界，支撑本报告对 Memo/Study 分工的判断。
 related_memos:
   - memo-0001
 related_workareas: []
