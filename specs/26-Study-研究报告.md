@@ -30,7 +30,7 @@ ldvh_member:
 
 Study / 研究报告承载已经形成稳定阅读价值的调研、分析、核验或方案比较结果。它解决的问题是：docs/studies 可以作为可变资料区，随时整理或删除；但某些报告已经成为后续讨论、决策、计划或 Memo 演变的关键依据，需要作为工作对象进入 Git 可追踪事实源。
 
-Study 是报告产物对象，不是讨论过程对象。讨论的关键转折由 Memo 的 `evolution` 承载；决策进入 ADR；可执行事项进入 WorkPlan；复用经验进入 Pitfall。Study 只保留报告正文、摘要、来源、结论边界和关联对象。
+Study 是报告产物对象，不是讨论过程对象。讨论的关键转折由 Memo 的 `evolution` 承载；决策进入 ADR；可执行事项进入 WorkPlan；复用经验进入 Pitfall。Study 只保留报告正文、摘要、输入边界、结论边界和关联对象。
 
 ### 1.1 Study 准入条件
 
@@ -152,9 +152,8 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举；创建 Study 时即应为 `active` | Reference | AI、Code、Web |
 | `created` | — | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
 | `updated` | — | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
+| `user_intent` | 用户意图、调研出发点或最初想解决的问题 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
 | `summary` | 报告摘要和当前可引用结论 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
-| `source` | 报告创建来源 | enum | 是 | `human` 或 `ai` | Reference | AI、Code、Web |
-| `source_detail` | 来源说明、触发问题或输入资料摘要 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
 | `conclusion` | 报告结论、边界和残留不确定性 | string | 否 | 推荐填写 | Narrative / Decision | AI、Web |
 | `source_docs` | 输入资料、临时研究或外部资料路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_memos` | 关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -165,7 +164,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `related_docs` | 后续引用或承接文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `archive_reason` | 归档原因 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Human |
 
-字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
+字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。Study 不得维护 `source` 或 `source_detail`；用户侧调研出发点统一写入 `user_intent`。
 
 ### 6.2 正文契约
 
@@ -187,10 +186,9 @@ title: Memo 工作模型演变承载方式研究
 status: active
 created: '2026-06-18T14:30:00+08:00'
 updated: '2026-06-18T15:00:00+08:00'
+user_intent: 用户要求评估 Memo 是否足以承载想法、调研、报告和讨论演变。
 summary: |
   Memo 应承载议题的当前摘要和关键语义转折，完整调研报告应由 Study 承载。
-source: ai
-source_detail: 用户要求评估 Memo 是否足以承载想法、调研、报告和讨论演变。
 conclusion: |
   Study 适合承载稳定报告；Memo 保留演变摘要和分流关系。
 source_docs: []
@@ -261,7 +259,7 @@ Code 可依据本文实现以下能力：
 1. 解析 Study Markdown frontmatter 和正文；
 2. 校验文件命名、ID、字段类型、必填字段和条件必填字段；
 3. 校验状态枚举和合法流转；
-4. 校验 `source` 枚举、`source_docs`、`related_*` 引用字段；
+4. 校验 `source_docs`、`related_*` 引用字段；
 5. 聚合活跃 Study、已归档 Study 和关联 Memo。
 
 Code 不得自行创建、替代、归档或删除 Study，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/studies/` 权威事实源。

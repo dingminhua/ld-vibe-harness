@@ -85,7 +85,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'related_adrs', 'related_docs',
   ],
   study: [
-    'summary', 'conclusion', 'report_body', 'source', 'source_detail', 'source_docs',
+    'user_intent', 'summary', 'conclusion', 'report_body', 'source_docs',
     'related_memos', 'related_workareas',
     'related_adrs', 'related_pitfalls', 'related_docs', 'archive_reason',
   ],
@@ -141,6 +141,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   date: { zh: '日期', en: 'Date' },
   source: { zh: '来源', en: 'Source' },
   source_detail: { zh: '来源说明', en: 'Source Detail' },
+  user_intent: { zh: '用户意图', en: 'User Intent' },
   description: { zh: '描述', en: 'Description' },
   evolution: { zh: '演变记录', en: 'Evolution' },
   report_body: { zh: '报告正文', en: 'Report Body' },

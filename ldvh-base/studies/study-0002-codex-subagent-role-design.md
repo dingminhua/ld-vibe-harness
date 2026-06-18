@@ -7,8 +7,7 @@ created: '2026-06-18T07:59:11'
 updated: '2026-06-18T07:59:11'
 summary: |
   Codex 子 Agent 适合承接可并行、边界清晰、噪音较高或需要专业视角的运行期工作。Codex 官方资料显示，子 Agent 不会自动生成，必须由用户明确要求并行委派；Codex 可使用内置 default、worker、explorer，也可通过个人或项目级 TOML 文件定义自定义 agent。当前 Codex App 工具面还暴露了 spawn_agent、wait_agent、send_input 和 close_agent 这类管理动作。
-source: ai
-source_detail: 用户要求调研 Codex 中如何创建子 Agent 与调用子 Agent，为后续 00 文档多角色设定做前期准备。
+user_intent: 用户要求调研 Codex 中如何创建子 Agent 与调用子 Agent，为后续 00 文档多角色设定做前期准备。
 conclusion: |
   LDVH 应把多角色设定抽象为环境无关的 Role Contract，而不是把它绑定为 Codex 子 Agent 配置。Codex 子 Agent 可以作为支持环境中的运行期委派实现：由 WorkPlan execution item 给出角色、输入和输出要求，由 Human 或主控 AI 在明确授权下触发子 Agent。00 文档应强调角色契约、证据回收和主控整合责任；具体 Codex 创建、调用和自定义 agent 配置应放入环境适配、能力资产或后续专门规范。
 source_docs: []

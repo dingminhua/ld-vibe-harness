@@ -7,8 +7,7 @@ created: '2026-06-18T07:59:11'
 updated: '2026-06-18T07:59:11'
 summary: |
   TRAE CN 把智能体定位为面向不同开发场景的编程助手。TRAE IDE 支持内置 Chat、Agent、SOLO Agent，也支持通过智能生成或手动创建自定义智能体；自定义智能体可以配置提示词、MCP Server 和内置工具，并可开启“可被其他智能体调用”。当前官方文档显示，TRAE IDE 中仅 SOLO Agent 可调用自定义智能体。TRAE CLI 则支持通过 `/agent-new` 创建子智能体，保存到 `.traecli/agents`，并可由 TRAE CLI 自动拆分任务调用，或由用户通过 `@{智能体名称}` 手动调用。
-source: ai
-source_detail: 用户要求补充 TRAE CN 关于子 Agent / 自定义智能体创建调用机制的同主题调研，为后续 00 文档多角色设定提供对照。
+user_intent: 用户要求补充 TRAE CN 关于子 Agent / 自定义智能体创建调用机制的同主题调研，为后续 00 文档多角色设定提供对照。
 conclusion: |
   TRAE CN 对 LDVH 的启发是：多角色在 Trae 环境中更接近“可配置、可被主控 SOLO Agent 或 CLI 调度的专业智能体”，而不是 Codex 式必须显式请求 spawn 的子 Agent。LDVH 00 仍应抽象为 Role Contract；Trae 适配层可把 Role Contract 映射为自定义智能体配置、SOLO Agent 可调用设置、CLI `.traecli/agents` 文件、Skill 和 MCP 配置。TRAE 的 Spec / Plan 文档和 SOLO 任务管理可以作为执行过程和协作界面，但不应替代 LDVH 的 WorkPlan、Memo、Study、ADR 等事实源。
 source_docs: []

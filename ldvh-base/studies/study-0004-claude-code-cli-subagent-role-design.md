@@ -7,8 +7,7 @@ created: '2026-06-18T07:59:11'
 updated: '2026-06-18T07:59:11'
 summary: |
   Claude Code CLI 的 subagents 是专门 AI 助手，用于隔离会污染主上下文的搜索、日志、文件阅读、测试和专业审查等任务。Claude Code 支持通过 `/agents` 管理界面创建管理 subagents，也支持手动编写带 YAML frontmatter 的 Markdown 文件、通过 `--agents` CLI JSON 动态定义、通过 plugin 分发，或用 `--agent` 把某个 agent 作为整个会话的主代理。调用方式包括自动委派、自然语言命名、@ mention 保证调用、`--agent` 会话级默认，以及 `/fork` 分叉当前对话。
-source: ai
-source_detail: 用户要求补充 Claude Code CLI 关于子 Agent / subagents 创建调用机制的同主题调研，为后续 00 文档多角色设定提供对照。
+user_intent: 用户要求补充 Claude Code CLI 关于子 Agent / subagents 创建调用机制的同主题调研，为后续 00 文档多角色设定提供对照。
 conclusion: |
   Claude Code CLI 对 LDVH 的启发是：它已经把 subagent 设计成“角色提示词 + 工具权限 + 模型 + MCP + Skills + hooks + memory + 调用方式”的完整运行期角色系统，但它仍是会话执行机制，不是项目长期事实源。LDVH 00 应抽象“Role Contract”，Claude Code 适配层可把 Role Contract 映射为 `.claude/agents/*.md`、`~/.claude/agents/*.md`、`--agents` JSON、plugin agents 或 `--agent` 主会话代理。主控必须负责委派边界、结果整合、验证和事实源回写。
 source_docs: []

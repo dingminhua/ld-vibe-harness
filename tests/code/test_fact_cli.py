@@ -66,7 +66,10 @@ def test_create_study_defaults_to_active(tmp_path):
     assert data["id"] == "study-0001"
     assert data["type"] == "study"
     assert data["status"] == "active"
+    assert data["user_intent"] == ""
     assert data["summary"] == "Stable Study 的稳定研究报告。"
+    assert "source" not in data
+    assert "source_detail" not in data
     assert "研究报告草稿" not in path.read_text(encoding="utf-8")
 
 

@@ -112,7 +112,7 @@ REQUIRED_FIELDS = {
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
-    "study": ["id", "type", "title", "status", "created", "updated", "summary", "source"],
+    "study": ["id", "type", "title", "status", "created", "updated", "summary"],
 }
 
 DEFAULT_STATUS = {
@@ -470,8 +470,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_studies"] = []
         data["related_docs"] = []
     if object_type == "study":
-        data["source"] = "ai"
-        data["source_detail"] = ""
+        data["user_intent"] = ""
         data["summary"] = f"{title} 的稳定研究报告。"
         data["conclusion"] = ""
         data["source_docs"] = []

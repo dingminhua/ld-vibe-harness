@@ -46,7 +46,7 @@ REQUIRED_FIELDS = {
     "adr": ["id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
-    "study": ["id", "type", "title", "status", "created", "updated", "summary", "source"],
+    "study": ["id", "type", "title", "status", "created", "updated", "summary"],
 }
 LIST_FIELDS = {
     "workarea": {"related_adrs", "related_memos", "related_pitfalls", "related_docs", "workplans"},
@@ -74,7 +74,7 @@ LONG_TEXT_FIELDS = {
     "adr": {"context", "decision", "consequences"},
     "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
     "memo": {"description", "source_detail", "discard_reason"},
-    "study": {"summary", "source_detail", "conclusion", "archive_reason"},
+    "study": {"summary", "user_intent", "conclusion", "archive_reason"},
 }
 
 # 12-工作模型字段内容格式规范：路径引用字段定义
@@ -742,7 +742,6 @@ def validate_adr(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 VALID_PRIORITY = {"P0", "P1", "P2", "P3"}
 VALID_MEMO_SOURCE = {"web", "conversation"}
-VALID_STUDY_SOURCE = {"human", "ai"}
 
 ID_LIST_FIELDS = {
     "related_workareas": "workarea",
@@ -804,10 +803,9 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 def validate_study(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "study")
-    for removed_field in ("related_taskplans", "related_tasks", "superseded_by"):
+    for removed_field in ("related_taskplans", "related_tasks", "superseded_by", "source", "source_detail"):
         if removed_field in data:
             issues.append(Issue(str(path), "error", "REMOVED_OBJECT_FIELD", f"当前 Study 不得维护旧对象关联字段: {removed_field}", field=removed_field))
-    issues.extend(validate_enum_field(path, data, "source", VALID_STUDY_SOURCE))
     if is_empty(data.get("report_body")):
         issues.append(Issue(str(path), "error", "MISSING_REPORT_BODY", "Study Markdown 必须包含非空报告正文", field="report_body"))
     if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
