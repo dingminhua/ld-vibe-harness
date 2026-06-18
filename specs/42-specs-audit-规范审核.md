@@ -13,7 +13,7 @@ ldvh_member:
   kind: work_process
   name_en: specs-audit
   name_zh: 规范审核
-  collection_status: candidate
+  collection_status: active
   canonical_path: specs/42-specs-audit-规范审核.md
   scenario_anchor: "§5"
   context_anchor: "§4"
@@ -163,7 +163,7 @@ AI 遇到以下信号时，应识别为规范审核场景：
 Gate 触发时，AI 应说明触发原因、影响范围、可选处理方式、推荐分流和需要 Human 确认的具体事项。Human 确认形成稳定事实时，应按 06 的 Human Gate 最小字段记录时间、决策、范围和约束。
 
 ---
-## 8. Skill 与 Agent 调度
+## 8. Skill 和 Agent 调度
 
 本流程默认由主控 AI 执行。只有当审核任务可复用、复杂、争议大或需要独立上下文时，才考虑 Skill 或 Agent 辅助。
 
@@ -362,8 +362,7 @@ python3 code/specs_validate.py all
 ---
 ## 15. 待补齐事项
 
-1. 本文当前 `collection_status` 为 candidate，已出现 dogfood 候选使用；是否升级为 active 仍需 Human Gate 判断；
-2. specs 审核的正向/负向具体案例库尚未建立，后续执行时可同步沉淀 Pitfall 或 docs 报告；
-3. 尚未定义跨规范引用一致性的自动化规则矩阵，目前依赖人工检查；
-4. 与后续 Code 审核、Rules 入口审核、能力资产审核的衔接细节待对应流程创建后再细化；
-5. specs 审核的 Skill SOP 和 Agent 辅助边界尚未固化，后续稳定复用后可判断是否需要独立 Skill。
+1. specs 审核的正向/负向具体案例库尚未建立，后续执行时可同步沉淀 Pitfall 或 docs 报告；
+2. 尚未定义跨规范引用一致性的自动化规则矩阵，目前依赖人工检查；
+3. 与后续 Code 审核、Rules 入口审核、能力资产审核的衔接细节待对应流程创建后再细化；
+4. specs 审核的 Skill SOP 和 Agent 辅助边界尚未固化，后续稳定复用后可判断是否需要独立 Skill。

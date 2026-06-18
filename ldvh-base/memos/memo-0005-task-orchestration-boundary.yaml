@@ -62,6 +62,14 @@ evolution:
     summary: 41-43 候选流程的待补齐状态已从“等待首次真实使用”改为“已有 dogfood 候选使用，升级 active 仍需 Human Gate”，避免 candidate 流程被误读为未验证或被 AI 擅自升级。
   - at: 2026-06-18
     summary: landing-report 已能在 41 触发保障能力缺口中读取 40/41 工作流程成员状态；当前输出会明确显示 40 为 active、41 为 candidate，从 Code 侧防止候选流程被误当成 active 触发保障。
+  - at: 2026-06-18
+    summary: Human 已确认 41-43 可以升级为 active；对应工作流程成员自描述已从 candidate 改为 active，候选等待升级事项已从待补齐段移除。
+human_gate_records:
+  - confirmed_at: "2026-06-18"
+    decision: Human 确认 41 work-model-audit、42 specs-audit、43 landing-readiness-audit 可以从 candidate 升级为 active。
+    scope: specs/41-work-model-audit-工作模型审核.md、specs/42-specs-audit-规范审核.md、specs/43-landing-readiness-audit-落地准备度审核.md 的成员自描述集合状态和对应待补齐事项。
+    constraints: |
+      升级只表示三条工作流程可以作为 active 流程入口被 AI 引用和执行；不代表其 Skill SOP、案例库、自动化矩阵或后续 Code/Web 审核流程已经完成。后续仍需按各流程的 Gate、回写和验证要求执行。
 source: conversation
 source_detail: 本轮围绕 LDVH 工作流程、任务编排、执行证据、角色复检和 Memo 分流的连续讨论；包含一次联网复核结论。
 priority: P1

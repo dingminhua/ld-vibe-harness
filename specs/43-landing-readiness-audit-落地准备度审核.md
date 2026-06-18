@@ -1,7 +1,7 @@
 # landing-readiness-audit-落地准备度审核
 
 > 创建日期：2026-06-16
-> 更新日期：2026-06-17
+> 更新日期：2026-06-18
 > 定位：定义规范落地准备度审核行动，用于逐条检查 specs 正式规范声明的规范落地要求是否已有可定位的保障机制、能力资产、环境适配、确定性检查、Human Gate、生命周期触发或人工降级分流
 > 适用范围：LDVH 自身和管辖项目中对 specs 正式规范、工作模型、工作流程、Code、Web、Rules、Skill、Agent、Hook、CI 或环境适配相关落地要求的准备度审核、缺口分流和后续回写
 > 上位依据：`specs/06-工作流程基础规范.md`
@@ -13,7 +13,7 @@ ldvh_member:
   kind: work_process
   name_en: landing-readiness-audit
   name_zh: 落地准备度审核
-  collection_status: candidate
+  collection_status: active
   canonical_path: specs/43-landing-readiness-audit-落地准备度审核.md
   scenario_anchor: "§5"
   context_anchor: "§4"
@@ -360,8 +360,7 @@ python3 code/specs_validate.py all
 ---
 ## 15. 待补齐事项
 
-1. 本文当前 `collection_status` 为 candidate，已出现 dogfood 候选使用；是否升级为 active 仍需 Human Gate 判断；
-2. 落地准备度审核的 ready/partial/blocked 正反样例尚未建立，后续执行时可同步沉淀 Pitfall 或 docs 报告；
-3. Code 尚未定义专门的准备度矩阵输出格式，目前可先复用 `landing specs`、`landing-report`、`index` 和人工检查；
-4. 与后续管辖项目接入检查、环境部署执行、Rules 入口审核、Code 审核、Web 审核的边界需在实际执行中继续细化；
-5. 若本流程反复执行且步骤稳定，可评估是否创建独立 Skill SOP，但 Skill 不得新增稳定规则。
+1. 落地准备度审核的 ready/partial/blocked 正反样例尚未建立，后续执行时可同步沉淀 Pitfall 或 docs 报告；
+2. Code 尚未定义专门的准备度矩阵输出格式，目前可先复用 `landing specs`、`landing-report`、`index` 和人工检查；
+3. 与后续管辖项目接入检查、环境部署执行、Rules 入口审核、Code 审核、Web 审核的边界需在实际执行中继续细化；
+4. 若本流程反复执行且步骤稳定，可评估是否创建独立 Skill SOP，但 Skill 不得新增稳定规则。

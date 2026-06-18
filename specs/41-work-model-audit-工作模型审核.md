@@ -13,7 +13,7 @@ ldvh_member:
   kind: work_process
   name_en: work-model-audit
   name_zh: 工作模型审核
-  collection_status: candidate
+  collection_status: active
   canonical_path: specs/41-work-model-audit-工作模型审核.md
   scenario_anchor: "§5"
   context_anchor: "§4"
@@ -366,7 +366,6 @@ python3 code/specs_validate.py all
 ---
 ## 15. 待补齐事项
 
-1. 本文当前 `collection_status` 为 candidate，已出现 dogfood 候选使用；是否升级为 active 仍需 Human Gate 判断；
-2. 工作模型审核的正向/负向具体案例库尚未建立，后续执行时可同步沉淀 Pitfall 或 docs 报告；
-3. 与工作流程设计审核（40）、规范审核（42）的职责边界需在实际执行中继续细化，避免同一内容被多个流程反复审查；
-4. 工作模型审核的 Skill SOP 和 Agent 辅助边界尚未固化，后续稳定复用后可判断是否需要独立 Skill。
+1. 工作模型审核的正向/负向具体案例库尚未建立，后续执行时可同步沉淀 Pitfall 或 docs 报告；
+2. 与工作流程设计审核（40）、规范审核（42）的职责边界需在实际执行中继续细化，避免同一内容被多个流程反复审查；
+3. 工作模型审核的 Skill SOP 和 Agent 辅助边界尚未固化，后续稳定复用后可判断是否需要独立 Skill。
