@@ -8,12 +8,12 @@
 
 ```yaml
 ldvh_member:
-  spec_id: "26"
+  spec_id: "25"
   kind: work_model
   name_en: Study
   name_zh: 研究报告
   collection_status: active
-  canonical_path: specs/26-Study-研究报告.md
+  canonical_path: specs/25-Study-研究报告.md
   instance_root: ldvh-base/studies/
   schema_anchor: "§6"
   state_machine_anchor: "§3"
@@ -67,7 +67,7 @@ Study 是 Markdown 工作对象。每个实例使用 YAML frontmatter 承载结�
 
 | 内容 | 权威位置 |
 |---|---|
-| Study 工作模型规范 | `specs/26-Study-研究报告.md` |
+| Study 工作模型规范 | `specs/25-Study-研究报告.md` |
 | Study 实例 | `ldvh-base/studies/` |
 | Study 字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | Study 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |

@@ -3,19 +3,20 @@ type: workplan
 title: Git 提交记录规范收口
 status: active
 created: '2026-06-19T02:48:00+08:00'
-updated: '2026-06-19T07:03:48+08:00'
+updated: '2026-06-19T07:42:00+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
   当前 LDVH 已确认旧变更对象不应继续作为工作对象存在，而应回到 Git commit records 作为事实源修改追溯证据。
   本计划已将旧 25 号工作模型文件删除，并新增 `specs/09.01-Git提交记录与变更追溯规范.md`，同步清理
-  specs、Code、Web、测试和文档中的旧工作对象入口。
+  specs、Code、Web、测试和文档中的旧工作对象入口；为消除迁移痕迹，Study 工作模型应从 26 补位到 25。
 
   本计划负责承接后续行动准备：明确迁出目标、提交记录格式、简体中文提交语言要求、Web 派生视图调整、
   Code 校验和字段命名同步，确保迁出后工作模型集合保持自洽，Git 历史仍可被 AI 和 Human 高效使用。
 success_criteria: |
   - [x] specs 中旧变更对象不再作为工作对象出现在 20-39 工作模型集合中
   - [x] Human Gate 和编号决策已收口：新规范落在 09.01，旧 25 号工作模型文件删除，不做短期兼容对象
+  - [x] Study 工作模型由 26 补位为 25，现行 specs、Code、Web、测试和事实源引用不再出现 `specs/26-Study` 或 26 号 Study 入口
   - [x] 新的 Git 提交记录与变更追溯规范明确提交结构、Refs、Human-Gate、Verification、Risk、简体中文提交语言要求，以及哪些规则可机器校验、哪些由 Human 审查兜底
   - [x] 旧 `related_changes` 字段最终策略明确为删除对象手写字段，关联提交完全由 Git 历史、Refs、对象 ID 和路径派生
   - [x] Code 校验、CLI、测试和索引不再把旧变更对象当作工作对象处理
@@ -109,7 +110,7 @@ orchestration:
     - specs/22-ADR-决策.md
     - specs/23-Pitfall-踩坑经验.md
     - specs/24-Memo-备忘.md
-    - specs/26-Study-研究报告.md
+    - specs/25-Study-研究报告.md
     - code/fact_cli.py
     - code/fact_validate.py
     - tests/code/test_fact_cli.py
@@ -249,6 +250,31 @@ orchestration:
     result_summary: ''
     evidence_refs: []
     blocking_reason: null
+  - id: item-10
+    title: 消除 Study 编号迁移痕迹
+    role: specs-code-web
+    mode: single
+    input_refs:
+    - specs/01-目录说明.md
+    - specs/25-Study-研究报告.md
+    - specs/05-工作模型基础规范.md
+    - specs/24-Memo-备忘.md
+    - code/
+    - tests/
+    - web/
+    - ldvh-base/
+    expected_output: |
+      将 Study 工作模型从 26 补位为 25，并同步所有现行引用：
+      - `specs/26-Study-研究报告.md` 不再存在；
+      - `specs/25-Study-研究报告.md` 的 `spec_id`、`canonical_path` 和 01 成员目录一致；
+      - specs、Code、Web、测试和 ldvh-base 现行事实源不再引用 `specs/26-Study` 或 26 号 Study；
+      - 旧 Change 迁出后的残留扫描不把合法的 `specs/25-Study` 误判为迁移残留。
+    status: done
+    result_summary: Study 工作模型已由 26 补位为 25；`specs/25-Study-研究报告.md`、01/05 成员目录与编号说明、05.01 字段注册表 owner、Web 关联排序、现行 specs 引用、事实源引用和测试引用已同步。残留 `specs/26` / `26-Study` 命中仅保留在 0074 本执行项和验证命令中，用于说明本次补救目标；字段注册表已新增 owner 与 active 工作模型编号一致性检查，防止 Study 字段再次漂回 26。
+    evidence_refs:
+    - specs/01-目录说明.md
+    - specs/25-Study-研究报告.md
+    blocking_reason: null
   review:
     controller_self_check: true
     specialist_review:
@@ -270,7 +296,7 @@ verification_evidence: |
   git diff --check
   npm run check
   python3 code/fact_validate.py ldvh-base
-  rg -n "specs/25|25-Change|Change 工作对象|Change 迁出|变更日志|关联变更|最近变更|决策、变更|任务、决策、变更|变更等对象|经验或变更|变更和其他 ADR|变更记录|ldvh-base/changes|related_changes" specs rules code tests web/docs web/src web/api ldvh-base
+  rg -n "specs/26|26-Study|25-Change|Change 工作对象|Change 迁出|变更日志|关联变更|最近变更|决策、变更|任务、决策、变更|变更等对象|经验或变更|变更和其他 ADR|变更记录|ldvh-base/changes|related_changes" specs rules code tests web/docs web/src web/api ldvh-base
   ```
 
   ## 验证结果
@@ -281,10 +307,12 @@ verification_evidence: |
   npm run check 通过：Web typecheck、Web build、Web API tests、228 个 Code 测试和 specs:check 均通过；Web build 仅有既有 chunk size warning。
   ldvh-base 全量 fact_validate 为 errors=0 warnings=114，warning 均为既有旧证据格式提示。
   残留扫描中 `related_changes` 只存在于 09.01 禁止条款、Code 拦截、测试负例、0074 自身验收描述和历史事实文本中；不再作为工作对象字段或入口存在。
+  2026-06-19 追加补救：Study 已由 26 补位为 25。`python3 code/specs_validate.py all --fail-on-diagnostics` 通过，派生成员索引显示 Study 的 `spec_id`、`canonical_path` 和 `doc_number` 均为 25；`python3 -m pytest tests/code/test_fact_validate.py tests/code/test_fact_cli.py -q` 通过，44 passed；0074、study-0001、memo-0005、workplan-0073 单体 fact_validate 为 errors=0，warnings=2，warning 均来自 0073 既有证据格式提示。
+  子 agent 复检后补救了 `specs/01`、`specs/05`、`specs/05.01`、Web 关联排序、Web 设计文档和 active/pending 事实源中的编号/Change 残留，并新增 `FIELD_REGISTRY_OWNER_SCOPE_MISMATCH` 检查。`python3 code/specs_validate.py field-registry specs/05.01-工作字段内容格式规范.md` 通过；`python3 -m pytest tests/code/specs_validate_checks/test_field_registry.py tests/code/test_fact_validate.py tests/code/test_fact_cli.py -q` 通过，53 passed；`npm run check` 通过，包含 Web typecheck/build/API 测试、229 个 Code 单测和 specs:check。
 
   ## 结论
 
-  本轮补救已把旧 Change 工作对象迁出边界重新压实到 specs、Code、Web 和测试四层；0074 不应关闭，因为 Web 共享 commit DTO 与结构化 trailer 展示仍是后续增强项。
+  本轮补救已把旧 Change 工作对象迁出边界重新压实到 specs、Code、Web 和测试四层，并完成 Study 由 26 到 25 的补位，避免现行工作模型集合暴露旧编号空洞；0074 不应关闭，因为 Web 共享 commit DTO、结构化 trailer 展示和提交前 message 门禁仍是后续项。
 closure_evidence: ''
 review_requested_at: ''
 closed_at: ''

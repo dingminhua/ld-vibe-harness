@@ -67,11 +67,24 @@ def test_field_registry_accepts_mixed_ref_url_ref_and_enum_signal_web_kinds(tmp_
         object_rows=[
             "| `orchestration.mode` | workplan | 编排方式 | reference | string | enum | 21 | 21 | enum | enum_signal | active | none |",
             "| `orchestration.execution_items.input_refs` | workplan | 输入引用 | reference | list_string | mixed_ref | none | 21 | ref | mixed_ref | active | none |",
-            "| `urls` | study | 外部网址 | reference | list_object | url_ref | none | 26 | structured | url_ref | active | none |",
+            "| `urls` | study | 外部网址 | reference | list_object | url_ref | none | 25 | structured | url_ref | active | none |",
         ],
     )
 
     assert checker.field_registry_check([str(path)]) == []
+
+
+def test_field_registry_reports_scope_owner_mismatch(tmp_path):
+    path = write_registry_doc(
+        tmp_path / "05.01-工作字段内容格式规范.md",
+        object_rows=[
+            "| `urls` | study | 外部网址 | reference | list_object | url_ref | none | 26 | structured | url_ref | active | none |",
+        ],
+    )
+
+    issues = checker.field_registry_check([str(path)])
+
+    assert any(issue.code == "FIELD_REGISTRY_OWNER_SCOPE_MISMATCH" for issue in issues)
 
 
 def test_field_registry_reports_invalid_enum(tmp_path):

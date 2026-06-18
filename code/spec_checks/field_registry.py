@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 from .common import HEADING_RE, Issue
+from .index import SpecsChecker
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -99,6 +100,22 @@ def default_spec_path():
 
 def workplan_spec_path():
     return SPECS_DIR / WORKPLAN_SPEC_NAME
+
+
+def active_work_model_scope_owners():
+    owners = {}
+    try:
+        index = SpecsChecker(PROJECT_ROOT, SPECS_DIR).build()
+    except Exception:
+        return owners
+    for member in index.get("members", []):
+        if member.get("kind") != "work_model" or member.get("collection_status") != "active":
+            continue
+        scope = str(member.get("name_en") or "").lower()
+        spec_id = str(member.get("spec_id") or "")
+        if scope and spec_id:
+            owners[scope] = spec_id
+    return owners
 
 
 def selected_spec_paths(paths=None):
@@ -297,8 +314,9 @@ def registered_field_paths(tables):
     return field_paths
 
 
-def check_registry_table(path, section_title, table, seen_keys):
+def check_registry_table(path, section_title, table, seen_keys, scope_owners=None):
     issues = []
+    scope_owners = scope_owners or {}
     header = table.get("header") or []
     if header[: len(REGISTRY_REQUIRED_COLUMNS)] != REGISTRY_REQUIRED_COLUMNS:
         expected = " | ".join(REGISTRY_REQUIRED_COLUMNS)
@@ -360,6 +378,18 @@ def check_registry_table(path, section_title, table, seen_keys):
             if value and not OWNER_RE.match(value):
                 issues.append(Issue(path, row["line"], f"{column} 归属值无效: {value}", code="FIELD_REGISTRY_OWNER_INVALID"))
 
+        expected_owner = scope_owners.get(data.get("scope"))
+        schema_owner = data.get("schema_owner")
+        if expected_owner and schema_owner not in {"", "none", "20-39", expected_owner}:
+            issues.append(
+                Issue(
+                    path,
+                    row["line"],
+                    f"schema_owner 与 scope 当前工作模型编号不一致: scope={data.get('scope')} schema_owner={schema_owner} expected={expected_owner}",
+                    code="FIELD_REGISTRY_OWNER_SCOPE_MISMATCH",
+                )
+            )
+
         status = data.get("status")
         replacement = data.get("replacement")
         if status == "active" and replacement != "none":
@@ -397,12 +427,13 @@ def check_file(path):
 
     tables = extract_tables(path)
     seen_keys = set()
+    scope_owners = active_work_model_scope_owners()
     for section_title in sorted(REQUIRED_REGISTRY_SECTION_TITLES):
         table = tables.get(section_title)
         if not table:
             issues.append(Issue(path, 1, f"缺少 registry 表章节或表格: {section_title}", code="FIELD_REGISTRY_TABLE_MISSING"))
             continue
-        issues.extend(check_registry_table(path, section_title, table, seen_keys))
+        issues.extend(check_registry_table(path, section_title, table, seen_keys, scope_owners))
 
     issues.extend(check_workplan_coverage(path, tables))
     return issues

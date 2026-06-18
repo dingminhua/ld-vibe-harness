@@ -114,7 +114,7 @@ const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
   related_adrs: 22,
   related_pitfalls: 23,
   related_memos: 24,
-  related_studies: 26,
+  related_studies: 25,
 };
 export type RelatedContentEntry = [string, unknown[]];
 type RelatedAssociationValue = {

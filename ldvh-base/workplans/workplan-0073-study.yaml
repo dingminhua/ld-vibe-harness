@@ -15,7 +15,7 @@ description: |
   后续用户指出 Memo 和 Study 的创建/更新时间应与其他工作对象一致记录并显示时间戳，而不是 date-only。
   本计划同步收口 `datetime` 字段规范、Validator、Web Memo 写入、事实源实例和 Web 显示测试。
 success_criteria: |
-  - [x] `specs/26-Study-研究报告.md` 不再把 `draft` 或 `superseded` 作为 Study 合法状态或合法流转
+  - [x] `specs/25-Study-研究报告.md` 不再把 `draft` 或 `superseded` 作为 Study 合法状态或合法流转
   - [x] `code/fact_cli.py` 创建 Study 时默认进入 `active`，并不再允许 Study `draft` 或 `superseded`
   - [x] `code/fact_validate.py` 校验 Study 时拒绝 `draft`、`superseded` 和 `superseded_by`
   - [x] Web Study 列表不再展示草稿或已替代筛选类别
@@ -37,12 +37,12 @@ orchestration:
     role: specs
     mode: single
     input_refs:
-    - specs/26-Study-研究报告.md
+    - specs/25-Study-研究报告.md
     expected_output: Study 标准状态与合法流转删除 draft，并明确创建后即为 active 稳定报告。
     status: done
     result_summary: 已删除 Study 规范中的 draft 标准状态、draft 流转和提升为 active 的生命周期表述，并明确创建 Study 时即应为 active。
     evidence_refs:
-    - specs/26-Study-研究报告.md
+    - specs/25-Study-研究报告.md
     blocking_reason: null
   - id: item-2
     title: 同步 Code 校验和 CLI 创建契约
@@ -88,7 +88,7 @@ orchestration:
     input_refs:
     - specs/05.01-工作字段内容格式规范.md
     - specs/24-Memo-备忘.md
-    - specs/26-Study-研究报告.md
+    - specs/25-Study-研究报告.md
     - code/fact_validate.py
     - web/api/routes/memos.ts
     - web/src/utils/dateFormat.ts
@@ -99,7 +99,7 @@ orchestration:
     evidence_refs:
     - specs/05.01-工作字段内容格式规范.md
     - specs/24-Memo-备忘.md
-    - specs/26-Study-研究报告.md
+    - specs/25-Study-研究报告.md
     - code/fact_validate.py
     - web/api/routes/memos.ts
     - tests/code/test_fact_validate.py
@@ -118,8 +118,8 @@ verification_evidence: |
 
   事实源和规范检查：
   - `python3 code/fact_validate.py ldvh-base/`：通过，files=110 errors=0 warnings=0。
-  - `python3 code/specs_validate.py refs specs/05.01-工作字段内容格式规范.md specs/24-Memo-备忘.md specs/26-Study-研究报告.md`：通过。
-  - `python3 code/specs_validate.py doc specs/05.01-工作字段内容格式规范.md specs/24-Memo-备忘.md specs/26-Study-研究报告.md`：通过。
+  - `python3 code/specs_validate.py refs specs/05.01-工作字段内容格式规范.md specs/24-Memo-备忘.md specs/25-Study-研究报告.md`：通过。
+  - `python3 code/specs_validate.py doc specs/05.01-工作字段内容格式规范.md specs/24-Memo-备忘.md specs/25-Study-研究报告.md`：通过。
 
   Code 测试：
   - `python3 -m pytest tests/code/test_fact_cli.py tests/code/test_fact_validate.py -q`：17 passed。
@@ -132,8 +132,8 @@ verification_evidence: |
   - 浏览器刷新 `/objects/memo` 后，Memo 元信息显示 `2026-06-18 09:26`、`2026-06-18 09:03`、`2026-06-18 08:49` 等带时分时间戳。
 
   残留扫描：
-  - `rg 'study.*draft|draft.*study|研究报告草稿|draft → active|draft → archived|标记为 active|提升为 active' specs/26-Study-研究报告.md code/fact_cli.py code/fact_validate.py tests web/src web/docs` 仅剩负向测试用例。
-  - `rg 'status: superseded|superseded_by:' ldvh-base/studies specs/26-Study-研究报告.md code/fact_cli.py code/fact_validate.py web/src/components/ObjectStatusFilter.tsx tests/web/api/facts.test.ts tests/code/test_fact_validate.py` 仅剩负向测试用例。
+  - `rg 'study.*draft|draft.*study|研究报告草稿|draft → active|draft → archived|标记为 active|提升为 active' specs/25-Study-研究报告.md code/fact_cli.py code/fact_validate.py tests web/src web/docs` 仅剩负向测试用例。
+  - `rg 'status: superseded|superseded_by:' ldvh-base/studies specs/25-Study-研究报告.md code/fact_cli.py code/fact_validate.py web/src/components/ObjectStatusFilter.tsx tests/web/api/facts.test.ts tests/code/test_fact_validate.py` 仅剩负向测试用例。
   - `rg "^created: date-only|^updated: date-only|review_requested_at: date-only|closed_at: date-only|evolution.at date-only"` 的实际模式扫描无残留；`resolved_at` 仍按 Memo 规范保留 date 字段。
 closure_evidence: |
   ## 关闭判断

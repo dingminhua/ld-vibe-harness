@@ -65,7 +65,7 @@ evolution:
   - at: '2026-06-18T09:00:36'
     summary: Human 已确认 41-43 可以升级为 active；对应工作流程成员自描述已从 candidate 改为 active，候选等待升级事项已从待补齐段移除。
   - at: '2026-06-18T10:49:13'
-    summary: workplan-0069 完成旧 TaskPlan / Task / SubTask 事实源与兼容入口清退；当前 active 工作对象入口只保留 WorkArea、WorkPlan、ADR、Pitfall、Memo、Change 和 Study，旧对象事实只保留在 Git 历史和已迁移 WorkPlan 证据中。
+    summary: workplan-0069 完成旧 TaskPlan / Task / SubTask 事实源与兼容入口清退；当前 active 工作对象入口只保留 WorkArea、WorkPlan、ADR、Pitfall、Memo 和 Study，事实源修改追溯回到 Git 提交记录和提交记录派生视图，旧对象事实只保留在 Git 历史和已迁移 WorkPlan 证据中。
 human_gate_records:
   - confirmed_at: "2026-06-18"
     decision: Human 确认 41 work-model-audit、42 specs-audit、43 landing-readiness-audit 可以从 candidate 升级为 active。
@@ -91,4 +91,4 @@ related_docs:
   - specs/06-工作流程基础规范.md
   - specs/21-WorkPlan-工作计划.md
   - specs/24-Memo-备忘.md
-  - specs/26-Study-研究报告.md
+  - specs/25-Study-研究报告.md

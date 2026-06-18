@@ -105,7 +105,7 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 
-所有 `related_*`、`aggregated_related_*` 和 Study `urls` 字段在对象详情中应统一收进上层“关联”区块，不得按字段名散落在正文、证据或其他字段之间。关联区块内部先展示工作对象关联，并按工作模型编号排序：WorkArea 20、WorkPlan 21、ADR 22、Pitfall 23、Memo 24、Study 26；非工作对象关联再按字段英文名排序，例如 `related_docs`、`urls`、`related_rules`。提交记录不是工作对象关联字段，应从 Git 提交记录视图派生。
+所有 `related_*`、`aggregated_related_*` 和 Study `urls` 字段在对象详情中应统一收进上层“关联”区块，不得按字段名散落在正文、证据或其他字段之间。关联区块内部先展示工作对象关联，并按工作模型编号排序：WorkArea 20、WorkPlan 21、ADR 22、Pitfall 23、Memo 24、Study 25；非工作对象关联再按字段英文名排序，例如 `related_docs`、`urls`、`related_rules`。提交记录不是工作对象关联字段，应从 Git 提交记录视图派生。
 
 关联区块内的工作对象引用不直接展示对象编号。对象编号属于打开后的对象详情、复制路径或 YAML 源码中的定位信息；列表态只展示对象类型图标、对象标题和必要操作图标，降低重复元信息对阅读的干扰。
 
