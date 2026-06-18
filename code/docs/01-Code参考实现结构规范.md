@@ -148,7 +148,7 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 | 实现入口或模块 | 测试位置 |
 |---|---|
-| `code/specs_validate.py` | `tests/code/test_specs_validate.py` 保留 CLI 兼容入口加载和聚合入口烟雾测试 |
+| `code/specs_validate.py` | `tests/code/test_specs_validate.py` 保留 CLI 兼容入口加载、`all --fail-on-diagnostics` 聚合入口成功回归和失败回归 |
 | `code/spec_checks/common.py` | `tests/code/specs_validate_checks/common.py` 提供 specs 校验测试共享加载和 Markdown 夹具 helper |
 | `code/spec_checks/doc_structure.py` | `tests/code/specs_validate_checks/test_doc_structure.py` |
 | `code/spec_checks/refs.py` | `tests/code/specs_validate_checks/test_refs.py` |
@@ -168,6 +168,8 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 | 受控写入或修复脚本 | 对应脚本名测试，并覆盖写入前阻断和写入后验证 |
 
 当实现模块拆分但 CLI 行为不变时，应保留原 CLI 集成测试，并补充必要的模块级单元测试。拆分提交不得以“只是搬文件”为理由跳过测试。
+
+`npm run test:code` 是 Code 参考实现的日常完整测试入口，必须同时执行 `tests/code` 自动化测试和 `python3 code/specs_validate.py all --fail-on-diagnostics` 综合检查。只需要快速运行 pytest 样例时使用 `npm run test:code:unit`；不得把 `test:code` 降级为仅入口加载、仅模块单元测试或不含 specs 聚合检查的烟雾测试。
 
 `tests/code/specs_validate_checks/` 是 `specs_validate.py` 测试的能力域拆分目录。目录名不得使用 `tests/code/spec_checks/`，避免与实现包 `code/spec_checks/` 在 pytest import 解析中发生同名包冲突。
 

@@ -12,10 +12,11 @@
     "web:check": "npm --workspace web run check",
     "web:build": "npm --workspace web run build",
     "test:web:api": "npm --workspace web run test:web:api",
-    "test:code": "python3 -m pytest tests/code",
+    "test:code:unit": "python3 -m pytest tests/code",
+    "test:code": "npm run test:code:unit && npm run specs:check",
     "test": "npm run test:code && npm run test:web:api",
-    "specs:check": "python3 code/specs_validate.py all --fail-on-diagnostics",
+    "specs:check": "tmpdir=$(mktemp -d); python3 code/specs_validate.py all --fail-on-diagnostics --out \"$tmpdir\"; status=$?; rm -rf \"$tmpdir\"; exit $status",
     "facts:check": "python3 code/fact_validate.py ldvh-base/",
-    "check": "npm run web:check && npm run web:build && npm run test:web:api && npm run test:code && npm run specs:check"
+    "check": "npm run web:check && npm run web:build && npm run test:web:api && npm run test:code"
   }
 }
