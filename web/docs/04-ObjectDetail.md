@@ -101,7 +101,7 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、WorkPlan、ADR、Pitfall、Memo、Study。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
 
-路径类字段应按字段语义区分：`related_docs` 指向关联文档，`related_refs` 指向报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明，`related_rules` 指向关联规范、Rules、Skill 或 Agent 路径。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
+路径类字段应按字段语义区分：`related_docs` 指向关联文档，`related_refs` 指向报告正文中的关键引用、外部 URL、规范段落、代码位置或来源说明，`related_rules` 指向关联规范、Rules、Skill、Agent、Code 或 Web 路径。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -122,6 +123,7 @@ def test_create_adr_defaults_to_active_contract(tmp_path):
     data = read_yaml(Path(result.stdout.strip()))
     assert data["status"] == "active"
     assert data["date"]
+    assert data["decision"] == "待补充。"
     assert data["related_workplans"] == []
     assert data["archive_reason"] == ""
     assert data["deprecated_reason"] == ""
@@ -129,6 +131,13 @@ def test_create_adr_defaults_to_active_contract(tmp_path):
     assert "superseded_by" not in data
     assert "alternatives" not in data
     assert "affects" not in data
+    validate = subprocess.run(
+        [sys.executable, str(PROJECT_ROOT / "code" / "fact_validate.py"), str(tmp_path / "ldvh-base" / "adrs"), "--format", "text"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert validate.returncode == 0, validate.stdout + validate.stderr
 
 
 def test_adr_transition_requires_terminal_reasons(tmp_path):

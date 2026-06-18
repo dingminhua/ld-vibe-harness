@@ -88,7 +88,7 @@ EVIDENCE_FIELDS_BY_TYPE = {
 EVIDENCE_REQUIRED_HEADINGS = ["验证计划", "验证命令", "验证结果", "结论"]
 ADR_CONSEQUENCES_REQUIRED_HEADINGS = ["正向价值", "逆向价值", "实施成本", "风险评估", "注意事项"]
 ADR_NO_REVERSE_VALUE_TEXT = "当前决策无逆向价值"
-VALUE_STANDARD_REF_RE = re.compile(r"\bV(?:[1-9]|10)\b")
+VALUE_STANDARD_REF_RE = re.compile(r"(?<![A-Za-z0-9_])V(?:[1-9]|10)(?![A-Za-z0-9_])")
 PITFALL_TAG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 WORKPLAN_ORCHESTRATION_MODES = {"single", "sequential", "parallel", "mixed"}

@@ -379,6 +379,38 @@ consequences: |
     assert "V1-V10" in result.stdout
 
 
+def test_active_adr_accepts_compact_chinese_value_reference(tmp_path):
+    adr = write_valid_adr(
+        tmp_path,
+        extra="""
+consequences: |
+  ## 正向价值
+
+  Current value.
+
+  ## 逆向价值
+
+  削弱V10持续完善：需要额外维护判断说明。
+
+  ## 实施成本
+
+  Current cost.
+
+  ## 风险评估
+
+  Current risk.
+
+  ## 注意事项
+
+  Current notes.
+""",
+    )
+
+    result = run_checker(adr)
+
+    assert result.returncode == 0
+
+
 def test_adr_terminal_statuses_require_reasons(tmp_path):
     archived = write_valid_adr(tmp_path / "archived", status="archived")
     deprecated = write_valid_adr(tmp_path / "deprecated", status="deprecated")

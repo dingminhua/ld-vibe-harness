@@ -549,6 +549,7 @@ def cmd_create(args: argparse.Namespace) -> int:
             f"确认时间={now}, 确认上下文={getattr(args, 'confirmation_context', 'N/A')}]"
         )
         data["context"] = gate_record
+        data["decision"] = "待补充。"
         data["consequences"] = "## 正向价值\n\n待补充。\n\n## 逆向价值\n\n当前决策无逆向价值\n\n## 实施成本\n\n待补充。\n\n## 风险评估\n\n待补充。\n\n## 注意事项\n\n待补充。\n"
         data["related_workareas"] = []
         data["related_workplans"] = []

@@ -321,6 +321,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   const [error, setError] = useState<string | null>(null);
   const obj = (data as Record<string, unknown> | undefined) ?? detail?.data;
   const status = detail?.summary.status ?? (obj?.status as string | undefined);
+  const headerStatus = isObjectDetailLayoutType(objectType) ? undefined : status;
   const title = getObjectTitle(obj, objectId, locale);
   const targetPath = detail?.target;
   const loading = !obj && !error && Boolean(objectType && objectId);
@@ -375,8 +376,8 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         target={targetPath}
         typeColor={typeColor}
         typeLabel={getObjectTypeLabel(objectType, locale)}
-        status={status}
-        statusLabel={status ? getObjectStatusLocale(objectType || '', status, locale) : undefined}
+        status={headerStatus}
+        statusLabel={headerStatus ? getObjectStatusLocale(objectType || '', headerStatus, locale) : undefined}
         source={obj || {}}
         locale={locale}
         created={formatDateTime(obj?.created as string | undefined)}

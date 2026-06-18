@@ -1474,6 +1474,8 @@ const ADR_READING_NODES: Array<{ field: string; zh: string; en: string }> = [
   { field: 'context', zh: '背景', en: 'Context' },
   { field: 'decision', zh: '决策', en: 'Decision' },
   { field: 'consequences', zh: '影响', en: 'Consequences' },
+  { field: 'archive_reason', zh: '归档原因', en: 'Archive Reason' },
+  { field: 'deprecated_reason', zh: '废弃原因', en: 'Deprecated Reason' },
 ];
 
 export function AdrReadingLayout({
@@ -1532,6 +1534,9 @@ const PITFALL_READING_NODES: Array<{ field: string; zh: string; en: string; kind
   { field: 'verification', zh: '验证', en: 'Verification', kind: 'evidence' },
   { field: 'avoidance', zh: '规避', en: 'Avoidance' },
   { field: 'applicability', zh: '范围', en: 'Scope' },
+  { field: 'superseded_by', zh: '替代来源', en: 'Superseded By' },
+  { field: 'archive_reason', zh: '归档原因', en: 'Archive Reason' },
+  { field: 'notes', zh: '备注', en: 'Notes' },
 ];
 
 export function PitfallReadingLayout({
