@@ -4,16 +4,16 @@
 > 定位：定义 Study / 研究报告工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要把 AI 调研、资料分析、方案比较或事实核验结果沉淀为稳定可阅读报告的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/03.01-规范文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/26-Memo-备忘.md`、`specs/27-Change-变更.md`
+> 相关规范：`specs/03.01-规范文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/24-Memo-备忘.md`、`specs/25-Change-变更.md`
 
 ```yaml
 ldvh_member:
-  spec_id: "28"
+  spec_id: "26"
   kind: work_model
   name_en: Study
   name_zh: 研究报告
   collection_status: active
-  canonical_path: specs/28-Study-研究报告.md
+  canonical_path: specs/26-Study-研究报告.md
   instance_root: ldvh-base/studies/
   schema_anchor: "§6"
   state_machine_anchor: "§3"
@@ -67,7 +67,7 @@ Study 是 Markdown 工作对象。每个实例使用 YAML frontmatter 承载结�
 
 | 内容 | 权威位置 |
 |---|---|
-| Study 工作模型规范 | `specs/28-Study-研究报告.md` |
+| Study 工作模型规范 | `specs/26-Study-研究报告.md` |
 | Study 实例 | `ldvh-base/studies/` |
 | Study 字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | Study 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -115,13 +115,13 @@ draft → archived
 
 Memo 可以引用一个或多个 Study。Memo 负责保留议题当前摘要和关键语义转折，Study 负责承载完整报告正文。Memo 不应复制 Study 全文；Study 不应记录 Memo 的讨论流水。
 
-Memo 的准入、状态和字段契约由 `specs/26-Memo-备忘.md` 定义。
+Memo 的准入、状态和字段契约由 `specs/24-Memo-备忘.md` 定义。
 
 ### 4.2 Study 与 WorkPlan、ADR 和 Pitfall
 
 Study 可以作为 WorkPlan 的资料输入、ADR 的决策依据或 Pitfall 的证据来源。目标对象应只引用 Study ID 或路径，不复制报告正文。
 
-WorkPlan、ADR 和 Pitfall 的准入、状态和字段契约分别由 `specs/21-WorkPlan-工作计划.md`、`specs/24-ADR-决策.md` 和 `specs/25-Pitfall-踩坑经验.md` 定义。
+WorkPlan、ADR 和 Pitfall 的准入、状态和字段契约分别由 `specs/21-WorkPlan-工作计划.md`、`specs/22-ADR-决策.md` 和 `specs/23-Pitfall-踩坑经验.md` 定义。
 
 ### 4.3 Study 与 docs/studies、docs/sources
 
@@ -129,7 +129,7 @@ docs/studies 和 docs/sources 可以作为 Study 的输入资料区。Study 一�
 
 ### 4.4 Study 与 Change
 
-Study 的创建、状态变化、核心报告改写、归档和替代都应留下 Change。Change 的 commit message 契约由 `specs/27-Change-变更.md` 定义。
+Study 的创建、状态变化、核心报告改写、归档和替代都应留下 Change。Change 的 commit message 契约由 `specs/25-Change-变更.md` 定义。
 
 ---
 ## 5. Human Gate
@@ -295,7 +295,7 @@ Study 创建、报告整理、吸收和归档的具体行动流程由后续 40-5
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Study 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、26 Memo、27 Change、Human Gate | 工作模型治理 | 创建、修改、审计、引用、归档或替代 Study 时 |
+| 上位约束承接要求 | Study 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、24 Memo、25 Change、Human Gate | 工作模型治理 | 创建、修改、审计、引用、归档或替代 Study 时 |
 | 入口可见要求 | AI 处理需要长期保留的调研报告时，应能定位本文 | 成员自描述、运行入口摘要、Memo 分流规则 | AI 执行入口提示 | 报告创建、引用、吸收、替代或归档时 |
 | 确定性执行要求 | Study frontmatter、状态、引用、文件命名和正文存在性应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Study 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、Markdown 承载或引用关系变化时 |
 | Human 交互要求 | Study 创建、提升为 active、核心报告改写、归档、替代和作为关键依据时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |

@@ -113,7 +113,7 @@ orchestration:
       任务完成，人工确认关闭。
     evidence_refs:
     - specs/07-Code确定性执行实现规范.md
-    - specs/24-ADR-决策.md
+    - specs/22-ADR-决策.md
     blocking_reason: null
   review:
     controller_self_check: true

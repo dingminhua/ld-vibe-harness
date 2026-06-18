@@ -14,10 +14,10 @@ consequences: |
 affects:
 - ldvh-base/adrs/
 - /Users/dmh2002/trae_projects/.trae/skills/ldvh-adr/SKILL.md
-- specs/24-ADR-决策.md
+- specs/22-ADR-决策.md
 related_tasks: []
 related_changes: []
 related_memos: []
 related_rules:
-- specs/24-ADR-决策.md
+- specs/22-ADR-决策.md
 related_workareas: []

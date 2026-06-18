@@ -4,16 +4,16 @@
 > 定位：定义 Memo / 备忘工作模型，包括对象定位、演变承载、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理尚未计划化但有保留价值的输入、发现、提醒、问题、缺口和偏好的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-WorkPlan-工作计划.md`、`specs/24-ADR-决策.md`、`specs/27-Change-变更.md`、`specs/28-Study-研究报告.md`
+> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md`、`specs/20-WorkArea-工作域.md`、`specs/21-WorkPlan-工作计划.md`、`specs/22-ADR-决策.md`、`specs/25-Change-变更.md`、`specs/26-Study-研究报告.md`
 
 ```yaml
 ldvh_member:
-  spec_id: "26"
+  spec_id: "24"
   kind: work_model
   name_en: Memo
   name_zh: 备忘
   collection_status: active
-  canonical_path: specs/26-Memo-备忘.md
+  canonical_path: specs/24-Memo-备忘.md
   instance_root: ldvh-base/memos/
   schema_anchor: "§6"
   state_machine_anchor: "§3"
@@ -74,7 +74,7 @@ ldvh-base/memos/memo-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| Memo 工作模型规范 | `specs/26-Memo-备忘.md` |
+| Memo 工作模型规范 | `specs/24-Memo-备忘.md` |
 | Memo 实例 | `ldvh-base/memos/` |
 | Memo 字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | Memo 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -127,7 +127,7 @@ WorkPlan 的准入、状态和字段契约由 `specs/21-WorkPlan-工作计划.md
 
 Memo 可以分流为 ADR，作为临时判断、偏好或方案取舍转化为长期决策的路径。分流后，Memo 的 `resolved_to` 应记录 `{type: adr, ref: <ADR ID>}`，ADR 的 `related_memos` 可记录来源 Memo。
 
-ADR 的准入、状态和字段契约由 `specs/24-ADR-决策.md` 定义。
+ADR 的准入、状态和字段契约由 `specs/22-ADR-决策.md` 定义。
 
 ### 4.3 Memo 与 WorkArea 和 WorkPlan
 
@@ -139,7 +139,7 @@ WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` �
 
 Memo 可以关联一个或多个 Study，用于承接 AI 调研、资料分析、事实核验或方案比较后的稳定报告。Memo 的 `related_studies` 记录 Study ID；Study 的 `related_memos` 可反向记录来源或关联 Memo。
 
-Memo 只保留报告对议题演变产生的关键影响，不复制报告全文。Study 的准入、状态和字段契约由 `specs/28-Study-研究报告.md` 定义。
+Memo 只保留报告对议题演变产生的关键影响，不复制报告全文。Study 的准入、状态和字段契约由 `specs/26-Study-研究报告.md` 定义。
 
 ### 4.5 Memo 与 Pitfall、管辖项目配置、docs
 
@@ -151,11 +151,11 @@ Memo 可以分流或关联到 Pitfall、管辖项目配置或 docs：
 4. 稳定调研、分析或报告内容，应优先形成 Study；
 5. 外部引用或调研资料，应进入 docs/sources。
 
-Pitfall 的准入、状态和字段契约由 `specs/25-Pitfall-踩坑经验.md` 定义。管辖项目配置的字段和边界由 `specs/03.04-管辖项目配置规范.md` 定义。环境能力核验、环境适配和适配措施正文不得写入管辖项目配置；需要长期保留的稳定事实应进入环境适配待补齐事项、WorkPlan、Memo、Study、ADR、正式规范或按 04 系列规范处理。当前具体检查结果只保留当前过程结论，不作为持久状态事实源。
+Pitfall 的准入、状态和字段契约由 `specs/23-Pitfall-踩坑经验.md` 定义。管辖项目配置的字段和边界由 `specs/03.04-管辖项目配置规范.md` 定义。环境能力核验、环境适配和适配措施正文不得写入管辖项目配置；需要长期保留的稳定事实应进入环境适配待补齐事项、WorkPlan、Memo、Study、ADR、正式规范或按 04 系列规范处理。当前具体检查结果只保留当前过程结论，不作为持久状态事实源。
 
 ### 4.6 Memo 与 Change
 
-Memo 的创建、状态变化、分流和废弃都应留下 Change。Change 的 commit message 契约由 `specs/27-Change-变更.md` 定义。
+Memo 的创建、状态变化、分流和废弃都应留下 Change。Change 的 commit message 契约由 `specs/25-Change-变更.md` 定义。
 
 ---
 ## 5. Human Gate
@@ -306,7 +306,7 @@ Memo 创建、分流和废弃的具体行动流程由后续 40-59 工作流程�
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Memo 实例和后续工作流程应遵守本文定义的准入、演变承载、状态机、字段契约、分流规则和事实源边界 | 05、03.02、本文、24 ADR、20 WorkArea、21 WorkPlan、28 Study、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、分流或废弃 Memo 时 |
+| 上位约束承接要求 | Memo 实例和后续工作流程应遵守本文定义的准入、演变承载、状态机、字段契约、分流规则和事实源边界 | 05、03.02、本文、22 ADR、20 WorkArea、21 WorkPlan、26 Study、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、分流或废弃 Memo 时 |
 | 入口可见要求 | AI 处理未计划化但有保留价值的信息、发现、提醒、问题或缺口时，应能定位本文 | 成员自描述、运行入口摘要、Memo 分流流程入口 | AI 执行入口提示 | 信息保留、分流、废弃或字段契约变化时 |
 | 确定性执行要求 | Memo 字段、状态、来源枚举、演变记录、优先级、引用、文件命名和条件必填应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Memo 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、分流规则或引用关系变化时 |
 | Human 交互要求 | Memo 创建、分流、废弃、核心摘要修改、演变记录修改和用 Memo 规避对象准入时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |

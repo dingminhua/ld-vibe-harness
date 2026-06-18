@@ -26,8 +26,8 @@ related_docs:
   - specs/05.01-工作字段内容格式规范.md
   - specs/06-工作流程基础规范.md
   - specs/21-WorkPlan-工作计划.md
-  - specs/26-Memo-备忘.md
-  - specs/28-Study-研究报告.md
+  - specs/24-Memo-备忘.md
+  - specs/26-Study-研究报告.md
 superseded_by:
 archive_reason:
 ---
@@ -162,8 +162,8 @@ archive_reason:
 4. 05.01 已明确公共字段边界，补充 `verification_evidence`、`closure_evidence`，并改用 `related_workplans`。
 5. 21 已改为 WorkPlan 规范，定义 WorkPlan 状态机、`orchestration.execution_items`、`orchestration.review`、验证证据和关闭证据。
 6. 22 / 23 已从 active 模型中移除或清理概念行混淆。
-7. 26 Memo 已改为分流前工作对象，使用 `source: web | conversation`，并通过 `related_workplans` 关联 WorkPlan。
-8. 28 Study 已成为报告产物对象，用于承载稳定研究报告正文，避免 Memo 复制完整报告。
+7. 24 Memo 已改为分流前工作对象，使用 `source: web | conversation`，并通过 `related_workplans` 关联 WorkPlan。
+8. 26 Study 已成为报告产物对象，用于承载稳定研究报告正文，避免 Memo 复制完整报告。
 9. Code / Web 已局部同步 Memo / Study 字段，但旧 TaskPlan、Task、SubTask 的完整迁移尚未完成。
 
 ## 当前模型边界

@@ -13,7 +13,7 @@ context: |
   Human Gate 记录：
   - 触发原因：该决策会改变 Memo 的状态机、字段契约、Code 校验、Web 快速创建和既有 Memo 实例。
   - 确认事项：Memo 状态是否收敛为待处理、已分流、已废弃三种。
-  - 影响范围：`specs/26-Memo-备忘.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/08-Web信息同步实现规范.md`、`code/fact_validate.py`、`code/fact_cli.py`、Web Memo API、既有 Memo 实例。
+  - 影响范围：`specs/24-Memo-备忘.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/08-Web信息同步实现规范.md`、`code/fact_validate.py`、`code/fact_cli.py`、Web Memo API、既有 Memo 实例。
   - 确认依据：用户明确表达“只需要三种就可以了：待处理，已分流，已废弃”。
   - Human 决策：接受三态分流模型，并要求创建 ADR 后开始修改。
   - 确认人/时间：Human，2026-06-17
@@ -62,7 +62,7 @@ alternatives: |
 
   替代方案三：继续使用 archived 表达废弃。该方案复用既有字段，但会把 Memo 的分流语义和其他对象的归档语义混在一起。
 affects:
-  - specs/26-Memo-备忘.md
+  - specs/24-Memo-备忘.md
   - specs/05.01-工作字段内容格式规范.md
   - specs/08-Web信息同步实现规范.md
   - code/fact_validate.py
@@ -79,7 +79,7 @@ related_memos:
   - memo-0005
 related_adrs: []
 related_rules:
-  - specs/26-Memo-备忘.md
+  - specs/24-Memo-备忘.md
   - specs/05.01-工作字段内容格式规范.md
   - specs/08-Web信息同步实现规范.md
 superseded_by:

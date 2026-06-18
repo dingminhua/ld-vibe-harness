@@ -40,7 +40,7 @@ related_adrs: []
 related_changes: []
 related_docs: []
 related_rules:
-- specs/27-Change-变更.md
+- specs/25-Change-变更.md
 tags:
 - subdocument
 - consistency

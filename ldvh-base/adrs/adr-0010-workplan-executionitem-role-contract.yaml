@@ -17,7 +17,7 @@ context: |
   Human Gate 记录：
   - 触发原因：该决策改变工作模型集合、对象命名、执行编排承载方式、Review / Audit 定位和后续 specs / Code / Web 迁移方向。
   - 确认事项：是否以 WorkPlan 替代 TaskPlan，是否将 Task / SubTask 移出 active 工作模型，是否用 ExecutionItem 作为 WorkPlan 内部编排节点，是否引入 Role Contract 作为专业子 Agent 能力契约。
-  - 影响范围：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/05-工作模型基础规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/06-工作流程基础规范.md`、`specs/21-TaskPlan-任务计划.md`、`specs/22-Task-任务.md`、`specs/23-SubTask-子任务.md`、`specs/26-Memo-备忘.md`、`specs/27-Change-变更.md`、40-59 工作流程、Code、Web 和既有工作对象实例。
+  - 影响范围：`specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/02-术语规范.md`、`specs/05-工作模型基础规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/06-工作流程基础规范.md`、`specs/21-TaskPlan-任务计划.md`、`specs/22-Task-任务.md`、`specs/23-SubTask-子任务.md`、`specs/24-Memo-备忘.md`、`specs/25-Change-变更.md`、40-59 工作流程、Code、Web 和既有工作对象实例。
   - 确认依据：用户明确表达 Task 具体如何执行并不关心，也不需要记录，是 AI 内部自己的事情；同时接受使用 WorkPlan / ExecutionItem 的方向，并要求按计划推进。
   - Human 决策：接受 WorkPlan 中心模型，取消 Task / SubTask 的 active 工作模型地位，将执行编排迁入 WorkPlan 内部，并用 Role Contract 规范专业子 Agent。
   - 确认人/时间：Human，2026-06-17
@@ -91,8 +91,8 @@ affects:
   - specs/21-TaskPlan-任务计划.md
   - specs/22-Task-任务.md
   - specs/23-SubTask-子任务.md
-  - specs/26-Memo-备忘.md
-  - specs/27-Change-变更.md
+  - specs/24-Memo-备忘.md
+  - specs/25-Change-变更.md
   - specs/40-59
   - code
   - web

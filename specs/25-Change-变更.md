@@ -8,12 +8,12 @@
 
 ```yaml
 ldvh_member:
-  spec_id: "27"
+  spec_id: "25"
   kind: work_model
   name_en: Change
   name_zh: 变更
   collection_status: active
-  canonical_path: specs/27-Change-变更.md
+  canonical_path: specs/25-Change-变更.md
   instance_root: Git commit records
   schema_anchor: "§6"
   state_machine_anchor: "§3"
@@ -74,7 +74,7 @@ Git commit 记录
 
 | 内容 | 权威位置 |
 |---|---|
-| Change 工作模型规范 | `specs/27-Change-变更.md` |
+| Change 工作模型规范 | `specs/25-Change-变更.md` |
 | Change 事实实例 | Git commit 记录 |
 | Change 字段契约 | commit message 格式 |
 | Change 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -127,11 +127,11 @@ WorkArea 的创建、归档、恢复和范围变更都应留下 Change。WorkPla
 
 ### 4.3 Change 与 ADR
 
-当 Change 涉及长期决策、事实源边界、架构方向或高影响规则变化时，应创建或关联 ADR。ADR 的准入、状态和字段契约由 `specs/24-ADR-决策.md` 定义。
+当 Change 涉及长期决策、事实源边界、架构方向或高影响规则变化时，应创建或关联 ADR。ADR 的准入、状态和字段契约由 `specs/22-ADR-决策.md` 定义。
 
 ### 4.4 Change 与 Memo、Study、Pitfall
 
-Memo 的准入、状态和字段契约由 `specs/26-Memo-备忘.md` 定义。Study 的准入、状态和字段契约由 `specs/28-Study-研究报告.md` 定义。Pitfall 的准入、状态和字段契约由 `specs/25-Pitfall-踩坑经验.md` 定义。Change 可通过 `Refs:` 或 body 记录相关 Memo、Study、Pitfall ID、路径或摘要。
+Memo 的准入、状态和字段契约由 `specs/24-Memo-备忘.md` 定义。Study 的准入、状态和字段契约由 `specs/26-Study-研究报告.md` 定义。Pitfall 的准入、状态和字段契约由 `specs/23-Pitfall-踩坑经验.md` 定义。Change 可通过 `Refs:` 或 body 记录相关 Memo、Study、Pitfall ID、路径或摘要。
 
 ### 4.5 Change 与规范、Code、Web
 
@@ -175,7 +175,7 @@ Refs: <object-refs>
 | `scope` | 否 | 影响范围 | `specs` |
 | `subject` | 是 | 简短说明，推荐不超过 72 字符 | `更新 Change 工作模型` |
 | `body` | 否 | 说明变更原因、内容、风险和 Human Gate 结果 | `新增 specs/22...` |
-| `Refs` | 建议 | 关联对象、规范编号、commit hash 或工作计划 ID | `Refs: workplan-0001, 27-Change-变更` |
+| `Refs` | 建议 | 关联对象、规范编号、commit hash 或工作计划 ID | `Refs: workplan-0001, 25-Change-变更` |
 
 `Refs` 暂为建议字段。没有明确对象可关联时，可以省略，但 Code 应给出 warning 而不是 error。
 
@@ -223,7 +223,7 @@ scope 为推荐值，项目可以在不破坏解析的前提下扩展。若历�
 | Memo | `memo-0001` |
 | Study | `study-0001` |
 | Pitfall | `pitfall-0001` |
-| 规范文档 | `27-Change-变更` |
+| 规范文档 | `25-Change-变更` |
 | commit hash | `abc1234` |
 
 Risk、Dependency、Artifact、Checklist 和 ExecutionItem 当前不是独立工作模型，不应作为默认 Refs 对象前缀。需要表达这些信息时，应通过 WorkPlan 字段、正文说明或对应产物路径承接。
@@ -243,19 +243,19 @@ Risk、Dependency、Artifact、Checklist 和 ExecutionItem 当前不是独立工
 ```text
 docs(specs): 更新 Change 工作模型
 
-新增 specs/27-Change-变更.md，明确 Change 以 Git
+新增 specs/25-Change-变更.md，明确 Change 以 Git
 commit 记录作为事实实例，不创建 ldvh-base/changes/。
 
-Refs: 27-Change-变更
+Refs: 25-Change-变更
 ```
 
 ```text
 fix(tools): 修正 commit message 校验引用
 
 将 commit_validate.py 中的 Change 规范引用更新到
-specs/27-Change-变更.md。
+specs/25-Change-变更.md。
 
-Refs: 27-Change-变更
+Refs: 25-Change-变更
 ```
 
 ```text
@@ -318,7 +318,7 @@ Code 可依据本文实现以下能力：
 5. 检查 WorkArea、WorkPlan 等对象是否缺少关联 Change；
 6. 诊断 Code 实现自身与本文格式约束之间的漂移。
 
-当前 `code/commit_validate.py` 是既有 Code 消费方，已同步到 `specs/27-Change-变更.md` 规范路径。后续 commit message 契约变化时，应同步更新该实现和对应测试。
+当前 `code/commit_validate.py` 是既有 Code 消费方，已同步到 `specs/25-Change-变更.md` 规范路径。后续 commit message 契约变化时，应同步更新该实现和对应测试。
 
 ### 8.3 Web 信息同步
 

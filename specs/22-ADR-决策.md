@@ -4,16 +4,16 @@
 > 定位：定义 ADR / 决策工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则
 > 适用范围：所有接入 LDVH 且需要管理长期决策、事实源边界、规范判断和后续执行约束的项目
 > 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/27-Change-变更.md`
+> 相关规范：`specs/05.01-工作字段内容格式规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/25-Change-变更.md`
 
 ```yaml
 ldvh_member:
-  spec_id: "24"
+  spec_id: "22"
   kind: work_model
   name_en: ADR
   name_zh: 决策
   collection_status: active
-  canonical_path: specs/24-ADR-决策.md
+  canonical_path: specs/22-ADR-决策.md
   instance_root: ldvh-base/adrs/
   schema_anchor: "§6"
   state_machine_anchor: "§3"
@@ -78,7 +78,7 @@ ldvh-base/adrs/adr-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| ADR 工作模型规范 | `specs/24-ADR-决策.md` |
+| ADR 工作模型规范 | `specs/22-ADR-决策.md` |
 | ADR 实例 | `ldvh-base/adrs/` |
 | ADR 字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
 | ADR 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -139,7 +139,7 @@ ADR 不替代 WorkPlan 的成功标准、验证证据、风险判断或关闭证
 
 ### 4.3 ADR 与 Change
 
-ADR 的创建、状态变化、核心决策改写、废弃、替代和升级为规范时，都应留下 Change。Change 的 commit message 契约由 `specs/27-Change-变更.md` 定义。
+ADR 的创建、状态变化、核心决策改写、废弃、替代和升级为规范时，都应留下 Change。Change 的 commit message 契约由 `specs/25-Change-变更.md` 定义。
 
 ### 4.4 ADR 与 Memo
 
@@ -150,7 +150,7 @@ Memo 中的输入满足 ADR 准入条件后，可以转化为 ADR。转化时应
 3. 评估 Human Gate；
 4. 不在 ADR 中复制 Memo 全文，只保留摘要和引用。
 
-Memo 的准入、状态和字段契约由 `specs/26-Memo-备忘.md` 定义。
+Memo 的准入、状态和字段契约由 `specs/24-Memo-备忘.md` 定义。
 
 ### 4.5 ADR 与 specs / Rules
 
@@ -233,14 +233,14 @@ consequences: |
 alternatives: |
   曾考虑创建 changes YAML 实例，但会与 Git 记录形成重复事实源。
 affects:
-  - specs/27-Change-变更.md
+  - specs/25-Change-变更.md
 related_workareas: []
 related_workplans: []
 related_changes: []
 related_memos: []
 related_adrs: []
 related_rules:
-  - specs/27-Change-变更.md
+  - specs/25-Change-变更.md
 superseded_by:
 ```
 
@@ -339,7 +339,7 @@ ADR 创建、确认、废弃、替代和升级为规范的具体行动流程由�
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | ADR 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、终态规则和事实源边界 | 05、03.03、本文、27 Change、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、接受、废弃或替代 ADR 时 |
+| 上位约束承接要求 | ADR 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、终态规则和事实源边界 | 05、03.03、本文、25 Change、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、接受、废弃或替代 ADR 时 |
 | 入口可见要求 | AI 处理长期决策、规范判断、事实源边界、方案取舍或执行约束时，应能定位本文 | 成员自描述、运行入口摘要、ADR 决策流程入口 | AI 执行入口提示 | 决策入口、规范升级、状态流转或字段契约变化时 |
 | 确定性执行要求 | ADR 字段、状态、引用、文件命名、替代链和条件必填应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、ADR 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、替代规则或相关规范路径变化时 |
 | Human 交互要求 | ADR 创建、接受、废弃、替代、核心决策改写和升级为规范应触发 Human Gate，并按 06 §6.3.1 留下最小证据记录 | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |

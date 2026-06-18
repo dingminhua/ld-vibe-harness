@@ -30,7 +30,7 @@ orchestration:
     result_summary: ''
     evidence_refs:
     - specs/26-Pitfall-陷阱.md（修订）
-    - specs/27-Change-变更.md（修订）
+    - specs/25-Change-变更.md（修订）
     - docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
     blocking_reason: Legacy Task is not closed; keep WorkPlan active after migration.
   review:
