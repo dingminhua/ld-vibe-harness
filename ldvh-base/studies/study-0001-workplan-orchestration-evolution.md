@@ -4,7 +4,7 @@ type: study
 title: WorkPlan 与执行编排模型演变研究
 status: active
 created: '2026-06-18T04:16:49'
-updated: '2026-06-18T21:14:45+08:00'
+updated: '2026-06-18T22:31:24+08:00'
 summary: |
   本报告整理本轮从 TaskPlan / Task / SubTask 体系，收敛到 WorkPlan / ExecutionItem / Role Contract 方向的完整来龙去脉。核心结论是：LDVH 应把 Human 需要长期追踪的目标、范围、成功标准、验证和关闭证据保留在 WorkPlan；AI 的执行拆解、并行安排、角色分派和临时步骤应作为 WorkPlan 内部编排或运行期上下文处理，不再提升为独立 Task 工作模型。
 user_intent: 用户要求将本轮关于 specs 工作流程、WorkPlan、ExecutionItem、Memo 分流和事实源边界的长对话整理为 Study。
@@ -49,9 +49,15 @@ archive_reason:
 6. 执行过程不作为历史事实源时，仍应保留哪些恢复、验证和关闭证据；
 7. Memo、Study、ADR、Pitfall、WorkPlan 在讨论收敛后的分流边界是什么。
 
-## 对话演变脉络
+## 输入与边界
 
-### 阶段一：从 TaskPlan / Task / SubTask 的边界问题开始
+本报告基于 2026-06-18 本轮 Human/AI 对话、相关 specs、工作对象事实源和已落地变更整理。报告只记录已经形成稳定复读价值的模型演变结论，不复制完整对话流水，也不把执行过程中的临时计划提升为长期事实源。
+
+## 关键发现
+
+### 对话演变脉络
+
+#### 阶段一：从 TaskPlan / Task / SubTask 的边界问题开始
 
 早期讨论仍以 TaskPlan、Task 和 SubTask 为基础。一个典型问题是：“分别审查 20、21、22、23，然后合并结论”到底应表达为一个 TaskPlan 下的四个 Task，还是一个 Task 下的四个 SubTask。
 
@@ -67,7 +73,7 @@ archive_reason:
 
 这个阶段的价值在于明确了 SubTask 的问题：它会制造多余层级，而且与当前子 Agent 不能再调用子 Agent 的执行能力不匹配。
 
-### 阶段二：从 Task 中心转向 WorkPlan 中心
+#### 阶段二：从 Task 中心转向 WorkPlan 中心
 
 后续讨论进一步指出：即使保留 Task，Human 其实也不关心每个 Task 的长期历史。Human 关心的是计划是否对齐目标、成功标准是否可验收、最终是否可以关闭，以及风险和经验有没有被正确分流。
 
@@ -83,7 +89,7 @@ archive_reason:
 
 这个阶段的核心转折是：LDVH 不再尝试把 AI 的每个执行步骤变成项目事实源，而是把长期事实源收敛到 WorkPlan 层。
 
-### 阶段三：明确 ExecutionItem 不是更小的工作对象
+#### 阶段三：明确 ExecutionItem 不是更小的工作对象
 
 一个重要追问是：如果 WorkPlan 里有 `execution_items`，那么每个 execution item 是否又要拆成工作对象。
 
@@ -99,7 +105,7 @@ archive_reason:
 
 当一个 ExecutionItem 需要独立目标、独立范围、独立 Human Gate、独立关闭判断，或者已经超出当前 WorkPlan 的关闭边界时，它应被分流为新的 WorkPlan，而不是升级为 Task。
 
-### 阶段四：区分过程记录与事实源证据
+#### 阶段四：区分过程记录与事实源证据
 
 讨论中最容易混淆的一点是“执行过程不作为历史事实源”。
 
@@ -121,7 +127,7 @@ archive_reason:
 
 这使 LDVH 与普通 vibe coding 拉开边界：普通 vibe coding 往往只留下代码结果和聊天上下文；LDVH 要留下未来仍能判断“为什么这样做、是否完成、还有什么风险”的事实源。
 
-## 行业实践复核
+### 行业实践复核
 
 本轮讨论中做过一次联网复核，用于判断 LDVH 的方向是否违背主流 AI 编程趋势。复核结果支持当前收敛方向，但资料只作为研究依据，不直接替代 specs。
 
@@ -151,7 +157,7 @@ archive_reason:
 
 对 LDVH 的判断是：LDVH 并不是逆行业趋势，也不是要替代 AI 自己的执行编排，而是把行业中分散的能力组织成项目事实源体系。WorkPlan 对应行业工具通常缺失的“可持久计划、验收与关闭证据”层；ExecutionItem 对应运行时可恢复编排；Role Contract 对应专业子 Agent 的输入、权限、输出和交还边界。
 
-## 已经落地的规范变化
+### 已经落地的规范变化
 
 截至本报告创建时，已经完成了若干规范和实现层面的收敛：
 
@@ -165,9 +171,9 @@ archive_reason:
 8. 26 Study 已成为报告产物对象，用于承载稳定研究报告正文，避免 Memo 复制完整报告。
 9. Code / Web 已局部同步 Memo / Study 字段，但旧 TaskPlan、Task、SubTask 的完整迁移尚未完成。
 
-## 当前模型边界
+### 当前模型边界
 
-### WorkPlan
+#### WorkPlan
 
 WorkPlan 是 Human 与 AI 围绕一次目标达成的工作事实契约。它承载：
 
@@ -183,7 +189,7 @@ WorkPlan 是 Human 与 AI 围绕一次目标达成的工作事实契约。它承
 
 WorkPlan 是 Human 可以审核、AI 可以恢复、未来可以复读的事实源入口。
 
-### ExecutionItem
+#### ExecutionItem
 
 ExecutionItem 是 WorkPlan 内部字段，不是工作对象。它承载：
 
@@ -200,7 +206,7 @@ ExecutionItem 是 WorkPlan 内部字段，不是工作对象。它承载：
 
 ExecutionItem 的目标是支持当前执行恢复和证据组织，而不是保存完整过程历史。
 
-### Role Contract
+#### Role Contract
 
 Role Contract 是尚未完全定型的概念。当前判断是：它应定义专业子 Agent 或专业审查视角的目的、输入、必读材料、允许动作、禁止动作、输出格式、交还对象和停止条件。
 
@@ -213,7 +219,7 @@ Role Contract 是尚未完全定型的概念。当前判断是：它应定义专
 
 当前倾向是先不要在 WorkPlan 字段契约中提前定义完整角色规则。WorkPlan 只保留执行恢复所需的最小 `role` 标识，完整角色规则由工作流程、能力资产或后续专门规范承接。
 
-### Review / Audit
+#### Review / Audit
 
 Review、Audit、Decision Review 当前不应成为工作模型。它们是流程环节或专业审查动作。
 
@@ -230,7 +236,7 @@ Review、Audit、Decision Review 当前不应成为工作模型。它们是流�
 
 审查输出不应绕过主控直接成为最终事实。主控负责整合、判断、补证和触发 Human Gate。
 
-## Memo 与 Study 的分工
+### Memo 与 Study 的分工
 
 本轮也暴露出 Memo 与 Study 的边界问题。
 
@@ -254,7 +260,7 @@ Study 适合记录：
 
 因此，`memo-0005` 被压缩为接续入口，而本 Study 承载完整来龙去脉。`memo-0006` 则保留另一个问题：当 Memo 中部分内容已经落地或转移，但仍有未收敛内容时，AI、Code 或 Web 应如何提醒是否继续 pending、追加 evolution、分流或 resolved。
 
-## 未决问题
+### 未决问题
 
 以下问题仍需在新会话继续核对：
 
@@ -269,7 +275,7 @@ Study 适合记录：
 9. Code / Web 中旧 TaskPlan、Task、SubTask 兼容层何时移除；
 10. 是否需要在 Code / Web 中提示 pending Memo 已有关联对象但未说明收敛状态。
 
-## 建议下一步
+## 建议
 
 建议新会话按以下顺序推进：
 
@@ -281,7 +287,7 @@ Study 适合记录：
 6. 检查 40-43 是否需要新增或调整具体工作流程；
 7. 待规范稳定后，再迁移 Code / Web 中旧 TaskPlan、Task、SubTask 实现。
 
-## 结论
+## 后续分流
 
 本轮讨论的核心价值，是把 LDVH 从“把任务过程对象化”的方向，拉回到“为 AI 协作保存必要事实源”的方向。
 

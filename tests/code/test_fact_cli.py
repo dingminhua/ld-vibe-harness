@@ -72,7 +72,13 @@ def test_create_study_defaults_to_active(tmp_path):
     assert "source" not in data
     assert "source_detail" not in data
     assert "source_docs" not in data
-    assert "研究报告草稿" not in path.read_text(encoding="utf-8")
+    content = path.read_text(encoding="utf-8")
+    assert "研究报告草稿" not in content
+    assert "## 研究问题" in content
+    assert "## 输入与边界" in content
+    assert "## 关键发现" in content
+    assert "## 建议" in content
+    assert "## 后续分流" in content
 
 
 def test_legacy_object_types_are_not_cli_choices(tmp_path):

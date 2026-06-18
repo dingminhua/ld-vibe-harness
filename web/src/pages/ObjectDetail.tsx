@@ -1,6 +1,6 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, ChevronUp, Code2, ExternalLink, FileText, Info, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, BookOpenText, ChevronDown, ChevronRight, ChevronUp, Code2, ExternalLink, FileText, Info, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import StatusBadge from '@/components/StatusBadge';
@@ -93,6 +93,13 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
 
 const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
 const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
+const STUDY_READING_NODE_FIELDS = new Set(['user_intent', 'summary', 'conclusion', 'report_body']);
+const STUDY_READING_NODE_LABELS_ZH: Record<string, string> = {
+  user_intent: '意图',
+  summary: '摘要',
+  conclusion: '建议',
+  report_body: '正文',
+};
 const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
   related_workareas: 20,
   related_workplans: 21,
@@ -495,7 +502,14 @@ export default function ObjectDetail() {
           ) : (
             <div className="mb-6 flex flex-col gap-5">
               {primaryEntries.map(([key, value]) => (
-                <ContentField key={key} fieldKey={key} value={value} locale={locale} objType={objType} />
+                <ContentField
+                  key={key}
+                  fieldKey={key}
+                  value={value}
+                  locale={locale}
+                  objType={objType}
+                  objectPath={typeof obj.path === 'string' ? obj.path : detail.target}
+                />
               ))}
               <RelatedContentSection entries={relatedEntries} locale={locale} />
             </div>
@@ -1201,7 +1215,7 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
       <div className="min-w-0 flex-1">
         <div className="ldvh-meta-primary truncate">{displayTitle}</div>
         {reference.summary && (
-          <div className="ldvh-caption mt-1 line-clamp-2 text-ldvh-text-secondary">{reference.summary}</div>
+          <div className="ldvh-caption mt-1 line-clamp-2 text-ldvh-text-secondary/70">{reference.summary}</div>
         )}
       </div>
       <CopyPathButton path={copyValue} />
@@ -1824,7 +1838,57 @@ export function EmptyHint({ text }: { text: string }) {
 }
 
 /** 内容字段：根据字段类型选择渲染方式和样式 */
-export function ContentField({ fieldKey, value, locale, objType }: { fieldKey: string; value: unknown; locale: string; objType: string }) {
+function basename(path: string) {
+  return path.split('/').filter(Boolean).pop() || path;
+}
+
+function StudyReportBodyEntry({ value, objectPath, locale }: { value: unknown; objectPath?: string; locale: string }) {
+  const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
+  const docPath = objectPath || 'study-report.md';
+  const title = objectPath ? basename(objectPath) : (locale === 'en' ? 'Report body' : '报告正文');
+  const openLabel = locale === 'en' ? 'Open in reading panel' : '扩展阅读';
+  const isCurrentPanelOpen = Boolean(panelOpen && panelContent?.type === 'doc' && panelContent.docPath === docPath);
+  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
+
+  const openReportBody = () => {
+    openPanel({ type: 'doc', title, docPath, data: String(value) });
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openReportBody();
+  };
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={openReportBody}
+      onKeyDown={handleKeyDown}
+      title={openLabel}
+      className="ldvh-body group flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+    >
+      <BookOpenText size={13} className="shrink-0 text-ldvh-accent" />
+      <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{title}</span>
+      <CopyPathButton path={objectPath} />
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          openReportBody();
+        }}
+        title={openLabel}
+        aria-label={openLabel}
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent text-ldvh-text-secondary/70 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-accent focus-visible:border-ldvh-accent/50 focus-visible:outline-none"
+      >
+        <PanelIcon size={14} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+export function ContentField({ fieldKey, value, locale, objType, objectPath }: { fieldKey: string; value: unknown; locale: string; objType: string; objectPath?: string }) {
   const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
   const [collapsed, setCollapsed] = useState(Boolean(isCollapsible));
 
@@ -1836,6 +1900,21 @@ export function ContentField({ fieldKey, value, locale, objType }: { fieldKey: s
   const label = labelEntry
     ? (locale === 'en' ? labelEntry.en : labelEntry.zh)
     : fieldKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  if (objType === 'study' && STUDY_READING_NODE_FIELDS.has(fieldKey)) {
+    const studyLabel = locale === 'zh' ? (STUDY_READING_NODE_LABELS_ZH[fieldKey] || label) : label;
+    return (
+      <TaskSection title={studyLabel} tone="default">
+        {fieldKey === 'report_body' ? (
+          <StudyReportBodyEntry value={value} objectPath={objectPath} locale={locale} />
+        ) : (
+          <div className="ldvh-study-node-content">
+            <FieldValue fieldKey={fieldKey} value={value} depth={0} locale={locale} />
+          </div>
+        )}
+      </TaskSection>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">

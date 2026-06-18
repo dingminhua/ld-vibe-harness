@@ -481,7 +481,19 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_pitfalls"] = []
         data["related_docs"] = []
         data["archive_reason"] = ""
-        data["report_body"] = f"# {title}\n\n## 研究问题\n\n待补充。\n"
+        data["report_body"] = (
+            f"# {title}\n\n"
+            "## 研究问题\n\n"
+            "待补充。\n\n"
+            "## 输入与边界\n\n"
+            "待补充。\n\n"
+            "## 关键发现\n\n"
+            "待补充。\n\n"
+            "## 建议\n\n"
+            "待补充。\n\n"
+            "## 后续分流\n\n"
+            "待补充。\n"
+        )
 
     # ADR 创建时回写 Human Gate 记录到 context
     if object_type == "adr":

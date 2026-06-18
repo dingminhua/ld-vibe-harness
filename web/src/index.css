@@ -436,6 +436,18 @@ input::-moz-focus-inner {
   background: rgb(var(--ldvh-border) / 0.28);
 }
 
+.ldvh-study-node-content .ldvh-inline-markdown {
+  color: rgb(var(--ldvh-text-secondary) / 0.92);
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(h2, h3, h4, h5, h6, strong) {
+  color: rgb(var(--ldvh-text-secondary));
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(code) {
+  color: rgb(var(--ldvh-accent));
+}
+
 .ldvh-definition-text .ldvh-inline-markdown :where(ul, ol) {
   margin-top: 0;
   margin-bottom: 0;

@@ -4,7 +4,7 @@ type: study
 title: TRAE CN 智能体创建调用与 LDVH 多角色设定调研
 status: active
 created: '2026-06-18T07:59:11'
-updated: '2026-06-18T21:14:45+08:00'
+updated: '2026-06-18T22:31:24+08:00'
 summary: |
   TRAE CN 把智能体定位为面向不同开发场景的编程助手。TRAE IDE 支持内置 Chat、Agent、SOLO Agent，也支持通过智能生成或手动创建自定义智能体；自定义智能体可以配置提示词、MCP Server 和内置工具，并可开启“可被其他智能体调用”。当前官方文档显示，TRAE IDE 中仅 SOLO Agent 可调用自定义智能体。TRAE CLI 则支持通过 `/agent-new` 创建子智能体，保存到 `.traecli/agents`，并可由 TRAE CLI 自动拆分任务调用，或由用户通过 `@{智能体名称}` 手动调用。
 user_intent: 用户要求补充 TRAE CN 关于子 Agent / 自定义智能体创建调用机制的同主题调研，为后续 00 文档多角色设定提供对照。
@@ -44,7 +44,7 @@ archive_reason:
 
 这里的“TRAE CN”覆盖官方文档中的 TRAE IDE / SOLO 模式 / TRAE CLI。三者能力不完全相同，因此本报告按环境分层整理。
 
-## 资料边界
+## 输入与边界
 
 本次调研使用 TRAE CN 官方文档，访问时间为 2026-06-18：
 
@@ -58,7 +58,9 @@ archive_reason:
 
 本报告只记录公开文档中的稳定机制，不推断未公开 API 或内部调度实现。
 
-## TRAE IDE 智能体定位
+## 关键发现
+
+### TRAE IDE 智能体定位
 
 TRAE IDE 官方文档把智能体定义为面向不同开发场景的编程助手。它们具有自主运行、工具访问、上下文理解和多步骤规划能力。内置智能体包括：
 
@@ -68,7 +70,7 @@ TRAE IDE 官方文档把智能体定义为面向不同开发场景的编程助�
 
 这说明 Trae 的“多角色”不是只靠一个单独的子线程工具实现，而是由内置 Agent、SOLO Agent、自定义智能体、工具配置和模式化工作流共同构成。
 
-## TRAE IDE 如何创建自定义智能体
+### TRAE IDE 如何创建自定义智能体
 
 TRAE IDE 支持两种创建方式：
 
@@ -91,7 +93,7 @@ TRAE IDE 支持两种创建方式：
 
 重要边界：官方文档明确说明，目前在 TRAE IDE 中仅 SOLO Agent 可调用自定义智能体。也就是说，一个普通自定义智能体开启“可被其他智能体调用”后，并不意味着任意智能体都能任意调用它；实际主控是 SOLO Agent。
 
-## TRAE IDE 如何调用智能体
+### TRAE IDE 如何调用智能体
 
 用户可以在 AI 对话输入框输入 `@`，或点击 `@智能体`，然后从智能体列表中选择要使用的智能体。
 
@@ -108,7 +110,7 @@ SOLO Agent 则是更接近 LDVH “主控 + 专业角色”设想的入口。官
 
 但它仍是 Trae 运行期机制，不是 LDVH 长期事实源。
 
-## SOLO Agent 与 Plan / Spec 模式
+### SOLO Agent 与 Plan / Spec 模式
 
 SOLO Agent 支持 Plan 和 Spec 模式。
 
@@ -118,7 +120,7 @@ Spec 模式面向复杂系统级任务，会生成三阶段文档组：`spec.md`
 
 对 LDVH 的判断是：Trae Spec / Plan 文档是 Trae 环境中的工作流产物，可以作为输入资料或运行期执行界面；但不应替代 LDVH 的 WorkPlan、Memo、Study、ADR、Change 等事实源。若两者共存，LDVH 应定义映射和回写边界，而不是把 `.trae/specs` 直接视为 LDVH 权威事实源。
 
-## TRAE CLI 如何创建子智能体
+### TRAE CLI 如何创建子智能体
 
 TRAE CLI 官方文档提供了更接近“子智能体配置文件”的机制。
 
@@ -145,7 +147,7 @@ model: model-name
 
 frontmatter 之后的 Markdown 正文是智能体角色提示词。这一点与 Claude Code subagent 和 Codex custom agent 的基本模式相近：配置层定义角色元数据和权限，正文定义行为。
 
-## TRAE CLI 如何调用智能体
+### TRAE CLI 如何调用智能体
 
 TRAE CLI 官方文档说明，TRAE CLI 会根据实际情况把一个任务拆成多个相对独立的子任务，然后分配给合适的智能体完成。用户也可以通过手动 `@{智能体名称}` 要求 TRAE CLI 调用对应智能体。
 
@@ -157,7 +159,7 @@ TRAE CLI 官方文档说明，TRAE CLI 会根据实际情况把一个任务拆�
 - 需要显式授权的环境，必须由 Human 或主控 AI 明确触发；
 - 不支持子 Agent 的环境，仍可由主控 AI 按 Role Contract 串行扮演角色并保留证据。
 
-## Skill、MCP 和权限边界
+### Skill、MCP 和权限边界
 
 TRAE CLI Skills 是模块化能力扩展机制，使用 `SKILL.md` 定义。Skill 按 `description` 匹配按需触发，并支持渐进式披露。目录包括：
 
@@ -173,7 +175,7 @@ MCP 层面，TRAE CLI 支持 stdio、SSE 和 Streamable HTTP，可通过 `traecl
 
 权限模式方面，TRAE CLI 支持 `default`、`plan`、`bypass_permissions`。这对 LDVH 多角色设计很重要：Role Contract 不能只写角色目标，还应写清工具权限、Human Gate 和是否允许无授权执行。
 
-## 对 LDVH 00 多角色设定的建议
+## 建议
 
 TRAE CN 的机制支持一个更产品化的多智能体界面：SOLO Agent 作为主控，自定义智能体作为专业角色，CLI 则通过 `.traecli/agents` 文件和 `@{智能体名称}` 暴露角色配置与调用。对 LDVH 00 的建议如下：
 
@@ -191,7 +193,7 @@ TRAE CN 的机制支持一个更产品化的多智能体界面：SOLO Agent 作�
 LDVH 的多角色协作可以在 Trae 环境中落地为 SOLO Agent 可调用的自定义智能体或 TRAE CLI 的 `.traecli/agents` 子智能体配置；但这些是环境适配形态。LDVH 的长期事实源只记录角色契约、任务输入、输出摘要、证据引用、验证结果和分流关系，不把 Trae 运行期对话流或 Spec / Plan 产物直接等同为 LDVH 工作对象。
 ```
 
-## 后续分流建议
+## 后续分流
 
 1. 修改 `specs/00-LD-Vibe-Harness理念与纲要.md` 时，吸收“多角色可映射为环境智能体，但角色本体是契约”的表述。
 2. 修改 `specs/04.02-LDVH能力资产与落地保障规范.md` 时，判断 Trae 自定义智能体配置、Skill、MCP、Rules 是否应纳入能力资产分层。

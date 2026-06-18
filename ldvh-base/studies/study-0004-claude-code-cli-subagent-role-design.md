@@ -4,7 +4,7 @@ type: study
 title: Claude Code CLI Subagents 创建调用与 LDVH 多角色设定调研
 status: active
 created: '2026-06-18T07:59:11'
-updated: '2026-06-18T21:14:45+08:00'
+updated: '2026-06-18T22:31:24+08:00'
 summary: |
   Claude Code CLI 的 subagents 是专门 AI 助手，用于隔离会污染主上下文的搜索、日志、文件阅读、测试和专业审查等任务。Claude Code 支持通过 `/agents` 管理界面创建管理 subagents，也支持手动编写带 YAML frontmatter 的 Markdown 文件、通过 `--agents` CLI JSON 动态定义、通过 plugin 分发，或用 `--agent` 把某个 agent 作为整个会话的主代理。调用方式包括自动委派、自然语言命名、@ mention 保证调用、`--agent` 会话级默认，以及 `/fork` 分叉当前对话。
 user_intent: 用户要求补充 Claude Code CLI 关于子 Agent / subagents 创建调用机制的同主题调研，为后续 00 文档多角色设定提供对照。
@@ -43,7 +43,7 @@ archive_reason:
 
 这里的 subagent 指 Claude Code 官方文档中的 specialized AI assistant，而不是 Anthropic Agent SDK 中的任意应用级 agent。
 
-## 资料边界
+## 输入与边界
 
 本次调研使用 Claude Code 官方文档，访问时间为 2026-06-18：
 
@@ -56,7 +56,9 @@ archive_reason:
 
 官方英文页面当前重定向到 `code.claude.com/docs/...`，内容仍为 Claude Code 官方文档。
 
-## Claude Code Subagents 解决什么问题
+## 关键发现
+
+### Claude Code Subagents 解决什么问题
 
 Claude Code 官方文档说明，当辅助任务会用搜索结果、日志或文件内容充斥主对话，而后续又不需要反复引用这些细节时，应使用 subagent。subagent 在自己的上下文中完成任务，只把摘要返回主对话。
 
@@ -72,7 +74,7 @@ Subagents 的价值包括：
 
 这对 LDVH 的关键启发是：subagent 是上下文隔离和专业化执行机制，不能直接等同于长期事实源。
 
-## 如何创建 Subagents
+### 如何创建 Subagents
 
 Claude Code 推荐使用 `/agents` 命令创建和管理 subagents。`/agents` 会打开管理界面，包含 Running 和 Library 两类视图：
 
@@ -108,7 +110,7 @@ Subagent 存储位置和优先级如下：
 
 当多个 subagents 同名时，更高优先级的位置获胜。
 
-## Subagent 文件结构
+### Subagent 文件结构
 
 Claude Code subagent 是带 YAML frontmatter 的 Markdown 文件。示例：
 
@@ -142,7 +144,7 @@ specific, actionable feedback on quality, security, and best practices.
 
 文件正文成为 subagent 的系统提示。官方文档特别说明，subagent 不接收完整的 Claude Code 系统提示，只接收自身提示和基础环境信息。非 fork subagent 从新的隔离上下文开始。
 
-## 工具、模型、MCP、Skills 和 Hooks 边界
+### 工具、模型、MCP、Skills 和 Hooks 边界
 
 Claude Code subagents 默认继承主对话可用工具和 MCP 工具，但可以通过 `tools` 允许列表或 `disallowedTools` 拒绝列表限制权限。例如只读审查者可以只允许 `Read`、`Grep`、`Glob` 和 `Bash`，不允许 `Edit` 或 `Write`。
 
@@ -157,7 +159,7 @@ Claude Code subagents 默认继承主对话可用工具和 MCP 工具，但可�
 
 这说明 Claude Code 的 subagent 不只是“一个新线程”，而是一个可配置工具、模型、技能、MCP、hook 和记忆边界的角色容器。
 
-## 如何调用 Subagents
+### 如何调用 Subagents
 
 Claude Code 支持自动委派和显式调用。
 
@@ -176,7 +178,7 @@ CLI reference 还提供了两项关键参数：
 
 官方 common workflows 给出的典型用法是：让 subagent 调研认证系统如何处理 token refresh，只把探索结果返回主对话。
 
-## 前台、后台、并行、嵌套和 Fork
+### 前台、后台、并行、嵌套和 Fork
 
 Claude Code subagents 可以前台或后台运行：
 
@@ -195,7 +197,7 @@ Fork 是另一个重要形态。`/fork` 会分叉当前对话，继承目前为�
 
 对 LDVH 的判断是：普通 subagent 更适合执行 WorkPlan 中边界清楚的 execution item；fork 更适合同一上下文下的并行假设探索或备选方案，但更容易带入主上下文噪音，需要更严格的输出摘要和事实源回写边界。
 
-## 上下文与持久化
+### 上下文与持久化
 
 非 fork subagent 的初始上下文包括：
 
@@ -209,7 +211,7 @@ Fork 是另一个重要形态。`/fork` 会分叉当前对话，继承目前为�
 
 这与 LDVH 的事实源边界很契合：subagent transcript 是环境运行记录，不应直接成为 LDVH 事实源。LDVH 只提取结论、证据引用、风险、验证和关闭信息。
 
-## 何时不用 Subagents
+### 何时不用 Subagents
 
 官方文档给出了选择边界。
 
@@ -228,7 +230,7 @@ Fork 是另一个重要形态。`/fork` 会分叉当前对话，继承目前为�
 
 如果想要可重用提示或在主对话上下文中运行的工作流，而不是隔离 subagent 上下文，应考虑 Skills。
 
-## 对 LDVH 00 多角色设定的建议
+## 建议
 
 Claude Code CLI 是当前三份调研中最接近“角色契约完整运行时”的环境。它把角色拆成：
 
@@ -260,7 +262,7 @@ LDVH 00 可以吸收这套思想，但不能把 Claude Code frontmatter 直接�
 LDVH 的多角色协作可在 Claude Code CLI 中落地为 subagent Markdown、`--agents` 动态定义、`--agent` 会话级代理或 plugin agents；但 LDVH 角色本体仍是 Role Contract。Claude Code 的 subagent transcript、fork 过程和后台任务日志属于运行期证据来源，只有经过主控整合后的摘要、验证结果、证据引用和风险分流进入 LDVH 长期事实源。
 ```
 
-## 后续分流建议
+## 后续分流
 
 1. 修改 `specs/00-LD-Vibe-Harness理念与纲要.md` 时，吸收 Claude Code “角色提示词 + 工具权限 + 模型 + MCP + Skill + hooks + memory”的角色契约思想。
 2. 修改 `specs/04.02-LDVH能力资产与落地保障规范.md` 时，判断 `.claude/agents`、`.claude/skills`、CLAUDE.md、MCP、hooks 和 plugins 的能力资产分层。

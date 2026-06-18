@@ -91,6 +91,7 @@ ISO_DATETIME_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$"
 )
 RELATED_REF_ITEM_KEYS = {"ref", "title", "summary"}
+STUDY_REQUIRED_BODY_HEADINGS = ["研究问题", "输入与边界", "关键发现", "建议", "后续分流"]
 
 # 05.01 §3.5.2：verification 字段不应包含的风险/约束/降级标题模式
 VERIFICATION_MISPLACED_HEADING_PATTERNS = [
@@ -455,6 +456,37 @@ def validate_related_refs(path: Path, data: dict[str, Any]) -> list[Issue]:
             value = item.get(optional_field)
             if value is not None and not isinstance(value, str):
                 issues.append(Issue(str(path), "error", "INVALID_RELATED_REF", f"related_refs 第 {index} 项的 {optional_field} 必须是字符串", field=f"related_refs.{optional_field}"))
+    return issues
+
+
+def validate_study_report_body_structure(path: Path, data: dict[str, Any]) -> list[Issue]:
+    body = data.get("report_body")
+    if not isinstance(body, str) or not body.strip():
+        return []
+    issues = []
+    lines = body.splitlines()
+    non_empty = [line.strip() for line in lines if line.strip()]
+    if not non_empty or not non_empty[0].startswith("# "):
+        issues.append(Issue(str(path), "error", "INVALID_STUDY_BODY_STRUCTURE", "Study 正文第一行必须是一级标题 # {title}", field="report_body"))
+    else:
+        h1_title = non_empty[0][2:].strip()
+        expected_title = data.get("title")
+        if isinstance(expected_title, str) and expected_title.strip() and h1_title != expected_title.strip():
+            issues.append(Issue(str(path), "warning", "STUDY_BODY_TITLE_MISMATCH", "Study 正文一级标题建议与 frontmatter title 保持一致", field="report_body"))
+
+    h1_count = sum(1 for line in lines if re.match(r"^#\s+", line))
+    if h1_count != 1:
+        issues.append(Issue(str(path), "error", "INVALID_STUDY_BODY_STRUCTURE", "Study 正文必须且只能包含一个一级标题", field="report_body"))
+
+    h2_headings = [line[3:].strip() for line in lines if re.match(r"^##\s+", line)]
+    if h2_headings != STUDY_REQUIRED_BODY_HEADINGS:
+        issues.append(Issue(
+            str(path),
+            "error",
+            "INVALID_STUDY_BODY_STRUCTURE",
+            "Study 正文二级标题必须按顺序固定为: " + "、".join(STUDY_REQUIRED_BODY_HEADINGS),
+            field="report_body",
+        ))
     return issues
 
 
@@ -838,6 +870,7 @@ def validate_study(path: Path, data: dict[str, Any]) -> list[Issue]:
     if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
         issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态必须提供归档原因: archive_reason", field="archive_reason"))
     issues.extend(validate_related_refs(path, data))
+    issues.extend(validate_study_report_body_structure(path, data))
     return issues
 
 

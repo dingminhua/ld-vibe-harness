@@ -178,7 +178,25 @@ archive_reason:
 
 # Draft Report
 
+## 研究问题
+
 This report should not validate because Study has no draft state.
+
+## 输入与边界
+
+Test fixture.
+
+## 关键发现
+
+Study has no draft state.
+
+## 建议
+
+Reject draft Study status.
+
+## 后续分流
+
+None.
 """,
         encoding="utf-8",
     )
@@ -216,7 +234,25 @@ archive_reason:
 
 # Superseded Report
 
+## 研究问题
+
 This report should not validate because Study has no superseded state.
+
+## 输入与边界
+
+Test fixture.
+
+## 关键发现
+
+Study has no superseded state.
+
+## 建议
+
+Reject superseded Study status and superseded_by.
+
+## 后续分流
+
+None.
 """,
         encoding="utf-8",
     )
@@ -257,7 +293,25 @@ archive_reason:
 
 # Source Report
 
+## 研究问题
+
 This report should not validate because Study no longer maintains source.
+
+## 输入与边界
+
+Test fixture.
+
+## 关键发现
+
+Study no longer maintains source.
+
+## 建议
+
+Reject source on Study.
+
+## 后续分流
+
+None.
 """,
         encoding="utf-8",
     )
@@ -295,7 +349,25 @@ archive_reason:
 
 # Source Detail Report
 
+## 研究问题
+
 This report should not validate because Study renamed source_detail to user_intent.
+
+## 输入与边界
+
+Test fixture.
+
+## 关键发现
+
+Study renamed source_detail to user_intent.
+
+## 建议
+
+Reject source_detail on Study.
+
+## 后续分流
+
+None.
 """,
         encoding="utf-8",
     )
@@ -334,7 +406,25 @@ archive_reason:
 
 # Source Docs Report
 
+## 研究问题
+
 This report should not validate because Study renamed source_docs to related_refs.
+
+## 输入与边界
+
+Test fixture.
+
+## 关键发现
+
+Study renamed source_docs to related_refs.
+
+## 建议
+
+Reject source_docs on Study.
+
+## 后续分流
+
+None.
 """,
         encoding="utf-8",
     )
@@ -375,7 +465,25 @@ archive_reason:
 
 # Structured Refs Report
 
+## 研究问题
+
 This report should validate with structured related_refs items.
+
+## 输入与边界
+
+Test fixture.
+
+## 关键发现
+
+Structured related_refs items are valid.
+
+## 建议
+
+Accept structured related_refs items.
+
+## 后续分流
+
+None.
 """,
         encoding="utf-8",
     )
@@ -415,7 +523,25 @@ archive_reason:
 
 # Invalid Refs Report
 
+## 研究问题
+
 This report should not validate because related_refs items are malformed.
+
+## 输入与边界
+
+Test fixture.
+
+## 关键发现
+
+Malformed related_refs items are invalid.
+
+## 建议
+
+Reject malformed related_refs items.
+
+## 后续分流
+
+None.
 """,
         encoding="utf-8",
     )
@@ -425,6 +551,44 @@ This report should not validate because related_refs items are malformed.
     assert result.returncode == 1
     assert "INVALID_RELATED_REF" in result.stdout
     assert "related_refs" in result.stdout
+
+
+def test_study_report_body_requires_standard_headings(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path)
+    study = root / "ldvh-base" / "studies" / "study-0001-bad-body.md"
+    study.parent.mkdir(parents=True, exist_ok=True)
+    study.write_text(
+        """---
+id: study-0001
+type: study
+title: Bad Body Report
+status: active
+created: "2026-06-18T09:00:00"
+updated: "2026-06-18T09:30:00"
+summary: Bad body report.
+related_refs: []
+related_workareas: []
+related_workplans: []
+related_adrs: []
+related_memos: []
+related_pitfalls: []
+related_docs: []
+archive_reason:
+---
+
+# Bad Body Report
+
+## 研究问题
+
+Missing standard body sections.
+""",
+        encoding="utf-8",
+    )
+
+    result = run_checker(study)
+
+    assert result.returncode == 1
+    assert "INVALID_STUDY_BODY_STRUCTURE" in result.stdout
 
 
 def test_pitfall_repeatability_field_is_no_longer_allowed(tmp_path):

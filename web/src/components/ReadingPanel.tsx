@@ -375,7 +375,13 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         compact
       />
       {obj && isObjectDetailLayoutType(objectType) && <ObjectSemanticPreview objectType={objectType} obj={obj} objectId={objectId} />}
-      {obj && !isObjectDetailLayoutType(objectType) && <GenericObjectPreview objectType={objectType} obj={obj} />}
+      {obj && !isObjectDetailLayoutType(objectType) && (
+        <GenericObjectPreview
+          objectType={objectType}
+          obj={obj}
+          objectPath={typeof obj.path === 'string' ? obj.path : targetPath}
+        />
+      )}
     </div>
   );
 }
@@ -440,7 +446,7 @@ function getObjectTypeLabel(objectType: string | undefined, locale: string) {
   return locale === 'en' ? labels.en : labels.zh;
 }
 
-function GenericObjectPreview({ objectType, obj }: { objectType?: string; obj: Record<string, unknown> }) {
+function GenericObjectPreview({ objectType, obj, objectPath }: { objectType?: string; obj: Record<string, unknown>; objectPath?: string }) {
   const { locale } = useI18n();
   const entries = getObjectDetailContentEntries(obj, objectType || '');
   if (entries.length === 0) return null;
@@ -448,7 +454,7 @@ function GenericObjectPreview({ objectType, obj }: { objectType?: string; obj: R
   return (
     <div className="mb-6 flex flex-col gap-5">
       {entries.map(([fieldKey, value]) => (
-        <ContentField key={fieldKey} fieldKey={fieldKey} value={value} locale={locale} objType={objectType || ''} />
+        <ContentField key={fieldKey} fieldKey={fieldKey} value={value} locale={locale} objType={objectType || ''} objectPath={objectPath} />
       ))}
     </div>
   );

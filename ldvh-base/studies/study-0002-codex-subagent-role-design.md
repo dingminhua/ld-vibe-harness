@@ -4,7 +4,7 @@ type: study
 title: Codex 子 Agent 创建调用与 LDVH 多角色设定调研
 status: active
 created: '2026-06-18T07:59:11'
-updated: '2026-06-18T21:14:45+08:00'
+updated: '2026-06-18T22:31:24+08:00'
 summary: |
   Codex 子 Agent 适合承接可并行、边界清晰、噪音较高或需要专业视角的运行期工作。Codex 官方资料显示，子 Agent 不会自动生成，必须由用户明确要求并行委派；Codex 可使用内置 default、worker、explorer，也可通过个人或项目级 TOML 文件定义自定义 agent。当前 Codex App 工具面还暴露了 spawn_agent、wait_agent、send_input 和 close_agent 这类管理动作。
 user_intent: 用户要求调研 Codex 中如何创建子 Agent 与调用子 Agent，为后续 00 文档多角色设定做前期准备。
@@ -41,7 +41,7 @@ archive_reason:
 
 这里的“子 Agent”特指 Codex 官方文档中的 subagent workflow：主 Agent 在运行期启动一个或多个专业代理，让它们并行探索、执行、审查或分析，然后把摘要结果交回主线程。它不是 LDVH 工作对象，也不是长期事实源。
 
-## 资料边界
+## 输入与边界
 
 本次调研使用以下资料：
 
@@ -53,7 +53,9 @@ archive_reason:
 
 本报告不把当前会话工具元数据视为公开产品文档；它只说明“当前环境可操作形态”。公开稳定说法仍以 Codex 官方手册为准。
 
-## Codex 子 Agent 解决什么问题
+## 关键发现
+
+### Codex 子 Agent 解决什么问题
 
 Codex 官方资料把子 Agent 的价值放在两个方向：
 
@@ -62,7 +64,7 @@ Codex 官方资料把子 Agent 的价值放在两个方向：
 
 这与 LDVH 当前 WorkPlan / ExecutionItem 方向一致：长期事实源只保留可恢复、可验证、可关闭的最小证据，不保存 AI 的完整运行期过程。
 
-## 如何创建子 Agent
+### 如何创建子 Agent
 
 Codex 有两类 agent 来源。
 
@@ -101,7 +103,7 @@ Codex 也有全局 `[agents]` 设置，用于控制并发和嵌套：
 
 对 LDVH 来说，创建 custom agent 属于环境适配或能力资产配置，不应写进 00 文档正文成为所有环境的强制规则。
 
-## 如何调用和管理子 Agent
+### 如何调用和管理子 Agent
 
 Codex 官方资料强调：Codex 不会自动生成子 Agent，只有在用户明确要求时才应触发。典型触发语包括：
 
@@ -140,7 +142,7 @@ the findings by category with file references.
 
 本次调研没有实际启动子 Agent，因为用户要求的是“调研子 Agent 怎么用”，不是要求“用子 Agent 来调研”。
 
-## 权限、沙箱和成本边界
+### 权限、沙箱和成本边界
 
 Codex 官方资料说明，子 Agent 继承当前沙箱策略和父会话的运行时 override。交互式 CLI 中，非当前线程的 approval request 也可能浮现；非交互式流程如果无法获得新批准，需要批准的动作会失败并把错误传回父工作流。
 
@@ -155,7 +157,7 @@ Codex 官方资料说明，子 Agent 继承当前沙箱策略和父会话的运�
 5. 子 Agent 完成后及时关闭；
 6. 主 Agent 对最终汇总、验收和事实源回写负责。
 
-## 与 AGENTS.md、Skills、MCP 的区别
+### 与 AGENTS.md、Skills、MCP 的区别
 
 Codex 官方资料把定制能力分成互补层级：
 
@@ -174,7 +176,7 @@ Codex 官方资料把定制能力分成互补层级：
 5. Codex custom agent 承载 Codex 环境中的可执行角色配置；
 6. Subagent workflow 承载一次 WorkPlan 执行中的运行期并行委派。
 
-## 对 LDVH 00 多角色设定的建议
+## 建议
 
 后续 00 文档可以引入“多角色协作”的理念，但建议使用环境无关表述：
 
@@ -192,7 +194,7 @@ Codex 官方资料把定制能力分成互补层级：
 LDVH 支持多角色 AI 协作，但角色首先是事实源治理中的责任契约，而不是某个运行环境的固定线程形态。支持子 Agent 的环境可以把 WorkPlan 中边界清晰的 ExecutionItem 委派给专业子 Agent；不支持子 Agent 的环境仍可由同一 AI 按角色契约完成串行自检、复检和证据整理。
 ```
 
-## 后续分流建议
+## 后续分流
 
 1. 修改 `specs/00-LD-Vibe-Harness理念与纲要.md` 时，吸收“角色是契约，不是线程”的理念层表述。
 2. 修改 `specs/06-工作流程基础规范.md` 时，定义主控、执行者、审查者、Human Gate 等流程角色边界。

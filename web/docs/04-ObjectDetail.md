@@ -101,6 +101,8 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 
 `related_refs` 可展示结构化引用条目。条目包含 `ref`、`title`、`summary` 时，列表主行显示 `title`，次行显示 `summary`，复制和扩展阅读仍作用于 `ref`。只有字符串时展示字符串本身。Web 不把 URL 摘要派生为事实；摘要必须来自 Study frontmatter 或其他权威事实源。
 
+Study 详情页是报告阅读界面，不按普通字段卡片表达主内容。中文主节点标题固定为“意图、摘要、建议、正文、关联”，分别对应 `user_intent`、`summary`、`conclusion`、`report_body` 和关联区。`user_intent`、`summary`、`conclusion` 和 `report_body` 必须与“关联”使用同一层级的节点标题样式：标题前使用小圆点，标题字号和权重与关联区标题一致，内容区颜色低于标题。`report_body` 不在主页面直接铺开全文；“正文”节点下只展示当前 Study 文件名入口，点击整行或扩展阅读图标后在右侧扩展阅读区渲染正文 Markdown。结构化 `related_refs.summary` 是引用用途提示，应比 Study 主内容再弱一级，不承担正文结论表达。
+
 ## 8. 右侧扩展阅读区
 
 - 由 App Shell 的 `ReadingPanel` 提供。
