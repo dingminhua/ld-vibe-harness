@@ -1,0 +1,80 @@
+id: workplan-0071
+type: workplan
+title: 沉淀清退与契约化经验并准备流程规范
+status: active
+created: '2026-06-18T09:11:44'
+updated: '2026-06-18T09:11:44'
+workarea: workarea-0012
+priority: P2
+description: |
+  在旧对象清退和文件元信息契约标准化过程中，记录中间问题、残留风险、Code/Web/Specs 协同经验和
+  后续流程规范候选。该 WorkPlan 不替代前两个执行计划，只负责把过程经验回写到 Memo、待补齐事项
+  或后续规范准备材料，避免执行中的经验只留在对话里。
+success_criteria: |
+  - [ ] 执行过程中遇到的阻塞、降级、残留风险或无法一次完成事项已记录到 Memo
+  - [ ] Code/Web/Specs 三方契约协同中的经验和问题已形成可复用总结
+  - [ ] 对未来相关工作流程规范的候选要求已记录，至少覆盖拆分、审批、执行、问题回写和最终复盘
+  - [ ] 最终回报中明确说明三个 WorkPlan 的完成情况、校验结果、残留风险和经验总结
+source: |
+  Human Gate confirmed by dmh2002 on 2026-06-18:
+  用户要求把这些事拆成三个 WorkPlan，审批后依次执行，中间不要停；若发生问题记录到 Memo，
+  最后在回报中告知，并从过程中总结经验和问题，用于完善当前流程并为未来相关工作流程规范做准备。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 维护过程问题 Memo
+    role: controller
+    mode: single
+    input_refs:
+    - ldvh-base/memos/
+    - workplan-0069
+    - workplan-0070
+    expected_output: 对执行中无法立即处理或值得保留的问题形成 Memo 记录。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-2
+    title: 总结 Code/Web/Specs 契约协同经验
+    role: reviewer
+    mode: single
+    input_refs:
+    - workplan-0069
+    - workplan-0070
+    expected_output: 形成面向未来流程规范的经验、问题和候选要求。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-3
+    title: 最终回报与后续规范准备
+    role: controller
+    mode: single
+    input_refs:
+    - memo-0005
+    - memo-0009
+    expected_output: 在最终回报中汇总三个 WorkPlan、校验、残留风险和流程改进候选。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: ''
+closure_evidence: ''
+related_docs: []
+related_adrs: []
+related_memos:
+- memo-0005
+- memo-0009
+related_pitfalls: []
+related_workplans:
+- workplan-0069
+- workplan-0070
+related_changes: []

@@ -1,0 +1,84 @@
+id: workplan-0070
+type: workplan
+title: 标准化 specs 文件元信息契约
+status: active
+created: '2026-06-18T09:11:44'
+updated: '2026-06-18T09:11:44'
+workarea: workarea-0012
+priority: P1
+description: |
+  将 LDVH specs Markdown 顶部 `> 字段：值` 头部元信息从格式建议升级为人、AI、Code、Web
+  可共同消费的稳定契约。变更重点是明确字段语义、适用文档类型、必填/可选规则和 Code 检查边界；
+  不把头部改成 YAML frontmatter，不把 `ldvh_member` 字段搬进普通头部，也不重复成员自描述事实。
+success_criteria: |
+  - [ ] `specs/03-文档基础规范.md` 明确头部元信息是机器可读契约，而非普通文档装饰
+  - [ ] `specs/03.01-规范文档规范.md` 列出 specs 正式规范、子文档、studies、sources 的头部字段规则
+  - [ ] `specs/03.02-工作模型文档规范.md` 明确 20-39 普通头部不得重复 `ldvh_member` 成员自描述字段
+  - [ ] `specs/03.03-工作流程文档规范.md` 明确 40-59 普通头部不得重复 `ldvh_member` 成员自描述字段
+  - [ ] 设计结论写清头部元信息契约与成员自描述契约的边界
+  - [ ] 仅记录后续 Code 检查候选，不贸然扩大 `code/spec_checks/index.py` 判定范围
+source: |
+  Human Gate confirmed by dmh2002 on 2026-06-18:
+  用户要求评估并设计 LDVH specs 文档的“标准文件元信息契约”，保持现有 `> 字段：值` 格式，
+  把它明确为稳定机器接口；同时要求注意 20+ / 40+ 双层元信息，不把 `ldvh_member` 字段搬进普通头部，
+  不新增会与成员自描述冲突的头部字段。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 复核现有 Code 消费边界
+    role: code
+    mode: single
+    input_refs:
+    - code/spec_checks/index.py
+    expected_output: 明确现有头部解析用于 doc_kind、引用、父子关系、索引和诊断，不把实现细节写成过度规则。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-2
+    title: 更新 03 与 03.01 头部字段契约
+    role: specs
+    mode: sequential
+    input_refs:
+    - specs/03-文档基础规范.md
+    - specs/03.01-规范文档规范.md
+    expected_output: 头部字段语义、适用文档类型、必填/可选和消费边界写入正式规范。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-3
+    title: 更新 03.02 与 03.03 双层元信息边界
+    role: specs
+    mode: sequential
+    input_refs:
+    - specs/03.02-工作模型文档规范.md
+    - specs/03.03-工作流程文档规范.md
+    expected_output: 20-39 / 40-59 普通头部只承载文档身份和引用边界，集合事实只由文件名与 `ldvh_member` 承载。
+    status: pending
+    result_summary: null
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: true
+      role: code-and-web-contract-review
+      expected_output: 从 Code 可解析性和 Web 可表达性两个视角确认契约可消费且不重复事实源。
+    human_closure_review: true
+verification_evidence: ''
+closure_evidence: ''
+related_docs:
+- specs/03-文档基础规范.md
+- specs/03.01-规范文档规范.md
+- specs/03.02-工作模型文档规范.md
+- specs/03.03-工作流程文档规范.md
+related_adrs: []
+related_memos:
+- memo-0005
+- memo-0009
+related_pitfalls: []
+related_workplans:
+- workplan-0069
+related_changes: []
