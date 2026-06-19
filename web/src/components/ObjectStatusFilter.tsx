@@ -59,11 +59,7 @@ function sortStatusOptions(options: ObjectStatusOption[]): ObjectStatusOption[] 
 }
 
 function getButtonClass(active: boolean): string {
-  return `ldvh-chip rounded-full px-3 py-1 transition-colors ${
-    active
-      ? 'bg-ldvh-accent/15 text-ldvh-accent'
-      : 'bg-ldvh-border/50 text-ldvh-text-secondary hover:text-ldvh-text-primary'
-  }`;
+  return `ldvh-tab-button ${active ? 'ldvh-tab-button-active' : 'ldvh-tab-button-idle'}`;
 }
 
 export function getFallbackStatuses(type: string, activeStatus: string | null): string[] {
@@ -74,7 +70,7 @@ export function getFallbackStatuses(type: string, activeStatus: string | null): 
 
 function CountPlaceholder() {
   return (
-    <span aria-hidden="true" className="ml-1 inline-flex min-w-4 items-center justify-center gap-0.5 align-middle">
+    <span aria-hidden="true" className="ldvh-tab-count inline-flex items-center justify-center gap-0.5 align-middle">
       <span className="h-1 w-1 animate-pulse rounded-full bg-current opacity-35" />
       <span className="h-1 w-1 animate-pulse rounded-full bg-current opacity-35 [animation-delay:150ms]" />
       <span className="h-1 w-1 animate-pulse rounded-full bg-current opacity-35 [animation-delay:300ms]" />
@@ -103,7 +99,7 @@ export default function ObjectStatusFilter({
 
   if (loading && sortedOptions.length === 0) {
     return (
-      <div className={`flex min-h-7 flex-wrap gap-1.5 ${className}`} aria-label={t('objectList.statusFilter')} aria-busy="true">
+      <div className={`ldvh-tab-list ${className}`} aria-label={t('objectList.statusFilter')} aria-busy="true">
         {fallbackStatuses.map((status) => (
           <button
             key={status}
@@ -130,7 +126,7 @@ export default function ObjectStatusFilter({
   if (displayOptions.length <= 1 && type !== 'memo') return null;
 
   return (
-    <div className={`flex min-h-7 flex-wrap gap-1.5 ${className}`} aria-label={t('objectList.statusFilter')}>
+    <div className={`ldvh-tab-list ${className}`} aria-label={t('objectList.statusFilter')}>
       {displayOptions.map((option) => (
         <button
           key={option.status}
@@ -139,7 +135,7 @@ export default function ObjectStatusFilter({
           className={getButtonClass(activeStatus === option.status)}
         >
           {getObjectStatusLocale(type, option.status, locale)}
-          <span className="ml-1 inline-block min-w-4 text-center opacity-70">{option.count}</span>
+          <span className="ldvh-tab-count">{option.count}</span>
         </button>
       ))}
       <button
@@ -148,7 +144,7 @@ export default function ObjectStatusFilter({
         className={getButtonClass(activeStatus === null)}
       >
         {t('objectList.all')}
-        <span className="ml-1 inline-block min-w-4 text-center opacity-70">{total}</span>
+        <span className="ldvh-tab-count">{total}</span>
       </button>
     </div>
   );

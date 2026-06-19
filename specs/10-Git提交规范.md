@@ -8,7 +8,7 @@ ldvh_doc:
   status: "active"
   canonical_path: "specs/10-Git提交规范.md"
   created: "2026-06-19"
-  updated: "2026-06-19"
+  updated: "2026-06-20"
   parent_doc: ""
   relation: ""
   positioning: "定义 LDVH 自身项目及所有管辖项目的 Git 提交格式、提交语言、Code/Web 可解析字段和派生追溯边界"
@@ -116,23 +116,23 @@ LDVH 使用 Conventional Commits 1.0.0（约定式提交规范）作为 Git comm
 ---
 ## 6. scope 推荐值
 
-| scope | 含义 |
-|---|---|
-| `specs` | specs 规范文档 |
-| `docs` | docs 正文或项目文档 |
-| `rules` | Rules / Instructions |
-| `code` | Code / 工具实现 |
-| `web` | Web 实现 |
-| `tests` | 测试代码 |
-| `config` | 项目配置 |
-| `workarea` | WorkArea 实例 |
-| `workplan` | WorkPlan 实例 |
-| `adr` | ADR 实例 |
-| `memo` | Memo 实例 |
-| `study` | Study 实例 |
-| `pitfall` | Pitfall 实例 |
-| `studies` | docs/studies 相关修改 |
-| `sources` | docs/sources 相关修改 |
+| scope | 简体中文 | English | 含义 |
+|---|---|---|---|
+| `specs` | 规范 | Specs | specs 规范文档 |
+| `docs` | 文档 | Docs | docs 正文或项目文档 |
+| `rules` | 规则 | Rules | Rules / Instructions |
+| `code` | Code | Code | Code / 工具实现 |
+| `web` | Web | Web | Web 实现 |
+| `tests` | 测试 | Tests | 测试代码 |
+| `config` | 配置 | Config | 项目配置 |
+| `workarea` | 工作域 | WorkArea | WorkArea 实例 |
+| `workplan` | 计划 | WorkPlan | WorkPlan 实例 |
+| `adr` | 决策 | ADR | ADR 实例 |
+| `memo` | 备忘 | Memo | Memo 实例 |
+| `study` | 研究 | Study | Study 实例 |
+| `pitfall` | 经验 | Pitfall | Pitfall 实例 |
+| `studies` | 研究材料 | Studies | docs/studies 相关修改 |
+| `sources` | 来源材料 | Sources | docs/sources 相关修改 |
 
 scope 为推荐值。项目可以在不破坏解析的前提下扩展，但不应用 scope 创造新的工作对象类别。
 
@@ -196,7 +196,9 @@ Web 呈现必须遵守：
 3. Dashboard、ProjectFiles 和 Changelog 应尽量共享同一 commit DTO 或解析契约；
 4. 对象详情中的关联提交应由 Git 派生，不从对象 YAML 手写字段读取为权威事实；
 5. Web 不展示 `Refs:`、`Human-Gate:`、`Verification:`、`Risk:` 作为固定字段或标签；
-6. Web 缓存、页面状态、筛选状态和派生索引不得替代 Git commit records。
+6. Web 可按当前语言本地化展示 `type` 和推荐 `scope` 标签；中文展示应使用 §5 和 §6 中的简体中文列，英文展示应保留 type 原始 token，并使用 §6 中的 English scope 展示名；
+7. 复制给 AI 定位或用于审计的提交上下文应保留原始 `type`、`scope` 和 hash token，不得只复制本地化标签；
+8. Web 缓存、页面状态、筛选状态和派生索引不得替代 Git commit records。
 
 ---
 ## 12. 示例

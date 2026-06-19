@@ -7,6 +7,8 @@ interface CopyPathButtonProps {
   className?: string;
   toneClassName?: string;
   toneStyle?: CSSProperties;
+  label?: string;
+  copiedLabel?: string;
 }
 
 async function copyText(text: string) {
@@ -30,7 +32,7 @@ async function copyText(text: string) {
   document.body.removeChild(textarea);
 }
 
-export default function CopyPathButton({ path, className = '', toneClassName, toneStyle }: CopyPathButtonProps) {
+export default function CopyPathButton({ path, className = '', toneClassName, toneStyle, label: labelOverride, copiedLabel }: CopyPathButtonProps) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -44,7 +46,7 @@ export default function CopyPathButton({ path, className = '', toneClassName, to
 
   if (!path) return null;
 
-  const label = copied ? t('common.copiedPath') : t('common.copyPath');
+  const label = copied ? (copiedLabel || t('common.copiedPath')) : (labelOverride || t('common.copyPath'));
   const buttonClassName = copied
     ? 'bg-emerald-500/10 text-emerald-400'
     : toneClassName ?? 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent';

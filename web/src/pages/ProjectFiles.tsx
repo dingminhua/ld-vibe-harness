@@ -563,51 +563,39 @@ export default function ProjectFiles() {
           </label>
           <div className="flex min-w-0 flex-col justify-end gap-2">
             <p className="ldvh-caption-strong">{pickCopy(locale, '视图', 'View')}</p>
-            <div role="tablist" aria-label={pickCopy(locale, '项目文件视图', 'Project file view')} className="grid max-w-2xl grid-cols-3 rounded-lg border border-ldvh-border bg-ldvh-bg p-1">
+            <div role="tablist" aria-label={pickCopy(locale, '项目文件视图', 'Project file view')} className="ldvh-tab-list max-w-2xl">
               <button
                 type="button"
                 role="tab"
                 aria-selected={activeTab === 'files'}
                 onClick={() => setActiveTab('files')}
-                className={`ldvh-card-title flex min-w-0 items-center justify-center gap-2 rounded-md px-3 py-2 transition-colors ${
-                  activeTab === 'files'
-                    ? 'bg-ldvh-panel text-ldvh-accent shadow-sm shadow-black/10'
-                    : 'text-ldvh-text-secondary hover:text-ldvh-text-primary'
-                }`}
+                className={`ldvh-tab-button ${activeTab === 'files' ? 'ldvh-tab-button-active' : 'ldvh-tab-button-idle'}`}
               >
                 <FolderOpen size={15} className="shrink-0" />
                 <span className="truncate">{copy.filesTab}</span>
-                <span className="ldvh-meta-primary shrink-0">{entries.length}</span>
+                <span className="ldvh-tab-count">{entries.length}</span>
               </button>
               <button
                 type="button"
                 role="tab"
                 aria-selected={activeTab === 'changes'}
                 onClick={() => setActiveTab('changes')}
-                className={`ldvh-card-title flex min-w-0 items-center justify-center gap-2 rounded-md px-3 py-2 transition-colors ${
-                  activeTab === 'changes'
-                    ? 'bg-ldvh-panel text-ldvh-accent shadow-sm shadow-black/10'
-                    : 'text-ldvh-text-secondary hover:text-ldvh-text-primary'
-                }`}
+                className={`ldvh-tab-button ${activeTab === 'changes' ? 'ldvh-tab-button-active' : 'ldvh-tab-button-idle'}`}
               >
                 <GitPullRequestArrow size={15} className="shrink-0" />
                 <span className="truncate">{copy.changesTab}</span>
-                <span className="ldvh-meta-primary shrink-0">{gitEntries.length}</span>
+                <span className="ldvh-tab-count">{gitEntries.length}</span>
               </button>
               <button
                 type="button"
                 role="tab"
                 aria-selected={activeTab === 'history'}
                 onClick={() => setActiveTab('history')}
-                className={`ldvh-card-title flex min-w-0 items-center justify-center gap-2 rounded-md px-3 py-2 transition-colors ${
-                  activeTab === 'history'
-                    ? 'bg-ldvh-panel text-ldvh-accent shadow-sm shadow-black/10'
-                    : 'text-ldvh-text-secondary hover:text-ldvh-text-primary'
-                }`}
+                className={`ldvh-tab-button ${activeTab === 'history' ? 'ldvh-tab-button-active' : 'ldvh-tab-button-idle'}`}
               >
                 <GitCommit size={15} className="shrink-0" />
                 <span className="truncate">{copy.historyTab}</span>
-                <span className="ldvh-meta-primary shrink-0">{commitEntries.length}</span>
+                <span className="ldvh-tab-count">{commitEntries.length}</span>
               </button>
             </div>
           </div>

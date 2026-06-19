@@ -56,6 +56,26 @@
     @apply text-xs font-medium leading-4;
   }
 
+  .ldvh-tab-list {
+    @apply flex min-h-7 flex-wrap items-center gap-1.5;
+  }
+
+  .ldvh-tab-button {
+    @apply inline-flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium leading-4 transition-colors;
+  }
+
+  .ldvh-tab-button-active {
+    @apply border-ldvh-accent/40 bg-ldvh-accent/10 text-ldvh-accent;
+  }
+
+  .ldvh-tab-button-idle {
+    @apply border-ldvh-border bg-transparent text-ldvh-text-secondary hover:border-ldvh-accent/30 hover:text-ldvh-text-primary;
+  }
+
+  .ldvh-tab-count {
+    @apply -ml-0.5 inline-block shrink-0 text-center font-mono text-xs leading-4 opacity-70;
+  }
+
   .ldvh-reading-title {
     @apply text-base font-semibold leading-6 text-ldvh-text-primary;
   }

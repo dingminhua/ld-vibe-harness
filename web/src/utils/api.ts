@@ -206,6 +206,11 @@ export interface ChangelogEntry {
   relativeTime: string;
 }
 
+export interface CommitDetailPanelData {
+  entry: ChangelogEntry;
+  stat: string;
+}
+
 export async function fetchChangelog(count?: number, locale?: string): Promise<ChangelogEntry[]> {
   const params = new URLSearchParams();
   if (count) params.set('count', String(count));

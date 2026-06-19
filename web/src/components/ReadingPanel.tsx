@@ -18,8 +18,9 @@ import {
   splitRelatedContentEntries,
 } from '@/pages/ObjectDetail';
 import { getObjectStatusLocale } from '@/i18n/locales';
-import { fetchDocContent, fetchObjectDetail, fetchObjects, type DocContent, type ObjectDetail as ApiObjectDetail, type ObjectItem } from '@/utils/api';
+import { fetchDocContent, fetchObjectDetail, fetchObjects, type CommitDetailPanelData, type DocContent, type ObjectDetail as ApiObjectDetail, type ObjectItem } from '@/utils/api';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
+import { getCommitScopeLabel, getCommitTypeLabel } from '@/utils/commitLabels';
 import { formatDateTime } from '@/utils/dateFormat';
 
 const MIN_WIDTH = 280;
@@ -152,6 +153,7 @@ export default function ReadingPanel() {
 
   if (!isOpen && !content) return null;
 
+  const showPanelTitle = content?.type !== 'diff';
   const panelTitle = content?.title || t('readingPanel.title');
   const preview = content ? <PanelContentRenderer content={content} /> : <EmptyPanelPreview />;
 
@@ -192,17 +194,23 @@ export default function ReadingPanel() {
           className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-xl border-t border-ldvh-border bg-ldvh-panel shadow-lg shadow-black/20 transition-transform duration-300 ease-out"
           style={{ height: `${bottomSheetHeight}vh` }}
         >
-          <div
-            className="flex h-10 flex-shrink-0 cursor-ns-resize items-center justify-center border-b border-ldvh-border"
-            onMouseDown={onSheetHandleDown}
-            onTouchStart={onSheetHandleDown}
-          >
-            <div className="h-1 w-10 rounded-full bg-ldvh-border" />
-          </div>
           <div className="z-10 flex shrink-0 items-center justify-between gap-2 border-b border-ldvh-border bg-ldvh-panel/95 px-4 py-2 backdrop-blur">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               {navigationControls}
-              <h3 className="ldvh-card-title truncate">{panelTitle}</h3>
+              <div
+                className={`flex min-h-7 min-w-0 flex-1 cursor-ns-resize items-center ${
+                  showPanelTitle ? 'justify-start' : 'justify-center'
+                }`}
+                onMouseDown={onSheetHandleDown}
+                onTouchStart={onSheetHandleDown}
+                aria-label={panelTitle}
+              >
+                {showPanelTitle ? (
+                  <h3 className="ldvh-card-title min-w-0 truncate">{panelTitle}</h3>
+                ) : (
+                  <div className="h-1 w-10 rounded-full bg-ldvh-border" />
+                )}
+              </div>
             </div>
             <button
               type="button"
@@ -241,7 +249,7 @@ export default function ReadingPanel() {
         <div className="flex min-w-0 items-center gap-2">
           <GripVertical size={14} className="flex-shrink-0 text-ldvh-text-secondary" />
           {navigationControls}
-          <h3 className="ldvh-card-title truncate">{panelTitle}</h3>
+          {showPanelTitle && <h3 className="ldvh-card-title truncate">{panelTitle}</h3>}
         </div>
         <button
           type="button"
@@ -601,28 +609,236 @@ function EvidencePreview({ content }: { content: PanelContent }) {
   );
 }
 
-function DiffPreview({ content }: { content: PanelContent }) {
-  const { t } = useI18n();
-  const { title, data } = content;
-  const diffText = typeof data === 'string' ? data : '';
-  const lines = diffText.split('\n');
+interface CommitStatFile {
+  path: string;
+  stat: string;
+  additions: number;
+  deletions: number;
+}
+
+interface ParsedCommitStat {
+  commit?: string;
+  author?: string;
+  date?: string;
+  files: CommitStatFile[];
+  summary?: {
+    filesChanged?: number;
+    insertions?: number;
+    deletions?: number;
+    raw: string;
+  };
+}
+
+function isCommitDetailPanelData(value: unknown): value is CommitDetailPanelData {
+  return Boolean(
+    value
+      && typeof value === 'object'
+      && 'entry' in value
+      && 'stat' in value
+      && typeof (value as { stat?: unknown }).stat === 'string',
+  );
+}
+
+function parseCommitStat(stat: string): ParsedCommitStat {
+  const parsed: ParsedCommitStat = { files: [] };
+  const lines = stat.split('\n');
+
+  lines.forEach((rawLine) => {
+    const line = rawLine.trim();
+    if (!line) return;
+
+    if (line.startsWith('commit ')) {
+      parsed.commit = line.replace(/^commit\s+/, '').slice(0, 12);
+      return;
+    }
+    if (line.startsWith('Author:')) {
+      parsed.author = line.replace(/^Author:\s*/, '');
+      return;
+    }
+    if (line.startsWith('Date:')) {
+      parsed.date = line.replace(/^Date:\s*/, '');
+      return;
+    }
+
+    const summaryMatch = line.match(/(?:(\d+)\s+files?\s+changed)?(?:,\s*)?(?:(\d+)\s+insertions?\(\+\))?(?:,\s*)?(?:(\d+)\s+deletions?\(-\))?/);
+    if (summaryMatch && (summaryMatch[1] || summaryMatch[2] || summaryMatch[3])) {
+      parsed.summary = {
+        filesChanged: summaryMatch[1] ? Number(summaryMatch[1]) : undefined,
+        insertions: summaryMatch[2] ? Number(summaryMatch[2]) : undefined,
+        deletions: summaryMatch[3] ? Number(summaryMatch[3]) : undefined,
+        raw: line,
+      };
+      return;
+    }
+
+    const separatorIndex = rawLine.lastIndexOf('|');
+    if (separatorIndex === -1) return;
+
+    const path = rawLine.slice(0, separatorIndex).trim();
+    const fileStat = rawLine.slice(separatorIndex + 1).trim();
+    if (!path || !fileStat) return;
+
+    parsed.files.push({
+      path,
+      stat: fileStat,
+      additions: (fileStat.match(/\+/g) || []).length,
+      deletions: (fileStat.match(/-/g) || []).length,
+    });
+  });
+
+  return parsed;
+}
+
+function CommitMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: 'add' | 'delete';
+}) {
+  const toneClass = tone === 'add'
+    ? 'text-emerald-300'
+    : tone === 'delete'
+      ? 'text-red-300'
+      : 'text-ldvh-text-primary';
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <FileDiff size={14} className="text-ldvh-text-secondary" />
-        <h4 className="ldvh-card-title">{title || t('readingPanel.changeDetail')}</h4>
-      </div>
-      <div className="rounded-md bg-ldvh-bg p-3">
-        <pre className="ldvh-meta-primary max-h-[600px] overflow-y-auto whitespace-pre-wrap">
-          {lines.map((line, i) => {
-            let cls = 'text-ldvh-text-primary';
-            if (line.startsWith('+')) cls = 'text-emerald-400';
-            else if (line.startsWith('-')) cls = 'text-red-400';
-            else if (line.startsWith('@@')) cls = 'text-ldvh-accent';
-            return <div key={i} className={cls}>{line}</div>;
-          })}
-        </pre>
-      </div>
+    <div className="rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2">
+      <div className={`font-mono text-lg font-semibold leading-tight ${toneClass}`}>{value}</div>
+      <div className="ldvh-caption mt-0.5">{label}</div>
     </div>
+  );
+}
+
+function DiffPreview({ content }: { content: PanelContent }) {
+  const { locale, t } = useI18n();
+  const { title, data } = content;
+  const commitData = isCommitDetailPanelData(data) ? data : null;
+  const entry = commitData?.entry;
+  const diffText = commitData?.stat ?? (typeof data === 'string' ? data : '');
+  const parsed = parseCommitStat(diffText);
+  const displayTitle = entry?.description || entry?.message || title || t('readingPanel.changeDetail');
+  const labels = locale === 'en'
+    ? {
+      type: 'Type',
+      scope: 'Scope',
+      commit: 'Commit',
+      time: 'Time',
+      files: 'Files',
+      insertions: 'Insertions',
+      deletions: 'Deletions',
+      changedFiles: 'Changed files',
+      noFiles: 'No file stat available',
+      raw: 'Raw stat',
+    }
+    : {
+      type: '类型',
+      scope: '范围',
+      commit: '提交',
+      time: '时间',
+      files: '文件',
+      insertions: '新增',
+      deletions: '删除',
+      changedFiles: '改动文件',
+      noFiles: '没有可展示的文件统计',
+      raw: '原始统计',
+    };
+  const summary = parsed.summary;
+  const filesChanged = summary?.filesChanged ?? parsed.files.length;
+  const insertions = summary?.insertions ?? parsed.files.reduce((total, file) => total + file.additions, 0);
+  const deletions = summary?.deletions ?? parsed.files.reduce((total, file) => total + file.deletions, 0);
+  const lines = diffText.split('\n');
+
+  return (
+    <div className="space-y-4">
+      <div className="flex min-w-0 items-start gap-2">
+        <FileDiff size={15} className="mt-0.5 flex-shrink-0 text-ldvh-accent" />
+        <h4 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words leading-relaxed">
+          {displayTitle}
+        </h4>
+      </div>
+
+      {(entry?.category || entry?.scope || entry?.isBreaking) && (
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          {entry?.category && (
+            <span className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-secondary">
+              {labels.type} · {getCommitTypeLabel(entry.category, locale)}
+            </span>
+          )}
+          {entry?.scope && (
+            <span className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-secondary">
+              {labels.scope} · {getCommitScopeLabel(entry.scope, locale)}
+            </span>
+          )}
+          {entry?.isBreaking && (
+            <span className="ldvh-chip rounded-md border border-red-500/40 bg-red-500/10 px-1.5 py-0.5 text-red-300">
+              !
+            </span>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2">
+          <div className="ldvh-caption">{labels.commit}</div>
+          <div className="ldvh-meta-primary mt-1 truncate font-mono">
+            {entry?.shortHash || parsed.commit || '—'}
+          </div>
+        </div>
+        <div className="rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2">
+          <div className="ldvh-caption">{labels.time}</div>
+          <div className="ldvh-meta-primary mt-1 truncate">
+            {entry?.date ? formatDateTime(entry.date) : parsed.date || '—'}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <CommitMetric label={labels.files} value={filesChanged} />
+        <CommitMetric label={labels.insertions} value={insertions} tone="add" />
+        <CommitMetric label={labels.deletions} value={deletions} tone="delete" />
+      </div>
+
+      <section className="rounded-lg border border-ldvh-border bg-ldvh-panel">
+        <div className="border-b border-ldvh-border px-3 py-2">
+          <h5 className="ldvh-caption-strong">{labels.changedFiles}</h5>
+        </div>
+        {parsed.files.length === 0 ? (
+          <p className="ldvh-body-muted px-3 py-4">{labels.noFiles}</p>
+        ) : (
+          <div className="divide-y divide-ldvh-border/70">
+            {parsed.files.map((file) => (
+              <div key={`${file.path}:${file.stat}`} className="px-3 py-2">
+                <div className="ldvh-meta-primary break-all font-mono">{file.path}</div>
+                <div className="ldvh-caption mt-1 font-mono text-ldvh-text-secondary">{file.stat}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {diffText && (
+        <details className="rounded-lg border border-ldvh-border bg-ldvh-bg">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-ldvh-text-secondary hover:text-ldvh-text-primary">
+            <FileDiff size={13} />
+            <span className="ldvh-caption-strong">{labels.raw}</span>
+          </summary>
+          <pre className="ldvh-meta-primary max-h-[360px] overflow-y-auto border-t border-ldvh-border px-3 py-2 whitespace-pre-wrap">
+            {lines.map((line, i) => {
+              let cls = 'text-ldvh-text-primary';
+              if (line.startsWith('+')) cls = 'text-emerald-400';
+              else if (line.startsWith('-')) cls = 'text-red-400';
+              else if (line.startsWith('@@')) cls = 'text-ldvh-accent';
+              return <div key={i} className={cls}>{line}</div>;
+            })}
+          </pre>
+        </details>
+      )}
+      {!diffText && (
+        <p className="ldvh-body-muted rounded-md border border-ldvh-border bg-ldvh-bg p-3">{labels.noFiles}</p>
+      )}
+      </div>
   );
 }

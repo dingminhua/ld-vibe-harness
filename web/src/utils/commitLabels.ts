@@ -1,0 +1,47 @@
+const COMMIT_TYPE_ZH: Record<string, string> = {
+  feat: '功能',
+  fix: '修复',
+  docs: '文档',
+  refactor: '重构',
+  test: '测试',
+  chore: '维护',
+  build: '构建',
+  ci: 'CI',
+  perf: '性能',
+  style: '样式',
+  revert: '回退',
+  spec: '规范',
+  rule: '规则',
+  adr: '决策',
+};
+
+const COMMIT_SCOPE_LABELS: Record<string, { zh: string; en: string }> = {
+  specs: { zh: '规范', en: 'Specs' },
+  docs: { zh: '文档', en: 'Docs' },
+  rules: { zh: '规则', en: 'Rules' },
+  code: { zh: 'Code', en: 'Code' },
+  web: { zh: 'Web', en: 'Web' },
+  tests: { zh: '测试', en: 'Tests' },
+  config: { zh: '配置', en: 'Config' },
+  workarea: { zh: '工作域', en: 'WorkArea' },
+  workplan: { zh: '计划', en: 'WorkPlan' },
+  adr: { zh: '决策', en: 'ADR' },
+  memo: { zh: '备忘', en: 'Memo' },
+  study: { zh: '研究', en: 'Study' },
+  pitfall: { zh: '经验', en: 'Pitfall' },
+  studies: { zh: '研究材料', en: 'Studies' },
+  sources: { zh: '来源材料', en: 'Sources' },
+};
+
+export function getCommitTypeLabel(type: string | undefined, locale: string) {
+  if (!type) return '';
+  if (locale === 'en') return type;
+  return COMMIT_TYPE_ZH[type] || type;
+}
+
+export function getCommitScopeLabel(scope: string | undefined, locale: string) {
+  if (!scope) return '';
+  const labels = COMMIT_SCOPE_LABELS[scope];
+  if (!labels) return scope;
+  return locale === 'en' ? labels.en : labels.zh;
+}

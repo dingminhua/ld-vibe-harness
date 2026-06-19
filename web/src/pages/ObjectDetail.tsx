@@ -1,6 +1,6 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpenText, ChevronDown, ChevronRight, ChevronUp, Code2, ExternalLink, FileText, Info, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, BookOpenText, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, ExternalLink, FileText, Info } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -905,7 +905,7 @@ function WorkAreaPlanRow({
   const planType = plan.type || 'workplan';
   const flowItems = plan.executionItems ?? [];
   const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === planType && panelContent.objectId === plan.id;
-  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
+  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
 
   return (
     <div
@@ -940,7 +940,7 @@ function WorkAreaPlanRow({
             toneClassName="bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-text-secondary"
           />
           <PanelIcon
-            size={14}
+            size={16}
             aria-hidden="true"
             className={`text-ldvh-text-secondary/70 transition-colors ${isCurrentPanelOpen ? toneClass.icon : toneClass.iconHover}`}
           />
@@ -1139,7 +1139,7 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
       || (!isDocPreview && !objectType && panelContent?.type === 'doc' && panelContent.title === value)
     )
   );
-  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
+  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
 
   useEffect(() => {
     if (!objectType) {
@@ -1224,7 +1224,7 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
         aria-label={previewLabel}
         className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent text-ldvh-text-secondary/70 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-accent focus-visible:border-ldvh-accent/50 focus-visible:outline-none"
       >
-        <PanelIcon size={14} aria-hidden="true" />
+        <PanelIcon size={16} aria-hidden="true" />
       </button>
     </div>
   );
@@ -1990,7 +1990,7 @@ export function DetailObjectRow({
 
   const title = item ? getLocalizedTitle(item, locale) : objectId;
   const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === objectType && panelContent.objectId === objectId;
-  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
+  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
   const objectTypeColor = CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other;
   const labelIcon = <ObjectTypeIcon type={objectType} size={12} className="shrink-0" style={{ color: objectTypeColor }} />;
   const open = () => openPanel({ type: 'object', title, objectType, objectId });
@@ -2031,7 +2031,7 @@ export function DetailObjectRow({
         {variant !== 'property' && <span className="ldvh-meta-muted shrink-0">{objectId}</span>}
         {variant !== 'property' && item?.status && <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(objectType, item.status, locale)} objectType={objectType} size="sm" />}
         <CopyPathButton path={item?.path} />
-        <PanelIcon size={14} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
+        <PanelIcon size={16} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
       </div>
     </div>
   );
@@ -2054,7 +2054,7 @@ function DetailObjectReferenceValue({
 
   const title = item ? getLocalizedTitle(item, locale) : objectId;
   const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === objectType && panelContent.objectId === objectId;
-  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
+  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
   const objectTypeColor = CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other;
   const open = () => openPanel({ type: 'object', title, objectType, objectId });
 
@@ -2076,7 +2076,7 @@ function DetailObjectReferenceValue({
       <ObjectTypeIcon type={objectType} size={12} className="shrink-0" style={{ color: objectTypeColor }} />
       <span className="ldvh-body min-w-0 flex-1 truncate transition-colors group-hover/detail-ref:text-ldvh-accent">{title}</span>
       <CopyPathButton path={item?.path} />
-      <PanelIcon size={14} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
+      <PanelIcon size={16} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
     </div>
   );
 }
@@ -2284,7 +2284,7 @@ function StudyReportBodyEntry({ value, objectPath, locale }: { value: unknown; o
   const title = objectPath ? basename(objectPath) : (locale === 'en' ? 'Report body' : '报告正文');
   const openLabel = locale === 'en' ? 'Open in reading panel' : '扩展阅读';
   const isCurrentPanelOpen = Boolean(panelOpen && panelContent?.type === 'doc' && panelContent.docPath === docPath);
-  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
+  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
 
   const openReportBody = () => {
     openPanel({ type: 'doc', title, docPath, data: String(value) });
@@ -2318,7 +2318,7 @@ function StudyReportBodyEntry({ value, objectPath, locale }: { value: unknown; o
         aria-label={openLabel}
         className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent text-ldvh-text-secondary/70 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-accent focus-visible:border-ldvh-accent/50 focus-visible:outline-none"
       >
-        <PanelIcon size={14} aria-hidden="true" />
+        <PanelIcon size={16} aria-hidden="true" />
       </button>
     </div>
   );

@@ -258,8 +258,12 @@ export const UI_LOCALES = {
     'memo.created': '备忘已创建',
     'memo.createFailed': '创建失败',
 
-    'changelog.title': '提交记录',
-    'changelog.subtitle': 'Git 提交记录，点击查看详情',
+    'changelog.allTypes': '全部类型',
+    'changelog.allScopes': '全部范围',
+    'changelog.recentCount': '最近 {count}',
+    'changelog.noMatches': '没有匹配的提交',
+    'changelog.copyContext': '复制提交上下文',
+    'changelog.copiedContext': '已复制提交上下文',
     'changelog.loadFailed': '加载提交记录失败',
     'changelog.detailFailed': '加载提交详情失败',
 
@@ -436,8 +440,12 @@ export const UI_LOCALES = {
     'memo.created': 'Memo created',
     'memo.createFailed': 'Failed to create memo',
 
-    'changelog.title': 'Commit Records',
-    'changelog.subtitle': 'Git commit history, click to view details',
+    'changelog.allTypes': 'All types',
+    'changelog.allScopes': 'All scopes',
+    'changelog.recentCount': 'Latest {count}',
+    'changelog.noMatches': 'No matching commits',
+    'changelog.copyContext': 'Copy commit context',
+    'changelog.copiedContext': 'Commit context copied',
     'changelog.loadFailed': 'Failed to load commits',
     'changelog.detailFailed': 'Failed to load commit detail',
 

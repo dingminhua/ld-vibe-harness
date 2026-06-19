@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import { fetchObjectDetail } from '@/utils/api';
 import { isObjectRef } from '@/utils/fieldFormats';
@@ -89,7 +89,7 @@ function ReferenceItem({
     ? (locale === 'en' ? TYPE_LOCALES[refType!].en : TYPE_LOCALES[refType!].zh)
     : refType;
   const isCurrentPanelOpen = Boolean(panelOpen && refType && panelContent?.type === 'object' && panelContent.objectType === refType && panelContent.objectId === refId);
-  const PanelIcon = isCurrentPanelOpen ? PanelRightClose : PanelRightOpen;
+  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
   const itemClassName = variant === 'plain'
     ? `ldvh-body group flex w-full items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors ${refType ? 'cursor-pointer hover:bg-ldvh-border/25' : 'cursor-default'}`
     : `ldvh-body group flex w-full items-center gap-2 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2 text-left transition-colors ${refType ? 'cursor-pointer hover:bg-ldvh-border/30' : 'cursor-default'}`;
@@ -144,7 +144,7 @@ function ReferenceItem({
       <CopyPathButton path={info?.path} />
       {showPanelIcon && refType && (
         <PanelIcon
-          size={14}
+          size={16}
           aria-hidden="true"
           className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent"
         />

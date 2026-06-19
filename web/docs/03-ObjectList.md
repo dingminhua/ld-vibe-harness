@@ -32,6 +32,7 @@
 - 状态筛选及同层任务态势图例属于列表切换控制区，必须固定在主滚动容器顶部；对象卡片列表在其下方滚动。
 - 由 `ObjectStatusFilter` 根据当前类型聚合状态数量。
 - 展示“各状态 + 全部 + 数量”，“全部”固定在最后。
+- 状态筛选使用全局 tab 样式：`ldvh-tab-list`、`ldvh-tab-button`、`ldvh-tab-button-active` 和 `ldvh-tab-button-idle`，与提交记录页加载范围、type、scope 筛选保持一致。
 - 数据返回前先渲染稳定的筛选占位，数字位置使用轻量加载动画，避免对象卡片先出现、顶部筛选后插入造成页面跳动。
 - 对有活跃态的主工作对象，URL 无 `status` 时默认视为 `active`；用户显式选择全部时写入 `?status=all`。
 - 当前状态写入 URL query：`?status=review_needed`。
