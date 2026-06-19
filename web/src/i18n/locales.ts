@@ -106,7 +106,7 @@ export const UI_LOCALES = {
     'nav.memos': '备忘',
     'nav.studies': '研究',
     'nav.changes': '提交记录',
-    'nav.changelog': 'Git',
+    'nav.changelog': '提交',
     'nav.collapseSidebar': '收起侧栏',
     'nav.expandSidebar': '展开侧栏',
     'theme.system': '跟随系统',
