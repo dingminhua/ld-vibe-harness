@@ -576,6 +576,10 @@ export function ObjectIdentityHeader({
   updated,
   closedAt,
   auxiliaryMetaEntries = [],
+  extraBadges,
+  customMetaEntries = [],
+  showDefaultDates = true,
+  showCopyAction = true,
   compact = false,
 }: {
   title: string;
@@ -592,6 +596,10 @@ export function ObjectIdentityHeader({
   updated: string;
   closedAt?: string;
   auxiliaryMetaEntries?: Array<[string, unknown]>;
+  extraBadges?: ReactNode;
+  customMetaEntries?: Array<{ label: string; value: ReactNode }>;
+  showDefaultDates?: boolean;
+  showCopyAction?: boolean;
   compact?: boolean;
 }) {
   const { t } = useI18n();
@@ -623,6 +631,7 @@ export function ObjectIdentityHeader({
                 {statusLabel || status}
               </span>
             )}
+            {extraBadges}
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
           </div>
           <TitleTag className={`${titleClassName} flex min-w-0 items-center gap-2 break-words`}>
@@ -639,8 +648,8 @@ export function ObjectIdentityHeader({
             </div>
           )}
           <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
-            <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />
-            <HeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />
+            {showDefaultDates && <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />}
+            {showDefaultDates && <HeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />}
             {remainingAuxiliaryMetaEntries.map(([key, value]) => (
               <HeaderDateMeta
                 key={key}
@@ -648,12 +657,17 @@ export function ObjectIdentityHeader({
                 value={formatAuxiliaryMetaValue(key, value, locale)}
               />
             ))}
+            {customMetaEntries.map((entry) => (
+              <HeaderDateMeta key={entry.label} label={entry.label} value={entry.value} />
+            ))}
             {closedAt && <HeaderDateMeta label={t('objectDetail.closedAt')} value={closedAt} />}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2 sm:pt-0.5">
-          <CopyPathButton path={target} />
-        </div>
+        {showCopyAction && (
+          <div className="flex shrink-0 items-center gap-2 sm:pt-0.5">
+            <CopyPathButton path={target} />
+          </div>
+        )}
       </div>
     </div>
   );

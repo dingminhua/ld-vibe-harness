@@ -712,6 +712,72 @@ function CommitMetric({
   );
 }
 
+function CommitIdentitySection({
+  entry,
+  parsed,
+  title,
+  labels,
+  locale,
+}: {
+  entry?: CommitDetailPanelData['entry'];
+  parsed: ParsedCommitStat;
+  title: string;
+  labels: {
+    category: string;
+    type: string;
+    scope: string;
+    commit: string;
+    time: string;
+  };
+  locale: string;
+}) {
+  const commitColor = CATEGORY_COLORS.other;
+  const categoryColor = CATEGORY_COLORS[entry?.category || ''] || CATEGORY_COLORS.other;
+  const commitValue = entry?.shortHash || parsed.commit || '—';
+  const timeValue = entry?.date ? formatDateTime(entry.date) : parsed.date || '—';
+  const typeLabel = locale === 'en' ? 'Commit' : labels.commit;
+
+  return (
+    <ObjectIdentityHeader
+      title={title}
+      id={commitValue}
+      objectType="changelog"
+      typeColor={commitColor}
+      typeLabel={typeLabel}
+      source={{}}
+      locale={locale}
+      created=""
+      updated=""
+      compact
+      showDefaultDates={false}
+      showCopyAction={false}
+      customMetaEntries={[{ label: labels.time, value: timeValue }]}
+      extraBadges={(
+        <>
+        {entry?.category && (
+          <span
+            className="ldvh-chip shrink-0 rounded px-2 py-0.5"
+            style={{ backgroundColor: `${categoryColor}18`, color: categoryColor }}
+          >
+            {labels.category} · {getCommitTypeLabel(entry.category, locale)}
+          </span>
+        )}
+        {entry?.scope && (
+          <span className="ldvh-chip shrink-0 rounded bg-ldvh-bg px-2 py-0.5 text-ldvh-text-secondary">
+            {labels.scope} · {getCommitScopeLabel(entry.scope, locale)}
+          </span>
+        )}
+        {entry?.isBreaking && (
+          <span className="ldvh-chip shrink-0 rounded bg-red-500/10 px-2 py-0.5 text-red-300">
+            !
+          </span>
+        )}
+        </>
+      )}
+    />
+  );
+}
+
 function DiffPreview({ content }: { content: PanelContent }) {
   const { locale, t } = useI18n();
   const { title, data } = content;
@@ -722,6 +788,7 @@ function DiffPreview({ content }: { content: PanelContent }) {
   const displayTitle = entry?.description || entry?.message || title || t('readingPanel.changeDetail');
   const labels = locale === 'en'
     ? {
+      category: 'Category',
       type: 'Type',
       scope: 'Scope',
       commit: 'Commit',
@@ -734,6 +801,7 @@ function DiffPreview({ content }: { content: PanelContent }) {
       raw: 'Raw stat',
     }
     : {
+      category: '分类',
       type: '类型',
       scope: '范围',
       commit: '提交',
@@ -753,47 +821,13 @@ function DiffPreview({ content }: { content: PanelContent }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex min-w-0 items-start gap-2">
-        <FileDiff size={15} className="mt-0.5 flex-shrink-0 text-ldvh-accent" />
-        <h4 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words leading-relaxed">
-          {displayTitle}
-        </h4>
-      </div>
-
-      {(entry?.category || entry?.scope || entry?.isBreaking) && (
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          {entry?.category && (
-            <span className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-secondary">
-              {labels.type} · {getCommitTypeLabel(entry.category, locale)}
-            </span>
-          )}
-          {entry?.scope && (
-            <span className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-secondary">
-              {labels.scope} · {getCommitScopeLabel(entry.scope, locale)}
-            </span>
-          )}
-          {entry?.isBreaking && (
-            <span className="ldvh-chip rounded-md border border-red-500/40 bg-red-500/10 px-1.5 py-0.5 text-red-300">
-              !
-            </span>
-          )}
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2">
-          <div className="ldvh-caption">{labels.commit}</div>
-          <div className="ldvh-meta-primary mt-1 truncate font-mono">
-            {entry?.shortHash || parsed.commit || '—'}
-          </div>
-        </div>
-        <div className="rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2">
-          <div className="ldvh-caption">{labels.time}</div>
-          <div className="ldvh-meta-primary mt-1 truncate">
-            {entry?.date ? formatDateTime(entry.date) : parsed.date || '—'}
-          </div>
-        </div>
-      </div>
+      <CommitIdentitySection
+        entry={entry}
+        parsed={parsed}
+        title={displayTitle}
+        labels={labels}
+        locale={locale}
+      />
 
       <div className="grid grid-cols-3 gap-2">
         <CommitMetric label={labels.files} value={filesChanged} />
