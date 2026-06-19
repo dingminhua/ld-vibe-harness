@@ -1,12 +1,31 @@
 # Web 信息同步实现规范
 
-> 创建日期：2026-06-07
-> 更新日期：2026-06-17
-> 定位：LDVH Web 信息同步构成要素的实现边界、派生视图、Confirm UI、受控轻写入白名单和 Web 实现文档边界的权威规范
-> 适用范围：LDVH 项目及所有接入 LDVH 的管辖项目中的 `web/`、Web 信息同步实现、Web 文档、派生视图和 Confirm UI
-> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
-> 相关规范：`specs/06-工作流程基础规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/10-测试基础规范.md`
-> 参考实现：LDVH 在 `web/` 下提供了一套 Web 参考实现；LDVH 的核心是规范系统，用户可根据本文约束自行实现 Web
+```yaml
+ldvh_doc:
+  doc_id: "08"
+  doc_kind: "formal_spec"
+  title: "Web 信息同步实现规范"
+  status: "active"
+  canonical_path: "specs/08-Web信息同步实现规范.md"
+  created: "2026-06-07"
+  updated: "2026-06-17"
+  parent_doc: ""
+  relation: ""
+  positioning: "LDVH Web 信息同步构成要素的实现边界、派生视图、Confirm UI、受控轻写入白名单和 Web 实现文档边界的权威规范"
+  scope: "LDVH 项目及所有接入 LDVH 的管辖项目中的 `web/`、Web 信息同步实现、Web 文档、派生视图和 Confirm UI"
+  basis:
+    - "specs/00-LD-Vibe-Harness理念与纲要.md"
+  related_specs:
+    - "specs/06-工作流程基础规范.md"
+    - "specs/07-Code确定性执行实现规范.md"
+    - "specs/09-事实源边界与承载规范.md"
+    - "specs/10-测试基础规范.md"
+  code_consumption:
+    - "doc_metadata"
+    - "relations"
+    - "structure"
+    - "landing_requirements"
+```
 
 ---
 
@@ -77,7 +96,7 @@ Web 信息同步层面向人可读、可确认、可操作的界面，包括派�
 ### 5.1 允许职责
 
 1. Web 展示事实实例、规范状态、引用关系、验证结果、缺口和待确认项；
-2. Web 展示 Code 生成的确定性诊断、聚合结果和派生数据；
+2. Web 展示 Code 生成的确定性诊断、`ldvh_doc` 文档元信息、聚合结果和派生数据；
 3. Web 展示规范落地、能力保障、LDVH 能力资产和环境适配缺口的 Human-facing 派生态势；
 4. 提供 Confirm UI，承载人类确认、取消、暂缓或修改反馈；
 5. 提供白名单内受控轻写入入口，并把写入交给受控写入链路执行；
@@ -93,7 +112,8 @@ Web 信息同步层面向人可读、可确认、可操作的界面，包括派�
 4. 直接调用 AI、Skill 或 Agent；
 5. 用 UI 展示替代验证证据或事实源回写；
 6. 在 Web 中维护独立于 Git 文件事实源的权威状态；
-7. 以 Web 页面表单、看板或人类项目管理习惯反向定义 AI 执行流程、对象契约或闭环规则。
+7. 以 Web 页面表单、看板或人类项目管理习惯反向定义 AI 执行流程、对象契约或闭环规则；
+8. 通过 Web 页面反向新增、补写或迁移 `ldvh_doc` 字段；Web 如发现文档元信息缺失或冲突，只能展示诊断、引导回到 Code / specs 修复流程或在白名单允许时触发受控轻写入。
 
 ### 5.3 Web AI 承接边界
 
@@ -434,7 +454,7 @@ Web 相关规格变更后，AI 应检查：
 | 确定性执行要求 | Web 可以消费 Code 输出，也可以直接读取事实源；当 Web 消费 Code 输出时，应遵守输出契约，当 Web 独立实现时，应提供等价的来源追溯、错误处理和测试验证 | `specs/07-Code确定性执行实现规范.md`、测试或等价验证、输出契约、Web 实现文档 | 实现承接 | Web 消费 Code 输出、独立实现事实源读取、展示工具诊断或触发受控写入时 |
 | Human 交互要求 | Confirm UI 应清楚展示确认对象、影响范围、风险和用户选择，并能承接 06 §6.3.1 的最小证据结构 | Web / Human 入口、Human Gate、受控写入链路 | Human 协同 | Confirm UI、确认流程、白名单写入入口或验收入口变化时 |
 | 入口可见要求 | Web 可以只读展示 LDVH 能力资产，帮助 Human 看见 Rules、Skill、Agent、Hook、Code、Web 等能力资产的固定路径、来源边界、降级方式和 Code 检查状态，但不得把该展示写成用户可选配置、环境安装状态或环境完整支持声明 | 04.02、04.03、Rules 入口分层、Code 能力资产检查 | 信息同步 | LDVH 能力资产定义、Rules 入口分层、Dashboard、Validate 或 Web 入口展示变化时 |
-| 生命周期触发要求 | Web 页面、API、缓存、写入白名单或 Code 输出消费变化后，应检查 Web 测试和文档是否同步 | Web 测试、Code 回归、文档联动检查 | 触发保障 | Web 页面、API、状态呈现、写入白名单或 Code 输出消费变化时 |
+| 生命周期触发要求 | Web 页面、API、缓存、`ldvh_doc` 展示边界、写入白名单或 Code 输出消费变化后，应检查 Web 测试和文档是否同步 | Web 测试、Code 回归、文档联动检查 | 触发保障 | Web 页面、API、状态呈现、文档元信息展示、写入白名单或 Code 输出消费变化时 |
 
 具体工作模型或工作流程如需 Web 能力，应在对应主规范中说明 Web 适配边界、字段契约、验证入口和降级方式。
 

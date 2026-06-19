@@ -28,10 +28,48 @@ INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
 INDEX_DEFINITION_SENTENCE_RE = re.compile(r"^(?:(?:在本文|在本规范|在本文档)中[，,]?\s*)?(?:(?:[-*]|\d+[.、])\s*)?(?:\*\*)?([^|。；;，,\s`*是]{2,24})(?:\*\*)?\s*(?:是指|定义为|包括且仅包括|指(?!向|引|标|回|令|定|派|出|控|责|南|针|纹|挥|数|甲|望)|是(?!否))")
 INDEX_FOOTNOTE_RE = re.compile(r"^\[\^[^\]]+\]:\s*(.+)$")
 INDEX_LDVH_MEMBER_RE = re.compile(r"```ya?ml\s*\n(.*?\n)```", re.DOTALL)
+INDEX_LDVH_DOC_ALLOWED_KINDS = {"formal_spec", "specs_subdocument", "work_model_spec", "work_process_spec"}
+INDEX_LDVH_DOC_ALLOWED_STATUS = {"active", "candidate", "reserved", "removed"}
+INDEX_LDVH_DOC_STANDARD_FIELDS = [
+    "doc_id",
+    "doc_kind",
+    "title",
+    "status",
+    "canonical_path",
+    "created",
+    "updated",
+    "parent_doc",
+    "relation",
+    "positioning",
+    "scope",
+    "basis",
+    "related_specs",
+    "code_consumption",
+]
+INDEX_LDVH_DOC_NONEMPTY_FIELDS = ["doc_id", "doc_kind", "title", "status", "canonical_path", "created", "updated", "positioning", "scope", "basis", "code_consumption"]
+INDEX_LDVH_DOC_HEADER_FORBIDDEN_FIELDS = {"创建日期", "更新日期", "所属主文档", "关系", "定位", "适用范围", "上位依据", "相关规范"}
+INDEX_LDVH_DOC_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 INDEX_WORK_MODEL_DIRECTORY_HEADER = ("当前编号", "工作模型", "事实实例承载")
 INDEX_FORBIDDEN_DEFINITION_SECTION_TITLES = {"术语定义", "概念定义", "名词解释"}
 INDEX_ALLOWED_SUBDOCUMENT_RELATIONS = {"应用剖面", "专题子文档"}
 INDEX_SUBDOCUMENT_BOUNDARY_TITLE_TERMS = ("子文档", "应用剖面", "专题子文档")
+INDEX_LDVH_MEMBER_HEADER_FORBIDDEN_FIELDS = {
+    "文档编号",
+    "文档类型",
+    "集合状态",
+    "canonical_path",
+    "schema_anchor",
+    "state_machine_anchor",
+    "human_gate_anchor",
+    "scenario_anchor",
+    "context_anchor",
+    "gate_anchor",
+    "execution_anchor",
+    "writeback_anchor",
+    "evidence_anchor",
+    "testability_anchor",
+    "code_consumption",
+}
 INDEX_GOVERNED_TERMS = {
     "LDVH 自身项目", "管辖项目", "管辖项目配置", "LDVH 文档工作区", "规范正文区", "管辖项目文档工作区", "正文区", "studies", "sources",
     "来源", "吸收", "参考与研究材料", "待补齐事项", "正式规范", "资产", "规范资产", "文本能力资产", "Code 能力资产", "Web 能力资产",
@@ -62,10 +100,11 @@ class SpecsIndexError(Exception):
 
 
 class SpecsChecker:
-    def __init__(self, root, specs_dir="specs"):
+    def __init__(self, root, specs_dir="specs", require_ldvh_doc=False):
         self.root = Path(root).resolve()
         raw_specs_dir = Path(specs_dir)
         self.specs_dir = raw_specs_dir.resolve() if raw_specs_dir.is_absolute() else (self.root / raw_specs_dir).resolve()
+        self.require_ldvh_doc = require_ldvh_doc
 
     def scan_files(self):
         files = []
@@ -121,31 +160,40 @@ class SpecsChecker:
         title = self.extract_title(lines)
         doc_number = self.extract_doc_number(path)
         doc_kind = self.infer_doc_kind(path, title, header)
+        doc_meta, doc_meta_diagnostics = self.extract_ldvh_doc(path, text)
         member, member_diagnostics = self.extract_ldvh_member(path, text) if self.is_member_candidate(path) else (None, [])
-        diagnostics = self.diagnose_document(path, lines, title, header, headings, doc_kind)
+        diagnostics = self.diagnose_document(path, lines, title, header, headings, doc_kind, doc_meta)
+        diagnostics.extend(doc_meta_diagnostics)
+        diagnostics.extend(self.diagnose_ldvh_doc(path, title, doc_kind, header, doc_meta, member))
+        diagnostics.extend(self.diagnose_ldvh_doc_header_boundary(path, header, doc_meta))
         diagnostics.extend(member_diagnostics)
+        diagnostics.extend(self.diagnose_member_header_boundary(path, header))
         diagnostics.extend(self.diagnose_member_document(path, member))
+        doc_basis = self.doc_meta_paths(doc_meta.get("basis")) if doc_meta else self.extract_paths_from_value(header.get("上位依据"))
+        doc_related_specs = self.doc_meta_paths(doc_meta.get("related_specs")) if doc_meta else self.extract_paths_from_value(header.get("相关规范"))
+        doc_parent = self.doc_meta_paths(doc_meta.get("parent_doc")) if doc_meta else self.extract_paths_from_value(header.get("所属主文档"))
         return {
             "doc": {
                 "path": rel_path,
                 "title": title,
                 "doc_number": doc_number,
                 "doc_kind": doc_kind,
-                "created_at": header.get("创建日期"),
-                "updated_at": header.get("更新日期"),
-                "positioning": header.get("定位"),
-                "scope": header.get("适用范围"),
-                "parent_doc": header.get("所属主文档"),
-                "relation": header.get("关系"),
-                "basis": self.extract_paths_from_value(header.get("上位依据")),
-                "related_specs": self.extract_paths_from_value(header.get("相关规范")),
+                "created_at": doc_meta.get("created") if doc_meta else header.get("创建日期"),
+                "updated_at": doc_meta.get("updated") if doc_meta else header.get("更新日期"),
+                "positioning": doc_meta.get("positioning") if doc_meta else header.get("定位"),
+                "scope": doc_meta.get("scope") if doc_meta else header.get("适用范围"),
+                "parent_doc": doc_parent[0] if doc_parent else None,
+                "relation": doc_meta.get("relation") if doc_meta else header.get("关系"),
+                "basis": doc_basis,
+                "related_specs": doc_related_specs,
                 "index_scope": header.get("索引范围"),
                 "header": header,
+                "ldvh_doc": doc_meta,
                 "content_hash": content_hash,
                 "parse_status": "ok" if not any(item["severity"] == "error" for item in diagnostics) else "error",
             },
             "sections": headings,
-            "relations": self.extract_relations(path, lines, header, content_hash),
+            "relations": self.extract_relations(path, lines, header, content_hash, doc_meta),
             "mechanisms": self.extract_mechanisms(path, lines, content_hash),
             "member": member,
             "diagnostics": diagnostics,
@@ -221,13 +269,18 @@ class SpecsChecker:
             stack.append({"level": item["level"], "section_number": section_number})
         return sections
 
-    def extract_relations(self, path, lines, header, content_hash):
+    def extract_relations(self, path, lines, header, content_hash, doc_meta=None):
         relations = []
-        for field, relation_kind in (("上位依据", "basis"), ("相关规范", "related_spec"), ("所属主文档", "parent_doc")):
-            value = header.get(field)
-            if value:
-                for target in self.extract_paths_from_value(value):
-                    relations.append(self.relation_record(path, 0, relation_kind, target, content_hash, "header_field"))
+        if doc_meta:
+            for field, relation_kind in (("basis", "basis"), ("related_specs", "related_spec"), ("parent_doc", "parent_doc")):
+                for target in self.doc_meta_paths(doc_meta.get(field)):
+                    relations.append(self.relation_record(path, doc_meta.get("line") or 0, relation_kind, target, content_hash, "ldvh_doc"))
+        else:
+            for field, relation_kind in (("上位依据", "basis"), ("相关规范", "related_spec"), ("所属主文档", "parent_doc")):
+                value = header.get(field)
+                if value:
+                    for target in self.extract_paths_from_value(value):
+                        relations.append(self.relation_record(path, 0, relation_kind, target, content_hash, "header_field"))
         in_code = False
         seen_line_refs = set()
         for line_number, line in enumerate(lines, start=1):
@@ -326,12 +379,12 @@ class SpecsChecker:
             )
         return mechanisms
 
-    def diagnose_document(self, path, lines, title, header, sections, doc_kind):
+    def diagnose_document(self, path, lines, title, header, sections, doc_kind, doc_meta=None):
         diagnostics = []
         rel_path = self.relative_path(path)
         if not title:
             diagnostics.append(self.diagnostic(rel_path, 1, "error", "MISSING_TITLE", "文档缺少一级标题"))
-        required = self.required_header_fields(doc_kind)
+        required = [] if doc_meta else self.required_header_fields(doc_kind)
         if self.extract_doc_number(path) == "00":
             required = [field for field in required if field != "上位依据"]
         for field in required:
@@ -384,6 +437,46 @@ class SpecsChecker:
             if doc_kind in {"formal_spec", "subdocument"} and not path.name.startswith("02-"):
                 diagnostics.extend(self.diagnose_definition_section_heading(rel_path, line_number, stripped))
                 diagnostics.extend(self.diagnose_definition_sentences(rel_path, line_number, stripped))
+        return diagnostics
+
+
+    def diagnose_member_header_boundary(self, path, header):
+        if not self.is_member_candidate(path):
+            return []
+        rel_path = self.relative_path(path)
+        diagnostics = []
+        for field in sorted(INDEX_LDVH_MEMBER_HEADER_FORBIDDEN_FIELDS):
+            if field not in header:
+                continue
+            diagnostics.append(
+                self.diagnostic(
+                    rel_path,
+                    1,
+                    "error",
+                    "LDVH_MEMBER_HEADER_FIELD_FORBIDDEN",
+                    f"20-39 / 40-59 普通头部不得重复登记成员自描述字段: {field}",
+                )
+            )
+        return diagnostics
+
+
+    def diagnose_ldvh_doc_header_boundary(self, path, header, doc_meta):
+        if not doc_meta:
+            return []
+        rel_path = self.relative_path(path)
+        diagnostics = []
+        for field in sorted(INDEX_LDVH_DOC_HEADER_FORBIDDEN_FIELDS):
+            if field not in header:
+                continue
+            diagnostics.append(
+                self.diagnostic(
+                    rel_path,
+                    1,
+                    "error",
+                    "LDVH_DOC_HEADER_FIELD_FORBIDDEN",
+                    f"specs 普通头部不得重复登记 ldvh_doc 文档元信息字段: {field}",
+                )
+            )
         return diagnostics
 
 
@@ -630,24 +723,42 @@ class SpecsChecker:
             body_refs.setdefault(source_path, set()).add(target_path)
         return body_refs
 
+    def extract_ldvh_doc(self, path, text):
+        return self.extract_ldvh_block(path, text, "ldvh_doc", "LDVH_DOC_INVALID", "ldvh_doc 必须是映射结构")
+
     def extract_ldvh_member(self, path, text):
+        return self.extract_ldvh_block(path, text, "ldvh_member", "LDVH_MEMBER_INVALID", "ldvh_member 必须是映射结构")
+
+    def extract_ldvh_block(self, path, text, root_key, invalid_code, invalid_message):
         rel_path = self.relative_path(path)
-        for match in INDEX_LDVH_MEMBER_RE.finditer(text):
+        metadata_text = self.metadata_preamble_text(text)
+        for match in INDEX_LDVH_MEMBER_RE.finditer(metadata_text):
             block = match.group(1)
             lines_before = text[:match.start(1)].splitlines()
             line_start = len(lines_before) + 1
             parsed = self.parse_ldvh_member_block(block)
             if parsed is None:
                 continue
-            member = parsed.get("ldvh_member")
-            if not isinstance(member, dict):
-                return None, [self.diagnostic(rel_path, line_start, "error", "LDVH_MEMBER_INVALID", "ldvh_member 必须是映射结构")]
-            normalized = dict(member)
+            payload = parsed.get(root_key)
+            if payload is None:
+                continue
+            if not isinstance(payload, dict):
+                return None, [self.diagnostic(rel_path, line_start, "error", invalid_code, invalid_message)]
+            normalized = dict(payload)
             normalized["path"] = rel_path
             normalized["line"] = line_start
             normalized["doc_number"] = self.extract_doc_number(path)
             return normalized, []
         return None, []
+
+    def metadata_preamble_text(self, text):
+        lines = text.splitlines(keepends=True)
+        preamble = []
+        for line in lines:
+            if line.strip() == "---":
+                break
+            preamble.append(line)
+        return "".join(preamble) if preamble else text
 
     def parse_ldvh_member_block(self, block):
         raw_lines = block.splitlines()
@@ -687,9 +798,114 @@ class SpecsChecker:
             else:
                 current[key] = self.parse_scalar(value)
                 current_list_key = None
-        return root if "ldvh_member" in root else None
+        return root if root else None
+
+    def diagnose_ldvh_doc(self, path, title, doc_kind, header, doc_meta, member):
+        rel_path = self.relative_path(path)
+        if not doc_meta:
+            if self.require_ldvh_doc:
+                return [self.diagnostic(rel_path, 1, "error", "LDVH_DOC_MISSING", "specs 文档缺少 ldvh_doc 文档自描述")]
+            return []
+        diagnostics = []
+        line = doc_meta.get("line") or 1
+        missing_fields = [field for field in INDEX_LDVH_DOC_STANDARD_FIELDS if field not in doc_meta]
+        for field in missing_fields:
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_FIELD_ABSENT", f"ldvh_doc 标准字段缺失: {field}"))
+        required = list(INDEX_LDVH_DOC_NONEMPTY_FIELDS)
+        if self.expected_ldvh_doc_kind(path, doc_kind) == "specs_subdocument":
+            required.extend(["parent_doc", "relation"])
+        for field in required:
+            if doc_meta.get(field) in (None, "", []):
+                if field == "basis" and self.extract_doc_number(path) == "00":
+                    continue
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_FIELD_EMPTY", f"ldvh_doc 字段值为空: {field}"))
+        doc_id = str(doc_meta.get("doc_id") or "")
+        doc_number = str(self.extract_doc_number(path) or "")
+        if doc_id != doc_number:
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_ID_MISMATCH", f"ldvh_doc doc_id 与文件编号不一致: {doc_id} != {doc_number}"))
+        expected_kind = self.expected_ldvh_doc_kind(path, doc_kind)
+        if doc_meta.get("doc_kind") != expected_kind:
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_KIND_MISMATCH", f"ldvh_doc doc_kind 与文档类型不一致: {doc_meta.get('doc_kind')} != {expected_kind}"))
+        if doc_meta.get("doc_kind") and doc_meta.get("doc_kind") not in INDEX_LDVH_DOC_ALLOWED_KINDS:
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_KIND_INVALID", f"ldvh_doc doc_kind 非法: {doc_meta.get('doc_kind')}"))
+        if doc_meta.get("status") and doc_meta.get("status") not in INDEX_LDVH_DOC_ALLOWED_STATUS:
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_STATUS_INVALID", f"ldvh_doc status 非法: {doc_meta.get('status')}"))
+        diagnostics.extend(self.diagnose_ldvh_doc_dates(path, doc_meta))
+        canonical_path = doc_meta.get("canonical_path")
+        if canonical_path and canonical_path != rel_path:
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_CANONICAL_PATH_MISMATCH", f"ldvh_doc canonical_path 与实际路径不一致: {canonical_path} != {rel_path}"))
+        if doc_meta.get("title") and title and doc_meta.get("title") != title:
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_TITLE_MISMATCH", f"ldvh_doc title 与一级标题不一致: {doc_meta.get('title')} != {title}"))
+        if doc_meta.get("created") and header.get("创建日期") and doc_meta.get("created") != header.get("创建日期"):
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_CREATED_MISMATCH", f"ldvh_doc created 与普通头部创建日期不一致: {doc_meta.get('created')} != {header.get('创建日期')}"))
+        if doc_meta.get("updated") and header.get("更新日期") and doc_meta.get("updated") != header.get("更新日期"):
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_UPDATED_MISMATCH", f"ldvh_doc updated 与普通头部更新日期不一致: {doc_meta.get('updated')} != {header.get('更新日期')}"))
+        if doc_meta.get("positioning") and header.get("定位") and doc_meta.get("positioning") != header.get("定位"):
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_POSITIONING_MISMATCH", "ldvh_doc positioning 与普通头部定位不一致"))
+        if doc_meta.get("scope") and header.get("适用范围") and doc_meta.get("scope") != header.get("适用范围"):
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_SCOPE_MISMATCH", "ldvh_doc scope 与普通头部适用范围不一致"))
+        if doc_meta.get("parent_doc") and header.get("所属主文档"):
+            doc_parent = self.doc_meta_paths(doc_meta.get("parent_doc"))
+            header_parent = self.extract_paths_from_value(header.get("所属主文档"))
+            if doc_parent != header_parent:
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_PARENT_MISMATCH", f"ldvh_doc parent_doc 与普通头部所属主文档不一致: {doc_parent} != {header_parent}"))
+        if doc_meta.get("relation") and header.get("关系") and doc_meta.get("relation") != header.get("关系"):
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_RELATION_MISMATCH", f"ldvh_doc relation 与普通头部关系不一致: {doc_meta.get('relation')} != {header.get('关系')}"))
+        if doc_meta.get("basis") is not None and header.get("上位依据"):
+            doc_basis = self.doc_meta_paths(doc_meta.get("basis"))
+            header_basis = self.extract_paths_from_value(header.get("上位依据"))
+            if doc_basis != header_basis:
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_BASIS_MISMATCH", f"ldvh_doc basis 与普通头部上位依据不一致: {doc_basis} != {header_basis}"))
+        if doc_meta.get("related_specs") is not None and header.get("相关规范"):
+            doc_related = self.doc_meta_paths(doc_meta.get("related_specs"))
+            header_related = self.extract_paths_from_value(header.get("相关规范"))
+            if doc_related != header_related:
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_RELATED_SPECS_MISMATCH", f"ldvh_doc related_specs 与普通头部相关规范不一致: {doc_related} != {header_related}"))
+        if member:
+            if str(member.get("spec_id") or "") != doc_id:
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_MEMBER_ID_MISMATCH", f"ldvh_doc doc_id 与 ldvh_member spec_id 不一致: {doc_id} != {member.get('spec_id')}"))
+            if member.get("canonical_path") and canonical_path and member.get("canonical_path") != canonical_path:
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_MEMBER_PATH_MISMATCH", f"ldvh_doc canonical_path 与 ldvh_member canonical_path 不一致: {canonical_path} != {member.get('canonical_path')}"))
+            expected_member_kind = {"work_model_spec": "work_model", "work_process_spec": "work_process"}.get(doc_meta.get("doc_kind"))
+            if expected_member_kind and member.get("kind") != expected_member_kind:
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_MEMBER_KIND_MISMATCH", f"ldvh_doc doc_kind 与 ldvh_member kind 不一致: {doc_meta.get('doc_kind')} != {member.get('kind')}"))
+        return diagnostics
+
+    def diagnose_ldvh_doc_dates(self, path, doc_meta):
+        diagnostics = []
+        rel_path = self.relative_path(path)
+        line = doc_meta.get("line") or 1
+        parsed_dates = {}
+        for field in ("created", "updated"):
+            value = doc_meta.get(field)
+            if value in (None, ""):
+                continue
+            value = str(value)
+            if not INDEX_LDVH_DOC_DATE_RE.match(value):
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_DATE_INVALID", f"ldvh_doc {field} 日期格式必须为 YYYY-MM-DD: {value}"))
+                continue
+            try:
+                parsed_dates[field] = datetime.strptime(value, "%Y-%m-%d").date()
+            except ValueError:
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_DATE_INVALID", f"ldvh_doc {field} 日期无效: {value}"))
+        if parsed_dates.get("created") and parsed_dates.get("updated") and parsed_dates["updated"] < parsed_dates["created"]:
+            diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_DOC_UPDATED_BEFORE_CREATED", f"ldvh_doc updated 不能早于 created: {doc_meta.get('updated')} < {doc_meta.get('created')}"))
+        return diagnostics
+
+    def doc_meta_paths(self, value):
+        if value in (None, "", []):
+            return []
+        if isinstance(value, list):
+            return [self.clean_cell(str(item)) for item in value if str(item).strip()]
+        paths = self.extract_paths_from_value(str(value))
+        if paths:
+            return paths
+        cleaned = self.clean_cell(str(value))
+        return [cleaned] if cleaned else []
 
     def parse_scalar(self, value):
+        if value == "[]":
+            return []
         if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
             return value[1:-1]
         if value in {"true", "false"}:
@@ -876,6 +1092,20 @@ class SpecsChecker:
             return "work_process"
         return None
 
+    def expected_ldvh_doc_kind(self, path, doc_kind):
+        doc_number = self.extract_doc_number(path)
+        try:
+            number = int(doc_number) if doc_number and "." not in str(doc_number) else None
+        except ValueError:
+            number = None
+        if number is not None and 20 <= number <= 39:
+            return "work_model_spec"
+        if number is not None and 40 <= number <= 59:
+            return "work_process_spec"
+        if doc_kind == "subdocument":
+            return "specs_subdocument"
+        return "formal_spec"
+
     def required_member_fields(self, kind):
         common = ["spec_id", "kind", "name_en", "name_zh", "collection_status", "canonical_path", "code_consumption"]
         if kind == "work_model":
@@ -1029,9 +1259,9 @@ def write_outputs(indexes, out_dir):
 
 
 def index_main(root, out=None, fail_on_diagnostics=False, specs_dir="specs"):
-    checker = SpecsChecker(root, specs_dir)
+    checker = SpecsChecker(root, specs_dir, require_ldvh_doc=True)
     if not checker.specs_dir.exists() and specs_dir == "specs":
-        legacy_checker = SpecsChecker(root, "specs")
+        legacy_checker = SpecsChecker(root, "specs", require_ldvh_doc=True)
         if legacy_checker.specs_dir.exists():
             checker = legacy_checker
     if not checker.specs_dir.exists():

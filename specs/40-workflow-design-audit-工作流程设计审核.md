@@ -1,11 +1,33 @@
 # workflow-design-audit-工作流程设计审核
 
-> 创建日期：2026-06-15
-> 更新日期：2026-06-18
-> 定位：定义工作流程设计审核行动，用于审核 `specs/40-59` 具体工作流程主文件是否符合 LDVH 工作流程基础规则、文档骨架、成员自描述、事实源边界、能力协作边界和行动特有可测试性要求
-> 适用范围：LDVH 自身和管辖项目中对 40-59 具体工作流程规范的新增、修改、升级、降级、重命名、删除、审查和能力消费前检查
-> 上位依据：`specs/06-工作流程基础规范.md`
-> 相关规范：`specs/03.03-工作流程文档规范.md`、`specs/05.01-工作字段内容格式规范.md`、`specs/09-事实源边界与承载规范.md`、`specs/10-测试基础规范.md`、`specs/21-WorkPlan-工作计划.md`
+```yaml
+ldvh_doc:
+  doc_id: "40"
+  doc_kind: "work_process_spec"
+  title: "workflow-design-audit-工作流程设计审核"
+  status: "active"
+  canonical_path: "specs/40-workflow-design-audit-工作流程设计审核.md"
+  created: "2026-06-15"
+  updated: "2026-06-18"
+  parent_doc: ""
+  relation: ""
+  positioning: "定义工作流程设计审核行动，用于审核 `specs/40-59` 具体工作流程主文件是否符合 LDVH 工作流程基础规则、文档骨架、成员自描述、事实源边界、能力协作边界和行动特有可测试性要求"
+  scope: "LDVH 自身和管辖项目中对 40-59 具体工作流程规范的新增、修改、升级、降级、重命名、删除、审查和能力消费前检查"
+  basis:
+    - "specs/06-工作流程基础规范.md"
+  related_specs:
+    - "specs/03.03-工作流程文档规范.md"
+    - "specs/05.01-工作字段内容格式规范.md"
+    - "specs/09-事实源边界与承载规范.md"
+    - "specs/10-测试基础规范.md"
+    - "specs/21-WorkPlan-工作计划.md"
+  code_consumption:
+    - "doc_metadata"
+    - "relations"
+    - "structure"
+    - "member_consistency"
+    - "work_process_collection"
+```
 
 ```yaml
 ldvh_member:

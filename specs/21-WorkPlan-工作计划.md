@@ -1,11 +1,29 @@
 # WorkPlan-工作计划
 
-> 创建日期：2026-06-12
-> 更新日期：2026-06-18
-> 定位：定义 WorkPlan / 工作计划工作模型，包括对象定位、准入条件、事实源边界、状态机、执行编排、Human Gate、字段契约、事实源回写和适配规则
-> 适用范围：所有接入 LDVH 且需要把一次目标组织为可执行、可验证、可关闭工作计划的项目
-> 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/05.01-工作字段内容格式规范.md`
+```yaml
+ldvh_doc:
+  doc_id: "21"
+  doc_kind: "work_model_spec"
+  title: "WorkPlan-工作计划"
+  status: "active"
+  canonical_path: "specs/21-WorkPlan-工作计划.md"
+  created: "2026-06-12"
+  updated: "2026-06-18"
+  parent_doc: ""
+  relation: ""
+  positioning: "定义 WorkPlan / 工作计划工作模型，包括对象定位、准入条件、事实源边界、状态机、执行编排、Human Gate、字段契约、事实源回写和适配规则"
+  scope: "所有接入 LDVH 且需要把一次目标组织为可执行、可验证、可关闭工作计划的项目"
+  basis:
+    - "specs/05-工作模型基础规范.md"
+  related_specs:
+    - "specs/05.01-工作字段内容格式规范.md"
+  code_consumption:
+    - "doc_metadata"
+    - "relations"
+    - "structure"
+    - "member_consistency"
+    - "work_model_collection"
+```
 
 ```yaml
 ldvh_member:

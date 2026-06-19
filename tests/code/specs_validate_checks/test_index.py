@@ -228,6 +228,388 @@ ldvh_member:
     assert not indexes["diagnostics"]
 
 
+def test_index_extracts_ldvh_doc_metadata(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "00-LD-Vibe-Harness理念与纲要.md",
+        """
+# LD Vibe Harness 理念与纲要
+
+```yaml
+ldvh_doc:
+  doc_id: "00"
+  doc_kind: formal_spec
+  title: LD Vibe Harness 理念与纲要
+  status: active
+  canonical_path: specs/00-LD-Vibe-Harness理念与纲要.md
+  created: "2026-06-01"
+  updated: "2026-06-01"
+  parent_doc: ""
+  relation: ""
+  positioning: 总纲
+  scope: LDVH
+  basis: []
+  related_specs: []
+  code_consumption:
+    - doc_metadata
+```
+
+## 1. 第一章
+""",
+    )
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+```yaml
+ldvh_doc:
+  doc_id: "03"
+  doc_kind: formal_spec
+  title: 文档基础规范
+  status: active
+  canonical_path: specs/03-文档基础规范.md
+  created: "2026-06-01"
+  updated: "2026-06-01"
+  parent_doc: ""
+  relation: ""
+  positioning: 文档规范
+  scope: LDVH
+  basis:
+    - specs/00-LD-Vibe-Harness理念与纲要.md
+  related_specs: []
+  code_consumption:
+    - doc_metadata
+    - structure
+```
+
+---
+
+## 1. 本文解决的问题
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path, require_ldvh_doc=True).build()
+    doc = next(item for item in indexes["docs"] if item["path"] == "specs/03-文档基础规范.md")
+
+    assert doc["ldvh_doc"]["doc_id"] == "03"
+    assert doc["ldvh_doc"]["doc_kind"] == "formal_spec"
+    assert doc["ldvh_doc"]["canonical_path"] == "specs/03-文档基础规范.md"
+    assert not indexes["diagnostics"]
+
+
+def test_index_ignores_ldvh_doc_examples_after_preamble(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03.01-规范文档规范.md",
+        """
+# 规范文档规范
+
+> 创建日期：2026-06-08
+> 定位：规范文档
+> 适用范围：LDVH
+> 所属主文档：`specs/03-文档基础规范.md`
+> 关系：应用剖面
+> 上位依据：`specs/03-文档基础规范.md`
+
+---
+
+## 1. 示例
+
+```yaml
+ldvh_doc:
+  doc_id: "99"
+  doc_kind: formal_spec
+  title: 示例
+  status: active
+  canonical_path: specs/99-example.md
+  created: "2026-06-08"
+  positioning: 示例
+  scope: 示例
+  basis:
+    - specs/00-LD-Vibe-Harness理念与纲要.md
+  code_consumption:
+    - doc_metadata
+```
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path, require_ldvh_doc=True).build()["diagnostics"]
+
+    assert any(item["code"] == "LDVH_DOC_MISSING" for item in diagnostics)
+    assert not any(item["code"] == "LDVH_DOC_ID_MISMATCH" for item in diagnostics)
+
+
+def test_index_reports_missing_ldvh_doc_when_required(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+> 定位：文档规范
+> 适用范围：LDVH
+> 上位依据：`specs/00-LD-Vibe-Harness理念与纲要.md`
+
+---
+
+## 1. 本文解决的问题
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path, require_ldvh_doc=True).build()["diagnostics"]
+
+    assert any(item["code"] == "LDVH_DOC_MISSING" for item in diagnostics)
+
+
+def test_index_reports_absent_ldvh_doc_standard_field(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+```yaml
+ldvh_doc:
+  doc_id: "03"
+  doc_kind: formal_spec
+  title: 文档基础规范
+  status: active
+  canonical_path: specs/03-文档基础规范.md
+  created: "2026-06-01"
+  parent_doc: ""
+  relation: ""
+  positioning: 文档规范
+  scope: LDVH
+  basis:
+    - specs/00-LD-Vibe-Harness理念与纲要.md
+  related_specs: []
+  code_consumption:
+    - doc_metadata
+```
+
+---
+
+## 1. 本文解决的问题
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path, require_ldvh_doc=True).build()["diagnostics"]
+
+    assert any(item["code"] == "LDVH_DOC_FIELD_ABSENT" and "updated" in item["message"] for item in diagnostics)
+
+
+def test_index_reports_empty_ldvh_doc_updated(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+```yaml
+ldvh_doc:
+  doc_id: "03"
+  doc_kind: formal_spec
+  title: 文档基础规范
+  status: active
+  canonical_path: specs/03-文档基础规范.md
+  created: "2026-06-01"
+  updated: ""
+  parent_doc: ""
+  relation: ""
+  positioning: 文档规范
+  scope: LDVH
+  basis:
+    - specs/00-LD-Vibe-Harness理念与纲要.md
+  related_specs: []
+  code_consumption:
+    - doc_metadata
+```
+
+---
+
+## 1. 本文解决的问题
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path, require_ldvh_doc=True).build()["diagnostics"]
+
+    assert any(item["code"] == "LDVH_DOC_FIELD_EMPTY" and "updated" in item["message"] for item in diagnostics)
+
+
+def test_index_reports_invalid_ldvh_doc_updated_date(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+```yaml
+ldvh_doc:
+  doc_id: "03"
+  doc_kind: formal_spec
+  title: 文档基础规范
+  status: active
+  canonical_path: specs/03-文档基础规范.md
+  created: "2026-06-01"
+  updated: "2026/06/01"
+  parent_doc: ""
+  relation: ""
+  positioning: 文档规范
+  scope: LDVH
+  basis:
+    - specs/00-LD-Vibe-Harness理念与纲要.md
+  related_specs: []
+  code_consumption:
+    - doc_metadata
+```
+
+---
+
+## 1. 本文解决的问题
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path, require_ldvh_doc=True).build()["diagnostics"]
+
+    assert any(item["code"] == "LDVH_DOC_DATE_INVALID" and "updated" in item["message"] for item in diagnostics)
+
+
+def test_index_reports_ldvh_doc_updated_before_created(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+```yaml
+ldvh_doc:
+  doc_id: "03"
+  doc_kind: formal_spec
+  title: 文档基础规范
+  status: active
+  canonical_path: specs/03-文档基础规范.md
+  created: "2026-06-02"
+  updated: "2026-06-01"
+  parent_doc: ""
+  relation: ""
+  positioning: 文档规范
+  scope: LDVH
+  basis:
+    - specs/00-LD-Vibe-Harness理念与纲要.md
+  related_specs: []
+  code_consumption:
+    - doc_metadata
+```
+
+---
+
+## 1. 本文解决的问题
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path, require_ldvh_doc=True).build()["diagnostics"]
+
+    assert any(item["code"] == "LDVH_DOC_UPDATED_BEFORE_CREATED" for item in diagnostics)
+
+
+def test_index_reports_ldvh_doc_metadata_duplicated_in_header(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "03-文档基础规范.md",
+        """
+# 文档基础规范
+
+> 创建日期：2026-06-01
+
+```yaml
+ldvh_doc:
+  doc_id: "03"
+  doc_kind: formal_spec
+  title: 文档基础规范
+  status: active
+  canonical_path: specs/03-文档基础规范.md
+  created: "2026-06-01"
+  updated: "2026-06-01"
+  parent_doc: ""
+  relation: ""
+  positioning: 文档规范
+  scope: LDVH
+  basis:
+    - specs/00-LD-Vibe-Harness理念与纲要.md
+  related_specs: []
+  code_consumption:
+    - doc_metadata
+```
+
+---
+
+## 1. 本文解决的问题
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path, require_ldvh_doc=True).build()["diagnostics"]
+
+    assert any(item["code"] == "LDVH_DOC_HEADER_FIELD_FORBIDDEN" and "创建日期" in item["message"] for item in diagnostics)
+
+
+def test_index_reports_ldvh_doc_path_and_kind_mismatch(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "21-WorkPlan-工作计划.md",
+        """
+# WorkPlan / 工作计划
+
+```yaml
+ldvh_doc:
+  doc_id: "20"
+  doc_kind: formal_spec
+  title: WorkPlan / 工作计划
+  status: active
+  canonical_path: specs/20-WorkArea-工作域.md
+  created: "2026-06-15"
+  updated: "2026-06-15"
+  parent_doc: ""
+  relation: ""
+  positioning: 工作计划模型
+  scope: LDVH
+  basis:
+    - specs/05-工作模型基础规范.md
+  related_specs: []
+  code_consumption:
+    - doc_metadata
+```
+
+```yaml
+ldvh_member:
+  spec_id: "21"
+  kind: work_model
+  name_en: WorkPlan
+  name_zh: 工作计划
+  collection_status: active
+  canonical_path: specs/21-WorkPlan-工作计划.md
+  instance_root: ldvh-base/workplans/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+```
+
+## 1. 第一章
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path, require_ldvh_doc=True).build()["diagnostics"]
+    codes = {item["code"] for item in diagnostics}
+
+    assert "LDVH_DOC_ID_MISMATCH" in codes
+    assert "LDVH_DOC_KIND_MISMATCH" in codes
+    assert "LDVH_DOC_CANONICAL_PATH_MISMATCH" in codes
+    assert "LDVH_DOC_MEMBER_ID_MISMATCH" in codes
+
+
 def test_index_reports_ldvh_member_spec_id_mismatch(tmp_path):
     specs = tmp_path / "specs"
     write_md(
@@ -284,6 +666,50 @@ def test_index_reports_missing_ldvh_member_for_concrete_work_model(tmp_path):
     diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
 
     assert any(item["code"] == "LDVH_MEMBER_MISSING" for item in diagnostics)
+
+
+def test_index_reports_member_fields_duplicated_in_header(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "21-WorkPlan-工作计划.md",
+        """
+# WorkPlan / 工作计划
+
+> 创建日期：2026-06-15
+> 定位：工作计划模型
+> 适用范围：LDVH
+> 上位依据：`specs/05-工作模型基础规范.md`
+> 文档编号：21
+> 集合状态：active
+> canonical_path：specs/21-WorkPlan-工作计划.md
+
+```yaml
+ldvh_member:
+  spec_id: "21"
+  kind: work_model
+  name_en: WorkPlan
+  name_zh: 工作计划
+  collection_status: active
+  canonical_path: specs/21-WorkPlan-工作计划.md
+  instance_root: ldvh-base/workplans/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+```
+
+## 1. 第一章
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
+
+    forbidden = [item for item in diagnostics if item["code"] == "LDVH_MEMBER_HEADER_FIELD_FORBIDDEN"]
+    assert len(forbidden) == 3
+    assert any("文档编号" in item["message"] for item in forbidden)
+    assert any("集合状态" in item["message"] for item in forbidden)
+    assert any("canonical_path" in item["message"] for item in forbidden)
 
 
 def test_index_reports_duplicate_ldvh_member_spec_id(tmp_path):

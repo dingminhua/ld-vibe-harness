@@ -1,10 +1,28 @@
 # LD Vibe Harness 理念与纲要
 
-> 创建日期：2026-05-27
-> 更新日期：2026-06-18
-> 定位：LD Vibe Harness 规范体系总纲，定义产品理念、系统边界、架构构成、价值实现标准、运行闭环标准与落地责任；本文只定义上位原则，不替代对象契约、Code 实现规范、Web 设计或具体执行规范
-> 适用范围：所有接入 LD Vibe Harness 的项目
-> 相关规范：`specs/03-文档基础规范.md`、`specs/04-规范落地与环境适配基础规范.md`
+```yaml
+ldvh_doc:
+  doc_id: "00"
+  doc_kind: "formal_spec"
+  title: "LD Vibe Harness 理念与纲要"
+  status: "active"
+  canonical_path: "specs/00-LD-Vibe-Harness理念与纲要.md"
+  created: "2026-05-27"
+  updated: "2026-06-18"
+  parent_doc: ""
+  relation: ""
+  positioning: "LD Vibe Harness 规范体系总纲，定义产品理念、系统边界、架构构成、价值实现标准、运行闭环标准与落地责任；本文只定义上位原则，不替代对象契约、Code 实现规范、Web 设计或具体执行规范"
+  scope: "所有接入 LD Vibe Harness 的项目"
+  basis: []
+  related_specs:
+    - "specs/03-文档基础规范.md"
+    - "specs/04-规范落地与环境适配基础规范.md"
+  code_consumption:
+    - "doc_metadata"
+    - "relations"
+    - "structure"
+    - "landing_requirements"
+```
 
 ---
 

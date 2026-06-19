@@ -1,10 +1,29 @@
 # WorkArea-工作域
 
-> 创建日期：2026-06-12
-> 定位：定义 WorkArea / 工作域工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写和适配规则
-> 适用范围：所有接入 LDVH 且需要长期管理工作范围、系统领域、治理域或产品域的项目
-> 上位依据：`specs/05-工作模型基础规范.md`
-> 相关规范：`specs/05.01-工作字段内容格式规范.md`
+```yaml
+ldvh_doc:
+  doc_id: "20"
+  doc_kind: "work_model_spec"
+  title: "WorkArea-工作域"
+  status: "active"
+  canonical_path: "specs/20-WorkArea-工作域.md"
+  created: "2026-06-12"
+  updated: "2026-06-12"
+  parent_doc: ""
+  relation: ""
+  positioning: "定义 WorkArea / 工作域工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写和适配规则"
+  scope: "所有接入 LDVH 且需要长期管理工作范围、系统领域、治理域或产品域的项目"
+  basis:
+    - "specs/05-工作模型基础规范.md"
+  related_specs:
+    - "specs/05.01-工作字段内容格式规范.md"
+  code_consumption:
+    - "doc_metadata"
+    - "relations"
+    - "structure"
+    - "member_consistency"
+    - "work_model_collection"
+```
 
 ```yaml
 ldvh_member:
