@@ -186,13 +186,25 @@ function countOpenExecutionItems(items: Array<{ status: string }>): number {
   return items.filter((item) => item.status === 'pending' || item.status === 'in_progress' || item.status === 'blocked').length
 }
 
-function sortRelatedObjects<T extends { status: string; updated: string; id: string }>(items: T[]): T[] {
+function getUpdatedTime(value: string | undefined): number {
+  return new Date(value || 0).getTime() || 0
+}
+
+function sortByUpdatedDesc<T extends { updated?: string; id: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const timeDelta = getUpdatedTime(b.updated) - getUpdatedTime(a.updated)
+    if (timeDelta !== 0) return timeDelta
+    const updatedDelta = String(b.updated || '').localeCompare(String(a.updated || ''))
+    if (updatedDelta !== 0) return updatedDelta
+    return a.id.localeCompare(b.id)
+  })
+}
+
+function sortExecutionItems<T extends { status: string; updated: string; id: string }>(items: T[]): T[] {
   return [...items].sort((a, b) => {
     const statusDelta = (STATUS_PRIORITY[a.status] ?? 50) - (STATUS_PRIORITY[b.status] ?? 50)
     if (statusDelta !== 0) return statusDelta
-    const aTime = new Date(a.updated || 0).getTime() || 0
-    const bTime = new Date(b.updated || 0).getTime() || 0
-    const timeDelta = bTime - aTime
+    const timeDelta = getUpdatedTime(b.updated) - getUpdatedTime(a.updated)
     if (timeDelta !== 0) return timeDelta
     return a.id.localeCompare(b.id)
   })
@@ -230,7 +242,7 @@ export async function buildPlanSummaries(planItems: ListedObject[], baseDir?: st
     return {
       ...toRelatedSummary(item, 'workplan'),
       workarea: toStringValue(data.workarea) || undefined,
-      executionItems: sortRelatedObjects(executionItems),
+      executionItems: sortExecutionItems(executionItems),
       executionItemTotal: executionItems.length,
       executionItemDone: executionItems.filter((executionItem) => executionItem.status === 'done').length,
       executionItemBlocked: executionItems.filter((executionItem) => executionItem.status === 'blocked').length,
@@ -257,7 +269,7 @@ async function enrichWorkareas(items: ListedObject[]): Promise<ListedObject[]> {
   }
 
   return items.map((item) => {
-    const relatedPlans = sortRelatedObjects(plansByWorkarea.get(item.id) ?? [])
+    const relatedPlans = sortByUpdatedDesc(plansByWorkarea.get(item.id) ?? [])
     return {
       ...item,
       plans: relatedPlans,
@@ -349,25 +361,29 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   }
 
   const items = getResultItems(result)
+  let enrichedItems = items
   if (isRecord(result.data)) {
     const statusItems = status ? await listObjectSummaries(type) : items
     result.data.statusOptions = getStatusOptions(statusItems)
     result.data.statusTotal = statusItems.length
   }
   if (isRecord(result.data) && type === 'workarea') {
-    result.data.items = await enrichWorkareas(items)
+    enrichedItems = await enrichWorkareas(items)
   }
   if (isRecord(result.data) && type === 'workplan') {
-    result.data.items = await enrichWorkPlans(items)
+    enrichedItems = await enrichWorkPlans(items)
   }
   if (isRecord(result.data) && type === 'adr') {
-    result.data.items = await enrichAdrs(items)
+    enrichedItems = await enrichAdrs(items)
   }
   if (isRecord(result.data) && type === 'memo') {
-    result.data.items = await enrichMemos(items)
+    enrichedItems = await enrichMemos(items)
   }
   if (isRecord(result.data) && type === 'pitfall') {
-    result.data.items = await enrichPitfalls(items)
+    enrichedItems = await enrichPitfalls(items)
+  }
+  if (isRecord(result.data)) {
+    result.data.items = sortByUpdatedDesc(enrichedItems)
   }
 
   res.json(result)

@@ -41,6 +41,7 @@
 
 - 使用 `ldvh-section-grid`，列数由容器宽度自动决定。
 - 不使用表格视图，不使用顶部类型标签页。
+- 所有对象卡片一律按 `updated` 时间倒序排列，最近发生变化的对象在最前；状态只用于筛选、徽章和卡片内容表达，不参与排序。
 - 通用卡片结构：
   - 左上：对象 ID，`ldvh-meta-muted`；
   - 右上：`CopyPathButton` + `StatusBadge`；
@@ -76,6 +77,7 @@ WorkArea 是“计划入口”卡片，帮助用户判断这个工作域下有�
   - 待关闭计划组使用 `objectList.pendingClosePlanCount`，文案为“待关闭计划”，紫色背景，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
   - 已闭合计划组使用 `objectList.closedPlanCount`，文案为“已闭合计划”，默认折叠；标题行折叠时展示向下展开箭头，展开后展示向上收起箭头，点击后展开历史计划行，使用 `ldvh-caption-strong`，标题前只用小圆点。
 - 活跃/待关闭/已闭合组内每一行是一个计划入口，计划名使用 `ldvh-body`；计划如存在 `priority`，在计划标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 WorkPlan 对象图标和标题；计划 ID 使用 `ldvh-meta-muted`，并展示计划标题、计划 ID、复制路径按钮和进入箭头，不再重复展示状态标签；右侧复制和进入箭头默认保持中性，复制按钮只有自身 hover 时切到该组背景对应的状态色。
+- 各计划组内部的计划入口按 `updated` 时间倒序排列，最近变化的计划在组内最前。
 - 计划行可展示一条 compact 执行态势条，复用 WorkPlan 的状态顺序和颜色：`已关闭 / 已验证 / 验证中 / 执行中 / 待执行 / 等待前置`；态势条占满计划行宽度，态势段只用 hover / focus tooltip 显示数量，不在 WorkArea 卡片里展开执行项。
 - WorkArea 卡片内不得出现大于工作域标题 `ldvh-card-title` 的文字；计划组和汇总都低于工作域标题层级。
 - 无计划时展示 `objectList.noPlans`。

@@ -1,8 +1,10 @@
+import type { ComponentType } from 'react';
 import {
   FileText,
   BookOpenText,
   Focus,
   GitCommit,
+  Github,
   FileSignature,
   Lightbulb,
   Link2,
@@ -12,7 +14,13 @@ import {
   type LucideProps,
 } from 'lucide-react';
 
-export const OBJECT_TYPE_ICONS: Record<string, LucideIcon> = {
+type SemanticIconComponent = ComponentType<LucideProps>;
+
+function GitHubSilhouetteIcon({ size = 16, className, ...props }: LucideProps) {
+  return <Github size={size} strokeWidth={0} fill="currentColor" className={className} {...props} />;
+}
+
+export const OBJECT_TYPE_ICONS: Record<string, SemanticIconComponent> = {
   workarea: Focus,
   workplan: Workflow,
   adr: FileSignature,
@@ -20,7 +28,7 @@ export const OBJECT_TYPE_ICONS: Record<string, LucideIcon> = {
   memo: Pencil,
   study: BookOpenText,
   change: GitCommit,
-  changelog: GitCommit,
+  changelog: GitHubSilhouetteIcon,
 };
 
 export const COLLECTION_ICONS: Record<string, LucideIcon> = {

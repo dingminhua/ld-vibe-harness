@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
+import type { ElementType } from 'react';
 import {
   LayoutDashboard,
   Globe,
@@ -8,6 +9,7 @@ import {
   Moon,
   Monitor,
   PanelLeft,
+  type LucideProps,
 } from 'lucide-react';
 import { useI18n } from '@/i18n/context';
 import { useTheme } from '@/hooks/useTheme';
@@ -15,7 +17,9 @@ import type { LocaleKey } from '@/i18n/locales';
 import { OBJECT_TYPE_ICONS } from '@/components/SemanticIcon';
 import ldBrandMark from '@/assets/ld-brand-mark.svg';
 
-const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: string }; icon: typeof LayoutDashboard }[] = [
+type NavIcon = ElementType<LucideProps>;
+
+const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: string }; icon: NavIcon }[] = [
   { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard },
   { to: '/project-files', label: { zh: '文件', en: 'Files' }, icon: FolderTree },
   { to: '/objects/workarea', labelKey: 'nav.workareas', icon: OBJECT_TYPE_ICONS.workarea },
@@ -72,6 +76,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { mode, cycleTheme } = useTheme();
   const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
   const languageLabel = locale === 'zh' ? t('language.switchToEnglish') : t('language.switchToChinese');
+  const sidebarToggleLabel = collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar');
   const themeLabel =
     mode === 'system' ? t('theme.system') :
     mode === 'light' ? t('theme.light') :
@@ -84,40 +89,24 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       }`}
     >
       <div className={`border-b border-ldvh-border ${collapsed ? 'px-2 py-3' : 'px-3 py-4'}`}>
-        <div className={collapsed ? 'flex flex-col items-center gap-2' : 'flex items-center justify-between gap-2'}>
+        <div className={collapsed ? 'flex flex-col items-center gap-2' : 'flex items-center gap-2'}>
           <div className={`flex min-w-0 items-center ${collapsed ? 'justify-center' : 'gap-2'}`}>
             <div
-              className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center"
               onMouseEnter={() => setVisibleTooltip('brand')}
               onMouseLeave={() => setVisibleTooltip(null)}
+              className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center"
             >
               <BrandMark />
               {collapsed && <IconTooltip label="LDVH" visible={visibleTooltip === 'brand'} />}
             </div>
             {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <div className="ldvh-card-title font-mono font-bold">LDVH</div>
+              <div className="min-w-0 flex-1">
                 <div className="ldvh-caption whitespace-normal break-keep">
                   {t('logo.tagline')}
                 </div>
               </div>
             )}
           </div>
-          <button
-            onClick={() => {
-              setVisibleTooltip(null);
-              onToggle();
-            }}
-            onMouseEnter={() => setVisibleTooltip('toggle')}
-            onMouseLeave={() => setVisibleTooltip(null)}
-            onFocus={() => setVisibleTooltip('toggle')}
-            onBlur={() => setVisibleTooltip(null)}
-            aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-            className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
-          >
-            <PanelLeft size={16} className={collapsed ? 'rotate-180' : ''} />
-            <IconTooltip label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')} visible={visibleTooltip === 'toggle'} />
-          </button>
         </div>
       </div>
       <nav className={`flex-1 px-2 py-3 ${collapsed ? 'overflow-visible' : 'overflow-y-auto'}`}>
@@ -185,6 +174,21 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           >
             <ThemeIcon mode={mode} />
             <IconTooltip label={themeLabel} visible={visibleTooltip === 'theme'} />
+          </button>
+          <button
+            onClick={() => {
+              setVisibleTooltip(null);
+              onToggle();
+            }}
+            onMouseEnter={() => setVisibleTooltip('sidebar-toggle')}
+            onMouseLeave={() => setVisibleTooltip(null)}
+            onFocus={() => setVisibleTooltip('sidebar-toggle')}
+            onBlur={() => setVisibleTooltip(null)}
+            aria-label={sidebarToggleLabel}
+            className="relative flex h-9 w-9 items-center justify-center rounded-md text-ldvh-text-secondary transition-colors hover:bg-ldvh-border/50 hover:text-ldvh-text-primary"
+          >
+            <PanelLeft size={16} className={collapsed ? 'rotate-180' : ''} />
+            <IconTooltip label={sidebarToggleLabel} visible={visibleTooltip === 'sidebar-toggle'} />
           </button>
         </div>
       </div>
