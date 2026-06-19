@@ -140,20 +140,52 @@ orchestration:
       role: null
       expected_output: null
     human_closure_review: true
-verification_evidence: |-
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
   ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
 
   历史任务计划迁移聚合证据：
   - task-0039: 5 个语义化组件已实现：ChecklistCard（完成比例+进度条）、ReferenceCard（ID+标题+状态徽章）、
   - task-0040: ReadingPanel 组件实现三段式布局，桌面端右侧320px面板滑出，移动端底部抽屉50vh+拖拽关闭。
   - task-0042: 新增 TYPE_DESCRIPTION_LOCALES（7种对象类型说明）和 STATUS_HINT_LOCALES（9种状态提示），
-closure_evidence: |-
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
   ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
 
   历史任务计划迁移聚合证据：
   - task-0039: 5 个语义化组件已实现：ChecklistCard（完成比例+进度条）、ReferenceCard（ID+标题+状态徽章）、
   - task-0040: ReadingPanel 组件实现三段式布局，桌面端右侧320px面板滑出，移动端底部抽屉50vh+拖拽关闭。
   - task-0042: 新增 TYPE_DESCRIPTION_LOCALES（7种对象类型说明）和 STATUS_HINT_LOCALES（9种状态提示），
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 review_requested_at: '2026-06-05T23:01:16.997442'
 closed_at: '2026-06-05T23:01:16.997442'
 related_docs: []

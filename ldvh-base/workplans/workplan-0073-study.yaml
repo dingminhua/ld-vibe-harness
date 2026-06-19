@@ -114,7 +114,19 @@ orchestration:
       expected_output: null
     human_closure_review: true
 verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
   ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
 
   事实源和规范检查：
   - `python3 code/fact_validate.py ldvh-base/`：通过，files=110 errors=0 warnings=0。
@@ -135,20 +147,40 @@ verification_evidence: |
   - `rg 'study.*draft|draft.*study|研究报告草稿|draft → active|draft → archived|标记为 active|提升为 active' specs/25-Study-研究报告.md code/fact_cli.py code/fact_validate.py tests web/src web/docs` 仅剩负向测试用例。
   - `rg 'status: superseded|superseded_by:' ldvh-base/studies specs/25-Study-研究报告.md code/fact_cli.py code/fact_validate.py web/src/components/ObjectStatusFilter.tsx tests/web/api/facts.test.ts tests/code/test_fact_validate.py` 仅剩负向测试用例。
   - `rg "^created: date-only|^updated: date-only|review_requested_at: date-only|closed_at: date-only|evolution.at date-only"` 的实际模式扫描无残留；`resolved_at` 仍按 Memo 规范保留 date 字段。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 closure_evidence: |
-  ## 关闭判断
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：关闭判断
 
   Study 研究报告对象的草稿和已替代状态已从规范、CLI、Validator 和 Web 状态筛选中移除。当前既有 Study 实例均为 active。
 
   Memo 和 Study 的 `created/updated` 已按 `datetime` 字段契约记录为时间戳；Web Memo 创建入口也已改为写入时间戳，避免继续产生 date-only 事实。
 
-  ## 验证结果
+  原文标题：验证结果
 
   事实源、规范、Code 测试、Web API 测试和 Web 类型检查均已通过；详见 `verification_evidence`。
 
-  ## 结论
+  原文标题：结论
 
   本计划已完成执行，可进入 Human closure review。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 review_requested_at: '2026-06-18T17:18:00+08:00'
 closed_at: ''
 related_docs: []

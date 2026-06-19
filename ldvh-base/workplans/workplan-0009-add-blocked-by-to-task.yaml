@@ -61,16 +61,48 @@ orchestration:
       role: null
       expected_output: null
     human_closure_review: true
-verification_evidence: |-
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
   ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
 
   历史任务计划迁移聚合证据：
   - task-0009: 已完成 blocked_by 前置任务字段全量落地：更新 specs/27、specs/27.06、specs/27.01、工作区规则/项目规则、tools/ldvh_fact_validate.py、tools/ldvh_fact_cli.py 和对应测试；task-0007 已迁移为 blocked_by: [task-0008]。验证结果：Fact Validator files=25 errors=0 warnings=0；全量 pytest 142 passed；py_compile 通过；CLI deps task-0007 可结构化查询前置依赖并返回 ready_to_execute=false。
-closure_evidence: |-
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
   ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
 
   历史任务计划迁移聚合证据：
   - task-0009: 已完成 blocked_by 前置任务字段全量落地：更新 specs/27、specs/27.06、specs/27.01、工作区规则/项目规则、tools/ldvh_fact_validate.py、tools/ldvh_fact_cli.py 和对应测试；task-0007 已迁移为 blocked_by: [task-0008]。验证结果：Fact Validator files=25 errors=0 warnings=0；全量 pytest 142 passed；py_compile 通过；CLI deps task-0007 可结构化查询前置依赖并返回 ready_to_execute=false。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 review_requested_at: '2026-06-18T07:40:04'
 closed_at: '2026-06-18T07:40:04'
 related_docs: []

@@ -120,7 +120,19 @@ orchestration:
       expected_output: 从 Code 可校验性和 Web 可表达性两个视角确认旧对象入口已退出当前产品面。
     human_closure_review: true
 verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
   ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
 
   旧对象事实源清退：
   - 删除清单 `/tmp/ldvh-legacy-delete-list.txt` 记录旧目录文件 129 个，覆盖 `ldvh-base/taskplans/` 与 `ldvh-base/tasks/`；本次也删除旧 Web 夹具 `tests/web/fixtures/taskplan-with-subtasks/`。
@@ -139,11 +151,27 @@ verification_evidence: |
     结果仅剩 05.01 清退规则、fact_validate 移除字段诊断和“旧对象应被拒绝”的测试断言。
   - 当前事实源中的旧结构字段已清除；少量 WorkPlan 历史叙述仍保留旧 Task 字样，作为迁移来源说明，不作为当前机器消费入口。
 
-  ## 结论
+  原文标题：结论
 
   0069 的 Code/Web/specs/事实源清退目标已通过机器校验；TaskFlow 组件命名仍是 Web 内部命名债，已分流到 0071 做流程经验记录，不阻断本轮契约清退。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 closure_evidence: |
-  ## 关闭判断
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：关闭判断
 
   0069 已完成旧工作对象事实源与兼容入口清退。当前 active 工作对象集合、CLI、Validator、Web API、Web 前端、字段注册表和测试夹具均不再把 TaskPlan / Task / SubTask 作为当前可消费对象。
 
@@ -155,9 +183,13 @@ closure_evidence: |
   - `TaskFlow*`、`TaskFlowBar` 的 `tasks` prop、`sortPlanTasks`、`detail-task` class 和少量未消费旧文案 key 属于命名债，进入 workplan-0071 的流程经验与后续规范准备，不阻断 0069。
   - 历史 WorkPlan、ADR、Memo、Study 中追溯迁移来源的 Task 字样不作为当前机器消费入口，本轮不做大规模文本改写。
 
-  ## 结论
+  原文标题：结论
 
   0069 已完成执行和独立专业复审，可转入 review_needed 等待 Human closure review。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 related_docs:
 - specs/05.02-工作模型字段内容与格式规范.md
 - specs/21-WorkPlan-工作计划.md

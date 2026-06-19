@@ -123,7 +123,19 @@ orchestration:
       expected_output: 独立复核计划审批、Human 执行批准、过程 Memo 回写和流程改进候选是否闭环。
     human_closure_review: true
 verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
   ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
 
   阶段完成记录：
   - workplan-0069 已完成并提交为 715a588 Remove legacy task object model。完成后 Code/Web 子 Agent 初审发现旧对象残留，修复后复审通过。
@@ -140,11 +152,27 @@ verification_evidence: |
   - 后续 WorkPlan：0070 识别的 docs/studies/sources 头部元信息 Code 覆盖、41-43 active 后落地硬化继续保留为后续候选，不在本轮扩大范围。
   - process-governance 子 Agent 初审返回 REQUEST_CHANGES，指出 0071 的 evidence_refs 中 0069 文件名漂移且现有 fact_validate 未捕获；已修正引用，后续可考虑为 evidence_refs 增加路径存在性检查。
 
-  ## 结论
+  原文标题：结论
 
   0071 的主体回写已完成，process-governance 子 Agent 初审问题已修复，最终复核已通过，可进入 review_needed。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
   ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
 
   process-governance 子 Agent 初审结论为 REQUEST_CHANGES：0071 的 evidence_refs 指向不存在的 0069 文件名。已将引用修正为 `ldvh-base/workplans/workplan-0069-legacy-cleanup-and-header-contract.yaml`。
   process-governance 子 Agent 最终复审结论为 PASS：计划审批、Human 执行批准、完成后复审、Memo/Pitfall/closure/follow-up 分流、memo-0005 旧对象口径修正、memo-0010 流程候选沉淀均已闭环。
@@ -154,9 +182,13 @@ closure_evidence: |
   - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过，diagnostics=0
   - `git diff --check`：通过
 
-  ## 结论
+  原文标题：结论
 
   本 WorkPlan 已完成过程经验沉淀和闭环复核，可进入 review_needed，等待 Human 关闭审查。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 related_docs:
 - specs/21-WorkPlan-工作计划.md
 - specs/40-workflow-design-audit-工作流程设计审核.md

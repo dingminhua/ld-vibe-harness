@@ -78,7 +78,19 @@ orchestration:
       expected_output: 独立复核 evidence_refs 路径检查是否准确、低误报，并确认测试覆盖关键边界。
     human_closure_review: true
 verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
   ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
 
   修改范围：
   - `code/fact_validate.py`：新增 `evidence_refs` 路径存在性检查，只校验可判定为项目内文件或目录路径的引用。
@@ -99,11 +111,27 @@ verification_evidence: |
   - 必须修复：无。
   - 建议：补充 `https://...` 样例和 `path §section` 正向样例；两项已在 `tests/code/test_fact_validate.py` 中采纳。
 
-  ## 结论
+  原文标题：结论
 
   Code 行为、测试、规范说明和独立复审已闭环，可进入 review_needed。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
   ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
 
   独立 Code 子 Agent 确认 `evidence_refs` 只对可判定为路径的引用报 `EVIDENCE_REF_PATH_NOT_FOUND`，并确认命令、对象 ID、提交号、带附注文本、仓库外绝对路径不会误报；规范 21 和 05.01 与实现一致。复审建议补充 URL 与 `path §section` 样例，已采纳并通过测试。
 
@@ -114,9 +142,13 @@ closure_evidence: |
   - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过
   - `git diff --check`：通过
 
-  ## 结论
+  原文标题：结论
 
   本 WorkPlan 已完成实现、测试、规范同步、确定性校验和独立 Code 复审，可进入 review_needed，等待 Human 关闭审查。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 related_docs:
 - specs/21-WorkPlan-工作计划.md
 - specs/05.02-工作模型字段内容与格式规范.md
