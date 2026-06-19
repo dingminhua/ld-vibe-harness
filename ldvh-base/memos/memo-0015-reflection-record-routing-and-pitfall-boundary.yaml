@@ -1,0 +1,65 @@
+id: memo-0015
+type: memo
+title: 反思记录分流与 Pitfall 边界待明确
+status: pending
+created: '2026-06-19T09:03:00+08:00'
+updated: '2026-06-19T09:03:00+08:00'
+description: |
+  本 Memo 承载一个待讨论的工作模型边界问题：AI 在工作中产生的反思、检讨和补救记录，是否应该进入 Pitfall，还是应先进入 Memo、WorkPlan、ADR 或规范改进链路。
+
+  本次触发背景：
+
+  1. `ldvh_doc.updated` 一度被规范和 Code 允许为空，导致 `specs/24-Memo-备忘.md` 等已创建规范文档出现空更新时间；
+  2. 主控修复后提交时，第一次 commit message 只写了“硬化 ldvh_doc 文档元信息契约”，不符合 `specs/09.01` 的 `<type>(<scope>): <subject>` 格式；
+  3. 用户追问“这些反思记录到哪里”，主控最初倾向于创建 Pitfall；
+  4. 用户进一步指出：Pitfall 应承载已经沉淀为经验、已经落地、其他 AI 可以顺手复用的内容；本次问题仍需要机制配合和边界讨论，不应过早进入 Pitfall。
+
+  当前判断：
+
+  本次反思不应直接进入 Pitfall。它还没有形成稳定、可复用、可直接执行的经验包，且暴露的问题不只是“以后记得做某事”，而是 LDVH 需要进一步明确：
+
+  1. AI 工作中的反思记录应该默认写入哪里；
+  2. 什么条件下反思可以升级为 Pitfall；
+  3. 什么条件下反思应该进入 WorkPlan，推动机制、Code、Hook、Web 或规范改造；
+  4. 什么条件下反思只是本次 WorkPlan 的 closure_evidence 或 commit message 追溯信息；
+  5. 如何避免把尚未解决、未验证、未机制化的问题包装成“踩坑经验”。
+
+  对 Pitfall 边界的初步意见：
+
+  Pitfall 应该记录已经解决、已验证、具有复用价值，并且后续 AI / Human 可以直接拿来规避同类问题的经验。它要提供的是“遇到什么情况时如何识别、为什么会错、已经验证的解决方式、以后怎么规避”，而不是承载还没有完成机制设计的问题清单。
+
+  因此，像本次这类“发现规则、流程、Hook、Code 或工作对象分流机制仍不完整”的反思，通常应先进入 Memo 或 WorkPlan：
+
+  1. 如果只是需要保留讨论线索，进入 Memo；
+  2. 如果已经明确要修改规范、Code、Web、Hook 或流程，进入 WorkPlan；
+  3. 如果已完成补救、验证并形成可复用规避策略，再考虑升级为 Pitfall；
+  4. 如果改变长期决策边界，再考虑进入 ADR。
+
+  后续需要讨论的问题：
+
+  1. 是否需要在 `specs/23-Pitfall-踩坑经验.md` 中进一步明确“反思不等于 Pitfall”；
+  2. 是否需要在 Memo 或 WorkPlan 规范中定义“反思记录”的默认承载位置；
+  3. WorkPlan 关闭时，如果发现执行过程问题，应如何分流到 Memo、Pitfall、WorkPlan 或 ADR；
+  4. 提交规范、字段契约和 Hook 这类机制缺口，是否应优先进入 WorkPlan，而不是 Pitfall；
+  5. Web 是否需要在工作对象详情中帮助区分“反思线索”“已沉淀经验”和“待机制化缺口”。
+evolution:
+  - at: '2026-06-19T09:03:00+08:00'
+    summary: 用户指出主控准备把本次反思写入 Pitfall 的判断仍有问题；Pitfall 应承载已落地、可复用、其他 AI 可直接使用的经验，而本次内容仍需要机制配合，应先进入 Memo 后续讨论。
+source: conversation
+source_detail: 用户追问“你这些反思记录到哪里呢”，随后指出这次内容不应进入 Pitfall，应先加入 Memo，后续再讨论踩坑边界。
+priority: P1
+resolved_to: ""
+resolved_at: ""
+discard_reason: ""
+related_workareas:
+  - workarea-0012
+related_workplans:
+  - workplan-0076
+related_adrs: []
+related_studies: []
+related_docs:
+  - specs/21-WorkPlan-工作计划.md
+  - specs/23-Pitfall-踩坑经验.md
+  - specs/24-Memo-备忘.md
+  - specs/09.01-Git提交记录与变更追溯规范.md
+  - specs/03.01-规范文档规范.md
