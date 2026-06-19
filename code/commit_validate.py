@@ -22,8 +22,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 VALID_TYPES = {
     "build", "chore", "ci", "docs", "feat", "fix", "perf",
     "refactor", "revert", "style", "test",
-    # LDVH 项目扩展类型，仍遵守 Conventional Commits 格式。
-    "spec", "rule", "adr",
 }
 
 # specs/10-Git提交规范.md scope 枚举（推荐值，非强制）
@@ -65,8 +63,8 @@ FORMAT_HELP = """\
     [optional footer(s)]
 
 各部分说明：
-  type      必填。变更类型：{valid_types}
-  scope     可选。影响范围（推荐）：{valid_scopes}
+  type      必填。变更类型闭集：{valid_types}
+  scope     可选。影响范围优先使用推荐值：{valid_scopes}
   !         可选。表示破坏性变更
   description 必填。简短描述，不超过 72 字符
   body      条件必填。推荐使用结构化语义清单说明动机、关键变更、影响边界、验证结论与风险
@@ -76,7 +74,7 @@ FORMAT_HELP = """\
   footer 不得替代 body 的语义清单；LDVH 不定义 Human-Gate、Verification、Risk 作为标准必填 trailer
 
 示例：
-  spec(specs): 采用约定式提交规范
+  docs(specs): 采用约定式提交规范
 
   动机:
   - 解决 Code 和 Web 解析边界不稳定的问题。

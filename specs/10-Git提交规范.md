@@ -83,8 +83,8 @@ LDVH 使用 Conventional Commits 1.0.0（约定式提交规范）作为 Git comm
 
 | 字段 | 要求 | 说明 |
 |---|---|---|
-| `type` | 必填 | 提交类型，使用本文 §5 的英文枚举 |
-| `scope` | 可选 | 影响范围，使用本文 §6 推荐值或项目扩展值 |
+| `type` | 必填 | 提交类型，使用本文 §5 的英文枚举；type 是严格闭集，不得使用枚举外值 |
+| `scope` | 可选 | 影响范围，优先使用本文 §6 推荐值；无合适值时可使用项目内稳定、名词性的扩展值 |
 | `!` | 可选 | 破坏性变更标记，对应 Conventional Commits 的 breaking change |
 | `description` | 必填 | 简体中文简短说明，推荐不超过 72 字符 |
 | `body` | 条件必填 | 使用简体中文说明做了什么、为什么做、影响范围、关键取舍和必要上下文；是否必填按 §4.2 判断 |
@@ -96,9 +96,9 @@ LDVH 使用 Conventional Commits 1.0.0（约定式提交规范）作为 Git comm
 
 首行只表达本次提交的主意图和主承载域，不表达 touched files 的全量分类。
 
-`type` 只能有一个，表示本次提交的主意图。一个提交如果同时包含多个彼此独立的意图，例如“新增 Web 展示能力”和“顺手重构无关 Code 模块”，应拆成多个提交。若一个原子闭环需要同时修改 specs、Code、Web 或 docs，应选择最能代表闭环目的的主 `type`，其他影响写入 body。
+`type` 只能有一个，表示本次提交的主变更意图或动作类别。一个提交如果同时包含多个彼此独立的意图，例如“新增 Web 展示能力”和“顺手重构无关 Code 模块”，应拆成多个提交。若一个原子闭环需要同时修改 specs、Code、Web 或 docs，应选择最能代表闭环目的的主 `type`，其他影响写入 body。
 
-`scope` 最多一个，表示主承载域或最重要的事实源边界。scope 不是文件清单，不要求覆盖所有改动路径。一次提交可以跨多个目录完成同一闭环，但首行只选择主 scope；其他受影响范围、配套实现和文档同步写入 body。
+`scope` 最多一个，表示名词性的主承载域或最重要的事实源边界。scope 不是文件清单，不要求覆盖所有改动路径。一次提交可以跨多个目录完成同一闭环，但首行只选择主 scope；其他受影响范围、配套实现和文档同步写入 body。
 
 首行不得使用多个 type、多个 scope、斜杠拼接、逗号拼接或“全都写上”的方式规避取舍。例如 `feat+docs(web/specs): ...`、`feat,fix(web): ...`、`feat(web,code): ...` 都不符合 LDVH 的单主语义。
 
@@ -145,8 +145,8 @@ Web 应把 body 作为“提交说明”优先展示给 Human；Code 应在提�
 AI 生成 commit message 时必须按以下顺序决策，避免把 LDVH 要求误解为文件分类、命令清单或私有 trailer：
 
 1. 判断是否应拆提交：若 staged changes 包含多个互相独立的目的，应先拆提交；若是一个原子闭环，可以跨 specs、Code、Web、docs 或测试文件保留在同一提交；
-2. 选择单一 `type`：只表达本次提交的主意图，不用多个 type 描述所有改动文件；
-3. 选择零个或一个 `scope`：只表达主承载域，不用 scope 覆盖全部 touched files；
+2. 选择单一 `type`：只表达本次提交的主变更意图或动作类别，不用多个 type 描述所有改动文件；
+3. 选择零个或一个 `scope`：只表达名词性的主承载域，优先使用推荐枚举，不用 scope 覆盖全部 touched files；
 4. 写 description：用一句简体中文说明本次提交的核心结果，不写“更新”“优化”“完善”这类空泛词；
 5. 判断 body 是否必填：命中 §4.2 必填条件时必须写 body；不确定时宁可写 body；
 6. 写 body 语义清单：优先使用 `动机:`、`关键变更:`、`影响边界:`、`验证结论:`、`风险与后续:` 小标题和 Markdown 列表；
@@ -159,36 +159,33 @@ AI 不应为了满足格式而制造虚假验证、虚假风险或虚假引用�
 ---
 ## 5. type 枚举
 
-| type | 简体中文 | 说明 |
-|---|---|---|
-| `feat` | 功能 | 新增功能、能力或用户可见对象 |
-| `fix` | 修复 | 修复缺陷、错误或不符合预期的行为 |
-| `docs` | 文档 | 文档修改 |
-| `refactor` | 重构 | 重构，不改变外部行为 |
-| `test` | 测试 | 测试相关 |
-| `chore` | 维护 | 辅助维护、杂项或难以归入其他类型的非功能变更 |
-| `build` | 构建 | 构建系统或外部依赖修改 |
-| `ci` | CI | CI 配置或流水线修改 |
-| `perf` | 性能 | 性能优化 |
-| `style` | 样式 | 代码格式、空白、排版等不影响语义的修改 |
-| `revert` | 回退 | 回退之前的提交 |
-| `spec` | 规范 | LDVH 扩展类型：specs 规范修改 |
-| `rule` | 规则 | LDVH 扩展类型：Rules / Instructions 修改 |
-| `adr` | 决策 | LDVH 扩展类型：ADR 实例创建或状态变化 |
+| type | 简体中文 | English | 含义 |
+|---|---|---|---|
+| `feat` | 新增功能 | Feature | 新增功能、能力或用户可见对象 |
+| `fix` | 问题修复 | Fix | 修复缺陷、错误或不符合预期的行为 |
+| `docs` | 文档修改 | Documentation | 修改文档、规范、规则入口或其他文档性事实源 |
+| `style` | 格式调整 | Style / formatting | 代码格式、空白、排版等不影响语义的修改 |
+| `refactor` | 代码重构 | Refactor | 重构，不改变外部行为 |
+| `perf` | 性能优化 | Performance | 性能优化 |
+| `test` | 测试修改 | Tests | 测试相关修改 |
+| `build` | 构建系统 | Build | 构建系统、依赖或打包相关修改 |
+| `ci` | 持续集成 | Continuous integration | CI 配置或流水线修改 |
+| `chore` | 维护杂项 | Chore / maintenance | 辅助维护、杂项或难以归入其他类型的非功能变更 |
+| `revert` | 回退变更 | Revert | 回退之前的提交 |
 
-不得使用 `improve`、`update`、`完善`、`优化` 这类含义不稳定的 type。所谓“完善”必须按实际变更目的落入明确类型：新增能力用 `feat`，修复问题用 `fix`，规范修改用 `spec`，文档修改用 `docs`，代码结构整理用 `refactor`，维护性调整用 `chore`。
+type 是严格闭集，不得使用枚举外内容。不得使用 `improve`、`update`、`完善`、`优化` 这类含义不稳定的 type。所谓“完善”必须按实际变更目的落入明确类型：新增能力用 `feat`，修复问题用 `fix`，规范、规则或 ADR 文本修改用 `docs`，代码结构整理用 `refactor`，维护性调整用 `chore`。
 
 ---
 ## 6. scope 推荐值
 
 | scope | 简体中文 | English | 含义 |
 |---|---|---|---|
-| `specs` | 规范 | Specs | specs 规范文档 |
+| `specs` | Specs | Specs | specs 规范文档 |
 | `docs` | 文档 | Docs | docs 正文或项目文档 |
 | `rules` | 规则 | Rules | Rules / Instructions |
 | `code` | Code | Code | Code / 工具实现 |
 | `web` | Web | Web | Web 实现 |
-| `tests` | 测试 | Tests | 测试代码 |
+| `tests` | Tests | Tests | 测试代码 |
 | `config` | 配置 | Config | 项目配置 |
 | `workarea` | 工作域 | WorkArea | WorkArea 实例 |
 | `workplan` | 计划 | WorkPlan | WorkPlan 实例 |
@@ -199,7 +196,7 @@ AI 不应为了满足格式而制造虚假验证、虚假风险或虚假引用�
 | `studies` | 研究材料 | Studies | docs/studies 相关修改 |
 | `sources` | 来源材料 | Sources | docs/sources 相关修改 |
 
-scope 为推荐值。项目可以在不破坏解析的前提下扩展，但不应用 scope 创造新的工作对象类别。
+scope 为推荐值，应优先使用上表枚举。没有合适枚举时，AI 可以基于项目语义选择一个简短、稳定、名词性的 scope；扩展 scope 不得创造新的工作对象类别，不得使用斜杠、逗号或多个词拼接规避主承载域取舍。LDVH 自身反复出现的新 scope，应回补到本文推荐值和 Web 展示标签。
 
 ---
 ## 7. 关联提交派生
@@ -274,7 +271,7 @@ Web 呈现必须遵守：
 ## 12. 示例
 
 ```text
-spec(specs): 采用约定式提交规范
+docs(specs): 采用约定式提交规范
 
 动机:
 - 解决提交记录无法被 Code 和 Web 稳定解析的问题。

@@ -31,7 +31,7 @@ def make_commit(hash_val="abc12345", subject="", body=""):
 
 def test_valid_commit_passes():
     commit = make_commit(
-        subject="spec(specs): 采用约定式提交规范",
+        subject="docs(specs): 采用约定式提交规范",
         body=(
             "明确 Git 提交记录使用 Conventional Commits。\n"
             "提交信息使用格式化首行和自然语言正文说明变更内容。"
@@ -211,7 +211,7 @@ def test_check_message_valid():
 
 
 def test_check_message_requires_body_for_staged_specs_file():
-    text = "spec(specs): 明确提交正文语义"
+    text = "docs(specs): 明确提交正文语义"
 
     issues = checker.check_message(text, touched_files=["specs/10-Git提交规范.md"])
     errors = [i for i in issues if i.level == "error"]
@@ -221,7 +221,7 @@ def test_check_message_requires_body_for_staged_specs_file():
 
 def test_body_mainly_commands_warns():
     commit = make_commit(
-        subject="spec(specs): 明确提交正文语义",
+        subject="docs(specs): 明确提交正文语义",
         body=(
             "npm run web:check\n"
             "python3 code/specs_validate.py doc specs\n"
