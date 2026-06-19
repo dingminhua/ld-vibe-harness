@@ -342,7 +342,7 @@ BREAKING CHANGE: 旧的仅首行字符串消费方需要改为读取结构化 de
 | 确定性执行要求 | commit message 可机械校验的部分由 Code 检查，关联提交由 Git 派生 | `code/commit_validate.py`、Git 查询、测试夹具 | 校验实现 | 提交契约或关联派生规则变化时 |
 | 确定性执行要求 | LDVH 自身仓库应提供或启用提交前 message 校验入口；未启用 Git hook 时，AI 提交前必须手动运行等价预检 | `commit-msg` hook、`code/commit_validate.py --check-message`、CI 或人工降级检查 | 触发保障 | 创建 Git commit、修改提交契约、调整 hook/CI 或迁移仓库入口时 |
 | 确定性执行要求 | 必须写 body 的提交应由 Code 基于 staged touched files 和 message 内容做提交前预检，缺失 body 视为 error，明显空泛正文视为 warning | `code/commit_validate.py --check-message`、staged diff、测试夹具 | 校验实现 | 修改 specs、rules、Code、Web、测试、配置、AI 入口、能力资产或跨文件事实源时 |
-| Web 呈现要求 | Web 提交详情应把 commit body 作为“提交说明”默认展开，把改动文件和原始信息作为默认收起的派生证据节点 | Web API commit DTO、`/changelog` 详情、Web 类型检查 | 展示实现 | Web 展示提交详情、复制提交上下文或提交 DTO 变化时 |
+| 入口可见要求 | Web 提交详情应把 commit body 作为“提交说明”默认展开，把改动文件和原始信息作为默认收起的派生证据节点 | Web API commit DTO、`/changelog` 详情、Web 类型检查 | 展示实现 | Web 展示提交详情、复制提交上下文或提交 DTO 变化时 |
 | Human 交互要求 | 高影响事实源修改和破坏性 Git 操作必须记录或触发 Human Gate | Human Gate、提交正文或对应事实源 | 人工确认 | 修改事实源边界、状态机、字段契约、入口资产或执行破坏性 Git 操作时 |
 | 生命周期触发要求 | 本规范变化后，应同步检查 01、05、05.01、05.02、05.03、06、07、08、Code、Web 和测试 | specs 检查、Code 测试、Web 类型检查、残留搜索 | 触发保障 | 提交格式、关联派生或 Web 展示规则变化时 |
 
