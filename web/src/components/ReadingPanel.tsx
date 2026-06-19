@@ -830,7 +830,6 @@ function CommitIdentitySection({
   const timeValue = entry?.date ? formatDateTime(entry.date) : parsed.date || '—';
   const typeLabel = locale === 'en' ? 'Commit' : labels.commit;
   const headerMetaItems = [
-    entry?.relativeTime || timeValue,
     entry?.category ? getCommitTypeLabel(entry.category, locale) : '',
     entry?.scope ? getCommitScopeLabel(entry.scope, locale) : '',
   ].filter(Boolean);
@@ -849,7 +848,7 @@ function CommitIdentitySection({
       updated=""
       showDefaultDates={false}
       titleMetaEntries={[{ label: labels.time, value: timeValue }]}
-      titleMetaAlign="actions"
+      titleMetaAlign="footerEnd"
       copyLabel={labels.copyHash}
       copiedLabel={labels.copiedHash}
       extraBadges={(
@@ -865,30 +864,31 @@ function CommitIdentitySection({
   );
 }
 
-export function CommitDetailContent({
-  entry,
-  stat,
-  title,
-}: {
-  entry?: CommitDetailPanelData['entry'];
-  stat: string;
-  title?: string;
-}) {
-  const { locale, t } = useI18n();
-  const [bodyState, setBodyState] = useState<'collapsed' | 'expanded'>('expanded');
-  const [filesState, setFilesState] = useState<'collapsed' | 'expanded'>('collapsed');
-  const [rawState, setRawState] = useState<'collapsed' | 'expanded'>('collapsed');
-  const diffText = stat;
-  const commitBody = entry?.body?.trim() ?? '';
-  const parsed = parseCommitStat(diffText);
-  const displayTitle = entry?.description || entry?.message || title || t('readingPanel.changeDetail');
-  const labels = locale === 'en'
+type CommitDetailLabels = {
+  category: string;
+  type: string;
+  scope: string;
+  commit: string;
+  time: string;
+  files: string;
+  insertions: string;
+  deletions: string;
+  commitBody: string;
+  changedFiles: string;
+  noFiles: string;
+  raw: string;
+  copyHash: string;
+  copiedHash: string;
+};
+
+function getCommitDetailLabels(locale: string): CommitDetailLabels {
+  return locale === 'en'
     ? {
       category: 'Category',
       type: 'Type',
       scope: 'Scope',
       commit: 'Commit',
-      time: 'Time',
+      time: 'Commit',
       files: 'Files',
       insertions: 'Insertions',
       deletions: 'Deletions',
@@ -904,7 +904,7 @@ export function CommitDetailContent({
       type: '类型',
       scope: '范围',
       commit: '提交',
-      time: '时间',
+      time: '提交',
       files: '文件',
       insertions: '新增',
       deletions: '删除',
@@ -915,6 +915,53 @@ export function CommitDetailContent({
       copyHash: '复制提交 hash',
       copiedHash: '已复制提交 hash',
     };
+}
+
+export function CommitDetailIdentity({
+  entry,
+  stat,
+  title,
+}: {
+  entry?: CommitDetailPanelData['entry'];
+  stat: string;
+  title?: string;
+}) {
+  const { locale, t } = useI18n();
+  const parsed = parseCommitStat(stat);
+  const displayTitle = entry?.description || entry?.message || title || t('readingPanel.changeDetail');
+  const labels = getCommitDetailLabels(locale);
+
+  return (
+    <CommitIdentitySection
+      entry={entry}
+      parsed={parsed}
+      title={displayTitle}
+      labels={labels}
+      locale={locale}
+    />
+  );
+}
+
+export function CommitDetailContent({
+  entry,
+  stat,
+  title,
+  showIdentity = true,
+}: {
+  entry?: CommitDetailPanelData['entry'];
+  stat: string;
+  title?: string;
+  showIdentity?: boolean;
+}) {
+  const { locale, t } = useI18n();
+  const [bodyState, setBodyState] = useState<'collapsed' | 'expanded'>('expanded');
+  const [filesState, setFilesState] = useState<'collapsed' | 'expanded'>('collapsed');
+  const [rawState, setRawState] = useState<'collapsed' | 'expanded'>('collapsed');
+  const diffText = stat;
+  const commitBody = entry?.body?.trim() ?? '';
+  const parsed = parseCommitStat(diffText);
+  const displayTitle = entry?.description || entry?.message || title || t('readingPanel.changeDetail');
+  const labels = getCommitDetailLabels(locale);
   const summary = parsed.summary;
   const filesChanged = summary?.filesChanged ?? parsed.files.length;
   const insertions = summary?.insertions ?? parsed.files.reduce((total, file) => total + file.additions, 0);
@@ -924,13 +971,15 @@ export function CommitDetailContent({
 
   return (
     <div className="space-y-4">
-      <CommitIdentitySection
-        entry={entry}
-        parsed={parsed}
-        title={displayTitle}
-        labels={labels}
-        locale={locale}
-      />
+      {showIdentity && (
+        <CommitIdentitySection
+          entry={entry}
+          parsed={parsed}
+          title={displayTitle}
+          labels={labels}
+          locale={locale}
+        />
+      )}
 
       <div className="grid grid-cols-3 gap-2">
         <CommitMetric label={labels.files} value={filesChanged} />

@@ -311,7 +311,7 @@ export default function Changelog() {
                 </button>
               </div>
               <div className="ldvh-meta-muted self-end">
-                {locale === 'en' ? 'Updated ' : '更新 '}
+                {locale === 'en' ? 'Commit ' : '提交 '}
                 {formatDateTime(entry.date)}
               </div>
             </div>

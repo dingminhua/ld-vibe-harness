@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
-import { CommitDetailContent } from '@/components/ReadingPanel';
+import { CommitDetailContent, CommitDetailIdentity } from '@/components/ReadingPanel';
 import { useI18n } from '@/i18n/context';
 import { fetchCommitDetail, type ChangelogEntry } from '@/utils/api';
 
@@ -68,12 +68,18 @@ export default function ChangelogDetail() {
               <ArrowLeft size={14} />
               {t('objectDetail.back')}
             </button>
+            <CommitDetailIdentity
+              entry={entry}
+              stat={stat}
+              title={entry?.description || entry?.message || hash}
+            />
           </div>
 
           <CommitDetailContent
             entry={entry}
             stat={stat}
             title={entry?.description || entry?.message || hash}
+            showIdentity={false}
           />
         </div>
       </div>

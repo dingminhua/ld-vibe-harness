@@ -607,7 +607,7 @@ export function ObjectIdentityHeader({
   customMetaEntries?: Array<{ label: string; value: ReactNode }>;
   copyLabel?: string;
   copiedLabel?: string;
-  titleMetaAlign?: 'content' | 'actions';
+  titleMetaAlign?: 'content' | 'actions' | 'footerEnd';
   showDefaultDates?: boolean;
   showCopyAction?: boolean;
   compact?: boolean;
@@ -625,6 +625,7 @@ export function ObjectIdentityHeader({
     || Boolean(closedAt);
   const inlineTitleMeta = titleMetaAlign === 'content' ? titleMetaEntries : [];
   const actionAlignedTitleMeta = titleMetaAlign === 'actions' ? titleMetaEntries : [];
+  const footerEndTitleMeta = titleMetaAlign === 'footerEnd' ? titleMetaEntries : [];
   return (
     <div className={compact ? 'min-w-0' : 'rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-3'}>
       <div className="flex min-w-0 items-start justify-between gap-3">
@@ -703,6 +704,13 @@ export function ObjectIdentityHeader({
           </div>
         )}
       </div>
+      {footerEndTitleMeta.length > 0 && (
+        <div className="mt-2 flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
+          {footerEndTitleMeta.map((entry) => (
+            <HeaderDateMeta key={entry.label} label={entry.label} value={entry.value} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

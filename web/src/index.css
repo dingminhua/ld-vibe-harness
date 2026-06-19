@@ -462,7 +462,20 @@ input::-moz-focus-inner {
   color: rgb(var(--ldvh-text-secondary) / 0.92);
 }
 
-.ldvh-study-node-content .ldvh-inline-markdown :where(h2, h3, h4, h5, h6, strong) {
+.ldvh-study-node-content .ldvh-inline-markdown :where(h2, h3, h4, h5, h6) {
+  margin-top: 0.75rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  color: rgb(var(--ldvh-text-secondary));
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(h2, h3, h4, h5, h6):first-child {
+  margin-top: 0;
+}
+
+.ldvh-study-node-content .ldvh-inline-markdown :where(strong) {
   color: rgb(var(--ldvh-text-secondary));
 }
 
