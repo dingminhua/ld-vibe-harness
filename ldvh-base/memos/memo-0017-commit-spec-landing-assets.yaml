@@ -3,7 +3,7 @@ type: memo
 title: 10 号 Git 提交规范落地资产边界待收敛
 status: pending
 created: '2026-06-20T04:33:49+08:00'
-updated: '2026-06-20T04:33:49+08:00'
+updated: '2026-06-20T04:44:36+08:00'
 description: |
   本 Memo 承载一个需要后续收敛的规范落地问题：`specs/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
 
@@ -30,9 +30,19 @@ description: |
   3. 是否为 10 号规范创建 `skills/ldvh-git-commit/SKILL.md`；
   4. 是否为 10 号规范创建 `hooks/git/commit-msg`、安装脚本和检查脚本；
   5. 是否需要 WorkPlan 承接这一组落地动作，避免在对话中零散修改。
+
+  新增待讨论的资产治理层问题：
+
+  1. 标准缺口：需要确认 `rules/`、`skills/`、`agents/`、`hooks/` 是否已经分别具备最佳实践级别的规范标准；若没有，应补齐资产类型规范，而不是只靠单个资产样例；
+  2. 生成质量：这些 LDVH 资产本身通常由 AI 按规范生成，因此不仅要有格式标准，还要有高标准、多视角审核要求，覆盖 Human、Code、Web、AI 执行和行业实践；
+  3. 变更监督：当 specs 正式规范发生变化时，需要明确由哪条审核链路监督 rules、skills、agents、hooks、Code、Web 和部署入口同步更新，避免资产漂移；
+  4. 事实源重复：40/41/42/43 这类审核流程、Skill 执行说明和 Rules 入口都可能复写正式规范内容，需要建立“薄引用 + 执行转换”的边界，避免把同一规范变成多重事实源；
+  5. 部署分层：资产本身与环境部署不是一回事。LDVH 仓库内维护的是权威资产；不同运行环境中建立同名文件时，应通过薄引用指向权威资产，而不是复制并长期分叉。
 evolution:
   - at: '2026-06-20T04:33:49+08:00'
     summary: 用户要求记录 10 号规范落地问题，并追问除 hook 外是否需要 Skill；当前结论是提交门禁需要 Git hook，AI 行动稳定性需要 Skill，两者职责不同且都应进入 10 号规范落地资产讨论。
+  - at: '2026-06-20T04:44:36+08:00'
+    summary: 补充记录 rules、skills、agents、hooks 的资产标准、AI 生成质量、多视角审核、规范变化监督、事实源重复和环境部署分层问题；这些问题需要逐一讨论后再转成正式规范修改。
 source: conversation
 source_detail: 用户围绕 10 号 Git 提交规范落地追问“这种属于 LDVH 安装后必须落地的资产”和“除了 hook，不需要 skills？”，要求建立 Memo 记录，避免后续遗忘。
 priority: P1
@@ -50,5 +60,9 @@ related_docs:
   - specs/06-工作流程基础规范.md
   - specs/10-Git提交规范.md
   - specs/24-Memo-备忘.md
+  - specs/40-workflow-design-audit-工作流程设计审核.md
+  - specs/41-work-model-audit-工作模型审核.md
+  - specs/42-specs-audit-规范审核.md
+  - specs/43-landing-readiness-audit-落地准备度审核.md
   - code/commit_validate.py
   - web/docs/06-Changelog.md
