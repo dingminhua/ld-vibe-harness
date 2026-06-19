@@ -23,14 +23,14 @@ orchestration:
     - task-0047
     expected_output: |
       - [ ] 修改 Pitfall 规范（specs/23），增加关闭时 ADR 推荐流程
-      - [ ] 修改 Git 提交记录规范（specs/09.01），补充 Pitfall 来源追溯口径
+      - [ ] 修改 Git 提交记录规范（specs/10），补充 Pitfall 来源追溯口径
       - [ ] 更新 ldvh-close Skill，Pitfall 关闭时增加 ADR 推荐步骤
       - [ ] 至少一个现有 Pitfall 实例补充 ADR 推荐记录作为示范
     status: pending
     result_summary: ''
     evidence_refs:
     - specs/23-Pitfall-踩坑经验.md（修订）
-    - specs/09.01-Git提交记录与变更追溯规范.md（修订）
+    - specs/10-Git提交规范.md（修订）
     - docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
     blocking_reason: Legacy Task is not closed; keep WorkPlan active after migration.
   review:

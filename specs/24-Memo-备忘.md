@@ -22,7 +22,7 @@ ldvh_doc:
     - "specs/20-WorkArea-工作域.md"
     - "specs/21-WorkPlan-工作计划.md"
     - "specs/22-ADR-决策.md"
-    - "specs/09.01-Git提交记录与变更追溯规范.md"
+    - "specs/10-Git提交规范.md"
     - "specs/25-Study-研究报告.md"
   code_consumption:
     - "doc_metadata"
@@ -181,7 +181,7 @@ Pitfall 的准入、状态和字段契约由 `specs/23-Pitfall-踩坑经验.md` 
 
 ### 4.6 Memo 与 Git 提交记录
 
-Memo 的创建、状态变化、分流和废弃都应留下 Git 提交记录。commit message 契约由 `specs/09.01-Git提交记录与变更追溯规范.md` 定义。
+Memo 的创建、状态变化、分流和废弃都应留下 Git 提交记录。commit message 格式规则由 `specs/10-Git提交规范.md` 定义。
 
 ---
 ## 5. Human Gate

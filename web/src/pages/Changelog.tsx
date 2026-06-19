@@ -6,84 +6,6 @@ import PageHeader from '@/components/PageHeader';
 import { formatDateTime } from '@/utils/dateFormat';
 import { usePanel } from '@/utils/panelContext';
 
-const CURRENT_OBJECT_TYPES = new Set(['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study']);
-
-/** 从当前对象 ID 推断类型，如 workplan-0004 → workplan, adr-0003 → adr */
-function inferTypeFromId(id: string): string | null {
-  const match = id.match(/^([a-z]+)-\d+$/i);
-  if (!match) return null;
-  const type = match[1].toLowerCase();
-  return CURRENT_OBJECT_TYPES.has(type) ? type : null;
-}
-
-/** 解析 commit message 中的 Refs 行，返回引用 ID 列表 */
-function parseRefs(message: string): string[] {
-  const refsLine = message.split('\n').find((line) => /^\s*Refs\s*:/i.test(line));
-  if (!refsLine) return [];
-  const value = refsLine.replace(/^\s*Refs\s*:\s*/i, '');
-  return value
-    .split(/[,\s]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-}
-
-/** 渲染 commit message，将 Refs 中的对象 ID 变为右侧阅读面板入口 */
-function RenderMessage({ message, onOpenRef }: { message: string; onOpenRef: (type: string, id: string) => void }) {
-  const refs = parseRefs(message);
-  if (refs.length === 0) {
-    return <>{message}</>;
-  }
-
-  // 找到 Refs 行的位置，只替换该行中的 ID
-  const lines = message.split('\n');
-  const elements: React.ReactNode[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (/^\s*Refs\s*:/i.test(line)) {
-      // 处理 Refs 行
-      const prefix = line.match(/^\s*Refs\s*:\s*/i)![0];
-      elements.push(<span key={`line-${i}-prefix`}>{prefix}</span>);
-
-      const value = line.replace(/^\s*Refs\s*:\s*/i, '');
-      const ids = value.split(/([,\s]+)/);
-      for (let j = 0; j < ids.length; j++) {
-        const part = ids[j];
-        const trimmed = part.trim();
-        if (trimmed && refs.includes(trimmed)) {
-          const type = inferTypeFromId(trimmed);
-          if (type) {
-            elements.push(
-            <span
-                key={`ref-${i}-${j}`}
-                className="cursor-pointer text-ldvh-accent hover:underline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenRef(type, trimmed);
-                }}
-              >
-                {part}
-              </span>
-            );
-          } else {
-            elements.push(<span key={`ref-${i}-${j}`}>{part}</span>);
-          }
-        } else {
-          elements.push(<span key={`ref-${i}-${j}`}>{part}</span>);
-        }
-      }
-    } else {
-      elements.push(<span key={`line-${i}`}>{line}</span>);
-    }
-
-    if (i < lines.length - 1) {
-      elements.push(<br key={`br-${i}`} />);
-    }
-  }
-
-  return <>{elements}</>;
-}
-
 export default function Changelog() {
   const { locale, t } = useI18n();
   const { openPanel } = usePanel();
@@ -175,10 +97,7 @@ export default function Changelog() {
                       {entry.shortHash}
                     </span>
                     <span className="ldvh-body truncate">
-                      <RenderMessage
-                        message={entry.message}
-                        onOpenRef={(type, id) => openPanel({ type: 'object', title: id, objectType: type, objectId: id })}
-                      />
+                      {entry.message}
                     </span>
                   </div>
                   <div className="ldvh-caption mt-1 flex items-center gap-3">

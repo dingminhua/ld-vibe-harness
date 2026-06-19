@@ -22,7 +22,7 @@ ldvh_doc:
     - "specs/21-WorkPlan-工作计划.md"
     - "specs/22-ADR-决策.md"
     - "specs/24-Memo-备忘.md"
-    - "specs/09.01-Git提交记录与变更追溯规范.md"
+    - "specs/10-Git提交规范.md"
   code_consumption:
     - "doc_metadata"
     - "relations"
@@ -171,7 +171,7 @@ ADR 的准入、状态和字段契约由 `specs/22-ADR-决策.md` 定义。
 
 ### 4.5 Pitfall 与 Git 提交记录
 
-Pitfall 的创建、状态变化、核心经验改写、归档和被吸收到规范、运行入口、Code、Web 或工作流程时，都应留下 Git 提交记录。commit message 契约由 `specs/09.01-Git提交记录与变更追溯规范.md` 定义。
+Pitfall 的创建、状态变化、核心经验改写、归档和被吸收到规范、运行入口、Code、Web 或工作流程时，都应留下 Git 提交记录。commit message 格式规则由 `specs/10-Git提交规范.md` 定义。
 
 ### 4.6 Pitfall 与规范、Code、Web 和运行入口
 

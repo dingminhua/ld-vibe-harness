@@ -67,7 +67,7 @@ LIST_FIELDS = {
     },
 }
 GLOBAL_REMOVED_FIELDS = {
-    "related_changes": "related_changes 不再由工作对象手写维护；关联提交应由 Git 历史和 Refs 派生",
+    "related_changes": "related_changes 不再由工作对象手写维护；关联提交应由 Git 历史、文件路径、对象 ID 和提交正文自然文本派生",
 }
 
 # 12-工作模型字段内容格式规范：长文本字段定义

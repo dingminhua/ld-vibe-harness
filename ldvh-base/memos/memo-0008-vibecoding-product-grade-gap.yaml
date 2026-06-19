@@ -32,5 +32,5 @@ related_docs:
   - specs/06-工作流程基础规范.md
   - specs/07-Code确定性执行实现规范.md
   - specs/08-Web信息同步实现规范.md
-  - specs/10-测试基础规范.md
+  - specs/11-测试基础规范.md
   - specs/21-WorkPlan-工作计划.md

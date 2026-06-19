@@ -23,6 +23,11 @@ INDEX_RESEARCH_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?((?:specs/research/|docs
 INDEX_DOCS_MATERIAL_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?((?:docs/(?:studies|sources|research|refs)/)[^`\s，。；、)）]+\.md)(?:`)?")
 INDEX_DOCS_ROOT_ASSET_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?(docs/[^/`\s，。；、)）]+\.md)(?:`)?")
 INDEX_EXTERNAL_URL_RE = re.compile(r"https?://[^\s`，。；、)）]+")
+INDEX_ALLOWED_EXTERNAL_STANDARD_URLS = {
+    "specs/10-Git提交规范.md": {
+        "https://www.conventionalcommits.org/en/v1.0.0/",
+    },
+}
 INDEX_SECTION_REF_RE = re.compile(r"§([一二三四五六七八九十百千万\d]+(?:\.\d+)*)")
 INDEX_DOC_NUMBER_RE = re.compile(r"^(\d+(?:\.\d+)?)-")
 INDEX_DEFINITION_SENTENCE_RE = re.compile(r"^(?:(?:在本文|在本规范|在本文档)中[，,]?\s*)?(?:(?:[-*]|\d+[.、])\s*)?(?:\*\*)?([^|。；;，,\s`*是]{2,24})(?:\*\*)?\s*(?:是指|定义为|包括且仅包括|指(?!向|引|标|回|令|定|派|出|控|责|南|针|纹|挥|数|甲|望)|是(?!否))")
@@ -431,6 +436,9 @@ class SpecsChecker:
                 )
             for match in INDEX_EXTERNAL_URL_RE.finditer(line):
                 target = match.group(0)
+                normalized_target = target.rstrip(">")
+                if normalized_target in INDEX_ALLOWED_EXTERNAL_STANDARD_URLS.get(rel_path, set()):
+                    continue
                 diagnostics.append(
                     self.diagnostic(rel_path, line_number, "warning", "EXTERNAL_REFERENCE_IN_SPEC", f"正式规范不得引用外部 URL: {target}")
                 )

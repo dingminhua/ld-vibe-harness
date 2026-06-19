@@ -329,7 +329,9 @@ export interface ChangelogEntry {
   date: string;
   message: string;
   category: string;
+  scope: string;
   description: string;
+  isBreaking: boolean;
   relativeTime: string;
 }
 
@@ -431,7 +433,6 @@ export interface ProjectGitCommitEntry {
   parents: string[];
   author: string;
   date: string;
-  refs: string;
   message: string;
   isMerge: boolean;
 }

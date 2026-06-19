@@ -33,7 +33,7 @@ related_studies: []
 related_docs:
   - specs/02-术语规范.md
   - specs/07-Code确定性执行实现规范.md
-  - specs/10-测试基础规范.md
+  - specs/11-测试基础规范.md
   - specs/40-workflow-design-audit-工作流程设计审核.md
   - specs/41-work-model-audit-工作模型审核.md
   - specs/42-specs-audit-规范审核.md

@@ -16,6 +16,8 @@ export const CATEGORY_COLORS: Record<string, string> = {
   perf: '#22c55e',      // green
   ci: '#ec4899',        // pink
   build: '#92400e',     // brown
+  spec: '#14b8a6',       // teal
+  rule: '#f97316',       // orange
   other: '#6b7280',     // gray
 };
 
@@ -31,6 +33,9 @@ export const CATEGORY_LOCALES: Record<string, { zh: string; en: string }> = {
   perf: { zh: '性能', en: 'Perf' },
   ci: { zh: 'CI', en: 'CI' },
   build: { zh: '构建', en: 'Build' },
+  spec: { zh: '规范', en: 'Spec' },
+  rule: { zh: '规则', en: 'Rule' },
+  adr: { zh: '决策', en: 'ADR' },
   other: { zh: '其他', en: 'Other' },
 };
 

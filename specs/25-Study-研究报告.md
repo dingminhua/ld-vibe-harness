@@ -21,7 +21,7 @@ ldvh_doc:
     - "specs/07-Code确定性执行实现规范.md"
     - "specs/08-Web信息同步实现规范.md"
     - "specs/09-事实源边界与承载规范.md"
-    - "specs/09.01-Git提交记录与变更追溯规范.md"
+    - "specs/10-Git提交规范.md"
     - "specs/24-Memo-备忘.md"
   code_consumption:
     - "doc_metadata"
@@ -150,7 +150,7 @@ docs/studies 和 docs/sources 可以作为 Study 的输入资料区，但不应�
 
 ### 4.4 Study 与 Git 提交记录
 
-Study 的创建、状态变化、核心报告改写和归档都应留下 Git 提交记录。commit message 契约由 `specs/09.01-Git提交记录与变更追溯规范.md` 定义。
+Study 的创建、状态变化、核心报告改写和归档都应留下 Git 提交记录。commit message 格式规则由 `specs/10-Git提交规范.md` 定义。
 
 ---
 ## 5. Human Gate
@@ -346,7 +346,7 @@ Study 创建、报告整理、吸收和归档的具体行动流程由后续 40-5
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Study 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、24 Memo、09.01、Human Gate | 工作模型治理 | 创建、修改、审计、引用或归档 Study 时 |
+| 上位约束承接要求 | Study 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、24 Memo、10、Human Gate | 工作模型治理 | 创建、修改、审计、引用或归档 Study 时 |
 | 入口可见要求 | AI 处理需要长期保留的调研报告时，应能定位本文 | 成员自描述、运行入口摘要、Memo 分流规则 | AI 执行入口提示 | 报告创建、引用、吸收或归档时 |
 | 确定性执行要求 | Study frontmatter、状态、引用、文件命名和正文存在性应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Study 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、Markdown 承载或引用关系变化时 |
 | Human 交互要求 | Study 创建、核心报告改写、归档和作为关键依据时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |

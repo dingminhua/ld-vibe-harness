@@ -170,7 +170,7 @@ review_needed -> active
 1. 长期决策进入 ADR；
 2. 暂存信息、待观察输入或分流线索进入 Memo；
 3. 已解决且可复用经验进入 Pitfall；
-4. Git 文件事实源修改由 Git commit records 承载，并按 `specs/09.01-Git提交记录与变更追溯规范.md` 追溯。
+4. Git 文件事实源修改由 Git commit records 承载，并按 `specs/10-Git提交规范.md` 追溯。
 
 ---
 ## 5. Human Gate
@@ -363,7 +363,7 @@ Code 应检查：
 9. `done` 或 `skipped` 执行项必须填写 `result_summary`；
 10. 执行项不得被其他工作对象作为独立对象引用；
 11. `related_workplans` 必须承载 WorkPlan ID；
-12. 工作计划相关提交由 Git 历史、`Refs:`、对象 ID 和文件路径派生，不得手写维护 `related_changes`。
+12. 工作计划相关提交由 Git 历史、对象 ID、文件路径和提交正文自然文本派生，不得手写维护 `related_changes`。
 
 Web 应把工作计划作为 Human 直接查看和确认的主对象。Web 可以展示执行编排、验证证据和关闭证据，但不得把执行项提升为一级导航、独立对象详情页或可独立写入的权威事实。
 

@@ -64,7 +64,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 | 判断当前是否为管辖项目 | `governed-projects` | `LDVH-GOVERNED-PROJECTS.yaml`、`specs/03.04-管辖项目配置规范.md` |
 | 新增、删除或修改管辖项目条目 | `governed-projects` | `specs/03.04-管辖项目配置规范.md`、Human Gate |
 | 处理管辖项目工作对象 | `fact_cli.py list/search/show/stats` | 对应项目 `ldvh-base/`、`specs/05-工作模型基础规范.md`、`specs/03.02-工作模型文档规范.md` 和对应 `specs/20-39` 工作模型规范 |
-| 处理管辖项目 Git 提交记录 | Git 历史和必要校验 | 管辖项目 Git commit records、`specs/09.01-Git提交记录与变更追溯规范.md` |
+| 处理管辖项目 Git 提交记录 | Git 历史和必要校验 | 管辖项目 Git commit records、`specs/10-Git提交规范.md` |
 | 读取或修改管辖项目文档 | 项目约定、README、用户指令 | 项目自有文档位置、`specs/03-文档基础规范.md`、`specs/09-事实源边界与承载规范.md` |
 | 执行 LDVH 落地或接入检查 | `governed-projects`、`landing-report` | `specs/04.03-环境入口适配与部署规范.md`、`specs/06-工作流程基础规范.md`、`specs/03.03-工作流程文档规范.md`、`specs/40-59` 中实际存在的 active 工作流程主文件 |
 | 维护 LDVH 产品资产 | `index` | 转入 `rules/LDVH-MAINTAINER-ENTRY.md` |

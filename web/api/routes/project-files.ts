@@ -398,7 +398,7 @@ router.get('/git/commits', async (req: Request, res: Response): Promise<void> =>
     await runCommand('git', ['rev-parse', '--is-inside-work-tree'], project.path)
     const stdout = await runCommand(
       'git',
-      ['log', `-${count}`, '--date=iso-strict', '--format=%H%x1f%h%x1f%P%x1f%an%x1f%ai%x1f%D%x1f%s'],
+      ['log', `-${count}`, '--date=iso-strict', '--format=%H%x1f%h%x1f%P%x1f%an%x1f%ai%x1f%s'],
       project.path,
     )
     const entries = stdout
@@ -406,7 +406,7 @@ router.get('/git/commits', async (req: Request, res: Response): Promise<void> =>
       .split('\n')
       .filter(Boolean)
       .map((line) => {
-        const [hash, shortHash, parentsRaw, author, date, refs, message] = line.split('\x1f')
+        const [hash, shortHash, parentsRaw, author, date, message] = line.split('\x1f')
         const parents = parentsRaw ? parentsRaw.split(' ').filter(Boolean) : []
         return {
           hash,
@@ -414,7 +414,6 @@ router.get('/git/commits', async (req: Request, res: Response): Promise<void> =>
           parents,
           author,
           date,
-          refs,
           message,
           isMerge: parents.length > 1,
         }
@@ -442,8 +441,8 @@ router.get('/git/commit/:hash', async (req: Request, res: Response): Promise<voi
     }
 
     await runCommand('git', ['rev-parse', '--is-inside-work-tree'], project.path)
-    const meta = await runCommand('git', ['show', '-s', '--date=iso-strict', '--format=%H%n%h%n%P%n%an%n%ai%n%D%n%B', hash], project.path)
-    const [fullHash = hash, shortHash = hash.slice(0, 7), parentsRaw = '', author = '', date = '', refs = '', ...messageLines] = meta.split('\n')
+    const meta = await runCommand('git', ['show', '-s', '--date=iso-strict', '--format=%H%n%h%n%P%n%an%n%ai%n%B', hash], project.path)
+    const [fullHash = hash, shortHash = hash.slice(0, 7), parentsRaw = '', author = '', date = '', ...messageLines] = meta.split('\n')
     const filesStdout = await runCommand('git', ['show', '--name-status', '--format=', '--find-renames', '--root', hash], project.path)
     const files = filesStdout
       .split('\n')
@@ -462,7 +461,6 @@ router.get('/git/commit/:hash', async (req: Request, res: Response): Promise<voi
         parents,
         author,
         date,
-        refs,
         message: messageLines.join('\n').trim(),
         isMerge: parents.length > 1,
         files,

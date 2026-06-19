@@ -32,12 +32,12 @@
   - 加载中显示旋转动画和 `common.loading`；
   - 成功后使用 `pre.ldvh-meta` 展示 `git diff --stat`。
 
-## 4. Refs 行引用
+## 4. 提交信息
 
-- commit message 中的 `Refs:` 行会被解析。
-- 形如 `workarea-0001`、`workplan-0006`、`adr-0006`、`memo-0005`、`pitfall-0001`、`study-0001` 的当前对象 ID 变成可点击文本。
-- 点击对象 ID 在右侧扩展阅读区打开对应对象预览，不替换当前提交记录页。
-- 非对象 ID 的文本原样展示。
+- commit message 按 Git 事实内容原样展示。
+- API 应按 Conventional Commits 解析 `category`、`scope`、`description` 和 `isBreaking`，供列表、仪表盘和后续派生视图使用。
+- 页面不解析 `Refs:`、`Human-Gate:`、`Verification:`、`Risk:` 为固定字段。
+- 对象相关提交如需展示，应由后续专门的派生查询能力基于 Git 历史、文件路径、对象 ID 和自然文本实现，不在提交记录页内联解析。
 
 ## 5. 日期格式
 
@@ -50,7 +50,6 @@
 | 操作 | 行为 |
 |---|---|
 | 点击提交卡片 | 展开/收起该提交的 diff stat |
-| 点击 Refs 对象 ID | 在右侧扩展阅读区打开对象预览 |
 | 切换语言 | 页面标题、副标题、加载和错误文案同步切换 |
 
 ## 7. 实现约束
@@ -67,8 +66,10 @@ interface ChangelogEntry {
   hash: string;
   shortHash: string;
   message: string;
-  description: string;
   category: string;
+  scope: string;
+  description: string;
+  isBreaking: boolean;
   author: string;
   date: string;
   relativeTime: string;

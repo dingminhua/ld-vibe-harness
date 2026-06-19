@@ -32,7 +32,7 @@ def test_consistency_reports_retired_test_source_consumption(tmp_path):
 
 ## 1. 本文解决的问题
 
-具体测试用例进入 10 定义的测试用例事实源或 Code 测试实现。
+具体测试用例进入 11 定义的测试用例事实源或 Code 测试实现。
 """,
     )
 

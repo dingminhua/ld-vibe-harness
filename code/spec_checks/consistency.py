@@ -45,8 +45,8 @@ CONSISTENCY_RETIRED_REFERENCE_RULES = (
         "message": "已退回工作流程疑似仍被作为当前消费入口、输入或上位口径",
     },
     {
-        "aliases": ("运行闭环测试机制", "10 定义", "specs/10"),
-        "dangerous_terms": ("测试事实源", "测试用例事实源", "10 定义", "正式规范", "前置约束"),
+        "aliases": ("运行闭环测试机制", "11 定义"),
+        "dangerous_terms": ("测试事实源", "测试用例事实源", "11 定义", "正式规范", "前置约束"),
         "code": "RETIRED_TEST_SOURCE_CONSUMPTION",
         "message": "已退回运行闭环测试机制疑似仍被作为当前测试事实源或正式约束",
     },

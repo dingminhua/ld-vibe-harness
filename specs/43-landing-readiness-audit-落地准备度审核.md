@@ -21,7 +21,7 @@ ldvh_doc:
     - "specs/04.03-环境入口适配与部署规范.md"
     - "specs/05.01-工作字段内容格式规范.md"
     - "specs/09-事实源边界与承载规范.md"
-    - "specs/10-测试基础规范.md"
+    - "specs/11-测试基础规范.md"
     - "specs/21-WorkPlan-工作计划.md"
   code_consumption:
     - "doc_metadata"
@@ -105,7 +105,7 @@ ldvh_member:
 | 环境入口、环境适配、部署检查、适配降级和 Human Gate | `specs/04.03-环境入口适配与部署规范.md` |
 | 工作流程通用规则、Context、Scenario、Gate、回写和证据 | `specs/06-工作流程基础规范.md` |
 | 事实源、过程输出、工具输出和回写边界 | `specs/09-事实源边界与承载规范.md` |
-| 测试治理、验证声明、等价验证和残留风险表达 | `specs/10-测试基础规范.md` |
+| 测试治理、验证声明、等价验证和残留风险表达 | `specs/11-测试基础规范.md` |
 | 被审核落地要求正文 | 对应 specs 正式规范的规范落地要求章节 |
 
 Code 输出、landing-report、命令输出、Web 视图、Skill 输出、Agent 输出、聊天分析、docs/studies 和 docs/sources 只能作为导航、诊断、候选建议或过程输出。审核结论形成稳定事实时，必须按事实类型分流到目标规范、WorkPlan、Memo、ADR、Pitfall、docs 报告、Code/Web 实现文档或其他权威 Git 文件事实源。
@@ -122,7 +122,7 @@ Code 输出、landing-report、命令输出、Web 视图、Skill 输出、Agent 
 3. `specs/04.02-LDVH能力资产与落地保障规范.md` 中要求到能力资产的默认映射、能力资产边界、能力提供原则和缺口分流；
 4. `specs/04.03-环境入口适配与部署规范.md` 中环境入口、适配状态、部署前检查、部署后适配检查、声明完成前检查和 Human Gate；
 5. `specs/09-事实源边界与承载规范.md` 中最终事实源、单一事实源、工具输出回写和过程输出回写边界；
-6. `specs/10-测试基础规范.md` 中验证方式、验证声明、失败处理和残留风险表达；
+6. `specs/11-测试基础规范.md` 中验证方式、验证声明、失败处理和残留风险表达；
 7. 目标规范或目标范围内的规范落地要求章节；
 8. 必要时运行 `python3 code/specs_validate.py landing specs`、`python3 code/specs_validate.py landing-report`、`python3 code/specs_validate.py index` 或 `python3 code/specs_validate.py all` 获取落地要求清单、结构诊断和成员状态导航；
 9. 必要时读取相关 Rules、Skill、Agent、Hook、Code、Web、CI 或环境适配资产的入口摘要，但不得用其输出替代 specs 权威原文。
@@ -270,7 +270,7 @@ Code 输出只作为导航、聚合和诊断结果。Code 不判断规范是否�
 3. 长期决策、能力边界选择、接受降级或是否升级 active 的判断，回写 ADR；
 4. 可复用误判、反复失败或风险经验，回写 Pitfall；
 5. 审核形成报告、研究或迁移说明，回写 docs；
-6. 修改事实源时，按 09.01 的 Git、commit message 和 Refs 追溯规则处理。
+6. 修改事实源时，按 10 的 Git 和 commit message 格式规则处理。
 
 凡回写为 WorkPlan 的后续行动，必须按 `specs/21-WorkPlan-工作计划.md` 和 `specs/05.01-工作字段内容格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkPlan 内部 `execution_items`。
 

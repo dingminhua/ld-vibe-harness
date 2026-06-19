@@ -180,7 +180,7 @@ AI 遇到以下信号时，应识别为工作模型审核场景：
 8. 审核结论会影响 Rules、Skill、Agent、Hook、Web 或工作流程的长期行为边界；
 9. 修改实例文件命名、权威字段定义或 `instance_root` 目录位置，可能影响既有实例可追溯性。
 
-Gate 触发时，AI 应说明触发原因、影响范围、可选处理方式、推荐分流和需要 Human 确认的具体事项。Human 确认形成稳定事实时，应按 `specs/06-工作流程基础规范.md` 的 Human Gate 最小字段和 `specs/09.01-Git提交记录与变更追溯规范.md` 的提交追溯要求记录时间、决策、范围和约束。
+Gate 触发时，AI 应说明触发原因、影响范围、可选处理方式、推荐分流和需要 Human 确认的具体事项。Human 确认形成稳定事实时，应按 `specs/06-工作流程基础规范.md` 的 Human Gate 最小字段和 `specs/10-Git提交规范.md` 的提交追溯要求记录时间、决策、范围和约束。
 
 ---
 ## 8. Skill 和 Agent 调度
@@ -263,7 +263,7 @@ Code 输出只作为导航、聚合和诊断结果。Code 不判断工作模型�
 3. 审核形成长期决策时，回写 ADR；
 4. 审核形成可复用踩坑经验时，回写 Pitfall；
 5. 审核形成研究报告或迁移说明时，回写 docs；
-6. 发生事实源修改时，按 09.01 的 Git、commit message 和 Refs 追溯规则处理。
+6. 发生事实源修改时，按 10 的 Git 和 commit message 格式规则处理。
 
 凡回写为 WorkPlan 的后续行动，必须按 `specs/21-WorkPlan-工作计划.md` 和 `specs/05.01-工作字段内容格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkPlan 内部 `execution_items`。
 

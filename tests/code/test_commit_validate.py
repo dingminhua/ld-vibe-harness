@@ -31,13 +31,10 @@ def make_commit(hash_val="abc12345", subject="", body=""):
 
 def test_valid_commit_passes():
     commit = make_commit(
-        subject="spec(specs): 建立 Git 提交记录规范",
+        subject="spec(specs): 采用约定式提交规范",
         body=(
-            "明确 Git 提交记录不再作为工作对象。\n\n"
-            "Refs: workplan-0074, specs/09.01-Git提交记录与变更追溯规范.md\n"
-            "Human-Gate: 用户确认提交记录不作为工作对象\n"
-            "Verification: python3 code/specs_validate.py all\n"
-            "Risk: 无已知残留风险"
+            "明确 Git 提交记录使用 Conventional Commits。\n"
+            "提交信息使用格式化首行和自然语言正文说明变更内容。"
         ),
     )
 
@@ -64,10 +61,43 @@ def test_invalid_type():
     assert any("type" in i.message and "不在有效枚举" in i.message for i in issues)
 
 
+def test_standard_types_pass():
+    for type_name in ("build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"):
+        commit = make_commit(subject=f"{type_name}: 测试标准类型")
+
+        issues = checker.check_commit(commit)
+        errors = [i for i in issues if i.level == "error"]
+
+        assert errors == []
+
+
+def test_breaking_change_marker_passes():
+    commit = make_commit(
+        subject="feat(api)!: 调整公开接口参数",
+        body="BREAKING CHANGE: 旧参数不再兼容。",
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert errors == []
+
+
+def test_uppercase_type_warns_but_parses():
+    commit = make_commit(subject="FIX(web): 修复页面错误")
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+    warnings = [i for i in issues if i.level == "warning"]
+
+    assert errors == []
+    assert any("建议使用小写" in i.message for i in warnings)
+
+
 def test_valid_type_without_scope():
     commit = make_commit(
         subject="docs: 测试文档",
-        body="说明\n\nRefs: 01-目录说明\nHuman-Gate: 不适用\nVerification: 未运行\nRisk: 无已知残留风险",
+        body="说明本次文档调整内容。",
     )
 
     issues = checker.check_commit(commit)
@@ -77,7 +107,7 @@ def test_valid_type_without_scope():
 
 
 def test_scope_not_recommended_warns():
-    commit = make_commit(subject="feat(unknown-scope): 新功能", body="说明\n\nRefs: 99-test")
+    commit = make_commit(subject="feat(unknown-scope): 新功能", body="说明本次功能调整内容。")
 
     issues = checker.check_commit(commit)
     warnings = [i for i in issues if i.level == "warning"]
@@ -87,20 +117,39 @@ def test_scope_not_recommended_warns():
 
 def test_subject_too_long():
     long_subject = "a" * 100
-    commit = make_commit(subject=f"docs(specs): {long_subject}", body="Refs: 01")
-
-    issues = checker.check_commit(commit)
-
-    assert any("超过" in i.message and "字符" in i.message for i in issues)
-
-
-def test_missing_refs_warns():
-    commit = make_commit(subject="docs(specs): 测试", body="没有 Refs 行")
+    commit = make_commit(subject=f"docs(specs): {long_subject}", body="说明")
 
     issues = checker.check_commit(commit)
     warnings = [i for i in issues if i.level == "warning"]
 
-    assert any("缺少 Refs" in i.message for i in warnings)
+    assert any("超过" in i.message and "字符" in i.message for i in warnings)
+
+
+def test_missing_trailers_do_not_warn():
+    commit = make_commit(subject="docs(specs): 测试", body="说明本次测试内容。")
+
+    issues = checker.check_commit(commit)
+    warnings = [i for i in issues if i.level == "warning"]
+
+    assert not any("Refs" in i.message or "Human-Gate" in i.message or "Verification" in i.message or "Risk" in i.message for i in warnings)
+
+
+def test_ldvh_fixed_footers_are_disallowed():
+    commit = make_commit(
+        subject="docs(specs): 测试禁用字段",
+        body=(
+            "说明本次测试内容。\n\n"
+            "Refs: memo-0001\n"
+            "Human-Gate: 用户确认\n"
+            "Verification: pytest\n"
+            "Risk: 无"
+        ),
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert any("不得使用 LDVH 固定 footer 字段" in i.message for i in errors)
 
 
 def test_missing_chinese_errors():
@@ -120,11 +169,7 @@ def test_missing_chinese_errors():
 def test_check_message_valid():
     text = (
         "docs(specs): 更新文档\n\n"
-        "更新内容。\n\n"
-        "Refs: 01-目录说明\n"
-        "Human-Gate: 不适用\n"
-        "Verification: 未运行\n"
-        "Risk: 无已知残留风险"
+        "更新内容。"
     )
 
     issues = checker.check_message(text)

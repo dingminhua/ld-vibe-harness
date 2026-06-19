@@ -958,11 +958,6 @@ export default function ProjectFiles() {
                               {entry.shortHash} · {entry.author} · {formatDateTime(entry.date)}
                             </span>
                             <span className="mt-1 flex min-w-0 flex-wrap gap-1">
-                              {entry.refs && (
-                                <span className="ldvh-chip rounded border border-ldvh-accent/30 bg-ldvh-accent/10 px-1.5 py-0.5 text-ldvh-accent">
-                                  {entry.refs}
-                                </span>
-                              )}
                               {entry.isMerge && (
                                 <span className="ldvh-chip rounded border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-secondary">
                                   {copy.mergeCommit}
@@ -990,7 +985,6 @@ export default function ProjectFiles() {
                                   <div className="ldvh-meta mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1">
                                     <span>{selectedCommit.author}</span>
                                     <span>{formatDateTime(selectedCommit.date)}</span>
-                                    {selectedCommit.refs && <span>{selectedCommit.refs}</span>}
                                   </div>
                                 </div>
                                 <div className="ldvh-meta px-1 py-2">{copy.chooseCommitFile}</div>
@@ -1011,7 +1005,6 @@ export default function ProjectFiles() {
                                   <div className="ldvh-meta mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1">
                                     <span>{selectedCommit.author}</span>
                                     <span>{formatDateTime(selectedCommit.date)}</span>
-                                    {selectedCommit.refs && <span>{selectedCommit.refs}</span>}
                                   </div>
                                 </div>
                                 <div className="min-w-0">

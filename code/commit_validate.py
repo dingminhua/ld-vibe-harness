@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""检查 Git commit message 是否符合 specs/09.01-Git提交记录与变更追溯规范.md 格式。
+"""检查 Git commit message 是否符合 specs/10-Git提交规范.md 格式。
 
 功能：
   - 默认模式：检查最近 N 条 git commit 记录
@@ -17,60 +17,54 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-# specs/09.01-Git提交记录与变更追溯规范.md type 枚举
-VALID_TYPES = {"feat", "fix", "docs", "refactor", "test", "chore", "spec", "rule", "adr", "revert"}
+# specs/10-Git提交规范.md type 枚举
+VALID_TYPES = {
+    "build", "chore", "ci", "docs", "feat", "fix", "perf",
+    "refactor", "revert", "style", "test",
+    # LDVH 项目扩展类型，仍遵守 Conventional Commits 格式。
+    "spec", "rule", "adr",
+}
 
-# specs/09.01-Git提交记录与变更追溯规范.md scope 枚举（推荐值，非强制）
+# specs/10-Git提交规范.md scope 枚举（推荐值，非强制）
 RECOMMENDED_SCOPES = {
     "specs", "docs", "rules", "code", "web", "tests", "config",
     "workarea", "workplan", "adr", "memo", "study", "pitfall",
     "studies", "sources",
 }
 
-# specs/09.01-Git提交记录与变更追溯规范.md: subject 推荐不超过 72 字符
+# specs/10-Git提交规范.md: description 推荐不超过 72 字符
 MAX_SUBJECT_LEN = 72
 
-# 第一行格式: <type>(<scope>): <subject>
-HEADER_RE = re.compile(r"^([a-z]+)(?:\(([^)]+)\))?:\s+(.+)$")
-
-# trailer 行格式
-TRAILER_RE = re.compile(r"^([A-Za-z][A-Za-z-]*):\s*(.+)$", re.MULTILINE)
-RECOMMENDED_TRAILERS = ("Refs", "Human-Gate", "Verification", "Risk")
+# 第一行格式: <type>[optional scope][!]: <description>
+HEADER_RE = re.compile(r"^([A-Za-z]+)(?:\(([^)]+)\))?(!)?:\s+(.+)$")
+DISALLOWED_FOOTER_RE = re.compile(r"^\s*(Refs|Human-Gate|Verification|Risk):\s+.+$", re.MULTILINE)
 
 # 中文字符检测（当前 LDVH 自身项目 Code 实现纪律）
 HAS_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
 
 FORMAT_HELP = """\
-正确的 commit message 格式（specs/09.01-Git提交记录与变更追溯规范.md）：
+正确的 commit message 格式（specs/10-Git提交规范.md）：
 
-    <type>(<scope>): <subject>
+    <type>[optional scope][!]: <description>
 
-    <body>
-
-    Refs: <object-refs>
-    Human-Gate: <summary>
-    Verification: <commands-or-result>
-    Risk: <risk-summary>
+    [optional body]
+    [optional footer(s)]
 
 各部分说明：
   type      必填。变更类型：{valid_types}
   scope     可选。影响范围（推荐）：{valid_scopes}
-  subject   必填。简短描述，不超过 72 字符
-  body      可选。详细说明变更原因和内容
-  Refs      建议。关联对象、规范、路径或 commit，多个引用用逗号分隔
-  Human-Gate 建议。涉及 Human Gate 时记录确认摘要；不涉及时说明不适用
-  Verification 建议。记录验证命令、人工检查或未运行原因
-  Risk      建议。记录残留风险或无已知残留风险
+  !         可选。表示破坏性变更
+  description 必填。简短描述，不超过 72 字符
+  body      可选。用于说明做了什么、为什么做，以及必要影响
+  footer    可选。遵守 Conventional Commits footer 规则；LDVH 不定义固定尾部字段
+
+禁用：
+  不得使用 Refs、Human-Gate、Verification、Risk 作为 LDVH 固定 footer 字段
 
 示例：
-  spec(specs): 建立 Git 提交记录规范
+  spec(specs): 采用约定式提交规范
 
-  明确 Git 提交记录不再作为工作对象，关联提交由 Refs 和 Git 历史派生。
-
-  Refs: workplan-0074, specs/09.01-Git提交记录与变更追溯规范.md
-  Human-Gate: 用户确认提交记录不作为工作对象
-  Verification: python3 code/specs_validate.py all
-  Risk: 需要同步 Code/Web 旧文案和测试夹具
+  将提交首行固定为 Conventional Commits 格式，便于 Code 和 Web 解析。
 """.format(
     valid_types=", ".join(sorted(VALID_TYPES)),
     valid_scopes=", ".join(sorted(RECOMMENDED_SCOPES)),
@@ -111,11 +105,6 @@ def parse_message_text(text: str) -> CommitInfo:
     return CommitInfo(hash="<message>", subject=subject, body=body, full_message=full)
 
 
-def parse_trailers(message: str) -> dict[str, str]:
-    """解析 commit message 中的 trailer 行。"""
-    return {key: value.strip() for key, value in TRAILER_RE.findall(message)}
-
-
 def git_log(n: int) -> list[CommitInfo]:
     """获取最近 n 条 commit 信息。"""
     result = subprocess.run(
@@ -153,19 +142,26 @@ def check_commit(commit: CommitInfo) -> list[Issue]:
     if not m:
         issues.append(Issue(
             commit.hash, "error",
-            f"第一行格式不符合 '<type>(<scope>): <subject>': {first_line[:80]}"
+            f"第一行格式不符合 '<type>[optional scope][!]: <description>': {first_line[:80]}"
         ))
         return issues
 
-    type_val = m.group(1)
+    raw_type_val = m.group(1)
+    type_val = raw_type_val.lower()
     scope_val = m.group(2)
-    subject_val = m.group(3).strip()
+    description_val = m.group(4).strip()
 
     # 检查 type
     if type_val not in VALID_TYPES:
         issues.append(Issue(
             commit.hash, "error",
             f"type '{type_val}' 不在有效枚举中 ({', '.join(sorted(VALID_TYPES))})"
+        ))
+
+    if raw_type_val != type_val:
+        issues.append(Issue(
+            commit.hash, "warning",
+            f"type 建议使用小写: {raw_type_val}"
         ))
 
     # 检查 scope（推荐值，warning）
@@ -178,34 +174,33 @@ def check_commit(commit: CommitInfo) -> list[Issue]:
     # 检查 subject 长度
     if len(first_line) > MAX_SUBJECT_LEN:
         issues.append(Issue(
-            commit.hash, "error",
-            f"subject 超过 {MAX_SUBJECT_LEN} 字符（当前 {len(first_line)} 字符）"
+            commit.hash, "warning",
+            f"description 所在首行超过 {MAX_SUBJECT_LEN} 字符（当前 {len(first_line)} 字符）"
         ))
 
-    # 检查 subject 不为空
-    if not subject_val:
+    # 检查 description 不为空
+    if not description_val:
         issues.append(Issue(
             commit.hash, "error",
-            "subject 不能为空"
+            "description 不能为空"
         ))
 
-    # 检查推荐 trailer（warning，非强制）
-    trailers = parse_trailers(commit.full_message)
-    for trailer in RECOMMENDED_TRAILERS:
-        if trailer not in trailers:
-            issues.append(Issue(
-                commit.hash, "warning",
-                f"缺少 {trailer}: 行（非强制但建议按 09.01 添加追溯信息）"
-            ))
+    # LDVH 不使用这四类自定义固定 footer，避免把 Git 提交变成工作对象记录。
+    disallowed_footers = sorted({match.group(1) for match in DISALLOWED_FOOTER_RE.finditer(commit.full_message)})
+    if disallowed_footers:
+        issues.append(Issue(
+            commit.hash, "error",
+            f"不得使用 LDVH 固定 footer 字段: {', '.join(disallowed_footers)}"
+        ))
 
     # 检查是否包含中文（error，强制）
-    # subject 中 type(scope) 之后的内容 + body 全文
+    # description + body 全文
     if m:
-        content_to_check = subject_val + "\n" + commit.body
+        content_to_check = description_val + "\n" + commit.body
         if not HAS_CHINESE_RE.search(content_to_check):
             issues.append(Issue(
                 commit.hash, "error",
-                "commit message 必须包含中文字符（subject 和 body 部分），type 和 scope 不要求中文"
+                "commit message 必须包含中文字符（description 和 body 部分），type 和 scope 不要求中文"
             ))
 
     return issues
@@ -221,7 +216,7 @@ def check_message(message_text: str) -> list[Issue]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="检查 Git commit message 是否符合 specs/09.01-Git提交记录与变更追溯规范.md 格式"
+        description="检查 Git commit message 是否符合 specs/10-Git提交规范.md 格式"
     )
     parser.add_argument(
         "--show-format", action="store_true",
@@ -287,7 +282,7 @@ def main():
                 error_count += 1
 
     if total_issues == 0:
-        print(f"最近 {args.count} 条 commit 格式均符合 specs/09.01-Git提交记录与变更追溯规范.md 要求")
+        print(f"最近 {args.count} 条 commit 格式均符合 specs/10-Git提交规范.md 要求")
     else:
         print(f"\n共 {total_issues} 个问题（{error_count} 个 error），检查了 {len(commits)} 条 commit")
         if error_count > 0:

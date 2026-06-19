@@ -6,7 +6,7 @@ created: '2026-06-19T07:03:48+08:00'
 updated: '2026-06-19T07:03:48+08:00'
 symptoms: |
   在 Git 提交记录规范收口过程中，已经定义了 commit message 格式，并更新了 `code/commit_validate.py`，
-  但最初没有把 `commit-msg` hook、CI 或等价提交前预检写入 `specs/09.01` 的规范落地要求。
+  但最初没有把 `commit-msg` hook、CI 或等价提交前预检写入 `specs/10` 的规范落地要求。
 
   结果是：规则和校验器都存在，但实际提交触发点仍可能缺失；Human 如果直接 `git commit`，Git 不会自动按新规则拦截旧格式。
 trigger_conditions: |
@@ -22,11 +22,11 @@ root_cause: |
   本次还暴露了一个次级问题：补规范时一度新增了不存在的“提交门禁要求”落地类型，
   被 `specs_validate` 拦截后才改回 04.01 已定义的“确定性执行要求”。这说明新增落地语义时必须先受 04.01 约束。
 resolution: |
-  1. 已把提交前校验要求补入 `specs/09.01` 的“规范落地要求”：
+  1. 已把提交前校验要求补入 `specs/10` 的“规范落地要求”：
      - LDVH 自身仓库应提供或启用提交前 message 校验入口；
      - 未启用 Git hook 时，AI 提交前必须手动运行等价预检；
      - 保障机制包括 `commit-msg` hook、`code/commit_validate.py --check-message`、CI 或人工降级检查。
-  2. 已把同一要求补入 `specs/09.01` 的检查项和待补齐事项。
+  2. 已把同一要求补入 `specs/10` 的检查项和待补齐事项。
   3. 已运行 `python3 code/specs_validate.py all --fail-on-diagnostics`，确认补写后的规范落地要求表符合 04.01 类型枚举。
   4. 已在 `workplan-0074` 中保留后续执行项，继续跟踪真正的 hook/CI 实现，不把规范补写误判为实现完成。
 verification: |
@@ -44,7 +44,7 @@ verification: |
 
   ## 验证结果
 
-  `specs_validate` 已确认 09.01 的新增落地要求使用 04.01 允许的“确定性执行要求”类型。
+  `specs_validate` 已确认 10 的新增落地要求使用 04.01 允许的“确定性执行要求”类型。
   本 Pitfall 记录了触发条件、根因、解决方式和后续规避策略；0074 保留 hook/CI 实现的后续执行项。
 
   ## 结论
@@ -66,7 +66,7 @@ source_objects:
 - workplan-0074
 related_objects: []
 related_rules:
-- specs/09.01-Git提交记录与变更追溯规范.md
+- specs/10-Git提交规范.md
 - specs/04.01-规范落地声明规范.md
 - code/commit_validate.py
 tags:

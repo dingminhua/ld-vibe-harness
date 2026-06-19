@@ -20,7 +20,9 @@ export interface GitLogEntry {
   date: string
   message: string
   category: string
+  scope: string
   description: string
+  isBreaking: boolean
   relativeTime: string
 }
 
@@ -41,19 +43,23 @@ export const CATEGORY_COLORS: Record<string, string> = {
 
 /**
  * 解析 conventional commit message
- * 格式: type(scope): description 或 type: description
+ * 格式: type(scope)!: description、type!: description 或 type: description
  */
-function parseCommitMessage(message: string): { category: string; description: string } {
-  const match = message.match(/^(\w+)(?:\([^)]+\))?:\s*(.+)$/)
+function parseCommitMessage(message: string): { category: string; scope: string; description: string; isBreaking: boolean } {
+  const match = message.match(/^([A-Za-z]+)(?:\(([^)]+)\))?(!)?:\s+(.+)$/)
   if (match) {
     return {
-      category: match[1],
-      description: match[2],
+      category: match[1].toLowerCase(),
+      scope: match[2] ?? '',
+      isBreaking: Boolean(match[3]),
+      description: match[4],
     }
   }
   return {
     category: 'other',
+    scope: '',
     description: message,
+    isBreaking: false,
   }
 }
 
@@ -78,7 +84,7 @@ export async function getGitLog(count: number = 50, locale: string = 'zh'): Prom
         const entries: GitLogEntry[] = lines.map((line) => {
           const [hash, shortHash, author, date, ...msgParts] = line.split('|')
           const message = msgParts.join('|')
-          const { category, description } = parseCommitMessage(message)
+          const { category, scope, description, isBreaking } = parseCommitMessage(message)
           return {
             hash,
             shortHash,
@@ -86,7 +92,9 @@ export async function getGitLog(count: number = 50, locale: string = 'zh'): Prom
             date,
             message,
             category,
+            scope,
             description,
+            isBreaking,
             relativeTime: sharedGetRelativeTime(date, locale),
           }
         })
