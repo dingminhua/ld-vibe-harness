@@ -14,7 +14,7 @@ import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { TaskFlowBar } from '@/components/TaskFlowStatus';
+import { ExecutionFlowBar } from '@/components/ExecutionFlowStatus';
 import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
@@ -59,7 +59,6 @@ const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'tags', 'scope', '
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
   memo: ['priority', 'tags'],
   study: ['tags'],
-  profile: ['project_name', 'project_kind', 'language', 'framework'],
   pitfall: ['tags'],
 };
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
@@ -69,12 +68,6 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'orchestration', 'verification_evidence', 'closure_evidence', 'related_workplans',
     'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
   ],
-  profile: [
-    'description', 'project_path', 'ldvh_base_path', 'docs_path',
-    'governance_scope', 'related_workareas', 'related_adrs',
-    'related_memos', 'related_pitfalls', 'related_docs',
-    'notes',
-  ],
   adr: [
     'context', 'decision', 'consequences',
     'related_rules', 'archive_reason', 'deprecated_reason', 'related_workareas',
@@ -83,7 +76,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   pitfall: [
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
     'avoidance', 'applicability', 'source_memos', 'related_workareas',
-    'related_adrs', 'related_profiles', 'related_docs', 'related_rules',
+    'related_adrs', 'related_docs', 'related_rules',
     'archive_reason', 'discard_reason', 'notes',
   ],
   memo: [
@@ -196,7 +189,6 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   pitfall: { zh: '踩坑经验', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
   study: { zh: '研究报告', en: 'Study' },
-  profile: { zh: '画像', en: 'Profile' },
   change: { zh: '提交记录', en: 'Commit' },
 };
 
@@ -267,7 +259,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   related_memos: { zh: '关联备忘', en: 'Related Memos' },
   related_studies: { zh: '关联研究报告', en: 'Related Studies' },
   related_pitfalls: { zh: '关联踩坑经验', en: 'Related Pitfalls' },
-  related_profiles: { zh: '关联画像', en: 'Related Profiles' },
   source_objects: { zh: '来源对象', en: 'Source Objects' },
   related_objects: { zh: '关联对象', en: 'Related Objects' },
   source_memos: { zh: '来源备忘', en: 'Source Memos' },
@@ -951,7 +942,7 @@ function WorkAreaPlanRow({
       </div>
       {flowItems.length > 0 && (
         <div className="min-w-0 self-stretch">
-          <TaskFlowBar tasks={flowItems} t={t} getStatus={getStatus} compact />
+          <ExecutionFlowBar items={flowItems} t={t} getStatus={getStatus} compact />
         </div>
       )}
     </div>
@@ -1327,7 +1318,7 @@ export function WorkPlanReadingLayout({
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      <TaskSection title={t('objectDetail.workplanExecution')} tone="default">
+      <DetailSection title={t('objectDetail.workplanExecution')} tone="default">
         {loading ? (
           <LoadingHint text={t('objectDetail.executionItemsLoading')} />
         ) : executionItems.length > 0 ? (
@@ -1344,17 +1335,17 @@ export function WorkPlanReadingLayout({
         ) : (
           <EmptyHint text={t('objectList.noExecutionItems')} />
         )}
-      </TaskSection>
+      </DetailSection>
 
-      <TaskSection title={getFieldLabel('success_criteria', locale)} tone="checklist">
+      <DetailSection title={getFieldLabel('success_criteria', locale)} tone="checklist">
         {hasDetailContent(obj.success_criteria) ? <ChecklistCard value={String(obj.success_criteria)} /> : <EmptyHint text={t('objectDetail.noSuccessCriteria')} />}
-      </TaskSection>
-      <TaskSection title={getFieldLabel('verification_evidence', locale)} tone="evidence">
+      </DetailSection>
+      <DetailSection title={getFieldLabel('verification_evidence', locale)} tone="evidence">
         {hasDetailContent(obj.verification_evidence) ? <EvidenceBlock value={String(obj.verification_evidence)} embedded /> : <EmptyHint text={t('objectDetail.noVerificationEvidence')} />}
-      </TaskSection>
-      <TaskSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
+      </DetailSection>
+      <DetailSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
         {hasDetailContent(obj.closure_evidence) ? <EvidenceBlock value={String(obj.closure_evidence)} embedded /> : <EmptyHint text={t('objectDetail.noClosureEvidenceForPlan')} />}
-      </TaskSection>
+      </DetailSection>
 
       <DetailNarrativeSection title={t('objectDetail.workareaGoal')} value={obj.description} />
       <DetailObjectReferenceSection
@@ -1378,13 +1369,13 @@ export function WorkPlanReadingLayout({
       <DetailMaterialSection fieldKey="aggregated_execution_refs" value={executionRefs} locale={locale} />
 
       {otherEntries.length > 0 && (
-        <TaskSection title={t('objectDetail.otherFields')} tone="default">
+        <DetailSection title={t('objectDetail.otherFields')} tone="default">
           <div className="flex flex-col gap-3">
             {otherEntries.map(([key, value]) => (
               <ContentField key={key} fieldKey={key} value={value} locale={locale} objType="workplan" />
             ))}
           </div>
-        </TaskSection>
+        </DetailSection>
       )}
     </div>
   );
@@ -1657,29 +1648,29 @@ function parseEvidenceReadingSections(value: string): Array<{ title: string; bod
 function DetailDefinitionSection({ title, value, muted = false }: { title: string; value: unknown; muted?: boolean }) {
   if (!hasDetailContent(value)) return null;
   return (
-    <TaskSection title={title} tone="primary">
+    <DetailSection title={title} tone="primary">
       <div className={`ldvh-definition-text min-w-0 ${muted ? 'opacity-85' : ''}`}>
         <DefinitionValue value={String(value)} muted={muted} />
       </div>
-    </TaskSection>
+    </DetailSection>
   );
 }
 
 function DetailNarrativeSection({ title, value }: { title: string; value: unknown }) {
   if (!hasDetailContent(value)) return null;
   return (
-    <TaskSection title={title} tone="primary">
+    <DetailSection title={title} tone="primary">
       <SummaryText value={String(value)} collapseThreshold={900} />
-    </TaskSection>
+    </DetailSection>
   );
 }
 
 function DetailMaterialSection({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
   if (!Array.isArray(value) || value.length === 0) return null;
   return (
-    <TaskSection title={getMaterialLabel(fieldKey, locale)} tone="default">
+    <DetailSection title={getMaterialLabel(fieldKey, locale)} tone="default">
       <MaterialValue fieldKey={fieldKey} value={value} locale={locale} referenceVariant="plain" />
-    </TaskSection>
+    </DetailSection>
   );
 }
 
@@ -1723,14 +1714,14 @@ function DetailObjectReferenceSection({
   if (!objectId) return null;
 
   return (
-    <TaskSection title={title} tone="primary">
+    <DetailSection title={title} tone="primary">
       <DetailObjectReferenceValue
         item={item}
         fallbackId={fallbackId}
         objectType={objectType}
         locale={locale}
       />
-    </TaskSection>
+    </DetailSection>
   );
 }
 
@@ -1749,10 +1740,10 @@ export function getObjectRefType(refId: string): string | null {
 
 export function findRelatedSummary(
   refId: string,
-  currentTask: RelatedObjectSummary | null,
+  currentItem: RelatedObjectSummary | null,
   parentPlan: ObjectItem | null,
 ): RelatedObjectSummary | null {
-  void currentTask;
+  void currentItem;
   void parentPlan;
   void refId;
   return null;
@@ -1949,7 +1940,7 @@ function formatAuxiliaryMetaValue(fieldKey: string, value: unknown, locale: stri
   );
 }
 
-export function TaskSection({
+export function DetailSection({
   title,
   tone,
   icon,
@@ -2030,7 +2021,7 @@ function ReadingNodeSection({
   );
 }
 
-export function TaskInlineField({ label, value }: { label: string; value: ReactNode }) {
+export function DetailInlineField({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="grid gap-2 py-3 first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]">
       <div className="ldvh-caption-strong text-ldvh-text-secondary">{label}</div>
@@ -2039,7 +2030,7 @@ export function TaskInlineField({ label, value }: { label: string; value: ReactN
   );
 }
 
-export function TaskDocGroup({ label, docs }: { label: string; docs?: string[] }) {
+export function DetailDocGroup({ label, docs }: { label: string; docs?: string[] }) {
   if (!docs || docs.length === 0) return null;
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-bg/40 p-3">

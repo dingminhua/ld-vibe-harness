@@ -50,11 +50,7 @@ orchestration:
       ## 结论
 
       任务完成，人工确认关闭。
-    evidence_refs:
-    - docs/studies/16-LDVH外部开源项目Web页面构成调研.md
-    - docs/studies/02-LDVH对Gstack的借鉴评估与深度调研.md
-    - docs/studies/07-LDVH对Superpowers的借鉴评估与深度调研.md
-    - docs/studies/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
+    evidence_refs: []
     blocking_reason: null
   review:
     controller_self_check: true
@@ -75,10 +71,7 @@ closure_evidence: |-
   - task-0051: 交付物：docs/studies/16-LDVH外部开源项目Web页面构成调研.md。
 review_requested_at: '2026-06-06T01:31:31.699938'
 closed_at: '2026-06-06T01:31:31.699938'
-related_docs:
-- docs/studies/02-LDVH对Gstack的借鉴评估与深度调研.md
-- docs/studies/07-LDVH对Superpowers的借鉴评估与深度调研.md
-- docs/studies/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
+related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []

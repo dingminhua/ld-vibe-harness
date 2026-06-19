@@ -12,13 +12,13 @@ import {
 import type { LocaleKey } from '@/i18n/locales';
 import type { RelatedObjectSummary } from '@/utils/api';
 
-export type TaskFlowTranslate = (key: LocaleKey, params?: Record<string, string>) => string;
+export type ExecutionFlowTranslate = (key: LocaleKey, params?: Record<string, string>) => string;
 
 const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
 const PENDING_CLOSE_STATUSES = new Set(['review_needed']);
-const TASK_RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected', 'deprecated', 'unknown']);
+const EXECUTION_RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected', 'deprecated', 'unknown']);
 
-export const taskFlowToneClass = {
+export const executionFlowToneClass = {
   ready: 'border-sky-500/25 bg-sky-500/10 text-sky-500',
   executing: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
   verifying: 'border-blue-500/30 bg-blue-500/10 text-blue-500',
@@ -29,9 +29,9 @@ export const taskFlowToneClass = {
   neutral: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
 };
 
-export type TaskFlowTone = keyof typeof taskFlowToneClass;
+export type ExecutionFlowTone = keyof typeof executionFlowToneClass;
 
-export const taskFlowRowClass: Record<TaskFlowTone, string> = {
+export const executionFlowRowClass: Record<ExecutionFlowTone, string> = {
   ready: 'border-sky-500/20 bg-sky-500/10 hover:bg-sky-500/15',
   executing: 'border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/15',
   verifying: 'border-blue-500/25 bg-blue-500/10 hover:bg-blue-500/15',
@@ -42,11 +42,11 @@ export const taskFlowRowClass: Record<TaskFlowTone, string> = {
   neutral: 'border-ldvh-border bg-ldvh-bg hover:bg-ldvh-border/35',
 };
 
-export const TASK_FLOW_ORDER: TaskFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'ready', 'blocked', 'risk', 'neutral'];
-export const TASK_FLOW_LEGEND_ORDER: TaskFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'ready', 'blocked'];
-const TASK_FLOW_QUEUE_ORDER: TaskFlowTone[] = [...TASK_FLOW_ORDER].reverse();
+export const EXECUTION_FLOW_ORDER: ExecutionFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'ready', 'blocked', 'risk', 'neutral'];
+export const EXECUTION_FLOW_LEGEND_ORDER: ExecutionFlowTone[] = ['closed', 'absorbing', 'verifying', 'executing', 'ready', 'blocked'];
+const EXECUTION_FLOW_QUEUE_ORDER: ExecutionFlowTone[] = [...EXECUTION_FLOW_ORDER].reverse();
 
-export const taskFlowBarClass: Record<TaskFlowTone, string> = {
+export const executionFlowBarClass: Record<ExecutionFlowTone, string> = {
   ready: 'bg-sky-500',
   executing: 'bg-emerald-500',
   verifying: 'bg-blue-500',
@@ -57,7 +57,7 @@ export const taskFlowBarClass: Record<TaskFlowTone, string> = {
   neutral: 'bg-ldvh-border',
 };
 
-export const taskFlowIconClass: Record<TaskFlowTone, string> = {
+export const executionFlowIconClass: Record<ExecutionFlowTone, string> = {
   ready: 'text-sky-500',
   executing: 'text-emerald-500',
   verifying: 'text-blue-500',
@@ -68,7 +68,7 @@ export const taskFlowIconClass: Record<TaskFlowTone, string> = {
   neutral: 'text-ldvh-text-secondary',
 };
 
-export const taskFlowRowHoverTextClass: Record<TaskFlowTone, string> = {
+export const executionFlowRowHoverTextClass: Record<ExecutionFlowTone, string> = {
   ready: 'group-hover/row:text-sky-500',
   executing: 'group-hover/row:text-emerald-500',
   verifying: 'group-hover/row:text-blue-500',
@@ -79,18 +79,18 @@ export const taskFlowRowHoverTextClass: Record<TaskFlowTone, string> = {
   neutral: 'group-hover/row:text-ldvh-accent',
 };
 
-export const taskFlowDetailHoverTextClass: Record<TaskFlowTone, string> = {
-  ready: 'group-hover/detail-task:text-sky-500',
-  executing: 'group-hover/detail-task:text-emerald-500',
-  verifying: 'group-hover/detail-task:text-blue-500',
-  absorbing: 'group-hover/detail-task:text-violet-500',
-  closed: 'group-hover/detail-task:text-zinc-500',
-  blocked: 'group-hover/detail-task:text-amber-500',
-  risk: 'group-hover/detail-task:text-red-500',
-  neutral: 'group-hover/detail-task:text-ldvh-accent',
+export const executionFlowDetailHoverTextClass: Record<ExecutionFlowTone, string> = {
+  ready: 'group-hover/detail-item:text-sky-500',
+  executing: 'group-hover/detail-item:text-emerald-500',
+  verifying: 'group-hover/detail-item:text-blue-500',
+  absorbing: 'group-hover/detail-item:text-violet-500',
+  closed: 'group-hover/detail-item:text-zinc-500',
+  blocked: 'group-hover/detail-item:text-amber-500',
+  risk: 'group-hover/detail-item:text-red-500',
+  neutral: 'group-hover/detail-item:text-ldvh-accent',
 };
 
-export const taskFlowActionClass: Record<TaskFlowTone, string> = {
+export const executionFlowActionClass: Record<ExecutionFlowTone, string> = {
   ready: 'bg-transparent text-sky-500 hover:bg-sky-500/10',
   executing: 'bg-transparent text-emerald-500 hover:bg-emerald-500/10',
   verifying: 'bg-transparent text-blue-500 hover:bg-blue-500/10',
@@ -101,7 +101,7 @@ export const taskFlowActionClass: Record<TaskFlowTone, string> = {
   neutral: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent',
 };
 
-export const taskFlowRowActionClass: Record<TaskFlowTone, string> = {
+export const executionFlowRowActionClass: Record<ExecutionFlowTone, string> = {
   ready: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-sky-500/10 hover:text-sky-500',
   executing: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-emerald-500/10 hover:text-emerald-500',
   verifying: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-blue-500/10 hover:text-blue-500',
@@ -112,7 +112,7 @@ export const taskFlowRowActionClass: Record<TaskFlowTone, string> = {
   neutral: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent',
 };
 
-export const taskFlowDetailActionClass: Record<TaskFlowTone, string> = {
+export const executionFlowDetailActionClass: Record<ExecutionFlowTone, string> = {
   ready: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-sky-500/10 hover:text-sky-500',
   executing: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-emerald-500/10 hover:text-emerald-500',
   verifying: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-blue-500/10 hover:text-blue-500',
@@ -123,7 +123,7 @@ export const taskFlowDetailActionClass: Record<TaskFlowTone, string> = {
   neutral: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent',
 };
 
-export function getTaskFlowIcon(tone: TaskFlowTone): LucideIcon {
+export function getExecutionFlowIcon(tone: ExecutionFlowTone): LucideIcon {
   if (tone === 'ready') return CircleDashed;
   if (tone === 'executing') return CirclePlay;
   if (tone === 'verifying') return ClipboardCheck;
@@ -134,41 +134,41 @@ export function getTaskFlowIcon(tone: TaskFlowTone): LucideIcon {
   return Clock3;
 }
 
-export function getTaskFlowTone(item: RelatedObjectSummary): TaskFlowTone {
+export function getExecutionFlowTone(item: RelatedObjectSummary): ExecutionFlowTone {
   if (item.status === 'executing') return 'executing';
   if (item.status === 'verifying') return 'verifying';
   if (PENDING_CLOSE_STATUSES.has(item.status)) return 'absorbing';
   if (TERMINAL_STATUSES.has(item.status)) return 'closed';
   if (item.status === 'planned') return item.blockingReason ? 'blocked' : 'ready';
-  if (TASK_RISK_STATUSES.has(item.status)) return 'risk';
+  if (EXECUTION_RISK_STATUSES.has(item.status)) return 'risk';
   return 'neutral';
 }
 
-export function getTaskFlowLabel(item: RelatedObjectSummary, t: TaskFlowTranslate, getStatus: (status: string) => string): string {
-  const tone = getTaskFlowTone(item);
-  if (tone === 'blocked') return t('objectList.taskFlowBlocked');
-  if (tone === 'ready') return t('objectList.taskFlowReady');
-  if (tone === 'executing') return t('objectList.taskFlowExecuting');
-  if (tone === 'verifying') return t('objectList.taskFlowVerifying');
-  if (tone === 'absorbing') return t('objectList.taskFlowAbsorbing');
+export function getExecutionFlowLabel(item: RelatedObjectSummary, t: ExecutionFlowTranslate, getStatus: (status: string) => string): string {
+  const tone = getExecutionFlowTone(item);
+  if (tone === 'blocked') return t('objectList.executionFlowBlocked');
+  if (tone === 'ready') return t('objectList.executionFlowReady');
+  if (tone === 'executing') return t('objectList.executionFlowExecuting');
+  if (tone === 'verifying') return t('objectList.executionFlowVerifying');
+  if (tone === 'absorbing') return t('objectList.executionFlowAbsorbing');
   if (tone === 'closed') return getStatus(item.status);
   return getStatus(item.status);
 }
 
-export function getTaskFlowToneLabel(tone: TaskFlowTone, t: TaskFlowTranslate, getStatus: (status: string) => string): string {
-  if (tone === 'blocked') return t('objectList.taskFlowBlocked');
-  if (tone === 'ready') return t('objectList.taskFlowReady');
-  if (tone === 'executing') return t('objectList.taskFlowExecuting');
-  if (tone === 'verifying') return t('objectList.taskFlowVerifying');
-  if (tone === 'absorbing') return t('objectList.taskFlowAbsorbing');
+export function getExecutionFlowToneLabel(tone: ExecutionFlowTone, t: ExecutionFlowTranslate, getStatus: (status: string) => string): string {
+  if (tone === 'blocked') return t('objectList.executionFlowBlocked');
+  if (tone === 'ready') return t('objectList.executionFlowReady');
+  if (tone === 'executing') return t('objectList.executionFlowExecuting');
+  if (tone === 'verifying') return t('objectList.executionFlowVerifying');
+  if (tone === 'absorbing') return t('objectList.executionFlowAbsorbing');
   if (tone === 'closed') return getStatus('closed');
-  if (tone === 'risk') return t('objectList.taskFlowRisk');
-  return t('objectList.taskFlowOther');
+  if (tone === 'risk') return t('objectList.executionFlowRisk');
+  return t('objectList.executionFlowOther');
 }
 
-export function getTaskFlowCounts(tasks: RelatedObjectSummary[]): Record<TaskFlowTone, number> {
-  return tasks.reduce<Record<TaskFlowTone, number>>((counts, task) => {
-    const tone = getTaskFlowTone(task);
+export function getExecutionFlowCounts(items: RelatedObjectSummary[]): Record<ExecutionFlowTone, number> {
+  return items.reduce<Record<ExecutionFlowTone, number>>((counts, item) => {
+    const tone = getExecutionFlowTone(item);
     counts[tone] += 1;
     return counts;
   }, {
@@ -183,15 +183,15 @@ export function getTaskFlowCounts(tasks: RelatedObjectSummary[]): Record<TaskFlo
   });
 }
 
-function getTaskFlowPriority(item: RelatedObjectSummary): number {
-  const tone = getTaskFlowTone(item);
-  const priority = TASK_FLOW_QUEUE_ORDER.indexOf(tone);
-  return priority === -1 ? TASK_FLOW_QUEUE_ORDER.length : priority;
+function getExecutionFlowPriority(item: RelatedObjectSummary): number {
+  const tone = getExecutionFlowTone(item);
+  const priority = EXECUTION_FLOW_QUEUE_ORDER.indexOf(tone);
+  return priority === -1 ? EXECUTION_FLOW_QUEUE_ORDER.length : priority;
 }
 
-export function sortPlanTasks(tasks: RelatedObjectSummary[]): RelatedObjectSummary[] {
-  return [...tasks].sort((a, b) => {
-    const priorityDelta = getTaskFlowPriority(a) - getTaskFlowPriority(b);
+export function sortPlanExecutionItems(items: RelatedObjectSummary[]): RelatedObjectSummary[] {
+  return [...items].sort((a, b) => {
+    const priorityDelta = getExecutionFlowPriority(a) - getExecutionFlowPriority(b);
     if (priorityDelta !== 0) return priorityDelta;
     return a.id.localeCompare(b.id);
   });

@@ -10,12 +10,6 @@ export interface DashboardData {
     humanGateStatus: string;
     validationPlanStatus: Record<string, string>;
   } | null;
-  profile: {
-    id: string;
-    title: string;
-    status: string;
-    path: string;
-  } | null;
   stats: Array<{
     type: string;
     total: number;

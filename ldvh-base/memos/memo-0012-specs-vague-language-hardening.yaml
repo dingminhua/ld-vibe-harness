@@ -50,7 +50,7 @@ related_docs:
   - specs/03-文档基础规范.md
   - specs/03.02-工作模型文档规范.md
   - specs/05-工作模型基础规范.md
-  - specs/05.01-工作字段内容格式规范.md
+  - specs/05.02-工作模型字段内容与格式规范.md
   - specs/07-Code确定性执行实现规范.md
   - specs/24-Memo-备忘.md
   - specs/42-specs-audit-规范审核.md

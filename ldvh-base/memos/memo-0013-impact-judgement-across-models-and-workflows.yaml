@@ -55,7 +55,7 @@ related_adrs: []
 related_studies: []
 related_docs:
   - specs/05-工作模型基础规范.md
-  - specs/05.01-工作字段内容格式规范.md
+  - specs/05.02-工作模型字段内容与格式规范.md
   - specs/06-工作流程基础规范.md
   - specs/21-WorkPlan-工作计划.md
   - specs/22-ADR-决策.md

@@ -112,7 +112,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     }
 
     res.json({
-      profile: null,
       stats,
       recentItems,
       actionItems,

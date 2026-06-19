@@ -34,7 +34,6 @@ const OBJECT_TYPE_LABELS: Record<string, { zh: string; en: string }> = {
   pitfall: { zh: '踩坑经验', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
   study: { zh: '研究报告', en: 'Study' },
-  profile: { zh: '画像', en: 'Profile' },
   change: { zh: '提交记录', en: 'Commit' },
 };
 

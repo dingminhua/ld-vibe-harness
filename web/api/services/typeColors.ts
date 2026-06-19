@@ -8,7 +8,6 @@ export const TYPE_COLORS: Record<string, string> = {
   adr: '#a855f7',       // purple
   pitfall: '#ef4444',   // red
   memo: '#eab308',      // yellow
-  profile: '#06b6d4',   // cyan
   default: '#6b7280',   // gray
 }
 

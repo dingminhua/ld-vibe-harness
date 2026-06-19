@@ -146,7 +146,7 @@ def test_ldvh_landing_check_consumes_existing_reports(tmp_path, monkeypatch):
     assert next(item for item in baseline["items"] if item["id"] == "web_asset")["status"] == "open"
     assert next(item for item in baseline["items"] if item["id"] == "report_structure")["status"] == "closed"
     assert "环境承接" in next(item for item in baseline["items"] if item["id"] == "environment_matrix")["gap_categories"]
-    assert set(baseline["summary"]["gap_categories"]) <= {"规范", "Code", "Web", "Task", "事实源", "环境承接", "Human Gate"}
+    assert set(baseline["summary"]["gap_categories"]) <= {"规范", "Code", "Web", "WorkPlan", "事实源", "环境承接", "Human Gate"}
 
 
 def test_ldvh_landing_check_reports_missing_governed_projects(tmp_path, monkeypatch):

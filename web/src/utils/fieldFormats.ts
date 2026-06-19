@@ -23,7 +23,7 @@ export const EVIDENCE_FIELDS = ['closure_evidence', 'verification_evidence', 've
 export const REFERENCE_FIELDS = [
   'workarea', 'workplan', 'related_workareas',
   'related_workplans', 'related_adrs', 'related_memos', 'related_pitfalls',
-  'related_studies', 'related_profiles', 'source_memos',
+  'related_studies', 'source_memos',
   'superseded_by', 'resolved_to',
 ];
 
@@ -39,7 +39,7 @@ export const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 
 export const COLLAPSIBLE_FIELDS = [
   'related_workareas', 'related_workplans',
   'related_docs', 'related_adrs', 'related_memos', 'related_studies',
-  'related_pitfalls', 'related_profiles', 'related_rules', 'urls',
+  'related_pitfalls', 'related_rules', 'urls',
   'source_memos',
 ];
 
@@ -79,5 +79,5 @@ export function hasChecklist(value: string) {
 export function isObjectRef(refId: string) {
   const match = refId.match(/^([a-z]+)-\d+$/);
   if (!match) return false;
-  return ['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study', 'profile'].includes(match[1]);
+  return ['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study'].includes(match[1]);
 }

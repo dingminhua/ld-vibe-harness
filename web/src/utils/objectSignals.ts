@@ -1,7 +1,7 @@
 type SignalField = 'priority' | 'importance' | 'category';
 
 export type ObjectSignalSource = Partial<Record<SignalField, unknown>>;
-export type SignalObjectType = 'workarea' | 'workplan' | 'adr' | 'pitfall' | 'memo' | 'study' | 'change' | 'profile' | string;
+export type SignalObjectType = 'workarea' | 'workplan' | 'adr' | 'pitfall' | 'memo' | 'study' | 'change' | string;
 
 export const SIGNAL_FIELDS: SignalField[] = ['priority', 'importance', 'category'];
 

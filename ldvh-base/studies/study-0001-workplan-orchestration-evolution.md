@@ -22,7 +22,7 @@ related_pitfalls: []
 related_docs:
   - specs/00-LD-Vibe-Harness理念与纲要.md
   - specs/05-工作模型基础规范.md
-  - specs/05.01-工作字段内容格式规范.md
+  - specs/05.02-工作模型字段内容与格式规范.md
   - specs/06-工作流程基础规范.md
   - specs/21-WorkPlan-工作计划.md
   - specs/24-Memo-备忘.md
@@ -281,7 +281,7 @@ Study 适合记录：
 1. 精读并逐段核对 `specs/21-WorkPlan-工作计划.md`；
 2. 重点检查 WorkPlan 准入、状态机、`orchestration`、ExecutionItem、review、验证证据和关闭证据；
 3. 回看 `specs/05-工作模型基础规范.md`，确认 ExecutionItem 不进入 active 工作模型集合；
-4. 回看 `specs/05.01-工作字段内容格式规范.md`，确认公共字段和证据字段边界；
+4. 回看 `specs/05.02-工作模型字段内容与格式规范.md`，确认公共字段和证据字段边界；
 5. 回看 `specs/06-工作流程基础规范.md`，确认计划、执行、自检、复检、Human Gate 和 Learn 的流程表达；
 6. 检查 40-43 是否需要新增或调整具体工作流程；
 7. 待规范稳定后，再迁移 Code / Web 中旧 TaskPlan、Task、SubTask 实现。

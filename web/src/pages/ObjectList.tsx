@@ -8,7 +8,7 @@ import MemoCreate from '@/components/MemoCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { TaskFlowBar, TaskFlowLegend } from '@/components/TaskFlowStatus';
+import { ExecutionFlowBar, ExecutionFlowLegend } from '@/components/ExecutionFlowStatus';
 import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
@@ -257,7 +257,7 @@ function WorkAreaPlanRow({
       </div>
       {flowItems.length > 0 && (
         <div className="min-w-0 self-stretch">
-          <TaskFlowBar tasks={flowItems} t={t} getStatus={getStatus} compact />
+          <ExecutionFlowBar items={flowItems} t={t} getStatus={getStatus} compact />
         </div>
       )}
     </div>
@@ -665,7 +665,7 @@ export default function ObjectList() {
           loading={loading}
         />
         {(currentType === 'workarea' || currentType === 'workplan') && (
-          <TaskFlowLegend t={t} getStatus={getStatus} />
+          <ExecutionFlowLegend t={t} getStatus={getStatus} />
         )}
         {currentType === 'memo' && (
           <MemoCreate onCreated={() => setReloadKey((value) => value + 1)} />

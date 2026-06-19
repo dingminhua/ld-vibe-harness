@@ -29,9 +29,7 @@ orchestration:
       - [ ] 运行事实源校验并确认无本任务新增错误
     status: in_progress
     result_summary: ''
-    evidence_refs:
-    - docs/studies/04-LDVH对Hermes-Agent的借鉴评估与深度调研.md
-    - docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
+    evidence_refs: []
     blocking_reason: Legacy Task is not closed; keep WorkPlan active after migration.
   review:
     controller_self_check: true
@@ -44,8 +42,7 @@ verification_evidence: ''
 closure_evidence: ''
 review_requested_at: ''
 closed_at: ''
-related_docs:
-- docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
+related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []

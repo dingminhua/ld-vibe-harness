@@ -68,7 +68,7 @@ orchestration:
     - code/fact_validate.py
     - tests/code/test_fact_validate.py
     - specs/21-WorkPlan-工作计划.md
-    - specs/05.01-工作字段内容格式规范.md
+    - specs/05.02-工作模型字段内容与格式规范.md
     blocking_reason: null
   review:
     controller_self_check: true
@@ -84,7 +84,7 @@ verification_evidence: |
   - `code/fact_validate.py`：新增 `evidence_refs` 路径存在性检查，只校验可判定为项目内文件或目录路径的引用。
   - `tests/code/test_fact_validate.py`：新增缺失路径报错和混合非路径引用不误报测试，并补齐有效 WorkPlan 测试夹具证据文件。
   - `tests/code/specs_validate_checks/test_ldvh_landing.py`：补齐 landing/web validate 共享夹具中的 evidence 文件。
-  - `specs/21-WorkPlan-工作计划.md` 与 `specs/05.01-工作字段内容格式规范.md`：同步说明 mixed evidence ref 的 Code 检查边界。
+  - `specs/21-WorkPlan-工作计划.md` 与 `specs/05.02-工作模型字段内容与格式规范.md`：同步说明 mixed evidence ref 的 Code 检查边界。
 
   已运行：
   - `python3 -m pytest tests/code/test_fact_validate.py -q`：8 passed
@@ -119,7 +119,7 @@ closure_evidence: |
   本 WorkPlan 已完成实现、测试、规范同步、确定性校验和独立 Code 复审，可进入 review_needed，等待 Human 关闭审查。
 related_docs:
 - specs/21-WorkPlan-工作计划.md
-- specs/05.01-工作字段内容格式规范.md
+- specs/05.02-工作模型字段内容与格式规范.md
 - specs/07-Code确定性执行实现规范.md
 related_adrs: []
 related_memos:

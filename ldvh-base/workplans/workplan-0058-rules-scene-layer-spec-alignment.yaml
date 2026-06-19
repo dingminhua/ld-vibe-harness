@@ -71,8 +71,7 @@ orchestration:
     - specs/02-术语规范.md
     - specs/05-工作模型基础规范.md
     - specs/04.02-LDVH能力资产与落地保障规范.md
-    - specs/05.01-工作字段内容格式规范.md
-    - docs/studies/44-multi-role-thinking-多角色思考.md
+    - specs/05.02-工作模型字段内容与格式规范.md
     - ldvh-base/workplans/workplan-0048-scene-rules-effectiveness-evaluation.yaml
     blocking_reason: null
   review:
@@ -95,8 +94,7 @@ related_docs:
 - specs/02-术语规范.md
 - specs/05-工作模型基础规范.md
 - specs/04.02-LDVH能力资产与落地保障规范.md
-- specs/05.01-工作字段内容格式规范.md
-- docs/studies/44-multi-role-thinking-多角色思考.md
+- specs/05.02-工作模型字段内容与格式规范.md
 - ldvh-base/workplans/workplan-0048-scene-rules-effectiveness-evaluation.yaml
 related_adrs: []
 related_memos: []

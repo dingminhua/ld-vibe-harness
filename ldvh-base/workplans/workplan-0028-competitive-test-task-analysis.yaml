@@ -51,11 +51,7 @@ orchestration:
       ## 结论
 
       任务完成，人工确认关闭。
-    evidence_refs:
-    - docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
-    - docs/studies/02-LDVH对Gstack的借鉴评估与深度调研.md
-    - docs/studies/07-LDVH对Superpowers的借鉴评估与深度调研.md
-    - docs/studies/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
+    evidence_refs: []
     blocking_reason: null
   review:
     controller_self_check: true
@@ -76,11 +72,7 @@ closure_evidence: |-
   - task-0028: 独立 agent 逐项验证 5 条 acceptance 全部通过：
 review_requested_at: '2026-06-06T00:01:18.379280'
 closed_at: '2026-06-06T00:01:18.379280'
-related_docs:
-- docs/studies/02-LDVH对Gstack的借鉴评估与深度调研.md
-- docs/studies/07-LDVH对Superpowers的借鉴评估与深度调研.md
-- docs/studies/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
-- docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
+related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []

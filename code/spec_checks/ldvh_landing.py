@@ -380,17 +380,17 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         report_issues,
     ))
 
-    allowed_categories = {"规范", "Code", "Web", "Task", "事实源", "环境承接", "Human Gate"}
+    allowed_categories = {"规范", "Code", "Web", "WorkPlan", "事实源", "环境承接", "Human Gate"}
     routing_issues = []
     for gap in remaining_gaps:
         if not gap.get("suggested_writeback"):
-            routing_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_GAP_ROUTING_MISSING", f"缺口缺少分流建议: {gap.get('id')}", category="Task"))
+            routing_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_GAP_ROUTING_MISSING", f"缺口缺少分流建议: {gap.get('id')}", category="WorkPlan"))
     routed_categories = set()
     for item in items:
         routed_categories.update(item.get("gap_categories", []))
     unknown_categories = sorted(routed_categories - allowed_categories)
     for category in unknown_categories:
-        routing_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_GAP_CATEGORY_UNKNOWN", f"未知缺口分类: {category}", category="Task"))
+        routing_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_GAP_CATEGORY_UNKNOWN", f"未知缺口分类: {category}", category="WorkPlan"))
     items.append(ldvh_bootstrap_baseline_item(
         "gap_classification_routing",
         "缺口分类与分流",
@@ -469,7 +469,7 @@ def ldvh_landing_check_build(workspace_root=None):
             "status": fact_report["status"],
             "issue_count": fact_report["issue_count"],
             "evidence": fact_report["evidence"],
-            "suggested_writeback": "fact_yaml_fix_or_task",
+            "suggested_writeback": "fact_yaml_fix_or_workplan",
             "issues": fact_report["issues"],
         },
         {
@@ -478,7 +478,7 @@ def ldvh_landing_check_build(workspace_root=None):
             "status": spec_report["status"],
             "issue_count": spec_report["issue_count"],
             "evidence": spec_report["evidence"],
-            "suggested_writeback": "spec_fix_or_task",
+            "suggested_writeback": "spec_fix_or_workplan",
             "issues": spec_report["issues"],
         },
     ]

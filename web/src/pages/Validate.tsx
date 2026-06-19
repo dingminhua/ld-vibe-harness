@@ -311,14 +311,14 @@ const REMEDIATION_LABELS: Record<string, LocalizedLabel> = {
 const WRITEBACK_LABELS: Record<string, LocalizedLabel> = {
   agent_or_44: { zh: 'Agent / 44 多角色思考', en: 'Agent / 44 multi-role thinking' },
   code_request_or_test: { zh: 'Code / 测试需求', en: 'Code / test request' },
-  fact_yaml_fix_or_task: { zh: '事实 YAML 修复 / 任务', en: 'Fact YAML fix / task' },
+  fact_yaml_fix_or_workplan: { zh: '事实 YAML 修复 / WorkPlan', en: 'Fact YAML fix / WorkPlan' },
   governed_projects_config: { zh: '管辖项目配置', en: 'Governed projects config' },
   human_gate_record: { zh: 'Human Gate 记录', en: 'Human Gate record' },
   landing_report_followup: { zh: '落地报告跟进', en: 'Landing report follow-up' },
   manual_review: { zh: '人工复核', en: 'Manual review' },
   none: { zh: '无需回写', en: 'No writeback' },
   runtime_projection_or_env_record: { zh: '运行投影 / 环境记录', en: 'Runtime projection / env record' },
-  spec_fix_or_task: { zh: '规范修复 / 任务', en: 'Spec fix / task' },
+  spec_fix_or_workplan: { zh: '规范修复 / WorkPlan', en: 'Spec fix / WorkPlan' },
   specs: { zh: '规范文档', en: 'Specs document' },
   workflow_or_skill_candidate: { zh: '工作流 / Skill 候选', en: 'Workflow / Skill candidate' },
 }

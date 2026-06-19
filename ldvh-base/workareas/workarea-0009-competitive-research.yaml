@@ -9,10 +9,7 @@ description: 深入研究 Gstack、Superpowers、BMAD-METHOD 等竞品的方法�
 source: 用户要求深入调研竞品测试任务安排及最佳实践
 scope: |-
   完成竞品测试任务安排的深度分析；完成行业最佳实践联网调研；产出分析报告进入 docs/sources/ 参考文档
-related_docs:
-- docs/studies/02-LDVH对Gstack的借鉴评估与深度调研.md
-- docs/studies/07-LDVH对Superpowers的借鉴评估与深度调研.md
-- docs/studies/08-LDVH对BMAD-METHOD的借鉴评估与深度调研.md
+related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []

@@ -74,7 +74,7 @@ Human Gate 记录：
 - 时间：
   2026-06-10
 - 决策：暂缓
-- 范围：Task 和 docs/studies/18
+- 范围：WorkPlan 和 docs/studies/18
 - 约束：测试通过，后续仍需 Web
 """,
     )
@@ -268,4 +268,3 @@ Human Gate 记录：
     assert payload["metadata"]["report"] == "human-gate"
     assert payload["summary"]["status"] == "open"
     assert payload["metadata"]["record_count"] == 1
-

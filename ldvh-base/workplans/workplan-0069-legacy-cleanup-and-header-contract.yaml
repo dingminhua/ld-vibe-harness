@@ -94,14 +94,14 @@ orchestration:
     role: specs
     mode: sequential
     input_refs:
-    - specs/05.01-工作字段内容格式规范.md
+    - specs/05.02-工作模型字段内容与格式规范.md
     - specs/21-WorkPlan-工作计划.md
     expected_output: 当前规则不再要求维护旧对象兼容、旧夹具或迁移保留能力。
     status: done
     result_summary: 05.01 明确旧 TaskPlan/Task/SubTask 不再作为当前 active 工作模型或 Code/Web 兼容对象；21
       仅保留 TaskFlow 命名债和 WorkPlan 关闭流程经验作为后续治理事项。
     evidence_refs:
-    - specs/05.01-工作字段内容格式规范.md
+    - specs/05.02-工作模型字段内容与格式规范.md
     - specs/21-WorkPlan-工作计划.md
     - code/docs/01-Code参考实现结构规范.md
     - web/docs/01-全局设计约束.md
@@ -135,7 +135,7 @@ verification_evidence: |
   - `npm run web:build`：通过；仅保留 Vite chunk size warning，非本次对象契约问题。
 
   残留扫描：
-  - `rg "taskplan|TaskPlan|subtask|SubTask|blocked_by|deliverables|source_tasks|related_taskplans|related_tasks|affected_docs|workplan_migration|22-Task|23-SubTask" code tests web/src web/api specs/05.01-工作字段内容格式规范.md specs/21-WorkPlan-工作计划.md web/docs code/docs`
+  - `rg "taskplan|TaskPlan|subtask|SubTask|blocked_by|deliverables|source_tasks|related_taskplans|related_tasks|affected_docs|workplan_migration|22-Task|23-SubTask" code tests web/src web/api specs/05.02-工作模型字段内容与格式规范.md specs/21-WorkPlan-工作计划.md web/docs code/docs`
     结果仅剩 05.01 清退规则、fact_validate 移除字段诊断和“旧对象应被拒绝”的测试断言。
   - 当前事实源中的旧结构字段已清除；少量 WorkPlan 历史叙述仍保留旧 Task 字样，作为迁移来源说明，不作为当前机器消费入口。
 
@@ -159,7 +159,7 @@ closure_evidence: |
 
   0069 已完成执行和独立专业复审，可转入 review_needed 等待 Human closure review。
 related_docs:
-- specs/05.01-工作字段内容格式规范.md
+- specs/05.02-工作模型字段内容与格式规范.md
 - specs/21-WorkPlan-工作计划.md
 related_adrs: []
 related_memos:

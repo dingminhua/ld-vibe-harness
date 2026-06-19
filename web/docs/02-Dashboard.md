@@ -135,4 +135,4 @@ interface DashboardData {
 }
 ```
 
-Profile 是历史残留概念，不属于当前 LDVH Dashboard 数据结构。后续 Web 实现应删除 `GET /api/dashboard` 的 `profile` 字段、Dashboard Profile card、`nav.profiles` 文案和相关 i18n，不得把管辖项目配置展示为项目画像卡片。
+项目画像类入口不属于当前 LDVH Dashboard 数据结构。`GET /api/dashboard` 不返回项目画像字段，Dashboard 不展示项目画像卡片，也不维护项目画像导航文案或相关 i18n；管辖项目配置如需展示，应按管辖配置自身语义另行设计。

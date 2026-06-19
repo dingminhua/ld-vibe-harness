@@ -1,7 +1,6 @@
 import {
   FileText,
   BookOpenText,
-  IdCard,
   Focus,
   GitCommit,
   ClipboardCheck,
@@ -23,7 +22,6 @@ export const OBJECT_TYPE_ICONS: Record<string, LucideIcon> = {
   pitfall: Lightbulb,
   memo: Pencil,
   study: BookOpenText,
-  profile: IdCard,
   change: GitCommit,
   validate: Shield,
   gate: ShieldCheck,

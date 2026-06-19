@@ -29,9 +29,9 @@ const TYPE_ORDER = ['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study'];
 
 const HIGHLIGHT_STATUSES = new Set(['executing', 'verifying', 'review_needed']);
 
-function getLocalizedTitle(item: { title?: string; title_en?: string; title_zh?: string }, locale: string): string {
-  if (locale === 'en') return (item as { title_en?: string }).title_en || item.title || '';
-  return (item as { title_zh?: string }).title_zh || item.title || '';
+function getLocalizedTitle(item: { id: string; title?: string; title_en?: string; title_zh?: string }, locale: string): string {
+  if (locale === 'zh') return item.title_zh || item.title || item.title_en || item.id;
+  return item.title_en || item.title || item.title_zh || item.id;
 }
 
 export default function Dashboard() {
@@ -132,27 +132,8 @@ export default function Dashboard() {
         <p className="ldvh-caption mb-4">{parts.join(locale === 'zh' ? '，' : ', ')}</p>
       )}
 
-      {/* Profile card + Landing Health 引导卡片 */}
+      {/* Landing Health 引导卡片 */}
       <div className="ldvh-dashboard-lead-grid mb-6">
-        {/* Profile card */}
-        {data.profile && (
-          <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="ldvh-section-title flex min-w-0 items-center gap-2">
-                  <ObjectTypeIcon type="profile" size={14} className="shrink-0 text-ldvh-accent" />
-                  {getLocalizedTitle(data.profile, locale)}
-                </h2>
-                <p className="ldvh-meta">{data.profile.id}</p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <CopyPathButton path={data.profile.path} />
-                <StatusBadge status={data.profile.status} size="md" />
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* 42 Landing 健康度引导卡片 */}
         {landing && (
           <div className="rounded-lg border border-ldvh-accent/30 bg-ldvh-accent/5 p-4">

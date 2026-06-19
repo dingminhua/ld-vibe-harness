@@ -32,8 +32,6 @@ orchestration:
     evidence_refs:
     - ldvh-base/adrs/adr-0007（新建）
     - specs/21-WorkPlan-工作计划.md（修订）
-    - docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
-    - docs/studies/07-LDVH对Superpowers的借鉴评估与深度调研.md
     blocking_reason: Legacy Task is not closed; keep WorkPlan active after migration.
   review:
     controller_self_check: true
@@ -46,9 +44,7 @@ verification_evidence: ''
 closure_evidence: ''
 review_requested_at: ''
 closed_at: ''
-related_docs:
-- docs/sources/06-竞品测试任务安排分析与最佳实践调研.md
-- docs/studies/07-LDVH对Superpowers的借鉴评估与深度调研.md
+related_docs: []
 related_adrs: []
 related_memos: []
 related_pitfalls: []
