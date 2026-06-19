@@ -101,7 +101,19 @@ WorkPlan 是“计划执行态势”卡片，帮助用户从计划判断当前�
   - 执行项行包含标题、内部编号、状态图标、同色弱背景和辅助阅读入口；执行项不得拥有独立对象详情路由；
   - 执行态势区域、态势条和普通信息区域不响应主路由跳转，避免误触外层卡片。
 
-### 3.6 空态、加载态、错误态
+### 3.6 Memo 卡片
+
+Memo 是“待分流信息”卡片，列表态用于快速判断每条备忘现在应继续处理、已经流向哪里，或为什么被废弃。
+
+- Memo 卡片保留通用头部、标题、优先级字符徽标、状态和更新时间。
+- Memo 卡片不使用通用非活跃原因块；卡片中部由 Memo 自身状态驱动。
+- Memo 卡片中部状态内容必须使用与 Pitfall 归档原因一致的弱说明表达：弱圆点、小号标签、小号正文，无彩色外框、无大面积状态底色、无 section 标题级强调。
+- `pending` 且没有分流闭环事实时，卡片中部消费 `source` 和 `source_detail`：`source` 使用“弱圆点 + 来源 + 原值”单行表达；`source_detail` 直接作为正文显示，不加“意图”标题。不得在 pending 卡片里展示 `description` 作为替代摘要。
+- `resolved` 或存在 `resolved_to` / `resolved_at` 时，卡片中部展示“已分流”区域，消费 `resolved_to` 和 `resolved_at`：`resolved_to` 显示分流目标，`resolved_at` 显示分流时间。不得只用状态徽章表达已解决。
+- `discarded` 或存在 `discard_reason` 时，卡片中部展示“已废弃”区域，消费 `discard_reason`；缺少原因时展示原因缺失提示。不得再同时展示通用非活跃原因块造成重复。
+- Memo 卡片内部信息区域只用于阅读，不响应主路由跳转；点击外层卡片仍进入 Memo 详情页。
+
+### 3.7 空态、加载态、错误态
 
 - 加载态：居中旋转动画。
 - 错误态：`common.loadFailed` + 错误信息。
@@ -166,6 +178,10 @@ interface ObjectItem {
   deprecated_reason?: string;          // 非活跃废弃原因，卡片完整原因说明展示
   discard_reason?: string;             // 非活跃废弃原因，卡片完整原因说明展示
   closure_evidence?: string;           // closed WorkPlan 关闭原因来源，卡片完整原因说明展示
+  source?: string;                      // Memo 来源，pending 卡片展示
+  source_detail?: string;               // Memo 意图，pending 卡片展示
+  resolved_to?: string | { type?: string; ref?: string }; // Memo 分流目标，resolved 卡片展示
+  resolved_at?: string;                 // Memo 分流时间，resolved 卡片展示
 }
 
 interface RelatedObjectSummary {

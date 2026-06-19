@@ -7,11 +7,13 @@ import { useI18n } from '@/i18n/context';
 import {
   ContentField,
   AdrReadingLayout,
+  MemoReadingLayout,
   ObjectIdentityHeader,
   PitfallReadingLayout,
   RelatedContentSection,
   WorkAreaReadingLayout,
   WorkPlanReadingLayout,
+  getAuxiliaryMetaEntries,
   getObjectDetailContentEntries,
   splitRelatedContentEntries,
 } from '@/pages/ObjectDetail';
@@ -382,6 +384,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         created={formatDateTime(obj?.created as string | undefined)}
         updated={formatDateTime(obj?.updated as string | undefined)}
         closedAt={obj?.closed_at ? formatDateTime(obj.closed_at as string) : undefined}
+        auxiliaryMetaEntries={obj && objectType !== 'workarea' ? getAuxiliaryMetaEntries(obj, objectType || '') : []}
         compact
       />
       {obj && isObjectDetailLayoutType(objectType) && <ObjectSemanticPreview objectType={objectType} obj={obj} objectId={objectId} />}
@@ -449,11 +452,16 @@ function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: str
     const { relatedEntries } = splitRelatedContentEntries(entries);
     return <AdrReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
   }
+  if (objectType === 'memo') {
+    const entries = getObjectDetailContentEntries(obj, objectType);
+    const { relatedEntries } = splitRelatedContentEntries(entries);
+    return <MemoReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
+  }
   return null;
 }
 
 function isObjectDetailLayoutType(objectType: string | undefined) {
-  return objectType === 'workarea' || objectType === 'workplan' || objectType === 'pitfall' || objectType === 'adr';
+  return objectType === 'workarea' || objectType === 'workplan' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'memo';
 }
 
 function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {

@@ -307,6 +307,10 @@ async function enrichMemos(items: ListedObject[]): Promise<ListedObject[]> {
       ...item,
       source: toStringValue(data.source) || undefined,
       description: toStringValue(data.description) || undefined,
+      source_detail: toStringValue(data.source_detail) || undefined,
+      resolved_to: data.resolved_to || undefined,
+      resolved_at: toStringValue(data.resolved_at) || undefined,
+      discard_reason: toStringValue(data.discard_reason) || undefined,
     }
   })
 }

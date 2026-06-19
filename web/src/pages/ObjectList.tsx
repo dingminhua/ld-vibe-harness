@@ -344,11 +344,13 @@ function ObjectCardFrame({
   locale,
   onOpen,
   children,
+  showNonActiveReason = true,
 }: {
   obj: ObjectItem;
   locale: string;
   onOpen: (objId: string) => void;
   children?: ReactNode;
+  showNonActiveReason?: boolean;
 }) {
   const titleAccentClass = getTitleAccentClass(obj.status);
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
@@ -378,7 +380,7 @@ function ObjectCardFrame({
         </span>
         <ArrowRight size={14} className="mt-0.5 shrink-0 text-ldvh-text-secondary transition-all group-hover/card:translate-x-0.5 group-hover/card:text-ldvh-accent" />
       </div>
-      {nonActiveReason && <StatusReasonNote reason={nonActiveReason} />}
+      {showNonActiveReason && nonActiveReason && <StatusReasonNote reason={nonActiveReason} />}
       {children}
       <div className="mt-auto flex min-w-0 justify-end pt-1 text-right">
         <span className="ldvh-meta-muted">
@@ -387,6 +389,125 @@ function ObjectCardFrame({
       </div>
     </div>
   );
+}
+
+type MemoRoutingRef = { ref: string; objectType?: string };
+
+function hasMemoResolvedFact(obj: ObjectItem) {
+  return obj.status === 'resolved' || Boolean(parseMemoRoutingRef(obj.resolved_to)) || Boolean(obj.resolved_at);
+}
+
+function hasMemoDiscardFact(obj: ObjectItem) {
+  return obj.status === 'discarded' || Boolean(obj.discard_reason?.trim());
+}
+
+function parseMemoRoutingRef(value: ObjectItem['resolved_to']): MemoRoutingRef | null {
+  if (typeof value === 'string') {
+    const ref = value.trim();
+    if (!ref) return null;
+    return { ref, objectType: ref.match(/^([a-z]+)-\d+$/)?.[1] };
+  }
+  if (!value || typeof value !== 'object') return null;
+  const ref = typeof value.ref === 'string' ? value.ref.trim() : '';
+  if (!ref) return null;
+  return {
+    ref,
+    objectType: typeof value.type === 'string' && value.type.trim() ? value.type.trim() : ref.match(/^([a-z]+)-\d+$/)?.[1],
+  };
+}
+
+function MemoFactPanel({
+  tone,
+  title,
+  children,
+}: {
+  tone: 'pending' | 'resolved' | 'discarded';
+  title: string;
+  children: ReactNode;
+}) {
+  void tone;
+  return (
+    <div
+      onClick={(event) => event.stopPropagation()}
+      className="min-w-0 cursor-default px-1.5 py-1"
+    >
+      <div className="ldvh-meta mb-1 flex min-w-0 items-center gap-1.5 text-ldvh-text-secondary/75">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/75" aria-hidden="true" />
+        <span className="min-w-0 truncate">{title}</span>
+      </div>
+      <div className="min-w-0 text-ldvh-text-secondary/75">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function MemoMetaLine({ label, value }: { label: string; value: string }) {
+  if (!value.trim()) return null;
+  return (
+    <div className="grid min-w-0 gap-1 py-1 first:pt-0 last:pb-0 sm:grid-cols-[3.5rem_1fr]">
+      <span className="ldvh-meta text-ldvh-text-secondary/75">{label}</span>
+      <span className="min-w-0 break-words text-[12px] leading-5 text-ldvh-text-secondary/75">{formatReasonText(value)}</span>
+    </div>
+  );
+}
+
+function MemoPendingCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
+  const source = obj.source || '';
+  const intent = obj.source_detail || '';
+  if (!source && !intent) return null;
+
+  return (
+    <div
+      onClick={(event) => event.stopPropagation()}
+      className="min-w-0 cursor-default px-1.5 py-1"
+    >
+      {source && (
+        <div className="ldvh-meta mb-1 flex min-w-0 items-center gap-1.5 text-ldvh-text-secondary/75">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/75" aria-hidden="true" />
+          <span className="shrink-0">{locale === 'en' ? 'Source' : '来源'}</span>
+          <span className="min-w-0 truncate">{formatReasonText(source)}</span>
+        </div>
+      )}
+      {intent && (
+        <p className="whitespace-pre-wrap break-words text-[12px] leading-5 text-ldvh-text-secondary/75">
+          {formatReasonText(intent)}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function MemoResolvedCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
+  const routingRef = parseMemoRoutingRef(obj.resolved_to);
+  const targetLabel = routingRef?.ref || (locale === 'en' ? 'Target missing' : '分流目标缺失');
+  const typeLabel = routingRef?.objectType ? `${routingRef.objectType} ` : '';
+  const resolvedAt = obj.resolved_at ? formatDateTime(obj.resolved_at) : '';
+
+  return (
+    <MemoFactPanel tone="resolved" title={locale === 'en' ? 'Routed' : '已分流'}>
+      <div className="flex flex-col gap-0.5">
+        <MemoMetaLine label={locale === 'en' ? 'Target' : '目标'} value={`${typeLabel}${targetLabel}`} />
+        {resolvedAt && <MemoMetaLine label={locale === 'en' ? 'Time' : '时间'} value={resolvedAt} />}
+      </div>
+    </MemoFactPanel>
+  );
+}
+
+function MemoDiscardedCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
+  const reason = obj.discard_reason?.trim() || (locale === 'en' ? 'Discard reason missing.' : '废弃原因缺失。');
+
+  return (
+    <MemoFactPanel tone="discarded" title={locale === 'en' ? 'Discarded' : '已废弃'}>
+      <MemoMetaLine label={locale === 'en' ? 'Reason' : '原因'} value={reason} />
+    </MemoFactPanel>
+  );
+}
+
+function MemoCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
+  if (hasMemoDiscardFact(obj)) return <MemoDiscardedCardContent obj={obj} locale={locale} />;
+  if (hasMemoResolvedFact(obj)) return <MemoResolvedCardContent obj={obj} locale={locale} />;
+  return <MemoPendingCardContent obj={obj} locale={locale} />;
 }
 
 export default function ObjectList() {
@@ -618,30 +739,10 @@ export default function ObjectList() {
     }
 
     if (currentType === 'memo') {
-      const memoSource = obj.source || '';
-      const description = obj.description || '';
-
       return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
+        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
           <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
-          {memoSource && (
-            <div className="flex items-center gap-1.5">
-              <span className="ldvh-caption-strong shrink-0 rounded-md border border-ldvh-border px-1.5 py-0.5 text-ldvh-text-secondary">
-                {locale === 'en' ? 'Source' : '来源'}
-              </span>
-              <span
-                className="ldvh-chip max-w-[16rem] truncate rounded-md border border-ldvh-border/50 bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-primary"
-                title={memoSource}
-              >
-                {memoSource}
-              </span>
-            </div>
-          )}
-          {description && (
-            <p className="ldvh-body-muted line-clamp-2 border-l-2 border-ldvh-border/40 pl-2">
-              {description}
-            </p>
-          )}
+          <MemoCardContent obj={obj} locale={locale} />
         </ObjectCardFrame>
       );
     }

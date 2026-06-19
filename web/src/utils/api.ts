@@ -2,14 +2,6 @@ const API_BASE = '/api';
 const inFlightRequests = new Map<string, Promise<unknown>>();
 
 export interface DashboardData {
-  landing?: {
-    totalRequirements: number;
-    gapTotal: number;
-    gapByArea: Record<string, number>;
-    capabilityStatus: Record<string, string>;
-    humanGateStatus: string;
-    validationPlanStatus: Record<string, string>;
-  } | null;
   stats: Array<{
     type: string;
     total: number;
@@ -49,11 +41,6 @@ export interface DashboardData {
     description: string;
     relativeTime: string;
   }>;
-  validation: {
-    ok: boolean;
-    errors: number;
-    warnings: number;
-  };
 }
 
 export interface ObjectItem {
@@ -102,6 +89,8 @@ export interface ObjectItem {
   description?: string;
   evolution?: Array<Record<string, unknown>>;
   source_detail?: string;
+  resolved_to?: string | { type?: string; ref?: string };
+  resolved_at?: string;
   related_studies?: string[];
   /** Study-specific */
   summary?: string;
@@ -165,114 +154,6 @@ export interface ObjectDetail {
   data: Record<string, unknown>;
 }
 
-export interface ValidationIssue {
-  level: 'error' | 'warning';
-  code: string;
-  message: string;
-  path: string;
-  field?: string;
-  suggestion?: string;
-}
-
-export interface LdvhReportError {
-  ok: false;
-  error: string;
-  stderr: string;
-  exitCode: number | string | null;
-}
-
-export interface LdvhLandingCheckReport {
-  metadata: {
-    generated_at?: string;
-    status_source?: string;
-    scope?: string;
-  };
-  summary: {
-    status?: string;
-    remaining_gap_count?: number;
-    by_status: Record<string, number>;
-  };
-  checks: Array<{
-    id?: string;
-    status?: string;
-    issue_count?: number;
-    evidence?: string;
-    suggested_writeback?: string;
-  }>;
-  remaining_gaps: Array<{
-    id?: string;
-    status?: string;
-    message?: string;
-    suggested_writeback?: string;
-  }>;
-}
-
-export interface LdvhLandingReport {
-  metadata: {
-    generated_at?: string;
-    requirement_count?: number;
-    human_gate_record_count?: number;
-    runtime_projection_issue_count?: number;
-    human_gate_issue_count?: number;
-    status_source?: string;
-  };
-  summary: {
-    by_status: Record<string, number>;
-    gap_total?: number;
-    runtime_projection_status?: string;
-    human_gate_status?: string;
-    gap_by_owner_area: Record<string, number>;
-  };
-  capability_gaps: Array<{
-    id?: string;
-    capability?: string;
-    status?: string;
-    owner_area?: string;
-    suggested_writeback?: string;
-    evidence?: string;
-  }>;
-  gap_categories: Array<{
-    key: string;
-    label?: string;
-    total?: number;
-    by_status: Record<string, number>;
-    examples: Array<{
-      source?: string;
-      status?: string;
-      title?: string;
-      suggested_writeback?: string;
-    }>;
-  }>;
-}
-
-export interface LdvhHumanGateReport {
-  metadata: {
-    generated_at?: string;
-    checked_file_count?: number;
-    record_count?: number;
-    issue_count?: number;
-    status_source?: string;
-    scope?: string;
-  };
-  summary: {
-    status?: string;
-  };
-  issues: ValidationIssue[];
-}
-
-export interface ValidationData {
-  ok: boolean;
-  command: string;
-  action: string;
-  summary: { files: number; errors: number; warnings: number };
-  issues: ValidationIssue[];
-  reports?: {
-    landingCheck?: LdvhLandingCheckReport | LdvhReportError;
-    landingReport?: LdvhLandingReport | LdvhReportError;
-    humanGateReport?: LdvhHumanGateReport | LdvhReportError;
-  };
-}
-
 async function request<T>(url: string): Promise<T> {
   const fullUrl = `${API_BASE}${url}`;
   const existing = inFlightRequests.get(fullUrl);
@@ -310,10 +191,6 @@ export async function fetchObjects(
 
 export async function fetchObjectDetail(type: string, id: string): Promise<ObjectDetail> {
   return request<ObjectDetail>(`/objects/${type}/${encodeURIComponent(id)}`);
-}
-
-export async function fetchValidation(): Promise<ValidationData> {
-  return request<ValidationData>('/validate');
 }
 
 export interface ChangelogEntry {

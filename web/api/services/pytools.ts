@@ -149,10 +149,3 @@ export async function listObjects(type: ObjectType, baseDir: string = LDVH_ROOT,
 export async function showObject(id: string, baseDir: string = LDVH_ROOT): Promise<PyToolsResult | PyToolsError> {
   return runPyTools('fact_cli.py', ['show', id, '--format', 'json', '--base-dir', baseDir])
 }
-
-/**
- * 校验 ldvh-base 目录下所有事实对象
- */
-export async function validate(baseDir: string = LDVH_BASE_DIR): Promise<PyToolsResult | PyToolsError> {
-  return runPyToolsJson('fact_validate.py', [baseDir, '--format', 'json']) as Promise<PyToolsResult | PyToolsError>
-}

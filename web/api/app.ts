@@ -12,12 +12,9 @@ import dotenv from 'dotenv'
 import authRoutes from './routes/auth.js'
 import dashboardRoutes from './routes/dashboard.js'
 import objectsRoutes from './routes/objects.js'
-import validateRoutes from './routes/validate.js'
 import changelogRoutes from './routes/changelog.js'
 import docsRoutes from './routes/docs.js'
 import memosRoutes from './routes/memos.js'
-import gateRoutes from './routes/gate.js'
-import landingPlanRoutes from './routes/landing-plan.js'
 import projectFilesRoutes from './routes/project-files.js'
 
 dotenv.config()
@@ -38,9 +35,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use('/api/auth', authRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/objects', objectsRoutes)
-app.use('/api/validate', validateRoutes)
-app.use('/api/gate', gateRoutes)
-app.use('/api/landing-plan', landingPlanRoutes)
 app.use('/api/changelog', changelogRoutes)
 app.use('/api/docs', docsRoutes)
 app.use('/api/memos', memosRoutes)

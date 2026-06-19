@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Activity, CheckCircle, AlertCircle, AlertTriangle, Shield, GitCommit, ArrowRightCircle,
-  ShieldCheck, TrendingUp, Target,
+  Activity, AlertCircle, GitCommit, ArrowRightCircle,
 } from 'lucide-react';
 import StatsCard from '@/components/StatsCard';
 import StatusBadge from '@/components/StatusBadge';
-import StatusBanner from '@/components/StatusBanner';
 import PageHeader from '@/components/PageHeader';
 import CopyPathButton from '@/components/CopyPathButton';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
@@ -67,28 +65,6 @@ export default function Dashboard() {
     );
   }
 
-  // 计算规范落地合规摘要
-  const landing = (data as DashboardData & { landing?: {
-    totalRequirements: number
-    gapTotal: number
-    gapByArea: Record<string, number>
-    capabilityStatus: Record<string, string>
-    humanGateStatus: string
-    validationPlanStatus: Record<string, string>
-  } | null }).landing;
-
-  const totalReqs = landing?.totalRequirements ?? 0;
-  const totalGaps = landing?.gapTotal ?? 0;
-  const closedReqs = totalReqs - totalGaps;
-  const compliancePercent = totalReqs > 0 ? Math.round((closedReqs / totalReqs) * 100) : 0;
-  const hasLandingGaps = totalGaps > 0;
-
-  // 能力状态汇总
-  const capStatuses = landing?.capabilityStatus || {};
-  const capOpenCount = Object.values(capStatuses).filter(s => s === 'open').length;
-  const capClosedCount = Object.values(capStatuses).filter(s => s === 'closed').length;
-  const capDegradedCount = Object.values(capStatuses).filter(s => s === 'degraded').length;
-
   // 态势摘要
   const statusCounts: Record<string, number> = {};
   for (const item of data.actionItems) {
@@ -107,79 +83,15 @@ export default function Dashboard() {
       parts.push(t(key, { count: String(count) }));
     }
   }
-  if (data.validation.errors > 0) {
-    parts.push(t('dashboard.summary.validationErrors', { count: String(data.validation.errors) }));
-  }
 
   return (
     <div className="p-4 sm:p-6">
       <PageHeader title={t('dashboard.title')} />
 
-      {/* 关键状态信号 */}
-      {data.validation.errors > 0 && (
-        <div className="mb-4">
-          <StatusBanner
-            status="open"
-            title={t('dashboard.validationErrorHint')}
-            description={t('dashboard.summary.validationErrors', { count: String(data.validation.errors) })}
-            action={{ label: t('dashboard.landingGuideAction'), onClick: () => navigate('/validate') }}
-          />
-        </div>
-      )}
-
       {/* 态势摘要行 */}
       {parts.length > 0 && (
         <p className="ldvh-caption mb-4">{parts.join(locale === 'zh' ? '，' : ', ')}</p>
       )}
-
-      {/* Landing Health 引导卡片 */}
-      <div className="ldvh-dashboard-lead-grid mb-6">
-        {/* 42 Landing 健康度引导卡片 */}
-        {landing && (
-          <div className="rounded-lg border border-ldvh-accent/30 bg-ldvh-accent/5 p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <Target size={16} className="text-ldvh-accent" />
-              <h2 className="ldvh-section-title">{t('dashboard.landingGuide')}</h2>
-            </div>
-            <p className="ldvh-caption mb-3">{t('dashboard.landingGuideDesc')}</p>
-
-            {/* 能力状态条 */}
-            <div className="mb-3">
-              <div className="flex h-1.5 overflow-hidden rounded-full bg-ldvh-border">
-                {capClosedCount > 0 && (
-                  <div className="h-full bg-emerald-500/70" style={{ width: `${(capClosedCount / (capClosedCount + capOpenCount + capDegradedCount || 1)) * 100}%` }} />
-                )}
-                {capDegradedCount > 0 && (
-                  <div className="h-full bg-yellow-500/70" style={{ width: `${(capDegradedCount / (capClosedCount + capOpenCount + capDegradedCount || 1)) * 100}%` }} />
-                )}
-                {capOpenCount > 0 && (
-                  <div className="h-full bg-red-500/70" style={{ width: `${(capOpenCount / (capClosedCount + capOpenCount + capDegradedCount || 1)) * 100}%` }} />
-                )}
-              </div>
-              <div className="ldvh-caption mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="text-emerald-300">{capClosedCount} {getStatus('closed')}</span>
-                {capDegradedCount > 0 && <span className="text-yellow-300">{capDegradedCount} {getStatus('degraded')}</span>}
-                {capOpenCount > 0 && <span className="text-red-300">{capOpenCount} {getStatus('open')}</span>}
-              </div>
-            </div>
-
-            {hasLandingGaps ? (
-              <p className="ldvh-caption-strong mb-3 text-orange-300">
-                {t('dashboard.landingNeedsWork', { count: String(totalGaps) })}
-              </p>
-            ) : (
-              <p className="ldvh-caption-strong mb-3 text-emerald-300">{t('dashboard.landingAllClosed')}</p>
-            )}
-
-            <button
-              onClick={() => navigate('/validate')}
-              className="ldvh-chip w-full rounded-md border border-ldvh-accent/40 bg-ldvh-accent/10 px-3 py-1.5 text-ldvh-accent transition-colors hover:bg-ldvh-accent/20"
-            >
-              {t('dashboard.landingGuideAction')}
-            </button>
-          </div>
-        )}
-      </div>
 
       {/* Stats grid */}
       <div className="ldvh-dashboard-stats-grid mb-6">
@@ -285,9 +197,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Recent activity + Validation status + Landing compliance */}
+      {/* Recent activity */}
       <div className="ldvh-dashboard-section-grid mt-6">
-        {/* Recent activity */}
         <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
           <div className="mb-3 flex items-center gap-2">
             <Activity size={16} className="text-ldvh-accent" />
@@ -330,116 +241,7 @@ export default function Dashboard() {
             </ul>
           )}
         </div>
-
-        {/* Validation status */}
-        <div className={`rounded-lg border bg-ldvh-panel p-4 ${data.validation.ok ? 'border-ldvh-border' : 'border-red-500'}`}>
-          <div className="mb-3 flex items-center gap-2">
-            <Shield size={16} className="text-ldvh-accent" />
-            <h3 className="ldvh-section-title">{t('dashboard.validationStatus')}</h3>
-          </div>
-          <div className="ldvh-dashboard-mini-grid">
-            <div className={`flex flex-col items-center rounded-md p-3 ${data.validation.ok ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-              {data.validation.ok ? (
-                <CheckCircle size={20} className="mb-1 text-green-400" />
-              ) : (
-                <AlertCircle size={20} className="mb-1 text-red-400" />
-              )}
-              <span className={`font-mono text-xl font-semibold ${data.validation.ok ? 'text-green-400' : 'text-red-400'}`}>
-                {data.validation.ok ? t('dashboard.pass') : t('dashboard.fail')}
-              </span>
-              <span className="ldvh-caption">{t('dashboard.status')}</span>
-            </div>
-            <div className="flex flex-col items-center rounded-md bg-red-500/10 p-3">
-              <AlertCircle size={20} className="mb-1 text-red-400" />
-              <span className="font-mono text-xl font-semibold text-red-400">{data.validation.errors}</span>
-              <span className="ldvh-caption">{t('dashboard.errors')}</span>
-            </div>
-            <div className="flex flex-col items-center rounded-md bg-yellow-500/10 p-3">
-              <AlertTriangle size={20} className="mb-1 text-yellow-400" />
-              <span className="font-mono text-xl font-semibold text-yellow-400">{data.validation.warnings}</span>
-              <span className="ldvh-caption">{t('dashboard.warnings')}</span>
-            </div>
-          </div>
-          {!data.validation.ok && (
-            <p className="ldvh-caption-strong mt-3 text-red-400">
-              {t('dashboard.validationErrorHint')}
-            </p>
-          )}
-        </div>
-
-        {/* P3: 规范落地合规标识 */}
-        {landing && (
-          <div className={`rounded-lg border bg-ldvh-panel p-4 ${compliancePercent >= 80 ? 'border-ldvh-border' : 'border-orange-500/50'}`}>
-            <div className="mb-3 flex items-center gap-2">
-              <ShieldCheck size={16} className="text-ldvh-accent" />
-              <h3 className="ldvh-section-title">{t('dashboard.complianceHeader')}</h3>
-            </div>
-            {/* 合规百分比环 */}
-            <div className="mb-3 flex items-center justify-center">
-              <div className="relative flex h-20 w-20 items-center justify-center">
-                <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" className="text-ldvh-border" strokeWidth="3" />
-                  <circle
-                    cx="18" cy="18" r="15.5"
-                    fill="none"
-                    stroke={compliancePercent >= 80 ? '#34d399' : compliancePercent >= 50 ? '#fbbf24' : '#f87171'}
-                    strokeWidth="3"
-                    strokeDasharray={`${compliancePercent} ${100 - compliancePercent}`}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="ldvh-card-title absolute font-mono text-ldvh-text-primary">{compliancePercent}%</span>
-              </div>
-            </div>
-            <div className="ldvh-dashboard-mini-grid text-center">
-              <div className="rounded-md bg-ldvh-bg p-2">
-                <p className="font-mono text-ldvh-text-primary">{totalReqs}</p>
-                <p className="ldvh-caption">{t('dashboard.complianceTotal', { total: String(totalReqs) })}</p>
-              </div>
-              <div className="rounded-md bg-ldvh-bg p-2">
-                <p className="font-mono text-emerald-300">{closedReqs}</p>
-                <p className="ldvh-caption">{t('dashboard.complianceClosed', { count: String(closedReqs) })}</p>
-              </div>
-            </div>
-            {totalGaps > 0 && (
-              <p className="ldvh-caption mt-2 text-center text-orange-300">
-                {t('dashboard.complianceDegraded', { count: String(totalGaps) })}
-              </p>
-            )}
-          </div>
-        )}
       </div>
-
-      {/* Landing Health mini section (only if landing data but not shown in card above) */}
-      {landing && (
-        <div className="mt-6 rounded-lg border border-ldvh-border bg-ldvh-panel p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <TrendingUp size={16} className="text-ldvh-accent" />
-            <h3 className="ldvh-section-title">{t('dashboard.landingHealth')}</h3>
-          </div>
-          <p className="ldvh-caption mb-3">{t('dashboard.landingHealthDesc')}</p>
-          <div className="ldvh-dashboard-metric-grid">
-            <div className="rounded-md bg-ldvh-bg p-3">
-              <p className="font-mono text-xl font-semibold text-ldvh-text-primary">{totalReqs}</p>
-              <p className="ldvh-caption">{t('dashboard.landingRequirements')}</p>
-            </div>
-            <div className="rounded-md bg-ldvh-bg p-3">
-              <p className={`font-mono text-xl font-semibold ${totalGaps > 0 ? 'text-red-300' : 'text-emerald-300'}`}>{totalGaps}</p>
-              <p className="ldvh-caption">{t('dashboard.landingGaps')}</p>
-            </div>
-            <div className="rounded-md bg-ldvh-bg p-3">
-              <p className="font-mono text-xl font-semibold text-ldvh-text-primary">{capOpenCount > 0 ? `${capOpenCount} ${getStatus('open')}` : getStatus('closed')}</p>
-              <p className="ldvh-caption">{t('dashboard.landingCapStatus')}</p>
-            </div>
-            <div className="rounded-md bg-ldvh-bg p-3">
-              <p className={`font-mono text-xl font-semibold ${landing.humanGateStatus === 'closed' ? 'text-emerald-300' : landing.humanGateStatus === 'open' ? 'text-red-300' : 'text-yellow-300'}`}>
-                {landing.humanGateStatus ? getStatus(landing.humanGateStatus) : '—'}
-              </p>
-              <p className="ldvh-caption">{t('dashboard.landingHGStatus')}</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

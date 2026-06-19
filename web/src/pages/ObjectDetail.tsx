@@ -57,7 +57,7 @@ const META_KEYS = [
 ];
 const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'tags', 'scope', 'impact', 'assignee'];
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
-  memo: ['priority', 'tags'],
+  memo: ['priority', 'tags', 'source'],
   study: ['tags'],
   pitfall: ['tags'],
 };
@@ -80,9 +80,9 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
     'archive_reason', 'discard_reason', 'notes',
   ],
   memo: [
-    'description', 'evolution', 'source', 'source_detail', 'resolved_to', 'resolved_at',
-    'discard_reason', 'related_studies', 'related_workareas',
-    'related_adrs', 'related_docs',
+    'description', 'evolution', 'resolved_to', 'resolved_at', 'discard_reason',
+    'source', 'source_detail', 'related_workareas', 'related_workplans',
+    'related_adrs', 'related_studies', 'related_docs',
   ],
   study: [
     'user_intent', 'summary', 'conclusion', 'report_body', 'urls',
@@ -487,6 +487,12 @@ export default function ObjectDetail() {
               relatedEntries={relatedEntries}
               locale={locale}
             />
+          ) : objType === 'memo' ? (
+            <MemoReadingLayout
+              obj={obj}
+              relatedEntries={relatedEntries}
+              locale={locale}
+            />
           ) : (
             <div className="mb-6 flex flex-col gap-5">
               {primaryEntries.map(([key, value]) => (
@@ -635,7 +641,6 @@ export function ObjectIdentityHeader({
           <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
             <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />
             <HeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />
-            {closedAt && <HeaderDateMeta label={t('objectDetail.closedAt')} value={closedAt} />}
             {remainingAuxiliaryMetaEntries.map(([key, value]) => (
               <HeaderDateMeta
                 key={key}
@@ -643,6 +648,7 @@ export function ObjectIdentityHeader({
                 value={formatAuxiliaryMetaValue(key, value, locale)}
               />
             ))}
+            {closedAt && <HeaderDateMeta label={t('objectDetail.closedAt')} value={closedAt} />}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:pt-0.5">
@@ -1589,6 +1595,196 @@ function PitfallTextNodeContent({ value }: { value: unknown }) {
   );
 }
 
+const MEMO_READING_NODES: Array<{ field: string; zh: string; en: string; kind: 'summary' | 'intent' | 'evolution' | 'routing' }> = [
+  { field: 'source_detail', zh: '意图', en: 'Intent', kind: 'intent' },
+  { field: 'description', zh: '摘要', en: 'Current Summary', kind: 'summary' },
+  { field: 'evolution', zh: '演变', en: 'Evolution', kind: 'evolution' },
+  { field: 'routing', zh: '分流', en: 'Routing', kind: 'routing' },
+];
+type MemoEvolutionEntry = { key: string; at?: string; summary: string };
+
+export function MemoReadingLayout({
+  obj,
+  relatedEntries,
+  locale,
+}: {
+  obj: Record<string, unknown>;
+  relatedEntries: RelatedContentEntry[];
+  locale: string;
+}) {
+  return (
+    <div className="mb-6 flex flex-col gap-5">
+      {MEMO_READING_NODES.map((node) => (
+        <MemoReadingNode
+          key={node.field}
+          title={locale === 'en' ? node.en : node.zh}
+          obj={obj}
+          locale={locale}
+          kind={node.kind}
+        />
+      ))}
+      <RelatedContentSection entries={relatedEntries} locale={locale} />
+    </div>
+  );
+}
+
+function MemoReadingNode({
+  title,
+  obj,
+  locale,
+  kind,
+}: {
+  title: string;
+  obj: Record<string, unknown>;
+  locale: string;
+  kind: 'summary' | 'intent' | 'evolution' | 'routing';
+}) {
+  const [state, setState] = useState<ReadingNodeState>('expanded');
+  const hasContent = kind === 'summary'
+    ? hasDetailContent(obj.description)
+    : kind === 'intent'
+      ? hasDetailContent(obj.source_detail)
+    : kind === 'evolution'
+      ? hasDetailContent(obj.evolution)
+      : hasMemoRoutingContent(obj);
+
+  if (!hasContent) return null;
+
+  return (
+    <ReadingNodeSection
+      title={title}
+      state={state}
+      locale={locale}
+      onToggle={() => setState((current) => getReadingNodeNextState(current))}
+    >
+      {kind === 'summary' && <MemoSummaryNode value={obj.description} />}
+      {kind === 'intent' && <MemoSummaryNode value={obj.source_detail} />}
+      {kind === 'evolution' && <MemoEvolutionNode value={obj.evolution} locale={locale} />}
+      {kind === 'routing' && <MemoRoutingNode obj={obj} locale={locale} />}
+    </ReadingNodeSection>
+  );
+}
+
+function MemoSummaryNode({ value }: { value: unknown }) {
+  return <StudyTextNodeContent value={value} />;
+}
+
+function MemoEvolutionNode({ value, locale }: { value: unknown; locale: string }) {
+  if (!Array.isArray(value)) return <StudyTextNodeContent value={value} />;
+  const entries = value
+    .map((item, index) => parseMemoEvolutionEntry(item, index))
+    .filter((entry): entry is MemoEvolutionEntry => Boolean(entry))
+    .reverse();
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {entries.map((entry) => (
+        <div key={entry.key} className="grid items-start gap-2 rounded-md border border-ldvh-border/45 px-2.5 py-2.5 odd:bg-ldvh-border/[0.30] even:bg-ldvh-bg/35 sm:grid-cols-[max-content_1fr] sm:gap-x-3">
+          <MemoEvolutionTime value={entry.at} locale={locale} />
+          <StudyTextNodeContent value={entry.summary} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function parseMemoEvolutionEntry(item: unknown, index: number): MemoEvolutionEntry | null {
+  if (typeof item === 'string' && item.trim().length > 0) {
+    return { key: `${index}-${item}`, summary: item };
+  }
+  if (!item || typeof item !== 'object') return null;
+  const record = item as Record<string, unknown>;
+  const summary = typeof record.summary === 'string' ? record.summary.trim() : '';
+  if (!summary) return null;
+  return {
+    key: `${index}-${String(record.at ?? summary)}`,
+    at: typeof record.at === 'string' ? record.at : undefined,
+    summary,
+  };
+}
+
+function MemoEvolutionTime({ value, locale }: { value?: string; locale: string }) {
+  if (!value) {
+    return (
+      <div className="ldvh-caption-strong whitespace-nowrap pt-1 text-ldvh-text-secondary">
+        {locale === 'en' ? 'Evolution' : '演变'}
+      </div>
+    );
+  }
+  const [date, time] = formatDateTime(value).split(' ');
+  return (
+    <div className="flex flex-col whitespace-nowrap pt-1 font-mono tabular-nums">
+      <span className="ldvh-caption-strong text-ldvh-text-secondary">{date}</span>
+      {time && <span className="ldvh-meta-muted leading-4">{time}</span>}
+    </div>
+  );
+}
+
+function MemoRoutingNode({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
+  const status = String(obj.status ?? 'pending');
+  const statusLabel = getObjectStatusLocale('memo', status, locale);
+  const resolvedRef = getMemoResolvedReference(obj.resolved_to);
+  const resolvedAt = typeof obj.resolved_at === 'string' && obj.resolved_at.trim().length > 0 ? obj.resolved_at : null;
+  const discardReason = typeof obj.discard_reason === 'string' && obj.discard_reason.trim().length > 0 ? obj.discard_reason : null;
+
+  return (
+    <div className="flex flex-col divide-y divide-ldvh-border/60">
+      <DetailInlineField
+        label={locale === 'en' ? 'Status' : '状态'}
+        value={<StatusBadge status={status} statusLabel={statusLabel} objectType="memo" size="sm" />}
+      />
+      {resolvedRef && (
+        <DetailObjectRow
+          label={locale === 'en' ? 'Target' : '目标'}
+          fallbackId={resolvedRef.ref}
+          objectType={resolvedRef.objectType}
+          locale={locale}
+          variant="property"
+        />
+      )}
+      {resolvedAt && (
+        <DetailInlineField
+          label={locale === 'en' ? 'Resolved At' : '分流时间'}
+          value={<span className="ldvh-definition-text">{formatDateTime(resolvedAt)}</span>}
+        />
+      )}
+      {discardReason && (
+        <DetailInlineField
+          label={locale === 'en' ? 'Discard Reason' : '废弃原因'}
+          value={<StudyTextNodeContent value={discardReason} />}
+        />
+      )}
+    </div>
+  );
+}
+
+function hasMemoRoutingContent(obj: Record<string, unknown>) {
+  const status = String(obj.status ?? 'pending');
+  return status === 'resolved'
+    || status === 'discarded'
+    || hasDetailContent(obj.resolved_to)
+    || hasDetailContent(obj.resolved_at)
+    || hasDetailContent(obj.discard_reason);
+}
+
+function getMemoResolvedReference(value: unknown): { ref: string; objectType: string } | null {
+  if (typeof value === 'string') {
+    const ref = value.trim();
+    if (!ref) return null;
+    const objectType = getObjectRefType(ref);
+    return objectType ? { ref, objectType } : null;
+  }
+  if (!value || typeof value !== 'object') return null;
+  const record = value as Record<string, unknown>;
+  const ref = typeof record.ref === 'string' ? record.ref.trim() : '';
+  if (!ref) return null;
+  const type = typeof record.type === 'string' ? record.type.trim() : '';
+  const objectType = type || getObjectRefType(ref);
+  return objectType ? { ref, objectType } : null;
+}
+
 const EVIDENCE_NODE_ORDER = ['验证计划', '验证命令', '验证结果', '结论'];
 
 function EvidenceReadingNodes({ value }: { value: string }) {
@@ -1885,7 +2081,7 @@ function DetailObjectReferenceValue({
   );
 }
 
-function getAuxiliaryMetaEntries(obj: Record<string, unknown>, objType: string) {
+export function getAuxiliaryMetaEntries(obj: Record<string, unknown>, objType: string) {
   const keys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
   return keys
     .filter((key) => key !== 'priority' || (objType !== 'memo' && objType !== 'workplan'))
@@ -1921,6 +2117,8 @@ function MetaValueChip({ fieldKey, value, children }: { fieldKey?: string; value
 }
 
 function formatAuxiliaryMetaValue(fieldKey: string, value: unknown, locale: string): ReactNode {
+  if (fieldKey === 'source') return localizeMetaValue(fieldKey, String(value), locale);
+
   if (Array.isArray(value)) {
     return (
       <span className="flex flex-wrap gap-1.5">

@@ -44,12 +44,12 @@ Web 测试实现使用以下目录边界：
 Web 测试按以下优先级选择：
 
 1. API contract 测试优先于页面测试；
-2. 高风险 API 优先覆盖 `POST /api/memos`、ProjectFiles、Validate、Objects、Gate 和提交记录页；
-3. 页面测试优先覆盖 Gate、Validate、ProjectFiles、ObjectDetail、ObjectList 和 Dashboard 的空态、错误态、降级态、只读边界和来源呈现；
+2. 高风险 API 优先覆盖 `POST /api/memos`、ProjectFiles、Objects 和提交记录页；
+3. 页面测试优先覆盖 ProjectFiles、ObjectDetail、ObjectList 和 Dashboard 的空态、错误态、降级态、只读边界和来源呈现；
 4. 组件测试优先覆盖状态徽章、对象卡片、Markdown 阅读、复制按钮、Confirm UI 占位和 i18n 映射；
 5. E2E、视觉回归和复杂浏览器流程后置，不作为当前 Web API contract 测试的前置条件。
 
-新增或修改高风险 API、白名单轻写入、Confirm UI、对象状态展示、Validate/Gate 派生结果展示或事实源读取逻辑时，应优先补齐 `tests/web/api/` 下的最小测试或说明等价验证方式。
+新增或修改高风险 API、白名单轻写入、对象状态展示或事实源读取逻辑时，应优先补齐 `tests/web/api/` 下的最小测试或说明等价验证方式。
 
 ## 4. 页面与 API 测试映射
 
@@ -60,8 +60,6 @@ Web 测试按以下优先级选择：
 | Dashboard | 项目态势、任务分布、来源追溯、空态和错误态 | `tests/web/pages/` 或 API 聚合测试 |
 | ObjectList | 对象列表、筛选、状态展示、计划态势和只读边界 | `tests/web/pages/`、`tests/web/components/` |
 | ObjectDetail | 字段展示、关联材料、验证方式、关闭证据和 Markdown 阅读 | `tests/web/pages/`、`tests/web/components/` |
-| Validate | `/api/validate`、`/api/landing-plan`、派生报告展示和失败降级 | `tests/web/api/`、`tests/web/pages/` |
-| Gate | `/api/gate`、Human Gate 派生报告、disabled 确认占位和降级提示 | `tests/web/api/`、`tests/web/pages/` |
 | 提交记录页 | Git 提交记录展示、commit 类型映射和引用追溯 | `tests/web/api/`、`tests/web/pages/` |
 | Memo 快速创建 | 白名单写入、字段校验、受控写入链路和错误态 | `tests/web/api/` |
 | 全局 i18n | UI 文案、状态、枚举、字段名和空态中英文映射 | `tests/web/components/`、`tests/web/pages/` |
@@ -96,6 +94,6 @@ AI 修改 `web/` 时，应按以下顺序执行：
 ## 7. 待补齐事项
 
 1. 当前 Web 参考实现的 npm script、测试框架和 API contract 运行入口需要在测试实现稳定后补齐；
-2. Validate、Gate、Objects 和 Memo 快速创建的最小 API contract 样例需要随对应测试创建；
+2. Objects 和 Memo 快速创建的最小 API contract 样例需要随对应测试创建；
 3. 页面级测试与组件级测试的拆分边界需要在首批 `tests/web/` 用例落地后复核；
 4. Web 消费 Code 输出的数据合同需要在 Code 输出结构稳定后补齐测试样例。

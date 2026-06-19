@@ -3,12 +3,9 @@ import {
   BookOpenText,
   Focus,
   GitCommit,
-  ClipboardCheck,
   FileSignature,
   Lightbulb,
   Link2,
-  Shield,
-  ShieldCheck,
   Pencil,
   Workflow,
   type LucideIcon,
@@ -23,9 +20,7 @@ export const OBJECT_TYPE_ICONS: Record<string, LucideIcon> = {
   memo: Pencil,
   study: BookOpenText,
   change: GitCommit,
-  validate: Shield,
-  gate: ShieldCheck,
-  changelog: ClipboardCheck,
+  changelog: GitCommit,
 };
 
 export const COLLECTION_ICONS: Record<string, LucideIcon> = {

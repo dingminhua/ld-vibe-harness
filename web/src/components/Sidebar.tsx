@@ -2,9 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import {
   LayoutDashboard,
-  Shield,
   Globe,
-  ClipboardList,
   FolderTree,
   Sun,
   Moon,
@@ -15,10 +13,10 @@ import { useI18n } from '@/i18n/context';
 import { useTheme } from '@/hooks/useTheme';
 import type { LocaleKey } from '@/i18n/locales';
 import { OBJECT_TYPE_ICONS } from '@/components/SemanticIcon';
+import ldBrandMark from '@/assets/ld-brand-mark.svg';
 
 const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: string }; icon: typeof LayoutDashboard }[] = [
   { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard },
-  { to: '/attention-test', label: { zh: '测试', en: 'Test' }, icon: ClipboardList },
   { to: '/project-files', label: { zh: '文件', en: 'Files' }, icon: FolderTree },
   { to: '/objects/workarea', labelKey: 'nav.workareas', icon: OBJECT_TYPE_ICONS.workarea },
   { to: '/objects/workplan', labelKey: 'nav.workplans', icon: OBJECT_TYPE_ICONS.workplan },
@@ -26,8 +24,6 @@ const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: s
   { to: '/objects/pitfall', labelKey: 'nav.pitfalls', icon: OBJECT_TYPE_ICONS.pitfall },
   { to: '/objects/memo', labelKey: 'nav.memos', icon: OBJECT_TYPE_ICONS.memo },
   { to: '/objects/study', labelKey: 'nav.studies', icon: OBJECT_TYPE_ICONS.study },
-  { to: '/validate', labelKey: 'nav.validate', icon: OBJECT_TYPE_ICONS.validate },
-  { to: '/gate', labelKey: 'nav.gate', icon: OBJECT_TYPE_ICONS.gate },
   { to: '/changelog', labelKey: 'nav.changelog', icon: OBJECT_TYPE_ICONS.changelog },
 ];
 
@@ -40,6 +36,17 @@ function ThemeIcon({ mode }: { mode: 'system' | 'light' | 'dark' }) {
   if (mode === 'light') return <Sun size={16} />;
   if (mode === 'dark') return <Moon size={16} />;
   return <Monitor size={16} />;
+}
+
+function BrandMark() {
+  return (
+    <span
+      className="flex h-7 w-7 items-center justify-center rounded-md bg-[#213330]"
+      aria-hidden="true"
+    >
+      <img src={ldBrandMark} alt="" className="w-[17px]" />
+    </span>
+  );
 }
 
 function IconTooltip({ label, visible }: { label: string; visible: boolean }) {
@@ -80,11 +87,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         <div className={collapsed ? 'flex flex-col items-center gap-2' : 'flex items-center justify-between gap-2'}>
           <div className={`flex min-w-0 items-center ${collapsed ? 'justify-center' : 'gap-2'}`}>
             <div
-              className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-ldvh-accent/15"
+              className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center"
               onMouseEnter={() => setVisibleTooltip('brand')}
               onMouseLeave={() => setVisibleTooltip(null)}
             >
-              <Shield size={18} className="text-ldvh-accent" />
+              <BrandMark />
               {collapsed && <IconTooltip label="LDVH" visible={visibleTooltip === 'brand'} />}
             </div>
             {!collapsed && (

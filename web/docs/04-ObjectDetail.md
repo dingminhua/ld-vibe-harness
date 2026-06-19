@@ -21,6 +21,8 @@
   WorkPlan：执行态势 + 成功标准 / 验证证据 / 关闭证据 + 目标 / 所属工作域 / 来源 + 文档 / 决策 / 备忘 / 踩坑经验
   ADR：背景 / 决策 / 影响 / 关联
   Pitfall：现象 / 触发 / 根因 / 方案 / 验证 / 规避 / 范围 / 关联
+  Study：意图 / 摘要 / 建议 / 正文 / 关联
+  Memo：意图 / 摘要 / 演变 / 分流 / 关联
   其他对象：字段卡片布局
 YAML 源码折叠区
 右侧扩展阅读区（App Shell 提供，不属于本页卡片）
@@ -66,6 +68,14 @@ WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 6. WorkPlan 详情页点击执行项行只打开右侧辅助阅读区，不切换主路由到独立对象详情；主路由跳转只属于对象列表卡片。
 
 ## 6. 非工作主线对象字段布局
+
+当前已定稿的非工作主线对象专用阅读方案为：
+
+1. Pitfall / 踩坑经验：作为“可复用经验阅读页”展示；
+2. ADR / 决策：作为“决策补丁阅读页”展示；
+3. Study / 研究报告：作为“报告阅读界面”展示。
+
+上述三类方案作为后续非工作主线对象页面设计的参照，不再回退到普通字段卡片堆叠。
 
 - Pitfall 不使用普通字段卡片堆叠，而作为“可复用经验阅读页”展示。主节点固定为“现象、触发、根因、方案、验证、规避、范围、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。
 - ADR 不使用普通字段卡片堆叠，而作为“决策补丁阅读页”展示。主节点固定为“背景、决策、影响、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。
@@ -119,7 +129,18 @@ Study 详情页是报告阅读界面，不按普通字段卡片表达主内容�
 
 Study 主节点标题栏整行可点击，不再在内容内部放“展开/收起”文字按钮。`user_intent`、`summary`、`conclusion`、`report_body` 和“关联”统一使用两态：默认全部打开，点击标题栏在 `expanded` 与 `collapsed` 之间切换。图标表达当前可执行动作：收拢状态使用 `ChevronDown`，表示可以向下打开；打开状态使用 `ChevronUp`，表示可以向上收起。
 
-Pitfall、ADR、Memo 等非 Study 对象的长文本阅读组织应向 Study 的固定主节点思路靠拢：优先依据 05.01 字段语义和 05.02 内容格式形成稳定阅读节点，而不是把 YAML 字段原样散成难以扫描的卡片。`verification` 等证据字段的节点顺序由 05.02 定义；具体对象页面只决定这些节点在对象详情中的位置和折叠行为。已定义专用阅读布局的对象必须在详情页和右侧扩展阅读区共用同一套节点、顺序、折叠行为和关联渲染。
+Memo 不使用普通字段卡片堆叠。Memo 是“分流前的信息对象”，页面目标不是证明结论、沉淀经验或呈现报告，而是帮助 Human 和 AI 判断这条信息当前应继续 pending、追加演变、分流到目标事实源，还是废弃。Memo 作为“待分流信息阅读页”展示，基础主节点固定为“意图、摘要、演变、关联”；“分流”是闭环事实节点，不是 pending 状态说明节点：
+
+1. “意图”消费 `source_detail`，使用与 Study “意图”一致的主节点样式表达这条 Memo 的来源意图、问题触发或对话背景；不得再以“来源说明”字段卡片或来源子字段表达。
+2. “摘要”消费 `description`，展示当前问题焦点、保留价值和阶段性收敛方向；这是 Memo 主阅读节点，不得被压在普通字段卡片中。
+3. “演变”消费 `evolution`，按倒序展示关键语义转折；每条展示 `at` 和 `summary`，`at` 拆成日期与时间两行展示，不做聊天流水账样式，不额外创建时间线事实源。
+4. “分流”只在 `status` 为 `resolved` / `discarded`，或存在 `resolved_to`、`resolved_at`、`discard_reason` 任一真实闭环事实时渲染；`pending` 且没有上述事实时不得渲染“分流”节点，不得用固定提示文案占位。节点内消费 `status`、`resolved_to`、`resolved_at`、`discard_reason`：`resolved` 显示分流目标引用和分流日期；`discarded` 显示废弃原因。Web 只读展示，不提供状态修改、分流或废弃按钮。
+5. `source` 不进入正文节点，必须作为对象头部弱元信息展示在“更新”之后，表达方式与创建/更新元信息一致。
+6. “关联”统一收纳 `related_workareas`、`related_workplans`、`related_adrs`、`related_studies` 和 `related_docs`，按关联区通用行样式展示；Memo 当前字段契约没有 `related_memos` 或 `related_pitfalls`，Web 不得为 Memo 杜撰这两类字段。
+
+Memo 节点标题栏应与 ADR / Pitfall / Study 保持一致：整行可点击，默认全部打开，折叠图标使用 `ChevronDown` / `ChevronUp`。详情页和右侧扩展阅读区必须复用同一套 Memo 阅读布局。
+
+Pitfall、ADR、Study 和后续 Memo 等非工作主线对象的长文本阅读组织应向固定主节点思路靠拢：优先依据 05.01 字段语义和 05.02 内容格式形成稳定阅读节点，而不是把 YAML 字段原样散成难以扫描的卡片。`verification` 等证据字段的节点顺序由 05.02 定义；具体对象页面只决定这些节点在对象详情中的位置和折叠行为。已定义专用阅读布局的对象必须在详情页和右侧扩展阅读区共用同一套节点、顺序、折叠行为和关联渲染。
 
 ## 8. 右侧扩展阅读区
 
@@ -130,9 +151,9 @@ Pitfall、ADR、Memo 等非 Study 对象的长文本阅读组织应向 Study 的
 - 不展示对象列表式导航。
 - 同一对象或文档入口再次点击关闭扩展阅读区；点击不同入口才切换右侧预览内容。
 - 对象预览不是“摘要卡片”，而是对象详情页阅读内容的右侧视口；同一个对象在详情页和扩展阅读区必须使用同一套字段顺序、字段标签、字段过滤和字段渲染。
-- WorkArea、WorkPlan、Pitfall、ADR 必须复用详情页导出的专用阅读布局。
-- WorkArea、WorkPlan、Pitfall、ADR 的扩展阅读头部同样不显示状态 chip；右侧面板按详情页身份区顺序展示 `类型 + ID + 标题 + 创建/更新时间 + 复制路径入口`，状态由复用的语义阅读布局表达。
-- Memo、Study 等通用对象必须复用详情页导出的 `getObjectDetailContentEntries()`、`splitRelatedContentEntries()`、`ContentField` 和 `RelatedContentSection`；不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map、关联分组或独立字段渲染器。
+- WorkArea、WorkPlan、Pitfall、ADR 必须复用详情页导出的专用阅读布局；Study 使用详情页固定主节点阅读布局。
+- WorkArea、WorkPlan、Pitfall、ADR、Study 的扩展阅读头部同样不显示状态 chip；右侧面板按详情页身份区顺序展示 `类型 + ID + 标题 + 创建/更新时间 + 复制路径入口`，状态由复用的语义阅读布局表达。
+- Memo 必须复用详情页专用 Memo 阅读布局，不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map、关联分组或独立字段渲染器。
 - 对象预览头部提供复制完整路径图标，复制对象详情 API 返回的 `target`。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。
 - Markdown 正文基准字号为 14px；表格横向滚动，代码块、引用块、任务列表由全局 Markdown 样式统一控制。
