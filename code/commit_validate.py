@@ -38,8 +38,7 @@ MAX_SUBJECT_LEN = 72
 
 # 第一行格式: <type>[optional scope][!]: <description>
 HEADER_RE = re.compile(r"^([A-Za-z]+)(?:\(([^)]+)\))?(!)?:\s+(.+)$")
-FOOTER_RE = re.compile(r"^(?:BREAKING CHANGE|[A-Za-z][A-Za-z0-9-]*):\s+\S+", re.MULTILINE)
-DISALLOWED_FOOTER_RE = re.compile(r"^\s*(Refs|Human-Gate|Verification|Risk):\s+.+$", re.MULTILINE)
+LDVH_PRIVATE_TRAILER_RE = re.compile(r"^\s*(Human-Gate|Verification|Risk):\s+.+$", re.MULTILINE)
 COMMAND_LINE_RE = re.compile(
     r"^\s*(?:npm|pnpm|yarn|bun|python3?|pytest|ruff|mypy|node|tsc|git|make|cargo|go|deno)\b"
 )
@@ -63,26 +62,31 @@ FORMAT_HELP = """\
     <type>[optional scope][!]: <description>
 
     [optional body]
+    [optional footer(s)]
 
 各部分说明：
   type      必填。变更类型：{valid_types}
   scope     可选。影响范围（推荐）：{valid_scopes}
   !         可选。表示破坏性变更
   description 必填。简短描述，不超过 72 字符
-  body      条件必填。用于说明动机、关键变更、影响边界、验证结论与风险
-  footer    禁用。破坏性变更使用首行 ! 标记，并在 body 中说明影响
+  body      条件必填。推荐使用结构化语义清单说明动机、关键变更、影响边界、验证结论与风险
+  footer    可选。遵守 Conventional Commits / git trailer，例如 BREAKING CHANGE、Refs、Co-authored-by
 
-禁用：
-  不得使用 footer；尤其不得使用 Refs、Human-Gate、Verification、Risk 作为固定字段
+注意：
+  footer 不得替代 body 的语义清单；LDVH 不定义 Human-Gate、Verification、Risk 作为标准必填 trailer
 
 示例：
   spec(specs): 采用约定式提交规范
 
-  将提交首行固定为 Conventional Commits 格式，解决 Code 和 Web 解析边界不稳定的问题。
+  动机:
+  - 解决 Code 和 Web 解析边界不稳定的问题。
 
-  关键变更是明确 type/scope 单主语义，并把 body 定位为 Git 无法自动提供的人类语义层。
+  关键变更:
+  - 明确 type/scope 单主语义。
+  - 把 body 定位为 Git 无法自动提供的人类语义层。
 
-  已确认提交预检能识别格式错误和明显空泛正文；残留风险由 Human 审查兜底。
+  验证结论:
+  - 已确认提交预检能识别格式错误和明显空泛正文。
 """.format(
     valid_types=", ".join(sorted(VALID_TYPES)),
     valid_scopes=", ".join(sorted(RECOMMENDED_SCOPES)),
@@ -319,19 +323,11 @@ def check_commit(commit: CommitInfo, touched_files: Optional[list[str]] = None) 
             "当前 staged files 要求 commit body 非空；body 应说明动机、关键变更、影响边界和风险"
         ))
 
-    # LDVH 不使用 footer，避免把 Git 提交变成工作对象记录或 AI 固定字段。
-    if FOOTER_RE.search(commit.body):
+    private_trailers = sorted({match.group(1) for match in LDVH_PRIVATE_TRAILER_RE.finditer(commit.full_message)})
+    if private_trailers:
         issues.append(Issue(
-            commit.hash, "error",
-            "不得使用 commit footer；破坏性变更用首行 ! 标记，其他确认、验证和风险写入自然语言 body"
-        ))
-
-    # 兼容旧错误信息，点名历史上禁用的四类固定字段。
-    disallowed_footers = sorted({match.group(1) for match in DISALLOWED_FOOTER_RE.finditer(commit.full_message)})
-    if disallowed_footers:
-        issues.append(Issue(
-            commit.hash, "error",
-            f"不得使用 LDVH 固定 footer 字段: {', '.join(disallowed_footers)}"
+            commit.hash, "warning",
+            f"不建议使用 LDVH 私有 trailer 替代 body 语义清单: {', '.join(private_trailers)}"
         ))
 
     # 检查是否包含中文（error，强制）

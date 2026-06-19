@@ -69,7 +69,7 @@ Git 提交记录与工作模型的边界如下：
 ---
 ## 4. commit message 格式
 
-LDVH 使用 Conventional Commits 1.0.0（约定式提交规范）作为 Git commit message 标准，外部标准链接为 <https://www.conventionalcommits.org/en/v1.0.0/>。提交信息必须在可解析的首行和必要正文中说清楚本次做了什么，不使用 `Refs:`、`Human-Gate:`、`Verification:`、`Risk:` 四类专用 trailer 作为标准格式字段。
+LDVH 使用 Conventional Commits 1.0.0（约定式提交规范）作为 Git commit message 标准，外部标准链接为 <https://www.conventionalcommits.org/en/v1.0.0/>。提交信息必须在可解析的首行、必要正文和可选 footer 中说清楚本次做了什么。LDVH 不发明与行业规范冲突的提交格式，也不把 `Human-Gate:`、`Verification:`、`Risk:` 这类私有 trailer 定义为标准必填字段。
 
 标准格式如下：
 
@@ -77,6 +77,8 @@ LDVH 使用 Conventional Commits 1.0.0（约定式提交规范）作为 Git comm
 <type>[optional scope][!]: <description>
 
 [optional body]
+
+[optional footer(s)]
 ```
 
 | 字段 | 要求 | 说明 |
@@ -86,9 +88,9 @@ LDVH 使用 Conventional Commits 1.0.0（约定式提交规范）作为 Git comm
 | `!` | 可选 | 破坏性变更标记，对应 Conventional Commits 的 breaking change |
 | `description` | 必填 | 简体中文简短说明，推荐不超过 72 字符 |
 | `body` | 条件必填 | 使用简体中文说明做了什么、为什么做、影响范围、关键取舍和必要上下文；是否必填按 §4.2 判断 |
-| `footer` | 禁用 | LDVH 不使用 commit footer；破坏性变更使用首行 `!` 标记，并在 body 中自然语言说明影响 |
+| `footer` | 可选 | 遵守 Conventional Commits 和 git trailer 风格；可以使用 `BREAKING CHANGE:`、`Refs:`、`Co-authored-by:` 等行业兼容 footer，但不得替代 body 的语义清单 |
 
-所有提交都遵守同一套格式。正文长短由变更复杂度决定，LDVH 不额外定义提交类别。复杂变更、规范变更、迁移、回退或跨多个事实源的修改，必须在正文用自然语言说明变更内容和影响，不拆成 LDVH 自定义固定 trailer 字段。
+所有提交都遵守同一套格式。正文长短由变更复杂度决定，LDVH 不额外定义提交类别。复杂变更、规范变更、迁移、回退或跨多个事实源的修改，必须在正文用结构化语义清单说明变更内容和影响，不拆成 LDVH 私有固定 trailer 字段。
 
 ### 4.1 首行单主语义
 
@@ -102,7 +104,7 @@ LDVH 使用 Conventional Commits 1.0.0（约定式提交规范）作为 Git comm
 
 ### 4.2 提交正文硬性要求
 
-commit body 是 Git 提交记录的人类语义层，不是给 Git 复制文件清单，也不是给 AI 填固定字段。Git 已经提供 hash、作者、时间、touched files、diff 和 stat；body 必须承载 Git 无法自动知道、但 Human 审查和 Web 阅读需要知道的语义信息。
+commit body 是 Git 提交记录的人类语义清单层。Git 已经提供 hash、作者、时间、touched files、diff 和 stat；body 必须承载 Git 无法自动知道、但 Human 审查、Code 预检、Web 阅读和 AI 后续执行需要知道的语义信息。
 
 以下提交必须包含非空 body：
 
@@ -119,20 +121,22 @@ commit body 是 Git 提交记录的人类语义层，不是给 Git 复制文件�
 2. 纯机械版本号、锁文件、生成物或等价维护变更，且不改变事实源语义、Web 行为或校验结果；
 3. 回退提交的工具自动生成正文已经足够说明被回退提交，且没有额外人工取舍。
 
-必须写 body 的提交，其正文至少覆盖以下四项语义；可以使用自然段，也可以使用 Markdown 列表或小标题，但不得改用 `Refs:`、`Human-Gate:`、`Verification:`、`Risk:` 等固定 trailer 或其他 footer 字段：
+必须写 body 的提交，其正文应优先使用 Markdown 小标题或列表形成稳定清单，至少覆盖以下四项语义；可以使用自然段补充说明，但不得改用 footer 替代 body。推荐小标题为“动机”“关键变更”“影响边界”“验证结论”“风险与后续”：
 
 1. 变更动机：为什么需要这次修改，解决了什么问题或收敛了什么偏差；
 2. 关键变更：本次实际改变了哪些行为、契约、展示或事实源语义，不重复逐文件清单；
 3. 影响边界：影响哪些对象、规范、Code/Web 能力、用户体验、AI 执行或后续维护；
 4. 验证结论与风险：说明本次变更已经确认到什么程度、仍有什么未验证或残留风险；检查命令可以作为辅助证据出现，但不得替代验证结论。
 
-以下正文不合格：
+以下 body 不合格：
 
 1. 只写“更新”“优化”“完善”“调整样式”“按要求修改”等无法判断语义的空泛表述；
 2. 只重复文件名、diff stat、命令输出或 changed files；
 3. 只堆 `npm run web:check`、`python3 code/specs_validate.py ...`、`git diff --check` 等命令，而不说明验证结论、动机、关键变更和影响边界；
-4. 把 Git 提交伪装成工作对象记录，使用 footer 或 LDVH 禁用的固定字段；
+4. 把 Git 提交伪装成工作对象记录，用 `Human-Gate:`、`Verification:`、`Risk:` 等 LDVH 私有 trailer 替代 body 语义清单；
 5. 为了满足格式而堆砌模板句，实际没有提供 Human 可审查的信息。
+
+Footer 是行业规范的一部分，只用于承载 Conventional Commits 或 git trailer 风格的尾部信息。`BREAKING CHANGE:`、`Refs:`、`Co-authored-by:` 等 footer 可以存在；LDVH 不要求 AI 为追溯、Human Gate、验证或风险固定补写 trailer。若这些信息对理解本次提交有语义价值，应优先写入 body 清单，footer 只作为兼容行业工具和平台的附加信息。
 
 Web 应把 body 作为“提交说明”优先展示给 Human；Code 应在提交前预检中尽可能根据 staged touched files 和 message 内容判断 body 是否缺失或明显空泛。无法机械判断语义质量时，应至少给出 warning，并由 Human 审查兜底。
 
@@ -224,7 +228,7 @@ Code 可以实现以下能力：
 2. 结合 staged touched files 或指定文件清单，按 §4.2 判断 body 是否必填；
 3. 对必须写 body 但缺失 body 的提交给出 error；
 4. 对 body 明显空泛、只重复文件清单、只写检查命令或缺少关键语义维度的提交给出 warning；
-5. 检查不得出现 footer，尤其不得出现 `Refs:`、`Human-Gate:`、`Verification:`、`Risk:` 四类 LDVH 禁用固定字段；
+5. 检查 footer 是否明显不符合 Conventional Commits / git trailer 形式，并对 `Human-Gate:`、`Verification:`、`Risk:` 等 LDVH 私有 trailer 替代 body 的倾向给出 warning；
 6. 基于 Git 历史、touched files、description/body 自然文本派生对象关联提交；
 7. 为 Web 提供提交列表、提交详情、文件统计、完整 body 和必要的派生关联；
 8. 对格式不稳定的提交给出 warning；
@@ -243,7 +247,7 @@ Web 呈现必须遵守：
 2. `/changelog` 可作为路由名保留，但页面文案应表达为提交记录派生视图；
 3. Dashboard、ProjectFiles 和 Changelog 应尽量共享同一 commit DTO 或解析契约；
 4. 对象详情中的关联提交应由 Git 派生，不从对象 YAML 手写字段读取为权威事实；
-5. Web 不展示 `Refs:`、`Human-Gate:`、`Verification:`、`Risk:` 作为固定字段或标签；
+5. Web 不把 `Human-Gate:`、`Verification:`、`Risk:` 展示为 LDVH 固定字段或标签；`Refs:`、`BREAKING CHANGE:`、`Co-authored-by:` 等行业兼容 footer 如存在，应作为 Git message 原文或后续 footer 派生信息展示；
 6. Web 可按当前语言本地化展示 `type` 和推荐 `scope` 标签；中文展示应使用 §5 和 §6 中的简体中文列，英文展示应保留 type 原始 token，并使用 §6 中的 English scope 展示名；
 7. 提交详情必须优先展示 body 派生的“提交说明”；有 body 时默认展开，没有 body 时不显示该节点；
 8. 改动文件、文件统计和原始信息来自 Git 派生数据；改动文件和原始信息默认收起，不替代提交说明；
@@ -256,37 +260,58 @@ Web 呈现必须遵守：
 ```text
 spec(specs): 采用约定式提交规范
 
-将 Git 提交首行统一为 Conventional Commits 格式，解决提交记录无法被 Code 和 Web 稳定解析的问题。
+动机:
+- 解决提交记录无法被 Code 和 Web 稳定解析的问题。
 
-关键变更是固定 type、scope、breaking marker 和 description 的解析边界，并明确工作对象不得手写维护 related_changes。
+关键变更:
+- 将 Git 提交首行统一为 Conventional Commits 格式。
+- 固定 type、scope、breaking marker 和 description 的解析边界。
+- 明确工作对象不得手写维护 related_changes。
 
-影响范围包括 Git 提交预检、Web 提交记录页和后续对象关联提交派生。
+影响边界:
+- 影响 Git 提交预检、Web 提交记录页和后续对象关联提交派生。
 
-已确认 specs 结构和章节引用没有因本次规则调整漂移；后续需要同步 Code 校验和 Web DTO。
+验证结论:
+- 已确认 specs 结构和章节引用没有因本次规则调整漂移。
+- 后续需要同步 Code 校验和 Web DTO。
 ```
 
 ```text
 fix(web): 修复提交记录分类解析
 
-支持 type(scope)!: description 格式，避免 breaking change 提交被识别为 other。
+动机:
+- 避免 breaking marker 提交被识别为 other。
 
-关键变更是让 Web API 解析 category、scope、description 和 isBreaking，并由 Dashboard 和 Changelog 共用这些字段。
+关键变更:
+- 支持 type(scope)!: description 格式。
+- 让 Web API 解析 category、scope、description 和 isBreaking。
+- Dashboard 和 Changelog 共用这些字段。
 
-影响范围限于提交记录派生展示，不改变 Git commit records 本身。
+影响边界:
+- 影响范围限于提交记录派生展示，不改变 Git commit records 本身。
 
-已确认 Web 类型与 breaking marker 提交样例均能覆盖解析结果。
+验证结论:
+- 已确认 Web 类型与 breaking marker 提交样例均能覆盖解析结果。
 ```
 
 ```text
 feat(web)!: 调整提交记录接口字段
 
-返回 category、scope、description 和 isBreaking 字段，供前端统一消费。
+动机:
+- 让前端统一消费提交记录结构化字段。
 
-该变更调整 Web API DTO，旧的仅首行字符串消费方需要改为读取结构化字段。
+关键变更:
+- 返回 category、scope、description 和 isBreaking 字段。
+- 调整 Web API DTO。
 
-影响范围包括 Dashboard 最近提交、Changelog 列表和提交详情。
+影响边界:
+- 影响 Dashboard 最近提交、Changelog 列表和提交详情。
+- 旧的仅首行字符串消费方需要改为读取结构化 description。
 
-已确认前端类型定义已同步，旧的仅首行字符串消费方需要改为读取结构化 description。
+验证结论:
+- 已确认前端类型定义已同步。
+
+BREAKING CHANGE: 旧的仅首行字符串消费方需要改为读取结构化 description。
 ```
 
 ---

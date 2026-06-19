@@ -83,16 +83,20 @@ def test_breaking_change_marker_passes():
     assert errors == []
 
 
-def test_footer_is_disallowed():
+def test_breaking_change_footer_passes():
     commit = make_commit(
         subject="feat(api)!: 调整公开接口参数",
-        body="BREAKING CHANGE: 旧参数不再兼容。",
+        body=(
+            "动机:\n"
+            "- 调整公开接口参数。\n\n"
+            "BREAKING CHANGE: 旧参数不再兼容。"
+        ),
     )
 
     issues = checker.check_commit(commit)
     errors = [i for i in issues if i.level == "error"]
 
-    assert any("不得使用 commit footer" in i.message for i in errors)
+    assert errors == []
 
 
 def test_uppercase_type_warns_but_parses():
@@ -137,21 +141,37 @@ def test_subject_too_long():
     assert any("超过" in i.message and "字符" in i.message for i in warnings)
 
 
-def test_missing_trailers_do_not_warn():
+def test_missing_private_trailers_do_not_warn():
     commit = make_commit(subject="docs(specs): 测试", body="说明本次测试内容。")
 
     issues = checker.check_commit(commit)
     warnings = [i for i in issues if i.level == "warning"]
 
-    assert not any("Refs" in i.message or "Human-Gate" in i.message or "Verification" in i.message or "Risk" in i.message for i in warnings)
+    assert not any("Human-Gate" in i.message or "Verification" in i.message or "Risk" in i.message for i in warnings)
 
 
-def test_ldvh_fixed_footers_are_disallowed():
+def test_refs_footer_is_allowed():
+    commit = make_commit(
+        subject="docs(specs): 测试引用 footer",
+        body=(
+            "动机:\n"
+            "- 说明本次测试内容。\n\n"
+            "Refs: #123"
+        ),
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert errors == []
+
+
+def test_ldvh_private_trailers_warn():
     commit = make_commit(
         subject="docs(specs): 测试禁用字段",
         body=(
-            "说明本次测试内容。\n\n"
-            "Refs: memo-0001\n"
+            "动机:\n"
+            "- 说明本次测试内容。\n\n"
             "Human-Gate: 用户确认\n"
             "Verification: pytest\n"
             "Risk: 无"
@@ -159,9 +179,9 @@ def test_ldvh_fixed_footers_are_disallowed():
     )
 
     issues = checker.check_commit(commit)
-    errors = [i for i in issues if i.level == "error"]
+    warnings = [i for i in issues if i.level == "warning"]
 
-    assert any("不得使用 LDVH 固定 footer 字段" in i.message for i in errors)
+    assert any("不建议使用 LDVH 私有 trailer" in i.message for i in warnings)
 
 
 def test_missing_chinese_errors():

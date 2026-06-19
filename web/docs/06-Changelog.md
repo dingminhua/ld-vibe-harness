@@ -67,6 +67,7 @@
   - `改动文件` 节点；
   - `原始信息` 节点。
 - 有 commit body 时展示 `提交说明` 节点并默认展开；没有 body 时不显示该节点。
+- `提交说明` 按 Git message body 原样 Markdown 渲染，适合展示结构化语义清单；合法 footer 如随 Git message 一并返回，可以保留在原文中，但 Web 不把它解析成 LDVH 工作对象字段。
 - `提交说明`、`改动文件` 和 `原始信息` 使用与对象正文一致的圆点标题、右侧折叠箭头和节点卡片样式；`改动文件` 和 `原始信息` 默认收起；原始 `git diff --stat` 或 `git show --stat` 文本只作为折叠审计信息保留，不作为主阅读界面。
 
 ## 6. 复制上下文
@@ -89,7 +90,7 @@
 
 - commit message 按 Git 事实内容原样展示。
 - API 应返回完整 commit body，并按 Conventional Commits 解析 `category`、`scope`、`description` 和 `isBreaking`，供列表、仪表盘、提交详情和后续派生视图使用。
-- 页面不解析 `Refs:`、`Human-Gate:`、`Verification:`、`Risk:` 为固定字段。
+- 页面不把 `Human-Gate:`、`Verification:`、`Risk:` 解析为 LDVH 固定字段；`Refs:`、`BREAKING CHANGE:`、`Co-authored-by:` 等行业兼容 footer 如存在，按 Git message 原文的一部分展示。
 - 对象相关提交如需展示，应由后续专门的派生查询能力基于 Git 历史、文件路径、对象 ID 和自然文本实现，不在提交记录页内联解析。
 
 ## 8. 日期格式
