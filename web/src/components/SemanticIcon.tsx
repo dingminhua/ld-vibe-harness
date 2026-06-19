@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import {
   FileText,
   BookOpenText,
+  ClipboardList,
   Focus,
   GitCommit,
   Github,
@@ -20,12 +21,17 @@ function GitHubSilhouetteIcon({ size = 16, className, ...props }: LucideProps) {
   return <Github size={size} strokeWidth={0} fill="currentColor" className={className} {...props} />;
 }
 
+function MemoPencilIcon({ size = 16, className, ...props }: LucideProps) {
+  const iconSize = Math.max(10, Number(size) - 2);
+  return <Pencil size={iconSize} className={className} {...props} />;
+}
+
 export const OBJECT_TYPE_ICONS: Record<string, SemanticIconComponent> = {
   workarea: Focus,
-  workplan: Workflow,
+  workplan: ClipboardList,
   adr: FileSignature,
   pitfall: Lightbulb,
-  memo: Pencil,
+  memo: MemoPencilIcon,
   study: BookOpenText,
   change: GitCommit,
   changelog: GitHubSilhouetteIcon,
@@ -33,8 +39,8 @@ export const OBJECT_TYPE_ICONS: Record<string, SemanticIconComponent> = {
 
 export const COLLECTION_ICONS: Record<string, LucideIcon> = {
   workarea: Focus,
-  workplan: Workflow,
-  plan: Workflow,
+  workplan: ClipboardList,
+  plan: ClipboardList,
   properties: FileText,
   docs: FileText,
   related: Link2,
