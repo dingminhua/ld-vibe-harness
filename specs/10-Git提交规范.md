@@ -140,6 +140,22 @@ Footer 是行业规范的一部分，只用于承载 Conventional Commits 或 gi
 
 Web 应把 body 作为“提交说明”优先展示给 Human；Code 应在提交前预检中尽可能根据 staged touched files 和 message 内容判断 body 是否缺失或明显空泛。无法机械判断语义质量时，应至少给出 warning，并由 Human 审查兜底。
 
+### 4.3 AI 写提交时的执行顺序
+
+AI 生成 commit message 时必须按以下顺序决策，避免把 LDVH 要求误解为文件分类、命令清单或私有 trailer：
+
+1. 判断是否应拆提交：若 staged changes 包含多个互相独立的目的，应先拆提交；若是一个原子闭环，可以跨 specs、Code、Web、docs 或测试文件保留在同一提交；
+2. 选择单一 `type`：只表达本次提交的主意图，不用多个 type 描述所有改动文件；
+3. 选择零个或一个 `scope`：只表达主承载域，不用 scope 覆盖全部 touched files；
+4. 写 description：用一句简体中文说明本次提交的核心结果，不写“更新”“优化”“完善”这类空泛词；
+5. 判断 body 是否必填：命中 §4.2 必填条件时必须写 body；不确定时宁可写 body；
+6. 写 body 语义清单：优先使用 `动机:`、`关键变更:`、`影响边界:`、`验证结论:`、`风险与后续:` 小标题和 Markdown 列表；
+7. 删除重复信息：body 中不得把 Git 已经提供的文件列表、diff stat、hash、作者、时间作为主要内容；
+8. 改写检查命令：若需要说明验证，不堆命令清单，应写验证结论，例如“已确认 Web 类型检查和 specs 结构检查通过，未发现提交详情 DTO 漂移”；
+9. 处理 footer：只有需要兼容 Conventional Commits 或平台工具时才写 footer，例如 `BREAKING CHANGE:`、`Refs:`、`Co-authored-by:`；不得用 `Human-Gate:`、`Verification:`、`Risk:` 替代 body 清单。
+
+AI 不应为了满足格式而制造虚假验证、虚假风险或虚假引用。未实际验证时，应在 `验证结论` 或 `风险与后续` 中明确写“未验证”及原因。
+
 ---
 ## 5. type 枚举
 
