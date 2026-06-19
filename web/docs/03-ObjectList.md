@@ -106,12 +106,12 @@ WorkPlan 是“计划执行态势”卡片，帮助用户从计划判断当前�
 
 ### 3.6 Memo 卡片
 
-Memo 是“待分流信息”卡片，列表态用于快速判断每条备忘现在应继续处理、已经流向哪里，或为什么被废弃。
+Memo 是“待分流信息”卡片，列表态用于快速定位每条备忘，并在已经分流或废弃时提示闭环事实；待处理卡片不展开来源、意图或长正文。
 
 - Memo 卡片保留通用头部、标题、优先级字符徽标、状态和更新时间。
-- Memo 卡片不使用通用非活跃原因块；卡片中部由 Memo 自身状态驱动。
+- Memo 卡片不使用通用非活跃原因块；卡片中部只由 Memo 闭环状态驱动。
 - Memo 卡片中部状态内容必须使用与 Pitfall 归档原因一致的弱说明表达：弱圆点、小号标签、小号正文，无彩色外框、无大面积状态底色、无 section 标题级强调。
-- `pending` 且没有分流闭环事实时，卡片中部消费 `source` 和 `source_detail`：`source` 使用“弱圆点 + 来源 + 原值”单行表达；`source_detail` 直接作为正文显示，不加“意图”标题。不得在 pending 卡片里展示 `description` 作为替代摘要。
+- `pending` 且没有分流闭环事实时，卡片中部不展示 `source`、`source_detail` 或 `description`；来源和意图留在 Memo 详情页的正文节点中阅读。
 - `resolved` 或存在 `resolved_to` / `resolved_at` 时，卡片中部展示“已分流”区域，消费 `resolved_to` 和 `resolved_at`：`resolved_to` 显示分流目标，`resolved_at` 显示分流时间。不得只用状态徽章表达已解决。
 - `discarded` 或存在 `discard_reason` 时，卡片中部展示“已废弃”区域，消费 `discard_reason`；缺少原因时展示原因缺失提示。不得再同时展示通用非活跃原因块造成重复。
 - Memo 卡片内部信息区域只用于阅读，不响应主路由跳转；点击外层卡片仍进入 Memo 详情页。
@@ -121,6 +121,18 @@ Memo 是“待分流信息”卡片，列表态用于快速判断每条备忘现
 - 加载态：居中旋转动画。
 - 错误态：`common.loadFailed` + 错误信息。
 - 空态：`objectList.noObjects`，不得拼 raw 中文句子。
+
+### 3.8 趋近定稿对象列表基线
+
+研究、决策、备忘、经验四个对象列表已经趋近定稿，应作为非工作主线对象卡片的统一基线。
+
+- 四类对象都使用同一外层卡片框架：浅边框、`ldvh-panel` 背景、`p-4`、`gap-3`、hover/focus 轻微 accent 边框反馈。
+- 顶部区域统一为左侧对象 ID、右侧复制完整路径和状态徽章；不得把状态移到标题带右侧，也不得在右侧操作区加入与复制不相关的强视觉按钮。
+- 标题带统一使用弱背景、内圈边框、左侧语义短线、对象类型图标、完整标题和右侧进入箭头；标题使用 `ldvh-card-title`，必须允许换行完整显示。
+- 更新时间统一放在卡片底部右侧，使用 `formatDateTime()` 和 `ldvh-meta-muted`；列表排序统一按 `updated` 倒序，最近发生变化的对象在最前。
+- 研究、决策、备忘和经验在列表态只展示对象定位所需信息，不展开长正文；备忘列表态只在已分流或已废弃时展示闭环事实，并使用弱说明表达，不升级为强状态模块。
+- 非活跃原因表达在决策和经验中保持一致：弱圆点、小号标签、小号正文，不使用醒目外框、大面积状态底色或标题级强调。
+- 四类对象必须继续使用同一 `ObjectStatusFilter` tab 视觉；状态数量数字使用 `ldvh-tab-count`，不得在单个对象页局部改大、改粗或拉开间距。
 
 ## 4. 交互
 
@@ -181,8 +193,8 @@ interface ObjectItem {
   deprecated_reason?: string;          // 非活跃废弃原因，卡片完整原因说明展示
   discard_reason?: string;             // 非活跃废弃原因，卡片完整原因说明展示
   closure_evidence?: string;           // closed WorkPlan 关闭原因来源，卡片完整原因说明展示
-  source?: string;                      // Memo 来源，pending 卡片展示
-  source_detail?: string;               // Memo 意图，pending 卡片展示
+  source?: string;                      // Memo 来源，详情页正文节点展示，pending 卡片不展示
+  source_detail?: string;               // Memo 意图，详情页正文节点展示，pending 卡片不展示
   resolved_to?: string | { type?: string; ref?: string }; // Memo 分流目标，resolved 卡片展示
   resolved_at?: string;                 // Memo 分流时间，resolved 卡片展示
 }

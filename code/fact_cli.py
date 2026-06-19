@@ -75,6 +75,7 @@ VALID_STATUSES = {
     "memo": {"pending", "resolved", "discarded"},
     "study": {"active", "archived"},
 }
+VALID_MEMO_RESOLVED_TO_TYPES = {"workarea", "workplan", "adr", "pitfall", "docs", "governed-projects", "other"}
 
 VALID_TRANSITIONS = {
     "workarea": {
@@ -684,6 +685,18 @@ def cmd_transition(args: argparse.Namespace) -> int:
         resolved_to = data.get("resolved_to")
         if not resolved_to or (isinstance(resolved_to, str) and not resolved_to.strip()):
             error("resolved_to 未填写，无法将 Memo 标记为 resolved")
+            return 1
+        if not isinstance(resolved_to, dict):
+            error("resolved_to 必须是 {type, ref} 对象，无法将 Memo 标记为 resolved")
+            return 1
+        target_type = resolved_to.get("type")
+        target_ref = resolved_to.get("ref")
+        if not target_type or not target_ref:
+            error("resolved_to 必须填写 type 和 ref，无法将 Memo 标记为 resolved")
+            return 1
+        if target_type not in VALID_MEMO_RESOLVED_TO_TYPES:
+            valid_values = ", ".join(sorted(VALID_MEMO_RESOLVED_TO_TYPES))
+            error(f"resolved_to.type 必须是以下值之一: {valid_values}；Study 只能通过 related_studies 关联")
             return 1
         if not data.get("resolved_at"):
             data["resolved_at"] = datetime.now().isoformat()

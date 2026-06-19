@@ -94,12 +94,6 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
 const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'archived', 'discarded', 'deprecated']);
 const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
 const STUDY_READING_NODE_FIELDS = new Set(['user_intent', 'summary', 'conclusion', 'report_body']);
-const STUDY_READING_NODE_LABELS_ZH: Record<string, string> = {
-  user_intent: '意图',
-  summary: '摘要',
-  conclusion: '建议',
-  report_body: '正文',
-};
 type ReadingNodeState = 'collapsed' | 'expanded';
 const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
   related_workareas: 20,
@@ -262,8 +256,8 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   source_objects: { zh: '来源对象', en: 'Source Objects' },
   related_objects: { zh: '关联对象', en: 'Related Objects' },
   source_memos: { zh: '来源备忘', en: 'Source Memos' },
-  resolved_to: { zh: '分流目标', en: 'Resolved To' },
-  resolved_at: { zh: '分流时间', en: 'Resolved At' },
+  resolved_to: { zh: '分流目标', en: 'Routed To' },
+  resolved_at: { zh: '分流时间', en: 'Routed At' },
   discard_reason: { zh: '废弃原因', en: 'Discard Reason' },
   deprecated_reason: { zh: '废弃原因', en: 'Deprecated Reason' },
   aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
@@ -475,6 +469,14 @@ export default function ObjectDetail() {
               locale={locale}
               getStatus={getStatus}
             />
+          ) : objType === 'study' ? (
+            <StudyReadingLayout
+              obj={obj}
+              extraEntries={primaryEntries}
+              relatedEntries={relatedEntries}
+              locale={locale}
+              objectPath={typeof obj.path === 'string' ? obj.path : detail.target}
+            />
           ) : objType === 'adr' ? (
             <AdrReadingLayout
               obj={obj}
@@ -577,7 +579,11 @@ export function ObjectIdentityHeader({
   closedAt,
   auxiliaryMetaEntries = [],
   extraBadges,
+  titleMetaEntries = [],
   customMetaEntries = [],
+  copyLabel,
+  copiedLabel,
+  titleMetaAlign = 'content',
   showDefaultDates = true,
   showCopyAction = true,
   compact = false,
@@ -597,7 +603,11 @@ export function ObjectIdentityHeader({
   closedAt?: string;
   auxiliaryMetaEntries?: Array<[string, unknown]>;
   extraBadges?: ReactNode;
+  titleMetaEntries?: Array<{ label: string; value: ReactNode }>;
   customMetaEntries?: Array<{ label: string; value: ReactNode }>;
+  copyLabel?: string;
+  copiedLabel?: string;
+  titleMetaAlign?: 'content' | 'actions';
   showDefaultDates?: boolean;
   showCopyAction?: boolean;
   compact?: boolean;
@@ -609,10 +619,16 @@ export function ObjectIdentityHeader({
   const statusColor = status ? getStatusColor(status) : null;
   const tagMetaEntry = auxiliaryMetaEntries.find(([key]) => key === 'tags');
   const remainingAuxiliaryMetaEntries = auxiliaryMetaEntries.filter(([key]) => key !== 'priority' && key !== 'tags');
+  const hasFooterMeta = showDefaultDates
+    || remainingAuxiliaryMetaEntries.length > 0
+    || customMetaEntries.length > 0
+    || Boolean(closedAt);
+  const inlineTitleMeta = titleMetaAlign === 'content' ? titleMetaEntries : [];
+  const actionAlignedTitleMeta = titleMetaAlign === 'actions' ? titleMetaEntries : [];
   return (
     <div className={compact ? 'min-w-0' : 'rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-3'}>
-      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span
               className="ldvh-chip shrink-0 rounded px-2 py-0.5"
@@ -634,11 +650,20 @@ export function ObjectIdentityHeader({
             {extraBadges}
             <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
           </div>
-          <TitleTag className={`${titleClassName} flex min-w-0 items-center gap-2 break-words`}>
-            <PriorityIcon source={source} type={objectType} locale={locale} size={compact ? 'sm' : 'lg'} />
-            <ObjectTypeIcon type={objectType} size={iconSize} className="shrink-0" style={{ color: typeColor }} />
-            <span className="min-w-0">{title}</span>
-          </TitleTag>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+            <TitleTag className={`${titleClassName} flex min-w-0 flex-1 basis-full items-center gap-2 break-words`}>
+              <PriorityIcon source={source} type={objectType} locale={locale} size={compact ? 'sm' : 'lg'} />
+              <ObjectTypeIcon type={objectType} size={iconSize} className="shrink-0" style={{ color: typeColor }} />
+              <span className="min-w-0">{title}</span>
+            </TitleTag>
+            {inlineTitleMeta.length > 0 && (
+              <div className="ml-auto flex min-w-0 basis-full flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
+                {inlineTitleMeta.map((entry) => (
+                  <HeaderDateMeta key={entry.label} label={entry.label} value={entry.value} />
+                ))}
+              </div>
+            )}
+          </div>
           {tagMetaEntry && (
             <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
               <HeaderDateMeta
@@ -647,25 +672,34 @@ export function ObjectIdentityHeader({
               />
             </div>
           )}
-          <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
-            {showDefaultDates && <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />}
-            {showDefaultDates && <HeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />}
-            {remainingAuxiliaryMetaEntries.map(([key, value]) => (
-              <HeaderDateMeta
-                key={key}
-                label={getFieldLabel(key, locale)}
-                value={formatAuxiliaryMetaValue(key, value, locale)}
-              />
-            ))}
-            {customMetaEntries.map((entry) => (
-              <HeaderDateMeta key={entry.label} label={entry.label} value={entry.value} />
-            ))}
-            {closedAt && <HeaderDateMeta label={t('objectDetail.closedAt')} value={closedAt} />}
-          </div>
+          {hasFooterMeta && (
+            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+              {showDefaultDates && <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />}
+              {showDefaultDates && <HeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />}
+              {remainingAuxiliaryMetaEntries.map(([key, value]) => (
+                <HeaderDateMeta
+                  key={key}
+                  label={getFieldLabel(key, locale)}
+                  value={formatAuxiliaryMetaValue(key, value, locale)}
+                />
+              ))}
+              {customMetaEntries.map((entry) => (
+                <HeaderDateMeta key={entry.label} label={entry.label} value={entry.value} />
+              ))}
+              {closedAt && <HeaderDateMeta label={t('objectDetail.closedAt')} value={closedAt} />}
+            </div>
+          )}
         </div>
         {showCopyAction && (
-          <div className="flex shrink-0 items-center gap-2 sm:pt-0.5">
-            <CopyPathButton path={target} />
+          <div className="flex shrink-0 flex-col items-end gap-2 sm:pt-0.5">
+            <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
+            {actionAlignedTitleMeta.length > 0 && (
+              <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
+                {actionAlignedTitleMeta.map((entry) => (
+                  <HeaderDateMeta key={entry.label} label={entry.label} value={entry.value} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1212,14 +1246,14 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
       onClick={openRelatedPreview}
       onKeyDown={handleKeyDown}
       title={previewLabel}
-      className="ldvh-body group flex w-full cursor-pointer items-start gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+      className="ldvh-body group flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
     >
       {objectType ? (
-        <ObjectTypeIcon type={objectType} size={13} className="mt-1 shrink-0" style={{ color: objectColor }} />
+        <ObjectTypeIcon type={objectType} size={13} className="shrink-0" style={{ color: objectColor }} />
       ) : isExternal ? (
-        <ExternalLink size={13} className="mt-1 shrink-0 text-ldvh-accent" />
+        <ExternalLink size={13} className="shrink-0 text-ldvh-accent" />
       ) : (
-        <FileText size={13} className="mt-1 shrink-0 text-ldvh-accent" />
+        <FileText size={13} className="shrink-0 text-ldvh-accent" />
       )}
       <div className="min-w-0 flex-1">
         <div className="ldvh-meta-primary truncate">{displayTitle}</div>
@@ -1227,19 +1261,21 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
           <div className="ldvh-caption mt-1 line-clamp-2 text-ldvh-text-secondary/70">{reference.summary}</div>
         )}
       </div>
-      <CopyPathButton path={copyValue} />
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          openRelatedPreview();
-        }}
-        title={previewLabel}
-        aria-label={previewLabel}
-        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent text-ldvh-text-secondary/70 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-accent focus-visible:border-ldvh-accent/50 focus-visible:outline-none"
-      >
-        <PanelIcon size={16} aria-hidden="true" />
-      </button>
+      <div className="flex h-7 shrink-0 items-center gap-1">
+        <CopyPathButton path={copyValue} />
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            openRelatedPreview();
+          }}
+          title={previewLabel}
+          aria-label={previewLabel}
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent text-ldvh-text-secondary/70 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-accent focus-visible:border-ldvh-accent/50 focus-visible:outline-none"
+        >
+          <PanelIcon size={16} aria-hidden="true" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -1760,7 +1796,7 @@ function MemoRoutingNode({ obj, locale }: { obj: Record<string, unknown>; locale
       )}
       {resolvedAt && (
         <DetailInlineField
-          label={locale === 'en' ? 'Resolved At' : '分流时间'}
+          label={locale === 'en' ? 'Routed At' : '分流时间'}
           value={<span className="ldvh-definition-text">{formatDateTime(resolvedAt)}</span>}
         />
       )}
@@ -2292,6 +2328,87 @@ function basename(path: string) {
   return path.split('/').filter(Boolean).pop() || path;
 }
 
+const STUDY_READING_NODES: Array<{ field: string; zh: string; en: string; kind: 'text' | 'report' }> = [
+  { field: 'user_intent', zh: '意图', en: 'Intent', kind: 'text' },
+  { field: 'summary', zh: '摘要', en: 'Summary', kind: 'text' },
+  { field: 'conclusion', zh: '建议', en: 'Recommendation', kind: 'text' },
+  { field: 'report_body', zh: '正文', en: 'Report body', kind: 'report' },
+];
+
+export function StudyReadingLayout({
+  obj,
+  extraEntries,
+  relatedEntries,
+  locale,
+  objectPath,
+}: {
+  obj: Record<string, unknown>;
+  extraEntries: Array<[string, unknown]>;
+  relatedEntries: RelatedContentEntry[];
+  locale: string;
+  objectPath?: string;
+}) {
+  const extraPrimaryEntries = extraEntries.filter(([fieldKey]) => !STUDY_READING_NODE_FIELDS.has(fieldKey));
+
+  return (
+    <div className="mb-6 flex flex-col gap-5">
+      {STUDY_READING_NODES.map((node) => (
+        <StudyReadingNode
+          key={node.field}
+          title={locale === 'en' ? node.en : node.zh}
+          value={obj[node.field]}
+          locale={locale}
+          kind={node.kind}
+          objectPath={objectPath}
+        />
+      ))}
+      {extraPrimaryEntries.map(([fieldKey, value]) => (
+        <ContentField
+          key={fieldKey}
+          fieldKey={fieldKey}
+          value={value}
+          locale={locale}
+          objType="study"
+          objectPath={objectPath}
+        />
+      ))}
+      <RelatedContentSection entries={relatedEntries} locale={locale} />
+    </div>
+  );
+}
+
+function StudyReadingNode({
+  title,
+  value,
+  locale,
+  kind,
+  objectPath,
+}: {
+  title: string;
+  value: unknown;
+  locale: string;
+  kind: 'text' | 'report';
+  objectPath?: string;
+}) {
+  const [state, setState] = useState<ReadingNodeState>('expanded');
+  if (!hasDetailContent(value)) return null;
+
+  return (
+    <ReadingNodeSection
+      title={title}
+      state={state}
+      locale={locale}
+      onToggle={() => setState((current) => getReadingNodeNextState(current))}
+    >
+      {kind === 'report' ? (
+        <StudyReportBodyEntry value={value} objectPath={objectPath} locale={locale} />
+      ) : (
+        <StudyTextNodeContent value={value} />
+      )}
+    </ReadingNodeSection>
+  );
+}
+
 function StudyReportBodyEntry({ value, objectPath, locale }: { value: unknown; objectPath?: string; locale: string }) {
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
   const docPath = objectPath || 'study-report.md';
@@ -2353,7 +2470,6 @@ function StudyTextNodeContent({ value }: { value: unknown }) {
 export function ContentField({ fieldKey, value, locale, objType, objectPath }: { fieldKey: string; value: unknown; locale: string; objType: string; objectPath?: string }) {
   const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
   const [collapsed, setCollapsed] = useState(Boolean(isCollapsible));
-  const [studyNodeState, setStudyNodeState] = useState<ReadingNodeState>('expanded');
 
   if (value === null || value === undefined) return null;
   if (value === '') return null;
@@ -2363,24 +2479,6 @@ export function ContentField({ fieldKey, value, locale, objType, objectPath }: {
   const label = labelEntry
     ? (locale === 'en' ? labelEntry.en : labelEntry.zh)
     : fieldKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-
-  if (objType === 'study' && STUDY_READING_NODE_FIELDS.has(fieldKey)) {
-    const studyLabel = locale === 'zh' ? (STUDY_READING_NODE_LABELS_ZH[fieldKey] || label) : label;
-    return (
-      <ReadingNodeSection
-        title={studyLabel}
-        state={studyNodeState}
-        locale={locale}
-        onToggle={() => setStudyNodeState((current) => getReadingNodeNextState(current))}
-      >
-        {fieldKey === 'report_body' ? (
-          <StudyReportBodyEntry value={value} objectPath={objectPath} locale={locale} />
-        ) : (
-          <StudyTextNodeContent value={value} />
-        )}
-      </ReadingNodeSection>
-    );
-  }
 
   return (
     <div className="rounded-lg border border-ldvh-border bg-ldvh-panel p-4">

@@ -27,8 +27,8 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   degraded: { zh: '降级', en: 'Degraded' },
   needs_human_gate: { zh: '需确认', en: 'Needs Gate' },
   unknown: { zh: '未知', en: 'Unknown' },
-  // Pitfall
-  resolved: { zh: '已解决', en: 'Resolved' },
+  // Memo
+  resolved: { zh: '已分流', en: 'Routed' },
   discarded: { zh: '已废弃', en: 'Discarded' },
 };
 

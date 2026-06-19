@@ -42,6 +42,32 @@ def read_study_frontmatter(path: Path):
     return yaml.safe_load(content[4:end])
 
 
+def write_memo(path: Path, *, resolved_to: dict[str, str] | str = "") -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "id": "memo-0001",
+        "type": "memo",
+        "title": "Study Boundary",
+        "status": "pending",
+        "created": "2026-06-20T09:00:00",
+        "updated": "2026-06-20T09:00:00",
+        "description": "Discuss whether a Study can close a Memo.",
+        "evolution": [],
+        "source": "conversation",
+        "source_detail": "test",
+        "priority": "P2",
+        "resolved_to": resolved_to,
+        "resolved_at": "",
+        "discard_reason": "",
+        "related_workareas": [],
+        "related_workplans": [],
+        "related_adrs": [],
+        "related_studies": ["study-0001"],
+        "related_docs": [],
+    }
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+
 def test_create_workplan_uses_current_contract(tmp_path):
     result = run_cli("create", "workplan", "--title", "Current Plan", "--base-dir", str(tmp_path))
 
@@ -233,6 +259,19 @@ def test_show_does_not_resolve_legacy_ids(tmp_path):
 
     assert result.returncode == 1
     assert "找不到对象" in result.stderr
+
+
+def test_memo_transition_rejects_study_resolved_target(tmp_path):
+    path = tmp_path / "ldvh-base" / "memos" / "memo-0001-study-boundary.yaml"
+    write_memo(path, resolved_to={"type": "study", "ref": "study-0001"})
+
+    result = run_cli("transition", str(path), "--to", "resolved", *AUTH_ARGS)
+
+    assert result.returncode == 1
+    assert "Study 只能通过 related_studies 关联" in result.stderr
+    data = read_yaml(path)
+    assert data["status"] == "pending"
+    assert data["resolved_at"] == ""
 
 
 def test_workplan_transition_requires_review_evidence(tmp_path):

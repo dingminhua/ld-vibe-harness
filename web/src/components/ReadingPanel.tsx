@@ -11,6 +11,7 @@ import {
   ObjectIdentityHeader,
   PitfallReadingLayout,
   RelatedContentSection,
+  StudyReadingLayout,
   WorkAreaReadingLayout,
   WorkPlanReadingLayout,
   getAuxiliaryMetaEntries,
@@ -153,7 +154,6 @@ export default function ReadingPanel() {
 
   if (!isOpen && !content) return null;
 
-  const showPanelTitle = content?.type !== 'diff';
   const panelTitle = content?.title || t('readingPanel.title');
   const preview = content ? <PanelContentRenderer content={content} /> : <EmptyPanelPreview />;
 
@@ -198,18 +198,12 @@ export default function ReadingPanel() {
             <div className="flex min-w-0 flex-1 items-center gap-2">
               {navigationControls}
               <div
-                className={`flex min-h-7 min-w-0 flex-1 cursor-ns-resize items-center ${
-                  showPanelTitle ? 'justify-start' : 'justify-center'
-                }`}
+                className="flex min-h-7 min-w-0 flex-1 cursor-ns-resize items-center justify-center"
                 onMouseDown={onSheetHandleDown}
                 onTouchStart={onSheetHandleDown}
                 aria-label={panelTitle}
               >
-                {showPanelTitle ? (
-                  <h3 className="ldvh-card-title min-w-0 truncate">{panelTitle}</h3>
-                ) : (
-                  <div className="h-1 w-10 rounded-full bg-ldvh-border" />
-                )}
+                <div className="h-1 w-10 rounded-full bg-ldvh-border" />
               </div>
             </div>
             <button
@@ -249,7 +243,6 @@ export default function ReadingPanel() {
         <div className="flex min-w-0 items-center gap-2">
           <GripVertical size={14} className="flex-shrink-0 text-ldvh-text-secondary" />
           {navigationControls}
-          {showPanelTitle && <h3 className="ldvh-card-title truncate">{panelTitle}</h3>}
         </div>
         <button
           type="button"
@@ -395,7 +388,14 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         auxiliaryMetaEntries={obj && objectType !== 'workarea' ? getAuxiliaryMetaEntries(obj, objectType || '') : []}
         compact
       />
-      {obj && isObjectDetailLayoutType(objectType) && <ObjectSemanticPreview objectType={objectType} obj={obj} objectId={objectId} />}
+      {obj && isObjectDetailLayoutType(objectType) && (
+        <ObjectSemanticPreview
+          objectType={objectType}
+          obj={obj}
+          objectId={objectId}
+          objectPath={typeof obj.path === 'string' ? obj.path : targetPath}
+        />
+      )}
       {obj && !isObjectDetailLayoutType(objectType) && (
         <GenericObjectPreview
           objectType={objectType}
@@ -407,7 +407,17 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   );
 }
 
-function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: string; obj: Record<string, unknown>; objectId?: string }) {
+function ObjectSemanticPreview({
+  objectType,
+  obj,
+  objectId,
+  objectPath,
+}: {
+  objectType?: string;
+  obj: Record<string, unknown>;
+  objectId?: string;
+  objectPath?: string;
+}) {
   const [summary, setSummary] = useState<ObjectItem | null>(null);
   const [loading, setLoading] = useState(false);
   const { locale, getStatus } = useI18n();
@@ -415,7 +425,7 @@ function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: str
   useEffect(() => {
     if (!objectType || !objectId) return;
     if (!isObjectDetailLayoutType(objectType)) return;
-    if (objectType === 'pitfall' || objectType === 'adr') {
+    if (objectType === 'pitfall' || objectType === 'adr' || objectType === 'memo' || objectType === 'study') {
       setSummary(null);
       setLoading(false);
       return;
@@ -465,11 +475,24 @@ function ObjectSemanticPreview({ objectType, obj, objectId }: { objectType?: str
     const { relatedEntries } = splitRelatedContentEntries(entries);
     return <MemoReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
   }
+  if (objectType === 'study') {
+    const entries = getObjectDetailContentEntries(obj, objectType);
+    const { primaryEntries, relatedEntries } = splitRelatedContentEntries(entries);
+    return (
+      <StudyReadingLayout
+        obj={obj}
+        extraEntries={primaryEntries}
+        relatedEntries={relatedEntries}
+        locale={locale}
+        objectPath={objectPath}
+      />
+    );
+  }
   return null;
 }
 
 function isObjectDetailLayoutType(objectType: string | undefined) {
-  return objectType === 'workarea' || objectType === 'workplan' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'memo';
+  return objectType === 'workarea' || objectType === 'workplan' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'memo' || objectType === 'study';
 }
 
 function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {
@@ -705,7 +728,7 @@ function CommitMetric({
       : 'text-ldvh-text-primary';
 
   return (
-    <div className="rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2">
+    <div className="rounded-md border border-ldvh-border bg-ldvh-bg px-3 py-2 text-center">
       <div className={`font-mono text-lg font-semibold leading-tight ${toneClass}`}>{value}</div>
       <div className="ldvh-caption mt-0.5">{label}</div>
     </div>
@@ -752,6 +775,34 @@ function CommitReadingNodeSection({
   );
 }
 
+const COMMIT_BODY_SECTION_TITLES = new Set([
+  '动机',
+  '关键变更',
+  '影响边界',
+  '验证结论',
+  '风险与后续',
+  'Motivation',
+  'Key changes',
+  'Impact boundary',
+  'Validation',
+  'Risks and follow-up',
+]);
+
+function formatCommitBodyForReading(value: string) {
+  return value
+    .trim()
+    .split('\n')
+    .map((line) => {
+      const match = line.match(/^([^\S\r\n]*)([^:：\n]+)\s*[:：]\s*$/);
+      if (!match) return line;
+      const [, indent, rawTitle] = match;
+      const title = rawTitle.trim();
+      if (indent || !COMMIT_BODY_SECTION_TITLES.has(title)) return line;
+      return `### ${title}`;
+    })
+    .join('\n');
+}
+
 function CommitIdentitySection({
   entry,
   parsed,
@@ -768,6 +819,8 @@ function CommitIdentitySection({
     scope: string;
     commit: string;
     time: string;
+    copyHash: string;
+    copiedHash: string;
   };
   locale: string;
 }) {
@@ -795,7 +848,10 @@ function CommitIdentitySection({
       created=""
       updated=""
       showDefaultDates={false}
-      customMetaEntries={[{ label: labels.time, value: timeValue }]}
+      titleMetaEntries={[{ label: labels.time, value: timeValue }]}
+      titleMetaAlign="actions"
+      copyLabel={labels.copyHash}
+      copiedLabel={labels.copiedHash}
       extraBadges={(
         <>
         {entry?.isBreaking && (
@@ -809,15 +865,20 @@ function CommitIdentitySection({
   );
 }
 
-function DiffPreview({ content }: { content: PanelContent }) {
+export function CommitDetailContent({
+  entry,
+  stat,
+  title,
+}: {
+  entry?: CommitDetailPanelData['entry'];
+  stat: string;
+  title?: string;
+}) {
   const { locale, t } = useI18n();
   const [bodyState, setBodyState] = useState<'collapsed' | 'expanded'>('expanded');
   const [filesState, setFilesState] = useState<'collapsed' | 'expanded'>('collapsed');
   const [rawState, setRawState] = useState<'collapsed' | 'expanded'>('collapsed');
-  const { title, data } = content;
-  const commitData = isCommitDetailPanelData(data) ? data : null;
-  const entry = commitData?.entry;
-  const diffText = commitData?.stat ?? (typeof data === 'string' ? data : '');
+  const diffText = stat;
   const commitBody = entry?.body?.trim() ?? '';
   const parsed = parseCommitStat(diffText);
   const displayTitle = entry?.description || entry?.message || title || t('readingPanel.changeDetail');
@@ -835,6 +896,8 @@ function DiffPreview({ content }: { content: PanelContent }) {
       changedFiles: 'Changed files',
       noFiles: 'No file stat available',
       raw: 'Original info',
+      copyHash: 'Copy commit hash',
+      copiedHash: 'Commit hash copied',
     }
     : {
       category: '分类',
@@ -849,12 +912,15 @@ function DiffPreview({ content }: { content: PanelContent }) {
       changedFiles: '改动文件',
       noFiles: '没有可展示的文件统计',
       raw: '原始信息',
+      copyHash: '复制提交 hash',
+      copiedHash: '已复制提交 hash',
     };
   const summary = parsed.summary;
   const filesChanged = summary?.filesChanged ?? parsed.files.length;
   const insertions = summary?.insertions ?? parsed.files.reduce((total, file) => total + file.additions, 0);
   const deletions = summary?.deletions ?? parsed.files.reduce((total, file) => total + file.deletions, 0);
   const lines = diffText.split('\n');
+  const formattedCommitBody = commitBody ? formatCommitBodyForReading(commitBody) : '';
 
   return (
     <div className="space-y-4">
@@ -879,10 +945,12 @@ function DiffPreview({ content }: { content: PanelContent }) {
           locale={locale}
           onToggle={() => setBodyState((current) => getCommitNodeNextState(current))}
         >
-          <MarkdownPreview
-            content={commitBody}
-            className="ldvh-inline-markdown rounded-lg border border-ldvh-border bg-ldvh-bg/40 px-3 py-2"
-          />
+          <div className="ldvh-study-node-content rounded-lg border border-ldvh-border bg-ldvh-bg/40 px-3 py-2">
+            <MarkdownPreview
+              content={formattedCommitBody}
+              className="ldvh-inline-markdown max-w-none"
+            />
+          </div>
         </CommitReadingNodeSection>
       )}
 
@@ -927,5 +995,18 @@ function DiffPreview({ content }: { content: PanelContent }) {
         )}
       </CommitReadingNodeSection>
       </div>
+  );
+}
+
+function DiffPreview({ content }: { content: PanelContent }) {
+  const { title, data } = content;
+  const commitData = isCommitDetailPanelData(data) ? data : null;
+
+  return (
+    <CommitDetailContent
+      entry={commitData?.entry}
+      stat={commitData?.stat ?? (typeof data === 'string' ? data : '')}
+      title={title}
+    />
   );
 }

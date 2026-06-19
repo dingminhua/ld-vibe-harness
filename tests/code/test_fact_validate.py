@@ -26,6 +26,35 @@ def write_yaml(path: Path, content: str) -> Path:
     return path
 
 
+def write_valid_memo(tmp_path: Path, *, status: str = "pending", resolved_to: str = "", resolved_at: str = "") -> Path:
+    return write_yaml(
+        tmp_path / "ldvh-base" / "memos" / "memo-0001-study-boundary.yaml",
+        f"""
+id: memo-0001
+type: memo
+title: Study boundary
+status: {status}
+created: "2026-06-20T09:00:00"
+updated: "2026-06-20T09:00:00"
+description: |
+  Discuss whether a Study can close a Memo.
+evolution: []
+source: conversation
+source_detail: test
+priority: P2
+resolved_to: {resolved_to}
+resolved_at: {resolved_at}
+discard_reason: ""
+related_workareas: []
+related_workplans: []
+related_adrs: []
+related_studies:
+  - study-0001
+related_docs: []
+""",
+    )
+
+
 def write_valid_workplan_tree(tmp_path: Path, *, status: str = "active") -> tuple[Path, Path]:
     root = tmp_path / "project"
     (root / "tests" / "code").mkdir(parents=True, exist_ok=True)
@@ -301,6 +330,30 @@ def test_datetime_fields_reject_date_only_values(tmp_path):
     assert "INVALID_DATETIME_FIELD" in result.stdout
     assert "created" in result.stdout
     assert "updated" in result.stdout
+
+
+def test_memo_related_study_does_not_resolve_memo(tmp_path):
+    memo = write_valid_memo(tmp_path)
+
+    result = run_checker(memo)
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+
+
+def test_memo_rejects_study_as_resolved_target(tmp_path):
+    memo = write_valid_memo(
+        tmp_path,
+        status="resolved",
+        resolved_to="{type: study, ref: study-0001}",
+        resolved_at="2026-06-20",
+    )
+
+    result = run_checker(memo)
+
+    assert result.returncode == 1
+    assert "INVALID_MEMO_RESOLVED_TO_TYPE" in result.stdout
+    assert "Study 只能通过 related_studies 关联" in result.stdout
 
 
 def test_adr_uses_current_three_state_contract(tmp_path):

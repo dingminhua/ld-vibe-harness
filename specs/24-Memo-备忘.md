@@ -119,7 +119,7 @@ Memo 标准状态如下：
 | 状态 | 含义 |
 |---|---|
 | `pending` | 待处理：已捕获，尚未决定是否分流、处理或废弃 |
-| `resolved` | 已分流到 WorkArea、WorkPlan、ADR、docs 或其他事实源，或已明确处理 |
+| `resolved` | 已分流到 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源，或已明确处理 |
 | `discarded` | 已废弃：确认不再需要继续跟踪或作为分流入口 |
 
 `resolved` 和 `discarded` 是稳定终态。终态 Memo 不得直接重开；如需重新处理，应新建 Memo，并在新 Memo 中引用原 Memo。
@@ -136,7 +136,7 @@ resolved → discarded
 
 | 流转 | 触发条件 | 说明 |
 |---|---|---|
-| `pending` → `resolved` | 已分流到目标事实源或已明确处理 | `resolved_to` 和 `resolved_at` 条件必填 |
+| `pending` → `resolved` | 已分流到目标事实源或已明确处理 | `resolved_to` 和 `resolved_at` 条件必填；Study 只作为 `related_studies` 关联，不作为 `resolved_to` |
 | `pending` → `discarded` | 判断不需要继续处理 | 应记录 `discard_reason` |
 | `resolved` → `discarded` | 分流记录不再需要作为活跃入口展示 | 保留分流关系，并记录 `discard_reason` |
 
@@ -169,6 +169,8 @@ Memo 可以关联一个或多个 Study，用于承接 AI 调研、资料分析�
 
 Memo 只保留报告对议题演变产生的关键影响，不复制报告全文。Study 的准入、状态和字段契约由 `specs/25-Study-研究报告.md` 定义。
 
+Study 是报告承载，不是讨论入口、执行承接或决策承接。将完整报告提炼为 Study 时，应更新 `related_studies` 和 `evolution`；除非 Memo 的剩余议题已经被 WorkPlan、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源完整承接，否则不得仅因形成 Study 就把 Memo 标记为 `resolved`。
+
 ### 4.5 Memo 与 Pitfall、管辖项目配置、docs
 
 Memo 可以分流或关联到 Pitfall、管辖项目配置或 docs：
@@ -176,7 +178,7 @@ Memo 可以分流或关联到 Pitfall、管辖项目配置或 docs：
 1. 已解决且有复用价值的踩坑经验线索，可转为 Pitfall；
 2. 项目路径或管辖项目清单线索，可转为工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 更新建议或项目文档更新建议；
 3. 项目正文、说明或短结论，可吸收到 docs；
-4. 稳定调研、分析或报告内容，应优先形成 Study；
+4. 稳定调研、分析或报告内容，应优先形成或关联 Study；这只表示报告正文已有承载，不等同于 Memo 已完成分流；
 5. 外部引用或调研资料，应进入 docs/sources。
 
 Pitfall 的准入、状态和字段契约由 `specs/23-Pitfall-踩坑经验.md` 定义。管辖项目配置的字段和边界由 `specs/03.04-管辖项目配置规范.md` 定义。环境能力核验、环境适配和适配措施正文不得写入管辖项目配置；需要长期保留的稳定事实应进入环境适配待补齐事项、WorkPlan、Memo、Study、ADR、正式规范或按 04 系列规范处理。当前具体检查结果只保留当前过程结论，不作为持久状态事实源。
@@ -219,7 +221,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `source` | 备忘进入事实源的入口来源 | enum | 是 | `web` 或 `conversation`；Web 快速创建固定为 `web`，对话中由 Human 或 AI 确认记录固定为 `conversation` | Reference | AI、Code、Web |
 | `source_detail` | 来源说明、触发场景或原始输入摘要 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
 | `priority` | 优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
-| `resolved_to` | 分流目标对象引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}` | Reference | AI、Code、Web |
+| `resolved_to` | 分流目标对象引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}`；`type` 只能是 `workarea`、`workplan`、`adr`、`pitfall`、`docs`、`governed-projects` 或 `other`，不得为 `study` | Reference | AI、Code、Web |
 | `resolved_at` | 分流日期 | date | 条件必填 | `status: resolved` 时必须填写 | Reference | AI、Code、Web |
 | `discard_reason` | 废弃原因 | string | 条件必填 | `status: discarded` 时必须填写 | Narrative | AI、Human |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -240,7 +242,7 @@ status: resolved
 created: '2026-06-09T09:30:00+08:00'
 updated: '2026-06-09T10:00:00+08:00'
 description: |
-  审查工作流程规范时发现错误处理和异常场景尚未形成统一规则。当前方向是先保留缺口，再决定是否分流为 WorkPlan 或 Study。
+  审查工作流程规范时发现错误处理和异常场景尚未形成统一规则。当前方向是先保留缺口，再决定是否分流为 WorkPlan 或关联 Study。
 evolution:
   - at: '2026-06-09T09:45:00+08:00'
     summary: 发现错误处理章节缺失，先作为备忘保留。
@@ -270,7 +272,7 @@ Memo 回写遵循以下规则：
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
 3. 状态变化后应更新 `updated`；状态变化历史由 Git commit 派生，不在 Memo YAML 中手写维护；
 4. Memo 出现关键语义转折、方向变化或阶段性收敛时，应更新 `description` 并向 `evolution` 追加摘要；不得记录完整聊天流水；
-5. Memo 分流为 WorkArea、WorkPlan、ADR、Study、Pitfall、docs、管辖项目配置更新或其他事实源时，应更新 `resolved_to` 和 `resolved_at`；
+5. Memo 分流为 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源时，应更新 `resolved_to` 和 `resolved_at`；形成或引用 Study 时只更新 `related_studies` 和必要的 `evolution`；
 6. Memo 创建、分流、废弃、关键关联变化、核心摘要或演变记录修改应通过 Git 提交记录留痕；
 7. Memo 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
 
@@ -299,7 +301,8 @@ AI 处理 Memo 时应遵守：
 3. 不得用 Memo 长期替代已经满足准入条件的 WorkArea、WorkPlan 或 ADR；
 4. 分流时应说明为什么目标类型合适；
 5. 分流后不再在 Memo 中维护目标对象的状态、验收或决策正文；
-6. 有完整报告时应形成或关联 Study，Memo 只记录报告如何改变议题理解。
+6. 有完整报告时应形成或关联 Study，Memo 只记录报告如何改变议题理解；
+7. 不得把 Study 写入 `resolved_to`；Study 只说明报告正文已有承载，不说明 Memo 讨论、执行或决策已经收敛。
 
 ### 8.2 Code 辅助
 
@@ -352,7 +355,7 @@ Memo 规范检查至少包括：
 | 字段完整性 | 必填字段、条件必填字段和字段类型符合 §6 |
 | 状态合法性 | 状态属于枚举，流转符合 §3.2 |
 | 演变承载 | `description` 是当前摘要，`evolution` 只记录关键语义转折，不记录流水账 |
-| 分流规则 | resolved Memo 已填写 `resolved_to` 和 `resolved_at` |
+| 分流规则 | resolved Memo 已填写 `resolved_to` 和 `resolved_at`，且 `resolved_to.type` 不是 `study` |
 | 废弃规则 | discarded Memo 已说明废弃原因 |
 | 对象边界 | Memo 未长期替代 WorkArea、WorkPlan、ADR 或 Study |
 | Human Gate | §5 场景已完成确认或记录降级 |

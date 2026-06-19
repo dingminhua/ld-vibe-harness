@@ -40,6 +40,7 @@ VALID_STATUSES = {
     "memo": {"pending", "resolved", "discarded"},
     "study": {"active", "archived"},
 }
+VALID_MEMO_RESOLVED_TO_TYPES = {"workarea", "workplan", "adr", "pitfall", "docs", "governed-projects", "other"}
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
     "workplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
@@ -936,6 +937,24 @@ def validate_memo(path: Path, data: dict[str, Any]) -> list[Issue]:
         for field in ["resolved_to", "resolved_at"]:
             if is_empty(data.get(field)):
                 issues.append(Issue(str(path), "error", "MISSING_RESOLVED_FIELD", f"resolved 状态必须提供非空字段: {field}"))
+        resolved_to = data.get("resolved_to")
+        if not is_empty(resolved_to):
+            if not isinstance(resolved_to, dict):
+                issues.append(Issue(str(path), "error", "INVALID_MEMO_RESOLVED_TO", "resolved_to 必须是 {type, ref} 对象", field="resolved_to"))
+            else:
+                target_type = resolved_to.get("type")
+                target_ref = resolved_to.get("ref")
+                if is_empty(target_type) or is_empty(target_ref):
+                    issues.append(Issue(str(path), "error", "INVALID_MEMO_RESOLVED_TO", "resolved_to 必须填写 type 和 ref", field="resolved_to"))
+                elif target_type not in VALID_MEMO_RESOLVED_TO_TYPES:
+                    valid_values = ", ".join(sorted(VALID_MEMO_RESOLVED_TO_TYPES))
+                    issues.append(Issue(
+                        str(path),
+                        "error",
+                        "INVALID_MEMO_RESOLVED_TO_TYPE",
+                        f"resolved_to.type 必须是以下值之一: {valid_values}；Study 只能通过 related_studies 关联",
+                        field="resolved_to.type",
+                    ))
     if data.get("status") == "discarded" and is_empty(data.get("discard_reason")):
         issues.append(Issue(str(path), "error", "MISSING_DISCARD_REASON", "discarded 状态必须提供非空字段: discard_reason", field="discard_reason"))
     return issues

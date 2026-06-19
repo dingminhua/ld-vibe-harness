@@ -10,6 +10,10 @@ const COMMIT_TYPE_ZH: Record<string, string> = {
   ci: '持续集成',
   chore: '维护杂项',
   revert: '回退变更',
+  spec: '规范',
+  rule: '规则',
+  adr: '决策',
+  other: '其他',
 };
 
 const COMMIT_SCOPE_LABELS: Record<string, { zh: string; en: string }> = {

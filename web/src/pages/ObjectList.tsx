@@ -452,32 +452,6 @@ function MemoMetaLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MemoPendingCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
-  const source = obj.source || '';
-  const intent = obj.source_detail || '';
-  if (!source && !intent) return null;
-
-  return (
-    <div
-      onClick={(event) => event.stopPropagation()}
-      className="min-w-0 cursor-default px-1.5 py-1"
-    >
-      {source && (
-        <div className="ldvh-meta mb-1 flex min-w-0 items-center gap-1.5 text-ldvh-text-secondary/75">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-text-secondary/75" aria-hidden="true" />
-          <span className="shrink-0">{locale === 'en' ? 'Source' : '来源'}</span>
-          <span className="min-w-0 truncate">{formatReasonText(source)}</span>
-        </div>
-      )}
-      {intent && (
-        <p className="whitespace-pre-wrap break-words text-[12px] leading-5 text-ldvh-text-secondary/75">
-          {formatReasonText(intent)}
-        </p>
-      )}
-    </div>
-  );
-}
-
 function MemoResolvedCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
   const routingRef = parseMemoRoutingRef(obj.resolved_to);
   const targetLabel = routingRef?.ref || (locale === 'en' ? 'Target missing' : '分流目标缺失');
@@ -507,7 +481,7 @@ function MemoDiscardedCardContent({ obj, locale }: { obj: ObjectItem; locale: st
 function MemoCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
   if (hasMemoDiscardFact(obj)) return <MemoDiscardedCardContent obj={obj} locale={locale} />;
   if (hasMemoResolvedFact(obj)) return <MemoResolvedCardContent obj={obj} locale={locale} />;
-  return <MemoPendingCardContent obj={obj} locale={locale} />;
+  return null;
 }
 
 export default function ObjectList() {

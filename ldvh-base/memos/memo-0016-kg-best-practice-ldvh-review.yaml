@@ -1,25 +1,26 @@
 id: memo-0016
 type: memo
 title: 结合最新实践评估 LDVH 知识图谱建设方向
-status: resolved
+status: pending
 created: '2026-06-20T09:14:00+08:00'
-updated: '2026-06-20T09:35:00+08:00'
+updated: '2026-06-20T09:45:00+08:00'
 description: |
   原有讨论已提炼为 Study `study-0006`。
-  本 Memo 保留分流记录与落地入口：先用 Study 固化完整评估报告，再以 WorkPlan 推进 P1/P2 落地动作。
+  Study 只承载完整评估报告，不替代本 Memo 的讨论入口。
+  本 Memo 继续保留后续收敛入口：先用 Study 复读完整评估报告，再判断是否以 WorkPlan 推进 P1/P2 落地动作。
 
   研究结论同步：LDVH 已具备图谱化输入条件，下一阶段应优先补齐关系语义标准、关系一致性校验和图查询闭环。
 
 evolution:
   - at: '2026-06-20T09:35:00+08:00'
     summary: 将知识图谱评估内容转入 study-0006，更新为 resolved 入口状态以便后续分流。
+  - at: '2026-06-20T09:45:00+08:00'
+    summary: Human 指出 Study 只是报告承载，不应作为 Memo 讨论入口的 resolved_to；纠正为 pending，并保留 study-0006 作为 related_studies。
 source: conversation
 source_detail: 用户要求“做吧”，将部分 memo 内容转为 study 对象。
 priority: P1
-resolved_to:
-  type: study
-  ref: study-0006
-resolved_at: '2026-06-20T09:35:00+08:00'
+resolved_to: ""
+resolved_at: ""
 discard_reason: ""
 related_adrs: []
 related_studies:

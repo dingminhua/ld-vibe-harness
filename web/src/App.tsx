@@ -6,6 +6,7 @@ import ProjectFiles from '@/pages/ProjectFiles';
 import ObjectList from '@/pages/ObjectList';
 import ObjectDetail from '@/pages/ObjectDetail';
 import Changelog from '@/pages/Changelog';
+import ChangelogDetail from '@/pages/ChangelogDetail';
 
 function AppRoutes() {
   return (
@@ -16,6 +17,7 @@ function AppRoutes() {
         <Route path="/objects/:type" element={<ObjectList />} />
         <Route path="/objects/:type/:id" element={<ObjectDetail />} />
         <Route path="/changelog" element={<Changelog />} />
+        <Route path="/changelog/:hash" element={<ChangelogDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

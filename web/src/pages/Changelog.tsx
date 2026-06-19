@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import CopyPathButton from '@/components/CopyPathButton';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
@@ -94,6 +95,7 @@ function getCommitCopyContext(entry: ChangelogEntry): string {
 export default function Changelog() {
   const { locale, t } = useI18n();
   const { isOpen: panelOpen, content: panelContent, openPanel, closePanel } = usePanel();
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<ChangelogEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedHash, setSelectedHash] = useState<string | null>(null);
@@ -165,6 +167,12 @@ export default function Changelog() {
     } finally {
       setLoadingHash(null);
     }
+  };
+
+  const openCommitPage = (entry: ChangelogEntry) => {
+    closePanel();
+    setSelectedHash(null);
+    navigate(`/changelog/${entry.hash}`);
   };
 
   const handleKeyboardOpen = (event: KeyboardEvent<HTMLDivElement>, open: () => void) => {
@@ -249,13 +257,11 @@ export default function Changelog() {
                   ? 'border-ldvh-accent/45 bg-ldvh-accent/5'
                   : 'border-ldvh-border bg-ldvh-panel hover:border-ldvh-accent/40 hover:bg-ldvh-panel/95'
               }`}
-              onClick={() => handleSelectCommit(entry)}
-              onKeyDown={(event) => handleKeyboardOpen(event, () => handleSelectCommit(entry))}
+              onClick={() => openCommitPage(entry)}
+              onKeyDown={(event) => handleKeyboardOpen(event, () => openCommitPage(entry))}
             >
               <div className="flex min-w-0 items-start justify-between gap-2">
                 <div className="ldvh-meta-muted flex min-w-0 flex-wrap items-center gap-1.5">
-                  <span>{entry.relativeTime || formatDateTime(entry.date)}</span>
-                  <span className="px-0.5" aria-hidden="true">·</span>
                   <span>{getCommitTypeLabel(entry.category, locale)}</span>
                   {entry.scope && (
                     <>
@@ -275,32 +281,38 @@ export default function Changelog() {
                     label={t('changelog.copyContext')}
                     copiedLabel={t('changelog.copiedContext')}
                   />
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleSelectCommit(entry);
-                    }}
-                    title={panelLabel}
-                    aria-label={panelLabel}
-                    className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent transition-colors focus-visible:border-ldvh-accent/50 focus-visible:outline-none ${
-                      isSelected
-                        ? 'text-ldvh-accent'
-                        : 'text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent'
-                    }`}
-                  >
-                    {isLoading ? <Loader2 size={16} className="animate-spin" /> : <PanelIcon size={16} aria-hidden="true" />}
-                  </button>
                 </div>
               </div>
               <div
-                className="-mx-1 flex min-w-0 items-start gap-1.5 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover/card:bg-ldvh-bg/85"
+                className="-mx-1 flex min-w-0 items-center gap-2 rounded-md border-l-2 bg-ldvh-bg/65 px-2.5 py-2 text-left ring-1 ring-inset ring-ldvh-border/50 transition-colors group-hover/card:bg-ldvh-bg/85"
                 style={{ borderLeftColor: typeColor }}
               >
-                <ObjectTypeIcon type="changelog" size={14} className="mt-0.5 flex-shrink-0 transition-colors group-hover/card:text-ldvh-accent" style={{ color: typeColor }} />
-                <div className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words leading-snug transition-colors group-hover/card:text-ldvh-accent">
-                  {entry.description || entry.message}
+                <ObjectTypeIcon type="changelog" size={14} className="flex-shrink-0 transition-colors group-hover/card:text-ldvh-accent" style={{ color: typeColor }} />
+                <div className="min-w-0 flex-1">
+                  <div className="ldvh-card-title whitespace-normal break-words leading-snug transition-colors group-hover/card:text-ldvh-accent">
+                    {entry.description || entry.message}
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleSelectCommit(entry);
+                  }}
+                  title={panelLabel}
+                  aria-label={panelLabel}
+                  className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent transition-colors focus-visible:border-ldvh-accent/50 focus-visible:outline-none ${
+                    isSelected
+                      ? 'text-ldvh-accent'
+                      : 'text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent'
+                  }`}
+                >
+                  {isLoading ? <Loader2 size={16} className="animate-spin" /> : <PanelIcon size={16} aria-hidden="true" />}
+                </button>
+              </div>
+              <div className="ldvh-meta-muted self-end">
+                {locale === 'en' ? 'Updated ' : '更新 '}
+                {formatDateTime(entry.date)}
               </div>
             </div>
           );
