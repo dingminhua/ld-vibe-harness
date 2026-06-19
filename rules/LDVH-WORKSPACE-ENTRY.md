@@ -1,5 +1,40 @@
 # LDVH 工作区入口
 
+```yaml
+ldvh_asset:
+  id: "ldvh-workspace-entry"
+  type: "rule"
+  status: "active"
+  canonical_path: "rules/LDVH-WORKSPACE-ENTRY.md"
+  source_specs:
+    - "specs/01-目录说明.md"
+    - "specs/03.04-管辖项目配置规范.md"
+    - "specs/04.02-LDVH能力资产与落地保障规范.md"
+    - "specs/04.03-环境入口适配与部署规范.md"
+  consumption_scenarios:
+    - "工作区级管辖项目识别"
+    - "管辖项目工作对象处理"
+    - "LDVH dogfood 管辖判断"
+  inputs:
+    - "LDVH-GOVERNED-PROJECTS.yaml"
+    - "当前工作目录"
+    - "用户任务目标"
+  outputs:
+    - "最小读取顺序"
+    - "场景路由"
+    - "STOP 点"
+  handoff: "命中 LDVH 产品资产维护时交还 rules/LDVH-MAINTAINER-ENTRY.md"
+  verification:
+    - "python3 code/specs_validate.py governed-projects"
+    - "python3 code/specs_validate.py deployment-entries"
+  sync_triggers:
+    - "管辖项目配置规则变化"
+    - "工作区入口职责变化"
+    - "环境入口适配或薄引用规则变化"
+    - "固定能力资产登记规则变化"
+  deprecation: "废弃、重命名或合并工作区入口前必须评估 Human Gate，并同步 01、04.02、04.03 和 Code 检查。"
+```
+
 > 文件性质：工作区级 Rules 入口资产，不是 specs 正式规范或最终事实源
 > 规范来源：`specs/01-目录说明.md`、`specs/03.04-管辖项目配置规范.md`、`specs/04.02-LDVH能力资产与落地保障规范.md`、`specs/04.03-环境入口适配与部署规范.md`
 > 适用范围：安装或使用 LDVH 的工作区级入口、管辖项目识别、管辖项目工作对象处理和 dogfood 管辖判断

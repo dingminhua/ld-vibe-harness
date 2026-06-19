@@ -3,7 +3,7 @@ type: memo
 title: 10 号 Git 提交规范落地资产边界待收敛
 status: pending
 created: '2026-06-20T04:33:49+08:00'
-updated: '2026-06-20T05:18:10+08:00'
+updated: '2026-06-20T05:30:57+08:00'
 description: |
   本 Memo 承载一个需要后续收敛的规范落地问题：`specs/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
 
@@ -42,10 +42,16 @@ description: |
   已确认的修正规则：
 
   1. 固定能力资产应采用登记制，而不是用“当前不维护固定 Skill/Hook”阻断资产建设；
-  2. Rules、Skill、Agent、Hook 只要完成来源规范、权威路径、资产元信息、边界说明、质量审查、同步责任和验证入口登记，就可以成为 LDVH 固定能力资产；
+  2. Rules、Skill、Agent、Hook 只要完成来源规范、权威路径、`ldvh_asset` 资产元信息、边界说明、质量审查、同步责任和验证入口登记，就可以成为 LDVH 固定能力资产；
   3. 未登记的 Skill、Agent、Hook 只能是候选资产、临时过程输出、人工降级步骤或环境适配候选，不得被 Code、Web、Rules 或工作流程当成稳定保障机制；
   4. 登记事实应优先由资产文件自身元信息承载，Code 派生资产索引，Web 只读展示，不手写维护一份容易漂移的总清单；
   5. 10 号 Git 提交规范后续需要的 `ldvh-git-commit` Skill 和 Git `commit-msg` hook，应按固定能力资产登记制推进。
+
+  Rules 登记补充：
+
+  1. 现有两个固定 Rules 资产也必须自登记，不能只由 04.02 表格手写列出；
+  2. `rules/LDVH-WORKSPACE-ENTRY.md` 和 `rules/LDVH-MAINTAINER-ENTRY.md` 应作为第一批补齐 `ldvh_asset` 元信息的固定能力资产；
+  3. Code 的能力资产检查应先保守覆盖必备 Rules 的登记元信息，后续再扩展到 Skill、Agent、Hook 的通用资产索引。
 evolution:
   - at: '2026-06-20T04:33:49+08:00'
     summary: 用户要求记录 10 号规范落地问题，并追问除 hook 外是否需要 Skill；当前结论是提交门禁需要 Git hook，AI 行动稳定性需要 Skill，两者职责不同且都应进入 10 号规范落地资产讨论。
@@ -53,6 +59,8 @@ evolution:
     summary: 补充记录 rules、skills、agents、hooks 的资产标准、AI 生成质量、多视角审核、规范变化监督、事实源重复和环境部署分层问题；这些问题需要逐一讨论后再转成正式规范修改。
   - at: '2026-06-20T05:18:10+08:00'
     summary: 确认固定能力资产应采用登记制；“当前不维护固定 Skill/Hook”应改为“未登记不得固定，已固定必须维护”，并作为 10 号提交 Skill 与 Git commit-msg hook 的后续落地前提。
+  - at: '2026-06-20T05:30:57+08:00'
+    summary: 补充确认 Rules 也必须按固定能力资产自登记；当前两个 Rules 入口应先补齐 `ldvh_asset` 元信息，并由 Code 做保守登记校验。
 source: conversation
 source_detail: 用户围绕 10 号 Git 提交规范落地追问“这种属于 LDVH 安装后必须落地的资产”和“除了 hook，不需要 skills？”，要求建立 Memo 记录，避免后续遗忘。
 priority: P1

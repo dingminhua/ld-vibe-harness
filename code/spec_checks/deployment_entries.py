@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import yaml
+
 from .common import Issue
 
 
@@ -18,6 +20,34 @@ DEPLOYMENT_ENTRIES_REQUIRED_ASSETS = {
         "rules/LDVH-MAINTAINER-ENTRY.md",
     ],
 }
+DEPLOYMENT_ENTRIES_REQUIRED_ASSET_METADATA = {
+    "rules/LDVH-WORKSPACE-ENTRY.md": {
+        "id": "ldvh-workspace-entry",
+        "type": "rule",
+        "status": "active",
+        "canonical_path": "rules/LDVH-WORKSPACE-ENTRY.md",
+    },
+    "rules/LDVH-MAINTAINER-ENTRY.md": {
+        "id": "ldvh-maintainer-entry",
+        "type": "rule",
+        "status": "active",
+        "canonical_path": "rules/LDVH-MAINTAINER-ENTRY.md",
+    },
+}
+DEPLOYMENT_ENTRIES_REQUIRED_METADATA_FIELDS = [
+    "id",
+    "type",
+    "status",
+    "canonical_path",
+    "source_specs",
+    "consumption_scenarios",
+    "inputs",
+    "outputs",
+    "handoff",
+    "verification",
+    "sync_triggers",
+    "deprecation",
+]
 DEPLOYMENT_ENTRIES_FORBIDDEN_TYPES = {"Code", "Web", "CLI", "MCP", "Command", "CI", "文档"}
 
 
@@ -41,6 +71,55 @@ def deployment_entries_fixed_asset_section(text):
     return "\n".join(section)
 
 
+def deployment_entries_asset_metadata(text):
+    in_yaml = False
+    block_lines = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not in_yaml and stripped in {"```yaml", "```yml"}:
+            in_yaml = True
+            block_lines = []
+            continue
+        if in_yaml and stripped == "```":
+            try:
+                data = yaml.safe_load("\n".join(block_lines)) or {}
+            except yaml.YAMLError:
+                return None
+            if isinstance(data, dict) and isinstance(data.get("ldvh_asset"), dict):
+                return data["ldvh_asset"]
+            in_yaml = False
+            block_lines = []
+            continue
+        if in_yaml:
+            block_lines.append(line)
+    return None
+
+
+def deployment_entries_check_asset_metadata(root, asset_path_raw):
+    asset_path = root / asset_path_raw
+    if not asset_path.exists():
+        return []
+
+    issues = []
+    text = asset_path.read_text(encoding="utf-8")
+    metadata = deployment_entries_asset_metadata(text)
+    if metadata is None:
+        issues.append(Issue(asset_path, 1, f"固定能力资产缺少 ldvh_asset 自登记元信息: {asset_path_raw}", code="DEPLOYMENT_ENTRIES_ASSET_METADATA_MISSING"))
+        return issues
+
+    for field in DEPLOYMENT_ENTRIES_REQUIRED_METADATA_FIELDS:
+        value = metadata.get(field)
+        if value in (None, "", []):
+            issues.append(Issue(asset_path, 1, f"固定能力资产登记缺少字段 {field}: {asset_path_raw}", code="DEPLOYMENT_ENTRIES_ASSET_METADATA_FIELD_MISSING"))
+
+    expected = DEPLOYMENT_ENTRIES_REQUIRED_ASSET_METADATA.get(asset_path_raw, {})
+    for field, expected_value in expected.items():
+        if metadata.get(field) != expected_value:
+            issues.append(Issue(asset_path, 1, f"固定能力资产登记字段 {field} 应为 {expected_value}: {asset_path_raw}", code="DEPLOYMENT_ENTRIES_ASSET_METADATA_MISMATCH"))
+
+    return issues
+
+
 def deployment_entries_check(root=None):
     root = Path(root) if root is not None else PROJECT_ROOT
     spec_path = root / DEPLOYMENT_ENTRIES_SPEC_PATH
@@ -62,6 +141,7 @@ def deployment_entries_check(root=None):
                 issues.append(Issue(spec_path, 1, f"LDVH 能力资产定义缺少必备资产路径: {expected_path}", code="DEPLOYMENT_ENTRIES_REQUIRED_ASSET_MISMATCH"))
             if not (root / expected_path).exists():
                 issues.append(Issue(root / expected_path, 1, f"缺少必备 LDVH 能力资产: {expected_path}", code="DEPLOYMENT_ENTRIES_REQUIRED_ASSET_MISSING"))
+            issues.extend(deployment_entries_check_asset_metadata(root, expected_path))
 
     fixed_asset_section = deployment_entries_fixed_asset_section(spec_text)
     for forbidden_type in DEPLOYMENT_ENTRIES_FORBIDDEN_TYPES:

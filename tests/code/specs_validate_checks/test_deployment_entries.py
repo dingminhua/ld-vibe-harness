@@ -2,14 +2,37 @@ from .common import checker, write_md
 from spec_checks import deployment_entries as deployment_entries_checks
 
 def write_deployment_entries_fixture(tmp_path):
-    for path, title in [
-        ("LDVH-WORKSPACE-ENTRY.md", "LDVH 工作区入口"),
-        ("LDVH-MAINTAINER-ENTRY.md", "LDVH 维护入口"),
+    for path, title, asset_id in [
+        ("LDVH-WORKSPACE-ENTRY.md", "LDVH 工作区入口", "ldvh-workspace-entry"),
+        ("LDVH-MAINTAINER-ENTRY.md", "LDVH 维护入口", "ldvh-maintainer-entry"),
     ]:
+        canonical_path = f"rules/{path}"
         write_md(
             tmp_path / "rules" / path,
             f"""
 # {title}
+
+```yaml
+ldvh_asset:
+  id: "{asset_id}"
+  type: "rule"
+  status: "active"
+  canonical_path: "{canonical_path}"
+  source_specs:
+    - "specs/04.02-LDVH能力资产与落地保障规范.md"
+  consumption_scenarios:
+    - "测试场景"
+  inputs:
+    - "测试输入"
+  outputs:
+    - "测试输出"
+  handoff: "测试交还"
+  verification:
+    - "python3 code/specs_validate.py deployment-entries"
+  sync_triggers:
+    - "测试触发"
+  deprecation: "测试废弃规则"
+```
 
 LDVH 能力资产与落地保障定义见 `specs/04.02-LDVH能力资产与落地保障规范.md`。
 """,
@@ -75,6 +98,27 @@ def test_deployment_entries_reports_forbidden_type_and_ai_entry_ref_missing(tmp_
 
     assert "DEPLOYMENT_ENTRIES_FORBIDDEN_TYPE" in codes
     assert "DEPLOYMENT_ENTRIES_AI_ENTRY_REF_MISSING" in codes
+
+
+def test_deployment_entries_reports_missing_asset_metadata(tmp_path):
+    write_deployment_entries_fixture(tmp_path)
+    asset_path = tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md"
+    asset_path.write_text("# LDVH 工作区入口\n\nLDVH 能力资产与落地保障定义见 `specs/04.02-LDVH能力资产与落地保障规范.md`。\n", encoding="utf-8")
+
+    codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
+
+    assert "DEPLOYMENT_ENTRIES_ASSET_METADATA_MISSING" in codes
+
+
+def test_deployment_entries_reports_asset_metadata_mismatch(tmp_path):
+    write_deployment_entries_fixture(tmp_path)
+    asset_path = tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md"
+    text = asset_path.read_text(encoding="utf-8")
+    asset_path.write_text(text.replace('id: "ldvh-workspace-entry"', 'id: "wrong-entry"'), encoding="utf-8")
+
+    codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
+
+    assert "DEPLOYMENT_ENTRIES_ASSET_METADATA_MISMATCH" in codes
 
 
 def test_deployment_entries_cli_is_in_all(tmp_path, monkeypatch, capsys):

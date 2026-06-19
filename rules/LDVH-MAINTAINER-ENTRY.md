@@ -1,5 +1,41 @@
 # LDVH 维护入口
 
+```yaml
+ldvh_asset:
+  id: "ldvh-maintainer-entry"
+  type: "rule"
+  status: "active"
+  canonical_path: "rules/LDVH-MAINTAINER-ENTRY.md"
+  source_specs:
+    - "specs/01-目录说明.md"
+    - "specs/03-文档基础规范.md"
+    - "specs/04.02-LDVH能力资产与落地保障规范.md"
+    - "specs/04.03-环境入口适配与部署规范.md"
+    - "specs/10-Git提交规范.md"
+  consumption_scenarios:
+    - "LDVH 产品资产维护"
+    - "specs、rules、skills、agents、hooks、code、tests、web 修改入口"
+    - "能力资产漂移判断"
+  inputs:
+    - "用户维护目标"
+    - "LDVH 仓库文件事实源"
+    - "Code 校验输出"
+  outputs:
+    - "产品资产维护最小读取顺序"
+    - "维护场景路由"
+    - "STOP 点"
+  handoff: "处理管辖项目工作对象时交还 rules/LDVH-WORKSPACE-ENTRY.md"
+  verification:
+    - "python3 code/specs_validate.py index"
+    - "python3 code/specs_validate.py deployment-entries"
+  sync_triggers:
+    - "LDVH 产品资产目录边界变化"
+    - "固定能力资产登记规则变化"
+    - "环境入口适配或部署规则变化"
+    - "Git 提交规范或事实源追溯规则变化"
+  deprecation: "废弃、重命名或合并维护入口前必须评估 Human Gate，并同步 01、04.02、04.03、工作区入口和 Code 检查。"
+```
+
 > 文件性质：LDVH 项目级 Rules 入口资产，不是 specs 正式规范或最终事实源
 > 规范来源：`specs/01-目录说明.md`、`specs/03-文档基础规范.md`、`specs/04.02-LDVH能力资产与落地保障规范.md`、`specs/04.03-环境入口适配与部署规范.md`
 > 适用范围：维护 LDVH 自身产品资产时的项目级入口
