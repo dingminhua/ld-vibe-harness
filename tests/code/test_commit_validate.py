@@ -74,13 +74,25 @@ def test_standard_types_pass():
 def test_breaking_change_marker_passes():
     commit = make_commit(
         subject="feat(api)!: 调整公开接口参数",
-        body="BREAKING CHANGE: 旧参数不再兼容。",
+        body="旧参数不再兼容，调用方需要改为传入新的结构化参数。",
     )
 
     issues = checker.check_commit(commit)
     errors = [i for i in issues if i.level == "error"]
 
     assert errors == []
+
+
+def test_footer_is_disallowed():
+    commit = make_commit(
+        subject="feat(api)!: 调整公开接口参数",
+        body="BREAKING CHANGE: 旧参数不再兼容。",
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert any("不得使用 commit footer" in i.message for i in errors)
 
 
 def test_uppercase_type_warns_but_parses():
@@ -176,6 +188,31 @@ def test_check_message_valid():
     errors = [i for i in issues if i.level == "error"]
 
     assert errors == []
+
+
+def test_check_message_requires_body_for_staged_specs_file():
+    text = "spec(specs): 明确提交正文语义"
+
+    issues = checker.check_message(text, touched_files=["specs/10-Git提交规范.md"])
+    errors = [i for i in issues if i.level == "error"]
+
+    assert any("要求 commit body 非空" in i.message for i in errors)
+
+
+def test_body_mainly_commands_warns():
+    commit = make_commit(
+        subject="spec(specs): 明确提交正文语义",
+        body=(
+            "npm run web:check\n"
+            "python3 code/specs_validate.py doc specs\n"
+            "git diff --check"
+        ),
+    )
+
+    issues = checker.check_commit(commit)
+    warnings = [i for i in issues if i.level == "warning"]
+
+    assert any("主要由检查命令组成" in i.message for i in warnings)
 
 
 def test_check_message_empty():

@@ -73,7 +73,9 @@
   }
 
   .ldvh-tab-count {
-    @apply -ml-0.5 inline-block shrink-0 text-center font-mono text-xs leading-4 opacity-70;
+    @apply inline-block shrink-0 text-center;
+    font: inherit;
+    line-height: inherit;
   }
 
   .ldvh-reading-title {

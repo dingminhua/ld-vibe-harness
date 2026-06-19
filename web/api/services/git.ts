@@ -19,6 +19,7 @@ export interface GitLogEntry {
   author: string
   date: string
   message: string
+  body: string
   category: string
   scope: string
   description: string
@@ -63,7 +64,14 @@ function parseCommitMessage(message: string): { category: string; scope: string;
   }
 }
 
-
+function splitCommitMessage(fullMessage: string): { subject: string; body: string } {
+  const normalized = fullMessage.replace(/\r\n/g, '\n').trimEnd()
+  const [subject = '', ...rest] = normalized.split('\n')
+  return {
+    subject,
+    body: rest.join('\n').replace(/^\n+/, '').trim(),
+  }
+}
 
 /**
  * 获取 git log 列表
@@ -72,7 +80,7 @@ export async function getGitLog(count: number = 50, locale: string = 'zh'): Prom
   return new Promise((resolve, reject) => {
     execFile(
       'git',
-      ['log', `-${count}`, '--format=%H|%h|%an|%ai|%s'],
+      ['log', `-${count}`, '--format=%H%x1f%h%x1f%an%x1f%ai%x1f%B%x1e'],
       { cwd: LDVH_ROOT, maxBuffer: 5 * 1024 * 1024 },
       (error, stdout) => {
         if (error) {
@@ -80,10 +88,10 @@ export async function getGitLog(count: number = 50, locale: string = 'zh'): Prom
           return
         }
 
-        const lines = stdout.trim().split('\n').filter(Boolean)
-        const entries: GitLogEntry[] = lines.map((line) => {
-          const [hash, shortHash, author, date, ...msgParts] = line.split('|')
-          const message = msgParts.join('|')
+        const blocks = stdout.split('\x1e').map((block) => block.trim()).filter(Boolean)
+        const entries: GitLogEntry[] = blocks.map((block) => {
+          const [hash, shortHash, author, date, fullMessage = ''] = block.split('\x1f')
+          const { subject: message, body } = splitCommitMessage(fullMessage)
           const { category, scope, description, isBreaking } = parseCommitMessage(message)
           return {
             hash,
@@ -91,6 +99,7 @@ export async function getGitLog(count: number = 50, locale: string = 'zh'): Prom
             author,
             date,
             message,
+            body,
             category,
             scope,
             description,
@@ -100,6 +109,42 @@ export async function getGitLog(count: number = 50, locale: string = 'zh'): Prom
         })
 
         resolve(entries)
+      },
+    )
+  })
+}
+
+/**
+ * 获取指定 commit 的解析后 message 信息
+ */
+export async function getGitCommit(hash: string, locale: string = 'zh'): Promise<GitLogEntry> {
+  return new Promise((resolve, reject) => {
+    execFile(
+      'git',
+      ['show', '-s', '--format=%H%x1f%h%x1f%an%x1f%ai%x1f%B', hash],
+      { cwd: LDVH_ROOT, maxBuffer: 5 * 1024 * 1024 },
+      (error, stdout) => {
+        if (error) {
+          reject(new Error(`git show commit failed: ${error.message}`))
+          return
+        }
+
+        const [fullHash, shortHash, author, date, fullMessage = ''] = stdout.trimEnd().split('\x1f')
+        const { subject: message, body } = splitCommitMessage(fullMessage)
+        const { category, scope, description, isBreaking } = parseCommitMessage(message)
+        resolve({
+          hash: fullHash,
+          shortHash,
+          author,
+          date,
+          message,
+          body,
+          category,
+          scope,
+          description,
+          isBreaking,
+          relativeTime: sharedGetRelativeTime(date, locale),
+        })
       },
     )
   })

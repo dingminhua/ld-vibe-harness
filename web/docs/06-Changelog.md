@@ -19,7 +19,7 @@
   默认态：左上相对时间 · type · scope + 右侧复制/阅读入口 + 标题块（GitHub 剪影图标 + description）
   选中态：卡片高亮，右侧阅读入口切换为收起态，右侧扩展阅读展示格式化提交详情
 右侧扩展阅读
-  提交身份区 + 分类/scope 标签 + 提交与时间 + 文件/新增/删除汇总 + 改动文件列表 + 折叠原始统计
+  提交身份区 + 提交与时间 + 文件/新增/删除汇总 + 提交说明 + 改动文件 + 原始信息
 ```
 
 ## 3. 提交卡片
@@ -54,15 +54,20 @@
 
 - 详情统一进入右侧扩展阅读，不在列表内展开。
 - 右侧扩展阅读顶部栏不展示提交标题，只保留导航、拖拽和关闭控制。
-- 主视图上半部分复用对象详情身份区组件和层级：
+- 主视图上半部分复用对象详情标准文件头组件和层级，不使用紧凑标题变体：
+  - 第一行左侧固定为对象类型“提交 / Commit”，其后使用与提交卡片第一行一致的弱元信息串：相对时间、分类和范围，以文字中点分隔，不使用背景 chip；
   - 提交描述；
   - 对象类型固定显示“提交 / Commit”，不得用 Conventional Commit `category` 替代对象类型；
-  - Conventional Commit `category` 在详情中作为“分类 / Category”辅助信息展示，`scope` 和破坏性标记同层展示；
-  - weak `shortHash` 与绝对时间；
+  - Conventional Commit `category` 不作为对象类型展示；破坏性标记可作为同层短标签保留；
+  - 绝对时间作为正文头部元信息保留，供审计读取；
+  - 右侧复制操作保留在标准文件头操作位，复制 commit hash；卡片上的复制操作继续复制面向 AI 定位的提交上下文；
 - 文件数、新增数、删除数汇总保留提交详情专用的三项指标卡设计；
 - 主视图后续格式化呈现：
-  - 改动文件列表。
-- 原始 `git diff --stat` 或 `git show --stat` 文本只作为折叠审计信息保留，不作为主阅读界面。
+  - `提交说明` 节点；
+  - `改动文件` 节点；
+  - `原始信息` 节点。
+- 有 commit body 时展示 `提交说明` 节点并默认展开；没有 body 时不显示该节点。
+- `提交说明`、`改动文件` 和 `原始信息` 使用与对象正文一致的圆点标题、右侧折叠箭头和节点卡片样式；`改动文件` 和 `原始信息` 默认收起；原始 `git diff --stat` 或 `git show --stat` 文本只作为折叠审计信息保留，不作为主阅读界面。
 
 ## 6. 复制上下文
 
@@ -75,14 +80,15 @@
   - `type`：Conventional Commit 类型；
   - `scope`：提交范围，缺失时用 `-`；
   - `description`：提交描述，缺失时回退到完整 message；
-  - `date`：使用页面统一绝对时间格式。
+  - `date`：使用页面统一绝对时间格式；
+  - `body`：存在 commit body 时保留完整正文。
 - 复制内容中的 `type` 和 `scope` 必须保留 Git 原始 token，不使用本地化显示名。
 - 复制操作不打开、不关闭右侧扩展阅读。
 
 ## 7. 提交信息
 
 - commit message 按 Git 事实内容原样展示。
-- API 应按 Conventional Commits 解析 `category`、`scope`、`description` 和 `isBreaking`，供列表、仪表盘和后续派生视图使用。
+- API 应返回完整 commit body，并按 Conventional Commits 解析 `category`、`scope`、`description` 和 `isBreaking`，供列表、仪表盘、提交详情和后续派生视图使用。
 - 页面不解析 `Refs:`、`Human-Gate:`、`Verification:`、`Risk:` 为固定字段。
 - 对象相关提交如需展示，应由后续专门的派生查询能力基于 Git 历史、文件路径、对象 ID 和自然文本实现，不在提交记录页内联解析。
 
@@ -110,7 +116,7 @@
 3. 不把提交记录页改成完整 diff 查看器；当前只展示 stat。
 4. 不展示 raw ISO 时间；卡片优先展示相对时间，必要时使用 `formatDateTime()`。
 5. 不把 commit message 强行翻译；它是 Git 事实内容。
-6. 不把原始 `git show --stat` 文本作为详情主界面；主界面必须先格式化统计和文件列表。
+6. 不把原始 `git show --stat` 文本作为详情主界面；主界面必须先格式化统计和文件列表，文件列表与原始信息都应位于默认收起的正文节点中。
 7. 提交卡片操作区应与对象列表保持方向一致：复制和扩展阅读入口在右侧；提交没有对象状态，不展示状态徽标。
 8. 复制内容必须服务 AI 定位沟通，不得退化为只复制短哈希或完整 hash。
 9. 提交记录页不是全量搜索页；所有快速筛选均以当前加载的最近 50 / 100 / 200 条为边界。
@@ -124,6 +130,7 @@ interface ChangelogEntry {
   hash: string;
   shortHash: string;
   message: string;
+  body: string;
   category: string;
   scope: string;
   description: string;
@@ -131,5 +138,12 @@ interface ChangelogEntry {
   author: string;
   date: string;
   relativeTime: string;
+}
+
+interface ChangelogDetail {
+  hash: string;
+  stat: string;
+  body: string;
+  entry: ChangelogEntry;
 }
 ```

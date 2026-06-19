@@ -13,6 +13,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -37,7 +38,21 @@ MAX_SUBJECT_LEN = 72
 
 # 第一行格式: <type>[optional scope][!]: <description>
 HEADER_RE = re.compile(r"^([A-Za-z]+)(?:\(([^)]+)\))?(!)?:\s+(.+)$")
+FOOTER_RE = re.compile(r"^(?:BREAKING CHANGE|[A-Za-z][A-Za-z0-9-]*):\s+\S+", re.MULTILINE)
 DISALLOWED_FOOTER_RE = re.compile(r"^\s*(Refs|Human-Gate|Verification|Risk):\s+.+$", re.MULTILINE)
+COMMAND_LINE_RE = re.compile(
+    r"^\s*(?:npm|pnpm|yarn|bun|python3?|pytest|ruff|mypy|node|tsc|git|make|cargo|go|deno)\b"
+)
+FILE_LIST_LINE_RE = re.compile(
+    r"^\s*(?:[-*]\s+)?(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.@%+~#=,:;()\\/\-\u4e00-\u9fff]+(?:\s+\|\s+\d+.*)?\s*$"
+)
+DIFF_STAT_LINE_RE = re.compile(r"^\s*(?:\d+\s+files?\s+changed|\d+\s+insertions?\(\+\)|\d+\s+deletions?\(-\))")
+VAGUE_BODY_RE = re.compile(r"(更新|优化|完善|调整|修改|处理|补充|整理|按要求|相关|一些|若干|东西|内容)")
+CONCRETE_OBJECT_RE = re.compile(
+    r"(`[^`]+`|[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+|specs?|Code|Web|API|DTO|body|scope|type|commit|校验|展示|规范|事实源|提交|对象|入口|风险|兼容|契约)"
+)
+
+BODY_MIN_CHARS = 30
 
 # 中文字符检测（当前 LDVH 自身项目 Code 实现纪律）
 HAS_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
@@ -48,23 +63,26 @@ FORMAT_HELP = """\
     <type>[optional scope][!]: <description>
 
     [optional body]
-    [optional footer(s)]
 
 各部分说明：
   type      必填。变更类型：{valid_types}
   scope     可选。影响范围（推荐）：{valid_scopes}
   !         可选。表示破坏性变更
   description 必填。简短描述，不超过 72 字符
-  body      可选。用于说明做了什么、为什么做，以及必要影响
-  footer    可选。遵守 Conventional Commits footer 规则；LDVH 不定义固定尾部字段
+  body      条件必填。用于说明动机、关键变更、影响边界、验证结论与风险
+  footer    禁用。破坏性变更使用首行 ! 标记，并在 body 中说明影响
 
 禁用：
-  不得使用 Refs、Human-Gate、Verification、Risk 作为 LDVH 固定 footer 字段
+  不得使用 footer；尤其不得使用 Refs、Human-Gate、Verification、Risk 作为固定字段
 
 示例：
   spec(specs): 采用约定式提交规范
 
-  将提交首行固定为 Conventional Commits 格式，便于 Code 和 Web 解析。
+  将提交首行固定为 Conventional Commits 格式，解决 Code 和 Web 解析边界不稳定的问题。
+
+  关键变更是明确 type/scope 单主语义，并把 body 定位为 Git 无法自动提供的人类语义层。
+
+  已确认提交预检能识别格式错误和明显空泛正文；残留风险由 Human 审查兜底。
 """.format(
     valid_types=", ".join(sorted(VALID_TYPES)),
     valid_scopes=", ".join(sorted(RECOMMENDED_SCOPES)),
@@ -132,7 +150,117 @@ def git_log(n: int) -> list[CommitInfo]:
     return commits
 
 
-def check_commit(commit: CommitInfo) -> list[Issue]:
+def get_staged_files() -> list[str]:
+    """返回当前 index 中 staged 的文件路径；失败时保守返回空列表。"""
+    result = subprocess.run(
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMRT"],
+        capture_output=True, text=True, cwd=PROJECT_ROOT,
+    )
+    if result.returncode != 0:
+        return []
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+
+def body_required_for_paths(paths: list[str]) -> bool:
+    """按 staged touched files 的路径做 body 必填的保守判断。"""
+    normalized = [path.strip().replace("\\", "/") for path in paths if path.strip()]
+    if not normalized:
+        return False
+    if len(normalized) >= 2:
+        return True
+
+    body_required_prefixes = (
+        "specs/",
+        "rules/",
+        "code/",
+        "tests/",
+        "web/",
+        "hooks/",
+        "agents/",
+        "skills/",
+        "ldvh-base/",
+        ".github/",
+    )
+    body_required_names = {
+        "AGENTS.md",
+        "package.json",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "yarn.lock",
+        "pyproject.toml",
+        "requirements.txt",
+    }
+
+    return any(
+        path.startswith(body_required_prefixes)
+        or Path(path).name in body_required_names
+        for path in normalized
+    )
+
+
+def body_lines(body: str) -> list[str]:
+    return [line.strip() for line in body.splitlines() if line.strip()]
+
+
+def mostly_matches(lines: list[str], pattern: re.Pattern[str]) -> bool:
+    if not lines:
+        return False
+    matched = sum(1 for line in lines if pattern.search(line))
+    return matched / len(lines) >= 0.6
+
+
+def semantic_signal_count(body: str) -> int:
+    signals = [
+        r"(为什么|为了|因为|解决|避免|收敛|动机|目的|偏差)",
+        r"(关键|变更|新增|明确|支持|禁止|改为|返回|展示|校验|实现)",
+        r"(影响|范围|边界|对象|下游|用户|AI|Web|Code|契约|兼容)",
+        r"(已确认|通过|未发现|验证|风险|未验证|后续|残留)",
+    ]
+    return sum(1 for pattern in signals if re.search(pattern, body))
+
+
+def check_body_quality(commit: CommitInfo) -> list[Issue]:
+    """检查 body 的明显偏差；不尝试替代 Human 语义审查。"""
+    issues: list[Issue] = []
+    body = commit.body.strip()
+    if not body:
+        return issues
+
+    lines = body_lines(body)
+    if len(body) < BODY_MIN_CHARS:
+        issues.append(Issue(
+            commit.hash, "warning",
+            f"body 过短，可能不足以说明动机、关键变更、影响边界和风险（当前 {len(body)} 字符）"
+        ))
+
+    if mostly_matches(lines, COMMAND_LINE_RE):
+        issues.append(Issue(
+            commit.hash, "warning",
+            "body 主要由检查命令组成；应改写为验证结论和残留风险，命令只能作为辅助证据"
+        ))
+
+    if mostly_matches(lines, FILE_LIST_LINE_RE) or mostly_matches(lines, DIFF_STAT_LINE_RE):
+        issues.append(Issue(
+            commit.hash, "warning",
+            "body 主要像文件清单或 diff stat；Git 已提供这些信息，body 应说明人类语义"
+        ))
+
+    if VAGUE_BODY_RE.search(body) and not CONCRETE_OBJECT_RE.search(body):
+        issues.append(Issue(
+            commit.hash, "warning",
+            "body 命中空泛词且缺少具体对象；应说明具体行为、契约、事实源或展示影响"
+        ))
+
+    if semantic_signal_count(body) < 2:
+        issues.append(Issue(
+            commit.hash, "warning",
+            "body 缺少明显语义信号；建议覆盖动机、关键变更、影响边界、验证结论或风险中的至少两类"
+        ))
+
+    return issues
+
+
+def check_commit(commit: CommitInfo, touched_files: Optional[list[str]] = None) -> list[Issue]:
     """检查单条 commit message 格式。"""
     issues = []
 
@@ -185,7 +313,20 @@ def check_commit(commit: CommitInfo) -> list[Issue]:
             "description 不能为空"
         ))
 
-    # LDVH 不使用这四类自定义固定 footer，避免把 Git 提交变成工作对象记录。
+    if touched_files is not None and body_required_for_paths(touched_files) and not commit.body.strip():
+        issues.append(Issue(
+            commit.hash, "error",
+            "当前 staged files 要求 commit body 非空；body 应说明动机、关键变更、影响边界和风险"
+        ))
+
+    # LDVH 不使用 footer，避免把 Git 提交变成工作对象记录或 AI 固定字段。
+    if FOOTER_RE.search(commit.body):
+        issues.append(Issue(
+            commit.hash, "error",
+            "不得使用 commit footer；破坏性变更用首行 ! 标记，其他确认、验证和风险写入自然语言 body"
+        ))
+
+    # 兼容旧错误信息，点名历史上禁用的四类固定字段。
     disallowed_footers = sorted({match.group(1) for match in DISALLOWED_FOOTER_RE.finditer(commit.full_message)})
     if disallowed_footers:
         issues.append(Issue(
@@ -203,15 +344,17 @@ def check_commit(commit: CommitInfo) -> list[Issue]:
                 "commit message 必须包含中文字符（description 和 body 部分），type 和 scope 不要求中文"
             ))
 
+    issues.extend(check_body_quality(commit))
+
     return issues
 
 
-def check_message(message_text: str) -> list[Issue]:
+def check_message(message_text: str, touched_files: Optional[list[str]] = None) -> list[Issue]:
     """检查提交前拟写入的 message 文本是否符合格式。"""
     if not message_text or not message_text.strip():
         return [Issue("<message>", "error", "message 不能为空")]
     commit = parse_message_text(message_text)
-    return check_commit(commit)
+    return check_commit(commit, touched_files=touched_files)
 
 
 def main():
@@ -225,6 +368,10 @@ def main():
     parser.add_argument(
         "--check-message", type=str, metavar="MSG", default=None,
         help="检查拟提交的 message 文本是否符合格式（提交前强制预检）"
+    )
+    parser.add_argument(
+        "--files", nargs="*", default=None,
+        help="指定本次提交的文件清单；未指定时 --check-message 会读取 staged files"
     )
     parser.add_argument(
         "-n", "--count", type=int, default=10,
@@ -243,7 +390,8 @@ def main():
 
     # --check-message 模式：提交前预检
     if args.check_message is not None:
-        issues = check_message(args.check_message)
+        touched_files = args.files if args.files is not None else get_staged_files()
+        issues = check_message(args.check_message, touched_files=touched_files)
         errors = [i for i in issues if i.level == "error"]
         warnings = [i for i in issues if i.level == "warning"]
 

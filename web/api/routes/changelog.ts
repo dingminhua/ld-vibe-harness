@@ -3,7 +3,7 @@
  */
 
 import { Router, type Request, type Response } from 'express'
-import { getGitLog, getGitShow } from '../services/git.js'
+import { getGitCommit, getGitLog, getGitShow } from '../services/git.js'
 
 const router = Router()
 
@@ -28,8 +28,12 @@ router.get('/:hash', async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ ok: false, error: 'Invalid hash format' })
       return
     }
-    const stat = await getGitShow(hash)
-    res.json({ hash, stat })
+    const locale = String(req.query.locale || 'zh')
+    const [stat, commit] = await Promise.all([
+      getGitShow(hash),
+      getGitCommit(hash, locale),
+    ])
+    res.json({ hash, stat, body: commit.body, entry: commit })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to fetch commit detail'
     res.status(500).json({ ok: false, error: message })

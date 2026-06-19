@@ -87,6 +87,7 @@ function getCommitCopyContext(entry: ChangelogEntry): string {
     `scope: ${entry.scope || '-'}`,
     `description: ${entry.description || entry.message || '-'}`,
     `date: ${formatDateTime(entry.date) || '-'}`,
+    ...(entry.body?.trim() ? [`body:\n${entry.body.trim()}`] : []),
   ].join('\n');
 }
 
@@ -148,11 +149,12 @@ export default function Changelog() {
     setLoadingHash(hash);
 
     try {
-      const detail = await fetchCommitDetail(hash);
+      const detail = await fetchCommitDetail(hash, locale);
+      const detailEntry = detail.entry ?? { ...entry, body: detail.body || entry.body };
       openPanel({
         type: 'diff',
         title: panelTitle,
-        data: { entry, stat: detail.stat },
+        data: { entry: detailEntry, stat: detail.stat },
       });
     } catch {
       openPanel({

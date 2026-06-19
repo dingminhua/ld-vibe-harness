@@ -37,6 +37,7 @@ export interface DashboardData {
     author: string;
     date: string;
     message: string;
+    body?: string;
     category: string;
     description: string;
     relativeTime: string;
@@ -199,6 +200,7 @@ export interface ChangelogEntry {
   author: string;
   date: string;
   message: string;
+  body: string;
   category: string;
   scope: string;
   description: string;
@@ -219,8 +221,11 @@ export async function fetchChangelog(count?: number, locale?: string): Promise<C
   return request<ChangelogEntry[]>(`/changelog${qs ? `?${qs}` : ''}`);
 }
 
-export async function fetchCommitDetail(hash: string): Promise<{ hash: string; stat: string }> {
-  return request<{ hash: string; stat: string }>(`/changelog/${hash}`);
+export async function fetchCommitDetail(hash: string, locale?: string): Promise<{ hash: string; stat: string; body: string; entry?: ChangelogEntry }> {
+  const params = new URLSearchParams();
+  if (locale) params.set('locale', locale);
+  const qs = params.toString();
+  return request<{ hash: string; stat: string; body: string; entry?: ChangelogEntry }>(`/changelog/${hash}${qs ? `?${qs}` : ''}`);
 }
 
 export interface DocContent {

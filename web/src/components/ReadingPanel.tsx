@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, X, GripVertical, FileText, FileDiff, ExternalLink } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, X, GripVertical, FileText, ExternalLink } from 'lucide-react';
 import { usePanel, type PanelContent } from '@/utils/panelContext';
 import MarkdownPreview from '@/components/MarkdownPreview';
 import CopyPathButton from '@/components/CopyPathButton';
@@ -712,6 +712,46 @@ function CommitMetric({
   );
 }
 
+function getCommitNodeNextState(state: 'collapsed' | 'expanded') {
+  return state === 'collapsed' ? 'expanded' : 'collapsed';
+}
+
+function CommitReadingNodeSection({
+  title,
+  state,
+  locale,
+  onToggle,
+  children,
+}: {
+  title: string;
+  state: 'collapsed' | 'expanded';
+  locale: string;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  const StateIcon = state === 'collapsed' ? ChevronDown : ChevronUp;
+  const nextState = getCommitNodeNextState(state);
+  const action = locale === 'en'
+    ? (nextState === 'collapsed' ? 'Collapse' : 'Expand')
+    : (nextState === 'collapsed' ? '收拢' : '展开');
+
+  return (
+    <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={locale === 'en' ? `${action} ${title}` : `${action}${title}`}
+        className={`ldvh-section-title flex w-full min-w-0 items-center gap-2 text-left transition-colors hover:text-ldvh-accent ${state === 'collapsed' ? '' : 'mb-3'}`}
+      >
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" />
+        <span className="min-w-0 flex-1 truncate">{title}</span>
+        <StateIcon size={14} className="shrink-0 text-ldvh-text-secondary/80" aria-hidden="true" />
+      </button>
+      {state !== 'collapsed' && children}
+    </section>
+  );
+}
+
 function CommitIdentitySection({
   entry,
   parsed,
@@ -732,15 +772,21 @@ function CommitIdentitySection({
   locale: string;
 }) {
   const commitColor = CATEGORY_COLORS.other;
-  const categoryColor = CATEGORY_COLORS[entry?.category || ''] || CATEGORY_COLORS.other;
   const commitValue = entry?.shortHash || parsed.commit || '—';
+  const copyValue = entry?.hash || commitValue;
   const timeValue = entry?.date ? formatDateTime(entry.date) : parsed.date || '—';
   const typeLabel = locale === 'en' ? 'Commit' : labels.commit;
+  const headerMetaItems = [
+    entry?.relativeTime || timeValue,
+    entry?.category ? getCommitTypeLabel(entry.category, locale) : '',
+    entry?.scope ? getCommitScopeLabel(entry.scope, locale) : '',
+  ].filter(Boolean);
 
   return (
     <ObjectIdentityHeader
       title={title}
-      id={commitValue}
+      id={headerMetaItems.join(' · ')}
+      target={copyValue}
       objectType="changelog"
       typeColor={commitColor}
       typeLabel={typeLabel}
@@ -748,25 +794,10 @@ function CommitIdentitySection({
       locale={locale}
       created=""
       updated=""
-      compact
       showDefaultDates={false}
-      showCopyAction={false}
       customMetaEntries={[{ label: labels.time, value: timeValue }]}
       extraBadges={(
         <>
-        {entry?.category && (
-          <span
-            className="ldvh-chip shrink-0 rounded px-2 py-0.5"
-            style={{ backgroundColor: `${categoryColor}18`, color: categoryColor }}
-          >
-            {labels.category} · {getCommitTypeLabel(entry.category, locale)}
-          </span>
-        )}
-        {entry?.scope && (
-          <span className="ldvh-chip shrink-0 rounded bg-ldvh-bg px-2 py-0.5 text-ldvh-text-secondary">
-            {labels.scope} · {getCommitScopeLabel(entry.scope, locale)}
-          </span>
-        )}
         {entry?.isBreaking && (
           <span className="ldvh-chip shrink-0 rounded bg-red-500/10 px-2 py-0.5 text-red-300">
             !
@@ -780,10 +811,14 @@ function CommitIdentitySection({
 
 function DiffPreview({ content }: { content: PanelContent }) {
   const { locale, t } = useI18n();
+  const [bodyState, setBodyState] = useState<'collapsed' | 'expanded'>('expanded');
+  const [filesState, setFilesState] = useState<'collapsed' | 'expanded'>('collapsed');
+  const [rawState, setRawState] = useState<'collapsed' | 'expanded'>('collapsed');
   const { title, data } = content;
   const commitData = isCommitDetailPanelData(data) ? data : null;
   const entry = commitData?.entry;
   const diffText = commitData?.stat ?? (typeof data === 'string' ? data : '');
+  const commitBody = entry?.body?.trim() ?? '';
   const parsed = parseCommitStat(diffText);
   const displayTitle = entry?.description || entry?.message || title || t('readingPanel.changeDetail');
   const labels = locale === 'en'
@@ -796,9 +831,10 @@ function DiffPreview({ content }: { content: PanelContent }) {
       files: 'Files',
       insertions: 'Insertions',
       deletions: 'Deletions',
+      commitBody: 'Commit notes',
       changedFiles: 'Changed files',
       noFiles: 'No file stat available',
-      raw: 'Raw stat',
+      raw: 'Original info',
     }
     : {
       category: '分类',
@@ -809,9 +845,10 @@ function DiffPreview({ content }: { content: PanelContent }) {
       files: '文件',
       insertions: '新增',
       deletions: '删除',
+      commitBody: '提交说明',
       changedFiles: '改动文件',
       noFiles: '没有可展示的文件统计',
-      raw: '原始统计',
+      raw: '原始信息',
     };
   const summary = parsed.summary;
   const filesChanged = summary?.filesChanged ?? parsed.files.length;
@@ -835,14 +872,30 @@ function DiffPreview({ content }: { content: PanelContent }) {
         <CommitMetric label={labels.deletions} value={deletions} tone="delete" />
       </div>
 
-      <section className="rounded-lg border border-ldvh-border bg-ldvh-panel">
-        <div className="border-b border-ldvh-border px-3 py-2">
-          <h5 className="ldvh-caption-strong">{labels.changedFiles}</h5>
-        </div>
+      {commitBody && (
+        <CommitReadingNodeSection
+          title={labels.commitBody}
+          state={bodyState}
+          locale={locale}
+          onToggle={() => setBodyState((current) => getCommitNodeNextState(current))}
+        >
+          <MarkdownPreview
+            content={commitBody}
+            className="ldvh-inline-markdown rounded-lg border border-ldvh-border bg-ldvh-bg/40 px-3 py-2"
+          />
+        </CommitReadingNodeSection>
+      )}
+
+      <CommitReadingNodeSection
+        title={labels.changedFiles}
+        state={filesState}
+        locale={locale}
+        onToggle={() => setFilesState((current) => getCommitNodeNextState(current))}
+      >
         {parsed.files.length === 0 ? (
-          <p className="ldvh-body-muted px-3 py-4">{labels.noFiles}</p>
+          <p className="ldvh-body-muted">{labels.noFiles}</p>
         ) : (
-          <div className="divide-y divide-ldvh-border/70">
+          <div className="divide-y divide-ldvh-border/70 rounded-lg border border-ldvh-border bg-ldvh-bg/40">
             {parsed.files.map((file) => (
               <div key={`${file.path}:${file.stat}`} className="px-3 py-2">
                 <div className="ldvh-meta-primary break-all font-mono">{file.path}</div>
@@ -851,15 +904,16 @@ function DiffPreview({ content }: { content: PanelContent }) {
             ))}
           </div>
         )}
-      </section>
+      </CommitReadingNodeSection>
 
-      {diffText && (
-        <details className="rounded-lg border border-ldvh-border bg-ldvh-bg">
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-ldvh-text-secondary hover:text-ldvh-text-primary">
-            <FileDiff size={13} />
-            <span className="ldvh-caption-strong">{labels.raw}</span>
-          </summary>
-          <pre className="ldvh-meta-primary max-h-[360px] overflow-y-auto border-t border-ldvh-border px-3 py-2 whitespace-pre-wrap">
+      <CommitReadingNodeSection
+        title={labels.raw}
+        state={rawState}
+        locale={locale}
+        onToggle={() => setRawState((current) => getCommitNodeNextState(current))}
+      >
+        {diffText ? (
+          <pre className="ldvh-meta-primary max-h-[360px] overflow-y-auto whitespace-pre-wrap rounded-lg border border-ldvh-border bg-ldvh-bg/40 px-3 py-2">
             {lines.map((line, i) => {
               let cls = 'text-ldvh-text-primary';
               if (line.startsWith('+')) cls = 'text-emerald-400';
@@ -868,11 +922,10 @@ function DiffPreview({ content }: { content: PanelContent }) {
               return <div key={i} className={cls}>{line}</div>;
             })}
           </pre>
-        </details>
-      )}
-      {!diffText && (
-        <p className="ldvh-body-muted rounded-md border border-ldvh-border bg-ldvh-bg p-3">{labels.noFiles}</p>
-      )}
+        ) : (
+          <p className="ldvh-body-muted">{labels.noFiles}</p>
+        )}
+      </CommitReadingNodeSection>
       </div>
   );
 }
