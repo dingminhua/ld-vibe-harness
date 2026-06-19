@@ -1,4 +1,4 @@
-"""Field registry checks for specs/05.01."""
+"""Field registry checks for specs/05.03."""
 
 import re
 from pathlib import Path
@@ -9,7 +9,7 @@ from .index import SpecsChecker
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SPECS_DIR = PROJECT_ROOT / "specs"
-FIELD_REGISTRY_SPEC_NAME = "05.01-工作字段内容格式规范.md"
+FIELD_REGISTRY_SPEC_NAME = "05.03-工作模型字段注册与消费规范.md"
 WORKPLAN_SPEC_NAME = "21-WorkPlan-工作计划.md"
 REQUIRED_REGISTRY_SECTION_TITLES = {"通用字段注册", "对象特有字段注册"}
 REGISTRY_SECTION_TITLES = {*REQUIRED_REGISTRY_SECTION_TITLES, "WorkPlan 试点字段注册"}
@@ -71,7 +71,7 @@ ALLOWED_WEB_RENDER_KINDS = {
     "deprecated",
 }
 ALLOWED_REGISTRY_STATUSES = {"active", "deprecated", "removed", "alias"}
-OWNER_RE = re.compile(r"^(none|05\.01|20-39|2[0-9]|3[0-9])$")
+OWNER_RE = re.compile(r"^(none|05\.0[1-3]|20-39|2[0-9]|3[0-9])$")
 DOC_NUMBERED_HEADING_RE = re.compile(r"^\d+(?:\.\d+)*\.?(?:\s+|$)")
 
 
@@ -325,7 +325,7 @@ def check_registry_table(path, section_title, table, seen_keys, scope_owners=Non
             Issue(
                 path,
                 table.get("line") or 1,
-                f"{section_title} registry 表头不符合 05.01 注册列: 期望 {expected}，实际 {actual}",
+                f"{section_title} registry 表头不符合 05.03 注册列: 期望 {expected}，实际 {actual}",
                 code="FIELD_REGISTRY_HEADER_INVALID",
             )
         )
@@ -413,7 +413,7 @@ def check_workplan_coverage(path, tables):
             Issue(
                 path,
                 1,
-                f"WorkPlan 字段未在 05.01 注册: {field_path}",
+                f"WorkPlan 字段未在 05.03 注册: {field_path}",
                 code="FIELD_REGISTRY_WORKPLAN_FIELD_MISSING",
             )
         )
@@ -423,7 +423,7 @@ def check_workplan_coverage(path, tables):
 def check_file(path):
     issues = []
     if not path.exists():
-        return [Issue(path, 1, "05.01 字段注册规范文件不存在", code="FIELD_REGISTRY_SPEC_MISSING")]
+        return [Issue(path, 1, "05.03 字段注册规范文件不存在", code="FIELD_REGISTRY_SPEC_MISSING")]
 
     tables = extract_tables(path)
     seen_keys = set()

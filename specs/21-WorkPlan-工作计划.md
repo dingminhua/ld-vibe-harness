@@ -16,7 +16,9 @@ ldvh_doc:
   basis:
     - "specs/05-工作模型基础规范.md"
   related_specs:
-    - "specs/05.01-工作字段内容格式规范.md"
+    - "specs/05.01-工作模型字段定义与语义规范.md"
+    - "specs/05.02-工作模型字段内容与格式规范.md"
+    - "specs/05.03-工作模型字段注册与消费规范.md"
   code_consumption:
     - "doc_metadata"
     - "relations"
@@ -77,7 +79,7 @@ ldvh-base/workplans/workplan-{NNNN}-short-title.yaml
 |---|---|
 | 工作计划工作模型规范 | `specs/21-WorkPlan-工作计划.md` |
 | 工作计划实例 | `ldvh-base/workplans/` |
-| 工作计划字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
+| 工作计划字段内容格式 | `specs/05.02-工作模型字段内容与格式规范.md` |
 | 工作计划展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 执行过程不作为长期事实源。工作计划只保留最小恢复信息、验证证据、关闭证据和经验分流结果；AI 的临时步骤、局部选择、工具缓存、子 Agent 中间过程和未采纳草稿不得写成独立工作对象。
@@ -191,7 +193,7 @@ Human Gate 发生在工作计划层。执行项、角色说明、子 Agent 输�
 ---
 ## 6. 字段契约
 
-公共字段语义定义见 `specs/05.01-工作字段内容格式规范.md` §4。本表只列出对象特有字段语义补充。
+公共字段语义定义见 `specs/05.01-工作模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
 
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
@@ -202,7 +204,7 @@ Human Gate 发生在工作计划层。执行项、角色说明、子 Agent 输�
 | `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
 | `updated` | 更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
 | `workarea` | 所属工作域 ID | string | 是 | 必须引用已存在 WorkArea | Reference | AI、Code、Web |
-| `priority` | 执行优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05-工作模型基础规范.md` §7.3.1 | Reference | AI、Code、Web |
+| `priority` | 执行优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
 | `description` | 目标背景、范围和问题说明 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `success_criteria` | 工作计划成功标准 | string | 是 | 应使用 checklist 或等价可验证条目支持关闭审查 | Checklist | AI、Code、Web |
 | `source` | 工作计划来源 | string | 是 | 谁在什么场景下表达 | Reference / Narrative | AI、Web |
@@ -374,7 +376,7 @@ Web 应把工作计划作为 Human 直接查看和确认的主对象。Web 可�
 |---|---|---|---|---|
 | 上位约束承接要求 | 工作计划必须遵守 05、05.01 和本文定义的人机职责边界 | 05、05.01、本文、Human Gate | 工作模型治理 | 创建、迁移、关闭或重排工作计划时 |
 | 确定性执行要求 | 工作计划内部执行项不得作为独立工作模型出现 | Validator、CLI、Web 展示 | 事实模型校验 | 创建、更新、展示或关闭工作计划时 |
-| 确定性执行要求 | 工作计划必须依据 05 的统一标准维护 `priority`，不得维护 `importance` | Validator、CLI、Web 展示 | 字段契约同步 | 创建、更新、排序、筛选或展示工作计划时 |
+| 确定性执行要求 | 工作计划必须依据 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 维护 `priority`，不得维护 `importance` | Validator、CLI、Web 展示 | 字段契约同步 | 创建、更新、排序、筛选或展示工作计划时 |
 | 生命周期触发要求 | 工作计划规范变化后应检查 Code、Web、事实实例和相关工作流程是否需要同步 | Code 测试、事实校验、Web 检查、流程检查 | 触发保障 | 字段、状态、执行编排或事实源路径变化时 |
 
 ---
@@ -383,7 +385,7 @@ Web 应把工作计划作为 Human 直接查看和确认的主对象。Web 可�
 | 检查项 | 标准 |
 |---|---|
 | 工作域归属 | 每个工作计划必须引用一个存在的工作域 |
-| 优先级 | `priority` 已填写且符合 05 统一标准，未维护 `importance` |
+| 优先级 | `priority` 已填写且符合 05.01 统一标准，未维护 `importance` |
 | 执行编排 | `orchestration.execution_items` 是内部字段，不存在独立执行项事实源文件 |
 | 人类入口 | 关闭审查发生在工作计划层 |
 | 关闭证据 | review_needed / closed 具备验证证据和关闭证据 |

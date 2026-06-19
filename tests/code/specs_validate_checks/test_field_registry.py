@@ -14,7 +14,7 @@ def registry_table(rows):
 
 def write_registry_doc(path, common_rows=None, object_rows=None):
     common_rows = common_rows or [
-        "| `description` | common | 背景 | narrative | markdown | none | none | 05.01 | format | summary | active | none |"
+        "| `description` | common | 背景 | narrative | markdown | none | none | 05.02 | format | summary | active | none |"
     ]
     object_rows = object_rows or [
         "| `success_criteria` | workplan | 成功标准 | checklist | checklist_markdown | none | none | 21 | owner_state | checklist | active | none |"
@@ -22,15 +22,15 @@ def write_registry_doc(path, common_rows=None, object_rows=None):
     return write_md(
         path,
         f"""
-# 工作字段内容格式规范
+# 工作模型字段注册与消费规范
 
-## 5. 字段内容/消费注册表
+## 3. 字段注册表
 
-### 5.4 通用字段注册
+### 3.4 通用字段注册
 
 {registry_table(common_rows)}
 
-### 5.5 对象特有字段注册
+### 3.5 对象特有字段注册
 
 {registry_table(object_rows)}
 
@@ -45,14 +45,14 @@ def test_field_registry_core_implementation_lives_in_spec_checks():
 
 
 def test_field_registry_accepts_valid_registry(tmp_path):
-    path = write_registry_doc(tmp_path / "05.01-工作字段内容格式规范.md")
+    path = write_registry_doc(tmp_path / "05.03-工作模型字段注册与消费规范.md")
 
     assert checker.field_registry_check([str(path)]) == []
 
 
 def test_field_registry_accepts_collection_owner(tmp_path):
     path = write_registry_doc(
-        tmp_path / "05.01-工作字段内容格式规范.md",
+        tmp_path / "05.03-工作模型字段注册与消费规范.md",
         common_rows=[
             "| `source` | common | 输入来源 | reference | string | mixed_ref | none | 20-39 | ref | summary | active | none |"
         ],
@@ -63,7 +63,7 @@ def test_field_registry_accepts_collection_owner(tmp_path):
 
 def test_field_registry_accepts_mixed_ref_url_ref_and_enum_signal_web_kinds(tmp_path):
     path = write_registry_doc(
-        tmp_path / "05.01-工作字段内容格式规范.md",
+        tmp_path / "05.03-工作模型字段注册与消费规范.md",
         object_rows=[
             "| `orchestration.mode` | workplan | 编排方式 | reference | string | enum | 21 | 21 | enum | enum_signal | active | none |",
             "| `orchestration.execution_items.input_refs` | workplan | 输入引用 | reference | list_string | mixed_ref | none | 21 | ref | mixed_ref | active | none |",
@@ -76,7 +76,7 @@ def test_field_registry_accepts_mixed_ref_url_ref_and_enum_signal_web_kinds(tmp_
 
 def test_field_registry_reports_scope_owner_mismatch(tmp_path):
     path = write_registry_doc(
-        tmp_path / "05.01-工作字段内容格式规范.md",
+        tmp_path / "05.03-工作模型字段注册与消费规范.md",
         object_rows=[
             "| `urls` | study | 外部网址 | reference | list_object | url_ref | none | 26 | structured | url_ref | active | none |",
         ],
@@ -89,9 +89,9 @@ def test_field_registry_reports_scope_owner_mismatch(tmp_path):
 
 def test_field_registry_reports_invalid_enum(tmp_path):
     path = write_registry_doc(
-        tmp_path / "05.01-工作字段内容格式规范.md",
+        tmp_path / "05.03-工作模型字段注册与消费规范.md",
         common_rows=[
-            "| `description` | common | 背景 | prose | markdown | none | none | 05.01 | format | summary | active | none |"
+            "| `description` | common | 背景 | prose | markdown | none | none | 05.02 | format | summary | active | none |"
         ],
     )
 
@@ -101,9 +101,9 @@ def test_field_registry_reports_invalid_enum(tmp_path):
 
 
 def test_field_registry_reports_duplicate_scope_and_path(tmp_path):
-    duplicated = "| `description` | common | 背景 | narrative | markdown | none | none | 05.01 | format | summary | active | none |"
+    duplicated = "| `description` | common | 背景 | narrative | markdown | none | none | 05.02 | format | summary | active | none |"
     path = write_registry_doc(
-        tmp_path / "05.01-工作字段内容格式规范.md",
+        tmp_path / "05.03-工作模型字段注册与消费规范.md",
         common_rows=[duplicated, duplicated],
     )
 
@@ -114,9 +114,9 @@ def test_field_registry_reports_duplicate_scope_and_path(tmp_path):
 
 def test_field_registry_reports_active_replacement(tmp_path):
     path = write_registry_doc(
-        tmp_path / "05.01-工作字段内容格式规范.md",
+        tmp_path / "05.03-工作模型字段注册与消费规范.md",
         common_rows=[
-            "| `description` | common | 背景 | narrative | markdown | none | none | 05.01 | format | summary | active | `details` |"
+            "| `description` | common | 背景 | narrative | markdown | none | none | 05.02 | format | summary | active | `details` |"
         ],
     )
 
@@ -126,7 +126,7 @@ def test_field_registry_reports_active_replacement(tmp_path):
 
 
 def test_field_registry_reports_workplan_field_missing_from_registry(tmp_path):
-    registry_path = write_registry_doc(tmp_path / "05.01-工作字段内容格式规范.md")
+    registry_path = write_registry_doc(tmp_path / "05.03-工作模型字段注册与消费规范.md")
     write_md(
         tmp_path / "21-WorkPlan-工作计划.md",
         """

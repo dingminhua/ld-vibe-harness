@@ -235,7 +235,7 @@ BREAKING CHANGE: 旧的仅首行描述消费方需要改为读取 description。
 | 确定性执行要求 | commit message 可机械校验的部分由 Code 检查，关联提交由 Git 派生 | `code/commit_validate.py`、Git 查询、测试夹具 | 校验实现 | 提交契约或关联派生规则变化时 |
 | 确定性执行要求 | LDVH 自身仓库应提供或启用提交前 message 校验入口；未启用 Git hook 时，AI 提交前必须手动运行等价预检 | `commit-msg` hook、`code/commit_validate.py --check-message`、CI 或人工降级检查 | 触发保障 | 创建 Git commit、修改提交契约、调整 hook/CI 或迁移仓库入口时 |
 | Human 交互要求 | 高影响事实源修改和破坏性 Git 操作必须记录或触发 Human Gate | Human Gate、提交正文或对应事实源 | 人工确认 | 修改事实源边界、状态机、字段契约、入口资产或执行破坏性 Git 操作时 |
-| 生命周期触发要求 | 本规范变化后，应同步检查 01、05、05.01、06、07、08、Code、Web 和测试 | specs 检查、Code 测试、Web 类型检查、残留搜索 | 触发保障 | 提交格式、关联派生或 Web 展示规则变化时 |
+| 生命周期触发要求 | 本规范变化后，应同步检查 01、05、05.01、05.02、05.03、06、07、08、Code、Web 和测试 | specs 检查、Code 测试、Web 类型检查、残留搜索 | 触发保障 | 提交格式、关联派生或 Web 展示规则变化时 |
 
 ---
 ## 14. Human Gate 与检查要求

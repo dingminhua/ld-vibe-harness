@@ -16,7 +16,9 @@ ldvh_doc:
   basis:
     - "specs/05-工作模型基础规范.md"
   related_specs:
-    - "specs/05.01-工作字段内容格式规范.md"
+    - "specs/05.01-工作模型字段定义与语义规范.md"
+    - "specs/05.02-工作模型字段内容与格式规范.md"
+    - "specs/05.03-工作模型字段注册与消费规范.md"
     - "specs/07-Code确定性执行实现规范.md"
     - "specs/08-Web信息同步实现规范.md"
     - "specs/20-WorkArea-工作域.md"
@@ -102,7 +104,7 @@ ldvh-base/memos/memo-{NNNN}-short-title.yaml
 |---|---|
 | Memo 工作模型规范 | `specs/24-Memo-备忘.md` |
 | Memo 实例 | `ldvh-base/memos/` |
-| Memo 字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
+| Memo 字段内容格式 | `specs/05.02-工作模型字段内容与格式规范.md` |
 | Memo 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 Memo 的当前稳定规则以本文为准。
@@ -202,7 +204,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 
 ### 6.1 字段表
 
-公共字段语义定义见 `specs/05.01-工作字段内容格式规范.md` §4。本表只列出对象特有字段语义补充。
+公共字段语义定义见 `specs/05.01-工作模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
 
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
@@ -216,7 +218,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `evolution` | 关键语义转折 | list[object] | 否 | 默认为空列表；元素至少包含 `at` 和 `summary` | Log / Narrative | AI、Code、Web |
 | `source` | 备忘进入事实源的入口来源 | enum | 是 | `web` 或 `conversation`；Web 快速创建固定为 `web`，对话中由 Human 或 AI 确认记录固定为 `conversation` | Reference | AI、Code、Web |
 | `source_detail` | 来源说明、触发场景或原始输入摘要 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
-| `priority` | 优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05-工作模型基础规范.md` §7.3.1 | Reference | AI、Code、Web |
+| `priority` | 优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
 | `resolved_to` | 分流目标对象引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}` | Reference | AI、Code、Web |
 | `resolved_at` | 分流日期 | date | 条件必填 | `status: resolved` 时必须填写 | Reference | AI、Code、Web |
 | `discard_reason` | 废弃原因 | string | 条件必填 | `status: discarded` 时必须填写 | Narrative | AI、Human |
@@ -226,7 +228,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 
-字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
+字段内容格式按 `specs/05.02-工作模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 
 ### 6.2 YAML 示例
 
@@ -336,7 +338,7 @@ Memo 创建、分流和废弃的具体行动流程由后续 40-59 工作流程�
 | 入口可见要求 | AI 处理未计划化但有保留价值的信息、发现、提醒、问题或缺口时，应能定位本文 | 成员自描述、运行入口摘要、Memo 分流流程入口 | AI 执行入口提示 | 信息保留、分流、废弃或字段契约变化时 |
 | 确定性执行要求 | Memo 字段、状态、来源枚举、演变记录、优先级、引用、文件命名和条件必填应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Memo 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、分流规则或引用关系变化时 |
 | Human 交互要求 | Memo 创建、分流、废弃、核心摘要修改、演变记录修改和用 Memo 规避对象准入时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | Memo 规范变化后，应检查成员自描述、05.01、ADR、Study、WorkArea、WorkPlan、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Memo 字段、状态、事实源边界、适配规则或检查要求变化时 |
+| 生命周期触发要求 | Memo 规范变化后，应检查成员自描述、05.01、05.02、05.03、ADR、Study、WorkArea、WorkPlan、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Memo 字段、状态、事实源边界、适配规则或检查要求变化时 |
 
 ---
 ## 10. 检查要求

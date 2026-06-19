@@ -16,7 +16,9 @@ ldvh_doc:
   basis:
     - "specs/05-工作模型基础规范.md"
   related_specs:
-    - "specs/05.01-工作字段内容格式规范.md"
+    - "specs/05.01-工作模型字段定义与语义规范.md"
+    - "specs/05.02-工作模型字段内容与格式规范.md"
+    - "specs/05.03-工作模型字段注册与消费规范.md"
     - "specs/07-Code确定性执行实现规范.md"
     - "specs/20-WorkArea-工作域.md"
     - "specs/21-WorkPlan-工作计划.md"
@@ -105,7 +107,7 @@ ldvh-base/pitfalls/pitfall-{NNNN}-short-title.yaml
 |---|---|
 | Pitfall 工作模型规范 | `specs/23-Pitfall-踩坑经验.md` |
 | Pitfall 实例 | `ldvh-base/pitfalls/` |
-| Pitfall 字段内容格式 | `specs/05.01-工作字段内容格式规范.md` |
+| Pitfall 字段内容格式 | `specs/05.02-工作模型字段内容与格式规范.md` |
 | Pitfall 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 Pitfall 的当前稳定规则以本文为准。
@@ -208,7 +210,7 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 
 ### 6.1 字段表
 
-公共字段语义定义见 `specs/05.01-工作字段内容格式规范.md` §4。本表只列出对象特有字段语义补充。
+公共字段语义定义见 `specs/05.01-工作模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
 
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
@@ -222,7 +224,7 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `trigger_conditions` | 触发条件、上下文或复现场景 | string | 是 | 应说明何时可能复现 | Narrative | AI、Code、Web |
 | `root_cause` | 根因或误判原因 | string | 是 | active 时必须明确 | Narrative | AI、Human、Web |
 | `resolution` | 解决方式 | string | 是 | active 时必须可执行 | Narrative | AI、Code、Web |
-| `verification` | 经验可用性的验证证据 | string | 是 | active 时必须填写；按 05.01 四段式验证证据结构书写 | 验证证据 | AI、Code、Web |
+| `verification` | 经验可用性的验证证据 | string | 是 | active 时必须填写；按 05.02 四段式验证证据结构书写 | 验证证据 | AI、Code、Web |
 | `avoidance` | 后续规避策略 | string | 是 | active 时必须可复用 | Narrative | AI、Human、Web |
 | `applicability` | 适用范围和不适用范围 | string | 是 | 应避免泛化过度 | Narrative | AI、Web |
 | `tags` | 英文标签列表 | list[string] | 否 | 默认为空列表；写入前应参考已有标签 | Reference | AI、Code、Web |
@@ -236,7 +238,7 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `archive_reason` | 归档原因；如已被规范、Rules、Skill、Agent、Code、Web 或工作流程吸收，应说明承接位置 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Human |
 | `notes` | 不得承载规则正文第二事实源 | string | 否 | 不得承载规则正文第二事实源 | Narrative / Reference | AI、Web |
 
-字段内容格式按 `specs/05.01-工作字段内容格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
+字段内容格式按 `specs/05.02-工作模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 
 ### 6.2 YAML 示例
 
@@ -310,7 +312,7 @@ notes:
 10. 列表字段可为空列表，不得省略字段后以 null 替代空列表；
 11. `tags` 必须使用英文 slug，推荐小写短横线格式；不得使用中文标签、空格、展示翻译或一次性临时短语；
 12. 写入或修改 Pitfall `tags` 前，Code 应提供当前事实源中已有标签清单，AI 应优先复用已有标签；已有标签无法表达当前经验时可以新增英文标签；
-13. `verification` 必须按 `specs/05.01-工作字段内容格式规范.md` §3.3 的四段式验证证据结构书写，不得只写“已验证”“通过”或把验证结果混入 `resolution`。
+13. `verification` 必须按 `specs/05.02-工作模型字段内容与格式规范.md` §3.3 的四段式验证证据结构书写，不得只写“已验证”“通过”或把验证结果混入 `resolution`。
 14. `symptoms`、`trigger_conditions`、`root_cause`、`resolution`、`avoidance` 和 `applicability` 等阅读节点字段可以使用 Markdown 段落或列表，但不得通过手写前导空格模拟缩进排版；需要条目时使用标准 Markdown 列表，需要普通说明时使用顶格段落。
 15. `root_cause`、`resolution` 和 `avoidance` 应优先写成可独立阅读的原子条目；每个条目只表达一个原因、一个动作或一个规避规则，不应把多个判断用分号串成一段长句。
 16. `trigger_conditions` 可使用短段落描述触发上下文；当触发条件超过一个时，应改用 Markdown 列表，让 Web 能稳定呈现为条目化经验。
@@ -387,7 +389,7 @@ Code 不得自行创建、归档、删除 Pitfall 或改写核心经验，不得
 
 Web 可展示 Pitfall 状态、症状、触发条件、根因、解决方式、验证结论、规避策略、适用范围、标签、归档原因、吸收关系和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。
 
-Pitfall 详情页是可复用经验阅读页，不按普通字段卡片堆叠。主节点固定为“现象、触发、根因、方案、验证、规避、范围、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。`verification` 节点消费 `specs/05.01-工作字段内容格式规范.md` 的四段式验证结构，并按“验证计划、验证命令、验证结果、结论”顺序轻量分段展示，不使用表格左列重复标签。
+Pitfall 详情页是可复用经验阅读页，不按普通字段卡片堆叠。主节点固定为“现象、触发、根因、方案、验证、规避、范围、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。`verification` 节点消费 `specs/05.02-工作模型字段内容与格式规范.md` 的四段式验证结构，并按“验证计划、验证命令、验证结果、结论”顺序轻量分段展示，不使用表格左列重复标签。
 
 Pitfall 详情页展示 `tags` 时应保留事实源中的英文原始值，不做中文翻译。列表卡片不展示 `tags`，也不展示 `repeatability`、“已解决/未解决”、复现概率或其他冗余解决态，避免把内部索引标签和已解决前提提升为外部卡片信号。
 
@@ -412,7 +414,7 @@ Pitfall 识别、创建、归档和吸收到规范或实现的具体行动流程
 | 入口可见要求 | AI 处理已解决可复用经验、反直觉问题、重复误判或规避策略时，应能定位本文 | 成员自描述、运行入口摘要、Pitfall 检索或经验吸收流程入口 | AI 执行入口提示 | 经验沉淀、任务执行前检查、状态流转或字段契约变化时 |
 | 确定性执行要求 | Pitfall 字段、状态、引用、文件命名、条件必填、标签格式、已有标签清单和归档吸收关系应由 Code 校验、提供或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Pitfall 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、归档规则或标签规则变化时 |
 | Human 交互要求 | Pitfall 创建、归档、核心经验改写和吸收到规范或实现时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | Pitfall 规范变化后，应检查成员自描述、05.01、ADR、Memo、WorkPlan、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Pitfall 字段、状态、事实源边界、适配规则或检查要求变化时 |
+| 生命周期触发要求 | Pitfall 规范变化后，应检查成员自描述、05.01、05.02、05.03、ADR、Memo、WorkPlan、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Pitfall 字段、状态、事实源边界、适配规则或检查要求变化时 |
 
 ---
 ## 10. 检查要求

@@ -1166,7 +1166,7 @@ verification: |
 
   Order should be reported.
 avoidance: |
-  Use 05.01 heading order.
+  Use 05.02 heading order.
 applicability: |
   Applies to Pitfall facts.
 tags:

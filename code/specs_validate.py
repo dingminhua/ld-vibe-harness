@@ -914,8 +914,8 @@ def build_parser():
     consistency_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
 
     # field-registry
-    field_registry_parser = subparsers.add_parser("field-registry", help="检查 05.01 字段内容/消费注册表。")
-    field_registry_parser.add_argument("paths", nargs="*", default=None, help="要检查的 05.01 文件或目录，默认检查 specs/05.01。")
+    field_registry_parser = subparsers.add_parser("field-registry", help="检查 05.03 字段注册与消费表。")
+    field_registry_parser.add_argument("paths", nargs="*", default=None, help="要检查的 05.03 文件或目录，默认检查 specs/05.03。")
 
     # governed-projects
     governed_projects_parser = subparsers.add_parser("governed-projects", help="检查工作区根目录管辖项目配置。")

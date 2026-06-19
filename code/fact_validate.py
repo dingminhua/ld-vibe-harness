@@ -70,7 +70,7 @@ GLOBAL_REMOVED_FIELDS = {
     "related_changes": "related_changes 不再由工作对象手写维护；关联提交应由 Git 历史、文件路径、对象 ID 和提交正文自然文本派生",
 }
 
-# 12-工作模型字段内容格式规范：长文本字段定义
+# 05.02 工作模型字段内容与格式规范：长文本字段定义
 LONG_TEXT_FIELDS = {
     "workarea": {"description", "scope", "constraints", "archive_reason"},
     "workplan": {"description", "success_criteria", "verification_evidence", "closure_evidence"},
@@ -80,10 +80,10 @@ LONG_TEXT_FIELDS = {
     "study": {"summary", "user_intent", "conclusion", "archive_reason"},
 }
 
-# 12-工作模型字段内容格式规范：路径引用字段定义
+# 05.02 工作模型字段内容与格式规范：路径引用字段定义
 PATH_FIELDS = {"related_docs", "related_rules", "source_docs"}
 
-# 05.01 工作字段内容格式规范：Evidence 字段定义
+# 05.02 工作模型字段内容与格式规范：Evidence 字段定义
 EVIDENCE_FIELDS_BY_TYPE = {
     "workplan": {"verification_evidence", "closure_evidence"},
     "pitfall": {"verification"},
@@ -106,7 +106,7 @@ URL_REF_RE = re.compile(r"^https?://", re.IGNORECASE)
 CHINESE_TEXT_RE = re.compile(r"[\u4e00-\u9fff]")
 STUDY_REQUIRED_BODY_HEADINGS = ["研究问题", "输入与边界", "关键发现", "建议", "后续分流"]
 
-# 05.01 §3.5.2：verification 字段不应包含的风险/约束/降级标题模式
+# 05.02：verification 字段不应包含的风险/约束/降级标题模式
 VERIFICATION_MISPLACED_HEADING_PATTERNS = [
     re.compile(r"^##\s*风险", re.MULTILINE),
     re.compile(r"^##\s*约束", re.MULTILINE),
@@ -255,7 +255,7 @@ def infer_object_type(path: Path, data: dict[str, Any]) -> str | None:
 
 
 def validate_long_text_block_scalar(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
-    """12-工作模型字段内容格式规范 §6.2：长文本字段含冒号/换行但未用 YAML 块标量时报 warning。"""
+    """05.02 工作模型字段内容与格式规范：长文本字段含冒号/换行但未用 YAML 块标量时报 warning。"""
     issues = []
     fields = LONG_TEXT_FIELDS.get(object_type, set())
     # 读取原始 YAML 文本，检查字段是否使用了块标量 | 或 >
@@ -285,7 +285,7 @@ def validate_long_text_block_scalar(path: Path, data: dict[str, Any], object_typ
 
 
 def validate_path_fields_exist(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
-    """12-工作模型字段内容格式规范 §6.1：路径引用字段中的相对路径不存在时报 error。"""
+    """05.02 工作模型字段内容与格式规范：路径引用字段中的相对路径不存在时报 error。"""
     issues = []
     project_root = infer_project_root(path)
     for field in sorted(PATH_FIELDS):
@@ -510,7 +510,7 @@ def validate_study_report_body_structure(path: Path, data: dict[str, Any]) -> li
 
 
 def validate_dangerous_html(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
-    """12-工作模型字段内容格式规范 §6.1：长文本字段包含危险 HTML 标签时报 error。"""
+    """05.02 工作模型字段内容与格式规范：长文本字段包含危险 HTML 标签时报 error。"""
     issues = []
     fields = LONG_TEXT_FIELDS.get(object_type, set())
     for field in sorted(fields):
@@ -529,7 +529,7 @@ def validate_dangerous_html(path: Path, data: dict[str, Any], object_type: str) 
 
 
 def validate_verification_misplaced_content(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
-    """05.01 §3.5.2：verification 字段包含风险/约束/降级标题时报 warning，建议迁移到 description 或 notes。"""
+    """05.02：verification 字段包含风险/约束/降级标题时报 warning，建议迁移到 description 或 notes。"""
     issues = []
     if object_type != "pitfall":
         return issues
@@ -549,7 +549,7 @@ def validate_verification_misplaced_content(path: Path, data: dict[str, Any], ob
 
 
 def validate_evidence_format(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
-    """05.01 §3.3：Evidence 字段非空但缺少四段式结构时报 warning。"""
+    """05.02 §3.3：Evidence 字段非空但缺少四段式结构时报 warning。"""
     issues = []
     for field in sorted(EVIDENCE_FIELDS_BY_TYPE.get(object_type, set())):
         value = data.get(field)
@@ -560,7 +560,7 @@ def validate_evidence_format(path: Path, data: dict[str, Any], object_type: str)
         if missing_headings:
             issues.append(Issue(
                 str(path), "warning", "EVIDENCE_FORMAT_HINT",
-                f"字段 {field} 建议按 05.01 四段式结构书写，缺少: {', '.join(missing_headings)}",
+                f"字段 {field} 建议按 05.02 四段式结构书写，缺少: {', '.join(missing_headings)}",
                 field=field,
             ))
             continue
@@ -568,7 +568,7 @@ def validate_evidence_format(path: Path, data: dict[str, Any], object_type: str)
         if ordered_headings != EVIDENCE_REQUIRED_HEADINGS:
             issues.append(Issue(
                 str(path), "warning", "EVIDENCE_FORMAT_ORDER",
-                f"字段 {field} 的 05.01 四段式标题顺序应为: {', '.join(EVIDENCE_REQUIRED_HEADINGS)}",
+                f"字段 {field} 的 05.02 四段式标题顺序应为: {', '.join(EVIDENCE_REQUIRED_HEADINGS)}",
                 field=field,
             ))
     return issues
@@ -615,15 +615,15 @@ def validate_common(path: Path, data: dict[str, Any], object_type: str) -> list[
     for field, message in GLOBAL_REMOVED_FIELDS.items():
         if field in data:
             issues.append(Issue(display_path, "error", "REMOVED_OBJECT_FIELD", message, field=field))
-    # 12-工作模型字段内容格式规范：长文本字段 YAML 块标量提示
+    # 05.02 工作模型字段内容与格式规范：长文本字段 YAML 块标量提示
     issues.extend(validate_long_text_block_scalar(path, data, object_type))
-    # 12-工作模型字段内容格式规范：路径引用字段存在性校验
+    # 05.02 工作模型字段内容与格式规范：路径引用字段存在性校验
     issues.extend(validate_path_fields_exist(path, data, object_type))
-    # 12-工作模型字段内容格式规范：危险 HTML 拦截
+    # 05.02 工作模型字段内容与格式规范：危险 HTML 拦截
     issues.extend(validate_dangerous_html(path, data, object_type))
-    # 12-工作模型字段内容格式规范：Evidence 字段格式提示
+    # 05.02 工作模型字段内容与格式规范：Evidence 字段格式提示
     issues.extend(validate_evidence_format(path, data, object_type))
-    # 05.01 §3.5.2：verification 字段风险/约束/降级内容迁移提示
+    # 05.02：verification 字段风险/约束/降级内容迁移提示
     issues.extend(validate_verification_misplaced_content(path, data, object_type))
     return issues
 

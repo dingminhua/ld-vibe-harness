@@ -707,7 +707,7 @@ def cmd_transition(args: argparse.Namespace) -> int:
                 return 1
         verification = data.get("verification")
         if not isinstance(verification, str) or not evidence_has_required_structure(verification):
-            error("verification 未按 05.01 四段式顺序填写，无法激活 Pitfall")
+            error("verification 未按 05.02 四段式顺序填写，无法激活 Pitfall")
             return 1
 
     if object_type == "pitfall" and new_status == "archived":
