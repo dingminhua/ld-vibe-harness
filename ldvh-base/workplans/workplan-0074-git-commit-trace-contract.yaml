@@ -248,7 +248,7 @@ orchestration:
     - code/hook_dispatch.py
     expected_output: 为 LDVH 自身仓库提供统一 Hook 事件或等价提交前 message 校验入口，明确用户环境适配、`git.commit-msg` 事件、CI 或等价预检的执行方式、失败等级和降级说明。
     status: done
-    result_summary: 已按 Human 纠偏要求撤销 Git 原生 hook 注册假设，改为新增统一 Hook registry `hooks/ldvh-hooks.yaml` 和 dispatcher `code/hook_dispatch.py`。`git.commit-msg` 事件复用 `code/commit_validate.py --check-message-file` 作为 canonical validator；Git 原生 hook、用户已有 hook 管理器、IDE、AI 执行约定或 CI 只作为调用统一入口的环境适配层，不在 LDVH 中写成唯一启用方式。当前本地 `core.hooksPath` 已取消设置。
+    result_summary: 已按 Human 纠偏要求撤销 Git hook 环境注册方式绑定，改为新增统一 Hook registry `hooks/ldvh-hooks.yaml` 和 dispatcher `code/hook_dispatch.py`。`git.commit-msg` 事件复用 `code/commit_validate.py --check-message-file` 作为 canonical validator；Git hook、用户已有 hook 管理器、IDE、AI 执行约定或 CI 只作为调用统一入口的环境适配层，不在 LDVH 中写成唯一启用方式。当前本地 `core.hooksPath` 已取消设置。
     evidence_refs:
     - hooks/ldvh-hooks.yaml
     - code/hook_dispatch.py
@@ -320,7 +320,7 @@ verification_evidence: |
 
   本轮补救已把旧 Change 工作对象迁出边界重新压实到 specs、Code、Web 和测试四层，并完成 Study 由 26 到 25 的补位，避免现行工作模型集合暴露旧编号空洞；0074 不应关闭，因为 Web 共享 commit DTO 和结构化提交信息展示仍是后续项。
 
-  2026-06-20 追加补救曾短暂采用 `hooks/commit-msg` 和 `git config core.hooksPath hooks` 作为本地 Git 原生注册方式。Human 指出 LDVH 后续会有各种 Hook，不能使用某个原生环境机制作为唯一方案，应使用统一方式并利用用户自身环境接入。主控已撤销本地 `core.hooksPath` 设置，并将方案纠偏为统一 Hook registry / dispatcher：`hooks/ldvh-hooks.yaml` 登记 `git.commit-msg` 事件，`code/hook_dispatch.py` 统一调度，事件命令复用 `code/commit_validate.py --check-message-file`。Git 原生 hook、用户已有 hook 管理器、IDE、AI 执行约定或 CI 都只是调用统一入口的适配层。
+  2026-06-20 追加补救曾短暂采用 `hooks/commit-msg` 和 `git config core.hooksPath hooks` 绑定本地 Git hook 环境注册方式。Human 指出 LDVH 后续会有各种 Hook，不能使用某个环境机制作为唯一方案，应使用统一方式并利用用户自身环境接入。主控已撤销本地 `core.hooksPath` 设置，并将方案纠偏为统一 Hook registry / dispatcher：`hooks/ldvh-hooks.yaml` 登记 `git.commit-msg` 事件，`code/hook_dispatch.py` 统一调度，事件命令复用 `code/commit_validate.py --check-message-file`。Git hook、用户已有 hook 管理器、IDE、AI 执行约定或 CI 都只是调用统一入口的适配层。
 
   2026-06-20 item-9 纠偏后验证结果：`python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` 可执行提交消息校验；`python3 -m pytest tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_deployment_entries.py -q` 通过；`python3 code/specs_validate.py deployment-entries` 通过；04.02 和 10 的 doc、refs、landing 检查均通过；0074 单体 fact_validate 通过；`python3 code/specs_validate.py all` 普通模式退出码为 0；`git diff --check` 通过；`git config --get core.hooksPath` 当前为空。`python3 code/specs_validate.py all --fail-on-diagnostics` 当前仍因 specs/05 既有 `POSSIBLE_DUPLICATE_TERM_DEFINITION` warning 退出 1，不属于本轮 item-9 新增问题。
 closure_evidence: ''
