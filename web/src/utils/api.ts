@@ -37,9 +37,11 @@ export interface DashboardData {
     author: string;
     date: string;
     message: string;
-    body?: string;
+    body: string;
     category: string;
+    scope: string;
     description: string;
+    isBreaking: boolean;
     relativeTime: string;
   }>;
 }
@@ -319,6 +321,11 @@ export interface ProjectGitCommitEntry {
   author: string;
   date: string;
   message: string;
+  body: string;
+  category: string;
+  scope: string;
+  description: string;
+  isBreaking: boolean;
   isMerge: boolean;
 }
 

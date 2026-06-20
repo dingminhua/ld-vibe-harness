@@ -9,6 +9,7 @@ import { existsSync } from 'fs'
 import { lstat, readdir, readFile, stat } from 'fs/promises'
 import path from 'path'
 import yaml from 'js-yaml'
+import { parseCommitMessage, splitCommitMessage } from '../services/git.js'
 import { LDVH_WORKSPACE_ROOT } from '../services/pytools.js'
 
 const router = Router()
@@ -398,16 +399,19 @@ router.get('/git/commits', async (req: Request, res: Response): Promise<void> =>
     await runCommand('git', ['rev-parse', '--is-inside-work-tree'], project.path)
     const stdout = await runCommand(
       'git',
-      ['log', `-${count}`, '--date=iso-strict', '--format=%H%x1f%h%x1f%P%x1f%an%x1f%ai%x1f%s'],
+      ['log', `-${count}`, '--date=iso-strict', '--format=%H%x1f%h%x1f%P%x1f%an%x1f%ai%x1f%B%x1e'],
       project.path,
     )
     const entries = stdout
       .trim()
-      .split('\n')
+      .split('\x1e')
+      .map((block) => block.trim())
       .filter(Boolean)
-      .map((line) => {
-        const [hash, shortHash, parentsRaw, author, date, message] = line.split('\x1f')
+      .map((block) => {
+        const [hash, shortHash, parentsRaw, author, date, fullMessage = ''] = block.split('\x1f')
         const parents = parentsRaw ? parentsRaw.split(' ').filter(Boolean) : []
+        const { subject: message, body } = splitCommitMessage(fullMessage)
+        const { category, scope, description, isBreaking } = parseCommitMessage(message)
         return {
           hash,
           shortHash,
@@ -415,6 +419,11 @@ router.get('/git/commits', async (req: Request, res: Response): Promise<void> =>
           author,
           date,
           message,
+          body,
+          category,
+          scope,
+          description,
+          isBreaking,
           isMerge: parents.length > 1,
         }
       })
@@ -443,6 +452,9 @@ router.get('/git/commit/:hash', async (req: Request, res: Response): Promise<voi
     await runCommand('git', ['rev-parse', '--is-inside-work-tree'], project.path)
     const meta = await runCommand('git', ['show', '-s', '--date=iso-strict', '--format=%H%n%h%n%P%n%an%n%ai%n%B', hash], project.path)
     const [fullHash = hash, shortHash = hash.slice(0, 7), parentsRaw = '', author = '', date = '', ...messageLines] = meta.split('\n')
+    const fullMessage = messageLines.join('\n').trim()
+    const { subject: message, body } = splitCommitMessage(fullMessage)
+    const { category, scope, description, isBreaking } = parseCommitMessage(message)
     const filesStdout = await runCommand('git', ['show', '--name-status', '--format=', '--find-renames', '--root', hash], project.path)
     const files = filesStdout
       .split('\n')
@@ -461,7 +473,12 @@ router.get('/git/commit/:hash', async (req: Request, res: Response): Promise<voi
         parents,
         author,
         date,
-        message: messageLines.join('\n').trim(),
+        message,
+        body,
+        category,
+        scope,
+        description,
+        isBreaking,
         isMerge: parents.length > 1,
         files,
       },

@@ -86,8 +86,10 @@ interface DashboardData {
   stats: { type: string; total: number; byStatus: Record<string, number> }[];
   recentItems: { type: string; id: string; title: string; title_en?: string; title_zh?: string; status: string; path: string; relativeTime: string; typeColor: string }[];
   actionItems: { type: string; id: string; title: string; title_en?: string; title_zh?: string; status: string; path: string; relativeTime: string; typeColor: string }[];
-  recentChanges: { hash: string; shortHash: string; message: string; description: string; category: string; author: string; date: string; relativeTime: string }[];
+  recentChanges: { hash: string; shortHash: string; message: string; body: string; category: string; scope: string; description: string; isBreaking: boolean; author: string; date: string; relativeTime: string }[];
 }
 ```
+
+`recentChanges` 复用 Changelog 的 commit DTO 和 parser；Dashboard 只选择其中少量字段展示，不单独解析 commit message。
 
 项目画像类入口不属于当前 LDVH Dashboard 数据结构。`GET /api/dashboard` 不返回项目画像字段，Dashboard 不展示项目画像卡片，也不维护项目画像导航文案或相关 i18n；管辖项目配置如需展示，应按管辖配置自身语义另行设计。

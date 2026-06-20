@@ -3,7 +3,7 @@ type: workplan
 title: Git 提交规范收口
 status: active
 created: '2026-06-19T02:48:00+08:00'
-updated: '2026-06-21T00:39:27+08:00'
+updated: '2026-06-21T01:18:00+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
@@ -21,7 +21,7 @@ success_criteria: |
   - [x] 旧 `related_changes` 字段最终策略明确为删除对象手写字段，关联提交完全由 Git 历史、对象 ID 和路径派生
   - [x] Code 校验、CLI、测试和索引不再把旧变更对象当作工作对象处理
   - [x] Web 中 `/changelog`、Dashboard 最近提交、ProjectFiles 提交历史和右侧阅读面板统一表达为 Git 提交记录派生视图
-  - [ ] Web API 共享同一 commit DTO 或解析函数，并结构化返回 type、scope、description、body、breaking、文件摘要或 diff 入口
+  - [x] Web API 共享同一 commit DTO 或解析函数，并结构化返回 type、scope、description、body、breaking、文件摘要或 diff 入口
   - [x] LDVH 自身仓库提供或启用提交前 message 校验入口；未启用 Git hook 前，AI 提交前必须运行等价预检
   - [x] `ldvh-git-commit` Skill 已按 04.02 固定能力资产登记制落地，承接 AI 提交准备、拆分、消息编写、预检和交还流程
   - [ ] 迁出完成后，现行 specs、Code、Web 和测试中不存在会误导 AI 的旧工作对象入口；历史资料中的旧称必须被明确判定为允许历史引用或待迁移残留
@@ -170,11 +170,14 @@ orchestration:
       - 返回 type、scope、description、body、breaking、文件摘要或 diff 入口；
       - Changelog 阅读面板展示结构化提交信息，不把提交正文与 diff/stat 混成一块不可读文本；
       - 导航、标题、Dashboard、ObjectDetail、ReadingPanel、Web docs 和 i18n 不再把它表达为旧工作对象。
-    status: in_progress
-    result_summary: Web 文案、ObjectDetail 聚合和主要文档已改为提交记录派生视图；共享 DTO 和结构化 Conventional Commits 解析仍待后续补齐或验证。
+    status: done
+    result_summary: Web 文案、ObjectDetail 聚合和主要文档已改为提交记录派生视图；`/api/changelog`、Dashboard recentChanges 和 ProjectFiles 提交历史/详情已复用 `web/api/services/git.ts` 的 commit message 拆分与 Conventional Commits parser，统一返回 `message`、`body`、`category`、`scope`、`description`、`isBreaking`，ProjectFiles 追加 parents/isMerge/files 作为工具页专属字段。
     evidence_refs:
     - web/src/i18n/locales.ts
     - web/src/pages/ObjectDetail.tsx
+    - web/api/services/git.ts
+    - web/api/routes/project-files.ts
+    - web/src/utils/api.ts
     - web/docs/06-Changelog.md
     blocking_reason: null
   - id: item-6
@@ -190,11 +193,12 @@ orchestration:
     - web/docs/11-Web测试实现规范.md
     expected_output: 增加或更新 Code/Web 测试，覆盖完整 commit body、Conventional Commits 元信息、字段迁移策略、Changelog 展开、Dashboard 最近提交入口和 ProjectFiles/Changelog 契约一致性；无法自动化处记录等价验证和残留风险。
     status: in_progress
-    result_summary: Code 测试夹具已更新；Web 结构化 commit DTO 与页面测试仍需视验证结果补齐。
+    result_summary: Code 测试夹具已更新；Web 已新增 commit DTO 契约测试，覆盖 Changelog、Dashboard、ProjectFiles 提交列表和 ProjectFiles 提交详情的结构化字段一致性。更完整的页面交互测试仍留作后续 Web 回归增强。
     evidence_refs:
     - tests/code/test_commit_validate.py
     - tests/code/test_fact_cli.py
     - tests/code/test_fact_validate.py
+    - tests/web/api/commit-dto.test.ts
     blocking_reason: null
   - id: item-7
     title: 全链路验证和迁移痕迹检查
@@ -353,6 +357,8 @@ verification_evidence: |
   2026-06-20 item-9 纠偏后验证结果：`python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` 可执行提交消息校验；`python3 -m pytest tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_deployment_entries.py -q` 通过；`python3 code/specs_validate.py deployment-entries` 通过；04.02 和 10 的 doc、refs、landing 检查均通过；0074 单体 fact_validate 通过；`python3 code/specs_validate.py all` 普通模式退出码为 0；`git diff --check` 通过；`git config --get core.hooksPath` 当前为空。`python3 code/specs_validate.py all --fail-on-diagnostics` 当前仍因 specs/05 既有 `POSSIBLE_DUPLICATE_TERM_DEFINITION` warning 退出 1，不属于本轮 item-9 新增问题。
 
   2026-06-21 item-11 验证结果：`python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit` 通过；`python3 code/specs_validate.py deployment-entries` 通过；`python3 -m pytest tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_deployment_entries.py` 通过，32 passed；`python3 code/specs_validate.py refs specs`、`python3 code/specs_validate.py landing specs` 和 `python3 code/specs_validate.py all` 普通模式均通过；`git diff --check` 通过。综合检查仅保留既有 `specs/05` 术语定义 warning，不属于 item-11 新增问题。
+
+  2026-06-21 item-5 追加验证结果：`/api/changelog`、Dashboard `recentChanges` 和 ProjectFiles 提交列表/详情已统一到 `web/api/services/git.ts` 的 commit message 拆分与 Conventional Commits parser；ProjectFiles 保留 parents、isMerge 和 files 作为工具页专属字段。新增 `tests/web/api/commit-dto.test.ts`，使用临时 Git 管辖项目同时验证 Changelog、Dashboard、ProjectFiles 四个 API 返回同一组结构化字段。`npm --prefix web run check` 通过；`npm --prefix web run test:web:api` 通过；`python3 code/fact_validate.py ldvh-base/workplans/workplan-0074-git-commit-trace-contract.yaml` 通过，errors=0 warnings=0；`python3 code/specs_validate.py refs specs` 和 `python3 code/specs_validate.py landing specs` 通过；`git diff --check` 通过。
 closure_evidence: ''
 review_requested_at: ''
 closed_at: ''

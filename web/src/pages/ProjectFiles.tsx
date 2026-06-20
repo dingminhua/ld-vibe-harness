@@ -940,7 +940,7 @@ export default function ProjectFiles() {
                         >
                           <span className="min-w-0 flex-1">
                             <span className="ldvh-card-title block truncate transition-colors group-hover:text-ldvh-accent">
-                              {entry.message}
+                              {entry.description || entry.message}
                             </span>
                             <span className="ldvh-meta block truncate">
                               {entry.shortHash} · {entry.author} · {formatDateTime(entry.date)}
@@ -969,7 +969,7 @@ export default function ProjectFiles() {
                                     <span className="ldvh-caption-strong text-ldvh-text-secondary">{copy.changeDetail}</span>
                                     <span className="ldvh-meta-primary">{selectedCommit.shortHash}</span>
                                   </div>
-                                  <p className="ldvh-body font-medium text-ldvh-text-primary">{selectedCommit.message.split('\n')[0] || selectedCommit.shortHash}</p>
+                                  <p className="ldvh-body font-medium text-ldvh-text-primary">{selectedCommit.description || selectedCommit.message || selectedCommit.shortHash}</p>
                                   <div className="ldvh-meta mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1">
                                     <span>{selectedCommit.author}</span>
                                     <span>{formatDateTime(selectedCommit.date)}</span>
@@ -984,10 +984,10 @@ export default function ProjectFiles() {
                                     <span className="ldvh-caption-strong text-ldvh-text-secondary">{copy.changeDetail}</span>
                                     <span className="ldvh-meta-primary">{selectedCommit.shortHash}</span>
                                   </div>
-                                  <p className="ldvh-body font-medium text-ldvh-text-primary">{selectedCommit.message.split('\n')[0] || selectedCommit.shortHash}</p>
-                                  {selectedCommit.message.split('\n').slice(1).join('\n').trim() && (
+                                  <p className="ldvh-body font-medium text-ldvh-text-primary">{selectedCommit.description || selectedCommit.message || selectedCommit.shortHash}</p>
+                                  {selectedCommit.body.trim() && (
                                     <pre className="ldvh-body-muted mt-2 whitespace-pre-wrap break-words">
-                                      {selectedCommit.message.split('\n').slice(1).join('\n').trim()}
+                                      {selectedCommit.body.trim()}
                                     </pre>
                                   )}
                                   <div className="ldvh-meta mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1">

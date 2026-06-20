@@ -27,6 +27,18 @@ export interface GitLogEntry {
   relativeTime: string
 }
 
+export type ParsedCommitMessage = {
+  category: string
+  scope: string
+  description: string
+  isBreaking: boolean
+}
+
+export type SplitCommitMessage = {
+  subject: string
+  body: string
+}
+
 /** Conventional commit 分类颜色 */
 export const CATEGORY_COLORS: Record<string, string> = {
   feat: '#3b82f6',      // blue
@@ -46,7 +58,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
  * 解析 conventional commit message
  * 格式: type(scope)!: description、type!: description 或 type: description
  */
-function parseCommitMessage(message: string): { category: string; scope: string; description: string; isBreaking: boolean } {
+export function parseCommitMessage(message: string): ParsedCommitMessage {
   const match = message.match(/^([A-Za-z]+)(?:\(([^)]+)\))?(!)?:\s+(.+)$/)
   if (match) {
     return {
@@ -64,7 +76,7 @@ function parseCommitMessage(message: string): { category: string; scope: string;
   }
 }
 
-function splitCommitMessage(fullMessage: string): { subject: string; body: string } {
+export function splitCommitMessage(fullMessage: string): SplitCommitMessage {
   const normalized = fullMessage.replace(/\r\n/g, '\n').trimEnd()
   const [subject = '', ...rest] = normalized.split('\n')
   return {

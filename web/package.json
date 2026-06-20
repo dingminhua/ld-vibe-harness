@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "check": "tsc --noEmit",
-    "test:web:api": "tsx ../tests/web/api/facts.test.ts && tsx ../tests/web/api/memos.test.ts",
+    "test:web:api": "tsx ../tests/web/api/facts.test.ts && tsx ../tests/web/api/memos.test.ts && tsx ../tests/web/api/commit-dto.test.ts",
     "server:dev": "nodemon",
     "dev": "concurrently \"npm run client:dev\" \"npm run server:dev\""
   },
