@@ -42,6 +42,7 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
 | Human 交互要求 | 新增管辖项目条目时，应评估 Human Gate | Human Gate、影响范围说明 | 工作流程治理 | 管辖项目清单变化时 |
 | Human 交互要求 | candidate 流程正式创建前，应先讨论是否独立成流程 | Human Gate、流程讨论 | 工作流程治理 | 从候选项创建流程前 |
 | Human 交互要求 | Human Gate UI 应清楚展示确认对象和影响范围 | Human Gate UI、承接 06 §6.3.1 | 工作流程治理 | Human Gate UI 变化时 |
+| 工作流程接管要求 | 接管后的执行和验证由 active 工作流程承担 | active 工作流程、Code 派生集合索引 | 工作流程治理 | 接管范围变化时 |
 | 生命周期触发要求 | 运行投影不可用时应记录降级说明 | 人工降级检查 | 触发保障 | 工具不可用时 |
 | 生命周期触发要求 | 平台能力变化后应检查平台清单是否同步 | 平台清单、人工降级检查 | 触发保障 | 平台能力变化时 |
 | 生命周期触发要求 | 第三方 Skill 入口变化后应检查包装 Skill 和运行投影是否同步 | 包装 Skill、运行投影漂移检查、降级方式 | 触发保障 | 第三方 Skill 使用入口变化时 |
@@ -71,7 +72,7 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert report["metadata"]["source_of_truth"] is False
     assert report["metadata"]["checked_file_count"] == 1
     assert report["metadata"]["source_count"] == 1
-    assert report["metadata"]["requirement_count"] == 10
+    assert report["metadata"]["requirement_count"] == 11
     assert report["metadata"]["runtime_projection_checked_file_count"] == 1
     assert report["metadata"]["runtime_projection_issue_count"] == 0
     assert report["metadata"]["human_gate_checked_file_count"] >= 2
@@ -80,7 +81,7 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert report["summary"]["runtime_projection_status"] == "closed"
     assert report["summary"]["human_gate_status"] == "degraded"
     assert report["summary"]["by_status"] == {
-        "closed": 2,
+        "closed": 3,
         "degraded": 3,
         "needs_human_gate": 4,
         "open": 1,
@@ -101,6 +102,7 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert report["gap_categories"]["human_gate"]["subcategories"]["decision_record_required"]["decision_flows"]
     assert report["runtime_projection"]["summary"]["status"] == report["summary"]["runtime_projection_status"]
     assert report["summary"]["by_owner_area"]["code"] == 1
+    assert report["summary"]["by_owner_area"]["workflow"] == 1
     assert [item["id"] for item in report["capability_gaps"]] == [
         "41_trigger_safeguard",
         "42_consumes_41",

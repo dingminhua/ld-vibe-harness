@@ -53,6 +53,7 @@ LANDING_REPORT_OWNER_AREAS = {
     "上位约束承接要求": "specs",
     "入口可见要求": "runtime_projection",
     "流程复用要求": "workflow",
+    "工作流程接管要求": "workflow",
     "子 Agent 思考要求": "agent",
     "确定性执行要求": "code",
     "Human 交互要求": "human_gate",

@@ -946,6 +946,28 @@ class SpecsChecker:
         allowed_statuses = self.allowed_member_statuses(member.get("kind"))
         if status and status not in allowed_statuses:
             diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_STATUS_INVALID", f"ldvh_member collection_status 非法: {status}"))
+        diagnostics.extend(self.diagnose_workflow_landing_takeover(rel_path, line, member))
+        return diagnostics
+
+    def diagnose_workflow_landing_takeover(self, rel_path, line, member):
+        if member.get("kind") != "work_process" or "landing_takeover" not in member:
+            return []
+        value = member.get("landing_takeover")
+        if not isinstance(value, list):
+            return [self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_LANDING_TAKEOVER_INVALID", "ldvh_member landing_takeover 必须是列表")]
+        diagnostics = []
+        required_parts = ("source_spec=", "requirement=", "scope=")
+        for item in value:
+            if not isinstance(item, str) or not all(part in item for part in required_parts):
+                diagnostics.append(
+                    self.diagnostic(
+                        rel_path,
+                        line,
+                        "error",
+                        "LDVH_MEMBER_LANDING_TAKEOVER_INVALID",
+                        "ldvh_member landing_takeover 每项必须包含 source_spec=、requirement= 和 scope=",
+                    )
+                )
         return diagnostics
 
     def members_as_collection_entries(self, kind):
@@ -965,6 +987,7 @@ class SpecsChecker:
                     "source": None,
                     "position": " / ".join(part for part in (member.get("name_en"), member.get("name_zh")) if part),
                     "aliases": [],
+                    "landing_takeover": member.get("landing_takeover") or [],
                 }
             )
         return entries

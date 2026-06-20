@@ -132,6 +132,69 @@ ldvh_doc:
     assert not any(item["code"] == "EXTERNAL_REFERENCE_IN_SPEC" for item in diagnostics)
 
 
+def test_workflow_member_exposes_landing_takeover(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "40-Workflow.md",
+        """
+# Workflow
+
+```yaml
+ldvh_member:
+  spec_id: 40
+  kind: work_process
+  name_en: workflow
+  name_zh: 工作流程
+  collection_status: active
+  canonical_path: specs/40-Workflow.md
+  code_consumption:
+    - workflow_index
+  landing_takeover:
+    - "source_spec=specs/04.01-规范落地声明规范.md; requirement=工作流程接管要求; scope=落地责任接管"
+```
+""",
+    )
+
+    checker_instance = checker.SpecsChecker(tmp_path)
+    indexes = checker_instance.build()
+    member = next(item for item in indexes["members"] if item["spec_id"] == "40")
+    entries = checker_instance.members_as_collection_entries("work_process")
+
+    assert member["landing_takeover"] == [
+        "source_spec=specs/04.01-规范落地声明规范.md; requirement=工作流程接管要求; scope=落地责任接管"
+    ]
+    assert entries[0]["landing_takeover"] == member["landing_takeover"]
+    assert not any(item["code"] == "LDVH_MEMBER_LANDING_TAKEOVER_INVALID" for item in indexes["diagnostics"])
+
+
+def test_workflow_member_reports_invalid_landing_takeover(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "40-Workflow.md",
+        """
+# Workflow
+
+```yaml
+ldvh_member:
+  spec_id: 40
+  kind: work_process
+  name_en: workflow
+  name_zh: 工作流程
+  collection_status: active
+  canonical_path: specs/40-Workflow.md
+  code_consumption:
+    - workflow_index
+  landing_takeover:
+    - "source_spec=specs/04.01-规范落地声明规范.md; requirement=工作流程接管要求"
+```
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
+
+    assert any(item["code"] == "LDVH_MEMBER_LANDING_TAKEOVER_INVALID" for item in diagnostics)
+
+
 def test_specs_document_reports_possible_duplicate_term_definition(tmp_path):
     specs = tmp_path / "specs"
     write_md(
