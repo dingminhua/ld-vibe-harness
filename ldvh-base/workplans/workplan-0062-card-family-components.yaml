@@ -62,8 +62,6 @@ orchestration:
     - web/src/components/MetricCard.tsx
     - web/src/components/StatusBanner.tsx
     - web/src/components/ContentCard.tsx
-    - web/src/pages/Gate.tsx
-    - web/src/pages/Validate.tsx
     blocking_reason: null
   review:
     controller_self_check: true

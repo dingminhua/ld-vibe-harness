@@ -1,9 +1,9 @@
 id: workplan-0074
 type: workplan
 title: Git 提交规范收口
-status: active
+status: closed
 created: '2026-06-19T02:48:00+08:00'
-updated: '2026-06-21T03:44:19+08:00'
+updated: '2026-06-21T04:10:00+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
@@ -24,8 +24,8 @@ success_criteria: |
   - [x] Web API 共享同一 commit DTO 或解析函数，并结构化返回 type、scope、description、body、breaking、文件摘要或 diff 入口
   - [x] LDVH 自身仓库提供或启用提交前 message 校验入口；未启用 Git hook 前，AI 提交前必须运行等价预检
   - [x] `ldvh-git-commit` Skill 已按 04.02 固定能力资产登记制落地，承接 AI 提交准备、拆分、消息编写、预检和交还流程
-  - [ ] 迁出完成后，现行 specs、Code、Web 和测试中不存在会误导 AI 的旧工作对象入口；历史资料中的旧称必须被明确判定为允许历史引用或待迁移残留
-  - [ ] `python3 code/specs_validate.py all --fail-on-diagnostics`、`python3 code/fact_validate.py ldvh-base`、相关 Code 测试和 Web 检查通过
+  - [x] 迁出完成后，现行 specs、Code、Web 和测试中不存在会误导 AI 的旧工作对象入口；历史资料中的旧称必须被明确判定为允许历史引用或待迁移残留
+  - [x] `python3 code/specs_validate.py all --fail-on-diagnostics`、`python3 code/fact_validate.py ldvh-base`、相关 Code 测试和 Web 检查通过
 source: |
   用户在 2026-06-18 至 2026-06-19 围绕旧变更对象提出：变更更像提交记录规范，不应作为工作对象继续存在。
   经讨论和多视角评估，建议将其从工作模型集合迁出，改为 Git commit records 的追溯规范。
@@ -192,8 +192,8 @@ orchestration:
     - tests/web/
     - web/docs/11-Web测试实现规范.md
     expected_output: 增加或更新 Code/Web 测试，覆盖完整 commit body、Conventional Commits 元信息、字段迁移策略、Changelog 展开、Dashboard 最近提交入口和 ProjectFiles/Changelog 契约一致性；无法自动化处记录等价验证和残留风险。
-    status: in_progress
-    result_summary: Code 测试夹具已更新；Web 已新增 commit DTO 契约测试，覆盖 Changelog、Dashboard、ProjectFiles 提交列表和 ProjectFiles 提交详情的结构化字段一致性。2026-06-21 追加复查确认 Web typecheck 和 Web API 契约测试通过；全量 Code 测试和 ldvh-base 事实校验仍被非 Web DTO 范围的既有仓库状态阻断，0074 暂不关闭。
+    status: done
+    result_summary: Code 测试夹具已更新；Web 已新增 commit DTO 契约测试，覆盖 Changelog、Dashboard、ProjectFiles 提交列表和 ProjectFiles 提交详情的结构化字段一致性。2026-06-21 关闭级复查确认 Web typecheck、Web API 契约测试、Code 全量测试、specs fail-on-diagnostics 和 ldvh-base 全量事实源校验均通过。
     evidence_refs:
     - tests/code/test_commit_validate.py
     - tests/code/test_fact_cli.py
@@ -361,9 +361,40 @@ verification_evidence: |
   2026-06-21 item-5 追加验证结果：`/api/changelog`、Dashboard `recentChanges` 和 ProjectFiles 提交列表/详情已统一到 `web/api/services/git.ts` 的 commit message 拆分与 Conventional Commits parser；ProjectFiles 保留 parents、isMerge 和 files 作为工具页专属字段。新增 `tests/web/api/commit-dto.test.ts`，使用临时 Git 管辖项目同时验证 Changelog、Dashboard、ProjectFiles 四个 API 返回同一组结构化字段。`npm --prefix web run check` 通过；`npm --prefix web run test:web:api` 通过；`python3 code/fact_validate.py ldvh-base/workplans/workplan-0074-git-commit-trace-contract.yaml` 通过，errors=0 warnings=0；`python3 code/specs_validate.py refs specs` 和 `python3 code/specs_validate.py landing specs` 通过；`git diff --check` 通过。
 
   2026-06-21 关闭前复查结果：按 Human 指示只负责本轮 Web DTO 落地，不处理其它 Code/事实源改动。`npm --prefix web run check` 和 `npm --prefix web run test:web:api` 均通过，确认 Changelog、Dashboard 和 ProjectFiles 的共享 commit DTO 契约仍成立。关闭级全量检查暂未满足：`python3 code/specs_validate.py all --fail-on-diagnostics` 因既有 `specs/05` 的 `POSSIBLE_DUPLICATE_TERM_DEFINITION` warning 返回 1；`python3 code/fact_validate.py ldvh-base` 因 memo-0018、study-0007、workplan-0025、workplan-0062、workplan-0063 的既有事实源问题返回 errors=8；`python3 -m pytest tests/code -q` 当前 256 passed、3 failed，失败集中在 WorkPlan 默认状态/流转测试和 specs_validate all 的 fail-on-diagnostics 断言。残留扫描中 `related_changes`、`ldvh-base/changes`、旧变更对象等命中均位于禁止条款、Code 拦截、测试负例、0074 自身验收/历史记录或其它历史事实文本；未发现本轮 Web DTO 改动新增旧 Change 工作对象入口。结论：Web DTO 落地可视为完成，0074 关闭仍需另行处理上述非 Web DTO 阻断项后再执行。
-closure_evidence: ''
-review_requested_at: ''
-closed_at: ''
+
+  2026-06-21 最终关闭复查结果：已清理关闭级阻断项。`specs/05` 的疑似重复术语定义 warning 已通过措辞调整消除；memo-0018 状态已修正为 Memo 状态机中的 pending；study-0007 已补齐 Study frontmatter 并整理为 25 号 Study 固定正文结构；workplan-0025、workplan-0062、workplan-0063 的历史机器证据引用已移除不存在路径且不改变历史事实语义。`python3 code/fact_validate.py ldvh-base` 通过，errors=0 warnings=0；`python3 code/specs_validate.py all --fail-on-diagnostics` 通过；`python3 -m pytest tests/code -q` 通过，261 passed；`npm --prefix web run check` 通过；`npm --prefix web run test:web:api` 通过；`git diff --check` 通过。残留扫描中旧 Change / `related_changes` / `ldvh-base/changes` 命中均位于禁止条款、Code 拦截、测试负例、0074 自身历史记录或历史备忘/踩坑文本；未发现现行 specs、Code、Web 或测试中仍把旧 Change 作为工作对象入口。
+closure_evidence: |
+  ## 验证计划
+
+  对 Git 提交规范迁出和提交落地进行关闭级复查：确认旧 Change 不再作为工作对象入口，10 号 Git 提交规范、提交预检、统一 Hook registry、ldvh-git-commit Skill、Web 提交记录派生视图和相关事实源均已闭环。
+
+  ## 验证命令
+
+  ```bash
+  python3 code/fact_validate.py ldvh-base
+  python3 code/specs_validate.py all --fail-on-diagnostics
+  python3 -m pytest tests/code -q
+  npm --prefix web run check
+  npm --prefix web run test:web:api
+  rg -n "旧变更对象|related_changes|ldvh-base/changes|提交记录工作对象|Change 工作对象|Change 迁出|25-Change" specs rules code tests web/docs web/src web/api ldvh-base
+  git diff --check
+  ```
+
+  ## 验证结果
+
+  `python3 code/fact_validate.py ldvh-base` 通过，errors=0 warnings=0。
+  `python3 code/specs_validate.py all --fail-on-diagnostics` 通过。
+  `python3 -m pytest tests/code -q` 通过，261 passed。
+  `npm --prefix web run check` 通过。
+  `npm --prefix web run test:web:api` 通过。
+  `git diff --check` 通过。
+  残留扫描命中均为禁止条款、Code 拦截、测试负例、0074 自身历史记录或历史备忘/踩坑文本；未发现现行入口继续把旧 Change 当作工作对象。
+
+  ## 结论
+
+  0074 已完成 Git 提交规范收口：旧 Change 工作对象已迁出，Git commit records 成为事实源修改追溯证据；提交消息规范、Code validator、统一 Hook registry/dispatcher、ldvh-git-commit Skill 和 Web 提交记录派生视图均已落地。CI 或 server-side 提交信息检查仍是 10 号规范记录的后续增强，不阻塞本 WorkPlan 关闭。
+review_requested_at: '2026-06-21T04:10:00+08:00'
+closed_at: '2026-06-21T04:10:00+08:00'
 related_docs:
 - specs/10-Git提交规范.md
 - web/docs/06-Changelog.md

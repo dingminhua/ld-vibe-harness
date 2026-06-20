@@ -62,8 +62,6 @@ orchestration:
     - web/src/components/PageHeader.tsx
     - web/src/pages/Dashboard.tsx
     - web/src/pages/ObjectList.tsx
-    - web/src/pages/Validate.tsx
-    - web/src/pages/Gate.tsx
     - web/src/pages/Changelog.tsx
     - web/src/pages/ObjectDetail.tsx
     - web/src/components/ReadingPanel.tsx

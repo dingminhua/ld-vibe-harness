@@ -52,7 +52,6 @@ orchestration:
     - web/docs/02-Dashboard.md
     - web/docs/03-ObjectList.md
     - web/docs/04-ObjectDetail.md
-    - web/docs/05-Validate.md
     - web/docs/06-Changelog.md
     blocking_reason: null
   review:
@@ -111,7 +110,6 @@ related_docs:
 - web/docs/02-Dashboard.md
 - web/docs/03-ObjectList.md
 - web/docs/04-ObjectDetail.md
-- web/docs/05-Validate.md
 - web/docs/06-Changelog.md
 related_adrs: []
 related_memos: []

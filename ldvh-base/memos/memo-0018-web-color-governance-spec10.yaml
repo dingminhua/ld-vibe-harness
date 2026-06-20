@@ -1,9 +1,9 @@
 id: memo-0018
 type: memo
 title: ld-vibe-harness Web 颜色体系治理总纲（规范10）
-status: active
+status: pending
 created: '2026-06-20T14:00:00+08:00'
-updated: '2026-06-20T14:00:00+08:00'
+updated: '2026-06-21T04:05:00+08:00'
 description: |
   本 Memo 规定 Web 颜色治理的总纲：第一阶段优先完成 Web 功能交付，
   不做全量颜色重构；颜色问题在阶段2起进入专项治理。
@@ -12,6 +12,8 @@ description: |
 evolution:
   - at: '2026-06-20T14:00:00+08:00'
     summary: 收敛出“memo+多个 study”的管理结构，并采用规范10作为颜色约束入口。
+  - at: '2026-06-21T04:05:00+08:00'
+    summary: 将 Memo 状态修正为现行 Memo 状态机中的 pending，不改变颜色治理语义。
 source: conversation
 source_detail: 用户要求将颜色治理整理为 memo/study 结构，并在 Web 第一阶段结束后再专项处理。
 priority: P1
