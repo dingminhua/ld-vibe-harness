@@ -41,3 +41,13 @@ LDVH 的测试统一放在仓库根 `tests/` 下。Web API 测试也从根级入
 npm run check
 npm run test:web:api
 ```
+
+## 开发文档入口
+
+Web 页面开发先阅读：
+
+1. [`web/docs/10-Web开发现状与设计语言基线.md`](./docs/10-Web开发现状与设计语言基线.md)
+2. [`web/docs/01-全局设计约束.md`](./docs/01-全局设计约束.md)
+3. 当前页面对应文档，例如 ObjectList、ObjectDetail 或 Changelog。
+
+当前设计语言以提交、研究、决策、备忘、经验五个已完善模块为基线。后续页面改造应优先复用它们的列表卡片、详情身份头部、正文节点、关联行、复制语义和右侧扩展阅读语言。

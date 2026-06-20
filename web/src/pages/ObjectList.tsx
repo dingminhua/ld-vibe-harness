@@ -252,7 +252,12 @@ function WorkAreaPlanRow({
           </span>
           <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
         </div>
-        <CopyPathButton path={item.path} toneClassName={toneClass.action} />
+        <CopyPathButton
+          path={item.path}
+          label={t('common.copyObjectPath')}
+          copiedLabel={t('common.copiedObjectPath')}
+          toneClassName={toneClass.action}
+        />
         <ArrowRight size={13} className={`shrink-0 text-ldvh-text-secondary/70 transition-all group-hover/workarea-row:translate-x-0.5 ${toneClass.hoverText}`} />
       </div>
       {flowItems.length > 0 && (
@@ -352,6 +357,7 @@ function ObjectCardFrame({
   children?: ReactNode;
   showNonActiveReason?: boolean;
 }) {
+  const { t } = useI18n();
   const titleAccentClass = getTitleAccentClass(obj.status);
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
   const nonActiveReason = getNonActiveReason(obj, locale);
@@ -366,7 +372,7 @@ function ObjectCardFrame({
       <div className="flex min-w-0 items-center justify-between gap-2">
         <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
         <div className="flex shrink-0 items-center gap-2">
-          <CopyPathButton path={obj.path} />
+          <CopyPathButton path={obj.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
           <StatusBadge status={obj.status} statusLabel={getObjectStatusLocale(obj.type, obj.status, locale)} objectType={obj.type} />
         </div>
       </div>

@@ -63,7 +63,7 @@ function ReferenceItem({
   variant: 'card' | 'plain';
 }) {
   const navigate = useNavigate();
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const { isOpen: panelOpen, content: panelContent } = usePanel();
   const [info, setInfo] = useState<{ type: string; title: string; status: string; path: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +78,7 @@ function ReferenceItem({
         const title = (locale === 'en'
           ? (obj.title_en as string || obj.title as string)
           : (obj.title_zh as string || obj.title as string)) || refId;
-        setInfo({ type: refType, title, status: detail.summary.status, path: detail.target });
+        setInfo({ type: refType, title, status: detail.summary.status, path: String(obj.path || detail.target || '') });
       })
       .catch(() => setInfo(null))
       .finally(() => setLoading(false));
@@ -141,7 +141,7 @@ function ReferenceItem({
           <StatusBadge status={info.status} statusLabel={getObjectStatusLocale(info.type, info.status, locale)} objectType={info.type} size="sm" />
         </span>
       )}
-      <CopyPathButton path={info?.path} />
+      <CopyPathButton path={info?.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
       {showPanelIcon && refType && (
         <PanelIcon
           size={16}

@@ -8,6 +8,8 @@
 
 提交记录页用于查看 Git commit records，并进入独立提交详情页审阅该提交的语义说明、文件统计和审计原文；右侧扩展阅读作为快速查看入口保留。它是提交证据入口，不是工作对象列表，也不是完整 diff 浏览器。
 
+提交页是当前五个基准模块之一。它虽然读取 Git commit records 而不是工作对象 YAML，但卡片网格、标题带、复制入口、详情身份头部、正文节点和右侧扩展阅读都应与研究、决策、备忘、经验保持同一设计语言。
+
 ## 2. 当前页面结构
 
 ```text
@@ -80,16 +82,16 @@
 
 - 提交卡片的复制能力面向“快速与 AI 定位沟通”，不是只复制给人眼阅读的短哈希。
 - 复制内容必须包含足够上下文，使 AI 能直接判断这是 LDVH Web 中的一条 Git commit record。
-- 复制内容使用稳定多行文本，至少包含：
+- 复制内容使用稳定多行文本，面向 AI 快速定位而非完整审计，至少包含：
   - 固定标题：`LDVH Commit`;
   - `hash`：完整 commit hash；
-  - `shortHash`：短哈希；
   - `type`：Conventional Commit 类型；
   - `scope`：提交范围，缺失时用 `-`；
   - `description`：提交描述，缺失时回退到完整 message；
-  - `date`：使用页面统一绝对时间格式；
-  - `body`：存在 commit body 时保留完整正文。
+  - `detail`：`/changelog/{hash}` 详情路由；
+  - `body`：存在 commit body 时只保留短预览，当前实现上限为 180 字符，超过时追加 `[truncated; fetch full body/stat by hash]`。
 - 复制内容中的 `type` 和 `scope` 必须保留 Git 原始 token，不使用本地化显示名。
+- 复制内容不得为了“看起来完整”塞入完整 stat、完整 diff、完整 body 或文件列表；AI 需要更多上下文时应通过 hash 和详情路由重新获取。
 - 复制操作不打开、不关闭右侧扩展阅读。
 
 ## 7. 提交信息

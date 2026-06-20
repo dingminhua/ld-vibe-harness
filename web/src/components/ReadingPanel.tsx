@@ -325,7 +325,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
   const status = detail?.summary.status ?? (obj?.status as string | undefined);
   const headerStatus = isObjectDetailLayoutType(objectType) ? undefined : status;
   const title = getObjectTitle(obj, objectId, locale);
-  const targetPath = detail?.target;
+  const targetPath = String(obj?.path || detail?.target || objectId || '');
   const loading = !obj && !error && Boolean(objectType && objectId);
   const typeColor = objectType ? (CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
 
@@ -386,6 +386,8 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         updated={formatDateTime(obj?.updated as string | undefined)}
         closedAt={obj?.closed_at ? formatDateTime(obj.closed_at as string) : undefined}
         auxiliaryMetaEntries={obj && objectType !== 'workarea' ? getAuxiliaryMetaEntries(obj, objectType || '') : []}
+        copyLabel={t('common.copyObjectPath')}
+        copiedLabel={t('common.copiedObjectPath')}
         compact
       />
       {obj && isObjectDetailLayoutType(objectType) && (

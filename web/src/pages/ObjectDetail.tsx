@@ -417,6 +417,7 @@ export default function ObjectDetail() {
   const listPath = `/objects/${objType}${listSearch ? `?${listSearch}` : ''}`;
   const currentPath = `${location.pathname}${location.search}`;
   const returnPath = getReturnPath(location.state, currentPath) ?? listPath;
+  const copyTarget = String(obj.path || detail.target || objId);
 
   return (
     <div className="flex h-full">
@@ -436,7 +437,7 @@ export default function ObjectDetail() {
               <ObjectIdentityHeader
                 title={displayTitle}
                 id={objId}
-                target={detail.target}
+                target={copyTarget}
                 objectType={objType}
                 typeColor={typeColor}
                 typeLabel={TYPE_LOCALES[objType] ? (locale === 'en' ? TYPE_LOCALES[objType].en : TYPE_LOCALES[objType].zh) : objType}
@@ -448,6 +449,8 @@ export default function ObjectDetail() {
                 updated={formatDateTime(obj.updated as string | undefined)}
                 closedAt={obj.closed_at ? formatDateTime(obj.closed_at as string) : undefined}
                 auxiliaryMetaEntries={auxiliaryMetaEntries}
+                copyLabel={t('common.copyObjectPath')}
+                copiedLabel={t('common.copiedObjectPath')}
               />
           </div>
           </div>
@@ -995,6 +998,8 @@ function WorkAreaPlanRow({
         <div className="flex shrink-0 items-center gap-2">
           <CopyPathButton
             path={plan.path}
+            label={t('common.copyObjectPath')}
+            copiedLabel={t('common.copiedObjectPath')}
             toneClassName="bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-text-secondary"
           />
           <PanelIcon
@@ -1174,6 +1179,7 @@ function parseRelatedAssociationValue(item: unknown): RelatedAssociationValue | 
 }
 
 function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: string; reference: RelatedAssociationValue; locale: string }) {
+  const { t } = useI18n();
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
   const [objectInfo, setObjectInfo] = useState<{ type: string; title: string; path: string } | null>(null);
   const [objectMissing, setObjectMissing] = useState(false);
@@ -1187,7 +1193,21 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
     ? (locale === 'en' ? 'Loading' : '读取中')
     : value;
   const displayTitle = reference.title || objectInfo?.title || (objectMissing ? value : fallbackTitle);
-  const copyValue = objectInfo?.path || value;
+  const copyValue = objectType ? objectInfo?.path : value;
+  const copyLabel = objectType
+    ? t('common.copyObjectPath')
+    : isExternal
+      ? t('common.copyUrl')
+      : isDocPreview
+        ? t('common.copyDocPath')
+        : t('common.copyReference');
+  const copiedLabel = objectType
+    ? t('common.copiedObjectPath')
+    : isExternal
+      ? t('common.copiedUrl')
+      : isDocPreview
+        ? t('common.copiedDocPath')
+        : t('common.copiedReference');
   const previewLabel = locale === 'en' ? 'Open in reading panel' : '扩展阅读';
   const isCurrentPanelOpen = Boolean(
     panelOpen && (
@@ -1216,7 +1236,7 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
         const title = (locale === 'en'
           ? ((obj.title_en as string) || obj.title as string)
           : ((obj.title_zh as string) || obj.title as string)) || value;
-        setObjectInfo({ type: objectType, title, path: detail.target });
+        setObjectInfo({ type: objectType, title, path: String(obj.path || detail.target || '') });
       })
       .catch(() => {
         if (!cancelled) setObjectMissing(true);
@@ -1272,7 +1292,7 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
         )}
       </div>
       <div className="flex h-7 shrink-0 items-center gap-1">
-        <CopyPathButton path={copyValue} />
+        <CopyPathButton path={copyValue} label={copyLabel} copiedLabel={copiedLabel} />
         <button
           type="button"
           onClick={(event) => {
@@ -2044,6 +2064,7 @@ export function DetailObjectRow({
   compact?: boolean;
   variant?: 'default' | 'property';
 }) {
+  const { t } = useI18n();
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
   const objectId = item?.id ?? fallbackId;
   if (!objectId) return null;
@@ -2090,7 +2111,7 @@ export function DetailObjectRow({
         <span className="ldvh-body min-w-0 flex-1 truncate transition-colors group-hover/detail-ref:text-ldvh-accent">{title}</span>
         {variant !== 'property' && <span className="ldvh-meta-muted shrink-0">{objectId}</span>}
         {variant !== 'property' && item?.status && <StatusBadge status={item.status} statusLabel={getObjectStatusLocale(objectType, item.status, locale)} objectType={objectType} size="sm" />}
-        <CopyPathButton path={item?.path} />
+        <CopyPathButton path={item?.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
         <PanelIcon size={16} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
       </div>
     </div>
@@ -2108,6 +2129,7 @@ function DetailObjectReferenceValue({
   objectType: string;
   locale: string;
 }) {
+  const { t } = useI18n();
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
   const objectId = item?.id ?? fallbackId;
   if (!objectId) return null;
@@ -2135,7 +2157,7 @@ function DetailObjectReferenceValue({
     >
       <ObjectTypeIcon type={objectType} size={12} className="shrink-0" style={{ color: objectTypeColor }} />
       <span className="ldvh-body min-w-0 flex-1 truncate transition-colors group-hover/detail-ref:text-ldvh-accent">{title}</span>
-      <CopyPathButton path={item?.path} />
+      <CopyPathButton path={item?.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
       <PanelIcon size={16} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
     </div>
   );
@@ -2420,6 +2442,7 @@ function StudyReadingNode({
 }
 
 function StudyReportBodyEntry({ value, objectPath, locale }: { value: unknown; objectPath?: string; locale: string }) {
+  const { t } = useI18n();
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
   const docPath = objectPath || 'study-report.md';
   const title = objectPath ? basename(objectPath) : (locale === 'en' ? 'Report body' : '报告正文');
@@ -2448,7 +2471,7 @@ function StudyReportBodyEntry({ value, objectPath, locale }: { value: unknown; o
     >
       <BookOpenText size={13} className="shrink-0 text-ldvh-accent" />
       <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{title}</span>
-      <CopyPathButton path={objectPath} />
+      <CopyPathButton path={objectPath} label={t('common.copyDocPath')} copiedLabel={t('common.copiedDocPath')} />
       <button
         type="button"
         onClick={(event) => {
