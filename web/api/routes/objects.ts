@@ -46,6 +46,8 @@ interface RelatedPlanSummary extends RelatedObjectSummary {
   executionItemDone?: number
   executionItemBlocked?: number
   executionItemOpen?: number
+  successCriteriaTotal?: number
+  successCriteriaDone?: number
   hasSuccessCriteria: boolean
   hasReviewRequestedAt: boolean
   hasVerificationEvidence?: boolean
@@ -186,6 +188,20 @@ function countOpenExecutionItems(items: Array<{ status: string }>): number {
   return items.filter((item) => item.status === 'pending' || item.status === 'in_progress' || item.status === 'blocked').length
 }
 
+function getChecklistProgress(value: unknown): { total: number; done: number } {
+  if (typeof value !== 'string') return { total: 0, done: 0 }
+  return value.split(/\r?\n/).reduce(
+    (progress, line) => {
+      const match = line.match(/^\s*[-*]\s+\[([ xX])\]\s+/)
+      if (!match) return progress
+      progress.total += 1
+      if (match[1].toLowerCase() === 'x') progress.done += 1
+      return progress
+    },
+    { total: 0, done: 0 },
+  )
+}
+
 function getUpdatedTime(value: string | undefined): number {
   return new Date(value || 0).getTime() || 0
 }
@@ -238,6 +254,7 @@ export async function buildPlanSummaries(planItems: ListedObject[], baseDir?: st
         .map((executionItem, index) => toExecutionItemSummary(executionItem, item, index))
         .filter((executionItem): executionItem is RelatedObjectSummary => Boolean(executionItem))
       : []
+    const successCriteriaProgress = getChecklistProgress(data.success_criteria)
 
     return {
       ...toRelatedSummary(item, 'workplan'),
@@ -247,6 +264,8 @@ export async function buildPlanSummaries(planItems: ListedObject[], baseDir?: st
       executionItemDone: executionItems.filter((executionItem) => executionItem.status === 'done').length,
       executionItemBlocked: executionItems.filter((executionItem) => executionItem.status === 'blocked').length,
       executionItemOpen: countOpenExecutionItems(executionItems),
+      successCriteriaTotal: successCriteriaProgress.total,
+      successCriteriaDone: successCriteriaProgress.done,
       hasSuccessCriteria: hasContent(data.success_criteria),
       hasReviewRequestedAt: hasContent(data.review_requested_at),
       hasVerificationEvidence: hasContent(data.verification_evidence),
@@ -302,6 +321,8 @@ async function enrichWorkPlans(items: ListedObject[]): Promise<ListedObject[]> {
       executionItemDone: summary.executionItemDone ?? 0,
       executionItemBlocked: summary.executionItemBlocked ?? 0,
       executionItemOpen: summary.executionItemOpen ?? 0,
+      successCriteriaTotal: summary.successCriteriaTotal ?? 0,
+      successCriteriaDone: summary.successCriteriaDone ?? 0,
       hasSuccessCriteria: summary.hasSuccessCriteria,
       hasReviewRequestedAt: summary.hasReviewRequestedAt,
       hasVerificationEvidence: summary.hasVerificationEvidence,

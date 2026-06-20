@@ -58,14 +58,16 @@ WorkArea 不使用普通字段卡片堆叠，而作为“工作域入口”展�
 
 ## 5. WorkPlan 语义阅读布局
 
-WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行态势”展示。执行项只作为 WorkPlan 内部编排的只读态势呈现，不在本文定义独立字段契约、对象路由或长期事实源结构。
+WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行态势”展示。WorkPlan 的设计语言必须先继承提交、研究、决策、备忘、经验五个成熟模块的基线，新的专用表达只能围绕“计划对象更复杂”来增加，不能另起一套视觉和信息秩序。执行项只作为 WorkPlan 内部编排的只读态势呈现，不在本文定义独立字段契约、对象路由或长期事实源结构。
 
-1. 执行态势：页面主区域第一块，展示整体执行态势条，并按与列表一致的队列顺序展示执行项行；队列顺序与态势条空间方向对应，态势条最右侧状态在上，最左侧状态在下；区块标题只使用小圆点。
-2. 成功标准、验证证据和关闭证据不再收进“关闭判断”总区块；分别作为同级模块展示 `success_criteria/verification_evidence/closure_evidence`。不展示额外顶部结论条，不单列待确认项或记录状态，未完成项由 checklist 或证据模块自身表达。成功标准是关闭判断依据，但不再用外层总模块包住。
-3. 定义事实不再收进“属性”总区块；目标、所属工作域、来源分别作为同级模块展示 `description/workarea/source`。`description` 是目标叙述，必须按 Markdown 正文渲染，不得用定义行拆分、短前缀标签或字段 chip 重排原文。所属工作域入口使用模块内对象引用值，显示 WorkArea 对象图标和工作域标题，不显示 ID 或状态徽章，点击只打开右侧辅助阅读，不切换主路由。
-4. 执行项行在 WorkPlan 详情中与 WorkArea card 的动作体验保持一致：复用状态色弱背景、左侧状态图标、执行项标题、内部编号、证据入口和辅助阅读入口；右侧操作图标默认中性，辅助阅读入口可随行 hover 切到该行背景对应的状态色。
-5. 关联材料不再收进“关联材料”总区块；文档、决策、备忘、踩坑经验按 `related_docs/related_adrs/related_memos/related_pitfalls` 分别作为同级模块展示。材料来源只聚合 WorkPlan 自身和已明确纳入 WorkPlan 证据的引用，按 ID 或路径去重；不得从执行项派生出另一套对象级材料事实源。关联提交由 Git 历史、文件路径、对象 ID 和提交正文自然文本派生，不从对象字段手写维护。
-6. WorkPlan 详情页点击执行项行只打开右侧辅助阅读区，不切换主路由到独立对象详情；主路由跳转只属于对象列表卡片。
+1. 计划进度：页面主区域第一块，展示 WorkPlan 自身推进阶段、成功标准完成度、执行项完成度、执行项状态分布和关闭材料记录状态。该模块只消费确定性只读派生摘要，不写回事实源。
+2. 执行态势：展示整体执行态势条，并按 Human 关注顺序展示执行项行：已阻塞、执行中、待执行、已跳过、已完成；区块标题只使用小圆点。
+3. 成功标准、验证证据和关闭证据不再收进“关闭判断”总区块；分别作为同级模块展示 `success_criteria/verification_evidence/closure_evidence`。不展示额外顶部结论条，不单列待确认项或记录状态，未完成项由 checklist 或证据模块自身表达。成功标准是关闭判断依据，但不再用外层总模块包住。
+4. `orchestration.review` 作为“检查安排”模块展示主控自检、专业复检和 Human 关闭审查要求；它只表达关闭前检查安排，不表达审查结论。审查结论仍由 `verification_evidence` 和 `closure_evidence` 承载。
+5. 定义事实不再收进“属性”总区块；目标、所属工作域、来源分别作为同级模块展示 `description/workarea/source`。`description` 是目标叙述，必须按 Markdown 正文渲染，不得用定义行拆分、短前缀标签或字段 chip 重排原文。所属工作域入口使用模块内对象引用值，显示 WorkArea 对象图标和工作域标题，不显示 ID 或状态徽章，点击只打开右侧辅助阅读，不切换主路由。
+6. 执行项行在 WorkPlan 详情中与 WorkArea card 的动作体验保持一致：复用状态色弱背景、左侧状态图标、执行项标题、内部编号、证据入口和辅助阅读入口；执行项不得使用 WorkPlan 对象图标或 WorkPlan 状态徽章。
+7. 关联材料不再收进“关联材料”总区块；文档、决策、备忘、踩坑经验按 `related_docs/related_adrs/related_memos/related_pitfalls` 分别作为同级模块展示。材料来源只聚合 WorkPlan 自身和已明确纳入 WorkPlan 证据的引用，按 ID 或路径去重；不得从执行项派生出另一套对象级材料事实源。关联提交由 Git 历史、文件路径、对象 ID 和提交正文自然文本派生，不从对象字段手写维护。
+8. WorkPlan 详情页点击执行项行只打开右侧辅助阅读区，不切换主路由到独立对象详情；主路由跳转只属于对象列表卡片。
 
 ## 6. 非工作主线对象字段布局
 
@@ -194,4 +196,4 @@ interface ObjectDetail {
 }
 ```
 
-WorkPlan 详情页可以额外消费 WorkPlan 只读派生摘要，用于展示执行态势、阻塞关系和对象路径。执行态势摘要仍来自 Git 文件事实源的确定性读取，不写回事实源，也不作为第二事实源；具体字段名待 `specs/21-WorkPlan-工作计划.md` 和 Web API 契约稳定后再落定，本文不提前定义数据结构。
+WorkPlan 详情页可以额外消费 WorkPlan 只读派生摘要，用于展示推进阶段、成功标准进度、执行态势、关闭材料完备性、阻塞关系和对象路径。当前 Web API 可派生 `executionItems`、`executionItemTotal`、`executionItemDone`、`executionItemBlocked`、`executionItemOpen`、`executionItemByStatus`、`successCriteriaTotal`、`successCriteriaDone`、`hasReviewRequestedAt`、`hasVerificationEvidence`、`hasClosureEvidence` 和 `hasClosedAt`。派生摘要仍来自 Git 文件事实源的确定性读取，不写回事实源，也不作为第二事实源。

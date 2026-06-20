@@ -69,6 +69,8 @@ export interface ObjectItem {
   executionItemBlocked?: number;
   executionItemOpen?: number;
   executionItemByStatus?: Record<string, number>;
+  successCriteriaTotal?: number;
+  successCriteriaDone?: number;
   hasSuccessCriteria?: boolean;
   hasReviewRequestedAt?: boolean;
   hasVerificationEvidence?: boolean;
@@ -140,6 +142,8 @@ export interface RelatedPlanSummary extends RelatedObjectSummary {
   executionItemDone?: number;
   executionItemBlocked?: number;
   executionItemOpen?: number;
+  successCriteriaTotal?: number;
+  successCriteriaDone?: number;
   hasSuccessCriteria: boolean;
   hasReviewRequestedAt: boolean;
   hasVerificationEvidence?: boolean;

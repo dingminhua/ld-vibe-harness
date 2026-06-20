@@ -8,13 +8,14 @@ import MemoCreate from '@/components/MemoCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { ExecutionFlowBar, ExecutionFlowLegend } from '@/components/ExecutionFlowStatus';
+import { ExecutionFlowBar, ExecutionFlowLegend, ExecutionFlowMarker } from '@/components/ExecutionFlowStatus';
 import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
+import { getExecutionFlowLabel, getExecutionFlowTone, sortPlanExecutionItems } from '@/utils/executionFlowStatus';
 
 type LocalizedTitleItem = Pick<ObjectItem, 'id'> & Partial<Pick<ObjectItem, 'title' | 'title_en' | 'title_zh'>>;
 
@@ -614,8 +615,9 @@ export default function ObjectList() {
 
     if (currentType === 'workplan') {
       const executionItems = obj.executionItems ?? [];
-      const visibleExecutionItems = executionItems.slice(0, 8);
-      const moreCount = Math.max(0, executionItems.length - visibleExecutionItems.length);
+      const sortedExecutionItems = sortPlanExecutionItems(executionItems);
+      const visibleExecutionItems = sortedExecutionItems.slice(0, 8);
+      const moreCount = Math.max(0, sortedExecutionItems.length - visibleExecutionItems.length);
       const needsCloseDecision = obj.status === 'review_needed';
       const isClosedPlan = obj.status === 'closed';
       const successCriteriaState: PlanRecordState = obj.hasSuccessCriteria ? 'recorded' : 'missing';
@@ -671,25 +673,35 @@ export default function ObjectList() {
               </span>
               {executionItems.length > 0 && (
                 <span className="ldvh-caption shrink-0 text-ldvh-text-secondary">
-                  {obj.executionItemDone ?? 0}/{obj.executionItemTotal ?? executionItems.length}
+                  {t('objectList.executionItemCount', { count: String(obj.executionItemTotal ?? executionItems.length) })}
                 </span>
               )}
             </div>
+            {executionItems.length > 0 && (
+              <div className="mb-2 min-w-0">
+                <ExecutionFlowBar items={executionItems} t={t} getStatus={getStatus} compact />
+              </div>
+            )}
             <div className="min-w-0 divide-y divide-ldvh-border/60">
               {visibleExecutionItems.length > 0 ? (
-                visibleExecutionItems.map((item) => (
-                  <div key={item.id} className="flex min-w-0 items-center gap-2 py-2">
-                    <ObjectTypeIcon type="workplan" size={12} className="shrink-0 text-sky-400" />
-                    <div className="min-w-0 flex-1">
-                      <span className="ldvh-body block min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
-                      <span className="ldvh-meta-muted block min-w-0 truncate">{item.role || item.id}</span>
+                visibleExecutionItems.map((item) => {
+                  const tone = getExecutionFlowTone(item);
+                  const label = getExecutionFlowLabel(item, t, getStatus);
+                  return (
+                    <div key={item.id} className="flex min-w-0 items-center gap-2 py-2">
+                      <ExecutionFlowMarker tone={tone} label={label} compact />
+                      <div className="min-w-0 flex-1">
+                        <span className="ldvh-body block min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
+                        <span className="ldvh-meta-muted block min-w-0 truncate">
+                          {[item.role || item.id, label].filter(Boolean).join(' · ')}
+                        </span>
+                      </div>
+                      {item.blockingReason && (
+                        <CircleAlert size={13} className="shrink-0 text-amber-400" />
+                      )}
                     </div>
-                    {item.blockingReason && (
-                      <CircleAlert size={13} className="shrink-0 text-amber-400" />
-                    )}
-                    <StatusBadge status={item.status} statusLabel={getObjectStatusLocale('workplan', item.status, locale)} objectType="workplan" size="sm" />
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="ldvh-body-muted rounded-md border border-dashed border-ldvh-border bg-ldvh-bg px-3 py-4 text-center">
                   {t('objectList.noExecutionItems')}

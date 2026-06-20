@@ -154,6 +154,8 @@ review_needed -> active
 | `done` | 执行项已完成 | 应填写 `result_summary`，并在有稳定证据时填写 `evidence_refs` |
 | `skipped` | 明确决定不执行 | 必须填写 `result_summary`；`closure_evidence` 可补充整体接受原因 |
 
+WorkPlan 的 Human-facing 阅读必须先表达计划对象自身的生命周期与关闭判断，再表达执行项队列。Code 或 Web 可以从 `status`、`success_criteria` checklist、`verification_evidence`、`closure_evidence`、`review_requested_at`、`closed_at` 和 `orchestration.execution_items` 派生只读摘要，用于展示推进阶段、成功标准完成度、执行项状态分布和关闭材料完备性。该摘要不得写回 YAML，也不得成为第二事实源；事实判断仍以本 WorkPlan 字段、关联工作对象和 Git 提交记录为准。
+
 执行项不得被其他工作对象直接引用为长期事实。需要长期追踪的结论，应按性质分流到 WorkPlan、ADR、Memo、Pitfall、docs、正式规范或 Git 提交记录。
 
 当某个执行项出现以下任一情况时，应停止把它作为内部执行项继续推进，并按事实性质分流；若它仍是可执行工作，应创建新的 WorkPlan：

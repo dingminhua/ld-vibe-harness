@@ -51,6 +51,9 @@ async function main() {
   assert.equal(typeof summary.executionItemDone, 'number')
   assert.equal(typeof summary.executionItemBlocked, 'number')
   assert.equal(typeof summary.executionItemOpen, 'number')
+  assert.equal(typeof summary.successCriteriaTotal, 'number')
+  assert.equal(typeof summary.successCriteriaDone, 'number')
+  assert.ok(summary.successCriteriaDone <= summary.successCriteriaTotal)
 
   assert.equal(isObjectRef('workplan-0001'), true)
   assert.equal(isObjectRef('taskplan-0001'), false)

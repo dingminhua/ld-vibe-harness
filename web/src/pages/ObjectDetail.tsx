@@ -14,13 +14,14 @@ import EvidenceBlock from '@/components/EvidenceBlock';
 import CopyPathButton from '@/components/CopyPathButton';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { ExecutionFlowBar } from '@/components/ExecutionFlowStatus';
+import { ExecutionFlowBar, ExecutionFlowMarker } from '@/components/ExecutionFlowStatus';
 import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { formatDateTime } from '@/utils/dateFormat';
 import { getStatusColor } from '@/utils/statusColors';
+import { executionFlowRowClass, getExecutionFlowLabel, getExecutionFlowTone, sortPlanExecutionItems } from '@/utils/executionFlowStatus';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
 import {
@@ -1371,12 +1372,16 @@ export function WorkPlanReadingLayout({
   getStatus: (status: string) => string;
 }) {
   const { t } = useI18n();
-  const executionItems = summary?.executionItems ?? [];
+  const ownExecutionItems = getWorkPlanExecutionItems(obj);
+  const executionItems = sortPlanExecutionItems(
+    ownExecutionItems.length > 0 ? ownExecutionItems : (summary?.executionItems ?? [])
+  );
+  const isExecutionLoading = loading && ownExecutionItems.length === 0;
+  const review = getWorkPlanReview(obj);
   const relatedDocs = ((obj.aggregated_related_docs as string[] | undefined) ?? (obj.related_docs as string[] | undefined)) || [];
   const relatedAdrs = ((obj.aggregated_related_adrs as string[] | undefined) ?? (obj.related_adrs as string[] | undefined)) || [];
   const relatedMemos = ((obj.aggregated_related_memos as string[] | undefined) ?? (obj.related_memos as string[] | undefined)) || [];
   const relatedPitfalls = ((obj.aggregated_related_pitfalls as string[] | undefined) ?? (obj.related_pitfalls as string[] | undefined)) || [];
-  const executionRefs = (obj.aggregated_execution_refs as string[] | undefined) || [];
   const hidden = new Set([
     ...META_KEYS,
     'workarea',
@@ -1404,19 +1409,29 @@ export function WorkPlanReadingLayout({
 
   return (
     <div className="mb-6 flex flex-col gap-5">
+      <WorkPlanLifecycleSection
+        obj={obj}
+        summary={summary}
+        executionItems={executionItems}
+        getStatus={getStatus}
+      />
+
       <DetailSection title={t('objectDetail.workplanExecution')} tone="default">
-        {loading ? (
+        {isExecutionLoading ? (
           <LoadingHint text={t('objectDetail.executionItemsLoading')} />
         ) : executionItems.length > 0 ? (
-          <div className="divide-y divide-ldvh-border/60 rounded-md border border-ldvh-border bg-ldvh-bg p-2">
-            {executionItems.map((item) => (
-              <ExecutionItemRow
-                key={item.id}
-                item={item}
-                locale={locale}
-                getStatus={getStatus}
-              />
-            ))}
+          <div className="flex min-w-0 flex-col gap-3">
+            <ExecutionFlowBar items={executionItems} t={t} getStatus={getStatus} />
+            <div className="divide-y divide-ldvh-border/60 rounded-md border border-ldvh-border bg-ldvh-bg p-2">
+              {executionItems.map((item) => (
+                <ExecutionItemRow
+                  key={item.id}
+                  item={item}
+                  locale={locale}
+                  getStatus={getStatus}
+                />
+              ))}
+            </div>
           </div>
         ) : (
           <EmptyHint text={t('objectList.noExecutionItems')} />
@@ -1432,6 +1447,7 @@ export function WorkPlanReadingLayout({
       <DetailSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
         {hasDetailContent(obj.closure_evidence) ? <EvidenceBlock value={String(obj.closure_evidence)} embedded /> : <EmptyHint text={t('objectDetail.noClosureEvidenceForPlan')} />}
       </DetailSection>
+      <WorkPlanReviewSection review={review} />
 
       <DetailNarrativeSection title={t('objectDetail.workareaGoal')} value={obj.description} />
       <DetailObjectReferenceSection
@@ -1452,7 +1468,6 @@ export function WorkPlanReadingLayout({
         ].filter((entry): entry is RelatedContentEntry => Array.isArray(entry[1]) && hasDetailContent(entry[1])))}
         locale={locale}
       />
-      <DetailMaterialSection fieldKey="aggregated_execution_refs" value={executionRefs} locale={locale} />
 
       {otherEntries.length > 0 && (
         <DetailSection title={t('objectDetail.otherFields')} tone="default">
@@ -1467,6 +1482,131 @@ export function WorkPlanReadingLayout({
   );
 }
 
+type WorkPlanLifecycleTone = 'draft' | 'active' | 'blocked' | 'verification' | 'review' | 'closed';
+
+const workPlanLifecycleClass: Record<WorkPlanLifecycleTone, string> = {
+  draft: 'border-sky-500/25 bg-sky-500/10 text-sky-400',
+  active: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400',
+  blocked: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+  verification: 'border-blue-500/25 bg-blue-500/10 text-blue-400',
+  review: 'border-violet-500/25 bg-violet-500/10 text-violet-400',
+  closed: 'border-zinc-500/25 bg-zinc-500/10 text-zinc-400',
+};
+
+function WorkPlanLifecycleSection({
+  obj,
+  summary,
+  executionItems,
+  getStatus,
+}: {
+  obj: Record<string, unknown>;
+  summary: ObjectItem | null;
+  executionItems: RelatedObjectSummary[];
+  getStatus: (status: string) => string;
+}) {
+  const { t } = useI18n();
+  const rawStatus = detailString(obj.status, detailString(summary?.status, 'unknown'));
+  const lifecycle = getWorkPlanLifecycle(obj, summary, executionItems);
+  const checklistProgress = getChecklistProgress(obj.success_criteria);
+  const successCriteriaTotal = summary?.successCriteriaTotal ?? checklistProgress.total;
+  const successCriteriaDone = summary?.successCriteriaDone ?? checklistProgress.done;
+  const executionTotal = summary?.executionItemTotal ?? executionItems.length;
+  const executionDone = summary?.executionItemDone ?? executionItems.filter((item) => item.status === 'done').length;
+  const recordItems = [
+    { label: t('objectList.reviewRequestedAt'), recorded: Boolean(summary?.hasReviewRequestedAt ?? hasDetailContent(obj.review_requested_at)) },
+    { label: t('objectList.verificationEvidence'), recorded: Boolean(summary?.hasVerificationEvidence ?? hasDetailContent(obj.verification_evidence)) },
+    { label: t('objectList.closureEvidence'), recorded: Boolean(summary?.hasClosureEvidence ?? hasDetailContent(obj.closure_evidence)) },
+    ...(rawStatus === 'closed'
+      ? [{ label: t('objectList.closedAt'), recorded: Boolean(summary?.hasClosedAt ?? hasDetailContent(obj.closed_at)) }]
+      : []),
+  ];
+
+  return (
+    <DetailSection title={t('objectDetail.workplanProgress')} tone="default">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+        <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-3">
+          <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{t('objectDetail.lifecycleStage')}</div>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className={`ldvh-caption-strong inline-flex rounded-md border px-2 py-1 ${workPlanLifecycleClass[lifecycle.tone]}`}>
+              {t(lifecycle.labelKey)}
+            </span>
+            <span className="ldvh-meta-muted">{getStatus(rawStatus)}</span>
+          </div>
+        </div>
+        <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ProgressMetric
+              label={t('objectDetail.successCriteriaProgress')}
+              done={successCriteriaDone}
+              total={successCriteriaTotal}
+              emptyText={t('objectDetail.noSuccessCriteria')}
+            />
+            <ProgressMetric
+              label={t('objectDetail.executionItemProgress')}
+              done={executionDone}
+              total={executionTotal}
+              emptyText={t('objectList.noExecutionItems')}
+            />
+          </div>
+          {executionItems.length > 0 && (
+            <div className="mt-3">
+              <ExecutionFlowBar items={executionItems} t={t} getStatus={getStatus} compact />
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="mt-3 flex min-w-0 flex-wrap gap-2">
+        {recordItems.map((item) => (
+          <DetailRecordItem key={item.label} label={item.label} recorded={item.recorded} />
+        ))}
+      </div>
+    </DetailSection>
+  );
+}
+
+function ProgressMetric({
+  label,
+  done,
+  total,
+  emptyText,
+}: {
+  label: string;
+  done: number;
+  total: number;
+  emptyText: string;
+}) {
+  const ratio = total > 0 ? Math.max(0, Math.min(100, (done / total) * 100)) : 0;
+  return (
+    <div className="min-w-0">
+      <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2">
+        <span className="ldvh-caption-strong min-w-0 truncate text-ldvh-text-secondary">{label}</span>
+        <span className="ldvh-caption shrink-0 text-ldvh-text-secondary">{total > 0 ? `${done}/${total}` : emptyText}</span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-ldvh-border/45">
+        <div className="h-full rounded-full bg-ldvh-accent" style={{ width: `${ratio}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function getWorkPlanLifecycle(
+  obj: Record<string, unknown>,
+  summary: ObjectItem | null,
+  executionItems: RelatedObjectSummary[],
+): { tone: WorkPlanLifecycleTone; labelKey: 'objectDetail.lifecycleDraft' | 'objectDetail.lifecycleActive' | 'objectDetail.lifecycleBlocked' | 'objectDetail.lifecycleVerification' | 'objectDetail.lifecycleReview' | 'objectDetail.lifecycleClosed' } {
+  const status = detailString(obj.status, detailString(summary?.status));
+  if (status === 'closed') return { tone: 'closed', labelKey: 'objectDetail.lifecycleClosed' };
+  if (status === 'review_needed') return { tone: 'review', labelKey: 'objectDetail.lifecycleReview' };
+  if (executionItems.some((item) => item.status === 'blocked' || Boolean(item.blockingReason))) {
+    return { tone: 'blocked', labelKey: 'objectDetail.lifecycleBlocked' };
+  }
+  if (status === 'draft') return { tone: 'draft', labelKey: 'objectDetail.lifecycleDraft' };
+  if (hasDetailContent(obj.verification_evidence) || hasDetailContent(obj.closure_evidence)) {
+    return { tone: 'verification', labelKey: 'objectDetail.lifecycleVerification' };
+  }
+  return { tone: 'active', labelKey: 'objectDetail.lifecycleActive' };
+}
+
 function ExecutionItemRow({
   item,
   locale,
@@ -1476,29 +1616,25 @@ function ExecutionItemRow({
   locale: string;
   getStatus: (status: string) => string;
 }) {
-  const label = getObjectStatusLocale('workplan', item.status, locale) || getStatus(item.status);
-  const toneClass = item.status === 'blocked'
-    ? 'border-amber-500/30 bg-amber-500/5'
-    : item.status === 'done'
-      ? 'border-emerald-500/25 bg-emerald-500/5'
-      : item.status === 'skipped'
-        ? 'border-ldvh-border bg-ldvh-bg/70'
-        : 'border-sky-500/25 bg-sky-500/5';
+  const { t } = useI18n();
+  const tone = getExecutionFlowTone(item);
+  const flowLabel = getExecutionFlowLabel(item, t, getStatus);
+  const toneClass = executionFlowRowClass[tone];
 
   return (
     <div className={`my-1 rounded-md border px-3 py-2.5 ${toneClass}`}>
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-1.5">
-            <ObjectTypeIcon type="workplan" size={13} className="shrink-0 text-sky-400" />
+            <ExecutionFlowMarker tone={tone} label={flowLabel} compact />
             <span className="ldvh-body min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
           </div>
           <div className="mt-0.5 flex min-w-0 flex-wrap gap-x-3 gap-y-1">
             <span className="ldvh-meta-muted">{item.role || item.id}</span>
             {item.mode && <span className="ldvh-caption">{item.mode}</span>}
+            <span className="ldvh-caption">{flowLabel}</span>
           </div>
         </div>
-        <StatusBadge status={item.status} statusLabel={label} objectType="workplan" size="sm" />
       </div>
       {item.expectedOutput && (
         <p className="ldvh-body-muted mt-2 border-l-2 border-ldvh-border/50 pl-2">{item.expectedOutput}</p>
@@ -1519,6 +1655,91 @@ function ExecutionItemRow({
         </div>
       )}
     </div>
+  );
+}
+
+function WorkPlanReviewSection({ review }: { review: Record<string, unknown> | null }) {
+  const { t } = useI18n();
+  if (!review) return null;
+
+  const specialistReview = isDetailRecord(review.specialist_review) ? review.specialist_review : null;
+  const hasSpecialistDetail = Boolean(
+    specialistReview && (
+      hasDetailContent(specialistReview.required)
+      || hasDetailContent(specialistReview.role)
+      || hasDetailContent(specialistReview.expected_output)
+    )
+  );
+
+  return (
+    <DetailSection title={t('objectDetail.workplanReview')} tone="default">
+      <div className="divide-y divide-ldvh-border/60">
+        {hasDetailContent(review.controller_self_check) && (
+          <ReviewInlineField
+            label={t('objectDetail.controllerSelfCheck')}
+            value={<ReviewBoolean value={review.controller_self_check} />}
+          />
+        )}
+        {hasSpecialistDetail && specialistReview && (
+          <div className="py-3 first:pt-0 last:pb-0">
+            <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{t('objectDetail.specialistReview')}</div>
+            <div className="flex flex-col gap-2">
+              {hasDetailContent(specialistReview.required) && (
+                <ReviewInlineField
+                  label={t('objectDetail.reviewRequirement')}
+                  value={<ReviewBoolean value={specialistReview.required} />}
+                  compact
+                />
+              )}
+              {hasDetailContent(specialistReview.role) && (
+                <ReviewInlineField
+                  label={t('objectDetail.reviewRole')}
+                  value={<span className="ldvh-body">{String(specialistReview.role)}</span>}
+                  compact
+                />
+              )}
+              {hasDetailContent(specialistReview.expected_output) && (
+                <ReviewInlineField
+                  label={t('objectDetail.expectedOutput')}
+                  value={<SummaryText value={String(specialistReview.expected_output)} collapseThreshold={360} />}
+                  compact
+                />
+              )}
+            </div>
+          </div>
+        )}
+        {hasDetailContent(review.human_closure_review) && (
+          <ReviewInlineField
+            label={t('objectDetail.humanClosureReview')}
+            value={<ReviewBoolean value={review.human_closure_review} />}
+          />
+        )}
+      </div>
+    </DetailSection>
+  );
+}
+
+function ReviewInlineField({ label, value, compact = false }: { label: string; value: ReactNode; compact?: boolean }) {
+  return (
+    <div className={`grid gap-2 ${compact ? 'sm:grid-cols-[5.25rem_1fr]' : 'py-3 first:pt-0 last:pb-0 sm:grid-cols-[6.25rem_1fr]'}`}>
+      <div className="ldvh-caption-strong text-ldvh-text-secondary">{label}</div>
+      <div className="min-w-0">{value}</div>
+    </div>
+  );
+}
+
+function ReviewBoolean({ value }: { value: unknown }) {
+  const { t } = useI18n();
+  const enabled = value === true || value === 'true' || value === 'required';
+  return (
+    <span className={`ldvh-chip inline-flex rounded-md border px-2 py-0.5 ${
+      enabled
+        ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
+        : 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary'
+    }`}
+    >
+      {enabled ? t('objectDetail.required') : t('objectDetail.notRequired')}
+    </span>
   );
 }
 
@@ -2366,6 +2587,58 @@ const STUDY_READING_NODES: Array<{ field: string; zh: string; en: string; kind: 
   { field: 'conclusion', zh: '建议', en: 'Recommendation', kind: 'text' },
   { field: 'report_body', zh: '正文', en: 'Report body', kind: 'report' },
 ];
+
+function isDetailRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function detailString(value: unknown, fallback = ''): string {
+  if (value === null || value === undefined) return fallback;
+  if (value instanceof Date) return value.toISOString();
+  return String(value);
+}
+
+function detailStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => detailString(item).trim())
+    .filter((item) => item.length > 0);
+}
+
+function getWorkPlanOrchestration(obj: Record<string, unknown>): Record<string, unknown> {
+  return isDetailRecord(obj.orchestration) ? obj.orchestration : {};
+}
+
+function getWorkPlanExecutionItems(obj: Record<string, unknown>): RelatedObjectSummary[] {
+  const orchestration = getWorkPlanOrchestration(obj);
+  const rawItems = Array.isArray(orchestration.execution_items) ? orchestration.execution_items : [];
+  return rawItems
+    .map((rawItem, index): RelatedObjectSummary | null => {
+      if (!isDetailRecord(rawItem)) return null;
+      const id = detailString(rawItem.id, `execution-item-${index + 1}`);
+      return {
+        id,
+        type: 'execution_item',
+        title: detailString(rawItem.title, id),
+        status: detailString(rawItem.status, 'unknown'),
+        path: detailString(obj.path),
+        updated: detailString(obj.updated),
+        role: detailString(rawItem.role) || undefined,
+        mode: detailString(rawItem.mode) || undefined,
+        expectedOutput: detailString(rawItem.expected_output) || undefined,
+        resultSummary: detailString(rawItem.result_summary) || undefined,
+        blockingReason: detailString(rawItem.blocking_reason) || undefined,
+        inputRefs: detailStringArray(rawItem.input_refs),
+        evidenceRefs: detailStringArray(rawItem.evidence_refs),
+      } satisfies RelatedObjectSummary;
+    })
+    .filter((item): item is RelatedObjectSummary => Boolean(item));
+}
+
+function getWorkPlanReview(obj: Record<string, unknown>): Record<string, unknown> | null {
+  const review = getWorkPlanOrchestration(obj).review;
+  return isDetailRecord(review) ? review : null;
+}
 
 export function StudyReadingLayout({
   obj,
