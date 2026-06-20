@@ -1,0 +1,132 @@
+id: workplan-0080
+type: workplan
+title: 固定能力资产登记制与最佳实践规范收敛
+status: active
+created: '2026-06-20T10:12:08+08:00'
+updated: '2026-06-20T10:12:08+08:00'
+workarea: workarea-0012
+priority: P1
+description: |
+  memo-0017 暴露出 10 号 Git 提交规范落地时的前置治理缺口：LDVH 需要明确 Rules、Skill、Agent、Hook 等固定能力资产如何登记、如何声明来源规范、如何接受质量审查、如何同步 specs 变化，以及如何区别权威资产与不同运行环境中的薄引用或部署副本。
+
+  本计划只承接固定能力资产登记制、资产类型最佳实践标准和同步监督规则的规范收敛。10 号提交规范的 commit-msg hook、ldvh-git-commit Skill 和提交门禁具体落地继续由 workplan-0074 承接；最佳实践文档内容方向可与 workplan-0024 并行推进。
+success_criteria: |
+  - [ ] 04.02 明确固定能力资产采用登记制，未登记资产不得被 Code、Web、Rules 或工作流程当成稳定保障机制
+  - [ ] 01 明确 rules/、skills/、agents/、hooks/ 等目录定位，区分权威固定资产、候选环境适配资产和说明性资产
+  - [ ] Rules、Skill、Agent、Hook 的资产元信息、来源规范、权威路径、边界说明、同步触发、验证入口和质量审查要求形成统一规则
+  - [ ] 明确 AI 生成能力资产的多视角审核要求，覆盖 Human、Code、Web、AI 执行和行业实践
+  - [ ] 明确 specs 变化后能力资产同步监督链路，避免 Rules、Skill、Agent、Hook、Code、Web 和部署入口漂移
+  - [ ] 明确固定能力资产与运行环境部署副本的分层边界，不把环境内同名文件长期分叉为第二事实源
+  - [ ] 将 10 号提交规范所需的 ldvh-git-commit Skill 和 commit-msg hook 作为后续可登记固定能力资产的试点约束，而不在本计划中实现其具体文件
+  - [ ] 相关 specs、Code 检查缺口、Web 展示边界和后续 WorkPlan/Memo 分流记录清楚
+source: |
+  用户在讨论 memo-0017 时确认该 Memo 会关联多个可并行 WorkPlan，并要求先按 10 号规范提交已完成修改，再按计划继续执行。
+
+  Human Gate 记录：
+  - 触发原因：创建新的 WorkPlan 承接固定能力资产登记制与最佳实践规范收敛。
+  - 影响范围：04.02、01、Rules / Skill / Agent / Hook 资产边界、后续 Code 派生索引、Web 展示和 10 号提交规范落地资产。
+  - 确认依据：用户明确说“好，先按10要求提交，然后按你计划执行”。
+  - Human 决策：批准按计划执行，并允许为 memo-0017 的第三条治理线创建独立 WorkPlan。
+  - 后续回写位置：本 WorkPlan、memo-0017、相关 specs、必要 Code/Web 缺口和后续 Git commit records。
+  - 残留风险：资产类型最佳实践标准尚未正式收敛；如果 40/41/42/43 派生型审核能力边界发生架构变化，可能需要与本计划联动调整。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 复核固定能力资产现有规范边界
+    role: specs
+    mode: single
+    input_refs:
+    - specs/01-目录说明.md
+    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.03-环境入口适配与部署规范.md
+    - specs/10-Git提交规范.md
+    - rules/LDVH-WORKSPACE-ENTRY.md
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - ldvh-base/memos/memo-0017-commit-spec-landing-assets.yaml
+    expected_output: 明确当前规范中关于固定能力资产、候选适配资产、环境部署副本和登记事实源的已有效规则与缺口。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-2
+    title: 收敛资产登记制和目录定位规则
+    role: specs
+    mode: single
+    input_refs:
+    - specs/01-目录说明.md
+    - specs/04.02-LDVH能力资产与落地保障规范.md
+    expected_output: 更新或提出规范修改，使固定能力资产登记制、rules/skills/agents/hooks 目录定位和候选资产边界一致。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-3
+    title: 定义资产类型最佳实践和质量审查要求
+    role: governance
+    mode: single
+    input_refs:
+    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/06-工作流程基础规范.md
+    - specs/40-workflow-design-audit-工作流程设计审核.md
+    - specs/41-work-model-audit-工作模型审核.md
+    - specs/42-specs-audit-规范审核.md
+    - specs/43-landing-readiness-audit-落地准备度审核.md
+    expected_output: 明确 Rules、Skill、Agent、Hook 至少应具备的元信息、执行边界、同步责任、验证入口和多视角审查要求。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-4
+    title: 判断 Code/Web 和后续 WorkPlan 分流
+    role: code-web
+    mode: single
+    input_refs:
+    - code/specs_validate.py
+    - code/spec_checks/
+    - web/
+    - ldvh-base/memos/memo-0017-commit-spec-landing-assets.yaml
+    expected_output: 判断能力资产登记是否需要 Code 派生索引、校验诊断或 Web 展示增强；不能立即完成的项分流到后续 WorkPlan/Memo。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-5
+    title: 全链路验证与关闭审查
+    role: reviewer
+    mode: single
+    input_refs:
+    - specs/
+    - rules/
+    - code/
+    - web/
+    - ldvh-base/
+    expected_output: 运行 specs、事实源和必要 Code/Web 校验，整理验证证据、残留风险、后续分流和关闭判断。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: true
+      role: specs-governance-code-web
+      expected_output: 从规范事实源、能力资产治理、Code 可检查性和 Web 展示边界确认登记制不会形成第二事实源或漂移风险。
+    human_closure_review: true
+verification_evidence: ''
+closure_evidence: ''
+review_requested_at: ''
+closed_at: ''
+related_docs:
+- specs/01-目录说明.md
+- specs/04.02-LDVH能力资产与落地保障规范.md
+- specs/04.03-环境入口适配与部署规范.md
+- specs/06-工作流程基础规范.md
+- specs/10-Git提交规范.md
+related_adrs: []
+related_memos:
+- memo-0017
+related_pitfalls: []
+related_workplans:
+- workplan-0024
+- workplan-0074

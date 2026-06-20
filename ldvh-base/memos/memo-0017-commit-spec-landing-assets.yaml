@@ -3,7 +3,7 @@ type: memo
 title: 10 号 Git 提交规范落地资产边界待收敛
 status: pending
 created: '2026-06-20T04:33:49+08:00'
-updated: '2026-06-20T10:02:11+08:00'
+updated: '2026-06-20T10:12:08+08:00'
 description: |
   本 Memo 承载一个需要后续收敛的规范落地问题：`specs/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
 
@@ -70,6 +70,8 @@ evolution:
     summary: 补充确认 Rules 也必须按固定能力资产自登记；当前两个 Rules 入口应先补齐 `ldvh_asset` 元信息，并由 Code 做保守登记校验。
   - at: '2026-06-20T10:02:11+08:00'
     summary: 确认本 Memo 应作为多线并行分流入口处理；Git 提交规范收口可由 workplan-0074 承接，最佳实践文档方向可由 workplan-0024 并行推进，后续固定能力资产登记制、Skill/Hook 落地和派生型能力资产治理如形成独立 WorkPlan，应继续追加关联而不是把本 Memo 过早 resolved。
+  - at: '2026-06-20T10:12:08+08:00'
+    summary: 新建 workplan-0080 承接固定能力资产登记制、资产类型最佳实践标准、同步监督和部署分层边界；本 Memo 继续保持 pending，三条并行承接线暂为 workplan-0074、workplan-0024 和 workplan-0080。
 source: conversation
 source_detail: 用户围绕 10 号 Git 提交规范落地追问“这种属于 LDVH 安装后必须落地的资产”和“除了 hook，不需要 skills？”，要求建立 Memo 记录，避免后续遗忘。
 priority: P1
@@ -80,6 +82,7 @@ related_workareas: []
 related_workplans:
   - workplan-0074
   - workplan-0024
+  - workplan-0080
 related_adrs: []
 related_studies: []
 related_docs:

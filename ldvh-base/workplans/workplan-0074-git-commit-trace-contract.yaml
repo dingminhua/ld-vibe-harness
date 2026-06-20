@@ -3,7 +3,7 @@ type: workplan
 title: Git 提交规范收口
 status: active
 created: '2026-06-19T02:48:00+08:00'
-updated: '2026-06-19T09:51:17+08:00'
+updated: '2026-06-20T10:11:13+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
@@ -320,7 +320,8 @@ related_docs:
 - specs/10-Git提交规范.md
 - web/docs/06-Changelog.md
 related_adrs: []
-related_memos: []
+related_memos:
+- memo-0017
 related_pitfalls:
 - pitfall-0008
 related_workplans: []

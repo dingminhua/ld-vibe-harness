@@ -3,7 +3,7 @@ type: workplan
 title: 建立11-最佳实践文档
 status: active
 created: '2026-06-05T15:58:49.402240'
-updated: '2026-06-05T16:05:00'
+updated: '2026-06-20T10:11:13+08:00'
 workarea: workarea-0004
 priority: P2
 description: 由历史 Task task-0024 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
@@ -43,6 +43,7 @@ review_requested_at: ''
 closed_at: ''
 related_docs: []
 related_adrs: []
-related_memos: []
+related_memos:
+- memo-0017
 related_pitfalls: []
 related_workplans: []
