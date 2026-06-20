@@ -3,7 +3,7 @@ type: workplan
 title: 固定能力资产登记制与最佳实践规范收敛
 status: review_needed
 created: '2026-06-20T10:12:08+08:00'
-updated: '2026-06-20T10:28:53+08:00'
+updated: '2026-06-20T10:44:47+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
@@ -17,7 +17,7 @@ success_criteria: |
   - [x] 明确 AI 生成能力资产的多视角审核要求，覆盖 Human、Code、Web、AI 执行和行业实践
   - [x] 明确 specs 变化后能力资产同步监督链路，避免 Rules、Skill、Agent、Hook、Code、Web 和部署入口漂移
   - [x] 明确固定能力资产与运行环境部署副本的分层边界，不把环境内同名文件长期分叉为第二事实源
-  - [x] 形成行业最佳实践 Study，并将可吸收结论回写到 04.02 的资产类型最佳实践标准
+  - [x] 形成多视角行业最佳实践 Study，并将可吸收结论回写到 04.02 的资产类型最佳实践标准
   - [x] 将 10 号提交规范所需的 ldvh-git-commit Skill 和 commit-msg hook 作为后续可登记固定能力资产的试点约束，而不在本计划中实现其具体文件
   - [x] 相关 specs、Code 检查缺口、Web 展示边界和后续 WorkPlan/Memo 分流记录清楚
 source: |
@@ -140,7 +140,35 @@ orchestration:
     - https://git-scm.com/docs/githooks
     expected_output: 形成 Study 记录行业实践来源与吸收结论，并把稳定规则回写 04.02，避免把 LDVH 内部治理误称为行业最佳实践。
     status: done
-    result_summary: 已创建 study-0008，调研 Anthropic / Claude Code、OpenAI Agents SDK、MCP 和 Git 官方资料，提炼上下文经济、渐进披露、发现描述、工具权限、Human 审批、可观测证据、确定性 Hook 和 commit-msg hook 可绕过性等规则，并回写到 04.02。
+    result_summary: 已创建 study-0008，调研 Anthropic / Claude Code、OpenAI Agents SDK、MCP 和 Git 官方资料，提炼上下文经济、渐进披露、发现描述、工具权限、Human 审批、可观测证据、确定性 Hook 和 commit-msg hook 可绕过性等规则，并回写到 04.02。后续 Human 指出该版仍显草率，需要多子 Agent 起草和主控合并，已由 item-7 承接深化。
+    evidence_refs:
+    - ldvh-base/studies/study-0008-ai-capability-asset-industry-practices.md
+    - specs/04.02-LDVH能力资产与落地保障规范.md
+    blocking_reason: null
+  - id: item-7
+    title: 多子 Agent 起草行业最佳实践并合并吸收
+    role: multi-agent-research-specs
+    mode: parallel
+    input_refs:
+    - ldvh-base/studies/study-0008-ai-capability-asset-industry-practices.md
+    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - https://developers.openai.com/codex/guides/agents-md
+    - https://developers.openai.com/codex/skills
+    - https://developers.openai.com/codex/subagents
+    - https://developers.openai.com/codex/hooks
+    - https://developers.openai.com/codex/rules
+    - https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
+    - https://code.claude.com/docs/en/sub-agents
+    - https://code.claude.com/docs/en/hooks
+    - https://openai.github.io/openai-agents-python/guardrails/
+    - https://openai.github.io/openai-agents-python/human_in_the_loop/
+    - https://pre-commit.com/
+    - https://typicode.github.io/husky/
+    - https://github.com/lint-staged/lint-staged
+    - https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches
+    expected_output: 从 Codex 专业视角、Claude / Anthropic 视角、OpenAI Agents / guardrails / evals 视角、Hook / DevOps / 提交门禁视角分别起草最佳实践，再由主控合并为 Study 矩阵和 04.02 稳定规则。
+    status: done
+    result_summary: 已按用户要求派出四个子 Agent 并完成合并：Codex 视角补充 AGENTS.md、Codex `.rules`、Skills、Subagents、Hooks、permissions、compact/resume 的分层；Claude 视角补充 CLAUDE.md/rules、Skills、subagents、hooks、plugins 的触发与权限实践；OpenAI Agents 视角补充 tools、handoffs、guardrails、HITL、tracing/evals 作为运行期保障构件；Hook/DevOps 视角补充 Git hooks、pre-commit、Husky、lint-staged、commitlint、CI/status checks 和 server-side gates。主控已将稳定结论合并到 study-0008，并将 04.02 吸收为术语分流、运行期构件分流、资产准入清单和 Hook/CI 分层规则。
     evidence_refs:
     - ldvh-base/studies/study-0008-ai-capability-asset-industry-practices.md
     - specs/04.02-LDVH能力资产与落地保障规范.md
@@ -181,7 +209,9 @@ verification_evidence: |
 
   初次验证曾认为本计划已完成固定能力资产登记制、资产类型最佳实践、同步监督和部署分层边界的规范收敛，并明确 10 号提交规范的 Skill/Hook 具体落地仍由 workplan-0074 承接。Human 关闭审查指出“最佳实践”缺少行业最佳实践内容，不能仅以 LDVH 内部治理规则关闭。因此计划曾退回 active，并补充 item-6 承接行业实践调研与规范吸收。
 
-  补齐后，study-0008 和 workplan-0080 单体事实源校验通过；04.02 的 doc、refs、landing 检查通过；`deployment-entries` 检查通过；`specs_validate.py all` 普通模式退出码为 0，仍仅存在仓库既有 review hint / warning；相关 diff 空白检查通过。计划重新进入 review_needed，等待 Human 关闭审查。
+  补齐后，study-0008 和 workplan-0080 单体事实源校验通过；04.02 的 doc、refs、landing 检查通过；`deployment-entries` 检查通过；`specs_validate.py all` 普通模式退出码为 0，仍仅存在仓库既有 review hint / warning；相关 diff 空白检查通过。
+
+  Human 随后指出最佳实践仍显草率，要求多子 Agent 起草，尤其加入 Codex 专业视角；本计划新增 item-7 承接深化。深化后，study-0008 和 workplan-0080 单体事实源校验通过；04.02 的 doc、refs、landing 检查通过；`deployment-entries` 检查通过；`specs_validate.py all` 普通模式退出码为 0，仍仅存在仓库既有 review hint / warning；相关 diff 空白检查通过。计划重新进入 review_needed，等待 Human 关闭审查。
 closure_evidence: |
   ## 验证计划
 
@@ -202,8 +232,8 @@ closure_evidence: |
 
   初次关闭审查未通过。Human 指出 0080 中“最佳实践”缺少行业最佳实践内容，已有内容主要是 LDVH 内部规则。计划已退回 active，并新增行业实践调研和 04.02 吸收记录。
 
-  第二次关闭审查前，已创建 study-0008 记录行业最佳实践来源和吸收结论，并将稳定规则回写 04.02。10 号提交规范所需的具体 `ldvh-git-commit` Skill 和 `commit-msg` Hook 仍不在本计划实现，继续由 workplan-0074 承接。本计划当前只申请关闭固定能力资产登记制、行业最佳实践吸收、同步监督和部署分层边界的规范收敛。
-review_requested_at: '2026-06-20T10:28:53+08:00'
+  第二次关闭审查前，已创建 study-0008 记录行业最佳实践来源和吸收结论，并将稳定规则回写 04.02。Human 随后指出该版最佳实践仍偏草率，需要多子 Agent 起草，尤其补充 Codex 专业视角。本计划已按要求新增多子 Agent 起草和主控合并吸收记录，study-0008 已扩展为来源对照矩阵、最佳实践矩阵、资产类型准入清单和反模式清单，04.02 已吸收术语分流、运行期构件分流、资产准入和 Hook / CI 分层规则。10 号提交规范所需的具体 `ldvh-git-commit` Skill 和 `commit-msg` Hook 仍不在本计划实现，继续由 workplan-0074 承接。
+review_requested_at: '2026-06-20T10:44:47+08:00'
 closed_at: ''
 related_docs:
 - specs/01-目录说明.md

@@ -4,12 +4,12 @@ type: study
 title: AI 能力资产行业最佳实践调研
 status: active
 created: '2026-06-20T10:25:42+08:00'
-updated: '2026-06-20T10:25:42+08:00'
+updated: '2026-06-20T10:40:36+08:00'
 summary: |
-  本报告补齐 workplan-0080 中此前缺失的外部行业最佳实践输入。调研对照 Anthropic / Claude Code 的 Skills、subagents、hooks、best practices，OpenAI Agents SDK 的 agent、guardrail、human-in-the-loop，MCP 工具暴露规范和 Git hook 官方文档，形成对 LDVH Rules、Skill、Agent、Hook 固定能力资产的可吸收规则：能力资产应保持上下文经济、渐进披露、明确发现条件、权限和工具边界、可验证输出、确定性优先、Human 审批和主控回收。
+  本报告补齐并加固 workplan-0080 中此前缺失的行业最佳实践输入。调研采用多视角起草与主控合并：Codex 专业视角、Claude / Anthropic 视角、OpenAI Agents / guardrails / evals 视角、Hook / DevOps / 提交门禁视角。结论被整理为来源对照矩阵、最佳实践矩阵、反模式清单和 LDVH 吸收规则，用于支撑 04.02 对 Rules、Skill、Agent、Hook 固定能力资产的准入、审查和关闭判断。
 user_intent: 用户指出 workplan-0080 中“最佳实践”目前只是 LDVH 内部规则，缺少行业最佳实践内容，要求先补齐 memo / WorkPlan 相关规范基础。
 conclusion: |
-  行业实践并不支持把 Rules、Skill、Agent、Hook 写成厚重的第二规范；更一致的方向是：长期入口保持短而可维护，领域流程按需加载，代理角色隔离上下文并限制工具，Hook 优先承接确定性检查，涉及副作用或风险的动作必须有审批、可观测证据和可恢复状态。LDVH 04.02 应把这些结论吸收为规则，而外部 URL 只保留在 Study 中作为调研依据。
+  行业实践并不支持把 Rules、Skill、Agent、Hook 写成厚重的第二规范。更稳的治理模型是：Rules / AGENTS / CLAUDE.md 等长期入口保持薄而可恢复；Skill 承接按需加载的可复用流程；Agent / subagent 承接隔离上下文、受限工具和主控回收；Hook 只承接生命周期触发、确定性快速反馈和证据采集；CI、server-side gate、guardrails、HITL、tracing 和 evals 作为运行期保障和质量证据，不反向成为规范事实源。LDVH 04.02 应吸收这些稳定规则，外部 URL 只保留在 Study 中作为调研依据。
 urls:
   - ref: https://code.claude.com/docs/en/best-practices
     title: Claude Code Best Practices
@@ -44,6 +44,45 @@ urls:
   - ref: https://git-scm.com/docs/githooks
     title: Git githooks Documentation
     summary: 用于对照 Git hook 的触发时机、参数、退出码、可绕过性和 commit-msg hook 的标准行为。
+  - ref: https://developers.openai.com/codex/guides/agents-md
+    title: Codex AGENTS.md Guide
+    summary: 用于说明 Codex 持久项目指导的加载顺序、薄入口、嵌套覆盖和验证方式。
+  - ref: https://developers.openai.com/codex/skills
+    title: Codex Agent Skills
+    summary: 用于说明 Codex Skill 的渐进披露、触发描述、目录层级和插件分发边界。
+  - ref: https://developers.openai.com/codex/subagents
+    title: Codex Subagents
+    summary: 用于说明 Codex subagents 的显式触发、上下文隔离、权限继承、并行成本和 custom agent schema。
+  - ref: https://developers.openai.com/codex/hooks
+    title: Codex Hooks
+    summary: 用于说明 Codex lifecycle hooks 的事件、matcher、并发、信任、timeout 和压缩恢复辅助边界。
+  - ref: https://developers.openai.com/codex/rules
+    title: Codex Rules
+    summary: 用于消除 LDVH Rules 与 Codex `.rules` 命令执行策略之间的同名歧义。
+  - ref: https://pre-commit.com/
+    title: pre-commit
+    summary: 用于对照多语言 Git hook 管理、配置版本化、stage 选择、精细跳过和 CI 复跑实践。
+  - ref: https://typicode.github.io/husky/
+    title: Husky
+    summary: 用于对照 Node 项目 Git hook 管理、`core.hooksPath`、安装脚本、POSIX shell、禁用和 opt-in/opt-out 边界。
+  - ref: https://github.com/lint-staged/lint-staged
+    title: lint-staged
+    summary: 用于对照 staged-file 门禁、轻量格式化 / lint、Git 操作备份和不适合全项目检查的边界。
+  - ref: https://commitlint.js.org/guides/local-setup.html
+    title: commitlint local setup
+    summary: 用于对照本地 commit-msg 校验的配置和可绕过边界。
+  - ref: https://commitlint.js.org/guides/ci-setup.html
+    title: commitlint CI setup
+    summary: 用于对照提交消息在 CI 中检查 commit range 的兜底实践。
+  - ref: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches
+    title: GitHub protected branches
+    summary: 用于对照 required status checks、required reviews 和合并门禁边界。
+  - ref: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/about-status-checks
+    title: GitHub status checks
+    summary: 用于对照 CI/status check 如何成为受保护分支的合并条件。
+  - ref: https://docs.gitlab.com/administration/server_hooks/
+    title: GitLab server hooks
+    summary: 用于对照 server-side hook 作为 push 门禁的确定性和部署边界。
 related_memos:
   - memo-0017
 related_workareas:
@@ -73,51 +112,75 @@ archive_reason:
 
 本次调研范围限定为公开官方或准官方资料，访问时间为 2026-06-20：
 
+- OpenAI Codex：AGENTS.md、Agent Skills、Subagents、Hooks、Rules、权限 / 沙箱 / 插件和最佳实践；
 - Anthropic / Claude Code：best practices、Skills、subagents、hooks guide、hooks reference；
 - Anthropic Claude API：Skill authoring best practices；
-- OpenAI：Agents SDK guide、Guardrails、Human-in-the-loop；
+- OpenAI：Agents SDK guide、Tools、Handoffs、Guardrails、Human-in-the-loop、Tracing、Agent evals；
 - Model Context Protocol：Tools specification；
-- Git：githooks 官方文档。
+- DevOps / 提交门禁：Git githooks、pre-commit、Husky、lint-staged、commitlint、GitHub protected branches / status checks、GitLab server hooks。
 
 本报告不把外部资料原文复制为 LDVH 规范。外部资料只用于提炼可复用设计原则；正式约束应吸收到 `specs/04.02-LDVH能力资产与落地保障规范.md`，并按 LDVH 自身术语和事实源边界表达。
 
+本报告的生成方式是多视角起草与主控合并：Codex 专业视角、Claude / Anthropic 视角、OpenAI Agents 视角和 Hook / DevOps 视角分别提出草案，主控再去重、归类并压缩为 LDVH 可吸收的稳定结论。子 Agent 输出是过程输入，不直接成为最终事实；本 Study 才是保留后的报告事实源。
+
 ## 关键发现
 
-### 上下文经济是能力资产的第一约束
+### 生态映射矩阵
 
-Claude Code best practices 和 Skill authoring best practices 都把上下文窗口视为需要主动管理的资源。长期入口文件应短、清晰、可维护；只有普遍适用的命令、风格、工作流规则和常见陷阱适合进入默认加载入口。领域知识、长流程、API 细节和偶发任务更适合按需 Skill、引用文件或工具读取。
+| 外部生态条目 | 对应 LDVH 层 | 可吸收结论 | 不吸收为顶层资产的理由 |
+|---|---|---|---|
+| Codex `AGENTS.md`、Claude `CLAUDE.md` / rules | Rules / 环境薄入口 | 长期入口应保持薄引用、入口路由、STOP 点、验证命令和恢复提示；不得复制完整 specs | 入口文件是 AI-facing 加载层，不是最终事实源 |
+| Codex `.rules`、权限策略、sandbox / approval / permission profiles | 04.03 环境适配 / 运行约束 | 运行权限、命令许可、网络和文件访问需要单独治理、测试和 Human Gate | 它们控制工具执行，不承载 LDVH 正式规则正文 |
+| Codex / Claude / OpenAI Skills | Skill | Skill 承接按需加载的可复用流程、清晰触发描述、输入输出、验证入口和失败处理 | Skill 不新增规范规则，不替代 specs |
+| Codex / Claude subagents、OpenAI Agents / handoffs / agent-as-tool | Agent | Agent 承接隔离上下文、专项审查、受限工具、主控回收和证据摘要 | Agent 输出不能直接成为事实源或关闭结论 |
+| Codex / Claude hooks、Git hooks、pre-commit、Husky | Hook / 环境适配 | Hook 承接生命周期触发、确定性快速反馈、日志和阻断；必须声明事件、参数、退出码、timeout、信任和可绕过性 | Hook 通过不等于检查通过，且本地 Hook 常可被绕过 |
+| lint-staged、commitlint、CI status checks、server-side hooks | Code / Hook / CI 门禁 | 同一规则应由 specs 定义、Code 实现、本地 Hook 快速反馈、CI 或 server-side gate 兜底 | 这些是运行门禁组合，不是单一文本资产 |
+| MCP tools、OpenAI tools、hosted tools | 工具能力 / 运行期构件 | 工具必须有名称、schema、用途、风险、审批和可观测输出 | 工具调用结果不反向成为规范事实 |
+| Guardrails、HITL、tracing、evals | 质量保障 / 证据 | Guardrails 放在正确边界；敏感动作可暂停审批并恢复；trace/eval 支撑回归评估 | 它们是运行证据和质量门禁，不是新的 LDVH 顶层文本资产 |
+| Plugins / marketplace 分发 | 部署 / 分发层 | Plugin 可以打包 Skills、Agents、Hooks、MCP 和 app 映射；安装状态、启用状态和授权状态要环境化记录 | Plugin 是分发单元，不是权威事实源 |
+| Memory / compact / resume / chat summary | 运行期上下文 | 恢复后重读入口；稳定结论必须回写 Git 文件事实源 | 摘要、记忆和压缩结果会丢细节，不可替代事实源 |
 
-对 LDVH 的吸收结论是：Rules 资产应继续保持薄入口定位；Skill、Agent、Hook 不能通过复制 specs 正文来提高“完整性”，而应通过稳定 ID、清晰描述、输入输出、验证入口和回指来源规范来提高可执行性。
+### 最佳实践矩阵
 
-### Skill 是按需加载的流程与知识包，不是第二规范
+| 实践 | 理由 | 可检查验收标准 | LDVH 吸收规则 | 反模式 |
+|---|---|---|---|---|
+| 常驻入口薄化 | Codex / Claude 都强调上下文窗口需要治理，入口过厚会稀释关键约束 | 入口只放高频、全局、移除后会犯错的规则；不复制 specs、字段契约或长期状态 | Rules 资产只承载入口路由、事实源边界、STOP 点和恢复提示 | 把 04.02、10 号规范或工作模型字段整段复制进入口 |
+| 同名术语分流 | Codex `.rules` 是命令许可策略，LDVH `rules/` 是 AI-facing 文本资产 | 文档明确“LDVH Rules ≠ Codex .rules”；命令许可归 04.03 | 04.02 保留 Rules 文本资产边界，04.03 承接环境权限配置 | 把命令 allowlist 当成 LDVH 规范入口 |
+| Skill 渐进披露 | Codex / Claude Skills 都依赖名称、描述和按需加载，描述决定发现 | Skill 有稳定名称、具体 description、输入输出、失败处理、验证步骤；长参考拆支持文件 | Skill 资产承接可复用流程，不复制规范正文 | Skill 名称泛化、description 空泛，或把 Skill 当自动 Agent 调度器 |
+| 风险越高，自由度越低 | 高风险流程需要确定性命令、脚本、审批和失败处理 | 提交、删除、发布、迁移、长期配置等操作有固定命令、审批点、拒绝路径和回滚说明 | 高风险 Skill / Hook 应优先脚本化和低自由度化 | 只写“请谨慎执行” |
+| Agent 输出回主控 | Codex / Claude subagents 解决上下文污染，OpenAI handoff / agent-as-tool 区分最终答复归属 | Agent 声明角色、工具、是否可写、输出格式、主控复核和 Human Gate；默认不直接写事实源 | Agent 资产必须有 `handoff` / `as_tool` / `subagent_review` 式所有权边界 | 子 Agent 直接关闭 WorkPlan、直接写事实源或无限分派 |
+| 工具权限最小化 | Agents SDK、Codex subagents、Claude subagents 都支持或强调工具和权限边界 | 资产声明 allowed tools、风险等级、审批条件、MCP / shell / network 边界 | Agent / Skill / Hook 元信息必须暴露工具权限和审批要求 | 给所有 Agent 全量 shell、Git、网络和 MCP 权限 |
+| Guardrails 放在动作边界 | OpenAI 区分 input、output、tool guardrails；工具 guardrails 才覆盖每次工具调用 | 资产声明 guardrail 类型、触发点、tripwire、阻塞或并行、误报降级 | 不能只靠入口文字自律，能机械检查的应放到 Code / Hook / tool boundary | 只在 Rules 写“不要越权” |
+| HITL 可恢复审批 | OpenAI HITL 将敏感工具调用暂停、批准 / 拒绝并恢复状态 | Human Gate 记录 action、参数、风险、批准 / 拒绝、恢复状态或后续分流 | 高影响动作需要结构化审批对象，不只是一句“已确认” | Human 只批准目标，Agent 后续自由扩权 |
+| Hook 只做快速反馈和确定性门禁 | Codex / Claude hooks 是生命周期触发；Git hooks 有明确事件、参数和退出码；本地 Hook 可绕过 | Hook 声明 event、matcher、inputs、command、timeout、exit code、trust、bypass、output | Hook 触发不等于通过；Hook 不能替代 Code、CI、Human Gate 或事实源 | 把 Hook 输出写成最终事实，或用判断型 Hook 放行关键门禁 |
+| 本地 Hook 必须有 CI / server-side 兜底 | Git / Husky / commitlint 体系承认本地 Hook 可被绕过；GitHub required checks 才能作为合并门禁 | 本地门禁有等价 CI command 或 server-side gate；跳过本地 Hook 需证据和解释 | `commit-msg` Hook 只能做本地前置，CI / Code validator 承接可重复检查 | 只要求开发者“记得装 hook” |
+| 复用同一 canonical command | 本地、CI、server-side 分叉实现会漂移 | Hook、CI 和手动命令调用同一 validator 或 wrapper | 提交规范类门禁回指 `specs/10` 和 `code/commit_validate.py`，不得复制正则 | 本地 shell 一套正则，CI 另一套正则 |
+| Trace / eval 形成质量证据 | OpenAI 建议先用 traces 调试，再用 evals 固化回归判断 | 高风险 Agent / Skill / Hook 试点至少有代表性执行证据、失败样例或人工降级记录 | active 固定能力资产前必须有验证证据，不能只靠一次演示 | “跑过一次看起来可以”就登记 active |
+| 分发层不反向成为事实源 | Codex / Claude plugins 都是打包和分发层 | 插件有 manifest、版本、依赖、启停说明；安装 / 授权状态归环境事实 | Plugin 可以包装稳定资产，但不改变权威路径和字段契约 | 把插件安装状态当成 LDVH 全局支持状态 |
+| compact / memory 非事实源 | 压缩、记忆和聊天摘要会丢细节 | 恢复后重读入口；稳定结论回写 specs、WorkPlan、Memo、ADR、Study 或 Git commit records | PreCompact / PostCompact 只做恢复辅助，不做最终证据 | 把 compact 摘要当 Human Gate 或关闭验收 |
 
-Claude Skills 的实践强调：
+### 资产类型准入清单
 
-- 描述字段要说明“做什么”和“何时使用”，否则难以被正确发现；
-- `SKILL.md` 应简洁，复杂资料拆到补充文件并按需读取；
-- 脆弱、必须一致的任务应降低自由度，给出明确脚本、命令或检查顺序；
-- 复杂任务应提供顺序工作流、反馈循环和可验证中间产物；
-- Skill 需要用真实场景和目标模型测试，不应只靠作者直觉。
+| 资产类型 | 准入检查 | 最低证据 |
+|---|---|---|
+| Rules | 是否薄入口；是否说明事实源边界；是否包含 STOP 点、恢复后重读、交还规则；是否避免同名环境规则歧义 | 入口文件元信息、来源 specs、人工降级检查或 Code 检查 |
+| Skill | name / description 是否具体；是否说明触发和不触发条件；是否按需加载；是否有输入输出、失败处理、验证步骤；是否不新增规范规则 | `SKILL.md`、示例任务或触发测试、验证命令或人工审查记录 |
+| Agent | 是否有角色边界、工具权限、上下文输入、输出格式、写入权限、主控回收、Human Gate 和并行写入限制 | Agent 元信息、主控合并记录、代表性审查 / trace / 人工降级证据 |
+| Hook | 是否声明事件、matcher / 参数、命令、timeout、退出码、信任、可绕过性、CI / server-side 兜底和日志位置 | Hook 文件 / 配置、canonical command、失败样例、CI 或手工复跑证据 |
+| 运行期保障构件 | tools / MCP / guardrails / HITL / tracing / evals 是否作为字段、证据或环境配置进入治理，而不是升级为顶层文本资产 | schema、审批记录、trace / eval 报告、Code / Web 展示或 04.03 适配记录 |
 
-对 LDVH 的吸收结论是：固定 Skill 必须有明确触发条件、可复用工作流、验证入口和主控交还方式。它可以把 specs 转成执行清单，但不能新增字段、状态机或 Human Gate 条件。
+### 关键反模式
 
-### Agent 是隔离上下文和专业权限的运行期角色
-
-Claude Code subagents 和 OpenAI Agents SDK 都把 agent 视为带角色、工具、状态、审批和编排边界的执行单元。Claude Code 强调 subagent 用于隔离会污染主上下文的搜索、日志、文件阅读和专项审查，并可限制工具。OpenAI Agents SDK 将复杂工作拆到 specialists、handoffs、state、guardrails 和 human review。
-
-对 LDVH 的吸收结论是：Agent 资产应声明角色边界、上下文输入、允许工具、输出格式、证据回写和主控复核责任。Agent 输出不能直接成为事实源；主控或 Human 必须完成整合、验证和回写。
-
-### Hook 优先承接确定性检查，判断型 Hook 需要降级边界
-
-Claude Code hooks 明确适合“每次都必须发生”的确定性控制，例如格式化、验证命令和项目规则执行；其 hooks reference 也提示 agent hooks 仍具实验性，生产工作流应优先命令 hooks。Git githooks 文档则给出更底层的契约：不同 hook 有明确触发点、参数和退出码；`commit-msg` 接收提交消息文件路径，非零退出会中止提交，但可被 `--no-verify` 绕过。
-
-对 LDVH 的吸收结论是：Hook 资产必须写清触发事件、参数、退出码语义、阻塞或异步行为、可绕过性、输出去向和降级方式。Hook 不能被写成“检查已经通过”的证据，更不能替代 CI、Code 校验、Human 授权或事实源回写。
-
-### Guardrails、HITL 和 MCP 提醒能力资产必须有审批与可观测边界
-
-OpenAI Agents SDK 的 guardrails 将输入、输出和工具调用检查分层，并区分阻塞执行和并行执行；HITL 机制让敏感工具调用暂停、由人审批或拒绝，并通过 run state 恢复。MCP tools 规范要求工具有名称、schema、能力声明和安全交互边界，并建议应用清楚展示哪些工具暴露给模型、何时调用工具、何时需要用户确认。
-
-对 LDVH 的吸收结论是：能力资产登记不应只检查文件存在，还应检查权限、审批、可观测证据、失败处理和可恢复状态。涉及写入、提交、外部系统调用、长期配置或风险动作时，Human Gate 与 Code/Web 证据必须保持优先级。
+1. 把外部资料、Study、工具输出或子 Agent 草稿直接升级成规范正文；
+2. 把 LDVH Rules 与 Codex `.rules`、Claude path rules、环境配置等同名机制混用；
+3. 把 specs 正文复制进 AGENTS、CLAUDE.md、Rules 或 Skill，制造第二事实源；
+4. Skill 描述泛化、触发条件不清，导致隐式调用误选或漏选；
+5. Agent 继承所有工具、直接写事实源、直接关闭工作对象或无限再分派；
+6. Hook 未声明事件、参数、退出码、timeout、信任来源和可绕过性；
+7. 把本地 Hook 通过当成 CI、server-side gate 或 Human Gate 通过；
+8. 本地 Hook、CI 和 server-side 各自维护一套正则或规则；
+9. 自动格式化或 lint-staged 悄悄修改 specs / `ldvh-base` 事实源；
+10. 把插件安装、MCP 授权、memory、compact 摘要或一次 trace 写成长期事实源。
 
 ## 建议
 
