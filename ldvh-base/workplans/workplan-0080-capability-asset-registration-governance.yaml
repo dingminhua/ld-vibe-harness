@@ -1,9 +1,9 @@
 id: workplan-0080
 type: workplan
 title: 固定能力资产登记制与最佳实践规范收敛
-status: active
+status: review_needed
 created: '2026-06-20T10:12:08+08:00'
-updated: '2026-06-20T10:15:24+08:00'
+updated: '2026-06-20T10:17:11+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
@@ -17,8 +17,8 @@ success_criteria: |
   - [x] 明确 AI 生成能力资产的多视角审核要求，覆盖 Human、Code、Web、AI 执行和行业实践
   - [x] 明确 specs 变化后能力资产同步监督链路，避免 Rules、Skill、Agent、Hook、Code、Web 和部署入口漂移
   - [x] 明确固定能力资产与运行环境部署副本的分层边界，不把环境内同名文件长期分叉为第二事实源
-  - [ ] 将 10 号提交规范所需的 ldvh-git-commit Skill 和 commit-msg hook 作为后续可登记固定能力资产的试点约束，而不在本计划中实现其具体文件
-  - [ ] 相关 specs、Code 检查缺口、Web 展示边界和后续 WorkPlan/Memo 分流记录清楚
+  - [x] 将 10 号提交规范所需的 ldvh-git-commit Skill 和 commit-msg hook 作为后续可登记固定能力资产的试点约束，而不在本计划中实现其具体文件
+  - [x] 相关 specs、Code 检查缺口、Web 展示边界和后续 WorkPlan/Memo 分流记录清楚
 source: |
   用户在讨论 memo-0017 时确认该 Memo 会关联多个可并行 WorkPlan，并要求先按 10 号规范提交已完成修改，再按计划继续执行。
 
@@ -94,9 +94,14 @@ orchestration:
     - web/
     - ldvh-base/memos/memo-0017-commit-spec-landing-assets.yaml
     expected_output: 判断能力资产登记是否需要 Code 派生索引、校验诊断或 Web 展示增强；不能立即完成的项分流到后续 WorkPlan/Memo。
-    status: pending
-    result_summary: ''
-    evidence_refs: []
+    status: done
+    result_summary: 已确认当前 Code 的 `deployment-entries` 检查能保守覆盖必备 Rules 资产存在性和 `ldvh_asset` 自登记元信息；Web 规范已有能力资产只读展示边界，当前未新增专门页面实现。10 号提交规范的 Skill/Hook 具体资产落地继续由 workplan-0074 承接，本计划只提供登记制和最佳实践规则。
+    evidence_refs:
+    - code/spec_checks/deployment_entries.py
+    - tests/code/specs_validate_checks/test_deployment_entries.py
+    - specs/08-Web信息同步实现规范.md
+    - web/docs/00-Architecture.md
+    - ldvh-base/workplans/workplan-0074-git-commit-trace-contract.yaml
     blocking_reason: null
   - id: item-5
     title: 全链路验证与关闭审查
@@ -109,9 +114,12 @@ orchestration:
     - web/
     - ldvh-base/
     expected_output: 运行 specs、事实源和必要 Code/Web 校验，整理验证证据、残留风险、后续分流和关闭判断。
-    status: pending
-    result_summary: ''
-    evidence_refs: []
+    status: done
+    result_summary: 已完成 04.02 单文件 doc、refs、landing 检查，workplan-0080 事实源校验，deployment-entries 能力资产检查和 specs_validate all 普通模式检查；计划进入 review_needed，等待 Human 关闭审查。
+    evidence_refs:
+    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - ldvh-base/workplans/workplan-0080-capability-asset-registration-governance.yaml
+    - code/spec_checks/deployment_entries.py
     blocking_reason: null
   review:
     controller_self_check: true
@@ -120,9 +128,54 @@ orchestration:
       role: specs-governance-code-web
       expected_output: 从规范事实源、能力资产治理、Code 可检查性和 Web 展示边界确认登记制不会形成第二事实源或漂移风险。
     human_closure_review: true
-verification_evidence: ''
-closure_evidence: ''
-review_requested_at: ''
+verification_evidence: |
+  ## 验证计划
+
+  验证 workplan-0080 是否完成固定能力资产登记制与最佳实践规范收敛：04.02 是否补齐资产类型最佳实践、同步监督和部署副本分层；01 是否已有目录定位；Code/Web 缺口是否已判断并分流；事实源关系是否保持有效。
+
+  ## 验证命令
+
+  ```bash
+  python3 code/specs_validate.py doc specs/04.02-LDVH能力资产与落地保障规范.md
+  python3 code/specs_validate.py refs specs/04.02-LDVH能力资产与落地保障规范.md
+  python3 code/specs_validate.py landing specs/04.02-LDVH能力资产与落地保障规范.md
+  python3 code/specs_validate.py deployment-entries
+  python3 code/specs_validate.py all
+  python3 code/fact_validate.py ldvh-base/workplans/workplan-0080-capability-asset-registration-governance.yaml
+  git diff --check
+  ```
+
+  ## 验证结果
+
+  04.02 的 doc、refs、landing 检查均通过。
+  `deployment-entries` 检查通过，确认当前必备 Rules 资产存在并具备 `ldvh_asset` 自登记元信息。
+  `specs_validate.py all` 普通模式退出码为 0；仍存在仓库既有 review hint / warning，不属于本计划新增硬错误。
+  workplan-0080 单体事实源校验为 errors=0 warnings=0。
+  相关 diff 空白检查通过。
+
+  ## 结论
+
+  本计划已完成固定能力资产登记制、资产类型最佳实践、同步监督和部署分层边界的规范收敛，并明确 10 号提交规范的 Skill/Hook 具体落地仍由 workplan-0074 承接。计划进入 review_needed，等待 Human 关闭审查。
+closure_evidence: |
+  ## 验证计划
+
+  审查本 WorkPlan 是否可以进入关闭审查状态，并确认未完成事项是否已合理分流。
+
+  ## 验证命令
+
+  ```bash
+  python3 code/fact_validate.py ldvh-base/workplans/workplan-0080-capability-asset-registration-governance.yaml
+  python3 code/specs_validate.py deployment-entries
+  ```
+
+  ## 验证结果
+
+  workplan-0080 事实源校验通过；能力资产检查通过。10 号提交规范所需的具体 `ldvh-git-commit` Skill 和 `commit-msg` hook 不在本计划实现，已保留在 workplan-0074 的后续执行线。
+
+  ## 结论
+
+  本计划的规范收敛目标已完成，剩余为 Human closure review。关闭前应由 Human 确认是否接受本计划不实现具体 Skill/Hook，而只提供固定能力资产登记制与最佳实践规则。
+review_requested_at: '2026-06-20T10:17:11+08:00'
 closed_at: ''
 related_docs:
 - specs/01-目录说明.md
