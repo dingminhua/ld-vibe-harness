@@ -3,7 +3,7 @@ type: workplan
 title: 固定能力资产登记制与最佳实践规范收敛
 status: review_needed
 created: '2026-06-20T10:12:08+08:00'
-updated: '2026-06-20T10:44:47+08:00'
+updated: '2026-06-20T11:14:41+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
@@ -233,6 +233,16 @@ closure_evidence: |
   初次关闭审查未通过。Human 指出 0080 中“最佳实践”缺少行业最佳实践内容，已有内容主要是 LDVH 内部规则。计划已退回 active，并新增行业实践调研和 04.02 吸收记录。
 
   第二次关闭审查前，已创建 study-0008 记录行业最佳实践来源和吸收结论，并将稳定规则回写 04.02。Human 随后指出该版最佳实践仍偏草率，需要多子 Agent 起草，尤其补充 Codex 专业视角。本计划已按要求新增多子 Agent 起草和主控合并吸收记录，study-0008 已扩展为来源对照矩阵、最佳实践矩阵、资产类型准入清单和反模式清单，04.02 已吸收术语分流、运行期构件分流、资产准入和 Hook / CI 分层规则。10 号提交规范所需的具体 `ldvh-git-commit` Skill 和 `commit-msg` Hook 仍不在本计划实现，继续由 workplan-0074 承接。
+
+  ## 专业价值审核
+
+  Human 要求安排子 Agent 审核 0080，并明确需要价值审核。主控已派出独立子 Agent Huygens 执行只读关闭审核；审核结论为“有条件关闭”。
+
+  价值审核认为：0080 已产生足够价值。它把 memo-0017 暴露的真实问题从“单个提交规范资产怎么落地”提升为“固定能力资产如何准入、登记、边界分流、验证和承接”的治理问题，并补进了行业实践矩阵，而不是只写 LDVH 内部口径。价值成立证据包括：study-0008 已形成多来源行业最佳实践矩阵；04.02 已把薄入口、按需 Skill、隔离 Agent、确定性 Hook 和分层门禁转成稳定规则；Hook / 提交门禁未被过度设计成万能资产，而是分层到 Hook、Code validator、CI / server-side gate 和 Human Gate。
+
+  审核未发现 P0 风险。P1 风险是：关闭记录若写成“提交能力已落地”，会越界；0080 的价值是治理规范收敛，真实实现仍应由 workplan-0074 承接。P2 风险是：行业最佳实践目前足够支撑治理层关闭，但不是逐产品逐版本的实现选型报告；后续 0074 做 Skill / Hook 时仍需针对具体实现再做轻量技术确认。
+
+  因此，若后续关闭 0080，closure 必须明确：本计划关闭的是固定能力资产登记治理与最佳实践吸收；memo-0017 暴露的问题已被收敛为 Rules / Skill / Agent / Hook / Code / Web / CI 分层治理；本计划不实现 `ldvh-git-commit` Skill、`commit-msg` Hook 或 CI / server-side gate；关闭后进入 workplan-0074 承接真实落地。
 review_requested_at: '2026-06-20T10:44:47+08:00'
 closed_at: ''
 related_docs:
