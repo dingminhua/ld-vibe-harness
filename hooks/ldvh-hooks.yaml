@@ -1,0 +1,46 @@
+ldvh_asset:
+  id: "ldvh-hook-registry"
+  type: "hook"
+  status: "active"
+  canonical_path: "hooks/ldvh-hooks.yaml"
+  source_specs:
+    - "specs/10-Git提交规范.md"
+    - "specs/04.02-LDVH能力资产与落地保障规范.md"
+  consumption_scenarios:
+    - "LDVH 统一 Hook 事件登记"
+    - "提交消息本地或环境前置校验"
+    - "未来多类 Hook 的统一调度入口"
+  inputs:
+    - "Hook event id"
+    - "事件上下文参数，例如 commit message 文件路径"
+  outputs:
+    - "统一 Hook dispatcher 执行结果"
+    - "底层 Code validator 输出和退出码"
+  handoff: "环境适配层只调用 code/hook_dispatch.py；失败时回到调用方修改输入或按对应规范人工降级。"
+  verification:
+    - "python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>"
+    - "python3 code/specs_validate.py deployment-entries"
+  sync_triggers:
+    - "specs/10-Git提交规范.md 提交格式或门禁规则变化"
+    - "code/commit_validate.py CLI 参数或错误等级变化"
+    - "code/hook_dispatch.py 事件参数、执行语义或 registry schema 变化"
+    - "specs/04.02-LDVH能力资产与落地保障规范.md Hook 资产规则变化"
+  deprecation: "废弃或拆分前必须同步 04.02、10、0074、deployment-entries 和所有环境适配入口。"
+
+hooks:
+  - id: "ldvh-git-commit-message"
+    event: "git.commit-msg"
+    status: "active"
+    description: "校验 Git commit message 是否符合 specs/10。"
+    blocking: true
+    inputs:
+      message_file:
+        required: true
+        description: "Git commit message 文件路径，或用户环境传入的等价消息文件。"
+    command:
+      - "python3"
+      - "code/commit_validate.py"
+      - "--check-message-file"
+      - "{message_file}"
+    equivalent_manual_check: "python3 code/commit_validate.py --check-message '<message>'"
+    bypass_boundary: "环境可以不接入该事件；接入后仍应承认本地或用户侧 Hook 可被绕过，CI / server-side gate 仍是后续兜底方向。"

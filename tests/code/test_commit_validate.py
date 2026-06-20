@@ -252,8 +252,9 @@ def test_check_message_invalid_format():
     assert errors  # 至少有一个 error
 
 
-def test_commit_msg_hook_reuses_canonical_validator(tmp_path):
-    hook_path = PROJECT_ROOT / "hooks" / "commit-msg"
+def test_unified_hook_dispatcher_reuses_canonical_validator(tmp_path):
+    dispatcher_path = PROJECT_ROOT / "code" / "hook_dispatch.py"
+    registry_path = PROJECT_ROOT / "hooks" / "ldvh-hooks.yaml"
     valid_message = tmp_path / "valid-message.txt"
     invalid_message = tmp_path / "invalid-message.txt"
     valid_message.write_text(
@@ -268,12 +269,18 @@ def test_commit_msg_hook_reuses_canonical_validator(tmp_path):
     )
     invalid_message.write_text("随便写写", encoding="utf-8")
 
-    hook_text = hook_path.read_text(encoding="utf-8")
+    registry_text = registry_path.read_text(encoding="utf-8")
 
-    assert "ldvh_asset:" in hook_text
-    assert "code/commit_validate.py --check-message" in hook_text
-    assert subprocess.run(["sh", str(hook_path), str(valid_message)], cwd=PROJECT_ROOT).returncode == 0
-    assert subprocess.run(["sh", str(hook_path), str(invalid_message)], cwd=PROJECT_ROOT).returncode != 0
+    assert "ldvh_asset:" in registry_text
+    assert "code/commit_validate.py" in registry_text
+    assert subprocess.run(
+        ["python3", str(dispatcher_path), "run", "git.commit-msg", "--message-file", str(valid_message)],
+        cwd=PROJECT_ROOT,
+    ).returncode == 0
+    assert subprocess.run(
+        ["python3", str(dispatcher_path), "run", "git.commit-msg", "--message-file", str(invalid_message)],
+        cwd=PROJECT_ROOT,
+    ).returncode != 0
 
 
 # ══════════════════════════════════════════════════════════════════════

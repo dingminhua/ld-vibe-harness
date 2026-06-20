@@ -364,6 +364,10 @@ def main():
         help="检查拟提交的 message 文本是否符合格式（提交前强制预检）"
     )
     parser.add_argument(
+        "--check-message-file", type=Path, metavar="PATH", default=None,
+        help="从文件读取拟提交的 message 文本并检查格式（供统一 Hook dispatcher 调用）"
+    )
+    parser.add_argument(
         "--files", nargs="*", default=None,
         help="指定本次提交的文件清单；未指定时 --check-message 会读取 staged files"
     )
@@ -382,10 +386,22 @@ def main():
         show_format()
         return
 
-    # --check-message 模式：提交前预检
-    if args.check_message is not None:
+    if args.check_message is not None and args.check_message_file is not None:
+        print("--check-message 和 --check-message-file 只能选择一个", file=sys.stderr)
+        sys.exit(2)
+
+    # --check-message / --check-message-file 模式：提交前预检
+    if args.check_message is not None or args.check_message_file is not None:
+        if args.check_message_file is not None:
+            try:
+                message_text = args.check_message_file.read_text(encoding="utf-8")
+            except OSError as exc:
+                print(f"读取 commit message 文件失败: {exc}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            message_text = args.check_message
         touched_files = args.files if args.files is not None else get_staged_files()
-        issues = check_message(args.check_message, touched_files=touched_files)
+        issues = check_message(message_text, touched_files=touched_files)
         errors = [i for i in issues if i.level == "error"]
         warnings = [i for i in issues if i.level == "warning"]
 

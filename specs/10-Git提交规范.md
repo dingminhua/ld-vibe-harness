@@ -337,7 +337,7 @@ BREAKING CHANGE: 旧的仅首行字符串消费方需要改为读取结构化 de
 | 上位约束承接要求 | 事实源修改应通过 Git 提交记录留下可追溯证据，不再把提交记录建模为工作对象 | 09、本文、06、Human Gate | 事实源治理 | 修改 Git 文件事实源、工作对象状态、规范、Code、Web 或入口资产时 |
 | 入口可见要求 | AI 准备提交、审计提交历史或追溯对象相关提交时应能定位本文 | Rules 入口摘要、commit_validate 帮助、Web 提交记录页 | AI 执行入口提示 | 提交、回退、审计、关闭 WorkPlan 或查询关联提交时 |
 | 确定性执行要求 | commit message 可机械校验的部分由 Code 检查，关联提交由 Git 派生 | `code/commit_validate.py`、Git 查询、测试夹具 | 校验实现 | 提交契约或关联派生规则变化时 |
-| 确定性执行要求 | LDVH 自身仓库应提供或启用提交前 message 校验入口；未启用 Git hook 时，AI 提交前必须手动运行等价预检 | `commit-msg` hook、`code/commit_validate.py --check-message`、CI 或人工降级检查 | 触发保障 | 创建 Git commit、修改提交契约、调整 hook/CI 或迁移仓库入口时 |
+| 确定性执行要求 | LDVH 自身仓库应提供统一 Hook 事件或等价提交前 message 校验入口；用户环境可用 Git、IDE、AI、CI 或自有 hook 系统调用统一入口，未启用环境 hook 时，AI 提交前必须手动运行等价预检 | `hooks/ldvh-hooks.yaml`、`code/hook_dispatch.py run git.commit-msg`、`code/commit_validate.py --check-message`、CI 或人工降级检查 | 触发保障 | 创建 Git commit、修改提交契约、调整 hook/CI 或迁移仓库入口时 |
 | 确定性执行要求 | 必须写 body 的提交应由 Code 基于 staged touched files 和 message 内容做提交前预检，缺失 body 视为 error，明显空泛正文视为 warning | `code/commit_validate.py --check-message`、staged diff、测试夹具 | 校验实现 | 修改 specs、rules、Code、Web、测试、配置、AI 入口、能力资产或跨文件事实源时 |
 | 入口可见要求 | Web 提交详情应把 commit body 作为“提交说明”默认展开，把改动文件和原始信息作为默认收起的派生证据节点 | Web API commit DTO、`/changelog` 详情、Web 类型检查 | 展示实现 | Web 展示提交详情、复制提交上下文或提交 DTO 变化时 |
 | Human 交互要求 | 高影响事实源修改和破坏性 Git 操作必须记录或触发 Human Gate | Human Gate、提交正文或对应事实源 | 人工确认 | 修改事实源边界、状态机、字段契约、入口资产或执行破坏性 Git 操作时 |
@@ -361,7 +361,7 @@ BREAKING CHANGE: 旧的仅首行字符串消费方需要改为读取结构化 de
 | 事实源边界 | 提交记录由 Git commit records 承载，不创建工作对象实例 |
 | 格式契约 | commit message 首行、type、scope、breaking marker 和 description 可被解析 |
 | 语言要求 | LDVH 自身提交主要人类可读内容使用简体中文 |
-| 提交门禁 | LDVH 自身仓库存在 `commit-msg` hook、CI 或等价预检入口；未启用时提交执行者必须在提交前运行 `code/commit_validate.py --check-message` |
+| 提交门禁 | LDVH 自身仓库存在统一 Hook 事件、CI 或等价预检入口；未启用环境 hook 时提交执行者必须在提交前运行 `code/commit_validate.py --check-message` 或 `code/hook_dispatch.py run git.commit-msg` |
 | 派生关联 | 对象关联提交由 Git 历史、文件路径、对象 ID 和正文自然文本派生，不手写维护 |
 | Code 边界 | Code 只校验、解析和聚合，不替代 Git |
 | Web 边界 | Web 只展示派生视图，不替代 Git |
@@ -369,6 +369,6 @@ BREAKING CHANGE: 旧的仅首行字符串消费方需要改为读取结构化 de
 ---
 ## 15. 待补齐事项
 
-1. 已提供 LDVH 自身仓库的 `commit-msg` hook；后续应补齐 CI 或 server-side 提交信息检查，并明确哪些 warning 在远端门禁中升级为 error；
+1. 已提供 LDVH 自身仓库的统一 Hook registry 和 `git.commit-msg` 事件；后续应补齐用户环境接入检查、CI 或 server-side 提交信息检查，并明确哪些 warning 在远端门禁中升级为 error；
 2. 若未来支持多仓库管辖项目，应补齐跨仓库提交记录查询和 Web 聚合边界；
 3. 若未来需要自动派生对象关联提交，应优先基于 touched files、对象 ID、规范编号和正文自然文本实现，不恢复手写字段或专用 trailer。

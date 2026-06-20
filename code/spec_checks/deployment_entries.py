@@ -20,7 +20,7 @@ DEPLOYMENT_ENTRIES_REQUIRED_ASSETS = {
         "rules/LDVH-MAINTAINER-ENTRY.md",
     ],
     "Hook": [
-        "hooks/commit-msg",
+        "hooks/ldvh-hooks.yaml",
     ],
 }
 DEPLOYMENT_ENTRIES_REQUIRED_ASSET_METADATA = {
@@ -36,11 +36,11 @@ DEPLOYMENT_ENTRIES_REQUIRED_ASSET_METADATA = {
         "status": "active",
         "canonical_path": "rules/LDVH-MAINTAINER-ENTRY.md",
     },
-    "hooks/commit-msg": {
-        "id": "ldvh-commit-msg-hook",
+    "hooks/ldvh-hooks.yaml": {
+        "id": "ldvh-hook-registry",
         "type": "hook",
         "status": "active",
-        "canonical_path": "hooks/commit-msg",
+        "canonical_path": "hooks/ldvh-hooks.yaml",
     },
 }
 DEPLOYMENT_ENTRIES_REQUIRED_METADATA_FIELDS = [
@@ -121,7 +121,16 @@ def deployment_entries_check_asset_metadata(root, asset_path_raw):
 
     issues = []
     text = asset_path.read_text(encoding="utf-8")
-    metadata = deployment_entries_asset_metadata(text)
+    metadata = None
+    if asset_path.suffix in {".yaml", ".yml"}:
+        try:
+            data = yaml.safe_load(text) or {}
+        except yaml.YAMLError:
+            data = {}
+        if isinstance(data, dict) and isinstance(data.get("ldvh_asset"), dict):
+            metadata = data["ldvh_asset"]
+    if metadata is None:
+        metadata = deployment_entries_asset_metadata(text)
     if metadata is None:
         issues.append(Issue(asset_path, 1, f"固定能力资产缺少 ldvh_asset 自登记元信息: {asset_path_raw}", code="DEPLOYMENT_ENTRIES_ASSET_METADATA_MISSING"))
         return issues
