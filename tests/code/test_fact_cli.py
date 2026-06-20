@@ -76,10 +76,16 @@ def test_create_workplan_uses_current_contract(tmp_path):
     data = read_yaml(path)
     assert data["id"] == "workplan-0001"
     assert data["type"] == "workplan"
-    assert data["status"] == "draft"
+    assert data["status"] == "subagents_plan_reviewing"
     assert "orchestration" in data
+    assert isinstance(data["orchestration"]["plan_review"], dict)
+    assert isinstance(data["orchestration"]["result_review"], dict)
+    assert "review" not in data["orchestration"]
+    assert data["plan_confirmed_at"] == ""
     assert data["verification_evidence"] == ""
     assert data["closure_evidence"] == ""
+    assert data["closure_requested_at"] == ""
+    assert data["closure_outcome"] == ""
     assert "tasks" not in data
     assert "completion_evidence" not in data
 
@@ -279,6 +285,7 @@ def test_workplan_transition_requires_review_evidence(tmp_path):
     assert created.returncode == 0, created.stderr
     path = Path(created.stdout.strip())
     data = read_yaml(path)
+    data["status"] = "draft"
     data["orchestration"]["execution_items"] = [
         {
             "id": "item-1",
@@ -332,6 +339,162 @@ def test_workplan_transition_requires_review_evidence(tmp_path):
     final = read_yaml(path)
     assert final["status"] == "review_needed"
     assert final["review_requested_at"]
+
+
+def test_workplan_current_transition_chain_sets_gate_fields(tmp_path):
+    created = run_cli("create", "workplan", "--title", "Current Transition Plan", "--base-dir", str(tmp_path))
+    assert created.returncode == 0, created.stderr
+    path = Path(created.stdout.strip())
+
+    data = read_yaml(path)
+    data["orchestration"]["plan_review"]["controller_resolution"] = {
+        "resolved_at": "2026-06-20T10:00:00",
+        "resolver": "test-controller",
+        "source_review_item_ids": [],
+        "accepted_findings": [],
+        "rejected_findings": [],
+        "required_changes_applied": [],
+        "unresolved_items": [],
+        "changed_fields": [],
+        "revision_history_refs": [],
+        "summary": "Plan review resolved.",
+    }
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    plan_confirming = run_cli("transition", str(path), "--to", "human_plan_confirming", *AUTH_ARGS)
+    assert plan_confirming.returncode == 0, plan_confirming.stderr
+
+    executing = run_cli("transition", str(path), "--to", "executing", *AUTH_ARGS)
+    assert executing.returncode == 0, executing.stderr
+    data = read_yaml(path)
+    assert data["status"] == "executing"
+    assert data["plan_confirmed_at"]
+    assert data["orchestration"]["plan_review"]["human_confirmation"]["decision"] == "execute"
+
+    data["orchestration"]["execution_items"][0]["status"] = "done"
+    data["orchestration"]["execution_items"][0]["result_summary"] = "Done."
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    self_checking = run_cli("transition", str(path), "--to", "result_self_checking", *AUTH_ARGS)
+    assert self_checking.returncode == 0, self_checking.stderr
+
+    data = read_yaml(path)
+    data["verification_evidence"] = (
+        "## 验证计划\n\n"
+        "检查当前 WorkPlan 新状态链路。\n\n"
+        "## 验证命令\n\n"
+        "python3 code/fact_validate.py ldvh-base/workplans\n\n"
+        "## 验证结果\n\n"
+        "通过。\n\n"
+        "## 结论\n\n"
+        "可以进入结果复核。"
+    )
+    data["closure_evidence"] = (
+        "## 验证计划\n\n"
+        "检查关闭材料。\n\n"
+        "## 验证命令\n\n"
+        "人工检查测试夹具。\n\n"
+        "## 验证结果\n\n"
+        "关闭材料齐备。\n\n"
+        "## 结论\n\n"
+        "可以提交关闭确认。"
+    )
+    data["orchestration"]["result_review"]["controller_self_check"] = {
+        "controller": "test-controller",
+        "checked_at": "2026-06-20T10:30:00",
+        "prompt_context": {
+            "objective": "Check current transition fixture.",
+            "input_refs": ["tests/code/test_fact_cli.py"],
+        },
+        "result": {
+            "status": "pass",
+            "summary": "Fixture can enter result review.",
+            "evidence_refs": ["tests/code/test_fact_cli.py"],
+        },
+        "attested_at": "2026-06-20T10:35:00",
+        "attestation": {
+            "signer": "test-controller",
+            "statement": "Checked fixture evidence.",
+        },
+    }
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    result_reviewing = run_cli("transition", str(path), "--to", "subagents_result_reviewing", *AUTH_ARGS)
+    assert result_reviewing.returncode == 0, result_reviewing.stderr
+
+    data = read_yaml(path)
+    data["orchestration"]["result_review"]["controller_resolution"] = {
+        "resolved_at": "2026-06-20T10:45:00",
+        "resolver": "test-controller",
+        "source_review_item_ids": [],
+        "accepted_findings": [],
+        "rejected_findings": [],
+        "required_changes_applied": [],
+        "unresolved_items": [],
+        "changed_fields": [],
+        "revision_history_refs": [],
+        "summary": "Result review resolved.",
+    }
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    closure_confirming = run_cli("transition", str(path), "--to", "human_closure_confirming", *AUTH_ARGS)
+    assert closure_confirming.returncode == 0, closure_confirming.stderr
+    data = read_yaml(path)
+    assert data["status"] == "human_closure_confirming"
+    assert data["closure_requested_at"]
+
+    data["closure_outcome"] = "completed"
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    closed = run_cli("transition", str(path), "--to", "closed", *AUTH_ARGS)
+    assert closed.returncode == 0, closed.stderr
+    final = read_yaml(path)
+    assert final["status"] == "closed"
+    assert final["closed_at"]
+    assert final["orchestration"]["result_review"]["human_closure_confirmation"]["decision"] == "close"
+
+
+def test_workplan_current_backward_transition_requires_reason(tmp_path):
+    created = run_cli("create", "workplan", "--title", "Backward Transition Plan", "--base-dir", str(tmp_path))
+    assert created.returncode == 0, created.stderr
+    path = Path(created.stdout.strip())
+
+    data = read_yaml(path)
+    data["orchestration"]["plan_review"]["controller_resolution"] = {
+        "resolved_at": "2026-06-20T10:00:00",
+        "resolver": "test-controller",
+        "source_review_item_ids": [],
+        "accepted_findings": [],
+        "rejected_findings": [],
+        "required_changes_applied": [],
+        "unresolved_items": [],
+        "changed_fields": [],
+        "revision_history_refs": [],
+        "summary": "Plan review resolved.",
+    }
+    path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    plan_confirming = run_cli("transition", str(path), "--to", "human_plan_confirming", *AUTH_ARGS)
+    assert plan_confirming.returncode == 0, plan_confirming.stderr
+
+    blocked = run_cli("transition", str(path), "--to", "subagents_plan_reviewing", *AUTH_ARGS)
+    assert blocked.returncode == 1
+    assert "--reason" in blocked.stderr
+
+    returned = run_cli(
+        "transition",
+        str(path),
+        "--to",
+        "subagents_plan_reviewing",
+        "--reason",
+        "Human requested plan revision.",
+        *AUTH_ARGS,
+    )
+    assert returned.returncode == 0, returned.stderr
+    final = read_yaml(path)
+    assert final["status"] == "subagents_plan_reviewing"
+    assert final["revision_history"][-1]["from_status"] == "human_plan_confirming"
+    assert final["revision_history"][-1]["reason"] == "Human requested plan revision."
 
 
 def write_pitfall(path: Path, *, status: str = "active", verification: str | None = None, archive_reason: str = "") -> None:

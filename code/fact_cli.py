@@ -67,9 +67,21 @@ FILENAME_PATTERNS = {
     "study": re.compile(r"^study-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$"),
 }
 
+WORKPLAN_LEGACY_STATUSES = {"draft", "active", "review_needed"}
+WORKPLAN_CURRENT_STATUSES = {
+    "subagents_plan_reviewing",
+    "human_plan_confirming",
+    "executing",
+    "result_self_checking",
+    "subagents_result_reviewing",
+    "human_closure_confirming",
+    "closed",
+}
+WORKPLAN_CLOSURE_OUTCOMES = {"completed", "partial_completed", "cancelled", "superseded", "invalid", "degraded_accepted"}
+
 VALID_STATUSES = {
     "workarea": {"active", "archived"},
-    "workplan": {"draft", "active", "review_needed", "closed"},
+    "workplan": WORKPLAN_CURRENT_STATUSES | WORKPLAN_LEGACY_STATUSES,
     "adr": {"active", "archived", "deprecated"},
     "pitfall": {"active", "archived"},
     "memo": {"pending", "resolved", "discarded"},
@@ -86,6 +98,12 @@ VALID_TRANSITIONS = {
         "draft": {"active"},
         "active": {"review_needed"},
         "review_needed": {"closed", "active"},
+        "subagents_plan_reviewing": {"human_plan_confirming"},
+        "human_plan_confirming": {"executing", "subagents_plan_reviewing"},
+        "executing": {"result_self_checking", "subagents_plan_reviewing"},
+        "result_self_checking": {"subagents_result_reviewing", "executing"},
+        "subagents_result_reviewing": {"human_closure_confirming", "result_self_checking", "executing"},
+        "human_closure_confirming": {"closed", "subagents_result_reviewing", "result_self_checking", "executing", "subagents_plan_reviewing"},
         "closed": set(),
     },
     "adr": {
@@ -119,7 +137,7 @@ REQUIRED_FIELDS = {
 
 DEFAULT_STATUS = {
     "workarea": "active",
-    "workplan": "draft",
+    "workplan": "subagents_plan_reviewing",
     "adr": "active",
     "pitfall": "active",
     "memo": "pending",
@@ -136,7 +154,7 @@ DIRECTORY_MAP = {
 }
 
 # 允许删除的状态集合
-DELETABLE_STATUSES = {"draft", "pending"}
+DELETABLE_STATUSES = {"draft", "pending", "subagents_plan_reviewing"}
 
 # ADR 专属常量
 ADR_TERMINAL_STATUSES = {"archived", "deprecated"}
@@ -419,6 +437,137 @@ def _build_adr_data(adr_id: str, args: argparse.Namespace, now: str) -> dict:
     return data
 
 
+def _default_workplan_orchestration() -> dict[str, Any]:
+    return {
+        "mode": "single",
+        "execution_items": [
+            {
+                "id": "item-1",
+                "title": "整理可审核执行方案",
+                "role": "main-controller",
+                "mode": "single",
+                "input_refs": ["current-conversation"],
+                "expected_output": "形成可供方案审核的执行计划、成功标准和验证边界。",
+                "status": "pending",
+                "result_summary": None,
+                "evidence_refs": [],
+                "blocking_reason": None,
+            }
+        ],
+        "plan_review": {
+            "orchestration_owner": "main_controller",
+            "workflow_ref": None,
+            "review_policy": {
+                "selection_reason": "默认由主控选择必要审核视角；如存在专门审核流程，应改由 workflow 接管。",
+                "required_perspectives": [],
+                "optional_perspectives": [],
+                "tool_method_requirements": [],
+                "aggregation_rule": "存在 fail 或 needs_human_gate 结论时不得进入 Human 方案确认，必须先处理或提交 Human 裁决。",
+            },
+            "review_items": [],
+            "controller_resolution": None,
+            "human_confirmation": None,
+        },
+        "result_review": {
+            "controller_self_check": None,
+            "orchestration_owner": "main_controller",
+            "workflow_ref": None,
+            "review_policy": {
+                "selection_reason": "默认由主控在结果自检后选择必要复核视角。",
+                "required_perspectives": [],
+                "optional_perspectives": [],
+                "tool_method_requirements": [],
+                "aggregation_rule": "存在 fail 或 needs_human_gate 结论时不得提交 Human 关闭确认，必须先处理或提交 Human 裁决。",
+            },
+            "review_items": [],
+            "controller_resolution": None,
+            "human_closure_confirmation": None,
+        },
+    }
+
+
+def _get_workplan_review_section(data: dict[str, Any], name: str) -> dict[str, Any] | None:
+    orchestration = data.get("orchestration")
+    if not isinstance(orchestration, dict):
+        return None
+    section = orchestration.get(name)
+    return section if isinstance(section, dict) else None
+
+
+def _ensure_workplan_review_dict(data: dict[str, Any], name: str) -> dict[str, Any]:
+    orchestration = data.setdefault("orchestration", {})
+    if not isinstance(orchestration, dict):
+        orchestration = {}
+        data["orchestration"] = orchestration
+    section = orchestration.get(name)
+    if not isinstance(section, dict):
+        section = {}
+        orchestration[name] = section
+    return section
+
+
+def _has_open_execution_items(data: dict[str, Any]) -> bool:
+    orchestration = data.get("orchestration")
+    execution_items = orchestration.get("execution_items") if isinstance(orchestration, dict) else None
+    if not isinstance(execution_items, list):
+        return True
+    return any(isinstance(item, dict) and item.get("status") in {"pending", "in_progress"} for item in execution_items)
+
+
+def _require_workplan_review_object(data: dict[str, Any], section_name: str, field_name: str, message: str) -> bool:
+    section = _get_workplan_review_section(data, section_name)
+    if not isinstance(section, dict) or not isinstance(section.get(field_name), dict):
+        error(message)
+        return False
+    return True
+
+
+def _set_plan_human_confirmation(data: dict[str, Any], args: argparse.Namespace, now: str) -> None:
+    plan_review = _ensure_workplan_review_dict(data, "plan_review")
+    if not isinstance(plan_review.get("human_confirmation"), dict):
+        plan_review["human_confirmation"] = {
+            "decision": "execute",
+            "scope": getattr(args, "confirmation_context", "") or "Human Gate 已确认执行范围。",
+            "constraints": [],
+            "confirmed_at": now,
+            "summary": f"{getattr(args, 'confirmed_by', 'Human')} 确认方案可进入执行。",
+        }
+    if is_empty(data.get("plan_confirmed_at")):
+        data["plan_confirmed_at"] = now
+
+
+def _set_closure_human_confirmation(data: dict[str, Any], args: argparse.Namespace, now: str) -> None:
+    result_review = _ensure_workplan_review_dict(data, "result_review")
+    if not isinstance(result_review.get("human_closure_confirmation"), dict):
+        result_review["human_closure_confirmation"] = {
+            "decision": "close",
+            "scope": getattr(args, "confirmation_context", "") or "Human Gate 已确认关闭范围。",
+            "constraints": [],
+            "confirmed_at": now,
+            "summary": f"{getattr(args, 'confirmed_by', 'Human')} 确认 WorkPlan 可关闭。",
+        }
+
+
+def _append_workplan_revision_history(data: dict[str, Any], args: argparse.Namespace, current_status: str, new_status: str) -> None:
+    reason = getattr(args, "reason", None)
+    if not reason:
+        error(f"退回流转 {current_status} → {new_status} 需要提供 --reason")
+        raise SystemExit(1)
+    history = data.setdefault("revision_history", [])
+    if not isinstance(history, list):
+        history = []
+        data["revision_history"] = history
+    history.append({
+        "at": datetime.now().isoformat(),
+        "from_status": current_status,
+        "to_status": new_status,
+        "actor": getattr(args, "confirmed_by", None) or "Human",
+        "reason": reason,
+        "changed_fields": [],
+        "summary": reason,
+    })
+
+
 # ── create 命令 ─────────────────────────────────────────────────────────
 
 def cmd_create(args: argparse.Namespace) -> int:
@@ -480,23 +629,17 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["workplans"] = []
     if object_type == "workplan":
         data["priority"] = "P2"
-        data["orchestration"] = {
-            "mode": "single",
-            "execution_items": [],
-            "review": {
-                "controller_self_check": True,
-                "specialist_review": {
-                    "required": False,
-                    "role": None,
-                    "expected_output": None,
-                },
-                "human_closure_review": True,
-            },
-        }
+        data["orchestration"] = _default_workplan_orchestration()
+        data["plan_confirmed_at"] = ""
         data["verification_evidence"] = ""
         data["closure_evidence"] = ""
+        data["closure_requested_at"] = ""
         data["review_requested_at"] = ""
         data["closed_at"] = ""
+        data["closure_outcome"] = ""
+        data["residual_risks"] = []
+        data["followup_refs"] = []
+        data["revision_history"] = []
         data["related_docs"] = []
         data["related_adrs"] = []
         data["related_memos"] = []
@@ -674,6 +817,81 @@ def cmd_transition(args: argparse.Namespace) -> int:
                 error(f"{field} 未填写，无法关闭 WorkPlan")
                 return 1
 
+    if object_type == "workplan" and current_status == "subagents_plan_reviewing" and new_status == "human_plan_confirming":
+        if not _require_workplan_review_object(
+            data,
+            "plan_review",
+            "controller_resolution",
+            "plan_review.controller_resolution 未填写，无法进入 Human 方案确认",
+        ):
+            return 1
+
+    if object_type == "workplan" and current_status == "human_plan_confirming" and new_status == "executing":
+        _set_plan_human_confirmation(data, args, datetime.now().isoformat())
+
+    if object_type == "workplan" and current_status == "executing" and new_status == "result_self_checking":
+        if _has_open_execution_items(data):
+            error("仍存在 pending 或 in_progress 执行项，无法进入结果自检")
+            return 1
+
+    if object_type == "workplan" and current_status == "result_self_checking" and new_status == "subagents_result_reviewing":
+        if not _require_workplan_review_object(
+            data,
+            "result_review",
+            "controller_self_check",
+            "result_review.controller_self_check 未填写，无法进入子 Agent 结果复核",
+        ):
+            return 1
+        for field in ("verification_evidence", "closure_evidence"):
+            if is_empty(data.get(field)):
+                error(f"{field} 未填写，无法进入子 Agent 结果复核")
+                return 1
+
+    if object_type == "workplan" and current_status == "subagents_result_reviewing" and new_status == "human_closure_confirming":
+        if not _require_workplan_review_object(
+            data,
+            "result_review",
+            "controller_resolution",
+            "result_review.controller_resolution 未填写，无法进入 Human 关闭确认",
+        ):
+            return 1
+        if is_empty(data.get("closure_requested_at")):
+            data["closure_requested_at"] = datetime.now().isoformat()
+
+    if object_type == "workplan" and current_status == "human_closure_confirming" and new_status == "closed":
+        if is_empty(data.get("plan_confirmed_at")):
+            error("plan_confirmed_at 未填写，无法关闭 WorkPlan")
+            return 1
+        if not _require_workplan_review_object(
+            data,
+            "plan_review",
+            "human_confirmation",
+            "plan_review.human_confirmation 未填写，无法关闭 WorkPlan",
+        ):
+            return 1
+        if not _require_workplan_review_object(
+            data,
+            "result_review",
+            "controller_self_check",
+            "result_review.controller_self_check 未填写，无法关闭 WorkPlan",
+        ):
+            return 1
+        if not _require_workplan_review_object(
+            data,
+            "result_review",
+            "controller_resolution",
+            "result_review.controller_resolution 未填写，无法关闭 WorkPlan",
+        ):
+            return 1
+        for field in ("closure_requested_at", "verification_evidence", "closure_evidence", "closure_outcome"):
+            if is_empty(data.get(field)):
+                error(f"{field} 未填写，无法关闭 WorkPlan")
+                return 1
+        if data.get("closure_outcome") not in WORKPLAN_CLOSURE_OUTCOMES:
+            error(f"closure_outcome 不合法，有效值: {', '.join(sorted(WORKPLAN_CLOSURE_OUTCOMES))}")
+            return 1
+        _set_closure_human_confirmation(data, args, datetime.now().isoformat())
+
     if object_type == "workarea" and new_status == "archived":
         archive_reason = data.get("archive_reason")
         if not archive_reason or (isinstance(archive_reason, str) and not archive_reason.strip()):
@@ -762,6 +980,23 @@ def cmd_transition(args: argparse.Namespace) -> int:
             "reason": reason,
             "date": datetime.now().isoformat(),
         })
+
+    current_workplan_backward_pairs = {
+        ("human_plan_confirming", "subagents_plan_reviewing"),
+        ("executing", "subagents_plan_reviewing"),
+        ("result_self_checking", "executing"),
+        ("subagents_result_reviewing", "result_self_checking"),
+        ("subagents_result_reviewing", "executing"),
+        ("human_closure_confirming", "subagents_result_reviewing"),
+        ("human_closure_confirming", "result_self_checking"),
+        ("human_closure_confirming", "executing"),
+        ("human_closure_confirming", "subagents_plan_reviewing"),
+    }
+    if object_type == "workplan" and (current_status, new_status) in current_workplan_backward_pairs:
+        try:
+            _append_workplan_revision_history(data, args, current_status, new_status)
+        except SystemExit:
+            return 1
 
     # 写回文件
     save_yaml(yaml_file, data)
