@@ -3,7 +3,7 @@ type: workplan
 title: Git 提交规范收口
 status: active
 created: '2026-06-19T02:48:00+08:00'
-updated: '2026-06-21T01:18:00+08:00'
+updated: '2026-06-21T03:44:19+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
@@ -193,7 +193,7 @@ orchestration:
     - web/docs/11-Web测试实现规范.md
     expected_output: 增加或更新 Code/Web 测试，覆盖完整 commit body、Conventional Commits 元信息、字段迁移策略、Changelog 展开、Dashboard 最近提交入口和 ProjectFiles/Changelog 契约一致性；无法自动化处记录等价验证和残留风险。
     status: in_progress
-    result_summary: Code 测试夹具已更新；Web 已新增 commit DTO 契约测试，覆盖 Changelog、Dashboard、ProjectFiles 提交列表和 ProjectFiles 提交详情的结构化字段一致性。更完整的页面交互测试仍留作后续 Web 回归增强。
+    result_summary: Code 测试夹具已更新；Web 已新增 commit DTO 契约测试，覆盖 Changelog、Dashboard、ProjectFiles 提交列表和 ProjectFiles 提交详情的结构化字段一致性。2026-06-21 追加复查确认 Web typecheck 和 Web API 契约测试通过；全量 Code 测试和 ldvh-base 事实校验仍被非 Web DTO 范围的既有仓库状态阻断，0074 暂不关闭。
     evidence_refs:
     - tests/code/test_commit_validate.py
     - tests/code/test_fact_cli.py
@@ -359,6 +359,8 @@ verification_evidence: |
   2026-06-21 item-11 验证结果：`python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit` 通过；`python3 code/specs_validate.py deployment-entries` 通过；`python3 -m pytest tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_deployment_entries.py` 通过，32 passed；`python3 code/specs_validate.py refs specs`、`python3 code/specs_validate.py landing specs` 和 `python3 code/specs_validate.py all` 普通模式均通过；`git diff --check` 通过。综合检查仅保留既有 `specs/05` 术语定义 warning，不属于 item-11 新增问题。
 
   2026-06-21 item-5 追加验证结果：`/api/changelog`、Dashboard `recentChanges` 和 ProjectFiles 提交列表/详情已统一到 `web/api/services/git.ts` 的 commit message 拆分与 Conventional Commits parser；ProjectFiles 保留 parents、isMerge 和 files 作为工具页专属字段。新增 `tests/web/api/commit-dto.test.ts`，使用临时 Git 管辖项目同时验证 Changelog、Dashboard、ProjectFiles 四个 API 返回同一组结构化字段。`npm --prefix web run check` 通过；`npm --prefix web run test:web:api` 通过；`python3 code/fact_validate.py ldvh-base/workplans/workplan-0074-git-commit-trace-contract.yaml` 通过，errors=0 warnings=0；`python3 code/specs_validate.py refs specs` 和 `python3 code/specs_validate.py landing specs` 通过；`git diff --check` 通过。
+
+  2026-06-21 关闭前复查结果：按 Human 指示只负责本轮 Web DTO 落地，不处理其它 Code/事实源改动。`npm --prefix web run check` 和 `npm --prefix web run test:web:api` 均通过，确认 Changelog、Dashboard 和 ProjectFiles 的共享 commit DTO 契约仍成立。关闭级全量检查暂未满足：`python3 code/specs_validate.py all --fail-on-diagnostics` 因既有 `specs/05` 的 `POSSIBLE_DUPLICATE_TERM_DEFINITION` warning 返回 1；`python3 code/fact_validate.py ldvh-base` 因 memo-0018、study-0007、workplan-0025、workplan-0062、workplan-0063 的既有事实源问题返回 errors=8；`python3 -m pytest tests/code -q` 当前 256 passed、3 failed，失败集中在 WorkPlan 默认状态/流转测试和 specs_validate all 的 fail-on-diagnostics 断言。残留扫描中 `related_changes`、`ldvh-base/changes`、旧变更对象等命中均位于禁止条款、Code 拦截、测试负例、0074 自身验收/历史记录或其它历史事实文本；未发现本轮 Web DTO 改动新增旧 Change 工作对象入口。结论：Web DTO 落地可视为完成，0074 关闭仍需另行处理上述非 Web DTO 阻断项后再执行。
 closure_evidence: ''
 review_requested_at: ''
 closed_at: ''
