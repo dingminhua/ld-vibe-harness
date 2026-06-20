@@ -8,7 +8,7 @@ ldvh_doc:
   status: "active"
   canonical_path: "specs/24-Memo-备忘.md"
   created: "2026-06-09"
-  updated: "2026-06-09"
+  updated: "2026-06-20"
   parent_doc: ""
   relation: ""
   positioning: "定义 Memo / 备忘工作模型，包括对象定位、演变承载、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则"
@@ -118,8 +118,8 @@ Memo 标准状态如下：
 
 | 状态 | 含义 |
 |---|---|
-| `pending` | 待处理：已捕获，尚未决定是否分流、处理或废弃 |
-| `resolved` | 已分流到 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源，或已明确处理 |
+| `pending` | 待处理：已捕获，尚未决定是否分流、处理或废弃；或已被部分分流但仍存在未承接议题 |
+| `resolved` | 已完整分流到 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源，或已明确处理 |
 | `discarded` | 已废弃：确认不再需要继续跟踪或作为分流入口 |
 
 `resolved` 和 `discarded` 是稳定终态。终态 Memo 不得直接重开；如需重新处理，应新建 Memo，并在新 Memo 中引用原 Memo。
@@ -136,7 +136,7 @@ resolved → discarded
 
 | 流转 | 触发条件 | 说明 |
 |---|---|---|
-| `pending` → `resolved` | 已分流到目标事实源或已明确处理 | `resolved_to` 和 `resolved_at` 条件必填；Study 只作为 `related_studies` 关联，不作为 `resolved_to` |
+| `pending` → `resolved` | Memo 中仍有保留价值的内容已完整分流到目标事实源或已明确处理 | `resolved_to` 和 `resolved_at` 条件必填；Study 只作为 `related_studies` 关联，不作为 `resolved_to`；部分分流不得转为 `resolved` |
 | `pending` → `discarded` | 判断不需要继续处理 | 应记录 `discard_reason` |
 | `resolved` → `discarded` | 分流记录不再需要作为活跃入口展示 | 保留分流关系，并记录 `discard_reason` |
 
@@ -147,7 +147,11 @@ resolved → discarded
 
 ### 4.1 Memo 与 WorkPlan
 
-Memo 可以分流为 WorkPlan，作为尚未计划化信息转化为可执行工作计划的路径。分流后，Memo 的 `resolved_to` 应记录 `{type: workplan, ref: <WorkPlan ID>}`，WorkPlan 的 `source` 或 `related_memos` 可记录 Memo ID 或路径。
+Memo 可以分流为一个或多个 WorkPlan，作为尚未计划化信息转化为可执行工作计划的路径。
+
+当 Memo 只被单个 WorkPlan 完整承接时，Memo 的 `resolved_to` 应记录 `{type: workplan, ref: <WorkPlan ID>}`，WorkPlan 的 `source` 或 `related_memos` 可记录 Memo ID 或路径。
+
+当 Memo 被多个 WorkPlan 并行或分阶段承接时，应先保持 `status: pending`，在 Memo 的 `related_workplans` 中记录已承接或相关的 WorkPlan ID，并在 `evolution` 中说明每个 WorkPlan 承接的议题范围、剩余未承接内容和下一步分流方向。只有当 Memo 的剩余议题已被完整承接、明确废弃或无需继续跟踪时，才可以进入 `resolved` 或 `discarded`。
 
 WorkPlan 的准入、状态和字段契约由 `specs/21-WorkPlan-工作计划.md` 定义。
 
@@ -160,6 +164,8 @@ ADR 的准入、状态和字段契约由 `specs/22-ADR-决策.md` 定义。
 ### 4.3 Memo 与 WorkArea 和 WorkPlan
 
 Memo 可以分流为 WorkArea，作为长期范围、治理域或持续维护面的来源线索。Memo 也可以分流为 WorkPlan，作为一次目标、执行计划或关闭审查的来源线索。分流后，Memo 的 `resolved_to` 应记录 `{type: workarea, ref: <WorkArea ID>}` 或 `{type: workplan, ref: <WorkPlan ID>}`，目标对象的 `related_memos` 可记录来源 Memo。
+
+若 Memo 同时关联多个 WorkArea 或 WorkPlan，`resolved_to` 只记录完整承接该 Memo 的单一主目标；并行承接、部分承接或主题相关的多个对象应写入 `related_workareas`、`related_workplans` 和 `evolution`，不得用单个 `resolved_to` 假装所有议题已经收敛。
 
 WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` 定义；WorkPlan 的准入、状态和字段契约由 `specs/21-WorkPlan-工作计划.md` 定义。
 
@@ -183,7 +189,20 @@ Memo 可以分流或关联到 Pitfall、管辖项目配置或 docs：
 
 Pitfall 的准入、状态和字段契约由 `specs/23-Pitfall-踩坑经验.md` 定义。管辖项目配置的字段和边界由 `specs/03.04-管辖项目配置规范.md` 定义。环境能力核验、环境适配和适配措施正文不得写入管辖项目配置；需要长期保留的稳定事实应进入环境适配待补齐事项、WorkPlan、Memo、Study、ADR、正式规范或按 04 系列规范处理。当前具体检查结果只保留当前过程结论，不作为持久状态事实源。
 
-### 4.6 Memo 与 Git 提交记录
+### 4.6 多线并行分流
+
+一个 Memo 可以承载同一讨论中产生的多个相关缺口、问题或后续方向。只要这些内容尚未形成各自独立的稳定事实源入口，允许暂时保留在同一个 Memo 中；一旦某个方向具备独立目标、成功标准、决策判断或长期跟踪价值，应分流到 WorkPlan、ADR、WorkArea、Pitfall、docs、管辖项目配置更新或其他事实源。
+
+多线并行分流遵守以下规则：
+
+1. `related_workplans`、`related_workareas`、`related_adrs`、`related_studies` 和 `related_docs` 可以记录多个关联对象，用于表达并行承接、分阶段承接或主题相关；
+2. 关联字段不等同于完成分流。Memo 仍存在未承接议题时必须保持 `pending`；
+3. `evolution` 应记录每条线的承接范围、当前判断和剩余问题，避免后续 AI 只看到关联对象却不知道 Memo 是否已经收敛；
+4. `resolved_to` 是单一最终分流目标或主承接目标，不用于记录多个并列目标；若没有单一主目标，应继续使用 `related_*` 与 `evolution` 表达多线承接状态；
+5. 当多个关联对象共同完整承接 Memo 时，应在 `evolution` 中说明完整承接判断，再选择最能代表关闭判断的主目标写入 `resolved_to`，或在经 Human Gate 确认后使用 `{type: other, ref: <说明性引用>}` 表达“由多对象共同承接”的关闭判断；
+6. 如果多线内容已经彼此独立且继续放在同一个 Memo 会削弱恢复和关闭判断，应创建新的 Memo 或 WorkPlan，并通过 `description`、`evolution` 或目标对象 `related_memos` 保留追溯关系。
+
+### 4.7 Memo 与 Git 提交记录
 
 Memo 的创建、状态变化、分流和废弃都应留下 Git 提交记录。commit message 格式规则由 `specs/10-Git提交规范.md` 定义。
 
@@ -196,6 +215,7 @@ Memo 的创建、状态变化、分流和废弃都应留下 Git 提交记录。c
 2. 将对话输入、docs/studies 结论或执行发现写入 Memo；
 3. 将 `pending` Memo 分流为 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置更新或其他事实源；
 4. 将 Memo 标记为 `discarded`，且废弃会丢失后续跟踪入口；
+5. 将 Memo 从单线分流改为多线并行分流，或将多个并行承接对象判断为已经共同完整承接；
 6. 修改 `resolved_to`、`priority`、`description`、`evolution` 或关键关联；
 7. 将 Memo 作为规避 WorkArea、WorkPlan 或 ADR 准入判断的长期替代物。
 
@@ -221,18 +241,20 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `source` | 备忘进入事实源的入口来源 | enum | 是 | `web` 或 `conversation`；Web 快速创建固定为 `web`，对话中由 Human 或 AI 确认记录固定为 `conversation` | Reference | AI、Code、Web |
 | `source_detail` | 来源说明、触发场景或原始输入摘要 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
 | `priority` | 优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
-| `resolved_to` | 分流目标对象引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}`；`type` 只能是 `workarea`、`workplan`、`adr`、`pitfall`、`docs`、`governed-projects` 或 `other`，不得为 `study` | Reference | AI、Code、Web |
+| `resolved_to` | 单一最终分流目标或主承接目标引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}`；`type` 只能是 `workarea`、`workplan`、`adr`、`pitfall`、`docs`、`governed-projects` 或 `other`，不得为 `study`；多线并行或部分承接优先使用 `related_*` 与 `evolution`，不得用单个 `resolved_to` 伪装完整收敛 | Reference | AI、Code、Web |
 | `resolved_at` | 分流日期 | date | 条件必填 | `status: resolved` 时必须填写 | Reference | AI、Code、Web |
 | `discard_reason` | 废弃原因 | string | 条件必填 | `status: discarded` 时必须填写 | Narrative | AI、Human |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_studies` | 关联研究报告 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表；可记录多个并行承接、分阶段承接或主题相关的 WorkPlan ID，不表示 Memo 已经 resolved | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 
 字段内容格式按 `specs/05.02-工作模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 
 ### 6.2 YAML 示例
+
+#### 6.2.1 单一目标完整分流示例
 
 ```yaml
 id: memo-0001
@@ -261,6 +283,37 @@ related_workplans: []
 related_docs: []
 ```
 
+#### 6.2.2 多线并行分流中的 pending 示例
+
+```yaml
+id: memo-0002
+type: memo
+title: 能力资产治理缺口待收敛
+status: pending
+created: '2026-06-20T09:30:00+08:00'
+updated: '2026-06-20T10:00:00+08:00'
+description: |
+  本 Memo 汇总同一讨论中产生的多个能力资产治理缺口。部分议题已经形成 WorkPlan，
+  但仍存在未承接的登记制、同步责任或落地边界问题，因此继续保持 pending。
+evolution:
+  - at: '2026-06-20T10:00:00+08:00'
+    summary: Git 提交规范收口由 workplan-0003 承接，最佳实践文档方向由 workplan-0004 并行承接；固定能力资产登记制仍待形成独立 WorkPlan。
+source: conversation
+source_detail: 用户讨论能力资产落地边界时要求暂存并分流。
+priority: P1
+resolved_to: ""
+resolved_at: ""
+discard_reason: ""
+related_adrs: []
+related_studies: []
+related_workareas: []
+related_workplans:
+  - workplan-0003
+  - workplan-0004
+related_docs:
+  - specs/04.02-LDVH能力资产与落地保障规范.md
+```
+
 ---
 ## 7. 事实源回写与证据留存
 
@@ -272,9 +325,11 @@ Memo 回写遵循以下规则：
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
 3. 状态变化后应更新 `updated`；状态变化历史由 Git commit 派生，不在 Memo YAML 中手写维护；
 4. Memo 出现关键语义转折、方向变化或阶段性收敛时，应更新 `description` 并向 `evolution` 追加摘要；不得记录完整聊天流水；
-5. Memo 分流为 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源时，应更新 `resolved_to` 和 `resolved_at`；形成或引用 Study 时只更新 `related_studies` 和必要的 `evolution`；
-6. Memo 创建、分流、废弃、关键关联变化、核心摘要或演变记录修改应通过 Git 提交记录留痕；
-7. Memo 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
+5. Memo 被单一目标完整分流为 WorkArea、WorkPlan、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源时，应更新 `resolved_to` 和 `resolved_at`；
+6. Memo 被多个目标并行或分阶段承接时，应先更新对应 `related_*` 字段和必要的 `evolution`，并保持 `pending`，直到剩余议题已完整承接、明确废弃或无需继续跟踪；
+7. 形成或引用 Study 时只更新 `related_studies` 和必要的 `evolution`；
+8. Memo 创建、分流、废弃、关键关联变化、核心摘要或演变记录修改应通过 Git 提交记录留痕；
+9. Memo 事实源写入后，应重新校验文件命名、字段完整性、状态合法性和引用有效性。
 
 ### 7.2 证据留存
 
@@ -300,9 +355,10 @@ AI 处理 Memo 时应遵守：
 2. 创建、分流、废弃或删除 Memo 前评估 Human Gate；
 3. 不得用 Memo 长期替代已经满足准入条件的 WorkArea、WorkPlan 或 ADR；
 4. 分流时应说明为什么目标类型合适；
-5. 分流后不再在 Memo 中维护目标对象的状态、验收或决策正文；
-6. 有完整报告时应形成或关联 Study，Memo 只记录报告如何改变议题理解；
-7. 不得把 Study 写入 `resolved_to`；Study 只说明报告正文已有承载，不说明 Memo 讨论、执行或决策已经收敛。
+5. 多线并行分流时，应说明每条线为什么可以并行、由哪个对象承接、剩余未承接内容是什么；
+6. 分流后不再在 Memo 中维护目标对象的状态、验收或决策正文；
+7. 有完整报告时应形成或关联 Study，Memo 只记录报告如何改变议题理解；
+8. 不得把 Study 写入 `resolved_to`；Study 只说明报告正文已有承载，不说明 Memo 讨论、执行或决策已经收敛。
 
 ### 8.2 Code 辅助
 
@@ -312,7 +368,7 @@ Code 可依据本文实现以下能力：
 2. 校验文件命名、ID、字段类型、必填字段和条件必填字段；
 3. 校验状态枚举和合法流转；
 4. 校验 `source`、`priority`、`evolution`、`resolved_to`（`type` 枚举和 `ref` 引用有效性）和引用字段；
-5. 聚合待处理 Memo、已分流 Memo、已废弃 Memo 和分流目标。
+5. 聚合待处理 Memo、已分流 Memo、已废弃 Memo、分流目标和已有关联对象但仍 `pending` 的多线分流 Memo。
 
 Code 不得自行创建、分流、废弃或删除 Memo，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/memos/` 权威事实源。
 

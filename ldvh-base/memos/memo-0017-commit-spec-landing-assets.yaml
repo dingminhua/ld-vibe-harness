@@ -3,7 +3,7 @@ type: memo
 title: 10 号 Git 提交规范落地资产边界待收敛
 status: pending
 created: '2026-06-20T04:33:49+08:00'
-updated: '2026-06-20T05:30:57+08:00'
+updated: '2026-06-20T10:02:11+08:00'
 description: |
   本 Memo 承载一个需要后续收敛的规范落地问题：`specs/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
 
@@ -52,6 +52,13 @@ description: |
   1. 现有两个固定 Rules 资产也必须自登记，不能只由 04.02 表格手写列出；
   2. `rules/LDVH-WORKSPACE-ENTRY.md` 和 `rules/LDVH-MAINTAINER-ENTRY.md` 应作为第一批补齐 `ldvh_asset` 元信息的固定能力资产；
   3. Code 的能力资产检查应先保守覆盖必备 Rules 的登记元信息，后续再扩展到 Skill、Agent、Hook 的通用资产索引。
+
+  分流与并行承接补充：
+
+  本 Memo 目前不是单一 WorkPlan 的待办入口，而是一组能力资产治理缺口的汇总入口。`workplan-0074`
+  可继续承接 Git 提交规范收口和提交门禁落地；`workplan-0024` 可并行承接最佳实践文档方向。后续若形成专门的固定能力资产登记制、
+  Skill/Hook 资产落地或派生型能力资产治理 WorkPlan，应继续加入 `related_workplans`，并在 `evolution`
+  中说明各线承接范围。只有当这些前置治理线均被明确承接或废弃后，才考虑将本 Memo 标记为 `resolved`。
 evolution:
   - at: '2026-06-20T04:33:49+08:00'
     summary: 用户要求记录 10 号规范落地问题，并追问除 hook 外是否需要 Skill；当前结论是提交门禁需要 Git hook，AI 行动稳定性需要 Skill，两者职责不同且都应进入 10 号规范落地资产讨论。
@@ -61,6 +68,8 @@ evolution:
     summary: 确认固定能力资产应采用登记制；“当前不维护固定 Skill/Hook”应改为“未登记不得固定，已固定必须维护”，并作为 10 号提交 Skill 与 Git commit-msg hook 的后续落地前提。
   - at: '2026-06-20T05:30:57+08:00'
     summary: 补充确认 Rules 也必须按固定能力资产自登记；当前两个 Rules 入口应先补齐 `ldvh_asset` 元信息，并由 Code 做保守登记校验。
+  - at: '2026-06-20T10:02:11+08:00'
+    summary: 确认本 Memo 应作为多线并行分流入口处理；Git 提交规范收口可由 workplan-0074 承接，最佳实践文档方向可由 workplan-0024 并行推进，后续固定能力资产登记制、Skill/Hook 落地和派生型能力资产治理如形成独立 WorkPlan，应继续追加关联而不是把本 Memo 过早 resolved。
 source: conversation
 source_detail: 用户围绕 10 号 Git 提交规范落地追问“这种属于 LDVH 安装后必须落地的资产”和“除了 hook，不需要 skills？”，要求建立 Memo 记录，避免后续遗忘。
 priority: P1
@@ -68,7 +77,9 @@ resolved_to: ""
 resolved_at: ""
 discard_reason: ""
 related_workareas: []
-related_workplans: []
+related_workplans:
+  - workplan-0074
+  - workplan-0024
 related_adrs: []
 related_studies: []
 related_docs:
