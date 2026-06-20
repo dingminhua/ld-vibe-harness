@@ -1,9 +1,9 @@
 id: workplan-0080
 type: workplan
 title: 固定能力资产登记制与最佳实践规范收敛
-status: review_needed
+status: closed
 created: '2026-06-20T10:12:08+08:00'
-updated: '2026-06-20T11:14:41+08:00'
+updated: '2026-06-20T20:32:15+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
@@ -243,8 +243,21 @@ closure_evidence: |
   审核未发现 P0 风险。P1 风险是：关闭记录若写成“提交能力已落地”，会越界；0080 的价值是治理规范收敛，真实实现仍应由 workplan-0074 承接。P2 风险是：行业最佳实践目前足够支撑治理层关闭，但不是逐产品逐版本的实现选型报告；后续 0074 做 Skill / Hook 时仍需针对具体实现再做轻量技术确认。
 
   因此，若后续关闭 0080，closure 必须明确：本计划关闭的是固定能力资产登记治理与最佳实践吸收；memo-0017 暴露的问题已被收敛为 Rules / Skill / Agent / Hook / Code / Web / CI 分层治理；本计划不实现 `ldvh-git-commit` Skill、`commit-msg` Hook 或 CI / server-side gate；关闭后进入 workplan-0074 承接真实落地。
+
+  ## Human 关闭审查
+
+  Human 已吸收专业价值审核意见，并明确同意按“有条件关闭”判断关闭 0080。
+
+  关闭结论如下：
+
+  1. 0080 已完成固定能力资产登记制与最佳实践吸收；
+  2. memo-0017 暴露的问题已收敛为 Rules / Skill / Agent / Hook / Code / Web / CI 分层治理；
+  3. 0080 不实现 `ldvh-git-commit` Skill 或 `commit-msg` Hook；
+  4. 关闭后进入 workplan-0074，按 04.02 的分层门禁规则做真实落地。
+
+  残留风险与分流：本计划关闭不代表提交能力资产已经部署或启用；`ldvh-git-commit` Skill、`commit-msg` Hook、CI / server-side gate 和具体提交门禁联动继续由 workplan-0074 承接。0074 实施时应复用 04.02 和 study-0008 的治理层结论，并针对具体实现再做轻量技术确认。
 review_requested_at: '2026-06-20T10:44:47+08:00'
-closed_at: ''
+closed_at: '2026-06-20T20:32:15+08:00'
 related_docs:
 - specs/01-目录说明.md
 - specs/04.02-LDVH能力资产与落地保障规范.md
