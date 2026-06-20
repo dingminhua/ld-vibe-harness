@@ -369,6 +369,6 @@ BREAKING CHANGE: 旧的仅首行字符串消费方需要改为读取结构化 de
 ---
 ## 15. 待补齐事项
 
-1. 应补齐 LDVH 自身仓库的 `commit-msg` hook 或 CI 提交信息检查，并明确哪些 warning 升级为 error；
+1. 已提供 LDVH 自身仓库的 `commit-msg` hook；后续应补齐 CI 或 server-side 提交信息检查，并明确哪些 warning 在远端门禁中升级为 error；
 2. 若未来支持多仓库管辖项目，应补齐跨仓库提交记录查询和 Web 聚合边界；
 3. 若未来需要自动派生对象关联提交，应优先基于 touched files、对象 ID、规范编号和正文自然文本实现，不恢复手写字段或专用 trailer。

@@ -19,6 +19,9 @@ DEPLOYMENT_ENTRIES_REQUIRED_ASSETS = {
         "rules/LDVH-WORKSPACE-ENTRY.md",
         "rules/LDVH-MAINTAINER-ENTRY.md",
     ],
+    "Hook": [
+        "hooks/commit-msg",
+    ],
 }
 DEPLOYMENT_ENTRIES_REQUIRED_ASSET_METADATA = {
     "rules/LDVH-WORKSPACE-ENTRY.md": {
@@ -32,6 +35,12 @@ DEPLOYMENT_ENTRIES_REQUIRED_ASSET_METADATA = {
         "type": "rule",
         "status": "active",
         "canonical_path": "rules/LDVH-MAINTAINER-ENTRY.md",
+    },
+    "hooks/commit-msg": {
+        "id": "ldvh-commit-msg-hook",
+        "type": "hook",
+        "status": "active",
+        "canonical_path": "hooks/commit-msg",
     },
 }
 DEPLOYMENT_ENTRIES_REQUIRED_METADATA_FIELDS = [
@@ -72,10 +81,20 @@ def deployment_entries_fixed_asset_section(text):
 
 
 def deployment_entries_asset_metadata(text):
+    def normalize_metadata_line(line):
+        stripped = line.lstrip()
+        if stripped.startswith("#"):
+            uncommented = stripped[1:]
+            if uncommented.startswith(" "):
+                uncommented = uncommented[1:]
+            return uncommented
+        return line
+
     in_yaml = False
     block_lines = []
     for line in text.splitlines():
-        stripped = line.strip()
+        normalized_line = normalize_metadata_line(line)
+        stripped = normalized_line.strip()
         if not in_yaml and stripped in {"```yaml", "```yml"}:
             in_yaml = True
             block_lines = []
@@ -91,7 +110,7 @@ def deployment_entries_asset_metadata(text):
             block_lines = []
             continue
         if in_yaml:
-            block_lines.append(line)
+            block_lines.append(normalized_line)
     return None
 
 

@@ -1,7 +1,9 @@
 import importlib.util
+import subprocess
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).resolve().parents[2] / "code" / "commit_validate.py"
+PROJECT_ROOT = MODULE_PATH.parents[1]
 spec = importlib.util.spec_from_file_location("commit_validate", MODULE_PATH)
 checker = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(checker)
@@ -248,6 +250,30 @@ def test_check_message_invalid_format():
     errors = [i for i in issues if i.level == "error"]
 
     assert errors  # 至少有一个 error
+
+
+def test_commit_msg_hook_reuses_canonical_validator(tmp_path):
+    hook_path = PROJECT_ROOT / "hooks" / "commit-msg"
+    valid_message = tmp_path / "valid-message.txt"
+    invalid_message = tmp_path / "invalid-message.txt"
+    valid_message.write_text(
+        (
+            "docs(workplan): 测试提交消息 hook\n\n"
+            "动机:\n"
+            "- 验证 hook 复用 code/commit_validate.py。\n\n"
+            "验证结论:\n"
+            "- 预期本地提交消息校验通过。"
+        ),
+        encoding="utf-8",
+    )
+    invalid_message.write_text("随便写写", encoding="utf-8")
+
+    hook_text = hook_path.read_text(encoding="utf-8")
+
+    assert "ldvh_asset:" in hook_text
+    assert "code/commit_validate.py --check-message" in hook_text
+    assert subprocess.run(["sh", str(hook_path), str(valid_message)], cwd=PROJECT_ROOT).returncode == 0
+    assert subprocess.run(["sh", str(hook_path), str(invalid_message)], cwd=PROJECT_ROOT).returncode != 0
 
 
 # ══════════════════════════════════════════════════════════════════════

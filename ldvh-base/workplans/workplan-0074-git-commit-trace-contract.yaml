@@ -3,7 +3,7 @@ type: workplan
 title: Git 提交规范收口
 status: active
 created: '2026-06-19T02:48:00+08:00'
-updated: '2026-06-20T10:11:13+08:00'
+updated: '2026-06-20T20:44:46+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
@@ -22,7 +22,7 @@ success_criteria: |
   - [x] Code 校验、CLI、测试和索引不再把旧变更对象当作工作对象处理
   - [x] Web 中 `/changelog`、Dashboard 最近提交、ProjectFiles 提交历史和右侧阅读面板统一表达为 Git 提交记录派生视图
   - [ ] Web API 共享同一 commit DTO 或解析函数，并结构化返回 type、scope、description、body、breaking、文件摘要或 diff 入口
-  - [ ] LDVH 自身仓库提供或启用提交前 message 校验入口；未启用 Git hook 前，AI 提交前必须运行等价预检
+  - [x] LDVH 自身仓库提供或启用提交前 message 校验入口；未启用 Git hook 前，AI 提交前必须运行等价预检
   - [ ] 迁出完成后，现行 specs、Code、Web 和测试中不存在会误导 AI 的旧工作对象入口；历史资料中的旧称必须被明确判定为允许历史引用或待迁移残留
   - [ ] `python3 code/specs_validate.py all --fail-on-diagnostics`、`python3 code/fact_validate.py ldvh-base`、相关 Code 测试和 Web 检查通过
 source: |
@@ -246,9 +246,13 @@ orchestration:
     - tests/code/test_commit_validate.py
     - .git/hooks/
     expected_output: 为 LDVH 自身仓库提供或启用提交前 message 校验入口，明确 `commit-msg` hook、CI 或等价预检的执行方式、失败等级和降级说明。
-    status: pending
-    result_summary: ''
-    evidence_refs: []
+    status: done
+    result_summary: 已新增已登记的 `hooks/commit-msg` Hook 资产，复用 `code/commit_validate.py --check-message` 作为 canonical validator；已通过 `git config core.hooksPath hooks` 在当前 LDVH 仓库启用本地 hook。Hook 只作为本地前置反馈，可被 `--no-verify` 绕过，不替代 specs/10、Code validator、CI/server-side gate、Human Gate 或 Git commit records。
+    evidence_refs:
+    - hooks/commit-msg
+    - code/commit_validate.py
+    - tests/code/test_commit_validate.py
+    - specs/04.02-LDVH能力资产与落地保障规范.md
     blocking_reason: null
   - id: item-10
     title: 消除 Study 编号迁移痕迹
@@ -312,7 +316,11 @@ verification_evidence: |
 
   ## 结论
 
-  本轮补救已把旧 Change 工作对象迁出边界重新压实到 specs、Code、Web 和测试四层，并完成 Study 由 26 到 25 的补位，避免现行工作模型集合暴露旧编号空洞；0074 不应关闭，因为 Web 共享 commit DTO、结构化提交信息展示和提交前 message 门禁仍是后续项。
+  本轮补救已把旧 Change 工作对象迁出边界重新压实到 specs、Code、Web 和测试四层，并完成 Study 由 26 到 25 的补位，避免现行工作模型集合暴露旧编号空洞；0074 不应关闭，因为 Web 共享 commit DTO 和结构化提交信息展示仍是后续项。
+
+  2026-06-20 追加补救：已新增 `hooks/commit-msg` 作为 active Hook 能力资产，复用 `code/commit_validate.py --check-message` 执行本地提交消息预检，并通过 `git config core.hooksPath hooks` 在当前 LDVH 仓库启用。Hook 脚本声明 Git commit-msg 事件、message 文件输入、退出码语义、可绕过性、等价复跑命令和分层门禁边界；04.02 已登记当前固定 Hook 资产，10 号规范待补齐事项已收敛为后续 CI / server-side gate。提交门禁本地前置项已完成，但 0074 仍不应关闭，因为 Web 共享 commit DTO 和结构化提交信息展示仍待完成。
+
+  2026-06-20 item-9 验证结果：`python3 -m pytest tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_deployment_entries.py -q` 通过，32 passed；`python3 code/specs_validate.py deployment-entries` 通过；04.02 和 10 的 doc、refs、landing 检查均通过；0074 单体 fact_validate 通过；`python3 code/specs_validate.py all` 普通模式退出码为 0；`git diff --check` 通过；`git config --get core.hooksPath` 返回 `hooks`，且 `hooks/commit-msg` 具备可执行位。`python3 code/specs_validate.py all --fail-on-diagnostics` 当前因 specs/05 既有 `POSSIBLE_DUPLICATE_TERM_DEFINITION` warning 退出 1，不属于本轮 item-9 新增问题。
 closure_evidence: ''
 review_requested_at: ''
 closed_at: ''

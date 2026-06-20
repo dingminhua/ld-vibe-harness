@@ -37,6 +37,34 @@ ldvh_asset:
 LDVH 能力资产与落地保障定义见 `specs/04.02-LDVH能力资产与落地保障规范.md`。
 """,
         )
+    write_md(
+        tmp_path / "hooks" / "commit-msg",
+        """
+#!/bin/sh
+# ```yaml
+# ldvh_asset:
+#   id: "ldvh-commit-msg-hook"
+#   type: "hook"
+#   status: "active"
+#   canonical_path: "hooks/commit-msg"
+#   source_specs:
+#     - "specs/10-Git提交规范.md"
+#   consumption_scenarios:
+#     - "测试场景"
+#   inputs:
+#     - "测试输入"
+#   outputs:
+#     - "测试输出"
+#   handoff: "测试交还"
+#   verification:
+#     - "python3 code/specs_validate.py deployment-entries"
+#   sync_triggers:
+#     - "测试触发"
+#   deprecation: "测试废弃规则"
+# ```
+echo test
+""",
+    )
     return write_md(
         tmp_path / "specs" / "04.02-LDVH能力资产与落地保障规范.md",
         """
@@ -47,6 +75,7 @@ LDVH 能力资产与落地保障定义见 `specs/04.02-LDVH能力资产与落地
 | 能力资产类型 | 当前固定资产 | 适合保障 | 不适合保障 | 边界 |
 |---|---|---|---|---|
 | Rules 资产 | `rules/LDVH-WORKSPACE-ENTRY.md`、`rules/LDVH-MAINTAINER-ENTRY.md` | AI 入口分层 | 完整规范正文 | 只做薄入口 |
+| Hook 资产 | `hooks/commit-msg` | Git 提交消息校验 | 替代 Code 校验 | 只做本地前置 |
 """,
     )
 
