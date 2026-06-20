@@ -203,7 +203,7 @@ export default function Changelog() {
 
   return (
     <div className="ldvh-page-frame">
-      <div className="sticky top-0 z-20 -mx-4 mb-4 flex flex-col gap-2 border-b border-ldvh-border bg-ldvh-bg/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+      <div className="sticky top-0 z-20 -mx-4 -mt-4 mb-4 flex flex-col gap-2 border-b border-ldvh-border bg-ldvh-bg/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6">
         <CommitCountGroup
           activeValue={logCount}
           onChange={(value) => {
@@ -260,7 +260,7 @@ export default function Changelog() {
               onClick={() => openCommitPage(entry)}
               onKeyDown={(event) => handleKeyboardOpen(event, () => openCommitPage(entry))}
             >
-              <div className="flex min-w-0 items-start justify-between gap-2">
+              <div className="flex min-w-0 items-center justify-between gap-2">
                 <div className="ldvh-meta-muted flex min-w-0 flex-wrap items-center gap-1.5">
                   <span>{getCommitTypeLabel(entry.category, locale)}</span>
                   {entry.scope && (

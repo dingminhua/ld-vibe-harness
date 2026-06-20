@@ -33,12 +33,12 @@ const MOBILE_BREAKPOINT = 768;
 
 const OBJECT_TYPE_LABELS: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '工作域', en: 'Work Area' },
-  workplan: { zh: '工作计划', en: 'Work Plan' },
+  workplan: { zh: '计划', en: 'Work Plan' },
   adr: { zh: '决策', en: 'ADR' },
-  pitfall: { zh: '踩坑经验', en: 'Pitfall' },
+  pitfall: { zh: '踩坑', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
-  study: { zh: '研究报告', en: 'Study' },
-  change: { zh: '提交记录', en: 'Commit' },
+  study: { zh: '研究', en: 'Study' },
+  change: { zh: '提交', en: 'Commit' },
 };
 
 export default function ReadingPanel() {
@@ -803,6 +803,48 @@ function formatCommitBodyForReading(value: string) {
     .join('\n');
 }
 
+type CommitBodySection = {
+  key: string;
+  title: string;
+  content: string;
+};
+
+function getCommitBodySectionsForReading(value: string, fallbackTitle: string): CommitBodySection[] {
+  const formatted = formatCommitBodyForReading(value);
+  const sections: CommitBodySection[] = [];
+  let currentTitle = fallbackTitle;
+  let current: string[] = [];
+
+  formatted.split('\n').forEach((line) => {
+    const headingMatch = line.match(/^###\s+(.+?)\s*$/);
+    if (headingMatch) {
+      if (current.some((item) => item.trim())) {
+        sections.push({
+          key: `${sections.length}:${currentTitle}`,
+          title: currentTitle,
+          content: current.join('\n').trim(),
+        });
+      }
+      currentTitle = headingMatch[1].trim();
+      current = [];
+      return;
+    }
+    current.push(line);
+  });
+
+  if (current.some((line) => line.trim())) {
+    sections.push({
+      key: `${sections.length}:${currentTitle}`,
+      title: currentTitle,
+      content: current.join('\n').trim(),
+    });
+  }
+
+  return sections.length > 0
+    ? sections
+    : [{ key: 'commit-body', title: fallbackTitle, content: formatted }];
+}
+
 function CommitIdentitySection({
   entry,
   parsed,
@@ -870,6 +912,7 @@ type CommitDetailLabels = {
   scope: string;
   commit: string;
   time: string;
+  summary: string;
   files: string;
   insertions: string;
   deletions: string;
@@ -889,6 +932,7 @@ function getCommitDetailLabels(locale: string): CommitDetailLabels {
       scope: 'Scope',
       commit: 'Commit',
       time: 'Commit',
+      summary: 'Change summary',
       files: 'Files',
       insertions: 'Insertions',
       deletions: 'Deletions',
@@ -905,6 +949,7 @@ function getCommitDetailLabels(locale: string): CommitDetailLabels {
       scope: '范围',
       commit: '提交',
       time: '提交',
+      summary: '变更统计',
       files: '文件',
       insertions: '新增',
       deletions: '删除',
@@ -954,7 +999,7 @@ export function CommitDetailContent({
   showIdentity?: boolean;
 }) {
   const { locale, t } = useI18n();
-  const [bodyState, setBodyState] = useState<'collapsed' | 'expanded'>('expanded');
+  const [bodySectionStates, setBodySectionStates] = useState<Record<string, 'collapsed' | 'expanded'>>({});
   const [filesState, setFilesState] = useState<'collapsed' | 'expanded'>('collapsed');
   const [rawState, setRawState] = useState<'collapsed' | 'expanded'>('collapsed');
   const diffText = stat;
@@ -967,10 +1012,14 @@ export function CommitDetailContent({
   const insertions = summary?.insertions ?? parsed.files.reduce((total, file) => total + file.additions, 0);
   const deletions = summary?.deletions ?? parsed.files.reduce((total, file) => total + file.deletions, 0);
   const lines = diffText.split('\n');
-  const formattedCommitBody = commitBody ? formatCommitBodyForReading(commitBody) : '';
+  const commitBodySections = commitBody ? getCommitBodySectionsForReading(commitBody, labels.commitBody) : [];
+
+  useEffect(() => {
+    setBodySectionStates({});
+  }, [entry?.hash, commitBody]);
 
   return (
-    <div className="space-y-4">
+    <div className="mb-6 flex flex-col gap-5">
       {showIdentity && (
         <CommitIdentitySection
           entry={entry}
@@ -981,27 +1030,42 @@ export function CommitDetailContent({
         />
       )}
 
-      <div className="grid grid-cols-3 gap-2">
-        <CommitMetric label={labels.files} value={filesChanged} />
-        <CommitMetric label={labels.insertions} value={insertions} tone="add" />
-        <CommitMetric label={labels.deletions} value={deletions} tone="delete" />
-      </div>
+      <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
+        <div className="ldvh-section-title mb-3 flex w-full min-w-0 items-center gap-2 text-left">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" />
+          <span className="min-w-0 flex-1 truncate">{labels.summary}</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <CommitMetric label={labels.files} value={filesChanged} />
+          <CommitMetric label={labels.insertions} value={insertions} tone="add" />
+          <CommitMetric label={labels.deletions} value={deletions} tone="delete" />
+        </div>
+      </section>
 
-      {commitBody && (
-        <CommitReadingNodeSection
-          title={labels.commitBody}
-          state={bodyState}
-          locale={locale}
-          onToggle={() => setBodyState((current) => getCommitNodeNextState(current))}
-        >
-          <div className="ldvh-study-node-content rounded-lg border border-ldvh-border bg-ldvh-bg/40 px-3 py-2">
-            <MarkdownPreview
-              content={formattedCommitBody}
-              className="ldvh-inline-markdown max-w-none"
-            />
-          </div>
-        </CommitReadingNodeSection>
-      )}
+      {commitBody && commitBodySections.map((section) => {
+        const sectionState = bodySectionStates[section.key] ?? 'expanded';
+        return (
+          <CommitReadingNodeSection
+            key={section.key}
+            title={section.title}
+            state={sectionState}
+            locale={locale}
+            onToggle={() => {
+              setBodySectionStates((current) => ({
+                ...current,
+                [section.key]: getCommitNodeNextState(sectionState),
+              }));
+            }}
+          >
+            <div className="ldvh-study-node-content">
+              <MarkdownPreview
+                content={section.content}
+                className="ldvh-inline-markdown max-w-none"
+              />
+            </div>
+          </CommitReadingNodeSection>
+        );
+      })}
 
       <CommitReadingNodeSection
         title={labels.changedFiles}

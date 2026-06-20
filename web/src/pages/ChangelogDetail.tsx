@@ -59,7 +59,7 @@ export default function ChangelogDetail() {
     <div className="flex h-full">
       <div className="flex-1 overflow-y-auto rounded-none transition-[margin] duration-300">
         <div className="mx-auto max-w-4xl p-4 sm:p-6">
-          <div className="sticky top-0 z-20 -mx-4 mb-6 border-b border-ldvh-border bg-ldvh-bg/95 px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:px-6">
+          <div className="sticky top-0 z-20 -mx-4 -mt-4 mb-6 border-b border-ldvh-border bg-ldvh-bg/95 px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6">
             <button
               type="button"
               onClick={() => navigate('/changelog')}

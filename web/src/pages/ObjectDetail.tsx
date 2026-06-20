@@ -178,12 +178,12 @@ export function getObjectDetailContentEntries(obj: Record<string, unknown>, objT
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '工作域', en: 'Work Area' },
-  workplan: { zh: '工作计划', en: 'Work Plan' },
+  workplan: { zh: '计划', en: 'Work Plan' },
   adr: { zh: '决策', en: 'ADR' },
-  pitfall: { zh: '踩坑经验', en: 'Pitfall' },
+  pitfall: { zh: '踩坑', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
-  study: { zh: '研究报告', en: 'Study' },
-  change: { zh: '提交记录', en: 'Commit' },
+  study: { zh: '研究', en: 'Study' },
+  change: { zh: '提交', en: 'Commit' },
 };
 
 /** 字段名中英映射 */
@@ -231,7 +231,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   mitigation: { zh: '缓解措施', en: 'Mitigation' },
   resolution: { zh: '解决方案', en: 'Resolution' },
   workarea: { zh: '工作域', en: 'Work Area' },
-  workplan: { zh: '工作计划', en: 'Work Plan' },
+  workplan: { zh: '计划', en: 'Work Plan' },
   orchestration: { zh: '编排', en: 'Orchestration' },
   execution_items: { zh: '执行项', en: 'Execution Items' },
   mode: { zh: '模式', en: 'Mode' },
@@ -248,11 +248,11 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   options: { zh: '选项', en: 'Options' },
   decision: { zh: '决策', en: 'Decision' },
   related_workareas: { zh: '关联工作域', en: 'Related Work Areas' },
-  related_workplans: { zh: '关联工作计划', en: 'Related Work Plans' },
+  related_workplans: { zh: '关联计划', en: 'Related Work Plans' },
   related_adrs: { zh: '关联决策', en: 'Related ADRs' },
   related_memos: { zh: '关联备忘', en: 'Related Memos' },
-  related_studies: { zh: '关联研究报告', en: 'Related Studies' },
-  related_pitfalls: { zh: '关联踩坑经验', en: 'Related Pitfalls' },
+  related_studies: { zh: '关联研究', en: 'Related Studies' },
+  related_pitfalls: { zh: '关联踩坑', en: 'Related Pitfalls' },
   source_objects: { zh: '来源对象', en: 'Source Objects' },
   related_objects: { zh: '关联对象', en: 'Related Objects' },
   source_memos: { zh: '来源备忘', en: 'Source Memos' },
@@ -283,7 +283,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   aggregated_related_docs: { zh: '聚合关联文档', en: 'Aggregated Related Docs' },
   aggregated_related_adrs: { zh: '聚合关联决策', en: 'Aggregated Related ADRs' },
   aggregated_related_memos: { zh: '聚合关联备忘', en: 'Aggregated Related Memos' },
-  aggregated_related_pitfalls: { zh: '聚合关联踩坑经验', en: 'Aggregated Related Pitfalls' },
+  aggregated_related_pitfalls: { zh: '聚合关联踩坑', en: 'Aggregated Related Pitfalls' },
   at: { zh: '时间', en: 'At' },
   from: { zh: '前状态', en: 'From' },
   to: { zh: '后状态', en: 'To' },
@@ -423,7 +423,7 @@ export default function ObjectDetail() {
       {/* Main content area */}
       <div className="flex-1 overflow-y-auto rounded-none transition-[margin] duration-300">
         <div className="mx-auto max-w-4xl p-4 sm:p-6">
-          <div className="sticky top-0 z-20 -mx-4 mb-6 border-b border-ldvh-border bg-ldvh-bg/95 px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:px-6">
+          <div className="sticky top-0 z-20 -mx-4 -mt-4 mb-6 border-b border-ldvh-border bg-ldvh-bg/95 px-4 pb-4 pt-4 backdrop-blur sm:-mx-6 sm:-mt-6 sm:px-6">
           {/* Header */}
           <div>
             <button
@@ -512,7 +512,7 @@ export default function ObjectDetail() {
           )}
 
           {/* YAML source */}
-          <div className="rounded-lg border border-ldvh-border bg-ldvh-panel overflow-hidden">
+          <div className="overflow-hidden rounded-xl border border-ldvh-border bg-ldvh-panel">
             <button
               onClick={() => setShowYaml(!showYaml)}
               className="ldvh-body-muted flex w-full items-center gap-2 p-3 transition-colors hover:bg-ldvh-border/30 hover:text-ldvh-text-primary"
@@ -628,7 +628,7 @@ export function ObjectIdentityHeader({
   const footerEndTitleMeta = titleMetaAlign === 'footerEnd' ? titleMetaEntries : [];
   return (
     <div className={compact ? 'min-w-0' : 'rounded-lg border border-ldvh-border bg-ldvh-panel px-4 py-3'}>
-      <div className="flex min-w-0 items-start justify-between gap-3">
+      <div className="flex min-w-0 items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span
@@ -665,34 +665,9 @@ export function ObjectIdentityHeader({
               </div>
             )}
           </div>
-          {tagMetaEntry && (
-            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
-              <HeaderDateMeta
-                label={getFieldLabel(tagMetaEntry[0], locale)}
-                value={formatAuxiliaryMetaValue(tagMetaEntry[0], tagMetaEntry[1], locale)}
-              />
-            </div>
-          )}
-          {hasFooterMeta && (
-            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
-              {showDefaultDates && <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />}
-              {showDefaultDates && <HeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />}
-              {remainingAuxiliaryMetaEntries.map(([key, value]) => (
-                <HeaderDateMeta
-                  key={key}
-                  label={getFieldLabel(key, locale)}
-                  value={formatAuxiliaryMetaValue(key, value, locale)}
-                />
-              ))}
-              {customMetaEntries.map((entry) => (
-                <HeaderDateMeta key={entry.label} label={entry.label} value={entry.value} />
-              ))}
-              {closedAt && <HeaderDateMeta label={t('objectDetail.closedAt')} value={closedAt} />}
-            </div>
-          )}
         </div>
         {showCopyAction && (
-          <div className="flex shrink-0 flex-col items-end gap-2 sm:pt-0.5">
+          <div className="flex shrink-0 flex-col items-end justify-center gap-2">
             <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />
             {actionAlignedTitleMeta.length > 0 && (
               <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
@@ -704,6 +679,32 @@ export function ObjectIdentityHeader({
           </div>
         )}
       </div>
+      {tagMetaEntry && (
+        <div className="mt-2 flex min-w-0 flex-wrap items-center justify-start gap-x-4 gap-y-1 text-left">
+          <HeaderDateMeta
+            label={getFieldLabel(tagMetaEntry[0], locale)}
+            value={formatAuxiliaryMetaValue(tagMetaEntry[0], tagMetaEntry[1], locale)}
+            align="start"
+          />
+        </div>
+      )}
+      {hasFooterMeta && (
+        <div className="mt-2 flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
+          {showDefaultDates && <HeaderDateMeta label={t('objectDetail.createdShort')} value={created} />}
+          {showDefaultDates && <HeaderDateMeta label={t('objectDetail.updatedShort')} value={updated} />}
+          {remainingAuxiliaryMetaEntries.map(([key, value]) => (
+            <HeaderDateMeta
+              key={key}
+              label={getFieldLabel(key, locale)}
+              value={formatAuxiliaryMetaValue(key, value, locale)}
+            />
+          ))}
+          {customMetaEntries.map((entry) => (
+            <HeaderDateMeta key={entry.label} label={entry.label} value={entry.value} />
+          ))}
+          {closedAt && <HeaderDateMeta label={t('objectDetail.closedAt')} value={closedAt} />}
+        </div>
+      )}
       {footerEndTitleMeta.length > 0 && (
         <div className="mt-2 flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
           {footerEndTitleMeta.map((entry) => (
@@ -715,12 +716,13 @@ export function ObjectIdentityHeader({
   );
 }
 
-function HeaderDateMeta({ label, value }: { label: string; value: ReactNode }) {
+function HeaderDateMeta({ label, value, align = 'end' }: { label: string; value: ReactNode; align?: 'start' | 'end' }) {
   const valueClassName = typeof value === 'string'
     ? 'ldvh-meta-muted min-w-0 truncate text-ldvh-text-secondary'
     : 'min-w-0';
+  const alignClassName = align === 'start' ? 'justify-start text-left' : 'justify-end text-right';
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5">
+    <span className={`inline-flex min-w-0 items-center gap-1.5 ${alignClassName}`}>
       <span className="ldvh-caption shrink-0">{label}</span>
       <span className={valueClassName}>{value}</span>
     </span>
@@ -978,7 +980,7 @@ function WorkAreaPlanRow({
       }}
       className={`group/workarea-plan-row flex min-w-0 cursor-pointer flex-col gap-2 rounded-md px-2 py-2.5 text-left transition-colors ${toneClass.row}`}
     >
-      <div className="flex min-w-0 items-start gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <div className="min-w-0 flex-1">
           <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${toneClass.titleHover}`}>
             <PriorityIcon source={plan} type={planType} locale={locale} size="sm" />
@@ -1293,10 +1295,10 @@ function getMaterialLabel(fieldKey: string, locale: string) {
     related_docs: { zh: '文档', en: 'Docs' },
     related_adrs: { zh: '决策', en: 'ADRs' },
     related_memos: { zh: '备忘', en: 'Memos' },
-    related_pitfalls: { zh: '踩坑经验', en: 'Pitfalls' },
+    related_pitfalls: { zh: '踩坑', en: 'Pitfalls' },
     related_rules: { zh: '规范', en: 'Specs' },
     urls: { zh: '网址', en: 'URLs' },
-    related_workplans: { zh: '工作计划', en: 'Work Plans' },
+    related_workplans: { zh: '计划', en: 'Work Plans' },
     aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
   };
   const entry = labels[fieldKey];
@@ -1465,7 +1467,7 @@ function ExecutionItemRow({
 
   return (
     <div className={`my-1 rounded-md border px-3 py-2.5 ${toneClass}`}>
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-1.5">
             <ObjectTypeIcon type="workplan" size={13} className="shrink-0 text-sky-400" />
@@ -1739,7 +1741,7 @@ function MemoEvolutionNode({ value, locale }: { value: unknown; locale: string }
   return (
     <div className="flex flex-col gap-1.5">
       {entries.map((entry) => (
-        <div key={entry.key} className="grid items-start gap-2 rounded-md border border-ldvh-border/45 px-2.5 py-2.5 odd:bg-ldvh-border/[0.30] even:bg-ldvh-bg/35 sm:grid-cols-[max-content_1fr] sm:gap-x-3">
+        <div key={entry.key} className="grid items-center gap-2 rounded-md border border-ldvh-border/45 px-2.5 py-2.5 odd:bg-ldvh-border/[0.30] even:bg-ldvh-bg/35 sm:grid-cols-[max-content_1fr] sm:gap-x-3">
           <MemoEvolutionTime value={entry.at} locale={locale} />
           <StudyTextNodeContent value={entry.summary} />
         </div>
@@ -1766,14 +1768,14 @@ function parseMemoEvolutionEntry(item: unknown, index: number): MemoEvolutionEnt
 function MemoEvolutionTime({ value, locale }: { value?: string; locale: string }) {
   if (!value) {
     return (
-      <div className="ldvh-caption-strong whitespace-nowrap pt-1 text-ldvh-text-secondary">
+      <div className="ldvh-caption-strong whitespace-nowrap text-ldvh-text-secondary">
         {locale === 'en' ? 'Evolution' : '演变'}
       </div>
     );
   }
   const [date, time] = formatDateTime(value).split(' ');
   return (
-    <div className="flex flex-col whitespace-nowrap pt-1 font-mono tabular-nums">
+    <div className="flex flex-col whitespace-nowrap font-mono tabular-nums">
       <span className="ldvh-caption-strong text-ldvh-text-secondary">{date}</span>
       {time && <span className="ldvh-meta-muted leading-4">{time}</span>}
     </div>
@@ -2053,8 +2055,8 @@ export function DetailObjectRow({
   const labelIcon = <ObjectTypeIcon type={objectType} size={12} className="shrink-0" style={{ color: objectTypeColor }} />;
   const open = () => openPanel({ type: 'object', title, objectType, objectId });
   const rowClassName = variant === 'property'
-    ? 'group/detail-ref grid min-w-0 cursor-pointer gap-2 py-3 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]'
-    : `group/detail-ref grid min-w-0 cursor-pointer gap-2 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr] ${compact ? 'py-2' : 'py-3'}`;
+    ? 'group/detail-ref grid min-w-0 cursor-pointer items-center gap-2 py-3 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr]'
+    : `group/detail-ref grid min-w-0 cursor-pointer items-center gap-2 text-left transition-colors first:pt-0 last:pb-0 sm:grid-cols-[5.625rem_1fr] ${compact ? 'py-2' : 'py-3'}`;
 
   return (
     <div

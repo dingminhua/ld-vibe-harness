@@ -14,12 +14,12 @@ import { ObjectTypeIcon } from '@/components/SemanticIcon';
 /** 对象类型中英映射（与 ObjectDetail 页面保持一致） */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '工作域', en: 'Work Area' },
-  workplan: { zh: '工作计划', en: 'Work Plan' },
+  workplan: { zh: '计划', en: 'Work Plan' },
   adr: { zh: '决策', en: 'ADR' },
-  pitfall: { zh: '踩坑经验', en: 'Pitfall' },
+  pitfall: { zh: '踩坑', en: 'Pitfall' },
   memo: { zh: '备忘', en: 'Memo' },
-  study: { zh: '研究报告', en: 'Study' },
-  change: { zh: '提交记录', en: 'Commit' },
+  study: { zh: '研究', en: 'Study' },
+  change: { zh: '提交', en: 'Commit' },
 };
 
 /** 从引用 ID 解析对象类型（如 workplan-0001 → workplan） */

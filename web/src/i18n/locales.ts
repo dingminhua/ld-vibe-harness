@@ -44,12 +44,12 @@ export function getObjectStatusLocale(type: string, status: string, locale: stri
 
 export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '长期工作范围', en: 'Long-lived work area' },
-  workplan: { zh: '人机编排和关闭判断的工作计划', en: 'Work plan for orchestration and closure' },
+  workplan: { zh: '人机编排和关闭判断的计划', en: 'Work plan for orchestration and closure' },
   adr: { zh: '决策记录', en: 'Architecture Decision Record' },
-  pitfall: { zh: '可复用踩坑经验', en: 'Reusable pitfall experience' },
+  pitfall: { zh: '可复用踩坑', en: 'Reusable pitfalls' },
   memo: { zh: '待分流的备忘', en: 'Memo pending routing' },
-  study: { zh: '稳定研究报告', en: 'Stable study report' },
-  change: { zh: '提交记录', en: 'Commit record' },
+  study: { zh: '稳定研究', en: 'Stable study' },
+  change: { zh: '提交', en: 'Commit' },
 };
 
 export function getTypeDescription(type: string, locale: string): string {
@@ -88,7 +88,7 @@ export function getObjectStatusHint(type: string, status: string, locale: string
     if (type === 'workplan') {
       return locale === 'en'
         ? 'Verification and closure evidence are ready; confirm whether this work plan can close.'
-        : '验证证据和关闭证据已就绪，待确认工作计划是否可关闭';
+        : '验证证据和关闭证据已就绪，待确认计划是否可关闭';
     }
   }
   return getStatusHint(status, locale);
@@ -102,10 +102,10 @@ export const UI_LOCALES = {
     'nav.workareas': '工作域',
     'nav.workplans': '计划',
     'nav.adrs': '决策',
-    'nav.pitfalls': '经验',
+    'nav.pitfalls': '踩坑',
     'nav.memos': '备忘',
     'nav.studies': '研究',
-    'nav.changes': '提交记录',
+    'nav.changes': '提交',
     'nav.changelog': '提交',
     'nav.collapseSidebar': '收起侧栏',
     'nav.expandSidebar': '展开侧栏',
@@ -186,7 +186,7 @@ export const UI_LOCALES = {
     'objectDetail.editAcceptance': '点击编辑验收标准',
     'objectDetail.goal': '目标',
     'objectDetail.noDescription': '未记录描述',
-    'objectDetail.workPlan': '所属工作计划',
+    'objectDetail.workPlan': '所属计划',
     'objectDetail.executionStatus': '执行状态',
     'objectDetail.currentState': '当前状态',
     'objectDetail.waitingFor': '等待对象',
@@ -264,7 +264,7 @@ export const UI_LOCALES = {
     'changelog.noMatches': '没有匹配的提交',
     'changelog.copyContext': '复制提交上下文',
     'changelog.copiedContext': '已复制提交上下文',
-    'changelog.loadFailed': '加载提交记录失败',
+    'changelog.loadFailed': '加载提交失败',
     'changelog.detailFailed': '加载提交详情失败',
 
     'common.loading': '加载中...',
