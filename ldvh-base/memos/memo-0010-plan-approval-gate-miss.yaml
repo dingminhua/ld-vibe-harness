@@ -3,7 +3,7 @@ type: memo
 title: WorkPlan 拆分后的计划审批门漏检
 status: pending
 created: '2026-06-18T09:26:05'
-updated: '2026-06-18T09:26:05'
+updated: '2026-06-20T11:21:12+08:00'
 description: |
   2026-06-18，AI 在用户要求“把这些事拆成三个 WorkPlan，审批后依次执行”后，直接创建并提交
   workplan-0069、workplan-0070 和 workplan-0071，随后在未等待 Human 审批的情况下开始修改
@@ -36,6 +36,13 @@ description: |
   4. 正常完成不必强行写 Memo 或 Pitfall。Memo 用于流程规则候选、残留风险、待硬化事项和跨对象长期记忆；Pitfall 用于已经识别且可复用的错误模式或操作陷阱；closure_evidence 用于普通完成证据；后续 WorkPlan 用于可执行的独立目标。
   5. 阶段提交应发生在每个 WorkPlan 完成复审和必要事实回写之后，以便最终报告能够把每个阶段映射到稳定 Git 记录。
   6. 用户要求“中间不要停”只在计划已经完成审批、执行顺序清楚且未遇到 STOP 点时适用；它不能覆盖计划审核、Human 执行批准、事实源冲突和关键降级确认。
+
+  2026-06-20 追加硬化提醒：
+
+  1. 当前 WorkPlan 关闭前，需要有专门的计划审核子 Agent 意见记录，不能只由主控口头判断计划可以关闭。
+  2. 关闭前还需要记录专业审查子 Agent 的意见；若存在多个专业视角，应分别记录每个子 Agent 的审查结论、主要依据、阻塞问题和残留风险。
+  3. WorkPlan 的关闭证据中必须写明子 Agent 名字或稳定角色名，例如 `plan-audit-reviewer`、`code-reviewer`、`specs-reviewer`、`process-governance-reviewer`，避免恢复上下文或后续关闭时忘记是谁给出的意见。
+  4. 这条提醒适用于当前正在等待关闭审查的 WorkPlan，尤其是 `workplan-0080` 这类已有执行结果、准备进入 Human closure review 的计划。
 evolution:
   - at: '2026-06-18T09:26:05'
     summary: 用户指出三个 WorkPlan 创建后缺少独立专业子 Agent 审批和 Human 审批；AI 撤回未授权代码改动，安排 0069/0070/0071 独立审批，并将该漏检记录为流程改进输入。
@@ -49,6 +56,8 @@ evolution:
     summary: workplan-0071 将本轮总结分流规则固定为：流程候选和长期风险写 Memo，可复用错误模式写 Pitfall，普通完成证据写 closure_evidence，可执行后续目标另建 WorkPlan；本轮除计划审批门漏检外未新增独立 Pitfall。
   - at: '2026-06-18T10:49:13'
     summary: workplan-0071 的流程治理复审发现 evidence_refs 可指向不存在路径且 fact_validate 未捕获；该问题已在 0071 中修复，后续可考虑为 evidence_refs 增加路径存在性检查。
+  - at: '2026-06-20T11:21:12+08:00'
+    summary: 用户要求记录当前 WorkPlan 关闭前必须保留专门计划审核子 Agent 和专业审查子 Agent 的意见，并明确记录子 Agent 名字或稳定角色名，以免关闭流程在上下文恢复或后续推进时被遗忘。
 source: conversation
 source_detail: 用户要求反思为什么漏掉计划审核和 Human 审批环节，并要求中间问题记录到 Memo。
 priority: P1
@@ -61,6 +70,7 @@ related_workplans:
 - workplan-0069
 - workplan-0070
 - workplan-0071
+- workplan-0080
 related_adrs: []
 related_studies: []
 related_docs:
