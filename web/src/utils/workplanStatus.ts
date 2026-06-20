@@ -14,18 +14,18 @@ export const WORKPLAN_LEGACY_STATUSES = [
   'review_needed',
 ] as const;
 
-export const WORKPLAN_DEFAULT_LIST_STATUS = 'executing';
+export const WORKPLAN_DEFAULT_LIST_STATUS = null;
 
 export const WORKPLAN_STATUS_ORDER = [
-  'human_closure_confirming',
-  'human_plan_confirming',
-  'subagents_result_reviewing',
-  'result_self_checking',
-  'executing',
   'subagents_plan_reviewing',
-  'review_needed',
-  'active',
+  'human_plan_confirming',
+  'executing',
+  'result_self_checking',
+  'subagents_result_reviewing',
+  'human_closure_confirming',
   'draft',
+  'active',
+  'review_needed',
   'closed',
 ] as const;
 

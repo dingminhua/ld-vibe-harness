@@ -6,7 +6,7 @@ import { getObjectPriority, getObjectSignals } from '../../../web/src/utils/obje
 import { getFallbackStatuses } from '../../../web/src/components/ObjectStatusFilter.tsx'
 import { formatDateTime } from '../../../web/src/utils/dateFormat.ts'
 import { getDefaultListStatus } from '../../../web/src/utils/listStatus.ts'
-import { WORKPLAN_DEFAULT_LIST_STATUS } from '../../../web/src/utils/workplanStatus.ts'
+import { WORKPLAN_DEFAULT_LIST_STATUS, WORKPLAN_STATUS_ORDER } from '../../../web/src/utils/workplanStatus.ts'
 
 async function main() {
   const workareas = await listObjects('workarea')
@@ -74,6 +74,16 @@ async function main() {
   assert.deepEqual(getFallbackStatuses('study', 'active'), ['active', 'archived'])
   assert.equal(getFallbackStatuses('study', 'active').includes('draft'), false)
   assert.equal(getDefaultListStatus('workplan'), WORKPLAN_DEFAULT_LIST_STATUS)
+  assert.equal(WORKPLAN_DEFAULT_LIST_STATUS, null)
+  assert.deepEqual(WORKPLAN_STATUS_ORDER.slice(0, 7), [
+    'subagents_plan_reviewing',
+    'human_plan_confirming',
+    'executing',
+    'result_self_checking',
+    'subagents_result_reviewing',
+    'human_closure_confirming',
+    'draft',
+  ])
   assert.equal(getFallbackStatuses('workplan', 'draft').includes('draft'), true)
   assert.equal(getFallbackStatuses('workplan', WORKPLAN_DEFAULT_LIST_STATUS).includes('human_closure_confirming'), true)
 

@@ -34,7 +34,7 @@
 - 展示“各状态 + 全部 + 数量”，“全部”固定在最后。
 - 状态筛选使用全局 tab 样式：`ldvh-tab-list`、`ldvh-tab-button`、`ldvh-tab-button-active` 和 `ldvh-tab-button-idle`，与提交记录页加载范围、type、scope 筛选保持一致。
 - 数据返回前先渲染稳定的筛选占位，数字位置使用轻量加载动画，避免对象卡片先出现、顶部筛选后插入造成页面跳动。
-- 对有活跃态的主工作对象，URL 无 `status` 时默认视为对象当前主推进态；WorkPlan 默认视为 `executing`，WorkArea / ADR / Pitfall / Study 默认视为 `active`，Memo 默认视为 `pending`；用户显式选择全部时写入 `?status=all`。
+- 对有活跃态的主工作对象，URL 无 `status` 时默认视为对象当前主推进态；WorkPlan 因当前事实源可能同时存在新状态和 legacy 状态，默认展示全部计划，并在筛选条显式展示当前新状态机与 legacy 状态计数；WorkArea / ADR / Pitfall / Study 默认视为 `active`，Memo 默认视为 `pending`；用户显式选择全部时写入 `?status=all`。
 - 当前状态写入 URL query：例如 `?status=human_closure_confirming`；历史对象仍可使用 `?status=review_needed` 或 `?status=active` 筛选。
 - 点击对象进入详情页时保留当前 query，使详情页返回路径与列表筛选一致。
 
