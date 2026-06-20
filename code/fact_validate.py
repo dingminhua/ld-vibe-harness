@@ -32,9 +32,32 @@ ID_PATTERNS = {
     "memo": re.compile(r"^memo-\d{4}$"),
     "study": re.compile(r"^study-\d{4}$"),
 }
+WORKPLAN_LEGACY_STATUSES = {"draft", "active", "review_needed"}
+WORKPLAN_CURRENT_STATUSES = {
+    "subagents_plan_reviewing",
+    "human_plan_confirming",
+    "executing",
+    "result_self_checking",
+    "subagents_result_reviewing",
+    "human_closure_confirming",
+    "closed",
+}
+WORKPLAN_STATUSES_REQUIRING_CURRENT_REVIEW_CONTRACT = WORKPLAN_CURRENT_STATUSES - {"closed"}
+WORKPLAN_STATUSES_REQUIRING_EXECUTION_ITEMS = WORKPLAN_CURRENT_STATUSES - {"closed"} | {"active", "review_needed", "closed"}
+WORKPLAN_STATUSES_REQUIRING_PLAN_CONFIRMATION = {
+    "executing",
+    "result_self_checking",
+    "subagents_result_reviewing",
+    "human_closure_confirming",
+    "closed",
+}
+WORKPLAN_STATUSES_REQUIRING_RESULT_SELF_CHECK = {"subagents_result_reviewing", "human_closure_confirming", "closed"}
+WORKPLAN_STATUSES_REQUIRING_CLOSURE_REQUEST = {"human_closure_confirming", "closed"}
+WORKPLAN_STATUSES_WITH_CLOSED_EXECUTION = {"result_self_checking", "subagents_result_reviewing", "human_closure_confirming", "closed", "review_needed"}
+WORKPLAN_CLOSURE_OUTCOMES = {"completed", "partial_completed", "cancelled", "superseded", "invalid", "degraded_accepted"}
 VALID_STATUSES = {
     "workarea": {"active", "archived"},
-    "workplan": {"draft", "active", "review_needed", "closed"},
+    "workplan": WORKPLAN_CURRENT_STATUSES | WORKPLAN_LEGACY_STATUSES,
     "adr": {"active", "archived", "deprecated"},
     "pitfall": {"active", "archived"},
     "memo": {"pending", "resolved", "discarded"},
@@ -710,11 +733,14 @@ def validate_workarea(path: Path, data: dict[str, Any]) -> list[Issue]:
 
 def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "workplan")
-    issues.extend(validate_datetime_fields(path, data, ("review_requested_at", "closed_at")))
+    issues.extend(validate_datetime_fields(path, data, ("plan_confirmed_at", "closure_requested_at", "review_requested_at", "closed_at")))
     status = data.get("status")
     issues.extend(validate_enum_field(path, data, "priority", {"P0", "P1", "P2", "P3"}))
     if "importance" in data:
         issues.append(Issue(str(path), "error", "LEGACY_WORKPLAN_FIELD", "WorkPlan 不得继续使用旧字段 importance；请只维护 priority", field="importance"))
+    if not is_empty(data.get("closure_outcome")) and data.get("closure_outcome") not in WORKPLAN_CLOSURE_OUTCOMES:
+        valid_outcomes = ", ".join(sorted(WORKPLAN_CLOSURE_OUTCOMES))
+        issues.append(Issue(str(path), "error", "INVALID_WORKPLAN_CLOSURE_OUTCOME", f"closure_outcome 必须是以下值之一: {valid_outcomes}", field="closure_outcome"))
     for legacy_field in ("tasks", "completion_evidence"):
         if legacy_field in data:
             issues.append(Issue(str(path), "error", "LEGACY_WORKPLAN_FIELD", f"WorkPlan 不得继续使用旧字段: {legacy_field}", field=legacy_field))
@@ -735,7 +761,7 @@ def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
     if not isinstance(execution_items, list):
         issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEMS", "orchestration.execution_items 必须是 list", field="orchestration.execution_items"))
         execution_items = []
-    elif status in {"active", "review_needed", "closed"} and not execution_items:
+    elif status in WORKPLAN_STATUSES_REQUIRING_EXECUTION_ITEMS and not execution_items:
         issues.append(Issue(str(path), "error", "EXECUTION_ITEMS_EMPTY", f"{status} 状态下 orchestration.execution_items 不得为空", field="orchestration.execution_items"))
 
     seen_item_ids: set[str] = set()
@@ -764,7 +790,7 @@ def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
         if item_status and item_status not in WORKPLAN_EXECUTION_ITEM_STATUSES:
             valid_statuses = ", ".join(sorted(WORKPLAN_EXECUTION_ITEM_STATUSES))
             issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_STATUS", f"{item_field}.status 必须是以下值之一: {valid_statuses}", field=f"{item_field}.status"))
-        if status in {"review_needed", "closed"} and item_status in {"pending", "in_progress"}:
+        if status in WORKPLAN_STATUSES_WITH_CLOSED_EXECUTION and item_status in {"pending", "in_progress"}:
             issues.append(Issue(str(path), "error", "EXECUTION_ITEM_OPEN_IN_REVIEW", f"{status} 状态下执行项不得仍为 {item_status}", field=f"{item_field}.status"))
         if item_status == "blocked" and is_empty(item.get("blocking_reason")):
             issues.append(Issue(str(path), "error", "MISSING_EXECUTION_ITEM_BLOCKING_REASON", "blocked 执行项必须填写 blocking_reason", field=f"{item_field}.blocking_reason"))
@@ -778,10 +804,59 @@ def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
         if isinstance(evidence_refs, list):
             issues.extend(validate_execution_item_evidence_refs(path, evidence_refs, item_field))
 
+    plan_review = orchestration.get("plan_review")
+    result_review = orchestration.get("result_review")
+    uses_current_review_contract = (
+        "plan_review" in orchestration
+        or "result_review" in orchestration
+        or status in WORKPLAN_STATUSES_REQUIRING_CURRENT_REVIEW_CONTRACT
+    )
+
+    if uses_current_review_contract:
+        if "plan_review" not in orchestration:
+            issues.append(Issue(str(path), "error", "MISSING_PLAN_REVIEW", "当前 WorkPlan 状态必须提供 orchestration.plan_review", field="orchestration.plan_review"))
+            plan_review = {}
+        elif not isinstance(plan_review, dict):
+            issues.append(Issue(str(path), "error", "INVALID_PLAN_REVIEW", "orchestration.plan_review 必须是 object", field="orchestration.plan_review"))
+
+        if "result_review" not in orchestration:
+            issues.append(Issue(str(path), "error", "MISSING_RESULT_REVIEW", "当前 WorkPlan 状态必须提供 orchestration.result_review", field="orchestration.result_review"))
+            result_review = {}
+        elif not isinstance(result_review, dict):
+            issues.append(Issue(str(path), "error", "INVALID_RESULT_REVIEW", "orchestration.result_review 必须是 object", field="orchestration.result_review"))
+
+    if isinstance(plan_review, dict):
+        issues.extend(validate_workplan_review_section(path, plan_review, "orchestration.plan_review"))
+
+    if isinstance(result_review, dict):
+        issues.extend(validate_workplan_review_section(path, result_review, "orchestration.result_review", allow_self_check=True))
+
+    if uses_current_review_contract and status in {"human_plan_confirming", "executing", "result_self_checking", "subagents_result_reviewing", "human_closure_confirming", "closed"}:
+        if not isinstance(plan_review, dict) or not isinstance(plan_review.get("controller_resolution"), dict):
+            issues.append(Issue(str(path), "error", "MISSING_PLAN_REVIEW_RESOLUTION", "进入 Human 方案确认及后续状态前必须填写 plan_review.controller_resolution", field="orchestration.plan_review.controller_resolution"))
+
+    if uses_current_review_contract and status in WORKPLAN_STATUSES_REQUIRING_PLAN_CONFIRMATION:
+        for field in ("plan_confirmed_at",):
+            if is_empty(data.get(field)):
+                issues.append(Issue(str(path), "error", "MISSING_WORKPLAN_PLAN_CONFIRMATION", f"{status} 状态必须提供非空字段: {field}", field=field))
+        if not isinstance(plan_review, dict) or not isinstance(plan_review.get("human_confirmation"), dict):
+            issues.append(Issue(str(path), "error", "MISSING_PLAN_HUMAN_CONFIRMATION", "executing 及后续状态必须填写 plan_review.human_confirmation", field="orchestration.plan_review.human_confirmation"))
+
+    if uses_current_review_contract and status in WORKPLAN_STATUSES_REQUIRING_RESULT_SELF_CHECK:
+        if not isinstance(result_review, dict) or not isinstance(result_review.get("controller_self_check"), dict):
+            issues.append(Issue(str(path), "error", "MISSING_RESULT_SELF_CHECK", f"{status} 状态必须填写 result_review.controller_self_check", field="orchestration.result_review.controller_self_check"))
+        for field in ("verification_evidence", "closure_evidence"):
+            if is_empty(data.get(field)):
+                issues.append(Issue(str(path), "error", "MISSING_WORKPLAN_REVIEW_FIELD", f"{status} 状态必须提供非空字段: {field}", field=field))
+
+    if uses_current_review_contract and status in {"human_closure_confirming", "closed"}:
+        if not isinstance(result_review, dict) or not isinstance(result_review.get("controller_resolution"), dict):
+            issues.append(Issue(str(path), "error", "MISSING_RESULT_REVIEW_RESOLUTION", f"{status} 状态必须填写 result_review.controller_resolution", field="orchestration.result_review.controller_resolution"))
+
     review = orchestration.get("review")
-    if not isinstance(review, dict):
+    if review is not None and not isinstance(review, dict):
         issues.append(Issue(str(path), "error", "INVALID_ORCHESTRATION_REVIEW", "orchestration.review 必须是 object", field="orchestration.review"))
-    else:
+    elif isinstance(review, dict):
         for field in ("controller_self_check", "human_closure_review"):
             if not isinstance(review.get(field), bool):
                 issues.append(Issue(str(path), "error", "INVALID_REVIEW_BOOLEAN", f"orchestration.review.{field} 必须是 boolean", field=f"orchestration.review.{field}"))
@@ -801,8 +876,65 @@ def validate_workplan(path: Path, data: dict[str, Any]) -> list[Issue]:
         for field in ("verification_evidence", "closure_evidence", "review_requested_at"):
             if is_empty(data.get(field)):
                 issues.append(Issue(str(path), "error", "MISSING_WORKPLAN_REVIEW_FIELD", f"{status} 状态必须提供非空字段: {field}", field=field))
+    if uses_current_review_contract and status in WORKPLAN_STATUSES_REQUIRING_CLOSURE_REQUEST:
+        if is_empty(data.get("closure_requested_at")):
+            issues.append(Issue(str(path), "error", "MISSING_WORKPLAN_CLOSURE_REQUESTED_AT", f"{status} 状态必须提供非空字段: closure_requested_at", field="closure_requested_at"))
     if status == "closed" and is_empty(data.get("closed_at")):
         issues.append(Issue(str(path), "error", "MISSING_WORKPLAN_CLOSED_AT", "closed 状态必须提供非空字段: closed_at", field="closed_at"))
+    if uses_current_review_contract and status == "closed" and is_empty(data.get("closure_outcome")):
+        issues.append(Issue(str(path), "error", "MISSING_WORKPLAN_CLOSURE_OUTCOME", "closed 状态必须提供非空字段: closure_outcome", field="closure_outcome"))
+    return issues
+
+
+def validate_workplan_review_section(path: Path, section: dict[str, Any], field_prefix: str, *, allow_self_check: bool = False) -> list[Issue]:
+    issues: list[Issue] = []
+    owner = section.get("orchestration_owner")
+    if owner is not None and owner not in {"main_controller", "workflow"}:
+        issues.append(Issue(str(path), "error", "INVALID_REVIEW_ORCHESTRATION_OWNER", f"{field_prefix}.orchestration_owner 必须是 main_controller 或 workflow", field=f"{field_prefix}.orchestration_owner"))
+    workflow_ref = section.get("workflow_ref")
+    if owner == "workflow" and is_empty(workflow_ref):
+        issues.append(Issue(str(path), "error", "MISSING_REVIEW_WORKFLOW_REF", f"{field_prefix}.workflow_ref 在 workflow 接管时必须填写", field=f"{field_prefix}.workflow_ref"))
+
+    review_policy = section.get("review_policy")
+    if review_policy is not None and not isinstance(review_policy, dict):
+        issues.append(Issue(str(path), "error", "INVALID_REVIEW_POLICY", f"{field_prefix}.review_policy 必须是 object", field=f"{field_prefix}.review_policy"))
+
+    review_items = section.get("review_items")
+    if review_items is not None and not isinstance(review_items, list):
+        issues.append(Issue(str(path), "error", "INVALID_REVIEW_ITEMS", f"{field_prefix}.review_items 必须是 list", field=f"{field_prefix}.review_items"))
+    elif isinstance(review_items, list):
+        seen_ids: set[str] = set()
+        for index, item in enumerate(review_items, start=1):
+            item_prefix = f"{field_prefix}.review_items[{index}]"
+            if not isinstance(item, dict):
+                issues.append(Issue(str(path), "error", "INVALID_REVIEW_ITEM", f"{item_prefix} 必须是 object", field=f"{field_prefix}.review_items"))
+                continue
+            item_id = item.get("id")
+            if isinstance(item_id, str):
+                if item_id in seen_ids:
+                    issues.append(Issue(str(path), "error", "DUPLICATE_REVIEW_ITEM_ID", f"审核条目 id 在当前 WorkPlan 内重复: {item_id}", field=f"{item_prefix}.id"))
+                seen_ids.add(item_id)
+            for required_field in ("id", "role", "agent_name", "requested_at"):
+                if is_empty(item.get(required_field)):
+                    issues.append(Issue(str(path), "error", "MISSING_REVIEW_ITEM_FIELD", f"{item_prefix} 缺少非空字段: {required_field}", field=f"{item_prefix}.{required_field}"))
+            prompt_context = item.get("prompt_context")
+            if prompt_context is not None and not isinstance(prompt_context, dict):
+                issues.append(Issue(str(path), "error", "INVALID_REVIEW_PROMPT_CONTEXT", f"{item_prefix}.prompt_context 必须是 object", field=f"{item_prefix}.prompt_context"))
+            result = item.get("result")
+            if result is not None and not isinstance(result, dict):
+                issues.append(Issue(str(path), "error", "INVALID_REVIEW_RESULT", f"{item_prefix}.result 必须是 object", field=f"{item_prefix}.result"))
+            elif isinstance(result, dict):
+                status = result.get("status")
+                if status is not None and status not in {"pass", "pass_with_followups", "fail", "needs_human_gate"}:
+                    issues.append(Issue(str(path), "error", "INVALID_REVIEW_RESULT_STATUS", f"{item_prefix}.result.status 必须是 pass/pass_with_followups/fail/needs_human_gate", field=f"{item_prefix}.result.status"))
+            attestation = item.get("attestation")
+            if attestation is not None and not isinstance(attestation, dict):
+                issues.append(Issue(str(path), "error", "INVALID_REVIEW_ATTESTATION", f"{item_prefix}.attestation 必须是 object", field=f"{item_prefix}.attestation"))
+
+    if allow_self_check:
+        self_check = section.get("controller_self_check")
+        if self_check is not None and not isinstance(self_check, dict):
+            issues.append(Issue(str(path), "error", "INVALID_CONTROLLER_SELF_CHECK", f"{field_prefix}.controller_self_check 必须是 object", field=f"{field_prefix}.controller_self_check"))
     return issues
 
 

@@ -161,6 +161,100 @@ related_workplans: []
     return root, workplan
 
 
+def add_current_review_contract(workplan: Path, *, closure_outcome: str = "completed") -> None:
+    content = workplan.read_text(encoding="utf-8")
+    content = content.replace(
+        """  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role:
+      expected_output:
+    human_closure_review: true
+""",
+        """  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref:
+    review_policy:
+      selection_reason: Current contract fixture.
+      required_perspectives: []
+      optional_perspectives: []
+      tool_method_requirements: []
+      aggregation_rule: All blocking findings must be resolved before execution.
+    review_items: []
+    controller_resolution:
+      resolved_at: "2026-06-12T00:10:00"
+      resolver: test-controller
+      source_review_item_ids: []
+      accepted_findings: []
+      rejected_findings: []
+      required_changes_applied: []
+      unresolved_items: []
+      changed_fields: []
+      revision_history_refs: []
+      summary: Plan review resolved.
+    human_confirmation:
+      decision: execute
+      scope: Test fixture scope.
+      constraints: []
+      confirmed_at: "2026-06-12T00:20:00"
+      summary: Human confirmed execution.
+  result_review:
+    controller_self_check:
+      controller: test-controller
+      checked_at: "2026-06-12T00:40:00"
+      prompt_context:
+        objective: Check fixture closure.
+        input_refs:
+          - tests/code/test_fact_validate.py
+      result:
+        status: pass
+        summary: Fixture can close.
+        evidence_refs:
+          - tests/code/test_fact_validate.py
+      attested_at: "2026-06-12T00:45:00"
+      attestation:
+        signer: test-controller
+        statement: Checked fixture evidence.
+    orchestration_owner: main_controller
+    workflow_ref:
+    review_policy:
+      selection_reason: Current contract fixture.
+      required_perspectives: []
+      optional_perspectives: []
+      tool_method_requirements: []
+      aggregation_rule: All blocking findings must be resolved before closure.
+    review_items: []
+    controller_resolution:
+      resolved_at: "2026-06-12T00:50:00"
+      resolver: test-controller
+      source_review_item_ids: []
+      accepted_findings: []
+      rejected_findings: []
+      required_changes_applied: []
+      unresolved_items: []
+      changed_fields: []
+      revision_history_refs: []
+      summary: Result review resolved.
+    human_closure_confirmation:
+      decision: close
+      scope: Test fixture closure.
+      constraints: []
+      confirmed_at: "2026-06-12T01:00:00"
+      summary: Human confirmed closure.
+""",
+    )
+    content = content.replace(
+        'review_requested_at: "2026-06-12T00:00:00"\n',
+        'review_requested_at: "2026-06-12T00:00:00"\nplan_confirmed_at: "2026-06-12T00:20:00"\nclosure_requested_at: "2026-06-12T00:55:00"\n',
+    )
+    content = content.replace(
+        "closed_at: '2026-06-12T01:00:00'\n",
+        f"closed_at: '2026-06-12T01:00:00'\nclosure_outcome: {closure_outcome}\n",
+    )
+    workplan.write_text(content, encoding="utf-8")
+
+
 def write_valid_adr(tmp_path: Path, *, status: str = "active", extra: str = "") -> Path:
     return write_yaml(
         tmp_path / "project" / "ldvh-base" / "adrs" / "adr-0001-current-decision.yaml",
@@ -1267,6 +1361,35 @@ def test_workplan_legacy_fields_are_errors(tmp_path):
     assert "LEGACY_WORKPLAN_FIELD" in result.stdout
     assert "tasks" in result.stdout
     assert "completion_evidence" in result.stdout
+
+
+def test_legacy_closed_workplan_does_not_require_current_review_contract(tmp_path):
+    root, _ = write_valid_workplan_tree(tmp_path, status="closed")
+
+    result = run_checker(root / "ldvh-base")
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
+
+
+def test_current_closed_workplan_requires_closure_outcome(tmp_path):
+    _, workplan = write_valid_workplan_tree(tmp_path, status="closed")
+    add_current_review_contract(workplan, closure_outcome="")
+
+    result = run_checker(workplan)
+
+    assert result.returncode == 1
+    assert "MISSING_WORKPLAN_CLOSURE_OUTCOME" in result.stdout
+
+
+def test_current_closed_workplan_contract_validates(tmp_path):
+    root, workplan = write_valid_workplan_tree(tmp_path, status="closed")
+    add_current_review_contract(workplan)
+
+    result = run_checker(root / "ldvh-base")
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
 
 
 def test_workplan_evidence_refs_missing_path_is_error(tmp_path):
