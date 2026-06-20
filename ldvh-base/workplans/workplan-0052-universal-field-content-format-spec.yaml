@@ -116,6 +116,6 @@ related_docs:
 - specs/05-工作模型基础规范.md
 - web/docs/07-内容可读性深度研究.md
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

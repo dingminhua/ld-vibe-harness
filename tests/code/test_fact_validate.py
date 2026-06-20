@@ -26,18 +26,18 @@ def write_yaml(path: Path, content: str) -> Path:
     return path
 
 
-def write_valid_memo(tmp_path: Path, *, status: str = "pending", resolved_to: str = "", resolved_at: str = "") -> Path:
+def write_valid_spark(tmp_path: Path, *, status: str = "pending", resolved_to: str = "", resolved_at: str = "") -> Path:
     return write_yaml(
-        tmp_path / "ldvh-base" / "memos" / "memo-0001-study-boundary.yaml",
+        tmp_path / "ldvh-base" / "sparks" / "spark-0001-study-boundary.yaml",
         f"""
-id: memo-0001
-type: memo
+id: spark-0001
+type: spark
 title: Study boundary
 status: {status}
 created: "2026-06-20T09:00:00"
 updated: "2026-06-20T09:00:00"
 description: |
-  Discuss whether a Study can close a Memo.
+  Discuss whether a Study can close a Spark.
 evolution: []
 source: conversation
 source_detail: test
@@ -72,7 +72,7 @@ description: Core work area
 source: test
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 workplans:
   - workplan-0001
@@ -153,7 +153,7 @@ review_requested_at: "2026-06-12T00:00:00"
 closed_at: {"'2026-06-12T01:00:00'" if status == "closed" else "''"}
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []
 """,
@@ -293,7 +293,7 @@ consequences: |
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_rules: []
 archive_reason:
 deprecated_reason:
@@ -346,7 +346,7 @@ source_objects: []
 related_objects: []
 related_rules: []
 tags: []
-source_memos: []
+source_sparks: []
 related_workareas: []
 related_adrs: []
 related_docs: []
@@ -426,27 +426,27 @@ def test_datetime_fields_reject_date_only_values(tmp_path):
     assert "updated" in result.stdout
 
 
-def test_memo_related_study_does_not_resolve_memo(tmp_path):
-    memo = write_valid_memo(tmp_path)
+def test_spark_related_study_does_not_resolve_spark(tmp_path):
+    spark = write_valid_spark(tmp_path)
 
-    result = run_checker(memo)
+    result = run_checker(spark)
 
     assert result.returncode == 0
     assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
 
 
-def test_memo_rejects_study_as_resolved_target(tmp_path):
-    memo = write_valid_memo(
+def test_spark_rejects_study_as_resolved_target(tmp_path):
+    spark = write_valid_spark(
         tmp_path,
         status="resolved",
         resolved_to="{type: study, ref: study-0001}",
         resolved_at="2026-06-20",
     )
 
-    result = run_checker(memo)
+    result = run_checker(spark)
 
     assert result.returncode == 1
-    assert "INVALID_MEMO_RESOLVED_TO_TYPE" in result.stdout
+    assert "INVALID_SPARK_RESOLVED_TO_TYPE" in result.stdout
     assert "Study 只能通过 related_studies 关联" in result.stdout
 
 
@@ -466,7 +466,7 @@ def test_adr_rejects_old_status_and_removed_fields(tmp_path):
         extra="""
 superseded_by: adr-0002
 related_objects:
-  - memo-0001
+  - spark-0001
 alternatives: |
   Old option.
 affects:
@@ -664,7 +664,7 @@ urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_docs: []
 archive_reason:
@@ -719,7 +719,7 @@ urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_docs: []
 superseded_by: study-0002
@@ -779,7 +779,7 @@ urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_docs: []
 archive_reason:
@@ -835,7 +835,7 @@ urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_docs: []
 archive_reason:
@@ -894,7 +894,7 @@ urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_docs: []
 archive_reason:
@@ -955,7 +955,7 @@ urls:
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_docs: []
 archive_reason:
@@ -1020,7 +1020,7 @@ urls:
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_docs: []
 archive_reason:
@@ -1075,7 +1075,7 @@ urls: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_docs: []
 archive_reason:
@@ -1140,7 +1140,7 @@ applicability: |
 repeatability: recurring
 tags: []
 source_objects: []
-source_memos: []
+source_sparks: []
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -1199,7 +1199,7 @@ applicability: |
   Applies to Pitfall facts.
 tags: []
 source_objects: []
-source_memos: []
+source_sparks: []
 related_workareas: []
 related_adrs: []
 related_docs: []
@@ -1261,7 +1261,7 @@ tags:
   - bad tag
   - 中文
 source_objects: []
-source_memos: []
+source_sparks: []
 related_workareas: []
 related_adrs: []
 related_docs: []
@@ -1319,7 +1319,7 @@ applicability: |
 tags:
   - evidence-order
 source_objects: []
-source_memos: []
+source_sparks: []
 related_workareas: []
 related_adrs: []
 related_docs: []
@@ -1390,6 +1390,50 @@ def test_current_closed_workplan_contract_validates(tmp_path):
 
     assert result.returncode == 0
     assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
+
+
+def test_executing_workplan_warns_when_all_execution_items_are_pending(tmp_path):
+    _, workplan = write_valid_workplan_tree(tmp_path, status="executing")
+    add_current_review_contract(workplan)
+    workplan.write_text(
+        workplan.read_text(encoding="utf-8").replace("      status: done", "      status: pending"),
+        encoding="utf-8",
+    )
+
+    result = run_checker(workplan)
+
+    assert result.returncode == 0
+    assert "WORKPLAN_EXECUTION_PROGRESS_NOT_RECORDED" in result.stdout
+    assert "warnings=1" in result.stdout
+
+
+def test_executing_workplan_rejects_unresolved_plan_items(tmp_path):
+    _, workplan = write_valid_workplan_tree(tmp_path, status="executing")
+    add_current_review_contract(workplan)
+    workplan.write_text(
+        workplan.read_text(encoding="utf-8").replace(
+            "      unresolved_items: []",
+            "      unresolved_items:\n        - Human still needs to confirm action wording.",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(workplan)
+
+    assert result.returncode == 1
+    assert "UNRESOLVED_PLAN_ITEMS_AFTER_CONFIRMATION" in result.stdout
+
+
+def test_result_reviewing_workplan_warns_when_review_items_empty(tmp_path):
+    _, workplan = write_valid_workplan_tree(tmp_path, status="subagents_result_reviewing")
+    add_current_review_contract(workplan)
+
+    result = run_checker(workplan)
+
+    assert result.returncode == 0
+    assert "RESULT_REVIEW_NOT_STARTED" in result.stdout
+    assert "warnings=1" in result.stdout
 
 
 def test_workplan_evidence_refs_missing_path_is_error(tmp_path):

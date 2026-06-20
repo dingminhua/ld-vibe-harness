@@ -129,6 +129,6 @@ related_docs:
 - specs/05.02-工作模型字段内容与格式规范.md
 - ldvh-base/workplans/workplan-0048-scene-rules-effectiveness-evaluation.yaml
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

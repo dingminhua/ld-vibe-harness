@@ -36,7 +36,7 @@ ldvh_asset:
     - "code/commit_validate.py CLI 或错误等级变化"
     - "hooks/ldvh-hooks.yaml git.commit-msg 事件变化"
     - "specs/04.02-LDVH能力资产与落地保障规范.md Skill 资产规则变化"
-  deprecation: "废弃或重命名前必须同步 04.02、10、0074、memo-0017 和 deployment-entries。"
+  deprecation: "废弃或重命名前必须同步 04.02、10、0074、spark-0017 和 deployment-entries。"
 ```
 
 Use this Skill to convert `specs/10-Git提交规范.md` into the commit execution workflow. Do not create new commit rules here. Treat `specs/10-Git提交规范.md` as the canonical rule, `code/commit_validate.py` as the canonical validator, `hooks/ldvh-hooks.yaml` as the Hook event registry, and `code/hook_dispatch.py` as the unified dispatcher.

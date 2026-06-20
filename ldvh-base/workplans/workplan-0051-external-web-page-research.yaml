@@ -105,6 +105,6 @@ review_requested_at: '2026-06-06T01:31:31.699938'
 closed_at: '2026-06-06T01:31:31.699938'
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

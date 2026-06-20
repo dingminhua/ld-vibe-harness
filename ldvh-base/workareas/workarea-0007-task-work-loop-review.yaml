@@ -10,7 +10,7 @@ scope: |-
   Task 工作闭环全流程可运行且经过验证；规则机制有效性测试通过；Task 字段契约覆盖产出物和文档同步需求；工具接口变更与规范同步机制建立
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 workplans:
 - workplan-0032

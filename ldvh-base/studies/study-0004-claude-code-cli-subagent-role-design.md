@@ -29,8 +29,8 @@ urls:
   - ref: https://docs.anthropic.com/en/docs/claude-code/hooks
     title: Claude Code Hooks
     summary: 用于说明 hooks 如何在工具执行前后提供自动化约束和检查。
-related_memos:
-  - memo-0007
+related_sparks:
+  - spark-0007
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -265,7 +265,7 @@ LDVH 00 可以吸收这套思想，但不能把 Claude Code frontmatter 直接�
 3. WorkPlan 的 `execution_items[*].role` 只引用角色，不复制完整 subagent 文件；
 4. 主控 AI 负责决定是否委派、选择前台/后台/fork、约束工具、等待结果和整合摘要；
 5. 子 Agent 中间输出和 transcript 不进入 LDVH 长期事实源；
-6. 只有摘要、证据引用、验证结果、关闭判断、风险和后续分流进入 WorkPlan / Memo / Study / ADR / Change；
+6. 只有摘要、证据引用、验证结果、关闭判断、风险和后续分流进入 WorkPlan / Spark / Study / ADR / Change；
 7. 若需要多层嵌套或 fork，应在 Role Contract 中记录防爆炸边界，例如最大深度、最大并发、只读限制和停止条件。
 
 一个可供 00 后续吸收的候选表述是：

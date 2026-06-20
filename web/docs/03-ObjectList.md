@@ -34,7 +34,7 @@
 - 展示“各状态 + 全部 + 数量”，“全部”固定在最后。
 - 状态筛选使用全局 tab 样式：`ldvh-tab-list`、`ldvh-tab-button`、`ldvh-tab-button-active` 和 `ldvh-tab-button-idle`，与提交记录页加载范围、type、scope 筛选保持一致。
 - 数据返回前先渲染稳定的筛选占位，数字位置使用轻量加载动画，避免对象卡片先出现、顶部筛选后插入造成页面跳动。
-- 对有活跃态的主工作对象，URL 无 `status` 时默认视为对象当前主推进态；WorkPlan 因当前事实源可能同时存在新状态和 legacy 状态，默认展示全部计划，并在筛选条显式展示当前新状态机与 legacy 状态计数；WorkArea / ADR / Pitfall / Study 默认视为 `active`，Memo 默认视为 `pending`；用户显式选择全部时写入 `?status=all`。
+- 对有活跃态的主工作对象，URL 无 `status` 时默认视为对象当前主推进态；WorkPlan 因当前事实源可能同时存在新状态和 legacy 状态，默认展示全部计划，并在筛选条显式展示当前新状态机与 legacy 状态计数；WorkArea / ADR / Pitfall / Study 默认视为 `active`，Spark 默认视为 `pending`；用户显式选择全部时写入 `?status=all`。
 - 当前状态写入 URL query：例如 `?status=human_closure_confirming`；历史对象仍可使用 `?status=review_needed` 或 `?status=active` 筛选。
 - 点击对象进入详情页时保留当前 query，使详情页返回路径与列表筛选一致。
 
@@ -47,8 +47,8 @@
   - 左上：对象 ID，`ldvh-meta-muted`；
   - 右上：`CopyPathButton` + `StatusBadge`；
   - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；标题必须允许换行完整显示，不得用截断省略代替阅读；
-  - 优先级字符徽标：WorkPlan 和 Memo 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
-  - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkPlan 和 Memo，不得为 WorkArea、ADR、Pitfall 或 Study 杜撰 priority、importance、category 或 tags；Memo 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
+  - 优先级字符徽标：WorkPlan 和 Spark 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
+  - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkPlan 和 Spark，不得为 WorkArea、ADR、Pitfall 或 Study 杜撰 priority、importance、category 或 tags；Spark 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
   - 非活跃原因：当对象状态不是 `active` 且事实源存在 `archive_reason`、`deprecated_reason`、`discard_reason` 或 `closure_evidence` 时，卡片标题下展示完整原因说明；原因必须弱于对象 ID、状态、标题和更新时间，不得使用醒目的外框、左侧强线或 section 样式。说明标签单独一行，使用“弱圆点 + 原因标签”，标签文字与正文使用同一弱阅读颜色；正文另起一行，使用小号阅读文本但仍弱于标题，保留换行、项目符号和数字顺序，不得压缩为单行标签，也不得截断为两行。`archived`、`deprecated`、`discarded` 和 `closed` 卡片如缺少对应原因字段，应展示“原因缺失”异常提示，但仍应弱于标题主视觉。
   - Pitfall 状态筛选只认 `active / archived`，不得展示 `draft`、`superseded` 或“已替代”入口；Pitfall 卡片不展示 `tags`，也不展示“已解决/未解决”等冗余解决态；Pitfall 标签是事实源索引和详情页辅助信息，不作为列表卡片信号或二层筛选 tab。
   - 底部：只展示更新时间，使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`，样式为弱化元信息 `ldvh-meta-muted`；更新时间行使用 `mt-auto` 贴近卡片下边距，避免不同标题行数或中部内容高度导致时间上浮；对象列表以更新时间排序，创建时间留在详情页身份区展示。
@@ -104,17 +104,17 @@ WorkPlan 是“计划执行态势”卡片，帮助用户从计划判断当前�
   - 执行项行包含标题、内部编号或角色、状态图标和同色弱背景；执行项不得使用 WorkPlan 对象图标或 WorkPlan 状态徽章，也不得拥有独立对象详情路由；
   - 执行态势区域、态势条和普通信息区域不响应主路由跳转，避免误触外层卡片。
 
-### 3.6 Memo 卡片
+### 3.6 Spark 卡片
 
-Memo 是“待分流信息”卡片，列表态用于快速定位每条备忘，并在已经分流或废弃时提示闭环事实；待处理卡片不展开来源、意图或长正文。
+Spark 是“待分流信息”卡片，列表态用于快速定位每条火花，并在已经分流或废弃时提示闭环事实；待处理卡片不展开来源、意图或长正文。
 
-- Memo 卡片保留通用头部、标题、优先级字符徽标、状态和更新时间。
-- Memo 卡片不使用通用非活跃原因块；卡片中部只由 Memo 闭环状态驱动。
-- Memo 卡片中部状态内容必须使用与 Pitfall 归档原因一致的弱说明表达：弱圆点、小号标签、小号正文，无彩色外框、无大面积状态底色、无 section 标题级强调。
-- `pending` 且没有分流闭环事实时，卡片中部不展示 `source`、`source_detail` 或 `description`；来源和意图留在 Memo 详情页的正文节点中阅读。
+- Spark 卡片保留通用头部、标题、优先级字符徽标、状态和更新时间。
+- Spark 卡片不使用通用非活跃原因块；卡片中部只由 Spark 闭环状态驱动。
+- Spark 卡片中部状态内容必须使用与 Pitfall 归档原因一致的弱说明表达：弱圆点、小号标签、小号正文，无彩色外框、无大面积状态底色、无 section 标题级强调。
+- `pending` 且没有分流闭环事实时，卡片中部不展示 `source`、`source_detail` 或 `description`；来源和意图留在 Spark 详情页的正文节点中阅读。
 - `resolved` 或存在 `resolved_to` / `resolved_at` 时，卡片中部展示“已分流”区域，消费 `resolved_to` 和 `resolved_at`：`resolved_to` 显示分流目标，`resolved_at` 显示分流时间。不得只用状态徽章表达已解决。
 - `discarded` 或存在 `discard_reason` 时，卡片中部展示“已废弃”区域，消费 `discard_reason`；缺少原因时展示原因缺失提示。不得再同时展示通用非活跃原因块造成重复。
-- Memo 卡片内部信息区域只用于阅读，不响应主路由跳转；点击外层卡片仍进入 Memo 详情页。
+- Spark 卡片内部信息区域只用于阅读，不响应主路由跳转；点击外层卡片仍进入 Spark 详情页。
 
 ### 3.7 空态、加载态、错误态
 
@@ -124,13 +124,13 @@ Memo 是“待分流信息”卡片，列表态用于快速定位每条备忘，
 
 ### 3.8 五个基准模块中的对象列表基线
 
-研究、决策、备忘、经验四个对象列表已经进入五个基准模块，应作为非工作主线对象卡片的统一基线。提交列表不属于工作对象列表，但其卡片网格、标题带、右上复制入口和底部更新时间必须与这四类对象列表保持同一视觉语言。
+研究、决策、火花、经验四个对象列表已经进入五个基准模块，应作为非工作主线对象卡片的统一基线。提交列表不属于工作对象列表，但其卡片网格、标题带、右上复制入口和底部更新时间必须与这四类对象列表保持同一视觉语言。
 
 - 四类对象都使用同一外层卡片框架：浅边框、`ldvh-panel` 背景、`p-4`、`gap-3`、hover/focus 轻微 accent 边框反馈。
 - 顶部区域统一为左侧对象 ID、右侧复制对象路径和状态徽章；不得把状态移到标题带右侧，也不得在右侧操作区加入与复制不相关的强视觉按钮。
 - 标题带统一使用弱背景、内圈边框、左侧语义短线、对象类型图标、完整标题和右侧进入箭头；标题使用 `ldvh-card-title`，必须允许换行完整显示。
 - 更新时间统一放在卡片底部右侧，使用 `formatDateTime()` 和 `ldvh-meta-muted`；列表排序统一按 `updated` 倒序，最近发生变化的对象在最前。
-- 研究、决策、备忘和经验在列表态只展示对象定位所需信息，不展开长正文；备忘列表态只在已分流或已废弃时展示闭环事实，并使用弱说明表达，不升级为强状态模块。
+- 研究、决策、火花和经验在列表态只展示对象定位所需信息，不展开长正文；火花列表态只在已分流或已废弃时展示闭环事实，并使用弱说明表达，不升级为强状态模块。
 - 非活跃原因表达在决策和经验中保持一致：弱圆点、小号标签、小号正文，不使用醒目外框、大面积状态底色或标题级强调。
 - 四类对象必须继续使用同一 `ObjectStatusFilter` tab 视觉；状态数量数字使用 `ldvh-tab-count`，不得在单个对象页局部改大、改粗或拉开间距。
 
@@ -171,7 +171,7 @@ interface ObjectItem {
   status: string;
   path: string;
   updated: string;
-  priority?: string;                  // WorkPlan / Memo 信号字段，只读展示
+  priority?: string;                  // WorkPlan / Spark 信号字段，只读展示
   plans?: RelatedPlanSummary[];       // WorkArea 列表项
   planTotal?: number;
   planClosed?: number;
@@ -194,10 +194,10 @@ interface ObjectItem {
   deprecated_reason?: string;          // 非活跃废弃原因，卡片完整原因说明展示
   discard_reason?: string;             // 非活跃废弃原因，卡片完整原因说明展示
   closure_evidence?: string;           // closed WorkPlan 关闭原因来源，卡片完整原因说明展示
-  source?: string;                      // Memo 来源，详情页正文节点展示，pending 卡片不展示
-  source_detail?: string;               // Memo 意图，详情页正文节点展示，pending 卡片不展示
-  resolved_to?: string | { type?: string; ref?: string }; // Memo 分流目标，resolved 卡片展示
-  resolved_at?: string;                 // Memo 分流时间，resolved 卡片展示
+  source?: string;                      // Spark 来源，详情页正文节点展示，pending 卡片不展示
+  source_detail?: string;               // Spark 意图，详情页正文节点展示，pending 卡片不展示
+  resolved_to?: string | { type?: string; ref?: string }; // Spark 分流目标，resolved 卡片展示
+  resolved_at?: string;                 // Spark 分流时间，resolved 卡片展示
 }
 
 interface RelatedObjectSummary {

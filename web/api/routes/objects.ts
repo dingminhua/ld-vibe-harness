@@ -335,7 +335,7 @@ async function enrichWorkPlans(items: ListedObject[]): Promise<ListedObject[]> {
   })
 }
 
-async function enrichMemos(items: ListedObject[]): Promise<ListedObject[]> {
+async function enrichSparks(items: ListedObject[]): Promise<ListedObject[]> {
   return items.map((item) => {
     const data = readFactData(item.path)
     return {
@@ -356,7 +356,7 @@ async function enrichPitfalls(items: ListedObject[]): Promise<ListedObject[]> {
     return {
       ...item,
       resolution: toStringValue(data.resolution) || undefined,
-      source_memos: toStringArray(data.source_memos),
+      source_sparks: toStringArray(data.source_sparks),
     }
   })
 }
@@ -399,8 +399,8 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   if (isRecord(result.data) && type === 'adr') {
     enrichedItems = await enrichAdrs(items)
   }
-  if (isRecord(result.data) && type === 'memo') {
-    enrichedItems = await enrichMemos(items)
+  if (isRecord(result.data) && type === 'spark') {
+    enrichedItems = await enrichSparks(items)
   }
   if (isRecord(result.data) && type === 'pitfall') {
     enrichedItems = await enrichPitfalls(items)
@@ -448,7 +448,7 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
   if (type === 'workplan' && result.data) {
     const relatedDocsSet = new Set<string>()
     const relatedAdrsSet = new Set<string>()
-    const relatedMemosSet = new Set<string>()
+    const relatedSparksSet = new Set<string>()
     const relatedPitfallsSet = new Set<string>()
     const executionRefsSet = new Set<string>()
     const orchestration = isRecord(result.data.orchestration) ? result.data.orchestration : {}
@@ -456,7 +456,7 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
 
     addStringArray(relatedDocsSet, result.data.related_docs)
     addStringArray(relatedAdrsSet, result.data.related_adrs)
-    addStringArray(relatedMemosSet, result.data.related_memos)
+    addStringArray(relatedSparksSet, result.data.related_sparks)
     addStringArray(relatedPitfallsSet, result.data.related_pitfalls)
 
     for (const executionItem of executionItems) {
@@ -467,7 +467,7 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
 
     result.data.aggregated_related_docs = [...relatedDocsSet]
     result.data.aggregated_related_adrs = [...relatedAdrsSet]
-    result.data.aggregated_related_memos = [...relatedMemosSet]
+    result.data.aggregated_related_sparks = [...relatedSparksSet]
     result.data.aggregated_related_pitfalls = [...relatedPitfallsSet]
     result.data.aggregated_execution_refs = [...executionRefsSet]
   }

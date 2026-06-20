@@ -1,21 +1,21 @@
-id: memo-0018
-type: memo
+id: spark-0018
+type: spark
 title: ld-vibe-harness Web 颜色体系治理总纲（规范10）
 status: pending
 created: '2026-06-20T14:00:00+08:00'
 updated: '2026-06-21T04:05:00+08:00'
 description: |
-  本 Memo 规定 Web 颜色治理的总纲：第一阶段优先完成 Web 功能交付，
+  本 Spark 规定 Web 颜色治理的总纲：第一阶段优先完成 Web 功能交付，
   不做全量颜色重构；颜色问题在阶段2起进入专项治理。
   颜色治理采用 strict 语义策略，遵循“语义先定义，再映射取值，避免颜色语义散落”。
 
 evolution:
   - at: '2026-06-20T14:00:00+08:00'
-    summary: 收敛出“memo+多个 study”的管理结构，并采用规范10作为颜色约束入口。
+    summary: 收敛出“spark+多个 study”的管理结构，并采用规范10作为颜色约束入口。
   - at: '2026-06-21T04:05:00+08:00'
-    summary: 将 Memo 状态修正为现行 Memo 状态机中的 pending，不改变颜色治理语义。
+    summary: 将 Spark 状态修正为现行 Spark 状态机中的 pending，不改变颜色治理语义。
 source: conversation
-source_detail: 用户要求将颜色治理整理为 memo/study 结构，并在 Web 第一阶段结束后再专项处理。
+source_detail: 用户要求将颜色治理整理为 spark/study 结构，并在 Web 第一阶段结束后再专项处理。
 priority: P1
 resolved_to: ""
 resolved_at: ""
@@ -28,7 +28,7 @@ related_studies:
 related_docs:
   - specs/01-目录说明.md
   - specs/10-Git提交规范.md
-  - specs/24-Memo-备忘.md
+  - specs/24-Spark-火花.md
   - web/docs/01-全局设计约束.md
   - web/docs/11-Web测试实现规范.md
 

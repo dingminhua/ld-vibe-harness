@@ -1,16 +1,16 @@
-id: memo-0013
-type: memo
+id: spark-0013
+type: spark
 title: 影响判断是否应扩展到工作模型和工作流程
 status: pending
 created: '2026-06-19T08:35:26+08:00'
 updated: '2026-06-19T08:35:26+08:00'
 description: |
-  本 Memo 承载一个待讨论的规范设计问题：ADR 的“影响”阅读节点和 `consequences` 影响闭环很有价值，但是否应把类似“影响”字段扩展到所有工作模型和工作流程，需要后续判断。
+  本 Spark 承载一个待讨论的规范设计问题：ADR 的“影响”阅读节点和 `consequences` 影响闭环很有价值，但是否应把类似“影响”字段扩展到所有工作模型和工作流程，需要后续判断。
 
   当前观察：
 
   1. ADR 的“影响”之所以好用，是因为 ADR 本质上记录长期决策补丁；决策如果没有正向价值、逆向价值、实施成本、风险评估和注意事项，就容易只记录“选了什么”，而没有记录“为什么接受它的后果”；
-  2. WorkPlan、Study、Memo、Pitfall 和工作流程规范中已经分散存在影响相关内容，例如成功标准、验证证据、关闭证据、建议、后续分流、Gate 影响范围、残留风险和回写建议；
+  2. WorkPlan、Study、Spark、Pitfall 和工作流程规范中已经分散存在影响相关内容，例如成功标准、验证证据、关闭证据、建议、后续分流、Gate 影响范围、残留风险和回写建议；
   3. 当前问题不是完全缺少影响信息，而是影响判断缺少统一触发口径，AI 可能只在 ADR 中认真写影响，在其他对象或流程变更中忽略影响范围、成本、风险和后续托底；
   4. 如果给所有对象都强制新增 `impact` 字段，可能会制造重复填表、字段语义重叠和低质量占位，削弱 V1 上下文效率和 V2 完整理解；
   5. 如果完全不扩展影响判断，工作模型字段契约、工作流程 Gate、Code/Web/Rules/Skill/Agent 行为边界发生变化时，AI 仍可能只描述动作，不说明后果。
@@ -24,7 +24,7 @@ description: |
   1. ADR 继续强制完整影响闭环，`consequences` 保持五段式，并由 Web 展示为“影响”节点；
   2. WorkPlan 不新增通用 `impact`，但在 `description`、`success_criteria`、`verification_evidence` 和 `closure_evidence` 中明确目标影响、残留风险、未完成项分流和关闭后果；
   3. WorkArea 可考虑表达范围影响或长期目标影响，但不套用 ADR 五段式；
-  4. Memo 不强制影响字段，只在分流判断中说明为什么值得进入 WorkPlan、ADR、Study、Pitfall、docs 或规范；
+  4. Spark 不强制影响字段，只在分流判断中说明为什么值得进入 WorkPlan、ADR、Study、Pitfall、docs 或规范；
   5. Study 通过“建议”和“后续分流”承载影响，不把研究报告伪装成决策记录；
   6. Pitfall 重点表达误判后果、复用条件和避免方式，可包含影响判断，但不应套用 ADR 决策影响闭环；
   7. 工作流程应在 Gate、回写、审核结论和行动价值审查中强制说明影响范围，而不是新增流程实例字段。
@@ -44,7 +44,7 @@ evolution:
   - at: '2026-06-19T08:35:26+08:00'
     summary: 用户认为 ADR 的“影响”字段很好，询问是否有必要所有工作模型和工作流程都加入影响；AI 建议将影响判断升级为通用思维动作和 Gate 口径，但不把 `impact` 作为所有对象的统一必填字段。
 source: conversation
-source_detail: 用户要求“把你的建议写成 memo，我后续考虑”。
+source_detail: 用户要求“把你的建议写成 spark，我后续考虑”。
 priority: P2
 resolved_to: ""
 resolved_at: ""
@@ -59,7 +59,7 @@ related_docs:
   - specs/06-工作流程基础规范.md
   - specs/21-WorkPlan-工作计划.md
   - specs/22-ADR-决策.md
-  - specs/24-Memo-备忘.md
+  - specs/24-Spark-火花.md
   - specs/25-Study-研究报告.md
   - specs/40-workflow-design-audit-工作流程设计审核.md
   - specs/41-work-model-audit-工作模型审核.md

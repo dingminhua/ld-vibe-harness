@@ -42,16 +42,16 @@ def read_study_frontmatter(path: Path):
     return yaml.safe_load(content[4:end])
 
 
-def write_memo(path: Path, *, resolved_to: dict[str, str] | str = "") -> None:
+def write_spark(path: Path, *, resolved_to: dict[str, str] | str = "") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     data = {
-        "id": "memo-0001",
-        "type": "memo",
+        "id": "spark-0001",
+        "type": "spark",
         "title": "Study Boundary",
         "status": "pending",
         "created": "2026-06-20T09:00:00",
         "updated": "2026-06-20T09:00:00",
-        "description": "Discuss whether a Study can close a Memo.",
+        "description": "Discuss whether a Study can close a Spark.",
         "evolution": [],
         "source": "conversation",
         "source_detail": "test",
@@ -143,7 +143,7 @@ def write_adr(path: Path, *, status: str = "active", archive_reason: str = "", d
         "related_workareas": [],
         "related_workplans": [],
         "related_adrs": [],
-        "related_memos": [],
+        "related_sparks": [],
         "related_rules": [],
         "archive_reason": archive_reason,
         "deprecated_reason": deprecated_reason,
@@ -267,9 +267,9 @@ def test_show_does_not_resolve_legacy_ids(tmp_path):
     assert "找不到对象" in result.stderr
 
 
-def test_memo_transition_rejects_study_resolved_target(tmp_path):
-    path = tmp_path / "ldvh-base" / "memos" / "memo-0001-study-boundary.yaml"
-    write_memo(path, resolved_to={"type": "study", "ref": "study-0001"})
+def test_spark_transition_rejects_study_resolved_target(tmp_path):
+    path = tmp_path / "ldvh-base" / "sparks" / "spark-0001-study-boundary.yaml"
+    write_spark(path, resolved_to={"type": "study", "ref": "study-0001"})
 
     result = run_cli("transition", str(path), "--to", "resolved", *AUTH_ARGS)
 
@@ -278,6 +278,43 @@ def test_memo_transition_rejects_study_resolved_target(tmp_path):
     data = read_yaml(path)
     assert data["status"] == "pending"
     assert data["resolved_at"] == ""
+
+
+def test_create_spark_defaults_validate(tmp_path):
+    result = run_cli("create", "spark", "--title", "Capture Followup", "--base-dir", str(tmp_path))
+
+    assert result.returncode == 0, result.stderr
+    path = Path(result.stdout.strip())
+    data = read_yaml(path)
+    assert data["type"] == "spark"
+    assert data["description"] == "Capture Followup 的火花摘要。"
+    validate = subprocess.run(
+        [sys.executable, str(PROJECT_ROOT / "code" / "fact_validate.py"), str(path), "--format", "text"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert validate.returncode == 0, validate.stdout + validate.stderr
+
+
+def test_update_source_sparks_writes_list(tmp_path):
+    spark_path = tmp_path / "ldvh-base" / "sparks" / "spark-0001-study-boundary.yaml"
+    write_spark(spark_path)
+    pitfall_path = tmp_path / "ldvh-base" / "pitfalls" / "pitfall-0001-transition-guard.yaml"
+    write_pitfall(pitfall_path, verification=PITFALL_VERIFICATION)
+
+    result = run_cli("update", str(pitfall_path), "--set", "source_sparks=spark-0001", *AUTH_ARGS)
+
+    assert result.returncode == 0, result.stderr
+    data = read_yaml(pitfall_path)
+    assert data["source_sparks"] == ["spark-0001"]
+    validate = subprocess.run(
+        [sys.executable, str(PROJECT_ROOT / "code" / "fact_validate.py"), str(tmp_path / "ldvh-base"), "--format", "text"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert validate.returncode == 0, validate.stdout + validate.stderr
 
 
 def test_workplan_transition_requires_review_evidence(tmp_path):
@@ -515,7 +552,7 @@ def write_pitfall(path: Path, *, status: str = "active", verification: str | Non
         "applicability": "Applicability.",
         "tags": ["transition-guard"],
         "source_objects": [],
-        "source_memos": [],
+        "source_sparks": [],
         "related_workareas": [],
         "related_adrs": [],
         "related_docs": [],

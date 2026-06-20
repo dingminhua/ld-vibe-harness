@@ -11,7 +11,7 @@ scope: |-
 constraints: 不改变 Human Gate 的确认机制本身，仅优化展示方式
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 workplans:
 - workplan-0050

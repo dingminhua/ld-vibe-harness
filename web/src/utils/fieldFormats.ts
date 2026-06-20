@@ -22,8 +22,8 @@ export const EVIDENCE_FIELDS = ['closure_evidence', 'verification_evidence', 've
 /** Object ID reference fields render through ReferenceCard when values look like LDVH object IDs. */
 export const REFERENCE_FIELDS = [
   'workarea', 'workplan', 'related_workareas',
-  'related_workplans', 'related_adrs', 'related_memos', 'related_pitfalls',
-  'related_studies', 'source_memos',
+  'related_workplans', 'related_adrs', 'related_sparks', 'related_pitfalls',
+  'related_studies', 'source_sparks',
   'superseded_by', 'resolved_to',
 ];
 
@@ -38,9 +38,9 @@ export const PATH_TEXT_FIELDS = ['project_path', 'ldvh_base_path', 'docs_path', 
 /** Fields that can be folded in detail view. */
 export const COLLAPSIBLE_FIELDS = [
   'related_workareas', 'related_workplans',
-  'related_docs', 'related_adrs', 'related_memos', 'related_studies',
+  'related_docs', 'related_adrs', 'related_sparks', 'related_studies',
   'related_pitfalls', 'related_rules', 'urls',
-  'source_memos',
+  'source_sparks',
 ];
 
 export function getPreviewableDocPath(value: string) {
@@ -79,5 +79,5 @@ export function hasChecklist(value: string) {
 export function isObjectRef(refId: string) {
   const match = refId.match(/^([a-z]+)-\d+$/);
   if (!match) return false;
-  return ['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study'].includes(match[1]);
+  return ['workarea', 'workplan', 'adr', 'pitfall', 'spark', 'study'].includes(match[1]);
 }

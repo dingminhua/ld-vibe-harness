@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LDVH 事实模型 CLI 工具：create / transition / delete / list / show / search / stats / related / link-rule / deprecate / supersede。
 
-对 LDVH 当前工作对象（workarea, workplan, adr, pitfall, memo, study）
+对 LDVH 当前工作对象（workarea, workplan, adr, pitfall, spark, study）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
 Git 提交记录使用 Git commit records 作为事实源，不通过本 CLI 管理。
 ADR 专属写入操作（link-rule / deprecate）必须携带 Human Gate 确认参数。
@@ -23,7 +23,7 @@ import yaml
 # ── 对象元数据（硬编码，与 fact_validate.py 保持一致） ──────────────
 
 # Git 提交记录使用 Git commit records 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"workarea", "workplan", "adr", "pitfall", "memo", "study"}
+OBJECT_TYPES = {"workarea", "workplan", "adr", "pitfall", "spark", "study"}
 
 
 class BlockScalarDumper(yaml.SafeDumper):
@@ -54,7 +54,7 @@ ID_PATTERNS = {
     "workplan": re.compile(r"^workplan-\d{4}$"),
     "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
-    "memo": re.compile(r"^memo-\d{4}$"),
+    "spark": re.compile(r"^spark-\d{4}$"),
     "study": re.compile(r"^study-\d{4}$"),
 }
 
@@ -63,7 +63,7 @@ FILENAME_PATTERNS = {
     "workplan": re.compile(r"^workplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "memo": re.compile(r"^memo-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "spark": re.compile(r"^spark-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "study": re.compile(r"^study-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$"),
 }
 
@@ -84,10 +84,10 @@ VALID_STATUSES = {
     "workplan": WORKPLAN_CURRENT_STATUSES | WORKPLAN_LEGACY_STATUSES,
     "adr": {"active", "archived", "deprecated"},
     "pitfall": {"active", "archived"},
-    "memo": {"pending", "resolved", "discarded"},
+    "spark": {"pending", "resolved", "discarded"},
     "study": {"active", "archived"},
 }
-VALID_MEMO_RESOLVED_TO_TYPES = {"workarea", "workplan", "adr", "pitfall", "docs", "governed-projects", "other"}
+VALID_SPARK_RESOLVED_TO_TYPES = {"workarea", "workplan", "adr", "pitfall", "docs", "governed-projects", "other"}
 
 VALID_TRANSITIONS = {
     "workarea": {
@@ -115,7 +115,7 @@ VALID_TRANSITIONS = {
         "active": {"archived"},
         "archived": set(),
     },
-    "memo": {
+    "spark": {
         "pending": {"resolved", "discarded"},
         "resolved": {"discarded"},
         "discarded": set(),
@@ -131,7 +131,7 @@ REQUIRED_FIELDS = {
     "workplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
     "adr": ["id", "type", "title", "status", "created", "updated", "date", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
-    "memo": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
+    "spark": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
     "study": ["id", "type", "title", "status", "created", "updated", "summary"],
 }
 
@@ -140,7 +140,7 @@ DEFAULT_STATUS = {
     "workplan": "subagents_plan_reviewing",
     "adr": "active",
     "pitfall": "active",
-    "memo": "pending",
+    "spark": "pending",
     "study": "active",
 }
 
@@ -149,7 +149,7 @@ DIRECTORY_MAP = {
     "workplan": "ldvh-base/workplans/",
     "adr": "ldvh-base/adrs/",
     "pitfall": "ldvh-base/pitfalls/",
-    "memo": "ldvh-base/memos/",
+    "spark": "ldvh-base/sparks/",
     "study": "ldvh-base/studies/",
 }
 
@@ -624,7 +624,7 @@ def cmd_create(args: argparse.Namespace) -> int:
     if object_type == "workarea":
         data["related_docs"] = []
         data["related_adrs"] = []
-        data["related_memos"] = []
+        data["related_sparks"] = []
         data["related_pitfalls"] = []
         data["workplans"] = []
     if object_type == "workplan":
@@ -642,10 +642,11 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["revision_history"] = []
         data["related_docs"] = []
         data["related_adrs"] = []
-        data["related_memos"] = []
+        data["related_sparks"] = []
         data["related_pitfalls"] = []
         data["related_workplans"] = []
-    if object_type == "memo":
+    if object_type == "spark":
+        data["description"] = f"{title} 的火花摘要。"
         data["priority"] = "P3"
         data["source"] = "conversation"
         data["source_detail"] = ""
@@ -677,7 +678,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["applicability"] = "待补充适用范围和不适用范围。"
         data["tags"] = []
         data["source_objects"] = []
-        data["source_memos"] = []
+        data["source_sparks"] = []
         data["related_workareas"] = []
         data["related_adrs"] = []
         data["related_docs"] = []
@@ -689,7 +690,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["summary"] = f"{title} 的稳定研究报告。"
         data["conclusion"] = ""
         data["urls"] = []
-        data["related_memos"] = []
+        data["related_sparks"] = []
         data["related_workareas"] = []
         data["related_workplans"] = []
         data["related_adrs"] = []
@@ -721,7 +722,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["consequences"] = "## 正向价值\n\n待补充。\n\n## 逆向价值\n\n当前决策无逆向价值\n\n## 实施成本\n\n待补充。\n\n## 风险评估\n\n待补充。\n\n## 注意事项\n\n待补充。\n"
         data["related_workareas"] = []
         data["related_workplans"] = []
-        data["related_memos"] = []
+        data["related_sparks"] = []
         data["related_adrs"] = []
         data["related_rules"] = []
         data["archive_reason"] = ""
@@ -898,31 +899,31 @@ def cmd_transition(args: argparse.Namespace) -> int:
             error("archive_reason 未填写，无法归档 WorkArea")
             return 1
 
-    # Memo 分流条件校验（pending → resolved）
-    if object_type == "memo" and current_status == "pending" and new_status == "resolved":
+    # Spark 分流条件校验（pending → resolved）
+    if object_type == "spark" and current_status == "pending" and new_status == "resolved":
         resolved_to = data.get("resolved_to")
         if not resolved_to or (isinstance(resolved_to, str) and not resolved_to.strip()):
-            error("resolved_to 未填写，无法将 Memo 标记为 resolved")
+            error("resolved_to 未填写，无法将 Spark 标记为 resolved")
             return 1
         if not isinstance(resolved_to, dict):
-            error("resolved_to 必须是 {type, ref} 对象，无法将 Memo 标记为 resolved")
+            error("resolved_to 必须是 {type, ref} 对象，无法将 Spark 标记为 resolved")
             return 1
         target_type = resolved_to.get("type")
         target_ref = resolved_to.get("ref")
         if not target_type or not target_ref:
-            error("resolved_to 必须填写 type 和 ref，无法将 Memo 标记为 resolved")
+            error("resolved_to 必须填写 type 和 ref，无法将 Spark 标记为 resolved")
             return 1
-        if target_type not in VALID_MEMO_RESOLVED_TO_TYPES:
-            valid_values = ", ".join(sorted(VALID_MEMO_RESOLVED_TO_TYPES))
+        if target_type not in VALID_SPARK_RESOLVED_TO_TYPES:
+            valid_values = ", ".join(sorted(VALID_SPARK_RESOLVED_TO_TYPES))
             error(f"resolved_to.type 必须是以下值之一: {valid_values}；Study 只能通过 related_studies 关联")
             return 1
         if not data.get("resolved_at"):
             data["resolved_at"] = datetime.now().isoformat()
 
-    if object_type == "memo" and new_status == "discarded":
+    if object_type == "spark" and new_status == "discarded":
         discard_reason = data.get("discard_reason")
         if not discard_reason or (isinstance(discard_reason, str) and not discard_reason.strip()):
-            error("discard_reason 未填写，无法废弃 Memo")
+            error("discard_reason 未填写，无法废弃 Spark")
             return 1
 
     if object_type == "study" and new_status == "archived":
@@ -1418,8 +1419,8 @@ def cmd_update(args: argparse.Namespace) -> int:
         value = value.replace("\\n", "\n").replace("\\\\", "\\")
         # 列表类型字段：逗号分隔
         if key in ("related_workareas", "related_workplans", "related_adrs",
-                    "related_memos", "related_studies", "related_pitfalls", "related_docs",
-                    "urls", "source_docs", "related_rules"):
+                    "related_sparks", "related_studies", "related_pitfalls", "related_docs",
+                    "urls", "source_docs", "source_sparks", "related_rules"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
         else:
             updates[key] = value

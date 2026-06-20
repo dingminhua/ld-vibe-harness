@@ -1,17 +1,17 @@
 ---
 id: study-0009
 type: study
-title: LDVH 从 Superpowers 吸收内容的备忘式研究
+title: LDVH 从 Superpowers 吸收内容的火花式研究
 status: active
 created: '2026-06-20T11:50:00+08:00'
 updated: '2026-06-20T11:50:00+08:00'
 summary: |
-  本 Study 以 memo 形式整理 LDVH 可以从 Superpowers 项目吸收的内容。核心判断是：Superpowers 最值得吸收的不是具体 Claude Code Skill 包本身，而是它对 AI 编码代理“合理化、抢跑、缺证据、跳过审查、上下文污染”的系统性约束设计。LDVH 应把这些机制转译为自身的事实源边界、验证铁律、Human Gate、WorkPlan 审查、Skill/Agent/Hook 资产准入和错误反馈闭环，而不是照搬其会话级工作流或绝对 TDD 教条。
-user_intent: 用户要求写一篇 memo，分析 LDVH 可以从 Superpowers 项目里吸收的内容，并通过 Study 的形式沉淀。
+  本 Study 以 spark 形式整理 LDVH 可以从 Superpowers 项目吸收的内容。核心判断是：Superpowers 最值得吸收的不是具体 Claude Code Skill 包本身，而是它对 AI 编码代理“合理化、抢跑、缺证据、跳过审查、上下文污染”的系统性约束设计。LDVH 应把这些机制转译为自身的事实源边界、验证铁律、Human Gate、WorkPlan 审查、Skill/Agent/Hook 资产准入和错误反馈闭环，而不是照搬其会话级工作流或绝对 TDD 教条。
+user_intent: 用户要求写一篇 spark，分析 LDVH 可以从 Superpowers 项目里吸收的内容，并通过 Study 的形式沉淀。
 conclusion: |
   LDVH 应吸收 Superpowers 的七类稳定机制：验证前不得宣称完成、规则反合理化、两阶段审查、子代理上下文隔离与主控回收、TDD/测试优先的可调强度门禁、Skill 触发描述克制、以及失败次数触发架构讨论。吸收方式应是“理念转译 + LDVH 事实源落地”：规则进入 specs 或能力资产准入，执行进入 WorkPlan / Skill / Hook / Code validator，报告和依据保留在 Study。不得把 Superpowers 的 Skill 文本、会话状态、无限子代理分派和绝对 TDD 例外规则直接搬入 LDVH。
 urls: []
-related_memos: []
+related_sparks: []
 related_workareas:
   - workarea-0009
   - workarea-0012
@@ -30,16 +30,16 @@ related_docs:
   - specs/06-工作流程基础规范.md
   - specs/10-Git提交规范.md
   - specs/21-WorkPlan-工作计划.md
-  - specs/24-Memo-备忘.md
+  - specs/24-Spark-火花.md
   - specs/25-Study-研究报告.md
 archive_reason:
 ---
 
-# LDVH 从 Superpowers 吸收内容的备忘式研究
+# LDVH 从 Superpowers 吸收内容的火花式研究
 
 ## 研究问题
 
-本 memo 型 Study 回答一个收敛问题：在已有 Superpowers 深度调研基础上，LDVH 到底应该吸收什么，吸收到哪里，以及哪些内容只保留为参考。
+本 spark 型 Study 回答一个收敛问题：在已有 Superpowers 深度调研基础上，LDVH 到底应该吸收什么，吸收到哪里，以及哪些内容只保留为参考。
 
 具体问题包括：
 
@@ -79,7 +79,7 @@ LDVH 已经有事实源、状态机、Human Gate 和规范体系，因此不需�
 | 两阶段审查 | 先检查“是否满足规格”，再检查“实现质量是否足够”，顺序不可倒 | WorkPlan review、子 Agent 审查流程、Code review Skill | 高 |
 | 子代理新鲜实例 | 用隔离上下文做研究、实现、规格审查、质量审查，主控负责合并和事实源回写 | Agent 资产准入、`specs/04.02`、多角色思考实践 | 中高 |
 | Skill 触发设计 | Skill 描述只写触发条件和边界，避免把完整流程写在描述里诱导跳读 | Skill 规范、`workplan-0060` | 高 |
-| 3+ 修复失败规则 | 同类问题多次修复失败时停止继续打补丁，转为根因/架构讨论 | Pitfall、Memo、WorkPlan blocking、系统性调试流程 | 中高 |
+| 3+ 修复失败规则 | 同类问题多次修复失败时停止继续打补丁，转为根因/架构讨论 | Pitfall、Spark、WorkPlan blocking、系统性调试流程 | 中高 |
 | Worktree / 分支安全 | 隔离工作区、清理前确认来源、敏感丢弃需显式确认 | Git 提交规范、环境适配、提交 Skill | 中 |
 | 人类伙伴定位 | Human 不是橡皮章，而是关键不确定性和高影响动作的共同决策者 | Human Gate 规则、`workplan-0046` | 中 |
 
@@ -94,7 +94,7 @@ Superpowers 把“做完了”和“已经验证能证明做完了”严格拆�
 - WorkPlan 进入 `review_needed` 前，必须有新鲜验证证据；
 - `closure_evidence` 不应只写“已完成”，应说明验证计划、验证命令、验证结果和结论；
 - AI 不应基于子 Agent 报告、工具摘要或主观观感直接宣称成功；
-- 验证失败或无法验证时，应明确降级为 blocking、follow-up、Memo、Pitfall 或 Human Gate，而不是粉饰为完成。
+- 验证失败或无法验证时，应明确降级为 blocking、follow-up、Spark、Pitfall 或 Human Gate，而不是粉饰为完成。
 
 这与 LDVH 已有的验证字段、证据四段式和关闭审查方向高度一致，优先级应很高。
 
@@ -110,7 +110,7 @@ LDVH 目前的 specs 和 rules 已有很多禁止项，但部分禁止项仍偏�
 - 允许例外的条件和 Human Gate；
 - 违反后的恢复路径。
 
-适合优先加抗合理化层的规则包括：事实源边界、不得绕过状态机、不得用 Study 替代 Memo 分流、不得用工具输出替代 Git 文件事实源、不得无验证宣称完成、不得把本地 Hook 通过当作 CI 通过。
+适合优先加抗合理化层的规则包括：事实源边界、不得绕过状态机、不得用 Study 替代 Spark 分流、不得用工具输出替代 Git 文件事实源、不得无验证宣称完成、不得把本地 Hook 通过当作 CI 通过。
 
 #### 3. 两阶段审查
 
@@ -170,7 +170,7 @@ Superpowers 的 3+ 修复失败规则值得吸收。AI 代理在连续失败后�
 
 - 同一验证失败、同一测试失败或同一审查反馈反复出现时，停止继续 patch；
 - 先形成根因假设、影响范围、已尝试路径和为什么失败；
-- 必要时创建 Memo、Pitfall、ADR 候选或 WorkPlan blocking；
+- 必要时创建 Spark、Pitfall、ADR 候选或 WorkPlan blocking；
 - 与 Human 讨论是否需要改架构、改规范、拆计划或降级目标。
 
 这能强化 LDVH 的 Learn 回路，避免“越修越乱”。
@@ -197,7 +197,7 @@ Superpowers 的 3+ 修复失败规则值得吸收。AI 代理在连续失败后�
 - Skill 不诱导跳读；
 - Hook 和 Code validator 只承担可机械检查的部分；
 - Human Gate 用于高影响判断和例外授权；
-- 失败能回流为 Memo、Pitfall、ADR、WorkPlan 或 specs 更新。
+- 失败能回流为 Spark、Pitfall、ADR、WorkPlan 或 specs 更新。
 
 ## 建议
 
@@ -207,7 +207,7 @@ Superpowers 的 3+ 修复失败规则值得吸收。AI 代理在连续失败后�
 4. 在 Agent / subagent 资产准入中加入最小上下文、最小工具权限、结构化输出、主控回收和不得直接关闭事实源的规则。
 5. TDD 采用风险分层：对代码逻辑、validator、迁移、状态机和回归 bug 强制测试优先；对研究和文档采用检查点/反例/审查清单优先。
 6. 更新 Skill 写作规则：description 只做触发和边界，不写完整流程摘要；完整流程必须在正文并按需读取。
-7. 增加“重复失败升级”规则：同类修复失败达到阈值时，停止继续 patch，转为根因分析、Human Gate、Memo/Pitfall/ADR 或 WorkPlan blocking。
+7. 增加“重复失败升级”规则：同类修复失败达到阈值时，停止继续 patch，转为根因分析、Human Gate、Spark/Pitfall/ADR 或 WorkPlan blocking。
 
 ## 后续分流
 
@@ -219,4 +219,4 @@ Superpowers 的 3+ 修复失败规则值得吸收。AI 代理在连续失败后�
 - `workplan-0074`：可吸收验证前提交、完整 diff 审阅、commit 前 fresh verification 和本地/CI 分层门禁。
 - `workplan-0080`：可吸收 Agent/Skill/Hook 能力资产准入规则，包括最小权限、主控回收、可观测证据和不得替代事实源。
 
-本 Study 只作为吸收备忘和研究报告。后续任何强制规则落地，都应进入对应 specs、WorkPlan、ADR、Skill、Hook、Code validator 或 Git 提交记录。
+本 Study 只作为吸收火花和研究报告。后续任何强制规则落地，都应进入对应 specs、WorkPlan、ADR、Skill、Hook、Code validator 或 Git 提交记录。

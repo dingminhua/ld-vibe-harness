@@ -110,7 +110,7 @@ orchestration:
     - specs/21-WorkPlan-工作计划.md
     - specs/22-ADR-决策.md
     - specs/23-Pitfall-踩坑经验.md
-    - specs/24-Memo-备忘.md
+    - specs/24-Spark-火花.md
     - specs/25-Study-研究报告.md
     - code/fact_cli.py
     - code/fact_validate.py
@@ -118,7 +118,7 @@ orchestration:
     - tests/code/test_fact_validate.py
     expected_output: 明确旧关联提交字段是删除、改名为 `related_commits`、只读兼容 alias，还是完全由 Git 历史派生；同步字段注册表、对象字段契约、CLI 模板、Validator 行为、测试夹具和 Web 展示命名。
     status: done
-    result_summary: 已选择删除对象手写字段；关联提交由 Git 历史、对象 ID 和路径派生。WorkPlan/ADR/Pitfall/Memo/Study 规范、CLI 模板、Validator 和测试夹具已同步，并补充全局 `related_changes` 写入/校验拦截。
+    result_summary: 已选择删除对象手写字段；关联提交由 Git 历史、对象 ID 和路径派生。WorkPlan/ADR/Pitfall/Spark/Study 规范、CLI 模板、Validator 和测试夹具已同步，并补充全局 `related_changes` 写入/校验拦截。
     evidence_refs:
     - specs/05.02-工作模型字段内容与格式规范.md
     - specs/21-WorkPlan-工作计划.md
@@ -269,7 +269,7 @@ orchestration:
     - specs/01-目录说明.md
     - specs/25-Study-研究报告.md
     - specs/05-工作模型基础规范.md
-    - specs/24-Memo-备忘.md
+    - specs/24-Spark-火花.md
     - code/
     - tests/
     - web/
@@ -345,7 +345,7 @@ verification_evidence: |
   npm run check 通过：Web typecheck、Web build、Web API tests、228 个 Code 测试和 specs:check 均通过；Web build 仅有既有 chunk size warning。
   ldvh-base 全量 fact_validate 为 errors=0 warnings=114，warning 均为既有旧证据格式提示。
   残留扫描中 `related_changes` 只存在于 10 禁止条款、Code 拦截、测试负例、0074 自身验收描述和历史事实文本中；不再作为工作对象字段或入口存在。
-  2026-06-19 追加补救：Study 已由 26 补位为 25。`python3 code/specs_validate.py all --fail-on-diagnostics` 通过，派生成员索引显示 Study 的 `spec_id`、`canonical_path` 和 `doc_number` 均为 25；`python3 -m pytest tests/code/test_fact_validate.py tests/code/test_fact_cli.py -q` 通过，44 passed；0074、study-0001、memo-0005、workplan-0073 单体 fact_validate 为 errors=0，warnings=2，warning 均来自 0073 既有证据格式提示。
+  2026-06-19 追加补救：Study 已由 26 补位为 25。`python3 code/specs_validate.py all --fail-on-diagnostics` 通过，派生成员索引显示 Study 的 `spec_id`、`canonical_path` 和 `doc_number` 均为 25；`python3 -m pytest tests/code/test_fact_validate.py tests/code/test_fact_cli.py -q` 通过，44 passed；0074、study-0001、spark-0005、workplan-0073 单体 fact_validate 为 errors=0，warnings=2，warning 均来自 0073 既有证据格式提示。
   子 agent 复检后补救了 `specs/01`、`specs/05`、`specs/05.01`、Web 关联排序、Web 设计文档和 active/pending 事实源中的编号/Change 残留，并新增 `FIELD_REGISTRY_OWNER_SCOPE_MISMATCH` 检查。`python3 code/specs_validate.py field-registry specs/05.02-工作模型字段内容与格式规范.md` 通过；`python3 -m pytest tests/code/specs_validate_checks/test_field_registry.py tests/code/test_fact_validate.py tests/code/test_fact_cli.py -q` 通过，53 passed；`npm run check` 通过，包含 Web typecheck/build/API 测试、229 个 Code 单测和 specs:check。
 
   ## 结论
@@ -360,9 +360,9 @@ verification_evidence: |
 
   2026-06-21 item-5 追加验证结果：`/api/changelog`、Dashboard `recentChanges` 和 ProjectFiles 提交列表/详情已统一到 `web/api/services/git.ts` 的 commit message 拆分与 Conventional Commits parser；ProjectFiles 保留 parents、isMerge 和 files 作为工具页专属字段。新增 `tests/web/api/commit-dto.test.ts`，使用临时 Git 管辖项目同时验证 Changelog、Dashboard、ProjectFiles 四个 API 返回同一组结构化字段。`npm --prefix web run check` 通过；`npm --prefix web run test:web:api` 通过；`python3 code/fact_validate.py ldvh-base/workplans/workplan-0074-git-commit-trace-contract.yaml` 通过，errors=0 warnings=0；`python3 code/specs_validate.py refs specs` 和 `python3 code/specs_validate.py landing specs` 通过；`git diff --check` 通过。
 
-  2026-06-21 关闭前复查结果：按 Human 指示只负责本轮 Web DTO 落地，不处理其它 Code/事实源改动。`npm --prefix web run check` 和 `npm --prefix web run test:web:api` 均通过，确认 Changelog、Dashboard 和 ProjectFiles 的共享 commit DTO 契约仍成立。关闭级全量检查暂未满足：`python3 code/specs_validate.py all --fail-on-diagnostics` 因既有 `specs/05` 的 `POSSIBLE_DUPLICATE_TERM_DEFINITION` warning 返回 1；`python3 code/fact_validate.py ldvh-base` 因 memo-0018、study-0007、workplan-0025、workplan-0062、workplan-0063 的既有事实源问题返回 errors=8；`python3 -m pytest tests/code -q` 当前 256 passed、3 failed，失败集中在 WorkPlan 默认状态/流转测试和 specs_validate all 的 fail-on-diagnostics 断言。残留扫描中 `related_changes`、`ldvh-base/changes`、旧变更对象等命中均位于禁止条款、Code 拦截、测试负例、0074 自身验收/历史记录或其它历史事实文本；未发现本轮 Web DTO 改动新增旧 Change 工作对象入口。结论：Web DTO 落地可视为完成，0074 关闭仍需另行处理上述非 Web DTO 阻断项后再执行。
+  2026-06-21 关闭前复查结果：按 Human 指示只负责本轮 Web DTO 落地，不处理其它 Code/事实源改动。`npm --prefix web run check` 和 `npm --prefix web run test:web:api` 均通过，确认 Changelog、Dashboard 和 ProjectFiles 的共享 commit DTO 契约仍成立。关闭级全量检查暂未满足：`python3 code/specs_validate.py all --fail-on-diagnostics` 因既有 `specs/05` 的 `POSSIBLE_DUPLICATE_TERM_DEFINITION` warning 返回 1；`python3 code/fact_validate.py ldvh-base` 因 spark-0018、study-0007、workplan-0025、workplan-0062、workplan-0063 的既有事实源问题返回 errors=8；`python3 -m pytest tests/code -q` 当前 256 passed、3 failed，失败集中在 WorkPlan 默认状态/流转测试和 specs_validate all 的 fail-on-diagnostics 断言。残留扫描中 `related_changes`、`ldvh-base/changes`、旧变更对象等命中均位于禁止条款、Code 拦截、测试负例、0074 自身验收/历史记录或其它历史事实文本；未发现本轮 Web DTO 改动新增旧 Change 工作对象入口。结论：Web DTO 落地可视为完成，0074 关闭仍需另行处理上述非 Web DTO 阻断项后再执行。
 
-  2026-06-21 最终关闭复查结果：已清理关闭级阻断项。`specs/05` 的疑似重复术语定义 warning 已通过措辞调整消除；memo-0018 状态已修正为 Memo 状态机中的 pending；study-0007 已补齐 Study frontmatter 并整理为 25 号 Study 固定正文结构；workplan-0025、workplan-0062、workplan-0063 的历史机器证据引用已移除不存在路径且不改变历史事实语义。`python3 code/fact_validate.py ldvh-base` 通过，errors=0 warnings=0；`python3 code/specs_validate.py all --fail-on-diagnostics` 通过；`python3 -m pytest tests/code -q` 通过，261 passed；`npm --prefix web run check` 通过；`npm --prefix web run test:web:api` 通过；`git diff --check` 通过。残留扫描中旧 Change / `related_changes` / `ldvh-base/changes` 命中均位于禁止条款、Code 拦截、测试负例、0074 自身历史记录或历史备忘/踩坑文本；未发现现行 specs、Code、Web 或测试中仍把旧 Change 作为工作对象入口。
+  2026-06-21 最终关闭复查结果：已清理关闭级阻断项。`specs/05` 的疑似重复术语定义 warning 已通过措辞调整消除；spark-0018 状态已修正为 Spark 状态机中的 pending；study-0007 已补齐 Study frontmatter 并整理为 25 号 Study 固定正文结构；workplan-0025、workplan-0062、workplan-0063 的历史机器证据引用已移除不存在路径且不改变历史事实语义。`python3 code/fact_validate.py ldvh-base` 通过，errors=0 warnings=0；`python3 code/specs_validate.py all --fail-on-diagnostics` 通过；`python3 -m pytest tests/code -q` 通过，261 passed；`npm --prefix web run check` 通过；`npm --prefix web run test:web:api` 通过；`git diff --check` 通过。残留扫描中旧 Change / `related_changes` / `ldvh-base/changes` 命中均位于禁止条款、Code 拦截、测试负例、0074 自身历史记录或历史火花/踩坑文本；未发现现行 specs、Code、Web 或测试中仍把旧 Change 作为工作对象入口。
 closure_evidence: |
   ## 验证计划
 
@@ -388,7 +388,7 @@ closure_evidence: |
   `npm --prefix web run check` 通过。
   `npm --prefix web run test:web:api` 通过。
   `git diff --check` 通过。
-  残留扫描命中均为禁止条款、Code 拦截、测试负例、0074 自身历史记录或历史备忘/踩坑文本；未发现现行入口继续把旧 Change 当作工作对象。
+  残留扫描命中均为禁止条款、Code 拦截、测试负例、0074 自身历史记录或历史火花/踩坑文本；未发现现行入口继续把旧 Change 当作工作对象。
 
   ## 结论
 
@@ -399,8 +399,8 @@ related_docs:
 - specs/10-Git提交规范.md
 - web/docs/06-Changelog.md
 related_adrs: []
-related_memos:
-- memo-0017
+related_sparks:
+- spark-0017
 related_pitfalls:
 - pitfall-0008
 related_workplans: []

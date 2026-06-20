@@ -37,7 +37,7 @@ orchestration:
       - 21.01-Rules.md、21.02-Skill.md、21.03-Agent.md、21.04-Tools.md、21.05-Web.md、21.06-Contract.md：ADR 规则、Skill/Tools/Web 边界和 Contract 权威入口已在 21 主规范、运行 Rules、ldvh-adr Skill、tools 与 web 边界中明确；历史文件暂作迁移前资料。
       - 22.01-Rules.md、22.02-Skill.md、22.03-Agent.md、22.04-Tools.md、22.05-Web.md、22.06-Contract.md：Change 提交纪律、Skill 编排和工具校验边界已在 22 主规范、05/06/08 和 ldvh-commit Skill 中明确；历史文件暂作迁移前资料。
       - 23.01-Rules.md、23.02-Skill.md、23.03-Agent.md、23.04-Tools.md、23.05-Web.md、23.06-Contract.md：Pitfall 主规范已修正主文档引用并补充 Tools/Web/Contract 迁移边界；历史文件暂作迁移前资料。
-      - 24.06-Contract.md、25.06-Contract.md、26.06-Contract.md：Intent/Memo/Profile 结构化契约已回并到 24/25/26 主规范，包含 YAML 示例、字段约束、命名契约、状态流转和契约消费检查项。
+      - 24.06-Contract.md、25.06-Contract.md、26.06-Contract.md：Intent/Spark/Profile 结构化契约已回并到 24/25/26 主规范，包含 YAML 示例、字段约束、命名契约、状态流转和契约消费检查项。
       - 27.01-Rules.md、27.02-Skill.md、27.03-Agent.md、27.04-Tools.md、27.05-Web.md、27.06-Contract.md：Task 生命周期、关闭条件和 Human Gate 权威入口已回到 27 主规范；Contract 仍作为结构化契约过渡副本。
 
       空占位或重复性历史机制文件，建议删除或归档但本轮暂不直接删除：
@@ -89,7 +89,7 @@ orchestration:
       closure_evidence: Task 21 已完成当前审计和拆分范围内的关闭条件：
 
       - 已按“先合并、再校验、后删除或归档”策略处理工作模型历史机制子文档体系，完成 21/22/23/24/25/26/27 主规范与 05/06/08 机制规范的必要回写。
-      - 已将 24.06、25.06、26.06 Contract 的结构化契约内容回并到 24/25/26 主规范，并将 Intent/Memo/Profile 的历史机制文件降级为迁移期参考或删除候选。
+      - 已将 24.06、25.06、26.06 Contract 的结构化契约内容回并到 24/25/26 主规范，并将 Intent/Spark/Profile 的历史机制文件降级为迁移期参考或删除候选。
       - 已修正运行入口依赖，将 `.trae/rules/ldvh-fact-model-rules.md` 与 ldvh-adr、ldvh-commit、ldvh-intake、ldvh-plan、ldvh-close Skill 的权威入口收敛到主规范、已回并契约章节、tools 实现和测试验收结果。
       - 已完成受影响引用审计，确认 tools、tests、web 与 specs 根规范不存在必须依赖固定 NN.01-NN.06 子文档结构才能运行的路径；仍保留迁移期追溯引用的文件已在 verification 中分类说明。
       - 已沉淀后续删除/归档候选清单：24.01-24.05、25.01-25.05、26.01-26.05 为优先删除候选；24.06、25.06、26.06 与 23.01-23.06 为优先归档候选；21.01-21.06、22.01-22.06、27.01-27.06 暂不删除。
@@ -124,7 +124,7 @@ orchestration:
       verification: 执行结果：
       1. 已删除全部 42 个历史机制子文档：21.01-21.06、22.01-22.06、23.01-23.06、24.01-24.06、25.01-25.06、26.01-26.06、27.01-27.06。
       2. 用户确认策略变更：不再区分"优先删除""优先归档""暂不删除"，合并后全部直接删除。
-      3. 已修正引用的文件： - specs/ 主规范：21-ADR、22-Change、23-Pitfall、24-Intent、25-Memo、26-Profile、27-Task、03-文档规范、08-工作流程基础规范 - docs/studies/Gstack产品方向共识：契约列更新为"已回并到规范" - .trae/rules/：ldvh-project-rules.md、ldvh-specs-rules.md - tools/：commit_validate.py、fact_cli.py - tests/：test_fact_cli.py、test_specs_validate.py - ldvh-base/ README：tasks、profiles、memos、intents、pitfalls
+      3. 已修正引用的文件： - specs/ 主规范：21-ADR、22-Change、23-Pitfall、24-Intent、25-Spark、26-Profile、27-Task、03-文档规范、08-工作流程基础规范 - docs/studies/Gstack产品方向共识：契约列更新为"已回并到规范" - .trae/rules/：ldvh-project-rules.md、ldvh-specs-rules.md - tools/：commit_validate.py、fact_cli.py - tests/：test_fact_cli.py、test_specs_validate.py - ldvh-base/ README：tasks、profiles、sparks、intents、pitfalls
       4. 校验结果： - python3 code/specs_validate.py all：0 error - python3 tools/fact_validate.py task-0022：0 error 0 warning - python3 -m pytest tests/tools/：122 passed
 
       ## 验证结果
@@ -205,6 +205,6 @@ review_requested_at: '2026-06-05T09:08:00.685374'
 closed_at: '2026-06-05T09:08:00.685374'
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

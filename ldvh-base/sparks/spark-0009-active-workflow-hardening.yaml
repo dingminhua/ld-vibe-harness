@@ -1,11 +1,11 @@
-id: memo-0009
-type: memo
+id: spark-0009
+type: spark
 title: 41-43 active 后落地硬化安排
 status: pending
 created: '2026-06-18T09:03:05'
 updated: '2026-06-18T09:03:05'
 description: |
-  本 Memo 承载 41 work-model-audit、42 specs-audit、43 landing-readiness-audit 升级为 active 后的后续硬化安排。
+  本 Spark 承载 41 work-model-audit、42 specs-audit、43 landing-readiness-audit 升级为 active 后的后续硬化安排。
 
   当前阶段已经完成：41-43 经 Human Gate 确认从 candidate 升级为 active；40-43 已承接 WorkPlan 回写契约；landing-report 已能读取并展示 40/41 工作流程成员状态，当前输出显示 40 active、41 active。
 
@@ -19,9 +19,9 @@ description: |
   这些事项尚未形成单一可关闭目标，暂不创建 WorkPlan。后续若用户要求继续落地，应优先从第 1 项“41 触发保障 Code 覆盖”分流为 WorkPlan。
 evolution:
   - at: '2026-06-18T09:03:05'
-    summary: 用户确认 41-43 可以升级为 active 后，AI 完成状态升级、Human Gate 记录和基础校验；随后将 active 后硬化事项独立从 memo-0005 分流到本 Memo，避免阻塞用户安排其他事情。
+    summary: 用户确认 41-43 可以升级为 active 后，AI 完成状态升级、Human Gate 记录和基础校验；随后将 active 后硬化事项独立从 spark-0005 分流到本 Spark，避免阻塞用户安排其他事情。
 source: conversation
-source_detail: 用户询问“下一步做什么”后，AI 提出 active 后落地闭环硬化顺序；用户要求将这些后续事项加入新的备忘。
+source_detail: 用户询问“下一步做什么”后，AI 提出 active 后落地闭环硬化顺序；用户要求将这些后续事项加入新的火花。
 priority: P1
 resolved_to: ""
 resolved_at: ""
@@ -38,4 +38,4 @@ related_docs:
   - specs/41-work-model-audit-工作模型审核.md
   - specs/42-specs-audit-规范审核.md
   - specs/43-landing-readiness-audit-落地准备度审核.md
-  - ldvh-base/memos/memo-0005-task-orchestration-boundary.yaml
+  - ldvh-base/sparks/spark-0005-task-orchestration-boundary.yaml

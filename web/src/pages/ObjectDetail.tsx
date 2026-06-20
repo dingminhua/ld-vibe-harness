@@ -57,42 +57,42 @@ const META_KEYS = [
   'path',
   'aggregated_related_docs',
   'aggregated_related_adrs',
-  'aggregated_related_memos',
+  'aggregated_related_sparks',
   'aggregated_related_pitfalls',
   'aggregated_execution_refs',
 ];
 const COMMON_AUXILIARY_META_KEYS = ['priority', 'importance', 'tags', 'scope', 'impact', 'assignee'];
 const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
-  memo: ['priority', 'tags', 'source'],
+  spark: ['priority', 'tags', 'source'],
   study: ['tags'],
   pitfall: ['tags'],
 };
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
-  workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls'],
+  workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_sparks', 'related_pitfalls'],
   workplan: [
     'workarea', 'priority', 'description', 'success_criteria', 'source',
     'orchestration', 'verification_evidence', 'closure_evidence', 'related_workplans',
-    'related_docs', 'related_adrs', 'related_memos', 'related_pitfalls',
+    'related_docs', 'related_adrs', 'related_sparks', 'related_pitfalls',
   ],
   adr: [
     'context', 'decision', 'consequences',
     'related_rules', 'archive_reason', 'deprecated_reason', 'related_workareas',
-    'related_workplans', 'related_adrs', 'related_memos',
+    'related_workplans', 'related_adrs', 'related_sparks',
   ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
-    'avoidance', 'applicability', 'source_memos', 'related_workareas',
+    'avoidance', 'applicability', 'source_sparks', 'related_workareas',
     'related_adrs', 'related_docs', 'related_rules',
     'archive_reason', 'discard_reason', 'notes',
   ],
-  memo: [
+  spark: [
     'description', 'evolution', 'resolved_to', 'resolved_at', 'discard_reason',
     'source', 'source_detail', 'related_workareas', 'related_workplans',
     'related_adrs', 'related_studies', 'related_docs',
   ],
   study: [
     'user_intent', 'summary', 'conclusion', 'report_body', 'urls',
-    'related_memos', 'related_workareas',
+    'related_sparks', 'related_workareas',
     'related_adrs', 'related_pitfalls', 'related_docs', 'archive_reason',
   ],
 };
@@ -104,7 +104,7 @@ const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
   related_workplans: 21,
   related_adrs: 22,
   related_pitfalls: 23,
-  related_memos: 24,
+  related_sparks: 24,
   related_studies: 25,
 };
 export type RelatedContentEntry = [string, unknown[]];
@@ -185,7 +185,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   workplan: { zh: '计划', en: 'Work Plan' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑', en: 'Pitfall' },
-  memo: { zh: '备忘', en: 'Memo' },
+  spark: { zh: '火花', en: 'Spark' },
   study: { zh: '研究', en: 'Study' },
   change: { zh: '提交', en: 'Commit' },
 };
@@ -254,12 +254,12 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   related_workareas: { zh: '关联工作域', en: 'Related Work Areas' },
   related_workplans: { zh: '关联计划', en: 'Related Work Plans' },
   related_adrs: { zh: '关联决策', en: 'Related ADRs' },
-  related_memos: { zh: '关联备忘', en: 'Related Memos' },
+  related_sparks: { zh: '关联火花', en: 'Related Sparks' },
   related_studies: { zh: '关联研究', en: 'Related Studies' },
   related_pitfalls: { zh: '关联踩坑', en: 'Related Pitfalls' },
   source_objects: { zh: '来源对象', en: 'Source Objects' },
   related_objects: { zh: '关联对象', en: 'Related Objects' },
-  source_memos: { zh: '来源备忘', en: 'Source Memos' },
+  source_sparks: { zh: '来源火花', en: 'Source Sparks' },
   resolved_to: { zh: '分流目标', en: 'Routed To' },
   resolved_at: { zh: '分流时间', en: 'Routed At' },
   discard_reason: { zh: '废弃原因', en: 'Discard Reason' },
@@ -286,7 +286,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   related_docs: { zh: '关联文档', en: 'Related Docs' },
   aggregated_related_docs: { zh: '聚合关联文档', en: 'Aggregated Related Docs' },
   aggregated_related_adrs: { zh: '聚合关联决策', en: 'Aggregated Related ADRs' },
-  aggregated_related_memos: { zh: '聚合关联备忘', en: 'Aggregated Related Memos' },
+  aggregated_related_sparks: { zh: '聚合关联火花', en: 'Aggregated Related Sparks' },
   aggregated_related_pitfalls: { zh: '聚合关联踩坑', en: 'Aggregated Related Pitfalls' },
   at: { zh: '时间', en: 'At' },
   from: { zh: '前状态', en: 'From' },
@@ -496,8 +496,8 @@ export default function ObjectDetail() {
               relatedEntries={relatedEntries}
               locale={locale}
             />
-          ) : objType === 'memo' ? (
-            <MemoReadingLayout
+          ) : objType === 'spark' ? (
+            <SparkReadingLayout
               obj={obj}
               relatedEntries={relatedEntries}
               locale={locale}
@@ -766,7 +766,7 @@ export function WorkAreaReadingLayout({
   const hasRelatedMaterials = [
     obj.related_docs,
     obj.related_adrs,
-    obj.related_memos,
+    obj.related_sparks,
     obj.related_pitfalls,
   ].some((value) => Array.isArray(value) && value.length > 0);
 
@@ -835,7 +835,7 @@ export function WorkAreaReadingLayout({
           entries={sortRelatedContentEntries([
             ['related_docs', obj.related_docs],
             ['related_adrs', obj.related_adrs],
-            ['related_memos', obj.related_memos],
+            ['related_sparks', obj.related_sparks],
             ['related_pitfalls', obj.related_pitfalls],
           ].filter((entry): entry is RelatedContentEntry => Array.isArray(entry[1]) && hasDetailContent(entry[1])))}
           locale={locale}
@@ -1318,7 +1318,7 @@ function getMaterialLabel(fieldKey: string, locale: string) {
   const labels: Record<string, { zh: string; en: string }> = {
     related_docs: { zh: '文档', en: 'Docs' },
     related_adrs: { zh: '决策', en: 'ADRs' },
-    related_memos: { zh: '备忘', en: 'Memos' },
+    related_sparks: { zh: '火花', en: 'Sparks' },
     related_pitfalls: { zh: '踩坑', en: 'Pitfalls' },
     related_rules: { zh: '规范', en: 'Specs' },
     urls: { zh: '网址', en: 'URLs' },
@@ -1383,7 +1383,7 @@ export function WorkPlanReadingLayout({
   const orchestration = getWorkPlanOrchestration(obj);
   const relatedDocs = ((obj.aggregated_related_docs as string[] | undefined) ?? (obj.related_docs as string[] | undefined)) || [];
   const relatedAdrs = ((obj.aggregated_related_adrs as string[] | undefined) ?? (obj.related_adrs as string[] | undefined)) || [];
-  const relatedMemos = ((obj.aggregated_related_memos as string[] | undefined) ?? (obj.related_memos as string[] | undefined)) || [];
+  const relatedSparks = ((obj.aggregated_related_sparks as string[] | undefined) ?? (obj.related_sparks as string[] | undefined)) || [];
   const relatedPitfalls = ((obj.aggregated_related_pitfalls as string[] | undefined) ?? (obj.related_pitfalls as string[] | undefined)) || [];
   const hidden = new Set([
     ...META_KEYS,
@@ -1401,13 +1401,13 @@ export function WorkPlanReadingLayout({
     'closed_at',
     'related_docs',
     'related_adrs',
-    'related_memos',
+    'related_sparks',
     'related_pitfalls',
     'related_workplans',
     'aggregated_execution_refs',
     'aggregated_related_docs',
     'aggregated_related_adrs',
-    'aggregated_related_memos',
+    'aggregated_related_sparks',
     'aggregated_related_pitfalls',
   ]);
   const otherEntries = Object.entries(obj).filter(([key, value]) => !hidden.has(key) && hasDetailContent(value));
@@ -1468,7 +1468,7 @@ export function WorkPlanReadingLayout({
           ['related_workplans', obj.related_workplans],
           ['related_docs', relatedDocs],
           ['related_adrs', relatedAdrs],
-          ['related_memos', relatedMemos],
+          ['related_sparks', relatedSparks],
           ['related_pitfalls', relatedPitfalls],
         ].filter((entry): entry is RelatedContentEntry => Array.isArray(entry[1]) && hasDetailContent(entry[1])))}
         locale={locale}
@@ -1996,10 +1996,10 @@ export function PitfallReadingLayout({
   relatedEntries: RelatedContentEntry[];
   locale: string;
 }) {
-  const sourceMemoEntries: RelatedContentEntry[] = Array.isArray(obj.source_memos) && hasDetailContent(obj.source_memos)
-    ? [['source_memos', obj.source_memos]]
+  const sourceSparkEntries: RelatedContentEntry[] = Array.isArray(obj.source_sparks) && hasDetailContent(obj.source_sparks)
+    ? [['source_sparks', obj.source_sparks]]
     : [];
-  const allRelatedEntries = sortRelatedContentEntries([...sourceMemoEntries, ...relatedEntries]);
+  const allRelatedEntries = sortRelatedContentEntries([...sourceSparkEntries, ...relatedEntries]);
 
   return (
     <div className="mb-6 flex flex-col gap-5">
@@ -2057,15 +2057,15 @@ function PitfallTextNodeContent({ value }: { value: unknown }) {
   );
 }
 
-const MEMO_READING_NODES: Array<{ field: string; zh: string; en: string; kind: 'summary' | 'intent' | 'evolution' | 'routing' }> = [
+const SPARK_READING_NODES: Array<{ field: string; zh: string; en: string; kind: 'summary' | 'intent' | 'evolution' | 'routing' }> = [
   { field: 'source_detail', zh: '意图', en: 'Intent', kind: 'intent' },
   { field: 'description', zh: '摘要', en: 'Current Summary', kind: 'summary' },
   { field: 'evolution', zh: '演变', en: 'Evolution', kind: 'evolution' },
   { field: 'routing', zh: '分流', en: 'Routing', kind: 'routing' },
 ];
-type MemoEvolutionEntry = { key: string; at?: string; summary: string };
+type SparkEvolutionEntry = { key: string; at?: string; summary: string };
 
-export function MemoReadingLayout({
+export function SparkReadingLayout({
   obj,
   relatedEntries,
   locale,
@@ -2076,8 +2076,8 @@ export function MemoReadingLayout({
 }) {
   return (
     <div className="mb-6 flex flex-col gap-5">
-      {MEMO_READING_NODES.map((node) => (
-        <MemoReadingNode
+      {SPARK_READING_NODES.map((node) => (
+        <SparkReadingNode
           key={node.field}
           title={locale === 'en' ? node.en : node.zh}
           obj={obj}
@@ -2090,7 +2090,7 @@ export function MemoReadingLayout({
   );
 }
 
-function MemoReadingNode({
+function SparkReadingNode({
   title,
   obj,
   locale,
@@ -2108,7 +2108,7 @@ function MemoReadingNode({
       ? hasDetailContent(obj.source_detail)
     : kind === 'evolution'
       ? hasDetailContent(obj.evolution)
-      : hasMemoRoutingContent(obj);
+      : hasSparkRoutingContent(obj);
 
   if (!hasContent) return null;
 
@@ -2119,23 +2119,23 @@ function MemoReadingNode({
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
-      {kind === 'summary' && <MemoSummaryNode value={obj.description} />}
-      {kind === 'intent' && <MemoSummaryNode value={obj.source_detail} />}
-      {kind === 'evolution' && <MemoEvolutionNode value={obj.evolution} locale={locale} />}
-      {kind === 'routing' && <MemoRoutingNode obj={obj} locale={locale} />}
+      {kind === 'summary' && <SparkSummaryNode value={obj.description} />}
+      {kind === 'intent' && <SparkSummaryNode value={obj.source_detail} />}
+      {kind === 'evolution' && <SparkEvolutionNode value={obj.evolution} locale={locale} />}
+      {kind === 'routing' && <SparkRoutingNode obj={obj} locale={locale} />}
     </ReadingNodeSection>
   );
 }
 
-function MemoSummaryNode({ value }: { value: unknown }) {
+function SparkSummaryNode({ value }: { value: unknown }) {
   return <StudyTextNodeContent value={value} />;
 }
 
-function MemoEvolutionNode({ value, locale }: { value: unknown; locale: string }) {
+function SparkEvolutionNode({ value, locale }: { value: unknown; locale: string }) {
   if (!Array.isArray(value)) return <StudyTextNodeContent value={value} />;
   const entries = value
-    .map((item, index) => parseMemoEvolutionEntry(item, index))
-    .filter((entry): entry is MemoEvolutionEntry => Boolean(entry))
+    .map((item, index) => parseSparkEvolutionEntry(item, index))
+    .filter((entry): entry is SparkEvolutionEntry => Boolean(entry))
     .reverse();
 
   if (entries.length === 0) return null;
@@ -2144,7 +2144,7 @@ function MemoEvolutionNode({ value, locale }: { value: unknown; locale: string }
     <div className="flex flex-col gap-1.5">
       {entries.map((entry) => (
         <div key={entry.key} className="grid items-center gap-2 rounded-md border border-ldvh-border/45 px-2.5 py-2.5 odd:bg-ldvh-border/[0.30] even:bg-ldvh-bg/35 sm:grid-cols-[max-content_1fr] sm:gap-x-3">
-          <MemoEvolutionTime value={entry.at} locale={locale} />
+          <SparkEvolutionTime value={entry.at} locale={locale} />
           <StudyTextNodeContent value={entry.summary} />
         </div>
       ))}
@@ -2152,7 +2152,7 @@ function MemoEvolutionNode({ value, locale }: { value: unknown; locale: string }
   );
 }
 
-function parseMemoEvolutionEntry(item: unknown, index: number): MemoEvolutionEntry | null {
+function parseSparkEvolutionEntry(item: unknown, index: number): SparkEvolutionEntry | null {
   if (typeof item === 'string' && item.trim().length > 0) {
     return { key: `${index}-${item}`, summary: item };
   }
@@ -2167,7 +2167,7 @@ function parseMemoEvolutionEntry(item: unknown, index: number): MemoEvolutionEnt
   };
 }
 
-function MemoEvolutionTime({ value, locale }: { value?: string; locale: string }) {
+function SparkEvolutionTime({ value, locale }: { value?: string; locale: string }) {
   if (!value) {
     return (
       <div className="ldvh-caption-strong whitespace-nowrap text-ldvh-text-secondary">
@@ -2184,10 +2184,10 @@ function MemoEvolutionTime({ value, locale }: { value?: string; locale: string }
   );
 }
 
-function MemoRoutingNode({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
+function SparkRoutingNode({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
   const status = String(obj.status ?? 'pending');
-  const statusLabel = getObjectStatusLocale('memo', status, locale);
-  const resolvedRef = getMemoResolvedReference(obj.resolved_to);
+  const statusLabel = getObjectStatusLocale('spark', status, locale);
+  const resolvedRef = getSparkResolvedReference(obj.resolved_to);
   const resolvedAt = typeof obj.resolved_at === 'string' && obj.resolved_at.trim().length > 0 ? obj.resolved_at : null;
   const discardReason = typeof obj.discard_reason === 'string' && obj.discard_reason.trim().length > 0 ? obj.discard_reason : null;
 
@@ -2195,7 +2195,7 @@ function MemoRoutingNode({ obj, locale }: { obj: Record<string, unknown>; locale
     <div className="flex flex-col divide-y divide-ldvh-border/60">
       <DetailInlineField
         label={locale === 'en' ? 'Status' : '状态'}
-        value={<StatusBadge status={status} statusLabel={statusLabel} objectType="memo" size="sm" />}
+        value={<StatusBadge status={status} statusLabel={statusLabel} objectType="spark" size="sm" />}
       />
       {resolvedRef && (
         <DetailObjectRow
@@ -2222,7 +2222,7 @@ function MemoRoutingNode({ obj, locale }: { obj: Record<string, unknown>; locale
   );
 }
 
-function hasMemoRoutingContent(obj: Record<string, unknown>) {
+function hasSparkRoutingContent(obj: Record<string, unknown>) {
   const status = String(obj.status ?? 'pending');
   return status === 'resolved'
     || status === 'discarded'
@@ -2231,7 +2231,7 @@ function hasMemoRoutingContent(obj: Record<string, unknown>) {
     || hasDetailContent(obj.discard_reason);
 }
 
-function getMemoResolvedReference(value: unknown): { ref: string; objectType: string } | null {
+function getSparkResolvedReference(value: unknown): { ref: string; objectType: string } | null {
   if (typeof value === 'string') {
     const ref = value.trim();
     if (!ref) return null;
@@ -2548,7 +2548,7 @@ function DetailObjectReferenceValue({
 export function getAuxiliaryMetaEntries(obj: Record<string, unknown>, objType: string) {
   const keys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
   return keys
-    .filter((key) => key !== 'priority' || (objType !== 'memo' && objType !== 'workplan'))
+    .filter((key) => key !== 'priority' || (objType !== 'spark' && objType !== 'workplan'))
     .map((key) => [key, obj[key]] as [string, unknown])
     .filter(([, value]) => value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0));
 }

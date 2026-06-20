@@ -8,44 +8,44 @@ workarea: workarea-0012
 priority: P2
 description: |
   在旧对象清退和文件元信息契约标准化过程中，记录中间问题、残留风险、Code/Web/Specs 协同经验和
-  后续流程规范候选。该 WorkPlan 不替代前两个执行计划，只负责把过程经验回写到 Memo、待补齐事项
+  后续流程规范候选。该 WorkPlan 不替代前两个执行计划，只负责把过程经验回写到 Spark、待补齐事项
   或后续规范准备材料，避免执行中的经验只留在对话里。本计划执行前必须经过独立流程治理复核
   和 Human 明确批准；执行后必须完成过程复盘和分流。
 success_criteria: |
-  - [x] 执行过程中遇到的阻塞、降级、残留风险或无法一次完成事项已记录到 Memo
+  - [x] 执行过程中遇到的阻塞、降级、残留风险或无法一次完成事项已记录到 Spark
   - [x] Code/Web/Specs 三方契约协同中的经验和问题已形成可复用总结
-  - [x] 对未来相关工作流程规范的候选要求已回写到 Memo、closure_evidence 或后续 WorkPlan，至少覆盖拆分、审批、执行、问题回写和最终复盘
+  - [x] 对未来相关工作流程规范的候选要求已回写到 Spark、closure_evidence 或后续 WorkPlan，至少覆盖拆分、审批、执行、问题回写和最终复盘
   - [x] 本轮“计划审核 / Human 执行审批漏检”已形成稳定记录，并作为后续流程规范候选输入
   - [x] 每个 WorkPlan 完成后均已安排独立专业子 Agent 做完成后检查，检查结论进入对应 WorkPlan 的 verification_evidence 或 closure_evidence
-  - [x] 每个 WorkPlan 关闭前均已判断是否需要把经验写入 Memo、把可复用踩坑写入 Pitfall，或把流程改进候选分流为后续 WorkPlan
+  - [x] 每个 WorkPlan 关闭前均已判断是否需要把经验写入 Spark、把可复用踩坑写入 Pitfall，或把流程改进候选分流为后续 WorkPlan
   - [x] 最终回报中明确说明三个 WorkPlan 的完成情况、校验结果、残留风险和经验总结
 source: |
   Plan creation requested by dmh2002 on 2026-06-18:
-  用户要求把这些事拆成三个 WorkPlan，审批后依次执行，中间不要停；若发生问题记录到 Memo，
+  用户要求把这些事拆成三个 WorkPlan，审批后依次执行，中间不要停；若发生问题记录到 Spark，
   最后在回报中告知，并从过程中总结经验和问题，用于完善当前流程并为未来相关工作流程规范做准备。
-  独立流程治理审批子 Agent 初审返回 REQUEST_CHANGES，要求明确计划审核和执行前批准门槛、过程 Memo 触发规则、
+  独立流程治理审批子 Agent 初审返回 REQUEST_CHANGES，要求明确计划审核和执行前批准门槛、过程 Spark 触发规则、
   流程改进候选稳定回写位置和专业复核要求。
-  用户随后补充要求：WorkPlan 完成后还需要独立子 Agent 检查；WorkPlan 最终总结要写入 Memo 或 Pitfall；
-  整个工作流程也要记录到 Memo，后续打磨成标准工作流程。
+  用户随后补充要求：WorkPlan 完成后还需要独立子 Agent 检查；WorkPlan 最终总结要写入 Spark 或 Pitfall；
+  整个工作流程也要记录到 Spark，后续打磨成标准工作流程。
 orchestration:
   mode: sequential
   execution_items:
   - id: item-1
-    title: 贯穿执行期维护过程问题 Memo
+    title: 贯穿执行期维护过程问题 Spark
     role: controller
     mode: single
     input_refs:
-    - ldvh-base/memos/
+    - ldvh-base/sparks/
     - workplan-0069
     - workplan-0070
-    expected_output: 在 0069 和 0070 执行期间，凡遇到阻塞、降级、范围扩大、审批不确定或残留风险，立即形成或更新 Memo；不得等到最终复盘才补记。
+    expected_output: 在 0069 和 0070 执行期间，凡遇到阻塞、降级、范围扩大、审批不确定或残留风险，立即形成或更新 Spark；不得等到最终复盘才补记。
     status: done
     result_summary: |
-      已更新 memo-0005，修正旧 TaskPlan / Task / SubTask 从“降权兼容”到“当前事实源和入口已清退”的事实口径；
-      已更新 memo-0010，记录计划审批门漏检、完成后复审硬 Gate、连续执行边界和总结分流规则。
+      已更新 spark-0005，修正旧 TaskPlan / Task / SubTask 从“降权兼容”到“当前事实源和入口已清退”的事实口径；
+      已更新 spark-0010，记录计划审批门漏检、完成后复审硬 Gate、连续执行边界和总结分流规则。
     evidence_refs:
-    - ldvh-base/memos/memo-0005-task-orchestration-boundary.yaml
-    - ldvh-base/memos/memo-0010-plan-approval-gate-miss.yaml
+    - ldvh-base/sparks/spark-0005-task-orchestration-boundary.yaml
+    - ldvh-base/sparks/spark-0010-plan-approval-gate-miss.yaml
     blocking_reason: null
   - id: item-2
     title: 总结 Code/Web/Specs 契约协同经验
@@ -54,13 +54,13 @@ orchestration:
     input_refs:
     - workplan-0069
     - workplan-0070
-    expected_output: 形成面向未来流程规范的经验、问题和候选要求，并稳定回写到 Memo、closure_evidence 或后续 WorkPlan。
+    expected_output: 形成面向未来流程规范的经验、问题和候选要求，并稳定回写到 Spark、closure_evidence 或后续 WorkPlan。
     status: done
     result_summary: |
       已总结 Code/Web/Specs 协同经验：Code 负责确定性入口和诊断，Web 负责可理解表达与旧入口残留暴露，
       Specs 负责契约边界；三方必须围绕同一事实源进行独立检查，完成后复审必须能提出阻塞项。
     evidence_refs:
-    - ldvh-base/memos/memo-0010-plan-approval-gate-miss.yaml
+    - ldvh-base/sparks/spark-0010-plan-approval-gate-miss.yaml
     - ldvh-base/workplans/workplan-0069-legacy-cleanup-and-header-contract.yaml
     - ldvh-base/workplans/workplan-0070-specs-header-metadata-contract.yaml
     blocking_reason: null
@@ -83,31 +83,31 @@ orchestration:
     - ldvh-base/workplans/workplan-0070-specs-header-metadata-contract.yaml
     blocking_reason: null
   - id: item-4
-    title: 分流总结到 Memo 或 Pitfall
+    title: 分流总结到 Spark 或 Pitfall
     role: controller
     mode: single
     input_refs:
-    - ldvh-base/memos/
+    - ldvh-base/sparks/
     - ldvh-base/pitfalls/
     - workplan-0069
     - workplan-0070
-    expected_output: 将过程经验、流程候选和残留问题写入 Memo；将已解决且可复用的错误模式或操作陷阱写入 Pitfall；不让总结只停留在最终回报。
+    expected_output: 将过程经验、流程候选和残留问题写入 Spark；将已解决且可复用的错误模式或操作陷阱写入 Pitfall；不让总结只停留在最终回报。
     status: done
     result_summary: |
-      本轮新增和补写 Memo，不新增 Pitfall：计划审批门漏检已经由 memo-0010 承载；旧对象兼容事实口径由 memo-0005 承载；
+      本轮新增和补写 Spark，不新增 Pitfall：计划审批门漏检已经由 spark-0010 承载；旧对象兼容事实口径由 spark-0005 承载；
       0069/0070 的普通完成证据留在各自 WorkPlan；暂未形成新的独立可复用 Pitfall。
     evidence_refs:
-    - ldvh-base/memos/memo-0005-task-orchestration-boundary.yaml
-    - ldvh-base/memos/memo-0010-plan-approval-gate-miss.yaml
+    - ldvh-base/sparks/spark-0005-task-orchestration-boundary.yaml
+    - ldvh-base/sparks/spark-0010-plan-approval-gate-miss.yaml
     blocking_reason: null
   - id: item-5
     title: 最终回报与后续规范准备
     role: controller
     mode: single
     input_refs:
-    - memo-0005
-    - memo-0009
-    expected_output: 在最终回报中汇总三个 WorkPlan、完成后子 Agent 检查、校验、残留风险、Memo/Pitfall 分流和流程改进候选。
+    - spark-0005
+    - spark-0009
+    expected_output: 在最终回报中汇总三个 WorkPlan、完成后子 Agent 检查、校验、残留风险、Spark/Pitfall 分流和流程改进候选。
     status: done
     result_summary: |
       最终回报将列出三个阶段提交、校验命令、子 Agent 复审结果、残留风险和流程改进候选；
@@ -120,7 +120,7 @@ orchestration:
     specialist_review:
       required: true
       role: process-governance-reviewer
-      expected_output: 独立复核计划审批、Human 执行批准、过程 Memo 回写和流程改进候选是否闭环。
+      expected_output: 独立复核计划审批、Human 执行批准、过程 Spark 回写和流程改进候选是否闭环。
     human_closure_review: true
 verification_evidence: |
   ## 验证计划
@@ -140,14 +140,14 @@ verification_evidence: |
   阶段完成记录：
   - workplan-0069 已完成并提交为 715a588 Remove legacy task object model。完成后 Code/Web 子 Agent 初审发现旧对象残留，修复后复审通过。
   - workplan-0070 已完成并提交为 d3d5c92 Document specs header metadata contract。完成后 Code/Web 子 Agent 复审通过。
-  - workplan-0071 已更新 memo-0005 和 memo-0010，沉淀旧对象清退事实口径、计划审批门漏检、完成后复审硬 Gate、Memo/Pitfall 分流规则和连续执行边界。
+  - workplan-0071 已更新 spark-0005 和 spark-0010，沉淀旧对象清退事实口径、计划审批门漏检、完成后复审硬 Gate、Spark/Pitfall 分流规则和连续执行边界。
 
   已运行并通过的关键验证：
   - workplan-0069 阶段：python3 code/fact_validate.py ldvh-base/；python3 code/specs_validate.py all --fail-on-diagnostics；python3 -m pytest tests/code -q；npm run test:web:api；npm run web:check；npm run web:build。
   - workplan-0070 阶段：python3 code/specs_validate.py all --fail-on-diagnostics；python3 code/fact_validate.py ldvh-base/；git diff --check。
 
   分流判断：
-  - Memo：memo-0005 记录旧对象事实源与编排边界收敛；memo-0010 记录审批、复审、执行和总结分流流程候选。
+  - Spark：spark-0005 记录旧对象事实源与编排边界收敛；spark-0010 记录审批、复审、执行和总结分流流程候选。
   - Pitfall：本轮除已记录的计划审批门漏检外，未形成新的独立可复用错误模式，暂不新增 Pitfall。
   - 后续 WorkPlan：0070 识别的 docs/studies/sources 头部元信息 Code 覆盖、41-43 active 后落地硬化继续保留为后续候选，不在本轮扩大范围。
   - process-governance 子 Agent 初审返回 REQUEST_CHANGES，指出 0071 的 evidence_refs 中 0069 文件名漂移且现有 fact_validate 未捕获；已修正引用，后续可考虑为 evidence_refs 增加路径存在性检查。
@@ -175,7 +175,7 @@ closure_evidence: |
   原文标题：验证结果
 
   process-governance 子 Agent 初审结论为 REQUEST_CHANGES：0071 的 evidence_refs 指向不存在的 0069 文件名。已将引用修正为 `ldvh-base/workplans/workplan-0069-legacy-cleanup-and-header-contract.yaml`。
-  process-governance 子 Agent 最终复审结论为 PASS：计划审批、Human 执行批准、完成后复审、Memo/Pitfall/closure/follow-up 分流、memo-0005 旧对象口径修正、memo-0010 流程候选沉淀均已闭环。
+  process-governance 子 Agent 最终复审结论为 PASS：计划审批、Human 执行批准、完成后复审、Spark/Pitfall/closure/follow-up 分流、spark-0005 旧对象口径修正、spark-0010 流程候选沉淀均已闭环。
 
   最终校验：
   - `python3 code/fact_validate.py ldvh-base/`：files=108 errors=0 warnings=0
@@ -196,10 +196,10 @@ related_docs:
 - specs/42-specs-audit-规范审核.md
 - specs/43-landing-readiness-audit-落地准备度审核.md
 related_adrs: []
-related_memos:
-- memo-0005
-- memo-0009
-- memo-0010
+related_sparks:
+- spark-0005
+- spark-0009
+- spark-0010
 related_pitfalls: []
 related_workplans:
 - workplan-0069

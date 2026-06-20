@@ -1,11 +1,11 @@
-id: memo-0017
-type: memo
+id: spark-0017
+type: spark
 title: 10 号 Git 提交规范落地资产边界待收敛
 status: pending
 created: '2026-06-20T04:33:49+08:00'
 updated: '2026-06-21T00:39:27+08:00'
 description: |
-  本 Memo 承载一个需要后续收敛的规范落地问题：`specs/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
+  本 Spark 承载一个需要后续收敛的规范落地问题：`specs/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
 
   当前讨论结论：
 
@@ -55,10 +55,10 @@ description: |
 
   分流与并行承接补充：
 
-  本 Memo 目前不是单一 WorkPlan 的待办入口，而是一组能力资产治理缺口的汇总入口。`workplan-0074`
+  本 Spark 目前不是单一 WorkPlan 的待办入口，而是一组能力资产治理缺口的汇总入口。`workplan-0074`
   可继续承接 Git 提交规范收口和提交门禁落地；`workplan-0024` 可并行承接最佳实践文档方向。后续若形成专门的固定能力资产登记制、
   Skill/Hook 资产落地或派生型能力资产治理 WorkPlan，应继续加入 `related_workplans`，并在 `evolution`
-  中说明各线承接范围。只有当这些前置治理线均被明确承接或废弃后，才考虑将本 Memo 标记为 `resolved`。
+  中说明各线承接范围。只有当这些前置治理线均被明确承接或废弃后，才考虑将本 Spark 标记为 `resolved`。
 evolution:
   - at: '2026-06-20T04:33:49+08:00'
     summary: 用户要求记录 10 号规范落地问题，并追问除 hook 外是否需要 Skill；当前结论是提交门禁需要 Git hook，AI 行动稳定性需要 Skill，两者职责不同且都应进入 10 号规范落地资产讨论。
@@ -69,13 +69,13 @@ evolution:
   - at: '2026-06-20T05:30:57+08:00'
     summary: 补充确认 Rules 也必须按固定能力资产自登记；当前两个 Rules 入口应先补齐 `ldvh_asset` 元信息，并由 Code 做保守登记校验。
   - at: '2026-06-20T10:02:11+08:00'
-    summary: 确认本 Memo 应作为多线并行分流入口处理；Git 提交规范收口可由 workplan-0074 承接，最佳实践文档方向可由 workplan-0024 并行推进，后续固定能力资产登记制、Skill/Hook 落地和派生型能力资产治理如形成独立 WorkPlan，应继续追加关联而不是把本 Memo 过早 resolved。
+    summary: 确认本 Spark 应作为多线并行分流入口处理；Git 提交规范收口可由 workplan-0074 承接，最佳实践文档方向可由 workplan-0024 并行推进，后续固定能力资产登记制、Skill/Hook 落地和派生型能力资产治理如形成独立 WorkPlan，应继续追加关联而不是把本 Spark 过早 resolved。
   - at: '2026-06-20T10:12:08+08:00'
-    summary: 新建 workplan-0080 承接固定能力资产登记制、资产类型最佳实践标准、同步监督和部署分层边界；本 Memo 继续保持 pending，三条并行承接线暂为 workplan-0074、workplan-0024 和 workplan-0080。
+    summary: 新建 workplan-0080 承接固定能力资产登记制、资产类型最佳实践标准、同步监督和部署分层边界；本 Spark 继续保持 pending，三条并行承接线暂为 workplan-0074、workplan-0024 和 workplan-0080。
   - at: '2026-06-21T00:39:27+08:00'
     summary: workplan-0074 已完成真实落地的一部分：`ldvh-git-commit` Skill 按 04.02 登记为 active 固定能力资产，10 号规范和维护入口已指向该 Skill；Hook 口径同步修正为统一 Hook registry / dispatcher 与环境接入层分离，不再描述为仓库级原生 Git hook 安装脚本。
 source: conversation
-source_detail: 用户围绕 10 号 Git 提交规范落地追问“这种属于 LDVH 安装后必须落地的资产”和“除了 hook，不需要 skills？”，要求建立 Memo 记录，避免后续遗忘。
+source_detail: 用户围绕 10 号 Git 提交规范落地追问“这种属于 LDVH 安装后必须落地的资产”和“除了 hook，不需要 skills？”，要求建立 Spark 记录，避免后续遗忘。
 priority: P1
 resolved_to: ""
 resolved_at: ""
@@ -93,7 +93,7 @@ related_docs:
   - specs/04.03-环境入口适配与部署规范.md
   - specs/06-工作流程基础规范.md
   - specs/10-Git提交规范.md
-  - specs/24-Memo-备忘.md
+  - specs/24-Spark-火花.md
   - specs/40-workflow-design-audit-工作流程设计审核.md
   - specs/41-work-model-audit-工作模型审核.md
   - specs/42-specs-audit-规范审核.md

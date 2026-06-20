@@ -54,7 +54,7 @@ avoidance: |
   3. 规范变更后执行受影响任务前，重新读取变更后的规范并声明"已按新规范调整执行计划"；
   4. 规范变更和任务执行尽量在不同会话内进行，让 AI 重新加载 Rules 和 Skill。
 applicability: 所有接入 LDVH 的项目，所有任务执行和关闭场景
-source_memos: []
+source_sparks: []
 related_workareas:
 - workarea-0003
 related_adrs: []

@@ -14,7 +14,7 @@ scope: |
   所有 13 个早期零散任务完成工作范围归组，任务归属关系完整可查。
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 archive_reason: |
   早期零散任务归组范围已完成收敛，当前不再承载新的任务计划。

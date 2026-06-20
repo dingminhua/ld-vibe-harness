@@ -50,7 +50,7 @@ avoidance: |
   - Task / SubTask：description、acceptance、verification、closure_evidence
   - Pitfall：symptoms、trigger_conditions、root_cause、resolution、verification、avoidance
 applicability: 所有接入 LDVH 的项目，所有事实模型类型
-source_memos: []
+source_sparks: []
 related_workareas: []
 related_adrs: []
 related_docs: []

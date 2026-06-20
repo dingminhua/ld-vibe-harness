@@ -10,7 +10,7 @@ scope: 创建真实工作对象实例，并通过 tools/check_fact_model.py 校�
 constraints: 不扩展新框架分支；不先做 Web；只验证最小可运行闭环。
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 archive_reason: |
   最小 Core Loop 验证范围已完成阶段性验证，当前不再承载新的任务计划。

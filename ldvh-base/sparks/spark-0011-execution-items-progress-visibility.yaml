@@ -1,5 +1,5 @@
-id: memo-0011
-type: memo
+id: spark-0011
+type: spark
 title: WorkPlan 执行项进度同时服务 AI 和 Human
 status: pending
 created: '2026-06-19T06:22:32+08:00'
@@ -54,10 +54,10 @@ description: |
      - active/pending 事实源中的当前性表述；
      - 旧字段、旧对象和旧路径的允许残留边界；
   5. Web 上应把验证结果压缩成可扫描摘要：通过的命令、失败的命令、允许 warning、残留风险和后续项；
-  6. AI 在执行中发现“规范已有但触发保障缺失”“迁移表面完成但残留未消除”等问题时，应默认分流为 Pitfall、Memo 或新增 execution_item，而不是等用户追问。
+  6. AI 在执行中发现“规范已有但触发保障缺失”“迁移表面完成但残留未消除”等问题时，应默认分流为 Pitfall、Spark 或新增 execution_item，而不是等用户追问。
 evolution:
   - at: '2026-06-19T06:22:32+08:00'
-    summary: 用户确认 execution_items 的拆分对 AI 和 Human 都有价值，要求先记录为 Memo，后续再推进。
+    summary: 用户确认 execution_items 的拆分对 AI 和 Human 都有价值，要求先记录为 Spark，后续再推进。
   - at: '2026-06-19T06:25:00+08:00'
     summary: 用户补充指出，不应只记录 execution_items，计划审查、Human 批准、最后 review、关闭确认等生命周期环节也应有显式状态和证据；若每个环节都强制记录状态，就能减少 AI 漏步骤。
   - at: '2026-06-19T07:30:42+08:00'

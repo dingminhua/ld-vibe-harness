@@ -7,7 +7,7 @@ import { useI18n } from '@/i18n/context';
 import {
   ContentField,
   AdrReadingLayout,
-  MemoReadingLayout,
+  SparkReadingLayout,
   ObjectIdentityHeader,
   PitfallReadingLayout,
   RelatedContentSection,
@@ -36,7 +36,7 @@ const OBJECT_TYPE_LABELS: Record<string, { zh: string; en: string }> = {
   workplan: { zh: '计划', en: 'Work Plan' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑', en: 'Pitfall' },
-  memo: { zh: '备忘', en: 'Memo' },
+  spark: { zh: '火花', en: 'Spark' },
   study: { zh: '研究', en: 'Study' },
   change: { zh: '提交', en: 'Commit' },
 };
@@ -427,7 +427,7 @@ function ObjectSemanticPreview({
   useEffect(() => {
     if (!objectType || !objectId) return;
     if (!isObjectDetailLayoutType(objectType)) return;
-    if (objectType === 'pitfall' || objectType === 'adr' || objectType === 'memo' || objectType === 'study') {
+    if (objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study') {
       setSummary(null);
       setLoading(false);
       return;
@@ -472,10 +472,10 @@ function ObjectSemanticPreview({
     const { relatedEntries } = splitRelatedContentEntries(entries);
     return <AdrReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
   }
-  if (objectType === 'memo') {
+  if (objectType === 'spark') {
     const entries = getObjectDetailContentEntries(obj, objectType);
     const { relatedEntries } = splitRelatedContentEntries(entries);
-    return <MemoReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
+    return <SparkReadingLayout obj={obj} relatedEntries={relatedEntries} locale={locale} />;
   }
   if (objectType === 'study') {
     const entries = getObjectDetailContentEntries(obj, objectType);
@@ -494,7 +494,7 @@ function ObjectSemanticPreview({
 }
 
 function isObjectDetailLayoutType(objectType: string | undefined) {
-  return objectType === 'workarea' || objectType === 'workplan' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'memo' || objectType === 'study';
+  return objectType === 'workarea' || objectType === 'workplan' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study';
 }
 
 function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {

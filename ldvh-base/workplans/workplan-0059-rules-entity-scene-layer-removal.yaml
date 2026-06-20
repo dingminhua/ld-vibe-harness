@@ -135,6 +135,6 @@ related_docs:
 - specs/04.02-LDVH能力资产与落地保障规范.md
 - rules/LDVH-WORKSPACE-ENTRY.md
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

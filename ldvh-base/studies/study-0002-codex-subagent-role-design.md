@@ -17,8 +17,8 @@ urls:
   - ref: https://developers.openai.com/codex/subagents
     title: Codex Subagents
     summary: 用于说明 Codex 子 Agent 的创建、配置和调用方式，支撑 LDVH 角色契约映射判断。
-related_memos:
-  - memo-0007
+related_sparks:
+  - spark-0007
 related_workareas: []
 related_workplans: []
 related_adrs: []

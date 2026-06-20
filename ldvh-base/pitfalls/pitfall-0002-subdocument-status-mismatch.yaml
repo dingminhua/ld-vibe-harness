@@ -47,7 +47,7 @@ avoidance: |
   - active：文件应包含完整机制实践内容
   - active-prep：文件应包含正在准备的机制实践内容
 applicability: 所有接入 LDVH 的项目，所有事实模型子文档
-source_memos: []
+source_sparks: []
 related_workareas: []
 related_adrs: []
 related_docs: []

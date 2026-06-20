@@ -30,8 +30,8 @@ urls:
   - ref: https://neo4j.com/blog/knowledge-graph/how-to-build-knowledge-graph/
     title: How to Build a Knowledge Graph in 7 Steps
     summary: 提供“建模-导入-测试-维护”闭环，支持 LDVH 将图谱建设按阶段化执行并验收。
-related_memos:
-  - memo-0016
+related_sparks:
+  - spark-0016
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -41,7 +41,7 @@ related_docs:
   - specs/05.02-工作模型字段内容与格式规范.md
   - specs/05.03-工作模型字段注册与消费规范.md
   - specs/21-WorkPlan-工作计划.md
-  - specs/24-Memo-备忘.md
+  - specs/24-Spark-火花.md
   - specs/42-specs-audit-规范审核.md
 archive_reason:
 ---
@@ -59,7 +59,7 @@ archive_reason:
 本研究基于 2025-2026 的公开实践文章与 LDVH 当前事实源资产；时间点为 2026-06-20。
 
 输入边界：
-- 只覆盖 LDVH 项目对象层（WorkPlan/Memo/ADR/Pitfall/Study/WorkArea）之间关系治理；
+- 只覆盖 LDVH 项目对象层（WorkPlan/Spark/ADR/Pitfall/Study/WorkArea）之间关系治理；
 - 不直接评估外部图数据库选型的托管成本、运维资源或组织预算；
 - 不替代 `docs/studies` 中临时资料，仅吸收可复用、可引用的结论。
 - 图谱输出只能作为运行时投影和当次诊断结果；不得写入 `entities.json`、`edges.json`、`graph-metadata.json` 等派生文件，不得维护长期缓存。
@@ -70,7 +70,7 @@ archive_reason:
 
 LDVH 已具备知识图谱建设的输入条件：
 
-- 结构化对象事实源（WorkPlan/Memo/ADR/Pitfall/Study/WorkArea）；
+- 结构化对象事实源（WorkPlan/Spark/ADR/Pitfall/Study/WorkArea）；
 - 标准化 ID 与跨对象关联字段；
 - fact_cli 检索与 Git 提交追溯链路。
 
@@ -110,7 +110,7 @@ LDVH 已具备知识图谱建设的输入条件：
 - 定义 LDVH 核心关系语义与最小字段映射；
 - 提供查询：邻接、阻塞链、证据链、收敛链；
 - 支持将关系问题映射到 WorkPlan 审核与关闭前检查点。
-- 查询入口应包含正向邻接、反向邻接、对象影响面、Memo 分流链、WorkPlan 输入/证据链和已失效引用列表。
+- 查询入口应包含正向邻接、反向邻接、对象影响面、Spark 分流链、WorkPlan 输入/证据链和已失效引用列表。
 
 ### 阶段 3（P2）：与 40-43 与提交链路打通
 

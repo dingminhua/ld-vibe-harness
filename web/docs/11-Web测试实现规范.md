@@ -44,7 +44,7 @@ Web 测试实现使用以下目录边界：
 Web 测试按以下优先级选择：
 
 1. API contract 测试优先于页面测试；
-2. 高风险 API 优先覆盖 `POST /api/memos`、ProjectFiles、Objects 和提交记录页；
+2. 高风险 API 优先覆盖 `POST /api/sparks`、ProjectFiles、Objects 和提交记录页；
 3. 页面测试优先覆盖 ProjectFiles、ObjectDetail、ObjectList 和 Dashboard 的空态、错误态、降级态、只读边界和来源呈现；
 4. 组件测试优先覆盖状态徽章、对象卡片、Markdown 阅读、复制按钮、Confirm UI 占位和 i18n 映射；
 5. E2E、视觉回归和复杂浏览器流程后置，不作为当前 Web API contract 测试的前置条件。
@@ -61,7 +61,7 @@ Web 测试按以下优先级选择：
 | ObjectList | 对象列表、筛选、状态展示、计划态势和只读边界 | `tests/web/pages/`、`tests/web/components/` |
 | ObjectDetail | 字段展示、关联材料、验证方式、关闭证据和 Markdown 阅读 | `tests/web/pages/`、`tests/web/components/` |
 | 提交记录页 | Git 提交记录展示、commit 类型映射和引用追溯 | `tests/web/api/`、`tests/web/pages/` |
-| Memo 快速创建 | 白名单写入、字段校验、受控写入链路和错误态 | `tests/web/api/` |
+| Spark 快速创建 | 白名单写入、字段校验、受控写入链路和错误态 | `tests/web/api/` |
 | 全局 i18n | UI 文案、状态、枚举、字段名和空态中英文映射 | `tests/web/components/`、`tests/web/pages/` |
 
 页面文档新增或改变 API、路由、关键交互、状态语义、来源呈现、写入边界或 i18n 要求时，应同步检查本节映射是否需要更新。
@@ -76,7 +76,7 @@ Web 测试夹具应遵守：
 4. 测试不得依赖真实用户环境、全局本机路径或未声明的外部服务；
 5. 截图、覆盖率、trace 和缓存仅作为临时运行产物，不进入长期事实源。
 
-字段契约夹具应覆盖当前工作对象属性边界：WorkPlan 可包含 `priority`，Memo 可包含 `priority`；WorkPlan 和 Memo 不得包含 `importance`（importance 已由 priority 统一承载，不再作为独立字段）。执行项夹具只用于 WorkPlan 内部派生态势，不得被写成独立对象契约；结果物、参考输入文档和完成后需同步检查的文档应按 WorkPlan 字段或证据字段归属，不能在夹具中混用。
+字段契约夹具应覆盖当前工作对象属性边界：WorkPlan 可包含 `priority`，Spark 可包含 `priority`；WorkPlan 和 Spark 不得包含 `importance`（importance 已由 priority 统一承载，不再作为独立字段）。执行项夹具只用于 WorkPlan 内部派生态势，不得被写成独立对象契约；结果物、参考输入文档和完成后需同步检查的文档应按 WorkPlan 字段或证据字段归属，不能在夹具中混用。
 
 ## 6. AI 修改 Web 的测试顺序
 
@@ -94,6 +94,6 @@ AI 修改 `web/` 时，应按以下顺序执行：
 ## 7. 待补齐事项
 
 1. 当前 Web 参考实现的 npm script、测试框架和 API contract 运行入口需要在测试实现稳定后补齐；
-2. Objects 和 Memo 快速创建的最小 API contract 样例需要随对应测试创建；
+2. Objects 和 Spark 快速创建的最小 API contract 样例需要随对应测试创建；
 3. 页面级测试与组件级测试的拆分边界需要在首批 `tests/web/` 用例落地后复核；
 4. Web 消费 Code 输出的数据合同需要在 Code 输出结构稳定后补齐测试样例。

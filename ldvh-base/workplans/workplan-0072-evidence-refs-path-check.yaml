@@ -154,8 +154,8 @@ related_docs:
 - specs/05.02-工作模型字段内容与格式规范.md
 - specs/07-Code确定性执行实现规范.md
 related_adrs: []
-related_memos:
-- memo-0010
+related_sparks:
+- spark-0010
 related_pitfalls: []
 related_workplans:
 - workplan-0071

@@ -45,7 +45,7 @@ description: 测试工作域说明
 source: 测试
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 workplans:
   - workplan-0001
@@ -97,7 +97,7 @@ review_requested_at: ''
 closed_at: ''
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []
 """.strip()

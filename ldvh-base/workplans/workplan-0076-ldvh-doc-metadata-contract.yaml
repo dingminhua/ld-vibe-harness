@@ -216,7 +216,7 @@ related_docs:
 - specs/07-Code确定性执行实现规范.md
 - specs/08-Web信息同步实现规范.md
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans:
 - workplan-0070

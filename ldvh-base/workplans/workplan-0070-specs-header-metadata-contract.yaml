@@ -145,9 +145,9 @@ related_docs:
 - specs/03.02-工作模型文档规范.md
 - specs/03.03-工作流程文档规范.md
 related_adrs: []
-related_memos:
-- memo-0005
-- memo-0009
+related_sparks:
+- spark-0005
+- spark-0009
 related_pitfalls: []
 related_workplans:
 - workplan-0069

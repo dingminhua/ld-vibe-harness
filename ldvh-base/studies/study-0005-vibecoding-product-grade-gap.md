@@ -71,8 +71,8 @@ urls:
   - ref: https://code.claude.com/docs/en/code-review
     title: Claude Code Review
     summary: 用于说明 AI 编程进入产品级后，代码审查应成为常规工作流，而不是可选补充。
-related_memos:
-  - memo-0008
+related_sparks:
+  - spark-0008
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -154,7 +154,7 @@ Demo 级 Vibe Coding 的优势很明确：
 
 产品级要求需求可追踪、可验收、可变更。ISO/IEC/IEEE 29148 把需求工程放在系统和软件生命周期中处理，强调需求过程和需求信息项。对 Vibe Coding 来说，这意味着不能只让 AI 读一句“做个 CRM”，而要有用户、场景、约束、验收、非目标和变更记录。
 
-LDVH 当前已有 WorkPlan 和 Memo，但缺更产品化的需求层。例如：
+LDVH 当前已有 WorkPlan 和 Spark，但缺更产品化的需求层。例如：
 
 - 用户画像；
 - 用户旅程；
@@ -244,7 +244,7 @@ DORA 研究长期关注软件交付和运维表现。DORA 四个核心指标在�
 
 LDVH 当前能通过 Git 提交记录和提交记录派生视图追溯事实源修改，但还不能系统衡量交付吞吐、质量和恢复能力。后续需要能看见：
 
-- 一个需求从 Memo / WorkPlan 到发布用了多久；
+- 一个需求从 Spark / WorkPlan 到发布用了多久；
 - 哪类变更最容易失败；
 - 哪些对象长期卡住；
 - 哪些测试或门禁阻塞最多；
@@ -277,8 +277,8 @@ AI coding 的产品级关键不是让 AI 无限自治，而是给 AI 明确事�
 从现有 specs 看，LDVH 已经具备几个重要底盘：
 
 1. 00 总纲已经把 LDVH 定位为面向 AI 协作的事实源治理和运行闭环，而不是普通文档集合；
-2. WorkArea / WorkPlan / ADR / Memo / Pitfall / Study 覆盖目标、计划、决策、经验和报告，事实源修改追溯回到 Git 提交记录；
-3. Memo + Study 已经解决了“想法暂存”和“稳定报告”分离；
+2. WorkArea / WorkPlan / ADR / Spark / Pitfall / Study 覆盖目标、计划、决策、经验和报告，事实源修改追溯回到 Git 提交记录；
+3. Spark + Study 已经解决了“想法暂存”和“稳定报告”分离；
 4. WorkPlan 已经把执行编排、验证证据、关闭证据放在一次工作对象内；
 5. 11 测试基础规范已经建立验证声明、测试归属和事实源边界；
 6. Code 和 Web 已经在理念层被定义为确定性执行与 Human-facing 桥接；
@@ -290,7 +290,7 @@ AI coding 的产品级关键不是让 AI 无限自治，而是给 AI 明确事�
 
 #### 1. 产品需求层
 
-当前 WorkPlan 更像一次可验收工作计划，Memo 更像议题入口。产品级还需要更稳定的产品需求层。候选能力包括：
+当前 WorkPlan 更像一次可验收工作计划，Spark 更像议题入口。产品级还需要更稳定的产品需求层。候选能力包括：
 
 - ProductGoal / 产品目标；
 - User / 用户画像；

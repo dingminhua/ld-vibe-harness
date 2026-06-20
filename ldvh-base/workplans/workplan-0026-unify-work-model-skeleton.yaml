@@ -30,7 +30,7 @@ orchestration:
       - [x] 22-Change-变更.md 已按新骨架重组（Change的4条与07适配差异保留在§1.5）
       - [x] 23-Pitfall-踩坑.md 已按新骨架重组
       - [x] 24-Intent-意图.md 已按新骨架重组，补充缺失章节（证据留存、AI协作、Tools辅助、Web同步的对象特有差异）
-      - [x] 25-Memo-备忘.md 已按新骨架重组，补充缺失章节
+      - [x] 25-Spark-火花.md 已按新骨架重组，补充缺失章节
       - [x] 26-Profile-项目画像.md 已按新骨架重组，补充缺失章节
       - [x] 27-Task-任务.md 已按新骨架重组，补充缺失章节
       - [x] 20-工作模型集合索引.md 已同步更新工作模型组成描述
@@ -113,6 +113,6 @@ review_requested_at: '2026-06-05T20:53:44.996546'
 closed_at: '2026-06-05T20:53:44.996546'
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

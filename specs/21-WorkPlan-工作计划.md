@@ -103,7 +103,7 @@ ldvh-base/workplans/workplan-{NNNN}-short-title.yaml
 
 目标重新启动、扩大范围或改变成功标准时，应创建新的工作计划，并引用原工作计划。
 
-主控起草方案不是 WorkPlan 状态。WorkPlan 的第一个权威状态是 `subagents_plan_reviewing`，表示方案已经可以被第三方审核。若方案尚不足以审核，应继续留在当前对话、Memo、Study 或其他前置事实源中，不得为了记录草稿而创建 WorkPlan。
+主控起草方案不是 WorkPlan 状态。WorkPlan 的第一个权威状态是 `subagents_plan_reviewing`，表示方案已经可以被第三方审核。若方案尚不足以审核，应继续留在当前对话、Spark、Study 或其他前置事实源中，不得为了记录草稿而创建 WorkPlan。
 
 ### 3.2 合法状态流转
 
@@ -129,13 +129,13 @@ human_closure_confirming -> subagents_plan_reviewing
 | 流转 | 触发条件 | 说明 |
 |---|---|---|
 | `subagents_plan_reviewing` -> `human_plan_confirming` | 方案审核完成，主控已处理审核意见，允许提交 Human 确认 | `plan_review.review_items` 应记录审核 Agent、提示上下文、输入引用、重点结论和签署声明；`plan_review.controller_resolution` 应记录主控如何采纳、拒绝、修改或提交争议 |
-| `human_plan_confirming` -> `executing` | Human 确认方案允许执行 | 应填写 `plan_confirmed_at`，并保留 Human 方案确认决策 |
+| `human_plan_confirming` -> `executing` | Human 确认方案允许执行 | 应填写 `plan_confirmed_at`，并保留 Human 方案确认决策；方案审核阶段的 `unresolved_items` 必须已被 Human 确认覆盖、改入执行范围、降级为后续事项或退回重审，不得带着行动前未确认事项进入执行 |
 | `executing` -> `result_self_checking` | 主控认为执行结果已足以进入收口自检 | 执行项结果、阻塞、跳过或分流情况应已更新 |
 | `result_self_checking` -> `subagents_result_reviewing` | 主控完成结果自检 | `result_review.controller_self_check` 应记录自检上下文、结论、证据和签署声明 |
 | `subagents_result_reviewing` -> `human_closure_confirming` | 结果复核完成，主控已处理复核意见，允许提交 Human 关闭确认 | `result_review.review_items` 应记录复核 Agent、提示上下文、输入引用、重点结论和签署声明；`result_review.controller_resolution` 应记录主控如何采纳、拒绝、修改或提交争议 |
 | `human_closure_confirming` -> `closed` | Human 确认关闭 | 应填写 `closed_at`，并确认 `closure_evidence` 足以解释关闭结果 |
 | `human_plan_confirming` -> `subagents_plan_reviewing` | Human 要求修改方案或补充审核 | 必须在 `revision_history` 记录原因、修改内容和需要重新审核的字段 |
-| `executing` -> `subagents_plan_reviewing` | 执行中发现目标、范围、成功标准或执行编排需要修改 | 必须暂停执行，在 `revision_history` 记录原因和修改内容，修改后重新进入方案审核 |
+| `executing` -> `subagents_plan_reviewing` | 执行中发现目标、范围、成功标准或执行编排需要修改，且该修改超出 Human 已确认执行范围 | 必须暂停执行，在 `revision_history` 记录原因和修改内容，修改后重新进入方案审核；普通缺陷、文案漂移、验证失败、残留命中或局部实现问题不得作为停下等待的新确认理由，应记录到执行项、自检、残留风险或后续分流并继续完成已确认方案 |
 | `result_self_checking` -> `executing` | 主控自检发现执行不足、证据不足或仍需补做 | 必须记录自检不通过原因和继续执行方向 |
 | `subagents_result_reviewing` -> `result_self_checking` | 第三方复核要求主控补充自检材料或修正证据整理 | 必须记录复核意见和需补充的自检内容 |
 | `subagents_result_reviewing` -> `executing` | 第三方复核认为结果不足，需要继续执行 | 必须记录复核意见和继续执行方向 |
@@ -182,23 +182,64 @@ human_closure_confirming -> subagents_plan_reviewing
 
 WorkPlan 的 Human-facing 阅读必须直接消费本文定义的权威状态，并先表达计划对象自身生命周期与关闭判断，再表达执行项队列。Code 或 Web 可以从 `status`、`success_criteria` checklist、`plan_review`、`result_review`、`verification_evidence`、`closure_evidence`、`closure_requested_at`、`closed_at` 和 `orchestration.execution_items` 派生只读摘要，用于展示推进阶段、成功标准完成度、执行项状态分布和关闭材料完备性。该摘要不得写回 YAML，也不得成为第二事实源；事实判断仍以本 WorkPlan 字段、关联工作对象和 Git 提交记录为准。
 
-执行项不得被其他工作对象直接引用为长期事实。需要长期追踪的结论，应按性质分流到 WorkPlan、ADR、Memo、Pitfall、docs、正式规范或 Git 提交记录。
+#### 4.2.1 Human 感知与状态同步契约
+
+WorkPlan 不只约束 YAML 字段，也约束主控在对话和 Web 展示中的行动口径。主控推进 WorkPlan 时必须让 Human 能稳定回答：当前处于哪个状态、已经完成哪些执行项、下一 Gate 是什么、还需要 Human 确认什么，以及 Web 能否看到同一状态。
+
+对话口径必须满足：
+
+1. 跨状态推进、完成一组关键执行项、进入验证/复核/关闭前，主控必须用简短状态播报说明当前 WorkPlan 状态、已完成执行项、剩余阻塞、下一 Gate 和需要 Human 确认的事项；
+2. 审核建议、主控推断和 Human 已确认事实必须分开表达；未被 Human 明确确认的命名、范围、Web 文案、降级接受或关闭判断不得写成已确认事实；
+3. 如果主控已经完成了实质执行但尚未回写 WorkPlan，必须明示“执行已发生但事实源尚未回写”，不得让 Human 误以为 Web 已能看到真实进展；
+4. 对话中的进度播报不得替代 `orchestration.execution_items`、`success_criteria`、`verification_evidence`、`closure_evidence`、`result_review` 或 `revision_history` 的事实源回写。
+5. Human 已确认执行后，主控不得再以“行动前还需确认”为由停在中途；新发现的问题应先按已确认范围继续处理，并记录到执行项、自检、残留风险、关闭证据或后续分流。只有发现会越出已确认目标/范围、改变成功标准、引入破坏性副作用或触发安全/事实源边界时，才允许退回方案审核或请求新的 Human Gate。
+6. `human_closure_confirming` 只能表述为“等待 Human 关闭确认”或“可提交关闭确认”，不得表述为“整个链条已完成”“已关闭”或“已提交”。主控回答完成度时必须同时说明 WorkPlan 是否 `closed`、是否存在 `human_closure_confirmation`、是否还有未提交 Git 变更。
+
+Web 感知必须满足：
+
+1. Web 只能展示 WorkPlan 事实源和确定性派生摘要；因此主控不得只修改顶层 `status`，却让执行项、成功标准、验证证据或复核记录长期停留在旧状态；
+2. 进入 `executing` 后，如果已经开始或完成任何实质执行，必须在同一工作轮次内回写对应执行项的 `status`、`result_summary` 和必要 `evidence_refs`，让 Web 执行态势反映真实进展；
+3. 进入 `result_self_checking` 前，执行项状态必须足以让 Web 展示“完成 / 跳过 / 阻塞 / 待执行”的真实分布；不得出现主控声称已经完成迁移、测试或验证，但 Web 仍显示所有执行项 `pending` 的情况；
+4. 成功标准、验证证据、关闭证据和结果复核材料应随阶段推进及时回写；若暂时不能回写，必须停留在当前阶段并说明阻塞原因，不得提前提交下一 Gate。
+
+#### 4.2.2 结果复核与完成口径
+
+结果复核是关闭前的独立判断流程，不是主控自检的格式化副本。进入 `subagents_result_reviewing` 后，主控必须按 `result_review.review_policy.required_perspectives` 真实发起并等待独立复核，或明确记录由专门工作流程接管；不得先进入 `human_closure_confirming`，再用主控摘要补填空的 `review_items`。
+
+结果复核必须满足：
+
+1. 每个必需视角都有可追溯的复核主体、提示上下文、输入引用、结论、证据引用和签署声明；
+2. 复核 Agent 提出的硬问题必须在进入 `human_closure_confirming` 前修复、退回执行、退回自检，或记录为需要 Human 裁决的争议；不得把范围内硬问题降级为普通 follow-up；
+3. 非本 WorkPlan 范围的问题可以写入 `residual_risks`、`followup_refs`、Spark 或后续 WorkPlan，但主控必须说明为什么不阻塞当前关闭确认；
+4. 主控必须在 `result_review.controller_resolution` 中逐项说明采纳、拒绝、已修复、分流或提交争议的处理结果，并保证 `unresolved_items` 不包含行动前未决事项；
+5. 若复核流程曾经缺失、失败或被旁路指出不完整，应追加 `revision_history`，说明缺失发生在哪个阶段、如何补齐、补齐后重新验证了什么。
+
+WorkPlan 的“完成”口径必须区分四层：
+
+1. 执行完成：执行项、成功标准和验证证据已回写，但仍需主控自检或结果复核；
+2. 可提交关闭确认：状态为 `human_closure_confirming`，结果复核和主控处理完成，但 Human 尚未确认关闭；
+3. 已关闭：状态为 `closed`，且 `human_closure_confirmation`、`closed_at` 和 `closure_outcome` 已填写；
+4. 已提交：相关事实源修改已经进入符合 `specs/10-Git提交规范.md` 的 Git commit records。
+
+主控不得把前一层冒充后一层。用户询问“是否完成整个工作链条”时，应至少核对 WorkPlan 状态、关闭确认字段、事实源校验和 Git 工作树状态，再给出结论。
+
+执行项不得被其他工作对象直接引用为长期事实。需要长期追踪的结论，应按性质分流到 WorkPlan、ADR、Spark、Pitfall、docs、正式规范或 Git 提交记录。
 
 当某个执行项出现以下任一情况时，应停止把它作为内部执行项继续推进，并按事实性质分流；若它仍是可执行工作，应创建新的 WorkPlan：
 
 1. 需要独立目标、独立范围或独立成功标准；
 2. 需要独立 Human Gate、独立验收或独立关闭判断；
 3. 需要跨会话长期治理或成为后续工作的事实源入口；
-4. 产生独立 ADR、Memo、Pitfall 或 Git 提交追溯链路，且该链路已经超出当前 WorkPlan 的关闭判断；
+4. 产生独立 ADR、Spark、Pitfall 或 Git 提交追溯链路，且该链路已经超出当前 WorkPlan 的关闭判断；
 5. 范围扩大到当前 WorkPlan 无法清晰关闭；
 6. 继续作为执行项会迫使 Web、Code 或 Human 把它当成一级对象管理。
 
-### 4.3 工作计划与 ADR、Memo、Pitfall 和 Git 提交记录
+### 4.3 工作计划与 ADR、Spark、Pitfall 和 Git 提交记录
 
-工作计划可以关联 ADR、Memo、Pitfall，并通过 Git 提交记录追溯事实源修改：
+工作计划可以关联 ADR、Spark、Pitfall，并通过 Git 提交记录追溯事实源修改：
 
 1. 长期决策进入 ADR；
-2. 暂存信息、待观察输入或分流线索进入 Memo；
+2. 暂存信息、待观察输入或分流线索进入 Spark；
 3. 已解决且可复用经验进入 Pitfall；
 4. Git 文件事实源修改由 Git commit records 承载，并按 `specs/10-Git提交规范.md` 追溯。
 
@@ -208,7 +249,7 @@ WorkPlan 的 Human-facing 阅读必须直接消费本文定义的权威状态，
 以下情况应评估 Human Gate：
 
 1. 创建、删除或重命名工作计划；
-2. 将用户输入、Memo 或临时讨论升级为工作计划；
+2. 将用户输入、Spark 或临时讨论升级为工作计划；
 3. 将方案审核结果从 `subagents_plan_reviewing` 提交到 `human_plan_confirming`；
 4. 确认 `human_plan_confirming` -> `executing`；
 5. 将工作计划从 `human_closure_confirming` 关闭为 `closed`；
@@ -244,11 +285,11 @@ Human Gate 发生在工作计划层。执行项、角色说明、子 Agent 输�
 | `closed_at` | 关闭时间 | datetime | 条件必填 | `closed` 时必须填写 | Reference | AI、Code、Web |
 | `closure_outcome` | 关闭结果分类 | string | 条件必填 | `closed` 时必须填写；允许 `completed`、`partial_completed`、`cancelled`、`superseded`、`invalid`、`degraded_accepted` | Reference | AI、Code、Web |
 | `residual_risks` | 残留风险摘要列表 | list[string] | 否 | 默认为空列表；关闭时如接受风险或未完成项必须填写 | Evidence / Log | AI、Web |
-| `followup_refs` | 后续承接引用 | list[string] | 否 | 默认为空列表；可引用后续 WorkPlan、Memo、ADR、Pitfall 或文档路径 | Reference | AI、Code、Web |
+| `followup_refs` | 后续承接引用 | list[string] | 否 | 默认为空列表；可引用后续 WorkPlan、Spark、ADR、Pitfall 或文档路径 | Reference | AI、Code、Web |
 | `revision_history` | 方案、执行或关闭确认退回后的修订记录 | list[object] | 否 | 默认为空列表；发生退回、方案修改、成功标准修改或执行编排修改时必须追加 | Structured / Log | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_memos` | 来源或关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_sparks` | 来源或关联火花 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表；承载 WorkPlan ID，不表示父子或阻塞关系 | Reference | AI、Code、Web |
 
@@ -339,7 +380,7 @@ WorkPlan 只记录审核事实和可决策摘要，不记录子 Agent 审核原�
 | `controller_resolution.accepted_findings` | 已采纳发现 | list[string] | 否 | 可为空列表 |
 | `controller_resolution.rejected_findings` | 未采纳发现 | list[string] | 否 | 不得只写“无”；有拒绝时应说明理由 |
 | `controller_resolution.required_changes_applied` | 已落实必须修改项 | list[string] | 否 | 修改 WorkPlan 字段时必须与 `revision_history` 对齐 |
-| `controller_resolution.unresolved_items` | 未解决或需 Human 裁决事项 | list[string] | 否 | 可为空列表；非空时 Human 确认必须覆盖 |
+| `controller_resolution.unresolved_items` | 未解决或需 Human 裁决事项 | list[string] | 否 | 可为空列表；非空时 Human 确认必须覆盖；`executing` 及后续状态不得仍保留行动前未确认事项 |
 | `controller_resolution.changed_fields` | 主控处理导致修改的字段路径 | list[string] | 否 | 改字段时必须填写，并回指 `revision_history` |
 | `controller_resolution.revision_history_refs` | 对应修订记录引用 | list[string] | 否 | 可使用 `revision_history` 局部引用或说明性引用 |
 | `controller_resolution.summary` | 主控处理摘要 | string | 是 | 说明如何处理审核意见以及是否需要重审或 Human 裁决 |
@@ -396,11 +437,11 @@ WorkPlan 只记录审核事实和可决策摘要，不记录子 Agent 审核原�
 |---|---|
 | `subagents_plan_reviewing` | 基础字段、`workarea`、`priority`、`description`、`success_criteria`、`source`、`orchestration.mode`、`orchestration.execution_items`、`orchestration.plan_review` 和 `orchestration.result_review` 已存在；`execution_items` 不得为空；`plan_review.review_policy` 已存在；`plan_review.review_items` 可以正在补齐 |
 | `human_plan_confirming` | `plan_review.review_items` 已完成并具备 Agent、角色、提示上下文、输入引用、重点结论和签署声明；`plan_review.controller_resolution` 已记录主控处理意见、必要修改和未决事项；不存在必须先改方案并重审的失败结论；等待 Human 确认 |
-| `executing` | 满足 `human_plan_confirming` 条件；`plan_confirmed_at` 和 `plan_review.human_confirmation` 已填写；执行项可以处于 `pending`、`in_progress`、`blocked`、`done` 或 `skipped` |
-| `result_self_checking` | 执行项不得仍为 `pending` 或 `in_progress`；`blocked` 执行项必须填写 `blocking_reason`；主控正在整理或填写 `result_review.controller_self_check`、`verification_evidence` 和 `closure_evidence` |
-| `subagents_result_reviewing` | `result_review.controller_self_check` 已填写并签署；`verification_evidence` 和 `closure_evidence` 已填写；`result_review.review_policy` 已存在；`result_review.review_items` 可以正在补齐 |
-| `human_closure_confirming` | `result_review.review_items` 已完成并具备 Agent、角色、提示上下文、输入引用、重点结论和签署声明；`result_review.controller_resolution` 已记录主控处理意见、必要修改和未决事项；`closure_requested_at` 已填写；等待 Human 关闭确认 |
-| `closed` | 满足 `human_closure_confirming` 条件；`closed_at`、`closure_outcome` 和 `result_review.human_closure_confirmation` 已填写；`closure_evidence` 足以说明关闭结果、残留风险、未完成项分流和 Human Gate 结果 |
+| `executing` | 满足 `human_plan_confirming` 条件；`plan_confirmed_at` 和 `plan_review.human_confirmation` 已填写；方案审核阶段不得仍存在行动前未确认的 `unresolved_items`；执行项可以处于 `pending`、`in_progress`、`blocked`、`done` 或 `skipped`；一旦发生实质执行，执行项状态、结果摘要和证据引用必须在同一工作轮次内回写 |
+| `result_self_checking` | 执行项不得仍为 `pending` 或 `in_progress`；`blocked` 执行项必须填写 `blocking_reason`；主控正在整理或填写 `result_review.controller_self_check`、`verification_evidence` 和 `closure_evidence`；成功标准检查进展和执行项状态必须足以支持 Web 派生态势 |
+| `subagents_result_reviewing` | `result_review.controller_self_check` 已填写并签署；`verification_evidence` 和 `closure_evidence` 已填写；`result_review.review_policy` 已存在；`result_review.review_items` 可以正在补齐，但主控不得把该状态表述为可关闭或已完成 |
+| `human_closure_confirming` | `result_review.review_items` 已按必需视角完成并具备 Agent、角色、提示上下文、输入引用、重点结论和签署声明；`result_review.controller_resolution` 已记录主控处理意见、必要修改和未决事项；范围内硬问题已修复、退回或提交 Human 裁决；`closure_requested_at` 已填写；等待 Human 关闭确认 |
+| `closed` | 满足 `human_closure_confirming` 条件；`closed_at`、`closure_outcome` 和 `result_review.human_closure_confirmation` 已填写；`closure_evidence` 足以说明关闭结果、残留风险、未完成项分流和 Human Gate 结果；若该 WorkPlan 对应 Git 事实源修改，仍应区分“已关闭”和“已提交” |
 
 ### 6.3 YAML 示例
 
@@ -545,7 +586,7 @@ orchestration:
 revision_history: []
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []
 ```
@@ -561,9 +602,11 @@ related_workplans: []
 2. 主控自检结论；
 3. 必要时的专业角色复检结论；
 4. 验证命令、文件路径、产物引用或人工确认记录；
-5. 经验、决策、备忘或提交追溯的分流结果。
+5. 经验、决策、火花或提交追溯的分流结果。
 
 进入 `result_self_checking` 前，不要求所有执行项都必须成功，但必须让执行项状态足以说明：哪些完成、哪些跳过、哪些阻塞被分流或接受、哪些风险仍需 Human 判断。进入 `subagents_result_reviewing` 前，主控自检、验证证据和关闭证据必须足以支持第三方复核。`closed` 不代表目标必然成功，只代表该 WorkPlan 的推进责任已经依据证据和关闭判断稳定终止。
+
+事实源回写必须跟上对话进度。主控不得只在对话中宣布“已完成”“已通过”“进入下一阶段”，却让 WorkPlan 仍呈现全部执行项 `pending`、成功标准未检查、结果自检为空或 Web 无法派生真实态势。若回写尚未完成，主控应继续停留在当前阶段并把“待回写事实源”作为当前剩余工作，而不是进入下一 Gate。
 
 ---
 ## 8. 适配边界
@@ -579,16 +622,20 @@ Code 应检查：
 7. `subagents_plan_reviewing` 及后续状态必须存在 `orchestration.plan_review` 和 `orchestration.result_review`；
 8. `human_plan_confirming` 及后续状态必须能追溯方案审核 Agent、提示上下文、输入引用、重点结论、签署声明和主控处理记录；
 9. `executing` 及后续状态必须填写 `plan_confirmed_at` 和 `plan_review.human_confirmation`；
-10. `result_self_checking` 及后续状态不得存在 `pending` 或 `in_progress` 执行项；
-11. `subagents_result_reviewing` 及后续状态必须填写主控自检、验证证据和关闭证据；
-12. `human_closure_confirming` 和 `closed` 必须填写 `closure_requested_at`，并具备结果复核 Agent、提示上下文、输入引用、重点结论、签署声明和主控处理记录；
-13. `closed` 工作计划必须填写 `closed_at` 和 `result_review.human_closure_confirmation`；
-14. `blocked` 执行项必须填写 `blocking_reason`；
-15. `done` 或 `skipped` 执行项必须填写 `result_summary`；
-16. 发生退回、目标修改、成功标准修改、执行编排修改，或主控根据审核意见修改 WorkPlan 字段时必须追加 `revision_history`，记录原因、修改字段和修改内容；
-17. 执行项不得被其他工作对象作为独立对象引用；
-18. `related_workplans` 必须承载 WorkPlan ID；
-19. 工作计划相关提交由 Git 历史、对象 ID、文件路径和提交正文自然文本派生，不得手写维护 `related_changes`。
+10. `executing` 及后续状态不得在 `plan_review.controller_resolution.unresolved_items` 中保留行动前未确认事项；
+11. `result_self_checking` 及后续状态不得存在 `pending` 或 `in_progress` 执行项；
+12. `subagents_result_reviewing` 及后续状态必须填写主控自检、验证证据和关闭证据；
+13. `subagents_result_reviewing` 状态下若 `result_review.review_items` 为空，Code 应至少给出 warning，提醒结果复核流程尚未真实启动或尚未记录；
+14. `human_closure_confirming` 和 `closed` 必须填写 `closure_requested_at`，并具备结果复核 Agent、提示上下文、输入引用、重点结论、签署声明和主控处理记录；
+15. `closed` 工作计划必须填写 `closed_at`、`closure_outcome` 和 `result_review.human_closure_confirmation`；
+16. `human_closure_confirming` 不得被 Code/Web 派生为 `closed` 或“已完成”；Web 展示应明确这是等待 Human 关闭确认的阶段；
+17. `blocked` 执行项必须填写 `blocking_reason`；
+18. `done` 或 `skipped` 执行项必须填写 `result_summary`；
+19. `executing` 状态下若所有执行项仍为 `pending`，Code 应至少给出 warning，提醒事实源和 Web 派生态势可能没有跟上真实执行；
+20. 发生退回、目标修改、成功标准修改、执行编排修改，或主控根据审核意见修改 WorkPlan 字段时必须追加 `revision_history`，记录原因、修改字段和修改内容；
+21. 执行项不得被其他工作对象作为独立对象引用；
+22. `related_workplans` 必须承载 WorkPlan ID；
+23. 工作计划相关提交由 Git 历史、对象 ID、文件路径和提交正文自然文本派生，不得手写维护 `related_changes`。
 
 Web 应把工作计划作为 Human 直接查看和确认的主对象。Web 可以展示执行编排、验证证据和关闭证据，但不得把执行项提升为一级导航、独立对象详情页或可独立写入的权威事实。
 
@@ -602,7 +649,11 @@ Web 应把工作计划作为 Human 直接查看和确认的主对象。Web 可�
 | 确定性执行要求 | 工作计划必须依据 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 维护 `priority`，不得维护 `importance` | Validator、CLI、Web 展示 | 字段契约同步 | 创建、更新、排序、筛选或展示工作计划时 |
 | 确定性执行要求 | 工作计划状态必须明确区分方案审核、方案确认、执行、结果自检、结果复核、关闭确认和已关闭，不得把审核阶段折叠为执行态派生含义 | Validator、CLI、Web 展示 | 状态机同步 | 状态枚举、流转、实例校验或 Web 展示变化时 |
 | 子 Agent 思考要求 | 方案审核和结果复核必须记录审核 Agent、角色、提示上下文、输入引用、重点结论、可审计签署声明和主控处理记录 | Agent 能力、主控多视角审查、事实实例校验 | 审核事实同步 | 方案审核、结果复核、主控处理记录、Agent 能力或签署字段变化时 |
+| 子 Agent 思考要求 | 结果复核必须按必需视角真实启动、等待结论、处理硬问题并记录主控 resolution；不得用空 `review_items`、主控代签或事后补表冒充独立复核 | Validator warning、Agent 编排记录、主控 resolution、revision_history | 复核闭环同步 | 进入结果复核、旁路指出复核缺失、修复复核发现或请求关闭确认时 |
 | Human 交互要求 | 方案执行和最终关闭必须经 Human 确认；退回、修改方案或接受残留风险必须记录原因和修改内容 | Human Gate、Web 展示、事实实例校验 | Gate 同步 | 方案确认、关闭确认、退回或修改关键字段时 |
+| Human 交互要求 | 主控跨阶段推进时必须说明当前状态、已完成执行项、剩余阻塞、下一 Gate 和待 Human 确认事项；未确认推断不得写成已确认事实 | 对话状态播报、Human Gate、WorkPlan 回写、Web 派生态势 | 感知同步 | 状态推进、执行项完成、验证复核、Web 展示或 Human 待确认事项变化时 |
+| 入口可见要求 | WorkPlan 顶层状态、执行项状态、成功标准、验证证据和结果复核记录必须能支持 Web 展示真实阶段；不得让 Web 长期显示与对话进展矛盾的派生态势 | Validator warning、Web 派生摘要、事实源回写 | 展示同步 | 执行开始、执行完成、进入结果自检、结果复核或关闭确认时 |
+| Human 交互要求 | 主控和 Web 必须区分执行完成、可提交关闭确认、已关闭和已提交，不得把 `human_closure_confirming` 或校验干净表述为整个工作链条完成 | 对话状态播报、Web 状态标签、Git 工作树检查、提交规范 | 关闭与提交同步 | 用户询问完成度、进入关闭确认、关闭 WorkPlan 或准备 Git 提交时 |
 | 生命周期触发要求 | 工作计划规范变化后应检查 Code、Web、事实实例和相关工作流程是否需要同步 | Code 测试、事实校验、Web 检查、流程检查 | 触发保障 | 字段、状态、执行编排或事实源路径变化时 |
 
 ---
@@ -616,9 +667,12 @@ Web 应把工作计划作为 Human 直接查看和确认的主对象。Web 可�
 | 人类入口 | 关闭审查发生在工作计划层 |
 | 状态枚举 | `status` 属于本文 §3.1 状态枚举，且不使用旧的 `draft`、`active`、`review_needed` |
 | 方案审核 | `human_plan_confirming` 及后续状态具备方案审核 Agent、提示上下文、输入引用、重点结论、签署声明和主控处理记录 |
+| 对话感知 | 跨阶段推进时清楚表达当前状态、已完成项、剩余阻塞、下一 Gate 和待 Human 确认事项 |
+| Web 感知 | `executing` 及后续状态的执行项、成功标准和证据回写足以支持 Web 派生真实态势 |
 | 结果自检 | `subagents_result_reviewing` 及后续状态具备主控自检、验证证据和关闭证据 |
-| 结果复核 | `human_closure_confirming` 及后续状态具备结果复核 Agent、提示上下文、输入引用、重点结论、签署声明和主控处理记录 |
+| 结果复核 | `human_closure_confirming` 及后续状态具备真实独立结果复核 Agent、提示上下文、输入引用、重点结论、签署声明和主控处理记录；硬问题已处理或退回 |
 | 关闭证据 | `human_closure_confirming` / `closed` 具备验证证据、关闭证据和关闭确认请求时间 |
+| 完成口径 | 能清楚区分执行完成、可提交关闭确认、已关闭和已提交；`human_closure_confirming` 不被表述为 `closed` |
 | 修订记录 | 退回、方案修改、成功标准修改、执行编排修改或主控根据审核意见修改字段时，`revision_history` 记录原因、字段和修改内容 |
 | 角色边界 | 执行项仅保留最小 `role` 标识；完整角色规则如需稳定化，由工作流程、能力资产规范或后续专门规范承接 |
 
@@ -626,4 +680,4 @@ Web 应把工作计划作为 Human 直接查看和确认的主对象。Web 可�
 ## 11. 待补齐事项
 
 1. WorkPlan 状态机、方案审核签署、结果自检、结果复核、Human 关闭确认和修订记录已经成为本文规则；后续 Code、Web、事实实例和相关工作流程应按本文同步落地；
-2. 旧工作对象清退后的历史说明只应保留在 Git 历史、Memo、ADR 或明确标注的研究材料中，不得重新成为当前事实源兼容要求。
+2. 旧工作对象清退后的历史说明只应保留在 Git 历史、Spark、ADR 或明确标注的研究材料中，不得重新成为当前事实源兼容要求。

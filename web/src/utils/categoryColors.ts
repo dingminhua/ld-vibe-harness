@@ -4,7 +4,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   workplan: '#0ea5e9',
   adr: '#a855f7',
   pitfall: '#ef4444',
-  memo: '#eab308',
+  spark: '#eab308',
   study: '#06b6d4',
   feat: '#3b82f6',      // blue
   fix: '#ef4444',       // red

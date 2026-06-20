@@ -14,7 +14,7 @@ constraints: |
   不脱离现有技术栈（React + Tailwind + Express），不引入新的 UI 框架；设计需兼容侧边栏和顶部导航两种布局；移动端采用一套代码响应式渐进增强方案，不做独立移动站，所有页面需覆盖 375px（iPhone SE 最低视口）到桌面端体验。
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 workplans:
 - workplan-0025

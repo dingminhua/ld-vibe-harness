@@ -1,11 +1,11 @@
-id: memo-0020
-type: memo
+id: spark-0020
+type: spark
 title: WorkPlan 模型与 Web 阅读层级缺口
 status: pending
 created: '2026-06-20T11:34:57+08:00'
 updated: '2026-06-20T20:20:23+08:00'
 description: |
-  用户在检查 WorkPlan 页面时指出，计划 tab 的改造必须先和已经成熟的五个模块保持一致：提交、研究、决策、备忘、经验已经形成当前 Web 的设计语言基线，WorkPlan 可以有新的专用表达，但大方向必须继承同一套身份头部、卡片框架、复制语义、右侧阅读、弱装饰和节点阅读语言，不能让 Human 感到进入另一套产品。
+  用户在检查 WorkPlan 页面时指出，计划 tab 的改造必须先和已经成熟的五个模块保持一致：提交、研究、决策、火花、经验已经形成当前 Web 的设计语言基线，WorkPlan 可以有新的专用表达，但大方向必须继承同一套身份头部、卡片框架、复制语义、右侧阅读、弱装饰和节点阅读语言，不能让 Human 感到进入另一套产品。
 
   当前暴露的问题已经超出 Web 解析层：WorkPlan 既是 Human 直接确认的工作对象，又包含内部 execution_items；页面目前容易把注意力压到执行项明细上，却没有清楚表达 WorkPlan 自身的推进阶段、关闭审查状态、整体 checklist 和成功标准完成度。Human 在任何阶段都应能先看到：
 
@@ -37,9 +37,9 @@ description: |
   5. 现有 WorkPlan 实例是否存在字段写法不一致、证据过长、执行项结果过密或 review_needed 页面不可读的问题。
 evolution:
   - at: '2026-06-20T11:34:57+08:00'
-    summary: 用户确认 WorkPlan 专用设计必须以成熟五模块设计语言为基线，并指出当前缺口不只是 Web 解析，而是 WorkPlan 模型、执行项状态信息契约、整体 checklist 和计划自身进度呈现共同存在问题；创建本 Memo 作为逐步推进入口。
+    summary: 用户确认 WorkPlan 专用设计必须以成熟五模块设计语言为基线，并指出当前缺口不只是 Web 解析，而是 WorkPlan 模型、执行项状态信息契约、整体 checklist 和计划自身进度呈现共同存在问题；创建本 Spark 作为逐步推进入口。
   - at: '2026-06-20T20:20:23+08:00'
-    summary: 已推进第一段收敛：WorkPlan 主规范补充 Human-facing 阅读必须先表达计划对象自身生命周期与关闭判断，再表达执行项队列；Web API 增加 success_criteria checklist 完成度只读派生；ObjectDetail 新增计划进度模块，展示推进阶段、成功标准进度、执行项完成度、执行项状态分布和关闭材料记录状态；Web 详情文档和设计语言基线同步记录该阅读顺序。Memo 暂不关闭，后续仍需继续检查字段注册、更多实例一致性和关闭审查阅读细节。
+    summary: 已推进第一段收敛：WorkPlan 主规范补充 Human-facing 阅读必须先表达计划对象自身生命周期与关闭判断，再表达执行项队列；Web API 增加 success_criteria checklist 完成度只读派生；ObjectDetail 新增计划进度模块，展示推进阶段、成功标准进度、执行项完成度、执行项状态分布和关闭材料记录状态；Web 详情文档和设计语言基线同步记录该阅读顺序。Spark 暂不关闭，后续仍需继续检查字段注册、更多实例一致性和关闭审查阅读细节。
 source: conversation
 source_detail: 用户在 /objects/workplan/workplan-0080?status=review_needed 检查 WorkPlan 详情时提出，需要专门记录并逐步推进 WorkPlan 模型与 Web 可读性问题。
 priority: P1

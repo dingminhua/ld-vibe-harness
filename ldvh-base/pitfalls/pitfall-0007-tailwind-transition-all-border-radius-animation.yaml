@@ -69,7 +69,7 @@ avoidance: |
 applicability: |
   所有使用 Tailwind CSS 的前端项目，特别是 React + Vite + Tailwind 技术栈。
   任何涉及页面切换、路由变化或动态渲染容器的场景。
-source_memos: []
+source_sparks: []
 related_workareas: []
 related_adrs: []
 related_docs: []

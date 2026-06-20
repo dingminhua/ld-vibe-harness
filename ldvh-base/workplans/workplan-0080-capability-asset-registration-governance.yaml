@@ -7,7 +7,7 @@ updated: '2026-06-20T20:32:15+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
-  memo-0017 暴露出 10 号 Git 提交规范落地时的前置治理缺口：LDVH 需要明确 Rules、Skill、Agent、Hook 等固定能力资产如何登记、如何声明来源规范、如何接受质量审查、如何同步 specs 变化，以及如何区别权威资产与不同运行环境中的薄引用或部署副本。
+  spark-0017 暴露出 10 号 Git 提交规范落地时的前置治理缺口：LDVH 需要明确 Rules、Skill、Agent、Hook 等固定能力资产如何登记、如何声明来源规范、如何接受质量审查、如何同步 specs 变化，以及如何区别权威资产与不同运行环境中的薄引用或部署副本。
 
   本计划只承接固定能力资产登记制、资产类型最佳实践标准和同步监督规则的规范收敛。10 号提交规范的 commit-msg hook、ldvh-git-commit Skill 和提交门禁具体落地继续由 workplan-0074 承接；最佳实践文档内容方向可与 workplan-0024 并行推进。
 success_criteria: |
@@ -19,16 +19,16 @@ success_criteria: |
   - [x] 明确固定能力资产与运行环境部署副本的分层边界，不把环境内同名文件长期分叉为第二事实源
   - [x] 形成多视角行业最佳实践 Study，并将可吸收结论回写到 04.02 的资产类型最佳实践标准
   - [x] 将 10 号提交规范所需的 ldvh-git-commit Skill 和 commit-msg hook 作为后续可登记固定能力资产的试点约束，而不在本计划中实现其具体文件
-  - [x] 相关 specs、Code 检查缺口、Web 展示边界和后续 WorkPlan/Memo 分流记录清楚
+  - [x] 相关 specs、Code 检查缺口、Web 展示边界和后续 WorkPlan/Spark 分流记录清楚
 source: |
-  用户在讨论 memo-0017 时确认该 Memo 会关联多个可并行 WorkPlan，并要求先按 10 号规范提交已完成修改，再按计划继续执行。
+  用户在讨论 spark-0017 时确认该 Spark 会关联多个可并行 WorkPlan，并要求先按 10 号规范提交已完成修改，再按计划继续执行。
 
   Human Gate 记录：
   - 触发原因：创建新的 WorkPlan 承接固定能力资产登记制与最佳实践规范收敛。
   - 影响范围：04.02、01、Rules / Skill / Agent / Hook 资产边界、后续 Code 派生索引、Web 展示和 10 号提交规范落地资产。
   - 确认依据：用户明确说“好，先按10要求提交，然后按你计划执行”。
-  - Human 决策：批准按计划执行，并允许为 memo-0017 的第三条治理线创建独立 WorkPlan。
-  - 后续回写位置：本 WorkPlan、memo-0017、相关 specs、必要 Code/Web 缺口和后续 Git commit records。
+  - Human 决策：批准按计划执行，并允许为 spark-0017 的第三条治理线创建独立 WorkPlan。
+  - 后续回写位置：本 WorkPlan、spark-0017、相关 specs、必要 Code/Web 缺口和后续 Git commit records。
   - 残留风险：资产类型最佳实践标准尚未正式收敛；如果 40/41/42/43 派生型审核能力边界发生架构变化，可能需要与本计划联动调整。
 orchestration:
   mode: sequential
@@ -44,7 +44,7 @@ orchestration:
     - specs/10-Git提交规范.md
     - rules/LDVH-WORKSPACE-ENTRY.md
     - rules/LDVH-MAINTAINER-ENTRY.md
-    - ldvh-base/memos/memo-0017-commit-spec-landing-assets.yaml
+    - ldvh-base/sparks/spark-0017-commit-spec-landing-assets.yaml
     expected_output: 明确当前规范中关于固定能力资产、候选适配资产、环境部署副本和登记事实源的已有效规则与缺口。
     status: done
     result_summary: 已复核 01、04.02、04.03、10 和两个 Rules 入口。04.02 已具备登记制骨架，但缺少资产类型最佳实践、同步监督和部署副本分层的规则态表达；01 已明确 rules/skills/agents/hooks 目录定位和固定资产登记边界，本轮无需修改。
@@ -93,8 +93,8 @@ orchestration:
     - code/specs_validate.py
     - code/spec_checks/
     - web/
-    - ldvh-base/memos/memo-0017-commit-spec-landing-assets.yaml
-    expected_output: 判断能力资产登记是否需要 Code 派生索引、校验诊断或 Web 展示增强；不能立即完成的项分流到后续 WorkPlan/Memo。
+    - ldvh-base/sparks/spark-0017-commit-spec-landing-assets.yaml
+    expected_output: 判断能力资产登记是否需要 Code 派生索引、校验诊断或 Web 展示增强；不能立即完成的项分流到后续 WorkPlan/Spark。
     status: done
     result_summary: 已确认当前 Code 的 `deployment-entries` 检查能保守覆盖必备 Rules 资产存在性和 `ldvh_asset` 自登记元信息；Web 规范已有能力资产只读展示边界，当前未新增专门页面实现。10 号提交规范的 Skill/Hook 具体资产落地继续由 workplan-0074 承接，本计划只提供登记制和最佳实践规则。
     evidence_refs:
@@ -238,11 +238,11 @@ closure_evidence: |
 
   Human 要求安排子 Agent 审核 0080，并明确需要价值审核。主控已派出独立子 Agent Huygens 执行只读关闭审核；审核结论为“有条件关闭”。
 
-  价值审核认为：0080 已产生足够价值。它把 memo-0017 暴露的真实问题从“单个提交规范资产怎么落地”提升为“固定能力资产如何准入、登记、边界分流、验证和承接”的治理问题，并补进了行业实践矩阵，而不是只写 LDVH 内部口径。价值成立证据包括：study-0008 已形成多来源行业最佳实践矩阵；04.02 已把薄入口、按需 Skill、隔离 Agent、确定性 Hook 和分层门禁转成稳定规则；Hook / 提交门禁未被过度设计成万能资产，而是分层到 Hook、Code validator、CI / server-side gate 和 Human Gate。
+  价值审核认为：0080 已产生足够价值。它把 spark-0017 暴露的真实问题从“单个提交规范资产怎么落地”提升为“固定能力资产如何准入、登记、边界分流、验证和承接”的治理问题，并补进了行业实践矩阵，而不是只写 LDVH 内部口径。价值成立证据包括：study-0008 已形成多来源行业最佳实践矩阵；04.02 已把薄入口、按需 Skill、隔离 Agent、确定性 Hook 和分层门禁转成稳定规则；Hook / 提交门禁未被过度设计成万能资产，而是分层到 Hook、Code validator、CI / server-side gate 和 Human Gate。
 
   审核未发现 P0 风险。P1 风险是：关闭记录若写成“提交能力已落地”，会越界；0080 的价值是治理规范收敛，真实实现仍应由 workplan-0074 承接。P2 风险是：行业最佳实践目前足够支撑治理层关闭，但不是逐产品逐版本的实现选型报告；后续 0074 做 Skill / Hook 时仍需针对具体实现再做轻量技术确认。
 
-  因此，若后续关闭 0080，closure 必须明确：本计划关闭的是固定能力资产登记治理与最佳实践吸收；memo-0017 暴露的问题已被收敛为 Rules / Skill / Agent / Hook / Code / Web / CI 分层治理；本计划不实现 `ldvh-git-commit` Skill、`commit-msg` Hook 或 CI / server-side gate；关闭后进入 workplan-0074 承接真实落地。
+  因此，若后续关闭 0080，closure 必须明确：本计划关闭的是固定能力资产登记治理与最佳实践吸收；spark-0017 暴露的问题已被收敛为 Rules / Skill / Agent / Hook / Code / Web / CI 分层治理；本计划不实现 `ldvh-git-commit` Skill、`commit-msg` Hook 或 CI / server-side gate；关闭后进入 workplan-0074 承接真实落地。
 
   ## Human 关闭审查
 
@@ -251,7 +251,7 @@ closure_evidence: |
   关闭结论如下：
 
   1. 0080 已完成固定能力资产登记制与最佳实践吸收；
-  2. memo-0017 暴露的问题已收敛为 Rules / Skill / Agent / Hook / Code / Web / CI 分层治理；
+  2. spark-0017 暴露的问题已收敛为 Rules / Skill / Agent / Hook / Code / Web / CI 分层治理；
   3. 0080 不实现 `ldvh-git-commit` Skill 或 `commit-msg` Hook；
   4. 关闭后进入 workplan-0074，按 04.02 的分层门禁规则做真实落地。
 
@@ -266,8 +266,8 @@ related_docs:
 - specs/10-Git提交规范.md
 - ldvh-base/studies/study-0008-ai-capability-asset-industry-practices.md
 related_adrs: []
-related_memos:
-- memo-0017
+related_sparks:
+- spark-0017
 related_pitfalls: []
 related_workplans:
 - workplan-0024

@@ -4,7 +4,7 @@ import { ArrowRight, CheckCircle2, ChevronDown, ChevronUp, CircleAlert, Clipboar
 import StatusBadge from '@/components/StatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
 import CopyPathButton from '@/components/CopyPathButton';
-import MemoCreate from '@/components/MemoCreate';
+import SparkCreate from '@/components/SparkCreate';
 import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
@@ -398,17 +398,17 @@ function ObjectCardFrame({
   );
 }
 
-type MemoRoutingRef = { ref: string; objectType?: string };
+type SparkRoutingRef = { ref: string; objectType?: string };
 
-function hasMemoResolvedFact(obj: ObjectItem) {
-  return obj.status === 'resolved' || Boolean(parseMemoRoutingRef(obj.resolved_to)) || Boolean(obj.resolved_at);
+function hasSparkResolvedFact(obj: ObjectItem) {
+  return obj.status === 'resolved' || Boolean(parseSparkRoutingRef(obj.resolved_to)) || Boolean(obj.resolved_at);
 }
 
-function hasMemoDiscardFact(obj: ObjectItem) {
+function hasSparkDiscardFact(obj: ObjectItem) {
   return obj.status === 'discarded' || Boolean(obj.discard_reason?.trim());
 }
 
-function parseMemoRoutingRef(value: ObjectItem['resolved_to']): MemoRoutingRef | null {
+function parseSparkRoutingRef(value: ObjectItem['resolved_to']): SparkRoutingRef | null {
   if (typeof value === 'string') {
     const ref = value.trim();
     if (!ref) return null;
@@ -423,7 +423,7 @@ function parseMemoRoutingRef(value: ObjectItem['resolved_to']): MemoRoutingRef |
   };
 }
 
-function MemoFactPanel({
+function SparkFactPanel({
   tone,
   title,
   children,
@@ -449,7 +449,7 @@ function MemoFactPanel({
   );
 }
 
-function MemoMetaLine({ label, value }: { label: string; value: string }) {
+function SparkMetaLine({ label, value }: { label: string; value: string }) {
   if (!value.trim()) return null;
   return (
     <div className="grid min-w-0 gap-1 py-1 first:pt-0 last:pb-0 sm:grid-cols-[3.5rem_1fr]">
@@ -459,35 +459,35 @@ function MemoMetaLine({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MemoResolvedCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
-  const routingRef = parseMemoRoutingRef(obj.resolved_to);
+function SparkResolvedCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
+  const routingRef = parseSparkRoutingRef(obj.resolved_to);
   const targetLabel = routingRef?.ref || (locale === 'en' ? 'Target missing' : '分流目标缺失');
   const typeLabel = routingRef?.objectType ? `${routingRef.objectType} ` : '';
   const resolvedAt = obj.resolved_at ? formatDateTime(obj.resolved_at) : '';
 
   return (
-    <MemoFactPanel tone="resolved" title={locale === 'en' ? 'Routed' : '已分流'}>
+    <SparkFactPanel tone="resolved" title={locale === 'en' ? 'Routed' : '已分流'}>
       <div className="flex flex-col gap-0.5">
-        <MemoMetaLine label={locale === 'en' ? 'Target' : '目标'} value={`${typeLabel}${targetLabel}`} />
-        {resolvedAt && <MemoMetaLine label={locale === 'en' ? 'Time' : '时间'} value={resolvedAt} />}
+        <SparkMetaLine label={locale === 'en' ? 'Target' : '目标'} value={`${typeLabel}${targetLabel}`} />
+        {resolvedAt && <SparkMetaLine label={locale === 'en' ? 'Time' : '时间'} value={resolvedAt} />}
       </div>
-    </MemoFactPanel>
+    </SparkFactPanel>
   );
 }
 
-function MemoDiscardedCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
+function SparkDiscardedCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
   const reason = obj.discard_reason?.trim() || (locale === 'en' ? 'Discard reason missing.' : '废弃原因缺失。');
 
   return (
-    <MemoFactPanel tone="discarded" title={locale === 'en' ? 'Discarded' : '已废弃'}>
-      <MemoMetaLine label={locale === 'en' ? 'Reason' : '原因'} value={reason} />
-    </MemoFactPanel>
+    <SparkFactPanel tone="discarded" title={locale === 'en' ? 'Discarded' : '已废弃'}>
+      <SparkMetaLine label={locale === 'en' ? 'Reason' : '原因'} value={reason} />
+    </SparkFactPanel>
   );
 }
 
-function MemoCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
-  if (hasMemoDiscardFact(obj)) return <MemoDiscardedCardContent obj={obj} locale={locale} />;
-  if (hasMemoResolvedFact(obj)) return <MemoResolvedCardContent obj={obj} locale={locale} />;
+function SparkCardContent({ obj, locale }: { obj: ObjectItem; locale: string }) {
+  if (hasSparkDiscardFact(obj)) return <SparkDiscardedCardContent obj={obj} locale={locale} />;
+  if (hasSparkResolvedFact(obj)) return <SparkResolvedCardContent obj={obj} locale={locale} />;
   return null;
 }
 
@@ -509,7 +509,7 @@ export default function ObjectList() {
   const activeStatus = getEffectiveListStatus(currentType, statusParam);
 
   useEffect(() => {
-    if (currentType !== 'memo' || !searchParams.has('category')) return;
+    if (currentType !== 'spark' || !searchParams.has('category')) return;
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete('category');
     setSearchParams(nextParams, { replace: true });
@@ -732,11 +732,11 @@ export default function ObjectList() {
       );
     }
 
-    if (currentType === 'memo') {
+    if (currentType === 'spark') {
       return (
         <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject} showNonActiveReason={false}>
           <ObjectSignalBadges source={obj} type={obj.type} locale={locale} />
-          <MemoCardContent obj={obj} locale={locale} />
+          <SparkCardContent obj={obj} locale={locale} />
         </ObjectCardFrame>
       );
     }
@@ -762,8 +762,8 @@ export default function ObjectList() {
         {(currentType === 'workarea' || currentType === 'workplan') && (
           <ExecutionFlowLegend t={t} getStatus={getStatus} />
         )}
-        {currentType === 'memo' && (
-          <MemoCreate onCreated={() => setReloadKey((value) => value + 1)} />
+        {currentType === 'spark' && (
+          <SparkCreate onCreated={() => setReloadKey((value) => value + 1)} />
         )}
       </div>
 

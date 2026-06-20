@@ -22,7 +22,7 @@ export const CODE_DIR = path.join(LDVH_ROOT, 'code')
 export const LDVH_BASE_DIR = path.join(LDVH_ROOT, 'ldvh-base')
 
 /** 当前工作对象类型 */
-export const OBJECT_TYPES = ['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study'] as const
+export const OBJECT_TYPES = ['workarea', 'workplan', 'adr', 'pitfall', 'spark', 'study'] as const
 export type ObjectType = (typeof OBJECT_TYPES)[number]
 
 export interface PyToolsResult {

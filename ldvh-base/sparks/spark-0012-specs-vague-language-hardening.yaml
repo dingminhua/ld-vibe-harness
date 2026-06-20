@@ -1,11 +1,11 @@
-id: memo-0012
-type: memo
+id: spark-0012
+type: spark
 title: specs 中模糊用词与确定性执行偏差待收敛
 status: pending
 created: '2026-06-19T08:23:18+08:00'
 updated: '2026-06-19T08:23:18+08:00'
 description: |
-  本 Memo 承载一个待讨论的规范设计问题：LDVH 的 specs 中是否应系统性减少或取消会影响执行的模糊用词，避免 AI 因定义不明确而产生执行偏差。
+  本 Spark 承载一个待讨论的规范设计问题：LDVH 的 specs 中是否应系统性减少或取消会影响执行的模糊用词，避免 AI 因定义不明确而产生执行偏差。
 
   用户观点：
 
@@ -37,7 +37,7 @@ evolution:
   - at: '2026-06-19T08:23:18+08:00'
     summary: 用户提出 specs 中模糊用词导致 AI 执行偏差，建议用硬性规定、显式空值或占位替代无法稳定判定的模型性用词；AI 同意该方向，并补充应区分控制性规则和解释性叙述。
 source: conversation
-source_detail: 用户要求“在 ldvh 里建立一个 memo”，探讨 specs 规范中是否应该取消模糊用词，并要求写入 AI 意见。
+source_detail: 用户要求“在 ldvh 里建立一个 spark”，探讨 specs 规范中是否应该取消模糊用词，并要求写入 AI 意见。
 priority: P1
 resolved_to: ""
 resolved_at: ""
@@ -52,5 +52,5 @@ related_docs:
   - specs/05-工作模型基础规范.md
   - specs/05.02-工作模型字段内容与格式规范.md
   - specs/07-Code确定性执行实现规范.md
-  - specs/24-Memo-备忘.md
+  - specs/24-Spark-火花.md
   - specs/42-specs-audit-规范审核.md

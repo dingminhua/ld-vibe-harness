@@ -7,7 +7,7 @@ created: '2026-06-20T10:25:42+08:00'
 updated: '2026-06-20T10:40:36+08:00'
 summary: |
   本报告补齐并加固 workplan-0080 中此前缺失的行业最佳实践输入。调研采用多视角起草与主控合并：Codex 专业视角、Claude / Anthropic 视角、OpenAI Agents / guardrails / evals 视角、Hook / DevOps / 提交门禁视角。结论被整理为来源对照矩阵、最佳实践矩阵、反模式清单和 LDVH 吸收规则，用于支撑 04.02 对 Rules、Skill、Agent、Hook 固定能力资产的准入、审查和关闭判断。
-user_intent: 用户指出 workplan-0080 中“最佳实践”目前只是 LDVH 内部规则，缺少行业最佳实践内容，要求先补齐 memo / WorkPlan 相关规范基础。
+user_intent: 用户指出 workplan-0080 中“最佳实践”目前只是 LDVH 内部规则，缺少行业最佳实践内容，要求先补齐 spark / WorkPlan 相关规范基础。
 conclusion: |
   行业实践并不支持把 Rules、Skill、Agent、Hook 写成厚重的第二规范。更稳的治理模型是：Rules / AGENTS / CLAUDE.md 等长期入口保持薄而可恢复；Skill 承接按需加载的可复用流程；Agent / subagent 承接隔离上下文、受限工具和主控回收；Hook 只承接生命周期触发、确定性快速反馈和证据采集；CI、server-side gate、guardrails、HITL、tracing 和 evals 作为运行期保障和质量证据，不反向成为规范事实源。LDVH 04.02 应吸收这些稳定规则，外部 URL 只保留在 Study 中作为调研依据。
 urls:
@@ -83,8 +83,8 @@ urls:
   - ref: https://docs.gitlab.com/administration/server_hooks/
     title: GitLab server hooks
     summary: 用于对照 server-side hook 作为 push 门禁的确定性和部署边界。
-related_memos:
-  - memo-0017
+related_sparks:
+  - spark-0017
 related_workareas:
   - workarea-0012
 related_workplans:
@@ -157,7 +157,7 @@ archive_reason:
 | 复用同一 canonical command | 本地、CI、server-side 分叉实现会漂移 | Hook、CI 和手动命令调用同一 validator 或 wrapper | 提交规范类门禁回指 `specs/10` 和 `code/commit_validate.py`，不得复制正则 | 本地 shell 一套正则，CI 另一套正则 |
 | Trace / eval 形成质量证据 | OpenAI 建议先用 traces 调试，再用 evals 固化回归判断 | 高风险 Agent / Skill / Hook 试点至少有代表性执行证据、失败样例或人工降级记录 | active 固定能力资产前必须有验证证据，不能只靠一次演示 | “跑过一次看起来可以”就登记 active |
 | 分发层不反向成为事实源 | Codex / Claude plugins 都是打包和分发层 | 插件有 manifest、版本、依赖、启停说明；安装 / 授权状态归环境事实 | Plugin 可以包装稳定资产，但不改变权威路径和字段契约 | 把插件安装状态当成 LDVH 全局支持状态 |
-| compact / memory 非事实源 | 压缩、记忆和聊天摘要会丢细节 | 恢复后重读入口；稳定结论回写 specs、WorkPlan、Memo、ADR、Study 或 Git commit records | PreCompact / PostCompact 只做恢复辅助，不做最终证据 | 把 compact 摘要当 Human Gate 或关闭验收 |
+| compact / memory 非事实源 | 压缩、记忆和聊天摘要会丢细节 | 恢复后重读入口；稳定结论回写 specs、WorkPlan、Spark、ADR、Study 或 Git commit records | PreCompact / PostCompact 只做恢复辅助，不做最终证据 | 把 compact 摘要当 Human Gate 或关闭验收 |
 
 ### 资产类型准入清单
 
@@ -197,4 +197,4 @@ archive_reason:
 - `workplan-0080`：已新增行业实践调研吸收项，并可在补齐后重新进入关闭审查。
 - `specs/04.02-LDVH能力资产与落地保障规范.md`：已吸收本报告的稳定规则。
 - `workplan-0074`：后续实现 `ldvh-git-commit` Skill 和 `commit-msg` Hook 时，引用本 Study 作为设计输入之一。
-- `memo-0017`：无需复制本报告正文，只需继续保留多 WorkPlan 分流关系。
+- `spark-0017`：无需复制本报告正文，只需继续保留多 WorkPlan 分流关系。

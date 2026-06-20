@@ -72,7 +72,7 @@ avoidance: |
   提交前必须执行搜索，确认 tools/ 中受影响的硬编码引用已经处理。
 applicability: |
   所有接入 LDVH 的管辖项目，所有涉及 specs 变更的 AI 操作。
-source_memos: []
+source_sparks: []
 related_workareas: []
 related_adrs:
 - adr-0005

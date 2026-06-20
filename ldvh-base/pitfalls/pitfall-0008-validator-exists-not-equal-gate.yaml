@@ -74,7 +74,7 @@ tags:
 - workflow-closure
 - commit-message
 - specs-landing
-source_memos: []
+source_sparks: []
 related_workareas:
 - workarea-0012
 related_adrs: []

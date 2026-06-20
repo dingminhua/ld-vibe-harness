@@ -170,6 +170,6 @@ review_requested_at: '2026-06-05T05:30:00.000000'
 closed_at: '2026-06-05T05:30:00.000000'
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

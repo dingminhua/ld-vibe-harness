@@ -13,7 +13,7 @@ constraints: |
   优先回到规范原文判断；不得凭记忆调整文档结构；涉及 specs、Rules、事实源或长期机制边界变更时按 Human Gate 和 Change 规则执行。
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 workplans:
 - workplan-0007

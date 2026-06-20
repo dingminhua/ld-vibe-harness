@@ -1,0 +1,822 @@
+id: workplan-0081
+type: workplan
+title: 将 Memo 重命名为 Spark 并确立火花捕获入口
+status: human_closure_confirming
+created: '2026-06-21T05:33:56+08:00'
+updated: '2026-06-21T06:18:41+08:00'
+workarea: workarea-0012
+priority: P1
+description: |
+  本计划承接 LDVH active 工作模型中的 Memo / 备忘重命名与语义升级。
+
+  当前 Memo 已经承担工作推进中大量未定型输入的第一承载点：临时问题、分支研究线索、风险感觉、设计灵感、执行缺口、命名疑虑和后续待判断点都可能先进入 Memo，再分流为 WorkPlan、ADR、Study、Pitfall、docs 或废弃。用户指出创造 Memo 的入口非常多，且 Web 中唯一可由 Human 创建的工作对象也是 Memo；在 vibe coding 语境下，Memo 的“备忘”语感已经不足以表达这个最小捕获入口。
+
+  目标命名倾向为 Spark / 火花：Spark 表达工作推进中刚出现、尚未归类但值得系统接住的最小未定型工作信号。它可以从一句话开始，后续被研究、分流、承接或丢弃；这比 Memo 更适合 Web 的 Human 直接创建入口，也更符合 vibe coding 的工作流心智。
+success_criteria: |
+  - [x] Human 明确确认正式命名采用“火花”，Web 中也显示为“火花”
+  - [x] Human 明确确认一次性迁移对象身份、文件名、目录名、字段名和 Web API，不保留旧 Memo 当前入口
+  - [x] Human 明确确认 Web 入口动作词采用 `Create Spark / 创建火花`
+  - [x] 形成 Memo -> Spark 的迁移方案，覆盖规范、事实实例、字段关系、Code、Web、测试和历史追溯边界
+  - [x] `specs/02-术语规范.md` 纳入 Spark / 火花术语归口或明确无需新增术语，避免 24/08 并行维护同一术语定义
+  - [x] `specs/24-Spark-火花.md` 承接 Spark 工作模型规范，并同步 `ldvh_doc`、`ldvh_member`、实例目录、对象定位、状态机、对象关系和 Human Gate
+  - [x] 字段注册与字段语义同步处理为 `related_sparks`、`source_sparks`、`spark-*`、`ldvh-base/sparks/` 等 Spark 口径
+  - [x] 现有 Spark 实例和所有相关对象引用完成迁移，不保留旧 Memo 当前入口
+  - [x] Code 工具、校验器、CLI、Web API、Web UI、测试夹具和文案同步 Spark 口径
+  - [x] Web 的 Human 直接创建入口明确改为捕获 Spark，并说明 Human 无需预先判断 WorkPlan、ADR、Study 或 Pitfall 类型
+  - [x] 执行前生成迁移 manifest，覆盖旧 memo 文件、结构化引用字段、正文引用、Web/API/测试命中；执行后用残留扫描逐项对账
+  - [x] active surface 残留扫描完成；除本 WorkPlan 迁移说明和方案审核历史语境外，不再残留会误导当前模型消费的 Memo 当前口径
+  - [x] 相关 specs 校验、事实源校验、Code 测试和 Web 构建/测试按实际变更范围执行并记录证据
+source: |
+  Human 在 2026-06-21 与主控讨论 Memo 命名时指出：现在的 Memo 越来越成为所有工作的开始；工作推进中会不断出现忽然想到的问题，需要记录或安排分支研究；Web 中唯一可由 Human 创建的对象也是 Memo。主控建议在 vibe coding 语境下将该对象升级命名为 Spark / 火花，用于承载最小未定型工作信号和 Web 捕获入口。Human 随后要求梳理改动事项，并在确认 Git 干净后要求“你建立workplan吧”。
+
+  Human Gate 记录：
+  - 触发原因：创建独立 WorkPlan 承接 active 工作模型 Memo 的重命名与语义升级。
+  - 影响范围：工作模型规范、字段注册、ldvh-base 事实实例、对象引用、Code 校验与 CLI、Web 创建入口、Web 展示、测试和迁移追溯。
+  - Human 结论：批准建立 WorkPlan。
+  - 当前边界：本计划先承载迁移方案与执行编排；正式执行重命名前仍需 Human 明确确认最终名称、迁移策略和是否保留兼容期。
+  - 方案审核补充边界：未进入 `executing` 前，不得执行 `specs/24` 重命名、`ldvh-base/memos/` 目录移动、`memo-*` 实例改名、字段名迁移或 Code/Web 同步修改。
+plan_confirmed_at: '2026-06-21T05:47:26+08:00'
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 确认 Spark 命名决策和迁移边界
+    role: product-governance
+    mode: single
+    input_refs:
+    - specs/24-Spark-火花.md
+    - specs/05-工作模型基础规范.md
+    - specs/03.02-工作模型文档规范.md
+    - 用户对 Memo 入口语义、vibe coding 语境和 Web 创建入口的当前讨论
+    expected_output: 明确正式对象名、中文名、Web 展示名、Web 动作文案、Spark 定义、对象身份迁移矩阵、是否允许兼容期，以及 Human Gate 决策记录。
+    status: done
+    result_summary: Human 已确认正式中文名与 Web 展示名均为“火花”，确认一次性全部迁移，并最终裁决 Web 入口动作词采用 `Create Spark / 创建火花`；主控采用内部英文标识 `spark`、对象 ID 前缀 `spark-*`、目录 `ldvh-base/sparks/`、字段 `related_sparks` / `source_sparks` 和 API `/api/sparks`。
+    evidence_refs:
+    - ldvh-base/workplans/workplan-0081-rename-memo-to-spark.yaml
+    - web/src/i18n/locales.ts
+    blocking_reason: null
+  - id: item-2
+    title: 盘点 Memo active surface 和迁移影响面
+    role: auditor
+    mode: single
+    input_refs:
+    - specs/
+    - ldvh-base/
+    - code/
+    - web/
+    - tests/
+    - rules/
+    - skills/
+    expected_output: 输出 Memo/Spark 迁移 manifest，覆盖现有 memo 文件、结构化引用字段、正文引用、Web/API/测试命中，区分必须迁移、可保留历史、需要兼容和需要后续分流的项。
+    status: done
+    result_summary: 已生成执行前迁移 manifest，覆盖 20 个旧 memo 文件、1090 条旧命中和 202 个待重写文件；迁移后用 active surface 正文扫描与文件名扫描对账。
+    evidence_refs:
+    - /tmp/ldvh-0081/memo-files-before.txt
+    - /tmp/ldvh-0081/memo-hits-before.txt
+    - /tmp/ldvh-0081/rewrite-files.txt
+    blocking_reason: null
+  - id: item-3
+    title: 重写 Spark 工作模型规范和字段注册
+    role: specs-editor
+    mode: single
+    input_refs:
+    - specs/24-Spark-火花.md
+    - specs/05.01-工作模型字段定义与语义规范.md
+    - specs/05.02-工作模型字段内容与格式规范.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    - specs/20-WorkArea-工作域.md
+    - specs/21-WorkPlan-工作计划.md
+    - specs/22-ADR-决策.md
+    - specs/23-Pitfall-踩坑经验.md
+    - specs/25-Study-研究报告.md
+    expected_output: 将 Spark 规范、字段、关系和文档引用同步为当前口径。
+    status: done
+    result_summary: 已将 24 号工作模型主文件迁移为 Spark / 火花，并同步 02、05、08、20-25、40-43、rules、skills、Web docs 等 active 文档引用和字段注册。
+    evidence_refs:
+    - specs/24-Spark-火花.md
+    - specs/02-术语规范.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    - specs/08-Web信息同步实现规范.md
+    blocking_reason: null
+  - id: item-4
+    title: 迁移事实实例和对象引用
+    role: fact-migration
+    mode: single
+    input_refs:
+    - ldvh-base/sparks/
+    - ldvh-base/workareas/
+    - ldvh-base/workplans/
+    - ldvh-base/adrs/
+    - ldvh-base/pitfalls/
+    - ldvh-base/studies/
+    expected_output: 将现有 Spark 实例、ID、目录、引用字段和正文当前口径迁移到 Spark，不保留旧 Memo 当前入口。
+    status: done
+    result_summary: 已将 `ldvh-base/memos/` 迁移为 `ldvh-base/sparks/`，20 个实例文件改为 `spark-*`，结构化字段与相关对象引用同步为 Spark 口径；ADR、Study 和 Spark 文件名中的旧 slug 也已重命名。
+    evidence_refs:
+    - ldvh-base/sparks/
+    - ldvh-base/adrs/adr-0009-spark-three-state-routing.yaml
+    - ldvh-base/studies/study-0009-superpowers-absorption-spark.md
+    blocking_reason: null
+  - id: item-5
+    title: 同步 Code、Web 和测试
+    role: implementation
+    mode: single
+    input_refs:
+    - code/fact_cli.py
+    - code/fact_validate.py
+    - tests/
+    - web/
+    expected_output: 更新对象类型、文件名正则、目录映射、引用校验、Web 路由/API、Web facts 服务、UI/i18n 文案、ObjectList/ObjectDetail/ReadingPanel 展示、Web Human 创建入口、Web 文档和测试夹具。
+    status: done
+    result_summary: 已同步 Code 校验器、CLI、Web API `/api/sparks`、Object 服务、Web UI/i18n、Web 文档和测试；Web Human 入口文案已按 Human 最终裁决实现为 `创建火花 / Create Spark`。
+    evidence_refs:
+    - code/fact_validate.py
+    - code/fact_cli.py
+    - web/api/routes/sparks.ts
+    - web/src/components/SparkCreate.tsx
+    - web/src/i18n/locales.ts
+    - tests/web/api/sparks.test.ts
+    blocking_reason: null
+  - id: item-6
+    title: 校验残留并整理关闭材料
+    role: reviewer
+    mode: single
+    input_refs:
+    - specs/
+    - ldvh-base/
+    - code/
+    - tests/
+    - web/
+    expected_output: 运行残留扫描、specs 校验、事实源校验、Code 测试、Web API contract 测试和 Web 构建/验证，并整理允许残留白名单、禁止残留清单、验证证据、残留风险和后续分流。
+    status: done
+    result_summary: 已完成事实源校验、specs 校验、Code 测试、Web API 测试、Web 构建、diff 空白检查、active surface 正文残留扫描和文件名残留扫描；当前仅本 WorkPlan 保留旧名作为迁移说明/方案审核历史语境。
+    evidence_refs:
+    - python3 code/fact_validate.py ldvh-base --format text
+    - python3 code/specs_validate.py index
+    - python3 code/specs_validate.py all
+    - python3 -m pytest tests/code/test_fact_validate.py tests/code/test_fact_cli.py tests/code/specs_validate_checks/test_ldvh_landing.py
+    - npm --prefix web run test:web:api
+    - npm --prefix web run build
+    - git diff --check
+    blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: Memo -> Spark 涉及 active 工作模型重命名、事实源迁移、Web 唯一 Human 创建入口和 Code 校验同步，执行前需要多视角审核方案边界。
+      required_perspectives:
+      - work-model-spec-reviewer
+      - fact-migration-reviewer
+      - code-web-impact-reviewer
+      - product-language-reviewer
+      optional_perspectives: []
+      tool_method_requirements:
+      - read_authoritative_sources
+      - inspect_active_surface
+      - produce_evidence_refs
+      - identify_human_gate_points
+      aggregation_rule: 任一视角发现必须先确认的命名、迁移或兼容风险时，不得进入 Human 方案确认。
+    review_items:
+    - id: plan-review-1
+      role: work-model-spec-reviewer
+      agent_name: Gibbs
+      requested_at: '2026-06-21T05:36:00+08:00'
+      prompt_context:
+        objective: 审核 workplan-0081 的方案是否符合 LDVH 工作模型规范、工作模型文档规范、Human Gate 与状态机要求。
+        input_refs:
+        - specs/05-工作模型基础规范.md
+        - specs/03.02-工作模型文档规范.md
+        - specs/24-Memo-备忘.md
+        - specs/05.03-工作模型字段注册与消费规范.md
+        - ldvh-base/workplans/workplan-0081-rename-memo-to-spark.yaml
+        constraints:
+        - 只读审核，不修改文件。
+        prompt_digest: 审核 Memo -> Spark 工作模型重命名方案是否可进入 Human 方案确认。
+      context_digest: workplan-0081-plan-review-work-model-spec
+      result:
+        status: needs_human_gate
+        summary: 方案整体符合 WorkPlan 状态机、工作模型文档规范和工作模型重命名 Gate 要求；可以提交 Human 方案确认，但只能确认最终命名与迁移策略，不能直接执行迁移。
+        key_findings:
+        - WorkPlan 当前状态与 subagents_plan_reviewing 首态一致，方案审核记录可在本阶段补齐。
+        - Human Gate 已识别，但正式执行前必须确认最终名称、迁移策略和是否保留兼容期。
+        - specs/24-Memo-备忘.md 的“重命名或改写”需要收紧，避免只改正文不改文件名和成员自描述。
+        recommendations:
+        - Human 确认时必须覆盖对象名、type、ID 前缀、实例目录、Web API 和兼容期。
+        - 未进入 executing 前，不得执行文件重命名、事实实例迁移或 Code/Web 同步。
+        - 若保留兼容期，应在 05.03 登记 alias/deprecated/replacement 关系。
+        required_changes:
+        - Human 确认问题必须包含最终命名、文件路径、实例目录、ID 前缀、API 和兼容策略。
+        evidence_refs:
+        - specs/05-工作模型基础规范.md
+        - specs/03.02-工作模型文档规范.md
+        - specs/21-WorkPlan-工作计划.md
+        - specs/24-Memo-备忘.md
+        - specs/08-Web信息同步实现规范.md
+      raw_output_ref: null
+      attested_at: '2026-06-21T05:39:00+08:00'
+      attestation:
+        signer: Gibbs
+        statement: 基于上述 prompt context 和 input refs 完成方案审核并对结论负责。
+    - id: plan-review-2
+      role: fact-migration-reviewer
+      agent_name: Ptolemy
+      requested_at: '2026-06-21T05:36:00+08:00'
+      prompt_context:
+        objective: 审核事实源迁移方案是否覆盖现有 memo 实例、对象引用、字段名、目录名、历史残留和 Git 可追溯边界。
+        input_refs:
+        - specs/24-Memo-备忘.md
+        - specs/05.03-工作模型字段注册与消费规范.md
+        - code/fact_validate.py
+        - code/fact_cli.py
+        - ldvh-base/memos/
+        - ldvh-base/
+        - ldvh-base/workplans/workplan-0081-rename-memo-to-spark.yaml
+        constraints:
+        - 只读审核，不修改文件。
+        prompt_digest: 审核 Memo -> Spark 事实源迁移边界和追溯策略。
+      context_digest: workplan-0081-plan-review-fact-migration
+      result:
+        status: pass_with_followups
+        summary: 方案覆盖事实源迁移的大面，但进入 Human 方案确认前需要把对象身份、字段名、历史残留白名单和 Git 可追溯边界写得更硬。
+        key_findings:
+        - 当前有 20 个 Memo 实例且全部为 pending，迁移会影响活跃入口。
+        - related_memos 和 source_memos 是注册表、对象实例、Code 和 Web 的当前结构化字段。
+        - Git 历史不可迁移重写，只能通过新提交记录旧路径到新路径映射。
+        recommendations:
+        - 增加对象身份迁移策略，明确 memo-0001 -> spark-0001 或保留 memo-* 作为稳定 ID。
+        - 增加字段名迁移策略，明确是否迁移为 related_sparks 和 source_sparks。
+        - 增加历史残留白名单和迁移 manifest 要求。
+        required_changes:
+        - '方案必须先写清 memo-* ID、type: memo、文件名、目录名、字段名的一次性迁移或兼容策略。'
+        - 方案必须先写清允许保留与禁止保留的 Memo 残留类别。
+        - 方案必须记录 Git 可追溯边界和执行后验收命令。
+        evidence_refs:
+        - specs/24-Memo-备忘.md
+        - specs/05.03-工作模型字段注册与消费规范.md
+        - code/fact_validate.py
+        - code/fact_cli.py
+        - specs/08-Web信息同步实现规范.md
+        - specs/10-Git提交规范.md
+      raw_output_ref: null
+      attested_at: '2026-06-21T05:41:00+08:00'
+      attestation:
+        signer: Ptolemy
+        statement: 基于上述 prompt context 和 input refs 完成方案审核并对结论负责。
+    - id: plan-review-3
+      role: code-web-impact-reviewer
+      agent_name: Bohr
+      requested_at: '2026-06-21T05:36:00+08:00'
+      prompt_context:
+        objective: 审核 Code、Web、API、测试和 UI 文案影响面是否被方案覆盖。
+        input_refs:
+        - code/fact_validate.py
+        - code/fact_cli.py
+        - tests/
+        - web/
+        - specs/08-Web信息同步实现规范.md
+        - ldvh-base/workplans/workplan-0081-rename-memo-to-spark.yaml
+        constraints:
+        - 只读审核，不修改文件。
+        prompt_digest: 审核 Memo -> Spark 对 Code/Web/API/测试的影响面。
+      context_digest: workplan-0081-plan-review-code-web-impact
+      result:
+        status: pass_with_followups
+        summary: 方案已覆盖 Code、Web、API、测试和 UI 文案主要影响面，可以提交 Human 方案确认；建议补充兼容/重命名契约矩阵。
+        key_findings:
+        - fact_validate.py 和 fact_cli.py 硬编码 memo 对象类型、正则、状态机、目录映射、引用校验和模板。
+        - Web API 当前唯一写入口是 POST /api/memos，后端生成 memo-{NNNN} 并写入 ldvh-base/memos。
+        - Web UI 影响覆盖导航、创建组件、列表、详情、阅读面板、i18n 和 Web 文档。
+        recommendations:
+        - Human Gate 中加入是否保留 /api/memos、是否保留 memo-*、是否迁移字段名以及兼容期结束条件。
+        - item-5 补充 Web 路由、facts 服务、i18n、ObjectList/ObjectDetail/ReadingPanel 和 Web 文档。
+        - item-6 补充 Code 测试、Web API contract、Web build 和残留扫描白名单。
+        required_changes: []
+        evidence_refs:
+        - code/fact_validate.py
+        - code/fact_cli.py
+        - web/api/
+        - web/src/
+        - tests/
+        - specs/08-Web信息同步实现规范.md
+      raw_output_ref: null
+      attested_at: '2026-06-21T05:40:00+08:00'
+      attestation:
+        signer: Bohr
+        statement: 基于上述 prompt context 和 input refs 完成方案审核并对结论负责。
+    - id: plan-review-4
+      role: product-language-reviewer
+      agent_name: Pasteur
+      requested_at: '2026-06-21T05:36:00+08:00'
+      prompt_context:
+        objective: 从产品语义、vibe coding 心智、Human 创建入口和中英文命名一致性审核 Spark / 火花方案。
+        input_refs:
+        - specs/24-Memo-备忘.md
+        - specs/00-LD-Vibe-Harness理念与纲要.md
+        - specs/02-术语规范.md
+        - specs/08-Web信息同步实现规范.md
+        - ldvh-base/workplans/workplan-0081-rename-memo-to-spark.yaml
+        constraints:
+        - 只读审核，不修改文件。
+        prompt_digest: 审核 Spark / 火花是否适合作为正式对象名和 Web 捕获入口。
+      context_digest: workplan-0081-plan-review-product-language
+      result:
+        status: needs_human_gate
+        summary: Spark / 火花适合作为正式对象名候选和 Web 捕获入口主语义，但需要 Human 先确认官方命名、中文展示名、Web 动作文案和旧 Memo 兼容口径。
+        key_findings:
+        - Spark 的产品语义方向成立，贴合“分流前工作对象”和最小未定型工作信号。
+        - “火花”必须被规范化，避免只被理解成灵感或想法。
+        - Web 入口建议使用 Capture Spark / 捕获火花，而不是普通“创建火花”。
+        recommendations:
+        - 采用正式对象名 Spark / 火花。
+        - 采用 Web 捕获入口名 Capture Spark / 捕获火花。
+        - 首段定义固定为“工作推进中刚出现、尚未归类但值得系统接住的最小未定型工作信号”。
+        - 旧名 Memo 仅作为历史 alias 或迁移说明，不进入当前 active surface。
+        required_changes:
+        - Human 需裁决正式对象名、Web 主按钮、中文定义、旧名 alias 和一次性迁移策略。
+        - 迁移方案需显式纳入 specs/02-术语规范.md。
+        evidence_refs:
+        - specs/24-Memo-备忘.md
+        - specs/00-LD-Vibe-Harness理念与纲要.md
+        - specs/02-术语规范.md
+        - specs/08-Web信息同步实现规范.md
+      raw_output_ref: null
+      attested_at: '2026-06-21T05:40:00+08:00'
+      attestation:
+        signer: Pasteur
+        statement: 基于上述 prompt context 和 input refs 完成方案审核并对结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-21T05:41:40+08:00'
+      resolver: codex-main-controller
+      source_review_item_ids:
+      - plan-review-1
+      - plan-review-2
+      - plan-review-3
+      - plan-review-4
+      accepted_findings:
+      - Memo -> Spark 属于 active 工作模型重命名与语义升级，必须进入 Human Gate 后才能执行。
+      - Spark / 火花适合作为正式对象名候选，但应定义为“最小未定型工作信号”，避免被理解成轻量灵感库。
+      - Web 入口动作词属于 Human-facing 当前口径；方案审核建议采用 Capture Spark / 捕获火花，但最终以 Human 裁决为准。
+      - 迁移必须明确 ID、type、文件名、目录名、字段名、API 和兼容期策略。
+      - 迁移必须生成 manifest，并按允许残留白名单和禁止残留清单做执行后对账。
+      - Human 已确认正式中文对象名和 Web 展示名均采用“火花”。
+      rejected_findings:
+      - Human 后续裁决不采用 Capture Spark / 捕获火花 作为当前 Web 入口动作词，改为 Create Spark / 创建火花。
+      required_changes_applied:
+      - 成功标准补充对象身份迁移策略、Web 动作文案、术语归口、迁移 manifest 和残留对账。
+      - source 补充未进入 executing 前不得执行重命名、目录移动、实例改名、字段迁移或 Code/Web 同步修改。
+      - item-1 补充对象身份迁移矩阵和 Human Gate 决策输出。
+      - item-2 补充迁移 manifest 产物要求。
+      - item-5 补充 Web 路由、facts 服务、UI/i18n、阅读面板、Web 文档和测试夹具同步范围。
+      - item-6 补充 Web API contract、Web 构建/验证、允许残留白名单和禁止残留清单。
+      unresolved_items: []
+      changed_fields:
+      - status
+      - updated
+      - success_criteria
+      - source
+      - orchestration.execution_items[item-1].expected_output
+      - orchestration.execution_items[item-2].expected_output
+      - orchestration.execution_items[item-5].expected_output
+      - orchestration.execution_items[item-6].expected_output
+      - orchestration.plan_review.review_items
+      - orchestration.plan_review.controller_resolution
+      - revision_history
+      - related_docs
+      revision_history_refs:
+      - revision_history[0]
+      summary: 主控接受四个审核视角的结论，将方案边界补强并推进到 `human_plan_confirming`。当前只请求 Human 确认命名与迁移策略；确认前不得执行任何文件迁移或 Code/Web 修改。
+    human_confirmation:
+      decision: execute
+      scope: 按本 WorkPlan 的一次性迁移策略执行 Memo -> 火花 / Spark 重命名，覆盖对象身份、实例目录、字段关系、Code、Web、测试和文档当前口径；Web 入口动作词按后续 Human 裁决采用 Create Spark / 创建火花。
+      constraints:
+      - 不改写 Git 历史；旧 Memo 只允许作为迁移说明、历史 alias 或关闭证据中的历史语境保留。
+      - 执行前后必须保留迁移 manifest 和残留扫描对账。
+      - Web 中显示为“火花”；内部英文标识采用 spark。
+      - Web 创建入口当前文案采用 Create Spark / 创建火花，不采用方案审核建议中的 Capture Spark / 捕获火花。
+      confirmed_at: '2026-06-21T05:47:26+08:00'
+      summary: Human 先确认“就叫火花，web里也叫火花”，随后确认“一次性全部迁移”，并在执行后裁决 Web 动作词采用“创建火花 / Create Spark”。方案审核中未决的命名、一次性迁移和 Web 动作词事项均已由 Human 覆盖，不再保留行动前未确认项。
+  result_review:
+    controller_self_check:
+      controller: codex-main-controller
+      checked_at: '2026-06-21T05:57:40+08:00'
+      prompt_context:
+        objective: 检查 Memo -> Spark 一次性迁移的成功标准、验证证据、关闭证据、残留风险、对话感知和 Web 派生状态是否足以进入结果复核或 Human 关闭确认。
+        input_refs:
+        - ldvh-base/workplans/workplan-0081-rename-memo-to-spark.yaml
+        - specs/24-Spark-火花.md
+        - specs/05.03-工作模型字段注册与消费规范.md
+        - code/fact_validate.py
+        - code/fact_cli.py
+        - web/api/routes/sparks.ts
+        - web/src/components/SparkCreate.tsx
+        - web/src/i18n/locales.ts
+        - tests/web/api/sparks.test.ts
+      result:
+        status: pass
+        summary: 代码、事实源、Web、测试和 active surface 残留扫描已经完成，执行项与成功标准已回写；Human 已裁决 Web 入口动作词采用 `Create Spark / 创建火花`，Web i18n 已同步。旁路审查关于 Web 派生状态滞后的问题已通过 execution_items 和 success_criteria 回写处理，可进入结果复核。
+        evidence_refs:
+        - ldvh-base/workplans/workplan-0081-rename-memo-to-spark.yaml
+        - web/src/i18n/locales.ts
+        - python3 code/fact_validate.py ldvh-base --format text
+        - npm --prefix web run test:web:api
+        - npm --prefix web run build
+      attested_at: '2026-06-21T05:57:40+08:00'
+      attestation:
+        signer: codex-main-controller
+        statement: 基于上述上下文完成结果自检；当前迁移实现、Web 动作词和证据回写均已满足进入结果复核的条件。
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 结果复核需要确认 Spark 迁移没有留下会误导当前模型消费的 Memo 口径，也没有破坏事实源引用、Code/Web 行为和测试。
+      required_perspectives:
+      - specs-consistency-reviewer
+      - fact-reference-reviewer
+      - code-test-reviewer
+      - web-ux-reviewer
+      optional_perspectives: []
+      tool_method_requirements:
+      - run_relevant_validators
+      - inspect_changed_files
+      - produce_evidence_refs
+      - classify_allowed_historical_residue
+      aggregation_rule: 任一硬错误、破坏性引用迁移或未解释 active surface 残留未处理时，不得提交 Human 关闭确认。
+    review_items:
+    - id: result-review-1
+      role: specs-consistency-reviewer
+      agent_name: Jason
+      requested_at: '2026-06-21T06:10:00+08:00'
+      prompt_context:
+        objective: 复核 Memo -> Spark / 火花迁移后 specs、字段注册、Web 写入白名单、Web 文案和图标语义是否一致。
+        input_refs:
+        - specs/24-Spark-火花.md
+        - specs/02-术语规范.md
+        - specs/05.03-工作模型字段注册与消费规范.md
+        - specs/08-Web信息同步实现规范.md
+        - web/docs/09-图标语义规范.md
+        - ldvh-base/workplans/workplan-0081-rename-memo-to-spark.yaml
+        constraints:
+        - 只读复核，不修改文件。
+        prompt_digest: 复核 Spark specs 与 Web 文案/图标语义一致性。
+      context_digest: workplan-0081-result-review-specs-consistency
+      result:
+        status: pass_with_followups
+        summary: Spark 主规范、字段注册、Web 白名单、Web 文案和 Sparkles 图标主线一致；旧 Memo active 入口未见未解释残留。
+        key_findings:
+        - specs/24 已声明 Spark / 火花、ldvh-base/sparks/、spark-{NNNN}、状态机、Human Gate 和 Web 边界。
+        - 05.03 已切到 source_sparks / related_sparks 和 Spark 专属字段。
+        - 08 Web 白名单与 24 一致，当前唯一 Web 写入是 POST /api/sparks。
+        - Web 图标语义和实现均为 Sparkles，Web i18n 为 创建火花 / Create Spark。
+        - 非阻断 follow-up：02 术语归口可更显式；WorkArea 图标规范与实现存在非 Spark 漂移。
+        recommendations:
+        - 将本复核写入 WorkPlan 结果复核记录。
+        - 后续补充 02 对 Spark / 火花术语归口的显式说明。
+        - 单独收敛 WorkArea 图标规范与实现差异。
+        required_changes: []
+        evidence_refs:
+        - specs/24-Spark-火花.md
+        - specs/05.03-工作模型字段注册与消费规范.md
+        - specs/08-Web信息同步实现规范.md
+        - web/docs/09-图标语义规范.md
+        - web/src/i18n/locales.ts
+      raw_output_ref: null
+      attested_at: '2026-06-21T06:14:00+08:00'
+      attestation:
+        signer: Jason
+        statement: 只读完成 specs-consistency-reviewer 结果复核，未修改文件，并基于列出的文件与只读校验输出对结论负责。
+    - id: result-review-2
+      role: fact-reference-reviewer
+      agent_name: Avicenna
+      requested_at: '2026-06-21T06:10:00+08:00'
+      prompt_context:
+        objective: 复核 ldvh-base 事实源迁移、Spark 实例、related_sparks/source_sparks 引用、旧 memo 路径和允许残留白名单。
+        input_refs:
+        - ldvh-base/sparks/
+        - ldvh-base/workareas/
+        - ldvh-base/workplans/
+        - ldvh-base/adrs/
+        - ldvh-base/pitfalls/
+        - ldvh-base/studies/
+        - ldvh-base/workplans/workplan-0081-rename-memo-to-spark.yaml
+        constraints:
+        - 只读复核，不修改文件。
+        prompt_digest: 复核 Spark 事实源迁移和引用一致性。
+      context_digest: workplan-0081-result-review-fact-reference
+      result:
+        status: pass_with_followups
+        summary: ldvh-base 的 Memo -> Spark 事实源迁移和引用一致性通过；旧 memo 当前入口、旧字段、旧目录、旧 API 在 active surface 中未发现未解释残留。
+        key_findings:
+        - ldvh-base/sparks/ 现有 20 个 spark-*.yaml，全部为 pending。
+        - ldvh-base/memos 当前不存在，旧 memo 文件删除并新增 sparks 目录。
+        - 排除本 WorkPlan 后，旧字段、旧路径、旧 API、旧对象词残留扫描无命中。
+        - related_sparks 与 source_sparks 引用均指向现有 spark-####。
+        - 允许残留白名单与实际残留一致；建议更显式写明本 WorkPlan 文件名保留 memo。
+        recommendations:
+        - 将本复核写入 WorkPlan 结果复核记录后重跑 fact_validate。
+        - 在关闭证据白名单中明确本 WorkPlan 文件名保留 memo 的原因。
+        required_changes: []
+        evidence_refs:
+        - ldvh-base/sparks/
+        - specs/24-Spark-火花.md
+        - python3 code/fact_validate.py ldvh-base --format text
+        - python3 code/fact_cli.py stats
+        - python3 code/fact_cli.py list spark
+        - /tmp/ldvh-0081/memo-files-before.txt
+        - /tmp/ldvh-0081/memo-hits-before.txt
+      raw_output_ref: null
+      attested_at: '2026-06-21T06:15:00+08:00'
+      attestation:
+        signer: Avicenna
+        statement: 只读完成 fact-reference-reviewer 结果复核，未修改文件，并基于列出的扫描、校验和引用检查对结论负责。
+    - id: result-review-3
+      role: code-test-reviewer
+      agent_name: McClintock
+      requested_at: '2026-06-21T06:10:00+08:00'
+      prompt_context:
+        objective: 复核 Code、CLI、Web API 和测试是否完成 Spark 迁移，并复查发现缺口的修复结果。
+        input_refs:
+        - code/fact_validate.py
+        - code/fact_cli.py
+        - tests/code/test_fact_validate.py
+        - tests/code/test_fact_cli.py
+        - tests/web/api/sparks.test.ts
+        - web/api/routes/sparks.ts
+        constraints:
+        - 只读复核，不修改文件。
+        prompt_digest: 复核 Spark Code/CLI/API/test 迁移和回归测试。
+      context_digest: workplan-0081-result-review-code-test
+      result:
+        status: pass
+        summary: 初次复核发现 source_sparks update 写入字符串和 CLI create spark 缺 description 两个缺口；主控修复后，二次复核确认缺口已解决，新增回归测试覆盖。
+        key_findings:
+        - fact_cli update 已将 source_sparks 纳入列表字段解析。
+        - fact_cli create spark 已写入非空 description 默认值。
+        - 新增 create spark validate 与 update source_sparks list 回归测试。
+        - Python 目标测试、Web API 测试和 Web build 均通过。
+        recommendations:
+        - 保留本复核作为代码结果复核证据。
+        required_changes: []
+        evidence_refs:
+        - code/fact_cli.py
+        - tests/code/test_fact_cli.py
+        - PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -p no:cacheprovider tests/code/test_fact_cli.py tests/code/test_fact_validate.py
+        - npm --prefix web run test:web:api
+        - npm --prefix web run build
+      raw_output_ref: null
+      attested_at: '2026-06-21T06:18:00+08:00'
+      attestation:
+        signer: McClintock
+        statement: 只读完成 code-test-reviewer 二次复核，未修改文件，并确认先前 P1/P2 缺口已经由当前文件事实源和测试结果解决。
+    - id: result-review-4
+      role: web-ux-reviewer
+      agent_name: Einstein
+      requested_at: '2026-06-21T06:10:00+08:00'
+      prompt_context:
+        objective: 复核 Web 当前实现是否符合 Human 裁决和图标语义：Create Spark / 创建火花，Spark 对象图标统一为 Sparkles。
+        input_refs:
+        - web/src/components/SemanticIcon.tsx
+        - web/src/i18n/locales.ts
+        - web/src/components/SparkCreate.tsx
+        - web/docs/09-图标语义规范.md
+        - web/src/components/Sidebar.tsx
+        - web/src/pages/ObjectList.tsx
+        - web/src/pages/ObjectDetail.tsx
+        - web/src/components/ReadingPanel.tsx
+        constraints:
+        - 只读复核，不修改文件。
+        prompt_digest: 复核 Spark Web 文案、创建入口和对象图标统一映射。
+      context_digest: workplan-0081-result-review-web-ux
+      result:
+        status: pass_with_followups
+        summary: Web 文案为 Create Spark / 创建火花，Spark 对象类型图标集中映射为 Sparkles，未发现页面散落 Spark 图标选择。
+        key_findings:
+        - locales.ts 中 spark.create、spark.quickCapture、spark.createBtn 中英均为 创建火花 / Create Spark。
+        - SemanticIcon.tsx 中 spark: Sparkles，Sidebar、ObjectList、ObjectDetail、ReadingPanel 等通过统一映射或 ObjectTypeIcon 使用。
+        - SparkCreate.tsx 使用 Plus 作为创建动作图标，属于操作语义，不是对象身份图标。
+        - 非阻断 follow-up：WorkArea 图标规范与实现存在非 Spark 漂移。
+        - 非阻断 follow-up：npm run lint 存在既有 lint 红项，不属于 Spark 文案/图标主线。
+        recommendations:
+        - 可以判定 Spark 命名、文案和对象图标语义主线通过。
+        - 后续单独收敛 WorkArea 图标规范与实现差异。
+        - 后续单独处理既有 Web lint 红项。
+        required_changes: []
+        evidence_refs:
+        - web/src/components/SemanticIcon.tsx
+        - web/src/i18n/locales.ts
+        - web/src/components/SparkCreate.tsx
+        - web/src/components/Sidebar.tsx
+        - web/src/pages/ObjectList.tsx
+        - web/docs/09-图标语义规范.md
+        - npm --prefix web run check
+        - npm --prefix web run lint
+      raw_output_ref: null
+      attested_at: '2026-06-21T06:15:00+08:00'
+      attestation:
+        signer: Einstein
+        statement: 只读完成 web-ux-reviewer 结果复核，未修改文件，并基于 Web 文件读取、扫描和检查输出对结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-21T06:18:41+08:00'
+      resolver: codex-main-controller
+      source_review_item_ids:
+      - result-review-1
+      - result-review-2
+      - result-review-3
+      - result-review-4
+      accepted_findings:
+      - Spark 规范、字段注册、事实源实例、Web API、Web 文案和 Sparkles 图标主线一致。
+      - 旧 Memo 当前入口、旧字段、旧目录和旧 API 未在 active surface 中留下未解释残留。
+      - Code 复核初次发现的 source_sparks update 和 create spark description 缺口已经修复并补测试。
+      - Human 最终裁决 Web 入口文案为 Create Spark / 创建火花，当前 Web i18n 已同步。
+      rejected_findings:
+      - 不将 WorkArea 图标规范与实现漂移作为 workplan-0081 关闭阻塞；该问题不属于 Spark/Memo 迁移主线，记录为 follow-up。
+      - 不将既有 Web lint 红项作为 workplan-0081 关闭阻塞；本轮已通过 Web build、Web API 测试和 npm run check，lint 红项另行分流。
+      required_changes_applied:
+      - 将 source_sparks 加入 fact_cli update 列表字段解析。
+      - 为 fact_cli create spark 写入非空 description 默认值。
+      - 补充 create spark validate 与 update source_sparks list 回归测试。
+      - 将 Spark 对象图标统一改为 lucide Sparkles，并同步 Web 图标语义文档。
+      - 将 Web 文案按 Human 裁决同步为 Create Spark / 创建火花。
+      unresolved_items: []
+      changed_fields:
+      - status
+      - updated
+      - code/fact_cli.py
+      - tests/code/test_fact_cli.py
+      - web/src/components/SemanticIcon.tsx
+      - web/docs/09-图标语义规范.md
+      - orchestration.result_review.review_items
+      - orchestration.result_review.controller_resolution
+      - closure_requested_at
+      - revision_history
+      - residual_risks
+      - followup_refs
+      revision_history_refs:
+      - revision_history[4]
+      summary: 主控采纳四个结果复核视角的有效发现，修复 Code/test 硬缺口，接受 Spark 主线通过结论，并将非 Spark 图标漂移和既有 lint 红项分流为后续项；当前可提交 Human 关闭确认。
+    human_closure_confirmation: null
+closure_requested_at: '2026-06-21T06:18:41+08:00'
+verification_evidence: |
+  ## 验证计划
+
+  验证 Memo -> Spark / 火花 一次性迁移是否完成，覆盖规范、事实源、Code、Web、测试、文件名残留、正文残留和 WorkPlan 自身回写。
+
+  ## 验证命令
+
+  - `python3 code/fact_validate.py ldvh-base --format text`
+  - `python3 code/specs_validate.py index`
+  - `python3 code/specs_validate.py all`
+  - `python3 -m pytest tests/code/test_fact_validate.py tests/code/test_fact_cli.py tests/code/specs_validate_checks/test_ldvh_landing.py`
+  - `npm --prefix web run test:web:api`
+  - `npm --prefix web run build`
+  - `git diff --check`
+  - `rg -n "related_memos|source_memos|aggregated_related_memos|memo-|/api/memos|ldvh-base/memos|\bmemo\b|\bMemo\b|\bMemos\b|MEMO|备忘" code web tests specs rules skills ldvh-base --glob '!web/node_modules/**' --glob '!web/dist/**' --glob '!ldvh-base/workplans/workplan-0081-rename-memo-to-spark.yaml'`
+  - `find ldvh-base specs rules skills code tests web -path 'web/node_modules' -prune -o -path 'web/dist' -prune -o -iname '*memo*' -print`
+
+  ## 验证结果
+
+  - 事实源校验通过：`files=133 errors=0 warnings=0`。
+  - specs index / all 校验通过；`all` 输出仅包含既有 review hints，exit code 为 0。
+  - Python 测试通过：`57 passed`。
+  - Web API 测试通过：`facts.test.ts`、`sparks.test.ts`、`commit-dto.test.ts` 全部通过。
+  - Web 构建通过；仅保留 Vite chunk size 提示。
+  - `git diff --check` 通过。
+  - active surface 正文残留扫描无命中；本 WorkPlan 作为迁移说明和审核历史语境被排除。
+  - 文件名残留扫描处理后，仅本 WorkPlan 文件名保留 `memo`，其语义是“将旧 Memo 重命名为 Spark”的迁移记录。
+
+  ## 结论
+
+  一次性迁移的实现和验证已足以支撑结果复核；Human 已裁决 Web 动作词采用 `Create Spark / 创建火花`。
+closure_evidence: |
+  ## 验证计划
+
+  关闭前需确认：执行项已回写、成功标准已按实际完成情况标记、残留白名单清晰、Web 派生状态能反映真实进展，结果复核已完成并由主控处理复核意见。
+
+  ## 验证命令
+
+  - 查看 `orchestration.execution_items`：6 个执行项均已 `done`，均有 `result_summary` 和 `evidence_refs`。
+  - 查看 `success_criteria`：迁移、验证、Web 动作词和图标语义相关条目均已完成。
+  - 查看 `orchestration.result_review.controller_self_check`：已记录旁路审查指出的对话感知和 Web 派生状态问题。
+  - 查看 `orchestration.result_review.review_items` 和 `controller_resolution`：四个结果复核视角已完成，主控已处理复核意见。
+
+  ## 验证结果
+
+  - 已完成对象身份、目录、字段、API、Web、测试和文档当前口径的一次性迁移。
+  - 允许残留白名单：本 WorkPlan 文件名、`title`、`description`、`source`、`plan_review.review_items`、历史 `revision_history` 中保留旧 Memo 词，用于说明迁移前语境、方案审核输入、迁移目标和 Git 不改写边界。
+  - 禁止残留清单：active surface 中不得再出现旧字段 `related_memos` / `source_memos`、旧目录 `ldvh-base/memos/`、旧 API `/api/memos`、旧当前类型 `memo` 或 Web 当前入口旧名。
+  - 对话感知修正：跨阶段口径已推进到 `human_closure_confirming`，执行项、成功标准、结果复核和关闭请求已回写，使 Web 能展示真实阶段。
+  - 结果复核处理：specs、事实引用、Code/tests、Web/UX 四个视角均已记录；Code/tests 初次复核发现的两个硬缺口已修复并通过二次复核。
+  - Follow-up 分流：02 术语归口、WorkArea 图标规范/实现漂移和既有 Web lint 红项不阻塞 Spark 迁移关闭，已写入 `residual_risks` / `followup_refs`。
+
+  ## 结论
+
+  当前已完成结果复核并进入 Human 关闭确认阶段；等待 Human 判断是否关闭 workplan-0081。
+revision_history:
+- at: '2026-06-21T05:41:40+08:00'
+  from_status: subagents_plan_reviewing
+  to_status: human_plan_confirming
+  actor: codex-main-controller
+  reason: 四个方案审核视角已完成，主控采纳审核意见并补强 Human Gate 决策项、迁移策略、manifest、残留白名单和验证范围，提交 Human 方案确认。
+  changed_fields:
+  - status
+  - updated
+  - success_criteria
+  - source
+  - orchestration.execution_items[item-1].expected_output
+  - orchestration.execution_items[item-2].expected_output
+  - orchestration.execution_items[item-5].expected_output
+  - orchestration.execution_items[item-6].expected_output
+  - orchestration.plan_review.review_items
+  - orchestration.plan_review.controller_resolution
+  - related_docs
+  summary: 方案审核完成后进入 Human 方案确认；Human 确认前不得执行 Spark 迁移。
+- at: '2026-06-21T05:47:26+08:00'
+  from_status: human_plan_confirming
+  to_status: human_plan_confirming
+  actor: Human
+  reason: Human 明确回复“就叫火花，web里也叫火花”，确认对象正式中文名和 Web 展示名。
+  changed_fields:
+  - updated
+  - success_criteria
+  - orchestration.plan_review.controller_resolution.accepted_findings
+  - orchestration.plan_review.controller_resolution.unresolved_items
+  summary: 已记录命名裁决；内部英文标识、ID/目录/字段/API 迁移策略和兼容期仍待确认，暂不进入 executing。
+- at: '2026-06-21T05:47:26+08:00'
+  from_status: human_plan_confirming
+  to_status: executing
+  actor: Human
+  reason: Human 明确回复“一次性全部迁移”，确认内部对象身份、目录、字段、API 和 Web 当前入口全部切换到火花 / spark 口径。
+  changed_fields:
+  - status
+  - success_criteria
+  - orchestration.plan_review.controller_resolution.unresolved_items
+  - orchestration.plan_review.human_confirmation
+  summary: Human 确认一次性迁移策略，WorkPlan 进入 executing。
+- at: '2026-06-21T05:57:40+08:00'
+  from_status: executing
+  to_status: result_self_checking
+  actor: codex-main-controller
+  reason: 迁移实现、执行项回写和验证证据已完成；旁路审查指出 Web 动作词尚未 Human 明确确认，因此进入结果自检并等待 Human Gate。
+  changed_fields:
+  - status
+  - updated
+  - success_criteria
+  - orchestration.execution_items
+  - orchestration.result_review.controller_self_check
+  - verification_evidence
+  - closure_evidence
+  - residual_risks
+  summary: 结果自检确认实现已完成，但关闭前需要 Human 裁决 `Capture Spark / 捕获火花` 动作词。
+- at: '2026-06-21T06:03:10+08:00'
+  from_status: result_self_checking
+  to_status: subagents_result_reviewing
+  actor: Human
+  reason: Human 明确回复“创建火花 / Create Spark”，裁决 Web 入口动作词，主控同步 Web i18n 和自检材料后进入结果复核。
+  changed_fields:
+  - status
+  - updated
+  - success_criteria
+  - orchestration.execution_items[item-1].result_summary
+  - orchestration.execution_items[item-5].result_summary
+  - orchestration.result_review.controller_self_check
+  - verification_evidence
+  - closure_evidence
+  - residual_risks
+  summary: Web 动作词 Human Gate 已解决；WorkPlan 进入结果复核阶段。
+- at: '2026-06-21T06:18:41+08:00'
+  from_status: subagents_result_reviewing
+  to_status: human_closure_confirming
+  actor: codex-main-controller
+  reason: 四个结果复核视角已完成，主控采纳 Spark 主线通过结论，修复 Code/tests 硬缺口，并将非 Spark follow-up 分流后提交 Human 关闭确认。
+  changed_fields:
+  - status
+  - updated
+  - code/fact_cli.py
+  - tests/code/test_fact_cli.py
+  - web/src/components/SemanticIcon.tsx
+  - web/docs/09-图标语义规范.md
+  - orchestration.result_review.review_items
+  - orchestration.result_review.controller_resolution
+  - closure_requested_at
+  - closure_evidence
+  - residual_risks
+  - followup_refs
+  summary: 结果复核完成；WorkPlan 等待 Human 关闭确认。
+related_docs:
+- specs/02-术语规范.md
+- specs/24-Spark-火花.md
+- specs/05.03-工作模型字段注册与消费规范.md
+- specs/08-Web信息同步实现规范.md
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workplans: []
+residual_risks:
+- 本 WorkPlan 保留旧 Memo 词作为迁移说明和方案审核历史语境；不得将这些历史记录解释为当前 active 工作模型入口。
+- specs/02-术语规范.md 对 Spark / 火花术语归口仍可更显式；当前不阻塞，因为 Spark 工作模型权威定义已由 specs/24-Spark-火花.md 承载。
+- web/docs/09-图标语义规范.md 与 web/src/components/SemanticIcon.tsx 存在 WorkArea 图标 Layers / Focus 的非 Spark 漂移，需后续单独收敛。
+- 既有 Web lint 红项仍需后续单独处理；本次 Spark 迁移已通过 Web build、Web API 测试和 npm run check。
+followup_refs:
+- specs/02-术语规范.md
+- web/docs/09-图标语义规范.md
+- web/src/components/SemanticIcon.tsx
+- web/src/components/ReadingPanel.tsx
+- web/src/pages/ObjectDetail.tsx

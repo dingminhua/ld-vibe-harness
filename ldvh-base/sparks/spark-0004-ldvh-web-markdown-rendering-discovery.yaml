@@ -1,5 +1,5 @@
-id: memo-0004
-type: memo
+id: spark-0004
+type: spark
 title: LDVH Web 长文本 Markdown 呈现发现
 status: pending
 created: '2026-06-06T01:35:34.203999'
@@ -19,7 +19,7 @@ description: |
 
   ## 职责边界
 
-  本 Memo 只记录发现和未决设计分支，不直接创建 Task，不作为实施依据，也不改变事实源边界。后续若进入执行，应另建 Task；若决定支持外部 Markdown 正文文件，应另建 ADR。
+  本 Spark 只记录发现和未决设计分支，不直接创建 Task，不作为实施依据，也不改变事实源边界。后续若进入执行，应另建 Task；若决定支持外部 Markdown 正文文件，应另建 ADR。
 
   ## 执行与验收说明
 

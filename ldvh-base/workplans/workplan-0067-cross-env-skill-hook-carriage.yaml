@@ -117,6 +117,6 @@ related_docs:
 - specs/04.03-环境入口适配与部署规范.md
 - specs/21-WorkPlan-工作计划.md
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

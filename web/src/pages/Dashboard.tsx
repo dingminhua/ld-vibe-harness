@@ -20,11 +20,11 @@ const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
   workplan: 'nav.workplans',
   adr: 'nav.adrs',
   pitfall: 'nav.pitfalls',
-  memo: 'nav.memos',
+  spark: 'nav.sparks',
   study: 'nav.studies',
 };
 
-const TYPE_ORDER = ['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study'];
+const TYPE_ORDER = ['workarea', 'workplan', 'adr', 'pitfall', 'spark', 'study'];
 
 const HIGHLIGHT_STATUSES = new Set([...WORKPLAN_CURRENT_STATUSES.filter((status) => status !== 'closed'), 'verifying', 'review_needed']);
 

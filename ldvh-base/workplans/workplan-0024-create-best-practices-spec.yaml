@@ -23,8 +23,8 @@ orchestration:
     - task-0024
     expected_output: |
       - [ ] specs/11-最佳实践.md 文件已创建，符合文档规范骨架
-      - [ ] 文档包含 BP-01 案例：Memo 驱动的调研与规划工作流
-      - [ ] 案例描述涵盖创建 Memo、AI 撰写可行性方案、调研文件夹关联、独立/并行执行、后续规划等要素
+      - [ ] 文档包含 BP-01 案例：Spark 驱动的调研与规划工作流
+      - [ ] 案例描述涵盖创建 Spark、AI 撰写可行性方案、调研文件夹关联、独立/并行执行、后续规划等要素
       - [ ] 01-目录说明.md 编号分区已更新
     status: in_progress
     result_summary: ''
@@ -43,7 +43,7 @@ review_requested_at: ''
 closed_at: ''
 related_docs: []
 related_adrs: []
-related_memos:
-- memo-0017
+related_sparks:
+- spark-0017
 related_pitfalls: []
 related_workplans: []

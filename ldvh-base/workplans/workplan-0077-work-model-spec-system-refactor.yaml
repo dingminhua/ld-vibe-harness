@@ -97,7 +97,7 @@ orchestration:
     - specs/21-WorkPlan-工作计划.md
     - specs/22-ADR-决策.md
     - specs/23-Pitfall-踩坑经验.md
-    - specs/24-Memo-备忘.md
+    - specs/24-Spark-火花.md
     - specs/25-Study-研究报告.md
     - code/spec_checks/field_registry.py
     - code/spec_checks/index.py
@@ -192,6 +192,6 @@ related_docs:
 - specs/07-Code确定性执行实现规范.md
 - specs/08-Web信息同步实现规范.md
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

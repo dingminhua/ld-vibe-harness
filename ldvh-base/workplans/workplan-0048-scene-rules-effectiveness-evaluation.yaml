@@ -167,6 +167,6 @@ related_docs:
 - specs/04.02-LDVH能力资产与落地保障规范.md
 - specs/04.03-环境入口适配与部署规范.md
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

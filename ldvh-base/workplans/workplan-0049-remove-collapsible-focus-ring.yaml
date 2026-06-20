@@ -109,7 +109,7 @@ review_requested_at: '2026-06-06T02:10:00'
 closed_at: '2026-06-06T02:10:00'
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls:
 - pitfall-0007
 related_workplans: []

@@ -103,6 +103,6 @@ related_docs:
 - specs/07-Code确定性执行实现规范.md
 - specs/06-工作流程基础规范.md
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

@@ -16,7 +16,7 @@ success_criteria: |
   - [x] Code 能检查 20-39 / 40-59 普通头部不得重复 `ldvh_member` 成员事实，例如 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 或 anchor 字段
   - [x] Code 明确 docs/studies、docs/sources 是否纳入头部元信息检查；若纳入，应定义扫描范围、doc_kind 命名和诊断等级；若暂不纳入，应写清降级边界
   - [x] Web 明确是否消费 specs 头部元信息，以及消费字段、展示位置和不反向制造事实源的边界
-  - [x] 已修复现有头部元信息不符合契约的 specs/docs 文件，或将不能立即修复的项分流为后续 WorkPlan/Memo
+  - [x] 已修复现有头部元信息不符合契约的 specs/docs 文件，或将不能立即修复的项分流为后续 WorkPlan/Spark
   - [x] `python3 code/specs_validate.py all --fail-on-diagnostics`、相关 Code 测试、必要 Web 检查和事实源校验通过
 source: |
   用户在 2026-06-19 追问“建立规范文档元信息”的事项为何一直没推进。复查发现 workplan-0070 已完成契约设计并处于 review_needed，但 Code/Web/docs 全量落地硬化仍只是 closure_evidence 中的后续候选。
@@ -194,7 +194,7 @@ related_docs:
 - specs/03.02-工作模型文档规范.md
 - specs/03.03-工作流程文档规范.md
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans:
 - workplan-0070

@@ -11,7 +11,7 @@ scope: |-
   完成竞品测试任务安排的深度分析；完成行业最佳实践联网调研；产出分析报告进入 docs/sources/ 参考文档
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 workplans:
 - workplan-0028

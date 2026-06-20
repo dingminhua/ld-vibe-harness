@@ -46,7 +46,7 @@ orchestration:
       4. 针对新增 API 的路径边界和 diff 输出做最小测试或手工验证
       5. 在浏览器中验证独立 tab 的项目文件浏览、Markdown 预览和待提交文件 diff 查看
 
-      同时需要扫描 Web 写入风险，确认除 Memo 快速创建外没有新增事实源写入入口。
+      同时需要扫描 Web 写入风险，确认除 Spark 快速创建外没有新增事实源写入入口。
 
       ## 验证结果
 
@@ -153,6 +153,6 @@ related_docs:
 - specs/08-Web信息同步实现规范.md
 - specs/10-Git提交规范.md
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 related_workplans: []

@@ -9,7 +9,7 @@ import {
   FileSignature,
   Lightbulb,
   Link2,
-  Pencil,
+  Sparkles,
   Workflow,
   type LucideIcon,
   type LucideProps,
@@ -21,17 +21,12 @@ function GitHubSilhouetteIcon({ size = 16, className, ...props }: LucideProps) {
   return <Github size={size} strokeWidth={0} fill="currentColor" className={className} {...props} />;
 }
 
-function MemoPencilIcon({ size = 16, className, ...props }: LucideProps) {
-  const iconSize = Math.max(10, Number(size) - 2);
-  return <Pencil size={iconSize} className={className} {...props} />;
-}
-
 export const OBJECT_TYPE_ICONS: Record<string, SemanticIconComponent> = {
   workarea: Focus,
   workplan: ClipboardList,
   adr: FileSignature,
   pitfall: Lightbulb,
-  memo: MemoPencilIcon,
+  spark: Sparkles,
   study: BookOpenText,
   change: GitCommit,
   changelog: GitHubSilhouetteIcon,

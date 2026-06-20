@@ -33,7 +33,7 @@ consequences: |
 
   - 修复前由 Human Gate 确认方案和影响范围。
   - 修复后以测试结果、机制保障和 Human 确认共同判断完成。
-related_memos: []
+related_sparks: []
 related_rules:
 - specs/22-ADR-决策.md
 related_workareas: []

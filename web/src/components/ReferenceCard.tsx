@@ -17,7 +17,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   workplan: { zh: '计划', en: 'Work Plan' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑', en: 'Pitfall' },
-  memo: { zh: '备忘', en: 'Memo' },
+  spark: { zh: '火花', en: 'Spark' },
   study: { zh: '研究', en: 'Study' },
   change: { zh: '提交', en: 'Commit' },
 };

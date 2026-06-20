@@ -72,7 +72,7 @@ WorkArea / 工作域是长期存在的工作范围事实，用于承载一个项
 4. 只有验收标准、关闭证据或执行步骤的事项；
 5. 已由现有工作域覆盖的重复范围。
 
-上述内容应进入 WorkPlan、Memo、ADR、docs 或当前对话上下文。
+上述内容应进入 WorkPlan、Spark、ADR、docs 或当前对话上下文。
 
 ---
 ## 2. 事实源边界
@@ -138,9 +138,9 @@ archived -> active
 5. 工作计划关闭后不改变工作域状态；
 6. 一个工作域可以长期产生多个工作计划。
 
-### 4.2 工作域与 ADR、Memo、Pitfall
+### 4.2 工作域与 ADR、Spark、Pitfall
 
-ADR、Memo、Pitfall 可以引用工作域，用于表达某条决策、备忘或踩坑经验适用于哪个长期范围。具体字段由对应对象规范定义。
+ADR、Spark、Pitfall 可以引用工作域，用于表达某条决策、火花或踩坑经验适用于哪个长期范围。具体字段由对应对象规范定义。
 
 ---
 ## 5. Human Gate
@@ -175,7 +175,7 @@ ADR、Memo、Pitfall 可以引用工作域，用于表达某条决策、备忘�
 | `source` | 工作域来源 | string | 是 | 谁在什么场景下确认 | Reference / Narrative | AI、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_memos` | 关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_sparks` | 关联火花 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `workplans` | 所属 WorkPlan ID 列表 | list[string] | 否 | 默认为空列表；由 WorkPlan 的 `workarea` 反向聚合 | Reference | AI、Code、Web |
 | `archive_reason` | — | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Code、Web |
@@ -199,7 +199,7 @@ constraints: |
 source: 用户确认工作域模型
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 workplans: []
 ```

@@ -1,5 +1,5 @@
-id: memo-0002
-type: memo
+id: spark-0002
+type: spark
 title: 规则建立方式待讨论
 status: pending
 created: '2026-06-05T06:23:44.941983'
@@ -8,7 +8,7 @@ description: |
   记录关于 LDVH 中规则应如何建立、何时进入 Rules、如何避免过度抽象并服务最近可运行闭环的待讨论问题。
 evolution: []
 source: conversation
-source_detail: 用户提出“添加一个备忘，规则到底怎么建立合适”
+source_detail: 用户提出“添加一个火花，规则到底怎么建立合适”
 related_adrs: []
 related_studies: []
 related_workareas: []

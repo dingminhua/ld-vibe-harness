@@ -1,11 +1,11 @@
-id: memo-0005
-type: memo
+id: spark-0005
+type: spark
 title: WorkPlan 与执行编排边界待收敛
 status: pending
 created: '2026-06-17T22:00:06'
 updated: '2026-06-19T11:42:00+08:00'
 description: |
-  本 Memo 承载本轮关于 TaskPlan / Task / SubTask、WorkPlan、ExecutionItem、Role Contract、计划审核和执行证据边界的阶段性收敛。
+  本 Spark 承载本轮关于 TaskPlan / Task / SubTask、WorkPlan、ExecutionItem、Role Contract、计划审核和执行证据边界的阶段性收敛。
 
   当前已落地的主结论是：LDVH 不再以独立 Task 作为 active 工作模型。Human 关心的是 WorkPlan 这一层的目标、范围、成功标准、关闭判断和证据；AI 在 WorkPlan 内部使用 `orchestration.execution_items` 安排执行、角色分工、并行/串行和最小恢复信息。ExecutionItem 不是工作对象，不进入 `ldvh-base/` 独立事实源，也不作为历史事实源长期追踪。
 
@@ -15,7 +15,7 @@ description: |
 
   当前事实源结构校验为 `errors=0 warnings=0`。此前 13 个 warning 来自历史旧规范路径引用，已按现行承接关系改向 `specs/21-WorkPlan-工作计划.md` 或相关现行规范，不再让旧 TaskPlan / Task / SubTask 规范路径形成事实源噪音。
 
-  `Specs 编号与字段注册表总收口` 已完成三个核心动作：`specs/05.02-工作模型字段内容与格式规范.md` 已从 WorkPlan 试点注册升级为全工作模型字段注册表，补齐 WorkArea、ADR、Pitfall、Memo、Change、Study 的字段名、语义、内容格式、Code/Web 消费元数据和废弃/别名关系；20-39 工作模型编号洞已填补，ADR、Pitfall、Memo、Change、Study 已从 24-28 迁移为 22-26；旧 specs 路径引用已清理到事实源零 warning。
+  `Specs 编号与字段注册表总收口` 已完成三个核心动作：`specs/05.02-工作模型字段内容与格式规范.md` 已从 WorkPlan 试点注册升级为全工作模型字段注册表，补齐 WorkArea、ADR、Pitfall、Spark、Change、Study 的字段名、语义、内容格式、Code/Web 消费元数据和废弃/别名关系；20-39 工作模型编号洞已填补，ADR、Pitfall、Spark、Change、Study 已从 24-28 迁移为 22-26；旧 specs 路径引用已清理到事实源零 warning。
 
   仍需继续讨论和核对的核心问题：
 
@@ -23,8 +23,8 @@ description: |
   - `orchestration.review` 目前只声明复检安排；若需要更明确的专业角色审核输出格式，应由 Role Contract、工作流程或能力资产规范承接；
   - Role Contract 应由 04 能力资产、06 流程基础、40-59 具体流程，还是其他规范承接；
   - WorkPlan 的 `verification_evidence` 与 `closure_evidence` 已在字段注册表和校验中分离，但旧迁移数据中仍可能存在语义重复，后续应在关闭新 WorkPlan 时持续强化证据写法；
-  - Memo 中已经部分落地的议题，如何提示 AI 判断继续 pending、追加 evolution、分流或 resolved；
-  - 旧 TaskPlan、Task、SubTask 的当前兼容面已经清退，Web 内部 `TaskFlow*` 命名债已由 workplan-0078 清理；剩余议题是 Memo 分流、Role Contract 归属、证据写法持续强化、历史叙述边界和需要保留为 Git 历史的证据说明。
+  - Spark 中已经部分落地的议题，如何提示 AI 判断继续 pending、追加 evolution、分流或 resolved；
+  - 旧 TaskPlan、Task、SubTask 的当前兼容面已经清退，Web 内部 `TaskFlow*` 命名债已由 workplan-0078 清理；剩余议题是 Spark 分流、Role Contract 归属、证据写法持续强化、历史叙述边界和需要保留为 Git 历史的证据说明。
 
   建议新会话优先从 `specs/21-WorkPlan-工作计划.md` 逐段核对，然后回看 `specs/05-工作模型基础规范.md`、`specs/05.02-工作模型字段内容与格式规范.md` 和 `specs/06-工作流程基础规范.md`，最后再处理 40-43 流程规范与 Code / Web 迁移。
 evolution:
@@ -45,9 +45,9 @@ evolution:
   - at: '2026-06-18T08:04:32'
     summary: 已完成 code/web 双视角验收后的最小硬化：Code 能读、列、统计、展示、校验 WorkPlan，并强化 related_workplans 存在性、related_changes 列表写入和多行证据块标量；Web 能读取 WorkPlan、展示 execution_items，并在 Dashboard 待推进主队列中对 legacy TaskPlan / Task / SubTask 降权。
   - at: '2026-06-18T08:04:32'
-    summary: 完成 05.01 全工作模型字段注册表升级；WorkArea、WorkPlan、ADR、Pitfall、Memo、Change、Study 的字段名、重要嵌套字段路径、Code/Web 消费元数据和旧字段废弃映射已进入统一注册入口。
+    summary: 完成 05.01 全工作模型字段注册表升级；WorkArea、WorkPlan、ADR、Pitfall、Spark、Change、Study 的字段名、重要嵌套字段路径、Code/Web 消费元数据和旧字段废弃映射已进入统一注册入口。
   - at: '2026-06-18T08:04:32'
-    summary: 完成 20-39 工作模型编号迁移：ADR、Pitfall、Memo、Change、Study 已从 24-28 迁移为 22-26，并同步 specs、rules、web 和事实源引用。
+    summary: 完成 20-39 工作模型编号迁移：ADR、Pitfall、Spark、Change、Study 已从 24-28 迁移为 22-26，并同步 specs、rules、web 和事实源引用。
   - at: '2026-06-18T08:27:13'
     summary: 清理旧 TaskPlan / Task / SubTask 规范路径引用后，事实源校验收敛为 errors=0 warnings=0。
   - at: '2026-06-18T08:39:30'
@@ -57,7 +57,7 @@ evolution:
   - at: '2026-06-18T08:45:50'
     summary: 补齐 Code 防回归检查：`specs/01-目录说明.md` 的 active 工作模型人工目录表现在必须与 20-39 成员主文件自描述中的 active work_model 成员一致，防止编号表再次漂移。
   - at: '2026-06-18T08:49:46'
-    summary: 40-43 工作流程规范已承接 WorkPlan 回写契约：流程产生后续行动时必须回写为 WorkPlan / Memo 等现行对象，WorkPlan 必须使用 `success_criteria`、`orchestration.execution_items`、验证证据和关闭证据，不得新建 TaskPlan / Task / SubTask。
+    summary: 40-43 工作流程规范已承接 WorkPlan 回写契约：流程产生后续行动时必须回写为 WorkPlan / Spark 等现行对象，WorkPlan 必须使用 `success_criteria`、`orchestration.execution_items`、验证证据和关闭证据，不得新建 TaskPlan / Task / SubTask。
   - at: '2026-06-18T08:53:08'
     summary: 41-43 候选流程的待补齐状态已从“等待首次真实使用”改为“已有 dogfood 候选使用，升级 active 仍需 Human Gate”，避免 candidate 流程被误读为未验证或被 AI 擅自升级。
   - at: '2026-06-18T08:56:46'
@@ -65,9 +65,9 @@ evolution:
   - at: '2026-06-18T09:00:36'
     summary: Human 已确认 41-43 可以升级为 active；对应工作流程成员自描述已从 candidate 改为 active，候选等待升级事项已从待补齐段移除。
   - at: '2026-06-18T10:49:13'
-    summary: workplan-0069 完成旧 TaskPlan / Task / SubTask 事实源与兼容入口清退；当前 active 工作对象入口只保留 WorkArea、WorkPlan、ADR、Pitfall、Memo 和 Study，事实源修改追溯回到 Git 提交记录和提交记录派生视图，旧对象事实只保留在 Git 历史和已迁移 WorkPlan 证据中。
+    summary: workplan-0069 完成旧 TaskPlan / Task / SubTask 事实源与兼容入口清退；当前 active 工作对象入口只保留 WorkArea、WorkPlan、ADR、Pitfall、Spark 和 Study，事实源修改追溯回到 Git 提交记录和提交记录派生视图，旧对象事实只保留在 Git 历史和已迁移 WorkPlan 证据中。
   - at: '2026-06-19T11:42:00+08:00'
-    summary: workplan-0078 完成 Web 内部 TaskFlow 命名债清理，当前入口改为 ExecutionFlow；本 Memo 后续不再把 TaskFlow 作为待处理债务。
+    summary: workplan-0078 完成 Web 内部 TaskFlow 命名债清理，当前入口改为 ExecutionFlow；本 Spark 后续不再把 TaskFlow 作为待处理债务。
 human_gate_records:
   - confirmed_at: "2026-06-18"
     decision: Human 确认 41 work-model-audit、42 specs-audit、43 landing-readiness-audit 可以从 candidate 升级为 active。
@@ -75,7 +75,7 @@ human_gate_records:
     constraints: |
       升级只表示三条工作流程可以作为 active 流程入口被 AI 引用和执行；不代表其 Skill SOP、案例库、自动化矩阵或后续 Code/Web 审核流程已经完成。后续仍需按各流程的 Gate、回写和验证要求执行。
 source: conversation
-source_detail: 本轮围绕 LDVH 工作流程、任务编排、执行证据、角色复检和 Memo 分流的连续讨论；包含一次联网复核结论。
+source_detail: 本轮围绕 LDVH 工作流程、任务编排、执行证据、角色复检和 Spark 分流的连续讨论；包含一次联网复核结论。
 priority: P1
 resolved_to: ""
 resolved_at: ""
@@ -92,5 +92,5 @@ related_docs:
   - specs/05.02-工作模型字段内容与格式规范.md
   - specs/06-工作流程基础规范.md
   - specs/21-WorkPlan-工作计划.md
-  - specs/24-Memo-备忘.md
+  - specs/24-Spark-火花.md
   - specs/25-Study-研究报告.md

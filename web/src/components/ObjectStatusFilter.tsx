@@ -31,7 +31,7 @@ const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   workplan: [...WORKPLAN_STATUS_ORDER],
   adr: ['active', 'archived', 'deprecated'],
   pitfall: ['active', 'archived'],
-  memo: ['pending', 'resolved', 'discarded'],
+  spark: ['pending', 'resolved', 'discarded'],
   study: ['active', 'archived'],
 };
 
@@ -89,7 +89,7 @@ export default function ObjectStatusFilter({
   const sortedOptions = useMemo(() => sortStatusOptions(options), [options]);
   const fallbackStatuses = useMemo(() => getFallbackStatuses(type, activeStatus), [type, activeStatus]);
   const displayOptions = useMemo(() => {
-    if (type !== 'memo' && type !== 'study' && type !== 'workplan') return sortedOptions;
+    if (type !== 'spark' && type !== 'study' && type !== 'workplan') return sortedOptions;
     const counts = new Map(sortedOptions.map((option) => [option.status, option.count]));
     return fallbackStatuses.map((status) => ({ status, count: counts.get(status) ?? 0 }));
   }, [fallbackStatuses, sortedOptions, type]);
@@ -120,7 +120,7 @@ export default function ObjectStatusFilter({
     );
   }
 
-  if (displayOptions.length <= 1 && type !== 'memo') return null;
+  if (displayOptions.length <= 1 && type !== 'spark') return null;
 
   return (
     <div className={`ldvh-tab-list ${className}`} aria-label={t('objectList.statusFilter')}>

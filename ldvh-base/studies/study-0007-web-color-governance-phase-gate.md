@@ -15,8 +15,8 @@ conclusion: |
   建议按“严格语义 + 分阶段”实施。
   先维持现状功能交付，待第一阶段结束后执行统一清理与映射收口。
   通过单点映射与 token 健康检查，避免颜色语义在组件层扩散。
-related_memos:
-  - memo-0018
+related_sparks:
+  - spark-0018
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -35,7 +35,7 @@ archive_reason:
 
 ## 输入与边界
 
-- 输入来自 `memo-0018`、`web/docs/01-全局设计约束.md` 和 `web/docs/11-Web测试实现规范.md`。
+- 输入来自 `spark-0018`、`web/docs/01-全局设计约束.md` 和 `web/docs/11-Web测试实现规范.md`。
 - 本 Study 只整理颜色治理阶段、约束和后续分流，不直接执行全量颜色重构。
 - 第一阶段以功能交付为优先，颜色问题只记录偏差和新增约束，不做大规模迁移。
 - 后续阶段应回到 Web 文档、主题 token、语义映射和测试入口落地，不把本 Study 作为长期执行清单。

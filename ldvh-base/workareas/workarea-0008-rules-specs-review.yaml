@@ -10,7 +10,7 @@ scope: |-
   通过实际任务执行验证规则触发、约束生效、Human Gate 拦截等机制均按预期工作；识别并修复规则体系中的漏洞和不足
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 workplans:
 - workplan-0027

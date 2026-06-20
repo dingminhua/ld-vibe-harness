@@ -9,11 +9,11 @@ import path from 'node:path'
 const requireFromWeb = createRequire(new URL('../../../web/package.json', import.meta.url))
 const yaml = requireFromWeb('js-yaml') as typeof import('js-yaml')
 
-const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ldvh-memos-api-'))
+const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ldvh-sparks-api-'))
 process.env.LDVH_ROOT = tempRoot
 
-const memosDir = path.join(tempRoot, 'ldvh-base', 'memos')
-fs.mkdirSync(memosDir, { recursive: true })
+const sparksDir = path.join(tempRoot, 'ldvh-base', 'sparks')
+fs.mkdirSync(sparksDir, { recursive: true })
 
 let server: Server
 let baseUrl = ''
@@ -25,23 +25,23 @@ type MutableFs = typeof fs & {
 
 const mutableFs = fs as MutableFs
 
-function resetMemosDir() {
-  fs.rmSync(memosDir, { recursive: true, force: true })
-  fs.mkdirSync(memosDir, { recursive: true })
+function resetSparksDir() {
+  fs.rmSync(sparksDir, { recursive: true, force: true })
+  fs.mkdirSync(sparksDir, { recursive: true })
 }
 
-async function postMemo(body: Record<string, unknown>) {
-  return fetch(`${baseUrl}/api/memos`, {
+async function postSpark(body: Record<string, unknown>) {
+  return fetch(`${baseUrl}/api/sparks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
 }
 
-function validMemo(overrides: Record<string, unknown> = {}) {
+function validSpark(overrides: Record<string, unknown> = {}) {
   return {
-    title: 'API Memo',
-    description: 'Captured from the Web memo quick entry.',
+    title: 'API Spark',
+    description: 'Captured from the Web spark quick entry.',
     priority: 'P1',
     ...overrides,
   }
@@ -56,24 +56,24 @@ async function closeServer() {
   })
 }
 
-async function testCreateMemo() {
-  resetMemosDir()
+async function testCreateSpark() {
+  resetSparksDir()
 
-  const response = await postMemo(validMemo())
+  const response = await postSpark(validSpark())
   const payload = await response.json() as Record<string, unknown>
 
   assert.equal(response.status, 201)
   assert.equal(payload.ok, true)
   assert.equal(payload.action, 'create')
-  assert.deepEqual(payload.summary, { id: 'memo-0001', type: 'memo', status: 'pending' })
+  assert.deepEqual(payload.summary, { id: 'spark-0001', type: 'spark', status: 'pending' })
 
-  const files = fs.readdirSync(memosDir)
-  assert.deepEqual(files, ['memo-0001-api-memo.yaml'])
+  const files = fs.readdirSync(sparksDir)
+  assert.deepEqual(files, ['spark-0001-api-spark.yaml'])
   const persisted = yaml.load(
-    fs.readFileSync(path.join(memosDir, files[0]), 'utf-8'),
+    fs.readFileSync(path.join(sparksDir, files[0]), 'utf-8'),
     { schema: yaml.JSON_SCHEMA },
   ) as Record<string, unknown>
-  assert.equal(persisted.id, 'memo-0001')
+  assert.equal(persisted.id, 'spark-0001')
   assert.equal(persisted.status, 'pending')
   assert.equal(persisted.source, 'web')
   assert.match(String(persisted.created), /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
@@ -86,58 +86,58 @@ async function testCreateMemo() {
 }
 
 async function testFieldValidation() {
-  resetMemosDir()
+  resetSparksDir()
 
-  const response = await postMemo({ title: 'Incomplete' })
+  const response = await postSpark({ title: 'Incomplete' })
   const payload = await response.json() as { ok: boolean, errors: string[] }
 
   assert.equal(response.status, 400)
   assert.equal(payload.ok, false)
   assert.ok(payload.errors.includes('description is required'))
   assert.ok(payload.errors.some((error) => error.startsWith('priority must be one of:')))
-  assert.deepEqual(fs.readdirSync(memosDir), [])
+  assert.deepEqual(fs.readdirSync(sparksDir), [])
 }
 
 async function testFileConflict() {
-  resetMemosDir()
+  resetSparksDir()
   const originalExistsSync = fs.existsSync
   mutableFs.existsSync = ((target: fs.PathLike) => {
-    if (typeof target === 'string' && target.endsWith(`${path.sep}memo-0001-conflict.yaml`)) {
+    if (typeof target === 'string' && target.endsWith(`${path.sep}spark-0001-conflict.yaml`)) {
       return true
     }
     return originalExistsSync(target)
   }) as typeof fs.existsSync
 
   try {
-    const response = await postMemo(validMemo({ title: 'Conflict' }))
+    const response = await postSpark(validSpark({ title: 'Conflict' }))
     const payload = await response.json() as Record<string, unknown>
 
     assert.equal(response.status, 409)
     assert.equal(payload.ok, false)
-    assert.equal(payload.code, 'MEMO_FILE_CONFLICT')
-    assert.deepEqual(fs.readdirSync(memosDir), [])
+    assert.equal(payload.code, 'SPARK_FILE_CONFLICT')
+    assert.deepEqual(fs.readdirSync(sparksDir), [])
   } finally {
     mutableFs.existsSync = originalExistsSync
   }
 }
 
 async function testWriteVerificationFailure() {
-  resetMemosDir()
+  resetSparksDir()
   const originalReadFileSync = fs.readFileSync
   mutableFs.readFileSync = ((target: fs.PathOrFileDescriptor, options?: unknown) => {
-    if (typeof target === 'string' && target.endsWith(`${path.sep}memo-0001-verify-fail.yaml`)) {
-      return 'id: memo-0001\ntype: memo\nstatus: resolved\n'
+    if (typeof target === 'string' && target.endsWith(`${path.sep}spark-0001-verify-fail.yaml`)) {
+      return 'id: spark-0001\ntype: spark\nstatus: resolved\n'
     }
     return originalReadFileSync(target, options as never)
   }) as typeof fs.readFileSync
 
   try {
-    const response = await postMemo(validMemo({ title: 'Verify Fail' }))
+    const response = await postSpark(validSpark({ title: 'Verify Fail' }))
     const payload = await response.json() as { ok: boolean, code: string, errors: string[] }
 
     assert.equal(response.status, 500)
     assert.equal(payload.ok, false)
-    assert.equal(payload.code, 'MEMO_WRITE_VERIFY_FAILED')
+    assert.equal(payload.code, 'SPARK_WRITE_VERIFY_FAILED')
     assert.ok(payload.errors.includes('status must be pending'))
   } finally {
     mutableFs.readFileSync = originalReadFileSync
@@ -150,7 +150,7 @@ async function main() {
   const address = server.address() as AddressInfo
   baseUrl = `http://127.0.0.1:${address.port}`
 
-  await testCreateMemo()
+  await testCreateSpark()
   await testFieldValidation()
   await testFileConflict()
   await testWriteVerificationFailure()

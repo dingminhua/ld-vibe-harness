@@ -155,7 +155,7 @@ related_docs:
 - specs/21-WorkPlan-工作计划.md
 - specs/23-Pitfall-踩坑经验.md
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls:
 - pitfall-0001
 related_workplans:

@@ -7,13 +7,13 @@ created: '2026-06-18T04:16:49'
 updated: '2026-06-18T22:31:24+08:00'
 summary: |
   本报告整理本轮从 TaskPlan / Task / SubTask 体系，收敛到 WorkPlan / ExecutionItem / Role Contract 方向的完整来龙去脉。核心结论是：LDVH 应把 Human 需要长期追踪的目标、范围、成功标准、验证和关闭证据保留在 WorkPlan；AI 的执行拆解、并行安排、角色分派和临时步骤应作为 WorkPlan 内部编排或运行期上下文处理，不再提升为独立 Task 工作模型。
-user_intent: 用户要求将本轮关于 specs 工作流程、WorkPlan、ExecutionItem、Memo 分流和事实源边界的长对话整理为 Study。
+user_intent: 用户要求将本轮关于 specs 工作流程、WorkPlan、ExecutionItem、Spark 分流和事实源边界的长对话整理为 Study。
 conclusion: |
   WorkPlan 是面向 Human 与 AI 对齐的一次工作事实契约；ExecutionItem 是 WorkPlan 内部的最小恢复与编排节点，不是工作对象；Role Contract 应承接专业 AI 角色的输入、权限、输出和交还边界，但其规范归属仍需继续判断。后续应优先逐段核对 specs/21，再回看 05、05.01、06 和 40-43，最后同步 Code / Web 中旧 TaskPlan、Task、SubTask 实现。
 urls: []
-related_memos:
-  - memo-0005
-  - memo-0006
+related_sparks:
+  - spark-0005
+  - spark-0006
 related_workareas: []
 related_workplans: []
 related_adrs:
@@ -25,7 +25,7 @@ related_docs:
   - specs/05.02-工作模型字段内容与格式规范.md
   - specs/06-工作流程基础规范.md
   - specs/21-WorkPlan-工作计划.md
-  - specs/24-Memo-备忘.md
+  - specs/24-Spark-火花.md
   - specs/25-Study-研究报告.md
 archive_reason:
 ---
@@ -46,7 +46,7 @@ archive_reason:
 4. 并行和串行应该作为任务属性，还是由计划内部关系推导；
 5. 子 Agent、主控自检、独立复检、Human Gate 应如何归位；
 6. 执行过程不作为历史事实源时，仍应保留哪些恢复、验证和关闭证据；
-7. Memo、Study、ADR、Pitfall、WorkPlan 在讨论收敛后的分流边界是什么。
+7. Spark、Study、ADR、Pitfall、WorkPlan 在讨论收敛后的分流边界是什么。
 
 ## 输入与边界
 
@@ -122,7 +122,7 @@ archive_reason:
 
 - 恢复证据：当前推进到哪里、下一步是什么、哪个执行项由哪个角色处理、依赖关系是什么、最近结果是什么；
 - 验证证据：执行了哪些测试或检查、独立复检发现了什么、Human Gate 确认了什么、哪些验收项已满足；
-- 关闭证据：为什么可以关闭、改了什么、还有什么残余风险、哪些未完成项被分流、经验是否进入 ADR / Pitfall / Memo / specs / Change。
+- 关闭证据：为什么可以关闭、改了什么、还有什么残余风险、哪些未完成项被分流、经验是否进入 ADR / Pitfall / Spark / specs / Change。
 
 这使 LDVH 与普通 vibe coding 拉开边界：普通 vibe coding 往往只留下代码结果和聊天上下文；LDVH 要留下未来仍能判断“为什么这样做、是否完成、还有什么风险”的事实源。
 
@@ -162,13 +162,13 @@ archive_reason:
 
 1. 00 已从“对象化任务管理”转向“面向 AI 协作的事实源治理”。
 2. 02 已清理旧 TaskPlan / Task / SubTask 术语，改用 WorkPlan 与 ExecutionItem。
-3. 05 已明确当前 active 工作模型集合以 WorkArea、WorkPlan、ADR、Pitfall、Memo、Study 等承载长期工作事实，Git 提交记录用于追溯事实源修改，ExecutionItem 不进入 20-39 集合。
+3. 05 已明确当前 active 工作模型集合以 WorkArea、WorkPlan、ADR、Pitfall、Spark、Study 等承载长期工作事实，Git 提交记录用于追溯事实源修改，ExecutionItem 不进入 20-39 集合。
 4. 05.01 已明确公共字段边界，补充 `verification_evidence`、`closure_evidence`，并改用 `related_workplans`。
 5. 21 已改为 WorkPlan 规范，定义 WorkPlan 状态机、`orchestration.execution_items`、`orchestration.review`、验证证据和关闭证据。
 6. 22 / 23 已从 active 模型中移除或清理概念行混淆。
-7. 24 Memo 已改为分流前工作对象，使用 `source: web | conversation`，并通过 `related_workplans` 关联 WorkPlan。
-8. 25 Study 已成为报告产物对象，用于承载稳定研究报告正文，避免 Memo 复制完整报告。
-9. Code / Web 已局部同步 Memo / Study 字段，但旧 TaskPlan、Task、SubTask 的完整迁移尚未完成。
+7. 24 Spark 已改为分流前工作对象，使用 `source: web | conversation`，并通过 `related_workplans` 关联 WorkPlan。
+8. 25 Study 已成为报告产物对象，用于承载稳定研究报告正文，避免 Spark 复制完整报告。
+9. Code / Web 已局部同步 Spark / Study 字段，但旧 TaskPlan、Task、SubTask 的完整迁移尚未完成。
 
 ### 当前模型边界
 
@@ -183,7 +183,7 @@ WorkPlan 是 Human 与 AI 围绕一次目标达成的工作事实契约。它承
 - 执行编排摘要；
 - 验证证据；
 - 关闭证据；
-- 相关 Memo、ADR、Pitfall、Change 和 docs；
+- 相关 Spark、ADR、Pitfall、Change 和 docs；
 - 经验分流结果。
 
 WorkPlan 是 Human 可以审核、AI 可以恢复、未来可以复读的事实源入口。
@@ -227,7 +227,7 @@ Review、Audit、Decision Review 当前不应成为工作模型。它们是流�
 - `verification_evidence`；
 - `closure_evidence`；
 - 后续 WorkPlan；
-- Memo；
+- Spark；
 - ADR；
 - Pitfall；
 - specs；
@@ -235,11 +235,11 @@ Review、Audit、Decision Review 当前不应成为工作模型。它们是流�
 
 审查输出不应绕过主控直接成为最终事实。主控负责整合、判断、补证和触发 Human Gate。
 
-### Memo 与 Study 的分工
+### Spark 与 Study 的分工
 
-本轮也暴露出 Memo 与 Study 的边界问题。
+本轮也暴露出 Spark 与 Study 的边界问题。
 
-Memo 适合记录：
+Spark 适合记录：
 
 - 尚未计划化但有保留价值的问题；
 - 当前摘要；
@@ -257,7 +257,7 @@ Study 适合记录：
 - 残留不确定性；
 - 后续分流建议。
 
-因此，`memo-0005` 被压缩为接续入口，而本 Study 承载完整来龙去脉。`memo-0006` 则保留另一个问题：当 Memo 中部分内容已经落地或转移，但仍有未收敛内容时，AI、Code 或 Web 应如何提醒是否继续 pending、追加 evolution、分流或 resolved。
+因此，`spark-0005` 被压缩为接续入口，而本 Study 承载完整来龙去脉。`spark-0006` 则保留另一个问题：当 Spark 中部分内容已经落地或转移，但仍有未收敛内容时，AI、Code 或 Web 应如何提醒是否继续 pending、追加 evolution、分流或 resolved。
 
 ### 未决问题
 
@@ -270,9 +270,9 @@ Study 适合记录：
 5. `orchestration.review` 是否只声明安排，还是需要标准化独立复检输出；
 6. `verification_evidence` 与 `closure_evidence` 的内容边界是否足够清楚；
 7. Role Contract 应由哪个规范承接；
-8. 40-43 工作流程是否需要增加“对话到 WorkPlan”或“Memo 分流与收敛”流程；
+8. 40-43 工作流程是否需要增加“对话到 WorkPlan”或“Spark 分流与收敛”流程；
 9. Code / Web 中旧 TaskPlan、Task、SubTask 兼容层何时移除；
-10. 是否需要在 Code / Web 中提示 pending Memo 已有关联对象但未说明收敛状态。
+10. 是否需要在 Code / Web 中提示 pending Spark 已有关联对象但未说明收敛状态。
 
 ## 建议
 
@@ -290,6 +290,6 @@ Study 适合记录：
 
 本轮讨论的核心价值，是把 LDVH 从“把任务过程对象化”的方向，拉回到“为 AI 协作保存必要事实源”的方向。
 
-WorkPlan 应是面向人和未来 AI 的长期事实契约；ExecutionItem 应是 WorkPlan 内部的运行恢复和证据组织结构；Role Contract 应是专业 AI 角色协作边界；Review 是流程环节；Memo 是待分流议题入口；Study 是稳定报告承载。
+WorkPlan 应是面向人和未来 AI 的长期事实契约；ExecutionItem 应是 WorkPlan 内部的运行恢复和证据组织结构；Role Contract 应是专业 AI 角色协作边界；Review 是流程环节；Spark 是待分流议题入口；Study 是稳定报告承载。
 
 这套方向符合当前 AI 编程工具对主线程清洁、多 Agent 分工、HITL、验证、checkpoint 和 checked-in documentation 的趋势，也更符合 LDVH 00 所强调的事实源治理价值。

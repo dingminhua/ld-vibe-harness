@@ -90,7 +90,7 @@ export interface ObjectItem {
   decision?: string;
   consequences?: string;
   related_rules?: string[];
-  /** Memo-specific */
+  /** Spark-specific */
   source?: string;
   description?: string;
   evolution?: Array<Record<string, unknown>>;
@@ -105,7 +105,7 @@ export interface ObjectItem {
   report_body?: string;
   /** Pitfall-specific */
   resolution?: string;
-  source_memos?: string[];
+  source_sparks?: string[];
 }
 
 export interface UrlItem {

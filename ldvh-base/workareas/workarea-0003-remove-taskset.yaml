@@ -18,7 +18,7 @@ constraints: |
   保留 WorkArea → TaskPlan → Task → SubTask 主链路；TaskSet 不再新建；Evidence 不再作为默认独立对象创建；修改事实源和规范后按提交纪律处理。
 related_docs: []
 related_adrs: []
-related_memos: []
+related_sparks: []
 related_pitfalls: []
 archive_reason: |
   TaskSet 与 Evidence 的模型收敛范围已完成阶段性决策，当前不再承载新的任务计划。

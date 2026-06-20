@@ -1,11 +1,11 @@
-id: memo-0007
-type: memo
+id: spark-0007
+type: spark
 title: AI 编程环境子 Agent 多角色设定调研入口
 status: pending
 created: '2026-06-18T07:59:11'
 updated: '2026-06-18T07:59:11'
 description: |
-  本 Memo 承载“如何用好 Codex、TRAE CN 和 Claude Code CLI 等 AI 编程环境中的子 Agent / 自定义智能体，以及这对 LDVH 后续 00 文档多角色设定有什么启发”的待收敛议题。
+  本 Spark 承载“如何用好 Codex、TRAE CN 和 Claude Code CLI 等 AI 编程环境中的子 Agent / 自定义智能体，以及这对 LDVH 后续 00 文档多角色设定有什么启发”的待收敛议题。
 
   当前阶段性结论是：Codex 子 Agent 是运行期委派机制，不应直接等同于 LDVH 的长期角色设定。Codex 官方资料显示，子 Agent 工作流用于把探索、测试、日志分析、代码审查等噪音较高或可并行的工作移出主线程；Codex 不会自动生成子 Agent，只有在用户明确要求“spawn agents / delegate in parallel / one agent per point”等并行委派时才应触发。
 
@@ -16,9 +16,9 @@ evolution:
   - at: '2026-06-18T07:59:11'
     summary: 根据用户要求，新增 Codex 子 Agent 创建、调用和多角色设定前期调研入口，并分流完整报告到 study-0002。
   - at: '2026-06-18T07:59:11'
-    summary: 根据用户补充要求，新增 TRAE CN 和 Claude Code CLI 两份同主题 Study，并把本 Memo 从 Codex 单点调研扩展为多环境横向调研入口。
+    summary: 根据用户补充要求，新增 TRAE CN 和 Claude Code CLI 两份同主题 Study，并把本 Spark 从 Codex 单点调研扩展为多环境横向调研入口。
 source: conversation
-source_detail: 用户要求增加一个 memo，并调研 Codex、TRAE CN 与 Claude Code CLI 中如何创建和调用子 Agent / 自定义智能体，为之后 00 文档中多角色设定做前期调研。
+source_detail: 用户要求增加一个 spark，并调研 Codex、TRAE CN 与 Claude Code CLI 中如何创建和调用子 Agent / 自定义智能体，为之后 00 文档中多角色设定做前期调研。
 priority: P1
 resolved_to: ""
 resolved_at: ""

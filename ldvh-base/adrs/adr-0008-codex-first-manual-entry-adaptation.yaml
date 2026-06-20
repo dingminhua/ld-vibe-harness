@@ -78,7 +78,7 @@ consequences: |
   - 其他环境只保留抽象自助适配原则，不维护具体目录、Hook 事件或安装步骤。
   - 薄入口模板放在 04.03，Rules 入口只保留导航和执行边界。
 related_workareas: []
-related_memos: []
+related_sparks: []
 related_adrs: []
 related_rules:
   - specs/04-规范落地与环境适配基础规范.md

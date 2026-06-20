@@ -24,7 +24,7 @@ ldvh_doc:
     - "specs/08-Web信息同步实现规范.md"
     - "specs/09-事实源边界与承载规范.md"
     - "specs/10-Git提交规范.md"
-    - "specs/24-Memo-备忘.md"
+    - "specs/24-Spark-火花.md"
   code_consumption:
     - "doc_metadata"
     - "relations"
@@ -55,18 +55,18 @@ ldvh_member:
 ---
 ## 1. 对象定位与准入条件
 
-Study / 研究报告承载已经形成稳定阅读价值的调研、分析、核验或方案比较结果。它解决的问题是：docs/studies 可以作为可变资料区，随时整理或删除；但某些报告已经成为后续讨论、决策、计划或 Memo 演变的关键依据，需要作为工作对象进入 Git 可追踪事实源。
+Study / 研究报告承载已经形成稳定阅读价值的调研、分析、核验或方案比较结果。它解决的问题是：docs/studies 可以作为可变资料区，随时整理或删除；但某些报告已经成为后续讨论、决策、计划或 Spark 演变的关键依据，需要作为工作对象进入 Git 可追踪事实源。
 
-Study 是报告产物对象，不是讨论过程对象。讨论的关键转折由 Memo 的 `evolution` 承载；决策进入 ADR；可执行事项进入 WorkPlan；复用经验进入 Pitfall。Study 只保留报告正文、摘要、输入边界、结论边界和关联对象。
+Study 是报告产物对象，不是讨论过程对象。讨论的关键转折由 Spark 的 `evolution` 承载；决策进入 ADR；可执行事项进入 WorkPlan；复用经验进入 Pitfall。Study 只保留报告正文、摘要、输入边界、结论边界和关联对象。
 
 ### 1.1 Study 准入条件
 
 一个内容满足以下条件之一时，应考虑形成 Study：
 
 1. AI 或 Human 已完成一轮调研，结果需要长期保留为可阅读报告；
-2. 报告会被多个 Memo、WorkPlan、ADR 或 Pitfall 引用；
+2. 报告会被多个 Spark、WorkPlan、ADR 或 Pitfall 引用；
 3. docs/studies 中的临时资料已经被整理为稳定结论，不宜继续只放在可变资料区；
-4. 某个 Memo 的讨论依赖一份报告，但 Memo 不应复制报告全文；
+4. 某个 Spark 的讨论依赖一份报告，但 Spark 不应复制报告全文；
 5. 方案比较、资料核验或事实调查需要保留结论边界、来源边界和残留不确定性。
 
 ### 1.2 不应形成 Study 的内容
@@ -74,7 +74,7 @@ Study 是报告产物对象，不是讨论过程对象。讨论的关键转折�
 以下内容通常不应单独形成 Study：
 
 1. 尚未整理的临时摘录、对话片段或原始资料；
-2. 已经可直接吸收到 specs、ADR、WorkPlan、Pitfall 或 Memo 的短结论；
+2. 已经可直接吸收到 specs、ADR、WorkPlan、Pitfall 或 Spark 的短结论；
 3. 外部资料原文副本，应进入 docs/sources 或项目约定的外部资料区；
 4. 只服务当前一次执行、无需长期复读的命令输出；
 5. 讨论过程中的每一次观点变化。
@@ -130,11 +130,11 @@ active → archived
 ---
 ## 4. 对象关系
 
-### 4.1 Study 与 Memo
+### 4.1 Study 与 Spark
 
-Memo 可以引用一个或多个 Study。Memo 负责保留议题当前摘要和关键语义转折，Study 负责承载完整报告正文。Memo 不应复制 Study 全文；Study 不应记录 Memo 的讨论流水。
+Spark 可以引用一个或多个 Study。Spark 负责保留议题当前摘要和关键语义转折，Study 负责承载完整报告正文。Spark 不应复制 Study 全文；Study 不应记录 Spark 的讨论流水。
 
-Memo 的准入、状态和字段契约由 `specs/24-Memo-备忘.md` 定义。
+Spark 的准入、状态和字段契约由 `specs/24-Spark-火花.md` 定义。
 
 ### 4.2 Study 与 WorkPlan、ADR 和 Pitfall
 
@@ -163,7 +163,7 @@ Study 的创建、状态变化、核心报告改写和归档都应留下 Git 提
 2. 将 docs/studies、docs/sources、外部资料或对话调研结果提升为 Study；
 3. 将 Study 标记为 `archived`；
 4. 大幅改写 `summary`、`conclusion` 或报告正文；
-5. 将 Study 作为 ADR、WorkPlan 或 Memo 的关键依据；
+5. 将 Study 作为 ADR、WorkPlan 或 Spark 的关键依据；
 6. 接受报告中的不确定性、降级结论或高影响判断。
 
 Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录承接。本文只规定 Study 语境下需要确认的事实和影响范围。
@@ -187,7 +187,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `summary` | 报告摘要和当前可引用结论 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `conclusion` | 报告结论、边界和残留不确定性 | string | 否 | 推荐填写 | Narrative / Decision | AI、Web |
 | `urls` | 报告正文中的外部网址及中文用途摘要；每项必须使用 `{ref, summary}` 或 `{ref, title, summary}` 结构，`ref` 必须是完整 `http(s)` URL，`summary` 必须是中文简介 | list[object] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_memos` | 关联备忘 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_sparks` | 关联火花 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -209,7 +209,7 @@ Frontmatter 后的 Markdown 正文是报告正文。正文必须使用稳定 Mar
 4. 细节分组应放在对应二级标题下，用三级标题 `###`、列表、表格或段落表达；
 5. `## 输入与边界` 统一承载资料边界、方法、来源范围和不纳入范围，不再使用 `## 资料边界` 等同义二级标题；
 6. `## 建议` 统一承载结论性建议、路线建议、候选补充方向和残留不确定性，不再另设 `## 结论` 或 `## 建议下一步` 作为同层级标题；
-7. `## 后续分流` 统一承载应进入 Memo、WorkPlan、ADR、Pitfall、docs 或规范的后续动作，不再使用 `## 后续分流建议` 等同义二级标题；
+7. `## 后续分流` 统一承载应进入 Spark、WorkPlan、ADR、Pitfall、docs 或规范的后续动作，不再使用 `## 后续分流建议` 等同义二级标题；
 8. 报告正文应避免连续超长段落；超过三个并列判断时应使用列表或表格；超过两个层次时应优先拆成三级标题和列表。
 
 正文必须回答以下问题：
@@ -218,7 +218,7 @@ Frontmatter 后的 Markdown 正文是报告正文。正文必须使用稳定 Mar
 2. 输入资料、方法、来源边界和不确定性边界是什么；
 3. 关键发现是什么；
 4. 建议、取舍、边界和残留不确定性是什么；
-5. 后续应分流到哪些 Memo、WorkPlan、ADR、Pitfall、docs 或规范。
+5. 后续应分流到哪些 Spark、WorkPlan、ADR、Pitfall、docs 或规范。
 
 ### 6.3 Markdown 示例
 
@@ -226,21 +226,21 @@ Frontmatter 后的 Markdown 正文是报告正文。正文必须使用稳定 Mar
 ---
 id: study-0001
 type: study
-title: Memo 工作模型演变承载方式研究
+title: Spark 工作模型演变承载方式研究
 status: active
 created: '2026-06-18T14:30:00+08:00'
 updated: '2026-06-18T15:00:00+08:00'
-user_intent: 用户要求评估 Memo 是否足以承载想法、调研、报告和讨论演变。
+user_intent: 用户要求评估 Spark 是否足以承载想法、调研、报告和讨论演变。
 summary: |
-  Memo 应承载议题的当前摘要和关键语义转折，完整调研报告应由 Study 承载。
+  Spark 应承载议题的当前摘要和关键语义转折，完整调研报告应由 Study 承载。
 conclusion: |
-  Study 适合承载稳定报告；Memo 保留演变摘要和分流关系。
+  Study 适合承载稳定报告；Spark 保留演变摘要和分流关系。
 urls:
-  - ref: specs/24-Memo-备忘.md §6
-    title: Memo 字段契约
-    summary: 用于说明 Memo 的演变记录和分流关系边界，支撑本报告对 Memo/Study 分工的判断。
-related_memos:
-  - memo-0001
+  - ref: specs/24-Spark-火花.md §6
+    title: Spark 字段契约
+    summary: 用于说明 Spark 的演变记录和分流关系边界，支撑本报告对 Spark/Study 分工的判断。
+related_sparks:
+  - spark-0001
 related_workareas: []
 related_workplans: []
 related_adrs: []
@@ -249,27 +249,27 @@ related_docs: []
 archive_reason:
 ---
 
-# Memo 工作模型演变承载方式研究
+# Spark 工作模型演变承载方式研究
 
 ## 研究问题
 
-Memo 是否应同时承载想法、调研报告和讨论演变。
+Spark 是否应同时承载想法、调研报告和讨论演变。
 
 ## 输入与边界
 
-本报告基于 Memo 与 Study 工作模型规范讨论，不复制原始对话流水。
+本报告基于 Spark 与 Study 工作模型规范讨论，不复制原始对话流水。
 
 ## 关键发现
 
-Memo 适合保留议题演变，Study 适合承载稳定报告正文。
+Spark 适合保留议题演变，Study 适合承载稳定报告正文。
 
 ## 建议
 
-Memo 不应复制完整报告；Study 承载稳定报告正文。
+Spark 不应复制完整报告；Study 承载稳定报告正文。
 
 ## 后续分流
 
-需要修改 Memo 或 Study 规则时，应分别进入对应工作模型规范或 WorkPlan。
+需要修改 Spark 或 Study 规则时，应分别进入对应工作模型规范或 WorkPlan。
 ```
 
 ---
@@ -282,7 +282,7 @@ Study 回写遵循以下规则：
 1. 创建 Study 时，应写入 `ldvh-base/studies/`，并填写 frontmatter 与 Markdown 正文；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
 3. 状态变化后应更新 `updated`；状态变化历史由 Git commit 派生，不在 Study 中手写维护；
-4. Study 被 Memo、WorkPlan、ADR 或 Pitfall 消费时，应通过对应对象的引用字段建立关系；
+4. Study 被 Spark、WorkPlan、ADR 或 Pitfall 消费时，应通过对应对象的引用字段建立关系；
 5. Study 创建、归档或核心报告改写应通过 Git 提交记录留痕；
 6. Study 事实源写入后，应重新校验文件命名、frontmatter 字段完整性、状态合法性和引用有效性。
 
@@ -294,7 +294,7 @@ Study 证据至少包括：
 2. 报告摘要和正文；
 3. 关键网址；
 4. 结论、边界和残留不确定性；
-5. 相关 Memo、WorkPlan、ADR、Pitfall、Git 提交记录或文档引用。
+5. 相关 Spark、WorkPlan、ADR、Pitfall、Git 提交记录或文档引用。
 
 Study 的报告正文应保留足以复读的结论和依据，但不复制外部资料全文，不记录讨论流水。
 
@@ -307,7 +307,7 @@ AI 处理 Study 时应遵守：
 
 1. 先判断内容是否已经从临时资料整理为稳定报告；
 2. 创建、归档或大幅改写 Study 前评估 Human Gate；
-3. 不得用 Study 替代 Memo 的议题演变、ADR 的长期决策或 WorkPlan 的执行计划；
+3. 不得用 Study 替代 Spark 的议题演变、ADR 的长期决策或 WorkPlan 的执行计划；
 4. 引用 Study 时只引用 ID、路径或摘要，不复制报告全文；
 5. 报告结论被吸收到 specs、ADR 或 WorkPlan 后，应在 Study 或目标对象中保留引用关系。
 
@@ -319,7 +319,7 @@ Code 可依据本文实现以下能力：
 2. 校验文件命名、ID、字段类型、必填字段和条件必填字段；
 3. 校验状态枚举和合法流转；
 4. 校验 `urls`、`related_*` 引用字段；
-5. 聚合活跃 Study、已归档 Study 和关联 Memo。
+5. 聚合活跃 Study、已归档 Study 和关联 Spark。
 
 Code 不得自行创建、替代、归档或删除 Study，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/studies/` 权威事实源。
 
@@ -331,7 +331,7 @@ Study 详情页是报告阅读界面，不按普通字段卡片表达主内容�
 
 Study 正文不应在主页面直接铺开全文。“正文”节点下只展示当前 Study 文件入口，点击整行或扩展阅读入口后在右侧扩展阅读区渲染 Markdown 正文。右侧扩展阅读区应复用同一份 Study 事实源，不得维护第二套摘要或正文。
 
-Study 的所有关联内容必须进入上层“关联”区块。`urls` 显示在“关联”下的“网址”分组，每个条目必须显示可读标题或 URL，并显示中文 `summary`；该摘要是引用用途提示，应弱于 Study 主内容，不得替代报告正文结论。`related_docs`、`related_memos`、`related_workareas`、`related_workplans`、`related_adrs` 和 `related_pitfalls` 等关联字段不得散落在正文、证据或其他字段之间。
+Study 的所有关联内容必须进入上层“关联”区块。`urls` 显示在“关联”下的“网址”分组，每个条目必须显示可读标题或 URL，并显示中文 `summary`；该摘要是引用用途提示，应弱于 Study 主内容，不得替代报告正文结论。`related_docs`、`related_sparks`、`related_workareas`、`related_workplans`、`related_adrs` 和 `related_pitfalls` 等关联字段不得散落在正文、证据或其他字段之间。
 
 当前 Web 不得直接创建、编辑、替代、归档或删除 Study。未来如需开放 Study 写入，必须先更新 `specs/08-Web信息同步实现规范.md` 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 
@@ -348,11 +348,11 @@ Study 创建、报告整理、吸收和归档的具体行动流程由后续 40-5
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Study 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、24 Memo、10、Human Gate | 工作模型治理 | 创建、修改、审计、引用或归档 Study 时 |
-| 入口可见要求 | AI 处理需要长期保留的调研报告时，应能定位本文 | 成员自描述、运行入口摘要、Memo 分流规则 | AI 执行入口提示 | 报告创建、引用、吸收或归档时 |
+| 上位约束承接要求 | Study 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、24 Spark、10、Human Gate | 工作模型治理 | 创建、修改、审计、引用或归档 Study 时 |
+| 入口可见要求 | AI 处理需要长期保留的调研报告时，应能定位本文 | 成员自描述、运行入口摘要、Spark 分流规则 | AI 执行入口提示 | 报告创建、引用、吸收或归档时 |
 | 确定性执行要求 | Study frontmatter、状态、引用、文件命名和正文存在性应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Study 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、Markdown 承载或引用关系变化时 |
 | Human 交互要求 | Study 创建、核心报告改写、归档和作为关键依据时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | Study 规范变化后，应检查成员自描述、01、03.01、05、05.01、05.02、05.03、08、Memo、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Study 字段、状态、事实源边界、Markdown frontmatter 或检查要求变化时 |
+| 生命周期触发要求 | Study 规范变化后，应检查成员自描述、01、03.01、05、05.01、05.02、05.03、08、Spark、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Study 字段、状态、事实源边界、Markdown frontmatter 或检查要求变化时 |
 
 ---
 ## 10. 检查要求
@@ -367,7 +367,7 @@ Study 规范检查至少包括：
 | 正文骨架 | Frontmatter 后存在非空 Markdown 报告正文；正文第一行是一级标题；二级标题按 §6.2 固定顺序出现 |
 | 状态合法性 | 状态属于枚举，流转符合 §3.2 |
 | 归档规则 | archived Study 已说明归档原因 |
-| 对象边界 | Study 未替代 Memo、ADR、WorkPlan、Pitfall 或 docs/sources |
+| 对象边界 | Study 未替代 Spark、ADR、WorkPlan、Pitfall 或 docs/sources |
 | Human Gate | §5 场景已完成确认或记录降级 |
 | Git 追溯 | Study 关键变化有 Git 可追溯记录 |
 | Code / Web 边界 | 派生输出未替代 Git 文件事实源 |

@@ -15,11 +15,11 @@ success_criteria: |
   - [x] Code 不再把 `taskplan`、`task`、`subtask` 作为可读、可写、可校验或可迁移工作对象类型
   - [x] Web 不再暴露 TaskPlan / Task / SubTask 的默认入口、详情布局、兼容夹具或测试假设
   - [x] specs 中旧对象兼容、迁移保留、历史夹具维护等当前规则痕迹已清理或改写为当前事实规则
-  - [x] Python、Web 和事实源校验通过，删除造成的残留问题已分流到 Memo 或后续 WorkPlan
+  - [x] Python、Web 和事实源校验通过，删除造成的残留问题已分流到 Spark 或后续 WorkPlan
 source: |
   Plan creation requested by dmh2002 on 2026-06-18:
   用户明确要求“不需要保留兼容能力，这个项目还没推广，没有其他人用”，并要求清理历史痕迹；
-  后续又要求把事项拆成三个 WorkPlan，审批后依次执行，中间问题记录到 Memo，最后总结经验用于完善流程。
+  后续又要求把事项拆成三个 WorkPlan，审批后依次执行，中间问题记录到 Spark，最后总结经验用于完善流程。
   独立 Code/Web 清退审批子 Agent 已返回 APPROVE；本计划仍需 Human 明确批准后才能开始执行。
 orchestration:
   mode: sequential
@@ -181,7 +181,7 @@ closure_evidence: |
 
   后续分流：
   - `TaskFlow*`、`TaskFlowBar` 的 `tasks` prop、`sortPlanTasks`、`detail-task` class 和少量未消费旧文案 key 属于命名债，进入 workplan-0071 的流程经验与后续规范准备，不阻断 0069。
-  - 历史 WorkPlan、ADR、Memo、Study 中追溯迁移来源的 Task 字样不作为当前机器消费入口，本轮不做大规模文本改写。
+  - 历史 WorkPlan、ADR、Spark、Study 中追溯迁移来源的 Task 字样不作为当前机器消费入口，本轮不做大规模文本改写。
 
   原文标题：结论
 
@@ -194,9 +194,9 @@ related_docs:
 - specs/05.02-工作模型字段内容与格式规范.md
 - specs/21-WorkPlan-工作计划.md
 related_adrs: []
-related_memos:
-- memo-0005
-- memo-0009
+related_sparks:
+- spark-0005
+- spark-0009
 related_pitfalls: []
 related_workplans: []
 review_requested_at: '2026-06-18T10:33:29.221116'

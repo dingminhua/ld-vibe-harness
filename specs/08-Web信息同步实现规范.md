@@ -257,29 +257,29 @@ Web 可以展示或收集 Human Gate 结果，但不得把 UI 状态、缓存或
 
 ### 8.2 Web 事实源写入白名单
 
-当前唯一允许 Web 直接写入 Git 文件事实源的能力是 Memo 快速创建。除下表外，Web 对 WorkArea、WorkPlan、ADR、Pitfall、Study、specs、Rules、Skill、Agent、Code 和其它 Git 文件事实源均只能读取、展示、筛选、复制路径或提供跳转，不得修改字段、状态、关系、内容或文件。
+当前唯一允许 Web 直接写入 Git 文件事实源的能力是 Spark 快速创建。除下表外，Web 对 WorkArea、WorkPlan、ADR、Pitfall、Study、specs、Rules、Skill、Agent、Code 和其它 Git 文件事实源均只能读取、展示、筛选、复制路径或提供跳转，不得修改字段、状态、关系、内容或文件。
 
 | 能力 | API | 写入目标 | 允许字段 | 约束 |
 |---|---|---|---|---|
-| Memo 快速创建 | `POST /api/memos` | `ldvh-base/memos/memo-{NNNN}-{slug}.yaml` | `title`、`description`、`priority` | 只能创建 `status: pending` 的新 Memo；必须校验必填字段和优先级；`source` 固定写入 `web`；不得写入 `status_history`；不得在创建后通过 Web 编辑 Memo 字段或状态 |
+| Spark 快速创建 | `POST /api/sparks` | `ldvh-base/sparks/spark-{NNNN}-{slug}.yaml` | `title`、`description`、`priority` | 只能创建 `status: pending` 的新 Spark；必须校验必填字段和优先级；`source` 固定写入 `web`；不得写入 `status_history`；不得在创建后通过 Web 编辑 Spark 字段或状态 |
 
 白名单规则如下：
 
 1. Web 不得提供对象字段通用 `PATCH`、`PUT`、`DELETE` 或任意 YAML 写回接口；
 2. WorkPlan 的 `status`、`workarea`、`success_criteria`、`verification_evidence`、`closure_evidence`、`orchestration` 等字段在 Web 中均为只读展示；
 3. WorkArea、WorkPlan、ADR、Pitfall 和 Study 在 Web 中均为只读展示；
-4. Memo 快速创建只用于捕获尚未计划化但值得保留的信息，不得用来绕过 WorkArea、WorkPlan、ADR 或 Pitfall 的准入规则；
+4. Spark 快速创建只用于捕获尚未计划化但值得保留的信息，不得用来绕过 WorkArea、WorkPlan、ADR 或 Pitfall 的准入规则；
 5. 短期不扩展 Web 写入白名单；Gate、Validate、ProjectFiles、ObjectDetail 和 Dashboard 均不得据页面需要新增写入入口；
 6. 未来如需新增 Web 写入能力，必须先修改本文白名单和对应对象规范，补齐校验、测试、Human Gate 影响评估和降级路径，再实现代码。
 
-Memo 快速创建作为当前唯一 Web 写入样例，应满足：
+Spark 快速创建作为当前唯一 Web 写入样例，应满足：
 
 1. 写入前校验 `title`、`description` 和 `priority` 最小字段；
-2. 文件名、ID 和 slug 生成必须避免覆盖既有 Memo，冲突时返回明确错误；
+2. 文件名、ID 和 slug 生成必须避免覆盖既有 Spark，冲突时返回明确错误；
 3. 写入后必须能重新读取目标文件并确认最小字段、`source: web` 和 `status: pending` 存在，且不得出现手写 `status_history`；
 4. API 响应必须区分成功、字段错误、冲突、写入失败和写后验证失败；
 5. 必须在 `tests/web/api/` 或等价 Web API 测试分区中覆盖成功、字段错误、冲突和写后验证路径；
-6. 不得扩展为通用 YAML 编辑器，不得修改既有 Memo 字段或状态。
+6. 不得扩展为通用 YAML 编辑器，不得修改既有 Spark 字段或状态。
 
 ### 8.3 Gate / Validate 阶段边界
 
@@ -321,7 +321,7 @@ Web 使用场景必须由对应规范、产品设计、工作流程或实现文�
 | 展示事实实例状态 | 展示、筛选、导航，可直接读取或通过 API 聚合事实实例 | 解析、聚合并为 AI 提供事实实例上下文 |
 | 展示校验结果 | 呈现问题、严重级别和修复入口 | 执行确定性校验 |
 | Human Gate | 展示确认项并收集人类选择 | 执行已授权写入或验证 |
-| Memo 快速创建 | 提供速记表单和创建结果反馈 | 校验并写入 Memo 事实源 |
+| Spark 快速创建 | 提供速记表单和创建结果反馈 | 校验并写入 Spark 事实源 |
 | 缺口审查 | 展示缺口和关联对象 | 生成缺口诊断 |
 | 运行态监控 | 展示同步状态和错误 | 提供可追溯输出 |
 | 项目当前事实态势 | 聚合展示 WorkArea、WorkPlan、执行项、阻塞、验证、Human Gate 和下一步信号，帮助 Human 看见 AI 正在做什么、将要做什么、需要配合什么 | 提供结构化事实、确定性校验、执行报告、状态回写和可追溯输出 |
@@ -387,14 +387,14 @@ Web 测试至少关注：
 2. 派生视图是否正确处理同步延迟、错误和空状态；
 3. Confirm UI 是否区分确认、取消、暂缓和修改反馈；
 4. 白名单外对象和字段是否保持只读；
-5. Memo 快速创建是否调用校验和受控写入链路；
+5. Spark 快速创建是否调用校验和受控写入链路；
 6. 缓存或数据库派生视图是否不替代事实源；
 7. Web 独立实现事实源读取、对象解析、派生聚合、缓存策略或 API 聚合时，应同步检查其是否仍基于同一 Git 文件事实源、同一 specs 契约和同一对象状态定义。
 
 Web 测试优先级如下：
 
 1. API contract 测试优先于页面测试；
-2. 高风险 API 优先覆盖 `POST /api/memos`、ProjectFiles、Validate 和 Objects；
+2. 高风险 API 优先覆盖 `POST /api/sparks`、ProjectFiles、Validate 和 Objects；
 3. 页面测试优先覆盖 Gate、Validate、ProjectFiles 和 ObjectDetail 的空态、错误态、降级态、只读边界和来源呈现；
 4. E2E、视觉回归和复杂浏览器流程后置，不作为当前 Web API contract 测试的前置条件；
 5. Web AI 新增或修改高风险 API 时，应同步补齐 `tests/web/api/` 下的最小测试或说明等价验证方式。
@@ -484,7 +484,7 @@ Web 一致性检查至少包括：
 | 数据来源 | 派生视图标注数据来源、同步时间或可追溯依据 |
 | 派生态势原因语义 | 等待、阻塞、风险、待执行、Human Gate、验证失败和证据缺失等态势能说明原因；同一事实源状态在原因不同时未被泛化为单一标签 |
 | 过程输出展示 | 过程输出已区分临时、候选、已回写、验证失败、降级和待 Human Gate 状态 |
-| Web 写入白名单 | 当前仅 Memo 快速创建可写入；白名单外对象和字段保持只读；写入目标、字段校验、写入前校验和写入后验证已识别 |
+| Web 写入白名单 | 当前仅 Spark 快速创建可写入；白名单外对象和字段保持只读；写入目标、字段校验、写入前校验和写入后验证已识别 |
 | Human Gate | UI 明确确认对象、影响范围、风险和用户选择，并能形成或导出 06 §6.3.1 所需的最小证据 |
 | Code 协作 | Web 选择消费 Code 输出或触发受控写入时遵守输出契约、写入校验和事实源边界；Web 独立实现时具备来源追溯、错误处理和测试验证 |
 | AI 协作边界 | Web 未直接调用 AI、Skill 或 Agent |

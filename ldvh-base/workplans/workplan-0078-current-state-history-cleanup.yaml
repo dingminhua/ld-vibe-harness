@@ -23,7 +23,7 @@ success_criteria: |
   - [x] 正式 specs 中不再把旧编号、旧工作对象、旧提交 trailer、迁移过程或废弃历史写成当前规则
   - [x] Code、Web、测试中不再存在可执行旧入口或会误导当前模型消费的旧兼容逻辑
   - [x] docs/studies 和 docs/sources 的删除、保留或边界说明与 01/03/09 的可变资料区规则一致
-  - [x] ldvh-base 中误导性当前事实已修正；关闭证据、Memo、Pitfall 等必要历史证据只作为历史证据保留
+  - [x] ldvh-base 中误导性当前事实已修正；关闭证据、Spark、Pitfall 等必要历史证据只作为历史证据保留
   - [x] 残留搜索输出能区分允许残留和不允许残留
   - [x] `python3 code/specs_validate.py all` 通过，或明确记录非本计划引入且可接受的诊断
   - [x] `python3 code/fact_validate.py` 通过，或明确记录非本计划引入且可接受的诊断
@@ -70,7 +70,7 @@ orchestration:
     expected_output: 形成必删、改写、允许保留、需 Human Gate 的残留分类，并据此推进清理。
     status: done
     result_summary: |
-      已扫描 active surface。必删/改写项包括普通/特殊提交措辞、Profile 当前入口、TaskFlow 内部命名、旧 suggested_writeback key、旧 05.01 路径和已删除资料区结构化引用。允许保留项包括 Git 历史、ADR/Memo/WorkPlan 关闭证据正文、禁用旧对象的负例规则和测试。
+      已扫描 active surface。必删/改写项包括普通/特殊提交措辞、Profile 当前入口、TaskFlow 内部命名、旧 suggested_writeback key、旧 05.01 路径和已删除资料区结构化引用。允许保留项包括 Git 历史、ADR/Spark/WorkPlan 关闭证据正文、禁用旧对象的负例规则和测试。
     evidence_refs:
     - specs/10-Git提交规范.md
     blocking_reason: null
@@ -141,12 +141,12 @@ orchestration:
     - ldvh-base/
     - specs/20-WorkArea-工作域.md
     - specs/21-WorkPlan-工作计划.md
-    - specs/24-Memo-备忘.md
+    - specs/24-Spark-火花.md
     - specs/23-Pitfall-踩坑经验.md
-    expected_output: 只修正误导当前执行的旧事实；必要历史证据保留为关闭证据、Memo 或 Pitfall。
+    expected_output: 只修正误导当前执行的旧事实；必要历史证据保留为关闭证据、Spark 或 Pitfall。
     status: done
     result_summary: |
-      已移除 ldvh-base 中指向已删除 docs/studies、docs/sources 文件的结构化引用；旧 specs/05.01 内容格式路径已改到现行 specs/05.02。子 agent 复核发现 memo-0003 和 memo-0005 作为 pending Memo 仍含 Profile / TaskFlow 当前口径，已修正为当前 active 模型口径。关闭证据和 ADR/Memo 中用于解释来龙去脉的正文历史保留，不作为 active 工作对象入口。
+      已移除 ldvh-base 中指向已删除 docs/studies、docs/sources 文件的结构化引用；旧 specs/05.01 内容格式路径已改到现行 specs/05.02。子 agent 复核发现 spark-0003 和 spark-0005 作为 pending Spark 仍含 Profile / TaskFlow 当前口径，已修正为当前 active 模型口径。关闭证据和 ADR/Spark 中用于解释来龙去脉的正文历史保留，不作为 active 工作对象入口。
     evidence_refs:
     - ldvh-base/
     blocking_reason: null
@@ -192,8 +192,8 @@ verification_evidence: |
 
   ## 验证结果
   - active surface 残留扫描无命中。
-  - 子 agent Poincare 复核发现 `ldvh-base` 中两个 pending Memo 仍含当前误导性旧口径；已修正 memo-0003 的 Profile 方案口径和 memo-0005 的 TaskFlow 后续债口径。
-  - `ldvh-base` 扩展残留扫描仍会命中 0078 自身验证记录、已关闭 WorkPlan 的历史证据和旧迁移说明；经分类，不再发现 pending Memo 或当前 active 入口中的未处理 Profile / TaskFlow / 旧 writeback key / 普通特殊提交口径。
+  - 子 agent Poincare 复核发现 `ldvh-base` 中两个 pending Spark 仍含当前误导性旧口径；已修正 spark-0003 的 Profile 方案口径和 spark-0005 的 TaskFlow 后续债口径。
+  - `ldvh-base` 扩展残留扫描仍会命中 0078 自身验证记录、已关闭 WorkPlan 的历史证据和旧迁移说明；经分类，不再发现 pending Spark 或当前 active 入口中的未处理 Profile / TaskFlow / 旧 writeback key / 普通特殊提交口径。
   - `python3 code/specs_validate.py all` 退出码 0；保留既有规范 review hints 与一条非阻塞 duplicate-term warning。
   - `python3 code/fact_validate.py ldvh-base --format text` 退出码 0，files=121 errors=0 warnings=112；warning 为既有 EVIDENCE_FORMAT_HINT。
   - 核心 Code 测试 81 passed。
@@ -224,8 +224,8 @@ related_docs:
 - specs/09-事实源边界与承载规范.md
 - specs/10-Git提交规范.md
 related_adrs: []
-related_memos:
-- memo-0011
+related_sparks:
+- spark-0011
 related_pitfalls: []
 related_workplans:
 - workplan-0069

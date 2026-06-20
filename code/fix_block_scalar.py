@@ -15,7 +15,7 @@ LONG_TEXT_FIELDS = {
     "workplan": {"description", "success_criteria", "verification_evidence", "closure_evidence"},
     "adr": {"context", "decision", "consequences"},
     "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
-    "memo": {"description", "source_detail", "discard_reason"},
+    "spark": {"description", "source_detail", "discard_reason"},
     "study": {"summary", "source_detail", "conclusion", "archive_reason"},
 }
 
