@@ -13,6 +13,7 @@ import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
 import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
+import { WORKPLAN_CURRENT_STATUSES } from '@/utils/workplanStatus';
 
 const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
   workarea: 'nav.workareas',
@@ -25,7 +26,7 @@ const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
 
 const TYPE_ORDER = ['workarea', 'workplan', 'adr', 'pitfall', 'memo', 'study'];
 
-const HIGHLIGHT_STATUSES = new Set(['executing', 'verifying', 'review_needed']);
+const HIGHLIGHT_STATUSES = new Set([...WORKPLAN_CURRENT_STATUSES.filter((status) => status !== 'closed'), 'verifying', 'review_needed']);
 
 function getLocalizedTitle(item: { id: string; title?: string; title_en?: string; title_zh?: string }, locale: string): string {
   if (locale === 'zh') return item.title_zh || item.title || item.title_en || item.id;
@@ -71,9 +72,13 @@ export default function Dashboard() {
     statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
   }
   const parts: string[] = [];
-  const statusKeys: Array<{ status: string; key: 'dashboard.summary.executing' | 'dashboard.summary.verifying' | 'dashboard.summary.reviewNeeded' | 'dashboard.summary.planned' }> = [
+  const statusKeys: Array<{ status: string; key: LocaleKey }> = [
+    { status: 'subagents_plan_reviewing', key: 'dashboard.summary.planReview' },
+    { status: 'human_plan_confirming', key: 'dashboard.summary.planConfirming' },
     { status: 'executing', key: 'dashboard.summary.executing' },
-    { status: 'verifying', key: 'dashboard.summary.verifying' },
+    { status: 'result_self_checking', key: 'dashboard.summary.verifying' },
+    { status: 'subagents_result_reviewing', key: 'dashboard.summary.resultReview' },
+    { status: 'human_closure_confirming', key: 'dashboard.summary.closureConfirming' },
     { status: 'review_needed', key: 'dashboard.summary.reviewNeeded' },
     { status: 'planned', key: 'dashboard.summary.planned' },
   ];

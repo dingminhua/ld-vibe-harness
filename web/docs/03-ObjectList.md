@@ -34,8 +34,8 @@
 - 展示“各状态 + 全部 + 数量”，“全部”固定在最后。
 - 状态筛选使用全局 tab 样式：`ldvh-tab-list`、`ldvh-tab-button`、`ldvh-tab-button-active` 和 `ldvh-tab-button-idle`，与提交记录页加载范围、type、scope 筛选保持一致。
 - 数据返回前先渲染稳定的筛选占位，数字位置使用轻量加载动画，避免对象卡片先出现、顶部筛选后插入造成页面跳动。
-- 对有活跃态的主工作对象，URL 无 `status` 时默认视为 `active`；用户显式选择全部时写入 `?status=all`。
-- 当前状态写入 URL query：`?status=review_needed`。
+- 对有活跃态的主工作对象，URL 无 `status` 时默认视为对象当前主推进态；WorkPlan 默认视为 `executing`，WorkArea / ADR / Pitfall / Study 默认视为 `active`，Memo 默认视为 `pending`；用户显式选择全部时写入 `?status=all`。
+- 当前状态写入 URL query：例如 `?status=human_closure_confirming`；历史对象仍可使用 `?status=review_needed` 或 `?status=active` 筛选。
 - 点击对象进入详情页时保留当前 query，使详情页返回路径与列表筛选一致。
 
 ### 3.2 对象卡片
@@ -75,7 +75,7 @@ WorkArea 是“计划入口”卡片，帮助用户判断这个工作域下有�
 - 底部更新时间右对齐，工作域 ID 保持在左上角。
 - 按计划状态分组展示：
   - 活跃计划组使用 `objectList.activePlanCount`，文案为“活跃计划”，绿色背景，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
-  - 待关闭计划组使用 `objectList.pendingClosePlanCount`，文案为“待关闭计划”，紫色背景，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
+  - 待确认计划组使用 `objectList.humanConfirmPlanCount`，文案为“待确认计划”，紫色背景，覆盖 `human_plan_confirming`、`human_closure_confirming` 和历史 `review_needed`，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
   - 已闭合计划组使用 `objectList.closedPlanCount`，文案为“已闭合计划”，默认折叠；标题行折叠时展示向下展开箭头，展开后展示向上收起箭头，点击后展开历史计划行，使用 `ldvh-caption-strong`，标题前只用小圆点。
 - 活跃/待关闭/已闭合组内每一行是一个计划入口，计划名使用 `ldvh-body`；计划如存在 `priority`，在计划标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 WorkPlan 对象图标和标题；计划 ID 使用 `ldvh-meta-muted`，并展示计划标题、计划 ID、复制对象路径按钮和进入箭头，不再重复展示状态标签；右侧复制和进入箭头默认保持中性，复制按钮只有自身 hover 时切到该组背景对应的状态色。
 - 各计划组内部的计划入口按 `updated` 时间倒序排列，最近变化的计划在组内最前。
@@ -93,10 +93,10 @@ WorkPlan 是“计划执行态势”卡片，帮助用户从计划判断当前�
 - 不展示所属工作域行；归属信息留在详情页属性区，列表卡片优先保留计划标题、关闭判断和执行态势。
 - 执行态势条归入执行态势区域，不再作为独立卡片；区域标题下直接展示整体态势条，态势段 hover / focus 时显示状态和数量。
 - 执行项状态图例在列表顶部右侧展示，卡片执行项行只保留图标和颜色，不重复状态文字。
-- WorkPlan `review_needed` 表示待关闭审查；执行项的派生态势不得反向定义 WorkPlan 状态机。
+- WorkPlan 卡片必须展示当前 WorkPlan 状态机：`subagents_plan_reviewing`、`human_plan_confirming`、`executing`、`result_self_checking`、`subagents_result_reviewing`、`human_closure_confirming`、`closed`。历史 `draft`、`active`、`review_needed` 只作为 legacy 兼容状态展示，不作为新建计划语言。
 - WorkPlan 卡片态势按“已完成 / 已跳过 / 已阻塞 / 执行中 / 待执行”从左到右排列，完成和跳过靠左，阻塞、执行中和待执行用于提示 Human 当前推进位置。
 - WorkPlan 卡片态势遵守 `specs/08-Web信息同步实现规范.md` §5.5 的派生态势原因语义规则。执行项事实状态以 `pending / in_progress / blocked / done / skipped` 为准；历史 `planned / executing / verifying` 等旧状态只作兼容读取，不作为新图例或新写入语言。
-- 仅当计划处于 `review_needed` 或已关闭计划缺少关闭字段时，展示关闭判断 / 收口异常区域。
+- 仅当计划处于 `human_closure_confirming`、历史 `review_needed` 或已关闭计划缺少关闭字段时，展示关闭判断 / 收口异常区域。关闭判断材料检查 `success_criteria`、`plan_confirmed_at`、`closure_requested_at`、`verification_evidence`、`closure_evidence`；历史对象可用 `review_requested_at` 兼容 `closure_requested_at`。
 - 展示执行态势区域：
   - 标题为 `objectList.planExecutionQueue`；
   - 标题前只使用小圆点，不使用独立对象图标；执行项不是一级工作对象；
@@ -185,7 +185,8 @@ interface ObjectItem {
   executionItemBlocked?: number;
   executionItemOpen?: number;
   hasSuccessCriteria?: boolean;
-  hasReviewRequestedAt?: boolean;
+  hasPlanConfirmedAt?: boolean;
+  hasClosureRequestedAt?: boolean;
   hasVerificationEvidence?: boolean;
   hasClosureEvidence?: boolean;
   hasClosedAt?: boolean;

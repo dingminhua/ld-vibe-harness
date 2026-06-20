@@ -17,7 +17,7 @@
 返回按钮
 统一对象身份头部：类型标签 + 状态标签 + ID + 优先级字符徽标 + 标题 + 创建/更新时间 + 复制对象路径图标
 内容区：
-  WorkArea：活跃计划 / 待关闭计划 / 已闭合计划 + 目标 / 范围 / 约束 / 来源 + 文档 / 决策 / 备忘 / 踩坑经验
+  WorkArea：活跃计划 / 待确认计划 / 已闭合计划 + 目标 / 范围 / 约束 / 来源 + 文档 / 决策 / 备忘 / 踩坑经验
   WorkPlan：执行态势 + 成功标准 / 验证证据 / 关闭证据 + 目标 / 所属工作域 / 来源 + 文档 / 决策 / 备忘 / 踩坑经验
   ADR：背景 / 决策 / 影响 / 关联
   Pitfall：现象 / 触发 / 根因 / 方案 / 验证 / 规避 / 范围 / 关联
@@ -48,8 +48,8 @@ YAML 源码折叠区
 
 WorkArea 不使用普通字段卡片堆叠，而作为“工作域入口”展示：
 
-1. 计划组：页面主区域第一组内容，按活跃、待关闭、已闭合分组展示关联计划；不再额外包一层“计划态势”区块，不展示顶部数量汇总。
-2. 活跃/待关闭计划默认展开，每行作为进入 WorkPlan 的入口；已闭合计划默认折叠。组标题文案只写“活跃计划 / 待关闭计划 / 已闭合计划”，不显示数量。活跃/待关闭组标题只作为静态组 header，不表现为按钮；只有可折叠的已闭合组展示折叠按钮状态。
+1. 计划组：页面主区域第一组内容，按活跃、待确认、已闭合分组展示关联计划；待确认组覆盖 `human_plan_confirming`、`human_closure_confirming` 和历史 `review_needed`；不再额外包一层“计划态势”区块，不展示顶部数量汇总。
+2. 活跃/待确认计划默认展开，每行作为进入 WorkPlan 的入口；已闭合计划默认折叠。组标题文案只写“活跃计划 / 待确认计划 / 已闭合计划”，不显示数量。活跃/待确认组标题只作为静态组 header，不表现为按钮；只有可折叠的已闭合组展示折叠按钮状态。
 3. 计划组标题只使用小圆点，不使用 WorkPlan 对象图标；计划行展示优先级字符徽标、WorkPlan 对象图标、计划标题、计划 ID、更新时间、compact 执行态势条、复制对象路径和辅助阅读入口图标，不重复展示状态徽章；态势条占满计划行宽度；计划标题使用 `ldvh-body`，不使用 `ldvh-card-title`，避免越过组标题和区块标题层级；成功标准、验证证据、关闭证据等计划关闭材料留在 WorkPlan 详情中表达。复制对象路径图标默认和 hover 都保持中性 ghost；辅助阅读图标默认中性，在计划行 hover 或当前右侧阅读已打开时才使用该计划组状态色。
 4. WorkArea 详情页点击计划行只打开右侧辅助阅读区，不切换主路由到 WorkPlan 详情；主路由跳转只属于对象列表卡片。
 5. 定义事实不再收进“属性”总区块；目标、范围、约束、来源分别作为同级模块展示 `description/scope/constraints/source`，不把 `scope` 放进顶部元信息 chip。模块标题使用小圆点，降低装饰负担；多行内容渲染为语句列表，`包含` / `不包含` 等短前缀渲染为语义标签。
@@ -60,10 +60,10 @@ WorkArea 不使用普通字段卡片堆叠，而作为“工作域入口”展�
 
 WorkPlan 不使用普通字段卡片堆叠，而作为“一次目标的执行态势”展示。WorkPlan 的设计语言必须先继承提交、研究、决策、备忘、经验五个成熟模块的基线，新的专用表达只能围绕“计划对象更复杂”来增加，不能另起一套视觉和信息秩序。执行项只作为 WorkPlan 内部编排的只读态势呈现，不在本文定义独立字段契约、对象路由或长期事实源结构。
 
-1. 计划进度：页面主区域第一块，展示 WorkPlan 自身推进阶段、成功标准完成度、执行项完成度、执行项状态分布和关闭材料记录状态。该模块只消费确定性只读派生摘要，不写回事实源。
+1. 计划进度：页面主区域第一块，展示 WorkPlan 自身推进阶段、成功标准完成度、执行项完成度、执行项状态分布和关闭材料记录状态。推进阶段直接消费当前 WorkPlan 状态机：`subagents_plan_reviewing`、`human_plan_confirming`、`executing`、`result_self_checking`、`subagents_result_reviewing`、`human_closure_confirming`、`closed`；历史 `draft`、`active`、`review_needed` 只作为 legacy 兼容显示。该模块只消费确定性只读派生摘要，不写回事实源。
 2. 执行态势：展示整体执行态势条，并按 Human 关注顺序展示执行项行：已阻塞、执行中、待执行、已跳过、已完成；区块标题只使用小圆点。
 3. 成功标准、验证证据和关闭证据不再收进“关闭判断”总区块；分别作为同级模块展示 `success_criteria/verification_evidence/closure_evidence`。不展示额外顶部结论条，不单列待确认项或记录状态，未完成项由 checklist 或证据模块自身表达。成功标准是关闭判断依据，但不再用外层总模块包住。
-4. `orchestration.review` 作为“检查安排”模块展示主控自检、专业复检和 Human 关闭审查要求；它只表达关闭前检查安排，不表达审查结论。审查结论仍由 `verification_evidence` 和 `closure_evidence` 承载。
+4. `orchestration.plan_review` 和 `orchestration.result_review` 作为“检查安排”模块展示方案审核、结果自检、结果复核、主控处理和 Human 确认摘要。Web 只展示已有审核事实和关键摘要，不把审核记录改写成独立 Review 对象；完整事实仍以 WorkPlan YAML 为准。历史 `orchestration.review` 仅作为 legacy fallback 展示主控自检、专业复检和 Human 关闭审查要求。
 5. 定义事实不再收进“属性”总区块；目标、所属工作域、来源分别作为同级模块展示 `description/workarea/source`。`description` 是目标叙述，必须按 Markdown 正文渲染，不得用定义行拆分、短前缀标签或字段 chip 重排原文。所属工作域入口使用模块内对象引用值，显示 WorkArea 对象图标和工作域标题，不显示 ID 或状态徽章，点击只打开右侧辅助阅读，不切换主路由。
 6. 执行项行在 WorkPlan 详情中与 WorkArea card 的动作体验保持一致：复用状态色弱背景、左侧状态图标、执行项标题、内部编号、证据入口和辅助阅读入口；执行项不得使用 WorkPlan 对象图标或 WorkPlan 状态徽章。
 7. 关联材料不再收进“关联材料”总区块；文档、决策、备忘、踩坑经验按 `related_docs/related_adrs/related_memos/related_pitfalls` 分别作为同级模块展示。材料来源只聚合 WorkPlan 自身和已明确纳入 WorkPlan 证据的引用，按 ID 或路径去重；不得从执行项派生出另一套对象级材料事实源。关联提交由 Git 历史、文件路径、对象 ID 和提交正文自然文本派生，不从对象字段手写维护。
@@ -196,4 +196,4 @@ interface ObjectDetail {
 }
 ```
 
-WorkPlan 详情页可以额外消费 WorkPlan 只读派生摘要，用于展示推进阶段、成功标准进度、执行态势、关闭材料完备性、阻塞关系和对象路径。当前 Web API 可派生 `executionItems`、`executionItemTotal`、`executionItemDone`、`executionItemBlocked`、`executionItemOpen`、`executionItemByStatus`、`successCriteriaTotal`、`successCriteriaDone`、`hasReviewRequestedAt`、`hasVerificationEvidence`、`hasClosureEvidence` 和 `hasClosedAt`。派生摘要仍来自 Git 文件事实源的确定性读取，不写回事实源，也不作为第二事实源。
+WorkPlan 详情页可以额外消费 WorkPlan 只读派生摘要，用于展示推进阶段、成功标准进度、执行态势、关闭材料完备性、阻塞关系和对象路径。当前 Web API 可派生 `executionItems`、`executionItemTotal`、`executionItemDone`、`executionItemBlocked`、`executionItemOpen`、`executionItemByStatus`、`successCriteriaTotal`、`successCriteriaDone`、`hasPlanConfirmedAt`、`hasClosureRequestedAt`、`hasVerificationEvidence`、`hasClosureEvidence` 和 `hasClosedAt`；历史 `review_requested_at` 可兼容为 `hasClosureRequestedAt`。派生摘要仍来自 Git 文件事实源的确定性读取，不写回事实源，也不作为第二事实源。

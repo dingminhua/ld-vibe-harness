@@ -16,6 +16,11 @@ import { getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 import { getExecutionFlowLabel, getExecutionFlowTone, sortPlanExecutionItems } from '@/utils/executionFlowStatus';
+import {
+  isWorkPlanClosureConfirmingStatus,
+  isWorkPlanHumanConfirmingStatus,
+  isWorkPlanTerminalStatus,
+} from '@/utils/workplanStatus';
 
 type LocalizedTitleItem = Pick<ObjectItem, 'id'> & Partial<Pick<ObjectItem, 'title' | 'title_en' | 'title_zh'>>;
 
@@ -24,11 +29,14 @@ type Translate = ReturnType<typeof useI18n>['t'];
 type PlanRecordState = 'recorded' | 'missing';
 type StatusReason = { label: string; text: string; missing?: boolean };
 
-const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded']);
-const PENDING_CLOSE_STATUSES = new Set(['review_needed']);
 const TITLE_ACCENT_CLASS: Record<string, string> = {
   active: 'border-emerald-400/80',
+  subagents_plan_reviewing: 'border-sky-400/80',
+  human_plan_confirming: 'border-violet-400/80',
   executing: 'border-emerald-400/80',
+  result_self_checking: 'border-blue-400/80',
+  subagents_result_reviewing: 'border-indigo-400/80',
+  human_closure_confirming: 'border-violet-400/80',
   accepted: 'border-emerald-400/70',
   review_needed: 'border-violet-400/80',
   verifying: 'border-blue-400/80',
@@ -141,14 +149,6 @@ function StatusReasonNote({ reason }: { reason: StatusReason }) {
       </p>
     </div>
   );
-}
-
-function isTerminalStatus(status: string): boolean {
-  return TERMINAL_STATUSES.has(status);
-}
-
-function isPendingCloseStatus(status: string): boolean {
-  return PENDING_CLOSE_STATUSES.has(status);
 }
 
 function handleKeyboardOpen(event: KeyboardEvent<HTMLElement>, onOpen: () => void) {
@@ -557,9 +557,9 @@ export default function ObjectList() {
     if (currentType === 'workarea') {
       const plans = obj.plans ?? [];
       const planTotal = obj.planTotal ?? plans.length;
-      const activePlans = plans.filter((plan) => !isPendingCloseStatus(plan.status) && !isTerminalStatus(plan.status));
-      const reviewPlans = plans.filter((plan) => isPendingCloseStatus(plan.status));
-      const closedPlans = plans.filter((plan) => isTerminalStatus(plan.status));
+      const activePlans = plans.filter((plan) => !isWorkPlanHumanConfirmingStatus(plan.status) && !isWorkPlanTerminalStatus(plan.status));
+      const reviewPlans = plans.filter((plan) => isWorkPlanHumanConfirmingStatus(plan.status));
+      const closedPlans = plans.filter((plan) => isWorkPlanTerminalStatus(plan.status));
       const closedPlanCount = obj.planClosed ?? closedPlans.length;
 
       return (
@@ -586,7 +586,7 @@ export default function ObjectList() {
               )}
               {reviewPlans.length > 0 && (
                 <WorkAreaPlanSection
-                  title={t('objectList.pendingClosePlanCount', { count: String(reviewPlans.length) })}
+                  title={t('objectList.humanConfirmPlanCount', { count: String(reviewPlans.length) })}
                   plans={reviewPlans}
                   locale={locale}
                   tone="review"
@@ -618,16 +618,18 @@ export default function ObjectList() {
       const sortedExecutionItems = sortPlanExecutionItems(executionItems);
       const visibleExecutionItems = sortedExecutionItems.slice(0, 8);
       const moreCount = Math.max(0, sortedExecutionItems.length - visibleExecutionItems.length);
-      const needsCloseDecision = obj.status === 'review_needed';
+      const needsCloseDecision = isWorkPlanClosureConfirmingStatus(obj.status);
       const isClosedPlan = obj.status === 'closed';
       const successCriteriaState: PlanRecordState = obj.hasSuccessCriteria ? 'recorded' : 'missing';
-      const reviewRequestedState: PlanRecordState = obj.hasReviewRequestedAt ? 'recorded' : 'missing';
+      const planConfirmedState: PlanRecordState = obj.hasPlanConfirmedAt ? 'recorded' : 'missing';
+      const closureRequestedState: PlanRecordState = obj.hasClosureRequestedAt ? 'recorded' : 'missing';
       const verificationEvidenceState: PlanRecordState = obj.hasVerificationEvidence ? 'recorded' : 'missing';
       const closureEvidenceState: PlanRecordState = obj.hasClosureEvidence ? 'recorded' : 'missing';
       const closedAtState: PlanRecordState = obj.hasClosedAt ? 'recorded' : 'missing';
       const closeDecisionFields = [
         { label: t('objectList.successCriteria'), state: successCriteriaState },
-        { label: t('objectList.reviewRequestedAt'), state: reviewRequestedState },
+        { label: t('objectList.planConfirmedAt'), state: planConfirmedState },
+        { label: t('objectList.closureRequestedAt'), state: closureRequestedState },
         { label: t('objectList.verificationEvidence'), state: verificationEvidenceState },
         { label: t('objectList.closureEvidence'), state: closureEvidenceState },
       ];

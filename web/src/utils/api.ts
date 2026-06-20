@@ -74,7 +74,8 @@ export interface ObjectItem {
   successCriteriaTotal?: number;
   successCriteriaDone?: number;
   hasSuccessCriteria?: boolean;
-  hasReviewRequestedAt?: boolean;
+  hasPlanConfirmedAt?: boolean;
+  hasClosureRequestedAt?: boolean;
   hasVerificationEvidence?: boolean;
   hasClosureEvidence?: boolean;
   hasClosedAt?: boolean;
@@ -147,7 +148,8 @@ export interface RelatedPlanSummary extends RelatedObjectSummary {
   successCriteriaTotal?: number;
   successCriteriaDone?: number;
   hasSuccessCriteria: boolean;
-  hasReviewRequestedAt: boolean;
+  hasPlanConfirmedAt: boolean;
+  hasClosureRequestedAt: boolean;
   hasVerificationEvidence?: boolean;
   hasClosureEvidence?: boolean;
   hasClosedAt: boolean;

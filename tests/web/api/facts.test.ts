@@ -5,6 +5,8 @@ import { isObjectRef, isPreviewablePathForField } from '../../../web/src/utils/f
 import { getObjectPriority, getObjectSignals } from '../../../web/src/utils/objectSignals.ts'
 import { getFallbackStatuses } from '../../../web/src/components/ObjectStatusFilter.tsx'
 import { formatDateTime } from '../../../web/src/utils/dateFormat.ts'
+import { getDefaultListStatus } from '../../../web/src/utils/listStatus.ts'
+import { WORKPLAN_DEFAULT_LIST_STATUS } from '../../../web/src/utils/workplanStatus.ts'
 
 async function main() {
   const workareas = await listObjects('workarea')
@@ -47,12 +49,15 @@ async function main() {
   const summary = summaries.find((item) => item.id === firstWorkplan.id)
   assert.ok(summary)
   assert.equal(summary.type, 'workplan')
+  assert.equal(typeof summary.status, 'string')
   assert.equal(typeof summary.executionItemTotal, 'number')
   assert.equal(typeof summary.executionItemDone, 'number')
   assert.equal(typeof summary.executionItemBlocked, 'number')
   assert.equal(typeof summary.executionItemOpen, 'number')
   assert.equal(typeof summary.successCriteriaTotal, 'number')
   assert.equal(typeof summary.successCriteriaDone, 'number')
+  assert.equal(typeof summary.hasPlanConfirmedAt, 'boolean')
+  assert.equal(typeof summary.hasClosureRequestedAt, 'boolean')
   assert.ok(summary.successCriteriaDone <= summary.successCriteriaTotal)
 
   assert.equal(isObjectRef('workplan-0001'), true)
@@ -68,7 +73,9 @@ async function main() {
 
   assert.deepEqual(getFallbackStatuses('study', 'active'), ['active', 'archived'])
   assert.equal(getFallbackStatuses('study', 'active').includes('draft'), false)
+  assert.equal(getDefaultListStatus('workplan'), WORKPLAN_DEFAULT_LIST_STATUS)
   assert.equal(getFallbackStatuses('workplan', 'draft').includes('draft'), true)
+  assert.equal(getFallbackStatuses('workplan', WORKPLAN_DEFAULT_LIST_STATUS).includes('human_closure_confirming'), true)
 
   const studies = await listObjects('study')
   assert.equal(studies.ok, true)

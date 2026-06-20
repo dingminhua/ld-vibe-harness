@@ -2,20 +2,17 @@ import { useMemo } from 'react';
 import type { ObjectStatusOption } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
+import { WORKPLAN_STATUS_ORDER } from '@/utils/workplanStatus';
 
 const STATUS_FILTER_ORDER = [
-  'active',
+  ...WORKPLAN_STATUS_ORDER,
   'in_progress',
   'blocked',
-  'executing',
-  'review_needed',
   'verifying',
   'planned',
   'pending',
-  'draft',
   'proposed',
   'accepted',
-  'closed',
   'done',
   'skipped',
   'resolved',
@@ -31,7 +28,7 @@ const statusOrderIndex = new Map(STATUS_FILTER_ORDER.map((status, index) => [sta
 
 const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   workarea: ['active', 'archived'],
-  workplan: ['draft', 'active', 'review_needed', 'closed'],
+  workplan: [...WORKPLAN_STATUS_ORDER],
   adr: ['active', 'archived', 'deprecated'],
   pitfall: ['active', 'archived'],
   memo: ['pending', 'resolved', 'discarded'],

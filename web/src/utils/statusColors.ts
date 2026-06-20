@@ -1,6 +1,11 @@
 export const STATUS_COLORS: Record<string, { light: string; dark: string }> = {
   active: { light: '#059669', dark: '#00d4aa' },
+  subagents_plan_reviewing: { light: '#0ea5e9', dark: '#38bdf8' },
+  human_plan_confirming: { light: '#8b5cf6', dark: '#a78bfa' },
   executing: { light: '#059669', dark: '#00d4aa' },
+  result_self_checking: { light: '#3b82f6', dark: '#60a5fa' },
+  subagents_result_reviewing: { light: '#6366f1', dark: '#818cf8' },
+  human_closure_confirming: { light: '#8b5cf6', dark: '#a78bfa' },
   accepted: { light: '#059669', dark: '#00d4aa' },
   closed: { light: '#6b7280', dark: '#6b7280' },
   resolved: { light: '#6b7280', dark: '#6b7280' },

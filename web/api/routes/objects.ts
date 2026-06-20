@@ -4,6 +4,12 @@
 
 import { Router, type Request, type Response } from 'express'
 import { listObjects, showObject, OBJECT_TYPES, readFactData, type ObjectType } from '../services/facts.js'
+import {
+  isWorkPlanActiveStatus,
+  isWorkPlanHumanConfirmingStatus,
+  isWorkPlanTerminalStatus,
+  WORKPLAN_STATUS_ORDER,
+} from '../../src/utils/workplanStatus.ts'
 
 const router = Router()
 
@@ -49,7 +55,8 @@ interface RelatedPlanSummary extends RelatedObjectSummary {
   successCriteriaTotal?: number
   successCriteriaDone?: number
   hasSuccessCriteria: boolean
-  hasReviewRequestedAt: boolean
+  hasPlanConfirmedAt: boolean
+  hasClosureRequestedAt: boolean
   hasVerificationEvidence?: boolean
   hasClosureEvidence?: boolean
   hasClosedAt: boolean
@@ -60,25 +67,18 @@ interface StatusOption {
   count: number
 }
 
-const TERMINAL_STATUSES = new Set(['closed', 'resolved', 'accepted', 'archived', 'discarded', 'superseded'])
-const REVIEW_STATUSES = new Set(['review_needed', 'needs_human_gate', 'proposed'])
-const ACTIVE_STATUSES = new Set(['active', 'executing', 'verifying'])
 const RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected', 'deprecated'])
 
 const STATUS_PRIORITY: Record<string, number> = {
-  review_needed: 0,
-  needs_human_gate: 1,
-  executing: 2,
-  verifying: 3,
-  active: 4,
-  open: 5,
-  degraded: 6,
-  suspended: 7,
-  proposed: 8,
-  planned: 9,
-  pending: 10,
-  draft: 10,
-  closed: 20,
+  ...Object.fromEntries(WORKPLAN_STATUS_ORDER.map((status, index) => [status, index])),
+  needs_human_gate: 10,
+  verifying: 11,
+  open: 12,
+  degraded: 13,
+  suspended: 14,
+  proposed: 15,
+  planned: 16,
+  pending: 17,
   resolved: 21,
   accepted: 22,
   archived: 23,
@@ -243,7 +243,7 @@ async function listObjectSummaries(type: ObjectType, baseDir?: string): Promise<
   return getResultItems(result)
 }
 
-export async function buildPlanSummaries(planItems: ListedObject[], baseDir?: string): Promise<RelatedPlanSummary[]> {
+export async function buildPlanSummaries(planItems: ListedObject[]): Promise<RelatedPlanSummary[]> {
   if (planItems.length === 0) return []
 
   return planItems.map((item) => {
@@ -267,7 +267,8 @@ export async function buildPlanSummaries(planItems: ListedObject[], baseDir?: st
       successCriteriaTotal: successCriteriaProgress.total,
       successCriteriaDone: successCriteriaProgress.done,
       hasSuccessCriteria: hasContent(data.success_criteria),
-      hasReviewRequestedAt: hasContent(data.review_requested_at),
+      hasPlanConfirmedAt: hasContent(data.plan_confirmed_at),
+      hasClosureRequestedAt: hasContent(data.closure_requested_at) || hasContent(data.review_requested_at),
       hasVerificationEvidence: hasContent(data.verification_evidence),
       hasClosureEvidence: hasContent(data.closure_evidence),
       hasClosedAt: hasContent(data.closed_at),
@@ -293,9 +294,9 @@ async function enrichWorkareas(items: ListedObject[]): Promise<ListedObject[]> {
       ...item,
       plans: relatedPlans,
       planTotal: relatedPlans.length,
-      planClosed: countMatching(relatedPlans, TERMINAL_STATUSES),
-      planReviewNeeded: countMatching(relatedPlans, REVIEW_STATUSES),
-      planActive: countMatching(relatedPlans, ACTIVE_STATUSES),
+      planClosed: relatedPlans.filter((plan) => isWorkPlanTerminalStatus(plan.status)).length,
+      planReviewNeeded: relatedPlans.filter((plan) => isWorkPlanHumanConfirmingStatus(plan.status)).length,
+      planActive: relatedPlans.filter((plan) => isWorkPlanActiveStatus(plan.status)).length,
       planRisk: countMatching(relatedPlans, RISK_STATUSES),
       planByStatus: countByStatus(relatedPlans),
     }
@@ -324,7 +325,8 @@ async function enrichWorkPlans(items: ListedObject[]): Promise<ListedObject[]> {
       successCriteriaTotal: summary.successCriteriaTotal ?? 0,
       successCriteriaDone: summary.successCriteriaDone ?? 0,
       hasSuccessCriteria: summary.hasSuccessCriteria,
-      hasReviewRequestedAt: summary.hasReviewRequestedAt,
+      hasPlanConfirmedAt: summary.hasPlanConfirmedAt,
+      hasClosureRequestedAt: summary.hasClosureRequestedAt,
       hasVerificationEvidence: summary.hasVerificationEvidence,
       hasClosureEvidence: summary.hasClosureEvidence,
       hasClosedAt: summary.hasClosedAt,

@@ -18,7 +18,7 @@
 
 ```text
 页面标题：仪表盘
-态势摘要行（如：1 个工作计划待关闭，6 个备忘待处理）
+态势摘要行（如：1 个方案待确认，2 个执行中，1 个关闭待确认）
 对象统计网格（workarea/workplan/adr/pitfall/memo/study）
 待推进（含复制对象路径图标） + 最近提交
 最近活动（含复制对象路径图标）
@@ -29,7 +29,7 @@
 ### 3.1 态势摘要
 
 - 位于页面标题下方。
-- 只展示非零关键状态，例如 executing、verifying、review_needed 和 planned。
+- 只展示非零关键状态。WorkPlan 使用当前状态机的关键节点：`subagents_plan_reviewing`、`human_plan_confirming`、`executing`、`result_self_checking`、`subagents_result_reviewing`、`human_closure_confirming`；历史 `review_needed` 和通用 `planned` 只作为兼容态势展示。
 - 使用 `ldvh-caption`，不得做成大号 banner 或重复统计卡。
 
 ### 3.2 对象统计网格
@@ -42,7 +42,7 @@
 ### 3.3 待推进
 
 - 位于第一组主面板左侧。
-- 展示非终态对象，重点状态使用左侧 accent 边线。
+- 展示非终态对象，WorkPlan 当前状态机和历史待处理状态使用左侧 accent 边线。
 - 点击条目打开右侧扩展阅读区，不直接离开仪表盘。
 - 每条右侧提供复制对象路径图标，复制 API 返回的对象 `path`，不得触发扩展阅读。
 

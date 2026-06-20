@@ -25,6 +25,11 @@ import { executionFlowRowClass, getExecutionFlowLabel, getExecutionFlowTone, sor
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
 import {
+  isWorkPlanHumanConfirmingStatus,
+  isWorkPlanTerminalStatus,
+  isWorkPlanResultReviewStatus,
+} from '@/utils/workplanStatus';
+import {
   CHECKLIST_COMPAT_FIELDS,
   COLLAPSIBLE_FIELDS,
   DOC_LINK_FIELDS,
@@ -92,8 +97,6 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   ],
 };
 
-const DETAIL_TERMINAL_STATUSES = new Set(['closed', 'resolved', 'archived', 'discarded', 'deprecated']);
-const DETAIL_PENDING_CLOSE_STATUSES = new Set(['review_needed']);
 const STUDY_READING_NODE_FIELDS = new Set(['user_intent', 'summary', 'conclusion', 'report_body']);
 type ReadingNodeState = 'collapsed' | 'expanded';
 const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
@@ -734,11 +737,11 @@ function HeaderDateMeta({ label, value, align = 'end' }: { label: string; value:
 }
 
 function isDetailTerminalStatus(status: string): boolean {
-  return DETAIL_TERMINAL_STATUSES.has(status);
+  return isWorkPlanTerminalStatus(status);
 }
 
-function isDetailPendingCloseStatus(status: string): boolean {
-  return DETAIL_PENDING_CLOSE_STATUSES.has(status);
+function isDetailHumanConfirmingStatus(status: string): boolean {
+  return isWorkPlanHumanConfirmingStatus(status);
 }
 
 export function WorkAreaReadingLayout({
@@ -757,8 +760,8 @@ export function WorkAreaReadingLayout({
   const { t } = useI18n();
   const { openPanel } = usePanel();
   const plans = summary?.plans ?? [];
-  const activePlans = plans.filter((plan) => !isDetailPendingCloseStatus(plan.status) && !isDetailTerminalStatus(plan.status));
-  const pendingClosePlans = plans.filter((plan) => isDetailPendingCloseStatus(plan.status));
+  const activePlans = plans.filter((plan) => !isDetailHumanConfirmingStatus(plan.status) && !isDetailTerminalStatus(plan.status));
+  const humanConfirmingPlans = plans.filter((plan) => isDetailHumanConfirmingStatus(plan.status));
   const closedPlans = plans.filter((plan) => isDetailTerminalStatus(plan.status));
   const hasRelatedMaterials = [
     obj.related_docs,
@@ -798,11 +801,11 @@ export function WorkAreaReadingLayout({
               onOpen={openPlan}
             />
           )}
-          {pendingClosePlans.length > 0 && (
+          {humanConfirmingPlans.length > 0 && (
             <WorkAreaPlanGroup
-              title={t('objectList.pendingClosePlanCount', { count: String(pendingClosePlans.length) })}
+              title={t('objectList.humanConfirmPlanCount', { count: String(humanConfirmingPlans.length) })}
               tone="review"
-              plans={pendingClosePlans}
+              plans={humanConfirmingPlans}
               locale={locale}
               getStatus={getStatus}
               onOpen={openPlan}
@@ -1377,7 +1380,7 @@ export function WorkPlanReadingLayout({
     ownExecutionItems.length > 0 ? ownExecutionItems : (summary?.executionItems ?? [])
   );
   const isExecutionLoading = loading && ownExecutionItems.length === 0;
-  const review = getWorkPlanReview(obj);
+  const orchestration = getWorkPlanOrchestration(obj);
   const relatedDocs = ((obj.aggregated_related_docs as string[] | undefined) ?? (obj.related_docs as string[] | undefined)) || [];
   const relatedAdrs = ((obj.aggregated_related_adrs as string[] | undefined) ?? (obj.related_adrs as string[] | undefined)) || [];
   const relatedMemos = ((obj.aggregated_related_memos as string[] | undefined) ?? (obj.related_memos as string[] | undefined)) || [];
@@ -1392,6 +1395,8 @@ export function WorkPlanReadingLayout({
     'orchestration',
     'verification_evidence',
     'closure_evidence',
+    'plan_confirmed_at',
+    'closure_requested_at',
     'review_requested_at',
     'closed_at',
     'related_docs',
@@ -1447,7 +1452,7 @@ export function WorkPlanReadingLayout({
       <DetailSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
         {hasDetailContent(obj.closure_evidence) ? <EvidenceBlock value={String(obj.closure_evidence)} embedded /> : <EmptyHint text={t('objectDetail.noClosureEvidenceForPlan')} />}
       </DetailSection>
-      <WorkPlanReviewSection review={review} />
+      <WorkPlanReviewSection orchestration={orchestration} />
 
       <DetailNarrativeSection title={t('objectDetail.workareaGoal')} value={obj.description} />
       <DetailObjectReferenceSection
@@ -1482,13 +1487,16 @@ export function WorkPlanReadingLayout({
   );
 }
 
-type WorkPlanLifecycleTone = 'draft' | 'active' | 'blocked' | 'verification' | 'review' | 'closed';
+type WorkPlanLifecycleTone = 'draft' | 'planReview' | 'planConfirming' | 'active' | 'blocked' | 'verification' | 'resultReview' | 'review' | 'closed';
 
 const workPlanLifecycleClass: Record<WorkPlanLifecycleTone, string> = {
   draft: 'border-sky-500/25 bg-sky-500/10 text-sky-400',
+  planReview: 'border-sky-500/25 bg-sky-500/10 text-sky-400',
+  planConfirming: 'border-violet-500/25 bg-violet-500/10 text-violet-400',
   active: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400',
   blocked: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
   verification: 'border-blue-500/25 bg-blue-500/10 text-blue-400',
+  resultReview: 'border-indigo-500/25 bg-indigo-500/10 text-indigo-400',
   review: 'border-violet-500/25 bg-violet-500/10 text-violet-400',
   closed: 'border-zinc-500/25 bg-zinc-500/10 text-zinc-400',
 };
@@ -1513,7 +1521,8 @@ function WorkPlanLifecycleSection({
   const executionTotal = summary?.executionItemTotal ?? executionItems.length;
   const executionDone = summary?.executionItemDone ?? executionItems.filter((item) => item.status === 'done').length;
   const recordItems = [
-    { label: t('objectList.reviewRequestedAt'), recorded: Boolean(summary?.hasReviewRequestedAt ?? hasDetailContent(obj.review_requested_at)) },
+    { label: t('objectList.planConfirmedAt'), recorded: Boolean(summary?.hasPlanConfirmedAt ?? hasDetailContent(obj.plan_confirmed_at)) },
+    { label: t('objectList.closureRequestedAt'), recorded: Boolean(summary?.hasClosureRequestedAt ?? (hasDetailContent(obj.closure_requested_at) || hasDetailContent(obj.review_requested_at))) },
     { label: t('objectList.verificationEvidence'), recorded: Boolean(summary?.hasVerificationEvidence ?? hasDetailContent(obj.verification_evidence)) },
     { label: t('objectList.closureEvidence'), recorded: Boolean(summary?.hasClosureEvidence ?? hasDetailContent(obj.closure_evidence)) },
     ...(rawStatus === 'closed'
@@ -1593,9 +1602,13 @@ function getWorkPlanLifecycle(
   obj: Record<string, unknown>,
   summary: ObjectItem | null,
   executionItems: RelatedObjectSummary[],
-): { tone: WorkPlanLifecycleTone; labelKey: 'objectDetail.lifecycleDraft' | 'objectDetail.lifecycleActive' | 'objectDetail.lifecycleBlocked' | 'objectDetail.lifecycleVerification' | 'objectDetail.lifecycleReview' | 'objectDetail.lifecycleClosed' } {
+): { tone: WorkPlanLifecycleTone; labelKey: 'objectDetail.lifecycleDraft' | 'objectDetail.lifecyclePlanReview' | 'objectDetail.lifecyclePlanConfirming' | 'objectDetail.lifecycleActive' | 'objectDetail.lifecycleBlocked' | 'objectDetail.lifecycleVerification' | 'objectDetail.lifecycleResultReview' | 'objectDetail.lifecycleReview' | 'objectDetail.lifecycleClosed' } {
   const status = detailString(obj.status, detailString(summary?.status));
   if (status === 'closed') return { tone: 'closed', labelKey: 'objectDetail.lifecycleClosed' };
+  if (status === 'subagents_plan_reviewing') return { tone: 'planReview', labelKey: 'objectDetail.lifecyclePlanReview' };
+  if (status === 'human_plan_confirming') return { tone: 'planConfirming', labelKey: 'objectDetail.lifecyclePlanConfirming' };
+  if (status === 'human_closure_confirming') return { tone: 'review', labelKey: 'objectDetail.lifecycleReview' };
+  if (isWorkPlanResultReviewStatus(status)) return { tone: 'resultReview', labelKey: 'objectDetail.lifecycleResultReview' };
   if (status === 'review_needed') return { tone: 'review', labelKey: 'objectDetail.lifecycleReview' };
   if (executionItems.some((item) => item.status === 'blocked' || Boolean(item.blockingReason))) {
     return { tone: 'blocked', labelKey: 'objectDetail.lifecycleBlocked' };
@@ -1658,9 +1671,157 @@ function ExecutionItemRow({
   );
 }
 
-function WorkPlanReviewSection({ review }: { review: Record<string, unknown> | null }) {
+function WorkPlanReviewSection({ orchestration }: { orchestration: Record<string, unknown> }) {
   const { t } = useI18n();
-  if (!review) return null;
+  const planReview = isDetailRecord(orchestration.plan_review) ? orchestration.plan_review : null;
+  const resultReview = isDetailRecord(orchestration.result_review) ? orchestration.result_review : null;
+  const legacyReview = isDetailRecord(orchestration.review) ? orchestration.review : null;
+
+  if (planReview || resultReview) {
+    return (
+      <DetailSection title={t('objectDetail.workplanReview')} tone="default">
+        <div className="divide-y divide-ldvh-border/60">
+          {planReview && <ReviewRecordGroup title={t('objectDetail.planReview')} review={planReview} phase="plan" />}
+          {resultReview && <ReviewRecordGroup title={t('objectDetail.resultReview')} review={resultReview} phase="result" />}
+        </div>
+      </DetailSection>
+    );
+  }
+
+  if (!legacyReview) return null;
+  return <LegacyWorkPlanReviewSection review={legacyReview} />;
+}
+
+function ReviewRecordGroup({
+  title,
+  review,
+  phase,
+}: {
+  title: string;
+  review: Record<string, unknown>;
+  phase: 'plan' | 'result';
+}) {
+  const { t } = useI18n();
+  const reviewItems = Array.isArray(review.review_items)
+    ? review.review_items.filter((item): item is Record<string, unknown> => isDetailRecord(item))
+    : [];
+  const controllerSelfCheck = isDetailRecord(review.controller_self_check) ? review.controller_self_check : null;
+  const controllerResolution = isDetailRecord(review.controller_resolution) ? review.controller_resolution : null;
+  const humanConfirmation = phase === 'plan' && isDetailRecord(review.human_confirmation) ? review.human_confirmation : null;
+  const humanClosureConfirmation = phase === 'result' && isDetailRecord(review.human_closure_confirmation) ? review.human_closure_confirmation : null;
+  const hasBody = reviewItems.length > 0
+    || controllerSelfCheck
+    || controllerResolution
+    || humanConfirmation
+    || humanClosureConfirmation;
+
+  if (!hasBody) return null;
+
+  return (
+    <div className="py-3 first:pt-0 last:pb-0">
+      <div className="ldvh-caption-strong mb-3 text-ldvh-text-secondary">{title}</div>
+      <div className="flex min-w-0 flex-col gap-3">
+        {controllerSelfCheck && (
+          <ReviewInlineField
+            label={t('objectDetail.controllerSelfCheck')}
+            value={<ReviewRecordSummary record={controllerSelfCheck} />}
+            compact
+          />
+        )}
+        {reviewItems.length > 0 && (
+          <ReviewInlineField
+            label={t('objectDetail.reviewItems')}
+            value={<ReviewItemsList items={reviewItems} />}
+            compact
+          />
+        )}
+        {controllerResolution && (
+          <ReviewInlineField
+            label={t('objectDetail.controllerResolution')}
+            value={<ReviewRecordSummary record={controllerResolution} />}
+            compact
+          />
+        )}
+        {humanConfirmation && (
+          <ReviewInlineField
+            label={t('objectDetail.humanPlanConfirmation')}
+            value={<ReviewRecordSummary record={humanConfirmation} />}
+            compact
+          />
+        )}
+        {humanClosureConfirmation && (
+          <ReviewInlineField
+            label={t('objectDetail.humanClosureConfirmation')}
+            value={<ReviewRecordSummary record={humanClosureConfirmation} />}
+            compact
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReviewItemsList({ items }: { items: Record<string, unknown>[] }) {
+  const { getStatus } = useI18n();
+  return (
+    <div className="flex min-w-0 flex-col gap-2">
+      {items.slice(0, 4).map((item, index) => {
+        const result = isDetailRecord(item.result) ? item.result : {};
+        const status = detailString(result.status);
+        const title = [
+          detailString(item.agent),
+          detailString(item.role),
+          detailString(item.phase),
+        ].filter(Boolean).join(' · ') || `#${index + 1}`;
+        const summary = detailString(result.summary) || detailString(item.summary);
+        return (
+          <div key={`${title}-${index}`} className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg px-2.5 py-2">
+            <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2">
+              <span className="ldvh-caption-strong min-w-0 truncate text-ldvh-text">{title}</span>
+              {status && (
+                <span className="ldvh-chip rounded-md border border-ldvh-border px-1.5 py-0.5 text-ldvh-text-secondary">
+                  {getStatus(status)}
+                </span>
+              )}
+            </div>
+            {summary && <SummaryText value={summary} collapseThreshold={220} />}
+          </div>
+        );
+      })}
+      {items.length > 4 && (
+        <span className="ldvh-caption text-ldvh-text-secondary">+{items.length - 4}</span>
+      )}
+    </div>
+  );
+}
+
+function ReviewRecordSummary({ record }: { record: Record<string, unknown> }) {
+  const { getStatus } = useI18n();
+  const result = isDetailRecord(record.result) ? record.result : {};
+  const status = detailString(result.status) || detailString(record.decision);
+  const summary = detailString(record.summary)
+    || detailString(result.summary)
+    || detailString(record.scope)
+    || detailString(record.notes);
+  const at = detailString(record.confirmed_at) || detailString(record.signed_at);
+
+  return (
+    <div className="min-w-0">
+      <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2">
+        {status && (
+          <span className="ldvh-chip rounded-md border border-ldvh-border px-1.5 py-0.5 text-ldvh-text-secondary">
+            {getStatus(status)}
+          </span>
+        )}
+        {at && <span className="ldvh-meta-muted">{formatDateTime(at)}</span>}
+      </div>
+      {summary ? <SummaryText value={summary} collapseThreshold={320} /> : <span className="ldvh-body-muted">-</span>}
+    </div>
+  );
+}
+
+function LegacyWorkPlanReviewSection({ review }: { review: Record<string, unknown> }) {
+  const { t } = useI18n();
 
   const specialistReview = isDetailRecord(review.specialist_review) ? review.specialist_review : null;
   const hasSpecialistDetail = Boolean(
@@ -2633,11 +2794,6 @@ function getWorkPlanExecutionItems(obj: Record<string, unknown>): RelatedObjectS
       } satisfies RelatedObjectSummary;
     })
     .filter((item): item is RelatedObjectSummary => Boolean(item));
-}
-
-function getWorkPlanReview(obj: Record<string, unknown>): Record<string, unknown> | null {
-  const review = getWorkPlanOrchestration(obj).review;
-  return isDetailRecord(review) ? review : null;
 }
 
 export function StudyReadingLayout({
