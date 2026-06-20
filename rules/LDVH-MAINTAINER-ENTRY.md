@@ -89,6 +89,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 | specs 章节引用 | `python3 code/specs_validate.py refs specs` | 检查正式规范中的章节引用 |
 | specs 落地要求表 | `python3 code/specs_validate.py landing specs` | 检查规范落地要求表结构 |
 | specs 综合检查 | `python3 code/specs_validate.py all` | 执行 specs 综合校验 |
+| LDVH Git 提交准备 | `ldvh-git-commit` Skill、`python3 code/commit_validate.py --check-message-file <message-file>` | 按 10 号规范拆分、编写、预检并创建提交 |
 | Rules 环境入口接入 | 按 `specs/04.03-环境入口适配与部署规范.md` §4.1-§4.4 执行 | 官方维护 Codex App 适配路径；默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口 |
 
 ---
@@ -103,6 +104,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 | 处理规范落地、环境适配或适配措施 | `landing-report`、`index` | `specs/04-规范落地与环境适配基础规范.md`、`specs/04.02-LDVH能力资产与落地保障规范.md`、`specs/04.03-环境入口适配与部署规范.md` |
 | 处理 Code、工具、脚本或校验 | 对应工具帮助、测试命令 | `specs/04.03-环境入口适配与部署规范.md`、`specs/07-Code确定性执行实现规范.md`、对应 `code/` 实现和 `tests/` |
 | 处理 Web 或 Human-facing 入口 | `index`、相关后端或 Web 校验 | `specs/08-Web信息同步实现规范.md` |
+| 准备 LDVH Git 提交 | `ldvh-git-commit`、`commit_validate.py` | `specs/10-Git提交规范.md`、`skills/ldvh-git-commit/SKILL.md`、`hooks/ldvh-hooks.yaml` |
 | 处理 LDVH 自身工作对象 | `governed-projects`、`fact_cli.py list/search/show/stats` | 转入 `rules/LDVH-WORKSPACE-ENTRY.md`，按 dogfood 管辖项目处理 |
 
 场景同时命中多个入口时，选择最小足够查询和读取集。涉及正式规范变更、规范落地要求变化、落地缺口、适配措施漂移或 Code/Web/Skill/Agent/Hook/CI 边界变化时，应读取 `specs/06-工作流程基础规范.md`、`specs/03.03-工作流程文档规范.md` 和 `specs/40-59` 中实际存在的工作流程主文件，判断是否存在 active 具体工作流程。

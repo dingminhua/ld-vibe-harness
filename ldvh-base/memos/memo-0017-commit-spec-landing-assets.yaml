@@ -3,14 +3,14 @@ type: memo
 title: 10 号 Git 提交规范落地资产边界待收敛
 status: pending
 created: '2026-06-20T04:33:49+08:00'
-updated: '2026-06-20T10:12:08+08:00'
+updated: '2026-06-21T00:39:27+08:00'
 description: |
   本 Memo 承载一个需要后续收敛的规范落地问题：`specs/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
 
   当前讨论结论：
 
   1. 10 号规范的提交门禁是安装后必须落地的保障，不应只被写成可选候选；
-  2. Git `commit-msg` hook 属于提交发生时的确定性门禁，用于调用 `code/commit_validate.py` 阻断硬 error；
+  2. Git `commit-msg` 类事件属于提交发生时的确定性门禁，应通过统一 Hook registry / dispatcher 调用 `code/commit_validate.py` 阻断硬 error；
   3. Skill 也需要纳入落地资产，因为用户最担心的是 AI 行动时误解规范要求。Skill 负责把 10 号规范转成 AI 可执行流程，而不是等提交时才由 hook 拦截；
   4. Code 负责机械检查，Web 负责展示提交说明，Rules 负责让 AI 在准备提交、审计提交或追溯事实源时能定位 10 号规范和对应 Skill；
   5. 已确认“当前不维护固定 Skill/Hook”不是长期正确规则；更合理的边界是：未登记资产不得被当成固定保障，一旦登记为固定能力资产，就必须维护、审查、验证和随 specs 同步更新。
@@ -18,7 +18,7 @@ description: |
   初步资产分工：
 
   1. Code：`code/commit_validate.py` 作为确定性检查入口，检查首行格式、type、description、body 必填、明显空泛 body、命令清单、文件清单和私有 trailer warning；
-  2. Git Hook：仓库级 `commit-msg` hook 作为安装后必落地门禁，提交时调用 Code 预检；
+  2. Hook：统一 Hook registry 登记 `git.commit-msg` 事件，用户环境可通过 Git、IDE、CI、AI 执行约定或自有 hook 系统调用统一 dispatcher，再由 dispatcher 调用 Code 预检；
   3. Skill：建议形成 `ldvh-git-commit` 或等价 Skill，承接 AI 准备提交时的流程：读取 staged files、判断是否拆提交、选择单一 type/scope、生成结构化 body、处理合法 footer、运行预检并根据 error/warning 修正；
   4. Rules：维护入口和工作区入口应提示准备提交时读取 10 号规范或进入对应 Skill；
   5. Web：继续展示完整 body 清单和提交详情，不承担门禁。
@@ -28,7 +28,7 @@ description: |
   1. 是否先修改 04.02，允许正式规范提出必落地要求时维护固定 Skill/Hook 资产；
   2. 是否同步 01 中 `hooks/` 和 `skills/` 目录定位，区分必落地资产、候选环境适配资产和说明性资产；
   3. 是否为 10 号规范创建 `skills/ldvh-git-commit/SKILL.md`；
-  4. 是否为 10 号规范创建 `hooks/git/commit-msg`、安装脚本和检查脚本；
+  4. 是否为 10 号规范登记统一 `git.commit-msg` Hook 事件、dispatcher 和等价环境接入检查；
   5. 是否需要 WorkPlan 承接这一组落地动作，避免在对话中零散修改。
 
   新增待讨论的资产治理层问题：
@@ -45,7 +45,7 @@ description: |
   2. Rules、Skill、Agent、Hook 只要完成来源规范、权威路径、`ldvh_asset` 资产元信息、边界说明、质量审查、同步责任和验证入口登记，就可以成为 LDVH 固定能力资产；
   3. 未登记的 Skill、Agent、Hook 只能是候选资产、临时过程输出、人工降级步骤或环境适配候选，不得被 Code、Web、Rules 或工作流程当成稳定保障机制；
   4. 登记事实应优先由资产文件自身元信息承载，Code 派生资产索引，Web 只读展示，不手写维护一份容易漂移的总清单；
-  5. 10 号 Git 提交规范后续需要的 `ldvh-git-commit` Skill 和 Git `commit-msg` hook，应按固定能力资产登记制推进。
+  5. 10 号 Git 提交规范后续需要的 `ldvh-git-commit` Skill 和 `git.commit-msg` Hook 事件，应按固定能力资产登记制推进。
 
   Rules 登记补充：
 
@@ -72,6 +72,8 @@ evolution:
     summary: 确认本 Memo 应作为多线并行分流入口处理；Git 提交规范收口可由 workplan-0074 承接，最佳实践文档方向可由 workplan-0024 并行推进，后续固定能力资产登记制、Skill/Hook 落地和派生型能力资产治理如形成独立 WorkPlan，应继续追加关联而不是把本 Memo 过早 resolved。
   - at: '2026-06-20T10:12:08+08:00'
     summary: 新建 workplan-0080 承接固定能力资产登记制、资产类型最佳实践标准、同步监督和部署分层边界；本 Memo 继续保持 pending，三条并行承接线暂为 workplan-0074、workplan-0024 和 workplan-0080。
+  - at: '2026-06-21T00:39:27+08:00'
+    summary: workplan-0074 已完成真实落地的一部分：`ldvh-git-commit` Skill 按 04.02 登记为 active 固定能力资产，10 号规范和维护入口已指向该 Skill；Hook 口径同步修正为统一 Hook registry / dispatcher 与环境接入层分离，不再描述为仓库级原生 Git hook 安装脚本。
 source: conversation
 source_detail: 用户围绕 10 号 Git 提交规范落地追问“这种属于 LDVH 安装后必须落地的资产”和“除了 hook，不需要 skills？”，要求建立 Memo 记录，避免后续遗忘。
 priority: P1

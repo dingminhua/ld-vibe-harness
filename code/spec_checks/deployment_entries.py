@@ -19,6 +19,9 @@ DEPLOYMENT_ENTRIES_REQUIRED_ASSETS = {
         "rules/LDVH-WORKSPACE-ENTRY.md",
         "rules/LDVH-MAINTAINER-ENTRY.md",
     ],
+    "Skill": [
+        "skills/ldvh-git-commit/SKILL.md",
+    ],
     "Hook": [
         "hooks/ldvh-hooks.yaml",
     ],
@@ -41,6 +44,12 @@ DEPLOYMENT_ENTRIES_REQUIRED_ASSET_METADATA = {
         "type": "hook",
         "status": "active",
         "canonical_path": "hooks/ldvh-hooks.yaml",
+    },
+    "skills/ldvh-git-commit/SKILL.md": {
+        "id": "ldvh-git-commit",
+        "type": "skill",
+        "status": "active",
+        "canonical_path": "skills/ldvh-git-commit/SKILL.md",
     },
 }
 DEPLOYMENT_ENTRIES_REQUIRED_METADATA_FIELDS = [

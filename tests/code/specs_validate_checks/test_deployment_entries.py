@@ -67,6 +67,39 @@ hooks:
       - "code/commit_validate.py"
 """,
     )
+    write_md(
+        tmp_path / "skills" / "ldvh-git-commit" / "SKILL.md",
+        """
+---
+name: ldvh-git-commit
+description: Prepare, validate, and create LDVH Git commits under specs/10.
+---
+
+# LDVH Git Commit
+
+```yaml
+ldvh_asset:
+  id: "ldvh-git-commit"
+  type: "skill"
+  status: "active"
+  canonical_path: "skills/ldvh-git-commit/SKILL.md"
+  source_specs:
+    - "specs/10-Git提交规范.md"
+  consumption_scenarios:
+    - "测试场景"
+  inputs:
+    - "测试输入"
+  outputs:
+    - "测试输出"
+  handoff: "测试交还"
+  verification:
+    - "python3 code/specs_validate.py deployment-entries"
+  sync_triggers:
+    - "测试触发"
+  deprecation: "测试废弃规则"
+```
+""",
+    )
     return write_md(
         tmp_path / "specs" / "04.02-LDVH能力资产与落地保障规范.md",
         """
@@ -77,6 +110,7 @@ hooks:
 | 能力资产类型 | 当前固定资产 | 适合保障 | 不适合保障 | 边界 |
 |---|---|---|---|---|
 | Rules 资产 | `rules/LDVH-WORKSPACE-ENTRY.md`、`rules/LDVH-MAINTAINER-ENTRY.md` | AI 入口分层 | 完整规范正文 | 只做薄入口 |
+| Skill 资产 | `skills/ldvh-git-commit/SKILL.md` | Git 提交流程 | 替代规范或 Code 校验 | 只做执行转换 |
 | Hook 资产 | `hooks/ldvh-hooks.yaml` | Git 提交消息校验 | 替代 Code 校验 | 只做统一登记 |
 """,
     )

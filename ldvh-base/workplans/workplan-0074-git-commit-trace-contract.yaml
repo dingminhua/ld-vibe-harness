@@ -3,7 +3,7 @@ type: workplan
 title: Git 提交规范收口
 status: active
 created: '2026-06-19T02:48:00+08:00'
-updated: '2026-06-20T21:58:40+08:00'
+updated: '2026-06-21T00:39:27+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
@@ -23,6 +23,7 @@ success_criteria: |
   - [x] Web 中 `/changelog`、Dashboard 最近提交、ProjectFiles 提交历史和右侧阅读面板统一表达为 Git 提交记录派生视图
   - [ ] Web API 共享同一 commit DTO 或解析函数，并结构化返回 type、scope、description、body、breaking、文件摘要或 diff 入口
   - [x] LDVH 自身仓库提供或启用提交前 message 校验入口；未启用 Git hook 前，AI 提交前必须运行等价预检
+  - [x] `ldvh-git-commit` Skill 已按 04.02 固定能力资产登记制落地，承接 AI 提交准备、拆分、消息编写、预检和交还流程
   - [ ] 迁出完成后，现行 specs、Code、Web 和测试中不存在会误导 AI 的旧工作对象入口；历史资料中的旧称必须被明确判定为允许历史引用或待迁移残留
   - [ ] `python3 code/specs_validate.py all --fail-on-diagnostics`、`python3 code/fact_validate.py ldvh-base`、相关 Code 测试和 Web 检查通过
 source: |
@@ -281,6 +282,33 @@ orchestration:
     - specs/01-目录说明.md
     - specs/25-Study-研究报告.md
     blocking_reason: null
+  - id: item-11
+    title: 落实提交执行 Skill
+    role: skill-code
+    mode: single
+    input_refs:
+    - specs/10-Git提交规范.md
+    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - skills/ldvh-git-commit/SKILL.md
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - code/spec_checks/deployment_entries.py
+    expected_output: |
+      为 10 号 Git 提交规范创建并登记 `ldvh-git-commit` Skill：
+      - Skill 只做提交执行流程转换，不新增规范规则；
+      - Skill 明确读取 staged files、判断拆分、选择 type/scope、生成 body、运行预检、处理 error/warning 和交还方式；
+      - 04.02、10、维护入口和 deployment-entries 检查能定位该 Skill；
+      - 未加载 Skill 的环境仍必须执行等价手动预检，不把 Skill 文件存在写成环境已安装。
+    status: done
+    result_summary: 已新增 `skills/ldvh-git-commit/SKILL.md` 和 `agents/openai.yaml`，并以 `ldvh_asset` 自登记为 active Skill。04.02 当前固定资产表、10 的 AI 提交流程复用要求、维护入口路由和 deployment-entries Code 检查均已指向该 Skill；Skill 明确不替代 10、Code validator、Hook registry、CI、Human Gate 或 Git commit records。
+    evidence_refs:
+    - skills/ldvh-git-commit/SKILL.md
+    - skills/ldvh-git-commit/agents/openai.yaml
+    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/10-Git提交规范.md
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - code/spec_checks/deployment_entries.py
+    - tests/code/specs_validate_checks/test_deployment_entries.py
+    blocking_reason: null
   review:
     controller_self_check: true
     specialist_review:
@@ -323,6 +351,8 @@ verification_evidence: |
   2026-06-20 追加补救曾短暂采用 `hooks/commit-msg` 和 `git config core.hooksPath hooks` 绑定本地 Git hook 环境注册方式。Human 指出 LDVH 后续会有各种 Hook，不能使用某个环境机制作为唯一方案，应使用统一方式并利用用户自身环境接入。主控已撤销本地 `core.hooksPath` 设置，并将方案纠偏为统一 Hook registry / dispatcher：`hooks/ldvh-hooks.yaml` 登记 `git.commit-msg` 事件，`code/hook_dispatch.py` 统一调度，事件命令复用 `code/commit_validate.py --check-message-file`。Git hook、用户已有 hook 管理器、IDE、AI 执行约定或 CI 都只是调用统一入口的适配层。
 
   2026-06-20 item-9 纠偏后验证结果：`python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` 可执行提交消息校验；`python3 -m pytest tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_deployment_entries.py -q` 通过；`python3 code/specs_validate.py deployment-entries` 通过；04.02 和 10 的 doc、refs、landing 检查均通过；0074 单体 fact_validate 通过；`python3 code/specs_validate.py all` 普通模式退出码为 0；`git diff --check` 通过；`git config --get core.hooksPath` 当前为空。`python3 code/specs_validate.py all --fail-on-diagnostics` 当前仍因 specs/05 既有 `POSSIBLE_DUPLICATE_TERM_DEFINITION` warning 退出 1，不属于本轮 item-9 新增问题。
+
+  2026-06-21 item-11 验证结果：`python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit` 通过；`python3 code/specs_validate.py deployment-entries` 通过；`python3 -m pytest tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_deployment_entries.py` 通过，32 passed；`python3 code/specs_validate.py refs specs`、`python3 code/specs_validate.py landing specs` 和 `python3 code/specs_validate.py all` 普通模式均通过；`git diff --check` 通过。综合检查仅保留既有 `specs/05` 术语定义 warning，不属于 item-11 新增问题。
 closure_evidence: ''
 review_requested_at: ''
 closed_at: ''
