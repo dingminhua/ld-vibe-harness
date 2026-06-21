@@ -7,10 +7,9 @@ import {
   FileSignature,
   Lightbulb,
   Link2,
+  Shovel,
   Sparkles,
-  UserRoundCheck,
   Workflow,
-  type LucideIcon,
   type LucideProps,
 } from 'lucide-react';
 
@@ -46,7 +45,7 @@ function FileSearchCornerIcon({ size = 16, className, strokeWidth = 2, ...props 
 }
 
 export const OBJECT_TYPE_ICONS: Record<string, SemanticIconComponent> = {
-  workcase: UserRoundCheck,
+  workcase: Shovel,
   adr: FileSignature,
   pitfall: Lightbulb,
   spark: Sparkles,
@@ -55,8 +54,8 @@ export const OBJECT_TYPE_ICONS: Record<string, SemanticIconComponent> = {
   changelog: GitHubSilhouetteIcon,
 };
 
-export const COLLECTION_ICONS: Record<string, LucideIcon> = {
-  workcase: UserRoundCheck,
+export const COLLECTION_ICONS: Record<string, SemanticIconComponent> = {
+  workcase: Shovel,
   plan: ClipboardList,
   properties: FileText,
   docs: FileText,
