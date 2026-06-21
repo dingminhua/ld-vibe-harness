@@ -199,8 +199,8 @@ CONSISTENCY_INDEX_REQUIRED_SECTIONS = {
     "11": "待补齐事项",
 }
 CONSISTENCY_COLLECTION_NUMBER_RANGES = {
-    "model": (20, 39, "工作模型集合索引条目编号应位于 20-39 区段"),
-    "workflow": (40, 59, "工作流程集合索引条目编号应位于 40-59 区段"),
+    "model": (20, 29, "工作模型集合索引条目编号应位于 20-29 区段"),
+    "workflow": (30, 59, "工作流程集合索引条目编号应位于 30-59 区段"),
 }
 CONSISTENCY_HUMAN_GATE_CHECK_TITLES = {
     "Human Gate 与检查要求",

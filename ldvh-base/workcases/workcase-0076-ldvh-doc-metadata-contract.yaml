@@ -8,18 +8,18 @@ created: '2026-06-19T07:55:28+08:00'
 updated: '2026-06-19T08:46:44+08:00'
 priority: P1
 description: |
-  workcase-0070 和 workcase-0075 已把现有 `> 字段：值` 普通头部定义为机器可读契约，并补充了 20-39 / 40-59 普通头部不得重复 `ldvh_member` 成员事实的 Code 诊断。
+  workcase-0070 和 workcase-0075 已把现有 `> 字段：值` 普通头部定义为机器可读契约，并补充了 20-29 / 30-59 普通头部不得重复 `ldvh_member` 成员事实的 Code 诊断。
 
-  Human 复审澄清：真正需要的是所有 specs 文档拥有统一、结构化、可机械校验的上位文档元信息块，而不是继续依赖普通头部。该上位块命名为 `ldvh_doc`，用于承载文档身份、类型、标题、路径、上位依据、相关规范、适用范围、状态和 Code/Web 消费边界；`ldvh_member` 只作为 20-39 工作模型和 40-59 工作流程集合成员的附加层。
+  Human 复审澄清：真正需要的是所有 specs 文档拥有统一、结构化、可机械校验的上位文档元信息块，而不是继续依赖普通头部。该上位块命名为 `ldvh_doc`，用于承载文档身份、类型、标题、路径、上位依据、相关规范、适用范围、状态和 Code/Web 消费边界；`ldvh_member` 只作为 20-29 工作模型和 30-59 工作流程集合成员的附加层。
 
   Human 二次复审进一步明确：`ldvh_doc` 必须是 specs 根目录规范文档元信息的唯一硬契约；字段不能缺席；是否允许为空、空值形态和默认值必须由字段契约逐字段定义，不得把所有字段一概处理为空字符串或空数组；不得用“建议”等软词描述硬字段；已有普通 Markdown 头部中的文档元信息必须清退，不能作为长期兼容入口。
 
   Human 三次复审指出：`updated` 不应为空；首次创建时也至少应等于 `created`，后续内容变更时应更新为最近变更日期。主控复盘确认前一轮把“字段必须出现”和“字段可以为空”混为一谈，且只验证了当前规则下通过，没有为用户真实意图建立失败样例；本轮已把该问题回写为回归诊断和测试。
 success_criteria: |
   - [x] 明确 `ldvh_doc` 与普通 `> 字段：值` 头部、文件名编号、`ldvh_member` 的职责分工
-  - [x] 设计覆盖 specs 正式规范、specs 子文档、20-39 工作模型成员、40-59 工作流程成员的 `ldvh_doc` 字段契约
+  - [x] 设计覆盖 specs 正式规范、specs 子文档、20-29 工作模型成员、30-59 工作流程成员的 `ldvh_doc` 字段契约
   - [x] 明确 `ldvh_doc.doc_kind`、`doc_id`、`title`、`canonical_path`、`status`、`basis`、`related_specs`、`scope`、`code_consumption` 等字段的名称、类型和必填规则
-  - [x] 明确 20-39 / 40-59 文档中 `ldvh_doc` 与 `ldvh_member` 是否并存，以及哪些字段不得重复或必须一致
+  - [x] 明确 20-29 / 30-59 文档中 `ldvh_doc` 与 `ldvh_member` 是否并存，以及哪些字段不得重复或必须一致
   - [x] 更新 03 / 03.01 / 03.02 / 03.03 / 07 / 08 中相关规范要求
   - [x] Code 能解析并校验 `ldvh_doc`，并报告缺失、字段非法、路径不一致、编号不一致、与 `ldvh_member` 冲突等诊断
   - [x] 规划或完成 specs 当前文件的最小迁移，避免长期同时存在含义相近但权威不同的两套文档元信息
@@ -45,7 +45,7 @@ orchestration:
     - specs/08-Web信息同步实现规范.md
     expected_output: 给出 `ldvh_doc` 的职责、适用范围、字段集合、示例和与普通头部、文件名、`ldvh_member` 的分工。
     status: done
-    result_summary: 已在 03 / 03.01 定义 `ldvh_doc` 为 specs 根目录文档级硬元信息唯一权威位置；普通 Markdown 头部不得重复文档元信息；20-39 / 40-59 中 `ldvh_doc` 承载文档级事实，`ldvh_member` 只承载集合成员事实。
+    result_summary: 已在 03 / 03.01 定义 `ldvh_doc` 为 specs 根目录文档级硬元信息唯一权威位置；普通 Markdown 头部不得重复文档元信息；20-29 / 30-59 中 `ldvh_doc` 承载文档级事实，`ldvh_member` 只承载集合成员事实。
     evidence_refs:
     - specs/03-文档基础规范.md
     - specs/03.01-规范文档规范.md

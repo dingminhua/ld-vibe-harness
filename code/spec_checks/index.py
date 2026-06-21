@@ -461,7 +461,7 @@ class SpecsChecker:
                     1,
                     "error",
                     "LDVH_MEMBER_HEADER_FIELD_FORBIDDEN",
-                    f"20-39 / 40-59 普通头部不得重复登记成员自描述字段: {field}",
+                    f"20-29 / 30-59 普通头部不得重复登记成员自描述字段: {field}",
                 )
             )
         return diagnostics
@@ -925,7 +925,7 @@ class SpecsChecker:
         if not self.is_member_candidate(path):
             return []
         if not member:
-            return [self.diagnostic(rel_path, 1, "error", "LDVH_MEMBER_MISSING", "20-39 / 40-59 具体成员主文件缺少 ldvh_member 自描述")]
+            return [self.diagnostic(rel_path, 1, "error", "LDVH_MEMBER_MISSING", "20-29 / 30-59 具体成员主文件缺少 ldvh_member 自描述")]
         diagnostics = []
         line = member.get("line") or 1
         required = self.required_member_fields(member.get("kind"))
@@ -1109,16 +1109,16 @@ class SpecsChecker:
         title = self.extract_title(path.read_text(encoding="utf-8").splitlines()) or ""
         if "迁移待删除" in title:
             return False
-        return 20 <= number <= 39 or 40 <= number <= 59
+        return 20 <= number <= 59
 
     def expected_member_kind(self, doc_number):
         try:
             number = int(doc_number)
         except (TypeError, ValueError):
             return None
-        if 20 <= number <= 39:
+        if 20 <= number <= 29:
             return "work_model"
-        if 40 <= number <= 59:
+        if 30 <= number <= 59:
             return "work_process"
         return None
 
@@ -1128,9 +1128,9 @@ class SpecsChecker:
             number = int(doc_number) if doc_number and "." not in str(doc_number) else None
         except ValueError:
             number = None
-        if number is not None and 20 <= number <= 39:
+        if number is not None and 20 <= number <= 29:
             return "work_model_spec"
-        if number is not None and 40 <= number <= 59:
+        if number is not None and 30 <= number <= 59:
             return "work_process_spec"
         if doc_kind == "subdocument":
             return "specs_subdocument"

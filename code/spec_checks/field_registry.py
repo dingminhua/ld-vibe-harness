@@ -70,7 +70,7 @@ ALLOWED_WEB_RENDER_KINDS = {
     "deprecated",
 }
 ALLOWED_REGISTRY_STATUSES = {"active", "deprecated", "removed", "alias"}
-OWNER_RE = re.compile(r"^(none|05\.0[1-3]|20-39|2[0-9]|3[0-9])$")
+OWNER_RE = re.compile(r"^(none|05\.0[1-3]|20-29|2[0-9])$")
 DOC_NUMBERED_HEADING_RE = re.compile(r"^\d+(?:\.\d+)*\.?(?:\s+|$)")
 
 
@@ -379,7 +379,7 @@ def check_registry_table(path, section_title, table, seen_keys, scope_owners=Non
 
         expected_owner = scope_owners.get(data.get("scope"))
         schema_owner = data.get("schema_owner")
-        if expected_owner and schema_owner not in {"", "none", "20-39", expected_owner}:
+        if expected_owner and schema_owner not in {"", "none", "20-29", expected_owner}:
             issues.append(
                 Issue(
                     path,

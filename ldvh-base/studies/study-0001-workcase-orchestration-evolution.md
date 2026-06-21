@@ -161,7 +161,7 @@ archive_reason: null
 
 1. 00 已从“对象化任务管理”转向“面向 AI 协作的事实源治理”。
 2. 02 已清理旧 TaskPlan / Task / SubTask 术语，改用 WorkCase 与 ExecutionItem。
-3. 05 已明确当前 active 工作模型集合以 WorkCase、ADR、Pitfall、Spark、Study 等承载长期工作事实，Git 提交记录用于追溯事实源修改，ExecutionItem 不进入 20-39 集合。
+3. 05 已明确当前 active 工作模型集合以 WorkCase、ADR、Pitfall、Spark、Study 等承载长期工作事实，Git 提交记录用于追溯事实源修改，ExecutionItem 不进入 20-29 集合。
 4. 05.01 已明确公共字段边界，补充 `verification_evidence`、`closure_evidence`，并改用 `related_workcases`。
 5. 21 已改为 WorkCase 规范，定义 WorkCase 状态机、`orchestration.execution_items`、`orchestration.review`、验证证据和关闭证据。
 6. 22 / 23 已从 active 模型中移除或清理概念行混淆。
@@ -212,7 +212,7 @@ Role Contract 是尚未完全定型的概念。当前判断是：它应定义专
 
 - 作为 04 能力资产的一类；
 - 作为 06 工作流程基础中的角色契约规则；
-- 作为 40-59 具体工作流程中的局部角色定义；
+- 作为 30-59 具体工作流程中的局部角色定义；
 - 或者作为后续独立规范承接。
 
 当前倾向是先不要在 WorkCase 字段契约中提前定义完整角色规则。WorkCase 只保留执行恢复所需的最小 `role` 标识，完整角色规则由工作流程、能力资产或后续专门规范承接。

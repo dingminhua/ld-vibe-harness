@@ -13,7 +13,7 @@ description: |
 
   本 WorkCase 的目标不是把 WorkArea 降级为 archived/deprecated 历史对象，而是做一次性迁移：从当前文件事实源、规范、Code、Web、测试和入口中移除 WorkArea 工作对象及其兼容痕迹。Git 提交历史不可作为普通迁移的一部分被抹除；这里的“消除历史痕迹”限定为当前仓库工作树和产品可见入口不再保留 WorkArea 主对象、兼容对象、历史视图或旧字段路径。
 success_criteria: |
-  - [x] WorkArea 从 active 工作模型集合中移除，不再作为 20-39 active 成员、对象类型、事实源目录或 Web 主入口存在
+  - [x] WorkArea 从 active 工作模型集合中移除，不再作为 20-29 active 成员、对象类型、事实源目录或 Web 主入口存在
   - [x] WorkCase 规范取消强制 `workarea` 归属，保留并强化优先级、状态、执行编排、验证证据和关闭判断等闭环字段
   - [x] 本 WorkCase 不引入跨项目字段、项目归属字段或跨项目归属机制；相关设计如未来需要另行建模
   - [x] 字段注册表移除或重写 `workarea`、`related_workareas`、`workarea_ref`、WorkArea 专属字段和 WorkArea 派生消费说明，不保留 deprecated 主链路
@@ -381,7 +381,7 @@ orchestration:
       context_digest: 实现已删除 WorkArea 主规范、目录、字段和产品入口；全文扫描排除 0085 后无命中。
       result:
         status: pass_with_followups
-        summary: 可通过，无阻断修改项。WorkArea 已从 active 工作模型清单、20-39 当前入口和派生索引中移除；WorkCase 未扩展跨项目或项目归属字段。
+        summary: 可通过，无阻断修改项。WorkArea 已从 active 工作模型清单、20-29 当前入口和派生索引中移除；WorkCase 未扩展跨项目或项目归属字段。
         key_findings:
         - 01 目录当前 active 工作模型只列 21-25：WorkCase、ADR、Pitfall、Spark、Study，20 未占用。
         - 05 工作模型基础规范当前集合同样只描述 WorkCase、ADR、Pitfall、Spark、Study。

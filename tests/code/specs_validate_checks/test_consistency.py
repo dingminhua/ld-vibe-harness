@@ -621,5 +621,5 @@ def test_consistency_skips_index_overrun_in_boundary_context(tmp_path):
 
 
 def test_consistency_removed_alias_does_not_match_number_range():
-    assert not checker.consistency_line_has_removed_alias("对应 41-59 active 工作流程规范", ["41"])
+    assert not checker.consistency_line_has_removed_alias("对应 30-59 active 工作流程规范", ["41"])
     assert checker.consistency_line_has_removed_alias("对应 41 active 工作流程规范", ["41"])

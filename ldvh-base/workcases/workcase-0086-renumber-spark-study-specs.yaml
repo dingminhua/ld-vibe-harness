@@ -41,7 +41,7 @@ orchestration:
     - current-conversation
     - specs/03.02-事实模型文档规范.md
     - specs/05-事实模型基础规范.md
-    - specs/20-39 active 工作模型成员集合
+    - specs/20-29 active 工作模型成员集合
     expected_output: 明确 Spark/Study 编号迁移的必须同步面、历史事实保留边界和 Human 方案确认前的风险。
     status: done
     result_summary: 已完成初始方案审核。迁移范围覆盖 Spark/Study 规范文件、成员自描述、目录和工作模型集合、字段注册 owner、Code/Web

@@ -331,6 +331,61 @@ ldvh_member:
     assert not indexes["diagnostics"]
 
 
+def test_index_member_kind_boundary_uses_30_for_work_process(tmp_path):
+    specs = tmp_path / "specs"
+    write_md(
+        specs / "29-TestModel-测试模型.md",
+        """
+# TestModel / 测试模型
+
+```yaml
+ldvh_member:
+  spec_id: "29"
+  kind: work_model
+  name_en: TestModel
+  name_zh: 测试模型
+  collection_status: candidate
+  canonical_path: specs/29-TestModel-测试模型.md
+  instance_root: ldvh-base/test-models/
+  schema_anchor: "§6"
+  state_machine_anchor: "§3"
+  human_gate_anchor: "§5"
+  code_consumption:
+    - fields
+```
+
+## 1. 第一章
+""",
+    )
+    write_md(
+        specs / "30-TestWorkflow-测试流程.md",
+        """
+# TestWorkflow / 测试流程
+
+```yaml
+ldvh_member:
+  spec_id: "30"
+  kind: work_process
+  name_en: TestWorkflow
+  name_zh: 测试流程
+  collection_status: candidate
+  canonical_path: specs/30-TestWorkflow-测试流程.md
+  code_consumption:
+    - workflow_index
+```
+
+## 1. 第一章
+""",
+    )
+
+    indexes = checker.SpecsChecker(tmp_path).build()
+
+    members = {item["spec_id"]: item for item in indexes["members"]}
+    assert members["29"]["kind"] == "work_model"
+    assert members["30"]["kind"] == "work_process"
+    assert not any(item["code"] == "LDVH_MEMBER_KIND_MISMATCH" for item in indexes["diagnostics"])
+
+
 def test_index_extracts_ldvh_doc_metadata(tmp_path):
     specs = tmp_path / "specs"
     write_md(

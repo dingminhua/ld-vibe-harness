@@ -14,7 +14,7 @@ description: |
 success_criteria: |
   - [x] 0070 已关闭，且关闭证据明确区分“契约设计完成”和“落地硬化后续项”
   - [x] specs 全量文件的头部元信息符合 03 / 03.01 / 03.02 / 03.03 的契约要求
-  - [x] Code 能检查 20-39 / 40-59 普通头部不得重复 `ldvh_member` 成员事实，例如 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 或 anchor 字段
+  - [x] Code 能检查 20-29 / 30-59 普通头部不得重复 `ldvh_member` 成员事实，例如 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 或 anchor 字段
   - [x] Code 明确 docs/studies、docs/sources 是否纳入头部元信息检查；若纳入，应定义扫描范围、doc_kind 命名和诊断等级；若暂不纳入，应写清降级边界
   - [x] Web 明确是否消费 specs 头部元信息，以及消费字段、展示位置和不反向制造事实源的边界
   - [x] 已修复现有头部元信息不符合契约的 specs/docs 文件，或将不能立即修复的项分流为后续 WorkCase/Spark
@@ -73,7 +73,7 @@ orchestration:
     - specs/03.03-行动编排文档规范.md
     expected_output: 增加或调整 Code 检查，使头部字段契约、成员自描述边界和重复事实源问题可被机械诊断。
     status: done
-    result_summary: 已在 index 检查中新增 `LDVH_MEMBER_HEADER_FIELD_FORBIDDEN` 错误诊断，覆盖 20-39 / 40-59 普通头部重复登记成员自描述字段；已补测试验证 `文档编号`、`集合状态`、`canonical_path` 三类重复字段会被诊断。
+    result_summary: 已在 index 检查中新增 `LDVH_MEMBER_HEADER_FIELD_FORBIDDEN` 错误诊断，覆盖 20-29 / 30-59 普通头部重复登记成员自描述字段；已补测试验证 `文档编号`、`集合状态`、`canonical_path` 三类重复字段会被诊断。
     evidence_refs:
     - code/spec_checks/index.py
     - tests/code/specs_validate_checks/test_index.py
@@ -149,7 +149,7 @@ verification_evidence: |
   ## 验证结果
 
   落地内容：
-  - `code/spec_checks/index.py` 新增 `LDVH_MEMBER_HEADER_FIELD_FORBIDDEN`，机械检查 20-39 / 40-59 普通头部不得重复登记成员自描述字段。
+  - `code/spec_checks/index.py` 新增 `LDVH_MEMBER_HEADER_FIELD_FORBIDDEN`，机械检查 20-29 / 30-59 普通头部不得重复登记成员自描述字段。
   - `tests/code/specs_validate_checks/test_index.py` 新增反例测试，确认 `文档编号`、`集合状态`、`canonical_path` 出现在普通头部会被诊断。
   - `specs/03.01-规范文档规范.md` 明确当前 Code 默认检查范围是 `specs/` 正文区；`docs/studies/` 和 `docs/sources/` 暂不进入默认 specs 派生索引扫描，修改时执行人工降级检查。
   - `web/docs/00-Architecture.md` 明确 Web 当前不消费 specs 头部元信息作为可编辑对象状态；未来展示只能来自 Git 文件或 Code 派生只读 API，不反向制造事实源。

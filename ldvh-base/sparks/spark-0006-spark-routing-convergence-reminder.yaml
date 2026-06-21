@@ -13,7 +13,7 @@ description: |
   - 何时 Spark 已被完整承接，可以填写 resolved_to / resolved_at 并转为 resolved；
   - Code 或 Web 是否应提示“已有关联对象但 Spark 仍 pending，是否还有未收敛内容”。
 
-  当前倾向是后续形成一个 40-59 工作流程，例如 Spark 分流与收敛流程，并补充 Code warning 与 Web 分流状态提示。
+  当前倾向是后续形成一个 30-59 工作流程，例如 Spark 分流与收敛流程，并补充 Code warning 与 Web 分流状态提示。
 
   后续落地拆分：
 

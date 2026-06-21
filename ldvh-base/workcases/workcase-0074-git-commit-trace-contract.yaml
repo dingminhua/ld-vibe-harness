@@ -15,7 +15,7 @@ description: |
   本计划负责承接后续行动准备：明确迁出目标、提交记录格式、简体中文提交语言要求、Web 派生视图调整、
   Code 校验和字段命名同步，确保迁出后工作模型集合保持自洽，Git 历史仍可被 AI 和 Human 高效使用。
 success_criteria: |
-  - [x] specs 中旧变更对象不再作为工作对象出现在 20-39 工作模型集合中
+  - [x] specs 中旧变更对象不再作为工作对象出现在 20-29 工作模型集合中
   - [x] Human Gate 和编号决策已收口：新规范落在 10，旧 25 号工作模型文件删除，不做短期兼容对象
   - [x] Study 工作模型由 26 补位为 25，现行 specs、Code、Web、测试和事实源引用不再出现 `specs/26-Study` 或 26 号 Study 入口
   - [x] 新的 Git 提交规范明确采用 Conventional Commits、提交内容使用简体中文、固定 footer 字段禁用，以及哪些规则可机器校验、哪些由 Human 审查兜底
@@ -77,7 +77,7 @@ orchestration:
     - specs/10-Git提交规范.md
     expected_output: 明确旧变更对象退出工作模型集合，新 Git 提交规范的编号、名称、canonical_path、边界、上位引用关系、旧 25 文件处理方式和历史引用迁移规则。
     status: done
-    result_summary: 已将 10 收口为 Git 提交规范，01/05/09/20-39 工作模型索引已改为不再收录旧变更对象。
+    result_summary: 已将 10 收口为 Git 提交规范，01/05/09/20-29 工作模型索引已改为不再收录旧变更对象。
     evidence_refs:
     - specs/10-Git提交规范.md
     - specs/05-事实模型基础规范.md

@@ -54,7 +54,7 @@ def test_field_registry_accepts_collection_owner(tmp_path):
     path = write_registry_doc(
         tmp_path / "05.03-字段注册与消费规范.md",
         common_rows=[
-            "| `source` | common | 输入来源 | reference | string | mixed_ref | none | 20-39 | ref | summary | active | none |"
+            "| `source` | common | 输入来源 | reference | string | mixed_ref | none | 20-29 | ref | summary | active | none |"
         ],
     )
 
@@ -85,6 +85,19 @@ def test_field_registry_reports_scope_owner_mismatch(tmp_path):
     issues = checker.field_registry_check([str(path)])
 
     assert any(issue.code == "FIELD_REGISTRY_OWNER_SCOPE_MISMATCH" for issue in issues)
+
+
+def test_field_registry_rejects_action_orchestration_owner(tmp_path):
+    path = write_registry_doc(
+        tmp_path / "05.03-字段注册与消费规范.md",
+        common_rows=[
+            "| `source` | common | 输入来源 | reference | string | mixed_ref | none | 30 | ref | summary | active | none |"
+        ],
+    )
+
+    issues = checker.field_registry_check([str(path)])
+
+    assert any(issue.code == "FIELD_REGISTRY_OWNER_INVALID" for issue in issues)
 
 
 def test_field_registry_reports_invalid_enum(tmp_path):

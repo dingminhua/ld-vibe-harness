@@ -31,7 +31,7 @@ orchestration:
       - [x] 已对无法直接清理或需要另行决策的问题形成明确阻塞/后续项，而不是自行缩小任务边界
     status: done
     result_summary: |-
-      verification: 已按 specs/20-39 现存历史机制子文档形成逐文件分类，当前执行用户确认的“先合并”策略；删除、归档或重命名仍需后续 Human Gate。
+      verification: 已按 specs/20-29 现存历史机制子文档形成逐文件分类，当前执行用户确认的“先合并”策略；删除、归档或重命名仍需后续 Human Gate。
 
       已合并回主规范或机制规范：
       - 21.01-Rules.md、21.02-Skill.md、21.03-Agent.md、21.04-Tools.md、21.05-Web.md、21.06-Contract.md：ADR 规则、Skill/Tools/Web 边界和 Contract 权威入口已在 21 主规范、运行 Rules、ldvh-adr Skill、tools 与 web 边界中明确；历史文件暂作迁移前资料。
@@ -80,7 +80,7 @@ orchestration:
 
       ## 验证结果
 
-      已完成 specs/20-39 历史机制子文档逐文件分类和合并回写，运行入口已收敛，fact_validate 和 specs_validate 校验通过，后续删除/归档候选清单已沉淀。
+      已完成 specs/20-29 历史机制子文档逐文件分类和合并回写，运行入口已收敛，fact_validate 和 specs_validate 校验通过，后续删除/归档候选清单已沉淀。
 
       ## 结论
 

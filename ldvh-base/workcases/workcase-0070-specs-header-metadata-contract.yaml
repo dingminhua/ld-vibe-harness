@@ -14,8 +14,8 @@ description: |
 success_criteria: |
   - [x] `specs/03-文档基础规范.md` 明确头部元信息是机器可读契约，而非普通文档装饰
   - [x] `specs/03.01-规范文档规范.md` 列出 specs 正式规范、子文档、studies、sources 的头部字段规则
-  - [x] `specs/03.02-事实模型文档规范.md` 明确 20-39 普通头部不得重复 `ldvh_member` 成员自描述字段
-  - [x] `specs/03.03-行动编排文档规范.md` 明确 40-59 普通头部不得重复 `ldvh_member` 成员自描述字段
+  - [x] `specs/03.02-事实模型文档规范.md` 明确 20-29 普通头部不得重复 `ldvh_member` 成员自描述字段
+  - [x] `specs/03.03-行动编排文档规范.md` 明确 30-59 普通头部不得重复 `ldvh_member` 成员自描述字段
   - [x] 设计结论写清头部元信息契约与成员自描述契约的边界
   - [x] 仅记录后续 Code 检查候选，不贸然扩大 `code/spec_checks/index.py` 判定范围
 source: |
@@ -62,7 +62,7 @@ orchestration:
     input_refs:
     - specs/03.02-事实模型文档规范.md
     - specs/03.03-行动编排文档规范.md
-    expected_output: 20-39 / 40-59 普通头部只承载文档身份和引用边界，集合事实只由文件名与 `ldvh_member` 承载。
+    expected_output: 20-29 / 30-59 普通头部只承载文档身份和引用边界，集合事实只由文件名与 `ldvh_member` 承载。
     status: done
     result_summary: 03.02 / 03.03 已明确普通头部只承载文档身份、定位、范围和引用；文件名与 `ldvh_member` 承载 spec_id、kind、collection_status、canonical_path 和各类 anchor，普通头部不得重复这些成员事实。
     evidence_refs:
@@ -79,7 +79,7 @@ orchestration:
 verification_evidence: |
   ## 验证计划
 
-  验证 0070 是否完成“标准化 specs 文件元信息契约”的设计目标：正式规范已写入头部元信息契约，20-39 / 40-59 双层元信息边界清楚，且当前 Code 校验未发现规范结构问题。
+  验证 0070 是否完成“标准化 specs 文件元信息契约”的设计目标：正式规范已写入头部元信息契约，20-29 / 30-59 双层元信息边界清楚，且当前 Code 校验未发现规范结构问题。
 
   ## 验证命令
 
@@ -93,8 +93,8 @@ verification_evidence: |
   修改范围：
   - `specs/03-文档基础规范.md`：将 Markdown 头部 `> 字段：值` 定义为人、AI、Code、Web 可共同消费的稳定机器接口，明确不默认改 YAML frontmatter。
   - `specs/03.01-规范文档规范.md`：新增 specs 正式规范、子文档、docs/studies、docs/sources 的头部字段规则表。
-  - `specs/03.02-事实模型文档规范.md`：明确 20-39 普通头部与 `ldvh_member` 分工，禁止普通头部重复 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 和 anchor 字段。
-  - `specs/03.03-行动编排文档规范.md`：明确 40-59 普通头部与 `ldvh_member` 分工，禁止普通头部重复流程成员身份、集合状态和 Code 消费锚点。
+  - `specs/03.02-事实模型文档规范.md`：明确 20-29 普通头部与 `ldvh_member` 分工，禁止普通头部重复 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 和 anchor 字段。
+  - `specs/03.03-行动编排文档规范.md`：明确 30-59 普通头部与 `ldvh_member` 分工，禁止普通头部重复流程成员身份、集合状态和 Code 消费锚点。
 
   确定性校验：
   - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过，diagnostics=0。
@@ -122,7 +122,7 @@ closure_evidence: |
   设计结论：
   - 头部元信息契约使用现有 `> 字段：值` 格式，作为人、AI、Code、Web 可共同消费的稳定机器接口。
   - 普通头部登记字段名、语义、内容格式和引用关系，不承载对象完整 schema、集合状态、Code 消费锚点或执行过程。
-  - 20-39 / 40-59 保持双层元信息：普通头部承载标题、定位、适用范围、上位依据和相关规范等人可读入口；文件名与 `ldvh_member` 承载 spec_id、kind、collection_status、canonical_path 和各类 anchor。
+  - 20-29 / 30-59 保持双层元信息：普通头部承载标题、定位、适用范围、上位依据和相关规范等人可读入口；文件名与 `ldvh_member` 承载 spec_id、kind、collection_status、canonical_path 和各类 anchor。
   - 本计划不修改 `code/spec_checks/index.py`，只记录后续检查候选。
 
   独立子 Agent 复审结论：
@@ -130,7 +130,7 @@ closure_evidence: |
   - web 子 Agent：通过。确认头部字段语义、适用文档类型、必填/可选规则足够 Web 展示和 AI 读取；双层元信息边界避免重复事实源；没有把 Web 展示需求反向变成多余字段。
 
   后续候选：
-  - 可单独设计 Code 诊断：20-39 / 40-59 普通头部不得出现 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 或各类 anchor。
+  - 可单独设计 Code 诊断：20-29 / 30-59 普通头部不得出现 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 或各类 anchor。
   - `docs/studies`、`docs/sources` 的头部字段规则已经写入 03.01，但当前 index.py 默认扫描边界仍是 `specs/*.md`，且内部仍有旧 `research/refs` doc_kind 命名；若后续要让 Code 校验 docs 资料区，应另起计划设计索引范围和命名迁移。
   - 2026-06-19 关闭审查确认：上述候选不属于 0070 的设计收口范围，已由 workcase-0075 承接为“元信息契约落地硬化”。
 

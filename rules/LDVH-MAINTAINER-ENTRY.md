@@ -99,15 +99,15 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 |---|---|---|
 | 理解 LDVH 总体规则 | `index` | `specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-目录说明.md`、`specs/02-术语规范.md` |
 | 修改 specs 正式规范 | `index`、`doc`、`refs`、`assurance` | `specs/03-文档基础规范.md`、`specs/03.01-规范文档规范.md`、`specs/04.01-规范保障声明规范.md`、目标规范 |
-| 修改或理解事实模型规范 | `index` | `specs/05-事实模型基础规范.md`、`specs/03.02-事实模型文档规范.md` 和对应 `specs/20-39` 事实模型规范 |
-| 处理行动编排规范 | `index`、`assurance-report` | `specs/06-行动编排基础规范.md`、`specs/03.03-行动编排文档规范.md` 和对应 `specs/40-59` 行动编排规范 |
+| 修改或理解事实模型规范 | `index` | `specs/05-事实模型基础规范.md`、`specs/03.02-事实模型文档规范.md` 和对应 `specs/20-29` 事实模型规范 |
+| 处理行动编排规范 | `index`、`assurance-report` | `specs/06-行动编排基础规范.md`、`specs/03.03-行动编排文档规范.md` 和对应 `specs/30-59` 行动编排规范 |
 | 处理规范保障、环境适配或适配措施 | `assurance-report`、`index` | `specs/04-规范保障与环境适配基础规范.md`、`specs/04.02-LDVH能力资产与保障机制规范.md`、`specs/04.03-环境入口适配与部署规范.md` |
 | 处理 Code、工具、脚本或校验 | 对应工具帮助、测试命令 | `specs/04.03-环境入口适配与部署规范.md`、`specs/07-Code确定性执行实现规范.md`、对应 `code/` 实现和 `tests/` |
 | 处理 Web 或 Human-facing 入口 | `index`、相关后端或 Web 校验 | `specs/08-Web信息同步实现规范.md` |
 | 准备 LDVH Git 提交 | `ldvh-git-commit`、`commit_validate.py` | `specs/10-Git提交规范.md`、`skills/ldvh-git-commit/SKILL.md`、`hooks/ldvh-hooks.yaml` |
 | 处理 LDVH 自身工作对象 | `governed-projects`、`fact_cli.py list/search/show/stats` | 转入 `rules/LDVH-WORKSPACE-ENTRY.md`，按 dogfood 管辖项目处理 |
 
-场景同时命中多个入口时，选择最小足够查询和读取集。涉及正式规范变更、规范保障要求变化、部署适配缺口、适配措施漂移或 Code/Web/Skill/Agent/Hook/CI 边界变化时，应读取 `specs/06-行动编排基础规范.md`、`specs/03.03-行动编排文档规范.md` 和 `specs/40-59` 中实际存在的行动编排主文件，判断是否存在 active 具体行动编排。
+场景同时命中多个入口时，选择最小足够查询和读取集。涉及正式规范变更、规范保障要求变化、部署适配缺口、适配措施漂移或 Code/Web/Skill/Agent/Hook/CI 边界变化时，应读取 `specs/06-行动编排基础规范.md`、`specs/03.03-行动编排文档规范.md` 和 `specs/30-59` 中实际存在的行动编排主文件，判断是否存在 active 具体行动编排。
 
 ---
 ## 5. STOP 点
