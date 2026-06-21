@@ -127,14 +127,14 @@ archived -> active
 
 ### 4.1 工作域与工作项
 
-工作域通过 WorkCase 的 `workarea` 字段被引用。工作项必须归属一个工作域。
+工作域通过 WorkCase 的 `workarea` 字段被引用。工作项必须归属一个工作域，且该归属事实只由 WorkCase 的 `workarea` 字段维护。
 
 规则如下：
 
 1. 工作域不直接管理执行项；
 2. 工作域不保存执行编排、执行步骤或关闭证据；
 3. 工作域可以通过派生展示聚合其下工作项的状态、产物和风险；
-4. 工作域的 `workcases` 字段记录归属本工作域的 WorkCase ID 列表，与 WorkCase 的 `workarea` 字段构成双向引用；Code 发现双向引用不一致时应报告诊断；
+4. 工作域不维护 `workcases` 事实源字段；Code / Web 需要展示某个工作域下的工作项时，应扫描 WorkCase 集合并按 `workarea` 反向聚合；
 5. 工作项关闭后不改变工作域状态；
 6. 一个工作域可以长期产生多个工作项。
 
@@ -177,7 +177,6 @@ ADR、Spark、Pitfall 可以引用工作域，用于表达某条决策、火花�
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_sparks` | 关联火花 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `workcases` | 所属 WorkCase ID 列表 | list[string] | 否 | 默认为空列表；由 WorkCase 的 `workarea` 反向聚合 | Reference | AI、Code、Web |
 | `archive_reason` | — | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Code、Web |
 
 ### 6.1 YAML 示例
@@ -201,7 +200,6 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-workcases: []
 ```
 
 ---
@@ -217,7 +215,7 @@ Code 应检查：
 1. 文件名、ID、type、status 合法；
 2. `archived` 状态必须提供 `archive_reason`；
 3. 工作域不出现工作项执行项的执行状态字段；
-4. `workcases` 中每个 WorkCase 必须存在且 `workarea` 指回当前工作域；
+4. 工作域不得继续维护 `workcases` 事实源字段；历史字段应迁移为由 WorkCase `workarea` 反向聚合的派生展示；
 5. 引用字段格式和路径存在性。
 
 Web 应显示工作域列表和详情，但不得把工作域展示为“待关闭”对象。

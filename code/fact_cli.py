@@ -628,7 +628,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_adrs"] = []
         data["related_sparks"] = []
         data["related_pitfalls"] = []
-        data["workcases"] = []
     if object_type == "workcase":
         data["priority"] = "P2"
         data["orchestration"] = _default_workcase_orchestration()

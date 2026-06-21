@@ -12,26 +12,3 @@ related_adrs: []
 related_sparks:
 - spark-0010
 related_pitfalls: []
-workcases:
-- workcase-0060
-- workcase-0061
-- workcase-0062
-- workcase-0063
-- workcase-0064
-- workcase-0065
-- workcase-0066
-- workcase-0067
-- workcase-0069
-- workcase-0070
-- workcase-0071
-- workcase-0072
-- workcase-0073
-- workcase-0074
-- workcase-0075
-- workcase-0076
-- workcase-0077
-- workcase-0078
-- workcase-0079
-- workcase-0080
-- workcase-0081
-- workcase-0082

@@ -149,7 +149,9 @@ human_closure_confirming -> subagents_plan_reviewing
 
 ### 4.1 工作项与工作域
 
-每个工作项必须通过 `workarea` 引用一个工作域。工作项不得脱离工作域存在。
+每个工作项必须通过 `workarea` 引用一个工作域。工作项不得脱离工作域存在，且 `workarea` 是工作项归属工作域的唯一权威事实源字段。
+
+WorkArea 不反向维护所属 WorkCase ID 列表。Code / Web 需要展示某个 WorkArea 下有哪些 WorkCase 时，应扫描 WorkCase 集合并按 `workarea` 反向聚合；该聚合结果是派生视图，不得回写为 WorkArea YAML 字段。
 
 ### 4.2 工作项与执行项
 
@@ -285,7 +287,7 @@ Human Gate 发生在工作项层。执行项、角色说明、子 Agent 输出�
 | `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
 | `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
 | `updated` | 更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
-| `workarea` | 所属工作域 ID | string | 是 | 必须引用已存在 WorkArea | Reference | AI、Code、Web |
+| `workarea` | 所属工作域 ID | string | 是 | 必须引用已存在 WorkArea；这是工作项归属工作域的唯一权威事实源字段 | Reference | AI、Code、Web |
 | `priority` | 执行优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
 | `description` | 目标背景、范围和问题说明 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `success_criteria` | 工作项成功标准 | string | 是 | 应使用 checklist 或等价可验证条目支持关闭审查 | Checklist | AI、Code、Web |

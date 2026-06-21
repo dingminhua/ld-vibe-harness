@@ -73,7 +73,7 @@ REQUIRED_FIELDS = {
     "study": ["id", "type", "title", "status", "created", "updated", "summary"],
 }
 LIST_FIELDS = {
-    "workarea": {"related_adrs", "related_sparks", "related_pitfalls", "related_docs", "workcases"},
+    "workarea": {"related_adrs", "related_sparks", "related_pitfalls", "related_docs"},
     "workcase": {"related_adrs", "related_sparks", "related_pitfalls", "related_docs", "related_workcases"},
     "adr": {
         "related_workareas", "related_workcases",
@@ -708,24 +708,9 @@ def validate_single_id_reference(path: Path, data: dict[str, Any], field: str, o
 def validate_workarea(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "workarea")
     if "taskplans" in data:
-        issues.append(Issue(str(path), "error", "REMOVED_WORKAREA_FIELD", "WorkArea 不得继续维护旧字段 taskplans；当前事实源只使用 workcases", field="taskplans"))
-    project_root = infer_project_root(path)
-    workarea_id = data.get("id")
-    workcases = data.get("workcases")
-    if isinstance(workcases, list) and isinstance(workarea_id, str):
-        for workcase_id in workcases:
-            if not isinstance(workcase_id, str) or not ID_PATTERNS["workcase"].match(workcase_id):
-                issues.append(Issue(str(path), "error", "INVALID_WORKCASE_REFERENCE", f"workcases 中必须使用 workcase-{{NNNN}} 格式的 WorkCase ID: {workcase_id}", field="workcases"))
-                continue
-            workcase_path, workcase_data, load_issue = find_object_by_id(project_root, "workcase", workcase_id)
-            if load_issue:
-                issues.append(load_issue)
-                continue
-            if workcase_path is None or workcase_data is None:
-                issues.append(Issue(str(path), "error", "WORKCASE_NOT_FOUND", f"workcases 引用的 WorkCase 不存在: {workcase_id}", field="workcases"))
-                continue
-            if workcase_data.get("workarea") != workarea_id:
-                issues.append(Issue(str(path), "error", "WORKAREA_BACKREF_MISMATCH", f"WorkCase 未通过 workarea 指回当前工作域: {workcase_id}", field="workcases"))
+        issues.append(Issue(str(path), "error", "REMOVED_WORKAREA_FIELD", "WorkArea 不得继续维护旧字段 taskplans；当前事实源只使用 WorkCase.workarea 表达工作项归属", field="taskplans"))
+    if "workcases" in data:
+        issues.append(Issue(str(path), "error", "REMOVED_WORKAREA_FIELD", "WorkArea 不得继续维护 workcases；工作域下的 WorkCase 列表应由 WorkCase.workarea 反向聚合派生", field="workcases"))
     if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
         issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态必须提供非空字段: archive_reason", field="archive_reason"))
     return issues

@@ -15,20 +15,3 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-workcases:
-- workcase-0007
-- workcase-0009
-- workcase-0010
-- workcase-0011
-- workcase-0012
-- workcase-0013
-- workcase-0014
-- workcase-0015
-- workcase-0016
-- workcase-0017
-- workcase-0018
-- workcase-0021
-- workcase-0024
-- workcase-0026
-- workcase-0052
-- workcase-0053

@@ -172,7 +172,7 @@ interface ObjectItem {
   path: string;
   updated: string;
   priority?: string;                  // WorkCase / Spark 信号字段，只读展示
-  workcases?: RelatedWorkCaseSummary[];       // WorkArea 列表项
+  workcases?: RelatedWorkCaseSummary[];       // WorkArea 列表项；由 WorkCase.workarea 派生
   workcaseTotal?: number;
   workcaseClosed?: number;
   workcaseReviewNeeded?: number;

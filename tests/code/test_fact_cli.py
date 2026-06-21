@@ -90,6 +90,17 @@ def test_create_workcase_uses_current_contract(tmp_path):
     assert "completion_evidence" not in data
 
 
+def test_create_workarea_does_not_write_workcases_backref(tmp_path):
+    result = run_cli("create", "workarea", "--title", "Core Area", "--base-dir", str(tmp_path))
+
+    assert result.returncode == 0, result.stderr
+    path = Path(result.stdout.strip())
+    data = read_yaml(path)
+    assert data["id"] == "workarea-0001"
+    assert data["type"] == "workarea"
+    assert "workcases" not in data
+
+
 def test_create_study_defaults_to_active(tmp_path):
     result = run_cli("create", "study", "--title", "Stable Study", "--base-dir", str(tmp_path))
 

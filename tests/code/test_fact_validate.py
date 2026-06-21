@@ -74,8 +74,6 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-workcases:
-  - workcase-0001
 """,
     )
     workcase = write_yaml(
@@ -1351,6 +1349,18 @@ def test_workarea_taskplans_field_is_no_longer_allowed(tmp_path):
     assert result.returncode == 1
     assert "REMOVED_WORKAREA_FIELD" in result.stdout
     assert "taskplans" in result.stdout
+
+
+def test_workarea_workcases_field_is_no_longer_allowed(tmp_path):
+    root, _ = write_valid_workcase_tree(tmp_path)
+    workarea = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
+    workarea.write_text(workarea.read_text(encoding="utf-8") + "workcases:\n  - workcase-0001\n", encoding="utf-8")
+
+    result = run_checker(root / "ldvh-base")
+
+    assert result.returncode == 1
+    assert "REMOVED_WORKAREA_FIELD" in result.stdout
+    assert "workcases" in result.stdout
 
 
 def test_workcase_legacy_fields_are_errors(tmp_path):

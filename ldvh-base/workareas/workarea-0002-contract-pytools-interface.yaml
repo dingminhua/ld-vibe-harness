@@ -19,6 +19,3 @@ related_sparks: []
 related_pitfalls: []
 archive_reason: |
   Python Tools 管理的早期契约试点范围已不再作为当前推进范围承载新的任务计划。
-workcases:
-- workcase-0003
-- workcase-0019
