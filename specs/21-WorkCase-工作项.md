@@ -53,6 +53,8 @@ WorkCase / 工作项是 Human 与 AI 围绕一次目标达成的工作事实契�
 
 主控 AI 在 WorkCase 创建前可以起草方案草稿；该起草动作不是 WorkCase 状态。只有当草稿已经足以被第三方子 Agent 审核时，才创建 WorkCase 并进入方案审核。Human 主要确认方案是否允许执行和结果是否允许关闭；AI 负责在工作项内部安排执行项、调度角色或专业视角、完成验证、整理证据并接受独立复核。执行项只属于 WorkCase 内部编排，不作为独立工作模型，不进入 20-39 集合，也不在 `ldvh-base/` 下形成独立事实实例。
 
+WorkCase 创建前必须先在对话中完成人和 AI 的需求对齐。Human 决定“需要创建 WorkCase”后，主控 AI 应立即创建 WorkCase，并连续完成方案审核编排、子 Agent / 第三方审核 Agent 方案审核和主控处理记录；该创建后审核链路是固定动作，不再插入额外 Human 确认。方案审核完成后才进入 `human_plan_confirming`，由 Human 在执行前对目标、范围、成功标准、执行颗粒度和约束进行确认。执行开始后，主控不得因普通执行问题再次要求“行动前确认”；问题应先按已确认范围处理并回写状态、证据、自检、风险或后续分流，只有越出已确认范围、改变成功标准、引入破坏性副作用或触发事实源边界时才退回 Human Gate。
+
 ### 1.1 工作项准入条件
 
 一个目标满足以下条件之一时，应形成工作项：
@@ -129,7 +131,7 @@ human_closure_confirming -> subagents_plan_reviewing
 | 流转 | 触发条件 | 说明 |
 |---|---|---|
 | `subagents_plan_reviewing` -> `human_plan_confirming` | 方案审核完成，主控已处理审核意见，允许提交 Human 确认 | `plan_review.review_items` 应记录审核 Agent、提示上下文、输入引用、重点结论和签署声明；`plan_review.controller_resolution` 应记录主控如何采纳、拒绝、修改或提交争议 |
-| `human_plan_confirming` -> `executing` | Human 确认方案允许执行 | 应填写 `plan_confirmed_at`，并保留 Human 方案确认决策；方案审核阶段的 `unresolved_items` 必须已被 Human 确认覆盖、改入执行范围、降级为后续事项或退回重审，不得带着行动前未确认事项进入执行 |
+| `human_plan_confirming` -> `executing` | Human 确认方案允许执行 | 应填写 `plan_confirmed_at`，并保留 Human 对目标、范围、成功标准、执行颗粒度和约束的方案确认决策；方案审核阶段的 `unresolved_items` 必须已被 Human 确认覆盖、改入执行范围、降级为后续事项或退回重审，不得带着行动前未确认事项进入执行 |
 | `executing` -> `result_self_checking` | 主控认为执行结果已足以进入收口自检 | 执行项结果、阻塞、跳过或分流情况应已更新 |
 | `result_self_checking` -> `subagents_result_reviewing` | 主控完成结果自检 | `result_review.controller_self_check` 应记录自检上下文、结论、证据和签署声明 |
 | `subagents_result_reviewing` -> `human_closure_confirming` | 结果复核完成，主控已处理复核意见，允许提交 Human 关闭确认 | `result_review.review_items` 应记录复核 Agent、提示上下文、输入引用、重点结论和签署声明；`result_review.controller_resolution` 应记录主控如何采纳、拒绝、修改或提交争议 |
@@ -256,14 +258,15 @@ WorkCase 的“完成”口径必须区分四层：
 
 以下情况应评估 Human Gate：
 
-1. 创建、删除或重命名工作项；
-2. 将用户输入、Spark 或临时讨论升级为工作项；
-3. 将方案审核结果从 `subagents_plan_reviewing` 提交到 `human_plan_confirming`；
-4. 确认 `human_plan_confirming` -> `executing`；
-5. 将工作项从 `human_closure_confirming` 关闭为 `closed`；
-6. 改写目标、成功标准、执行编排或关闭判断；
-7. 跳过未验证执行项或通过豁免关闭工作项；
-8. 合并、拆分或重新组织工作项。
+1. 将用户输入、Spark 或临时讨论升级为工作项前，Human 必须明确决定创建 WorkCase；
+2. 删除或重命名工作项；
+3. 确认 `human_plan_confirming` -> `executing`，即在执行前确认目标、范围、成功标准、执行颗粒度和约束；
+4. 将工作项从 `human_closure_confirming` 关闭为 `closed`；
+5. 改写目标、成功标准、执行编排或关闭判断；
+6. 跳过未验证执行项或通过豁免关闭工作项；
+7. 合并、拆分或重新组织工作项。
+
+Human 决定创建 WorkCase 后，创建事实源、进入 `subagents_plan_reviewing`、协调方案审核子 Agent、记录审核结果和形成 `controller_resolution` 是连续的 AI 内部动作，不应再次请求 Human 介入。只有方案审核完成且需要进入执行前确认时，才进入 `human_plan_confirming` 等待 Human 对齐颗粒度；若方案审核本身发现必须由 Human 裁决的范围、命名、成功标准或风险，应通过 `controller_resolution.unresolved_items` 提交到该确认 Gate。
 
 Human Gate 发生在工作项层。执行项、角色说明、子 Agent 输出和工具结果不作为 Human 直接管理入口；它们必须回到工作项证据或对应工作对象后才成为稳定事实。
 
@@ -345,6 +348,8 @@ Human Gate 发生在工作项层。执行项、角色说明、子 Agent 输出�
 `plan_review` 和 `result_review` 不创建独立 Review 工作对象，但它们是 WorkCase 内部权威审核事实。审核记录必须能回答：哪个 Agent 审核、以什么角色审核、当时获得的提示上下文和输入引用是什么、审核结论是什么、主控如何处理审核意见、何时签署。没有真实密码学能力时，签署为可审计 attestation，不得伪装成密钥签名。
 
 WorkCase 只记录审核事实和可决策摘要，不记录子 Agent 审核原文全文。审核条目应保留关键发现、关键建议、必须修改项和证据引用；完整原文只有在高风险审核、争议审核或 Human Gate 需要时，才通过可选 `raw_output_ref` 指向外部稳定位置。
+
+当 `orchestration_owner` 为 `main_controller` 时，`review_items[].agent_name` 必须指向独立子 Agent、第三方审核 Agent 或可辨识的专业审核主体，不得填写主控自身标识来替代审核。主控可以编排、汇总和处理审核意见，但不得用 `codex-main-controller`、`main_controller` 或等价主控名在 `review_items` 中自签充当子 Agent。若由专门 workflow 接管审核，应将 `orchestration_owner` 设为 `workflow` 并填写 `workflow_ref`，由 workflow 记录自身可追溯的审核主体。
 
 子 Agent 审核完成后，主控必须形成 `controller_resolution`。主控不得改写 `review_items` 中的原始审核结论；主控只能采纳、拒绝、归并、提交 Human 裁决，或修改 WorkCase 的方案、成功标准、执行编排、验证证据、关闭证据、残留风险等字段。凡主控根据审核意见修改 WorkCase 字段，必须追加 `revision_history`；若修改影响本轮审核对象本身，必须回到对应的子 Agent 审核状态重新审核。
 

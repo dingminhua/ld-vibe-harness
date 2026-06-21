@@ -1386,6 +1386,58 @@ def test_current_closed_workcase_contract_validates(tmp_path):
     assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
 
 
+def test_workcase_review_item_warns_when_self_signed_by_controller(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="human_plan_confirming")
+    add_current_review_contract(workcase)
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8").replace(
+            "    review_items: []",
+            """    review_items:
+      - id: plan-review-1
+        role: specs-reviewer
+        agent_name: codex-main-controller
+        requested_at: "2026-06-12T00:05:00"
+        result:
+          status: pass
+""",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(workcase)
+
+    assert result.returncode == 0
+    assert "WORKCASE_REVIEW_ITEM_SELF_SIGNED" in result.stdout
+    assert "warnings=1" in result.stdout
+
+
+def test_workcase_revision_history_requires_transition_fields(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="human_closure_confirming")
+    add_current_review_contract(workcase)
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8")
+        + """
+revision_history:
+  - revised_at: "2026-06-12T00:30:00"
+    actor: test-controller
+    reason: Test revision.
+    changed_fields:
+      - status
+    summary: Missing transition fields.
+""",
+        encoding="utf-8",
+    )
+
+    result = run_checker(workcase)
+
+    assert result.returncode == 1
+    assert "LEGACY_WORKCASE_REVISION_TIME_FIELD" in result.stdout
+    assert "MISSING_WORKCASE_REVISION_FIELD" in result.stdout
+    assert "from_status" in result.stdout
+    assert "to_status" in result.stdout
+
+
 def test_executing_workcase_warns_when_all_execution_items_are_pending(tmp_path):
     _, workcase = write_valid_workcase_tree(tmp_path, status="executing")
     add_current_review_contract(workcase)

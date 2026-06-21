@@ -616,7 +616,10 @@ residual_risks:
 - Git commit history 不在本次普通迁移改写范围内；当前工作树和产品入口已清理。
 followup_refs: []
 revision_history:
-- revised_at: '2026-06-21T09:50:07+08:00'
+- at: '2026-06-21T09:50:07+08:00'
+  from_status: subagents_plan_reviewing
+  to_status: human_plan_confirming
+  actor: codex-main-controller
   reason: 用户纠正“跨项目归属直接进入 WorkCase 字段契约”属于范围扩展，要求本 WorkCase 不涉及跨项目，未来再说。
   changed_fields:
   - goal
@@ -626,7 +629,10 @@ revision_history:
   - orchestration.plan_review.review_items[plan-review-1]
   - orchestration.plan_review.controller_resolution
   summary: 已从本 WorkCase 的目标、成功标准、审核结论和待确认项中移除跨项目字段承接要求，改为明确不处理跨项目或项目归属字段。
-- revised_at: '2026-06-21T10:25:51+08:00'
+- at: '2026-06-21T10:25:51+08:00'
+  from_status: executing
+  to_status: subagents_result_reviewing
+  actor: codex-main-controller
   reason: 实现完成并进入用户要求的子 agent 结果复查流程。
   changed_fields:
   - status
@@ -638,7 +644,10 @@ revision_history:
   - closure_evidence
   - residual_risks
   summary: 已完成 WorkArea 当前产品痕迹的一次性移除、验证和主控自检；当前状态推进为 subagents_result_reviewing。
-- revised_at: '2026-06-21T10:39:18+08:00'
+- at: '2026-06-21T10:39:18+08:00'
+  from_status: subagents_result_reviewing
+  to_status: human_closure_confirming
+  actor: codex-main-controller
   reason: 子 agent 结果复查完成，修复 validator 行为阻断项并回写复查结论。
   changed_fields:
   - status

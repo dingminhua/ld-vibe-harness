@@ -53,6 +53,15 @@ WORKCASE_STATUSES_REQUIRING_RESULT_SELF_CHECK = {"subagents_result_reviewing", "
 WORKCASE_STATUSES_REQUIRING_CLOSURE_REQUEST = {"human_closure_confirming", "closed"}
 WORKCASE_STATUSES_WITH_CLOSED_EXECUTION = {"result_self_checking", "subagents_result_reviewing", "human_closure_confirming", "closed", "review_needed"}
 WORKCASE_CLOSURE_OUTCOMES = {"completed", "partial_completed", "cancelled", "superseded", "invalid", "degraded_accepted"}
+WORKCASE_CONTROLLER_REVIEW_AGENT_NAMES = {
+    "codex-main-controller",
+    "codex_main_controller",
+    "main-controller",
+    "main_controller",
+    "controller",
+    "主控",
+    "主控ai",
+}
 VALID_STATUSES = {
     "workcase": WORKCASE_CURRENT_STATUSES | WORKCASE_LEGACY_STATUSES,
     "adr": {"active", "archived", "deprecated"},
@@ -886,6 +895,7 @@ def validate_workcase(path: Path, data: dict[str, Any]) -> list[Issue]:
         issues.append(Issue(str(path), "error", "MISSING_WORKCASE_CLOSED_AT", "closed 状态必须提供非空字段: closed_at", field="closed_at"))
     if uses_current_review_contract and status == "closed" and is_empty(data.get("closure_outcome")):
         issues.append(Issue(str(path), "error", "MISSING_WORKCASE_CLOSURE_OUTCOME", "closed 状态必须提供非空字段: closure_outcome", field="closure_outcome"))
+    issues.extend(validate_workcase_revision_history(path, data))
     return issues
 
 
@@ -920,6 +930,19 @@ def validate_workcase_review_section(path: Path, section: dict[str, Any], field_
             for required_field in ("id", "role", "agent_name", "requested_at"):
                 if is_empty(item.get(required_field)):
                     issues.append(Issue(str(path), "error", "MISSING_REVIEW_ITEM_FIELD", f"{item_prefix} 缺少非空字段: {required_field}", field=f"{item_prefix}.{required_field}"))
+            agent_name = item.get("agent_name")
+            if (
+                owner == "main_controller"
+                and isinstance(agent_name, str)
+                and agent_name.strip().lower() in WORKCASE_CONTROLLER_REVIEW_AGENT_NAMES
+            ):
+                issues.append(Issue(
+                    str(path),
+                    "warning",
+                    "WORKCASE_REVIEW_ITEM_SELF_SIGNED",
+                    f"{item_prefix}.agent_name 使用主控标识，不能作为独立子 Agent / 第三方审核 Agent 的审核事实；应补充真实审核主体，或改由 workflow_ref 记录专门流程接管",
+                    field=f"{item_prefix}.agent_name",
+                ))
             prompt_context = item.get("prompt_context")
             if prompt_context is not None and not isinstance(prompt_context, dict):
                 issues.append(Issue(str(path), "error", "INVALID_REVIEW_PROMPT_CONTEXT", f"{item_prefix}.prompt_context 必须是 object", field=f"{item_prefix}.prompt_context"))
@@ -965,6 +988,41 @@ def validate_workcase_review_section(path: Path, section: dict[str, Any], field_
                         f"{result_field}.required_changes 必须是 list；没有必须修改项时填写空列表",
                         field=f"{result_field}.required_changes",
                     ))
+    return issues
+
+
+def validate_workcase_revision_history(path: Path, data: dict[str, Any]) -> list[Issue]:
+    issues: list[Issue] = []
+    revision_history = data.get("revision_history")
+    if revision_history is None:
+        return issues
+    if not isinstance(revision_history, list):
+        return [Issue(str(path), "error", "INVALID_WORKCASE_REVISION_HISTORY", "revision_history 必须是 list", field="revision_history")]
+
+    for index, item in enumerate(revision_history, start=1):
+        item_field = f"revision_history[{index}]"
+        if not isinstance(item, dict):
+            issues.append(Issue(str(path), "error", "INVALID_WORKCASE_REVISION_HISTORY_ITEM", f"{item_field} 必须是 object", field=item_field))
+            continue
+        if "revised_at" in item and "at" not in item:
+            issues.append(Issue(
+                str(path),
+                "error",
+                "LEGACY_WORKCASE_REVISION_TIME_FIELD",
+                f"{item_field} 必须使用 at，不得使用旧字段 revised_at",
+                field=f"{item_field}.revised_at",
+            ))
+        for field in ("at", "from_status", "to_status", "actor", "reason", "changed_fields", "summary"):
+            if is_empty(item.get(field)):
+                issues.append(Issue(str(path), "error", "MISSING_WORKCASE_REVISION_FIELD", f"{item_field} 缺少非空字段: {field}", field=f"{item_field}.{field}"))
+        for status_field in ("from_status", "to_status"):
+            status_value = item.get(status_field)
+            if isinstance(status_value, str) and status_value not in WORKCASE_CURRENT_STATUSES:
+                valid_statuses = ", ".join(sorted(WORKCASE_CURRENT_STATUSES))
+                issues.append(Issue(str(path), "error", "INVALID_WORKCASE_REVISION_STATUS", f"{item_field}.{status_field} 必须属于当前 WorkCase 状态: {valid_statuses}", field=f"{item_field}.{status_field}"))
+        changed_fields = item.get("changed_fields")
+        if changed_fields is not None and not isinstance(changed_fields, list):
+            issues.append(Issue(str(path), "error", "INVALID_WORKCASE_REVISION_CHANGED_FIELDS", f"{item_field}.changed_fields 必须是 list", field=f"{item_field}.changed_fields"))
     return issues
 
 
