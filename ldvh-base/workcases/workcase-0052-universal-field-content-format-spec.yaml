@@ -22,7 +22,7 @@ orchestration:
     input_refs:
     - task-0052
     expected_output: |
-      - [x] 创建 specs/05.02-事实模型字段内容与格式规范.md
+      - [x] 创建 specs/05.02-字段内容与格式规范.md
       - [x] 定义 Narrative / Checklist / Evidence / Decision / Reference / Log 六种内容格式的边界和书写规则
       - [x] 建立现有对象字段到内容格式的映射表
       - [x] 明确 Tools（fact_validate.py 等）校验消费规则
@@ -41,7 +41,7 @@ orchestration:
 
       closure_evidence: ## 验证结果
 
-      - specs/05.02-事实模型字段内容与格式规范.md 已创建（407行），包含11个章节
+      - specs/05.02-字段内容与格式规范.md 已创建（407行），包含11个章节
       - 六种内容格式（Narrative/Checklist/Evidence/Decision/Reference/Log）边界和书写规则已定义
       - 六类对象字段映射表已建立
       - Tools 校验消费规则已明确（error/warning/暂不校验三级）
@@ -53,7 +53,7 @@ orchestration:
 
       12号规范文档完整创建，Tools和Web落地任务（task-0053/0054）均已关闭。
     evidence_refs:
-    - specs/05.02-事实模型字段内容与格式规范.md
+    - specs/05.02-字段内容与格式规范.md
     - specs/03-文档基础规范.md
     - specs/09-事实源边界与承载规范.md
     - specs/07-Code确定性执行实现规范.md

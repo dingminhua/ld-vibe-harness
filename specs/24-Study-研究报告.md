@@ -17,8 +17,8 @@ ldvh_doc:
     - "specs/05-事实模型基础规范.md"
   related_specs:
     - "specs/03.01-规范文档规范.md"
-    - "specs/05.01-事实模型字段定义与语义规范.md"
-    - "specs/05.02-事实模型字段内容与格式规范.md"
+    - "specs/05.01-字段定义与语义规范.md"
+    - "specs/05.02-字段内容与格式规范.md"
     - "specs/10-Git提交规范.md"
     - "specs/20-Spark-火花.md"
   code_consumption:
@@ -92,7 +92,7 @@ Study 是 Markdown 工作对象。每个实例使用 YAML frontmatter 承载结�
 |---|---|
 | Study 事实模型规范 | `specs/24-Study-研究报告.md` |
 | Study 实例 | `ldvh-base/studies/` |
-| Study 字段内容格式 | `specs/05.02-事实模型字段内容与格式规范.md` |
+| Study 字段内容格式 | `specs/05.02-字段内容与格式规范.md` |
 | Study 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 Study 不替代 `docs/studies/`。`docs/studies/` 仍是可变内部研究资料区；Study 是被提升为工作对象后的稳定报告事实源。
@@ -169,7 +169,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 
 ### 6.1 Frontmatter 字段表
 
-公共字段语义定义见 `specs/05.01-事实模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
+公共字段语义定义见 `specs/05.01-字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
 
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
@@ -190,7 +190,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `related_docs` | 后续引用或承接文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `archive_reason` | 归档原因 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Human |
 
-字段内容格式按 `specs/05.02-事实模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。Study 不得维护 `source`、`source_detail` 或 `source_docs`；用户侧调研出发点统一写入 `user_intent`，外部网页资料统一写入 `urls`。
+字段内容格式按 `specs/05.02-字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。Study 不得维护 `source`、`source_detail` 或 `source_docs`；用户侧调研出发点统一写入 `user_intent`，外部网页资料统一写入 `urls`。
 
 ### 6.2 正文契约
 

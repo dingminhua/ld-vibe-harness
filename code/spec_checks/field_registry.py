@@ -9,7 +9,7 @@ from .index import SpecsChecker
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SPECS_DIR = PROJECT_ROOT / "specs"
-FIELD_REGISTRY_SPEC_NAME = "05.03-事实模型字段注册与消费规范.md"
+FIELD_REGISTRY_SPEC_NAME = "05.03-字段注册与消费规范.md"
 WORKCASE_SPEC_NAME = "21-WorkCase-工作项.md"
 REQUIRED_REGISTRY_SECTION_TITLES = {"通用字段注册", "对象特有字段注册"}
 REGISTRY_SECTION_TITLES = {*REQUIRED_REGISTRY_SECTION_TITLES, "WorkCase 试点字段注册"}

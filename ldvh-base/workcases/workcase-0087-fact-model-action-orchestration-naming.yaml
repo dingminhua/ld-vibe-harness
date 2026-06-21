@@ -60,17 +60,17 @@ orchestration:
     mode: single
     input_refs:
     - specs/05-事实模型基础规范.md
-    - specs/05.01-事实模型字段定义与语义规范.md
-    - specs/05.02-事实模型字段内容与格式规范.md
-    - specs/05.03-事实模型字段注册与消费规范.md
+    - specs/05.01-字段定义与语义规范.md
+    - specs/05.02-字段内容与格式规范.md
+    - specs/05.03-字段注册与消费规范.md
     - specs/03.02-事实模型文档规范.md
     expected_output: 给出 05、05.01、05.02、05.03 的候选标题、路径迁移策略、canonical_path 影响和是否保留旧文件名的建议。
     status: done
     result_summary: 05.01、05.02、05.03 标题收敛为职责型标题；本轮不重命名实际文件路径，canonical_path 保持现有路径以避免与 0086 编号迁移混杂。
     evidence_refs:
-    - specs/05.01-事实模型字段定义与语义规范.md
-    - specs/05.02-事实模型字段内容与格式规范.md
-    - specs/05.03-事实模型字段注册与消费规范.md
+    - specs/05.01-字段定义与语义规范.md
+    - specs/05.02-字段内容与格式规范.md
+    - specs/05.03-字段注册与消费规范.md
     blocking_reason: null
   - id: item-3
     title: 评估 06 与 40-59 行动编排总协调职责
@@ -239,9 +239,9 @@ orchestration:
         - specs/03.02-事实模型文档规范.md
         - specs/03.03-行动编排文档规范.md
         - specs/05-事实模型基础规范.md
-        - specs/05.01-事实模型字段定义与语义规范.md
-        - specs/05.02-事实模型字段内容与格式规范.md
-        - specs/05.03-事实模型字段注册与消费规范.md
+        - specs/05.01-字段定义与语义规范.md
+        - specs/05.02-字段内容与格式规范.md
+        - specs/05.03-字段注册与消费规范.md
         - specs/06-行动编排基础规范.md
         - specs/20-Spark-火花.md
         - specs/21-WorkCase-工作项.md
@@ -442,9 +442,9 @@ orchestration:
         - specs/03.02-事实模型文档规范.md
         - specs/03.03-行动编排文档规范.md
         - specs/05-事实模型基础规范.md
-        - specs/05.01-事实模型字段定义与语义规范.md
-        - specs/05.02-事实模型字段内容与格式规范.md
-        - specs/05.03-事实模型字段注册与消费规范.md
+        - specs/05.01-字段定义与语义规范.md
+        - specs/05.02-字段内容与格式规范.md
+        - specs/05.03-字段注册与消费规范.md
         - specs/06-行动编排基础规范.md
         - specs/40-action-orchestration-design-audit-行动编排设计审核.md
         - specs/41-fact-model-audit-事实模型审核.md
@@ -472,9 +472,9 @@ orchestration:
         - specs/02-术语规范.md:189
         - specs/02-术语规范.md:204
         - specs/05-事实模型基础规范.md:1
-        - specs/05.01-事实模型字段定义与语义规范.md:1
-        - specs/05.02-事实模型字段内容与格式规范.md:1
-        - specs/05.03-事实模型字段注册与消费规范.md:1
+        - specs/05.01-字段定义与语义规范.md:1
+        - specs/05.02-字段内容与格式规范.md:1
+        - specs/05.03-字段注册与消费规范.md:1
         - specs/06-行动编排基础规范.md:94
         - specs/41-fact-model-audit-事实模型审核.md:60
         - /tmp/ldvh-old-terms-0087.txt
@@ -631,9 +631,9 @@ related_docs:
 - specs/03.02-事实模型文档规范.md
 - specs/03.03-行动编排文档规范.md
 - specs/05-事实模型基础规范.md
-- specs/05.01-事实模型字段定义与语义规范.md
-- specs/05.02-事实模型字段内容与格式规范.md
-- specs/05.03-事实模型字段注册与消费规范.md
+- specs/05.01-字段定义与语义规范.md
+- specs/05.02-字段内容与格式规范.md
+- specs/05.03-字段注册与消费规范.md
 - specs/06-行动编排基础规范.md
 - specs/20-Spark-火花.md
 - specs/21-WorkCase-工作项.md

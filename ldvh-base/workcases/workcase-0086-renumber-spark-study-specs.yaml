@@ -87,7 +87,7 @@ orchestration:
     result_summary: 已同步字段注册 owner、ADR/Pitfall 规范引用、Web 关联排序、Web Spark API 注释、测试夹具和
       ldvh-base 当前事实源路径引用。
     evidence_refs:
-    - specs/05.03-事实模型字段注册与消费规范.md
+    - specs/05.03-字段注册与消费规范.md
     - web/src/pages/ObjectDetail.tsx
     - web/docs/04-ObjectDetail.md
     - web/api/routes/sparks.ts
@@ -201,7 +201,7 @@ orchestration:
         - 迁移完成后用针对旧路径和旧编号的 rg 扫描分类残留。
         required_changes: []
         evidence_refs:
-        - specs/05.03-事实模型字段注册与消费规范.md
+        - specs/05.03-字段注册与消费规范.md
         - web/docs/04-ObjectDetail.md
         - tests/code/test_fact_validate.py
       raw_output_ref: null
@@ -327,7 +327,7 @@ orchestration:
         - specs/20-Spark-火花.md
         - specs/24-Study-研究报告.md
         - specs/01-目录说明.md
-        - specs/05.03-事实模型字段注册与消费规范.md
+        - specs/05.03-字段注册与消费规范.md
         - python3 code/specs_validate.py all --fail-on-diagnostics
         constraints:
         - 只复核本次编号迁移，不扩大到其它工作模型设计。

@@ -66,9 +66,9 @@ related_studies:
 - study-0006
 related_workcases: []
 related_docs:
-- specs/05.01-事实模型字段定义与语义规范.md
-- specs/05.02-事实模型字段内容与格式规范.md
-- specs/05.03-事实模型字段注册与消费规范.md
+- specs/05.01-字段定义与语义规范.md
+- specs/05.02-字段内容与格式规范.md
+- specs/05.03-字段注册与消费规范.md
 - specs/21-WorkCase-工作项.md
 - specs/20-Spark-火花.md
 - specs/41-fact-model-audit-事实模型审核.md

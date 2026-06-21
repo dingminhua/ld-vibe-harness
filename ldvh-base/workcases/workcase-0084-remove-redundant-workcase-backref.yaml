@@ -49,13 +49,13 @@ orchestration:
     mode: sequential
     input_refs:
     - specs/21-WorkCase-工作项.md
-    - specs/05.03-事实模型字段注册与消费规范.md
+    - specs/05.03-字段注册与消费规范.md
     expected_output: 规范明确 `workcases` 不再是 WorkCase 事实源字段，归属列表从 WorkCase.workcase 派生。
     status: done
     result_summary: 已更新 WorkCase 和字段注册表规范；WorkCase.workcases 被标记为废弃字段，WorkCase.workcase 成为唯一权威归属字段。
     evidence_refs:
     - specs/21-WorkCase-工作项.md
-    - specs/05.03-事实模型字段注册与消费规范.md
+    - specs/05.03-字段注册与消费规范.md
     blocking_reason: null
   - id: item-3
     title: 更新 Code 校验和创建模板
@@ -127,7 +127,7 @@ orchestration:
         objective: 审核取消 WorkCase.workcases 双向维护字段是否符合 LDVH 事实源边界和工作模型关系语义。
         input_refs:
         - specs/21-WorkCase-工作项.md
-        - specs/05.03-事实模型字段注册与消费规范.md
+        - specs/05.03-字段注册与消费规范.md
         - web/api/routes/objects.ts
         constraints:
         - 不引入新的第二事实源。
@@ -175,7 +175,7 @@ orchestration:
         objective: 检查取消 WorkCase.workcases 双向维护字段的规范、Code、事实实例、Web 派生路径和验证证据是否完整。
         input_refs:
         - specs/21-WorkCase-工作项.md
-        - specs/05.03-事实模型字段注册与消费规范.md
+        - specs/05.03-字段注册与消费规范.md
         - code/fact_validate.py
         - code/fact_cli.py
         - web/api/routes/objects.ts
@@ -265,7 +265,7 @@ followup_refs: []
 revision_history: []
 related_docs:
 - specs/21-WorkCase-工作项.md
-- specs/05.03-事实模型字段注册与消费规范.md
+- specs/05.03-字段注册与消费规范.md
 - code/fact_validate.py
 - code/fact_cli.py
 - tests/code/test_fact_validate.py

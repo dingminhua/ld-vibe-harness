@@ -68,7 +68,7 @@ orchestration:
     - code/fact_validate.py
     - tests/code/test_fact_validate.py
     - specs/21-WorkCase-工作项.md
-    - specs/05.02-事实模型字段内容与格式规范.md
+    - specs/05.02-字段内容与格式规范.md
     blocking_reason: null
   review:
     controller_self_check: true
@@ -96,7 +96,7 @@ verification_evidence: |
   - `code/fact_validate.py`：新增 `evidence_refs` 路径存在性检查，只校验可判定为项目内文件或目录路径的引用。
   - `tests/code/test_fact_validate.py`：新增缺失路径报错和混合非路径引用不误报测试，并补齐有效 WorkCase 测试夹具证据文件。
   - `tests/code/specs_validate_checks/test_ldvh_assurance.py`：补齐 assurance/web validate 共享夹具中的 evidence 文件。
-  - `specs/21-WorkCase-工作项.md` 与 `specs/05.02-事实模型字段内容与格式规范.md`：同步说明 mixed evidence ref 的 Code 检查边界。
+  - `specs/21-WorkCase-工作项.md` 与 `specs/05.02-字段内容与格式规范.md`：同步说明 mixed evidence ref 的 Code 检查边界。
 
   已运行：
   - `python3 -m pytest tests/code/test_fact_validate.py -q`：8 passed
@@ -151,7 +151,7 @@ closure_evidence: |
   本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 related_docs:
 - specs/21-WorkCase-工作项.md
-- specs/05.02-事实模型字段内容与格式规范.md
+- specs/05.02-字段内容与格式规范.md
 - specs/07-Code确定性执行实现规范.md
 related_adrs: []
 related_sparks:

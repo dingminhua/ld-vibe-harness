@@ -1811,7 +1811,7 @@ def test_parent_subdocument_registry_diagnostics(tmp_path):
 """,
     )
     write_md(
-        specs / "05.01-事实模型字段定义与语义规范.md",
+        specs / "05.01-字段定义与语义规范.md",
         """
 # 工作模型字段定义与语义规范
 
@@ -1855,11 +1855,11 @@ def test_parent_subdocument_registry_passes_when_boundary_lists_child(tmp_path):
 
 | 子文档 | 说明 |
 |---|---|
-| `specs/05.01-事实模型字段定义与语义规范.md` | 工作模型字段规则 |
+| `specs/05.01-字段定义与语义规范.md` | 工作模型字段规则 |
 """,
     )
     write_md(
-        specs / "05.01-事实模型字段定义与语义规范.md",
+        specs / "05.01-字段定义与语义规范.md",
         """
 # 工作模型字段定义与语义规范
 

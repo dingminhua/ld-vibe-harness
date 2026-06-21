@@ -70,7 +70,7 @@ orchestration:
     - specs/03.02-事实模型文档规范.md
     - specs/03.04-管辖项目配置规范.md
     - specs/05-事实模型基础规范.md
-    - specs/05.02-事实模型字段内容与格式规范.md
+    - specs/05.02-字段内容与格式规范.md
     - specs/07-Code确定性执行实现规范.md
     - specs/08-Web信息同步实现规范.md
     - specs/09-事实源边界与承载规范.md
@@ -106,7 +106,7 @@ orchestration:
     role: specs-code
     mode: single
     input_refs:
-    - specs/05.02-事实模型字段内容与格式规范.md
+    - specs/05.02-字段内容与格式规范.md
     - specs/21-WorkCase-工作项.md
     - specs/22-ADR-决策.md
     - specs/23-Pitfall-踩坑经验.md
@@ -120,7 +120,7 @@ orchestration:
     status: done
     result_summary: 已选择删除对象手写字段；关联提交由 Git 历史、对象 ID 和路径派生。WorkCase/ADR/Pitfall/Spark/Study 规范、CLI 模板、Validator 和测试夹具已同步，并补充全局 `related_changes` 写入/校验拦截。
     evidence_refs:
-    - specs/05.02-事实模型字段内容与格式规范.md
+    - specs/05.02-字段内容与格式规范.md
     - specs/21-WorkCase-工作项.md
     - code/fact_validate.py
     blocking_reason: null
@@ -346,7 +346,7 @@ verification_evidence: |
   ldvh-base 全量 fact_validate 为 errors=0 warnings=114，warning 均为既有旧证据格式提示。
   残留扫描中 `related_changes` 只存在于 10 禁止条款、Code 拦截、测试负例、0074 自身验收描述和历史事实文本中；不再作为工作对象字段或入口存在。
   2026-06-19 追加补救：Study 已由 26 补位为 25。`python3 code/specs_validate.py all --fail-on-diagnostics` 通过，派生成员索引显示 Study 的 `spec_id`、`canonical_path` 和 `doc_number` 均为 25；`python3 -m pytest tests/code/test_fact_validate.py tests/code/test_fact_cli.py -q` 通过，44 passed；0074、study-0001、spark-0005、workcase-0073 单体 fact_validate 为 errors=0，warnings=2，warning 均来自 0073 既有证据格式提示。
-  子 agent 复检后补救了 `specs/01`、`specs/05`、`specs/05.01`、Web 关联排序、Web 设计文档和 active/pending 事实源中的编号/Change 残留，并新增 `FIELD_REGISTRY_OWNER_SCOPE_MISMATCH` 检查。`python3 code/specs_validate.py field-registry specs/05.02-事实模型字段内容与格式规范.md` 通过；`python3 -m pytest tests/code/specs_validate_checks/test_field_registry.py tests/code/test_fact_validate.py tests/code/test_fact_cli.py -q` 通过，53 passed；`npm run check` 通过，包含 Web typecheck/build/API 测试、229 个 Code 单测和 specs:check。
+  子 agent 复检后补救了 `specs/01`、`specs/05`、`specs/05.01`、Web 关联排序、Web 设计文档和 active/pending 事实源中的编号/Change 残留，并新增 `FIELD_REGISTRY_OWNER_SCOPE_MISMATCH` 检查。`python3 code/specs_validate.py field-registry specs/05.02-字段内容与格式规范.md` 通过；`python3 -m pytest tests/code/specs_validate_checks/test_field_registry.py tests/code/test_fact_validate.py tests/code/test_fact_cli.py -q` 通过，53 passed；`npm run check` 通过，包含 Web typecheck/build/API 测试、229 个 Code 单测和 specs:check。
 
   ## 结论
 

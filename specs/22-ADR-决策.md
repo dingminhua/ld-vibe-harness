@@ -16,8 +16,8 @@ ldvh_doc:
   basis:
     - "specs/05-事实模型基础规范.md"
   related_specs:
-    - "specs/05.01-事实模型字段定义与语义规范.md"
-    - "specs/05.02-事实模型字段内容与格式规范.md"
+    - "specs/05.01-字段定义与语义规范.md"
+    - "specs/05.02-字段内容与格式规范.md"
     - "specs/10-Git提交规范.md"
   code_consumption:
     - "doc_metadata"
@@ -101,7 +101,7 @@ ldvh-base/adrs/adr-{NNNN}-short-title.yaml
 |---|---|
 | ADR 事实模型规范 | `specs/22-ADR-决策.md` |
 | ADR 实例 | `ldvh-base/adrs/` |
-| ADR 字段内容格式 | `specs/05.02-事实模型字段内容与格式规范.md` |
+| ADR 字段内容格式 | `specs/05.02-字段内容与格式规范.md` |
 | ADR 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 ADR 的当前稳定规则以本文为准。
@@ -196,7 +196,7 @@ ADR 语境下的 Human Gate 记录应遵守 `specs/06-行动编排基础规范.m
 
 ### 6.1 字段表
 
-公共字段语义定义见 `specs/05.01-事实模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
+公共字段语义定义见 `specs/05.01-字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
 
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
@@ -217,7 +217,7 @@ ADR 语境下的 Human Gate 记录应遵守 `specs/06-行动编排基础规范.m
 | `archive_reason` | 归档原因和吸收位置 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Code、Web |
 | `deprecated_reason` | 废弃原因和不再适用边界 | string | 条件必填 | `status: deprecated` 时必须填写 | Narrative | AI、Code、Web |
 
-字段内容格式按 `specs/05.02-事实模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
+字段内容格式按 `specs/05.02-字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 
 ### 6.2 YAML 示例
 

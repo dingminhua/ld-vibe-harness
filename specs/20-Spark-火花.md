@@ -16,8 +16,8 @@ ldvh_doc:
   basis:
     - "specs/05-事实模型基础规范.md"
   related_specs:
-    - "specs/05.01-事实模型字段定义与语义规范.md"
-    - "specs/05.02-事实模型字段内容与格式规范.md"
+    - "specs/05.01-字段定义与语义规范.md"
+    - "specs/05.02-字段内容与格式规范.md"
     - "specs/21-WorkCase-工作项.md"
     - "specs/22-ADR-决策.md"
     - "specs/24-Study-研究报告.md"
@@ -98,7 +98,7 @@ ldvh-base/sparks/spark-{NNNN}-short-title.yaml
 |---|---|
 | Spark 事实模型规范 | `specs/20-Spark-火花.md` |
 | Spark 实例 | `ldvh-base/sparks/` |
-| Spark 字段内容格式 | `specs/05.02-事实模型字段内容与格式规范.md` |
+| Spark 字段内容格式 | `specs/05.02-字段内容与格式规范.md` |
 | Spark 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 Spark 的当前稳定规则以本文为准。
@@ -212,7 +212,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 
 ### 6.1 字段表
 
-公共字段语义定义见 `specs/05.01-事实模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
+公共字段语义定义见 `specs/05.01-字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
 
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
@@ -226,7 +226,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `evolution` | 关键语义转折 | list[object] | 否 | 默认为空列表；元素至少包含 `at` 和 `summary` | Log / Narrative | AI、Code、Web |
 | `source` | 火花进入事实源的入口来源 | enum | 是 | `web` 或 `conversation`；Web 快速创建固定为 `web`，对话中由 Human 或 AI 确认记录固定为 `conversation` | Reference | AI、Code、Web |
 | `source_detail` | 来源说明、触发场景或原始输入摘要 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
-| `priority` | 优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-事实模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
+| `priority` | 优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
 | `resolved_to` | 单一最终分流目标或主承接目标引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}`；`type` 只能是 `workcase`、`adr`、`pitfall`、`docs`、`governed-projects` 或 `other`，不得为 `study`；多线并行或部分承接优先使用 `related_*` 与 `evolution`，不得用单个 `resolved_to` 伪装完整收敛 | Reference | AI、Code、Web |
 | `resolved_at` | 分流日期 | date | 条件必填 | `status: resolved` 时必须填写 | Reference | AI、Code、Web |
 | `discard_reason` | 废弃原因 | string | 条件必填 | `status: discarded` 时必须填写 | Narrative | AI、Human |
@@ -235,7 +235,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `related_workcases` | 关联工作项 | list[string] | 否 | 默认为空列表；可记录多个并行承接、分阶段承接或主题相关的 WorkCase ID，不表示 Spark 已经 resolved | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 
-字段内容格式按 `specs/05.02-事实模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
+字段内容格式按 `specs/05.02-字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 
 ### 6.2 YAML 示例
 
