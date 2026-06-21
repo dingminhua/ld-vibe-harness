@@ -159,7 +159,7 @@ Spark 是“待分流信息”卡片，列表态用于快速定位每条火花�
 
 ## 6. API 数据结构
 
-对象列表 API 返回的字段分为事实源字段和只读派生摘要。`priority`、`importance` 等信号字段只应来自对象 YAML 自身且必须符合对应工作模型字段契约；WorkCase 列表项中的工作项与执行态势字段属于 Express API 根据 Git 文件事实源关系派生的只读摘要，不写回事实源，也不作为对象字段契约来源。
+对象列表 API 返回的字段分为事实源字段和只读派生摘要。`priority`、`importance` 等信号字段只应来自对象 YAML 自身且必须符合对应事实模型字段契约；WorkCase 列表项中的工作项与执行态势字段属于 Express API 根据 Git 文件事实源关系派生的只读摘要，不写回事实源，也不作为对象字段契约来源。
 
 ```typescript
 interface ObjectItem {

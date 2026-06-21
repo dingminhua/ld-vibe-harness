@@ -19,7 +19,7 @@ success_criteria: |
   - [x] Human 明确确认 Web 入口动作词采用 `Create Spark / 创建火花`
   - [x] 形成 Memo -> Spark 的迁移方案，覆盖规范、事实实例、字段关系、Code、Web、测试和历史追溯边界
   - [x] `specs/02-术语规范.md` 纳入 Spark / 火花术语归口或明确无需新增术语，避免 24/08 并行维护同一术语定义
-  - [x] `specs/24-Spark-火花.md` 承接 Spark 工作模型规范，并同步 `ldvh_doc`、`ldvh_member`、实例目录、对象定位、状态机、对象关系和 Human Gate
+  - [x] `specs/20-Spark-火花.md` 承接 Spark 工作模型规范，并同步 `ldvh_doc`、`ldvh_member`、实例目录、对象定位、状态机、对象关系和 Human Gate
   - [x] 字段注册与字段语义同步处理为 `related_sparks`、`source_sparks`、`spark-*`、`ldvh-base/sparks/` 等 Spark 口径
   - [x] 现有 Spark 实例和所有相关对象引用完成迁移，不保留旧 Memo 当前入口
   - [x] Code 工具、校验器、CLI、Web API、Web UI、测试夹具和文案同步 Spark 口径
@@ -45,7 +45,7 @@ orchestration:
     role: product-governance
     mode: single
     input_refs:
-    - specs/24-Spark-火花.md
+    - specs/20-Spark-火花.md
     - specs/05-工作模型基础规范.md
     - specs/03.02-工作模型文档规范.md
     - 用户对 Memo 入口语义、vibe coding 语境和 Web 创建入口的当前讨论
@@ -81,19 +81,19 @@ orchestration:
     role: specs-editor
     mode: single
     input_refs:
-    - specs/24-Spark-火花.md
+    - specs/20-Spark-火花.md
     - specs/05.01-工作模型字段定义与语义规范.md
     - specs/05.02-工作模型字段内容与格式规范.md
     - specs/05.03-工作模型字段注册与消费规范.md
     - specs/21-WorkCase-工作项.md
     - specs/22-ADR-决策.md
     - specs/23-Pitfall-踩坑经验.md
-    - specs/25-Study-研究报告.md
+    - specs/24-Study-研究报告.md
     expected_output: 将 Spark 规范、字段、关系和文档引用同步为当前口径。
     status: done
     result_summary: 已将 24 号工作模型主文件迁移为 Spark / 火花，并同步 02、05、08、20-25、40-43、rules、skills、Web docs 等 active 文档引用和字段注册。
     evidence_refs:
-    - specs/24-Spark-火花.md
+    - specs/20-Spark-火花.md
     - specs/02-术语规范.md
     - specs/05.03-工作模型字段注册与消费规范.md
     - specs/08-Web信息同步实现规范.md
@@ -402,7 +402,7 @@ orchestration:
         objective: 检查 Memo -> Spark 一次性迁移的成功标准、验证证据、关闭证据、残留风险、对话感知和 Web 派生状态是否足以进入结果复核或 Human 关闭确认。
         input_refs:
         - ldvh-base/workcases/workcase-0081-rename-memo-to-spark.yaml
-        - specs/24-Spark-火花.md
+        - specs/20-Spark-火花.md
         - specs/05.03-工作模型字段注册与消费规范.md
         - code/fact_validate.py
         - code/fact_cli.py
@@ -452,7 +452,7 @@ orchestration:
       prompt_context:
         objective: 复核 Memo -> Spark / 火花迁移后 specs、字段注册、Web 写入白名单、Web 文案和图标语义是否一致。
         input_refs:
-        - specs/24-Spark-火花.md
+        - specs/20-Spark-火花.md
         - specs/02-术语规范.md
         - specs/05.03-工作模型字段注册与消费规范.md
         - specs/08-Web信息同步实现规范.md
@@ -475,7 +475,7 @@ orchestration:
         - 后续补充 02 对 Spark / 火花术语归口的显式说明。
         required_changes: []
         evidence_refs:
-        - specs/24-Spark-火花.md
+        - specs/20-Spark-火花.md
         - specs/05.03-工作模型字段注册与消费规范.md
         - specs/08-Web信息同步实现规范.md
         - web/docs/09-图标语义规范.md
@@ -517,7 +517,7 @@ orchestration:
         required_changes: []
         evidence_refs:
         - ldvh-base/sparks/
-        - specs/24-Spark-火花.md
+        - specs/20-Spark-火花.md
         - python3 code/fact_validate.py ldvh-base --format text
         - python3 code/fact_cli.py stats
         - python3 code/fact_cli.py list spark
@@ -800,7 +800,7 @@ revision_history:
   summary: 结果复核完成；WorkCase 等待 Human 关闭确认。
 related_docs:
 - specs/02-术语规范.md
-- specs/24-Spark-火花.md
+- specs/20-Spark-火花.md
 - specs/05.03-工作模型字段注册与消费规范.md
 - specs/08-Web信息同步实现规范.md
 related_adrs: []
@@ -809,7 +809,7 @@ related_pitfalls: []
 related_workcases: []
 residual_risks:
 - 本 WorkCase 保留旧 Memo 词作为迁移说明和方案审核历史语境；不得将这些历史记录解释为当前 active 工作模型入口。
-- specs/02-术语规范.md 对 Spark / 火花术语归口仍可更显式；当前不阻塞，因为 Spark 工作模型权威定义已由 specs/24-Spark-火花.md 承载。
+- specs/02-术语规范.md 对 Spark / 火花术语归口仍可更显式；当前不阻塞，因为 Spark 工作模型权威定义已由 specs/20-Spark-火花.md 承载。
 - 既有 Web lint 红项仍需后续单独处理；本次 Spark 迁移已通过 Web build、Web API 测试和 npm run check。
 followup_refs:
 - specs/02-术语规范.md

@@ -33,19 +33,19 @@ ldvh_doc:
 
 本文解决整个 LDVH 管辖项目的 Git commit message 应如何格式化书写、AI 和 Human 如何利用 Git 历史理解变更、Code 如何校验提交格式、Web 如何解析和展示提交记录派生视图，以及工作对象是否需要手写关联提交字段的问题。
 
-Git 提交记录不是 LDVH 工作对象，不进入 20-39 工作模型集合，不创建 `ldvh-base/changes/`，也不具备 YAML 状态机。它是事实源修改的 Git 层追溯证据，服务 `specs/09-事实源边界与承载规范.md` 定义的 Git 可追踪原则。
+Git 提交记录不是 LDVH 工作对象，不进入 20-39 事实模型集合，不创建 `ldvh-base/changes/`，也不具备 YAML 状态机。它是事实源修改的 Git 层追溯证据，服务 `specs/09-事实源边界与承载规范.md` 定义的 Git 可追踪原则。
 
 ---
-## 2. 与 09 和工作模型的关系
+## 2. 与 09 和事实模型的关系
 
 09 定义最终事实源必须是 Git 可追踪文件。本文承接 09，专门定义修改这些文件时 Git commit message 应如何写，确保 Git commit records 可读取、可审查、可校验、可被 Code/Web 解析和派生展示。
 
-Git 提交记录与工作模型的边界如下：
+Git 提交记录与事实模型的边界如下：
 
 | 内容 | 权威位置 |
 |---|---|
 | 工作对象状态、字段、验收和关闭判断 | 对应 `ldvh-base/` YAML 或 Study Markdown 实例 |
-| 工作对象字段契约和状态机 | 20-39 具体工作模型规范 |
+| 工作对象字段契约和状态机 | 20-39 具体事实模型规范 |
 | 事实源修改的提交证据 | Git commit records |
 | Git 提交格式与派生追溯规则 | 本文 |
 | 提交记录的列表、筛选、关联和详情展示 | Code/Web 派生视图，不替代 Git |
@@ -221,7 +221,7 @@ Code 可机械检查 commit message 是否包含中文字符、是否符合首�
 ---
 ## 9. Human Gate 与风险
 
-Git 提交记录本身不额外触发 Human Gate。Human Gate 由被修改的事实源、对象、规范、Code、Web、工作流程或破坏性 Git 操作触发。
+Git 提交记录本身不额外触发 Human Gate。Human Gate 由被修改的事实源、对象、规范、Code、Web、行动编排或破坏性 Git 操作触发。
 
 以下场景应在提交正文或对应事实源中用自然语言说明确认情况，但不使用 `Human-Gate:` trailer：
 

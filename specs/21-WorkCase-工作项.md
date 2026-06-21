@@ -11,7 +11,7 @@ ldvh_doc:
   updated: "2026-06-21"
   parent_doc: ""
   relation: ""
-  positioning: "定义 WorkCase / 工作项工作模型，包括对象定位、准入条件、事实源边界、方案审核、执行、结果自检、结果复核、关闭确认、变更记录、字段契约、事实源回写和适配规则"
+  positioning: "定义 WorkCase / 工作项事实模型，包括对象定位、准入条件、事实源边界、方案审核、执行、结果自检、结果复核、关闭确认、变更记录、字段契约、事实源回写和适配规则"
   scope: "所有接入 LDVH 且需要把一次目标组织为可执行、可验证、可关闭工作项的项目"
   basis:
     - "specs/05-工作模型基础规范.md"
@@ -51,7 +51,7 @@ ldvh_member:
 
 WorkCase / 工作项是 Human 与 AI 围绕一次目标达成的工作事实契约。工作项承载已经由主控 AI 起草到可审核程度的目标、范围、成功标准、执行编排、方案审核、执行过程、结果自检、结果复核、关闭确认和经验分流。
 
-主控 AI 在 WorkCase 创建前可以起草方案草稿；该起草动作不是 WorkCase 状态。只有当草稿已经足以被第三方子 Agent 审核时，才创建 WorkCase 并进入方案审核。Human 主要确认方案是否允许执行和结果是否允许关闭；AI 负责在工作项内部安排执行项、调度角色或专业视角、完成验证、整理证据并接受独立复核。执行项只属于 WorkCase 内部编排，不作为独立工作模型，不进入 20-39 集合，也不在 `ldvh-base/` 下形成独立事实实例。
+主控 AI 在 WorkCase 创建前可以起草方案草稿；该起草动作不是 WorkCase 状态。只有当草稿已经足以被第三方子 Agent 审核时，才创建 WorkCase 并进入方案审核。Human 主要确认方案是否允许执行和结果是否允许关闭；AI 负责在工作项内部安排执行项、调度角色或专业视角、完成验证、整理证据并接受独立复核。执行项只属于 WorkCase 内部编排，不作为独立事实模型，不进入 20-39 集合，也不在 `ldvh-base/` 下形成独立事实实例。
 
 WorkCase 创建前必须先在对话中完成人和 AI 的需求对齐。Human 决定“需要创建 WorkCase”后，主控 AI 应立即创建 WorkCase，并连续完成方案审核编排、子 Agent / 第三方审核 Agent 方案审核和主控处理记录；该创建后审核链路是固定动作，不再插入额外 Human 确认。方案审核完成后才进入 `human_plan_confirming`，由 Human 在执行前对目标、范围、成功标准、执行颗粒度和约束进行确认。执行开始后，主控不得因普通执行问题再次要求“行动前确认”；问题应先按已确认范围处理并回写状态、证据、自检、风险或后续分流，只有越出已确认范围、改变成功标准、引入破坏性副作用或触发事实源边界时才退回 Human Gate。
 
@@ -79,7 +79,7 @@ ldvh-base/workcases/workcase-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| 工作项工作模型规范 | `specs/21-WorkCase-工作项.md` |
+| 工作项事实模型规范 | `specs/21-WorkCase-工作项.md` |
 | 工作项实例 | `ldvh-base/workcases/` |
 | 工作项字段内容格式 | `specs/05.02-工作模型字段内容与格式规范.md` |
 | 工作项展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -214,7 +214,7 @@ Web 感知必须满足：
 
 #### 4.1.3 结果复核与完成口径
 
-结果复核是关闭前的独立判断流程，不是主控自检的格式化副本。进入 `subagents_result_reviewing` 后，主控必须按 `result_review.review_policy.required_perspectives` 真实发起并等待独立复核，或明确记录由专门工作流程接管；不得先进入 `human_closure_confirming`，再用主控摘要补填空的 `review_items`。
+结果复核是关闭前的独立判断流程，不是主控自检的格式化副本。进入 `subagents_result_reviewing` 后，主控必须按 `result_review.review_policy.required_perspectives` 真实发起并等待独立复核，或明确记录由专门行动编排接管；不得先进入 `human_closure_confirming`，再用主控摘要补填空的 `review_items`。
 
 结果复核必须满足：
 
@@ -324,7 +324,7 @@ Human Gate 发生在工作项层。执行项、角色说明、子 Agent 输出�
 | `parallel` | 多个执行项可并行推进 |
 | `mixed` | 同时存在顺序和并行安排 |
 
-`execution_items` 是工作项内部字段，不得被提升为独立工作模型。并行执行项可以由不同子 Agent 或专业角色执行；子 Agent 不再继续创建子 Agent，所有结果回到主控汇总、自检和后续复检。
+`execution_items` 是工作项内部字段，不得被提升为独立事实模型。并行执行项可以由不同子 Agent 或专业角色执行；子 Agent 不再继续创建子 Agent，所有结果回到主控汇总、自检和后续复检。
 
 每个 `orchestration.execution_items` 对象的字段契约如下：
 
@@ -343,7 +343,7 @@ Human Gate 发生在工作项层。执行项、角色说明、子 Agent 输出�
 
 `evidence_refs` 是混合引用字段，可以包含对象 ID、文件/目录路径、URL、命令、Git 变更引用或说明性文本。Code 应只对可判定为文件或目录路径的项做存在性检查；命令、对象 ID、提交号、外部 URL、仓库外临时路径和带附注的说明性文本不得被误判为必须存在的项目内路径。
 
-`role` 只表达本执行项所需的专业视角、责任边界或子 Agent 类型，不在 WorkCase 字段契约中提前定义完整角色规则。完整角色规则如需稳定化，应由工作流程、能力资产规范或后续专门规范承接；WorkCase 只保留执行恢复所需的最小角色标识。
+`role` 只表达本执行项所需的专业视角、责任边界或子 Agent 类型，不在 WorkCase 字段契约中提前定义完整角色规则。完整角色规则如需稳定化，应由行动编排、能力资产规范或后续专门规范承接；WorkCase 只保留执行恢复所需的最小角色标识。
 
 `plan_review` 和 `result_review` 不创建独立 Review 工作对象，但它们是 WorkCase 内部权威审核事实。审核记录必须能回答：哪个 Agent 审核、以什么角色审核、当时获得的提示上下文和输入引用是什么、审核结论是什么、主控如何处理审核意见、何时签署。没有真实密码学能力时，签署为可审计 attestation，不得伪装成密钥签名。
 
@@ -353,14 +353,14 @@ WorkCase 只记录审核事实和可决策摘要，不记录子 Agent 审核原�
 
 子 Agent 审核完成后，主控必须形成 `controller_resolution`。主控不得改写 `review_items` 中的原始审核结论；主控只能采纳、拒绝、归并、提交 Human 裁决，或修改 WorkCase 的方案、成功标准、执行编排、验证证据、关闭证据、残留风险等字段。凡主控根据审核意见修改 WorkCase 字段，必须追加 `revision_history`；若修改影响本轮审核对象本身，必须回到对应的子 Agent 审核状态重新审核。
 
-子 Agent 审核的视角选择和工具方法当前由主控安排。WorkCase 只承载审核编排需求和审核事实，不承载子 Agent 系统实现；当存在 active 的专门审核编排工作流程时，主控应调用该流程，并在 `workflow_ref` 中记录承接位置。
+子 Agent 审核的视角选择和工具方法当前由主控安排。WorkCase 只承载审核编排需求和审核事实，不承载子 Agent 系统实现；当存在 active 的专门审核编排行动编排时，主控应调用该流程，并在 `workflow_ref` 中记录承接位置。
 
 `orchestration.plan_review` 的字段契约如下：
 
 | 字段路径 | 含义 | 类型 | 必填 | 条件 |
 |---|---|---|---|---|
 | `orchestration_owner` | 方案审核编排责任方 | string | 是 | 允许 `main_controller` 或 `workflow` |
-| `workflow_ref` | 专门审核编排工作流程引用 | string 或 null | 否 | 没有专门流程时为空；由工作流程接管时必须填写 |
+| `workflow_ref` | 专门审核编排行动编排引用 | string 或 null | 否 | 没有专门流程时为空；由行动编排接管时必须填写 |
 | `review_policy.selection_reason` | 审核视角选择理由 | string | 是 | 说明为什么需要这些视角 |
 | `review_policy.required_perspectives` | 必须执行的审核视角 | list[string] | 是 | 例如 scope_reviewer、success_criteria_reviewer、risk_reviewer、verification_reviewer |
 | `review_policy.optional_perspectives` | 可选补充审核视角 | list[string] | 否 | 可为空列表 |
@@ -422,7 +422,7 @@ WorkCase 只记录审核事实和可决策摘要，不记录子 Agent 审核原�
 | `controller_self_check.attestation.signer` | 签署者 | string | 是 | 通常为主控标识 |
 | `controller_self_check.attestation.statement` | 签署声明 | string | 是 | 应声明基于上述上下文完成自检并对结论负责 |
 | `orchestration_owner` | 结果复核编排责任方 | string | 是 | 允许 `main_controller` 或 `workflow` |
-| `workflow_ref` | 专门结果复核编排工作流程引用 | string 或 null | 否 | 没有专门流程时为空；由工作流程接管时必须填写 |
+| `workflow_ref` | 专门结果复核编排行动编排引用 | string 或 null | 否 | 没有专门流程时为空；由行动编排接管时必须填写 |
 | `review_policy` | 结果复核策略 | object | 是 | 字段与 `plan_review.review_policy` 相同，视角和方法按结果复核选择 |
 | `review_items` | 结果复核条目列表 | list[object] | 是 | `subagents_result_reviewing` 时可以正在补齐；进入 `human_closure_confirming` 前必须全部完成 |
 | `review_items[]` | 结果复核条目结构 | object | 是 | 字段与 `plan_review.review_items[]` 相同，`phase` 语义为结果复核 |
@@ -463,7 +463,7 @@ WorkCase 只记录审核事实和可决策摘要，不记录子 Agent 审核原�
 ```yaml
 id: workcase-0001
 type: workcase
-title: 重构工作模型状态边界
+title: 重构事实模型状态边界
 status: subagents_result_reviewing
 created: '2026-06-18T00:00:00'
 updated: '2026-06-18T03:30:00'
@@ -471,7 +471,7 @@ priority: P1
 description: |
   将一次模型重构目标组织为可执行、可验证、可关闭的工作项。
 success_criteria: |
-  - [ ] 工作模型规范已更新
+  - [ ] 事实模型规范已更新
   - [ ] 事实实例路径已明确
   - [ ] Code 和 Web 缺口已记录
 source: 用户确认创建工作项
@@ -660,8 +660,8 @@ Web 应把工作项作为 Human 直接查看和确认的主对象。Web 可以�
 
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | 工作项必须遵守 05、05.01 和本文定义的人机职责边界 | 05、05.01、本文、Human Gate | 工作模型治理 | 创建、迁移、关闭或重排工作项时 |
-| 确定性执行要求 | 工作项内部执行项不得作为独立工作模型出现 | Validator、CLI、Web 展示 | 事实模型校验 | 创建、更新、展示或关闭工作项时 |
+| 上位约束承接要求 | 工作项必须遵守 05、05.01 和本文定义的人机职责边界 | 05、05.01、本文、Human Gate | 事实模型治理 | 创建、迁移、关闭或重排工作项时 |
+| 确定性执行要求 | 工作项内部执行项不得作为独立事实模型出现 | Validator、CLI、Web 展示 | 事实模型校验 | 创建、更新、展示或关闭工作项时 |
 | 确定性执行要求 | 工作项必须依据 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 维护 `priority`，不得维护 `importance` | Validator、CLI、Web 展示 | 字段契约同步 | 创建、更新、排序、筛选或展示工作项时 |
 | 确定性执行要求 | 工作项状态必须明确区分方案审核、方案确认、执行、结果自检、结果复核、关闭确认和已关闭，不得把审核阶段折叠为执行态派生含义 | Validator、CLI、Web 展示 | 状态机同步 | 状态枚举、流转、实例校验或 Web 展示变化时 |
 | 子 Agent 思考要求 | 方案审核和结果复核必须记录审核 Agent、角色、提示上下文、输入引用、重点结论、可审计签署声明和主控处理记录 | Agent 能力、主控多视角审查、事实实例校验 | 审核事实同步 | 方案审核、结果复核、主控处理记录、Agent 能力或签署字段变化时 |
@@ -670,7 +670,7 @@ Web 应把工作项作为 Human 直接查看和确认的主对象。Web 可以�
 | Human 交互要求 | 主控跨阶段推进时必须说明当前状态、已完成执行项、剩余阻塞、下一 Gate 和待 Human 确认事项；未确认推断不得写成已确认事实 | 对话状态播报、Human Gate、WorkCase 回写、Web 派生态势 | 感知同步 | 状态推进、执行项完成、验证复核、Web 展示或 Human 待确认事项变化时 |
 | 入口可见要求 | WorkCase 顶层状态、执行项状态、成功标准、验证证据和结果复核记录必须能支持 Web 展示真实阶段；不得让 Web 长期显示与对话进展矛盾的派生态势 | Validator warning、Web 派生摘要、事实源回写 | 展示同步 | 执行开始、执行完成、进入结果自检、结果复核或关闭确认时 |
 | Human 交互要求 | 主控和 Web 必须区分执行完成、可提交关闭确认、已关闭和已提交，不得把 `human_closure_confirming` 或校验干净表述为整个工作链条完成 | 对话状态播报、Web 状态标签、Git 工作树检查、提交规范 | 关闭与提交同步 | 用户询问完成度、进入关闭确认、关闭 WorkCase 或准备 Git 提交时 |
-| 生命周期触发要求 | 工作项规范变化后应检查 Code、Web、事实实例和相关工作流程是否需要同步 | Code 测试、事实校验、Web 检查、流程检查 | 触发保障 | 字段、状态、执行编排或事实源路径变化时 |
+| 生命周期触发要求 | 工作项规范变化后应检查 Code、Web、事实实例和相关行动编排是否需要同步 | Code 测试、事实校验、Web 检查、流程检查 | 触发保障 | 字段、状态、执行编排或事实源路径变化时 |
 
 ---
 ## 10. 检查要求
@@ -689,10 +689,10 @@ Web 应把工作项作为 Human 直接查看和确认的主对象。Web 可以�
 | 关闭证据 | `human_closure_confirming` / `closed` 具备验证证据、关闭证据和关闭确认请求时间 |
 | 完成口径 | 能清楚区分执行完成、可提交关闭确认、已关闭和已提交；`human_closure_confirming` 不被表述为 `closed` |
 | 修订记录 | 退回、方案修改、成功标准修改、执行编排修改或主控根据审核意见修改字段时，`revision_history` 记录原因、字段和修改内容 |
-| 角色边界 | 执行项仅保留最小 `role` 标识；完整角色规则如需稳定化，由工作流程、能力资产规范或后续专门规范承接 |
+| 角色边界 | 执行项仅保留最小 `role` 标识；完整角色规则如需稳定化，由行动编排、能力资产规范或后续专门规范承接 |
 
 ---
 ## 11. 待补齐事项
 
-1. WorkCase 状态机、方案审核签署、结果自检、结果复核、Human 关闭确认和修订记录已经成为本文规则；后续 Code、Web、事实实例和相关工作流程应按本文同步实现；
+1. WorkCase 状态机、方案审核签署、结果自检、结果复核、Human 关闭确认和修订记录已经成为本文规则；后续 Code、Web、事实实例和相关行动编排应按本文同步实现；
 2. 旧工作对象清退后的历史说明只应保留在 Git 历史、Spark、ADR 或明确标注的研究材料中，不得重新成为当前事实源兼容要求。

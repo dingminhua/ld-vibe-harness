@@ -1,0 +1,719 @@
+id: workcase-0087
+type: workcase
+title: 收敛事实模型与行动编排命名职责
+goal: 将 LDVH 中“工作模型 / 工作流程”的边界收敛为“事实模型 / 行动编排”的职责表达，并评估 05 系列子文档去除重复体系前缀、06 与 40-59 行动编排总协调职责、相关术语和引用的同步修改方案。
+status: human_closure_confirming
+created: '2026-06-21T20:20:31+08:00'
+updated: '2026-06-21T22:30:56+08:00'
+priority: P1
+description: |
+  当前讨论形成新的命名和职责判断：LDVH 中 20-39 更准确地表达为“事实模型”，用于定义什么事实值得长期承载，以及字段、状态、关系和事实源边界；40-59 更准确地表达为“行动编排”，用于定义 AI 如何围绕事实和规范行动，协调规则、能力资产、环境接入、Human Gate、验证、回写和降级。
+
+  因此，工作流程主文件不宜再被理解为“薄入口”。“薄入口”容易把工作流程误读成跳转页、索引页或能力资产 wrapper。更合适的定位是：每个行动编排主文件承担总协调职责，承上接住来源规范的规则、边界和保障要求，启下协调 Skill、Code、Hook、Web、Agent、环境适配和 Human Gate，并横向声明与事实模型、相邻行动编排和事实源的边界。
+
+  同一讨论中还形成了 05 系列命名方向：05 体系已经表达事实模型归属，05.01 / 05.02 / 05.03 子文档标题不必重复“工作模型字段”前缀，可考虑收敛为“字段定义与语义规范”“字段内容与格式规范”“字段注册与消费规范”等职责型标题。该方向需要在正式修改前评估术语、文件路径、canonical_path、Code 解析、Web 链接、Rules 路由和历史事实边界。
+
+  本 WorkCase 只承接方案化和后续执行治理，不代表相关规范已经改名。正式修改前需要 Human 确认方案、范围、迁移策略和验证要求。
+success_criteria: |-
+  - [x] 明确“事实模型”和“行动编排”的定义、适用边界、与现有“工作模型 / 工作流程”术语的关系，以及是否采用一次性改名或渐进别名策略
+  - [x] 梳理受影响规范：至少覆盖 00、01、02、03.02、03.03、05、05.01、05.02、05.03、06、20-24、40-43、04 系列、07、08、09、10、11
+  - [x] 评估 05 系列子文档去除重复父体系前缀的命名方案、文件路径方案、canonical_path 迁移方案和历史引用保留边界
+  - [x] 评估 06 与 40-59 是否从“工作流程”表述收敛为“行动编排”，并明确每个行动编排 md 的总协调职责
+  - [x] 明确 Code、Web、Rules、Skill、Hook、测试和事实源实例需要同步的引用、解析、展示、校验和部署检查入口
+  - [x] 修改前完成 Human Gate：确认术语变更范围、是否重命名文件、是否保留旧术语别名、是否同步 Web 文案和 Code 输出
+  - [x] 执行后通过 specs 综合校验、事实源校验、相关 Python 测试、Web 检查、旧术语/旧路径残留扫描和提交信息预检
+  - [ ] 关闭材料记录未改名或保留旧术语的原因、残留风险、后续 WorkCase / Spark 分流和 Git 提交追溯边界
+source: |
+  用户在围绕 40/41 派生型审核流程与能力资产边界的讨论中进一步指出：
+  - “工作流程薄入口”表述不合适，更准确的是工作流程的“总协调”，每一个工作流程 md 的职责是协调、承上启下；
+  - “事实模型”和“行动编排”比“工作模型”和“工作流程”更合适；
+  - 05 系列的子文档也可以不需要重复父体系前缀，应该强调在 05 体系下的职责。
+
+  Human Gate 记录：
+  - 触发原因：创建 WorkCase、后续可能修改正式规范命名、canonical_path、术语和 Code/Web/Rules 展示，属于高影响规范治理变更。
+  - 确认依据：用户明确回复“嗯，按这个方向建立workcase吧”。
+  - Human 决策：允许创建本 WorkCase 承接方案审核、执行确认、后续修改和关闭确认。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 梳理事实模型与行动编排术语边界
+    role: terminology-architect
+    mode: single
+    input_refs:
+    - current-conversation
+    - specs/00-LD-Vibe-Harness理念与纲要.md
+    - specs/02-术语规范.md
+    - specs/05-工作模型基础规范.md
+    - specs/06-工作流程基础规范.md
+    expected_output: 定义事实模型和行动编排的职责边界，说明与现有工作模型/工作流程术语的兼容和迁移策略。
+    status: done
+    result_summary: 02、05、06 已将“事实模型 / 行动编排”作为正式表达；旧“工作模型 / 工作流程”保留为旧路径、机器字段、历史事实文本和兼容枚举中的兼容表达。
+    evidence_refs:
+    - specs/02-术语规范.md
+    - specs/05-工作模型基础规范.md
+    - specs/06-工作流程基础规范.md
+    blocking_reason: null
+  - id: item-2
+    title: 评估 05 系列职责型命名方案
+    role: specs-structure-reviewer
+    mode: single
+    input_refs:
+    - specs/05-工作模型基础规范.md
+    - specs/05.01-工作模型字段定义与语义规范.md
+    - specs/05.02-工作模型字段内容与格式规范.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    - specs/03.02-工作模型文档规范.md
+    expected_output: 给出 05、05.01、05.02、05.03 的候选标题、路径迁移策略、canonical_path 影响和是否保留旧文件名的建议。
+    status: done
+    result_summary: 05.01、05.02、05.03 标题收敛为职责型标题；本轮不重命名实际文件路径，canonical_path 保持现有路径以避免与 0086 编号迁移混杂。
+    evidence_refs:
+    - specs/05.01-工作模型字段定义与语义规范.md
+    - specs/05.02-工作模型字段内容与格式规范.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    blocking_reason: null
+  - id: item-3
+    title: 评估 06 与 40-59 行动编排总协调职责
+    role: workflow-boundary-reviewer
+    mode: single
+    input_refs:
+    - specs/06-工作流程基础规范.md
+    - specs/03.03-工作流程文档规范.md
+    - specs/40-workflow-design-audit-工作流程设计审核.md
+    - specs/41-work-model-audit-工作模型审核.md
+    - specs/42-specs-audit-规范审核.md
+    - specs/43-assurance-readiness-audit-保障准备度审核.md
+    expected_output: 明确行动编排主文件作为总协调契约应承载哪些内容、不应复制哪些来源规范规则，以及 40-43 是否需要随之重写。
+    status: done
+    result_summary: 06 与 40-43 正文收敛为行动编排表达，并在 06 明确每个 active 行动编排主文件承担总协调、承上启下职责，不是薄入口或能力资产 wrapper。
+    evidence_refs:
+    - specs/06-工作流程基础规范.md
+    - specs/40-workflow-design-audit-工作流程设计审核.md
+    - specs/41-work-model-audit-工作模型审核.md
+    - specs/42-specs-audit-规范审核.md
+    - specs/43-assurance-readiness-audit-保障准备度审核.md
+    blocking_reason: null
+  - id: item-4
+    title: 盘点实现与展示同步面
+    role: implementation-impact-reviewer
+    mode: single
+    input_refs:
+    - code/
+    - tests/
+    - web/
+    - rules/
+    - skills/
+    - hooks/
+    - ldvh-base/
+    expected_output: 列出 Code、Web、Rules、Skill、Hook、测试和工作对象事实源中受术语/路径变更影响的入口、引用和验证命令。
+    status: done
+    result_summary: 已同步 specs、rules、code/docs、web/docs 的当前叙述；Code 内部键名、旧文件路径、保障枚举和历史事实文本保留为兼容层，并通过残留扫描记录。
+    evidence_refs:
+    - rules/LDVH-WORKSPACE-ENTRY.md
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - code/docs/01-Code参考实现结构规范.md
+    - web/docs/04-ObjectDetail.md
+    - /tmp/ldvh-old-terms-0087.txt
+    blocking_reason: null
+  - id: item-5
+    title: 执行确认后修改规范和配套资产
+    role: implementation-editor
+    mode: sequential
+    input_refs:
+    - item-1
+    - item-2
+    - item-3
+    - item-4
+    expected_output: 在 item-1 至 item-4 完成迁移策略、影响清单和 Human Gate 覆盖后，再修改规范、Code/Web/Rules/测试/事实源引用并保留迁移证据；不得把首次方案确认解释为已授权未知的最终术语/路径迁移直接落地。
+    status: done
+    result_summary: 已按最小可验证范围修改正式规范、Rules 入口和 Code/Web 文档；实际文件路径和机器标识未在本轮重命名。
+    evidence_refs:
+    - specs/00-LD-Vibe-Harness理念与纲要.md
+    - specs/01-目录说明.md
+    - specs/02-术语规范.md
+    - specs/03.02-工作模型文档规范.md
+    - specs/03.03-工作流程文档规范.md
+    - specs/05-工作模型基础规范.md
+    - specs/06-工作流程基础规范.md
+    blocking_reason: null
+  - id: item-6
+    title: 验证迁移并整理关闭材料
+    role: verification
+    mode: sequential
+    input_refs:
+    - python3 code/specs_validate.py all --fail-on-diagnostics
+    - python3 code/fact_validate.py ldvh-base
+    - npm run test:code
+    - python3 -m pytest tests/code -q
+    - npm --prefix web run check
+    - npm --prefix web run test:web:api
+    - python3 code/commit_validate.py --check-message-file <message-file>
+    - python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>
+    - rg scans for old terminology and old paths
+    expected_output: 验证命令结果、残留命中分类、风险与后续分流、Human 关闭确认材料。
+    status: done
+    result_summary: specs 综合校验、事实源校验、Code 单测、Web 类型检查、Web API 测试、旧术语残留扫描和提交信息预检均已完成；fact_validate 仅报告既有 WorkCase 自签审核 warning 与 0087 进入结果复核前的状态类 warning。
+    evidence_refs:
+    - python3 code/specs_validate.py all --fail-on-diagnostics
+    - python3 code/fact_validate.py ldvh-base --format text
+    - npm run test:code
+    - npm --prefix web run check
+    - npm --prefix web run test:web:api
+    - python3 code/commit_validate.py --check-message-file <message-file>
+    - python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>
+    - /tmp/ldvh-old-terms-0087.txt
+    blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 本 WorkCase 涉及正式规范术语体系、05 子文档标题/路径、06/40-59 行动编排职责、Code/Web/Rules 展示和事实源引用，执行前必须先确认迁移范围与风险。
+      required_perspectives:
+      - terminology_boundary_reviewer
+      - specs_structure_reviewer
+      - implementation_impact_reviewer
+      optional_perspectives:
+      - history_boundary_reviewer
+      tool_method_requirements:
+      - read_authoritative_sources
+      - inspect_specs_code_web_rules_tests
+      - classify_term_and_path_occurrences
+      - produce_evidence_refs
+      aggregation_rule: 任一视角提出必须修改项且未处理时不得进入 Human 执行确认；术语替换不得无差别覆盖历史事实文本。
+    review_items:
+    - id: plan-review-1
+      role: terminology_boundary_reviewer
+      agent_name: Kierkegaard terminology-boundary-reviewer (019eea32-5e30-7af0-b74a-1893ba587e70)
+      requested_at: '2026-06-21T20:31:00+08:00'
+      prompt_context:
+        objective: 审核 0087 对“事实模型 / 行动编排”兼容或替代“工作模型 / 工作流程”的术语边界是否足以进入执行前 Human 确认。
+        input_refs:
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml
+        - specs/00-LD-Vibe-Harness理念与纲要.md
+        - specs/02-术语规范.md
+        - specs/05-工作模型基础规范.md
+        - specs/06-工作流程基础规范.md
+        - specs/21-WorkCase-工作项.md
+        constraints:
+        - 只读审核，不修改文件
+        - 不把候选术语视为已生效正式规范
+        prompt_digest: 判断新术语方向、兼容策略、事实模型/行动编排边界和进入 human_plan_confirming 的阻塞项。
+      context_digest: 只读检查 00/02/05/06/21 与 0087，重点确认正式术语仍为工作模型/工作流程且 0087 未越权执行改名。
+      result:
+        status: pass_with_followups
+        summary: 方案内容足以提交到 human_plan_confirming；0087 没有把新术语伪装成已生效规范，而是要求先做定义、兼容策略、路径/canonical_path/Code/Web/Rules 影响评估和 Human Gate。
+        key_findings:
+        - 现行正式术语仍是“工作模型 / 工作流程”，00、02、05、06 分别承载现有术语和基础规则，0087 必须经 Human Gate 后才能执行迁移。
+        - “事实模型”与现有工作模型职责基本同构，覆盖事实承载、字段契约、状态流转、事实源边界和实例承载。
+        - “行动编排”与现有工作流程职责基本同构，覆盖读取、判断、执行、Gate、回写、证据留存以及 Skill/Agent/Code/Web 协调。
+        - 方案覆盖面充足，execution_items 已覆盖术语、05 命名、06/40-59、实现展示同步、执行和验证。
+        recommendations:
+        - Human 确认时重点明确是否采用新术语、一次性改名或别名渐进、是否重命名文件/canonical_path、是否同步 Web 文案和 Code 输出。
+        - 执行前先处理或明确隔离 workcase-0086 的未提交迁移影响，避免两个高影响规范迁移混入同一提交。
+        - 迁移执行时保留旧术语命中分类，避免机械全局替换。
+        required_changes: []
+        evidence_refs:
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:10
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:16
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:23
+        - specs/00-LD-Vibe-Harness理念与纲要.md:89
+        - specs/02-术语规范.md:174
+        - specs/02-术语规范.md:189
+        - specs/05-工作模型基础规范.md:58
+        - specs/06-工作流程基础规范.md:56
+        - specs/21-WorkCase-工作项.md:133
+        - specs/21-WorkCase-工作项.md:454
+      raw_output_ref: subagent:019eea32-5e30-7af0-b74a-1893ba587e70
+      attested_at: '2026-06-21T20:35:00+08:00'
+      attestation:
+        signer: Kierkegaard terminology-boundary-reviewer
+        statement: 基于上述 prompt context 和 input refs 完成只读审核，并对本条方案审核结论负责。
+    - id: plan-review-2
+      role: specs_structure_reviewer
+      agent_name: Franklin specs-structure-reviewer (019eea32-5e96-7503-b5fa-b66663ca855c)
+      requested_at: '2026-06-21T20:31:00+08:00'
+      prompt_context:
+        objective: 审核 0087 对 05 子文档去前缀、06/40-59 行动编排总协调、20-24 编号变化后的受影响范围是否足以进入执行前 Human 确认。
+        input_refs:
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml
+        - specs/03.02-工作模型文档规范.md
+        - specs/03.03-工作流程文档规范.md
+        - specs/05-工作模型基础规范.md
+        - specs/05.01-工作模型字段定义与语义规范.md
+        - specs/05.02-工作模型字段内容与格式规范.md
+        - specs/05.03-工作模型字段注册与消费规范.md
+        - specs/06-工作流程基础规范.md
+        - specs/20-Spark-火花.md
+        - specs/21-WorkCase-工作项.md
+        - specs/22-ADR-决策.md
+        - specs/23-Pitfall-踩坑经验.md
+        - specs/24-Study-研究报告.md
+        - specs/40-workflow-design-audit-工作流程设计审核.md
+        - specs/41-work-model-audit-工作模型审核.md
+        - specs/42-specs-audit-规范审核.md
+        - specs/43-assurance-readiness-audit-保障准备度审核.md
+        constraints:
+        - 只读审核，不修改文件
+        - 重点检查方案范围、编号变化和执行前 Gate 边界
+        prompt_digest: 判断 05/06/20-24/40-43 结构影响面、review_items/controller_resolution 完备性和 item-5 Human Gate 边界。
+      context_digest: 只读检查 0087 与 WorkCase 状态机，确认范围方向充分但进入 human_plan_confirming 前需补审核事实、resolution 和 item-5 Gate 边界。
+      result:
+        status: pass_with_followups
+        summary: 0087 对 05 子文档、06/40-59 和当前 20-24 集合的高层范围识别基本充分；原始审核指出在补齐 review_items、controller_resolution 和 item-5 Gate 边界前尚不足以进入 human_plan_confirming。
+        key_findings:
+        - 0087 已覆盖 05.01/05.02/05.03 标题/路径/canonical_path、06 与 40-59 的总协调定位，以及 Code/Web/Rules/事实源历史边界。
+        - success_criteria 覆盖 00、01、02、03.02、03.03、05、05.01-05.03、06、20-24、40-43、04、07、08、09、10、11，范围方向足够宽。
+        - related_docs 已列入 20-Spark、21-WorkCase、22-ADR、23-Pitfall、24-Study 和 40-43，能反映 0086 编号迁移后的当前 20-24 集合。
+        - item-5 是实际修改项，必须在 item-1 到 item-4 结果汇总并由 Human Gate 覆盖后执行，避免把初次方案确认误读为直接授权最终迁移落地。
+        recommendations:
+        - 将本次审核作为 plan_review 条目记录，并由主控补 controller_resolution。
+        - 在 controller_resolution 中明确当前进入 Human 确认的范围和后续 item-5 的执行前边界。
+        - 给 item-4 或 controller_resolution 增加扫描口径：当前 20-24 编号集合、05 子文档旧标题/旧路径、06/40-59 旧术语语义、Code/Web/Rules/Skill/Hook/tests/ldvh-base 引用分类。
+        required_changes:
+        - 补齐 orchestration.plan_review.review_items。
+        - 补齐 orchestration.plan_review.controller_resolution。
+        - 明确 item-5 的修改前 Human Gate 边界。
+        evidence_refs:
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:14
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:18
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:69
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:85
+        - specs/21-WorkCase-工作项.md:269
+        - specs/21-WorkCase-工作项.md:348
+        - specs/21-WorkCase-工作项.md:369
+        - specs/21-WorkCase-工作项.md:389
+        - specs/21-WorkCase-工作项.md:453
+        - specs/01-目录说明.md:168
+      raw_output_ref: subagent:019eea32-5e96-7503-b5fa-b66663ca855c
+      attested_at: '2026-06-21T20:49:00+08:00'
+      attestation:
+        signer: Franklin specs-structure-reviewer
+        statement: 基于上述 prompt context 和 input refs 完成只读审核，并对本条方案审核结论负责。
+    - id: plan-review-3
+      role: implementation_impact_reviewer
+      agent_name: Avicenna implementation-impact-reviewer (019eea32-5ee6-7c22-ab89-52d97e97a177)
+      requested_at: '2026-06-21T20:31:00+08:00'
+      prompt_context:
+        objective: 审核 0087 对 Code/Web/Rules/Skill/Hook/测试/事实源同步面和验证命令的覆盖是否足以进入执行前 Human 确认。
+        input_refs:
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml
+        - code/
+        - tests/
+        - web/
+        - rules/
+        - skills/
+        - hooks/
+        - ldvh-base/
+        - specs/21-WorkCase-工作项.md
+        constraints:
+        - 只读审核，不修改文件
+        - 重点检查实现影响、验证命令和提交预检入口
+        prompt_digest: 判断实现影响面、旧术语/旧路径扫描口径、验证计划和 commit-msg/hook 预检是否充分。
+      context_digest: 只读检查实现影响面，确认 0087 覆盖大类足够，但需将审核结果真实写回并补明确提交预检 / Hook 等价命令。
+      result:
+        status: pass_with_followups
+        summary: 影响面方向正确，已覆盖 Code/Web/Rules/Skill/Hook/测试/事实源实例；原始审核指出补齐审核事实、controller_resolution 和明确提交预检 / Hook 等价命令前尚不足以进入 human_plan_confirming。
+        key_findings:
+        - WorkCase 现有范围覆盖 Code、tests、web、rules、skills、hooks、ldvh-base 等大类。
+        - 旧术语/旧路径扫描需要按 Code、tests、web、rules、skills、hooks、ldvh-base 分类，并区分历史事实保留、当前事实引用需同步和说明性残留。
+        - 验证计划已有 specs、fact、pytest、Web API 和残留扫描，但缺少明确 commit-msg / Hook 等价预检命令。
+        - 当前工作树仍有大量未提交变更，符合 0087 已记录的 workcase-0086 混入风险。
+        recommendations:
+        - 把实现影响审查结论作为真实 plan_review.review_items[] 记录。
+        - 验证计划使用 `python3 code/specs_validate.py all --fail-on-diagnostics`、`npm run test:code`，并补充 commit/hook 预检。
+        - 对 ldvh-base 旧术语命中进行历史事实保留、当前事实引用需同步、仅说明性残留三类处理。
+        required_changes:
+        - 补齐 orchestration.plan_review.review_items。
+        - 补齐 orchestration.plan_review.controller_resolution。
+        - 在验证计划中显式加入提交信息预检 / Hook 等价命令。
+        evidence_refs:
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:132
+        - specs/21-WorkCase-工作项.md:453
+        - specs/21-WorkCase-工作项.md:358
+        - hooks/ldvh-hooks.yaml:21
+        - code/docs/01-Code参考实现结构规范.md:170
+      raw_output_ref: subagent:019eea32-5ee6-7c22-ab89-52d97e97a177
+      attested_at: '2026-06-21T20:45:00+08:00'
+      attestation:
+        signer: Avicenna implementation-impact-reviewer
+        statement: 基于上述 prompt context 和 input refs 完成只读审核，并对本条方案审核结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-21T20:49:13+08:00'
+      resolver: codex-main-controller
+      source_review_item_ids:
+      - plan-review-1
+      - plan-review-2
+      - plan-review-3
+      accepted_findings:
+      - 采纳术语边界审核：现行正式术语仍为“工作模型 / 工作流程”，0087 只提交候选迁移方案，执行前必须由 Human Gate 覆盖术语策略。
+      - 采纳结构审核：05 子文档命名、06/40-59 总协调和当前 20-24 集合影响面充分，但 item-5 必须等待 item-1 至 item-4 结果汇总并由 Human Gate 覆盖后执行。
+      - 采纳实现影响审核：迁移需覆盖 Code/Web/Rules/Skill/Hook/测试/事实源，并对旧术语、旧路径和 ldvh-base 命中分类处理。
+      - 采纳提交预检要求：验证计划需显式加入 commit_validate 与 hook_dispatch 的 commit-msg 等价命令。
+      rejected_findings: []
+      required_changes_applied:
+      - 已将三个子 Agent 审核结论写入 `orchestration.plan_review.review_items`。
+      - 已补齐 `orchestration.plan_review.controller_resolution`。
+      - 已将 item-5 的 expected_output 改为必须在 item-1 至 item-4 汇总并由 Human Gate 覆盖后再执行。
+      - 已在 item-6 和 verification_evidence 中补充 `python3 code/specs_validate.py all --fail-on-diagnostics`、`npm run test:code`、`python3 code/commit_validate.py --check-message-file <message-file>` 和 `python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>`。
+      unresolved_items: []
+      changed_fields:
+      - status
+      - updated
+      - orchestration.execution_items[item-5].expected_output
+      - orchestration.execution_items[item-6].input_refs
+      - orchestration.plan_review.review_items
+      - orchestration.plan_review.controller_resolution
+      - revision_history
+      - verification_evidence
+      revision_history_refs:
+      - revision_history[0]
+      summary: 三个必需视角均已完成只读审核。审核未否定 0087 的方向；结构和实现视角提出的进入 human_plan_confirming 前必改项均已由主控落实。本 WorkCase 已可提交 Human 执行前确认；controller_resolution.unresolved_items 是执行前确认事项，不得带入 executing。
+    human_confirmation:
+      decision: execute
+      scope: 按 0087 当前目标、成功标准和执行编排执行；采用“事实模型 / 行动编排”为规范表达方向，05 子文档以职责型标题收敛，06 与 40-59 收敛为行动编排总协调职责。
+      constraints:
+      - 采用一次性规范正文收敛，但历史事实文本不得机械改写。
+      - 05.01、05.02、05.03 优先修改标题、canonical_path 和当前规范引用；如文件路径迁移会与现有 0086 编号迁移混杂，则先保留旧文件路径并在残留风险中说明。
+      - 06 与 40-59 优先收敛术语、职责和正文语义；文件路径重命名若会扩大影响面，可作为后续分流。
+      - 允许在当前工作树已有 0086 编号迁移变更之上工作，但不得回滚或混淆既有未提交改动。
+      confirmed_at: '2026-06-21T21:40:31+08:00'
+      summary: Human 回复“执行吧”，确认进入执行阶段；主控按最小可验证范围执行术语和职责收敛。
+  result_review:
+    controller_self_check:
+      controller: codex-main-controller
+      checked_at: '2026-06-21T21:47:10+08:00'
+      prompt_context:
+        objective: 自检 0087 执行结果是否完成事实模型/行动编排术语和职责收敛、是否通过验证、是否存在必须先修复的问题。
+        input_refs:
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml
+        - specs/
+        - rules/
+        - code/docs/
+        - web/docs/
+        - /tmp/ldvh-old-terms-0087.txt
+        constraints:
+        - 不将旧文件路径和机器标识误判为必须清理的正文残留
+        - 不改写历史事实源文本
+      result:
+        status: pass_with_followups
+        summary: 正式规范和入口叙述已收敛为“事实模型 / 行动编排”，05 子文档标题已职责化，06 已补入行动编排总协调职责；验证通过。剩余旧词主要是旧文件路径、机器标识、保障枚举、Code 内部兼容标签和历史事实文本，应在关闭材料中作为兼容残留说明。
+        key_findings:
+        - specs 综合检查、Code 单测、Web 类型检查和 Web API 测试均通过。
+        - 旧术语残留扫描命中 253 行，主要来自保留路径、机器字段、兼容枚举、Code 内部标签和历史事实源引用。
+        - 本轮未重命名实际文件路径，避免与 workcase-0086 的 20/24 编号迁移混入同一提交边界。
+        required_changes: []
+        evidence_refs:
+        - python3 code/specs_validate.py all --fail-on-diagnostics
+        - python3 code/fact_validate.py ldvh-base --format text
+        - npm run test:code
+        - npm --prefix web run check
+        - npm --prefix web run test:web:api
+        - python3 code/commit_validate.py --check-message-file <message-file>
+        - python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>
+        - /tmp/ldvh-old-terms-0087.txt
+      attestation:
+        signer: codex-main-controller
+        statement: 基于上述输入、修改范围和验证输出完成主控自检；该结论不是独立结果复核，后续仍需子 Agent / 第三方审核。
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 已完成术语和职责收敛执行，结果复核需独立检查 specs 一致性、兼容残留分类、Code/Web/Rules 同步边界和验证证据。
+      required_perspectives:
+      - specs_result_reviewer
+      - implementation_result_reviewer
+      optional_perspectives:
+      - history_boundary_reviewer
+      tool_method_requirements:
+      - read_changed_specs_and_workcase
+      - inspect_validation_evidence
+      - classify_old_term_residuals
+      - produce_evidence_refs
+      aggregation_rule: 任一结果复核发现必须修复项时不得进入 Human 关闭确认；旧路径、机器字段、历史事实文本和兼容枚举不得被机械视为失败。
+    review_items:
+    - id: result-review-1
+      role: specs_result_reviewer
+      agent_name: Laplace specs-result-reviewer (019eea71-f161-7202-88ef-c7b04c0a140e)
+      requested_at: '2026-06-21T21:48:00+08:00'
+      prompt_context:
+        objective: 复核 0087 specs 层面是否完成事实模型/行动编排术语与职责收敛、05 子文档职责型标题、06 总协调边界，并判断是否存在关闭前必须修复项。
+        input_refs:
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml
+        - specs/02-术语规范.md
+        - specs/03.02-工作模型文档规范.md
+        - specs/03.03-工作流程文档规范.md
+        - specs/05-工作模型基础规范.md
+        - specs/05.01-工作模型字段定义与语义规范.md
+        - specs/05.02-工作模型字段内容与格式规范.md
+        - specs/05.03-工作模型字段注册与消费规范.md
+        - specs/06-工作流程基础规范.md
+        - specs/40-workflow-design-audit-工作流程设计审核.md
+        - specs/41-work-model-audit-工作模型审核.md
+        constraints:
+        - 只读复核，不修改文件
+        - 旧路径和机器标识若符合兼容策略，不作为失败项
+        prompt_digest: 检查 specs 语义、结构一致性、兼容边界和关闭前硬阻塞。
+      context_digest: 只读复核 02/03.02/03.03/05/05.01-05.03/06/40/41 与 0087，确认 specs 层面无关闭前硬阻塞。
+      result:
+        status: pass_with_followups
+        summary: specs 层面的事实模型/行动编排术语与职责收敛、05 子文档职责型标题收敛、06 行动编排总协调边界补充已完成；旧路径、机器标识、保障要求枚举和历史事实文本的保留边界说明清楚。未发现进入 Human 关闭确认前必须修复的 specs 硬阻塞。
+        key_findings:
+        - 02 已明确“事实模型 / 行动编排”为当前正式表达，并说明“工作模型 / 工作流程”仅保留在旧文件路径、机器字段、历史事实文本、兼容枚举等位置。
+        - 05、05.01、05.02、05.03 的正文职责已收敛到事实模型与字段职责；05.01、05.02、05.03 标题已分别为“字段定义与语义规范”“字段内容与格式规范”“字段注册与消费规范”。
+        - 06 已明确 active 行动编排主文件承担总协调职责，不是薄入口、索引页或能力资产 wrapper，并规定承上、启下、横向边界。
+        - 40、41 已按行动编排语义表达具体审核流程；文件路径和 `work_process` / `work_model` 机器标识保留，符合兼容策略。
+        - 复跑 `python3 code/specs_validate.py all --fail-on-diagnostics` 退出码 0；`fact_validate` errors=0，仅提示 0087 result_review 尚未写入 review_items。
+        recommendations:
+        - Human 关闭材料中继续保留 residual_risks：本轮未重命名实际文件路径，机器标识仍作为兼容层存在。
+        - 后续若要迁移文件路径、`work_model` / `work_process` 机器键或保障要求枚举，应单独立项，避免与 0086 编号迁移和本次术语收敛混在一起。
+        - 可在后续小修中润色 05/06 第一章个别句式，例如“基础规则、事实模型/行动编排、准入条件”略有重复，但不构成关闭前阻塞。
+        required_changes: []
+        evidence_refs:
+        - specs/02-术语规范.md:175
+        - specs/02-术语规范.md:189
+        - specs/02-术语规范.md:204
+        - specs/05-工作模型基础规范.md:1
+        - specs/05.01-工作模型字段定义与语义规范.md:1
+        - specs/05.02-工作模型字段内容与格式规范.md:1
+        - specs/05.03-工作模型字段注册与消费规范.md:1
+        - specs/06-工作流程基础规范.md:94
+        - specs/41-work-model-audit-工作模型审核.md:60
+        - /tmp/ldvh-old-terms-0087.txt
+      raw_output_ref: subagent:019eea71-f161-7202-88ef-c7b04c0a140e
+      attested_at: '2026-06-21T22:30:00+08:00'
+      attestation:
+        signer: Laplace specs-result-reviewer
+        statement: 基于上述 prompt context 和 input refs 完成只读结果复核，并对本条复核结论负责。
+    - id: result-review-2
+      role: implementation_result_reviewer
+      agent_name: Lorentz implementation-result-reviewer (019eea71-f1de-7363-93db-5b3e7c3ea9aa)
+      requested_at: '2026-06-21T21:48:00+08:00'
+      prompt_context:
+        objective: 复核 0087 实现和验证面是否足以进入 Human 关闭确认，包括旧术语残留分类、Code/Web 同步边界和验证证据。
+        input_refs:
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml
+        - rules/
+        - code/docs/
+        - web/docs/
+        - code/
+        - tests/
+        - web/
+        - /tmp/ldvh-old-terms-0087.txt
+        - python3 code/specs_validate.py all --fail-on-diagnostics
+        - python3 code/fact_validate.py ldvh-base --format text
+        - npm run test:code
+        - npm --prefix web run check
+        - npm --prefix web run test:web:api
+        constraints:
+        - 只读复核，不修改文件
+        - 旧路径、机器标识、兼容枚举、测试夹具和历史事实文本不机械视为失败
+        prompt_digest: 检查实现同步面、验证证据、旧术语残留分类和关闭前硬阻塞。
+      context_digest: 只读复核 rules/code/web/tests 与验证证据，确认实现和验证面无关闭前硬阻塞。
+      result:
+        status: pass_with_followups
+        summary: 实现和验证面足以进入 Human 关闭确认。未发现关闭前必须同步 Code/Web 源码的硬阻塞；旧术语残留分类总体合理，主要属于旧文件路径、机器标识/兼容枚举、保障要求既有类型名、Code 兼容诊断/测试夹具和历史事实文本。
+        key_findings:
+        - 02 已明确“事实模型 / 行动编排”为当前正式表达，并限定旧术语只保留在旧路径、机器字段、历史事实文本、兼容枚举等位置。
+        - 05、06 主规范已收敛：05 定义事实模型，06 定义行动编排，并明确 active 行动编排主文件承担总协调职责，不是薄入口或 wrapper。
+        - Web 源码没有发现需要同步的用户可见旧术语阻塞；残留仅是注释类命中。Web/API 源码实际同步了 Spark/Study 编号引用和关联排序。
+        - Code 源码仍有 `work_model`、`work_process`、`workflow`、中文“工作模型/工作流程”诊断文本，但当前可归为兼容层：机器 kind/doc_kind、旧索引名检查、保障枚举、测试夹具和失败诊断文案。
+        - 旧术语扫描 253 行命中按目录约为 specs 196、code 48、rules 6、web_docs 2、web 1，分类与 WorkCase 自检描述一致。
+        - 核心校验复跑通过：specs_validate all 通过，fact_validate errors=0 warnings=11，npm run test:code 273 passed 且 specs:check 通过，Web check/API 测试通过。
+        recommendations:
+        - Human 关闭材料中明确写入：本轮不重命名实际文件路径，不迁移 `work_model/work_process` 机器标识，不机械改写历史事实文本。
+        - 若要清理 CLI 帮助/诊断中的旧中文术语，应作为后续兼容迁移单独处理。
+        - 提交时注意与 workcase-0086 的编号迁移边界，避免两个高影响迁移在提交说明里混淆。
+        required_changes: []
+        evidence_refs:
+        - specs/02-术语规范.md:204
+        - specs/05-工作模型基础规范.md:1
+        - specs/06-工作流程基础规范.md:1
+        - specs/06-工作流程基础规范.md:94
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:397
+        - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:505
+        - /tmp/ldvh-old-terms-0087.txt
+        - python3 code/specs_validate.py all --fail-on-diagnostics
+        - python3 code/fact_validate.py ldvh-base --format text
+        - npm run test:code
+        - npm --prefix web run check
+        - npm --prefix web run test:web:api
+      raw_output_ref: subagent:019eea71-f1de-7363-93db-5b3e7c3ea9aa
+      attested_at: '2026-06-21T22:30:00+08:00'
+      attestation:
+        signer: Lorentz implementation-result-reviewer
+        statement: 基于上述 prompt context 和 input refs 完成只读结果复核，并对本条复核结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-21T22:30:56+08:00'
+      resolver: codex-main-controller
+      source_review_item_ids:
+      - result-review-1
+      - result-review-2
+      accepted_findings:
+      - 采纳 specs 结果复核：正式规范语义已完成事实模型/行动编排收敛，旧路径和机器标识保留边界清楚，无关闭前硬阻塞。
+      - 采纳实现结果复核：Code/Web 源码无必须同步的关闭前阻塞，旧术语残留主要属于兼容层、测试夹具、诊断文案和历史事实文本。
+      - 采纳后续建议：若后续迁移实际文件路径、机器键、CLI/诊断文案或保障要求枚举，应单独立项并与 0086 编号迁移分开处理。
+      rejected_findings: []
+      required_changes_applied: []
+      unresolved_items: []
+      changed_fields:
+      - status
+      - updated
+      - orchestration.result_review.review_items
+      - orchestration.result_review.controller_resolution
+      - closure_evidence
+      - closure_requested_at
+      - revision_history
+      revision_history_refs:
+      - revision_history[3]
+      summary: 两个结果复核视角均为 pass_with_followups 且无 required_changes。本 WorkCase 已可提交 Human 关闭确认；未重命名路径、未迁移机器标识和未机械改写历史事实文本作为已知残留风险保留。
+    human_closure_confirmation: null
+revision_history:
+- at: '2026-06-21T20:49:13+08:00'
+  from_status: subagents_plan_reviewing
+  to_status: human_plan_confirming
+  actor: codex-main-controller
+  reason: 子 Agent 方案审核完成后，按 WorkCase 规范补齐审核事实、主控处理记录、item-5 Gate 边界和提交预检验证命令，并推进到 human_plan_confirming。
+  changed_fields:
+  - status
+  - updated
+  - orchestration.execution_items[item-5].expected_output
+  - orchestration.execution_items[item-6].input_refs
+  - orchestration.plan_review.review_items
+  - orchestration.plan_review.controller_resolution
+  - verification_evidence
+  summary: 记录 terminology_boundary_reviewer、specs_structure_reviewer、implementation_impact_reviewer 三个审核视角；采纳其非方向性阻塞项并完成回写。
+- at: '2026-06-21T21:40:31+08:00'
+  from_status: human_plan_confirming
+  to_status: executing
+  actor: Human
+  reason: Human 回复“执行吧”，确认按 0087 目标、成功标准和执行编排进入执行。
+  changed_fields:
+  - status
+  - updated
+  - plan_confirmed_at
+  - orchestration.plan_review.human_confirmation
+  - orchestration.plan_review.controller_resolution.unresolved_items
+  summary: 执行确认覆盖术语策略、05 子文档职责型标题、06/40-59 行动编排总协调和最小可验证迁移边界；不得机械改写历史事实文本。
+- at: '2026-06-21T21:47:10+08:00'
+  from_status: executing
+  to_status: subagents_result_reviewing
+  actor: codex-main-controller
+  reason: 已完成规范、入口和文档叙述收敛以及验证命令，进入结果复核。
+  changed_fields:
+  - status
+  - updated
+  - success_criteria
+  - orchestration.execution_items
+  - orchestration.result_review.controller_self_check
+  - orchestration.result_review.review_policy
+  - verification_evidence
+  - closure_evidence
+  - residual_risks
+  summary: 执行完成并通过 specs、fact、Code、Web、提交信息和 Hook 预检；旧路径和机器标识作为兼容残留保留，等待独立结果复核。
+- at: '2026-06-21T22:30:56+08:00'
+  from_status: subagents_result_reviewing
+  to_status: human_closure_confirming
+  actor: codex-main-controller
+  reason: 两个独立结果复核视角均完成，结论为 pass_with_followups 且无关闭前必须修复项。
+  changed_fields:
+  - status
+  - updated
+  - orchestration.result_review.review_items
+  - orchestration.result_review.controller_resolution
+  - verification_evidence
+  - closure_evidence
+  - closure_requested_at
+  summary: 结果复核完成并进入 Human 关闭确认；路径和机器标识兼容残留已记录为 residual_risks。
+plan_confirmed_at: '2026-06-21T21:40:31+08:00'
+related_docs:
+- specs/00-LD-Vibe-Harness理念与纲要.md
+- specs/01-目录说明.md
+- specs/02-术语规范.md
+- specs/03.02-工作模型文档规范.md
+- specs/03.03-工作流程文档规范.md
+- specs/05-工作模型基础规范.md
+- specs/05.01-工作模型字段定义与语义规范.md
+- specs/05.02-工作模型字段内容与格式规范.md
+- specs/05.03-工作模型字段注册与消费规范.md
+- specs/06-工作流程基础规范.md
+- specs/20-Spark-火花.md
+- specs/21-WorkCase-工作项.md
+- specs/22-ADR-决策.md
+- specs/23-Pitfall-踩坑经验.md
+- specs/24-Study-研究报告.md
+- specs/40-workflow-design-audit-工作流程设计审核.md
+- specs/41-work-model-audit-工作模型审核.md
+- specs/42-specs-audit-规范审核.md
+- specs/43-assurance-readiness-audit-保障准备度审核.md
+related_adrs: []
+related_sparks:
+- spark-0019
+related_pitfalls: []
+related_workcases:
+- workcase-0086
+verification_evidence: |-
+  ## 验证计划
+
+  尚未进入执行。执行确认后应至少验证：
+
+  ## 验证命令
+
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 code/fact_validate.py ldvh-base`
+  - `npm run test:code`
+  - `python3 -m pytest tests/code -q`
+  - `npm --prefix web run check`
+  - `npm --prefix web run test:web:api`
+  - `python3 code/commit_validate.py --check-message-file <message-file>`
+  - `python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>`
+  - 旧术语、旧标题、旧路径、旧 canonical_path 和当前事实引用扫描
+
+  ## 验证结果
+
+  - 本 WorkCase 创建时仅新增工作对象事实源，未修改正式 specs、Code、Web、Rules、Skill 或 Hook。
+  - 方案审核阶段已完成三个子 Agent 只读审核，并由主控补齐审核事实、处理记录和验证计划命令。
+  - 执行阶段已完成事实模型 / 行动编排术语收敛、05 子文档职责型标题收敛、06 行动编排总协调职责补充、Rules / Code docs / Web docs 当前叙述同步。
+  - `python3 code/specs_validate.py all --fail-on-diagnostics` 通过，退出码 0。
+  - `python3 code/fact_validate.py ldvh-base --format text` 通过，`errors=0`；仍有 0084/0085/0086 既有自签审核 warning，以及 0087 在进入结果复核前的执行进度 warning。
+  - `npm run test:code` 通过，273 个 Python 单测通过，随后 specs:check 通过。
+  - `npm --prefix web run check` 通过。
+  - `npm --prefix web run test:web:api` 通过。
+  - `python3 code/commit_validate.py --check-message-file <message-file>` 通过。
+  - `python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` 通过。
+  - 旧术语残留扫描命中 253 行，主要属于旧文件路径、机器字段、兼容枚举、Code 内部标签和历史事实文本。
+  - 结果复核阶段已完成 specs_result_reviewer 与 implementation_result_reviewer 两个只读复核，结论均为 `pass_with_followups` 且 `required_changes=[]`。
+
+  ## 结论
+
+  - 当前已完成 0087 执行、主控自检和独立结果复核，状态推进到 Human 关闭确认。
+closure_evidence: |-
+  ## 验证计划
+
+  0087 关闭前需要确认：正式规范表达已收敛、旧路径和机器标识兼容边界已说明、验证命令通过、结果复核完成且无必须修复项。
+
+  ## 验证命令
+
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 code/fact_validate.py ldvh-base --format text`
+  - `npm run test:code`
+  - `npm --prefix web run check`
+  - `npm --prefix web run test:web:api`
+  - `python3 code/commit_validate.py --check-message-file <message-file>`
+  - `python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>`
+
+  ## 验证结果
+
+  - 正式表达已收敛为“事实模型 / 行动编排”。
+  - 05.01、05.02、05.03 标题已收敛为“字段定义与语义规范”“字段内容与格式规范”“字段注册与消费规范”。
+  - 06 已明确 active 行动编排主文件承担总协调、承上启下职责，不是薄入口、索引页或能力资产 wrapper。
+  - 旧路径、`work_model` / `work_process` 机器标识、保障要求枚举和历史事实文本保留为兼容层。
+
+  ## 结论
+
+  - 结果复核已完成，两个复核视角均无关闭前必须修复项；当前进入 Human 关闭确认。
+  - 若后续决定重命名实际文件路径，应单独创建或延续 WorkCase，并与 workcase-0086 的编号迁移分开提交。
+closure_requested_at: '2026-06-21T22:30:56+08:00'
+residual_risks:
+- 本轮未重命名实际文件路径，`specs/03.02-工作模型文档规范.md`、`specs/05-工作模型基础规范.md`、`specs/06-工作流程基础规范.md`、40/41 等路径仍保留旧词；这是兼容选择，不代表正文术语未迁移。
+- Code 内部仍保留 `work_model`、`work_process`、部分中文诊断和兼容枚举；当前验证通过，后续若要连机器标识一起迁移，应另设迁移边界和测试更新。
+- 当前工作区仍有 workcase-0086 相关未提交迁移变更；提交时应拆分或说明边界，避免两个高影响迁移混在同一提交中。
+followup_refs: []

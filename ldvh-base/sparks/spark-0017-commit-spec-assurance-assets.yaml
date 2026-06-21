@@ -92,7 +92,7 @@ related_docs:
 - specs/04.03-环境入口适配与部署规范.md
 - specs/06-工作流程基础规范.md
 - specs/10-Git提交规范.md
-- specs/24-Spark-火花.md
+- specs/20-Spark-火花.md
 - specs/40-workflow-design-audit-工作流程设计审核.md
 - specs/41-work-model-audit-工作模型审核.md
 - specs/42-specs-audit-规范审核.md

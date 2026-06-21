@@ -2,16 +2,16 @@
 
 ```yaml
 ldvh_doc:
-  doc_id: "24"
+  doc_id: "20"
   doc_kind: "work_model_spec"
   title: "Spark-火花"
   status: "active"
-  canonical_path: "specs/24-Spark-火花.md"
+  canonical_path: "specs/20-Spark-火花.md"
   created: "2026-06-09"
   updated: "2026-06-20"
   parent_doc: ""
   relation: ""
-  positioning: "定义 Spark / 火花工作模型，包括对象定位、演变承载、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则"
+  positioning: "定义 Spark / 火花事实模型，包括对象定位、演变承载、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则"
   scope: "所有接入 LDVH 且需要管理尚未计划化但有保留价值的输入、发现、提醒、问题、缺口和偏好的项目"
   basis:
     - "specs/05-工作模型基础规范.md"
@@ -24,7 +24,7 @@ ldvh_doc:
     - "specs/21-WorkCase-工作项.md"
     - "specs/22-ADR-决策.md"
     - "specs/10-Git提交规范.md"
-    - "specs/25-Study-研究报告.md"
+    - "specs/24-Study-研究报告.md"
   code_consumption:
     - "doc_metadata"
     - "relations"
@@ -35,12 +35,12 @@ ldvh_doc:
 
 ```yaml
 ldvh_member:
-  spec_id: "24"
+  spec_id: "20"
   kind: work_model
   name_en: Spark
   name_zh: 火花
   collection_status: active
-  canonical_path: specs/24-Spark-火花.md
+  canonical_path: specs/20-Spark-火花.md
   instance_root: ldvh-base/sparks/
   schema_anchor: "§6"
   state_machine_anchor: "§3"
@@ -88,7 +88,7 @@ Spark 可以从一句话开始，随后逐步扩展和收敛。`description` 承
 ---
 ## 2. 事实源边界
 
-本文是 Spark 工作模型的权威规范，定义 Spark 的准入条件、状态机、对象关系、Human Gate、字段契约、事实源回写和证据留存要求。
+本文是 Spark 事实模型的权威规范，定义 Spark 的准入条件、状态机、对象关系、Human Gate、字段契约、事实源回写和证据留存要求。
 
 Spark 实例的权威事实源位置为：
 
@@ -100,7 +100,7 @@ ldvh-base/sparks/spark-{NNNN}-short-title.yaml
 
 | 内容 | 权威位置 |
 |---|---|
-| Spark 工作模型规范 | `specs/24-Spark-火花.md` |
+| Spark 事实模型规范 | `specs/20-Spark-火花.md` |
 | Spark 实例 | `ldvh-base/sparks/` |
 | Spark 字段内容格式 | `specs/05.02-工作模型字段内容与格式规范.md` |
 | Spark 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -171,7 +171,7 @@ WorkCase 的准入、状态和字段契约由 `specs/21-WorkCase-工作项.md` �
 
 Spark 可以关联一个或多个 Study，用于承接 AI 调研、资料分析、事实核验或方案比较后的稳定报告。Spark 的 `related_studies` 记录 Study ID；Study 的 `related_sparks` 可反向记录来源或关联 Spark。
 
-Spark 只保留报告对议题演变产生的关键影响，不复制报告全文。Study 的准入、状态和字段契约由 `specs/25-Study-研究报告.md` 定义。
+Spark 只保留报告对议题演变产生的关键影响，不复制报告全文。Study 的准入、状态和字段契约由 `specs/24-Study-研究报告.md` 定义。
 
 Study 是报告承载，不是讨论入口、执行承接或决策承接。将完整报告提炼为 Study 时，应更新 `related_studies` 和 `evolution`；除非 Spark 的剩余议题已经被 WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源完整承接，否则不得仅因形成 Study 就把 Spark 标记为 `resolved`。
 
@@ -261,7 +261,7 @@ status: resolved
 created: '2026-06-09T09:30:00+08:00'
 updated: '2026-06-09T10:00:00+08:00'
 description: |
-  审查工作流程规范时发现错误处理和异常场景尚未形成统一规则。当前方向是先保留缺口，再决定是否分流为 WorkCase 或关联 Study。
+  审查行动编排规范时发现错误处理和异常场景尚未形成统一规则。当前方向是先保留缺口，再决定是否分流为 WorkCase 或关联 Study。
 evolution:
   - at: '2026-06-09T09:45:00+08:00'
     summary: 发现错误处理章节缺失，先作为火花保留。
@@ -375,9 +375,9 @@ Web 可展示 Spark 状态、优先级、来源类型、来源说明、关键演
 
 Web 不得在页面状态、缓存或数据库中维护独立 Spark 权威状态。Spark 创建后的字段编辑、状态流转、分流、废弃和删除不得通过 Web 直接执行；如未来需要开放，必须先更新 08 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 
-### 8.4 工作流程与环境适配
+### 8.4 行动编排与环境适配
 
-Spark 创建、分流和废弃的具体行动流程由后续 40-59 工作流程规范承接。本文只定义 Spark 实例的事实规则和状态约束。
+Spark 创建、分流和废弃的具体行动流程由后续 40-59 行动编排规范承接。本文只定义 Spark 实例的事实规则和状态约束。
 
 环境不支持完整引用校验、分流辅助或创建后字段编辑时，应记录降级方式，例如改用人工检查、Code 校验或直接读取 Git 文件事实源；不得把未完成的环境能力表述为完整支持。
 
@@ -388,11 +388,11 @@ Spark 创建、分流和废弃的具体行动流程由后续 40-59 工作流程�
 
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Spark 实例和后续工作流程应遵守本文定义的准入、演变承载、状态机、字段契约、分流规则和事实源边界 | 05、03.02、本文、22 ADR、20 21 WorkCase、25 Study、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、分流或废弃 Spark 时 |
+| 上位约束承接要求 | Spark 实例和后续行动编排应遵守本文定义的准入、演变承载、状态机、字段契约、分流规则和事实源边界 | 05、03.02、本文、22 ADR、20 21 WorkCase、25 Study、Human Gate | 事实模型治理 | 创建、修改、搬移、审计、分流或废弃 Spark 时 |
 | 入口可见要求 | AI 处理未计划化但有保留价值的信息、发现、提醒、问题或缺口时，应能定位本文 | 成员自描述、运行入口摘要、Spark 分流流程入口 | AI 执行入口提示 | 信息保留、分流、废弃或字段契约变化时 |
 | 确定性执行要求 | Spark 字段、状态、来源枚举、演变记录、优先级、引用、文件命名和条件必填应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Spark 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、分流规则或引用关系变化时 |
-| Human 交互要求 | Spark 创建、分流、废弃、核心摘要修改、演变记录修改和用 Spark 规避对象准入时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | Spark 规范变化后，应检查成员自描述、05.01、05.02、05.03、ADR、Study、WorkCase、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Spark 字段、状态、事实源边界、适配规则或检查要求变化时 |
+| Human 交互要求 | Spark 创建、分流、废弃、核心摘要修改、演变记录修改和用 Spark 规避对象准入时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 事实模型治理 | §5 中任一场景发生时 |
+| 生命周期触发要求 | Spark 规范变化后，应检查成员自描述、05.01、05.02、05.03、ADR、Study、WorkCase、Code、Web、适配措施和相关行动编排是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Spark 字段、状态、事实源边界、适配规则或检查要求变化时 |
 
 ---
 ## 10. 检查要求
@@ -417,5 +417,5 @@ Spark 规范检查至少包括：
 ## 11. 待补齐事项
 
 1. Spark 校验 Code 待字段契约稳定后继续补齐更多正反样例；
-2. Spark 快速创建已作为当前唯一 Web 写入能力实现；Spark 分流、废弃、删除和创建后字段编辑仍待工作流程、受控写入规范和 Human Gate 样例补齐；
-3. Spark 创建、分流和废弃的具体工作流程待 40-59 承接；
+2. Spark 快速创建已作为当前唯一 Web 写入能力实现；Spark 分流、废弃、删除和创建后字段编辑仍待行动编排、受控写入规范和 Human Gate 样例补齐；
+3. Spark 创建、分流和废弃的具体行动编排待 40-59 承接；

@@ -24,8 +24,8 @@ related_docs:
 - specs/05.02-工作模型字段内容与格式规范.md
 - specs/06-工作流程基础规范.md
 - specs/21-WorkCase-工作项.md
-- specs/24-Spark-火花.md
-- specs/25-Study-研究报告.md
+- specs/20-Spark-火花.md
+- specs/24-Study-研究报告.md
 archive_reason: null
 ---
 

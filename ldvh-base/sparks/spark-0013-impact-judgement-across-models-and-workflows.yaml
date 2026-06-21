@@ -58,8 +58,8 @@ related_docs:
 - specs/06-工作流程基础规范.md
 - specs/21-WorkCase-工作项.md
 - specs/22-ADR-决策.md
-- specs/24-Spark-火花.md
-- specs/25-Study-研究报告.md
+- specs/20-Spark-火花.md
+- specs/24-Study-研究报告.md
 - specs/40-workflow-design-audit-工作流程设计审核.md
 - specs/41-work-model-audit-工作模型审核.md
 - specs/42-specs-audit-规范审核.md

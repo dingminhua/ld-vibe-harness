@@ -2,16 +2,16 @@
 
 ```yaml
 ldvh_doc:
-  doc_id: "25"
+  doc_id: "24"
   doc_kind: "work_model_spec"
   title: "Study-研究报告"
   status: "active"
-  canonical_path: "specs/25-Study-研究报告.md"
+  canonical_path: "specs/24-Study-研究报告.md"
   created: "2026-06-18"
   updated: "2026-06-18"
   parent_doc: ""
   relation: ""
-  positioning: "定义 Study / 研究报告工作模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则"
+  positioning: "定义 Study / 研究报告事实模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则"
   scope: "所有接入 LDVH 且需要把 AI 调研、资料分析、方案比较或事实核验结果沉淀为稳定可阅读报告的项目"
   basis:
     - "specs/05-工作模型基础规范.md"
@@ -24,7 +24,7 @@ ldvh_doc:
     - "specs/08-Web信息同步实现规范.md"
     - "specs/09-事实源边界与承载规范.md"
     - "specs/10-Git提交规范.md"
-    - "specs/24-Spark-火花.md"
+    - "specs/20-Spark-火花.md"
   code_consumption:
     - "doc_metadata"
     - "relations"
@@ -35,12 +35,12 @@ ldvh_doc:
 
 ```yaml
 ldvh_member:
-  spec_id: "25"
+  spec_id: "24"
   kind: work_model
   name_en: Study
   name_zh: 研究报告
   collection_status: active
-  canonical_path: specs/25-Study-研究报告.md
+  canonical_path: specs/24-Study-研究报告.md
   instance_root: ldvh-base/studies/
   schema_anchor: "§6"
   state_machine_anchor: "§3"
@@ -82,7 +82,7 @@ Study 是报告产物对象，不是讨论过程对象。讨论的关键转折�
 ---
 ## 2. 事实源边界
 
-本文是 Study 工作模型的权威规范，定义 Study 的准入条件、状态机、对象关系、Human Gate、字段契约、事实源回写和证据留存要求。Study 作为 Markdown 工作对象时，文档治理承接 `specs/03.01-规范文档规范.md`；权威事实源、派生展示和外部资料边界承接 `specs/09-事实源边界与承载规范.md`。
+本文是 Study 事实模型的权威规范，定义 Study 的准入条件、状态机、对象关系、Human Gate、字段契约、事实源回写和证据留存要求。Study 作为 Markdown 工作对象时，文档治理承接 `specs/03.01-规范文档规范.md`；权威事实源、派生展示和外部资料边界承接 `specs/09-事实源边界与承载规范.md`。
 
 Study 实例的权威事实源位置为：
 
@@ -94,7 +94,7 @@ Study 是 Markdown 工作对象。每个实例使用 YAML frontmatter 承载结�
 
 | 内容 | 权威位置 |
 |---|---|
-| Study 工作模型规范 | `specs/25-Study-研究报告.md` |
+| Study 事实模型规范 | `specs/24-Study-研究报告.md` |
 | Study 实例 | `ldvh-base/studies/` |
 | Study 字段内容格式 | `specs/05.02-工作模型字段内容与格式规范.md` |
 | Study 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
@@ -134,7 +134,7 @@ active → archived
 
 Spark 可以引用一个或多个 Study。Spark 负责保留议题当前摘要和关键语义转折，Study 负责承载完整报告正文。Spark 不应复制 Study 全文；Study 不应记录 Spark 的讨论流水。
 
-Spark 的准入、状态和字段契约由 `specs/24-Spark-火花.md` 定义。
+Spark 的准入、状态和字段契约由 `specs/20-Spark-火花.md` 定义。
 
 ### 4.2 Study 与 WorkCase、ADR 和 Pitfall
 
@@ -225,7 +225,7 @@ Frontmatter 后的 Markdown 正文是报告正文。正文必须使用稳定 Mar
 ---
 id: study-0001
 type: study
-title: Spark 工作模型演变承载方式研究
+title: Spark 事实模型演变承载方式研究
 status: active
 created: '2026-06-18T14:30:00+08:00'
 updated: '2026-06-18T15:00:00+08:00'
@@ -235,7 +235,7 @@ summary: |
 conclusion: |
   Study 适合承载稳定报告；Spark 保留演变摘要和分流关系。
 urls:
-  - ref: specs/24-Spark-火花.md §6
+  - ref: specs/20-Spark-火花.md §6
     title: Spark 字段契约
     summary: 用于说明 Spark 的演变记录和分流关系边界，支撑本报告对 Spark/Study 分工的判断。
 related_sparks:
@@ -247,7 +247,7 @@ related_docs: []
 archive_reason:
 ---
 
-# Spark 工作模型演变承载方式研究
+# Spark 事实模型演变承载方式研究
 
 ## 研究问题
 
@@ -255,7 +255,7 @@ Spark 是否应同时承载想法、调研报告和讨论演变。
 
 ## 输入与边界
 
-本报告基于 Spark 与 Study 工作模型规范讨论，不复制原始对话流水。
+本报告基于 Spark 与 Study 事实模型规范讨论，不复制原始对话流水。
 
 ## 关键发现
 
@@ -267,7 +267,7 @@ Spark 不应复制完整报告；Study 承载稳定报告正文。
 
 ## 后续分流
 
-需要修改 Spark 或 Study 规则时，应分别进入对应工作模型规范或 WorkCase。
+需要修改 Spark 或 Study 规则时，应分别进入对应事实模型规范或 WorkCase。
 ```
 
 ---
@@ -333,9 +333,9 @@ Study 的所有关联内容必须进入上层“关联”区块。`urls` 显示�
 
 当前 Web 不得直接创建、编辑、替代、归档或删除 Study。未来如需开放 Study 写入，必须先更新 `specs/08-Web信息同步实现规范.md` 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 
-### 8.4 工作流程与环境适配
+### 8.4 行动编排与环境适配
 
-Study 创建、报告整理、吸收和归档的具体行动流程由后续 40-59 工作流程规范承接。本文只定义 Study 实例的事实规则和状态约束。
+Study 创建、报告整理、吸收和归档的具体行动流程由后续 40-59 行动编排规范承接。本文只定义 Study 实例的事实规则和状态约束。
 
 环境不支持 Markdown frontmatter 解析、引用校验或正文预览时，应记录降级方式，例如改用人工检查、Code 校验或直接读取 Git 文件事实源；不得把未完成的环境能力表述为完整支持。
 
@@ -346,11 +346,11 @@ Study 创建、报告整理、吸收和归档的具体行动流程由后续 40-5
 
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Study 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、24 Spark、10、Human Gate | 工作模型治理 | 创建、修改、审计、引用或归档 Study 时 |
+| 上位约束承接要求 | Study 实例和后续行动编排应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter 和事实源边界 | 05、03.02、本文、24 Spark、10、Human Gate | 事实模型治理 | 创建、修改、审计、引用或归档 Study 时 |
 | 入口可见要求 | AI 处理需要长期保留的调研报告时，应能定位本文 | 成员自描述、运行入口摘要、Spark 分流规则 | AI 执行入口提示 | 报告创建、引用、吸收或归档时 |
 | 确定性执行要求 | Study frontmatter、状态、引用、文件命名和正文存在性应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Study 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、Markdown 承载或引用关系变化时 |
-| Human 交互要求 | Study 创建、核心报告改写、归档和作为关键依据时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | Study 规范变化后，应检查成员自描述、01、03.01、05、05.01、05.02、05.03、08、Spark、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Study 字段、状态、事实源边界、Markdown frontmatter 或检查要求变化时 |
+| Human 交互要求 | Study 创建、核心报告改写、归档和作为关键依据时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 事实模型治理 | §5 中任一场景发生时 |
+| 生命周期触发要求 | Study 规范变化后，应检查成员自描述、01、03.01、05、05.01、05.02、05.03、08、Spark、Code、Web、适配措施和相关行动编排是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Study 字段、状态、事实源边界、Markdown frontmatter 或检查要求变化时 |
 
 ---
 ## 10. 检查要求
@@ -374,5 +374,5 @@ Study 规范检查至少包括：
 ## 11. 待补齐事项
 
 1. Study 校验 Code、Web 读取和测试应在本文生效后同步补齐；
-2. Study 创建、吸收和归档的具体工作流程待 40-59 承接；
+2. Study 创建、吸收和归档的具体行动编排待 40-59 承接；
 3. Study 与 docs/studies 的迁移样例、正反样例和 Human Gate 样例待真实报告完成后补齐。

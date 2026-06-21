@@ -141,7 +141,7 @@ orchestration:
     input_refs:
     - ldvh-base/
     - specs/21-WorkCase-工作项.md
-    - specs/24-Spark-火花.md
+    - specs/20-Spark-火花.md
     - specs/23-Pitfall-踩坑经验.md
     expected_output: 只修正误导当前执行的旧事实；必要历史证据保留为关闭证据、Spark 或 Pitfall。
     status: done

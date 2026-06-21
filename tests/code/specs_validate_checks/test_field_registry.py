@@ -67,7 +67,7 @@ def test_field_registry_accepts_mixed_ref_url_ref_and_enum_signal_web_kinds(tmp_
         object_rows=[
             "| `orchestration.mode` | workcase | 编排方式 | reference | string | enum | 21 | 21 | enum | enum_signal | active | none |",
             "| `orchestration.execution_items.input_refs` | workcase | 输入引用 | reference | list_string | mixed_ref | none | 21 | ref | mixed_ref | active | none |",
-            "| `urls` | study | 外部网址 | reference | list_object | url_ref | none | 25 | structured | url_ref | active | none |",
+            "| `urls` | study | 外部网址 | reference | list_object | url_ref | none | 24 | structured | url_ref | active | none |",
         ],
     )
 

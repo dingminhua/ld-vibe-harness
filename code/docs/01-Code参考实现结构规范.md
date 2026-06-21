@@ -9,7 +9,7 @@
 
 `specs/07-Code确定性执行实现规范.md` 是 LDVH Code 构成要素、确定性执行边界、需求准入、验证规则、维护规则和 Code 文档边界的权威规范。`specs/11-测试基础规范.md` 是跨构成要素测试治理、验证声明、测试实现归属和测试证据事实源边界的权威规范。
 
-本文只定义 `code/` 参考实现的目录结构、模块拆分、命令入口、测试映射和 AI 修改顺序，不替代 `specs/07-Code确定性执行实现规范.md`、`specs/11-测试基础规范.md`、工作模型规范、工作流程规范、事实源边界规范或具体对象契约。
+本文只定义 `code/` 参考实现的目录结构、模块拆分、命令入口、测试映射和 AI 修改顺序，不替代 `specs/07-Code确定性执行实现规范.md`、`specs/11-测试基础规范.md`、事实模型规范、行动编排规范、事实源边界规范或具体对象契约。
 
 当本文与 `specs/07-Code确定性执行实现规范.md` 或 `specs/11-测试基础规范.md` 存在冲突或解释不一致时，以 specs 为准；`code/` 实现和 `code/docs/` 文档不得通过实现细节反向改写 specs 正文、对象字段契约、状态机、Human Gate 条件、测试治理规则或事实源归属。
 
@@ -34,7 +34,7 @@
 | `code/specs_validate.py` | specs 文档结构、引用、保障要求、术语、Human Gate、管辖项目、运行投影、Web validate 派生检查等聚合入口 | 作为 CLI 兼容层和跨模块配置同步层；新增检查不得默认继续堆入此文件，应进入 `code/spec_checks/` |
 | `code/fact_cli.py` | 工作对象事实源查询、展示、搜索和统计入口 | 查询能力扩展时应保持输出来源可追溯，必要时拆出共享读取层 |
 | `code/fact_validate.py` | 工作对象事实源校验入口 | 字段、状态和对象关系规则变化时同步测试；不得把 specs 规则复制为第二事实源 |
-| `code/commit_validate.py` | commit message 校验入口 | 保持轻量单一职责；规则变化应回到对应规范或工作流程 |
+| `code/commit_validate.py` | commit message 校验入口 | 保持轻量单一职责；规则变化应回到对应规范或行动编排 |
 | `code/fix_block_scalar.py` | YAML block scalar 辅助修复脚本 | 只作为定向辅助脚本，不扩张为通用写入工具 |
 
 `code/` 中新增文件前，应先判断是否属于既有能力域；若属于 specs 校验域，应优先进入 `code/spec_checks/` 目标结构，而不是新增新的根级大脚本。

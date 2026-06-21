@@ -110,8 +110,8 @@ orchestration:
     - specs/21-WorkCase-工作项.md
     - specs/22-ADR-决策.md
     - specs/23-Pitfall-踩坑经验.md
-    - specs/24-Spark-火花.md
-    - specs/25-Study-研究报告.md
+    - specs/20-Spark-火花.md
+    - specs/24-Study-研究报告.md
     - code/fact_cli.py
     - code/fact_validate.py
     - tests/code/test_fact_cli.py
@@ -267,9 +267,9 @@ orchestration:
     mode: single
     input_refs:
     - specs/01-目录说明.md
-    - specs/25-Study-研究报告.md
+    - specs/24-Study-研究报告.md
     - specs/05-工作模型基础规范.md
-    - specs/24-Spark-火花.md
+    - specs/20-Spark-火花.md
     - code/
     - tests/
     - web/
@@ -277,14 +277,14 @@ orchestration:
     expected_output: |
       将 Study 工作模型从 26 补位为 25，并同步所有现行引用：
       - `specs/26-Study-研究报告.md` 不再存在；
-      - `specs/25-Study-研究报告.md` 的 `spec_id`、`canonical_path` 和 01 成员目录一致；
+      - `specs/24-Study-研究报告.md` 的 `spec_id`、`canonical_path` 和 01 成员目录一致；
       - specs、Code、Web、测试和 ldvh-base 现行事实源不再引用 `specs/26-Study` 或 26 号 Study；
       - 旧 Change 迁出后的残留扫描不把合法的 `specs/25-Study` 误判为迁移残留。
     status: done
-    result_summary: Study 工作模型已由 26 补位为 25；`specs/25-Study-研究报告.md`、01/05 成员目录与编号说明、05.01 字段注册表 owner、Web 关联排序、现行 specs 引用、事实源引用和测试引用已同步。残留 `specs/26` / `26-Study` 命中仅保留在 0074 本执行项和验证命令中，用于说明本次补救目标；字段注册表已新增 owner 与 active 工作模型编号一致性检查，防止 Study 字段再次漂回 26。
+    result_summary: Study 工作模型已由 26 补位为 25；`specs/24-Study-研究报告.md`、01/05 成员目录与编号说明、05.01 字段注册表 owner、Web 关联排序、现行 specs 引用、事实源引用和测试引用已同步。残留 `specs/26` / `26-Study` 命中仅保留在 0074 本执行项和验证命令中，用于说明本次补救目标；字段注册表已新增 owner 与 active 工作模型编号一致性检查，防止 Study 字段再次漂回 26。
     evidence_refs:
     - specs/01-目录说明.md
-    - specs/25-Study-研究报告.md
+    - specs/24-Study-研究报告.md
     blocking_reason: null
   - id: item-11
     title: 落实提交执行 Skill

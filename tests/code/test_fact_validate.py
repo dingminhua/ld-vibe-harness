@@ -1021,7 +1021,7 @@ urls:
   - https://example.com/bare-url
   - title: Missing ref
     summary: This item has no ref.
-  - ref: specs/25-Study-研究报告.md
+  - ref: specs/24-Study-研究报告.md
     title: Local path is not a URL.
   - ref: https://example.com/reference
     note: Unexpected field.

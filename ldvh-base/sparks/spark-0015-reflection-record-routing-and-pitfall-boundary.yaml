@@ -9,7 +9,7 @@ description: |
 
   本次触发背景：
 
-  1. `ldvh_doc.updated` 一度被规范和 Code 允许为空，导致 `specs/24-Spark-火花.md` 等已创建规范文档出现空更新时间；
+  1. `ldvh_doc.updated` 一度被规范和 Code 允许为空，导致 `specs/20-Spark-火花.md` 等已创建规范文档出现空更新时间；
   2. 主控修复后提交时，第一次 commit message 只写了“硬化 ldvh_doc 文档元信息契约”，不符合 `specs/10` 的 `<type>(<scope>): <subject>` 格式；
   3. 用户追问“这些反思记录到哪里”，主控最初倾向于创建 Pitfall；
   4. 用户进一步指出：Pitfall 应承载已经沉淀为经验、已经落地、其他 AI 可以顺手复用的内容；本次问题仍需要机制配合和边界讨论，不应过早进入 Pitfall。
@@ -58,6 +58,6 @@ related_studies: []
 related_docs:
 - specs/21-WorkCase-工作项.md
 - specs/23-Pitfall-踩坑经验.md
-- specs/24-Spark-火花.md
+- specs/20-Spark-火花.md
 - specs/10-Git提交规范.md
 - specs/03.01-规范文档规范.md

@@ -2,7 +2,7 @@
  * Sparks API 路由：火花速记创建入口（仅 Spark 允许 Web 创建，其他类型由 AI 创建）
  *
  * 依据：
- * - specs/24-Spark-火花.md §8.3 Web 信息同步
+ * - specs/20-Spark-火花.md §8.3 Web 信息同步
  * - specs/08-Web信息同步实现规范.md §8.2 Web 事实源写入白名单
  */
 
