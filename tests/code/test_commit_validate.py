@@ -259,7 +259,7 @@ def test_unified_hook_dispatcher_reuses_canonical_validator(tmp_path):
     invalid_message = tmp_path / "invalid-message.txt"
     valid_message.write_text(
         (
-            "docs(workplan): 测试提交消息 hook\n\n"
+            "docs(workcase): 测试提交消息 hook\n\n"
             "动机:\n"
             "- 验证 hook 复用 code/commit_validate.py。\n\n"
             "验证结论:\n"

@@ -24,7 +24,7 @@ ldvh_doc:
     - "specs/05.03-工作模型字段注册与消费规范.md"
     - "specs/09-事实源边界与承载规范.md"
     - "specs/11-测试基础规范.md"
-    - "specs/21-WorkPlan-工作计划.md"
+    - "specs/21-WorkCase-工作项.md"
   code_consumption:
     - "doc_metadata"
     - "relations"
@@ -71,7 +71,7 @@ ldvh_member:
 4. Code 派生落地要求表、landing-report、文档结构检查或人工审查发现落地要求缺口；
 5. AI 执行时发现规范要求已经写入 specs，但找不到入口、流程、Code、Human Gate、环境适配或降级方式；
 6. 准备把某个 candidate 工作流程、Skill、Agent、Hook、Code 或 Web 能力升级为可被落地要求消费的保障机制前；
-7. 需要把落地缺口分流为 WorkPlan、Spark、ADR、Pitfall、规范修订、Code/Web 需求或环境适配待补齐事项时。
+7. 需要把落地缺口分流为 WorkCase、Spark、ADR、Pitfall、规范修订、Code/Web 需求或环境适配待补齐事项时。
 
 以下场景不应由本流程直接承接：
 
@@ -93,7 +93,7 @@ ldvh_member:
 4. 已有 Rules、Skill、Agent、Hook、Code、Web、CI 或环境入口准备作为保障机制被落地要求消费；
 5. Human 要求判断 LDVH 当前是否具备进入真实落地、管辖项目接入、环境部署或 dogfood 的准备条件。
 
-不满足以上条件时，不应为了补齐流程编号或制造完整矩阵而触发本流程。若只是抽象讨论某类能力未来可能存在，应记录为候选事项、Spark 或 WorkPlan，而不是声称完成落地准备度审核。
+不满足以上条件时，不应为了补齐流程编号或制造完整矩阵而触发本流程。若只是抽象讨论某类能力未来可能存在，应记录为候选事项、Spark 或 WorkCase，而不是声称完成落地准备度审核。
 
 ---
 ## 3. 事实源边界
@@ -110,7 +110,7 @@ ldvh_member:
 | 测试治理、验证声明、等价验证和残留风险表达 | `specs/11-测试基础规范.md` |
 | 被审核落地要求正文 | 对应 specs 正式规范的规范落地要求章节 |
 
-Code 输出、landing-report、命令输出、Web 视图、Skill 输出、Agent 输出、聊天分析、docs/studies 和 docs/sources 只能作为导航、诊断、候选建议或过程输出。审核结论形成稳定事实时，必须按事实类型分流到目标规范、WorkPlan、Spark、ADR、Pitfall、docs 报告、Code/Web 实现文档或其他权威 Git 文件事实源。
+Code 输出、landing-report、命令输出、Web 视图、Skill 输出、Agent 输出、聊天分析、docs/studies 和 docs/sources 只能作为导航、诊断、候选建议或过程输出。审核结论形成稳定事实时，必须按事实类型分流到目标规范、WorkCase、Spark、ADR、Pitfall、docs 报告、Code/Web 实现文档或其他权威 Git 文件事实源。
 
 本流程不得创建“落地状态”“已准备状态”“环境已支持状态”这类长期状态事实源。准备度结论是一次审核过程输出；若需要长期追溯，应记录为工作对象、决策、风险、任务或规范修订，而不是保存为独立状态清单。
 
@@ -163,7 +163,7 @@ AI 遇到以下信号时，应识别为落地准备度审核场景：
 10. **判定准备度**：对每条落地要求给出 `ready / partial / blocked / needs_human_gate / not_applicable` 之一，并说明依据、证据、缺口和下一步分流；
 11. **识别系统性缺口**：聚合同类缺口，区分能力资产缺口、环境入口接入缺口、个人环境约束、适配检查失败、Code 缺口、Web 缺口、Skill/Agent/Hook 缺口、Human Gate 缺口、规范声明缺口；
 12. **形成审核结论**：按 §10 输出过程结论，说明审核对象、读取依据、运行命令、准备度矩阵、触发 Gate、回写建议和残留风险；
-13. **分流后续行动**：规范声明错误回写目标规范；能力或实现缺口进入 WorkPlan、Spark、ADR 或 Code/Web 需求；可复用误判进入 Pitfall；研究或报告进入 docs；高影响决策进入 ADR 或 Human Gate；
+13. **分流后续行动**：规范声明错误回写目标规范；能力或实现缺口进入 WorkCase、Spark、ADR 或 Code/Web 需求；可复用误判进入 Pitfall；研究或报告进入 docs；高影响决策进入 ADR 或 Human Gate；
 14. **复跑验证**：若本流程导致规范、Code、入口资产或能力资产变更，应重新运行相关 specs 校验、Code 检查或等价验证；未验证时不得声明完整 ready。
 
 ### 6.1 落地要求准备度检查矩阵
@@ -269,13 +269,13 @@ Code 输出只作为导航、聚合和诊断结果。Code 不判断规范是否�
 稳定事实回写规则如下：
 
 1. 落地要求声明错误或规范正文缺陷，回写对应 specs 主文件；
-2. 能力资产缺口、Code 缺口、Web 缺口、环境适配缺口或后续实现事项，回写 WorkPlan 或 Spark；
+2. 能力资产缺口、Code 缺口、Web 缺口、环境适配缺口或后续实现事项，回写 WorkCase 或 Spark；
 3. 长期决策、能力边界选择、接受降级或是否升级 active 的判断，回写 ADR；
 4. 可复用误判、反复失败或风险经验，回写 Pitfall；
 5. 审核形成报告、研究或迁移说明，回写 docs；
 6. 修改事实源时，按 10 的 Git 和 commit message 格式规则处理。
 
-凡回写为 WorkPlan 的后续行动，必须按 `specs/21-WorkPlan-工作计划.md` 和 `specs/05.02-工作模型字段内容与格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkPlan 内部 `execution_items`。
+凡回写为 WorkCase 的后续行动，必须按 `specs/21-WorkCase-工作项.md` 和 `specs/05.02-工作模型字段内容与格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkCase 内部 `execution_items`。
 
 不得把聊天中的“应该准备好了”“看起来可用”“已有保障机制”当作完成证据。关键结论必须能回指规范、目标文件、Code 命令输出、Human Gate、能力资产路径、环境适配规则或事实源差异。
 
@@ -331,7 +331,7 @@ Gate 场景：
 回写场景：
 
 1. 审核发现目标规范落地要求表缺陷，应回写目标规范；
-2. 审核发现能力资产缺口，应回写 WorkPlan、Spark 或 ADR；
+2. 审核发现能力资产缺口，应回写 WorkCase、Spark 或 ADR；
 3. 审核发现长期决策，应回写 ADR；
 4. 审核发现可复用误判，应回写 Pitfall；
 5. 审核只产生临时建议时，应明确其为过程输出。

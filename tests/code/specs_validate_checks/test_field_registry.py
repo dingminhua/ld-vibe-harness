@@ -17,7 +17,7 @@ def write_registry_doc(path, common_rows=None, object_rows=None):
         "| `description` | common | 背景 | narrative | markdown | none | none | 05.02 | format | summary | active | none |"
     ]
     object_rows = object_rows or [
-        "| `success_criteria` | workplan | 成功标准 | checklist | checklist_markdown | none | none | 21 | owner_state | checklist | active | none |"
+        "| `success_criteria` | workcase | 成功标准 | checklist | checklist_markdown | none | none | 21 | owner_state | checklist | active | none |"
     ]
     return write_md(
         path,
@@ -65,8 +65,8 @@ def test_field_registry_accepts_mixed_ref_url_ref_and_enum_signal_web_kinds(tmp_
     path = write_registry_doc(
         tmp_path / "05.03-工作模型字段注册与消费规范.md",
         object_rows=[
-            "| `orchestration.mode` | workplan | 编排方式 | reference | string | enum | 21 | 21 | enum | enum_signal | active | none |",
-            "| `orchestration.execution_items.input_refs` | workplan | 输入引用 | reference | list_string | mixed_ref | none | 21 | ref | mixed_ref | active | none |",
+            "| `orchestration.mode` | workcase | 编排方式 | reference | string | enum | 21 | 21 | enum | enum_signal | active | none |",
+            "| `orchestration.execution_items.input_refs` | workcase | 输入引用 | reference | list_string | mixed_ref | none | 21 | ref | mixed_ref | active | none |",
             "| `urls` | study | 外部网址 | reference | list_object | url_ref | none | 25 | structured | url_ref | active | none |",
         ],
     )
@@ -125,12 +125,12 @@ def test_field_registry_reports_active_replacement(tmp_path):
     assert any(issue.code == "FIELD_REGISTRY_REPLACEMENT_INVALID" for issue in issues)
 
 
-def test_field_registry_reports_workplan_field_missing_from_registry(tmp_path):
+def test_field_registry_reports_workcase_field_missing_from_registry(tmp_path):
     registry_path = write_registry_doc(tmp_path / "05.03-工作模型字段注册与消费规范.md")
     write_md(
-        tmp_path / "21-WorkPlan-工作计划.md",
+        tmp_path / "21-WorkCase-工作项.md",
         """
-# WorkPlan-工作计划
+# WorkCase-工作项
 
 ## 6. 字段契约
 
@@ -143,5 +143,5 @@ def test_field_registry_reports_workplan_field_missing_from_registry(tmp_path):
 
     issues = checker.field_registry_check([str(registry_path)])
 
-    assert any(issue.code == "FIELD_REGISTRY_WORKPLAN_FIELD_MISSING" for issue in issues)
+    assert any(issue.code == "FIELD_REGISTRY_WORKCASE_FIELD_MISSING" for issue in issues)
     assert any("unregistered_field" in issue.message for issue in issues)

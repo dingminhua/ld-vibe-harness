@@ -22,7 +22,7 @@ resolved_to: ""
 resolved_at: ""
 discard_reason: ""
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_studies:
   - study-0005
@@ -33,4 +33,4 @@ related_docs:
   - specs/07-Code确定性执行实现规范.md
   - specs/08-Web信息同步实现规范.md
   - specs/11-测试基础规范.md
-  - specs/21-WorkPlan-工作计划.md
+  - specs/21-WorkCase-工作项.md

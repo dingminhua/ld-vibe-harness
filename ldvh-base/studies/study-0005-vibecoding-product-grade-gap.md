@@ -74,7 +74,7 @@ urls:
 related_sparks:
   - spark-0008
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
@@ -84,7 +84,7 @@ related_docs:
   - specs/07-Code确定性执行实现规范.md
   - specs/08-Web信息同步实现规范.md
   - specs/11-测试基础规范.md
-  - specs/21-WorkPlan-工作计划.md
+  - specs/21-WorkCase-工作项.md
 archive_reason:
 ---
 
@@ -154,7 +154,7 @@ Demo 级 Vibe Coding 的优势很明确：
 
 产品级要求需求可追踪、可验收、可变更。ISO/IEC/IEEE 29148 把需求工程放在系统和软件生命周期中处理，强调需求过程和需求信息项。对 Vibe Coding 来说，这意味着不能只让 AI 读一句“做个 CRM”，而要有用户、场景、约束、验收、非目标和变更记录。
 
-LDVH 当前已有 WorkPlan 和 Spark，但缺更产品化的需求层。例如：
+LDVH 当前已有 WorkCase 和 Spark，但缺更产品化的需求层。例如：
 
 - 用户画像；
 - 用户旅程；
@@ -184,7 +184,7 @@ LDVH 当前有 ADR，但还缺系统架构事实源和接口治理能力。未�
 
 ISO/IEC 25010 把软件质量拆成多个质量特征，例如功能适合性、性能效率、兼容性、可用性、可靠性、安全性、可维护性和可移植性。产品级不能只问“功能有没有”，还要问“是否可靠、是否安全、是否可维护、是否易用、是否能被迁移和扩展”。
 
-LDVH 当前价值标准中已有强制验证和证据沉淀，但还没有把质量属性系统化映射到 WorkPlan、测试、评审和发布门禁。
+LDVH 当前价值标准中已有强制验证和证据沉淀，但还没有把质量属性系统化映射到 WorkCase、测试、评审和发布门禁。
 
 #### 4. 从“人工验收”到“测试金字塔和回归体系”
 
@@ -244,7 +244,7 @@ DORA 研究长期关注软件交付和运维表现。DORA 四个核心指标在�
 
 LDVH 当前能通过 Git 提交记录和提交记录派生视图追溯事实源修改，但还不能系统衡量交付吞吐、质量和恢复能力。后续需要能看见：
 
-- 一个需求从 Spark / WorkPlan 到发布用了多久；
+- 一个需求从 Spark / WorkCase 到发布用了多久；
 - 哪类变更最容易失败；
 - 哪些对象长期卡住；
 - 哪些测试或门禁阻塞最多；
@@ -277,9 +277,9 @@ AI coding 的产品级关键不是让 AI 无限自治，而是给 AI 明确事�
 从现有 specs 看，LDVH 已经具备几个重要底盘：
 
 1. 00 总纲已经把 LDVH 定位为面向 AI 协作的事实源治理和运行闭环，而不是普通文档集合；
-2. WorkArea / WorkPlan / ADR / Spark / Pitfall / Study 覆盖目标、计划、决策、经验和报告，事实源修改追溯回到 Git 提交记录；
+2. WorkArea / WorkCase / ADR / Spark / Pitfall / Study 覆盖目标、计划、决策、经验和报告，事实源修改追溯回到 Git 提交记录；
 3. Spark + Study 已经解决了“想法暂存”和“稳定报告”分离；
-4. WorkPlan 已经把执行编排、验证证据、关闭证据放在一次工作对象内；
+4. WorkCase 已经把执行编排、验证证据、关闭证据放在一次工作对象内；
 5. 11 测试基础规范已经建立验证声明、测试归属和事实源边界；
 6. Code 和 Web 已经在理念层被定义为确定性执行与 Human-facing 桥接；
 7. 最近子 Agent 调研已经开始把多角色抽象为 Role Contract，而不是绑定具体环境线程。
@@ -290,7 +290,7 @@ AI coding 的产品级关键不是让 AI 无限自治，而是给 AI 明确事�
 
 #### 1. 产品需求层
 
-当前 WorkPlan 更像一次可验收工作计划，Spark 更像议题入口。产品级还需要更稳定的产品需求层。候选能力包括：
+当前 WorkCase 更像一次可验收工作项，Spark 更像议题入口。产品级还需要更稳定的产品需求层。候选能力包括：
 
 - ProductGoal / 产品目标；
 - User / 用户画像；
@@ -301,7 +301,7 @@ AI coding 的产品级关键不是让 AI 无限自治，而是给 AI 明确事�
 - Feedback / 用户反馈；
 - Roadmap / 路线图。
 
-不一定都要变成工作模型，但 LDVH 至少需要定义这些信息应放在哪里、如何被 AI 读取、如何与 WorkPlan 关联。
+不一定都要变成工作模型，但 LDVH 至少需要定义这些信息应放在哪里、如何被 AI 读取、如何与 WorkCase 关联。
 
 #### 2. 架构与接口治理
 
@@ -330,7 +330,7 @@ LDVH 需要把 ISO 25010 式质量属性转成 AI 可执行的门禁语言。例
 - 可维护性：模块边界、复杂度、代码审查；
 - 可移植性：配置、环境、部署方式。
 
-这需要在 WorkPlan 的成功标准、验证证据和关闭证据中形成模板或检查项。
+这需要在 WorkCase 的成功标准、验证证据和关闭证据中形成模板或检查项。
 
 #### 4. DevSecOps 与供应链
 
@@ -362,7 +362,7 @@ LDVH 需要补齐：
 - on-call 或责任人；
 - 事故处理流程。
 
-LDVH 可考虑新增 Release / ProductionReadiness / Deployment / Migration 等对象或流程，也可以先通过 WorkPlan 模板和 Study 试运行。
+LDVH 可考虑新增 Release / ProductionReadiness / Deployment / Migration 等对象或流程，也可以先通过 WorkCase 模板和 Study 试运行。
 
 #### 6. 运行观测与事故复盘
 
@@ -374,7 +374,7 @@ LDVH 当前主要治理开发期事实源，产品级需要运行期闭环：
 - postmortem；
 - SLO 消耗；
 - 用户影响；
-- 修复 WorkPlan；
+- 修复 WorkCase；
 - Pitfall / ADR / docs 回流。
 
 这会显著扩大 LDVH 范围，需要谨慎分阶段，不宜一次性全做。
@@ -398,7 +398,7 @@ Vibe Coding 产品级需要专门衡量 AI 产出质量：
 
 LDVH Web 未来需要从“对象阅读器”升级为“产品工程态势驾驶舱”。建议逐步增加：
 
-- WorkPlan 看板；
+- WorkCase 看板；
 - 风险队列；
 - Human Gate 队列；
 - 验证证据状态；
@@ -420,11 +420,11 @@ Web 仍不能成为开放编辑后台，但可以成为 Human 介入、验收和
 
 建议新增或增强：
 
-1. WorkPlan 模板：加入产品级验收、质量属性、风险、发布影响和回滚问题；
+1. WorkCase 模板：加入产品级验收、质量属性、风险、发布影响和回滚问题；
 2. Release readiness checklist：先作为工作流程或 Study 模板，不急着建对象；
 3. 测试策略模板：按风险选择 unit / integration / e2e / contract / security / performance；
 4. Web 显示验证证据和 Human Gate 队列；
-5. Code 校验 WorkPlan 是否有可复现验证证据。
+5. Code 校验 WorkCase 是否有可复现验证证据。
 
 #### 第二阶段：安全与供应链闭环
 
@@ -437,7 +437,7 @@ Web 仍不能成为开放编辑后台，但可以成为 Human 介入、验收和
 3. Secret / credential 边界规则；
 4. CI/CD 安全检查；
 5. ASVS / SSDF / SLSA 映射模板；
-6. 安全风险进入 Pitfall、ADR 或 WorkPlan 的分流规则。
+6. 安全风险进入 Pitfall、ADR 或 WorkCase 的分流规则。
 
 #### 第三阶段：生产运行闭环
 
@@ -482,14 +482,14 @@ LDVH 面向的不是“让 AI 更快生成 demo”，而是“让 AI 参与真�
 
 ### 残留不确定性
 
-1. LDVH 是否应新增 Product / Feature / Release / Incident 等工作模型，还是先用 docs + WorkPlan + Study 承接，需要后续单独决策。
+1. LDVH 是否应新增 Product / Feature / Release / Incident 等工作模型，还是先用 docs + WorkCase + Study 承接，需要后续单独决策。
 2. 产品级能力很容易膨胀成大型 ALM / DevOps 平台，LDVH 应保持“AI 工程驾驭体系”的边界，不应复制 Jira、GitHub、Datadog 或 CI 平台。
 3. 不同项目的产品级门槛不同。个人工具、SaaS、医疗、金融、交易系统、安全产品的质量和合规要求差异巨大，LDVH 需要风险分级，而不是一刀切。
 4. Web 驾驶舱的增强必须谨慎控制写入边界，避免 Web 变成第二事实源。
 
 ## 后续分流
 
-1. 先创建或补充 WorkPlan，聚焦“产品级 readiness 最小闭环”。
+1. 先创建或补充 WorkCase，聚焦“产品级 readiness 最小闭环”。
 2. 在 00 中补充产品级 Vibe Coding 的价值边界，但避免一次性把所有产品工程能力写成承诺。
 3. 在 06 或 40-59 中新增“产品级准备度评审”工作流程。
 4. 在 10 中补充产品级测试策略和质量属性映射。

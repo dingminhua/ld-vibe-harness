@@ -13,12 +13,12 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-workplans:
-- workplan-0028
-- workplan-0043
-- workplan-0044
-- workplan-0045
-- workplan-0046
-- workplan-0047
-- workplan-0051
-- workplan-0055
+workcases:
+- workcase-0028
+- workcase-0043
+- workcase-0044
+- workcase-0045
+- workcase-0046
+- workcase-0047
+- workcase-0051
+- workcase-0055

@@ -16,18 +16,18 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-workplans:
-- workplan-0025
-- workplan-0029
-- workplan-0030
-- workplan-0031
-- workplan-0034
-- workplan-0035
-- workplan-0036
-- workplan-0039
-- workplan-0041
-- workplan-0049
-- workplan-0054
-- workplan-0056
-- workplan-0057
-- workplan-0068
+workcases:
+- workcase-0025
+- workcase-0029
+- workcase-0030
+- workcase-0031
+- workcase-0034
+- workcase-0035
+- workcase-0036
+- workcase-0039
+- workcase-0041
+- workcase-0049
+- workcase-0054
+- workcase-0056
+- workcase-0057
+- workcase-0068

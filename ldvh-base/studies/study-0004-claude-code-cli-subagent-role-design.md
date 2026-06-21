@@ -32,14 +32,14 @@ urls:
 related_sparks:
   - spark-0007
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
   - specs/00-LD-Vibe-Harness理念与纲要.md
   - specs/04.02-LDVH能力资产与落地保障规范.md
   - specs/06-工作流程基础规范.md
-  - specs/21-WorkPlan-工作计划.md
+  - specs/21-WorkCase-工作项.md
 archive_reason:
 ---
 
@@ -207,7 +207,7 @@ Claude Code 也支持嵌套 subagents。文档说明从 v2.1.172 开始，subage
 
 Fork 是另一个重要形态。`/fork` 会分叉当前对话，继承目前为止的完整对话，而不是从空白上下文开始。Fork 适合需要大量背景才能有用的辅助任务，或从同一起点并行尝试多个方法。它会让自己的工具调用保持在主对话之外，只把最终结果返回。
 
-对 LDVH 的判断是：普通 subagent 更适合执行 WorkPlan 中边界清楚的 execution item；fork 更适合同一上下文下的并行假设探索或备选方案，但更容易带入主上下文噪音，需要更严格的输出摘要和事实源回写边界。
+对 LDVH 的判断是：普通 subagent 更适合执行 WorkCase 中边界清楚的 execution item；fork 更适合同一上下文下的并行假设探索或备选方案，但更容易带入主上下文噪音，需要更严格的输出摘要和事实源回写边界。
 
 ### 上下文与持久化
 
@@ -262,10 +262,10 @@ LDVH 00 可以吸收这套思想，但不能把 Claude Code frontmatter 直接�
 
 1. 00 文档只定义环境无关 Role Contract；
 2. Claude Code 适配层负责把 Role Contract 映射为 `.claude/agents/*.md`、`~/.claude/agents/*.md`、`--agents` JSON 或 plugin agents；
-3. WorkPlan 的 `execution_items[*].role` 只引用角色，不复制完整 subagent 文件；
+3. WorkCase 的 `execution_items[*].role` 只引用角色，不复制完整 subagent 文件；
 4. 主控 AI 负责决定是否委派、选择前台/后台/fork、约束工具、等待结果和整合摘要；
 5. 子 Agent 中间输出和 transcript 不进入 LDVH 长期事实源；
-6. 只有摘要、证据引用、验证结果、关闭判断、风险和后续分流进入 WorkPlan / Spark / Study / ADR / Change；
+6. 只有摘要、证据引用、验证结果、关闭判断、风险和后续分流进入 WorkCase / Spark / Study / ADR / Change；
 7. 若需要多层嵌套或 fork，应在 Role Contract 中记录防爆炸边界，例如最大深度、最大并发、只读限制和停止条件。
 
 一个可供 00 后续吸收的候选表述是：
@@ -279,5 +279,5 @@ LDVH 的多角色协作可在 Claude Code CLI 中落地为 subagent Markdown、`
 1. 修改 `specs/00-LD-Vibe-Harness理念与纲要.md` 时，吸收 Claude Code “角色提示词 + 工具权限 + 模型 + MCP + Skill + hooks + memory”的角色契约思想。
 2. 修改 `specs/04.02-LDVH能力资产与落地保障规范.md` 时，判断 `.claude/agents`、`.claude/skills`、CLAUDE.md、MCP、hooks 和 plugins 的能力资产分层。
 3. 修改 `specs/06-工作流程基础规范.md` 时，定义主控是否允许自动委派、何时必须 Human Gate、何时使用前台/后台/fork。
-4. 修改 `specs/21-WorkPlan-工作计划.md` 时，保留最小角色引用和证据字段，不把 Claude Code frontmatter 作为 WorkPlan schema。
+4. 修改 `specs/21-WorkCase-工作项.md` 时，保留最小角色引用和证据字段，不把 Claude Code frontmatter 作为 WorkCase schema。
 5. 如要给 Claude Code 生成示例 subagent，应另建环境适配文档或 Skill，并要求项目级 agent 文件进入版本控制或保留定义摘要。

@@ -57,14 +57,14 @@ ldvh_member:
 
 Study / 研究报告承载已经形成稳定阅读价值的调研、分析、核验或方案比较结果。它解决的问题是：docs/studies 可以作为可变资料区，随时整理或删除；但某些报告已经成为后续讨论、决策、计划或 Spark 演变的关键依据，需要作为工作对象进入 Git 可追踪事实源。
 
-Study 是报告产物对象，不是讨论过程对象。讨论的关键转折由 Spark 的 `evolution` 承载；决策进入 ADR；可执行事项进入 WorkPlan；复用经验进入 Pitfall。Study 只保留报告正文、摘要、输入边界、结论边界和关联对象。
+Study 是报告产物对象，不是讨论过程对象。讨论的关键转折由 Spark 的 `evolution` 承载；决策进入 ADR；可执行事项进入 WorkCase；复用经验进入 Pitfall。Study 只保留报告正文、摘要、输入边界、结论边界和关联对象。
 
 ### 1.1 Study 准入条件
 
 一个内容满足以下条件之一时，应考虑形成 Study：
 
 1. AI 或 Human 已完成一轮调研，结果需要长期保留为可阅读报告；
-2. 报告会被多个 Spark、WorkPlan、ADR 或 Pitfall 引用；
+2. 报告会被多个 Spark、WorkCase、ADR 或 Pitfall 引用；
 3. docs/studies 中的临时资料已经被整理为稳定结论，不宜继续只放在可变资料区；
 4. 某个 Spark 的讨论依赖一份报告，但 Spark 不应复制报告全文；
 5. 方案比较、资料核验或事实调查需要保留结论边界、来源边界和残留不确定性。
@@ -74,7 +74,7 @@ Study 是报告产物对象，不是讨论过程对象。讨论的关键转折�
 以下内容通常不应单独形成 Study：
 
 1. 尚未整理的临时摘录、对话片段或原始资料；
-2. 已经可直接吸收到 specs、ADR、WorkPlan、Pitfall 或 Spark 的短结论；
+2. 已经可直接吸收到 specs、ADR、WorkCase、Pitfall 或 Spark 的短结论；
 3. 外部资料原文副本，应进入 docs/sources 或项目约定的外部资料区；
 4. 只服务当前一次执行、无需长期复读的命令输出；
 5. 讨论过程中的每一次观点变化。
@@ -136,11 +136,11 @@ Spark 可以引用一个或多个 Study。Spark 负责保留议题当前摘要�
 
 Spark 的准入、状态和字段契约由 `specs/24-Spark-火花.md` 定义。
 
-### 4.2 Study 与 WorkPlan、ADR 和 Pitfall
+### 4.2 Study 与 WorkCase、ADR 和 Pitfall
 
-Study 可以作为 WorkPlan 的资料输入、ADR 的决策依据或 Pitfall 的证据来源。目标对象应只引用 Study ID 或路径，不复制报告正文。
+Study 可以作为 WorkCase 的资料输入、ADR 的决策依据或 Pitfall 的证据来源。目标对象应只引用 Study ID 或路径，不复制报告正文。
 
-WorkPlan、ADR 和 Pitfall 的准入、状态和字段契约分别由 `specs/21-WorkPlan-工作计划.md`、`specs/22-ADR-决策.md` 和 `specs/23-Pitfall-踩坑经验.md` 定义。
+WorkCase、ADR 和 Pitfall 的准入、状态和字段契约分别由 `specs/21-WorkCase-工作项.md`、`specs/22-ADR-决策.md` 和 `specs/23-Pitfall-踩坑经验.md` 定义。
 
 ### 4.3 Study 与关联文档和网址
 
@@ -163,7 +163,7 @@ Study 的创建、状态变化、核心报告改写和归档都应留下 Git 提
 2. 将 docs/studies、docs/sources、外部资料或对话调研结果提升为 Study；
 3. 将 Study 标记为 `archived`；
 4. 大幅改写 `summary`、`conclusion` 或报告正文；
-5. 将 Study 作为 ADR、WorkPlan 或 Spark 的关键依据；
+5. 将 Study 作为 ADR、WorkCase 或 Spark 的关键依据；
 6. 接受报告中的不确定性、降级结论或高影响判断。
 
 Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录承接。本文只规定 Study 语境下需要确认的事实和影响范围。
@@ -189,7 +189,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `urls` | 报告正文中的外部网址及中文用途摘要；每项必须使用 `{ref, summary}` 或 `{ref, title, summary}` 结构，`ref` 必须是完整 `http(s)` URL，`summary` 必须是中文简介 | list[object] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_sparks` | 关联火花 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workcases` | 关联工作项 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 后续引用或承接文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -209,7 +209,7 @@ Frontmatter 后的 Markdown 正文是报告正文。正文必须使用稳定 Mar
 4. 细节分组应放在对应二级标题下，用三级标题 `###`、列表、表格或段落表达；
 5. `## 输入与边界` 统一承载资料边界、方法、来源范围和不纳入范围，不再使用 `## 资料边界` 等同义二级标题；
 6. `## 建议` 统一承载结论性建议、路线建议、候选补充方向和残留不确定性，不再另设 `## 结论` 或 `## 建议下一步` 作为同层级标题；
-7. `## 后续分流` 统一承载应进入 Spark、WorkPlan、ADR、Pitfall、docs 或规范的后续动作，不再使用 `## 后续分流建议` 等同义二级标题；
+7. `## 后续分流` 统一承载应进入 Spark、WorkCase、ADR、Pitfall、docs 或规范的后续动作，不再使用 `## 后续分流建议` 等同义二级标题；
 8. 报告正文应避免连续超长段落；超过三个并列判断时应使用列表或表格；超过两个层次时应优先拆成三级标题和列表。
 
 正文必须回答以下问题：
@@ -218,7 +218,7 @@ Frontmatter 后的 Markdown 正文是报告正文。正文必须使用稳定 Mar
 2. 输入资料、方法、来源边界和不确定性边界是什么；
 3. 关键发现是什么；
 4. 建议、取舍、边界和残留不确定性是什么；
-5. 后续应分流到哪些 Spark、WorkPlan、ADR、Pitfall、docs 或规范。
+5. 后续应分流到哪些 Spark、WorkCase、ADR、Pitfall、docs 或规范。
 
 ### 6.3 Markdown 示例
 
@@ -242,7 +242,7 @@ urls:
 related_sparks:
   - spark-0001
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs: []
@@ -269,7 +269,7 @@ Spark 不应复制完整报告；Study 承载稳定报告正文。
 
 ## 后续分流
 
-需要修改 Spark 或 Study 规则时，应分别进入对应工作模型规范或 WorkPlan。
+需要修改 Spark 或 Study 规则时，应分别进入对应工作模型规范或 WorkCase。
 ```
 
 ---
@@ -282,7 +282,7 @@ Study 回写遵循以下规则：
 1. 创建 Study 时，应写入 `ldvh-base/studies/`，并填写 frontmatter 与 Markdown 正文；
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
 3. 状态变化后应更新 `updated`；状态变化历史由 Git commit 派生，不在 Study 中手写维护；
-4. Study 被 Spark、WorkPlan、ADR 或 Pitfall 消费时，应通过对应对象的引用字段建立关系；
+4. Study 被 Spark、WorkCase、ADR 或 Pitfall 消费时，应通过对应对象的引用字段建立关系；
 5. Study 创建、归档或核心报告改写应通过 Git 提交记录留痕；
 6. Study 事实源写入后，应重新校验文件命名、frontmatter 字段完整性、状态合法性和引用有效性。
 
@@ -294,7 +294,7 @@ Study 证据至少包括：
 2. 报告摘要和正文；
 3. 关键网址；
 4. 结论、边界和残留不确定性；
-5. 相关 Spark、WorkPlan、ADR、Pitfall、Git 提交记录或文档引用。
+5. 相关 Spark、WorkCase、ADR、Pitfall、Git 提交记录或文档引用。
 
 Study 的报告正文应保留足以复读的结论和依据，但不复制外部资料全文，不记录讨论流水。
 
@@ -307,9 +307,9 @@ AI 处理 Study 时应遵守：
 
 1. 先判断内容是否已经从临时资料整理为稳定报告；
 2. 创建、归档或大幅改写 Study 前评估 Human Gate；
-3. 不得用 Study 替代 Spark 的议题演变、ADR 的长期决策或 WorkPlan 的执行计划；
+3. 不得用 Study 替代 Spark 的议题演变、ADR 的长期决策或 WorkCase 的执行计划；
 4. 引用 Study 时只引用 ID、路径或摘要，不复制报告全文；
-5. 报告结论被吸收到 specs、ADR 或 WorkPlan 后，应在 Study 或目标对象中保留引用关系。
+5. 报告结论被吸收到 specs、ADR 或 WorkCase 后，应在 Study 或目标对象中保留引用关系。
 
 ### 8.2 Code 辅助
 
@@ -331,7 +331,7 @@ Study 详情页是报告阅读界面，不按普通字段卡片表达主内容�
 
 Study 正文不应在主页面直接铺开全文。“正文”节点下只展示当前 Study 文件入口，点击整行或扩展阅读入口后在右侧扩展阅读区渲染 Markdown 正文。右侧扩展阅读区应复用同一份 Study 事实源，不得维护第二套摘要或正文。
 
-Study 的所有关联内容必须进入上层“关联”区块。`urls` 显示在“关联”下的“网址”分组，每个条目必须显示可读标题或 URL，并显示中文 `summary`；该摘要是引用用途提示，应弱于 Study 主内容，不得替代报告正文结论。`related_docs`、`related_sparks`、`related_workareas`、`related_workplans`、`related_adrs` 和 `related_pitfalls` 等关联字段不得散落在正文、证据或其他字段之间。
+Study 的所有关联内容必须进入上层“关联”区块。`urls` 显示在“关联”下的“网址”分组，每个条目必须显示可读标题或 URL，并显示中文 `summary`；该摘要是引用用途提示，应弱于 Study 主内容，不得替代报告正文结论。`related_docs`、`related_sparks`、`related_workareas`、`related_workcases`、`related_adrs` 和 `related_pitfalls` 等关联字段不得散落在正文、证据或其他字段之间。
 
 当前 Web 不得直接创建、编辑、替代、归档或删除 Study。未来如需开放 Study 写入，必须先更新 `specs/08-Web信息同步实现规范.md` 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 
@@ -367,7 +367,7 @@ Study 规范检查至少包括：
 | 正文骨架 | Frontmatter 后存在非空 Markdown 报告正文；正文第一行是一级标题；二级标题按 §6.2 固定顺序出现 |
 | 状态合法性 | 状态属于枚举，流转符合 §3.2 |
 | 归档规则 | archived Study 已说明归档原因 |
-| 对象边界 | Study 未替代 Spark、ADR、WorkPlan、Pitfall 或 docs/sources |
+| 对象边界 | Study 未替代 Spark、ADR、WorkCase、Pitfall 或 docs/sources |
 | Human Gate | §5 场景已完成确认或记录降级 |
 | Git 追溯 | Study 关键变化有 Git 可追溯记录 |
 | Code / Web 边界 | 派生输出未替代 Git 文件事实源 |

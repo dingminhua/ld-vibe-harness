@@ -1,0 +1,112 @@
+id: workcase-0051
+type: workcase
+title: 外部开源项目Web页面构成调研
+goal: |
+  外部开源项目Web页面构成调研
+status: closed
+created: '2026-06-06T01:15:48.773632'
+updated: '2026-06-06T01:31:31.699929'
+workarea: workarea-0009
+priority: P2
+description: 由历史 Task task-0051 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0051 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0051; source path: ldvh-base/taskplans/taskplan-0051-external-web-page-research.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0051
+    title: 外部开源项目Web页面构成调研
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0051
+    expected_output: |
+      - [x] 至少完成四个外部开源项目 Web 相关页面构成调研
+      - [x] 调研报告写入 docs/studies/16-LDVH外部开源项目Web页面构成调研.md
+      - [x] 报告覆盖页面入口、导航结构、页面类型、组件模式和技术栈
+      - [x] 报告提炼出对 LDVH Web 页面构建的可执行建议
+      - [x] workarea-0009 的 related_tasks 已关联 task-0051
+    status: done
+    result_summary: |-
+      verification: 已完成独立审查：5 项 acceptance 实质全部通过。审查证据包括 docs/studies/16-LDVH外部开源项目Web页面构成调研.md 已存在并覆盖 mcp-shrimp-task-manager、BMAD-METHOD、gstack、superpowers 四个项目；报告包含页面入口、导航结构、页面类型、组件模式、技术栈和 LDVH Web 页面构建建议；workarea-0009 的 related_tasks 已包含 task-0051。
+
+      ## 验证结果
+
+      独立审查确认 5 项 acceptance 全部通过，调研报告覆盖四个项目，包含页面入口、导航结构、页面类型、组件模式、技术栈和 LDVH Web 页面构建建议，workarea-0009 已关联 task-0051。
+
+      ## 结论
+
+      验证通过。
+
+      closure_evidence: 交付物：docs/studies/16-LDVH外部开源项目Web页面构成调研.md。
+      事实源：ldvh-base/tasks/task-0051-external-web-page-research.yaml；ldvh-base/intents/workarea-0009-competitive-research.yaml 已关联 task-0051。
+      验证：独立审查确认 5 项 acceptance 全部通过；Fact Validator 已运行，新建 task-0051 不再产生命名或字段校验错误，当前剩余校验错误为既有历史文件问题。
+
+      ## 验证结果
+
+      独立审查确认 5 项 acceptance 全部通过，Fact Validator 运行后 task-0051 无新增校验错误。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0051: 交付物：docs/studies/16-LDVH外部开源项目Web页面构成调研.md。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0051: 交付物：docs/studies/16-LDVH外部开源项目Web页面构成调研.md。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+review_requested_at: '2026-06-06T01:31:31.699938'
+closed_at: '2026-06-06T01:31:31.699938'
+related_docs: []
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

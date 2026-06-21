@@ -9,7 +9,7 @@ summary: |
   TRAE CN 把智能体定位为面向不同开发场景的编程助手。TRAE IDE 支持内置 Chat、Agent、SOLO Agent，也支持通过智能生成或手动创建自定义智能体；自定义智能体可以配置提示词、MCP Server 和内置工具，并可开启“可被其他智能体调用”。当前官方文档显示，TRAE IDE 中仅 SOLO Agent 可调用自定义智能体。TRAE CLI 则支持通过 `/agent-new` 创建子智能体，保存到 `.traecli/agents`，并可由 TRAE CLI 自动拆分任务调用，或由用户通过 `@{智能体名称}` 手动调用。
 user_intent: 用户要求补充 TRAE CN 关于子 Agent / 自定义智能体创建调用机制的同主题调研，为后续 00 文档多角色设定提供对照。
 conclusion: |
-  TRAE CN 对 LDVH 的启发是：多角色在 Trae 环境中更接近“可配置、可被主控 SOLO Agent 或 CLI 调度的专业智能体”，而不是 Codex 式必须显式请求 spawn 的子 Agent。LDVH 00 仍应抽象为 Role Contract；Trae 适配层可把 Role Contract 映射为自定义智能体配置、SOLO Agent 可调用设置、CLI `.traecli/agents` 文件、Skill 和 MCP 配置。TRAE 的 Spec / Plan 文档和 SOLO 任务管理可以作为执行过程和协作界面，但不应替代 LDVH 的 WorkPlan、Spark、Study、ADR 等事实源。
+  TRAE CN 对 LDVH 的启发是：多角色在 Trae 环境中更接近“可配置、可被主控 SOLO Agent 或 CLI 调度的专业智能体”，而不是 Codex 式必须显式请求 spawn 的子 Agent。LDVH 00 仍应抽象为 Role Contract；Trae 适配层可把 Role Contract 映射为自定义智能体配置、SOLO Agent 可调用设置、CLI `.traecli/agents` 文件、Skill 和 MCP 配置。TRAE 的 Spec / Plan 文档和 SOLO 任务管理可以作为执行过程和协作界面，但不应替代 LDVH 的 WorkCase、Spark、Study、ADR 等事实源。
 urls:
   - ref: https://docs.trae.cn/ide_agent-overview
     title: TRAE IDE Agent Overview
@@ -35,14 +35,14 @@ urls:
 related_sparks:
   - spark-0007
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
   - specs/00-LD-Vibe-Harness理念与纲要.md
   - specs/04.02-LDVH能力资产与落地保障规范.md
   - specs/06-工作流程基础规范.md
-  - specs/21-WorkPlan-工作计划.md
+  - specs/21-WorkCase-工作项.md
 archive_reason:
 ---
 
@@ -113,7 +113,7 @@ TRAE IDE 支持两种创建方式：
 
 SOLO Agent 则是更接近 LDVH “主控 + 专业角色”设想的入口。官方文档说明，SOLO Agent 可以配置其可调用的自定义智能体、MCP Server 和内置工具。配置好可调用智能体后，SOLO Agent 作为主控智能体，可以在处理复杂长上下文任务时自动调用相应智能体，将任务拆分和隔离，使不同智能体在独立上下文中专注处理各自任务。用户也可以在提示词中明确指定要调用的智能体，SOLO Agent 会根据上下文在合适时机调用。
 
-这与 LDVH 的 WorkPlan / ExecutionItem 有自然映射：
+这与 LDVH 的 WorkCase / ExecutionItem 有自然映射：
 
 - SOLO Agent 类似运行期主控；
 - 自定义智能体类似专业执行角色；
@@ -132,7 +132,7 @@ Plan 模式适用于中小型功能开发和模块级重构。SOLO Agent 收到�
 
 Spec 模式面向复杂系统级任务，会生成三阶段文档组：`spec.md`、`tasks.md` 和 `checklist.md`，存储在项目根目录 `.trae/specs/` 下。官方文档说明这些文档可纳入版本控制，作为项目知识资产长期保留。
 
-对 LDVH 的判断是：Trae Spec / Plan 文档是 Trae 环境中的工作流产物，可以作为输入资料或运行期执行界面；但不应替代 LDVH 的 WorkPlan、Spark、Study、ADR、Change 等事实源。若两者共存，LDVH 应定义映射和回写边界，而不是把 `.trae/specs` 直接视为 LDVH 权威事实源。
+对 LDVH 的判断是：Trae Spec / Plan 文档是 Trae 环境中的工作流产物，可以作为输入资料或运行期执行界面；但不应替代 LDVH 的 WorkCase、Spark、Study、ADR、Change 等事实源。若两者共存，LDVH 应定义映射和回写边界，而不是把 `.trae/specs` 直接视为 LDVH 权威事实源。
 
 ### TRAE CLI 如何创建子智能体
 
@@ -198,7 +198,7 @@ TRAE CN 的机制支持一个更产品化的多智能体界面：SOLO Agent 作�
 3. Trae IDE 适配时，Role Contract 可以映射到自定义智能体的提示词、英文标识名、何时调用和工具配置。
 4. Trae SOLO 适配时，Role Contract 可以映射到 SOLO Agent 可调用智能体清单。
 5. Trae CLI 适配时，Role Contract 可以映射到 `.traecli/agents` 下的 frontmatter 与正文提示。
-6. Trae Spec / Plan 文档可以作为环境工作流产物和输入资料，但 LDVH 长期事实源仍应是 WorkPlan / Spark / Study / ADR / Change。
+6. Trae Spec / Plan 文档可以作为环境工作流产物和输入资料，但 LDVH 长期事实源仍应是 WorkCase / Spark / Study / ADR / Change。
 7. 如果 Trae 自动拆分任务并调用智能体，LDVH 只回收摘要、证据、验证结果、关闭判断和风险，不回写每个智能体的完整过程日志。
 
 一个可供 00 后续吸收的候选表述是：
@@ -212,5 +212,5 @@ LDVH 的多角色协作可以在 Trae 环境中落地为 SOLO Agent 可调用的
 1. 修改 `specs/00-LD-Vibe-Harness理念与纲要.md` 时，吸收“多角色可映射为环境智能体，但角色本体是契约”的表述。
 2. 修改 `specs/04.02-LDVH能力资产与落地保障规范.md` 时，判断 Trae 自定义智能体配置、Skill、MCP、Rules 是否应纳入能力资产分层。
 3. 修改 `specs/06-工作流程基础规范.md` 时，补充“主控自动调度”和“Human 显式调用”两类环境触发模式。
-4. 修改 `specs/21-WorkPlan-工作计划.md` 时，不应把 `.traecli/agents` 或 SOLO Agent 配置写入 WorkPlan 字段；WorkPlan 只保留 `role`、输入、输出、证据和关闭信息。
+4. 修改 `specs/21-WorkCase-工作项.md` 时，不应把 `.traecli/agents` 或 SOLO Agent 配置写入 WorkCase 字段；WorkCase 只保留 `role`、输入、输出、证据和关闭信息。
 5. 如后续要支持 Trae 环境落地，应另建环境适配文档或 Skill，说明如何从 Role Contract 生成 Trae 自定义智能体配置摘要。

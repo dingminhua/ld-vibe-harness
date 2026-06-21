@@ -46,7 +46,7 @@ resolved_to: {resolved_to}
 resolved_at: {resolved_at}
 discard_reason: ""
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_studies:
   - study-0001
@@ -55,7 +55,7 @@ related_docs: []
     )
 
 
-def write_valid_workplan_tree(tmp_path: Path, *, status: str = "active") -> tuple[Path, Path]:
+def write_valid_workcase_tree(tmp_path: Path, *, status: str = "active") -> tuple[Path, Path]:
     root = tmp_path / "project"
     (root / "tests" / "code").mkdir(parents=True, exist_ok=True)
     (root / "tests" / "code" / "test_fact_validate.py").write_text("# evidence fixture\n", encoding="utf-8")
@@ -74,16 +74,18 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-workplans:
-  - workplan-0001
+workcases:
+  - workcase-0001
 """,
     )
-    workplan = write_yaml(
-        root / "ldvh-base" / "workplans" / "workplan-0001-core-plan.yaml",
+    workcase = write_yaml(
+        root / "ldvh-base" / "workcases" / "workcase-0001-core-plan.yaml",
         f"""
-id: workplan-0001
-type: workplan
+id: workcase-0001
+type: workcase
 title: Core Plan
+goal: |
+  Validate the core WorkCase fixture.
 status: {status}
 created: "2026-06-12T09:00:00"
 updated: "2026-06-12T09:30:00"
@@ -102,7 +104,7 @@ orchestration:
       mode: single
       input_refs:
         - code/fact_validate.py
-      expected_output: Current WorkPlan validates.
+      expected_output: Current WorkCase validates.
       status: done
       result_summary: Done.
       evidence_refs:
@@ -118,17 +120,17 @@ orchestration:
 verification_evidence: |
   ## 验证计划
 
-  检查当前 WorkPlan 是否满足关闭审查前的验证条件。
+  检查当前 WorkCase 是否满足关闭审查前的验证条件。
 
   ## 验证命令
 
   ```bash
-  python3 code/fact_validate.py ldvh-base/workplans
+  python3 code/fact_validate.py ldvh-base/workcases
   ```
 
   ## 验证结果
 
-  当前 WorkPlan 校验通过。
+  当前 WorkCase 校验通过。
 
   ## 结论
 
@@ -140,7 +142,7 @@ closure_evidence: |
 
   ## 验证命令
 
-  人工检查 WorkPlan 成功标准、执行项和验证证据。
+  人工检查 WorkCase 成功标准、执行项和验证证据。
 
   ## 验证结果
 
@@ -155,14 +157,14 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-related_workplans: []
+related_workcases: []
 """,
     )
-    return root, workplan
+    return root, workcase
 
 
-def add_current_review_contract(workplan: Path, *, closure_outcome: str = "completed") -> None:
-    content = workplan.read_text(encoding="utf-8")
+def add_current_review_contract(workcase: Path, *, closure_outcome: str = "completed") -> None:
+    content = workcase.read_text(encoding="utf-8")
     content = content.replace(
         """  review:
     controller_self_check: true
@@ -210,6 +212,9 @@ def add_current_review_contract(workplan: Path, *, closure_outcome: str = "compl
       result:
         status: pass
         summary: Fixture can close.
+        key_findings:
+          - 未发现范围内问题。
+        required_changes: []
         evidence_refs:
           - tests/code/test_fact_validate.py
       attested_at: "2026-06-12T00:45:00"
@@ -252,7 +257,7 @@ def add_current_review_contract(workplan: Path, *, closure_outcome: str = "compl
         "closed_at: '2026-06-12T01:00:00'\n",
         f"closed_at: '2026-06-12T01:00:00'\nclosure_outcome: {closure_outcome}\n",
     )
-    workplan.write_text(content, encoding="utf-8")
+    workcase.write_text(content, encoding="utf-8")
 
 
 def write_valid_adr(tmp_path: Path, *, status: str = "active", extra: str = "") -> Path:
@@ -291,7 +296,7 @@ consequences: |
 
   Current notes.
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_sparks: []
 related_rules: []
@@ -356,8 +361,8 @@ archive_reason:
     )
 
 
-def test_valid_workplan_tree(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+def test_valid_workcase_tree(tmp_path):
+    root, _ = write_valid_workcase_tree(tmp_path)
 
     result = run_checker(root / "ldvh-base")
 
@@ -367,21 +372,21 @@ def test_valid_workplan_tree(tmp_path):
 
 
 def test_related_changes_is_rejected_for_all_current_work_objects(tmp_path):
-    root, workplan = write_valid_workplan_tree(tmp_path / "workplan")
-    workplan.write_text(
-        workplan.read_text(encoding="utf-8") + "related_changes:\n  - abc1234\n",
+    root, workcase = write_valid_workcase_tree(tmp_path / "workcase")
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8") + "related_changes:\n  - abc1234\n",
         encoding="utf-8",
     )
     adr = write_valid_adr(tmp_path / "adr", extra="related_changes:\n  - abc1234\n")
     pitfall = write_valid_pitfall(tmp_path / "pitfall", extra="related_changes:\n  - abc1234\n")
 
-    workplan_result = run_checker(workplan)
+    workcase_result = run_checker(workcase)
     adr_result = run_checker(adr)
     pitfall_result = run_checker(pitfall)
 
-    assert workplan_result.returncode == 1
-    assert "REMOVED_OBJECT_FIELD" in workplan_result.stdout
-    assert "related_changes" in workplan_result.stdout
+    assert workcase_result.returncode == 1
+    assert "REMOVED_OBJECT_FIELD" in workcase_result.stdout
+    assert "related_changes" in workcase_result.stdout
     assert adr_result.returncode == 1
     assert "REMOVED_OBJECT_FIELD" in adr_result.stdout
     assert "related_changes" in adr_result.stdout
@@ -391,7 +396,7 @@ def test_related_changes_is_rejected_for_all_current_work_objects(tmp_path):
 
 
 def test_legacy_taskplan_file_is_unknown_object_type(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     legacy = write_yaml(
         root / "ldvh-base" / "taskplans" / "taskplan-0001-old.yaml",
         """
@@ -409,7 +414,7 @@ status: active
 
 
 def test_datetime_fields_reject_date_only_values(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     workarea = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
     workarea.write_text(
         workarea.read_text(encoding="utf-8")
@@ -648,7 +653,7 @@ def test_adr_terminal_statuses_require_reasons(tmp_path):
 
 
 def test_study_draft_status_is_invalid(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     study = root / "ldvh-base" / "studies" / "study-0001-draft-report.md"
     study.parent.mkdir(parents=True, exist_ok=True)
     study.write_text(
@@ -662,7 +667,7 @@ updated: "2026-06-18T09:30:00"
 summary: Draft report.
 urls: []
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
@@ -703,7 +708,7 @@ None.
 
 
 def test_study_superseded_status_and_field_are_invalid(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     study = root / "ldvh-base" / "studies" / "study-0001-superseded-report.md"
     study.parent.mkdir(parents=True, exist_ok=True)
     study.write_text(
@@ -717,7 +722,7 @@ updated: "2026-06-18T09:30:00"
 summary: Superseded report.
 urls: []
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
@@ -761,7 +766,7 @@ None.
 
 
 def test_study_source_field_is_no_longer_allowed(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     study = root / "ldvh-base" / "studies" / "study-0001-source-report.md"
     study.parent.mkdir(parents=True, exist_ok=True)
     study.write_text(
@@ -777,7 +782,7 @@ source: ai
 user_intent: Trigger context remains here.
 urls: []
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
@@ -818,7 +823,7 @@ None.
 
 
 def test_study_source_detail_field_is_no_longer_allowed(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     study = root / "ldvh-base" / "studies" / "study-0001-source-detail-report.md"
     study.parent.mkdir(parents=True, exist_ok=True)
     study.write_text(
@@ -833,7 +838,7 @@ source_detail: Old source detail field.
 summary: Source detail report.
 urls: []
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
@@ -874,7 +879,7 @@ None.
 
 
 def test_study_source_docs_field_is_no_longer_allowed(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     study = root / "ldvh-base" / "studies" / "study-0001-source-docs-report.md"
     study.parent.mkdir(parents=True, exist_ok=True)
     study.write_text(
@@ -892,7 +897,7 @@ related_refs:
   - https://example.com/legacy
 urls: []
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
@@ -934,7 +939,7 @@ None.
 
 
 def test_study_urls_accept_structured_items(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     study = root / "ldvh-base" / "studies" / "study-0001-structured-refs.md"
     study.parent.mkdir(parents=True, exist_ok=True)
     study.write_text(
@@ -953,7 +958,7 @@ urls:
   - ref: https://example.com/second-reference
     summary: 用于补充第二个外部网址的中文用途说明。
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
@@ -993,7 +998,7 @@ None.
 
 
 def test_study_urls_reject_invalid_structured_items(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     study = root / "ldvh-base" / "studies" / "study-0001-invalid-refs.md"
     study.parent.mkdir(parents=True, exist_ok=True)
     study.write_text(
@@ -1018,7 +1023,7 @@ urls:
   - ref: https://example.com/english-summary
     summary: English-only summary is not enough.
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
@@ -1059,7 +1064,7 @@ None.
 
 
 def test_study_report_body_requires_standard_headings(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     study = root / "ldvh-base" / "studies" / "study-0001-bad-body.md"
     study.parent.mkdir(parents=True, exist_ok=True)
     study.write_text(
@@ -1073,7 +1078,7 @@ updated: "2026-06-18T09:30:00"
 summary: Bad body report.
 urls: []
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
@@ -1097,7 +1102,7 @@ Missing standard body sections.
 
 
 def test_pitfall_repeatability_field_is_no_longer_allowed(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     pitfall = write_yaml(
         root / "ldvh-base" / "pitfalls" / "pitfall-0001-repeatability.yaml",
         """
@@ -1142,7 +1147,7 @@ tags: []
 source_objects: []
 source_sparks: []
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_docs: []
 related_rules: []
@@ -1159,7 +1164,7 @@ notes:
 
 
 def test_pitfall_superseded_status_and_field_are_invalid(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     pitfall = write_yaml(
         root / "ldvh-base" / "pitfalls" / "pitfall-0001-superseded.yaml",
         """
@@ -1219,7 +1224,7 @@ notes:
 
 
 def test_pitfall_tags_must_be_english_slugs(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     pitfall = write_yaml(
         root / "ldvh-base" / "pitfalls" / "pitfall-0001-bad-tags.yaml",
         """
@@ -1278,7 +1283,7 @@ notes:
 
 
 def test_pitfall_verification_headings_must_be_ordered(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     pitfall = write_yaml(
         root / "ldvh-base" / "pitfalls" / "pitfall-0001-bad-evidence-order.yaml",
         """
@@ -1337,7 +1342,7 @@ notes:
 
 
 def test_workarea_taskplans_field_is_no_longer_allowed(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+    root, _ = write_valid_workcase_tree(tmp_path)
     workarea = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
     workarea.write_text(workarea.read_text(encoding="utf-8") + "taskplans:\n  - taskplan-0001\n", encoding="utf-8")
 
@@ -1348,23 +1353,23 @@ def test_workarea_taskplans_field_is_no_longer_allowed(tmp_path):
     assert "taskplans" in result.stdout
 
 
-def test_workplan_legacy_fields_are_errors(tmp_path):
-    _, workplan = write_valid_workplan_tree(tmp_path)
-    workplan.write_text(
-        workplan.read_text(encoding="utf-8") + "tasks: []\ncompletion_evidence: done\n",
+def test_workcase_legacy_fields_are_errors(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path)
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8") + "tasks: []\ncompletion_evidence: done\n",
         encoding="utf-8",
     )
 
-    result = run_checker(workplan)
+    result = run_checker(workcase)
 
     assert result.returncode == 1
-    assert "LEGACY_WORKPLAN_FIELD" in result.stdout
+    assert "LEGACY_WORKCASE_FIELD" in result.stdout
     assert "tasks" in result.stdout
     assert "completion_evidence" in result.stdout
 
 
-def test_legacy_closed_workplan_does_not_require_current_review_contract(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path, status="closed")
+def test_legacy_closed_workcase_does_not_require_current_review_contract(tmp_path):
+    root, _ = write_valid_workcase_tree(tmp_path, status="closed")
 
     result = run_checker(root / "ldvh-base")
 
@@ -1372,19 +1377,19 @@ def test_legacy_closed_workplan_does_not_require_current_review_contract(tmp_pat
     assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
 
 
-def test_current_closed_workplan_requires_closure_outcome(tmp_path):
-    _, workplan = write_valid_workplan_tree(tmp_path, status="closed")
-    add_current_review_contract(workplan, closure_outcome="")
+def test_current_closed_workcase_requires_closure_outcome(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="closed")
+    add_current_review_contract(workcase, closure_outcome="")
 
-    result = run_checker(workplan)
+    result = run_checker(workcase)
 
     assert result.returncode == 1
-    assert "MISSING_WORKPLAN_CLOSURE_OUTCOME" in result.stdout
+    assert "MISSING_WORKCASE_CLOSURE_OUTCOME" in result.stdout
 
 
-def test_current_closed_workplan_contract_validates(tmp_path):
-    root, workplan = write_valid_workplan_tree(tmp_path, status="closed")
-    add_current_review_contract(workplan)
+def test_current_closed_workcase_contract_validates(tmp_path):
+    root, workcase = write_valid_workcase_tree(tmp_path, status="closed")
+    add_current_review_contract(workcase)
 
     result = run_checker(root / "ldvh-base")
 
@@ -1392,26 +1397,26 @@ def test_current_closed_workplan_contract_validates(tmp_path):
     assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
 
 
-def test_executing_workplan_warns_when_all_execution_items_are_pending(tmp_path):
-    _, workplan = write_valid_workplan_tree(tmp_path, status="executing")
-    add_current_review_contract(workplan)
-    workplan.write_text(
-        workplan.read_text(encoding="utf-8").replace("      status: done", "      status: pending"),
+def test_executing_workcase_warns_when_all_execution_items_are_pending(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="executing")
+    add_current_review_contract(workcase)
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8").replace("      status: done", "      status: pending"),
         encoding="utf-8",
     )
 
-    result = run_checker(workplan)
+    result = run_checker(workcase)
 
     assert result.returncode == 0
-    assert "WORKPLAN_EXECUTION_PROGRESS_NOT_RECORDED" in result.stdout
+    assert "WORKCASE_EXECUTION_PROGRESS_NOT_RECORDED" in result.stdout
     assert "warnings=1" in result.stdout
 
 
-def test_executing_workplan_rejects_unresolved_plan_items(tmp_path):
-    _, workplan = write_valid_workplan_tree(tmp_path, status="executing")
-    add_current_review_contract(workplan)
-    workplan.write_text(
-        workplan.read_text(encoding="utf-8").replace(
+def test_executing_workcase_rejects_unresolved_plan_items(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="executing")
+    add_current_review_contract(workcase)
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8").replace(
             "      unresolved_items: []",
             "      unresolved_items:\n        - Human still needs to confirm action wording.",
             1,
@@ -1419,30 +1424,82 @@ def test_executing_workplan_rejects_unresolved_plan_items(tmp_path):
         encoding="utf-8",
     )
 
-    result = run_checker(workplan)
+    result = run_checker(workcase)
 
     assert result.returncode == 1
     assert "UNRESOLVED_PLAN_ITEMS_AFTER_CONFIRMATION" in result.stdout
 
 
-def test_result_reviewing_workplan_warns_when_review_items_empty(tmp_path):
-    _, workplan = write_valid_workplan_tree(tmp_path, status="subagents_result_reviewing")
-    add_current_review_contract(workplan)
+def test_result_reviewing_workcase_warns_when_review_items_empty(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="subagents_result_reviewing")
+    add_current_review_contract(workcase)
 
-    result = run_checker(workplan)
+    result = run_checker(workcase)
 
     assert result.returncode == 0
     assert "RESULT_REVIEW_NOT_STARTED" in result.stdout
     assert "warnings=1" in result.stdout
 
 
-def test_workplan_evidence_refs_missing_path_is_error(tmp_path):
-    root, workplan = write_valid_workplan_tree(tmp_path)
-    content = workplan.read_text(encoding="utf-8")
-    workplan.write_text(
+def test_result_self_check_requires_key_findings(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="subagents_result_reviewing")
+    add_current_review_contract(workcase)
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8").replace(
+            "        key_findings:\n          - 未发现范围内问题。",
+            "        key_findings: []",
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(workcase)
+
+    assert result.returncode == 1
+    assert "MISSING_RESULT_SELF_CHECK_FINDINGS" in result.stdout
+
+
+def test_result_self_check_requires_required_changes_list(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="subagents_result_reviewing")
+    add_current_review_contract(workcase)
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8").replace(
+            "        required_changes: []",
+            "        required_changes:",
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(workcase)
+
+    assert result.returncode == 1
+    assert "MISSING_RESULT_SELF_CHECK_REQUIRED_CHANGES" in result.stdout
+
+
+def test_result_self_check_required_changes_must_be_resolved_before_later_states(tmp_path):
+    for status in ("subagents_result_reviewing", "human_closure_confirming", "closed"):
+        _, workcase = write_valid_workcase_tree(tmp_path / status, status=status)
+        add_current_review_contract(workcase)
+        workcase.write_text(
+            workcase.read_text(encoding="utf-8").replace(
+                "        required_changes: []",
+                "        required_changes:\n          - Fix a self-check finding before result review.",
+            ),
+            encoding="utf-8",
+        )
+
+        result = run_checker(workcase)
+
+        assert result.returncode == 1
+        assert "UNRESOLVED_RESULT_SELF_CHECK_REQUIRED_CHANGES" in result.stdout
+
+
+def test_workcase_evidence_refs_missing_path_is_error(tmp_path):
+    root, workcase = write_valid_workcase_tree(tmp_path)
+    content = workcase.read_text(encoding="utf-8")
+    workcase.write_text(
         content.replace(
             "        - tests/code/test_fact_validate.py",
-            "        - ldvh-base/workplans/workplan-9999-missing.yaml",
+            "        - ldvh-base/workcases/workcase-9999-missing.yaml",
         ),
         encoding="utf-8",
     )
@@ -1451,24 +1508,24 @@ def test_workplan_evidence_refs_missing_path_is_error(tmp_path):
 
     assert result.returncode == 1
     assert "EVIDENCE_REF_PATH_NOT_FOUND" in result.stdout
-    assert "workplan-9999-missing.yaml" in result.stdout
+    assert "workcase-9999-missing.yaml" in result.stdout
 
 
-def test_workplan_evidence_refs_non_paths_are_not_errors(tmp_path):
-    root, workplan = write_valid_workplan_tree(tmp_path)
-    content = workplan.read_text(encoding="utf-8")
-    workplan.write_text(
+def test_workcase_evidence_refs_non_paths_are_not_errors(tmp_path):
+    root, workcase = write_valid_workcase_tree(tmp_path)
+    content = workcase.read_text(encoding="utf-8")
+    workcase.write_text(
         content.replace(
             "        - tests/code/test_fact_validate.py",
             "\n".join(
                 [
                     "        - tests/code/test_fact_validate.py",
                     "        - python3 code/fact_validate.py ldvh-base/",
-                    "        - workplan-0071",
+                    "        - workcase-0071",
                     "        - 95a0604",
                     "        - https://example.com/evidence",
                     "        - /tmp/non-stable-external-evidence.txt",
-                    "        - specs/21-WorkPlan-工作计划.md（修订）",
+                    "        - specs/21-WorkCase-工作项.md（修订）",
                 ]
             ),
         ),
@@ -1481,10 +1538,10 @@ def test_workplan_evidence_refs_non_paths_are_not_errors(tmp_path):
     assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
 
 
-def test_workplan_evidence_refs_section_suffix_checks_path_part(tmp_path):
-    root, workplan = write_valid_workplan_tree(tmp_path)
-    content = workplan.read_text(encoding="utf-8")
-    workplan.write_text(
+def test_workcase_evidence_refs_section_suffix_checks_path_part(tmp_path):
+    root, workcase = write_valid_workcase_tree(tmp_path)
+    content = workcase.read_text(encoding="utf-8")
+    workcase.write_text(
         content.replace(
             "        - tests/code/test_fact_validate.py",
             "        - tests/code/test_fact_validate.py §fixture",
@@ -1498,8 +1555,8 @@ def test_workplan_evidence_refs_section_suffix_checks_path_part(tmp_path):
     assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
 
 
-def test_json_output_reports_current_workplan(tmp_path):
-    root, _ = write_valid_workplan_tree(tmp_path)
+def test_json_output_reports_current_workcase(tmp_path):
+    root, _ = write_valid_workcase_tree(tmp_path)
 
     result = run_checker(root / "ldvh-base", extra_args=["--format", "json"])
 

@@ -15,20 +15,20 @@ import CopyPathButton from '@/components/CopyPathButton';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { ExecutionFlowBar, ExecutionFlowMarker } from '@/components/ExecutionFlowStatus';
-import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
+import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary, type RelatedWorkCaseSummary } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { formatDateTime } from '@/utils/dateFormat';
 import { getStatusColor } from '@/utils/statusColors';
-import { executionFlowRowClass, getExecutionFlowLabel, getExecutionFlowTone, sortPlanExecutionItems } from '@/utils/executionFlowStatus';
+import { executionFlowRowClass, getExecutionFlowLabel, getExecutionFlowTone, sortWorkCaseExecutionItems } from '@/utils/executionFlowStatus';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
 import {
-  isWorkPlanHumanConfirmingStatus,
-  isWorkPlanTerminalStatus,
-  isWorkPlanResultReviewStatus,
-} from '@/utils/workplanStatus';
+  isWorkCaseHumanConfirmingStatus,
+  isWorkCaseTerminalStatus,
+  isWorkCaseResultReviewStatus,
+} from '@/utils/workcaseStatus';
 import {
   CHECKLIST_COMPAT_FIELDS,
   COLLAPSIBLE_FIELDS,
@@ -69,15 +69,15 @@ const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
 };
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_sparks', 'related_pitfalls'],
-  workplan: [
+  workcase: [
     'workarea', 'priority', 'description', 'success_criteria', 'source',
-    'orchestration', 'verification_evidence', 'closure_evidence', 'related_workplans',
+    'orchestration', 'verification_evidence', 'closure_evidence', 'related_workcases',
     'related_docs', 'related_adrs', 'related_sparks', 'related_pitfalls',
   ],
   adr: [
     'context', 'decision', 'consequences',
     'related_rules', 'archive_reason', 'deprecated_reason', 'related_workareas',
-    'related_workplans', 'related_adrs', 'related_sparks',
+    'related_workcases', 'related_adrs', 'related_sparks',
   ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
@@ -87,7 +87,7 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
   ],
   spark: [
     'description', 'evolution', 'resolved_to', 'resolved_at', 'discard_reason',
-    'source', 'source_detail', 'related_workareas', 'related_workplans',
+    'source', 'source_detail', 'related_workareas', 'related_workcases',
     'related_adrs', 'related_studies', 'related_docs',
   ],
   study: [
@@ -101,7 +101,7 @@ const STUDY_READING_NODE_FIELDS = new Set(['user_intent', 'summary', 'conclusion
 type ReadingNodeState = 'collapsed' | 'expanded';
 const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
   related_workareas: 20,
-  related_workplans: 21,
+  related_workcases: 21,
   related_adrs: 22,
   related_pitfalls: 23,
   related_sparks: 24,
@@ -182,7 +182,7 @@ export function getObjectDetailContentEntries(obj: Record<string, unknown>, objT
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '工作域', en: 'Work Area' },
-  workplan: { zh: '计划', en: 'Work Plan' },
+  workcase: { zh: '工作项', en: 'WorkCase' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑', en: 'Pitfall' },
   spark: { zh: '火花', en: 'Spark' },
@@ -235,7 +235,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   mitigation: { zh: '缓解措施', en: 'Mitigation' },
   resolution: { zh: '解决方案', en: 'Resolution' },
   workarea: { zh: '工作域', en: 'Work Area' },
-  workplan: { zh: '计划', en: 'Work Plan' },
+  workcase: { zh: '工作项', en: 'WorkCase' },
   orchestration: { zh: '编排', en: 'Orchestration' },
   execution_items: { zh: '执行项', en: 'Execution Items' },
   mode: { zh: '模式', en: 'Mode' },
@@ -252,7 +252,7 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   options: { zh: '选项', en: 'Options' },
   decision: { zh: '决策', en: 'Decision' },
   related_workareas: { zh: '关联工作域', en: 'Related Work Areas' },
-  related_workplans: { zh: '关联计划', en: 'Related Work Plans' },
+  related_workcases: { zh: '关联工作项', en: 'Related Work Cases' },
   related_adrs: { zh: '关联决策', en: 'Related ADRs' },
   related_sparks: { zh: '关联火花', en: 'Related Sparks' },
   related_studies: { zh: '关联研究', en: 'Related Studies' },
@@ -322,7 +322,7 @@ export default function ObjectDetail() {
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
   const [workareaSummary, setWorkareaSummary] = useState<ObjectItem | null>(null);
   const [workareaSummaryLoading, setWorkareaSummaryLoading] = useState(false);
-  const [relatedPlanSummary, setRelatedPlanSummary] = useState<ObjectItem | null>(null);
+  const [relatedWorkCaseSummary, setRelatedWorkCaseSummary] = useState<ObjectItem | null>(null);
   const [relatedSummaryLoading, setRelatedSummaryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
@@ -335,9 +335,9 @@ export default function ObjectDetail() {
     let cancelled = false;
     setDetail(null);
     setWorkareaSummary(null);
-    setRelatedPlanSummary(null);
+    setRelatedWorkCaseSummary(null);
     setWorkareaSummaryLoading(type === 'workarea');
-    setRelatedSummaryLoading(type === 'workplan');
+    setRelatedSummaryLoading(type === 'workcase');
     setError(null);
 
     fetchObjectDetail(type, id)
@@ -362,14 +362,14 @@ export default function ObjectDetail() {
         });
     }
 
-    if (type === 'workplan') {
-      fetchObjects('workplan')
+    if (type === 'workcase') {
+      fetchObjects('workcase')
         .then((result) => {
           if (cancelled) return;
-          setRelatedPlanSummary(result.data?.items?.find((plan) => plan.id === id) ?? null);
+          setRelatedWorkCaseSummary(result.data?.items?.find((workcase) => workcase.id === id) ?? null);
         })
         .catch(() => {
-          if (!cancelled) setRelatedPlanSummary(null);
+          if (!cancelled) setRelatedWorkCaseSummary(null);
         })
         .finally(() => {
           if (!cancelled) setRelatedSummaryLoading(false);
@@ -468,10 +468,10 @@ export default function ObjectDetail() {
               locale={locale}
               getStatus={getStatus}
             />
-          ) : objType === 'workplan' ? (
-            <WorkPlanReadingLayout
+          ) : objType === 'workcase' ? (
+            <WorkCaseReadingLayout
               obj={obj}
-              summary={relatedPlanSummary}
+              summary={relatedWorkCaseSummary}
               loading={relatedSummaryLoading}
               locale={locale}
               getStatus={getStatus}
@@ -737,11 +737,11 @@ function HeaderDateMeta({ label, value, align = 'end' }: { label: string; value:
 }
 
 function isDetailTerminalStatus(status: string): boolean {
-  return isWorkPlanTerminalStatus(status);
+  return isWorkCaseTerminalStatus(status);
 }
 
 function isDetailHumanConfirmingStatus(status: string): boolean {
-  return isWorkPlanHumanConfirmingStatus(status);
+  return isWorkCaseHumanConfirmingStatus(status);
 }
 
 export function WorkAreaReadingLayout({
@@ -759,10 +759,10 @@ export function WorkAreaReadingLayout({
 }) {
   const { t } = useI18n();
   const { openPanel } = usePanel();
-  const plans = summary?.plans ?? [];
-  const activePlans = plans.filter((plan) => !isDetailHumanConfirmingStatus(plan.status) && !isDetailTerminalStatus(plan.status));
-  const humanConfirmingPlans = plans.filter((plan) => isDetailHumanConfirmingStatus(plan.status));
-  const closedPlans = plans.filter((plan) => isDetailTerminalStatus(plan.status));
+  const workcases = summary?.workcases ?? [];
+  const activeWorkCases = workcases.filter((workcase) => !isDetailHumanConfirmingStatus(workcase.status) && !isDetailTerminalStatus(workcase.status));
+  const humanConfirmingWorkCases = workcases.filter((workcase) => isDetailHumanConfirmingStatus(workcase.status));
+  const closedWorkCases = workcases.filter((workcase) => isDetailTerminalStatus(workcase.status));
   const hasRelatedMaterials = [
     obj.related_docs,
     obj.related_adrs,
@@ -770,12 +770,12 @@ export function WorkAreaReadingLayout({
     obj.related_pitfalls,
   ].some((value) => Array.isArray(value) && value.length > 0);
 
-  const openPlan = (plan: RelatedPlanSummary) => {
+  const openWorkCase = (workcase: RelatedWorkCaseSummary) => {
     openPanel({
       type: 'object',
-      title: getLocalizedTitle(plan, locale),
-      objectType: plan.type || 'workplan',
-      objectId: plan.id,
+      title: getLocalizedTitle(workcase, locale),
+      objectType: workcase.type || 'workcase',
+      objectId: workcase.id,
     });
   };
 
@@ -785,40 +785,40 @@ export function WorkAreaReadingLayout({
         <div className="rounded-xl border border-dashed border-ldvh-border bg-ldvh-panel px-3 py-6 text-center">
           <span className="ldvh-body-muted">{t('objectDetail.workareaPlansLoading')}</span>
         </div>
-      ) : plans.length === 0 ? (
+      ) : workcases.length === 0 ? (
         <div className="rounded-xl border border-dashed border-ldvh-border bg-ldvh-panel px-3 py-6 text-center">
           <span className="ldvh-body-muted">{t('objectList.noPlans')}</span>
         </div>
       ) : (
         <>
-          {activePlans.length > 0 && (
-            <WorkAreaPlanGroup
-              title={t('objectList.activePlanCount', { count: String(activePlans.length) })}
+          {activeWorkCases.length > 0 && (
+            <WorkAreaWorkCaseGroup
+              title={t('objectList.activePlanCount', { count: String(activeWorkCases.length) })}
               tone="active"
-              plans={activePlans}
+              workcases={activeWorkCases}
               locale={locale}
               getStatus={getStatus}
-              onOpen={openPlan}
+              onOpen={openWorkCase}
             />
           )}
-          {humanConfirmingPlans.length > 0 && (
-            <WorkAreaPlanGroup
-              title={t('objectList.humanConfirmPlanCount', { count: String(humanConfirmingPlans.length) })}
+          {humanConfirmingWorkCases.length > 0 && (
+            <WorkAreaWorkCaseGroup
+              title={t('objectList.humanConfirmPlanCount', { count: String(humanConfirmingWorkCases.length) })}
               tone="review"
-              plans={humanConfirmingPlans}
+              workcases={humanConfirmingWorkCases}
               locale={locale}
               getStatus={getStatus}
-              onOpen={openPlan}
+              onOpen={openWorkCase}
             />
           )}
-          {closedPlans.length > 0 && (
-            <WorkAreaPlanGroup
-              title={t('objectList.closedPlanCount', { count: String(summary?.planClosed ?? closedPlans.length) })}
+          {closedWorkCases.length > 0 && (
+            <WorkAreaWorkCaseGroup
+              title={t('objectList.closedPlanCount', { count: String(summary?.workcaseClosed ?? closedWorkCases.length) })}
               tone="closed"
-              plans={closedPlans}
+              workcases={closedWorkCases}
               locale={locale}
               getStatus={getStatus}
-              onOpen={openPlan}
+              onOpen={openWorkCase}
               defaultCollapsed
             />
           )}
@@ -868,10 +868,10 @@ function WorkAreaDefinitionSection({ title, value, muted = false }: { title: str
   );
 }
 
-function WorkAreaPlanGroup({
+function WorkAreaWorkCaseGroup({
   title,
   tone,
-  plans,
+  workcases,
   locale,
   getStatus,
   onOpen,
@@ -879,10 +879,10 @@ function WorkAreaPlanGroup({
 }: {
   title: string;
   tone: 'active' | 'review' | 'closed';
-  plans: RelatedPlanSummary[];
+  workcases: RelatedWorkCaseSummary[];
   locale: string;
   getStatus: (status: string) => string;
-  onOpen: (plan: RelatedPlanSummary) => void;
+  onOpen: (workcase: RelatedWorkCaseSummary) => void;
   defaultCollapsed?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
@@ -892,24 +892,24 @@ function WorkAreaPlanGroup({
       header: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
       row: 'hover:bg-emerald-500/10',
       icon: 'text-emerald-400',
-      titleHover: 'group-hover/workarea-plan-row:text-emerald-400',
-      iconHover: 'group-hover/workarea-plan-row:text-emerald-400 hover:text-emerald-400',
+      titleHover: 'group-hover/workarea-workcase-row:text-emerald-400',
+      iconHover: 'group-hover/workarea-workcase-row:text-emerald-400 hover:text-emerald-400',
     },
     review: {
       section: 'border-violet-500/30 bg-violet-500/5',
       header: 'border-violet-500/30 bg-violet-500/10 text-violet-400',
       row: 'hover:bg-violet-500/10',
       icon: 'text-violet-400',
-      titleHover: 'group-hover/workarea-plan-row:text-violet-400',
-      iconHover: 'group-hover/workarea-plan-row:text-violet-400 hover:text-violet-400',
+      titleHover: 'group-hover/workarea-workcase-row:text-violet-400',
+      iconHover: 'group-hover/workarea-workcase-row:text-violet-400 hover:text-violet-400',
     },
     closed: {
       section: 'border-ldvh-border bg-ldvh-bg/60',
       header: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
       row: 'hover:bg-ldvh-border/35',
       icon: 'text-ldvh-text-secondary',
-      titleHover: 'group-hover/workarea-plan-row:text-ldvh-accent',
-      iconHover: 'group-hover/workarea-plan-row:text-ldvh-accent hover:text-ldvh-accent',
+      titleHover: 'group-hover/workarea-workcase-row:text-ldvh-accent',
+      iconHover: 'group-hover/workarea-workcase-row:text-ldvh-accent hover:text-ldvh-accent',
     },
   }[tone];
   const canCollapse = defaultCollapsed || tone === 'closed';
@@ -935,10 +935,10 @@ function WorkAreaPlanGroup({
       )}
       {!collapsed && (
         <div className="divide-y divide-ldvh-border/60 px-1 py-1">
-          {plans.map((plan) => (
-            <WorkAreaPlanRow
-              key={plan.id}
-              plan={plan}
+          {workcases.map((workcase) => (
+            <WorkAreaWorkCaseRow
+              key={workcase.id}
+              workcase={workcase}
               locale={locale}
               getStatus={getStatus}
               toneClass={toneClass}
@@ -951,33 +951,33 @@ function WorkAreaPlanGroup({
   );
 }
 
-function WorkAreaPlanRow({
-  plan,
+function WorkAreaWorkCaseRow({
+  workcase,
   locale,
   getStatus,
   toneClass,
   onOpen,
 }: {
-  plan: RelatedPlanSummary;
+  workcase: RelatedWorkCaseSummary;
   locale: string;
   getStatus: (status: string) => string;
   toneClass: { row: string; icon: string; titleHover: string; iconHover: string };
-  onOpen: (plan: RelatedPlanSummary) => void;
+  onOpen: (workcase: RelatedWorkCaseSummary) => void;
 }) {
   const { t } = useI18n();
   const { isOpen: panelOpen, content: panelContent } = usePanel();
-  const open = () => onOpen(plan);
-  const planType = plan.type || 'workplan';
-  const flowItems = plan.executionItems ?? [];
-  const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === planType && panelContent.objectId === plan.id;
+  const open = () => onOpen(workcase);
+  const workcaseType = workcase.type || 'workcase';
+  const flowItems = workcase.executionItems ?? [];
+  const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === workcaseType && panelContent.objectId === workcase.id;
   const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
 
   return (
     <div
       role="button"
       tabIndex={0}
-      data-detail-object-id={plan.id}
-      data-detail-object-type={planType}
+      data-detail-object-id={workcase.id}
+      data-detail-object-type={workcaseType}
       onClick={open}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -985,23 +985,23 @@ function WorkAreaPlanRow({
           open();
         }
       }}
-      className={`group/workarea-plan-row flex min-w-0 cursor-pointer flex-col gap-2 rounded-md px-2 py-2.5 text-left transition-colors ${toneClass.row}`}
+      className={`group/workarea-workcase-row flex min-w-0 cursor-pointer flex-col gap-2 rounded-md px-2 py-2.5 text-left transition-colors ${toneClass.row}`}
     >
       <div className="flex min-w-0 items-center gap-3">
         <div className="min-w-0 flex-1">
           <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${toneClass.titleHover}`}>
-            <PriorityIcon source={plan} type={planType} locale={locale} size="sm" />
-            <ObjectTypeIcon type={planType} size={12} className="shrink-0" />
-            <span className="min-w-0 truncate">{getLocalizedTitle(plan, locale)}</span>
+            <PriorityIcon source={workcase} type={workcaseType} locale={locale} size="sm" />
+            <ObjectTypeIcon type={workcaseType} size={12} className="shrink-0" />
+            <span className="min-w-0 truncate">{getLocalizedTitle(workcase, locale)}</span>
           </span>
           <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="ldvh-meta-muted min-w-0 truncate">{plan.id}</span>
-            <span className="ldvh-caption">{formatDateTime(plan.updated)}</span>
+            <span className="ldvh-meta-muted min-w-0 truncate">{workcase.id}</span>
+            <span className="ldvh-caption">{formatDateTime(workcase.updated)}</span>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <CopyPathButton
-            path={plan.path}
+            path={workcase.path}
             label={t('common.copyObjectPath')}
             copiedLabel={t('common.copiedObjectPath')}
             toneClassName="bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-text-secondary"
@@ -1322,7 +1322,7 @@ function getMaterialLabel(fieldKey: string, locale: string) {
     related_pitfalls: { zh: '踩坑', en: 'Pitfalls' },
     related_rules: { zh: '规范', en: 'Specs' },
     urls: { zh: '网址', en: 'URLs' },
-    related_workplans: { zh: '计划', en: 'Work Plans' },
+    related_workcases: { zh: '工作项', en: 'Work Cases' },
     aggregated_execution_refs: { zh: '执行引用', en: 'Execution Refs' },
   };
   const entry = labels[fieldKey];
@@ -1361,7 +1361,7 @@ function getChecklistProgress(value: unknown) {
   };
 }
 
-export function WorkPlanReadingLayout({
+export function WorkCaseReadingLayout({
   obj,
   summary,
   loading,
@@ -1375,12 +1375,12 @@ export function WorkPlanReadingLayout({
   getStatus: (status: string) => string;
 }) {
   const { t } = useI18n();
-  const ownExecutionItems = getWorkPlanExecutionItems(obj);
-  const executionItems = sortPlanExecutionItems(
+  const ownExecutionItems = getWorkCaseExecutionItems(obj);
+  const executionItems = sortWorkCaseExecutionItems(
     ownExecutionItems.length > 0 ? ownExecutionItems : (summary?.executionItems ?? [])
   );
   const isExecutionLoading = loading && ownExecutionItems.length === 0;
-  const orchestration = getWorkPlanOrchestration(obj);
+  const orchestration = getWorkCaseOrchestration(obj);
   const relatedDocs = ((obj.aggregated_related_docs as string[] | undefined) ?? (obj.related_docs as string[] | undefined)) || [];
   const relatedAdrs = ((obj.aggregated_related_adrs as string[] | undefined) ?? (obj.related_adrs as string[] | undefined)) || [];
   const relatedSparks = ((obj.aggregated_related_sparks as string[] | undefined) ?? (obj.related_sparks as string[] | undefined)) || [];
@@ -1403,7 +1403,7 @@ export function WorkPlanReadingLayout({
     'related_adrs',
     'related_sparks',
     'related_pitfalls',
-    'related_workplans',
+    'related_workcases',
     'aggregated_execution_refs',
     'aggregated_related_docs',
     'aggregated_related_adrs',
@@ -1414,14 +1414,14 @@ export function WorkPlanReadingLayout({
 
   return (
     <div className="mb-6 flex flex-col gap-5">
-      <WorkPlanLifecycleSection
+      <WorkCaseLifecycleSection
         obj={obj}
         summary={summary}
         executionItems={executionItems}
         getStatus={getStatus}
       />
 
-      <DetailSection title={t('objectDetail.workplanExecution')} tone="default">
+      <DetailSection title={t('objectDetail.workcaseExecution')} tone="default">
         {isExecutionLoading ? (
           <LoadingHint text={t('objectDetail.executionItemsLoading')} />
         ) : executionItems.length > 0 ? (
@@ -1450,9 +1450,9 @@ export function WorkPlanReadingLayout({
         {hasDetailContent(obj.verification_evidence) ? <EvidenceBlock value={String(obj.verification_evidence)} embedded /> : <EmptyHint text={t('objectDetail.noVerificationEvidence')} />}
       </DetailSection>
       <DetailSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
-        {hasDetailContent(obj.closure_evidence) ? <EvidenceBlock value={String(obj.closure_evidence)} embedded /> : <EmptyHint text={t('objectDetail.noClosureEvidenceForPlan')} />}
+        {hasDetailContent(obj.closure_evidence) ? <EvidenceBlock value={String(obj.closure_evidence)} embedded /> : <EmptyHint text={t('objectDetail.noClosureEvidenceForWorkCase')} />}
       </DetailSection>
-      <WorkPlanReviewSection orchestration={orchestration} />
+      <WorkCaseReviewSection orchestration={orchestration} />
 
       <DetailNarrativeSection title={t('objectDetail.workareaGoal')} value={obj.description} />
       <DetailObjectReferenceSection
@@ -1465,7 +1465,7 @@ export function WorkPlanReadingLayout({
       <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
       <RelatedContentSection
         entries={sortRelatedContentEntries([
-          ['related_workplans', obj.related_workplans],
+          ['related_workcases', obj.related_workcases],
           ['related_docs', relatedDocs],
           ['related_adrs', relatedAdrs],
           ['related_sparks', relatedSparks],
@@ -1478,7 +1478,7 @@ export function WorkPlanReadingLayout({
         <DetailSection title={t('objectDetail.otherFields')} tone="default">
           <div className="flex flex-col gap-3">
             {otherEntries.map(([key, value]) => (
-              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType="workplan" />
+              <ContentField key={key} fieldKey={key} value={value} locale={locale} objType="workcase" />
             ))}
           </div>
         </DetailSection>
@@ -1487,9 +1487,9 @@ export function WorkPlanReadingLayout({
   );
 }
 
-type WorkPlanLifecycleTone = 'draft' | 'planReview' | 'planConfirming' | 'active' | 'blocked' | 'verification' | 'resultReview' | 'review' | 'closed';
+type WorkCaseLifecycleTone = 'draft' | 'planReview' | 'planConfirming' | 'active' | 'blocked' | 'verification' | 'resultReview' | 'review' | 'closed';
 
-const workPlanLifecycleClass: Record<WorkPlanLifecycleTone, string> = {
+const workCaseLifecycleClass: Record<WorkCaseLifecycleTone, string> = {
   draft: 'border-sky-500/25 bg-sky-500/10 text-sky-400',
   planReview: 'border-sky-500/25 bg-sky-500/10 text-sky-400',
   planConfirming: 'border-violet-500/25 bg-violet-500/10 text-violet-400',
@@ -1501,7 +1501,7 @@ const workPlanLifecycleClass: Record<WorkPlanLifecycleTone, string> = {
   closed: 'border-zinc-500/25 bg-zinc-500/10 text-zinc-400',
 };
 
-function WorkPlanLifecycleSection({
+function WorkCaseLifecycleSection({
   obj,
   summary,
   executionItems,
@@ -1514,7 +1514,7 @@ function WorkPlanLifecycleSection({
 }) {
   const { t } = useI18n();
   const rawStatus = detailString(obj.status, detailString(summary?.status, 'unknown'));
-  const lifecycle = getWorkPlanLifecycle(obj, summary, executionItems);
+  const lifecycle = getWorkCaseLifecycle(obj, summary, executionItems);
   const checklistProgress = getChecklistProgress(obj.success_criteria);
   const successCriteriaTotal = summary?.successCriteriaTotal ?? checklistProgress.total;
   const successCriteriaDone = summary?.successCriteriaDone ?? checklistProgress.done;
@@ -1531,12 +1531,12 @@ function WorkPlanLifecycleSection({
   ];
 
   return (
-    <DetailSection title={t('objectDetail.workplanProgress')} tone="default">
+    <DetailSection title={t('objectDetail.workcaseProgress')} tone="default">
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-3">
           <div className="ldvh-caption-strong mb-2 text-ldvh-text-secondary">{t('objectDetail.lifecycleStage')}</div>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className={`ldvh-caption-strong inline-flex rounded-md border px-2 py-1 ${workPlanLifecycleClass[lifecycle.tone]}`}>
+            <span className={`ldvh-caption-strong inline-flex rounded-md border px-2 py-1 ${workCaseLifecycleClass[lifecycle.tone]}`}>
               {t(lifecycle.labelKey)}
             </span>
             <span className="ldvh-meta-muted">{getStatus(rawStatus)}</span>
@@ -1598,17 +1598,17 @@ function ProgressMetric({
   );
 }
 
-function getWorkPlanLifecycle(
+function getWorkCaseLifecycle(
   obj: Record<string, unknown>,
   summary: ObjectItem | null,
   executionItems: RelatedObjectSummary[],
-): { tone: WorkPlanLifecycleTone; labelKey: 'objectDetail.lifecycleDraft' | 'objectDetail.lifecyclePlanReview' | 'objectDetail.lifecyclePlanConfirming' | 'objectDetail.lifecycleActive' | 'objectDetail.lifecycleBlocked' | 'objectDetail.lifecycleVerification' | 'objectDetail.lifecycleResultReview' | 'objectDetail.lifecycleReview' | 'objectDetail.lifecycleClosed' } {
+): { tone: WorkCaseLifecycleTone; labelKey: 'objectDetail.lifecycleDraft' | 'objectDetail.lifecyclePlanReview' | 'objectDetail.lifecyclePlanConfirming' | 'objectDetail.lifecycleActive' | 'objectDetail.lifecycleBlocked' | 'objectDetail.lifecycleVerification' | 'objectDetail.lifecycleResultReview' | 'objectDetail.lifecycleReview' | 'objectDetail.lifecycleClosed' } {
   const status = detailString(obj.status, detailString(summary?.status));
   if (status === 'closed') return { tone: 'closed', labelKey: 'objectDetail.lifecycleClosed' };
   if (status === 'subagents_plan_reviewing') return { tone: 'planReview', labelKey: 'objectDetail.lifecyclePlanReview' };
   if (status === 'human_plan_confirming') return { tone: 'planConfirming', labelKey: 'objectDetail.lifecyclePlanConfirming' };
   if (status === 'human_closure_confirming') return { tone: 'review', labelKey: 'objectDetail.lifecycleReview' };
-  if (isWorkPlanResultReviewStatus(status)) return { tone: 'resultReview', labelKey: 'objectDetail.lifecycleResultReview' };
+  if (isWorkCaseResultReviewStatus(status)) return { tone: 'resultReview', labelKey: 'objectDetail.lifecycleResultReview' };
   if (status === 'review_needed') return { tone: 'review', labelKey: 'objectDetail.lifecycleReview' };
   if (executionItems.some((item) => item.status === 'blocked' || Boolean(item.blockingReason))) {
     return { tone: 'blocked', labelKey: 'objectDetail.lifecycleBlocked' };
@@ -1671,7 +1671,7 @@ function ExecutionItemRow({
   );
 }
 
-function WorkPlanReviewSection({ orchestration }: { orchestration: Record<string, unknown> }) {
+function WorkCaseReviewSection({ orchestration }: { orchestration: Record<string, unknown> }) {
   const { t } = useI18n();
   const planReview = isDetailRecord(orchestration.plan_review) ? orchestration.plan_review : null;
   const resultReview = isDetailRecord(orchestration.result_review) ? orchestration.result_review : null;
@@ -1679,7 +1679,7 @@ function WorkPlanReviewSection({ orchestration }: { orchestration: Record<string
 
   if (planReview || resultReview) {
     return (
-      <DetailSection title={t('objectDetail.workplanReview')} tone="default">
+      <DetailSection title={t('objectDetail.workcaseReview')} tone="default">
         <div className="divide-y divide-ldvh-border/60">
           {planReview && <ReviewRecordGroup title={t('objectDetail.planReview')} review={planReview} phase="plan" />}
           {resultReview && <ReviewRecordGroup title={t('objectDetail.resultReview')} review={resultReview} phase="result" />}
@@ -1689,7 +1689,7 @@ function WorkPlanReviewSection({ orchestration }: { orchestration: Record<string
   }
 
   if (!legacyReview) return null;
-  return <LegacyWorkPlanReviewSection review={legacyReview} />;
+  return <LegacyWorkCaseReviewSection review={legacyReview} />;
 }
 
 function ReviewRecordGroup({
@@ -1820,7 +1820,7 @@ function ReviewRecordSummary({ record }: { record: Record<string, unknown> }) {
   );
 }
 
-function LegacyWorkPlanReviewSection({ review }: { review: Record<string, unknown> }) {
+function LegacyWorkCaseReviewSection({ review }: { review: Record<string, unknown> }) {
   const { t } = useI18n();
 
   const specialistReview = isDetailRecord(review.specialist_review) ? review.specialist_review : null;
@@ -1833,7 +1833,7 @@ function LegacyWorkPlanReviewSection({ review }: { review: Record<string, unknow
   );
 
   return (
-    <DetailSection title={t('objectDetail.workplanReview')} tone="default">
+    <DetailSection title={t('objectDetail.workcaseReview')} tone="default">
       <div className="divide-y divide-ldvh-border/60">
         {hasDetailContent(review.controller_self_check) && (
           <ReviewInlineField
@@ -2399,10 +2399,10 @@ export function getObjectRefType(refId: string): string | null {
 export function findRelatedSummary(
   refId: string,
   currentItem: RelatedObjectSummary | null,
-  parentPlan: ObjectItem | null,
+  parentWorkCase: ObjectItem | null,
 ): RelatedObjectSummary | null {
   void currentItem;
-  void parentPlan;
+  void parentWorkCase;
   void refId;
   return null;
 }
@@ -2548,7 +2548,7 @@ function DetailObjectReferenceValue({
 export function getAuxiliaryMetaEntries(obj: Record<string, unknown>, objType: string) {
   const keys = Array.from(new Set([...(AUXILIARY_META_KEYS_BY_TYPE[objType] || []), ...COMMON_AUXILIARY_META_KEYS]));
   return keys
-    .filter((key) => key !== 'priority' || (objType !== 'spark' && objType !== 'workplan'))
+    .filter((key) => key !== 'priority' || (objType !== 'spark' && objType !== 'workcase'))
     .map((key) => [key, obj[key]] as [string, unknown])
     .filter(([, value]) => value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0));
 }
@@ -2766,12 +2766,12 @@ function detailStringArray(value: unknown): string[] {
     .filter((item) => item.length > 0);
 }
 
-function getWorkPlanOrchestration(obj: Record<string, unknown>): Record<string, unknown> {
+function getWorkCaseOrchestration(obj: Record<string, unknown>): Record<string, unknown> {
   return isDetailRecord(obj.orchestration) ? obj.orchestration : {};
 }
 
-function getWorkPlanExecutionItems(obj: Record<string, unknown>): RelatedObjectSummary[] {
-  const orchestration = getWorkPlanOrchestration(obj);
+function getWorkCaseExecutionItems(obj: Record<string, unknown>): RelatedObjectSummary[] {
+  const orchestration = getWorkCaseOrchestration(obj);
   const rawItems = Array.isArray(orchestration.execution_items) ? orchestration.execution_items : [];
   return rawItems
     .map((rawItem, index): RelatedObjectSummary | null => {
@@ -3085,7 +3085,7 @@ function FieldValue({ fieldKey, value, depth, locale }: { fieldKey: string; valu
   return <span className="ldvh-body">{String(value)}</span>;
 }
 
-/** 从引用 ID 解析对象类型（如 workplan-0001 → workplan） */
+/** 从引用 ID 解析对象类型（如 workcase-0001 → workcase） */
 function parseRefType(refId: string): string | null {
   if (!isObjectRef(refId)) return null;
   const m = refId.match(/^([a-z]+)-\d+$/);

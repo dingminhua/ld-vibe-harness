@@ -22,7 +22,7 @@ ldvh_doc:
     - "specs/05.03-工作模型字段注册与消费规范.md"
     - "specs/09-事实源边界与承载规范.md"
     - "specs/11-测试基础规范.md"
-    - "specs/21-WorkPlan-工作计划.md"
+    - "specs/21-WorkCase-工作项.md"
   code_consumption:
     - "doc_metadata"
     - "relations"
@@ -92,7 +92,7 @@ ldvh_member:
 4. 已有 Skill、Agent、Hook、Code、Web 或环境入口准备消费该工作流程；
 5. 已发现某类行动反复依赖聊天记忆、临时提醒或无事实源判断。
 
-不满足以上条件时，不应为了填补编号或维持顺序而创建或审核工作流程。只存在抽象想法、一次性执行策略或尚未稳定的实践时，应先作为过程输出或候选材料；形成稳定事实后，再按事实类型和对象准入分流到 docs/studies、Spark、WorkPlan、ADR 或其他权威位置。
+不满足以上条件时，不应为了填补编号或维持顺序而创建或审核工作流程。只存在抽象想法、一次性执行策略或尚未稳定的实践时，应先作为过程输出或候选材料；形成稳定事实后，再按事实类型和对象准入分流到 docs/studies、Spark、WorkCase、ADR 或其他权威位置。
 
 ---
 ## 3. 事实源边界
@@ -165,7 +165,7 @@ AI 遇到以下信号时，应识别为工作流程设计审核场景：
 12. **审核事实源回写与证据**：检查稳定事实、过程输出、验证证据、Human Gate 记录和后续分流是否有明确归属；
 13. **审核行动特有可测试性锚点**：检查正向场景、负向场景、Gate 场景、回写场景、失败降级和回归风险是否可验证；
 14. **审核落地要求**：检查规范落地要求表是否说明同步、检查或审计触发条件，且没有制造无法保障的落地承诺；
-15. **形成审核结论**：按 §10 输出过程结论，必要时触发 Human Gate、创建后续 WorkPlan/Spark/ADR/Pitfall 或修订目标文件；
+15. **形成审核结论**：按 §10 输出过程结论，必要时触发 Human Gate、创建后续 WorkCase/Spark/ADR/Pitfall 或修订目标文件；
 16. **复跑验证**：目标文件被修改后，应重新运行相关校验命令，并记录结果、残留风险和下一步分流。
 
 ---
@@ -264,13 +264,13 @@ Code 输出只作为导航、聚合和诊断结果。Code 不判断流程是否�
 稳定事实回写规则如下：
 
 1. 目标工作流程正文需要调整时，回写对应 `specs/40-59` 主文件；
-2. 审核形成缺口、后续工作线索或后续行动时，回写 Spark 或 WorkPlan；
+2. 审核形成缺口、后续工作线索或后续行动时，回写 Spark 或 WorkCase；
 3. 审核形成长期决策时，回写 ADR；
 4. 审核形成可复用踩坑经验时，回写 Pitfall；
 5. 审核形成研究报告或迁移说明时，回写 docs；
 6. 发生事实源修改时，按 10 的 Git 和 commit message 格式规则处理。
 
-凡回写为 WorkPlan 的后续行动，必须按 `specs/21-WorkPlan-工作计划.md` 和 `specs/05.02-工作模型字段内容与格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkPlan 内部 `execution_items`。
+凡回写为 WorkCase 的后续行动，必须按 `specs/21-WorkCase-工作项.md` 和 `specs/05.02-工作模型字段内容与格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkCase 内部 `execution_items`。
 
 不得把聊天中的“看起来可以”“应该合格”“已审核”当作完成证据。关键结论必须能回指规范、目标文件、命令输出、Human Gate 或事实源差异。
 
@@ -388,4 +388,4 @@ python3 code/specs_validate.py all
 2. 评估是否需要创建工作流程语义审查 Agent，用于复杂流程设计争议和价值观一致性审查；
 3. 评估 `code/spec_checks/index.py` 是否需要增强对工作流程行动特有可测试性锚点、落地要求和能力边界的检查；
 4. 后续创建 specs 审核、Code 审核、Rules 入口审核等流程时，应先使用本文执行设计审核；
-5. 本流程实际执行后发现的重复误判，应按事实源边界分流到 Pitfall、Spark、WorkPlan、ADR、Code 需求或本文修订。
+5. 本流程实际执行后发现的重复误判，应按事实源边界分流到 Pitfall、Spark、WorkCase、ADR、Code 需求或本文修订。

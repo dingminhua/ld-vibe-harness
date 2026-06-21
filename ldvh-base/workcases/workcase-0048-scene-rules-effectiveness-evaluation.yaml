@@ -1,0 +1,174 @@
+id: workcase-0048
+type: workcase
+title: scene-rules-effectiveness-evaluation
+goal: |
+  scene-rules-effectiveness-evaluation
+status: review_needed
+created: '2026-06-06T00:24:12.418786'
+updated: '2026-06-06T08:24:15.000000'
+workarea: workarea-0008
+priority: P2
+description: 由历史 Task task-0048 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [ ] 关联任务 task-0048 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0048; source path: ldvh-base/taskplans/taskplan-0048-scene-rules-effectiveness-evaluation.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0048
+    title: scene-rules-effectiveness-evaluation
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0048
+    expected_output: |
+      - [x] 完成三层规则逐条对比，输出重叠度分析表
+      - [x] 提取场景规则独有内容清单，逐条评估必要性
+      - [x] 完成移除推演，明确约束丢失项和合并方案
+      - [x] 输出最终结论：保留/移除/合并建议
+    status: done
+    result_summary: |-
+      verification: 逐条对比分析结果可追溯，结论有逻辑支撑
+
+      ## 验证结果
+
+      三层规则逐条对比完成，重叠度分析表已输出，场景规则独有内容清单逐条评估必要性，移除推演和合并方案已明确，结论有逻辑支撑。
+
+      ## 结论
+
+      验证通过。
+
+      closure_evidence: task-0048 独立验收前补充的可追溯分析证据。
+
+      一、三层规则逐条对比与重叠度分析
+
+      对比对象：
+      - 场景规则：.trae/rules/ldvh-fact-model-rules.md
+      - 工作区规则：.trae/rules/ldvh-workspace-rules.md
+      - 项目规则：ld-vibe-harness/.trae/rules/ldvh-project-rules.md
+
+      逐条对比结果：
+      1. 场景问候语：工作区规则已覆盖 Hello，LDVH；后半句仅为仪式性补充。判定：部分重叠。
+      2. 编辑前读取链路：工作区规则覆盖读取策略，项目规则覆盖按任务读原文。判定：部分重叠。
+      3. 字段契约、状态机、Human Gate 等执行约束：工作区规则和项目规则均有部分覆盖。判定：部分重叠。
+      4. 不得把 ldvh-base YAML 当普通配置文件修改：项目规则硬约束间接覆盖，但无直接表述。判定：低重叠。
+      5. 不得绕过对象状态机：项目规则覆盖 Task blocked_by 和 acceptance，但未完整覆盖所有对象状态机。判定：低重叠。
+      6. 不得跳过 Human Gate：工作区规则已明确覆盖事实源创建、关键状态流转、ADR 写入、规范升级和高风险变更。判定：高重叠。
+      7. 不得自行添加对象规范未定义字段：工作区规则和项目规则均无等价表述。判定：无重叠。
+      8. 不得将 proposed ADR 作为执行依据：工作区规则和项目规则均明确覆盖。判定：完全重叠。
+      9. 不得未读对象规范就编辑事实实例：工作区读取策略和项目规则回原文要求部分覆盖。判定：部分重叠。
+      10. ADR 特别入口：工作区规则要求先调用 ldvh-adr，项目规则有 ADR 入口。判定：完全重叠。
+      11. Task 执行前先状态流转：项目规则间接覆盖，但未直接表述。判定：低重叠。
+      12. blocked_by 未全部关闭不得执行：项目规则明确覆盖。判定：完全重叠。
+      13. Task 关闭需 acceptance、子任务、closure_evidence 满足：项目规则覆盖 acceptance，specs/27 覆盖完整关闭条件。判定：部分重叠。
+      14. verifying -> review_needed、高风险操作、创建子任务需 Human Gate：工作区规则覆盖高风险 Human Gate，specs/27 覆盖状态机。判定：部分重叠。
+      15. 子任务不得再创建子任务：specs/27 覆盖，但工作区/项目规则未覆盖。判定：无重叠。
+
+      统计：完全重叠 3 条，高重叠 1 条，部分重叠 7 条，低重叠 3 条，无重叠 2 条。若将部分重叠及以上视为已有规则体系可感知覆盖，则覆盖 11/15，约 73%。
+
+      二、场景规则独有内容清单与必要性评估
+
+      1. 问候语后半句“我们在操作工作区规定限制的文件”：低必要。它只增强仪式感，不产生实质约束。
+      2. 编辑前读取具体步骤链：中必要。有指导价值，但更适合放入项目规则入口，而不是独立场景规则。
+      3. 不得把 ldvh-base YAML 当普通配置文件随意修改：中必要。应合并到项目规则硬约束。
+      4. 不得绕过对象状态机：中必要。应合并到项目规则硬约束。
+      5. 不得自行添加对象规范未定义字段：高必要。其他两层缺失，应合并到项目规则硬约束。
+      6. 不得未读对应对象规范就编辑事实实例：中必要。应合并到项目规则硬约束，并强化“不读不编辑”。
+      7. Task 关键规则摘要：低必要。它是 specs/27 的摘要，若项目规则已经要求回原文，则不应在场景规则重复维护。
+      8. ADR 特别入口：低必要。工作区规则和项目规则已有 ADR 入口，且更明确要求调用 ldvh-adr。
+
+      三、移除推演与合并方案
+
+      假设移除 .trae/rules/ldvh-fact-model-rules.md：
+      - 丢失问候语后半句：无实质影响，可直接丢弃。
+      - 丢失编辑前读取链路：有轻微影响，应合并到项目规则入口。
+      - 丢失四条事实实例硬约束：有中高影响，应合并到项目规则硬约束。
+      - 丢失 Task 摘要规则：影响较低，应依赖 specs/27 原文，不再重复摘要。
+      - 丢失 ADR 摘要入口：影响较低，工作区规则和项目规则已有覆盖。
+
+      建议合并到项目规则的内容：
+      - 编辑 ldvh-base YAML 前必须识别所属项目，读取项目规则，再按对象类型读取对应工作模型规范。
+      - 不得把 ldvh-base YAML 当普通配置文件随意修改。
+      - 不得绕过对象状态机。
+      - 不得自行添加对象规范未定义字段。
+      - 未读取对应对象规范和结构化契约章节时，不得编辑事实实例。
+
+      建议同步修改工作区规则：
+      - 将“编辑 ldvh-base YAML 进入 ldvh-fact-model-rules.md”改为“编辑 ldvh-base YAML 遵守项目规则中的事实实例硬约束，并按对象规范读取原文”。
+      - 压缩保护中移除“ldvh-base 见事实模型规则”。
+
+      四、最终建议
+
+      建议移除场景规则层，将有效内容合并到项目规则。原因：场景规则多数内容与始终生效的工作区规则、项目规则或 specs 原文重叠；它还承载了对象规范摘要，增加维护成本并分散注意力。保留工作区规则 + 项目规则 + specs 原文的两层入口结构，更清晰、更稳定。
+
+      ## 验证结果
+
+      三层规则逐条对比完成，覆盖 11/15（约73%），场景规则独有内容中2条无重叠（不得自行添加未定义字段、子任务不得再创建子任务），建议移除场景规则层并将有效内容合并到项目规则。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+    evidence_refs:
+    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.03-环境入口适配与部署规范.md
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0048: task-0048 独立验收前补充的可追溯分析证据。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0048: task-0048 独立验收前补充的可追溯分析证据。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+review_requested_at: '2026-06-06T08:24:15.000000'
+closed_at: ''
+related_docs:
+- specs/04.02-LDVH能力资产与落地保障规范.md
+- specs/04.03-环境入口适配与部署规范.md
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

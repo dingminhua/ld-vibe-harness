@@ -25,7 +25,7 @@ description: |
 
   我也认为“允许留空但字段必须存在”通常优于“用模糊句子暗示以后再补”。字段存在且为空可以暴露事实源未完成，后续 Code/Web 也能明确展示 degraded、pending 或 not_applicable；模糊语句则容易让 AI 误以为已经满足要求。
 
-  但需要注意一个反向风险：过度硬化可能制造无意义填表，让 AI 为了满足格式而写入低质量占位。后续如果推进为 WorkPlan，建议同时设计“硬字段 + 合法空值语义 + 不适用说明 + 最小有效内容”的规则，避免只有硬字段、没有质量标准。
+  但需要注意一个反向风险：过度硬化可能制造无意义填表，让 AI 为了满足格式而写入低质量占位。后续如果推进为 WorkCase，建议同时设计“硬字段 + 合法空值语义 + 不适用说明 + 最小有效内容”的规则，避免只有硬字段、没有质量标准。
 
   可能的后续分流方向：
 
@@ -43,7 +43,7 @@ resolved_to: ""
 resolved_at: ""
 discard_reason: ""
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:

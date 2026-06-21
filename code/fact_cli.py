@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LDVH 事实模型 CLI 工具：create / transition / delete / list / show / search / stats / related / link-rule / deprecate / supersede。
 
-对 LDVH 当前工作对象（workarea, workplan, adr, pitfall, spark, study）
+对 LDVH 当前工作对象（workarea, workcase, adr, pitfall, spark, study）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
 Git 提交记录使用 Git commit records 作为事实源，不通过本 CLI 管理。
 ADR 专属写入操作（link-rule / deprecate）必须携带 Human Gate 确认参数。
@@ -23,7 +23,7 @@ import yaml
 # ── 对象元数据（硬编码，与 fact_validate.py 保持一致） ──────────────
 
 # Git 提交记录使用 Git commit records 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"workarea", "workplan", "adr", "pitfall", "spark", "study"}
+OBJECT_TYPES = {"workarea", "workcase", "adr", "pitfall", "spark", "study"}
 
 
 class BlockScalarDumper(yaml.SafeDumper):
@@ -51,7 +51,7 @@ REMOVED_FIELDS_BY_TYPE = {
 
 ID_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}$"),
-    "workplan": re.compile(r"^workplan-\d{4}$"),
+    "workcase": re.compile(r"^workcase-\d{4}$"),
     "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
     "spark": re.compile(r"^spark-\d{4}$"),
@@ -60,15 +60,15 @@ ID_PATTERNS = {
 
 FILENAME_PATTERNS = {
     "workarea": re.compile(r"^workarea-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
-    "workplan": re.compile(r"^workplan-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
+    "workcase": re.compile(r"^workcase-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "spark": re.compile(r"^spark-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "study": re.compile(r"^study-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$"),
 }
 
-WORKPLAN_LEGACY_STATUSES = {"draft", "active", "review_needed"}
-WORKPLAN_CURRENT_STATUSES = {
+WORKCASE_LEGACY_STATUSES = {"draft", "active", "review_needed"}
+WORKCASE_CURRENT_STATUSES = {
     "subagents_plan_reviewing",
     "human_plan_confirming",
     "executing",
@@ -77,24 +77,24 @@ WORKPLAN_CURRENT_STATUSES = {
     "human_closure_confirming",
     "closed",
 }
-WORKPLAN_CLOSURE_OUTCOMES = {"completed", "partial_completed", "cancelled", "superseded", "invalid", "degraded_accepted"}
+WORKCASE_CLOSURE_OUTCOMES = {"completed", "partial_completed", "cancelled", "superseded", "invalid", "degraded_accepted"}
 
 VALID_STATUSES = {
     "workarea": {"active", "archived"},
-    "workplan": WORKPLAN_CURRENT_STATUSES | WORKPLAN_LEGACY_STATUSES,
+    "workcase": WORKCASE_CURRENT_STATUSES | WORKCASE_LEGACY_STATUSES,
     "adr": {"active", "archived", "deprecated"},
     "pitfall": {"active", "archived"},
     "spark": {"pending", "resolved", "discarded"},
     "study": {"active", "archived"},
 }
-VALID_SPARK_RESOLVED_TO_TYPES = {"workarea", "workplan", "adr", "pitfall", "docs", "governed-projects", "other"}
+VALID_SPARK_RESOLVED_TO_TYPES = {"workarea", "workcase", "adr", "pitfall", "docs", "governed-projects", "other"}
 
 VALID_TRANSITIONS = {
     "workarea": {
         "active": {"archived"},
         "archived": {"active"},
     },
-    "workplan": {
+    "workcase": {
         "draft": {"active"},
         "active": {"review_needed"},
         "review_needed": {"closed", "active"},
@@ -128,7 +128,7 @@ VALID_TRANSITIONS = {
 
 REQUIRED_FIELDS = {
     "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
-    "workplan": ["id", "type", "title", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
+    "workcase": ["id", "type", "title", "goal", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
     "adr": ["id", "type", "title", "status", "created", "updated", "date", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "spark": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
@@ -137,7 +137,7 @@ REQUIRED_FIELDS = {
 
 DEFAULT_STATUS = {
     "workarea": "active",
-    "workplan": "subagents_plan_reviewing",
+    "workcase": "subagents_plan_reviewing",
     "adr": "active",
     "pitfall": "active",
     "spark": "pending",
@@ -146,7 +146,7 @@ DEFAULT_STATUS = {
 
 DIRECTORY_MAP = {
     "workarea": "ldvh-base/workareas/",
-    "workplan": "ldvh-base/workplans/",
+    "workcase": "ldvh-base/workcases/",
     "adr": "ldvh-base/adrs/",
     "pitfall": "ldvh-base/pitfalls/",
     "spark": "ldvh-base/sparks/",
@@ -437,7 +437,7 @@ def _build_adr_data(adr_id: str, args: argparse.Namespace, now: str) -> dict:
     return data
 
 
-def _default_workplan_orchestration() -> dict[str, Any]:
+def _default_workcase_orchestration() -> dict[str, Any]:
     return {
         "mode": "single",
         "execution_items": [
@@ -486,7 +486,7 @@ def _default_workplan_orchestration() -> dict[str, Any]:
     }
 
 
-def _get_workplan_review_section(data: dict[str, Any], name: str) -> dict[str, Any] | None:
+def _get_workcase_review_section(data: dict[str, Any], name: str) -> dict[str, Any] | None:
     orchestration = data.get("orchestration")
     if not isinstance(orchestration, dict):
         return None
@@ -494,7 +494,7 @@ def _get_workplan_review_section(data: dict[str, Any], name: str) -> dict[str, A
     return section if isinstance(section, dict) else None
 
 
-def _ensure_workplan_review_dict(data: dict[str, Any], name: str) -> dict[str, Any]:
+def _ensure_workcase_review_dict(data: dict[str, Any], name: str) -> dict[str, Any]:
     orchestration = data.setdefault("orchestration", {})
     if not isinstance(orchestration, dict):
         orchestration = {}
@@ -514,8 +514,8 @@ def _has_open_execution_items(data: dict[str, Any]) -> bool:
     return any(isinstance(item, dict) and item.get("status") in {"pending", "in_progress"} for item in execution_items)
 
 
-def _require_workplan_review_object(data: dict[str, Any], section_name: str, field_name: str, message: str) -> bool:
-    section = _get_workplan_review_section(data, section_name)
+def _require_workcase_review_object(data: dict[str, Any], section_name: str, field_name: str, message: str) -> bool:
+    section = _get_workcase_review_section(data, section_name)
     if not isinstance(section, dict) or not isinstance(section.get(field_name), dict):
         error(message)
         return False
@@ -523,7 +523,7 @@ def _require_workplan_review_object(data: dict[str, Any], section_name: str, fie
 
 
 def _set_plan_human_confirmation(data: dict[str, Any], args: argparse.Namespace, now: str) -> None:
-    plan_review = _ensure_workplan_review_dict(data, "plan_review")
+    plan_review = _ensure_workcase_review_dict(data, "plan_review")
     if not isinstance(plan_review.get("human_confirmation"), dict):
         plan_review["human_confirmation"] = {
             "decision": "execute",
@@ -537,18 +537,18 @@ def _set_plan_human_confirmation(data: dict[str, Any], args: argparse.Namespace,
 
 
 def _set_closure_human_confirmation(data: dict[str, Any], args: argparse.Namespace, now: str) -> None:
-    result_review = _ensure_workplan_review_dict(data, "result_review")
+    result_review = _ensure_workcase_review_dict(data, "result_review")
     if not isinstance(result_review.get("human_closure_confirmation"), dict):
         result_review["human_closure_confirmation"] = {
             "decision": "close",
             "scope": getattr(args, "confirmation_context", "") or "Human Gate 已确认关闭范围。",
             "constraints": [],
             "confirmed_at": now,
-            "summary": f"{getattr(args, 'confirmed_by', 'Human')} 确认 WorkPlan 可关闭。",
+            "summary": f"{getattr(args, 'confirmed_by', 'Human')} 确认 WorkCase 可关闭。",
         }
 
 
-def _append_workplan_revision_history(data: dict[str, Any], args: argparse.Namespace, current_status: str, new_status: str) -> None:
+def _append_workcase_revision_history(data: dict[str, Any], args: argparse.Namespace, current_status: str, new_status: str) -> None:
     reason = getattr(args, "reason", None)
     if not reason:
         error(f"退回流转 {current_status} → {new_status} 需要提供 --reason")
@@ -612,6 +612,8 @@ def cmd_create(args: argparse.Namespace) -> int:
             data[field] = object_type
         elif field == "title":
             data[field] = title
+        elif field == "goal":
+            data[field] = title
         elif field == "status":
             data[field] = DEFAULT_STATUS[object_type]
         elif field in ("created", "updated"):
@@ -626,10 +628,10 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_adrs"] = []
         data["related_sparks"] = []
         data["related_pitfalls"] = []
-        data["workplans"] = []
-    if object_type == "workplan":
+        data["workcases"] = []
+    if object_type == "workcase":
         data["priority"] = "P2"
-        data["orchestration"] = _default_workplan_orchestration()
+        data["orchestration"] = _default_workcase_orchestration()
         data["plan_confirmed_at"] = ""
         data["verification_evidence"] = ""
         data["closure_evidence"] = ""
@@ -644,7 +646,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["related_adrs"] = []
         data["related_sparks"] = []
         data["related_pitfalls"] = []
-        data["related_workplans"] = []
+        data["related_workcases"] = []
     if object_type == "spark":
         data["description"] = f"{title} 的火花摘要。"
         data["priority"] = "P3"
@@ -655,7 +657,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["resolved_at"] = ""
         data["discard_reason"] = ""
         data["related_workareas"] = []
-        data["related_workplans"] = []
+        data["related_workcases"] = []
         data["related_adrs"] = []
         data["related_studies"] = []
         data["related_docs"] = []
@@ -692,7 +694,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["urls"] = []
         data["related_sparks"] = []
         data["related_workareas"] = []
-        data["related_workplans"] = []
+        data["related_workcases"] = []
         data["related_adrs"] = []
         data["related_pitfalls"] = []
         data["related_docs"] = []
@@ -721,7 +723,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["decision"] = "待补充。"
         data["consequences"] = "## 正向价值\n\n待补充。\n\n## 逆向价值\n\n当前决策无逆向价值\n\n## 实施成本\n\n待补充。\n\n## 风险评估\n\n待补充。\n\n## 注意事项\n\n待补充。\n"
         data["related_workareas"] = []
-        data["related_workplans"] = []
+        data["related_workcases"] = []
         data["related_sparks"] = []
         data["related_adrs"] = []
         data["related_rules"] = []
@@ -794,32 +796,32 @@ def cmd_transition(args: argparse.Namespace) -> int:
             error("deprecated_reason 未填写，无法废弃 ADR")
             return 1
 
-    # WorkPlan 激活和关闭审查条件校验（新 WorkPlan 契约）
-    if object_type == "workplan" and current_status == "draft" and new_status == "active":
+    # WorkCase 激活和关闭审查条件校验（新 WorkCase 契约）
+    if object_type == "workcase" and current_status == "draft" and new_status == "active":
         orchestration = data.get("orchestration")
         execution_items = orchestration.get("execution_items") if isinstance(orchestration, dict) else None
         if not isinstance(execution_items, list) or not execution_items:
-            error("orchestration.execution_items 未填写，无法激活 WorkPlan")
+            error("orchestration.execution_items 未填写，无法激活 WorkCase")
             return 1
 
-    if object_type == "workplan" and current_status == "active" and new_status == "review_needed":
+    if object_type == "workcase" and current_status == "active" and new_status == "review_needed":
         for field in ("verification_evidence", "closure_evidence"):
             value = data.get(field)
             if not value or (isinstance(value, str) and not value.strip()):
-                error(f"{field} 未填写，无法将 WorkPlan 标记为 review_needed")
+                error(f"{field} 未填写，无法将 WorkCase 标记为 review_needed")
                 return 1
         if not data.get("review_requested_at"):
             data["review_requested_at"] = datetime.now().isoformat()
 
-    if object_type == "workplan" and current_status == "review_needed" and new_status == "closed":
+    if object_type == "workcase" and current_status == "review_needed" and new_status == "closed":
         for field in ("review_requested_at", "verification_evidence", "closure_evidence"):
             value = data.get(field)
             if not value or (isinstance(value, str) and not value.strip()):
-                error(f"{field} 未填写，无法关闭 WorkPlan")
+                error(f"{field} 未填写，无法关闭 WorkCase")
                 return 1
 
-    if object_type == "workplan" and current_status == "subagents_plan_reviewing" and new_status == "human_plan_confirming":
-        if not _require_workplan_review_object(
+    if object_type == "workcase" and current_status == "subagents_plan_reviewing" and new_status == "human_plan_confirming":
+        if not _require_workcase_review_object(
             data,
             "plan_review",
             "controller_resolution",
@@ -827,16 +829,16 @@ def cmd_transition(args: argparse.Namespace) -> int:
         ):
             return 1
 
-    if object_type == "workplan" and current_status == "human_plan_confirming" and new_status == "executing":
+    if object_type == "workcase" and current_status == "human_plan_confirming" and new_status == "executing":
         _set_plan_human_confirmation(data, args, datetime.now().isoformat())
 
-    if object_type == "workplan" and current_status == "executing" and new_status == "result_self_checking":
+    if object_type == "workcase" and current_status == "executing" and new_status == "result_self_checking":
         if _has_open_execution_items(data):
             error("仍存在 pending 或 in_progress 执行项，无法进入结果自检")
             return 1
 
-    if object_type == "workplan" and current_status == "result_self_checking" and new_status == "subagents_result_reviewing":
-        if not _require_workplan_review_object(
+    if object_type == "workcase" and current_status == "result_self_checking" and new_status == "subagents_result_reviewing":
+        if not _require_workcase_review_object(
             data,
             "result_review",
             "controller_self_check",
@@ -848,8 +850,8 @@ def cmd_transition(args: argparse.Namespace) -> int:
                 error(f"{field} 未填写，无法进入子 Agent 结果复核")
                 return 1
 
-    if object_type == "workplan" and current_status == "subagents_result_reviewing" and new_status == "human_closure_confirming":
-        if not _require_workplan_review_object(
+    if object_type == "workcase" and current_status == "subagents_result_reviewing" and new_status == "human_closure_confirming":
+        if not _require_workcase_review_object(
             data,
             "result_review",
             "controller_resolution",
@@ -859,37 +861,37 @@ def cmd_transition(args: argparse.Namespace) -> int:
         if is_empty(data.get("closure_requested_at")):
             data["closure_requested_at"] = datetime.now().isoformat()
 
-    if object_type == "workplan" and current_status == "human_closure_confirming" and new_status == "closed":
+    if object_type == "workcase" and current_status == "human_closure_confirming" and new_status == "closed":
         if is_empty(data.get("plan_confirmed_at")):
-            error("plan_confirmed_at 未填写，无法关闭 WorkPlan")
+            error("plan_confirmed_at 未填写，无法关闭 WorkCase")
             return 1
-        if not _require_workplan_review_object(
+        if not _require_workcase_review_object(
             data,
             "plan_review",
             "human_confirmation",
-            "plan_review.human_confirmation 未填写，无法关闭 WorkPlan",
+            "plan_review.human_confirmation 未填写，无法关闭 WorkCase",
         ):
             return 1
-        if not _require_workplan_review_object(
+        if not _require_workcase_review_object(
             data,
             "result_review",
             "controller_self_check",
-            "result_review.controller_self_check 未填写，无法关闭 WorkPlan",
+            "result_review.controller_self_check 未填写，无法关闭 WorkCase",
         ):
             return 1
-        if not _require_workplan_review_object(
+        if not _require_workcase_review_object(
             data,
             "result_review",
             "controller_resolution",
-            "result_review.controller_resolution 未填写，无法关闭 WorkPlan",
+            "result_review.controller_resolution 未填写，无法关闭 WorkCase",
         ):
             return 1
         for field in ("closure_requested_at", "verification_evidence", "closure_evidence", "closure_outcome"):
             if is_empty(data.get(field)):
-                error(f"{field} 未填写，无法关闭 WorkPlan")
+                error(f"{field} 未填写，无法关闭 WorkCase")
                 return 1
-        if data.get("closure_outcome") not in WORKPLAN_CLOSURE_OUTCOMES:
-            error(f"closure_outcome 不合法，有效值: {', '.join(sorted(WORKPLAN_CLOSURE_OUTCOMES))}")
+        if data.get("closure_outcome") not in WORKCASE_CLOSURE_OUTCOMES:
+            error(f"closure_outcome 不合法，有效值: {', '.join(sorted(WORKCASE_CLOSURE_OUTCOMES))}")
             return 1
         _set_closure_human_confirmation(data, args, datetime.now().isoformat())
 
@@ -951,7 +953,7 @@ def cmd_transition(args: argparse.Namespace) -> int:
     # 执行流转
     data["status"] = new_status
     data["updated"] = datetime.now().isoformat()
-    if object_type == "workplan" and new_status == "closed":
+    if object_type == "workcase" and new_status == "closed":
         data["closed_at"] = datetime.now().isoformat()
 
     # ADR 流转时回写 Human Gate 记录到 context
@@ -982,7 +984,7 @@ def cmd_transition(args: argparse.Namespace) -> int:
             "date": datetime.now().isoformat(),
         })
 
-    current_workplan_backward_pairs = {
+    current_workcase_backward_pairs = {
         ("human_plan_confirming", "subagents_plan_reviewing"),
         ("executing", "subagents_plan_reviewing"),
         ("result_self_checking", "executing"),
@@ -993,9 +995,9 @@ def cmd_transition(args: argparse.Namespace) -> int:
         ("human_closure_confirming", "executing"),
         ("human_closure_confirming", "subagents_plan_reviewing"),
     }
-    if object_type == "workplan" and (current_status, new_status) in current_workplan_backward_pairs:
+    if object_type == "workcase" and (current_status, new_status) in current_workcase_backward_pairs:
         try:
-            _append_workplan_revision_history(data, args, current_status, new_status)
+            _append_workcase_revision_history(data, args, current_status, new_status)
         except SystemExit:
             return 1
 
@@ -1418,7 +1420,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         # 处理字符串转义：\n → 换行, \\ → 反斜杠
         value = value.replace("\\n", "\n").replace("\\\\", "\\")
         # 列表类型字段：逗号分隔
-        if key in ("related_workareas", "related_workplans", "related_adrs",
+        if key in ("related_workareas", "related_workcases", "related_adrs",
                     "related_sparks", "related_studies", "related_pitfalls", "related_docs",
                     "urls", "source_docs", "source_sparks", "related_rules"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []
@@ -1496,7 +1498,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # show 子命令
     show_parser = subparsers.add_parser("show", help="查看事实对象详情")
-    show_parser.add_argument("target", help="YAML 文件路径或对象 ID（如 workplan-0001）")
+    show_parser.add_argument("target", help="YAML 文件路径或对象 ID（如 workcase-0001）")
     show_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     show_parser.add_argument("--format", choices={"text", "json"}, default="text", help="输出格式，默认 text")
 
@@ -1538,7 +1540,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # update 子命令
     update_parser = subparsers.add_parser("update", help="更新事实对象的指定字段")
-    update_parser.add_argument("target", help="对象 ID（如 workplan-0002）或 YAML 文件路径")
+    update_parser.add_argument("target", help="对象 ID（如 workcase-0002）或 YAML 文件路径")
     update_parser.add_argument("--set", action="append", default=None, help="设置字段值（key=value，可多次指定，列表字段用逗号分隔）")
     update_parser.add_argument("--base-dir", default=".", help="项目根目录（默认当前目录）")
     _add_authorization_args(update_parser)

@@ -1,0 +1,136 @@
+id: workcase-0058
+type: workcase
+title: rules-scene-layer-spec-alignment
+goal: |
+  rules-scene-layer-spec-alignment
+status: review_needed
+created: '2026-06-07T01:49:39.503579'
+updated: '2026-06-07T01:49:39.503579'
+workarea: workarea-0008
+priority: P2
+description: 由历史 Task task-0058 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [ ] 关联任务 task-0058 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0058; source path: ldvh-base/taskplans/taskplan-0058-rules-scene-layer-spec-alignment.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0058
+    title: rules-scene-layer-spec-alignment
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0058
+    expected_output: |
+      - [x] 05-Trae-Solo环境规范.md 已取消将场景规则作为 LDVH 默认规则层的表述
+      - [x] 02/07/09/12 中对工作区场景规则或 ldvh-fact-model-rules.md 的旧口径已同步调整
+      - [x] 规范保留有效约束的承接路径：项目规则硬约束、工作区入口、specs 原文
+      - [x] 完成引用检查，确认 specs 根目录不再把 ldvh-fact-model-rules.md 作为默认事实实例编辑入口
+    status: done
+    result_summary: |-
+      verification: 检索 specs 根目录中的"场景规则""工作区场景规则""ldvh-fact-model-rules"等引用，确认剩余引用不再表达 LDVH 默认三层规则结构。
+
+      ## 验证结果
+
+      specs 根目录正式规范中不再出现 ldvh-fact-model-rules，不再把"工作区规则 → 项目规则 → 场景规则"作为 LDVH 默认通道层，剩余"工作区场景规则"表述仅用于说明默认不再作为承载层。
+
+      ## 结论
+
+      验证通过。
+
+      closure_evidence: ## 验证结果
+
+      已按用户确认的“只改规范”范围，完成 specs 正式规范口径调整，未删除或修改 .trae/rules/ 实体文件。
+
+      已修改的规范文件：
+      - specs/05-Trae-Solo环境规范.md：将 LDVH 规则默认层级调整为工作区规则、项目规则和 specs 原文；场景规则改为例外机制，必须说明例外原因、权威 specs 来源和退出条件。
+      - specs/02-术语规范.md：将“工作模型规则”定义调整为由项目规则事实实例硬约束、工作区项目识别入口和 specs 对象规范原文共同承接，不再作为独立工作区场景规则默认承载层。
+      - specs/07-工作模型基础规范.md：将事实实例编辑入口从 ldvh-fact-model-rules.md 调整为工作区规则识别管辖项目、项目规则承接硬约束和对象规范入口。
+      - specs/09-LDVH特别说明.md：取消独立工作区场景规则问候语，保留统一 Hello，LDVH 问候。
+      - specs/12-工作模型字段内容格式规范.md：将机制落地关系从 ldvh-fact-model-rules.md 改为工作区规则与项目规则。
+      - specs/41-multi-role-thinking-多角色思考.md：同步移除将场景规则作为入口摘要或落地位置的普通并列口径。
+
+      引用检查命令：
+      python3 -c "from pathlib import Path; terms=['ldvh-fact-model-rules','工作区场景规则','通道层：工作区规则 → 项目规则 → 场景规则','场景规则局部','工作模型编辑规则','进入工作区场景规则']; ..."
+
+      引用检查结果：
+      - specs 根目录正式规范中不再出现 ldvh-fact-model-rules。
+      - specs 根目录正式规范中不再把“工作区规则 → 项目规则 → 场景规则”作为 LDVH 默认通道层。
+      - 剩余“工作区场景规则”表述仅用于说明“默认不再作为承载层”或“默认不再维护独立问候语”，不再表达默认入口。
+
+      fact_validate 结果：
+      - 已运行 python3 tools/fact_validate.py ldvh-base/。
+      - 校验仍存在历史错误，包括既有 ADR 文件名、旧任务 closed_at/closure_evidence、部分 deliverables 路径等问题。
+      - 本次新增 task-0058 仅出现 verification 结构提示类 warning，未发现由本次规范修改引入的阻断性结构错误。
+
+      ## 结论
+
+      本轮已完成“先修改相关规范文件”的目标：正式 specs 口径已经从默认三层规则结构收敛为“工作区规则 + 项目规则 + specs 原文”，场景规则仅作为非默认例外机制。后续可另起任务修改 .trae/rules 实体并删除或迁移 ldvh-fact-model-rules.md。
+    evidence_refs:
+    - specs/04.03-环境入口适配与部署规范.md
+    - specs/02-术语规范.md
+    - specs/05-工作模型基础规范.md
+    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/05.02-工作模型字段内容与格式规范.md
+    - ldvh-base/workcases/workcase-0048-scene-rules-effectiveness-evaluation.yaml
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  历史任务计划迁移聚合证据：
+  - task-0058: ## 验证结果
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  历史任务计划迁移聚合证据：
+  - task-0058: ## 验证结果
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+review_requested_at: '2026-06-07T01:49:39.503579'
+closed_at: ''
+related_docs:
+- specs/04.03-环境入口适配与部署规范.md
+- specs/02-术语规范.md
+- specs/05-工作模型基础规范.md
+- specs/04.02-LDVH能力资产与落地保障规范.md
+- specs/05.02-工作模型字段内容与格式规范.md
+- ldvh-base/workcases/workcase-0048-scene-rules-effectiveness-evaluation.yaml
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

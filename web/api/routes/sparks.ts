@@ -151,7 +151,7 @@ router.post('/', (req: Request, res: Response): void => {
       resolved_at: '',
       discard_reason: '',
       related_workareas: [] as string[],
-      related_workplans: [] as string[],
+      related_workcases: [] as string[],
       related_adrs: [] as string[],
       related_studies: [] as string[],
       related_docs: [] as string[],

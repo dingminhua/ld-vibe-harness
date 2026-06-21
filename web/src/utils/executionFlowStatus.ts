@@ -176,7 +176,7 @@ function getExecutionFlowPriority(item: RelatedObjectSummary): number {
   return priority === -1 ? EXECUTION_FLOW_QUEUE_ORDER.length : priority;
 }
 
-export function sortPlanExecutionItems(items: RelatedObjectSummary[]): RelatedObjectSummary[] {
+export function sortWorkCaseExecutionItems(items: RelatedObjectSummary[]): RelatedObjectSummary[] {
   return [...items].sort((a, b) => {
     const priorityDelta = getExecutionFlowPriority(a) - getExecutionFlowPriority(b);
     if (priorityDelta !== 0) return priorityDelta;

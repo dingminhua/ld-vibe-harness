@@ -17,13 +17,13 @@ const __dirname = path.dirname(__filename)
 export const LDVH_ROOT = path.resolve(process.env.LDVH_ROOT || path.resolve(__dirname, '../../..'))
 export const LDVH_BASE_DIR = path.join(LDVH_ROOT, 'ldvh-base')
 
-export const ACTIVE_OBJECT_TYPES = ['workarea', 'workplan', 'adr', 'pitfall', 'spark', 'study'] as const
+export const ACTIVE_OBJECT_TYPES = ['workarea', 'workcase', 'adr', 'pitfall', 'spark', 'study'] as const
 export const OBJECT_TYPES = ACTIVE_OBJECT_TYPES
 export type ObjectType = (typeof OBJECT_TYPES)[number]
 
 const DIRECTORY_MAP: Record<ObjectType, string> = {
   workarea: 'workareas',
-  workplan: 'workplans',
+  workcase: 'workcases',
   adr: 'adrs',
   pitfall: 'pitfalls',
   spark: 'sparks',

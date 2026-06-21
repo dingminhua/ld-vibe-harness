@@ -14,7 +14,7 @@ summary: |
 conclusion: |
   LDVH 适合走“先在内生事实源上做轻量图谱化，再逐步接入图检索能力”的路线。
   第 1 阶段目标应是：稳定运行时实体/关系提取器 + 关系一致性校验 + 依赖链/阻塞链可查询视图。
-  第 2 阶段目标应是：将图状态纳入 40-43 审核触发与 WorkPlan 关闭 Gate。
+  第 2 阶段目标应是：将图状态纳入 40-43 审核触发与 WorkCase 关闭 Gate。
   第 3 阶段目标应是：结合图增强检索与审核建议，形成图谱驱动的可解释 AI 辅助能力。
   明确边界：图节点、边、元数据和校验结果只能按 CLI/API 请求从当前 code、specs、ldvh-base 与 Git 工作区实时生成，不得落盘为派生事实源，不得使用长期缓存或外部图数据库作为事实缓存。
 urls:
@@ -33,14 +33,14 @@ urls:
 related_sparks:
   - spark-0016
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
   - specs/05.01-工作模型字段定义与语义规范.md
   - specs/05.02-工作模型字段内容与格式规范.md
   - specs/05.03-工作模型字段注册与消费规范.md
-  - specs/21-WorkPlan-工作计划.md
+  - specs/21-WorkCase-工作项.md
   - specs/24-Spark-火花.md
   - specs/42-specs-audit-规范审核.md
 archive_reason:
@@ -52,14 +52,14 @@ archive_reason:
 
 1. LDVH 是否已经具备可建设知识图谱的基础？
 2. 结合 2025-2026 的行业实践，LDVH 应优先补齐哪些图谱化能力？
-3. 建议如何与当前 40-43 审核链路与工作计划闭环对齐？
+3. 建议如何与当前 40-43 审核链路与工作项闭环对齐？
 
 ## 输入与边界
 
 本研究基于 2025-2026 的公开实践文章与 LDVH 当前事实源资产；时间点为 2026-06-20。
 
 输入边界：
-- 只覆盖 LDVH 项目对象层（WorkPlan/Spark/ADR/Pitfall/Study/WorkArea）之间关系治理；
+- 只覆盖 LDVH 项目对象层（WorkCase/Spark/ADR/Pitfall/Study/WorkArea）之间关系治理；
 - 不直接评估外部图数据库选型的托管成本、运维资源或组织预算；
 - 不替代 `docs/studies` 中临时资料，仅吸收可复用、可引用的结论。
 - 图谱输出只能作为运行时投影和当次诊断结果；不得写入 `entities.json`、`edges.json`、`graph-metadata.json` 等派生文件，不得维护长期缓存。
@@ -70,7 +70,7 @@ archive_reason:
 
 LDVH 已具备知识图谱建设的输入条件：
 
-- 结构化对象事实源（WorkPlan/Spark/ADR/Pitfall/Study/WorkArea）；
+- 结构化对象事实源（WorkCase/Spark/ADR/Pitfall/Study/WorkArea）；
 - 标准化 ID 与跨对象关联字段；
 - fact_cli 检索与 Git 提交追溯链路。
 
@@ -109,8 +109,8 @@ LDVH 已具备知识图谱建设的输入条件：
 
 - 定义 LDVH 核心关系语义与最小字段映射；
 - 提供查询：邻接、阻塞链、证据链、收敛链；
-- 支持将关系问题映射到 WorkPlan 审核与关闭前检查点。
-- 查询入口应包含正向邻接、反向邻接、对象影响面、Spark 分流链、WorkPlan 输入/证据链和已失效引用列表。
+- 支持将关系问题映射到 WorkCase 审核与关闭前检查点。
+- 查询入口应包含正向邻接、反向邻接、对象影响面、Spark 分流链、WorkCase 输入/证据链和已失效引用列表。
 
 ### 阶段 3（P2）：与 40-43 与提交链路打通
 
@@ -121,7 +121,7 @@ LDVH 已具备知识图谱建设的输入条件：
 
 ## 后续分流
 
-- 将本 Study 的阶段化建议分流为 WorkPlan，优先推进 `P1` 的运行时抽取器与校验器。
+- 将本 Study 的阶段化建议分流为 WorkCase，优先推进 `P1` 的运行时抽取器与校验器。
 - 在 41/42/43 的可触发清单中补上“图谱关系一致性检查”作为明确触发条件。
 - 形成一套可复用的关系视图查询模板（对象级依赖闭包、阻塞链、resolved 路径、证据链）。
-- WorkPlan 创建前应明确禁止缓存：验收标准必须包含“不落盘派生图谱文件、不引入长期缓存、不把外部图数据库作为事实源”的检查项。
+- WorkCase 创建前应明确禁止缓存：验收标准必须包含“不落盘派生图谱文件、不引入长期缓存、不把外部图数据库作为事实源”的检查项。

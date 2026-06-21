@@ -23,7 +23,7 @@ ldvh_doc:
     - "specs/05.03-工作模型字段注册与消费规范.md"
     - "specs/09-事实源边界与承载规范.md"
     - "specs/11-测试基础规范.md"
-    - "specs/21-WorkPlan-工作计划.md"
+    - "specs/21-WorkCase-工作项.md"
   code_consumption:
     - "doc_metadata"
     - "relations"
@@ -167,7 +167,7 @@ AI 遇到以下信号时，应识别为规范审核场景：
 12. **审核检查要求**：检查文档是否明确 AI 应如何判断规则成立、失败或需要 Human Gate；是否存在"只要求但不说明判定方法"；
 13. **审核与 docs 和 studies 的边界**：检查是否把历史迁移、来源演化、研究材料或工具使用说明直接写进 specs 正文；
 14. **审核可执行性**：检查规范是否能被 AI 直接消费并产生动作，而不是只陈述理念；是否缺少必要锚点、字段或判定方法；
-15. **形成审核结论**：按 §10 输出过程结论，必要时触发 Human Gate、创建后续 WorkPlan/Spark/ADR/Pitfall 或修订目标文件；
+15. **形成审核结论**：按 §10 输出过程结论，必要时触发 Human Gate、创建后续 WorkCase/Spark/ADR/Pitfall 或修订目标文件；
 16. **复跑验证**：目标文档被修改后，应重新运行相关校验命令，并记录结果、残留风险和下一步分流；验证命令输出仅用于判断目标规范文档的机械属性是否自洽，不代表该规范在项目中已被满足。
 
 ---
@@ -264,13 +264,13 @@ Code 输出只作为导航、聚合和诊断结果。Code 不判断规范是否�
 稳定事实回写规则如下：
 
 1. 目标规范正文需要调整时，回写对应 `specs/` 主文件；
-2. 审核形成缺口、后续工作线索或后续行动时，回写 Spark 或 WorkPlan；
+2. 审核形成缺口、后续工作线索或后续行动时，回写 Spark 或 WorkCase；
 3. 审核形成长期决策或架构判断时，回写 ADR；
 4. 审核形成可复用踩坑经验时，回写 Pitfall；
 5. 审核形成研究报告或迁移说明时，回写 docs；
 6. 发生事实源修改时，按 10 的 Git 和 commit message 格式规则处理。
 
-凡回写为 WorkPlan 的后续行动，必须按 `specs/21-WorkPlan-工作计划.md` 和 `specs/05.02-工作模型字段内容与格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkPlan 内部 `execution_items`。
+凡回写为 WorkCase 的后续行动，必须按 `specs/21-WorkCase-工作项.md` 和 `specs/05.02-工作模型字段内容与格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkCase 内部 `execution_items`。
 
 不得把聊天中的"看起来合格""逻辑没问题""应该符合 Vx"当作完成证据。关键结论必须能回指规范、目标文件、命令输出、Human Gate 或事实源差异。
 

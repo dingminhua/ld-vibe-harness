@@ -1,0 +1,160 @@
+id: workcase-0068
+type: workcase
+title: 管辖项目文件浏览与 Git 变更查看页
+goal: |
+  管辖项目文件浏览与 Git 变更查看页
+status: closed
+created: '2026-06-11T17:56:14'
+updated: '2026-06-11T18:29:50'
+workarea: workarea-0006
+priority: P2
+description: 由历史 Task task-0068 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0068 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0068; source path: ldvh-base/taskplans/taskplan-0068-governed-project-file-browser.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0068
+    title: 管辖项目文件浏览与 Git 变更查看页
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0068
+    expected_output: |
+      - [x] 新增一个独立 Web tab，不替换当前主页和 attention-test 测试页
+      - [x] 页面能读取 `LDVH-GOVERNED-PROJECTS.yaml`，按管辖项目 id/name/path 分组展示项目
+      - [x] 每个项目提供只读文件浏览入口，至少覆盖 README、docs、ldvh-base 和常用 Markdown/YAML 文件
+      - [x] 点击 `.md` 文件可在 Web 内以 Markdown 预览方式阅读，并保留文件路径复制能力
+      - [x] 非 Markdown 文本文件可用代码/纯文本视图阅读，二进制或过大文件有明确降级提示
+      - [x] 页面显示当前工作区待提交文件，区分 modified、added、deleted、untracked 等状态
+      - [x] 点击待提交文件可查看对应 diff；新增文件、删除文件和未跟踪文件有可理解的展示方式
+      - [x] 文件浏览和 diff 查看不提供任何 Web 写入、暂存、提交、还原或删除能力
+      - [x] API 层限制读取范围，拒绝路径穿越和管辖范围外文件访问
+      - [x] 设计语言与现有 Web 保持一致，移动端和窄宽下不得出现横向滚动
+      - [x] 运行 `npm run check`、`npm run lint`、`npm run build` 通过
+      - [x] 使用浏览器验证页面主流程：项目切换、Markdown 预览、待提交文件列表、diff 查看
+    status: done
+    result_summary: |-
+      verification: ## 验证计划
+
+      实现后应运行：
+
+      1. `npm run check`
+      2. `npm run lint`
+      3. `npm run build`
+      4. 针对新增 API 的路径边界和 diff 输出做最小测试或手工验证
+      5. 在浏览器中验证独立 tab 的项目文件浏览、Markdown 预览和待提交文件 diff 查看
+
+      同时需要扫描 Web 写入风险，确认除 Spark 快速创建外没有新增事实源写入入口。
+
+      ## 验证结果
+
+      - 新增 `/project-files` 独立 Web tab，侧边栏显示“文件”入口。
+      - `GET /api/project-files/projects` 可读取 `LDVH-GOVERNED-PROJECTS.yaml` 并返回管辖项目。
+      - `GET /api/project-files/entries`、`/content`、`/git/status`、`/git/diff` 已做本地烟测通过。
+      - 浏览器验证 `README.md` 可用通用 `MarkdownPreview` 阅读。
+      - 浏览器验证待提交文件 `web/src/pages/ProjectFiles.tsx` 可打开 diff。
+      - 浏览器验证桌面和 390px 窄视口下页面级 `scrollWidth` 等于视口宽度，无整页横向滚动。
+      - `npm run check`、`npm run lint`、`npm run build` 通过。
+      - `python3 -m pytest tests/test_fact_cli.py::test_list_json_output tests/test_fact_cli.py::test_list_json_includes_attention_summary_fields -q` 通过。
+      - `python3 tools/fact_validate.py ldvh-base --format json` 通过，0 errors / 0 warnings。
+
+      ## 结论
+
+      任务完成。新增能力保持只读边界，没有新增 Git 写入、事实源写入、暂存、提交、回退或删除入口。
+
+      closure_evidence: ## 交付内容
+
+      - 新增 `web/api/routes/project-files.ts`，提供管辖项目、目录、文件内容、Git 状态和单文件 diff 的只读 API。
+      - 在 `web/api/app.ts` 注册 `/api/project-files` 路由。
+      - 新增 `web/src/pages/ProjectFiles.tsx`，提供项目文件浏览、Markdown 预览、文本预览、待提交文件列表和 diff 面板。
+      - 在 `web/src/App.tsx` 和 `web/src/components/Sidebar.tsx` 接入 `/project-files` 独立 tab。
+      - 在 `web/src/utils/api.ts` 增加新增 API 的类型和请求函数。
+
+      ## 验证结果
+
+      - API 烟测通过：`/projects`、`/entries`、`/content`、`/git/status`、`/git/diff` 均能返回预期数据。
+      - 浏览器验证通过：`README.md` 可 Markdown 预览，待提交文件可打开 diff。
+      - 桌面和 390px 窄视口下页面级宽度未超出视口，diff 横向滚动限制在 diff 面板内部。
+      - `npm run check`、`npm run lint`、`npm run build` 通过。
+      - `python3 -m pytest tests/test_fact_cli.py::test_list_json_output tests/test_fact_cli.py::test_list_json_includes_attention_summary_fields -q` 通过。
+      - `python3 tools/fact_validate.py ldvh-base --format json` 在补齐关闭证据后通过。
+
+      ## 结论
+
+      task-0068 已完成并关闭。新增页面保持只读边界，没有新增事实源写入或 Git 写入入口。
+    evidence_refs:
+    - web/api/routes/project-files.ts
+    - web/api/app.ts
+    - web/src/pages/ProjectFiles.tsx
+    - web/src/App.tsx
+    - web/src/components/Sidebar.tsx
+    - web/src/utils/api.ts
+    - specs/03-文档基础规范.md
+    - specs/03.04-管辖项目配置规范.md
+    - specs/08-Web信息同步实现规范.md
+    - specs/10-Git提交规范.md
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0068: ## 交付内容
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0068: ## 交付内容
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+review_requested_at: '2026-06-11T18:29:50'
+closed_at: '2026-06-11T18:29:50'
+related_docs:
+- specs/03-文档基础规范.md
+- specs/03.04-管辖项目配置规范.md
+- specs/08-Web信息同步实现规范.md
+- specs/10-Git提交规范.md
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

@@ -1,0 +1,164 @@
+id: workcase-0072
+type: workcase
+title: 补齐 evidence_refs 路径存在性检查
+goal: |
+  补齐 evidence_refs 路径存在性检查
+status: review_needed
+created: 2026-06-18T16:22:16+0800
+updated: '2026-06-18T16:32:01.828605'
+workarea: workarea-0012
+priority: P2
+description: |
+  workcase-0071 的 process-governance 复审发现 `orchestration.execution_items[].evidence_refs`
+  可以指向不存在的路径，而 `fact_validate` 未捕获。该计划补齐最小 Code 检查：只对看起来像文件或目录路径的
+  evidence ref 做存在性校验，保留命令、对象 ID、提交号和描述性说明的自由度，避免把证据引用误收窄为纯路径字段。
+success_criteria: |
+  - [x] `fact_validate` 能对 WorkCase execution item 中看起来像路径的 `evidence_refs` 报告不存在路径
+  - [x] 命令、对象 ID、提交号或描述性 evidence ref 不被误判为路径
+  - [x] 新增或更新单元测试覆盖存在路径、缺失路径和非路径 evidence ref
+  - [x] 当前事实源校验保持 errors=0 warnings=0
+  - [x] 完成后安排独立 Code 子 Agent 复审并把结论写回本 WorkCase
+source: |
+  用户在完成 workcase-0069、0070、0071 后询问下一步并要求“继续”。主控将 workcase-0071
+  暴露出的 `evidence_refs` 路径存在性缺口识别为最小、明确、可验证的下一步硬化目标；本计划按该授权执行。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 实现 evidence_refs 路径启发式检查
+    role: code
+    mode: single
+    input_refs:
+    - code/fact_validate.py
+    expected_output: 对看起来像路径的 evidence_refs 做存在性校验，并避免误伤命令、对象 ID、提交号或描述性文本。
+    status: done
+    result_summary: |
+      `fact_validate` 新增 execution item evidence_refs 路径检查：仅对可判定为项目内文件或目录路径的引用检查存在性；
+      URL、命令、对象 ID、提交号、带附注说明和仓库外绝对路径不作为项目内路径强制校验。
+    evidence_refs:
+    - code/fact_validate.py
+    blocking_reason: null
+  - id: item-2
+    title: 补齐单元测试
+    role: code
+    mode: single
+    input_refs:
+    - tests/code/test_fact_validate.py
+    expected_output: 覆盖缺失 evidence_refs 路径报错、非路径 evidence_refs 不报错，以及现有有效 WorkCase
+      继续通过。
+    status: done
+    result_summary: |
+      已补充缺失路径报错、非路径混合引用不误报、URL 不误报和 `path §section` 只检查路径段的测试；
+      同时修正共享测试夹具，使临时项目包含其声明的 evidence 文件。
+    evidence_refs:
+    - tests/code/test_fact_validate.py
+    - tests/code/specs_validate_checks/test_ldvh_landing.py
+    blocking_reason: null
+  - id: item-3
+    title: 校验与独立复审
+    role: reviewer
+    mode: single
+    input_refs:
+    - code/fact_validate.py
+    - tests/code/test_fact_validate.py
+    expected_output: 运行确定性校验并安排独立 Code 子 Agent 复审，结论写回 verification_evidence 和 closure_evidence。
+    status: done
+    result_summary: |
+      已运行全量 code 测试、事实源校验、specs 综合校验和 diff whitespace 检查；独立 Code 子 Agent 复审 PASS，
+      子 Agent 建议补充的 URL 和 `path §section` 边界测试已采纳。
+    evidence_refs:
+    - code/fact_validate.py
+    - tests/code/test_fact_validate.py
+    - specs/21-WorkCase-工作项.md
+    - specs/05.02-工作模型字段内容与格式规范.md
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: true
+      role: code-reviewer
+      expected_output: 独立复核 evidence_refs 路径检查是否准确、低误报，并确认测试覆盖关键边界。
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  修改范围：
+  - `code/fact_validate.py`：新增 `evidence_refs` 路径存在性检查，只校验可判定为项目内文件或目录路径的引用。
+  - `tests/code/test_fact_validate.py`：新增缺失路径报错和混合非路径引用不误报测试，并补齐有效 WorkCase 测试夹具证据文件。
+  - `tests/code/specs_validate_checks/test_ldvh_landing.py`：补齐 landing/web validate 共享夹具中的 evidence 文件。
+  - `specs/21-WorkCase-工作项.md` 与 `specs/05.02-工作模型字段内容与格式规范.md`：同步说明 mixed evidence ref 的 Code 检查边界。
+
+  已运行：
+  - `python3 -m pytest tests/code/test_fact_validate.py -q`：8 passed
+  - `python3 -m pytest tests/code/test_fact_cli.py tests/code/test_fact_validate.py -q`：12 passed
+  - `python3 -m pytest tests/code -q`：197 passed
+  - `python3 code/fact_validate.py ldvh-base/`：files=109 errors=0 warnings=0
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过
+  - `git diff --check`：通过
+
+  独立 Code 子 Agent 复审：
+  - 结论：PASS。
+  - 必须修复：无。
+  - 建议：补充 `https://...` 样例和 `path §section` 正向样例；两项已在 `tests/code/test_fact_validate.py` 中采纳。
+
+  原文标题：结论
+
+  Code 行为、测试、规范说明和独立复审已闭环，可进入 review_needed。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  独立 Code 子 Agent 确认 `evidence_refs` 只对可判定为路径的引用报 `EVIDENCE_REF_PATH_NOT_FOUND`，并确认命令、对象 ID、提交号、带附注文本、仓库外绝对路径不会误报；规范 21 和 05.01 与实现一致。复审建议补充 URL 与 `path §section` 样例，已采纳并通过测试。
+
+  最终校验：
+  - `python3 -m pytest tests/code/test_fact_validate.py -q`：8 passed
+  - `python3 -m pytest tests/code -q`：197 passed
+  - `python3 code/fact_validate.py ldvh-base/`：files=109 errors=0 warnings=0
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过
+  - `git diff --check`：通过
+
+  原文标题：结论
+
+  本 WorkCase 已完成实现、测试、规范同步、确定性校验和独立 Code 复审，可进入 review_needed，等待 Human 关闭审查。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+related_docs:
+- specs/21-WorkCase-工作项.md
+- specs/05.02-工作模型字段内容与格式规范.md
+- specs/07-Code确定性执行实现规范.md
+related_adrs: []
+related_sparks:
+- spark-0010
+related_pitfalls: []
+related_workcases:
+- workcase-0071
+review_requested_at: '2026-06-18T16:32:01.828599'

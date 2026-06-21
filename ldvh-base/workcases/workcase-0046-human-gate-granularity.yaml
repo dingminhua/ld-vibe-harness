@@ -1,0 +1,53 @@
+id: workcase-0046
+type: workcase
+title: Human Gate粒度配置
+goal: |
+  Human Gate粒度配置
+status: active
+created: '2026-06-06T00:03:22.830866'
+updated: '2026-06-06T00:03:22.830866'
+workarea: workarea-0009
+priority: P2
+description: 由历史 Task task-0046 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [ ] 关联任务 task-0046 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0046; source path: ldvh-base/taskplans/taskplan-0046-human-gate-granularity.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0046
+    title: Human Gate粒度配置
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0046
+    expected_output: |
+      - [ ] 产出 ADR 论证 Human Gate 粒度配置方案
+      - [ ] ADR 状态流转至 accepted
+      - [ ] 定义风险级别分类标准（高/中/低）
+      - [ ] 修改 specs/05-工作模型基础规范.md 或相关规范中的 Human Gate 章节
+      - [ ] 更新 .trae/rules/ 中的 Human Gate 规则以反映分级
+    status: pending
+    result_summary: ''
+    evidence_refs:
+    - ldvh-base/adrs/adr-0008（新建）
+    - specs/05-工作模型基础规范.md（修订）
+    blocking_reason: Legacy Task is not closed; keep WorkCase active after migration.
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: ''
+closure_evidence: ''
+review_requested_at: ''
+closed_at: ''
+related_docs: []
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

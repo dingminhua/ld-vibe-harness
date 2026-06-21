@@ -6,30 +6,30 @@ status: active
 created: '2026-06-20T11:50:00+08:00'
 updated: '2026-06-20T11:50:00+08:00'
 summary: |
-  本 Study 以 spark 形式整理 LDVH 可以从 Superpowers 项目吸收的内容。核心判断是：Superpowers 最值得吸收的不是具体 Claude Code Skill 包本身，而是它对 AI 编码代理“合理化、抢跑、缺证据、跳过审查、上下文污染”的系统性约束设计。LDVH 应把这些机制转译为自身的事实源边界、验证铁律、Human Gate、WorkPlan 审查、Skill/Agent/Hook 资产准入和错误反馈闭环，而不是照搬其会话级工作流或绝对 TDD 教条。
+  本 Study 以 spark 形式整理 LDVH 可以从 Superpowers 项目吸收的内容。核心判断是：Superpowers 最值得吸收的不是具体 Claude Code Skill 包本身，而是它对 AI 编码代理“合理化、抢跑、缺证据、跳过审查、上下文污染”的系统性约束设计。LDVH 应把这些机制转译为自身的事实源边界、验证铁律、Human Gate、WorkCase 审查、Skill/Agent/Hook 资产准入和错误反馈闭环，而不是照搬其会话级工作流或绝对 TDD 教条。
 user_intent: 用户要求写一篇 spark，分析 LDVH 可以从 Superpowers 项目里吸收的内容，并通过 Study 的形式沉淀。
 conclusion: |
-  LDVH 应吸收 Superpowers 的七类稳定机制：验证前不得宣称完成、规则反合理化、两阶段审查、子代理上下文隔离与主控回收、TDD/测试优先的可调强度门禁、Skill 触发描述克制、以及失败次数触发架构讨论。吸收方式应是“理念转译 + LDVH 事实源落地”：规则进入 specs 或能力资产准入，执行进入 WorkPlan / Skill / Hook / Code validator，报告和依据保留在 Study。不得把 Superpowers 的 Skill 文本、会话状态、无限子代理分派和绝对 TDD 例外规则直接搬入 LDVH。
+  LDVH 应吸收 Superpowers 的七类稳定机制：验证前不得宣称完成、规则反合理化、两阶段审查、子代理上下文隔离与主控回收、TDD/测试优先的可调强度门禁、Skill 触发描述克制、以及失败次数触发架构讨论。吸收方式应是“理念转译 + LDVH 事实源落地”：规则进入 specs 或能力资产准入，执行进入 WorkCase / Skill / Hook / Code validator，报告和依据保留在 Study。不得把 Superpowers 的 Skill 文本、会话状态、无限子代理分派和绝对 TDD 例外规则直接搬入 LDVH。
 urls: []
 related_sparks: []
 related_workareas:
   - workarea-0009
   - workarea-0012
-related_workplans:
-  - workplan-0044
-  - workplan-0046
-  - workplan-0047
-  - workplan-0048
-  - workplan-0060
-  - workplan-0074
-  - workplan-0080
+related_workcases:
+  - workcase-0044
+  - workcase-0046
+  - workcase-0047
+  - workcase-0048
+  - workcase-0060
+  - workcase-0074
+  - workcase-0080
 related_adrs: []
 related_pitfalls: []
 related_docs:
   - specs/04.02-LDVH能力资产与落地保障规范.md
   - specs/06-工作流程基础规范.md
   - specs/10-Git提交规范.md
-  - specs/21-WorkPlan-工作计划.md
+  - specs/21-WorkCase-工作项.md
   - specs/24-Spark-火花.md
   - specs/25-Study-研究报告.md
 archive_reason:
@@ -46,7 +46,7 @@ archive_reason:
 1. Superpowers 中哪些机制对 LDVH 的治理目标最有价值；
 2. 这些机制应转译为 LDVH 的规范、工作对象、能力资产还是执行流程；
 3. 哪些内容与 LDVH 的事实源边界、跨会话治理和 Human Gate 设计不完全兼容；
-4. 后续如果推进落地，应优先分流到哪些已有 WorkPlan 或规范面。
+4. 后续如果推进落地，应优先分流到哪些已有 WorkCase 或规范面。
 
 ## 输入与边界
 
@@ -58,7 +58,7 @@ archive_reason:
 
 - Superpowers 是面向 AI 编码代理的软件开发方法论，LDVH 是 Vibe Coding 治理框架；二者目标重叠但不等同。
 - Superpowers 的主要载体是 Claude Code Skill 和会话级纪律，LDVH 的权威事实源是 specs、`ldvh-base/` 工作对象、Code/Web 派生输出和 Git 提交记录。
-- 本 Study 只提供吸收建议；任何强制规则必须进入 specs、ADR、WorkPlan、Skill、Hook、Code validator 或其他正式事实源后才生效。
+- 本 Study 只提供吸收建议；任何强制规则必须进入 specs、ADR、WorkCase、Skill、Hook、Code validator 或其他正式事实源后才生效。
 - 旧调研中的 GitHub Star、作者、完整 Skill 名录等背景信息不在本报告重复展开。
 
 ## 关键发现
@@ -73,15 +73,15 @@ LDVH 已经有事实源、状态机、Human Gate 和规范体系，因此不需�
 
 | Superpowers 机制 | LDVH 可吸收内容 | 建议承载位置 | 吸收强度 |
 |---|---|---|---|
-| 验证铁律 | 未有新鲜验证证据前，不得宣称完成、关闭、通过或可合并 | `specs/06`、`specs/21`、WorkPlan 关闭流程、提交 Skill | 高 |
-| TDD 铁律 | 高风险代码变更、修 bug、回归修复应优先测试先行；允许按项目风险分层 | `workplan-0044`、`specs/21`、测试/验证规范 | 中高 |
-| 反合理化表 | 为关键禁令补充常见借口、红旗、停止条件和纠偏动作 | Rules、Skill、`specs/04.02`、`workplan-0048` | 高 |
-| 两阶段审查 | 先检查“是否满足规格”，再检查“实现质量是否足够”，顺序不可倒 | WorkPlan review、子 Agent 审查流程、Code review Skill | 高 |
+| 验证铁律 | 未有新鲜验证证据前，不得宣称完成、关闭、通过或可合并 | `specs/06`、`specs/21`、WorkCase 关闭流程、提交 Skill | 高 |
+| TDD 铁律 | 高风险代码变更、修 bug、回归修复应优先测试先行；允许按项目风险分层 | `workcase-0044`、`specs/21`、测试/验证规范 | 中高 |
+| 反合理化表 | 为关键禁令补充常见借口、红旗、停止条件和纠偏动作 | Rules、Skill、`specs/04.02`、`workcase-0048` | 高 |
+| 两阶段审查 | 先检查“是否满足规格”，再检查“实现质量是否足够”，顺序不可倒 | WorkCase review、子 Agent 审查流程、Code review Skill | 高 |
 | 子代理新鲜实例 | 用隔离上下文做研究、实现、规格审查、质量审查，主控负责合并和事实源回写 | Agent 资产准入、`specs/04.02`、多角色思考实践 | 中高 |
-| Skill 触发设计 | Skill 描述只写触发条件和边界，避免把完整流程写在描述里诱导跳读 | Skill 规范、`workplan-0060` | 高 |
-| 3+ 修复失败规则 | 同类问题多次修复失败时停止继续打补丁，转为根因/架构讨论 | Pitfall、Spark、WorkPlan blocking、系统性调试流程 | 中高 |
+| Skill 触发设计 | Skill 描述只写触发条件和边界，避免把完整流程写在描述里诱导跳读 | Skill 规范、`workcase-0060` | 高 |
+| 3+ 修复失败规则 | 同类问题多次修复失败时停止继续打补丁，转为根因/架构讨论 | Pitfall、Spark、WorkCase blocking、系统性调试流程 | 中高 |
 | Worktree / 分支安全 | 隔离工作区、清理前确认来源、敏感丢弃需显式确认 | Git 提交规范、环境适配、提交 Skill | 中 |
-| 人类伙伴定位 | Human 不是橡皮章，而是关键不确定性和高影响动作的共同决策者 | Human Gate 规则、`workplan-0046` | 中 |
+| 人类伙伴定位 | Human 不是橡皮章，而是关键不确定性和高影响动作的共同决策者 | Human Gate 规则、`workcase-0046` | 中 |
 
 ### LDVH 最应该吸收的七个设计
 
@@ -91,7 +91,7 @@ Superpowers 把“做完了”和“已经验证能证明做完了”严格拆�
 
 对 LDVH 的转译：
 
-- WorkPlan 进入 `review_needed` 前，必须有新鲜验证证据；
+- WorkCase 进入 `review_needed` 前，必须有新鲜验证证据；
 - `closure_evidence` 不应只写“已完成”，应说明验证计划、验证命令、验证结果和结论；
 - AI 不应基于子 Agent 报告、工具摘要或主观观感直接宣称成功；
 - 验证失败或无法验证时，应明确降级为 blocking、follow-up、Spark、Pitfall 或 Human Gate，而不是粉饰为完成。
@@ -121,12 +121,12 @@ Superpowers 的审查顺序是：规格合规先于质量审查。这个顺序�
 
 如果把二者混在一次 review 里，AI 很容易在代码质量讨论中掩盖规格偏差。LDVH 可吸收为：
 
-- 第一阶段：对象与规格审查，检查是否命中正确 WorkPlan、WorkArea、specs、事实源边界、Human Gate 和验收标准；
+- 第一阶段：对象与规格审查，检查是否命中正确 WorkCase、WorkArea、specs、事实源边界、Human Gate 和验收标准；
 - 第二阶段：质量审查，检查实现、文档表达、测试覆盖、Web 呈现、可维护性和残留风险；
 - 第一阶段不通过时，不进入第二阶段；
 - 修复后重新从第一阶段开始，而不是只补一个局部 patch。
 
-这可以进入 WorkPlan 审核流程、子 Agent 审查角色和未来的 `ldvh-close` / `ldvh-commit` 类 Skill。
+这可以进入 WorkCase 审核流程、子 Agent 审查角色和未来的 `ldvh-close` / `ldvh-commit` 类 Skill。
 
 #### 4. 子代理隔离与主控回收
 
@@ -134,7 +134,7 @@ Superpowers 的“控制器-工作者”模式可以被 LDVH 吸收，但应降�
 
 - 子代理只拿到完成任务所需的最小上下文；
 - 子代理输出必须结构化；
-- 子代理不直接关闭 WorkPlan、不直接写最终结论；
+- 子代理不直接关闭 WorkCase、不直接写最终结论；
 - 主控必须读取、合并、复核，并把稳定结论写回事实源；
 - 审查子代理不信任实现子代理报告，应独立读取代码和事实源。
 
@@ -170,7 +170,7 @@ Superpowers 的 3+ 修复失败规则值得吸收。AI 代理在连续失败后�
 
 - 同一验证失败、同一测试失败或同一审查反馈反复出现时，停止继续 patch；
 - 先形成根因假设、影响范围、已尝试路径和为什么失败；
-- 必要时创建 Spark、Pitfall、ADR 候选或 WorkPlan blocking；
+- 必要时创建 Spark、Pitfall、ADR 候选或 WorkCase blocking；
 - 与 Human 讨论是否需要改架构、改规范、拆计划或降级目标。
 
 这能强化 LDVH 的 Learn 回路，避免“越修越乱”。
@@ -197,26 +197,26 @@ Superpowers 的 3+ 修复失败规则值得吸收。AI 代理在连续失败后�
 - Skill 不诱导跳读；
 - Hook 和 Code validator 只承担可机械检查的部分；
 - Human Gate 用于高影响判断和例外授权；
-- 失败能回流为 Spark、Pitfall、ADR、WorkPlan 或 specs 更新。
+- 失败能回流为 Spark、Pitfall、ADR、WorkCase 或 specs 更新。
 
 ## 建议
 
-1. 把“验证前不得宣称完成”作为 LDVH 横切铁律，贯穿 WorkPlan 关闭、提交、PR、审查和能力资产登记。
+1. 把“验证前不得宣称完成”作为 LDVH 横切铁律，贯穿 WorkCase 关闭、提交、PR、审查和能力资产登记。
 2. 为高风险规则增加反合理化层，优先覆盖事实源边界、状态机、Human Gate、验证证据和 Hook/CI 边界。
-3. 将 WorkPlan 审查拆成“规格合规”和“质量合规”两个阶段，并明确第一阶段不通过时不得进入第二阶段。
+3. 将 WorkCase 审查拆成“规格合规”和“质量合规”两个阶段，并明确第一阶段不通过时不得进入第二阶段。
 4. 在 Agent / subagent 资产准入中加入最小上下文、最小工具权限、结构化输出、主控回收和不得直接关闭事实源的规则。
 5. TDD 采用风险分层：对代码逻辑、validator、迁移、状态机和回归 bug 强制测试优先；对研究和文档采用检查点/反例/审查清单优先。
 6. 更新 Skill 写作规则：description 只做触发和边界，不写完整流程摘要；完整流程必须在正文并按需读取。
-7. 增加“重复失败升级”规则：同类修复失败达到阈值时，停止继续 patch，转为根因分析、Human Gate、Spark/Pitfall/ADR 或 WorkPlan blocking。
+7. 增加“重复失败升级”规则：同类修复失败达到阈值时，停止继续 patch，转为根因分析、Human Gate、Spark/Pitfall/ADR 或 WorkCase blocking。
 
 ## 后续分流
 
-- `workplan-0044`：可吸收验证铁律、测试先行分层和关闭声明规则。
-- `workplan-0046`：可吸收 Superpowers 的 Human Gate 分布思路，但应保留 LDVH 自身审批语义。
-- `workplan-0047`：可吸收 3+ 修复失败、根因调查和错误反馈到规则/经验的机制。
-- `workplan-0048`：可吸收反合理化表和红旗清单，用于评估规则是否真的有效。
-- `workplan-0060`：可吸收 Skill 描述克制、触发条件写法和压力测试思路。
-- `workplan-0074`：可吸收验证前提交、完整 diff 审阅、commit 前 fresh verification 和本地/CI 分层门禁。
-- `workplan-0080`：可吸收 Agent/Skill/Hook 能力资产准入规则，包括最小权限、主控回收、可观测证据和不得替代事实源。
+- `workcase-0044`：可吸收验证铁律、测试先行分层和关闭声明规则。
+- `workcase-0046`：可吸收 Superpowers 的 Human Gate 分布思路，但应保留 LDVH 自身审批语义。
+- `workcase-0047`：可吸收 3+ 修复失败、根因调查和错误反馈到规则/经验的机制。
+- `workcase-0048`：可吸收反合理化表和红旗清单，用于评估规则是否真的有效。
+- `workcase-0060`：可吸收 Skill 描述克制、触发条件写法和压力测试思路。
+- `workcase-0074`：可吸收验证前提交、完整 diff 审阅、commit 前 fresh verification 和本地/CI 分层门禁。
+- `workcase-0080`：可吸收 Agent/Skill/Hook 能力资产准入规则，包括最小权限、主控回收、可观测证据和不得替代事实源。
 
-本 Study 只作为吸收火花和研究报告。后续任何强制规则落地，都应进入对应 specs、WorkPlan、ADR、Skill、Hook、Code validator 或 Git 提交记录。
+本 Study 只作为吸收火花和研究报告。后续任何强制规则落地，都应进入对应 specs、WorkCase、ADR、Skill、Hook、Code validator 或 Git 提交记录。

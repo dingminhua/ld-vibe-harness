@@ -6,8 +6,8 @@ status: active
 created: '2026-06-20T10:25:42+08:00'
 updated: '2026-06-20T10:40:36+08:00'
 summary: |
-  本报告补齐并加固 workplan-0080 中此前缺失的行业最佳实践输入。调研采用多视角起草与主控合并：Codex 专业视角、Claude / Anthropic 视角、OpenAI Agents / guardrails / evals 视角、Hook / DevOps / 提交门禁视角。结论被整理为来源对照矩阵、最佳实践矩阵、反模式清单和 LDVH 吸收规则，用于支撑 04.02 对 Rules、Skill、Agent、Hook 固定能力资产的准入、审查和关闭判断。
-user_intent: 用户指出 workplan-0080 中“最佳实践”目前只是 LDVH 内部规则，缺少行业最佳实践内容，要求先补齐 spark / WorkPlan 相关规范基础。
+  本报告补齐并加固 workcase-0080 中此前缺失的行业最佳实践输入。调研采用多视角起草与主控合并：Codex 专业视角、Claude / Anthropic 视角、OpenAI Agents / guardrails / evals 视角、Hook / DevOps / 提交门禁视角。结论被整理为来源对照矩阵、最佳实践矩阵、反模式清单和 LDVH 吸收规则，用于支撑 04.02 对 Rules、Skill、Agent、Hook 固定能力资产的准入、审查和关闭判断。
+user_intent: 用户指出 workcase-0080 中“最佳实践”目前只是 LDVH 内部规则，缺少行业最佳实践内容，要求先补齐 spark / WorkCase 相关规范基础。
 conclusion: |
   行业实践并不支持把 Rules、Skill、Agent、Hook 写成厚重的第二规范。更稳的治理模型是：Rules / AGENTS / CLAUDE.md 等长期入口保持薄而可恢复；Skill 承接按需加载的可复用流程；Agent / subagent 承接隔离上下文、受限工具和主控回收；Hook 只承接生命周期触发、确定性快速反馈和证据采集；CI、server-side gate、guardrails、HITL、tracing 和 evals 作为运行期保障和质量证据，不反向成为规范事实源。LDVH 04.02 应吸收这些稳定规则，外部 URL 只保留在 Study 中作为调研依据。
 urls:
@@ -87,9 +87,9 @@ related_sparks:
   - spark-0017
 related_workareas:
   - workarea-0012
-related_workplans:
-  - workplan-0080
-  - workplan-0074
+related_workcases:
+  - workcase-0080
+  - workcase-0074
 related_adrs: []
 related_pitfalls: []
 related_docs:
@@ -106,7 +106,7 @@ archive_reason:
 
 1. 外部 AI 工程生态中，类似 Rules、Skill、Agent、Hook 的能力资产通常如何设计；
 2. 哪些实践可以吸收到 LDVH 固定能力资产登记制；
-3. 这些实践对 `workplan-0080` 和 `specs/04.02-LDVH能力资产与落地保障规范.md` 的关闭条件有什么影响。
+3. 这些实践对 `workcase-0080` 和 `specs/04.02-LDVH能力资产与落地保障规范.md` 的关闭条件有什么影响。
 
 ## 输入与边界
 
@@ -148,7 +148,7 @@ archive_reason:
 | 同名术语分流 | Codex `.rules` 是命令许可策略，LDVH `rules/` 是 AI-facing 文本资产 | 文档明确“LDVH Rules ≠ Codex .rules”；命令许可归 04.03 | 04.02 保留 Rules 文本资产边界，04.03 承接环境权限配置 | 把命令 allowlist 当成 LDVH 规范入口 |
 | Skill 渐进披露 | Codex / Claude Skills 都依赖名称、描述和按需加载，描述决定发现 | Skill 有稳定名称、具体 description、输入输出、失败处理、验证步骤；长参考拆支持文件 | Skill 资产承接可复用流程，不复制规范正文 | Skill 名称泛化、description 空泛，或把 Skill 当自动 Agent 调度器 |
 | 风险越高，自由度越低 | 高风险流程需要确定性命令、脚本、审批和失败处理 | 提交、删除、发布、迁移、长期配置等操作有固定命令、审批点、拒绝路径和回滚说明 | 高风险 Skill / Hook 应优先脚本化和低自由度化 | 只写“请谨慎执行” |
-| Agent 输出回主控 | Codex / Claude subagents 解决上下文污染，OpenAI handoff / agent-as-tool 区分最终答复归属 | Agent 声明角色、工具、是否可写、输出格式、主控复核和 Human Gate；默认不直接写事实源 | Agent 资产必须有 `handoff` / `as_tool` / `subagent_review` 式所有权边界 | 子 Agent 直接关闭 WorkPlan、直接写事实源或无限分派 |
+| Agent 输出回主控 | Codex / Claude subagents 解决上下文污染，OpenAI handoff / agent-as-tool 区分最终答复归属 | Agent 声明角色、工具、是否可写、输出格式、主控复核和 Human Gate；默认不直接写事实源 | Agent 资产必须有 `handoff` / `as_tool` / `subagent_review` 式所有权边界 | 子 Agent 直接关闭 WorkCase、直接写事实源或无限分派 |
 | 工具权限最小化 | Agents SDK、Codex subagents、Claude subagents 都支持或强调工具和权限边界 | 资产声明 allowed tools、风险等级、审批条件、MCP / shell / network 边界 | Agent / Skill / Hook 元信息必须暴露工具权限和审批要求 | 给所有 Agent 全量 shell、Git、网络和 MCP 权限 |
 | Guardrails 放在动作边界 | OpenAI 区分 input、output、tool guardrails；工具 guardrails 才覆盖每次工具调用 | 资产声明 guardrail 类型、触发点、tripwire、阻塞或并行、误报降级 | 不能只靠入口文字自律，能机械检查的应放到 Code / Hook / tool boundary | 只在 Rules 写“不要越权” |
 | HITL 可恢复审批 | OpenAI HITL 将敏感工具调用暂停、批准 / 拒绝并恢复状态 | Human Gate 记录 action、参数、风险、批准 / 拒绝、恢复状态或后续分流 | 高影响动作需要结构化审批对象，不只是一句“已确认” | Human 只批准目标，Agent 后续自由扩权 |
@@ -157,7 +157,7 @@ archive_reason:
 | 复用同一 canonical command | 本地、CI、server-side 分叉实现会漂移 | Hook、CI 和手动命令调用同一 validator 或 wrapper | 提交规范类门禁回指 `specs/10` 和 `code/commit_validate.py`，不得复制正则 | 本地 shell 一套正则，CI 另一套正则 |
 | Trace / eval 形成质量证据 | OpenAI 建议先用 traces 调试，再用 evals 固化回归判断 | 高风险 Agent / Skill / Hook 试点至少有代表性执行证据、失败样例或人工降级记录 | active 固定能力资产前必须有验证证据，不能只靠一次演示 | “跑过一次看起来可以”就登记 active |
 | 分发层不反向成为事实源 | Codex / Claude plugins 都是打包和分发层 | 插件有 manifest、版本、依赖、启停说明；安装 / 授权状态归环境事实 | Plugin 可以包装稳定资产，但不改变权威路径和字段契约 | 把插件安装状态当成 LDVH 全局支持状态 |
-| compact / memory 非事实源 | 压缩、记忆和聊天摘要会丢细节 | 恢复后重读入口；稳定结论回写 specs、WorkPlan、Spark、ADR、Study 或 Git commit records | PreCompact / PostCompact 只做恢复辅助，不做最终证据 | 把 compact 摘要当 Human Gate 或关闭验收 |
+| compact / memory 非事实源 | 压缩、记忆和聊天摘要会丢细节 | 恢复后重读入口；稳定结论回写 specs、WorkCase、Spark、ADR、Study 或 Git commit records | PreCompact / PostCompact 只做恢复辅助，不做最终证据 | 把 compact 摘要当 Human Gate 或关闭验收 |
 
 ### 资产类型准入清单
 
@@ -184,7 +184,7 @@ archive_reason:
 
 ## 建议
 
-1. `workplan-0080` 初次进入 `review_needed` 时不应关闭，因为此前“行业实践”只作为口头审查维度存在，没有形成外部调研事实源；本 Study 形成后，该缺口可以作为已补齐项重新提交关闭审查。
+1. `workcase-0080` 初次进入 `review_needed` 时不应关闭，因为此前“行业实践”只作为口头审查维度存在，没有形成外部调研事实源；本 Study 形成后，该缺口可以作为已补齐项重新提交关闭审查。
 2. `specs/04.02` 的 §2.2 已明确行业实践来源被提炼为 LDVH 规则，并补充上下文经济、渐进披露、触发描述、权限审批、可观测证据、确定性优先和 Hook 可绕过性等规则。
 3. 后续设计 `ldvh-git-commit` Skill 和 `commit-msg` Hook 时，应直接消费本 Study 的结论：
    - Skill 承接可复用流程和验证入口；
@@ -194,7 +194,7 @@ archive_reason:
 
 ## 后续分流
 
-- `workplan-0080`：已新增行业实践调研吸收项，并可在补齐后重新进入关闭审查。
+- `workcase-0080`：已新增行业实践调研吸收项，并可在补齐后重新进入关闭审查。
 - `specs/04.02-LDVH能力资产与落地保障规范.md`：已吸收本报告的稳定规则。
-- `workplan-0074`：后续实现 `ldvh-git-commit` Skill 和 `commit-msg` Hook 时，引用本 Study 作为设计输入之一。
-- `spark-0017`：无需复制本报告正文，只需继续保留多 WorkPlan 分流关系。
+- `workcase-0074`：后续实现 `ldvh-git-commit` Skill 和 `commit-msg` Hook 时，引用本 Study 作为设计输入之一。
+- `spark-0017`：无需复制本报告正文，只需继续保留多 WorkCase 分流关系。

@@ -39,6 +39,6 @@ source_detail: 用户在讨论 LDVH Web 呈现时提出：YAML 格式的大段�
 related_adrs: []
 related_studies: []
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_docs: []
 priority: P2

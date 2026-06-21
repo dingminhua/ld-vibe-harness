@@ -14,7 +14,7 @@ import { ObjectTypeIcon } from '@/components/SemanticIcon';
 /** 对象类型中英映射（与 ObjectDetail 页面保持一致） */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '工作域', en: 'Work Area' },
-  workplan: { zh: '计划', en: 'Work Plan' },
+  workcase: { zh: '工作项', en: 'WorkCase' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑', en: 'Pitfall' },
   spark: { zh: '火花', en: 'Spark' },
@@ -22,7 +22,7 @@ const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
   change: { zh: '提交', en: 'Commit' },
 };
 
-/** 从引用 ID 解析对象类型（如 workplan-0001 → workplan） */
+/** 从引用 ID 解析对象类型（如 workcase-0001 → workcase） */
 function parseRefType(refId: string): string | null {
   if (!isObjectRef(refId)) return null;
   const m = refId.match(/^([a-z]+)-\d+$/);

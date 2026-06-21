@@ -28,18 +28,18 @@ resolution: |
      - 保障机制包括 `commit-msg` hook、`code/commit_validate.py --check-message`、CI 或人工降级检查。
   2. 已把同一要求补入 `specs/10` 的检查项和待补齐事项。
   3. 已运行 `python3 code/specs_validate.py all --fail-on-diagnostics`，确认补写后的规范落地要求表符合 04.01 类型枚举。
-  4. 已在 `workplan-0074` 中保留后续执行项，继续跟踪真正的 hook/CI 实现，不把规范补写误判为实现完成。
+  4. 已在 `workcase-0074` 中保留后续执行项，继续跟踪真正的 hook/CI 实现，不把规范补写误判为实现完成。
 verification: |
   ## 验证计划
 
-  验证本经验是否已经完成最小闭环：规范补写、规范校验通过、后续实现项回到当前 WorkPlan。
+  验证本经验是否已经完成最小闭环：规范补写、规范校验通过、后续实现项回到当前 WorkCase。
 
   ## 验证命令
 
   ```bash
   python3 code/specs_validate.py all --fail-on-diagnostics
   python3 code/fact_validate.py ldvh-base/pitfalls/pitfall-0008-validator-exists-not-equal-gate.yaml
-  python3 code/fact_validate.py ldvh-base/workplans/workplan-0074-git-commit-trace-contract.yaml
+  python3 code/fact_validate.py ldvh-base/workcases/workcase-0074-git-commit-trace-contract.yaml
   ```
 
   ## 验证结果
@@ -56,14 +56,14 @@ avoidance: |
   - 入口在哪里：AI、Human 或工具什么时候会看到这条规则；
   - 触发点在哪里：hook、CI、命令、工作流程步骤还是人工降级预检；
   - 失败如何处理：error 阻断、warning 提醒，还是需要 Human 判断；
-  - 事实源在哪里：检查结果和例外说明应写回哪个规范、WorkPlan、Pitfall 或 Git 提交记录。
+  - 事实源在哪里：检查结果和例外说明应写回哪个规范、WorkCase、Pitfall 或 Git 提交记录。
 
   不能用“已有脚本”“测试通过”“我会记得运行”替代落地保障。
 applicability: |
   适用于 LDVH 中所有从规范规则走向 Code 校验、Hook、CI、Web 提示或 AI 执行入口的场景。
   尤其适用于 commit message、字段契约、状态机、Human Gate、验证证据格式和事实源边界这类需要稳定触发的规则。
 source_objects:
-- workplan-0074
+- workcase-0074
 related_objects: []
 related_rules:
 - specs/10-Git提交规范.md

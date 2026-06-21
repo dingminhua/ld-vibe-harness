@@ -1,12 +1,12 @@
 type SignalField = 'priority' | 'importance' | 'category';
 
 export type ObjectSignalSource = Partial<Record<SignalField, unknown>>;
-export type SignalObjectType = 'workarea' | 'workplan' | 'adr' | 'pitfall' | 'spark' | 'study' | 'change' | string;
+export type SignalObjectType = 'workarea' | 'workcase' | 'adr' | 'pitfall' | 'spark' | 'study' | 'change' | string;
 
 export const SIGNAL_FIELDS: SignalField[] = ['priority', 'importance', 'category'];
 
 const SIGNAL_FIELDS_BY_TYPE: Record<string, SignalField[]> = {
-  workplan: ['priority'],
+  workcase: ['priority'],
   spark: ['priority'],
 };
 
@@ -115,7 +115,7 @@ export function getSignalText(field: string, value: unknown, locale: string): st
 }
 
 export function getObjectPriority(source: ObjectSignalSource, type?: SignalObjectType): string | null {
-  if (type !== 'workplan' && type !== 'spark') return null;
+  if (type !== 'workcase' && type !== 'spark') return null;
   return normalizeSignalValue(source.priority);
 }
 

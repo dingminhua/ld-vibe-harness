@@ -1,0 +1,110 @@
+id: workcase-0010
+type: workcase
+title: 精简 11 号 Trae Solo 环境规范
+goal: |
+  精简 11 号 Trae Solo 环境规范
+status: closed
+created: '2026-06-18T07:40:04'
+updated: '2026-06-18T07:40:04'
+workarea: workarea-0004
+priority: P2
+description: 由历史 Task task-0010 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0010 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0010; source path: ldvh-base/taskplans/taskplan-0010-refine-trae-solo-env-spec.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0010
+    title: 精简 11 号 Trae Solo 环境规范
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0010
+    expected_output: |-
+      - [x] 11 号文档不再复制 Trae 官方或 refs 外部文章可承载的通用功能说明
+      - [x] 11 号文档明确 Trae 功能事实以 refs 中 Trae 文章为权威引用来源
+      - [x] 11 号文档仅保留 LDVH 在 Rules、Skill、Agent、AskUserQuestion、Schedule、MCP 等相关功能上的特殊使用约定
+      - [x] specs/refs 中存在或补齐 Trae 相关文章入口，且 refs 不反向引用 specs
+      - [x] 修改后通过可用校验命令
+    status: done
+    result_summary: |-
+      verification: 阅读 11 号文档与 specs/refs 中 Trae 相关资料，检查重复内容是否移出或改为引用，运行事实模型校验和可用文档检查命令。
+      ## 验证结果
+
+      11 号文档重复内容已移出或改为引用；文档规范检查、引用检查和事实模型校验均通过。
+
+      ## 结论
+
+      验证通过。
+
+      closure_evidence: 已完成 specs/11-LDVH-Trae-Solo-环境规范.md 重写：Trae 平台客观事实改为引用 docs/sources/trae/ 权威入口，正文收敛为 LDVH 对 Rules、Skill、Agent、AskUserQuestion、RunCommand、Schedule、MCP、Commands/Plan/Spec 的特殊使用约定。
+      独立审查确认 5 项 acceptance 全部通过。
+      校验通过：python3 tools/check_03_specs_doc_standard.py specs/11-LDVH-Trae-Solo-环境规范.md；python3 tools/check_03_specs_references.py specs/11-LDVH-Trae-Solo-环境规范.md；python3 tools/ldvh_fact_validate.py ldvh-base/；python3 -m pytest tests/tools/test_check_fact_model.py tests/tools/test_fact_model_cli.py tests/tools/test_check_03_specs_doc_standard.py tests/tools/test_check_03_specs_references.py；git diff --check。
+      ## 验证结果
+
+      11 号文档重写完成，Trae 平台客观事实改为引用 docs/sources/trae/ 权威入口；独立审查 5 项 acceptance 全部通过；文档规范检查、引用检查、事实模型校验和测试均通过。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0010: 已完成 specs/11-LDVH-Trae-Solo-环境规范.md 重写：Trae 平台客观事实改为引用 docs/sources/trae/ 权威入口，正文收敛为 LDVH 对 Rules、Skill、Agent、AskUserQuestion、RunCommand、Schedule、MCP、Commands/Plan/Spec 的特殊使用约定。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0010: 已完成 specs/11-LDVH-Trae-Solo-环境规范.md 重写：Trae 平台客观事实改为引用 docs/sources/trae/ 权威入口，正文收敛为 LDVH 对 Rules、Skill、Agent、AskUserQuestion、RunCommand、Schedule、MCP、Commands/Plan/Spec 的特殊使用约定。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+review_requested_at: '2026-06-18T07:40:04'
+closed_at: '2026-06-18T07:40:04'
+related_docs: []
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

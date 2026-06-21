@@ -1,0 +1,113 @@
+id: workcase-0028
+type: workcase
+title: 竞品测试任务安排分析与最佳实践调研
+goal: |
+  竞品测试任务安排分析与最佳实践调研
+status: closed
+created: '2026-06-05T17:59:00.102418'
+updated: '2026-06-06T00:01:18.379272'
+workarea: workarea-0009
+priority: P2
+description: 由历史 Task task-0028 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0028 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0028; source path: ldvh-base/taskplans/taskplan-0028-competitive-test-task-analysis.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0028
+    title: 竞品测试任务安排分析与最佳实践调研
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0028
+    expected_output: |
+      - [x] 深入阅读 docs/studies/16、17、18 中关于测试任务安排的内容
+      - [x] 联网调研 AI 辅助开发中测试任务安排的最佳实践
+      - [x] 分析各竞品测试任务安排的异同与优劣
+      - [x] 产出分析报告写入 docs/sources/ 目录
+      - [x] 报告包含竞品对比、最佳实践总结和 LDVH 改进建议
+    status: done
+    result_summary: |-
+      verification: ## 验证结果
+
+      历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+      ## 结论
+
+      历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
+
+      closure_evidence: 独立 agent 逐项验证 5 条 acceptance 全部通过：
+      1. docs/studies/16、17、18 均包含测试任务安排相关章节
+      2. 报告第3章包含 STDD、Agentic Engineering、Checkpoint 等行业最佳实践
+      3. 报告第2章包含三竞品五维度对比及各自优劣分析
+      4. docs/sources/07 报告已写入，共221行5章节
+      5. 报告覆盖竞品对比、最佳实践总结、5条LDVH改进建议
+
+      ## 验证结果
+
+      5 条 acceptance 全部通过，竞品对比报告已写入 docs/sources/，覆盖竞品对比、最佳实践和改进建议。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0028: 独立 agent 逐项验证 5 条 acceptance 全部通过：
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0028: 独立 agent 逐项验证 5 条 acceptance 全部通过：
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+review_requested_at: '2026-06-06T00:01:18.379280'
+closed_at: '2026-06-06T00:01:18.379280'
+related_docs: []
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

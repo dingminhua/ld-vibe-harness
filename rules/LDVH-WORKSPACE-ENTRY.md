@@ -58,7 +58,7 @@ ldvh_asset:
 | 读取工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` | 默认维护 LDVH 自身 `specs/`、`rules/`、`code/`、`web/` 等产品资产 |
 | 判断当前项目是否为管辖项目 | 把 LDVH 自身开发规则强加给用户项目 |
 | 定位管辖项目自身 `ldvh-base/`、项目文档和 Git 事实源 | 默认接管、创建、迁移或重排用户项目 docs |
-| 处理所有管辖项目的 WorkArea、WorkPlan、ADR、Spark、Pitfall 和 Study，并按 Git 提交记录追溯事实源修改 | 把工作区环境入口写成长期安装状态 |
+| 处理所有管辖项目的 WorkArea、WorkCase、ADR、Spark、Pitfall 和 Study，并按 Git 提交记录追溯事实源修改 | 把工作区环境入口写成长期安装状态 |
 | 在 LDVH 自身被登记为 dogfood 管辖项目时，处理 LDVH 自身 `ldvh-base/` 工作对象 | 把 LDVH 安装用户的 LDVH 仓库默认视为管辖项目 |
 
 `ldvh-base/` 不因为位于 LDVH 仓库内就属于 LDVH 项目级维护入口。它始终是被管辖项目的工作对象事实源，归工作区级管辖治理入口处理；LDVH 自身源码仓库只有在 `LDVH-GOVERNED-PROJECTS.yaml` 中登记为 dogfood 管辖项目时，才按管辖项目处理其 `ldvh-base/`。
@@ -83,7 +83,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 |---|---|---|
 | 管辖项目配置 | `python3 code/specs_validate.py governed-projects` | 检查工作区根目录管辖项目配置 |
 | specs 规范入口和章节 | `python3 code/specs_validate.py index` | 生成规范派生索引，辅助定位文件、章节、引用和诊断 |
-| 工作对象列表 | `python3 code/fact_cli.py list <type>` | 查询当前项目 WorkArea、WorkPlan、ADR、Spark、Pitfall 或 Study 摘要 |
+| 工作对象列表 | `python3 code/fact_cli.py list <type>` | 查询当前项目 WorkArea、WorkCase、ADR、Spark、Pitfall 或 Study 摘要 |
 | 工作对象详情 | `python3 code/fact_cli.py show <id>` | 查询单个工作对象详情 |
 | 工作对象搜索 | `python3 code/fact_cli.py search <keyword>` | 按关键词搜索工作对象事实源 |
 | 工作对象统计 | `python3 code/fact_cli.py stats` | 统计工作对象状态分布 |

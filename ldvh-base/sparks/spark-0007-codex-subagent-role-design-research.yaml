@@ -9,7 +9,7 @@ description: |
 
   当前阶段性结论是：Codex 子 Agent 是运行期委派机制，不应直接等同于 LDVH 的长期角色设定。Codex 官方资料显示，子 Agent 工作流用于把探索、测试、日志分析、代码审查等噪音较高或可并行的工作移出主线程；Codex 不会自动生成子 Agent，只有在用户明确要求“spawn agents / delegate in parallel / one agent per point”等并行委派时才应触发。
 
-  对 LDVH 的启发是：00 文档可以定义环境无关的 Role Contract，用于说明专业角色的目的、输入、权限边界、输出格式、证据要求和交还条件；Codex 子 Agent、自定义 agent TOML、Skills、MCP 和 AGENTS.md 只是不同层级的落地载体。后续不宜把 00 文档写成“所有多角色都必须创建 Codex 子 Agent”，而应写成“当环境支持且 Human 明确授权时，可把 WorkPlan execution item 委派给匹配角色的子 Agent”。
+  对 LDVH 的启发是：00 文档可以定义环境无关的 Role Contract，用于说明专业角色的目的、输入、权限边界、输出格式、证据要求和交还条件；Codex 子 Agent、自定义 agent TOML、Skills、MCP 和 AGENTS.md 只是不同层级的落地载体。后续不宜把 00 文档写成“所有多角色都必须创建 Codex 子 Agent”，而应写成“当环境支持且 Human 明确授权时，可把 WorkCase execution item 委派给匹配角色的子 Agent”。
 
   当前已形成三份横向 Study：Codex 子 Agent、TRAE CN 智能体、Claude Code CLI subagents。后续需要在修改 00、06、21 或能力资产规范时复读这些报告，尤其注意不同环境在“创建角色配置”“触发委派”“自动调用”“工具权限”“上下文隔离”和“长期事实源”上的差异。
 evolution:
@@ -24,7 +24,7 @@ resolved_to: ""
 resolved_at: ""
 discard_reason: ""
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_studies:
   - study-0002
@@ -34,4 +34,4 @@ related_docs:
   - specs/00-LD-Vibe-Harness理念与纲要.md
   - specs/04.02-LDVH能力资产与落地保障规范.md
   - specs/06-工作流程基础规范.md
-  - specs/21-WorkPlan-工作计划.md
+  - specs/21-WorkCase-工作项.md

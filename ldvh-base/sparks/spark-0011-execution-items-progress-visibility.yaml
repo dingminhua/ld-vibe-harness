@@ -1,11 +1,11 @@
 id: spark-0011
 type: spark
-title: WorkPlan 执行项进度同时服务 AI 和 Human
+title: WorkCase 执行项进度同时服务 AI 和 Human
 status: pending
 created: '2026-06-19T06:22:32+08:00'
 updated: '2026-06-19T07:30:42+08:00'
 description: |
-  用户在讨论 workplan-0074 时指出，WorkPlan 的 execution_items 不应只作为 AI 内部拆分，也应成为 Human 可见的进度视图。
+  用户在讨论 workcase-0074 时指出，WorkCase 的 execution_items 不应只作为 AI 内部拆分，也应成为 Human 可见的进度视图。
 
   当前理解：
 
@@ -18,35 +18,35 @@ description: |
 
   后续推进方向：
 
-  1. 梳理 WorkPlan 规范中 execution_items 的状态回写要求；
-  2. 评估 Web 的 WorkPlan 详情页是否需要把执行编排作为一级进度视图；
-  3. 明确 AI 现场执行计划与 WorkPlan execution_items 的映射原则；
+  1. 梳理 WorkCase 规范中 execution_items 的状态回写要求；
+  2. 评估 Web 的 WorkCase 详情页是否需要把执行编排作为一级进度视图；
+  3. 明确 AI 现场执行计划与 WorkCase execution_items 的映射原则；
   4. 进一步区分“执行项状态”和“计划生命周期环节状态”：
      - execution_items 回答具体做什么、做到哪一步；
      - lifecycle / gate 状态回答计划是否经过审查、Human 批准、执行、完成后 review、关闭证据和关闭确认；
   5. 如果计划审查、Human 批准执行、完成后 review、关闭审查等环节也要求显式状态和证据，AI 就更难遗漏步骤；
-  6. Web 可把 WorkPlan 生命周期做成进度条或阶段队列，把 execution_items 做成执行队列，两者共同表达“流程是否完整”和“任务是否完成”；
-  7. 判断是否需要形成 WorkPlan/Web 设计改造任务。
+  6. Web 可把 WorkCase 生命周期做成进度条或阶段队列，把 execution_items 做成执行队列，两者共同表达“流程是否完整”和“任务是否完成”；
+  7. 判断是否需要形成 WorkCase/Web 设计改造任务。
 
-  2026-06-19 在 workplan-0074 的 Change 迁出、Study 26→25 补位和子 agent 复检过程中，进一步暴露出 WorkPlan 设计和 AI 工作体验的不足：
+  2026-06-19 在 workcase-0074 的 Change 迁出、Study 26→25 补位和子 agent 复检过程中，进一步暴露出 WorkCase 设计和 AI 工作体验的不足：
 
   1. 新发现的问题可以被补进 execution_items，但当前没有一个醒目的“工作中发现问题 → 分流 → 补救 → 复检”的显式通道；
   2. AI 容易把“已完成主线修改”误判为闭环完成，直到用户提醒“消除迁移痕迹”或子 agent 找到残留；
   3. execution_items 能承载任务拆分，但不够表达“本轮临时发现、补救项、复检项、后续未完成项”之间的关系；
   4. 子 agent 输出目前需要主控人工消化，缺少结构化 intake：哪些发现已采纳、哪些拒绝、哪些转为后续项、哪些需要 Human Gate；
-  5. 验证命令虽然写入了 WorkPlan，但验证结果过长，Web 和 AI 都不容易快速看出“哪些验证已通过、哪些残留是允许的、哪些仍未关闭”；
+  5. 验证命令虽然写入了 WorkCase，但验证结果过长，Web 和 AI 都不容易快速看出“哪些验证已通过、哪些残留是允许的、哪些仍未关闭”；
   6. 残留扫描主要依赖字符串搜索，容易漏掉语义残留，例如字段 owner 写 26、Web 排序写 26、当前事实源仍把 Change 当 active 对象；
-  7. WorkPlan 缺少明确的生命周期状态轨道：计划创建、执行前确认、执行中、复检中、Human closure、关闭后风险跟踪没有被稳定呈现；
-  8. Web 如果只展示 WorkPlan 卡片或正文，Human 很难看到当前到底停在“执行项完成”“复检发现待处理”“后续项未做”还是“可以关闭”。
+  7. WorkCase 缺少明确的生命周期状态轨道：计划创建、执行前确认、执行中、复检中、Human closure、关闭后风险跟踪没有被稳定呈现；
+  8. Web 如果只展示 WorkCase 卡片或正文，Human 很难看到当前到底停在“执行项完成”“复检发现待处理”“后续项未做”还是“可以关闭”。
 
   可能的改进方向：
 
-  1. WorkPlan 需要同时拥有 execution queue 和 lifecycle queue：
+  1. WorkCase 需要同时拥有 execution queue 和 lifecycle queue：
      - execution queue 表达具体执行项；
      - lifecycle queue 表达计划审批、执行、复检、Human Gate、关闭证据和关闭确认；
   2. 每个 execution_item 可以增加或规范化 `discovered_from`、`followup_type`、`review_status`、`accepted_findings`、`deferred_findings` 一类语义，避免把复检发现混在普通执行项里；
   3. 子 agent 结果应进入一个可见 intake 区域，逐条标记为 accepted / rejected / deferred / needs-human，主控不能只在聊天里说“已处理”；
-  4. WorkPlan 关闭前应有强制 residual checklist，至少覆盖：
+  4. WorkCase 关闭前应有强制 residual checklist，至少覆盖：
      - specs 编号和 canonical_path；
      - 字段注册表 owner；
      - Code 派生索引；
@@ -63,19 +63,19 @@ evolution:
   - at: '2026-06-19T07:30:42+08:00'
     summary: 用户要求记录本次 0074 补救过程中的 AI 工作体验；追加说明 execution_items、生命周期、子 agent findings intake、残留扫描、验证摘要和工作中发现问题分流机制仍需改进。
 source: conversation
-source_detail: 由 workplan-0074 的 item 与主线程执行步骤是否一一对应、Web 是否能看到进度的讨论引出。
+source_detail: 由 workcase-0074 的 item 与主线程执行步骤是否一一对应、Web 是否能看到进度的讨论引出。
 priority: P2
 resolved_to: ""
 resolved_at: ""
 discard_reason: ""
 related_workareas:
 - workarea-0012
-related_workplans:
-- workplan-0074
+related_workcases:
+- workcase-0074
 related_adrs: []
 related_studies: []
 related_docs:
-- specs/21-WorkPlan-工作计划.md
+- specs/21-WorkCase-工作项.md
 - specs/08-Web信息同步实现规范.md
 - specs/05.02-工作模型字段内容与格式规范.md
 - specs/10-Git提交规范.md

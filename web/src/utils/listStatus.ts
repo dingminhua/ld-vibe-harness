@@ -1,4 +1,4 @@
-import { WORKPLAN_DEFAULT_LIST_STATUS } from '@/utils/workplanStatus';
+import { WORKCASE_DEFAULT_LIST_STATUS } from '@/utils/workcaseStatus';
 
 const DEFAULT_ACTIVE_TYPES = new Set(['workarea', 'adr', 'pitfall', 'study']);
 
@@ -6,7 +6,7 @@ export const ALL_STATUS_PARAM = 'all';
 
 export function getDefaultListStatus(type: string): string | null {
   if (type === 'spark') return 'pending';
-  if (type === 'workplan') return WORKPLAN_DEFAULT_LIST_STATUS;
+  if (type === 'workcase') return WORKCASE_DEFAULT_LIST_STATUS;
   return DEFAULT_ACTIVE_TYPES.has(type) ? 'active' : null;
 }
 

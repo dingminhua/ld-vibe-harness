@@ -9,7 +9,7 @@ summary: |
   Codex 子 Agent 适合承接可并行、边界清晰、噪音较高或需要专业视角的运行期工作。Codex 官方资料显示，子 Agent 不会自动生成，必须由用户明确要求并行委派；Codex 可使用内置 default、worker、explorer，也可通过个人或项目级 TOML 文件定义自定义 agent。当前 Codex App 工具面还暴露了 spawn_agent、wait_agent、send_input 和 close_agent 这类管理动作。
 user_intent: 用户要求调研 Codex 中如何创建子 Agent 与调用子 Agent，为后续 00 文档多角色设定做前期准备。
 conclusion: |
-  LDVH 应把多角色设定抽象为环境无关的 Role Contract，而不是把它绑定为 Codex 子 Agent 配置。Codex 子 Agent 可以作为支持环境中的运行期委派实现：由 WorkPlan execution item 给出角色、输入和输出要求，由 Human 或主控 AI 在明确授权下触发子 Agent。00 文档应强调角色契约、证据回收和主控整合责任；具体 Codex 创建、调用和自定义 agent 配置应放入环境适配、能力资产或后续专门规范。
+  LDVH 应把多角色设定抽象为环境无关的 Role Contract，而不是把它绑定为 Codex 子 Agent 配置。Codex 子 Agent 可以作为支持环境中的运行期委派实现：由 WorkCase execution item 给出角色、输入和输出要求，由 Human 或主控 AI 在明确授权下触发子 Agent。00 文档应强调角色契约、证据回收和主控整合责任；具体 Codex 创建、调用和自定义 agent 配置应放入环境适配、能力资产或后续专门规范。
 urls:
   - ref: https://developers.openai.com/codex/concepts/subagents
     title: Codex Subagent Concepts
@@ -20,14 +20,14 @@ urls:
 related_sparks:
   - spark-0007
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
   - specs/00-LD-Vibe-Harness理念与纲要.md
   - specs/04.02-LDVH能力资产与落地保障规范.md
   - specs/06-工作流程基础规范.md
-  - specs/21-WorkPlan-工作计划.md
+  - specs/21-WorkCase-工作项.md
 archive_reason:
 ---
 
@@ -64,7 +64,7 @@ Codex 官方资料把子 Agent 的价值放在两个方向：
 1. 降低主线程上下文污染。探索记录、测试日志、栈追踪、命令输出和临时分析容易让主线程变长、变脏，影响后续判断。子 Agent 可以把这些噪音移出主线程，只把摘要和结论交回主 Agent。
 2. 并行推进独立工作。安全审查、测试缺口、可维护性、日志分析、代码库探索等问题可以拆成相互独立的工作包，让多个 Agent 同时运行，再由主 Agent 汇总。
 
-这与 LDVH 当前 WorkPlan / ExecutionItem 方向一致：长期事实源只保留可恢复、可验证、可关闭的最小证据，不保存 AI 的完整运行期过程。
+这与 LDVH 当前 WorkCase / ExecutionItem 方向一致：长期事实源只保留可恢复、可验证、可关闭的最小证据，不保存 AI 的完整运行期过程。
 
 ### 如何创建子 Agent
 
@@ -176,14 +176,14 @@ Codex 官方资料把定制能力分成互补层级：
 3. MCP 承载外部系统能力；
 4. Role Contract 承载 LDVH 环境无关的角色契约；
 5. Codex custom agent 承载 Codex 环境中的可执行角色配置；
-6. Subagent workflow 承载一次 WorkPlan 执行中的运行期并行委派。
+6. Subagent workflow 承载一次 WorkCase 执行中的运行期并行委派。
 
 ## 建议
 
 后续 00 文档可以引入“多角色协作”的理念，但建议使用环境无关表述：
 
 1. LDVH 的角色是契约，不是线程。角色契约应描述目的、输入、权限、输出、证据、交还条件和停止条件。
-2. WorkPlan 的 `orchestration.execution_items[*].role` 可以声明需要的专业视角，但不等于必须创建 Codex 子 Agent。
+2. WorkCase 的 `orchestration.execution_items[*].role` 可以声明需要的专业视角，但不等于必须创建 Codex 子 Agent。
 3. 当环境支持子 Agent 且 Human 明确授权时，主控 AI 可以把 execution item 委派给对应角色的子 Agent。
 4. 主控 AI 负责整合结果、去噪、验证和回写事实源；子 Agent 只交回摘要、证据引用和风险提示。
 5. 子 Agent 的中间日志、临时计划和未采纳草稿不进入长期事实源。
@@ -193,13 +193,13 @@ Codex 官方资料把定制能力分成互补层级：
 一个可供 00 后续吸收的候选表述是：
 
 ```text
-LDVH 支持多角色 AI 协作，但角色首先是事实源治理中的责任契约，而不是某个运行环境的固定线程形态。支持子 Agent 的环境可以把 WorkPlan 中边界清晰的 ExecutionItem 委派给专业子 Agent；不支持子 Agent 的环境仍可由同一 AI 按角色契约完成串行自检、复检和证据整理。
+LDVH 支持多角色 AI 协作，但角色首先是事实源治理中的责任契约，而不是某个运行环境的固定线程形态。支持子 Agent 的环境可以把 WorkCase 中边界清晰的 ExecutionItem 委派给专业子 Agent；不支持子 Agent 的环境仍可由同一 AI 按角色契约完成串行自检、复检和证据整理。
 ```
 
 ## 后续分流
 
 1. 修改 `specs/00-LD-Vibe-Harness理念与纲要.md` 时，吸收“角色是契约，不是线程”的理念层表述。
 2. 修改 `specs/06-工作流程基础规范.md` 时，定义主控、执行者、审查者、Human Gate 等流程角色边界。
-3. 修改 `specs/21-WorkPlan-工作计划.md` 时，只保留 execution item 需要的最小 `role` 和证据字段，避免把 Codex custom agent schema 写入 WorkPlan。
+3. 修改 `specs/21-WorkCase-工作项.md` 时，只保留 execution item 需要的最小 `role` 和证据字段，避免把 Codex custom agent schema 写入 WorkCase。
 4. 修改 `specs/04.02-LDVH能力资产与落地保障规范.md` 时，再判断是否需要把 Codex custom agent TOML、Skills、MCP、AGENTS.md 的关系纳入能力资产分层。
 5. 如需长期维护 Codex 子 Agent 示例，应另建环境适配文档或 Skill，而不是塞进 00。

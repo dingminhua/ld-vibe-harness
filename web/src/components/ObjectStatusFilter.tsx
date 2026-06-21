@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import type { ObjectStatusOption } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
-import { WORKPLAN_STATUS_ORDER } from '@/utils/workplanStatus';
+import { WORKCASE_STATUS_ORDER } from '@/utils/workcaseStatus';
 
 const STATUS_FILTER_ORDER = [
-  ...WORKPLAN_STATUS_ORDER,
+  ...WORKCASE_STATUS_ORDER,
   'in_progress',
   'blocked',
   'verifying',
@@ -28,7 +28,7 @@ const statusOrderIndex = new Map(STATUS_FILTER_ORDER.map((status, index) => [sta
 
 const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
   workarea: ['active', 'archived'],
-  workplan: [...WORKPLAN_STATUS_ORDER],
+  workcase: [...WORKCASE_STATUS_ORDER],
   adr: ['active', 'archived', 'deprecated'],
   pitfall: ['active', 'archived'],
   spark: ['pending', 'resolved', 'discarded'],
@@ -89,7 +89,7 @@ export default function ObjectStatusFilter({
   const sortedOptions = useMemo(() => sortStatusOptions(options), [options]);
   const fallbackStatuses = useMemo(() => getFallbackStatuses(type, activeStatus), [type, activeStatus]);
   const displayOptions = useMemo(() => {
-    if (type !== 'spark' && type !== 'study' && type !== 'workplan') return sortedOptions;
+    if (type !== 'spark' && type !== 'study' && type !== 'workcase') return sortedOptions;
     const counts = new Map(sortedOptions.map((option) => [option.status, option.count]));
     return fallbackStatuses.map((status) => ({ status, count: counts.get(status) ?? 0 }));
   }, [fallbackStatuses, sortedOptions, type]);

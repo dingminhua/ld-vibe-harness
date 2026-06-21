@@ -8,7 +8,7 @@ description: |
   Spark 中的话题可能部分已经转移、落地或形成决策，但剩余内容仍未完全收敛。需要设计一套机制提醒 AI 判断：
 
   - 哪些内容仍应保留在 Spark pending；
-  - 哪些内容应分流到 ADR、WorkPlan、Study、Pitfall、docs 或其他事实源；
+  - 哪些内容应分流到 ADR、WorkCase、Study、Pitfall、docs 或其他事实源；
   - 何时只更新 evolution 和关联引用，而不把 Spark 直接标记为 resolved；
   - 何时 Spark 已被完整承接，可以填写 resolved_to / resolved_at 并转为 resolved；
   - Code 或 Web 是否应提示“已有关联对象但 Spark 仍 pending，是否还有未收敛内容”。
@@ -18,7 +18,7 @@ description: |
   后续落地拆分：
 
   1. 新增或补充工作流程规范，定义 AI 处理 Spark 时如何判断继续 pending、追加 evolution、关联目标对象、resolved 或 discarded。
-  2. 增加 Code 检查：pending Spark 如果已经存在 related_adrs、related_workplans、related_studies 或 related_docs，但 evolution 没有说明分流/收敛状态，应给出 warning。
+  2. 增加 Code 检查：pending Spark 如果已经存在 related_adrs、related_workcases、related_studies 或 related_docs，但 evolution 没有说明分流/收敛状态，应给出 warning。
   3. 增加 Web 提示：Spark 详情页应展示轻量分流状态，例如“仍待收敛”“已有相关对象，可能需要确认是否部分分流”“已分流到目标对象”。
 evolution:
   - at: '2026-06-18T04:03:23'
@@ -30,7 +30,7 @@ resolved_to: ""
 resolved_at: ""
 discard_reason: ""
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_studies:
   - study-0001

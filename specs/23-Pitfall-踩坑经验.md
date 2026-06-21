@@ -21,7 +21,7 @@ ldvh_doc:
     - "specs/05.03-工作模型字段注册与消费规范.md"
     - "specs/07-Code确定性执行实现规范.md"
     - "specs/20-WorkArea-工作域.md"
-    - "specs/21-WorkPlan-工作计划.md"
+    - "specs/21-WorkCase-工作项.md"
     - "specs/22-ADR-决策.md"
     - "specs/24-Spark-火花.md"
     - "specs/10-Git提交规范.md"
@@ -64,7 +64,7 @@ Pitfall 的目标是让 AI 和 Human 在后续执行中提前识别同类陷阱�
 
 1. 问题已经解决，且解决方式已验证；
 2. 问题具有反直觉性，AI 或 Human 后续容易重复误判；
-3. 问题跨 WorkArea、WorkPlan、项目阶段或管辖项目具有复用价值；
+3. 问题跨 WorkArea、WorkCase、项目阶段或管辖项目具有复用价值；
 4. 问题暴露了事实源读取、字段契约、Code 使用、Web 派生视图、环境适配、适配措施或工作流程中的稳定陷阱；
 5. 同类问题已经出现多次，需要形成规避策略；
 6. 问题可作为后续规范、Rules / Instructions、Skill、Agent、Code、Web、ADR 或工作流程改进的输入。
@@ -79,10 +79,10 @@ Pitfall 的目标是让 AI 和 Human 在后续执行中提前识别同类陷阱�
 2. 未验证的猜测、假设或临时判断；
 3. 只影响当前一次执行且没有复用价值的错误；
 4. 单纯的命令输出、日志片段或失败记录；
-5. 已由 specs、Rules / Instructions、ADR、WorkPlan 或 Code 明确约束，且没有新增经验的信息；
+5. 已由 specs、Rules / Instructions、ADR、WorkCase 或 Code 明确约束，且没有新增经验的信息；
 6. 没有规避策略的抱怨、复盘感想或笼统提醒。
 
-不形成 Pitfall 的内容，应按性质留在当前执行上下文，或进入 Spark、WorkPlan、ADR、docs、sources、studies、Code 测试、Git 提交记录或其他权威位置。
+不形成 Pitfall 的内容，应按性质留在当前执行上下文，或进入 Spark、WorkCase、ADR、docs、sources、studies、Code 测试、Git 提交记录或其他权威位置。
 
 ### 1.3 Pitfall 与规范、运行入口和实现的边界
 
@@ -124,7 +124,7 @@ Pitfall 标准状态如下：
 | `active` | 已确认，问题已解决、解决方式已验证，且可作为后续执行参考 |
 | `archived` | 已归档，不再作为常规参考，但保留历史经验、归档原因和必要关联 |
 
-Pitfall 不设 `draft` 状态。未解决、未验证或字段不完整的问题不得写成 Pitfall；应留在 Spark、WorkPlan、对话上下文或其他更合适的事实源中继续消化。
+Pitfall 不设 `draft` 状态。未解决、未验证或字段不完整的问题不得写成 Pitfall；应留在 Spark、WorkCase、对话上下文或其他更合适的事实源中继续消化。
 
 `archived` 是稳定终态。终态 Pitfall 不得直接重开；如需重新沉淀，应新建 Pitfall，并在新 Pitfall 中引用原 Pitfall。
 
@@ -145,11 +145,11 @@ active → archived
 ---
 ## 4. 对象关系
 
-### 4.1 Pitfall 与 WorkPlan
+### 4.1 Pitfall 与 WorkCase
 
-工作计划执行、验证或关闭过程中发现的已解决且可复用经验，可以整理为 Pitfall。Pitfall 可通过 `source_objects` 或 `related_workplans` 记录来源工作计划。
+工作项执行、验证或关闭过程中发现的已解决且可复用经验，可以整理为 Pitfall。Pitfall 可通过 `source_objects` 或 `related_workcases` 记录来源工作项。
 
-Pitfall 不替代 WorkPlan 的成功标准、验证证据、关闭证据、风险判断或缺陷修复动作。
+Pitfall 不替代 WorkCase 的成功标准、验证证据、关闭证据、风险判断或缺陷修复动作。
 
 ### 4.2 Pitfall 与 Spark
 
@@ -157,11 +157,11 @@ Spark 中保留的发现、提醒、复盘线索或问题线索满足 Pitfall �
 
 Spark 的准入、状态和字段契约由 `specs/24-Spark-火花.md` 定义。
 
-### 4.3 Pitfall 与 WorkArea / WorkPlan
+### 4.3 Pitfall 与 WorkArea / WorkCase
 
-工作域和工作计划可以通过 `related_pitfalls` 引用执行过程中形成或需要参考的踩坑经验。Pitfall 可通过 `related_workareas` 记录关联工作域，通过 `related_workplans` 记录关联工作计划。
+工作域和工作项可以通过 `related_pitfalls` 引用执行过程中形成或需要参考的踩坑经验。Pitfall 可通过 `related_workareas` 记录关联工作域，通过 `related_workcases` 记录关联工作项。
 
-WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` 定义；WorkPlan 的准入、状态和字段契约由 `specs/21-WorkPlan-工作计划.md` 定义。Pitfall 不替代 WorkArea 的长期范围，也不替代 WorkPlan 的目标、成功标准、执行编排或关闭判断。
+WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` 定义；WorkCase 的准入、状态和字段契约由 `specs/21-WorkCase-工作项.md` 定义。Pitfall 不替代 WorkArea 的长期范围，也不替代 WorkCase 的目标、成功标准、执行编排或关闭判断。
 
 ### 4.4 Pitfall 与 ADR
 
@@ -196,7 +196,7 @@ Pitfall 的创建、状态变化、核心经验改写、归档和被吸收到规
 以下情况应评估 Human Gate：
 
 1. 创建、删除或重命名 Pitfall 实例；
-2. 将 WorkPlan 过程发现、Spark、docs/studies 结论或对话输入升级为 Pitfall；
+2. 将 WorkCase 过程发现、Spark、docs/studies 结论或对话输入升级为 Pitfall；
 3. 将 `active` Pitfall 标记为 `archived`；
 5. 修改 `root_cause`、`resolution`、`verification` 或 `avoidance` 等核心经验字段；
 6. 将 Pitfall 的规避策略吸收到 specs、Rules / Instructions、Skill、Agent、Code、Web 或工作流程；
@@ -231,7 +231,7 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `source_objects` | 来源对象 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `source_sparks` | 来源火花 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_workplans` | 关联工作计划 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
+| `related_workcases` | 关联工作项 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_rules` | 已吸收或承接该经验的规范、Rules、Skill、Agent、Code 或 Web 路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -287,7 +287,7 @@ tags:
 source_objects: []
 source_sparks: []
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_docs:
   - specs/01-目录说明.md
@@ -322,7 +322,7 @@ notes:
 
 Pitfall 实例文件命名规则为 `pitfall-{NNNN}-short-title.yaml`。编号从 `0001` 起递增，固定 4 位；英文短标题使用小写短横线命名；文件存放位置为 `ldvh-base/pitfalls/`。
 
-文件名变化必须同步检查引用该 Pitfall 的 WorkArea、WorkPlan、Spark、ADR、Web 派生视图、Git 提交记录和 Code 聚合结果。
+文件名变化必须同步检查引用该 Pitfall 的 WorkArea、WorkCase、Spark、ADR、Web 派生视图、Git 提交记录和 Code 聚合结果。
 
 ---
 ## 7. 事实源回写与证据留存
@@ -351,7 +351,7 @@ Pitfall 证据至少包括：
 6. 规避策略；
 7. 适用范围和不适用范围；
 8. Human Gate 确认记录；
-9. 相关 WorkPlan、Spark、ADR、docs、规范、Code 或 Git 提交引用。
+9. 相关 WorkCase、Spark、ADR、docs、规范、Code 或 Git 提交引用。
 
 证据摘要应足以支持经验复用判断，但不得复制大量日志、命令输出、代码片段或外部资料形成第二事实源。
 
@@ -369,7 +369,7 @@ AI 处理 Pitfall 时应遵守：
 5. 进入代码、文档、规范、环境适配或工具修改前，可按任务类型、文件路径、技术栈、标签和事实源类型筛选 active Pitfall；
 6. 不得把未解决问题、未验证猜测或一次性失败直接写成 active Pitfall；
 7. 写入或修改 `tags` 时，应先查看 Code 提供的已有标签清单，优先复用，必要时再新增英文 slug；
-8. 不得让 Pitfall 替代 WorkPlan、Spark、ADR、规范、Code 测试或 Git 提交记录。
+8. 不得让 Pitfall 替代 WorkCase、Spark、ADR、规范、Code 测试或 Git 提交记录。
 
 ### 8.2 Code 辅助
 
@@ -410,11 +410,11 @@ Pitfall 识别、创建、归档和吸收到规范或实现的具体行动流程
 
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Pitfall 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、经验吸收边界和事实源边界 | 05、03.02、本文、22 ADR、24 Spark、21 WorkPlan、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、归档或吸收 Pitfall 时 |
+| 上位约束承接要求 | Pitfall 实例和后续工作流程应遵守本文定义的准入、状态机、字段契约、经验吸收边界和事实源边界 | 05、03.02、本文、22 ADR、24 Spark、21 WorkCase、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、归档或吸收 Pitfall 时 |
 | 入口可见要求 | AI 处理已解决可复用经验、反直觉问题、重复误判或规避策略时，应能定位本文 | 成员自描述、运行入口摘要、Pitfall 检索或经验吸收流程入口 | AI 执行入口提示 | 经验沉淀、任务执行前检查、状态流转或字段契约变化时 |
 | 确定性执行要求 | Pitfall 字段、状态、引用、文件命名、条件必填、标签格式、已有标签清单和归档吸收关系应由 Code 校验、提供或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Pitfall 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、引用关系、归档规则或标签规则变化时 |
 | Human 交互要求 | Pitfall 创建、归档、核心经验改写和吸收到规范或实现时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | Pitfall 规范变化后，应检查成员自描述、05.01、05.02、05.03、ADR、Spark、WorkPlan、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Pitfall 字段、状态、事实源边界、适配规则或检查要求变化时 |
+| 生命周期触发要求 | Pitfall 规范变化后，应检查成员自描述、05.01、05.02、05.03、ADR、Spark、WorkCase、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Pitfall 字段、状态、事实源边界、适配规则或检查要求变化时 |
 
 ---
 ## 10. 检查要求
@@ -430,7 +430,7 @@ Pitfall 规范检查至少包括：
 | active 可用性 | active Pitfall 已解决、已验证、具备规避策略和适用范围 |
 | 终态处理 | archived 不得重开 |
 | 吸收关系 | archived Pitfall 已填写 `archive_reason`；如被规范、运行入口、Code、Web 或工作流程吸收，已填写对应关联字段 |
-| 对象边界 | Pitfall 未替代 WorkPlan、Spark、ADR、规范、Code 测试或 Git 提交记录 |
+| 对象边界 | Pitfall 未替代 WorkCase、Spark、ADR、规范、Code 测试或 Git 提交记录 |
 | 经验吸收边界 | 规避策略被吸收后只保留引用，不复制规则正文第二事实源 |
 | Human Gate | §5 场景已完成确认或记录降级 |
 | Git 追溯 | Pitfall 关键变化有 Git 可追溯记录 |

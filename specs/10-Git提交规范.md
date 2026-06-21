@@ -61,7 +61,7 @@ Git 提交记录与工作模型的边界如下：
 2. 修改 `ldvh-base/` 下的工作对象事实源；
 3. 修改 Study Markdown、docs 正文、docs/studies、docs/sources 或经授权沉淀的项目文档；
 4. 修改会影响 Human Gate、状态流转、事实源边界、校验逻辑、Web 呈现或 AI 入口的文件；
-5. 完成 WorkPlan、ADR、Spark、Study、Pitfall、WorkArea 等对象的创建、关键字段改写、状态变化、归档或删除；
+5. 完成 WorkCase、ADR、Spark、Study、Pitfall、WorkArea 等对象的创建、关键字段改写、状态变化、归档或删除；
 6. 回退、修正或补充之前已提交的事实源修改。
 
 未进入 Git 的临时实验、构建产物、缓存或本地草稿不形成正式提交记录；一旦提交，就应尽量符合本文格式。
@@ -189,7 +189,7 @@ type 是严格闭集，不得使用枚举外内容。不得使用 `improve`、`u
 | `tests` | Tests | Tests | 测试代码 |
 | `config` | 配置 | Config | 项目配置 |
 | `workarea` | 工作域 | WorkArea | WorkArea 实例 |
-| `workplan` | 计划 | WorkPlan | WorkPlan 实例 |
+| `workcase` | 计划 | WorkCase | WorkCase 实例 |
 | `adr` | 决策 | ADR | ADR 实例 |
 | `spark` | 火花 | Spark | Spark 实例 |
 | `study` | 研究 | Study | Study 实例 |
@@ -336,7 +336,7 @@ BREAKING CHANGE: 旧的仅首行字符串消费方需要改为读取结构化 de
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 上位约束承接要求 | 事实源修改应通过 Git 提交记录留下可追溯证据，不再把提交记录建模为工作对象 | 09、本文、06、Human Gate | 事实源治理 | 修改 Git 文件事实源、工作对象状态、规范、Code、Web 或入口资产时 |
-| 入口可见要求 | AI 准备提交、审计提交历史或追溯对象相关提交时应能定位本文 | Rules 入口摘要、commit_validate 帮助、Web 提交记录页 | AI 执行入口提示 | 提交、回退、审计、关闭 WorkPlan 或查询关联提交时 |
+| 入口可见要求 | AI 准备提交、审计提交历史或追溯对象相关提交时应能定位本文 | Rules 入口摘要、commit_validate 帮助、Web 提交记录页 | AI 执行入口提示 | 提交、回退、审计、关闭 WorkCase 或查询关联提交时 |
 | 流程复用要求 | AI 创建 Git commit 时应优先通过已登记 `ldvh-git-commit` Skill 执行提交准备、拆分判断、消息编写、预检和交还；环境未加载该 Skill 时必须手动执行等价流程 | `../skills/ldvh-git-commit/SKILL.md`、本文、`code/commit_validate.py`、人工降级检查 | 流程复用 | 创建 Git commit、修正提交消息、修改提交契约或调整 Skill 资产时 |
 | 确定性执行要求 | commit message 可机械校验的部分由 Code 检查，关联提交由 Git 派生 | `code/commit_validate.py`、Git 查询、测试夹具 | 校验实现 | 提交契约或关联派生规则变化时 |
 | 确定性执行要求 | LDVH 自身仓库应提供统一 Hook 事件或等价提交前 message 校验入口；用户环境可用 Git、IDE、AI、CI 或自有 hook 系统调用统一入口，未启用环境 hook 时，AI 提交前必须手动运行等价预检 | `hooks/ldvh-hooks.yaml`、`code/hook_dispatch.py run git.commit-msg`、`code/commit_validate.py --check-message`、CI 或人工降级检查 | 触发保障 | 创建 Git commit、修改提交契约、调整 hook/CI 或迁移仓库入口时 |

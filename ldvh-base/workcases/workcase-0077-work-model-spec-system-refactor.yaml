@@ -1,0 +1,199 @@
+id: workcase-0077
+type: workcase
+title: 重构 05 工作模型规范体系
+goal: |
+  重构 05 工作模型规范体系
+status: review_needed
+created: '2026-06-19T10:11:08+08:00'
+updated: '2026-06-19T10:57:43+08:00'
+workarea: workarea-0012
+priority: P1
+description: |
+  当前 05 体系的问题不是简单把原 05.01 内容格式子文档拆成两个文件，而是 05 父规范、字段层、内容格式层和消费注册层的职责没有系统分层：
+  - 05 父规范包含工作模型总纲、通用规则、字段契约原则和字段注册边界，入口说明偏厚；
+  - 05.01 同时承载字段内容格式、公共字段语义、字段注册表、Code/Web 消费枚举和 AI 写入规则；
+  - “不是 schema、不决定必填、不管状态机”等边界在 05 与 05.01 中重复出现；
+  - Code/Web 消费语义与具体实现边界存在混写风险。
+
+  Human 明确纠正：本计划目标是对整个 05 工作模型规范体系做系统性重构，而不是局部拆分 05.01。
+
+  本计划负责将 05 体系重构为四层：
+  - 05：工作模型基础规范，只保留工作模型定义、准入、标准组成、通用原则和 20-39 关系；
+  - 05.01：工作模型字段定义与语义规范，承接字段层通用规则、公共字段语义和与 20-39 字段契约的边界；
+  - 05.02：工作模型字段内容与格式规范，承接 Narrative、Checklist、验证证据、Decision、Reference、Log、Structured 和 AI 写入格式；
+  - 05.03：工作模型字段注册与消费规范，承接字段注册表、注册列枚举、字段生命周期和 Code/Web 可消费元数据。
+success_criteria: |
+  - [x] 05 父规范只保留工作模型总纲、准入、标准组成、通用原则和 20-39 关系，不再展开字段注册/内容格式/消费细节
+  - [x] 创建或重构 `specs/05.01-工作模型字段定义与语义规范.md`，并设置完整 `ldvh_doc`
+  - [x] 创建 `specs/05.02-工作模型字段内容与格式规范.md`，并设置完整 `ldvh_doc`
+  - [x] 创建 `specs/05.03-工作模型字段注册与消费规范.md`，并设置完整 `ldvh_doc`
+  - [x] 将公共字段语义、字段契约通用规则和字段层边界迁移到 05.01
+  - [x] 将字段内容格式类型和 AI 写入格式迁移到 05.02
+  - [x] 将字段注册表、注册枚举、Code/Web 消费枚举和字段生命周期迁移到 05.03
+  - [x] 定向同步 specs、Code、Web、测试和工作对象引用；字段层引用指向 05.01，内容格式引用指向 05.02，字段注册/消费引用指向 05.03
+  - [x] `python3 code/specs_validate.py field-registry` 通过
+  - [x] `python3 code/specs_validate.py all` 通过
+  - [x] `python3 code/fact_validate.py ldvh-base/workcases/workcase-0077-work-model-spec-system-refactor.yaml` 通过
+  - [x] 相关 Code 测试和 Web 检查通过，或记录降级验证结论
+source: |
+  Human 在 2026-06-19 明确批准新增 WorkCase 并执行该行动，不需要中途再次询问。
+
+  Human Gate 记录：
+  - 决策主题：是否对整个 05 工作模型规范体系进行系统性重构。
+  - Human 结论：批准直接执行。
+  - 决策理由：当前问题不是简单相加的文件长度，而是 05 体系中父规范、字段层、内容格式层和消费注册层的冗余信息与职责混杂。
+  - 执行边界：不要把行动简化为拆分 05.01；应系统重构 05 父规范和 05 系列子文档，按字段层、内容格式层、消费注册层分别定位引用。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 建立拆分迁移 WorkCase
+    role: controller
+    mode: single
+    input_refs:
+    - specs/21-WorkCase-工作项.md
+    - ldvh-base/workcases/
+    expected_output: 创建本 WorkCase，记录 Human Gate、目标、成功标准和执行编排。
+    status: done
+    result_summary: 已创建 workcase-0077，并记录 Human 批准与 05 体系系统性重构边界。
+    evidence_refs:
+    - ldvh-base/workcases/workcase-0077-work-model-spec-system-refactor.yaml
+    blocking_reason: null
+  - id: item-2
+    title: 重构 05 系列规范分层
+    role: specs
+    mode: single
+    input_refs:
+    - specs/05-工作模型基础规范.md
+    - specs/05-工作模型基础规范.md
+    - specs/05.01-工作模型字段定义与语义规范.md
+    - specs/05.02-工作模型字段内容与格式规范.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    expected_output: 形成 05、05.01、05.02、05.03 四层结构，并保持父子文档元信息一致。
+    status: done
+    result_summary: 已将 05 体系整理为 05 父规范、05.01 字段层、05.02 内容格式层、05.03 注册与消费层；05 父规范保留总纲和边界，子文档分别承接字段语义、内容格式和消费注册。
+    evidence_refs:
+    - specs/05-工作模型基础规范.md
+    - specs/05.01-工作模型字段定义与语义规范.md
+    - specs/05.02-工作模型字段内容与格式规范.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    blocking_reason: null
+  - id: item-3
+    title: 同步规范引用与实现消费入口
+    role: specs-code-web
+    mode: single
+    input_refs:
+    - specs/
+    - code/spec_checks/field_registry.py
+    - code/specs_validate.py
+    - tests/code/
+    - web/docs/04-ObjectDetail.md
+    expected_output: 定向同步路径、说明、Code 常量、CLI 文案、测试夹具和 Web 文档，不误迁移字段层、内容格式层和注册消费层引用。
+    status: done
+    result_summary: 已同步 specs 目录说明、术语、工作模型文档规范、20-25 工作模型、40-43 流程规范、Code 字段注册检查、CLI 文案、fact 校验提示、测试夹具和 Web 文档引用。
+    evidence_refs:
+    - specs/01-目录说明.md
+    - specs/02-术语规范.md
+    - specs/03.02-工作模型文档规范.md
+    - specs/20-WorkArea-工作域.md
+    - specs/21-WorkCase-工作项.md
+    - specs/22-ADR-决策.md
+    - specs/23-Pitfall-踩坑经验.md
+    - specs/24-Spark-火花.md
+    - specs/25-Study-研究报告.md
+    - code/spec_checks/field_registry.py
+    - code/spec_checks/index.py
+    - code/specs_validate.py
+    - code/fact_validate.py
+    - tests/code/specs_validate_checks/test_field_registry.py
+    - tests/code/specs_validate_checks/test_index.py
+    - web/docs/04-ObjectDetail.md
+    blocking_reason: null
+  - id: item-4
+    title: 验证与关闭准备
+    role: reviewer
+    mode: single
+    input_refs:
+    - specs/
+    - code/
+    - tests/
+    - web/
+    - ldvh-base/workcases/workcase-0077-work-model-spec-system-refactor.yaml
+    expected_output: 运行字段注册、specs、事实源、测试和 Web 检查，整理验证证据与关闭证据。
+    status: done
+    result_summary: 字段注册、specs 综合检查、相关 pytest 和本 WorkCase 事实源校验均通过；Web 文档完成引用同步，本次未运行前端构建。
+    evidence_refs:
+    - python3 code/specs_validate.py field-registry
+    - python3 code/specs_validate.py all
+    - python3 -m pytest tests/code/specs_validate_checks/test_field_registry.py tests/code/specs_validate_checks/test_index.py tests/code/test_fact_validate.py -q
+    - python3 code/fact_validate.py ldvh-base/workcases/workcase-0077-work-model-spec-system-refactor.yaml
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  - 检查 05.03 字段注册表结构、枚举和 WorkCase 字段覆盖；
+  - 检查 specs 文档结构、章节引用、落地要求、Human Gate、运行投影、能力资产、一致性、字段注册和管辖项目配置；
+  - 运行受影响的 Code 测试；
+  - 校验本 WorkCase 事实源。
+
+  ## 验证命令
+
+  - `python3 code/specs_validate.py field-registry`
+  - `python3 code/specs_validate.py all`
+  - `python3 -m pytest tests/code/specs_validate_checks/test_field_registry.py tests/code/specs_validate_checks/test_index.py tests/code/test_fact_validate.py -q`
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0077-work-model-spec-system-refactor.yaml`
+
+  ## 验证结果
+
+  - 字段注册表检查通过；
+  - specs 综合检查通过；
+  - 相关测试通过；
+  - 本 WorkCase 事实源校验通过。
+
+  ## 结论
+
+  - 05 体系系统性重构已完成，当前等待 Human closure review。
+closure_evidence: |
+  ## 验证计划
+
+  - 汇总本计划是否达到关闭条件；
+  - 记录残留风险；
+  - 确认 Human Gate 状态。
+
+  ## 验证命令
+
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0077-work-model-spec-system-refactor.yaml`
+
+  ## 验证结果
+
+  - 本计划要求的 05 父规范、05.01、05.02、05.03 四层结构已形成；
+  - 公共字段语义、内容格式、字段注册与消费规则已分离到对应归口；
+  - 相关 specs、Code、测试和 Web 文档引用已同步；
+  - 本计划配置了 `human_closure_review: true`，因此进入 `review_needed`，不由 AI 直接关闭。
+
+  ## 结论
+
+  - 本次验证覆盖 specs、字段注册、相关 Code 测试和 Web 文档引用；未运行完整前端构建或浏览器检查，因为本次没有修改 Web 运行代码。
+  - Human 已批准执行系统性 05 体系重构；关闭仍等待 Human review。
+review_requested_at: '2026-06-19T10:57:43+08:00'
+closed_at: ''
+related_docs:
+- specs/05-工作模型基础规范.md
+- specs/05.01-工作模型字段定义与语义规范.md
+- specs/05.02-工作模型字段内容与格式规范.md
+- specs/05.03-工作模型字段注册与消费规范.md
+- specs/03-文档基础规范.md
+- specs/03.01-规范文档规范.md
+- specs/07-Code确定性执行实现规范.md
+- specs/08-Web信息同步实现规范.md
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

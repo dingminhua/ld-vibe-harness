@@ -58,7 +58,7 @@ Web 测试按以下优先级选择：
 | 页面或能力 | 主要验证点 | 测试位置 |
 |---|---|---|
 | Dashboard | 项目态势、任务分布、来源追溯、空态和错误态 | `tests/web/pages/` 或 API 聚合测试 |
-| ObjectList | 对象列表、筛选、状态展示、计划态势和只读边界 | `tests/web/pages/`、`tests/web/components/` |
+| ObjectList | 对象列表、筛选、状态展示、工作项态势和只读边界 | `tests/web/pages/`、`tests/web/components/` |
 | ObjectDetail | 字段展示、关联材料、验证方式、关闭证据和 Markdown 阅读 | `tests/web/pages/`、`tests/web/components/` |
 | 提交记录页 | Git 提交记录展示、commit 类型映射和引用追溯 | `tests/web/api/`、`tests/web/pages/` |
 | Spark 快速创建 | 白名单写入、字段校验、受控写入链路和错误态 | `tests/web/api/` |
@@ -76,7 +76,7 @@ Web 测试夹具应遵守：
 4. 测试不得依赖真实用户环境、全局本机路径或未声明的外部服务；
 5. 截图、覆盖率、trace 和缓存仅作为临时运行产物，不进入长期事实源。
 
-字段契约夹具应覆盖当前工作对象属性边界：WorkPlan 可包含 `priority`，Spark 可包含 `priority`；WorkPlan 和 Spark 不得包含 `importance`（importance 已由 priority 统一承载，不再作为独立字段）。执行项夹具只用于 WorkPlan 内部派生态势，不得被写成独立对象契约；结果物、参考输入文档和完成后需同步检查的文档应按 WorkPlan 字段或证据字段归属，不能在夹具中混用。
+字段契约夹具应覆盖当前工作对象属性边界：WorkCase 可包含 `priority`，Spark 可包含 `priority`；WorkCase 和 Spark 不得包含 `importance`（importance 已由 priority 统一承载，不再作为独立字段）。执行项夹具只用于 WorkCase 内部派生态势，不得被写成独立对象契约；结果物、参考输入文档和完成后需同步检查的文档应按 WorkCase 字段或证据字段归属，不能在夹具中混用。
 
 ## 6. AI 修改 Web 的测试顺序
 

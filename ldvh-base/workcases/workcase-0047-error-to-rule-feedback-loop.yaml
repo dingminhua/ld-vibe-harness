@@ -1,0 +1,52 @@
+id: workcase-0047
+type: workcase
+title: 错误到规则的反馈闭环
+goal: |
+  错误到规则的反馈闭环
+status: active
+created: '2026-06-06T00:03:35.838429'
+updated: '2026-06-06T00:03:35.838429'
+workarea: workarea-0009
+priority: P2
+description: 由历史 Task task-0047 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [ ] 关联任务 task-0047 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0047; source path: ldvh-base/taskplans/taskplan-0047-error-to-rule-feedback-loop.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0047
+    title: 错误到规则的反馈闭环
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0047
+    expected_output: |
+      - [ ] 修改 Pitfall 规范（specs/23），增加关闭时 ADR 推荐流程
+      - [ ] 修改 Git 提交记录规范（specs/10），补充 Pitfall 来源追溯口径
+      - [ ] 更新 ldvh-close Skill，Pitfall 关闭时增加 ADR 推荐步骤
+      - [ ] 至少一个现有 Pitfall 实例补充 ADR 推荐记录作为示范
+    status: pending
+    result_summary: ''
+    evidence_refs:
+    - specs/23-Pitfall-踩坑经验.md（修订）
+    - specs/10-Git提交规范.md（修订）
+    blocking_reason: Legacy Task is not closed; keep WorkCase active after migration.
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: ''
+closure_evidence: ''
+review_requested_at: ''
+closed_at: ''
+related_docs: []
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

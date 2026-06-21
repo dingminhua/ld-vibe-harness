@@ -12,7 +12,7 @@ import yaml
 # 05.02 工作模型字段内容与格式规范：长文本字段定义
 LONG_TEXT_FIELDS = {
     "workarea": {"description", "scope", "constraints", "archive_reason"},
-    "workplan": {"description", "success_criteria", "verification_evidence", "closure_evidence"},
+    "workcase": {"description", "success_criteria", "verification_evidence", "closure_evidence"},
     "adr": {"context", "decision", "consequences"},
     "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
     "spark": {"description", "source_detail", "discard_reason"},

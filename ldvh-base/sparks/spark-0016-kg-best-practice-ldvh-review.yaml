@@ -7,7 +7,7 @@ updated: '2026-06-20T10:15:00+08:00'
 description: |
   原有讨论已提炼为 Study `study-0006`。
   Study 只承载完整评估报告，不替代本 Spark 的讨论入口。
-  本 Spark 继续保留后续收敛入口：先用 Study 复读完整评估报告，再判断是否以 WorkPlan 推进 P1/P2 落地动作。
+  本 Spark 继续保留后续收敛入口：先用 Study 复读完整评估报告，再判断是否以 WorkCase 推进 P1/P2 落地动作。
 
   研究结论同步：LDVH 已具备图谱化输入条件，下一阶段应优先补齐关系语义标准、关系一致性校验和图查询闭环。
 
@@ -16,24 +16,24 @@ description: |
   不得落盘维护 entities.json、edges.json、graph-metadata.json，不得引入外部图数据库作为事实缓存，不得依赖长期缓存或派生索引作为事实源。
 
   需要配合的最小动作：
-  1. 定义 LDVH 关系语义表，将 workarea、workplans、related_*、source_*、resolved_to、execution_items.input_refs 和 execution_items.evidence_refs 映射为明确边类型；
+  1. 定义 LDVH 关系语义表，将 workarea、workcases、related_*、source_*、resolved_to、execution_items.input_refs 和 execution_items.evidence_refs 映射为明确边类型；
   2. 增加只读运行时抽取层，按请求读取事实源并返回内存中的 nodes/edges/issues；
   3. 为 fact_cli 和 Web API 增加邻接、反向邻接、收敛链、证据链和图一致性检查入口；
-  4. 将图一致性检查接入 WorkPlan 审核和 41/42/43 审核触发，但检查输出只作为当次诊断结果，不作为新事实源保存。
+  4. 将图一致性检查接入 WorkCase 审核和 41/42/43 审核触发，但检查输出只作为当次诊断结果，不作为新事实源保存。
 
-  预期收益：AI 与 Human 可以实时看见 Spark 是否被承接、WorkPlan 依赖哪些输入、旧路径是否仍被引用、规范或代码变更影响哪些对象；
+  预期收益：AI 与 Human 可以实时看见 Spark 是否被承接、WorkCase 依赖哪些输入、旧路径是否仍被引用、规范或代码变更影响哪些对象；
   同时避免派生 JSON、缓存或外部图状态滞后于代码和事实源。
 
   2026-06-20 追加要求：知识地图/知识图谱投影视图必须纳入管辖项目，而不能只覆盖 LDVH 自身仓库。
   管辖项目覆盖应以工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 为入口，读取其中登记的每个项目根目录，并按项目自身事实源边界实时生成图谱投影。
   这意味着节点和边必须带有项目维度，例如 `project_id`、项目根路径、对象类型、对象 ID、文件路径和 Git commit 标识；
-  由于每个管辖项目的 WorkArea、WorkPlan、ADR、Spark、Pitfall 和 Study 编号都是项目内独立编号，图谱内部全局节点 ID 不得只使用 `spark-0016` 这类裸对象 ID，必须组合项目 ID 与对象身份。
+  由于每个管辖项目的 WorkArea、WorkCase、ADR、Spark、Pitfall 和 Study 编号都是项目内独立编号，图谱内部全局节点 ID 不得只使用 `spark-0016` 这类裸对象 ID，必须组合项目 ID 与对象身份。
 
   管辖项目纳入的最小措施：
   1. 增加管辖项目发现层：先读取并校验 `LDVH-GOVERNED-PROJECTS.yaml`，生成可查询的项目集合；图查询入口应支持单项目、全部管辖项目和当前项目三种范围；
   2. 增加项目命名空间：所有对象节点、文档节点、Git 提交节点和诊断 issue 都必须携带 `project_id`，跨项目引用必须显式标记 `from_project` 和 `to_project`；
   3. 增加项目边界控制：只读取登记项目根目录内的 `ldvh-base/`、Git 记录和经项目约定或用户授权可读的文档位置；不得因生成知识地图而默认接管、创建、迁移、重排或强制校验用户 docs；
-  4. 增加多项目关系抽取：在单项目内抽取 `workplans`、`related_*`、`source_*`、`resolved_to`、`execution_items.input_refs` 和 `execution_items.evidence_refs`；发现跨项目路径或对象引用时只生成显式跨项目边，不能猜测隐含关系；
+  4. 增加多项目关系抽取：在单项目内抽取 `workcases`、`related_*`、`source_*`、`resolved_to`、`execution_items.input_refs` 和 `execution_items.evidence_refs`；发现跨项目路径或对象引用时只生成显式跨项目边，不能猜测隐含关系；
   5. 增加降级诊断：项目缺少 `ldvh-base/`、Git 不可读、路径越界、引用目标不存在或文档位置未授权时，应输出当次诊断 issue，不得写入缓存或回写为事实字段；
   6. 增加 Web 和 CLI 范围选择：Human-facing 入口应展示项目选择器、项目分组、跨项目边和不完整项目提示；CLI/API 应返回本次查询的项目范围、扫描时间和降级原因；
   7. 增加多项目测试夹具：至少覆盖两个管辖项目存在同名对象 ID、跨项目路径引用、缺失项目根目录、缺失 `ldvh-base/`、路径穿越拒绝和未授权 docs 不被扫描。
@@ -65,12 +65,12 @@ related_adrs: []
 related_studies:
   - study-0006
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_docs:
   - specs/05.01-工作模型字段定义与语义规范.md
   - specs/05.02-工作模型字段内容与格式规范.md
   - specs/05.03-工作模型字段注册与消费规范.md
-  - specs/21-WorkPlan-工作计划.md
+  - specs/21-WorkCase-工作项.md
   - specs/24-Spark-火花.md
   - specs/41-work-model-audit-工作模型审核.md
   - specs/42-specs-audit-规范审核.md

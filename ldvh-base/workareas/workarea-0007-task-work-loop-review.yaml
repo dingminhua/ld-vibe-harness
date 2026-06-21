@@ -12,6 +12,6 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-workplans:
-- workplan-0032
-- workplan-0037
+workcases:
+- workcase-0032
+- workcase-0037

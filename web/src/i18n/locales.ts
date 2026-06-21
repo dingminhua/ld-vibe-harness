@@ -3,7 +3,7 @@
 // 来源：specs/05-工作模型基础规范 §5 状态机
 // ============================================================
 export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
-  // WorkArea / WorkPlan / ADR
+  // WorkArea / WorkCase / ADR
   draft: { zh: '草稿', en: 'Draft' },
   proposed: { zh: '已提议', en: 'Proposed' },
   accepted: { zh: '已采纳', en: 'Accepted' },
@@ -52,7 +52,7 @@ export function getObjectStatusLocale(type: string, status: string, locale: stri
 
 export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '长期工作范围', en: 'Long-lived work area' },
-  workplan: { zh: '人机编排和关闭判断的计划', en: 'Work plan for orchestration and closure' },
+  workcase: { zh: '人机编排和关闭判断的工作项', en: 'WorkCase for orchestration and closure' },
   adr: { zh: '决策记录', en: 'Architecture Decision Record' },
   pitfall: { zh: '可复用踩坑', en: 'Reusable pitfalls' },
   spark: { zh: '待分流的火花', en: 'Spark pending routing' },
@@ -98,10 +98,10 @@ export function getObjectStatusHint(type: string, status: string, locale: string
       : '当前有效的决策补丁';
   }
   if (status === 'review_needed') {
-    if (type === 'workplan') {
+    if (type === 'workcase') {
       return locale === 'en'
-        ? 'Verification and closure evidence are ready; confirm whether this work plan can close.'
-        : '验证证据和关闭证据已就绪，待确认计划是否可关闭';
+        ? 'Verification and closure evidence are ready; confirm whether this WorkCase can close.'
+        : '验证证据和关闭证据已就绪，待确认工作项是否可关闭';
     }
   }
   return getStatusHint(status, locale);
@@ -113,7 +113,7 @@ export const UI_LOCALES = {
 
     'nav.dashboard': '仪表盘',
     'nav.workareas': '工作域',
-    'nav.workplans': '计划',
+    'nav.workcases': '工作项',
     'nav.adrs': '决策',
     'nav.pitfalls': '踩坑',
     'nav.sparks': '火花',
@@ -149,11 +149,11 @@ export const UI_LOCALES = {
     'objectList.noObjects': '未找到 {type} 对象',
     'objectList.all': '全部',
     'objectList.statusFilter': '状态筛选',
-    'objectList.relatedPlans': '关联计划',
-    'objectList.planCount': '{count} 个计划',
-    'objectList.activePlanCount': '活跃计划',
-    'objectList.humanConfirmPlanCount': '待确认计划',
-    'objectList.closedPlanCount': '已闭合计划',
+    'objectList.relatedPlans': '关联工作项',
+    'objectList.planCount': '{count} 个工作项',
+    'objectList.activePlanCount': '活跃工作项',
+    'objectList.humanConfirmPlanCount': '待确认工作项',
+    'objectList.closedPlanCount': '已闭合工作项',
     'objectList.closeDecision': '关闭判断',
     'objectList.closureIssue': '收口异常',
     'objectList.planExecutionQueue': '执行队列',
@@ -172,9 +172,9 @@ export const UI_LOCALES = {
     'objectList.activeCount': '{count} 进行中',
     'objectList.reviewCount': '{count} 待关闭',
     'objectList.riskCount': '{count} 有风险',
-    'objectList.noPlans': '暂无关联计划',
+    'objectList.noPlans': '暂无关联工作项',
     'objectList.noExecutionItems': '暂无执行项',
-    'objectList.morePlans': '还有 {count} 个计划',
+    'objectList.morePlans': '还有 {count} 个工作项',
     'objectList.moreExecutionItems': '还有 {count} 个执行项',
     'objectList.successCriteria': '成功标准',
     'objectList.planConfirmedAt': '方案确认',
@@ -206,7 +206,7 @@ export const UI_LOCALES = {
     'objectDetail.editAcceptance': '点击编辑验收标准',
     'objectDetail.goal': '目标',
     'objectDetail.noDescription': '未记录描述',
-    'objectDetail.workPlan': '所属计划',
+    'objectDetail.workPlan': '所属工作项',
     'objectDetail.executionStatus': '执行状态',
     'objectDetail.currentState': '当前状态',
     'objectDetail.waitingFor': '等待对象',
@@ -224,15 +224,15 @@ export const UI_LOCALES = {
     'objectDetail.emptyValue': '空',
     'objectDetail.workArea': '工作域',
     'objectDetail.parentWorkArea': '所属工作域',
-    'objectDetail.workareaPlanOverview': '计划态势',
+    'objectDetail.workareaPlanOverview': '工作项态势',
     'objectDetail.workareaDefinition': '属性',
     'objectDetail.workareaGoal': '目标',
     'objectDetail.workareaRelatedMaterials': '关联材料',
-    'objectDetail.workareaPlansLoading': '正在读取关联计划',
-    'objectDetail.planGoal': '计划目标',
-    'objectDetail.noPlanDescription': '未记录计划描述',
+    'objectDetail.workareaPlansLoading': '正在读取关联工作项',
+    'objectDetail.planGoal': '工作项目标',
+    'objectDetail.noPlanDescription': '未记录工作项描述',
     'objectDetail.planExecution': '执行队列',
-    'objectDetail.workplanProgress': '计划进度',
+    'objectDetail.workcaseProgress': '工作项进度',
     'objectDetail.lifecycleStage': '推进阶段',
     'objectDetail.lifecycleDraft': '目标确认',
     'objectDetail.lifecyclePlanReview': '方案审核',
@@ -245,9 +245,9 @@ export const UI_LOCALES = {
     'objectDetail.lifecycleClosed': '已关闭',
     'objectDetail.successCriteriaProgress': '成功标准',
     'objectDetail.executionItemProgress': '执行项',
-    'objectDetail.workplanExecution': '执行项',
+    'objectDetail.workcaseExecution': '执行项',
     'objectDetail.executionItemsLoading': '正在读取执行项态势',
-    'objectDetail.workplanReview': '检查安排',
+    'objectDetail.workcaseReview': '检查安排',
     'objectDetail.planReview': '方案审核',
     'objectDetail.resultReview': '结果复核',
     'objectDetail.reviewPolicy': '审核策略',
@@ -275,7 +275,7 @@ export const UI_LOCALES = {
     'objectDetail.closeDecisionRecordState': '记录状态',
     'objectDetail.noCompletionEvidence': '尚未记录完成证据',
     'objectDetail.noVerificationEvidence': '尚未记录验证证据',
-    'objectDetail.noClosureEvidenceForPlan': '尚未记录关闭证据',
+    'objectDetail.noClosureEvidenceForWorkCase': '尚未记录关闭证据',
     'objectDetail.planMaterials': '产出与文档',
     'objectDetail.relatedMaterials': '关联材料',
 
@@ -289,7 +289,7 @@ export const UI_LOCALES = {
     'readingPanel.docLoadFailed': '文档加载失败',
     'readingPanel.noEvidence': '暂无证据信息',
     'readingPanel.changeDetail': '提交详情',
-    'objectDetail.humanGateTip': '此计划待关闭审查',
+    'objectDetail.humanGateTip': '此工作项待关闭审查',
 
     'spark.create': '创建火花',
     'spark.quickCapture': '创建火花',
@@ -340,7 +340,7 @@ export const UI_LOCALES = {
 
     'nav.dashboard': 'Dashboard',
     'nav.workareas': 'Work Areas',
-    'nav.workplans': 'Work Plans',
+    'nav.workcases': 'Work Cases',
     'nav.adrs': 'ADRs',
     'nav.pitfalls': 'Pitfalls',
     'nav.sparks': 'Sparks',
@@ -376,11 +376,11 @@ export const UI_LOCALES = {
     'objectList.noObjects': 'No {type} found',
     'objectList.all': 'All',
     'objectList.statusFilter': 'Status filter',
-    'objectList.relatedPlans': 'Related Plans',
-    'objectList.planCount': '{count} plans',
-    'objectList.activePlanCount': 'Active plans',
-    'objectList.humanConfirmPlanCount': 'Plans awaiting confirmation',
-    'objectList.closedPlanCount': 'Closed plans',
+    'objectList.relatedPlans': 'Related WorkCases',
+    'objectList.planCount': '{count} WorkCases',
+    'objectList.activePlanCount': 'Active WorkCases',
+    'objectList.humanConfirmPlanCount': 'WorkCases awaiting confirmation',
+    'objectList.closedPlanCount': 'Closed WorkCases',
     'objectList.closeDecision': 'Close Decision',
     'objectList.closureIssue': 'Closure Issue',
     'objectList.planExecutionQueue': 'Execution Queue',
@@ -399,9 +399,9 @@ export const UI_LOCALES = {
     'objectList.activeCount': '{count} active',
     'objectList.reviewCount': '{count} pending close',
     'objectList.riskCount': '{count} at risk',
-    'objectList.noPlans': 'No related plans',
+    'objectList.noPlans': 'No related WorkCases',
     'objectList.noExecutionItems': 'No execution items',
-    'objectList.morePlans': '{count} more plans',
+    'objectList.morePlans': '{count} more WorkCases',
     'objectList.moreExecutionItems': '{count} more execution items',
     'objectList.successCriteria': 'Success Criteria',
     'objectList.planConfirmedAt': 'Plan Confirmed',
@@ -433,7 +433,7 @@ export const UI_LOCALES = {
     'objectDetail.editAcceptance': 'Click to edit acceptance criteria',
     'objectDetail.goal': 'Goal',
     'objectDetail.noDescription': 'No description recorded',
-    'objectDetail.workPlan': 'Work Plan',
+    'objectDetail.workPlan': 'WorkCase',
     'objectDetail.executionStatus': 'Execution Status',
     'objectDetail.currentState': 'Current State',
     'objectDetail.waitingFor': 'Waiting For',
@@ -451,15 +451,15 @@ export const UI_LOCALES = {
     'objectDetail.emptyValue': 'Empty',
     'objectDetail.workArea': 'Work Area',
     'objectDetail.parentWorkArea': 'Parent Work Area',
-    'objectDetail.workareaPlanOverview': 'Plan Overview',
+    'objectDetail.workareaPlanOverview': 'WorkCase Overview',
     'objectDetail.workareaDefinition': 'Properties',
     'objectDetail.workareaGoal': 'Goal',
     'objectDetail.workareaRelatedMaterials': 'Related Materials',
-    'objectDetail.workareaPlansLoading': 'Loading related plans',
-    'objectDetail.planGoal': 'Plan Goal',
-    'objectDetail.noPlanDescription': 'No plan description recorded',
+    'objectDetail.workareaPlansLoading': 'Loading related WorkCases',
+    'objectDetail.planGoal': 'WorkCase Goal',
+    'objectDetail.noPlanDescription': 'No WorkCase description recorded',
     'objectDetail.planExecution': 'Execution Queue',
-    'objectDetail.workplanProgress': 'Plan Progress',
+    'objectDetail.workcaseProgress': 'WorkCase Progress',
     'objectDetail.lifecycleStage': 'Lifecycle Stage',
     'objectDetail.lifecycleDraft': 'Goal alignment',
     'objectDetail.lifecyclePlanReview': 'Plan review',
@@ -472,9 +472,9 @@ export const UI_LOCALES = {
     'objectDetail.lifecycleClosed': 'Closed',
     'objectDetail.successCriteriaProgress': 'Success criteria',
     'objectDetail.executionItemProgress': 'Execution items',
-    'objectDetail.workplanExecution': 'Execution Items',
+    'objectDetail.workcaseExecution': 'Execution Items',
     'objectDetail.executionItemsLoading': 'Loading execution item posture',
-    'objectDetail.workplanReview': 'Review Arrangement',
+    'objectDetail.workcaseReview': 'Review Arrangement',
     'objectDetail.planReview': 'Plan Review',
     'objectDetail.resultReview': 'Result Review',
     'objectDetail.reviewPolicy': 'Review Policy',
@@ -502,7 +502,7 @@ export const UI_LOCALES = {
     'objectDetail.closeDecisionRecordState': 'Record state',
     'objectDetail.noCompletionEvidence': 'No completion evidence recorded',
     'objectDetail.noVerificationEvidence': 'No verification evidence recorded',
-    'objectDetail.noClosureEvidenceForPlan': 'No closure evidence recorded',
+    'objectDetail.noClosureEvidenceForWorkCase': 'No closure evidence recorded',
     'objectDetail.planMaterials': 'Deliverables and Docs',
     'objectDetail.relatedMaterials': 'Related Materials',
 
@@ -516,7 +516,7 @@ export const UI_LOCALES = {
     'readingPanel.docLoadFailed': 'Failed to load document',
     'readingPanel.noEvidence': 'No evidence available',
     'readingPanel.changeDetail': 'Commit Detail',
-    'objectDetail.humanGateTip': 'This plan is pending close review',
+    'objectDetail.humanGateTip': 'This WorkCase is pending close review',
 
     'spark.create': 'Create Spark',
     'spark.quickCapture': 'Create Spark',

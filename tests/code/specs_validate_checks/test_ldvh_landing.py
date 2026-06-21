@@ -47,25 +47,27 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-workplans:
-  - workplan-0001
+workcases:
+  - workcase-0001
 """.strip()
         + "\n",
         encoding="utf-8",
     )
-    workplan_dir = tmp_path / "ldvh-base" / "workplans"
-    workplan_dir.mkdir(parents=True, exist_ok=True)
-    (workplan_dir / "workplan-0001-test.yaml").write_text(
+    workcase_dir = tmp_path / "ldvh-base" / "workcases"
+    workcase_dir.mkdir(parents=True, exist_ok=True)
+    (workcase_dir / "workcase-0001-test.yaml").write_text(
         """
-id: workplan-0001
-type: workplan
-title: 测试工作计划
+id: workcase-0001
+type: workcase
+title: 测试工作项
+goal: |
+  验证测试工作项夹具。
 status: active
 created: '2026-06-10T00:00:00'
 updated: '2026-06-10T00:00:00'
 workarea: workarea-0001
 priority: P2
-description: 测试工作计划说明
+description: 测试工作项说明
 success_criteria: |
   - [ ] 可验证条件
 source: 测试
@@ -99,7 +101,7 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-related_workplans: []
+related_workcases: []
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -146,7 +148,7 @@ def test_ldvh_landing_check_consumes_existing_reports(tmp_path, monkeypatch):
     assert next(item for item in baseline["items"] if item["id"] == "web_asset")["status"] == "open"
     assert next(item for item in baseline["items"] if item["id"] == "report_structure")["status"] == "closed"
     assert "环境承接" in next(item for item in baseline["items"] if item["id"] == "environment_matrix")["gap_categories"]
-    assert set(baseline["summary"]["gap_categories"]) <= {"规范", "Code", "Web", "WorkPlan", "事实源", "环境承接", "Human Gate"}
+    assert set(baseline["summary"]["gap_categories"]) <= {"规范", "Code", "Web", "WorkCase", "事实源", "环境承接", "Human Gate"}
 
 
 def test_ldvh_landing_check_reports_missing_governed_projects(tmp_path, monkeypatch):
@@ -163,8 +165,8 @@ def test_ldvh_landing_check_reports_missing_governed_projects(tmp_path, monkeypa
 
 def test_ldvh_landing_check_reports_fact_validation_issues(tmp_path, monkeypatch):
     build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
-    bad_workplan = tmp_path / "ldvh-base" / "workplans" / "workplan-0002-bad.yaml"
-    bad_workplan.write_text("id: bad\ntype: workplan\n", encoding="utf-8")
+    bad_workcase = tmp_path / "ldvh-base" / "workcases" / "workcase-0002-bad.yaml"
+    bad_workcase.write_text("id: bad\ntype: workcase\n", encoding="utf-8")
 
     report = checker.ldvh_landing_check_build(tmp_path)
 

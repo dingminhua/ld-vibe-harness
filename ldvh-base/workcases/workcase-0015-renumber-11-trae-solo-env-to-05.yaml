@@ -1,0 +1,105 @@
+id: workcase-0015
+type: workcase
+title: renumber 11 trae solo env to 05
+goal: |
+  renumber 11 trae solo env to 05
+status: closed
+created: '2026-06-18T07:40:04'
+updated: '2026-06-18T07:40:04'
+workarea: workarea-0004
+priority: P2
+description: 由历史 Task task-0015 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0015 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0015; source path: ldvh-base/taskplans/taskplan-0015-renumber-11-trae-solo-env-to-05.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0015
+    title: renumber 11 trae solo env to 05
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0015
+    expected_output: |-
+      - [x] 原 11 文档文件名、标题和头部定位调整为新编号 05
+      - [x] specs 根目录正式规范中对原 11 文档的引用已更新为新路径和新编号
+      - [x] Rules 中对原 11 文档的引用已更新为新路径和新编号
+      - [x] 保留 11 号文档此前收敛出的"Trae 事实引用 refs、LDVH 只写特殊约定"原则
+      - [x] 不处理 docs/research、specs/refs、tools/tests/web 等非本轮确认范围引用
+      - [x] 可用文档规范检查和引用检查通过
+    status: done
+    result_summary: |-
+      verification: 检查原 11 文档重编号结果、标题、头部元数据、refs 引用原则和 specs 根目录正式规范与 Rules 引用；运行 specs 文档规范检查、引用检查和事实模型校验。
+
+      ## 验证结果
+
+      原 specs/11-LDVH-Trae-Solo-环境规范.md 已重编号为 specs/04.03-环境入口适配与部署规范.md（后续再次重编号），specs 根目录正式规范与 Rules 引用已同步更新，文档规范检查和引用检查通过。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+
+      closure_evidence: ## 验证结果
+
+      原 11 文档重编号执行完成，specs 根目录正式规范与 Rules 中引用已更新，文档规范检查和引用检查通过。
+
+      ## 结论
+
+      重编号结果符合预期，人工确认关闭。
+    evidence_refs: []
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  历史任务计划迁移聚合证据：
+  - task-0015: ## 验证结果
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  历史任务计划迁移聚合证据：
+  - task-0015: ## 验证结果
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+review_requested_at: '2026-06-18T07:40:04'
+closed_at: '2026-06-18T07:40:04'
+related_docs: []
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

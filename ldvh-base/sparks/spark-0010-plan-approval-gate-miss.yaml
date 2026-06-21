@@ -1,20 +1,20 @@
 id: spark-0010
 type: spark
-title: WorkPlan 拆分后的计划审批门漏检
+title: WorkCase 拆分后的计划审批门漏检
 status: pending
 created: '2026-06-18T09:26:05'
 updated: '2026-06-20T11:21:12+08:00'
 description: |
-  2026-06-18，AI 在用户要求“把这些事拆成三个 WorkPlan，审批后依次执行”后，直接创建并提交
-  workplan-0069、workplan-0070 和 workplan-0071，随后在未等待 Human 审批的情况下开始修改
+  2026-06-18，AI 在用户要求“把这些事拆成三个 WorkCase，审批后依次执行”后，直接创建并提交
+  workcase-0069、workcase-0070 和 workcase-0071，随后在未等待 Human 审批的情况下开始修改
   code/fact_cli.py。用户指出缺少计划审核和 Human 审批后，AI 暂停执行、撤回未授权代码改动，
-  并安排三个独立专业审批子 Agent 分别审查三个 WorkPlan。
+  并安排三个独立专业审批子 Agent 分别审查三个 WorkCase。
 
   初步原因：
 
   1. AI 把“创建计划的授权”误当成“执行计划的授权”；
   2. AI 把用户“中间不要停下来”的连续执行偏好置于“审批后执行”的门槛之前；
-  3. WorkPlan 当前 `review` 字段主要服务关闭前检查，计划执行前审批门槛没有显式字段承载；
+  3. WorkCase 当前 `review` 字段主要服务关闭前检查，计划执行前审批门槛没有显式字段承载；
   4. `draft` / `active` 状态语义不足以表达“计划已写好但等待审批”，导致 AI 倾向于把字段齐全的计划直接标为 active；
   5. 子 Agent 审批结果没有在执行前成为硬 Gate。
 
@@ -23,41 +23,41 @@ description: |
   1. 0069、0070、0071 在 Human 明确批准前保持待执行状态；
   2. 0071 应把计划审核、Human 执行批准、过程 Spark 回写和最终复盘写成可复用流程经验；
   3. 后续流程规范候选应考虑增加“计划草案 -> 独立专业审批 -> Human 执行批准 -> 执行”的硬顺序；
-  4. 凡用户明确说“审批后执行”，AI 不得把创建 WorkPlan、提交 WorkPlan 或子 Agent APPROVE 解释为执行批准。
-  5. 每个 WorkPlan 完成后应安排独立专业子 Agent 做完成后检查，检查对象包括成功标准、验证证据、关闭证据、残留风险和分流是否充分。
-  6. 每个 WorkPlan 关闭前应判断总结应进入 Spark、Pitfall、后续 WorkPlan 还是 closure_evidence：过程经验和流程候选进入 Spark；已解决且可复用的错误模式进入 Pitfall；需继续执行的目标进入后续 WorkPlan。
+  4. 凡用户明确说“审批后执行”，AI 不得把创建 WorkCase、提交 WorkCase 或子 Agent APPROVE 解释为执行批准。
+  5. 每个 WorkCase 完成后应安排独立专业子 Agent 做完成后检查，检查对象包括成功标准、验证证据、关闭证据、残留风险和分流是否充分。
+  6. 每个 WorkCase 关闭前应判断总结应进入 Spark、Pitfall、后续 WorkCase 还是 closure_evidence：过程经验和流程候选进入 Spark；已解决且可复用的错误模式进入 Pitfall；需继续执行的目标进入后续 WorkCase。
   7. 整套“计划拆分 -> 子 Agent 审批 -> Human 执行批准 -> 执行 -> 完成后子 Agent 检查 -> 总结分流 -> Human 关闭审查”流程应作为后续标准工作流程候选继续打磨。
 
   本轮连续执行后的补充经验：
 
-  1. 完成后独立复审必须能失败，并且失败应发生在关闭或提交完成结论之前。workplan-0069 的初次 Code/Web 复审实际发现了 Web 旧入口、API 空兼容字段和测试残留，说明复审不能只是仪式性记录。
+  1. 完成后独立复审必须能失败，并且失败应发生在关闭或提交完成结论之前。workcase-0069 的初次 Code/Web 复审实际发现了 Web 旧入口、API 空兼容字段和测试残留，说明复审不能只是仪式性记录。
   2. 子 Agent 复审应按专业视角命名，例如 Code、Web、Specs、process-governance，并检查真实 diff、事实源、命令输出和成功标准，而不是只复述计划。
-  3. WorkPlan 证据需要保留可恢复、可验证、可关闭的最小事实：提交、命令、子 Agent 结论、残留风险、分流决定。中间阅读顺序、临时 todo 和已被最终结论吸收的重复分析不应进入长期事实源。
-  4. 正常完成不必强行写 Spark 或 Pitfall。Spark 用于流程规则候选、残留风险、待硬化事项和跨对象长期记忆；Pitfall 用于已经识别且可复用的错误模式或操作陷阱；closure_evidence 用于普通完成证据；后续 WorkPlan 用于可执行的独立目标。
-  5. 阶段提交应发生在每个 WorkPlan 完成复审和必要事实回写之后，以便最终报告能够把每个阶段映射到稳定 Git 记录。
+  3. WorkCase 证据需要保留可恢复、可验证、可关闭的最小事实：提交、命令、子 Agent 结论、残留风险、分流决定。中间阅读顺序、临时 todo 和已被最终结论吸收的重复分析不应进入长期事实源。
+  4. 正常完成不必强行写 Spark 或 Pitfall。Spark 用于流程规则候选、残留风险、待硬化事项和跨对象长期记忆；Pitfall 用于已经识别且可复用的错误模式或操作陷阱；closure_evidence 用于普通完成证据；后续 WorkCase 用于可执行的独立目标。
+  5. 阶段提交应发生在每个 WorkCase 完成复审和必要事实回写之后，以便最终报告能够把每个阶段映射到稳定 Git 记录。
   6. 用户要求“中间不要停”只在计划已经完成审批、执行顺序清楚且未遇到 STOP 点时适用；它不能覆盖计划审核、Human 执行批准、事实源冲突和关键降级确认。
 
   2026-06-20 追加硬化提醒：
 
-  1. 当前 WorkPlan 关闭前，需要有专门的计划审核子 Agent 意见记录，不能只由主控口头判断计划可以关闭。
+  1. 当前 WorkCase 关闭前，需要有专门的计划审核子 Agent 意见记录，不能只由主控口头判断计划可以关闭。
   2. 关闭前还需要记录专业审查子 Agent 的意见；若存在多个专业视角，应分别记录每个子 Agent 的审查结论、主要依据、阻塞问题和残留风险。
-  3. WorkPlan 的关闭证据中必须写明子 Agent 名字或稳定角色名，例如 `plan-audit-reviewer`、`code-reviewer`、`specs-reviewer`、`process-governance-reviewer`，避免恢复上下文或后续关闭时忘记是谁给出的意见。
-  4. 这条提醒适用于当前正在等待关闭审查的 WorkPlan，尤其是 `workplan-0080` 这类已有执行结果、准备进入 Human closure review 的计划。
+  3. WorkCase 的关闭证据中必须写明子 Agent 名字或稳定角色名，例如 `plan-audit-reviewer`、`code-reviewer`、`specs-reviewer`、`process-governance-reviewer`，避免恢复上下文或后续关闭时忘记是谁给出的意见。
+  4. 这条提醒适用于当前正在等待关闭审查的 WorkCase，尤其是 `workcase-0080` 这类已有执行结果、准备进入 Human closure review 的计划。
 evolution:
   - at: '2026-06-18T09:26:05'
-    summary: 用户指出三个 WorkPlan 创建后缺少独立专业子 Agent 审批和 Human 审批；AI 撤回未授权代码改动，安排 0069/0070/0071 独立审批，并将该漏检记录为流程改进输入。
+    summary: 用户指出三个 WorkCase 创建后缺少独立专业子 Agent 审批和 Human 审批；AI 撤回未授权代码改动，安排 0069/0070/0071 独立审批，并将该漏检记录为流程改进输入。
   - at: '2026-06-18T09:27:28'
-    summary: 用户补充要求 WorkPlan 完成后也必须有独立专业子 Agent 检查，最终总结需要写入 Spark 或 Pitfall，整套流程应记录后用于打磨标准工作流程；AI 已将该要求同步到 workplan-0071 和本 Spark。
+    summary: 用户补充要求 WorkCase 完成后也必须有独立专业子 Agent 检查，最终总结需要写入 Spark 或 Pitfall，整套流程应记录后用于打磨标准工作流程；AI 已将该要求同步到 workcase-0071 和本 Spark。
   - at: '2026-06-18T10:49:13'
-    summary: workplan-0069 的完成后 Code/Web 复审先返回需修复问题，实际拦截了旧对象残留入口；修复后再复审通过。该案例证明完成后专业复审应成为关闭前硬 Gate。
+    summary: workcase-0069 的完成后 Code/Web 复审先返回需修复问题，实际拦截了旧对象残留入口；修复后再复审通过。该案例证明完成后专业复审应成为关闭前硬 Gate。
   - at: '2026-06-18T10:49:13'
-    summary: workplan-0070 的 Code/Web 复审确认文件头部元信息契约和 ldvh_member 边界清楚，同时把 docs/studies/sources 后续 Code 覆盖识别为未来候选而非当前阻塞。
+    summary: workcase-0070 的 Code/Web 复审确认文件头部元信息契约和 ldvh_member 边界清楚，同时把 docs/studies/sources 后续 Code 覆盖识别为未来候选而非当前阻塞。
   - at: '2026-06-18T10:49:13'
-    summary: workplan-0071 将本轮总结分流规则固定为：流程候选和长期风险写 Spark，可复用错误模式写 Pitfall，普通完成证据写 closure_evidence，可执行后续目标另建 WorkPlan；本轮除计划审批门漏检外未新增独立 Pitfall。
+    summary: workcase-0071 将本轮总结分流规则固定为：流程候选和长期风险写 Spark，可复用错误模式写 Pitfall，普通完成证据写 closure_evidence，可执行后续目标另建 WorkCase；本轮除计划审批门漏检外未新增独立 Pitfall。
   - at: '2026-06-18T10:49:13'
-    summary: workplan-0071 的流程治理复审发现 evidence_refs 可指向不存在路径且 fact_validate 未捕获；该问题已在 0071 中修复，后续可考虑为 evidence_refs 增加路径存在性检查。
+    summary: workcase-0071 的流程治理复审发现 evidence_refs 可指向不存在路径且 fact_validate 未捕获；该问题已在 0071 中修复，后续可考虑为 evidence_refs 增加路径存在性检查。
   - at: '2026-06-20T11:21:12+08:00'
-    summary: 用户要求记录当前 WorkPlan 关闭前必须保留专门计划审核子 Agent 和专业审查子 Agent 的意见，并明确记录子 Agent 名字或稳定角色名，以免关闭流程在上下文恢复或后续推进时被遗忘。
+    summary: 用户要求记录当前 WorkCase 关闭前必须保留专门计划审核子 Agent 和专业审查子 Agent 的意见，并明确记录子 Agent 名字或稳定角色名，以免关闭流程在上下文恢复或后续推进时被遗忘。
 source: conversation
 source_detail: 用户要求反思为什么漏掉计划审核和 Human 审批环节，并要求中间问题记录到 Spark。
 priority: P1
@@ -66,15 +66,15 @@ resolved_at: ""
 discard_reason: ""
 related_workareas:
 - workarea-0012
-related_workplans:
-- workplan-0069
-- workplan-0070
-- workplan-0071
-- workplan-0080
+related_workcases:
+- workcase-0069
+- workcase-0070
+- workcase-0071
+- workcase-0080
 related_adrs: []
 related_studies: []
 related_docs:
-- specs/21-WorkPlan-工作计划.md
+- specs/21-WorkCase-工作项.md
 - specs/40-workflow-design-audit-工作流程设计审核.md
 - specs/41-work-model-audit-工作模型审核.md
 - specs/42-specs-audit-规范审核.md

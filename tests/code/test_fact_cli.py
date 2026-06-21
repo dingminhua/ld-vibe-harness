@@ -60,7 +60,7 @@ def write_spark(path: Path, *, resolved_to: dict[str, str] | str = "") -> None:
         "resolved_at": "",
         "discard_reason": "",
         "related_workareas": [],
-        "related_workplans": [],
+        "related_workcases": [],
         "related_adrs": [],
         "related_studies": ["study-0001"],
         "related_docs": [],
@@ -68,14 +68,14 @@ def write_spark(path: Path, *, resolved_to: dict[str, str] | str = "") -> None:
     path.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
 
-def test_create_workplan_uses_current_contract(tmp_path):
-    result = run_cli("create", "workplan", "--title", "Current Plan", "--base-dir", str(tmp_path))
+def test_create_workcase_uses_current_contract(tmp_path):
+    result = run_cli("create", "workcase", "--title", "Current Plan", "--base-dir", str(tmp_path))
 
     assert result.returncode == 0, result.stderr
     path = Path(result.stdout.strip())
     data = read_yaml(path)
-    assert data["id"] == "workplan-0001"
-    assert data["type"] == "workplan"
+    assert data["id"] == "workcase-0001"
+    assert data["type"] == "workcase"
     assert data["status"] == "subagents_plan_reviewing"
     assert "orchestration" in data
     assert isinstance(data["orchestration"]["plan_review"], dict)
@@ -141,7 +141,7 @@ def write_adr(path: Path, *, status: str = "active", archive_reason: str = "", d
         "decision": "Decision.",
         "consequences": "Consequences.",
         "related_workareas": [],
-        "related_workplans": [],
+        "related_workcases": [],
         "related_adrs": [],
         "related_sparks": [],
         "related_rules": [],
@@ -167,7 +167,7 @@ def test_create_adr_defaults_to_active_contract(tmp_path):
     assert data["status"] == "active"
     assert data["date"]
     assert data["decision"] == "待补充。"
-    assert data["related_workplans"] == []
+    assert data["related_workcases"] == []
     assert data["archive_reason"] == ""
     assert data["deprecated_reason"] == ""
     assert "related_objects" not in data
@@ -234,7 +234,7 @@ def test_update_study_rejects_removed_fields(tmp_path):
 
 
 def test_update_rejects_global_related_changes_field(tmp_path):
-    created = run_cli("create", "workplan", "--title", "Stable Plan", "--base-dir", str(tmp_path))
+    created = run_cli("create", "workcase", "--title", "Stable Plan", "--base-dir", str(tmp_path))
     assert created.returncode == 0, created.stderr
     path = Path(created.stdout.strip())
 
@@ -317,8 +317,8 @@ def test_update_source_sparks_writes_list(tmp_path):
     assert validate.returncode == 0, validate.stdout + validate.stderr
 
 
-def test_workplan_transition_requires_review_evidence(tmp_path):
-    created = run_cli("create", "workplan", "--title", "Transition Plan", "--base-dir", str(tmp_path))
+def test_workcase_transition_requires_review_evidence(tmp_path):
+    created = run_cli("create", "workcase", "--title", "Transition Plan", "--base-dir", str(tmp_path))
     assert created.returncode == 0, created.stderr
     path = Path(created.stdout.strip())
     data = read_yaml(path)
@@ -349,10 +349,10 @@ def test_workplan_transition_requires_review_evidence(tmp_path):
     data = read_yaml(path)
     data["verification_evidence"] = (
         "## 验证计划\n\n"
-        "检查当前工作计划是否满足 review_needed 前置验证。\n\n"
+        "检查当前工作项是否满足 review_needed 前置验证。\n\n"
         "## 验证命令\n\n"
         "```bash\n"
-        "python3 code/fact_validate.py ldvh-base/workplans\n"
+        "python3 code/fact_validate.py ldvh-base/workcases\n"
         "```\n\n"
         "## 验证结果\n\n"
         "通过。\n\n"
@@ -378,8 +378,8 @@ def test_workplan_transition_requires_review_evidence(tmp_path):
     assert final["review_requested_at"]
 
 
-def test_workplan_current_transition_chain_sets_gate_fields(tmp_path):
-    created = run_cli("create", "workplan", "--title", "Current Transition Plan", "--base-dir", str(tmp_path))
+def test_workcase_current_transition_chain_sets_gate_fields(tmp_path):
+    created = run_cli("create", "workcase", "--title", "Current Transition Plan", "--base-dir", str(tmp_path))
     assert created.returncode == 0, created.stderr
     path = Path(created.stdout.strip())
 
@@ -418,9 +418,9 @@ def test_workplan_current_transition_chain_sets_gate_fields(tmp_path):
     data = read_yaml(path)
     data["verification_evidence"] = (
         "## 验证计划\n\n"
-        "检查当前 WorkPlan 新状态链路。\n\n"
+        "检查当前 WorkCase 新状态链路。\n\n"
         "## 验证命令\n\n"
-        "python3 code/fact_validate.py ldvh-base/workplans\n\n"
+        "python3 code/fact_validate.py ldvh-base/workcases\n\n"
         "## 验证结果\n\n"
         "通过。\n\n"
         "## 结论\n\n"
@@ -446,6 +446,8 @@ def test_workplan_current_transition_chain_sets_gate_fields(tmp_path):
         "result": {
             "status": "pass",
             "summary": "Fixture can enter result review.",
+            "key_findings": ["未发现范围内问题。"],
+            "required_changes": [],
             "evidence_refs": ["tests/code/test_fact_cli.py"],
         },
         "attested_at": "2026-06-20T10:35:00",
@@ -491,8 +493,8 @@ def test_workplan_current_transition_chain_sets_gate_fields(tmp_path):
     assert final["orchestration"]["result_review"]["human_closure_confirmation"]["decision"] == "close"
 
 
-def test_workplan_current_backward_transition_requires_reason(tmp_path):
-    created = run_cli("create", "workplan", "--title", "Backward Transition Plan", "--base-dir", str(tmp_path))
+def test_workcase_current_backward_transition_requires_reason(tmp_path):
+    created = run_cli("create", "workcase", "--title", "Backward Transition Plan", "--base-dir", str(tmp_path))
     assert created.returncode == 0, created.stderr
     path = Path(created.stdout.strip())
 
@@ -606,11 +608,11 @@ def test_pitfall_transition_requires_archive_reason(tmp_path):
 
 
 def test_list_json_only_reports_current_objects(tmp_path):
-    run_cli("create", "workplan", "--title", "Listed Plan", "--base-dir", str(tmp_path))
+    run_cli("create", "workcase", "--title", "Listed Plan", "--base-dir", str(tmp_path))
 
-    result = run_cli("list", "workplan", "--base-dir", str(tmp_path), "--format", "json")
+    result = run_cli("list", "workcase", "--base-dir", str(tmp_path), "--format", "json")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
     assert payload["summary"]["count"] == 1
-    assert payload["data"]["items"][0]["type"] == "workplan"
+    assert payload["data"]["items"][0]["type"] == "workcase"

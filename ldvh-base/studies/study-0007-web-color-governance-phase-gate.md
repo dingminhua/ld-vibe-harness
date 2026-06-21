@@ -18,7 +18,7 @@ conclusion: |
 related_sparks:
   - spark-0018
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
@@ -57,7 +57,7 @@ archive_reason:
 
 ## 后续分流
 
-- 阶段一冻结结果应回写到 Web 阶段性交付记录或相关 WorkPlan，不在本 Study 内持续维护执行状态。
-- 语义审计应分流到 Web 设计文档或后续 Web 治理 WorkPlan。
+- 阶段一冻结结果应回写到 Web 阶段性交付记录或相关 WorkCase，不在本 Study 内持续维护执行状态。
+- 语义审计应分流到 Web 设计文档或后续 Web 治理 WorkCase。
 - 硬编码清单和受控例外应分流到 Web 文档或专项事实源，明确理由、影响范围和复检时间。
 - token 健康与质量门应分流到 Code/Web 测试或 CI 接入计划，避免只停留在研究结论。

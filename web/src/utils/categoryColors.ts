@@ -1,7 +1,7 @@
 /** Conventional commit 分类颜色映射 */
 export const CATEGORY_COLORS: Record<string, string> = {
   workarea: '#3b82f6',
-  workplan: '#0ea5e9',
+  workcase: '#0ea5e9',
   adr: '#a855f7',
   pitfall: '#ef4444',
   spark: '#eab308',

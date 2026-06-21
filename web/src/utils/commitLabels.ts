@@ -25,7 +25,7 @@ const COMMIT_SCOPE_LABELS: Record<string, { zh: string; en: string }> = {
   tests: { zh: 'Tests', en: 'Tests' },
   config: { zh: '配置', en: 'Config' },
   workarea: { zh: '工作域', en: 'WorkArea' },
-  workplan: { zh: '计划', en: 'WorkPlan' },
+  workcase: { zh: '工作项', en: 'WorkCase' },
   adr: { zh: '决策', en: 'ADR' },
   spark: { zh: '火花', en: 'Spark' },
   study: { zh: '研究', en: 'Study' },

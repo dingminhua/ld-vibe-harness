@@ -13,7 +13,7 @@ import {
   RelatedContentSection,
   StudyReadingLayout,
   WorkAreaReadingLayout,
-  WorkPlanReadingLayout,
+  WorkCaseReadingLayout,
   getAuxiliaryMetaEntries,
   getObjectDetailContentEntries,
   splitRelatedContentEntries,
@@ -33,7 +33,7 @@ const MOBILE_BREAKPOINT = 768;
 
 const OBJECT_TYPE_LABELS: Record<string, { zh: string; en: string }> = {
   workarea: { zh: '工作域', en: 'Work Area' },
-  workplan: { zh: '计划', en: 'Work Plan' },
+  workcase: { zh: '工作项', en: 'WorkCase' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑', en: 'Pitfall' },
   spark: { zh: '火花', en: 'Spark' },
@@ -436,7 +436,7 @@ function ObjectSemanticPreview({
     setLoading(true);
     setSummary(null);
 
-    const summaryType = objectType === 'workarea' ? 'workarea' : 'workplan';
+    const summaryType = objectType === 'workarea' ? 'workarea' : 'workcase';
     fetchObjects(summaryType)
       .then((result) => {
         if (cancelled) return;
@@ -459,8 +459,8 @@ function ObjectSemanticPreview({
   if (objectType === 'workarea') {
     return <WorkAreaReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
   }
-  if (objectType === 'workplan') {
-    return <WorkPlanReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
+  if (objectType === 'workcase') {
+    return <WorkCaseReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
   }
   if (objectType === 'pitfall') {
     const entries = getObjectDetailContentEntries(obj, objectType);
@@ -494,7 +494,7 @@ function ObjectSemanticPreview({
 }
 
 function isObjectDetailLayoutType(objectType: string | undefined) {
-  return objectType === 'workarea' || objectType === 'workplan' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study';
+  return objectType === 'workarea' || objectType === 'workcase' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study';
 }
 
 function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {

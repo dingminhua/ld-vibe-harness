@@ -1,0 +1,124 @@
+id: workcase-0067
+type: workcase
+title: 研究跨环境 Skill 与 Hook 能力承接差异
+goal: |
+  研究跨环境 Skill 与 Hook 能力承接差异
+status: closed
+created: '2026-06-11T00:00:00'
+updated: '2026-06-11T00:00:00'
+workarea: workarea-0012
+priority: P2
+description: 由历史 Task task-0067 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0067 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0067; source path: ldvh-base/taskplans/taskplan-0067-cross-env-skill-hook-carriage.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0067
+    title: 研究跨环境 Skill 与 Hook 能力承接差异
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0067
+    expected_output: |
+      - [x] 找到 ECC 中关于 Skill、Hook、Agent、Rules / Instructions、触发机制、自动化承接或降级补偿的依据
+      - [x] 梳理 Codex App、Trae Work CN、Claude Code CLI 对 Skill、Hook 或等价机制的能力差异
+      - [x] 明确“一个环境的 Skill + Hook 组合效果，在另一个环境只有 Skill 时”应如何表达承接类型
+      - [x] 明确哪些能力可以等价迁移，哪些需要人工降级，哪些需要 Code / Task / 运行投影补偿
+      - [x] 明确能力组合拆分规则：Skill 负责什么、Hook 负责什么、主控 AI 负责什么、Task 承载什么
+      - [x] 明确矩阵中应如何记录组合能力、缺失能力、替代能力、待补齐事项和验证证据
+      - [x] 明确是否需要修改 04.03、04.06、11.01、01 目录说明或相关 Code 校验
+      - [x] 输出后续正式修改 specs / Code / tests 的 Task 边界
+    status: done
+    result_summary: |-
+      verification: ## 验证计划
+
+      - 只读检索 ECC 相关 refs、research、specs 或历史材料，优先查找能力适配、触发机制、Hook、Skill、自动化承接、降级和运行投影相关内容。
+      - 对照 LDVH `skills/`、`hooks/`、`agents/`、`rules/` 资产定位，以及 04.03、04.06、11.01 当前表述，形成跨环境能力差异处理方案。
+      - 至少给出一个具体案例：Codex 的 Skill + Hook 组合如何在 Trae 只有 Skill 的情况下承接或降级。
+
+      ## 验证结果
+
+      2026-06-11 已完成只读研究，覆盖 ECC 预处理材料、ECC 源资料、LDVH 04/11 规范与 Trae/Codex/Claude Code refs。
+
+      结论：Codex 的 Skill + Hook 组合迁到 Trae Skill-only 时，不能声明等价承接。应拆分为 Skill 承接流程、Rules / Instructions 承接入口约束、Command / Code / CI 承接显式校验、Human Gate 承接授权、Task / open_items 记录缺口；矩阵类型应标为“指令承接”或“人工降级”，最多在存在薄入口和验证证据时标为“适配承接”。
+
+      Skill 是可复用任务能力或流程说明，不提供事件级强制触发；Hook 是事件驱动自动化，适合工具执行前后或会话生命周期节点；Rules / Instructions 适合入口可见约束；Agent 适合独立上下文和专项审查；Code / Command / CI 适合把 Hook 原本做的确定性检查迁成显式命令、校验脚本或 CI。
+
+      具体案例：Codex/Claude Code 风格的 verification-loop Skill + Stop/PostToolUse Hook，在 Trae Skill-only 中应改为 Trae Skill 说明最终响应前验收流程，配合 Rule 要求修改后显式运行校验，可选 Command 封装 `/verify-before-final`，并明确这不是 Stop/PostToolUse Hook，不会自动触发。
+
+      后续 Task 边界：修改 04.03，补充跨环境组合能力必须拆分到具体能力面；修改 04.06，新增组合能力矩阵卡片或字段级校验要求；修改 11.01，补充第三方 Skill 不得冒充 Hook/自动触发能力；扩展 Code 校验，检查 Hook/lifecycle 承接项是否包含承接降级、不可模拟能力、验证命令或待补齐事项。
+
+      closure_evidence: ## 验证结果
+
+      已完成跨环境 Skill / Hook 能力承接差异只读研究，明确 Skill-only 不能等价承接 Skill + Hook 组合效果，必须拆分到 Skill、Rules / Instructions、Command / Code / CI、Human Gate、Task / open_items 等能力面。
+
+      ## 结论
+
+      本 Task 只产出研究结论，不直接修改 04.03、04.06、11.01 或 Code 校验。后续应通过独立 Task 把组合能力拆分规则写入规范和校验，且不得把 Trae Skill-only 标为 Hook 等价或原生承接。
+    evidence_refs:
+    - specs/01-目录说明.md
+    - specs/04.03-环境入口适配与部署规范.md
+    - specs/21-WorkCase-工作项.md
+    - code/specs_validate.py
+    - tests/code/test_specs_validate.py
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  历史任务计划迁移聚合证据：
+  - task-0067: ## 验证结果
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  历史任务计划迁移聚合证据：
+  - task-0067: ## 验证结果
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+review_requested_at: '2026-06-11T00:00:00'
+closed_at: '2026-06-11T00:00:00'
+related_docs:
+- specs/01-目录说明.md
+- specs/04.03-环境入口适配与部署规范.md
+- specs/04.03-环境入口适配与部署规范.md
+- specs/21-WorkCase-工作项.md
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

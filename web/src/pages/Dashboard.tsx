@@ -13,20 +13,20 @@ import { usePanel } from '@/utils/panelContext';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
 import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
-import { WORKPLAN_CURRENT_STATUSES } from '@/utils/workplanStatus';
+import { WORKCASE_CURRENT_STATUSES } from '@/utils/workcaseStatus';
 
 const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
   workarea: 'nav.workareas',
-  workplan: 'nav.workplans',
+  workcase: 'nav.workcases',
   adr: 'nav.adrs',
   pitfall: 'nav.pitfalls',
   spark: 'nav.sparks',
   study: 'nav.studies',
 };
 
-const TYPE_ORDER = ['workarea', 'workplan', 'adr', 'pitfall', 'spark', 'study'];
+const TYPE_ORDER = ['workarea', 'workcase', 'adr', 'pitfall', 'spark', 'study'];
 
-const HIGHLIGHT_STATUSES = new Set([...WORKPLAN_CURRENT_STATUSES.filter((status) => status !== 'closed'), 'verifying', 'review_needed']);
+const HIGHLIGHT_STATUSES = new Set([...WORKCASE_CURRENT_STATUSES.filter((status) => status !== 'closed'), 'verifying', 'review_needed']);
 
 function getLocalizedTitle(item: { id: string; title?: string; title_en?: string; title_zh?: string }, locale: string): string {
   if (locale === 'zh') return item.title_zh || item.title || item.title_en || item.id;

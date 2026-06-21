@@ -21,7 +21,7 @@ resolved_to: ""
 resolved_at: ""
 discard_reason: ""
 related_workareas: []
-related_workplans: []
+related_workcases: []
 related_adrs: []
 related_studies:
   - study-0007

@@ -10,9 +10,9 @@ from .index import SpecsChecker
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SPECS_DIR = PROJECT_ROOT / "specs"
 FIELD_REGISTRY_SPEC_NAME = "05.03-工作模型字段注册与消费规范.md"
-WORKPLAN_SPEC_NAME = "21-WorkPlan-工作计划.md"
+WORKCASE_SPEC_NAME = "21-WorkCase-工作项.md"
 REQUIRED_REGISTRY_SECTION_TITLES = {"通用字段注册", "对象特有字段注册"}
-REGISTRY_SECTION_TITLES = {*REQUIRED_REGISTRY_SECTION_TITLES, "WorkPlan 试点字段注册"}
+REGISTRY_SECTION_TITLES = {*REQUIRED_REGISTRY_SECTION_TITLES, "WorkCase 试点字段注册"}
 
 REGISTRY_REQUIRED_COLUMNS = [
     "field_path",
@@ -46,7 +46,7 @@ ALLOWED_REF_KINDS = {
     "none",
     "object_ref",
     "workarea_ref",
-    "workplan_ref",
+    "workcase_ref",
     "commit_ref",
     "doc_path",
     "mixed_ref",
@@ -98,8 +98,8 @@ def default_spec_path():
     return SPECS_DIR / FIELD_REGISTRY_SPEC_NAME
 
 
-def workplan_spec_path():
-    return SPECS_DIR / WORKPLAN_SPEC_NAME
+def workcase_spec_path():
+    return SPECS_DIR / WORKCASE_SPEC_NAME
 
 
 def active_work_model_scope_owners():
@@ -257,7 +257,7 @@ def extract_markdown_tables(path):
     return tables
 
 
-def extract_workplan_field_paths(path):
+def extract_workcase_field_paths(path):
     field_paths = set()
     for table in extract_markdown_tables(path):
         header = table.get("header") or []
@@ -400,21 +400,21 @@ def check_registry_table(path, section_title, table, seen_keys, scope_owners=Non
     return issues
 
 
-def check_workplan_coverage(path, tables):
+def check_workcase_coverage(path, tables):
     issues = []
-    workplan_path = path.parent / WORKPLAN_SPEC_NAME
-    if not workplan_path.exists():
+    workcase_path = path.parent / WORKCASE_SPEC_NAME
+    if not workcase_path.exists():
         return issues
 
     registered_paths = registered_field_paths(tables)
-    workplan_paths = extract_workplan_field_paths(workplan_path)
-    for field_path in sorted(workplan_paths - registered_paths):
+    workcase_paths = extract_workcase_field_paths(workcase_path)
+    for field_path in sorted(workcase_paths - registered_paths):
         issues.append(
             Issue(
                 path,
                 1,
-                f"WorkPlan 字段未在 05.03 注册: {field_path}",
-                code="FIELD_REGISTRY_WORKPLAN_FIELD_MISSING",
+                f"WorkCase 字段未在 05.03 注册: {field_path}",
+                code="FIELD_REGISTRY_WORKCASE_FIELD_MISSING",
             )
         )
     return issues
@@ -435,7 +435,7 @@ def check_file(path):
             continue
         issues.extend(check_registry_table(path, section_title, table, seen_keys, scope_owners))
 
-    issues.extend(check_workplan_coverage(path, tables))
+    issues.extend(check_workcase_coverage(path, tables))
     return issues
 
 

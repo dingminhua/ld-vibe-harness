@@ -74,7 +74,7 @@ Human Gate 记录：
 - 时间：
   2026-06-10
 - 决策：暂缓
-- 范围：WorkPlan 和 docs/studies/18
+- 范围：WorkCase 和 docs/studies/18
 - 约束：测试通过，后续仍需 Web
 """,
     )

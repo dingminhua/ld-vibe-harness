@@ -50,16 +50,16 @@ ldvh_member:
 
 WorkArea / 工作域是长期存在的工作范围事实，用于承载一个项目中的系统领域、治理范围、产品方向、能力区或持续维护面。工作域回答“这一类工作属于哪里”，不回答“一次目标是否已经完成”。
 
-工作域是上游长期范围对象。一次性目标、阶段性目标、执行编排和关闭判断应由 WorkPlan / 工作计划承载，不应由工作域承载。
+工作域是上游长期范围对象。一次性目标、阶段性目标、执行编排和关闭判断应由 WorkCase / 工作项承载，不应由工作域承载。
 
 ### 1.1 工作域准入条件
 
 一个范围满足以下条件之一时，应考虑形成工作域：
 
-1. 需要长期沉淀上下文、约束、相关工作计划和历史决策；
-2. 后续会持续产生多个工作计划；
+1. 需要长期沉淀上下文、约束、相关工作项和历史决策；
+2. 后续会持续产生多个工作项；
 3. 代表系统、产品、规范、Code 工具、Web、规范规则、流程或治理的稳定范围；
-4. 不结构化会导致工作计划缺少上游范围或上下文归属；
+4. 不结构化会导致工作项缺少上游范围或上下文归属；
 5. 需要在 Web、Code 工具或规范中作为长期筛选和聚合维度。
 
 ### 1.2 不应形成工作域的内容
@@ -72,7 +72,7 @@ WorkArea / 工作域是长期存在的工作范围事实，用于承载一个项
 4. 只有验收标准、关闭证据或执行步骤的事项；
 5. 已由现有工作域覆盖的重复范围。
 
-上述内容应进入 WorkPlan、Spark、ADR、docs 或当前对话上下文。
+上述内容应进入 WorkCase、Spark、ADR、docs 或当前对话上下文。
 
 ---
 ## 2. 事实源边界
@@ -103,7 +103,7 @@ ldvh-base/workareas/workarea-{NNNN}-short-title.yaml
 
 | 状态 | 含义 |
 |---|---|
-| `active` | 当前有效，可承载新的工作计划 |
+| `active` | 当前有效，可承载新的工作项 |
 | `archived` | 暂不作为当前工作范围使用，但历史事实保留 |
 
 工作域没有 `completed`、`review_needed` 或 `closed`。工作域被重新启用时，应从 `archived` 回到 `active`，不是重开完成态。
@@ -119,24 +119,24 @@ archived -> active
 
 | 流转 | 触发条件 | 说明 |
 |---|---|---|
-| `active` -> `archived` | 该范围暂不再承载新的工作计划 | 应填写 `archive_reason` |
+| `active` -> `archived` | 该范围暂不再承载新的工作项 | 应填写 `archive_reason` |
 | `archived` -> `active` | 该范围重新进入当前工作 | 应记录恢复原因 |
 
 ---
 ## 4. 对象关系
 
-### 4.1 工作域与工作计划
+### 4.1 工作域与工作项
 
-工作域通过 WorkPlan 的 `workarea` 字段被引用。工作计划必须归属一个工作域。
+工作域通过 WorkCase 的 `workarea` 字段被引用。工作项必须归属一个工作域。
 
 规则如下：
 
 1. 工作域不直接管理执行项；
 2. 工作域不保存执行编排、执行步骤或关闭证据；
-3. 工作域可以通过派生展示聚合其下工作计划的状态、产物和风险；
-4. 工作域的 `workplans` 字段记录归属本工作域的 WorkPlan ID 列表，与 WorkPlan 的 `workarea` 字段构成双向引用；Code 发现双向引用不一致时应报告诊断；
-5. 工作计划关闭后不改变工作域状态；
-6. 一个工作域可以长期产生多个工作计划。
+3. 工作域可以通过派生展示聚合其下工作项的状态、产物和风险；
+4. 工作域的 `workcases` 字段记录归属本工作域的 WorkCase ID 列表，与 WorkCase 的 `workarea` 字段构成双向引用；Code 发现双向引用不一致时应报告诊断；
+5. 工作项关闭后不改变工作域状态；
+6. 一个工作域可以长期产生多个工作项。
 
 ### 4.2 工作域与 ADR、Spark、Pitfall
 
@@ -177,7 +177,7 @@ ADR、Spark、Pitfall 可以引用工作域，用于表达某条决策、火花�
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_sparks` | 关联火花 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `workplans` | 所属 WorkPlan ID 列表 | list[string] | 否 | 默认为空列表；由 WorkPlan 的 `workarea` 反向聚合 | Reference | AI、Code、Web |
+| `workcases` | 所属 WorkCase ID 列表 | list[string] | 否 | 默认为空列表；由 WorkCase 的 `workarea` 反向聚合 | Reference | AI、Code、Web |
 | `archive_reason` | — | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Code、Web |
 
 ### 6.1 YAML 示例
@@ -201,13 +201,13 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-workplans: []
+workcases: []
 ```
 
 ---
 ## 7. 事实源回写与证据留存
 
-工作域变化应回写 YAML 实例。因某个工作计划完成而产生的执行证据、验证证据或关闭判断，不得回写为工作域完成证据。
+工作域变化应回写 YAML 实例。因某个工作项完成而产生的执行证据、验证证据或关闭判断，不得回写为工作域完成证据。
 
 ---
 ## 8. 适配边界
@@ -216,8 +216,8 @@ Code 应检查：
 
 1. 文件名、ID、type、status 合法；
 2. `archived` 状态必须提供 `archive_reason`；
-3. 工作域不出现工作计划执行项的执行状态字段；
-4. `workplans` 中每个 WorkPlan 必须存在且 `workarea` 指回当前工作域；
+3. 工作域不出现工作项执行项的执行状态字段；
+4. `workcases` 中每个 WorkCase 必须存在且 `workarea` 指回当前工作域；
 5. 引用字段格式和路径存在性。
 
 Web 应显示工作域列表和详情，但不得把工作域展示为“待关闭”对象。
@@ -228,8 +228,8 @@ Web 应显示工作域列表和详情，但不得把工作域展示为“待关�
 | 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 上位约束承接要求 | 工作域必须遵守 05、20 和本文定义的长期范围边界 | 05、20、本文、Human Gate | 工作模型治理 | 创建、迁移、归档或恢复工作域时 |
-| 确定性执行要求 | 工作域不得承载一次性目标完成判断 | Validator、Web 展示、工作计划规范 | 事实模型校验 | 工作域字段或状态变化时 |
-| 生命周期触发要求 | 工作域规范变化后应检查 WorkPlan、Code、Web 和事实实例 | Code 测试、Web 检查、事实校验 | 触发保障 | 字段、状态或事实源路径变化时 |
+| 确定性执行要求 | 工作域不得承载一次性目标完成判断 | Validator、Web 展示、工作项规范 | 事实模型校验 | 工作域字段或状态变化时 |
+| 生命周期触发要求 | 工作域规范变化后应检查 WorkCase、Code、Web 和事实实例 | Code 测试、Web 检查、事实校验 | 触发保障 | 字段、状态或事实源路径变化时 |
 
 ---
 ## 10. 检查要求

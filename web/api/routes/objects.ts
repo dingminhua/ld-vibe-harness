@@ -5,11 +5,11 @@
 import { Router, type Request, type Response } from 'express'
 import { listObjects, showObject, OBJECT_TYPES, readFactData, type ObjectType } from '../services/facts.js'
 import {
-  isWorkPlanActiveStatus,
-  isWorkPlanHumanConfirmingStatus,
-  isWorkPlanTerminalStatus,
-  WORKPLAN_STATUS_ORDER,
-} from '../../src/utils/workplanStatus.ts'
+  isWorkCaseActiveStatus,
+  isWorkCaseHumanConfirmingStatus,
+  isWorkCaseTerminalStatus,
+  WORKCASE_STATUS_ORDER,
+} from '../../src/utils/workcaseStatus.ts'
 
 const router = Router()
 
@@ -45,7 +45,7 @@ interface RelatedObjectSummary {
   evidenceRefs?: string[]
 }
 
-interface RelatedPlanSummary extends RelatedObjectSummary {
+interface RelatedWorkCaseSummary extends RelatedObjectSummary {
   workarea?: string
   executionItems?: RelatedObjectSummary[]
   executionItemTotal?: number
@@ -70,7 +70,7 @@ interface StatusOption {
 const RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected', 'deprecated'])
 
 const STATUS_PRIORITY: Record<string, number> = {
-  ...Object.fromEntries(WORKPLAN_STATUS_ORDER.map((status, index) => [status, index])),
+  ...Object.fromEntries(WORKCASE_STATUS_ORDER.map((status, index) => [status, index])),
   needs_human_gate: 10,
   verifying: 11,
   open: 12,
@@ -150,7 +150,7 @@ function toRelatedSummary(item: ListedObject, type = item.type): RelatedObjectSu
   }
 }
 
-function toExecutionItemSummary(value: unknown, plan: ListedObject, index: number): RelatedObjectSummary | null {
+function toExecutionItemSummary(value: unknown, workcase: ListedObject, index: number): RelatedObjectSummary | null {
   if (!isRecord(value)) return null
   const id = toStringValue(value.id) || `execution-item-${index + 1}`
   const status = toStringValue(value.status, 'unknown')
@@ -161,8 +161,8 @@ function toExecutionItemSummary(value: unknown, plan: ListedObject, index: numbe
     type: 'execution_item',
     status,
     title,
-    path: plan.path,
-    updated: plan.updated,
+    path: workcase.path,
+    updated: workcase.updated,
     role: toStringValue(value.role) || undefined,
     mode: toStringValue(value.mode) || undefined,
     expectedOutput: toStringValue(value.expected_output) || undefined,
@@ -243,10 +243,10 @@ async function listObjectSummaries(type: ObjectType, baseDir?: string): Promise<
   return getResultItems(result)
 }
 
-export async function buildPlanSummaries(planItems: ListedObject[]): Promise<RelatedPlanSummary[]> {
-  if (planItems.length === 0) return []
+export async function buildWorkCaseSummaries(workcaseItems: ListedObject[]): Promise<RelatedWorkCaseSummary[]> {
+  if (workcaseItems.length === 0) return []
 
-  return planItems.map((item) => {
+  return workcaseItems.map((item) => {
     const data = readFactData(item.path)
     const orchestration = isRecord(data.orchestration) ? data.orchestration : {}
     const executionItems = Array.isArray(orchestration.execution_items)
@@ -257,7 +257,7 @@ export async function buildPlanSummaries(planItems: ListedObject[]): Promise<Rel
     const successCriteriaProgress = getChecklistProgress(data.success_criteria)
 
     return {
-      ...toRelatedSummary(item, 'workplan'),
+      ...toRelatedSummary(item, 'workcase'),
       workarea: toStringValue(data.workarea) || undefined,
       executionItems: sortExecutionItems(executionItems),
       executionItemTotal: executionItems.length,
@@ -277,35 +277,35 @@ export async function buildPlanSummaries(planItems: ListedObject[]): Promise<Rel
 }
 
 async function enrichWorkareas(items: ListedObject[]): Promise<ListedObject[]> {
-  const workPlanItems = await listObjectSummaries('workplan')
-  const plans = await buildPlanSummaries(workPlanItems)
-  const plansByWorkarea = new Map<string, RelatedPlanSummary[]>()
+  const workcaseItems = await listObjectSummaries('workcase')
+  const workcases = await buildWorkCaseSummaries(workcaseItems)
+  const workcasesByWorkarea = new Map<string, RelatedWorkCaseSummary[]>()
 
-  for (const plan of plans) {
-    if (!plan.workarea) continue
-    const current = plansByWorkarea.get(plan.workarea) ?? []
-    current.push(plan)
-    plansByWorkarea.set(plan.workarea, current)
+  for (const workcase of workcases) {
+    if (!workcase.workarea) continue
+    const current = workcasesByWorkarea.get(workcase.workarea) ?? []
+    current.push(workcase)
+    workcasesByWorkarea.set(workcase.workarea, current)
   }
 
   return items.map((item) => {
-    const relatedPlans = sortByUpdatedDesc(plansByWorkarea.get(item.id) ?? [])
+    const relatedWorkcases = sortByUpdatedDesc(workcasesByWorkarea.get(item.id) ?? [])
     return {
       ...item,
-      plans: relatedPlans,
-      planTotal: relatedPlans.length,
-      planClosed: relatedPlans.filter((plan) => isWorkPlanTerminalStatus(plan.status)).length,
-      planReviewNeeded: relatedPlans.filter((plan) => isWorkPlanHumanConfirmingStatus(plan.status)).length,
-      planActive: relatedPlans.filter((plan) => isWorkPlanActiveStatus(plan.status)).length,
-      planRisk: countMatching(relatedPlans, RISK_STATUSES),
-      planByStatus: countByStatus(relatedPlans),
+      workcases: relatedWorkcases,
+      workcaseTotal: relatedWorkcases.length,
+      workcaseClosed: relatedWorkcases.filter((workcase) => isWorkCaseTerminalStatus(workcase.status)).length,
+      workcaseReviewNeeded: relatedWorkcases.filter((workcase) => isWorkCaseHumanConfirmingStatus(workcase.status)).length,
+      workcaseActive: relatedWorkcases.filter((workcase) => isWorkCaseActiveStatus(workcase.status)).length,
+      workcaseRisk: countMatching(relatedWorkcases, RISK_STATUSES),
+      workcaseByStatus: countByStatus(relatedWorkcases),
     }
   })
 }
 
-async function enrichWorkPlans(items: ListedObject[]): Promise<ListedObject[]> {
-  const planSummaries = await buildPlanSummaries(items)
-  const summariesById = new Map(planSummaries.map((plan) => [plan.id, plan]))
+async function enrichWorkCases(items: ListedObject[]): Promise<ListedObject[]> {
+  const workcaseSummaries = await buildWorkCaseSummaries(items)
+  const summariesById = new Map(workcaseSummaries.map((workcase) => [workcase.id, workcase]))
   const workareaItems = await listObjectSummaries('workarea')
   const workareasById = new Map(workareaItems.map((item) => [item.id, item]))
 
@@ -393,8 +393,8 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
   if (isRecord(result.data) && type === 'workarea') {
     enrichedItems = await enrichWorkareas(items)
   }
-  if (isRecord(result.data) && type === 'workplan') {
-    enrichedItems = await enrichWorkPlans(items)
+  if (isRecord(result.data) && type === 'workcase') {
+    enrichedItems = await enrichWorkCases(items)
   }
   if (isRecord(result.data) && type === 'adr') {
     enrichedItems = await enrichAdrs(items)
@@ -444,8 +444,8 @@ router.get('/:type/:id', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
-  // WorkPlan 派生阅读材料：计划自身材料 + execution_items 的输入和证据引用。
-  if (type === 'workplan' && result.data) {
+  // WorkCase 派生阅读材料：工作项自身材料 + execution_items 的输入和证据引用。
+  if (type === 'workcase' && result.data) {
     const relatedDocsSet = new Set<string>()
     const relatedAdrsSet = new Set<string>()
     const relatedSparksSet = new Set<string>()

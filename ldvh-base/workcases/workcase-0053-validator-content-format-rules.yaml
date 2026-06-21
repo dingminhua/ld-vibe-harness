@@ -1,0 +1,107 @@
+id: workcase-0053
+type: workcase
+title: validator content format rules
+goal: |
+  validator content format rules
+status: closed
+created: '2026-06-06T17:40:10.845698'
+updated: '2026-06-06T18:30:40.647886'
+workarea: workarea-0004
+priority: P2
+description: 由历史 Task task-0053 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0053 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0053; source path: ldvh-base/taskplans/taskplan-0053-validator-content-format-rules.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0053
+    title: validator content format rules
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0053
+    expected_output: |
+      - [x] 新增长文本字段 YAML 块标量提示：description 等字段含冒号/换行但未用 | 时报 warning
+      - [x] 新增内部路径存在性校验：related_docs / deliverables 中相对路径不存在时报 error
+      - [x] 新增危险 HTML 拦截：长文本字段包含 script/iframe/事件处理器时报 error
+      - [x] 新增 Evidence 字段格式提示：verification / closure_evidence 非空但缺少验证结果或结论结构时报 warning
+      - [x] 运行事实源校验通过
+    status: done
+    result_summary: |-
+      verification: ## 验证结果
+
+      历史补齐：该 Task 在早期关闭时未单独维护 verification 字段；本次状态边界收敛补齐该字段。具体验证结果和证据见 closure_evidence。
+
+      ## 结论
+
+      历史关闭记录有效，当前补齐 verification 字段以满足关闭边界。
+
+      closure_evidence: ## 验证结果
+
+      - validate_long_text_block_scalar 已实现并集成（fact_validate.py 第184-211行）
+      - validate_path_fields_exist 已实现并集成（第214-240行）
+      - validate_dangerous_html 已实现并集成（第243-259行）
+      - validate_evidence_format 已实现并集成（第262-277行）
+      - 事实源校验运行正常，无新增异常
+
+      ## 结论
+
+      4项校验增强全部实现，fact_validate.py 功能完整运行。
+    evidence_refs:
+    - code/fact_validate.py
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  历史任务计划迁移聚合证据：
+  - task-0053: ## 验证结果
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  历史任务计划迁移聚合证据：
+  - task-0053: ## 验证结果
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+review_requested_at: '2026-06-06T18:30:40.647893'
+closed_at: '2026-06-06T18:30:40.647893'
+related_docs: []
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

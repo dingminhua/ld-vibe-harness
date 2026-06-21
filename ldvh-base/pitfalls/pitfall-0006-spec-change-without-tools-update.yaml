@@ -54,7 +54,7 @@ verification: |
 
   后续规格变更中，AI 已在维护入口和正式规范中加入规格变更与 Code/Web 联动约束；涉及对象契约和字段格式变化时，已同步检查并更新 `code/fact_validate.py`、相关测试和 Web 文档。
 
-  本次迁移验证字段格式时，Code 检查已能对 WorkPlan `verification_evidence` / `closure_evidence` 与 Pitfall `verification` 的四段式结构给出诊断；相关测试已更新并通过。
+  本次迁移验证字段格式时，Code 检查已能对 WorkCase `verification_evidence` / `closure_evidence` 与 Pitfall `verification` 的四段式结构给出诊断；相关测试已更新并通过。
 
   ## 结论
 

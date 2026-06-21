@@ -1,0 +1,115 @@
+id: workcase-0006
+type: workcase
+title: PyTools 承接生产对象增删改查
+goal: |
+  PyTools 承接生产对象增删改查
+status: closed
+created: '2026-06-18T07:40:04'
+updated: '2026-06-18T07:40:04'
+workarea: workarea-0003
+priority: P2
+description: 由历史 Task task-0006 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [x] 关联任务 task-0006 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0006; source path: ldvh-base/taskplans/taskplan-0006-pytools-crud.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0006
+    title: PyTools 承接生产对象增删改查
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0006
+    expected_output: |
+      - [x] tools/ 下有统一的 fact_model_cli.py 或等价入口，支持 create/transition/delete 子命令
+      - [x] create 命令对 7 类对象生成符合 Contract 的 YAML 骨架
+      - [x] transition 命令校验状态流转合法性后更新 status 和 updated 字段
+      - [x] delete 命令校验对象状态后删除 YAML 文件
+      - [x] ADR create 封装 ADR YAML + Change YAML 为原子操作
+      - [x] ldvh-intake Skill 调用 PyTools create 命令而非直接写 YAML
+      - [x] ldvh-close Skill 调用 PyTools transition 命令而非直接写 YAML
+      - [x] 现有 tests/tools/ 下有对应测试用例
+    status: done
+    result_summary: |-
+      verification: python3 -m pytest tests/tools/ && python3 tools/check_fact_model.py ldvh-base/
+      ## 验证结果
+
+      22 个测试用例全部通过；Fact Validator 校验通过；fact_model_cli.py create/transition/delete 三个子命令覆盖 7 类对象。
+
+      ## 结论
+
+      验证通过。
+
+      closure_evidence: fact_model_cli.py 已实现 create/transition/delete 三个子命令，覆盖 7 类对象。
+      ADR create 原子创建关联 Change YAML。
+      ldvh-intake 和 ldvh-close Skill 已更新为调用 PyTools 命令。
+      22 个测试用例全部通过。
+      ## 验证结果
+
+      fact_model_cli.py 已实现 create/transition/delete 三个子命令覆盖 7 类对象；ADR create 原子创建关联 Change YAML；ldvh-intake/ldvh-close Skill 已更新为调用 PyTools 命令；22 个测试用例全部通过。
+
+      ## 结论
+
+      任务完成，人工确认关闭。
+    evidence_refs:
+    - specs/07-Code确定性执行实现规范.md
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 验证证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0006: fact_model_cli.py 已实现 create/transition/delete 三个子命令，覆盖 7 类对象。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+closure_evidence: |
+  ## 验证计划
+
+  历史证据格式规范化：检查原 关闭证据 是否保留可复查的验证对象、结果或关闭判断；本次仅补齐四段式结构，不新增或改变历史事实语义。
+
+  ## 验证命令
+
+  历史记录未单独记录完整的验证命令；如原字段包含命令、脚本、检查入口或人工检查动作，保留在下方原始证据摘录中。
+
+  ## 验证结果
+
+  原始证据摘录：
+
+  原文标题：验证结果
+
+  历史任务计划迁移聚合证据：
+  - task-0006: fact_model_cli.py 已实现 create/transition/delete 三个子命令，覆盖 7 类对象。
+
+  ## 结论
+
+  本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
+review_requested_at: '2026-06-18T07:40:04'
+closed_at: '2026-06-18T07:40:04'
+related_docs: []
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

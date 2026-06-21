@@ -1,0 +1,51 @@
+id: workcase-0055
+type: workcase
+title: Hermes Agent源码级调用任务机制调研
+goal: |
+  Hermes Agent源码级调用任务机制调研
+status: active
+created: '2026-06-06T09:58:59.665870'
+updated: '2026-06-06T18:39:45.228054'
+workarea: workarea-0009
+priority: P2
+description: 由历史 Task task-0055 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
+  为准，避免复制多个权威事实。
+success_criteria: '- [ ] 关联任务 task-0055 满足其 acceptance、verification 和 closure_evidence。'
+source: |-
+  Legacy TaskPlan migration from taskplan-0055; source path: ldvh-base/taskplans/taskplan-0055-hermes-agent-code-research.yaml
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+orchestration:
+  mode: single
+  execution_items:
+  - id: task-0055
+    title: Hermes Agent源码级调用任务机制调研
+    role: legacy-task
+    mode: single
+    input_refs:
+    - task-0055
+    expected_output: |
+      - [ ] NousResearch/hermes-agent 源码已下载并记录真实源码位置与提交信息
+      - [ ] 已调研 Hermes Agent 的调用任务生成、执行编排、工具调用、记忆/技能/上下文机制
+      - [ ] 已产出可进入 LDVH 参考文档体系的调研报告
+      - [ ] 报告内容基于源码事实，不以猜测或营销描述替代源码证据
+      - [ ] 运行事实源校验并确认无本任务新增错误
+    status: in_progress
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: Legacy Task is not closed; keep WorkCase active after migration.
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: ''
+closure_evidence: ''
+review_requested_at: ''
+closed_at: ''
+related_docs: []
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

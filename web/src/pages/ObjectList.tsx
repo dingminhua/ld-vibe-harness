@@ -9,24 +9,24 @@ import ObjectSignalBadges from '@/components/ObjectSignalBadges';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { ExecutionFlowBar, ExecutionFlowLegend, ExecutionFlowMarker } from '@/components/ExecutionFlowStatus';
-import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type RelatedPlanSummary } from '@/utils/api';
+import { fetchObjects, type ObjectItem, type ObjectStatusOption, type RelatedObjectSummary, type RelatedWorkCaseSummary } from '@/utils/api';
 import { formatDateTime } from '@/utils/dateFormat';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
-import { getExecutionFlowLabel, getExecutionFlowTone, sortPlanExecutionItems } from '@/utils/executionFlowStatus';
+import { getExecutionFlowLabel, getExecutionFlowTone, sortWorkCaseExecutionItems } from '@/utils/executionFlowStatus';
 import {
-  isWorkPlanClosureConfirmingStatus,
-  isWorkPlanHumanConfirmingStatus,
-  isWorkPlanTerminalStatus,
-} from '@/utils/workplanStatus';
+  isWorkCaseClosureConfirmingStatus,
+  isWorkCaseHumanConfirmingStatus,
+  isWorkCaseTerminalStatus,
+} from '@/utils/workcaseStatus';
 
 type LocalizedTitleItem = Pick<ObjectItem, 'id'> & Partial<Pick<ObjectItem, 'title' | 'title_en' | 'title_zh'>>;
 
 type OpenEvent = MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>;
 type Translate = ReturnType<typeof useI18n>['t'];
-type PlanRecordState = 'recorded' | 'missing';
+type WorkCaseRecordState = 'recorded' | 'missing';
 type StatusReason = { label: string; text: string; missing?: boolean };
 
 const TITLE_ACCENT_CLASS: Record<string, string> = {
@@ -159,29 +159,29 @@ function handleKeyboardOpen(event: KeyboardEvent<HTMLElement>, onOpen: () => voi
   }
 }
 
-function getPlanRecordStateLabel(state: PlanRecordState, t: Translate): string {
+function getWorkCaseRecordStateLabel(state: WorkCaseRecordState, t: Translate): string {
   if (state === 'recorded') return t('objectList.hasRecord');
   return t('objectList.missingRecord');
 }
 
-function getPlanRecordClassName(state: PlanRecordState): string {
+function getWorkCaseRecordClassName(state: WorkCaseRecordState): string {
   if (state === 'recorded') return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500';
   return 'border-red-500/60 bg-red-500/15 text-red-400 ring-1 ring-inset ring-red-500/20';
 }
 
-function getPlanRecordIcon(state: PlanRecordState) {
+function getWorkCaseRecordIcon(state: WorkCaseRecordState) {
   if (state === 'recorded') return CheckCircle2;
   return CircleAlert;
 }
 
-function PlanRecordItem({ label, state, t }: { label: string; state: PlanRecordState; t: Translate }) {
-  const stateLabel = getPlanRecordStateLabel(state, t);
-  const StateIcon = getPlanRecordIcon(state);
+function WorkCaseRecordItem({ label, state, t }: { label: string; state: WorkCaseRecordState; t: Translate }) {
+  const stateLabel = getWorkCaseRecordStateLabel(state, t);
+  const StateIcon = getWorkCaseRecordIcon(state);
   return (
     <span
       aria-label={`${label} ${stateLabel}`}
       title={`${label} ${stateLabel}`}
-      className={`ldvh-chip inline-flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 ${getPlanRecordClassName(state)}`}
+      className={`ldvh-chip inline-flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1 ${getWorkCaseRecordClassName(state)}`}
     >
       <ClipboardCheck size={12} className="shrink-0" />
       <span className="min-w-0 truncate">{label}</span>
@@ -217,7 +217,7 @@ const workAreaSectionToneClass = {
   },
 };
 
-function WorkAreaPlanRow({
+function WorkAreaWorkCaseRow({
   item,
   locale,
   tone,
@@ -225,7 +225,7 @@ function WorkAreaPlanRow({
   getStatus,
   onOpen,
 }: {
-  item: RelatedPlanSummary;
+  item: RelatedWorkCaseSummary;
   locale: string;
   tone: keyof typeof workAreaSectionToneClass;
   t: Translate;
@@ -233,7 +233,7 @@ function WorkAreaPlanRow({
   onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
 }) {
   const toneClass = workAreaSectionToneClass[tone];
-  const planType = item.type || 'workplan';
+  const workcaseType = item.type || 'workcase';
   const flowItems = item.executionItems ?? [];
 
   return (
@@ -247,8 +247,8 @@ function WorkAreaPlanRow({
       <div className="flex min-w-0 items-center gap-2">
         <div className="min-w-0 flex-1">
           <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${toneClass.hoverText}`}>
-            <PriorityIcon source={item} type={planType} locale={locale} size="sm" />
-            <ObjectTypeIcon type={planType} size={12} className="shrink-0" />
+            <PriorityIcon source={item} type={workcaseType} locale={locale} size="sm" />
+            <ObjectTypeIcon type={workcaseType} size={12} className="shrink-0" />
             <span className="min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
           </span>
           <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
@@ -270,9 +270,9 @@ function WorkAreaPlanRow({
   );
 }
 
-function WorkAreaPlanSection({
+function WorkAreaWorkCaseSection({
   title,
-  plans,
+  workcases,
   locale,
   tone,
   t,
@@ -281,7 +281,7 @@ function WorkAreaPlanSection({
   defaultCollapsed = false,
 }: {
   title: string;
-  plans?: RelatedPlanSummary[];
+  workcases?: RelatedWorkCaseSummary[];
   locale: string;
   tone: keyof typeof workAreaSectionToneClass;
   t: Translate;
@@ -292,13 +292,13 @@ function WorkAreaPlanSection({
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const toneClass = workAreaSectionToneClass[tone];
   const canCollapse = defaultCollapsed || tone === 'closed';
-  const hasPlans = Boolean(plans && plans.length > 0);
+  const hasWorkCases = Boolean(workcases && workcases.length > 0);
   const headerClassName = `ldvh-caption-strong flex w-full min-w-0 items-center gap-2 border px-3 py-2 text-left ${toneClass.header}`;
   const headerContent = (
     <>
       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-80" aria-hidden="true" />
       <span className="min-w-0 flex-1 truncate">{title}</span>
-      {canCollapse && hasPlans && (collapsed ? <ChevronDown size={13} className="shrink-0" /> : <ChevronUp size={13} className="shrink-0" />)}
+      {canCollapse && hasWorkCases && (collapsed ? <ChevronDown size={13} className="shrink-0" /> : <ChevronUp size={13} className="shrink-0" />)}
     </>
   );
 
@@ -307,7 +307,7 @@ function WorkAreaPlanSection({
       onClick={(event) => event.stopPropagation()}
       className={`min-w-0 cursor-default overflow-hidden rounded-md border ${toneClass.section}`}
     >
-      {canCollapse && hasPlans ? (
+      {canCollapse && hasWorkCases ? (
         <button
           type="button"
           aria-expanded={!collapsed}
@@ -326,12 +326,12 @@ function WorkAreaPlanSection({
           {headerContent}
         </div>
       )}
-      {!collapsed && plans && plans.length > 0 && (
+      {!collapsed && workcases && workcases.length > 0 && (
         <div className="min-w-0 divide-y divide-ldvh-border/60 px-1 py-1">
-          {plans.map((plan) => (
-            <WorkAreaPlanRow
-              key={plan.id}
-              item={plan}
+          {workcases.map((workcase) => (
+            <WorkAreaWorkCaseRow
+              key={workcase.id}
+              item={workcase}
               locale={locale}
               tone={tone}
               t={t}
@@ -504,7 +504,7 @@ export default function ObjectList() {
   const [reloadKey, setReloadKey] = useState(0);
   const { t, getStatus, locale } = useI18n();
 
-  const currentType = type ?? 'workplan';
+  const currentType = type ?? 'workcase';
   const statusParam = searchParams.get('status');
   const activeStatus = getEffectiveListStatus(currentType, statusParam);
 
@@ -555,16 +555,16 @@ export default function ObjectList() {
 
   const renderObjectCard = (obj: ObjectItem) => {
     if (currentType === 'workarea') {
-      const plans = obj.plans ?? [];
-      const planTotal = obj.planTotal ?? plans.length;
-      const activePlans = plans.filter((plan) => !isWorkPlanHumanConfirmingStatus(plan.status) && !isWorkPlanTerminalStatus(plan.status));
-      const reviewPlans = plans.filter((plan) => isWorkPlanHumanConfirmingStatus(plan.status));
-      const closedPlans = plans.filter((plan) => isWorkPlanTerminalStatus(plan.status));
-      const closedPlanCount = obj.planClosed ?? closedPlans.length;
+      const workcases = obj.workcases ?? [];
+      const workcaseTotal = obj.workcaseTotal ?? workcases.length;
+      const activeWorkCases = workcases.filter((workcase) => !isWorkCaseHumanConfirmingStatus(workcase.status) && !isWorkCaseTerminalStatus(workcase.status));
+      const reviewWorkCases = workcases.filter((workcase) => isWorkCaseHumanConfirmingStatus(workcase.status));
+      const closedWorkCases = workcases.filter((workcase) => isWorkCaseTerminalStatus(workcase.status));
+      const closedWorkCaseCount = obj.workcaseClosed ?? closedWorkCases.length;
 
       return (
         <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
-          {planTotal === 0 ? (
+          {workcaseTotal === 0 ? (
             <p
               onClick={(event) => event.stopPropagation()}
               className="ldvh-body-muted cursor-default rounded-md border border-dashed border-ldvh-border bg-ldvh-bg px-3 py-4 text-center"
@@ -573,10 +573,10 @@ export default function ObjectList() {
             </p>
           ) : (
             <>
-              {activePlans.length > 0 && (
-                <WorkAreaPlanSection
-                  title={t('objectList.activePlanCount', { count: String(activePlans.length) })}
-                  plans={activePlans}
+              {activeWorkCases.length > 0 && (
+                <WorkAreaWorkCaseSection
+                  title={t('objectList.activePlanCount', { count: String(activeWorkCases.length) })}
+                  workcases={activeWorkCases}
                   locale={locale}
                   tone="active"
                   t={t}
@@ -584,10 +584,10 @@ export default function ObjectList() {
                   onOpen={openRelatedObject}
                 />
               )}
-              {reviewPlans.length > 0 && (
-                <WorkAreaPlanSection
-                  title={t('objectList.humanConfirmPlanCount', { count: String(reviewPlans.length) })}
-                  plans={reviewPlans}
+              {reviewWorkCases.length > 0 && (
+                <WorkAreaWorkCaseSection
+                  title={t('objectList.humanConfirmPlanCount', { count: String(reviewWorkCases.length) })}
+                  workcases={reviewWorkCases}
                   locale={locale}
                   tone="review"
                   t={t}
@@ -595,10 +595,10 @@ export default function ObjectList() {
                   onOpen={openRelatedObject}
                 />
               )}
-              {closedPlanCount > 0 && (
-                <WorkAreaPlanSection
-                  title={t('objectList.closedPlanCount', { count: String(closedPlanCount) })}
-                  plans={closedPlans}
+              {closedWorkCaseCount > 0 && (
+                <WorkAreaWorkCaseSection
+                  title={t('objectList.closedPlanCount', { count: String(closedWorkCaseCount) })}
+                  workcases={closedWorkCases}
                   locale={locale}
                   tone="closed"
                   t={t}
@@ -613,19 +613,19 @@ export default function ObjectList() {
       );
     }
 
-    if (currentType === 'workplan') {
+    if (currentType === 'workcase') {
       const executionItems = obj.executionItems ?? [];
-      const sortedExecutionItems = sortPlanExecutionItems(executionItems);
+      const sortedExecutionItems = sortWorkCaseExecutionItems(executionItems);
       const visibleExecutionItems = sortedExecutionItems.slice(0, 8);
       const moreCount = Math.max(0, sortedExecutionItems.length - visibleExecutionItems.length);
-      const needsCloseDecision = isWorkPlanClosureConfirmingStatus(obj.status);
-      const isClosedPlan = obj.status === 'closed';
-      const successCriteriaState: PlanRecordState = obj.hasSuccessCriteria ? 'recorded' : 'missing';
-      const planConfirmedState: PlanRecordState = obj.hasPlanConfirmedAt ? 'recorded' : 'missing';
-      const closureRequestedState: PlanRecordState = obj.hasClosureRequestedAt ? 'recorded' : 'missing';
-      const verificationEvidenceState: PlanRecordState = obj.hasVerificationEvidence ? 'recorded' : 'missing';
-      const closureEvidenceState: PlanRecordState = obj.hasClosureEvidence ? 'recorded' : 'missing';
-      const closedAtState: PlanRecordState = obj.hasClosedAt ? 'recorded' : 'missing';
+      const needsCloseDecision = isWorkCaseClosureConfirmingStatus(obj.status);
+      const isClosedWorkCase = obj.status === 'closed';
+      const successCriteriaState: WorkCaseRecordState = obj.hasSuccessCriteria ? 'recorded' : 'missing';
+      const planConfirmedState: WorkCaseRecordState = obj.hasPlanConfirmedAt ? 'recorded' : 'missing';
+      const closureRequestedState: WorkCaseRecordState = obj.hasClosureRequestedAt ? 'recorded' : 'missing';
+      const verificationEvidenceState: WorkCaseRecordState = obj.hasVerificationEvidence ? 'recorded' : 'missing';
+      const closureEvidenceState: WorkCaseRecordState = obj.hasClosureEvidence ? 'recorded' : 'missing';
+      const closedAtState: WorkCaseRecordState = obj.hasClosedAt ? 'recorded' : 'missing';
       const closeDecisionFields = [
         { label: t('objectList.successCriteria'), state: successCriteriaState },
         { label: t('objectList.planConfirmedAt'), state: planConfirmedState },
@@ -634,12 +634,12 @@ export default function ObjectList() {
         { label: t('objectList.closureEvidence'), state: closureEvidenceState },
       ];
       const closedIntegrityFields = [...closeDecisionFields, { label: t('objectList.closedAt'), state: closedAtState }];
-      const hasClosedIntegrityIssue = isClosedPlan && closedIntegrityFields.some((field) => field.state === 'missing');
+      const hasClosedIntegrityIssue = isClosedWorkCase && closedIntegrityFields.some((field) => field.state === 'missing');
       const shouldShowCloseDecision = needsCloseDecision || hasClosedIntegrityIssue;
       const closeDecisionTitle = hasClosedIntegrityIssue && !needsCloseDecision
         ? t('objectList.closureIssue')
         : t('objectList.closeDecision');
-      const visibleCloseFields = isClosedPlan ? closedIntegrityFields : closeDecisionFields;
+      const visibleCloseFields = isClosedWorkCase ? closedIntegrityFields : closeDecisionFields;
 
       return (
         <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
@@ -658,7 +658,7 @@ export default function ObjectList() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {visibleCloseFields.map((field) => (
-                  <PlanRecordItem key={field.label} label={field.label} state={field.state} t={t} />
+                  <WorkCaseRecordItem key={field.label} label={field.label} state={field.state} t={t} />
                 ))}
               </div>
             </div>
@@ -759,7 +759,7 @@ export default function ObjectList() {
           total={statusTotal}
           loading={loading}
         />
-        {(currentType === 'workarea' || currentType === 'workplan') && (
+        {(currentType === 'workarea' || currentType === 'workcase') && (
           <ExecutionFlowLegend t={t} getStatus={getStatus} />
         )}
         {currentType === 'spark' && (

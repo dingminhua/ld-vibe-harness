@@ -58,13 +58,13 @@ export interface ObjectItem {
   updated: string;
   priority?: string;
   importance?: string;
-  plans?: RelatedPlanSummary[];
-  planTotal?: number;
-  planClosed?: number;
-  planReviewNeeded?: number;
-  planActive?: number;
-  planRisk?: number;
-  planByStatus?: Record<string, number>;
+  workcases?: RelatedWorkCaseSummary[];
+  workcaseTotal?: number;
+  workcaseClosed?: number;
+  workcaseReviewNeeded?: number;
+  workcaseActive?: number;
+  workcaseRisk?: number;
+  workcaseByStatus?: Record<string, number>;
   executionItems?: RelatedObjectSummary[];
   executionItemTotal?: number;
   executionItemDone?: number;
@@ -138,7 +138,7 @@ export interface RelatedObjectSummary {
   evidenceRefs?: string[];
 }
 
-export interface RelatedPlanSummary extends RelatedObjectSummary {
+export interface RelatedWorkCaseSummary extends RelatedObjectSummary {
   workarea?: string;
   executionItems?: RelatedObjectSummary[];
   executionItemTotal?: number;

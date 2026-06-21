@@ -1,0 +1,238 @@
+id: workcase-0078
+type: workcase
+title: LDVH 当前态历史残留清理
+goal: |
+  LDVH 当前态历史残留清理
+status: review_needed
+created: '2026-06-19T11:16:20+08:00'
+updated: '2026-06-19T11:42:00+08:00'
+workarea: workarea-0012
+priority: P1
+description: |
+  本计划负责把 LDVH 当前文件事实源收敛为现行规则态，清除已经被吸收、废弃、迁移完成或会误导 AI 的历史残留。
+
+  本计划不改写 Git 历史，不执行破坏性 Git 操作，不把 Git commit records 中的历史记录伪装成未发生。清理范围是当前工作树中的正式规范、能力资产、Code、Web、测试、可变资料区和 dogfood 工作对象事实源中的误导性残留。
+
+  处理原则：
+  - specs 正文只保留当前有效规则、契约、边界和状态判定方法，不记录迁移过程、旧编号、旧对象或废弃说明；
+  - Code、Web、测试不得继续暴露或依赖旧工作对象、旧提交格式或旧规范编号的 active 入口；
+  - docs/studies 和 docs/sources 是可变资料区，已吸收或不再作为当前依据的资料可删除或用最小索引说明边界；
+  - ldvh-base 是 dogfood 工作对象事实源，关闭证据和经验可保留，但不得让旧 Task、TaskPlan、SubTask、Change 对象看起来仍是 active 模型；
+  - 无法安全删除的历史证据应进入允许残留清单，并说明权威位置和保留理由。
+success_criteria: |
+  - [x] 创建本总控 WorkCase，并记录 Human 授权、清理边界和执行项
+  - [x] 生成残留扫描清单，按必删、改写、允许保留、需 Human Gate 分类
+  - [x] 正式 specs 中不再把旧编号、旧工作对象、旧提交 trailer、迁移过程或废弃历史写成当前规则
+  - [x] Code、Web、测试中不再存在可执行旧入口或会误导当前模型消费的旧兼容逻辑
+  - [x] docs/studies 和 docs/sources 的删除、保留或边界说明与 01/03/09 的可变资料区规则一致
+  - [x] ldvh-base 中误导性当前事实已修正；关闭证据、Spark、Pitfall 等必要历史证据只作为历史证据保留
+  - [x] 残留搜索输出能区分允许残留和不允许残留
+  - [x] `python3 code/specs_validate.py all` 通过，或明确记录非本计划引入且可接受的诊断
+  - [x] `python3 code/fact_validate.py` 通过，或明确记录非本计划引入且可接受的诊断
+  - [x] 相关 Code/Web 测试通过，或记录降级验证和残留风险
+source: |
+  Human 在 2026-06-19 要求“对整个 ldvh 进行消除历史痕迹的工作”，并在 AI 提出分阶段计划后回复“按你计划执行”。
+
+  Human Gate 记录：
+  - 决策主题：是否创建并执行 LDVH 当前态历史残留清理总控计划。
+  - Human 结论：批准按计划执行。
+  - 执行边界：先清理当前文件事实源中的历史残留，不改写 Git 历史，不执行破坏性 Git 操作；涉及删除目录、改变事实源边界、关闭关键缺口或重写 dogfood 工作对象历史时继续按 Human Gate 判断。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 建立清理总控计划
+    role: controller
+    mode: single
+    input_refs:
+    - specs/21-WorkCase-工作项.md
+    - rules/LDVH-WORKSPACE-ENTRY.md
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    expected_output: 创建本 WorkCase，记录目标、边界、成功标准和执行编排。
+    status: done
+    result_summary: 已创建 workcase-0078，明确本计划只清理当前文件事实源，不改写 Git 历史。
+    evidence_refs:
+    - ldvh-base/workcases/workcase-0078-current-state-history-cleanup.yaml
+    blocking_reason: null
+  - id: item-2
+    title: 扫描并分类历史残留
+    role: audit
+    mode: single
+    input_refs:
+    - specs/
+    - rules/
+    - skills/
+    - agents/
+    - hooks/
+    - code/
+    - tests/
+    - web/
+    - docs/
+    - ldvh-base/
+    expected_output: 形成必删、改写、允许保留、需 Human Gate 的残留分类，并据此推进清理。
+    status: done
+    result_summary: |
+      已扫描 active surface。必删/改写项包括普通/特殊提交措辞、Profile 当前入口、TaskFlow 内部命名、旧 suggested_writeback key、旧 05.01 路径和已删除资料区结构化引用。允许保留项包括 Git 历史、ADR/Spark/WorkCase 关闭证据正文、禁用旧对象的负例规则和测试。
+    evidence_refs:
+    - specs/10-Git提交规范.md
+    blocking_reason: null
+  - id: item-3
+    title: 清理正式规范和能力资产残留
+    role: specs-assets
+    mode: single
+    input_refs:
+    - specs/
+    - rules/
+    - skills/
+    - agents/
+    - hooks/
+    expected_output: 让正式规范和能力资产只表达当前有效入口、规则、契约和边界。
+    status: done
+    result_summary: |
+      已清理普通/特殊提交措辞，修正工作流程文档示例编号，移除 21 中已完成的 TaskFlow 命名债待办；保留 40-43 中禁止新建旧对象的负例规则。
+    evidence_refs:
+    - specs/10-Git提交规范.md
+    - specs/03.03-工作流程文档规范.md
+    - specs/21-WorkCase-工作项.md
+    blocking_reason: null
+  - id: item-4
+    title: 清理 Code Web Tests 旧入口残留
+    role: implementation
+    mode: single
+    input_refs:
+    - code/
+    - web/
+    - tests/
+    expected_output: 删除或改写旧对象、旧编号和旧提交格式在实现和测试中的 active 入口。
+    status: done
+    result_summary: |
+      已把 Web 内部 TaskFlow 命名改为 ExecutionFlow，移除 Dashboard/API/Profile 入口与相关类型、图标和字段识别；Code 校验 suggested_writeback 改用 WorkCase；测试同步当前命名。active surface 残留扫描未命中 TaskFlow/Profile/旧 writeback key。
+    evidence_refs:
+    - code/spec_checks/ldvh_landing.py
+    - code/spec_checks/human_gate.py
+    - web/src/components/ExecutionFlowStatus.tsx
+    - web/src/utils/executionFlowStatus.ts
+    - web/src/pages/Dashboard.tsx
+    - web/src/pages/ObjectDetail.tsx
+    - web/src/pages/ObjectList.tsx
+    - web/src/utils/api.ts
+    - tests/code/specs_validate_checks/test_ldvh_landing.py
+    - tests/code/specs_validate_checks/test_human_gate.py
+    blocking_reason: null
+  - id: item-5
+    title: 整理可变资料区
+    role: docs
+    mode: single
+    input_refs:
+    - docs/studies/
+    - docs/sources/
+    - specs/03.01-规范文档规范.md
+    expected_output: 完成资料区删除、保留或边界说明，使其不再被误读为正式规范依据。
+    status: done
+    result_summary: |
+      已为 docs/studies 与 docs/sources 增加 README 边界说明；已删除资料文件的 dogfood 结构化引用已从 ldvh-base 移除，避免当前事实源继续追踪不存在的资料路径。
+    evidence_refs:
+    - docs/studies/README.md
+    - docs/sources/README.md
+    blocking_reason: null
+  - id: item-6
+    title: 审查 dogfood 工作对象残留
+    role: fact-model
+    mode: single
+    input_refs:
+    - ldvh-base/
+    - specs/20-WorkArea-工作域.md
+    - specs/21-WorkCase-工作项.md
+    - specs/24-Spark-火花.md
+    - specs/23-Pitfall-踩坑经验.md
+    expected_output: 只修正误导当前执行的旧事实；必要历史证据保留为关闭证据、Spark 或 Pitfall。
+    status: done
+    result_summary: |
+      已移除 ldvh-base 中指向已删除 docs/studies、docs/sources 文件的结构化引用；旧 specs/05.01 内容格式路径已改到现行 specs/05.02。子 agent 复核发现 spark-0003 和 spark-0005 作为 pending Spark 仍含 Profile / TaskFlow 当前口径，已修正为当前 active 模型口径。关闭证据和 ADR/Spark 中用于解释来龙去脉的正文历史保留，不作为 active 工作对象入口。
+    evidence_refs:
+    - ldvh-base/
+    blocking_reason: null
+  - id: item-7
+    title: 验证与残留说明
+    role: reviewer
+    mode: single
+    input_refs:
+    - code/specs_validate.py
+    - code/fact_validate.py
+    - tests/
+    - web/
+    expected_output: 运行校验和测试，形成允许残留与残留风险说明。
+    status: done
+    result_summary: |
+      已通过 specs、事实源、核心 Code 测试、Web typecheck 和 Web API 测试。允许残留：Git 历史、旧迁移关闭证据正文、旧对象禁用规则与负例测试、既有 EVIDENCE_FORMAT_HINT warning。
+    evidence_refs:
+    - code/specs_validate.py
+    - code/fact_validate.py
+    - tests/
+    - web/
+    blocking_reason: null
+  review:
+    controller_self_check: true
+    specialist_review:
+      required: false
+      role: null
+      expected_output: null
+    human_closure_review: true
+verification_evidence: |
+  ## 验证计划
+  - 检查 active surface 不再出现普通/特殊提交、TaskFlow、Profile、旧 suggested_writeback key 等会误导当前模型消费的残留。
+  - 检查 specs、fact source、Code 测试和 Web 类型/API 测试。
+
+  ## 验证命令
+  - `rg -n "普通提交|普通/特殊|特殊提交|TaskFlow|taskFlow|planTask|TaskSection|TaskInline|TaskDoc|related_profiles|nav\\.profiles|fact_yaml_fix_or_task|spec_fix_or_task|\\bProfile\\b|\\bprofile\\b" specs web/src web/api web/docs code tests -g '!web/node_modules/**' -g '!web/dist/**'`
+  - `rg -n "普通提交|普通/特殊|特殊提交|TaskFlow|taskFlow|planTask|TaskSection|TaskInline|TaskDoc|related_profiles|nav\\.profiles|fact_yaml_fix_or_task|spec_fix_or_task|\\bProfile\\b|\\bprofile\\b" ldvh-base`
+  - `python3 code/specs_validate.py all`
+  - `python3 code/fact_validate.py ldvh-base --format text`
+  - `python3 -m pytest tests/code/specs_validate_checks/test_ldvh_landing.py tests/code/specs_validate_checks/test_human_gate.py tests/code/test_commit_validate.py tests/code/test_fact_cli.py tests/code/test_fact_validate.py -q`
+  - `npm run check` in `web/`
+  - `npm run test:web:api` in `web/`
+
+  ## 验证结果
+  - active surface 残留扫描无命中。
+  - 子 agent Poincare 复核发现 `ldvh-base` 中两个 pending Spark 仍含当前误导性旧口径；已修正 spark-0003 的 Profile 方案口径和 spark-0005 的 TaskFlow 后续债口径。
+  - `ldvh-base` 扩展残留扫描仍会命中 0078 自身验证记录、已关闭 WorkCase 的历史证据和旧迁移说明；经分类，不再发现 pending Spark 或当前 active 入口中的未处理 Profile / TaskFlow / 旧 writeback key / 普通特殊提交口径。
+  - `python3 code/specs_validate.py all` 退出码 0；保留既有规范 review hints 与一条非阻塞 duplicate-term warning。
+  - `python3 code/fact_validate.py ldvh-base --format text` 退出码 0，files=121 errors=0 warnings=112；warning 为既有 EVIDENCE_FORMAT_HINT。
+  - 核心 Code 测试 81 passed。
+  - Web typecheck 通过。
+  - Web API 测试通过。
+
+  ## 结论
+  - 本轮当前文件事实源清理达到 review_needed；关闭仍需 Human 审核。
+closure_evidence: |
+  ## 验证计划
+  - 关闭前由 Human 审核本 WorkCase 的范围、变更和允许残留。
+
+  ## 验证命令
+  - 复核 `git status --short`、本 WorkCase 验证证据和关键校验输出。
+
+  ## 验证结果
+  - AI 执行与自检已完成，状态进入 review_needed。
+  - 未改写 Git 历史，未执行破坏性 Git 操作。
+  - 允许残留范围为 Git 历史、必要历史证据正文、禁用旧对象/旧格式的负例规则与测试，以及既有证据格式提示 warning。
+
+  ## 结论
+  - 等待 Human closure review 后关闭。
+review_requested_at: '2026-06-19T11:35:00+08:00'
+closed_at: ''
+related_docs:
+- specs/01-目录说明.md
+- specs/03.01-规范文档规范.md
+- specs/09-事实源边界与承载规范.md
+- specs/10-Git提交规范.md
+related_adrs: []
+related_sparks:
+- spark-0011
+related_pitfalls: []
+related_workcases:
+- workcase-0069
+- workcase-0071
+- workcase-0074
+- workcase-0075
+- workcase-0076
+- workcase-0077
