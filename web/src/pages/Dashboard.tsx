@@ -23,7 +23,7 @@ const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
   study: 'nav.studies',
 };
 
-const TYPE_ORDER = ['workcase', 'adr', 'pitfall', 'spark', 'study'];
+const TYPE_ORDER = ['spark', 'workcase', 'adr', 'pitfall', 'study'];
 
 const HIGHLIGHT_STATUSES = new Set([...WORKCASE_CURRENT_STATUSES.filter((status) => status !== 'closed'), 'verifying', 'review_needed']);
 

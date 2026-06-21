@@ -31,9 +31,9 @@ const SNAP_THRESHOLD = 40;
 const MOBILE_BREAKPOINT = 768;
 
 const OBJECT_TYPE_LABELS: Record<string, { zh: string; en: string }> = {
-  workcase: { zh: '工作项', en: 'WorkCase' },
+  workcase: { zh: '工作', en: 'WorkCase' },
   adr: { zh: '决策', en: 'ADR' },
-  pitfall: { zh: '踩坑', en: 'Pitfall' },
+  pitfall: { zh: '经验', en: 'Pitfall' },
   spark: { zh: '火花', en: 'Spark' },
   study: { zh: '研究', en: 'Study' },
   change: { zh: '提交', en: 'Commit' },

@@ -13,9 +13,9 @@ import { ObjectTypeIcon } from '@/components/SemanticIcon';
 
 /** 对象类型中英映射（与 ObjectDetail 页面保持一致） */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
-  workcase: { zh: '工作项', en: 'WorkCase' },
+  workcase: { zh: '工作', en: 'WorkCase' },
   adr: { zh: '决策', en: 'ADR' },
-  pitfall: { zh: '踩坑', en: 'Pitfall' },
+  pitfall: { zh: '经验', en: 'Pitfall' },
   spark: { zh: '火花', en: 'Spark' },
   study: { zh: '研究', en: 'Study' },
   change: { zh: '提交', en: 'Commit' },

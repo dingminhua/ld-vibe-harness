@@ -51,9 +51,9 @@ export function getObjectStatusLocale(type: string, status: string, locale: stri
 }
 
 export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }> = {
-  workcase: { zh: '人机编排和关闭判断的工作项', en: 'WorkCase for orchestration and closure' },
+  workcase: { zh: '人机编排和关闭判断的工作', en: 'WorkCase for orchestration and closure' },
   adr: { zh: '决策记录', en: 'Architecture Decision Record' },
-  pitfall: { zh: '可复用踩坑', en: 'Reusable pitfalls' },
+  pitfall: { zh: '可复用经验', en: 'Reusable pitfalls' },
   spark: { zh: '待分流的火花', en: 'Spark pending routing' },
   study: { zh: '稳定研究', en: 'Stable study' },
   change: { zh: '提交', en: 'Commit' },
@@ -100,7 +100,7 @@ export function getObjectStatusHint(type: string, status: string, locale: string
     if (type === 'workcase') {
       return locale === 'en'
         ? 'Verification and closure evidence are ready; confirm whether this WorkCase can close.'
-        : '验证证据和关闭证据已就绪，待确认工作项是否可关闭';
+        : '验证证据和关闭证据已就绪，待确认工作是否可关闭';
     }
   }
   return getStatusHint(status, locale);
@@ -111,9 +111,9 @@ export const UI_LOCALES = {
     'logo.tagline': '让 Vibe Coding 更高效、更稳定、更可控',
 
     'nav.dashboard': '仪表盘',
-    'nav.workcases': '工作项',
+    'nav.workcases': '工作',
     'nav.adrs': '决策',
-    'nav.pitfalls': '踩坑',
+    'nav.pitfalls': '经验',
     'nav.sparks': '火花',
     'nav.studies': '研究',
     'nav.changes': '提交',
@@ -147,11 +147,11 @@ export const UI_LOCALES = {
     'objectList.noObjects': '未找到 {type} 对象',
     'objectList.all': '全部',
     'objectList.statusFilter': '状态筛选',
-    'objectList.relatedPlans': '关联工作项',
-    'objectList.planCount': '{count} 个工作项',
-    'objectList.activePlanCount': '活跃工作项',
-    'objectList.humanConfirmPlanCount': '待确认工作项',
-    'objectList.closedPlanCount': '已闭合工作项',
+    'objectList.relatedPlans': '关联工作',
+    'objectList.planCount': '{count} 个工作',
+    'objectList.activePlanCount': '活跃工作',
+    'objectList.humanConfirmPlanCount': '待确认工作',
+    'objectList.closedPlanCount': '已闭合工作',
     'objectList.closeDecision': '关闭判断',
     'objectList.closureIssue': '收口异常',
     'objectList.planExecutionQueue': '执行队列',
@@ -170,9 +170,9 @@ export const UI_LOCALES = {
     'objectList.activeCount': '{count} 进行中',
     'objectList.reviewCount': '{count} 待关闭',
     'objectList.riskCount': '{count} 有风险',
-    'objectList.noPlans': '暂无关联工作项',
+    'objectList.noPlans': '暂无关联工作',
     'objectList.noExecutionItems': '暂无执行项',
-    'objectList.morePlans': '还有 {count} 个工作项',
+    'objectList.morePlans': '还有 {count} 个工作',
     'objectList.moreExecutionItems': '还有 {count} 个执行项',
     'objectList.successCriteria': '成功标准',
     'objectList.planConfirmedAt': '方案确认',
@@ -204,7 +204,7 @@ export const UI_LOCALES = {
     'objectDetail.editAcceptance': '点击编辑验收标准',
     'objectDetail.goal': '目标',
     'objectDetail.noDescription': '未记录描述',
-    'objectDetail.workPlan': '所属工作项',
+    'objectDetail.workPlan': '所属工作',
     'objectDetail.executionStatus': '执行状态',
     'objectDetail.currentState': '当前状态',
     'objectDetail.waitingFor': '等待对象',
@@ -220,10 +220,10 @@ export const UI_LOCALES = {
     'objectDetail.dependencies': '前置依赖',
     'objectDetail.otherFields': '其他字段',
     'objectDetail.emptyValue': '空',
-    'objectDetail.planGoal': '工作项目标',
-    'objectDetail.noPlanDescription': '未记录工作项描述',
+    'objectDetail.planGoal': '工作目标',
+    'objectDetail.noPlanDescription': '未记录工作描述',
     'objectDetail.planExecution': '执行队列',
-    'objectDetail.workcaseProgress': '工作项进度',
+    'objectDetail.workcaseProgress': '工作进度',
     'objectDetail.lifecycleStage': '推进阶段',
     'objectDetail.lifecycleDraft': '目标确认',
     'objectDetail.lifecyclePlanReview': '方案审核',
@@ -280,7 +280,7 @@ export const UI_LOCALES = {
     'readingPanel.docLoadFailed': '文档加载失败',
     'readingPanel.noEvidence': '暂无证据信息',
     'readingPanel.changeDetail': '提交详情',
-    'objectDetail.humanGateTip': '此工作项待关闭审查',
+    'objectDetail.humanGateTip': '此工作待关闭审查',
 
     'spark.create': '创建火花',
     'spark.quickCapture': '创建火花',

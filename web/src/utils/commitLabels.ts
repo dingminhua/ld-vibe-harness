@@ -24,11 +24,11 @@ const COMMIT_SCOPE_LABELS: Record<string, { zh: string; en: string }> = {
   web: { zh: 'Web', en: 'Web' },
   tests: { zh: 'Tests', en: 'Tests' },
   config: { zh: '配置', en: 'Config' },
-  workcase: { zh: '工作项', en: 'WorkCase' },
+  workcase: { zh: '工作', en: 'WorkCase' },
   adr: { zh: '决策', en: 'ADR' },
   spark: { zh: '火花', en: 'Spark' },
   study: { zh: '研究', en: 'Study' },
-  pitfall: { zh: '踩坑', en: 'Pitfall' },
+  pitfall: { zh: '经验', en: 'Pitfall' },
   studies: { zh: '研究材料', en: 'Studies' },
   sources: { zh: '来源材料', en: 'Sources' },
 };
