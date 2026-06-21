@@ -1,0 +1,56 @@
+id: spark-0021
+type: spark
+title: 子 Agent 复查编排流程缺口
+status: pending
+created: '2026-06-21T10:02:20.884225'
+updated: '2026-06-21T10:02:20+08:00'
+description: |
+  本 Spark 承载一个待收敛的流程缺口：`specs/21-WorkCase-工作项.md` 已经把子 Agent 方案审核和结果复核写入 WorkCase 状态机、字段契约和关闭前条件，但当前还没有一个独立的工作流程来规定“子 Agent 复查工作”如何被主控发起、等待、回收、处理和关闭。
+
+  当前已有规则：
+
+  1. WorkCase 状态机中存在 `subagents_plan_reviewing` 和 `subagents_result_reviewing`；
+  2. `plan_review.review_items` 与 `result_review.review_items` 要记录审核 Agent、提示上下文、输入引用、重点结论、证据引用和签署声明；
+  3. `result_review.controller_resolution` 必须说明主控如何采纳、拒绝、修复、退回或提交争议；
+  4. 子 Agent 提出的范围内硬问题必须在进入 Human 关闭确认前处理；
+  5. 现有 40/41/42/43 审核流程只把子 Agent 作为可辅助审查能力，没有规定通用复查编排动作。
+
+  当前缺口：
+
+  1. 没有独立流程定义何时必须发起子 Agent 复查、需要几个视角、如何选择视角；
+  2. 没有统一输入包契约，例如目标、范围、变更清单、验证证据、残留风险、禁止事项和输出格式；
+  3. 没有明确只读复核、可修改复核、并行复核和复核失败时的降级路径；
+  4. 没有流程级要求主控等待结果、关闭 Agent、处理硬问题并回写 WorkCase；
+  5. 没有 Code/Web 可直接消费的“复查是否真实发生”检查锚点，容易出现事后补表、主控代签或空 `review_items` 冒充复核；
+  6. 没有稳定说明该流程与 WorkCase 内部状态、40-43 审核流程、Agent 能力资产和 Human Gate 的边界。
+
+  候选方向：
+
+  1. 新增一个具体工作流程，例如 `44-subagent-review-orchestration-子Agent复核编排`，专门承接方案审核和结果复核的编排规则；
+  2. 或者在 `specs/06-工作流程基础规范.md` 与 `specs/21-WorkCase-工作项.md` 中补强通用规则，但不新增 40-59 主文件；
+  3. 若 44 成立，应定义主控调度、输入包、视角选择、并行等待、结果回收、硬问题处理、Agent 关闭、事实源回写、Human Gate 和失败降级；
+  4. Code 后续可增加检查：进入 `human_closure_confirming` 时，必需视角不得为空，review item 必须具备 Agent 标识、输入引用、结论、证据引用、签署声明和 controller resolution；
+  5. Web 后续可展示复核阶段、必需视角完成度、硬问题处理状态和是否等待 Human 关闭确认。
+
+  本 Spark 只记录分支问题，不在当前 WorkCase 主线中直接修改流程架构。
+source: conversation
+priority: P1
+source_detail: 用户在处理 workcase-0083 主线收口时追问“为什么没有子agent复查工作的流程？”，随后要求“这个分支先写一个spark，然后做好主线工作”。
+evolution:
+  - at: '2026-06-21T10:02:20+08:00'
+    summary: 记录子 Agent 复查编排流程缺口：当前 WorkCase 有状态机和字段契约，但缺少独立 workflow 规定复查如何发起、等待、回收、处理和关闭。
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workareas: []
+related_workcases:
+  - workcase-0083
+related_adrs: []
+related_studies: []
+related_docs:
+  - specs/06-工作流程基础规范.md
+  - specs/21-WorkCase-工作项.md
+  - specs/40-workflow-design-audit-工作流程设计审核.md
+  - specs/41-work-model-audit-工作模型审核.md
+  - specs/42-specs-audit-规范审核.md
+  - specs/43-assurance-readiness-audit-保障准备度审核.md

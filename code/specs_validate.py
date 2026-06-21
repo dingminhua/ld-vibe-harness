@@ -18,9 +18,9 @@ from spec_checks import field_registry as field_registry_checks
 from spec_checks import governed_projects as governed_projects_checks
 from spec_checks import human_gate as human_gate_checks
 from spec_checks import index as index_checks
-from spec_checks import landing as landing_checks
-from spec_checks import ldvh_landing as ldvh_landing_checks
-from spec_checks import landing_report as landing_report_checks
+from spec_checks import assurance as assurance_checks
+from spec_checks import ldvh_assurance as ldvh_assurance_checks
+from spec_checks import assurance_report as assurance_report_checks
 from spec_checks import refs as refs_checks
 from spec_checks import runtime_projection as runtime_projection_checks
 from spec_checks import web_validate as web_validate_checks
@@ -379,177 +379,177 @@ def refs_main(paths):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# landing — 规范落地要求表检查
+# assurance — 规范保障要求表检查
 # ══════════════════════════════════════════════════════════════════════
 
-LANDING_SECTION_TITLE = landing_checks.LANDING_SECTION_TITLE
-LANDING_REQUIRED_COLUMNS = landing_checks.LANDING_REQUIRED_COLUMNS
-LANDING_ALLOWED_TYPES = landing_checks.LANDING_ALLOWED_TYPES
-LANDING_REPORT_OWNER_AREAS = landing_report_checks.LANDING_REPORT_OWNER_AREAS
-LANDING_REPORT_AREA_LABELS = landing_report_checks.LANDING_REPORT_AREA_LABELS
-LANDING_REPORT_WRITEBACK_AREAS = landing_report_checks.LANDING_REPORT_WRITEBACK_AREAS
-LANDING_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS
-LANDING_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS
-LANDING_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS
-LANDING_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS
-LANDING_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS
-LANDING_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS = landing_report_checks.LANDING_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS
-RUNTIME_PROJECTION_REMEDIATION_LABELS = landing_report_checks.RUNTIME_PROJECTION_REMEDIATION_LABELS
-RUNTIME_PROJECTION_REMEDIATION_TERMS = landing_report_checks.RUNTIME_PROJECTION_REMEDIATION_TERMS
-LANDING_REPORT_HUMAN_GATE_DECISION_TERMS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_DECISION_TERMS
-LANDING_REPORT_HUMAN_GATE_POLICY_TERMS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_POLICY_TERMS
-LANDING_REPORT_HUMAN_GATE_POLICY_DISCUSSION_TERMS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_POLICY_DISCUSSION_TERMS
-LANDING_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS
-LANDING_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS
-LANDING_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS
-LANDING_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS = landing_report_checks.LANDING_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS
-LANDING_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS = landing_report_checks.LANDING_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS
-LANDING_REPORT_DEGRADED_MARKERS = landing_report_checks.LANDING_REPORT_DEGRADED_MARKERS
-LANDING_REPORT_OPEN_MARKERS = landing_report_checks.LANDING_REPORT_OPEN_MARKERS
-LANDING_REPORT_OPEN_PATTERNS = landing_report_checks.LANDING_REPORT_OPEN_PATTERNS
-LANDING_REPORT_HUMAN_GATE_PATTERNS = landing_report_checks.LANDING_REPORT_HUMAN_GATE_PATTERNS
-LANDING_REPORT_CAPABILITY_CHECKS = landing_report_checks.LANDING_REPORT_CAPABILITY_CHECKS
+ASSURANCE_SECTION_TITLE = assurance_checks.ASSURANCE_SECTION_TITLE
+ASSURANCE_REQUIRED_COLUMNS = assurance_checks.ASSURANCE_REQUIRED_COLUMNS
+ASSURANCE_ALLOWED_TYPES = assurance_checks.ASSURANCE_ALLOWED_TYPES
+ASSURANCE_REPORT_OWNER_AREAS = assurance_report_checks.ASSURANCE_REPORT_OWNER_AREAS
+ASSURANCE_REPORT_AREA_LABELS = assurance_report_checks.ASSURANCE_REPORT_AREA_LABELS
+ASSURANCE_REPORT_WRITEBACK_AREAS = assurance_report_checks.ASSURANCE_REPORT_WRITEBACK_AREAS
+ASSURANCE_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS
+ASSURANCE_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS
+ASSURANCE_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS
+ASSURANCE_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS
+ASSURANCE_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS
+ASSURANCE_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS = assurance_report_checks.ASSURANCE_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS
+RUNTIME_PROJECTION_REMEDIATION_LABELS = assurance_report_checks.RUNTIME_PROJECTION_REMEDIATION_LABELS
+RUNTIME_PROJECTION_REMEDIATION_TERMS = assurance_report_checks.RUNTIME_PROJECTION_REMEDIATION_TERMS
+ASSURANCE_REPORT_HUMAN_GATE_DECISION_TERMS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_DECISION_TERMS
+ASSURANCE_REPORT_HUMAN_GATE_POLICY_TERMS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_POLICY_TERMS
+ASSURANCE_REPORT_HUMAN_GATE_POLICY_DISCUSSION_TERMS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_POLICY_DISCUSSION_TERMS
+ASSURANCE_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS
+ASSURANCE_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS
+ASSURANCE_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS
+ASSURANCE_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS = assurance_report_checks.ASSURANCE_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS
+ASSURANCE_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS = assurance_report_checks.ASSURANCE_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS
+ASSURANCE_REPORT_DEGRADED_MARKERS = assurance_report_checks.ASSURANCE_REPORT_DEGRADED_MARKERS
+ASSURANCE_REPORT_OPEN_MARKERS = assurance_report_checks.ASSURANCE_REPORT_OPEN_MARKERS
+ASSURANCE_REPORT_OPEN_PATTERNS = assurance_report_checks.ASSURANCE_REPORT_OPEN_PATTERNS
+ASSURANCE_REPORT_HUMAN_GATE_PATTERNS = assurance_report_checks.ASSURANCE_REPORT_HUMAN_GATE_PATTERNS
+ASSURANCE_REPORT_CAPABILITY_CHECKS = assurance_report_checks.ASSURANCE_REPORT_CAPABILITY_CHECKS
 
 
-def sync_landing_config():
-    landing_checks.PROJECT_ROOT = PROJECT_ROOT
-    landing_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
+def sync_assurance_config():
+    assurance_checks.PROJECT_ROOT = PROJECT_ROOT
+    assurance_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
 
 
-def sync_landing_report_config():
-    landing_report_checks.PROJECT_ROOT = PROJECT_ROOT
-    landing_report_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
-    landing_report_checks.DOCS_DIR = DOCS_DIR
-    landing_report_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
+def sync_assurance_report_config():
+    assurance_report_checks.PROJECT_ROOT = PROJECT_ROOT
+    assurance_report_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
+    assurance_report_checks.DOCS_DIR = DOCS_DIR
+    assurance_report_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
 
 
-def landing_default_check_paths():
-    sync_landing_config()
-    return landing_checks.default_check_paths()
+def assurance_default_check_paths():
+    sync_assurance_config()
+    return assurance_checks.default_check_paths()
 
 
-def landing_is_formal_spec(path):
-    sync_landing_config()
-    return landing_checks.is_formal_spec(path)
+def assurance_is_formal_spec(path):
+    sync_assurance_config()
+    return assurance_checks.is_formal_spec(path)
 
 
-def landing_strip_section_number(title):
-    return landing_checks.strip_section_number(title)
+def assurance_strip_section_number(title):
+    return assurance_checks.strip_section_number(title)
 
 
-def landing_split_cells(line):
-    return landing_checks.split_cells(line)
+def assurance_split_cells(line):
+    return assurance_checks.split_cells(line)
 
 
-def landing_is_separator(cells):
-    return landing_checks.is_separator(cells)
+def assurance_is_separator(cells):
+    return assurance_checks.is_separator(cells)
 
 
-def landing_clean_cell(value):
-    return landing_checks.clean_cell(value)
+def assurance_clean_cell(value):
+    return assurance_checks.clean_cell(value)
 
 
-def landing_relative_path(path):
-    sync_landing_config()
-    return landing_checks.landing_relative_path(path)
+def assurance_relative_path(path):
+    sync_assurance_config()
+    return assurance_checks.assurance_relative_path(path)
 
 
-def landing_extract_requirements_file(path):
-    sync_landing_config()
-    return landing_checks.extract_requirements_file(path)
+def assurance_extract_requirements_file(path):
+    sync_assurance_config()
+    return assurance_checks.extract_requirements_file(path)
 
 
-def landing_report_match_marker(text, markers):
-    return landing_report_checks.landing_report_match_marker(text, markers)
+def assurance_report_match_marker(text, markers):
+    return assurance_report_checks.assurance_report_match_marker(text, markers)
 
 
-def landing_report_infer_status(requirement):
-    return landing_report_checks.landing_report_infer_status(requirement)
+def assurance_report_infer_status(requirement):
+    return assurance_report_checks.assurance_report_infer_status(requirement)
 
 
-def landing_report_count_by(requirements, key):
-    return landing_report_checks.landing_report_count_by(requirements, key)
+def assurance_report_count_by(requirements, key):
+    return assurance_report_checks.assurance_report_count_by(requirements, key)
 
 
-def landing_report_is_gap(item):
-    return landing_report_checks.landing_report_is_gap(item)
+def assurance_report_is_gap(item):
+    return assurance_report_checks.assurance_report_is_gap(item)
 
 
-def landing_report_human_gate_subcategory(item):
-    return landing_report_checks.landing_report_human_gate_subcategory(item)
+def assurance_report_human_gate_subcategory(item):
+    return assurance_report_checks.assurance_report_human_gate_subcategory(item)
 
 
-def landing_report_human_gate_decision_flow(item):
-    return landing_report_checks.landing_report_human_gate_decision_flow(item)
+def assurance_report_human_gate_decision_flow(item):
+    return assurance_report_checks.assurance_report_human_gate_decision_flow(item)
 
 
-def landing_report_human_gate_policy_flow(item):
-    return landing_report_checks.landing_report_human_gate_policy_flow(item)
+def assurance_report_human_gate_policy_flow(item):
+    return assurance_report_checks.assurance_report_human_gate_policy_flow(item)
 
 
-def landing_report_human_gate_support_flow(item):
-    return landing_report_checks.landing_report_human_gate_support_flow(item)
+def assurance_report_human_gate_support_flow(item):
+    return assurance_report_checks.assurance_report_human_gate_support_flow(item)
 
 
-def landing_report_human_gate_diagnostic_flow(item):
-    return landing_report_checks.landing_report_human_gate_diagnostic_flow(item)
+def assurance_report_human_gate_diagnostic_flow(item):
+    return assurance_report_checks.assurance_report_human_gate_diagnostic_flow(item)
 
 
-def landing_report_runtime_projection_subcategory(item):
-    return landing_report_checks.landing_report_runtime_projection_subcategory(item)
+def assurance_report_runtime_projection_subcategory(item):
+    return assurance_report_checks.assurance_report_runtime_projection_subcategory(item)
 
 
 def _classify_runtime_projection_remediation(item):
-    return landing_report_checks._classify_runtime_projection_remediation(item)
+    return assurance_report_checks._classify_runtime_projection_remediation(item)
 
 
-def landing_report_build_gap_categories(requirements, capability_gaps):
-    return landing_report_checks.landing_report_build_gap_categories(requirements, capability_gaps)
+def assurance_report_build_gap_categories(requirements, capability_gaps):
+    return assurance_report_checks.assurance_report_build_gap_categories(requirements, capability_gaps)
 
 
-def landing_report_document_text(paths):
-    return landing_report_checks.landing_report_document_text(paths)
+def assurance_report_document_text(paths):
+    return assurance_report_checks.assurance_report_document_text(paths)
 
 
-def landing_report_terms_present(text, terms):
-    return landing_report_checks.landing_report_terms_present(text, terms)
+def assurance_report_terms_present(text, terms):
+    return assurance_report_checks.assurance_report_terms_present(text, terms)
 
 
-def landing_report_build_capability_gaps(formal_files, runtime_projection_report=None, human_gate_report=None):
-    return landing_report_checks.landing_report_build_capability_gaps(formal_files, runtime_projection_report, human_gate_report)
+def assurance_report_build_capability_gaps(formal_files, runtime_projection_report=None, human_gate_report=None):
+    return assurance_report_checks.assurance_report_build_capability_gaps(formal_files, runtime_projection_report, human_gate_report)
 
 
-def landing_report_build(paths=None):
-    sync_landing_report_config()
-    return landing_report_checks.landing_report_build(paths)
+def assurance_report_build(paths=None):
+    sync_assurance_report_config()
+    return assurance_report_checks.assurance_report_build(paths)
 
 
-def landing_report_shorten(text, limit=96):
-    return landing_report_checks.landing_report_shorten(text, limit)
+def assurance_report_shorten(text, limit=96):
+    return assurance_report_checks.assurance_report_shorten(text, limit)
 
 
-def landing_report_format_text(report):
-    return landing_report_checks.landing_report_format_text(report)
+def assurance_report_format_text(report):
+    return assurance_report_checks.assurance_report_format_text(report)
 
 
-def landing_report_main(paths=None, output_format="text"):
-    sync_landing_report_config()
-    return landing_report_checks.landing_report_main(paths, output_format)
+def assurance_report_main(paths=None, output_format="text"):
+    sync_assurance_report_config()
+    return assurance_report_checks.assurance_report_main(paths, output_format)
 
 
-def landing_check_file(path):
-    sync_landing_config()
-    return landing_checks.check_file(path)
+def assurance_check_file(path):
+    sync_assurance_config()
+    return assurance_checks.check_file(path)
 
 
-def landing_check_paths(paths):
-    sync_landing_config()
-    return landing_checks.check_paths(paths)
+def assurance_check_paths(paths):
+    sync_assurance_config()
+    return assurance_checks.check_paths(paths)
 
 
-def landing_main(paths):
-    sync_landing_config()
-    return landing_checks.main(paths)
+def assurance_main(paths):
+    sync_assurance_config()
+    return assurance_checks.main(paths)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -675,79 +675,79 @@ def governed_projects_main(root):
     return governed_projects_checks.main(root)
 
 
-LDVH_LANDING_CHECK_STATUS_ORDER = ldvh_landing_checks.LDVH_LANDING_CHECK_STATUS_ORDER
-BOOTSTRAP_BASELINE_DEFINITIONS = ldvh_landing_checks.BOOTSTRAP_BASELINE_DEFINITIONS
+LDVH_ASSURANCE_CHECK_STATUS_ORDER = ldvh_assurance_checks.LDVH_ASSURANCE_CHECK_STATUS_ORDER
+BOOTSTRAP_BASELINE_DEFINITIONS = ldvh_assurance_checks.BOOTSTRAP_BASELINE_DEFINITIONS
 
 
-def sync_ldvh_landing_config():
-    ldvh_landing_checks.PROJECT_ROOT = PROJECT_ROOT
-    ldvh_landing_checks.SPECS_DIR = SPECS_DIR
-    ldvh_landing_checks.LEGACY_SPECS_DIR = LEGACY_SPECS_DIR
-    ldvh_landing_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
-    ldvh_landing_checks.DOCS_DIR = DOCS_DIR
-    ldvh_landing_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
-    ldvh_landing_checks.GOVERNED_PROJECTS_FILENAME = GOVERNED_PROJECTS_FILENAME
+def sync_ldvh_assurance_config():
+    ldvh_assurance_checks.PROJECT_ROOT = PROJECT_ROOT
+    ldvh_assurance_checks.SPECS_DIR = SPECS_DIR
+    ldvh_assurance_checks.LEGACY_SPECS_DIR = LEGACY_SPECS_DIR
+    ldvh_assurance_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
+    ldvh_assurance_checks.DOCS_DIR = DOCS_DIR
+    ldvh_assurance_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
+    ldvh_assurance_checks.GOVERNED_PROJECTS_FILENAME = GOVERNED_PROJECTS_FILENAME
 
 
-def ldvh_landing_check_status(items):
-    return ldvh_landing_checks.ldvh_landing_check_status(items)
+def ldvh_assurance_check_status(items):
+    return ldvh_assurance_checks.ldvh_assurance_check_status(items)
 
 
-def ldvh_landing_check_fact_files():
-    sync_ldvh_landing_config()
-    return ldvh_landing_checks.ldvh_landing_check_fact_files()
+def ldvh_assurance_check_fact_files():
+    sync_ldvh_assurance_config()
+    return ldvh_assurance_checks.ldvh_assurance_check_fact_files()
 
 
-def ldvh_landing_check_fact_validate():
-    sync_ldvh_landing_config()
-    return ldvh_landing_checks.ldvh_landing_check_fact_validate()
+def ldvh_assurance_check_fact_validate():
+    sync_ldvh_assurance_config()
+    return ldvh_assurance_checks.ldvh_assurance_check_fact_validate()
 
 
-def ldvh_landing_check_spec_validate():
-    sync_ldvh_landing_config()
-    return ldvh_landing_checks.ldvh_landing_check_spec_validate()
+def ldvh_assurance_check_spec_validate():
+    sync_ldvh_assurance_config()
+    return ldvh_assurance_checks.ldvh_assurance_check_spec_validate()
 
 
 def ldvh_bootstrap_issue(code, message, path=None, category="Code"):
-    sync_ldvh_landing_config()
-    return ldvh_landing_checks.ldvh_bootstrap_issue(code, message, path, category)
+    sync_ldvh_assurance_config()
+    return ldvh_assurance_checks.ldvh_bootstrap_issue(code, message, path, category)
 
 
 def ldvh_bootstrap_baseline_item(item_id, label, status, evidence, categories=None, issues=None):
-    return ldvh_landing_checks.ldvh_bootstrap_baseline_item(item_id, label, status, evidence, categories, issues)
+    return ldvh_assurance_checks.ldvh_bootstrap_baseline_item(item_id, label, status, evidence, categories, issues)
 
 
 def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runtime_report, spec_report, remaining_gaps):
-    sync_ldvh_landing_config()
-    return ldvh_landing_checks.ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runtime_report, spec_report, remaining_gaps)
+    sync_ldvh_assurance_config()
+    return ldvh_assurance_checks.ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runtime_report, spec_report, remaining_gaps)
 
 
-def ldvh_landing_check_build(workspace_root=None):
-    sync_ldvh_landing_config()
-    return ldvh_landing_checks.ldvh_landing_check_build(workspace_root)
+def ldvh_assurance_check_build(workspace_root=None):
+    sync_ldvh_assurance_config()
+    return ldvh_assurance_checks.ldvh_assurance_check_build(workspace_root)
 
 
-def landing_plan_build(workspace_root=None):
-    sync_ldvh_landing_config()
-    return ldvh_landing_checks.landing_plan_build(workspace_root)
+def assurance_plan_build(workspace_root=None):
+    sync_ldvh_assurance_config()
+    return ldvh_assurance_checks.assurance_plan_build(workspace_root)
 
 
-def landing_plan_format_text(plan):
-    return ldvh_landing_checks.landing_plan_format_text(plan)
+def assurance_plan_format_text(plan):
+    return ldvh_assurance_checks.assurance_plan_format_text(plan)
 
 
-def landing_plan_main(workspace_root=None, output_format="text"):
-    sync_ldvh_landing_config()
-    return ldvh_landing_checks.landing_plan_main(workspace_root, output_format)
+def assurance_plan_main(workspace_root=None, output_format="text"):
+    sync_ldvh_assurance_config()
+    return ldvh_assurance_checks.assurance_plan_main(workspace_root, output_format)
 
 
-def ldvh_landing_check_format_text(report):
-    return ldvh_landing_checks.ldvh_landing_check_format_text(report)
+def ldvh_assurance_check_format_text(report):
+    return ldvh_assurance_checks.ldvh_assurance_check_format_text(report)
 
 
-def ldvh_landing_check_main(workspace_root=None, output_format="text"):
-    sync_ldvh_landing_config()
-    return ldvh_landing_checks.ldvh_landing_check_main(workspace_root, output_format)
+def ldvh_assurance_check_main(workspace_root=None, output_format="text"):
+    sync_ldvh_assurance_config()
+    return ldvh_assurance_checks.ldvh_assurance_check_main(workspace_root, output_format)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -763,12 +763,12 @@ def sync_web_validate_config():
     web_validate_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
 
 
-def web_validate_compact_landing_check(report):
-    return web_validate_checks.web_validate_compact_landing_check(report)
+def web_validate_compact_assurance_check(report):
+    return web_validate_checks.web_validate_compact_assurance_check(report)
 
 
-def web_validate_compact_landing_report(report):
-    return web_validate_checks.web_validate_compact_landing_report(report)
+def web_validate_compact_assurance_report(report):
+    return web_validate_checks.web_validate_compact_assurance_report(report)
 
 
 def web_validate_compact_human_gate_report(report):
@@ -867,24 +867,24 @@ def build_parser():
     refs_parser = subparsers.add_parser("refs", help="检查 specs Markdown 文档中的 § 引用是否存在。")
     refs_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
 
-    # landing
-    landing_parser = subparsers.add_parser("landing", help="检查 specs 正式规范的规范落地要求表。")
-    landing_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
+    # assurance
+    assurance_parser = subparsers.add_parser("assurance", help="检查 specs 正式规范的规范保障要求表。")
+    assurance_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
 
-    # landing-report
-    landing_report_parser = subparsers.add_parser("landing-report", help="生成 specs 规范落地要求聚合报告。")
-    landing_report_parser.add_argument("paths", nargs="*", default=None, help="要聚合的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
-    landing_report_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+    # assurance-report
+    assurance_report_parser = subparsers.add_parser("assurance-report", help="生成 specs 规范保障要求聚合报告。")
+    assurance_report_parser.add_argument("paths", nargs="*", default=None, help="要聚合的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
+    assurance_report_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
-    # ldvh-landing-check
-    ldvh_landing_check_parser = subparsers.add_parser("ldvh-landing-check", help="生成 42 LDVH落地与检查派生报告。")
-    ldvh_landing_check_parser.add_argument("--workspace-root", default=str(DEFAULT_WORKSPACE_ROOT), help="包含 LDVH-GOVERNED-PROJECTS.yaml 的工作区根目录，默认自动定位。")
-    ldvh_landing_check_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+    # ldvh-assurance-check
+    ldvh_assurance_check_parser = subparsers.add_parser("ldvh-assurance-check", help="生成 42 LDVH部署与适配检查派生报告。")
+    ldvh_assurance_check_parser.add_argument("--workspace-root", default=str(DEFAULT_WORKSPACE_ROOT), help="包含 LDVH-GOVERNED-PROJECTS.yaml 的工作区根目录，默认自动定位。")
+    ldvh_assurance_check_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
-    # landing-plan
-    landing_plan_parser = subparsers.add_parser("landing-plan", help="生成只读 landing-plan 聚合计划视图。")
-    landing_plan_parser.add_argument("--workspace-root", default=str(DEFAULT_WORKSPACE_ROOT), help="工作区根目录，默认自动定位。")
-    landing_plan_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+    # assurance-plan
+    assurance_plan_parser = subparsers.add_parser("assurance-plan", help="生成只读 assurance-plan 聚合计划视图。")
+    assurance_plan_parser.add_argument("--workspace-root", default=str(DEFAULT_WORKSPACE_ROOT), help="工作区根目录，默认自动定位。")
+    assurance_plan_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
     # web-validate
     web_validate_parser = subparsers.add_parser("web-validate", help="生成 Web Validate 页面只读数据合同。")
@@ -929,7 +929,7 @@ def build_parser():
     index_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")
 
     # all
-    all_parser = subparsers.add_parser("all", help="运行所有检查（doc + refs + landing + human-gate + index）。")
+    all_parser = subparsers.add_parser("all", help="运行所有检查（doc + refs + assurance + human-gate + index）。")
     all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
     all_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录（用于 index 子命令）。")
     all_parser.add_argument("--workspace-root", default=str(DEFAULT_WORKSPACE_ROOT), help="工作区根目录（用于 governed-projects 检查），默认自动定位。")
@@ -951,17 +951,17 @@ def main(argv=None):
         paths = args.paths if args.paths is not None else refs_default_check_paths()
         return refs_main(paths)
 
-    if command == "landing":
-        return landing_main(args.paths)
+    if command == "assurance":
+        return assurance_main(args.paths)
 
-    if command == "landing-report":
-        return landing_report_main(args.paths, args.format)
+    if command == "assurance-report":
+        return assurance_report_main(args.paths, args.format)
 
-    if command == "ldvh-landing-check":
-        return ldvh_landing_check_main(args.workspace_root, args.format)
+    if command == "ldvh-assurance-check":
+        return ldvh_assurance_check_main(args.workspace_root, args.format)
 
-    if command == "landing-plan":
-        return landing_plan_main(args.workspace_root, args.format)
+    if command == "assurance-plan":
+        return assurance_plan_main(args.workspace_root, args.format)
 
     if command == "web-validate":
         return web_validate_main(args.workspace_root, args.format)
@@ -1004,9 +1004,9 @@ def main(argv=None):
         refs_paths = args.paths if args.paths else refs_default_check_paths()
         if refs_main(refs_paths) != 0:
             exit_code = 1
-        # landing
-        landing_paths = args.paths if args.paths else landing_default_check_paths()
-        if landing_main(landing_paths) != 0:
+        # assurance
+        assurance_paths = args.paths if args.paths else assurance_default_check_paths()
+        if assurance_main(assurance_paths) != 0:
             exit_code = 1
         # human-gate
         human_gate_paths = args.paths if args.paths else human_gate_default_check_paths()

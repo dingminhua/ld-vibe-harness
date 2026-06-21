@@ -44,7 +44,7 @@ description: |
   5. Web 是否需要在工作对象详情中帮助区分“反思线索”“已沉淀经验”和“待机制化缺口”。
 evolution:
   - at: '2026-06-19T09:03:00+08:00'
-    summary: 用户指出主控准备把本次反思写入 Pitfall 的判断仍有问题；Pitfall 应承载已落地、可复用、其他 AI 可直接使用的经验，而本次内容仍需要机制配合，应先进入 Spark 后续讨论。
+    summary: 用户指出主控准备把本次反思写入 Pitfall 的判断仍有问题；Pitfall 应承载已生效、可复用、其他 AI 可直接使用的经验，而本次内容仍需要机制配合，应先进入 Spark 后续讨论。
 source: conversation
 source_detail: 用户追问“你这些反思记录到哪里呢”，随后指出这次内容不应进入 Pitfall，应先加入 Spark，后续再讨论踩坑边界。
 priority: P1

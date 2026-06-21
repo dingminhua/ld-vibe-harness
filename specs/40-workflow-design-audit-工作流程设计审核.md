@@ -105,7 +105,7 @@ ldvh_member:
 | 工作流程通用规则 | `specs/06-工作流程基础规范.md` |
 | 工作流程文档骨架与成员自描述契约 | `specs/03.03-工作流程文档规范.md` |
 | 目录、编号和文件归属 | `specs/01-目录说明.md` |
-| 能力资产边界 | `specs/04.02-LDVH能力资产与落地保障规范.md` |
+| 能力资产边界 | `specs/04.02-LDVH能力资产与保障机制规范.md` |
 | Code 实现与派生索引边界 | `specs/07-Code确定性执行实现规范.md` |
 | 事实源、证据和回写边界 | `specs/09-事实源边界与承载规范.md` |
 | 测试治理和验证声明 | `specs/11-测试基础规范.md` |
@@ -126,8 +126,8 @@ Code 派生集合索引、命令输出、Skill 输出、Agent 输出、Web 视�
 4. `specs/01-目录说明.md` 中 40-59 编号区段、成员自描述与 Code 派生索引边界；
 5. `specs/07-Code确定性执行实现规范.md` 中成员集合派生索引边界、Code 输出边界和验证规则；
 6. 目标工作流程主文件或候选草案；
-7. 必要时读取 `specs/04.02-LDVH能力资产与落地保障规范.md`、`specs/09-事实源边界与承载规范.md` 和 `specs/11-测试基础规范.md`；
-8. 必要时运行 `python3 code/specs_validate.py index`、`python3 code/specs_validate.py doc specs`、`python3 code/specs_validate.py refs specs`、`python3 code/specs_validate.py landing specs` 或 `python3 code/specs_validate.py all` 获取导航和诊断。
+7. 必要时读取 `specs/04.02-LDVH能力资产与保障机制规范.md`、`specs/09-事实源边界与承载规范.md` 和 `specs/11-测试基础规范.md`；
+8. 必要时运行 `python3 code/specs_validate.py index`、`python3 code/specs_validate.py doc specs`、`python3 code/specs_validate.py refs specs`、`python3 code/specs_validate.py assurance specs` 或 `python3 code/specs_validate.py all` 获取导航和诊断。
 
 若目标流程尚未创建，AI 只能审核候选草案和创建方案，不得声称该流程已经是 active 成员。若无法定位目标文件、上位规范或必要诊断来源，应暂停并说明缺口。
 
@@ -153,7 +153,7 @@ AI 遇到以下信号时，应识别为工作流程设计审核场景：
 
 1. **确认目标**：确认被审核对象是已存在主文件、候选草案、编号意向、迁移计划还是能力消费请求；
 2. **确认权威依据**：读取或定位 06、03.03、01、07 和目标文件，必要时补充 04.02、09、10；
-3. **运行确定性诊断**：优先运行或参考 Code 派生索引、文档结构、引用、落地要求和综合校验结果；
+3. **运行确定性诊断**：优先运行或参考 Code 派生索引、文档结构、引用、保障要求和综合校验结果；
 4. **审核成员自描述**：检查 `spec_id`、`kind`、`name_en`、`name_zh`、`collection_status`、`canonical_path`、必需锚点和 `code_consumption` 是否完整一致；
 5. **审核文件归属**：检查文件名、编号、区段、标题和 canonical path 是否符合 01、03.03 和 06；
 6. **审核行动定位**：判断该内容是否确实需要控制 AI 行动，是否不成为工作流程就会导致边界漂移；
@@ -164,7 +164,7 @@ AI 遇到以下信号时，应识别为工作流程设计审核场景：
 11. **审核能力协作**：检查 Skill、Agent、Hook、Code、Web、CI 和入口资产的参与是否符合 04.02、07、08 和 06 的主控唯一调度原则；
 12. **审核事实源回写与证据**：检查稳定事实、过程输出、验证证据、Human Gate 记录和后续分流是否有明确归属；
 13. **审核行动特有可测试性锚点**：检查正向场景、负向场景、Gate 场景、回写场景、失败降级和回归风险是否可验证；
-14. **审核落地要求**：检查规范落地要求表是否说明同步、检查或审计触发条件，且没有制造无法保障的落地承诺；
+14. **审核保障要求**：检查规范保障要求表是否说明同步、检查或审计触发条件，且没有制造无法保障的部署适配承诺；
 15. **形成审核结论**：按 §10 输出过程结论，必要时触发 Human Gate、创建后续 WorkCase/Spark/ADR/Pitfall 或修订目标文件；
 16. **复跑验证**：目标文件被修改后，应重新运行相关校验命令，并记录结果、残留风险和下一步分流。
 
@@ -219,7 +219,7 @@ Skill 和 Agent 输出均为过程输出，必须交还主控。Skill 不得自�
 4. active 流程必需锚点检查；
 5. 文档结构和章节骨架检查；
 6. specs 引用检查；
-7. 规范落地要求表结构检查；
+7. 规范保障要求表结构检查；
 8. 派生集合索引、状态清单和冲突诊断。
 
 常用命令包括：
@@ -228,13 +228,13 @@ Skill 和 Agent 输出均为过程输出，必须交还主控。Skill 不得自�
 python3 code/specs_validate.py index
 python3 code/specs_validate.py doc specs
 python3 code/specs_validate.py refs specs
-python3 code/specs_validate.py landing specs
+python3 code/specs_validate.py assurance specs
 python3 code/specs_validate.py all
 ```
 
 Code 输出只作为导航、聚合和诊断结果。Code 不判断流程是否符合价值观、是否语义自洽、是否真的好用，也不生成授权。Code 不可用、诊断不完整或输出无法回指事实源时，应退回人工检查并记录残留风险。
 
-**审查边界声明**：本流程只审查目标工作流程文档中写的规范要求是否合理、完整、一致、可执行；不审查项目中是否已实际满足这些要求。Code 的作用仅限于帮助 AI 检查目标文档的机械属性（成员自描述、编号、路径、骨架、引用、锚点、落地要求表结构），Code 输出不构成"该工作流程在项目中已被满足"的证据。
+**审查边界声明**：本流程只审查目标工作流程文档中写的规范要求是否合理、完整、一致、可执行；不审查项目中是否已实际满足这些要求。Code 的作用仅限于帮助 AI 检查目标文档的机械属性（成员自描述、编号、路径、骨架、引用、锚点、保障要求表结构），Code 输出不构成"该工作流程在项目中已被满足"的证据。
 
 ---
 ## 10. 事实源回写与证据留存
@@ -336,24 +336,24 @@ Gate 场景：
 python3 code/specs_validate.py index
 python3 code/specs_validate.py doc specs
 python3 code/specs_validate.py refs specs
-python3 code/specs_validate.py landing specs
+python3 code/specs_validate.py assurance specs
 python3 code/specs_validate.py all
 ```
 
 无法运行自动化校验时，应说明原因、采用的人工检查方式和残留风险，不得声称完整验证。Code 命令输出仅辅助机械属性检查，不替代 AI 对价值与规范的判断。
 
 ---
-## 13. 规范落地要求
+## 13. 规范保障要求
 
-本文通过以下规范落地要求说明相关要求的同步、检查或审计触发条件。
+本文通过以下规范保障要求说明相关要求的同步、检查或审计触发条件。
 
-| 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 上位约束承接要求 | 工作流程设计审核应承接 06 的工作流程通用规则和 03.03 的工作流程文档骨架、成员自描述契约、可测试性锚点 | 本文、06、03.03、Human Gate | 工作流程治理 | 新增、修改、升级、降级、删除、重命名或审查 40-59 工作流程时 |
 | 入口可见要求 | AI 处理工作流程设计、工作流程变更或工作流程质量审查时应能定位本文 | Rules 入口、06、03.03、Code 派生索引 | AI 执行入口提示 | 工作流程场景路由、成员主文件、入口资产或 Code 查询入口变化时 |
 | 流程复用要求 | 高频工作流程设计审核可以封装为 Skill，但 Skill 不得新增稳定规则或默认调度 Agent | Skill SOP、主控交还、人工降级检查 | 流程复用 | 工作流程设计审核反复执行且步骤稳定时 |
 | 子 Agent 思考要求 | 复杂语义自洽、价值观一致性或流程职责冲突可由 Agent 辅助审查，但 Agent 输出必须回主控 | Agent 审查、主控复核、Human Gate | 子 Agent 思考 | 工作流程设计存在争议、高风险或跨流程冲突时 |
-| 确定性执行要求 | Code 应检查成员自描述、编号、路径、锚点、章节、引用和落地要求表，并生成派生集合诊断 | `code/spec_checks/index.py`、`code/specs_validate.py`、测试或等价验证 | 校验实现 | 工作流程成员字段、骨架、锚点、引用或校验规则变化时 |
+| 确定性执行要求 | Code 应检查成员自描述、编号、路径、锚点、章节、引用和保障要求表，并生成派生集合诊断 | `code/spec_checks/index.py`、`code/specs_validate.py`、测试或等价验证 | 校验实现 | 工作流程成员字段、骨架、锚点、引用或校验规则变化时 |
 | Human 交互要求 | 新增 active 流程、重排编号、删除重命名、改变成员自描述契约或接受长期降级时应触发 Human Gate | Human Gate 记录、影响范围说明、确认记录 | 工作流程治理 | §7 任一 Gate 场景发生时 |
 | 生命周期触发要求 | 本流程或目标工作流程变化后，应检查入口资产、06、03.03、07、09、10、Code、测试、Skill、Agent、Hook、Web 是否需要同步 | Code 校验、人工降级检查、能力资产边界审查 | 触发保障 | Context、Scenario、Gate、执行流程、回写、证据、能力协作、测试锚点或成员自描述变化时 |
 
@@ -378,7 +378,7 @@ python3 code/specs_validate.py all
 | 事实源边界 | 过程输出、派生索引、工具结果、Agent 输出和 Web 状态未替代 Git 文件事实源 |
 | 证据留存 | 审核结论、验证命令、Human Gate、修改结果和残留风险可追溯 |
 | 可测试性锚点 | 正例、反例、Gate、回写、失败降级和回归风险明确 |
-| 落地要求 | 落地要求表说明同步、检查或审计触发条件，未制造无法保障的承诺 |
+| 保障要求 | 保障要求表说明同步、检查或审计触发条件，未制造无法保障的承诺 |
 | 验证结果 | 相关 Code 校验命令已运行或已说明无法运行的原因、采用的人工检查方式和残留风险；Code 诊断仅辅助机械属性检查，不替代 AI 对价值与规范的判断 |
 
 ---
@@ -386,6 +386,6 @@ python3 code/specs_validate.py all
 
 1. 评估是否需要创建 `ldvh-workflow-design-audit` Skill，用于封装固定审核清单和输出格式；
 2. 评估是否需要创建工作流程语义审查 Agent，用于复杂流程设计争议和价值观一致性审查；
-3. 评估 `code/spec_checks/index.py` 是否需要增强对工作流程行动特有可测试性锚点、落地要求和能力边界的检查；
+3. 评估 `code/spec_checks/index.py` 是否需要增强对工作流程行动特有可测试性锚点、保障要求和能力边界的检查；
 4. 后续创建 specs 审核、Code 审核、Rules 入口审核等流程时，应先使用本文执行设计审核；
 5. 本流程实际执行后发现的重复误判，应按事实源边界分流到 Pitfall、Spark、WorkCase、ADR、Code 需求或本文修订。

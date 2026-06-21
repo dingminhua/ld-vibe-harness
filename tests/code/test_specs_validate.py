@@ -38,7 +38,7 @@ def test_specs_validate_all_cli_passes_on_current_repo(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
     assert "03 文档基础规范检查通过" in result.stdout
     assert "Specs § 引用检查通过" in result.stdout
-    assert "规范落地要求检查通过" in result.stdout
+    assert "规范保障要求检查通过" in result.stdout
     assert (tmp_path / "index" / "specs-docs-index.json").exists()
     assert (tmp_path / "index" / "specs-members-index.json").exists()
 

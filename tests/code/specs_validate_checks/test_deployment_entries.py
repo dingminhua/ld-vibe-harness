@@ -19,7 +19,7 @@ ldvh_asset:
   status: "active"
   canonical_path: "{canonical_path}"
   source_specs:
-    - "specs/04.02-LDVH能力资产与落地保障规范.md"
+    - "specs/04.02-LDVH能力资产与保障机制规范.md"
   consumption_scenarios:
     - "测试场景"
   inputs:
@@ -34,7 +34,7 @@ ldvh_asset:
   deprecation: "测试废弃规则"
 ```
 
-LDVH 能力资产与落地保障定义见 `specs/04.02-LDVH能力资产与落地保障规范.md`。
+LDVH 能力资产与保障机制定义见 `specs/04.02-LDVH能力资产与保障机制规范.md`。
 """,
         )
     write_md(
@@ -101,9 +101,9 @@ ldvh_asset:
 """,
     )
     return write_md(
-        tmp_path / "specs" / "04.02-LDVH能力资产与落地保障规范.md",
+        tmp_path / "specs" / "04.02-LDVH能力资产与保障机制规范.md",
         """
-# LDVH 能力资产与落地保障规范
+# LDVH 能力资产与保障机制规范
 
 ## 2. LDVH 能力资产
 
@@ -141,7 +141,7 @@ def test_deployment_entries_reports_missing_spec(tmp_path):
 def test_deployment_entries_reports_required_type_and_asset_problems(tmp_path):
     write_deployment_entries_fixture(tmp_path)
     (tmp_path / "rules" / "LDVH-MAINTAINER-ENTRY.md").unlink()
-    spec_path = tmp_path / "specs" / "04.02-LDVH能力资产与落地保障规范.md"
+    spec_path = tmp_path / "specs" / "04.02-LDVH能力资产与保障机制规范.md"
     text = spec_path.read_text(encoding="utf-8")
     text = text.replace("| Rules 资产 | `rules/LDVH-WORKSPACE-ENTRY.md`、`rules/LDVH-MAINTAINER-ENTRY.md` | AI 入口分层 | 完整规范正文 | 只做薄入口 |\n", "")
     spec_path.write_text(text, encoding="utf-8")
@@ -168,7 +168,7 @@ def test_deployment_entries_reports_forbidden_type_and_ai_entry_ref_missing(tmp_
 def test_deployment_entries_reports_missing_asset_metadata(tmp_path):
     write_deployment_entries_fixture(tmp_path)
     asset_path = tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md"
-    asset_path.write_text("# LDVH 工作区入口\n\nLDVH 能力资产与落地保障定义见 `specs/04.02-LDVH能力资产与落地保障规范.md`。\n", encoding="utf-8")
+    asset_path.write_text("# LDVH 工作区入口\n\nLDVH 能力资产与保障机制定义见 `specs/04.02-LDVH能力资产与保障机制规范.md`。\n", encoding="utf-8")
 
     codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
 

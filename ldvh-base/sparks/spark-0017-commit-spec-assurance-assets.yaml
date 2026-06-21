@@ -1,11 +1,11 @@
 id: spark-0017
 type: spark
-title: 10 号 Git 提交规范落地资产边界待收敛
+title: 10 号 Git 提交规范保障资产边界待收敛
 status: pending
 created: '2026-06-20T04:33:49+08:00'
 updated: '2026-06-21T00:39:27+08:00'
 description: |
-  本 Spark 承载一个需要后续收敛的规范落地问题：`specs/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
+  本 Spark 承载一个需要后续收敛的规范保障问题：`specs/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
 
   当前讨论结论：
 
@@ -25,7 +25,7 @@ description: |
 
   后续需要收敛的问题：
 
-  1. 是否先修改 04.02，允许正式规范提出必落地要求时维护固定 Skill/Hook 资产；
+  1. 是否先修改 04.02，允许正式规范提出必保障要求时维护固定 Skill/Hook 资产；
   2. 是否同步 01 中 `hooks/` 和 `skills/` 目录定位，区分必落地资产、候选环境适配资产和说明性资产；
   3. 是否为 10 号规范创建 `skills/ldvh-git-commit/SKILL.md`；
   4. 是否为 10 号规范登记统一 `git.commit-msg` Hook 事件、dispatcher 和等价环境接入检查；
@@ -61,7 +61,7 @@ description: |
   中说明各线承接范围。只有当这些前置治理线均被明确承接或废弃后，才考虑将本 Spark 标记为 `resolved`。
 evolution:
   - at: '2026-06-20T04:33:49+08:00'
-    summary: 用户要求记录 10 号规范落地问题，并追问除 hook 外是否需要 Skill；当前结论是提交门禁需要 Git hook，AI 行动稳定性需要 Skill，两者职责不同且都应进入 10 号规范落地资产讨论。
+    summary: 用户要求记录 10 号规范保障问题，并追问除 hook 外是否需要 Skill；当前结论是提交门禁需要 Git hook，AI 行动稳定性需要 Skill，两者职责不同且都应进入 10 号规范保障资产讨论。
   - at: '2026-06-20T04:44:36+08:00'
     summary: 补充记录 rules、skills、agents、hooks 的资产标准、AI 生成质量、多视角审核、规范变化监督、事实源重复和环境部署分层问题；这些问题需要逐一讨论后再转成正式规范修改。
   - at: '2026-06-20T05:18:10+08:00'
@@ -75,7 +75,7 @@ evolution:
   - at: '2026-06-21T00:39:27+08:00'
     summary: workcase-0074 已完成真实落地的一部分：`ldvh-git-commit` Skill 按 04.02 登记为 active 固定能力资产，10 号规范和维护入口已指向该 Skill；Hook 口径同步修正为统一 Hook registry / dispatcher 与环境接入层分离，不再描述为仓库级原生 Git hook 安装脚本。
 source: conversation
-source_detail: 用户围绕 10 号 Git 提交规范落地追问“这种属于 LDVH 安装后必须落地的资产”和“除了 hook，不需要 skills？”，要求建立 Spark 记录，避免后续遗忘。
+source_detail: 用户围绕 10 号 Git 提交规范保障追问“这种属于 LDVH 安装后必须落地的资产”和“除了 hook，不需要 skills？”，要求建立 Spark 记录，避免后续遗忘。
 priority: P1
 resolved_to: ""
 resolved_at: ""
@@ -89,7 +89,7 @@ related_adrs: []
 related_studies: []
 related_docs:
   - specs/01-目录说明.md
-  - specs/04.02-LDVH能力资产与落地保障规范.md
+  - specs/04.02-LDVH能力资产与保障机制规范.md
   - specs/04.03-环境入口适配与部署规范.md
   - specs/06-工作流程基础规范.md
   - specs/10-Git提交规范.md
@@ -97,6 +97,6 @@ related_docs:
   - specs/40-workflow-design-audit-工作流程设计审核.md
   - specs/41-work-model-audit-工作模型审核.md
   - specs/42-specs-audit-规范审核.md
-  - specs/43-landing-readiness-audit-落地准备度审核.md
+  - specs/43-assurance-readiness-audit-保障准备度审核.md
   - code/commit_validate.py
   - web/docs/06-Changelog.md

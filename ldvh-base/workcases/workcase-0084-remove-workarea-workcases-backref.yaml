@@ -257,7 +257,7 @@ verification_evidence: |
 
   - 事实源校验通过：files=89，errors=0，warnings=0。
   - Python 单测通过：62 passed。
-  - specs 综合检查通过：文档结构、章节引用、规范落地要求、字段注册表、管辖项目配置等检查均通过。
+  - specs 综合检查通过：文档结构、章节引用、规范保障要求、字段注册表、管辖项目配置等检查均通过。
   - Web API 测试通过：WorkArea / WorkCase API 派生摘要路径未被本次事实源清理破坏。
 
   ## 结论

@@ -37,7 +37,7 @@ related_adrs: []
 related_pitfalls: []
 related_docs:
   - specs/00-LD-Vibe-Harness理念与纲要.md
-  - specs/04.02-LDVH能力资产与落地保障规范.md
+  - specs/04.02-LDVH能力资产与保障机制规范.md
   - specs/06-工作流程基础规范.md
   - specs/21-WorkCase-工作项.md
 archive_reason:
@@ -277,7 +277,7 @@ LDVH 的多角色协作可在 Claude Code CLI 中落地为 subagent Markdown、`
 ## 后续分流
 
 1. 修改 `specs/00-LD-Vibe-Harness理念与纲要.md` 时，吸收 Claude Code “角色提示词 + 工具权限 + 模型 + MCP + Skill + hooks + memory”的角色契约思想。
-2. 修改 `specs/04.02-LDVH能力资产与落地保障规范.md` 时，判断 `.claude/agents`、`.claude/skills`、CLAUDE.md、MCP、hooks 和 plugins 的能力资产分层。
+2. 修改 `specs/04.02-LDVH能力资产与保障机制规范.md` 时，判断 `.claude/agents`、`.claude/skills`、CLAUDE.md、MCP、hooks 和 plugins 的能力资产分层。
 3. 修改 `specs/06-工作流程基础规范.md` 时，定义主控是否允许自动委派、何时必须 Human Gate、何时使用前台/后台/fork。
 4. 修改 `specs/21-WorkCase-工作项.md` 时，保留最小角色引用和证据字段，不把 Claude Code frontmatter 作为 WorkCase schema。
 5. 如要给 Claude Code 生成示例 subagent，应另建环境适配文档或 Skill，并要求项目级 agent 文件进入版本控制或保留定义摘要。

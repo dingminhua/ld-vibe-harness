@@ -31,7 +31,7 @@
 
 | 文件 | 当前职责 | 结构治理要求 |
 |---|---|---|
-| `code/specs_validate.py` | specs 文档结构、引用、落地要求、术语、Human Gate、管辖项目、运行投影、Web validate 派生检查等聚合入口 | 作为 CLI 兼容层和跨模块配置同步层；新增检查不得默认继续堆入此文件，应进入 `code/spec_checks/` |
+| `code/specs_validate.py` | specs 文档结构、引用、保障要求、术语、Human Gate、管辖项目、运行投影、Web validate 派生检查等聚合入口 | 作为 CLI 兼容层和跨模块配置同步层；新增检查不得默认继续堆入此文件，应进入 `code/spec_checks/` |
 | `code/fact_cli.py` | 工作对象事实源查询、展示、搜索和统计入口 | 查询能力扩展时应保持输出来源可追溯，必要时拆出共享读取层 |
 | `code/fact_validate.py` | 工作对象事实源校验入口 | 字段、状态和对象关系规则变化时同步测试；不得把 specs 规则复制为第二事实源 |
 | `code/commit_validate.py` | commit message 校验入口 | 保持轻量单一职责；规则变化应回到对应规范或工作流程 |
@@ -64,13 +64,13 @@
 |---|---|
 | `python3 code/specs_validate.py doc specs` | 继续检查 Markdown 文档结构 |
 | `python3 code/specs_validate.py refs specs` | 继续检查章节引用 |
-| `python3 code/specs_validate.py landing specs` | 继续检查规范落地要求表 |
+| `python3 code/specs_validate.py assurance specs` | 继续检查规范保障要求表 |
 | `python3 code/specs_validate.py index --fail-on-diagnostics` | 继续输出派生索引和诊断 |
 | `python3 code/specs_validate.py all --fail-on-diagnostics` | 继续作为 specs 综合校验入口 |
 | `python3 code/specs_validate.py governed-projects` | 继续检查工作区管辖项目配置 |
-| `python3 code/specs_validate.py landing-report` | 继续聚合规范落地要求报告 |
-| `python3 code/specs_validate.py ldvh-landing-check` | 继续生成 LDVH 落地检查派生报告 |
-| `python3 code/specs_validate.py landing-plan` | 继续生成只读 landing-plan 聚合计划视图 |
+| `python3 code/specs_validate.py assurance-report` | 继续聚合规范保障要求报告 |
+| `python3 code/specs_validate.py ldvh-assurance-check` | 继续生成 LDVH 部署适配检查派生报告 |
+| `python3 code/specs_validate.py assurance-plan` | 继续生成只读 assurance-plan 聚合计划视图 |
 | `python3 code/specs_validate.py web-validate` | 继续输出 Web Validate 只读数据合同 |
 
 拆分模块时，CLI 参数、exit code、关键诊断 code 和默认输入范围不得无说明改变。确需改变时，应先更新 `specs/07-Code确定性执行实现规范.md`、本文、测试和下游调用方。
@@ -87,11 +87,11 @@
 | specs 语义一致性检查 | `code/spec_checks/consistency.py` | `consistency_*` |
 | 文档结构检查 | `code/spec_checks/doc_structure.py` | `doc_*`、`Heading` |
 | 章节引用检查 | `code/spec_checks/refs.py` | `refs_*`、`Document` |
-| 规范落地要求表 | `code/spec_checks/landing.py` | `landing_*` |
-| 规范落地要求聚合报告 | `code/spec_checks/landing_report.py` | `landing_report_*`、运行投影和 Human Gate 报告消费 |
+| 规范保障要求表 | `code/spec_checks/assurance.py` | `assurance_*` |
+| 规范保障要求聚合报告 | `code/spec_checks/assurance_report.py` | `assurance_report_*`、运行投影和 Human Gate 报告消费 |
 | Human Gate 证据结构检查 | `code/spec_checks/human_gate.py` | `human_gate_*` |
 | 管辖项目配置检查 | `code/spec_checks/governed_projects.py` | `governed_projects_*` |
-| LDVH 落地检查和落地计划 | `code/spec_checks/ldvh_landing.py` | `ldvh_landing_check_*`、`landing_plan_*` |
+| LDVH 部署适配检查和保障计划 | `code/spec_checks/ldvh_assurance.py` | `ldvh_assurance_check_*`、`assurance_plan_*` |
 | Web Validate 派生数据压缩 | `code/spec_checks/web_validate.py` | `web_validate_*` |
 | specs 派生索引和诊断 | `code/spec_checks/index.py` | `SpecsChecker` 和 `INDEX_*` |
 
@@ -151,12 +151,12 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 | `code/spec_checks/common.py` | `tests/code/specs_validate_checks/common.py` 提供 specs 校验测试共享加载和 Markdown 夹具 helper |
 | `code/spec_checks/doc_structure.py` | `tests/code/specs_validate_checks/test_doc_structure.py` |
 | `code/spec_checks/refs.py` | `tests/code/specs_validate_checks/test_refs.py` |
-| `code/spec_checks/landing_report.py` | `tests/code/specs_validate_checks/test_landing_report.py` |
+| `code/spec_checks/assurance_report.py` | `tests/code/specs_validate_checks/test_assurance_report.py` |
 | `code/spec_checks/runtime_projection.py` | `tests/code/specs_validate_checks/test_runtime_projection.py` |
 | `code/spec_checks/deployment_entries.py` | `tests/code/specs_validate_checks/test_deployment_entries.py` |
 | `code/spec_checks/human_gate.py` | `tests/code/specs_validate_checks/test_human_gate.py` |
 | `code/spec_checks/governed_projects.py` | `tests/code/specs_validate_checks/test_governed_projects.py` |
-| `code/spec_checks/ldvh_landing.py` | `tests/code/specs_validate_checks/test_ldvh_landing.py` |
+| `code/spec_checks/ldvh_assurance.py` | `tests/code/specs_validate_checks/test_ldvh_assurance.py` |
 | `code/spec_checks/web_validate.py` | `tests/code/specs_validate_checks/test_web_validate.py` |
 | `code/spec_checks/index.py` | `tests/code/specs_validate_checks/test_index.py` |
 | `code/spec_checks/consistency.py` | `tests/code/specs_validate_checks/test_consistency.py` |
@@ -176,8 +176,8 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 `specs_validate.py` 拆分应按以下优先级推进：
 
 1. 先提取无写入、依赖少、输出独立的能力域，例如 `runtime_projection`、`governed_projects`、`human_gate`；
-2. 再提取表格解析和 Markdown 结构类能力，例如 `doc_structure`、`refs`、`landing`；
-3. 再提取大型聚合报告；`ldvh_landing` 已迁入 `code/spec_checks/ldvh_landing.py`，`web_validate` 已迁入 `code/spec_checks/web_validate.py`；
+2. 再提取表格解析和 Markdown 结构类能力，例如 `doc_structure`、`refs`、`assurance`；
+3. 再提取大型聚合报告；`ldvh_assurance` 已迁入 `code/spec_checks/ldvh_assurance.py`，`web_validate` 已迁入 `code/spec_checks/web_validate.py`；
 4. 最后处理共享常量较多的 `consistency` 和 `index`，避免早期拆分制造循环依赖；
 5. 每次拆分后运行 `python3 code/specs_validate.py all --fail-on-diagnostics` 和对应 `tests/code` 测试。
 

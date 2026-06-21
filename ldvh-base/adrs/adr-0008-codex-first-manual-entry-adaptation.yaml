@@ -81,8 +81,8 @@ related_workareas: []
 related_sparks: []
 related_adrs: []
 related_rules:
-  - specs/04-规范落地与环境适配基础规范.md
-  - specs/04.02-LDVH能力资产与落地保障规范.md
+  - specs/04-规范保障与环境适配基础规范.md
+  - specs/04.02-LDVH能力资产与保障机制规范.md
   - specs/04.03-环境入口适配与部署规范.md
 archive_reason:
 deprecated_reason:

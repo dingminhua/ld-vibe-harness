@@ -9,7 +9,7 @@ updated: '2026-06-20T20:32:15+08:00'
 workarea: workarea-0012
 priority: P1
 description: |
-  spark-0017 暴露出 10 号 Git 提交规范落地时的前置治理缺口：LDVH 需要明确 Rules、Skill、Agent、Hook 等固定能力资产如何登记、如何声明来源规范、如何接受质量审查、如何同步 specs 变化，以及如何区别权威资产与不同运行环境中的薄引用或部署副本。
+  spark-0017 暴露出 10 号 Git 提交规范保障时的前置治理缺口：LDVH 需要明确 Rules、Skill、Agent、Hook 等固定能力资产如何登记、如何声明来源规范、如何接受质量审查、如何同步 specs 变化，以及如何区别权威资产与不同运行环境中的薄引用或部署副本。
 
   本计划只承接固定能力资产登记制、资产类型最佳实践标准和同步监督规则的规范收敛。10 号提交规范的 commit-msg hook、ldvh-git-commit Skill 和提交门禁具体落地继续由 workcase-0074 承接；最佳实践文档内容方向可与 workcase-0024 并行推进。
 success_criteria: |
@@ -27,7 +27,7 @@ source: |
 
   Human Gate 记录：
   - 触发原因：创建新的 WorkCase 承接固定能力资产登记制与最佳实践规范收敛。
-  - 影响范围：04.02、01、Rules / Skill / Agent / Hook 资产边界、后续 Code 派生索引、Web 展示和 10 号提交规范落地资产。
+  - 影响范围：04.02、01、Rules / Skill / Agent / Hook 资产边界、后续 Code 派生索引、Web 展示和 10 号提交规范保障资产。
   - 确认依据：用户明确说“好，先按10要求提交，然后按你计划执行”。
   - Human 决策：批准按计划执行，并允许为 spark-0017 的第三条治理线创建独立 WorkCase。
   - 后续回写位置：本 WorkCase、spark-0017、相关 specs、必要 Code/Web 缺口和后续 Git commit records。
@@ -41,18 +41,18 @@ orchestration:
     mode: single
     input_refs:
     - specs/01-目录说明.md
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     - specs/04.03-环境入口适配与部署规范.md
     - specs/10-Git提交规范.md
     - rules/LDVH-WORKSPACE-ENTRY.md
     - rules/LDVH-MAINTAINER-ENTRY.md
-    - ldvh-base/sparks/spark-0017-commit-spec-landing-assets.yaml
+    - ldvh-base/sparks/spark-0017-commit-spec-assurance-assets.yaml
     expected_output: 明确当前规范中关于固定能力资产、候选适配资产、环境部署副本和登记事实源的已有效规则与缺口。
     status: done
     result_summary: 已复核 01、04.02、04.03、10 和两个 Rules 入口。04.02 已具备登记制骨架，但缺少资产类型最佳实践、同步监督和部署副本分层的规则态表达；01 已明确 rules/skills/agents/hooks 目录定位和固定资产登记边界，本轮无需修改。
     evidence_refs:
     - specs/01-目录说明.md
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     - rules/LDVH-WORKSPACE-ENTRY.md
     - rules/LDVH-MAINTAINER-ENTRY.md
     blocking_reason: null
@@ -62,12 +62,12 @@ orchestration:
     mode: single
     input_refs:
     - specs/01-目录说明.md
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     expected_output: 更新或提出规范修改，使固定能力资产登记制、rules/skills/agents/hooks 目录定位和候选资产边界一致。
     status: done
     result_summary: 已在 04.02 补充固定能力资产登记制的规则态支撑，包括资产类型最佳实践标准、同步监督与漂移处理、权威资产与部署副本分层。01 现有目录表已覆盖目录定位，不做重复改写。
     evidence_refs:
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     - specs/01-目录说明.md
     blocking_reason: null
   - id: item-3
@@ -75,17 +75,17 @@ orchestration:
     role: governance
     mode: single
     input_refs:
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     - specs/06-工作流程基础规范.md
     - specs/40-workflow-design-audit-工作流程设计审核.md
     - specs/41-work-model-audit-工作模型审核.md
     - specs/42-specs-audit-规范审核.md
-    - specs/43-landing-readiness-audit-落地准备度审核.md
+    - specs/43-assurance-readiness-audit-保障准备度审核.md
     expected_output: 明确 Rules、Skill、Agent、Hook 至少应具备的元信息、执行边界、同步责任、验证入口和多视角审查要求。
     status: done
     result_summary: 已在 04.02 定义 Rules、Skill、Agent、Hook 的补充最佳实践，覆盖薄引用、执行转换、输入输出、失败降级、多视角审查、事实源不分叉、环境中立和可审计要求。初次关闭审查时，Human 指出该项仅覆盖 LDVH 内部治理视角，缺少行业最佳实践输入；本项保留为内部规则收敛结果，外部实践吸收由 item-6 补齐。
     evidence_refs:
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     blocking_reason: null
   - id: item-4
     title: 判断 Code/Web 和后续 WorkCase 分流
@@ -95,7 +95,7 @@ orchestration:
     - code/specs_validate.py
     - code/spec_checks/
     - web/
-    - ldvh-base/sparks/spark-0017-commit-spec-landing-assets.yaml
+    - ldvh-base/sparks/spark-0017-commit-spec-assurance-assets.yaml
     expected_output: 判断能力资产登记是否需要 Code 派生索引、校验诊断或 Web 展示增强；不能立即完成的项分流到后续 WorkCase/Spark。
     status: done
     result_summary: 已确认当前 Code 的 `deployment-entries` 检查能保守覆盖必备 Rules 资产存在性和 `ldvh_asset` 自登记元信息；Web 规范已有能力资产只读展示边界，当前未新增专门页面实现。10 号提交规范的 Skill/Hook 具体资产落地继续由 workcase-0074 承接，本计划只提供登记制和最佳实践规则。
@@ -118,9 +118,9 @@ orchestration:
     - ldvh-base/
     expected_output: 运行 specs、事实源和必要 Code/Web 校验，整理验证证据、残留风险、后续分流和关闭判断。
     status: done
-    result_summary: 已完成 04.02 单文件 doc、refs、landing 检查，study-0008 和 workcase-0080 事实源校验，deployment-entries 能力资产检查和 specs_validate all 普通模式检查；初次关闭审查因缺少行业最佳实践被退回，补齐 item-6 后再次进入 review_needed，等待 Human 关闭审查。
+    result_summary: 已完成 04.02 单文件 doc、refs、assurance 检查，study-0008 和 workcase-0080 事实源校验，deployment-entries 能力资产检查和 specs_validate all 普通模式检查；初次关闭审查因缺少行业最佳实践被退回，补齐 item-6 后再次进入 review_needed，等待 Human 关闭审查。
     evidence_refs:
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     - ldvh-base/workcases/workcase-0080-capability-asset-registration-governance.yaml
     - code/spec_checks/deployment_entries.py
     blocking_reason: null
@@ -145,7 +145,7 @@ orchestration:
     result_summary: 已创建 study-0008，调研 Anthropic / Claude Code、OpenAI Agents SDK、MCP 和 Git 官方资料，提炼上下文经济、渐进披露、发现描述、工具权限、Human 审批、可观测证据、确定性 Hook 和 commit-msg hook 可绕过性等规则，并回写到 04.02。后续 Human 指出该版仍显草率，需要多子 Agent 起草和主控合并，已由 item-7 承接深化。
     evidence_refs:
     - ldvh-base/studies/study-0008-ai-capability-asset-industry-practices.md
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     blocking_reason: null
   - id: item-7
     title: 多子 Agent 起草行业最佳实践并合并吸收
@@ -153,7 +153,7 @@ orchestration:
     mode: parallel
     input_refs:
     - ldvh-base/studies/study-0008-ai-capability-asset-industry-practices.md
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     - https://developers.openai.com/codex/guides/agents-md
     - https://developers.openai.com/codex/skills
     - https://developers.openai.com/codex/subagents
@@ -173,7 +173,7 @@ orchestration:
     result_summary: 已按用户要求派出四个子 Agent 并完成合并：Codex 视角补充 AGENTS.md、Codex `.rules`、Skills、Subagents、Hooks、permissions、compact/resume 的分层；Claude 视角补充 CLAUDE.md/rules、Skills、subagents、hooks、plugins 的触发与权限实践；OpenAI Agents 视角补充 tools、handoffs、guardrails、HITL、tracing/evals 作为运行期保障构件；Hook/DevOps 视角补充 Git hooks、pre-commit、Husky、lint-staged、commitlint、CI/status checks 和 server-side gates。主控已将稳定结论合并到 study-0008，并将 04.02 吸收为术语分流、运行期构件分流、资产准入清单和 Hook/CI 分层规则。
     evidence_refs:
     - ldvh-base/studies/study-0008-ai-capability-asset-industry-practices.md
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     blocking_reason: null
   review:
     controller_self_check: true
@@ -190,9 +190,9 @@ verification_evidence: |
   ## 验证命令
 
   ```bash
-  python3 code/specs_validate.py doc specs/04.02-LDVH能力资产与落地保障规范.md
-  python3 code/specs_validate.py refs specs/04.02-LDVH能力资产与落地保障规范.md
-  python3 code/specs_validate.py landing specs/04.02-LDVH能力资产与落地保障规范.md
+  python3 code/specs_validate.py doc specs/04.02-LDVH能力资产与保障机制规范.md
+  python3 code/specs_validate.py refs specs/04.02-LDVH能力资产与保障机制规范.md
+  python3 code/specs_validate.py assurance specs/04.02-LDVH能力资产与保障机制规范.md
   python3 code/specs_validate.py deployment-entries
   python3 code/specs_validate.py all
   python3 code/fact_validate.py ldvh-base/studies/study-0008-ai-capability-asset-industry-practices.md ldvh-base/workcases/workcase-0080-capability-asset-registration-governance.yaml
@@ -201,7 +201,7 @@ verification_evidence: |
 
   ## 验证结果
 
-  04.02 的 doc、refs、landing 检查均通过。
+  04.02 的 doc、refs、assurance 检查均通过。
   `deployment-entries` 检查通过，确认当前必备 Rules 资产存在并具备 `ldvh_asset` 自登记元信息。
   `specs_validate.py all` 普通模式退出码为 0；仍存在仓库既有 review hint / warning，不属于本计划新增硬错误。
   workcase-0080 单体事实源校验为 errors=0 warnings=0。
@@ -211,9 +211,9 @@ verification_evidence: |
 
   初次验证曾认为本计划已完成固定能力资产登记制、资产类型最佳实践、同步监督和部署分层边界的规范收敛，并明确 10 号提交规范的 Skill/Hook 具体落地仍由 workcase-0074 承接。Human 关闭审查指出“最佳实践”缺少行业最佳实践内容，不能仅以 LDVH 内部治理规则关闭。因此计划曾退回 active，并补充 item-6 承接行业实践调研与规范吸收。
 
-  补齐后，study-0008 和 workcase-0080 单体事实源校验通过；04.02 的 doc、refs、landing 检查通过；`deployment-entries` 检查通过；`specs_validate.py all` 普通模式退出码为 0，仍仅存在仓库既有 review hint / warning；相关 diff 空白检查通过。
+  补齐后，study-0008 和 workcase-0080 单体事实源校验通过；04.02 的 doc、refs、assurance 检查通过；`deployment-entries` 检查通过；`specs_validate.py all` 普通模式退出码为 0，仍仅存在仓库既有 review hint / warning；相关 diff 空白检查通过。
 
-  Human 随后指出最佳实践仍显草率，要求多子 Agent 起草，尤其加入 Codex 专业视角；本计划新增 item-7 承接深化。深化后，study-0008 和 workcase-0080 单体事实源校验通过；04.02 的 doc、refs、landing 检查通过；`deployment-entries` 检查通过；`specs_validate.py all` 普通模式退出码为 0，仍仅存在仓库既有 review hint / warning；相关 diff 空白检查通过。计划重新进入 review_needed，等待 Human 关闭审查。
+  Human 随后指出最佳实践仍显草率，要求多子 Agent 起草，尤其加入 Codex 专业视角；本计划新增 item-7 承接深化。深化后，study-0008 和 workcase-0080 单体事实源校验通过；04.02 的 doc、refs、assurance 检查通过；`deployment-entries` 检查通过；`specs_validate.py all` 普通模式退出码为 0，仍仅存在仓库既有 review hint / warning；相关 diff 空白检查通过。计划重新进入 review_needed，等待 Human 关闭审查。
 closure_evidence: |
   ## 验证计划
 
@@ -242,7 +242,7 @@ closure_evidence: |
 
   价值审核认为：0080 已产生足够价值。它把 spark-0017 暴露的真实问题从“单个提交规范资产怎么落地”提升为“固定能力资产如何准入、登记、边界分流、验证和承接”的治理问题，并补进了行业实践矩阵，而不是只写 LDVH 内部口径。价值成立证据包括：study-0008 已形成多来源行业最佳实践矩阵；04.02 已把薄入口、按需 Skill、隔离 Agent、确定性 Hook 和分层门禁转成稳定规则；Hook / 提交门禁未被过度设计成万能资产，而是分层到 Hook、Code validator、CI / server-side gate 和 Human Gate。
 
-  审核未发现 P0 风险。P1 风险是：关闭记录若写成“提交能力已落地”，会越界；0080 的价值是治理规范收敛，真实实现仍应由 workcase-0074 承接。P2 风险是：行业最佳实践目前足够支撑治理层关闭，但不是逐产品逐版本的实现选型报告；后续 0074 做 Skill / Hook 时仍需针对具体实现再做轻量技术确认。
+  审核未发现 P0 风险。P1 风险是：关闭记录若写成“提交能力已生效”，会越界；0080 的价值是治理规范收敛，真实实现仍应由 workcase-0074 承接。P2 风险是：行业最佳实践目前足够支撑治理层关闭，但不是逐产品逐版本的实现选型报告；后续 0074 做 Skill / Hook 时仍需针对具体实现再做轻量技术确认。
 
   因此，若后续关闭 0080，closure 必须明确：本计划关闭的是固定能力资产登记治理与最佳实践吸收；spark-0017 暴露的问题已被收敛为 Rules / Skill / Agent / Hook / Code / Web / CI 分层治理；本计划不实现 `ldvh-git-commit` Skill、`commit-msg` Hook 或 CI / server-side gate；关闭后进入 workcase-0074 承接真实落地。
 
@@ -262,7 +262,7 @@ review_requested_at: '2026-06-20T10:44:47+08:00'
 closed_at: '2026-06-20T20:32:15+08:00'
 related_docs:
 - specs/01-目录说明.md
-- specs/04.02-LDVH能力资产与落地保障规范.md
+- specs/04.02-LDVH能力资产与保障机制规范.md
 - specs/04.03-环境入口适配与部署规范.md
 - specs/06-工作流程基础规范.md
 - specs/10-Git提交规范.md

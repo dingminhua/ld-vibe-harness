@@ -145,7 +145,7 @@ verification_evidence: |
   python3 code/specs_validate.py index --fail-on-diagnostics
   python3 code/specs_validate.py all --fail-on-diagnostics
   npm run check
-  python3 code/fact_validate.py ldvh-base/workcases/workcase-0075-specs-metadata-landing-hardening.yaml ldvh-base/workcases/workcase-0076-ldvh-doc-metadata-contract.yaml
+  python3 code/fact_validate.py ldvh-base/workcases/workcase-0075-specs-metadata-assurance-hardening.yaml ldvh-base/workcases/workcase-0076-ldvh-doc-metadata-contract.yaml
   git diff --check
   ```
 
@@ -165,9 +165,9 @@ verification_evidence: |
   校验结果：
   - `python3 -m pytest tests/code/specs_validate_checks/test_index.py -q`：53 passed。
   - `python3 code/specs_validate.py index --fail-on-diagnostics`：通过，diagnostics=0。
-  - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过；Specs § 引用、规范落地要求、Human Gate 最小证据结构、投影漂移、LDVH 能力资产、一致性、字段注册表和管辖项目配置检查均通过。
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过；Specs § 引用、规范保障要求、Human Gate 最小证据结构、投影漂移、LDVH 能力资产、一致性、字段注册表和管辖项目配置检查均通过。
   - `npm run check`：通过；Web 类型检查、Web build、Web API 测试、239 条 Python 测试和 specs 检查均通过。
-  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0075-specs-metadata-landing-hardening.yaml ldvh-base/workcases/workcase-0076-ldvh-doc-metadata-contract.yaml`：通过，files=2 errors=0 warnings=0。
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0075-specs-metadata-assurance-hardening.yaml ldvh-base/workcases/workcase-0076-ldvh-doc-metadata-contract.yaml`：通过，files=2 errors=0 warnings=0。
   - `git diff --check`：通过，无空白错误。
 
   ## 结论

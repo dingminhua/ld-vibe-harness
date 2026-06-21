@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from .common import HEADING_RE, Issue, iter_markdown_files
-from . import landing as landing_checks
+from . import assurance as assurance_checks
 from .index import SpecsChecker
 
 
@@ -12,14 +12,14 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SPECS_DIR = PROJECT_ROOT / "specs"
 
 
-def sync_landing_config():
-    landing_checks.PROJECT_ROOT = PROJECT_ROOT
-    landing_checks.FORMAL_SPECS_DIR = SPECS_DIR
+def sync_assurance_config():
+    assurance_checks.PROJECT_ROOT = PROJECT_ROOT
+    assurance_checks.FORMAL_SPECS_DIR = SPECS_DIR
 
 
-def landing_is_formal_spec(path):
-    sync_landing_config()
-    return landing_checks.is_formal_spec(path)
+def assurance_is_formal_spec(path):
+    sync_assurance_config()
+    return assurance_checks.is_formal_spec(path)
 
 
 CONSISTENCY_WORK_MODEL_REQUIRED_SECTIONS = {
@@ -31,7 +31,7 @@ CONSISTENCY_WORK_MODEL_REQUIRED_SECTIONS = {
     "6": "字段契约",
     "7": "事实源回写与证据留存",
     "8": "适配边界",
-    "9": "规范落地要求",
+    "9": "规范保障要求",
     "10": "检查要求",
     "11": "待补齐事项",
 }
@@ -39,7 +39,7 @@ CONSISTENCY_NEGATIVE_TERMS = ("不得", "不应", "不能", "不可", "不是", 
 CONSISTENCY_DANGEROUS_TERMS = ("active", "统一流程", "默认流程", "默认保障机制", "可执行入口", "默认对象", "独立工作模型", "当前权威工作流程入口")
 CONSISTENCY_RETIRED_REFERENCE_RULES = (
     {
-        "aliases": ("42 LDVH 落地与检查", "42 LDVH落地与检查", "42 检查流程", "LDVH落地与检查"),
+        "aliases": ("42 LDVH 部署与适配检查", "42 LDVH部署与适配检查", "42 检查流程", "LDVH部署与适配检查"),
         "dangerous_terms": ("上位口径", "流程消费", "消费", "应读取", "读取本文", "输入", "默认保障机制", "可执行入口"),
         "code": "RETIRED_WORKFLOW_CONSUMPTION",
         "message": "已退回工作流程疑似仍被作为当前消费入口、输入或上位口径",
@@ -81,13 +81,13 @@ CONSISTENCY_FORBIDDEN_TEXT_RULES = (
 
 # 04 系列文件预期清单（文件名 → 预期标题，包含实际空格）
 CONSISTENCY_04_SERIES_FILES = {
-    "04-规范落地与环境适配基础规范.md": "规范落地与环境适配基础规范",
-    "04.01-规范落地声明规范.md": "规范落地声明规范",
-    "04.02-LDVH能力资产与落地保障规范.md": "LDVH 能力资产与落地保障规范",
+    "04-规范保障与环境适配基础规范.md": "规范保障与环境适配基础规范",
+    "04.01-规范保障声明规范.md": "规范保障声明规范",
+    "04.02-LDVH能力资产与保障机制规范.md": "LDVH 能力资产与保障机制规范",
     "04.03-环境入口适配与部署规范.md": "环境入口适配与部署规范",
 }
 CONSISTENCY_04_SERIES_ORDER = list(CONSISTENCY_04_SERIES_FILES.keys())
-CONSISTENCY_04_REQUIRED_TAIL = ["规范落地要求", "Human Gate 与检查要求", "待补齐事项"]
+CONSISTENCY_04_REQUIRED_TAIL = ["规范保障要求", "Human Gate 与检查要求", "待补齐事项"]
 CONSISTENCY_04_RETIRED_FILES = {
     "04.04-个人环境特别要求规范.md": "个人环境特别要求已并入 04.03",
 }
@@ -123,7 +123,7 @@ def consistency_04_series_issues():
                 Issue(
                     path,
                     1,
-                    "04 系列章节尾部应依次为：规范落地要求、Human Gate 与检查要求、待补齐事项",
+                    "04 系列章节尾部应依次为：规范保障要求、Human Gate 与检查要求、待补齐事项",
                     code="04_SERIES_SECTION_TAIL_MISMATCH",
                 )
             )
@@ -184,7 +184,7 @@ CONSISTENCY_WORKFLOW_REQUIRED_SECTIONS = {
     "10": "事实源回写与证据留存",
     "11": "环境适配边界",
     "12": "行动特有可测试性锚点",
-    "13": "规范落地要求",
+    "13": "规范保障要求",
     "14": "检查要求",
     "15": "待补齐事项",
 }
@@ -221,8 +221,8 @@ CONSISTENCY_DEPRECATED_EXPRESSIONS = {
     "承接检查": "适配检查",
     "承接降级": "适配降级",
     "承接机制": "保障机制 / 适配方式 / 适配措施",
-    "机制落地关系": "规范落地要求 + LDVH 能力保障 + 环境适配",
-    "机制承接关系": "规范落地要求 + LDVH 能力保障 + 环境适配",
+    "机制混同关系": "规范保障要求 + LDVH 能力保障 + 环境适配",
+    "机制承接关系": "规范保障要求 + LDVH 能力保障 + 环境适配",
     "输入材料": "参考与研究材料",
     "待补齐项": "待补齐事项",
 }
@@ -586,11 +586,11 @@ def consistency_is_current_deprecated_index(path):
 def consistency_human_gate_check_section_issues(paths):
     issues = []
     for path in iter_markdown_files(paths):
-        if not landing_is_formal_spec(path):
+        if not assurance_is_formal_spec(path):
             continue
         sections = consistency_h2_sections(path)
         titles = {section["title"] for section in sections.values()}
-        if "规范落地要求" not in titles:
+        if "规范保障要求" not in titles:
             continue
         if titles & CONSISTENCY_HUMAN_GATE_CHECK_TITLES:
             continue

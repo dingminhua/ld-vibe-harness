@@ -52,7 +52,7 @@ orchestration:
       同时修正共享测试夹具，使临时项目包含其声明的 evidence 文件。
     evidence_refs:
     - tests/code/test_fact_validate.py
-    - tests/code/specs_validate_checks/test_ldvh_landing.py
+    - tests/code/specs_validate_checks/test_ldvh_assurance.py
     blocking_reason: null
   - id: item-3
     title: 校验与独立复审
@@ -97,7 +97,7 @@ verification_evidence: |
   修改范围：
   - `code/fact_validate.py`：新增 `evidence_refs` 路径存在性检查，只校验可判定为项目内文件或目录路径的引用。
   - `tests/code/test_fact_validate.py`：新增缺失路径报错和混合非路径引用不误报测试，并补齐有效 WorkCase 测试夹具证据文件。
-  - `tests/code/specs_validate_checks/test_ldvh_landing.py`：补齐 landing/web validate 共享夹具中的 evidence 文件。
+  - `tests/code/specs_validate_checks/test_ldvh_assurance.py`：补齐 assurance/web validate 共享夹具中的 evidence 文件。
   - `specs/21-WorkCase-工作项.md` 与 `specs/05.02-工作模型字段内容与格式规范.md`：同步说明 mixed evidence ref 的 Code 检查边界。
 
   已运行：

@@ -156,7 +156,7 @@ orchestration:
     - python3 code/fact_validate.py ldvh-base --format text
     - python3 code/specs_validate.py index
     - python3 code/specs_validate.py all
-    - python3 -m pytest tests/code/test_fact_validate.py tests/code/test_fact_cli.py tests/code/specs_validate_checks/test_ldvh_landing.py
+    - python3 -m pytest tests/code/test_fact_validate.py tests/code/test_fact_cli.py tests/code/specs_validate_checks/test_ldvh_assurance.py
     - npm --prefix web run test:web:api
     - npm --prefix web run build
     - git diff --check
@@ -671,7 +671,7 @@ verification_evidence: |
   - `python3 code/fact_validate.py ldvh-base --format text`
   - `python3 code/specs_validate.py index`
   - `python3 code/specs_validate.py all`
-  - `python3 -m pytest tests/code/test_fact_validate.py tests/code/test_fact_cli.py tests/code/specs_validate_checks/test_ldvh_landing.py`
+  - `python3 -m pytest tests/code/test_fact_validate.py tests/code/test_fact_cli.py tests/code/specs_validate_checks/test_ldvh_assurance.py`
   - `npm --prefix web run test:web:api`
   - `npm --prefix web run build`
   - `git diff --check`

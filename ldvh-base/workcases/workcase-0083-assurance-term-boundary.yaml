@@ -1,0 +1,549 @@
+id: workcase-0083
+type: workcase
+title: 收窄落地术语边界并分层规范保障到部署链路
+goal: 收窄落地术语边界并分层规范保障到部署链路
+status: human_closure_confirming
+created: '2026-06-21T09:17:44.126386'
+updated: '2026-06-21T09:58:03.296586'
+workarea: workarea-0012
+priority: P1
+description: |
+  当前 04 系列和 43 工作流程中，“落地”同时承载规范要求声明、能力资产保障、环境适配、部署执行、适配检查和现场有效状态等多层语义，容易让 Human 和 AI 把“资产存在”误解为“已经部署并可用”。
+
+  本 WorkCase 承接一次术语与规范治理工作：先通过 Human Gate 确认是否正式收窄“落地”定义，再调整 02、04 系列和 43 的术语口径，明确“规范保障要求、能力保障、能力资产、环境适配、部署执行、适配检查、落地/本次现场有效”的链路；随后按 Human 后续裁决执行 Rules、Code、Web、测试、CLI 和 JSON 字段的一次性硬改，统一收敛为 `assurance` 和“规范保障要求”口径。
+success_criteria: |
+  - [x] Human Gate 明确正式收窄“落地”的定义，并明确不设置兼容期
+  - [x] 02 术语规范明确“落地”与规范保障要求、能力保障、环境适配、部署执行、适配检查的边界和推荐写法
+  - [x] 04、04.01、04.02、04.03 的职责链路改为分层表达，避免把保障机制字段解释为已部署或已生效状态
+  - [x] 43 工作流程明确自己审核保障准备度，不直接声明现场落地结果
+  - [x] 有工作流程接管与无工作流程接管两种情况下，规范保障要求的写法、派生可发现性、生命周期触发和 Code 派生检查责任清楚
+  - [x] Rules、Code、Web、测试和 Code 文档已同步硬改：`assurance`、`assurance-report`、`ldvh-assurance-check`、`assurance-plan`、`assuranceCheck`、`assuranceReport`、`metadata.report` 和 `assurance_takeover` 等结构化入口均改为 `assurance` 口径
+  - [x] 验证命令、残留风险和后续分流记录清楚
+source: |
+  用户在当前对话中先要求分析“落地规范”与 LDVH 能力资产、环境部署之间的关系，又要求主控和子 Agent 一起评估需要做哪些事。随后用户追问“有工作流程”和“没有工作流程”时规范保障要求应如何写，以及变化后如何让相互之间知道要检查变化、适应变化。最后用户明确要求“了解一下 workcase，建立一个workcase”。
+
+  Human Gate 记录：
+  - 触发原因：将当前对话中的术语治理议题升级为 WorkCase。
+  - 影响范围：02 术语规范、04 系列、43 工作流程、Rules 入口、Code `assurance-*` 检查与报告、Web 展示和测试。
+  - 确认依据：用户明确要求建立 WorkCase。
+  - Human 决策：允许创建 WorkCase 承接后续规范治理与结构化入口迁移评估。
+  - 执行结论：Human 已进一步确认彻底硬改；specs / rules / code / web / tests / ldvh-base 已按本 WorkCase 执行并进入关闭确认。
+orchestration:
+  mode: mixed
+  execution_items:
+  - id: item-1
+    title: 确认术语决策与 Human Gate 边界
+    role: governance
+    mode: single
+    input_refs:
+    - current-conversation
+    - specs/02-术语规范.md
+    - specs/04-规范保障与环境适配基础规范.md
+    expected_output: 明确是否正式收窄“落地”定义、是否保留兼容期、哪些命名和接口暂不迁移。
+    status: done
+    result_summary: Human Gate 已确认“规范保障要求”作为正式术语，并确认 Code/CLI/Web/JSON 字段彻底硬改，不保留旧接口尾巴。
+    evidence_refs:
+    - current-conversation
+    - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
+    blocking_reason: null
+  - id: item-2
+    title: 修改 02 与 04 系列术语链路
+    role: specs-editor
+    mode: sequential
+    input_refs:
+    - specs/02-术语规范.md
+    - specs/04-规范保障与环境适配基础规范.md
+    - specs/04.01-规范保障声明规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
+    - specs/04.03-环境入口适配与部署规范.md
+    expected_output: 规范正文明确规范保障要求、能力保障、能力资产、环境适配、部署执行、适配检查和落地/本次现场有效的分层关系。
+    status: done
+    result_summary: 已更新 02、04、04.01、04.02、04.03 的术语和链路：规范保障要求、能力保障、环境适配、部署执行、适配检查和落地分层表达；只有部署执行完成且适配检查通过的当前现场有效结果才称为落地。
+    evidence_refs:
+    - specs/02-术语规范.md
+    - specs/04-规范保障与环境适配基础规范.md
+    - specs/04.01-规范保障声明规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
+    - specs/04.03-环境入口适配与部署规范.md
+    blocking_reason: null
+  - id: item-3
+    title: 澄清工作流程接管与变化感知机制
+    role: workflow-governance
+    mode: sequential
+    input_refs:
+    - specs/03.03-工作流程文档规范.md
+    - specs/04.01-规范保障声明规范.md
+    - specs/06-工作流程基础规范.md
+    - specs/43-assurance-readiness-audit-保障准备度审核.md
+    - code/spec_checks/index.py
+    expected_output: 明确无工作流程接管时来源规范如何写保障要求；有工作流程接管时如何写接管声明、派生可发现性、生命周期触发和 Code 派生检查。
+    status: done
+    result_summary: 已将工作流程接管字段和派生集合索引硬改为 assurance_takeover，43 改为保障准备度审核；来源规范保留保障要求和触发索引，执行责任由
+      active 接管流程承接。
+    evidence_refs:
+    - specs/03.03-工作流程文档规范.md
+    - specs/04.01-规范保障声明规范.md
+    - specs/06-工作流程基础规范.md
+    - specs/43-assurance-readiness-audit-保障准备度审核.md
+    - code/spec_checks/index.py
+    blocking_reason: null
+  - id: item-4
+    title: 评估 Rules Code Web 和测试硬改迁移
+    role: structured-migration-reviewer
+    mode: parallel
+    input_refs:
+    - rules/LDVH-WORKSPACE-ENTRY.md
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - code/spec_checks/assurance.py
+    - code/spec_checks/assurance_report.py
+    - code/spec_checks/ldvh_assurance.py
+    - code/specs_validate.py
+    - code/docs/01-Code参考实现结构规范.md
+    - tests/code/specs_validate_checks/
+    - web/
+    expected_output: 按 Human Gate 后续裁决执行 CLI/API/JSON/Web 字段硬改，并同步测试、Rules 和 Code
+      文档。
+    status: done
+    result_summary: 已将 CLI 子命令改为 assurance、assurance-report、ldvh-assurance-check、assurance-plan；Python
+      模块和函数、JSON report id、Web reports key、index 消费字段、测试文件和 Code 文档同步硬改。
+    evidence_refs:
+    - code/spec_checks/assurance.py
+    - code/spec_checks/assurance_report.py
+    - code/spec_checks/ldvh_assurance.py
+    - code/specs_validate.py
+    - code/spec_checks/web_validate.py
+    - code/docs/01-Code参考实现结构规范.md
+    - tests/code/specs_validate_checks/test_assurance_report.py
+    - tests/code/specs_validate_checks/test_ldvh_assurance.py
+    - tests/code/specs_validate_checks/test_web_validate.py
+    blocking_reason: null
+  - id: item-5
+    title: 验证与关闭材料整理
+    role: verification
+    mode: sequential
+    input_refs:
+    - specs/
+    - rules/
+    - code/
+    - web/
+    - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
+    expected_output: 运行相关 specs、事实源、能力资产和 Code/Web 检查，整理验证证据、残留风险和后续分流。
+    status: done
+    result_summary: 已运行 specs 综合校验、index 诊断、assurance 报告路径和完整 code 测试；旧结构化入口在正式产品资产范围内已清零。
+    evidence_refs:
+    - python3 code/specs_validate.py all
+    - python3 code/specs_validate.py index --fail-on-diagnostics
+    - npm run test:code -- --runInBand
+    blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 本 WorkCase 涉及核心术语边界、04 系列职责链路、工作流程接管关系和结构化入口迁移，需要方案执行前进行多视角审核。
+      required_perspectives:
+      - terminology_reviewer
+      - workflow_takeover_reviewer
+      - code_structured_migration_reviewer
+      optional_perspectives:
+      - web_human_facing_reviewer
+      tool_method_requirements:
+      - read_authoritative_sources
+      - inspect_code_cli_and_tests
+      - produce_evidence_refs
+      aggregation_rule: 存在 fail 或 needs_human_gate 结论时不得进入 Human 方案确认，必须先处理或提交 Human
+        裁决。
+    review_items:
+    - id: plan-review-1
+      role: terminology_reviewer
+      agent_name: Kepler
+      requested_at: '2026-06-21T09:34:00+08:00'
+      prompt_context:
+        objective: 审核 WorkCase 方案是否足以推进“收窄落地术语边界”。
+        input_refs:
+        - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
+        - specs/02-术语规范.md
+        - specs/04-规范保障与环境适配基础规范.md
+        - specs/04.01-规范保障声明规范.md
+        - specs/04.02-LDVH能力资产与保障机制规范.md
+        - specs/04.03-环境入口适配与部署规范.md
+        constraints:
+        - 只读审核，不修改文件。
+        - 输出 status、summary、key_findings、recommendations、required_changes 和 evidence_refs。
+      context_digest: 术语视角聚焦术语归口、全文替换风险和 Human Gate 裁决边界。
+      result:
+        status: needs_human_gate
+        summary: 方案方向足够，但“收窄落地术语边界”会改变核心术语和 04 系列职责关系，执行前必须由 Human 明确裁决定义收窄、是否保留过渡期和结构化入口边界。
+        key_findings:
+        - 02 是术语定义权威位置，04 系列只能写应用关系；WorkCase item-2 先读取 02 的方向合规。
+        - 方案已识别资产存在、能力保障、环境适配、部署执行、适配检查和现场有效性不能混为“已生效”。
+        - 方案已明确避免直接全文替换，并要求 Human 明确结构化入口迁移边界。
+        - Human Gate 必要且已被 WorkCase success criteria 和 item-1 识别。
+        - '`规范保障要求` 必须先在 02 中作为正式术语定名，不能在 04 系列中并行定义。'
+        recommendations:
+        - Human Gate 决议至少明确是否收窄“落地”、推荐中文术语、结构化入口是否硬改、过渡期是否存在。
+        - item-2 执行时应先改 02 的术语边界，再让 04/04.01/04.02/04.03 只引用和应用。
+        - item-4 应产出“不迁移清单”，区分 CLI/API、文件名、测试 fixture、历史路径中的保留项与仅改展示文案项。
+        - 禁止全局替换应写成执行检查项，只允许按语义上下文逐处改写。
+        required_changes:
+        - 执行前必须获得 Human Gate 裁决；无该裁决不应修改规范正文。
+        - 在主控处理结论中补明不得使用全文搜索替换推进术语迁移，必须逐处判断语义层级。
+        - 明确 `规范保障要求` 是正式术语，而不是过渡写法或描述性改写。
+        evidence_refs:
+        - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
+        - specs/02-术语规范.md
+        - specs/04-规范保障与环境适配基础规范.md
+        - specs/04.01-规范保障声明规范.md
+        - specs/04.02-LDVH能力资产与保障机制规范.md
+        - specs/04.03-环境入口适配与部署规范.md
+      raw_output_ref: null
+      attested_at: '2026-06-21T09:42:00+08:00'
+      attestation:
+        signer: Kepler
+        statement: 基于列出的 WorkCase 和 02/04 系列输入完成只读术语方案审核，并对上述结论负责。
+    - id: plan-review-2
+      role: workflow_takeover_reviewer
+      agent_name: Parfit
+      requested_at: '2026-06-21T09:34:00+08:00'
+      prompt_context:
+        objective: 审核 WorkCase 方案是否足以处理有/无工作流程接管时规范保障要求的写法和变化感知机制。
+        input_refs:
+        - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
+        - specs/03.03-工作流程文档规范.md
+        - specs/04.01-规范保障声明规范.md
+        - specs/06-工作流程基础规范.md
+        - specs/43-assurance-readiness-audit-保障准备度审核.md
+        - code/spec_checks/index.py
+        constraints:
+        - 只读审核，不修改文件。
+        - 重点审查接管声明、反向索引、生命周期触发和二次事实源风险。
+      context_digest: 工作流程接管视角聚焦来源规范与 active 工作流程之间的责任转移和 Code 派生可发现性。
+      result:
+        status: pass_with_followups
+        summary: 方案足以进入下一步汇总和 Human 确认；success criteria 与 item-3 已覆盖有/无工作流程接管时的写法和变化感知。但“反向索引”应收窄为
+          Code 派生可发现性，避免形成手写第二事实源。
+        key_findings:
+        - 03.03、04.01、06 已要求工作流程接管必须写明来源、范围、责任、证据、Human Gate 和失败降级；WorkCase item-3
+          输入与输出命中这些要求。
+        - 当前 Code 只校验 `assurance_takeover` 是列表且包含 source_spec、requirement、scope，并暴露到派生集合索引；尚不校验来源规范反向引用、active
+          状态、重复接管或正文责任完整性。
+        - 04.01、03.03、06、43 已覆盖接管建立、变更、降级、移除或失去 active 后的同步检查。
+        - 二次事实源风险已被现有规范识别，但执行时仍需避免来源规范和工作流程并行维护执行细节、检查清单或关闭证据。
+        recommendations:
+        - item-3 执行产物中明确两种模板：无工作流程接管时来源规范保留完整保障要求和触发条件；有 active 工作流程接管时来源规范只保留来源声明和接管引用。
+        - 把“反向索引”改口为“派生可发现性/派生集合索引”，明确不得新增手写反向清单。
+        - item-4 应判断是否需要把 `assurance_takeover` 从浅格式校验升级为引用、重复、active、正文覆盖诊断，或明确本阶段只做人工降级检查。
+        required_changes: []
+        evidence_refs:
+        - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
+        - specs/03.03-工作流程文档规范.md
+        - specs/04.01-规范保障声明规范.md
+        - specs/06-工作流程基础规范.md
+        - specs/43-assurance-readiness-audit-保障准备度审核.md
+        - code/spec_checks/index.py
+      raw_output_ref: null
+      attested_at: '2026-06-21T09:45:00+08:00'
+      attestation:
+        signer: Parfit
+        statement: 基于列出的 WorkCase、工作流程规范和 Code 派生索引输入完成只读流程接管方案审核，并对上述结论负责。
+    - id: plan-review-3
+      role: code_structured_migration_reviewer
+      agent_name: Anscombe
+      requested_at: '2026-06-21T09:34:00+08:00'
+      prompt_context:
+        objective: 审核 WorkCase 方案是否足以保护 Code/CLI/Web/test 的结构化迁移一致性。
+        input_refs:
+        - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
+        - code/spec_checks/assurance.py
+        - code/spec_checks/assurance_report.py
+        - code/spec_checks/ldvh_assurance.py
+        - code/specs_validate.py
+        - code/docs/01-Code参考实现结构规范.md
+        - tests/code/specs_validate_checks/
+        - web/
+        constraints:
+        - 只读审核，不修改文件。
+        - 重点审查 CLI/API/JSON/Web 字段名、输出文案迁移、测试影响和硬改风险。
+      context_digest: 结构化迁移视角聚焦 CLI/API、Web validate contract、JSON report id、测试断言和中文输出迁移边界。
+      result:
+        status: pass_with_followups
+        summary: 方案方向可以保护结构化契约，但执行前应把迁移边界写硬：明确 CLI 子命令、Web 字段、JSON `metadata.report`
+          值、`assurance_takeover` 派生索引字段和中文输出文案的一次性改写策略。
+        key_findings:
+        - Code 文档已把 `assurance specs`、`assurance-report`、`ldvh-assurance-check`、`assurance-plan`
+          和 `web-validate` 列为稳定结构化入口。
+        - WorkCase 原 success criteria 中结构化入口表达偏窄，实际迁移面覆盖多条 CLI 命令、JSON report id、Web
+          contract 和测试断言。
+        - 输出文案和结构化字段均可按 Human Gate 硬改，但必须同步测试和 Code 文档。
+        - '`assurance.py` 硬编码章节标题、表头和允许类型；若直接重命名“规范保障要求”，会影响正式规范检查、`all` 聚合检查和测试。'
+        - Web 侧通过 `web_validate.py` 输出 `assuranceCheck`、`assuranceReport`，测试需随结构化入口迁移同步固定。
+        - '`assurance_takeover` 是工作流程索引消费字段并有测试覆盖；术语迁移时必须同步 Code、测试和文档。'
+        recommendations:
+        - 执行方案中增加迁移矩阵，覆盖 CLI 名称、Python 函数、JSON 字段、Web reports key、中文输出、测试文件、允许改动和禁止改动。
+        - 若 Human Gate 确认彻底硬改，应删除旧入口和旧字段，不新增 alias，并补充单一新入口测试。
+        - 变更后至少运行 `npm run test:code`，并重点关注 specs_validate、assurance_report、ldvh_assurance、web_validate
+          和 index 相关测试。
+        required_changes:
+        - 在 WorkCase item-4 或 Human Gate 决策中明确结构化入口是否硬改以及是否保留过渡期。
+        - 把输出文案和结构化字段迁移拆成可改/不可改；不得无说明破坏 exit code、默认范围和诊断 code。
+        - 把测试影响列入验收；现有断言若因术语或接口变化而调整，必须说明是 Human Gate 硬改。
+        evidence_refs:
+        - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
+        - code/docs/01-Code参考实现结构规范.md
+        - code/specs_validate.py
+        - code/spec_checks/assurance.py
+        - code/spec_checks/assurance_report.py
+        - code/spec_checks/ldvh_assurance.py
+        - code/spec_checks/web_validate.py
+        - tests/code/specs_validate_checks/test_assurance_report.py
+        - tests/code/specs_validate_checks/test_ldvh_assurance.py
+        - tests/code/specs_validate_checks/test_web_validate.py
+        - tests/code/specs_validate_checks/test_index.py
+      raw_output_ref: null
+      attested_at: '2026-06-21T09:47:00+08:00'
+      attestation:
+        signer: Anscombe
+        statement: 基于列出的 WorkCase、Code、Web validate 和测试输入完成只读结构化迁移方案审核，并对上述结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-21T09:50:00+08:00'
+      resolver: main_controller
+      source_review_item_ids:
+      - plan-review-1
+      - plan-review-2
+      - plan-review-3
+      accepted_findings:
+      - 术语收窄会改变核心术语和 04 系列职责关系，执行 specs/rules/code/web 修改前必须先获得 Human Gate 裁决。
+      - 02 是术语定义权威位置；04 系列只能写应用关系，不能并行定义 `规范保障要求` 或新术语边界。
+      - 不得使用全文搜索替换推进术语迁移，必须逐处判断语义层级。
+      - '`反向索引` 在本 WorkCase 中应改称 `派生可发现性` 或 `Code 派生集合索引`，不得新增手写反向清单。'
+      - 结构化入口必须由 Human Gate 明确是否硬改；若确认硬改，不得保留过渡 alias。
+      - 输出文案和结构化 key 可以随硬改迁移；exit code、默认范围、诊断 code 和测试断言不得被无说明破坏。
+      rejected_findings: []
+      required_changes_applied:
+      - 已把成功标准从泛化 CLI/API 扩展为具体结构化入口清单。
+      - 已在 item-4 expected_output 中加入 CLI/API/JSON/Web 字段名迁移矩阵要求。
+      - 已在 controller_resolution 中记录 Human Gate 裁决事项、禁止全文替换、派生可发现性和结构化入口硬改边界。
+      unresolved_items: []
+      changed_fields:
+      - success_criteria
+      - orchestration.execution_items[item-4].expected_output
+      - orchestration.plan_review.review_items
+      - orchestration.plan_review.controller_resolution
+      revision_history_refs: []
+      summary: 三个方案审核视角已完成。术语视角要求 Human Gate 裁决后才能执行规范修改；流程接管和结构化迁移视角均认为方案可继续，但需补强派生可发现性和结构化入口硬改边界。主控已采纳全部发现和
+        required changes，将未决事项提交 Human 方案确认。
+    human_confirmation:
+      decision: execute
+      scope: 'Human Gate: 用户确认“规范保障要求”作为正式术语，并确认对 Code/CLI/Web/JSON 字段执行彻底硬改，不保留旧接口尾巴。'
+      constraints: []
+      confirmed_at: '2026-06-21T09:34:34.535890'
+      summary: dmh2002 确认方案可进入执行。
+  result_review:
+    controller_self_check:
+      checked_at: '2026-06-21T09:55:11+08:00'
+      checker: main_controller
+      input_refs:
+      - specs/
+      - rules/
+      - code/
+      - tests/
+      - web/
+      - code/docs/
+      - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
+      result:
+        status: pass
+        summary: 规范保障要求硬改已完成；旧结构化入口、旧中文要求名、旧工作流程路径和旧标题过渡识别在正式产品资产范围内已清零。
+        key_findings:
+        - 02 和 04 只把“落地”保留为部署执行完成且适配检查通过后的当前现场有效结果。
+        - CLI、Python 模块、Web validate key、JSON metadata.report、测试文件和 Code 文档均收敛到 assurance
+          口径。
+        - 子 Agent 复核指出的旧过渡提示、旧标题识别和 ldvh-base 旧路径暴露已处理。
+        required_changes: []
+      attestation:
+        signer: main_controller
+        statement: 基于最终残留搜索、specs 综合校验、index 诊断、事实源校验和 code 测试完成主控自检，并对上述结论负责。
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 默认由主控在结果自检后选择必要复核视角。
+      required_perspectives:
+      - specs_consistency_reviewer
+      - structured_migration_reviewer
+      optional_perspectives:
+      - web_human_facing_reviewer
+      tool_method_requirements:
+      - run_relevant_validators
+      - inspect_changed_files
+      - produce_evidence_refs
+      aggregation_rule: 存在 fail 或 needs_human_gate 结论时不得提交 Human 关闭确认，必须先处理或提交 Human
+        裁决。
+    review_items:
+    - id: result-review-1
+      role: specs_consistency_reviewer
+      agent_name: Chandrasekhar
+      requested_at: '2026-06-21T09:50:00+08:00'
+      prompt_context:
+        objective: 复核“规范保障要求”硬改后是否仍保留旧过渡提示、旧标题识别或泛化落地用法。
+        input_refs:
+        - specs/
+        - code/spec_checks/index.py
+        - code/spec_checks/consistency.py
+        constraints:
+        - 只读审核，不修改文件。
+        - 输出 status、findings、required_changes 和 evidence_refs。
+      context_digest: 术语和索引一致性视角聚焦旧过渡提示、旧章节标题识别和“落地”保留语义。
+      result:
+        status: pass_with_followups
+        summary: 复核发现正式产品资产仍有旧过渡提示和旧标题识别尾巴；正式“落地”定义本身可接受。
+        key_findings:
+        - 02 曾保留旧表达过渡信息，和彻底硬改口径冲突。
+        - index 曾继续识别旧标题，形成旧入口尾巴。
+        - 02/04 中作为新定义出现的“落地”是可接受保留。
+        required_changes:
+        - 移除正式产品资产中的旧过渡提示。
+        - 移除旧标题识别分支。
+      evidence_refs:
+      - specs/02-术语规范.md
+      - specs/04-规范保障与环境适配基础规范.md
+      - code/spec_checks/index.py
+      - code/spec_checks/consistency.py
+      raw_output_ref: null
+      attested_at: '2026-06-21T09:55:11+08:00'
+      attestation:
+        signer: Chandrasekhar
+        statement: 基于列出的 specs 和 Code 输入完成只读结果复核，并对上述结论负责。
+    - id: result-review-2
+      role: structured_migration_reviewer
+      agent_name: Pasteur
+      requested_at: '2026-06-21T09:50:00+08:00'
+      prompt_context:
+        objective: 复核 Code、Web、JSON 和事实源输出是否仍暴露旧结构化入口或路径。
+        input_refs:
+        - code/
+        - tests/
+        - web/
+        - code/docs/
+        - ldvh-base/
+        constraints:
+        - 只读审核，不修改文件。
+        - 输出旧接口残留、Web/JSON 风险和验证命令。
+      context_digest: 结构化迁移视角聚焦 CLI/API/Web key、JSON report、ldvh-base 路径引用和用户可见报告输出。
+      result:
+        status: pass_with_followups
+        summary: 复核确认 Code/Web 结构化入口基本自洽，但指出旧标题识别和 ldvh-base 旧路径引用仍会影响彻底硬改的干净度。
+        key_findings:
+        - 旧 CLI 子命令已移除，旧英文接口限定范围内 0 命中。
+        - 旧标题识别和 ldvh-base 旧路径引用需要清理，否则报告内容仍可能暴露旧名。
+        - assurance-report、assurance-plan、ldvh-assurance-check 和 web-validate 的新 key
+          自洽。
+        required_changes:
+        - 清理旧标题识别。
+        - 清理 ldvh-base 中旧路径引用。
+      evidence_refs:
+      - code/spec_checks/index.py
+      - code/spec_checks/consistency.py
+      - ldvh-base/
+      - code/spec_checks/web_validate.py
+      - tests/code/specs_validate_checks/test_web_validate.py
+      raw_output_ref: null
+      attested_at: '2026-06-21T09:55:11+08:00'
+      attestation:
+        signer: Pasteur
+        statement: 基于列出的 Code、Web、测试和 ldvh-base 输入完成只读结果复核，并对上述结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-21T09:55:11+08:00'
+      resolver: main_controller
+      source_review_item_ids:
+      - result-review-1
+      - result-review-2
+      accepted_findings:
+      - 正式产品资产不得保留旧过渡提示。
+      - 旧标题识别属于硬改尾巴，应删除。
+      - ldvh-base 中旧路径引用会被报告聚合暴露，应同步迁移到 assurance 路径。
+      rejected_findings: []
+      required_changes_applied:
+      - 已清理 02 中旧过渡提示，保留“落地”的正式收窄定义和禁用规则。
+      - 已移除 index 对旧标题的识别分支，并把 consistency 不推荐表达改为当前混同关系表达。
+      - 已迁移 ldvh-base 中旧路径、文件名和结构化引用；旧结构化入口和旧中文要求名目标残留为 0。
+      unresolved_items: []
+      changed_fields:
+      - result_review.controller_self_check
+      - result_review.review_items
+      - result_review.controller_resolution
+      - verification_evidence
+      - closure_evidence
+      revision_history_refs: []
+      summary: 结果复核的硬问题已全部处理并通过最终验证，可提交 Human 关闭确认。
+    human_closure_confirmation: null
+plan_confirmed_at: '2026-06-21T09:34:34.535890'
+verification_evidence: |
+  ## 验证计划
+  - 检查 specs 文档结构、章节引用、规范保障要求表、语义一致性、派生索引诊断和完整 code 测试。
+  - 检查正式产品资产范围内旧结构化入口和旧中文术语残留。
+
+  ## 验证命令
+  - `python3 code/specs_validate.py assurance specs`
+  - `python3 code/specs_validate.py refs specs`
+  - `python3 code/specs_validate.py consistency specs`
+  - `python3 code/specs_validate.py all`
+  - `python3 code/specs_validate.py index --fail-on-diagnostics`
+  - `python3 code/specs_validate.py --help`
+  - `python3 -m pytest tests/code/specs_validate_checks/test_index.py tests/code/specs_validate_checks/test_consistency.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_ldvh_assurance.py tests/code/specs_validate_checks/test_web_validate.py`
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml`
+  - `npm run test:code -- --runInBand`
+  - `rg` 检查正式产品资产范围内旧结构化入口、旧中文术语、当前 `assurance` 入口和 Web 字段迁移结果。
+
+  ## 验证结果
+  - 规范保障要求检查、Specs § 引用检查、一致性检查和 specs 综合检查均通过。
+  - `index --fail-on-diagnostics` 通过，diagnostics=0，docs=32，members=10。
+  - `specs_validate.py --help` 只展示 `assurance`、`assurance-report`、`ldvh-assurance-check`、`assurance-plan`，不再展示旧子命令。
+  - `test_index.py`、`test_consistency.py`、`test_assurance_report.py`、`test_ldvh_assurance.py` 与 `test_web_validate.py` 子集通过，115 passed。
+  - WorkCase 事实源校验通过，files=1 errors=0 warnings=0。
+  - `npm run test:code -- --runInBand` 通过，271 passed；specs:check 通过。
+  - 正式产品资产范围内旧结构化入口和旧中文术语目标残留为 0。
+
+  ## 结论
+  - 本 WorkCase 的规范、Rules、Code、Web contract、测试和 Code 文档硬改已通过当前可执行校验。
+closure_evidence: |
+  ## 验证计划
+  - 确认 Human Gate 已覆盖术语替换和结构化入口硬改。
+  - 确认旧结构化入口、旧中文要求名、旧文件路径和旧标题识别已清理。
+  - 确认结果复核发现的问题已处理，并通过最终验证。
+
+  ## 验证命令
+  - `rg` 残留搜索
+  - `python3 code/specs_validate.py all`
+  - `python3 code/specs_validate.py index --fail-on-diagnostics`
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml`
+  - `npm run test:code -- --runInBand`
+
+  ## 验证结果
+  - Human 已确认“规范保障要求”作为正式术语，并确认彻底硬改，不保留旧接口尾巴。
+  - 旧结构化入口、旧中文要求名、旧文件路径和旧标题识别已从正式产品资产范围清理。
+  - “落地”仅在 02/04 中作为正式收窄定义、禁用规则和术语治理触发保留。
+  - 子 Agent 结果复核发现的问题已全部处理，最终 specs、fact 和 code 验证通过。
+  - 子 Agent 复查编排缺少独立工作流程的问题已分流到 `spark-0021`，不阻塞本 WorkCase 对“规范保障要求”硬改主线的关闭确认。
+
+  ## 结论
+  - 当前结论可提交 Human 判断是否关闭 WorkCase；关闭前仍需 Human 明确接受本次硬改结果。
+closure_requested_at: '2026-06-21T09:55:11+08:00'
+review_requested_at: ''
+closed_at: ''
+closure_outcome: ''
+residual_risks:
+- '`assurance-report` 和 `assurance-plan` 仍可能因发现 open/degraded 缺口而以非零退出码返回；这属于报告语义，不表示命令不存在或硬改失败。'
+followup_refs:
+- spark-0021
+revision_history: []
+related_docs:
+- specs/02-术语规范.md
+- specs/04-规范保障与环境适配基础规范.md
+- specs/04.01-规范保障声明规范.md
+- specs/04.02-LDVH能力资产与保障机制规范.md
+- specs/04.03-环境入口适配与部署规范.md
+- specs/43-assurance-readiness-audit-保障准备度审核.md
+related_adrs: []
+related_sparks:
+- spark-0021
+related_pitfalls: []
+related_workcases:
+- workcase-0080

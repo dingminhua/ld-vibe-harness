@@ -7,7 +7,7 @@ updated: '2026-06-19T11:42:00+08:00'
 description: |
   本 Spark 承载本轮关于 TaskPlan / Task / SubTask、WorkCase、ExecutionItem、Role Contract、计划审核和执行证据边界的阶段性收敛。
 
-  当前已落地的主结论是：LDVH 不再以独立 Task 作为 active 工作模型。Human 关心的是 WorkCase 这一层的目标、范围、成功标准、关闭判断和证据；AI 在 WorkCase 内部使用 `orchestration.execution_items` 安排执行、角色分工、并行/串行和最小恢复信息。ExecutionItem 不是工作对象，不进入 `ldvh-base/` 独立事实源，也不作为历史事实源长期追踪。
+  当前已生效的主结论是：LDVH 不再以独立 Task 作为 active 工作模型。Human 关心的是 WorkCase 这一层的目标、范围、成功标准、关闭判断和证据；AI 在 WorkCase 内部使用 `orchestration.execution_items` 安排执行、角色分工、并行/串行和最小恢复信息。ExecutionItem 不是工作对象，不进入 `ldvh-base/` 独立事实源，也不作为历史事实源长期追踪。
 
   执行过程不作为历史事实源，含义是：不记录 AI 的临时 todo、工具读取顺序、子 Agent 中间过程、未采纳草稿或已被最终结论吸收的重复分析。WorkCase 只保留足以恢复、验证和关闭的最小证据，包括当前推进位置、执行项结果摘要、稳定产物、测试/检查、独立复检结论、Human Gate 结果、关闭原因、残留风险和经验分流结果。
 
@@ -61,7 +61,7 @@ evolution:
   - at: '2026-06-18T08:53:08'
     summary: 41-43 候选流程的待补齐状态已从“等待首次真实使用”改为“已有 dogfood 候选使用，升级 active 仍需 Human Gate”，避免 candidate 流程被误读为未验证或被 AI 擅自升级。
   - at: '2026-06-18T08:56:46'
-    summary: landing-report 已能在 41 触发保障能力缺口中读取 40/41 工作流程成员状态；当前输出会明确显示 40 为 active、41 为 candidate，从 Code 侧防止候选流程被误当成 active 触发保障。
+    summary: assurance-report 已能在 41 触发保障能力缺口中读取 40/41 工作流程成员状态；当前输出会明确显示 40 为 active、41 为 candidate，从 Code 侧防止候选流程被误当成 active 触发保障。
   - at: '2026-06-18T09:00:36'
     summary: Human 已确认 41-43 可以升级为 active；对应工作流程成员自描述已从 candidate 改为 active，候选等待升级事项已从待补齐段移除。
   - at: '2026-06-18T10:49:13'
@@ -70,8 +70,8 @@ evolution:
     summary: workcase-0078 完成 Web 内部 TaskFlow 命名债清理，当前入口改为 ExecutionFlow；本 Spark 后续不再把 TaskFlow 作为待处理债务。
 human_gate_records:
   - confirmed_at: "2026-06-18"
-    decision: Human 确认 41 work-model-audit、42 specs-audit、43 landing-readiness-audit 可以从 candidate 升级为 active。
-    scope: specs/41-work-model-audit-工作模型审核.md、specs/42-specs-audit-规范审核.md、specs/43-landing-readiness-audit-落地准备度审核.md 的成员自描述集合状态和对应待补齐事项。
+    decision: Human 确认 41 work-model-audit、42 specs-audit、43 assurance-readiness-audit 可以从 candidate 升级为 active。
+    scope: specs/41-work-model-audit-工作模型审核.md、specs/42-specs-audit-规范审核.md、specs/43-assurance-readiness-audit-保障准备度审核.md 的成员自描述集合状态和对应待补齐事项。
     constraints: |
       升级只表示三条工作流程可以作为 active 流程入口被 AI 引用和执行；不代表其 Skill SOP、案例库、自动化矩阵或后续 Code/Web 审核流程已经完成。后续仍需按各流程的 Gate、回写和验证要求执行。
 source: conversation

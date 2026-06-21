@@ -132,7 +132,7 @@ ldvh_doc:
     assert not any(item["code"] == "EXTERNAL_REFERENCE_IN_SPEC" for item in diagnostics)
 
 
-def test_workflow_member_exposes_landing_takeover(tmp_path):
+def test_workflow_member_exposes_assurance_takeover(tmp_path):
     specs = tmp_path / "specs"
     write_md(
         specs / "40-Workflow.md",
@@ -149,8 +149,8 @@ ldvh_member:
   canonical_path: specs/40-Workflow.md
   code_consumption:
     - workflow_index
-  landing_takeover:
-    - "source_spec=specs/04.01-规范落地声明规范.md; requirement=工作流程接管要求; scope=落地责任接管"
+  assurance_takeover:
+    - "source_spec=specs/04.01-规范保障声明规范.md; requirement=工作流程接管要求; scope=执行责任接管"
 ```
 """,
     )
@@ -160,14 +160,14 @@ ldvh_member:
     member = next(item for item in indexes["members"] if item["spec_id"] == "40")
     entries = checker_instance.members_as_collection_entries("work_process")
 
-    assert member["landing_takeover"] == [
-        "source_spec=specs/04.01-规范落地声明规范.md; requirement=工作流程接管要求; scope=落地责任接管"
+    assert member["assurance_takeover"] == [
+        "source_spec=specs/04.01-规范保障声明规范.md; requirement=工作流程接管要求; scope=执行责任接管"
     ]
-    assert entries[0]["landing_takeover"] == member["landing_takeover"]
-    assert not any(item["code"] == "LDVH_MEMBER_LANDING_TAKEOVER_INVALID" for item in indexes["diagnostics"])
+    assert entries[0]["assurance_takeover"] == member["assurance_takeover"]
+    assert not any(item["code"] == "LDVH_MEMBER_ASSURANCE_TAKEOVER_INVALID" for item in indexes["diagnostics"])
 
 
-def test_workflow_member_reports_invalid_landing_takeover(tmp_path):
+def test_workflow_member_reports_invalid_assurance_takeover(tmp_path):
     specs = tmp_path / "specs"
     write_md(
         specs / "40-Workflow.md",
@@ -184,15 +184,15 @@ ldvh_member:
   canonical_path: specs/40-Workflow.md
   code_consumption:
     - workflow_index
-  landing_takeover:
-    - "source_spec=specs/04.01-规范落地声明规范.md; requirement=工作流程接管要求"
+  assurance_takeover:
+    - "source_spec=specs/04.01-规范保障声明规范.md; requirement=工作流程接管要求"
 ```
 """,
     )
 
     diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
 
-    assert any(item["code"] == "LDVH_MEMBER_LANDING_TAKEOVER_INVALID" for item in diagnostics)
+    assert any(item["code"] == "LDVH_MEMBER_ASSURANCE_TAKEOVER_INVALID" for item in diagnostics)
 
 
 def test_specs_document_reports_possible_duplicate_term_definition(tmp_path):
@@ -1255,7 +1255,7 @@ def test_specs_document_reports_definition_with_shi_zhi(tmp_path):
 
 ## 1. 本文解决的问题
 
-保障机制是指确保规范落地的手段。
+保障机制是指确保规范保障的手段。
 """,
     )
 
@@ -1333,7 +1333,7 @@ def test_specs_document_does_not_report_jiancha_shifou(tmp_path):
 
 ## 1. 本文解决的问题
 
-检查是否需要更新规范落地要求。
+检查是否需要更新规范保障要求。
 """,
     )
 
@@ -1704,9 +1704,9 @@ Code 参考实现结构入口为 `code/docs/missing.md`。
 def test_environment_template_markdown_paths_do_not_require_repo_files(tmp_path):
     specs = tmp_path / "specs"
     write_md(
-        specs / "04-规范落地与环境适配基础规范.md",
+        specs / "04-规范保障与环境适配基础规范.md",
         """
-# 规范落地与环境适配基础规范
+# 规范保障与环境适配基础规范
 
 > 创建日期：2026-06-01
 > 定位：04 父规范
@@ -1723,7 +1723,7 @@ def test_environment_template_markdown_paths_do_not_require_repo_files(tmp_path)
 > 创建日期：2026-06-01
 > 定位：环境入口
 > 适用范围：LDVH
-> 上位依据：`specs/04-规范落地与环境适配基础规范.md`
+> 上位依据：`specs/04-规范保障与环境适配基础规范.md`
 
 ## 1. 本文解决的问题
 

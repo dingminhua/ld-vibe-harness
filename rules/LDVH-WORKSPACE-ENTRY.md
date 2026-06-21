@@ -9,7 +9,7 @@ ldvh_asset:
   source_specs:
     - "specs/01-目录说明.md"
     - "specs/03.04-管辖项目配置规范.md"
-    - "specs/04.02-LDVH能力资产与落地保障规范.md"
+    - "specs/04.02-LDVH能力资产与保障机制规范.md"
     - "specs/04.03-环境入口适配与部署规范.md"
   consumption_scenarios:
     - "工作区级管辖项目识别"
@@ -36,7 +36,7 @@ ldvh_asset:
 ```
 
 > 文件性质：工作区级 Rules 入口资产，不是 specs 正式规范或最终事实源
-> 规范来源：`specs/01-目录说明.md`、`specs/03.04-管辖项目配置规范.md`、`specs/04.02-LDVH能力资产与落地保障规范.md`、`specs/04.03-环境入口适配与部署规范.md`
+> 规范来源：`specs/01-目录说明.md`、`specs/03.04-管辖项目配置规范.md`、`specs/04.02-LDVH能力资产与保障机制规范.md`、`specs/04.03-环境入口适配与部署规范.md`
 > 适用范围：安装或使用 LDVH 的工作区级入口、管辖项目识别、管辖项目工作对象处理和 dogfood 管辖判断
 
 ---
@@ -101,7 +101,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 | 处理管辖项目工作对象 | `fact_cli.py list/search/show/stats` | 对应项目 `ldvh-base/`、`specs/05-工作模型基础规范.md`、`specs/03.02-工作模型文档规范.md` 和对应 `specs/20-39` 工作模型规范 |
 | 处理管辖项目 Git 提交记录 | Git 历史和必要校验 | 管辖项目 Git commit records、`specs/10-Git提交规范.md` |
 | 读取或修改管辖项目文档 | 项目约定、README、用户指令 | 项目自有文档位置、`specs/03-文档基础规范.md`、`specs/09-事实源边界与承载规范.md` |
-| 执行 LDVH 落地或接入检查 | `governed-projects`、`landing-report` | `specs/04.03-环境入口适配与部署规范.md`、`specs/06-工作流程基础规范.md`、`specs/03.03-工作流程文档规范.md`、`specs/40-59` 中实际存在的 active 工作流程主文件 |
+| 执行 LDVH 部署适配或接入检查 | `governed-projects`、`assurance-report` | `specs/04.03-环境入口适配与部署规范.md`、`specs/06-工作流程基础规范.md`、`specs/03.03-工作流程文档规范.md`、`specs/40-59` 中实际存在的 active 工作流程主文件 |
 | 维护 LDVH 产品资产 | `index` | 转入 `rules/LDVH-MAINTAINER-ENTRY.md` |
 
 遇到“对应 `specs/20-39` 工作模型规范”时，应按 `specs/03.02-工作模型文档规范.md` 的成员自描述契约和成员主文件定位具体文件；遇到“对应 `specs/40-59` 工作流程规范”时，应按 `specs/03.03-工作流程文档规范.md` 的成员自描述契约和实际存在的成员主文件定位具体文件。
@@ -128,7 +128,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 
 1. `specs/01-目录说明.md`；
 2. `specs/03.04-管辖项目配置规范.md`；
-3. `specs/04.02-LDVH能力资产与落地保障规范.md`；
+3. `specs/04.02-LDVH能力资产与保障机制规范.md`；
 4. `specs/04.03-环境入口适配与部署规范.md`；
 5. `rules/LDVH-MAINTAINER-ENTRY.md`；
 6. 已授权的工作区级薄入口。

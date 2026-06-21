@@ -43,7 +43,7 @@ orchestration:
 
       ## 结论
 
-      统一卡片家族组件已落地。保留 StatsCard、对象列表项、引用卡片等业务专用组件，不再强制改造成 ContentCard。
+      统一卡片家族组件已生效。保留 StatsCard、对象列表项、引用卡片等业务专用组件，不再强制改造成 ContentCard。
 
       closure_evidence: ## 交付内容
 

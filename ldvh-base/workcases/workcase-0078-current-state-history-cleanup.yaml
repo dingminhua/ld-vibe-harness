@@ -108,7 +108,7 @@ orchestration:
     result_summary: |
       已把 Web 内部 TaskFlow 命名改为 ExecutionFlow，移除 Dashboard/API/Profile 入口与相关类型、图标和字段识别；Code 校验 suggested_writeback 改用 WorkCase；测试同步当前命名。active surface 残留扫描未命中 TaskFlow/Profile/旧 writeback key。
     evidence_refs:
-    - code/spec_checks/ldvh_landing.py
+    - code/spec_checks/ldvh_assurance.py
     - code/spec_checks/human_gate.py
     - web/src/components/ExecutionFlowStatus.tsx
     - web/src/utils/executionFlowStatus.ts
@@ -116,7 +116,7 @@ orchestration:
     - web/src/pages/ObjectDetail.tsx
     - web/src/pages/ObjectList.tsx
     - web/src/utils/api.ts
-    - tests/code/specs_validate_checks/test_ldvh_landing.py
+    - tests/code/specs_validate_checks/test_ldvh_assurance.py
     - tests/code/specs_validate_checks/test_human_gate.py
     blocking_reason: null
   - id: item-5
@@ -188,7 +188,7 @@ verification_evidence: |
   - `rg -n "普通提交|普通/特殊|特殊提交|TaskFlow|taskFlow|planTask|TaskSection|TaskInline|TaskDoc|related_profiles|nav\\.profiles|fact_yaml_fix_or_task|spec_fix_or_task|\\bProfile\\b|\\bprofile\\b" ldvh-base`
   - `python3 code/specs_validate.py all`
   - `python3 code/fact_validate.py ldvh-base --format text`
-  - `python3 -m pytest tests/code/specs_validate_checks/test_ldvh_landing.py tests/code/specs_validate_checks/test_human_gate.py tests/code/test_commit_validate.py tests/code/test_fact_cli.py tests/code/test_fact_validate.py -q`
+  - `python3 -m pytest tests/code/specs_validate_checks/test_ldvh_assurance.py tests/code/specs_validate_checks/test_human_gate.py tests/code/test_commit_validate.py tests/code/test_fact_cli.py tests/code/test_fact_validate.py -q`
   - `npm run check` in `web/`
   - `npm run test:web:api` in `web/`
 

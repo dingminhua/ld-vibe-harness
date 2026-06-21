@@ -1,4 +1,4 @@
-"""LDVH landing check and read-only landing plan reports."""
+"""LDVH assurance check and read-only assurance plan reports."""
 
 import json
 import subprocess
@@ -9,8 +9,8 @@ from pathlib import Path
 from .common import iter_markdown_files
 from . import doc_structure as doc_structure_checks
 from . import governed_projects as governed_projects_checks
-from . import landing as landing_checks
-from . import landing_report as landing_report_checks
+from . import assurance as assurance_checks
+from . import assurance_report as assurance_report_checks
 from . import refs as refs_checks
 
 
@@ -19,11 +19,11 @@ SPECS_DIR = PROJECT_ROOT / "specs"
 LEGACY_SPECS_DIR = PROJECT_ROOT / "docs" / "specs"
 FORMAL_SPECS_DIR = SPECS_DIR
 DOCS_DIR = PROJECT_ROOT / "docs"
-RUNTIME_PROJECTION_DEFAULT_PATHS = list(landing_report_checks.RUNTIME_PROJECTION_DEFAULT_PATHS)
+RUNTIME_PROJECTION_DEFAULT_PATHS = list(assurance_report_checks.RUNTIME_PROJECTION_DEFAULT_PATHS)
 GOVERNED_PROJECTS_FILENAME = governed_projects_checks.GOVERNED_PROJECTS_FILENAME
 
-RUNTIME_PROJECTION_REMEDIATION_LABELS = landing_report_checks.RUNTIME_PROJECTION_REMEDIATION_LABELS
-LDVH_LANDING_CHECK_STATUS_ORDER = {"closed": 0, "degraded": 1, "open": 2, "blocked": 3}
+RUNTIME_PROJECTION_REMEDIATION_LABELS = assurance_report_checks.RUNTIME_PROJECTION_REMEDIATION_LABELS
+LDVH_ASSURANCE_CHECK_STATUS_ORDER = {"closed": 0, "degraded": 1, "open": 2, "blocked": 3}
 
 
 def sync_doc_structure_config():
@@ -36,16 +36,16 @@ def sync_refs_config():
     refs_checks.LEGACY_SPECS_DIR = LEGACY_SPECS_DIR
 
 
-def sync_landing_config():
-    landing_checks.PROJECT_ROOT = PROJECT_ROOT
-    landing_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
+def sync_assurance_config():
+    assurance_checks.PROJECT_ROOT = PROJECT_ROOT
+    assurance_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
 
 
-def sync_landing_report_config():
-    landing_report_checks.PROJECT_ROOT = PROJECT_ROOT
-    landing_report_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
-    landing_report_checks.DOCS_DIR = DOCS_DIR
-    landing_report_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
+def sync_assurance_report_config():
+    assurance_report_checks.PROJECT_ROOT = PROJECT_ROOT
+    assurance_report_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
+    assurance_report_checks.DOCS_DIR = DOCS_DIR
+    assurance_report_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
 
 
 def sync_governed_projects_config():
@@ -67,36 +67,36 @@ def refs_check_paths(paths):
     return refs_checks.check_paths(paths)
 
 
-def landing_check_paths(paths):
-    sync_landing_config()
-    return landing_checks.check_paths(paths)
+def assurance_check_paths(paths):
+    sync_assurance_config()
+    return assurance_checks.check_paths(paths)
 
 
-def landing_default_check_paths():
-    sync_landing_config()
-    return landing_checks.default_check_paths()
+def assurance_default_check_paths():
+    sync_assurance_config()
+    return assurance_checks.default_check_paths()
 
 
-def landing_relative_path(path):
-    sync_landing_config()
-    return landing_checks.landing_relative_path(path)
+def assurance_relative_path(path):
+    sync_assurance_config()
+    return assurance_checks.assurance_relative_path(path)
 
 
-def landing_report_count_by(items, key):
-    return landing_report_checks.landing_report_count_by(items, key)
+def assurance_report_count_by(items, key):
+    return assurance_report_checks.assurance_report_count_by(items, key)
 
 
-def landing_report_is_gap(item):
-    return landing_report_checks.landing_report_is_gap(item)
+def assurance_report_is_gap(item):
+    return assurance_report_checks.assurance_report_is_gap(item)
 
 
-def landing_report_build(paths=None):
-    sync_landing_report_config()
-    return landing_report_checks.landing_report_build(paths)
+def assurance_report_build(paths=None):
+    sync_assurance_report_config()
+    return assurance_report_checks.assurance_report_build(paths)
 
 
 def classify_runtime_projection_remediation(item):
-    return landing_report_checks._classify_runtime_projection_remediation(item)
+    return assurance_report_checks._classify_runtime_projection_remediation(item)
 
 
 def governed_projects_check_root(root):
@@ -104,24 +104,24 @@ def governed_projects_check_root(root):
     return governed_projects_checks.check_root(root)
 
 
-def ldvh_landing_check_status(items):
+def ldvh_assurance_check_status(items):
     status = "closed"
     for item in items:
         item_status = item.get("status", "closed")
-        if LDVH_LANDING_CHECK_STATUS_ORDER.get(item_status, 0) > LDVH_LANDING_CHECK_STATUS_ORDER.get(status, 0):
+        if LDVH_ASSURANCE_CHECK_STATUS_ORDER.get(item_status, 0) > LDVH_ASSURANCE_CHECK_STATUS_ORDER.get(status, 0):
             status = item_status
     return status
 
 
-def ldvh_landing_check_fact_files():
+def ldvh_assurance_check_fact_files():
     facts_dir = PROJECT_ROOT / "ldvh-base"
     if not facts_dir.exists():
         return []
     return sorted(facts_dir.rglob("*.yaml"))
 
 
-def ldvh_landing_check_fact_validate():
-    fact_files = ldvh_landing_check_fact_files()
+def ldvh_assurance_check_fact_validate():
+    fact_files = ldvh_assurance_check_fact_files()
     if not fact_files:
         return {
             "status": "degraded",
@@ -179,22 +179,22 @@ def ldvh_landing_check_fact_validate():
         }
 
 
-def ldvh_landing_check_spec_validate():
+def ldvh_assurance_check_spec_validate():
     doc_issues = doc_check_paths([str(SPECS_DIR)])
     refs_issues = refs_check_paths(refs_default_check_paths())
-    landing_issues = landing_check_paths(landing_default_check_paths())
-    issues = doc_issues + refs_issues + landing_issues
+    assurance_issues = assurance_check_paths(assurance_default_check_paths())
+    issues = doc_issues + refs_issues + assurance_issues
     return {
         "status": "open" if issues else "closed",
         "issue_count": len(issues),
         "doc_issue_count": len(doc_issues),
         "refs_issue_count": len(refs_issues),
-        "landing_issue_count": len(landing_issues),
+        "assurance_issue_count": len(assurance_issues),
         "checked_file_count": len(iter_markdown_files([str(SPECS_DIR)])),
-        "evidence": f"spec checks found doc={len(doc_issues)}, refs={len(refs_issues)}, landing={len(landing_issues)} issues",
+        "evidence": f"spec checks found doc={len(doc_issues)}, refs={len(refs_issues)}, assurance={len(assurance_issues)} issues",
         "issues": [
             {
-                "source": landing_relative_path(issue.path),
+                "source": assurance_relative_path(issue.path),
                 "line": issue.line,
                 "code": issue.code,
                 "message": issue.message,
@@ -222,7 +222,7 @@ def ldvh_bootstrap_issue(code, message, path=None, category="Code"):
     return {
         "code": code,
         "message": message,
-        "path": landing_relative_path(path) if path else None,
+        "path": assurance_relative_path(path) if path else None,
         "category": category,
     }
 
@@ -263,7 +263,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         (PROJECT_ROOT / "rules" / "LDVH-MAINTAINER-ENTRY.md", "LDVH 维护运行投影入口", "环境承接"),
     ]
     asset_issues = [
-        ldvh_bootstrap_issue("BOOTSTRAP_ASSET_MISSING", f"缺少{label}: {landing_relative_path(path)}", path, category)
+        ldvh_bootstrap_issue("BOOTSTRAP_ASSET_MISSING", f"缺少{label}: {assurance_relative_path(path)}", path, category)
         for path, label, category in required_assets
         if not path.exists()
     ]
@@ -280,7 +280,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         "governed_projects_config",
         "管辖项目配置检查",
         "open" if governed_issues else "closed",
-        f"checked {landing_relative_path(workspace_root / GOVERNED_PROJECTS_FILENAME)}",
+        f"checked {assurance_relative_path(workspace_root / GOVERNED_PROJECTS_FILENAME)}",
         ["事实源"] if governed_issues else [],
         [
             ldvh_bootstrap_issue(issue.code, issue.message, issue.path, "事实源")
@@ -290,7 +290,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
 
     index_paths = [SPECS_DIR / "20-工作模型集合索引.md", SPECS_DIR / "40-工作流程集合索引.md"]
     index_issues = [
-        ldvh_bootstrap_issue("BOOTSTRAP_INDEX_MISSING", f"缺少索引文件: {landing_relative_path(path)}", path, "规范")
+        ldvh_bootstrap_issue("BOOTSTRAP_INDEX_MISSING", f"缺少索引文件: {assurance_relative_path(path)}", path, "规范")
         for path in index_paths
         if not path.exists()
     ]
@@ -303,7 +303,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         index_issues,
     ))
 
-    capability_path = SPECS_DIR / "04.02-LDVH能力资产与落地保障规范.md"
+    capability_path = SPECS_DIR / "04.02-LDVH能力资产与保障机制规范.md"
     environment_path = SPECS_DIR / "04.03-环境入口适配与部署规范.md"
     matrix_issues = []
     if not capability_path.exists():
@@ -340,7 +340,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
 
     code_paths = [PROJECT_ROOT / "code" / "specs_validate.py", PROJECT_ROOT / "tests" / "code" / "test_specs_validate.py"]
     code_issues = [
-        ldvh_bootstrap_issue("BOOTSTRAP_CODE_SELF_CHECK_MISSING", f"缺少 Code 自检关键文件: {landing_relative_path(path)}", path, "Code")
+        ldvh_bootstrap_issue("BOOTSTRAP_CODE_SELF_CHECK_MISSING", f"缺少 Code 自检关键文件: {assurance_relative_path(path)}", path, "Code")
         for path in code_paths
         if not path.exists()
     ]
@@ -355,7 +355,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
 
     web_paths = [PROJECT_ROOT / "web", PROJECT_ROOT / "web" / "api", PROJECT_ROOT / "web" / "src"]
     web_issues = [
-        ldvh_bootstrap_issue("BOOTSTRAP_WEB_ASSET_MISSING", f"缺少 Web 资产路径: {landing_relative_path(path)}", path, "Web")
+        ldvh_bootstrap_issue("BOOTSTRAP_WEB_ASSET_MISSING", f"缺少 Web 资产路径: {assurance_relative_path(path)}", path, "Web")
         for path in web_paths
         if not path.exists()
     ]
@@ -375,7 +375,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         "report_structure",
         "42 报告结构输出",
         "open" if report_issues else "closed",
-        "checked ldvh-landing-check report structure contract",
+        "checked ldvh-assurance-check report structure contract",
         None,
         report_issues,
     ))
@@ -404,8 +404,8 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         "definitions": [{"id": item_id, "label": label} for item_id, label in BOOTSTRAP_BASELINE_DEFINITIONS],
         "items": items,
         "summary": {
-            "status": ldvh_landing_check_status(items),
-            "by_status": landing_report_count_by(items, "status"),
+            "status": ldvh_assurance_check_status(items),
+            "by_status": assurance_report_count_by(items, "status"),
             "item_count": len(items),
             "open_item_count": len([item for item in items if item["status"] != "closed"]),
             "gap_categories": sorted({category for item in items for category in item.get("gap_categories", [])}),
@@ -413,36 +413,36 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
     }
 
 
-def ldvh_landing_check_build(workspace_root=None):
+def ldvh_assurance_check_build(workspace_root=None):
     workspace_root = Path(workspace_root) if workspace_root else PROJECT_ROOT
     governed_issues = governed_projects_check_root(workspace_root)
-    landing_report = landing_report_build()
-    runtime_report = landing_report["runtime_projection"]
-    human_gate_report = landing_report["human_gate"]
-    fact_report = ldvh_landing_check_fact_validate()
-    spec_report = ldvh_landing_check_spec_validate()
-    capability_status = ldvh_landing_check_status(landing_report.get("capability_gaps", []))
-    requirement_status = ldvh_landing_check_status(landing_report.get("requirements", []))
+    assurance_report = assurance_report_build()
+    runtime_report = assurance_report["runtime_projection"]
+    human_gate_report = assurance_report["human_gate"]
+    fact_report = ldvh_assurance_check_fact_validate()
+    spec_report = ldvh_assurance_check_spec_validate()
+    capability_status = ldvh_assurance_check_status(assurance_report.get("capability_gaps", []))
+    requirement_status = ldvh_assurance_check_status(assurance_report.get("requirements", []))
     checks = [
         {
             "id": "governed_projects",
             "source_area": "governed-projects",
             "status": "open" if governed_issues else "closed",
             "issue_count": len(governed_issues),
-            "evidence": f"governed-projects checked at {landing_relative_path(workspace_root / GOVERNED_PROJECTS_FILENAME)}",
+            "evidence": f"governed-projects checked at {assurance_relative_path(workspace_root / GOVERNED_PROJECTS_FILENAME)}",
             "suggested_writeback": "governed_projects_config",
             "issues": [
-                {"source": landing_relative_path(issue.path), "line": issue.line, "code": issue.code, "message": issue.message}
+                {"source": assurance_relative_path(issue.path), "line": issue.line, "code": issue.code, "message": issue.message}
                 for issue in governed_issues
             ],
         },
         {
-            "id": "landing_report",
-            "source_area": "landing-report",
-            "status": ldvh_landing_check_status([{"status": capability_status}, {"status": requirement_status}]),
-            "issue_count": len([item for item in landing_report.get("requirements", []) if item.get("status") != "closed"]) + len([item for item in landing_report.get("capability_gaps", []) if item.get("status") != "closed"]),
-            "evidence": f"landing-report consumed {landing_report['metadata']['requirement_count']} requirements and {len(landing_report.get('capability_gaps', []))} capability checks",
-            "suggested_writeback": "landing_report_followup",
+            "id": "assurance_report",
+            "source_area": "assurance-report",
+            "status": ldvh_assurance_check_status([{"status": capability_status}, {"status": requirement_status}]),
+            "issue_count": len([item for item in assurance_report.get("requirements", []) if item.get("status") != "closed"]) + len([item for item in assurance_report.get("capability_gaps", []) if item.get("status") != "closed"]),
+            "evidence": f"assurance-report consumed {assurance_report['metadata']['requirement_count']} requirements and {len(assurance_report.get('capability_gaps', []))} capability checks",
+            "suggested_writeback": "assurance_report_followup",
             "issues": [],
         },
         {
@@ -506,18 +506,18 @@ def ldvh_landing_check_build(workspace_root=None):
     return {
         "metadata": {
             "tool": "code/specs_validate.py",
-            "report": "ldvh-landing-check",
+            "report": "ldvh-assurance-check",
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "source_of_truth": False,
             "status_source": "derived heuristic",
             "project_root": str(PROJECT_ROOT),
             "workspace_root": str(workspace_root),
             "scope": "project-local Git facts plus explicit workspace governed-projects config",
-            "bootstrap_baseline_source": "docs/studies/42-ldvh-landing-check-LDVH落地与检查.md (已退回 studies，待重新设计)",
+            "bootstrap_baseline_source": "docs/studies/42-ldvh-assurance-check-LDVH部署与适配检查.md (已退回 studies，待重新设计)",
         },
         "summary": {
-            "status": ldvh_landing_check_status(checks),
-            "by_status": landing_report_count_by(checks, "status"),
+            "status": ldvh_assurance_check_status(checks),
+            "by_status": assurance_report_count_by(checks, "status"),
             "remaining_gap_count": len(remaining_gaps),
             "bootstrap_baseline_status": bootstrap_baseline["summary"]["status"],
             "bootstrap_baseline_open_item_count": bootstrap_baseline["summary"]["open_item_count"],
@@ -528,18 +528,18 @@ def ldvh_landing_check_build(workspace_root=None):
     }
 
 
-def landing_plan_build(workspace_root=None):
+def assurance_plan_build(workspace_root=None):
     workspace_root = Path(workspace_root) if workspace_root else PROJECT_ROOT
-    landing_report = landing_report_build()
-    ldvh_check = ldvh_landing_check_build(workspace_root)
-    gap_categories = landing_report.get("gap_categories", {})
+    assurance_report = assurance_report_build()
+    ldvh_check = ldvh_assurance_check_build(workspace_root)
+    gap_categories = assurance_report.get("gap_categories", {})
 
     facts_read = []
-    for req in landing_report.get("requirements", []):
+    for req in assurance_report.get("requirements", []):
         src = req.get("source", "")
         if src and src not in [f["path"] for f in facts_read]:
             facts_read.append({"path": src, "type": "spec"})
-    for cap in landing_report.get("capability_gaps", []):
+    for cap in assurance_report.get("capability_gaps", []):
         src = cap.get("source", "capability_gaps")
         if src and src not in [f["path"] for f in facts_read]:
             facts_read.append({"path": src, "type": "capability"})
@@ -574,11 +574,11 @@ def landing_plan_build(workspace_root=None):
                 for k, v in category["subcategories"].items()
             }
             rp_items = [
-                r for r in landing_report.get("requirements", [])
-                if r.get("owner_area") == "runtime_projection" and landing_report_is_gap(r)
+                r for r in assurance_report.get("requirements", [])
+                if r.get("owner_area") == "runtime_projection" and assurance_report_is_gap(r)
             ] + [
-                c for c in landing_report.get("capability_gaps", [])
-                if c.get("owner_area") == "runtime_projection" and landing_report_is_gap(c)
+                c for c in assurance_report.get("capability_gaps", [])
+                if c.get("owner_area") == "runtime_projection" and assurance_report_is_gap(c)
             ]
             remediation_counts = {}
             for item in rp_items:
@@ -642,7 +642,7 @@ def landing_plan_build(workspace_root=None):
     return {
         "metadata": {
             "tool": "code/specs_validate.py",
-            "report": "landing-plan",
+            "report": "assurance-plan",
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "source_of_truth": False,
             "status_source": "derived heuristic",
@@ -651,16 +651,16 @@ def landing_plan_build(workspace_root=None):
         "scope": {
             "project_root": str(PROJECT_ROOT),
             "workspace_root": str(workspace_root),
-            "landing_report_sources": landing_report["metadata"]["source_count"],
-            "landing_report_requirements": landing_report["metadata"]["requirement_count"],
+            "assurance_report_sources": assurance_report["metadata"]["source_count"],
+            "assurance_report_requirements": assurance_report["metadata"]["requirement_count"],
         },
         "facts_read": facts_read,
         "capabilities": capabilities,
         "requirements": {
-            "total": landing_report["metadata"]["requirement_count"],
-            "by_status": landing_report["summary"]["by_status"],
-            "gap_total": landing_report["summary"]["gap_total"],
-            "gap_by_owner_area": landing_report["summary"]["gap_by_owner_area"],
+            "total": assurance_report["metadata"]["requirement_count"],
+            "by_status": assurance_report["summary"]["by_status"],
+            "gap_total": assurance_report["summary"]["gap_total"],
+            "gap_by_owner_area": assurance_report["summary"]["gap_by_owner_area"],
         },
         "gaps": {
             "by_owner_area": {area: cat["total"] for area, cat in gap_categories.items()},
@@ -674,14 +674,14 @@ def landing_plan_build(workspace_root=None):
     }
 
 
-def landing_plan_format_text(plan):
+def assurance_plan_format_text(plan):
     lines = []
-    lines.append("# Landing Plan (只读)")
+    lines.append("# Assurance Plan (只读)")
     lines.append("")
     scope = plan.get("scope", {})
     lines.append(f"项目: {scope.get('project_root', '')}")
-    lines.append(f"规范来源: {scope.get('landing_report_sources', 0)} 篇")
-    lines.append(f"规范落地要求: {scope.get('landing_report_requirements', 0)} 条")
+    lines.append(f"规范来源: {scope.get('assurance_report_sources', 0)} 篇")
+    lines.append(f"规范保障要求: {scope.get('assurance_report_requirements', 0)} 条")
     req = plan.get("requirements", {})
     lines.append(f"未关闭缺口: {req.get('gap_total', 0)}")
     lines.append(f"缺口分布: {req.get('gap_by_owner_area', {})}")
@@ -730,18 +730,18 @@ def landing_plan_format_text(plan):
     return "\n".join(lines)
 
 
-def landing_plan_main(workspace_root=None, output_format="text"):
-    plan = landing_plan_build(workspace_root)
+def assurance_plan_main(workspace_root=None, output_format="text"):
+    plan = assurance_plan_build(workspace_root)
     if output_format == "json":
         json.dump(plan, sys.stdout, ensure_ascii=False, indent=2)
     else:
-        print(landing_plan_format_text(plan))
+        print(assurance_plan_format_text(plan))
     has_open = plan.get("requirements", {}).get("gap_total", 0) > 0
     return 1 if has_open else 0
 
 
-def ldvh_landing_check_format_text(report):
-    lines = ["LDVH落地与检查派生报告"]
+def ldvh_assurance_check_format_text(report):
+    lines = ["LDVH部署与适配检查派生报告"]
     lines.append(f"- 状态: {report['summary']['status']}")
     lines.append(f"- 剩余缺口数: {report['summary']['remaining_gap_count']}")
     lines.append(f"- Bootstrap Code 基线状态: {report['summary'].get('bootstrap_baseline_status')}")
@@ -766,10 +766,10 @@ def ldvh_landing_check_format_text(report):
     return "\n".join(lines)
 
 
-def ldvh_landing_check_main(workspace_root=None, output_format="text"):
-    report = ldvh_landing_check_build(workspace_root)
+def ldvh_assurance_check_main(workspace_root=None, output_format="text"):
+    report = ldvh_assurance_check_build(workspace_root)
     if output_format == "json":
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
-        print(ldvh_landing_check_format_text(report))
+        print(ldvh_assurance_check_format_text(report))
     return 0 if report["summary"]["status"] in {"closed", "degraded"} else 1

@@ -1,23 +1,23 @@
 import json
 from .common import checker, write_md
-from spec_checks import ldvh_landing as ldvh_landing_checks
-from .test_landing_report import build_landing_report_fixture
+from spec_checks import ldvh_assurance as ldvh_assurance_checks
+from .test_assurance_report import build_assurance_report_fixture
 from .test_governed_projects import write_governed_projects
 
 # ══════════════════════════════════════════════════════════════════════
-# ldvh-landing-check — 42 LDVH落地与检查派生报告
+# ldvh-assurance-check — 42 LDVH部署与适配检查派生报告
 # ══════════════════════════════════════════════════════════════════════
 
-def test_ldvh_landing_core_implementation_lives_in_spec_checks():
-    assert checker.ldvh_landing_checks is ldvh_landing_checks
-    assert ldvh_landing_checks.ldvh_landing_check_build.__module__ == "spec_checks.ldvh_landing"
-    assert ldvh_landing_checks.landing_plan_build.__module__ == "spec_checks.ldvh_landing"
+def test_ldvh_assurance_core_implementation_lives_in_spec_checks():
+    assert checker.ldvh_assurance_checks is ldvh_assurance_checks
+    assert ldvh_assurance_checks.ldvh_assurance_check_build.__module__ == "spec_checks.ldvh_assurance"
+    assert ldvh_assurance_checks.assurance_plan_build.__module__ == "spec_checks.ldvh_assurance"
 
 
-def build_ldvh_landing_check_fixture(tmp_path, monkeypatch):
-    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+def build_ldvh_assurance_check_fixture(tmp_path, monkeypatch):
+    docs_specs = build_assurance_report_fixture(tmp_path, monkeypatch)
     monkeypatch.setattr(checker, "SPECS_DIR", docs_specs)
-    evidence_file = tmp_path / "tests" / "code" / "specs_validate_checks" / "test_ldvh_landing.py"
+    evidence_file = tmp_path / "tests" / "code" / "specs_validate_checks" / "test_ldvh_assurance.py"
     evidence_file.parent.mkdir(parents=True, exist_ok=True)
     evidence_file.write_text("# evidence fixture\n", encoding="utf-8")
     write_governed_projects(
@@ -47,8 +47,6 @@ related_docs: []
 related_adrs: []
 related_sparks: []
 related_pitfalls: []
-workcases:
-  - workcase-0001
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -80,11 +78,11 @@ orchestration:
       mode: single
       input_refs:
         - code/specs_validate.py
-      expected_output: 测试落地检查。
+      expected_output: 测试部署适配检查。
       status: done
       result_summary: 已完成。
       evidence_refs:
-        - tests/code/specs_validate_checks/test_ldvh_landing.py
+        - tests/code/specs_validate_checks/test_ldvh_assurance.py
       blocking_reason:
   review:
     controller_self_check: true
@@ -109,16 +107,16 @@ related_workcases: []
     return docs_specs
 
 
-def test_ldvh_landing_check_consumes_existing_reports(tmp_path, monkeypatch):
-    build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
+def test_ldvh_assurance_check_consumes_existing_reports(tmp_path, monkeypatch):
+    build_ldvh_assurance_check_fixture(tmp_path, monkeypatch)
 
-    report = checker.ldvh_landing_check_build(tmp_path)
+    report = checker.ldvh_assurance_check_build(tmp_path)
 
-    assert report["metadata"]["report"] == "ldvh-landing-check"
+    assert report["metadata"]["report"] == "ldvh-assurance-check"
     assert report["metadata"]["source_of_truth"] is False
     assert {item["id"] for item in report["checks"]} == {
         "governed_projects",
-        "landing_report",
+        "assurance_report",
         "runtime_projection",
         "human_gate",
         "fact_validate",
@@ -151,11 +149,11 @@ def test_ldvh_landing_check_consumes_existing_reports(tmp_path, monkeypatch):
     assert set(baseline["summary"]["gap_categories"]) <= {"规范", "Code", "Web", "WorkCase", "事实源", "环境承接", "Human Gate"}
 
 
-def test_ldvh_landing_check_reports_missing_governed_projects(tmp_path, monkeypatch):
-    build_landing_report_fixture(tmp_path, monkeypatch)
+def test_ldvh_assurance_check_reports_missing_governed_projects(tmp_path, monkeypatch):
+    build_assurance_report_fixture(tmp_path, monkeypatch)
     monkeypatch.setattr(checker, "SPECS_DIR", tmp_path / "docs" / "specs")
 
-    report = checker.ldvh_landing_check_build(tmp_path)
+    report = checker.ldvh_assurance_check_build(tmp_path)
 
     governed = next(item for item in report["checks"] if item["id"] == "governed_projects")
     assert report["summary"]["status"] == "open"
@@ -163,12 +161,12 @@ def test_ldvh_landing_check_reports_missing_governed_projects(tmp_path, monkeypa
     assert governed["issues"][0]["code"] == "GOVERNED_PROJECTS_MISSING"
 
 
-def test_ldvh_landing_check_reports_fact_validation_issues(tmp_path, monkeypatch):
-    build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
+def test_ldvh_assurance_check_reports_fact_validation_issues(tmp_path, monkeypatch):
+    build_ldvh_assurance_check_fixture(tmp_path, monkeypatch)
     bad_workcase = tmp_path / "ldvh-base" / "workcases" / "workcase-0002-bad.yaml"
     bad_workcase.write_text("id: bad\ntype: workcase\n", encoding="utf-8")
 
-    report = checker.ldvh_landing_check_build(tmp_path)
+    report = checker.ldvh_assurance_check_build(tmp_path)
 
     fact_check = next(item for item in report["checks"] if item["id"] == "fact_validate")
     assert report["summary"]["status"] == "open"
@@ -176,15 +174,15 @@ def test_ldvh_landing_check_reports_fact_validation_issues(tmp_path, monkeypatch
     assert fact_check["issue_count"] > 0
 
 
-def test_ldvh_landing_check_cli_outputs_json(tmp_path, monkeypatch, capsys):
-    build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
+def test_ldvh_assurance_check_cli_outputs_json(tmp_path, monkeypatch, capsys):
+    build_ldvh_assurance_check_fixture(tmp_path, monkeypatch)
 
-    exit_code = checker.main(["ldvh-landing-check", "--workspace-root", str(tmp_path), "--format", "json"])
+    exit_code = checker.main(["ldvh-assurance-check", "--workspace-root", str(tmp_path), "--format", "json"])
 
     payload = json.loads(capsys.readouterr().out)
     assert exit_code == 1
-    assert payload["metadata"]["report"] == "ldvh-landing-check"
+    assert payload["metadata"]["report"] == "ldvh-assurance-check"
     assert payload["summary"]["status"] == "open"
-    assert payload["metadata"]["bootstrap_baseline_source"] == "docs/studies/42-ldvh-landing-check-LDVH落地与检查.md (已退回 studies，待重新设计)"
+    assert payload["metadata"]["bootstrap_baseline_source"] == "docs/studies/42-ldvh-assurance-check-LDVH部署与适配检查.md (已退回 studies，待重新设计)"
     assert payload["bootstrap_baseline"]["summary"]["item_count"] == 10
     assert payload["remaining_gaps"]

@@ -2,10 +2,10 @@ import json
 from .common import checker, write_md
 
 # ══════════════════════════════════════════════════════════════════════
-# landing-report — 规范落地要求聚合报告
+# assurance-report — 规范保障要求聚合报告
 # ══════════════════════════════════════════════════════════════════════
 
-def build_landing_report_fixture(tmp_path, monkeypatch):
+def build_assurance_report_fixture(tmp_path, monkeypatch):
     docs_specs = tmp_path / "specs"
     (tmp_path / "rules").mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
@@ -24,20 +24,20 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
     write_md(
         docs_specs / "00-Test.md",
         """
-# Landing Report Test
+# Assurance Report Test
 
 ## 章节索引
 
 | 章节 | 主题 |
 |---|---|
-| 1 | 规范落地要求 |
+| 1 | 规范保障要求 |
 
-## 1. 规范落地要求
+## 1. 规范保障要求
 
-| 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 上位约束承接要求 | 后续正式规范不得违背本文的价值实现标准 | 规范检查 | 文档治理 | 审计时 |
-| 确定性执行要求 | 后续 Code 应能生成 landing report | `code/specs_validate.py` 扩展、正反样例 | 校验实现 | 规范落地要求变化时 |
+| 确定性执行要求 | 后续 Code 应能生成 assurance report | `code/specs_validate.py` 扩展、正反样例 | 校验实现 | 规范保障要求变化时 |
 | Human 交互要求 | 高影响变更应触发 Human Gate | Human Gate、确认记录 | 工作流程治理 | 变更前 |
 | Human 交互要求 | 新增管辖项目条目时，应评估 Human Gate | Human Gate、影响范围说明 | 工作流程治理 | 管辖项目清单变化时 |
 | Human 交互要求 | candidate 流程正式创建前，应先讨论是否独立成流程 | Human Gate、流程讨论 | 工作流程治理 | 从候选项创建流程前 |
@@ -54,9 +54,9 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
         """
 # 评估
 
-## 1. 规范落地要求
+## 1. 规范保障要求
 
-| 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 确定性执行要求 | 不应进入正式报告 | Code | 校验实现 | 任意 |
 """,
@@ -64,10 +64,10 @@ def build_landing_report_fixture(tmp_path, monkeypatch):
     return docs_specs
 
 
-def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
-    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+def test_assurance_report_builds_statuses_and_summary(tmp_path, monkeypatch):
+    docs_specs = build_assurance_report_fixture(tmp_path, monkeypatch)
 
-    report = checker.landing_report_build([str(docs_specs)])
+    report = checker.assurance_report_build([str(docs_specs)])
 
     assert report["metadata"]["source_of_truth"] is False
     assert report["metadata"]["checked_file_count"] == 1
@@ -113,21 +113,21 @@ def test_landing_report_builds_statuses_and_summary(tmp_path, monkeypatch):
 
     statuses = {item["content"]: item["status"] for item in report["requirements"]}
     assert statuses["后续正式规范不得违背本文的价值实现标准"] == "closed"
-    assert statuses["后续 Code 应能生成 landing report"] == "closed"
+    assert statuses["后续 Code 应能生成 assurance report"] == "closed"
     assert statuses["高影响变更应触发 Human Gate"] == "needs_human_gate"
     assert statuses["运行投影不可用时应记录降级说明"] == "degraded"
     assert statuses["41 触发保障应被 42 消费，并覆盖运行投影漂移检查和 Human Gate 证据消费"] == "needs_human_gate"
     assert next(item for item in report["requirements"] if item["owner_area"] == "code")["suggested_writeback"] == "code_request_or_test"
 
 
-def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
-    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+def test_assurance_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
+    docs_specs = build_assurance_report_fixture(tmp_path, monkeypatch)
 
-    exit_code = checker.main(["landing-report", str(docs_specs), "--format", "json"])
+    exit_code = checker.main(["assurance-report", str(docs_specs), "--format", "json"])
 
     assert exit_code == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["metadata"]["report"] == "landing-report"
+    assert payload["metadata"]["report"] == "assurance-report"
     assert payload["metadata"]["runtime_projection_checked_file_count"] == 1
     assert payload["metadata"]["human_gate_record_count"] == 0
     assert payload["summary"]["human_gate_status"] == "degraded"
@@ -155,14 +155,14 @@ def test_landing_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["capability_gaps"][0]["capability"] == "41 触发保障"
 
 
-def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
-    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+def test_assurance_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
+    docs_specs = build_assurance_report_fixture(tmp_path, monkeypatch)
 
-    exit_code = checker.main(["landing-report", str(docs_specs)])
+    exit_code = checker.main(["assurance-report", str(docs_specs)])
 
     assert exit_code == 0
     output = capsys.readouterr().out
-    assert "规范落地要求聚合报告" in output
+    assert "规范保障要求聚合报告" in output
     assert "需关注项:" in output
     assert "能力缺口:" in output
     assert "缺口分类:" in output
@@ -182,7 +182,7 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "Web / Human-facing 承接 (web_human_facing_support):" in output
     assert "Code 降级提示/覆盖 (diagnostic_coverage):" in output
     assert "覆盖范围降级 (coverage_degraded):" in output
-    assert "后续 Code 应能生成 landing report" not in output
+    assert "后续 Code 应能生成 assurance report" not in output
     assert "运行投影检查文件数: 1" in output
     assert "Human Gate 记录数: 0" in output
     assert "Human Gate 问题状态" in output
@@ -192,8 +192,8 @@ def test_landing_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "suggested_writeback: code_request_or_test" in output
 
 
-def test_landing_report_reports_41_member_status(tmp_path, monkeypatch):
-    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
+def test_assurance_report_reports_41_member_status(tmp_path, monkeypatch):
+    docs_specs = build_assurance_report_fixture(tmp_path, monkeypatch)
     write_md(
         docs_specs / "40-Workflow.md",
         """
@@ -227,7 +227,7 @@ ldvh_member:
 """,
     )
 
-    report = checker.landing_report_build([str(docs_specs)])
+    report = checker.assurance_report_build([str(docs_specs)])
 
     gap = next(item for item in report["capability_gaps"] if item["id"] == "41_trigger_safeguard")
     assert gap["status"] == "degraded"
@@ -235,12 +235,12 @@ ldvh_member:
     assert "collection_status=candidate" in gap["status_reason"]
 
 
-def test_landing_plan_build(tmp_path, monkeypatch):
-    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
-    plan = checker.landing_plan_build(str(tmp_path))
-    assert plan["metadata"]["report"] == "landing-plan"
+def test_assurance_plan_build(tmp_path, monkeypatch):
+    docs_specs = build_assurance_report_fixture(tmp_path, monkeypatch)
+    plan = checker.assurance_plan_build(str(tmp_path))
+    assert plan["metadata"]["report"] == "assurance-plan"
     assert plan["metadata"]["read_only"] is True
-    assert plan["scope"]["landing_report_requirements"] >= 1
+    assert plan["scope"]["assurance_report_requirements"] >= 1
     assert plan["requirements"]["gap_total"] >= 1
     assert "gaps" in plan
     assert "proposed_actions" in plan
@@ -252,11 +252,11 @@ def test_landing_plan_build(tmp_path, monkeypatch):
     assert len(plan["capabilities"]) >= 1
 
 
-def test_landing_plan_text_output(tmp_path, monkeypatch):
-    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
-    plan = checker.landing_plan_build(str(tmp_path))
-    text = checker.landing_plan_format_text(plan)
-    assert "Landing Plan (只读)" in text
+def test_assurance_plan_text_output(tmp_path, monkeypatch):
+    docs_specs = build_assurance_report_fixture(tmp_path, monkeypatch)
+    plan = checker.assurance_plan_build(str(tmp_path))
+    text = checker.assurance_plan_format_text(plan)
+    assert "Assurance Plan (只读)" in text
     assert "能力状态" in text
     assert "建议行动" in text
     assert "写入需求" in text
@@ -266,8 +266,8 @@ def test_landing_plan_text_output(tmp_path, monkeypatch):
 
 
 def test_runtime_projection_remediation_classification(tmp_path, monkeypatch):
-    docs_specs = build_landing_report_fixture(tmp_path, monkeypatch)
-    plan = checker.landing_plan_build(str(tmp_path))
+    docs_specs = build_assurance_report_fixture(tmp_path, monkeypatch)
+    plan = checker.assurance_plan_build(str(tmp_path))
     rp_action = None
     for action in plan["proposed_actions"]:
         if action["owner_area"] == "runtime_projection":

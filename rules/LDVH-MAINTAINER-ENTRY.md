@@ -9,7 +9,7 @@ ldvh_asset:
   source_specs:
     - "specs/01-目录说明.md"
     - "specs/03-文档基础规范.md"
-    - "specs/04.02-LDVH能力资产与落地保障规范.md"
+    - "specs/04.02-LDVH能力资产与保障机制规范.md"
     - "specs/04.03-环境入口适配与部署规范.md"
     - "specs/10-Git提交规范.md"
   consumption_scenarios:
@@ -37,7 +37,7 @@ ldvh_asset:
 ```
 
 > 文件性质：LDVH 项目级 Rules 入口资产，不是 specs 正式规范或最终事实源
-> 规范来源：`specs/01-目录说明.md`、`specs/03-文档基础规范.md`、`specs/04.02-LDVH能力资产与落地保障规范.md`、`specs/04.03-环境入口适配与部署规范.md`
+> 规范来源：`specs/01-目录说明.md`、`specs/03-文档基础规范.md`、`specs/04.02-LDVH能力资产与保障机制规范.md`、`specs/04.03-环境入口适配与部署规范.md`
 > 适用范围：维护 LDVH 自身产品资产时的项目级入口
 
 ---
@@ -45,7 +45,7 @@ ldvh_asset:
 
 这个文件用于 LDVH 源码仓库的项目级薄入口。它告诉 AI：进入 `ld-vibe-harness` 仓库维护 LDVH 产品资产时，先查什么、如何判断事实源、何时暂停。
 
-它不是最终事实源。正式规则以 `specs/` 为准，能力资产定义以 `specs/04.02-LDVH能力资产与落地保障规范.md` 为准，环境入口适配、部署和检查方法以 `specs/04.03-环境入口适配与部署规范.md` 为准。
+它不是最终事实源。正式规则以 `specs/` 为准，能力资产定义以 `specs/04.02-LDVH能力资产与保障机制规范.md` 为准，环境入口适配、部署和检查方法以 `specs/04.03-环境入口适配与部署规范.md` 为准。
 
 环境入口、项目规则、工作区配置或会话提示只应通过薄引用措施指向本文件，不应复制本文正文或 specs 正文。薄引用正文只应包含入口指向、压缩或恢复后的重读提示，以及 LDVH 管理段开始和结束标记。
 
@@ -75,7 +75,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 2. 涉及目录、编号或文件归属判断时，读取 `specs/01-目录说明.md`；
 3. 涉及术语、命名或不推荐表达时，读取 `specs/02-术语规范.md`；
 4. 涉及 specs 修改时，读取 `specs/03-文档基础规范.md`、`specs/03.01-规范文档规范.md`、目标规范和必要的 04/06/09 规范；
-5. 涉及能力资产、Rules、Skill、Agent、Hook、Code、Web 或环境适配时，读取 `specs/04.02-LDVH能力资产与落地保障规范.md` 和 `specs/04.03-环境入口适配与部署规范.md`；
+5. 涉及能力资产、Rules、Skill、Agent、Hook、Code、Web 或环境适配时，读取 `specs/04.02-LDVH能力资产与保障机制规范.md` 和 `specs/04.03-环境入口适配与部署规范.md`；
 6. 能由 Code 定位、聚合或检查的内容，优先使用 Code 工具查询；工具输出只作为导航、聚合和诊断结果，不替代权威文件原文；
 7. 修改完成后运行对应校验命令，并把稳定结论写回权威事实源。
 
@@ -84,10 +84,10 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 | 查询目标 | 优先命令 | 用途 |
 |---|---|---|
 | specs 规范入口和章节 | `python3 code/specs_validate.py index` | 生成规范派生索引，辅助定位文件、章节、引用和诊断 |
-| 规范落地要求状态 | `python3 code/specs_validate.py landing-report` | 聚合正式规范的落地要求、状态和建议回写方向 |
+| 规范保障要求状态 | `python3 code/specs_validate.py assurance-report` | 聚合正式规范的保障要求、状态和建议回写方向 |
 | specs 文档结构 | `python3 code/specs_validate.py doc specs` | 检查正式规范文档结构 |
 | specs 章节引用 | `python3 code/specs_validate.py refs specs` | 检查正式规范中的章节引用 |
-| specs 落地要求表 | `python3 code/specs_validate.py landing specs` | 检查规范落地要求表结构 |
+| specs 保障要求表 | `python3 code/specs_validate.py assurance specs` | 检查规范保障要求表结构 |
 | specs 综合检查 | `python3 code/specs_validate.py all` | 执行 specs 综合校验 |
 | LDVH Git 提交准备 | `ldvh-git-commit` Skill、`python3 code/commit_validate.py --check-message-file <message-file>` | 按 10 号规范拆分、编写、预检并创建提交 |
 | Rules 环境入口接入 | 按 `specs/04.03-环境入口适配与部署规范.md` §4.1-§4.4 执行 | 官方维护 Codex App 适配路径；默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口 |
@@ -98,16 +98,16 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 | 场景 | 先用工具 | 必读权威入口 |
 |---|---|---|
 | 理解 LDVH 总体规则 | `index` | `specs/00-LD-Vibe-Harness理念与纲要.md`、`specs/01-目录说明.md`、`specs/02-术语规范.md` |
-| 修改 specs 正式规范 | `index`、`doc`、`refs`、`landing` | `specs/03-文档基础规范.md`、`specs/03.01-规范文档规范.md`、`specs/04.01-规范落地声明规范.md`、目标规范 |
+| 修改 specs 正式规范 | `index`、`doc`、`refs`、`assurance` | `specs/03-文档基础规范.md`、`specs/03.01-规范文档规范.md`、`specs/04.01-规范保障声明规范.md`、目标规范 |
 | 修改或理解工作模型规范 | `index` | `specs/05-工作模型基础规范.md`、`specs/03.02-工作模型文档规范.md` 和对应 `specs/20-39` 工作模型规范 |
-| 处理工作流程规范 | `index`、`landing-report` | `specs/06-工作流程基础规范.md`、`specs/03.03-工作流程文档规范.md` 和对应 `specs/40-59` 工作流程规范 |
-| 处理规范落地、环境适配或适配措施 | `landing-report`、`index` | `specs/04-规范落地与环境适配基础规范.md`、`specs/04.02-LDVH能力资产与落地保障规范.md`、`specs/04.03-环境入口适配与部署规范.md` |
+| 处理工作流程规范 | `index`、`assurance-report` | `specs/06-工作流程基础规范.md`、`specs/03.03-工作流程文档规范.md` 和对应 `specs/40-59` 工作流程规范 |
+| 处理规范保障、环境适配或适配措施 | `assurance-report`、`index` | `specs/04-规范保障与环境适配基础规范.md`、`specs/04.02-LDVH能力资产与保障机制规范.md`、`specs/04.03-环境入口适配与部署规范.md` |
 | 处理 Code、工具、脚本或校验 | 对应工具帮助、测试命令 | `specs/04.03-环境入口适配与部署规范.md`、`specs/07-Code确定性执行实现规范.md`、对应 `code/` 实现和 `tests/` |
 | 处理 Web 或 Human-facing 入口 | `index`、相关后端或 Web 校验 | `specs/08-Web信息同步实现规范.md` |
 | 准备 LDVH Git 提交 | `ldvh-git-commit`、`commit_validate.py` | `specs/10-Git提交规范.md`、`skills/ldvh-git-commit/SKILL.md`、`hooks/ldvh-hooks.yaml` |
 | 处理 LDVH 自身工作对象 | `governed-projects`、`fact_cli.py list/search/show/stats` | 转入 `rules/LDVH-WORKSPACE-ENTRY.md`，按 dogfood 管辖项目处理 |
 
-场景同时命中多个入口时，选择最小足够查询和读取集。涉及正式规范变更、规范落地要求变化、落地缺口、适配措施漂移或 Code/Web/Skill/Agent/Hook/CI 边界变化时，应读取 `specs/06-工作流程基础规范.md`、`specs/03.03-工作流程文档规范.md` 和 `specs/40-59` 中实际存在的工作流程主文件，判断是否存在 active 具体工作流程。
+场景同时命中多个入口时，选择最小足够查询和读取集。涉及正式规范变更、规范保障要求变化、部署适配缺口、适配措施漂移或 Code/Web/Skill/Agent/Hook/CI 边界变化时，应读取 `specs/06-工作流程基础规范.md`、`specs/03.03-工作流程文档规范.md` 和 `specs/40-59` 中实际存在的工作流程主文件，判断是否存在 active 具体工作流程。
 
 ---
 ## 5. STOP 点
@@ -128,7 +128,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 修改本文后，应检查：
 
 1. `specs/01-目录说明.md`；
-2. `specs/04.02-LDVH能力资产与落地保障规范.md`;
+2. `specs/04.02-LDVH能力资产与保障机制规范.md`;
 3. `specs/04.03-环境入口适配与部署规范.md`;
 4. `rules/LDVH-WORKSPACE-ENTRY.md`；
 5. LDVH 仓库项目级薄入口。

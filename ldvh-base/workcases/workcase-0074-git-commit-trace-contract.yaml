@@ -234,9 +234,9 @@ orchestration:
     mode: single
     input_refs:
     - specs/10-Git提交规范.md
-    - specs/04.01-规范落地声明规范.md
+    - specs/04.01-规范保障声明规范.md
     - specs/23-Pitfall-踩坑经验.md
-    expected_output: 识别“有校验器不等于提交门禁已落地”的工作中发现问题，补入 10 落地要求，并沉淀为 Pitfall 供后续复用。
+    expected_output: 识别“有校验器不等于提交门禁已生效”的工作中发现问题，补入 10 保障要求，并沉淀为 Pitfall 供后续复用。
     status: done
     result_summary: 已将提交前校验入口补入 10 的确定性执行要求、检查项和待补齐事项；新增 pitfall-0008 记录误判根因和规避策略。
     evidence_refs:
@@ -261,7 +261,7 @@ orchestration:
     - code/hook_dispatch.py
     - code/commit_validate.py
     - tests/code/test_commit_validate.py
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     blocking_reason: null
   - id: item-10
     title: 消除 Study 编号迁移痕迹
@@ -294,7 +294,7 @@ orchestration:
     mode: single
     input_refs:
     - specs/10-Git提交规范.md
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     - skills/ldvh-git-commit/SKILL.md
     - rules/LDVH-MAINTAINER-ENTRY.md
     - code/spec_checks/deployment_entries.py
@@ -309,7 +309,7 @@ orchestration:
     evidence_refs:
     - skills/ldvh-git-commit/SKILL.md
     - skills/ldvh-git-commit/agents/openai.yaml
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     - specs/10-Git提交规范.md
     - rules/LDVH-MAINTAINER-ENTRY.md
     - code/spec_checks/deployment_entries.py
@@ -356,11 +356,11 @@ verification_evidence: |
 
   2026-06-20 追加补救曾短暂采用 `hooks/commit-msg` 和 `git config core.hooksPath hooks` 绑定本地 Git hook 环境注册方式。Human 指出 LDVH 后续会有各种 Hook，不能使用某个环境机制作为唯一方案，应使用统一方式并利用用户自身环境接入。主控已撤销本地 `core.hooksPath` 设置，并将方案纠偏为统一 Hook registry / dispatcher：`hooks/ldvh-hooks.yaml` 登记 `git.commit-msg` 事件，`code/hook_dispatch.py` 统一调度，事件命令复用 `code/commit_validate.py --check-message-file`。Git hook、用户已有 hook 管理器、IDE、AI 执行约定或 CI 都只是调用统一入口的适配层。
 
-  2026-06-20 item-9 纠偏后验证结果：`python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` 可执行提交消息校验；`python3 -m pytest tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_deployment_entries.py -q` 通过；`python3 code/specs_validate.py deployment-entries` 通过；04.02 和 10 的 doc、refs、landing 检查均通过；0074 单体 fact_validate 通过；`python3 code/specs_validate.py all` 普通模式退出码为 0；`git diff --check` 通过；`git config --get core.hooksPath` 当前为空。`python3 code/specs_validate.py all --fail-on-diagnostics` 当前仍因 specs/05 既有 `POSSIBLE_DUPLICATE_TERM_DEFINITION` warning 退出 1，不属于本轮 item-9 新增问题。
+  2026-06-20 item-9 纠偏后验证结果：`python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` 可执行提交消息校验；`python3 -m pytest tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_deployment_entries.py -q` 通过；`python3 code/specs_validate.py deployment-entries` 通过；04.02 和 10 的 doc、refs、assurance 检查均通过；0074 单体 fact_validate 通过；`python3 code/specs_validate.py all` 普通模式退出码为 0；`git diff --check` 通过；`git config --get core.hooksPath` 当前为空。`python3 code/specs_validate.py all --fail-on-diagnostics` 当前仍因 specs/05 既有 `POSSIBLE_DUPLICATE_TERM_DEFINITION` warning 退出 1，不属于本轮 item-9 新增问题。
 
-  2026-06-21 item-11 验证结果：`python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit` 通过；`python3 code/specs_validate.py deployment-entries` 通过；`python3 -m pytest tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_deployment_entries.py` 通过，32 passed；`python3 code/specs_validate.py refs specs`、`python3 code/specs_validate.py landing specs` 和 `python3 code/specs_validate.py all` 普通模式均通过；`git diff --check` 通过。综合检查仅保留既有 `specs/05` 术语定义 warning，不属于 item-11 新增问题。
+  2026-06-21 item-11 验证结果：`python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit` 通过；`python3 code/specs_validate.py deployment-entries` 通过；`python3 -m pytest tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_deployment_entries.py` 通过，32 passed；`python3 code/specs_validate.py refs specs`、`python3 code/specs_validate.py assurance specs` 和 `python3 code/specs_validate.py all` 普通模式均通过；`git diff --check` 通过。综合检查仅保留既有 `specs/05` 术语定义 warning，不属于 item-11 新增问题。
 
-  2026-06-21 item-5 追加验证结果：`/api/changelog`、Dashboard `recentChanges` 和 ProjectFiles 提交列表/详情已统一到 `web/api/services/git.ts` 的 commit message 拆分与 Conventional Commits parser；ProjectFiles 保留 parents、isMerge 和 files 作为工具页专属字段。新增 `tests/web/api/commit-dto.test.ts`，使用临时 Git 管辖项目同时验证 Changelog、Dashboard、ProjectFiles 四个 API 返回同一组结构化字段。`npm --prefix web run check` 通过；`npm --prefix web run test:web:api` 通过；`python3 code/fact_validate.py ldvh-base/workcases/workcase-0074-git-commit-trace-contract.yaml` 通过，errors=0 warnings=0；`python3 code/specs_validate.py refs specs` 和 `python3 code/specs_validate.py landing specs` 通过；`git diff --check` 通过。
+  2026-06-21 item-5 追加验证结果：`/api/changelog`、Dashboard `recentChanges` 和 ProjectFiles 提交列表/详情已统一到 `web/api/services/git.ts` 的 commit message 拆分与 Conventional Commits parser；ProjectFiles 保留 parents、isMerge 和 files 作为工具页专属字段。新增 `tests/web/api/commit-dto.test.ts`，使用临时 Git 管辖项目同时验证 Changelog、Dashboard、ProjectFiles 四个 API 返回同一组结构化字段。`npm --prefix web run check` 通过；`npm --prefix web run test:web:api` 通过；`python3 code/fact_validate.py ldvh-base/workcases/workcase-0074-git-commit-trace-contract.yaml` 通过，errors=0 warnings=0；`python3 code/specs_validate.py refs specs` 和 `python3 code/specs_validate.py assurance specs` 通过；`git diff --check` 通过。
 
   2026-06-21 关闭前复查结果：按 Human 指示只负责本轮 Web DTO 落地，不处理其它 Code/事实源改动。`npm --prefix web run check` 和 `npm --prefix web run test:web:api` 均通过，确认 Changelog、Dashboard 和 ProjectFiles 的共享 commit DTO 契约仍成立。关闭级全量检查暂未满足：`python3 code/specs_validate.py all --fail-on-diagnostics` 因既有 `specs/05` 的 `POSSIBLE_DUPLICATE_TERM_DEFINITION` warning 返回 1；`python3 code/fact_validate.py ldvh-base` 因 spark-0018、study-0007、workcase-0025、workcase-0062、workcase-0063 的既有事实源问题返回 errors=8；`python3 -m pytest tests/code -q` 当前 256 passed、3 failed，失败集中在 WorkCase 默认状态/流转测试和 specs_validate all 的 fail-on-diagnostics 断言。残留扫描中 `related_changes`、`ldvh-base/changes`、旧变更对象等命中均位于禁止条款、Code 拦截、测试负例、0074 自身验收/历史记录或其它历史事实文本；未发现本轮 Web DTO 改动新增旧 Change 工作对象入口。结论：Web DTO 落地可视为完成，0074 关闭仍需另行处理上述非 Web DTO 阻断项后再执行。
 
@@ -394,7 +394,7 @@ closure_evidence: |
 
   ## 结论
 
-  0074 已完成 Git 提交规范收口：旧 Change 工作对象已迁出，Git commit records 成为事实源修改追溯证据；提交消息规范、Code validator、统一 Hook registry/dispatcher、ldvh-git-commit Skill 和 Web 提交记录派生视图均已落地。CI 或 server-side 提交信息检查仍是 10 号规范记录的后续增强，不阻塞本 WorkCase 关闭。
+  0074 已完成 Git 提交规范收口：旧 Change 工作对象已迁出，Git commit records 成为事实源修改追溯证据；提交消息规范、Code validator、统一 Hook registry/dispatcher、ldvh-git-commit Skill 和 Web 提交记录派生视图均已生效。CI 或 server-side 提交信息检查仍是 10 号规范记录的后续增强，不阻塞本 WorkCase 关闭。
 review_requested_at: '2026-06-21T04:10:00+08:00'
 closed_at: '2026-06-21T04:10:00+08:00'
 related_docs:

@@ -1,7 +1,7 @@
 import json
 from .common import checker
 from spec_checks import web_validate as web_validate_checks
-from .test_ldvh_landing import build_ldvh_landing_check_fixture
+from .test_ldvh_assurance import build_ldvh_assurance_check_fixture
 
 # ── web-validate 子命令测试 ──────────────────────────────────────
 
@@ -25,13 +25,13 @@ def test_web_validate_build_returns_dict():
 
 
 def test_web_validate_build_has_reports():
-    """web_validate_build 的 reports 应包含 landingCheck、landingReport 和 humanGateReport"""
+    """web_validate_build 的 reports 应包含 assuranceCheck、assuranceReport 和 humanGateReport"""
     report = checker.web_validate_build()
 
     reports = report.get("reports", {})
 
-    assert "landingCheck" in reports
-    assert "landingReport" in reports
+    assert "assuranceCheck" in reports
+    assert "assuranceReport" in reports
     assert "humanGateReport" in reports
 
 
@@ -69,7 +69,7 @@ def test_web_validate_main_json_output(capsys):
 # ══════════════════════════════════════════════════════════════════════
 
 def test_web_validate_builds_web_contract_from_code(tmp_path, monkeypatch):
-    build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
+    build_ldvh_assurance_check_fixture(tmp_path, monkeypatch)
 
     report = checker.web_validate_build(str(tmp_path))
 
@@ -78,20 +78,20 @@ def test_web_validate_builds_web_contract_from_code(tmp_path, monkeypatch):
     assert report["target"] == "ldvh-base"
     assert report["summary"]["files"] == 2
     assert report["summary"]["errors"] == 0
-    assert "landingCheck" in report["reports"]
-    assert "landingReport" in report["reports"]
+    assert "assuranceCheck" in report["reports"]
+    assert "assuranceReport" in report["reports"]
     assert "humanGateReport" in report["reports"]
-    assert report["reports"]["landingCheck"]["summary"]["status"] == "open"
-    assert report["reports"]["landingReport"]["summary"]["gap_total"] >= 1
+    assert report["reports"]["assuranceCheck"]["summary"]["status"] == "open"
+    assert report["reports"]["assuranceReport"]["summary"]["gap_total"] >= 1
     assert report["reports"]["humanGateReport"]["metadata"]["record_count"] == 0
 
 
 def test_web_validate_cli_outputs_json_without_failing_on_open_status(tmp_path, monkeypatch, capsys):
-    build_ldvh_landing_check_fixture(tmp_path, monkeypatch)
+    build_ldvh_assurance_check_fixture(tmp_path, monkeypatch)
 
     exit_code = checker.main(["web-validate", "--workspace-root", str(tmp_path), "--format", "json"])
 
     payload = json.loads(capsys.readouterr().out)
     assert exit_code == 0
     assert payload["command"] == "web_validate"
-    assert payload["reports"]["landingCheck"]["summary"]["status"] == "open"
+    assert payload["reports"]["assuranceCheck"]["summary"]["status"] == "open"

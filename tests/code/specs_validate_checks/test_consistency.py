@@ -15,7 +15,7 @@ def test_consistency_reports_retired_workflow_consumption(tmp_path):
 
 ## 1. 本文解决的问题
 
-LDVH落地与检查读取本文时，应至少确认 active 工作流程输入。
+LDVH部署与适配检查读取本文时，应至少确认 active 工作流程输入。
 """,
     )
 
@@ -49,7 +49,7 @@ def test_consistency_ignores_retired_historical_boundary(tmp_path):
 
 ## 1. 本文解决的问题
 
-LDVH落地与检查已退回，待重新设计，只能作为候选输入或历史背景。
+LDVH部署与适配检查已退回，待重新设计，只能作为候选输入或历史背景。
 """,
     )
 
@@ -206,11 +206,11 @@ def test_consistency_index_passes_when_required_sections_present(tmp_path, monke
 
 ## 6. 集合关系
 
-## 7. 落地与检查输入
+## 7. 部署适配检查输入
 
 ## 8. 集合一致性检查
 
-## 9. 规范落地要求
+## 9. 规范保障要求
 
 ## 10. Human Gate 与检查要求
 
@@ -441,7 +441,7 @@ def test_consistency_reports_04_series_file_missing(monkeypatch, tmp_path):
 def test_consistency_reports_04_series_title_mismatch(monkeypatch, tmp_path):
     """模拟 04 系列文件标题不匹配场景"""
     # 创建一个临时文件，标题不匹配
-    fake_file = tmp_path / "04-规范落地与环境适配基础规范.md"
+    fake_file = tmp_path / "04-规范保障与环境适配基础规范.md"
     fake_file.write_text("# 错误的标题\n\n内容", encoding="utf-8")
 
     original = checker.SPECS_DIR

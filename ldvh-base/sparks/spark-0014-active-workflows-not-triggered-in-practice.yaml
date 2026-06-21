@@ -12,7 +12,7 @@ description: |
   1. `specs/40-workflow-design-audit-工作流程设计审核.md`
   2. `specs/41-work-model-audit-工作模型审核.md`
   3. `specs/42-specs-audit-规范审核.md`
-  4. `specs/43-landing-readiness-audit-落地准备度审核.md`
+  4. `specs/43-assurance-readiness-audit-保障准备度审核.md`
 
   用户观察：
 
@@ -23,7 +23,7 @@ description: |
 
   AI 当前理解：
 
-  这不是简单的“流程没用”，更像是流程落地形态和实际工作入口之间存在断层。40-43 当前更偏审核型流程：它们回答“某类规范/模型/流程/落地要求是否合格”，但真实工作中 AI 经常直接进入修改、补救、写 Spark、建 WorkCase 或跑 Code 校验，而不是先显式声明“现在进入某个审核流程”。
+  这不是简单的“流程没用”，更像是流程落地形态和实际工作入口之间存在断层。40-43 当前更偏审核型流程：它们回答“某类规范/模型/流程/保障要求是否合格”，但真实工作中 AI 经常直接进入修改、补救、写 Spark、建 WorkCase 或跑 Code 校验，而不是先显式声明“现在进入某个审核流程”。
 
   如果一个工作流程要在实际工作中被触发，至少需要满足以下条件之一：
 
@@ -68,6 +68,6 @@ related_docs:
   - specs/40-workflow-design-audit-工作流程设计审核.md
   - specs/41-work-model-audit-工作模型审核.md
   - specs/42-specs-audit-规范审核.md
-  - specs/43-landing-readiness-audit-落地准备度审核.md
+  - specs/43-assurance-readiness-audit-保障准备度审核.md
   - specs/21-WorkCase-工作项.md
   - specs/24-Spark-火花.md

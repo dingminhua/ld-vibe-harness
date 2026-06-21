@@ -78,14 +78,14 @@ INDEX_LDVH_MEMBER_HEADER_FORBIDDEN_FIELDS = {
 INDEX_GOVERNED_TERMS = {
     "LDVH 自身项目", "管辖项目", "管辖项目配置", "LDVH 文档工作区", "规范正文区", "管辖项目文档工作区", "正文区", "studies", "sources",
     "来源", "吸收", "参考与研究材料", "待补齐事项", "正式规范", "资产", "规范资产", "文本能力资产", "Code 能力资产", "Web 能力资产",
-    "工作对象事实源", "用户资产", "可变资料区", "候选事项", "索引文档", "说明性索引", "规范型集合索引", "规范落地要求", "能力保障",
+    "工作对象事实源", "用户资产", "可变资料区", "候选事项", "索引文档", "说明性索引", "规范型集合索引", "规范保障要求", "能力保障",
     "LDVH 能力资产", "保障机制", "环境入口", "环境适配", "环境能力清单", "适配措施", "适配措施状态", "环境", "AI 开发环境",
     "环境实体", "环境能力", "适配边界", "适配检查", "适配降级", "工作区级入口", "项目级入口", "AI 入口分层", "LDVH 项目事实源",
     "项目接入说明", "能力缺口", "环境缺口", "漂移", "LDVH 运行纪律", "启用", "薄引用", "开发环境", "工作模型", "工作对象", "工作模型字段",
     "字段内容格式", "对象状态", "集合状态", "检查过程状态", "派生状态", "Git 提交记录", "工作流程", "Code", "Web", "受控写入", "受控轻写入",
     "Rules / Instructions", "Skill", "LDVH 自建 Skill", "LDVH 包装 Skill", "Agent", "Hook / 自动触发", "MCP / 模型上下文协议", "运行闭环", "具体工作流程",
-    "行动", "Scenario 识别条件", "适用场景", "步骤", "阶段标签", "Apply", "Verify", "Review", "Recheck", "Gate", "Human Gate 记录", "LDVH落地",
-    "环境确认", "LDVH落地与检查", "落地检查报告", "检查", "校验", "验证", "审计", "审阅", "审核", "写入", "回写", "事实源回写",
+    "行动", "Scenario 识别条件", "适用场景", "步骤", "阶段标签", "Apply", "Verify", "Review", "Recheck", "Gate", "Human Gate 记录", "LDVH部署适配",
+    "环境确认", "LDVH部署与适配检查", "部署适配检查报告", "检查", "校验", "验证", "审计", "审阅", "审核", "写入", "回写", "事实源回写",
 }
 INDEX_DEFINITION_WHITELIST_TERMS = {"本文", "本规范", "00", "02", "Code", "Web", "Human Gate", "Rules", "Skill", "Agent", "Hook", "MCP"}
 INDEX_ALLOWED_DEFINITION_OWNERS = {
@@ -339,9 +339,8 @@ class SpecsChecker:
             if heading:
                 title = heading.group(2).strip()
                 in_section = (
-                    "规范落地要求" in title
+                    "规范保障要求" in title
                     or "机制承接关系" in title
-                    or "机制落地关系" in title
                     or "机制关系声明" in title
                 )
                 in_table = False
@@ -374,11 +373,11 @@ class SpecsChecker:
                     "entity": self.clean_cell(cells[1]),
                     "relation_type": self.clean_cell(cells[2]),
                     "sync_trigger": self.clean_cell(cells[3]),
-                    "landing_requirement": self.clean_cell(cells[0]) if len(cells) >= 5 else None,
+                    "assurance_requirement": self.clean_cell(cells[0]) if len(cells) >= 5 else None,
                     "requirement_content": self.clean_cell(cells[1]) if len(cells) >= 5 else None,
                     "guarantee_mechanism": self.clean_cell(cells[2]) if len(cells) >= 5 else None,
                     "sync_type": self.clean_cell(cells[3]) if len(cells) >= 5 else None,
-                    "landing_trigger": self.clean_cell(cells[4]) if len(cells) >= 5 else None,
+                    "assurance_trigger": self.clean_cell(cells[4]) if len(cells) >= 5 else None,
                     "content_hash": content_hash,
                 }
             )
@@ -946,15 +945,15 @@ class SpecsChecker:
         allowed_statuses = self.allowed_member_statuses(member.get("kind"))
         if status and status not in allowed_statuses:
             diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_STATUS_INVALID", f"ldvh_member collection_status 非法: {status}"))
-        diagnostics.extend(self.diagnose_workflow_landing_takeover(rel_path, line, member))
+        diagnostics.extend(self.diagnose_workflow_assurance_takeover(rel_path, line, member))
         return diagnostics
 
-    def diagnose_workflow_landing_takeover(self, rel_path, line, member):
-        if member.get("kind") != "work_process" or "landing_takeover" not in member:
+    def diagnose_workflow_assurance_takeover(self, rel_path, line, member):
+        if member.get("kind") != "work_process" or "assurance_takeover" not in member:
             return []
-        value = member.get("landing_takeover")
+        value = member.get("assurance_takeover")
         if not isinstance(value, list):
-            return [self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_LANDING_TAKEOVER_INVALID", "ldvh_member landing_takeover 必须是列表")]
+            return [self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_ASSURANCE_TAKEOVER_INVALID", "ldvh_member assurance_takeover 必须是列表")]
         diagnostics = []
         required_parts = ("source_spec=", "requirement=", "scope=")
         for item in value:
@@ -964,8 +963,8 @@ class SpecsChecker:
                         rel_path,
                         line,
                         "error",
-                        "LDVH_MEMBER_LANDING_TAKEOVER_INVALID",
-                        "ldvh_member landing_takeover 每项必须包含 source_spec=、requirement= 和 scope=",
+                        "LDVH_MEMBER_ASSURANCE_TAKEOVER_INVALID",
+                        "ldvh_member assurance_takeover 每项必须包含 source_spec=、requirement= 和 scope=",
                     )
                 )
         return diagnostics
@@ -987,7 +986,7 @@ class SpecsChecker:
                     "source": None,
                     "position": " / ".join(part for part in (member.get("name_en"), member.get("name_zh")) if part),
                     "aliases": [],
-                    "landing_takeover": member.get("landing_takeover") or [],
+                    "assurance_takeover": member.get("assurance_takeover") or [],
                 }
             )
         return entries

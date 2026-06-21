@@ -5,15 +5,15 @@ status: pending
 created: '2026-06-18T09:03:05'
 updated: '2026-06-18T09:03:05'
 description: |
-  本 Spark 承载 41 work-model-audit、42 specs-audit、43 landing-readiness-audit 升级为 active 后的后续硬化安排。
+  本 Spark 承载 41 work-model-audit、42 specs-audit、43 assurance-readiness-audit 升级为 active 后的后续硬化安排。
 
-  当前阶段已经完成：41-43 经 Human Gate 确认从 candidate 升级为 active；40-43 已承接 WorkCase 回写契约；landing-report 已能读取并展示 40/41 工作流程成员状态，当前输出显示 40 active、41 active。
+  当前阶段已经完成：41-43 经 Human Gate 确认从 candidate 升级为 active；40-43 已承接 WorkCase 回写契约；assurance-report 已能读取并展示 40/41 工作流程成员状态，当前输出显示 40 active、41 active。
 
   仍需后续安排的事项：
 
-  1. 41 触发保障 Code 覆盖：把“哪些规范、工作模型、字段契约、状态机、成员自描述或事实源边界变化必须触发 41”推进为更确定的 Code 诊断或测试，而不只停留在 landing-report 成员状态可见。
+  1. 41 触发保障 Code 覆盖：把“哪些规范、工作模型、字段契约、状态机、成员自描述或事实源边界变化必须触发 41”推进为更确定的 Code 诊断或测试，而不只停留在 assurance-report 成员状态可见。
   2. 42 消费 41 状态闭环：明确 specs 审核何时必须读取或引用 41 的工作模型审核结果，避免 42 做通用规范审查时遗漏工作模型设计质量问题。
-  3. landing-report degraded 项继续收敛：优先处理术语重复/裸词检查、测试目录/验证入口归属检查、runtime projection 覆盖边界、Human Gate 证据消费覆盖边界。
+  3. assurance-report degraded 项继续收敛：优先处理术语重复/裸词检查、测试目录/验证入口归属检查、runtime projection 覆盖边界、Human Gate 证据消费覆盖边界。
   4. 41-43 active 后案例库和 Skill SOP 仍未固化：正反样例、自动化矩阵和 Skill SOP 应在反复执行后再判断是否独立成能力资产。
 
   这些事项尚未形成单一可关闭目标，暂不创建 WorkCase。后续若用户要求继续落地，应优先从第 1 项“41 触发保障 Code 覆盖”分流为 WorkCase。
@@ -37,5 +37,5 @@ related_docs:
   - specs/40-workflow-design-audit-工作流程设计审核.md
   - specs/41-work-model-audit-工作模型审核.md
   - specs/42-specs-audit-规范审核.md
-  - specs/43-landing-readiness-audit-落地准备度审核.md
+  - specs/43-assurance-readiness-audit-保障准备度审核.md
   - ldvh-base/sparks/spark-0005-task-orchestration-boundary.yaml

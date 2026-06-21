@@ -1,4 +1,4 @@
-"""Landing requirement aggregate report checks for LDVH specs."""
+"""Assurance requirement aggregate report checks for LDVH specs."""
 
 import json
 import re
@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .common import iter_markdown_files
 from . import human_gate as human_gate_checks
-from . import landing as landing_checks
+from . import assurance as assurance_checks
 from . import runtime_projection as runtime_projection_checks
 
 
@@ -39,17 +39,17 @@ def human_gate_report_build(paths=None):
     return human_gate_checks.report_build(paths)
 
 
-LANDING_SECTION_TITLE = landing_checks.LANDING_SECTION_TITLE
-LANDING_REQUIRED_COLUMNS = landing_checks.LANDING_REQUIRED_COLUMNS
-LANDING_ALLOWED_TYPES = landing_checks.LANDING_ALLOWED_TYPES
+ASSURANCE_SECTION_TITLE = assurance_checks.ASSURANCE_SECTION_TITLE
+ASSURANCE_REQUIRED_COLUMNS = assurance_checks.ASSURANCE_REQUIRED_COLUMNS
+ASSURANCE_ALLOWED_TYPES = assurance_checks.ASSURANCE_ALLOWED_TYPES
 
 
-def sync_landing_config():
-    landing_checks.PROJECT_ROOT = PROJECT_ROOT
-    landing_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
+def sync_assurance_config():
+    assurance_checks.PROJECT_ROOT = PROJECT_ROOT
+    assurance_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
 
 
-LANDING_REPORT_OWNER_AREAS = {
+ASSURANCE_REPORT_OWNER_AREAS = {
     "上位约束承接要求": "specs",
     "入口可见要求": "runtime_projection",
     "流程复用要求": "workflow",
@@ -59,7 +59,7 @@ LANDING_REPORT_OWNER_AREAS = {
     "Human 交互要求": "human_gate",
     "生命周期触发要求": "runtime_projection",
 }
-LANDING_REPORT_AREA_LABELS = {
+ASSURANCE_REPORT_AREA_LABELS = {
     "agent": "Agent",
     "code": "Code / Test",
     "human_gate": "Human Gate",
@@ -68,7 +68,7 @@ LANDING_REPORT_AREA_LABELS = {
     "unknown": "未知",
     "workflow": "Workflow / Skill",
 }
-LANDING_REPORT_WRITEBACK_AREAS = {
+ASSURANCE_REPORT_WRITEBACK_AREAS = {
     "specs": "specs",
     "runtime_projection": "runtime_projection_or_env_record",
     "workflow": "workflow_or_skill_candidate",
@@ -76,28 +76,28 @@ LANDING_REPORT_WRITEBACK_AREAS = {
     "code": "code_request_or_test",
     "human_gate": "human_gate_record",
 }
-LANDING_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS = {
+ASSURANCE_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS = {
     "decision_record_required": "必须人类决策记录",
     "policy_clarification": "规范口径说明",
     "implementation_support": "承接实现支持",
     "diagnostic_coverage": "Code 降级提示/覆盖",
 }
-LANDING_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS = {
+ASSURANCE_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS = {
     "current_record_required": "当前需要记录",
     "future_trigger_record": "未来触发时记录",
     "rule_condition_only": "只保留为规则条件",
 }
-LANDING_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS = {
+ASSURANCE_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS = {
     "future_evaluation": "未来触发时评估",
     "workflow_design_discussion": "流程创建前讨论",
 }
-LANDING_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS = {
+ASSURANCE_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS = {
     "web_human_facing_support": "Web / Human-facing 承接",
 }
-LANDING_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS = {
+ASSURANCE_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS = {
     "coverage_degraded": "覆盖范围降级",
 }
-LANDING_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS = {
+ASSURANCE_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS = {
     "lifecycle_trigger_sync": "生命周期触发同步",
     "platform_capability_sync": "平台能力承接同步",
     "projection_coverage_diagnostic": "投影覆盖诊断降级",
@@ -127,7 +127,7 @@ RUNTIME_PROJECTION_REMEDIATION_TERMS = {
         "MCP", "AGENTS.md", "config.toml", "sandbox", "approval",
     ],
 }
-LANDING_REPORT_HUMAN_GATE_DECISION_TERMS = [
+ASSURANCE_REPORT_HUMAN_GATE_DECISION_TERMS = [
     "接受长期降级",
     "关闭",
     "创建",
@@ -148,30 +148,30 @@ LANDING_REPORT_HUMAN_GATE_DECISION_TERMS = [
     "核心",
     "降级",
 ]
-LANDING_REPORT_HUMAN_GATE_POLICY_TERMS = [
+ASSURANCE_REPORT_HUMAN_GATE_POLICY_TERMS = [
     "评估 Human Gate",
     "应评估 Human Gate",
     "应先讨论",
     "讨论是否",
 ]
-LANDING_REPORT_HUMAN_GATE_POLICY_DISCUSSION_TERMS = [
+ASSURANCE_REPORT_HUMAN_GATE_POLICY_DISCUSSION_TERMS = [
     "应先讨论",
     "讨论是否",
 ]
-LANDING_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS = [
+ASSURANCE_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS = [
     "Human Gate UI",
     "展示确认对象",
     "承接 06 §6.3.1",
 ]
-LANDING_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS = [
+ASSURANCE_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS = [
     "当前已",
     "本次已",
     "已现场确认",
     "已接受长期降级",
-    "已判定 LDVH落地与检查闭环",
+    "已判定 LDVH部署与适配检查闭环",
     "已声明 Human",
 ]
-LANDING_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS = [
+ASSURANCE_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS = [
     "前",
     "时",
     "发生",
@@ -181,7 +181,7 @@ LANDING_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS = [
     "§",
     "从候选项创建",
 ]
-LANDING_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS = [
+ASSURANCE_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS = [
     "平台清单",
     "平台能力",
     "Trae Solo",
@@ -193,11 +193,11 @@ LANDING_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS = [
     "MCP",
     "refs",
 ]
-LANDING_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS = [
+ASSURANCE_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS = [
     "第三方 Skill",
     "包装 Skill",
 ]
-LANDING_REPORT_DEGRADED_MARKERS = [
+ASSURANCE_REPORT_DEGRADED_MARKERS = [
     "open-degraded",
     "degraded",
     "人工降级",
@@ -206,7 +206,7 @@ LANDING_REPORT_DEGRADED_MARKERS = [
     "降级方式",
     "记录降级",
 ]
-LANDING_REPORT_OPEN_MARKERS = [
+ASSURANCE_REPORT_OPEN_MARKERS = [
     "TODO",
     "待补齐",
     "待创建",
@@ -217,24 +217,24 @@ LANDING_REPORT_OPEN_MARKERS = [
     "未完成",
     "open item",
 ]
-LANDING_REPORT_OPEN_PATTERNS = [
+ASSURANCE_REPORT_OPEN_PATTERNS = [
     re.compile(r"后续[^|。；;]*?(补齐|扩展|创建|讨论|稳定|校准|补充|形成|沉淀)"),
     re.compile(r"(需要|需|应)[^|。；;]*?(补齐|扩展|创建|讨论|稳定|校准|形成缺口)"),
     re.compile(r"缺口[^|。；;]*?(待|未|open)"),
 ]
-LANDING_REPORT_HUMAN_GATE_PATTERNS = [
+ASSURANCE_REPORT_HUMAN_GATE_PATTERNS = [
     re.compile(r"(必须|应|需|需要|触发|进入|经|通过|完成)[^|。；;]*?Human Gate"),
     re.compile(r"Human Gate[^|。；;]*?(确认|前|后|授权|暂停|等待)"),
 ]
-LANDING_REPORT_CAPABILITY_CHECKS = [
+ASSURANCE_REPORT_CAPABILITY_CHECKS = [
     {
         "id": "41_trigger_safeguard",
         "capability": "41 触发保障",
         "status": "degraded",
         "owner_area": "code",
         "required_terms": ["41", "触发保障"],
-        "missing_reason": "landing-report 未发现 41 触发保障声明，无法判断正式规范或运行投影变化是否应进入 41",
-        "degraded_reason": "landing-report 只能聚合 41 触发保障要求，尚不能验证所有触发场景是否实际进入 41",
+        "missing_reason": "assurance-report 未发现 41 触发保障声明，无法判断正式规范或运行投影变化是否应进入 41",
+        "degraded_reason": "assurance-report 只能聚合 41 触发保障要求，尚不能验证所有触发场景是否实际进入 41",
         "suggested_writeback": "code_request_or_test",
     },
     {
@@ -243,8 +243,8 @@ LANDING_REPORT_CAPABILITY_CHECKS = [
         "status": "degraded",
         "owner_area": "workflow",
         "required_terms": ["42", "41", "消费"],
-        "missing_reason": "landing-report 未发现 42 消费 41 触发状态声明，无法作为 LDVH落地与检查输入",
-        "degraded_reason": "landing-report 能暴露 41/42 联动要求，但尚不能证明 42 现场检查已经消费本次报告",
+        "missing_reason": "assurance-report 未发现 42 消费 41 触发状态声明，无法作为 LDVH部署与适配检查输入",
+        "degraded_reason": "assurance-report 能暴露 41/42 联动要求，但尚不能证明 42 现场检查已经消费本次报告",
         "suggested_writeback": "workflow_or_skill_candidate",
     },
     {
@@ -253,8 +253,8 @@ LANDING_REPORT_CAPABILITY_CHECKS = [
         "status": "open",
         "owner_area": "runtime_projection",
         "required_terms": ["运行投影", "漂移检查"],
-        "missing_reason": "landing-report 未发现运行投影漂移检查声明，无法诊断入口、Skill、Hook、CI、Web 或 Code 投影漂移",
-        "degraded_reason": "landing-report 只能识别运行投影漂移检查要求，尚不能读取真实运行投影并比对正式规范",
+        "missing_reason": "assurance-report 未发现运行投影漂移检查声明，无法诊断入口、Skill、Hook、CI、Web 或 Code 投影漂移",
+        "degraded_reason": "assurance-report 只能识别运行投影漂移检查要求，尚不能读取真实运行投影并比对正式规范",
         "suggested_writeback": "runtime_projection_or_env_record",
     },
     {
@@ -263,57 +263,57 @@ LANDING_REPORT_CAPABILITY_CHECKS = [
         "status": "degraded",
         "owner_area": "human_gate",
         "required_terms": ["Human Gate", "证据"],
-        "missing_reason": "landing-report 未发现 Human Gate 证据消费声明，无法支持降级、关闭或通过声明",
-        "degraded_reason": "landing-report 能识别 Human Gate 证据消费要求，但尚未把 Human Gate 记录校验结果并入状态判断",
+        "missing_reason": "assurance-report 未发现 Human Gate 证据消费声明，无法支持降级、关闭或通过声明",
+        "degraded_reason": "assurance-report 能识别 Human Gate 证据消费要求，但尚未把 Human Gate 记录校验结果并入状态判断",
         "suggested_writeback": "human_gate_record",
     },
 ]
 
 
-def landing_default_check_paths():
-    sync_landing_config()
-    return landing_checks.default_check_paths()
+def assurance_default_check_paths():
+    sync_assurance_config()
+    return assurance_checks.default_check_paths()
 
 
-def landing_is_formal_spec(path):
-    sync_landing_config()
-    return landing_checks.is_formal_spec(path)
+def assurance_is_formal_spec(path):
+    sync_assurance_config()
+    return assurance_checks.is_formal_spec(path)
 
 
-def landing_strip_section_number(title):
-    return landing_checks.strip_section_number(title)
+def assurance_strip_section_number(title):
+    return assurance_checks.strip_section_number(title)
 
 
-def landing_split_cells(line):
-    return landing_checks.split_cells(line)
+def assurance_split_cells(line):
+    return assurance_checks.split_cells(line)
 
 
-def landing_is_separator(cells):
-    return landing_checks.is_separator(cells)
+def assurance_is_separator(cells):
+    return assurance_checks.is_separator(cells)
 
 
-def landing_clean_cell(value):
-    return landing_checks.clean_cell(value)
+def assurance_clean_cell(value):
+    return assurance_checks.clean_cell(value)
 
 
-def landing_relative_path(path):
-    sync_landing_config()
-    return landing_checks.landing_relative_path(path)
+def assurance_relative_path(path):
+    sync_assurance_config()
+    return assurance_checks.assurance_relative_path(path)
 
 
-def landing_extract_requirements_file(path):
-    sync_landing_config()
-    return landing_checks.extract_requirements_file(path)
+def assurance_extract_requirements_file(path):
+    sync_assurance_config()
+    return assurance_checks.extract_requirements_file(path)
 
 
-def landing_report_match_marker(text, markers):
+def assurance_report_match_marker(text, markers):
     for marker in markers:
         if marker in text:
             return marker
     return None
 
 
-def landing_report_infer_status(requirement):
+def assurance_report_infer_status(requirement):
     text = " | ".join(
         [
             requirement.get("requirement_type", ""),
@@ -324,20 +324,20 @@ def landing_report_infer_status(requirement):
         ]
     )
 
-    marker = landing_report_match_marker(text, LANDING_REPORT_DEGRADED_MARKERS)
+    marker = assurance_report_match_marker(text, ASSURANCE_REPORT_DEGRADED_MARKERS)
     if marker:
         return "degraded", f"matched degraded marker: {marker}"
 
-    marker = landing_report_match_marker(text, LANDING_REPORT_OPEN_MARKERS)
+    marker = assurance_report_match_marker(text, ASSURANCE_REPORT_OPEN_MARKERS)
     if marker:
         return "open", f"matched open marker: {marker}"
 
-    for pattern in LANDING_REPORT_OPEN_PATTERNS:
+    for pattern in ASSURANCE_REPORT_OPEN_PATTERNS:
         match = pattern.search(text)
         if match:
             return "open", f"matched open pattern: {match.group(0)}"
 
-    for pattern in LANDING_REPORT_HUMAN_GATE_PATTERNS:
+    for pattern in ASSURANCE_REPORT_HUMAN_GATE_PATTERNS:
         match = pattern.search(text)
         if match:
             return "needs_human_gate", f"matched Human Gate pattern: {match.group(0)}"
@@ -345,7 +345,7 @@ def landing_report_infer_status(requirement):
     return "closed", "no open/degraded/Human Gate marker matched"
 
 
-def landing_report_count_by(requirements, key):
+def assurance_report_count_by(requirements, key):
     counts = {}
     for requirement in requirements:
         value = requirement.get(key) or "(empty)"
@@ -353,11 +353,11 @@ def landing_report_count_by(requirements, key):
     return dict(sorted(counts.items(), key=lambda item: item[0]))
 
 
-def landing_report_is_gap(item):
+def assurance_report_is_gap(item):
     return item.get("status") != "closed"
 
 
-def landing_report_human_gate_subcategory(item):
+def assurance_report_human_gate_subcategory(item):
     if "capability" in item:
         return "diagnostic_coverage"
     text = " | ".join(
@@ -369,16 +369,16 @@ def landing_report_human_gate_subcategory(item):
             item.get("status_reason", ""),
         ]
     )
-    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS):
+    if any(term in text for term in ASSURANCE_REPORT_HUMAN_GATE_IMPLEMENTATION_TERMS):
         return "implementation_support"
-    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_POLICY_TERMS):
+    if any(term in text for term in ASSURANCE_REPORT_HUMAN_GATE_POLICY_TERMS):
         return "policy_clarification"
-    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_DECISION_TERMS):
+    if any(term in text for term in ASSURANCE_REPORT_HUMAN_GATE_DECISION_TERMS):
         return "decision_record_required"
     return "policy_clarification"
 
 
-def landing_report_human_gate_decision_flow(item):
+def assurance_report_human_gate_decision_flow(item):
     text = " | ".join(
         [
             item.get("content", ""),
@@ -388,14 +388,14 @@ def landing_report_human_gate_decision_flow(item):
             item.get("status_reason", ""),
         ]
     )
-    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS):
+    if any(term in text for term in ASSURANCE_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS):
         return "current_record_required"
-    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS):
+    if any(term in text for term in ASSURANCE_REPORT_HUMAN_GATE_FUTURE_TRIGGER_TERMS):
         return "future_trigger_record"
     return "rule_condition_only"
 
 
-def landing_report_human_gate_policy_flow(item):
+def assurance_report_human_gate_policy_flow(item):
     text = " | ".join(
         [
             item.get("content", ""),
@@ -405,20 +405,20 @@ def landing_report_human_gate_policy_flow(item):
             item.get("status_reason", ""),
         ]
     )
-    if any(term in text for term in LANDING_REPORT_HUMAN_GATE_POLICY_DISCUSSION_TERMS):
+    if any(term in text for term in ASSURANCE_REPORT_HUMAN_GATE_POLICY_DISCUSSION_TERMS):
         return "workflow_design_discussion"
     return "future_evaluation"
 
 
-def landing_report_human_gate_support_flow(item):
+def assurance_report_human_gate_support_flow(item):
     return "web_human_facing_support"
 
 
-def landing_report_human_gate_diagnostic_flow(item):
+def assurance_report_human_gate_diagnostic_flow(item):
     return "coverage_degraded"
 
 
-def landing_report_runtime_projection_subcategory(item):
+def assurance_report_runtime_projection_subcategory(item):
     if "capability" in item:
         return "projection_coverage_diagnostic"
     text = " | ".join(
@@ -430,9 +430,9 @@ def landing_report_runtime_projection_subcategory(item):
             item.get("status_reason", ""),
         ]
     )
-    if any(term in text for term in LANDING_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS):
+    if any(term in text for term in ASSURANCE_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS):
         return "third_party_skill_projection"
-    if any(term in text for term in LANDING_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS):
+    if any(term in text for term in ASSURANCE_REPORT_RUNTIME_PROJECTION_PLATFORM_TERMS):
         return "platform_capability_sync"
     return "lifecycle_trigger_sync"
 
@@ -449,16 +449,16 @@ def _classify_runtime_projection_remediation(item):
     return "doc_crossref_check"
 
 
-def landing_report_build_gap_categories(requirements, capability_gaps):
+def assurance_report_build_gap_categories(requirements, capability_gaps):
     categories = {}
     for item in list(requirements) + list(capability_gaps):
-        if not landing_report_is_gap(item):
+        if not assurance_report_is_gap(item):
             continue
         owner_area = item.get("owner_area") or "unknown"
         if owner_area not in categories:
             categories[owner_area] = {
                 "owner_area": owner_area,
-                "label": LANDING_REPORT_AREA_LABELS.get(owner_area, owner_area),
+                "label": ASSURANCE_REPORT_AREA_LABELS.get(owner_area, owner_area),
                 "total": 0,
                 "by_status": {},
                 "by_suggested_writeback": {},
@@ -487,18 +487,18 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
         example = {
             "source": source,
             "status": status,
-            "title": landing_report_shorten(title, 120),
+            "title": assurance_report_shorten(title, 120),
             "suggested_writeback": suggested_writeback,
         }
         if len(category["examples"]) < 3:
             category["examples"].append(example)
         if owner_area == "human_gate":
-            subcategory_key = landing_report_human_gate_subcategory(item)
+            subcategory_key = assurance_report_human_gate_subcategory(item)
             subcategories = category["subcategories"]
             if subcategory_key not in subcategories:
                 subcategories[subcategory_key] = {
                     "id": subcategory_key,
-                    "label": LANDING_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS.get(subcategory_key, subcategory_key),
+                    "label": ASSURANCE_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS.get(subcategory_key, subcategory_key),
                     "total": 0,
                     "by_status": {},
                     "examples": [],
@@ -517,12 +517,12 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
             if len(subcategory["examples"]) < 3:
                 subcategory["examples"].append(example)
             if subcategory_key == "decision_record_required":
-                flow_key = landing_report_human_gate_decision_flow(item)
+                flow_key = assurance_report_human_gate_decision_flow(item)
                 decision_flows = subcategory["decision_flows"]
                 if flow_key not in decision_flows:
                     decision_flows[flow_key] = {
                         "id": flow_key,
-                        "label": LANDING_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS.get(flow_key, flow_key),
+                        "label": ASSURANCE_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS.get(flow_key, flow_key),
                         "total": 0,
                         "by_status": {},
                         "examples": [],
@@ -533,12 +533,12 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                 if len(flow["examples"]) < 3:
                     flow["examples"].append(example)
             if subcategory_key == "policy_clarification":
-                flow_key = landing_report_human_gate_policy_flow(item)
+                flow_key = assurance_report_human_gate_policy_flow(item)
                 policy_flows = subcategory["policy_flows"]
                 if flow_key not in policy_flows:
                     policy_flows[flow_key] = {
                         "id": flow_key,
-                        "label": LANDING_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS.get(flow_key, flow_key),
+                        "label": ASSURANCE_REPORT_HUMAN_GATE_POLICY_FLOW_LABELS.get(flow_key, flow_key),
                         "total": 0,
                         "by_status": {},
                         "examples": [],
@@ -549,12 +549,12 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                 if len(flow["examples"]) < 3:
                     flow["examples"].append(example)
             if subcategory_key == "implementation_support":
-                flow_key = landing_report_human_gate_support_flow(item)
+                flow_key = assurance_report_human_gate_support_flow(item)
                 support_flows = subcategory["support_flows"]
                 if flow_key not in support_flows:
                     support_flows[flow_key] = {
                         "id": flow_key,
-                        "label": LANDING_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS.get(flow_key, flow_key),
+                        "label": ASSURANCE_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS.get(flow_key, flow_key),
                         "total": 0,
                         "by_status": {},
                         "examples": [],
@@ -565,12 +565,12 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                 if len(flow["examples"]) < 3:
                     flow["examples"].append(example)
             if subcategory_key == "diagnostic_coverage":
-                flow_key = landing_report_human_gate_diagnostic_flow(item)
+                flow_key = assurance_report_human_gate_diagnostic_flow(item)
                 diagnostic_flows = subcategory["diagnostic_flows"]
                 if flow_key not in diagnostic_flows:
                     diagnostic_flows[flow_key] = {
                         "id": flow_key,
-                        "label": LANDING_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS.get(flow_key, flow_key),
+                        "label": ASSURANCE_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS.get(flow_key, flow_key),
                         "total": 0,
                         "by_status": {},
                         "examples": [],
@@ -581,12 +581,12 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
                 if len(flow["examples"]) < 3:
                     flow["examples"].append(example)
         if owner_area == "runtime_projection":
-            subcategory_key = landing_report_runtime_projection_subcategory(item)
+            subcategory_key = assurance_report_runtime_projection_subcategory(item)
             subcategories = category["subcategories"]
             if subcategory_key not in subcategories:
                 subcategories[subcategory_key] = {
                     "id": subcategory_key,
-                    "label": LANDING_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS.get(subcategory_key, subcategory_key),
+                    "label": ASSURANCE_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS.get(subcategory_key, subcategory_key),
                     "total": 0,
                     "by_status": {},
                     "examples": [],
@@ -624,18 +624,18 @@ def landing_report_build_gap_categories(requirements, capability_gaps):
     return dict(sorted(categories.items(), key=lambda item: item[0]))
 
 
-def landing_report_document_text(paths):
+def assurance_report_document_text(paths):
     parts = []
     for path in paths:
         parts.append(path.read_text(encoding="utf-8"))
     return "\n".join(parts)
 
 
-def landing_report_terms_present(text, terms):
+def assurance_report_terms_present(text, terms):
     return all(term in text for term in terms)
 
 
-def landing_report_member_status(text, spec_id, kind):
+def assurance_report_member_status(text, spec_id, kind):
     for match in re.finditer(r"```ya?ml\s*\n(.*?\n)```", text, re.DOTALL):
         block = match.group(1)
         if "ldvh_member:" not in block:
@@ -649,28 +649,28 @@ def landing_report_member_status(text, spec_id, kind):
     return None
 
 
-def landing_report_build_capability_gaps(formal_files, runtime_projection_report=None, human_gate_report=None):
-    text = landing_report_document_text(formal_files)
+def assurance_report_build_capability_gaps(formal_files, runtime_projection_report=None, human_gate_report=None):
+    text = assurance_report_document_text(formal_files)
     gaps = []
 
-    for check in LANDING_REPORT_CAPABILITY_CHECKS:
-        terms_present = landing_report_terms_present(text, check["required_terms"])
+    for check in ASSURANCE_REPORT_CAPABILITY_CHECKS:
+        terms_present = assurance_report_terms_present(text, check["required_terms"])
         status = check["status"] if terms_present else "open"
         reason = check["degraded_reason"] if terms_present else check["missing_reason"]
         evidence = "matched formal spec terms" if terms_present else "required terms missing from formal specs"
         if check["id"] == "41_trigger_safeguard":
-            status_40 = landing_report_member_status(text, "40", "work_process")
-            status_41 = landing_report_member_status(text, "41", "work_process")
+            status_40 = assurance_report_member_status(text, "40", "work_process")
+            status_41 = assurance_report_member_status(text, "41", "work_process")
             evidence = f"workflow 40 status={status_40 or 'missing'}; workflow 41 status={status_41 or 'missing'}"
             if status_41 == "active":
                 status = "degraded" if terms_present else "open"
-                reason = "41 已是 active 工作流程，但 landing-report 仍只能诊断成员状态，尚不能验证所有触发场景是否实际进入 41"
+                reason = "41 已是 active 工作流程，但 assurance-report 仍只能诊断成员状态，尚不能验证所有触发场景是否实际进入 41"
             elif status_41:
                 status = "degraded"
-                reason = f"41 当前 collection_status={status_41}，landing-report 已接入成员状态诊断，但候选流程仍不得被当作 active 触发保障"
+                reason = f"41 当前 collection_status={status_41}，assurance-report 已接入成员状态诊断，但候选流程仍不得被当作 active 触发保障"
             else:
                 status = "open"
-                reason = "landing-report 未发现 41 工作流程成员自描述，无法提供 41 触发保障成员状态诊断"
+                reason = "assurance-report 未发现 41 工作流程成员自描述，无法提供 41 触发保障成员状态诊断"
         if check["id"] == "runtime_projection_drift_check" and runtime_projection_report is not None:
             runtime_status = runtime_projection_report["summary"]["status"]
             runtime_issue_count = runtime_projection_report["metadata"]["issue_count"]
@@ -678,10 +678,10 @@ def landing_report_build_capability_gaps(formal_files, runtime_projection_report
             evidence = f"runtime-projection checked {runtime_file_count} project-local files, issues: {runtime_issue_count}, status: {runtime_status}"
             if runtime_status == "open":
                 status = "open"
-                reason = "runtime-projection 检查发现 open 漂移问题，landing-report 已接入该诊断"
+                reason = "runtime-projection 检查发现 open 漂移问题，assurance-report 已接入该诊断"
             elif runtime_status == "degraded":
                 status = "degraded"
-                reason = "runtime-projection 检查发现 degraded 漂移风险，landing-report 已接入该诊断"
+                reason = "runtime-projection 检查发现 degraded 漂移风险，assurance-report 已接入该诊断"
             elif terms_present:
                 status = "degraded"
                 reason = "runtime-projection 检查当前未发现项目内问题，但仍是项目局部启发式，尚不能证明所有运行投影完整覆盖"
@@ -693,7 +693,7 @@ def landing_report_build_capability_gaps(formal_files, runtime_projection_report
             evidence = f"human-gate checked {gate_file_count} project-local files, records: {gate_record_count}, issues: {gate_issue_count}, status: {gate_status}"
             if gate_status == "open":
                 status = "open"
-                reason = "human-gate 检查发现 open 证据结构问题，landing-report 已接入该诊断"
+                reason = "human-gate 检查发现 open 证据结构问题，assurance-report 已接入该诊断"
             elif terms_present:
                 status = "degraded"
                 reason = "human-gate 检查已接入，但仍是项目局部结构检查，尚不能证明所有 Human Gate 触发与 42 现场消费均已覆盖"
@@ -712,31 +712,31 @@ def landing_report_build_capability_gaps(formal_files, runtime_projection_report
     return gaps
 
 
-def landing_report_build(paths=None):
-    check_paths = paths if paths else landing_default_check_paths()
+def assurance_report_build(paths=None):
+    check_paths = paths if paths else assurance_default_check_paths()
     markdown_files = iter_markdown_files(check_paths)
-    formal_files = [path for path in markdown_files if landing_is_formal_spec(path)]
+    formal_files = [path for path in markdown_files if assurance_is_formal_spec(path)]
     requirements = []
     for path in formal_files:
-        requirements.extend(landing_extract_requirements_file(path))
+        requirements.extend(assurance_extract_requirements_file(path))
     runtime_projection_report = runtime_projection_report_build()
     human_gate_report = human_gate_report_build()
-    capability_gaps = landing_report_build_capability_gaps(formal_files, runtime_projection_report, human_gate_report)
+    capability_gaps = assurance_report_build_capability_gaps(formal_files, runtime_projection_report, human_gate_report)
 
     for requirement in requirements:
-        status, reason = landing_report_infer_status(requirement)
-        owner_area = LANDING_REPORT_OWNER_AREAS.get(requirement["requirement_type"], "unknown")
+        status, reason = assurance_report_infer_status(requirement)
+        owner_area = ASSURANCE_REPORT_OWNER_AREAS.get(requirement["requirement_type"], "unknown")
         requirement["status"] = status
         requirement["status_reason"] = reason
         requirement["owner_area"] = owner_area
-        requirement["suggested_writeback"] = LANDING_REPORT_WRITEBACK_AREAS.get(owner_area, "manual_review")
+        requirement["suggested_writeback"] = ASSURANCE_REPORT_WRITEBACK_AREAS.get(owner_area, "manual_review")
 
     source_files = sorted({requirement["source"] for requirement in requirements})
-    gap_categories = landing_report_build_gap_categories(requirements, capability_gaps)
+    gap_categories = assurance_report_build_gap_categories(requirements, capability_gaps)
     return {
         "metadata": {
             "tool": "code/specs_validate.py",
-            "report": "landing-report",
+            "report": "assurance-report",
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "source_of_truth": False,
             "status_source": "derived heuristic",
@@ -750,17 +750,17 @@ def landing_report_build(paths=None):
             "human_gate_issue_count": human_gate_report["metadata"]["issue_count"],
         },
         "summary": {
-            "by_status": landing_report_count_by(requirements, "status"),
-            "by_capability_status": landing_report_count_by(capability_gaps, "status"),
+            "by_status": assurance_report_count_by(requirements, "status"),
+            "by_capability_status": assurance_report_count_by(capability_gaps, "status"),
             "gap_total": sum(category["total"] for category in gap_categories.values()),
             "gap_by_owner_area": {area: category["total"] for area, category in gap_categories.items()},
             "runtime_projection_status": runtime_projection_report["summary"]["status"],
             "runtime_projection_by_status": runtime_projection_report["summary"]["by_status"],
             "human_gate_status": human_gate_report["summary"]["status"],
             "human_gate_by_status": human_gate_report["summary"]["by_status"],
-            "by_type": landing_report_count_by(requirements, "requirement_type"),
-            "by_sync_type": landing_report_count_by(requirements, "sync_type"),
-            "by_owner_area": landing_report_count_by(requirements, "owner_area"),
+            "by_type": assurance_report_count_by(requirements, "requirement_type"),
+            "by_sync_type": assurance_report_count_by(requirements, "sync_type"),
+            "by_owner_area": assurance_report_count_by(requirements, "owner_area"),
         },
         "requirements": requirements,
         "capability_gaps": capability_gaps,
@@ -770,15 +770,15 @@ def landing_report_build(paths=None):
     }
 
 
-def landing_report_shorten(text, limit=96):
+def assurance_report_shorten(text, limit=96):
     text = str(text).strip()
     if len(text) <= limit:
         return text
     return text[: limit - 3].rstrip() + "..."
 
 
-def landing_report_format_text(report):
-    lines = ["规范落地要求聚合报告"]
+def assurance_report_format_text(report):
+    lines = ["规范保障要求聚合报告"]
     metadata = report["metadata"]
     lines.append(f"- 检查文件数: {metadata['checked_file_count']}")
     lines.append(f"- 来源文件数: {metadata['source_count']}")
@@ -792,7 +792,7 @@ def landing_report_format_text(report):
 
     for title, key in [
         ("按状态", "by_status"),
-        ("按落地要求类型", "by_type"),
+        ("按保障要求类型", "by_type"),
         ("按同步类型", "by_sync_type"),
         ("按承接区域", "by_owner_area"),
         ("运行投影问题状态", "runtime_projection_by_status"),
@@ -814,7 +814,7 @@ def landing_report_format_text(report):
         lines.append("- 无")
     else:
         for item in actionable:
-            content = landing_report_shorten(item["content"])
+            content = assurance_report_shorten(item["content"])
             lines.append(
                 f"- {item['source']}:{item['line']} "
                 f"[{item['status']}/{item['requirement_type']}/{item['owner_area']}] "
@@ -909,10 +909,10 @@ def landing_report_format_text(report):
     return "\n".join(lines)
 
 
-def landing_report_main(paths=None, output_format="text"):
-    report = landing_report_build(paths)
+def assurance_report_main(paths=None, output_format="text"):
+    report = assurance_report_build(paths)
     if output_format == "json":
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
-        print(landing_report_format_text(report))
+        print(assurance_report_format_text(report))
     return 0

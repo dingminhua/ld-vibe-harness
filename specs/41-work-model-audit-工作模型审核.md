@@ -50,7 +50,7 @@ ldvh_member:
     - work_model_skeleton_check
     - work_model_anchor_check
     - work_model_reference_check
-    - work_model_landing_table_check
+    - work_model_assurance_table_check
     - work_model_collection_diagnostics
 ```
 
@@ -121,7 +121,7 @@ ldvh_member:
 
 1. `../rules/LDVH-MAINTAINER-ENTRY.md` 中与工作模型规范场景路由和维护规则相关的段落；
 2. `specs/05-工作模型基础规范.md` 中工作模型定义、标准组成、准入条件、状态机、对象关系、Human Gate、字段契约、事实源回写与适配边界相关章节；
-3. `specs/03.02-工作模型文档规范.md` 中成员自描述契约、文档骨架、字段契约表达、适配规则表达、规范落地要求和检查要求；
+3. `specs/03.02-工作模型文档规范.md` 中成员自描述契约、文档骨架、字段契约表达、适配规则表达、规范保障要求和检查要求；
 4. `specs/05.01-工作模型字段定义与语义规范.md` 中公共字段语义、`specs/05.02-工作模型字段内容与格式规范.md` 中内容格式、`specs/05.03-工作模型字段注册与消费规范.md` 中消费规则（如适用）；
 5. `specs/01-目录说明.md` 中 20-39 编号区段和成员自描述规则；
 6. `specs/09-事实源边界与承载规范.md` 中单一事实源原则和权威位置判断规则；
@@ -150,7 +150,7 @@ AI 遇到以下信号时，应识别为工作模型审核场景：
 
 1. **确认目标**：确认被审核对象是已存在的 `specs/20-39` 工作模型主文件、候选草案、编号意向、迁移计划还是能力消费请求；
 2. **确认权威依据**：读取或定位 05、03.02、05.01、05.02、05.03、01、09 和目标文件；
-3. **运行确定性诊断**：优先运行或参考 `python3 code/specs_validate.py index`、`python3 code/specs_validate.py doc specs`、`python3 code/specs_validate.py refs specs`、`python3 code/specs_validate.py landing specs`、`python3 code/specs_validate.py all` 获取目标文档的机械属性导航与诊断（成员自描述完整性、编号/路径/标题一致性、骨架章节齐全性、引用有效性、锚点有效性、规范落地要求表结构、派生集合索引与冲突诊断）；
+3. **运行确定性诊断**：优先运行或参考 `python3 code/specs_validate.py index`、`python3 code/specs_validate.py doc specs`、`python3 code/specs_validate.py refs specs`、`python3 code/specs_validate.py assurance specs`、`python3 code/specs_validate.py all` 获取目标文档的机械属性导航与诊断（成员自描述完整性、编号/路径/标题一致性、骨架章节齐全性、引用有效性、锚点有效性、规范保障要求表结构、派生集合索引与冲突诊断）；
 4. **审核成员自描述**：检查 `spec_id`、`kind`（必须是 `work_model`）、`name_en`、`name_zh`、`collection_status`、`canonical_path`、`instance_root`、`schema_anchor`、`state_machine_anchor`、`human_gate_anchor` 是否完整一致；
 5. **审核文件归属**：检查文件名、编号、区段、标题和 canonical path 是否符合 01、03.02 和 05；
 6. **审核对象定位（价值层面）**：判断该内容是否确实需要被结构化承载为工作模型，是否不成为工作模型就会导致事实不可追溯或边界漂移；是否存在重复覆盖已有的工作模型；
@@ -163,7 +163,7 @@ AI 遇到以下信号时，应识别为工作模型审核场景：
 13. **审核事实源回写与证据（规范层面）**：检查 §7 对实例创建、修改、关闭、删除和回写的归属规则是否明确；是否声明只有 Git 文件事实源作为权威位置；
 14. **审核整体设计（价值+规范交叉层面）**：跳出逐段检查，做一次整体判断：①**边界清晰性**——检查是否与相邻工作模型（WorkArea、WorkCase、Pitfall、Spark、ADR、Study）职责重叠；是否明确声明"不是什么"；是否存在职责漂移（如本该在工作流程中的执行步骤被写进工作模型）；②**整体流转合理性**——检查从典型事实"进入→状态机推进→字段变更→Human Gate→关闭/回写"的路径是否闭环；状态机的关键状态是否有对应的字段契约支撑；终态是否可到达；③**AI 消费可用性**——检查最小可读上下文（spec_id/kind/collection_status）是否完整；状态机是否驱动了至少 2 个可执行的决策点；字段契约是否提供 AI 可直接消费的结构；④**机制契合度**——检查成员自描述字段是否可被 Code 派生索引；anchor 命名是否与 03.02 的约定一致；collection_status 取值是否在 05 定义的范围内；
 15. **审核适配规则**：检查 §8 对 AI、Rules、Skill、Agent、Web、结构化契约的消费方式是否只保留摘要和引用，不复制实现正文；
-16. **审核规范落地要求**：检查规范落地要求表是否说明同步、检查或审计触发条件，且没有制造无法保障的落地承诺；
+16. **审核规范保障要求**：检查规范保障要求表是否说明同步、检查或审计触发条件，且没有制造无法保障的部署适配承诺；
 17. **审核检查要求**：检查工作模型是否明确 AI 如何判断实例合法、非法、需要回写或需要 Human Gate；
 18. **审核待补齐事项**：检查待补齐事项是否列举了真实缺口而非泛化问题；是否与成员自描述中的 candidate/planned 状态相匹配；
 19. **形成审核结论**：按 §10 输出过程结论，必要时触发 Human Gate、创建后续 WorkCase/Spark/ADR/Pitfall 或修订目标文件；
@@ -218,7 +218,7 @@ Skill 和 Agent 输出均为过程输出，必须交还主控。Skill 不得自�
 3. active 工作模型必需锚点检查；
 4. 文档结构与骨架章节检查；
 5. specs 引用检查与锚点有效性；
-6. 规范落地要求表结构检查；
+6. 规范保障要求表结构检查；
 7. 派生集合索引与冲突诊断；
 8. 与其他工作模型/工作流程成员自描述的一致性提示。
 
@@ -228,13 +228,13 @@ Skill 和 Agent 输出均为过程输出，必须交还主控。Skill 不得自�
 python3 code/specs_validate.py index
 python3 code/specs_validate.py doc specs
 python3 code/specs_validate.py refs specs
-python3 code/specs_validate.py landing specs
+python3 code/specs_validate.py assurance specs
 python3 code/specs_validate.py all
 ```
 
 Code 输出只作为导航、聚合和诊断结果。Code 不判断工作模型是否具备工程价值、不判断状态机设计是否合理、不判断对象关系是否清晰、不判断 Human Gate 是否在正确节点触发，也不生成授权。Code 不可用、诊断不完整或输出无法回指事实源时，应退回人工检查并记录残留风险。
 
-**审查边界声明**：本流程只审查目标工作模型文档中写的规范要求是否合理、完整、一致、可执行；不审查项目中是否已实际满足这些要求。Code 的作用仅限于帮助 AI 检查目标文档的机械属性（成员自描述、编号、路径、骨架、引用、锚点、落地要求表结构），Code 输出不构成"该工作模型在项目中已被满足"的证据。
+**审查边界声明**：本流程只审查目标工作模型文档中写的规范要求是否合理、完整、一致、可执行；不审查项目中是否已实际满足这些要求。Code 的作用仅限于帮助 AI 检查目标文档的机械属性（成员自描述、编号、路径、骨架、引用、锚点、保障要求表结构），Code 输出不构成"该工作模型在项目中已被满足"的证据。
 
 ---
 ## 10. 事实源回写与证据留存
@@ -254,7 +254,7 @@ Code 输出只作为导航、聚合和诊断结果。Code 不判断工作模型�
 
 | 结论 | 含义 |
 |---|---|
-| `pass` | 未发现阻塞问题，价值与规范层面均通过，且必要的机械诊断检查通过（成员自描述完整性、编号/路径/锚点一致性、骨架章节齐全、引用有效、规范落地要求表结构完整） |
+| `pass` | 未发现阻塞问题，价值与规范层面均通过，且必要的机械诊断检查通过（成员自描述完整性、编号/路径/锚点一致性、骨架章节齐全、引用有效、规范保障要求表结构完整） |
 | `pass_with_followups` | 可继续使用，但存在不阻塞的后续改进项 |
 | `blocked` | 存在阻塞问题，不得标记为通过或 active |
 | `needs_human_gate` | 需要 Human 确认后才能继续或升级/修改 |
@@ -335,18 +335,18 @@ Gate 场景：
 python3 code/specs_validate.py index
 python3 code/specs_validate.py doc specs
 python3 code/specs_validate.py refs specs
-python3 code/specs_validate.py landing specs
+python3 code/specs_validate.py assurance specs
 python3 code/specs_validate.py all
 ```
 
 无法运行自动化校验时，应说明原因、采用的人工检查方式和残留风险，不得声称完整验证。Code 命令输出仅辅助机械属性检查，不替代 AI 对价值与规范的判断。
 
 ---
-## 13. 规范落地要求
+## 13. 规范保障要求
 
-本文通过以下规范落地要求说明相关要求的同步、检查或审计触发条件。
+本文通过以下规范保障要求说明相关要求的同步、检查或审计触发条件。
 
-| 落地要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 上位约束承接要求 | 工作模型审核应承接 05 的工作模型基础规则和 03.02 的工作模型文档骨架、成员自描述契约、字段契约表达和适配规则表达 | 本文、05、03.02、05.01、05.02、05.03、Human Gate | 文档治理 | 新增、修改、升级、降级、删除、重命名或审查 20-39 工作模型时 |
 | 入口可见要求 | AI 处理工作模型设计、字段契约、状态机或工作模型变更时应能定位本文 | Rules 入口、05、03.02 | AI 执行入口提示 | 工作模型场景路由、成员主文件或入口资产变化时 |
@@ -383,7 +383,7 @@ python3 code/specs_validate.py all
 | 机制契合度（整体设计） | 能被 Rules、Skill、Agent、Code、Web、CI 等能力资产稳定消费；不制造能力资产无法处理的结构 |
 | 适配规则 | §8 只保留摘要和引用，不复制 Skill/Agent/Web 实现正文 |
 | 验证结果 | 相关 Code 校验命令已运行或已说明无法运行的原因、采用的人工检查方式和残留风险；Code 诊断仅辅助机械属性检查，不替代 AI 对价值与规范的判断 |
-| 落地要求 | 规范落地要求表声明要求内容、保障机制、同步类型和触发条件，不把环境实体写成要求本身 |
+| 保障要求 | 规范保障要求表声明要求内容、保障机制、同步类型和触发条件，不把环境实体写成要求本身 |
 | 检查要求 | 明确 AI 如何判断实例合法、非法、需要回写或需要 Human Gate |
 | 待补齐事项 | 真实、具体，与 candidate/planned 状态或当前实现缺口一致 |
 | 审核结论 | 结论按 `pass / pass_with_followups / blocked / needs_human_gate / not_applicable` 分类，且能回指事实源 |

@@ -111,7 +111,7 @@ orchestration:
 
       任务完成，人工确认关闭。
     evidence_refs:
-    - specs/04.02-LDVH能力资产与落地保障规范.md
+    - specs/04.02-LDVH能力资产与保障机制规范.md
     - specs/04.03-环境入口适配与部署规范.md
     blocking_reason: null
   review:
@@ -166,7 +166,7 @@ closure_evidence: |
 review_requested_at: '2026-06-06T08:24:15.000000'
 closed_at: ''
 related_docs:
-- specs/04.02-LDVH能力资产与落地保障规范.md
+- specs/04.02-LDVH能力资产与保障机制规范.md
 - specs/04.03-环境入口适配与部署规范.md
 related_adrs: []
 related_sparks: []

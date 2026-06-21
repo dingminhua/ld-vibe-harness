@@ -1,4 +1,4 @@
-"""Landing requirement table checks for LDVH specs."""
+"""Assurance requirement table checks for LDVH specs."""
 
 import re
 from pathlib import Path
@@ -9,9 +9,9 @@ from .common import HEADING_RE, Issue, iter_markdown_files, relative_path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FORMAL_SPECS_DIR = PROJECT_ROOT / "specs"
 DOC_NUMBERED_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?(?:\s+|$)")
-LANDING_SECTION_TITLE = "规范落地要求"
-LANDING_REQUIRED_COLUMNS = ["落地要求", "要求内容", "保障机制", "同步类型", "触发条件"]
-LANDING_ALLOWED_TYPES = {
+ASSURANCE_SECTION_TITLE = "规范保障要求"
+ASSURANCE_REQUIRED_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
+ASSURANCE_ALLOWED_TYPES = {
     "上位约束承接要求",
     "入口可见要求",
     "流程复用要求",
@@ -62,7 +62,7 @@ def clean_cell(value):
     return text
 
 
-def landing_relative_path(path):
+def assurance_relative_path(path):
     return relative_path(path, PROJECT_ROOT)
 
 
@@ -73,7 +73,7 @@ def extract_requirements_file(path):
 
     lines = path.read_text(encoding="utf-8").splitlines()
     in_code_block = False
-    in_landing_section = False
+    in_assurance_section = False
     header_seen = False
     in_table = False
 
@@ -89,12 +89,12 @@ def extract_requirements_file(path):
         if heading:
             level = len(heading.group(1))
             title = strip_section_number(heading.group(2).strip())
-            in_landing_section = level == 2 and title == LANDING_SECTION_TITLE
+            in_assurance_section = level == 2 and title == ASSURANCE_SECTION_TITLE
             header_seen = False
             in_table = False
             continue
 
-        if not in_landing_section:
+        if not in_assurance_section:
             continue
         if not stripped:
             if in_table:
@@ -112,12 +112,12 @@ def extract_requirements_file(path):
             header_seen = True
             in_table = True
             continue
-        if len(cells) < len(LANDING_REQUIRED_COLUMNS):
+        if len(cells) < len(ASSURANCE_REQUIRED_COLUMNS):
             continue
 
         requirements.append(
             {
-                "source": landing_relative_path(path),
+                "source": assurance_relative_path(path),
                 "line": index,
                 "requirement_type": clean_cell(cells[0]),
                 "content": clean_cell(cells[1]),
@@ -137,7 +137,7 @@ def check_file(path):
 
     lines = path.read_text(encoding="utf-8").splitlines()
     in_code_block = False
-    in_landing_section = False
+    in_assurance_section = False
     section_line = None
     header_seen = False
     table_seen = False
@@ -155,18 +155,18 @@ def check_file(path):
         if heading:
             level = len(heading.group(1))
             title = strip_section_number(heading.group(2).strip())
-            if in_landing_section and not table_seen:
-                issues.append(Issue(path, section_line, "规范落地要求章节缺少表格", code="LANDING_TABLE_MISSING"))
-            elif in_landing_section and table_seen and not row_seen:
-                issues.append(Issue(path, section_line, "规范落地要求表格缺少数据行", code="LANDING_ROW_MISSING"))
-            in_landing_section = level == 2 and title == LANDING_SECTION_TITLE
-            section_line = index if in_landing_section else None
+            if in_assurance_section and not table_seen:
+                issues.append(Issue(path, section_line, "规范保障要求章节缺少表格", code="ASSURANCE_TABLE_MISSING"))
+            elif in_assurance_section and table_seen and not row_seen:
+                issues.append(Issue(path, section_line, "规范保障要求表格缺少数据行", code="ASSURANCE_ROW_MISSING"))
+            in_assurance_section = level == 2 and title == ASSURANCE_SECTION_TITLE
+            section_line = index if in_assurance_section else None
             header_seen = False
             table_seen = False
             row_seen = False
             continue
 
-        if not in_landing_section:
+        if not in_assurance_section:
             continue
 
         if not stripped:
@@ -183,52 +183,52 @@ def check_file(path):
         if not header_seen:
             header_seen = True
             table_seen = True
-            if cells[: len(LANDING_REQUIRED_COLUMNS)] != LANDING_REQUIRED_COLUMNS:
-                expected = " | ".join(LANDING_REQUIRED_COLUMNS)
+            if cells[: len(ASSURANCE_REQUIRED_COLUMNS)] != ASSURANCE_REQUIRED_COLUMNS:
+                expected = " | ".join(ASSURANCE_REQUIRED_COLUMNS)
                 actual = " | ".join(cells)
                 issues.append(
                     Issue(
                         path,
                         index,
-                        f"规范落地要求表头不符合 04.01 要求: 期望 {expected}，实际 {actual}",
-                        code="LANDING_HEADER_INVALID",
+                        f"规范保障要求表头不符合 04.01 要求: 期望 {expected}，实际 {actual}",
+                        code="ASSURANCE_HEADER_INVALID",
                     )
                 )
             continue
 
         row_seen = True
-        if len(cells) < len(LANDING_REQUIRED_COLUMNS):
-            issues.append(Issue(path, index, "规范落地要求表格行缺少必填字段", code="LANDING_ROW_TOO_SHORT"))
+        if len(cells) < len(ASSURANCE_REQUIRED_COLUMNS):
+            issues.append(Issue(path, index, "规范保障要求表格行缺少必填字段", code="ASSURANCE_ROW_TOO_SHORT"))
             continue
 
-        required_values = cells[: len(LANDING_REQUIRED_COLUMNS)]
-        for column, value in zip(LANDING_REQUIRED_COLUMNS, required_values):
+        required_values = cells[: len(ASSURANCE_REQUIRED_COLUMNS)]
+        for column, value in zip(ASSURANCE_REQUIRED_COLUMNS, required_values):
             if not value:
-                issues.append(Issue(path, index, f"规范落地要求表格字段为空: {column}", code="LANDING_FIELD_EMPTY"))
+                issues.append(Issue(path, index, f"规范保障要求表格字段为空: {column}", code="ASSURANCE_FIELD_EMPTY"))
 
         requirement_type = required_values[0]
-        if requirement_type and requirement_type not in LANDING_ALLOWED_TYPES:
-            allowed = "、".join(sorted(LANDING_ALLOWED_TYPES))
+        if requirement_type and requirement_type not in ASSURANCE_ALLOWED_TYPES:
+            allowed = "、".join(sorted(ASSURANCE_ALLOWED_TYPES))
             issues.append(
                 Issue(
                     path,
                     index,
-                    f"规范落地要求类型未在 04.01 中定义: {requirement_type}；允许值: {allowed}",
-                    code="LANDING_TYPE_INVALID",
+                    f"规范保障要求类型未在 04.01 中定义: {requirement_type}；允许值: {allowed}",
+                    code="ASSURANCE_TYPE_INVALID",
                 )
             )
 
-    if in_landing_section and not table_seen:
-        issues.append(Issue(path, section_line, "规范落地要求章节缺少表格", code="LANDING_TABLE_MISSING"))
-    elif in_landing_section and table_seen and not row_seen:
-        issues.append(Issue(path, section_line, "规范落地要求表格缺少数据行", code="LANDING_ROW_MISSING"))
+    if in_assurance_section and not table_seen:
+        issues.append(Issue(path, section_line, "规范保障要求章节缺少表格", code="ASSURANCE_TABLE_MISSING"))
+    elif in_assurance_section and table_seen and not row_seen:
+        issues.append(Issue(path, section_line, "规范保障要求表格缺少数据行", code="ASSURANCE_ROW_MISSING"))
 
     if not any(
-        len(match.group(1)) == 2 and strip_section_number(match.group(2).strip()) == LANDING_SECTION_TITLE
+        len(match.group(1)) == 2 and strip_section_number(match.group(2).strip()) == ASSURANCE_SECTION_TITLE
         for match in (HEADING_RE.match(line) for line in lines)
         if match
     ):
-        issues.append(Issue(path, 1, "正式规范文档缺少规范落地要求章节", code="LANDING_SECTION_MISSING"))
+        issues.append(Issue(path, 1, "正式规范文档缺少规范保障要求章节", code="ASSURANCE_SECTION_MISSING"))
 
     return issues
 
@@ -244,9 +244,9 @@ def main(paths):
     selected_paths = paths if paths else default_check_paths()
     issues = check_paths(selected_paths)
     if issues:
-        print(f"规范落地要求检查失败，共 {len(issues)} 个问题：")
+        print(f"规范保障要求检查失败，共 {len(issues)} 个问题：")
         for issue in issues:
             print(f"- {issue.format(PROJECT_ROOT)}")
         return 1
-    print("规范落地要求检查通过。")
+    print("规范保障要求检查通过。")
     return 0

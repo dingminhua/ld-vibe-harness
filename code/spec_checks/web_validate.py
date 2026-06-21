@@ -4,8 +4,8 @@ import json
 from pathlib import Path
 
 from . import human_gate as human_gate_checks
-from . import landing_report as landing_report_checks
-from . import ldvh_landing as ldvh_landing_checks
+from . import assurance_report as assurance_report_checks
+from . import ldvh_assurance as ldvh_assurance_checks
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -13,23 +13,23 @@ SPECS_DIR = PROJECT_ROOT / "specs"
 LEGACY_SPECS_DIR = PROJECT_ROOT / "docs" / "specs"
 FORMAL_SPECS_DIR = SPECS_DIR
 DOCS_DIR = PROJECT_ROOT / "docs"
-RUNTIME_PROJECTION_DEFAULT_PATHS = list(landing_report_checks.RUNTIME_PROJECTION_DEFAULT_PATHS)
+RUNTIME_PROJECTION_DEFAULT_PATHS = list(assurance_report_checks.RUNTIME_PROJECTION_DEFAULT_PATHS)
 
 
-def sync_ldvh_landing_config():
-    ldvh_landing_checks.PROJECT_ROOT = PROJECT_ROOT
-    ldvh_landing_checks.SPECS_DIR = SPECS_DIR
-    ldvh_landing_checks.LEGACY_SPECS_DIR = LEGACY_SPECS_DIR
-    ldvh_landing_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
-    ldvh_landing_checks.DOCS_DIR = DOCS_DIR
-    ldvh_landing_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
+def sync_ldvh_assurance_config():
+    ldvh_assurance_checks.PROJECT_ROOT = PROJECT_ROOT
+    ldvh_assurance_checks.SPECS_DIR = SPECS_DIR
+    ldvh_assurance_checks.LEGACY_SPECS_DIR = LEGACY_SPECS_DIR
+    ldvh_assurance_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
+    ldvh_assurance_checks.DOCS_DIR = DOCS_DIR
+    ldvh_assurance_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
 
 
-def sync_landing_report_config():
-    landing_report_checks.PROJECT_ROOT = PROJECT_ROOT
-    landing_report_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
-    landing_report_checks.DOCS_DIR = DOCS_DIR
-    landing_report_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
+def sync_assurance_report_config():
+    assurance_report_checks.PROJECT_ROOT = PROJECT_ROOT
+    assurance_report_checks.FORMAL_SPECS_DIR = FORMAL_SPECS_DIR
+    assurance_report_checks.DOCS_DIR = DOCS_DIR
+    assurance_report_checks.RUNTIME_PROJECTION_DEFAULT_PATHS = list(RUNTIME_PROJECTION_DEFAULT_PATHS)
 
 
 def sync_human_gate_config():
@@ -38,19 +38,19 @@ def sync_human_gate_config():
     human_gate_checks.DOCS_DIR = DOCS_DIR
 
 
-def ldvh_landing_check_fact_validate():
-    sync_ldvh_landing_config()
-    return ldvh_landing_checks.ldvh_landing_check_fact_validate()
+def ldvh_assurance_check_fact_validate():
+    sync_ldvh_assurance_config()
+    return ldvh_assurance_checks.ldvh_assurance_check_fact_validate()
 
 
-def ldvh_landing_check_build(workspace_root=None):
-    sync_ldvh_landing_config()
-    return ldvh_landing_checks.ldvh_landing_check_build(workspace_root)
+def ldvh_assurance_check_build(workspace_root=None):
+    sync_ldvh_assurance_config()
+    return ldvh_assurance_checks.ldvh_assurance_check_build(workspace_root)
 
 
-def landing_report_build(paths=None):
-    sync_landing_report_config()
-    return landing_report_checks.landing_report_build(paths)
+def assurance_report_build(paths=None):
+    sync_assurance_report_config()
+    return assurance_report_checks.assurance_report_build(paths)
 
 
 def human_gate_report_build(paths=None):
@@ -58,7 +58,7 @@ def human_gate_report_build(paths=None):
     return human_gate_checks.report_build(paths)
 
 
-def web_validate_compact_landing_check(report):
+def web_validate_compact_assurance_check(report):
     return {
         "metadata": {
             "generated_at": report.get("metadata", {}).get("generated_at"),
@@ -92,7 +92,7 @@ def web_validate_compact_landing_check(report):
     }
 
 
-def web_validate_compact_landing_report(report):
+def web_validate_compact_assurance_report(report):
     return {
         "metadata": {
             "generated_at": report.get("metadata", {}).get("generated_at"),
@@ -159,10 +159,10 @@ def web_validate_compact_human_gate_report(report):
 
 
 def web_validate_build(workspace_root=None):
-    fact_report = ldvh_landing_check_fact_validate()
-    landing_check = ldvh_landing_check_build(workspace_root)
-    landing_report = landing_report_build()
-    human_gate_report = landing_report.get("human_gate")
+    fact_report = ldvh_assurance_check_fact_validate()
+    assurance_check = ldvh_assurance_check_build(workspace_root)
+    assurance_report = assurance_report_build()
+    human_gate_report = assurance_report.get("human_gate")
     if human_gate_report is None:
         human_gate_report = human_gate_report_build()
 
@@ -178,23 +178,23 @@ def web_validate_build(workspace_root=None):
         },
         "issues": fact_report.get("issues", []),
         "reports": {
-            "landingCheck": web_validate_compact_landing_check(landing_check),
-            "landingReport": web_validate_compact_landing_report(landing_report),
+            "assuranceCheck": web_validate_compact_assurance_check(assurance_check),
+            "assuranceReport": web_validate_compact_assurance_report(assurance_report),
             "humanGateReport": web_validate_compact_human_gate_report(human_gate_report),
         },
     }
 
 
 def web_validate_format_text(report):
-    landing = report.get("reports", {}).get("landingCheck", {})
-    landing_report = report.get("reports", {}).get("landingReport", {})
+    assurance = report.get("reports", {}).get("assuranceCheck", {})
+    assurance_report = report.get("reports", {}).get("assuranceReport", {})
     human_gate = report.get("reports", {}).get("humanGateReport", {})
     lines = ["Web Validate 派生报告"]
     lines.append(f"- fact files: {report.get('summary', {}).get('files', 0)}")
     lines.append(f"- fact errors: {report.get('summary', {}).get('errors', 0)}")
     lines.append(f"- fact warnings: {report.get('summary', {}).get('warnings', 0)}")
-    lines.append(f"- 42 status: {landing.get('summary', {}).get('status')}")
-    lines.append(f"- landing gaps: {landing_report.get('summary', {}).get('gap_total', 0)}")
+    lines.append(f"- 42 status: {assurance.get('summary', {}).get('status')}")
+    lines.append(f"- assurance gaps: {assurance_report.get('summary', {}).get('gap_total', 0)}")
     lines.append(f"- Human Gate records: {human_gate.get('metadata', {}).get('record_count', 0)}")
     return "\n".join(lines)
 

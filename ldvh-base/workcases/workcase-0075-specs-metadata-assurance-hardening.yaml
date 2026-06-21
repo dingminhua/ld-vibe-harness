@@ -173,7 +173,7 @@ closure_evidence: |
   ## 验证命令
 
   ```bash
-  python3 code/fact_validate.py ldvh-base/workcases/workcase-0070-specs-header-metadata-contract.yaml ldvh-base/workcases/workcase-0075-specs-metadata-landing-hardening.yaml
+  python3 code/fact_validate.py ldvh-base/workcases/workcase-0070-specs-header-metadata-contract.yaml ldvh-base/workcases/workcase-0075-specs-metadata-assurance-hardening.yaml
   python3 code/specs_validate.py all --fail-on-diagnostics
   npm run check
   ```

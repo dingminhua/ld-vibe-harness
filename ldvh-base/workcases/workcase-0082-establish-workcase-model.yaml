@@ -487,7 +487,7 @@ orchestration:
         evidence_refs:
         - ldvh-base/workareas/workarea-0012-ldvh-internal-governance.yaml
         - ldvh-base/workcases/workcase-0074-git-commit-trace-contract.yaml
-        - ldvh-base/workcases/workcase-0075-specs-metadata-landing-hardening.yaml
+        - ldvh-base/workcases/workcase-0075-specs-metadata-assurance-hardening.yaml
         - ldvh-base/workcases/workcase-0076-ldvh-doc-metadata-contract.yaml
         - ldvh-base/workcases/workcase-0077-work-model-spec-system-refactor.yaml
       raw_output_ref: null
@@ -612,7 +612,7 @@ verification_evidence: |
 
   ## 验证命令
   - python3 code/fact_validate.py ldvh-base --format text
-  - python3 -m pytest tests/code/test_fact_cli.py tests/code/test_fact_validate.py tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_field_registry.py tests/code/specs_validate_checks/test_index.py tests/code/specs_validate_checks/test_ldvh_landing.py -q
+  - python3 -m pytest tests/code/test_fact_cli.py tests/code/test_fact_validate.py tests/code/test_commit_validate.py tests/code/specs_validate_checks/test_field_registry.py tests/code/specs_validate_checks/test_index.py tests/code/specs_validate_checks/test_ldvh_assurance.py -q
   - npm --prefix web run check && npm --prefix web run test:web:api
   - npm --prefix web run build
   - python3 code/specs_validate.py all
