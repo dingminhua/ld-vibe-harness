@@ -1,6 +1,6 @@
 ---
 name: ldvh-git-commit
-description: Prepare, validate, and create LDVH Git commits under specs/10. Use when Codex is asked to commit LDVH changes, write or repair a commit message, split staged changes, run commit prechecks, or explain/fix commit validation failures in an LDVH governed repository.
+description: Prepare, validate, and create LDVH Git commits under specs/44 and specs/10. Use when Codex is asked to commit LDVH changes, write or repair a commit message, split staged changes, run commit prechecks, or explain/fix commit validation failures in an LDVH governed repository.
 ---
 
 # LDVH Git Commit
@@ -12,8 +12,9 @@ ldvh_asset:
   status: "active"
   canonical_path: "skills/ldvh-git-commit/SKILL.md"
   source_specs:
+    - "specs/44-git-commit-orchestration-Git提交编排.md"
     - "specs/10-Git提交规范.md"
-    - "specs/04.02-LDVH能力资产与落地保障规范.md"
+    - "specs/04.02-LDVH能力资产与保障机制规范.md"
   consumption_scenarios:
     - "AI 准备创建 Git commit"
     - "提交消息预检失败修正"
@@ -33,13 +34,14 @@ ldvh_asset:
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:
     - "specs/10-Git提交规范.md commit message 契约变化"
+    - "specs/44-git-commit-orchestration-Git提交编排.md 提交行动编排变化"
     - "code/commit_validate.py CLI 或错误等级变化"
     - "hooks/ldvh-hooks.yaml git.commit-msg 事件变化"
-    - "specs/04.02-LDVH能力资产与落地保障规范.md Skill 资产规则变化"
+    - "specs/04.02-LDVH能力资产与保障机制规范.md Skill 资产规则变化"
   deprecation: "废弃或重命名前必须同步 04.02、10、0074、spark-0017 和 deployment-entries。"
 ```
 
-Use this Skill to convert `specs/10-Git提交规范.md` into the commit execution workflow. Do not create new commit rules here. Treat `specs/10-Git提交规范.md` as the canonical rule, `code/commit_validate.py` as the canonical validator, `hooks/ldvh-hooks.yaml` as the Hook event registry, and `code/hook_dispatch.py` as the unified dispatcher.
+Use this Skill to execute the commit workflow coordinated by `specs/44-git-commit-orchestration-Git提交编排.md` and constrained by `specs/10-Git提交规范.md`. Do not create new commit rules here. Treat `specs/10-Git提交规范.md` as the canonical commit-message rule, `code/commit_validate.py` as the canonical validator, `hooks/ldvh-hooks.yaml` as the Hook event registry, and `code/hook_dispatch.py` as the unified dispatcher.
 
 ## Workflow
 

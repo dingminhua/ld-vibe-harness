@@ -4,8 +4,9 @@ ldvh_asset:
   status: "active"
   canonical_path: "hooks/ldvh-hooks.yaml"
   source_specs:
+    - "specs/44-git-commit-orchestration-Git提交编排.md"
     - "specs/10-Git提交规范.md"
-    - "specs/04.02-LDVH能力资产与落地保障规范.md"
+    - "specs/04.02-LDVH能力资产与保障机制规范.md"
   consumption_scenarios:
     - "LDVH 统一 Hook 事件登记"
     - "提交消息本地或环境前置校验"
@@ -21,10 +22,11 @@ ldvh_asset:
     - "python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>"
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:
+    - "specs/44-git-commit-orchestration-Git提交编排.md 提交行动编排或 Hook 边界变化"
     - "specs/10-Git提交规范.md 提交格式或门禁规则变化"
     - "code/commit_validate.py CLI 参数或错误等级变化"
     - "code/hook_dispatch.py 事件参数、执行语义或 registry schema 变化"
-    - "specs/04.02-LDVH能力资产与落地保障规范.md Hook 资产规则变化"
+    - "specs/04.02-LDVH能力资产与保障机制规范.md Hook 资产规则变化"
   deprecation: "废弃或拆分前必须同步 04.02、10、0074、deployment-entries 和所有环境适配入口。"
 
 hooks:

@@ -6,6 +6,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+import yaml
+
 from .common import HEADING_RE
 
 
@@ -54,6 +56,11 @@ INDEX_LDVH_DOC_STANDARD_FIELDS = [
 INDEX_LDVH_DOC_NONEMPTY_FIELDS = ["doc_id", "doc_kind", "title", "status", "canonical_path", "created", "updated", "positioning", "scope", "basis", "code_consumption"]
 INDEX_LDVH_DOC_HEADER_FORBIDDEN_FIELDS = {"创建日期", "更新日期", "所属主文档", "关系", "定位", "适用范围", "上位依据", "相关规范"}
 INDEX_LDVH_DOC_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+INDEX_CAPABILITY_ASSET_ALLOWED_TYPES = {"rule", "skill", "agent", "hook", "code", "web", "ci", "command", "environment"}
+INDEX_CAPABILITY_ASSET_REQUIRED_PARTS = ("type=", "path=", "purpose=", "status=")
+INDEX_CAPABILITY_ASSET_TEXT_TYPES = {"rule", "skill", "agent", "hook"}
+INDEX_CAPABILITY_ASSET_ALLOWED_STATUSES = {"required", "optional", "degraded", "planned"}
+INDEX_CAPABILITY_ASSET_DEPLOYMENT_STATUS_TERMS = ("deployed", "installed", "enabled", "verified", "已部署", "已安装", "已启用", "已验证", "完整支持")
 INDEX_WORK_MODEL_DIRECTORY_HEADER = ("当前编号", "工作模型", "事实实例承载")
 INDEX_FORBIDDEN_DEFINITION_SECTION_TITLES = {"术语定义", "概念定义", "名词解释"}
 INDEX_ALLOWED_SUBDOCUMENT_RELATIONS = {"应用剖面", "专题子文档"}
@@ -946,6 +953,7 @@ class SpecsChecker:
         if status and status not in allowed_statuses:
             diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_STATUS_INVALID", f"ldvh_member collection_status 非法: {status}"))
         diagnostics.extend(self.diagnose_workflow_assurance_takeover(rel_path, line, member))
+        diagnostics.extend(self.diagnose_workflow_capability_assets(rel_path, line, member))
         return diagnostics
 
     def diagnose_workflow_assurance_takeover(self, rel_path, line, member):
@@ -969,6 +977,105 @@ class SpecsChecker:
                 )
         return diagnostics
 
+    def diagnose_workflow_capability_assets(self, rel_path, line, member):
+        if member.get("kind") != "work_process" or "capability_assets" not in member:
+            return []
+        value = member.get("capability_assets")
+        if not isinstance(value, list):
+            return [self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_CAPABILITY_ASSETS_INVALID", "ldvh_member capability_assets 必须是列表")]
+
+        diagnostics = []
+        for item in value:
+            parsed = self.parse_capability_asset_entry(item)
+            if parsed is None:
+                diagnostics.append(
+                    self.diagnostic(
+                        rel_path,
+                        line,
+                        "error",
+                        "LDVH_MEMBER_CAPABILITY_ASSETS_INVALID",
+                        "ldvh_member capability_assets 每项必须包含 type=、path=、purpose= 和 status=",
+                    )
+                )
+                continue
+
+            asset_type = parsed.get("type")
+            asset_path_raw = parsed.get("path")
+            status = parsed.get("status")
+            if asset_type not in INDEX_CAPABILITY_ASSET_ALLOWED_TYPES:
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_CAPABILITY_ASSET_TYPE_INVALID", f"capability_assets type 非法: {asset_type}"))
+            if status not in INDEX_CAPABILITY_ASSET_ALLOWED_STATUSES:
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_CAPABILITY_ASSET_STATUS_INVALID", f"capability_assets status 非法或表达部署状态: {status}"))
+            if any(term in item for term in INDEX_CAPABILITY_ASSET_DEPLOYMENT_STATUS_TERMS):
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_CAPABILITY_ASSET_STATUS_INVALID", "capability_assets 不得表达环境部署、安装、启用、验证或完整支持状态"))
+
+            if not asset_path_raw:
+                continue
+            asset_path = self.root / asset_path_raw
+            if asset_path_raw.startswith("/") or ".." in Path(asset_path_raw).parts:
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_CAPABILITY_ASSET_PATH_INVALID", f"capability_assets path 必须是仓库内相对路径: {asset_path_raw}"))
+                continue
+            if asset_type not in {"ci", "command", "environment"} and not asset_path.exists():
+                diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_CAPABILITY_ASSET_PATH_MISSING", f"capability_assets path 不存在: {asset_path_raw}"))
+                continue
+            if asset_type in INDEX_CAPABILITY_ASSET_TEXT_TYPES and asset_path.exists():
+                metadata = self.read_ldvh_asset_metadata(asset_path)
+                if metadata is None:
+                    diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_CAPABILITY_ASSET_METADATA_MISSING", f"固定文本能力资产缺少 ldvh_asset 元信息: {asset_path_raw}"))
+                    continue
+                if metadata.get("type") != asset_type:
+                    diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_CAPABILITY_ASSET_METADATA_MISMATCH", f"capability_assets type 与 ldvh_asset type 不一致: {asset_type} != {metadata.get('type')}"))
+                if metadata.get("canonical_path") != asset_path_raw:
+                    diagnostics.append(self.diagnostic(rel_path, line, "error", "LDVH_MEMBER_CAPABILITY_ASSET_METADATA_MISMATCH", f"capability_assets path 与 ldvh_asset canonical_path 不一致: {asset_path_raw} != {metadata.get('canonical_path')}"))
+        return diagnostics
+
+    def parse_capability_asset_entry(self, item):
+        if not isinstance(item, str) or not all(part in item for part in INDEX_CAPABILITY_ASSET_REQUIRED_PARTS):
+            return None
+        parsed = {}
+        for part in item.split(";"):
+            if "=" not in part:
+                continue
+            key, value = part.split("=", 1)
+            parsed[key.strip()] = value.strip()
+        if not all(parsed.get(part[:-1]) for part in INDEX_CAPABILITY_ASSET_REQUIRED_PARTS):
+            return None
+        return parsed
+
+    def read_ldvh_asset_metadata(self, asset_path):
+        try:
+            text = asset_path.read_text(encoding="utf-8")
+        except OSError:
+            return None
+        if asset_path.suffix in {".yaml", ".yml"}:
+            try:
+                data = yaml.safe_load(text) or {}
+            except yaml.YAMLError:
+                data = {}
+            if isinstance(data, dict) and isinstance(data.get("ldvh_asset"), dict):
+                return data["ldvh_asset"]
+        in_yaml = False
+        block_lines = []
+        for line in text.splitlines():
+            stripped = line.strip()
+            if not in_yaml and stripped in {"```yaml", "```yml"}:
+                in_yaml = True
+                block_lines = []
+                continue
+            if in_yaml and stripped == "```":
+                try:
+                    data = yaml.safe_load("\n".join(block_lines)) or {}
+                except yaml.YAMLError:
+                    data = {}
+                if isinstance(data, dict) and isinstance(data.get("ldvh_asset"), dict):
+                    return data["ldvh_asset"]
+                in_yaml = False
+                block_lines = []
+                continue
+            if in_yaml:
+                block_lines.append(line)
+        return None
+
     def members_as_collection_entries(self, kind):
         indexes = self.build()
         entries = []
@@ -987,6 +1094,7 @@ class SpecsChecker:
                     "position": " / ".join(part for part in (member.get("name_en"), member.get("name_zh")) if part),
                     "aliases": [],
                     "assurance_takeover": member.get("assurance_takeover") or [],
+                    "capability_assets": member.get("capability_assets") or [],
                 }
             )
         return entries

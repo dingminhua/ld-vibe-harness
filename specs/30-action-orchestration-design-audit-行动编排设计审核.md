@@ -2,17 +2,17 @@
 
 ```yaml
 ldvh_doc:
-  doc_id: "40"
+  doc_id: "30"
   doc_kind: "work_process_spec"
   title: "action-orchestration-design-audit-行动编排设计审核"
-  status: "removed"
-  canonical_path: "specs/40-action-orchestration-design-audit-行动编排设计审核.md"
+  status: "active"
+  canonical_path: "specs/30-action-orchestration-design-audit-行动编排设计审核.md"
   created: "2026-06-15"
   updated: "2026-06-22"
   parent_doc: ""
   relation: ""
-  positioning: "行动编排设计审核旧编号占位；该行动编排已迁移到 specs/30-action-orchestration-design-audit-行动编排设计审核.md"
-  scope: "历史编号追溯；不得作为 active 行动编排执行"
+  positioning: "定义行动编排设计审核行动，用于审核 `specs/30-59` 具体行动编排主文件是否符合 LDVH 行动编排基础规则、文档骨架、成员自描述、事实源边界、能力协作边界和行动特有可测试性要求"
+  scope: "LDVH 自身和管辖项目中对 30-59 具体行动编排规范的新增、修改、升级、降级、重命名、删除、审查和能力消费前检查"
   basis:
     - "specs/06-行动编排基础规范.md"
   related_specs:
@@ -31,13 +31,12 @@ ldvh_doc:
 
 ```yaml
 ldvh_member:
-  spec_id: "40"
+  spec_id: "30"
   kind: work_process
   name_en: action-orchestration-design-audit
   name_zh: 行动编排设计审核
-  collection_status: removed
-  canonical_path: specs/40-action-orchestration-design-audit-行动编排设计审核.md
-  superseded_by: specs/30-action-orchestration-design-audit-行动编排设计审核.md
+  collection_status: active
+  canonical_path: specs/30-action-orchestration-design-audit-行动编排设计审核.md
   scenario_anchor: "§5"
   context_anchor: "§4"
   gate_anchor: "§7"
@@ -51,8 +50,6 @@ ldvh_member:
     - workflow_anchor_checks
     - workflow_collection_diagnostics
 ```
-
-> 迁移说明：本文件为旧编号追溯占位，行动编排设计审核的 active 主文件已迁移到 `specs/30-action-orchestration-design-audit-行动编排设计审核.md`。AI 不应按本文件执行行动编排设计审核。
 
 ---
 ## 1. 行动定位与适用场景
@@ -94,6 +91,27 @@ ldvh_member:
 5. 已发现某类行动反复依赖聊天记忆、临时提醒或无事实源判断。
 
 不满足以上条件时，不应为了填补编号或维持顺序而创建或审核行动编排。只存在抽象想法、一次性执行策略或尚未稳定的实践时，应先作为过程输出或候选材料；形成稳定事实后，再按事实类型和对象准入分流到 docs/studies、Spark、WorkCase、ADR 或其他权威位置。
+
+### 2.1 新增与修改依据检查
+
+审核新增行动编排时，AI 必须先检查创建依据是否成立。创建依据至少应能回答：
+
+1. 要控制的是哪一类 AI 行动，错误执行或漏执行会造成什么边界漂移；
+2. 该候选流程命中 06 §5.4 的哪些准入条件；
+3. 为什么现有 active 行动编排、事实模型、规范、Rules、Skill、Agent、Hook、Code 或 Web 不能充分承接；
+4. 候选流程预期如何定义 Context、Scenario、Gate、执行、回写、证据、能力协作和可测试性锚点；
+5. 编号、命名、状态、归属和 active 升级是否触发 Human Gate；
+6. 若当前只存在想法、临时做法或一次性策略，应分流为过程输出、Spark、WorkCase、ADR、Pitfall 或 docs，而不是直接创建 active 行动编排。
+
+审核修改已有行动编排时，AI 必须先检查修改依据是否成立。修改依据至少应能回答：
+
+1. 修改触发来自哪里，例如上位规范变化、执行失败、Code 诊断、能力资产消费失败、重复误判、Human Gate、事实源边界冲突或测试缺口；
+2. 修改影响的是 Context、Scenario、Gate、执行流程、回写、证据、能力协作、环境适配、成员自描述、保障要求还是可测试性锚点；
+3. 修改是否改变进入条件、停止条件、事实源边界、主控调度、Human Gate 或相邻行动编排边界；
+4. 修改后需要同步哪些事实源和能力资产，例如 03.03、06、09、10、Rules、Skill、Agent、Hook、Code、Web、CI、适配措施或 Git 提交记录；
+5. 修改能否通过本文 §14 的检查要求和 §12 的可测试性锚点复核。
+
+没有新增或修改依据时，AI 不得把“更完整”“更像流程”“编号可用”“以后可能会用”作为创建或修改行动编排的充分理由。
 
 ---
 ## 3. 事实源边界
@@ -153,21 +171,22 @@ AI 遇到以下信号时，应识别为行动编排设计审核场景：
 行动编排设计审核按以下步骤执行：
 
 1. **确认目标**：确认被审核对象是已存在主文件、候选草案、编号意向、迁移计划还是能力消费请求；
-2. **确认权威依据**：读取或定位 06、03.03、01、07 和目标文件，必要时补充 04.02、09、10；
-3. **运行确定性诊断**：优先运行或参考 Code 派生索引、文档结构、引用、保障要求和综合校验结果；
-4. **审核成员自描述**：检查 `spec_id`、`kind`、`name_en`、`name_zh`、`collection_status`、`canonical_path`、必需锚点和 `code_consumption` 是否完整一致；
-5. **审核文件归属**：检查文件名、编号、区段、标题和 canonical path 是否符合 01、03.03 和 06；
-6. **审核行动定位**：判断该内容是否确实需要控制 AI 行动，是否不成为行动编排就会导致边界漂移；
-7. **审核适用与不适用场景**：检查 Scenario 是否可识别，是否排除了不该进入该流程的场景；
-8. **审核 Context**：检查流程是否给出最小可行动上下文，是否能回指 Git 文件事实源，是否避免全文泛读和聊天记忆依赖；
-9. **审核 Gate**：检查停止、确认、降级、Human Gate 和条件 Gate 是否明确，是否存在绕过授权或事实源边界的风险；
-10. **审核执行步骤**：检查步骤是否可操作、顺序是否合理、是否能被 AI 按步骤执行，而不是只陈述理念；
-11. **审核能力协作**：检查 Skill、Agent、Hook、Code、Web、CI 和入口资产的参与是否符合 04.02、07、08 和 06 的主控唯一调度原则；
-12. **审核事实源回写与证据**：检查稳定事实、过程输出、验证证据、Human Gate 记录和后续分流是否有明确归属；
-13. **审核行动特有可测试性锚点**：检查正向场景、负向场景、Gate 场景、回写场景、失败降级和回归风险是否可验证；
-14. **审核保障要求**：检查规范保障要求表是否说明同步、检查或审计触发条件，且没有制造无法保障的部署适配承诺；
-15. **形成审核结论**：按 §10 输出过程结论，必要时触发 Human Gate、创建后续 WorkCase/Spark/ADR/Pitfall 或修订目标文件；
-16. **复跑验证**：目标文件被修改后，应重新运行相关校验命令，并记录结果、残留风险和下一步分流。
+2. **审核新增或修改依据**：按 §2.1 判断创建或修改行动编排的事实依据、准入条件、替代承接能力、影响范围和 Human Gate 是否成立；
+3. **确认权威依据**：读取或定位 06、03.03、01、07 和目标文件，必要时补充 04.02、09、10；
+4. **运行确定性诊断**：优先运行或参考 Code 派生索引、文档结构、引用、保障要求和综合校验结果；
+5. **审核成员自描述**：检查 `spec_id`、`kind`、`name_en`、`name_zh`、`collection_status`、`canonical_path`、必需锚点和 `code_consumption` 是否完整一致；
+6. **审核文件归属**：检查文件名、编号、区段、标题和 canonical path 是否符合 01、03.03 和 06；
+7. **审核行动定位**：判断该内容是否确实需要控制 AI 行动，是否不成为行动编排就会导致边界漂移；
+8. **审核适用与不适用场景**：检查 Scenario 是否可识别，是否排除了不该进入该流程的场景；
+9. **审核 Context**：检查流程是否给出最小可行动上下文，是否能回指 Git 文件事实源，是否避免全文泛读和聊天记忆依赖；
+10. **审核 Gate**：检查停止、确认、降级、Human Gate 和条件 Gate 是否明确，是否存在绕过授权或事实源边界的风险；
+11. **审核执行步骤**：检查步骤是否可操作、顺序是否合理、是否能被 AI 按步骤执行，而不是只陈述理念；
+12. **审核能力协作**：检查 Skill、Agent、Hook、Code、Web、CI 和入口资产的参与是否符合 04.02、07、08 和 06 的主控唯一调度原则；
+13. **审核事实源回写与证据**：检查稳定事实、过程输出、验证证据、Human Gate 记录和后续分流是否有明确归属；
+14. **审核行动特有可测试性锚点**：检查正向场景、负向场景、Gate 场景、回写场景、失败降级和回归风险是否可验证；
+15. **审核保障要求**：检查规范保障要求表是否说明同步、检查或审计触发条件，且没有制造无法保障的部署适配承诺；
+16. **形成审核结论**：按 §10 输出过程结论，必要时触发 Human Gate、创建后续 WorkCase/Spark/ADR/Pitfall 或修订目标文件；
+17. **复跑验证**：目标文件被修改后，应重新运行相关校验命令，并记录结果、残留风险和下一步分流。
 
 ---
 ## 7. Gate 触发条件
@@ -369,6 +388,7 @@ python3 code/specs_validate.py all
 | 成员自描述 | `spec_id`、`kind`、`name_en`、`name_zh`、`collection_status`、`canonical_path`、锚点和 `code_consumption` 完整一致 |
 | 文件命名 | 文件名符合 `NN-{英文名}-{中文名}` 这类 Markdown 文件命名模式，且不重复“行动编排规范”字样 |
 | 状态边界 | 只有 active、主文件存在、骨架检查通过且锚点完整的流程可被执行 |
+| 新增或修改依据 | 创建或修改行动编排的触发来源、准入条件、替代承接判断、影响范围、同步对象和 Human Gate 已说明；不得只因编号空缺、临时便利或措辞偏好创建或修改 |
 | 行动定位 | 该流程确实控制 AI 读取、判断、执行、暂停、验证、回写或维护行为 |
 | 行动价值 | 说明该流程如何改善 AI 的 Context、Scenario、Gate、执行、验证、回写或学习闭环，主要服务哪些 V1-V10 项，且未以流程数量、步骤数量或能力实体数量替代价值标准 |
 | Scenario | 进入条件和不适用场景明确，可被 AI 识别 |

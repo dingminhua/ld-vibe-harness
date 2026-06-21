@@ -8,7 +8,7 @@ ldvh_doc:
   status: "active"
   canonical_path: "specs/10-Git提交规范.md"
   created: "2026-06-19"
-  updated: "2026-06-20"
+  updated: "2026-06-22"
   parent_doc: ""
   relation: ""
   positioning: "定义 LDVH 自身项目及所有管辖项目的 Git 提交格式、提交语言、Code/Web 可解析字段和派生追溯边界"
@@ -138,9 +138,9 @@ Web 应把 body 作为“提交说明”优先展示给 Human；Code 应在提�
 
 ### 4.3 AI 写提交时的执行顺序
 
-AI 生成 commit message 时必须按以下顺序决策，避免把 LDVH 要求误解为文件分类、命令清单或私有 trailer：
+AI 生成 commit message 时必须按以下顺序决策，避免把 LDVH 要求误解为文件分类、命令清单或私有 trailer。创建 Git commit、拆分 staged changes、运行提交预检、处理预检失败和交还提交结果的行动编排由 `specs/44-git-commit-orchestration-Git提交编排.md` 接管；本文继续维护提交格式、事实源定位、派生追溯和 Web 展示规则。
 
-0. 若当前环境可发现已登记 Skill `ldvh-git-commit`，应优先用该 Skill 承接提交准备、拆分判断、消息编写、预检和交还流程；若环境未加载该 Skill，应按本文和 Code 预检手动执行等价流程；
+0. 按 44 判断是否进入 Git 提交编排；若 44 已登记可用的提交流程能力资产且当前环境可发现，应优先使用该资产承接提交准备、拆分判断、消息编写、预检和交还流程；若环境未加载对应资产，应按 44、本文和 Code 预检手动执行等价流程；
 1. 判断是否应拆提交：若 staged changes 包含多个互相独立的目的，应先拆提交；若是一个原子闭环，可以跨 specs、Code、Web、docs 或测试文件保留在同一提交；
 2. 选择单一 `type`：只表达本次提交的主变更意图或动作类别，不用多个 type 描述所有改动文件；
 3. 选择零个或一个 `scope`：只表达名词性的主承载域，优先使用推荐枚举，不用 scope 覆盖全部 touched files；
@@ -333,9 +333,9 @@ BREAKING CHANGE: 旧的仅首行字符串消费方需要改为读取结构化 de
 |---|---|---|---|---|
 | 上位约束承接要求 | 事实源修改应通过 Git 提交记录留下可追溯证据，不再把提交记录建模为工作对象 | 09、本文、06、Human Gate | 事实源治理 | 修改 Git 文件事实源、工作对象状态、规范、Code、Web 或入口资产时 |
 | 入口可见要求 | AI 准备提交、审计提交历史或追溯对象相关提交时应能定位本文 | Rules 入口摘要、commit_validate 帮助、Web 提交记录页 | AI 执行入口提示 | 提交、回退、审计、关闭 WorkCase 或查询关联提交时 |
-| 流程复用要求 | AI 创建 Git commit 时应优先通过已登记 `ldvh-git-commit` Skill 执行提交准备、拆分判断、消息编写、预检和交还；环境未加载该 Skill 时必须手动执行等价流程 | `../skills/ldvh-git-commit/SKILL.md`、本文、`code/commit_validate.py`、人工降级检查 | 流程复用 | 创建 Git commit、修正提交消息、修改提交契约或调整 Skill 资产时 |
+| 流程复用要求 | AI 创建 Git commit 时应按 44 进入 Git 提交编排，并优先使用 44 已登记的提交流程能力资产执行提交准备、拆分判断、消息编写、预检和交还；环境未加载对应资产时必须手动执行等价流程 | `specs/44-git-commit-orchestration-Git提交编排.md`、本文、`code/commit_validate.py`、人工降级检查 | 流程复用 | 创建 Git commit、修正提交消息、修改提交契约或调整提交流程能力资产时 |
 | 确定性执行要求 | commit message 可机械校验的部分由 Code 检查，关联提交由 Git 派生 | `code/commit_validate.py`、Git 查询、测试夹具 | 校验实现 | 提交契约或关联派生规则变化时 |
-| 确定性执行要求 | LDVH 自身仓库应提供统一 Hook 事件或等价提交前 message 校验入口；用户环境可用 Git、IDE、AI、CI 或自有 hook 系统调用统一入口，未启用环境 hook 时，AI 提交前必须手动运行等价预检 | `hooks/ldvh-hooks.yaml`、`code/hook_dispatch.py run git.commit-msg`、`code/commit_validate.py --check-message`、CI 或人工降级检查 | 触发保障 | 创建 Git commit、修改提交契约、调整 hook/CI 或迁移仓库入口时 |
+| 确定性执行要求 | LDVH 自身仓库应提供统一 Hook 事件或等价提交前 message 校验入口；用户环境可用 Git、IDE、AI、CI 或自有 hook 系统调用统一入口，未启用环境 hook 时，AI 提交前必须手动运行等价预检 | 44 已登记的 Hook 能力资产、`code/hook_dispatch.py run git.commit-msg`、`code/commit_validate.py --check-message`、CI 或人工降级检查 | 触发保障 | 创建 Git commit、修改提交契约、调整 hook/CI 或迁移仓库入口时 |
 | 确定性执行要求 | 必须写 body 的提交应由 Code 基于 staged touched files 和 message 内容做提交前预检，缺失 body 视为 error，明显空泛正文视为 warning | `code/commit_validate.py --check-message`、staged diff、测试夹具 | 校验实现 | 修改 specs、rules、Code、Web、测试、配置、AI 入口、能力资产或跨文件事实源时 |
 | 入口可见要求 | Web 提交详情应把 commit body 作为“提交说明”默认展开，把改动文件和原始信息作为默认收起的派生证据节点 | Web API commit DTO、`/changelog` 详情、Web 类型检查 | 展示实现 | Web 展示提交详情、复制提交上下文或提交 DTO 变化时 |
 | Human 交互要求 | 高影响事实源修改和破坏性 Git 操作必须记录或触发 Human Gate | Human Gate、提交正文或对应事实源 | 人工确认 | 修改事实源边界、状态机、字段契约、入口资产或执行破坏性 Git 操作时 |
@@ -359,8 +359,8 @@ BREAKING CHANGE: 旧的仅首行字符串消费方需要改为读取结构化 de
 | 事实源边界 | 提交记录由 Git commit records 承载，不创建工作对象实例 |
 | 格式契约 | commit message 首行、type、scope、breaking marker 和 description 可被解析 |
 | 语言要求 | LDVH 自身提交主要人类可读内容使用简体中文 |
-| 流程复用 | 已登记 `ldvh-git-commit` Skill 只承接 AI 提交流程转换；未加载 Skill 时不得省略等价手动流程 |
-| 提交门禁 | LDVH 自身仓库存在统一 Hook 事件、CI 或等价预检入口；未启用环境 hook 时提交执行者必须在提交前运行 `code/commit_validate.py --check-message` 或 `code/hook_dispatch.py run git.commit-msg` |
+| 流程复用 | 44 已登记的提交流程能力资产只承接 AI 提交流程转换；未加载对应资产时不得省略等价手动流程 |
+| 提交门禁 | LDVH 自身仓库存在统一 Hook 事件、CI 或等价预检入口；未启用环境 hook 时提交执行者必须按 44 在提交前运行 `code/commit_validate.py --check-message` 或 `code/hook_dispatch.py run git.commit-msg` |
 | 派生关联 | 对象关联提交由 Git 历史、文件路径、对象 ID 和正文自然文本派生，不手写维护 |
 | Code 边界 | Code 只校验、解析和聚合，不替代 Git |
 | Web 边界 | Web 只展示派生视图，不替代 Git |

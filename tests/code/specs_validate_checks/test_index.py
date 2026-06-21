@@ -195,6 +195,118 @@ ldvh_member:
     assert any(item["code"] == "LDVH_MEMBER_ASSURANCE_TAKEOVER_INVALID" for item in diagnostics)
 
 
+def test_workflow_member_exposes_and_validates_capability_assets(tmp_path):
+    specs = tmp_path / "specs"
+    skills = tmp_path / "skills" / "ldvh-example"
+    hooks = tmp_path / "hooks"
+    code = tmp_path / "code"
+    skills.mkdir(parents=True)
+    hooks.mkdir(parents=True)
+    code.mkdir(parents=True)
+    write_md(
+        skills / "SKILL.md",
+        """
+---
+name: ldvh-example
+description: Example.
+---
+
+```yaml
+ldvh_asset:
+  id: "ldvh-example"
+  type: "skill"
+  status: "active"
+  canonical_path: "skills/ldvh-example/SKILL.md"
+```
+""",
+    )
+    (hooks / "ldvh-hooks.yaml").write_text(
+        """
+ldvh_asset:
+  id: "ldvh-hook-registry"
+  type: "hook"
+  status: "active"
+  canonical_path: "hooks/ldvh-hooks.yaml"
+""",
+        encoding="utf-8",
+    )
+    (code / "validator.py").write_text("print('ok')\n", encoding="utf-8")
+    write_md(
+        specs / "44-Workflow.md",
+        """
+# Workflow
+
+```yaml
+ldvh_member:
+  spec_id: 44
+  kind: work_process
+  name_en: workflow
+  name_zh: 工作流程
+  collection_status: active
+  canonical_path: specs/44-Workflow.md
+  code_consumption:
+    - workflow_index
+  capability_assets:
+    - "type=skill; path=skills/ldvh-example/SKILL.md; purpose=复用执行外壳; status=required"
+    - "type=hook; path=hooks/ldvh-hooks.yaml; purpose=事件登记; status=required"
+    - "type=code; path=code/validator.py; purpose=确定性校验; status=required"
+```
+""",
+    )
+
+    checker_instance = checker.SpecsChecker(tmp_path)
+    indexes = checker_instance.build()
+    member = next(item for item in indexes["members"] if item["spec_id"] == "44")
+    entries = checker_instance.members_as_collection_entries("work_process")
+
+    assert member["capability_assets"] == [
+        "type=skill; path=skills/ldvh-example/SKILL.md; purpose=复用执行外壳; status=required",
+        "type=hook; path=hooks/ldvh-hooks.yaml; purpose=事件登记; status=required",
+        "type=code; path=code/validator.py; purpose=确定性校验; status=required",
+    ]
+    assert entries[0]["capability_assets"] == member["capability_assets"]
+    assert not any(item["code"].startswith("LDVH_MEMBER_CAPABILITY_ASSET") for item in indexes["diagnostics"])
+
+
+def test_workflow_member_reports_invalid_capability_assets(tmp_path):
+    specs = tmp_path / "specs"
+    skills = tmp_path / "skills" / "bad"
+    skills.mkdir(parents=True)
+    write_md(skills / "SKILL.md", "# Missing metadata\n")
+    write_md(
+        specs / "44-Workflow.md",
+        """
+# Workflow
+
+```yaml
+ldvh_member:
+  spec_id: 44
+  kind: work_process
+  name_en: workflow
+  name_zh: 工作流程
+  collection_status: active
+  canonical_path: specs/44-Workflow.md
+  code_consumption:
+    - workflow_index
+  capability_assets:
+    - "type=skill; path=skills/bad/SKILL.md; purpose=复用执行外壳; status=installed"
+    - "type=plugin; path=plugins/example; purpose=环境插件; status=required"
+    - "type=code; path=code/missing.py; purpose=确定性校验; status=required"
+    - "type=hook; path=hooks/missing.yaml; purpose=事件登记"
+```
+""",
+    )
+
+    diagnostics = checker.SpecsChecker(tmp_path).build()["diagnostics"]
+    codes = {item["code"] for item in diagnostics}
+
+    assert "LDVH_MEMBER_CAPABILITY_ASSET_METADATA_MISSING" in codes
+    assert "LDVH_MEMBER_CAPABILITY_ASSET_STATUS_INVALID" in codes
+    assert "LDVH_MEMBER_CAPABILITY_ASSET_TYPE_INVALID" in codes
+    assert "LDVH_MEMBER_CAPABILITY_ASSET_PATH_MISSING" in codes
+    assert "LDVH_MEMBER_CAPABILITY_ASSETS_INVALID" in codes
+
+
 def test_specs_document_reports_possible_duplicate_term_definition(tmp_path):
     specs = tmp_path / "specs"
     write_md(
