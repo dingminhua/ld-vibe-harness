@@ -8,45 +8,41 @@ description: |
   本 Spark 规定 Web 颜色治理的总纲：第一阶段优先完成 Web 功能交付，
   不做全量颜色重构；颜色问题在阶段2起进入专项治理。
   颜色治理采用 strict 语义策略，遵循“语义先定义，再映射取值，避免颜色语义散落”。
-
 evolution:
-  - at: '2026-06-20T14:00:00+08:00'
-    summary: 收敛出“spark+多个 study”的管理结构，并采用规范10作为颜色约束入口。
-  - at: '2026-06-21T04:05:00+08:00'
-    summary: 将 Spark 状态修正为现行 Spark 状态机中的 pending，不改变颜色治理语义。
+- at: '2026-06-20T14:00:00+08:00'
+  summary: 收敛出“spark+多个 study”的管理结构，并采用规范10作为颜色约束入口。
+- at: '2026-06-21T04:05:00+08:00'
+  summary: 将 Spark 状态修正为现行 Spark 状态机中的 pending，不改变颜色治理语义。
 source: conversation
 source_detail: 用户要求将颜色治理整理为 spark/study 结构，并在 Web 第一阶段结束后再专项处理。
 priority: P1
-resolved_to: ""
-resolved_at: ""
-discard_reason: ""
-related_workareas: []
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
 related_workcases: []
 related_adrs: []
 related_studies:
-  - study-0007
+- study-0007
 related_docs:
-  - specs/01-目录说明.md
-  - specs/10-Git提交规范.md
-  - specs/24-Spark-火花.md
-  - web/docs/01-全局设计约束.md
-  - web/docs/11-Web测试实现规范.md
-
+- specs/01-目录说明.md
+- specs/10-Git提交规范.md
+- specs/24-Spark-火花.md
+- web/docs/01-全局设计约束.md
+- web/docs/11-Web测试实现规范.md
 规范10:
-  - "1) 任何新增颜色只能来源于 ldvh 主题 token 或已存在语义映射 key。"
-  - "2) 禁止新增裸露十六进制色值（#RRGGBB）。"
-  - "3) 禁止新增 tailwind 语义色类（text-/bg-/border-*-400/500 等）直接表达业务语义。"
-  - "4) 同一语义必须单点定义（Single Source of Truth）。"
-  - "5) 分类色仅来自 category 映射文件。"
-  - "6) 生命周期状态色仅来自 status 映射体系。"
-  - "7) 流程态颜色仅来自 executionFlow 映射体系。"
-  - "8) signals/优先级/重要性颜色仅来自 signal 映射。"
-  - "9) 禁止悬空 token 使用（如 text-tertiary），必须先补齐 token 或移除引用。"
-  - "10) 所有受控例外必须有理由、最小影响范围与复检时间。"
-
+- 1) 任何新增颜色只能来源于 ldvh 主题 token 或已存在语义映射 key。
+- 2) 禁止新增裸露十六进制色值（#RRGGBB）。
+- 3) 禁止新增 tailwind 语义色类（text-/bg-/border-*-400/500 等）直接表达业务语义。
+- 4) 同一语义必须单点定义（Single Source of Truth）。
+- 5) 分类色仅来自 category 映射文件。
+- 6) 生命周期状态色仅来自 status 映射体系。
+- 7) 流程态颜色仅来自 executionFlow 映射体系。
+- 8) signals/优先级/重要性颜色仅来自 signal 映射。
+- 9) 禁止悬空 token 使用（如 text-tertiary），必须先补齐 token 或移除引用。
+- 10) 所有受控例外必须有理由、最小影响范围与复检时间。
 key_findings: |
   - 主题层已存在 ldvh 系列主题 token（light/dark）。
   - 分类、生命周期状态、执行流程和信号已具备集中映射入口。
   - 当前阶段存在少量 hardcoded 例外，不阻塞第一阶段交付；进入专项阶段再收敛。
   - 颜色治理分为 4 个 study：冻结、语义审计、硬编码清单、token 健康与回归。
-owner: ""
+owner: ''

@@ -17,8 +17,8 @@
 返回按钮
 统一对象身份头部：类型标签 + 状态标签 + ID + 优先级字符徽标 + 标题 + 创建/更新时间 + 复制对象路径图标
 内容区：
-  WorkArea：活跃工作项 / 待确认工作项 / 已闭合工作项 + 目标 / 范围 / 约束 / 来源 + 文档 / 决策 / 火花 / 踩坑经验
-  WorkCase：执行态势 + 成功标准 / 验证证据 / 关闭证据 + 目标 / 所属工作域 / 来源 + 文档 / 决策 / 火花 / 踩坑经验
+  WorkCase：活跃工作项 / 待确认工作项 / 已闭合工作项 + 目标 / 范围 / 约束 / 来源 + 文档 / 决策 / 火花 / 踩坑经验
+  WorkCase：执行态势 + 成功标准 / 验证证据 / 关闭证据 + 目标 / 所属工作项 / 来源 + 文档 / 决策 / 火花 / 踩坑经验
   ADR：背景 / 决策 / 影响 / 关联
   Pitfall：现象 / 触发 / 根因 / 方案 / 验证 / 规避 / 范围 / 关联
   Study：意图 / 摘要 / 建议 / 正文 / 关联
@@ -30,10 +30,10 @@ YAML 源码折叠区
 
 ## 3. 头部与元信息
 
-- 返回按钮优先回到进入详情页前的来源界面（`location.state.from`），用于支持从 WorkArea 卡片进入 WorkCase 等跨对象类型跳转；直接打开详情页且没有来源时，兜底回到 `/objects/{type}` 并保留当前 query。返回目标是对象列表页时，右侧扩展阅读区必须主动关闭，避免把详情页上下文残留到主选择面。
+- 返回按钮优先回到进入详情页前的来源界面（`location.state.from`），用于支持从 WorkCase 卡片进入 WorkCase 等跨对象类型跳转；直接打开详情页且没有来源时，兜底回到 `/objects/{type}` 并保留当前 query。返回目标是对象列表页时，右侧扩展阅读区必须主动关闭，避免把详情页上下文残留到主选择面。
 - 详情页不展示对象列表的状态筛选；状态筛选只属于列表页，详情页第一视觉层应是当前对象。
 - 对象详情头部身份区必须固定在主滚动容器顶部，确保返回、复制对象路径、状态/身份和对象标题在长正文滚动后仍可见；正文内容在该头部下方独立滚动。
-- 所有对象详情页必须使用同一套对象身份头部，不得按 WorkArea/WorkCase 和 ADR/Spark/Study/Pitfall 分维护两套头部。
+- 所有对象详情页必须使用同一套对象身份头部，不得按 WorkCase 和 ADR/Spark/Study/Pitfall 分维护两套头部。
 - 头部第一行统一为 `类型标签 + 当前状态标签 + object-id`；类型标签和状态标签使用相同尺寸、圆角和文本权重，但颜色分别来自对象类型色和状态语义色。
 - 类型标签使用对象类型颜色，显示本地化类型名；状态标签显示本地化状态名，不放在右上操作区。
 - 标题优先使用 `title_zh/title_en`，回退 `title`，再回退 ID；工作对象和普通对象标题前均使用 `ObjectTypeIcon(obj.type)` 识别对象身份。
@@ -44,14 +44,14 @@ YAML 源码折叠区
 - 对象字段必须以对应工作模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。`priority` 只适用于 WorkCase 和 Spark，且在详情头部以字符徽标展示；importance 已由 priority 统一承载，不再作为独立字段。
 - 右侧扩展阅读区中的对象头部应复用同一套身份头部的小号版本，字段顺序、类型/状态标签规则、复制入口和时间展示不得另起一套。
 
-## 4. WorkArea 语义阅读布局
+## 4. WorkCase 语义阅读布局
 
-WorkArea 不使用普通字段卡片堆叠，而作为“工作域入口”展示：
+WorkCase 不使用普通字段卡片堆叠，而作为“工作项入口”展示：
 
 1. 工作项组：页面主区域第一组内容，按活跃、待确认、已闭合分组展示关联工作项；待确认组覆盖 `human_plan_confirming`、`human_closure_confirming` 和历史 `review_needed`；不再额外包一层“工作项态势”区块，不展示顶部数量汇总。
 2. 活跃/待确认工作项默认展开，每行作为进入 WorkCase 的入口；已闭合工作项默认折叠。组标题文案只写“活跃工作项 / 待确认工作项 / 已闭合工作项”，不显示数量。活跃/待确认组标题只作为静态组 header，不表现为按钮；只有可折叠的已闭合组展示折叠按钮状态。
 3. 工作项组标题只使用小圆点，不使用 WorkCase 对象图标；工作项行展示优先级字符徽标、WorkCase 对象图标、工作项标题、工作项 ID、更新时间、compact 执行态势条、复制对象路径和辅助阅读入口图标，不重复展示状态徽章；态势条占满工作项行宽度；工作项标题使用 `ldvh-body`，不使用 `ldvh-card-title`，避免越过组标题和区块标题层级；成功标准、验证证据、关闭证据等工作项关闭材料留在 WorkCase 详情中表达。复制对象路径图标默认和 hover 都保持中性 ghost；辅助阅读图标默认中性，在工作项行 hover 或当前右侧阅读已打开时才使用该工作项组状态色。
-4. WorkArea 详情页点击工作项行只打开右侧辅助阅读区，不切换主路由到 WorkCase 详情；主路由跳转只属于对象列表卡片。
+4. WorkCase 详情页点击工作项行只打开右侧辅助阅读区，不切换主路由到 WorkCase 详情；主路由跳转只属于对象列表卡片。
 5. 定义事实不再收进“属性”总区块；目标、范围、约束、来源分别作为同级模块展示 `description/scope/constraints/source`，不把 `scope` 放进顶部元信息 chip。模块标题使用小圆点，降低装饰负担；多行内容渲染为语句列表，`包含` / `不包含` 等短前缀渲染为语义标签。
 6. 关联材料不再收进“关联材料”总区块；文档、决策、火花、踩坑经验按 `related_docs/related_adrs/related_sparks/related_pitfalls` 分别作为同级模块展示，只有对应字段非空时显示。
 7. 关联材料模块内部使用 plain 引用行，不带状态色背景，也不再套小卡片边框；右侧复制和扩展阅读图标保持中性 ghost 表现，复制 tooltip 必须按对象路径、文档路径、链接或引用区分；左侧对象类型图标、ID 或短标签承担对象类型识别。
@@ -64,8 +64,8 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 2. 执行态势：展示整体执行态势条，并按 Human 关注顺序展示执行项行：已阻塞、执行中、待执行、已跳过、已完成；区块标题只使用小圆点。
 3. 成功标准、验证证据和关闭证据不再收进“关闭判断”总区块；分别作为同级模块展示 `success_criteria/verification_evidence/closure_evidence`。不展示额外顶部结论条，不单列待确认项或记录状态，未完成项由 checklist 或证据模块自身表达。成功标准是关闭判断依据，但不再用外层总模块包住。
 4. `orchestration.plan_review` 和 `orchestration.result_review` 作为“检查安排”模块展示方案审核、结果自检、结果复核、主控处理和 Human 确认摘要。Web 只展示已有审核事实和关键摘要，不把审核记录改写成独立 Review 对象；完整事实仍以 WorkCase YAML 为准。历史 `orchestration.review` 仅作为 legacy fallback 展示主控自检、专业复检和 Human 关闭审查要求。
-5. 定义事实不再收进“属性”总区块；目标、所属工作域、来源分别作为同级模块展示 `description/workarea/source`。`description` 是目标叙述，必须按 Markdown 正文渲染，不得用定义行拆分、短前缀标签或字段 chip 重排原文。所属工作域入口使用模块内对象引用值，显示 WorkArea 对象图标和工作域标题，不显示 ID 或状态徽章，点击只打开右侧辅助阅读，不切换主路由。
-6. 执行项行在 WorkCase 详情中与 WorkArea card 的动作体验保持一致：复用状态色弱背景、左侧状态图标、执行项标题、内部编号、证据入口和辅助阅读入口；执行项不得使用 WorkCase 对象图标或 WorkCase 状态徽章。
+5. 定义事实不再收进“属性”总区块；目标、所属工作项、来源分别作为同级模块展示 `description/workcase/source`。`description` 是目标叙述，必须按 Markdown 正文渲染，不得用定义行拆分、短前缀标签或字段 chip 重排原文。所属工作项入口使用模块内对象引用值，显示 WorkCase 对象图标和工作项标题，不显示 ID 或状态徽章，点击只打开右侧辅助阅读，不切换主路由。
+6. 执行项行在 WorkCase 详情中与 WorkCase card 的动作体验保持一致：复用状态色弱背景、左侧状态图标、执行项标题、内部编号、证据入口和辅助阅读入口；执行项不得使用 WorkCase 对象图标或 WorkCase 状态徽章。
 7. 关联材料不再收进“关联材料”总区块；文档、决策、火花、踩坑经验按 `related_docs/related_adrs/related_sparks/related_pitfalls` 分别作为同级模块展示。材料来源只聚合 WorkCase 自身和已明确纳入 WorkCase 证据的引用，按 ID 或路径去重；不得从执行项派生出另一套对象级材料事实源。关联提交由 Git 历史、文件路径、对象 ID 和提交正文自然文本派生，不从对象字段手写维护。
 8. WorkCase 详情页点击执行项行只打开右侧辅助阅读区，不切换主路由到独立对象详情；主路由跳转只属于对象列表卡片。
 
@@ -84,13 +84,13 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 - ADR 不使用普通字段卡片堆叠，而作为“决策补丁阅读页”展示。主节点固定为“背景、决策、影响、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。
 - ADR 的“影响”节点消费 `consequences` 字段。active ADR 必须按 `## 正向价值`、`## 逆向价值`、`## 实施成本`、`## 风险评估`、`## 注意事项` 五段式书写；有逆向价值时必须引用 V1-V10，无逆向价值时 `## 逆向价值` 填写 `当前决策无逆向价值`。Web 在节点内按 Markdown 分段展示，不把五段拆成独立工作对象字段。
 - ADR 不展示“备选”节点，也不维护 `alternatives` 字段。未采纳方案若来自 Spark，应保留在 Spark 的演变记录或讨论上下文中；若只来自临时对话且未进入决策，不进入 ADR。
-- ADR 不展示独立“承接”节点，也不维护 `affects` 字段。`related_rules`、`related_workareas`、`related_workcases`、`related_adrs`、`related_sparks` 等统一进入“关联”，按关联内容的通用行样式展示。关联提交由 Git 派生视图呈现。
+- ADR 不展示独立“承接”节点，也不维护 `affects` 字段。`related_rules`、`related_workcases`、`related_workcases`、`related_adrs`、`related_sparks` 等统一进入“关联”，按关联内容的通用行样式展示。关联提交由 Git 派生视图呈现。
 - ADR 状态只显示 `active / archived / deprecated`。详情页不得展示或派生 `proposed`、`accepted`、`rejected`、`superseded` 或 `superseded_by` 旧生命周期语义。
 - Pitfall `verification` 节点消费 05.02 四段式结构，但在 Pitfall 页面内渲染为轻量分段阅读，不使用表格左列重复“计划/记录/结果/结论”。验证节点内部按“验证计划、验证命令、验证结果、结论”顺序展示。
 - Pitfall `root_cause`、`resolution`、`avoidance` 等经验节点应把 Markdown 列表渲染为清晰的条目阅读，而不是使用浏览器默认列表缩进。无序列表只使用灰色圆点；有序列表应保留 Markdown 原文的普通 `1.`、`2.`、`3.` 文本编号，不得额外渲染为徽标、强调色或状态标记。
 - 未定义专用语义布局的对象使用普通字段卡片兜底；每个字段一个轻量卡片，字段标题用 `ldvh-caption-strong`。
 - 普通字段卡片中的关联类字段可折叠；默认折叠长关联集合，避免压过主阅读路径。
-- Pitfall、ADR、Spark、WorkArea、WorkCase 等长文本字段必须按 Markdown 渲染。
+- Pitfall、ADR、Spark、WorkCase 等长文本字段必须按 Markdown 渲染。
 - WorkCase 已使用专用语义布局，不进入普通字段卡片路径。
 
 ## 7. 字段渲染规则
@@ -112,13 +112,13 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 | 路径文本 | `PathText` | 等宽、可换行的路径标签 |
 | 其他短文本 | `ldvh-body` | 普通文本 |
 
-当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkArea、WorkCase、ADR、Pitfall、Spark、Study。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
+当前可点击对象引用仅覆盖 Web 支持的工作对象类型：WorkCase、ADR、Pitfall、Spark、Study。未进入当前对象路由的引用只作为普通引用文本展示，不跳转到无效详情页。
 
 路径类字段应按字段语义区分：`related_docs` 指向关联文档，`urls` 只指向报告正文提炼出的外部 `http(s)` 网址及用途摘要，`related_rules` 指向关联规范、Rules、Skill、Agent、Code 或 Web 路径。Web 可预览本地 Markdown 或展示路径，但不得把可预览路径集合解释为所有路径字段的合法范围。
 
 带章节后缀的本地 Markdown 引用应区分展示文本与加载路径：列表行保留完整引用文本，例如 `specs/07-Code确定性执行实现规范.md §4.7`；点击整行或扩展阅读图标时，只用规范化后的 Markdown 文件路径加载右侧阅读区，例如 `specs/07-Code确定性执行实现规范.md`，不得把章节后缀拼入文件读取 API。
 
-所有 `related_*`、`aggregated_related_*` 和 Study `urls` 字段在对象详情中应统一收进上层“关联”区块，不得按字段名散落在正文、证据或其他字段之间。关联区块内部先展示工作对象关联，并按工作模型编号排序：WorkArea 20、WorkCase 21、ADR 22、Pitfall 23、Spark 24、Study 25；非工作对象关联再按字段英文名排序，例如 `related_docs`、`urls`、`related_rules`。提交记录不是工作对象关联字段，应从 Git 提交记录视图派生。
+所有 `related_*`、`aggregated_related_*` 和 Study `urls` 字段在对象详情中应统一收进上层“关联”区块，不得按字段名散落在正文、证据或其他字段之间。关联区块内部先展示工作对象关联，并按工作模型编号排序：WorkCase 20、WorkCase 21、ADR 22、Pitfall 23、Spark 24、Study 25；非工作对象关联再按字段英文名排序，例如 `related_docs`、`urls`、`related_rules`。提交记录不是工作对象关联字段，应从 Git 提交记录视图派生。
 
 关联区块内的工作对象引用不直接展示对象编号。对象编号属于打开后的对象详情、复制路径或 YAML 源码中的定位信息；列表态只展示对象类型图标、对象标题和必要操作图标，降低重复元信息对阅读的干扰。
 
@@ -141,7 +141,7 @@ Spark 不使用普通字段卡片堆叠。Spark 是“分流前的信息对象�
 3. “演变”消费 `evolution`，按倒序展示关键语义转折；每条展示 `at` 和 `summary`，`at` 拆成日期与时间两行展示，不做聊天流水账样式，不额外创建时间线事实源。
 4. “分流”只在 `status` 为 `resolved` / `discarded`，或存在 `resolved_to`、`resolved_at`、`discard_reason` 任一真实闭环事实时渲染；`pending` 且没有上述事实时不得渲染“分流”节点，不得用固定提示文案占位。节点内消费 `status`、`resolved_to`、`resolved_at`、`discard_reason`：`resolved` 显示分流目标引用和分流日期；`discarded` 显示废弃原因。Web 只读展示，不提供状态修改、分流或废弃按钮。
 5. `source` 不进入正文节点，必须作为对象头部弱元信息展示在“更新”之后，表达方式与创建/更新元信息一致。
-6. “关联”统一收纳 `related_workareas`、`related_workcases`、`related_adrs`、`related_studies` 和 `related_docs`，按关联区通用行样式展示；Spark 当前字段契约没有 `related_sparks` 或 `related_pitfalls`，Web 不得为 Spark 杜撰这两类字段。
+6. “关联”统一收纳 `related_workcases`、`related_workcases`、`related_adrs`、`related_studies` 和 `related_docs`，按关联区通用行样式展示；Spark 当前字段契约没有 `related_sparks` 或 `related_pitfalls`，Web 不得为 Spark 杜撰这两类字段。
 
 Spark 节点标题栏应与 ADR / Pitfall / Study 保持一致：整行可点击，默认全部打开，折叠图标使用 `ChevronDown` / `ChevronUp`。详情页和右侧扩展阅读区必须复用同一套 Spark 阅读布局。
 
@@ -156,8 +156,8 @@ Pitfall、ADR、Study 和 Spark 等非工作主线对象的长文本阅读组织
 - 不展示对象列表式导航。
 - 同一对象或文档入口再次点击关闭扩展阅读区；点击不同入口才切换右侧预览内容。
 - 对象预览不是“摘要卡片”，而是对象详情页阅读内容的右侧视口；同一个对象在详情页和扩展阅读区必须使用同一套字段顺序、字段标签、字段过滤和字段渲染。
-- WorkArea、WorkCase、Pitfall、ADR、Study 和 Spark 必须复用详情页导出的专用阅读布局。
-- WorkArea、WorkCase、Pitfall、ADR、Study 和 Spark 的扩展阅读头部同样不显示状态 chip；右侧面板按详情页身份区顺序展示 `类型 + ID + 标题 + 创建/更新时间 + 复制对象路径入口`，状态由复用的语义阅读布局表达。
+- WorkCase、Pitfall、ADR、Study 和 Spark 必须复用详情页导出的专用阅读布局。
+- WorkCase、Pitfall、ADR、Study 和 Spark 的扩展阅读头部同样不显示状态 chip；右侧面板按详情页身份区顺序展示 `类型 + ID + 标题 + 创建/更新时间 + 复制对象路径入口`，状态由复用的语义阅读布局表达。
 - Spark 必须复用详情页专用 Spark 阅读布局，不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map、关联分组或独立字段渲染器。
 - 对象预览头部提供复制对象路径图标，复制 API 返回的 `data.path` / 对象 `path`，只有缺失时才降级到 `target`。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。

@@ -3,11 +3,11 @@
  */
 
 export const TYPE_COLORS: Record<string, string> = {
-  workarea: '#3b82f6',  // blue
   workcase: '#0ea5e9',  // sky
   adr: '#a855f7',       // purple
   pitfall: '#ef4444',   // red
   spark: '#eab308',      // yellow
+  study: '#06b6d4',      // cyan
   default: '#6b7280',   // gray
 }
 

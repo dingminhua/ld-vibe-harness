@@ -64,7 +64,7 @@ LDVH 维护入口负责产品资产维护，不负责管辖项目工作对象治
 
 `ldvh-base/` 始终是被管辖项目的工作对象事实源。即使它位于 LDVH 源码仓库内，也应通过工作区级 `rules/LDVH-WORKSPACE-ENTRY.md` 和 `LDVH-GOVERNED-PROJECTS.yaml` 判断后处理。
 
-若工作目标是处理 WorkArea、WorkCase、ADR、Spark、Pitfall 或 Study 等工作对象，应转入 `rules/LDVH-WORKSPACE-ENTRY.md`；若目标是追溯事实源修改，应读取 Git commit records 和 `specs/10-Git提交规范.md`。
+若工作目标是处理 WorkCase、ADR、Spark、Pitfall 或 Study 等工作对象，应转入 `rules/LDVH-WORKSPACE-ENTRY.md`；若目标是追溯事实源修改，应读取 Git commit records 和 `specs/10-Git提交规范.md`。
 
 ---
 ## 3. 最小启动顺序

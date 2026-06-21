@@ -16,15 +16,14 @@ conclusion: |
   先维持现状功能交付，待第一阶段结束后执行统一清理与映射收口。
   通过单点映射与 token 健康检查，避免颜色语义在组件层扩散。
 related_sparks:
-  - spark-0018
-related_workareas: []
+- spark-0018
 related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
-  - web/docs/01-全局设计约束.md
-  - web/docs/11-Web测试实现规范.md
-archive_reason:
+- web/docs/01-全局设计约束.md
+- web/docs/11-Web测试实现规范.md
+archive_reason: null
 ---
 
 # Web 颜色体系治理专项（规范10）

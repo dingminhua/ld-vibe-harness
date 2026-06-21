@@ -49,7 +49,6 @@ avoidance: |
   3. 定期审计规则一致性
 applicability: 所有接入 LDVH 的项目，所有规则层级
 source_sparks: []
-related_workareas: []
 related_adrs: []
 related_docs: []
 related_rules:
@@ -58,9 +57,9 @@ tags:
 - rules
 - consistency
 - single-authority
-notes: '## 影响程度迁移说明
+notes: |-
+  ## 影响程度迁移说明
 
-
-  历史 severity 字段值为 `high`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。'
+  历史 severity 字段值为 `high`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。
 archive_reason: |
   该经验已由 specs/03.01-规范文档规范.md 吸收为单一权威位置与规范引用要求，不再作为常规 active Pitfall 参考。

@@ -5,14 +5,11 @@ status: deprecated
 created: '2026-06-03T00:00:00'
 updated: '2026-06-03T00:00:00'
 date: '2026-06-03'
-context: 落地审计发现项目规则缺少 ADR 入口摘要、Human Gate 确认记录可追溯性不足、adr-0001 仍为 proposed 状态。已完成整改并需通过流程验证
-  ADR 创建和拒绝的生命周期。
-decision: 1) 项目规则补充 ADR 读取提醒和写入 Human Gate 入口摘要；2) adr-0001 context 补充结构化确认记录；3) 创建本
-  ADR 后走 proposed→rejected 流程验证拒绝生命周期；4) 同步将 adr-0001 也走 proposed→rejected 流程。
+context: 落地审计发现项目规则缺少 ADR 入口摘要、Human Gate 确认记录可追溯性不足、adr-0001 仍为 proposed 状态。已完成整改并需通过流程验证 ADR 创建和拒绝的生命周期。
+decision: 1) 项目规则补充 ADR 读取提醒和写入 Human Gate 入口摘要；2) adr-0001 context 补充结构化确认记录；3) 创建本 ADR 后走 proposed→rejected 流程验证拒绝生命周期；4) 同步将 adr-0001 也走 proposed→rejected 流程。
 consequences: 整改项落地；adr-0001 和 0002 均进入 rejected 终态，保留历史记录不删除。
 related_sparks: []
 related_rules:
 - specs/22-ADR-决策.md
-related_workareas: []
-archive_reason:
+archive_reason: null
 deprecated_reason: 历史 ADR 流程验证记录；当前 ADR 已收敛为已确认决策补丁，不再保留 rejected/proposed 生命周期。

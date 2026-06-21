@@ -6,7 +6,6 @@ goal: |
 status: review_needed
 created: '2026-06-18T09:08:15'
 updated: '2026-06-18T10:33:29.221122'
-workarea: workarea-0012
 priority: P1
 description: |
   清退旧 TaskPlan / Task / SubTask 工作对象事实源、Code 兼容入口、Web 展示入口和当前规范中的兼容维护规则。
@@ -36,11 +35,9 @@ orchestration:
     - 用户 2026-06-18 明确授权
     expected_output: WorkCase 记录旧对象清退目标、成功标准、授权和执行分解。
     status: done
-    result_summary: 已创建 workcase-0069，并根据用户要求缩窄为旧对象清退计划；独立 Code/Web 清退审批子 Agent 已批准，等待
-      Human 执行批准。
+    result_summary: 已创建 workcase-0069，并根据用户要求缩窄为旧对象清退计划；独立 Code/Web 清退审批子 Agent 已批准，等待 Human 执行批准。
     evidence_refs:
     - ldvh-base/workcases/workcase-0069-legacy-cleanup-and-header-contract.yaml
-    - ldvh-base/workareas/workarea-0012-ldvh-internal-governance.yaml
     blocking_reason: null
   - id: item-2
     title: 清退旧工作对象事实源和 Code 兼容入口
@@ -54,8 +51,7 @@ orchestration:
     - ldvh-base/subtasks/
     expected_output: 旧对象目录删除，CLI 和 Validator 不再接受旧对象类型，相关测试更新。
     status: done
-    result_summary: 已删除旧 taskplans/tasks/subtasks 事实源目录和 workcase_migration 兼容脚本；fact_cli、fact_validate、fix_block_scalar、field_registry
-      均收敛到 active 工作对象集合，并用测试断言旧对象类型不可创建、不可 show、不可作为当前字段。
+    result_summary: 已删除旧 taskplans/tasks/subtasks 事实源目录和 workcase_migration 兼容脚本；fact_cli、fact_validate、fix_block_scalar、field_registry 均收敛到 active 工作对象集合，并用测试断言旧对象类型不可创建、不可 show、不可作为当前字段。
     evidence_refs:
     - code/fact_cli.py
     - code/fact_validate.py
@@ -77,8 +73,7 @@ orchestration:
     - tests/web/
     expected_output: Web 默认对象集合和详情阅读布局只面向 active 工作模型，旧对象夹具删除或替换。
     status: done
-    result_summary: Web API、Dashboard、ObjectDetail、ObjectList、ReadingPanel、ReferenceCard、字段格式、颜色、状态和本地化入口已移除旧对象消费；Web
-      API 测试改为断言旧对象 ID 不可作为对象引用或详情入口。
+    result_summary: Web API、Dashboard、ObjectDetail、ObjectList、ReadingPanel、ReferenceCard、字段格式、颜色、状态和本地化入口已移除旧对象消费；Web API 测试改为断言旧对象 ID 不可作为对象引用或详情入口。
     evidence_refs:
     - web/api/routes/objects.ts
     - web/api/routes/dashboard.ts
@@ -100,8 +95,7 @@ orchestration:
     - specs/21-WorkCase-工作项.md
     expected_output: 当前规则不再要求维护旧对象兼容、旧夹具或迁移保留能力。
     status: done
-    result_summary: 05.01 明确旧 TaskPlan/Task/SubTask 不再作为当前 active 工作模型或 Code/Web 兼容对象；21
-      仅保留 TaskFlow 命名债和 WorkCase 关闭流程经验作为后续治理事项。
+    result_summary: 05.01 明确旧 TaskPlan/Task/SubTask 不再作为当前 active 工作模型或 Code/Web 兼容对象；21 仅保留 TaskFlow 命名债和 WorkCase 关闭流程经验作为后续治理事项。
     evidence_refs:
     - specs/05.02-工作模型字段内容与格式规范.md
     - specs/21-WorkCase-工作项.md

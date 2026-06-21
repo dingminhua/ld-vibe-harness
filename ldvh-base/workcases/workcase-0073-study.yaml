@@ -6,7 +6,6 @@ goal: |
 status: review_needed
 created: '2026-06-18T17:08:44.743293'
 updated: '2026-06-18T17:51:51+08:00'
-workarea: workarea-0012
 priority: P2
 description: |
   Study / 研究报告对象只应承载已经形成稳定阅读价值的报告产物，因此不应存在 `draft` 草稿状态；
@@ -57,8 +56,7 @@ orchestration:
     - tests/code/test_fact_validate.py
     expected_output: Validator 拒绝 Study draft/superseded/superseded_by，CLI 创建 Study 默认 active，相关测试覆盖。
     status: done
-    result_summary: fact_cli 和 fact_validate 的 Study 合法状态均收口为 active/archived；CLI 创建 Study 默认 active，并新增测试覆盖默认创建和
-      draft 拒绝、superseded 拒绝和 superseded_by 字段退出 Study 契约。
+    result_summary: fact_cli 和 fact_validate 的 Study 合法状态均收口为 active/archived；CLI 创建 Study 默认 active，并新增测试覆盖默认创建和 draft 拒绝、superseded 拒绝和 superseded_by 字段退出 Study 契约。
     evidence_refs:
     - code/fact_cli.py
     - code/fact_validate.py
@@ -74,9 +72,7 @@ orchestration:
     - tests/web/api/facts.test.ts
     expected_output: /objects/study 不再出现草稿或已替代筛选类别，Web 校验通过。
     status: done
-    result_summary: ObjectStatusFilter 的 Study fallback 状态删除 draft 和 superseded，/objects/study 只保留 active、archived
-      筛选类别；Web API 测试已固定 Study fallback 不含 draft，且 WorkCase draft 不受影响。Web
-      日期显示已修正为不为 date-only 事实补出 00:00。
+    result_summary: ObjectStatusFilter 的 Study fallback 状态删除 draft 和 superseded，/objects/study 只保留 active、archived 筛选类别；Web API 测试已固定 Study fallback 不含 draft，且 WorkCase draft 不受影响。Web 日期显示已修正为不为 date-only 事实补出 00:00。
     evidence_refs:
     - web/src/components/ObjectStatusFilter.tsx
     - web/src/utils/dateFormat.ts
@@ -96,8 +92,7 @@ orchestration:
     - web/src/utils/dateFormat.ts
     expected_output: datetime 字段不再接受 date-only；Web Spark 创建和现有事实源均使用时间戳；Spark/Study 页面显示时分。
     status: done
-    result_summary: 05.01 已明确 datetime 字段必须记录 ISO 8601 时间戳；fact_validate 已拒绝 date-only datetime；Web
-      Spark 创建改为本地 ISO 时间戳；历史 date-only 事实源字段已用对应行的 Git blame 提交时间迁移；Study/Spark 页面已验证显示时分。
+    result_summary: 05.01 已明确 datetime 字段必须记录 ISO 8601 时间戳；fact_validate 已拒绝 date-only datetime；Web Spark 创建改为本地 ISO 时间戳；历史 date-only 事实源字段已用对应行的 Git blame 提交时间迁移；Study/Spark 页面已验证显示时分。
     evidence_refs:
     - specs/05.02-工作模型字段内容与格式规范.md
     - specs/24-Spark-火花.md

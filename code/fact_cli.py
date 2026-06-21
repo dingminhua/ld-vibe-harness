@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """LDVH 事实模型 CLI 工具：create / transition / delete / list / show / search / stats / related / link-rule / deprecate / supersede。
 
-对 LDVH 当前工作对象（workarea, workcase, adr, pitfall, spark, study）
+对 LDVH 当前工作对象（workcase, adr, pitfall, spark, study）
 执行创建、状态流转、删除、列表查询、详情查看、搜索、统计等操作。
 Git 提交记录使用 Git commit records 作为事实源，不通过本 CLI 管理。
 ADR 专属写入操作（link-rule / deprecate）必须携带 Human Gate 确认参数。
@@ -23,7 +23,7 @@ import yaml
 # ── 对象元数据（硬编码，与 fact_validate.py 保持一致） ──────────────
 
 # Git 提交记录使用 Git commit records 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"workarea", "workcase", "adr", "pitfall", "spark", "study"}
+OBJECT_TYPES = {"workcase", "adr", "pitfall", "spark", "study"}
 
 
 class BlockScalarDumper(yaml.SafeDumper):
@@ -43,14 +43,13 @@ BlockScalarDumper.add_representer(str, _string_representer)
 BlockScalarDumper.add_representer(LiteralString, _string_representer)
 
 LIST_SUMMARY_FIELDS = ("priority", "importance")
-GLOBAL_REMOVED_FIELDS = {"related_changes"}
+GLOBAL_REMOVED_FIELDS = {"related_changes", "related_" + "work" + "areas"}
 REMOVED_FIELDS_BY_TYPE = {
     "adr": {"related_taskplans", "related_tasks", "related_objects", "superseded_by", "alternatives", "affects"},
     "study": {"related_taskplans", "related_tasks", "related_refs", "superseded_by", "source", "source_detail", "source_docs"},
 }
 
 ID_PATTERNS = {
-    "workarea": re.compile(r"^workarea-\d{4}$"),
     "workcase": re.compile(r"^workcase-\d{4}$"),
     "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
@@ -59,7 +58,6 @@ ID_PATTERNS = {
 }
 
 FILENAME_PATTERNS = {
-    "workarea": re.compile(r"^workarea-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "workcase": re.compile(r"^workcase-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
@@ -80,20 +78,15 @@ WORKCASE_CURRENT_STATUSES = {
 WORKCASE_CLOSURE_OUTCOMES = {"completed", "partial_completed", "cancelled", "superseded", "invalid", "degraded_accepted"}
 
 VALID_STATUSES = {
-    "workarea": {"active", "archived"},
     "workcase": WORKCASE_CURRENT_STATUSES | WORKCASE_LEGACY_STATUSES,
     "adr": {"active", "archived", "deprecated"},
     "pitfall": {"active", "archived"},
     "spark": {"pending", "resolved", "discarded"},
     "study": {"active", "archived"},
 }
-VALID_SPARK_RESOLVED_TO_TYPES = {"workarea", "workcase", "adr", "pitfall", "docs", "governed-projects", "other"}
+VALID_SPARK_RESOLVED_TO_TYPES = {"workcase", "adr", "pitfall", "docs", "governed-projects", "other"}
 
 VALID_TRANSITIONS = {
-    "workarea": {
-        "active": {"archived"},
-        "archived": {"active"},
-    },
     "workcase": {
         "draft": {"active"},
         "active": {"review_needed"},
@@ -127,8 +120,7 @@ VALID_TRANSITIONS = {
 }
 
 REQUIRED_FIELDS = {
-    "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
-    "workcase": ["id", "type", "title", "goal", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
+    "workcase": ["id", "type", "title", "goal", "status", "created", "updated", "priority", "description", "success_criteria", "source", "orchestration"],
     "adr": ["id", "type", "title", "status", "created", "updated", "date", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "spark": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
@@ -136,7 +128,6 @@ REQUIRED_FIELDS = {
 }
 
 DEFAULT_STATUS = {
-    "workarea": "active",
     "workcase": "subagents_plan_reviewing",
     "adr": "active",
     "pitfall": "active",
@@ -145,7 +136,6 @@ DEFAULT_STATUS = {
 }
 
 DIRECTORY_MAP = {
-    "workarea": "ldvh-base/workareas/",
     "workcase": "ldvh-base/workcases/",
     "adr": "ldvh-base/adrs/",
     "pitfall": "ldvh-base/pitfalls/",
@@ -623,11 +613,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         else:
             # 其他必填字段默认为空字符串占位
             data[field] = ""
-    if object_type == "workarea":
-        data["related_docs"] = []
-        data["related_adrs"] = []
-        data["related_sparks"] = []
-        data["related_pitfalls"] = []
     if object_type == "workcase":
         data["priority"] = "P2"
         data["orchestration"] = _default_workcase_orchestration()
@@ -655,7 +640,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["resolved_to"] = ""
         data["resolved_at"] = ""
         data["discard_reason"] = ""
-        data["related_workareas"] = []
         data["related_workcases"] = []
         data["related_adrs"] = []
         data["related_studies"] = []
@@ -680,7 +664,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["tags"] = []
         data["source_objects"] = []
         data["source_sparks"] = []
-        data["related_workareas"] = []
         data["related_adrs"] = []
         data["related_docs"] = []
         data["related_rules"] = []
@@ -692,7 +675,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["conclusion"] = ""
         data["urls"] = []
         data["related_sparks"] = []
-        data["related_workareas"] = []
         data["related_workcases"] = []
         data["related_adrs"] = []
         data["related_pitfalls"] = []
@@ -721,7 +703,6 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["context"] = gate_record
         data["decision"] = "待补充。"
         data["consequences"] = "## 正向价值\n\n待补充。\n\n## 逆向价值\n\n当前决策无逆向价值\n\n## 实施成本\n\n待补充。\n\n## 风险评估\n\n待补充。\n\n## 注意事项\n\n待补充。\n"
-        data["related_workareas"] = []
         data["related_workcases"] = []
         data["related_sparks"] = []
         data["related_adrs"] = []
@@ -893,12 +874,6 @@ def cmd_transition(args: argparse.Namespace) -> int:
             error(f"closure_outcome 不合法，有效值: {', '.join(sorted(WORKCASE_CLOSURE_OUTCOMES))}")
             return 1
         _set_closure_human_confirmation(data, args, datetime.now().isoformat())
-
-    if object_type == "workarea" and new_status == "archived":
-        archive_reason = data.get("archive_reason")
-        if not archive_reason or (isinstance(archive_reason, str) and not archive_reason.strip()):
-            error("archive_reason 未填写，无法归档 WorkArea")
-            return 1
 
     # Spark 分流条件校验（pending → resolved）
     if object_type == "spark" and current_status == "pending" and new_status == "resolved":
@@ -1419,7 +1394,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         # 处理字符串转义：\n → 换行, \\ → 反斜杠
         value = value.replace("\\n", "\n").replace("\\\\", "\\")
         # 列表类型字段：逗号分隔
-        if key in ("related_workareas", "related_workcases", "related_adrs",
+        if key in ("related_workcases", "related_adrs",
                     "related_sparks", "related_studies", "related_pitfalls", "related_docs",
                     "urls", "source_docs", "source_sparks", "related_rules"):
             updates[key] = [v.strip() for v in value.split(",") if v.strip()] if value else []

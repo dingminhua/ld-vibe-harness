@@ -30,8 +30,8 @@
 |---|---|---|---|
 | 全局设计 | [`01-全局设计约束.md`](./01-全局设计约束.md) | 基线文档 | 所有页面变更先检查本文件 |
 | Dashboard | [`02-Dashboard.md`](./02-Dashboard.md) | 可用，仍是态势入口 | 应向五个基准模块的对象行、复制语义和右侧阅读入口靠拢 |
-| ObjectList | [`03-ObjectList.md`](./03-ObjectList.md) | 研究、决策、火花、经验列表已作为基线；WorkArea/WorkCase 是工作主线专用形态 | 非工作主线对象列表不得偏离四类对象卡片基线 |
-| ObjectDetail | [`04-ObjectDetail.md`](./04-ObjectDetail.md) | 研究、决策、火花、经验详情已作为基线；WorkArea/WorkCase 是工作主线专用形态 | 专用阅读布局必须同时服务详情页和右侧扩展阅读 |
+| ObjectList | [`03-ObjectList.md`](./03-ObjectList.md) | 研究、决策、火花、经验列表已作为基线；WorkCase 是工作主线专用形态 | 非工作主线对象列表不得偏离四类对象卡片基线 |
+| ObjectDetail | [`04-ObjectDetail.md`](./04-ObjectDetail.md) | 研究、决策、火花、经验详情已作为基线；WorkCase 是工作主线专用形态 | 专用阅读布局必须同时服务详情页和右侧扩展阅读 |
 | Changelog | [`06-Changelog.md`](./06-Changelog.md) | 已进入五个基准模块 | 提交页是证据流工具页，但卡片和详情语言与对象模块同源 |
 | ProjectFiles | 暂无独立页面文档 | 工具页，提交历史已复用 Changelog/Dashboard 的 commit parser 和 DTO 字段 | 不以五个模块卡片语言强行改造，但复制、Markdown、路径、提交记录字段和工具密度应遵守全局规则 |
 | 图标语义 | [`09-图标语义规范.md`](./09-图标语义规范.md) | 基线文档 | 新增图标或操作先检查语义归属 |
@@ -82,7 +82,7 @@ WorkCase 详情页优先回答“是否能继续推进或关闭”，信息层�
 验证证据
 关闭证据
 检查安排
-目标 / 所属工作域 / 来源
+目标 / 所属工作项 / 来源
 关联材料
 ```
 

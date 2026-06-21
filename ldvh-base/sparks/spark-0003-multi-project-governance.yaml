@@ -9,15 +9,14 @@ description: |
   1. 项目定义不够清晰——什么算一个项目、什么不算，边界判定标准缺失
   2. 当前 active 工作模型没有项目集合对象，多项目分组和聚合治理缺少结构化承载
 
-  建议方案：以"不新增对象、强化现有机制"为主；是否引入项目集合对象或通过管辖项目配置、WorkArea、Spark 等现行对象承接，需后续按当前 active 工作模型另行判断。
+  建议方案：以"不新增对象、强化现有机制"为主；是否引入项目集合对象或通过管辖项目配置、WorkCase、Spark 等现行对象承接，需后续按当前 active 工作模型另行判断。
 evolution:
-  - at: '2026-06-19T11:42:00+08:00'
-    summary: workcase-0078 子 agent 复核后确认 Profile 不再是 active 工作模型；本 Spark 若继续 pending，仅保留多项目集合治理问题，不再建议通过 Profile 字段扩展解决。
+- at: '2026-06-19T11:42:00+08:00'
+  summary: workcase-0078 子 agent 复核后确认 Profile 不再是 active 工作模型；本 Spark 若继续 pending，仅保留多项目集合治理问题，不再建议通过 Profile 字段扩展解决。
 source: conversation
 source_detail: 用户提出"存在多个项目需要管理的情况，项目的定义要清晰，生产对象只有项目没有项目集合如何处理"
 related_adrs: []
 related_studies: []
-related_workareas: []
 related_workcases: []
 related_docs: []
 priority: P1

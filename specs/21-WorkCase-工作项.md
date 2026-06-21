@@ -49,7 +49,7 @@ ldvh_member:
 ---
 ## 1. 对象定位与准入条件
 
-WorkCase / 工作项是 Human 与 AI 围绕一次目标达成的工作事实契约。工作项承载已经由主控 AI 起草到可审核程度的目标、范围、成功标准、所属工作域、执行编排、方案审核、执行过程、结果自检、结果复核、关闭确认和经验分流。
+WorkCase / 工作项是 Human 与 AI 围绕一次目标达成的工作事实契约。工作项承载已经由主控 AI 起草到可审核程度的目标、范围、成功标准、执行编排、方案审核、执行过程、结果自检、结果复核、关闭确认和经验分流。
 
 主控 AI 在 WorkCase 创建前可以起草方案草稿；该起草动作不是 WorkCase 状态。只有当草稿已经足以被第三方子 Agent 审核时，才创建 WorkCase 并进入方案审核。Human 主要确认方案是否允许执行和结果是否允许关闭；AI 负责在工作项内部安排执行项、调度角色或专业视角、完成验证、整理证据并接受独立复核。执行项只属于 WorkCase 内部编排，不作为独立工作模型，不进入 20-39 集合，也不在 `ldvh-base/` 下形成独立事实实例。
 
@@ -147,13 +147,7 @@ human_closure_confirming -> subagents_plan_reviewing
 ---
 ## 4. 对象关系
 
-### 4.1 工作项与工作域
-
-每个工作项必须通过 `workarea` 引用一个工作域。工作项不得脱离工作域存在，且 `workarea` 是工作项归属工作域的唯一权威事实源字段。
-
-WorkArea 不反向维护所属 WorkCase ID 列表。Code / Web 需要展示某个 WorkArea 下有哪些 WorkCase 时，应扫描 WorkCase 集合并按 `workarea` 反向聚合；该聚合结果是派生视图，不得回写为 WorkArea YAML 字段。
-
-### 4.2 工作项与执行项
+### 4.1 工作项与执行项
 
 工作项通过 `orchestration.execution_items` 字段承载内部执行编排。执行项用于说明 AI 当前如何安排工作、验证和角色分工；执行项没有独立状态机、编号区段或事实源文件。
 
@@ -184,7 +178,7 @@ WorkArea 不反向维护所属 WorkCase ID 列表。Code / Web 需要展示某�
 
 WorkCase 的 Human-facing 阅读必须直接消费本文定义的权威状态，并先表达工作项对象自身生命周期与关闭判断，再表达执行项队列。Code 或 Web 可以从 `status`、`success_criteria` checklist、`plan_review`、`result_review`、`verification_evidence`、`closure_evidence`、`closure_requested_at`、`closed_at` 和 `orchestration.execution_items` 派生只读摘要，用于展示推进阶段、成功标准完成度、执行项状态分布和关闭材料完备性。该摘要不得写回 YAML，也不得成为第二事实源；事实判断仍以本 WorkCase 字段、关联工作对象和 Git 提交记录为准。
 
-#### 4.2.1 Human 感知与状态同步契约
+#### 4.1.1 Human 感知与状态同步契约
 
 WorkCase 不只约束 YAML 字段，也约束主控在对话和 Web 展示中的行动口径。主控推进 WorkCase 时必须让 Human 能稳定回答：当前处于哪个状态、已经完成哪些执行项、下一 Gate 是什么、还需要 Human 确认什么，以及 Web 能否看到同一状态。
 
@@ -204,7 +198,7 @@ Web 感知必须满足：
 3. 进入 `result_self_checking` 前，执行项状态必须足以让 Web 展示“完成 / 跳过 / 阻塞 / 待执行”的真实分布；不得出现主控声称已经完成迁移、测试或验证，但 Web 仍显示所有执行项 `pending` 的情况；
 4. 成功标准、验证证据、关闭证据和结果复核材料应随阶段推进及时回写；若暂时不能回写，必须停留在当前阶段并说明阻塞原因，不得提前提交下一 Gate。
 
-#### 4.2.2 主控结果自检硬规则
+#### 4.1.2 主控结果自检硬规则
 
 主控结果自检不是进入结果复核前的形式签名。进入 `subagents_result_reviewing` 前，`result_review.controller_self_check` 必须记录本轮实际检查了什么、发现了什么、没发现什么、修复了什么，以及为什么可以交给独立结果复核。
 
@@ -216,7 +210,7 @@ Web 感知必须满足：
 4. 自检发现超出当前 WorkCase 范围的问题，应写入 `residual_risks`、`followup_refs`、Spark 或后续 WorkCase，并说明为什么不阻塞当前复核；
 5. 自检不得把“未检查”写成“未发现”；工具未运行、文件未读、Web 未验或事实源未扫时，必须记录为未完成检查并停留在 `result_self_checking`。
 
-#### 4.2.3 结果复核与完成口径
+#### 4.1.3 结果复核与完成口径
 
 结果复核是关闭前的独立判断流程，不是主控自检的格式化副本。进入 `subagents_result_reviewing` 后，主控必须按 `result_review.review_policy.required_perspectives` 真实发起并等待独立复核，或明确记录由专门工作流程接管；不得先进入 `human_closure_confirming`，再用主控摘要补填空的 `review_items`。
 
@@ -248,7 +242,7 @@ WorkCase 的“完成”口径必须区分四层：
 5. 范围扩大到当前 WorkCase 无法清晰关闭；
 6. 继续作为执行项会迫使 Web、Code 或 Human 把它当成一级对象管理。
 
-### 4.3 工作项与 ADR、Spark、Pitfall 和 Git 提交记录
+### 4.2 工作项与 ADR、Spark、Pitfall 和 Git 提交记录
 
 工作项可以关联 ADR、Spark、Pitfall，并通过 Git 提交记录追溯事实源修改：
 
@@ -267,7 +261,7 @@ WorkCase 的“完成”口径必须区分四层：
 3. 将方案审核结果从 `subagents_plan_reviewing` 提交到 `human_plan_confirming`；
 4. 确认 `human_plan_confirming` -> `executing`；
 5. 将工作项从 `human_closure_confirming` 关闭为 `closed`；
-6. 改写目标、成功标准、执行编排、工作域归属或关闭判断；
+6. 改写目标、成功标准、执行编排或关闭判断；
 7. 跳过未验证执行项或通过豁免关闭工作项；
 8. 合并、拆分或重新组织工作项。
 
@@ -287,7 +281,6 @@ Human Gate 发生在工作项层。执行项、角色说明、子 Agent 输出�
 | `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
 | `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
 | `updated` | 更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
-| `workarea` | 所属工作域 ID | string | 是 | 必须引用已存在 WorkArea；这是工作项归属工作域的唯一权威事实源字段 | Reference | AI、Code、Web |
 | `priority` | 执行优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
 | `description` | 目标背景、范围和问题说明 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `success_criteria` | 工作项成功标准 | string | 是 | 应使用 checklist 或等价可验证条目支持关闭审查 | Checklist | AI、Code、Web |
@@ -452,7 +445,7 @@ WorkCase 只记录审核事实和可决策摘要，不记录子 Agent 审核原�
 
 | 状态 | 必须满足的对象条件 |
 |---|---|
-| `subagents_plan_reviewing` | 基础字段、`workarea`、`priority`、`description`、`success_criteria`、`source`、`orchestration.mode`、`orchestration.execution_items`、`orchestration.plan_review` 和 `orchestration.result_review` 已存在；`execution_items` 不得为空；`plan_review.review_policy` 已存在；`plan_review.review_items` 可以正在补齐 |
+| `subagents_plan_reviewing` | 基础字段、`priority`、`description`、`success_criteria`、`source`、`orchestration.mode`、`orchestration.execution_items`、`orchestration.plan_review` 和 `orchestration.result_review` 已存在；`execution_items` 不得为空；`plan_review.review_policy` 已存在；`plan_review.review_items` 可以正在补齐 |
 | `human_plan_confirming` | `plan_review.review_items` 已完成并具备 Agent、角色、提示上下文、输入引用、重点结论和签署声明；`plan_review.controller_resolution` 已记录主控处理意见、必要修改和未决事项；不存在必须先改方案并重审的失败结论；等待 Human 确认 |
 | `executing` | 满足 `human_plan_confirming` 条件；`plan_confirmed_at` 和 `plan_review.human_confirmation` 已填写；方案审核阶段不得仍存在行动前未确认的 `unresolved_items`；执行项可以处于 `pending`、`in_progress`、`blocked`、`done` 或 `skipped`；一旦发生实质执行，执行项状态、结果摘要和证据引用必须在同一工作轮次内回写 |
 | `result_self_checking` | 执行项不得仍为 `pending` 或 `in_progress`；`blocked` 执行项必须填写 `blocking_reason`；主控正在整理或填写 `result_review.controller_self_check`、`verification_evidence` 和 `closure_evidence`；成功标准检查进展和执行项状态必须足以支持 Web 派生态势 |
@@ -469,7 +462,6 @@ title: 重构工作模型状态边界
 status: subagents_result_reviewing
 created: '2026-06-18T00:00:00'
 updated: '2026-06-18T03:30:00'
-workarea: workarea-0001
 priority: P1
 description: |
   将一次模型重构目标组织为可执行、可验证、可关闭的工作项。
@@ -633,8 +625,7 @@ related_workcases: []
 
 Code 应检查：
 
-1. 工作项必须引用存在的 WorkArea；
-2. `priority` 必须属于 `P0`、`P1`、`P2`、`P3`；
+1. `priority` 必须属于 `P0`、`P1`、`P2`、`P3`；
 3. 不得维护 `importance` 字段；
 4. `orchestration.execution_items` 中的 `id` 在当前工作项内唯一；
 5. `orchestration.mode`、`orchestration.execution_items.mode` 和 `orchestration.execution_items.status` 必须属于本文定义的枚举；
@@ -681,7 +672,6 @@ Web 应把工作项作为 Human 直接查看和确认的主对象。Web 可以�
 
 | 检查项 | 标准 |
 |---|---|
-| 工作域归属 | 每个工作项必须引用一个存在的工作域 |
 | 优先级 | `priority` 已填写且符合 05.01 统一标准，未维护 `importance` |
 | 执行编排 | `orchestration.execution_items` 是内部字段，不存在独立执行项事实源文件 |
 | 人类入口 | 关闭审查发生在工作项层 |

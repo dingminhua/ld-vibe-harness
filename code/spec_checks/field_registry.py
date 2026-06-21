@@ -45,7 +45,6 @@ ALLOWED_VALUE_SHAPES = {
 ALLOWED_REF_KINDS = {
     "none",
     "object_ref",
-    "workarea_ref",
     "workcase_ref",
     "commit_ref",
     "doc_path",

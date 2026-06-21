@@ -36,21 +36,18 @@ description: |
   4. Web 是否能在列表和详情页用五个基准模块同源的设计语言表达这些信息；
   5. 现有 WorkCase 实例是否存在字段写法不一致、证据过长、执行项结果过密或 review_needed 页面不可读的问题。
 evolution:
-  - at: '2026-06-20T11:34:57+08:00'
-    summary: 用户确认 WorkCase 专用设计必须以成熟五模块设计语言为基线，并指出当前缺口不只是 Web 解析，而是 WorkCase 模型、执行项状态信息契约、整体 checklist 和工作项自身进度呈现共同存在问题；创建本 Spark 作为逐步推进入口。
-  - at: '2026-06-20T20:20:23+08:00'
-    summary: 已推进第一段收敛：WorkCase 主规范补充 Human-facing 阅读必须先表达工作项对象自身生命周期与关闭判断，再表达执行项队列；Web API 增加 success_criteria checklist 完成度只读派生；ObjectDetail 新增工作项进度模块，展示推进阶段、成功标准进度、执行项完成度、执行项状态分布和关闭材料记录状态；Web 详情文档和设计语言基线同步记录该阅读顺序。Spark 暂不关闭，后续仍需继续检查字段注册、更多实例一致性和关闭审查阅读细节。
+- at: '2026-06-20T11:34:57+08:00'
+  summary: 用户确认 WorkCase 专用设计必须以成熟五模块设计语言为基线，并指出当前缺口不只是 Web 解析，而是 WorkCase 模型、执行项状态信息契约、整体 checklist 和工作项自身进度呈现共同存在问题；创建本 Spark 作为逐步推进入口。
+- at: '2026-06-20T20:20:23+08:00'
+  summary: 已推进第一段收敛：WorkCase 主规范补充 Human-facing 阅读必须先表达工作项对象自身生命周期与关闭判断，再表达执行项队列；Web API 增加 success_criteria checklist 完成度只读派生；ObjectDetail 新增工作项进度模块，展示推进阶段、成功标准进度、执行项完成度、执行项状态分布和关闭材料记录状态；Web 详情文档和设计语言基线同步记录该阅读顺序。Spark 暂不关闭，后续仍需继续检查字段注册、更多实例一致性和关闭审查阅读细节。
 source: conversation
-source_detail: 用户在 /objects/workcase/workcase-0080?status=review_needed 检查 WorkCase 详情时提出，需要专门记录并逐步推进 WorkCase 模型与 Web 可读性问题。
+source_detail: 用户在 /objects/workcase-0080?status=review_needed 检查 WorkCase 详情时提出，需要专门记录并逐步推进 WorkCase 模型与 Web 可读性问题。
 priority: P1
-resolved_to: ""
-resolved_at: ""
-discard_reason: ""
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
 related_adrs: []
 related_studies: []
-related_workareas:
-- workarea-0006
-- workarea-0012
 related_workcases:
 - workcase-0039
 - workcase-0054

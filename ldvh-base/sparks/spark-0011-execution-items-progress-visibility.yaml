@@ -56,20 +56,18 @@ description: |
   5. Web 上应把验证结果压缩成可扫描摘要：通过的命令、失败的命令、允许 warning、残留风险和后续项；
   6. AI 在执行中发现“规范已有但触发保障缺失”“迁移表面完成但残留未消除”等问题时，应默认分流为 Pitfall、Spark 或新增 execution_item，而不是等用户追问。
 evolution:
-  - at: '2026-06-19T06:22:32+08:00'
-    summary: 用户确认 execution_items 的拆分对 AI 和 Human 都有价值，要求先记录为 Spark，后续再推进。
-  - at: '2026-06-19T06:25:00+08:00'
-    summary: 用户补充指出，不应只记录 execution_items，计划审查、Human 批准、最后 review、关闭确认等生命周期环节也应有显式状态和证据；若每个环节都强制记录状态，就能减少 AI 漏步骤。
-  - at: '2026-06-19T07:30:42+08:00'
-    summary: 用户要求记录本次 0074 补救过程中的 AI 工作体验；追加说明 execution_items、生命周期、子 agent findings intake、残留扫描、验证摘要和工作中发现问题分流机制仍需改进。
+- at: '2026-06-19T06:22:32+08:00'
+  summary: 用户确认 execution_items 的拆分对 AI 和 Human 都有价值，要求先记录为 Spark，后续再推进。
+- at: '2026-06-19T06:25:00+08:00'
+  summary: 用户补充指出，不应只记录 execution_items，计划审查、Human 批准、最后 review、关闭确认等生命周期环节也应有显式状态和证据；若每个环节都强制记录状态，就能减少 AI 漏步骤。
+- at: '2026-06-19T07:30:42+08:00'
+  summary: 用户要求记录本次 0074 补救过程中的 AI 工作体验；追加说明 execution_items、生命周期、子 agent findings intake、残留扫描、验证摘要和工作中发现问题分流机制仍需改进。
 source: conversation
 source_detail: 由 workcase-0074 的 item 与主线程执行步骤是否一一对应、Web 是否能看到进度的讨论引出。
 priority: P2
-resolved_to: ""
-resolved_at: ""
-discard_reason: ""
-related_workareas:
-- workarea-0012
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
 related_workcases:
 - workcase-0074
 related_adrs: []

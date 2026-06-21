@@ -188,7 +188,6 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `conclusion` | 报告结论、边界和残留不确定性 | string | 否 | 推荐填写 | Narrative / Decision | AI、Web |
 | `urls` | 报告正文中的外部网址及中文用途摘要；每项必须使用 `{ref, summary}` 或 `{ref, title, summary}` 结构，`ref` 必须是完整 `http(s)` URL，`summary` 必须是中文简介 | list[object] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_sparks` | 关联火花 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workcases` | 关联工作项 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_pitfalls` | 关联踩坑经验 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -241,7 +240,6 @@ urls:
     summary: 用于说明 Spark 的演变记录和分流关系边界，支撑本报告对 Spark/Study 分工的判断。
 related_sparks:
   - spark-0001
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_pitfalls: []
@@ -331,7 +329,7 @@ Study 详情页是报告阅读界面，不按普通字段卡片表达主内容�
 
 Study 正文不应在主页面直接铺开全文。“正文”节点下只展示当前 Study 文件入口，点击整行或扩展阅读入口后在右侧扩展阅读区渲染 Markdown 正文。右侧扩展阅读区应复用同一份 Study 事实源，不得维护第二套摘要或正文。
 
-Study 的所有关联内容必须进入上层“关联”区块。`urls` 显示在“关联”下的“网址”分组，每个条目必须显示可读标题或 URL，并显示中文 `summary`；该摘要是引用用途提示，应弱于 Study 主内容，不得替代报告正文结论。`related_docs`、`related_sparks`、`related_workareas`、`related_workcases`、`related_adrs` 和 `related_pitfalls` 等关联字段不得散落在正文、证据或其他字段之间。
+Study 的所有关联内容必须进入上层“关联”区块。`urls` 显示在“关联”下的“网址”分组，每个条目必须显示可读标题或 URL，并显示中文 `summary`；该摘要是引用用途提示，应弱于 Study 主内容，不得替代报告正文结论。`related_docs`、`related_sparks`、`related_workcases`、`related_adrs` 和 `related_pitfalls` 等关联字段不得散落在正文、证据或其他字段之间。
 
 当前 Web 不得直接创建、编辑、替代、归档或删除 Study。未来如需开放 Study 写入，必须先更新 `specs/08-Web信息同步实现规范.md` 白名单、本文字段/状态约束、Code 校验、测试和 Human Gate 影响评估。
 

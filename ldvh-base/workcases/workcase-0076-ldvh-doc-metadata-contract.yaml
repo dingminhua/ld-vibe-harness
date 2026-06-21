@@ -6,7 +6,6 @@ goal: |
 status: review_needed
 created: '2026-06-19T07:55:28+08:00'
 updated: '2026-06-19T08:46:44+08:00'
-workarea: workarea-0012
 priority: P1
 description: |
   workcase-0070 和 workcase-0075 已把现有 `> 字段：值` 普通头部定义为机器可读契约，并补充了 20-39 / 40-59 普通头部不得重复 `ldvh_member` 成员事实的 Code 诊断。

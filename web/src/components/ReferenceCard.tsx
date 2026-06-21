@@ -13,7 +13,6 @@ import { ObjectTypeIcon } from '@/components/SemanticIcon';
 
 /** 对象类型中英映射（与 ObjectDetail 页面保持一致） */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
-  workarea: { zh: '工作域', en: 'Work Area' },
   workcase: { zh: '工作项', en: 'WorkCase' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑', en: 'Pitfall' },

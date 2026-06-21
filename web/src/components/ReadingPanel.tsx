@@ -12,7 +12,6 @@ import {
   PitfallReadingLayout,
   RelatedContentSection,
   StudyReadingLayout,
-  WorkAreaReadingLayout,
   WorkCaseReadingLayout,
   getAuxiliaryMetaEntries,
   getObjectDetailContentEntries,
@@ -32,7 +31,6 @@ const SNAP_THRESHOLD = 40;
 const MOBILE_BREAKPOINT = 768;
 
 const OBJECT_TYPE_LABELS: Record<string, { zh: string; en: string }> = {
-  workarea: { zh: '工作域', en: 'Work Area' },
   workcase: { zh: '工作项', en: 'WorkCase' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑', en: 'Pitfall' },
@@ -385,7 +383,7 @@ function ObjectPreview({ content }: { content: PanelContent }) {
         created={formatDateTime(obj?.created as string | undefined)}
         updated={formatDateTime(obj?.updated as string | undefined)}
         closedAt={obj?.closed_at ? formatDateTime(obj.closed_at as string) : undefined}
-        auxiliaryMetaEntries={obj && objectType !== 'workarea' ? getAuxiliaryMetaEntries(obj, objectType || '') : []}
+        auxiliaryMetaEntries={obj ? getAuxiliaryMetaEntries(obj, objectType || '') : []}
         copyLabel={t('common.copyObjectPath')}
         copiedLabel={t('common.copiedObjectPath')}
         compact
@@ -436,15 +434,10 @@ function ObjectSemanticPreview({
     setLoading(true);
     setSummary(null);
 
-    const summaryType = objectType === 'workarea' ? 'workarea' : 'workcase';
-    fetchObjects(summaryType)
+    fetchObjects('workcase')
       .then((result) => {
         if (cancelled) return;
         const items = result.data?.items ?? [];
-        if (objectType === 'workarea') {
-          setSummary(items.find((workarea) => workarea.id === objectId) ?? null);
-          return;
-        }
         setSummary(items.find((plan) => plan.id === objectId) ?? null);
       })
       .catch(() => {
@@ -456,9 +449,6 @@ function ObjectSemanticPreview({
     return () => { cancelled = true; };
   }, [objectType, objectId]);
 
-  if (objectType === 'workarea') {
-    return <WorkAreaReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
-  }
   if (objectType === 'workcase') {
     return <WorkCaseReadingLayout obj={obj} summary={summary} loading={loading} locale={locale} getStatus={getStatus} />;
   }
@@ -494,7 +484,7 @@ function ObjectSemanticPreview({
 }
 
 function isObjectDetailLayoutType(objectType: string | undefined) {
-  return objectType === 'workarea' || objectType === 'workcase' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study';
+  return objectType === 'workcase' || objectType === 'pitfall' || objectType === 'adr' || objectType === 'spark' || objectType === 'study';
 }
 
 function getObjectTitle(obj: Record<string, unknown> | undefined, objectId: string | undefined, locale: string) {

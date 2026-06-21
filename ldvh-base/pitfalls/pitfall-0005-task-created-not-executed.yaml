@@ -53,7 +53,6 @@ avoidance: |
 applicability: |
   适用于所有由用户明确执行意图触发的 Task 创建场景，尤其是当前会话可以直接进入执行、验证或修复的任务。
 source_sparks: []
-related_workareas: []
 related_adrs: []
 related_docs: []
 related_rules: []

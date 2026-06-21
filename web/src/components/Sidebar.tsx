@@ -22,7 +22,6 @@ type NavIcon = ElementType<LucideProps>;
 const NAV_ITEMS: { to: string; labelKey?: LocaleKey; label?: { zh: string; en: string }; icon: NavIcon }[] = [
   { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard },
   { to: '/project-files', label: { zh: '文件', en: 'Files' }, icon: FolderTree },
-  { to: '/objects/workarea', labelKey: 'nav.workareas', icon: OBJECT_TYPE_ICONS.workarea },
   { to: '/objects/workcase', labelKey: 'nav.workcases', icon: OBJECT_TYPE_ICONS.workcase },
   { to: '/objects/adr', labelKey: 'nav.adrs', icon: OBJECT_TYPE_ICONS.adr },
   { to: '/objects/pitfall', labelKey: 'nav.pitfalls', icon: OBJECT_TYPE_ICONS.pitfall },

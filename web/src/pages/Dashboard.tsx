@@ -16,7 +16,6 @@ import { CATEGORY_COLORS, getCategoryLocale } from '@/utils/categoryColors';
 import { WORKCASE_CURRENT_STATUSES } from '@/utils/workcaseStatus';
 
 const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
-  workarea: 'nav.workareas',
   workcase: 'nav.workcases',
   adr: 'nav.adrs',
   pitfall: 'nav.pitfalls',
@@ -24,7 +23,7 @@ const TYPE_LABEL_KEYS: Record<string, LocaleKey> = {
   study: 'nav.studies',
 };
 
-const TYPE_ORDER = ['workarea', 'workcase', 'adr', 'pitfall', 'spark', 'study'];
+const TYPE_ORDER = ['workcase', 'adr', 'pitfall', 'spark', 'study'];
 
 const HIGHLIGHT_STATUSES = new Set([...WORKCASE_CURRENT_STATUSES.filter((status) => status !== 'closed'), 'verifying', 'review_needed']);
 

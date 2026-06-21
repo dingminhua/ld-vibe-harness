@@ -6,7 +6,6 @@ goal: |
 status: review_needed
 created: 2026-06-18T16:22:16+0800
 updated: '2026-06-18T16:32:01.828605'
-workarea: workarea-0012
 priority: P2
 description: |
   workcase-0071 的 process-governance 复审发现 `orchestration.execution_items[].evidence_refs`
@@ -44,8 +43,7 @@ orchestration:
     mode: single
     input_refs:
     - tests/code/test_fact_validate.py
-    expected_output: 覆盖缺失 evidence_refs 路径报错、非路径 evidence_refs 不报错，以及现有有效 WorkCase
-      继续通过。
+    expected_output: 覆盖缺失 evidence_refs 路径报错、非路径 evidence_refs 不报错，以及现有有效 WorkCase 继续通过。
     status: done
     result_summary: |
       已补充缺失路径报错、非路径混合引用不误报、URL 不误报和 `path §section` 只检查路径段的测试；

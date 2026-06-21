@@ -18,24 +18,23 @@ description: |
 
   这些事项尚未形成单一可关闭目标，暂不创建 WorkCase。后续若用户要求继续落地，应优先从第 1 项“41 触发保障 Code 覆盖”分流为 WorkCase。
 evolution:
-  - at: '2026-06-18T09:03:05'
-    summary: 用户确认 41-43 可以升级为 active 后，AI 完成状态升级、Human Gate 记录和基础校验；随后将 active 后硬化事项独立从 spark-0005 分流到本 Spark，避免阻塞用户安排其他事情。
+- at: '2026-06-18T09:03:05'
+  summary: 用户确认 41-43 可以升级为 active 后，AI 完成状态升级、Human Gate 记录和基础校验；随后将 active 后硬化事项独立从 spark-0005 分流到本 Spark，避免阻塞用户安排其他事情。
 source: conversation
 source_detail: 用户询问“下一步做什么”后，AI 提出 active 后落地闭环硬化顺序；用户要求将这些后续事项加入新的火花。
 priority: P1
-resolved_to: ""
-resolved_at: ""
-discard_reason: ""
-related_workareas: []
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
 related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:
-  - specs/02-术语规范.md
-  - specs/07-Code确定性执行实现规范.md
-  - specs/11-测试基础规范.md
-  - specs/40-workflow-design-audit-工作流程设计审核.md
-  - specs/41-work-model-audit-工作模型审核.md
-  - specs/42-specs-audit-规范审核.md
-  - specs/43-assurance-readiness-audit-保障准备度审核.md
-  - ldvh-base/sparks/spark-0005-task-orchestration-boundary.yaml
+- specs/02-术语规范.md
+- specs/07-Code确定性执行实现规范.md
+- specs/11-测试基础规范.md
+- specs/40-workflow-design-audit-工作流程设计审核.md
+- specs/41-work-model-audit-工作模型审核.md
+- specs/42-specs-audit-规范审核.md
+- specs/43-assurance-readiness-audit-保障准备度审核.md
+- ldvh-base/sparks/spark-0005-task-orchestration-boundary.yaml

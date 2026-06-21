@@ -13,24 +13,23 @@ description: |
 
   完整调研已形成 study-0005。后续修改 00 总纲、06 工作流程、10 测试基础、04 能力资产、07 Code、08 Web 或新增 40-59 流程时，应复读该报告。
 evolution:
-  - at: '2026-06-18T08:49:21'
-    summary: 根据用户要求，新增 Vibe Coding 从 demo 到产品级的能力缺口调研入口，并分流完整报告到 study-0005。
+- at: '2026-06-18T08:49:21'
+  summary: 根据用户要求，新增 Vibe Coding 从 demo 到产品级的能力缺口调研入口，并分流完整报告到 study-0005。
 source: conversation
 source_detail: 用户要求新建 Spark，调研 Vibe Coding 从 demo 到产品级需要哪些变化，以及 LDVH 面向产品级开发还需要增强哪些环节。
 priority: P1
-resolved_to: ""
-resolved_at: ""
-discard_reason: ""
-related_workareas: []
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
 related_workcases: []
 related_adrs: []
 related_studies:
-  - study-0005
+- study-0005
 related_docs:
-  - specs/00-LD-Vibe-Harness理念与纲要.md
-  - specs/04.02-LDVH能力资产与保障机制规范.md
-  - specs/06-工作流程基础规范.md
-  - specs/07-Code确定性执行实现规范.md
-  - specs/08-Web信息同步实现规范.md
-  - specs/11-测试基础规范.md
-  - specs/21-WorkCase-工作项.md
+- specs/00-LD-Vibe-Harness理念与纲要.md
+- specs/04.02-LDVH能力资产与保障机制规范.md
+- specs/06-工作流程基础规范.md
+- specs/07-Code确定性执行实现规范.md
+- specs/08-Web信息同步实现规范.md
+- specs/11-测试基础规范.md
+- specs/21-WorkCase-工作项.md

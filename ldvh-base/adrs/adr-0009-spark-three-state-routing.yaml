@@ -37,7 +37,7 @@ decision: |
 
   Spark 不再使用 `draft`、`active` 或 `archived`。旧 `draft` / `active` 迁移为 `pending`，旧 `archived` 迁移为 `discarded`。
 
-  Spark 的废弃原因字段命名为 `discard_reason`，不再复用 `archive_reason`。`archive_reason` 保留给 WorkArea、Pitfall 等仍存在归档语义的对象。
+  Spark 的废弃原因字段命名为 `discard_reason`，不再复用 `archive_reason`。`archive_reason` 保留给 WorkCase、Pitfall 等仍存在归档语义的对象。
 consequences: |
   ## 正向价值
 
@@ -63,13 +63,12 @@ consequences: |
 
   - 已接受迁移规则：`draft` -> `pending`，`active` -> `pending`，`resolved` -> `resolved`，`archived` -> `discarded`。
   - Code 校验、Web 状态筛选和既有 Spark 实例同步迁移，避免状态语义分叉。
-related_workareas: []
 related_sparks:
-  - spark-0005
+- spark-0005
 related_adrs: []
 related_rules:
-  - specs/24-Spark-火花.md
-  - specs/05.02-工作模型字段内容与格式规范.md
-  - specs/08-Web信息同步实现规范.md
-archive_reason:
-deprecated_reason:
+- specs/24-Spark-火花.md
+- specs/05.02-工作模型字段内容与格式规范.md
+- specs/08-Web信息同步实现规范.md
+archive_reason: null
+deprecated_reason: null

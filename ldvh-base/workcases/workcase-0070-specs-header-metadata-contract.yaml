@@ -6,7 +6,6 @@ goal: |
 status: closed
 created: '2026-06-18T09:11:44'
 updated: '2026-06-19T07:40:26+08:00'
-workarea: workarea-0012
 priority: P1
 description: |
   将 LDVH specs Markdown 顶部 `> 字段：值` 头部元信息从格式建议升级为人、AI、Code、Web
@@ -36,8 +35,7 @@ orchestration:
     - code/spec_checks/index.py
     expected_output: 明确现有头部解析用于 doc_kind、引用、父子关系、索引和诊断，不把实现细节写成过度规则。
     status: done
-    result_summary: 已复核 index.py 当前消费：extract_header 解析 `> 字段：值`；派生 created_at、updated_at、positioning、scope、parent_doc、relation、basis、related_specs、index_scope，并用于
-      doc_kind、relations、required_header_fields 与诊断。0070 不修改 index.py，仅把现有消费边界写入规范。
+    result_summary: 已复核 index.py 当前消费：extract_header 解析 `> 字段：值`；派生 created_at、updated_at、positioning、scope、parent_doc、relation、basis、related_specs、index_scope，并用于 doc_kind、relations、required_header_fields 与诊断。0070 不修改 index.py，仅把现有消费边界写入规范。
     evidence_refs:
     - code/spec_checks/index.py
     - specs/03-文档基础规范.md
@@ -52,8 +50,7 @@ orchestration:
     - specs/03.01-规范文档规范.md
     expected_output: 头部字段语义、适用文档类型、必填/可选和消费边界写入正式规范。
     status: done
-    result_summary: 03 §5.1 已明确头部元信息是稳定机器接口，继续使用 `> 字段：值`，不得默认改 YAML frontmatter；03.01
-      已登记正式规范、子文档、studies、sources 的必填/可选字段规则。
+    result_summary: 03 §5.1 已明确头部元信息是稳定机器接口，继续使用 `> 字段：值`，不得默认改 YAML frontmatter；03.01 已登记正式规范、子文档、studies、sources 的必填/可选字段规则。
     evidence_refs:
     - specs/03-文档基础规范.md
     - specs/03.01-规范文档规范.md
@@ -67,8 +64,7 @@ orchestration:
     - specs/03.03-工作流程文档规范.md
     expected_output: 20-39 / 40-59 普通头部只承载文档身份和引用边界，集合事实只由文件名与 `ldvh_member` 承载。
     status: done
-    result_summary: 03.02 / 03.03 已明确普通头部只承载文档身份、定位、范围和引用；文件名与 `ldvh_member` 承载 spec_id、kind、collection_status、canonical_path
-      和各类 anchor，普通头部不得重复这些成员事实。
+    result_summary: 03.02 / 03.03 已明确普通头部只承载文档身份、定位、范围和引用；文件名与 `ldvh_member` 承载 spec_id、kind、collection_status、canonical_path 和各类 anchor，普通头部不得重复这些成员事实。
     evidence_refs:
     - specs/03.02-工作模型文档规范.md
     - specs/03.03-工作流程文档规范.md

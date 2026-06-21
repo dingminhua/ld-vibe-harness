@@ -20,7 +20,6 @@ ldvh_doc:
     - "specs/05.02-工作模型字段内容与格式规范.md"
     - "specs/05.03-工作模型字段注册与消费规范.md"
     - "specs/07-Code确定性执行实现规范.md"
-    - "specs/20-WorkArea-工作域.md"
     - "specs/21-WorkCase-工作项.md"
     - "specs/22-ADR-决策.md"
     - "specs/24-Spark-火花.md"
@@ -64,7 +63,7 @@ Pitfall 的目标是让 AI 和 Human 在后续执行中提前识别同类陷阱�
 
 1. 问题已经解决，且解决方式已验证；
 2. 问题具有反直觉性，AI 或 Human 后续容易重复误判；
-3. 问题跨 WorkArea、WorkCase、项目阶段或管辖项目具有复用价值；
+3. 问题跨 WorkCase、项目阶段或管辖项目具有复用价值；
 4. 问题暴露了事实源读取、字段契约、Code 使用、Web 派生视图、环境适配、适配措施或工作流程中的稳定陷阱；
 5. 同类问题已经出现多次，需要形成规避策略；
 6. 问题可作为后续规范、Rules / Instructions、Skill、Agent、Code、Web、ADR 或工作流程改进的输入。
@@ -157,11 +156,11 @@ Spark 中保留的发现、提醒、复盘线索或问题线索满足 Pitfall �
 
 Spark 的准入、状态和字段契约由 `specs/24-Spark-火花.md` 定义。
 
-### 4.3 Pitfall 与 WorkArea / WorkCase
+### 4.3 Pitfall 与 WorkCase
 
-工作域和工作项可以通过 `related_pitfalls` 引用执行过程中形成或需要参考的踩坑经验。Pitfall 可通过 `related_workareas` 记录关联工作域，通过 `related_workcases` 记录关联工作项。
+工作项可以通过 `related_pitfalls` 引用执行过程中形成或需要参考的踩坑经验。Pitfall 可通过 `related_workcases` 记录关联工作项。
 
-WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` 定义；WorkCase 的准入、状态和字段契约由 `specs/21-WorkCase-工作项.md` 定义。Pitfall 不替代 WorkArea 的长期范围，也不替代 WorkCase 的目标、成功标准、执行编排或关闭判断。
+WorkCase 的准入、状态和字段契约由 `specs/21-WorkCase-工作项.md` 定义。Pitfall 不替代 WorkCase 的目标、成功标准、执行编排或关闭判断。
 
 ### 4.4 Pitfall 与 ADR
 
@@ -230,7 +229,6 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `tags` | 英文标签列表 | list[string] | 否 | 默认为空列表；写入前应参考已有标签 | Reference | AI、Code、Web |
 | `source_objects` | 来源对象 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `source_sparks` | 来源火花 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workcases` | 关联工作项 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -286,7 +284,6 @@ tags:
   - fact-source
 source_objects: []
 source_sparks: []
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_docs:
@@ -322,7 +319,7 @@ notes:
 
 Pitfall 实例文件命名规则为 `pitfall-{NNNN}-short-title.yaml`。编号从 `0001` 起递增，固定 4 位；英文短标题使用小写短横线命名；文件存放位置为 `ldvh-base/pitfalls/`。
 
-文件名变化必须同步检查引用该 Pitfall 的 WorkArea、WorkCase、Spark、ADR、Web 派生视图、Git 提交记录和 Code 聚合结果。
+文件名变化必须同步检查引用该 Pitfall 的 WorkCase、Spark、ADR、Web 派生视图、Git 提交记录和 Code 聚合结果。
 
 ---
 ## 7. 事实源回写与证据留存

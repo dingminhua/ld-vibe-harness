@@ -27,7 +27,6 @@ const STATUS_FILTER_ORDER = [
 const statusOrderIndex = new Map(STATUS_FILTER_ORDER.map((status, index) => [status, index]));
 
 const FALLBACK_STATUSES_BY_TYPE: Record<string, string[]> = {
-  workarea: ['active', 'archived'],
   workcase: [...WORKCASE_STATUS_ORDER],
   adr: ['active', 'archived', 'deprecated'],
   pitfall: ['active', 'archived'],

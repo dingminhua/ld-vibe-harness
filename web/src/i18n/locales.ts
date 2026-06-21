@@ -3,7 +3,7 @@
 // 来源：specs/05-工作模型基础规范 §5 状态机
 // ============================================================
 export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
-  // WorkArea / WorkCase / ADR
+  // WorkCase / ADR
   draft: { zh: '草稿', en: 'Draft' },
   proposed: { zh: '已提议', en: 'Proposed' },
   accepted: { zh: '已采纳', en: 'Accepted' },
@@ -51,7 +51,6 @@ export function getObjectStatusLocale(type: string, status: string, locale: stri
 }
 
 export const TYPE_DESCRIPTION_LOCALES: Record<string, { zh: string; en: string }> = {
-  workarea: { zh: '长期工作范围', en: 'Long-lived work area' },
   workcase: { zh: '人机编排和关闭判断的工作项', en: 'WorkCase for orchestration and closure' },
   adr: { zh: '决策记录', en: 'Architecture Decision Record' },
   pitfall: { zh: '可复用踩坑', en: 'Reusable pitfalls' },
@@ -112,7 +111,6 @@ export const UI_LOCALES = {
     'logo.tagline': '让 Vibe Coding 更高效、更稳定、更可控',
 
     'nav.dashboard': '仪表盘',
-    'nav.workareas': '工作域',
     'nav.workcases': '工作项',
     'nav.adrs': '决策',
     'nav.pitfalls': '踩坑',
@@ -222,13 +220,6 @@ export const UI_LOCALES = {
     'objectDetail.dependencies': '前置依赖',
     'objectDetail.otherFields': '其他字段',
     'objectDetail.emptyValue': '空',
-    'objectDetail.workArea': '工作域',
-    'objectDetail.parentWorkArea': '所属工作域',
-    'objectDetail.workareaPlanOverview': '工作项态势',
-    'objectDetail.workareaDefinition': '属性',
-    'objectDetail.workareaGoal': '目标',
-    'objectDetail.workareaRelatedMaterials': '关联材料',
-    'objectDetail.workareaPlansLoading': '正在读取关联工作项',
     'objectDetail.planGoal': '工作项目标',
     'objectDetail.noPlanDescription': '未记录工作项描述',
     'objectDetail.planExecution': '执行队列',
@@ -339,7 +330,6 @@ export const UI_LOCALES = {
     'logo.tagline': 'Making Vibe Coding more efficient, stable, and controllable',
 
     'nav.dashboard': 'Dashboard',
-    'nav.workareas': 'Work Areas',
     'nav.workcases': 'Work Cases',
     'nav.adrs': 'ADRs',
     'nav.pitfalls': 'Pitfalls',
@@ -449,13 +439,6 @@ export const UI_LOCALES = {
     'objectDetail.dependencies': 'Dependencies',
     'objectDetail.otherFields': 'Other Fields',
     'objectDetail.emptyValue': 'Empty',
-    'objectDetail.workArea': 'Work Area',
-    'objectDetail.parentWorkArea': 'Parent Work Area',
-    'objectDetail.workareaPlanOverview': 'WorkCase Overview',
-    'objectDetail.workareaDefinition': 'Properties',
-    'objectDetail.workareaGoal': 'Goal',
-    'objectDetail.workareaRelatedMaterials': 'Related Materials',
-    'objectDetail.workareaPlansLoading': 'Loading related WorkCases',
     'objectDetail.planGoal': 'WorkCase Goal',
     'objectDetail.noPlanDescription': 'No WorkCase description recorded',
     'objectDetail.planExecution': 'Execution Queue',

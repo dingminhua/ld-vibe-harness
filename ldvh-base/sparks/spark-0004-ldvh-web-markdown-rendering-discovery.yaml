@@ -38,7 +38,6 @@ source: conversation
 source_detail: 用户在讨论 LDVH Web 呈现时提出：YAML 格式的大段文本内容是否应以 Markdown 语义存储并在 Web 上按 Markdown 呈现
 related_adrs: []
 related_studies: []
-related_workareas: []
 related_workcases: []
 related_docs: []
 priority: P2

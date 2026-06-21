@@ -11,7 +11,6 @@ source: conversation
 source_detail: 用户提出“添加一个火花，规则到底怎么建立合适”
 related_adrs: []
 related_studies: []
-related_workareas: []
 related_workcases: []
 related_docs:
 - specs/04.03-环境入口适配与部署规范.md

@@ -19,7 +19,7 @@
 状态筛选（ObjectStatusFilter）
 对象卡片自适应网格（ldvh-section-grid）
   通用卡片：ID + 复制对象路径图标 + 状态徽章 + 优先级字符徽标 + 标题 + 信号标签 + 更新时间
-  WorkArea 卡片：工作域自身信息 + 按状态分组的工作项入口
+  WorkCase 卡片：工作项自身信息 + 按状态分组的工作项入口
   WorkCase 卡片：工作项自身信息 + 执行态势条 + 关闭判断信号
 加载态 / 错误态 / 空态
 ```
@@ -34,7 +34,7 @@
 - 展示“各状态 + 全部 + 数量”，“全部”固定在最后。
 - 状态筛选使用全局 tab 样式：`ldvh-tab-list`、`ldvh-tab-button`、`ldvh-tab-button-active` 和 `ldvh-tab-button-idle`，与提交记录页加载范围、type、scope 筛选保持一致。
 - 数据返回前先渲染稳定的筛选占位，数字位置使用轻量加载动画，避免对象卡片先出现、顶部筛选后插入造成页面跳动。
-- 对有活跃态的主工作对象，URL 无 `status` 时默认视为对象当前主推进态；WorkCase 因当前事实源可能同时存在新状态和 legacy 状态，默认展示全部工作项，并在筛选条显式展示当前新状态机与 legacy 状态计数；WorkArea / ADR / Pitfall / Study 默认视为 `active`，Spark 默认视为 `pending`；用户显式选择全部时写入 `?status=all`。
+- 对有活跃态的主工作对象，URL 无 `status` 时默认视为对象当前主推进态；WorkCase 因当前事实源可能同时存在新状态和 legacy 状态，默认展示全部工作项，并在筛选条显式展示当前新状态机与 legacy 状态计数；WorkCase / ADR / Pitfall / Study 默认视为 `active`，Spark 默认视为 `pending`；用户显式选择全部时写入 `?status=all`。
 - 当前状态写入 URL query：例如 `?status=human_closure_confirming`；历史对象仍可使用 `?status=review_needed` 或 `?status=active` 筛选。
 - 点击对象进入详情页时保留当前 query，使详情页返回路径与列表筛选一致。
 
@@ -48,7 +48,7 @@
   - 右上：`CopyPathButton` + `StatusBadge`；
   - 中部：本地化标题，`ldvh-card-title`，放入轻量标题带，左侧使用状态语义短线突出，不通过放大字号突出；标题必须允许换行完整显示，不得用截断省略代替阅读；
   - 优先级字符徽标：WorkCase 和 Spark 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色、轻量边框和 tooltip 表达优先级，不作为错误或阻塞状态；
-  - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkCase 和 Spark，不得为 WorkArea、ADR、Pitfall 或 Study 杜撰 priority、importance、category 或 tags；Spark 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
+  - 可选信号：仅当对应对象的字段契约定义该字段时展示；`priority` 只适用于 WorkCase 和 Spark，不得为 WorkCase、ADR、Pitfall 或 Study 杜撰 priority、importance、category 或 tags；Spark 不维护 category；Pitfall 不维护 repeatability；importance 字段已由 priority 统一承载，不作为独立字段使用
   - 非活跃原因：当对象状态不是 `active` 且事实源存在 `archive_reason`、`deprecated_reason`、`discard_reason` 或 `closure_evidence` 时，卡片标题下展示完整原因说明；原因必须弱于对象 ID、状态、标题和更新时间，不得使用醒目的外框、左侧强线或 section 样式。说明标签单独一行，使用“弱圆点 + 原因标签”，标签文字与正文使用同一弱阅读颜色；正文另起一行，使用小号阅读文本但仍弱于标题，保留换行、项目符号和数字顺序，不得压缩为单行标签，也不得截断为两行。`archived`、`deprecated`、`discarded` 和 `closed` 卡片如缺少对应原因字段，应展示“原因缺失”异常提示，但仍应弱于标题主视觉。
   - Pitfall 状态筛选只认 `active / archived`，不得展示 `draft`、`superseded` 或“已替代”入口；Pitfall 卡片不展示 `tags`，也不展示“已解决/未解决”等冗余解决态；Pitfall 标签是事实源索引和详情页辅助信息，不作为列表卡片信号或二层筛选 tab。
   - 底部：只展示更新时间，使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`，样式为弱化元信息 `ldvh-meta-muted`；更新时间行使用 `mt-auto` 贴近卡片下边距，避免不同标题行数或中部内容高度导致时间上浮；对象列表以更新时间排序，创建时间留在详情页身份区展示。
@@ -67,30 +67,30 @@ ADR 是“已确认但尚未完全吸收到 specs/rules/code/web/skill/agent/wor
 - ADR 卡片标题必须允许换行完整显示，避免用截断标题替代决策识别。
 - ADR 卡片不展示 `related_rules` chip，也不展示 `superseded_by`、`proposed`、`accepted`、`rejected`、`superseded`、`alternatives` 或 `affects` 等旧生命周期和旧字段信息。
 
-### 3.4 WorkArea 卡片
+### 3.4 WorkCase 卡片
 
-WorkArea 是“工作项入口”卡片，帮助用户判断这个工作域下有哪些活跃/待关闭/已闭合工作项，并快速进入仍需推进的工作项。
+WorkCase 是“工作项入口”卡片，帮助用户判断这个工作项下有哪些活跃/待关闭/已闭合工作项，并快速进入仍需推进的工作项。
 
-- 保留通用卡片头部：ID、复制对象路径、状态、标题；外层卡片可点击进入 WorkArea 详情，标题右侧加箭头作为对象入口提示；工作项分组框本身不响应点击。
-- 底部更新时间右对齐，工作域 ID 保持在左上角。
+- 保留通用卡片头部：ID、复制对象路径、状态、标题；外层卡片可点击进入 WorkCase 详情，标题右侧加箭头作为对象入口提示；工作项分组框本身不响应点击。
+- 底部更新时间右对齐，工作项 ID 保持在左上角。
 - 按工作项状态分组展示：
   - 活跃工作项组使用 `objectList.activePlanCount`，文案为“活跃工作项”，绿色背景，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
   - 待确认工作项组使用 `objectList.humanConfirmPlanCount`，文案为“待确认工作项”，紫色背景，覆盖 `human_plan_confirming`、`human_closure_confirming` 和历史 `review_needed`，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
   - 已闭合工作项组使用 `objectList.closedPlanCount`，文案为“已闭合工作项”，默认折叠；标题行折叠时展示向下展开箭头，展开后展示向上收起箭头，点击后展开历史工作项行，使用 `ldvh-caption-strong`，标题前只用小圆点。
 - 活跃/待关闭/已闭合组内每一行是一个工作项入口，工作项名使用 `ldvh-body`；工作项如存在 `priority`，在工作项标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 WorkCase 对象图标和标题；工作项 ID 使用 `ldvh-meta-muted`，并展示工作项标题、工作项 ID、复制对象路径按钮和进入箭头，不再重复展示状态标签；右侧复制和进入箭头默认保持中性，复制按钮只有自身 hover 时切到该组背景对应的状态色。
 - 各工作项组内部的工作项入口按 `updated` 时间倒序排列，最近变化的工作项在组内最前。
-- 工作项行可展示一条 compact 执行态势条，复用 WorkCase 执行项状态顺序和颜色：`已完成 / 已跳过 / 已阻塞 / 执行中 / 待执行`；态势条占满工作项行宽度，态势段只用 hover / focus tooltip 显示数量，不在 WorkArea 卡片里展开执行项。
-- WorkArea 卡片内不得出现大于工作域标题 `ldvh-card-title` 的文字；工作项组和汇总都低于工作域标题层级。
+- 工作项行可展示一条 compact 执行态势条，复用 WorkCase 执行项状态顺序和颜色：`已完成 / 已跳过 / 已阻塞 / 执行中 / 待执行`；态势条占满工作项行宽度，态势段只用 hover / focus tooltip 显示数量，不在 WorkCase 卡片里展开执行项。
+- WorkCase 卡片内不得出现大于工作项标题 `ldvh-card-title` 的文字；工作项组和汇总都低于工作项标题层级。
 - 无工作项时展示 `objectList.noPlans`。
-- WorkArea 不展示工作项内执行项标题或关闭材料；执行编排留给 WorkCase 卡片与详情页。
-- 点击工作项行跳转 `/objects/workcase/{id}`，不触发外层工作域卡片跳转。
+- WorkCase 不展示工作项内执行项标题或关闭材料；执行编排留给 WorkCase 卡片与详情页。
+- 点击工作项行跳转 `/objects/workcase/{id}`，不触发外层工作项卡片跳转。
 
 ### 3.5 WorkCase 卡片
 
 WorkCase 是“工作项执行态势”卡片，帮助用户从工作项判断当前执行处在哪个阶段、是否存在前置等待，以及关闭判断材料是否齐备。
 
 - 保留通用卡片头部：ID、复制对象路径、状态、标题。
-- 不展示所属工作域行；归属信息留在详情页属性区，列表卡片优先保留工作项标题、关闭判断和执行态势。
+- 不展示所属工作项行；归属信息留在详情页属性区，列表卡片优先保留工作项标题、关闭判断和执行态势。
 - 执行态势条归入执行态势区域，不再作为独立卡片；区域标题下直接展示整体态势条，态势段 hover / focus 时显示状态和数量。
 - 执行项状态图例在列表顶部右侧展示，卡片执行项行只保留图标和颜色，不重复状态文字。
 - WorkCase 卡片必须展示当前 WorkCase 状态机：`subagents_plan_reviewing`、`human_plan_confirming`、`executing`、`result_self_checking`、`subagents_result_reviewing`、`human_closure_confirming`、`closed`。历史 `draft`、`active`、`review_needed` 只作为 legacy 兼容状态展示，不作为新建工作项语言。
@@ -152,14 +152,14 @@ Spark 是“待分流信息”卡片，列表态用于快速定位每条火花�
 1. 不恢复顶部对象类型标签页；类型导航已经统一到左侧侧栏。
 2. 不把列表改成表格；当前事实对象用卡片扫描。
 3. 不展示 raw ISO 时间，统一使用 `formatDateTime()`。
-4. 不在列表卡片里塞入长描述；WorkArea 和 WorkCase 只展示关系、状态、数量、进度和关闭材料信号。
+4. 不在列表卡片里塞入长描述；WorkCase 只展示关系、状态、数量、进度和关闭材料信号。
 5. 对象卡片必须保留复制对象路径图标，方便把事实源路径交给 AI。
 6. 执行项不作为一级导航 tab，也不拥有独立详情路由。
 7. 对象卡片外层可作为当前对象入口，提供统一 hover/focus 反馈；内部信息框必须显式阻止外层点击并使用默认光标。只有复制按钮、工作项行等明确通向另一处的内部控件可以单独响应。
 
 ## 6. API 数据结构
 
-对象列表 API 返回的字段分为事实源字段和只读派生摘要。`priority`、`importance` 等信号字段只应来自对象 YAML 自身且必须符合对应工作模型字段契约；WorkArea 和 WorkCase 列表项中的工作项与执行态势字段属于 Express API 根据 Git 文件事实源关系派生的只读摘要，不写回事实源，也不作为对象字段契约来源。
+对象列表 API 返回的字段分为事实源字段和只读派生摘要。`priority`、`importance` 等信号字段只应来自对象 YAML 自身且必须符合对应工作模型字段契约；WorkCase 列表项中的工作项与执行态势字段属于 Express API 根据 Git 文件事实源关系派生的只读摘要，不写回事实源，也不作为对象字段契约来源。
 
 ```typescript
 interface ObjectItem {
@@ -172,7 +172,7 @@ interface ObjectItem {
   path: string;
   updated: string;
   priority?: string;                  // WorkCase / Spark 信号字段，只读展示
-  workcases?: RelatedWorkCaseSummary[];       // WorkArea 列表项；由 WorkCase.workarea 派生
+  workcases?: RelatedWorkCaseSummary[];       // WorkCase 列表项；由 WorkCase.workcase 派生
   workcaseTotal?: number;
   workcaseClosed?: number;
   workcaseReviewNeeded?: number;
@@ -218,4 +218,4 @@ interface RelatedObjectSummary {
 }
 ```
 
-这些字段只由 WorkArea 和 WorkCase 列表接口返回，属于 Express API 根据事实对象关系派生的只读摘要；事实源 YAML 不因列表渲染发生写入。执行项字段名在 WorkCase 数据结构稳定前只作为概念占位，不构成最终 API 契约。
+这些字段只由 WorkCase 列表接口返回，属于 Express API 根据事实对象关系派生的只读摘要；事实源 YAML 不因列表渲染发生写入。执行项字段名在 WorkCase 数据结构稳定前只作为概念占位，不构成最终 API 契约。

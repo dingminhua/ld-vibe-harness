@@ -6,14 +6,12 @@ goal: |
 status: closed
 created: '2026-06-11T00:00:00'
 updated: '2026-06-11T00:00:00'
-workarea: workarea-0012
 priority: P2
-description: 由历史 Task task-0067 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
-  为准，避免复制多个权威事实。
+description: 由历史 Task task-0067 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
 success_criteria: '- [x] 关联任务 task-0067 满足其 acceptance、verification 和 closure_evidence。'
 source: |-
   Legacy TaskPlan migration from taskplan-0067; source path: ldvh-base/taskplans/taskplan-0067-cross-env-skill-hook-carriage.yaml
-  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkCase backlinks only, preserve legacy TaskPlan/Task facts.
 orchestration:
   mode: single
   execution_items:

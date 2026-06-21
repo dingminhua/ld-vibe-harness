@@ -53,39 +53,38 @@ description: |
   13. `rules/LDVH-MAINTAINER-ENTRY.md` 与 `rules/LDVH-WORKSPACE-ENTRY.md`：可能需要同步场景路由，使 AI 在提交、审核和部署检查时能定位薄流程入口、来源规范和能力资产组合。
   14. 该影响面属于 Human Gate 级架构变更，后续宜由独立 WorkCase 承接，例如“将工作流程重构为薄入口与部署接口契约”，不宜零散修改。
 evolution:
-  - at: '2026-06-20T09:56:56+08:00'
-    summary: 用户指出 40/41 这类工作流程本身也是基于现有 specs 生成的，追问是否可以直接落地为 LDVH 能力资产而不保留厚重 md；当前记录为派生型审核流程与能力资产边界待收敛问题。
-  - at: '2026-06-21T04:57:27+08:00'
-    summary: 进一步讨论后形成新判断：工作流程不应复制来源规范规则，而应作为规范保障、能力资产编排和环境部署适配之间的极薄接口契约；Git 提交样例显示 `specs/10` 可作为规则事实源，提交工作流程接管执行落地，Skill/Code/Hook/Web 分别承担执行转换、确定性校验、触发和展示。该模型可推广到 40/41，将其从厚审核流程主文件降为薄入口，同时保留行动发现、接管范围、资产协作、回写、Gate 和部署检查职责。
-  - at: '2026-06-21T05:12:21+08:00'
-    summary: 补充初步影响面清单：该方向至少会牵动 06、03.03、04.02、04.03、10、40/41、可能的 42/43、01、07、08、09、Git 提交相关 Skill/Code/Hook 资产和 Rules 入口；后续应作为 Human Gate 级架构变更由独立 WorkCase 承接。
+- at: '2026-06-20T09:56:56+08:00'
+  summary: 用户指出 40/41 这类工作流程本身也是基于现有 specs 生成的，追问是否可以直接落地为 LDVH 能力资产而不保留厚重 md；当前记录为派生型审核流程与能力资产边界待收敛问题。
+- at: '2026-06-21T04:57:27+08:00'
+  summary: 进一步讨论后形成新判断：工作流程不应复制来源规范规则，而应作为规范保障、能力资产编排和环境部署适配之间的极薄接口契约；Git 提交样例显示 `specs/10` 可作为规则事实源，提交工作流程接管执行落地，Skill/Code/Hook/Web 分别承担执行转换、确定性校验、触发和展示。该模型可推广到 40/41，将其从厚审核流程主文件降为薄入口，同时保留行动发现、接管范围、资产协作、回写、Gate 和部署检查职责。
+- at: '2026-06-21T05:12:21+08:00'
+  summary: 补充初步影响面清单：该方向至少会牵动 06、03.03、04.02、04.03、10、40/41、可能的 42/43、01、07、08、09、Git 提交相关 Skill/Code/Hook 资产和 Rules 入口；后续应作为 Human Gate 级架构变更由独立 WorkCase 承接。
 source: conversation
 source_detail: 用户围绕 40/41 审核流程是否应作为独立 specs 主文件存在，还是应作为由既有 specs 派生的 LDVH 能力资产落地进行讨论，要求新建 Spark 记录以便后续思考。
 priority: P1
-resolved_to: ""
-resolved_at: ""
-discard_reason: ""
-related_workareas: []
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
 related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:
-  - specs/01-目录说明.md
-  - specs/03.02-工作模型文档规范.md
-  - specs/03.03-工作流程文档规范.md
-  - specs/04.02-LDVH能力资产与保障机制规范.md
-  - specs/04.03-环境入口适配与部署规范.md
-  - specs/05-工作模型基础规范.md
-  - specs/05.01-工作模型字段定义与语义规范.md
-  - specs/05.02-工作模型字段内容与格式规范.md
-  - specs/05.03-工作模型字段注册与消费规范.md
-  - specs/06-工作流程基础规范.md
-  - specs/07-Code确定性执行实现规范.md
-  - specs/08-Web信息同步实现规范.md
-  - specs/09-事实源边界与承载规范.md
-  - specs/10-Git提交规范.md
-  - specs/24-Spark-火花.md
-  - specs/40-workflow-design-audit-工作流程设计审核.md
-  - specs/41-work-model-audit-工作模型审核.md
-  - specs/42-specs-audit-规范审核.md
-  - specs/43-assurance-readiness-audit-保障准备度审核.md
+- specs/01-目录说明.md
+- specs/03.02-工作模型文档规范.md
+- specs/03.03-工作流程文档规范.md
+- specs/04.02-LDVH能力资产与保障机制规范.md
+- specs/04.03-环境入口适配与部署规范.md
+- specs/05-工作模型基础规范.md
+- specs/05.01-工作模型字段定义与语义规范.md
+- specs/05.02-工作模型字段内容与格式规范.md
+- specs/05.03-工作模型字段注册与消费规范.md
+- specs/06-工作流程基础规范.md
+- specs/07-Code确定性执行实现规范.md
+- specs/08-Web信息同步实现规范.md
+- specs/09-事实源边界与承载规范.md
+- specs/10-Git提交规范.md
+- specs/24-Spark-火花.md
+- specs/40-workflow-design-audit-工作流程设计审核.md
+- specs/41-work-model-audit-工作模型审核.md
+- specs/42-specs-audit-规范审核.md
+- specs/43-assurance-readiness-audit-保障准备度审核.md

@@ -666,11 +666,11 @@ def test_index_reports_ldvh_doc_path_and_kind_mismatch(tmp_path):
 
 ```yaml
 ldvh_doc:
-  doc_id: "20"
+  doc_id: "99"
   doc_kind: formal_spec
   title: WorkCase / 工作项
   status: active
-  canonical_path: specs/20-WorkArea-工作域.md
+  canonical_path: specs/99-Wrong-路径.md
   created: "2026-06-15"
   updated: "2026-06-15"
   parent_doc: ""
@@ -727,7 +727,7 @@ def test_index_reports_ldvh_member_spec_id_mismatch(tmp_path):
 
 ```yaml
 ldvh_member:
-  spec_id: "20"
+  spec_id: "99"
   kind: work_model
   name_en: WorkCase
   name_zh: 工作项
@@ -817,7 +817,7 @@ ldvh_member:
 
 def test_index_reports_duplicate_ldvh_member_spec_id(tmp_path):
     specs = tmp_path / "specs"
-    for filename in ("20-WorkArea-工作域.md", "21-WorkCase-工作项.md"):
+    for filename in ("21-WorkCase-工作项.md", "22-ADR-决策.md"):
         write_md(
             specs / filename,
             f"""
@@ -867,13 +867,13 @@ def test_index_accepts_work_model_directory_matching_active_members(tmp_path):
 
 | 当前编号 | 工作模型 | 事实实例承载 |
 |---|---|---|
-| 20 | WorkArea / 工作域 | `ldvh-base/workareas/` |
 | 21 | WorkCase / 工作项 | `ldvh-base/workcases/` |
+| 22 | ADR / 决策 | `ldvh-base/adrs/` |
 """,
     )
     for filename, spec_id, name_en, name_zh, root in (
-        ("20-WorkArea-工作域.md", "20", "WorkArea", "工作域", "ldvh-base/workareas/"),
         ("21-WorkCase-工作项.md", "21", "WorkCase", "工作项", "ldvh-base/workcases/"),
+        ("22-ADR-决策.md", "22", "ADR", "决策", "ldvh-base/adrs/"),
     ):
         write_md(
             specs / filename,

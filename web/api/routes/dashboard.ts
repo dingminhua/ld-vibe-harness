@@ -12,7 +12,6 @@ const router = Router()
 
 /** 判断状态是否为"可推进"（非终态） */
 function isActionableStatus(type: string, status: string): boolean {
-  if (type === 'workarea' && status === 'active') return false
   const terminalStatuses = ['closed', 'accepted', 'rejected', 'superseded', 'deprecated', 'archived', 'resolved', 'discarded']
   return !terminalStatuses.includes(status)
 }

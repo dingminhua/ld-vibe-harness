@@ -46,7 +46,7 @@ verification: |
   1. 使用 Playwright 连续帧截图脚本（direct-nav.cjs）对比修复前后帧序列：
      - 修复前：direct-01/direct-02 帧可见明显圆形轮廓
      - 修复后：同位置帧不再出现圆形轮廓
-  2. 手动验证：直接访问 /objects/intent/workarea-0001，页面加载无异常动画
+  2. 手动验证：直接访问 /objects/intent/workcase-0001，页面加载无异常动画
   3. 功能回归：ReadingPanel 面板开关的 margin 过渡仍然正常工作
   原文标题：验证结果
 
@@ -70,7 +70,6 @@ applicability: |
   所有使用 Tailwind CSS 的前端项目，特别是 React + Vite + Tailwind 技术栈。
   任何涉及页面切换、路由变化或动态渲染容器的场景。
 source_sparks: []
-related_workareas: []
 related_adrs: []
 related_docs: []
 related_rules:

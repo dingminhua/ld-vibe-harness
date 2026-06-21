@@ -6,7 +6,6 @@ goal: |
 status: review_needed
 created: '2026-06-19T11:16:20+08:00'
 updated: '2026-06-19T11:42:00+08:00'
-workarea: workarea-0012
 priority: P1
 description: |
   本计划负责把 LDVH 当前文件事实源收敛为现行规则态，清除已经被吸收、废弃、迁移完成或会误导 AI 的历史残留。
@@ -141,7 +140,6 @@ orchestration:
     mode: single
     input_refs:
     - ldvh-base/
-    - specs/20-WorkArea-工作域.md
     - specs/21-WorkCase-工作项.md
     - specs/24-Spark-火花.md
     - specs/23-Pitfall-踩坑经验.md

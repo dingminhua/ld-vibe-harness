@@ -48,7 +48,6 @@ avoidance: |
   - active-prep：文件应包含正在准备的机制实践内容
 applicability: 所有接入 LDVH 的项目，所有事实模型子文档
 source_sparks: []
-related_workareas: []
 related_adrs: []
 related_docs: []
 related_rules:
@@ -57,9 +56,9 @@ tags:
 - subdocument
 - consistency
 - specs
-notes: '## 影响程度迁移说明
+notes: |-
+  ## 影响程度迁移说明
 
-
-  历史 severity 字段值为 `high`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。'
+  历史 severity 字段值为 `high`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。
 archive_reason: |
   该经验已由 specs/03.01-规范文档规范.md 吸收为规范文档状态与内容一致性要求，不再作为常规 active Pitfall 参考。

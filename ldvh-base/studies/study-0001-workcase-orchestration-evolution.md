@@ -12,22 +12,21 @@ conclusion: |
   WorkCase 是面向 Human 与 AI 对齐的一次工作事实契约；ExecutionItem 是 WorkCase 内部的最小恢复与编排节点，不是工作对象；Role Contract 应承接专业 AI 角色的输入、权限、输出和交还边界，但其规范归属仍需继续判断。后续应优先逐段核对 specs/21，再回看 05、05.01、06 和 40-43，最后同步 Code / Web 中旧 TaskPlan、Task、SubTask 实现。
 urls: []
 related_sparks:
-  - spark-0005
-  - spark-0006
-related_workareas: []
+- spark-0005
+- spark-0006
 related_workcases: []
 related_adrs:
-  - adr-0010
+- adr-0010
 related_pitfalls: []
 related_docs:
-  - specs/00-LD-Vibe-Harness理念与纲要.md
-  - specs/05-工作模型基础规范.md
-  - specs/05.02-工作模型字段内容与格式规范.md
-  - specs/06-工作流程基础规范.md
-  - specs/21-WorkCase-工作项.md
-  - specs/24-Spark-火花.md
-  - specs/25-Study-研究报告.md
-archive_reason:
+- specs/00-LD-Vibe-Harness理念与纲要.md
+- specs/05-工作模型基础规范.md
+- specs/05.02-工作模型字段内容与格式规范.md
+- specs/06-工作流程基础规范.md
+- specs/21-WorkCase-工作项.md
+- specs/24-Spark-火花.md
+- specs/25-Study-研究报告.md
+archive_reason: null
 ---
 
 # WorkCase 与执行编排模型演变研究
@@ -162,7 +161,7 @@ archive_reason:
 
 1. 00 已从“对象化任务管理”转向“面向 AI 协作的事实源治理”。
 2. 02 已清理旧 TaskPlan / Task / SubTask 术语，改用 WorkCase 与 ExecutionItem。
-3. 05 已明确当前 active 工作模型集合以 WorkArea、WorkCase、ADR、Pitfall、Spark、Study 等承载长期工作事实，Git 提交记录用于追溯事实源修改，ExecutionItem 不进入 20-39 集合。
+3. 05 已明确当前 active 工作模型集合以 WorkCase、ADR、Pitfall、Spark、Study 等承载长期工作事实，Git 提交记录用于追溯事实源修改，ExecutionItem 不进入 20-39 集合。
 4. 05.01 已明确公共字段边界，补充 `verification_evidence`、`closure_evidence`，并改用 `related_workcases`。
 5. 21 已改为 WorkCase 规范，定义 WorkCase 状态机、`orchestration.execution_items`、`orchestration.review`、验证证据和关闭证据。
 6. 22 / 23 已从 active 模型中移除或清理概念行混淆。
@@ -178,7 +177,7 @@ WorkCase 是 Human 与 AI 围绕一次目标达成的工作事实契约。它承
 
 - 目标和背景；
 - 范围和约束；
-- 所属 WorkArea；
+- 所属 WorkCase；
 - 成功标准；
 - 执行编排摘要；
 - 验证证据；

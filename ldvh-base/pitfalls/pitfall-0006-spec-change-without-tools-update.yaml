@@ -73,7 +73,6 @@ avoidance: |
 applicability: |
   所有接入 LDVH 的管辖项目，所有涉及 specs 变更的 AI 操作。
 source_sparks: []
-related_workareas: []
 related_adrs:
 - adr-0005
 related_docs: []

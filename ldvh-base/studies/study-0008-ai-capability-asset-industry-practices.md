@@ -11,91 +11,89 @@ user_intent: 用户指出 workcase-0080 中“最佳实践”目前只是 LDVH �
 conclusion: |
   行业实践并不支持把 Rules、Skill、Agent、Hook 写成厚重的第二规范。更稳的治理模型是：Rules / AGENTS / CLAUDE.md 等长期入口保持薄而可恢复；Skill 承接按需加载的可复用流程；Agent / subagent 承接隔离上下文、受限工具和主控回收；Hook 只承接生命周期触发、确定性快速反馈和证据采集；CI、server-side gate、guardrails、HITL、tracing 和 evals 作为运行期保障和质量证据，不反向成为规范事实源。LDVH 04.02 应吸收这些稳定规则，外部 URL 只保留在 Study 中作为调研依据。
 urls:
-  - ref: https://code.claude.com/docs/en/best-practices
-    title: Claude Code Best Practices
-    summary: 用于对照上下文管理、先探索再计划再实现、可验证检查、hooks、skills、subagents 和权限配置等实践。
-  - ref: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
-    title: Skill authoring best practices
-    summary: 用于对照 Skill 应保持简洁、按需加载、描述清晰、渐进披露、真实场景测试和可验证中间产物。
-  - ref: https://code.claude.com/docs/en/skills
-    title: Claude Code Skills
-    summary: 用于说明 Skills 适合承接反复粘贴的流程、清单或多步程序，并通过元信息和按需加载降低上下文负担。
-  - ref: https://code.claude.com/docs/en/sub-agents
-    title: Claude Code Subagents
-    summary: 用于说明 subagents 的上下文隔离、工具权限限制、描述驱动委派、并行研究和主对话回收边界。
-  - ref: https://code.claude.com/docs/en/hooks-guide
-    title: Claude Code Hooks Guide
-    summary: 用于说明 hooks 适合确定性自动化和项目规则执行，判断型 hooks 应区别于命令型确定性检查。
-  - ref: https://code.claude.com/docs/en/hooks
-    title: Claude Code Hooks Reference
-    summary: 用于说明 agent hooks 仍带实验性，生产工作流应优先命令 hooks，并区分阻塞与异步执行。
-  - ref: https://developers.openai.com/api/docs/guides/agents
-    title: OpenAI Agents SDK Guide
-    summary: 用于对照应用拥有编排、工具执行、审批、状态和可观测性时的 agent SDK 分层。
-  - ref: https://openai.github.io/openai-agents-python/guardrails/
-    title: OpenAI Agents SDK Guardrails
-    summary: 用于对照输入、输出和工具 guardrails 的触发边界、tripwire、阻塞执行和副作用控制。
-  - ref: https://openai.github.io/openai-agents-python/human_in_the_loop/
-    title: OpenAI Agents SDK Human-in-the-loop
-    summary: 用于对照敏感工具调用的暂停、审批、拒绝、状态序列化和恢复机制。
-  - ref: https://modelcontextprotocol.io/specification/2025-06-18/server/tools
-    title: MCP Tools Specification
-    summary: 用于对照工具暴露应具备元信息、schema、变更通知、安全提示和 Human 可拒绝调用的交互边界。
-  - ref: https://git-scm.com/docs/githooks
-    title: Git githooks Documentation
-    summary: 用于对照 Git hook 的触发时机、参数、退出码、可绕过性和 commit-msg hook 的标准行为。
-  - ref: https://developers.openai.com/codex/guides/agents-md
-    title: Codex AGENTS.md Guide
-    summary: 用于说明 Codex 持久项目指导的加载顺序、薄入口、嵌套覆盖和验证方式。
-  - ref: https://developers.openai.com/codex/skills
-    title: Codex Agent Skills
-    summary: 用于说明 Codex Skill 的渐进披露、触发描述、目录层级和插件分发边界。
-  - ref: https://developers.openai.com/codex/subagents
-    title: Codex Subagents
-    summary: 用于说明 Codex subagents 的显式触发、上下文隔离、权限继承、并行成本和 custom agent schema。
-  - ref: https://developers.openai.com/codex/hooks
-    title: Codex Hooks
-    summary: 用于说明 Codex lifecycle hooks 的事件、matcher、并发、信任、timeout 和压缩恢复辅助边界。
-  - ref: https://developers.openai.com/codex/rules
-    title: Codex Rules
-    summary: 用于消除 LDVH Rules 与 Codex `.rules` 命令执行策略之间的同名歧义。
-  - ref: https://pre-commit.com/
-    title: pre-commit
-    summary: 用于对照多语言 Git hook 管理、配置版本化、stage 选择、精细跳过和 CI 复跑实践。
-  - ref: https://typicode.github.io/husky/
-    title: Husky
-    summary: 用于对照 Node 项目 Git hook 管理、`core.hooksPath`、安装脚本、POSIX shell、禁用和 opt-in/opt-out 边界。
-  - ref: https://github.com/lint-staged/lint-staged
-    title: lint-staged
-    summary: 用于对照 staged-file 门禁、轻量格式化 / lint、Git 操作备份和不适合全项目检查的边界。
-  - ref: https://commitlint.js.org/guides/local-setup.html
-    title: commitlint local setup
-    summary: 用于对照本地 commit-msg 校验的配置和可绕过边界。
-  - ref: https://commitlint.js.org/guides/ci-setup.html
-    title: commitlint CI setup
-    summary: 用于对照提交消息在 CI 中检查 commit range 的兜底实践。
-  - ref: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches
-    title: GitHub protected branches
-    summary: 用于对照 required status checks、required reviews 和合并门禁边界。
-  - ref: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/about-status-checks
-    title: GitHub status checks
-    summary: 用于对照 CI/status check 如何成为受保护分支的合并条件。
-  - ref: https://docs.gitlab.com/administration/server_hooks/
-    title: GitLab server hooks
-    summary: 用于对照 server-side hook 作为 push 门禁的确定性和部署边界。
+- ref: https://code.claude.com/docs/en/best-practices
+  title: Claude Code Best Practices
+  summary: 用于对照上下文管理、先探索再计划再实现、可验证检查、hooks、skills、subagents 和权限配置等实践。
+- ref: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
+  title: Skill authoring best practices
+  summary: 用于对照 Skill 应保持简洁、按需加载、描述清晰、渐进披露、真实场景测试和可验证中间产物。
+- ref: https://code.claude.com/docs/en/skills
+  title: Claude Code Skills
+  summary: 用于说明 Skills 适合承接反复粘贴的流程、清单或多步程序，并通过元信息和按需加载降低上下文负担。
+- ref: https://code.claude.com/docs/en/sub-agents
+  title: Claude Code Subagents
+  summary: 用于说明 subagents 的上下文隔离、工具权限限制、描述驱动委派、并行研究和主对话回收边界。
+- ref: https://code.claude.com/docs/en/hooks-guide
+  title: Claude Code Hooks Guide
+  summary: 用于说明 hooks 适合确定性自动化和项目规则执行，判断型 hooks 应区别于命令型确定性检查。
+- ref: https://code.claude.com/docs/en/hooks
+  title: Claude Code Hooks Reference
+  summary: 用于说明 agent hooks 仍带实验性，生产工作流应优先命令 hooks，并区分阻塞与异步执行。
+- ref: https://developers.openai.com/api/docs/guides/agents
+  title: OpenAI Agents SDK Guide
+  summary: 用于对照应用拥有编排、工具执行、审批、状态和可观测性时的 agent SDK 分层。
+- ref: https://openai.github.io/openai-agents-python/guardrails/
+  title: OpenAI Agents SDK Guardrails
+  summary: 用于对照输入、输出和工具 guardrails 的触发边界、tripwire、阻塞执行和副作用控制。
+- ref: https://openai.github.io/openai-agents-python/human_in_the_loop/
+  title: OpenAI Agents SDK Human-in-the-loop
+  summary: 用于对照敏感工具调用的暂停、审批、拒绝、状态序列化和恢复机制。
+- ref: https://modelcontextprotocol.io/specification/2025-06-18/server/tools
+  title: MCP Tools Specification
+  summary: 用于对照工具暴露应具备元信息、schema、变更通知、安全提示和 Human 可拒绝调用的交互边界。
+- ref: https://git-scm.com/docs/githooks
+  title: Git githooks Documentation
+  summary: 用于对照 Git hook 的触发时机、参数、退出码、可绕过性和 commit-msg hook 的标准行为。
+- ref: https://developers.openai.com/codex/guides/agents-md
+  title: Codex AGENTS.md Guide
+  summary: 用于说明 Codex 持久项目指导的加载顺序、薄入口、嵌套覆盖和验证方式。
+- ref: https://developers.openai.com/codex/skills
+  title: Codex Agent Skills
+  summary: 用于说明 Codex Skill 的渐进披露、触发描述、目录层级和插件分发边界。
+- ref: https://developers.openai.com/codex/subagents
+  title: Codex Subagents
+  summary: 用于说明 Codex subagents 的显式触发、上下文隔离、权限继承、并行成本和 custom agent schema。
+- ref: https://developers.openai.com/codex/hooks
+  title: Codex Hooks
+  summary: 用于说明 Codex lifecycle hooks 的事件、matcher、并发、信任、timeout 和压缩恢复辅助边界。
+- ref: https://developers.openai.com/codex/rules
+  title: Codex Rules
+  summary: 用于消除 LDVH Rules 与 Codex `.rules` 命令执行策略之间的同名歧义。
+- ref: https://pre-commit.com/
+  title: pre-commit
+  summary: 用于对照多语言 Git hook 管理、配置版本化、stage 选择、精细跳过和 CI 复跑实践。
+- ref: https://typicode.github.io/husky/
+  title: Husky
+  summary: 用于对照 Node 项目 Git hook 管理、`core.hooksPath`、安装脚本、POSIX shell、禁用和 opt-in/opt-out 边界。
+- ref: https://github.com/lint-staged/lint-staged
+  title: lint-staged
+  summary: 用于对照 staged-file 门禁、轻量格式化 / lint、Git 操作备份和不适合全项目检查的边界。
+- ref: https://commitlint.js.org/guides/local-setup.html
+  title: commitlint local setup
+  summary: 用于对照本地 commit-msg 校验的配置和可绕过边界。
+- ref: https://commitlint.js.org/guides/ci-setup.html
+  title: commitlint CI setup
+  summary: 用于对照提交消息在 CI 中检查 commit range 的兜底实践。
+- ref: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches
+  title: GitHub protected branches
+  summary: 用于对照 required status checks、required reviews 和合并门禁边界。
+- ref: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/about-status-checks
+  title: GitHub status checks
+  summary: 用于对照 CI/status check 如何成为受保护分支的合并条件。
+- ref: https://docs.gitlab.com/administration/server_hooks/
+  title: GitLab server hooks
+  summary: 用于对照 server-side hook 作为 push 门禁的确定性和部署边界。
 related_sparks:
-  - spark-0017
-related_workareas:
-  - workarea-0012
+- spark-0017
 related_workcases:
-  - workcase-0080
-  - workcase-0074
+- workcase-0080
+- workcase-0074
 related_adrs: []
 related_pitfalls: []
 related_docs:
-  - specs/04.02-LDVH能力资产与保障机制规范.md
-  - specs/10-Git提交规范.md
-archive_reason:
+- specs/04.02-LDVH能力资产与保障机制规范.md
+- specs/10-Git提交规范.md
+archive_reason: null
 ---
 
 # AI 能力资产行业最佳实践调研

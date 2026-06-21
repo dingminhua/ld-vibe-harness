@@ -9,11 +9,6 @@ import { getDefaultListStatus } from '../../../web/src/utils/listStatus.ts'
 import { WORKCASE_DEFAULT_LIST_STATUS, WORKCASE_STATUS_ORDER } from '../../../web/src/utils/workcaseStatus.ts'
 
 async function main() {
-  const workareas = await listObjects('workarea')
-  assert.equal(workareas.ok, true)
-  assert.ok(Array.isArray(workareas.data.items))
-  assert.ok(workareas.data.items.length > 0)
-
   const workcases = await listObjects('workcase')
   assert.equal(workcases.ok, true)
   assert.ok(Array.isArray(workcases.data.items))

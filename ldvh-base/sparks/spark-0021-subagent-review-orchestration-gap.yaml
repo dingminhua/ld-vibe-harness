@@ -37,20 +37,19 @@ source: conversation
 priority: P1
 source_detail: 用户在处理 workcase-0083 主线收口时追问“为什么没有子agent复查工作的流程？”，随后要求“这个分支先写一个spark，然后做好主线工作”。
 evolution:
-  - at: '2026-06-21T10:02:20+08:00'
-    summary: 记录子 Agent 复查编排流程缺口：当前 WorkCase 有状态机和字段契约，但缺少独立 workflow 规定复查如何发起、等待、回收、处理和关闭。
+- at: '2026-06-21T10:02:20+08:00'
+  summary: 记录子 Agent 复查编排流程缺口：当前 WorkCase 有状态机和字段契约，但缺少独立 workflow 规定复查如何发起、等待、回收、处理和关闭。
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''
-related_workareas: []
 related_workcases:
-  - workcase-0083
+- workcase-0083
 related_adrs: []
 related_studies: []
 related_docs:
-  - specs/06-工作流程基础规范.md
-  - specs/21-WorkCase-工作项.md
-  - specs/40-workflow-design-audit-工作流程设计审核.md
-  - specs/41-work-model-audit-工作模型审核.md
-  - specs/42-specs-audit-规范审核.md
-  - specs/43-assurance-readiness-audit-保障准备度审核.md
+- specs/06-工作流程基础规范.md
+- specs/21-WorkCase-工作项.md
+- specs/40-workflow-design-audit-工作流程设计审核.md
+- specs/41-work-model-audit-工作模型审核.md
+- specs/42-specs-audit-规范审核.md
+- specs/43-assurance-readiness-audit-保障准备度审核.md

@@ -18,32 +18,31 @@ conclusion: |
   第 3 阶段目标应是：结合图增强检索与审核建议，形成图谱驱动的可解释 AI 辅助能力。
   明确边界：图节点、边、元数据和校验结果只能按 CLI/API 请求从当前 code、specs、ldvh-base 与 Git 工作区实时生成，不得落盘为派生事实源，不得使用长期缓存或外部图数据库作为事实缓存。
 urls:
-  - ref: https://neo4j.com/blog/genai/introducing-document-intelligence-from-documents-to-a-knowledge-graph-right-inside-aura/
-    title: Neo4j Document Intelligence（从文档构建知识图谱）
-    summary: 指出文档数据占比高且向量检索难以表达关系，支撑了 LDVH 优先用内部对象事实源做图谱化的思路。
-  - ref: https://aws.amazon.com/about-aws/whats-new/2025/08/amazon-neptune-supports-byokg-rag-toolkit/
-    title: Neptune BYOKG for GraphRAG
-    summary: 提供“已建图谱可直接接入 GraphRAG”模式，提示 LDVH 可后续采用图 + 向量混合检索。
-  - ref: https://neo4j.com/docs/cypher-manual/current/schema/
-    title: Neo4j Schema
-    summary: 强调在无模式可演进前提下，对稳定部分使用图类型/约束，支持“核心关系固定 + 关系演进扩展”。
-  - ref: https://neo4j.com/blog/knowledge-graph/how-to-build-knowledge-graph/
-    title: How to Build a Knowledge Graph in 7 Steps
-    summary: 提供“建模-导入-测试-维护”闭环，支持 LDVH 将图谱建设按阶段化执行并验收。
+- ref: https://neo4j.com/blog/genai/introducing-document-intelligence-from-documents-to-a-knowledge-graph-right-inside-aura/
+  title: Neo4j Document Intelligence（从文档构建知识图谱）
+  summary: 指出文档数据占比高且向量检索难以表达关系，支撑了 LDVH 优先用内部对象事实源做图谱化的思路。
+- ref: https://aws.amazon.com/about-aws/whats-new/2025/08/amazon-neptune-supports-byokg-rag-toolkit/
+  title: Neptune BYOKG for GraphRAG
+  summary: 提供“已建图谱可直接接入 GraphRAG”模式，提示 LDVH 可后续采用图 + 向量混合检索。
+- ref: https://neo4j.com/docs/cypher-manual/current/schema/
+  title: Neo4j Schema
+  summary: 强调在无模式可演进前提下，对稳定部分使用图类型/约束，支持“核心关系固定 + 关系演进扩展”。
+- ref: https://neo4j.com/blog/knowledge-graph/how-to-build-knowledge-graph/
+  title: How to Build a Knowledge Graph in 7 Steps
+  summary: 提供“建模-导入-测试-维护”闭环，支持 LDVH 将图谱建设按阶段化执行并验收。
 related_sparks:
-  - spark-0016
-related_workareas: []
+- spark-0016
 related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
-  - specs/05.01-工作模型字段定义与语义规范.md
-  - specs/05.02-工作模型字段内容与格式规范.md
-  - specs/05.03-工作模型字段注册与消费规范.md
-  - specs/21-WorkCase-工作项.md
-  - specs/24-Spark-火花.md
-  - specs/42-specs-audit-规范审核.md
-archive_reason:
+- specs/05.01-工作模型字段定义与语义规范.md
+- specs/05.02-工作模型字段内容与格式规范.md
+- specs/05.03-工作模型字段注册与消费规范.md
+- specs/21-WorkCase-工作项.md
+- specs/24-Spark-火花.md
+- specs/42-specs-audit-规范审核.md
+archive_reason: null
 ---
 
 # LDVH 知识图谱建设的最新实践与落地评估
@@ -59,7 +58,7 @@ archive_reason:
 本研究基于 2025-2026 的公开实践文章与 LDVH 当前事实源资产；时间点为 2026-06-20。
 
 输入边界：
-- 只覆盖 LDVH 项目对象层（WorkCase/Spark/ADR/Pitfall/Study/WorkArea）之间关系治理；
+- 只覆盖 LDVH 项目对象层（WorkCase/Spark/ADR/Pitfall/Study/WorkCase）之间关系治理；
 - 不直接评估外部图数据库选型的托管成本、运维资源或组织预算；
 - 不替代 `docs/studies` 中临时资料，仅吸收可复用、可引用的结论。
 - 图谱输出只能作为运行时投影和当次诊断结果；不得写入 `entities.json`、`edges.json`、`graph-metadata.json` 等派生文件，不得维护长期缓存。
@@ -70,7 +69,7 @@ archive_reason:
 
 LDVH 已具备知识图谱建设的输入条件：
 
-- 结构化对象事实源（WorkCase/Spark/ADR/Pitfall/Study/WorkArea）；
+- 结构化对象事实源（WorkCase/Spark/ADR/Pitfall/Study/WorkCase）；
 - 标准化 ID 与跨对象关联字段；
 - fact_cli 检索与 Git 提交追溯链路。
 

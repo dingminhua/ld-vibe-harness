@@ -31,26 +31,6 @@ projects:
     path: /tmp/ldvh-test
 """,
     )
-    workarea_dir = tmp_path / "ldvh-base" / "workareas"
-    workarea_dir.mkdir(parents=True, exist_ok=True)
-    (workarea_dir / "workarea-0001-test.yaml").write_text(
-        """
-id: workarea-0001
-type: workarea
-title: 测试工作域
-status: active
-created: '2026-06-10T00:00:00'
-updated: '2026-06-10T00:00:00'
-description: 测试工作域说明
-source: 测试
-related_docs: []
-related_adrs: []
-related_sparks: []
-related_pitfalls: []
-""".strip()
-        + "\n",
-        encoding="utf-8",
-    )
     workcase_dir = tmp_path / "ldvh-base" / "workcases"
     workcase_dir.mkdir(parents=True, exist_ok=True)
     (workcase_dir / "workcase-0001-test.yaml").write_text(
@@ -63,7 +43,6 @@ goal: |
 status: active
 created: '2026-06-10T00:00:00'
 updated: '2026-06-10T00:00:00'
-workarea: workarea-0001
 priority: P2
 description: 测试工作项说明
 success_criteria: |

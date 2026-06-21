@@ -58,13 +58,6 @@ export interface ObjectItem {
   updated: string;
   priority?: string;
   importance?: string;
-  workcases?: RelatedWorkCaseSummary[];
-  workcaseTotal?: number;
-  workcaseClosed?: number;
-  workcaseReviewNeeded?: number;
-  workcaseActive?: number;
-  workcaseRisk?: number;
-  workcaseByStatus?: Record<string, number>;
   executionItems?: RelatedObjectSummary[];
   executionItemTotal?: number;
   executionItemDone?: number;
@@ -83,8 +76,6 @@ export interface ObjectItem {
   deprecated_reason?: string;
   discard_reason?: string;
   closure_evidence?: string;
- workarea?: string;
- workareaSummary?: RelatedObjectSummary;
   /** ADR-specific fields */
   date?: string;
   decision?: string;
@@ -139,7 +130,6 @@ export interface RelatedObjectSummary {
 }
 
 export interface RelatedWorkCaseSummary extends RelatedObjectSummary {
-  workarea?: string;
   executionItems?: RelatedObjectSummary[];
   executionItemTotal?: number;
   executionItemDone?: number;

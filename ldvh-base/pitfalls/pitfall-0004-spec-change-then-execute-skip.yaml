@@ -55,8 +55,6 @@ avoidance: |
   4. 规范变更和任务执行尽量在不同会话内进行，让 AI 重新加载 Rules 和 Skill。
 applicability: 所有接入 LDVH 的项目，所有任务执行和关闭场景
 source_sparks: []
-related_workareas:
-- workarea-0003
 related_adrs: []
 related_docs: []
 related_rules:
@@ -65,7 +63,7 @@ tags:
 - task-lifecycle
 - verification
 - ai-collaboration
-notes: '## 影响程度迁移说明
+notes: |-
+  ## 影响程度迁移说明
 
-
-  历史 severity 字段值为 `high`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。'
+  历史 severity 字段值为 `high`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。

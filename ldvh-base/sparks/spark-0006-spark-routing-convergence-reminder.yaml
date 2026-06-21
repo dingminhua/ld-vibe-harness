@@ -21,17 +21,16 @@ description: |
   2. 增加 Code 检查：pending Spark 如果已经存在 related_adrs、related_workcases、related_studies 或 related_docs，但 evolution 没有说明分流/收敛状态，应给出 warning。
   3. 增加 Web 提示：Spark 详情页应展示轻量分流状态，例如“仍待收敛”“已有相关对象，可能需要确认是否部分分流”“已分流到目标对象”。
 evolution:
-  - at: '2026-06-18T04:03:23'
-    summary: 明确后续应拆成工作流程规范、Code warning 和 Web 分流状态提示三项落地动作。
+- at: '2026-06-18T04:03:23'
+  summary: 明确后续应拆成工作流程规范、Code warning 和 Web 分流状态提示三项落地动作。
 source: conversation
 source_detail: 用户提出“如果 spark 部分话题已经转移或者落地，需要怎么做，以及通过什么提醒 AI”
 priority: P2
-resolved_to: ""
-resolved_at: ""
-discard_reason: ""
-related_workareas: []
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
 related_workcases: []
 related_adrs: []
 related_studies:
-  - study-0001
+- study-0001
 related_docs: []

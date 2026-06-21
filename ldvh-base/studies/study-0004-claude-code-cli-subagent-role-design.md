@@ -11,36 +11,35 @@ user_intent: 用户要求补充 Claude Code CLI 关于子 Agent / subagents 创�
 conclusion: |
   Claude Code CLI 对 LDVH 的启发是：它已经把 subagent 设计成“角色提示词 + 工具权限 + 模型 + MCP + Skills + hooks + memory + 调用方式”的完整运行期角色系统，但它仍是会话执行机制，不是项目长期事实源。LDVH 00 应抽象“Role Contract”，Claude Code 适配层可把 Role Contract 映射为 `.claude/agents/*.md`、`~/.claude/agents/*.md`、`--agents` JSON、plugin agents 或 `--agent` 主会话代理。主控必须负责委派边界、结果整合、验证和事实源回写。
 urls:
-  - ref: https://docs.anthropic.com/en/docs/claude-code/sub-agents
-    title: Claude Code Subagents
-    summary: 用于说明 Claude Code subagents 的定位、配置文件结构、工具权限和调用方式。
-  - ref: https://docs.anthropic.com/zh-CN/docs/claude-code/sub-agents
-    title: Claude Code Subagents 中文文档
-    summary: 用于对照中文表述，确认 subagents 的概念边界和使用场景。
-  - ref: https://docs.anthropic.com/en/docs/claude-code/cli-reference
-    title: Claude Code CLI Reference
-    summary: 用于说明 CLI 参数、会话级 agent 选择和命令入口对角色映射的影响。
-  - ref: https://docs.anthropic.com/en/docs/claude-code/common-workflows
-    title: Claude Code Common Workflows
-    summary: 用于说明 Claude Code 常见工作流如何组织开发、审查和上下文管理。
-  - ref: https://docs.anthropic.com/en/docs/claude-code/skills
-    title: Claude Code Skills
-    summary: 用于说明 Skills 如何补充 subagents，承接可复用流程和专业能力。
-  - ref: https://docs.anthropic.com/en/docs/claude-code/hooks
-    title: Claude Code Hooks
-    summary: 用于说明 hooks 如何在工具执行前后提供自动化约束和检查。
+- ref: https://docs.anthropic.com/en/docs/claude-code/sub-agents
+  title: Claude Code Subagents
+  summary: 用于说明 Claude Code subagents 的定位、配置文件结构、工具权限和调用方式。
+- ref: https://docs.anthropic.com/zh-CN/docs/claude-code/sub-agents
+  title: Claude Code Subagents 中文文档
+  summary: 用于对照中文表述，确认 subagents 的概念边界和使用场景。
+- ref: https://docs.anthropic.com/en/docs/claude-code/cli-reference
+  title: Claude Code CLI Reference
+  summary: 用于说明 CLI 参数、会话级 agent 选择和命令入口对角色映射的影响。
+- ref: https://docs.anthropic.com/en/docs/claude-code/common-workflows
+  title: Claude Code Common Workflows
+  summary: 用于说明 Claude Code 常见工作流如何组织开发、审查和上下文管理。
+- ref: https://docs.anthropic.com/en/docs/claude-code/skills
+  title: Claude Code Skills
+  summary: 用于说明 Skills 如何补充 subagents，承接可复用流程和专业能力。
+- ref: https://docs.anthropic.com/en/docs/claude-code/hooks
+  title: Claude Code Hooks
+  summary: 用于说明 hooks 如何在工具执行前后提供自动化约束和检查。
 related_sparks:
-  - spark-0007
-related_workareas: []
+- spark-0007
 related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
-  - specs/00-LD-Vibe-Harness理念与纲要.md
-  - specs/04.02-LDVH能力资产与保障机制规范.md
-  - specs/06-工作流程基础规范.md
-  - specs/21-WorkCase-工作项.md
-archive_reason:
+- specs/00-LD-Vibe-Harness理念与纲要.md
+- specs/04.02-LDVH能力资产与保障机制规范.md
+- specs/06-工作流程基础规范.md
+- specs/21-WorkCase-工作项.md
+archive_reason: null
 ---
 
 # Claude Code CLI Subagents 创建调用与 LDVH 多角色设定调研

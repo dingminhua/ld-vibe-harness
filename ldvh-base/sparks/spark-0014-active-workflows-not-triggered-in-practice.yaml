@@ -51,23 +51,22 @@ description: |
   5. 评估是否需要一个更贴近日常工作的执行流程，例如“规范修改流程”或“工作对象修改流程”，由它在关键节点调用 40-43；
   6. 若后续推进，应形成 WorkCase，而不是直接在当前对话中改动 40-43。
 evolution:
-  - at: '2026-06-19T08:46:28+08:00'
-    summary: 用户指出当前 4 个工作流程在实际工作中没有被触发，要求新增 Spark，后续重新评估它们的作用和落地形态。
+- at: '2026-06-19T08:46:28+08:00'
+  summary: 用户指出当前 4 个工作流程在实际工作中没有被触发，要求新增 Spark，后续重新评估它们的作用和落地形态。
 source: conversation
 source_detail: 用户说“现在有4个工作流程，我需要再次评估他们的作用，我发现在实际工作中并没有触发他们，帮我加入新的spark”。
 priority: P1
-resolved_to: ""
-resolved_at: ""
-discard_reason: ""
-related_workareas: []
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
 related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:
-  - specs/06-工作流程基础规范.md
-  - specs/40-workflow-design-audit-工作流程设计审核.md
-  - specs/41-work-model-audit-工作模型审核.md
-  - specs/42-specs-audit-规范审核.md
-  - specs/43-assurance-readiness-audit-保障准备度审核.md
-  - specs/21-WorkCase-工作项.md
-  - specs/24-Spark-火花.md
+- specs/06-工作流程基础规范.md
+- specs/40-workflow-design-audit-工作流程设计审核.md
+- specs/41-work-model-audit-工作模型审核.md
+- specs/42-specs-audit-规范审核.md
+- specs/43-assurance-readiness-audit-保障准备度审核.md
+- specs/21-WorkCase-工作项.md
+- specs/24-Spark-火花.md

@@ -59,7 +59,6 @@ def write_spark(path: Path, *, resolved_to: dict[str, str] | str = "") -> None:
         "resolved_to": resolved_to,
         "resolved_at": "",
         "discard_reason": "",
-        "related_workareas": [],
         "related_workcases": [],
         "related_adrs": [],
         "related_studies": ["study-0001"],
@@ -88,17 +87,6 @@ def test_create_workcase_uses_current_contract(tmp_path):
     assert data["closure_outcome"] == ""
     assert "tasks" not in data
     assert "completion_evidence" not in data
-
-
-def test_create_workarea_does_not_write_workcases_backref(tmp_path):
-    result = run_cli("create", "workarea", "--title", "Core Area", "--base-dir", str(tmp_path))
-
-    assert result.returncode == 0, result.stderr
-    path = Path(result.stdout.strip())
-    data = read_yaml(path)
-    assert data["id"] == "workarea-0001"
-    assert data["type"] == "workarea"
-    assert "workcases" not in data
 
 
 def test_create_study_defaults_to_active(tmp_path):
@@ -151,7 +139,6 @@ def write_adr(path: Path, *, status: str = "active", archive_reason: str = "", d
         "context": "Context.",
         "decision": "Decision.",
         "consequences": "Consequences.",
-        "related_workareas": [],
         "related_workcases": [],
         "related_adrs": [],
         "related_sparks": [],
@@ -257,8 +244,23 @@ def test_update_rejects_global_related_changes_field(tmp_path):
     assert "related_changes" not in data
 
 
+def test_update_rejects_removed_area_relation_field(tmp_path):
+    old_field = "related_" + "work" + "areas"
+    old_ref = "work" + "area-0001"
+    created = run_cli("create", "workcase", "--title", "Stable Plan", "--base-dir", str(tmp_path))
+    assert created.returncode == 0, created.stderr
+    path = Path(created.stdout.strip())
+
+    result = run_cli("update", str(path), "--set", f"{old_field}={old_ref}", *AUTH_ARGS)
+
+    assert result.returncode == 1
+    assert "已移除字段" in result.stderr
+    data = read_yaml(path)
+    assert old_field not in data
+
+
 def test_legacy_object_types_are_not_cli_choices(tmp_path):
-    for object_type in ("taskplan", "task", "subtask"):
+    for object_type in ("taskplan", "task", "subtask", "work" + "area"):
         result = run_cli("create", object_type, "--title", "Legacy", "--base-dir", str(tmp_path))
         assert result.returncode == 2
         assert "invalid choice" in result.stderr
@@ -566,7 +568,6 @@ def write_pitfall(path: Path, *, status: str = "active", verification: str | Non
         "tags": ["transition-guard"],
         "source_objects": [],
         "source_sparks": [],
-        "related_workareas": [],
         "related_adrs": [],
         "related_docs": [],
         "related_rules": [],

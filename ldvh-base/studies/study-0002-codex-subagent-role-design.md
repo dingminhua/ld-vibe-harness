@@ -11,24 +11,23 @@ user_intent: 用户要求调研 Codex 中如何创建子 Agent 与调用子 Agen
 conclusion: |
   LDVH 应把多角色设定抽象为环境无关的 Role Contract，而不是把它绑定为 Codex 子 Agent 配置。Codex 子 Agent 可以作为支持环境中的运行期委派实现：由 WorkCase execution item 给出角色、输入和输出要求，由 Human 或主控 AI 在明确授权下触发子 Agent。00 文档应强调角色契约、证据回收和主控整合责任；具体 Codex 创建、调用和自定义 agent 配置应放入环境适配、能力资产或后续专门规范。
 urls:
-  - ref: https://developers.openai.com/codex/concepts/subagents
-    title: Codex Subagent Concepts
-    summary: 用于说明 Codex 子 Agent 的定位、适用场景和上下文隔离价值。
-  - ref: https://developers.openai.com/codex/subagents
-    title: Codex Subagents
-    summary: 用于说明 Codex 子 Agent 的创建、配置和调用方式，支撑 LDVH 角色契约映射判断。
+- ref: https://developers.openai.com/codex/concepts/subagents
+  title: Codex Subagent Concepts
+  summary: 用于说明 Codex 子 Agent 的定位、适用场景和上下文隔离价值。
+- ref: https://developers.openai.com/codex/subagents
+  title: Codex Subagents
+  summary: 用于说明 Codex 子 Agent 的创建、配置和调用方式，支撑 LDVH 角色契约映射判断。
 related_sparks:
-  - spark-0007
-related_workareas: []
+- spark-0007
 related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
-  - specs/00-LD-Vibe-Harness理念与纲要.md
-  - specs/04.02-LDVH能力资产与保障机制规范.md
-  - specs/06-工作流程基础规范.md
-  - specs/21-WorkCase-工作项.md
-archive_reason:
+- specs/00-LD-Vibe-Harness理念与纲要.md
+- specs/04.02-LDVH能力资产与保障机制规范.md
+- specs/06-工作流程基础规范.md
+- specs/21-WorkCase-工作项.md
+archive_reason: null
 ---
 
 # Codex 子 Agent 创建调用与 LDVH 多角色设定调研

@@ -61,7 +61,7 @@ Git 提交记录与工作模型的边界如下：
 2. 修改 `ldvh-base/` 下的工作对象事实源；
 3. 修改 Study Markdown、docs 正文、docs/studies、docs/sources 或经授权沉淀的项目文档；
 4. 修改会影响 Human Gate、状态流转、事实源边界、校验逻辑、Web 呈现或 AI 入口的文件；
-5. 完成 WorkCase、ADR、Spark、Study、Pitfall、WorkArea 等对象的创建、关键字段改写、状态变化、归档或删除；
+5. 完成 WorkCase、ADR、Spark、Study、Pitfall、WorkCase 等对象的创建、关键字段改写、状态变化、归档或删除；
 6. 回退、修正或补充之前已提交的事实源修改。
 
 未进入 Git 的临时实验、构建产物、缓存或本地草稿不形成正式提交记录；一旦提交，就应尽量符合本文格式。
@@ -188,7 +188,7 @@ type 是严格闭集，不得使用枚举外内容。不得使用 `improve`、`u
 | `web` | Web | Web | Web 实现 |
 | `tests` | Tests | Tests | 测试代码 |
 | `config` | 配置 | Config | 项目配置 |
-| `workarea` | 工作域 | WorkArea | WorkArea 实例 |
+| `workcase` | 工作项 | WorkCase | WorkCase 实例 |
 | `workcase` | 计划 | WorkCase | WorkCase 实例 |
 | `adr` | 决策 | ADR | ADR 实例 |
 | `spark` | 火花 | Spark | Spark 实例 |

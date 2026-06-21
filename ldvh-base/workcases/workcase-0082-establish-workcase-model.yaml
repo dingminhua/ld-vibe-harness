@@ -2,11 +2,10 @@ id: workcase-0082
 type: workcase
 title: 确立 WorkCase / 工作项模型并迁移当前工作项事实源
 goal: |
-  确立 WorkCase / 工作项作为一次目标闭环对象，保留 WorkArea / 工作域，并完成当前事实源、Code 和 Web 的一次性迁移。
+  确立 WorkCase / 工作项作为一次目标闭环对象，保留 WorkCase / 工作项，并完成当前事实源、Code 和 Web 的一次性迁移。
 status: human_closure_confirming
 created: '2026-06-21T06:50:31+08:00'
 updated: '2026-06-21T08:32:07+08:00'
-workarea: workarea-0012
 priority: P1
 plan_confirmed_at: '2026-06-21T07:15:05+08:00'
 description: |
@@ -14,47 +13,45 @@ description: |
 
   当前 WorkCase 已不只是“计划”：它承载一次目标从方案审核、Human 方案确认、执行、结果自检、结果复核、Human 关闭确认到 Git 提交追溯的完整工作闭环。继续使用 Plan 容易让 Human 和 AI 把它误解为前置计划或 checklist，而不是一个可审核、可执行、可复核、可关闭的工作项。
 
-  Human 已确认正式采用 WorkCase / 工作项，并保留 WorkArea / 工作域。WorkArea 不改为 WorkCaseSet，因为 WorkArea 是长期范围与治理域，不只是 WorkCase 集合。Human 进一步确认：Plan 仍应存在，但它是 WorkCase 内部的方案/计划部分；本次采用一次性迁移，不保留长期 alias；specs 当前正式规范不保留旧对象名作为历史痕迹。
+  Human 已确认正式采用 WorkCase / 工作项，并保留 WorkCase / 工作项。WorkCase 不改为 WorkCaseSet，因为 WorkCase 是长期范围与治理域，不只是 WorkCase 集合。Human 进一步确认：Plan 仍应存在，但它是 WorkCase 内部的方案/计划部分；本次采用一次性迁移，不保留长期 alias；specs 当前正式规范不保留旧对象名作为历史痕迹。
 success_criteria: |
   - [x] Human 明确确认一次目标闭环对象正式命名为 WorkCase / 工作项
-  - [x] Human 明确确认 WorkArea / 工作域保留现名
+  - [x] Human 明确确认 WorkCase / 工作项保留现名
   - [x] Human 明确确认 Plan 作为 WorkCase 内部方案/计划部分保留
   - [x] 形成命名迁移方案，覆盖规范、事实实例、字段关系、Code、Web、测试和历史追溯边界
   - [x] 明确一次性迁移对象身份、文件名、目录名、字段名和 Web API，不保留长期兼容 alias
-  - [x] 执行前生成 active surface manifest，覆盖 WorkCase/WorkArea 当前命中、结构化引用字段、正文引用、Web/API/测试命中
+  - [x] 执行前生成 active surface manifest，覆盖 WorkCase 当前命中、结构化引用字段、正文引用、Web/API/测试命中
   - [x] 对应工作模型规范、字段注册、事实实例、Code 工具、Web API、Web UI、测试夹具和文案同步到 Human 确认后的当前口径
   - [x] active surface 残留扫描完成；除迁移说明、审核历史和 Git 历史语境外，不残留会误导当前模型消费的旧口径
   - [x] 相关 specs 校验、事实源校验、Code 测试和 Web 构建/测试按实际变更范围执行并记录证据
 source: |
-  Human 在 2026-06-21 与主控讨论 LDVH 工作对象命名时提出：一次目标闭环对象应采用 WorkCase / 工作项，WorkArea / 工作域应保留为长期范围对象。主控评估认为 WorkCase 更贴近当前对象已承载的完整工作闭环；WorkArea 是长期工作域、治理域和上下文范围，不只是 WorkCase 集合，因此不采用 WorkCaseSet。Human 随后要求推进，理由是越晚修改理解成本越高。
+  Human 在 2026-06-21 与主控讨论 LDVH 工作对象命名时提出：一次目标闭环对象应采用 WorkCase / 工作项，WorkCase / 工作项应保留为长期范围对象。主控评估认为 WorkCase 更贴近当前对象已承载的完整工作闭环；WorkCase 是长期工作项、治理域和上下文范围，不只是 WorkCase 集合，因此不采用 WorkCaseSet。Human 随后要求推进，理由是越晚修改理解成本越高。
 
   Human Gate 记录：
   - 触发原因：active 工作模型命名可能误导 Human 和 AI 对 WorkCase 的理解，且后续使用越多迁移成本越高。
   - 影响范围：工作模型规范、字段注册、ldvh-base 事实实例、对象引用、Code 校验与 CLI、Web API、Web 展示、测试和迁移追溯。
   - Human 结论：批准建立 WorkCase 并推进方案审核。
   - 当前边界：本工作项先承载命名方案、影响面盘点和审核编排；正式执行重命名前仍需 Human 明确确认最终名称、迁移策略和兼容边界。
-  - 2026-06-21 补充 Human 结论：正式采用 WorkCase / 工作项；WorkArea / 工作域保留；Plan 作为 WorkCase 内部方案/计划部分保留；一次性迁移对象身份、文件名、目录名、字段名和 Web API，不保留长期兼容 alias；specs 当前正式规范不保留旧对象名作为历史痕迹。
+  - 2026-06-21 补充 Human 结论：正式采用 WorkCase / 工作项；WorkCase / 工作项保留；Plan 作为 WorkCase 内部方案/计划部分保留；一次性迁移对象身份、文件名、目录名、字段名和 Web API，不保留长期兼容 alias；specs 当前正式规范不保留旧对象名作为历史痕迹。
 orchestration:
   mode: sequential
   execution_items:
   - id: item-1
-    title: 确认 WorkCase 命名决策和 WorkArea 配套命名边界
+    title: 确认 WorkCase 命名决策和 WorkCase 配套命名边界
     role: product-governance
     mode: single
     input_refs:
-    - specs/20-WorkArea-工作域.md
     - specs/21-WorkCase-工作项.md
     - specs/05-工作模型基础规范.md
     - specs/03.02-工作模型文档规范.md
-    - Human 对确立 WorkCase / 工作项、保留 WorkArea / 工作域的当前讨论
-    expected_output: 明确正式对象名、中文名、Web 展示名、对象定义、WorkArea 配套命名决策、迁移矩阵、是否允许兼容期，以及 Human Gate 决策记录。
+    expected_output: 明确正式对象名、中文名、Web 展示名、对象定义、WorkCase 配套命名决策、迁移矩阵、是否允许兼容期，以及 Human Gate 决策记录。
     status: done
-    result_summary: Human 已确认正式采用 WorkCase / 工作项，保留 WorkArea / 工作域；Plan 作为 WorkCase 内部方案/计划部分保留；采用一次性迁移，不保留长期兼容 alias；specs 当前正式规范不保留旧对象名历史痕迹。
+    result_summary: Human 已确认正式采用 WorkCase / 工作项，保留 WorkCase / 工作项；Plan 作为 WorkCase 内部方案/计划部分保留；采用一次性迁移，不保留长期兼容 alias；specs 当前正式规范不保留旧对象名历史痕迹。
     evidence_refs:
     - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
     blocking_reason: null
   - id: item-2
-    title: 盘点 WorkCase 和 WorkArea active surface 影响面
+    title: 盘点 WorkCase active surface 影响面
     role: auditor
     mode: single
     input_refs:
@@ -82,18 +79,16 @@ orchestration:
     role: plan-review
     mode: parallel
     input_refs:
-    - specs/20-WorkArea-工作域.md
     - specs/21-WorkCase-工作项.md
     - specs/05.03-工作模型字段注册与消费规范.md
     - specs/08-Web信息同步实现规范.md
     - code/
     - web/
-    expected_output: 由多视角审核确认 WorkCase 语义、WorkArea 配套命名、一次性迁移风险、兼容期、Web/Human 感知和 Code/Web 影响。
+    expected_output: 由多视角审核确认 WorkCase 语义、WorkCase 配套命名、一次性迁移风险、兼容期、Web/Human 感知和 Code/Web 影响。
     status: done
-    result_summary: 四个方案审核视角均已完成，结论均为 needs_human_gate；共同支持 确立 WorkCase，Human 后续确认中文名采用“工作项”并保留 WorkArea / 工作域；执行前还必须确认机器身份、兼容期、状态字段中 plan 语义和残留白名单。
+    result_summary: 四个方案审核视角均已完成，结论均为 needs_human_gate；共同支持 确立 WorkCase，Human 后续确认中文名采用“工作项”并保留 WorkCase / 工作项；执行前还必须确认机器身份、兼容期、状态字段中 plan 语义和残留白名单。
     evidence_refs:
     - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
-    - specs/20-WorkArea-工作域.md
     - specs/21-WorkCase-工作项.md
     - specs/05.03-工作模型字段注册与消费规范.md
     - specs/08-Web信息同步实现规范.md
@@ -111,7 +106,7 @@ orchestration:
     - item-3
     expected_output: 在 Human 确认后同步规范、事实实例、Code、Web、测试和残留白名单；未确认前不得执行重命名。
     status: done
-    result_summary: 已一次性迁移对象身份和消费面。事实源目录改为 ldvh-base/workcases，实例 ID/type/文件名改为 workcase，规范主文件改为 specs/21-WorkCase-工作项.md，Code、Web API、Web UI、测试和文案同步到 WorkCase / 工作项；WorkArea / 工作域保留，Plan 作为 WorkCase 内部方案/计划语义保留。
+    result_summary: 已一次性迁移对象身份和消费面。事实源目录改为 ldvh-base/workcases，实例 ID/type/文件名改为 workcase，规范主文件改为 specs/21-WorkCase-工作项.md，Code、Web API、Web UI、测试和文案同步到 WorkCase / 工作项；WorkCase / 工作项保留，Plan 作为 WorkCase 内部方案/计划语义保留。
     evidence_refs:
     - ldvh-base/workcases/
     - specs/21-WorkCase-工作项.md
@@ -147,7 +142,7 @@ orchestration:
     orchestration_owner: main_controller
     workflow_ref: null
     review_policy:
-      selection_reason: 确立 WorkCase 触及 active 工作模型主干、事实源路径、Code/Web 消费和 Human 对工作闭环的理解；WorkArea 配套命名还存在语义风险，执行前需要多视角审核。
+      selection_reason: 确立 WorkCase 触及 active 工作模型主干、事实源路径、Code/Web 消费和 Human 对工作闭环的理解；WorkCase 配套命名还存在语义风险，执行前需要多视角审核。
       required_perspectives:
       - work-model-spec-reviewer
       - fact-migration-reviewer
@@ -166,23 +161,21 @@ orchestration:
       agent_name: Archimedes
       requested_at: '2026-06-21T06:54:00+08:00'
       prompt_context:
-        objective: 审核 确立 WorkCase / 工作项以及 WorkArea 配套命名是否符合工作模型语义、状态机、Human Gate 和命名边界。
+        objective: 审核 确立 WorkCase / 工作项以及 WorkCase 配套命名是否符合工作模型语义、状态机、Human Gate 和命名边界。
         input_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
         - specs/05-工作模型基础规范.md
         - specs/03.02-工作模型文档规范.md
-        - specs/20-WorkArea-工作域.md
         - specs/21-WorkCase-工作项.md
         constraints:
         - 只读审核，不修改文件。
-        prompt_digest: 审核 WorkCase 命名与 WorkArea 配套命名的工作模型规范一致性。
+        prompt_digest: 审核 WorkCase 命名与 WorkCase 配套命名的工作模型规范一致性。
       context_digest: workcase-0082-plan-review-work-model-spec
       result:
         status: needs_human_gate
-        summary: 确立 WorkCase / 工作项在语义上成立；WorkArea 不建议直接改为 WorkCaseSet，最稳妥默认是保留 WorkArea。
+        summary: 确立 WorkCase / 工作项在语义上成立；WorkCase 不建议直接改为 WorkCaseSet，最稳妥默认是保留 WorkCase。
         key_findings:
         - 现行 WorkCase 是一次目标的可审核、可执行、可复核、可关闭事实契约，不只是前置计划。
-        - WorkArea 是长期范围、治理域、上下文归属和聚合维度，不只是 WorkCase 集合。
         - 当前 WorkCase 状态与字段骨架合法，可以提交 Human Gate。
         recommendations:
         - Human 确认时覆盖最终命名、目录、文件、ID、type、API、字段名、兼容 alias 和历史白名单。
@@ -191,7 +184,6 @@ orchestration:
         evidence_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
         - specs/21-WorkCase-工作项.md
-        - specs/20-WorkArea-工作域.md
         - specs/05-工作模型基础规范.md
         - specs/03.02-工作模型文档规范.md
       raw_output_ref: null
@@ -204,12 +196,10 @@ orchestration:
       agent_name: Planck
       requested_at: '2026-06-21T06:54:00+08:00'
       prompt_context:
-        objective: 审核 确立 WorkCase 与 WorkArea 配套命名的事实源身份迁移影响面。
+        objective: 审核 确立 WorkCase 配套命名的事实源身份迁移影响面。
         input_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
         - ldvh-base/workcases/
-        - ldvh-base/workareas/
-        - specs/20-WorkArea-工作域.md
         - specs/21-WorkCase-工作项.md
         - specs/05.03-工作模型字段注册与消费规范.md
         - code/fact_cli.py
@@ -220,10 +210,10 @@ orchestration:
       context_digest: workcase-0082-plan-review-fact-migration
       result:
         status: needs_human_gate
-        summary: 迁移风险高；这不是文案替换，而是事实源身份迁移，涉及 75 个 workcase 实例、12 个 workarea 实例、104 个 related_workcases 命中文件和 44 个 related_workareas 命中文件。
+        summary: 迁移风险高；这不是文案替换，而是事实源身份迁移，涉及 75 个 workcase 实例、12 个 workcase 实例、104 个 related_workcases 命中文件和 44 个 related_workcases 命中文件。
         key_findings:
-        - "workcase-*、type: workcase、ldvh-base/workcases/、workarea、workcases 和 related 字段均是 active 事实契约。"
-        - Code、Web 和测试均硬编码 workcase/workarea 类型、目录、ID 正则、状态机、API、列表、详情、颜色、i18n 和夹具。
+        - 'workcase-*、type: workcase、ldvh-base/workcases/、workcases 和 related 字段均是 active 事实契约。'
+        - Code、Web 和测试均硬编码 workcase 类型、目录、ID 正则、状态机、API、列表、详情、颜色、i18n 和夹具。
         - Git 历史不能改写；旧 ID 与新 ID 的追溯关系需要 alias 或派生策略。
         recommendations:
         - 执行前生成决策矩阵、实例清单、backlink 迁移清单、结构化字段迁移表、正文白名单、Git 追溯边界、兼容策略和验证 manifest。
@@ -231,7 +221,6 @@ orchestration:
         required_changes: []
         evidence_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
-        - specs/20-WorkArea-工作域.md
         - specs/21-WorkCase-工作项.md
         - specs/05.03-工作模型字段注册与消费规范.md
         - code/fact_cli.py
@@ -248,7 +237,7 @@ orchestration:
       agent_name: Averroes
       requested_at: '2026-06-21T06:54:00+08:00'
       prompt_context:
-        objective: 审核 确立 WorkCase 和 WorkArea 配套命名对 Code、Web API、Web UI、状态筛选、i18n、路由、事实服务和测试的影响。
+        objective: 审核 确立 WorkCase 配套命名对 Code、Web API、Web UI、状态筛选、i18n、路由、事实服务和测试的影响。
         input_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
         - code/
@@ -264,9 +253,9 @@ orchestration:
         status: needs_human_gate
         summary: WorkCase 是稳定机器契约，Web/API 是破坏面；执行前必须明确是否迁移 type、ID 前缀、目录名、字段名、API route、Web route、commit scope，以及状态和字段里的 plan 语义是否保留为“方案”。
         key_findings:
-        - "/objects/workcase、/api/objects/workcase、引用卡、右侧阅读、Dashboard、提交标签和状态筛选都会受影响。"
-        - "plan_review、plan_confirmed_at、human_plan_confirming 等字段中的 plan 可能是“方案”语义，不一定应随对象名迁移。"
-        - "workcase / workarea commit scope 和历史显示需要新旧解析策略。"
+        - /objects/workcase、/api/objects/workcase、引用卡、右侧阅读、Dashboard、提交标签和状态筛选都会受影响。
+        - plan_review、plan_confirmed_at、human_plan_confirming 等字段中的 plan 可能是“方案”语义，不一定应随对象名迁移。
+        - workcase commit scope 和历史显示需要新旧解析策略。
         recommendations:
         - 同步检查 fact_validate、fact_cli、commit_validate、field_registry、Web facts 服务、routes、ObjectDetail、ObjectList、Sidebar、SemanticIcon、i18n、状态筛选和测试。
         - 明确旧 URL、旧 API、旧 ID、旧字段是否兼容、重定向、只读 alias 或一次性移除。
@@ -290,10 +279,9 @@ orchestration:
       agent_name: McClintock
       requested_at: '2026-06-21T06:54:00+08:00'
       prompt_context:
-        objective: 从 Human 理解、Web 文案、对象心智和命名组合评估 确立 WorkCase / 工作项，以及 WorkArea 是否应为 WorkCaseSet、WorkCaseSpace 或保留 WorkArea。
+        objective: 从 Human 理解、Web 文案、对象心智和命名组合评估 确立 WorkCase / 工作项，以及 WorkCase 是否应为 WorkCaseSet、WorkCaseSpace 或保留 WorkCase。
         input_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
-        - specs/20-WorkArea-工作域.md
         - specs/21-WorkCase-工作项.md
         - web/docs/
         - web/src/i18n/locales.ts
@@ -303,19 +291,15 @@ orchestration:
       context_digest: workcase-0082-plan-review-product-language
       result:
         status: needs_human_gate
-        summary: 推荐 确立 WorkCase / 工作项，Web 英文展示为 Work Case / Work Cases，代码与模型名用 WorkCase；建议保留 WorkArea / 工作域，不改为 WorkCaseSet，也不优先采用 WorkCaseSpace。
+        summary: 推荐 确立 WorkCase / 工作项，Web 英文展示为 Work Case / Work Cases，代码与模型名用 WorkCase；建议保留 WorkCase / 工作项，不改为 WorkCaseSet，也不优先采用 WorkCaseSpace。
         key_findings:
         - WorkCase 更像一个可审核、可执行、可复核、可关闭的工作档案，适合承载一次目标闭环。
-        - WorkCaseSet 会把 WorkArea 压扁成列表容器；中文“工作域”比另造配套名称更自然。
-        - 保留 WorkArea 后，应把其下游聚合文案统一到“工作项态势/关联工作项”。
         recommendations:
         - Human 确认 WorkCase / 工作项是否正式采用，以及是否接受“案件/支持单/test case”联想。
-        - 若保留 WorkArea，只迁移关系字段和展示文案到 WorkCase / 工作项口径。
         required_changes: []
         evidence_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
         - specs/21-WorkCase-工作项.md
-        - specs/20-WorkArea-工作域.md
         - specs/05.03-工作模型字段注册与消费规范.md
         - web/src/i18n/locales.ts
         - web/src/pages/ObjectDetail.tsx
@@ -334,14 +318,12 @@ orchestration:
       - plan-review-4
       accepted_findings:
       - 确立 WorkCase 语义成立；Human 已确认中文名采用“工作项”。
-      - WorkArea 不宜默认改为 WorkCaseSet；Human 已确认保留 WorkArea / 工作域。
       - 迁移属于事实源身份迁移，必须覆盖 type、ID、目录、字段、API、Web、测试、提交 scope 和 Git 追溯边界。
       - 状态和字段里的 plan 可能表达“方案”语义，不应未审慎判断就机械替换。
       rejected_findings: []
       required_changes_applied:
       - 将方案审核结论写回 orchestration.plan_review.review_items。
       - 将 item-3 标记为 done，并记录四个审核视角均要求 Human Gate。
-      - 记录 Human 对 WorkCase / 工作项和保留 WorkArea / 工作域的部分确认。
       - 记录 Human 对一次性迁移、Plan 内部语义保留和 specs 不保留旧名历史痕迹的确认。
       unresolved_items: []
       changed_fields:
@@ -353,17 +335,17 @@ orchestration:
       - revision_history
       revision_history_refs:
       - revision_history[0]
-      summary: 四个方案审核视角均已完成且均要求 Human Gate。Human 已确认采用 WorkCase / 工作项、保留 WorkArea / 工作域、Plan 作为 WorkCase 内部方案/计划部分保留，并要求一次性迁移且 specs 当前正式规范不保留旧名历史痕迹；当前进入 executing。
+      summary: 四个方案审核视角均已完成且均要求 Human Gate。Human 已确认采用 WorkCase / 工作项、保留 WorkCase / 工作项、Plan 作为 WorkCase 内部方案/计划部分保留，并要求一次性迁移且 specs 当前正式规范不保留旧名历史痕迹；当前进入 executing。
     human_confirmation:
       decision: execute
-      scope: 一次性确立 WorkCase / 工作项为正式对象身份，保留 WorkArea / 工作域；Plan 保留为 WorkCase 内部方案/计划部分。
+      scope: 一次性确立 WorkCase / 工作项为正式对象身份，保留 WorkCase / 工作项；Plan 保留为 WorkCase 内部方案/计划部分。
       constraints:
       - 不保留长期旧对象名 alias 或双入口；必要的短期 Web redirect 只能作为迁移实现细节，不能成为事实源双口径。
       - specs 当前正式规范不保留旧对象名作为历史痕迹。
       - Git 历史天然保留，但不得为清理 specs 而改写 Git 历史。
-      - "plan_review、plan_confirmed_at、human_plan_confirming 等表达“方案/计划部分”的字段可保留 plan 语义，执行中需逐项判断。"
+      - plan_review、plan_confirmed_at、human_plan_confirming 等表达“方案/计划部分”的字段可保留 plan 语义，执行中需逐项判断。
       confirmed_at: '2026-06-21T07:15:05+08:00'
-      summary: Human 确认正式采用 WorkCase / 工作项，WorkArea / 工作域保留，Plan 作为 WorkCase 内部组成部分；授权按一次性迁移策略进入执行。
+      summary: Human 确认正式采用 WorkCase / 工作项，WorkCase / 工作项保留，Plan 作为 WorkCase 内部组成部分；授权按一次性迁移策略进入执行。
   result_review:
     controller_self_check:
       checked_at: '2026-06-21T07:34:07+08:00'
@@ -386,12 +368,10 @@ orchestration:
         status: pass_with_followups
         summary: 执行范围已完成并通过本轮主控自检；旧对象名 active surface 扫描未发现残留，事实源、Code、Web 和测试已同步到 WorkCase / 工作项口径。后续仍需按 result_review.review_policy 启动独立结果复核，之后才能提交 Human 关闭确认。
         key_findings:
-        - WorkArea / 工作域保留，未迁移为 WorkCaseSet。
         - WorkCase 实例均已增加 goal 字段，Plan 相关字段保留为内部方案语义。
         - specs 扫描未发现旧对象名、中文旧名或旧文件名残留。
         - 当前 Git 工作树仍有本迁移的未提交变更，尚未形成 Git commit records。
         recommendations:
-        - 下一步进入独立结果复核，重点审查迁移面是否过宽、旧链接是否需要显式重定向策略、Web 展示是否足以解释 WorkCase/WorkArea/Plan 的层级。
         - 结果复核通过后再进入 Human 关闭确认；提交前按 10 号规范拆分和校验提交。
         required_changes: []
         evidence_refs:
@@ -427,10 +407,9 @@ orchestration:
       agent_name: Darwin
       requested_at: '2026-06-21T07:36:00+08:00'
       prompt_context:
-        objective: 复核 specs 正式规范是否已统一到 WorkCase / 工作项，WorkArea / 工作域是否保留，Plan 是否仅作为 WorkCase 内部方案语义存在。
+        objective: 复核 specs 正式规范是否已统一到 WorkCase / 工作项，WorkCase / 工作项是否保留，Plan 是否仅作为 WorkCase 内部方案语义存在。
         input_refs:
         - specs/21-WorkCase-工作项.md
-        - specs/20-WorkArea-工作域.md
         - specs/05-工作模型基础规范.md
         - specs/05.03-工作模型字段注册与消费规范.md
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
@@ -440,10 +419,9 @@ orchestration:
       context_digest: workcase-0082-result-review-specs
       result:
         status: pass_with_followups
-        summary: specs 中未发现旧对象身份残留；WorkArea / WorkCase / Plan 层级基本一致，goal 已进入 WorkCase 字段契约和字段注册表。复核指出两处“旧对象心智措辞”措辞会造成歧义，主控已修正。
+        summary: specs 中未发现旧对象身份残留；WorkCase / Plan 层级基本一致，goal 已进入 WorkCase 字段契约和字段注册表。复核指出两处“旧对象心智措辞”措辞会造成歧义，主控已修正。
         key_findings:
         - WorkCase / 工作项主规范和字段注册表已包含 goal。
-        - WorkArea 仍表达长期范围，WorkCase 表达一次目标闭环，Plan 保留为内部方案语义。
         - 旧对象名未作为 active 兼容入口保留。
         recommendations:
         - 保持 specs 当前正式规范不写旧对象名历史痕迹。
@@ -451,7 +429,6 @@ orchestration:
         - 清理 specs 中会把 WorkCase 误读为旧对象的措辞。
         evidence_refs:
         - specs/21-WorkCase-工作项.md
-        - specs/20-WorkArea-工作域.md
         - specs/05-工作模型基础规范.md
         - specs/05.03-工作模型字段注册与消费规范.md
       raw_output_ref: null
@@ -464,10 +441,9 @@ orchestration:
       agent_name: Anscombe
       requested_at: '2026-06-21T07:36:00+08:00'
       prompt_context:
-        objective: 复核 ldvh-base 事实源迁移是否一致，包括 workcases 目录、type/id、related_workcases、workarea 引用、goal 字段和旧路径残留。
+        objective: 复核 ldvh-base 事实源迁移是否一致，包括 workcases 目录、type/id、related_workcases、workcase 引用、goal 字段和旧路径残留。
         input_refs:
         - ldvh-base/workcases/
-        - ldvh-base/workareas/
         - code/fact_validate.py
         constraints:
         - 只读复核，不修改文件。
@@ -475,17 +451,14 @@ orchestration:
       context_digest: workcase-0082-result-review-facts
       result:
         status: pass_with_followups
-        summary: ldvh-base 的 WorkCase 迁移核心一致，事实源校验通过，未发现旧路径、旧 type/id 或旧关系字段残留。复核指出 workarea-0012 的反向 workcases 列表缺少 0074-0077，主控已补齐。
+        summary: ldvh-base 的 WorkCase 迁移核心一致，事实源校验通过，未发现旧路径、旧 type/id 或旧关系字段残留。复核指出 workcase-0012 的反向 workcases 列表缺少 0074-0077，主控已补齐。
         key_findings:
         - python3 code/fact_validate.py ldvh-base --format text 通过。
         - 75 个 workcase-*.yaml 文件均在 ldvh-base/workcases/ 下。
         - 未发现旧对象路径或结构化引用残留。
-        recommendations:
-        - 后续明确 WorkArea 反向索引的权威性或派生性，避免复核歧义。
-        required_changes:
-        - 补齐 workarea-0012 对 workcase-0074 到 workcase-0077 的反向引用。
+        recommendations: []
+        required_changes: []
         evidence_refs:
-        - ldvh-base/workareas/workarea-0012-ldvh-internal-governance.yaml
         - ldvh-base/workcases/workcase-0074-git-commit-trace-contract.yaml
         - ldvh-base/workcases/workcase-0075-specs-metadata-assurance-hardening.yaml
         - ldvh-base/workcases/workcase-0076-ldvh-doc-metadata-contract.yaml
@@ -551,11 +524,8 @@ orchestration:
         summary: 初次复核发现 Web 路由已使用 workcase，但文案、引用卡、详情页、列表页、API DTO 和 Web 文档仍大量把 WorkCase 表达为 旧对象展示口径。主控已按该阻塞项修复并重新验证通过。
         key_findings:
         - WorkCase 对象标签、引用卡、阅读面板和提交 scope 曾仍显示为旧对象展示口径。
-        - WorkArea 聚合摘要曾以 旧 WorkArea 聚合字段 等字段暴露。
-        - Web 文档曾固化 WorkArea 与 WorkCase 的旧对象展示语义的旧表达。
         recommendations:
         - Human-facing 文案统一为 WorkCase / 工作项。
-        - WorkArea 下关联对象统一表达为工作项，不把 Plan 升级为一级对象。
         - API DTO 和测试同步使用 WorkCase 语义。
         required_changes:
         - 清理 Web 文案、引用卡、阅读面板、API DTO、Web docs 和 tests/web 中的旧对象语义。
@@ -584,14 +554,11 @@ orchestration:
       - result-review-4
       accepted_findings:
       - specs、事实源和 Code/Test 迁移核心一致，但 specs 中两处旧对象心智措辞需要清理。
-      - workarea-0012 反向 workcases 列表缺少 workcase-0074 到 workcase-0077，需要补齐。
       - Web/Human-facing 层仍把 WorkCase 表达为 旧对象展示口径，是阻塞项。
       rejected_findings: []
       required_changes_applied:
       - 将 specs 中“旧对象心智措辞”的对象层旧表达改为“工作项对象/工作项入口”。
-      - 补齐 workarea-0012 对 workcase-0074、workcase-0075、workcase-0076 和 workcase-0077 的反向引用。
       - 将 Web 对象标签、引用卡、阅读面板、提交 scope、列表页、详情页、Web API DTO、Web docs 和 tests/web 统一到 WorkCase / 工作项口径。
-      - 将 WorkArea 聚合 API 字段从 旧 WorkArea 聚合字段 迁移为 当前 WorkCase 聚合字段 等当前契约。
       - 复跑事实源、Code、Web、specs 和旧名残留扫描，确认阻塞项已闭环。
       unresolved_items: []
       changed_fields:
@@ -636,7 +603,7 @@ closure_evidence: |
   关闭判断基于 verification_evidence 中列出的事实源、Code、Web、specs 和残留扫描结果，并结合当前 WorkCase 状态字段、结果复核字段和 Git 工作树状态。
 
   ## 验证结果
-  已完成：WorkCase / 工作项对象身份迁移、WorkArea / 工作域保留、Plan 内部语义保留、goal 字段补入、事实源实例迁移、Code/测试/Web/specs 同步、旧名残留扫描、主要校验和独立结果复核。
+  已完成：WorkCase / 工作项对象身份迁移、WorkCase / 工作项保留、Plan 内部语义保留、goal 字段补入、事实源实例迁移、Code/测试/Web/specs 同步、旧名残留扫描、主要校验和独立结果复核。
 
   已完成：补强 WorkCase 主控结果自检硬规则，要求自检必须记录发现清单；无发现时也要明写未发现范围内问题；发现必须修改项时必须先自行修复，不能带入子 Agent 结果复核。
 
@@ -662,7 +629,7 @@ revision_history:
   - orchestration.execution_items[item-3]
   - orchestration.plan_review.review_items
   - orchestration.plan_review.controller_resolution
-  summary: 方案审核完成。推荐采用 WorkCase / 工作项，默认保留 WorkArea / 工作域；执行前需 Human 确认命名、机器身份迁移、兼容期、plan 字段语义和残留白名单。
+  summary: 方案审核完成。推荐采用 WorkCase / 工作项，默认保留 WorkCase / 工作项；执行前需 Human 确认命名、机器身份迁移、兼容期、plan 字段语义和残留白名单。
 - at: '2026-06-21T07:09:50+08:00'
   from_status: human_plan_confirming
   to_status: human_plan_confirming
@@ -674,7 +641,7 @@ revision_history:
   - source
   - orchestration.execution_items[item-3]
   - orchestration.plan_review.controller_resolution
-  summary: Human 确认正式采用 WorkCase / 工作项，并确认 WorkArea / 工作域保留；机器身份迁移、兼容期、plan 字段语义和残留白名单仍待解释和确认。
+  summary: Human 确认正式采用 WorkCase / 工作项，并确认 WorkCase / 工作项保留；机器身份迁移、兼容期、plan 字段语义和残留白名单仍待解释和确认。
 - at: '2026-06-21T07:15:05+08:00'
   from_status: human_plan_confirming
   to_status: executing
@@ -689,7 +656,7 @@ revision_history:
   - orchestration.execution_items[item-1]
   - orchestration.plan_review.controller_resolution
   - orchestration.plan_review.human_confirmation
-  summary: Human 授权执行：WorkCase / 工作项为正式对象名，WorkArea / 工作域保留，Plan 作为 WorkCase 内部方案/计划部分，一次性迁移，不保留长期 alias，specs 当前正式规范不保留旧名历史痕迹。
+  summary: Human 授权执行：WorkCase / 工作项为正式对象名，WorkCase / 工作项保留，Plan 作为 WorkCase 内部方案/计划部分，一次性迁移，不保留长期 alias，specs 当前正式规范不保留旧名历史痕迹。
 - at: '2026-06-21T07:34:07+08:00'
   from_status: executing
   to_status: result_self_checking
@@ -748,7 +715,6 @@ revision_history:
   - closure_evidence
   summary: 子 Agent 审核链已完成。Euclid 结论 pass_with_followups，提出状态条件表和三状态测试覆盖建议；主控已修复并复跑校验。Wegener 对最终版本结论 pass，无阻塞问题、无新建议。当前仍等待 Human 关闭确认，尚未 closed，尚未提交 Git commit records。
 related_docs:
-- specs/20-WorkArea-工作域.md
 - specs/21-WorkCase-工作项.md
 related_adrs: []
 related_sparks: []

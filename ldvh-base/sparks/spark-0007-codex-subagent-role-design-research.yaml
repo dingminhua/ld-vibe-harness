@@ -13,25 +13,24 @@ description: |
 
   当前已形成三份横向 Study：Codex 子 Agent、TRAE CN 智能体、Claude Code CLI subagents。后续需要在修改 00、06、21 或能力资产规范时复读这些报告，尤其注意不同环境在“创建角色配置”“触发委派”“自动调用”“工具权限”“上下文隔离”和“长期事实源”上的差异。
 evolution:
-  - at: '2026-06-18T07:59:11'
-    summary: 根据用户要求，新增 Codex 子 Agent 创建、调用和多角色设定前期调研入口，并分流完整报告到 study-0002。
-  - at: '2026-06-18T07:59:11'
-    summary: 根据用户补充要求，新增 TRAE CN 和 Claude Code CLI 两份同主题 Study，并把本 Spark 从 Codex 单点调研扩展为多环境横向调研入口。
+- at: '2026-06-18T07:59:11'
+  summary: 根据用户要求，新增 Codex 子 Agent 创建、调用和多角色设定前期调研入口，并分流完整报告到 study-0002。
+- at: '2026-06-18T07:59:11'
+  summary: 根据用户补充要求，新增 TRAE CN 和 Claude Code CLI 两份同主题 Study，并把本 Spark 从 Codex 单点调研扩展为多环境横向调研入口。
 source: conversation
 source_detail: 用户要求增加一个 spark，并调研 Codex、TRAE CN 与 Claude Code CLI 中如何创建和调用子 Agent / 自定义智能体，为之后 00 文档中多角色设定做前期调研。
 priority: P1
-resolved_to: ""
-resolved_at: ""
-discard_reason: ""
-related_workareas: []
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
 related_workcases: []
 related_adrs: []
 related_studies:
-  - study-0002
-  - study-0003
-  - study-0004
+- study-0002
+- study-0003
+- study-0004
 related_docs:
-  - specs/00-LD-Vibe-Harness理念与纲要.md
-  - specs/04.02-LDVH能力资产与保障机制规范.md
-  - specs/06-工作流程基础规范.md
-  - specs/21-WorkCase-工作项.md
+- specs/00-LD-Vibe-Harness理念与纲要.md
+- specs/04.02-LDVH能力资产与保障机制规范.md
+- specs/06-工作流程基础规范.md
+- specs/21-WorkCase-工作项.md

@@ -6,14 +6,12 @@ goal: |
 status: active
 created: '2026-06-05T17:57:47.201963'
 updated: '2026-06-05T17:57:59.958448'
-workarea: workarea-0008
 priority: P2
-description: 由历史 Task task-0027 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
-  为准，避免复制多个权威事实。
+description: 由历史 Task task-0027 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
 success_criteria: '- [ ] 关联任务 task-0027 满足其 acceptance、verification 和 closure_evidence。'
 source: |-
   Legacy TaskPlan migration from taskplan-0027; source path: ldvh-base/taskplans/taskplan-0027-test-rules-mechanism.yaml
-  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkCase backlinks only, preserve legacy TaskPlan/Task facts.
 orchestration:
   mode: single
   execution_items:
@@ -23,8 +21,7 @@ orchestration:
     mode: single
     input_refs:
     - task-0027
-    expected_output: '- [ ] 工作区规则在每次对话首句触发\n- [ ] 项目规则在读取项目文件时触发\n- [ ] 场景规则在编辑对应文件时触发\n-
-      [ ] Human Gate 在关键操作时正确拦截\n- [ ] 事实模型规则在编辑 ldvh-base/ YAML 时触发\n- [ ] 测试结果记录并反馈规则漏洞'
+    expected_output: '- [ ] 工作区规则在每次对话首句触发\n- [ ] 项目规则在读取项目文件时触发\n- [ ] 场景规则在编辑对应文件时触发\n- [ ] Human Gate 在关键操作时正确拦截\n- [ ] 事实模型规则在编辑 ldvh-base/ YAML 时触发\n- [ ] 测试结果记录并反馈规则漏洞'
     status: pending
     result_summary: ''
     evidence_refs: []

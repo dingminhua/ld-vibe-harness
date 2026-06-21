@@ -6,7 +6,6 @@ goal: |
 status: review_needed
 created: '2026-06-18T09:11:44'
 updated: '2026-06-18T10:48:16.867910'
-workarea: workarea-0012
 priority: P2
 description: |
   在旧对象清退和文件元信息契约标准化过程中，记录中间问题、残留风险、Code/Web/Specs 协同经验和
@@ -74,8 +73,7 @@ orchestration:
     - workcase-0069
     - workcase-0070
     - workcase-0071
-    expected_output: 每个 WorkCase 完成后，按其专业领域安排独立子 Agent 复核完成证据、残留风险和关闭条件；复核结论回写到对应
-      WorkCase 证据字段。
+    expected_output: 每个 WorkCase 完成后，按其专业领域安排独立子 Agent 复核完成证据、残留风险和关闭条件；复核结论回写到对应 WorkCase 证据字段。
     status: done
     result_summary: |
       workcase-0069 已完成 Code/Web 双视角完成后复审，初审发现旧入口残留并在修复后通过；

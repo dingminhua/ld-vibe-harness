@@ -15,9 +15,8 @@ import yaml
 
 
 # Git 提交记录使用 Git commit records 作为事实源，不通过本 CLI 管理 YAML 文件
-OBJECT_TYPES = {"workarea", "workcase", "adr", "pitfall", "spark", "study"}
+OBJECT_TYPES = {"workcase", "adr", "pitfall", "spark", "study"}
 FILENAME_PATTERNS = {
-    "workarea": re.compile(r"^workarea-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "workcase": re.compile(r"^workcase-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "adr": re.compile(r"^adr-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
     "pitfall": re.compile(r"^pitfall-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.yaml$"),
@@ -25,7 +24,6 @@ FILENAME_PATTERNS = {
     "study": re.compile(r"^study-\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$"),
 }
 ID_PATTERNS = {
-    "workarea": re.compile(r"^workarea-\d{4}$"),
     "workcase": re.compile(r"^workcase-\d{4}$"),
     "adr": re.compile(r"^adr-\d{4}$"),
     "pitfall": re.compile(r"^pitfall-\d{4}$"),
@@ -56,47 +54,39 @@ WORKCASE_STATUSES_REQUIRING_CLOSURE_REQUEST = {"human_closure_confirming", "clos
 WORKCASE_STATUSES_WITH_CLOSED_EXECUTION = {"result_self_checking", "subagents_result_reviewing", "human_closure_confirming", "closed", "review_needed"}
 WORKCASE_CLOSURE_OUTCOMES = {"completed", "partial_completed", "cancelled", "superseded", "invalid", "degraded_accepted"}
 VALID_STATUSES = {
-    "workarea": {"active", "archived"},
     "workcase": WORKCASE_CURRENT_STATUSES | WORKCASE_LEGACY_STATUSES,
     "adr": {"active", "archived", "deprecated"},
     "pitfall": {"active", "archived"},
     "spark": {"pending", "resolved", "discarded"},
     "study": {"active", "archived"},
 }
-VALID_SPARK_RESOLVED_TO_TYPES = {"workarea", "workcase", "adr", "pitfall", "docs", "governed-projects", "other"}
+VALID_SPARK_RESOLVED_TO_TYPES = {"workcase", "adr", "pitfall", "docs", "governed-projects", "other"}
 REQUIRED_FIELDS = {
-    "workarea": ["id", "type", "title", "status", "created", "updated", "description", "source"],
-    "workcase": ["id", "type", "title", "goal", "status", "created", "updated", "workarea", "priority", "description", "success_criteria", "source", "orchestration"],
+    "workcase": ["id", "type", "title", "goal", "status", "created", "updated", "priority", "description", "success_criteria", "source", "orchestration"],
     "adr": ["id", "type", "title", "status", "created", "updated", "date", "context", "decision", "consequences"],
     "pitfall": ["id", "type", "title", "status", "created", "updated", "symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"],
     "spark": ["id", "type", "title", "status", "created", "updated", "description", "source", "priority"],
     "study": ["id", "type", "title", "status", "created", "updated", "summary"],
 }
 LIST_FIELDS = {
-    "workarea": {"related_adrs", "related_sparks", "related_pitfalls", "related_docs"},
     "workcase": {"related_adrs", "related_sparks", "related_pitfalls", "related_docs", "related_workcases"},
-    "adr": {
-        "related_workareas", "related_workcases",
-        "related_adrs", "related_sparks", "related_rules",
-    },
+    "adr": {"related_workcases", "related_adrs", "related_sparks", "related_rules"},
     "pitfall": {
         "source_objects", "related_objects", "related_rules", "tags",
-        "source_sparks", "related_workareas", "related_adrs",
-        "related_docs",
+        "source_sparks", "related_adrs", "related_docs",
     },
-    "spark": {"evolution", "related_workareas", "related_workcases", "related_adrs", "related_studies", "related_docs"},
+    "spark": {"evolution", "related_workcases", "related_adrs", "related_studies", "related_docs"},
     "study": {
-        "urls", "related_workareas", "related_workcases", "related_adrs",
-        "related_sparks", "related_pitfalls", "related_docs",
+        "urls", "related_workcases", "related_adrs", "related_sparks", "related_pitfalls", "related_docs",
     },
 }
 GLOBAL_REMOVED_FIELDS = {
     "related_changes": "related_changes 不再由工作对象手写维护；关联提交应由 Git 历史、文件路径、对象 ID 和提交正文自然文本派生",
+    "related_" + "work" + "areas": "旧范围对象关联字段已移除；当前工作对象不得继续手写该关系字段",
 }
 
 # 05.02 工作模型字段内容与格式规范：长文本字段定义
 LONG_TEXT_FIELDS = {
-    "workarea": {"description", "scope", "constraints", "archive_reason"},
     "workcase": {"description", "success_criteria", "verification_evidence", "closure_evidence"},
     "adr": {"context", "decision", "consequences", "archive_reason", "deprecated_reason"},
     "pitfall": {"symptoms", "trigger_conditions", "root_cause", "resolution", "verification", "avoidance", "applicability"},
@@ -263,8 +253,6 @@ def infer_object_type(path: Path, data: dict[str, Any]) -> str | None:
     if yaml_type in OBJECT_TYPES:
         return yaml_type
     name = path.name
-    if name.startswith("workarea-"):
-        return "workarea"
     if name.startswith("workcase-"):
         return "workcase"
     if name.startswith("adr-"):
@@ -671,7 +659,6 @@ def validate_datetime_fields(path: Path, data: dict[str, Any], fields: tuple[str
 
 def find_object_by_id(project_root: Path, object_type: str, object_id: str) -> tuple[Path | None, dict[str, Any] | None, Issue | None]:
     directory_name = {
-        "workarea": "workareas",
         "workcase": "workcases",
         "adr": "adrs",
         "pitfall": "pitfalls",
@@ -705,17 +692,6 @@ def validate_single_id_reference(path: Path, data: dict[str, Any], field: str, o
     return []
 
 
-def validate_workarea(path: Path, data: dict[str, Any]) -> list[Issue]:
-    issues = validate_common(path, data, "workarea")
-    if "taskplans" in data:
-        issues.append(Issue(str(path), "error", "REMOVED_WORKAREA_FIELD", "WorkArea 不得继续维护旧字段 taskplans；当前事实源只使用 WorkCase.workarea 表达工作项归属", field="taskplans"))
-    if "workcases" in data:
-        issues.append(Issue(str(path), "error", "REMOVED_WORKAREA_FIELD", "WorkArea 不得继续维护 workcases；工作域下的 WorkCase 列表应由 WorkCase.workarea 反向聚合派生", field="workcases"))
-    if data.get("status") == "archived" and is_empty(data.get("archive_reason")):
-        issues.append(Issue(str(path), "error", "MISSING_ARCHIVE_REASON", "archived 状态必须提供非空字段: archive_reason", field="archive_reason"))
-    return issues
-
-
 def validate_workcase(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "workcase")
     issues.extend(validate_datetime_fields(path, data, ("plan_confirmed_at", "closure_requested_at", "review_requested_at", "closed_at")))
@@ -729,7 +705,6 @@ def validate_workcase(path: Path, data: dict[str, Any]) -> list[Issue]:
     for legacy_field in ("tasks", "completion_evidence"):
         if legacy_field in data:
             issues.append(Issue(str(path), "error", "LEGACY_WORKCASE_FIELD", f"WorkCase 不得继续使用旧字段: {legacy_field}", field=legacy_field))
-    issues.extend(validate_single_id_reference(path, data, "workarea", "workarea"))
     issues.extend(validate_id_list_references(path, data, "related_workcases", "workcase"))
 
     orchestration = data.get("orchestration")
@@ -1073,7 +1048,6 @@ VALID_PRIORITY = {"P0", "P1", "P2", "P3"}
 VALID_SPARK_SOURCE = {"web", "conversation"}
 
 ID_LIST_FIELDS = {
-    "related_workareas": "workarea",
     "related_adrs": "adr",
     "related_sparks": "spark",
     "related_studies": "study",
@@ -1169,7 +1143,6 @@ def validate_file(path: Path) -> tuple[list[Issue], bool]:
     if object_type is None:
         return [Issue(str(path), "error", "UNKNOWN_OBJECT_TYPE", "无法根据 YAML type 或文件名前缀识别对象类型")], True
     validators = {
-        "workarea": validate_workarea,
         "workcase": validate_workcase,
         "adr": validate_adr,
         "pitfall": validate_pitfall,

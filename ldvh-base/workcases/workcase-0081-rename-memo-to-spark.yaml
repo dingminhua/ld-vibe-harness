@@ -6,7 +6,6 @@ goal: |
 status: human_closure_confirming
 created: '2026-06-21T05:33:56+08:00'
 updated: '2026-06-21T06:18:41+08:00'
-workarea: workarea-0012
 priority: P1
 description: |
   本计划承接 LDVH active 工作模型中的 Memo / 备忘重命名与语义升级。
@@ -86,7 +85,6 @@ orchestration:
     - specs/05.01-工作模型字段定义与语义规范.md
     - specs/05.02-工作模型字段内容与格式规范.md
     - specs/05.03-工作模型字段注册与消费规范.md
-    - specs/20-WorkArea-工作域.md
     - specs/21-WorkCase-工作项.md
     - specs/22-ADR-决策.md
     - specs/23-Pitfall-踩坑经验.md
@@ -106,7 +104,6 @@ orchestration:
     mode: single
     input_refs:
     - ldvh-base/sparks/
-    - ldvh-base/workareas/
     - ldvh-base/workcases/
     - ldvh-base/adrs/
     - ldvh-base/pitfalls/
@@ -473,11 +470,9 @@ orchestration:
         - 05.03 已切到 source_sparks / related_sparks 和 Spark 专属字段。
         - 08 Web 白名单与 24 一致，当前唯一 Web 写入是 POST /api/sparks。
         - Web 图标语义和实现均为 Sparkles，Web i18n 为 创建火花 / Create Spark。
-        - 非阻断 follow-up：02 术语归口可更显式；WorkArea 图标规范与实现存在非 Spark 漂移。
         recommendations:
         - 将本复核写入 WorkCase 结果复核记录。
         - 后续补充 02 对 Spark / 火花术语归口的显式说明。
-        - 单独收敛 WorkArea 图标规范与实现差异。
         required_changes: []
         evidence_refs:
         - specs/24-Spark-火花.md
@@ -498,7 +493,6 @@ orchestration:
         objective: 复核 ldvh-base 事实源迁移、Spark 实例、related_sparks/source_sparks 引用、旧 memo 路径和允许残留白名单。
         input_refs:
         - ldvh-base/sparks/
-        - ldvh-base/workareas/
         - ldvh-base/workcases/
         - ldvh-base/adrs/
         - ldvh-base/pitfalls/
@@ -599,11 +593,9 @@ orchestration:
         - locales.ts 中 spark.create、spark.quickCapture、spark.createBtn 中英均为 创建火花 / Create Spark。
         - SemanticIcon.tsx 中 spark: Sparkles，Sidebar、ObjectList、ObjectDetail、ReadingPanel 等通过统一映射或 ObjectTypeIcon 使用。
         - SparkCreate.tsx 使用 Plus 作为创建动作图标，属于操作语义，不是对象身份图标。
-        - 非阻断 follow-up：WorkArea 图标规范与实现存在非 Spark 漂移。
         - 非阻断 follow-up：npm run lint 存在既有 lint 红项，不属于 Spark 文案/图标主线。
         recommendations:
         - 可以判定 Spark 命名、文案和对象图标语义主线通过。
-        - 后续单独收敛 WorkArea 图标规范与实现差异。
         - 后续单独处理既有 Web lint 红项。
         required_changes: []
         evidence_refs:
@@ -634,7 +626,6 @@ orchestration:
       - Code 复核初次发现的 source_sparks update 和 create spark description 缺口已经修复并补测试。
       - Human 最终裁决 Web 入口文案为 Create Spark / 创建火花，当前 Web i18n 已同步。
       rejected_findings:
-      - 不将 WorkArea 图标规范与实现漂移作为 workcase-0081 关闭阻塞；该问题不属于 Spark/Memo 迁移主线，记录为 follow-up。
       - 不将既有 Web lint 红项作为 workcase-0081 关闭阻塞；本轮已通过 Web build、Web API 测试和 npm run check，lint 红项另行分流。
       required_changes_applied:
       - 将 source_sparks 加入 fact_cli update 列表字段解析。
@@ -711,7 +702,7 @@ closure_evidence: |
   - 禁止残留清单：active surface 中不得再出现旧字段 `related_memos` / `source_memos`、旧目录 `ldvh-base/memos/`、旧 API `/api/memos`、旧当前类型 `memo` 或 Web 当前入口旧名。
   - 对话感知修正：跨阶段口径已推进到 `human_closure_confirming`，执行项、成功标准、结果复核和关闭请求已回写，使 Web 能展示真实阶段。
   - 结果复核处理：specs、事实引用、Code/tests、Web/UX 四个视角均已记录；Code/tests 初次复核发现的两个硬缺口已修复并通过二次复核。
-  - Follow-up 分流：02 术语归口、WorkArea 图标规范/实现漂移和既有 Web lint 红项不阻塞 Spark 迁移关闭，已写入 `residual_risks` / `followup_refs`。
+  - Follow-up 分流：02 术语归口、WorkCase 图标规范/实现漂移和既有 Web lint 红项不阻塞 Spark 迁移关闭，已写入 `residual_risks` / `followup_refs`。
 
   ## 结论
 
@@ -819,7 +810,6 @@ related_workcases: []
 residual_risks:
 - 本 WorkCase 保留旧 Memo 词作为迁移说明和方案审核历史语境；不得将这些历史记录解释为当前 active 工作模型入口。
 - specs/02-术语规范.md 对 Spark / 火花术语归口仍可更显式；当前不阻塞，因为 Spark 工作模型权威定义已由 specs/24-Spark-火花.md 承载。
-- web/docs/09-图标语义规范.md 与 web/src/components/SemanticIcon.tsx 存在 WorkArea 图标 Layers / Focus 的非 Spark 漂移，需后续单独收敛。
 - 既有 Web lint 红项仍需后续单独处理；本次 Spark 迁移已通过 Web build、Web API 测试和 npm run check。
 followup_refs:
 - specs/02-术语规范.md

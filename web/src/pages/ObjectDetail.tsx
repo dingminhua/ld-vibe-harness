@@ -15,7 +15,7 @@ import CopyPathButton from '@/components/CopyPathButton';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { ExecutionFlowBar, ExecutionFlowMarker } from '@/components/ExecutionFlowStatus';
-import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary, type RelatedWorkCaseSummary } from '@/utils/api';
+import { fetchObjectDetail, fetchObjects, type ObjectDetail, type ObjectItem, type RelatedObjectSummary } from '@/utils/api';
 import { useI18n } from '@/i18n/context';
 import { getObjectStatusLocale } from '@/i18n/locales';
 import { CATEGORY_COLORS } from '@/utils/categoryColors';
@@ -68,31 +68,30 @@ const AUXILIARY_META_KEYS_BY_TYPE: Record<string, string[]> = {
   pitfall: ['tags'],
 };
 const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
-  workarea: ['description', 'source', 'scope', 'constraints', 'related_docs', 'related_adrs', 'related_sparks', 'related_pitfalls'],
   workcase: [
-    'workarea', 'priority', 'description', 'success_criteria', 'source',
+    'priority', 'description', 'success_criteria', 'source',
     'orchestration', 'verification_evidence', 'closure_evidence', 'related_workcases',
     'related_docs', 'related_adrs', 'related_sparks', 'related_pitfalls',
   ],
   adr: [
     'context', 'decision', 'consequences',
-    'related_rules', 'archive_reason', 'deprecated_reason', 'related_workareas',
+    'related_rules', 'archive_reason', 'deprecated_reason',
     'related_workcases', 'related_adrs', 'related_sparks',
   ],
   pitfall: [
     'symptoms', 'trigger_conditions', 'root_cause', 'resolution', 'verification',
-    'avoidance', 'applicability', 'source_sparks', 'related_workareas',
+    'avoidance', 'applicability', 'source_sparks',
     'related_adrs', 'related_docs', 'related_rules',
     'archive_reason', 'discard_reason', 'notes',
   ],
   spark: [
     'description', 'evolution', 'resolved_to', 'resolved_at', 'discard_reason',
-    'source', 'source_detail', 'related_workareas', 'related_workcases',
+    'source', 'source_detail', 'related_workcases',
     'related_adrs', 'related_studies', 'related_docs',
   ],
   study: [
     'user_intent', 'summary', 'conclusion', 'report_body', 'urls',
-    'related_sparks', 'related_workareas',
+    'related_sparks',
     'related_adrs', 'related_pitfalls', 'related_docs', 'archive_reason',
   ],
 };
@@ -100,7 +99,6 @@ const FIELD_ORDER_BY_TYPE: Record<string, string[]> = {
 const STUDY_READING_NODE_FIELDS = new Set(['user_intent', 'summary', 'conclusion', 'report_body']);
 type ReadingNodeState = 'collapsed' | 'expanded';
 const RELATED_OBJECT_FIELD_ORDER: Record<string, number> = {
-  related_workareas: 20,
   related_workcases: 21,
   related_adrs: 22,
   related_pitfalls: 23,
@@ -181,7 +179,6 @@ export function getObjectDetailContentEntries(obj: Record<string, unknown>, objT
 
 /** 对象类型中英映射 */
 const TYPE_LOCALES: Record<string, { zh: string; en: string }> = {
-  workarea: { zh: '工作域', en: 'Work Area' },
   workcase: { zh: '工作项', en: 'WorkCase' },
   adr: { zh: '决策', en: 'ADR' },
   pitfall: { zh: '踩坑', en: 'Pitfall' },
@@ -234,7 +231,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   analysis: { zh: '分析', en: 'Analysis' },
   mitigation: { zh: '缓解措施', en: 'Mitigation' },
   resolution: { zh: '解决方案', en: 'Resolution' },
-  workarea: { zh: '工作域', en: 'Work Area' },
   workcase: { zh: '工作项', en: 'WorkCase' },
   orchestration: { zh: '编排', en: 'Orchestration' },
   execution_items: { zh: '执行项', en: 'Execution Items' },
@@ -251,7 +247,6 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   transition_reasons: { zh: '流转记录', en: 'Transition Reasons' },
   options: { zh: '选项', en: 'Options' },
   decision: { zh: '决策', en: 'Decision' },
-  related_workareas: { zh: '关联工作域', en: 'Related Work Areas' },
   related_workcases: { zh: '关联工作项', en: 'Related Work Cases' },
   related_adrs: { zh: '关联决策', en: 'Related ADRs' },
   related_sparks: { zh: '关联火花', en: 'Related Sparks' },
@@ -320,8 +315,6 @@ export default function ObjectDetail() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
-  const [workareaSummary, setWorkareaSummary] = useState<ObjectItem | null>(null);
-  const [workareaSummaryLoading, setWorkareaSummaryLoading] = useState(false);
   const [relatedWorkCaseSummary, setRelatedWorkCaseSummary] = useState<ObjectItem | null>(null);
   const [relatedSummaryLoading, setRelatedSummaryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -334,9 +327,7 @@ export default function ObjectDetail() {
     if (!type || !id) return;
     let cancelled = false;
     setDetail(null);
-    setWorkareaSummary(null);
     setRelatedWorkCaseSummary(null);
-    setWorkareaSummaryLoading(type === 'workarea');
     setRelatedSummaryLoading(type === 'workcase');
     setError(null);
 
@@ -348,19 +339,6 @@ export default function ObjectDetail() {
         if (!cancelled) setError(e.message);
       });
 
-    if (type === 'workarea') {
-      fetchObjects('workarea')
-        .then((result) => {
-          if (cancelled) return;
-          setWorkareaSummary(result.data?.items?.find((item) => item.id === id) ?? null);
-        })
-        .catch(() => {
-          if (!cancelled) setWorkareaSummary(null);
-        })
-        .finally(() => {
-          if (!cancelled) setWorkareaSummaryLoading(false);
-        });
-    }
 
     if (type === 'workcase') {
       fetchObjects('workcase')
@@ -413,7 +391,7 @@ export default function ObjectDetail() {
   const contentEntries = getObjectDetailContentEntries(obj, objType);
   const { primaryEntries, relatedEntries } = splitRelatedContentEntries(contentEntries);
 
-  const auxiliaryMetaEntries = objType === 'workarea' ? [] : getAuxiliaryMetaEntries(obj, objType);
+  const auxiliaryMetaEntries = getAuxiliaryMetaEntries(obj, objType);
 
   // 生成真正的 YAML 源码
   const yamlSource = objectToYaml(obj);
@@ -460,15 +438,7 @@ export default function ObjectDetail() {
           </div>
 
           {/* Content fields */}
-          {objType === 'workarea' ? (
-            <WorkAreaReadingLayout
-              obj={obj}
-              summary={workareaSummary}
-              loading={workareaSummaryLoading}
-              locale={locale}
-              getStatus={getStatus}
-            />
-          ) : objType === 'workcase' ? (
+          {objType === 'workcase' ? (
             <WorkCaseReadingLayout
               obj={obj}
               summary={relatedWorkCaseSummary}
@@ -733,292 +703,6 @@ function HeaderDateMeta({ label, value, align = 'end' }: { label: string; value:
       <span className="ldvh-caption shrink-0">{label}</span>
       <span className={valueClassName}>{value}</span>
     </span>
-  );
-}
-
-function isDetailTerminalStatus(status: string): boolean {
-  return isWorkCaseTerminalStatus(status);
-}
-
-function isDetailHumanConfirmingStatus(status: string): boolean {
-  return isWorkCaseHumanConfirmingStatus(status);
-}
-
-export function WorkAreaReadingLayout({
-  obj,
-  summary,
-  loading,
-  locale,
-  getStatus,
-}: {
-  obj: Record<string, unknown>;
-  summary: ObjectItem | null;
-  loading: boolean;
-  locale: string;
-  getStatus: (status: string) => string;
-}) {
-  const { t } = useI18n();
-  const { openPanel } = usePanel();
-  const workcases = summary?.workcases ?? [];
-  const activeWorkCases = workcases.filter((workcase) => !isDetailHumanConfirmingStatus(workcase.status) && !isDetailTerminalStatus(workcase.status));
-  const humanConfirmingWorkCases = workcases.filter((workcase) => isDetailHumanConfirmingStatus(workcase.status));
-  const closedWorkCases = workcases.filter((workcase) => isDetailTerminalStatus(workcase.status));
-  const hasRelatedMaterials = [
-    obj.related_docs,
-    obj.related_adrs,
-    obj.related_sparks,
-    obj.related_pitfalls,
-  ].some((value) => Array.isArray(value) && value.length > 0);
-
-  const openWorkCase = (workcase: RelatedWorkCaseSummary) => {
-    openPanel({
-      type: 'object',
-      title: getLocalizedTitle(workcase, locale),
-      objectType: workcase.type || 'workcase',
-      objectId: workcase.id,
-    });
-  };
-
-  return (
-    <div className="mb-6 flex flex-col gap-5">
-      {loading ? (
-        <div className="rounded-xl border border-dashed border-ldvh-border bg-ldvh-panel px-3 py-6 text-center">
-          <span className="ldvh-body-muted">{t('objectDetail.workareaPlansLoading')}</span>
-        </div>
-      ) : workcases.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-ldvh-border bg-ldvh-panel px-3 py-6 text-center">
-          <span className="ldvh-body-muted">{t('objectList.noPlans')}</span>
-        </div>
-      ) : (
-        <>
-          {activeWorkCases.length > 0 && (
-            <WorkAreaWorkCaseGroup
-              title={t('objectList.activePlanCount', { count: String(activeWorkCases.length) })}
-              tone="active"
-              workcases={activeWorkCases}
-              locale={locale}
-              getStatus={getStatus}
-              onOpen={openWorkCase}
-            />
-          )}
-          {humanConfirmingWorkCases.length > 0 && (
-            <WorkAreaWorkCaseGroup
-              title={t('objectList.humanConfirmPlanCount', { count: String(humanConfirmingWorkCases.length) })}
-              tone="review"
-              workcases={humanConfirmingWorkCases}
-              locale={locale}
-              getStatus={getStatus}
-              onOpen={openWorkCase}
-            />
-          )}
-          {closedWorkCases.length > 0 && (
-            <WorkAreaWorkCaseGroup
-              title={t('objectList.closedPlanCount', { count: String(summary?.workcaseClosed ?? closedWorkCases.length) })}
-              tone="closed"
-              workcases={closedWorkCases}
-              locale={locale}
-              getStatus={getStatus}
-              onOpen={openWorkCase}
-              defaultCollapsed
-            />
-          )}
-        </>
-      )}
-
-      <WorkAreaDefinitionSection title={t('objectDetail.workareaGoal')} value={obj.description} />
-      <WorkAreaDefinitionSection title={getFieldLabel('scope', locale)} value={obj.scope} />
-      <WorkAreaDefinitionSection title={getFieldLabel('constraints', locale)} value={obj.constraints} />
-      <WorkAreaDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} muted />
-
-      {hasRelatedMaterials && (
-        <RelatedContentSection
-          entries={sortRelatedContentEntries([
-            ['related_docs', obj.related_docs],
-            ['related_adrs', obj.related_adrs],
-            ['related_sparks', obj.related_sparks],
-            ['related_pitfalls', obj.related_pitfalls],
-          ].filter((entry): entry is RelatedContentEntry => Array.isArray(entry[1]) && hasDetailContent(entry[1])))}
-          locale={locale}
-        />
-      )}
-    </div>
-  );
-}
-
-function WorkAreaSection({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="rounded-xl border border-ldvh-border bg-ldvh-panel p-4">
-      <h2 className="ldvh-section-title mb-3 flex min-w-0 items-center gap-2">
-        <span className="h-1.5 w-1.5 rounded-full bg-ldvh-accent" />
-        <span className="min-w-0 truncate">{title}</span>
-      </h2>
-      {children}
-    </section>
-  );
-}
-
-function WorkAreaDefinitionSection({ title, value, muted = false }: { title: string; value: unknown; muted?: boolean }) {
-  if (!hasDetailContent(value)) return null;
-  return (
-    <WorkAreaSection title={title}>
-      <div className={`ldvh-definition-text min-w-0 ${muted ? 'opacity-85' : ''}`}>
-        <DefinitionValue value={String(value)} muted={muted} />
-      </div>
-    </WorkAreaSection>
-  );
-}
-
-function WorkAreaWorkCaseGroup({
-  title,
-  tone,
-  workcases,
-  locale,
-  getStatus,
-  onOpen,
-  defaultCollapsed = false,
-}: {
-  title: string;
-  tone: 'active' | 'review' | 'closed';
-  workcases: RelatedWorkCaseSummary[];
-  locale: string;
-  getStatus: (status: string) => string;
-  onOpen: (workcase: RelatedWorkCaseSummary) => void;
-  defaultCollapsed?: boolean;
-}) {
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
-  const toneClass = {
-    active: {
-      section: 'border-emerald-500/30 bg-emerald-500/5',
-      header: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
-      row: 'hover:bg-emerald-500/10',
-      icon: 'text-emerald-400',
-      titleHover: 'group-hover/workarea-workcase-row:text-emerald-400',
-      iconHover: 'group-hover/workarea-workcase-row:text-emerald-400 hover:text-emerald-400',
-    },
-    review: {
-      section: 'border-violet-500/30 bg-violet-500/5',
-      header: 'border-violet-500/30 bg-violet-500/10 text-violet-400',
-      row: 'hover:bg-violet-500/10',
-      icon: 'text-violet-400',
-      titleHover: 'group-hover/workarea-workcase-row:text-violet-400',
-      iconHover: 'group-hover/workarea-workcase-row:text-violet-400 hover:text-violet-400',
-    },
-    closed: {
-      section: 'border-ldvh-border bg-ldvh-bg/60',
-      header: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
-      row: 'hover:bg-ldvh-border/35',
-      icon: 'text-ldvh-text-secondary',
-      titleHover: 'group-hover/workarea-workcase-row:text-ldvh-accent',
-      iconHover: 'group-hover/workarea-workcase-row:text-ldvh-accent hover:text-ldvh-accent',
-    },
-  }[tone];
-  const canCollapse = defaultCollapsed || tone === 'closed';
-  const headerClassName = `ldvh-caption-strong flex w-full min-w-0 items-center gap-2 border px-3 py-2 text-left ${toneClass.header}`;
-  const headerContent = (
-    <>
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-80" aria-hidden="true" />
-      <span className="min-w-0 flex-1 truncate">{title}</span>
-      {canCollapse && (collapsed ? <ChevronDown size={13} className="shrink-0" /> : <ChevronUp size={13} className="shrink-0" />)}
-    </>
-  );
-
-  return (
-    <div className={`min-w-0 overflow-hidden rounded-md border ${toneClass.section}`}>
-      {canCollapse ? (
-        <button type="button" onClick={() => setCollapsed((value) => !value)} className={`${headerClassName} cursor-pointer`}>
-          {headerContent}
-        </button>
-      ) : (
-        <div className={`${headerClassName} cursor-default`}>
-          {headerContent}
-        </div>
-      )}
-      {!collapsed && (
-        <div className="divide-y divide-ldvh-border/60 px-1 py-1">
-          {workcases.map((workcase) => (
-            <WorkAreaWorkCaseRow
-              key={workcase.id}
-              workcase={workcase}
-              locale={locale}
-              getStatus={getStatus}
-              toneClass={toneClass}
-              onOpen={onOpen}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function WorkAreaWorkCaseRow({
-  workcase,
-  locale,
-  getStatus,
-  toneClass,
-  onOpen,
-}: {
-  workcase: RelatedWorkCaseSummary;
-  locale: string;
-  getStatus: (status: string) => string;
-  toneClass: { row: string; icon: string; titleHover: string; iconHover: string };
-  onOpen: (workcase: RelatedWorkCaseSummary) => void;
-}) {
-  const { t } = useI18n();
-  const { isOpen: panelOpen, content: panelContent } = usePanel();
-  const open = () => onOpen(workcase);
-  const workcaseType = workcase.type || 'workcase';
-  const flowItems = workcase.executionItems ?? [];
-  const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === workcaseType && panelContent.objectId === workcase.id;
-  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      data-detail-object-id={workcase.id}
-      data-detail-object-type={workcaseType}
-      onClick={open}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          open();
-        }
-      }}
-      className={`group/workarea-workcase-row flex min-w-0 cursor-pointer flex-col gap-2 rounded-md px-2 py-2.5 text-left transition-colors ${toneClass.row}`}
-    >
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${toneClass.titleHover}`}>
-            <PriorityIcon source={workcase} type={workcaseType} locale={locale} size="sm" />
-            <ObjectTypeIcon type={workcaseType} size={12} className="shrink-0" />
-            <span className="min-w-0 truncate">{getLocalizedTitle(workcase, locale)}</span>
-          </span>
-          <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="ldvh-meta-muted min-w-0 truncate">{workcase.id}</span>
-            <span className="ldvh-caption">{formatDateTime(workcase.updated)}</span>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <CopyPathButton
-            path={workcase.path}
-            label={t('common.copyObjectPath')}
-            copiedLabel={t('common.copiedObjectPath')}
-            toneClassName="bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-text-secondary"
-          />
-          <PanelIcon
-            size={16}
-            aria-hidden="true"
-            className={`text-ldvh-text-secondary/70 transition-colors ${isCurrentPanelOpen ? toneClass.icon : toneClass.iconHover}`}
-          />
-        </div>
-      </div>
-      {flowItems.length > 0 && (
-        <div className="min-w-0 self-stretch">
-          <ExecutionFlowBar items={flowItems} t={t} getStatus={getStatus} compact />
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -1387,7 +1071,6 @@ export function WorkCaseReadingLayout({
   const relatedPitfalls = ((obj.aggregated_related_pitfalls as string[] | undefined) ?? (obj.related_pitfalls as string[] | undefined)) || [];
   const hidden = new Set([
     ...META_KEYS,
-    'workarea',
     'priority',
     'description',
     'success_criteria',
@@ -1454,14 +1137,7 @@ export function WorkCaseReadingLayout({
       </DetailSection>
       <WorkCaseReviewSection orchestration={orchestration} />
 
-      <DetailNarrativeSection title={t('objectDetail.workareaGoal')} value={obj.description} />
-      <DetailObjectReferenceSection
-        title={t('objectDetail.parentWorkArea')}
-        item={summary?.workareaSummary}
-        fallbackId={typeof obj.workarea === 'string' ? obj.workarea : undefined}
-        objectType="workarea"
-        locale={locale}
-      />
+      <DetailNarrativeSection title={t('objectDetail.planGoal')} value={obj.description} />
       <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
       <RelatedContentSection
         entries={sortRelatedContentEntries([

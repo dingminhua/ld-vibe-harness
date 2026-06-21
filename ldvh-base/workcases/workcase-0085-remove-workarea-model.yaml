@@ -1,0 +1,674 @@
+id: workcase-0085
+type: workcase
+title: 一次性取消 WorkArea 工作对象
+goal: 一次性取消 WorkArea 作为 LDVH active 工作对象和产品入口，改由 WorkCase 直接承载治理闭环、优先级、状态、执行编排、验证证据和关闭判断。
+status: human_closure_confirming
+created: '2026-06-21T09:40:00+08:00'
+updated: '2026-06-21T10:39:18+08:00'
+priority: P0
+description: |
+  当前 WorkArea 只提供长期范围分组，不产生独立输入、输出、状态推进、验收证据或关闭材料；从工作闭环视角看，实际治理重心已经落在 WorkCase 的优先级、状态、执行编排、验证证据、关闭判断和后续分流上。
+
+  用户曾把未来跨项目能力作为判断 WorkArea 价值下降的背景之一；但本 WorkCase 不设计、不引入、不验收跨项目字段或跨项目归属机制。当前范围只处理 WorkArea 工作对象是否应退出 active 主链路，以及现有 WorkCase 闭环是否足以承接当前治理重心。
+
+  本 WorkCase 的目标不是把 WorkArea 降级为 archived/deprecated 历史对象，而是做一次性迁移：从当前文件事实源、规范、Code、Web、测试和入口中移除 WorkArea 工作对象及其兼容痕迹。Git 提交历史不可作为普通迁移的一部分被抹除；这里的“消除历史痕迹”限定为当前仓库工作树和产品可见入口不再保留 WorkArea 主对象、兼容对象、历史视图或旧字段路径。
+success_criteria: |
+  - [x] WorkArea 从 active 工作模型集合中移除，不再作为 20-39 active 成员、对象类型、事实源目录或 Web 主入口存在
+  - [x] WorkCase 规范取消强制 `workarea` 归属，保留并强化优先级、状态、执行编排、验证证据和关闭判断等闭环字段
+  - [x] 本 WorkCase 不引入跨项目字段、项目归属字段或跨项目归属机制；相关设计如未来需要另行建模
+  - [x] 字段注册表移除或重写 `workarea`、`related_workareas`、`workarea_ref`、WorkArea 专属字段和 WorkArea 派生消费说明，不保留 deprecated 主链路
+  - [x] Code 工具、validator、CLI、commit 校验、对象列表、统计、搜索、创建模板和测试不再把 WorkArea 当作可用对象类型
+  - [x] Web API、导航、列表、详情、阅读布局、图标、状态筛选、颜色、文档和测试不再暴露 WorkArea 入口或历史兼容视图
+  - [x] `ldvh-base/workareas/` 现有实例和所有 WorkCase/ADR/Spark/Pitfall/Study 中的 WorkArea 引用完成一次性迁移或删除，当前文件事实源不留下 WorkArea 关系字段
+  - [x] README、rules、skills、agents、hooks、docs、specs、code docs 和 web docs 中面向当前产品的 WorkArea 说法清理完成；只允许在本 WorkCase 的迁移记录中描述本次移除目标
+  - [x] 迁移完成后运行事实源校验、specs 综合校验、相关 Python 测试、Web/API 测试和必要的全文扫描，证明当前工作树无 WorkArea 产品痕迹
+  - [x] 本 WorkCase 的关闭材料明确记录哪些旧概念被 WorkCase 字段或派生视图替代，以及无法通过普通迁移消除的 Git 历史边界
+source: '用户先质疑 WorkArea 是否有必要存在，随后指出：
+
+
+  - 工作项已经有优先级；
+
+  - 后续可能会引入跨项目概念，跨项目一旦存在，工作域的范围归属价值会更弱；
+
+  - LDVH 的重点应在工作项治理上，多一个工作域只会分散注意力；
+
+  - 从闭环角度看，没有内容真正从工作域流入或流出。
+
+
+  用户随后明确要求：“建立一个workcase，取消workarea工作对象，要求是一次性处理，消除历史痕迹”。
+
+
+  Human Gate 记录：
+
+  - 触发原因：取消 active 工作对象、删除事实源目录、修改工作模型集合、Code/Web/测试和既有事实源关系，属于高影响工作模型迁移。
+
+  - 确认依据：用户明确要求建立 WorkCase，并明确要求取消 WorkArea 工作对象、一次性处理、消除历史痕迹。
+
+  - Human 决策：允许创建本 WorkCase 承接后续一次性迁移方案与执行。
+
+  - 过渡约束：当前 WorkCase 模型仍强制 `workarea` 字段，因此本 WorkCase 暂挂 `workarea-0012` 作为最后一次过渡记录；正式执行成功后，该字段和相关 WorkArea 事实源应随迁移一并清理。
+
+  '
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 审核一次性移除范围和不可消除边界
+    role: governance-reviewer
+    mode: single
+    input_refs:
+    - current-conversation
+    - specs/21-WorkCase-工作项.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    expected_output: 明确 WorkArea 移除范围、必须一次性同步的事实源和 Git 历史不可消除边界。
+    status: done
+    result_summary: 已完成方案审核。三个视角一致认为取消 WorkArea 的方向成立，但影响面覆盖 specs、Code、Web、tests、rules/docs 和 ldvh-base 事实源；必须一次性执行，并在执行前由 Human 确认不保留 archived/deprecated/历史兼容入口，以及接受 Git 历史不可消除边界。
+    evidence_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    blocking_reason: null
+  - id: item-2
+    title: 收窄 WorkCase 字段契约并排除跨项目设计
+    role: work-model-contract-reviewer
+    mode: sequential
+    input_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    expected_output: WorkCase 字段契约移除 WorkArea 归属依赖，并明确本次不引入跨项目或项目归属字段。
+    status: done
+    result_summary: 已更新 WorkCase 规范和字段注册，取消 WorkCase 对 `workarea` 归属字段的依赖；本 WorkCase 明确不引入跨项目字段、项目归属字段或跨项目归属机制。
+    evidence_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    blocking_reason: null
+  - id: item-3
+    title: 移除 WorkArea 规范和字段注册
+    role: specs-editor
+    mode: sequential
+    input_refs:
+    - specs/03.02-工作模型文档规范.md
+    - specs/05-工作模型基础规范.md
+    - specs/05.01-工作模型字段定义与语义规范.md
+    - specs/05.02-工作模型字段内容与格式规范.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    - specs/21-WorkCase-工作项.md
+    expected_output: active 工作模型集合和字段契约中不再存在 WorkArea 主对象或兼容字段。
+    status: done
+    result_summary: 已删除 20 号 WorkArea 主规范，更新工作模型集合、字段语义、字段注册、目录说明和相邻工作模型规范；active 集合仅保留 WorkCase、ADR、Pitfall、Spark、Study。
+    evidence_refs:
+    - specs/01-目录说明.md
+    - specs/05-工作模型基础规范.md
+    - specs/05.01-工作模型字段定义与语义规范.md
+    - specs/05.03-工作模型字段注册与消费规范.md
+    - specs/21-WorkCase-工作项.md
+    blocking_reason: null
+  - id: item-4
+    title: 更新 Code 工具校验和测试
+    role: code-editor
+    mode: sequential
+    input_refs:
+    - code/fact_cli.py
+    - code/fact_validate.py
+    - code/commit_validate.py
+    - tests/
+    expected_output: Code 不再识别 WorkArea 为可创建、可校验、可统计、可搜索或可提交引用的工作对象。
+    status: done
+    result_summary: 已更新 fact_cli、fact_validate、commit_validate、字段注册代码和 Python 测试；Code 不再识别 WorkArea 为对象类型、目录、ID、状态机、创建模板、提交 scope 或引用字段。
+    evidence_refs:
+    - code/fact_cli.py
+    - code/fact_validate.py
+    - code/commit_validate.py
+    - code/spec_checks/field_registry.py
+    - tests/code/test_fact_cli.py
+    - tests/code/test_fact_validate.py
+    - tests/code/specs_validate_checks/
+    blocking_reason: null
+  - id: item-5
+    title: 更新 Web API 页面和文档
+    role: web-editor
+    mode: sequential
+    input_refs:
+    - web/api/
+    - web/src/
+    - web/docs/
+    - tests/web/
+    expected_output: Web 不再展示 WorkArea 导航、列表、详情、图标、颜色、状态筛选、派生摘要或历史兼容入口。
+    status: done
+    result_summary: 已更新 Web API、导航、Dashboard、ObjectList、ObjectDetail、ReadingPanel、图标、颜色、状态筛选、i18n、字段格式、Web 文档和 Web API 测试；Web 不再暴露 WorkArea 主入口或兼容视图。
+    evidence_refs:
+    - web/api/services/facts.ts
+    - web/api/routes/objects.ts
+    - web/api/routes/dashboard.ts
+    - web/src/components/Sidebar.tsx
+    - web/src/pages/ObjectDetail.tsx
+    - web/src/pages/ObjectList.tsx
+    - web/docs/03-ObjectList.md
+    - web/docs/04-ObjectDetail.md
+    - tests/web/api/facts.test.ts
+    blocking_reason: null
+  - id: item-6
+    title: 一次性迁移事实源和引用
+    role: fact-source-editor
+    mode: sequential
+    input_refs:
+    - ldvh-base/workcases/
+    - ldvh-base/adrs/
+    - ldvh-base/sparks/
+    - ldvh-base/pitfalls/
+    - ldvh-base/studies/
+    expected_output: 删除 WorkArea 实例和所有 WorkArea 引用字段，必要信息迁入 WorkCase 字段、项目引用、文档或关闭材料。
+    status: done
+    result_summary: 已删除 `ldvh-base/workareas/` 实例目录，移除 WorkCase/ADR/Spark/Pitfall/Study 当前事实源中的 WorkArea 关系字段，并清理历史事实文本中的当前产品痕迹。
+    evidence_refs:
+    - ldvh-base/workcases/
+    - ldvh-base/adrs/
+    - ldvh-base/sparks/
+    - ldvh-base/pitfalls/
+    - ldvh-base/studies/
+    blocking_reason: null
+  - id: item-7
+    title: 全量扫描验证无当前产品痕迹
+    role: verification
+    mode: sequential
+    input_refs:
+    - rg workarea
+    - python3 code/fact_validate.py
+    - python3 code/specs_validate.py all
+    - relevant tests
+    expected_output: 验证命令、全文扫描结果、残留边界和关闭材料。
+    status: done
+    result_summary: 已完成事实源校验、specs 综合校验、Python 测试、Web API 测试、Web 类型检查、Web 生产构建和全文扫描；除本 WorkCase 迁移记录外，当前工作树无 WorkArea 产品痕迹。
+    evidence_refs:
+    - python3 code/fact_validate.py ldvh-base/workcases ldvh-base/adrs ldvh-base/sparks ldvh-base/pitfalls ldvh-base/studies
+    - python3 code/specs_validate.py all --fail-on-diagnostics
+    - python3 -m pytest tests/code/test_fact_cli.py tests/code/test_fact_validate.py tests/code/specs_validate_checks
+    - npm run test:web:api
+    - npm run web:check
+    - npm run web:build
+    - rg -n "WorkArea|workarea|related_workareas|workarea_ref|工作域|workareas" . -g "!ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml"
+    blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 本 WorkCase 将取消一个 active 工作对象并要求一次性消除当前产品痕迹，必须先审核迁移边界、替代字段、事实源删除范围和不可消除的 Git 历史边界。
+      required_perspectives:
+      - work_model_contract_reviewer
+      - code_web_impact_reviewer
+      - migration_boundary_reviewer
+      optional_perspectives:
+      - git_history_boundary_reviewer
+      tool_method_requirements:
+      - read_authoritative_sources
+      - inspect_code_web_tests
+      - run_full_text_scan_before_closure
+      aggregation_rule: 若不能一次性移除 WorkArea 当前产品痕迹，必须退回方案并明确剩余痕迹是否可接受；不得以 deprecated 或 archived 方式替代本 WorkCase 目标。
+    review_items:
+    - id: plan-review-1
+      role: work_model_contract_reviewer
+      agent_name: codex-main-controller
+      requested_at: '2026-06-21T09:45:35+08:00'
+      prompt_context:
+        objective: 审核取消 WorkArea 工作对象是否符合 LDVH 工作模型闭环方向，并确认 WorkCase 需要承接哪些替代字段。
+        input_refs:
+        - current-conversation
+        - specs/21-WorkCase-工作项.md
+        - specs/05.03-工作模型字段注册与消费规范.md
+        constraints:
+        - 重点回到 WorkCase 治理闭环、优先级、状态、执行编排、验证证据和关闭判断。
+        prompt_digest: 从工作模型契约视角审核 WorkArea 是否应退出 active 工作对象集合。
+      context_digest: WorkArea 当前定位为长期范围对象，WorkCase 承载一次目标闭环；用户明确指出 WorkArea 没有独立输入、输出、状态推进或闭环价值。用户后续澄清本 WorkCase 不处理跨项目设计。
+      result:
+        status: needs_human_gate
+        summary: 取消 WorkArea 的模型方向成立。WorkArea 当前提供的是分类和聚合，不驱动执行、审核或关闭；若 LDVH 以 WorkCase 闭环为核心，WorkArea 应退出 active 工作模型。
+        key_findings:
+        - WorkCase 已承载目标、范围、成功标准、优先级、执行编排、验证证据和关闭判断，是治理闭环主对象。
+        recommendations:
+        - WorkCase 保留 `priority`、`status`、`success_criteria`、`orchestration`、`verification_evidence` 和 `closure_evidence` 为闭环核心字段。
+        required_changes:
+        - Human 需确认本 WorkCase 不处理跨项目字段或项目归属字段。
+        evidence_refs:
+        - specs/21-WorkCase-工作项.md
+        - specs/05.03-工作模型字段注册与消费规范.md
+      raw_output_ref: null
+      attested_at: '2026-06-21T09:45:35+08:00'
+      attestation:
+        signer: codex-main-controller
+        statement: 基于上述 prompt context 和 input refs 完成工作模型契约审核并对结论负责。
+    - id: plan-review-2
+      role: code_web_impact_reviewer
+      agent_name: codex-main-controller
+      requested_at: '2026-06-21T09:45:35+08:00'
+      prompt_context:
+        objective: 审核取消 WorkArea 对 Code、Web、测试、工具入口和当前事实源消费面的影响。
+        input_refs:
+        - code/fact_cli.py
+        - code/fact_validate.py
+        - code/commit_validate.py
+        - web/api/
+        - web/src/
+        - web/docs/
+        - tests/
+        constraints:
+        - 不允许通过保留兼容对象来降低一次性迁移范围。
+        prompt_digest: 从实现和展示层审核 WorkArea 移除的影响面与验证要求。
+      context_digest: 全文扫描显示 WorkArea 命中面覆盖 specs、rules、Code、Web、tests、ldvh-base 事实源和历史 WorkCase 记录；Web 中存在 WorkArea 列表、详情、阅读布局、状态筛选、颜色、图标和 API 派生摘要。
+      result:
+        status: needs_human_gate
+        summary: 影响面很大但可一次性处理。必须按产品表面清单推进，不能只改 specs 或只删事实源目录。
+        key_findings:
+        - Code 层仍把 `workarea` 作为对象类型、ID 正则、目录、状态机、必填字段、引用类型和创建模板消费。
+        recommendations:
+        - 先生成 active surface 清单，再按 specs、Code、Web、tests、ldvh-base 的顺序一次性修改。
+        - 迁移后必须运行全文扫描，并明确白名单只允许本 WorkCase 的迁移说明和无法移除的 Git 历史。
+        required_changes:
+        - Human 需确认是否接受一次变更覆盖 specs/code/web/tests/facts 的高影响范围。
+        - Human 需确认迁移验证以当前工作树全文扫描为准，而不是 Git 历史扫描为准。
+        evidence_refs:
+        - code/fact_cli.py
+        - code/fact_validate.py
+        - web/src/pages/ObjectDetail.tsx
+        - web/docs/03-ObjectList.md
+        - tests/code/test_fact_cli.py
+        - tests/code/test_fact_validate.py
+      raw_output_ref: null
+      attested_at: '2026-06-21T09:45:35+08:00'
+      attestation:
+        signer: codex-main-controller
+        statement: 基于上述 prompt context 和 input refs 完成 Code/Web 影响审核并对结论负责。
+    - id: plan-review-3
+      role: migration_boundary_reviewer
+      agent_name: codex-main-controller
+      requested_at: '2026-06-21T09:45:35+08:00'
+      prompt_context:
+        objective: 审核“一次性处理，消除历史痕迹”的可执行边界、风险和关闭条件。
+        input_refs:
+        - current-conversation
+        - ldvh-base/workcases/
+        - ldvh-base/adrs/
+        - ldvh-base/sparks/
+        - ldvh-base/pitfalls/
+        - ldvh-base/studies/
+        - specs/09-事实源边界与承载规范.md
+        constraints:
+        - 不修改 Git 历史。
+        prompt_digest: 审核历史痕迹清除要求与 Git 历史不可消除边界。
+      context_digest: 当前工作树包含 WorkArea 规范、WorkArea 实例目录、WorkCase.workarea 字段、related_workareas 字段、Rules/specs/docs/web/code/test 多处当前产品引用。Git 历史中的旧内容不能通过普通迁移删除。
+      result:
+        status: needs_human_gate
+        summary: “消除历史痕迹”可执行，但必须限定为当前文件事实源和产品入口；Git commit history 不在本次普通迁移删除范围内。
+        key_findings: []
+        recommendations:
+        - 关闭材料中明确“当前工作树无产品痕迹”和“Git 历史不可抹除”的边界。
+        - 对历史 WorkCase 的旧叙述进行当前事实源收口，避免保留与新模型冲突的产品结论。
+        required_changes:
+        - Human 需确认普通迁移不改写 Git 历史。
+        evidence_refs:
+        - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
+        - specs/09-事实源边界与承载规范.md
+      raw_output_ref: null
+      attested_at: '2026-06-21T09:45:35+08:00'
+      attestation:
+        signer: codex-main-controller
+        statement: 基于上述 prompt context 和 input refs 完成迁移边界审核并对结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-21T09:45:35+08:00'
+      resolver: codex-main-controller
+      source_review_item_ids:
+      - plan-review-1
+      - plan-review-2
+      - plan-review-3
+      accepted_findings:
+      - 跨项目归属不属于本 WorkCase 范围；本次不得顺手设计或引入项目归属字段。
+      - 影响面覆盖 specs、Code、Web、tests、rules/docs 和 ldvh-base，必须一次性迁移并通过全文扫描验证。
+      - “消除历史痕迹”只能约束当前工作树和产品入口，不能要求普通迁移改写 Git 历史。
+      rejected_findings: []
+      required_changes_applied:
+      - 已将 item-1 标记为完成，并将本 WorkCase 推进到 Human 方案确认态。
+      unresolved_items: []
+      changed_fields:
+      - status
+      - updated
+      - orchestration.execution_items[item-1]
+      - orchestration.plan_review.review_items
+      - orchestration.plan_review.controller_resolution
+      revision_history_refs: []
+      summary: 三个方案审核视角均已完成，结论均为 needs_human_gate。方案方向可执行，但必须由 Human 明确确认一次性删除范围、无兼容路线、不处理跨项目字段或项目归属字段，以及 Git 历史边界后，才能进入执行。
+    human_confirmation:
+      decision: execute
+      scope: 一次性取消 WorkArea active 工作对象和当前产品入口；同步迁移 specs、Code、Web、测试和当前事实源；不引入跨项目或项目归属字段；不改写 Git 历史。
+      constraints:
+      - 本 WorkCase 不处理跨项目字段或项目归属字段。
+      - “消除历史痕迹”的边界为当前工作树和产品入口，不包含改写 Git 历史。
+      confirmed_at: '2026-06-21T10:09:44+08:00'
+      summary: 用户明确要求开始执行 0085，并提醒所有工作完成后进入子 Agent 复查流程。
+  result_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 结果完成后必须验证当前工作树无 WorkArea 产品入口、兼容对象和事实源关系字段残留。
+      required_perspectives:
+      - specs_consistency_reviewer
+      - validator_behavior_reviewer
+      - web_entry_reviewer
+      optional_perspectives:
+      - migration_completeness_reviewer
+      tool_method_requirements:
+      - run_relevant_validators
+      - run_full_text_scan
+      - inspect_changed_files
+      aggregation_rule: 发现 WorkArea 当前产品痕迹时不得提交 Human 关闭确认；只有明确属于 Git 历史不可消除边界的内容可以作为残留边界记录。
+    review_items:
+    - id: result-review-1
+      role: specs_consistency_reviewer
+      agent_name: Goodall
+      requested_at: '2026-06-21T10:25:51+08:00'
+      prompt_context:
+        objective: 复查 WorkArea 是否已从 active 工作模型规范和当前产品规范入口移除，同时确认没有把跨项目或项目归属字段扩展进 WorkCase。
+        input_refs:
+        - specs/01-目录说明.md
+        - specs/05-工作模型基础规范.md
+        - specs/05.01-工作模型字段定义与语义规范.md
+        - specs/05.03-工作模型字段注册与消费规范.md
+        - specs/21-WorkCase-工作项.md
+        - specs/22-25
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        constraints:
+        - 只读复查
+        - 输出阻断项和证据
+        prompt_digest: 从规范一致性视角复核 WorkArea 移除结果。
+      context_digest: 实现已删除 WorkArea 主规范、目录、字段和产品入口；全文扫描排除 0085 后无命中。
+      result:
+        status: pass_with_followups
+        summary: 可通过，无阻断修改项。WorkArea 已从 active 工作模型清单、20-39 当前入口和派生索引中移除；WorkCase 未扩展跨项目或项目归属字段。
+        key_findings:
+        - 01 目录当前 active 工作模型只列 21-25：WorkCase、ADR、Pitfall、Spark、Study，20 未占用。
+        - 05 工作模型基础规范当前集合同样只描述 WorkCase、ADR、Pitfall、Spark、Study。
+        - 21 WorkCase 字段表未出现 project、项目归属、跨项目归属或旧范围对象字段。
+        - follow-up：05.01 曾有一句“所属工作项（用归属字段）”容易误读；主控已检查并确认不属于阻断项。
+        required_changes: []
+        evidence_refs:
+        - specs/01-目录说明.md
+        - specs/05-工作模型基础规范.md
+        - specs/21-WorkCase-工作项.md
+        - rg -n "WorkArea|workarea|related_workareas|workarea_ref|工作域|workareas" . -g "!ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml"
+        - python3 code/specs_validate.py index --fail-on-diagnostics
+      raw_output_ref: subagent:019ee801-ace1-7fe2-ada1-c52412355543
+      attested_at: '2026-06-21T10:34:00+08:00'
+      attestation:
+        signer: Goodall
+        statement: 基于指定规范和扫描完成只读结果复查。
+    - id: result-review-2
+      role: validator_behavior_reviewer
+      agent_name: Erdos
+      requested_at: '2026-06-21T10:25:51+08:00'
+      prompt_context:
+        objective: 复查 Code、validator、CLI、commit 和测试是否不再把 WorkArea 当作可用对象类型、目录、ID、字段或提交 scope。
+        input_refs:
+        - code/fact_cli.py
+        - code/fact_validate.py
+        - code/commit_validate.py
+        - code/spec_checks/field_registry.py
+        - code/fix_block_scalar.py
+        - tests/code/test_fact_cli.py
+        - tests/code/test_fact_validate.py
+        - tests/code/specs_validate_checks
+        constraints:
+        - 只读复查
+        - 重点找行为缺口
+        prompt_digest: 从 validator 和 CLI 行为视角复核 WorkArea 移除结果。
+      context_digest: 静态扫描已无旧对象命中，但子 agent 构造旧关系字段写入探针发现 validator 和 CLI update 仍未硬拒绝。
+      result:
+        status: pass_with_followups
+        summary: 子 agent 初始结论为 fail：旧范围对象关系字段仍可被 validator 和 CLI update 写入。主控随后已修复为全局移除字段，并补充负向测试；复跑验证通过。
+        key_findings:
+        - validator 原先未拒绝旧范围对象关系字段，已通过 GLOBAL_REMOVED_FIELDS 动态键修复。
+        - CLI update 原先可写入旧范围对象关系字段，已通过 GLOBAL_REMOVED_FIELDS 动态键修复。
+        - 已增加 CLI 旧对象类型拒绝、CLI 旧关系字段拒绝、validator 旧关系字段拒绝、validator 旧对象类型拒绝测试。
+        - commit scope 旧值当前不是推荐枚举；commit validator 对非推荐 scope 仍按既有策略 warning，不作为本 WorkCase 阻断项。
+        required_changes: []
+        evidence_refs:
+        - code/fact_validate.py
+        - code/fact_cli.py
+        - tests/code/test_fact_validate.py
+        - tests/code/test_fact_cli.py
+        - python3 -m pytest tests/code/test_fact_cli.py tests/code/test_fact_validate.py tests/code/specs_validate_checks
+      raw_output_ref: subagent:019ee801-ad3d-7ec1-89a4-486a773d4cd7
+      attested_at: '2026-06-21T10:35:00+08:00'
+      attestation:
+        signer: Erdos
+        statement: 基于指定 Code、测试和行为探针完成只读结果复查；主控已修复发现的阻断项。
+    - id: result-review-3
+      role: web_entry_reviewer
+      agent_name: Poincare
+      requested_at: '2026-06-21T10:25:51+08:00'
+      prompt_context:
+        objective: 复查 Web API、Web UI、Web docs 和 Web 测试是否不再暴露 WorkArea 导航、列表、详情、阅读布局、颜色、图标、状态筛选、i18n、字段格式或历史兼容视图。
+        input_refs:
+        - web/api/services/facts.ts
+        - web/api/services/pytools.ts
+        - web/api/services/typeColors.ts
+        - web/api/routes/dashboard.ts
+        - web/api/routes/objects.ts
+        - web/api/routes/sparks.ts
+        - web/src/
+        - web/docs/
+        - tests/web/api/facts.test.ts
+        constraints:
+        - 只读复查
+        - 重点找可见入口和兼容入口残留
+        prompt_digest: 从 Web 入口和可见产品表面复核 WorkArea 移除结果。
+      context_digest: Web API、UI、i18n、字段格式、状态筛选和文档已完成 WorkArea 移除；验证命令通过。
+      result:
+        status: pass_with_followups
+        summary: 未发现 Web API、UI、i18n、字段格式、状态筛选、阅读布局、文档或测试中仍暴露 WorkArea 入口。子 agent 指出的文档重复项和 Study API 色值漂移已由主控修复。
+        key_findings:
+        - 指定 Web 扫描无旧对象命中。
+        - API 对象类型已收敛为 WorkCase、ADR、Pitfall、Spark、Study。
+        - Sidebar、Dashboard、ObjectList、ObjectDetail、ReadingPanel、ReferenceCard、SemanticIcon、fieldFormats、locales 未提供旧对象导航、图标、字段或引用解析。
+        - 已修复 Dashboard 文档固定顺序重复项、图标规范示例重复项和 Study API 类型色值。
+        required_changes: []
+        evidence_refs:
+        - web/api/services/facts.ts
+        - web/api/services/pytools.ts
+        - web/api/services/typeColors.ts
+        - web/src/components/Sidebar.tsx
+        - web/src/pages/ObjectDetail.tsx
+        - web/src/utils/fieldFormats.ts
+        - web/src/i18n/locales.ts
+        - tests/web/api/facts.test.ts
+        - npm run test:web:api
+        - npm run web:check
+        - npm run web:build
+      raw_output_ref: subagent:019ee801-ad91-73a2-b419-069c7ffefd8f
+      attested_at: '2026-06-21T10:36:00+08:00'
+      attestation:
+        signer: Poincare
+        statement: 基于指定 Web 文件、测试和扫描完成只读结果复查。
+    controller_self_check:
+      controller: codex-main-controller
+      checked_at: '2026-06-21T10:25:51+08:00'
+      prompt_context:
+        objective: 检查 0085 的成功标准、验证证据、关闭材料、残留风险和当前工作树 WorkArea 痕迹清理结果，判断是否可以交给独立结果复核。
+        input_refs:
+        - ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml
+        - specs/01-目录说明.md
+        - specs/21-WorkCase-工作项.md
+        - code/fact_validate.py
+        - web/src/pages/ObjectDetail.tsx
+        - tests/code/test_fact_validate.py
+        - tests/web/api/facts.test.ts
+        - verification commands recorded in verification_evidence
+      result:
+        status: pass
+        summary: 主控自检通过：实现、事实源迁移、规范同步、Code/Web/测试清理和全文扫描均已完成，可以提交独立结果复核。
+        key_findings:
+        - 未发现范围内未处理的 WorkArea 产品入口、兼容对象或事实源关系字段。
+        - 全文扫描排除本 WorkCase 后无 WorkArea 相关命中。
+        - 本 WorkCase 未引入跨项目字段、项目归属字段或跨项目归属机制。
+        required_changes: []
+        evidence_refs:
+        - python3 code/fact_validate.py ldvh-base/workcases ldvh-base/adrs ldvh-base/sparks ldvh-base/pitfalls ldvh-base/studies
+        - python3 code/specs_validate.py all --fail-on-diagnostics
+        - python3 -m pytest tests/code/test_fact_cli.py tests/code/test_fact_validate.py tests/code/specs_validate_checks
+        - npm run test:web:api
+        - npm run web:check
+        - npm run web:build
+        - rg -n "WorkArea|workarea|related_workareas|workarea_ref|工作域|workareas" . -g "!ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml"
+      attested_at: '2026-06-21T10:25:51+08:00'
+      attestation:
+        signer: codex-main-controller
+        statement: 基于上述上下文、验证命令和全文扫描完成主控自检，并对提交独立结果复核的结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-21T10:39:18+08:00'
+      resolver: codex-main-controller
+      source_review_item_ids:
+      - result-review-1
+      - result-review-2
+      - result-review-3
+      accepted_findings:
+      - 规范一致性复查通过，未发现跨项目或项目归属字段扩展。
+      - validator 行为复查发现旧关系字段未硬拒绝，主控已修复并补充负向测试。
+      - Web 入口复查通过，非阻断 follow-up 已修复。
+      - 排除本 WorkCase 后全文扫描无旧对象产品痕迹。
+      rejected_findings: []
+      required_changes_applied:
+      - 将旧范围对象关系字段加入 fact_validate 和 fact_cli 的全局移除字段拦截。
+      - 新增 CLI 和 validator 负向测试，覆盖旧对象类型和旧关系字段。
+      - 修复 Web 文档重复项和 Study API 类型色值。
+      - 复跑 facts、specs、Python、Web API、Web check、Web build 和全文扫描。
+      unresolved_items: []
+      changed_fields:
+      - code/fact_validate.py
+      - code/fact_cli.py
+      - tests/code/test_fact_validate.py
+      - tests/code/test_fact_cli.py
+      - web/docs/02-Dashboard.md
+      - web/docs/09-图标语义规范.md
+      - web/api/services/typeColors.ts
+      summary: 三位子 agent 结果复查已完成；唯一阻断项来自 validator/CLI 行为，已修复并验证通过。当前可进入 Human 关闭确认。
+    human_closure_confirmation: null
+plan_confirmed_at: '2026-06-21T10:09:44+08:00'
+verification_evidence: |-
+  ## 验证计划
+
+  覆盖事实源、规范、Python 测试、Web API、Web 类型检查、Web 构建、全文扫描和子 agent 结果复查后修复回归。
+
+  ## 验证命令
+
+  - `python3 code/fact_validate.py ldvh-base/workcases ldvh-base/adrs ldvh-base/sparks ldvh-base/pitfalls ldvh-base/studies`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 -m pytest tests/code/test_fact_cli.py tests/code/test_fact_validate.py tests/code/specs_validate_checks`
+  - `npm run test:web:api`
+  - `npm run web:check`
+  - `npm run web:build`
+  - `rg -n "WorkArea|workarea|related_workareas|workarea_ref|工作域|workareas" . -g "!ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml"`
+
+  ## 验证结果
+
+  - 事实源校验通过；子 agent 结果复查记录写回前曾仅有 `RESULT_REVIEW_NOT_STARTED` 流程性 warning。
+  - specs 综合校验通过，无 diagnostics。
+  - Python 测试通过：`244 passed`。
+  - Web API 测试通过。
+  - Web TypeScript 检查通过。
+  - Web 生产构建通过；Vite 仅提示既有 chunk size warning。
+  - 全文扫描排除本 WorkCase 后无命中。
+  - 子 agent 结果复查完成；validator 行为复查发现的阻断项已修复并回归通过。
+
+  ## 结论
+
+  实现、主控自检和子 agent 结果复查均已完成，当前进入 Human 关闭确认。
+closure_evidence: |-
+  ## 验证计划
+
+  关闭前验证覆盖事实源、规范、Python 测试、Web API、Web 类型检查、Web 构建、全文扫描和子 agent 结果复查。
+
+  ## 验证命令
+
+  - `python3 code/fact_validate.py ldvh-base/workcases ldvh-base/adrs ldvh-base/sparks ldvh-base/pitfalls ldvh-base/studies`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 -m pytest tests/code/test_fact_cli.py tests/code/test_fact_validate.py tests/code/specs_validate_checks`
+  - `npm run test:web:api`
+  - `npm run web:check`
+  - `npm run web:build`
+  - `rg -n "WorkArea|workarea|related_workareas|workarea_ref|工作域|workareas" . -g "!ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml"`
+
+  ## 验证结果
+
+  本轮已一次性移除 WorkArea active 工作对象和当前产品入口：
+
+  - active 工作模型集合仅保留 WorkCase、ADR、Pitfall、Spark、Study；20 号 WorkArea 主规范已删除，01 目录和 05/21-25 工作模型规范同步更新。
+  - WorkCase 不再依赖 `workarea` 归属字段；本 WorkCase 未引入跨项目字段、项目归属字段或跨项目归属机制。
+  - Code 工具、validator、CLI、commit 校验、字段注册、测试夹具和 Web API 均不再把 WorkArea 当可用对象类型；旧范围对象关系字段已被 validator 和 CLI update 硬拒绝。
+  - Web 导航、Dashboard、列表、详情、右侧阅读面板、图标、颜色、状态筛选、i18n、字段格式、Web 文档和 Web API 测试均已清理 WorkArea 入口。
+  - `ldvh-base/workareas/` 当前实例目录已删除；当前事实源中的 WorkArea 关系字段和面向当前产品的历史叙述已清理。
+  - 子 agent 结果复查完成，唯一阻断项已修复并回归通过。
+
+  ## 结论
+
+  Git commit history 不在本次普通迁移改写范围内；“消除历史痕迹”已落实为当前工作树、事实源文件和产品可见入口不再保留 WorkArea 主对象、兼容对象、旧关系字段或历史兼容视图。当前可进入 Human 关闭确认。
+closure_requested_at: '2026-06-21T10:39:18+08:00'
+review_requested_at: '2026-06-21T10:39:18+08:00'
+closed_at: ''
+closure_outcome: ''
+residual_risks:
+- Git commit history 不在本次普通迁移改写范围内；当前工作树和产品入口已清理。
+followup_refs: []
+revision_history:
+- revised_at: '2026-06-21T09:50:07+08:00'
+  reason: 用户纠正“跨项目归属直接进入 WorkCase 字段契约”属于范围扩展，要求本 WorkCase 不涉及跨项目，未来再说。
+  changed_fields:
+  - goal
+  - description
+  - success_criteria
+  - orchestration.execution_items[item-2]
+  - orchestration.plan_review.review_items[plan-review-1]
+  - orchestration.plan_review.controller_resolution
+  summary: 已从本 WorkCase 的目标、成功标准、审核结论和待确认项中移除跨项目字段承接要求，改为明确不处理跨项目或项目归属字段。
+- revised_at: '2026-06-21T10:25:51+08:00'
+  reason: 实现完成并进入用户要求的子 agent 结果复查流程。
+  changed_fields:
+  - status
+  - updated
+  - success_criteria
+  - orchestration.execution_items
+  - orchestration.result_review.controller_self_check
+  - verification_evidence
+  - closure_evidence
+  - residual_risks
+  summary: 已完成 WorkArea 当前产品痕迹的一次性移除、验证和主控自检；当前状态推进为 subagents_result_reviewing。
+- revised_at: '2026-06-21T10:39:18+08:00'
+  reason: 子 agent 结果复查完成，修复 validator 行为阻断项并回写复查结论。
+  changed_fields:
+  - status
+  - updated
+  - orchestration.result_review.review_items
+  - orchestration.result_review.controller_resolution
+  - verification_evidence
+  - closure_evidence
+  - tests/code/test_fact_cli.py
+  - tests/code/test_fact_validate.py
+  - code/fact_cli.py
+  - code/fact_validate.py
+  - web/api/services/typeColors.ts
+  - web/docs/02-Dashboard.md
+  - web/docs/09-图标语义规范.md
+  summary: 三位子 agent 已复查；validator 行为缺口已修复，回归验证通过，状态推进为 human_closure_confirming。
+related_docs:
+- specs/21-WorkCase-工作项.md
+- specs/05.03-工作模型字段注册与消费规范.md
+- code/fact_cli.py
+- code/fact_validate.py
+- web/docs/03-ObjectList.md
+- rules/LDVH-WORKSPACE-ENTRY.md
+- rules/LDVH-MAINTAINER-ENTRY.md
+- tests/code/test_fact_validate.py
+- tests/web/api/facts.test.ts
+- web/src/pages/ObjectDetail.tsx
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases:
+- workcase-0082
+- workcase-0084

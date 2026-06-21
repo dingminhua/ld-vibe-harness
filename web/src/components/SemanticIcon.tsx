@@ -2,7 +2,6 @@ import type { ComponentType } from 'react';
 import {
   FileText,
   ClipboardList,
-  Focus,
   GitCommit,
   Github,
   FileSignature,
@@ -47,7 +46,6 @@ function FileSearchCornerIcon({ size = 16, className, strokeWidth = 2, ...props 
 }
 
 export const OBJECT_TYPE_ICONS: Record<string, SemanticIconComponent> = {
-  workarea: Focus,
   workcase: UserRoundCheck,
   adr: FileSignature,
   pitfall: Lightbulb,
@@ -58,7 +56,6 @@ export const OBJECT_TYPE_ICONS: Record<string, SemanticIconComponent> = {
 };
 
 export const COLLECTION_ICONS: Record<string, LucideIcon> = {
-  workarea: Focus,
   workcase: UserRoundCheck,
   plan: ClipboardList,
   properties: FileText,

@@ -45,7 +45,6 @@ priority: P2
 resolved_to: {resolved_to}
 resolved_at: {resolved_at}
 discard_reason: ""
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_studies:
@@ -59,23 +58,6 @@ def write_valid_workcase_tree(tmp_path: Path, *, status: str = "active") -> tupl
     root = tmp_path / "project"
     (root / "tests" / "code").mkdir(parents=True, exist_ok=True)
     (root / "tests" / "code" / "test_fact_validate.py").write_text("# evidence fixture\n", encoding="utf-8")
-    write_yaml(
-        root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml",
-        """
-id: workarea-0001
-type: workarea
-title: Core
-status: active
-created: "2026-06-12T09:00:00"
-updated: "2026-06-12T09:30:00"
-description: Core work area
-source: test
-related_docs: []
-related_adrs: []
-related_sparks: []
-related_pitfalls: []
-""",
-    )
     workcase = write_yaml(
         root / "ldvh-base" / "workcases" / "workcase-0001-core-plan.yaml",
         f"""
@@ -87,7 +69,6 @@ goal: |
 status: {status}
 created: "2026-06-12T09:00:00"
 updated: "2026-06-12T09:30:00"
-workarea: workarea-0001
 priority: P2
 description: Core plan
 success_criteria: |
@@ -293,7 +274,6 @@ consequences: |
   ## 注意事项
 
   Current notes.
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_sparks: []
@@ -350,7 +330,6 @@ related_objects: []
 related_rules: []
 tags: []
 source_sparks: []
-related_workareas: []
 related_adrs: []
 related_docs: []
 archive_reason:
@@ -365,7 +344,7 @@ def test_valid_workcase_tree(tmp_path):
     result = run_checker(root / "ldvh-base")
 
     assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
     assert result.stderr == ""
 
 
@@ -393,6 +372,43 @@ def test_related_changes_is_rejected_for_all_current_work_objects(tmp_path):
     assert "related_changes" in pitfall_result.stdout
 
 
+def test_removed_area_relation_field_is_rejected(tmp_path):
+    old_field = "related_" + "work" + "areas"
+    old_ref = "work" + "area-0001"
+    _, workcase = write_valid_workcase_tree(tmp_path)
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8") + f"{old_field}:\n  - {old_ref}\n",
+        encoding="utf-8",
+    )
+
+    result = run_checker(workcase)
+
+    assert result.returncode == 1
+    assert "REMOVED_OBJECT_FIELD" in result.stdout
+    assert "旧范围对象关联字段已移除" in result.stdout
+
+
+def test_removed_area_object_type_is_unknown(tmp_path):
+    old_type = "work" + "area"
+    legacy = write_yaml(
+        tmp_path / "ldvh-base" / "old-area" / "old-area-0001-core.yaml",
+        f"""
+id: {old_type}-0001
+type: {old_type}
+title: Old area
+status: active
+created: "2026-06-12T09:00:00"
+updated: "2026-06-12T09:30:00"
+description: Old area fixture
+""",
+    )
+
+    result = run_checker(legacy)
+
+    assert result.returncode == 2
+    assert "UNKNOWN_OBJECT_TYPE" in result.stdout
+
+
 def test_legacy_taskplan_file_is_unknown_object_type(tmp_path):
     root, _ = write_valid_workcase_tree(tmp_path)
     legacy = write_yaml(
@@ -412,16 +428,15 @@ status: active
 
 
 def test_datetime_fields_reject_date_only_values(tmp_path):
-    root, _ = write_valid_workcase_tree(tmp_path)
-    workarea = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
-    workarea.write_text(
-        workarea.read_text(encoding="utf-8")
+    _, workcase = write_valid_workcase_tree(tmp_path)
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8")
         .replace('created: "2026-06-12T09:00:00"', 'created: "2026-06-12"')
         .replace('updated: "2026-06-12T09:30:00"', 'updated: "2026-06-12"'),
         encoding="utf-8",
     )
 
-    result = run_checker(workarea)
+    result = run_checker(workcase)
 
     assert result.returncode == 1
     assert "INVALID_DATETIME_FIELD" in result.stdout
@@ -664,7 +679,6 @@ created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 summary: Draft report.
 urls: []
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_sparks: []
@@ -719,7 +733,6 @@ created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 summary: Superseded report.
 urls: []
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_sparks: []
@@ -779,7 +792,6 @@ summary: Source report.
 source: ai
 user_intent: Trigger context remains here.
 urls: []
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_sparks: []
@@ -835,7 +847,6 @@ updated: "2026-06-18T09:30:00"
 source_detail: Old source detail field.
 summary: Source detail report.
 urls: []
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_sparks: []
@@ -894,7 +905,6 @@ source_docs:
 related_refs:
   - https://example.com/legacy
 urls: []
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_sparks: []
@@ -955,7 +965,6 @@ urls:
     summary: 用于说明这个网址支撑报告中的核心判断。
   - ref: https://example.com/second-reference
     summary: 用于补充第二个外部网址的中文用途说明。
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_sparks: []
@@ -1020,7 +1029,6 @@ urls:
     title: Missing summary
   - ref: https://example.com/english-summary
     summary: English-only summary is not enough.
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_sparks: []
@@ -1075,7 +1083,6 @@ created: "2026-06-18T09:00:00"
 updated: "2026-06-18T09:30:00"
 summary: Bad body report.
 urls: []
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_sparks: []
@@ -1144,7 +1151,6 @@ repeatability: recurring
 tags: []
 source_objects: []
 source_sparks: []
-related_workareas: []
 related_workcases: []
 related_adrs: []
 related_docs: []
@@ -1203,7 +1209,6 @@ applicability: |
 tags: []
 source_objects: []
 source_sparks: []
-related_workareas: []
 related_adrs: []
 related_docs: []
 related_rules: []
@@ -1265,7 +1270,6 @@ tags:
   - 中文
 source_objects: []
 source_sparks: []
-related_workareas: []
 related_adrs: []
 related_docs: []
 related_rules: []
@@ -1323,7 +1327,6 @@ tags:
   - evidence-order
 source_objects: []
 source_sparks: []
-related_workareas: []
 related_adrs: []
 related_docs: []
 related_rules: []
@@ -1337,30 +1340,6 @@ notes:
     assert result.returncode == 0
     assert "EVIDENCE_FORMAT_ORDER" in result.stdout
     assert "warnings=1" in result.stdout
-
-
-def test_workarea_taskplans_field_is_no_longer_allowed(tmp_path):
-    root, _ = write_valid_workcase_tree(tmp_path)
-    workarea = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
-    workarea.write_text(workarea.read_text(encoding="utf-8") + "taskplans:\n  - taskplan-0001\n", encoding="utf-8")
-
-    result = run_checker(root / "ldvh-base")
-
-    assert result.returncode == 1
-    assert "REMOVED_WORKAREA_FIELD" in result.stdout
-    assert "taskplans" in result.stdout
-
-
-def test_workarea_workcases_field_is_no_longer_allowed(tmp_path):
-    root, _ = write_valid_workcase_tree(tmp_path)
-    workarea = root / "ldvh-base" / "workareas" / "workarea-0001-core.yaml"
-    workarea.write_text(workarea.read_text(encoding="utf-8") + "workcases:\n  - workcase-0001\n", encoding="utf-8")
-
-    result = run_checker(root / "ldvh-base")
-
-    assert result.returncode == 1
-    assert "REMOVED_WORKAREA_FIELD" in result.stdout
-    assert "workcases" in result.stdout
 
 
 def test_workcase_legacy_fields_are_errors(tmp_path):
@@ -1384,7 +1363,7 @@ def test_legacy_closed_workcase_does_not_require_current_review_contract(tmp_pat
     result = run_checker(root / "ldvh-base")
 
     assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
 
 
 def test_current_closed_workcase_requires_closure_outcome(tmp_path):
@@ -1404,7 +1383,7 @@ def test_current_closed_workcase_contract_validates(tmp_path):
     result = run_checker(root / "ldvh-base")
 
     assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
 
 
 def test_executing_workcase_warns_when_all_execution_items_are_pending(tmp_path):
@@ -1545,7 +1524,7 @@ def test_workcase_evidence_refs_non_paths_are_not_errors(tmp_path):
     result = run_checker(root / "ldvh-base")
 
     assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
 
 
 def test_workcase_evidence_refs_section_suffix_checks_path_part(tmp_path):
@@ -1562,7 +1541,7 @@ def test_workcase_evidence_refs_section_suffix_checks_path_part(tmp_path):
     result = run_checker(root / "ldvh-base")
 
     assert result.returncode == 0
-    assert result.stdout.strip() == "检查完成: files=2 errors=0 warnings=0"
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
 
 
 def test_json_output_reports_current_workcase(tmp_path):
@@ -1572,5 +1551,5 @@ def test_json_output_reports_current_workcase(tmp_path):
 
     assert result.returncode == 0
     payload = json.loads(result.stdout)
-    assert payload["summary"]["files"] == 2
+    assert payload["summary"]["files"] == 1
     assert payload["summary"]["errors"] == 0

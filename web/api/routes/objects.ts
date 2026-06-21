@@ -4,12 +4,7 @@
 
 import { Router, type Request, type Response } from 'express'
 import { listObjects, showObject, OBJECT_TYPES, readFactData, type ObjectType } from '../services/facts.js'
-import {
-  isWorkCaseActiveStatus,
-  isWorkCaseHumanConfirmingStatus,
-  isWorkCaseTerminalStatus,
-  WORKCASE_STATUS_ORDER,
-} from '../../src/utils/workcaseStatus.ts'
+import { WORKCASE_STATUS_ORDER } from '../../src/utils/workcaseStatus.ts'
 
 const router = Router()
 
@@ -46,7 +41,6 @@ interface RelatedObjectSummary {
 }
 
 interface RelatedWorkCaseSummary extends RelatedObjectSummary {
-  workarea?: string
   executionItems?: RelatedObjectSummary[]
   executionItemTotal?: number
   executionItemDone?: number
@@ -66,8 +60,6 @@ interface StatusOption {
   status: string
   count: number
 }
-
-const RISK_STATUSES = new Set(['open', 'degraded', 'suspended', 'rejected', 'deprecated'])
 
 const STATUS_PRIORITY: Record<string, number> = {
   ...Object.fromEntries(WORKCASE_STATUS_ORDER.map((status, index) => [status, index])),
@@ -258,7 +250,6 @@ export async function buildWorkCaseSummaries(workcaseItems: ListedObject[]): Pro
 
     return {
       ...toRelatedSummary(item, 'workcase'),
-      workarea: toStringValue(data.workarea) || undefined,
       executionItems: sortExecutionItems(executionItems),
       executionItemTotal: executionItems.length,
       executionItemDone: executionItems.filter((executionItem) => executionItem.status === 'done').length,
@@ -276,47 +267,15 @@ export async function buildWorkCaseSummaries(workcaseItems: ListedObject[]): Pro
   })
 }
 
-async function enrichWorkareas(items: ListedObject[]): Promise<ListedObject[]> {
-  const workcaseItems = await listObjectSummaries('workcase')
-  const workcases = await buildWorkCaseSummaries(workcaseItems)
-  const workcasesByWorkarea = new Map<string, RelatedWorkCaseSummary[]>()
-
-  for (const workcase of workcases) {
-    if (!workcase.workarea) continue
-    const current = workcasesByWorkarea.get(workcase.workarea) ?? []
-    current.push(workcase)
-    workcasesByWorkarea.set(workcase.workarea, current)
-  }
-
-  return items.map((item) => {
-    const relatedWorkcases = sortByUpdatedDesc(workcasesByWorkarea.get(item.id) ?? [])
-    return {
-      ...item,
-      workcases: relatedWorkcases,
-      workcaseTotal: relatedWorkcases.length,
-      workcaseClosed: relatedWorkcases.filter((workcase) => isWorkCaseTerminalStatus(workcase.status)).length,
-      workcaseReviewNeeded: relatedWorkcases.filter((workcase) => isWorkCaseHumanConfirmingStatus(workcase.status)).length,
-      workcaseActive: relatedWorkcases.filter((workcase) => isWorkCaseActiveStatus(workcase.status)).length,
-      workcaseRisk: countMatching(relatedWorkcases, RISK_STATUSES),
-      workcaseByStatus: countByStatus(relatedWorkcases),
-    }
-  })
-}
-
 async function enrichWorkCases(items: ListedObject[]): Promise<ListedObject[]> {
   const workcaseSummaries = await buildWorkCaseSummaries(items)
   const summariesById = new Map(workcaseSummaries.map((workcase) => [workcase.id, workcase]))
-  const workareaItems = await listObjectSummaries('workarea')
-  const workareasById = new Map(workareaItems.map((item) => [item.id, item]))
 
   return items.map((item) => {
     const summary = summariesById.get(item.id)
     if (!summary) return item
-    const workarea = summary.workarea ? workareasById.get(summary.workarea) : undefined
     return {
       ...item,
-      workarea: summary.workarea,
-      workareaSummary: workarea ? toRelatedSummary(workarea, 'workarea') : undefined,
       executionItems: summary.executionItems ?? [],
       executionItemTotal: summary.executionItemTotal ?? 0,
       executionItemDone: summary.executionItemDone ?? 0,
@@ -389,9 +348,6 @@ router.get('/:type', async (req: Request, res: Response): Promise<void> => {
     const statusItems = status ? await listObjectSummaries(type) : items
     result.data.statusOptions = getStatusOptions(statusItems)
     result.data.statusTotal = statusItems.length
-  }
-  if (isRecord(result.data) && type === 'workarea') {
-    enrichedItems = await enrichWorkareas(items)
   }
   if (isRecord(result.data) && type === 'workcase') {
     enrichedItems = await enrichWorkCases(items)

@@ -6,7 +6,6 @@ goal: |
 status: review_needed
 created: '2026-06-19T07:40:26+08:00'
 updated: '2026-06-19T07:55:28+08:00'
-workarea: workarea-0012
 priority: P1
 description: |
   workcase-0070 已完成 specs 文件头部元信息契约的设计和规范写入，但后续 Code/Web/docs 全量落地尚未推进。

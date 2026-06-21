@@ -540,9 +540,9 @@ def test_consistency_skips_index_overrun_in_non_index_doc(tmp_path):
 
 def test_consistency_skips_index_overrun_in_current_20_40_main_docs(tmp_path):
     write_md(
-        tmp_path / "20-WorkArea-工作域.md",
+        tmp_path / "21-WorkCase-工作项.md",
         """
-# WorkArea-工作域
+# WorkCase-工作项
 
 ## 1. 对象定位与准入条件
 

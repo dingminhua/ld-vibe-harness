@@ -6,14 +6,12 @@ goal: |
 status: review_needed
 created: '2026-06-07T02:10:57.677412'
 updated: '2026-06-07T02:45:00.000000'
-workarea: workarea-0008
 priority: P2
-description: 由历史 Task task-0059 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
-  为准，避免复制多个权威事实。
+description: 由历史 Task task-0059 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
 success_criteria: '- [ ] 关联任务 task-0059 满足其 acceptance、verification 和 closure_evidence。'
 source: |-
   Legacy TaskPlan migration from taskplan-0059; source path: ldvh-base/taskplans/taskplan-0059-rules-entity-scene-layer-removal.yaml
-  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkCase backlinks only, preserve legacy TaskPlan/Task facts.
 orchestration:
   mode: single
   execution_items:
@@ -77,7 +75,6 @@ orchestration:
     - specs/05-工作模型基础规范.md
     - specs/04.02-LDVH能力资产与保障机制规范.md
     - rules/LDVH-WORKSPACE-ENTRY.md
-    - ldvh-base/workareas/workarea-0008-rules-specs-review.yaml
     blocking_reason: null
   review:
     controller_self_check: true

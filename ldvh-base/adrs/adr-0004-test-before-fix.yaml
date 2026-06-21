@@ -36,6 +36,5 @@ consequences: |
 related_sparks: []
 related_rules:
 - specs/22-ADR-决策.md
-related_workareas: []
-archive_reason:
-deprecated_reason:
+archive_reason: null
+deprecated_reason: null

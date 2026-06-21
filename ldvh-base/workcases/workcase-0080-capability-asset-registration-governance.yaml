@@ -6,7 +6,6 @@ goal: |
 status: closed
 created: '2026-06-20T10:12:08+08:00'
 updated: '2026-06-20T20:32:15+08:00'
-workarea: workarea-0012
 priority: P1
 description: |
   spark-0017 暴露出 10 号 Git 提交规范保障时的前置治理缺口：LDVH 需要明确 Rules、Skill、Agent、Hook 等固定能力资产如何登记、如何声明来源规范、如何接受质量审查、如何同步 specs 变化，以及如何区别权威资产与不同运行环境中的薄引用或部署副本。

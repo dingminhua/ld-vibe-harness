@@ -27,7 +27,7 @@ VALID_TYPES = {
 # specs/10-Git提交规范.md scope 枚举（推荐值，非强制）
 RECOMMENDED_SCOPES = {
     "specs", "docs", "rules", "code", "web", "tests", "config",
-    "workarea", "workcase", "adr", "spark", "study", "pitfall",
+    "workcase", "adr", "spark", "study", "pitfall",
     "studies", "sources",
 }
 

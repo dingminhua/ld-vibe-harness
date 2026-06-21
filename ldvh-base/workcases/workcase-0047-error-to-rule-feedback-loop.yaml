@@ -6,14 +6,12 @@ goal: |
 status: active
 created: '2026-06-06T00:03:35.838429'
 updated: '2026-06-06T00:03:35.838429'
-workarea: workarea-0009
 priority: P2
-description: 由历史 Task task-0047 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
-  为准，避免复制多个权威事实。
+description: 由历史 Task task-0047 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
 success_criteria: '- [ ] 关联任务 task-0047 满足其 acceptance、verification 和 closure_evidence。'
 source: |-
   Legacy TaskPlan migration from taskplan-0047; source path: ldvh-base/taskplans/taskplan-0047-error-to-rule-feedback-loop.yaml
-  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkCase backlinks only, preserve legacy TaskPlan/Task facts.
 orchestration:
   mode: single
   execution_items:

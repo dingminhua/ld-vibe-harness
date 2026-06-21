@@ -58,7 +58,7 @@ ADR 不是所有判断或提案的默认归宿。AI 可以在当前任务中做�
 
 一个判断满足以下条件之一时，应考虑形成 ADR：
 
-1. 影响多个 WorkArea、WorkCase、工作模型、工作流程或项目阶段；
+1. 影响多个 WorkCase、工作模型、工作流程或项目阶段；
 2. 改变长期执行方式、协作方式、事实源归属或 Human Gate 边界；
 3. 改变 specs、Rules / Instructions、Skill、Agent 或适配措施的长期规则；
 4. 对后续 AI 或 Human 执行具有持续约束；
@@ -142,23 +142,17 @@ active → deprecated
 ---
 ## 4. 对象关系
 
-### 4.1 ADR 与 WorkArea / WorkCase
-
-工作域或工作项涉及长期决策、方案选择或事实源边界时，应创建或关联 ADR。ADR 可通过 `related_workareas` 引用来源工作域，通过 `related_workcases` 引用来源工作项。
-
-ADR 不替代 WorkArea 的长期范围，也不替代 WorkCase 的目标、成功标准、执行编排或关闭判断。
-
-### 4.2 ADR 与 WorkCase
+### 4.1 ADR 与 WorkCase
 
 工作项执行过程中产生的判断满足 ADR 准入条件时，可升级为 ADR。ADR 可通过 `related_workcases` 引用来源工作项。
 
 ADR 不替代 WorkCase 的成功标准、验证证据、风险判断或关闭证据。
 
-### 4.3 ADR 与 Git 提交记录
+### 4.2 ADR 与 Git 提交记录
 
 ADR 的创建、状态变化、核心决策改写、归档、废弃和升级为规范时，都应留下 Git 提交记录。commit message 格式规则由 `specs/10-Git提交规范.md` 定义。
 
-### 4.4 ADR 与 Spark
+### 4.3 ADR 与 Spark
 
 Spark 中的输入满足 ADR 准入条件后，可以转化为 ADR。转化时应：
 
@@ -169,7 +163,7 @@ Spark 中的输入满足 ADR 准入条件后，可以转化为 ADR。转化时�
 
 Spark 的准入、状态和字段契约由 `specs/24-Spark-火花.md` 定义。
 
-### 4.5 ADR 与 specs / Rules
+### 4.4 ADR 与 specs / Rules
 
 ADR 中的决策补丁升级为稳定规则时，应：
 
@@ -218,7 +212,6 @@ ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.m
 | `context` | 决策背景、问题和来源 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `decision` | 决策补丁内容 | string | 是 | `active` 后核心内容变更需 Human Gate | Decision | AI、Human、Web |
 | `consequences` | 决策影响闭环 | string | 是 | active ADR 必须按 `## 正向价值`、`## 逆向价值`、`## 实施成本`、`## 风险评估`、`## 注意事项` 五段式书写；有逆向价值时必须引用 V1-V10；无逆向价值时 `## 逆向价值` 填写 `当前决策无逆向价值` | Decision / Narrative | AI、Code、Web |
-| `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workcases` | 关联工作项 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_sparks` | 来源或关联火花 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
@@ -263,7 +256,6 @@ consequences: |
   ## 注意事项
 
   - 对象不手写维护提交列表；Code/Web 派生输出不得替代 Git 事实源。
-related_workareas: []
 related_workcases: []
 related_sparks: []
 related_adrs: []
@@ -318,7 +310,7 @@ ADR 证据至少包括：
 4. 决策后果；
 5. 影响范围；
 6. Human Gate 确认记录；
-7. 相关 Git 提交记录、WorkArea、WorkCase、Spark 或规范引用。
+7. 相关 Git 提交记录、WorkCase、Spark 或规范引用。
 
 active ADR 的 `consequences` 字段必须按以下五段式记录影响闭环：
 
@@ -367,7 +359,7 @@ ADR 详情页应采用固定阅读节点：“背景、决策、影响、关联�
 
 ADR 列表卡片只展示身份信息、完整标题、非活跃原因、更新时间、复制和进入入口，不展示摘要、影响范围、关联规范 chip、`context`、`decision` 或未采纳备选提示。列表卡片标题必须允许换行完整显示；非活跃原因必须完整显示但弱于标题，使用“弱圆点 + 原因标签”和弱阅读正文，不得用醒目外框、强竖线、标签 chip 或截断摘要表达。
 
-ADR Web 不得展示或派生 `proposed`、`accepted`、`rejected`、`superseded`、`superseded_by`、`alternatives` 或 `affects` 等旧生命周期和旧字段语义。关联规范、工作域、工作项、火花、Git 提交记录和其他 ADR 应统一进入“关联”节点，不单独形成“承接”或“影响范围”节点。
+ADR Web 不得展示或派生 `proposed`、`accepted`、`rejected`、`superseded`、`superseded_by`、`alternatives` 或 `affects` 等旧生命周期和旧字段语义。关联规范、工作项、火花、Git 提交记录和其他 ADR 应统一进入“关联”节点，不单独形成“承接”或“影响范围”节点。
 
 Web 不得在页面状态、缓存或数据库中维护独立 ADR 权威状态。受控编辑 ADR 字段时，应调用 Code 校验和受控写入链路，并遵守 Human Gate。
 

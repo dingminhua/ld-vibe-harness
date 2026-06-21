@@ -12,27 +12,24 @@ conclusion: |
   LDVH 应吸收 Superpowers 的七类稳定机制：验证前不得宣称完成、规则反合理化、两阶段审查、子代理上下文隔离与主控回收、TDD/测试优先的可调强度门禁、Skill 触发描述克制、以及失败次数触发架构讨论。吸收方式应是“理念转译 + LDVH 事实源落地”：规则进入 specs 或能力资产准入，执行进入 WorkCase / Skill / Hook / Code validator，报告和依据保留在 Study。不得把 Superpowers 的 Skill 文本、会话状态、无限子代理分派和绝对 TDD 例外规则直接搬入 LDVH。
 urls: []
 related_sparks: []
-related_workareas:
-  - workarea-0009
-  - workarea-0012
 related_workcases:
-  - workcase-0044
-  - workcase-0046
-  - workcase-0047
-  - workcase-0048
-  - workcase-0060
-  - workcase-0074
-  - workcase-0080
+- workcase-0044
+- workcase-0046
+- workcase-0047
+- workcase-0048
+- workcase-0060
+- workcase-0074
+- workcase-0080
 related_adrs: []
 related_pitfalls: []
 related_docs:
-  - specs/04.02-LDVH能力资产与保障机制规范.md
-  - specs/06-工作流程基础规范.md
-  - specs/10-Git提交规范.md
-  - specs/21-WorkCase-工作项.md
-  - specs/24-Spark-火花.md
-  - specs/25-Study-研究报告.md
-archive_reason:
+- specs/04.02-LDVH能力资产与保障机制规范.md
+- specs/06-工作流程基础规范.md
+- specs/10-Git提交规范.md
+- specs/21-WorkCase-工作项.md
+- specs/24-Spark-火花.md
+- specs/25-Study-研究报告.md
+archive_reason: null
 ---
 
 # LDVH 从 Superpowers 吸收内容的火花式研究
@@ -121,7 +118,7 @@ Superpowers 的审查顺序是：规格合规先于质量审查。这个顺序�
 
 如果把二者混在一次 review 里，AI 很容易在代码质量讨论中掩盖规格偏差。LDVH 可吸收为：
 
-- 第一阶段：对象与规格审查，检查是否命中正确 WorkCase、WorkArea、specs、事实源边界、Human Gate 和验收标准；
+- 第一阶段：对象与规格审查，检查是否命中正确 WorkCase、specs、事实源边界、Human Gate 和验收标准；
 - 第二阶段：质量审查，检查实现、文档表达、测试覆盖、Web 呈现、可维护性和残留风险；
 - 第一阶段不通过时，不进入第二阶段；
 - 修复后重新从第一阶段开始，而不是只补一个局部 patch。

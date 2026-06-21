@@ -18,8 +18,6 @@ import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus
 import { getExecutionFlowLabel, getExecutionFlowTone, sortWorkCaseExecutionItems } from '@/utils/executionFlowStatus';
 import {
   isWorkCaseClosureConfirmingStatus,
-  isWorkCaseHumanConfirmingStatus,
-  isWorkCaseTerminalStatus,
 } from '@/utils/workcaseStatus';
 
 type LocalizedTitleItem = Pick<ObjectItem, 'id'> & Partial<Pick<ObjectItem, 'title' | 'title_en' | 'title_zh'>>;
@@ -190,160 +188,6 @@ function WorkCaseRecordItem({ label, state, t }: { label: string; state: WorkCas
   );
 }
 
-const workAreaSectionToneClass = {
-  active: {
-    section: 'border-emerald-500/30 bg-emerald-500/5',
-    header: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
-    rowHover: 'hover:bg-emerald-500/10',
-    icon: 'text-emerald-400',
-    hoverText: 'group-hover/workarea-row:text-emerald-400',
-    action: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-emerald-500/10 hover:text-emerald-400',
-  },
-  review: {
-    section: 'border-violet-500/30 bg-violet-500/5',
-    header: 'border-violet-500/30 bg-violet-500/10 text-violet-400',
-    rowHover: 'hover:bg-violet-500/10',
-    icon: 'text-violet-400',
-    hoverText: 'group-hover/workarea-row:text-violet-400',
-    action: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-violet-500/10 hover:text-violet-400',
-  },
-  closed: {
-    section: 'border-ldvh-border bg-ldvh-bg',
-    header: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
-    rowHover: 'hover:bg-ldvh-border/35',
-    icon: 'text-ldvh-text-secondary',
-    hoverText: 'group-hover/workarea-row:text-ldvh-accent',
-    action: 'bg-transparent text-ldvh-text-secondary/70 hover:bg-ldvh-border/30 hover:text-ldvh-accent',
-  },
-};
-
-function WorkAreaWorkCaseRow({
-  item,
-  locale,
-  tone,
-  t,
-  getStatus,
-  onOpen,
-}: {
-  item: RelatedWorkCaseSummary;
-  locale: string;
-  tone: keyof typeof workAreaSectionToneClass;
-  t: Translate;
-  getStatus: (status: string) => string;
-  onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
-}) {
-  const toneClass = workAreaSectionToneClass[tone];
-  const workcaseType = item.type || 'workcase';
-  const flowItems = item.executionItems ?? [];
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={(event) => onOpen(event, item)}
-      onKeyDown={(event) => handleKeyboardOpen(event, () => onOpen(event, item))}
-      className={`group/workarea-row flex min-w-0 cursor-pointer flex-col gap-1.5 rounded-md px-2 py-2 text-left outline-none transition-colors hover:brightness-[1.04] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ldvh-accent/70 ${toneClass.rowHover}`}
-    >
-      <div className="flex min-w-0 items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <span className={`ldvh-body flex min-w-0 items-center gap-1.5 truncate transition-colors ${toneClass.hoverText}`}>
-            <PriorityIcon source={item} type={workcaseType} locale={locale} size="sm" />
-            <ObjectTypeIcon type={workcaseType} size={12} className="shrink-0" />
-            <span className="min-w-0 truncate">{getLocalizedTitle(item, locale)}</span>
-          </span>
-          <span className="ldvh-meta-muted block min-w-0 truncate">{item.id}</span>
-        </div>
-        <CopyPathButton
-          path={item.path}
-          label={t('common.copyObjectPath')}
-          copiedLabel={t('common.copiedObjectPath')}
-          toneClassName={toneClass.action}
-        />
-        <ArrowRight size={13} className={`shrink-0 text-ldvh-text-secondary/70 transition-all group-hover/workarea-row:translate-x-0.5 ${toneClass.hoverText}`} />
-      </div>
-      {flowItems.length > 0 && (
-        <div className="min-w-0 self-stretch">
-          <ExecutionFlowBar items={flowItems} t={t} getStatus={getStatus} compact />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function WorkAreaWorkCaseSection({
-  title,
-  workcases,
-  locale,
-  tone,
-  t,
-  getStatus,
-  onOpen,
-  defaultCollapsed = false,
-}: {
-  title: string;
-  workcases?: RelatedWorkCaseSummary[];
-  locale: string;
-  tone: keyof typeof workAreaSectionToneClass;
-  t: Translate;
-  getStatus: (status: string) => string;
-  onOpen: (event: OpenEvent, item: RelatedObjectSummary) => void;
-  defaultCollapsed?: boolean;
-}) {
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
-  const toneClass = workAreaSectionToneClass[tone];
-  const canCollapse = defaultCollapsed || tone === 'closed';
-  const hasWorkCases = Boolean(workcases && workcases.length > 0);
-  const headerClassName = `ldvh-caption-strong flex w-full min-w-0 items-center gap-2 border px-3 py-2 text-left ${toneClass.header}`;
-  const headerContent = (
-    <>
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-80" aria-hidden="true" />
-      <span className="min-w-0 flex-1 truncate">{title}</span>
-      {canCollapse && hasWorkCases && (collapsed ? <ChevronDown size={13} className="shrink-0" /> : <ChevronUp size={13} className="shrink-0" />)}
-    </>
-  );
-
-  return (
-    <div
-      onClick={(event) => event.stopPropagation()}
-      className={`min-w-0 cursor-default overflow-hidden rounded-md border ${toneClass.section}`}
-    >
-      {canCollapse && hasWorkCases ? (
-        <button
-          type="button"
-          aria-expanded={!collapsed}
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setCollapsed((value) => !value);
-          }}
-          onKeyDown={(event) => event.stopPropagation()}
-          className={`${headerClassName} cursor-pointer`}
-        >
-          {headerContent}
-        </button>
-      ) : (
-        <div className={`${headerClassName} cursor-default`}>
-          {headerContent}
-        </div>
-      )}
-      {!collapsed && workcases && workcases.length > 0 && (
-        <div className="min-w-0 divide-y divide-ldvh-border/60 px-1 py-1">
-          {workcases.map((workcase) => (
-            <WorkAreaWorkCaseRow
-              key={workcase.id}
-              item={workcase}
-              locale={locale}
-              tone={tone}
-              t={t}
-              getStatus={getStatus}
-              onOpen={onOpen}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function ObjectCardFrame({
   obj,
@@ -554,64 +398,6 @@ export default function ObjectList() {
   };
 
   const renderObjectCard = (obj: ObjectItem) => {
-    if (currentType === 'workarea') {
-      const workcases = obj.workcases ?? [];
-      const workcaseTotal = obj.workcaseTotal ?? workcases.length;
-      const activeWorkCases = workcases.filter((workcase) => !isWorkCaseHumanConfirmingStatus(workcase.status) && !isWorkCaseTerminalStatus(workcase.status));
-      const reviewWorkCases = workcases.filter((workcase) => isWorkCaseHumanConfirmingStatus(workcase.status));
-      const closedWorkCases = workcases.filter((workcase) => isWorkCaseTerminalStatus(workcase.status));
-      const closedWorkCaseCount = obj.workcaseClosed ?? closedWorkCases.length;
-
-      return (
-        <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
-          {workcaseTotal === 0 ? (
-            <p
-              onClick={(event) => event.stopPropagation()}
-              className="ldvh-body-muted cursor-default rounded-md border border-dashed border-ldvh-border bg-ldvh-bg px-3 py-4 text-center"
-            >
-              {t('objectList.noPlans')}
-            </p>
-          ) : (
-            <>
-              {activeWorkCases.length > 0 && (
-                <WorkAreaWorkCaseSection
-                  title={t('objectList.activePlanCount', { count: String(activeWorkCases.length) })}
-                  workcases={activeWorkCases}
-                  locale={locale}
-                  tone="active"
-                  t={t}
-                  getStatus={getStatus}
-                  onOpen={openRelatedObject}
-                />
-              )}
-              {reviewWorkCases.length > 0 && (
-                <WorkAreaWorkCaseSection
-                  title={t('objectList.humanConfirmPlanCount', { count: String(reviewWorkCases.length) })}
-                  workcases={reviewWorkCases}
-                  locale={locale}
-                  tone="review"
-                  t={t}
-                  getStatus={getStatus}
-                  onOpen={openRelatedObject}
-                />
-              )}
-              {closedWorkCaseCount > 0 && (
-                <WorkAreaWorkCaseSection
-                  title={t('objectList.closedPlanCount', { count: String(closedWorkCaseCount) })}
-                  workcases={closedWorkCases}
-                  locale={locale}
-                  tone="closed"
-                  t={t}
-                  getStatus={getStatus}
-                  onOpen={openRelatedObject}
-                  defaultCollapsed
-                />
-              )}
-            </>
-          )}
-        </ObjectCardFrame>
-      );
-    }
 
     if (currentType === 'workcase') {
       const executionItems = obj.executionItems ?? [];
@@ -759,7 +545,7 @@ export default function ObjectList() {
           total={statusTotal}
           loading={loading}
         />
-        {(currentType === 'workarea' || currentType === 'workcase') && (
+        {currentType === 'workcase' && (
           <ExecutionFlowLegend t={t} getStatus={getStatus} />
         )}
         {currentType === 'spark' && (

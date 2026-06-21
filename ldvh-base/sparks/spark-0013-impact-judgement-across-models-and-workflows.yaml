@@ -23,7 +23,7 @@ description: |
 
   1. ADR 继续强制完整影响闭环，`consequences` 保持五段式，并由 Web 展示为“影响”节点；
   2. WorkCase 不新增通用 `impact`，但在 `description`、`success_criteria`、`verification_evidence` 和 `closure_evidence` 中明确目标影响、残留风险、未完成项分流和关闭后果；
-  3. WorkArea 可考虑表达范围影响或长期目标影响，但不套用 ADR 五段式；
+  3. WorkCase 可考虑表达范围影响或长期目标影响，但不套用 ADR 五段式；
   4. Spark 不强制影响字段，只在分流判断中说明为什么值得进入 WorkCase、ADR、Study、Pitfall、docs 或规范；
   5. Study 通过“建议”和“后续分流”承载影响，不把研究报告伪装成决策记录；
   6. Pitfall 重点表达误判后果、复用条件和避免方式，可包含影响判断，但不应套用 ADR 决策影响闭环；
@@ -41,26 +41,25 @@ description: |
   4. 40-43 审核流程可把“影响范围是否说明清楚”纳入审核检查；
   5. 22 ADR 维持现状，作为完整影响闭环的强约束样板。
 evolution:
-  - at: '2026-06-19T08:35:26+08:00'
-    summary: 用户认为 ADR 的“影响”字段很好，询问是否有必要所有工作模型和工作流程都加入影响；AI 建议将影响判断升级为通用思维动作和 Gate 口径，但不把 `impact` 作为所有对象的统一必填字段。
+- at: '2026-06-19T08:35:26+08:00'
+  summary: 用户认为 ADR 的“影响”字段很好，询问是否有必要所有工作模型和工作流程都加入影响；AI 建议将影响判断升级为通用思维动作和 Gate 口径，但不把 `impact` 作为所有对象的统一必填字段。
 source: conversation
 source_detail: 用户要求“把你的建议写成 spark，我后续考虑”。
 priority: P2
-resolved_to: ""
-resolved_at: ""
-discard_reason: ""
-related_workareas: []
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
 related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:
-  - specs/05-工作模型基础规范.md
-  - specs/05.02-工作模型字段内容与格式规范.md
-  - specs/06-工作流程基础规范.md
-  - specs/21-WorkCase-工作项.md
-  - specs/22-ADR-决策.md
-  - specs/24-Spark-火花.md
-  - specs/25-Study-研究报告.md
-  - specs/40-workflow-design-audit-工作流程设计审核.md
-  - specs/41-work-model-audit-工作模型审核.md
-  - specs/42-specs-audit-规范审核.md
+- specs/05-工作模型基础规范.md
+- specs/05.02-工作模型字段内容与格式规范.md
+- specs/06-工作流程基础规范.md
+- specs/21-WorkCase-工作项.md
+- specs/22-ADR-决策.md
+- specs/24-Spark-火花.md
+- specs/25-Study-研究报告.md
+- specs/40-workflow-design-audit-工作流程设计审核.md
+- specs/41-work-model-audit-工作模型审核.md
+- specs/42-specs-audit-规范审核.md

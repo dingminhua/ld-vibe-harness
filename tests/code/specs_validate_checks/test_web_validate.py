@@ -76,7 +76,7 @@ def test_web_validate_builds_web_contract_from_code(tmp_path, monkeypatch):
     assert report["command"] == "web_validate"
     assert report["action"] == "validate"
     assert report["target"] == "ldvh-base"
-    assert report["summary"]["files"] == 2
+    assert report["summary"]["files"] == 1
     assert report["summary"]["errors"] == 0
     assert "assuranceCheck" in report["reports"]
     assert "assuranceReport" in report["reports"]

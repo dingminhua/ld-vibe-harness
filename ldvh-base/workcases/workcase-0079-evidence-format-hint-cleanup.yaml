@@ -6,7 +6,6 @@ goal: |
 status: review_needed
 created: '2026-06-19T11:44:59+08:00'
 updated: '2026-06-19T12:03:00+08:00'
-workarea: workarea-0012
 priority: P2
 description: |
   本计划负责处理 `python3 code/fact_validate.py ldvh-base --format text` 中剩余的 `EVIDENCE_FORMAT_HINT` warning。

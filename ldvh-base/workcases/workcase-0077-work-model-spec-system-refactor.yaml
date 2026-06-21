@@ -6,7 +6,6 @@ goal: |
 status: review_needed
 created: '2026-06-19T10:11:08+08:00'
 updated: '2026-06-19T10:57:43+08:00'
-workarea: workarea-0012
 priority: P1
 description: |
   当前 05 体系的问题不是简单把原 05.01 内容格式子文档拆成两个文件，而是 05 父规范、字段层、内容格式层和消费注册层的职责没有系统分层：
@@ -95,7 +94,6 @@ orchestration:
     - specs/01-目录说明.md
     - specs/02-术语规范.md
     - specs/03.02-工作模型文档规范.md
-    - specs/20-WorkArea-工作域.md
     - specs/21-WorkCase-工作项.md
     - specs/22-ADR-决策.md
     - specs/23-Pitfall-踩坑经验.md

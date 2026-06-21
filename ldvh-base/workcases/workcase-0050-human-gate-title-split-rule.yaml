@@ -6,14 +6,12 @@ goal: |
 status: active
 created: '2026-06-06T00:30:40.787036'
 updated: '2026-06-06T00:31:07.327758'
-workarea: workarea-0011
 priority: P2
-description: 由历史 Task task-0050 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance
-  为准，避免复制多个权威事实。
+description: 由历史 Task task-0050 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
 success_criteria: '- [ ] 关联任务 task-0050 满足其 acceptance、verification 和 closure_evidence。'
 source: |-
   Legacy TaskPlan migration from taskplan-0050; source path: ldvh-base/taskplans/taskplan-0050-human-gate-title-split-rule.yaml
-  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkArea backlinks only, preserve legacy TaskPlan/Task facts.
+  Human Gate confirmed by dmh2002: User said 继续吧 after TaskPlan-to-WorkCase migration preview on 2026-06-18; write WorkCase facts and WorkCase backlinks only, preserve legacy TaskPlan/Task facts.
 orchestration:
   mode: single
   execution_items:
@@ -23,8 +21,7 @@ orchestration:
     mode: single
     input_refs:
     - task-0050
-    expected_output: '- [ ] 所有 Skill 的 Human Gate 确认标题不超过 60 字符\n- [ ] 超长标题已拆分为简要标题+详情展开\n-
-      [ ] 拆分后确认信息可读性优于拆分前\n- [ ] 相关文档已同步更新'
+    expected_output: '- [ ] 所有 Skill 的 Human Gate 确认标题不超过 60 字符\n- [ ] 超长标题已拆分为简要标题+详情展开\n- [ ] 拆分后确认信息可读性优于拆分前\n- [ ] 相关文档已同步更新'
     status: in_progress
     result_summary: ''
     evidence_refs:

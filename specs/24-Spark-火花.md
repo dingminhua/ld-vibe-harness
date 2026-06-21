@@ -21,7 +21,6 @@ ldvh_doc:
     - "specs/05.03-工作模型字段注册与消费规范.md"
     - "specs/07-Code确定性执行实现规范.md"
     - "specs/08-Web信息同步实现规范.md"
-    - "specs/20-WorkArea-工作域.md"
     - "specs/21-WorkCase-工作项.md"
     - "specs/22-ADR-决策.md"
     - "specs/10-Git提交规范.md"
@@ -55,9 +54,9 @@ ldvh_member:
 ---
 ## 1. 对象定位与准入条件
 
-Spark / 火花承载尚未计划化但有保留价值的输入、发现、提醒、问题、缺口、偏好和待消化议题。Spark 的目标是降低误创建 WorkArea、WorkCase 或 ADR 的冲动，同时避免有价值的信息只留在聊天记忆中。
+Spark / 火花承载尚未计划化但有保留价值的输入、发现、提醒、问题、缺口、偏好和待消化议题。Spark 的目标是降低误创建 WorkCase 或 ADR 的冲动，同时避免有价值的信息只留在聊天记忆中。
 
-Spark 是分流前的工作对象。它可以后续转化或关联到 WorkArea、WorkCase、ADR、Pitfall、docs、管辖项目配置或其他事实源，但在转化前不替代这些对象的字段契约、状态机、验收规则或配置边界。
+Spark 是分流前的工作对象。它可以后续转化或关联到 WorkCase、ADR、Pitfall、docs、管辖项目配置或其他事实源，但在转化前不替代这些对象的字段契约、状态机、验收规则或配置边界。
 
 Spark 可以从一句话开始，随后逐步扩展和收敛。`description` 承载当前可读摘要，`evolution` 只记录关键语义转折、方向变化、阶段性收敛和重要分流，不记录逐条对话、完整报告正文或状态流转历史。完整研究报告由 Study 承载，状态流转历史由 Git 提交记录派生。
 
@@ -68,7 +67,6 @@ Spark 可以从一句话开始，随后逐步扩展和收敛。`description` 承
 1. 有保留价值，但尚未形成明确执行目标或验收标准；
 2. 不满足 WorkCase 准入条件，但可能后续转为 WorkCase；
 3. 不满足 ADR 准入条件，但属于可能影响后续判断的偏好、观察或临时判断；
-4. 不满足 WorkArea 或 WorkCase 准入条件，但可能后续发展为长期范围、目标或约束；
 5. 执行过程中发现问题、缺口、风险线索、资料线索或待讨论事项，尚未决定如何处理；
 6. 不记录会导致后续遗忘、重复讨论或信息断裂；
 7. 一个想法需要先暂存，后续可能通过讨论、AI 调研、Study 报告或 WorkCase 逐步收敛。
@@ -82,7 +80,7 @@ Spark 可以从一句话开始，随后逐步扩展和收敛。`description` 承
 1. 当前对话中可以直接处理的信息；
 2. 已有明确目标和验收标准的工作，应创建 WorkCase 或写入现有对象；
 3. 已经满足长期决策准入的判断，应创建 ADR；
-4. 已经满足长期范围或工作项准入的输入，应创建 WorkArea 或 WorkCase；
+4. 已经满足工作项准入的输入，应创建 WorkCase；
 5. 纯闲聊、寒暄或无后续价值的信息；
 6. 已由 Study、docs、sources 或现有对象完整承载的信息；
 7. 完整调研报告正文，应形成 Study 或进入项目约定文档位置，而不是复制到 Spark。
@@ -119,7 +117,7 @@ Spark 标准状态如下：
 | 状态 | 含义 |
 |---|---|
 | `pending` | 待处理：已捕获，尚未决定是否分流、处理或废弃；或已被部分分流但仍存在未承接议题 |
-| `resolved` | 已完整分流到 WorkArea、WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源，或已明确处理 |
+| `resolved` | 已完整分流到 WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源，或已明确处理 |
 | `discarded` | 已废弃：确认不再需要继续跟踪或作为分流入口 |
 
 `resolved` 和 `discarded` 是稳定终态。终态 Spark 不得直接重开；如需重新处理，应新建 Spark，并在新 Spark 中引用原 Spark。
@@ -161,13 +159,13 @@ Spark 可以分流为 ADR，作为临时判断、偏好或方案取舍转化为�
 
 ADR 的准入、状态和字段契约由 `specs/22-ADR-决策.md` 定义。
 
-### 4.3 Spark 与 WorkArea 和 WorkCase
+### 4.3 Spark 与 WorkCase
 
-Spark 可以分流为 WorkArea，作为长期范围、治理域或持续维护面的来源线索。Spark 也可以分流为 WorkCase，作为一次目标、执行计划或关闭审查的来源线索。分流后，Spark 的 `resolved_to` 应记录 `{type: workarea, ref: <WorkArea ID>}` 或 `{type: workcase, ref: <WorkCase ID>}`，目标对象的 `related_sparks` 可记录来源 Spark。
+Spark 可以分流为 WorkCase，作为一次目标、执行计划或关闭审查的来源线索。分流后，Spark 的 `resolved_to` 应记录 `{type: workcase, ref: <WorkCase ID>}`，目标对象的 `related_sparks` 可记录来源 Spark。
 
-若 Spark 同时关联多个 WorkArea 或 WorkCase，`resolved_to` 只记录完整承接该 Spark 的单一主目标；并行承接、部分承接或主题相关的多个对象应写入 `related_workareas`、`related_workcases` 和 `evolution`，不得用单个 `resolved_to` 假装所有议题已经收敛。
+若 Spark 同时关联多个 WorkCase，`resolved_to` 只记录完整承接该 Spark 的单一主目标；并行承接、部分承接或主题相关的多个对象应写入 `related_workcases` 和 `evolution`，不得用单个 `resolved_to` 假装所有议题已经收敛。
 
-WorkArea 的准入、状态和字段契约由 `specs/20-WorkArea-工作域.md` 定义；WorkCase 的准入、状态和字段契约由 `specs/21-WorkCase-工作项.md` 定义。
+WorkCase 的准入、状态和字段契约由 `specs/21-WorkCase-工作项.md` 定义。
 
 ### 4.4 Spark 与 Study
 
@@ -191,11 +189,11 @@ Pitfall 的准入、状态和字段契约由 `specs/23-Pitfall-踩坑经验.md` 
 
 ### 4.6 多线并行分流
 
-一个 Spark 可以承载同一讨论中产生的多个相关缺口、问题或后续方向。只要这些内容尚未形成各自独立的稳定事实源入口，允许暂时保留在同一个 Spark 中；一旦某个方向具备独立目标、成功标准、决策判断或长期跟踪价值，应分流到 WorkCase、ADR、WorkArea、Pitfall、docs、管辖项目配置更新或其他事实源。
+一个 Spark 可以承载同一讨论中产生的多个相关缺口、问题或后续方向。只要这些内容尚未形成各自独立的稳定事实源入口，允许暂时保留在同一个 Spark 中；一旦某个方向具备独立目标、成功标准、决策判断或长期跟踪价值，应分流到 WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其他事实源。
 
 多线并行分流遵守以下规则：
 
-1. `related_workcases`、`related_workareas`、`related_adrs`、`related_studies` 和 `related_docs` 可以记录多个关联对象，用于表达并行承接、分阶段承接或主题相关；
+1. `related_workcases`、`related_adrs`、`related_studies` 和 `related_docs` 可以记录多个关联对象，用于表达并行承接、分阶段承接或主题相关；
 2. 关联字段不等同于完成分流。Spark 仍存在未承接议题时必须保持 `pending`；
 3. `evolution` 应记录每条线的承接范围、当前判断和剩余问题，避免后续 AI 只看到关联对象却不知道 Spark 是否已经收敛；
 4. `resolved_to` 是单一最终分流目标或主承接目标，不用于记录多个并列目标；若没有单一主目标，应继续使用 `related_*` 与 `evolution` 表达多线承接状态；
@@ -213,11 +211,11 @@ Spark 的创建、状态变化、分流和废弃都应留下 Git 提交记录。
 
 1. 创建、删除或重命名 Spark 实例；
 2. 将对话输入、docs/studies 结论或执行发现写入 Spark；
-3. 将 `pending` Spark 分流为 WorkArea、WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其他事实源；
+3. 将 `pending` Spark 分流为 WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其他事实源；
 4. 将 Spark 标记为 `discarded`，且废弃会丢失后续跟踪入口；
 5. 将 Spark 从单线分流改为多线并行分流，或将多个并行承接对象判断为已经共同完整承接；
 6. 修改 `resolved_to`、`priority`、`description`、`evolution` 或关键关联；
-7. 将 Spark 作为规避 WorkArea、WorkCase 或 ADR 准入判断的长期替代物。
+7. 将 Spark 作为规避 WorkCase 或 ADR 准入判断的长期替代物。
 
 Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录承接。本文只规定 Spark 语境下需要确认的事实和影响范围。
 
@@ -241,12 +239,11 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `source` | 火花进入事实源的入口来源 | enum | 是 | `web` 或 `conversation`；Web 快速创建固定为 `web`，对话中由 Human 或 AI 确认记录固定为 `conversation` | Reference | AI、Code、Web |
 | `source_detail` | 来源说明、触发场景或原始输入摘要 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
 | `priority` | 优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
-| `resolved_to` | 单一最终分流目标或主承接目标引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}`；`type` 只能是 `workarea`、`workcase`、`adr`、`pitfall`、`docs`、`governed-projects` 或 `other`，不得为 `study`；多线并行或部分承接优先使用 `related_*` 与 `evolution`，不得用单个 `resolved_to` 伪装完整收敛 | Reference | AI、Code、Web |
+| `resolved_to` | 单一最终分流目标或主承接目标引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}`；`type` 只能是 `workcase`、`adr`、`pitfall`、`docs`、`governed-projects` 或 `other`，不得为 `study`；多线并行或部分承接优先使用 `related_*` 与 `evolution`，不得用单个 `resolved_to` 伪装完整收敛 | Reference | AI、Code、Web |
 | `resolved_at` | 分流日期 | date | 条件必填 | `status: resolved` 时必须填写 | Reference | AI、Code、Web |
 | `discard_reason` | 废弃原因 | string | 条件必填 | `status: discarded` 时必须填写 | Narrative | AI、Human |
 | `related_adrs` | 关联决策记录 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_studies` | 关联研究报告 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
-| `related_workareas` | 关联工作域 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 | `related_workcases` | 关联工作项 | list[string] | 否 | 默认为空列表；可记录多个并行承接、分阶段承接或主题相关的 WorkCase ID，不表示 Spark 已经 resolved | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 
@@ -278,7 +275,6 @@ resolved_at: 2026-06-09
 discard_reason:
 related_adrs: []
 related_studies: []
-related_workareas: []
 related_workcases: []
 related_docs: []
 ```
@@ -306,7 +302,6 @@ resolved_at: ""
 discard_reason: ""
 related_adrs: []
 related_studies: []
-related_workareas: []
 related_workcases:
   - workcase-0003
   - workcase-0004
@@ -325,7 +320,7 @@ Spark 回写遵循以下规则：
 2. 状态变化前应检查合法流转、条件必填和 Human Gate；
 3. 状态变化后应更新 `updated`；状态变化历史由 Git commit 派生，不在 Spark YAML 中手写维护；
 4. Spark 出现关键语义转折、方向变化或阶段性收敛时，应更新 `description` 并向 `evolution` 追加摘要；不得记录完整聊天流水；
-5. Spark 被单一目标完整分流为 WorkArea、WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源时，应更新 `resolved_to` 和 `resolved_at`；
+5. Spark 被单一目标完整分流为 WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源时，应更新 `resolved_to` 和 `resolved_at`；
 6. Spark 被多个目标并行或分阶段承接时，应先更新对应 `related_*` 字段和必要的 `evolution`，并保持 `pending`，直到剩余议题已完整承接、明确废弃或无需继续跟踪；
 7. 形成或引用 Study 时只更新 `related_studies` 和必要的 `evolution`；
 8. Spark 创建、分流、废弃、关键关联变化、核心摘要或演变记录修改应通过 Git 提交记录留痕；
@@ -340,7 +335,7 @@ Spark 证据至少包括：
 3. 当前摘要和关键语义转折；
 4. 分流目标或废弃原因；
 5. Human Gate 确认记录；
-6. 相关 WorkArea、WorkCase、ADR、Study、Git 提交记录或文档引用。
+6. 相关 WorkCase、ADR、Study、Git 提交记录或文档引用。
 
 Spark 的分流证据应保留摘要和目标引用，不复制目标对象全文。
 
@@ -353,7 +348,7 @@ AI 处理 Spark 时应遵守：
 
 1. 先判断信息是否满足 Spark 准入条件；
 2. 创建、分流、废弃或删除 Spark 前评估 Human Gate；
-3. 不得用 Spark 长期替代已经满足准入条件的 WorkArea、WorkCase 或 ADR；
+3. 不得用 Spark 长期替代已经满足准入条件的 WorkCase 或 ADR；
 4. 分流时应说明为什么目标类型合适；
 5. 多线并行分流时，应说明每条线为什么可以并行、由哪个对象承接、剩余未承接内容是什么；
 6. 分流后不再在 Spark 中维护目标对象的状态、验收或决策正文；
@@ -393,11 +388,11 @@ Spark 创建、分流和废弃的具体行动流程由后续 40-59 工作流程�
 
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Spark 实例和后续工作流程应遵守本文定义的准入、演变承载、状态机、字段契约、分流规则和事实源边界 | 05、03.02、本文、22 ADR、20 WorkArea、21 WorkCase、25 Study、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、分流或废弃 Spark 时 |
+| 上位约束承接要求 | Spark 实例和后续工作流程应遵守本文定义的准入、演变承载、状态机、字段契约、分流规则和事实源边界 | 05、03.02、本文、22 ADR、20 21 WorkCase、25 Study、Human Gate | 工作模型治理 | 创建、修改、搬移、审计、分流或废弃 Spark 时 |
 | 入口可见要求 | AI 处理未计划化但有保留价值的信息、发现、提醒、问题或缺口时，应能定位本文 | 成员自描述、运行入口摘要、Spark 分流流程入口 | AI 执行入口提示 | 信息保留、分流、废弃或字段契约变化时 |
 | 确定性执行要求 | Spark 字段、状态、来源枚举、演变记录、优先级、引用、文件命名和条件必填应由 Code 校验或记录缺口 | `specs/07-Code确定性执行实现规范.md`、Spark 校验 Code、正反样例 | 校验实现 | 字段契约、状态机、分流规则或引用关系变化时 |
 | Human 交互要求 | Spark 创建、分流、废弃、核心摘要修改、演变记录修改和用 Spark 规避对象准入时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | 工作模型治理 | §5 中任一场景发生时 |
-| 生命周期触发要求 | Spark 规范变化后，应检查成员自描述、05.01、05.02、05.03、ADR、Study、WorkArea、WorkCase、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Spark 字段、状态、事实源边界、适配规则或检查要求变化时 |
+| 生命周期触发要求 | Spark 规范变化后，应检查成员自描述、05.01、05.02、05.03、ADR、Study、WorkCase、Code、Web、适配措施和相关工作流程是否需要同步 | 成员自描述检查、字段格式映射、对象关系检查、Code/Web 联动检查、人工降级检查 | 触发保障 | Spark 字段、状态、事实源边界、适配规则或检查要求变化时 |
 
 ---
 ## 10. 检查要求
@@ -413,7 +408,7 @@ Spark 规范检查至少包括：
 | 演变承载 | `description` 是当前摘要，`evolution` 只记录关键语义转折，不记录流水账 |
 | 分流规则 | resolved Spark 已填写 `resolved_to` 和 `resolved_at`，且 `resolved_to.type` 不是 `study` |
 | 废弃规则 | discarded Spark 已说明废弃原因 |
-| 对象边界 | Spark 未长期替代 WorkArea、WorkCase、ADR 或 Study |
+| 对象边界 | Spark 未长期替代 WorkCase、ADR 或 Study |
 | Human Gate | §5 场景已完成确认或记录降级 |
 | Git 追溯 | Spark 关键变化有 Git 可追溯记录 |
 | Code / Web 边界 | 派生输出未替代 Git 文件事实源 |
