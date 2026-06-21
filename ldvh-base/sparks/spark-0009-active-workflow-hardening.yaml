@@ -5,7 +5,7 @@ status: pending
 created: '2026-06-18T09:03:05'
 updated: '2026-06-18T09:03:05'
 description: |
-  本 Spark 承载 41 work-model-audit、42 specs-audit、43 assurance-readiness-audit 升级为 active 后的后续硬化安排。
+  本 Spark 承载 41 fact-model-audit、42 specs-audit、43 assurance-readiness-audit 升级为 active 后的后续硬化安排。
 
   当前阶段已经完成：41-43 经 Human Gate 确认从 candidate 升级为 active；40-43 已承接 WorkCase 回写契约；assurance-report 已能读取并展示 40/41 工作流程成员状态，当前输出显示 40 active、41 active。
 
@@ -33,8 +33,8 @@ related_docs:
 - specs/02-术语规范.md
 - specs/07-Code确定性执行实现规范.md
 - specs/11-测试基础规范.md
-- specs/40-workflow-design-audit-工作流程设计审核.md
-- specs/41-work-model-audit-工作模型审核.md
+- specs/40-action-orchestration-design-audit-行动编排设计审核.md
+- specs/41-fact-model-audit-事实模型审核.md
 - specs/42-specs-audit-规范审核.md
 - specs/43-assurance-readiness-audit-保障准备度审核.md
 - ldvh-base/sparks/spark-0005-task-orchestration-boundary.yaml

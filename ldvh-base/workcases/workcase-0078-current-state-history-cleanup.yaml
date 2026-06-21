@@ -91,7 +91,7 @@ orchestration:
       已清理普通/特殊提交措辞，修正工作流程文档示例编号，移除 21 中已完成的 TaskFlow 命名债待办；保留 40-43 中禁止新建旧对象的负例规则。
     evidence_refs:
     - specs/10-Git提交规范.md
-    - specs/03.03-工作流程文档规范.md
+    - specs/03.03-行动编排文档规范.md
     - specs/21-WorkCase-工作项.md
     blocking_reason: null
   - id: item-4

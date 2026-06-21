@@ -14,8 +14,8 @@ description: |
 success_criteria: |
   - [x] `specs/03-文档基础规范.md` 明确头部元信息是机器可读契约，而非普通文档装饰
   - [x] `specs/03.01-规范文档规范.md` 列出 specs 正式规范、子文档、studies、sources 的头部字段规则
-  - [x] `specs/03.02-工作模型文档规范.md` 明确 20-39 普通头部不得重复 `ldvh_member` 成员自描述字段
-  - [x] `specs/03.03-工作流程文档规范.md` 明确 40-59 普通头部不得重复 `ldvh_member` 成员自描述字段
+  - [x] `specs/03.02-事实模型文档规范.md` 明确 20-39 普通头部不得重复 `ldvh_member` 成员自描述字段
+  - [x] `specs/03.03-行动编排文档规范.md` 明确 40-59 普通头部不得重复 `ldvh_member` 成员自描述字段
   - [x] 设计结论写清头部元信息契约与成员自描述契约的边界
   - [x] 仅记录后续 Code 检查候选，不贸然扩大 `code/spec_checks/index.py` 判定范围
 source: |
@@ -60,14 +60,14 @@ orchestration:
     role: specs
     mode: sequential
     input_refs:
-    - specs/03.02-工作模型文档规范.md
-    - specs/03.03-工作流程文档规范.md
+    - specs/03.02-事实模型文档规范.md
+    - specs/03.03-行动编排文档规范.md
     expected_output: 20-39 / 40-59 普通头部只承载文档身份和引用边界，集合事实只由文件名与 `ldvh_member` 承载。
     status: done
     result_summary: 03.02 / 03.03 已明确普通头部只承载文档身份、定位、范围和引用；文件名与 `ldvh_member` 承载 spec_id、kind、collection_status、canonical_path 和各类 anchor，普通头部不得重复这些成员事实。
     evidence_refs:
-    - specs/03.02-工作模型文档规范.md
-    - specs/03.03-工作流程文档规范.md
+    - specs/03.02-事实模型文档规范.md
+    - specs/03.03-行动编排文档规范.md
     blocking_reason: null
   review:
     controller_self_check: true
@@ -93,8 +93,8 @@ verification_evidence: |
   修改范围：
   - `specs/03-文档基础规范.md`：将 Markdown 头部 `> 字段：值` 定义为人、AI、Code、Web 可共同消费的稳定机器接口，明确不默认改 YAML frontmatter。
   - `specs/03.01-规范文档规范.md`：新增 specs 正式规范、子文档、docs/studies、docs/sources 的头部字段规则表。
-  - `specs/03.02-工作模型文档规范.md`：明确 20-39 普通头部与 `ldvh_member` 分工，禁止普通头部重复 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 和 anchor 字段。
-  - `specs/03.03-工作流程文档规范.md`：明确 40-59 普通头部与 `ldvh_member` 分工，禁止普通头部重复流程成员身份、集合状态和 Code 消费锚点。
+  - `specs/03.02-事实模型文档规范.md`：明确 20-39 普通头部与 `ldvh_member` 分工，禁止普通头部重复 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 和 anchor 字段。
+  - `specs/03.03-行动编排文档规范.md`：明确 40-59 普通头部与 `ldvh_member` 分工，禁止普通头部重复流程成员身份、集合状态和 Code 消费锚点。
 
   确定性校验：
   - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过，diagnostics=0。
@@ -140,8 +140,8 @@ closure_evidence: |
 related_docs:
 - specs/03-文档基础规范.md
 - specs/03.01-规范文档规范.md
-- specs/03.02-工作模型文档规范.md
-- specs/03.03-工作流程文档规范.md
+- specs/03.02-事实模型文档规范.md
+- specs/03.03-行动编排文档规范.md
 related_adrs: []
 related_sparks:
 - spark-0005

@@ -288,7 +288,7 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         ],
     ))
 
-    index_paths = [SPECS_DIR / "20-工作模型集合索引.md", SPECS_DIR / "40-工作流程集合索引.md"]
+    index_paths = [SPECS_DIR / "20-事实模型集合索引.md", SPECS_DIR / "40-行动编排集合索引.md"]
     index_issues = [
         ldvh_bootstrap_issue("BOOTSTRAP_INDEX_MISSING", f"缺少索引文件: {assurance_relative_path(path)}", path, "规范")
         for path in index_paths

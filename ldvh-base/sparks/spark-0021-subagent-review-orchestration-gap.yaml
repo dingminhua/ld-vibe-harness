@@ -27,7 +27,7 @@ description: |
   候选方向：
 
   1. 新增一个具体工作流程，例如 `44-subagent-review-orchestration-子Agent复核编排`，专门承接方案审核和结果复核的编排规则；
-  2. 或者在 `specs/06-工作流程基础规范.md` 与 `specs/21-WorkCase-工作项.md` 中补强通用规则，但不新增 40-59 主文件；
+  2. 或者在 `specs/06-行动编排基础规范.md` 与 `specs/21-WorkCase-工作项.md` 中补强通用规则，但不新增 40-59 主文件；
   3. 若 44 成立，应定义主控调度、输入包、视角选择、并行等待、结果回收、硬问题处理、Agent 关闭、事实源回写、Human Gate 和失败降级；
   4. Code 后续可增加检查：进入 `human_closure_confirming` 时，必需视角不得为空，review item 必须具备 Agent 标识、输入引用、结论、证据引用、签署声明和 controller resolution；
   5. Web 后续可展示复核阶段、必需视角完成度、硬问题处理状态和是否等待 Human 关闭确认。
@@ -47,9 +47,9 @@ related_workcases:
 related_adrs: []
 related_studies: []
 related_docs:
-- specs/06-工作流程基础规范.md
+- specs/06-行动编排基础规范.md
 - specs/21-WorkCase-工作项.md
-- specs/40-workflow-design-audit-工作流程设计审核.md
-- specs/41-work-model-audit-工作模型审核.md
+- specs/40-action-orchestration-design-audit-行动编排设计审核.md
+- specs/41-fact-model-audit-事实模型审核.md
 - specs/42-specs-audit-规范审核.md
 - specs/43-assurance-readiness-audit-保障准备度审核.md

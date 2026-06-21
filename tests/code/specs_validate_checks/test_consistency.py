@@ -9,7 +9,7 @@ def test_consistency_core_implementation_lives_in_spec_checks():
 
 def test_consistency_reports_retired_workflow_consumption(tmp_path):
     path = write_md(
-        tmp_path / "40-工作流程集合索引.md",
+        tmp_path / "40-行动编排集合索引.md",
         """
 # 工作流程集合索引
 
@@ -26,7 +26,7 @@ LDVH部署与适配检查读取本文时，应至少确认 active 工作流程�
 
 def test_consistency_reports_retired_test_source_consumption(tmp_path):
     path = write_md(
-        tmp_path / "03.03-工作流程文档规范.md",
+        tmp_path / "03.03-行动编排文档规范.md",
         """
 # 工作流程文档规范
 
@@ -110,7 +110,7 @@ def test_consistency_skips_non_active_work_model(tmp_path):
 
 
 def test_consistency_reports_collection_index_range_mismatch(tmp_path):
-    entries = [{"number": "41", "title": "41-Test-测试.md", "type": "具体工作模型规范", "status": "active", "path": tmp_path / "20-工作模型集合索引.md", "line": 7}]
+    entries = [{"number": "41", "title": "41-Test-测试.md", "type": "具体工作模型规范", "status": "active", "path": tmp_path / "20-事实模型集合索引.md", "line": 7}]
 
     issues = checker.consistency_collection_range_issues(entries, "model")
 
@@ -164,7 +164,7 @@ def test_consistency_skips_non_active_workflow(tmp_path):
 def test_consistency_reports_index_section_missing(tmp_path, monkeypatch):
     monkeypatch.setattr(checker, "SPECS_DIR", tmp_path)
     write_md(
-        tmp_path / "20-工作模型集合索引.md",
+        tmp_path / "20-事实模型集合索引.md",
         """
 # 工作模型集合索引
 
@@ -186,7 +186,7 @@ def test_consistency_reports_index_section_missing(tmp_path, monkeypatch):
 def test_consistency_index_passes_when_required_sections_present(tmp_path, monkeypatch):
     monkeypatch.setattr(checker, "SPECS_DIR", tmp_path)
     write_md(
-        tmp_path / "20-工作模型集合索引.md",
+        tmp_path / "20-事实模型集合索引.md",
         """
 # 工作模型集合索引
 
@@ -489,7 +489,7 @@ def test_consistency_reports_retired_04_series_file(monkeypatch, tmp_path):
 
 def test_consistency_reports_index_overrun_keyword(tmp_path):
     write_md(
-        tmp_path / "20-工作模型集合索引.md",
+        tmp_path / "20-事实模型集合索引.md",
         """
 # 工作模型集合索引
 
@@ -506,7 +506,7 @@ def test_consistency_reports_index_overrun_keyword(tmp_path):
 
 def test_consistency_reports_index_overrun_multiple_keywords(tmp_path):
     write_md(
-        tmp_path / "40-工作流程集合索引.md",
+        tmp_path / "40-行动编排集合索引.md",
         """
 # 工作流程集合索引
 
@@ -550,9 +550,9 @@ def test_consistency_skips_index_overrun_in_current_20_40_main_docs(tmp_path):
 """,
     )
     write_md(
-        tmp_path / "40-workflow-design-audit-工作流程设计审核.md",
+        tmp_path / "40-action-orchestration-design-audit-行动编排设计审核.md",
         """
-# workflow-design-audit-工作流程设计审核
+# action-orchestration-design-audit-行动编排设计审核
 
 ## 1. 行动定位与适用场景
 
@@ -567,7 +567,7 @@ Scenario、Gate 触发条件、执行流程和事实源回写是具体工作流�
 
 def test_consistency_skips_index_overrun_in_code_block(tmp_path):
     write_md(
-        tmp_path / "20-工作模型集合索引.md",
+        tmp_path / "20-事实模型集合索引.md",
         """
 # 工作模型集合索引
 
@@ -586,7 +586,7 @@ def test_consistency_skips_index_overrun_in_code_block(tmp_path):
 
 def test_consistency_skips_index_overrun_in_negative_context(tmp_path):
     write_md(
-        tmp_path / "20-工作模型集合索引.md",
+        tmp_path / "20-事实模型集合索引.md",
         """
 # 工作模型集合索引
 
@@ -603,7 +603,7 @@ def test_consistency_skips_index_overrun_in_negative_context(tmp_path):
 
 def test_consistency_skips_index_overrun_in_boundary_context(tmp_path):
     write_md(
-        tmp_path / "40-工作流程集合索引.md",
+        tmp_path / "40-行动编排集合索引.md",
         """
 # 工作流程集合索引
 

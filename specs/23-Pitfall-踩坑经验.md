@@ -14,12 +14,9 @@ ldvh_doc:
   positioning: "定义 Pitfall / 踩坑经验事实模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则"
   scope: "所有接入 LDVH 且需要沉淀已解决、已验证且具有复用价值的踩坑经验的项目"
   basis:
-    - "specs/05-工作模型基础规范.md"
+    - "specs/05-事实模型基础规范.md"
   related_specs:
-    - "specs/05.01-工作模型字段定义与语义规范.md"
-    - "specs/05.02-工作模型字段内容与格式规范.md"
-    - "specs/05.03-工作模型字段注册与消费规范.md"
-    - "specs/07-Code确定性执行实现规范.md"
+    - "specs/05.02-事实模型字段内容与格式规范.md"
     - "specs/21-WorkCase-工作项.md"
     - "specs/22-ADR-决策.md"
     - "specs/20-Spark-火花.md"
@@ -106,7 +103,7 @@ ldvh-base/pitfalls/pitfall-{NNNN}-short-title.yaml
 |---|---|
 | Pitfall 事实模型规范 | `specs/23-Pitfall-踩坑经验.md` |
 | Pitfall 实例 | `ldvh-base/pitfalls/` |
-| Pitfall 字段内容格式 | `specs/05.02-工作模型字段内容与格式规范.md` |
+| Pitfall 字段内容格式 | `specs/05.02-事实模型字段内容与格式规范.md` |
 | Pitfall 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 Pitfall 的当前稳定规则以本文为准。
@@ -150,19 +147,15 @@ active → archived
 
 Pitfall 不替代 WorkCase 的成功标准、验证证据、关闭证据、风险判断或缺陷修复动作。
 
+WorkCase 的准入、状态和字段契约由 `specs/21-WorkCase-工作项.md` 定义；Pitfall 只记录可复用经验和规避策略。
+
 ### 4.2 Pitfall 与 Spark
 
 Spark 中保留的发现、提醒、复盘线索或问题线索满足 Pitfall 准入条件后，可以分流为 Pitfall。分流后，Pitfall 的 `source_sparks` 应记录来源 Spark，Spark 的 `resolved_to` 可记录 Pitfall ID。
 
 Spark 的准入、状态和字段契约由 `specs/20-Spark-火花.md` 定义。
 
-### 4.3 Pitfall 与 WorkCase
-
-工作项可以通过 `related_pitfalls` 引用执行过程中形成或需要参考的踩坑经验。Pitfall 可通过 `related_workcases` 记录关联工作项。
-
-WorkCase 的准入、状态和字段契约由 `specs/21-WorkCase-工作项.md` 定义。Pitfall 不替代 WorkCase 的目标、成功标准、执行编排或关闭判断。
-
-### 4.4 Pitfall 与 ADR
+### 4.3 Pitfall 与 ADR
 
 Pitfall 和 ADR 是独立事实模型。经验是经验，决策是决策，两者可以关联但不可互相替代。
 
@@ -170,11 +163,11 @@ Pitfall 和 ADR 是独立事实模型。经验是经验，决策是决策，两�
 
 ADR 的准入、状态和字段契约由 `specs/22-ADR-决策.md` 定义。
 
-### 4.5 Pitfall 与 Git 提交记录
+### 4.4 Pitfall 与 Git 提交记录
 
 Pitfall 的创建、状态变化、核心经验改写、归档和被吸收到规范、运行入口、Code、Web 或行动编排时，都应留下 Git 提交记录。commit message 格式规则由 `specs/10-Git提交规范.md` 定义。
 
-### 4.6 Pitfall 与规范、Code、Web 和运行入口
+### 4.5 Pitfall 与规范、Code、Web 和运行入口
 
 当 Pitfall 中的规避策略需要长期生效时，应按内容性质分流：
 
@@ -209,7 +202,7 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 
 ### 6.1 字段表
 
-公共字段语义定义见 `specs/05.01-工作模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
+公共字段语义定义见 `specs/05.01-事实模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
 
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
@@ -236,7 +229,7 @@ Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记�
 | `archive_reason` | 归档原因；如已被规范、Rules、Skill、Agent、Code、Web 或行动编排吸收，应说明承接位置 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Human |
 | `notes` | 不得承载规则正文第二事实源 | string | 否 | 不得承载规则正文第二事实源 | Narrative / Reference | AI、Web |
 
-字段内容格式按 `specs/05.02-工作模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
+字段内容格式按 `specs/05.02-事实模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 
 ### 6.2 YAML 示例
 
@@ -290,7 +283,7 @@ related_docs:
   - specs/01-目录说明.md
   - specs/09-事实源边界与承载规范.md
 related_rules:
-  - specs/03.02-工作模型文档规范.md
+  - specs/03.02-事实模型文档规范.md
 archive_reason:
 notes:
 ````
@@ -309,7 +302,7 @@ notes:
 10. 列表字段可为空列表，不得省略字段后以 null 替代空列表；
 11. `tags` 必须使用英文 slug，推荐小写短横线格式；不得使用中文标签、空格、展示翻译或一次性临时短语；
 12. 写入或修改 Pitfall `tags` 前，Code 应提供当前事实源中已有标签清单，AI 应优先复用已有标签；已有标签无法表达当前经验时可以新增英文标签；
-13. `verification` 必须按 `specs/05.02-工作模型字段内容与格式规范.md` §3.3 的四段式验证证据结构书写，不得只写“已验证”“通过”或把验证结果混入 `resolution`。
+13. `verification` 必须按 `specs/05.02-事实模型字段内容与格式规范.md` §3.3 的四段式验证证据结构书写，不得只写“已验证”“通过”或把验证结果混入 `resolution`。
 14. `symptoms`、`trigger_conditions`、`root_cause`、`resolution`、`avoidance` 和 `applicability` 等阅读节点字段可以使用 Markdown 段落或列表，但不得通过手写前导空格模拟缩进排版；需要条目时使用标准 Markdown 列表，需要普通说明时使用顶格段落。
 15. `root_cause`、`resolution` 和 `avoidance` 应优先写成可独立阅读的原子条目；每个条目只表达一个原因、一个动作或一个规避规则，不应把多个判断用分号串成一段长句。
 16. `trigger_conditions` 可使用短段落描述触发上下文；当触发条件超过一个时，应改用 Markdown 列表，让 Web 能稳定呈现为条目化经验。
@@ -386,7 +379,7 @@ Code 不得自行创建、归档、删除 Pitfall 或改写核心经验，不得
 
 Web 可展示 Pitfall 状态、症状、触发条件、根因、解决方式、验证结论、规避策略、适用范围、标签、归档原因、吸收关系和待确认项。Web 展示必须可追溯到 Git 文件事实源或 Code 派生结果。
 
-Pitfall 详情页是可复用经验阅读页，不按普通字段卡片堆叠。主节点固定为“现象、触发、根因、方案、验证、规避、范围、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。`verification` 节点消费 `specs/05.02-工作模型字段内容与格式规范.md` 的四段式验证结构，并按“验证计划、验证命令、验证结果、结论”顺序轻量分段展示，不使用表格左列重复标签。
+Pitfall 详情页是可复用经验阅读页，不按普通字段卡片堆叠。主节点固定为“现象、触发、根因、方案、验证、规避、范围、关联”，节点标题栏整行可点击，默认全部打开，折叠图标规则与 Study 一致。`verification` 节点消费 `specs/05.02-事实模型字段内容与格式规范.md` 的四段式验证结构，并按“验证计划、验证命令、验证结果、结论”顺序轻量分段展示，不使用表格左列重复标签。
 
 Pitfall 详情页展示 `tags` 时应保留事实源中的英文原始值，不做中文翻译。列表卡片不展示 `tags`，也不展示 `repeatability`、“已解决/未解决”、复现概率或其他冗余解决态，避免把内部索引标签和已解决前提提升为外部卡片信号。
 

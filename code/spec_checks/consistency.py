@@ -228,8 +228,8 @@ CONSISTENCY_DEPRECATED_EXPRESSIONS = {
 }
 
 CONSISTENCY_INDEX_OVERRUN_KEYWORDS = ("字段契约", "状态机", "Scenario", "Gate 触发条件", "执行流程", "事实源回写", "对象关系")
-CONSISTENCY_INDEX_FILE_RE = re.compile(r"^(20-工作模型集合索引|40-工作流程集合索引)\.md$")
-CONSISTENCY_DEPRECATED_INDEX_FILE_NAMES = {"20-工作模型集合索引.md", "40-工作流程集合索引.md"}
+CONSISTENCY_INDEX_FILE_RE = re.compile(r"^(20-事实模型集合索引|40-行动编排集合索引)\.md$")
+CONSISTENCY_DEPRECATED_INDEX_FILE_NAMES = {"20-事实模型集合索引.md", "40-行动编排集合索引.md"}
 CONSISTENCY_INDEX_BOUNDARY_TERMS = (
     "本文不定义",
     "不定义",
@@ -451,7 +451,7 @@ def consistency_removed_consumption_issues(entries, paths, code):
     issues = []
     removed = [entry for entry in entries if entry["status"] == "removed"]
     for path in iter_markdown_files(paths):
-        if path.name in {"20-工作模型集合索引.md", "40-工作流程集合索引.md"}:
+        if path.name in {"20-事实模型集合索引.md", "40-行动编排集合索引.md"}:
             continue
         in_code = False
         for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):

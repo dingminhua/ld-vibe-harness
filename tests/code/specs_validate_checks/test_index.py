@@ -236,7 +236,7 @@ def test_specs_document_allows_term_definition_in_owner_spec(tmp_path):
 """,
     )
     write_md(
-        specs / "05-工作模型基础规范.md",
+        specs / "05-事实模型基础规范.md",
         """
 # 工作模型基础规范
 
@@ -276,7 +276,7 @@ def test_index_extracts_ldvh_member_for_work_model(tmp_path):
 """,
     )
     write_md(
-        specs / "05-工作模型基础规范.md",
+        specs / "05-事实模型基础规范.md",
         """
 # 工作模型基础规范
 
@@ -296,7 +296,7 @@ def test_index_extracts_ldvh_member_for_work_model(tmp_path):
 > 创建日期：2026-06-15
 > 定位：工作项模型
 > 适用范围：LDVH
-> 上位依据：`specs/05-工作模型基础规范.md`
+> 上位依据：`specs/05-事实模型基础规范.md`
 
 ```yaml
 ldvh_member:
@@ -678,7 +678,7 @@ ldvh_doc:
   positioning: 工作项模型
   scope: LDVH
   basis:
-    - specs/05-工作模型基础规范.md
+    - specs/05-事实模型基础规范.md
   related_specs: []
   code_consumption:
     - doc_metadata
@@ -723,7 +723,7 @@ def test_index_reports_ldvh_member_spec_id_mismatch(tmp_path):
 > 创建日期：2026-06-15
 > 定位：工作项模型
 > 适用范围：LDVH
-> 上位依据：`specs/05-工作模型基础规范.md`
+> 上位依据：`specs/05-事实模型基础规范.md`
 
 ```yaml
 ldvh_member:
@@ -760,7 +760,7 @@ def test_index_reports_missing_ldvh_member_for_concrete_work_model(tmp_path):
 > 创建日期：2026-06-15
 > 定位：工作项模型
 > 适用范围：LDVH
-> 上位依据：`specs/05-工作模型基础规范.md`
+> 上位依据：`specs/05-事实模型基础规范.md`
 
 ## 1. 第一章
 """,
@@ -781,7 +781,7 @@ def test_index_reports_member_fields_duplicated_in_header(tmp_path):
 > 创建日期：2026-06-15
 > 定位：工作项模型
 > 适用范围：LDVH
-> 上位依据：`specs/05-工作模型基础规范.md`
+> 上位依据：`specs/05-事实模型基础规范.md`
 > 文档编号：21
 > 集合状态：active
 > canonical_path：specs/21-WorkCase-工作项.md
@@ -826,7 +826,7 @@ def test_index_reports_duplicate_ldvh_member_spec_id(tmp_path):
 > 创建日期：2026-06-15
 > 定位：测试工作模型
 > 适用范围：LDVH
-> 上位依据：`specs/05-工作模型基础规范.md`
+> 上位依据：`specs/05-事实模型基础规范.md`
 
 ```yaml
 ldvh_member:
@@ -883,7 +883,7 @@ def test_index_accepts_work_model_directory_matching_active_members(tmp_path):
 > 创建日期：2026-06-15
 > 定位：测试工作模型
 > 适用范围：LDVH
-> 上位依据：`specs/05-工作模型基础规范.md`
+> 上位依据：`specs/05-事实模型基础规范.md`
 
 ```yaml
 ldvh_member:
@@ -935,7 +935,7 @@ def test_index_reports_stale_work_model_directory_table(tmp_path):
 > 创建日期：2026-06-15
 > 定位：决策工作模型
 > 适用范围：LDVH
-> 上位依据：`specs/05-工作模型基础规范.md`
+> 上位依据：`specs/05-事实模型基础规范.md`
 
 ```yaml
 ldvh_member:
@@ -1795,7 +1795,7 @@ def test_subdocument_contract_diagnostics_help_ai_review(tmp_path):
 def test_parent_subdocument_registry_diagnostics(tmp_path):
     specs = tmp_path / "specs"
     write_md(
-        specs / "05-工作模型基础规范.md",
+        specs / "05-事实模型基础规范.md",
         """
 # 工作模型基础规范
 
@@ -1811,16 +1811,16 @@ def test_parent_subdocument_registry_diagnostics(tmp_path):
 """,
     )
     write_md(
-        specs / "05.01-工作模型字段定义与语义规范.md",
+        specs / "05.01-事实模型字段定义与语义规范.md",
         """
 # 工作模型字段定义与语义规范
 
 > 创建日期：2026-06-01
-> 所属主文档：`specs/05-工作模型基础规范.md`
+> 所属主文档：`specs/05-事实模型基础规范.md`
 > 关系：专题子文档
 > 定位：工作模型字段定义与语义规范
 > 适用范围：LDVH 工作模型字段
-> 上位依据：`specs/05-工作模型基础规范.md`
+> 上位依据：`specs/05-事实模型基础规范.md`
 
 ---
 ## 1. 本文解决的问题
@@ -1837,7 +1837,7 @@ def test_parent_subdocument_registry_diagnostics(tmp_path):
 def test_parent_subdocument_registry_passes_when_boundary_lists_child(tmp_path):
     specs = tmp_path / "specs"
     write_md(
-        specs / "05-工作模型基础规范.md",
+        specs / "05-事实模型基础规范.md",
         """
 # 工作模型基础规范
 
@@ -1855,20 +1855,20 @@ def test_parent_subdocument_registry_passes_when_boundary_lists_child(tmp_path):
 
 | 子文档 | 说明 |
 |---|---|
-| `specs/05.01-工作模型字段定义与语义规范.md` | 工作模型字段规则 |
+| `specs/05.01-事实模型字段定义与语义规范.md` | 工作模型字段规则 |
 """,
     )
     write_md(
-        specs / "05.01-工作模型字段定义与语义规范.md",
+        specs / "05.01-事实模型字段定义与语义规范.md",
         """
 # 工作模型字段定义与语义规范
 
 > 创建日期：2026-06-01
-> 所属主文档：`specs/05-工作模型基础规范.md`
+> 所属主文档：`specs/05-事实模型基础规范.md`
 > 关系：专题子文档
 > 定位：工作模型字段定义与语义规范
 > 适用范围：LDVH 工作模型字段
-> 上位依据：`specs/05-工作模型基础规范.md`
+> 上位依据：`specs/05-事实模型基础规范.md`
 
 ---
 ## 1. 本文解决的问题

@@ -70,18 +70,18 @@ orchestration:
     role: workflow-governance
     mode: sequential
     input_refs:
-    - specs/03.03-工作流程文档规范.md
+    - specs/03.03-行动编排文档规范.md
     - specs/04.01-规范保障声明规范.md
-    - specs/06-工作流程基础规范.md
+    - specs/06-行动编排基础规范.md
     - specs/43-assurance-readiness-audit-保障准备度审核.md
     - code/spec_checks/index.py
     expected_output: 明确无工作流程接管时来源规范如何写保障要求；有工作流程接管时如何写接管声明、派生可发现性、生命周期触发和 Code 派生检查。
     status: done
     result_summary: 已将工作流程接管字段和派生集合索引硬改为 assurance_takeover，43 改为保障准备度审核；来源规范保留保障要求和触发索引，执行责任由 active 接管流程承接。
     evidence_refs:
-    - specs/03.03-工作流程文档规范.md
+    - specs/03.03-行动编排文档规范.md
     - specs/04.01-规范保障声明规范.md
-    - specs/06-工作流程基础规范.md
+    - specs/06-行动编排基础规范.md
     - specs/43-assurance-readiness-audit-保障准备度审核.md
     - code/spec_checks/index.py
     blocking_reason: null
@@ -203,9 +203,9 @@ orchestration:
         objective: 审核 WorkCase 方案是否足以处理有/无工作流程接管时规范保障要求的写法和变化感知机制。
         input_refs:
         - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
-        - specs/03.03-工作流程文档规范.md
+        - specs/03.03-行动编排文档规范.md
         - specs/04.01-规范保障声明规范.md
-        - specs/06-工作流程基础规范.md
+        - specs/06-行动编排基础规范.md
         - specs/43-assurance-readiness-audit-保障准备度审核.md
         - code/spec_checks/index.py
         constraints:
@@ -227,9 +227,9 @@ orchestration:
         required_changes: []
         evidence_refs:
         - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
-        - specs/03.03-工作流程文档规范.md
+        - specs/03.03-行动编排文档规范.md
         - specs/04.01-规范保障声明规范.md
-        - specs/06-工作流程基础规范.md
+        - specs/06-行动编排基础规范.md
         - specs/43-assurance-readiness-audit-保障准备度审核.md
         - code/spec_checks/index.py
       raw_output_ref: null

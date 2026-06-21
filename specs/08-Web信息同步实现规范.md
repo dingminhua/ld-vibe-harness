@@ -16,7 +16,7 @@ ldvh_doc:
   basis:
     - "specs/00-LD-Vibe-Harness理念与纲要.md"
   related_specs:
-    - "specs/06-工作流程基础规范.md"
+    - "specs/06-行动编排基础规范.md"
     - "specs/07-Code确定性执行实现规范.md"
     - "specs/09-事实源边界与承载规范.md"
     - "specs/11-测试基础规范.md"
@@ -239,7 +239,7 @@ Confirm UI 规则如下：
 
 ### 8.1 Confirm UI 最小字段
 
-Confirm UI 的展示、输入、导出或受控写入结果应能承接 `specs/06-工作流程基础规范.md` §6.3.1 的最小证据结构。
+Confirm UI 的展示、输入、导出或受控写入结果应能承接 `specs/06-行动编排基础规范.md` §6.3.1 的最小证据结构。
 
 Web 侧至少应支持以下信息被 Human 看见或被确认结果记录：
 

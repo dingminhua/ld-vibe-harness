@@ -191,8 +191,8 @@ closure_evidence: |
   本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
 related_docs:
 - specs/21-WorkCase-工作项.md
-- specs/40-workflow-design-audit-工作流程设计审核.md
-- specs/41-work-model-audit-工作模型审核.md
+- specs/40-action-orchestration-design-audit-行动编排设计审核.md
+- specs/41-fact-model-audit-事实模型审核.md
 - specs/42-specs-audit-规范审核.md
 - specs/43-assurance-readiness-audit-保障准备度审核.md
 related_adrs: []

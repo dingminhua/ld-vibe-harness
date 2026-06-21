@@ -150,7 +150,7 @@ def test_shorthand_main_document_reference_passes(tmp_path, monkeypatch):
     specs_dir = tmp_path / "specs"
     target = write_md(specs_dir / "21-ADR-决策.md", "# ADR\n\n## 3. 字段契约")
     source = write_md(
-        specs_dir / "20-工作模型集合索引.md",
+        specs_dir / "20-事实模型集合索引.md",
         """
 # 工作模型集合索引
 

@@ -46,7 +46,7 @@ orchestration:
     - specs/03-文档基础规范.md
     - specs/04.03-环境入口适配与部署规范.md
     - specs/07-Code确定性执行实现规范.md
-    - specs/06-工作流程基础规范.md
+    - specs/06-行动编排基础规范.md
     blocking_reason: null
   review:
     controller_self_check: true
@@ -101,7 +101,7 @@ related_docs:
 - specs/03-文档基础规范.md
 - specs/04.03-环境入口适配与部署规范.md
 - specs/07-Code确定性执行实现规范.md
-- specs/06-工作流程基础规范.md
+- specs/06-行动编排基础规范.md
 related_adrs: []
 related_sparks: []
 related_pitfalls: []

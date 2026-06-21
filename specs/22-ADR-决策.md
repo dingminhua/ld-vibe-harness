@@ -14,12 +14,10 @@ ldvh_doc:
   positioning: "定义 ADR / 决策事实模型，包括对象定位、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则"
   scope: "所有接入 LDVH 且需要管理长期决策、事实源边界、规范判断和后续执行约束的项目"
   basis:
-    - "specs/05-工作模型基础规范.md"
+    - "specs/05-事实模型基础规范.md"
   related_specs:
-    - "specs/05.01-工作模型字段定义与语义规范.md"
-    - "specs/05.02-工作模型字段内容与格式规范.md"
-    - "specs/05.03-工作模型字段注册与消费规范.md"
-    - "specs/07-Code确定性执行实现规范.md"
+    - "specs/05.01-事实模型字段定义与语义规范.md"
+    - "specs/05.02-事实模型字段内容与格式规范.md"
     - "specs/10-Git提交规范.md"
   code_consumption:
     - "doc_metadata"
@@ -103,7 +101,7 @@ ldvh-base/adrs/adr-{NNNN}-short-title.yaml
 |---|---|
 | ADR 事实模型规范 | `specs/22-ADR-决策.md` |
 | ADR 实例 | `ldvh-base/adrs/` |
-| ADR 字段内容格式 | `specs/05.02-工作模型字段内容与格式规范.md` |
+| ADR 字段内容格式 | `specs/05.02-事实模型字段内容与格式规范.md` |
 | ADR 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 ADR 的当前稳定规则以本文为准。
@@ -191,14 +189,14 @@ ADR 中的决策补丁升级为稳定规则时，应：
 
 Human Gate 的具体环境实体由 04 系列环境适配项和适配措施记录。本文只规定 ADR 语境下需要确认的事实、影响范围和证据要求。
 
-ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.md` §6.3.1。创建、归档、废弃、核心决策改写或升级为规范等场景中，确认记录至少应说明目标 ADR、决策变化、影响范围、确认依据、Human 决策、后续回写位置和残留风险。确认记录可以摘要写入 ADR 的 `context`、`consequences`、`archive_reason`、`deprecated_reason`、相关 WorkCase / Spark 或 Git commit 证据中，但不得只停留在对话结论里，不得维护手写 `status_history`。
+ADR 语境下的 Human Gate 记录应遵守 `specs/06-行动编排基础规范.md` §6.3.1。创建、归档、废弃、核心决策改写或升级为规范等场景中，确认记录至少应说明目标 ADR、决策变化、影响范围、确认依据、Human 决策、后续回写位置和残留风险。确认记录可以摘要写入 ADR 的 `context`、`consequences`、`archive_reason`、`deprecated_reason`、相关 WorkCase / Spark 或 Git commit 证据中，但不得只停留在对话结论里，不得维护手写 `status_history`。
 
 ---
 ## 6. 字段契约
 
 ### 6.1 字段表
 
-公共字段语义定义见 `specs/05.01-工作模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
+公共字段语义定义见 `specs/05.01-事实模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
 
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
@@ -219,7 +217,7 @@ ADR 语境下的 Human Gate 记录应遵守 `specs/06-工作流程基础规范.m
 | `archive_reason` | 归档原因和吸收位置 | string | 条件必填 | `status: archived` 时必须填写 | Narrative | AI、Code、Web |
 | `deprecated_reason` | 废弃原因和不再适用边界 | string | 条件必填 | `status: deprecated` 时必须填写 | Narrative | AI、Code、Web |
 
-字段内容格式按 `specs/05.02-工作模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
+字段内容格式按 `specs/05.02-事实模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 
 ### 6.2 YAML 示例
 

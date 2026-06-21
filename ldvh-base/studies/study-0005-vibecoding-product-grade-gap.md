@@ -79,7 +79,7 @@ related_pitfalls: []
 related_docs:
 - specs/00-LD-Vibe-Harness理念与纲要.md
 - specs/04.02-LDVH能力资产与保障机制规范.md
-- specs/06-工作流程基础规范.md
+- specs/06-行动编排基础规范.md
 - specs/07-Code确定性执行实现规范.md
 - specs/08-Web信息同步实现规范.md
 - specs/11-测试基础规范.md

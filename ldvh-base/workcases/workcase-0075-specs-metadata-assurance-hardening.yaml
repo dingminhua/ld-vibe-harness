@@ -34,8 +34,8 @@ orchestration:
     - ldvh-base/workcases/workcase-0070-specs-header-metadata-contract.yaml
     - specs/03-文档基础规范.md
     - specs/03.01-规范文档规范.md
-    - specs/03.02-工作模型文档规范.md
-    - specs/03.03-工作流程文档规范.md
+    - specs/03.02-事实模型文档规范.md
+    - specs/03.03-行动编排文档规范.md
     expected_output: 明确 0070 已完成契约设计，后续落地硬化由 0075 承接，不把两个目标混在一个 WorkCase 中。
     status: done
     result_summary: 已确认 0070 可关闭；0075 承接 Code/Web/docs 全量落地硬化。
@@ -50,8 +50,8 @@ orchestration:
     - specs/
     - specs/03-文档基础规范.md
     - specs/03.01-规范文档规范.md
-    - specs/03.02-工作模型文档规范.md
-    - specs/03.03-工作流程文档规范.md
+    - specs/03.02-事实模型文档规范.md
+    - specs/03.03-行动编排文档规范.md
     expected_output: 列出 specs 当前头部元信息缺失、字段不匹配、重复成员事实或需要迁移的文件，并直接修复可安全修复项。
     status: done
     result_summary: 已运行普通头部重复成员字段扫描，未发现 specs 当前头部存在 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 或 anchor 字段残留；新增 Code 诊断后 `specs_validate.py all --fail-on-diagnostics` 通过，说明当前 specs 头部元信息符合契约。
@@ -69,8 +69,8 @@ orchestration:
     - tests/code/specs_validate_checks/test_index.py
     - specs/03-文档基础规范.md
     - specs/03.01-规范文档规范.md
-    - specs/03.02-工作模型文档规范.md
-    - specs/03.03-工作流程文档规范.md
+    - specs/03.02-事实模型文档规范.md
+    - specs/03.03-行动编排文档规范.md
     expected_output: 增加或调整 Code 检查，使头部字段契约、成员自描述边界和重复事实源问题可被机械诊断。
     status: done
     result_summary: 已在 index 检查中新增 `LDVH_MEMBER_HEADER_FIELD_FORBIDDEN` 错误诊断，覆盖 20-39 / 40-59 普通头部重复登记成员自描述字段；已补测试验证 `文档编号`、`集合状态`、`canonical_path` 三类重复字段会被诊断。
@@ -192,8 +192,8 @@ closed_at: ''
 related_docs:
 - specs/03-文档基础规范.md
 - specs/03.01-规范文档规范.md
-- specs/03.02-工作模型文档规范.md
-- specs/03.03-工作流程文档规范.md
+- specs/03.02-事实模型文档规范.md
+- specs/03.03-行动编排文档规范.md
 related_adrs: []
 related_sparks: []
 related_pitfalls: []

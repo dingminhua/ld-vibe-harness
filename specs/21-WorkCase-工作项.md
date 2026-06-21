@@ -14,11 +14,10 @@ ldvh_doc:
   positioning: "定义 WorkCase / 工作项事实模型，包括对象定位、准入条件、事实源边界、方案审核、执行、结果自检、结果复核、关闭确认、变更记录、字段契约、事实源回写和适配规则"
   scope: "所有接入 LDVH 且需要把一次目标组织为可执行、可验证、可关闭工作项的项目"
   basis:
-    - "specs/05-工作模型基础规范.md"
+    - "specs/05-事实模型基础规范.md"
   related_specs:
-    - "specs/05.01-工作模型字段定义与语义规范.md"
-    - "specs/05.02-工作模型字段内容与格式规范.md"
-    - "specs/05.03-工作模型字段注册与消费规范.md"
+    - "specs/05.01-事实模型字段定义与语义规范.md"
+    - "specs/05.02-事实模型字段内容与格式规范.md"
   code_consumption:
     - "doc_metadata"
     - "relations"
@@ -81,7 +80,7 @@ ldvh-base/workcases/workcase-{NNNN}-short-title.yaml
 |---|---|
 | 工作项事实模型规范 | `specs/21-WorkCase-工作项.md` |
 | 工作项实例 | `ldvh-base/workcases/` |
-| 工作项字段内容格式 | `specs/05.02-工作模型字段内容与格式规范.md` |
+| 工作项字段内容格式 | `specs/05.02-事实模型字段内容与格式规范.md` |
 | 工作项展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 执行过程不作为长期事实源。工作项只保留最小恢复信息、验证证据、关闭证据和经验分流结果；AI 的临时步骤、局部选择、工具缓存、子 Agent 中间过程和未采纳草稿不得写成独立工作对象。
@@ -273,7 +272,7 @@ Human Gate 发生在工作项层。执行项、角色说明、子 Agent 输出�
 ---
 ## 6. 字段契约
 
-公共字段语义定义见 `specs/05.01-工作模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
+公共字段语义定义见 `specs/05.01-事实模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
 
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
@@ -284,7 +283,7 @@ Human Gate 发生在工作项层。执行项、角色说明、子 Agent 输出�
 | `status` | 见 §3.1 状态枚举 | string | 是 | 必须属于 §3.1 状态枚举 | Reference | AI、Code、Web |
 | `created` | 创建时间 | datetime | 是 | ISO 8601 时间戳 | Reference | AI、Code、Web |
 | `updated` | 更新时间 | datetime | 是 | 每次事实源更新时同步 | Reference | AI、Code、Web |
-| `priority` | 执行优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
+| `priority` | 执行优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-事实模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
 | `description` | 目标背景、范围和问题说明 | string | 是 | 使用 YAML 块标量 | Narrative | AI、Web |
 | `success_criteria` | 工作项成功标准 | string | 是 | 应使用 checklist 或等价可验证条目支持关闭审查 | Checklist | AI、Code、Web |
 | `source` | 工作项来源 | string | 是 | 谁在什么场景下表达 | Reference / Narrative | AI、Web |
@@ -492,7 +491,7 @@ orchestration:
       role: specs-editor
       mode: sequential
       input_refs:
-        - specs/05-工作模型基础规范.md
+        - specs/05-事实模型基础规范.md
         - specs/21-WorkCase-工作项.md
       expected_output: 更新后的 WorkCase 规范正文和可复查验证结果
       status: done
@@ -662,7 +661,7 @@ Web 应把工作项作为 Human 直接查看和确认的主对象。Web 可以�
 |---|---|---|---|---|
 | 上位约束承接要求 | 工作项必须遵守 05、05.01 和本文定义的人机职责边界 | 05、05.01、本文、Human Gate | 事实模型治理 | 创建、迁移、关闭或重排工作项时 |
 | 确定性执行要求 | 工作项内部执行项不得作为独立事实模型出现 | Validator、CLI、Web 展示 | 事实模型校验 | 创建、更新、展示或关闭工作项时 |
-| 确定性执行要求 | 工作项必须依据 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 维护 `priority`，不得维护 `importance` | Validator、CLI、Web 展示 | 字段契约同步 | 创建、更新、排序、筛选或展示工作项时 |
+| 确定性执行要求 | 工作项必须依据 `specs/05.01-事实模型字段定义与语义规范.md` §3.1 维护 `priority`，不得维护 `importance` | Validator、CLI、Web 展示 | 字段契约同步 | 创建、更新、排序、筛选或展示工作项时 |
 | 确定性执行要求 | 工作项状态必须明确区分方案审核、方案确认、执行、结果自检、结果复核、关闭确认和已关闭，不得把审核阶段折叠为执行态派生含义 | Validator、CLI、Web 展示 | 状态机同步 | 状态枚举、流转、实例校验或 Web 展示变化时 |
 | 子 Agent 思考要求 | 方案审核和结果复核必须记录审核 Agent、角色、提示上下文、输入引用、重点结论、可审计签署声明和主控处理记录 | Agent 能力、主控多视角审查、事实实例校验 | 审核事实同步 | 方案审核、结果复核、主控处理记录、Agent 能力或签署字段变化时 |
 | 子 Agent 思考要求 | 结果复核必须按必需视角真实启动、等待结论、处理硬问题并记录主控 resolution；不得用空 `review_items`、主控代签或事后补表冒充独立复核 | Validator warning、Agent 编排记录、主控 resolution、revision_history | 复核闭环同步 | 进入结果复核、旁路指出复核缺失、修复复核发现或请求关闭确认时 |

@@ -203,7 +203,7 @@ def test_assurance_report_reports_41_member_status(tmp_path, monkeypatch):
 ldvh_member:
   spec_id: 40
   kind: work_process
-  name_en: workflow-design-audit
+  name_en: action-orchestration-design-audit
   name_zh: 工作流程设计审核
   collection_status: active
   canonical_path: specs/40-Workflow.md
@@ -219,7 +219,7 @@ ldvh_member:
 ldvh_member:
   spec_id: 41
   kind: work_process
-  name_en: work-model-audit
+  name_en: fact-model-audit
   name_zh: 工作模型审核
   collection_status: candidate
   canonical_path: specs/41-Workflow.md

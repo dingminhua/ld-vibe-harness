@@ -1,12 +1,12 @@
-# work-model-audit-事实模型审核
+# fact-model-audit-事实模型审核
 
 ```yaml
 ldvh_doc:
   doc_id: "41"
   doc_kind: "work_process_spec"
-  title: "work-model-audit-事实模型审核"
+  title: "fact-model-audit-事实模型审核"
   status: "active"
-  canonical_path: "specs/41-work-model-audit-工作模型审核.md"
+  canonical_path: "specs/41-fact-model-audit-事实模型审核.md"
   created: "2026-06-16"
   updated: "2026-06-18"
   parent_doc: ""
@@ -14,13 +14,12 @@ ldvh_doc:
   positioning: "定义事实模型设计审核行动，用于审核 `specs/20-39` 具体事实模型主文件是否具备明确工程价值、是否符合 LDVH 事实模型基础规则、文档骨架、成员自描述、事实源边界、字段契约、状态机、Human Gate、对象关系与实例可验证性要求；本流程使用 Code 作为机械属性导航与诊断辅助，但不把 Code 输出作为通过依据"
   scope: "LDVH 自身和管辖项目中对 20-39 具体事实模型规范的新增、修改、升级、降级、重命名、删除、审查和能力消费前检查"
   basis:
-    - "specs/05-工作模型基础规范.md"
+    - "specs/05-事实模型基础规范.md"
   related_specs:
-    - "specs/03.02-工作模型文档规范.md"
-    - "specs/05.01-工作模型字段定义与语义规范.md"
-    - "specs/05.02-工作模型字段内容与格式规范.md"
-    - "specs/05.03-工作模型字段注册与消费规范.md"
-    - "specs/09-事实源边界与承载规范.md"
+    - "specs/03.02-事实模型文档规范.md"
+    - "specs/05.01-事实模型字段定义与语义规范.md"
+    - "specs/05.02-事实模型字段内容与格式规范.md"
+    - "specs/05.03-事实模型字段注册与消费规范.md"
     - "specs/21-WorkCase-工作项.md"
   code_consumption:
     - "doc_metadata"
@@ -34,10 +33,10 @@ ldvh_doc:
 ldvh_member:
   spec_id: "41"
   kind: work_process
-  name_en: work-model-audit
+  name_en: fact-model-audit
   name_zh: 事实模型审核
   collection_status: active
-  canonical_path: specs/41-work-model-audit-工作模型审核.md
+  canonical_path: specs/41-fact-model-audit-事实模型审核.md
   scenario_anchor: "§5"
   context_anchor: "§4"
   gate_anchor: "§7"
@@ -103,11 +102,11 @@ ldvh_member:
 
 | 内容 | 权威位置 |
 |---|---|
-| LDVH 事实模型基础规则、标准组成、准入条件、通用规范 | `specs/05-工作模型基础规范.md` |
-| 事实模型文档骨架、成员自描述契约、字段契约表达、适配规则表达 | `specs/03.02-工作模型文档规范.md` |
-| 公共字段语义与字段治理 | `specs/05.01-工作模型字段定义与语义规范.md` |
-| 字段内容格式与字段内容写入 | `specs/05.02-工作模型字段内容与格式规范.md` |
-| 字段注册表与 Code/Web 消费元数据 | `specs/05.03-工作模型字段注册与消费规范.md` |
+| LDVH 事实模型基础规则、标准组成、准入条件、通用规范 | `specs/05-事实模型基础规范.md` |
+| 事实模型文档骨架、成员自描述契约、字段契约表达、适配规则表达 | `specs/03.02-事实模型文档规范.md` |
+| 公共字段语义与字段治理 | `specs/05.01-事实模型字段定义与语义规范.md` |
+| 字段内容格式与字段内容写入 | `specs/05.02-事实模型字段内容与格式规范.md` |
+| 字段注册表与 Code/Web 消费元数据 | `specs/05.03-事实模型字段注册与消费规范.md` |
 | 单一事实源原则、权威位置判断、工具输出边界、Web 状态边界 | `specs/09-事实源边界与承载规范.md` |
 | 目录、编号与文件归属 | `specs/01-目录说明.md` |
 | 目标事实模型主文件正文 | 对应 `specs/20-39` 成员主文件 |
@@ -120,9 +119,9 @@ ldvh_member:
 执行本流程前，AI 应按最小可行动原则准备以下 Context：
 
 1. `../rules/LDVH-MAINTAINER-ENTRY.md` 中与事实模型规范场景路由和维护规则相关的段落；
-2. `specs/05-工作模型基础规范.md` 中事实模型定义、标准组成、准入条件、状态机、对象关系、Human Gate、字段契约、事实源回写与适配边界相关章节；
-3. `specs/03.02-工作模型文档规范.md` 中成员自描述契约、文档骨架、字段契约表达、适配规则表达、规范保障要求和检查要求；
-4. `specs/05.01-工作模型字段定义与语义规范.md` 中公共字段语义、`specs/05.02-工作模型字段内容与格式规范.md` 中内容格式、`specs/05.03-工作模型字段注册与消费规范.md` 中消费规则（如适用）；
+2. `specs/05-事实模型基础规范.md` 中事实模型定义、标准组成、准入条件、状态机、对象关系、Human Gate、字段契约、事实源回写与适配边界相关章节；
+3. `specs/03.02-事实模型文档规范.md` 中成员自描述契约、文档骨架、字段契约表达、适配规则表达、规范保障要求和检查要求；
+4. `specs/05.01-事实模型字段定义与语义规范.md` 中公共字段语义、`specs/05.02-事实模型字段内容与格式规范.md` 中内容格式、`specs/05.03-事实模型字段注册与消费规范.md` 中消费规则（如适用）；
 5. `specs/01-目录说明.md` 中 20-39 编号区段和成员自描述规则；
 6. `specs/09-事实源边界与承载规范.md` 中单一事实源原则和权威位置判断规则；
 7. 目标事实模型主文件或候选草案。
@@ -184,7 +183,7 @@ AI 遇到以下信号时，应识别为事实模型审核场景：
 8. 审核结论会影响 Rules、Skill、Agent、Hook、Web 或行动编排的长期行为边界；
 9. 修改实例文件命名、权威字段定义或 `instance_root` 目录位置，可能影响既有实例可追溯性。
 
-Gate 触发时，AI 应说明触发原因、影响范围、可选处理方式、推荐分流和需要 Human 确认的具体事项。Human 确认形成稳定事实时，应按 `specs/06-工作流程基础规范.md` 的 Human Gate 最小字段和 `specs/10-Git提交规范.md` 的提交追溯要求记录时间、决策、范围和约束。
+Gate 触发时，AI 应说明触发原因、影响范围、可选处理方式、推荐分流和需要 Human 确认的具体事项。Human 确认形成稳定事实时，应按 `specs/06-行动编排基础规范.md` 的 Human Gate 最小字段和 `specs/10-Git提交规范.md` 的提交追溯要求记录时间、决策、范围和约束。
 
 ---
 ## 8. Skill 和 Agent 调度
@@ -269,7 +268,7 @@ Code 输出只作为导航、聚合和诊断结果。Code 不判断事实模型�
 5. 审核形成研究报告或迁移说明时，回写 docs；
 6. 发生事实源修改时，按 10 的 Git 和 commit message 格式规则处理。
 
-凡回写为 WorkCase 的后续行动，必须按 `specs/21-WorkCase-工作项.md` 和 `specs/05.02-工作模型字段内容与格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkCase 内部 `execution_items`。
+凡回写为 WorkCase 的后续行动，必须按 `specs/21-WorkCase-工作项.md` 和 `specs/05.02-事实模型字段内容与格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkCase 内部 `execution_items`。
 
 不得把聊天中的"看起来可以"、"应该合格"或"已审核"当作完成证据。关键结论必须能回指规范、目标文件、Human Gate 记录或事实源差异。
 

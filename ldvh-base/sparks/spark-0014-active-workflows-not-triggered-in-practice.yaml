@@ -9,8 +9,8 @@ description: |
 
   当前 active 工作流程：
 
-  1. `specs/40-workflow-design-audit-工作流程设计审核.md`
-  2. `specs/41-work-model-audit-工作模型审核.md`
+  1. `specs/40-action-orchestration-design-audit-行动编排设计审核.md`
+  2. `specs/41-fact-model-audit-事实模型审核.md`
   3. `specs/42-specs-audit-规范审核.md`
   4. `specs/43-assurance-readiness-audit-保障准备度审核.md`
 
@@ -63,9 +63,9 @@ related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:
-- specs/06-工作流程基础规范.md
-- specs/40-workflow-design-audit-工作流程设计审核.md
-- specs/41-work-model-audit-工作模型审核.md
+- specs/06-行动编排基础规范.md
+- specs/40-action-orchestration-design-audit-行动编排设计审核.md
+- specs/41-fact-model-audit-事实模型审核.md
 - specs/42-specs-audit-规范审核.md
 - specs/43-assurance-readiness-audit-保障准备度审核.md
 - specs/21-WorkCase-工作项.md

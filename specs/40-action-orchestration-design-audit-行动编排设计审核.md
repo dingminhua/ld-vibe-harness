@@ -1,12 +1,12 @@
-# workflow-design-audit-行动编排设计审核
+# action-orchestration-design-audit-行动编排设计审核
 
 ```yaml
 ldvh_doc:
   doc_id: "40"
   doc_kind: "work_process_spec"
-  title: "workflow-design-audit-行动编排设计审核"
+  title: "action-orchestration-design-audit-行动编排设计审核"
   status: "active"
-  canonical_path: "specs/40-workflow-design-audit-工作流程设计审核.md"
+  canonical_path: "specs/40-action-orchestration-design-audit-行动编排设计审核.md"
   created: "2026-06-15"
   updated: "2026-06-18"
   parent_doc: ""
@@ -14,12 +14,10 @@ ldvh_doc:
   positioning: "定义行动编排设计审核行动，用于审核 `specs/40-59` 具体行动编排主文件是否符合 LDVH 行动编排基础规则、文档骨架、成员自描述、事实源边界、能力协作边界和行动特有可测试性要求"
   scope: "LDVH 自身和管辖项目中对 40-59 具体行动编排规范的新增、修改、升级、降级、重命名、删除、审查和能力消费前检查"
   basis:
-    - "specs/06-工作流程基础规范.md"
+    - "specs/06-行动编排基础规范.md"
   related_specs:
-    - "specs/03.03-工作流程文档规范.md"
-    - "specs/05.01-工作模型字段定义与语义规范.md"
-    - "specs/05.02-工作模型字段内容与格式规范.md"
-    - "specs/05.03-工作模型字段注册与消费规范.md"
+    - "specs/03.03-行动编排文档规范.md"
+    - "specs/05.02-事实模型字段内容与格式规范.md"
     - "specs/09-事实源边界与承载规范.md"
     - "specs/11-测试基础规范.md"
     - "specs/21-WorkCase-工作项.md"
@@ -35,10 +33,10 @@ ldvh_doc:
 ldvh_member:
   spec_id: "40"
   kind: work_process
-  name_en: workflow-design-audit
+  name_en: action-orchestration-design-audit
   name_zh: 行动编排设计审核
   collection_status: active
-  canonical_path: specs/40-workflow-design-audit-工作流程设计审核.md
+  canonical_path: specs/40-action-orchestration-design-audit-行动编排设计审核.md
   scenario_anchor: "§5"
   context_anchor: "§4"
   gate_anchor: "§7"
@@ -58,7 +56,7 @@ ldvh_member:
 
 行动编排设计审核是 LDVH 对具体行动编排规范主文件进行质量审查的行动编排。它回答：一个 `specs/40-59` 行动编排主文件是否能被 AI 正确读取、识别、执行、暂停、验证、回写和维护。
 
-本流程只审核行动编排设计质量，不维护行动编排集合清单，不生成派生索引，不替代 Code 派生集合索引，也不替代 `specs/06-工作流程基础规范.md` 和 `specs/03.03-工作流程文档规范.md` 的通用规则。
+本流程只审核行动编排设计质量，不维护行动编排集合清单，不生成派生索引，不替代 Code 派生集合索引，也不替代 `specs/06-行动编排基础规范.md` 和 `specs/03.03-行动编排文档规范.md` 的通用规则。
 
 本流程只审核目标文件作为行动编排主文件的设计质量，不审核目标流程所涉及领域的业务质量、Code 实现质量、Rules 入口质量或 specs 全局价值判断。
 
@@ -102,8 +100,8 @@ ldvh_member:
 | 内容 | 权威位置 |
 |---|---|
 | LDVH 总体价值标准 | `specs/00-LD-Vibe-Harness理念与纲要.md` |
-| 行动编排通用规则 | `specs/06-工作流程基础规范.md` |
-| 行动编排文档骨架与成员自描述契约 | `specs/03.03-工作流程文档规范.md` |
+| 行动编排通用规则 | `specs/06-行动编排基础规范.md` |
+| 行动编排文档骨架与成员自描述契约 | `specs/03.03-行动编排文档规范.md` |
 | 目录、编号和文件归属 | `specs/01-目录说明.md` |
 | 能力资产边界 | `specs/04.02-LDVH能力资产与保障机制规范.md` |
 | Code 实现与派生索引边界 | `specs/07-Code确定性执行实现规范.md` |
@@ -121,8 +119,8 @@ Code 派生集合索引、命令输出、Skill 输出、Agent 输出、Web 视�
 执行本流程前，AI 应按最小可行动原则准备以下 Context：
 
 1. `../rules/LDVH-MAINTAINER-ENTRY.md` 中与行动编排场景路由、Code 查询入口、STOP 点和维护规则相关的段落；
-2. `specs/06-工作流程基础规范.md` 中行动编排定义、标准组成、准入、Context、Scenario、Gate、能力协作、事实源回写、证据留存、40-59 关系和检查要求；
-3. `specs/03.03-工作流程文档规范.md` 中适用文件、成员自描述契约、文档骨架、可测试性锚点、环境适配边界和检查要求；
+2. `specs/06-行动编排基础规范.md` 中行动编排定义、标准组成、准入、Context、Scenario、Gate、能力协作、事实源回写、证据留存、40-59 关系和检查要求；
+3. `specs/03.03-行动编排文档规范.md` 中适用文件、成员自描述契约、文档骨架、可测试性锚点、环境适配边界和检查要求；
 4. `specs/01-目录说明.md` 中 40-59 编号区段、成员自描述与 Code 派生索引边界；
 5. `specs/07-Code确定性执行实现规范.md` 中成员集合派生索引边界、Code 输出边界和验证规则；
 6. 目标行动编排主文件或候选草案；
@@ -270,7 +268,7 @@ Code 输出只作为导航、聚合和诊断结果。Code 不判断流程是否�
 5. 审核形成研究报告或迁移说明时，回写 docs；
 6. 发生事实源修改时，按 10 的 Git 和 commit message 格式规则处理。
 
-凡回写为 WorkCase 的后续行动，必须按 `specs/21-WorkCase-工作项.md` 和 `specs/05.02-工作模型字段内容与格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkCase 内部 `execution_items`。
+凡回写为 WorkCase 的后续行动，必须按 `specs/21-WorkCase-工作项.md` 和 `specs/05.02-事实模型字段内容与格式规范.md` 填写 `success_criteria`、`orchestration.execution_items`、`verification_evidence` 与 `closure_evidence` 等字段；流程步骤不得新建 TaskPlan、Task 或 SubTask，执行期拆分只能作为 WorkCase 内部 `execution_items`。
 
 不得把聊天中的“看起来可以”“应该合格”“已审核”当作完成证据。关键结论必须能回指规范、目标文件、命令输出、Human Gate 或事实源差异。
 
@@ -384,7 +382,7 @@ python3 code/specs_validate.py all
 ---
 ## 15. 待补齐事项
 
-1. 评估是否需要创建 `ldvh-workflow-design-audit` Skill，用于封装固定审核清单和输出格式；
+1. 评估是否需要创建 `ldvh-action-orchestration-design-audit` Skill，用于封装固定审核清单和输出格式；
 2. 评估是否需要创建行动编排语义审查 Agent，用于复杂流程设计争议和价值观一致性审查；
 3. 评估 `code/spec_checks/index.py` 是否需要增强对行动编排行动特有可测试性锚点、保障要求和能力边界的检查；
 4. 后续创建 specs 审核、Code 审核、Rules 入口审核等流程时，应先使用本文执行设计审核；

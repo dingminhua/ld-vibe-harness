@@ -14,16 +14,12 @@ ldvh_doc:
   positioning: "定义 Spark / 火花事实模型，包括对象定位、演变承载、准入条件、事实源边界、状态机、对象关系、Human Gate、字段契约、事实源回写、证据留存和适配规则"
   scope: "所有接入 LDVH 且需要管理尚未计划化但有保留价值的输入、发现、提醒、问题、缺口和偏好的项目"
   basis:
-    - "specs/05-工作模型基础规范.md"
+    - "specs/05-事实模型基础规范.md"
   related_specs:
-    - "specs/05.01-工作模型字段定义与语义规范.md"
-    - "specs/05.02-工作模型字段内容与格式规范.md"
-    - "specs/05.03-工作模型字段注册与消费规范.md"
-    - "specs/07-Code确定性执行实现规范.md"
-    - "specs/08-Web信息同步实现规范.md"
+    - "specs/05.01-事实模型字段定义与语义规范.md"
+    - "specs/05.02-事实模型字段内容与格式规范.md"
     - "specs/21-WorkCase-工作项.md"
     - "specs/22-ADR-决策.md"
-    - "specs/10-Git提交规范.md"
     - "specs/24-Study-研究报告.md"
   code_consumption:
     - "doc_metadata"
@@ -102,7 +98,7 @@ ldvh-base/sparks/spark-{NNNN}-short-title.yaml
 |---|---|
 | Spark 事实模型规范 | `specs/20-Spark-火花.md` |
 | Spark 实例 | `ldvh-base/sparks/` |
-| Spark 字段内容格式 | `specs/05.02-工作模型字段内容与格式规范.md` |
+| Spark 字段内容格式 | `specs/05.02-事实模型字段内容与格式规范.md` |
 | Spark 展示、聚合或查询结果 | `web/` 或 `code/` 的派生输出，不作为最终事实源 |
 
 Spark 的当前稳定规则以本文为准。
@@ -159,15 +155,7 @@ Spark 可以分流为 ADR，作为临时判断、偏好或方案取舍转化为�
 
 ADR 的准入、状态和字段契约由 `specs/22-ADR-决策.md` 定义。
 
-### 4.3 Spark 与 WorkCase
-
-Spark 可以分流为 WorkCase，作为一次目标、执行计划或关闭审查的来源线索。分流后，Spark 的 `resolved_to` 应记录 `{type: workcase, ref: <WorkCase ID>}`，目标对象的 `related_sparks` 可记录来源 Spark。
-
-若 Spark 同时关联多个 WorkCase，`resolved_to` 只记录完整承接该 Spark 的单一主目标；并行承接、部分承接或主题相关的多个对象应写入 `related_workcases` 和 `evolution`，不得用单个 `resolved_to` 假装所有议题已经收敛。
-
-WorkCase 的准入、状态和字段契约由 `specs/21-WorkCase-工作项.md` 定义。
-
-### 4.4 Spark 与 Study
+### 4.3 Spark 与 Study
 
 Spark 可以关联一个或多个 Study，用于承接 AI 调研、资料分析、事实核验或方案比较后的稳定报告。Spark 的 `related_studies` 记录 Study ID；Study 的 `related_sparks` 可反向记录来源或关联 Spark。
 
@@ -175,7 +163,7 @@ Spark 只保留报告对议题演变产生的关键影响，不复制报告全�
 
 Study 是报告承载，不是讨论入口、执行承接或决策承接。将完整报告提炼为 Study 时，应更新 `related_studies` 和 `evolution`；除非 Spark 的剩余议题已经被 WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其他非 Study 事实源完整承接，否则不得仅因形成 Study 就把 Spark 标记为 `resolved`。
 
-### 4.5 Spark 与 Pitfall、管辖项目配置、docs
+### 4.4 Spark 与 Pitfall、管辖项目配置、docs
 
 Spark 可以分流或关联到 Pitfall、管辖项目配置或 docs：
 
@@ -187,7 +175,7 @@ Spark 可以分流或关联到 Pitfall、管辖项目配置或 docs：
 
 Pitfall 的准入、状态和字段契约由 `specs/23-Pitfall-踩坑经验.md` 定义。管辖项目配置的字段和边界由 `specs/03.04-管辖项目配置规范.md` 定义。环境能力核验、环境适配和适配措施正文不得写入管辖项目配置；需要长期保留的稳定事实应进入环境适配待补齐事项、WorkCase、Spark、Study、ADR、正式规范或按 04 系列规范处理。当前具体检查结果只保留当前过程结论，不作为持久状态事实源。
 
-### 4.6 多线并行分流
+### 4.5 多线并行分流
 
 一个 Spark 可以承载同一讨论中产生的多个相关缺口、问题或后续方向。只要这些内容尚未形成各自独立的稳定事实源入口，允许暂时保留在同一个 Spark 中；一旦某个方向具备独立目标、成功标准、决策判断或长期跟踪价值，应分流到 WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其他事实源。
 
@@ -200,7 +188,7 @@ Pitfall 的准入、状态和字段契约由 `specs/23-Pitfall-踩坑经验.md` 
 5. 当多个关联对象共同完整承接 Spark 时，应在 `evolution` 中说明完整承接判断，再选择最能代表关闭判断的主目标写入 `resolved_to`，或在经 Human Gate 确认后使用 `{type: other, ref: <说明性引用>}` 表达“由多对象共同承接”的关闭判断；
 6. 如果多线内容已经彼此独立且继续放在同一个 Spark 会削弱恢复和关闭判断，应创建新的 Spark 或 WorkCase，并通过 `description`、`evolution` 或目标对象 `related_sparks` 保留追溯关系。
 
-### 4.7 Spark 与 Git 提交记录
+### 4.6 Spark 与 Git 提交记录
 
 Spark 的创建、状态变化、分流和废弃都应留下 Git 提交记录。commit message 格式规则由 `specs/10-Git提交规范.md` 定义。
 
@@ -224,7 +212,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 
 ### 6.1 字段表
 
-公共字段语义定义见 `specs/05.01-工作模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
+公共字段语义定义见 `specs/05.01-事实模型字段定义与语义规范.md` §4。本表只列出对象特有字段语义补充。
 
 | 字段名 | 含义 | 类型 | 必填 | 默认值或状态约束 | 内容格式 | 消费方 |
 |---|---|---|---|---|---|---|
@@ -238,7 +226,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `evolution` | 关键语义转折 | list[object] | 否 | 默认为空列表；元素至少包含 `at` 和 `summary` | Log / Narrative | AI、Code、Web |
 | `source` | 火花进入事实源的入口来源 | enum | 是 | `web` 或 `conversation`；Web 快速创建固定为 `web`，对话中由 Human 或 AI 确认记录固定为 `conversation` | Reference | AI、Code、Web |
 | `source_detail` | 来源说明、触发场景或原始输入摘要 | string | 否 | 可为空 | Narrative / Reference | AI、Web |
-| `priority` | 优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-工作模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
+| `priority` | 优先级 | string | 是 | `P0`、`P1`、`P2`、`P3`；判断标准见 `specs/05.01-事实模型字段定义与语义规范.md` §3.1 | Reference | AI、Code、Web |
 | `resolved_to` | 单一最终分流目标或主承接目标引用 | object | 条件必填 | `status: resolved` 时必须填写；结构为 `{type, ref}`；`type` 只能是 `workcase`、`adr`、`pitfall`、`docs`、`governed-projects` 或 `other`，不得为 `study`；多线并行或部分承接优先使用 `related_*` 与 `evolution`，不得用单个 `resolved_to` 伪装完整收敛 | Reference | AI、Code、Web |
 | `resolved_at` | 分流日期 | date | 条件必填 | `status: resolved` 时必须填写 | Reference | AI、Code、Web |
 | `discard_reason` | 废弃原因 | string | 条件必填 | `status: discarded` 时必须填写 | Narrative | AI、Human |
@@ -247,7 +235,7 @@ Human Gate 的具体环境实体由 04 系列环境适配和适配措施记录�
 | `related_workcases` | 关联工作项 | list[string] | 否 | 默认为空列表；可记录多个并行承接、分阶段承接或主题相关的 WorkCase ID，不表示 Spark 已经 resolved | Reference | AI、Code、Web |
 | `related_docs` | 关联文档路径 | list[string] | 否 | 默认为空列表 | Reference | AI、Code、Web |
 
-字段内容格式按 `specs/05.02-工作模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
+字段内容格式按 `specs/05.02-事实模型字段内容与格式规范.md` 执行。字段缺失、类型错误、状态非法、引用不存在、条件必填缺失或文件命名不匹配时，Code 应报告诊断，不得静默通过。
 
 ### 6.2 YAML 示例
 

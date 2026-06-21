@@ -25,7 +25,7 @@ related_pitfalls: []
 related_docs:
 - specs/00-LD-Vibe-Harness理念与纲要.md
 - specs/04.02-LDVH能力资产与保障机制规范.md
-- specs/06-工作流程基础规范.md
+- specs/06-行动编排基础规范.md
 - specs/21-WorkCase-工作项.md
 archive_reason: null
 ---
@@ -198,7 +198,7 @@ LDVH 支持多角色 AI 协作，但角色首先是事实源治理中的责任�
 ## 后续分流
 
 1. 修改 `specs/00-LD-Vibe-Harness理念与纲要.md` 时，吸收“角色是契约，不是线程”的理念层表述。
-2. 修改 `specs/06-工作流程基础规范.md` 时，定义主控、执行者、审查者、Human Gate 等流程角色边界。
+2. 修改 `specs/06-行动编排基础规范.md` 时，定义主控、执行者、审查者、Human Gate 等流程角色边界。
 3. 修改 `specs/21-WorkCase-工作项.md` 时，只保留 execution item 需要的最小 `role` 和证据字段，避免把 Codex custom agent schema 写入 WorkCase。
 4. 修改 `specs/04.02-LDVH能力资产与保障机制规范.md` 时，再判断是否需要把 Codex custom agent TOML、Skills、MCP、AGENTS.md 的关系纳入能力资产分层。
 5. 如需长期维护 Codex 子 Agent 示例，应另建环境适配文档或 Skill，而不是塞进 00。

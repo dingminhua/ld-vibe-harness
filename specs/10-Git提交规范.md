@@ -16,11 +16,7 @@ ldvh_doc:
   basis:
     - "specs/00-LD-Vibe-Harness理念与纲要.md"
     - "specs/09-事实源边界与承载规范.md"
-  related_specs:
-    - "specs/01-目录说明.md"
-    - "specs/07-Code确定性执行实现规范.md"
-    - "specs/08-Web信息同步实现规范.md"
-    - "specs/11-测试基础规范.md"
+  related_specs: []
   code_consumption:
     - "doc_metadata"
     - "relations"

@@ -75,9 +75,9 @@ orchestration:
     mode: single
     input_refs:
     - specs/04.02-LDVH能力资产与保障机制规范.md
-    - specs/06-工作流程基础规范.md
-    - specs/40-workflow-design-audit-工作流程设计审核.md
-    - specs/41-work-model-audit-工作模型审核.md
+    - specs/06-行动编排基础规范.md
+    - specs/40-action-orchestration-design-audit-行动编排设计审核.md
+    - specs/41-fact-model-audit-事实模型审核.md
     - specs/42-specs-audit-规范审核.md
     - specs/43-assurance-readiness-audit-保障准备度审核.md
     expected_output: 明确 Rules、Skill、Agent、Hook 至少应具备的元信息、执行边界、同步责任、验证入口和多视角审查要求。
@@ -263,7 +263,7 @@ related_docs:
 - specs/01-目录说明.md
 - specs/04.02-LDVH能力资产与保障机制规范.md
 - specs/04.03-环境入口适配与部署规范.md
-- specs/06-工作流程基础规范.md
+- specs/06-行动编排基础规范.md
 - specs/10-Git提交规范.md
 - ldvh-base/studies/study-0008-ai-capability-asset-industry-practices.md
 related_adrs: []
