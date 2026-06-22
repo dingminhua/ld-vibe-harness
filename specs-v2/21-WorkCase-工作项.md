@@ -19,12 +19,14 @@ v2_spec:
     - "specs-v2/01-规范体系基础规范.md"
     - "specs-v2/02-事实模型基础规范.md"
   related_specs:
-    - "specs-v2/02.Att.01-字段注册表.md"
-    - "specs-v2/02.Att.02-成员身份字段表.md"
-    - "specs-v2/02.Att.03-成员主文件骨架模板.md"
-    - "specs-v2/02.Att.04-成员一致性辅助核对表.md"
-    - "specs-v2/02.Att.05-成员双读映射矩阵.md"
-    - "specs-v2/02.Att.06-字段矩阵诊断表.md"
+    - "specs-v2/attachments/02.Att.01-字段注册表.md"
+    - "specs-v2/attachments/02.Att.02-成员身份字段表.md"
+    - "specs-v2/attachments/02.Att.03-成员主文件骨架模板.md"
+    - "specs-v2/attachments/02.Att.04-成员一致性辅助核对表.md"
+    - "specs-v2/attachments/02.Att.05-成员双读映射矩阵.md"
+    - "specs-v2/attachments/02.Att.06-字段矩阵诊断表.md"
+    - "specs-v2/07-事实源边界与Git追溯规范.md"
+    - "specs-v2/attachments/21.Att.01-orchestration字段契约表.md"
     - "specs/20-Spark-火花.md"
     - "specs/22-ADR-决策.md"
     - "specs/23-Pitfall-踩坑经验.md"
@@ -167,6 +169,8 @@ ldvh-base/workcases/workcase-{NNNN}-short-title.yaml
 | WorkCase 展示、聚合或查询结果 | Web、Code 或知识地图派生输出，不作为最终事实源 |
 
 执行过程不作为长期事实源。WorkCase 只保留最小恢复信息、验证证据、关闭证据和经验分流结果；AI 的临时步骤、局部选择、工具缓存、子 Agent 中间过程和未采纳草稿不得写成独立工作对象。
+
+提交追溯、过程输出回写和非事实源排除以 `07-事实源边界与Git追溯规范.md` 为准。审核原文、子 Agent 输出、工具输出、对话播报和 Web 派生态势只有写入 WorkCase 字段、稳定外部引用或对应事实源后才形成可追溯事实；Git 提交记录用于追溯事实源修改，不得手写维护为 WorkCase 字段清单。
 
 ## 6. 状态机
 
@@ -333,6 +337,8 @@ Human Gate 发生在 WorkCase 层。执行项、角色说明、子 Agent 输出�
 | `orchestration.plan_review` | 方案审核记录 | object | 必填 | `subagents_plan_reviewing` 及后续状态必须存在 |
 | `orchestration.result_review` | 结果自检和结果复核记录 | object | 必填 | `result_self_checking` 及后续状态逐步补齐 |
 
+`orchestration` 的详细字段契约由 `attachments/21.Att.01-orchestration字段契约表.md` 承载。该附件只展开 `plan_review`、`result_review`、`controller_resolution`、`review_items`、`human_confirmation`、`human_closure_confirmation`、`controller_self_check` 和 `revision_history` 的字段表、枚举和条件，不得改变本文定义的状态机、Human Gate 或关闭口径。
+
 每个 `execution_items[]` 至少包含：`id`、`title`、`role`、`mode`、`input_refs`、`expected_output`、`status`、`result_summary`、`evidence_refs`、`blocking_reason`。`mode` 允许 `single`、`sequential`、`parallel`，不得为 `mixed`。`status` 允许 `pending`、`in_progress`、`blocked`、`done`、`skipped`。
 
 `plan_review` 必须承载方案审核编排责任方、审核策略、审核条目、主控处理记录和 Human 方案确认。进入 `human_plan_confirming` 前，`review_items`、`controller_resolution` 必须完成；进入 `executing` 及后续状态前，`human_confirmation` 和 `plan_confirmed_at` 必须填写。
@@ -383,6 +389,13 @@ Code 应检查：
 10. 退回、关键字段修改或主控根据审核意见修改字段时必须追加 `revision_history`；
 11. 执行项不得被其他工作对象作为独立对象引用；
 12. 工作项相关提交由 Git history 和提交正文自然文本派生，不得手写维护 `related_changes`。
+13. `plan_review.review_items[].result.status`、`result_review.review_items[].result.status` 和 `controller_self_check.result.status` 必须属于 `pass`、`pass_with_followups`、`fail`、`needs_human_gate`；
+14. `plan_review.human_confirmation.decision` 必须属于 `execute`、`revise_plan`、`close`；
+15. `result_review.human_closure_confirmation.decision` 必须属于 `close`、`continue_execution`、`revise_plan`、`request_result_review`、`request_self_check`；
+16. `orchestration_owner` 必须属于 `main_controller` 或 `workflow`，主控不得在 `review_items` 中自签冒充子 Agent；
+17. `controller_self_check.result.key_findings` 必须非空，`required_changes` 非空时不得进入结果复核；
+18. `subagents_result_reviewing` 状态下 `result_review.review_items` 为空时，Code 应至少给出 warning；
+19. `related_workcases` 只承载 WorkCase ID，不承载执行项 ID、提交 hash 或自由文本关系。
 
 Web 应把 WorkCase 作为 Human 直接查看和确认的主对象。Web 可以展示执行编排、验证证据和关闭证据，但不得把执行项提升为一级导航、独立对象详情页或可独立写入的权威事实。
 
@@ -390,18 +403,28 @@ Web 应把 WorkCase 作为 Human 直接查看和确认的主对象。Web 可以�
 
 运行时扩展承载物不得复制 WorkCase 完整字段契约、状态机、关闭条件或 Human Gate 细则；需要摘要时必须回指本文、active WorkCase 规范和对应实例事实源。
 
-## 12. 规范保障要求
+## 12. 附件规则
+
+本文授权以下附件承载可枚举、可复用或可被 Code/Web 消费的细表；附件不得替代本文、02、07、行动编排或测试治理。
+
+| 附件 | 承载内容 | 不承载 |
+|---|---|---|
+| `attachments/21.Att.01-orchestration字段契约表.md` | WorkCase `orchestration` 长字段表、枚举和条件 | 状态机本体、Human Gate 本体、行动编排流程 |
+
+新增、删除、重命名或改变以上附件的信息对象时，应回到本文 Human Gate，并同步 01 当前目录登记、README 写作区入口和 Code v2 解析。
+
+## 13. 规范保障要求
 
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 上位约束承接要求 | WorkCase 实例和后续行动编排应遵守本文定义的准入、状态机、执行项内部化、审核记录、Human Gate、字段契约和关闭判断 | 本文、active `specs/21-WorkCase-工作项.md`、v2 02、Human Gate；未 active 前为人工降级检查 | 事实模型治理 | 创建、迁移、关闭、重排或审计 WorkCase 时 |
 | 入口可见要求 | AI 处理需要组织为可执行、可验证、可关闭目标时，应能定位 WorkCase active 规范、本文草案和对应实例事实源 | `specs-v2/README.md`、02 成员身份、知识地图输入、运行时入口；未 active 前为人工降级检查 | AI 执行入口 | WorkCase 入口、成员身份、实例目录或读取顺序变化时 |
-| 确定性执行要求 | WorkCase 状态、执行项、方案审核、自检、结果复核、关闭确认、修订记录、条件必填和完成口径应由 Code 校验或记录缺口 | 现有 active Code、`02.Att.04`、`02.Att.05`、`02.Att.06`、人工降级检查；v2 双读实现和测试仍待后续 Code 规范承接 | Code 校验 | 字段契约、状态机、执行编排、Web 派生态势或 Code 消费入口变化时 |
+| 确定性执行要求 | WorkCase 状态、执行项、方案审核、自检、结果复核、关闭确认、修订记录、条件必填和完成口径应由 Code 校验或记录缺口 | 现有 active Code、`02.Att.04`、`02.Att.05`、`02.Att.06`、`21.Att.01`、人工降级检查；v2 双读实现和测试仍待后续 Code 规范承接 | Code 校验 | 字段契约、状态机、执行编排、Web 派生态势或 Code 消费入口变化时 |
 | 子 Agent 思考要求 | 方案审核和结果复核必须记录审核 Agent、角色、提示上下文、输入引用、重点结论、可审计签署声明和主控处理记录 | Agent 能力、主控多视角审查、事实实例校验；后续可由行动编排接管 | 独立审查 | 方案审核、结果复核、Agent 能力、签署字段或主控处理记录变化时 |
 | Human 交互要求 | 方案执行和最终关闭必须经 Human 确认；退回、修改方案或接受残留风险必须记录原因和修改内容 | Human Gate、Web 展示、事实实例校验 | Human Gate | 方案确认、关闭确认、退回或修改关键字段时 |
 | 生命周期触发要求 | WorkCase 规范变化后应检查 Spark、ADR、Pitfall、Code、Web、运行时扩展、行动编排和待补齐事项是否同步 | 本文、02 授权附件、active 20-23、Code 诊断、人工降级检查；建议由规范生命周期同步行动编排接管 | 生命周期同步 | 字段、状态、执行编排、事实源路径或展示规则变化时 |
 
-## 13. 对象特有实例检查
+## 14. 对象特有实例检查
 
 | 检查项 | 标准 |
 |---|---|
@@ -419,9 +442,9 @@ Web 应把 WorkCase 作为 Human 直接查看和确认的主对象。Web 可以�
 | 完成口径 | 能清楚区分执行完成、可提交关闭确认、已关闭和已提交 |
 | 修订记录 | 退回、方案修改、成功标准修改、执行编排修改或主控根据审核意见修改字段时，`revision_history` 记录原因、字段和修改内容 |
 
-## 14. 待补齐事项
+## 15. 待补齐事项
 
-1. WorkCase v2 草案已迁入主要状态机、执行编排、方案审核、结果自检、结果复核、关闭确认和修订记录规则；仍需在 Human 单篇核对前逐项对照 active `specs/21-WorkCase-工作项.md` 中的嵌套字段完整性；
+1. WorkCase v2 草案和 `21.Att.01` 已迁入主要状态机、执行编排、方案审核、结果自检、结果复核、关闭确认、修订记录和 orchestration 长字段规则；仍需 Human 单篇核对后才能视为迁移完成；
 2. active `ldvh_member` 与 v2 `v2_fact_model_member` 的双读 Code 实现、正反样例和切换策略尚未完成；本文不改变 Code 默认消费入口；
 3. WorkCase Web 派生态势、状态标签和关闭/提交口径应在 v2 Web 规范和实现迁移时复核；
 4. WorkCase 创建、方案审核、结果复核和关闭确认的具体行动编排尚未迁入，应由后续 30-59 行动编排单篇处理；

@@ -19,11 +19,12 @@ v2_spec:
     - "specs-v2/01-规范体系基础规范.md"
     - "specs-v2/02-事实模型基础规范.md"
   related_specs:
-    - "specs-v2/02.Att.01-字段注册表.md"
-    - "specs-v2/02.Att.02-成员身份字段表.md"
-    - "specs-v2/02.Att.03-成员主文件骨架模板.md"
-    - "specs-v2/02.Att.04-成员一致性辅助核对表.md"
-    - "specs-v2/02.Att.05-成员双读映射矩阵.md"
+    - "specs-v2/attachments/02.Att.01-字段注册表.md"
+    - "specs-v2/attachments/02.Att.02-成员身份字段表.md"
+    - "specs-v2/attachments/02.Att.03-成员主文件骨架模板.md"
+    - "specs-v2/attachments/02.Att.04-成员一致性辅助核对表.md"
+    - "specs-v2/attachments/02.Att.05-成员双读映射矩阵.md"
+    - "specs-v2/07-事实源边界与Git追溯规范.md"
     - "specs/20-Spark-火花.md"
     - "specs/21-WorkCase-工作项.md"
   migration_sources:
@@ -153,6 +154,8 @@ ADR 不是所有判断或提案的默认归宿。AI 可以在当前任务中做�
 4. 已由 specs、Rules 或其他正式规范明确约束的重复判断；
 5. 仅属于风险判断、依赖关系、产物引用或检查结果的字段内容。
 
+未采纳的候选方案不得写入 ADR 字段作为并行决策；可留在 Spark、Study、WorkCase 上下文或当前讨论记录中。ADR 只记录已形成长期执行约束的决策补丁及其取舍后果。
+
 ### 4.3 ADR 与规范的边界
 
 ADR 记录决策补丁的背景、原因、选择和后果；正式规范记录稳定规则。ADR 不替代 specs 正文、Rules 执行入口、事实模型字段契约或行动编排规则。
@@ -257,7 +260,7 @@ ADR 语境下的 Human Gate 记录至少应说明目标 ADR、决策变化、影
 | `archive_reason` | 公共字段，ADR 采用 | 归档原因和吸收位置 | markdown | 条件必填 | `status: archived` 时必须填写 | narrative | 22 | AI、Code、Web |
 | `deprecated_reason` | 公共字段，ADR 采用 | 废弃原因和不再适用边界 | markdown | 条件必填 | `status: deprecated` 时必须填写 | narrative | 22 | AI、Code、Web |
 
-active ADR 的 `consequences` 字段必须包含 `## 正向价值`、`## 逆向价值`、`## 实施成本`、`## 风险评估`、`## 注意事项`。存在逆向价值时必须引用 V1-V10；无逆向价值时 `## 逆向价值` 填写 `当前决策无逆向价值`。
+active ADR 的 `consequences` 字段必须包含 `## 正向价值`、`## 逆向价值`、`## 实施成本`、`## 风险评估`、`## 注意事项`。`## 正向价值` 只记录相对 V1-V10 的价值增强；`## 逆向价值` 只记录相对 V1-V10 的价值削弱，不混入实施成本、概率风险或执行代价。存在逆向价值时必须引用 V1-V10；无逆向价值时 `## 逆向价值` 填写 `当前决策无逆向价值`。
 
 ## 10. 事实实例写入、回写、验证和证据留存
 

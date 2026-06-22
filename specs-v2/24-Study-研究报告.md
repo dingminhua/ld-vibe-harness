@@ -19,11 +19,12 @@ v2_spec:
     - "specs-v2/01-规范体系基础规范.md"
     - "specs-v2/02-事实模型基础规范.md"
   related_specs:
-    - "specs-v2/02.Att.01-字段注册表.md"
-    - "specs-v2/02.Att.02-成员身份字段表.md"
-    - "specs-v2/02.Att.03-成员主文件骨架模板.md"
-    - "specs-v2/02.Att.04-成员一致性辅助核对表.md"
-    - "specs-v2/02.Att.05-成员双读映射矩阵.md"
+    - "specs-v2/attachments/02.Att.01-字段注册表.md"
+    - "specs-v2/attachments/02.Att.02-成员身份字段表.md"
+    - "specs-v2/attachments/02.Att.03-成员主文件骨架模板.md"
+    - "specs-v2/attachments/02.Att.04-成员一致性辅助核对表.md"
+    - "specs-v2/attachments/02.Att.05-成员双读映射矩阵.md"
+    - "specs-v2/07-事实源边界与Git追溯规范.md"
     - "specs/20-Spark-火花.md"
     - "specs/21-WorkCase-工作项.md"
     - "specs/22-ADR-决策.md"
@@ -209,7 +210,11 @@ docs/studies 和 docs/sources 可以作为 Study 的输入资料区，但不应�
 
 `urls` 不得只是裸 URL 列表。每个外部网址必须使用结构化条目：`ref` 记录完整 `http(s)` URL，`summary` 用中文记录该网址在当前报告中的用途摘要，`title` 可记录可读标题。
 
+维护历史 Study 时，若发现 `urls` 中仍有字符串 URL 条目，应迁移为 `{ref, summary}` 结构；不得继续新增裸 URL。
+
 `related_docs` 只记录与 Study 相关的项目内文档路径。如果某项是报告正文中的外部网页资料，应放入 `urls`；如果某项是项目内文档、规范路径或代码位置，应放入 `related_docs` 或对象规范定义的专属关联字段。
+
+引用不等于吸收。Study 被 WorkCase、ADR、Pitfall、Spark、docs 或规范引用时，只说明该报告被作为输入或依据；稳定规则、决策、任务、经验或事实源修改必须进入对应权威事实源，并通过 Git commit records 追溯。
 
 ### 7.4 Study 与 Git 提交记录
 
@@ -268,6 +273,8 @@ Frontmatter 后的 Markdown 正文是报告正文。正文必须使用稳定 Mar
 6. `## 建议` 统一承载结论性建议、路线建议、候选补充方向和残留不确定性；
 7. `## 后续分流` 统一承载应进入 Spark、WorkCase、ADR、Pitfall、docs 或规范的后续动作；
 8. 报告正文应避免连续超长段落；超过三个并列判断时应使用列表或表格。
+
+正文不仅要出现固定标题，还必须实际回答五组问题：研究问题是什么、输入资料/方法/来源边界是什么、关键发现是什么、建议/取舍/不确定性是什么、后续应分流到哪里。
 
 ## 10. 事实实例写入、回写、验证和证据留存
 

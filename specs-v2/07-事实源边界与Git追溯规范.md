@@ -24,6 +24,18 @@ v2_spec:
     - "specs-v2/05-Web信息同步规范.md"
     - "specs-v2/06-运行时扩展规范.md"
     - "specs-v2/08-测试基础规范.md"
+    - "specs-v2/attachments/07.Att.01-事实归属矩阵.md"
+    - "specs-v2/attachments/07.Att.02-Commit-Type枚举表.md"
+    - "specs-v2/attachments/07.Att.03-Commit-Scope推荐表.md"
+    - "specs-v2/attachments/07.Att.04-Commit-Body必填条件表.md"
+    - "specs-v2/attachments/07.Att.05-Commit-Message样例集.md"
+    - "specs-v2/attachments/07.Att.06-过程输出回写核对表.md"
+    - "specs-v2/attachments/07.Att.07-Git提交留痕范围表.md"
+    - "specs-v2/attachments/07.Att.08-Commit-Message字段表.md"
+    - "specs-v2/attachments/07.Att.09-关联提交派生优先级表.md"
+    - "specs-v2/attachments/07.Att.10-事实源读取策略核对表.md"
+    - "specs-v2/attachments/07.Att.11-非事实源排除清单.md"
+    - "specs-v2/attachments/07.Att.12-事实承载介质选择表.md"
   migration_sources:
     - "specs/09-事实源边界与承载规范.md"
     - "specs/10-Git提交规范.md"
@@ -41,12 +53,12 @@ v2_spec:
     - "change_traceability"
     - "knowledge_map_input"
     - "assurance_requirements"
-  migration_status: "not_migrated"
+  migration_status: "partially_migrated"
 ```
 
 > 文件状态：本文当前位于 `specs-v2/`，尚未切换为 active；正式事实源边界与 Git 提交规则仍以 `specs/09-事实源边界与承载规范.md` 和 `specs/10-Git提交规范.md` 为准。
 >
-> 本文用于建立 v2 07 的框架和归口边界。未经 Human 单篇确认前，本文不得作为 active 规范、Code 默认消费依据、Rules 入口依据或迁移完成结论。
+> 本文已经按 v1 `09` 和 v1 `10` 完成本轮主体迁移，仍需 Human 单篇核对后才可生效。未经 Human 单篇确认前，本文不得作为 active 规范、Code 默认消费依据、Rules 入口依据或迁移完成结论。
 
 ## 1. 本文解决的问题
 
@@ -111,6 +123,7 @@ v2_spec:
 | 提交记录页面、关联提交展示和 Human-facing 提交详情 | 05 |
 | Skill、Hook、Rules 对提交行动和校验入口的接入 | 06 |
 | 测试和验证声明 | 08 |
+| 事实归属矩阵、commit type/scope、body 必填条件、message 样例、过程输出回写、读取策略、提交留痕范围、message 字段、关联提交派生、非事实源排除和承载介质选择 | 本文授权附件 `07.Att.01` 至 `07.Att.12` |
 
 ## 5. 最终事实源与非事实源
 
@@ -127,18 +140,13 @@ LDVH 的最终事实源必须是 Git 可追踪文件。一个事实只有写入�
 | `code/`、`web/`、运行时扩展承载物 | 实现、入口、适配或能力承载事实源，但不替代规范和工作对象 |
 | Code/Web/知识地图/命令输出 | 派生视图、诊断或过程输出，不是最终事实源 |
 
+`specs/` 或切换后的 active 规范区只承载规范规则和状态判定方法，不承载具体事实实例、历史过程或状态实例。`ldvh-base/` 承载结构化对象实例，不承载规范正文。管辖项目文档或 `docs/` 授权位置不替代 `ldvh-base/` 中的动态对象状态。`code/` 和 `web/` 可以实现工具能力和展示能力，但不能独立维护与 Git 文件事实源冲突的状态。
+
 ### 5.1 事实承载介质与文档工作区边界
 
 事实承载介质必须按事实性质选择，不能因为同为 Markdown、YAML、代码文件或派生输出就混为同一类事实源。
 
-承载介质选择原则如下：
-
-| 介质 | 适合承载 | 不得承载 |
-|---|---|---|
-| Markdown 正文 | 规范规则、事实模型实例正文、工作对象描述、项目文档正文、研究报告正文 | 可机械解析的字段注册表权威结构、运行时缓存、Code 输出缓存 |
-| YAML 或等价结构化块 | 身份元信息、字段契约、配置清单、机器可读索引和最小状态字段 | 长篇规则解释、Human 判断替代物、未授权字段扩展 |
-| 代码文件 | 确定性实现、校验器、解析器、测试实现和工具入口 | 规范规则本体、字段存在性、状态机、Human Gate |
-| 派生数据或命令输出 | 导航、诊断、聚合、展示、临时报告和迁移辅助 | 最终事实源、集合事实源、长期状态或权威目录 |
+承载介质选择表由 `attachments/07.Att.12-事实承载介质选择表.md` 承载。介质选择表只能辅助判断，不得改变本文定义的最终事实源、单一事实源和回写原则。
 
 管辖项目文档必须区分三类事实源边界：
 
@@ -153,6 +161,16 @@ LDVH 的最终事实源必须是 Git 可追踪文件。一个事实只有写入�
 聊天记录、Skill 输出、Agent 输出、工具缓存、数据库派生视图、运行时索引、命令输出、模型临时上下文、Web 页面状态、筛选状态、测试输出、安装过程状态、初始化状态和环境观察状态，都不能成为 LDVH 最终事实源。
 
 安装、入口存在性、工具可用性、适配措施现场状态和环境能力观察只能作为当前检查结果。若观察结果形成可复查的后续工作、长期决策、经验、提醒或正式规则，应按内容性质分流为 WorkCase、ADR、Spark、Pitfall、Study、正式规范、适配措施或 Git commit records。
+
+非事实源排除清单由 `attachments/07.Att.11-非事实源排除清单.md` 承载。排除清单只能辅助识别，不得把列入清单的内容重新授权为事实源。
+
+### 5.2 事实源查询与读取策略
+
+AI 查询和读取事实源时，应先使用 Code、搜索工具、索引或 Git 查询定位事实源、对象、章节和关系，再按最小必要范围读取权威文件原文。工具输出只作为导航、聚合和诊断结果，不替代 Git 文件事实源。
+
+AI 应先定位目标段落、对象字段或引用关系，再按行范围读取；不得在未定位的情况下全文读取超过 200 行的规范文档。跨章节理解任务可以逐步扩展读取范围；完整上下文构建任务才考虑全文读取。
+
+事实源读取策略核对表由 `attachments/07.Att.10-事实源读取策略核对表.md` 承载。该附件只提供读取粒度和工具输出边界检查，不改变事实源权威归属。
 
 ## 6. 单一事实源、引用摘要与吸收
 
@@ -169,7 +187,38 @@ LDVH 的最终事实源必须是 Git 可追踪文件。一个事实只有写入�
 
 当两个位置出现同一事实的不同表述时，应依据本文和对应对象规范判断权威位置，非权威位置应改为引用、摘要、候选、导航、过程材料或删除重复内容。
 
-## 7. 过程输出与工具输出回写
+## 7. v2 切换、历史记录与新事实源
+
+v2 切换 active 前，当前 active `specs/`、既有事实源和 Git commit records 仍是当前工作判断的事实依据。`specs-v2/` 只承载迁移草案、计划和核对输入，不替代 active 事实源。
+
+v2 通过 Human Gate 切换为 active 后，v1 规范和切换前事实源整体进入历史记录。历史记录可以被查询、审计、追溯和提取，但不得被直接当作新的 active 事实源继续消费。
+
+历史记录包括：
+
+1. 切换前 active `specs/` 规范；
+2. 切换前 `ldvh-base/` 工作对象事实源；
+3. 切换前项目文档、研究材料、来源材料、规则入口和运行时承载物；
+4. Git commit records、提交正文、diff、tag、branch 和时间线；
+5. 迁移计划、审计报告、过程输出和 Human Gate 记录。
+
+从历史记录进入新事实源必须满足以下顺序：
+
+1. 定位历史来源，说明来源路径、对象 ID、commit hash、章节锚点或过程记录；
+2. 判断内容性质，归属到规范体系、事实模型、行动编排、Code、Web、运行时扩展、事实源追溯或测试治理；
+3. 提取最小稳定事实，不把旧状态、旧目录、旧字段或旧判断整体复制成当前事实；
+4. 按目标 v2 规范、事实模型、附件授权、Human Gate 和 Code 检查要求写入新的 active 事实源；
+5. 通过 Git commit records 追溯本次提取、改写和回写；
+6. 对无法确认、已过期、与 v2 冲突或只具历史价值的内容保留为历史引用，不进入新事实源。
+
+禁止把以下内容直接继承为新 active 事实：
+
+1. v1 中仅为迁移方便维护的状态清单；
+2. 旧事实对象的关闭、阻塞、检查或环境观察状态；
+3. 旧 Web 缓存、Code 派生索引、知识地图草案或临时报告；
+4. 未经 Human 确认的旧讨论结论、候选建议或过程判断；
+5. 与 v2 规范、字段契约、事实源边界或 Human Gate 冲突的旧规则。
+
+## 8. 过程输出与工具输出回写
 
 过程输出包括聊天答复、Skill 输出、Agent 输出、工具报告、Web 视图、检查摘要、候选草案、风险提示、下一步建议和临时分析结论。过程输出默认不是最终事实源，只能作为当前行动编排的中间结果、展示材料、交还主控材料或受控写入候选。
 
@@ -200,9 +249,13 @@ LDVH 的最终事实源必须是 Git 可追踪文件。一个事实只有写入�
 
 无法完成回写时，应在过程输出中说明未回写原因、残留风险、建议权威位置和后续分流方式，不得把“已展示”“已输出”或“已生成候选草案”表述为稳定事实已形成。
 
-## 8. Git 追溯与 commit message 契约
+过程输出回写核对表由 `attachments/07.Att.06-过程输出回写核对表.md` 承载。该附件只能辅助检查，不得改变本文定义的回写原则。
+
+## 9. Git 追溯与 commit message 契约
 
 Git commit records 是事实源修改的追溯证据。它们服务于理解谁修改了什么、为什么修改、影响哪些事实源、是否经过验证和后续如何追溯，但不进入 20-29 事实模型集合，不创建 `ldvh-base/changes/`，也不作为对象字段手写维护。
+
+修改 Git 文件事实源、能力承载物、测试、配置或会影响 Human Gate、状态流转、事实源边界、校验逻辑、Web 呈现或 AI 入口的文件时，应通过符合本文契约的 Git commit records 留痕。Git 提交留痕范围由 `attachments/07.Att.07-Git提交留痕范围表.md` 承载。
 
 LDVH 使用 Conventional Commits 1.0.0 作为 commit message 标准。标准格式为：
 
@@ -214,32 +267,35 @@ LDVH 使用 Conventional Commits 1.0.0 作为 commit message 标准。标准格�
 [optional footer(s)]
 ```
 
+commit message 字段表由 `attachments/07.Att.08-Commit-Message字段表.md` 承载。
+
 commit message 契约包括：
 
-1. `type` 必填，使用严格闭集；
-2. `scope` 可选，优先使用推荐值，最多一个；
+1. `type` 必填，使用 `attachments/07.Att.02-Commit-Type枚举表.md` 定义的严格闭集；
+2. `scope` 可选，优先使用 `attachments/07.Att.03-Commit-Scope推荐表.md` 定义的推荐值，最多一个；
 3. `description` 必填，LDVH 自身项目应使用简体中文简短说明；
-4. `body` 按条件必填，用简体中文说明动机、关键变更、影响边界、验证结论和风险后续；
+4. `body` 按 `attachments/07.Att.04-Commit-Body必填条件表.md` 条件必填，用简体中文说明动机、关键变更、影响边界、验证结论和风险后续；
 5. `footer` 可选，遵守 Conventional Commits 和 git trailer 风格；
 6. `Human-Gate:`、`Verification:`、`Risk:` 等 LDVH 私有 trailer 不得替代 body 语义清单；
 7. 工作对象相关提交由 Git history、touched files、对象 ID、规范编号、路径和正文自然文本派生，不手写维护。
 
-以下提交必须包含非空 body：
+提交首行只表达本次提交的单一主意图和主承载域。不得使用多个 type、多个 scope、斜杠拼接、逗号拼接或“全都写上”的方式规避取舍。多个彼此独立的目的应拆分为多个提交；一个原子闭环可以跨 specs、Code、Web、docs 或测试文件，但首行仍只能选择一个主 type 和零个或一个主 scope。
 
-1. 修改 specs、rules、Code、Web、测试、配置、AI 入口或能力资产；
-2. 修改 `ldvh-base/` 工作对象事实源的状态、关键字段、归档、废弃、关闭或删除；
-3. 一次提交涉及两个及以上文件，或同时影响两个及以上 scope；
-4. 修改会影响 Human Gate、事实源边界、状态流转、字段契约、Web 呈现、校验逻辑、复制上下文或 AI 执行入口；
-5. 有用户确认、设计取舍、残留风险、兼容性影响、验证证据或后续约束需要保留；
-6. description 无法让不了解上下文的人判断本次提交的目的、边界和影响。
+对象、规范、Code 和 Web 的关联提交应由 Git history、touched files、对象 ID、规范编号、路径、commit description/body 自然文本、时间线和必要人工筛选派生。关联提交派生优先级由 `attachments/07.Att.09-关联提交派生优先级表.md` 承载。不得为了追溯强制 AI 补写固定 `Refs:` 字段，不得把关联提交派生结果回写为对象手写字段。
+
+LDVH 自身项目的 commit description 和 body 应使用简体中文表达主要人类可读内容；type、scope、路径、命令、对象 ID、英文专名和代码标识可以保留英文或原文。
+
+Git 提交记录本身不额外触发 Human Gate。Human Gate 由被修改的事实源、对象、规范、Code、Web、行动编排、运行时扩展或破坏性 Git 操作触发。需要说明高影响确认、残留风险、未验证内容或兼容性影响时，应写入提交正文或对应事实源，不使用 `Human-Gate:`、`Verification:`、`Risk:` 私有 trailer 替代。
 
 AI 如何准备、拆分、预检、执行和交还一次 commit，由 03 与 Git 提交行动编排成员承接。本文只定义 commit records 和 commit message 本体规则。
+
+commit message 样例由 `attachments/07.Att.05-Commit-Message样例集.md` 承载。样例只用于说明写法，不新增 type、scope、body 条件或流程要求。
 
 Git history 可以作为知识地图的时间和变更证据层。Code 可以按请求读取 commit hash、commit message、changed files、diff、author/date 和 commit range，用于派生变更事件、影响面、事实源写入关系、证据链和时间线；这些派生关系只说明“本次查询中从 Git 与当前事实源观察到的关系”，不改变 Git commit records 的事实源性质。
 
 知识地图不得反向维护 Git history、不得把派生边写回提交记录、不得用图谱节点替代 commit hash、commit body、changed files 或 diff。需要证明事实源修改时，应回到 Git commit records、对应事实源文件和必要验证证据；知识地图只能提供定位和影响分析入口。
 
-## 9. Code、Web 与知识地图消费边界
+## 10. Code、Web 与知识地图消费边界
 
 Code 可以读取 Git 文件事实源、解析 commit message、派生关联提交、生成知识地图边、检查事实源冲突和报告回写缺口。Code 输出必须能回指来源路径、commit hash、章节锚点或对象 ID。
 
@@ -247,22 +303,32 @@ Web 可以展示提交记录、最近提交、关联提交和事实源变更影�
 
 知识地图可以消费规范关系、对象字段、路径、Git commit records 和派生关联，但知识地图是只读投影，不落盘为事实源，不反向维护规范、对象或提交记录。
 
-## 10. 典型事实归属
+## 11. 附件规则
 
-| 事实类型 | 权威位置 |
-|---|---|
-| 理念、价值标准和六类构成要素 | 00 |
-| 规范结构、规范治理、附件规则和知识地图输入规则 | 01 |
-| 事实模型基础、字段契约、成员机制和具体事实模型 | 02 与 20-29 成员主文件 |
-| 行动编排基础、成员机制和具体行动流程 | 03 与 30-59 成员主文件 |
-| Code 实现、命令、校验器和诊断输出 | 04 与 `code/` |
-| Web 派生展示、API 和受控轻写入 | 05 与 `web/` |
-| 运行时扩展、Rules、Skills、Agents、Hooks 和环境适配 | 06 与对应承载物 |
-| 测试治理、验证声明和测试实现归属 | 08 与 `tests/` |
-| 工作对象事实源 | `ldvh-base/` |
-| 事实源修改追溯 | Git commit records |
+本文授权以下附件。附件只承载主文档已经授权的长表、枚举、样例或核对表，不定义新的事实源原则、提交流程、Code 输出 Schema、Web 页面契约或 Human Gate。
 
-## 11. 规范保障要求
+| 附件 | 单一信息对象 | 不得承载 |
+|---|---|---|
+| `attachments/07.Att.01-事实归属矩阵.md` | 典型事实归属矩阵 | 事实源原则、目录治理规则、迁移流程 |
+| `attachments/07.Att.02-Commit-Type枚举表.md` | commit type 严格闭集 | 提交流程、scope、body 条件 |
+| `attachments/07.Att.03-Commit-Scope推荐表.md` | commit scope 推荐值 | type 闭集、对象字段、Web 标签实现 |
+| `attachments/07.Att.04-Commit-Body必填条件表.md` | commit body 必填条件与正文质量标准 | commit type/scope 枚举、提交样例 |
+| `attachments/07.Att.05-Commit-Message样例集.md` | commit message 样例 | 新规则、新枚举或流程要求 |
+| `attachments/07.Att.06-过程输出回写核对表.md` | 过程输出回写辅助核对表 | 回写原则、事实模型字段或行动流程 |
+| `attachments/07.Att.07-Git提交留痕范围表.md` | Git 提交留痕适用范围 | commit message 字段、提交流程、Hook 接入 |
+| `attachments/07.Att.08-Commit-Message字段表.md` | commit message 字段契约 | type/scope 枚举、body 条件、提交样例 |
+| `attachments/07.Att.09-关联提交派生优先级表.md` | 关联提交派生优先级 | 对象字段、手写关联清单、Git 查询实现 |
+| `attachments/07.Att.10-事实源读取策略核对表.md` | 事实源查询、定位和读取粒度核对表 | 事实源原则、Code 输出 Schema、行动流程 |
+| `attachments/07.Att.11-非事实源排除清单.md` | 非事实源排除清单 | 稳定事实归属、回写流程、例外授权 |
+| `attachments/07.Att.12-事实承载介质选择表.md` | 事实承载介质选择表 | 目录治理、字段契约、Code 输出 Schema |
+
+新增、删除、重命名或改变以上附件的信息对象时，应回到本文 Human Gate，并同步 01 当前目录登记、README 写作区入口和 Code v2 解析。
+
+## 12. 典型事实归属
+
+典型事实归属矩阵由 `attachments/07.Att.01-事实归属矩阵.md` 承载。矩阵用于辅助定位权威位置；遇到冲突时，以本文事实源原则、对应 v2 主规范和 active 事实源为准。
+
+## 13. 规范保障要求
 
 本文通过以下规范保障要求说明相关要求的同步、检查或审计触发条件。
 
@@ -275,7 +341,7 @@ Web 可以展示提交记录、最近提交、关联提交和事实源变更影�
 | Human 交互要求 | 改变最终事实源、单一事实源、Git 追溯、事实回写或提交契约前应评估 Human Gate | Human Gate、影响范围说明、确认记录 | 人工确认 | 事实源权威位置、回写边界、提交规则或追溯语义变化时 |
 | 生命周期触发要求 | 事实模型、行动编排、Code、Web、运行时扩展、测试或 Git 提交流程变化后，应检查本文是否需要同步 | 规范修改执行顺序、Code 检查、测试、人工降级检查 | 触发保障 | 相关规范或实现改变事实源读取、写入、展示、校验或追溯方式时 |
 
-## 12. Human Gate
+## 14. Human Gate
 
 以下情况必须暂停并等待 Human 确认：
 
@@ -284,9 +350,11 @@ Web 可以展示提交记录、最近提交、关联提交和事实源变更影�
 3. 改变 commit message 契约、body 必填条件、type/scope 闭集或提交语言要求；
 4. 删除、迁移、重命名或批量改写事实源目录、工作对象目录或规范路径；
 5. 改变 Git commit records 与工作对象、规范、Code/Web 展示之间的派生关系；
-6. 接受事实源规则、Git 追溯规则或提交校验长期降级。
+6. 接受事实源规则、Git 追溯规则或提交校验长期降级；
+7. 将历史记录中的旧状态、旧规则、旧字段或旧目录直接继承为新 active 事实源；
+8. 新增、删除、重命名或改变本文授权附件的信息对象。
 
-## 13. 事实源治理检查要求
+## 15. 事实源治理检查要求
 
 事实源治理检查至少包括：
 
@@ -298,14 +366,14 @@ Web 可以展示提交记录、最近提交、关联提交和事实源变更影�
 | 回写条件 | 过程输出和工具输出只有满足回写条件后才成为稳定事实 |
 | Git 追溯 | 提交记录用于追溯事实源修改，不作为工作对象字段维护 |
 | 提交契约 | commit message 契约有 Code 可检查入口和 Human 可读语义层 |
+| 历史提取 | 历史记录进入新事实源时完成来源定位、性质归属、最小事实提取和 Git 追溯 |
 | 跨规范边界 | 02、03、04、05、06、08 没有复制维护本文本体规则 |
 
-## 14. 待补齐事项
+## 16. 待补齐事项
 
-1. 逐条核对 v1 `09`，确认最终事实源、单一事实源、过程输出和工具输出回写规则如何迁入本文；
-2. 逐条核对 v1 `10`，确认 commit message 契约、type/scope、body、语言和派生关联规则如何迁入本文；
-3. 确认 v1 `44` 与本文的边界，确保提交流程进入 03，提交本体规则进入本文；
-4. 确认 Code v2 的 Git 解析、commit validator、知识地图边和关联提交派生输出 Schema；
-5. 确认 Web v2 是否继续展示提交记录、关联提交和变更影响面；
-6. 确认测试基础规范如何验证事实源回写、Git 追溯和 commit 契约；
-7. 后续拆出 `07.Att.01-事实归属矩阵`、`07.Att.02-Commit-Type枚举表`、`07.Att.03-Commit-Scope推荐表`、`07.Att.04-Commit-Message样例集` 和 `07.Att.05-过程输出回写核对表`。
+1. 本文和 `07.Att.01` 至 `07.Att.12` 已承接 v1 `09` 与 v1 `10` 主体规则，仍需 Human 单篇核对后才能视为迁移完成；
+2. v1 `44` 的提交流程边界已在本文说明为 03/30-59 归口，后续应在行动编排迁移时再次核对；
+3. Code v2 的 Git 解析、commit validator、知识地图边、关联提交派生输出 Schema 和 v1-v2 双读策略尚未完成；
+4. Web v2 的提交记录、关联提交和变更影响面展示仍需在 05 与实现迁移时回指本文；
+5. 测试基础规范应补齐事实源回写、历史记录提取、Git 追溯和 commit 契约的正反样例；
+6. v2 active 切换前，应用 MIGRATION-MAP 或等价覆盖诊断逐条确认 v1 `09`、v1 `10` 的章节去向。

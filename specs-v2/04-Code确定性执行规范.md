@@ -23,6 +23,16 @@ v2_spec:
     - "specs-v2/03-行动编排规范.md"
     - "specs-v2/05-Web信息同步规范.md"
     - "specs-v2/08-测试基础规范.md"
+    - "specs-v2/attachments/04.Att.01-Code需求记录字段表.md"
+    - "specs-v2/attachments/04.Att.02-Code命令入口表.md"
+    - "specs-v2/attachments/04.Att.03-Code结构化输出Schema表.md"
+    - "specs-v2/attachments/04.Att.04-Code诊断码表.md"
+    - "specs-v2/attachments/04.Att.05-知识地图输入范围表.md"
+    - "specs-v2/attachments/04.Att.06-知识地图投影Schema表.md"
+    - "specs-v2/attachments/04.Att.07-受控写入前检查矩阵.md"
+    - "specs-v2/attachments/04.Att.08-v1-v2-Code消费双读映射矩阵.md"
+    - "specs-v2/attachments/04.Att.09-Code回归入口表.md"
+    - "specs-v2/attachments/04.Att.10-Code参考实现文档边界清单.md"
   migration_sources:
     - "specs/07-Code确定性执行实现规范.md"
   active_fact_source:
@@ -37,12 +47,12 @@ v2_spec:
     - "source_refs"
     - "controlled_write_boundaries"
     - "assurance_requirements"
-  migration_status: "not_migrated"
+  migration_status: "partially_migrated"
 ```
 
 > 文件状态：本文当前位于 `specs-v2/`，尚未切换为 active；正式 Code 规则仍以 active `specs/07-Code确定性执行实现规范.md` 和当前 active Code 实现为准。
 >
-> 本文用于建立 v2 04 的框架和归口边界。未经 Human 单篇确认前，本文不得作为 active 规范、Code 默认消费依据、Rules 入口依据或迁移完成结论。
+> 本文已经按 v1 `07` 完成本轮主体迁移，并吸收当前 Code 第二版 `v2-check` 的迁移诊断边界，仍需 Human 单篇核对后才可生效。未经 Human 单篇确认前，本文不得作为 active 规范、Code 默认消费依据、Rules 入口依据或迁移完成结论。
 
 ## 1. 本文解决的问题
 
@@ -124,6 +134,8 @@ Code 只能承接需要确定性解析、校验、聚合、诊断、投影或受
 
 提出 Code 需求时，应能回指来源规范、事实源、行动编排成员或 Human Gate 记录；无法回指时，只能记录为待澄清需求，不得直接实现为规则。
 
+Code 需求记录字段表由 `attachments/04.Att.01-Code需求记录字段表.md` 承载。需求记录只能说明来源、输入范围、输出形式、写入行为、验证方式和降级方式，不得替代正式规范或 Human Gate。
+
 ## 6. Code 实现纪律
 
 Code 实现必须以规范和事实源为输入，不得反向定义规范。实现纪律包括：
@@ -134,6 +146,7 @@ Code 实现必须以规范和事实源为输入，不得反向定义规范。实
 4. 不隐式写入：读取、解析、校验、聚合、诊断和投影默认不得修改事实源；
 5. 不硬编码候选规则：未进入 active 或待迁移草案的规则不得被实现为默认判断；
 6. 不把测试、Web 或运行时扩展的便利字段反向写成规范字段。
+7. 不直接调用 AI、Skill 或 Agent 生成确定性结论；AI、Skill 和 Agent 可以作为过程输入或行动编排能力，但 Code 的确定性输出必须来自可复查文件、参数、命令、Git 记录或其它可解析输入。
 
 Code 变更必须遵守“文档约束先行、测试或等价验证先行、实现后行”的前置纪律。新增或改变 Code 行为前，应先确认：
 
@@ -159,6 +172,10 @@ Code 输出分为结构化结果、诊断、派生索引、过程输出和写入
 
 派生索引和知识地图可以由命令输出到临时文件或 stdout 供 AI、Web 或 Human 阅读，但默认不落盘为权威文件。若后续需要保留某类派生产物，应由 07 判断事实源边界，并由对应构成要素规范声明权威位置。
 
+Code 命令入口表由 `attachments/04.Att.02-Code命令入口表.md` 承载。结构化输出通用 Schema 由 `attachments/04.Att.03-Code结构化输出Schema表.md` 承载。Code 诊断码与诊断字段由 `attachments/04.Att.04-Code诊断码表.md` 承载。
+
+过程输出必须区分候选输出、诊断输出、权威写入前检查和已写入事实源。Code 输出无法回指来源、无法区分候选与权威写入、或无法说明降级风险时，不得被行动编排、Web 或 Human 当作稳定事实使用。
+
 ## 8. v1-v2 兼容底线
 
 Code v2 不能一次性替换 v1 Code。它应先提供兼容、诊断和投影层，并至少保留或映射：
@@ -173,6 +190,8 @@ Code v2 不能一次性替换 v1 Code。它应先提供兼容、诊断和投影�
 8. v1 测试命令和回归入口的可发现关系；测试治理归 08。
 
 迁移期间，Code 可以双读 v1 和 v2 身份块并输出差异诊断。双读只用于兼容和迁移审计，不得把 v2 草案解释为 active 规范。
+
+v1-v2 Code 消费双读映射矩阵由 `attachments/04.Att.08-v1-v2-Code消费双读映射矩阵.md` 承载。v2 未 active 前，`v2-check` 是独立迁移诊断入口；`specs_validate.py all` 的 active 默认校验仍以当前 `specs/` 的 `ldvh_doc`、`ldvh_member`、保障要求表和现有派生索引结构为准。
 
 ## 9. 知识地图输出边界
 
@@ -195,6 +214,8 @@ Code v2 不能一次性替换 v1 Code。它应先提供兼容、诊断和投影�
 4. 只表达建议、猜测或候选判断且未进入规范身份块、附件授权、成员身份或事实源记录的内容。
 
 被排除的输入可以出现在 `diagnostics` 或 `excluded_inputs` 中，但不得静默生成节点或边。
+
+知识地图输入范围表由 `attachments/04.Att.05-知识地图输入范围表.md` 承载。该附件只说明允许输入、排除输入、后置输入和降级诊断，不得把知识地图运行时能力提前为当前主线。
 
 知识地图查询必须按范围和层级受控展开。Code 至少应支持以下读取层级：
 
@@ -234,11 +255,13 @@ Git history 是知识地图的时间和变更证据层。Code 可以从 commit h
 
 节点至少声明 `id`、`type`、`label`、`canonical_path`、`source_refs`、`project_namespace`、`status` 和 `authority`。跨项目节点 ID 必须包含 `project_namespace`，不得使用裸对象 ID 当全局节点。节点类型至少覆盖规范、附件、事实模型成员、行动编排成员、工作对象、事实实例、对象字段、管辖项目配置、运行时扩展、Code 入口、Web 视图、事实源和 Git commit。
 
-关系边至少声明 `id`、`type`、`from`、`to`、`source_refs`、`direction` 和 `derived_from`。边类型必须来自 `01.Att.01-知识地图关系类型表.md`，不得由 Code 临时创造。
+关系边至少声明 `id`、`type`、`from`、`to`、`source_refs`、`direction` 和 `derived_from`。边类型必须来自 `attachments/01.Att.01-知识地图关系类型表.md`，不得由 Code 临时创造。
 
 `source_refs` 至少能回指 `path`、`line_start` 和 `line_end`；需要定位对象、字段、章节或锚点时，应补充 `object_id`、`field_path`、`field` 或 `anchor`。无法提供来源回指的节点、边或诊断不得被输出为可信投影。
 
 `diagnostics` 至少声明 `severity`、`code`、`message`、`source_refs` 和 `suggested_owner`。诊断等级闭集为 `error`、`warning`、`info`；遇到输入范围不明、关系类型不明、来源缺失、v1/v2 权威冲突或 Schema 不完整时，必须输出诊断并将 `degraded` 标记为 true。
+
+知识地图投影目标 Schema 由 `attachments/04.Att.06-知识地图投影Schema表.md` 承载。当前迁移期 `v2-check` 可以输出降级的子集 Schema，但必须通过 `degraded`、`diagnostics` 或 review hints 暴露未实现的输入范围、原文层、Git history 层、多项目层或 raw 层，不得伪装为完整知识地图运行时。
 
 迁移期间，知识地图可以双读 v1 active 事实源和 v2 草案，用于发现差异和迁移缺口；双读不得把 v2 草案解释为 active 权威，也不得让 v2 草案覆盖 v1 active 规则。
 
@@ -261,6 +284,8 @@ Code 可以提供受控写入前检查。该检查只回答“本次写入是否
 
 Code 不得因检查通过而自动写入事实源。真正写入必须由对应事实模型、行动编排、Human Gate、07 事实源规则和 Git 追溯共同授权。
 
+受控写入前检查矩阵由 `attachments/04.Att.07-受控写入前检查矩阵.md` 承载。该矩阵只定义 preflight，不定义实际写入执行。
+
 ## 11. Code 生命周期维护
 
 以下变化发生后，必须检查 Code 是否需要同步：
@@ -275,6 +300,8 @@ Code 不得因检查通过而自动写入事实源。真正写入必须由对应
 
 删除、重命名或替换 Code 命令前，必须检查调用方、Rules/Skill/Hook、Web、测试、README 和行动编排成员是否仍引用旧入口。
 
+Code 回归入口表由 `attachments/04.Att.09-Code回归入口表.md` 承载。Code 参考实现文档边界清单由 `attachments/04.Att.10-Code参考实现文档边界清单.md` 承载。
+
 ## 12. 与其它规范的边界
 
 | 规范 | Code 消费方式 | 不得越界 |
@@ -286,7 +313,26 @@ Code 不得因检查通过而自动写入事实源。真正写入必须由对应
 | 07 | 消费事实源、Git history 和 commit 契约 | 不替代 Git 文件事实源 |
 | 08 | 暴露 Code 实现测试入口和可验证性 | 不定义测试治理标准 |
 
-## 13. 规范保障要求
+## 13. 附件规则
+
+本文授权以下附件。附件只承载主文档已经授权的字段表、命令表、Schema 表、矩阵或清单，不定义新的 Code 原则、行动流程、Web 页面契约、事实模型字段或 Human Gate。
+
+| 附件 | 单一信息对象 | 不得承载 |
+|---|---|---|
+| `attachments/04.Att.01-Code需求记录字段表.md` | Code 需求记录字段表 | 正式规则、实现代码 |
+| `attachments/04.Att.02-Code命令入口表.md` | Code 命令入口表 | 命令实现、测试治理 |
+| `attachments/04.Att.03-Code结构化输出Schema表.md` | Code 通用结构化输出字段 | 具体命令完整 Schema |
+| `attachments/04.Att.04-Code诊断码表.md` | Code 诊断字段和等级 | 诊断实现、关闭判断 |
+| `attachments/04.Att.05-知识地图输入范围表.md` | 知识地图输入范围 | 运行时图谱实现 |
+| `attachments/04.Att.06-知识地图投影Schema表.md` | 知识地图目标投影 Schema | 持久图谱缓存 |
+| `attachments/04.Att.07-受控写入前检查矩阵.md` | 受控写入 preflight 检查矩阵 | 实际写入授权 |
+| `attachments/04.Att.08-v1-v2-Code消费双读映射矩阵.md` | v1-v2 Code 消费双读映射 | active 切换决定 |
+| `attachments/04.Att.09-Code回归入口表.md` | Code 回归入口表 | 测试治理本体 |
+| `attachments/04.Att.10-Code参考实现文档边界清单.md` | Code 参考实现文档边界 | 正式规范规则 |
+
+新增、删除、重命名或改变以上附件的信息对象时，应回到本文 Human Gate，并同步 01 当前目录登记、README 写作区入口和 Code v2 解析。
+
+## 14. 规范保障要求
 
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
@@ -298,7 +344,7 @@ Code 不得因检查通过而自动写入事实源。真正写入必须由对应
 | Human 交互要求 | 接受 Code 长期降级、受控写入、环境能力声明或高影响自动修复前应评估 Human Gate | Human Gate、影响范围说明、确认记录 | Human Gate | Code 越过只读/诊断边界或影响事实源时 |
 | 生命周期触发要求 | 规范、事实模型、行动编排、Web、运行时扩展、事实源或测试变化后，应检查 Code 消费是否同步 | Code 回归、知识地图诊断、测试、人工降级检查 | 生命周期同步 | 任一上游结构或消费契约变化时 |
 
-## 14. Human Gate
+## 15. Human Gate
 
 以下情况必须暂停并等待 Human 确认：
 
@@ -309,7 +355,7 @@ Code 不得因检查通过而自动写入事实源。真正写入必须由对应
 5. 声明某环境已完整支持某 Code/Hook/CI 能力；
 6. 删除关键回归入口或让 Web/运行时扩展依赖未验证 DTO。
 
-## 15. Code 检查要求
+## 16. Code 检查要求
 
 Code 检查至少包括：
 
@@ -324,13 +370,13 @@ Code 检查至少包括：
 | 写入前检查 | 写入风险只被报告，不被 Code 直接授权 |
 | 测试入口 | 关键 CLI 和诊断有对应测试或等价验证说明 |
 
-## 16. 待补齐事项
+## 17. 待补齐事项
 
-1. 逐条核对 v1 `07`，确认 Code 实现规范、命令入口、受控写入和 Web/测试消费如何迁入本文；
+1. 本文和 `04.Att.01` 至 `04.Att.10` 已承接 v1 `07` 主体规则，仍需 Human 单篇核对后才能视为迁移完成；
 2. 盘点 `code/specs_validate.py`、`code/fact_cli.py`、`code/commit_validate.py`、`code/hook_dispatch.py` 和 `code/spec_checks` 的 v2 兼容策略；
 3. 将本文定义的 v2 知识地图最小投影契约细化为实现 Schema、正反样例和测试夹具；
 4. 明确 v1-v2 双读、降级诊断和迁移覆盖检查；
 5. 补齐 v2 附件身份一致性检查，覆盖真实路径、身份块、父规范登记、README 登记和旧引用残留；
 6. 与 08 对齐 Code 实现测试入口和验证声明；
 7. 与 05 对齐 Web DTO 和 Human-facing 派生展示输入；
-8. 后续拆出 `04.Att.01-Code命令入口矩阵`、`04.Att.02-诊断输出Schema`、`04.Att.03-知识地图投影Schema`、`04.Att.04-受控写入前检查矩阵` 和 `04.Att.05-v1-v2 Code消费双读映射`。
+8. 当前 `v2-check` 已提供 specs-v2 结构诊断和只读知识地图预览，但尚未实现完整 v1-v2 双读、完整诊断 Schema、完整知识地图目标 Schema、受控写入前检查命令或 Git history 图谱。

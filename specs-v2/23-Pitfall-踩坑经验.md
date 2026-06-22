@@ -19,11 +19,12 @@ v2_spec:
     - "specs-v2/01-规范体系基础规范.md"
     - "specs-v2/02-事实模型基础规范.md"
   related_specs:
-    - "specs-v2/02.Att.01-字段注册表.md"
-    - "specs-v2/02.Att.02-成员身份字段表.md"
-    - "specs-v2/02.Att.03-成员主文件骨架模板.md"
-    - "specs-v2/02.Att.04-成员一致性辅助核对表.md"
-    - "specs-v2/02.Att.05-成员双读映射矩阵.md"
+    - "specs-v2/attachments/02.Att.01-字段注册表.md"
+    - "specs-v2/attachments/02.Att.02-成员身份字段表.md"
+    - "specs-v2/attachments/02.Att.03-成员主文件骨架模板.md"
+    - "specs-v2/attachments/02.Att.04-成员一致性辅助核对表.md"
+    - "specs-v2/attachments/02.Att.05-成员双读映射矩阵.md"
+    - "specs-v2/07-事实源边界与Git追溯规范.md"
     - "specs/20-Spark-火花.md"
     - "specs/21-WorkCase-工作项.md"
     - "specs/22-ADR-决策.md"
@@ -282,7 +283,10 @@ Pitfall 的创建、状态变化、核心经验改写、归档和被吸收到规
 3. 不得使用 `repeatability`、`severity` 或 `superseded_by` 作为新写入字段；
 4. `tags` 必须使用英文 slug，推荐小写短横线格式；写入或修改前应优先复用已有标签；
 5. `verification` 必须按四段式验证证据结构书写，不得只写已验证或通过；
-6. 阅读节点字段可以使用 Markdown 段落或列表，但不得通过手写前导空格模拟缩进排版。
+6. 阅读节点字段可以使用 Markdown 段落或列表，但不得通过手写前导空格模拟缩进排版；
+7. `root_cause`、`resolution` 和 `avoidance` 应优先写成原子条目；多触发条件应使用列表；没有顺序关系的经验应使用无序列表；
+8. 列表字段为空时应写为空列表，不得写为 `null`；
+9. `status: archived` 如因规范、运行入口、Code、Web 或行动编排吸收而产生，应同步填写 `archive_reason` 和 `related_rules`、`related_docs`、`related_adrs` 或其它对应关联字段。
 
 ## 10. 事实实例写入、回写、验证和证据留存
 
