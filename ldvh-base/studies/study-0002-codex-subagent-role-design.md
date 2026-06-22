@@ -4,7 +4,7 @@ type: study
 title: Codex 子 Agent 创建调用与 LDVH 多角色设定调研
 status: active
 created: '2026-06-18T07:59:11'
-updated: '2026-06-18T22:31:24+08:00'
+updated: '2026-06-23T01:12:49+08:00'
 summary: |
   Codex 子 Agent 适合承接可并行、边界清晰、噪音较高或需要专业视角的运行期工作。Codex 官方资料显示，子 Agent 不会自动生成，必须由用户明确要求并行委派；Codex 可使用内置 default、worker、explorer，也可通过个人或项目级 TOML 文件定义自定义 agent。当前 Codex App 工具面还暴露了 spawn_agent、wait_agent、send_input 和 close_agent 这类管理动作。
 user_intent: 用户要求调研 Codex 中如何创建子 Agent 与调用子 Agent，为后续 00 文档多角色设定做前期准备。
@@ -202,3 +202,51 @@ LDVH 支持多角色 AI 协作，但角色首先是事实源治理中的责任�
 3. 修改 `specs/21-WorkCase-工作项.md` 时，只保留 execution item 需要的最小 `role` 和证据字段，避免把 Codex custom agent schema 写入 WorkCase。
 4. 修改 `specs/04.02-LDVH能力资产与保障机制规范.md` 时，再判断是否需要把 Codex custom agent TOML、Skills、MCP、AGENTS.md 的关系纳入能力资产分层。
 5. 如需长期维护 Codex 子 Agent 示例，应另建环境适配文档或 Skill，而不是塞进 00。
+
+## 2026-06-22 讨论补充：Codex 子 Agent 需求与 v1 规范落点
+
+本次后续讨论确认了一个更具体的落地判断：在 Codex 环境下用好子 Agent，不能只写成 Codex 配置或 prompt 技巧；应先在 LDVH v1 体系中明确“为什么需要子 Agent、何时需要、由谁调度、输入输出如何回收”，再把 Codex 的具体能力作为环境适配承接。
+
+当前 Codex 子 Agent 的一个重要产品边界是：主控不会默认自动 spawn 子 Agent，通常需要用户明确要求 subagents、delegate 或 parallel agent work。这个边界不是缺陷，而是成本、权限、上下文隔离、并行写入冲突和责任归属的综合权衡。LDVH 若希望 AI 在特定场景下更稳定地使用子 Agent，应把触发条件、输入包、输出格式、主控整合责任和降级方式写入自己的行动编排与能力资产边界，而不是期待 Codex 主控形成隐式习惯。
+
+本次还确认了一个 Codex App 工具层约束：启动子 Agent 时，普通文本任务使用 `message`，结构化输入使用 `items`，两者应二选一；`fork_context` 只表示是否继承当前线程历史，不是另一个可混用的 context 参数。LDVH 后续如果写 Codex 适配，应把这个约束归入环境适配层，作为 Codex 输入包构造注意事项，而不是上升为所有环境的 Role Contract 规则。
+
+按现有 specs v1 分层，建议落点如下：
+
+1. `specs/02-术语规范.md`：保留并必要时补强 `Agent`、`Role Contract`、`ExecutionItem` 的概念边界。子 Agent 是环境中的 Agent 能力或实体；Role Contract 是 LDVH 的环境无关角色契约，不等于 Codex subagent 本身。
+2. `specs/06-行动编排基础规范.md`：承载主控调度 Agent 的通用规则，包括何时考虑子 Agent、谁能调度、输入包最小要求、输出必须交还主控、哪些情况触发 Human Gate，以及 Agent 输出不得直接生效。
+3. `specs/21-WorkCase-工作项.md`：只记录实例层最小事实，例如 `orchestration.execution_items[*].role`、`input_refs`、`expected_output`、审核条目的 `prompt_context`、`agent_name` 和 `controller_resolution`。WorkCase 不应写入 Codex spawn schema，也不维护完整 Role Contract。
+4. `specs/04.02-LDVH能力资产与保障机制规范.md` 和 `agents/`：当 LDVH 需要固定 Agent 能力资产时，在 04.02 中按固定资产规则登记，并在 `agents/` 中维护权威定义摘要。Agent 资产应说明角色边界、输入摘要、工具权限、是否允许写入、输出格式、主控复核、Human Gate 和证据回写位置。
+5. `specs/04.03-环境入口适配与部署规范.md`：承接 Codex 专属适配，包括 `spawn_agent`、`fork_context`、`message` / `items` 二选一、Codex custom agent TOML、`agents.max_threads`、`agents.max_depth`、`SubagentStart` / `SubagentStop` Hook 候选，以及非 Codex 环境的降级边界。
+6. `specs/30-59` 具体行动编排：如果要把子 Agent 复查变成稳定流程，应优先把 `spark-0021-subagent-review-orchestration-gap` 收敛为一个 active 行动编排，例如“子 Agent 复核编排”。该流程应定义 Scenario、Context 输入包、并行等待、结果回收、硬问题处理、Agent 关闭、WorkCase 回写、Human Gate 和失败降级。
+
+因此，当前更优先的建设方向不是先改 21 的字段，也不是直接创建 Codex agent 配置，而是先把 `spark-0021` 所指出的“子 Agent 复查编排流程缺口”收敛成具体行动编排。字段层已有承载点，缺的是主控何时必须发起、如何发起、如何等待、如何处理结论和如何回写的 active workflow。
+
+## 2026-06-23 讨论补充：Trae 子 Agent 并行策略对照
+
+本次补充调研了 Trae 的子 Agent 并行策略，用于和 Codex subagent workflow 对照。Trae 的并行能力不应简单等同于 Codex 的 `spawn_agent`。更准确地说，Trae 是由“SOLO Agent 主控 + 可调用自定义智能体 + SOLO 多任务并行”共同形成并行策略。
+
+Trae 官方文档显示，SOLO 模式以 AI 为主导，支持自动规划并执行从需求理解、代码生成、测试到成果预览的全流程；SOLO 模式的任务管理支持在一个项目中同时管理多个任务。SOLO Agent 可以配置可调用的自定义智能体、MCP Server 和内置工具。配置好可调用智能体后，SOLO Agent 作为主控智能体，可以在处理复杂长上下文任务时自动调用相应智能体，将任务拆分和隔离，让不同智能体在独立上下文中处理各自任务；用户也可以在提示词中明确指定要调用的智能体。
+
+因此，Trae 的并行策略至少有两层：
+
+1. 任务级并行：SOLO 模式通过任务管理面板支持同一项目内多个任务并行推进，适合把大目标拆成多个任务容器。
+2. 角色级委派：SOLO Agent 在单个复杂任务内可以自动或按用户指定调用自定义智能体，让专业角色在隔离上下文中处理模块化任务。
+
+这和 Codex 的差异是：Codex 子 Agent 通常需要用户明确要求 subagents、delegate 或 parallel agent work；Trae SOLO 则更偏“主控自动调度配置好的专业智能体”，同时保留用户显式 `@` 指定智能体的入口。Codex 的并行容器更接近 agent thread；Trae 的并行容器则同时包括 SOLO 多任务面板和 SOLO Agent 的自定义智能体调用。
+
+社区实践还提出了同项目并行的工程化风险：上下文污染、路径越权和执行时序冲突。该实践建议采用单 Workspace、SOLO Coder、多任务隔离、路径白名单和专属 SubAgent 调度，并把并行任务按依赖关系分为无依赖、弱依赖和强依赖三类。该内容属于社区经验，不是 Trae 官方规范；但它对 LDVH 很有参考价值，因为它补上了官方能力说明之外的冲突治理策略。
+
+对 LDVH 的吸收判断如下：
+
+1. Trae 适配应把 Role Contract 映射为自定义智能体配置、SOLO Agent 可调用智能体清单和必要的工具权限，而不是把 Trae 智能体配置当作 LDVH 角色本体。
+2. Trae 的任务级并行应映射到 WorkCase / ExecutionItem 的任务拆分、依赖关系、输入输出和证据回收；Trae 多任务面板只是执行界面，不是 LDVH 长期事实源。
+3. Trae 的角色级委派应映射到行动编排中的 Agent 调度规则：何时自动调用、何时要求 Human 显式指定、何时降级为主控串行多视角审查。
+4. 同项目并行写入必须有路径或模块边界。前端、后端、测试、文档、审查等 disjoint scope 可以并行；共享配置、数据库 schema、核心接口契约、公共类型等强依赖区域应先由主控确认接口或串行处理。
+5. Trae Spec / Plan 产物可以作为输入资料、执行界面或证据引用，但不得替代 LDVH WorkCase、Spark、Study、ADR、Pitfall 或 Git commit records。
+
+可供后续 04.03 或 Trae 适配文档吸收的候选表述：
+
+```text
+Trae 环境中的并行能力由 SOLO 多任务管理和 SOLO Agent 调用自定义智能体共同承载。LDVH 可将 WorkCase 的 ExecutionItem 映射为 Trae 任务级并行，将 Role Contract 映射为可被 SOLO Agent 调用的自定义智能体；但并行执行必须保留输入、输出、路径边界、依赖关系、主控回收、Human Gate 和事实源回写规则。Trae 运行期任务、对话流和 Spec / Plan 文件不是 LDVH 最终事实源。
+```

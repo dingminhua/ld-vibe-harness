@@ -3,7 +3,7 @@ type: spark
 title: AI 编程环境子 Agent 多角色设定调研入口
 status: pending
 created: '2026-06-18T07:59:11'
-updated: '2026-06-18T07:59:11'
+updated: '2026-06-22T23:45:41+08:00'
 description: |
   本 Spark 承载“如何用好 Codex、TRAE CN 和 Claude Code CLI 等 AI 编程环境中的子 Agent / 自定义智能体，以及这对 LDVH 后续 00 文档多角色设定有什么启发”的待收敛议题。
 
@@ -17,6 +17,8 @@ evolution:
   summary: 根据用户要求，新增 Codex 子 Agent 创建、调用和多角色设定前期调研入口，并分流完整报告到 study-0002。
 - at: '2026-06-18T07:59:11'
   summary: 根据用户补充要求，新增 TRAE CN 和 Claude Code CLI 两份同主题 Study，并把本 Spark 从 Codex 单点调研扩展为多环境横向调研入口。
+- at: '2026-06-22T23:45:41+08:00'
+  summary: 补充 Codex 子 Agent 在 LDVH v1 体系中的规范落点判断：先明确 Role Contract、主控调度和 WorkCase 记录边界，再由 04.02/agents 承接固定 Agent 资产，由 04.03 承接 Codex spawn_agent、fork_context、message/items 二选一和 custom agent TOML 等环境适配；建议优先把 spark-0021 收敛为子 Agent 复核编排流程。
 source: conversation
 source_detail: 用户要求增加一个 spark，并调研 Codex、TRAE CN 与 Claude Code CLI 中如何创建和调用子 Agent / 自定义智能体，为之后 00 文档中多角色设定做前期调研。
 priority: P1
