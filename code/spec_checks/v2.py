@@ -340,9 +340,16 @@ class V2Checker:
         name = path.name
         if V2_ATTACHMENT_RE.match(name):
             return "attachment"
-        if V2_SPEC_RE.match(name) and path.parent == self.specs_dir:
+        spec_match = V2_SPEC_RE.match(name)
+        if spec_match and path.parent == self.specs_dir:
+            if self.is_member_spec_id(spec_match.group(1)):
+                return "member_spec"
             return "spec"
-        if spec_meta and ("20-29-事实模型" in rel_to_specs or "30-59-行动编排" in rel_to_specs):
+        if spec_meta and (
+            self.is_member_spec_id(str(spec_meta.get("spec_id") or ""))
+            or "20-29-事实模型" in rel_to_specs
+            or "30-59-行动编排" in rel_to_specs
+        ):
             return "member_spec"
         if spec_meta:
             return "spec_like"
@@ -444,10 +451,11 @@ class V2Checker:
         rel_path = doc["path"]
         spec = doc["spec"] or {}
         line = doc["spec_line"] or 1
-        if "20-29-事实模型" in self.relative_to_specs_dir(doc["absolute_path"]):
+        spec_id = str(spec.get("spec_id") or self.expected_spec_id(doc) or "")
+        if self.is_fact_model_member_id(spec_id):
             if not doc["fact_member"]:
                 self.diagnostics.append(self.diagnostic(rel_path, line, "error", "V2_FACT_MEMBER_MISSING", "事实模型成员规范缺少 v2_fact_model_member 身份块"))
-        if "30-59-行动编排" in self.relative_to_specs_dir(doc["absolute_path"]):
+        if self.is_action_member_id(spec_id):
             if not doc["action_member"]:
                 self.diagnostics.append(self.diagnostic(rel_path, line, "error", "V2_ACTION_MEMBER_MISSING", "行动编排成员规范缺少 v2_action_member 身份块"))
         if spec.get("spec_kind") != "member_spec":
@@ -946,11 +954,25 @@ class V2Checker:
         return payload.get("canonical_path") or payload.get("parent_spec") or ""
 
     def expected_spec_id(self, doc):
-        if doc["doc_type"] == "member_spec":
-            match = V2_MEMBER_RE.match(doc["absolute_path"].name)
-            return match.group(1) if match else None
         match = V2_SPEC_RE.match(doc["absolute_path"].name)
+        if match:
+            return match.group(1)
+        match = V2_MEMBER_RE.match(doc["absolute_path"].name)
         return match.group(1) if match else None
+
+    def is_member_spec_id(self, spec_id):
+        return self.is_fact_model_member_id(spec_id) or self.is_action_member_id(spec_id)
+
+    def is_fact_model_member_id(self, spec_id):
+        return self.spec_id_in_range(spec_id, 20, 29)
+
+    def is_action_member_id(self, spec_id):
+        return self.spec_id_in_range(spec_id, 30, 59)
+
+    def spec_id_in_range(self, spec_id, start, end):
+        if not isinstance(spec_id, str) or not re.match(r"^\d{2}$", spec_id):
+            return False
+        return start <= int(spec_id) <= end
 
     def expected_attachment_id(self, doc):
         match = V2_ATTACHMENT_RE.match(doc["absolute_path"].name)

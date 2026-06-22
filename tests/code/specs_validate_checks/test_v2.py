@@ -197,6 +197,90 @@ v2_spec:
     assert any(item["code"] == "V2_SPEC_REQUIRED_SECTION_MISSING" for item in report["diagnostics"])
 
 
+def test_v2_check_treats_root_20_to_59_files_as_member_specs(tmp_path):
+    specs_v2 = tmp_path / "specs-v2"
+    write_md(
+        specs_v2 / "20-Spark-火花.md",
+        """
+# Spark-火花
+
+```yaml
+v2_spec:
+  spec_id: "20"
+  spec_kind: "member_spec"
+  title: "Spark-火花"
+  status: "draft"
+  authority: "not_active_until_human_approved"
+  canonical_path: "specs-v2/20-Spark-火花.md"
+  created: "2026-06-23"
+  updated: "2026-06-23"
+  parent_spec: "specs-v2/02-事实模型基础规范.md"
+  relation: "fact_model_member"
+  positioning: "定义 Spark 事实模型成员"
+  scope: "v2"
+  basis: []
+  related_specs: []
+  migration_sources: []
+  active_fact_source: []
+  code_consumption:
+    - "fact_model_member_identity"
+  migration_status: "partially_migrated"
+```
+
+```yaml
+v2_fact_model_member:
+  spec_id: "20"
+  kind: "fact_model"
+  name_en: "Spark"
+  name_zh: "火花"
+  collection_status: "active"
+  canonical_path: "specs-v2/20-Spark-火花.md"
+  instance_root: "ldvh-base/sparks/"
+  instance_carrier: "yaml"
+  fact_source_anchor: "§5"
+  schema_anchor: "§9"
+  state_machine_anchor: "§6"
+  human_gate_anchor: "§8"
+  code_consumption:
+    - "fields"
+```
+
+## 1. 本文解决的问题
+
+定义成员。
+
+## 2. 上位依据
+
+承接 02。
+
+## 3. 构成要素归属与价值判断
+
+属于事实模型。
+
+## 4. 规范保障要求
+
+| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+|---|---|---|---|---|
+| 成员身份要求 | 需要成员身份块 | Code 校验 | 事实模型治理 | 修改时 |
+
+## 5. Human Gate
+
+改变成员身份时暂停。
+
+## 6. 待补齐事项
+
+无。
+""",
+    )
+
+    report = checker.v2_check_build(tmp_path)
+    docs = {doc["path"]: doc for doc in report["docs"]}
+
+    assert docs["specs-v2/20-Spark-火花.md"]["doc_type"] == "member_spec"
+    assert docs["specs-v2/20-Spark-火花.md"]["v2_fact_model_member"]["spec_id"] == "20"
+    assert not report["diagnostics"]
+
+
 def test_v2_core_implementation_lives_in_spec_checks():
     assert checker.v2_checks is v2_checks
     assert v2_checks.v2_check_build.__module__ == "spec_checks.v2"
