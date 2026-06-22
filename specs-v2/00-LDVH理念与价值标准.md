@@ -16,7 +16,7 @@ v2_spec:
   scope: "所有 v2 规范、构成要素实践、事实模型、行动编排、Code、Web、运行时扩展、附件和派生机制"
   basis: []
   related_specs:
-    - "specs-v2/01-规范体系与治理规范.md"
+    - "specs-v2/01-规范体系基础规范.md"
   migration_sources:
     - "specs/00-LD-Vibe-Harness理念与纲要.md"
   active_fact_source:
