@@ -196,6 +196,29 @@ Code v2 不能一次性替换 v1 Code。它应先提供兼容、诊断和投影�
 
 被排除的输入可以出现在 `diagnostics` 或 `excluded_inputs` 中，但不得静默生成节点或边。
 
+知识地图查询必须按范围和层级受控展开。Code 至少应支持以下读取层级：
+
+| 层级 | Code 输出 | 约束 |
+|---|---|---|
+| 入口层 | 节点摘要、状态、路径、归属、上位依据、附件和消费类别 | 默认层级，不读取原文全文、全量 Git history 或全量事实对象正文 |
+| 邻接层 | 指定节点的一跳关系和来源回指 | 只围绕指定节点展开，不隐式返回全图 |
+| 展开层 | 二跳、多跳、影响面、阻塞链、证据链、收敛链和跨项目边 | 必须由调用方提供任务目的、起点和深度或关系类型 |
+| 原文层 | 规范正文片段、附件表格、事实对象全文、Git diff、commit body 或测试输出 | 仅在关系视图不足以判断或需要验证证据时返回 |
+
+Code 不得把“生成知识地图”实现为一次性全量上下文注入。CLI/API/Web 调用应能声明 `input_scope`、`project_scope`、`start_node`、`relation_types`、`depth` 和是否允许原文层展开；未声明时必须使用最小默认范围。
+
+知识地图必须支持项目命名空间。Code 读取管辖项目时，应先读取并校验工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml`，再按项目范围生成投影。项目范围至少包括：
+
+1. `current_project`：只读取当前命中的管辖项目；
+2. `all_governed_projects`：读取所有已登记管辖项目；
+3. `explicit_projects`：只读取调用方明确指定的项目集合。
+
+节点、边和诊断必须携带项目维度。对象节点不得使用 `spark-0016`、`workcase-0001` 等裸对象 ID 作为全局 ID；全局节点 ID 必须组合 `project_id`、对象类型、对象 ID 和必要路径。跨项目关系必须显式声明 `from_project`、`to_project`、来源路径和关系类型，不能因路径相似、编号相同或标题相近而猜测隐含关系。
+
+Code 读取管辖项目时只能读取登记项目根目录内的 `ldvh-base/`、该项目 Git 记录，以及项目自身约定、用户明确指令、当前任务上下文或 Human Gate 授权的文档位置。项目缺少 `ldvh-base/`、Git 不可读、路径越界、引用目标不存在或文档位置未授权时，应输出当次 `diagnostics`，不得写入缓存、不得补写事实字段、不得修改 `LDVH-GOVERNED-PROJECTS.yaml`。
+
+Git history 是知识地图的时间和变更证据层。Code 可以从 commit hash、commit message、changed files、diff、author/date 和 commit range 派生变更事件节点、`impacts`、`writes_to`、`derives_from` 或证据回指；但这些关系必须实时从 Git 和当前事实源解析，不得落盘为长期图状态，也不得替代 07 定义的 Git commit records 和 commit message 契约。
+
 知识地图输出至少包含：
 
 1. `nodes`；
@@ -220,6 +243,8 @@ Code v2 不能一次性替换 v1 Code。它应先提供兼容、诊断和投影�
 迁移期间，知识地图可以双读 v1 active 事实源和 v2 草案，用于发现差异和迁移缺口；双读不得把 v2 草案解释为 active 权威，也不得让 v2 草案覆盖 v1 active 规则。
 
 Code 不得落盘知识地图缓存，不得让知识地图反向维护管辖项目配置、规范正文、事实对象或 Git 提交记录。
+
+知识地图输出只能进入 stdout、HTTP response、当次审核报告正文或等价的一次性调用结果。Code 不得写入长期 JSON、SQLite、外部图数据库、Web 本地缓存或其它派生图状态；若调用方要求持久化图谱结果，Code 必须拒绝或输出诊断。
 
 ## 10. 受控写入前检查
 

@@ -235,6 +235,10 @@ commit message 契约包括：
 
 AI 如何准备、拆分、预检、执行和交还一次 commit，由 03 与 Git 提交行动编排成员承接。本文只定义 commit records 和 commit message 本体规则。
 
+Git history 可以作为知识地图的时间和变更证据层。Code 可以按请求读取 commit hash、commit message、changed files、diff、author/date 和 commit range，用于派生变更事件、影响面、事实源写入关系、证据链和时间线；这些派生关系只说明“本次查询中从 Git 与当前事实源观察到的关系”，不改变 Git commit records 的事实源性质。
+
+知识地图不得反向维护 Git history、不得把派生边写回提交记录、不得用图谱节点替代 commit hash、commit body、changed files 或 diff。需要证明事实源修改时，应回到 Git commit records、对应事实源文件和必要验证证据；知识地图只能提供定位和影响分析入口。
+
 ## 9. Code、Web 与知识地图消费边界
 
 Code 可以读取 Git 文件事实源、解析 commit message、派生关联提交、生成知识地图边、检查事实源冲突和报告回写缺口。Code 输出必须能回指来源路径、commit hash、章节锚点或对象 ID。

@@ -125,7 +125,11 @@ Web 可以展示知识地图，但只能消费 04 定义的知识地图只读投
 2. 关系边类型来自 `01.Att.01-知识地图关系类型表.md`；
 3. `diagnostics`、`excluded_inputs` 和 `degraded` 状态必须对 Human 可见；
 4. 图布局、筛选、折叠、颜色和交互状态不成为稳定事实；
-5. Web 不得补写 Code 未输出的节点、关系边或来源回指。
+5. Web 不得补写 Code 未输出的节点、关系边或来源回指；
+6. Web 必须呈现本次查询的 `input_scope`、`project_scope`、生成时间、降级原因和项目命名空间；
+7. 跨项目关系必须显示来源项目和目标项目，不得把不同项目中的同名对象 ID 合并展示为同一节点。
+
+Web 展示知识地图必须使用无缓存语义。API 响应应使用 `Cache-Control: no-store` 或等价措施；前端不得使用 localStorage、sessionStorage、IndexedDB、Service Worker cache 或等价浏览器持久化机制保存图谱节点、关系边、诊断结果、项目范围或展开状态。页面可以在内存中保留当前交互态，但刷新、重新查询或事实源变化后必须重新向 Code/API 获取只读投影。
 
 ## 6. 受控轻写入白名单
 

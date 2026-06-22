@@ -24,6 +24,7 @@ from spec_checks import assurance_report as assurance_report_checks
 from spec_checks import refs as refs_checks
 from spec_checks import runtime_projection as runtime_projection_checks
 from spec_checks import web_validate as web_validate_checks
+from spec_checks import v2 as v2_checks
 
 
 # ── 通用常量 ──
@@ -851,6 +852,22 @@ def infer_specs_dir_from_paths(paths):
     return index_checks.infer_specs_dir_from_paths(paths)
 
 
+# v2 — specs-v2 只读诊断与知识地图投影
+
+def sync_v2_config():
+    v2_checks.PROJECT_ROOT = PROJECT_ROOT
+
+
+def v2_check_build(root=None, specs_dir="specs-v2"):
+    sync_v2_config()
+    return v2_checks.v2_check_build(root or PROJECT_ROOT, specs_dir)
+
+
+def v2_check_main(root=None, specs_dir="specs-v2", output_format="json", fail_on_diagnostics=False):
+    sync_v2_config()
+    return v2_checks.v2_check_main(root or PROJECT_ROOT, specs_dir, output_format, fail_on_diagnostics)
+
+
 # ══════════════════════════════════════════════════════════════════════
 # CLI
 # ══════════════════════════════════════════════════════════════════════
@@ -928,6 +945,13 @@ def build_parser():
     index_parser.add_argument("--out", default=None, help="输出目录；未提供时将完整索引输出到 stdout。")
     index_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")
 
+    # v2-check
+    v2_parser = subparsers.add_parser("v2-check", help="生成 specs-v2 只读诊断和知识地图派生预览。")
+    v2_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
+    v2_parser.add_argument("--specs-dir", default="specs-v2", help="要检查的 v2 写作区目录，默认 specs-v2。")
+    v2_parser.add_argument("--format", choices=["text", "json"], default="json", help="报告输出格式，默认 json。")
+    v2_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在诊断时返回非零状态。")
+
     # all
     all_parser = subparsers.add_parser("all", help="运行所有检查（doc + refs + assurance + human-gate + index）。")
     all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
@@ -993,6 +1017,9 @@ def main(argv=None):
         except SpecsIndexError as exc:
             print(str(exc), file=sys.stderr)
             return 2
+
+    if command == "v2-check":
+        return v2_check_main(args.root, args.specs_dir, args.format, args.fail_on_diagnostics)
 
     if command == "all":
         exit_code = 0
