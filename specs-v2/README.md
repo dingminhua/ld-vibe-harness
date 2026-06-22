@@ -38,7 +38,7 @@ AI 读取本目录时，应先读取 `PLAN.md`。任何 v2 文件在未经过 Hu
 | `PLAN.md` | v2 目标、原则、阶段和实施边界 | candidate |
 | `V1-UNDERSTANDING-GATE.md` | v1 机制性契约理解门禁 | candidate_gate |
 | `MIGRATION-MAP.md` | v1 到 v2 的迁移覆盖清单 | empty_stub |
-| `00-11` 主干占位 | 候选主规范结构 | empty_stub |
+| `00-11` 候选主干 | 候选主规范结构；00 已形成确认基线，其余仍需逐篇核对 | candidate / candidate_notes / empty_stub |
 | `{父编号}.Att.{两位序号}-{名称}.md` | 根目录平铺附件、注册表、矩阵和知识地图结构构件候选 | candidate / empty_stub |
 | `20-29-事实模型/` | 具体事实模型迁移候选区 | empty_stub |
 | `30-59-行动编排/` | 具体行动编排迁移候选区 | empty_stub |

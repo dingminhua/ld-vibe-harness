@@ -42,7 +42,7 @@ Code v2 不得：
 4. 默认接管用户 docs；
 5. 省略 project namespace 生成跨项目裸节点 ID。
 
-## 4. 待核对事项
+## 4. 待补齐事项
 
 1. v2 Code 命令入口；
 2. 知识地图 nodes / edges / diagnostics 输出边界；
