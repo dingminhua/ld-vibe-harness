@@ -858,14 +858,58 @@ def sync_v2_config():
     v2_checks.PROJECT_ROOT = PROJECT_ROOT
 
 
-def v2_check_build(root=None, specs_dir="specs-v2"):
+def v2_check_build(
+    root=None,
+    specs_dir="specs-v2",
+    input_scope="specs_v2",
+    query_layer="entry",
+    project_scope="current_project",
+    start_node=None,
+    relation_types=None,
+    depth=1,
+    projects=None,
+):
     sync_v2_config()
-    return v2_checks.v2_check_build(root or PROJECT_ROOT, specs_dir)
+    return v2_checks.v2_check_build(
+        root or PROJECT_ROOT,
+        specs_dir,
+        input_scope=input_scope,
+        query_layer=query_layer,
+        project_scope=project_scope,
+        start_node=start_node,
+        relation_types=relation_types,
+        depth=depth,
+        projects=projects,
+    )
 
 
-def v2_check_main(root=None, specs_dir="specs-v2", output_format="json", fail_on_diagnostics=False):
+def v2_check_main(
+    root=None,
+    specs_dir="specs-v2",
+    output_format="json",
+    fail_on_diagnostics=False,
+    input_scope="specs_v2",
+    query_layer="entry",
+    project_scope="current_project",
+    start_node=None,
+    relation_types=None,
+    depth=1,
+    projects=None,
+):
     sync_v2_config()
-    return v2_checks.v2_check_main(root or PROJECT_ROOT, specs_dir, output_format, fail_on_diagnostics)
+    return v2_checks.v2_check_main(
+        root or PROJECT_ROOT,
+        specs_dir,
+        output_format,
+        fail_on_diagnostics,
+        input_scope=input_scope,
+        query_layer=query_layer,
+        project_scope=project_scope,
+        start_node=start_node,
+        relation_types=relation_types,
+        depth=depth,
+        projects=projects,
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -950,6 +994,13 @@ def build_parser():
     v2_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
     v2_parser.add_argument("--specs-dir", default="specs-v2", help="要检查的 v2 写作区目录，默认 specs-v2。")
     v2_parser.add_argument("--format", choices=["text", "json"], default="json", help="报告输出格式，默认 json。")
+    v2_parser.add_argument("--input-scope", choices=["specs_v2", "all", "governed_projects", "git_history"], default="specs_v2", help="知识地图输入范围，默认 specs_v2。")
+    v2_parser.add_argument("--layer", choices=["entry", "neighbors", "expand", "raw"], default="entry", help="知识地图渐进读取层级，默认 entry。")
+    v2_parser.add_argument("--project-scope", choices=["current_project", "all_governed_projects", "explicit_projects"], default="current_project", help="项目范围，默认 current_project。")
+    v2_parser.add_argument("--project", action="append", default=[], help="project_scope=explicit_projects 时指定项目，可重复。")
+    v2_parser.add_argument("--start-node", default=None, help="neighbors/expand/raw 层级的起点节点 ID、路径或标题。")
+    v2_parser.add_argument("--relation-type", action="append", default=[], help="限制返回的关系类型，可重复。")
+    v2_parser.add_argument("--depth", type=int, default=1, help="expand/raw 层级的最大展开深度，默认 1。")
     v2_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在诊断时返回非零状态。")
 
     # all
@@ -1019,7 +1070,19 @@ def main(argv=None):
             return 2
 
     if command == "v2-check":
-        return v2_check_main(args.root, args.specs_dir, args.format, args.fail_on_diagnostics)
+        return v2_check_main(
+            args.root,
+            args.specs_dir,
+            args.format,
+            args.fail_on_diagnostics,
+            input_scope=args.input_scope,
+            query_layer=args.layer,
+            project_scope=args.project_scope,
+            start_node=args.start_node,
+            relation_types=args.relation_type,
+            depth=args.depth,
+            projects=args.project,
+        )
 
     if command == "all":
         exit_code = 0

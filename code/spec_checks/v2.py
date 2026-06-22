@@ -78,13 +78,44 @@ V2_REQUIRED_00_SECTIONS = {
     "待补齐事项",
 }
 V2_ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
+V2_INPUT_SCOPES = {"specs_v2", "all", "governed_projects", "git_history"}
+V2_QUERY_LAYERS = {"entry", "neighbors", "expand", "raw"}
+V2_PROJECT_SCOPES = {"current_project", "all_governed_projects", "explicit_projects"}
+V2_DEFAULT_PROJECT_NAMESPACE = "ldvh_self"
+V2_DEGRADED_DIAGNOSTIC_CODES = {
+    "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED",
+    "V2_GIT_HISTORY_GRAPH_NOT_IMPLEMENTED",
+    "V2_RAW_LAYER_NOT_IMPLEMENTED",
+    "V2_QUERY_START_NODE_MISSING",
+    "V2_QUERY_START_NODE_NOT_FOUND",
+    "V2_PROJECT_SCOPE_NOT_IMPLEMENTED",
+}
 
 
 class V2Checker:
-    def __init__(self, root=None, specs_dir="specs-v2"):
+    def __init__(
+        self,
+        root=None,
+        specs_dir="specs-v2",
+        input_scope="specs_v2",
+        query_layer="entry",
+        project_scope="current_project",
+        start_node=None,
+        relation_types=None,
+        depth=1,
+        projects=None,
+    ):
         self.root = Path(root or PROJECT_ROOT).resolve()
         raw_specs_dir = Path(specs_dir)
         self.specs_dir = raw_specs_dir.resolve() if raw_specs_dir.is_absolute() else (self.root / raw_specs_dir).resolve()
+        self.input_scope = input_scope
+        self.query_layer = query_layer
+        self.project_scope = project_scope
+        self.start_node = start_node
+        self.relation_types = set(relation_types or [])
+        self.depth = max(0, int(depth or 0))
+        self.projects = list(projects or [])
+        self.project_namespace = V2_DEFAULT_PROJECT_NAMESPACE
         self.diagnostics = []
         self.review_hints = []
         self.docs = []
@@ -97,17 +128,21 @@ class V2Checker:
         self.edge_keys = set()
 
     def build(self):
-        if not self.specs_dir.exists():
-            raise FileNotFoundError(f"v2 规范目录不存在: {self.specs_dir}")
+        self.validate_query_options()
+        self.add_scope_diagnostics()
 
-        files = sorted(self.specs_dir.rglob("*.md"))
         parsed_docs = []
-        for path in files:
-            parsed_docs.append(self.parse_file(path))
+        known_paths = set()
+        if self.should_parse_specs_v2():
+            if not self.specs_dir.exists():
+                raise FileNotFoundError(f"v2 规范目录不存在: {self.specs_dir}")
+            files = sorted(self.specs_dir.rglob("*.md"))
+            known_paths = {self.relative_path(path) for path in files}
+            for path in files:
+                parsed_docs.append(self.parse_file(path))
 
         spec_paths = {doc["path"] for doc in parsed_docs if doc["doc_type"] in {"spec", "member_spec"}}
         attachment_paths = {doc["path"] for doc in parsed_docs if doc["doc_type"] == "attachment"}
-        known_paths = {self.relative_path(path) for path in files}
 
         for doc in parsed_docs:
             self.docs.append(self.compact_doc(doc))
@@ -118,6 +153,7 @@ class V2Checker:
             self.add_relation_edges(doc, known_paths)
 
         self.add_missing_attachment_authorization_diagnostics(spec_paths, attachment_paths)
+        knowledge_map = self.project_knowledge_map()
 
         return {
             "metadata": {
@@ -129,17 +165,116 @@ class V2Checker:
                 "specs_dir": self.relative_path(self.specs_dir),
                 "read_only": True,
                 "knowledge_map_boundary": "read_only_projection_not_fact_source",
+                "input_scope": self.input_scope,
+                "effective_input_scope": self.effective_input_scope(),
+                "query_layer": self.query_layer,
+                "project_scope": self.project_scope,
+                "projects": self.projects,
+                "start_node": self.start_node,
+                "relation_types": sorted(self.relation_types),
+                "depth": self.depth,
+                "degraded": self.is_degraded(),
             },
             "docs": self.docs,
             "sections": self.sections,
             "relations": self.relations,
-            "knowledge_map": {
-                "nodes": self.nodes,
-                "edges": self.edges,
-            },
+            "knowledge_map": knowledge_map,
             "diagnostics": self.diagnostics,
             "review_hints": self.review_hints,
         }
+
+    def validate_query_options(self):
+        if self.input_scope not in V2_INPUT_SCOPES:
+            self.diagnostics.append(
+                self.diagnostic(
+                    "<runtime>",
+                    1,
+                    "error",
+                    "V2_INPUT_SCOPE_INVALID",
+                    f"input_scope 非法: {self.input_scope}",
+                    suggested_owner="04-Code确定性执行规范",
+                )
+            )
+        if self.query_layer not in V2_QUERY_LAYERS:
+            self.diagnostics.append(
+                self.diagnostic(
+                    "<runtime>",
+                    1,
+                    "error",
+                    "V2_QUERY_LAYER_INVALID",
+                    f"query_layer 非法: {self.query_layer}",
+                    suggested_owner="04-Code确定性执行规范",
+                )
+            )
+        if self.project_scope not in V2_PROJECT_SCOPES:
+            self.diagnostics.append(
+                self.diagnostic(
+                    "<runtime>",
+                    1,
+                    "error",
+                    "V2_PROJECT_SCOPE_INVALID",
+                    f"project_scope 非法: {self.project_scope}",
+                    suggested_owner="04-Code确定性执行规范",
+                )
+            )
+
+    def add_scope_diagnostics(self):
+        if self.input_scope in {"all", "governed_projects"}:
+            self.diagnostics.append(
+                self.diagnostic(
+                    "<runtime>",
+                    1,
+                    "warning",
+                    "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED",
+                    "管辖项目运行时图谱尚未实现；本次输出不包含 ldvh-base 工作对象关系或多项目扫描结果",
+                    suggested_owner="04-Code确定性执行规范",
+                )
+            )
+        if self.input_scope in {"all", "git_history"}:
+            self.diagnostics.append(
+                self.diagnostic(
+                    "<runtime>",
+                    1,
+                    "warning",
+                    "V2_GIT_HISTORY_GRAPH_NOT_IMPLEMENTED",
+                    "Git history 证据层尚未实现；本次输出不包含 commit、diff 或变更事件边",
+                    suggested_owner="04-Code确定性执行规范",
+                )
+            )
+        if self.project_scope != "current_project":
+            self.diagnostics.append(
+                self.diagnostic(
+                    "<runtime>",
+                    1,
+                    "warning",
+                    "V2_PROJECT_SCOPE_NOT_IMPLEMENTED",
+                    f"project_scope={self.project_scope} 尚未实现；本次输出仅使用 {self.project_namespace} 命名空间",
+                    suggested_owner="04-Code确定性执行规范",
+                )
+            )
+        if self.query_layer == "raw":
+            self.diagnostics.append(
+                self.diagnostic(
+                    "<runtime>",
+                    1,
+                    "warning",
+                    "V2_RAW_LAYER_NOT_IMPLEMENTED",
+                    "原文层展开尚未实现；本次输出退回到 expand 关系视图，不返回正文全文、Git diff 或事实对象全文",
+                    suggested_owner="04-Code确定性执行规范",
+                )
+            )
+
+    def should_parse_specs_v2(self):
+        return self.input_scope in {"specs_v2", "all"}
+
+    def effective_input_scope(self):
+        scopes = []
+        if self.should_parse_specs_v2():
+            scopes.append("specs_v2")
+        return scopes
+
+    def is_degraded(self):
+        return any(item.get("code") in V2_DEGRADED_DIAGNOSTIC_CODES for item in self.diagnostics)
 
     def parse_file(self, path):
         text = path.read_text(encoding="utf-8")
@@ -401,8 +536,12 @@ class V2Checker:
                 "type": node_type,
                 "label": doc["title"],
                 "path": doc["path"],
+                "canonical_path": doc["path"],
                 "line": doc["title_line"],
                 "status": meta.get("status"),
+                "authority": meta.get("authority"),
+                "project_namespace": self.project_namespace,
+                "source_refs": [self.source_ref(doc["path"], doc["title_line"])],
                 "source": "markdown_file",
             },
         )
@@ -420,7 +559,10 @@ class V2Checker:
                     "type": "section",
                     "label": section["title_normalized"],
                     "path": doc["path"],
+                    "canonical_path": doc["path"],
                     "line": section["line"],
+                    "project_namespace": self.project_namespace,
+                    "source_refs": [self.source_ref(doc["path"], section["line"], section["end_line"], anchor=f"§{section['number']}" if section["number"] else None)],
                     "source": "markdown_heading",
                 },
             )
@@ -443,7 +585,17 @@ class V2Checker:
 
         for category in spec.get("code_consumption") or []:
             code_node = f"code_consumption:{category}"
-            self.add_node(code_node, {"type": "code_consumption_category", "label": category, "source": "v2_spec.code_consumption"})
+            self.add_node(
+                code_node,
+                {
+                    "type": "code_consumption_category",
+                    "label": category,
+                    "canonical_path": doc["path"],
+                    "project_namespace": self.project_namespace,
+                    "source_refs": [self.source_ref(doc["path"], doc["spec_line"] or 1, field="v2_spec.code_consumption")],
+                    "source": "v2_spec.code_consumption",
+                },
+            )
             self.add_edge(code_node, source, "consumes", "code_consumption", doc["spec_line"] or 1, label=category)
 
         if attachment:
@@ -455,7 +607,17 @@ class V2Checker:
                 self.add_edge(source, target, "derives_from", "migration_sources", doc["attachment_line"] or 1)
             for category in attachment.get("code_consumption") or []:
                 code_node = f"code_consumption:{category}"
-                self.add_node(code_node, {"type": "code_consumption_category", "label": category, "source": "v2_attachment.code_consumption"})
+                self.add_node(
+                    code_node,
+                    {
+                        "type": "code_consumption_category",
+                        "label": category,
+                        "canonical_path": doc["path"],
+                        "project_namespace": self.project_namespace,
+                        "source_refs": [self.source_ref(doc["path"], doc["attachment_line"] or 1, field="v2_attachment.code_consumption")],
+                        "source": "v2_attachment.code_consumption",
+                    },
+                )
                 self.add_edge(code_node, source, "consumes", "code_consumption", doc["attachment_line"] or 1, label=category)
 
         for ref in sorted(set(V2_PATH_REF_RE.findall(doc["text"]))):
@@ -464,17 +626,26 @@ class V2Checker:
 
     def add_edge(self, source, target, relation_type, source_structure, line, label=None):
         self.add_relation(source, target, relation_type, source_structure, line, label)
+        self.ensure_reference_node(target, line)
         key = (source, target, relation_type, source_structure, label)
         if key in self.edge_keys:
             return
         self.edge_keys.add(key)
+        edge_id = self.edge_id(source, target, relation_type, source_structure, label)
         self.edges.append(
             {
+                "id": edge_id,
                 "source": source,
                 "target": target,
+                "from": source,
+                "to": target,
                 "type": relation_type,
                 "source_structure": source_structure,
+                "direction": "A -> B",
+                "derived_from": source_structure,
                 "line": line,
+                "project_namespace": self.project_namespace,
+                "source_refs": [self.source_ref(source if source.endswith(".md") else target, line, field=source_structure)],
                 **({"label": label} if label else {}),
             }
         )
@@ -491,6 +662,7 @@ class V2Checker:
                 "relation_type": relation_type,
                 "source_structure": source_structure,
                 "line": line,
+                "source_refs": [self.source_ref(source if source.endswith(".md") else target, line, field=source_structure)],
                 **({"label": label} if label else {}),
             }
         )
@@ -500,6 +672,203 @@ class V2Checker:
             return
         self.node_ids.add(node_id)
         self.nodes.append({"id": node_id, **payload})
+
+    def project_knowledge_map(self):
+        nodes_by_id = {node["id"]: node for node in self.nodes}
+        edges = self.filtered_edges_by_relation(self.edges)
+        layer = "expand" if self.query_layer == "raw" else self.query_layer
+
+        if layer == "entry":
+            selected_nodes = {
+                node["id"]
+                for node in self.nodes
+                if node.get("type") not in {"section", "code_consumption_category"}
+            }
+            selected_edges = [
+                edge
+                for edge in edges
+                if edge.get("type") in {"basis", "related", "parent", "owns_attachment", "derives_from"}
+                and (edge.get("from") in selected_nodes or edge.get("to") in selected_nodes)
+            ]
+            selected_nodes.update(self.edge_endpoint_ids(selected_edges))
+        elif layer in {"neighbors", "expand"}:
+            start_id = self.resolve_start_node(nodes_by_id)
+            if not start_id:
+                selected_nodes, selected_edges = self.entry_fallback(edges)
+            else:
+                selected_nodes, selected_edges = self.traverse_edges(start_id, edges, 1 if layer == "neighbors" else self.depth)
+        else:
+            selected_nodes, selected_edges = self.entry_fallback(edges)
+
+        projected_nodes = [nodes_by_id[node_id] for node_id in self.sorted_node_ids(selected_nodes) if node_id in nodes_by_id]
+        return {
+            "query": {
+                "input_scope": self.input_scope,
+                "effective_input_scope": self.effective_input_scope(),
+                "layer": self.query_layer,
+                "project_scope": self.project_scope,
+                "projects": self.projects,
+                "start_node": self.start_node,
+                "relation_types": sorted(self.relation_types),
+                "depth": self.depth,
+                "degraded": self.is_degraded(),
+            },
+            "project_namespace": self.project_namespace,
+            "nodes": projected_nodes,
+            "edges": selected_edges,
+            "excluded_inputs": self.excluded_inputs(),
+        }
+
+    def filtered_edges_by_relation(self, edges):
+        if not self.relation_types:
+            return list(edges)
+        return [edge for edge in edges if edge.get("type") in self.relation_types]
+
+    def entry_fallback(self, edges):
+        selected_nodes = {
+            node["id"]
+            for node in self.nodes
+            if node.get("type") not in {"section", "code_consumption_category"}
+        }
+        selected_edges = [
+            edge
+            for edge in edges
+            if edge.get("type") in {"basis", "related", "parent", "owns_attachment", "derives_from"}
+            and (edge.get("from") in selected_nodes or edge.get("to") in selected_nodes)
+        ]
+        selected_nodes.update(self.edge_endpoint_ids(selected_edges))
+        return selected_nodes, selected_edges
+
+    def resolve_start_node(self, nodes_by_id):
+        if not self.start_node:
+            self.diagnostics.append(
+                self.diagnostic(
+                    "<runtime>",
+                    1,
+                    "warning",
+                    "V2_QUERY_START_NODE_MISSING",
+                    f"query_layer={self.query_layer} 需要 start_node；本次退回入口层",
+                    suggested_owner="04-Code确定性执行规范",
+                )
+            )
+            return None
+        if self.start_node in nodes_by_id:
+            return self.start_node
+        matches = [
+            node["id"]
+            for node in self.nodes
+            if node.get("path") == self.start_node
+            or node.get("canonical_path") == self.start_node
+            or node.get("label") == self.start_node
+        ]
+        if matches:
+            return sorted(matches)[0]
+        self.diagnostics.append(
+            self.diagnostic(
+                "<runtime>",
+                1,
+                "warning",
+                "V2_QUERY_START_NODE_NOT_FOUND",
+                f"未找到 start_node: {self.start_node}；本次退回入口层",
+                suggested_owner="04-Code确定性执行规范",
+            )
+        )
+        return None
+
+    def traverse_edges(self, start_id, edges, depth):
+        selected_nodes = {start_id}
+        selected_edges = []
+        frontier = {start_id}
+        for _ in range(max(1, depth)):
+            next_frontier = set()
+            for edge in edges:
+                from_id = edge.get("from")
+                to_id = edge.get("to")
+                if from_id in frontier or to_id in frontier:
+                    selected_edges.append(edge)
+                    if from_id:
+                        next_frontier.add(from_id)
+                    if to_id:
+                        next_frontier.add(to_id)
+            next_frontier -= selected_nodes
+            selected_nodes.update(next_frontier)
+            frontier = next_frontier
+            if not frontier:
+                break
+        selected_nodes.update(self.edge_endpoint_ids(selected_edges))
+        return selected_nodes, self.unique_edges(selected_edges)
+
+    def edge_endpoint_ids(self, edges):
+        endpoint_ids = set()
+        for edge in edges:
+            if edge.get("from"):
+                endpoint_ids.add(edge["from"])
+            if edge.get("to"):
+                endpoint_ids.add(edge["to"])
+        return endpoint_ids
+
+    def unique_edges(self, edges):
+        seen = set()
+        result = []
+        for edge in edges:
+            key = edge.get("id")
+            if key in seen:
+                continue
+            seen.add(key)
+            result.append(edge)
+        return result
+
+    def sorted_node_ids(self, node_ids):
+        order = {node["id"]: index for index, node in enumerate(self.nodes)}
+        return sorted(node_ids, key=lambda node_id: order.get(node_id, len(order)))
+
+    def excluded_inputs(self):
+        excluded = []
+        if self.input_scope in {"all", "governed_projects"}:
+            excluded.append({"input": "governed_projects", "reason": "not_implemented", "diagnostic": "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED"})
+        if self.input_scope in {"all", "git_history"}:
+            excluded.append({"input": "git_history", "reason": "not_implemented", "diagnostic": "V2_GIT_HISTORY_GRAPH_NOT_IMPLEMENTED"})
+        if self.query_layer == "raw":
+            excluded.append({"input": "raw_content", "reason": "not_implemented", "diagnostic": "V2_RAW_LAYER_NOT_IMPLEMENTED"})
+        return excluded
+
+    def ensure_reference_node(self, node_id, line):
+        if node_id in self.node_ids:
+            return
+        if not isinstance(node_id, str) or not node_id.endswith(".md"):
+            return
+        node_path = self.root / node_id
+        node_type = "external_fact_source" if node_path.exists() else "missing_reference"
+        self.add_node(
+            node_id,
+            {
+                "type": node_type,
+                "label": Path(node_id).name,
+                "path": node_id,
+                "canonical_path": node_id,
+                "line": line,
+                "project_namespace": self.project_namespace,
+                "source_refs": [self.source_ref(node_id, line)],
+                "source": "relation_target",
+            },
+        )
+
+    def source_ref(self, path, line_start=1, line_end=None, field=None, anchor=None):
+        ref = {
+            "path": path,
+            "line_start": line_start or 1,
+            "line_end": line_end or line_start or 1,
+        }
+        if field:
+            ref["field"] = field
+        if anchor:
+            ref["anchor"] = anchor
+        return ref
+
+    def edge_id(self, source, target, relation_type, source_structure, label=None):
+        raw = "|".join([str(source), str(relation_type), str(target), str(source_structure), str(label or "")])
+        digest = hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]
+        return f"edge:{digest}"
 
     def extract_title(self, text):
         for index, line in enumerate(text.splitlines(), start=1):
@@ -649,8 +1018,19 @@ class V2Checker:
     def sha256(self, text):
         return "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
 
-    def diagnostic(self, path, line, severity, code, message):
-        return {"severity": severity, "path": path, "line": line, "code": code, "message": message}
+    def diagnostic(self, path, line, severity, code, message, suggested_owner=None, source_refs=None):
+        line = line or 1
+        item = {
+            "severity": severity,
+            "path": path,
+            "line": line,
+            "code": code,
+            "message": message,
+            "source_refs": source_refs or [self.source_ref(path, line)],
+        }
+        if suggested_owner:
+            item["suggested_owner"] = suggested_owner
+        return item
 
 
 def format_text(report):
@@ -659,8 +1039,12 @@ def format_text(report):
     docs = report.get("docs", [])
     nodes = report.get("knowledge_map", {}).get("nodes", [])
     edges = report.get("knowledge_map", {}).get("edges", [])
+    query = report.get("knowledge_map", {}).get("query", {})
     lines = [
         "specs-v2 只读诊断完成",
+        f"- input_scope: {query.get('input_scope')}",
+        f"- layer: {query.get('layer')}",
+        f"- degraded: {query.get('degraded')}",
         f"- docs: {len(docs)}",
         f"- knowledge_map.nodes: {len(nodes)}",
         f"- knowledge_map.edges: {len(edges)}",
@@ -680,12 +1064,54 @@ def format_text(report):
     return "\n".join(lines)
 
 
-def v2_check_build(root=None, specs_dir="specs-v2"):
-    return V2Checker(root or PROJECT_ROOT, specs_dir).build()
+def v2_check_build(
+    root=None,
+    specs_dir="specs-v2",
+    input_scope="specs_v2",
+    query_layer="entry",
+    project_scope="current_project",
+    start_node=None,
+    relation_types=None,
+    depth=1,
+    projects=None,
+):
+    return V2Checker(
+        root or PROJECT_ROOT,
+        specs_dir,
+        input_scope=input_scope,
+        query_layer=query_layer,
+        project_scope=project_scope,
+        start_node=start_node,
+        relation_types=relation_types,
+        depth=depth,
+        projects=projects,
+    ).build()
 
 
-def v2_check_main(root=None, specs_dir="specs-v2", output_format="json", fail_on_diagnostics=False):
-    report = v2_check_build(root, specs_dir)
+def v2_check_main(
+    root=None,
+    specs_dir="specs-v2",
+    output_format="json",
+    fail_on_diagnostics=False,
+    input_scope="specs_v2",
+    query_layer="entry",
+    project_scope="current_project",
+    start_node=None,
+    relation_types=None,
+    depth=1,
+    projects=None,
+):
+    report = v2_check_build(
+        root,
+        specs_dir,
+        input_scope=input_scope,
+        query_layer=query_layer,
+        project_scope=project_scope,
+        start_node=start_node,
+        relation_types=relation_types,
+        depth=depth,
+        projects=projects,
+    )
     if output_format == "json":
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
