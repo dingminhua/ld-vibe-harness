@@ -372,11 +372,11 @@ Code 检查至少包括：
 
 ## 17. 待补齐事项
 
-1. 本文和 `04.Att.01` 至 `04.Att.10` 已承接 v1 `07` 主体规则，仍需 Human 单篇核对后才能视为迁移完成；
-2. 盘点 `code/specs_validate.py`、`code/fact_cli.py`、`code/commit_validate.py`、`code/hook_dispatch.py` 和 `code/spec_checks` 的 v2 兼容策略；
-3. 将本文定义的 v2 知识地图最小投影契约细化为实现 Schema、正反样例和测试夹具；
+1. 本文和 `04.Att.01` 至 `04.Att.10` 已承接 v1 `07` 主体规则，并已作为 active Code 确定性执行规范生效；
+2. 盘点 `code/specs_validate.py`、`code/fact_cli.py`、`code/commit_validate.py`、`code/hook_dispatch.py` 和 `code/spec_checks` 的 active specs 兼容策略；
+3. 将本文定义的知识地图最小投影契约细化为实现 Schema、正反样例和测试夹具；
 4. 明确 v1-v2 双读、降级诊断和迁移覆盖检查；
 5. 补齐 v2 附件身份一致性检查，覆盖真实路径、身份块、父规范登记、README 登记和旧引用残留；
 6. 与 08 对齐 Code 实现测试入口和验证声明；
 7. 与 05 对齐 Web DTO 和 Human-facing 派生展示输入；
-8. 当前 `v2-check` 已提供 active specs 结构诊断和只读知识地图预览，`preflight` 已提供受控写入前检查第一版；仍需补齐完整 v1-v2 双读、完整诊断 Schema、完整知识地图目标 Schema、字段级 Schema 检查和 Git history 图谱。
+8. 当前 `v2-check` 已提供 active specs 结构诊断和只读知识地图预览，`preflight` 已提供受控写入前检查第一版；仍需补齐完整历史双读、完整诊断 Schema、完整知识地图目标 Schema、字段级 Schema 检查和 Git history 图谱。

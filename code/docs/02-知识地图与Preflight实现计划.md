@@ -111,7 +111,7 @@ preflight 输出应优先给出机器可消费诊断，同时保留 Human 可读
 ## 9. 待确认事项
 
 1. preflight 输出状态是否采用 `pass`、`blocked`、`needs_human_gate`、`degraded` 的闭集；
-2. 第一版 preflight 是否只面向 LDVH 产品资产，管辖项目事实源留到 v2 正式生效后；
+2. 第一版 preflight 是否继续只面向 LDVH 产品资产，或开始纳入管辖项目事实源的写入前检查；
 3. 是否在 Web 介入前先提供只读 JSON 输出，供 AI 和 CLI 消费。
 
 ## 10. 实施记录

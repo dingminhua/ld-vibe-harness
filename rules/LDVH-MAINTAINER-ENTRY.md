@@ -85,8 +85,8 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 
 | 查询目标 | 优先命令 | 用途 |
 |---|---|---|
-| specs 规范入口和章节 | `python3 code/specs_validate.py v2-check --format text` | 生成 v2 active 规范诊断和知识地图派生预览 |
-| specs 综合检查 | `python3 code/specs_validate.py all --fail-on-diagnostics` | 执行 v2 active specs 综合校验 |
+| specs 规范入口和章节 | `python3 code/specs_validate.py v2-check --format text` | 生成 active specs 规范诊断和知识地图派生预览 |
+| specs 综合检查 | `python3 code/specs_validate.py all --fail-on-diagnostics` | 执行 active specs 综合校验 |
 | LDVH Git 提交准备 | `ldvh-git-commit` Skill、`python3 code/commit_validate.py --check-message-file <message-file>` | 按 07 的 commit message 契约拆分、编写、预检并创建提交 |
 | Rules 环境入口接入 | 按 `specs/06-运行时扩展规范.md` §4.1-§4.4 执行 | 官方维护 Codex App 适配路径；默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口 |
 

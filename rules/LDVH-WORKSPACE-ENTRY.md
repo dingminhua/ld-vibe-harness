@@ -83,7 +83,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 | 查询目标 | 优先命令 | 用途 |
 |---|---|---|
 | 管辖项目配置 | `python3 code/specs_validate.py governed-projects` | 检查工作区根目录管辖项目配置 |
-| specs 规范入口和章节 | `python3 code/specs_validate.py v2-check --format text` | 生成 v2 active 规范诊断和知识地图派生预览 |
+| specs 规范入口和章节 | `python3 code/specs_validate.py v2-check --format text` | 生成 active specs 规范诊断和知识地图派生预览 |
 | 工作对象列表 | `python3 code/fact_cli.py list <type>` | 查询当前项目 WorkCase、ADR、Spark、Pitfall 或 Study 摘要 |
 | 工作对象详情 | `python3 code/fact_cli.py show <id>` | 查询单个工作对象详情 |
 | 工作对象搜索 | `python3 code/fact_cli.py search <keyword>` | 按关键词搜索工作对象事实源 |

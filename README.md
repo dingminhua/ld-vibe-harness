@@ -15,6 +15,12 @@ LD Vibe Harness 是面向 Vibe Coding 的工程化驾驭框架，由 LaoDing 基
 | Web | 面向 Human 展示状态、风险、证据、待确认事项和受控交互 |
 | 运行时扩展 | 承接 Rules、Skills、Agents、Hooks 与环境适配，使 LDVH 能被看见、触发和执行 |
 
+## 当前权威入口
+
+当前 `specs/` 是 LDVH 的 active 正式规范事实源。`history/specs-v1/` 只作为历史追溯、迁移审计和价值提取输入，不再作为默认规范入口。
+
+AI 维护 LDVH 产品资产时，先读取 `rules/LDVH-MAINTAINER-ENTRY.md`；处理管辖项目工作对象时，先读取 `rules/LDVH-WORKSPACE-ENTRY.md`。Code 默认以 `active_specs` 消费当前 `specs/`，`v2-check` 只是 active specs 诊断和只读知识地图预览入口，不替代规范原文、Human Gate 或完整测试。
+
 ## 闭环流转
 
 ```text

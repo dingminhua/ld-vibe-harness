@@ -79,7 +79,7 @@ v2_fact_model_member:
 6. Spark 字段契约、条件必填、内容格式、证据留存和实例检查要求；
 7. AI、Code、Web、知识地图和运行时扩展消费 Spark 时不得越过的事实源边界。
 
-本文不定义 WorkCase、ADR、Pitfall 或 Study 的准入条件、字段契约和状态机；这些对象即使已有 v2 成员规范，在 Human 单篇确认和 active 切换前的历史默认入口为对应 v1 历史 成员主文件为准。本文也不扩展 Web 写入白名单、不定义 Code 输出 Schema、不定义行动编排执行步骤或 Git commit message 契约。
+本文不定义 WorkCase、ADR、Pitfall 或 Study 的准入条件、字段契约和状态机；这些对象以当前 active 21-24 成员主文件为准。本文也不扩展 Web 写入白名单、不定义 Code 输出 Schema、不定义行动编排执行步骤或 Git commit message 契约。
 
 ## 2. 上位依据
 
@@ -454,9 +454,9 @@ Spark 实例检查至少包括：
 
 ## 14. 待补齐事项
 
-1. 本文只处理 20-Spark 草案；21-WorkCase、22-ADR、23-Pitfall 和 24-Study 已另行写入 `specs/` 根目录成员规范，但相关对象规则在 Human 单篇确认和 active 切换前的历史默认入口为 v1 历史 成员主文件为准；
+1. 本文已作为 active Spark 成员规范生效；21-WorkCase、22-ADR、23-Pitfall 和 24-Study 已另行作为 active 成员规范写入 `specs/` 根目录；
 2. v2 字段注册表尚未全量迁入对象特有字段。`resolved_to`、`resolved_to.type`、`resolved_to.ref`、`resolved_at`、`evolution` 和 Spark 关联字段应在后续字段矩阵诊断中与 active 05.03 和本文字段契约逐项核对；
-3. 历史 `ldvh_member` 与 active `v2_fact_model_member` 的双读 Code 实现、正反样例和切换策略尚未完成；本文提供 active 成员规范输入；Code 默认消费入口应按 v2 身份块切换；
+3. 历史 `ldvh_member` 与 active `v2_fact_model_member` 的双读 Code 实现、正反样例和历史追溯策略尚未完成；本文提供 active 成员规范输入；Code 默认消费入口应按当前身份块读取；
 4. Spark Web 快速创建白名单应在 v2 Web 规范和 Code 实现迁移时复核。本文不扩展 Web 创建后编辑、分流、废弃或删除能力；
 5. Spark 创建、分流、废弃、多线并行收敛和 Human Gate 记录的具体行动编排不按 v1 直接迁入；应待 v2 保障需求稳定后进入行动编排候选计划；
 6. 后续修改本文时，应再次核对 active `specs/20-Spark-火花.md`、02 授权附件、现有 Code/Web 测试和相关 active 20-24 成员规则，确认没有字段、状态、引用或消费入口漂移。
