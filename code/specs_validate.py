@@ -10,6 +10,24 @@ CODE_DIR = Path(__file__).resolve().parent
 if str(CODE_DIR) not in sys.path:
     sys.path.insert(0, str(CODE_DIR))
 
+
+def _fast_preflight_main(argv):
+    from spec_checks import preflight as preflight_checks
+
+    parser = argparse.ArgumentParser(description="执行受控写入前只读检查，不授权写入。")
+    parser.add_argument("--root", default=str(Path(__file__).resolve().parent.parent), help="项目根目录，默认使用当前工具所在项目。")
+    parser.add_argument("--target-path", required=True, help="准备写入的目标路径，可为相对或绝对路径。")
+    parser.add_argument("--operation", choices=["create", "update", "delete", "move", "rename"], default="update", help="准备执行的写入类型，默认 update。")
+    parser.add_argument("--field-path", default=None, help="可选字段路径；第一版仅暴露降级诊断，不做字段级 Schema 校验。")
+    parser.add_argument("--status", default=None, help="可选状态值；第一版仅提示回到对应状态规则。")
+    parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+    args = parser.parse_args(argv)
+    return preflight_checks.preflight_main(args.root, args.target_path, args.operation, args.field_path, args.status, args.format)
+
+
+if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "preflight":
+    sys.exit(_fast_preflight_main(sys.argv[2:]))
+
 from spec_checks import common as common_checks
 from spec_checks import doc_structure as doc_structure_checks
 from spec_checks import deployment_entries as deployment_entries_checks

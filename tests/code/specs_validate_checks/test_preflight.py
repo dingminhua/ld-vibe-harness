@@ -1,6 +1,12 @@
 import json
+import subprocess
+import sys
+from pathlib import Path
 
 from .common import checker, write_md
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 def test_preflight_existing_spec_update_requires_human_gate_but_does_not_authorize_write(tmp_path):
@@ -87,3 +93,30 @@ def test_preflight_cli_json_and_text_outputs(tmp_path, capsys):
     assert "受控写入 preflight 完成" in text_output
     assert "- status: blocked" in text_output
     assert "PREFLIGHT_TARGET_LOCATION_UNAUTHORIZED" in text_output
+
+
+def test_preflight_script_fast_path_outputs_json_without_full_cli_imports(tmp_path):
+    write_md(tmp_path / "code" / "example.py", "print('ok')\n")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "preflight",
+            "--root",
+            str(tmp_path),
+            "--target-path",
+            "code/example.py",
+            "--format",
+            "json",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    report = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert report["metadata"]["tool"] == "code/specs_validate.py preflight"
+    assert report["summary"]["status"] == "pass"
+    assert "v2 active 规范诊断完成" not in result.stdout
