@@ -20,6 +20,7 @@ from spec_checks import human_gate as human_gate_checks
 from spec_checks import index as index_checks
 from spec_checks import assurance as assurance_checks
 from spec_checks import ldvh_assurance as ldvh_assurance_checks
+from spec_checks import preflight as preflight_checks
 from spec_checks import assurance_report as assurance_report_checks
 from spec_checks import refs as refs_checks
 from spec_checks import runtime_projection as runtime_projection_checks
@@ -912,6 +913,20 @@ def v2_check_main(
     )
 
 
+def sync_preflight_config():
+    preflight_checks.PROJECT_ROOT = PROJECT_ROOT
+
+
+def preflight_build(root=None, target_path=None, operation="update", field_path=None, status=None):
+    sync_preflight_config()
+    return preflight_checks.preflight_build(root or PROJECT_ROOT, target_path, operation, field_path, status)
+
+
+def preflight_main(root=None, target_path=None, operation="update", field_path=None, status=None, output_format="text"):
+    sync_preflight_config()
+    return preflight_checks.preflight_main(root or PROJECT_ROOT, target_path, operation, field_path, status, output_format)
+
+
 # ══════════════════════════════════════════════════════════════════════
 # CLI
 # ══════════════════════════════════════════════════════════════════════
@@ -1003,6 +1018,15 @@ def build_parser():
     v2_parser.add_argument("--depth", type=int, default=1, help="expand/raw 层级的最大展开深度，默认 1。")
     v2_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在诊断时返回非零状态。")
 
+    # preflight
+    preflight_parser = subparsers.add_parser("preflight", help="执行受控写入前只读检查，不授权写入。")
+    preflight_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
+    preflight_parser.add_argument("--target-path", required=True, help="准备写入的目标路径，可为相对或绝对路径。")
+    preflight_parser.add_argument("--operation", choices=["create", "update", "delete", "move", "rename"], default="update", help="准备执行的写入类型，默认 update。")
+    preflight_parser.add_argument("--field-path", default=None, help="可选字段路径；第一版仅暴露降级诊断，不做字段级 Schema 校验。")
+    preflight_parser.add_argument("--status", default=None, help="可选状态值；第一版仅提示回到对应状态规则。")
+    preflight_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+
     # all
     all_parser = subparsers.add_parser("all", help="运行 v2 active specs 综合检查。")
     all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
@@ -1082,6 +1106,16 @@ def main(argv=None):
             relation_types=args.relation_type,
             depth=args.depth,
             projects=args.project,
+        )
+
+    if command == "preflight":
+        return preflight_main(
+            args.root,
+            args.target_path,
+            args.operation,
+            args.field_path,
+            args.status,
+            args.format,
         )
 
     if command == "all":

@@ -79,6 +79,7 @@
 | `python3 code/specs_validate.py ldvh-assurance-check` | 继续生成 LDVH 部署适配检查派生报告 |
 | `python3 code/specs_validate.py assurance-plan` | 继续生成只读 assurance-plan 聚合计划视图 |
 | `python3 code/specs_validate.py web-validate` | 继续输出 Web Validate 只读数据合同 |
+| `python3 code/specs_validate.py preflight --target-path <path>` | 继续执行受控写入前只读诊断；不得授权或执行写入 |
 
 拆分模块时，CLI 参数、exit code、关键诊断 code 和默认输入范围不得无说明改变。确需改变时，应先更新 `specs/04-Code确定性执行规范.md`、本文、测试和下游调用方。
 
@@ -102,7 +103,7 @@
 | Web Validate 派生数据压缩 | `code/spec_checks/web_validate.py` | `web_validate_*` |
 | specs 派生索引和诊断 | `code/spec_checks/index.py` | `SpecsChecker` 和 `INDEX_*` |
 | 知识地图只读投影 | `code/spec_checks/knowledge_map.py` | `code/spec_checks/v2.py` 中的当前知识地图预览逻辑 |
-| 受控写入前检查 | `code/spec_checks/preflight.py` | 尚未实现 |
+| 受控写入前检查 | `code/spec_checks/preflight.py` | 04.Att.07、`preflight_*` |
 
 模块迁移应优先选择边界清楚、依赖少、测试覆盖明确的能力域；不得在一次迁移中同时改变行为和搬移大量不相关能力域。
 
@@ -198,5 +199,5 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 1. `specs_validate.py` 的主要检查能力域已迁入 `code/spec_checks/`；该文件当前只应承担 CLI 兼容、配置同步、常量/函数兼容引用和跨模块编排；
 2. `specs_validate.py` 的结构化输出字段、错误码和诊断格式仍需后续统一；
-3. 知识地图只读投影核心已提取到 `code/spec_checks/knowledge_map.py`，仍通过 `v2-check` 兼容入口暴露；受控写入 preflight 模块和 CLI 尚未完成；
+3. 知识地图只读投影核心已提取到 `code/spec_checks/knowledge_map.py`，仍通过 `v2-check` 兼容入口暴露；受控写入 preflight 第一版已由 `code/spec_checks/preflight.py` 和 `python3 code/specs_validate.py preflight --target-path <path>` 承载；
 4. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。
