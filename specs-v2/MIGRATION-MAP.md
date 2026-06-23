@@ -78,11 +78,11 @@ migration_map:
 | `specs/00-LD-Vibe-Harness理念与纲要.md` | LDVH 为什么存在、AI 第一服务对象、V1-V10、运行闭环总体叙述 | `specs-v2/00-LDVH理念与价值标准.md`；运行闭环分别落入 02/03/07/08 | `split` | `human_confirmed` | 已确认原文关键表述保留；运行闭环、Markdown/YAML 承载倾向、保障要求和总纲一致性检查已明确下沉承接 |
 | `specs/01-目录说明.md` | 目录规划、根文件定位、编号区间、入口定位 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/README.md`、知识地图派生读取 | `split` | `human_confirmed` | 已确认由 01 的规范结构、当前目录登记、附件规则和 README 写作区入口共同承接；不恢复独立目录说明规范 |
 | `specs/02-术语规范.md` | 术语推荐表达、不推荐表达和命名边界 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/attachments/01.Att.02-术语表.md`、`specs-v2/attachments/01.Att.08-规范表达清单.md` | `merge` | `human_confirmed` | 已确认术语归入规范体系，附件只承载术语表和表达清单，不反向定义主规范原则 |
-| `specs/03-文档基础规范.md` | 文档工作区、吸收规则、引用纪律、文档结构底线 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/07-事实源边界与Git追溯规范.md` | `split` | `drafted_pending_review` | 核对吸收规则与过程输出回写边界的归口，不得被 01 或 07 静默吞并 |
+| `specs/03-文档基础规范.md` | 文档工作区、吸收规则、引用纪律、文档结构底线 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/07-事实源边界与Git追溯规范.md` | `split` | `human_confirmed` | 已确认规范身份、必要章节、引用纪律、附件和迁移治理由 01 承接；文档工作区事实源边界、studies/sources、吸收规则、单一事实源和过程输出回写边界由 07 承接 |
 | `specs/03.01-规范文档规范.md` | `ldvh_doc`、正式规范骨架、保障要求、Human Gate、Code 消费要求 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/attachments/01.Att.03-规范保障要求类型表.md`、`specs-v2/attachments/01.Att.04-规范身份字段表.md` | `merge` | `human_confirmed` | 已确认 v2 必要章节、身份块、附件规则、保障要求、Human Gate 和 Code 消费边界由 01 承接 |
-| `specs/03.02-事实模型文档规范.md` | 20-29 成员自描述、成员骨架、字段和状态锚点 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/20-Spark-火花.md` 到 `24-Study-研究报告.md`、`specs-v2/attachments/02.Att.*` | `split` | `drafted_pending_review` | 核对 `ldvh_member` 到 `v2_fact_model_member` 的双读映射、锚点和 Code 派生集合 |
+| `specs/03.02-事实模型文档规范.md` | 20-29 成员自描述、成员骨架、字段和状态锚点 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/20-Spark-火花.md` 到 `24-Study-研究报告.md`、`specs-v2/attachments/02.Att.*` | `split` | `human_confirmed` | 已确认事实模型成员身份、成员主文件骨架、集合状态、锚点、双读映射和 Code 派生集合边界由 02、02 附件和 20-24 成员主文件承接 |
 | `specs/03.03-行动编排文档规范.md` | 30-59 成员自描述、Context/Scenario/Gate/执行/证据锚点 | `specs-v2/03-行动编排规范.md` 定义生成规则；未来 `specs-v2/30-59` 成员由 v2 保障需求生成 | `defer` | `deferred_until_v2_requirement_plan` | v1 成员机制只作为参考；不得把 30-59 视为必须逐篇迁移 |
-| `specs/03.04-管辖项目配置规范.md` | `LDVH-GOVERNED-PROJECTS.yaml` schema、项目命名空间、管辖边界 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/04-Code确定性执行规范.md`、`specs-v2/06-运行时扩展规范.md` | `split` | `mapped_pending_review` | 核对管辖项目配置仍不得记录部署状态，不得默认接管用户 docs |
+| `specs/03.04-管辖项目配置规范.md` | `LDVH-GOVERNED-PROJECTS.yaml` schema、项目命名空间、管辖边界 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/04-Code确定性执行规范.md`、`specs-v2/06-运行时扩展规范.md`、`specs-v2/07-事实源边界与Git追溯规范.md` | `split` | `human_confirmed` | 已确认管辖项目配置事实源、最小字段边界、不记录部署/检查状态、不默认接管用户 docs、项目命名空间和 Code 只读校验入口由 01、04、06、07 共同承接 |
 | `specs/04-规范保障与环境适配基础规范.md` | 保障机制、能力保障和环境适配基础框架 | `specs-v2/06-运行时扩展规范.md`，并与 `specs-v2/01-规范体系基础规范.md` 的保障要求章节配合 | `split` | `human_confirmed` | 已确认保障要求提出归 01，固定运行时扩展承载、环境入口、薄引用、适配检查和人工降级归 06，不吞并 Code/Web/行动编排实现责任 |
 | `specs/04.01-规范保障声明规范.md` | 保障声明字段、保障要求类型、声明契约 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/attachments/01.Att.03-规范保障要求类型表.md`、`specs-v2/attachments/01.Att.07-行动编排接管建议矩阵.md` | `merge` | `human_confirmed` | 已确认普通保障要求与建议行动编排实例的关系，不保留 AI 检查要求作为松口自由项 |
 | `specs/04.02-LDVH能力资产与保障机制规范.md` | 能力资产登记、Rules/Skills/Agents/Hooks/Code/Web 边界 | `specs-v2/06-运行时扩展规范.md`、`specs-v2/04-Code确定性执行规范.md`、`specs-v2/05-Web信息同步规范.md` | `split` | `human_confirmed` | 已确认运行时扩展只登记固定 Rules/Skills/Agents/Hooks 承载物；Code/Web 是独立构成要素，不作为运行时扩展资产等同处理 |
@@ -180,15 +180,15 @@ v2 未 active 前，下列入口必须继续以 active `specs/` 为准：
 
 | v2 文件 | 初审判断 | 进入 Human 单篇核对前的主要缺口 |
 |---|---|---|
-| `00-LDVH理念与价值标准.md` | 已进入 Human 单篇核对 | 已确认 v1 00 存在理由、AI 第一服务对象、V1-V10、运行闭环下沉、Markdown/YAML 承载归口、保障要求收敛和总纲一致性检查承接 |
+| `00-LDVH理念与价值标准.md` | Human 单篇确认完成 | 已确认 v1 00 存在理由、AI 第一服务对象、V1-V10、运行闭环下沉、Markdown/YAML 承载归口、保障要求收敛和总纲一致性检查承接 |
 | `01-规范体系基础规范.md` | Human 单篇确认完成 | 已确认 01 只承接规范体系共同治理；v1 03.02/03.03 只作为成员声明和专属骨架共同治理方法来源，不表示 01 承接事实模型或行动编排成员完整骨架 |
-| `02-事实模型基础规范.md` | Human 单篇确认完成 | 已确认 02 承接 v1 05 系列基础职责；20-24 具体事实模型成员仍需逐篇核对，不随 02 自动完成 |
+| `02-事实模型基础规范.md` | Human 单篇确认完成 | 已确认 02 承接 v1 05 系列基础职责和 v1 03.02 的事实模型成员治理方法；20-24 具体事实模型成员已逐篇完成 Human 单篇确认 |
 | `04-Code确定性执行规范.md` | Human 单篇确认完成 | 已确认 04 承接 v1 07 Code 主体职责；知识地图和受控写入前检查均保持只读诊断或 preflight 边界 |
 | `05-Web信息同步规范.md` | Human 单篇确认完成 | 已确认 05 只承接 Web 契约、Human-facing 展示、受控轻写入白名单、Confirm UI、提交展示、知识地图展示和回归线；不限定 Web 实现语言、框架或技术栈 |
 | `06-运行时扩展规范.md` | Human 单篇确认完成 | 已确认 06 承接 v1 04/04.02/04.03 的固定运行时扩展、自描述、薄引用、Codex 候选入口、Hook 候选、适配检查和环境边界；Code/Web/行动编排/测试只作为外部归口或缺口分流方向 |
 | `07-事实源边界与Git追溯规范.md` | Human 单篇确认完成 | 已确认 07 承接 v1 09 与 v1 10 的事实源边界、过程输出回写、历史记录提取、Git 追溯和 commit message 契约；v1 44 提交流程仅作为后续行动编排参考 |
 | `08-测试基础规范.md` | Human 单篇确认完成 | 已确认 08 承接 v1 11 的测试治理、验证声明、证据边界、失败阻断、等价验证和 Code/Web 回归入口；测试服务六类构成要素验证，不替代构成要素本体规则 |
-| `20-Spark-火花.md` | Human 单篇确认完成 | 已确认 active 20、02 字段矩阵、Web 快速创建白名单和 Spark 生命周期保障需求已由 v2 20 承接；21-24 关联成员仍需逐篇核对 |
+| `20-Spark-火花.md` | Human 单篇确认完成 | 已确认 active 20、02 字段矩阵、Web 快速创建白名单和 Spark 生命周期保障需求已由 v2 20 承接；21-24 关联成员已完成 Human 单篇确认 |
 | `21-WorkCase-工作项.md` | Human 单篇确认完成 | 已确认 active 21、`21.Att.01`、orchestration 字段、关闭材料、Web 态势和提交展示边界已由 v2 21 承接 |
 | `22-ADR-决策.md` | Human 单篇确认完成 | 已确认 active 22 的决策吸收、状态机、Human Gate、字段契约和 Web 旧字段禁用规则已由 v2 22 承接 |
 | `23-Pitfall-踩坑经验.md` | Human 单篇确认完成 | 已确认 active 23 的经验准入、归档、吸收边界、标签、验证证据和 Web 详情规则已由 v2 23 承接 |

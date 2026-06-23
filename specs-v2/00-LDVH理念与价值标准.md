@@ -26,12 +26,12 @@ v2_spec:
     - "v2_relations"
     - "value_principles"
     - "human_gate_requirements"
-  migration_status: "partially_migrated"
+  migration_status: "migrated"
 ```
 
 > 文件状态：本文当前位于 `specs-v2/`，尚未切换为 active；正式规则仍以 `specs/00-LD-Vibe-Harness理念与纲要.md` 为准。
 >
-> 本文用于核对 v2 00 的定位、边界和写法。未经 Human 单篇确认前，本文不得作为 active 规范、Code 消费依据、Rules 入口依据或迁移完成结论。
+> 本文已完成 v2 00 的定位、边界和写法核对。active 切换前，本文不得作为 active 规范、Code 消费依据或 Rules 入口依据。
 
 ## 1. 本文解决的问题
 
