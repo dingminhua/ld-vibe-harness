@@ -40,7 +40,7 @@ v2_spec:
     - "fact_model_fields"
     - "fact_model_state_machine"
     - "fact_model_instance_checks"
-  migration_status: "partially_migrated"
+  migration_status: "migrated"
 ```
 
 ```yaml
@@ -444,7 +444,7 @@ Web 应把 WorkCase 作为 Human 直接查看和确认的主对象。Web 可以�
 
 ## 15. 待补齐事项
 
-1. WorkCase v2 草案和 `21.Att.01` 已迁入主要状态机、执行编排、方案审核、结果自检、结果复核、关闭确认、修订记录和 orchestration 长字段规则；仍需 Human 单篇核对后才能视为迁移完成；
+1. WorkCase v2 草案和 `21.Att.01` 已迁入主要状态机、执行编排、方案审核、结果自检、结果复核、关闭确认、修订记录和 orchestration 长字段规则，并已完成 Human 单篇确认；active 切换前仍以 active v1 WorkCase 规范为默认入口；
 2. active `ldvh_member` 与 v2 `v2_fact_model_member` 的双读 Code 实现、正反样例和切换策略尚未完成；本文不改变 Code 默认消费入口；
 3. WorkCase Web 派生态势、状态标签和关闭/提交口径应在 v2 Web 规范和实现迁移时复核；
 4. WorkCase 创建、方案审核、结果复核和关闭确认的具体行动编排不按 v1 直接迁入；应待 v2 保障需求稳定后进入行动编排候选计划；
