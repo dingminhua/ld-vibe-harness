@@ -83,10 +83,10 @@ migration_map:
 | `specs/03.02-事实模型文档规范.md` | 20-29 成员自描述、成员骨架、字段和状态锚点 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/20-Spark-火花.md` 到 `24-Study-研究报告.md`、`specs-v2/attachments/02.Att.*` | `split` | `drafted_pending_review` | 核对 `ldvh_member` 到 `v2_fact_model_member` 的双读映射、锚点和 Code 派生集合 |
 | `specs/03.03-行动编排文档规范.md` | 30-59 成员自描述、Context/Scenario/Gate/执行/证据锚点 | `specs-v2/03-行动编排规范.md` 定义生成规则；未来 `specs-v2/30-59` 成员由 v2 保障需求生成 | `defer` | `deferred_until_v2_requirement_plan` | v1 成员机制只作为参考；不得把 30-59 视为必须逐篇迁移 |
 | `specs/03.04-管辖项目配置规范.md` | `LDVH-GOVERNED-PROJECTS.yaml` schema、项目命名空间、管辖边界 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/04-Code确定性执行规范.md`、`specs-v2/06-运行时扩展规范.md` | `split` | `mapped_pending_review` | 核对管辖项目配置仍不得记录部署状态，不得默认接管用户 docs |
-| `specs/04-规范保障与环境适配基础规范.md` | 保障机制、能力保障和环境适配基础框架 | `specs-v2/06-运行时扩展规范.md`，并与 `specs-v2/01-规范体系基础规范.md` 的保障要求章节配合 | `split` | `drafted_pending_review` | 核对“保障要求提出”和“运行时扩展承载”没有混为一个章节 |
+| `specs/04-规范保障与环境适配基础规范.md` | 保障机制、能力保障和环境适配基础框架 | `specs-v2/06-运行时扩展规范.md`，并与 `specs-v2/01-规范体系基础规范.md` 的保障要求章节配合 | `split` | `human_confirmed` | 已确认保障要求提出归 01，固定运行时扩展承载、环境入口、薄引用、适配检查和人工降级归 06，不吞并 Code/Web/行动编排实现责任 |
 | `specs/04.01-规范保障声明规范.md` | 保障声明字段、保障要求类型、声明契约 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/attachments/01.Att.03-规范保障要求类型表.md`、`specs-v2/attachments/01.Att.07-行动编排接管建议矩阵.md` | `merge` | `human_confirmed` | 已确认普通保障要求与建议行动编排实例的关系，不保留 AI 检查要求作为松口自由项 |
-| `specs/04.02-LDVH能力资产与保障机制规范.md` | 能力资产登记、Rules/Skills/Agents/Hooks/Code/Web 边界 | `specs-v2/06-运行时扩展规范.md`、`specs-v2/04-Code确定性执行规范.md`、`specs-v2/05-Web信息同步规范.md` | `split` | `drafted_pending_review` | 核对六类构成要素与资产分类不被等同；Code/Web 是构成要素，不是运行时扩展 |
-| `specs/04.03-环境入口适配与部署规范.md` | 环境入口、薄引用、部署适配、适配检查 | `specs-v2/06-运行时扩展规范.md`、`specs-v2/attachments/06.Att.*` | `merge` | `drafted_pending_review` | 核对开发环境不是 LDVH 构成要素，运行时扩展只承载接入与适配能力 |
+| `specs/04.02-LDVH能力资产与保障机制规范.md` | 能力资产登记、Rules/Skills/Agents/Hooks/Code/Web 边界 | `specs-v2/06-运行时扩展规范.md`、`specs-v2/04-Code确定性执行规范.md`、`specs-v2/05-Web信息同步规范.md` | `split` | `human_confirmed` | 已确认运行时扩展只登记固定 Rules/Skills/Agents/Hooks 承载物；Code/Web 是独立构成要素，不作为运行时扩展资产等同处理 |
+| `specs/04.03-环境入口适配与部署规范.md` | 环境入口、薄引用、部署适配、适配检查 | `specs-v2/06-运行时扩展规范.md`、`specs-v2/attachments/06.Att.*` | `merge` | `human_confirmed` | 已确认开发环境不是 LDVH 构成要素；Codex 等外部环境只是接入与适配对象，适配检查结果不成为长期状态事实 |
 | `specs/05-事实模型基础规范.md` | 事实模型通用规则、事实实例、回写与证据适配 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/07-事实源边界与Git追溯规范.md` | `split` | `human_confirmed` | 已确认事实模型基础规则由 02 承接，02 不覆盖 v1 09 全局事实源原则；全局事实源仍由 07 单篇核对 |
 | `specs/05.01-字段定义与语义规范.md` | 字段语义、公共字段和模型字段 owner 分层 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/attachments/02.Att.01-字段注册表.md` | `merge` | `human_confirmed` | 已确认字段契约属于事实模型，公共字段语义和字段治理收口到 02 |
 | `specs/05.02-字段内容与格式规范.md` | 字段内容格式、结构化表达和格式约束 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/attachments/02.Att.01-字段注册表.md` | `merge` | `human_confirmed` | 已确认字段内容格式并入 02，作为字段内容表达规则而非独立权威域 |
@@ -185,7 +185,7 @@ v2 未 active 前，下列入口必须继续以 active `specs/` 为准：
 | `02-事实模型基础规范.md` | Human 单篇确认完成 | 已确认 02 承接 v1 05 系列基础职责；20-24 具体事实模型成员仍需逐篇核对，不随 02 自动完成 |
 | `04-Code确定性执行规范.md` | Human 单篇确认完成 | 已确认 04 承接 v1 07 Code 主体职责；知识地图和受控写入前检查均保持只读诊断或 preflight 边界 |
 | `05-Web信息同步规范.md` | Human 单篇确认完成 | 已确认 05 只承接 Web 契约、Human-facing 展示、受控轻写入白名单、Confirm UI、提交展示、知识地图展示和回归线；不限定 Web 实现语言、框架或技术栈 |
-| `06-运行时扩展规范.md` | 接近可核对 | 需要核对 v1 04 系列承接、运行时扩展自描述、Codex 入口、Hook、薄引用和适配检查边界 |
+| `06-运行时扩展规范.md` | Human 单篇确认完成 | 已确认 06 承接 v1 04/04.02/04.03 的固定运行时扩展、自描述、薄引用、Codex 候选入口、Hook 候选、适配检查和环境边界；Code/Web/行动编排/测试只作为外部归口或缺口分流方向 |
 | `07-事实源边界与Git追溯规范.md` | 接近可核对但影响高 | 需要逐项核对 v1 09 与 v1 10，确认事实源边界、过程输出回写、Git 追溯和 commit message 契约没有被局部规范吞并 |
 | `08-测试基础规范.md` | 接近可核对 | 需要核对 v1 11 的测试治理、验证声明、证据边界、失败阻断、等价验证和 Code/Web 回归入口 |
 | `20-Spark-火花.md` | 可进入准备核对 | 需要逐项核对 active 20、02 字段矩阵、Web 快速创建白名单和 Spark 生命周期保障需求 |
