@@ -119,4 +119,4 @@ def test_preflight_script_fast_path_outputs_json_without_full_cli_imports(tmp_pa
     assert result.returncode == 0
     assert report["metadata"]["tool"] == "code/specs_validate.py preflight"
     assert report["summary"]["status"] == "pass"
-    assert "v2 active 规范诊断完成" not in result.stdout
+    assert "active specs 规范诊断完成" not in result.stdout

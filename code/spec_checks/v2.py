@@ -88,7 +88,7 @@ V2_REQUIRED_00_SECTIONS = {
     "待补齐事项",
 }
 V2_ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
-V2_INPUT_SCOPES = {"specs_v2", "all", "history_specs_v1", "governed_projects", "git_history"}
+V2_INPUT_SCOPES = {"active_specs", "specs_v2", "all", "history_specs_v1", "governed_projects", "git_history"}
 V2_QUERY_LAYERS = {"entry", "neighbors", "expand", "raw"}
 V2_PROJECT_SCOPES = {"current_project", "all_governed_projects", "explicit_projects"}
 class V2Checker(KnowledgeMapMixin):
@@ -96,7 +96,7 @@ class V2Checker(KnowledgeMapMixin):
         self,
         root=None,
         specs_dir="specs",
-        input_scope="specs_v2",
+        input_scope="active_specs",
         query_layer="entry",
         project_scope="current_project",
         start_node=None,
@@ -280,12 +280,12 @@ class V2Checker(KnowledgeMapMixin):
             )
 
     def should_parse_specs_v2(self):
-        return self.input_scope in {"specs_v2", "all"}
+        return self.input_scope in {"active_specs", "specs_v2", "all"}
 
     def effective_input_scope(self):
         scopes = []
         if self.should_parse_specs_v2():
-            scopes.append("specs_v2")
+            scopes.append("active_specs")
         return scopes
 
     def is_degraded(self):
@@ -733,7 +733,7 @@ def format_text(report):
     edges = report.get("knowledge_map", {}).get("edges", [])
     query = report.get("knowledge_map", {}).get("query", {})
     lines = [
-        "v2 active 规范诊断完成",
+        "active specs 规范诊断完成",
         f"- input_scope: {query.get('input_scope')}",
         f"- layer: {query.get('layer')}",
         f"- degraded: {query.get('degraded')}",
@@ -759,7 +759,7 @@ def format_text(report):
 def v2_check_build(
     root=None,
     specs_dir="specs",
-    input_scope="specs_v2",
+    input_scope="active_specs",
     query_layer="entry",
     project_scope="current_project",
     start_node=None,
@@ -785,7 +785,7 @@ def v2_check_main(
     specs_dir="specs",
     output_format="json",
     fail_on_diagnostics=False,
-    input_scope="specs_v2",
+    input_scope="active_specs",
     query_layer="entry",
     project_scope="current_project",
     start_node=None,

@@ -36,7 +36,7 @@ def test_specs_validate_all_cli_passes_on_current_repo(tmp_path):
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "v2 active 规范诊断完成" in result.stdout
+    assert "active specs 规范诊断完成" in result.stdout
     assert "diagnostics: 0" in result.stdout
 
 

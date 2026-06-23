@@ -40,11 +40,11 @@ def _fast_preflight_main(argv):
 def _fast_v2_check_main(argv):
     from spec_checks import v2 as v2_checks
 
-    parser = argparse.ArgumentParser(description="生成 v2 active specs 诊断和知识地图派生预览。")
+    parser = argparse.ArgumentParser(description="生成 active specs 诊断和知识地图派生预览。")
     parser.add_argument("--root", default=str(Path(__file__).resolve().parent.parent), help="项目根目录，默认使用当前工具所在项目。")
     parser.add_argument("--specs-dir", default="specs", help="要检查的 v2 规范目录，默认 specs。")
     parser.add_argument("--format", choices=["text", "json"], default="json", help="报告输出格式，默认 json。")
-    parser.add_argument("--input-scope", choices=["specs_v2", "all", "history_specs_v1", "governed_projects", "git_history"], default="specs_v2", help="知识地图输入范围，默认 specs_v2。")
+    parser.add_argument("--input-scope", choices=["active_specs", "specs_v2", "all", "history_specs_v1", "governed_projects", "git_history"], default="active_specs", help="知识地图输入范围，默认 active_specs；specs_v2 保留为兼容别名。")
     parser.add_argument("--layer", choices=["entry", "neighbors", "expand", "raw"], default="entry", help="知识地图渐进读取层级，默认 entry。")
     parser.add_argument("--project-scope", choices=["current_project", "all_governed_projects", "explicit_projects"], default="current_project", help="项目范围，默认 current_project。")
     parser.add_argument("--project", action="append", default=[], help="project_scope=explicit_projects 时指定项目，可重复。")
@@ -269,7 +269,7 @@ def _fast_index_main(argv):
 
 def _fast_all_main(argv):
     project_root = _project_root_fast()
-    parser = argparse.ArgumentParser(description="运行 v2 active specs 综合检查。")
+    parser = argparse.ArgumentParser(description="运行 active specs 综合检查。")
     parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
     parser.add_argument("--root", default=str(project_root), help="项目根目录（用于 index 子命令）。")
     parser.add_argument("--workspace-root", default=str(_default_workspace_root_path_fast()), help="工作区根目录（用于 governed-projects 检查），默认自动定位。")
@@ -292,7 +292,7 @@ def _fast_all_main(argv):
         specs_dir,
         "text",
         args.fail_on_diagnostics,
-        input_scope="specs_v2",
+        input_scope="active_specs",
         query_layer="entry",
         project_scope="current_project",
     )
@@ -1165,7 +1165,7 @@ def infer_specs_dir_from_paths(paths):
     return index_checks.infer_specs_dir_from_paths(paths)
 
 
-# v2 — active specs 诊断与知识地图投影
+# active specs 诊断与知识地图投影
 
 def sync_v2_config():
     v2_checks.PROJECT_ROOT = PROJECT_ROOT
@@ -1174,7 +1174,7 @@ def sync_v2_config():
 def v2_check_build(
     root=None,
     specs_dir="specs",
-    input_scope="specs_v2",
+    input_scope="active_specs",
     query_layer="entry",
     project_scope="current_project",
     start_node=None,
@@ -1201,7 +1201,7 @@ def v2_check_main(
     specs_dir="specs",
     output_format="json",
     fail_on_diagnostics=False,
-    input_scope="specs_v2",
+    input_scope="active_specs",
     query_layer="entry",
     project_scope="current_project",
     start_node=None,
@@ -1317,11 +1317,11 @@ def build_parser():
     index_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")
 
     # v2-check
-    v2_parser = subparsers.add_parser("v2-check", help="生成 v2 active specs 诊断和知识地图派生预览。")
+    v2_parser = subparsers.add_parser("v2-check", help="生成 active specs 诊断和知识地图派生预览。")
     v2_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
     v2_parser.add_argument("--specs-dir", default="specs", help="要检查的 v2 规范目录，默认 specs。")
     v2_parser.add_argument("--format", choices=["text", "json"], default="json", help="报告输出格式，默认 json。")
-    v2_parser.add_argument("--input-scope", choices=["specs_v2", "all", "history_specs_v1", "governed_projects", "git_history"], default="specs_v2", help="知识地图输入范围，默认 specs_v2。")
+    v2_parser.add_argument("--input-scope", choices=["active_specs", "specs_v2", "all", "history_specs_v1", "governed_projects", "git_history"], default="active_specs", help="知识地图输入范围，默认 active_specs；specs_v2 保留为兼容别名。")
     v2_parser.add_argument("--layer", choices=["entry", "neighbors", "expand", "raw"], default="entry", help="知识地图渐进读取层级，默认 entry。")
     v2_parser.add_argument("--project-scope", choices=["current_project", "all_governed_projects", "explicit_projects"], default="current_project", help="项目范围，默认 current_project。")
     v2_parser.add_argument("--project", action="append", default=[], help="project_scope=explicit_projects 时指定项目，可重复。")
@@ -1340,7 +1340,7 @@ def build_parser():
     preflight_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
     # all
-    all_parser = subparsers.add_parser("all", help="运行 v2 active specs 综合检查。")
+    all_parser = subparsers.add_parser("all", help="运行 active specs 综合检查。")
     all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
     all_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录（用于 index 子命令）。")
     all_parser.add_argument("--workspace-root", default=str(DEFAULT_WORKSPACE_ROOT), help="工作区根目录（用于 governed-projects 检查），默认自动定位。")
@@ -1439,7 +1439,7 @@ def main(argv=None):
             specs_dir,
             "text",
             args.fail_on_diagnostics,
-            input_scope="specs_v2",
+            input_scope="active_specs",
             query_layer="entry",
             project_scope="current_project",
         )

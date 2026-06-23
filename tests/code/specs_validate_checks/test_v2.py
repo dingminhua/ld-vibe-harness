@@ -595,12 +595,12 @@ def test_v2_check_json_and_text_output_shape_are_stable(tmp_path, capsys):
     assert report["metadata"]["tool"] == "code/specs_validate.py v2-check"
     assert report["metadata"]["read_only"] is True
     assert report["metadata"]["knowledge_map_boundary"] == "read_only_projection_not_fact_source"
-    assert report["metadata"]["input_scope"] == "specs_v2"
-    assert report["metadata"]["effective_input_scope"] == ["specs_v2"]
+    assert report["metadata"]["input_scope"] == "active_specs"
+    assert report["metadata"]["effective_input_scope"] == ["active_specs"]
     assert report["knowledge_map"]["schema_version"] == "04.Att.06.v1"
     assert report["knowledge_map"]["generated_at"] == report["metadata"]["generated_at"]
     assert report["knowledge_map"]["tool"] == report["metadata"]["tool"]
-    assert report["knowledge_map"]["input_scope"] == "specs_v2"
+    assert report["knowledge_map"]["input_scope"] == "active_specs"
     assert report["knowledge_map"]["degraded"] is False
     assert report["knowledge_map"]["diagnostics"] == []
     assert report["knowledge_map"]["source_refs"]
@@ -621,8 +621,8 @@ def test_v2_check_json_and_text_output_shape_are_stable(tmp_path, capsys):
     text_output = capsys.readouterr().out
 
     assert exit_code == 0
-    assert "v2 active 规范诊断完成" in text_output
-    assert "- input_scope: specs_v2" in text_output
+    assert "active specs 规范诊断完成" in text_output
+    assert "- input_scope: active_specs" in text_output
     assert "- layer: entry" in text_output
     assert "- degraded: False" in text_output
     assert "- diagnostics: 0" in text_output
@@ -709,6 +709,16 @@ def test_v2_check_invalid_query_options_return_diagnostics_without_parsing_specs
     assert "V2_PROJECT_SCOPE_NOT_IMPLEMENTED" in codes
 
 
+def test_v2_check_accepts_legacy_specs_v2_input_scope_alias(tmp_path):
+    write_minimal_v2_knowledge_map_fixture(tmp_path)
+
+    report = checker.v2_check_build(tmp_path, input_scope="specs_v2")
+
+    assert report["metadata"]["input_scope"] == "specs_v2"
+    assert report["metadata"]["effective_input_scope"] == ["active_specs"]
+    assert report["knowledge_map"]["input_scope"] == "specs_v2"
+
+
 def test_v2_check_script_fast_path_outputs_json(tmp_path):
     write_minimal_v2_knowledge_map_fixture(tmp_path)
 
@@ -730,6 +740,6 @@ def test_v2_check_script_fast_path_outputs_json(tmp_path):
 
     assert result.returncode == 0
     assert report["metadata"]["tool"] == "code/specs_validate.py v2-check"
-    assert report["metadata"]["input_scope"] == "specs_v2"
+    assert report["metadata"]["input_scope"] == "active_specs"
     assert report["knowledge_map"]["schema_version"] == "04.Att.06.v1"
     assert report["diagnostics"] == []
