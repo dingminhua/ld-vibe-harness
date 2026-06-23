@@ -82,7 +82,7 @@ Human Gate 必须发生在实际文件移动、路径替换、入口切换和事
 |---|---|---|
 | active v1 规范 | `specs/` | `history/specs-v1/` |
 | v2 正式规范正文 | `specs-v2/{00-08,20-29}.md` 和授权附件 | `specs/` |
-| v2 写作区辅助控制文件 | `specs-v2/README.md`、`PLAN.md`、`MIGRATION-MAP.md`、`V1-UNDERSTANDING-GATE.md`、`V2-ACTIVATION-PLAN.md` | `history/specs-v2-migration/` |
+| v2 写作区辅助控制文件 | 迁移期写作区入口、`PLAN.md`、`MIGRATION-MAP.md`、`V1-UNDERSTANDING-GATE.md`、`V2-ACTIVATION-PLAN.md` | `history/specs-v2-migration/` |
 | v2 未处理草案 | `specs-v2/` 中未被 Human 确认的文件 | 不进入 active `specs/`，按 Human Gate 决定归档或保留 |
 
 `specs-v2/` 不能整体原样改名为 `specs/`。只有已核对、已确认、具备 active 身份转换规则的规范正文、成员主文件和授权附件可以进入新的 active `specs/`。

@@ -56,6 +56,14 @@ npm run web:restart
 npm run web:restart
 ```
 
+Web 页面开发先阅读：
+
+1. `web/docs/10-Web开发现状与设计语言基线.md`
+2. `web/docs/01-全局设计约束.md`
+3. 当前页面对应文档，例如 ObjectList、ObjectDetail 或 Changelog。
+
+当前设计语言以提交、研究、决策、火花、经验五个已完善模块为基线。后续页面改造应优先复用它们的列表卡片、详情身份头部、正文节点、关联行、复制语义和右侧扩展阅读语言。
+
 ## 检查入口
 
 仓库根目录提供统一工程入口；测试仍统一放在根级 `tests/` 下。
@@ -71,6 +79,14 @@ python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text
 `npm run test:code` 是 Code 侧完整验证入口；`v2-check` 是 active specs 诊断和只读知识地图预览入口，不替代完整测试、Web 回归或 Human Gate。
 
 如果 Code 工具在当前环境不可用，不能把工具输出缺失解释为规范通过；应回到 Git 文件事实源、对应 `specs/` 原文、Rules 入口和人工降级检查。
+
+## 资料目录边界
+
+`docs/studies/` 是 LDVH 自身项目的内部研究资料区，只用于临时承载方案分析、评估材料和吸收候选。
+
+`docs/sources/` 是 LDVH 自身项目的外部信源资料区，只用于临时承载外部资料、引用副本、摘要和第三方参考。
+
+这两个目录不承载正式规范依据。已被采纳的稳定结论应以 `specs/`、`ldvh-base/`、`code/`、`web/` 或对应权威事实源为准；未被采纳、不再需要或尚未吸收的资料不作为当前入口保留。
 
 ## 项目状态
 

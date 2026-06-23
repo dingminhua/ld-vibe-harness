@@ -76,7 +76,7 @@ migration_map:
 | v1 来源 | v1 职责 | v2 目标 | 动作 | 状态 | 阻断/核对条件 |
 |---|---|---|---|---|---|
 | `specs/00-LD-Vibe-Harness理念与纲要.md` | LDVH 为什么存在、AI 第一服务对象、V1-V10、运行闭环总体叙述 | `specs-v2/00-LDVH理念与价值标准.md`；运行闭环分别落入 02/03/07/08 | `split` | `human_confirmed` | 已确认原文关键表述保留；运行闭环、Markdown/YAML 承载倾向、保障要求和总纲一致性检查已明确下沉承接 |
-| `specs/01-目录说明.md` | 目录规划、根文件定位、编号区间、入口定位 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/README.md`、知识地图派生读取 | `split` | `human_confirmed` | 已确认由 01 的规范结构、当前目录登记、附件规则和 README 写作区入口共同承接；不恢复独立目录说明规范 |
+| `specs/01-目录说明.md` | 目录规划、根文件定位、编号区间、入口定位 | `specs-v2/01-规范体系基础规范.md`、迁移期写作区入口、知识地图派生读取 | `split` | `human_confirmed` | 已确认由 01 的规范结构、当前目录登记、附件规则和迁移期写作区入口共同承接；不恢复独立目录说明规范；active 切换后仅保留项目根 README 作为 README 入口 |
 | `specs/02-术语规范.md` | 术语推荐表达、不推荐表达和命名边界 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/attachments/01.Att.02-术语表.md`、`specs-v2/attachments/01.Att.08-规范表达清单.md` | `merge` | `human_confirmed` | 已确认术语归入规范体系，附件只承载术语表和表达清单，不反向定义主规范原则 |
 | `specs/03-文档基础规范.md` | 文档工作区、吸收规则、引用纪律、文档结构底线 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/07-事实源边界与Git追溯规范.md` | `split` | `human_confirmed` | 已确认规范身份、必要章节、引用纪律、附件和迁移治理由 01 承接；文档工作区事实源边界、studies/sources、吸收规则、单一事实源和过程输出回写边界由 07 承接 |
 | `specs/03.01-规范文档规范.md` | `ldvh_doc`、正式规范骨架、保障要求、Human Gate、Code 消费要求 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/attachments/01.Att.03-规范保障要求类型表.md`、`specs-v2/attachments/01.Att.04-规范身份字段表.md` | `merge` | `human_confirmed` | 已确认 v2 必要章节、身份块、附件规则、保障要求、Human Gate 和 Code 消费边界由 01 承接 |
