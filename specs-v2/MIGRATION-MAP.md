@@ -75,7 +75,7 @@ migration_map:
 
 | v1 来源 | v1 职责 | v2 目标 | 动作 | 状态 | 阻断/核对条件 |
 |---|---|---|---|---|---|
-| `specs/00-LD-Vibe-Harness理念与纲要.md` | LDVH 为什么存在、AI 第一服务对象、V1-V10、运行闭环总体叙述 | `specs-v2/00-LDVH理念与价值标准.md`；运行闭环分别落入 02/03/07/08 | `split` | `drafted_pending_review` | 核对原文关键表述是否保留；确认运行闭环没有在 00 中丢失而是被下沉承接 |
+| `specs/00-LD-Vibe-Harness理念与纲要.md` | LDVH 为什么存在、AI 第一服务对象、V1-V10、运行闭环总体叙述 | `specs-v2/00-LDVH理念与价值标准.md`；运行闭环分别落入 02/03/07/08 | `split` | `ready_for_human_review` | 已确认原文关键表述保留；运行闭环、Markdown/YAML 承载倾向、保障要求和总纲一致性检查已明确下沉承接 |
 | `specs/01-目录说明.md` | 目录规划、根文件定位、编号区间、入口定位 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/README.md`、知识地图派生读取 | `split` | `drafted_pending_review` | 核对目录说明是否由 01 的规范结构和 README 写作区入口共同承接；不得恢复独立目录说明规范 |
 | `specs/02-术语规范.md` | 术语推荐表达、不推荐表达和命名边界 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/attachments/01.Att.02-术语表.md`、`specs-v2/attachments/01.Att.08-规范表达清单.md` | `merge` | `drafted_pending_review` | 核对附件只承载术语表和表达清单，不反向定义主规范原则 |
 | `specs/03-文档基础规范.md` | 文档工作区、吸收规则、引用纪律、文档结构底线 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/07-事实源边界与Git追溯规范.md` | `split` | `drafted_pending_review` | 核对吸收规则与过程输出回写边界的归口，不得被 01 或 07 静默吞并 |
@@ -180,7 +180,7 @@ v2 未 active 前，下列入口必须继续以 active `specs/` 为准：
 
 | v2 文件 | 初审判断 | 进入 Human 单篇核对前的主要缺口 |
 |---|---|---|
-| `00-LDVH理念与价值标准.md` | 接近可核对 | 需要再次逐句核对 v1 00 的存在理由、AI 第一服务对象、V1-V10 和运行闭环下沉去向 |
+| `00-LDVH理念与价值标准.md` | 已进入 Human 单篇核对 | 已确认 v1 00 存在理由、AI 第一服务对象、V1-V10、运行闭环下沉、Markdown/YAML 承载归口、保障要求收敛和总纲一致性检查承接 |
 | `01-规范体系基础规范.md` | 接近可核对 | 需要核对 `v2_spec`/`v2_attachment` 与 v1 `ldvh_doc` 的双读关系、术语附件和身份附件是否完整 |
 | `02-事实模型基础规范.md` | 可进入准备核对 | 需要与 20-24 成员、字段注册表、字段矩阵和 active 05.03 对象特有字段逐项对照 |
 | `04-Code确定性执行规范.md` | 可进入准备核对 | 需要核对 v2-check 现状、v1-v2 双读、输出 Schema、降级诊断和受控写入前检查边界 |
