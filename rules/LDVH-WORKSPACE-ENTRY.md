@@ -28,6 +28,7 @@ ldvh_asset:
   verification:
     - "python3 code/specs_validate.py governed-projects"
     - "python3 code/specs_validate.py deployment-entries"
+    - "python3 code/specs_validate.py v2-check --input-scope runtime_extensions --fail-on-diagnostics --format text"
   sync_triggers:
     - "source_specs 中任一 active 规范发生入口职责、事实源边界、Human Gate、Code 诊断或知识地图输入变化"
     - "管辖项目配置规则变化"
@@ -85,6 +86,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 |---|---|---|
 | 管辖项目配置 | `python3 code/specs_validate.py governed-projects` | 检查工作区根目录管辖项目配置 |
 | specs 规范入口和章节 | `python3 code/specs_validate.py v2-check --format text` | 生成 active specs 规范诊断和知识地图派生预览 |
+| 固定运行时扩展自描述 | `python3 code/specs_validate.py v2-check --input-scope runtime_extensions --format text` | 只读投影固定运行时扩展 `ldvh_asset`，用于入口、来源规范和同步触发定位 |
 | 工作对象列表 | `python3 code/fact_cli.py list <type>` | 查询当前项目 WorkCase、ADR、Spark、Pitfall 或 Study 摘要 |
 | 工作对象详情 | `python3 code/fact_cli.py show <id>` | 查询单个工作对象详情 |
 | 工作对象搜索 | `python3 code/fact_cli.py search <keyword>` | 按关键词搜索工作对象事实源 |

@@ -28,6 +28,7 @@ ldvh_asset:
   handoff: "处理管辖项目工作对象时交还 rules/LDVH-WORKSPACE-ENTRY.md"
   verification:
     - "python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text"
+    - "python3 code/specs_validate.py v2-check --input-scope runtime_extensions --fail-on-diagnostics --format text"
     - "python3 code/specs_validate.py all --fail-on-diagnostics"
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:
@@ -77,7 +78,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 1. 确认当前任务是否维护 LDVH 产品资产；
 2. 涉及目录、编号或文件归属判断时，读取 `specs/01-规范体系基础规范.md`；
 3. 涉及术语、命名或不推荐表达时，读取 `specs/attachments/01.Att.02-术语表.md`；
-4. 涉及 specs 修改时，读取 `specs/01-规范体系基础规范.md`、目标规范和必要的 04/06/07/08 规范，并按 01 与 06 评估固定 Rules 资产是否受影响；
+4. 涉及 specs 修改时，读取 `specs/01-规范体系基础规范.md`、目标规范和必要的 04/06/07/08 规范，优先运行 `python3 code/specs_validate.py preflight --target-path <path>`，并按 01 与 06 评估固定 Rules 资产是否受影响；
 5. 涉及 Rules、Skill、Agent、Hook 或环境适配时，读取 `specs/06-运行时扩展规范.md`；涉及 Code 或 Web 时分别读取 `specs/04-Code确定性执行规范.md` 或 `specs/05-Web信息同步规范.md`；
 6. 能由 Code 定位、聚合或检查的内容，优先使用 Code 工具查询；工具输出只作为导航、聚合和诊断结果，不替代权威文件原文；
 7. 修改完成后运行对应校验命令，并把稳定结论写回权威事实源。
@@ -87,6 +88,8 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 | 查询目标 | 优先命令 | 用途 |
 |---|---|---|
 | specs 规范入口和章节 | `python3 code/specs_validate.py v2-check --format text` | 生成 active specs 规范诊断和知识地图派生预览 |
+| 固定运行时扩展自描述 | `python3 code/specs_validate.py v2-check --input-scope runtime_extensions --format text` | 只读投影固定运行时扩展 `ldvh_asset`，辅助定位 Rules/Skill/Hook 来源规范和同步影响 |
+| specs 写入前检查 | `python3 code/specs_validate.py preflight --target-path <path>` | 只读提示 Human Gate、Git 追溯、同步影响和固定 Rules 资产影响；不授权写入 |
 | specs 综合检查 | `python3 code/specs_validate.py all --fail-on-diagnostics` | 执行 active specs 综合校验 |
 | LDVH Git 提交准备 | `ldvh-git-commit` Skill、`python3 code/commit_validate.py --check-message-file <message-file>` | 按 07 的 commit message 契约拆分、编写、预检并创建提交 |
 | Rules 环境入口接入 | 按 `specs/06-运行时扩展规范.md` §4.1-§4.4 执行 | 官方维护 Codex App 适配路径；默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口 |
@@ -97,10 +100,10 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 | 场景 | 先用工具 | 必读权威入口 |
 |---|---|---|
 | 理解 LDVH 总体规则 | `index` | `specs/00-LDVH理念与价值标准.md`、`specs/01-规范体系基础规范.md`、`specs/attachments/01.Att.02-术语表.md` |
-| 修改 specs 正式规范 | `v2-check`、`all` | `specs/01-规范体系基础规范.md`、目标规范 |
+| 修改 specs 正式规范 | `preflight`、`v2-check`、`all` | `specs/01-规范体系基础规范.md`、目标规范、必要时 `specs/06-运行时扩展规范.md` |
 | 修改或理解事实模型规范 | `v2-check` | `specs/02-事实模型基础规范.md` 和对应 `specs/20-29` 事实模型规范 |
 | 处理行动编排规范 | `v2-check` | `specs/03-行动编排规范.md` 和未来 `specs/30-59` 行动编排规范 |
-| 处理规范保障、环境适配或适配措施 | `v2-check` | `specs/01-规范体系基础规范.md`、`specs/06-运行时扩展规范.md` |
+| 处理规范保障、环境适配或适配措施 | `v2-check`、`v2-check --input-scope runtime_extensions` | `specs/01-规范体系基础规范.md`、`specs/06-运行时扩展规范.md` |
 | 处理 Code、工具、脚本或校验 | 对应工具帮助、测试命令 | `specs/06-运行时扩展规范.md`、`specs/04-Code确定性执行规范.md`、对应 `code/` 实现和 `tests/` |
 | 处理 Web 或 Human-facing 入口 | `index`、相关后端或 Web 校验 | `specs/05-Web信息同步规范.md` |
 | 准备 LDVH Git 提交 | `ldvh-git-commit`、`commit_validate.py` | `specs/07-事实源边界与Git追溯规范.md`、`skills/ldvh-git-commit/SKILL.md`、`hooks/ldvh-hooks.yaml` |
