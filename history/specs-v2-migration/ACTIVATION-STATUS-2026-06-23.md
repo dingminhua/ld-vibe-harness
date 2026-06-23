@@ -89,3 +89,4 @@ Web 暂不接入 v2 active 工作流。
 | 事项 | 状态 | 说明 |
 |---|---|---|
 | commit validator v2 化 | 已完成 | `code/commit_validate.py` 的帮助、注释和成功提示已改为引用 `specs/07-事实源边界与Git追溯规范.md`、`07.Att.02`、`07.Att.03`、`07.Att.04` 和 `07.Att.08` |
+| 工作区评估材料吸收 | 已记录 | `CLOSURE-AUDIT-2026-06-23.md` 已把工作区根目录两份评估文档吸收为 v2 active 后迁移收口核对项；未直接修改 00 或其它 active specs |
