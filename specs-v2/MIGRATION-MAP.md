@@ -99,9 +99,9 @@ migration_map:
 | `specs/11-测试基础规范.md` | 测试治理、验证声明、测试证据和回归同步 | `specs-v2/08-测试基础规范.md` | `migrate` | `human_confirmed` | 已确认测试治理、验证声明、测试证据边界、失败阻断、等价验证、同步触发和 Code/Web/运行时扩展测试归属由 08 承接，当前验证入口不固化为长期技术选型义务 |
 | `specs/20-Spark-火花.md` | Spark 事实模型成员 | `specs-v2/20-Spark-火花.md` | `migrate` | `human_confirmed` | 已确认 Spark 准入、事实源、状态机、Study 不作为 resolved_to、多线分流、字段契约、Human Gate 和 Web 快速创建白名单由 20 承接 |
 | `specs/21-WorkCase-工作项.md` | WorkCase 事实模型成员 | `specs-v2/21-WorkCase-工作项.md` | `migrate` | `human_confirmed` | 已确认工作项准入、orchestration 字段、执行项内部化、方案审核、结果自检、结果复核、关闭证据、Human Gate 和状态流转由 v2 21 承接 |
-| `specs/22-ADR-决策.md` | ADR 事实模型成员 | `specs-v2/22-ADR-决策.md` | `migrate` | `drafted_pending_review` | 核对决策准入、后果、吸收、替代和关闭规则 |
-| `specs/23-Pitfall-踩坑经验.md` | Pitfall 事实模型成员 | `specs-v2/23-Pitfall-踩坑经验.md` | `migrate` | `drafted_pending_review` | 核对经验准入、复发风险、吸收和长期回流 |
-| `specs/24-Study-研究报告.md` | Study 事实模型成员 | `specs-v2/24-Study-研究报告.md` | `migrate` | `drafted_pending_review` | 核对来源、frontmatter、吸收路径和归档边界 |
+| `specs/22-ADR-决策.md` | ADR 事实模型成员 | `specs-v2/22-ADR-决策.md` | `migrate` | `human_confirmed` | 已确认决策准入、五段式后果、规范吸收、替代/废弃、Human Gate、字段契约和 Web 旧字段禁用规则由 v2 22 承接 |
+| `specs/23-Pitfall-踩坑经验.md` | Pitfall 事实模型成员 | `specs-v2/23-Pitfall-踩坑经验.md` | `migrate` | `human_confirmed` | 已确认经验准入、已解决已验证前提、状态机、吸收边界、标签、验证证据、Human Gate 和 Web 详情边界由 v2 23 承接 |
+| `specs/24-Study-研究报告.md` | Study 事实模型成员 | `specs-v2/24-Study-研究报告.md` | `migrate` | `human_confirmed` | 已确认 Study 准入、Markdown frontmatter、正文骨架、结构化 URL、docs/studies 边界、Human Gate 和 Web 阅读边界由 v2 24 承接 |
 | `specs/30-action-orchestration-governance-行动编排创建审核与治理.md` | 行动编排创建、审核和治理流程 | 未来行动编排候选计划参考材料 | `defer` | `deferred_until_v2_requirement_plan` | 待 v2 各规范提出行动编排需求后，判断是否需要新的创建/审核/治理编排 |
 | `specs/41-fact-model-audit-事实模型审核.md` | 事实模型审核行动编排 | 未来行动编排候选计划参考材料 | `defer` | `deferred_until_v2_requirement_plan` | 待 v2 02 与 20-29 提出保障需求后，判断是否需要事实模型审核编排 |
 | `specs/42-specs-audit-规范审核.md` | 规范审核行动编排 | 未来行动编排候选计划参考材料 | `defer` | `deferred_until_v2_requirement_plan` | 待 v2 01 和各主规范提出保障需求后，判断是否需要规范审核编排 |
@@ -190,9 +190,9 @@ v2 未 active 前，下列入口必须继续以 active `specs/` 为准：
 | `08-测试基础规范.md` | Human 单篇确认完成 | 已确认 08 承接 v1 11 的测试治理、验证声明、证据边界、失败阻断、等价验证和 Code/Web 回归入口；测试服务六类构成要素验证，不替代构成要素本体规则 |
 | `20-Spark-火花.md` | Human 单篇确认完成 | 已确认 active 20、02 字段矩阵、Web 快速创建白名单和 Spark 生命周期保障需求已由 v2 20 承接；21-24 关联成员仍需逐篇核对 |
 | `21-WorkCase-工作项.md` | Human 单篇确认完成 | 已确认 active 21、`21.Att.01`、orchestration 字段、关闭材料、Web 态势和提交展示边界已由 v2 21 承接 |
-| `22-ADR-决策.md` | 可进入准备核对 | 需要逐项核对 active 22、决策吸收、状态机、Human Gate 和 Web 旧字段禁用规则 |
-| `23-Pitfall-踩坑经验.md` | 可进入准备核对 | 需要逐项核对 active 23、经验准入、归档、吸收边界、标签和 Web 详情规则 |
-| `24-Study-研究报告.md` | 可进入准备核对 | 需要逐项核对 active 24、frontmatter、正文骨架、来源、归档和 Web 阅读边界 |
+| `22-ADR-决策.md` | Human 单篇确认完成 | 已确认 active 22 的决策吸收、状态机、Human Gate、字段契约和 Web 旧字段禁用规则已由 v2 22 承接 |
+| `23-Pitfall-踩坑经验.md` | Human 单篇确认完成 | 已确认 active 23 的经验准入、归档、吸收边界、标签、验证证据和 Web 详情规则已由 v2 23 承接 |
+| `24-Study-研究报告.md` | Human 单篇确认完成 | 已确认 active 24 的 frontmatter、正文骨架、来源边界、归档和 Web 阅读边界已由 v2 24 承接 |
 
 推荐核对顺序：
 

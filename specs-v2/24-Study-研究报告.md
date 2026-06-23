@@ -39,7 +39,7 @@ v2_spec:
     - "fact_model_fields"
     - "fact_model_state_machine"
     - "fact_model_instance_checks"
-  migration_status: "partially_migrated"
+  migration_status: "migrated"
 ```
 
 ```yaml
@@ -327,7 +327,7 @@ Web 可展示 Study 列表、状态、摘要、结论、正文入口和关联对
 
 ## 14. 待补齐事项
 
-1. 本文已迁入 Study 主要准入、状态机、frontmatter 字段、正文骨架、URL 结构和 Web 阅读边界；仍需在 Human 单篇核对前逐项对照 active `specs/24-Study-研究报告.md`；
+1. 本文已迁入 Study 主要准入、状态机、frontmatter 字段、正文骨架、URL 结构和 Web 阅读边界，并已完成 Human 单篇确认；active 切换前仍以 active v1 Study 规范为默认入口；
 2. active `ldvh_member` 与 v2 `v2_fact_model_member` 的双读 Code 实现、正反样例和切换策略尚未完成；本文不改变 Code 默认消费入口；
 3. Study 创建、报告整理、吸收和归档的具体行动编排不按 v1 直接迁入；应待 v2 保障需求稳定后进入行动编排候选计划；
 4. 本文切换 active 前，应再次核对 active `specs/24-Study-研究报告.md`、02 授权附件、现有 Code/Web 测试和相关 active 20-24 成员规则，确认没有字段、状态、引用或消费入口漂移。
