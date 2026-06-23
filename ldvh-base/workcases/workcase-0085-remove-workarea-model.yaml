@@ -161,9 +161,7 @@ orchestration:
     result_summary: 已删除 `ldvh-base/workareas/` 实例目录，移除 WorkCase/ADR/Spark/Pitfall/Study 当前事实源中的 WorkArea 关系字段，并清理历史事实文本中的当前产品痕迹。
     evidence_refs:
     - ldvh-base/workcases/
-    - ldvh-base/adrs/
     - ldvh-base/sparks/
-    - ldvh-base/pitfalls/
     - ldvh-base/studies/
     blocking_reason: null
   - id: item-7

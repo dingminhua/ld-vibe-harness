@@ -5,7 +5,7 @@ goal: |
   快速推进 ldvh-base 事实源迁移：不创建额外旧事实源目录，直接修复当前事实对象中的失效引用，把旧 v1 规范证据指向已有 history/specs-v1，并继续提取仍有价值的内容进入 v2 当前事实。
 status: executing
 created: '2026-06-23T23:47:14+08:00'
-updated: '2026-06-24T00:05:00+08:00'
+updated: '2026-06-24T00:34:00+08:00'
 priority: P1
 plan_confirmed_at: '2026-06-23T23:50:54+08:00'
 description: |
@@ -20,6 +20,7 @@ success_criteria: |-
   - [ ] 建立价值提取规则，明确旧对象中的需求、决策、风险、经验、研究材料、验证证据和未完成事项分别应进入哪类 v2 事实模型或规范/Code/Web/运行时扩展工作
   - [x] 明确不创建旧事实源目录；旧事实追溯依赖 Git 历史、history/specs-v1 和当前对象中的历史证据引用
   - [x] 收口旧 WorkCase 自签审核 warning，使 `ldvh-base` 全量事实源校验达到 0 errors / 0 warnings
+  - [x] 按 Human 最新口径清空 ADR 与 Pitfall 当前事实对象，并修复结构化证据断链
   - [ ] 给出分批执行顺序和每批验证口径，避免知识地图、Web 或 Code 把历史残留误读为当前事实
   - [ ] 对所有会移动、删除、关闭、批量重写或改变事实源边界的动作列出 Human Gate 条件
   - [ ] 形成可执行的下一阶段 WorkCase 或行动编排候选，并在执行前提交 Human 方案确认
@@ -32,6 +33,7 @@ source: |
   - 触发原因：创建 WorkCase，规划后续可能涉及事实源历史化、对象分类、价值提取、批量重写和事实源边界调整的高影响工作。
   - Human 决策：允许先建立本控制计划。
   - 追加决策：用户指出“我们现在要做的是迁移事实源，你就不需要创建旧的事实源了……现在要快速推进”。
+  - 追加决策：用户明确“Pitfall 和 ADR 可以全部清空，WorkCase 可以重点清理，Spark 和 Study 要保留”。
   - 当前授权边界：允许快速修复当前 ldvh-base 中确定性的失效历史引用；不授权创建旧事实源目录，不授权移动、删除、关闭、批量语义重写或重建事实源。
 orchestration:
   mode: sequential
@@ -86,9 +88,12 @@ orchestration:
     - specs/23-Pitfall-踩坑经验.md
     - specs/24-Study-研究报告.md
     expected_output: 明确旧事实中的需求、决策、风险、经验、研究、证据和未完成事项分别应重写到哪些 v2 事实模型或后续工作。
-    status: pending
-    result_summary: ''
-    evidence_refs: []
+    status: in_progress
+    result_summary: |
+      最新 Human 口径已调整：Spark 与 Study 应保留为知识线索和研究承载；ADR 与 Pitfall 可以清空；WorkCase 是主要清理对象。因此本轮不再以减少 pending Spark 为目标，Spark 后续只补必要关联和演变说明，不轻易改终态。
+    evidence_refs:
+    - specs/20-Spark-火花.md
+    - specs/24-Study-研究报告.md
     blocking_reason: null
   - id: item-4
     title: 明确历史追溯与当前事实源边界
@@ -155,6 +160,22 @@ orchestration:
     - ldvh-base/workcases/workcase-0084-remove-redundant-workcase-backref.yaml
     - ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml
     - ldvh-base/workcases/workcase-0086-renumber-spark-study-specs.yaml
+    - python3 code/fact_validate.py ldvh-base/ --format text
+    blocking_reason: null
+  - id: item-8
+    title: 清空 ADR 与 Pitfall 当前事实对象
+    role: fact-source-cleanup
+    mode: single
+    input_refs:
+    - item-3
+    - item-4
+    - code/fact_validate.py
+    expected_output: 按 Human 最新口径清空 ADR/Pitfall 当前对象，保留 Spark/Study，不把已删除 ADR/Pitfall 路径继续作为结构化证据。
+    status: done
+    result_summary: |
+      已按 Human 最新口径删除当前 ADR/Pitfall YAML 文件；Spark 与 Study 保留；同步移除旧 WorkCase 中指向已删除 ADR/Pitfall 路径的结构化 evidence_refs，避免 Code 和知识地图把已清空对象当作当前事实。
+    evidence_refs:
+    - ldvh-base/workcases/workcase-0088-ldvh-base-history-extraction-plan.yaml
     - python3 code/fact_validate.py ldvh-base/ --format text
     blocking_reason: null
   plan_review:

@@ -113,7 +113,6 @@ orchestration:
     result_summary: 已将 `ldvh-base/memos/` 迁移为 `ldvh-base/sparks/`，20 个实例文件改为 `spark-*`，结构化字段与相关对象引用同步为 Spark 口径；ADR、Study 和 Spark 文件名中的旧 slug 也已重命名。
     evidence_refs:
     - ldvh-base/sparks/
-    - ldvh-base/adrs/adr-0009-spark-three-state-routing.yaml
     - ldvh-base/studies/study-0009-superpowers-absorption-spark.md
     blocking_reason: null
   - id: item-5

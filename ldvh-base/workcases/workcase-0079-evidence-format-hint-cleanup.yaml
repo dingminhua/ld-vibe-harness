@@ -77,7 +77,6 @@ orchestration:
       已批量规范化 59 个文件中的 112 个证据字段；只替换 `verification`、`verification_evidence`、`closure_evidence` 字段内容结构，未改变对象状态、关系、标题、执行项或关闭时间。
     evidence_refs:
     - ldvh-base/workcases/
-    - ldvh-base/pitfalls/
     blocking_reason: null
   - id: item-4
     title: 校验与抽样复核
