@@ -87,10 +87,10 @@ migration_map:
 | `specs/04.01-规范保障声明规范.md` | 保障声明字段、保障要求类型、声明契约 | `specs-v2/01-规范体系基础规范.md`、`specs-v2/attachments/01.Att.03-规范保障要求类型表.md`、`specs-v2/attachments/01.Att.07-行动编排接管建议矩阵.md` | `merge` | `human_confirmed` | 已确认普通保障要求与建议行动编排实例的关系，不保留 AI 检查要求作为松口自由项 |
 | `specs/04.02-LDVH能力资产与保障机制规范.md` | 能力资产登记、Rules/Skills/Agents/Hooks/Code/Web 边界 | `specs-v2/06-运行时扩展规范.md`、`specs-v2/04-Code确定性执行规范.md`、`specs-v2/05-Web信息同步规范.md` | `split` | `drafted_pending_review` | 核对六类构成要素与资产分类不被等同；Code/Web 是构成要素，不是运行时扩展 |
 | `specs/04.03-环境入口适配与部署规范.md` | 环境入口、薄引用、部署适配、适配检查 | `specs-v2/06-运行时扩展规范.md`、`specs-v2/attachments/06.Att.*` | `merge` | `drafted_pending_review` | 核对开发环境不是 LDVH 构成要素，运行时扩展只承载接入与适配能力 |
-| `specs/05-事实模型基础规范.md` | 事实模型通用规则、事实实例、回写与证据适配 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/07-事实源边界与Git追溯规范.md` | `split` | `drafted_pending_review` | 核对事实模型规则不得覆盖 v1 09 全局事实源原则 |
-| `specs/05.01-字段定义与语义规范.md` | 字段语义、公共字段和模型字段 owner 分层 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/attachments/02.Att.01-字段注册表.md` | `merge` | `drafted_pending_review` | 核对字段契约属于事实模型，注册表不反向定义字段存在性或必填性 |
-| `specs/05.02-字段内容与格式规范.md` | 字段内容格式、结构化表达和格式约束 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/attachments/02.Att.01-字段注册表.md` | `merge` | `drafted_pending_review` | 核对格式类型和字段语义在 02 中统一，但不拆成独立权威域 |
-| `specs/05.03-字段注册与消费规范.md` | 字段注册、消费元数据、Code/Web 字段消费 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/attachments/02.Att.01-字段注册表.md`、`specs-v2/attachments/02.Att.06-字段矩阵诊断表.md` | `merge` | `drafted_pending_review` | 核对字段注册表的授权边界和 Code 字段矩阵诊断 |
+| `specs/05-事实模型基础规范.md` | 事实模型通用规则、事实实例、回写与证据适配 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/07-事实源边界与Git追溯规范.md` | `split` | `human_confirmed` | 已确认事实模型基础规则由 02 承接，02 不覆盖 v1 09 全局事实源原则；全局事实源仍由 07 单篇核对 |
+| `specs/05.01-字段定义与语义规范.md` | 字段语义、公共字段和模型字段 owner 分层 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/attachments/02.Att.01-字段注册表.md` | `merge` | `human_confirmed` | 已确认字段契约属于事实模型，公共字段语义和字段治理收口到 02 |
+| `specs/05.02-字段内容与格式规范.md` | 字段内容格式、结构化表达和格式约束 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/attachments/02.Att.01-字段注册表.md` | `merge` | `human_confirmed` | 已确认字段内容格式并入 02，作为字段内容表达规则而非独立权威域 |
+| `specs/05.03-字段注册与消费规范.md` | 字段注册、消费元数据、Code/Web 字段消费 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/attachments/02.Att.01-字段注册表.md`、`specs-v2/attachments/02.Att.06-字段矩阵诊断表.md` | `merge` | `human_confirmed` | 已确认字段注册表作为 02 附件存在，不反向定义具体模型字段存在性、必填性、状态条件或完整 schema |
 | `specs/06-行动编排基础规范.md` | 行动编排通用规则、执行生命周期、过程输出、证据与保障接管 | `specs-v2/03-行动编排规范.md` 定义行动编排如何由规范保障需求生成、登记、执行和回写 | `defer` | `deferred_until_v2_requirement_plan` | 不按 v1 流程直接迁移；v1 06 只作为 v2 03 写作参考 |
 | `specs/07-Code确定性执行实现规范.md` | Code 确定性解析、校验、聚合和实现边界 | `specs-v2/04-Code确定性执行规范.md` | `migrate` | `drafted_pending_review` | 核对 v2-check 只读边界、双读策略、受控写入前检查和测试回归入口 |
 | `specs/08-Web信息同步实现规范.md` | Web 派生展示、DTO、轻写入白名单、Human-facing 状态 | `specs-v2/05-Web信息同步规范.md` | `migrate` | `drafted_pending_review` | Web 暂不实施不等于契约可丢失；核对 DTO、Spark 创建白名单和 Confirm UI 边界 |
@@ -182,7 +182,7 @@ v2 未 active 前，下列入口必须继续以 active `specs/` 为准：
 |---|---|---|
 | `00-LDVH理念与价值标准.md` | 已进入 Human 单篇核对 | 已确认 v1 00 存在理由、AI 第一服务对象、V1-V10、运行闭环下沉、Markdown/YAML 承载归口、保障要求收敛和总纲一致性检查承接 |
 | `01-规范体系基础规范.md` | Human 单篇确认完成 | 已确认 01 只承接规范体系共同治理；v1 03.02/03.03 只作为成员声明和专属骨架共同治理方法来源，不表示 01 承接事实模型或行动编排成员完整骨架 |
-| `02-事实模型基础规范.md` | 可进入准备核对 | 需要与 20-24 成员、字段注册表、字段矩阵和 active 05.03 对象特有字段逐项对照 |
+| `02-事实模型基础规范.md` | Human 单篇确认完成 | 已确认 02 承接 v1 05 系列基础职责；20-24 具体事实模型成员仍需逐篇核对，不随 02 自动完成 |
 | `04-Code确定性执行规范.md` | 可进入准备核对 | 需要核对 v2-check 现状、v1-v2 双读、输出 Schema、降级诊断和受控写入前检查边界 |
 | `05-Web信息同步规范.md` | 接近可核对 | Web v2 暂不实施，需核对 DTO、轻写入白名单、Confirm UI、提交展示和 Web 回归线是否足够保留 |
 | `06-运行时扩展规范.md` | 接近可核对 | 需要核对 v1 04 系列承接、运行时扩展自描述、Codex 入口、Hook、薄引用和适配检查边界 |
