@@ -120,3 +120,4 @@ preflight 输出应优先给出机器可消费诊断，同时保留 Human 可读
 | 日期 | 阶段 | 结果 | 验证 |
 |---|---|---|---|
 | 2026-06-23 | KM-1 基线固化 | 已补充当前 `v2-check` JSON/text 输出、relation type 过滤、raw 降级、start node 回退和非法参数诊断测试；未改变实现行为 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q`、`npm run test:code` |
+| 2026-06-23 | KM-2 核心提取 | 已将知识地图节点、边、source refs、查询层、降级投影和关系过滤提取到 `code/spec_checks/knowledge_map.py`；`v2-check` CLI 兼容入口保持不变 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q` |

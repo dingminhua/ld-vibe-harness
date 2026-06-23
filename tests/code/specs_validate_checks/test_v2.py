@@ -1,6 +1,7 @@
 import json
 
 from .common import checker, write_md
+from spec_checks import knowledge_map as knowledge_map_checks
 from spec_checks import v2 as v2_checks
 
 
@@ -428,6 +429,8 @@ v2_fact_model_member:
 def test_v2_core_implementation_lives_in_spec_checks():
     assert checker.v2_checks is v2_checks
     assert v2_checks.v2_check_build.__module__ == "spec_checks.v2"
+    assert v2_checks.KnowledgeMapMixin is knowledge_map_checks.KnowledgeMapMixin
+    assert knowledge_map_checks.KnowledgeMapMixin.project_knowledge_map.__module__ == "spec_checks.knowledge_map"
 
 
 def test_v2_check_neighbors_layer_uses_start_node(tmp_path):

@@ -198,5 +198,5 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 1. `specs_validate.py` 的主要检查能力域已迁入 `code/spec_checks/`；该文件当前只应承担 CLI 兼容、配置同步、常量/函数兼容引用和跨模块编排；
 2. `specs_validate.py` 的结构化输出字段、错误码和诊断格式仍需后续统一；
-3. 知识地图只读投影和受控写入 preflight 的实现计划已记录在 `code/docs/02-知识地图与Preflight实现计划.md`，尚未完成模块和 CLI；
+3. 知识地图只读投影核心已提取到 `code/spec_checks/knowledge_map.py`，仍通过 `v2-check` 兼容入口暴露；受控写入 preflight 模块和 CLI 尚未完成；
 4. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。
