@@ -1,4 +1,10 @@
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker, write_md
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 # ══════════════════════════════════════════════════════════════════════
 # refs — 引用完整性检查
@@ -275,3 +281,27 @@ def test_explicit_specs_path_reference_resolves_unchecked_existing_file(tmp_path
 
     assert checker.refs_check_paths([source]) == []
     assert target.exists()
+
+
+def test_refs_script_fast_path_outputs_text(tmp_path):
+    path = write_md(
+        tmp_path / "01-Test.md",
+        """
+# 测试文档
+
+## 1. 第一章
+
+依据本文 §1。
+""",
+    )
+
+    result = subprocess.run(
+        [sys.executable, str(PROJECT_ROOT / "code" / "specs_validate.py"), "refs", str(path)],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "Specs § 引用检查通过" in result.stdout

@@ -1,4 +1,10 @@
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker, write_md
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 # ══════════════════════════════════════════════════════════════════════
 # doc — 文档编号/标题规范检查
@@ -256,3 +262,17 @@ def test_doc_main_returns_zero_when_no_issues(tmp_path, capsys):
     assert exit_code == 0
     assert "检查通过" in capsys.readouterr().out
 
+
+def test_doc_script_fast_path_outputs_text(tmp_path):
+    path = write_md(tmp_path / "ok.md", "# 标题\n\n## 1. 正确")
+
+    result = subprocess.run(
+        [sys.executable, str(PROJECT_ROOT / "code" / "specs_validate.py"), "doc", str(path)],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "03 文档基础规范检查通过" in result.stdout

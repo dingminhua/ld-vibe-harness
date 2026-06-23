@@ -39,15 +39,15 @@
 
 一次 `python3 -X importtime code/specs_validate.py preflight ...` 观察显示，即使只运行 preflight，也会加载 `doc_structure`、`deployment_entries`、`consistency`、`field_registry`、`human_gate`、`index`、`ldvh_assurance`、`web_validate`、`v2` 等模块。
 
-这不改变功能正确性，但会让轻量命令承担不相关检查域的启动成本。当前已为直接执行的 `preflight`、`v2-check`、`governed-projects`、`deployment-entries`、`runtime-projection`、`human-gate`、`human-gate-report` 和 `field-registry` 子命令增加脚本级 fast path，使这些命令不再加载完整 specs 检查聚合入口；通过导入 `specs_validate.py` 后调用 wrapper 的测试兼容路径仍保持不变。
+这不改变功能正确性，但会让轻量命令承担不相关检查域的启动成本。当前已为直接执行的 `preflight`、`v2-check`、`governed-projects`、`deployment-entries`、`runtime-projection`、`human-gate`、`human-gate-report`、`field-registry`、`doc`、`refs` 和 `assurance` 子命令增加脚本级 fast path，使这些命令不再加载完整 specs 检查聚合入口；通过导入 `specs_validate.py` 后调用 wrapper 的测试兼容路径仍保持不变。
 
 ## 4. 后续优化顺序
 
 | 顺序 | 工作 | 约束 |
 |---|---|---|
-| 1 | 为直接执行的 `preflight`、`v2-check`、`governed-projects`、`deployment-entries`、`runtime-projection`、`human-gate`、`human-gate-report` 和 `field-registry` 增加脚本级 fast path | 已完成；不改变输出结构、exit code 或诊断码 |
+| 1 | 为直接执行的 `preflight`、`v2-check`、`governed-projects`、`deployment-entries`、`runtime-projection`、`human-gate`、`human-gate-report`、`field-registry`、`doc`、`refs` 和 `assurance` 增加脚本级 fast path | 已完成；不改变输出结构、exit code 或诊断码 |
 | 2 | 为 `specs_validate.py` 增加懒加载模块 helper | 必须保留现有 CLI、测试 wrapper 和模块归属断言 |
-| 3 | 再让 `doc`、`refs`、`assurance` 等单命令只加载自身依赖 | 不改变输出结构、exit code 或诊断码 |
+| 3 | 再让 `consistency`、`assurance-report`、`ldvh-assurance-check` 和 `web-validate` 等聚合或报告命令按能力域延迟加载依赖 | 不改变输出结构、exit code 或诊断码 |
 | 4 | 再清理只为历史兼容暴露的常量 alias | 需先查 tests、Rules、Skills、Hooks、Web 是否仍引用 |
 | 5 | 最后评估长期不再使用的兼容子命令是否降级、归档或删除 | 必须同步 04.Att.02、04.Att.09、08.Att.05 和 `code/docs/01` |
 

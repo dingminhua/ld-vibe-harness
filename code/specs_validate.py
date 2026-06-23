@@ -126,6 +126,43 @@ def _fast_field_registry_main(argv):
     return field_registry_checks.main(args.paths)
 
 
+def _fast_doc_main(argv):
+    from spec_checks import doc_structure as doc_structure_checks
+
+    project_root = Path(__file__).resolve().parent.parent
+    parser = argparse.ArgumentParser(description="检查 specs Markdown 文档是否符合 03 文档基础规范的章节编号要求。")
+    parser.add_argument("paths", nargs="*", default=[str(project_root / "specs")], help="要检查的 Markdown 文件或目录，默认检查 specs/。")
+    args = parser.parse_args(argv)
+    doc_structure_checks.PROJECT_ROOT = project_root
+    return doc_structure_checks.main(args.paths)
+
+
+def _fast_refs_main(argv):
+    from spec_checks import refs as refs_checks
+
+    project_root = Path(__file__).resolve().parent.parent
+    parser = argparse.ArgumentParser(description="检查 specs Markdown 文档中的 § 引用是否存在。")
+    parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
+    args = parser.parse_args(argv)
+    refs_checks.PROJECT_ROOT = project_root
+    refs_checks.SPECS_DIR = project_root / "specs"
+    refs_checks.LEGACY_SPECS_DIR = project_root / "docs" / "specs"
+    paths = args.paths if args.paths is not None else refs_checks.default_check_paths()
+    return refs_checks.main(paths)
+
+
+def _fast_assurance_main(argv):
+    from spec_checks import assurance as assurance_checks
+
+    project_root = Path(__file__).resolve().parent.parent
+    parser = argparse.ArgumentParser(description="检查 specs 正式规范的规范保障要求表。")
+    parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
+    args = parser.parse_args(argv)
+    assurance_checks.PROJECT_ROOT = project_root
+    assurance_checks.FORMAL_SPECS_DIR = project_root / "specs"
+    return assurance_checks.main(args.paths)
+
+
 if __name__ == "__main__" and len(sys.argv) > 1:
     _FAST_COMMANDS = {
         "preflight": _fast_preflight_main,
@@ -136,6 +173,9 @@ if __name__ == "__main__" and len(sys.argv) > 1:
         "human-gate": _fast_human_gate_main,
         "human-gate-report": _fast_human_gate_report_main,
         "field-registry": _fast_field_registry_main,
+        "doc": _fast_doc_main,
+        "refs": _fast_refs_main,
+        "assurance": _fast_assurance_main,
     }
     if sys.argv[1] in _FAST_COMMANDS:
         sys.exit(_FAST_COMMANDS[sys.argv[1]](sys.argv[2:]))
