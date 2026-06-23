@@ -38,9 +38,9 @@ related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
-- specs/00-LD-Vibe-Harness理念与纲要.md
-- specs/04.02-LDVH能力资产与保障机制规范.md
-- specs/06-行动编排基础规范.md
+- history/specs-v1/00-LD-Vibe-Harness理念与纲要.md
+- history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+- history/specs-v1/06-行动编排基础规范.md
 - specs/21-WorkCase-工作项.md
 archive_reason: null
 ---
@@ -53,7 +53,7 @@ archive_reason: null
 
 1. TRAE CN 中如何创建自定义智能体或子智能体；
 2. TRAE CN 中如何调用这些智能体；
-3. 这些机制对 LDVH 后续 `specs/00-LD-Vibe-Harness理念与纲要.md` 中多角色设定有什么启发。
+3. 这些机制对 LDVH 后续 `history/specs-v1/00-LD-Vibe-Harness理念与纲要.md` 中多角色设定有什么启发。
 
 这里的“TRAE CN”覆盖官方文档中的 TRAE IDE / SOLO 模式 / TRAE CLI。三者能力不完全相同，因此本报告按环境分层整理。
 
@@ -208,8 +208,8 @@ LDVH 的多角色协作可以在 Trae 环境中落地为 SOLO Agent 可调用的
 
 ## 后续分流
 
-1. 修改 `specs/00-LD-Vibe-Harness理念与纲要.md` 时，吸收“多角色可映射为环境智能体，但角色本体是契约”的表述。
-2. 修改 `specs/04.02-LDVH能力资产与保障机制规范.md` 时，判断 Trae 自定义智能体配置、Skill、MCP、Rules 是否应纳入能力资产分层。
-3. 修改 `specs/06-行动编排基础规范.md` 时，补充“主控自动调度”和“Human 显式调用”两类环境触发模式。
+1. 修改 `history/specs-v1/00-LD-Vibe-Harness理念与纲要.md` 时，吸收“多角色可映射为环境智能体，但角色本体是契约”的表述。
+2. 修改 `history/specs-v1/04.02-LDVH能力资产与保障机制规范.md` 时，判断 Trae 自定义智能体配置、Skill、MCP、Rules 是否应纳入能力资产分层。
+3. 修改 `history/specs-v1/06-行动编排基础规范.md` 时，补充“主控自动调度”和“Human 显式调用”两类环境触发模式。
 4. 修改 `specs/21-WorkCase-工作项.md` 时，不应把 `.traecli/agents` 或 SOLO Agent 配置写入 WorkCase 字段；WorkCase 只保留 `role`、输入、输出、证据和关闭信息。
 5. 如后续要支持 Trae 环境落地，应另建环境适配文档或 Skill，说明如何从 Role Contract 生成 Trae 自定义智能体配置摘要。

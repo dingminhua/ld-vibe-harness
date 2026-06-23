@@ -36,7 +36,7 @@ orchestration:
       verification: ## 验证计划
 
       - 只读检索 ECC 相关 refs、research、specs 或历史材料，记录来源路径和关键结论。
-      - 对照 LDVH `specs/04.03-环境入口适配与部署规范.md`、04.07、04.08、42 和 `code/specs_validate.py` 当前实现，形成缺口清单。
+      - 对照 LDVH `history/specs-v1/04.03-环境入口适配与部署规范.md`、04.07、04.08、42 和 `code/specs_validate.py` 当前实现，形成缺口清单。
       - 运行必要的只读检查命令，例如 `python3 code/specs_validate.py ldvh-assurance-check --format json`，确认矩阵相关缺口如何暴露。
 
       ## 验证结果
@@ -61,8 +61,8 @@ orchestration:
 
       本 Task 只产出研究结论，不直接修改 04 系列正文、不删除 04.07/04.08、不宣称任一环境完整承接。后续正式修改应按验证结果中的 Task A-E 拆分执行，必要时触发 Human Gate 或 ADR 评估。
     evidence_refs:
-    - specs/04-规范保障与环境适配基础规范.md
-    - specs/04.03-环境入口适配与部署规范.md
+    - history/specs-v1/04-规范保障与环境适配基础规范.md
+    - history/specs-v1/04.03-环境入口适配与部署规范.md
     - code/specs_validate.py
     - tests/code/test_specs_validate.py
     blocking_reason: null
@@ -114,10 +114,10 @@ closure_evidence: |
 review_requested_at: '2026-06-11T00:00:00'
 closed_at: '2026-06-11T00:00:00'
 related_docs:
-- specs/04-规范保障与环境适配基础规范.md
-- specs/04.03-环境入口适配与部署规范.md
-- specs/04.03-环境入口适配与部署规范.md
-- specs/04.03-环境入口适配与部署规范.md
+- history/specs-v1/04-规范保障与环境适配基础规范.md
+- history/specs-v1/04.03-环境入口适配与部署规范.md
+- history/specs-v1/04.03-环境入口适配与部署规范.md
+- history/specs-v1/04.03-环境入口适配与部署规范.md
 related_adrs: []
 related_sparks: []
 related_pitfalls: []

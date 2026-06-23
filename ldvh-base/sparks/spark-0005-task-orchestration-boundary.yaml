@@ -15,7 +15,7 @@ description: |
 
   当前事实源结构校验为 `errors=0 warnings=0`。此前 13 个 warning 来自历史旧规范路径引用，已按现行承接关系改向 `specs/21-WorkCase-工作项.md` 或相关现行规范，不再让旧 TaskPlan / Task / SubTask 规范路径形成事实源噪音。
 
-  `Specs 编号与字段注册表总收口` 已完成三个核心动作：`specs/05.02-字段内容与格式规范.md` 已从 WorkCase 试点注册升级为全工作模型字段注册表，补齐 WorkCase、ADR、Pitfall、Spark、Change、Study 的字段名、语义、内容格式、Code/Web 消费元数据和废弃/别名关系；20-29 工作模型编号洞已填补，ADR、Pitfall、Spark、Change、Study 已从 24-28 迁移为 22-26；旧 specs 路径引用已清理到事实源零 warning。
+  `Specs 编号与字段注册表总收口` 已完成三个核心动作：`history/specs-v1/05.02-字段内容与格式规范.md` 已从 WorkCase 试点注册升级为全工作模型字段注册表，补齐 WorkCase、ADR、Pitfall、Spark、Change、Study 的字段名、语义、内容格式、Code/Web 消费元数据和废弃/别名关系；20-29 工作模型编号洞已填补，ADR、Pitfall、Spark、Change、Study 已从 24-28 迁移为 22-26；旧 specs 路径引用已清理到事实源零 warning。
 
   仍需继续讨论和核对的核心问题：
 
@@ -26,7 +26,7 @@ description: |
   - Spark 中已经部分落地的议题，如何提示 AI 判断继续 pending、追加 evolution、分流或 resolved；
   - 旧 TaskPlan、Task、SubTask 的当前兼容面已经清退，Web 内部 `TaskFlow*` 命名债已由 workcase-0078 清理；剩余议题是 Spark 分流、Role Contract 归属、证据写法持续强化、历史叙述边界和需要保留为 Git 历史的证据说明。
 
-  建议新会话优先从 `specs/21-WorkCase-工作项.md` 逐段核对，然后回看 `specs/05-事实模型基础规范.md`、`specs/05.02-字段内容与格式规范.md` 和 `specs/06-行动编排基础规范.md`，最后再处理 40-43 流程规范与 Code / Web 迁移。
+  建议新会话优先从 `specs/21-WorkCase-工作项.md` 逐段核对，然后回看 `history/specs-v1/05-事实模型基础规范.md`、`history/specs-v1/05.02-字段内容与格式规范.md` 和 `history/specs-v1/06-行动编排基础规范.md`，最后再处理 40-43 流程规范与 Code / Web 迁移。
 evolution:
 - at: '2026-06-18T04:13:34'
   summary: 初始问题是 TaskPlan / Task / SubTask 的边界混乱，尤其是主控、子 Agent、复检和并行任务如何编排。
@@ -53,9 +53,9 @@ evolution:
 - at: '2026-06-18T08:39:30'
   summary: 完成 legacy 工作对象默认入口降级：Code 拒绝新建 TaskPlan / Task / SubTask，Web 主导航、Dashboard 和默认关注队列只暴露 active 工作模型；历史对象保留读取、校验和直达展示兼容。
 - at: '2026-06-18T08:42:32'
-  summary: 清理正式 specs 中的工作模型历史痕迹：`specs/01-目录说明.md` 的 active 工作模型表已同步为 20-26 当前编号，手写集合索引和能力材料残留措辞已改为当前规则态。
+  summary: 清理正式 specs 中的工作模型历史痕迹：`history/specs-v1/01-目录说明.md` 的 active 工作模型表已同步为 20-26 当前编号，手写集合索引和能力材料残留措辞已改为当前规则态。
 - at: '2026-06-18T08:45:50'
-  summary: 补齐 Code 防回归检查：`specs/01-目录说明.md` 的 active 工作模型人工目录表现在必须与 20-29 成员主文件自描述中的 active work_model 成员一致，防止编号表再次漂移。
+  summary: 补齐 Code 防回归检查：`history/specs-v1/01-目录说明.md` 的 active 工作模型人工目录表现在必须与 20-29 成员主文件自描述中的 active work_model 成员一致，防止编号表再次漂移。
 - at: '2026-06-18T08:49:46'
   summary: 40-43 工作流程规范已承接 WorkCase 回写契约：流程产生后续行动时必须回写为 WorkCase / Spark 等现行对象，WorkCase 必须使用 `success_criteria`、`orchestration.execution_items`、验证证据和关闭证据，不得新建 TaskPlan / Task / SubTask。
 - at: '2026-06-18T08:53:08'
@@ -71,7 +71,7 @@ evolution:
 human_gate_records:
 - confirmed_at: '2026-06-18'
   decision: Human 确认 41 fact-model-audit、42 specs-audit、43 assurance-readiness-audit 可以从 candidate 升级为 active。
-  scope: specs/41-fact-model-audit-事实模型审核.md、specs/42-specs-audit-规范审核.md、specs/43-assurance-readiness-audit-保障准备度审核.md 的成员自描述集合状态和对应待补齐事项。
+  scope: history/specs-v1/41-fact-model-audit-事实模型审核.md、history/specs-v1/42-specs-audit-规范审核.md、history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md 的成员自描述集合状态和对应待补齐事项。
   constraints: |
     升级只表示三条工作流程可以作为 active 流程入口被 AI 引用和执行；不代表其 Skill SOP、案例库、自动化矩阵或后续 Code/Web 审核流程已经完成。后续仍需按各流程的 Gate、回写和验证要求执行。
 source: conversation
@@ -86,10 +86,10 @@ related_adrs:
 related_studies:
 - study-0001
 related_docs:
-- specs/00-LD-Vibe-Harness理念与纲要.md
-- specs/05-事实模型基础规范.md
-- specs/05.02-字段内容与格式规范.md
-- specs/06-行动编排基础规范.md
+- history/specs-v1/00-LD-Vibe-Harness理念与纲要.md
+- history/specs-v1/05-事实模型基础规范.md
+- history/specs-v1/05.02-字段内容与格式规范.md
+- history/specs-v1/06-行动编排基础规范.md
 - specs/21-WorkCase-工作项.md
 - specs/20-Spark-火花.md
 - specs/24-Study-研究报告.md

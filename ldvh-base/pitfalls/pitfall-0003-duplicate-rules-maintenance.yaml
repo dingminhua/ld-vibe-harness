@@ -52,7 +52,7 @@ source_sparks: []
 related_adrs: []
 related_docs: []
 related_rules:
-- specs/03.01-规范文档规范.md
+- history/specs-v1/03.01-规范文档规范.md
 tags:
 - rules
 - consistency
@@ -62,4 +62,4 @@ notes: |-
 
   历史 severity 字段值为 `high`；影响和后果以 symptoms、applicability、avoidance 和 notes 的叙述内容为准。
 archive_reason: |
-  该经验已由 specs/03.01-规范文档规范.md 吸收为单一权威位置与规范引用要求，不再作为常规 active Pitfall 参考。
+  该经验已由 history/specs-v1/03.01-规范文档规范.md 吸收为单一权威位置与规范引用要求，不再作为常规 active Pitfall 参考。

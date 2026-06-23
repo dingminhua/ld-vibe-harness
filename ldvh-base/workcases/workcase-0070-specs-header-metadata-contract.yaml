@@ -12,10 +12,10 @@ description: |
   可共同消费的稳定契约。变更重点是明确字段语义、适用文档类型、必填/可选规则和 Code 检查边界；
   不把头部改成 YAML frontmatter，不把 `ldvh_member` 字段搬进普通头部，也不重复成员自描述事实。
 success_criteria: |
-  - [x] `specs/03-文档基础规范.md` 明确头部元信息是机器可读契约，而非普通文档装饰
-  - [x] `specs/03.01-规范文档规范.md` 列出 specs 正式规范、子文档、studies、sources 的头部字段规则
-  - [x] `specs/03.02-事实模型文档规范.md` 明确 20-29 普通头部不得重复 `ldvh_member` 成员自描述字段
-  - [x] `specs/03.03-行动编排文档规范.md` 明确 30-59 普通头部不得重复 `ldvh_member` 成员自描述字段
+  - [x] `history/specs-v1/03-文档基础规范.md` 明确头部元信息是机器可读契约，而非普通文档装饰
+  - [x] `history/specs-v1/03.01-规范文档规范.md` 列出 specs 正式规范、子文档、studies、sources 的头部字段规则
+  - [x] `history/specs-v1/03.02-事实模型文档规范.md` 明确 20-29 普通头部不得重复 `ldvh_member` 成员自描述字段
+  - [x] `history/specs-v1/03.03-行动编排文档规范.md` 明确 30-59 普通头部不得重复 `ldvh_member` 成员自描述字段
   - [x] 设计结论写清头部元信息契约与成员自描述契约的边界
   - [x] 仅记录后续 Code 检查候选，不贸然扩大 `code/spec_checks/index.py` 判定范围
 source: |
@@ -38,36 +38,36 @@ orchestration:
     result_summary: 已复核 index.py 当前消费：extract_header 解析 `> 字段：值`；派生 created_at、updated_at、positioning、scope、parent_doc、relation、basis、related_specs、index_scope，并用于 doc_kind、relations、required_header_fields 与诊断。0070 不修改 index.py，仅把现有消费边界写入规范。
     evidence_refs:
     - code/spec_checks/index.py
-    - specs/03-文档基础规范.md
-    - specs/03.01-规范文档规范.md
+    - history/specs-v1/03-文档基础规范.md
+    - history/specs-v1/03.01-规范文档规范.md
     blocking_reason: null
   - id: item-2
     title: 更新 03 与 03.01 头部字段契约
     role: specs
     mode: sequential
     input_refs:
-    - specs/03-文档基础规范.md
-    - specs/03.01-规范文档规范.md
+    - history/specs-v1/03-文档基础规范.md
+    - history/specs-v1/03.01-规范文档规范.md
     expected_output: 头部字段语义、适用文档类型、必填/可选和消费边界写入正式规范。
     status: done
     result_summary: 03 §5.1 已明确头部元信息是稳定机器接口，继续使用 `> 字段：值`，不得默认改 YAML frontmatter；03.01 已登记正式规范、子文档、studies、sources 的必填/可选字段规则。
     evidence_refs:
-    - specs/03-文档基础规范.md
-    - specs/03.01-规范文档规范.md
+    - history/specs-v1/03-文档基础规范.md
+    - history/specs-v1/03.01-规范文档规范.md
     blocking_reason: null
   - id: item-3
     title: 更新 03.02 与 03.03 双层元信息边界
     role: specs
     mode: sequential
     input_refs:
-    - specs/03.02-事实模型文档规范.md
-    - specs/03.03-行动编排文档规范.md
+    - history/specs-v1/03.02-事实模型文档规范.md
+    - history/specs-v1/03.03-行动编排文档规范.md
     expected_output: 20-29 / 30-59 普通头部只承载文档身份和引用边界，集合事实只由文件名与 `ldvh_member` 承载。
     status: done
     result_summary: 03.02 / 03.03 已明确普通头部只承载文档身份、定位、范围和引用；文件名与 `ldvh_member` 承载 spec_id、kind、collection_status、canonical_path 和各类 anchor，普通头部不得重复这些成员事实。
     evidence_refs:
-    - specs/03.02-事实模型文档规范.md
-    - specs/03.03-行动编排文档规范.md
+    - history/specs-v1/03.02-事实模型文档规范.md
+    - history/specs-v1/03.03-行动编排文档规范.md
     blocking_reason: null
   review:
     controller_self_check: true
@@ -91,10 +91,10 @@ verification_evidence: |
   ## 验证结果
 
   修改范围：
-  - `specs/03-文档基础规范.md`：将 Markdown 头部 `> 字段：值` 定义为人、AI、Code、Web 可共同消费的稳定机器接口，明确不默认改 YAML frontmatter。
-  - `specs/03.01-规范文档规范.md`：新增 specs 正式规范、子文档、docs/studies、docs/sources 的头部字段规则表。
-  - `specs/03.02-事实模型文档规范.md`：明确 20-29 普通头部与 `ldvh_member` 分工，禁止普通头部重复 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 和 anchor 字段。
-  - `specs/03.03-行动编排文档规范.md`：明确 30-59 普通头部与 `ldvh_member` 分工，禁止普通头部重复流程成员身份、集合状态和 Code 消费锚点。
+  - `history/specs-v1/03-文档基础规范.md`：将 Markdown 头部 `> 字段：值` 定义为人、AI、Code、Web 可共同消费的稳定机器接口，明确不默认改 YAML frontmatter。
+  - `history/specs-v1/03.01-规范文档规范.md`：新增 specs 正式规范、子文档、docs/studies、docs/sources 的头部字段规则表。
+  - `history/specs-v1/03.02-事实模型文档规范.md`：明确 20-29 普通头部与 `ldvh_member` 分工，禁止普通头部重复 `文档编号`、`文档类型`、`集合状态`、`canonical_path` 和 anchor 字段。
+  - `history/specs-v1/03.03-行动编排文档规范.md`：明确 30-59 普通头部与 `ldvh_member` 分工，禁止普通头部重复流程成员身份、集合状态和 Code 消费锚点。
 
   确定性校验：
   - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过，diagnostics=0。
@@ -138,10 +138,10 @@ closure_evidence: |
 
   0070 的契约设计目标已完成，可以关闭。后续 Code/Web/docs 全量落地不继续塞回 0070，由 workcase-0075 独立推进。
 related_docs:
-- specs/03-文档基础规范.md
-- specs/03.01-规范文档规范.md
-- specs/03.02-事实模型文档规范.md
-- specs/03.03-行动编排文档规范.md
+- history/specs-v1/03-文档基础规范.md
+- history/specs-v1/03.01-规范文档规范.md
+- history/specs-v1/03.02-事实模型文档规范.md
+- history/specs-v1/03.03-行动编排文档规范.md
 related_adrs: []
 related_sparks:
 - spark-0005

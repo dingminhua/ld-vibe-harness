@@ -33,7 +33,7 @@ orchestration:
 
       ## 验证结果
 
-      原 specs/13-LDVH事实模型基础规范.md 已重编号为 specs/05-事实模型基础规范.md（后续再次重编号），specs 根目录正式规范与 Rules 引用已同步更新，文档规范检查和引用检查通过。
+      原 specs/13-LDVH事实模型基础规范.md 已重编号为 history/specs-v1/05-事实模型基础规范.md（后续再次重编号），specs 根目录正式规范与 Rules 引用已同步更新，文档规范检查和引用检查通过。
 
       ## 结论
 

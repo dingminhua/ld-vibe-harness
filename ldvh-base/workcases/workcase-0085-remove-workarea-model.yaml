@@ -59,13 +59,13 @@ orchestration:
     input_refs:
     - current-conversation
     - specs/21-WorkCase-工作项.md
-    - specs/05.03-字段注册与消费规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
     expected_output: 明确 WorkArea 移除范围、必须一次性同步的事实源和 Git 历史不可消除边界。
     status: done
     result_summary: 已完成方案审核。三个视角一致认为取消 WorkArea 的方向成立，但影响面覆盖 specs、Code、Web、tests、rules/docs 和 ldvh-base 事实源；必须一次性执行，并在执行前由 Human 确认不保留 archived/deprecated/历史兼容入口，以及接受 Git 历史不可消除边界。
     evidence_refs:
     - specs/21-WorkCase-工作项.md
-    - specs/05.03-字段注册与消费规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
     blocking_reason: null
   - id: item-2
     title: 收窄 WorkCase 字段契约并排除跨项目设计
@@ -73,33 +73,33 @@ orchestration:
     mode: sequential
     input_refs:
     - specs/21-WorkCase-工作项.md
-    - specs/05.03-字段注册与消费规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
     expected_output: WorkCase 字段契约移除 WorkArea 归属依赖，并明确本次不引入跨项目或项目归属字段。
     status: done
     result_summary: 已更新 WorkCase 规范和字段注册，取消 WorkCase 对 `workarea` 归属字段的依赖；本 WorkCase 明确不引入跨项目字段、项目归属字段或跨项目归属机制。
     evidence_refs:
     - specs/21-WorkCase-工作项.md
-    - specs/05.03-字段注册与消费规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
     blocking_reason: null
   - id: item-3
     title: 移除 WorkArea 规范和字段注册
     role: specs-editor
     mode: sequential
     input_refs:
-    - specs/03.02-事实模型文档规范.md
-    - specs/05-事实模型基础规范.md
-    - specs/05.01-字段定义与语义规范.md
-    - specs/05.02-字段内容与格式规范.md
-    - specs/05.03-字段注册与消费规范.md
+    - history/specs-v1/03.02-事实模型文档规范.md
+    - history/specs-v1/05-事实模型基础规范.md
+    - history/specs-v1/05.01-字段定义与语义规范.md
+    - history/specs-v1/05.02-字段内容与格式规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
     - specs/21-WorkCase-工作项.md
     expected_output: active 工作模型集合和字段契约中不再存在 WorkArea 主对象或兼容字段。
     status: done
     result_summary: 已删除 20 号 WorkArea 主规范，更新工作模型集合、字段语义、字段注册、目录说明和相邻工作模型规范；active 集合仅保留 WorkCase、ADR、Pitfall、Spark、Study。
     evidence_refs:
-    - specs/01-目录说明.md
-    - specs/05-事实模型基础规范.md
-    - specs/05.01-字段定义与语义规范.md
-    - specs/05.03-字段注册与消费规范.md
+    - history/specs-v1/01-目录说明.md
+    - history/specs-v1/05-事实模型基础规范.md
+    - history/specs-v1/05.01-字段定义与语义规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
     - specs/21-WorkCase-工作项.md
     blocking_reason: null
   - id: item-4
@@ -213,7 +213,7 @@ orchestration:
         input_refs:
         - current-conversation
         - specs/21-WorkCase-工作项.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
         constraints:
         - 重点回到 WorkCase 治理闭环、优先级、状态、执行编排、验证证据和关闭判断。
         prompt_digest: 从工作模型契约视角审核 WorkArea 是否应退出 active 工作对象集合。
@@ -229,7 +229,7 @@ orchestration:
         - Human 需确认本 WorkCase 不处理跨项目字段或项目归属字段。
         evidence_refs:
         - specs/21-WorkCase-工作项.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
       raw_output_ref: null
       attested_at: '2026-06-21T09:45:35+08:00'
       attestation:
@@ -289,7 +289,7 @@ orchestration:
         - ldvh-base/sparks/
         - ldvh-base/pitfalls/
         - ldvh-base/studies/
-        - specs/09-事实源边界与承载规范.md
+        - history/specs-v1/09-事实源边界与承载规范.md
         constraints:
         - 不修改 Git 历史。
         prompt_digest: 审核历史痕迹清除要求与 Git 历史不可消除边界。
@@ -305,7 +305,7 @@ orchestration:
         - Human 需确认普通迁移不改写 Git 历史。
         evidence_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
-        - specs/09-事实源边界与承载规范.md
+        - history/specs-v1/09-事实源边界与承载规范.md
       raw_output_ref: null
       attested_at: '2026-06-21T09:45:35+08:00'
       attestation:
@@ -366,10 +366,10 @@ orchestration:
       prompt_context:
         objective: 复查 WorkArea 是否已从 active 工作模型规范和当前产品规范入口移除，同时确认没有把跨项目或项目归属字段扩展进 WorkCase。
         input_refs:
-        - specs/01-目录说明.md
-        - specs/05-事实模型基础规范.md
-        - specs/05.01-字段定义与语义规范.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/01-目录说明.md
+        - history/specs-v1/05-事实模型基础规范.md
+        - history/specs-v1/05.01-字段定义与语义规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
         - specs/21-WorkCase-工作项.md
         - specs/22-25
         - rules/LDVH-WORKSPACE-ENTRY.md
@@ -389,8 +389,8 @@ orchestration:
         - follow-up：05.01 曾有一句“所属工作项（用归属字段）”容易误读；主控已检查并确认不属于阻断项。
         required_changes: []
         evidence_refs:
-        - specs/01-目录说明.md
-        - specs/05-事实模型基础规范.md
+        - history/specs-v1/01-目录说明.md
+        - history/specs-v1/05-事实模型基础规范.md
         - specs/21-WorkCase-工作项.md
         - rg -n "WorkArea|workarea|related_workareas|workarea_ref|工作域|workareas" . -g "!ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml"
         - python3 code/specs_validate.py index --fail-on-diagnostics
@@ -410,7 +410,7 @@ orchestration:
         - code/fact_validate.py
         - code/commit_validate.py
         - code/spec_checks/field_registry.py
-        - code/fix_block_scalar.py
+        - history/code-archive/fix_block_scalar.py
         - tests/code/test_fact_cli.py
         - tests/code/test_fact_validate.py
         - tests/code/specs_validate_checks
@@ -493,7 +493,7 @@ orchestration:
         objective: 检查 0085 的成功标准、验证证据、关闭材料、残留风险和当前工作树 WorkArea 痕迹清理结果，判断是否可以交给独立结果复核。
         input_refs:
         - ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml
-        - specs/01-目录说明.md
+        - history/specs-v1/01-目录说明.md
         - specs/21-WorkCase-工作项.md
         - code/fact_validate.py
         - web/src/pages/ObjectDetail.tsx
@@ -666,7 +666,7 @@ revision_history:
   summary: 三位子 agent 已复查；validator 行为缺口已修复，回归验证通过，状态推进为 human_closure_confirming。
 related_docs:
 - specs/21-WorkCase-工作项.md
-- specs/05.03-字段注册与消费规范.md
+- history/specs-v1/05.03-字段注册与消费规范.md
 - code/fact_cli.py
 - code/fact_validate.py
 - web/docs/03-ObjectList.md

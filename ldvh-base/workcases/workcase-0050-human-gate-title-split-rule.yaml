@@ -26,7 +26,7 @@ orchestration:
     result_summary: ''
     evidence_refs:
     - 更新后的 Skill 文件
-    - specs/04.03-环境入口适配与部署规范.md
+    - history/specs-v1/04.03-环境入口适配与部署规范.md
     blocking_reason: Legacy Task is not closed; keep WorkCase active after migration.
   review:
     controller_self_check: true
@@ -40,7 +40,7 @@ closure_evidence: ''
 review_requested_at: ''
 closed_at: ''
 related_docs:
-- specs/04.03-环境入口适配与部署规范.md
+- history/specs-v1/04.03-环境入口适配与部署规范.md
 related_adrs: []
 related_sparks: []
 related_pitfalls: []

@@ -66,8 +66,8 @@ source_objects:
 - workcase-0074
 related_objects: []
 related_rules:
-- specs/10-Git提交规范.md
-- specs/04.01-规范保障声明规范.md
+- history/specs-v1/10-Git提交规范.md
+- history/specs-v1/04.01-规范保障声明规范.md
 - code/commit_validate.py
 tags:
 - validation-gate

@@ -65,6 +65,6 @@ consequences: |
 related_adrs: []
 related_rules:
 - specs/21-WorkCase-工作项.md
-- specs/05-事实模型基础规范.md
+- history/specs-v1/05-事实模型基础规范.md
 archive_reason:
 deprecated_reason: 该记录基于旧 Task 工作模型的 review_needed 机制，后续已由 WorkCase / ExecutionItem / Role Contract 方向承接，不再作为当前决策补丁。

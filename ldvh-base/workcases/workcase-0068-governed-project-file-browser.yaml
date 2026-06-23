@@ -91,10 +91,10 @@ orchestration:
     - web/src/App.tsx
     - web/src/components/Sidebar.tsx
     - web/src/utils/api.ts
-    - specs/03-文档基础规范.md
-    - specs/03.04-管辖项目配置规范.md
-    - specs/08-Web信息同步实现规范.md
-    - specs/10-Git提交规范.md
+    - history/specs-v1/03-文档基础规范.md
+    - history/specs-v1/03.04-管辖项目配置规范.md
+    - history/specs-v1/08-Web信息同步实现规范.md
+    - history/specs-v1/10-Git提交规范.md
     blocking_reason: null
   review:
     controller_self_check: true
@@ -148,10 +148,10 @@ closure_evidence: |
 review_requested_at: '2026-06-11T18:29:50'
 closed_at: '2026-06-11T18:29:50'
 related_docs:
-- specs/03-文档基础规范.md
-- specs/03.04-管辖项目配置规范.md
-- specs/08-Web信息同步实现规范.md
-- specs/10-Git提交规范.md
+- history/specs-v1/03-文档基础规范.md
+- history/specs-v1/03.04-管辖项目配置规范.md
+- history/specs-v1/08-Web信息同步实现规范.md
+- history/specs-v1/10-Git提交规范.md
 related_adrs: []
 related_sparks: []
 related_pitfalls: []

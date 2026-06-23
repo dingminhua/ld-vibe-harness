@@ -66,7 +66,7 @@ orchestration:
     evidence_refs:
     - code/specs_validate.py
     - tests/code/test_specs_validate.py
-    - specs/07-Code确定性执行实现规范.md
+    - history/specs-v1/07-Code确定性执行实现规范.md
     blocking_reason: null
   review:
     controller_self_check: true
@@ -116,7 +116,7 @@ closure_evidence: |
 review_requested_at: '2026-06-11T00:00:00'
 closed_at: '2026-06-11T00:00:00'
 related_docs:
-- specs/07-Code确定性执行实现规范.md
+- history/specs-v1/07-Code确定性执行实现规范.md
 related_adrs: []
 related_sparks: []
 related_pitfalls: []

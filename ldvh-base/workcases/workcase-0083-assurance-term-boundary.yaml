@@ -36,8 +36,8 @@ orchestration:
     mode: single
     input_refs:
     - current-conversation
-    - specs/02-术语规范.md
-    - specs/04-规范保障与环境适配基础规范.md
+    - history/specs-v1/02-术语规范.md
+    - history/specs-v1/04-规范保障与环境适配基础规范.md
     expected_output: 明确是否正式收窄“落地”定义、是否保留兼容期、哪些命名和接口暂不迁移。
     status: done
     result_summary: Human Gate 已确认“规范保障要求”作为正式术语，并确认 Code/CLI/Web/JSON 字段彻底硬改，不保留旧接口尾巴。
@@ -50,39 +50,39 @@ orchestration:
     role: specs-editor
     mode: sequential
     input_refs:
-    - specs/02-术语规范.md
-    - specs/04-规范保障与环境适配基础规范.md
-    - specs/04.01-规范保障声明规范.md
-    - specs/04.02-LDVH能力资产与保障机制规范.md
-    - specs/04.03-环境入口适配与部署规范.md
+    - history/specs-v1/02-术语规范.md
+    - history/specs-v1/04-规范保障与环境适配基础规范.md
+    - history/specs-v1/04.01-规范保障声明规范.md
+    - history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+    - history/specs-v1/04.03-环境入口适配与部署规范.md
     expected_output: 规范正文明确规范保障要求、能力保障、能力资产、环境适配、部署执行、适配检查和落地/本次现场有效的分层关系。
     status: done
     result_summary: 已更新 02、04、04.01、04.02、04.03 的术语和链路：规范保障要求、能力保障、环境适配、部署执行、适配检查和落地分层表达；只有部署执行完成且适配检查通过的当前现场有效结果才称为落地。
     evidence_refs:
-    - specs/02-术语规范.md
-    - specs/04-规范保障与环境适配基础规范.md
-    - specs/04.01-规范保障声明规范.md
-    - specs/04.02-LDVH能力资产与保障机制规范.md
-    - specs/04.03-环境入口适配与部署规范.md
+    - history/specs-v1/02-术语规范.md
+    - history/specs-v1/04-规范保障与环境适配基础规范.md
+    - history/specs-v1/04.01-规范保障声明规范.md
+    - history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+    - history/specs-v1/04.03-环境入口适配与部署规范.md
     blocking_reason: null
   - id: item-3
     title: 澄清工作流程接管与变化感知机制
     role: workflow-governance
     mode: sequential
     input_refs:
-    - specs/03.03-行动编排文档规范.md
-    - specs/04.01-规范保障声明规范.md
-    - specs/06-行动编排基础规范.md
-    - specs/43-assurance-readiness-audit-保障准备度审核.md
+    - history/specs-v1/03.03-行动编排文档规范.md
+    - history/specs-v1/04.01-规范保障声明规范.md
+    - history/specs-v1/06-行动编排基础规范.md
+    - history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
     - code/spec_checks/index.py
     expected_output: 明确无工作流程接管时来源规范如何写保障要求；有工作流程接管时如何写接管声明、派生可发现性、生命周期触发和 Code 派生检查。
     status: done
     result_summary: 已将工作流程接管字段和派生集合索引硬改为 assurance_takeover，43 改为保障准备度审核；来源规范保留保障要求和触发索引，执行责任由 active 接管流程承接。
     evidence_refs:
-    - specs/03.03-行动编排文档规范.md
-    - specs/04.01-规范保障声明规范.md
-    - specs/06-行动编排基础规范.md
-    - specs/43-assurance-readiness-audit-保障准备度审核.md
+    - history/specs-v1/03.03-行动编排文档规范.md
+    - history/specs-v1/04.01-规范保障声明规范.md
+    - history/specs-v1/06-行动编排基础规范.md
+    - history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
     - code/spec_checks/index.py
     blocking_reason: null
   - id: item-4
@@ -156,11 +156,11 @@ orchestration:
         objective: 审核 WorkCase 方案是否足以推进“收窄落地术语边界”。
         input_refs:
         - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
-        - specs/02-术语规范.md
-        - specs/04-规范保障与环境适配基础规范.md
-        - specs/04.01-规范保障声明规范.md
-        - specs/04.02-LDVH能力资产与保障机制规范.md
-        - specs/04.03-环境入口适配与部署规范.md
+        - history/specs-v1/02-术语规范.md
+        - history/specs-v1/04-规范保障与环境适配基础规范.md
+        - history/specs-v1/04.01-规范保障声明规范.md
+        - history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+        - history/specs-v1/04.03-环境入口适配与部署规范.md
         constraints:
         - 只读审核，不修改文件。
         - 输出 status、summary、key_findings、recommendations、required_changes 和 evidence_refs。
@@ -185,11 +185,11 @@ orchestration:
         - 明确 `规范保障要求` 是正式术语，而不是过渡写法或描述性改写。
         evidence_refs:
         - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
-        - specs/02-术语规范.md
-        - specs/04-规范保障与环境适配基础规范.md
-        - specs/04.01-规范保障声明规范.md
-        - specs/04.02-LDVH能力资产与保障机制规范.md
-        - specs/04.03-环境入口适配与部署规范.md
+        - history/specs-v1/02-术语规范.md
+        - history/specs-v1/04-规范保障与环境适配基础规范.md
+        - history/specs-v1/04.01-规范保障声明规范.md
+        - history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+        - history/specs-v1/04.03-环境入口适配与部署规范.md
       raw_output_ref: null
       attested_at: '2026-06-21T09:42:00+08:00'
       attestation:
@@ -203,10 +203,10 @@ orchestration:
         objective: 审核 WorkCase 方案是否足以处理有/无工作流程接管时规范保障要求的写法和变化感知机制。
         input_refs:
         - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
-        - specs/03.03-行动编排文档规范.md
-        - specs/04.01-规范保障声明规范.md
-        - specs/06-行动编排基础规范.md
-        - specs/43-assurance-readiness-audit-保障准备度审核.md
+        - history/specs-v1/03.03-行动编排文档规范.md
+        - history/specs-v1/04.01-规范保障声明规范.md
+        - history/specs-v1/06-行动编排基础规范.md
+        - history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
         - code/spec_checks/index.py
         constraints:
         - 只读审核，不修改文件。
@@ -227,10 +227,10 @@ orchestration:
         required_changes: []
         evidence_refs:
         - ldvh-base/workcases/workcase-0083-assurance-term-boundary.yaml
-        - specs/03.03-行动编排文档规范.md
-        - specs/04.01-规范保障声明规范.md
-        - specs/06-行动编排基础规范.md
-        - specs/43-assurance-readiness-audit-保障准备度审核.md
+        - history/specs-v1/03.03-行动编排文档规范.md
+        - history/specs-v1/04.01-规范保障声明规范.md
+        - history/specs-v1/06-行动编排基础规范.md
+        - history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
         - code/spec_checks/index.py
       raw_output_ref: null
       attested_at: '2026-06-21T09:45:00+08:00'
@@ -387,8 +387,8 @@ orchestration:
         - 移除正式产品资产中的旧过渡提示。
         - 移除旧标题识别分支。
       evidence_refs:
-      - specs/02-术语规范.md
-      - specs/04-规范保障与环境适配基础规范.md
+      - history/specs-v1/02-术语规范.md
+      - history/specs-v1/04-规范保障与环境适配基础规范.md
       - code/spec_checks/index.py
       - code/spec_checks/consistency.py
       raw_output_ref: null
@@ -519,12 +519,12 @@ followup_refs:
 - spark-0021
 revision_history: []
 related_docs:
-- specs/02-术语规范.md
-- specs/04-规范保障与环境适配基础规范.md
-- specs/04.01-规范保障声明规范.md
-- specs/04.02-LDVH能力资产与保障机制规范.md
-- specs/04.03-环境入口适配与部署规范.md
-- specs/43-assurance-readiness-audit-保障准备度审核.md
+- history/specs-v1/02-术语规范.md
+- history/specs-v1/04-规范保障与环境适配基础规范.md
+- history/specs-v1/04.01-规范保障声明规范.md
+- history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+- history/specs-v1/04.03-环境入口适配与部署规范.md
+- history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
 related_adrs: []
 related_sparks:
 - spark-0021

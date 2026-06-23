@@ -38,10 +38,10 @@ orchestration:
 
       验证通过。
 
-      closure_evidence: 01 文档 git mv 为 specs/01-目录说明.md，标题从"# LDVH 目录说明"调整为"# 目录说明"；specs 根目录 14 个文件和 Rules 2 处引用已更新；docs/research 引用未处理（范围外）。文档规范和引用检查皆通过。
+      closure_evidence: 01 文档 git mv 为 history/specs-v1/01-目录说明.md，标题从"# LDVH 目录说明"调整为"# 目录说明"；specs 根目录 14 个文件和 Rules 2 处引用已更新；docs/research 引用未处理（范围外）。文档规范和引用检查皆通过。
       ## 验证结果
 
-      01 文档已重命名为 specs/01-目录说明.md，标题已调整；specs 根目录 14 个文件和 Rules 2 处引用已更新；文档规范和引用检查通过。
+      01 文档已重命名为 history/specs-v1/01-目录说明.md，标题已调整；specs 根目录 14 个文件和 Rules 2 处引用已更新；文档规范和引用检查通过。
 
       ## 结论
 
@@ -71,7 +71,7 @@ verification_evidence: |
   原文标题：验证结果
 
   历史任务计划迁移聚合证据：
-  - task-0011: 01 文档 git mv 为 specs/01-目录说明.md，标题从"# LDVH 目录说明"调整为"# 目录说明"；specs 根目录 14 个文件和 Rules 2 处引用已更新；docs/research 引用未处理（范围外）。文档规范和引用检查皆通过。
+  - task-0011: 01 文档 git mv 为 history/specs-v1/01-目录说明.md，标题从"# LDVH 目录说明"调整为"# 目录说明"；specs 根目录 14 个文件和 Rules 2 处引用已更新；docs/research 引用未处理（范围外）。文档规范和引用检查皆通过。
 
   ## 结论
 
@@ -92,7 +92,7 @@ closure_evidence: |
   原文标题：验证结果
 
   历史任务计划迁移聚合证据：
-  - task-0011: 01 文档 git mv 为 specs/01-目录说明.md，标题从"# LDVH 目录说明"调整为"# 目录说明"；specs 根目录 14 个文件和 Rules 2 处引用已更新；docs/research 引用未处理（范围外）。文档规范和引用检查皆通过。
+  - task-0011: 01 文档 git mv 为 history/specs-v1/01-目录说明.md，标题从"# LDVH 目录说明"调整为"# 目录说明"；specs 根目录 14 个文件和 Rules 2 处引用已更新；docs/research 引用未处理（范围外）。文档规范和引用检查皆通过。
 
   ## 结论
 

@@ -52,7 +52,7 @@ orchestration:
     result_summary: ''
     evidence_refs:
     - specs/21-WorkCase-工作项.md
-    - specs/07-Code确定性执行实现规范.md
+    - history/specs-v1/07-Code确定性执行实现规范.md
     blocking_reason: Legacy Task is not closed; keep WorkCase active after migration.
   review:
     controller_self_check: true

@@ -77,12 +77,12 @@ related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
-- specs/00-LD-Vibe-Harness理念与纲要.md
-- specs/04.02-LDVH能力资产与保障机制规范.md
-- specs/06-行动编排基础规范.md
-- specs/07-Code确定性执行实现规范.md
-- specs/08-Web信息同步实现规范.md
-- specs/11-测试基础规范.md
+- history/specs-v1/00-LD-Vibe-Harness理念与纲要.md
+- history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+- history/specs-v1/06-行动编排基础规范.md
+- history/specs-v1/07-Code确定性执行实现规范.md
+- history/specs-v1/08-Web信息同步实现规范.md
+- history/specs-v1/11-测试基础规范.md
 - specs/21-WorkCase-工作项.md
 archive_reason: null
 ---
@@ -191,7 +191,7 @@ LDVH 当前价值标准中已有强制验证和证据沉淀，但还没有把质
 
 Claude Code 和 Codex 相关资料都强调让 AI 运行构建、测试和 lint，建立自我验证循环。Claude Code Review 的公开说明也强调多 agent 分工查找不同类别问题，并用实际代码行为验证候选问题以过滤误报。
 
-LDVH 目前有 `specs/11-测试基础规范.md`，但还需要把产品级测试策略变成可执行的工作流和质量门禁，而不仅是测试治理原则。
+LDVH 目前有 `history/specs-v1/11-测试基础规范.md`，但还需要把产品级测试策略变成可执行的工作流和质量门禁，而不仅是测试治理原则。
 
 #### 5. 从“代码生成”到“安全开发生命周期”
 

@@ -91,8 +91,8 @@ related_workcases:
 related_adrs: []
 related_pitfalls: []
 related_docs:
-- specs/04.02-LDVH能力资产与保障机制规范.md
-- specs/10-Git提交规范.md
+- history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+- history/specs-v1/10-Git提交规范.md
 archive_reason: null
 ---
 
@@ -104,7 +104,7 @@ archive_reason: null
 
 1. 外部 AI 工程生态中，类似 Rules、Skill、Agent、Hook 的能力资产通常如何设计；
 2. 哪些实践可以吸收到 LDVH 固定能力资产登记制；
-3. 这些实践对 `workcase-0080` 和 `specs/04.02-LDVH能力资产与保障机制规范.md` 的关闭条件有什么影响。
+3. 这些实践对 `workcase-0080` 和 `history/specs-v1/04.02-LDVH能力资产与保障机制规范.md` 的关闭条件有什么影响。
 
 ## 输入与边界
 
@@ -117,7 +117,7 @@ archive_reason: null
 - Model Context Protocol：Tools specification；
 - DevOps / 提交门禁：Git githooks、pre-commit、Husky、lint-staged、commitlint、GitHub protected branches / status checks、GitLab server hooks。
 
-本报告不把外部资料原文复制为 LDVH 规范。外部资料只用于提炼可复用设计原则；正式约束应吸收到 `specs/04.02-LDVH能力资产与保障机制规范.md`，并按 LDVH 自身术语和事实源边界表达。
+本报告不把外部资料原文复制为 LDVH 规范。外部资料只用于提炼可复用设计原则；正式约束应吸收到 `history/specs-v1/04.02-LDVH能力资产与保障机制规范.md`，并按 LDVH 自身术语和事实源边界表达。
 
 本报告的生成方式是多视角起草与主控合并：Codex 专业视角、Claude / Anthropic 视角、OpenAI Agents 视角和 Hook / DevOps 视角分别提出草案，主控再去重、归类并压缩为 LDVH 可吸收的稳定结论。子 Agent 输出是过程输入，不直接成为最终事实；本 Study 才是保留后的报告事实源。
 
@@ -187,12 +187,12 @@ archive_reason: null
 3. 后续设计 `ldvh-git-commit` Skill 和 `commit-msg` Hook 时，应直接消费本 Study 的结论：
    - Skill 承接可复用流程和验证入口；
    - Hook 只承接确定性门禁；
-   - 两者都不替代 `specs/10-Git提交规范.md`、`commit_validate.py` 或 Git 提交事实源。
+   - 两者都不替代 `history/specs-v1/10-Git提交规范.md`、`commit_validate.py` 或 Git 提交事实源。
 4. 外部资料不进入 specs 正文作为裸 URL；Study 的 `urls` 字段保留调研依据，specs 只保留吸收后的稳定规则。
 
 ## 后续分流
 
 - `workcase-0080`：已新增行业实践调研吸收项，并可在补齐后重新进入关闭审查。
-- `specs/04.02-LDVH能力资产与保障机制规范.md`：已吸收本报告的稳定规则。
+- `history/specs-v1/04.02-LDVH能力资产与保障机制规范.md`：已吸收本报告的稳定规则。
 - `workcase-0074`：后续实现 `ldvh-git-commit` Skill 和 `commit-msg` Hook 时，引用本 Study 作为设计输入之一。
 - `spark-0017`：无需复制本报告正文，只需继续保留多 WorkCase 分流关系。

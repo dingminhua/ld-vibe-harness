@@ -9,10 +9,10 @@ description: |
 
   当前 active 工作流程：
 
-  1. `specs/40-action-orchestration-design-audit-行动编排设计审核.md`
-  2. `specs/41-fact-model-audit-事实模型审核.md`
-  3. `specs/42-specs-audit-规范审核.md`
-  4. `specs/43-assurance-readiness-audit-保障准备度审核.md`
+  1. `history/specs-v1/30-action-orchestration-governance-行动编排创建审核与治理.md`
+  2. `history/specs-v1/41-fact-model-audit-事实模型审核.md`
+  3. `history/specs-v1/42-specs-audit-规范审核.md`
+  4. `history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md`
 
   用户观察：
 
@@ -63,10 +63,10 @@ related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:
-- specs/06-行动编排基础规范.md
-- specs/40-action-orchestration-design-audit-行动编排设计审核.md
-- specs/41-fact-model-audit-事实模型审核.md
-- specs/42-specs-audit-规范审核.md
-- specs/43-assurance-readiness-audit-保障准备度审核.md
+- history/specs-v1/06-行动编排基础规范.md
+- history/specs-v1/30-action-orchestration-governance-行动编排创建审核与治理.md
+- history/specs-v1/41-fact-model-audit-事实模型审核.md
+- history/specs-v1/42-specs-audit-规范审核.md
+- history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
 - specs/21-WorkCase-工作项.md
 - specs/20-Spark-火花.md

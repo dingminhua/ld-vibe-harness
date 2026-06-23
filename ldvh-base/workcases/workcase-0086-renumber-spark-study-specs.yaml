@@ -39,8 +39,8 @@ orchestration:
     mode: single
     input_refs:
     - current-conversation
-    - specs/03.02-事实模型文档规范.md
-    - specs/05-事实模型基础规范.md
+    - history/specs-v1/03.02-事实模型文档规范.md
+    - history/specs-v1/05-事实模型基础规范.md
     - specs/20-29 active 工作模型成员集合
     expected_output: 明确 Spark/Study 编号迁移的必须同步面、历史事实保留边界和 Human 方案确认前的风险。
     status: done
@@ -60,9 +60,9 @@ orchestration:
     input_refs:
     - specs/20-Spark-火花.md
     - specs/24-Study-研究报告.md
-    - specs/01-目录说明.md
-    - specs/03.02-事实模型文档规范.md
-    - specs/05-事实模型基础规范.md
+    - history/specs-v1/01-目录说明.md
+    - history/specs-v1/03.02-事实模型文档规范.md
+    - history/specs-v1/05-事实模型基础规范.md
     expected_output: Spark 规范成为 20 号，Study 规范成为 24 号，成员目录和自描述一致。
     status: done
     result_summary: 已完成规范文件迁移：Spark 成为 20 号工作模型，Study 成为 24 号工作模型；两个文件的 doc_id、spec_id、canonical_path
@@ -70,8 +70,8 @@ orchestration:
     evidence_refs:
     - specs/20-Spark-火花.md
     - specs/24-Study-研究报告.md
-    - specs/01-目录说明.md
-    - specs/05-事实模型基础规范.md
+    - history/specs-v1/01-目录说明.md
+    - history/specs-v1/05-事实模型基础规范.md
     blocking_reason: null
   - id: item-3
     title: 同步 Code Web 测试和事实源引用
@@ -87,7 +87,7 @@ orchestration:
     result_summary: 已同步字段注册 owner、ADR/Pitfall 规范引用、Web 关联排序、Web Spark API 注释、测试夹具和
       ldvh-base 当前事实源路径引用。
     evidence_refs:
-    - specs/05.03-字段注册与消费规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
     - web/src/pages/ObjectDetail.tsx
     - web/docs/04-ObjectDetail.md
     - web/api/routes/sparks.ts
@@ -146,8 +146,8 @@ orchestration:
         objective: 审核 Spark/Study 编号迁移方案是否覆盖工作模型契约、成员自描述和当前事实源边界。
         input_refs:
         - current-conversation
-        - specs/03.02-事实模型文档规范.md
-        - specs/05-事实模型基础规范.md
+        - history/specs-v1/03.02-事实模型文档规范.md
+        - history/specs-v1/05-事实模型基础规范.md
         - specs/20-Spark-火花.md
         - specs/24-Study-研究报告.md
         - ldvh-base/workcases/workcase-0086-renumber-spark-study-specs.yaml
@@ -201,7 +201,7 @@ orchestration:
         - 迁移完成后用针对旧路径和旧编号的 rg 扫描分类残留。
         required_changes: []
         evidence_refs:
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
         - web/docs/04-ObjectDetail.md
         - tests/code/test_fact_validate.py
       raw_output_ref: null
@@ -326,8 +326,8 @@ orchestration:
         input_refs:
         - specs/20-Spark-火花.md
         - specs/24-Study-研究报告.md
-        - specs/01-目录说明.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/01-目录说明.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
         - python3 code/specs_validate.py all --fail-on-diagnostics
         constraints:
         - 只复核本次编号迁移，不扩大到其它工作模型设计。
@@ -437,8 +437,8 @@ plan_confirmed_at: '2026-06-21T18:30:35+08:00'
 related_docs:
 - specs/20-Spark-火花.md
 - specs/24-Study-研究报告.md
-- specs/03.02-事实模型文档规范.md
-- specs/05-事实模型基础规范.md
+- history/specs-v1/03.02-事实模型文档规范.md
+- history/specs-v1/05-事实模型基础规范.md
 related_adrs: []
 related_sparks: []
 related_pitfalls: []

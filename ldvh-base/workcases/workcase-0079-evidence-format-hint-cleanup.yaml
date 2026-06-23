@@ -10,7 +10,7 @@ priority: P2
 description: |
   本计划负责处理 `python3 code/fact_validate.py ldvh-base --format text` 中剩余的 `EVIDENCE_FORMAT_HINT` warning。
 
-  `EVIDENCE_FORMAT_HINT` 表示证据字段有内容，但未按 `specs/05.02-字段内容与格式规范.md` 要求的四段式 Markdown 标题书写：
+  `EVIDENCE_FORMAT_HINT` 表示证据字段有内容，但未按 `history/specs-v1/05.02-字段内容与格式规范.md` 要求的四段式 Markdown 标题书写：
   - `## 验证计划`
   - `## 验证命令`
   - `## 验证结果`
@@ -54,7 +54,7 @@ orchestration:
     role: maintainer
     mode: single
     input_refs:
-    - specs/05.02-字段内容与格式规范.md
+    - history/specs-v1/05.02-字段内容与格式规范.md
     - specs/21-WorkCase-工作项.md
     - specs/23-Pitfall-踩坑经验.md
     expected_output: 明确历史证据四段式改写策略、例外条件和不得伪造的内容边界。
@@ -62,7 +62,7 @@ orchestration:
     result_summary: |
       改写策略为保留原字段全文作为“原始证据摘录”，将原二级标题降为普通 `原文标题：...`，新增四段式骨架；`验证计划` 和 `验证命令` 仅说明历史记录未单独记录完整信息，不补造当时未记录的命令、结果或 Human Gate 结论。
     evidence_refs:
-    - specs/05.02-字段内容与格式规范.md
+    - history/specs-v1/05.02-字段内容与格式规范.md
     blocking_reason: null
   - id: item-3
     title: 分批规范化历史证据字段
@@ -152,7 +152,7 @@ closure_evidence: |
 review_requested_at: '2026-06-19T12:03:00+08:00'
 closed_at: ''
 related_docs:
-- specs/05.02-字段内容与格式规范.md
+- history/specs-v1/05.02-字段内容与格式规范.md
 - specs/21-WorkCase-工作项.md
 - specs/23-Pitfall-踩坑经验.md
 related_adrs: []

@@ -42,8 +42,8 @@ orchestration:
     mode: single
     input_refs:
     - specs/21-WorkCase-工作项.md
-    - specs/05-事实模型基础规范.md
-    - specs/03.02-事实模型文档规范.md
+    - history/specs-v1/05-事实模型基础规范.md
+    - history/specs-v1/03.02-事实模型文档规范.md
     expected_output: 明确正式对象名、中文名、Web 展示名、对象定义、WorkCase 配套命名决策、迁移矩阵、是否允许兼容期，以及 Human Gate 决策记录。
     status: done
     result_summary: Human 已确认正式采用 WorkCase / 工作项，保留 WorkCase / 工作项；Plan 作为 WorkCase 内部方案/计划部分保留；采用一次性迁移，不保留长期兼容 alias；specs 当前正式规范不保留旧对象名历史痕迹。
@@ -80,8 +80,8 @@ orchestration:
     mode: parallel
     input_refs:
     - specs/21-WorkCase-工作项.md
-    - specs/05.03-字段注册与消费规范.md
-    - specs/08-Web信息同步实现规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
+    - history/specs-v1/08-Web信息同步实现规范.md
     - code/
     - web/
     expected_output: 由多视角审核确认 WorkCase 语义、WorkCase 配套命名、一次性迁移风险、兼容期、Web/Human 感知和 Code/Web 影响。
@@ -90,8 +90,8 @@ orchestration:
     evidence_refs:
     - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
     - specs/21-WorkCase-工作项.md
-    - specs/05.03-字段注册与消费规范.md
-    - specs/08-Web信息同步实现规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
+    - history/specs-v1/08-Web信息同步实现规范.md
     - code/fact_validate.py
     - code/fact_cli.py
     - web/src/i18n/locales.ts
@@ -110,7 +110,7 @@ orchestration:
     evidence_refs:
     - ldvh-base/workcases/
     - specs/21-WorkCase-工作项.md
-    - specs/05.03-字段注册与消费规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
     - code/fact_validate.py
     - code/fact_cli.py
     - web/api/routes/objects.ts
@@ -164,8 +164,8 @@ orchestration:
         objective: 审核 确立 WorkCase / 工作项以及 WorkCase 配套命名是否符合工作模型语义、状态机、Human Gate 和命名边界。
         input_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
-        - specs/05-事实模型基础规范.md
-        - specs/03.02-事实模型文档规范.md
+        - history/specs-v1/05-事实模型基础规范.md
+        - history/specs-v1/03.02-事实模型文档规范.md
         - specs/21-WorkCase-工作项.md
         constraints:
         - 只读审核，不修改文件。
@@ -184,8 +184,8 @@ orchestration:
         evidence_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
         - specs/21-WorkCase-工作项.md
-        - specs/05-事实模型基础规范.md
-        - specs/03.02-事实模型文档规范.md
+        - history/specs-v1/05-事实模型基础规范.md
+        - history/specs-v1/03.02-事实模型文档规范.md
       raw_output_ref: null
       attested_at: '2026-06-21T06:56:00+08:00'
       attestation:
@@ -201,7 +201,7 @@ orchestration:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
         - ldvh-base/workcases/
         - specs/21-WorkCase-工作项.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
         - code/fact_cli.py
         - code/fact_validate.py
         constraints:
@@ -222,7 +222,7 @@ orchestration:
         evidence_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
         - specs/21-WorkCase-工作项.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
         - code/fact_cli.py
         - code/fact_validate.py
         - web/api/routes/objects.ts
@@ -243,8 +243,8 @@ orchestration:
         - code/
         - web/
         - tests/
-        - specs/08-Web信息同步实现规范.md
-        - specs/10-Git提交规范.md
+        - history/specs-v1/08-Web信息同步实现规范.md
+        - history/specs-v1/10-Git提交规范.md
         constraints:
         - 只读审核，不修改文件。
         prompt_digest: 审核 Code/Web/Test 迁移风险和同步面。
@@ -267,8 +267,8 @@ orchestration:
         - web/src/i18n/locales.ts
         - web/src/pages/ObjectDetail.tsx
         - tests/web/api/facts.test.ts
-        - specs/08-Web信息同步实现规范.md
-        - specs/10-Git提交规范.md
+        - history/specs-v1/08-Web信息同步实现规范.md
+        - history/specs-v1/10-Git提交规范.md
       raw_output_ref: null
       attested_at: '2026-06-21T06:58:00+08:00'
       attestation:
@@ -300,7 +300,7 @@ orchestration:
         evidence_refs:
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
         - specs/21-WorkCase-工作项.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
         - web/src/i18n/locales.ts
         - web/src/pages/ObjectDetail.tsx
       raw_output_ref: null
@@ -354,7 +354,7 @@ orchestration:
         objective: 自检 WorkCase / 工作项一次性迁移是否已经覆盖 specs、事实源、Code、Web、测试和残留扫描，并区分执行完成、结果复核和关闭确认。
         input_refs:
         - specs/21-WorkCase-工作项.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
         - ldvh-base/workcases/
         - code/fact_validate.py
         - code/fact_cli.py
@@ -376,7 +376,7 @@ orchestration:
         required_changes: []
         evidence_refs:
         - specs/21-WorkCase-工作项.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
         - ldvh-base/workcases/
         - code/fact_validate.py
         - code/fact_cli.py
@@ -410,8 +410,8 @@ orchestration:
         objective: 复核 specs 正式规范是否已统一到 WorkCase / 工作项，WorkCase / 工作项是否保留，Plan 是否仅作为 WorkCase 内部方案语义存在。
         input_refs:
         - specs/21-WorkCase-工作项.md
-        - specs/05-事实模型基础规范.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/05-事实模型基础规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
         - ldvh-base/workcases/workcase-0082-establish-workcase-model.yaml
         constraints:
         - 只读复核，不修改文件。
@@ -429,8 +429,8 @@ orchestration:
         - 清理 specs 中会把 WorkCase 误读为旧对象的措辞。
         evidence_refs:
         - specs/21-WorkCase-工作项.md
-        - specs/05-事实模型基础规范.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/05-事实模型基础规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
       raw_output_ref: null
       attested_at: '2026-06-21T07:40:00+08:00'
       attestation:
@@ -478,7 +478,7 @@ orchestration:
         - code/
         - tests/
         - specs/21-WorkCase-工作项.md
-        - specs/05.03-字段注册与消费规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
         constraints:
         - 只读复核，不修改文件。
         prompt_digest: 复核 Code/Test 迁移和 goal 必填字段一致性。
@@ -694,7 +694,7 @@ revision_history:
   changed_fields:
   - updated
   - specs/21-WorkCase-工作项.md
-  - specs/05.03-字段注册与消费规范.md
+  - history/specs-v1/05.03-字段注册与消费规范.md
   - code/fact_validate.py
   - tests/code/test_fact_validate.py
   - tests/code/test_fact_cli.py

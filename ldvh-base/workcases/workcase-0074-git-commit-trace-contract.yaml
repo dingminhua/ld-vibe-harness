@@ -9,7 +9,7 @@ updated: '2026-06-21T04:10:00+08:00'
 priority: P1
 description: |
   当前 LDVH 已确认旧变更对象不应继续作为工作对象存在，而应回到 Git commit records 作为事实源修改追溯证据。
-  本计划已将旧 25 号工作模型文件删除，并新增 `specs/10-Git提交规范.md`，同步清理
+  本计划已将旧 25 号工作模型文件删除，并新增 `history/specs-v1/10-Git提交规范.md`，同步清理
   specs、Code、Web、测试和文档中的旧工作对象入口；为消除迁移痕迹，Study 工作模型应从 26 补位到 25。
 
   本计划负责承接后续行动准备：明确迁出目标、提交记录格式、简体中文提交语言要求、Web 派生视图调整、
@@ -42,12 +42,12 @@ orchestration:
     role: controller
     mode: single
     input_refs:
-    - specs/01-目录说明.md
-    - specs/03.01-规范文档规范.md
-    - specs/03.02-事实模型文档规范.md
-    - specs/05-事实模型基础规范.md
-    - specs/09-事实源边界与承载规范.md
-    - specs/10-Git提交规范.md
+    - history/specs-v1/01-目录说明.md
+    - history/specs-v1/03.01-规范文档规范.md
+    - history/specs-v1/03.02-事实模型文档规范.md
+    - history/specs-v1/05-事实模型基础规范.md
+    - history/specs-v1/09-事实源边界与承载规范.md
+    - history/specs-v1/10-Git提交规范.md
     expected_output: |
       在执行任何 specs/code/web 迁移前，先形成 Human Gate 结论：
       - 是否确认旧变更对象退出工作模型集合；
@@ -58,29 +58,29 @@ orchestration:
     status: done
     result_summary: 已确认旧变更对象退出工作模型集合，新规范编号为 10，旧 25 号工作模型文件删除，不保留兼容 YAML 对象。
     evidence_refs:
-    - specs/10-Git提交规范.md
-    - specs/01-目录说明.md
+    - history/specs-v1/10-Git提交规范.md
+    - history/specs-v1/01-目录说明.md
     blocking_reason: null
   - id: item-1
     title: 收口迁出目标与规范归属
     role: specs
     mode: single
     input_refs:
-    - specs/01-目录说明.md
-    - specs/03.02-事实模型文档规范.md
-    - specs/03.04-管辖项目配置规范.md
-    - specs/05-事实模型基础规范.md
-    - specs/05.02-字段内容与格式规范.md
-    - specs/07-Code确定性执行实现规范.md
-    - specs/08-Web信息同步实现规范.md
-    - specs/09-事实源边界与承载规范.md
-    - specs/10-Git提交规范.md
+    - history/specs-v1/01-目录说明.md
+    - history/specs-v1/03.02-事实模型文档规范.md
+    - history/specs-v1/03.04-管辖项目配置规范.md
+    - history/specs-v1/05-事实模型基础规范.md
+    - history/specs-v1/05.02-字段内容与格式规范.md
+    - history/specs-v1/07-Code确定性执行实现规范.md
+    - history/specs-v1/08-Web信息同步实现规范.md
+    - history/specs-v1/09-事实源边界与承载规范.md
+    - history/specs-v1/10-Git提交规范.md
     expected_output: 明确旧变更对象退出工作模型集合，新 Git 提交规范的编号、名称、canonical_path、边界、上位引用关系、旧 25 文件处理方式和历史引用迁移规则。
     status: done
     result_summary: 已将 10 收口为 Git 提交规范，01/05/09/20-29 工作模型索引已改为不再收录旧变更对象。
     evidence_refs:
-    - specs/10-Git提交规范.md
-    - specs/05-事实模型基础规范.md
+    - history/specs-v1/10-Git提交规范.md
+    - history/specs-v1/05-事实模型基础规范.md
     blocking_reason: null
   - id: item-2
     title: 定义 Git 提交记录契约
@@ -106,7 +106,7 @@ orchestration:
     role: specs-code
     mode: single
     input_refs:
-    - specs/05.02-字段内容与格式规范.md
+    - history/specs-v1/05.02-字段内容与格式规范.md
     - specs/21-WorkCase-工作项.md
     - specs/22-ADR-决策.md
     - specs/23-Pitfall-踩坑经验.md
@@ -120,7 +120,7 @@ orchestration:
     status: done
     result_summary: 已选择删除对象手写字段；关联提交由 Git 历史、对象 ID 和路径派生。WorkCase/ADR/Pitfall/Spark/Study 规范、CLI 模板、Validator 和测试夹具已同步，并补充全局 `related_changes` 写入/校验拦截。
     evidence_refs:
-    - specs/05.02-字段内容与格式规范.md
+    - history/specs-v1/05.02-字段内容与格式规范.md
     - specs/21-WorkCase-工作项.md
     - code/fact_validate.py
     blocking_reason: null
@@ -220,7 +220,7 @@ orchestration:
     status: done
     result_summary: Specs/Code/Web 三个子 agent 初审指出的残留问题已补救：规范措辞不再把旧 Change 当工作对象，Code 全局拦截 `related_changes`，Web Changelog 文档、提交元信息解析和图标语义已对齐提交记录派生视图。完整检查通过，剩余工作是 Web 共享 commit DTO 和结构化提交信息展示增强。
     evidence_refs:
-    - specs/10-Git提交规范.md
+    - history/specs-v1/10-Git提交规范.md
     - code/fact_validate.py
     - code/fact_cli.py
     - web/docs/06-Changelog.md
@@ -231,14 +231,14 @@ orchestration:
     role: controller
     mode: single
     input_refs:
-    - specs/10-Git提交规范.md
-    - specs/04.01-规范保障声明规范.md
+    - history/specs-v1/10-Git提交规范.md
+    - history/specs-v1/04.01-规范保障声明规范.md
     - specs/23-Pitfall-踩坑经验.md
     expected_output: 识别“有校验器不等于提交门禁已生效”的工作中发现问题，补入 10 保障要求，并沉淀为 Pitfall 供后续复用。
     status: done
     result_summary: 已将提交前校验入口补入 10 的确定性执行要求、检查项和待补齐事项；新增 pitfall-0008 记录误判根因和规避策略。
     evidence_refs:
-    - specs/10-Git提交规范.md
+    - history/specs-v1/10-Git提交规范.md
     - ldvh-base/pitfalls/pitfall-0008-validator-exists-not-equal-gate.yaml
     blocking_reason: null
   - id: item-9
@@ -246,7 +246,7 @@ orchestration:
     role: code
     mode: single
     input_refs:
-    - specs/10-Git提交规范.md
+    - history/specs-v1/10-Git提交规范.md
     - code/commit_validate.py
     - tests/code/test_commit_validate.py
     - hooks/ldvh-hooks.yaml
@@ -259,16 +259,16 @@ orchestration:
     - code/hook_dispatch.py
     - code/commit_validate.py
     - tests/code/test_commit_validate.py
-    - specs/04.02-LDVH能力资产与保障机制规范.md
+    - history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
     blocking_reason: null
   - id: item-10
     title: 消除 Study 编号迁移痕迹
     role: specs-code-web
     mode: single
     input_refs:
-    - specs/01-目录说明.md
+    - history/specs-v1/01-目录说明.md
     - specs/24-Study-研究报告.md
-    - specs/05-事实模型基础规范.md
+    - history/specs-v1/05-事实模型基础规范.md
     - specs/20-Spark-火花.md
     - code/
     - tests/
@@ -283,7 +283,7 @@ orchestration:
     status: done
     result_summary: Study 工作模型已由 26 补位为 25；`specs/24-Study-研究报告.md`、01/05 成员目录与编号说明、05.01 字段注册表 owner、Web 关联排序、现行 specs 引用、事实源引用和测试引用已同步。残留 `specs/26` / `26-Study` 命中仅保留在 0074 本执行项和验证命令中，用于说明本次补救目标；字段注册表已新增 owner 与 active 工作模型编号一致性检查，防止 Study 字段再次漂回 26。
     evidence_refs:
-    - specs/01-目录说明.md
+    - history/specs-v1/01-目录说明.md
     - specs/24-Study-研究报告.md
     blocking_reason: null
   - id: item-11
@@ -291,8 +291,8 @@ orchestration:
     role: skill-code
     mode: single
     input_refs:
-    - specs/10-Git提交规范.md
-    - specs/04.02-LDVH能力资产与保障机制规范.md
+    - history/specs-v1/10-Git提交规范.md
+    - history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
     - skills/ldvh-git-commit/SKILL.md
     - rules/LDVH-MAINTAINER-ENTRY.md
     - code/spec_checks/deployment_entries.py
@@ -307,8 +307,8 @@ orchestration:
     evidence_refs:
     - skills/ldvh-git-commit/SKILL.md
     - skills/ldvh-git-commit/agents/openai.yaml
-    - specs/04.02-LDVH能力资产与保障机制规范.md
-    - specs/10-Git提交规范.md
+    - history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+    - history/specs-v1/10-Git提交规范.md
     - rules/LDVH-MAINTAINER-ENTRY.md
     - code/spec_checks/deployment_entries.py
     - tests/code/specs_validate_checks/test_deployment_entries.py
@@ -346,7 +346,7 @@ verification_evidence: |
   ldvh-base 全量 fact_validate 为 errors=0 warnings=114，warning 均为既有旧证据格式提示。
   残留扫描中 `related_changes` 只存在于 10 禁止条款、Code 拦截、测试负例、0074 自身验收描述和历史事实文本中；不再作为工作对象字段或入口存在。
   2026-06-19 追加补救：Study 已由 26 补位为 25。`python3 code/specs_validate.py all --fail-on-diagnostics` 通过，派生成员索引显示 Study 的 `spec_id`、`canonical_path` 和 `doc_number` 均为 25；`python3 -m pytest tests/code/test_fact_validate.py tests/code/test_fact_cli.py -q` 通过，44 passed；0074、study-0001、spark-0005、workcase-0073 单体 fact_validate 为 errors=0，warnings=2，warning 均来自 0073 既有证据格式提示。
-  子 agent 复检后补救了 `specs/01`、`specs/05`、`specs/05.01`、Web 关联排序、Web 设计文档和 active/pending 事实源中的编号/Change 残留，并新增 `FIELD_REGISTRY_OWNER_SCOPE_MISMATCH` 检查。`python3 code/specs_validate.py field-registry specs/05.02-字段内容与格式规范.md` 通过；`python3 -m pytest tests/code/specs_validate_checks/test_field_registry.py tests/code/test_fact_validate.py tests/code/test_fact_cli.py -q` 通过，53 passed；`npm run check` 通过，包含 Web typecheck/build/API 测试、229 个 Code 单测和 specs:check。
+  子 agent 复检后补救了 `specs/01`、`specs/05`、`specs/05.01`、Web 关联排序、Web 设计文档和 active/pending 事实源中的编号/Change 残留，并新增 `FIELD_REGISTRY_OWNER_SCOPE_MISMATCH` 检查。`python3 code/specs_validate.py field-registry history/specs-v1/05.02-字段内容与格式规范.md` 通过；`python3 -m pytest tests/code/specs_validate_checks/test_field_registry.py tests/code/test_fact_validate.py tests/code/test_fact_cli.py -q` 通过，53 passed；`npm run check` 通过，包含 Web typecheck/build/API 测试、229 个 Code 单测和 specs:check。
 
   ## 结论
 
@@ -396,7 +396,7 @@ closure_evidence: |
 review_requested_at: '2026-06-21T04:10:00+08:00'
 closed_at: '2026-06-21T04:10:00+08:00'
 related_docs:
-- specs/10-Git提交规范.md
+- history/specs-v1/10-Git提交规范.md
 - web/docs/06-Changelog.md
 related_adrs: []
 related_sparks:

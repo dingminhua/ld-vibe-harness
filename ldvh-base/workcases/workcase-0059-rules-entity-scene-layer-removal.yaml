@@ -41,9 +41,9 @@ orchestration:
 
       specs 正式规范调整：
       - specs/05-Trae-Solo环境规范.md：明确 LDVH 只维护工作区规则和项目规则两类 Rules 入口，不使用场景规则；移除例外场景规则层级表、例外触发读取流程、例外同步到 .trae/rules 场景规则、例外场景规则审计和待办表述。
-      - specs/01-目录说明.md：将 specs 编号分区和 refs/research 边界入口摘要从 ldvh-specs-rules.md 改为由项目规则承接。
-      - specs/02-术语规范.md：将工作模型规则定义调整为由项目规则、工作区规则和 specs 原文共同承接，明确不使用场景规则承载工作模型规则；将术语入口摘要从 ldvh-specs-rules.md 改为项目规则。
-      - specs/03-文档基础规范.md：将 specs 编辑入口摘要从 ldvh-specs-rules.md 改为项目规则。
+      - history/specs-v1/01-目录说明.md：将 specs 编号分区和 refs/research 边界入口摘要从 ldvh-specs-rules.md 改为由项目规则承接。
+      - history/specs-v1/02-术语规范.md：将工作模型规则定义调整为由项目规则、工作区规则和 specs 原文共同承接，明确不使用场景规则承载工作模型规则；将术语入口摘要从 ldvh-specs-rules.md 改为项目规则。
+      - history/specs-v1/03-文档基础规范.md：将 specs 编辑入口摘要从 ldvh-specs-rules.md 改为项目规则。
       - specs/07-工作模型基础规范.md：明确工作模型对象不通过场景规则承载，其运行时入口约束归入项目规则、工作区规则或 specs 原文。
       - specs/09-LDVH特别说明.md：明确 LDVH 不维护独立工作区场景规则问候语，也不使用场景规则覆盖对话入口。
       - specs/20-工作模型集合索引.md：将运行机制迁移位置从泛化 .trae/rules 收敛为工作区规则、项目规则或 05 的 Rules 机制规范。
@@ -68,12 +68,12 @@ orchestration:
     evidence_refs:
     - ldvh-base/workcases/workcase-0048-scene-rules-effectiveness-evaluation.yaml
     - ldvh-base/workcases/workcase-0058-rules-scene-layer-spec-alignment.yaml
-    - specs/01-目录说明.md
-    - specs/02-术语规范.md
-    - specs/03-文档基础规范.md
-    - specs/04.03-环境入口适配与部署规范.md
-    - specs/05-事实模型基础规范.md
-    - specs/04.02-LDVH能力资产与保障机制规范.md
+    - history/specs-v1/01-目录说明.md
+    - history/specs-v1/02-术语规范.md
+    - history/specs-v1/03-文档基础规范.md
+    - history/specs-v1/04.03-环境入口适配与部署规范.md
+    - history/specs-v1/05-事实模型基础规范.md
+    - history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
     - rules/LDVH-WORKSPACE-ENTRY.md
     blocking_reason: null
   review:
@@ -126,12 +126,12 @@ closed_at: ''
 related_docs:
 - ldvh-base/workcases/workcase-0048-scene-rules-effectiveness-evaluation.yaml
 - ldvh-base/workcases/workcase-0058-rules-scene-layer-spec-alignment.yaml
-- specs/01-目录说明.md
-- specs/02-术语规范.md
-- specs/03-文档基础规范.md
-- specs/04.03-环境入口适配与部署规范.md
-- specs/05-事实模型基础规范.md
-- specs/04.02-LDVH能力资产与保障机制规范.md
+- history/specs-v1/01-目录说明.md
+- history/specs-v1/02-术语规范.md
+- history/specs-v1/03-文档基础规范.md
+- history/specs-v1/04.03-环境入口适配与部署规范.md
+- history/specs-v1/05-事实模型基础规范.md
+- history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
 - rules/LDVH-WORKSPACE-ENTRY.md
 related_adrs: []
 related_sparks: []

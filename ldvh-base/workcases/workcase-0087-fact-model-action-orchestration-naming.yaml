@@ -42,56 +42,56 @@ orchestration:
     mode: single
     input_refs:
     - current-conversation
-    - specs/00-LD-Vibe-Harness理念与纲要.md
-    - specs/02-术语规范.md
-    - specs/05-事实模型基础规范.md
-    - specs/06-行动编排基础规范.md
+    - history/specs-v1/00-LD-Vibe-Harness理念与纲要.md
+    - history/specs-v1/02-术语规范.md
+    - history/specs-v1/05-事实模型基础规范.md
+    - history/specs-v1/06-行动编排基础规范.md
     expected_output: 定义事实模型和行动编排的职责边界，说明与现有工作模型/工作流程术语的兼容和迁移策略。
     status: done
     result_summary: 02、05、06 已将“事实模型 / 行动编排”作为正式表达；旧“工作模型 / 工作流程”保留为旧路径、机器字段、历史事实文本和兼容枚举中的兼容表达。
     evidence_refs:
-    - specs/02-术语规范.md
-    - specs/05-事实模型基础规范.md
-    - specs/06-行动编排基础规范.md
+    - history/specs-v1/02-术语规范.md
+    - history/specs-v1/05-事实模型基础规范.md
+    - history/specs-v1/06-行动编排基础规范.md
     blocking_reason: null
   - id: item-2
     title: 评估 05 系列职责型命名方案
     role: specs-structure-reviewer
     mode: single
     input_refs:
-    - specs/05-事实模型基础规范.md
-    - specs/05.01-字段定义与语义规范.md
-    - specs/05.02-字段内容与格式规范.md
-    - specs/05.03-字段注册与消费规范.md
-    - specs/03.02-事实模型文档规范.md
+    - history/specs-v1/05-事实模型基础规范.md
+    - history/specs-v1/05.01-字段定义与语义规范.md
+    - history/specs-v1/05.02-字段内容与格式规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
+    - history/specs-v1/03.02-事实模型文档规范.md
     expected_output: 给出 05、05.01、05.02、05.03 的候选标题、路径迁移策略、canonical_path 影响和是否保留旧文件名的建议。
     status: done
     result_summary: 05.01、05.02、05.03 标题收敛为职责型标题；本轮不重命名实际文件路径，canonical_path 保持现有路径以避免与 0086 编号迁移混杂。
     evidence_refs:
-    - specs/05.01-字段定义与语义规范.md
-    - specs/05.02-字段内容与格式规范.md
-    - specs/05.03-字段注册与消费规范.md
+    - history/specs-v1/05.01-字段定义与语义规范.md
+    - history/specs-v1/05.02-字段内容与格式规范.md
+    - history/specs-v1/05.03-字段注册与消费规范.md
     blocking_reason: null
   - id: item-3
     title: 评估 06 与 30-59 行动编排总协调职责
     role: workflow-boundary-reviewer
     mode: single
     input_refs:
-    - specs/06-行动编排基础规范.md
-    - specs/03.03-行动编排文档规范.md
-    - specs/40-action-orchestration-design-audit-行动编排设计审核.md
-    - specs/41-fact-model-audit-事实模型审核.md
-    - specs/42-specs-audit-规范审核.md
-    - specs/43-assurance-readiness-audit-保障准备度审核.md
+    - history/specs-v1/06-行动编排基础规范.md
+    - history/specs-v1/03.03-行动编排文档规范.md
+    - history/specs-v1/30-action-orchestration-governance-行动编排创建审核与治理.md
+    - history/specs-v1/41-fact-model-audit-事实模型审核.md
+    - history/specs-v1/42-specs-audit-规范审核.md
+    - history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
     expected_output: 明确行动编排主文件作为总协调契约应承载哪些内容、不应复制哪些来源规范规则，以及 40-43 是否需要随之重写。
     status: done
     result_summary: 06 与 40-43 正文收敛为行动编排表达，并在 06 明确每个 active 行动编排主文件承担总协调、承上启下职责，不是薄入口或能力资产 wrapper。
     evidence_refs:
-    - specs/06-行动编排基础规范.md
-    - specs/40-action-orchestration-design-audit-行动编排设计审核.md
-    - specs/41-fact-model-audit-事实模型审核.md
-    - specs/42-specs-audit-规范审核.md
-    - specs/43-assurance-readiness-audit-保障准备度审核.md
+    - history/specs-v1/06-行动编排基础规范.md
+    - history/specs-v1/30-action-orchestration-governance-行动编排创建审核与治理.md
+    - history/specs-v1/41-fact-model-audit-事实模型审核.md
+    - history/specs-v1/42-specs-audit-规范审核.md
+    - history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
     blocking_reason: null
   - id: item-4
     title: 盘点实现与展示同步面
@@ -128,13 +128,13 @@ orchestration:
     status: done
     result_summary: 已按最小可验证范围修改正式规范、Rules 入口和 Code/Web 文档；实际文件路径和机器标识未在本轮重命名。
     evidence_refs:
-    - specs/00-LD-Vibe-Harness理念与纲要.md
-    - specs/01-目录说明.md
-    - specs/02-术语规范.md
-    - specs/03.02-事实模型文档规范.md
-    - specs/03.03-行动编排文档规范.md
-    - specs/05-事实模型基础规范.md
-    - specs/06-行动编排基础规范.md
+    - history/specs-v1/00-LD-Vibe-Harness理念与纲要.md
+    - history/specs-v1/01-目录说明.md
+    - history/specs-v1/02-术语规范.md
+    - history/specs-v1/03.02-事实模型文档规范.md
+    - history/specs-v1/03.03-行动编排文档规范.md
+    - history/specs-v1/05-事实模型基础规范.md
+    - history/specs-v1/06-行动编排基础规范.md
     blocking_reason: null
   - id: item-6
     title: 验证迁移并整理关闭材料
@@ -189,10 +189,10 @@ orchestration:
         objective: 审核 0087 对“事实模型 / 行动编排”兼容或替代“工作模型 / 工作流程”的术语边界是否足以进入执行前 Human 确认。
         input_refs:
         - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml
-        - specs/00-LD-Vibe-Harness理念与纲要.md
-        - specs/02-术语规范.md
-        - specs/05-事实模型基础规范.md
-        - specs/06-行动编排基础规范.md
+        - history/specs-v1/00-LD-Vibe-Harness理念与纲要.md
+        - history/specs-v1/02-术语规范.md
+        - history/specs-v1/05-事实模型基础规范.md
+        - history/specs-v1/06-行动编排基础规范.md
         - specs/21-WorkCase-工作项.md
         constraints:
         - 只读审核，不修改文件
@@ -216,11 +216,11 @@ orchestration:
         - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:10
         - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:16
         - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:23
-        - specs/00-LD-Vibe-Harness理念与纲要.md:89
-        - specs/02-术语规范.md:174
-        - specs/02-术语规范.md:189
-        - specs/05-事实模型基础规范.md:58
-        - specs/06-行动编排基础规范.md:56
+        - history/specs-v1/00-LD-Vibe-Harness理念与纲要.md:89
+        - history/specs-v1/02-术语规范.md:174
+        - history/specs-v1/02-术语规范.md:189
+        - history/specs-v1/05-事实模型基础规范.md:58
+        - history/specs-v1/06-行动编排基础规范.md:56
         - specs/21-WorkCase-工作项.md:133
         - specs/21-WorkCase-工作项.md:454
       raw_output_ref: subagent:019eea32-5e30-7af0-b74a-1893ba587e70
@@ -236,22 +236,22 @@ orchestration:
         objective: 审核 0087 对 05 子文档去前缀、06/30-59 行动编排总协调、20-24 编号变化后的受影响范围是否足以进入执行前 Human 确认。
         input_refs:
         - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml
-        - specs/03.02-事实模型文档规范.md
-        - specs/03.03-行动编排文档规范.md
-        - specs/05-事实模型基础规范.md
-        - specs/05.01-字段定义与语义规范.md
-        - specs/05.02-字段内容与格式规范.md
-        - specs/05.03-字段注册与消费规范.md
-        - specs/06-行动编排基础规范.md
+        - history/specs-v1/03.02-事实模型文档规范.md
+        - history/specs-v1/03.03-行动编排文档规范.md
+        - history/specs-v1/05-事实模型基础规范.md
+        - history/specs-v1/05.01-字段定义与语义规范.md
+        - history/specs-v1/05.02-字段内容与格式规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
+        - history/specs-v1/06-行动编排基础规范.md
         - specs/20-Spark-火花.md
         - specs/21-WorkCase-工作项.md
         - specs/22-ADR-决策.md
         - specs/23-Pitfall-踩坑经验.md
         - specs/24-Study-研究报告.md
-        - specs/40-action-orchestration-design-audit-行动编排设计审核.md
-        - specs/41-fact-model-audit-事实模型审核.md
-        - specs/42-specs-audit-规范审核.md
-        - specs/43-assurance-readiness-audit-保障准备度审核.md
+        - history/specs-v1/30-action-orchestration-governance-行动编排创建审核与治理.md
+        - history/specs-v1/41-fact-model-audit-事实模型审核.md
+        - history/specs-v1/42-specs-audit-规范审核.md
+        - history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
         constraints:
         - 只读审核，不修改文件
         - 重点检查方案范围、编号变化和执行前 Gate 边界
@@ -283,7 +283,7 @@ orchestration:
         - specs/21-WorkCase-工作项.md:369
         - specs/21-WorkCase-工作项.md:389
         - specs/21-WorkCase-工作项.md:453
-        - specs/01-目录说明.md:168
+        - history/specs-v1/01-目录说明.md:168
       raw_output_ref: subagent:019eea32-5e96-7503-b5fa-b66663ca855c
       attested_at: '2026-06-21T20:49:00+08:00'
       attestation:
@@ -438,16 +438,16 @@ orchestration:
         objective: 复核 0087 specs 层面是否完成事实模型/行动编排术语与职责收敛、05 子文档职责型标题、06 总协调边界，并判断是否存在关闭前必须修复项。
         input_refs:
         - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml
-        - specs/02-术语规范.md
-        - specs/03.02-事实模型文档规范.md
-        - specs/03.03-行动编排文档规范.md
-        - specs/05-事实模型基础规范.md
-        - specs/05.01-字段定义与语义规范.md
-        - specs/05.02-字段内容与格式规范.md
-        - specs/05.03-字段注册与消费规范.md
-        - specs/06-行动编排基础规范.md
-        - specs/40-action-orchestration-design-audit-行动编排设计审核.md
-        - specs/41-fact-model-audit-事实模型审核.md
+        - history/specs-v1/02-术语规范.md
+        - history/specs-v1/03.02-事实模型文档规范.md
+        - history/specs-v1/03.03-行动编排文档规范.md
+        - history/specs-v1/05-事实模型基础规范.md
+        - history/specs-v1/05.01-字段定义与语义规范.md
+        - history/specs-v1/05.02-字段内容与格式规范.md
+        - history/specs-v1/05.03-字段注册与消费规范.md
+        - history/specs-v1/06-行动编排基础规范.md
+        - history/specs-v1/30-action-orchestration-governance-行动编排创建审核与治理.md
+        - history/specs-v1/41-fact-model-audit-事实模型审核.md
         constraints:
         - 只读复核，不修改文件
         - 旧路径和机器标识若符合兼容策略，不作为失败项
@@ -468,15 +468,15 @@ orchestration:
         - 可在后续小修中润色 05/06 第一章个别句式，例如“基础规则、事实模型/行动编排、准入条件”略有重复，但不构成关闭前阻塞。
         required_changes: []
         evidence_refs:
-        - specs/02-术语规范.md:175
-        - specs/02-术语规范.md:189
-        - specs/02-术语规范.md:204
-        - specs/05-事实模型基础规范.md:1
-        - specs/05.01-字段定义与语义规范.md:1
-        - specs/05.02-字段内容与格式规范.md:1
-        - specs/05.03-字段注册与消费规范.md:1
-        - specs/06-行动编排基础规范.md:94
-        - specs/41-fact-model-audit-事实模型审核.md:60
+        - history/specs-v1/02-术语规范.md:175
+        - history/specs-v1/02-术语规范.md:189
+        - history/specs-v1/02-术语规范.md:204
+        - history/specs-v1/05-事实模型基础规范.md:1
+        - history/specs-v1/05.01-字段定义与语义规范.md:1
+        - history/specs-v1/05.02-字段内容与格式规范.md:1
+        - history/specs-v1/05.03-字段注册与消费规范.md:1
+        - history/specs-v1/06-行动编排基础规范.md:94
+        - history/specs-v1/41-fact-model-audit-事实模型审核.md:60
         - /tmp/ldvh-old-terms-0087.txt
       raw_output_ref: subagent:019eea71-f161-7202-88ef-c7b04c0a140e
       attested_at: '2026-06-21T22:30:00+08:00'
@@ -524,10 +524,10 @@ orchestration:
         - 提交时注意与 workcase-0086 的编号迁移边界，避免两个高影响迁移在提交说明里混淆。
         required_changes: []
         evidence_refs:
-        - specs/02-术语规范.md:204
-        - specs/05-事实模型基础规范.md:1
-        - specs/06-行动编排基础规范.md:1
-        - specs/06-行动编排基础规范.md:94
+        - history/specs-v1/02-术语规范.md:204
+        - history/specs-v1/05-事实模型基础规范.md:1
+        - history/specs-v1/06-行动编排基础规范.md:1
+        - history/specs-v1/06-行动编排基础规范.md:94
         - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:397
         - ldvh-base/workcases/workcase-0087-fact-model-action-orchestration-naming.yaml:505
         - /tmp/ldvh-old-terms-0087.txt
@@ -625,25 +625,25 @@ revision_history:
   summary: 结果复核完成并进入 Human 关闭确认；路径和机器标识兼容残留已记录为 residual_risks。
 plan_confirmed_at: '2026-06-21T21:40:31+08:00'
 related_docs:
-- specs/00-LD-Vibe-Harness理念与纲要.md
-- specs/01-目录说明.md
-- specs/02-术语规范.md
-- specs/03.02-事实模型文档规范.md
-- specs/03.03-行动编排文档规范.md
-- specs/05-事实模型基础规范.md
-- specs/05.01-字段定义与语义规范.md
-- specs/05.02-字段内容与格式规范.md
-- specs/05.03-字段注册与消费规范.md
-- specs/06-行动编排基础规范.md
+- history/specs-v1/00-LD-Vibe-Harness理念与纲要.md
+- history/specs-v1/01-目录说明.md
+- history/specs-v1/02-术语规范.md
+- history/specs-v1/03.02-事实模型文档规范.md
+- history/specs-v1/03.03-行动编排文档规范.md
+- history/specs-v1/05-事实模型基础规范.md
+- history/specs-v1/05.01-字段定义与语义规范.md
+- history/specs-v1/05.02-字段内容与格式规范.md
+- history/specs-v1/05.03-字段注册与消费规范.md
+- history/specs-v1/06-行动编排基础规范.md
 - specs/20-Spark-火花.md
 - specs/21-WorkCase-工作项.md
 - specs/22-ADR-决策.md
 - specs/23-Pitfall-踩坑经验.md
 - specs/24-Study-研究报告.md
-- specs/40-action-orchestration-design-audit-行动编排设计审核.md
-- specs/41-fact-model-audit-事实模型审核.md
-- specs/42-specs-audit-规范审核.md
-- specs/43-assurance-readiness-audit-保障准备度审核.md
+- history/specs-v1/30-action-orchestration-governance-行动编排创建审核与治理.md
+- history/specs-v1/41-fact-model-audit-事实模型审核.md
+- history/specs-v1/42-specs-audit-规范审核.md
+- history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
 related_adrs: []
 related_sparks:
 - spark-0019
@@ -713,7 +713,7 @@ closure_evidence: |-
   - 若后续决定重命名实际文件路径，应单独创建或延续 WorkCase，并与 workcase-0086 的编号迁移分开提交。
 closure_requested_at: '2026-06-21T22:30:56+08:00'
 residual_risks:
-- 本轮未重命名实际文件路径，`specs/03.02-事实模型文档规范.md`、`specs/05-事实模型基础规范.md`、`specs/06-行动编排基础规范.md`、40/41 等路径仍保留旧词；这是兼容选择，不代表正文术语未迁移。
+- 本轮未重命名实际文件路径，`history/specs-v1/03.02-事实模型文档规范.md`、`history/specs-v1/05-事实模型基础规范.md`、`history/specs-v1/06-行动编排基础规范.md`、40/41 等路径仍保留旧词；这是兼容选择，不代表正文术语未迁移。
 - Code 内部仍保留 `work_model`、`work_process`、部分中文诊断和兼容枚举；当前验证通过，后续若要连机器标识一起迁移，应另设迁移边界和测试更新。
 - 当前工作区仍有 workcase-0086 相关未提交迁移变更；提交时应拆分或说明边界，避免两个高影响迁移混在同一提交中。
 followup_refs: []

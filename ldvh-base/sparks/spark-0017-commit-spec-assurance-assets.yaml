@@ -5,7 +5,7 @@ status: pending
 created: '2026-06-20T04:33:49+08:00'
 updated: '2026-06-21T00:39:27+08:00'
 description: |
-  本 Spark 承载一个需要后续收敛的规范保障问题：`specs/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
+  本 Spark 承载一个需要后续收敛的规范保障问题：`history/specs-v1/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
 
   当前讨论结论：
 
@@ -87,15 +87,15 @@ related_workcases:
 related_adrs: []
 related_studies: []
 related_docs:
-- specs/01-目录说明.md
-- specs/04.02-LDVH能力资产与保障机制规范.md
-- specs/04.03-环境入口适配与部署规范.md
-- specs/06-行动编排基础规范.md
-- specs/10-Git提交规范.md
+- history/specs-v1/01-目录说明.md
+- history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+- history/specs-v1/04.03-环境入口适配与部署规范.md
+- history/specs-v1/06-行动编排基础规范.md
+- history/specs-v1/10-Git提交规范.md
 - specs/20-Spark-火花.md
-- specs/40-action-orchestration-design-audit-行动编排设计审核.md
-- specs/41-fact-model-audit-事实模型审核.md
-- specs/42-specs-audit-规范审核.md
-- specs/43-assurance-readiness-audit-保障准备度审核.md
+- history/specs-v1/30-action-orchestration-governance-行动编排创建审核与治理.md
+- history/specs-v1/41-fact-model-audit-事实模型审核.md
+- history/specs-v1/42-specs-audit-规范审核.md
+- history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
 - code/commit_validate.py
 - web/docs/06-Changelog.md

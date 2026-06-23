@@ -84,7 +84,7 @@ orchestration:
     role: code-web
     mode: single
     input_refs:
-    - specs/05.02-字段内容与格式规范.md
+    - history/specs-v1/05.02-字段内容与格式规范.md
     - specs/20-Spark-火花.md
     - specs/24-Study-研究报告.md
     - code/fact_validate.py
@@ -94,7 +94,7 @@ orchestration:
     status: done
     result_summary: 05.01 已明确 datetime 字段必须记录 ISO 8601 时间戳；fact_validate 已拒绝 date-only datetime；Web Spark 创建改为本地 ISO 时间戳；历史 date-only 事实源字段已用对应行的 Git blame 提交时间迁移；Study/Spark 页面已验证显示时分。
     evidence_refs:
-    - specs/05.02-字段内容与格式规范.md
+    - history/specs-v1/05.02-字段内容与格式规范.md
     - specs/20-Spark-火花.md
     - specs/24-Study-研究报告.md
     - code/fact_validate.py
@@ -127,8 +127,8 @@ verification_evidence: |
 
   事实源和规范检查：
   - `python3 code/fact_validate.py ldvh-base/`：通过，files=110 errors=0 warnings=0。
-  - `python3 code/specs_validate.py refs specs/05.02-字段内容与格式规范.md specs/20-Spark-火花.md specs/24-Study-研究报告.md`：通过。
-  - `python3 code/specs_validate.py doc specs/05.02-字段内容与格式规范.md specs/20-Spark-火花.md specs/24-Study-研究报告.md`：通过。
+  - `python3 code/specs_validate.py refs history/specs-v1/05.02-字段内容与格式规范.md specs/20-Spark-火花.md specs/24-Study-研究报告.md`：通过。
+  - `python3 code/specs_validate.py doc history/specs-v1/05.02-字段内容与格式规范.md specs/20-Spark-火花.md specs/24-Study-研究报告.md`：通过。
 
   Code 测试：
   - `python3 -m pytest tests/code/test_fact_cli.py tests/code/test_fact_validate.py -q`：17 passed。

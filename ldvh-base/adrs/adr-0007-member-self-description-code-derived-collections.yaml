@@ -40,11 +40,11 @@ consequences: |
 related_adrs:
 - adr-0005
 related_rules:
-- specs/00-LD-Vibe-Harness理念与纲要.md
-- specs/01-目录说明.md
-- specs/03.02-事实模型文档规范.md
-- specs/03.03-行动编排文档规范.md
-- specs/07-Code确定性执行实现规范.md
-- specs/09-事实源边界与承载规范.md
+- history/specs-v1/00-LD-Vibe-Harness理念与纲要.md
+- history/specs-v1/01-目录说明.md
+- history/specs-v1/03.02-事实模型文档规范.md
+- history/specs-v1/03.03-行动编排文档规范.md
+- history/specs-v1/07-Code确定性执行实现规范.md
+- history/specs-v1/09-事实源边界与承载规范.md
 archive_reason:
 deprecated_reason:

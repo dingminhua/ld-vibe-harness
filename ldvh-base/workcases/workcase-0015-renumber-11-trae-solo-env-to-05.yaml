@@ -34,7 +34,7 @@ orchestration:
 
       ## 验证结果
 
-      原 specs/11-LDVH-Trae-Solo-环境规范.md 已重编号为 specs/04.03-环境入口适配与部署规范.md（后续再次重编号），specs 根目录正式规范与 Rules 引用已同步更新，文档规范检查和引用检查通过。
+      原 specs/11-LDVH-Trae-Solo-环境规范.md 已重编号为 history/specs-v1/04.03-环境入口适配与部署规范.md（后续再次重编号），specs 根目录正式规范与 Rules 引用已同步更新，文档规范检查和引用检查通过。
 
       ## 结论
 

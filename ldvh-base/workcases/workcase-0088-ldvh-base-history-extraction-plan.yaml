@@ -1,23 +1,24 @@
 id: workcase-0088
 type: workcase
-title: ldvh-base 历史事实源收口与价值提取准备
+title: ldvh-base 事实源快速迁移与价值提取
 goal: |
-  建立 ldvh-base 当前事实源历史化与价值提取的控制计划，在不立即批量迁移、不移动目录、不删除对象的前提下，先完成盘点、分类、提取规则和后续 Human Gate 边界。
-status: subagents_plan_reviewing
+  快速推进 ldvh-base 事实源迁移：不创建额外旧事实源目录，直接修复当前事实对象中的失效引用，把旧 v1 规范证据指向已有 history/specs-v1，并继续提取仍有价值的内容进入 v2 当前事实。
+status: executing
 created: '2026-06-23T23:47:14+08:00'
-updated: '2026-06-23T23:47:14+08:00'
+updated: '2026-06-23T23:50:54+08:00'
 priority: P1
+plan_confirmed_at: '2026-06-23T23:50:54+08:00'
 description: |
   v2 active 规范、Code 默认检查、Rules / Skill / Hook 入口和项目根 README 已完成收敛，但 ldvh-base 中仍保留大量 v1 时代的工作对象、旧 specs 路径、关闭证据、迁移过程证据和未分流的长期经验。
 
-  这些内容不能被简单删除，也不能直接视为当前 active 事实源继续消费。当前阶段的目标是先建立控制计划：把旧 ldvh-base 作为待历史化事实源进行盘点和分类，识别仍有价值的需求、决策、风险、经验、证据和未完成事项，再按 v2 事实模型重写到新的当前事实源或对应规范/代码/Web/运行时扩展工作中。
+  这些内容不能被简单删除，也不能直接视为当前 active 事实源继续消费。当前阶段不再创建额外“旧事实源”目录；旧事实源已经由 Git 历史、history/specs-v1 和当前对象中的历史证据承载。迁移应直接作用于当前 ldvh-base：失效的 v1 规范引用改为已有历史规范路径，仍有当前价值的需求、决策、风险、经验、证据和未完成事项再按 v2 事实模型重写进入当前事实。
 
-  本 WorkCase 不直接执行批量迁移，不移动或重命名 ldvh-base 目录，不关闭旧对象，不创建新事实源目录。任何目录级历史化、当前事实源重建、批量对象改写、旧对象关闭、对象删除或事实源边界改变，必须在本计划完成方案审核和 Human Gate 后另行执行。
+  本 WorkCase 不移动或重命名 ldvh-base 目录，不创建旧事实源目录，不通过复制目录制造第二事实源。后续若涉及对象删除、关闭、批量改写语义、重建当前事实源入口或改变事实源边界，仍必须单独 Human Gate。
 success_criteria: |-
-  - [ ] 完成 ldvh-base 当前对象清单和校验基线，至少覆盖 WorkCase、Spark、ADR、Pitfall 和 Study 的数量、状态分布、明显 v1 路径残留和当前阻塞类型
-  - [ ] 建立对象分类规则，区分当前仍需执行、历史证据保留、价值提取候选、可归档/可废弃候选、需要 Human Gate 裁决五类
+  - [x] 完成 ldvh-base 当前对象清单和校验基线，至少覆盖 WorkCase、Spark、ADR、Pitfall 和 Study 的数量、状态分布、明显 v1 路径残留和当前阻塞类型
+  - [x] 建立第一批对象处理规则：旧 v1 specs 失效路径直接迁移到已有 history/specs-v1；同名 active 20-24 事实模型路径保持指向 active specs
   - [ ] 建立价值提取规则，明确旧对象中的需求、决策、风险、经验、研究材料、验证证据和未完成事项分别应进入哪类 v2 事实模型或规范/Code/Web/运行时扩展工作
-  - [ ] 明确历史事实源与新当前事实源的边界方案，包括是否移动目录、是否保留旧 ldvh-base 原路径、是否新建当前事实源、Git 追溯方式和回滚边界
+  - [x] 明确不创建旧事实源目录；旧事实追溯依赖 Git 历史、history/specs-v1 和当前对象中的历史证据引用
   - [ ] 给出分批执行顺序和每批验证口径，避免知识地图、Web 或 Code 把历史残留误读为当前事实
   - [ ] 对所有会移动、删除、关闭、批量重写或改变事实源边界的动作列出 Human Gate 条件
   - [ ] 形成可执行的下一阶段 WorkCase 或行动编排候选，并在执行前提交 Human 方案确认
@@ -29,7 +30,8 @@ source: |
   Human Gate 记录：
   - 触发原因：创建 WorkCase，规划后续可能涉及事实源历史化、对象分类、价值提取、批量重写和事实源边界调整的高影响工作。
   - Human 决策：允许先建立本控制计划。
-  - 当前授权边界：只允许建立计划、盘点口径和分类规则；尚未授权移动、删除、关闭、批量重写或重建事实源。
+  - 追加决策：用户指出“我们现在要做的是迁移事实源，你就不需要创建旧的事实源了……现在要快速推进”。
+  - 当前授权边界：允许快速修复当前 ldvh-base 中确定性的失效历史引用；不授权创建旧事实源目录，不授权移动、删除、关闭、批量语义重写或重建事实源。
 orchestration:
   mode: sequential
   execution_items:
@@ -47,9 +49,12 @@ orchestration:
     - specs/24-Study-研究报告.md
     - specs/07-事实源边界与Git追溯规范.md
     expected_output: 输出对象数量、状态分布、路径残留类型、校验错误类型和当前可安全处理范围；不得修改事实对象。
-    status: pending
-    result_summary: ''
-    evidence_refs: []
+    status: done
+    result_summary: |
+      已建立基线：迁移前 ldvh-base 共 129 个文件，fact_validate 报告 349 errors、32 warnings；对象分布为 WorkCase 81、Spark 21、ADR 10、Pitfall 8、Study 9。错误主要为旧 v1 specs 路径导致的 PATH_NOT_FOUND 与 EVIDENCE_REF_PATH_NOT_FOUND。第一批确定性迁移后，全量 fact_validate 降为 0 errors、10 warnings，剩余 warning 均为既有 WORKCASE_REVIEW_ITEM_SELF_SIGNED。
+    evidence_refs:
+    - /tmp/ldvh-base-fact-validate.json
+    - /tmp/ldvh-base-fact-validate-after2.json
     blocking_reason: null
   - id: item-2
     title: 制定对象分类规则
@@ -60,9 +65,12 @@ orchestration:
     - specs/02-事实模型基础规范.md
     - specs/07-事实源边界与Git追溯规范.md
     expected_output: 定义当前仍需执行、历史证据保留、价值提取候选、可归档/可废弃候选、需要 Human Gate 裁决五类判断标准。
-    status: pending
-    result_summary: ''
-    evidence_refs: []
+    status: in_progress
+    result_summary: |
+      第一批已确定：失效的 v1 specs 路径属于历史证据引用，应迁移到已有 history/specs-v1；同名且仍 active 的 20-24 事实模型路径保持 active specs；已归档脚本路径迁移到 history/code-archive。后续仍需对对象价值进行语义分类。
+    evidence_refs:
+    - history/specs-v1/
+    - history/code-archive/fix_block_scalar.py
     blocking_reason: null
   - id: item-3
     title: 制定价值提取映射规则
@@ -82,7 +90,7 @@ orchestration:
     evidence_refs: []
     blocking_reason: null
   - id: item-4
-    title: 设计历史事实源与当前事实源边界方案
+    title: 明确历史追溯与当前事实源边界
     role: fact-source-boundary-planner
     mode: single
     input_refs:
@@ -91,9 +99,12 @@ orchestration:
     - item-3
     - specs/07-事实源边界与Git追溯规范.md
     expected_output: 给出是否移动旧 ldvh-base、是否新建当前事实源、如何保持 Git 追溯、如何避免 Code/Web/知识地图误读历史对象的方案选项和推荐路径。
-    status: pending
-    result_summary: ''
-    evidence_refs: []
+    status: done
+    result_summary: |
+      已按 Human 最新口径收敛：不创建旧事实源目录，不复制 ldvh-base；旧事实追溯依赖 Git 历史、history/specs-v1 和对象内历史证据引用。当前迁移直接修复 ldvh-base 中的失效路径，后续价值提取再写入 v2 当前事实。
+    evidence_refs:
+    - specs/07-事实源边界与Git追溯规范.md
+    - history/specs-v1/
     blocking_reason: null
   - id: item-5
     title: 制定分批执行顺序和验证口径
@@ -146,15 +157,18 @@ orchestration:
       aggregation_rule: 任一视角发现可能导致历史事实被当作当前事实、事实源边界被静默改变、或 Code/Web/知识地图消费对象漂移的硬问题时，不得进入执行；必须先退回方案修订或提交 Human Gate。
     review_items: []
     controller_resolution:
-      status: pending
-      summary: 当前仅完成 WorkCase 初始控制计划，尚未执行方案审核、盘点或迁移。
+      status: pass_with_followups
+      summary: 用户已明确要求不创建旧事实源并快速迁移；主控已执行第一批确定性路径迁移，后续继续做价值提取分类和剩余 warning 收口。
       required_changes: []
       unresolved_questions:
-      - 是否保留旧 ldvh-base 原路径作为历史事实源，还是移动到 history 后重建当前 ldvh-base。
       - 哪些 review_needed / human_closure_confirming 的旧 WorkCase 仍应视为当前需处理对象。
       - 旧对象价值提取后，原对象状态是否关闭、归档、保留原状态或转入历史目录。
-      ready_for_human_confirmation: false
-    human_confirmation: null
+      ready_for_human_confirmation: true
+    human_confirmation:
+      confirmed_at: '2026-06-23T23:50:54+08:00'
+      confirmed_by: human
+      decision: execute
+      summary: 不创建旧事实源目录，快速推进当前 ldvh-base 事实源迁移。
   result_review:
     controller_self_check: null
     review_policy: null

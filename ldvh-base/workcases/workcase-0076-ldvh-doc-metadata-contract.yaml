@@ -37,18 +37,18 @@ orchestration:
     role: specs
     mode: single
     input_refs:
-    - specs/03-文档基础规范.md
-    - specs/03.01-规范文档规范.md
-    - specs/03.02-事实模型文档规范.md
-    - specs/03.03-行动编排文档规范.md
-    - specs/07-Code确定性执行实现规范.md
-    - specs/08-Web信息同步实现规范.md
+    - history/specs-v1/03-文档基础规范.md
+    - history/specs-v1/03.01-规范文档规范.md
+    - history/specs-v1/03.02-事实模型文档规范.md
+    - history/specs-v1/03.03-行动编排文档规范.md
+    - history/specs-v1/07-Code确定性执行实现规范.md
+    - history/specs-v1/08-Web信息同步实现规范.md
     expected_output: 给出 `ldvh_doc` 的职责、适用范围、字段集合、示例和与普通头部、文件名、`ldvh_member` 的分工。
     status: done
     result_summary: 已在 03 / 03.01 定义 `ldvh_doc` 为 specs 根目录文档级硬元信息唯一权威位置；普通 Markdown 头部不得重复文档元信息；20-29 / 30-59 中 `ldvh_doc` 承载文档级事实，`ldvh_member` 只承载集合成员事实。
     evidence_refs:
-    - specs/03-文档基础规范.md
-    - specs/03.01-规范文档规范.md
+    - history/specs-v1/03-文档基础规范.md
+    - history/specs-v1/03.01-规范文档规范.md
     blocking_reason: null
   - id: item-2
     title: 设计迁移策略与兼容窗口
@@ -90,7 +90,7 @@ orchestration:
     result_summary: 已为当前 30 个 specs 根目录 Markdown 文件补齐完整 `ldvh_doc` 标准字段，并清退正文前普通文档元信息头部；字段空值按 03.01 逐字段契约处理，`updated` 已全部补齐为非空日期，03.01 因正文含示例块，已单独补真实顶层块并通过 Code 诊断确认。
     evidence_refs:
     - specs/
-    - specs/03.01-规范文档规范.md
+    - history/specs-v1/03.01-规范文档规范.md
     blocking_reason: null
   - id: item-5
     title: 明确 Web 消费方式
@@ -99,12 +99,12 @@ orchestration:
     input_refs:
     - web/docs/
     - web/
-    - specs/08-Web信息同步实现规范.md
+    - history/specs-v1/08-Web信息同步实现规范.md
     expected_output: 明确 Web 是否展示 `ldvh_doc`、展示字段、读取来源、辅助阅读面板或项目文件页的边界，以及不反向写入事实源的约束。
     status: done
     result_summary: 已在 08 和 Web 架构文档明确 Web 可展示 `ldvh_doc` 和 Code 诊断，但只能来自 Git 文件或 Code 派生只读 API；Web 不反向新增、补写、迁移、编辑或用普通头部替代 `ldvh_doc`。
     evidence_refs:
-    - specs/08-Web信息同步实现规范.md
+    - history/specs-v1/08-Web信息同步实现规范.md
     - web/docs/00-Architecture.md
     blocking_reason: null
   - id: item-6
@@ -151,10 +151,10 @@ verification_evidence: |
   ## 验证结果
 
   落地内容：
-  - `specs/03-文档基础规范.md` 和 `specs/03.01-规范文档规范.md` 已定义 `ldvh_doc` 的职责、字段、位置、与普通头部和 `ldvh_member` 的分工。
-  - `specs/03.01-规范文档规范.md` 已明确 `ldvh_doc` 标准字段必须全量出现；是否允许为空、空值形态和默认值按字段逐项定义；`updated` 必须非空，首次创建时与 `created` 相同，后续内容变更时更新为最近变更日期，且不得早于 `created`；字段值要求使用硬边界表达，不使用“建议”等软词表达字段契约；正式规范骨架已改为 `ldvh_doc` 标准模板。
-  - `specs/03.02-事实模型文档规范.md`、`specs/03.03-行动编排文档规范.md`、`specs/07-Code确定性执行实现规范.md`、`specs/08-Web信息同步实现规范.md` 已同步 `ldvh_doc` 消费边界。
-  - `specs/03.02-事实模型文档规范.md` 和 `specs/03.03-行动编排文档规范.md` 的专用骨架已同步改为 `ldvh_doc` + `ldvh_member` 双结构化模板，不再示范普通文档元信息头部。
+  - `history/specs-v1/03-文档基础规范.md` 和 `history/specs-v1/03.01-规范文档规范.md` 已定义 `ldvh_doc` 的职责、字段、位置、与普通头部和 `ldvh_member` 的分工。
+  - `history/specs-v1/03.01-规范文档规范.md` 已明确 `ldvh_doc` 标准字段必须全量出现；是否允许为空、空值形态和默认值按字段逐项定义；`updated` 必须非空，首次创建时与 `created` 相同，后续内容变更时更新为最近变更日期，且不得早于 `created`；字段值要求使用硬边界表达，不使用“建议”等软词表达字段契约；正式规范骨架已改为 `ldvh_doc` 标准模板。
+  - `history/specs-v1/03.02-事实模型文档规范.md`、`history/specs-v1/03.03-行动编排文档规范.md`、`history/specs-v1/07-Code确定性执行实现规范.md`、`history/specs-v1/08-Web信息同步实现规范.md` 已同步 `ldvh_doc` 消费边界。
+  - `history/specs-v1/03.02-事实模型文档规范.md` 和 `history/specs-v1/03.03-行动编排文档规范.md` 的专用骨架已同步改为 `ldvh_doc` + `ldvh_member` 双结构化模板，不再示范普通文档元信息头部。
   - 当前 specs 根目录 30 个 Markdown 文件已补齐顶层 `ldvh_doc` 的完整标准字段，并清退正文前普通文档元信息头部；03.01 因正文包含示例块，已额外补真实顶层块。
   - `code/spec_checks/index.py` 已解析顶部元信息区中的 `ldvh_doc`，并诊断 `LDVH_DOC_FIELD_ABSENT`、`LDVH_DOC_FIELD_EMPTY`、`LDVH_DOC_DATE_INVALID`、`LDVH_DOC_UPDATED_BEFORE_CREATED`、doc_kind/status、doc_id、canonical_path、title、普通头部重复和 `ldvh_member` 冲突。
   - `tests/code/specs_validate_checks/test_index.py` 已覆盖正常解析、缺失诊断、标准字段缺席、`updated` 为空、日期格式非法、`updated` 早于 `created`、普通头部重复、编号/路径/类型冲突，以及正文示例不应被误读为真实元信息。
@@ -210,12 +210,12 @@ closure_evidence: |
 review_requested_at: '2026-06-19T08:15:49+08:00'
 closed_at: ''
 related_docs:
-- specs/03-文档基础规范.md
-- specs/03.01-规范文档规范.md
-- specs/03.02-事实模型文档规范.md
-- specs/03.03-行动编排文档规范.md
-- specs/07-Code确定性执行实现规范.md
-- specs/08-Web信息同步实现规范.md
+- history/specs-v1/03-文档基础规范.md
+- history/specs-v1/03.01-规范文档规范.md
+- history/specs-v1/03.02-事实模型文档规范.md
+- history/specs-v1/03.03-行动编排文档规范.md
+- history/specs-v1/07-Code确定性执行实现规范.md
+- history/specs-v1/08-Web信息同步实现规范.md
 related_adrs: []
 related_sparks: []
 related_pitfalls: []

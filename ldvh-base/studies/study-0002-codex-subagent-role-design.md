@@ -41,7 +41,7 @@ archive_reason: null
 
 1. Codex 中如何创建子 Agent；
 2. Codex 中如何调用和管理子 Agent；
-3. 这些机制对 LDVH 后续 `specs/00-LD-Vibe-Harness理念与纲要.md` 中的多角色设定有什么启发。
+3. 这些机制对 LDVH 后续 `history/specs-v1/00-LD-Vibe-Harness理念与纲要.md` 中的多角色设定有什么启发。
 
 这里的“子 Agent”特指 Codex 官方文档中的 subagent workflow：主 Agent 在运行期启动一个或多个专业代理，让它们并行探索、执行、审查或分析，然后把摘要结果交回主线程。它不是 LDVH 工作对象，也不是长期事实源。
 
@@ -200,10 +200,10 @@ LDVH 支持多角色 AI 协作，但角色首先是事实源治理中的责任�
 
 ## 后续分流
 
-1. 修改 `specs/00-LD-Vibe-Harness理念与纲要.md` 时，吸收“角色是契约，不是线程”的理念层表述。
-2. 修改 `specs/06-行动编排基础规范.md` 时，定义主控、执行者、审查者、Human Gate 等流程角色边界。
+1. 修改 `history/specs-v1/00-LD-Vibe-Harness理念与纲要.md` 时，吸收“角色是契约，不是线程”的理念层表述。
+2. 修改 `history/specs-v1/06-行动编排基础规范.md` 时，定义主控、执行者、审查者、Human Gate 等流程角色边界。
 3. 修改 `specs/21-WorkCase-工作项.md` 时，只保留 execution item 需要的最小 `role` 和证据字段，避免把 Codex custom agent schema 写入 WorkCase。
-4. 修改 `specs/04.02-LDVH能力资产与保障机制规范.md` 时，再判断是否需要把 Codex custom agent TOML、Skills、MCP、AGENTS.md 的关系纳入能力资产分层。
+4. 修改 `history/specs-v1/04.02-LDVH能力资产与保障机制规范.md` 时，再判断是否需要把 Codex custom agent TOML、Skills、MCP、AGENTS.md 的关系纳入能力资产分层。
 5. 如需长期维护 Codex 子 Agent 示例，应另建环境适配文档或 Skill，而不是塞进 00。
 
 ### 2026-06-22 讨论补充：Codex 子 Agent 需求与 v1 规范落点
@@ -216,11 +216,11 @@ LDVH 支持多角色 AI 协作，但角色首先是事实源治理中的责任�
 
 按现有 specs v1 分层，建议落点如下：
 
-1. `specs/02-术语规范.md`：保留并必要时补强 `Agent`、`Role Contract`、`ExecutionItem` 的概念边界。子 Agent 是环境中的 Agent 能力或实体；Role Contract 是 LDVH 的环境无关角色契约，不等于 Codex subagent 本身。
-2. `specs/06-行动编排基础规范.md`：承载主控调度 Agent 的通用规则，包括何时考虑子 Agent、谁能调度、输入包最小要求、输出必须交还主控、哪些情况触发 Human Gate，以及 Agent 输出不得直接生效。
+1. `history/specs-v1/02-术语规范.md`：保留并必要时补强 `Agent`、`Role Contract`、`ExecutionItem` 的概念边界。子 Agent 是环境中的 Agent 能力或实体；Role Contract 是 LDVH 的环境无关角色契约，不等于 Codex subagent 本身。
+2. `history/specs-v1/06-行动编排基础规范.md`：承载主控调度 Agent 的通用规则，包括何时考虑子 Agent、谁能调度、输入包最小要求、输出必须交还主控、哪些情况触发 Human Gate，以及 Agent 输出不得直接生效。
 3. `specs/21-WorkCase-工作项.md`：只记录实例层最小事实，例如 `orchestration.execution_items[*].role`、`input_refs`、`expected_output`、审核条目的 `prompt_context`、`agent_name` 和 `controller_resolution`。WorkCase 不应写入 Codex spawn schema，也不维护完整 Role Contract。
-4. `specs/04.02-LDVH能力资产与保障机制规范.md` 和 `agents/`：当 LDVH 需要固定 Agent 能力资产时，在 04.02 中按固定资产规则登记，并在 `agents/` 中维护权威定义摘要。Agent 资产应说明角色边界、输入摘要、工具权限、是否允许写入、输出格式、主控复核、Human Gate 和证据回写位置。
-5. `specs/04.03-环境入口适配与部署规范.md`：承接 Codex 专属适配，包括 `spawn_agent`、`fork_context`、`message` / `items` 二选一、Codex custom agent TOML、`agents.max_threads`、`agents.max_depth`、`SubagentStart` / `SubagentStop` Hook 候选，以及非 Codex 环境的降级边界。
+4. `history/specs-v1/04.02-LDVH能力资产与保障机制规范.md` 和 `agents/`：当 LDVH 需要固定 Agent 能力资产时，在 04.02 中按固定资产规则登记，并在 `agents/` 中维护权威定义摘要。Agent 资产应说明角色边界、输入摘要、工具权限、是否允许写入、输出格式、主控复核、Human Gate 和证据回写位置。
+5. `history/specs-v1/04.03-环境入口适配与部署规范.md`：承接 Codex 专属适配，包括 `spawn_agent`、`fork_context`、`message` / `items` 二选一、Codex custom agent TOML、`agents.max_threads`、`agents.max_depth`、`SubagentStart` / `SubagentStop` Hook 候选，以及非 Codex 环境的降级边界。
 6. `specs/30-59` 具体行动编排：如果要把子 Agent 复查变成稳定流程，应优先把 `spark-0021-subagent-review-orchestration-gap` 收敛为一个 active 行动编排，例如“子 Agent 复核编排”。该流程应定义 Scenario、Context 输入包、并行等待、结果回收、硬问题处理、Agent 关闭、WorkCase 回写、Human Gate 和失败降级。
 
 因此，当前更优先的建设方向不是先改 21 的字段，也不是直接创建 Codex agent 配置，而是先把 `spark-0021` 所指出的“子 Agent 复查编排流程缺口”收敛成具体行动编排。字段层已有承载点，缺的是主控何时必须发起、如何发起、如何等待、如何处理结论和如何回写的 active workflow。

@@ -24,8 +24,8 @@ related_adrs: []
 related_studies:
 - study-0007
 related_docs:
-- specs/01-目录说明.md
-- specs/10-Git提交规范.md
+- history/specs-v1/01-目录说明.md
+- history/specs-v1/10-Git提交规范.md
 - specs/20-Spark-火花.md
 - web/docs/01-全局设计约束.md
 - web/docs/11-Web测试实现规范.md

@@ -36,12 +36,12 @@ related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
-- specs/05.01-字段定义与语义规范.md
-- specs/05.02-字段内容与格式规范.md
-- specs/05.03-字段注册与消费规范.md
+- history/specs-v1/05.01-字段定义与语义规范.md
+- history/specs-v1/05.02-字段内容与格式规范.md
+- history/specs-v1/05.03-字段注册与消费规范.md
 - specs/21-WorkCase-工作项.md
 - specs/20-Spark-火花.md
-- specs/42-specs-audit-规范审核.md
+- history/specs-v1/42-specs-audit-规范审核.md
 archive_reason: null
 ---
 

@@ -30,11 +30,11 @@ related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:
-- specs/02-术语规范.md
-- specs/07-Code确定性执行实现规范.md
-- specs/11-测试基础规范.md
-- specs/40-action-orchestration-design-audit-行动编排设计审核.md
-- specs/41-fact-model-audit-事实模型审核.md
-- specs/42-specs-audit-规范审核.md
-- specs/43-assurance-readiness-audit-保障准备度审核.md
+- history/specs-v1/02-术语规范.md
+- history/specs-v1/07-Code确定性执行实现规范.md
+- history/specs-v1/11-测试基础规范.md
+- history/specs-v1/30-action-orchestration-governance-行动编排创建审核与治理.md
+- history/specs-v1/41-fact-model-audit-事实模型审核.md
+- history/specs-v1/42-specs-audit-规范审核.md
+- history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md
 - ldvh-base/sparks/spark-0005-task-orchestration-boundary.yaml

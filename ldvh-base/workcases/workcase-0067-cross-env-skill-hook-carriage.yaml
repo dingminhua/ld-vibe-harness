@@ -58,8 +58,8 @@ orchestration:
 
       本 Task 只产出研究结论，不直接修改 04.03、04.06、11.01 或 Code 校验。后续应通过独立 Task 把组合能力拆分规则写入规范和校验，且不得把 Trae Skill-only 标为 Hook 等价或原生承接。
     evidence_refs:
-    - specs/01-目录说明.md
-    - specs/04.03-环境入口适配与部署规范.md
+    - history/specs-v1/01-目录说明.md
+    - history/specs-v1/04.03-环境入口适配与部署规范.md
     - specs/21-WorkCase-工作项.md
     - code/specs_validate.py
     - tests/code/test_specs_validate.py
@@ -112,9 +112,9 @@ closure_evidence: |
 review_requested_at: '2026-06-11T00:00:00'
 closed_at: '2026-06-11T00:00:00'
 related_docs:
-- specs/01-目录说明.md
-- specs/04.03-环境入口适配与部署规范.md
-- specs/04.03-环境入口适配与部署规范.md
+- history/specs-v1/01-目录说明.md
+- history/specs-v1/04.03-环境入口适配与部署规范.md
+- history/specs-v1/04.03-环境入口适配与部署规范.md
 - specs/21-WorkCase-工作项.md
 related_adrs: []
 related_sparks: []

@@ -23,9 +23,9 @@ related_workcases:
 related_adrs: []
 related_pitfalls: []
 related_docs:
-- specs/04.02-LDVH能力资产与保障机制规范.md
-- specs/06-行动编排基础规范.md
-- specs/10-Git提交规范.md
+- history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+- history/specs-v1/06-行动编排基础规范.md
+- history/specs-v1/10-Git提交规范.md
 - specs/21-WorkCase-工作项.md
 - specs/20-Spark-火花.md
 - specs/24-Study-研究报告.md

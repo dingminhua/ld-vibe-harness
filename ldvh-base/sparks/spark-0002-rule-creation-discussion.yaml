@@ -13,6 +13,6 @@ related_adrs: []
 related_studies: []
 related_workcases: []
 related_docs:
-- specs/04.03-环境入口适配与部署规范.md
-- specs/06-行动编排基础规范.md
+- history/specs-v1/04.03-环境入口适配与部署规范.md
+- history/specs-v1/06-行动编排基础规范.md
 priority: P2
