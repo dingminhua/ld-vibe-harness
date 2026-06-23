@@ -53,6 +53,7 @@ v2_draft_area:
 | `PLAN.md` | v2 写作区实施阶段、结构计划、禁止事项和工作流程接入边界 | draft，未 active |
 | `V1-UNDERSTANDING-GATE.md` | v1 机制理解门禁和不得丢失的机制清单 | gate，未 active |
 | `MIGRATION-MAP.md` | v1 到 v2 迁移覆盖控制、行动编排后置生成规则和 v2 工作流程接入边界 | coverage control，未 active |
+| `V2-ACTIVATION-PLAN.md` | v2 从写作区成为 active 正式规范前后的门禁、文件动作、入口切换、历史记录处理和回滚路径 | activation control，未 active |
 
 当前已处理附件如下。附件文件统一放在 `attachments/`；附件随父规范核对，不作为独立根规范：
 
