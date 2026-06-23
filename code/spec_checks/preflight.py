@@ -29,6 +29,7 @@ AUTHORIZED_PREFIXES = [
 AUTHORIZED_FILES = {
     "LDVH-GOVERNED-PROJECTS.yaml": ("runtime_extension", "06/07"),
     "README.md": ("project_entry", "01/07"),
+    "pyproject.toml": ("code", "04/08"),
 }
 
 FIELD_PATH_RULES = {
@@ -435,7 +436,7 @@ def preflight_build(root=None, target_path=None, operation="update", field_path=
             diagnostic(
                 "PREFLIGHT_RULES_ENTRY_SYNC_REVIEW_REQUIRED",
                 "info",
-                f"本次 specs 写入可能影响固定 Rules 入口表达；应参考 {RULES_ENTRY_SYNC_REVIEW_PATH} 执行 Rules 入口同步审查。该成员当前为 planned 人工降级清单，不授权自动修改 Rules",
+                f"本次 specs 写入可能影响固定 Rules 入口表达；应参考 {RULES_ENTRY_SYNC_REVIEW_PATH} 执行 Rules 入口同步审查。preflight 只提示同步风险，不授权自动修改 Rules",
                 relative_path,
                 "03-行动编排规范 / 06-运行时扩展规范",
                 "rules_entry_sync_review",

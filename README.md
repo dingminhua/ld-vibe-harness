@@ -33,11 +33,21 @@ AI 维护 LDVH 产品资产时，先读取 `rules/LDVH-MAINTAINER-ENTRY.md`；�
 
 Code 检查依赖 Python 3.9+ 和 `PyYAML`；测试依赖 `pytest`。依赖声明见 `pyproject.toml`。
 
+新环境中优先使用 Code 自举入口：
+
 ```bash
-python3 -m pip install -e '.[test]'
+python3 code/bootstrap_code.py
 ```
 
-Web 依赖位于 `web/` 工作区：
+它直接安装 Code 和 Code 测试所需的最小 Python 依赖，避免不同环境的 `pip`、`setuptools` 和 editable install 行为差异影响 AI 审核入口。手工兜底命令为：
+
+```bash
+python3 -m pip install PyYAML pytest
+```
+
+跨环境审核不要把 `python3 -m pip install -e '.[test]'` 作为默认入口；旧版 `pip` 对 `pyproject.toml` 的 editable install 支持不稳定。`pyproject.toml` 保留依赖声明和现代构建配置，Code 审核入口以 `code/bootstrap_code.py` 为准。
+
+Web 依赖独立位于 `web/` 工作区：
 
 ```bash
 npm --prefix web install

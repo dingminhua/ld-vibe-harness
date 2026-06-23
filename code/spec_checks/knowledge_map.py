@@ -192,6 +192,17 @@ class KnowledgeMapMixin:
 
     def add_node(self, node_id, payload):
         if node_id in self.node_ids:
+            for node in self.nodes:
+                if node.get("id") != node_id:
+                    continue
+                if self.should_replace_node(node, payload):
+                    payload.setdefault("canonical_path", payload.get("path"))
+                    payload.setdefault("project_namespace", self.project_namespace)
+                    payload.setdefault("source_refs", [])
+                    payload.setdefault("status", None)
+                    payload.setdefault("authority", None)
+                    node.clear()
+                    node.update({"id": node_id, **payload})
             return
         self.node_ids.add(node_id)
         payload.setdefault("canonical_path", payload.get("path"))
@@ -200,6 +211,17 @@ class KnowledgeMapMixin:
         payload.setdefault("status", None)
         payload.setdefault("authority", None)
         self.nodes.append({"id": node_id, **payload})
+
+    def should_replace_node(self, existing, incoming):
+        existing_type = existing.get("type")
+        incoming_type = incoming.get("type")
+        existing_source = existing.get("source")
+        incoming_source = incoming.get("source")
+        if existing_source == "relation_target" and incoming_source == "markdown_file":
+            return True
+        if existing_type in {"external_fact_source", "missing_reference"} and incoming_type not in {"external_fact_source", "missing_reference"}:
+            return True
+        return False
 
     def project_knowledge_map(self, generated_at=None):
         nodes_by_id = {node["id"]: node for node in self.nodes}

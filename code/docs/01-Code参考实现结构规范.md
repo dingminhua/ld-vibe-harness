@@ -31,6 +31,7 @@
 
 | 文件 | 当前职责 | 结构治理要求 |
 |---|---|---|
+| `code/bootstrap_code.py` | Code Python 依赖自举入口 | 保持无第三方依赖；只安装 Code 与 Code 测试所需的最小 Python 依赖，不依赖 editable install，不承接 Web 依赖安装 |
 | `code/specs_validate.py` | specs 文档结构、引用、保障要求、术语、Human Gate、管辖项目、运行投影、Web validate 派生检查等聚合入口 | 作为 CLI 兼容层和跨模块配置同步层；新增检查不得默认继续堆入此文件，应进入 `code/spec_checks/` |
 | `code/fact_cli.py` | 工作对象事实源查询、展示、搜索和统计入口 | 查询能力扩展时应保持输出来源可追溯，必要时拆出共享读取层 |
 | `code/fact_validate.py` | 工作对象事实源校验入口 | 字段、状态和对象关系规则变化时同步测试；不得把 specs 规则复制为第二事实源 |
@@ -70,6 +71,7 @@
 
 | 命令 | 兼容要求 |
 |---|---|
+| `python3 code/bootstrap_code.py` | 继续作为无第三方依赖的 Code Python 依赖自举入口；不得依赖 editable install、安装 Web 依赖或声明环境完整支持 LDVH |
 | `python3 code/specs_validate.py doc specs` | 继续检查 Markdown 文档结构 |
 | `python3 code/specs_validate.py refs specs` | 继续检查章节引用 |
 | `python3 code/specs_validate.py assurance specs` | 继续检查规范保障要求表 |
@@ -160,6 +162,7 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 | 实现入口或模块 | 测试位置 |
 |---|---|
+| `code/bootstrap_code.py` | `tests/code/test_bootstrap_code.py` |
 | `code/specs_validate.py` | `tests/code/test_specs_validate.py` 保留 CLI 兼容入口加载、`all --fail-on-diagnostics` 聚合入口成功回归和失败回归 |
 | `code/spec_checks/common.py` | `tests/code/specs_validate_checks/common.py` 提供 specs 校验测试共享加载和 Markdown 夹具 helper |
 | `code/spec_checks/doc_structure.py` | `tests/code/specs_validate_checks/test_doc_structure.py` |

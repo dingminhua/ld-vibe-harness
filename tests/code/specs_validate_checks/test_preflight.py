@@ -103,6 +103,17 @@ def test_preflight_blocks_unauthorized_location(tmp_path):
     assert "PREFLIGHT_TARGET_LOCATION_UNAUTHORIZED" in codes
 
 
+def test_preflight_allows_pyproject_as_code_dependency_entry(tmp_path):
+    (tmp_path / "pyproject.toml").write_text("[project]\nname = \"fixture\"\n", encoding="utf-8")
+
+    report = checker.preflight_build(tmp_path, "pyproject.toml", operation="update")
+    codes = {item["code"] for item in report["diagnostics"]}
+
+    assert report["input"]["asset_type"] == "code"
+    assert report["summary"]["status"] == "pass"
+    assert "PREFLIGHT_TARGET_LOCATION_UNAUTHORIZED" not in codes
+
+
 def test_preflight_blocks_create_when_target_exists(tmp_path):
     write_md(tmp_path / "tests" / "code" / "test_existing.py", "# existing\n")
 

@@ -541,6 +541,157 @@ v2_attachment:
     assert not report["diagnostics"]
 
 
+def test_knowledge_map_real_doc_node_replaces_prior_reference_placeholder(tmp_path):
+    specs_v2 = tmp_path / "specs-v2"
+    write_md(
+        specs_v2 / "06-运行时扩展规范.md",
+        """
+# 运行时扩展规范
+
+```yaml
+v2_spec:
+  spec_id: "06"
+  spec_kind: "spec"
+  title: "运行时扩展规范"
+  status: "active"
+  authority: "active"
+  canonical_path: "specs-v2/06-运行时扩展规范.md"
+  created: "2026-06-23"
+  updated: "2026-06-24"
+  parent_spec: ""
+  relation: ""
+  positioning: "定义运行时扩展"
+  scope: "v2"
+  basis: []
+  related_specs:
+    - "specs-v2/30-rules-entry-sync-review-Rules入口同步审查.md"
+  migration_sources: []
+  active_fact_source:
+    - "specs-v2/06-运行时扩展规范.md"
+  code_consumption:
+    - "v2_spec_metadata"
+  migration_status: "migrated"
+```
+
+## 1. 本文解决的问题
+
+定义运行时扩展。
+
+## 2. 上位依据
+
+承接 00。
+
+## 3. 构成要素归属与价值判断
+
+属于运行时扩展。
+
+## 4. 规范保障要求
+
+| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+|---|---|---|---|---|
+| 入口可见要求 | 需要定位 30 | Code 检查 | 运行时扩展 | 修改时 |
+
+## 5. Human Gate
+
+改变入口时暂停。
+
+## 6. 待补齐事项
+
+无。
+""",
+    )
+    write_md(
+        specs_v2 / "30-rules-entry-sync-review-Rules入口同步审查.md",
+        """
+# rules-entry-sync-review-Rules入口同步审查
+
+```yaml
+v2_spec:
+  spec_id: "30"
+  spec_kind: "member_spec"
+  title: "rules-entry-sync-review-Rules入口同步审查"
+  status: "active"
+  authority: "active"
+  canonical_path: "specs-v2/30-rules-entry-sync-review-Rules入口同步审查.md"
+  created: "2026-06-24"
+  updated: "2026-06-24"
+  parent_spec: "specs-v2/03-行动编排规范.md"
+  relation: "action_member"
+  positioning: "定义 Rules 同步审查"
+  scope: "v2"
+  basis: []
+  related_specs: []
+  migration_sources: []
+  active_fact_source:
+    - "specs-v2/30-rules-entry-sync-review-Rules入口同步审查.md"
+  code_consumption:
+    - "action_member_identity"
+  migration_status: "not_applicable"
+```
+
+```yaml
+v2_action_member:
+  spec_id: "30"
+  kind: "action_process"
+  name_en: "rules-entry-sync-review"
+  name_zh: "Rules入口同步审查"
+  collection_status: "active"
+  canonical_path: "specs-v2/30-rules-entry-sync-review-Rules入口同步审查.md"
+  scenario_anchor: "§8"
+  context_anchor: "§7"
+  gate_anchor: "§11"
+  execution_anchor: "§9"
+  issue_routing_anchor: "§10"
+  writeback_anchor: "§14"
+  evidence_anchor: "§14"
+  testability_anchor: "§16"
+  assurance_takeover: []
+  capability_assets: []
+  code_consumption:
+    - "action_member_identity"
+```
+
+## 1. 本文解决的问题
+
+定义 Rules 同步审查。
+
+## 2. 上位依据
+
+承接 03。
+
+## 3. 构成要素归属与价值判断
+
+属于行动编排。
+
+## 4. 规范保障要求
+
+| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+|---|---|---|---|---|
+| 入口可见要求 | 需要同步 Rules | 本文 | 行动实践关联 | 修改时 |
+
+## 5. Human Gate
+
+改变成员状态时暂停。
+
+## 6. 待补齐事项
+
+无。
+""",
+    )
+
+    report = checker.v2_check_build(
+        tmp_path,
+        query_layer="neighbors",
+        start_node="specs-v2/30-rules-entry-sync-review-Rules入口同步审查.md",
+    )
+    nodes = {node["id"]: node for node in report["knowledge_map"]["nodes"]}
+    node = nodes["specs-v2/30-rules-entry-sync-review-Rules入口同步审查.md"]
+
+    assert node["type"] == "member_spec"
+    assert node["status"] == "active"
+    assert node["authority"] == "active"
+
+
 def test_v2_check_reports_degraded_when_governed_projects_config_is_missing(tmp_path):
     (tmp_path / "specs-v2").mkdir()
 

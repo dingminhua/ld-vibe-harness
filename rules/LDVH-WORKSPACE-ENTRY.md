@@ -9,13 +9,16 @@ ldvh_asset:
   source_specs:
     - "specs/01-规范体系基础规范.md"
     - "specs/02-事实模型基础规范.md"
+    - "specs/04-Code确定性执行规范.md"
     - "specs/06-运行时扩展规范.md"
+    - "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
     - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
     - "specs/07-事实源边界与Git追溯规范.md"
   consumption_scenarios:
     - "工作区级管辖项目识别"
     - "管辖项目工作对象处理"
     - "LDVH dogfood 管辖判断"
+    - "知识地图任务导航和 Rules 入口同步审查"
   inputs:
     - "LDVH-GOVERNED-PROJECTS.yaml"
     - "当前工作目录"
@@ -24,24 +27,25 @@ ldvh_asset:
     - "最小读取顺序"
     - "场景路由"
     - "STOP 点"
-    - "知识地图只读导航入口"
+    - "知识地图任务导航入口"
   handoff: "命中 LDVH 产品资产维护时交还 rules/LDVH-MAINTAINER-ENTRY.md"
   verification:
     - "python3 code/specs_validate.py governed-projects"
+    - "python3 code/specs_validate.py knowledge-map --layer neighbors --start-node rules/LDVH-WORKSPACE-ENTRY.md --input-scope runtime_extensions --format text"
     - "python3 code/specs_validate.py deployment-entries"
     - "python3 code/specs_validate.py capability-environment"
     - "python3 code/specs_validate.py v2-check --input-scope runtime_extensions --fail-on-diagnostics --format text"
   sync_triggers:
-    - "source_specs 中任一 active 规范发生入口职责、事实源边界、Human Gate、Code 诊断或知识地图输入变化"
+    - "source_specs 中任一 active 规范发生入口职责、事实源边界、Human Gate、Code 诊断、知识地图输入或知识地图任务导航触发条件变化"
     - "管辖项目配置规则变化"
     - "工作区入口职责变化"
     - "环境入口适配或薄引用规则变化"
     - "固定运行时扩展登记规则变化"
-  deprecation: "废弃、重命名或合并工作区入口前必须评估 Human Gate，并同步 01、02、06、07 和 Code 检查。"
+  deprecation: "废弃、重命名或合并工作区入口前必须评估 Human Gate，并同步 01、02、04、06、07、30 和 Code 检查。"
 ```
 
 > 文件性质：工作区级 Rules 入口资产，不是 specs 正式规范或最终事实源
-> 规范来源：`specs/01-规范体系基础规范.md`、`specs/02-事实模型基础规范.md`、`specs/06-运行时扩展规范.md`、`specs/attachments/06.Att.02-固定运行时扩展登记表.md`、`specs/07-事实源边界与Git追溯规范.md`
+> 规范来源：`specs/01-规范体系基础规范.md`、`specs/02-事实模型基础规范.md`、`specs/04-Code确定性执行规范.md`、`specs/06-运行时扩展规范.md`、`specs/30-rules-entry-sync-review-Rules入口同步审查.md`、`specs/attachments/06.Att.02-固定运行时扩展登记表.md`、`specs/07-事实源边界与Git追溯规范.md`
 > 适用范围：安装或使用 LDVH 的工作区级入口、管辖项目识别、管辖项目工作对象处理和 dogfood 管辖判断
 
 ---
@@ -89,8 +93,10 @@ AI 进入工作区入口后，应按以下顺序启动：
 
 | 查询目标 | 优先命令 | 用途 |
 |---|---|---|
+| Code 依赖自举 | `python3 code/bootstrap_code.py` | 在新环境缺少 `PyYAML` 或 `pytest` 时安装 Code 与 Code 测试 Python 依赖；不安装 Web 依赖，不声明环境完整支持 LDVH |
 | 管辖项目配置 | `python3 code/specs_validate.py governed-projects` | 检查工作区根目录管辖项目配置 |
-| specs 规范入口和章节 | `python3 code/specs_validate.py v2-check --format text` | 生成 active specs 规范诊断和知识地图派生预览；只作导航和读取建议 |
+| specs 汇总健康检查 | `python3 code/specs_validate.py v2-check --format text` | 生成 active specs 结构诊断和知识地图汇总预览；不得替代具体任务导航 |
+| 知识地图任务导航 | `python3 code/specs_validate.py knowledge-map --layer neighbors --start-node <path-or-node> --format json` | 围绕具体规范、附件、行动成员、Rules 入口、管辖项目或承载物查看状态、权威、来源回指、一跳关系和同步影响 |
 | 固定运行时扩展自描述 | `python3 code/specs_validate.py v2-check --input-scope runtime_extensions --format text` | 只读投影固定运行时扩展 `ldvh_asset`，用于入口、来源规范和同步触发定位 |
 | 能力资产环境保障矩阵 | `python3 code/specs_validate.py capability-environment` | 只读投影固定能力资产的来源规范、同步责任、验证链和环境落地边界；不声明环境已安装 |
 | 工作对象列表 | `python3 code/fact_cli.py list <type>` | 查询当前项目 WorkCase、ADR、Spark、Pitfall 或 Study 摘要 |
@@ -103,7 +109,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 
 本文承载的入口表达只包括：入口判断、场景路由、最小读取、STOP 点、工具导航、交接、降级提示和来源规范回指。知识地图入口只能表现为 Code 命令、读取建议和影响判断，不得在本文内展开或固化图谱内容。
 
-按 `specs/30-rules-entry-sync-review-Rules入口同步审查.md` 的 planned 人工清单，active specs、附件或行动成员主文件变化若影响本文的入口路由、最小读取、STOP、工具入口、交接、验证、降级提示、知识地图入口或 Code 检查入口含义，应转入维护入口进行 Rules 入口同步审查。普通文案澄清、路径错字或不改变入口行为的读取建议调整，可在说明依据并完成验证后处理；修改职责边界、STOP、`source_specs`、`sync_triggers`、canonical path、固定承载物身份、权限含义或环境薄引用前，必须评估 Human Gate。
+按 active `specs/30-rules-entry-sync-review-Rules入口同步审查.md`，active specs、附件或行动成员主文件变化若影响本文的入口路由、最小读取、STOP、工具入口、交接、验证、降级提示、知识地图任务导航、知识地图入口或 Code 检查入口含义，应转入维护入口执行 Rules 入口同步审查。普通文案澄清、路径错字或不改变入口行为的读取建议调整，可在说明依据并完成验证后处理；修改职责边界、STOP、`source_specs`、`sync_triggers`、canonical path、固定承载物身份、权限含义或环境薄引用前，必须评估 Human Gate。
 
 ---
 ## 4. 场景路由
@@ -115,9 +121,9 @@ AI 进入工作区入口后，应按以下顺序启动：
 | 处理管辖项目工作对象 | `fact_cli.py list/search/show/stats` | 对应项目 `ldvh-base/`、`specs/02-事实模型基础规范.md` 和对应 `specs/20-29` 事实模型规范 |
 | 处理管辖项目 Git 提交记录 | Git 历史和必要校验 | 管辖项目 Git commit records、`specs/07-事实源边界与Git追溯规范.md` |
 | 读取或修改管辖项目文档 | 项目约定、README、用户指令 | 项目自有文档位置、`specs/01-规范体系基础规范.md`、`specs/07-事实源边界与Git追溯规范.md` |
-| 定位规范关系、读取建议或同步影响 | `v2-check`、`v2-check --input-scope runtime_extensions`、`capability-environment` | 只读知识地图和 Code 投影；冲突时退回 active specs、06 和 Git 文件事实源 |
+| 定位规范关系、读取建议或同步影响 | `knowledge-map --layer neighbors --start-node <path-or-node>`、`v2-check`、`v2-check --input-scope runtime_extensions`、`capability-environment` | 只读知识地图和 Code 投影；冲突时退回 active specs、06 和 Git 文件事实源 |
 | 执行 LDVH 部署适配或接入检查 | `governed-projects`、`v2-check` | `specs/06-运行时扩展规范.md`、`specs/03-行动编排规范.md` |
-| 判断 specs 变化是否影响固定 Rules 入口表达 | `preflight`、`capability-environment` | 转入 `rules/LDVH-MAINTAINER-ENTRY.md`；`specs/30-rules-entry-sync-review-Rules入口同步审查.md` 当前仅为 planned 人工降级清单 |
+| 判断 specs 变化是否影响固定 Rules 入口表达 | `knowledge-map --layer neighbors --start-node <changed-path>`、`preflight`、`capability-environment` | 转入 `rules/LDVH-MAINTAINER-ENTRY.md`，按 active `specs/30-rules-entry-sync-review-Rules入口同步审查.md` 执行 |
 | 维护 LDVH 产品资产 | `index` | 转入 `rules/LDVH-MAINTAINER-ENTRY.md` |
 
 遇到“对应 `specs/20-29` 事实模型规范”时，应按 `specs/02-事实模型基础规范.md` 的成员自描述契约和成员主文件定位具体文件；遇到“对应 `specs/30-59` 行动编排规范”时，应按 `specs/03-行动编排规范.md` 的成员自描述契约和实际存在的成员主文件定位具体文件。
@@ -145,11 +151,14 @@ AI 进入工作区入口后，应按以下顺序启动：
 
 1. `specs/01-规范体系基础规范.md`；
 2. `specs/02-事实模型基础规范.md`；
-3. `specs/06-运行时扩展规范.md`；
-4. `specs/07-事实源边界与Git追溯规范.md`；
-5. `rules/LDVH-MAINTAINER-ENTRY.md`；
-6. 本文 `source_specs`、`sync_triggers`、入口路由、STOP 点、验证入口和交接规则；
-7. `python3 code/specs_validate.py deployment-entries`；
-8. `python3 code/specs_validate.py capability-environment`；
-9. `python3 code/specs_validate.py v2-check --input-scope runtime_extensions --fail-on-diagnostics --format text`；
-10. 已授权的工作区级薄入口。
+3. `specs/04-Code确定性执行规范.md`；
+4. `specs/06-运行时扩展规范.md`；
+5. `specs/07-事实源边界与Git追溯规范.md`；
+6. `specs/30-rules-entry-sync-review-Rules入口同步审查.md`；
+7. `rules/LDVH-MAINTAINER-ENTRY.md`；
+8. 本文 `source_specs`、`sync_triggers`、入口路由、STOP 点、验证入口和交接规则；
+9. `python3 code/specs_validate.py knowledge-map --layer neighbors --start-node rules/LDVH-WORKSPACE-ENTRY.md --input-scope runtime_extensions --format text`；
+10. `python3 code/specs_validate.py deployment-entries`；
+11. `python3 code/specs_validate.py capability-environment`；
+12. `python3 code/specs_validate.py v2-check --input-scope runtime_extensions --fail-on-diagnostics --format text`；
+13. 已授权的工作区级薄入口。

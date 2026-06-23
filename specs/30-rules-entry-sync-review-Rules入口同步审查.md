@@ -5,8 +5,8 @@ v2_spec:
   spec_id: "30"
   spec_kind: "member_spec"
   title: "rules-entry-sync-review-Rules入口同步审查"
-  status: "ready_for_review"
-  authority: "not_active_until_human_approved"
+  status: "active"
+  authority: "active"
   canonical_path: "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
   created: "2026-06-24"
   updated: "2026-06-24"
@@ -31,7 +31,8 @@ v2_spec:
     - "specs/07-事实源边界与Git追溯规范.md"
     - "specs/08-测试基础规范.md"
   migration_sources: []
-  active_fact_source: []
+  active_fact_source:
+    - "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
   code_consumption:
     - "v2_spec_metadata"
     - "action_member_identity"
@@ -47,7 +48,7 @@ v2_action_member:
   kind: "action_process"
   name_en: "rules-entry-sync-review"
   name_zh: "Rules入口同步审查"
-  collection_status: "planned"
+  collection_status: "active"
   canonical_path: "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
   scenario_anchor: "§8"
   context_anchor: "§7"
@@ -57,10 +58,15 @@ v2_action_member:
   writeback_anchor: "§14"
   evidence_anchor: "§14"
   testability_anchor: "§16"
-  assurance_takeover: []
+  assurance_takeover:
+    - "source_spec=specs/01-规范体系基础规范.md; requirement=入口可见要求; scope=规范、附件或行动成员变化后的 Rules 入口可见与知识地图任务导航同步审查"
+    - "source_spec=specs/04-Code确定性执行规范.md; requirement=入口可见要求; scope=Code 命令、knowledge-map、v2-check、preflight 入口语义变化后的 Rules 工具导航同步审查"
+    - "source_spec=specs/04-Code确定性执行规范.md; requirement=知识地图投影要求; scope=知识地图任务导航触发、start_node 查询和汇总健康检查边界变化后的 Rules 表达同步审查"
+    - "source_spec=specs/06-运行时扩展规范.md; requirement=Specs 变化与 Rules 资产同步责任; scope=固定 Rules 资产 source_specs、场景、触发、最小读取、路由、STOP、工具入口、知识地图任务导航、交接、验证和废弃规则同步审查"
   capability_assets:
     - "type=rule; path=rules/LDVH-WORKSPACE-ENTRY.md; purpose=工作区入口表达同步审查对象; status=required"
     - "type=rule; path=rules/LDVH-MAINTAINER-ENTRY.md; purpose=维护入口表达同步审查对象; status=required"
+    - "type=code; path=code/specs_validate.py knowledge-map; purpose=以变化来源或受影响入口为 start_node 获取知识地图任务导航; status=required"
     - "type=code; path=code/specs_validate.py preflight; purpose=写入前提示 Rules 影响和 Human Gate; status=required"
     - "type=code; path=code/specs_validate.py capability-environment; purpose=固定能力资产与环境保障矩阵只读投影; status=required"
     - "type=code; path=code/specs_validate.py deployment-entries; purpose=固定运行时扩展登记一致性检查; status=required"
@@ -77,15 +83,15 @@ ldvh_member:
   kind: work_process
   name_en: rules-entry-sync-review
   name_zh: Rules入口同步审查
-  collection_status: planned
+  collection_status: active
   canonical_path: specs/30-rules-entry-sync-review-Rules入口同步审查.md
   code_consumption:
     - workflow_index
     - rules_entry_sync_review
 ```
 
-> 文件状态：本文是 30-59 行动编排成员主文件草案，当前 `collection_status=planned`，不是 active 行动编排，不得被 Rules、Skill、Agent、Hook、Code 或 Web 当作已生效流程默认调用。
-> 当前用途：在 30 进入 active 前，本文只作为 Rules 入口同步审查的候选清单和人工降级参考；正式执行仍以 `specs/06-运行时扩展规范.md` 的 4.2 节、固定 Rules 入口和 Human Gate 为准。
+> 文件状态：本文是 active 行动编排成员主文件，当前 `collection_status=active`，可作为固定 Rules 入口同步审查的默认执行流程。
+> 当前用途：当 active specs、附件或行动成员主文件变化可能影响固定 Rules 入口表达时，本文承接同步审查执行责任；来源规范、06、04、07、08 和固定 Rules 文件仍保留各自权威边界。
 
 ## 1. 本文解决的问题
 
@@ -107,7 +113,7 @@ ldvh_member:
 本文承接 `specs/03-行动编排规范.md`：
 
 1. 行动编排承接的是执行责任，不是来源规范的规则权威；
-2. 当前 `collection_status=planned`，不得被解释为 active 可执行流程；
+2. 当前 `collection_status=active`，只在本文准入范围内作为可执行流程；
 3. Skill、Agent、Code、Hook 和 Rules 输出必须交还主控判断；
 4. 过程输出、检查结果和同步建议默认不是最终事实源。
 
@@ -117,6 +123,7 @@ ldvh_member:
 2. active specs、附件或成员主文件变化后，应评估固定 Rules 资产是否受影响；
 3. 评估结论只能是无需同步、需要同步 Rules 入口表达，或进入 Human Gate；
 4. 来源规范负责触发影响评估，Rules 文件自身只承载实例自描述和运行时入口表达。
+5. 当来源规范要求知识地图任务导航强触发时，Rules 资产应表达具体触发场景、命令入口、起点选择、输出边界和降级路径。
 
 本文承接 `specs/01-规范体系基础规范.md` 的保障要求和成员机制，承接 `specs/04-Code确定性执行规范.md` 的只读诊断边界，承接 `specs/07-事实源边界与Git追溯规范.md` 的事实源和 Git 追溯边界，承接 `specs/08-测试基础规范.md` 的验证声明边界。
 
@@ -138,7 +145,7 @@ ldvh_member:
 | 价值 | 本文如何服务 |
 |---|---|
 | V1 快速定位 | 明确 Rules 入口同步审查的进入信号、Context 和候选命令 |
-| V2 可行动理解 | 把“入口可见要求变化后谁检查 Rules”收束为单一 planned 成员 |
+| V2 可行动理解 | 把“入口可见要求变化后谁检查 Rules”收束为单一 active 成员 |
 | V4 稳定执行 | 固化无需同步、建议同步、Human Gate 三类结论 |
 | V5 门禁识别 | 修改 Rules 边界、STOP、source_specs 或 sync_triggers 前识别 Human Gate |
 | V6 强制验证 | 要求同步前后运行 preflight、deployment-entries、capability-environment 和相关 specs 检查 |
@@ -150,13 +157,13 @@ ldvh_member:
 |---|---|
 | 把所有能力变化都拉进 Rules 同步 | 只有影响 Rules 入口表达的 specs、附件或成员变化才进入本文范围 |
 | 用编排替代来源 specs | 本文只承接检查和同步执行责任，不改变来源规范权威 |
-| 用 planned 成员冒充 active 流程 | 当前只能作为候选清单和人工降级参考 |
+| 用非 active 成员冒充 active 流程 | 本文只能在 `collection_status=active` 且命中准入条件时执行；其它非 active 成员不得被本文连带激活 |
 | 自动修改 Rules | 编排给出建议；涉及高影响边界时先进入 Human Gate，由主控 AI 在授权范围内修改 |
 | 用 Rules 复制 specs 正文 | Rules 只保留入口表达、回指和降级提示，不复制规范本体 |
 
 ## 4. 行动定位与适用场景
 
-本文定位为 Rules 入口表达同步审查的 planned 行动编排成员。
+本文定位为 Rules 入口表达同步审查的 active 行动编排成员。
 
 适用场景是：某次 specs、附件或行动成员主文件变化，可能影响 AI 通过固定 Rules 入口定位规范、判断场景、执行最小读取、识别 STOP、选择工具、交还入口或说明降级风险。
 
@@ -192,7 +199,7 @@ ldvh_member:
 
 ## 6. 事实源边界
 
-本文是 planned 行动编排成员主文件，不是 active 执行事实源。
+本文是 active 行动编排成员主文件，但只承接固定 Rules 入口表达同步审查执行责任。
 
 | 内容 | 权威位置 |
 |---|---|
@@ -202,6 +209,7 @@ ldvh_member:
 | 维护 Rules 入口资产 | `rules/LDVH-MAINTAINER-ENTRY.md` |
 | 固定运行时扩展登记 | `specs/attachments/06.Att.02-固定运行时扩展登记表.md` |
 | 受控写入前诊断 | `python3 code/specs_validate.py preflight --target-path <path>` |
+| 知识地图任务导航 | `python3 code/specs_validate.py knowledge-map --layer neighbors --start-node <path-or-node> --format json` |
 | 能力环境矩阵 | `python3 code/specs_validate.py capability-environment` |
 
 本文产生的审查结论、同步建议、命令输出和草案补丁默认是过程输出。只有写入 specs、Rules、事实对象或 Git commit records 后，才形成可追溯事实。
@@ -210,14 +218,16 @@ ldvh_member:
 
 进入审查前，主控 AI 应读取或查询：
 
-1. 本文状态；若 `collection_status` 不是 `active`，必须说明当前只是人工降级参考；
+1. 本文状态、`active_fact_source`、`assurance_takeover` 和准入范围；
 2. 变化来源文件和相关章节；
 3. `specs/06-运行时扩展规范.md` 的 4.1、4.2、5、7、11、12 节；
 4. 受影响的固定 Rules 文件；
 5. `specs/attachments/06.Att.02-固定运行时扩展登记表.md`；
-6. 必要 Code 输出：
+6. 以变化来源文件或受影响 Rules 入口为 `start_node` 的知识地图邻接查询，确认状态、权威、来源规范、相关规范、Code 消费类别和一跳影响；
+7. 必要 Code 输出：
 
 ```bash
+python3 code/specs_validate.py knowledge-map --layer neighbors --start-node <changed-path> --format json
 python3 code/specs_validate.py preflight --target-path <changed-path>
 python3 code/specs_validate.py deployment-entries
 python3 code/specs_validate.py capability-environment
@@ -231,7 +241,7 @@ python3 code/specs_validate.py v2-check --input-scope runtime_extensions --forma
 当满足以下任一 Scenario 时，应进入 Rules 入口同步审查：
 
 1. 用户明确要求检查 specs 变化后 Rules 是否需要同步；
-2. 修改或计划修改 active specs、附件或行动成员主文件，且内容涉及入口可见、最小读取、场景路由、STOP、Human Gate、工具入口、交接、验证、降级提示、知识地图入口或 Code 检查入口含义；
+2. 修改或计划修改 active specs、附件或行动成员主文件，且内容涉及入口可见、最小读取、场景路由、STOP、Human Gate、工具入口、交接、验证、降级提示、知识地图任务导航、知识地图入口或 Code 检查入口含义；
 3. `preflight` 输出固定 Rules 资产影响提示；
 4. `capability-environment`、`deployment-entries` 或 `runtime_extensions` 投影显示固定 Rules 资产来源、验证链或同步触发与当前变化存在冲突；
 5. 主控 AI 准备声明某个 specs 入口已可被 Rules 稳定导航。
@@ -244,13 +254,12 @@ python3 code/specs_validate.py v2-check --input-scope runtime_extensions --forma
 
 ## 9. 执行流程
 
-当前 `collection_status=planned` 时，以下流程只作为人工降级检查清单。未来本文 active 后，才能作为正式行动编排流程。
-
 1. 确认触发源是否为 specs、附件或行动成员主文件变化；
 2. 摘要变化内容，标注是否影响入口可见、读取顺序、STOP、工具入口、交接、验证或降级提示；
-3. 读取受影响 Rules 的 `ldvh_asset.source_specs`、`sync_triggers`、`verification` 和正文场景路由；
-4. 运行必要 Code 检查；
-5. 判断影响类型：
+3. 运行知识地图邻接查询，确认变化来源与 01、04、06、受影响 Rules 资产或其它相关规范的关系；
+4. 读取受影响 Rules 的 `ldvh_asset.source_specs`、`sync_triggers`、`verification` 和正文场景路由；
+5. 运行必要 Code 检查；
+6. 判断影响类型：
 
 | 结论 | 使用条件 | 后续动作 |
 |---|---|---|
@@ -258,9 +267,9 @@ python3 code/specs_validate.py v2-check --input-scope runtime_extensions --forma
 | 建议同步 | 变化影响 Rules 可见表达，且不触发高影响 Human Gate | 给出具体修改点，由主控 AI 修改并验证 |
 | Human Gate | 涉及职责边界、STOP、`source_specs`、`sync_triggers`、canonical path、固定承载物身份、权限扩大或环境薄引用 | 暂停，向 Human 说明影响范围和建议 |
 
-6. 若 Human Gate 通过，由主控 AI 在授权范围内修改 Rules；
-7. 修改后重新运行验证；
-8. 将稳定结论写入对应文件、事实对象或 Git commit records。
+7. 若 Human Gate 通过，由主控 AI 在授权范围内修改 Rules；
+8. 修改后重新运行验证；
+9. 将稳定结论写入对应文件、事实对象或 Git commit records。
 
 ## 10. 执行中问题分流与失败暂停
 
@@ -288,7 +297,7 @@ python3 code/specs_validate.py v2-check --input-scope runtime_extensions --forma
 5. 覆盖用户环境入口、项目规则或等价配置；
 6. 声明 Rules 入口已在某环境中部署生效；
 7. 接受 Rules 同步长期降级；
-8. 将 planned 或 candidate 行动编排当作 active 流程执行。
+8. 将 planned、candidate 或其它非 active 行动编排当作 active 流程执行。
 
 普通文案澄清、路径错字修正、验证命令补充或不改变入口行为的读取建议调整，可在说明依据并完成验证后由主控 AI 处理。
 
@@ -312,6 +321,7 @@ python3 code/specs_validate.py v2-check --input-scope runtime_extensions --forma
 | 命令 | 用途 | 边界 |
 |---|---|---|
 | `python3 code/specs_validate.py preflight --target-path <path>` | 写入前提示 Human Gate、Rules 影响和归口 | 不授权写入 |
+| `python3 code/specs_validate.py knowledge-map --layer neighbors --start-node <path-or-node> --format json` | 以变化来源或受影响入口为起点，查看状态、权威、来源规范、相关规范、消费关系和一跳影响 | 不替代 active specs、成员主文件或 Rules 文件原文 |
 | `python3 code/specs_validate.py deployment-entries` | 检查固定运行时扩展登记与自描述一致性 | 不说明环境已安装 |
 | `python3 code/specs_validate.py capability-environment` | 投影固定能力资产来源、同步、验证和环境边界 | 不写环境入口，不替代 Rules 判断 |
 | `python3 code/specs_validate.py v2-check --input-scope runtime_extensions --format text` | 查看固定运行时扩展自描述知识地图投影 | 不替代 active specs 或资产原文 |
@@ -339,7 +349,7 @@ python3 code/specs_validate.py v2-check --input-scope runtime_extensions --forma
 | 可复用失败经验 | Pitfall |
 | 提交追溯 | Git commit records |
 
-不得把聊天过程、临时命令输出或 planned 编排状态直接写成 active 流程事实。
+不得把聊天过程、临时命令输出或非 active 编排状态直接写成 active 流程事实。
 
 ## 15. 环境适配边界
 
@@ -351,17 +361,17 @@ Rules 文件同步完成，只说明 LDVH 固定 Rules 资产的入口表达已�
 
 ## 16. 行动特有可测试性锚点
 
-本文未来 active 前至少应具备以下可测试性锚点：
+本文 active 执行至少应具备以下可测试性锚点：
 
 | 锚点 | 正例 | 反例 |
 |---|---|---|
 | Scenario | specs 修改影响入口可见时进入审查 | code 实现变化但无入口影响时误进入 |
-| Context | 读取变化来源、06 §4.2、受影响 Rules 和 Code 输出 | 只凭聊天记忆判断 |
+| Context | 读取变化来源、知识地图邻接查询、06 §4.2、受影响 Rules 和 Code 输出 | 只凭聊天记忆判断 |
 | Gate | 修改 STOP 或 `source_specs` 前触发 Human Gate | 静默改写高影响入口边界 |
 | 输出 | 明确无需同步、建议同步或 Human Gate | 只说“应该没问题” |
 | 验证 | 修改后运行 deployment-entries、capability-environment 和相关 specs 检查 | 未验证即声明完成 |
 
-当前 planned 状态下，测试只验证本文结构、身份和人工降级检查口径；不得把测试通过解释为 active 流程已生效。
+当前 Code 已通过 active specs 综合诊断覆盖本文结构和身份；字段级 `assurance_takeover`、`capability_assets` 和锚点专项诊断仍可继续增强。专项诊断未完整前，必须按本文 §18 和 03.Att.03 做人工降级核对，不得省略。
 
 ## 17. 规范保障要求
 
@@ -369,9 +379,9 @@ Rules 文件同步完成，只说明 LDVH 固定 Rules 资产的入口表达已�
 
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 来源要求承接实践 | 只承接 specs、附件或行动成员主文件对固定 Rules 入口表达的影响，不新增子级规范保障要求 | 本文 §8、`preflight`、受影响 Rules 文件 | 行动实践关联 | 变化可能影响入口可见、读取顺序、STOP、工具入口、交接、验证或降级提示时 |
+| 来源要求承接实践 | 只承接 specs、附件或行动成员主文件对固定 Rules 入口表达的影响，不新增子级规范保障要求 | 本文 §8、`knowledge-map --layer neighbors --start-node <path-or-node>`、`preflight`、受影响 Rules 文件 | 行动实践关联 | 变化可能影响入口可见、读取顺序、STOP、工具入口、知识地图任务导航、交接、验证或降级提示时 |
 | Rules 修改实践 | Rules 入口表达需要同步时，由主控 AI 在授权范围内修改；高影响项先进入 Human Gate | `rules/LDVH-WORKSPACE-ENTRY.md`、`rules/LDVH-MAINTAINER-ENTRY.md`、本文 §9、§11 | Rules 入口表达同步 | 审查结论为建议同步或 Human Gate 通过时 |
-| Code 辅助实践 | 使用只读 Code 投影辅助判断固定 Rules 来源、验证链和环境边界，不把投影当作事实源 | `deployment-entries`、`capability-environment`、`runtime_extensions` | Code 诊断协作 | 需要判断固定 Rules 资产来源、验证链或环境边界时 |
+| Code 辅助实践 | 使用只读 Code 投影辅助判断固定 Rules 来源、验证链、环境边界和知识地图任务导航关系，不把投影当作事实源 | `knowledge-map`、`deployment-entries`、`capability-environment`、`runtime_extensions` | Code 诊断协作 | 需要判断固定 Rules 资产来源、验证链、环境边界或知识地图入口表达时 |
 | 能力协作实践 | Skill/Agent 只给过程输出，必须交还主控 AI | 本文 §12、主控 AI、可选 Agent 输出 | 能力输出交还 | 需要独立审查、并行探索或复用稳定步骤时 |
 | 环境边界实践 | 本文不落地环境入口、不声明部署；环境入口问题回到 06 或后续环境适配编排候选 | 06、固定 Rules、Human Gate、后续候选成员 | 环境适配分流 | 涉及环境入口、部署声明、Hook 生效声明或长期降级时 |
 
@@ -382,18 +392,17 @@ Rules 文件同步完成，只说明 LDVH 固定 Rules 资产的入口表达已�
 | 检查项 | 标准 |
 |---|---|
 | 身份块 | 同时包含 `v2_spec` 和 `v2_action_member` |
-| 状态分工 | `v2_spec.status` 不被误读为 active 流程；以 `collection_status=planned` 为准 |
+| 状态分工 | `v2_spec.status` 与 `v2_action_member.collection_status` 均为 active，且只在本文准入范围内执行 |
 | 锚点 | Scenario、Context、Gate、执行、问题分流、回写、证据和可测试性锚点可定位 |
+| 来源承接 | `assurance_takeover` 回指 01、04、06 的入口可见、知识地图投影和 Rules 同步责任要求 |
 | 承接边界 | 只审查 Rules 入口表达同步，不处理 Skill/Hook/Agent/Code 落地 |
 | 能力映射 | `capability_assets` 只登记审查所需能力，不声明部署完成 |
-| Human Gate | 高影响 Rules 修改、环境写入和 planned 冒充 active 均被阻断 |
+| Human Gate | 高影响 Rules 修改、环境写入和非 active 冒充 active 均被阻断 |
 | 验证入口 | Code 命令和人工降级检查可回指 04、06 和 08 |
 
 ## 19. 待补齐事项
 
-1. 需要 Human 明确确认本文是否可从 `planned` 升级为 `active`；
-2. 若升级 active，应补齐 Code 对 `v2_action_member` 锚点、`assurance_takeover` 和 `capability_assets` 的专项诊断；
-3. 若升级 active，应把来源 specs 的入口可见要求通过 `assurance_takeover` 明确登记为被承接要求；
-4. 需要评估是否由 preflight 在 specs 写入前输出更精确的 `Rules 入口同步审查` 提示；
-5. 需要确认环境入口落地与适配检查是否形成独立 31 或后续成员；
-6. 需要确认能力承载落地分流是否形成独立 32 或后续成员。
+1. 需要继续补齐 Code 对 `v2_action_member` 锚点、`assurance_takeover` 和 `capability_assets` 的字段级专项诊断；当前以 active specs 综合诊断和人工降级核对覆盖；
+2. 需要评估是否由 preflight 在 specs 写入前输出更精确的 `Rules 入口同步审查` 和知识地图 `start_node` 提示；
+3. 需要确认环境入口落地与适配检查是否形成独立 31 或后续成员；
+4. 需要确认能力承载落地分流是否形成独立 32 或后续成员。
