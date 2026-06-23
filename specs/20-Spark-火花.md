@@ -93,7 +93,7 @@ v2_fact_model_member:
 
 1. 本文作为事实模型成员规范，必须具备 `v2_spec` 和 `v2_fact_model_member` 身份块；
 2. 本文必须声明上位依据、构成要素归属与价值判断、规范保障要求、Human Gate 和待补齐事项；
-3. 本文的成员身份、章节锚点、迁移来源和 active 事实源只作为 v2 写作区诊断输入，不改变当前 active 事实源；
+3. 本文的成员身份、章节锚点、迁移来源和 active 事实源只作为 active 成员诊断输入，不改变实例事实源；
 4. 迁移来源、Code 输出、Web 展示和过程讨论不得升级为 active 权威。
 
 本文承接 `02-事实模型基础规范.md`：
@@ -101,9 +101,9 @@ v2_fact_model_member:
 1. Spark 必须在成员主文件中定义完整对象规则，包括对象定位、事实源边界、状态机、对象关系、Human Gate、字段契约、实例写入、消费边界和对象特有检查；
 2. Spark 字段契约必须说明字段来源、含义、值形态、必填性、状态条件、内容格式、schema 归口和消费方；
 3. 字段注册表只能辅助诊断公共字段和消费元数据，不能反向证明 Spark 采用某字段或改变 Spark 对象内 schema；
-4. v2 写作期，Spark 的正式事实模型仍以 active `specs/20-Spark-火花.md` 为准。
+4. Spark 的正式事实模型以当前 active `specs/20-Spark-火花.md` 为准。
 
-若本文与 active `specs/20-Spark-火花.md`、v2 00、v2 01 或 v2 02 冲突，在 Human 单篇确认前不得自行选择覆盖；应记录为待核对事项。
+若本文与 00、01、02 或事实源边界规范冲突，不得自行选择覆盖；应记录为待核对事项并回到 Human Gate。
 
 ## 3. 构成要素归属与价值判断
 
@@ -181,7 +181,7 @@ Spark 可以从一句话开始，随后逐步扩展和收敛。`description` 承
 
 ## 5. 事实源边界
 
-本文是 Spark v2 成员主文件的写作区规则来源；v2 写作期，Spark 的正式事实模型仍以 active `specs/20-Spark-火花.md` 为准。
+本文是 Spark 的 active 成员主文件。Spark 的正式事实模型以当前 active `specs/20-Spark-火花.md` 为准。
 
 Spark 实例的权威事实源位置为：
 
@@ -402,7 +402,7 @@ Code 可依据本文和 active Spark 规范实现或诊断以下能力：
 5. 聚合待处理 Spark、已分流 Spark、已废弃 Spark、分流目标和已有关联对象但仍 `pending` 的多线分流 Spark；
 6. 在 v2 双读期间核对 历史 `ldvh_member` 与 active `v2_fact_model_member` 的编号、路径、实例目录、锚点和 Code 消费入口。
 
-Code 不得自行创建、分流、废弃或删除 Spark，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/sparks/` 权威事实源。v2 写作期，Code 默认校验仍以 active `specs/20-Spark-火花.md` 和现有实现为准。
+Code 不得自行创建、分流、废弃或删除 Spark，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/sparks/` 权威事实源。Code 默认校验应回到 active `specs/20-Spark-火花.md` 和现有实现。
 
 ### 11.3 Web 消费边界
 

@@ -409,7 +409,7 @@ Web 应把 WorkCase 作为 Human 直接查看和确认的主对象。Web 可以�
 |---|---|---|
 | `attachments/21.Att.01-orchestration字段契约表.md` | WorkCase `orchestration` 长字段表、枚举和条件 | 状态机本体、Human Gate 本体、行动编排流程 |
 
-新增、删除、重命名或改变以上附件的信息对象时，应回到本文 Human Gate，并同步 01 当前目录登记、README 写作区入口和 Code v2 解析。
+新增、删除、重命名或改变以上附件的信息对象时，应回到本文 Human Gate，并同步 01 当前目录登记和 Code v2 解析。
 
 ## 13. 规范保障要求
 

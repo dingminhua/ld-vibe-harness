@@ -200,7 +200,7 @@ v1-v2 Code 消费双读映射矩阵由 `attachments/04.Att.08-v1-v2-Code消费�
 知识地图输入范围必须受控。Code 只能把以下内容纳入知识地图节点和边：
 
 1. active `specs/` 中可由身份块、规范结构或事实源边界识别的正式规范、附件、成员主文件和事实对象；
-2. `specs/README.md` 或 01 当前处理范围明确登记，且文件自身具有 `v2_spec`、`v2_attachment`、`v2_fact_model_member` 或 `v2_action_member` 身份块的 v2 草案；
+2. 01 当前目录登记明确授权的 active 规范、附件或成员主文件，且文件自身具有 `v2_spec`、`v2_attachment`、`v2_fact_model_member` 或 `v2_action_member` 身份块；
 3. 工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 中已登记的管辖项目配置事实源；
 4. 管辖项目 `ldvh-base/` 中由 02 和 20-29 成员主文件授权的事实实例、对象 ID、字段路径和对象关系；
 5. 07 授权的 Git history、commit records、路径变更、提交正文和事实源派生输入；
