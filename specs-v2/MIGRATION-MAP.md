@@ -94,8 +94,8 @@ migration_map:
 | `specs/06-行动编排基础规范.md` | 行动编排通用规则、执行生命周期、过程输出、证据与保障接管 | `specs-v2/03-行动编排规范.md` 定义行动编排如何由规范保障需求生成、登记、执行和回写 | `defer` | `deferred_until_v2_requirement_plan` | 不按 v1 流程直接迁移；v1 06 只作为 v2 03 写作参考 |
 | `specs/07-Code确定性执行实现规范.md` | Code 确定性解析、校验、聚合和实现边界 | `specs-v2/04-Code确定性执行规范.md` | `migrate` | `human_confirmed` | 已确认 v2-check 只读边界、双读策略、知识地图投影、受控写入前检查和测试回归入口由 04 承接 |
 | `specs/08-Web信息同步实现规范.md` | Web 派生展示、DTO、轻写入白名单、Human-facing 状态 | `specs-v2/05-Web信息同步规范.md` | `migrate` | `human_confirmed` | 已确认 Web v2 暂不实施不等于契约丢失；DTO/API、Spark 轻写入白名单、Confirm UI、提交展示、知识地图展示和 Web 回归线由 05 承接，技术选型不进入 v2 义务 |
-| `specs/09-事实源边界与承载规范.md` | 最终事实源、单一事实源、过程输出回写、承载介质 | `specs-v2/07-事实源边界与Git追溯规范.md` | `migrate` | `drafted_pending_review` | 这是高影响重构；不得让 02/03/04/05/06 的局部规则替代全局事实源原则 |
-| `specs/10-Git提交规范.md` | Git commit records、commit message 契约、提交追溯 | `specs-v2/07-事实源边界与Git追溯规范.md`；AI 提交流程归未来 44 行动编排成员 | `split` | `drafted_pending_review` | 核对 commit message 本体与 44 AI 提交流程分离 |
+| `specs/09-事实源边界与承载规范.md` | 最终事实源、单一事实源、过程输出回写、承载介质 | `specs-v2/07-事实源边界与Git追溯规范.md` | `migrate` | `human_confirmed` | 已确认最终事实源、单一事实源、过程输出回写、历史记录提取、非事实源排除和事实承载介质由 07 承接，未被 02/03/04/05/06 局部规则替代 |
+| `specs/10-Git提交规范.md` | Git commit records、commit message 契约、提交追溯 | `specs-v2/07-事实源边界与Git追溯规范.md`；AI 提交流程归未来 44 行动编排成员 | `split` | `human_confirmed` | 已确认 Git commit records 只做事实源修改追溯；commit message 契约、type/scope、body 条件和关联提交派生归 07，AI 提交流程归行动编排 |
 | `specs/11-测试基础规范.md` | 测试治理、验证声明、测试证据和回归同步 | `specs-v2/08-测试基础规范.md` | `migrate` | `drafted_pending_review` | 核对 Code/Web/运行时扩展测试归属和等价验证边界 |
 | `specs/20-Spark-火花.md` | Spark 事实模型成员 | `specs-v2/20-Spark-火花.md` | `migrate` | `drafted_pending_review` | 核对 active `ldvh_member` 与 v2 `v2_fact_model_member` 的字段、状态、Human Gate 和实例路径 |
 | `specs/21-WorkCase-工作项.md` | WorkCase 事实模型成员 | `specs-v2/21-WorkCase-工作项.md` | `migrate` | `drafted_pending_review` | 核对工作项准入、orchestration 字段、证据、关闭和状态流转 |
@@ -186,7 +186,7 @@ v2 未 active 前，下列入口必须继续以 active `specs/` 为准：
 | `04-Code确定性执行规范.md` | Human 单篇确认完成 | 已确认 04 承接 v1 07 Code 主体职责；知识地图和受控写入前检查均保持只读诊断或 preflight 边界 |
 | `05-Web信息同步规范.md` | Human 单篇确认完成 | 已确认 05 只承接 Web 契约、Human-facing 展示、受控轻写入白名单、Confirm UI、提交展示、知识地图展示和回归线；不限定 Web 实现语言、框架或技术栈 |
 | `06-运行时扩展规范.md` | Human 单篇确认完成 | 已确认 06 承接 v1 04/04.02/04.03 的固定运行时扩展、自描述、薄引用、Codex 候选入口、Hook 候选、适配检查和环境边界；Code/Web/行动编排/测试只作为外部归口或缺口分流方向 |
-| `07-事实源边界与Git追溯规范.md` | 接近可核对但影响高 | 需要逐项核对 v1 09 与 v1 10，确认事实源边界、过程输出回写、Git 追溯和 commit message 契约没有被局部规范吞并 |
+| `07-事实源边界与Git追溯规范.md` | Human 单篇确认完成 | 已确认 07 承接 v1 09 与 v1 10 的事实源边界、过程输出回写、历史记录提取、Git 追溯和 commit message 契约；v1 44 提交流程仅作为后续行动编排参考 |
 | `08-测试基础规范.md` | 接近可核对 | 需要核对 v1 11 的测试治理、验证声明、证据边界、失败阻断、等价验证和 Code/Web 回归入口 |
 | `20-Spark-火花.md` | 可进入准备核对 | 需要逐项核对 active 20、02 字段矩阵、Web 快速创建白名单和 Spark 生命周期保障需求 |
 | `21-WorkCase-工作项.md` | 可进入准备核对 | 需要逐项核对 active 21、`21.Att.01`、orchestration 字段、关闭材料、Web 态势和提交展示 |

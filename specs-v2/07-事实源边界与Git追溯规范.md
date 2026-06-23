@@ -53,7 +53,7 @@ v2_spec:
     - "change_traceability"
     - "knowledge_map_input"
     - "assurance_requirements"
-  migration_status: "partially_migrated"
+  migration_status: "migrated"
 ```
 
 > 文件状态：本文当前位于 `specs-v2/`，尚未切换为 active；正式事实源边界与 Git 提交规则仍以 `specs/09-事实源边界与承载规范.md` 和 `specs/10-Git提交规范.md` 为准。
