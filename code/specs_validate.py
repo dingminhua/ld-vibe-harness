@@ -77,11 +77,34 @@ def _fast_governed_projects_main(argv):
     return governed_projects_checks.main(args.root)
 
 
+def _fast_deployment_entries_main(argv):
+    from spec_checks import deployment_entries as deployment_entries_checks
+
+    project_root = Path(__file__).resolve().parent.parent
+    parser = argparse.ArgumentParser(description="检查固定运行时扩展登记表与承载物自描述是否一致。")
+    parser.add_argument("--root", default=str(project_root), help="项目根目录，默认使用当前工具所在项目。")
+    args = parser.parse_args(argv)
+    deployment_entries_checks.PROJECT_ROOT = project_root
+    return deployment_entries_checks.deployment_entries_main(args.root)
+
+
+def _fast_runtime_projection_main(argv):
+    from spec_checks import runtime_projection as runtime_projection_checks
+
+    parser = argparse.ArgumentParser(description="检查项目内运行投影是否存在漂移风险。")
+    parser.add_argument("paths", nargs="*", default=None, help="要检查的运行投影文件或目录，默认检查项目内授权运行投影。")
+    parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+    args = parser.parse_args(argv)
+    return runtime_projection_checks.main(args.paths, args.format)
+
+
 if __name__ == "__main__" and len(sys.argv) > 1:
     _FAST_COMMANDS = {
         "preflight": _fast_preflight_main,
         "v2-check": _fast_v2_check_main,
         "governed-projects": _fast_governed_projects_main,
+        "deployment-entries": _fast_deployment_entries_main,
+        "runtime-projection": _fast_runtime_projection_main,
     }
     if sys.argv[1] in _FAST_COMMANDS:
         sys.exit(_FAST_COMMANDS[sys.argv[1]](sys.argv[2:]))

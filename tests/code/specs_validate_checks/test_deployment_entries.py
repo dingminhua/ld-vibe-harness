@@ -1,7 +1,12 @@
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker, write_md
 from spec_checks import deployment_entries as deployment_entries_checks
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEPLOYMENT_REGISTRY_PATH = "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
 
 
@@ -203,3 +208,24 @@ def test_deployment_entries_cli_is_in_all(tmp_path, monkeypatch, capsys):
 
     assert exit_code == 0
     assert "固定运行时扩展登记检查通过" in capsys.readouterr().out
+
+
+def test_deployment_entries_script_fast_path_outputs_text(tmp_path):
+    write_deployment_entries_fixture(tmp_path)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "deployment-entries",
+            "--root",
+            str(tmp_path),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "固定运行时扩展登记检查通过。" in result.stdout
+    assert result.stderr == ""

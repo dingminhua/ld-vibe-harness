@@ -1,5 +1,13 @@
 import json
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker, write_md
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
 
 def test_runtime_projection_reports_missing_authority_and_spec_ref(tmp_path, monkeypatch):
     docs_specs = tmp_path / "specs"
@@ -92,4 +100,27 @@ def test_runtime_projection_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert exit_code == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["metadata"]["report"] == "runtime-projection"
+    assert payload["summary"]["status"] == "closed"
+
+
+def test_runtime_projection_script_fast_path_outputs_json():
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "runtime-projection",
+            "rules/LDVH-WORKSPACE-ENTRY.md",
+            "--format",
+            "json",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+        cwd=PROJECT_ROOT,
+    )
+    payload = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert payload["metadata"]["report"] == "runtime-projection"
+    assert payload["metadata"]["checked_file_count"] == 1
     assert payload["summary"]["status"] == "closed"
