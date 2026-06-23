@@ -31,6 +31,7 @@ ldvh_asset:
     - "python3 code/specs_validate.py all --fail-on-diagnostics"
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:
+    - "source_specs 中任一 active 规范发生入口职责、Human Gate、Code 诊断、知识地图输入、Git 追溯或运行时扩展边界变化"
     - "LDVH 产品资产目录边界变化"
     - "固定运行时扩展登记规则变化"
     - "环境入口适配或部署规则变化"
@@ -76,7 +77,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 1. 确认当前任务是否维护 LDVH 产品资产；
 2. 涉及目录、编号或文件归属判断时，读取 `specs/01-规范体系基础规范.md`；
 3. 涉及术语、命名或不推荐表达时，读取 `specs/attachments/01.Att.02-术语表.md`；
-4. 涉及 specs 修改时，读取 `specs/01-规范体系基础规范.md`、目标规范和必要的 04/06/07/08 规范；
+4. 涉及 specs 修改时，读取 `specs/01-规范体系基础规范.md`、目标规范和必要的 04/06/07/08 规范，并按 01 与 06 评估固定 Rules 资产是否受影响；
 5. 涉及 Rules、Skill、Agent、Hook 或环境适配时，读取 `specs/06-运行时扩展规范.md`；涉及 Code 或 Web 时分别读取 `specs/04-Code确定性执行规范.md` 或 `specs/05-Web信息同步规范.md`；
 6. 能由 Code 定位、聚合或检查的内容，优先使用 Code 工具查询；工具输出只作为导航、聚合和诊断结果，不替代权威文件原文；
 7. 修改完成后运行对应校验命令，并把稳定结论写回权威事实源。
@@ -129,4 +130,5 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 2. `specs/06-运行时扩展规范.md`;
 3. `specs/04-Code确定性执行规范.md`;
 4. `rules/LDVH-WORKSPACE-ENTRY.md`；
-5. LDVH 仓库项目级薄入口。
+5. 本文 `source_specs`、`sync_triggers`、入口路由、STOP 点、验证入口和交接规则；
+6. LDVH 仓库项目级薄入口。

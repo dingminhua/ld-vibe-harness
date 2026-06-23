@@ -29,6 +29,7 @@ ldvh_asset:
     - "python3 code/specs_validate.py governed-projects"
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:
+    - "source_specs 中任一 active 规范发生入口职责、事实源边界、Human Gate、Code 诊断或知识地图输入变化"
     - "管辖项目配置规则变化"
     - "工作区入口职责变化"
     - "环境入口适配或薄引用规则变化"
@@ -132,4 +133,5 @@ AI 进入工作区入口后，应按以下顺序启动：
 3. `specs/06-运行时扩展规范.md`；
 4. `specs/07-事实源边界与Git追溯规范.md`；
 5. `rules/LDVH-MAINTAINER-ENTRY.md`；
-6. 已授权的工作区级薄入口。
+6. 本文 `source_specs`、`sync_triggers`、入口路由、STOP 点、验证入口和交接规则；
+7. 已授权的工作区级薄入口。
