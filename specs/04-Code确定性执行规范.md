@@ -382,4 +382,4 @@ Code 检查至少包括：
 5. 补齐 v2 附件身份一致性检查，覆盖真实路径、身份块、父规范登记、README 登记和旧引用残留；
 6. 与 08 对齐 Code 实现测试入口和验证声明；
 7. 与 05 对齐 Web DTO 和 Human-facing 派生展示输入；
-8. 当前 `v2-check` 已提供 active specs 结构诊断和只读知识地图预览，`preflight` 已提供受控写入前检查第一版；仍需补齐完整历史双读、完整诊断 Schema、完整知识地图目标 Schema 和字段级 Schema 检查。
+8. 当前 `v2-check` 已提供 active specs 结构诊断、显式 `runtime_extensions` 只读范围和只读知识地图预览，`preflight` 已提供受控写入前检查第一版并能提示固定 Rules 资产同步影响；仍需补齐完整历史双读、完整诊断 Schema、完整知识地图目标 Schema 和字段级 Schema 检查。

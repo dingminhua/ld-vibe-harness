@@ -164,7 +164,7 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 | `code/spec_checks/refs.py` | `tests/code/specs_validate_checks/test_refs.py` |
 | `code/spec_checks/assurance_report.py` | `tests/code/specs_validate_checks/test_assurance_report.py` |
 | `code/spec_checks/runtime_projection.py` | `tests/code/specs_validate_checks/test_runtime_projection.py` |
-| `code/spec_checks/deployment_entries.py` | `tests/code/specs_validate_checks/test_deployment_entries.py` |
+| `code/spec_checks/deployment_entries.py` | `tests/code/specs_validate_checks/test_deployment_entries.py`；同时为 `v2-check --input-scope runtime_extensions` 和 preflight Rules 资产影响提示提供 `ldvh_asset` 只读解析 helper |
 | `code/spec_checks/human_gate.py` | `tests/code/specs_validate_checks/test_human_gate.py` |
 | `code/spec_checks/governed_projects.py` | `tests/code/specs_validate_checks/test_governed_projects.py` |
 | `code/spec_checks/ldvh_assurance.py` | `tests/code/specs_validate_checks/test_ldvh_assurance.py` |
@@ -200,7 +200,7 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 1. `specs_validate.py` 的主要检查能力域已迁入 `code/spec_checks/`；该文件当前只应承担 CLI 兼容、配置同步、常量/函数兼容引用和跨模块编排；
 2. `specs_validate.py` 的结构化输出字段、错误码和诊断格式仍需后续统一；
-3. 知识地图只读投影核心已提取到 `code/spec_checks/knowledge_map.py`，仍通过 `v2-check` 兼容入口暴露；受控写入 preflight 第一版已由 `code/spec_checks/preflight.py` 和 `python3 code/specs_validate.py preflight --target-path <path>` 承载；
+3. 知识地图只读投影核心已提取到 `code/spec_checks/knowledge_map.py`，仍通过 `v2-check` 兼容入口暴露；显式 `runtime_extensions` 输入范围通过 `deployment_entries` helper 读取固定运行时扩展自描述；受控写入 preflight 第一版已由 `code/spec_checks/preflight.py` 和 `python3 code/specs_validate.py preflight --target-path <path>` 承载，并能提示固定 Rules 资产影响；
 4. `code/fix_block_scalar.py` 已退出 active `code/` 路径并归档到 `history/code-archive/fix_block_scalar.py`；
 5. `specs_validate.py` 顶部一次性 import 多个检查域仍有 CLI 启动性能优化空间，后续应按 `code/docs/03-Code归档与性能审计.md` 单独推进懒加载；
 6. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。

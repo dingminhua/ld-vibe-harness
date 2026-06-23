@@ -9,6 +9,7 @@ from pathlib import Path
 import yaml
 
 from .common import HEADING_RE
+from .deployment_entries import deployment_entries_asset_records
 from .knowledge_map import (
     KnowledgeMapMixin,
     V2_DEFAULT_PROJECT_NAMESPACE,
@@ -88,7 +89,7 @@ V2_REQUIRED_00_SECTIONS = {
     "待补齐事项",
 }
 V2_ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
-V2_INPUT_SCOPES = {"active_specs", "specs_v2", "all", "history_specs_v1", "governed_projects"}
+V2_INPUT_SCOPES = {"active_specs", "specs_v2", "all", "history_specs_v1", "governed_projects", "runtime_extensions"}
 V2_QUERY_LAYERS = {"entry", "neighbors", "expand", "raw"}
 V2_PROJECT_SCOPES = {"current_project", "all_governed_projects", "explicit_projects"}
 class V2Checker(KnowledgeMapMixin):
@@ -154,6 +155,9 @@ class V2Checker(KnowledgeMapMixin):
             self.add_section_nodes(doc)
             self.validate_doc(doc, spec_paths, attachment_paths, known_paths)
             self.add_relation_edges(doc, known_paths)
+
+        if self.should_parse_runtime_extensions():
+            self.add_runtime_extension_assets()
 
         self.add_missing_attachment_authorization_diagnostics(spec_paths, attachment_paths)
         generated_at = datetime.now().isoformat(timespec="seconds")
@@ -271,10 +275,15 @@ class V2Checker(KnowledgeMapMixin):
     def should_parse_specs_v2(self):
         return self.input_scope in {"active_specs", "specs_v2", "all"}
 
+    def should_parse_runtime_extensions(self):
+        return self.input_scope in {"runtime_extensions", "all"}
+
     def effective_input_scope(self):
         scopes = []
         if self.should_parse_specs_v2():
             scopes.append("active_specs")
+        if self.should_parse_runtime_extensions():
+            scopes.append("runtime_extensions")
         return scopes
 
     def is_degraded(self):
@@ -464,6 +473,32 @@ class V2Checker(KnowledgeMapMixin):
                 self.diagnostics.append(self.diagnostic(rel_path, line, "error", "V2_ACTION_MEMBER_MISSING", "行动编排成员规范缺少 v2_action_member 身份块"))
         if spec.get("spec_kind") != "member_spec":
             self.diagnostics.append(self.diagnostic(rel_path, line, "error", "V2_MEMBER_SPEC_KIND_INVALID", "专题成员规范 v2_spec.spec_kind 必须为 member_spec"))
+
+    def add_runtime_extension_assets(self):
+        for record in deployment_entries_asset_records(self.root):
+            metadata = record.get("metadata") or {}
+            node_id = record.get("canonical_path") or record.get("path")
+            self.add_node(
+                node_id,
+                {
+                    "type": "runtime_extension",
+                    "label": metadata.get("id") or node_id,
+                    "path": record.get("path"),
+                    "canonical_path": node_id,
+                    "line": 1,
+                    "status": metadata.get("status"),
+                    "authority": "runtime_extension_asset",
+                    "project_namespace": self.project_namespace,
+                    "source_refs": [self.source_ref(record.get("path"), 1, field="ldvh_asset")],
+                    "source": "ldvh_asset",
+                    "asset_type": metadata.get("type"),
+                    "source_specs": list(metadata.get("source_specs") or []),
+                    "sync_triggers": list(metadata.get("sync_triggers") or []),
+                    "verification": list(metadata.get("verification") or []),
+                },
+            )
+            for source_spec in metadata.get("source_specs") or []:
+                self.add_edge(node_id, source_spec, "derives_from", "ldvh_asset.source_specs", 1)
 
     def validate_assurance_table(self, doc):
         section = self.find_h2_section(doc, "规范保障要求")

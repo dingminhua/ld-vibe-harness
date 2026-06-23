@@ -69,6 +69,15 @@ DEPLOYMENT_ENTRIES_REQUIRED_METADATA_FIELDS = [
 DEPLOYMENT_ENTRIES_FORBIDDEN_TYPES = {"Code", "Web", "CLI", "MCP", "Command", "CI", "文档"}
 
 
+def deployment_entries_required_asset_paths():
+    paths = []
+    for expected_paths in DEPLOYMENT_ENTRIES_REQUIRED_ASSETS.values():
+        if isinstance(expected_paths, str):
+            expected_paths = [expected_paths]
+        paths.extend(expected_paths)
+    return paths
+
+
 def deployment_entries_fixed_asset_section(text):
     marker = "## 2. 登记表"
     start = text.find(marker)
@@ -155,6 +164,43 @@ def deployment_entries_check_asset_metadata(root, asset_path_raw):
             issues.append(Issue(asset_path, 1, f"固定运行时扩展登记字段 {field} 应为 {expected_value}: {asset_path_raw}", code="DEPLOYMENT_ENTRIES_ASSET_METADATA_MISMATCH"))
 
     return issues
+
+
+def deployment_entries_asset_records(root=None, asset_paths=None):
+    root = Path(root) if root is not None else PROJECT_ROOT
+    records = []
+    for asset_path_raw in asset_paths or deployment_entries_required_asset_paths():
+        asset_path = root / asset_path_raw
+        if not asset_path.exists():
+            continue
+        text = asset_path.read_text(encoding="utf-8")
+        metadata = None
+        if asset_path.suffix in {".yaml", ".yml"}:
+            try:
+                data = yaml.safe_load(text) or {}
+            except yaml.YAMLError:
+                data = {}
+            if isinstance(data, dict) and isinstance(data.get("ldvh_asset"), dict):
+                metadata = data["ldvh_asset"]
+        if metadata is None:
+            metadata = deployment_entries_asset_metadata(text)
+        if not isinstance(metadata, dict):
+            continue
+        records.append(
+            {
+                "path": asset_path_raw,
+                "absolute_path": asset_path,
+                "metadata": metadata,
+                "id": metadata.get("id"),
+                "type": metadata.get("type"),
+                "status": metadata.get("status"),
+                "canonical_path": metadata.get("canonical_path") or asset_path_raw,
+                "source_specs": list(metadata.get("source_specs") or []),
+                "sync_triggers": list(metadata.get("sync_triggers") or []),
+                "verification": list(metadata.get("verification") or []),
+            }
+        )
+    return records
 
 
 def deployment_entries_check(root=None):

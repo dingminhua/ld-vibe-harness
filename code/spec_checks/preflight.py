@@ -4,6 +4,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from .deployment_entries import deployment_entries_asset_records
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PREFLIGHT_TOOL = "code/specs_validate.py preflight"
@@ -76,6 +78,23 @@ def check_status(diagnostics):
     if any(item["severity"] == "warning" for item in diagnostics):
         return "needs_human_gate"
     return "pass"
+
+
+def rules_asset_impact(root, relative_path, target_info):
+    if not target_info or target_info["asset_type"] not in {"specs", "runtime_extension"}:
+        return {"required": False, "assets": [], "basis": "not_applicable"}
+
+    records = [
+        record
+        for record in deployment_entries_asset_records(root)
+        if record.get("type") == "rule"
+    ]
+    if target_info["asset_type"] == "runtime_extension":
+        matches = [record for record in records if record.get("canonical_path") == relative_path or record.get("path") == relative_path]
+        return {"required": True, "assets": matches, "basis": "target_runtime_asset"}
+
+    matches = [record for record in records if relative_path in set(record.get("source_specs") or [])]
+    return {"required": True, "assets": matches, "basis": "source_specs"}
 
 
 def preflight_build(root=None, target_path=None, operation="update", field_path=None, status=None):
@@ -222,6 +241,7 @@ def preflight_build(root=None, target_path=None, operation="update", field_path=
     )
 
     sync_owner = target_info["owner"] if target_info else "04-Code确定性执行规范"
+    rules_impact = rules_asset_impact(root, relative_path, target_info)
     add_check(
         "sync_impact",
         "同步影响",
@@ -236,6 +256,34 @@ def preflight_build(root=None, target_path=None, operation="update", field_path=
             )
         ],
     )
+
+    rules_items = []
+    if rules_impact["required"]:
+        assets = rules_impact["assets"]
+        if assets:
+            asset_paths = "、".join(asset["canonical_path"] for asset in assets)
+            rules_items.append(
+                diagnostic(
+                    "PREFLIGHT_RULES_ASSET_IMPACT_REVIEW_REQUIRED",
+                    "info",
+                    f"继续写入前应评估固定 Rules 资产同步影响: {asset_paths}",
+                    relative_path,
+                    "06-运行时扩展规范",
+                    "rules_asset_impact",
+                )
+            )
+        else:
+            rules_items.append(
+                diagnostic(
+                    "PREFLIGHT_RULES_ASSET_IMPACT_REVIEW_REQUIRED",
+                    "info",
+                    "继续写入前应评估固定 Rules 资产同步影响；未发现 source_specs 或目标路径精确匹配的固定 Rules 资产，仍需按入口行为、STOP 点、验证入口和交接路径判断",
+                    relative_path,
+                    "06-运行时扩展规范",
+                    "rules_asset_impact",
+                )
+            )
+    add_check("rules_asset_impact", "Rules 资产影响", rules_items)
 
     add_check(
         "failure_owner",
@@ -268,6 +316,21 @@ def preflight_build(root=None, target_path=None, operation="update", field_path=
             "field_path": field_path,
             "status": status,
             "asset_type": target_info["asset_type"] if target_info else None,
+        },
+        "rules_asset_impact": {
+            "required": rules_impact["required"],
+            "basis": rules_impact["basis"],
+            "assets": [
+                {
+                    "id": asset.get("id"),
+                    "type": asset.get("type"),
+                    "canonical_path": asset.get("canonical_path"),
+                    "source_specs": asset.get("source_specs") or [],
+                    "sync_triggers": asset.get("sync_triggers") or [],
+                    "verification": asset.get("verification") or [],
+                }
+                for asset in rules_impact["assets"]
+            ],
         },
         "summary": {
             "status": summary_status,

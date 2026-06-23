@@ -573,6 +573,50 @@ def test_v2_check_history_specs_v1_scope_is_degraded_without_active_parse(tmp_pa
     assert excluded["history_specs_v1"]["diagnostic"] == "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED"
 
 
+def test_v2_check_runtime_extensions_scope_projects_fixed_asset_nodes(tmp_path):
+    write_md(
+        tmp_path / "rules" / "LDVH-MAINTAINER-ENTRY.md",
+        """
+# LDVH 维护入口
+
+```yaml
+ldvh_asset:
+  id: "ldvh-maintainer-entry"
+  type: "rule"
+  status: "active"
+  canonical_path: "rules/LDVH-MAINTAINER-ENTRY.md"
+  source_specs:
+    - "specs/01-规范体系基础规范.md"
+    - "specs/06-运行时扩展规范.md"
+  consumption_scenarios:
+    - "测试场景"
+  inputs:
+    - "测试输入"
+  outputs:
+    - "测试输出"
+  handoff: "测试交还"
+  verification:
+    - "python3 code/specs_validate.py deployment-entries"
+  sync_triggers:
+    - "source_specs 变化"
+  deprecation: "测试废弃规则"
+```
+""",
+    )
+
+    report = checker.v2_check_build(tmp_path, input_scope="runtime_extensions")
+    nodes = {node["id"]: node for node in report["knowledge_map"]["nodes"]}
+    edge_pairs = {(edge["from"], edge["to"], edge["type"]) for edge in report["knowledge_map"]["edges"]}
+
+    assert report["metadata"]["effective_input_scope"] == ["runtime_extensions"]
+    assert report["docs"] == []
+    assert nodes["rules/LDVH-MAINTAINER-ENTRY.md"]["type"] == "runtime_extension"
+    assert nodes["rules/LDVH-MAINTAINER-ENTRY.md"]["asset_type"] == "rule"
+    assert "specs/01-规范体系基础规范.md" in nodes["rules/LDVH-MAINTAINER-ENTRY.md"]["source_specs"]
+    assert ("rules/LDVH-MAINTAINER-ENTRY.md", "specs/01-规范体系基础规范.md", "derives_from") in edge_pairs
+    assert report["knowledge_map"]["excluded_inputs"] == []
+
+
 def test_v2_check_json_and_text_output_shape_are_stable(tmp_path, capsys):
     write_minimal_v2_knowledge_map_fixture(tmp_path)
 

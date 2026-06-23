@@ -11,6 +11,34 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 def test_preflight_existing_spec_update_requires_human_gate_but_does_not_authorize_write(tmp_path):
     write_md(tmp_path / "specs" / "04-Code确定性执行规范.md", "# Code\n")
+    write_md(
+        tmp_path / "rules" / "LDVH-MAINTAINER-ENTRY.md",
+        """
+# LDVH 维护入口
+
+```yaml
+ldvh_asset:
+  id: "ldvh-maintainer-entry"
+  type: "rule"
+  status: "active"
+  canonical_path: "rules/LDVH-MAINTAINER-ENTRY.md"
+  source_specs:
+    - "specs/04-Code确定性执行规范.md"
+  consumption_scenarios:
+    - "测试场景"
+  inputs:
+    - "测试输入"
+  outputs:
+    - "测试输出"
+  handoff: "测试交还"
+  verification:
+    - "python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text"
+  sync_triggers:
+    - "source_specs 变化"
+  deprecation: "测试废弃规则"
+```
+""",
+    )
 
     report = checker.preflight_build(tmp_path, "specs/04-Code确定性执行规范.md", operation="update")
     codes = {item["code"] for item in report["diagnostics"]}
@@ -22,7 +50,22 @@ def test_preflight_existing_spec_update_requires_human_gate_but_does_not_authori
     assert "PREFLIGHT_HUMAN_GATE_REQUIRED" in codes
     assert "PREFLIGHT_GIT_TRACE_REQUIRED" in codes
     assert "PREFLIGHT_SYNC_IMPACT_REVIEW_REQUIRED" in codes
+    assert "PREFLIGHT_RULES_ASSET_IMPACT_REVIEW_REQUIRED" in codes
+    assert report["rules_asset_impact"]["required"] is True
+    assert report["rules_asset_impact"]["basis"] == "source_specs"
+    assert [asset["canonical_path"] for asset in report["rules_asset_impact"]["assets"]] == ["rules/LDVH-MAINTAINER-ENTRY.md"]
     assert not any(item["severity"] == "error" for item in report["diagnostics"])
+
+
+def test_preflight_spec_update_still_requires_rules_review_without_exact_source_match(tmp_path):
+    write_md(tmp_path / "specs" / "05-Web信息同步规范.md", "# Web\n")
+
+    report = checker.preflight_build(tmp_path, "specs/05-Web信息同步规范.md", operation="update")
+    codes = {item["code"] for item in report["diagnostics"]}
+
+    assert "PREFLIGHT_RULES_ASSET_IMPACT_REVIEW_REQUIRED" in codes
+    assert report["rules_asset_impact"]["required"] is True
+    assert report["rules_asset_impact"]["assets"] == []
 
 
 def test_preflight_blocks_update_for_missing_target(tmp_path):
