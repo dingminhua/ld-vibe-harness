@@ -40,7 +40,7 @@ v2_spec:
     - "fact_model_fields"
     - "fact_model_state_machine"
     - "fact_model_instance_checks"
-  migration_status: "partially_migrated"
+  migration_status: "migrated"
 ```
 
 ```yaml
