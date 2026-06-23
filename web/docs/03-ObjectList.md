@@ -19,7 +19,6 @@
 状态筛选（ObjectStatusFilter）
 对象卡片自适应网格（ldvh-section-grid）
   通用卡片：ID + 复制对象路径图标 + 状态徽章 + 优先级字符徽标 + 标题 + 信号标签 + 更新时间
-  WorkCase 卡片：工作项自身信息 + 按状态分组的工作项入口
   WorkCase 卡片：工作项自身信息 + 执行态势条 + 关闭判断信号
 加载态 / 错误态 / 空态
 ```
@@ -69,24 +68,6 @@ ADR 是“已确认但尚未完全吸收到 specs/rules/code/web/skill/agent/wor
 
 ### 3.4 WorkCase 卡片
 
-WorkCase 是“工作项入口”卡片，帮助用户判断这个工作项下有哪些活跃/待关闭/已闭合工作项，并快速进入仍需推进的工作项。
-
-- 保留通用卡片头部：ID、复制对象路径、状态、标题；外层卡片可点击进入 WorkCase 详情，标题右侧加箭头作为对象入口提示；工作项分组框本身不响应点击。
-- 底部更新时间右对齐，工作项 ID 保持在左上角。
-- 按工作项状态分组展示：
-  - 活跃工作项组使用 `objectList.activePlanCount`，文案为“活跃工作项”，绿色背景，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
-  - 待确认工作项组使用 `objectList.humanConfirmPlanCount`，文案为“待确认工作项”，紫色背景，覆盖 `human_plan_confirming`、`human_closure_confirming` 和历史 `review_needed`，组标题使用 `ldvh-caption-strong`，标题前只用小圆点；
-  - 已闭合工作项组使用 `objectList.closedPlanCount`，文案为“已闭合工作项”，默认折叠；标题行折叠时展示向下展开箭头，展开后展示向上收起箭头，点击后展开历史工作项行，使用 `ldvh-caption-strong`，标题前只用小圆点。
-- 活跃/待关闭/已闭合组内每一行是一个工作项入口，工作项名使用 `ldvh-body`；工作项如存在 `priority`，在工作项标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 WorkCase 对象图标和标题；工作项 ID 使用 `ldvh-meta-muted`，并展示工作项标题、工作项 ID、复制对象路径按钮和进入箭头，不再重复展示状态标签；右侧复制和进入箭头默认保持中性，复制按钮只有自身 hover 时切到该组背景对应的状态色。
-- 各工作项组内部的工作项入口按 `updated` 时间倒序排列，最近变化的工作项在组内最前。
-- 工作项行可展示一条 compact 执行态势条，复用 WorkCase 执行项状态顺序和颜色：`已完成 / 已跳过 / 已阻塞 / 执行中 / 待执行`；态势条占满工作项行宽度，态势段只用 hover / focus tooltip 显示数量，不在 WorkCase 卡片里展开执行项。
-- WorkCase 卡片内不得出现大于工作项标题 `ldvh-card-title` 的文字；工作项组和汇总都低于工作项标题层级。
-- 无工作项时展示 `objectList.noPlans`。
-- WorkCase 不展示工作项内执行项标题或关闭材料；执行编排留给 WorkCase 卡片与详情页。
-- 点击工作项行跳转 `/objects/workcase/{id}`，不触发外层工作项卡片跳转。
-
-### 3.5 WorkCase 卡片
-
 WorkCase 是“工作项执行态势”卡片，帮助用户从工作项判断当前执行处在哪个阶段、是否存在前置等待，以及关闭判断材料是否齐备。
 
 - 保留通用卡片头部：ID、复制对象路径、状态、标题。
@@ -95,7 +76,7 @@ WorkCase 是“工作项执行态势”卡片，帮助用户从工作项判断�
 - 执行项状态图例在列表顶部右侧展示，卡片执行项行只保留图标和颜色，不重复状态文字。
 - WorkCase 卡片必须展示当前 WorkCase 状态机：`subagents_plan_reviewing`、`human_plan_confirming`、`executing`、`result_self_checking`、`subagents_result_reviewing`、`human_closure_confirming`、`closed`。历史 `draft`、`active`、`review_needed` 只作为 legacy 兼容状态展示，不作为新建工作项语言。
 - WorkCase 卡片态势按“已完成 / 已跳过 / 已阻塞 / 执行中 / 待执行”从左到右排列，完成和跳过靠左，阻塞、执行中和待执行用于提示 Human 当前推进位置。
-- WorkCase 卡片态势遵守 `specs/08-Web信息同步实现规范.md` §5.5 的派生态势原因语义规则。执行项事实状态以 `pending / in_progress / blocked / done / skipped` 为准；历史 `planned / executing / verifying` 等旧状态只作兼容读取，不作为新图例或新写入语言。
+- WorkCase 卡片态势遵守 `specs/05-Web信息同步规范.md` 的派生态势原因语义规则。执行项事实状态以 `pending / in_progress / blocked / done / skipped` 为准；历史 `planned / executing / verifying` 等旧状态只作兼容读取，不作为新图例或新写入语言。
 - 仅当工作项处于 `human_closure_confirming`、历史 `review_needed` 或已关闭工作项缺少关闭字段时，展示关闭判断 / 收口异常区域。关闭判断材料检查 `success_criteria`、`plan_confirmed_at`、`closure_requested_at`、`verification_evidence`、`closure_evidence`；历史对象可用 `review_requested_at` 兼容 `closure_requested_at`。
 - 展示执行态势区域：
   - 标题为 `objectList.planExecutionQueue`；
@@ -104,7 +85,7 @@ WorkCase 是“工作项执行态势”卡片，帮助用户从工作项判断�
   - 执行项行包含标题、内部编号或角色、状态图标和同色弱背景；执行项不得使用 WorkCase 对象图标或 WorkCase 状态徽章，也不得拥有独立对象详情路由；
   - 执行态势区域、态势条和普通信息区域不响应主路由跳转，避免误触外层卡片。
 
-### 3.6 Spark 卡片
+### 3.5 Spark 卡片
 
 Spark 是“待分流信息”卡片，列表态用于快速定位每条火花，并在已经分流或废弃时提示闭环事实；待处理卡片不展开来源、意图或长正文。
 
@@ -116,13 +97,13 @@ Spark 是“待分流信息”卡片，列表态用于快速定位每条火花�
 - `discarded` 或存在 `discard_reason` 时，卡片中部展示“已废弃”区域，消费 `discard_reason`；缺少原因时展示原因缺失提示。不得再同时展示通用非活跃原因块造成重复。
 - Spark 卡片内部信息区域只用于阅读，不响应主路由跳转；点击外层卡片仍进入 Spark 详情页。
 
-### 3.7 空态、加载态、错误态
+### 3.6 空态、加载态、错误态
 
 - 加载态：居中旋转动画。
 - 错误态：`common.loadFailed` + 错误信息。
 - 空态：`objectList.noObjects`，不得拼 raw 中文句子。
 
-### 3.8 五个基准模块中的对象列表基线
+### 3.7 五个基准模块中的对象列表基线
 
 研究、决策、火花、经验四个对象列表已经进入五个基准模块，应作为非工作主线对象卡片的统一基线。提交列表不属于工作对象列表，但其卡片网格、标题带、右上复制入口和底部更新时间必须与这四类对象列表保持同一视觉语言。
 
