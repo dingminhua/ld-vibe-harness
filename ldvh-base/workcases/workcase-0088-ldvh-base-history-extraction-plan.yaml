@@ -5,7 +5,7 @@ goal: |
   快速推进 ldvh-base 事实源迁移：不创建额外旧事实源目录，直接修复当前事实对象中的失效引用，把旧 v1 规范证据指向已有 history/specs-v1，并继续提取仍有价值的内容进入 v2 当前事实。
 status: executing
 created: '2026-06-23T23:47:14+08:00'
-updated: '2026-06-24T00:34:00+08:00'
+updated: '2026-06-24T00:52:00+08:00'
 priority: P1
 plan_confirmed_at: '2026-06-23T23:50:54+08:00'
 description: |
@@ -21,7 +21,7 @@ success_criteria: |-
   - [x] 明确不创建旧事实源目录；旧事实追溯依赖 Git 历史、history/specs-v1 和当前对象中的历史证据引用
   - [x] 收口旧 WorkCase 自签审核 warning，使 `ldvh-base` 全量事实源校验达到 0 errors / 0 warnings
   - [x] 按 Human 最新口径清空 ADR 与 Pitfall 当前事实对象，并修复结构化证据断链
-  - [ ] 给出分批执行顺序和每批验证口径，避免知识地图、Web 或 Code 把历史残留误读为当前事实
+  - [x] 给出分批执行顺序和每批验证口径，避免知识地图、Web 或 Code 把历史残留误读为当前事实
   - [ ] 对所有会移动、删除、关闭、批量重写或改变事实源边界的动作列出 Human Gate 条件
   - [ ] 形成可执行的下一阶段 WorkCase 或行动编排候选，并在执行前提交 Human 方案确认
 source: |
@@ -124,9 +124,29 @@ orchestration:
     - code/fact_validate.py
     - code/specs_validate.py
     expected_output: 输出后续批次、每批准入条件、验证命令、失败降级方式、Human Gate 条件和提交拆分建议。
-    status: pending
-    result_summary: ''
-    evidence_refs: []
+    status: done
+    result_summary: |
+      已完成非 closed WorkCase 分流盘点。当前 WorkCase 不应直接批量删除或批量关闭，应按以下批次推进：
+
+      批次 A：已在 `human_closure_confirming` 且成功标准全勾的 WorkCase，可提交 Human 批量关闭确认；范围为 0081、0082、0083、0085、0086。执行前提是 Human 明确确认关闭；执行动作是填写 `closed_at`、`closure_outcome` 和 `result_review.human_closure_confirmation`，状态改为 `closed`。
+
+      批次 B：状态不一致但材料基本完成的 WorkCase，先补齐状态与结果复核材料，不直接关闭；范围为 0084、0087。0084 成功标准已全勾，但停在 `result_self_checking` 且 `controller_resolution` 为空；0087 已在关闭确认口，但仍有一条成功标准未勾，需要先补 closure 分流说明。
+
+      批次 C：后期已完成但停在 `review_needed` 的旧 WorkCase，先做历史迁移接管复核，再提交 Human 关闭确认；范围为 0069、0071、0072、0073、0075、0076、0077、0078、0079。这批成功标准均已完成，且有验证/关闭证据，但缺少 v2 WorkCase 关闭前的结果复核结构。
+
+      批次 D：早期 Task 时代残留，不作为当前 active 工作继续推进，先判断是否已有价值被 v2 specs、Code、Web、Spark 或 Study 吸收，再决定关闭或删除候选；范围为 0023、0024、0027、0037、0043、0044、0045、0046、0047、0050、0055、0061。
+
+      批次 E：早期 `review_needed` 残留，已有历史证据但成功标准仍是旧 Task 口径，先按主题抽取价值，再转入关闭/删除候选；范围为 0048、0058、0059、0060。
+
+      验证口径：每批修改后必须运行 `python3 code/fact_validate.py ldvh-base/ --format text`；涉及 specs 或 Code/Web 吸收判断时再运行 `python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text`；提交前运行 `git diff --check` 和 `python3 code/commit_validate.py --check-message-file <message-file>`。
+
+      Human Gate：关闭任一 WorkCase、删除任一 WorkCase、把旧 active 判定为无当前价值、或把旧工作事实抽取进 active specs/Code/Web/运行时扩展前，必须明确记录确认范围。当前只完成分流计划，不等同于关闭授权。
+    evidence_refs:
+    - ldvh-base/workcases/
+    - specs/21-WorkCase-工作项.md
+    - python3 code/fact_cli.py list workcase
+    - python3 code/fact_cli.py stats
+    - python3 code/fact_validate.py ldvh-base/ --format text
     blocking_reason: null
   - id: item-6
     title: 提交 Human 方案确认
