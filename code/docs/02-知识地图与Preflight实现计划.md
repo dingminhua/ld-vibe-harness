@@ -26,12 +26,14 @@ Code 第二版先完成两个能力：
 
 | 能力 | 当前状态 | 边界 |
 |---|---|---|
-| `python3 code/specs_validate.py v2-check` | 已能输出 active specs 诊断和只读知识地图预览子集 | 不等于完整知识地图运行时 |
+| `python3 code/specs_validate.py v2-check` | 已能输出 active specs 诊断和只读知识地图预览 | 不等于 Web 可视化或 Git 历史图谱 |
+| `python3 code/specs_validate.py knowledge-map` | 已能只输出知识地图投影本体 | 与 `v2-check` 复用同一输入范围、层级和项目范围语义 |
 | active specs 输入 | 默认读取当前 `specs/`，测试中保留 `specs-v2` 兼容夹具 | `active_specs` 为默认 input_scope；`specs_v2` 保留为旧脚本兼容别名 |
 | runtime extensions 输入 | 显式 `runtime_extensions` 范围读取固定运行时扩展 `ldvh_asset` 自描述 | 不作为默认范围；只读生成节点和来源规范关系，不写入缓存 |
-| 知识地图查询层 | 已有 `entry`、`neighbors`、`expand`、`raw` 的部分行为 | 未实现 raw 原文层和管辖项目层；Git history 不进入知识地图范围 |
+| governed projects 输入 | 显式 `governed_projects` 范围读取 `LDVH-GOVERNED-PROJECTS.yaml` 和登记项目 `ldvh-base/` | 节点带项目命名空间；不修改项目清单、事实对象或项目 docs |
+| 知识地图查询层 | 已有 `entry`、`neighbors`、`expand`、`raw` 行为 | raw 只返回受控片段；Git history 不进入知识地图范围 |
 | 降级诊断 | 已对部分未实现范围输出 degraded 诊断 | 诊断 Schema 尚未完整统一 |
-| preflight | 已实现第一版 `python3 code/specs_validate.py preflight --target-path <path>`，并能提示 specs/runtime extension 写入对固定 Rules 资产的同步影响 | 只读诊断，不授权写入；字段级 Schema 校验仍降级 |
+| preflight | 已实现 `python3 code/specs_validate.py preflight --target-path <path>`，并能提示 specs/runtime extension 写入对固定 Rules 资产的同步影响、部分字段归口和知识地图上下文 | 只读诊断，不授权写入；未登记字段仍降级 |
 
 ## 3. 不做事项
 
@@ -41,7 +43,7 @@ Code 第二版先完成两个能力：
 2. 不实现自动写入、自动修复、自动提交或事实源代写；
 3. 不把历史 v1 事实源解释为 active 权威；
 4. 不把 `web_cache`、测试缓存、聊天过程、临时审计或迁移计划作为可信节点边输入；
-5. 不把 Web 接入、管辖项目图谱和 raw 原文层作为第一批完成目标；
+5. 不把 Web 可视化接入作为第一批完成目标；
 6. 不建立 Git history 图谱、专用 Git 查询层或 Git 缓存；历史追溯使用 Git 原生命令，LDVH 只维护 commit message 格式要求和校验。
 7. 不修改 `code/specs_validate.py v2-check` 的兼容输出，除非同一提交补充测试、文档和下游影响说明。
 
@@ -67,12 +69,15 @@ Code 第二版先完成两个能力：
 | KM-1 基线固化 | 增补测试记录当前 `v2-check` JSON/text 输出、query layer、input scope 和 degraded 行为 | 行为不变，现有测试通过 |
 | KM-2 核心提取 | 从 `v2.py` 提取节点、边、source refs、edge id、诊断和查询过滤到 `knowledge_map.py` | `v2-check` 输出兼容，模块级测试覆盖 |
 | KM-3 Schema 对齐 | 补齐 04.Att.06 要求的顶层字段、节点字段、边字段和来源回指缺口 | 缺失能力用 `degraded` 或 `diagnostics` 明示 |
-| KM-4 范围约束 | 明确 `active_specs`、`specs_v2` 兼容别名、`runtime_extensions` 显式只读范围、`history_specs_v1`、`governed_projects`、排除输入和禁止输入的处理 | 后置范围返回诊断，不静默伪装支持；Git history 不作为知识地图输入范围 |
-| KM-5 CLI 收敛 | 评估是否新增 `knowledge-map` 子命令，或继续以 `v2-check` 暴露只读预览 | 若新增命令，再更新 04.Att.02 和测试 |
+| KM-4 范围约束 | 明确 `active_specs`、`specs_v2` 兼容别名、`runtime_extensions` 显式只读范围、`governed_projects` 显式只读范围、排除输入和禁止输入的处理 | Git history 不作为知识地图输入范围；缺失或非法管辖项目输入用诊断暴露 |
+| KM-5 CLI 收敛 | 新增 `knowledge-map` 子命令，只输出知识地图投影本体 | 已更新 04.Att.02 和测试 |
+| KM-6 raw 与管辖项目 | 实现 raw 受控片段和管辖项目事实对象节点/边 | 不落盘、不缓存、不扫描未授权 docs |
 
 `active_specs` 是当前默认输入范围；`specs_v2` 只作为兼容别名保留。输出或文档不得把 `specs_v2` 解释为独立当前事实源或仍存在的 `specs-v2/` 当前入口。
 
 `runtime_extensions` 是显式只读输入范围，用于读取固定运行时扩展 `ldvh_asset` 自描述并投影为运行时资产节点和来源规范关系。它不进入默认 `active_specs` 范围，不落盘缓存，不替代 06 对 Rules 资产边界和同步责任的治理。
+
+`governed_projects` 是显式只读输入范围，用于读取工作区 `LDVH-GOVERNED-PROJECTS.yaml` 和登记项目 `ldvh-base/` 中的 WorkCase、ADR、Pitfall、Spark、Study。节点 ID 必须带项目命名空间，避免不同项目同名对象合并。缺失 `ldvh-base/`、解析失败、越界路径或缺失目标必须输出诊断，不得补写项目清单、事实对象或项目 docs。
 
 ## 6. Preflight 实现阶段
 
@@ -80,7 +85,7 @@ Code 第二版先完成两个能力：
 |---|---|---|
 | PF-1 输入合同草案 | 定义 operation、target path、可选 object type、field path、status、source refs 和 output format | 只作为实现合同，不改变正式规范 |
 | PF-2 路径与位置检查 | 判断目标路径是否落在 specs、attachments、code、web、runtime extension、tests 或事实源授权位置 | 输出通过、阻断或需 Human Gate 的诊断 |
-| PF-3 字段与状态检查 | 针对已知事实模型、规范身份块、附件身份块和 Code 文档边界做只读检查 | 不完整能力用 degraded 明示 |
+| PF-3 字段与状态检查 | 针对已知规范身份块、附件身份块和运行时扩展自描述字段做只读归口识别 | 不完整能力用 degraded 明示 |
 | PF-4 Gate 与追溯提示 | 暴露 Human Gate、Git 追溯、同步影响、固定 Rules 资产影响和失败归口 | 检查通过仍不授权写入 |
 | PF-5 CLI 登记 | 新增稳定 preflight 子命令并更新 04.Att.02、04.Att.09、08.Att.05 和 Code 文档 | 命令、测试、文档同批提交 |
 
@@ -130,3 +135,4 @@ preflight 输出应优先给出机器可消费诊断，同时保留 Human 可读
 | 2026-06-23 | PF-1/PF-2/PF-4/PF-5 第一版 | 已新增 `code/spec_checks/preflight.py` 和 `python3 code/specs_validate.py preflight --target-path <path>`，覆盖授权位置、操作/路径、字段/状态降级、Human Gate、Git 追溯、同步影响和失败归口；始终 `write_authorized=false` | `python3 -m pytest tests/code/specs_validate_checks/test_preflight.py -q` |
 | 2026-06-24 | active specs 输入范围收口 | 已将知识地图默认 input_scope 从 `specs_v2` 调整为 `active_specs`，并保留 `specs_v2` 作为兼容别名 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py tests/code/specs_validate_checks/test_preflight.py tests/code/test_specs_validate.py -q` |
 | 2026-06-24 | runtime_extensions 与 Rules 影响提示 | 已复用 `deployment_entries` 的 `ldvh_asset` 解析，新增显式 `runtime_extensions` 知识地图输入范围，并在 preflight 中提示 specs/runtime extension 写入可能影响的固定 Rules 资产 | `python3 -m pytest tests/code/specs_validate_checks/test_preflight.py tests/code/specs_validate_checks/test_v2.py tests/code/specs_validate_checks/test_deployment_entries.py -q` |
+| 2026-06-24 | knowledge-map、raw、governed_projects 与字段级 preflight | 已新增 `knowledge-map` 子命令、raw 受控原文片段、`governed_projects` 事实对象图谱投影、项目命名空间节点、缺失目标诊断、preflight 字段归口和知识地图上下文输出 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py tests/code/specs_validate_checks/test_preflight.py -q` |

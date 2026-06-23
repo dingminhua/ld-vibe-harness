@@ -68,6 +68,37 @@ def _fast_v2_check_main(argv):
     )
 
 
+def _fast_knowledge_map_main(argv):
+    from spec_checks import v2 as v2_checks
+
+    parser = argparse.ArgumentParser(description="生成知识地图只读投影。")
+    parser.add_argument("--root", default=str(Path(__file__).resolve().parent.parent), help="项目根目录，默认使用当前工具所在项目。")
+    parser.add_argument("--specs-dir", default="specs", help="要检查的 v2 规范目录，默认 specs。")
+    parser.add_argument("--format", choices=["text", "json"], default="json", help="报告输出格式，默认 json。")
+    parser.add_argument("--input-scope", choices=["active_specs", "specs_v2", "all", "history_specs_v1", "governed_projects", "runtime_extensions"], default="active_specs", help="知识地图输入范围，默认 active_specs。")
+    parser.add_argument("--layer", choices=["entry", "neighbors", "expand", "raw"], default="entry", help="知识地图渐进读取层级，默认 entry。")
+    parser.add_argument("--project-scope", choices=["current_project", "all_governed_projects", "explicit_projects"], default="current_project", help="项目范围，默认 current_project。")
+    parser.add_argument("--project", action="append", default=[], help="project_scope=explicit_projects 时指定项目，可重复。")
+    parser.add_argument("--start-node", default=None, help="neighbors/expand/raw 层级的起点节点 ID、路径或标题。")
+    parser.add_argument("--relation-type", action="append", default=[], help="限制返回的关系类型，可重复。")
+    parser.add_argument("--depth", type=int, default=1, help="expand/raw 层级的最大展开深度，默认 1。")
+    parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在诊断时返回非零状态。")
+    args = parser.parse_args(argv)
+    return v2_checks.knowledge_map_main(
+        args.root,
+        args.specs_dir,
+        args.format,
+        args.fail_on_diagnostics,
+        input_scope=args.input_scope,
+        query_layer=args.layer,
+        project_scope=args.project_scope,
+        start_node=args.start_node,
+        relation_types=args.relation_type,
+        depth=args.depth,
+        projects=args.project,
+    )
+
+
 def _default_workspace_root_fast(governed_projects_checks):
     env_root = os.environ.get("LDVH_WORKSPACE_ROOT")
     if env_root:
@@ -302,6 +333,7 @@ if __name__ == "__main__" and len(sys.argv) > 1:
     _FAST_COMMANDS = {
         "preflight": _fast_preflight_main,
         "v2-check": _fast_v2_check_main,
+        "knowledge-map": _fast_knowledge_map_main,
         "governed-projects": _fast_governed_projects_main,
         "deployment-entries": _fast_deployment_entries_main,
         "runtime-projection": _fast_runtime_projection_main,
@@ -1225,6 +1257,35 @@ def v2_check_main(
     )
 
 
+def knowledge_map_main(
+    root=None,
+    specs_dir="specs",
+    output_format="json",
+    fail_on_diagnostics=False,
+    input_scope="active_specs",
+    query_layer="entry",
+    project_scope="current_project",
+    start_node=None,
+    relation_types=None,
+    depth=1,
+    projects=None,
+):
+    sync_v2_config()
+    return v2_checks.knowledge_map_main(
+        root or PROJECT_ROOT,
+        specs_dir,
+        output_format,
+        fail_on_diagnostics,
+        input_scope=input_scope,
+        query_layer=query_layer,
+        project_scope=project_scope,
+        start_node=start_node,
+        relation_types=relation_types,
+        depth=depth,
+        projects=projects,
+    )
+
+
 def sync_preflight_config():
     preflight_checks.PROJECT_ROOT = PROJECT_ROOT
 
@@ -1330,6 +1391,20 @@ def build_parser():
     v2_parser.add_argument("--depth", type=int, default=1, help="expand/raw 层级的最大展开深度，默认 1。")
     v2_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在诊断时返回非零状态。")
 
+    # knowledge-map
+    knowledge_map_parser = subparsers.add_parser("knowledge-map", help="生成知识地图只读投影。")
+    knowledge_map_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
+    knowledge_map_parser.add_argument("--specs-dir", default="specs", help="要检查的 v2 规范目录，默认 specs。")
+    knowledge_map_parser.add_argument("--format", choices=["text", "json"], default="json", help="报告输出格式，默认 json。")
+    knowledge_map_parser.add_argument("--input-scope", choices=["active_specs", "specs_v2", "all", "history_specs_v1", "governed_projects", "runtime_extensions"], default="active_specs", help="知识地图输入范围，默认 active_specs。")
+    knowledge_map_parser.add_argument("--layer", choices=["entry", "neighbors", "expand", "raw"], default="entry", help="知识地图渐进读取层级，默认 entry。")
+    knowledge_map_parser.add_argument("--project-scope", choices=["current_project", "all_governed_projects", "explicit_projects"], default="current_project", help="项目范围，默认 current_project。")
+    knowledge_map_parser.add_argument("--project", action="append", default=[], help="project_scope=explicit_projects 时指定项目，可重复。")
+    knowledge_map_parser.add_argument("--start-node", default=None, help="neighbors/expand/raw 层级的起点节点 ID、路径或标题。")
+    knowledge_map_parser.add_argument("--relation-type", action="append", default=[], help="限制返回的关系类型，可重复。")
+    knowledge_map_parser.add_argument("--depth", type=int, default=1, help="expand/raw 层级的最大展开深度，默认 1。")
+    knowledge_map_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在诊断时返回非零状态。")
+
     # preflight
     preflight_parser = subparsers.add_parser("preflight", help="执行受控写入前只读检查，不授权写入。")
     preflight_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
@@ -1407,6 +1482,21 @@ def main(argv=None):
 
     if command == "v2-check":
         return v2_check_main(
+            args.root,
+            args.specs_dir,
+            args.format,
+            args.fail_on_diagnostics,
+            input_scope=args.input_scope,
+            query_layer=args.layer,
+            project_scope=args.project_scope,
+            start_node=args.start_node,
+            relation_types=args.relation_type,
+            depth=args.depth,
+            projects=args.project,
+        )
+
+    if command == "knowledge-map":
+        return knowledge_map_main(
             args.root,
             args.specs_dir,
             args.format,

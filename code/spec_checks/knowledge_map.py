@@ -4,19 +4,40 @@ import hashlib
 import re
 from pathlib import Path
 
+import yaml
+
 
 V2_DEFAULT_PROJECT_NAMESPACE = "ldvh_self"
 V2_KNOWLEDGE_MAP_SCHEMA_VERSION = "04.Att.06.v1"
 V2_KNOWLEDGE_MAP_TOOL = "code/specs_validate.py v2-check"
 V2_DEGRADED_DIAGNOSTIC_CODES = {
     "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED",
-    "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED",
-    "V2_RAW_LAYER_NOT_IMPLEMENTED",
     "V2_QUERY_START_NODE_MISSING",
     "V2_QUERY_START_NODE_NOT_FOUND",
-    "V2_PROJECT_SCOPE_NOT_IMPLEMENTED",
+    "V2_GOVERNED_PROJECTS_CONFIG_MISSING",
+    "V2_GOVERNED_PROJECTS_CONFIG_INVALID",
+    "V2_GOVERNED_PROJECT_NOT_FOUND",
+    "V2_GOVERNED_PROJECT_LDVH_BASE_MISSING",
+    "V2_PROJECT_FACT_GRAPH_LOAD_FAILED",
+    "V2_PROJECT_FACT_GRAPH_TARGET_NOT_FOUND",
+    "V2_PROJECT_PATH_OUT_OF_SCOPE",
+    "V2_INPUT_SCOPE_INVALID",
+    "V2_QUERY_LAYER_INVALID",
+    "V2_PROJECT_SCOPE_INVALID",
 }
 V2_PATH_REF_RE = re.compile(r"`((?:specs-v2|specs|code|web|tests|rules|skills|agents|hooks)/[^`]+?)`")
+V2_OBJECT_ID_RE = re.compile(r"^(workcase|adr|pitfall|spark|study)-\d{4}$")
+V2_FACT_DIR_TO_TYPE = {
+    "workcases": "workcase",
+    "adrs": "adr",
+    "pitfalls": "pitfall",
+    "sparks": "spark",
+    "studies": "study",
+}
+V2_FACT_RELATION_FIELD_PREFIXES = (
+    ("related_", "related"),
+    ("source_", "derives_from"),
+)
 
 
 class KnowledgeMapMixin:
@@ -147,7 +168,7 @@ class KnowledgeMapMixin:
                 "derived_from": source_structure,
                 "line": line,
                 "project_namespace": self.project_namespace,
-                "source_refs": [self.source_ref(source if source.endswith(".md") else target, line, field=source_structure)],
+                "source_refs": [self.edge_source_ref(source, target, line, source_structure)],
                 **({"label": label} if label else {}),
             }
         )
@@ -164,7 +185,7 @@ class KnowledgeMapMixin:
                 "relation_type": relation_type,
                 "source_structure": source_structure,
                 "line": line,
-                "source_refs": [self.source_ref(source if source.endswith(".md") else target, line, field=source_structure)],
+                "source_refs": [self.edge_source_ref(source, target, line, source_structure)],
                 **({"label": label} if label else {}),
             }
         )
@@ -209,7 +230,7 @@ class KnowledgeMapMixin:
 
         projected_nodes = [nodes_by_id[node_id] for node_id in self.sorted_node_ids(selected_nodes) if node_id in nodes_by_id]
         source_refs = self.knowledge_map_source_refs(projected_nodes, selected_edges)
-        return {
+        projection = {
             "schema_version": V2_KNOWLEDGE_MAP_SCHEMA_VERSION,
             "generated_at": generated_at,
             "tool": V2_KNOWLEDGE_MAP_TOOL,
@@ -233,6 +254,9 @@ class KnowledgeMapMixin:
             "edges": selected_edges,
             "excluded_inputs": self.excluded_inputs(),
         }
+        if self.query_layer == "raw":
+            projection["raw_content"] = self.raw_content_for_projection(projected_nodes)
+        return projection
 
     def knowledge_map_source_refs(self, nodes, edges):
         refs = []
@@ -353,11 +377,405 @@ class KnowledgeMapMixin:
         excluded = []
         if self.input_scope in {"all", "history_specs_v1"}:
             excluded.append({"input": "history_specs_v1", "reason": "not_implemented", "diagnostic": "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED"})
-        if self.input_scope in {"all", "governed_projects"}:
-            excluded.append({"input": "governed_projects", "reason": "not_implemented", "diagnostic": "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED"})
-        if self.query_layer == "raw":
-            excluded.append({"input": "raw_content", "reason": "not_implemented", "diagnostic": "V2_RAW_LAYER_NOT_IMPLEMENTED"})
         return excluded
+
+    def raw_content_for_projection(self, nodes):
+        items = []
+        seen = set()
+        for node in nodes:
+            refs = node.get("source_refs") or []
+            for ref in refs[:1]:
+                path_value = ref.get("path")
+                if not path_value:
+                    continue
+                path = self.resolve_source_path(path_value)
+                key = (str(path), ref.get("line_start"), ref.get("line_end"))
+                if key in seen or not path.exists() or not path.is_file():
+                    continue
+                seen.add(key)
+                try:
+                    lines = path.read_text(encoding="utf-8").splitlines()
+                except OSError:
+                    continue
+                start = max(1, int(ref.get("line_start") or 1))
+                end = max(start, int(ref.get("line_end") or start))
+                end = min(end, start + 39, len(lines))
+                excerpt = "\n".join(lines[start - 1 : end])
+                items.append(
+                    {
+                        "node_id": node.get("id"),
+                        "path": path_value,
+                        "line_start": start,
+                        "line_end": end,
+                        "text": excerpt,
+                    }
+                )
+        return items
+
+    def resolve_source_path(self, path_value):
+        path = Path(path_value)
+        if path.is_absolute():
+            return path
+        return self.root / path
+
+    def add_governed_project_graph(self):
+        config_path = self.governed_projects_config_path()
+        if not config_path:
+            self.diagnostics.append(
+                self.diagnostic(
+                    "<workspace>",
+                    1,
+                    "warning",
+                    "V2_GOVERNED_PROJECTS_CONFIG_MISSING",
+                    "未找到 LDVH-GOVERNED-PROJECTS.yaml，无法生成管辖项目知识地图投影",
+                    suggested_owner="06-运行时扩展规范",
+                )
+            )
+            return
+        try:
+            data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as exc:
+            self.diagnostics.append(
+                self.diagnostic(
+                    str(config_path),
+                    1,
+                    "warning",
+                    "V2_GOVERNED_PROJECTS_CONFIG_INVALID",
+                    f"管辖项目配置无法解析: {exc}",
+                    suggested_owner="06-运行时扩展规范",
+                )
+            )
+            return
+        projects = data.get("projects")
+        if not isinstance(projects, list):
+            self.diagnostics.append(
+                self.diagnostic(
+                    self.relative_or_absolute(config_path),
+                    1,
+                    "warning",
+                    "V2_GOVERNED_PROJECTS_CONFIG_INVALID",
+                    "管辖项目配置 projects 必须是列表",
+                    suggested_owner="06-运行时扩展规范",
+                )
+            )
+            return
+
+        selected = self.select_governed_projects(projects)
+        for project in selected:
+            self.add_project_graph(project, config_path)
+
+    def governed_projects_config_path(self):
+        for candidate in (self.root / "LDVH-GOVERNED-PROJECTS.yaml", self.root.parent / "LDVH-GOVERNED-PROJECTS.yaml"):
+            if candidate.exists():
+                return candidate
+        return None
+
+    def select_governed_projects(self, projects):
+        valid_projects = [project for project in projects if isinstance(project, dict) and project.get("id") and project.get("path")]
+        if self.project_scope == "all_governed_projects":
+            return valid_projects
+        if self.project_scope == "explicit_projects":
+            wanted = set(self.projects)
+            selected = [project for project in valid_projects if project.get("id") in wanted]
+            missing = sorted(wanted - {project.get("id") for project in selected})
+            for project_id in missing:
+                self.diagnostics.append(
+                    self.diagnostic(
+                        "<workspace>",
+                        1,
+                        "warning",
+                        "V2_GOVERNED_PROJECT_NOT_FOUND",
+                        f"未找到显式指定的管辖项目: {project_id}",
+                        suggested_owner="06-运行时扩展规范",
+                    )
+                )
+            return selected
+
+        root = self.root.resolve()
+        selected = []
+        for project in valid_projects:
+            try:
+                project_root = Path(project["path"]).resolve()
+            except OSError:
+                continue
+            if project_root == root:
+                selected.append(project)
+        if selected:
+            return selected
+        return valid_projects[:1] if len(valid_projects) == 1 else []
+
+    def add_project_graph(self, project, config_path):
+        project_id = str(project.get("id"))
+        project_root = Path(project.get("path")).resolve()
+        project_node_id = f"project:{project_id}"
+        config_ref_path = self.relative_or_absolute(config_path)
+        self.add_node(
+            project_node_id,
+            {
+                "type": "governed_project",
+                "label": project.get("name") or project_id,
+                "path": str(project_root),
+                "canonical_path": str(project_root),
+                "line": 1,
+                "status": "active",
+                "authority": "LDVH-GOVERNED-PROJECTS.yaml",
+                "project_namespace": project_id,
+                "project_id": project_id,
+                "source_refs": [self.source_ref(config_ref_path, 1, field=f"projects.{project_id}")],
+                "source": "governed_projects_config",
+            },
+        )
+        ldvh_base = project_root / "ldvh-base"
+        if not ldvh_base.exists():
+            self.diagnostics.append(
+                self.diagnostic(
+                    str(ldvh_base),
+                    1,
+                    "warning",
+                    "V2_GOVERNED_PROJECT_LDVH_BASE_MISSING",
+                    f"管辖项目缺少 ldvh-base: {project_id}",
+                    suggested_owner="02-事实模型基础规范",
+                )
+            )
+            return
+
+        records = []
+        object_index = {}
+        for directory_name, object_type in V2_FACT_DIR_TO_TYPE.items():
+            directory = ldvh_base / directory_name
+            if not directory.exists():
+                continue
+            suffix = ".md" if object_type == "study" else ".yaml"
+            for path in sorted(directory.glob(f"{object_type}-*{suffix}")):
+                record = self.load_fact_record(project_id, project_root, object_type, path)
+                if not record:
+                    continue
+                records.append(record)
+                object_index[record["object_id"]] = record
+
+        for record in records:
+            self.add_fact_node(record)
+            self.add_edge(project_node_id, record["node_id"], "related", "governed_project.ldvh_base", 1)
+        for record in records:
+            self.add_fact_edges(record, object_index, project_root)
+
+    def load_fact_record(self, project_id, project_root, object_type, path):
+        try:
+            text = path.read_text(encoding="utf-8")
+            if path.suffix == ".md":
+                if not text.startswith("---\n"):
+                    raise ValueError("Study Markdown 缺少 YAML frontmatter")
+                end = text.find("\n---", 4)
+                if end == -1:
+                    raise ValueError("Study Markdown 缺少 frontmatter 结束标记")
+                data = yaml.safe_load(text[4:end]) or {}
+            else:
+                data = yaml.safe_load(text) or {}
+        except (OSError, yaml.YAMLError, ValueError) as exc:
+            self.diagnostics.append(
+                self.diagnostic(
+                    self.project_relative_or_absolute(project_root, path),
+                    1,
+                    "warning",
+                    "V2_PROJECT_FACT_GRAPH_LOAD_FAILED",
+                    f"事实对象无法解析为知识地图节点: {exc}",
+                    suggested_owner="02-事实模型基础规范",
+                )
+            )
+            return None
+        if not isinstance(data, dict):
+            return None
+        object_id = data.get("id")
+        if not isinstance(object_id, str) or not object_id:
+            return None
+        object_type = str(data.get("type") or object_type)
+        node_id = f"{project_id}:{object_type}:{object_id}"
+        return {
+            "project_id": project_id,
+            "project_root": project_root,
+            "object_type": object_type,
+            "object_id": object_id,
+            "node_id": node_id,
+            "path": path,
+            "relative_path": self.project_relative_or_absolute(project_root, path),
+            "data": data,
+            "text": text,
+        }
+
+    def add_fact_node(self, record):
+        data = record["data"]
+        self.add_node(
+            record["node_id"],
+            {
+                "type": "fact_object",
+                "object_type": record["object_type"],
+                "object_id": record["object_id"],
+                "label": data.get("title") or record["object_id"],
+                "path": record["relative_path"],
+                "canonical_path": record["relative_path"],
+                "line": 1,
+                "status": data.get("status"),
+                "authority": "ldvh-base",
+                "project_namespace": record["project_id"],
+                "project_id": record["project_id"],
+                "source_refs": [self.source_ref(record["relative_path"], 1, object_id=record["object_id"])],
+                "source": "ldvh_base_fact_object",
+            },
+        )
+
+    def add_fact_edges(self, record, object_index, project_root):
+        data = record["data"]
+        for field, value in data.items():
+            if field in {"source", "source_detail"}:
+                continue
+            relation_type = None
+            for prefix, mapped_relation in V2_FACT_RELATION_FIELD_PREFIXES:
+                if field.startswith(prefix):
+                    relation_type = mapped_relation
+                    break
+            if field in {"input_refs", "depends_on", "blocked_by"}:
+                relation_type = "consumes"
+            if field in {"evidence_refs", "verification_refs"}:
+                relation_type = "validates"
+            if field == "resolved_to":
+                relation_type = "impacts"
+            if relation_type:
+                self.add_fact_relation_values(record, object_index, project_root, field, value, relation_type)
+            if field == "execution_items" and isinstance(value, list):
+                for index, item in enumerate(value):
+                    if not isinstance(item, dict):
+                        continue
+                    self.add_fact_relation_values(record, object_index, project_root, f"execution_items[{index}].input_refs", item.get("input_refs"), "consumes")
+                    self.add_fact_relation_values(record, object_index, project_root, f"execution_items[{index}].evidence_refs", item.get("evidence_refs"), "validates")
+
+    def add_fact_relation_values(self, record, object_index, project_root, field, value, relation_type):
+        values = value if isinstance(value, list) else [value]
+        for raw_target in values:
+            target = self.normalize_fact_target(raw_target)
+            if not target:
+                continue
+            target_node = self.resolve_fact_target(record, object_index, project_root, target, field)
+            line = self.find_text_line(record["text"], field.split("[")[0])
+            self.add_edge(record["node_id"], target_node, relation_type, field, line)
+
+    def normalize_fact_target(self, raw_target):
+        if raw_target is None:
+            return None
+        if isinstance(raw_target, str):
+            value = raw_target.strip()
+            if not value:
+                return None
+            if V2_OBJECT_ID_RE.match(value) or "/" in value or value.endswith((".md", ".yaml", ".yml")):
+                return value
+            return None
+        if isinstance(raw_target, dict):
+            target_type = raw_target.get("type")
+            target_id = raw_target.get("id")
+            if target_type and target_id:
+                return f"{target_type}:{target_id}"
+            if raw_target.get("path"):
+                return str(raw_target.get("path"))
+        return None
+
+    def resolve_fact_target(self, record, object_index, project_root, target, field):
+        project_id = record["project_id"]
+        target_id = target.split(":", 1)[1] if ":" in target and V2_OBJECT_ID_RE.match(target.split(":", 1)[1]) else target
+        if V2_OBJECT_ID_RE.match(target_id) and target_id in object_index:
+            return object_index[target_id]["node_id"]
+        if V2_OBJECT_ID_RE.match(target_id):
+            node_id = f"{project_id}:missing:{target_id}"
+            self.add_missing_fact_target_node(node_id, target_id, record, field)
+            return node_id
+
+        path = Path(target)
+        if not path.is_absolute():
+            path = project_root / target
+        try:
+            resolved = path.resolve()
+            resolved.relative_to(project_root)
+        except ValueError:
+            node_id = f"{project_id}:out_of_scope:{hashlib.sha1(target.encode('utf-8')).hexdigest()[:12]}"
+            self.diagnostics.append(
+                self.diagnostic(
+                    record["relative_path"],
+                    self.find_text_line(record["text"], field.split("[")[0]),
+                    "warning",
+                    "V2_PROJECT_PATH_OUT_OF_SCOPE",
+                    f"事实对象字段 {field} 引用项目根目录外路径: {target}",
+                    suggested_owner="07-事实源边界与Git追溯规范",
+                )
+            )
+            self.add_node(
+                node_id,
+                {
+                    "type": "missing_reference",
+                    "label": target,
+                    "path": target,
+                    "canonical_path": target,
+                    "line": 1,
+                    "project_namespace": project_id,
+                    "project_id": project_id,
+                    "source_refs": [self.source_ref(record["relative_path"], self.find_text_line(record["text"], field.split("[")[0]), field=field, object_id=record["object_id"])],
+                    "source": "ldvh_base_fact_reference",
+                },
+            )
+            return node_id
+
+        rel = self.project_relative_or_absolute(project_root, resolved)
+        node_id = f"{project_id}:path:{rel}"
+        node_type = "external_fact_source" if resolved.exists() else "missing_reference"
+        if not resolved.exists():
+            self.diagnostics.append(
+                self.diagnostic(
+                    record["relative_path"],
+                    self.find_text_line(record["text"], field.split("[")[0]),
+                    "warning",
+                    "V2_PROJECT_FACT_GRAPH_TARGET_NOT_FOUND",
+                    f"事实对象字段 {field} 引用目标不存在: {target}",
+                    suggested_owner="02-事实模型基础规范",
+                )
+            )
+        self.add_node(
+            node_id,
+            {
+                "type": node_type,
+                "label": target,
+                "path": rel,
+                "canonical_path": rel,
+                "line": 1,
+                "project_namespace": project_id,
+                "project_id": project_id,
+                "source_refs": [self.source_ref(record["relative_path"], self.find_text_line(record["text"], field.split("[")[0]), field=field, object_id=record["object_id"])],
+                "source": "ldvh_base_fact_reference",
+            },
+        )
+        return node_id
+
+    def add_missing_fact_target_node(self, node_id, target_id, record, field):
+        self.diagnostics.append(
+            self.diagnostic(
+                record["relative_path"],
+                self.find_text_line(record["text"], field.split("[")[0]),
+                "warning",
+                "V2_PROJECT_FACT_GRAPH_TARGET_NOT_FOUND",
+                f"事实对象字段 {field} 引用对象不存在: {target_id}",
+                suggested_owner="02-事实模型基础规范",
+            )
+        )
+        self.add_node(
+            node_id,
+            {
+                "type": "missing_reference",
+                "label": target_id,
+                "path": record["relative_path"],
+                "canonical_path": record["relative_path"],
+                "line": 1,
+                "project_namespace": record["project_id"],
+                "project_id": record["project_id"],
+                "source_refs": [self.source_ref(record["relative_path"], self.find_text_line(record["text"], field.split("[")[0]), field=field, object_id=record["object_id"])],
+                "source": "ldvh_base_fact_reference",
+            },
+        )
 
     def ensure_reference_node(self, node_id, line):
         if node_id in self.node_ids:
@@ -380,7 +798,7 @@ class KnowledgeMapMixin:
             },
         )
 
-    def source_ref(self, path, line_start=1, line_end=None, field=None, anchor=None):
+    def source_ref(self, path, line_start=1, line_end=None, field=None, anchor=None, object_id=None):
         ref = {
             "path": path,
             "line_start": line_start or 1,
@@ -390,9 +808,43 @@ class KnowledgeMapMixin:
             ref["field"] = field
         if anchor:
             ref["anchor"] = anchor
+        if object_id:
+            ref["object_id"] = object_id
         return ref
+
+    def edge_source_ref(self, source, target, line, field):
+        for node_id in (source, target):
+            ref = self.primary_node_source_ref(node_id)
+            if ref:
+                result = dict(ref)
+                result.setdefault("line_start", line or 1)
+                result.setdefault("line_end", line or result.get("line_start", 1))
+                result["field"] = field
+                return result
+        for value in (source, target):
+            if isinstance(value, str) and value.endswith((".md", ".yaml", ".yml")):
+                return self.source_ref(value, line, field=field)
+        return self.source_ref("<runtime>", line, field=field)
+
+    def primary_node_source_ref(self, node_id):
+        for node in self.nodes:
+            if node.get("id") == node_id and node.get("source_refs"):
+                return node["source_refs"][0]
+        return None
 
     def edge_id(self, source, target, relation_type, source_structure, label=None):
         raw = "|".join([str(source), str(relation_type), str(target), str(source_structure), str(label or "")])
         digest = hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]
         return f"edge:{digest}"
+
+    def relative_or_absolute(self, path):
+        try:
+            return str(Path(path).resolve().relative_to(self.root))
+        except ValueError:
+            return str(Path(path).resolve())
+
+    def project_relative_or_absolute(self, project_root, path):
+        try:
+            return str(Path(path).resolve().relative_to(Path(project_root).resolve()))
+        except ValueError:
+            return str(Path(path).resolve())

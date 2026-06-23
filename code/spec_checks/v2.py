@@ -158,6 +158,8 @@ class V2Checker(KnowledgeMapMixin):
 
         if self.should_parse_runtime_extensions():
             self.add_runtime_extension_assets()
+        if self.should_parse_governed_projects():
+            self.add_governed_project_graph()
 
         self.add_missing_attachment_authorization_diagnostics(spec_paths, attachment_paths)
         generated_at = datetime.now().isoformat(timespec="seconds")
@@ -238,39 +240,6 @@ class V2Checker(KnowledgeMapMixin):
                     suggested_owner="04-Code确定性执行规范",
                 )
             )
-        if self.input_scope in {"all", "governed_projects"}:
-            self.diagnostics.append(
-                self.diagnostic(
-                    "<runtime>",
-                    1,
-                    "warning",
-                    "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED",
-                    "管辖项目运行时图谱尚未实现；本次输出不包含 ldvh-base 工作对象关系或多项目扫描结果",
-                    suggested_owner="04-Code确定性执行规范",
-                )
-            )
-        if self.project_scope != "current_project":
-            self.diagnostics.append(
-                self.diagnostic(
-                    "<runtime>",
-                    1,
-                    "warning",
-                    "V2_PROJECT_SCOPE_NOT_IMPLEMENTED",
-                    f"project_scope={self.project_scope} 尚未实现；本次输出仅使用 {self.project_namespace} 命名空间",
-                    suggested_owner="04-Code确定性执行规范",
-                )
-            )
-        if self.query_layer == "raw":
-            self.diagnostics.append(
-                self.diagnostic(
-                    "<runtime>",
-                    1,
-                    "warning",
-                    "V2_RAW_LAYER_NOT_IMPLEMENTED",
-                    "原文层展开尚未实现；本次输出退回到 expand 关系视图，不返回正文全文、Git diff 或事实对象全文",
-                    suggested_owner="04-Code确定性执行规范",
-                )
-            )
 
     def should_parse_specs_v2(self):
         return self.input_scope in {"active_specs", "specs_v2", "all"}
@@ -278,12 +247,17 @@ class V2Checker(KnowledgeMapMixin):
     def should_parse_runtime_extensions(self):
         return self.input_scope in {"runtime_extensions", "all"}
 
+    def should_parse_governed_projects(self):
+        return self.input_scope in {"governed_projects", "all"}
+
     def effective_input_scope(self):
         scopes = []
         if self.should_parse_specs_v2():
             scopes.append("active_specs")
         if self.should_parse_runtime_extensions():
             scopes.append("runtime_extensions")
+        if self.should_parse_governed_projects():
+            scopes.append("governed_projects")
         return scopes
 
     def is_degraded(self):
@@ -780,6 +754,24 @@ def format_text(report):
     return "\n".join(lines)
 
 
+def format_knowledge_map_text(knowledge_map):
+    query = knowledge_map.get("query", {})
+    lines = [
+        "知识地图只读投影完成",
+        f"- input_scope: {knowledge_map.get('input_scope')}",
+        f"- layer: {query.get('layer')}",
+        f"- project_scope: {query.get('project_scope')}",
+        f"- degraded: {knowledge_map.get('degraded')}",
+        f"- nodes: {len(knowledge_map.get('nodes', []))}",
+        f"- edges: {len(knowledge_map.get('edges', []))}",
+        f"- diagnostics: {len(knowledge_map.get('diagnostics', []))}",
+        f"- excluded_inputs: {len(knowledge_map.get('excluded_inputs', []))}",
+    ]
+    if "raw_content" in knowledge_map:
+        lines.append(f"- raw_content: {len(knowledge_map.get('raw_content', []))}")
+    return "\n".join(lines)
+
+
 def v2_check_build(
     root=None,
     specs_dir="specs",
@@ -833,5 +825,39 @@ def v2_check_main(
     else:
         print(format_text(report))
     if fail_on_diagnostics and report.get("diagnostics"):
+        return 1
+    return 0
+
+
+def knowledge_map_main(
+    root=None,
+    specs_dir="specs",
+    output_format="json",
+    fail_on_diagnostics=False,
+    input_scope="active_specs",
+    query_layer="entry",
+    project_scope="current_project",
+    start_node=None,
+    relation_types=None,
+    depth=1,
+    projects=None,
+):
+    report = v2_check_build(
+        root,
+        specs_dir,
+        input_scope=input_scope,
+        query_layer=query_layer,
+        project_scope=project_scope,
+        start_node=start_node,
+        relation_types=relation_types,
+        depth=depth,
+        projects=projects,
+    )
+    knowledge_map = report.get("knowledge_map", {})
+    if output_format == "json":
+        print(json.dumps(knowledge_map, ensure_ascii=False, indent=2))
+    else:
+        print(format_knowledge_map_text(knowledge_map))
+    if fail_on_diagnostics and knowledge_map.get("diagnostics"):
         return 1
     return 0

@@ -541,7 +541,7 @@ v2_attachment:
     assert not report["diagnostics"]
 
 
-def test_v2_check_reports_degraded_for_unimplemented_scopes(tmp_path):
+def test_v2_check_reports_degraded_when_governed_projects_config_is_missing(tmp_path):
     (tmp_path / "specs-v2").mkdir()
 
     report = checker.v2_check_build(tmp_path, input_scope="all", project_scope="all_governed_projects")
@@ -551,10 +551,96 @@ def test_v2_check_reports_degraded_for_unimplemented_scopes(tmp_path):
     assert report["metadata"]["degraded"] is True
     assert report["knowledge_map"]["query"]["degraded"] is True
     assert "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED" in codes
-    assert "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED" in codes
-    assert "V2_PROJECT_SCOPE_NOT_IMPLEMENTED" in codes
+    assert "V2_GOVERNED_PROJECTS_CONFIG_MISSING" in codes
     assert excluded["history_specs_v1"] == "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED"
-    assert excluded["governed_projects"] == "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED"
+
+
+def test_v2_check_governed_projects_projects_namespaced_fact_nodes(tmp_path):
+    workspace = tmp_path / "workspace"
+    project_a = workspace / "project-a"
+    project_b = workspace / "project-b"
+    write_md(
+        workspace / "LDVH-GOVERNED-PROJECTS.yaml",
+        f"""
+product_name: Test LDVH
+product_description: Test workspace
+projects:
+  - id: project-a
+    path: {project_a}
+    name: Project A
+  - id: project-b
+    path: {project_b}
+    name: Project B
+""",
+    )
+    write_md(
+        project_a / "ldvh-base" / "sparks" / "spark-0001-alpha.yaml",
+        """
+id: spark-0001
+type: spark
+title: Alpha
+status: pending
+created: '2026-06-23'
+updated: '2026-06-23'
+description: Alpha
+source: conversation
+priority: P1
+related_studies:
+  - study-0001
+""",
+    )
+    write_md(
+        project_a / "ldvh-base" / "studies" / "study-0001-alpha.md",
+        """
+---
+id: study-0001
+type: study
+title: Alpha Study
+status: active
+created: '2026-06-23'
+updated: '2026-06-23'
+summary: Alpha
+input_refs:
+  - spark-0001
+---
+# Alpha Study
+""",
+    )
+    write_md(
+        project_b / "ldvh-base" / "sparks" / "spark-0001-beta.yaml",
+        """
+id: spark-0001
+type: spark
+title: Beta
+status: pending
+created: '2026-06-23'
+updated: '2026-06-23'
+description: Beta
+source: conversation
+priority: P1
+""",
+    )
+
+    report = checker.v2_check_build(project_a, input_scope="governed_projects", project_scope="all_governed_projects")
+    nodes = {node["id"]: node for node in report["knowledge_map"]["nodes"]}
+    edges = {(edge["from"], edge["to"], edge["type"]) for edge in report["knowledge_map"]["edges"]}
+
+    assert "project-a:spark:spark-0001" in nodes
+    assert "project-b:spark:spark-0001" in nodes
+    assert nodes["project-a:spark:spark-0001"]["project_namespace"] == "project-a"
+    assert nodes["project-b:spark:spark-0001"]["project_namespace"] == "project-b"
+    assert ("project-a:spark:spark-0001", "project-a:study:study-0001", "related") in edges
+    assert report["knowledge_map"]["excluded_inputs"] == []
+
+    focused_report = checker.v2_check_build(
+        project_a,
+        input_scope="governed_projects",
+        project_scope="all_governed_projects",
+        query_layer="raw",
+        start_node="project-a:study:study-0001",
+    )
+    focused_edges = {(edge["from"], edge["to"], edge["type"]) for edge in focused_report["knowledge_map"]["edges"]}
+    assert ("project-a:study:study-0001", "project-a:spark:spark-0001", "consumes") in focused_edges
 
 
 def test_v2_check_history_specs_v1_scope_is_degraded_without_active_parse(tmp_path):
@@ -684,7 +770,7 @@ def test_v2_check_relation_type_filter_limits_projected_edges(tmp_path):
     assert not report["diagnostics"]
 
 
-def test_v2_check_raw_layer_degrades_to_expand_projection(tmp_path):
+def test_v2_check_raw_layer_returns_bounded_source_excerpts(tmp_path):
     write_minimal_v2_knowledge_map_fixture(tmp_path)
 
     report = checker.v2_check_build(
@@ -694,16 +780,14 @@ def test_v2_check_raw_layer_degrades_to_expand_projection(tmp_path):
         depth=1,
     )
     codes = {item["code"] for item in report["diagnostics"]}
-    excluded = {item["input"]: item for item in report["knowledge_map"]["excluded_inputs"]}
 
-    assert report["metadata"]["degraded"] is True
+    assert report["metadata"]["degraded"] is False
     assert report["knowledge_map"]["query"]["layer"] == "raw"
-    assert report["knowledge_map"]["query"]["degraded"] is True
-    assert report["knowledge_map"]["degraded"] is True
-    assert "V2_RAW_LAYER_NOT_IMPLEMENTED" in codes
-    assert "V2_RAW_LAYER_NOT_IMPLEMENTED" in {item["code"] for item in report["knowledge_map"]["diagnostics"]}
-    assert excluded["raw_content"]["diagnostic"] == "V2_RAW_LAYER_NOT_IMPLEMENTED"
-    assert all("text" not in node for node in report["knowledge_map"]["nodes"])
+    assert report["knowledge_map"]["query"]["degraded"] is False
+    assert report["knowledge_map"]["degraded"] is False
+    assert "V2_RAW_LAYER_NOT_IMPLEMENTED" not in codes
+    assert report["knowledge_map"]["raw_content"]
+    assert all("text" in item for item in report["knowledge_map"]["raw_content"])
 
 
 def test_v2_check_neighbors_without_start_node_falls_back_to_entry(tmp_path):
@@ -748,7 +832,6 @@ def test_v2_check_invalid_query_options_return_diagnostics_without_parsing_specs
     assert "V2_INPUT_SCOPE_INVALID" in codes
     assert "V2_QUERY_LAYER_INVALID" in codes
     assert "V2_PROJECT_SCOPE_INVALID" in codes
-    assert "V2_PROJECT_SCOPE_NOT_IMPLEMENTED" in codes
 
 
 def test_v2_check_accepts_legacy_specs_v2_input_scope_alias(tmp_path):

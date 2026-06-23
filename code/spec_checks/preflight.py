@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .deployment_entries import deployment_entries_asset_records
+from .v2 import v2_check_build
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -27,6 +28,19 @@ AUTHORIZED_PREFIXES = [
 AUTHORIZED_FILES = {
     "LDVH-GOVERNED-PROJECTS.yaml": ("runtime_extension", "06/07"),
     "README.md": ("project_entry", "01/07"),
+}
+
+FIELD_PATH_RULES = {
+    "v2_spec.spec_id": ("01-规范体系基础规范", "specs/attachments/01.Att.04-规范身份字段表.md", "v2_spec"),
+    "v2_spec.status": ("01-规范体系基础规范", "specs/attachments/01.Att.04-规范身份字段表.md", "v2_spec"),
+    "v2_spec.authority": ("01-规范体系基础规范", "specs/attachments/01.Att.04-规范身份字段表.md", "v2_spec"),
+    "v2_spec.related_specs": ("01-规范体系基础规范", "specs/attachments/01.Att.04-规范身份字段表.md", "v2_spec"),
+    "v2_spec.code_consumption": ("04-Code确定性执行规范", "specs/04-Code确定性执行规范.md", "v2_spec"),
+    "v2_attachment.status": ("01-规范体系基础规范", "specs/attachments/01.Att.05-附件身份字段表.md", "v2_attachment"),
+    "v2_attachment.parent_spec": ("01-规范体系基础规范", "specs/attachments/01.Att.05-附件身份字段表.md", "v2_attachment"),
+    "ldvh_asset.source_specs": ("06-运行时扩展规范", "specs/attachments/06.Att.01-运行时扩展自描述字段表.md", "ldvh_asset"),
+    "ldvh_asset.sync_triggers": ("06-运行时扩展规范", "specs/attachments/06.Att.01-运行时扩展自描述字段表.md", "ldvh_asset"),
+    "ldvh_asset.verification": ("06-运行时扩展规范", "specs/attachments/06.Att.01-运行时扩展自描述字段表.md", "ldvh_asset"),
 }
 
 
@@ -95,6 +109,107 @@ def rules_asset_impact(root, relative_path, target_info):
 
     matches = [record for record in records if relative_path in set(record.get("source_specs") or [])]
     return {"required": True, "assets": matches, "basis": "source_specs"}
+
+
+def field_path_info(field_path):
+    if not field_path:
+        return None
+    if field_path in FIELD_PATH_RULES:
+        owner, source_path, root_key = FIELD_PATH_RULES[field_path]
+        return {
+            "validated": True,
+            "field_path": field_path,
+            "owner": owner,
+            "source_path": source_path,
+            "root_key": root_key,
+        }
+    root_key = field_path.split(".", 1)[0]
+    return {
+        "validated": False,
+        "field_path": field_path,
+        "owner": None,
+        "source_path": None,
+        "root_key": root_key,
+    }
+
+
+def knowledge_map_context(root, relative_path, target_info):
+    if not target_info or target_info.get("asset_type") not in {"specs", "runtime_extension", "fact_source"}:
+        return {"available": False, "reason": "not_applicable", "recommended_reads": [], "impacted_nodes": [], "edges": [], "diagnostics": []}
+    if target_info["asset_type"] == "runtime_extension":
+        input_scope = "runtime_extensions"
+    elif target_info["asset_type"] == "fact_source":
+        input_scope = "governed_projects"
+    else:
+        input_scope = "active_specs"
+    try:
+        report = v2_check_build(
+            root,
+            input_scope=input_scope,
+            query_layer="expand",
+            start_node=relative_path,
+            depth=1,
+        )
+    except Exception as exc:  # pragma: no cover - defensive diagnostics only
+        return {
+            "available": False,
+            "reason": "knowledge_map_error",
+            "message": str(exc),
+            "recommended_reads": [],
+            "impacted_nodes": [],
+            "edges": [],
+            "diagnostics": [],
+        }
+    knowledge_map = report.get("knowledge_map", {})
+    nodes = knowledge_map.get("nodes", [])
+    edges = knowledge_map.get("edges", [])
+    recommended_reads = []
+    seen_reads = set()
+    for node in nodes:
+        path = node.get("canonical_path") or node.get("path")
+        if not path or path in seen_reads:
+            continue
+        if node.get("type") in {"spec", "member_spec", "attachment", "runtime_extension", "fact_object", "external_fact_source"}:
+            seen_reads.add(path)
+            recommended_reads.append(
+                {
+                    "path": path,
+                    "node_id": node.get("id"),
+                    "node_type": node.get("type"),
+                    "label": node.get("label"),
+                    "source_refs": node.get("source_refs") or [],
+                }
+            )
+    impacted_nodes = [
+        {
+            "id": node.get("id"),
+            "type": node.get("type"),
+            "label": node.get("label"),
+            "canonical_path": node.get("canonical_path"),
+            "project_namespace": node.get("project_namespace"),
+        }
+        for node in nodes
+    ]
+    return {
+        "available": True,
+        "input_scope": input_scope,
+        "query_layer": "expand",
+        "start_node": relative_path,
+        "degraded": knowledge_map.get("degraded"),
+        "recommended_reads": recommended_reads[:12],
+        "impacted_nodes": impacted_nodes[:24],
+        "edges": [
+            {
+                "type": edge.get("type"),
+                "from": edge.get("from"),
+                "to": edge.get("to"),
+                "derived_from": edge.get("derived_from"),
+                "source_refs": edge.get("source_refs") or [],
+            }
+            for edge in edges[:24]
+        ],
+        "diagnostics": knowledge_map.get("diagnostics", []),
+    }
 
 
 def preflight_build(root=None, target_path=None, operation="update", field_path=None, status=None):
@@ -187,12 +302,24 @@ def preflight_build(root=None, target_path=None, operation="update", field_path=
                 "field_and_state",
             )
         )
-    if field_path:
+    field_info = field_path_info(field_path)
+    if field_info and field_info["validated"]:
+        field_items.append(
+            diagnostic(
+                "PREFLIGHT_FIELD_PATH_OWNER_IDENTIFIED",
+                "info",
+                f"field_path 已识别字段归口: {field_path} -> {field_info['owner']} ({field_info['source_path']})",
+                relative_path,
+                field_info["owner"],
+                "field_and_state",
+            )
+        )
+    elif field_info:
         field_items.append(
             diagnostic(
                 "PREFLIGHT_FIELD_PATH_NOT_VALIDATED",
                 "warning",
-                f"field_path 已接收但第一版 preflight 尚未做字段级 Schema 校验: {field_path}",
+                f"field_path 已接收但尚未纳入字段级 Schema 映射: {field_path}",
                 relative_path,
                 target_info["owner"] if target_info else "04-Code确定性执行规范",
                 "field_and_state",
@@ -242,6 +369,7 @@ def preflight_build(root=None, target_path=None, operation="update", field_path=
 
     sync_owner = target_info["owner"] if target_info else "04-Code确定性执行规范"
     rules_impact = rules_asset_impact(root, relative_path, target_info)
+    km_context = knowledge_map_context(root, relative_path, target_info)
     add_check(
         "sync_impact",
         "同步影响",
@@ -332,6 +460,8 @@ def preflight_build(root=None, target_path=None, operation="update", field_path=
                 for asset in rules_impact["assets"]
             ],
         },
+        "field_path_analysis": field_info,
+        "knowledge_map_context": km_context,
         "summary": {
             "status": summary_status,
             "error_count": sum(1 for item in diagnostics if item["severity"] == "error"),

@@ -118,6 +118,78 @@ def test_preflight_field_and_status_are_degraded_warnings(tmp_path):
     assert "PREFLIGHT_HUMAN_GATE_REQUIRED" in codes
 
 
+def test_preflight_identifies_known_field_owner_and_knowledge_map_context(tmp_path):
+    write_md(
+        tmp_path / "specs" / "04-Code确定性执行规范.md",
+        """
+# Code确定性执行规范
+
+```yaml
+v2_spec:
+  spec_id: "04"
+  spec_kind: "spec"
+  title: "Code确定性执行规范"
+  status: "active"
+  authority: "active"
+  canonical_path: "specs/04-Code确定性执行规范.md"
+  created: "2026-06-23"
+  updated: "2026-06-23"
+  parent_spec: ""
+  relation: ""
+  positioning: "Code"
+  scope: "Code"
+  basis: []
+  related_specs: []
+  migration_sources: []
+  active_fact_source: []
+  code_consumption:
+    - "knowledge_map_projection"
+  migration_status: "migrated"
+```
+
+## 1. 本文解决的问题
+
+Code。
+
+## 2. 上位依据
+
+无。
+
+## 3. 构成要素归属与价值判断
+
+Code。
+
+## 4. 规范保障要求
+
+| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+|---|---|---|---|---|
+| 确定性执行要求 | 检查 | Code | 校验实现 | 变化时 |
+
+## 5. Human Gate
+
+高影响变化暂停。
+
+## 6. 待补齐事项
+
+无。
+""",
+    )
+
+    report = checker.preflight_build(
+        tmp_path,
+        "specs/04-Code确定性执行规范.md",
+        operation="update",
+        field_path="v2_spec.status",
+    )
+    codes = {item["code"] for item in report["diagnostics"]}
+
+    assert "PREFLIGHT_FIELD_PATH_OWNER_IDENTIFIED" in codes
+    assert "PREFLIGHT_FIELD_PATH_NOT_VALIDATED" not in codes
+    assert report["field_path_analysis"]["owner"] == "01-规范体系基础规范"
+    assert report["knowledge_map_context"]["available"] is True
+    assert report["knowledge_map_context"]["recommended_reads"]
+
+
 def test_preflight_cli_json_and_text_outputs(tmp_path, capsys):
     write_md(tmp_path / "code" / "example.py", "print('ok')\n")
 
