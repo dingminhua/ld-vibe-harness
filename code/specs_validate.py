@@ -98,6 +98,34 @@ def _fast_runtime_projection_main(argv):
     return runtime_projection_checks.main(args.paths, args.format)
 
 
+def _fast_human_gate_main(argv):
+    from spec_checks import human_gate as human_gate_checks
+
+    parser = argparse.ArgumentParser(description="检查 Markdown 中的 Human Gate 记录是否符合 06 最小证据结构。")
+    parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/ 和 ldvh-base/。")
+    args = parser.parse_args(argv)
+    return human_gate_checks.main(args.paths)
+
+
+def _fast_human_gate_report_main(argv):
+    from spec_checks import human_gate as human_gate_checks
+
+    parser = argparse.ArgumentParser(description="生成 Human Gate 证据结构派生报告。")
+    parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/ 和 ldvh-base/。")
+    parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+    args = parser.parse_args(argv)
+    return human_gate_checks.report_main(args.paths, args.format)
+
+
+def _fast_field_registry_main(argv):
+    from spec_checks import field_registry as field_registry_checks
+
+    parser = argparse.ArgumentParser(description="检查 05.03 字段注册与消费表。")
+    parser.add_argument("paths", nargs="*", default=None, help="要检查的 05.03 文件或目录，默认检查 specs/05.03。")
+    args = parser.parse_args(argv)
+    return field_registry_checks.main(args.paths)
+
+
 if __name__ == "__main__" and len(sys.argv) > 1:
     _FAST_COMMANDS = {
         "preflight": _fast_preflight_main,
@@ -105,6 +133,9 @@ if __name__ == "__main__" and len(sys.argv) > 1:
         "governed-projects": _fast_governed_projects_main,
         "deployment-entries": _fast_deployment_entries_main,
         "runtime-projection": _fast_runtime_projection_main,
+        "human-gate": _fast_human_gate_main,
+        "human-gate-report": _fast_human_gate_report_main,
+        "field-registry": _fast_field_registry_main,
     }
     if sys.argv[1] in _FAST_COMMANDS:
         sys.exit(_FAST_COMMANDS[sys.argv[1]](sys.argv[2:]))

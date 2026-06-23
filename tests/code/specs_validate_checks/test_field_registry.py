@@ -1,6 +1,12 @@
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker, write_md
 from spec_checks import field_registry as field_registry_checks
 
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 REGISTRY_HEADER = (
     "| field_path | scope | meaning | format_kind | value_shape | ref_kind | enum_owner | "
@@ -163,3 +169,23 @@ def test_field_registry_reports_workcase_field_missing_from_registry(tmp_path):
 
     assert any(issue.code == "FIELD_REGISTRY_WORKCASE_FIELD_MISSING" for issue in issues)
     assert any("unregistered_field" in issue.message for issue in issues)
+
+
+def test_field_registry_script_fast_path_outputs_text(tmp_path):
+    path = write_registry_doc(tmp_path / "05.03-字段注册与消费规范.md")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "field-registry",
+            str(path),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "字段注册表检查通过。" in result.stdout
+    assert result.stderr == ""

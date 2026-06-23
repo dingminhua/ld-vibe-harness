@@ -1,5 +1,12 @@
 import json
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker, write_md
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 # ══════════════════════════════════════════════════════════════════════
 # human-gate — Human Gate 轻量人类决策记录结构检查
@@ -267,4 +274,73 @@ Human Gate 记录：
     assert exit_code == 1
     assert payload["metadata"]["report"] == "human-gate"
     assert payload["summary"]["status"] == "open"
+    assert payload["metadata"]["record_count"] == 1
+
+
+def test_human_gate_script_fast_path_outputs_text(tmp_path):
+    path = write_md(
+        tmp_path / "gate-complete.md",
+        """
+# Gate
+
+Human Gate 记录：
+- 时间：2026-06-10
+- 决策：确认推进
+- 范围：specs/41
+- 约束：验证通过
+""",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "human-gate",
+            str(path),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "Human Gate 最小证据结构检查通过。" in result.stdout
+    assert result.stderr == ""
+
+
+def test_human_gate_report_script_fast_path_outputs_json(tmp_path):
+    path = PROJECT_ROOT / ".tmp-human-gate-report-fast-path.md"
+    write_md(
+        path,
+        """
+# Gate
+
+Human Gate 记录：
+- 时间：2026-06-10
+- 决策：确认推进
+- 范围：specs/41
+- 约束：验证通过
+""",
+    )
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(PROJECT_ROOT / "code" / "specs_validate.py"),
+                "human-gate-report",
+                str(path),
+                "--format",
+                "json",
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        payload = json.loads(result.stdout)
+    finally:
+        path.unlink(missing_ok=True)
+
+    assert result.returncode == 0
+    assert payload["metadata"]["report"] == "human-gate"
+    assert payload["summary"]["status"] == "closed"
     assert payload["metadata"]["record_count"] == 1
