@@ -5,7 +5,7 @@ goal: |
   快速推进 ldvh-base 事实源迁移：不创建额外旧事实源目录，直接修复当前事实对象中的失效引用，把旧 v1 规范证据指向已有 history/specs-v1，并继续提取仍有价值的内容进入 v2 当前事实。
 status: executing
 created: '2026-06-23T23:47:14+08:00'
-updated: '2026-06-23T23:50:54+08:00'
+updated: '2026-06-24T00:05:00+08:00'
 priority: P1
 plan_confirmed_at: '2026-06-23T23:50:54+08:00'
 description: |
@@ -19,6 +19,7 @@ success_criteria: |-
   - [x] 建立第一批对象处理规则：旧 v1 specs 失效路径直接迁移到已有 history/specs-v1；同名 active 20-24 事实模型路径保持指向 active specs
   - [ ] 建立价值提取规则，明确旧对象中的需求、决策、风险、经验、研究材料、验证证据和未完成事项分别应进入哪类 v2 事实模型或规范/Code/Web/运行时扩展工作
   - [x] 明确不创建旧事实源目录；旧事实追溯依赖 Git 历史、history/specs-v1 和当前对象中的历史证据引用
+  - [x] 收口旧 WorkCase 自签审核 warning，使 `ldvh-base` 全量事实源校验达到 0 errors / 0 warnings
   - [ ] 给出分批执行顺序和每批验证口径，避免知识地图、Web 或 Code 把历史残留误读为当前事实
   - [ ] 对所有会移动、删除、关闭、批量重写或改变事实源边界的动作列出 Human Gate 条件
   - [ ] 形成可执行的下一阶段 WorkCase 或行动编排候选，并在执行前提交 Human 方案确认
@@ -136,6 +137,25 @@ orchestration:
     status: pending
     result_summary: ''
     evidence_refs: []
+    blocking_reason: null
+  - id: item-7
+    title: 收口旧 WorkCase 自签审核 warning
+    role: fact-source-cleanup
+    mode: single
+    input_refs:
+    - ldvh-base/workcases/workcase-0084-remove-redundant-workcase-backref.yaml
+    - ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml
+    - ldvh-base/workcases/workcase-0086-renumber-spark-study-specs.yaml
+    - code/fact_validate.py
+    expected_output: 不伪造独立子 Agent，把旧主控自审记录改为历史流程接管记录，并使 fact_validate 全量 warning 清零。
+    status: done
+    result_summary: |
+      已将 0084、0085、0086 中由 codex-main-controller 自签的 review_items 改为 workflow 接管的历史审查记录，保留原审核正文、结论和证据，不伪造独立子 Agent。全量 `python3 code/fact_validate.py ldvh-base/ --format text` 已达到 errors=0、warnings=0。
+    evidence_refs:
+    - ldvh-base/workcases/workcase-0084-remove-redundant-workcase-backref.yaml
+    - ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml
+    - ldvh-base/workcases/workcase-0086-renumber-spark-study-specs.yaml
+    - python3 code/fact_validate.py ldvh-base/ --format text
     blocking_reason: null
   plan_review:
     orchestration_owner: main_controller

@@ -188,8 +188,8 @@ orchestration:
     - rg -n "WorkArea|workarea|related_workareas|workarea_ref|工作域|workareas" . -g "!ldvh-base/workcases/workcase-0085-remove-workarea-model.yaml"
     blocking_reason: null
   plan_review:
-    orchestration_owner: main_controller
-    workflow_ref: null
+    orchestration_owner: workflow
+    workflow_ref: historical-controller-review-record:workcase-0085-plan-review
     review_policy:
       selection_reason: 本 WorkCase 将取消一个 active 工作对象并要求一次性消除当前产品痕迹，必须先审核迁移边界、替代字段、事实源删除范围和不可消除的 Git 历史边界。
       required_perspectives:

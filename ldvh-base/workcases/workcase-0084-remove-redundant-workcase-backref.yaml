@@ -104,8 +104,8 @@ orchestration:
     - npm run test:web:api
     blocking_reason: null
   plan_review:
-    orchestration_owner: main_controller
-    workflow_ref: null
+    orchestration_owner: workflow
+    workflow_ref: historical-controller-review-record:workcase-0084-plan-review
     review_policy:
       selection_reason: 本变更影响工作模型字段契约和事实源边界，需要确认单一事实源方案、Code 派生方式和现有 Web 消费路径。
       required_perspectives:

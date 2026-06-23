@@ -120,8 +120,8 @@ orchestration:
     - rg scan for old Spark/Study numbering
     blocking_reason: null
   plan_review:
-    orchestration_owner: main_controller
-    workflow_ref: null
+    orchestration_owner: workflow
+    workflow_ref: historical-controller-review-record:workcase-0086-plan-review
     review_policy:
       selection_reason: 本 WorkCase 涉及 active 工作模型编号迁移、规范文件重命名、当前事实源引用迁移以及 Code/Web/测试联动，需要先审核范围和验证策略。
       required_perspectives:
@@ -300,8 +300,8 @@ orchestration:
       attestation:
         signer: codex-main-controller
         statement: 基于上述上下文完成结果自检并对结论负责。
-    orchestration_owner: main_controller
-    workflow_ref: null
+    orchestration_owner: workflow
+    workflow_ref: historical-controller-review-record:workcase-0086-result-review
     review_policy:
       selection_reason: 编号迁移完成后必须复核规范成员集合、Code/Web 派生、事实源引用和残留扫描是否一致。
       required_perspectives:
