@@ -47,7 +47,7 @@ v2_spec:
     - "source_refs"
     - "controlled_write_boundaries"
     - "assurance_requirements"
-  migration_status: "partially_migrated"
+  migration_status: "migrated"
 ```
 
 > 文件状态：本文当前位于 `specs-v2/`，尚未切换为 active；正式 Code 规则仍以 active `specs/07-Code确定性执行实现规范.md` 和当前 active Code 实现为准。
