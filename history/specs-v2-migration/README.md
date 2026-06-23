@@ -1,5 +1,7 @@
 # LDVH specs-v2 写作区入口
 
+> 归档说明：本文已随 v2 active 切换进入 `history/specs-v2-migration/`，保留写作期口径用于追溯。当前 active 正式规范事实源为 `specs/`；切换状态见 `ACTIVATION-STATUS-2026-06-23.md`。
+
 ```yaml
 v2_draft_area:
   status: "draft_non_authoritative"
@@ -54,6 +56,8 @@ v2_draft_area:
 | `V1-UNDERSTANDING-GATE.md` | v1 机制理解门禁和不得丢失的机制清单 | gate，未 active |
 | `MIGRATION-MAP.md` | v1 到 v2 迁移覆盖控制、行动编排后置生成规则和 v2 工作流程接入边界 | coverage control，未 active |
 | `V2-ACTIVATION-PLAN.md` | v2 从写作区成为 active 正式规范前后的门禁、文件动作、入口切换、历史记录处理和回滚路径 | activation control，未 active |
+| `ACTIVATION-FREEZE-2026-06-23.md` | v2 active 切换前冻结状态、Human Gate 和检查结果 | activation history，已记录 |
+| `ACTIVATION-STATUS-2026-06-23.md` | v2 active 切换完成阶段、Web 后置状态和历史记录价值提取计划 | activation history，已记录 |
 
 当前已处理附件如下。附件文件统一放在 `attachments/`；附件随父规范核对，不作为独立根规范：
 
