@@ -1,8 +1,14 @@
 import json
+import subprocess
+import sys
+from pathlib import Path
 
 from .common import checker, write_md
 from spec_checks import knowledge_map as knowledge_map_checks
 from spec_checks import v2 as v2_checks
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 def write_minimal_v2_knowledge_map_fixture(root):
@@ -701,3 +707,29 @@ def test_v2_check_invalid_query_options_return_diagnostics_without_parsing_specs
     assert "V2_QUERY_LAYER_INVALID" in codes
     assert "V2_PROJECT_SCOPE_INVALID" in codes
     assert "V2_PROJECT_SCOPE_NOT_IMPLEMENTED" in codes
+
+
+def test_v2_check_script_fast_path_outputs_json(tmp_path):
+    write_minimal_v2_knowledge_map_fixture(tmp_path)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "v2-check",
+            "--root",
+            str(tmp_path),
+            "--format",
+            "json",
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    report = json.loads(result.stdout)
+
+    assert result.returncode == 0
+    assert report["metadata"]["tool"] == "code/specs_validate.py v2-check"
+    assert report["metadata"]["input_scope"] == "specs_v2"
+    assert report["knowledge_map"]["schema_version"] == "04.Att.06.v1"
+    assert report["diagnostics"] == []

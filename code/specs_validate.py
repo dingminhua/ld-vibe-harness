@@ -25,8 +25,66 @@ def _fast_preflight_main(argv):
     return preflight_checks.preflight_main(args.root, args.target_path, args.operation, args.field_path, args.status, args.format)
 
 
-if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "preflight":
-    sys.exit(_fast_preflight_main(sys.argv[2:]))
+def _fast_v2_check_main(argv):
+    from spec_checks import v2 as v2_checks
+
+    parser = argparse.ArgumentParser(description="生成 v2 active specs 诊断和知识地图派生预览。")
+    parser.add_argument("--root", default=str(Path(__file__).resolve().parent.parent), help="项目根目录，默认使用当前工具所在项目。")
+    parser.add_argument("--specs-dir", default="specs", help="要检查的 v2 规范目录，默认 specs。")
+    parser.add_argument("--format", choices=["text", "json"], default="json", help="报告输出格式，默认 json。")
+    parser.add_argument("--input-scope", choices=["specs_v2", "all", "history_specs_v1", "governed_projects", "git_history"], default="specs_v2", help="知识地图输入范围，默认 specs_v2。")
+    parser.add_argument("--layer", choices=["entry", "neighbors", "expand", "raw"], default="entry", help="知识地图渐进读取层级，默认 entry。")
+    parser.add_argument("--project-scope", choices=["current_project", "all_governed_projects", "explicit_projects"], default="current_project", help="项目范围，默认 current_project。")
+    parser.add_argument("--project", action="append", default=[], help="project_scope=explicit_projects 时指定项目，可重复。")
+    parser.add_argument("--start-node", default=None, help="neighbors/expand/raw 层级的起点节点 ID、路径或标题。")
+    parser.add_argument("--relation-type", action="append", default=[], help="限制返回的关系类型，可重复。")
+    parser.add_argument("--depth", type=int, default=1, help="expand/raw 层级的最大展开深度，默认 1。")
+    parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在诊断时返回非零状态。")
+    args = parser.parse_args(argv)
+    return v2_checks.v2_check_main(
+        args.root,
+        args.specs_dir,
+        args.format,
+        args.fail_on_diagnostics,
+        input_scope=args.input_scope,
+        query_layer=args.layer,
+        project_scope=args.project_scope,
+        start_node=args.start_node,
+        relation_types=args.relation_type,
+        depth=args.depth,
+        projects=args.project,
+    )
+
+
+def _default_workspace_root_fast(governed_projects_checks):
+    env_root = os.environ.get("LDVH_WORKSPACE_ROOT")
+    if env_root:
+        return Path(env_root)
+    project_root = Path(__file__).resolve().parent.parent
+    parent_root = project_root.parent
+    if (parent_root / governed_projects_checks.GOVERNED_PROJECTS_FILENAME).exists():
+        return parent_root
+    return project_root
+
+
+def _fast_governed_projects_main(argv):
+    from spec_checks import governed_projects as governed_projects_checks
+
+    parser = argparse.ArgumentParser(description="检查工作区根目录管辖项目配置。")
+    parser.add_argument("--root", default=str(_default_workspace_root_fast(governed_projects_checks)), help="工作区根目录，默认自动定位。")
+    args = parser.parse_args(argv)
+    governed_projects_checks.PROJECT_ROOT = Path(__file__).resolve().parent.parent
+    return governed_projects_checks.main(args.root)
+
+
+if __name__ == "__main__" and len(sys.argv) > 1:
+    _FAST_COMMANDS = {
+        "preflight": _fast_preflight_main,
+        "v2-check": _fast_v2_check_main,
+        "governed-projects": _fast_governed_projects_main,
+    }
+    if sys.argv[1] in _FAST_COMMANDS:
+        sys.exit(_FAST_COMMANDS[sys.argv[1]](sys.argv[2:]))
 
 from spec_checks import common as common_checks
 from spec_checks import doc_structure as doc_structure_checks

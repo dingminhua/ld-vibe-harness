@@ -1,4 +1,11 @@
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker, write_md
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 # ══════════════════════════════════════════════════════════════════════
 # governed-projects — 工作区根目录管辖项目配置检查
@@ -101,3 +108,31 @@ projects:
 
     assert "GOVERNED_PROJECTS_ROOT_FIELD_FORBIDDEN" in codes
     assert "GOVERNED_PROJECT_FIELD_FORBIDDEN" in codes
+
+
+def test_governed_projects_script_fast_path_outputs_text(tmp_path):
+    write_governed_projects(
+        tmp_path,
+        """
+product_name: LD Vibe Harness
+product_description: |
+  管理当前工作区项目。
+projects: []
+""",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "governed-projects",
+            "--root",
+            str(tmp_path),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "管辖项目配置检查通过。" in result.stdout
+    assert result.stderr == ""
