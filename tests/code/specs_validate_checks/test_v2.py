@@ -540,12 +540,33 @@ def test_v2_check_reports_degraded_for_unimplemented_scopes(tmp_path):
 
     report = checker.v2_check_build(tmp_path, input_scope="all", project_scope="all_governed_projects")
     codes = {item["code"] for item in report["diagnostics"]}
+    excluded = {item["input"]: item["diagnostic"] for item in report["knowledge_map"]["excluded_inputs"]}
 
     assert report["metadata"]["degraded"] is True
     assert report["knowledge_map"]["query"]["degraded"] is True
+    assert "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED" in codes
     assert "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED" in codes
     assert "V2_GIT_HISTORY_GRAPH_NOT_IMPLEMENTED" in codes
     assert "V2_PROJECT_SCOPE_NOT_IMPLEMENTED" in codes
+    assert excluded["history_specs_v1"] == "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED"
+    assert excluded["governed_projects"] == "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED"
+    assert excluded["git_history"] == "V2_GIT_HISTORY_GRAPH_NOT_IMPLEMENTED"
+
+
+def test_v2_check_history_specs_v1_scope_is_degraded_without_active_parse(tmp_path):
+    write_minimal_v2_knowledge_map_fixture(tmp_path)
+
+    report = checker.v2_check_build(tmp_path, input_scope="history_specs_v1")
+    codes = {item["code"] for item in report["diagnostics"]}
+    excluded = {item["input"]: item for item in report["knowledge_map"]["excluded_inputs"]}
+
+    assert report["metadata"]["degraded"] is True
+    assert report["metadata"]["effective_input_scope"] == []
+    assert report["docs"] == []
+    assert report["knowledge_map"]["nodes"] == []
+    assert report["knowledge_map"]["degraded"] is True
+    assert "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED" in codes
+    assert excluded["history_specs_v1"]["diagnostic"] == "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED"
 
 
 def test_v2_check_json_and_text_output_shape_are_stable(tmp_path, capsys):

@@ -88,7 +88,7 @@ V2_REQUIRED_00_SECTIONS = {
     "待补齐事项",
 }
 V2_ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
-V2_INPUT_SCOPES = {"specs_v2", "all", "governed_projects", "git_history"}
+V2_INPUT_SCOPES = {"specs_v2", "all", "history_specs_v1", "governed_projects", "git_history"}
 V2_QUERY_LAYERS = {"entry", "neighbors", "expand", "raw"}
 V2_PROJECT_SCOPES = {"current_project", "all_governed_projects", "explicit_projects"}
 class V2Checker(KnowledgeMapMixin):
@@ -223,6 +223,17 @@ class V2Checker(KnowledgeMapMixin):
             )
 
     def add_scope_diagnostics(self):
+        if self.input_scope in {"all", "history_specs_v1"}:
+            self.diagnostics.append(
+                self.diagnostic(
+                    "<runtime>",
+                    1,
+                    "warning",
+                    "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED",
+                    "v1 历史规范图谱尚未实现；本次输出不包含历史追溯、迁移审计或价值提取节点边",
+                    suggested_owner="04-Code确定性执行规范",
+                )
+            )
         if self.input_scope in {"all", "governed_projects"}:
             self.diagnostics.append(
                 self.diagnostic(

@@ -994,7 +994,7 @@ def build_parser():
     v2_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
     v2_parser.add_argument("--specs-dir", default="specs", help="要检查的 v2 规范目录，默认 specs。")
     v2_parser.add_argument("--format", choices=["text", "json"], default="json", help="报告输出格式，默认 json。")
-    v2_parser.add_argument("--input-scope", choices=["specs_v2", "all", "governed_projects", "git_history"], default="specs_v2", help="知识地图输入范围，默认 specs_v2。")
+    v2_parser.add_argument("--input-scope", choices=["specs_v2", "all", "history_specs_v1", "governed_projects", "git_history"], default="specs_v2", help="知识地图输入范围，默认 specs_v2。")
     v2_parser.add_argument("--layer", choices=["entry", "neighbors", "expand", "raw"], default="entry", help="知识地图渐进读取层级，默认 entry。")
     v2_parser.add_argument("--project-scope", choices=["current_project", "all_governed_projects", "explicit_projects"], default="current_project", help="项目范围，默认 current_project。")
     v2_parser.add_argument("--project", action="append", default=[], help="project_scope=explicit_projects 时指定项目，可重复。")
