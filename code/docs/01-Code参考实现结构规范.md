@@ -3,15 +3,15 @@
 > 版本：0.1
 > 更新：2026-06-15
 > 范围：`code/` 目录下 LDVH Code 参考实现、命令入口、模块结构和测试映射
-> 上位规范：[`specs/07-Code确定性执行实现规范.md`](../../specs/07-Code确定性执行实现规范.md)、[`specs/11-测试基础规范.md`](../../specs/11-测试基础规范.md)
+> 上位规范：[`specs/04-Code确定性执行规范.md`](../../specs/04-Code确定性执行规范.md)、[`specs/08-测试基础规范.md`](../../specs/08-测试基础规范.md)
 
 ## 0. 上位规范
 
-`specs/07-Code确定性执行实现规范.md` 是 LDVH Code 构成要素、确定性执行边界、需求准入、验证规则、维护规则和 Code 文档边界的权威规范。`specs/11-测试基础规范.md` 是跨构成要素测试治理、验证声明、测试实现归属和测试证据事实源边界的权威规范。
+`specs/04-Code确定性执行规范.md` 是 LDVH Code 构成要素、确定性执行边界、需求准入、验证规则、维护规则和 Code 文档边界的权威规范。`specs/08-测试基础规范.md` 是跨构成要素测试治理、验证声明、测试实现归属和测试证据事实源边界的权威规范。
 
-本文只定义 `code/` 参考实现的目录结构、模块拆分、命令入口、测试映射和 AI 修改顺序，不替代 `specs/07-Code确定性执行实现规范.md`、`specs/11-测试基础规范.md`、事实模型规范、行动编排规范、事实源边界规范或具体对象契约。
+本文只定义 `code/` 参考实现的目录结构、模块拆分、命令入口、测试映射和 AI 修改顺序，不替代 `specs/04-Code确定性执行规范.md`、`specs/08-测试基础规范.md`、事实模型规范、行动编排规范、事实源边界规范或具体对象契约。
 
-当本文与 `specs/07-Code确定性执行实现规范.md` 或 `specs/11-测试基础规范.md` 存在冲突或解释不一致时，以 specs 为准；`code/` 实现和 `code/docs/` 文档不得通过实现细节反向改写 specs 正文、对象字段契约、状态机、Human Gate 条件、测试治理规则或事实源归属。
+当本文与 `specs/04-Code确定性执行规范.md` 或 `specs/08-测试基础规范.md` 存在冲突或解释不一致时，以 specs 为准；`code/` 实现和 `code/docs/` 文档不得通过实现细节反向改写 specs 正文、对象字段契约、状态机、Human Gate 条件、测试治理规则或事实源归属。
 
 ## 1. 本文解决的问题
 
@@ -65,7 +65,7 @@
 | `python3 code/specs_validate.py doc specs` | 继续检查 Markdown 文档结构 |
 | `python3 code/specs_validate.py refs specs` | 继续检查章节引用 |
 | `python3 code/specs_validate.py assurance specs` | 继续检查规范保障要求表 |
-| `python3 code/specs_validate.py index --fail-on-diagnostics` | 继续输出派生索引和诊断 |
+| `python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text` | 继续输出 active specs 诊断和只读知识地图预览 |
 | `python3 code/specs_validate.py all --fail-on-diagnostics` | 继续作为 specs 综合校验入口 |
 | `python3 code/specs_validate.py governed-projects` | 继续检查工作区管辖项目配置 |
 | `python3 code/specs_validate.py assurance-report` | 继续聚合规范保障要求报告 |
@@ -73,7 +73,7 @@
 | `python3 code/specs_validate.py assurance-plan` | 继续生成只读 assurance-plan 聚合计划视图 |
 | `python3 code/specs_validate.py web-validate` | 继续输出 Web Validate 只读数据合同 |
 
-拆分模块时，CLI 参数、exit code、关键诊断 code 和默认输入范围不得无说明改变。确需改变时，应先更新 `specs/07-Code确定性执行实现规范.md`、本文、测试和下游调用方。
+拆分模块时，CLI 参数、exit code、关键诊断 code 和默认输入范围不得无说明改变。确需改变时，应先更新 `specs/04-Code确定性执行规范.md`、本文、测试和下游调用方。
 
 ### 4.2 能力域目标模块
 
@@ -83,7 +83,7 @@
 |---|---|---|
 | 通用类型、路径、Markdown 遍历和 Issue 输出 | `code/spec_checks/common.py` | `Issue`、`iter_markdown_files`、共享正则和路径工具 |
 | 运行投影漂移检查 | `code/spec_checks/runtime_projection.py` | `runtime_projection_*` |
-| LDVH 能力资产检查 | `code/spec_checks/deployment_entries.py` | `deployment_entries_*` |
+| 固定运行时扩展登记检查 | `code/spec_checks/deployment_entries.py` | `deployment_entries_*` |
 | specs 语义一致性检查 | `code/spec_checks/consistency.py` | `consistency_*` |
 | 文档结构检查 | `code/spec_checks/doc_structure.py` | `doc_*`、`Heading` |
 | 章节引用检查 | `code/spec_checks/refs.py` | `refs_*`、`Document` |
@@ -118,14 +118,14 @@
 
 AI 修改 `code/` 时，应按以下顺序执行：
 
-1. 读取 `specs/07-Code确定性执行实现规范.md` 和本文；
+1. 读取 `specs/04-Code确定性执行规范.md` 和本文；
 2. 定位需求来源、规则来源、输入范围、失败条件和降级方式；
 3. 判断能力域和实现位置；
 4. 若为 specs 校验能力，优先选择 `code/spec_checks/` 目标模块或兼容入口中的对应能力域；
 5. 先补正例、反例、边界样例、测试命令或等价验证方式；
 6. 再做最小实现或无行为变化拆分；
 7. 运行对应测试和必要的综合校验；
-8. 若改变 CLI、输出结构、诊断 code、写入行为或下游消费方式，同步更新本文、`specs/07-Code确定性执行实现规范.md`、Web 调用方或入口引用。
+8. 若改变 CLI、输出结构、诊断 code、写入行为或下游消费方式，同步更新本文、`specs/04-Code确定性执行规范.md`、Web 调用方或入口引用。
 
 ### 5.1 Code 结构变更记录要求
 
@@ -139,7 +139,7 @@ AI 修改 `code/` 时，应按以下顺序执行：
 
 记录时应优先更新本文中最接近的章节，例如 §2 当前清单、§3 目录边界、§4.2 能力域目标模块、§4.3 防堆砌规则、§6 测试映射、§7 拆分顺序或 §8 待补齐事项。记录内容应说明当前事实、后续归属、兼容要求和必要验证方式；不得只在提交说明、聊天记录或临时任务中保留 Code 结构事实。
 
-若调整会改变上位规则、对象字段契约、状态机、Human Gate 条件、事实源归属、长期降级接受、Web/CLI 对外合同或是否继续保留兼容入口，应先回到 `specs/07-Code确定性执行实现规范.md` 和相关正式规范判断；仍需取舍时，应暂停请求 Human 判断，再按判断结果更新本文和必要事实源。
+若调整会改变上位规则、对象字段契约、状态机、Human Gate 条件、事实源归属、长期降级接受、Web/CLI 对外合同或是否继续保留兼容入口，应先回到 `specs/04-Code确定性执行规范.md` 和相关正式规范判断；仍需取舍时，应暂停请求 Human 判断，再按判断结果更新本文和必要事实源。
 
 ## 6. 测试映射
 

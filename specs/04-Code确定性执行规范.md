@@ -189,9 +189,9 @@ Code v2 不能一次性替换 v1 Code。它应先提供兼容、诊断和投影�
 7. v1 Web Spark 创建白名单和 WorkCase orchestration 展示字段；
 8. v1 测试命令和回归入口的可发现关系；测试治理归 08。
 
-迁移期间，Code 可以双读 v1 和 v2 身份块并输出差异诊断。双读只用于兼容和迁移审计，不得把 v2 草案解释为 active 规范。
+v2 active 后，Code 可以保留对 v1 历史身份块的只读解析能力，用于历史追溯、迁移审计和价值提取。历史双读只用于诊断和追溯，不得把 `history/specs-v1/` 解释为 active 规范，不得让旧身份块覆盖当前 active `specs/`。
 
-v1-v2 Code 消费双读映射矩阵由 `attachments/04.Att.08-v1-v2-Code消费双读映射矩阵.md` 承载。v2 写作期，`v2-check` 是独立迁移诊断入口；`specs_validate.py all` 的 active 默认校验仍以当前 `specs/` 的 `ldvh_doc`、`ldvh_member`、保障要求表和现有派生索引结构为准。
+v1-v2 Code 消费双读映射矩阵由 `attachments/04.Att.08-v1-v2-Code消费双读映射矩阵.md` 承载。v2 active 后，`v2-check` 和 `specs_validate.py all` 均默认读取当前 active `specs/`；历史双读、旧身份块兼容和迁移覆盖检查不得替代 active specs 诊断。
 
 ## 9. 知识地图输出边界
 
@@ -261,9 +261,9 @@ Git history 是知识地图的时间和变更证据层。Code 可以从 commit h
 
 `diagnostics` 至少声明 `severity`、`code`、`message`、`source_refs` 和 `suggested_owner`。诊断等级闭集为 `error`、`warning`、`info`；遇到输入范围不明、关系类型不明、来源缺失、v1/v2 权威冲突或 Schema 不完整时，必须输出诊断并将 `degraded` 标记为 true。
 
-知识地图投影目标 Schema 由 `attachments/04.Att.06-知识地图投影Schema表.md` 承载。当前迁移期 `v2-check` 可以输出降级的子集 Schema，但必须通过 `degraded`、`diagnostics` 或 review hints 暴露未实现的输入范围、原文层、Git history 层、多项目层或 raw 层，不得伪装为完整知识地图运行时。
+知识地图投影目标 Schema 由 `attachments/04.Att.06-知识地图投影Schema表.md` 承载。当前 `v2-check` 可以输出 active specs 诊断和只读知识地图预览子集，但必须通过 `degraded`、`diagnostics` 或 review hints 暴露未实现的输入范围、原文层、Git history 层、多项目层或 raw 层，不得伪装为完整知识地图运行时。
 
-迁移期间，知识地图可以双读 v1 active 事实源和 v2 草案，用于发现差异和迁移缺口；双读不得把 v2 草案解释为 active 权威，也不得让 v2 草案覆盖 v1 active 规则。
+历史价值提取期间，知识地图可以只读消费 v1 历史事实源和当前 active `specs/`，用于发现仍有价值的需求、决策、证据、经验、风险和未完成事项。双读不得把历史事实源解释为 active 权威，也不得让历史图谱边覆盖当前 active 规则。
 
 Code 不得落盘知识地图缓存，不得让知识地图反向维护管辖项目配置、规范正文、事实对象或 Git 提交记录。
 
@@ -330,7 +330,7 @@ Code 回归入口表由 `attachments/04.Att.09-Code回归入口表.md` 承载。
 | `attachments/04.Att.09-Code回归入口表.md` | Code 回归入口表 | 测试治理本体 |
 | `attachments/04.Att.10-Code参考实现文档边界清单.md` | Code 参考实现文档边界 | 正式规范规则 |
 
-新增、删除、重命名或改变以上附件的信息对象时，应回到本文 Human Gate，并同步 01 当前目录登记、README 写作区入口和 Code v2 解析。
+新增、删除、重命名或改变以上附件的信息对象时，应回到本文 Human Gate，并同步 01 当前目录登记和 Code v2 解析。
 
 ## 14. 规范保障要求
 
@@ -379,4 +379,4 @@ Code 检查至少包括：
 5. 补齐 v2 附件身份一致性检查，覆盖真实路径、身份块、父规范登记、README 登记和旧引用残留；
 6. 与 08 对齐 Code 实现测试入口和验证声明；
 7. 与 05 对齐 Web DTO 和 Human-facing 派生展示输入；
-8. 当前 `v2-check` 已提供 v2 结构诊断和只读知识地图预览，但尚未实现完整 v1-v2 双读、完整诊断 Schema、完整知识地图目标 Schema、受控写入前检查命令或 Git history 图谱。
+8. 当前 `v2-check` 已提供 active specs 结构诊断和只读知识地图预览，但尚未实现完整 v1-v2 双读、完整诊断 Schema、完整知识地图目标 Schema、受控写入前检查命令或 Git history 图谱。

@@ -95,17 +95,17 @@ def test_specs_document_reports_external_url_reference(tmp_path):
 def test_git_commit_spec_allows_conventional_commits_standard_url(tmp_path):
     specs = tmp_path / "specs"
     write_md(
-        specs / "10-Git提交规范.md",
+        specs / "07-事实源边界与Git追溯规范.md",
         """
-# Git 提交规范
+# 事实源边界与Git追溯规范
 
 ```yaml
 ldvh_doc:
-  doc_id: "10"
+  doc_id: "07"
   doc_kind: "formal_spec"
-  title: "Git 提交规范"
+  title: "事实源边界与Git追溯规范"
   status: "active"
-  canonical_path: "specs/10-Git提交规范.md"
+  canonical_path: "specs/07-事实源边界与Git追溯规范.md"
   created: "2026-06-19"
   updated: "2026-06-19"
   parent_doc: ""
@@ -113,7 +113,7 @@ ldvh_doc:
   positioning: "定义 Git commit message 格式规则"
   scope: "LDVH 管辖项目"
   basis:
-    - "specs/09-事实源边界与承载规范.md"
+    - "specs/00-LDVH理念与价值标准.md"
   related_specs: []
   code_consumption:
     - "doc_metadata"

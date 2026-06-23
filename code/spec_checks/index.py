@@ -26,7 +26,7 @@ INDEX_DOCS_MATERIAL_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?((?:docs/(?:studies
 INDEX_DOCS_ROOT_ASSET_REF_RE = re.compile(r"(?<![`\w./-])(?:`)?(docs/[^/`\s，。；、)）]+\.md)(?:`)?")
 INDEX_EXTERNAL_URL_RE = re.compile(r"https?://[^\s`，。；、)）]+")
 INDEX_ALLOWED_EXTERNAL_STANDARD_URLS = {
-    "specs/10-Git提交规范.md": {
+    "specs/07-事实源边界与Git追溯规范.md": {
         "https://www.conventionalcommits.org/en/v1.0.0/",
     },
 }
