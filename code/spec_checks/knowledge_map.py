@@ -6,6 +6,8 @@ from pathlib import Path
 
 
 V2_DEFAULT_PROJECT_NAMESPACE = "ldvh_self"
+V2_KNOWLEDGE_MAP_SCHEMA_VERSION = "04.Att.06.v1"
+V2_KNOWLEDGE_MAP_TOOL = "code/specs_validate.py v2-check"
 V2_DEGRADED_DIAGNOSTIC_CODES = {
     "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED",
     "V2_GIT_HISTORY_GRAPH_NOT_IMPLEMENTED",
@@ -171,9 +173,14 @@ class KnowledgeMapMixin:
         if node_id in self.node_ids:
             return
         self.node_ids.add(node_id)
+        payload.setdefault("canonical_path", payload.get("path"))
+        payload.setdefault("project_namespace", self.project_namespace)
+        payload.setdefault("source_refs", [])
+        payload.setdefault("status", None)
+        payload.setdefault("authority", None)
         self.nodes.append({"id": node_id, **payload})
 
-    def project_knowledge_map(self):
+    def project_knowledge_map(self, generated_at=None):
         nodes_by_id = {node["id"]: node for node in self.nodes}
         edges = self.filtered_edges_by_relation(self.edges)
         layer = "expand" if self.query_layer == "raw" else self.query_layer
@@ -201,7 +208,15 @@ class KnowledgeMapMixin:
             selected_nodes, selected_edges = self.entry_fallback(edges)
 
         projected_nodes = [nodes_by_id[node_id] for node_id in self.sorted_node_ids(selected_nodes) if node_id in nodes_by_id]
+        source_refs = self.knowledge_map_source_refs(projected_nodes, selected_edges)
         return {
+            "schema_version": V2_KNOWLEDGE_MAP_SCHEMA_VERSION,
+            "generated_at": generated_at,
+            "tool": V2_KNOWLEDGE_MAP_TOOL,
+            "input_scope": self.input_scope,
+            "degraded": self.is_degraded(),
+            "diagnostics": list(self.diagnostics),
+            "source_refs": source_refs,
             "query": {
                 "input_scope": self.input_scope,
                 "effective_input_scope": self.effective_input_scope(),
@@ -218,6 +233,18 @@ class KnowledgeMapMixin:
             "edges": selected_edges,
             "excluded_inputs": self.excluded_inputs(),
         }
+
+    def knowledge_map_source_refs(self, nodes, edges):
+        refs = []
+        seen = set()
+        for item in list(nodes) + list(edges) + list(self.diagnostics):
+            for ref in item.get("source_refs") or []:
+                key = tuple(sorted(ref.items()))
+                if key in seen:
+                    continue
+                seen.add(key)
+                refs.append(ref)
+        return refs
 
     def filtered_edges_by_relation(self, edges):
         if not self.relation_types:

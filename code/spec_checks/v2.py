@@ -13,6 +13,7 @@ from .knowledge_map import (
     KnowledgeMapMixin,
     V2_DEFAULT_PROJECT_NAMESPACE,
     V2_DEGRADED_DIAGNOSTIC_CODES,
+    V2_KNOWLEDGE_MAP_TOOL,
 )
 
 
@@ -155,14 +156,15 @@ class V2Checker(KnowledgeMapMixin):
             self.add_relation_edges(doc, known_paths)
 
         self.add_missing_attachment_authorization_diagnostics(spec_paths, attachment_paths)
-        knowledge_map = self.project_knowledge_map()
+        generated_at = datetime.now().isoformat(timespec="seconds")
+        knowledge_map = self.project_knowledge_map(generated_at=generated_at)
 
         return {
             "metadata": {
                 "derived": True,
                 "source_of_truth": False,
-                "generated_at": datetime.now().isoformat(timespec="seconds"),
-                "tool": "code/specs_validate.py v2-check",
+                "generated_at": generated_at,
+                "tool": V2_KNOWLEDGE_MAP_TOOL,
                 "root": str(self.root),
                 "specs_dir": self.relative_path(self.specs_dir),
                 "read_only": True,

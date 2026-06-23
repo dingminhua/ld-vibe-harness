@@ -570,10 +570,25 @@ def test_v2_check_json_and_text_output_shape_are_stable(tmp_path, capsys):
     assert report["metadata"]["knowledge_map_boundary"] == "read_only_projection_not_fact_source"
     assert report["metadata"]["input_scope"] == "specs_v2"
     assert report["metadata"]["effective_input_scope"] == ["specs_v2"]
+    assert report["knowledge_map"]["schema_version"] == "04.Att.06.v1"
+    assert report["knowledge_map"]["generated_at"] == report["metadata"]["generated_at"]
+    assert report["knowledge_map"]["tool"] == report["metadata"]["tool"]
+    assert report["knowledge_map"]["input_scope"] == "specs_v2"
+    assert report["knowledge_map"]["degraded"] is False
+    assert report["knowledge_map"]["diagnostics"] == []
+    assert report["knowledge_map"]["source_refs"]
     assert report["knowledge_map"]["query"]["layer"] == "entry"
     assert report["knowledge_map"]["project_namespace"] == "ldvh_self"
     assert report["knowledge_map"]["excluded_inputs"] == []
     assert report["diagnostics"] == []
+    assert all(
+        {"id", "type", "label", "canonical_path", "source_refs", "project_namespace", "status", "authority"} <= set(node)
+        for node in report["knowledge_map"]["nodes"]
+    )
+    assert all(
+        {"id", "type", "from", "to", "source_refs", "direction", "derived_from"} <= set(edge)
+        for edge in report["knowledge_map"]["edges"]
+    )
 
     exit_code = checker.v2_check_main(tmp_path, output_format="text")
     text_output = capsys.readouterr().out
@@ -615,7 +630,9 @@ def test_v2_check_raw_layer_degrades_to_expand_projection(tmp_path):
     assert report["metadata"]["degraded"] is True
     assert report["knowledge_map"]["query"]["layer"] == "raw"
     assert report["knowledge_map"]["query"]["degraded"] is True
+    assert report["knowledge_map"]["degraded"] is True
     assert "V2_RAW_LAYER_NOT_IMPLEMENTED" in codes
+    assert "V2_RAW_LAYER_NOT_IMPLEMENTED" in {item["code"] for item in report["knowledge_map"]["diagnostics"]}
     assert excluded["raw_content"]["diagnostic"] == "V2_RAW_LAYER_NOT_IMPLEMENTED"
     assert all("text" not in node for node in report["knowledge_map"]["nodes"])
 
