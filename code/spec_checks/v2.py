@@ -88,7 +88,7 @@ V2_REQUIRED_00_SECTIONS = {
     "待补齐事项",
 }
 V2_ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
-V2_INPUT_SCOPES = {"active_specs", "specs_v2", "all", "history_specs_v1", "governed_projects", "git_history"}
+V2_INPUT_SCOPES = {"active_specs", "specs_v2", "all", "history_specs_v1", "governed_projects"}
 V2_QUERY_LAYERS = {"entry", "neighbors", "expand", "raw"}
 V2_PROJECT_SCOPES = {"current_project", "all_governed_projects", "explicit_projects"}
 class V2Checker(KnowledgeMapMixin):
@@ -242,17 +242,6 @@ class V2Checker(KnowledgeMapMixin):
                     "warning",
                     "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED",
                     "管辖项目运行时图谱尚未实现；本次输出不包含 ldvh-base 工作对象关系或多项目扫描结果",
-                    suggested_owner="04-Code确定性执行规范",
-                )
-            )
-        if self.input_scope in {"all", "git_history"}:
-            self.diagnostics.append(
-                self.diagnostic(
-                    "<runtime>",
-                    1,
-                    "warning",
-                    "V2_GIT_HISTORY_GRAPH_NOT_IMPLEMENTED",
-                    "Git history 证据层尚未实现；本次输出不包含 commit、diff 或变更事件边",
                     suggested_owner="04-Code确定性执行规范",
                 )
             )

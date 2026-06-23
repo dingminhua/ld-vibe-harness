@@ -552,11 +552,9 @@ def test_v2_check_reports_degraded_for_unimplemented_scopes(tmp_path):
     assert report["knowledge_map"]["query"]["degraded"] is True
     assert "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED" in codes
     assert "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED" in codes
-    assert "V2_GIT_HISTORY_GRAPH_NOT_IMPLEMENTED" in codes
     assert "V2_PROJECT_SCOPE_NOT_IMPLEMENTED" in codes
     assert excluded["history_specs_v1"] == "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED"
     assert excluded["governed_projects"] == "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED"
-    assert excluded["git_history"] == "V2_GIT_HISTORY_GRAPH_NOT_IMPLEMENTED"
 
 
 def test_v2_check_history_specs_v1_scope_is_degraded_without_active_parse(tmp_path):

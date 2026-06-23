@@ -28,7 +28,7 @@ Code 第二版先完成两个能力：
 |---|---|---|
 | `python3 code/specs_validate.py v2-check` | 已能输出 active specs 诊断和只读知识地图预览子集 | 不等于完整知识地图运行时 |
 | active specs 输入 | 默认读取当前 `specs/`，测试中保留 `specs-v2` 兼容夹具 | `active_specs` 为默认 input_scope；`specs_v2` 保留为旧脚本兼容别名 |
-| 知识地图查询层 | 已有 `entry`、`neighbors`、`expand`、`raw` 的部分行为 | 未实现 raw 原文层、管辖项目层和 Git history 层 |
+| 知识地图查询层 | 已有 `entry`、`neighbors`、`expand`、`raw` 的部分行为 | 未实现 raw 原文层和管辖项目层；Git history 不进入知识地图范围 |
 | 降级诊断 | 已对部分未实现范围输出 degraded 诊断 | 诊断 Schema 尚未完整统一 |
 | preflight | 已实现第一版 `python3 code/specs_validate.py preflight --target-path <path>` | 只读诊断，不授权写入；字段级 Schema 校验仍降级 |
 
@@ -40,8 +40,9 @@ Code 第二版先完成两个能力：
 2. 不实现自动写入、自动修复、自动提交或事实源代写；
 3. 不把历史 v1 事实源解释为 active 权威；
 4. 不把 `web_cache`、测试缓存、聊天过程、临时审计或迁移计划作为可信节点边输入；
-5. 不把 Web 接入、管辖项目图谱、Git history 图谱和 raw 原文层作为第一批完成目标；
-6. 不修改 `code/specs_validate.py v2-check` 的兼容输出，除非同一提交补充测试、文档和下游影响说明。
+5. 不把 Web 接入、管辖项目图谱和 raw 原文层作为第一批完成目标；
+6. 不建立 Git history 图谱、专用 Git 查询层或 Git 缓存；历史追溯使用 Git 原生命令，LDVH 只维护 commit message 格式要求和校验。
+7. 不修改 `code/specs_validate.py v2-check` 的兼容输出，除非同一提交补充测试、文档和下游影响说明。
 
 ## 4. 目标模块边界
 
@@ -64,7 +65,7 @@ Code 第二版先完成两个能力：
 | KM-1 基线固化 | 增补测试记录当前 `v2-check` JSON/text 输出、query layer、input scope 和 degraded 行为 | 行为不变，现有测试通过 |
 | KM-2 核心提取 | 从 `v2.py` 提取节点、边、source refs、edge id、诊断和查询过滤到 `knowledge_map.py` | `v2-check` 输出兼容，模块级测试覆盖 |
 | KM-3 Schema 对齐 | 补齐 04.Att.06 要求的顶层字段、节点字段、边字段和来源回指缺口 | 缺失能力用 `degraded` 或 `diagnostics` 明示 |
-| KM-4 范围约束 | 明确 `active_specs`、`specs_v2` 兼容别名、`history_specs_v1`、`governed_projects`、`git_history`、排除输入和禁止输入的处理 | 后置范围返回诊断，不静默伪装支持 |
+| KM-4 范围约束 | 明确 `active_specs`、`specs_v2` 兼容别名、`history_specs_v1`、`governed_projects`、排除输入和禁止输入的处理 | 后置范围返回诊断，不静默伪装支持；Git history 不作为知识地图输入范围 |
 | KM-5 CLI 收敛 | 评估是否新增 `knowledge-map` 子命令，或继续以 `v2-check` 暴露只读预览 | 若新增命令，再更新 04.Att.02 和测试 |
 
 `active_specs` 是当前默认输入范围；`specs_v2` 只作为兼容别名保留。输出或文档不得把 `specs_v2` 解释为独立当前事实源或仍存在的 `specs-v2/` 当前入口。
@@ -121,6 +122,6 @@ preflight 输出应优先给出机器可消费诊断，同时保留 Human 可读
 | 2026-06-23 | KM-1 基线固化 | 已补充当前 `v2-check` JSON/text 输出、relation type 过滤、raw 降级、start node 回退和非法参数诊断测试；未改变实现行为 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q`、`npm run test:code` |
 | 2026-06-23 | KM-2 核心提取 | 已将知识地图节点、边、source refs、查询层、降级投影和关系过滤提取到 `code/spec_checks/knowledge_map.py`；`v2-check` CLI 兼容入口保持不变 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q` |
 | 2026-06-23 | KM-3 Schema 对齐 | 已在 `knowledge_map` 输出中补齐 `schema_version`、`generated_at`、`tool`、`input_scope`、`degraded`、`diagnostics`、`source_refs`，并统一节点基础字段 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q` |
-| 2026-06-23 | KM-4 范围约束 | 已将 `history_specs_v1` 接入为合法后置范围，并对 `history_specs_v1`、`governed_projects`、`git_history` 输出 degraded 和 excluded input 诊断；未实现历史图谱读取 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q` |
+| 2026-06-23 | KM-4 范围约束 | 已将 `history_specs_v1` 接入为合法后置范围，并对 `history_specs_v1`、`governed_projects` 输出 degraded 和 excluded input 诊断；Git history 后续明确不作为知识地图输入范围 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q` |
 | 2026-06-23 | PF-1/PF-2/PF-4/PF-5 第一版 | 已新增 `code/spec_checks/preflight.py` 和 `python3 code/specs_validate.py preflight --target-path <path>`，覆盖授权位置、操作/路径、字段/状态降级、Human Gate、Git 追溯、同步影响和失败归口；始终 `write_authorized=false` | `python3 -m pytest tests/code/specs_validate_checks/test_preflight.py -q` |
 | 2026-06-24 | active specs 输入范围收口 | 已将知识地图默认 input_scope 从 `specs_v2` 调整为 `active_specs`，并保留 `specs_v2` 作为兼容别名 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py tests/code/specs_validate_checks/test_preflight.py tests/code/test_specs_validate.py -q` |

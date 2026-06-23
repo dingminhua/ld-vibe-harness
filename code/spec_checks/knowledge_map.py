@@ -11,7 +11,6 @@ V2_KNOWLEDGE_MAP_TOOL = "code/specs_validate.py v2-check"
 V2_DEGRADED_DIAGNOSTIC_CODES = {
     "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED",
     "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED",
-    "V2_GIT_HISTORY_GRAPH_NOT_IMPLEMENTED",
     "V2_RAW_LAYER_NOT_IMPLEMENTED",
     "V2_QUERY_START_NODE_MISSING",
     "V2_QUERY_START_NODE_NOT_FOUND",
@@ -356,8 +355,6 @@ class KnowledgeMapMixin:
             excluded.append({"input": "history_specs_v1", "reason": "not_implemented", "diagnostic": "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED"})
         if self.input_scope in {"all", "governed_projects"}:
             excluded.append({"input": "governed_projects", "reason": "not_implemented", "diagnostic": "V2_GOVERNED_PROJECT_GRAPH_NOT_IMPLEMENTED"})
-        if self.input_scope in {"all", "git_history"}:
-            excluded.append({"input": "git_history", "reason": "not_implemented", "diagnostic": "V2_GIT_HISTORY_GRAPH_NOT_IMPLEMENTED"})
         if self.query_layer == "raw":
             excluded.append({"input": "raw_content", "reason": "not_implemented", "diagnostic": "V2_RAW_LAYER_NOT_IMPLEMENTED"})
         return excluded

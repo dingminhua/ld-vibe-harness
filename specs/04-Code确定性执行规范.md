@@ -195,7 +195,7 @@ v1-v2 Code 消费双读映射矩阵由 `attachments/04.Att.08-v1-v2-Code消费�
 
 ## 9. 知识地图输出边界
 
-知识地图是 Code 基于规范结构、事实模型、管辖项目配置、运行时扩展自描述和 Git history 生成的只读派生投影。
+知识地图是 Code 基于规范结构、事实模型、管辖项目配置和运行时扩展自描述生成的只读派生投影。
 
 知识地图输入范围必须受控。Code 只能把以下内容纳入知识地图节点和边：
 
@@ -203,8 +203,7 @@ v1-v2 Code 消费双读映射矩阵由 `attachments/04.Att.08-v1-v2-Code消费�
 2. 01 当前目录登记明确授权的 active 规范、附件或成员主文件，且文件自身具有 `v2_spec`、`v2_attachment`、`v2_fact_model_member` 或 `v2_action_member` 身份块；
 3. 工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 中已登记的管辖项目配置事实源；
 4. 管辖项目 `ldvh-base/` 中由 02 和 20-29 成员主文件授权的事实实例、对象 ID、字段路径和对象关系；
-5. 07 授权的 Git history、commit records、路径变更、提交正文和事实源派生输入；
-6. 运行时扩展、Code、Web 或测试入口中带有稳定自描述、来源规范和 canonical path 的承载物。
+5. 运行时扩展、Code、Web 或测试入口中带有稳定自描述、来源规范和 canonical path 的承载物。
 
 下列内容不得作为知识地图节点或关系边的权威输入：
 
@@ -221,10 +220,10 @@ v1-v2 Code 消费双读映射矩阵由 `attachments/04.Att.08-v1-v2-Code消费�
 
 | 层级 | Code 输出 | 约束 |
 |---|---|---|
-| 入口层 | 节点摘要、状态、路径、归属、上位依据、附件和消费类别 | 默认层级，不读取原文全文、全量 Git history 或全量事实对象正文 |
+| 入口层 | 节点摘要、状态、路径、归属、上位依据、附件和消费类别 | 默认层级，不读取原文全文或全量事实对象正文 |
 | 邻接层 | 指定节点的一跳关系和来源回指 | 只围绕指定节点展开，不隐式返回全图 |
 | 展开层 | 二跳、多跳、影响面、阻塞链、证据链、收敛链和跨项目边 | 必须由调用方提供任务目的、起点和深度或关系类型 |
-| 原文层 | 规范正文片段、附件表格、事实对象全文、Git diff、commit body 或测试输出 | 仅在关系视图不足以判断或需要验证证据时返回 |
+| 原文层 | 规范正文片段、附件表格、事实对象全文或测试输出 | 仅在关系视图不足以判断或需要验证证据时返回 |
 
 Code 不得把“生成知识地图”实现为一次性全量上下文注入。CLI/API/Web 调用应能声明 `input_scope`、`project_scope`、`start_node`、`relation_types`、`depth` 和是否允许原文层展开；未声明时必须使用最小默认范围。
 
@@ -238,7 +237,7 @@ Code 不得把“生成知识地图”实现为一次性全量上下文注入。
 
 Code 读取管辖项目时只能读取登记项目根目录内的 `ldvh-base/`、该项目 Git 记录，以及项目自身约定、用户明确指令、当前任务上下文或 Human Gate 授权的文档位置。项目缺少 `ldvh-base/`、Git 不可读、路径越界、引用目标不存在或文档位置未授权时，应输出当次 `diagnostics`，不得写入缓存、不得补写事实字段、不得修改 `LDVH-GOVERNED-PROJECTS.yaml`。
 
-Git history 是知识地图的时间和变更证据层。Code 可以从 commit hash、commit message、changed files、diff、author/date 和 commit range 派生变更事件节点、`impacts`、`writes_to`、`derives_from` 或证据回指；但这些关系必须实时从 Git 和当前事实源解析，不得落盘为长期图状态，也不得替代 07 定义的 Git commit records 和 commit message 契约。
+Git 历史查询不进入知识地图默认输入范围，也不要求 LDVH 建立专用 Git 图谱或查询层。需要追溯历史时，应使用 Git 原生命令按需查询 commit hash、commit message、changed files、diff、author/date 和 commit range；LDVH 只要求 commit message 格式满足 07，以便未来可读、可查、可追溯。
 
 知识地图输出至少包含：
 
@@ -253,7 +252,7 @@ Git history 是知识地图的时间和变更证据层。Code 可以从 commit h
 9. `schema_version`；
 10. `degraded`。
 
-节点至少声明 `id`、`type`、`label`、`canonical_path`、`source_refs`、`project_namespace`、`status` 和 `authority`。跨项目节点 ID 必须包含 `project_namespace`，不得使用裸对象 ID 当全局节点。节点类型至少覆盖规范、附件、事实模型成员、行动编排成员、工作对象、事实实例、对象字段、管辖项目配置、运行时扩展、Code 入口、Web 视图、事实源和 Git commit。
+节点至少声明 `id`、`type`、`label`、`canonical_path`、`source_refs`、`project_namespace`、`status` 和 `authority`。跨项目节点 ID 必须包含 `project_namespace`，不得使用裸对象 ID 当全局节点。节点类型至少覆盖规范、附件、事实模型成员、行动编排成员、工作对象、事实实例、对象字段、管辖项目配置、运行时扩展、Code 入口、Web 视图和事实源。
 
 关系边至少声明 `id`、`type`、`from`、`to`、`source_refs`、`direction` 和 `derived_from`。边类型必须来自 `attachments/01.Att.01-知识地图关系类型表.md`，不得由 Code 临时创造。
 
@@ -261,7 +260,7 @@ Git history 是知识地图的时间和变更证据层。Code 可以从 commit h
 
 `diagnostics` 至少声明 `severity`、`code`、`message`、`source_refs` 和 `suggested_owner`。诊断等级闭集为 `error`、`warning`、`info`；遇到输入范围不明、关系类型不明、来源缺失、v1/v2 权威冲突或 Schema 不完整时，必须输出诊断并将 `degraded` 标记为 true。
 
-知识地图投影目标 Schema 由 `attachments/04.Att.06-知识地图投影Schema表.md` 承载。当前 `v2-check` 可以输出 active specs 诊断和只读知识地图预览子集，但必须通过 `degraded`、`diagnostics` 或 review hints 暴露未实现的输入范围、原文层、Git history 层、多项目层或 raw 层，不得伪装为完整知识地图运行时。
+知识地图投影目标 Schema 由 `attachments/04.Att.06-知识地图投影Schema表.md` 承载。当前 `v2-check` 可以输出 active specs 诊断和只读知识地图预览子集，但必须通过 `degraded`、`diagnostics` 或 review hints 暴露未实现的输入范围、原文层、多项目层或 raw 层，不得伪装为完整知识地图运行时。
 
 历史价值提取期间，知识地图可以只读消费 v1 历史事实源和当前 active `specs/`，用于发现仍有价值的需求、决策、证据、经验、风险和未完成事项。双读不得把历史事实源解释为 active 权威，也不得让历史图谱边覆盖当前 active 规则。
 
@@ -310,7 +309,7 @@ Code 回归入口表由 `attachments/04.Att.09-Code回归入口表.md` 承载。
 | 03 | 消费行动成员、锚点、接管关系和能力资产 | 不决定流程价值或 Gate 结论 |
 | 05 | 为 Web 提供 DTO、派生视图和诊断输入 | 不维护 Web 页面契约 |
 | 06 | 消费 Rules/Skill/Agent/Hook 自描述和环境适配输入 | 不声明环境完整支持 |
-| 07 | 消费事实源、Git history 和 commit 契约 | 不替代 Git 文件事实源 |
+| 07 | 消费事实源边界和 commit message 契约 | 不替代 Git 文件事实源或 Git 原生命令 |
 | 08 | 暴露 Code 实现测试入口和可验证性 | 不定义测试治理标准 |
 
 ## 13. 附件规则
@@ -379,4 +378,4 @@ Code 检查至少包括：
 5. 补齐 v2 附件身份一致性检查，覆盖真实路径、身份块、父规范登记、README 登记和旧引用残留；
 6. 与 08 对齐 Code 实现测试入口和验证声明；
 7. 与 05 对齐 Web DTO 和 Human-facing 派生展示输入；
-8. 当前 `v2-check` 已提供 active specs 结构诊断和只读知识地图预览，`preflight` 已提供受控写入前检查第一版；仍需补齐完整历史双读、完整诊断 Schema、完整知识地图目标 Schema、字段级 Schema 检查和 Git history 图谱。
+8. 当前 `v2-check` 已提供 active specs 结构诊断和只读知识地图预览，`preflight` 已提供受控写入前检查第一版；仍需补齐完整历史双读、完整诊断 Schema、完整知识地图目标 Schema 和字段级 Schema 检查。
