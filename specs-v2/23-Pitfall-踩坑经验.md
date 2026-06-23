@@ -343,5 +343,5 @@ Web 可展示 Pitfall 状态、症状、触发条件、根因、解决方式、�
 
 1. 本文已迁入 Pitfall 主要准入、状态机、经验吸收边界、Human Gate、字段契约、标签和 Web 详情规则；仍需在 Human 单篇核对前逐项对照 active `specs/23-Pitfall-踩坑经验.md`；
 2. active `ldvh_member` 与 v2 `v2_fact_model_member` 的双读 Code 实现、正反样例和切换策略尚未完成；本文不改变 Code 默认消费入口；
-3. Pitfall 识别、创建、归档和吸收的具体行动编排尚未迁入，应由后续 30-59 行动编排单篇处理；
+3. Pitfall 识别、创建、归档和吸收的具体行动编排不按 v1 直接迁入；应待 v2 保障需求稳定后进入行动编排候选计划；
 4. 本文切换 active 前，应再次核对 active `specs/23-Pitfall-踩坑经验.md`、02 授权附件、现有 Code/Web 测试和相关 active 20-24 成员规则，确认没有字段、状态、引用或消费入口漂移。

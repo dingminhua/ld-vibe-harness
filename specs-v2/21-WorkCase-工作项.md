@@ -447,5 +447,5 @@ Web 应把 WorkCase 作为 Human 直接查看和确认的主对象。Web 可以�
 1. WorkCase v2 草案和 `21.Att.01` 已迁入主要状态机、执行编排、方案审核、结果自检、结果复核、关闭确认、修订记录和 orchestration 长字段规则；仍需 Human 单篇核对后才能视为迁移完成；
 2. active `ldvh_member` 与 v2 `v2_fact_model_member` 的双读 Code 实现、正反样例和切换策略尚未完成；本文不改变 Code 默认消费入口；
 3. WorkCase Web 派生态势、状态标签和关闭/提交口径应在 v2 Web 规范和实现迁移时复核；
-4. WorkCase 创建、方案审核、结果复核和关闭确认的具体行动编排尚未迁入，应由后续 30-59 行动编排单篇处理；
+4. WorkCase 创建、方案审核、结果复核和关闭确认的具体行动编排不按 v1 直接迁入；应待 v2 保障需求稳定后进入行动编排候选计划；
 5. 本文切换 active 前，应再次核对 active `specs/21-WorkCase-工作项.md`、02 授权附件、现有 Code/Web 测试和相关 active 20-24 成员规则，确认没有字段、状态、引用或消费入口漂移。

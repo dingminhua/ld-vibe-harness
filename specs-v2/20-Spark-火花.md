@@ -460,5 +460,5 @@ Spark 实例检查至少包括：
 2. v2 字段注册表尚未全量迁入对象特有字段。`resolved_to`、`resolved_to.type`、`resolved_to.ref`、`resolved_at`、`evolution` 和 Spark 关联字段应在后续字段矩阵诊断中与 active 05.03 和本文字段契约逐项核对；
 3. active `ldvh_member` 与 v2 `v2_fact_model_member` 的双读 Code 实现、正反样例和切换策略尚未完成；本文只提供成员草案输入，不改变 Code 默认消费入口；
 4. Spark Web 快速创建白名单应在 v2 Web 规范和 Code 实现迁移时复核。本文不扩展 Web 创建后编辑、分流、废弃或删除能力；
-5. Spark 创建、分流、废弃、多线并行收敛和 Human Gate 记录的具体行动编排尚未迁入，应由后续 30-59 行动编排单篇处理；
+5. Spark 创建、分流、废弃、多线并行收敛和 Human Gate 记录的具体行动编排不按 v1 直接迁入；应待 v2 保障需求稳定后进入行动编排候选计划；
 6. 本文切换 active 前，应再次核对 active `specs/20-Spark-火花.md`、02 授权附件、现有 Code/Web 测试和相关 active 20-24 成员规则，确认没有字段、状态、引用或消费入口漂移。
