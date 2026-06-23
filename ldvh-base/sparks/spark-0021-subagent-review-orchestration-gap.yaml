@@ -3,7 +3,7 @@ type: spark
 title: 子 Agent 复查编排流程缺口
 status: pending
 created: '2026-06-21T10:02:20.884225'
-updated: '2026-06-21T10:02:20+08:00'
+updated: '2026-06-23T09:10:34+08:00'
 description: |
   本 Spark 承载一个待收敛的流程缺口：`specs/21-WorkCase-工作项.md` 已经把子 Agent 方案审核和结果复核写入 WorkCase 状态机、字段契约和关闭前条件，但当前还没有一个独立的工作流程来规定“子 Agent 复查工作”如何被主控发起、等待、回收、处理和关闭。
 
@@ -39,13 +39,18 @@ source_detail: 用户在处理 workcase-0083 主线收口时追问“为什么�
 evolution:
 - at: '2026-06-21T10:02:20+08:00'
   summary: 记录子 Agent 复查编排流程缺口：当前 WorkCase 有状态机和字段契约，但缺少独立 workflow 规定复查如何发起、等待、回收、处理和关闭。
+- at: '2026-06-23T09:02:49+08:00'
+  summary: 补充主控监督与角色团队设想：后续流程不应只补审核表格，还应定义业务治理层的主控/角色/Role Contract/事实源回写，以及技术执行层的并行查询、搜索、探索和只读证据收集；Codex 缺少 Trae SOLO 式自动调度角色团队时，需要由 LDVH 行动编排、WorkCase 输入包和环境适配机制模拟该能力。
+- at: '2026-06-23T09:10:34+08:00'
+  summary: 补充 Claude Code 可学习机制：subagent 角色容器、agent teams 的 lead/teammates/shared task list/mailbox、计划批准后写入、输出 intake 和 hooks 生命周期控制可作为子 Agent 复核编排的设计参照；Codex 需更多机制模拟，Trae 可映射到 SOLO Agent 与自定义智能体但仍需事实源边界。
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''
 related_workcases:
 - workcase-0083
 related_adrs: []
-related_studies: []
+related_studies:
+- study-0002
 related_docs:
 - specs/06-行动编排基础规范.md
 - specs/21-WorkCase-工作项.md
