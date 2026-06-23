@@ -93,7 +93,7 @@ migration_map:
 | `specs/05.03-字段注册与消费规范.md` | 字段注册、消费元数据、Code/Web 字段消费 | `specs-v2/02-事实模型基础规范.md`、`specs-v2/attachments/02.Att.01-字段注册表.md`、`specs-v2/attachments/02.Att.06-字段矩阵诊断表.md` | `merge` | `human_confirmed` | 已确认字段注册表作为 02 附件存在，不反向定义具体模型字段存在性、必填性、状态条件或完整 schema |
 | `specs/06-行动编排基础规范.md` | 行动编排通用规则、执行生命周期、过程输出、证据与保障接管 | `specs-v2/03-行动编排规范.md` 定义行动编排如何由规范保障需求生成、登记、执行和回写 | `defer` | `deferred_until_v2_requirement_plan` | 不按 v1 流程直接迁移；v1 06 只作为 v2 03 写作参考 |
 | `specs/07-Code确定性执行实现规范.md` | Code 确定性解析、校验、聚合和实现边界 | `specs-v2/04-Code确定性执行规范.md` | `migrate` | `human_confirmed` | 已确认 v2-check 只读边界、双读策略、知识地图投影、受控写入前检查和测试回归入口由 04 承接 |
-| `specs/08-Web信息同步实现规范.md` | Web 派生展示、DTO、轻写入白名单、Human-facing 状态 | `specs-v2/05-Web信息同步规范.md` | `migrate` | `drafted_pending_review` | Web 暂不实施不等于契约可丢失；核对 DTO、Spark 创建白名单和 Confirm UI 边界 |
+| `specs/08-Web信息同步实现规范.md` | Web 派生展示、DTO、轻写入白名单、Human-facing 状态 | `specs-v2/05-Web信息同步规范.md` | `migrate` | `human_confirmed` | 已确认 Web v2 暂不实施不等于契约丢失；DTO/API、Spark 轻写入白名单、Confirm UI、提交展示、知识地图展示和 Web 回归线由 05 承接，技术选型不进入 v2 义务 |
 | `specs/09-事实源边界与承载规范.md` | 最终事实源、单一事实源、过程输出回写、承载介质 | `specs-v2/07-事实源边界与Git追溯规范.md` | `migrate` | `drafted_pending_review` | 这是高影响重构；不得让 02/03/04/05/06 的局部规则替代全局事实源原则 |
 | `specs/10-Git提交规范.md` | Git commit records、commit message 契约、提交追溯 | `specs-v2/07-事实源边界与Git追溯规范.md`；AI 提交流程归未来 44 行动编排成员 | `split` | `drafted_pending_review` | 核对 commit message 本体与 44 AI 提交流程分离 |
 | `specs/11-测试基础规范.md` | 测试治理、验证声明、测试证据和回归同步 | `specs-v2/08-测试基础规范.md` | `migrate` | `drafted_pending_review` | 核对 Code/Web/运行时扩展测试归属和等价验证边界 |
@@ -184,7 +184,7 @@ v2 未 active 前，下列入口必须继续以 active `specs/` 为准：
 | `01-规范体系基础规范.md` | Human 单篇确认完成 | 已确认 01 只承接规范体系共同治理；v1 03.02/03.03 只作为成员声明和专属骨架共同治理方法来源，不表示 01 承接事实模型或行动编排成员完整骨架 |
 | `02-事实模型基础规范.md` | Human 单篇确认完成 | 已确认 02 承接 v1 05 系列基础职责；20-24 具体事实模型成员仍需逐篇核对，不随 02 自动完成 |
 | `04-Code确定性执行规范.md` | Human 单篇确认完成 | 已确认 04 承接 v1 07 Code 主体职责；知识地图和受控写入前检查均保持只读诊断或 preflight 边界 |
-| `05-Web信息同步规范.md` | 接近可核对 | Web v2 暂不实施，需核对 DTO、轻写入白名单、Confirm UI、提交展示和 Web 回归线是否足够保留 |
+| `05-Web信息同步规范.md` | Human 单篇确认完成 | 已确认 05 只承接 Web 契约、Human-facing 展示、受控轻写入白名单、Confirm UI、提交展示、知识地图展示和回归线；不限定 Web 实现语言、框架或技术栈 |
 | `06-运行时扩展规范.md` | 接近可核对 | 需要核对 v1 04 系列承接、运行时扩展自描述、Codex 入口、Hook、薄引用和适配检查边界 |
 | `07-事实源边界与Git追溯规范.md` | 接近可核对但影响高 | 需要逐项核对 v1 09 与 v1 10，确认事实源边界、过程输出回写、Git 追溯和 commit message 契约没有被局部规范吞并 |
 | `08-测试基础规范.md` | 接近可核对 | 需要核对 v1 11 的测试治理、验证声明、证据边界、失败阻断、等价验证和 Code/Web 回归入口 |

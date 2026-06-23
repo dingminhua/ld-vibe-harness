@@ -55,7 +55,7 @@ v2_spec:
     - "knowledge_map_display"
     - "controlled_light_write_boundaries"
     - "assurance_requirements"
-  migration_status: "partially_migrated"
+  migration_status: "migrated"
 ```
 
 > 文件状态：本文当前位于 `specs-v2/`，尚未切换为 active；正式 Web 规则仍以 active `specs/08-Web信息同步实现规范.md` 和当前 Web 实现为准。
@@ -77,6 +77,8 @@ LDVH 整体以 AI 执行者为第一服务对象；Web 的直接服务对象是 
 5. Web 暂不实施时，哪些 v1 契约仍必须作为迁移回归线保留。
 
 本文不定义事实模型字段、Code 输出 Schema、Git 提交契约、测试治理或运行时扩展入口。
+
+本文定义 Web 的能力契约、消费边界、展示要求、交互白名单、验收条件和不得越界事项；不限定 Web 的实现语言、框架、依赖、后端/前端拆分、内部模块结构或具体技术栈。当前实现若使用特定框架、路由、组件、目录组织或缓存机制，只能作为 Web 实现域事实或参考实现状态，不构成 v2 规范义务。
 
 DTO 与 API 契约由 `attachments/05.Att.01-DTO与API契约表.md` 承载；页面与 API 映射由 `attachments/05.Att.02-页面与API映射矩阵.md` 承载。
 
