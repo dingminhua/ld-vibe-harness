@@ -455,12 +455,17 @@ def test_consistency_reports_04_series_title_mismatch(monkeypatch, tmp_path):
 
 
 def test_consistency_04_series_passes_for_existing_files():
-    """实际 04 系列文件都应通过检查"""
+    """历史 v1 04 系列文件都应通过兼容检查"""
+    original = checker.SPECS_DIR
+    checker.SPECS_DIR = checker.PROJECT_ROOT / "history" / "specs-v1"
+
     issues = checker.consistency_04_series_issues()
 
     assert not any(issue.code == "04_SERIES_FILE_MISSING" for issue in issues)
     assert not any(issue.code == "04_SERIES_TITLE_MISMATCH" for issue in issues)
     assert not any(issue.code == "04_SERIES_RETIRED_FILE_PRESENT" for issue in issues)
+
+    checker.SPECS_DIR = original
 
 
 def test_consistency_reports_retired_04_series_file(monkeypatch, tmp_path):

@@ -852,7 +852,7 @@ def infer_specs_dir_from_paths(paths):
     return index_checks.infer_specs_dir_from_paths(paths)
 
 
-# v2 — specs-v2 只读诊断与知识地图投影
+# v2 — active specs 诊断与知识地图投影
 
 def sync_v2_config():
     v2_checks.PROJECT_ROOT = PROJECT_ROOT
@@ -860,7 +860,7 @@ def sync_v2_config():
 
 def v2_check_build(
     root=None,
-    specs_dir="specs-v2",
+    specs_dir="specs",
     input_scope="specs_v2",
     query_layer="entry",
     project_scope="current_project",
@@ -885,7 +885,7 @@ def v2_check_build(
 
 def v2_check_main(
     root=None,
-    specs_dir="specs-v2",
+    specs_dir="specs",
     output_format="json",
     fail_on_diagnostics=False,
     input_scope="specs_v2",
@@ -990,9 +990,9 @@ def build_parser():
     index_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")
 
     # v2-check
-    v2_parser = subparsers.add_parser("v2-check", help="生成 specs-v2 只读诊断和知识地图派生预览。")
+    v2_parser = subparsers.add_parser("v2-check", help="生成 v2 active specs 诊断和知识地图派生预览。")
     v2_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
-    v2_parser.add_argument("--specs-dir", default="specs-v2", help="要检查的 v2 写作区目录，默认 specs-v2。")
+    v2_parser.add_argument("--specs-dir", default="specs", help="要检查的 v2 规范目录，默认 specs。")
     v2_parser.add_argument("--format", choices=["text", "json"], default="json", help="报告输出格式，默认 json。")
     v2_parser.add_argument("--input-scope", choices=["specs_v2", "all", "governed_projects", "git_history"], default="specs_v2", help="知识地图输入范围，默认 specs_v2。")
     v2_parser.add_argument("--layer", choices=["entry", "neighbors", "expand", "raw"], default="entry", help="知识地图渐进读取层级，默认 entry。")
@@ -1004,7 +1004,7 @@ def build_parser():
     v2_parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在诊断时返回非零状态。")
 
     # all
-    all_parser = subparsers.add_parser("all", help="运行所有检查（doc + refs + assurance + human-gate + index）。")
+    all_parser = subparsers.add_parser("all", help="运行 v2 active specs 综合检查。")
     all_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
     all_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录（用于 index 子命令）。")
     all_parser.add_argument("--workspace-root", default=str(DEFAULT_WORKSPACE_ROOT), help="工作区根目录（用于 governed-projects 检查），默认自动定位。")
@@ -1085,49 +1085,18 @@ def main(argv=None):
         )
 
     if command == "all":
-        exit_code = 0
-        doc_paths = args.paths if args.paths else [str(SPECS_DIR)]
-        # doc
-        if doc_main(doc_paths) != 0:
-            exit_code = 1
-        # refs
-        refs_paths = args.paths if args.paths else refs_default_check_paths()
-        if refs_main(refs_paths) != 0:
-            exit_code = 1
-        # assurance
-        assurance_paths = args.paths if args.paths else assurance_default_check_paths()
-        if assurance_main(assurance_paths) != 0:
-            exit_code = 1
-        # human-gate
-        human_gate_paths = args.paths if args.paths else human_gate_default_check_paths()
-        if human_gate_main(human_gate_paths) != 0:
-            exit_code = 1
-        # runtime-projection
-        if runtime_projection_main(None) != 0:
-            exit_code = 1
-        # deployment-entries
-        if deployment_entries_main(args.root) != 0:
-            exit_code = 1
-        # consistency
-        consistency_paths = args.paths if args.paths else [str(SPECS_DIR)]
-        if consistency_main(consistency_paths) != 0:
-            exit_code = 1
-        # field-registry
-        field_registry_paths = args.paths if args.paths else None
-        if field_registry_main(field_registry_paths) != 0:
-            exit_code = 1
-        # governed-projects
-        if governed_projects_main(args.workspace_root) != 0:
-            exit_code = 1
-        # index
-        try:
-            index_specs_dir = args.specs_dir or infer_specs_dir_from_paths(args.paths)
-            if index_main(args.root, args.out, args.fail_on_diagnostics, index_specs_dir) != 0:
-                exit_code = 1
-        except SpecsIndexError as exc:
-            print(str(exc), file=sys.stderr)
-            exit_code = 2
-        return exit_code
+        if args.paths:
+            return doc_main(args.paths)
+        specs_dir = args.specs_dir or "specs"
+        return v2_check_main(
+            args.root,
+            specs_dir,
+            "text",
+            args.fail_on_diagnostics,
+            input_scope="specs_v2",
+            query_layer="entry",
+            project_scope="current_project",
+        )
 
 
 if __name__ == "__main__":

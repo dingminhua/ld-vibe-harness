@@ -74,7 +74,12 @@ def test_field_registry_accepts_mixed_ref_url_ref_and_enum_signal_web_kinds(tmp_
     assert checker.field_registry_check([str(path)]) == []
 
 
-def test_field_registry_reports_scope_owner_mismatch(tmp_path):
+def test_field_registry_reports_scope_owner_mismatch(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        checker.field_registry_checks,
+        "active_work_model_scope_owners",
+        lambda: {"study": "24"},
+    )
     path = write_registry_doc(
         tmp_path / "05.03-字段注册与消费规范.md",
         object_rows=[

@@ -1,4 +1,4 @@
-"""Read-only diagnostics and knowledge-map projection for specs-v2 drafts."""
+"""Diagnostics and knowledge-map projection for v2 specs."""
 
 import hashlib
 import json
@@ -60,7 +60,12 @@ V2_ATTACHMENT_REQUIRED_FIELDS = [
 ]
 V2_ATTACHMENT_LIST_FIELDS = ["migration_sources", "code_consumption"]
 V2_ATTACHMENT_STATUS_VALUES = {"draft", "ready_for_review", "active", "deprecated"}
-V2_ATTACHMENT_AUTHORITY_VALUES = {"not_active_until_parent_and_human_approved", "active_with_parent", "deprecated_by"}
+V2_ATTACHMENT_AUTHORITY_VALUES = {
+    "not_active_until_parent_and_human_approved",
+    "active_with_parent",
+    "active_with_parent_spec",
+    "deprecated_by",
+}
 V2_ATTACHMENT_FORBIDDEN_SECTION_TITLES = {"AI 检查要求", "Human Gate", "Code 消费要求"}
 
 V2_REQUIRED_SPEC_SECTIONS = {
@@ -96,7 +101,7 @@ class V2Checker:
     def __init__(
         self,
         root=None,
-        specs_dir="specs-v2",
+        specs_dir="specs",
         input_scope="specs_v2",
         query_layer="entry",
         project_scope="current_project",
@@ -134,6 +139,10 @@ class V2Checker:
         parsed_docs = []
         known_paths = set()
         if self.should_parse_specs_v2():
+            if not self.specs_dir.exists() and self.specs_dir.name == "specs":
+                legacy_draft_dir = self.root / "specs-v2"
+                if legacy_draft_dir.exists():
+                    self.specs_dir = legacy_draft_dir.resolve()
             if not self.specs_dir.exists():
                 raise FileNotFoundError(f"v2 规范目录不存在: {self.specs_dir}")
             files = sorted(self.specs_dir.rglob("*.md"))
@@ -1063,7 +1072,7 @@ def format_text(report):
     edges = report.get("knowledge_map", {}).get("edges", [])
     query = report.get("knowledge_map", {}).get("query", {})
     lines = [
-        "specs-v2 只读诊断完成",
+        "v2 active 规范诊断完成",
         f"- input_scope: {query.get('input_scope')}",
         f"- layer: {query.get('layer')}",
         f"- degraded: {query.get('degraded')}",
@@ -1088,7 +1097,7 @@ def format_text(report):
 
 def v2_check_build(
     root=None,
-    specs_dir="specs-v2",
+    specs_dir="specs",
     input_scope="specs_v2",
     query_layer="entry",
     project_scope="current_project",
@@ -1112,7 +1121,7 @@ def v2_check_build(
 
 def v2_check_main(
     root=None,
-    specs_dir="specs-v2",
+    specs_dir="specs",
     output_format="json",
     fail_on_diagnostics=False,
     input_scope="specs_v2",
