@@ -3,9 +3,10 @@ type: workcase
 title: 确立 WorkCase / 工作项模型并迁移当前工作项事实源
 goal: |
   确立 WorkCase / 工作项作为一次目标闭环对象，保留 WorkCase / 工作项，并完成当前事实源、Code 和 Web 的一次性迁移。
-status: human_closure_confirming
+status: closed
 created: '2026-06-21T06:50:31+08:00'
-updated: '2026-06-21T08:32:07+08:00'
+updated: '2026-06-24T01:10:00+08:00'
+review_requested_at: '2026-06-24T01:10:00+08:00'
 priority: P1
 plan_confirmed_at: '2026-06-21T07:15:05+08:00'
 description: |
@@ -572,7 +573,11 @@ orchestration:
       revision_history_refs:
       - revision_history[4]
       summary: 四个结果复核视角已完成；Web/UX 初始 fail 已按阻塞项修复并复验通过。当前可提交 Human 关闭确认，但尚未关闭，且 Git 提交记录尚未形成。
-    human_closure_confirmation: null
+    human_closure_confirmation:
+      confirmed_at: '2026-06-24T01:10:00+08:00'
+      confirmed_by: human
+      decision: close
+      summary: Human 明确要求一次性按迁移分流计划处理；本 WorkCase 执行结果、验证证据和残留风险已纳入关闭确认范围。
 verification_evidence: |
   ## 验证计划
   覆盖事实源、Code、Web、specs 和旧名残留扫描，确认 WorkCase / 工作项一次性迁移后的 active surface 可以被当前工具链消费。
@@ -614,8 +619,8 @@ closure_evidence: |
   ## 结论
   当前只能说明执行、主控自检和独立结果复核已完成，不能说明整个工作链条已关闭；下一 Gate 是 Human 关闭确认。
 closure_requested_at: '2026-06-21T07:57:48+08:00'
-closed_at: null
-closure_outcome: null
+closed_at: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
 residual_risks: []
 followup_refs: []
 revision_history:

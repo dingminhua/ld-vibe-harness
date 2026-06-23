@@ -3,9 +3,10 @@ type: workcase
 title: 统一结构化文档元信息契约
 goal: |
   统一结构化文档元信息契约
-status: review_needed
+status: closed
 created: '2026-06-19T07:55:28+08:00'
-updated: '2026-06-19T08:46:44+08:00'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
 priority: P1
 description: |
   workcase-0070 和 workcase-0075 已把现有 `> 字段：值` 普通头部定义为机器可读契约，并补充了 20-29 / 30-59 普通头部不得重复 `ldvh_member` 成员事实的 Code 诊断。
@@ -207,8 +208,8 @@ closure_evidence: |
   ## 结论
 
   从执行角度，0076 已满足 success_criteria；待 Human 确认后可关闭。
-review_requested_at: '2026-06-19T08:15:49+08:00'
-closed_at: ''
+review_requested_at: '2026-06-24T01:10:00+08:00'
+closed_at: '2026-06-24T01:10:00+08:00'
 related_docs:
 - history/specs-v1/03-文档基础规范.md
 - history/specs-v1/03.01-规范文档规范.md

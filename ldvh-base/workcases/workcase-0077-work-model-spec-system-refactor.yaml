@@ -3,9 +3,10 @@ type: workcase
 title: 重构 05 工作模型规范体系
 goal: |
   重构 05 工作模型规范体系
-status: review_needed
+status: closed
 created: '2026-06-19T10:11:08+08:00'
-updated: '2026-06-19T10:57:43+08:00'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
 priority: P1
 description: |
   当前 05 体系的问题不是简单把原 05.01 内容格式子文档拆成两个文件，而是 05 父规范、字段层、内容格式层和消费注册层的职责没有系统分层：
@@ -180,8 +181,8 @@ closure_evidence: |
 
   - 本次验证覆盖 specs、字段注册、相关 Code 测试和 Web 文档引用；未运行完整前端构建或浏览器检查，因为本次没有修改 Web 运行代码。
   - Human 已批准执行系统性 05 体系重构；关闭仍等待 Human review。
-review_requested_at: '2026-06-19T10:57:43+08:00'
-closed_at: ''
+review_requested_at: '2026-06-24T01:10:00+08:00'
+closed_at: '2026-06-24T01:10:00+08:00'
 related_docs:
 - history/specs-v1/05-事实模型基础规范.md
 - history/specs-v1/05.01-字段定义与语义规范.md

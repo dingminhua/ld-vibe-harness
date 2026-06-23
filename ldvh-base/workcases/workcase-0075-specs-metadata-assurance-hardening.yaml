@@ -3,9 +3,10 @@ type: workcase
 title: specs 元信息契约落地硬化
 goal: |
   specs 元信息契约落地硬化
-status: review_needed
+status: closed
 created: '2026-06-19T07:40:26+08:00'
-updated: '2026-06-19T07:55:28+08:00'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
 priority: P1
 description: |
   workcase-0070 已完成 specs 文件头部元信息契约的设计和规范写入，但后续 Code/Web/docs 全量落地尚未推进。
@@ -187,8 +188,8 @@ closure_evidence: |
   ## 结论
 
   若以上边界确认，0075 可关闭；真正的统一硬化由 workcase-0076 执行。
-review_requested_at: '2026-06-19T07:49:16+08:00'
-closed_at: ''
+review_requested_at: '2026-06-24T01:10:00+08:00'
+closed_at: '2026-06-24T01:10:00+08:00'
 related_docs:
 - history/specs-v1/03-文档基础规范.md
 - history/specs-v1/03.01-规范文档规范.md

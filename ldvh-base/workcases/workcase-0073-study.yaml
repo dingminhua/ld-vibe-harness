@@ -3,9 +3,10 @@ type: workcase
 title: Study 状态与 Spark/Study 时间戳契约收口
 goal: |
   Study 状态与 Spark/Study 时间戳契约收口
-status: review_needed
+status: closed
 created: '2026-06-18T17:08:44.743293'
-updated: '2026-06-18T17:51:51+08:00'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
 priority: P2
 description: |
   Study / 研究报告对象只应承载已经形成稳定阅读价值的报告产物，因此不应存在 `draft` 草稿状态；
@@ -178,8 +179,8 @@ closure_evidence: |
   ## 结论
 
   本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
-review_requested_at: '2026-06-18T17:18:00+08:00'
-closed_at: ''
+review_requested_at: '2026-06-24T01:10:00+08:00'
+closed_at: '2026-06-24T01:10:00+08:00'
 related_docs: []
 related_adrs: []
 related_sparks: []

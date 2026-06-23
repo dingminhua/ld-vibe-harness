@@ -3,9 +3,11 @@ type: workcase
 title: 清退旧工作对象事实源与兼容入口
 goal: |
   清退旧工作对象事实源与兼容入口
-status: review_needed
+status: closed
 created: '2026-06-18T09:08:15'
-updated: '2026-06-18T10:33:29.221122'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
+closed_at: '2026-06-24T01:10:00+08:00'
 priority: P1
 description: |
   清退旧 TaskPlan / Task / SubTask 工作对象事实源、Code 兼容入口、Web 展示入口和当前规范中的兼容维护规则。
@@ -195,4 +197,4 @@ related_sparks:
 - spark-0009
 related_pitfalls: []
 related_workcases: []
-review_requested_at: '2026-06-18T10:33:29.221116'
+review_requested_at: '2026-06-24T01:10:00+08:00'

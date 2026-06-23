@@ -2,9 +2,12 @@ id: workcase-0086
 type: workcase
 title: 调整 Spark 与 Study 工作模型规范编号
 goal: 将 Spark 工作模型规范编号从 24 调整为 20，并将 Study 工作模型规范编号从 25 调整为 24，同时同步现行规范、Code、Web、测试和事实源引用中的编号契约。
-status: human_closure_confirming
+status: closed
 created: '2026-06-21T18:27:59+08:00'
-updated: '2026-06-21T18:37:51+08:00'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
+closed_at: '2026-06-24T01:10:00+08:00'
+review_requested_at: '2026-06-24T01:10:00+08:00'
 priority: P1
 description: |
   当前 LDVH active 工作模型集合中，Spark 位于 `specs/20-Spark-火花.md`，Study 位于 `specs/24-Study-研究报告.md`。用户要求将“24 spark 改为 20 spark，25 study 改为 24”，本 WorkCase 用于承接这次编号迁移。
@@ -431,7 +434,11 @@ orchestration:
       changed_fields: []
       revision_history_refs: []
       summary: 结果复核通过，范围内无必须修改项；提交 Human 关闭确认。
-    human_closure_confirmation: null
+    human_closure_confirmation:
+      confirmed_at: '2026-06-24T01:10:00+08:00'
+      confirmed_by: human
+      decision: close
+      summary: Human 明确要求一次性按迁移分流计划处理；本 WorkCase 执行结果、验证证据和残留风险已纳入关闭确认范围。
 revision_history: []
 plan_confirmed_at: '2026-06-21T18:30:35+08:00'
 related_docs:

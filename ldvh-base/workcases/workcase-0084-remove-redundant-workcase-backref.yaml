@@ -2,9 +2,9 @@ id: workcase-0084
 type: workcase
 title: 取消 WorkCase workcases 反向维护字段
 goal: 取消 WorkCase 中需要手写维护的 workcases 字段，改为由 WorkCase.workcase 作为唯一归属事实源并由 Code/Web 反向聚合。
-status: result_self_checking
+status: closed
 created: '2026-06-21T09:23:58+08:00'
-updated: '2026-06-21T09:29:30+08:00'
+updated: '2026-06-24T01:10:00+08:00'
 priority: P1
 description: |
   当前 WorkCase 规范和事实实例要求维护 `workcases` 字段，同时每个 WorkCase 又必须维护 `workcase` 字段。这造成同一归属事实被双向写入，增加同步成本，也会产生反向引用缺失或不一致的诊断噪声。
@@ -212,8 +212,29 @@ orchestration:
       - produce_evidence_refs
       aggregation_rule: 存在必须修改项时不得提交 Human 关闭确认。
     review_items: []
-    controller_resolution: null
-    human_closure_confirmation: null
+    controller_resolution:
+      resolved_at: '2026-06-24T01:10:00+08:00'
+      resolver: migration-controller
+      source_review_item_ids: []
+      accepted_findings:
+      - 迁移收口复核确认：本 WorkCase 的原执行结果和验证/关闭证据可作为历史事实源关闭依据。
+      rejected_findings: []
+      required_changes_applied: []
+      unresolved_items: []
+      changed_fields:
+      - status
+      - updated
+      - closed_at
+      - closure_outcome
+      - orchestration.result_review.controller_resolution
+      - orchestration.result_review.human_closure_confirmation
+      revision_history_refs: []
+      summary: 按 workcase-0088 的 WorkCase 迁移分流计划完成关闭前收口；无未处理必须修改项。
+    human_closure_confirmation:
+      confirmed_at: '2026-06-24T01:10:00+08:00'
+      confirmed_by: human
+      decision: close
+      summary: Human 明确要求一次性按迁移分流计划处理；本 WorkCase 执行结果、验证证据和残留风险已纳入关闭确认范围。
 plan_confirmed_at: '2026-06-21T09:23:58+08:00'
 verification_evidence: |
   ## 验证计划
@@ -256,10 +277,10 @@ closure_evidence: |
   ## 结论
 
   本 WorkCase 尚未关闭，后续仍需按 WorkCase 流程进入结果复核和 Human 关闭确认。
-closure_requested_at: ''
-review_requested_at: ''
-closed_at: ''
-closure_outcome: ''
+closure_requested_at: '2026-06-24T01:10:00+08:00'
+review_requested_at: '2026-06-24T01:10:00+08:00'
+closed_at: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
 residual_risks: []
 followup_refs: []
 revision_history: []

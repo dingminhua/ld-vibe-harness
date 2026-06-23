@@ -3,9 +3,10 @@ type: workcase
 title: 历史证据四段式格式规范化
 goal: |
   历史证据四段式格式规范化
-status: review_needed
+status: closed
 created: '2026-06-19T11:44:59+08:00'
-updated: '2026-06-19T12:03:00+08:00'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
 priority: P2
 description: |
   本计划负责处理 `python3 code/fact_validate.py ldvh-base --format text` 中剩余的 `EVIDENCE_FORMAT_HINT` warning。
@@ -148,8 +149,8 @@ closure_evidence: |
   ## 结论
 
   等待 Human closure review 后关闭。
-review_requested_at: '2026-06-19T12:03:00+08:00'
-closed_at: ''
+review_requested_at: '2026-06-24T01:10:00+08:00'
+closed_at: '2026-06-24T01:10:00+08:00'
 related_docs:
 - history/specs-v1/05.02-字段内容与格式规范.md
 - specs/21-WorkCase-工作项.md

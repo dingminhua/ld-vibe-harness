@@ -3,9 +3,10 @@ type: workcase
 title: 分层验证策略
 goal: |
   分层验证策略
-status: active
+status: closed
 created: '2026-06-06T00:03:08.819841'
-updated: '2026-06-06T00:03:08.819841'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: superseded
 priority: P2
 description: 由历史 Task task-0045 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
 success_criteria: '- [ ] 关联任务 task-0045 满足其 acceptance、verification 和 closure_evidence。'
@@ -26,8 +27,8 @@ orchestration:
       - [ ] 为每个级别定义验证要求清单
       - [ ] 将分层验证策略写入 specs/21-WorkCase-工作项.md 或独立最佳实践文档
       - [ ] 更新 ldvh-plan Skill 在拆解步骤时参考复杂度分级
-    status: pending
-    result_summary: ''
+    status: skipped
+    result_summary: v2 迁移收口：旧 Task 时代残留不再作为当前 active 工作执行，后续价值按 Spark/Study/新 WorkCase 分流。
     evidence_refs:
     - specs/21-WorkCase-工作项.md（修订）或独立验证策略文档
     blocking_reason: Legacy Task is not closed; keep WorkCase active after migration.
@@ -38,10 +39,33 @@ orchestration:
       role: null
       expected_output: null
     human_closure_review: true
-verification_evidence: ''
-closure_evidence: ''
-review_requested_at: ''
-closed_at: ''
+verification_evidence: |
+  ## 验证计划
+  按 workcase-0088 的 WorkCase 迁移分流计划复核本旧 Task 时代残留是否仍应作为当前 active WorkCase 推进。
+
+  ## 验证命令
+  - `python3 code/fact_cli.py list workcase`
+  - `python3 code/fact_validate.py ldvh-base/ --format text`
+
+  ## 验证结果
+  本对象来自旧 TaskPlan/Task 迁移，原 Task 事实源已退出 active 工作对象集合；当前 v2 事实模型、规范、Code、Web 或保留的 Spark/Study 已承接仍有价值的线索。本轮不把旧 Task 口径继续视为当前执行目标。
+
+  ## 结论
+  本 WorkCase 作为历史迁移残留关闭；关闭不表示原 Task 时代所有候选目标均在当前 active 体系继续执行。
+closure_evidence: |
+  ## 验证计划
+  关闭前确认该对象属于旧 Task 时代残留，且继续保留 active/review_needed 状态会让 Code、Web 或知识地图误读为当前待执行工作。
+
+  ## 验证命令
+  - `python3 code/fact_validate.py ldvh-base/ --format text`
+
+  ## 验证结果
+  Human 已授权按 workcase-0088 的迁移分流计划一次性处理旧 WorkCase。该对象不再作为当前 active 工作继续推进；如其中仍有长期价值，应由 Spark、Study、当前规范、Code/Web 缺口或后续新 WorkCase 单独承接。
+
+  ## 结论
+  关闭为历史迁移收口，后续 AI 不应把该对象状态解释为当前待执行任务。
+review_requested_at: '2026-06-24T01:10:00+08:00'
+closed_at: '2026-06-24T01:10:00+08:00'
 related_docs: []
 related_adrs: []
 related_sparks: []

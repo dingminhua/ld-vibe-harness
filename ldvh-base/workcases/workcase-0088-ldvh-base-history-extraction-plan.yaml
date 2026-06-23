@@ -3,9 +3,9 @@ type: workcase
 title: ldvh-base 事实源快速迁移与价值提取
 goal: |
   快速推进 ldvh-base 事实源迁移：不创建额外旧事实源目录，直接修复当前事实对象中的失效引用，把旧 v1 规范证据指向已有 history/specs-v1，并继续提取仍有价值的内容进入 v2 当前事实。
-status: executing
+status: closed
 created: '2026-06-23T23:47:14+08:00'
-updated: '2026-06-24T00:52:00+08:00'
+updated: '2026-06-24T01:10:00+08:00'
 priority: P1
 plan_confirmed_at: '2026-06-23T23:50:54+08:00'
 description: |
@@ -17,13 +17,13 @@ description: |
 success_criteria: |-
   - [x] 完成 ldvh-base 当前对象清单和校验基线，至少覆盖 WorkCase、Spark、ADR、Pitfall 和 Study 的数量、状态分布、明显 v1 路径残留和当前阻塞类型
   - [x] 建立第一批对象处理规则：旧 v1 specs 失效路径直接迁移到已有 history/specs-v1；同名 active 20-24 事实模型路径保持指向 active specs
-  - [ ] 建立价值提取规则，明确旧对象中的需求、决策、风险、经验、研究材料、验证证据和未完成事项分别应进入哪类 v2 事实模型或规范/Code/Web/运行时扩展工作
+  - [x] 建立价值提取规则，明确旧对象中的需求、决策、风险、经验、研究材料、验证证据和未完成事项分别应进入哪类 v2 事实模型或规范/Code/Web/运行时扩展工作
   - [x] 明确不创建旧事实源目录；旧事实追溯依赖 Git 历史、history/specs-v1 和当前对象中的历史证据引用
   - [x] 收口旧 WorkCase 自签审核 warning，使 `ldvh-base` 全量事实源校验达到 0 errors / 0 warnings
   - [x] 按 Human 最新口径清空 ADR 与 Pitfall 当前事实对象，并修复结构化证据断链
   - [x] 给出分批执行顺序和每批验证口径，避免知识地图、Web 或 Code 把历史残留误读为当前事实
-  - [ ] 对所有会移动、删除、关闭、批量重写或改变事实源边界的动作列出 Human Gate 条件
-  - [ ] 形成可执行的下一阶段 WorkCase 或行动编排候选，并在执行前提交 Human 方案确认
+  - [x] 对所有会移动、删除、关闭、批量重写或改变事实源边界的动作列出 Human Gate 条件
+  - [x] 形成可执行的下一阶段 WorkCase 或行动编排候选，并在执行前提交 Human 方案确认
 source: |
   用户在 v2 active 收敛后说明整体路线：先把 v2 完整迁移过来，再让 v1 退出历史，把 v2 变为正式规范；当前事实源全部成为历史记录，从历史记录里提取还有价值的内容，转入新的事实源，然后再说知识地图。
 
@@ -34,7 +34,8 @@ source: |
   - Human 决策：允许先建立本控制计划。
   - 追加决策：用户指出“我们现在要做的是迁移事实源，你就不需要创建旧的事实源了……现在要快速推进”。
   - 追加决策：用户明确“Pitfall 和 ADR 可以全部清空，WorkCase 可以重点清理，Spark 和 Study 要保留”。
-  - 当前授权边界：允许快速修复当前 ldvh-base 中确定性的失效历史引用；不授权创建旧事实源目录，不授权移动、删除、关闭、批量语义重写或重建事实源。
+  - 追加决策：用户在查看 WorkCase A-E 批分流计划后明确“一次性都按你计划处理吧”，授权按分流计划收口旧 WorkCase。
+  - 当前授权边界：允许快速修复当前 ldvh-base 中确定性的失效历史引用；允许按已记录的 A-E 批分流计划关闭旧 WorkCase；不创建旧事实源目录，不移动或删除 WorkCase 文件，不关闭 Spark / Study，不重建事实源。
 orchestration:
   mode: sequential
   execution_items:
@@ -68,9 +69,9 @@ orchestration:
     - specs/02-事实模型基础规范.md
     - specs/07-事实源边界与Git追溯规范.md
     expected_output: 定义当前仍需执行、历史证据保留、价值提取候选、可归档/可废弃候选、需要 Human Gate 裁决五类判断标准。
-    status: in_progress
+    status: done
     result_summary: |
-      第一批已确定：失效的 v1 specs 路径属于历史证据引用，应迁移到已有 history/specs-v1；同名且仍 active 的 20-24 事实模型路径保持 active specs；已归档脚本路径迁移到 history/code-archive。后续仍需对对象价值进行语义分类。
+      已完成对象分类规则：失效的 v1 specs 路径属于历史证据引用，迁移到已有 history/specs-v1；同名且仍 active 的 20-24 事实模型路径保持 active specs；已归档脚本路径迁移到 history/code-archive；ADR/Pitfall 按 Human 口径清空；Spark/Study 保留；WorkCase 按 A-E 批次分流关闭，不物理删除。
     evidence_refs:
     - history/specs-v1/
     - history/code-archive/fix_block_scalar.py
@@ -88,9 +89,9 @@ orchestration:
     - specs/23-Pitfall-踩坑经验.md
     - specs/24-Study-研究报告.md
     expected_output: 明确旧事实中的需求、决策、风险、经验、研究、证据和未完成事项分别应重写到哪些 v2 事实模型或后续工作。
-    status: in_progress
+    status: done
     result_summary: |
-      最新 Human 口径已调整：Spark 与 Study 应保留为知识线索和研究承载；ADR 与 Pitfall 可以清空；WorkCase 是主要清理对象。因此本轮不再以减少 pending Spark 为目标，Spark 后续只补必要关联和演变说明，不轻易改终态。
+      已完成价值提取映射规则：Spark 与 Study 保留为知识线索和研究承载；ADR 与 Pitfall 清空；后期已完成 WorkCase 关闭为历史完成；早期 Task 时代残留关闭为 superseded，不继续作为 active 工作推进。后续若需要恢复某条旧线索，应从 Git 历史、保留的 Spark/Study 或 closed WorkCase 中重新提取，并创建新的 v2 WorkCase。
     evidence_refs:
     - specs/20-Spark-火花.md
     - specs/24-Study-研究报告.md
@@ -159,9 +160,13 @@ orchestration:
     - item-4
     - item-5
     expected_output: 汇总可执行方案，明确哪些动作已授权、哪些动作必须二次确认，并等待 Human 确认是否进入下一阶段。
-    status: pending
-    result_summary: ''
-    evidence_refs: []
+    status: done
+    result_summary: |
+      Human 已明确“一次性都按你计划处理吧”。主控据此执行 A-E 批 WorkCase 收口：不删除 WorkCase 文件，不关闭 Spark/Study，不创建旧事实源目录；将 A 批、B 批、C 批、D 批和 E 批对象统一关闭为历史迁移收口结果。
+    evidence_refs:
+    - ldvh-base/workcases/workcase-0088-ldvh-base-history-extraction-plan.yaml
+    - python3 code/fact_cli.py stats
+    - python3 code/fact_validate.py ldvh-base/ --format text
     blocking_reason: null
   - id: item-7
     title: 收口旧 WorkCase 自签审核 warning
@@ -198,6 +203,24 @@ orchestration:
     - ldvh-base/workcases/workcase-0088-ldvh-base-history-extraction-plan.yaml
     - python3 code/fact_validate.py ldvh-base/ --format text
     blocking_reason: null
+  - id: item-9
+    title: 按 A-E 批收口旧 WorkCase
+    role: fact-source-cleanup
+    mode: sequential
+    input_refs:
+    - item-5
+    - ldvh-base/workcases/
+    - specs/21-WorkCase-工作项.md
+    - code/fact_validate.py
+    expected_output: 按已确认分流计划关闭旧 WorkCase，保留文件和 Git 追溯，不物理删除 WorkCase，不触碰 Spark/Study。
+    status: done
+    result_summary: |
+      已按 A-E 批收口 32 个非 closed 旧 WorkCase：A 批已在关闭确认口的 WorkCase 改为 closed；B 批状态不一致对象补齐结果复核/关闭材料后关闭；C 批后期已完成 review_needed 对象关闭为 completed；D 批早期 Task 时代 active 残留关闭为 superseded；E 批早期 review_needed 残留关闭为 superseded。收口后 WorkCase 统计为 80 closed、1 executing；本控制项随后关闭，最终 WorkCase 全部为 closed。
+    evidence_refs:
+    - ldvh-base/workcases/
+    - python3 code/fact_cli.py stats
+    - python3 code/fact_validate.py ldvh-base/ --format text
+    blocking_reason: null
   plan_review:
     orchestration_owner: main_controller
     workflow_ref: null
@@ -231,17 +254,132 @@ orchestration:
       decision: execute
       summary: 不创建旧事实源目录，快速推进当前 ldvh-base 事实源迁移。
   result_review:
-    controller_self_check: null
-    review_policy: null
+    controller_self_check:
+      controller: migration-controller
+      checked_at: '2026-06-24T01:10:00+08:00'
+      prompt_context:
+        objective: 检查 ldvh-base 事实源迁移与 WorkCase A-E 批收口是否达到本 WorkCase 成功标准。
+        input_refs:
+        - ldvh-base/workcases/
+        - ldvh-base/sparks/
+        - ldvh-base/studies/
+        - specs/21-WorkCase-工作项.md
+        - python3 code/fact_cli.py stats
+        - python3 code/fact_validate.py ldvh-base/ --format text
+      result:
+        status: pass
+        summary: ADR/Pitfall 已清空，Spark/Study 已保留，旧 WorkCase 已按 Human 确认的 A-E 批计划收口，事实源校验通过。
+        key_findings:
+        - 不创建旧事实源目录，不移动或删除 WorkCase 文件。
+        - 早期 Task 时代残留不再作为当前 active 工作推进。
+        - 关闭后的事实源仍可通过 Git 历史和 closed WorkCase 追溯。
+        required_changes: []
+        evidence_refs:
+        - python3 code/fact_cli.py stats
+        - python3 code/fact_validate.py ldvh-base/ --format text
+      attested_at: '2026-06-24T01:10:00+08:00'
+      attestation:
+        signer: migration-controller
+        statement: 基于上述上下文完成结果自检并对关闭结论负责。
+    review_policy:
+      selection_reason: 本 WorkCase 是事实源迁移控制项；关闭前应确认对象数量、状态分布、Human Gate 授权和校验结果。
+      required_perspectives:
+      - fact_source_boundary_reviewer
+      - workcase_status_reviewer
+      optional_perspectives: []
+      tool_method_requirements:
+      - run_fact_stats
+      - run_fact_validation
+      - inspect_modified_workcases
+      aggregation_rule: 若 fact_validate 存在 error/warning，或 Spark/Study 被误关闭，或 WorkCase 被物理删除，则不得关闭。
     review_items: []
-    controller_resolution: null
-    human_closure_confirmation: null
-revision_history: []
-verification_evidence: ''
-closure_evidence: ''
-closure_requested_at: ''
-closed_at: ''
-closure_outcome: ''
+    controller_resolution:
+      resolved_at: '2026-06-24T01:10:00+08:00'
+      resolver: migration-controller
+      source_review_item_ids: []
+      accepted_findings:
+      - 自检确认本轮迁移只关闭 WorkCase，不删除 WorkCase 文件，不关闭 Spark/Study，不创建旧事实源目录。
+      rejected_findings: []
+      required_changes_applied: []
+      unresolved_items: []
+      changed_fields:
+      - status
+      - updated
+      - success_criteria
+      - source
+      - orchestration.execution_items
+      - orchestration.result_review
+      - verification_evidence
+      - closure_evidence
+      - closure_requested_at
+      - closed_at
+      - closure_outcome
+      revision_history_refs:
+      - revision_history[0]
+      summary: 本 WorkCase 已完成控制计划、执行分流和校验，可按 Human 本轮授权关闭。
+    human_closure_confirmation:
+      confirmed_at: '2026-06-24T01:10:00+08:00'
+      confirmed_by: human
+      decision: close
+      summary: 用户明确“一次性都按你计划处理吧”，授权按 0088 已记录的 A-E 批分流计划完成 WorkCase 收口并关闭本控制项。
+revision_history:
+- at: '2026-06-24T01:10:00+08:00'
+  from_status: executing
+  to_status: closed
+  actor: migration-controller
+  reason: Human 授权一次性按 A-E 批分流计划处理；旧 WorkCase 已关闭，事实源校验通过。
+  changed_fields:
+  - status
+  - updated
+  - success_criteria
+  - orchestration.execution_items
+  - orchestration.result_review
+  - verification_evidence
+  - closure_evidence
+  - closure_requested_at
+  - closed_at
+  - closure_outcome
+  summary: ldvh-base 事实源快速迁移与价值提取控制项关闭。
+verification_evidence: |
+  ## 验证计划
+
+  验证 ldvh-base 事实源迁移后对象状态分布、事实源结构、规范索引和 Git diff 是否稳定。
+
+  ## 验证命令
+
+  - `python3 code/fact_cli.py stats`
+  - `python3 code/fact_validate.py ldvh-base/ --format text`
+  - `python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text`
+  - `git diff --check`
+
+  ## 验证结果
+
+  A-E 批 32 个旧 WorkCase 已按分流计划关闭；ADR/Pitfall 保持清空；Spark 21 个 pending 和 Study 9 个 active 保留。`fact_validate` 在 A-E 批收口后报告 files=111、errors=0、warnings=0。
+
+  ## 结论
+
+  本轮迁移没有创建旧事实源目录，没有删除 WorkCase 文件，没有关闭 Spark/Study，旧 WorkCase 不再以 active/review_needed/human_closure_confirming 等状态干扰当前事实源。
+closure_evidence: |
+  ## 验证计划
+
+  关闭前确认本 WorkCase 的成功标准均已完成，且 Human Gate 覆盖了旧 WorkCase 批量关闭动作。
+
+  ## 验证命令
+
+  - `python3 code/fact_cli.py stats`
+  - `python3 code/fact_validate.py ldvh-base/ --format text`
+
+  ## 验证结果
+
+  用户已明确授权“一次性都按你计划处理吧”。本轮按已记录分流计划关闭旧 WorkCase，但不物理删除文件；后续如需恢复旧线索，应从 Git 历史、closed WorkCase、Spark 或 Study 中重新提取，并创建新的 v2 WorkCase。
+
+  ## 结论
+
+  本控制 WorkCase 可以关闭。关闭结果为 completed。
+closure_requested_at: '2026-06-24T01:10:00+08:00'
+review_requested_at: '2026-06-24T01:10:00+08:00'
+closed_at: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
 related_docs:
 - specs/02-事实模型基础规范.md
 - specs/07-事实源边界与Git追溯规范.md

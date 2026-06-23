@@ -3,9 +3,10 @@ type: workcase
 title: rules-scene-layer-spec-alignment
 goal: |
   rules-scene-layer-spec-alignment
-status: review_needed
+status: closed
 created: '2026-06-07T01:49:39.503579'
-updated: '2026-06-07T01:49:39.503579'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: superseded
 priority: P2
 description: 由历史 Task task-0058 迁移生成的任务计划。计划目标以关联 Task 的 description 和 acceptance 为准，避免复制多个权威事实。
 success_criteria: '- [ ] 关联任务 task-0058 满足其 acceptance、verification 和 closure_evidence。'
@@ -119,8 +120,8 @@ closure_evidence: |
   ## 结论
 
   本次仅完成证据字段四段式格式规范化；对象状态、关闭判断、验证结果和历史事实语义以原始证据摘录为准，未额外伪造历史验证过程。
-review_requested_at: '2026-06-07T01:49:39.503579'
-closed_at: ''
+review_requested_at: '2026-06-24T01:10:00+08:00'
+closed_at: '2026-06-24T01:10:00+08:00'
 related_docs:
 - history/specs-v1/04.03-环境入口适配与部署规范.md
 - history/specs-v1/02-术语规范.md

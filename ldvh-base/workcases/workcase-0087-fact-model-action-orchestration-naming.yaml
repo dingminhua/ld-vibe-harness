@@ -2,9 +2,12 @@ id: workcase-0087
 type: workcase
 title: 收敛事实模型与行动编排命名职责
 goal: 将 LDVH 中“工作模型 / 工作流程”的边界收敛为“事实模型 / 行动编排”的职责表达，并评估 05 系列子文档去除重复体系前缀、06 与 30-59 行动编排总协调职责、相关术语和引用的同步修改方案。
-status: human_closure_confirming
+status: closed
 created: '2026-06-21T20:20:31+08:00'
-updated: '2026-06-21T22:30:56+08:00'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
+closed_at: '2026-06-24T01:10:00+08:00'
+review_requested_at: '2026-06-24T01:10:00+08:00'
 priority: P1
 description: |
   当前讨论形成新的命名和职责判断：LDVH 中 20-29 更准确地表达为“事实模型”，用于定义什么事实值得长期承载，以及字段、状态、关系和事实源边界；30-59 更准确地表达为“行动编排”，用于定义 AI 如何围绕事实和规范行动，协调规则、能力资产、环境接入、Human Gate、验证、回写和降级。
@@ -22,7 +25,7 @@ success_criteria: |-
   - [x] 明确 Code、Web、Rules、Skill、Hook、测试和事实源实例需要同步的引用、解析、展示、校验和部署检查入口
   - [x] 修改前完成 Human Gate：确认术语变更范围、是否重命名文件、是否保留旧术语别名、是否同步 Web 文案和 Code 输出
   - [x] 执行后通过 specs 综合校验、事实源校验、相关 Python 测试、Web 检查、旧术语/旧路径残留扫描和提交信息预检
-  - [ ] 关闭材料记录未改名或保留旧术语的原因、残留风险、后续 WorkCase / Spark 分流和 Git 提交追溯边界
+  - [x] 关闭材料记录未改名或保留旧术语的原因、残留风险、后续 WorkCase / Spark 分流和 Git 提交追溯边界
 source: |
   用户在围绕 40/41 派生型审核流程与能力资产边界的讨论中进一步指出：
   - “工作流程薄入口”表述不合适，更准确的是工作流程的“总协调”，每一个工作流程 md 的职责是协调、承上启下；
@@ -565,7 +568,11 @@ orchestration:
       revision_history_refs:
       - revision_history[3]
       summary: 两个结果复核视角均为 pass_with_followups 且无 required_changes。本 WorkCase 已可提交 Human 关闭确认；未重命名路径、未迁移机器标识和未机械改写历史事实文本作为已知残留风险保留。
-    human_closure_confirmation: null
+    human_closure_confirmation:
+      confirmed_at: '2026-06-24T01:10:00+08:00'
+      confirmed_by: human
+      decision: close
+      summary: Human 明确要求一次性按迁移分流计划处理；本 WorkCase 执行结果、验证证据和残留风险已纳入关闭确认范围。
 revision_history:
 - at: '2026-06-21T20:49:13+08:00'
   from_status: subagents_plan_reviewing

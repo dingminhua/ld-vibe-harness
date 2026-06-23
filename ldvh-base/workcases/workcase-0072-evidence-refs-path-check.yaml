@@ -3,9 +3,11 @@ type: workcase
 title: 补齐 evidence_refs 路径存在性检查
 goal: |
   补齐 evidence_refs 路径存在性检查
-status: review_needed
+status: closed
 created: 2026-06-18T16:22:16+0800
-updated: '2026-06-18T16:32:01.828605'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
+closed_at: '2026-06-24T01:10:00+08:00'
 priority: P2
 description: |
   workcase-0071 的 process-governance 复审发现 `orchestration.execution_items[].evidence_refs`
@@ -159,4 +161,4 @@ related_sparks:
 related_pitfalls: []
 related_workcases:
 - workcase-0071
-review_requested_at: '2026-06-18T16:32:01.828599'
+review_requested_at: '2026-06-24T01:10:00+08:00'

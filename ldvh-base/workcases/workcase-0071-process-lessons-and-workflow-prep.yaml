@@ -3,9 +3,11 @@ type: workcase
 title: 沉淀清退与契约化经验并准备流程规范
 goal: |
   沉淀清退与契约化经验并准备流程规范
-status: review_needed
+status: closed
 created: '2026-06-18T09:11:44'
-updated: '2026-06-18T10:48:16.867910'
+updated: '2026-06-24T01:10:00+08:00'
+closure_outcome: completed
+closed_at: '2026-06-24T01:10:00+08:00'
 priority: P2
 description: |
   在旧对象清退和文件元信息契约标准化过程中，记录中间问题、残留风险、Code/Web/Specs 协同经验和
@@ -204,4 +206,4 @@ related_pitfalls: []
 related_workcases:
 - workcase-0069
 - workcase-0070
-review_requested_at: '2026-06-18T10:48:16.867905'
+review_requested_at: '2026-06-24T01:10:00+08:00'
