@@ -12,6 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PREFLIGHT_TOOL = "code/specs_validate.py preflight"
 PREFLIGHT_OPERATIONS = {"create", "update", "delete", "move", "rename"}
 HIGH_IMPACT_OPERATIONS = {"delete", "move", "rename"}
+RULES_ENTRY_SYNC_REVIEW_PATH = "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
 
 
 AUTHORIZED_PREFIXES = [
@@ -109,6 +110,20 @@ def rules_asset_impact(root, relative_path, target_info):
 
     matches = [record for record in records if relative_path in set(record.get("source_specs") or [])]
     return {"required": True, "assets": matches, "basis": "source_specs"}
+
+
+def rules_entry_sync_review(root, relative_path, target_info):
+    if not target_info or target_info.get("asset_type") != "specs":
+        return {"required": False, "path": RULES_ENTRY_SYNC_REVIEW_PATH, "basis": "not_applicable"}
+    if not relative_path.startswith("specs/"):
+        return {"required": False, "path": RULES_ENTRY_SYNC_REVIEW_PATH, "basis": "not_applicable"}
+    path = root / relative_path
+    is_markdown = Path(relative_path).suffix == ".md" or path.suffix == ".md"
+    if not is_markdown:
+        return {"required": False, "path": RULES_ENTRY_SYNC_REVIEW_PATH, "basis": "not_markdown_spec"}
+    if relative_path == RULES_ENTRY_SYNC_REVIEW_PATH:
+        return {"required": False, "path": RULES_ENTRY_SYNC_REVIEW_PATH, "basis": "self_review"}
+    return {"required": True, "path": RULES_ENTRY_SYNC_REVIEW_PATH, "basis": "specs_entry_surface"}
 
 
 def field_path_info(field_path):
@@ -369,6 +384,7 @@ def preflight_build(root=None, target_path=None, operation="update", field_path=
 
     sync_owner = target_info["owner"] if target_info else "04-Code确定性执行规范"
     rules_impact = rules_asset_impact(root, relative_path, target_info)
+    rules_entry_review = rules_entry_sync_review(root, relative_path, target_info)
     km_context = knowledge_map_context(root, relative_path, target_info)
     add_check(
         "sync_impact",
@@ -412,6 +428,20 @@ def preflight_build(root=None, target_path=None, operation="update", field_path=
                 )
             )
     add_check("rules_asset_impact", "Rules 资产影响", rules_items)
+
+    rules_entry_items = []
+    if rules_entry_review["required"]:
+        rules_entry_items.append(
+            diagnostic(
+                "PREFLIGHT_RULES_ENTRY_SYNC_REVIEW_REQUIRED",
+                "info",
+                f"本次 specs 写入可能影响固定 Rules 入口表达；应参考 {RULES_ENTRY_SYNC_REVIEW_PATH} 执行 Rules 入口同步审查。该成员当前为 planned 人工降级清单，不授权自动修改 Rules",
+                relative_path,
+                "03-行动编排规范 / 06-运行时扩展规范",
+                "rules_entry_sync_review",
+            )
+        )
+    add_check("rules_entry_sync_review", "Rules 入口同步审查", rules_entry_items)
 
     add_check(
         "failure_owner",
@@ -460,6 +490,7 @@ def preflight_build(root=None, target_path=None, operation="update", field_path=
                 for asset in rules_impact["assets"]
             ],
         },
+        "rules_entry_sync_review": rules_entry_review,
         "field_path_analysis": field_info,
         "knowledge_map_context": km_context,
         "summary": {

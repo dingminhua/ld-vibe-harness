@@ -64,8 +64,23 @@ def test_preflight_spec_update_still_requires_rules_review_without_exact_source_
     codes = {item["code"] for item in report["diagnostics"]}
 
     assert "PREFLIGHT_RULES_ASSET_IMPACT_REVIEW_REQUIRED" in codes
+    assert "PREFLIGHT_RULES_ENTRY_SYNC_REVIEW_REQUIRED" in codes
     assert report["rules_asset_impact"]["required"] is True
     assert report["rules_asset_impact"]["assets"] == []
+    assert report["rules_entry_sync_review"]["required"] is True
+    assert report["rules_entry_sync_review"]["path"] == "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
+
+
+def test_preflight_rules_entry_sync_review_only_targets_specs_surface(tmp_path):
+    write_md(tmp_path / "rules" / "LDVH-MAINTAINER-ENTRY.md", "# Rules\n")
+
+    report = checker.preflight_build(tmp_path, "rules/LDVH-MAINTAINER-ENTRY.md", operation="update")
+    codes = {item["code"] for item in report["diagnostics"]}
+
+    assert "PREFLIGHT_RULES_ASSET_IMPACT_REVIEW_REQUIRED" in codes
+    assert "PREFLIGHT_RULES_ENTRY_SYNC_REVIEW_REQUIRED" not in codes
+    assert report["rules_entry_sync_review"]["required"] is False
+    assert report["rules_entry_sync_review"]["basis"] == "not_applicable"
 
 
 def test_preflight_blocks_update_for_missing_target(tmp_path):

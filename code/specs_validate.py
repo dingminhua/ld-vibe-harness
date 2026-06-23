@@ -131,6 +131,18 @@ def _fast_deployment_entries_main(argv):
     return deployment_entries_checks.deployment_entries_main(args.root)
 
 
+def _fast_capability_environment_main(argv):
+    from spec_checks import capability_environment as capability_environment_checks
+
+    project_root = _project_root_fast()
+    parser = argparse.ArgumentParser(description="生成固定能力资产与环境保障矩阵。")
+    parser.add_argument("--root", default=str(project_root), help="项目根目录，默认使用当前工具所在项目。")
+    parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+    args = parser.parse_args(argv)
+    capability_environment_checks.PROJECT_ROOT = project_root
+    return capability_environment_checks.capability_environment_main(args.root, args.format)
+
+
 def _fast_runtime_projection_main(argv):
     from spec_checks import runtime_projection as runtime_projection_checks
 
@@ -336,6 +348,7 @@ if __name__ == "__main__" and len(sys.argv) > 1:
         "knowledge-map": _fast_knowledge_map_main,
         "governed-projects": _fast_governed_projects_main,
         "deployment-entries": _fast_deployment_entries_main,
+        "capability-environment": _fast_capability_environment_main,
         "runtime-projection": _fast_runtime_projection_main,
         "human-gate": _fast_human_gate_main,
         "human-gate-report": _fast_human_gate_report_main,
@@ -356,6 +369,7 @@ if __name__ == "__main__" and len(sys.argv) > 1:
 
 from spec_checks import common as common_checks
 from spec_checks import doc_structure as doc_structure_checks
+from spec_checks import capability_environment as capability_environment_checks
 from spec_checks import deployment_entries as deployment_entries_checks
 from spec_checks import consistency as consistency_checks
 from spec_checks import field_registry as field_registry_checks
@@ -445,6 +459,20 @@ def deployment_entries_check(root=None):
 def deployment_entries_main(root=None):
     sync_deployment_entries_config()
     return deployment_entries_checks.deployment_entries_main(root)
+
+
+def sync_capability_environment_config():
+    capability_environment_checks.PROJECT_ROOT = PROJECT_ROOT
+
+
+def capability_environment_report_build(root=None):
+    sync_capability_environment_config()
+    return capability_environment_checks.capability_environment_report_build(root)
+
+
+def capability_environment_main(root=None, output_format="text"):
+    sync_capability_environment_config()
+    return capability_environment_checks.capability_environment_main(root, output_format)
 
 
 CONSISTENCY_WORK_MODEL_REQUIRED_SECTIONS = consistency_checks.CONSISTENCY_WORK_MODEL_REQUIRED_SECTIONS
@@ -1349,6 +1377,11 @@ def build_parser():
     deployment_entries_parser = subparsers.add_parser("deployment-entries", help="检查固定运行时扩展登记表与承载物自描述是否一致。")
     deployment_entries_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
 
+    # capability-environment
+    capability_environment_parser = subparsers.add_parser("capability-environment", help="生成固定能力资产与环境保障矩阵。")
+    capability_environment_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
+    capability_environment_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+
     # human-gate
     human_gate_parser = subparsers.add_parser("human-gate", help="检查 Markdown 中的 Human Gate 记录是否符合 06 最小证据结构。")
     human_gate_parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 docs/ 和 ldvh-base/。")
@@ -1457,6 +1490,9 @@ def main(argv=None):
 
     if command == "deployment-entries":
         return deployment_entries_main(args.root)
+
+    if command == "capability-environment":
+        return capability_environment_main(args.root, args.format)
 
     if command == "human-gate":
         return human_gate_main(args.paths)
