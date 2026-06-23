@@ -1,0 +1,182 @@
+id: workcase-0088
+type: workcase
+title: ldvh-base 历史事实源收口与价值提取准备
+goal: |
+  建立 ldvh-base 当前事实源历史化与价值提取的控制计划，在不立即批量迁移、不移动目录、不删除对象的前提下，先完成盘点、分类、提取规则和后续 Human Gate 边界。
+status: subagents_plan_reviewing
+created: '2026-06-23T23:47:14+08:00'
+updated: '2026-06-23T23:47:14+08:00'
+priority: P1
+description: |
+  v2 active 规范、Code 默认检查、Rules / Skill / Hook 入口和项目根 README 已完成收敛，但 ldvh-base 中仍保留大量 v1 时代的工作对象、旧 specs 路径、关闭证据、迁移过程证据和未分流的长期经验。
+
+  这些内容不能被简单删除，也不能直接视为当前 active 事实源继续消费。当前阶段的目标是先建立控制计划：把旧 ldvh-base 作为待历史化事实源进行盘点和分类，识别仍有价值的需求、决策、风险、经验、证据和未完成事项，再按 v2 事实模型重写到新的当前事实源或对应规范/代码/Web/运行时扩展工作中。
+
+  本 WorkCase 不直接执行批量迁移，不移动或重命名 ldvh-base 目录，不关闭旧对象，不创建新事实源目录。任何目录级历史化、当前事实源重建、批量对象改写、旧对象关闭、对象删除或事实源边界改变，必须在本计划完成方案审核和 Human Gate 后另行执行。
+success_criteria: |-
+  - [ ] 完成 ldvh-base 当前对象清单和校验基线，至少覆盖 WorkCase、Spark、ADR、Pitfall 和 Study 的数量、状态分布、明显 v1 路径残留和当前阻塞类型
+  - [ ] 建立对象分类规则，区分当前仍需执行、历史证据保留、价值提取候选、可归档/可废弃候选、需要 Human Gate 裁决五类
+  - [ ] 建立价值提取规则，明确旧对象中的需求、决策、风险、经验、研究材料、验证证据和未完成事项分别应进入哪类 v2 事实模型或规范/Code/Web/运行时扩展工作
+  - [ ] 明确历史事实源与新当前事实源的边界方案，包括是否移动目录、是否保留旧 ldvh-base 原路径、是否新建当前事实源、Git 追溯方式和回滚边界
+  - [ ] 给出分批执行顺序和每批验证口径，避免知识地图、Web 或 Code 把历史残留误读为当前事实
+  - [ ] 对所有会移动、删除、关闭、批量重写或改变事实源边界的动作列出 Human Gate 条件
+  - [ ] 形成可执行的下一阶段 WorkCase 或行动编排候选，并在执行前提交 Human 方案确认
+source: |
+  用户在 v2 active 收敛后说明整体路线：先把 v2 完整迁移过来，再让 v1 退出历史，把 v2 变为正式规范；当前事实源全部成为历史记录，从历史记录里提取还有价值的内容，转入新的事实源，然后再说知识地图。
+
+  在完成非根 README 清理后，主控复核发现 active specs 与 Code 检查已稳定，但 `python3 code/fact_validate.py ldvh-base/` 仍出现大量旧 v1 specs 路径和历史对象残留。主控建议下一步先建立 ldvh-base 历史事实源收口计划，用户回复“按你计划执行”。
+
+  Human Gate 记录：
+  - 触发原因：创建 WorkCase，规划后续可能涉及事实源历史化、对象分类、价值提取、批量重写和事实源边界调整的高影响工作。
+  - Human 决策：允许先建立本控制计划。
+  - 当前授权边界：只允许建立计划、盘点口径和分类规则；尚未授权移动、删除、关闭、批量重写或重建事实源。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 建立 ldvh-base 盘点与校验基线
+    role: fact-source-auditor
+    mode: single
+    input_refs:
+    - ldvh-base/
+    - specs/02-事实模型基础规范.md
+    - specs/20-Spark-火花.md
+    - specs/21-WorkCase-工作项.md
+    - specs/22-ADR-决策.md
+    - specs/23-Pitfall-踩坑经验.md
+    - specs/24-Study-研究报告.md
+    - specs/07-事实源边界与Git追溯规范.md
+    expected_output: 输出对象数量、状态分布、路径残留类型、校验错误类型和当前可安全处理范围；不得修改事实对象。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-2
+    title: 制定对象分类规则
+    role: fact-model-governance
+    mode: single
+    input_refs:
+    - item-1
+    - specs/02-事实模型基础规范.md
+    - specs/07-事实源边界与Git追溯规范.md
+    expected_output: 定义当前仍需执行、历史证据保留、价值提取候选、可归档/可废弃候选、需要 Human Gate 裁决五类判断标准。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-3
+    title: 制定价值提取映射规则
+    role: extraction-planner
+    mode: single
+    input_refs:
+    - item-1
+    - item-2
+    - specs/20-Spark-火花.md
+    - specs/21-WorkCase-工作项.md
+    - specs/22-ADR-决策.md
+    - specs/23-Pitfall-踩坑经验.md
+    - specs/24-Study-研究报告.md
+    expected_output: 明确旧事实中的需求、决策、风险、经验、研究、证据和未完成事项分别应重写到哪些 v2 事实模型或后续工作。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-4
+    title: 设计历史事实源与当前事实源边界方案
+    role: fact-source-boundary-planner
+    mode: single
+    input_refs:
+    - item-1
+    - item-2
+    - item-3
+    - specs/07-事实源边界与Git追溯规范.md
+    expected_output: 给出是否移动旧 ldvh-base、是否新建当前事实源、如何保持 Git 追溯、如何避免 Code/Web/知识地图误读历史对象的方案选项和推荐路径。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-5
+    title: 制定分批执行顺序和验证口径
+    role: migration-planner
+    mode: single
+    input_refs:
+    - item-1
+    - item-2
+    - item-3
+    - item-4
+    - code/fact_validate.py
+    - code/specs_validate.py
+    expected_output: 输出后续批次、每批准入条件、验证命令、失败降级方式、Human Gate 条件和提交拆分建议。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  - id: item-6
+    title: 提交 Human 方案确认
+    role: controller
+    mode: single
+    input_refs:
+    - item-1
+    - item-2
+    - item-3
+    - item-4
+    - item-5
+    expected_output: 汇总可执行方案，明确哪些动作已授权、哪些动作必须二次确认，并等待 Human 确认是否进入下一阶段。
+    status: pending
+    result_summary: ''
+    evidence_refs: []
+    blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 本 WorkCase 后续可能改变 ldvh-base 事实源边界、历史对象状态、当前事实源入口和知识地图消费前提，必须先审核盘点、分类和 Human Gate 方案。
+      required_perspectives:
+      - fact_model_boundary_reviewer
+      - history_extraction_reviewer
+      - code_web_consumption_reviewer
+      optional_perspectives:
+      - git_traceability_reviewer
+      tool_method_requirements:
+      - read_active_fact_model_specs
+      - inspect_ldvh_base_status_distribution
+      - run_or_record_fact_validation_baseline
+      - classify_without_mutating_objects
+      - identify_human_gate_actions
+      aggregation_rule: 任一视角发现可能导致历史事实被当作当前事实、事实源边界被静默改变、或 Code/Web/知识地图消费对象漂移的硬问题时，不得进入执行；必须先退回方案修订或提交 Human Gate。
+    review_items: []
+    controller_resolution:
+      status: pending
+      summary: 当前仅完成 WorkCase 初始控制计划，尚未执行方案审核、盘点或迁移。
+      required_changes: []
+      unresolved_questions:
+      - 是否保留旧 ldvh-base 原路径作为历史事实源，还是移动到 history 后重建当前 ldvh-base。
+      - 哪些 review_needed / human_closure_confirming 的旧 WorkCase 仍应视为当前需处理对象。
+      - 旧对象价值提取后，原对象状态是否关闭、归档、保留原状态或转入历史目录。
+      ready_for_human_confirmation: false
+    human_confirmation: null
+  result_review:
+    controller_self_check: null
+    review_policy: null
+    review_items: []
+    controller_resolution: null
+    human_closure_confirmation: null
+revision_history: []
+verification_evidence: ''
+closure_evidence: ''
+closure_requested_at: ''
+closed_at: ''
+closure_outcome: ''
+related_docs:
+- specs/02-事实模型基础规范.md
+- specs/07-事实源边界与Git追溯规范.md
+- specs/20-Spark-火花.md
+- specs/21-WorkCase-工作项.md
+- specs/22-ADR-决策.md
+- specs/23-Pitfall-踩坑经验.md
+- specs/24-Study-研究报告.md
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases:
+- workcase-0078
