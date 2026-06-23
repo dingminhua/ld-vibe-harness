@@ -3,7 +3,7 @@ type: spark
 title: 结合最新实践评估 LDVH 知识图谱建设方向
 status: pending
 created: '2026-06-20T09:14:00+08:00'
-updated: '2026-06-20T10:15:00+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 description: |
   原有讨论已提炼为 Study `study-0006`。
   Study 只承载完整评估报告，不替代本 Spark 的讨论入口。
@@ -53,6 +53,8 @@ evolution:
   summary: Human 明确知识图谱只能根据 code 和事实源实时生成，不能存在缓存；追评后确认方向可行，但需将 Study 中持久化输出建议修正为运行时图谱投影视图。
 - at: '2026-06-20T10:15:00+08:00'
   summary: Human 进一步明确知识地图必须覆盖管辖项目；补充以 LDVH-GOVERNED-PROJECTS.yaml 为入口、多项目命名空间、边界控制、范围选择、降级诊断和多项目测试夹具作为后续保障要求。
+input_refs:
+- study-0006
 source: conversation
 source_detail: |
   用户要求“做吧”，将部分 spark 内容转为 study 对象。

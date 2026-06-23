@@ -68,8 +68,7 @@ priority: P2
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''
-related_workcases:
-- workcase-0074
+related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:

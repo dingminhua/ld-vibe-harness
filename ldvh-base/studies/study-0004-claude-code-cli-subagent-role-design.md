@@ -4,7 +4,7 @@ type: study
 title: Claude Code CLI Subagents 创建调用与 LDVH 多角色设定调研
 status: active
 created: '2026-06-18T07:59:11'
-updated: '2026-06-18T22:31:24+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 summary: |
   Claude Code CLI 的 subagents 是专门 AI 助手，用于隔离会污染主上下文的搜索、日志、文件阅读、测试和专业审查等任务。Claude Code 支持通过 `/agents` 管理界面创建管理 subagents，也支持手动编写带 YAML frontmatter 的 Markdown 文件、通过 `--agents` CLI JSON 动态定义、通过 plugin 分发，或用 `--agent` 把某个 agent 作为整个会话的主代理。调用方式包括自动委派、自然语言命名、@ mention 保证调用、`--agent` 会话级默认，以及 `/fork` 分叉当前对话。
 user_intent: 用户要求补充 Claude Code CLI 关于子 Agent / subagents 创建调用机制的同主题调研，为后续 00 文档多角色设定提供对照。
@@ -29,6 +29,8 @@ urls:
 - ref: https://docs.anthropic.com/en/docs/claude-code/hooks
   title: Claude Code Hooks
   summary: 用于说明 hooks 如何在工具执行前后提供自动化约束和检查。
+input_refs:
+- spark-0007
 related_sparks:
 - spark-0007
 related_workcases: []

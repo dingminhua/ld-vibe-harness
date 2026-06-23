@@ -4,19 +4,21 @@ type: study
 title: WorkCase 与执行编排模型演变研究
 status: active
 created: '2026-06-18T04:16:49'
-updated: '2026-06-18T22:31:24+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 summary: |
   本报告整理本轮从 TaskPlan / Task / SubTask 体系，收敛到 WorkCase / ExecutionItem / Role Contract 方向的完整来龙去脉。核心结论是：LDVH 应把 Human 需要长期追踪的目标、范围、成功标准、验证和关闭证据保留在 WorkCase；AI 的执行拆解、并行安排、角色分派和临时步骤应作为 WorkCase 内部编排或运行期上下文处理，不再提升为独立 Task 工作模型。
 user_intent: 用户要求将本轮关于 specs 工作流程、WorkCase、ExecutionItem、Spark 分流和事实源边界的长对话整理为 Study。
 conclusion: |
   WorkCase 是面向 Human 与 AI 对齐的一次工作事实契约；ExecutionItem 是 WorkCase 内部的最小恢复与编排节点，不是工作对象；Role Contract 应承接专业 AI 角色的输入、权限、输出和交还边界，但其规范归属仍需继续判断。后续应优先逐段核对 specs/21，再回看 05、05.01、06 和 40-43，最后同步 Code / Web 中旧 TaskPlan、Task、SubTask 实现。
 urls: []
+input_refs:
+- spark-0005
+- spark-0006
 related_sparks:
 - spark-0005
 - spark-0006
 related_workcases: []
-related_adrs:
-- adr-0010
+related_adrs: []
 related_pitfalls: []
 related_docs:
 - history/specs-v1/00-LD-Vibe-Harness理念与纲要.md

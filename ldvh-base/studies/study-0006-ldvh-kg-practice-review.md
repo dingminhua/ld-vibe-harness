@@ -4,7 +4,7 @@ type: study
 title: LDVH 知识图谱建设的最新实践与落地评估
 status: active
 created: '2026-06-20T09:20:00+08:00'
-updated: '2026-06-20T10:05:00+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 user_intent: |
   评估“LDVH 是否可直接按现有基础设施建设知识图谱，并给出当前可执行的落地路径”，
   同时结合 2025-2026 的行业实践形成稳健建议。
@@ -30,6 +30,8 @@ urls:
 - ref: https://neo4j.com/blog/knowledge-graph/how-to-build-knowledge-graph/
   title: How to Build a Knowledge Graph in 7 Steps
   summary: 提供“建模-导入-测试-维护”闭环，支持 LDVH 将图谱建设按阶段化执行并验收。
+input_refs:
+- spark-0016
 related_sparks:
 - spark-0016
 related_workcases: []

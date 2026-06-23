@@ -48,12 +48,7 @@ resolved_at: ''
 discard_reason: ''
 related_adrs: []
 related_studies: []
-related_workcases:
-- workcase-0039
-- workcase-0054
-- workcase-0056
-- workcase-0077
-- workcase-0080
+related_workcases: []
 related_docs:
 - specs/21-WorkCase-工作项.md
 - history/specs-v1/05.02-字段内容与格式规范.md

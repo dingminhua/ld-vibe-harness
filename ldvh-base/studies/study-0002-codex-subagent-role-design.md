@@ -4,7 +4,7 @@ type: study
 title: Codex 子 Agent 创建调用与 LDVH 多角色设定调研
 status: active
 created: '2026-06-18T07:59:11'
-updated: '2026-06-23T10:03:18+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 summary: |
   Codex 子 Agent 适合承接可并行、边界清晰、噪音较高或需要专业视角的运行期工作。Codex 官方资料显示，子 Agent 不会自动生成，必须由用户明确要求并行委派；Codex 可使用内置 default、worker、explorer，也可通过个人或项目级 TOML 文件定义自定义 agent。当前 Codex App 工具面还暴露了 spawn_agent、wait_agent、send_input 和 close_agent 这类管理动作。
 user_intent: 用户要求调研 Codex 中如何创建子 Agent 与调用子 Agent，为后续 00 文档多角色设定做前期准备。
@@ -17,6 +17,8 @@ urls:
 - ref: https://developers.openai.com/codex/subagents
   title: Codex Subagents
   summary: 用于说明 Codex 子 Agent 的创建、配置和调用方式，支撑 LDVH 角色契约映射判断。
+input_refs:
+- spark-0007
 related_sparks:
 - spark-0007
 related_workcases: []

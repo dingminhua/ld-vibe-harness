@@ -3,7 +3,7 @@ type: spark
 title: 10 号 Git 提交规范保障资产边界待收敛
 status: pending
 created: '2026-06-20T04:33:49+08:00'
-updated: '2026-06-21T00:39:27+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 description: |
   本 Spark 承载一个需要后续收敛的规范保障问题：`history/specs-v1/10-Git提交规范.md` 已经明确 commit message 的行业规范基础、body 语义清单、Code 预检和 Web 展示边界，但真正安装后落地不应只依赖 AI 自觉或手动命令。
 
@@ -74,18 +74,18 @@ evolution:
   summary: 新建 workcase-0080 承接固定能力资产登记制、资产类型最佳实践标准、同步监督和部署分层边界；本 Spark 继续保持 pending，三条并行承接线暂为 workcase-0074、workcase-0024 和 workcase-0080。
 - at: '2026-06-21T00:39:27+08:00'
   summary: workcase-0074 已完成真实落地的一部分：`ldvh-git-commit` Skill 按 04.02 登记为 active 固定能力资产，10 号规范和维护入口已指向该 Skill；Hook 口径同步修正为统一 Hook registry / dispatcher 与环境接入层分离，不再描述为仓库级原生 Git hook 安装脚本。
+input_refs:
+- study-0008
 source: conversation
 source_detail: 用户围绕 10 号 Git 提交规范保障追问“这种属于 LDVH 安装后必须落地的资产”和“除了 hook，不需要 skills？”，要求建立 Spark 记录，避免后续遗忘。
 priority: P1
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''
-related_workcases:
-- workcase-0074
-- workcase-0024
-- workcase-0080
+related_workcases: []
 related_adrs: []
-related_studies: []
+related_studies:
+- study-0008
 related_docs:
 - history/specs-v1/01-目录说明.md
 - history/specs-v1/04.02-LDVH能力资产与保障机制规范.md

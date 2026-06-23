@@ -3,7 +3,7 @@ type: spark
 title: WorkCase 与执行编排边界待收敛
 status: pending
 created: '2026-06-17T22:00:06'
-updated: '2026-06-19T11:42:00+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 description: |
   本 Spark 承载本轮关于 TaskPlan / Task / SubTask、WorkCase、ExecutionItem、Role Contract、计划审核和执行证据边界的阶段性收敛。
 
@@ -74,6 +74,8 @@ human_gate_records:
   scope: history/specs-v1/41-fact-model-audit-事实模型审核.md、history/specs-v1/42-specs-audit-规范审核.md、history/specs-v1/43-assurance-readiness-audit-保障准备度审核.md 的成员自描述集合状态和对应待补齐事项。
   constraints: |
     升级只表示三条工作流程可以作为 active 流程入口被 AI 引用和执行；不代表其 Skill SOP、案例库、自动化矩阵或后续 Code/Web 审核流程已经完成。后续仍需按各流程的 Gate、回写和验证要求执行。
+input_refs:
+- study-0001
 source: conversation
 source_detail: 本轮围绕 LDVH 工作流程、任务编排、执行证据、角色复检和 Spark 分流的连续讨论；包含一次联网复核结论。
 priority: P1
@@ -81,8 +83,7 @@ resolved_to: ''
 resolved_at: ''
 discard_reason: ''
 related_workcases: []
-related_adrs:
-- adr-0010
+related_adrs: []
 related_studies:
 - study-0001
 related_docs:

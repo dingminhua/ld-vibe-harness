@@ -4,22 +4,16 @@ type: study
 title: LDVH 从 Superpowers 吸收内容的火花式研究
 status: active
 created: '2026-06-20T11:50:00+08:00'
-updated: '2026-06-20T11:50:00+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 summary: |
   本 Study 以 spark 形式整理 LDVH 可以从 Superpowers 项目吸收的内容。核心判断是：Superpowers 最值得吸收的不是具体 Claude Code Skill 包本身，而是它对 AI 编码代理“合理化、抢跑、缺证据、跳过审查、上下文污染”的系统性约束设计。LDVH 应把这些机制转译为自身的事实源边界、验证铁律、Human Gate、WorkCase 审查、Skill/Agent/Hook 资产准入和错误反馈闭环，而不是照搬其会话级工作流或绝对 TDD 教条。
 user_intent: 用户要求写一篇 spark，分析 LDVH 可以从 Superpowers 项目里吸收的内容，并通过 Study 的形式沉淀。
 conclusion: |
   LDVH 应吸收 Superpowers 的七类稳定机制：验证前不得宣称完成、规则反合理化、两阶段审查、子代理上下文隔离与主控回收、TDD/测试优先的可调强度门禁、Skill 触发描述克制、以及失败次数触发架构讨论。吸收方式应是“理念转译 + LDVH 事实源落地”：规则进入 specs 或能力资产准入，执行进入 WorkCase / Skill / Hook / Code validator，报告和依据保留在 Study。不得把 Superpowers 的 Skill 文本、会话状态、无限子代理分派和绝对 TDD 例外规则直接搬入 LDVH。
 urls: []
+input_refs: []
 related_sparks: []
-related_workcases:
-- workcase-0044
-- workcase-0046
-- workcase-0047
-- workcase-0048
-- workcase-0060
-- workcase-0074
-- workcase-0080
+related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:

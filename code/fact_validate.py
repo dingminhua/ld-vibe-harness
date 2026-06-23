@@ -84,9 +84,9 @@ LIST_FIELDS = {
         "source_objects", "related_objects", "related_rules", "tags",
         "source_sparks", "related_adrs", "related_docs",
     },
-    "spark": {"evolution", "related_workcases", "related_adrs", "related_studies", "related_docs"},
+    "spark": {"evolution", "input_refs", "related_workcases", "related_adrs", "related_studies", "related_docs"},
     "study": {
-        "urls", "related_workcases", "related_adrs", "related_sparks", "related_pitfalls", "related_docs",
+        "urls", "input_refs", "related_workcases", "related_adrs", "related_sparks", "related_pitfalls", "related_docs",
     },
 }
 GLOBAL_REMOVED_FIELDS = {

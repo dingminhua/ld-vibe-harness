@@ -4,7 +4,7 @@ type: study
 title: Web 颜色体系治理专项（规范10）
 status: active
 created: '2026-06-20T14:10:00+08:00'
-updated: '2026-06-20T14:10:00+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 user_intent: |
   在不影响 Web 第一阶段功能交付前提下，建立颜色使用的分阶段治理方案，
   并明确规范10约束与执行顺序，使颜色语义可追溯、可审计。
@@ -15,6 +15,8 @@ conclusion: |
   建议按“严格语义 + 分阶段”实施。
   先维持现状功能交付，待第一阶段结束后执行统一清理与映射收口。
   通过单点映射与 token 健康检查，避免颜色语义在组件层扩散。
+input_refs:
+- spark-0018
 related_sparks:
 - spark-0018
 related_workcases: []

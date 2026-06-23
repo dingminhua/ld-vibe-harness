@@ -3,7 +3,7 @@ type: spark
 title: Spark 分流与收敛提醒机制待设计
 status: pending
 created: '2026-06-18T04:03:23'
-updated: '2026-06-18T04:03:23'
+updated: '2026-06-24T03:20:00+08:00'
 description: |
   Spark 中的话题可能部分已经转移、落地或形成决策，但剩余内容仍未完全收敛。需要设计一套机制提醒 AI 判断：
 
@@ -23,6 +23,8 @@ description: |
 evolution:
 - at: '2026-06-18T04:03:23'
   summary: 明确后续应拆成工作流程规范、Code warning 和 Web 分流状态提示三项落地动作。
+input_refs:
+- study-0001
 source: conversation
 source_detail: 用户提出“如果 spark 部分话题已经转移或者落地，需要怎么做，以及通过什么提醒 AI”
 priority: P2

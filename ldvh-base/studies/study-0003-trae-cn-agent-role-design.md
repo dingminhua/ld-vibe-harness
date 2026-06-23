@@ -4,7 +4,7 @@ type: study
 title: TRAE CN 智能体创建调用与 LDVH 多角色设定调研
 status: active
 created: '2026-06-18T07:59:11'
-updated: '2026-06-18T22:31:24+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 summary: |
   TRAE CN 把智能体定位为面向不同开发场景的编程助手。TRAE IDE 支持内置 Chat、Agent、SOLO Agent，也支持通过智能生成或手动创建自定义智能体；自定义智能体可以配置提示词、MCP Server 和内置工具，并可开启“可被其他智能体调用”。当前官方文档显示，TRAE IDE 中仅 SOLO Agent 可调用自定义智能体。TRAE CLI 则支持通过 `/agent-new` 创建子智能体，保存到 `.traecli/agents`，并可由 TRAE CLI 自动拆分任务调用，或由用户通过 `@{智能体名称}` 手动调用。
 user_intent: 用户要求补充 TRAE CN 关于子 Agent / 自定义智能体创建调用机制的同主题调研，为后续 00 文档多角色设定提供对照。
@@ -32,6 +32,8 @@ urls:
 - ref: https://docs.trae.cn/cli_permission-mode
   title: TRAE CLI Permission Mode
   summary: 用于说明 TRAE CLI 权限模式对智能体执行边界和安全控制的影响。
+input_refs:
+- spark-0007
 related_sparks:
 - spark-0007
 related_workcases: []

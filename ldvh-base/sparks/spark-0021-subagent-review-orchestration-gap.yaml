@@ -3,7 +3,7 @@ type: spark
 title: 子 Agent 复查编排流程缺口
 status: pending
 created: '2026-06-21T10:02:20.884225'
-updated: '2026-06-23T09:10:34+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 description: |
   本 Spark 承载一个待收敛的流程缺口：`specs/21-WorkCase-工作项.md` 已经把子 Agent 方案审核和结果复核写入 WorkCase 状态机、字段契约和关闭前条件，但当前还没有一个独立的工作流程来规定“子 Agent 复查工作”如何被主控发起、等待、回收、处理和关闭。
 
@@ -33,6 +33,8 @@ description: |
   5. Web 后续可展示复核阶段、必需视角完成度、硬问题处理状态和是否等待 Human 关闭确认。
 
   本 Spark 只记录分支问题，不在当前 WorkCase 主线中直接修改流程架构。
+input_refs:
+- study-0002
 source: conversation
 priority: P1
 source_detail: 用户在处理 workcase-0083 主线收口时追问“为什么没有子agent复查工作的流程？”，随后要求“这个分支先写一个spark，然后做好主线工作”。
@@ -46,8 +48,7 @@ evolution:
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''
-related_workcases:
-- workcase-0083
+related_workcases: []
 related_adrs: []
 related_studies:
 - study-0002

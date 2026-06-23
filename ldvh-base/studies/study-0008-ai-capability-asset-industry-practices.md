@@ -4,7 +4,7 @@ type: study
 title: AI 能力资产行业最佳实践调研
 status: active
 created: '2026-06-20T10:25:42+08:00'
-updated: '2026-06-20T10:40:36+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 summary: |
   本报告补齐并加固 workcase-0080 中此前缺失的行业最佳实践输入。调研采用多视角起草与主控合并：Codex 专业视角、Claude / Anthropic 视角、OpenAI Agents / guardrails / evals 视角、Hook / DevOps / 提交门禁视角。结论被整理为来源对照矩阵、最佳实践矩阵、反模式清单和 LDVH 吸收规则，用于支撑 04.02 对 Rules、Skill、Agent、Hook 固定能力资产的准入、审查和关闭判断。
 user_intent: 用户指出 workcase-0080 中“最佳实践”目前只是 LDVH 内部规则，缺少行业最佳实践内容，要求先补齐 spark / WorkCase 相关规范基础。
@@ -83,11 +83,11 @@ urls:
 - ref: https://docs.gitlab.com/administration/server_hooks/
   title: GitLab server hooks
   summary: 用于对照 server-side hook 作为 push 门禁的确定性和部署边界。
+input_refs:
+- spark-0017
 related_sparks:
 - spark-0017
-related_workcases:
-- workcase-0080
-- workcase-0074
+related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:

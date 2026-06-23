@@ -4,7 +4,7 @@ type: study
 title: Vibe Coding 从 Demo 到产品级与 LDVH 增强方向调研
 status: active
 created: '2026-06-18T08:49:21'
-updated: '2026-06-18T22:31:24+08:00'
+updated: '2026-06-24T03:20:00+08:00'
 summary: |
   Vibe Coding 从 demo 到产品级的核心变化，不是“让 AI 多写代码”，而是把 AI 生成代码纳入产品工程闭环。产品级要求需求、架构、质量、安全、供应链、发布、运行、观测、事故、用户反馈和成本都可管理、可验证、可追溯。LDVH 当前已经有规范、工作模型、基础流程、Code 和 Web 的底盘，但仍需要增强产品需求层、架构治理、质量门禁、DevSecOps、生产就绪、运行观测、发布治理、AI 评测和 Human-facing 驾驶舱。
 user_intent: 用户要求调研 Vibe Coding 从 demo 到产品级需要哪些变化，以及 LDVH 未来面向产品级开发还需要增强哪些环节。
@@ -71,6 +71,8 @@ urls:
 - ref: https://code.claude.com/docs/en/code-review
   title: Claude Code Review
   summary: 用于说明 AI 编程进入产品级后，代码审查应成为常规工作流，而不是可选补充。
+input_refs:
+- spark-0008
 related_sparks:
 - spark-0008
 related_workcases: []

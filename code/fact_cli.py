@@ -637,6 +637,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["source"] = "conversation"
         data["source_detail"] = ""
         data["evolution"] = []
+        data["input_refs"] = []
         data["resolved_to"] = ""
         data["resolved_at"] = ""
         data["discard_reason"] = ""
@@ -674,6 +675,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         data["summary"] = f"{title} 的稳定研究报告。"
         data["conclusion"] = ""
         data["urls"] = []
+        data["input_refs"] = []
         data["related_sparks"] = []
         data["related_workcases"] = []
         data["related_adrs"] = []

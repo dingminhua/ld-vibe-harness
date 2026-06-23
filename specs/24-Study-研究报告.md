@@ -248,6 +248,7 @@ Study 的创建、状态变化、核心报告改写和归档都应留下 Git com
 | `urls[].ref` | Study 嵌套字段 | 完整外部 URL | string | 条件必填 | `urls` 条目存在时必须是完整 `http(s)` URL | reference | 24 | AI、Code、Web |
 | `urls[].title` | Study 嵌套字段 | 可读标题 | string | 可选 | 可为空 | narrative | 24 | AI、Web |
 | `urls[].summary` | Study 嵌套字段 | URL 支撑当前报告中什么判断 | markdown | 条件必填 | `urls` 条目存在时必须填写中文用途摘要 | narrative / reference | 24 | AI、Web |
+| `input_refs` | 公共字段，Study 采用 | 当前报告实际消费的稳定输入对象或项目内文档 | list_string | 可选 | 默认为空列表；可记录 Spark、WorkCase、ADR、Pitfall、Study ID 或项目内文档路径；外部网页资料仍写入 `urls` | reference | 24 | AI、Code、Web、知识地图 |
 | `related_sparks` | 公共字段，Study 采用 | 关联 Spark | list_string | 可选 | 默认为空列表 | reference | 24 | AI、Code、Web |
 | `related_workcases` | 公共字段，Study 采用 | 关联 WorkCase | list_string | 可选 | 默认为空列表 | reference | 24 | AI、Code、Web |
 | `related_adrs` | 公共字段，Study 采用 | 关联 ADR | list_string | 可选 | 默认为空列表 | reference | 24 | AI、Code、Web |
@@ -255,7 +256,7 @@ Study 的创建、状态变化、核心报告改写和归档都应留下 Git com
 | `related_docs` | 公共字段，Study 采用 | 后续引用或承接文档路径 | list_string | 可选 | 默认为空列表；不承载外部网页资料 | reference | 24 | AI、Code、Web |
 | `archive_reason` | 公共字段，Study 采用 | 归档原因 | markdown | 条件必填 | `status: archived` 时必须填写 | narrative | 24 | AI、Human |
 
-Study 不得维护 `source`、`source_detail` 或 `source_docs`；用户侧调研出发点统一写入 `user_intent`，外部网页资料统一写入 `urls`。
+Study 不得维护 `source`、`source_detail` 或 `source_docs`；用户侧调研出发点统一写入 `user_intent`，外部网页资料统一写入 `urls`。`input_refs` 只表达报告消费了哪些稳定输入，不替代 `related_*` 导航关系，不表示目标对象已吸收报告结论。
 
 ### 9.2 Markdown 正文契约
 
