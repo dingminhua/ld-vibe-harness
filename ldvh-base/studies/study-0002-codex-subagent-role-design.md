@@ -4,7 +4,7 @@ type: study
 title: Codex 子 Agent 创建调用与 LDVH 多角色设定调研
 status: active
 created: '2026-06-18T07:59:11'
-updated: '2026-06-23T09:22:10+08:00'
+updated: '2026-06-23T10:03:18+08:00'
 summary: |
   Codex 子 Agent 适合承接可并行、边界清晰、噪音较高或需要专业视角的运行期工作。Codex 官方资料显示，子 Agent 不会自动生成，必须由用户明确要求并行委派；Codex 可使用内置 default、worker、explorer，也可通过个人或项目级 TOML 文件定义自定义 agent。当前 Codex App 工具面还暴露了 spawn_agent、wait_agent、send_input 和 close_agent 这类管理动作。
 user_intent: 用户要求调研 Codex 中如何创建子 Agent 与调用子 Agent，为后续 00 文档多角色设定做前期准备。
@@ -23,9 +23,12 @@ related_workcases: []
 related_adrs: []
 related_pitfalls: []
 related_docs:
-- specs/00-LD-Vibe-Harness理念与纲要.md
-- specs/04.02-LDVH能力资产与保障机制规范.md
-- specs/06-行动编排基础规范.md
+- specs/00-LDVH理念与价值标准.md
+- specs/03-行动编排规范.md
+- specs/06-运行时扩展规范.md
+- history/specs-v1/00-LD-Vibe-Harness理念与纲要.md
+- history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+- history/specs-v1/06-行动编排基础规范.md
 - specs/21-WorkCase-工作项.md
 archive_reason: null
 ---
@@ -203,7 +206,7 @@ LDVH 支持多角色 AI 协作，但角色首先是事实源治理中的责任�
 4. 修改 `specs/04.02-LDVH能力资产与保障机制规范.md` 时，再判断是否需要把 Codex custom agent TOML、Skills、MCP、AGENTS.md 的关系纳入能力资产分层。
 5. 如需长期维护 Codex 子 Agent 示例，应另建环境适配文档或 Skill，而不是塞进 00。
 
-## 2026-06-22 讨论补充：Codex 子 Agent 需求与 v1 规范落点
+### 2026-06-22 讨论补充：Codex 子 Agent 需求与 v1 规范落点
 
 本次后续讨论确认了一个更具体的落地判断：在 Codex 环境下用好子 Agent，不能只写成 Codex 配置或 prompt 技巧；应先在 LDVH v1 体系中明确“为什么需要子 Agent、何时需要、由谁调度、输入输出如何回收”，再把 Codex 的具体能力作为环境适配承接。
 
@@ -222,7 +225,7 @@ LDVH 支持多角色 AI 协作，但角色首先是事实源治理中的责任�
 
 因此，当前更优先的建设方向不是先改 21 的字段，也不是直接创建 Codex agent 配置，而是先把 `spark-0021` 所指出的“子 Agent 复查编排流程缺口”收敛成具体行动编排。字段层已有承载点，缺的是主控何时必须发起、如何发起、如何等待、如何处理结论和如何回写的 active workflow。
 
-## 2026-06-23 讨论补充：Trae 子 Agent 并行策略对照
+### 2026-06-23 讨论补充：Trae 子 Agent 并行策略对照
 
 本次补充调研了 Trae 的子 Agent 并行策略，用于和 Codex subagent workflow 对照。Trae 的并行能力不应简单等同于 Codex 的 `spawn_agent`。更准确地说，Trae 是由“SOLO Agent 主控 + 可调用自定义智能体 + SOLO 多任务并行”共同形成并行策略。
 
@@ -251,7 +254,7 @@ Trae 官方文档显示，SOLO 模式以 AI 为主导，支持自动规划并执
 Trae 环境中的并行能力由 SOLO 多任务管理和 SOLO Agent 调用自定义智能体共同承载。LDVH 可将 WorkCase 的 ExecutionItem 映射为 Trae 任务级并行，将 Role Contract 映射为可被 SOLO Agent 调用的自定义智能体；但并行执行必须保留输入、输出、路径边界、依赖关系、主控回收、Human Gate 和事实源回写规则。Trae 运行期任务、对话流和 Spec / Plan 文件不是 LDVH 最终事实源。
 ```
 
-## 2026-06-23 讨论补充：主控监督与角色团队设想
+### 2026-06-23 讨论补充：主控监督与角色团队设想
 
 本次讨论进一步明确了用户对 LDVH 多角色机制的目标形态：LDVH 希望形成“一个主控 + 一群角色”的协作结构。主控不只是普通执行者，而更像监督、编排者和最终责任主体；角色则承担具体执行、查询、审查、验证、反方意见、专项风险检查等职责。主控可以自行安排角色做事，也可以调度角色互相审查，但角色输出不能直接成为最终事实源，必须回到主控整合、判断、验证和回写。
 
@@ -273,7 +276,7 @@ Codex 当前缺少 Trae SOLO 这种产品化“主控自动调度角色团队”
 
 这一判断对 `spark-0021-subagent-review-orchestration-gap` 有直接影响：后续的“子 Agent 复核编排”不应只定义关闭前的审查表格，还应定义主控如何在业务层组织角色、如何在技术层并行查询和搜索、如何把角色输出 intake 成 accepted / rejected / deferred / needs-human，以及 Codex 缺少 SOLO 自动调度时应如何通过 LDVH 行动编排模拟该能力。
 
-## 2026-06-23 讨论补充：Claude 可学习机制与跨环境转换
+### 2026-06-23 讨论补充：Claude 可学习机制与跨环境转换
 
 本次讨论补充了 Claude Code 可供 LDVH 学习的机制。Claude Code 的 subagent 更接近完整角色容器：除了独立上下文和系统提示外，还可以围绕工具权限、permission mode、model、MCP、skills、hooks、memory、background 运行和工作区隔离形成边界。Claude 还区分单会话内的 subagent 和更实验性的 agent teams；后者包含 team lead、teammates、共享任务列表、mailbox、任务依赖、计划批准和 lead synthesis，更接近“主控 + 一群角色”的协作形态。
 
@@ -300,7 +303,7 @@ Codex 当前缺少 Trae SOLO 这种产品化“主控自动调度角色团队”
 
 结论是：Claude 的机制大多可以在 LDVH 中抽象成 Role Contract、ExecutionItem、Agent 调度、输出 intake、Human Gate 和 Hook/Code 校验；但在 Codex 中需要更多由 LDVH 机制主动补齐，因为 Codex 偏显式 spawn，没有 Claude agent teams 那样的团队层，也没有 Trae SOLO 那样的产品化主控面板。Trae 对“主控 + 角色团队”的转换更自然，但仍要防止 Trae 运行期任务、Spec/Plan 和智能体配置变成 LDVH 第二事实源。
 
-## 2026-06-23 讨论补充：LDVH v2 中的设计归属
+### 2026-06-23 讨论补充：LDVH v2 中的设计归属
 
 本次讨论进一步确认：在 LDVH v2 中，“主控调度角色 / 子 Agent 并行行动”不应被设计成一个孤立的新顶层组件，也不应把整套机制复制进每一个具体工作编排。更合适的做法是：在通用层定义一次调度机制，在每个实际工作编排中按需引用和实例化。
 
@@ -338,3 +341,27 @@ Codex 当前缺少 Trae SOLO 这种产品化“主控自动调度角色团队”
 这也回答了“设计思想是否要融合到每一个实际工作编排里”的问题：应当融合，但融合的是调度思想和引用点，不是复制机制正文。换句话说，`Role Contract` 是角色能力本体，`03` 是调用与治理语法，`30-59` 是具体场景用法，`21` 是审计记录。
 
 对后续 AI 研究落地的建议是：优先在 v2 草案中提出一个候选行动编排成员，例如“主控-角色调度编排”或“子 Agent 复核编排”。该候选成员应从 03 的通用机制派生，覆盖业务治理层和技术执行层两类需求：业务治理层处理稳定角色、复核和责任归属；技术执行层处理临时查询 worker、并行搜索、日志分析、代码探索和资料对照。Codex 因缺少 Trae SOLO 或 Claude agent teams 那样的产品化自动团队机制，需要由 LDVH 在 03/06 层补齐触发、输入、输出、等待、intake 和降级规则。
+
+### 2026-06-23 讨论补充：WorkBuddy 专家团机制参考
+
+本次补充了解了腾讯 WorkBuddy 的“专家团 / Expert Team”机制。公开资料显示，WorkBuddy 的产品定位更偏办公和业务流程场景中的 AI Agent Workbench：用户用一句自然语言描述目标，系统把任务交给多个行业专家协作，从策略到交付形成一站式结果。官方页面强调 WorkBuddy 有 100+ domain experts，覆盖运营、设计、数据、开发等角色，并支持多个专家并行协作。
+
+WorkBuddy 专家团的可学习结构包括：
+
+1. **专家中心**：用户可以从专家中心或公开专家广场调用已有专家或专家团，也可以创建自己的专属专家团。
+2. **自然语言创建专家团**：社区体验资料显示，用户可以用大白话说明领域，WorkBuddy 通过交互式问答逐步收集需求，再自动匹配 Skill、插件或 MCP 工具链，生成可执行的专家团队。
+3. **leader / 总监角色**：典型专家团中存在一个统筹角色，负责拆解需求、分派任务、把控方向和整合结果；其他专家分别承担研究、写作、标题、排版、校对、数据分析等子任务。
+4. **专家绑定工具链**：专家不是只有 prompt 或人设，而是由职责、Skill、插件、MCP、输入输出和协作逻辑共同组成。
+5. **企业资产沉淀**：企业版叙事强调把优秀员工经验沉淀为技能、专家或 AI 助理，并接入企业项目流程，同时通过成本、安全、权限和风险治理形成组织级 AI 资产。
+
+这说明 WorkBuddy 的专家团更像是“Role Contract + Skill/MCP 工具链 + leader 调度 + 可复用专家资产”的产品化形态。它与 Codex、Trae、Claude 的差异在于：Codex 更像显式 subagent 委派工具；Trae 更像 SOLO 主控加可调用智能体；Claude 更强调 subagent 容器和 agent teams；WorkBuddy 则把“组队、选专家、配工具、交付任务”包装成普通办公用户可直接使用的产品能力。
+
+对 LDVH 的吸收判断如下：
+
+1. LDVH 的 Role Contract 可以逐步产品化为“专家”资产，但专家本体仍应是环境无关契约，不绑定 WorkBuddy、Codex、Trae 或 Claude 的实现形态。
+2. 主控角色应显式存在。WorkBuddy 的 leader / 总监结构印证了 LDVH 需要把主控定义为调度者、仲裁者、证据回收者和事实源写回责任主体。
+3. 创建角色团队可以采用交互式问答，而不是要求 Human 一次性写完完整 prompt。LDVH 后续可让 AI 逐步询问领域、目标、角色、工具、权限、输出格式、审查规则和 Human Gate 条件。
+4. 专家能力应沉淀为组织资产。对应到 LDVH，就是 Role Contract、Skill、Agent、行动编排、WorkCase 记录和事实源回写共同形成可复用资产。
+5. WorkBuddy 的产品形态进一步证明：主控-角色机制不应停留在某个环境的 subagent API 层，而应成为 LDVH 自身的行动编排能力，再由 06 运行时扩展投影到不同环境。
+
+在 Codex 环境中，可以部分复刻 WorkBuddy 专家团模式，但复刻的是机制骨架，不是完整产品体验。可复刻的部分包括：用 Role Contract 定义专家，用 Codex custom agent TOML 或运行期 `spawn_agent` 承载专家，用主控 prompt / 行动编排拆解任务，用多个 explorer / worker / reviewer 并行处理不同输入，再由主控汇总、仲裁和写回事实源。难以原生复刻的部分包括：专家中心 UI、自然语言一键生成专家团、自动匹配 Skill / 插件 / MCP、团队运行面板、企业级资产治理和自动化团队调度习惯。这些需要 LDVH 通过 03 行动编排、06 运行时扩展、04 Code 校验和 05 Web 界面逐步补齐。
