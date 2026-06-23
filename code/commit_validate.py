@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""检查 Git commit message 是否符合 specs/10-Git提交规范.md 格式。
+"""检查 Git commit message 是否符合 specs/07-事实源边界与Git追溯规范.md。
 
 功能：
   - 默认模式：检查最近 N 条 git commit 记录
@@ -17,21 +17,26 @@ from typing import Optional
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+COMMIT_SPEC_PATH = "specs/07-事实源边界与Git追溯规范.md"
+COMMIT_TYPE_SPEC_PATH = "specs/attachments/07.Att.02-Commit-Type枚举表.md"
+COMMIT_SCOPE_SPEC_PATH = "specs/attachments/07.Att.03-Commit-Scope推荐表.md"
+COMMIT_BODY_SPEC_PATH = "specs/attachments/07.Att.04-Commit-Body必填条件表.md"
+COMMIT_FIELD_SPEC_PATH = "specs/attachments/07.Att.08-Commit-Message字段表.md"
 
-# specs/10-Git提交规范.md type 枚举
+# specs/attachments/07.Att.02-Commit-Type枚举表.md type 枚举
 VALID_TYPES = {
     "build", "chore", "ci", "docs", "feat", "fix", "perf",
     "refactor", "revert", "style", "test",
 }
 
-# specs/10-Git提交规范.md scope 枚举（推荐值，非强制）
+# specs/attachments/07.Att.03-Commit-Scope推荐表.md scope 推荐值（非强制）
 RECOMMENDED_SCOPES = {
     "specs", "docs", "rules", "code", "web", "tests", "config",
     "workcase", "adr", "spark", "study", "pitfall",
     "studies", "sources",
 }
 
-# specs/10-Git提交规范.md: description 推荐不超过 72 字符
+# specs/attachments/07.Att.08-Commit-Message字段表.md: description 推荐不超过 72 字符
 MAX_SUBJECT_LEN = 72
 
 # 第一行格式: <type>[optional scope][!]: <description>
@@ -55,7 +60,7 @@ BODY_MIN_CHARS = 30
 HAS_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
 
 FORMAT_HELP = """\
-正确的 commit message 格式（specs/10-Git提交规范.md）：
+正确的 commit message 格式（{commit_spec_path}）：
 
     <type>[optional scope][!]: <description>
 
@@ -63,12 +68,12 @@ FORMAT_HELP = """\
     [optional footer(s)]
 
 各部分说明：
-  type      必填。变更类型闭集：{valid_types}
-  scope     可选。影响范围优先使用推荐值：{valid_scopes}
+  type      必填。变更类型闭集见 {commit_type_spec_path}：{valid_types}
+  scope     可选。影响范围优先使用 {commit_scope_spec_path} 推荐值：{valid_scopes}
   !         可选。表示破坏性变更
   description 必填。简短描述，不超过 72 字符
-  body      条件必填。推荐使用结构化语义清单说明动机、关键变更、影响边界、验证结论与风险
-  footer    可选。遵守 Conventional Commits / git trailer，例如 BREAKING CHANGE、Refs、Co-authored-by
+  body      条件必填，条件见 {commit_body_spec_path}。推荐使用结构化语义清单说明动机、关键变更、影响边界、验证结论与风险
+  footer    可选，字段契约见 {commit_field_spec_path}。遵守 Conventional Commits / git trailer，例如 BREAKING CHANGE、Refs、Co-authored-by
 
 注意：
   footer 不得替代 body 的语义清单；LDVH 不定义 Human-Gate、Verification、Risk 作为标准必填 trailer
@@ -86,6 +91,11 @@ FORMAT_HELP = """\
   验证结论:
   - 已确认提交预检能识别格式错误和明显空泛正文。
 """.format(
+    commit_spec_path=COMMIT_SPEC_PATH,
+    commit_type_spec_path=COMMIT_TYPE_SPEC_PATH,
+    commit_scope_spec_path=COMMIT_SCOPE_SPEC_PATH,
+    commit_body_spec_path=COMMIT_BODY_SPEC_PATH,
+    commit_field_spec_path=COMMIT_FIELD_SPEC_PATH,
     valid_types=", ".join(sorted(VALID_TYPES)),
     valid_scopes=", ".join(sorted(RECOMMENDED_SCOPES)),
 )
@@ -353,7 +363,7 @@ def check_message(message_text: str, touched_files: Optional[list[str]] = None) 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="检查 Git commit message 是否符合 specs/10-Git提交规范.md 格式"
+        description=f"检查 Git commit message 是否符合 {COMMIT_SPEC_PATH}"
     )
     parser.add_argument(
         "--show-format", action="store_true",
@@ -440,7 +450,7 @@ def main():
                 error_count += 1
 
     if total_issues == 0:
-        print(f"最近 {args.count} 条 commit 格式均符合 specs/10-Git提交规范.md 要求")
+        print(f"最近 {args.count} 条 commit 格式均符合 {COMMIT_SPEC_PATH} 要求")
     else:
         print(f"\n共 {total_issues} 个问题（{error_count} 个 error），检查了 {len(commits)} 条 commit")
         if error_count > 0:

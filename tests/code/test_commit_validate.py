@@ -215,10 +215,20 @@ def test_check_message_valid():
 def test_check_message_requires_body_for_staged_specs_file():
     text = "docs(specs): 明确提交正文语义"
 
-    issues = checker.check_message(text, touched_files=["specs/10-Git提交规范.md"])
+    issues = checker.check_message(text, touched_files=["specs/07-事实源边界与Git追溯规范.md"])
     errors = [i for i in issues if i.level == "error"]
 
     assert any("要求 commit body 非空" in i.message for i in errors)
+
+
+def test_show_format_uses_v2_commit_spec(capsys):
+    checker.show_format()
+
+    output = capsys.readouterr().out
+
+    assert "specs/07-事实源边界与Git追溯规范.md" in output
+    assert "specs/attachments/07.Att.02-Commit-Type枚举表.md" in output
+    assert "specs/10-Git提交规范.md" not in output
 
 
 def test_body_mainly_commands_warns():
