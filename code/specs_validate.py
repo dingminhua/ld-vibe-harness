@@ -11,11 +11,23 @@ if str(CODE_DIR) not in sys.path:
     sys.path.insert(0, str(CODE_DIR))
 
 
+def _project_root_fast():
+    return Path(__file__).resolve().parent.parent
+
+
+def _default_workspace_root_path_fast():
+    project_root = _project_root_fast()
+    parent_root = project_root.parent
+    if (parent_root / "LDVH-GOVERNED-PROJECTS.yaml").exists():
+        return parent_root
+    return project_root
+
+
 def _fast_preflight_main(argv):
     from spec_checks import preflight as preflight_checks
 
     parser = argparse.ArgumentParser(description="执行受控写入前只读检查，不授权写入。")
-    parser.add_argument("--root", default=str(Path(__file__).resolve().parent.parent), help="项目根目录，默认使用当前工具所在项目。")
+    parser.add_argument("--root", default=str(_project_root_fast()), help="项目根目录，默认使用当前工具所在项目。")
     parser.add_argument("--target-path", required=True, help="准备写入的目标路径，可为相对或绝对路径。")
     parser.add_argument("--operation", choices=["create", "update", "delete", "move", "rename"], default="update", help="准备执行的写入类型，默认 update。")
     parser.add_argument("--field-path", default=None, help="可选字段路径；第一版仅暴露降级诊断，不做字段级 Schema 校验。")
@@ -73,14 +85,14 @@ def _fast_governed_projects_main(argv):
     parser = argparse.ArgumentParser(description="检查工作区根目录管辖项目配置。")
     parser.add_argument("--root", default=str(_default_workspace_root_fast(governed_projects_checks)), help="工作区根目录，默认自动定位。")
     args = parser.parse_args(argv)
-    governed_projects_checks.PROJECT_ROOT = Path(__file__).resolve().parent.parent
+    governed_projects_checks.PROJECT_ROOT = _project_root_fast()
     return governed_projects_checks.main(args.root)
 
 
 def _fast_deployment_entries_main(argv):
     from spec_checks import deployment_entries as deployment_entries_checks
 
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = _project_root_fast()
     parser = argparse.ArgumentParser(description="检查固定运行时扩展登记表与承载物自描述是否一致。")
     parser.add_argument("--root", default=str(project_root), help="项目根目录，默认使用当前工具所在项目。")
     args = parser.parse_args(argv)
@@ -129,7 +141,7 @@ def _fast_field_registry_main(argv):
 def _fast_doc_main(argv):
     from spec_checks import doc_structure as doc_structure_checks
 
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = _project_root_fast()
     parser = argparse.ArgumentParser(description="检查 specs Markdown 文档是否符合 03 文档基础规范的章节编号要求。")
     parser.add_argument("paths", nargs="*", default=[str(project_root / "specs")], help="要检查的 Markdown 文件或目录，默认检查 specs/。")
     args = parser.parse_args(argv)
@@ -140,7 +152,7 @@ def _fast_doc_main(argv):
 def _fast_refs_main(argv):
     from spec_checks import refs as refs_checks
 
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = _project_root_fast()
     parser = argparse.ArgumentParser(description="检查 specs Markdown 文档中的 § 引用是否存在。")
     parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
     args = parser.parse_args(argv)
@@ -154,13 +166,136 @@ def _fast_refs_main(argv):
 def _fast_assurance_main(argv):
     from spec_checks import assurance as assurance_checks
 
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = _project_root_fast()
     parser = argparse.ArgumentParser(description="检查 specs 正式规范的规范保障要求表。")
     parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
     args = parser.parse_args(argv)
     assurance_checks.PROJECT_ROOT = project_root
     assurance_checks.FORMAL_SPECS_DIR = project_root / "specs"
     return assurance_checks.main(args.paths)
+
+
+def _fast_assurance_report_main(argv):
+    from spec_checks import assurance_report as assurance_report_checks
+
+    project_root = _project_root_fast()
+    parser = argparse.ArgumentParser(description="生成 specs 规范保障要求聚合报告。")
+    parser.add_argument("paths", nargs="*", default=None, help="要聚合的 Markdown 文件或目录，默认检查 specs/ 根目录正式规范。")
+    parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+    args = parser.parse_args(argv)
+    assurance_report_checks.PROJECT_ROOT = project_root
+    assurance_report_checks.FORMAL_SPECS_DIR = project_root / "specs"
+    assurance_report_checks.DOCS_DIR = project_root / "docs"
+    return assurance_report_checks.assurance_report_main(args.paths, args.format)
+
+
+def _fast_ldvh_assurance_check_main(argv):
+    from spec_checks import ldvh_assurance as ldvh_assurance_checks
+
+    project_root = _project_root_fast()
+    parser = argparse.ArgumentParser(description="生成 42 LDVH部署与适配检查派生报告。")
+    parser.add_argument("--workspace-root", default=str(_default_workspace_root_path_fast()), help="包含 LDVH-GOVERNED-PROJECTS.yaml 的工作区根目录，默认自动定位。")
+    parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+    args = parser.parse_args(argv)
+    ldvh_assurance_checks.PROJECT_ROOT = project_root
+    ldvh_assurance_checks.SPECS_DIR = project_root / "specs"
+    ldvh_assurance_checks.LEGACY_SPECS_DIR = project_root / "docs" / "specs"
+    ldvh_assurance_checks.FORMAL_SPECS_DIR = project_root / "specs"
+    ldvh_assurance_checks.DOCS_DIR = project_root / "docs"
+    return ldvh_assurance_checks.ldvh_assurance_check_main(args.workspace_root, args.format)
+
+
+def _fast_assurance_plan_main(argv):
+    from spec_checks import ldvh_assurance as ldvh_assurance_checks
+
+    project_root = _project_root_fast()
+    parser = argparse.ArgumentParser(description="生成只读 assurance-plan 聚合计划视图。")
+    parser.add_argument("--workspace-root", default=str(_default_workspace_root_path_fast()), help="工作区根目录，默认自动定位。")
+    parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+    args = parser.parse_args(argv)
+    ldvh_assurance_checks.PROJECT_ROOT = project_root
+    ldvh_assurance_checks.SPECS_DIR = project_root / "specs"
+    ldvh_assurance_checks.LEGACY_SPECS_DIR = project_root / "docs" / "specs"
+    ldvh_assurance_checks.FORMAL_SPECS_DIR = project_root / "specs"
+    ldvh_assurance_checks.DOCS_DIR = project_root / "docs"
+    return ldvh_assurance_checks.assurance_plan_main(args.workspace_root, args.format)
+
+
+def _fast_web_validate_main(argv):
+    from spec_checks import web_validate as web_validate_checks
+
+    project_root = _project_root_fast()
+    parser = argparse.ArgumentParser(description="生成 Web Validate 页面只读数据合同。")
+    parser.add_argument("--workspace-root", default=str(_default_workspace_root_path_fast()), help="工作区根目录，默认自动定位。")
+    parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
+    args = parser.parse_args(argv)
+    web_validate_checks.PROJECT_ROOT = project_root
+    web_validate_checks.SPECS_DIR = project_root / "specs"
+    web_validate_checks.LEGACY_SPECS_DIR = project_root / "docs" / "specs"
+    web_validate_checks.FORMAL_SPECS_DIR = project_root / "specs"
+    web_validate_checks.DOCS_DIR = project_root / "docs"
+    return web_validate_checks.web_validate_main(args.workspace_root, args.format)
+
+
+def _fast_consistency_main(argv):
+    from spec_checks import consistency as consistency_checks
+
+    project_root = _project_root_fast()
+    parser = argparse.ArgumentParser(description="检查集合状态消费、工作模型骨架和 02 术语状态一致性。")
+    parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
+    args = parser.parse_args(argv)
+    consistency_checks.PROJECT_ROOT = project_root
+    consistency_checks.SPECS_DIR = project_root / "specs"
+    return consistency_checks.consistency_main(args.paths)
+
+
+def _fast_index_main(argv):
+    from spec_checks import index as index_checks
+
+    project_root = _project_root_fast()
+    parser = argparse.ArgumentParser(description="生成 specs 文档派生索引和诊断结果（03.01 规范文档剖面）。")
+    parser.add_argument("--root", default=str(project_root), help="项目根目录，默认使用当前工具所在项目。")
+    parser.add_argument("--specs-dir", default="specs", help="要生成索引的规范目录，默认 specs。")
+    parser.add_argument("--out", default=None, help="输出目录；未提供时将完整索引输出到 stdout。")
+    parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态。")
+    args = parser.parse_args(argv)
+    index_checks.PROJECT_ROOT = project_root
+    try:
+        return index_checks.index_main(args.root, args.out, args.fail_on_diagnostics, args.specs_dir)
+    except index_checks.SpecsIndexError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+
+def _fast_all_main(argv):
+    project_root = _project_root_fast()
+    parser = argparse.ArgumentParser(description="运行 v2 active specs 综合检查。")
+    parser.add_argument("paths", nargs="*", default=None, help="要检查的 Markdown 文件或目录，默认检查 specs/。")
+    parser.add_argument("--root", default=str(project_root), help="项目根目录（用于 index 子命令）。")
+    parser.add_argument("--workspace-root", default=str(_default_workspace_root_path_fast()), help="工作区根目录（用于 governed-projects 检查），默认自动定位。")
+    parser.add_argument("--specs-dir", default=None, help="要生成索引的规范目录；未提供时根据 paths 推断，默认 specs。")
+    parser.add_argument("--out", default=None, help="输出目录（用于 index 子命令）；未提供时将完整索引输出到 stdout。")
+    parser.add_argument("--fail-on-diagnostics", action="store_true", help="存在 warning 或 error 诊断时返回非零状态（用于 index 子命令）。")
+    args = parser.parse_args(argv)
+    if args.paths:
+        from spec_checks import doc_structure as doc_structure_checks
+
+        doc_structure_checks.PROJECT_ROOT = project_root
+        return doc_structure_checks.main(args.paths)
+
+    from spec_checks import v2 as v2_checks
+
+    specs_dir = args.specs_dir or "specs"
+    v2_checks.PROJECT_ROOT = project_root
+    return v2_checks.v2_check_main(
+        args.root,
+        specs_dir,
+        "text",
+        args.fail_on_diagnostics,
+        input_scope="specs_v2",
+        query_layer="entry",
+        project_scope="current_project",
+    )
 
 
 if __name__ == "__main__" and len(sys.argv) > 1:
@@ -176,6 +311,13 @@ if __name__ == "__main__" and len(sys.argv) > 1:
         "doc": _fast_doc_main,
         "refs": _fast_refs_main,
         "assurance": _fast_assurance_main,
+        "assurance-report": _fast_assurance_report_main,
+        "ldvh-assurance-check": _fast_ldvh_assurance_check_main,
+        "assurance-plan": _fast_assurance_plan_main,
+        "web-validate": _fast_web_validate_main,
+        "consistency": _fast_consistency_main,
+        "index": _fast_index_main,
+        "all": _fast_all_main,
     }
     if sys.argv[1] in _FAST_COMMANDS:
         sys.exit(_FAST_COMMANDS[sys.argv[1]](sys.argv[2:]))

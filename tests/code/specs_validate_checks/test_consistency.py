@@ -1,5 +1,11 @@
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker, write_md
 from spec_checks import consistency as consistency_checks
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 def test_consistency_core_implementation_lives_in_spec_checks():
     assert checker.consistency_checks is consistency_checks
@@ -628,3 +634,16 @@ def test_consistency_skips_index_overrun_in_boundary_context(tmp_path):
 def test_consistency_removed_alias_does_not_match_number_range():
     assert not checker.consistency_line_has_removed_alias("对应 30-59 active 工作流程规范", ["41"])
     assert checker.consistency_line_has_removed_alias("对应 41 active 工作流程规范", ["41"])
+
+
+def test_consistency_script_fast_path_outputs_text():
+    result = subprocess.run(
+        [sys.executable, str(PROJECT_ROOT / "code" / "specs_validate.py"), "consistency"],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode in (0, 1)
+    assert "一致性检查" in result.stdout

@@ -1,5 +1,11 @@
 import json
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker, write_md
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 # ══════════════════════════════════════════════════════════════════════
 # assurance-report — 规范保障要求聚合报告
@@ -299,3 +305,42 @@ def test_classify_runtime_projection_remediation():
     assert checker._classify_runtime_projection_remediation(
         {"content": "第三方 Skill 接管后应检查同步", "title": "", "id": ""}
     ) == "skill_projection_check"
+
+
+def test_assurance_report_script_fast_path_outputs_json():
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "assurance-report",
+            "--format",
+            "json",
+        ],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["metadata"]["report"] == "assurance-report"
+
+
+def test_assurance_plan_script_fast_path_outputs_text():
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "assurance-plan",
+            "--workspace-root",
+            str(PROJECT_ROOT.parent),
+        ],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode in (0, 1)
+    assert "# Assurance Plan (只读)" in result.stdout

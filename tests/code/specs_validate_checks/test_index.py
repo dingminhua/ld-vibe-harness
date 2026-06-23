@@ -1,6 +1,12 @@
 import json
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker, write_md
 from spec_checks import index as index_checks
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 def test_index_core_implementation_lives_in_spec_checks():
     assert checker.index_checks is index_checks
@@ -2158,3 +2164,27 @@ def test_index_main_outputs_json_to_stdout(tmp_path, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["metadata"]["tool"] == "code/specs_validate.py"
     assert payload["docs"]
+
+
+def test_index_script_fast_path_writes_outputs(tmp_path):
+    out_dir = tmp_path / "index"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "index",
+            "--root",
+            str(PROJECT_ROOT),
+            "--out",
+            str(out_dir),
+        ],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "已生成 specs 文档派生索引与诊断结果" in result.stdout
+    assert (out_dir / "specs-docs-index.json").exists()

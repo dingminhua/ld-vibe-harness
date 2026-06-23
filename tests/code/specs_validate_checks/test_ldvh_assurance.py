@@ -1,8 +1,14 @@
 import json
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker, write_md
 from spec_checks import ldvh_assurance as ldvh_assurance_checks
 from .test_assurance_report import build_assurance_report_fixture
 from .test_governed_projects import write_governed_projects
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 # ══════════════════════════════════════════════════════════════════════
 # ldvh-assurance-check — 42 LDVH部署与适配检查派生报告
@@ -165,3 +171,26 @@ def test_ldvh_assurance_check_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["metadata"]["bootstrap_baseline_source"] == "docs/studies/42-ldvh-assurance-check-LDVH部署与适配检查.md (已退回 studies，待重新设计)"
     assert payload["bootstrap_baseline"]["summary"]["item_count"] == 10
     assert payload["remaining_gaps"]
+
+
+def test_ldvh_assurance_check_script_fast_path_outputs_json():
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "ldvh-assurance-check",
+            "--workspace-root",
+            str(PROJECT_ROOT.parent),
+            "--format",
+            "json",
+        ],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode in (0, 1)
+    assert payload["metadata"]["report"] == "ldvh-assurance-check"
+    assert "summary" in payload

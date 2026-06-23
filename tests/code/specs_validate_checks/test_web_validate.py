@@ -1,7 +1,13 @@
 import json
+import subprocess
+import sys
+from pathlib import Path
+
 from .common import checker
 from spec_checks import web_validate as web_validate_checks
 from .test_ldvh_assurance import build_ldvh_assurance_check_fixture
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 # ── web-validate 子命令测试 ──────────────────────────────────────
 
@@ -95,3 +101,26 @@ def test_web_validate_cli_outputs_json_without_failing_on_open_status(tmp_path, 
     assert exit_code == 0
     assert payload["command"] == "web_validate"
     assert payload["reports"]["assuranceCheck"]["summary"]["status"] == "open"
+
+
+def test_web_validate_script_fast_path_outputs_json():
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PROJECT_ROOT / "code" / "specs_validate.py"),
+            "web-validate",
+            "--workspace-root",
+            str(PROJECT_ROOT.parent),
+            "--format",
+            "json",
+        ],
+        cwd=PROJECT_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["command"] == "web_validate"
+    assert "reports" in payload
