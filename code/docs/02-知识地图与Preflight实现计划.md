@@ -114,3 +114,9 @@ preflight 输出应优先给出机器可消费诊断，同时保留 Human 可读
 2. preflight 输出状态是否采用 `pass`、`blocked`、`needs_human_gate`、`degraded` 的闭集；
 3. 第一版 preflight 是否只面向 LDVH 产品资产，管辖项目事实源留到 v2 正式生效后；
 4. 是否在 Web 介入前先提供只读 JSON 输出，供 AI 和 CLI 消费。
+
+## 10. 实施记录
+
+| 日期 | 阶段 | 结果 | 验证 |
+|---|---|---|---|
+| 2026-06-23 | KM-1 基线固化 | 已补充当前 `v2-check` JSON/text 输出、relation type 过滤、raw 降级、start node 回退和非法参数诊断测试；未改变实现行为 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q`、`npm run test:code` |
