@@ -303,28 +303,36 @@ def ldvh_bootstrap_baseline_build(workspace_root, checks, governed_issues, runti
         index_issues,
     ))
 
-    capability_path = SPECS_DIR / "04.02-LDVH能力资产与保障机制规范.md"
-    environment_path = SPECS_DIR / "04.03-环境入口适配与部署规范.md"
+    runtime_spec_path = SPECS_DIR / "06-运行时扩展规范.md"
+    fixed_registry_path = SPECS_DIR / "attachments" / "06.Att.02-固定运行时扩展登记表.md"
+    deployment_checklist_path = SPECS_DIR / "attachments" / "06.Att.10-部署检查核对表.md"
     matrix_issues = []
-    if not capability_path.exists():
-        matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_CAPABILITY_SPEC_MISSING", "缺少 LDVH 能力资产规范文件", capability_path, "环境承接"))
+    if not runtime_spec_path.exists():
+        matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_RUNTIME_SPEC_MISSING", "缺少运行时扩展规范文件", runtime_spec_path, "环境承接"))
     else:
-        capability_text = capability_path.read_text(encoding="utf-8")
-        for asset_type in ["Rules 资产"]:
-            if asset_type not in capability_text:
-                matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_CAPABILITY_ASSET_MISSING", f"能力资产规范缺少固定资产类型: {asset_type}", capability_path, "环境承接"))
-    if not environment_path.exists():
-        matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_ENV_ENTRY_SPEC_MISSING", "缺少环境入口适配与部署规范文件", environment_path, "环境承接"))
+        runtime_text = runtime_spec_path.read_text(encoding="utf-8")
+        for required_term in ["固定运行时扩展", "环境适配", "部署检查"]:
+            if required_term not in runtime_text:
+                matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_RUNTIME_TERM_MISSING", f"运行时扩展规范缺少关键口径: {required_term}", runtime_spec_path, "环境承接"))
+    if not fixed_registry_path.exists():
+        matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_RUNTIME_REGISTRY_MISSING", "缺少固定运行时扩展登记表", fixed_registry_path, "环境承接"))
     else:
-        environment_text = environment_path.read_text(encoding="utf-8")
-        for environment in ["Trae CN", "Trae 国际版", "Codex App"]:
-            if environment not in environment_text:
-                matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_ENV_ENTRY_MISSING", f"环境入口适配规范缺少入口: {environment}", environment_path, "环境承接"))
+        fixed_registry_text = fixed_registry_path.read_text(encoding="utf-8")
+        for entry_type in ["Rules", "Skill", "Hook"]:
+            if entry_type not in fixed_registry_text:
+                matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_RUNTIME_REGISTRY_TYPE_MISSING", f"固定运行时扩展登记表缺少承载物类型: {entry_type}", fixed_registry_path, "环境承接"))
+    if not deployment_checklist_path.exists():
+        matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_DEPLOYMENT_CHECKLIST_MISSING", "缺少部署检查核对表", deployment_checklist_path, "环境承接"))
+    else:
+        deployment_checklist_text = deployment_checklist_path.read_text(encoding="utf-8")
+        for stage in ["部署前", "部署执行", "部署后", "声明完成前"]:
+            if stage not in deployment_checklist_text:
+                matrix_issues.append(ldvh_bootstrap_issue("BOOTSTRAP_DEPLOYMENT_STAGE_MISSING", f"部署检查核对表缺少阶段: {stage}", deployment_checklist_path, "环境承接"))
     items.append(ldvh_bootstrap_baseline_item(
         "environment_matrix",
-        "环境入口与能力资产检查",
+        "运行时扩展登记与部署检查",
         "open" if matrix_issues else "closed",
-        "checked 04.02 capability assets and 04.03 environment entries",
+        "checked 06 runtime extension registry and deployment checklist",
         None,
         matrix_issues,
     ))

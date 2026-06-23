@@ -4,9 +4,10 @@ ldvh_asset:
   status: "active"
   canonical_path: "hooks/ldvh-hooks.yaml"
   source_specs:
-    - "specs/44-git-commit-orchestration-Git提交编排.md"
-    - "specs/10-Git提交规范.md"
-    - "specs/04.02-LDVH能力资产与保障机制规范.md"
+    - "specs/03-行动编排规范.md"
+    - "specs/07-事实源边界与Git追溯规范.md"
+    - "specs/06-运行时扩展规范.md"
+    - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
   consumption_scenarios:
     - "LDVH 统一 Hook 事件登记"
     - "提交消息本地或环境前置校验"
@@ -22,18 +23,19 @@ ldvh_asset:
     - "python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>"
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:
-    - "specs/44-git-commit-orchestration-Git提交编排.md 提交行动编排或 Hook 边界变化"
-    - "specs/10-Git提交规范.md 提交格式或门禁规则变化"
+    - "specs/03-行动编排规范.md 提交行动编排或 Hook 边界变化"
+    - "specs/07-事实源边界与Git追溯规范.md 提交格式或门禁规则变化"
     - "code/commit_validate.py CLI 参数或错误等级变化"
     - "code/hook_dispatch.py 事件参数、执行语义或 registry schema 变化"
-    - "specs/04.02-LDVH能力资产与保障机制规范.md Hook 资产规则变化"
-  deprecation: "废弃或拆分前必须同步 04.02、10、0074、deployment-entries 和所有环境适配入口。"
+    - "specs/06-运行时扩展规范.md Hook 资产规则变化"
+    - "specs/attachments/06.Att.02-固定运行时扩展登记表.md Hook 登记变化"
+  deprecation: "废弃或拆分前必须同步 03、06、07、deployment-entries 和所有环境适配入口。"
 
 hooks:
   - id: "ldvh-git-commit-message"
     event: "git.commit-msg"
     status: "active"
-    description: "校验 Git commit message 是否符合 specs/10。"
+    description: "校验 Git commit message 是否符合 specs/07。"
     blocking: true
     inputs:
       message_file:

@@ -7,10 +7,11 @@ ldvh_asset:
   status: "active"
   canonical_path: "rules/LDVH-WORKSPACE-ENTRY.md"
   source_specs:
-    - "specs/01-目录说明.md"
-    - "specs/03.04-管辖项目配置规范.md"
-    - "specs/04.02-LDVH能力资产与保障机制规范.md"
-    - "specs/04.03-环境入口适配与部署规范.md"
+    - "specs/01-规范体系基础规范.md"
+    - "specs/02-事实模型基础规范.md"
+    - "specs/06-运行时扩展规范.md"
+    - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
+    - "specs/07-事实源边界与Git追溯规范.md"
   consumption_scenarios:
     - "工作区级管辖项目识别"
     - "管辖项目工作对象处理"
@@ -31,12 +32,12 @@ ldvh_asset:
     - "管辖项目配置规则变化"
     - "工作区入口职责变化"
     - "环境入口适配或薄引用规则变化"
-    - "固定能力资产登记规则变化"
-  deprecation: "废弃、重命名或合并工作区入口前必须评估 Human Gate，并同步 01、04.02、04.03 和 Code 检查。"
+    - "固定运行时扩展登记规则变化"
+  deprecation: "废弃、重命名或合并工作区入口前必须评估 Human Gate，并同步 01、02、06、07 和 Code 检查。"
 ```
 
 > 文件性质：工作区级 Rules 入口资产，不是 specs 正式规范或最终事实源
-> 规范来源：`specs/01-目录说明.md`、`specs/03.04-管辖项目配置规范.md`、`specs/04.02-LDVH能力资产与保障机制规范.md`、`specs/04.03-环境入口适配与部署规范.md`
+> 规范来源：`specs/01-规范体系基础规范.md`、`specs/02-事实模型基础规范.md`、`specs/06-运行时扩展规范.md`、`specs/attachments/06.Att.02-固定运行时扩展登记表.md`、`specs/07-事实源边界与Git追溯规范.md`
 > 适用范围：安装或使用 LDVH 的工作区级入口、管辖项目识别、管辖项目工作对象处理和 dogfood 管辖判断
 
 ---
@@ -44,9 +45,9 @@ ldvh_asset:
 
 这个文件用于工作区级薄入口。它告诉 AI：当前工作区是否使用 LDVH、LDVH 管哪些项目、如何进入管辖项目的事实源和工作对象。
 
-它不是最终事实源。正式规则以 `specs/` 为准，管辖项目清单以工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 为准，环境入口适配、部署和检查方法以 `specs/04.03-环境入口适配与部署规范.md` 为准。
+它不是最终事实源。正式规则以 `specs/` 为准，管辖项目清单以工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 为准，环境入口适配、部署和检查方法以 `specs/06-运行时扩展规范.md` 为准。
 
-环境入口、项目规则、工作区配置或会话提示只应通过薄引用措施指向本文件，不应复制本文正文或 specs 正文。薄引用正文只应包含入口指向、压缩或恢复后的重读提示，以及 LDVH 管理段开始和结束标记。
+环境入口、项目规则、工作区配置或会话提示只应通过薄引用措施指向本文件，不应复制本文正文或 specs 正文。薄引用正文只应包含入口指向、压缩或恢复后的重读提示，以及 LDVH 管理段开始和结束标记。当前固定运行时扩展登记见 `specs/attachments/06.Att.02-固定运行时扩展登记表.md`。
 
 ---
 ## 2. 入口职责
@@ -82,12 +83,12 @@ AI 进入工作区入口后，应按以下顺序启动：
 | 查询目标 | 优先命令 | 用途 |
 |---|---|---|
 | 管辖项目配置 | `python3 code/specs_validate.py governed-projects` | 检查工作区根目录管辖项目配置 |
-| specs 规范入口和章节 | `python3 code/specs_validate.py index` | 生成规范派生索引，辅助定位文件、章节、引用和诊断 |
+| specs 规范入口和章节 | `python3 code/specs_validate.py v2-check --format text` | 生成 v2 active 规范诊断和知识地图派生预览 |
 | 工作对象列表 | `python3 code/fact_cli.py list <type>` | 查询当前项目 WorkCase、ADR、Spark、Pitfall 或 Study 摘要 |
 | 工作对象详情 | `python3 code/fact_cli.py show <id>` | 查询单个工作对象详情 |
 | 工作对象搜索 | `python3 code/fact_cli.py search <keyword>` | 按关键词搜索工作对象事实源 |
 | 工作对象统计 | `python3 code/fact_cli.py stats` | 统计工作对象状态分布 |
-| Rules 环境入口接入 | 按 `specs/04.03-环境入口适配与部署规范.md` §4.1-§4.4 执行 | 官方维护 Codex App 适配路径；默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口 |
+| Rules 环境入口接入 | 按 `specs/06-运行时扩展规范.md` §4.1-§4.4 执行 | 官方维护 Codex App 适配路径；默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口 |
 
 工具输出只作为导航、聚合和诊断结果，不替代权威文件原文。当工具不可用、输出无法回指事实源、结果与原文冲突或当前场景超出工具能力时，应退回 Git 文件事实源、对应规范和人工降级检查。
 
@@ -96,15 +97,15 @@ AI 进入工作区入口后，应按以下顺序启动：
 
 | 场景 | 先用工具 | 必读权威入口 |
 |---|---|---|
-| 判断当前是否为管辖项目 | `governed-projects` | `LDVH-GOVERNED-PROJECTS.yaml`、`specs/03.04-管辖项目配置规范.md` |
-| 新增、删除或修改管辖项目条目 | `governed-projects` | `specs/03.04-管辖项目配置规范.md`、Human Gate |
-| 处理管辖项目工作对象 | `fact_cli.py list/search/show/stats` | 对应项目 `ldvh-base/`、`specs/05-事实模型基础规范.md`、`specs/03.02-事实模型文档规范.md` 和对应 `specs/20-29` 事实模型规范 |
-| 处理管辖项目 Git 提交记录 | Git 历史和必要校验 | 管辖项目 Git commit records、`specs/10-Git提交规范.md` |
-| 读取或修改管辖项目文档 | 项目约定、README、用户指令 | 项目自有文档位置、`specs/03-文档基础规范.md`、`specs/09-事实源边界与承载规范.md` |
-| 执行 LDVH 部署适配或接入检查 | `governed-projects`、`assurance-report` | `specs/04.03-环境入口适配与部署规范.md`、`specs/06-行动编排基础规范.md`、`specs/03.03-行动编排文档规范.md`、`specs/30-59` 中实际存在的 active 行动编排主文件 |
+| 判断当前是否为管辖项目 | `governed-projects` | `LDVH-GOVERNED-PROJECTS.yaml`、`specs/06-运行时扩展规范.md` |
+| 新增、删除或修改管辖项目条目 | `governed-projects` | `specs/06-运行时扩展规范.md`、Human Gate |
+| 处理管辖项目工作对象 | `fact_cli.py list/search/show/stats` | 对应项目 `ldvh-base/`、`specs/02-事实模型基础规范.md` 和对应 `specs/20-29` 事实模型规范 |
+| 处理管辖项目 Git 提交记录 | Git 历史和必要校验 | 管辖项目 Git commit records、`specs/07-事实源边界与Git追溯规范.md` |
+| 读取或修改管辖项目文档 | 项目约定、README、用户指令 | 项目自有文档位置、`specs/01-规范体系基础规范.md`、`specs/07-事实源边界与Git追溯规范.md` |
+| 执行 LDVH 部署适配或接入检查 | `governed-projects`、`v2-check` | `specs/06-运行时扩展规范.md`、`specs/03-行动编排规范.md` |
 | 维护 LDVH 产品资产 | `index` | 转入 `rules/LDVH-MAINTAINER-ENTRY.md` |
 
-遇到“对应 `specs/20-29` 事实模型规范”时，应按 `specs/03.02-事实模型文档规范.md` 的成员自描述契约和成员主文件定位具体文件；遇到“对应 `specs/30-59` 行动编排规范”时，应按 `specs/03.03-行动编排文档规范.md` 的成员自描述契约和实际存在的成员主文件定位具体文件。
+遇到“对应 `specs/20-29` 事实模型规范”时，应按 `specs/02-事实模型基础规范.md` 的成员自描述契约和成员主文件定位具体文件；遇到“对应 `specs/30-59` 行动编排规范”时，应按 `specs/03-行动编排规范.md` 的成员自描述契约和实际存在的成员主文件定位具体文件。
 
 ---
 ## 5. STOP 点
@@ -126,9 +127,9 @@ AI 进入工作区入口后，应按以下顺序启动：
 
 修改本文后，应检查：
 
-1. `specs/01-目录说明.md`；
-2. `specs/03.04-管辖项目配置规范.md`；
-3. `specs/04.02-LDVH能力资产与保障机制规范.md`；
-4. `specs/04.03-环境入口适配与部署规范.md`；
+1. `specs/01-规范体系基础规范.md`；
+2. `specs/02-事实模型基础规范.md`；
+3. `specs/06-运行时扩展规范.md`；
+4. `specs/07-事实源边界与Git追溯规范.md`；
 5. `rules/LDVH-MAINTAINER-ENTRY.md`；
 6. 已授权的工作区级薄入口。

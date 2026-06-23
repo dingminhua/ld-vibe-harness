@@ -958,7 +958,7 @@ def build_parser():
     runtime_projection_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 
     # deployment-entries
-    deployment_entries_parser = subparsers.add_parser("deployment-entries", help="检查 LDVH 能力资产与 04.02 定义是否一致。")
+    deployment_entries_parser = subparsers.add_parser("deployment-entries", help="检查固定运行时扩展登记表与承载物自描述是否一致。")
     deployment_entries_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
 
     # human-gate

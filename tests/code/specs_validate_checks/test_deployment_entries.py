@@ -1,6 +1,10 @@
 from .common import checker, write_md
 from spec_checks import deployment_entries as deployment_entries_checks
 
+
+DEPLOYMENT_REGISTRY_PATH = "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
+
+
 def write_deployment_entries_fixture(tmp_path):
     for path, title, asset_id in [
         ("LDVH-WORKSPACE-ENTRY.md", "LDVH 工作区入口", "ldvh-workspace-entry"),
@@ -19,7 +23,7 @@ ldvh_asset:
   status: "active"
   canonical_path: "{canonical_path}"
   source_specs:
-    - "specs/04.02-LDVH能力资产与保障机制规范.md"
+    - "{DEPLOYMENT_REGISTRY_PATH}"
   consumption_scenarios:
     - "测试场景"
   inputs:
@@ -34,19 +38,19 @@ ldvh_asset:
   deprecation: "测试废弃规则"
 ```
 
-LDVH 能力资产与保障机制定义见 `specs/04.02-LDVH能力资产与保障机制规范.md`。
+固定运行时扩展登记见 `{DEPLOYMENT_REGISTRY_PATH}`。
 """,
         )
     write_md(
         tmp_path / "hooks" / "ldvh-hooks.yaml",
-        """
+        f"""
 ldvh_asset:
   id: "ldvh-hook-registry"
   type: "hook"
   status: "active"
   canonical_path: "hooks/ldvh-hooks.yaml"
   source_specs:
-    - "specs/10-Git提交规范.md"
+    - "{DEPLOYMENT_REGISTRY_PATH}"
   consumption_scenarios:
     - "测试场景"
   inputs:
@@ -69,10 +73,10 @@ hooks:
     )
     write_md(
         tmp_path / "skills" / "ldvh-git-commit" / "SKILL.md",
-        """
+        f"""
 ---
 name: ldvh-git-commit
-description: Prepare, validate, and create LDVH Git commits under specs/10.
+description: Prepare, validate, and create LDVH Git commits under specs/07.
 ---
 
 # LDVH Git Commit
@@ -84,7 +88,7 @@ ldvh_asset:
   status: "active"
   canonical_path: "skills/ldvh-git-commit/SKILL.md"
   source_specs:
-    - "specs/10-Git提交规范.md"
+    - "{DEPLOYMENT_REGISTRY_PATH}"
   consumption_scenarios:
     - "测试场景"
   inputs:
@@ -101,17 +105,18 @@ ldvh_asset:
 """,
     )
     return write_md(
-        tmp_path / "specs" / "04.02-LDVH能力资产与保障机制规范.md",
+        tmp_path / DEPLOYMENT_REGISTRY_PATH,
         """
-# LDVH 能力资产与保障机制规范
+# 固定运行时扩展登记表
 
-## 2. LDVH 能力资产
+## 2. 登记表
 
-| 能力资产类型 | 当前固定资产 | 适合保障 | 不适合保障 | 边界 |
-|---|---|---|---|---|
-| Rules 资产 | `rules/LDVH-WORKSPACE-ENTRY.md`、`rules/LDVH-MAINTAINER-ENTRY.md` | AI 入口分层 | 完整规范正文 | 只做薄入口 |
-| Skill 资产 | `skills/ldvh-git-commit/SKILL.md` | Git 提交流程 | 替代规范或 Code 校验 | 只做执行转换 |
-| Hook 资产 | `hooks/ldvh-hooks.yaml` | Git 提交消息校验 | 替代 Code 校验 | 只做统一登记 |
+| 类型 | 当前固定承载物 | 权威路径 | 边界 |
+|---|---|---|---|
+| Rules | 工作区入口 | `rules/LDVH-WORKSPACE-ENTRY.md` | 只做薄入口 |
+| Rules | 维护入口 | `rules/LDVH-MAINTAINER-ENTRY.md` | 只做维护入口 |
+| Skill | Git 提交 Skill | `skills/ldvh-git-commit/SKILL.md` | 只做执行转换 |
+| Hook | Hook registry | `hooks/ldvh-hooks.yaml` | 只做统一登记 |
 """,
     )
 
@@ -141,9 +146,10 @@ def test_deployment_entries_reports_missing_spec(tmp_path):
 def test_deployment_entries_reports_required_type_and_asset_problems(tmp_path):
     write_deployment_entries_fixture(tmp_path)
     (tmp_path / "rules" / "LDVH-MAINTAINER-ENTRY.md").unlink()
-    spec_path = tmp_path / "specs" / "04.02-LDVH能力资产与保障机制规范.md"
+    spec_path = tmp_path / DEPLOYMENT_REGISTRY_PATH
     text = spec_path.read_text(encoding="utf-8")
-    text = text.replace("| Rules 资产 | `rules/LDVH-WORKSPACE-ENTRY.md`、`rules/LDVH-MAINTAINER-ENTRY.md` | AI 入口分层 | 完整规范正文 | 只做薄入口 |\n", "")
+    text = text.replace("| Rules | 工作区入口 | `rules/LDVH-WORKSPACE-ENTRY.md` | 只做薄入口 |\n", "")
+    text = text.replace("| Rules | 维护入口 | `rules/LDVH-MAINTAINER-ENTRY.md` | 只做维护入口 |\n", "")
     spec_path.write_text(text, encoding="utf-8")
 
     codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
@@ -168,7 +174,7 @@ def test_deployment_entries_reports_forbidden_type_and_ai_entry_ref_missing(tmp_
 def test_deployment_entries_reports_missing_asset_metadata(tmp_path):
     write_deployment_entries_fixture(tmp_path)
     asset_path = tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md"
-    asset_path.write_text("# LDVH 工作区入口\n\nLDVH 能力资产与保障机制定义见 `specs/04.02-LDVH能力资产与保障机制规范.md`。\n", encoding="utf-8")
+    asset_path.write_text(f"# LDVH 工作区入口\n\n固定运行时扩展登记见 `{DEPLOYMENT_REGISTRY_PATH}`。\n", encoding="utf-8")
 
     codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
 
@@ -196,4 +202,4 @@ def test_deployment_entries_cli_is_in_all(tmp_path, monkeypatch, capsys):
     exit_code = checker.main(["deployment-entries", "--root", str(tmp_path)])
 
     assert exit_code == 0
-    assert "LDVH 能力资产检查通过" in capsys.readouterr().out
+    assert "固定运行时扩展登记检查通过" in capsys.readouterr().out
