@@ -52,6 +52,13 @@
 
 `code/spec_checks/` 是 specs 校验域的目标模块目录。该目录不存在时，新增 specs 校验能力可以先在兼容入口中实现，但必须在本文件或任务记录中说明后续归属；一旦创建该目录，新能力应优先进入对应模块。
 
+### 3.1 Code 文档清单
+
+| 文件 | 当前职责 |
+|---|---|
+| `code/docs/01-Code参考实现结构规范.md` | 维护 Code 参考实现的目录结构、模块拆分、命令入口、测试映射和 AI 修改顺序 |
+| `code/docs/02-知识地图与Preflight实现计划.md` | 规划知识地图只读投影、受控写入前检查、测试切分和渐进实现顺序 |
+
 ## 4. `specs_validate.py` 结构治理
 
 `code/specs_validate.py` 当前承担历史聚合入口职责。它可以继续作为 CLI 兼容层存在，但不应继续作为所有 specs 检查规则的默认实现落点。
@@ -94,6 +101,8 @@
 | LDVH 部署适配检查和保障计划 | `code/spec_checks/ldvh_assurance.py` | `ldvh_assurance_check_*`、`assurance_plan_*` |
 | Web Validate 派生数据压缩 | `code/spec_checks/web_validate.py` | `web_validate_*` |
 | specs 派生索引和诊断 | `code/spec_checks/index.py` | `SpecsChecker` 和 `INDEX_*` |
+| 知识地图只读投影 | `code/spec_checks/knowledge_map.py` | `code/spec_checks/v2.py` 中的当前知识地图预览逻辑 |
+| 受控写入前检查 | `code/spec_checks/preflight.py` | 尚未实现 |
 
 模块迁移应优先选择边界清楚、依赖少、测试覆盖明确的能力域；不得在一次迁移中同时改变行为和搬移大量不相关能力域。
 
@@ -160,6 +169,8 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 | `code/spec_checks/web_validate.py` | `tests/code/specs_validate_checks/test_web_validate.py` |
 | `code/spec_checks/index.py` | `tests/code/specs_validate_checks/test_index.py` |
 | `code/spec_checks/consistency.py` | `tests/code/specs_validate_checks/test_consistency.py` |
+| `code/spec_checks/knowledge_map.py` | `tests/code/specs_validate_checks/test_knowledge_map.py` |
+| `code/spec_checks/preflight.py` | `tests/code/specs_validate_checks/test_preflight.py` |
 | `code/fact_validate.py` | `tests/code/test_fact_validate.py` 或对应事实模型测试 |
 | `code/fact_cli.py` | `tests/code/test_fact_cli.py` 或 CLI 行为测试 |
 | `code/commit_validate.py` | `tests/code/test_commit_validate.py` |
@@ -187,4 +198,5 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 1. `specs_validate.py` 的主要检查能力域已迁入 `code/spec_checks/`；该文件当前只应承担 CLI 兼容、配置同步、常量/函数兼容引用和跨模块编排；
 2. `specs_validate.py` 的结构化输出字段、错误码和诊断格式仍需后续统一；
-3. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。
+3. 知识地图只读投影和受控写入 preflight 的实现计划已记录在 `code/docs/02-知识地图与Preflight实现计划.md`，尚未完成模块和 CLI；
+4. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。
