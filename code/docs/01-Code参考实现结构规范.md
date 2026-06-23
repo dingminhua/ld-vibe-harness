@@ -35,7 +35,6 @@
 | `code/fact_cli.py` | 工作对象事实源查询、展示、搜索和统计入口 | 查询能力扩展时应保持输出来源可追溯，必要时拆出共享读取层 |
 | `code/fact_validate.py` | 工作对象事实源校验入口 | 字段、状态和对象关系规则变化时同步测试；不得把 specs 规则复制为第二事实源 |
 | `code/commit_validate.py` | commit message 校验入口 | 保持轻量单一职责；规则变化应回到对应规范或行动编排 |
-| `code/fix_block_scalar.py` | YAML block scalar 辅助修复脚本 | 只作为定向辅助脚本，不扩张为通用写入工具 |
 
 `code/` 中新增文件前，应先判断是否属于既有能力域；若属于 specs 校验域，应优先进入 `code/spec_checks/` 目标结构，而不是新增新的根级大脚本。
 
@@ -49,6 +48,7 @@
 | `code/spec_checks/` | specs 校验、索引、聚合和诊断的能力域模块 | 工作对象事实源校验、Web UI 实现、长期规范正文 |
 | `code/docs/` | Code 参考实现结构、执行细则、命令说明和迁移计划 | LDVH 稳定规范规则、对象字段契约、状态机、Human Gate 权威条件 |
 | `tests/code/` | Code 参考实现测试、正反样例和回归测试 | specs 正文、长期事实源、Web 页面测试 |
+| `history/code-archive/` | 已退出 active `code/` 路径的历史辅助脚本 | 当前 Code 参考实现、默认 CLI、测试入口或运行时能力 |
 
 `code/spec_checks/` 是 specs 校验域的目标模块目录。该目录不存在时，新增 specs 校验能力可以先在兼容入口中实现，但必须在本文件或任务记录中说明后续归属；一旦创建该目录，新能力应优先进入对应模块。
 
@@ -58,6 +58,7 @@
 |---|---|
 | `code/docs/01-Code参考实现结构规范.md` | 维护 Code 参考实现的目录结构、模块拆分、命令入口、测试映射和 AI 修改顺序 |
 | `code/docs/02-知识地图与Preflight实现计划.md` | 规划知识地图只读投影、受控写入前检查、测试切分和渐进实现顺序 |
+| `code/docs/03-Code归档与性能审计.md` | 记录 active Code 路径归档判断、历史辅助脚本归档和 CLI 启动性能后续优化顺序 |
 
 ## 4. `specs_validate.py` 结构治理
 
@@ -200,4 +201,6 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 1. `specs_validate.py` 的主要检查能力域已迁入 `code/spec_checks/`；该文件当前只应承担 CLI 兼容、配置同步、常量/函数兼容引用和跨模块编排；
 2. `specs_validate.py` 的结构化输出字段、错误码和诊断格式仍需后续统一；
 3. 知识地图只读投影核心已提取到 `code/spec_checks/knowledge_map.py`，仍通过 `v2-check` 兼容入口暴露；受控写入 preflight 第一版已由 `code/spec_checks/preflight.py` 和 `python3 code/specs_validate.py preflight --target-path <path>` 承载；
-4. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。
+4. `code/fix_block_scalar.py` 已退出 active `code/` 路径并归档到 `history/code-archive/fix_block_scalar.py`；
+5. `specs_validate.py` 顶部一次性 import 多个检查域仍有 CLI 启动性能优化空间，后续应按 `code/docs/03-Code归档与性能审计.md` 单独推进懒加载；
+6. Code 与 Web Validate API 的输出合同仍需在 Code 结构稳定后补齐更细的数据结构说明。

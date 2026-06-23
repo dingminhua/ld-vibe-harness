@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""批量修补 ldvh-base YAML 文件：将长文本字段转为 YAML 块标量 | 格式。不改变内容，只改写法。"""
+"""历史辅助脚本：批量修补 ldvh-base YAML 长文本字段为块标量。"""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ from pathlib import Path
 import yaml
 
 
-# 05.02 工作模型字段内容与格式规范：长文本字段定义
 LONG_TEXT_FIELDS = {
     "workcase": {"description", "success_criteria", "verification_evidence", "closure_evidence"},
     "adr": {"context", "decision", "consequences"},
@@ -20,7 +19,6 @@ LONG_TEXT_FIELDS = {
 
 
 class LiteralStr(str):
-    """强制 yaml.dump 使用块标量 | 的字符串类型。"""
     pass
 
 
@@ -32,7 +30,6 @@ yaml.add_representer(LiteralStr, literal_str_representer)
 
 
 def fix_file(path: Path) -> bool:
-    """修补单个文件，返回是否做了修改。"""
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -51,10 +48,8 @@ def fix_file(path: Path) -> bool:
         value = data.get(field)
         if not isinstance(value, str) or not value:
             continue
-        # 只修补包含换行或冒号的长文本
         if "\n" not in value and ": " not in value:
             continue
-        # 转为 LiteralStr 强制块标量
         data[field] = LiteralStr(value)
         changed = True
 
