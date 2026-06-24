@@ -3,7 +3,7 @@ type: spark
 title: 降级概念收敛与命名治理
 status: pending
 created: '2026-06-24T23:50:16+08:00'
-updated: '2026-06-25T01:19:12+08:00'
+updated: '2026-06-25T01:31:00+08:00'
 description: |
   本 Spark 记录 LDVH 中“降级”概念过度泛化的问题，并作为逐项讨论和结论登记入口。
 
@@ -192,7 +192,8 @@ input_refs:
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''
-related_workcases: []
+related_workcases:
+  - workcase-0005
 related_adrs: []
 related_studies: []
 related_docs:
