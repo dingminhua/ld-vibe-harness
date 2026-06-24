@@ -3,7 +3,7 @@ type: spark
 title: 如何在 LDVH 中利用好 Codex 工作树、子 Agent 和新建对话能力
 status: pending
 created: '2026-06-25T03:07:28+08:00'
-updated: '2026-06-25T03:07:28+08:00'
+updated: '2026-06-25T03:31:32+08:00'
 description: |
   本 Spark 记录一个新的体系设计议题：LDVH 应如何系统性利用 Codex App / Codex CLI 中已经观察到的并行能力，包括 Codex 工作树、新建对话、线程间委派、子 Agent、以及配置 `agents.max_depth = 2` 后可能支持的一层嵌套子 Agent。
 
@@ -44,6 +44,9 @@ evolution:
   - at: '2026-06-25T03:07:28+08:00'
     summary: |
       建立 Codex 工作树、子 Agent、新建对话和一层嵌套子 Agent 能力利用方式的研究议题。当前 Spark 只登记问题、背景和调研约束；后续由独立 Codex 线程进行外部调研并产出 Study。
+  - at: '2026-06-25T03:31:32+08:00'
+    summary: |
+      并行研究线程 D 已完成外部资料调研并产出 study-0011。Study 建议把 Codex worktree、新建对话和子 Agent 区分为写入隔离、轻量线程和读多写少过程能力；`agents.max_depth = 2` 的一层嵌套子 Agent 建议先按受限实验能力处理，后续是否正式允许需 ADR 决策。
 input_refs:
   - rules/LDVH-WORKSPACE-ENTRY.md
   - rules/LDVH-MAINTAINER-ENTRY.md
@@ -58,7 +61,8 @@ resolved_at: ''
 discard_reason: ''
 related_workcases: []
 related_adrs: []
-related_studies: []
+related_studies:
+  - study-0011
 related_docs:
   - rules/LDVH-WORKSPACE-ENTRY.md
   - rules/LDVH-MAINTAINER-ENTRY.md
