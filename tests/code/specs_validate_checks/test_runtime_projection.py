@@ -71,8 +71,9 @@ def test_runtime_projection_reports_copied_formal_body(tmp_path, monkeypatch):
 
     report = checker.runtime_projection_report_build([str(projection)])
 
-    assert report["summary"]["status"] == "degraded"
+    assert report["summary"]["status"] == "evidence_gap"
     assert report["issues"][0]["code"] == "RUNTIME_PROJECTION_BODY_COPIED"
+    assert report["issues"][0]["status"] == "evidence_gap"
 
 
 def test_runtime_projection_cli_outputs_json(tmp_path, monkeypatch, capsys):

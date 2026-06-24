@@ -49,9 +49,9 @@ def build_assurance_report_fixture(tmp_path, monkeypatch):
 | Human 交互要求 | candidate 流程正式创建前，应先讨论是否独立成流程 | Human Gate、流程讨论 | 工作流程治理 | 从候选项创建流程前 |
 | Human 交互要求 | Human Gate UI 应清楚展示确认对象和影响范围 | Human Gate UI、承接 06 §6.3.1 | 工作流程治理 | Human Gate UI 变化时 |
 | 工作流程接管要求 | 接管后的执行和验证由 active 工作流程承担 | active 工作流程、Code 派生集合索引 | 工作流程治理 | 接管范围变化时 |
-| 生命周期触发要求 | 运行投影不可用时应记录问题原因 | 降级说明 | 触发保障 | 工具不可用时 |
-| 生命周期触发要求 | 平台能力变化后应检查平台清单是否同步 | 平台清单、降级说明 | 触发保障 | 平台能力变化时 |
-| 生命周期触发要求 | 第三方 Skill 入口变化后应检查包装 Skill 和运行投影是否同步 | 包装 Skill、运行投影漂移检查、降级方式 | 触发保障 | 第三方 Skill 使用入口变化时 |
+| 生命周期触发要求 | 运行投影不可用时应记录问题原因 | 受限说明 | 触发保障 | 工具不可用时 |
+| 生命周期触发要求 | 平台能力变化后应检查平台清单是否同步 | 平台清单、受限说明 | 触发保障 | 平台能力变化时 |
+| 生命周期触发要求 | 第三方 Skill 入口变化后应检查包装 Skill 和运行投影是否同步 | 包装 Skill、运行投影漂移检查、受限方式 | 触发保障 | 第三方 Skill 使用入口变化时 |
 | 生命周期触发要求 | 41 触发保障应被 42 消费，并覆盖运行投影漂移检查和 Human Gate 证据消费 | 41 分层触发保障、42 消费检查、运行投影漂移检查、Human Gate 证据消费 | 触发保障 | 正式规范、运行投影或 Human Gate 证据变化时 |
 """,
     )
@@ -85,15 +85,16 @@ def test_assurance_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert report["metadata"]["human_gate_record_count"] == 0
     assert report["metadata"]["human_gate_issue_count"] == 0
     assert report["summary"]["runtime_projection_status"] == "closed"
-    assert report["summary"]["human_gate_status"] == "degraded"
+    assert report["summary"]["human_gate_status"] == "evidence_gap"
     assert report["summary"]["by_status"] == {
         "closed": 3,
-        "degraded": 3,
+        "limited": 3,
         "needs_human_gate": 4,
         "open": 1,
     }
     assert report["summary"]["by_capability_status"] == {
-        "degraded": 3,
+        "capability_gap": 1,
+        "evidence_gap": 2,
         "open": 1,
     }
     assert report["summary"]["gap_total"] == sum(
@@ -121,7 +122,7 @@ def test_assurance_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert statuses["后续正式规范不得违背本文的价值实现标准"] == "closed"
     assert statuses["后续 Code 应能生成 assurance report"] == "closed"
     assert statuses["高影响变更应触发 Human Gate"] == "needs_human_gate"
-    assert statuses["运行投影不可用时应记录问题原因"] == "degraded"
+    assert statuses["运行投影不可用时应记录问题原因"] == "limited"
     assert statuses["41 触发保障应被 42 消费，并覆盖运行投影漂移检查和 Human Gate 证据消费"] == "needs_human_gate"
     assert next(item for item in report["requirements"] if item["owner_area"] == "code")["suggested_writeback"] == "code_request_or_test"
 
@@ -136,7 +137,7 @@ def test_assurance_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["metadata"]["report"] == "assurance-report"
     assert payload["metadata"]["runtime_projection_checked_file_count"] == 1
     assert payload["metadata"]["human_gate_record_count"] == 0
-    assert payload["summary"]["human_gate_status"] == "degraded"
+    assert payload["summary"]["human_gate_status"] == "evidence_gap"
     assert payload["summary"]["by_status"]["open"] == 1
     assert payload["summary"]["by_status"]["needs_human_gate"] == 4
     assert payload["summary"]["gap_total"] == 12
@@ -156,7 +157,7 @@ def test_assurance_report_cli_outputs_json(tmp_path, monkeypatch, capsys):
     assert payload["gap_categories"]["human_gate"]["subcategories"]["policy_clarification"]["policy_flows"]["future_evaluation"]["total"] == 1
     assert payload["gap_categories"]["human_gate"]["subcategories"]["policy_clarification"]["policy_flows"]["workflow_design_discussion"]["total"] == 1
     assert payload["gap_categories"]["human_gate"]["subcategories"]["implementation_support"]["support_flows"]["web_human_facing_support"]["total"] == 1
-    assert payload["gap_categories"]["human_gate"]["subcategories"]["diagnostic_coverage"]["diagnostic_flows"]["coverage_degraded"]["total"] == 1
+    assert payload["gap_categories"]["human_gate"]["subcategories"]["diagnostic_coverage"]["diagnostic_flows"]["coverage_limited"]["total"] == 1
     assert payload["requirements"][0]["source"] == "specs/00-Test.md"
     assert payload["capability_gaps"][0]["capability"] == "41 触发保障"
 
@@ -177,7 +178,7 @@ def test_assurance_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "生命周期触发同步 (lifecycle_trigger_sync):" in output
     assert "平台能力承接同步 (platform_capability_sync):" in output
     assert "第三方 Skill 投影 (third_party_skill_projection):" in output
-    assert "投影覆盖诊断降级 (projection_coverage_diagnostic):" in output
+    assert "投影覆盖诊断受限 (projection_coverage_diagnostic):" in output
     assert "Human Gate (human_gate):" in output
     assert "必须人类决策记录 (decision_record_required):" in output
     assert "未来触发时记录 (future_trigger_record):" in output
@@ -186,8 +187,8 @@ def test_assurance_report_cli_outputs_text(tmp_path, monkeypatch, capsys):
     assert "流程创建前讨论 (workflow_design_discussion):" in output
     assert "承接实现支持 (implementation_support):" in output
     assert "Web / Human-facing 承接 (web_human_facing_support):" in output
-    assert "Code 降级提示/覆盖 (diagnostic_coverage):" in output
-    assert "覆盖范围降级 (coverage_degraded):" in output
+    assert "Code 覆盖诊断 (diagnostic_coverage):" in output
+    assert "覆盖范围受限 (coverage_limited):" in output
     assert "后续 Code 应能生成 assurance report" not in output
     assert "运行投影检查文件数: 1" in output
     assert "Human Gate 记录数: 0" in output
@@ -236,7 +237,7 @@ ldvh_member:
     report = checker.assurance_report_build([str(docs_specs)])
 
     gap = next(item for item in report["capability_gaps"] if item["id"] == "41_trigger_safeguard")
-    assert gap["status"] == "degraded"
+    assert gap["status"] == "capability_gap"
     assert gap["evidence"] == "workflow 40 status=active; workflow 41 status=candidate"
     assert "collection_status=candidate" in gap["status_reason"]
 

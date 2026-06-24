@@ -125,7 +125,7 @@ Human Gate 记录：
     assert "HUMAN_GATE_FIELD_MISSING" in output
 
 
-def test_human_gate_report_degraded_when_no_records(tmp_path, monkeypatch):
+def test_human_gate_report_evidence_gap_when_no_records(tmp_path, monkeypatch):
     monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
     path = write_md(
         tmp_path / "notes.md",
@@ -138,7 +138,7 @@ No gate records.
 
     report = checker.human_gate_report_build([str(path)])
 
-    assert report["summary"]["status"] == "degraded"
+    assert report["summary"]["status"] == "evidence_gap"
     assert report["metadata"]["record_count"] == 0
     assert report["metadata"]["issue_count"] == 0
 
