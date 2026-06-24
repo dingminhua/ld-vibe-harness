@@ -1104,6 +1104,10 @@ export function WorkCaseReadingLayout({
         getStatus={getStatus}
       />
 
+      <WorkCaseEvidenceSummarySection obj={obj} summary={summary} />
+
+      <DetailNarrativeSection title={t('objectDetail.planGoal')} value={obj.description} />
+
       <DetailSection title={t('objectDetail.workcaseExecution')} tone="default">
         {isExecutionLoading ? (
           <LoadingHint text={t('objectDetail.executionItemsLoading')} />
@@ -1137,7 +1141,6 @@ export function WorkCaseReadingLayout({
       </DetailSection>
       <WorkCaseReviewSection orchestration={orchestration} />
 
-      <DetailNarrativeSection title={t('objectDetail.planGoal')} value={obj.description} />
       <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
       <RelatedContentSection
         entries={sortRelatedContentEntries([
@@ -1271,6 +1274,55 @@ function ProgressMetric({
         <div className="h-full rounded-full bg-ldvh-accent" style={{ width: `${ratio}%` }} />
       </div>
     </div>
+  );
+}
+
+function WorkCaseEvidenceSummarySection({ obj, summary }: { obj: Record<string, unknown>; summary: ObjectItem | null }) {
+  const { t } = useI18n();
+  const checklistProgress = getChecklistProgress(obj.success_criteria);
+  const successCriteriaTotal = summary?.successCriteriaTotal ?? checklistProgress.total;
+  const successCriteriaDone = summary?.successCriteriaDone ?? checklistProgress.done;
+  const items = [
+    {
+      label: t('objectDetail.successCriteriaProgress'),
+      value: successCriteriaTotal > 0 ? `${successCriteriaDone}/${successCriteriaTotal}` : '—',
+      recorded: successCriteriaTotal > 0,
+    },
+    {
+      label: t('objectList.planConfirmedAt'),
+      value: summary?.hasPlanConfirmedAt ?? hasDetailContent(obj.plan_confirmed_at) ? t('objectList.hasRecord') : t('objectList.missingRecord'),
+      recorded: Boolean(summary?.hasPlanConfirmedAt ?? hasDetailContent(obj.plan_confirmed_at)),
+    },
+    {
+      label: t('objectList.verificationEvidence'),
+      value: summary?.hasVerificationEvidence ?? hasDetailContent(obj.verification_evidence) ? t('objectList.hasRecord') : t('objectList.missingRecord'),
+      recorded: Boolean(summary?.hasVerificationEvidence ?? hasDetailContent(obj.verification_evidence)),
+    },
+    {
+      label: t('objectList.closureEvidence'),
+      value: summary?.hasClosureEvidence ?? hasDetailContent(obj.closure_evidence) ? t('objectList.hasRecord') : t('objectList.missingRecord'),
+      recorded: Boolean(summary?.hasClosureEvidence ?? hasDetailContent(obj.closure_evidence)),
+    },
+  ];
+
+  return (
+    <DetailSection title={t('objectDetail.closeDecisionRecordState')} tone="default">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((item) => (
+          <div
+            key={item.label}
+            className={`min-w-0 rounded-lg border px-3 py-2.5 ${
+              item.recorded
+                ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
+                : 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+            }`}
+          >
+            <div className="ldvh-caption mb-1 truncate opacity-85">{item.label}</div>
+            <div className="ldvh-section-title truncate">{item.value}</div>
+          </div>
+        ))}
+      </div>
+    </DetailSection>
   );
 }
 
@@ -1817,11 +1869,14 @@ function SparkEvolutionNode({ value, locale }: { value: unknown; locale: string 
   if (entries.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-2">
       {entries.map((entry) => (
-        <div key={entry.key} className="grid items-center gap-2 rounded-md border border-ldvh-border/45 px-2.5 py-2.5 odd:bg-ldvh-border/[0.30] even:bg-ldvh-bg/35 sm:grid-cols-[max-content_1fr] sm:gap-x-3">
-          <SparkEvolutionTime value={entry.at} locale={locale} />
-          <StudyTextNodeContent value={entry.summary} />
+        <div key={entry.key} className="min-w-0 rounded-md border border-ldvh-border/45 bg-ldvh-bg/45 px-3 py-2">
+          <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" aria-hidden="true" />
+            <SparkEvolutionTime value={entry.at} locale={locale} />
+          </div>
+          <StudyTextNodeContent value={entry.summary} compact />
         </div>
       ))}
     </div>
@@ -1846,16 +1901,16 @@ function parseSparkEvolutionEntry(item: unknown, index: number): SparkEvolutionE
 function SparkEvolutionTime({ value, locale }: { value?: string; locale: string }) {
   if (!value) {
     return (
-      <div className="ldvh-caption-strong whitespace-nowrap text-ldvh-text-secondary">
+      <div className="ldvh-caption-strong min-w-0 break-words text-ldvh-text-secondary">
         {locale === 'en' ? 'Evolution' : '演变'}
       </div>
     );
   }
   const [date, time] = formatDateTime(value).split(' ');
   return (
-    <div className="flex flex-col whitespace-nowrap font-mono tabular-nums">
-      <span className="ldvh-caption-strong text-ldvh-text-secondary">{date}</span>
-      {time && <span className="ldvh-meta-muted leading-4">{time}</span>}
+    <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono tabular-nums">
+      <span className="ldvh-caption-strong min-w-0 break-words text-ldvh-text-secondary">{date}</span>
+      {time && <span className="ldvh-meta-muted min-w-0 break-words leading-4">{time}</span>}
     </div>
   );
 }
@@ -2593,12 +2648,12 @@ function StudyReportBodyEntry({ value, objectPath, locale }: { value: unknown; o
   );
 }
 
-function StudyTextNodeContent({ value }: { value: unknown }) {
+function StudyTextNodeContent({ value, compact = false }: { value: unknown; compact?: boolean }) {
   const text = String(value);
 
   return (
-    <div className="ldvh-study-node-content">
-      <div className="ldvh-inline-markdown max-w-none">
+    <div className={`ldvh-study-node-content min-w-0 ${compact ? 'ldvh-study-node-content-compact' : ''}`}>
+      <div className="ldvh-inline-markdown max-w-none min-w-0 overflow-hidden break-words">
         <Markdown remarkPlugins={[remarkGfm]}>{text}</Markdown>
       </div>
     </div>

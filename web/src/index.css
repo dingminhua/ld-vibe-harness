@@ -84,6 +84,11 @@
 
   .ldvh-inline-markdown {
     @apply text-sm leading-6 text-ldvh-text-primary;
+    overflow-wrap: anywhere;
+  }
+
+  .ldvh-study-node-content-compact .ldvh-inline-markdown {
+    @apply text-[13px] leading-5;
   }
 
   .ldvh-page-frame {
@@ -380,6 +385,11 @@ input::-moz-focus-inner {
 .ldvh-inline-markdown :where(p, ul, ol, pre, blockquote) {
   margin-top: 0.375rem;
   margin-bottom: 0.375rem;
+}
+
+.ldvh-study-node-content-compact .ldvh-inline-markdown :where(p, ul, ol, pre, blockquote) {
+  margin-top: 0.125rem;
+  margin-bottom: 0.125rem;
 }
 
 .ldvh-inline-markdown :where(ul, ol) {

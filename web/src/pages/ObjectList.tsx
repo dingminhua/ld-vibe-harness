@@ -17,6 +17,7 @@ import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 import { getExecutionFlowLabel, getExecutionFlowTone, sortWorkCaseExecutionItems } from '@/utils/executionFlowStatus';
 import {
+  WORKCASE_STATUS_ORDER,
   isWorkCaseClosureConfirmingStatus,
 } from '@/utils/workcaseStatus';
 
@@ -26,6 +27,11 @@ type OpenEvent = MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>;
 type Translate = ReturnType<typeof useI18n>['t'];
 type WorkCaseRecordState = 'recorded' | 'missing';
 type StatusReason = { label: string; text: string; missing?: boolean };
+type WorkCaseCardSummaryTone = 'default' | 'risk' | 'ready' | 'gate';
+
+const WORKCASE_STATUS_ORDER_INDEX = new Map<string, number>(
+  WORKCASE_STATUS_ORDER.map((status, index) => [status, index]),
+);
 
 const TITLE_ACCENT_CLASS: Record<string, string> = {
   active: 'border-emerald-400/80',
@@ -186,6 +192,52 @@ function WorkCaseRecordItem({ label, state, t }: { label: string; state: WorkCas
       <StateIcon size={state === 'missing' ? 13 : 12} strokeWidth={state === 'missing' ? 2.6 : 2} className="shrink-0 opacity-95" />
     </span>
   );
+}
+
+function WorkCaseCardSummary({
+  label,
+  value,
+  helper,
+  tone = 'default',
+}: {
+  label: string;
+  value: string;
+  helper?: string;
+  tone?: WorkCaseCardSummaryTone;
+}) {
+  const toneClass = {
+    default: 'border-ldvh-border bg-ldvh-bg text-ldvh-text-secondary',
+    risk: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+    ready: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400',
+    gate: 'border-violet-500/25 bg-violet-500/10 text-violet-400',
+  }[tone];
+
+  return (
+    <div className={`flex min-w-0 items-center justify-between gap-2 rounded-md border px-2.5 py-2 ${toneClass}`}>
+      <div className="min-w-0">
+        <div className="ldvh-caption-strong truncate">{label}</div>
+        {helper && <div className="ldvh-meta-muted mt-0.5 truncate">{helper}</div>}
+      </div>
+      <div className="shrink-0 font-mono text-[15px] leading-none tracking-tight">{value}</div>
+    </div>
+  );
+}
+
+function getWorkCaseLifecycleOrder(status: string): number {
+  if (status === 'review_needed') return WORKCASE_STATUS_ORDER_INDEX.get('human_closure_confirming') ?? 999;
+  if (status === 'active' || status === 'draft') return WORKCASE_STATUS_ORDER_INDEX.get('executing') ?? 999;
+  return WORKCASE_STATUS_ORDER_INDEX.get(status) ?? 999;
+}
+
+function sortObjectsForList(items: ObjectItem[], currentType: string): ObjectItem[] {
+  if (currentType !== 'workcase') return items;
+  return [...items].sort((a, b) => {
+    const statusDelta = getWorkCaseLifecycleOrder(a.status) - getWorkCaseLifecycleOrder(b.status);
+    if (statusDelta !== 0) return statusDelta;
+    const updatedDelta = Date.parse(b.updated || '') - Date.parse(a.updated || '');
+    if (Number.isFinite(updatedDelta) && updatedDelta !== 0) return updatedDelta;
+    return a.id.localeCompare(b.id);
+  });
 }
 
 
@@ -375,6 +427,8 @@ export default function ObjectList() {
       .finally(() => setLoading(false));
   }, [currentType, activeStatus, reloadKey]);
 
+  const sortedItems = sortObjectsForList(items, currentType);
+
   const handleStatusChange = (status: string | null) => {
     const nextParams = new URLSearchParams(searchParams);
     writeListStatusParam(currentType, nextParams, status);
@@ -426,9 +480,46 @@ export default function ObjectList() {
         ? t('objectList.closureIssue')
         : t('objectList.closeDecision');
       const visibleCloseFields = isClosedWorkCase ? closedIntegrityFields : closeDecisionFields;
+      const successCriteriaTotal = obj.successCriteriaTotal ?? 0;
+      const successCriteriaDone = obj.successCriteriaDone ?? 0;
+      const executionTotal = obj.executionItemTotal ?? executionItems.length;
+      const executionDone = obj.executionItemDone ?? executionItems.filter((item) => item.status === 'done').length;
+      const executionBlocked = obj.executionItemBlocked ?? executionItems.filter((item) => item.status === 'blocked' || item.blockingReason).length;
+      const missingCloseFields = visibleCloseFields.filter((field) => field.state === 'missing').length;
+      const summaryTone: WorkCaseCardSummaryTone = hasClosedIntegrityIssue || executionBlocked > 0
+        ? 'risk'
+        : needsCloseDecision
+          ? 'gate'
+          : successCriteriaTotal > 0 && successCriteriaDone === successCriteriaTotal
+            ? 'ready'
+            : 'default';
+      const primarySummary = shouldShowCloseDecision
+        ? {
+            label: closeDecisionTitle,
+            value: missingCloseFields > 0 ? String(missingCloseFields) : getWorkCaseRecordStateLabel('recorded', t),
+            helper: needsCloseDecision ? getStatus(obj.status) : undefined,
+            tone: summaryTone,
+          }
+        : executionBlocked > 0
+          ? {
+              label: t('objectList.planExecutionRisk'),
+              value: String(executionBlocked),
+              helper: t('objectList.planExecutionItems'),
+              tone: 'risk' as const,
+            }
+          : {
+              label: t('objectList.planExecutionItems'),
+              value: executionTotal > 0 ? `${executionDone}/${executionTotal}` : '—',
+              helper: successCriteriaTotal > 0 ? `${t('objectList.successCriteria')} ${successCriteriaDone}/${successCriteriaTotal}` : undefined,
+              tone: successCriteriaTotal > 0 && successCriteriaDone === successCriteriaTotal ? 'ready' as const : 'default' as const,
+            };
 
       return (
         <ObjectCardFrame key={obj.id} obj={obj} locale={locale} onOpen={openObject}>
+          <div onClick={(event) => event.stopPropagation()} className="min-w-0 cursor-default">
+            <WorkCaseCardSummary {...primarySummary} />
+          </div>
+
           {shouldShowCloseDecision && (
             <div
               onClick={(event) => event.stopPropagation()}
@@ -461,7 +552,9 @@ export default function ObjectList() {
               </span>
               {executionItems.length > 0 && (
                 <span className="ldvh-caption shrink-0 text-ldvh-text-secondary">
-                  {t('objectList.executionItemCount', { count: String(obj.executionItemTotal ?? executionItems.length) })}
+                  {t('objectList.executionFlowCount', { status: t('objectList.executionFlowDone'), count: String(executionDone) })}
+                  {' · '}
+                  {t('objectList.executionFlowCount', { status: t('objectList.executionFlowBlocked'), count: String(executionBlocked) })}
                 </span>
               )}
             </div>
@@ -563,13 +656,13 @@ export default function ObjectList() {
           <p className="ldvh-body-muted">{t('common.loadFailed')}</p>
           <p className="ldvh-meta text-red-400">{error}</p>
         </div>
-      ) : items.length === 0 ? (
+      ) : sortedItems.length === 0 ? (
         <div className="ldvh-body-muted py-20 text-center">
           {t('objectList.noObjects', { type: currentType })}
         </div>
       ) : (
         <div className="ldvh-section-grid">
-          {items.map((obj) => renderObjectCard(obj))}
+          {sortedItems.map((obj) => renderObjectCard(obj))}
         </div>
       )}
     </div>

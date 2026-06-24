@@ -8,12 +8,6 @@ export const WORKCASE_CURRENT_STATUSES = [
   'closed',
 ] as const;
 
-export const WORKCASE_LEGACY_STATUSES = [
-  'draft',
-  'active',
-  'review_needed',
-] as const;
-
 export const WORKCASE_DEFAULT_LIST_STATUS = null;
 
 export const WORKCASE_STATUS_ORDER = [
@@ -23,9 +17,6 @@ export const WORKCASE_STATUS_ORDER = [
   'result_self_checking',
   'subagents_result_reviewing',
   'human_closure_confirming',
-  'draft',
-  'active',
-  'review_needed',
   'closed',
 ] as const;
 
@@ -34,7 +25,6 @@ const WORKCASE_HUMAN_CONFIRMING_STATUSES = new Set([
   'human_plan_confirming',
   'human_closure_confirming',
   'review_needed',
-  'needs_human_gate',
 ]);
 const WORKCASE_RESULT_REVIEW_STATUSES = new Set([
   'result_self_checking',
