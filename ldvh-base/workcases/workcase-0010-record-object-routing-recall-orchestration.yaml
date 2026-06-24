@@ -1,0 +1,135 @@
+id: workcase-0010
+type: workcase
+title: 记录对象归口沉淀与召回行动编排落地
+goal: |
+  承接 spark-0028，设计并落地统一的“记录对象归口、沉淀与召回行动编排”，用于 Spark、ADR、Pitfall 三类记录对象的入库分流、查重合并、冲突判断、出库召回和 Human Gate 识别；WorkCase 与 Study 只作为边界外出口。
+status: subagents_plan_reviewing
+created: '2026-06-25T04:13:45.250316'
+updated: '2026-06-25T04:20:00+08:00'
+priority: P1
+description: |
+  spark-0028 已收敛出核心判断：Spark、ADR、Pitfall 是记录对象，不宜分别建立三个独立行动编排；它们共享同一类底层问题，即 AI 遇到输入、发现、判断、失败或经验线索时，如何判断是否需要长期记录、归口到哪类记录对象、是否已有对象可召回、是否更新旧对象、合并、新建、归档、废弃或触发 Human Gate。
+
+  本 WorkCase 承接该 Spark，将其推进为行动编排落地方案。该编排内部区分入库模式和出库模式；WorkCase 是明确行动承接出口，Study 是研究行动产物，不与 Spark/ADR/Pitfall 并列为记录对象分支。
+success_criteria: |
+  - [ ] 形成记录对象行动编排的准入判断：什么时候不入库，什么时候进入 Spark、ADR、Pitfall，什么时候转 WorkCase 或研究行动并产出 Study。
+  - [ ] 形成创建前召回规则：创建新 Spark/ADR/Pitfall 前必须查重、召回、比较范围、判断更新/合并/并列/冲突/Human Gate。
+  - [ ] 形成出库召回规则：当前任务触发时如何召回已有 ADR、Pitfall、Spark，并决定应用、忽略、更新、归档或转行动。
+  - [ ] 明确 Human Gate：同主题结论冲突、与 active ADR 冲突、推翻核心 Pitfall、长期规则/边界/取舍变化时必须暂停确认。
+  - [ ] 明确知识地图和 Code 的角色：只能作为导航、召回和诊断工具，不替代权威事实源或 Human Gate。
+  - [ ] 给出应落入 `specs/03-行动编排规范.md` 或新行动编排成员的具体变更方案，并完成执行前子 Agent 方案审核。
+source: |
+  来源 Spark：`ldvh-base/sparks/spark-0028-record-object-routing-recall-orchestration.yaml`。
+  Human 补充要求：该 Spark 也要建立 WorkCase 推动，并纳入本轮安排。
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 梳理记录对象编排边界
+      role: design
+      mode: single
+      input_refs:
+        - ldvh-base/sparks/spark-0028-record-object-routing-recall-orchestration.yaml
+        - specs/03-行动编排规范.md
+        - specs/20-Spark-火花.md
+        - specs/22-ADR-决策.md
+        - specs/23-Pitfall-踩坑经验.md
+        - specs/21-WorkCase-工作项.md
+        - specs/24-Study-研究报告.md
+      expected_output: 明确 Spark/ADR/Pitfall 记录对象与 WorkCase/Study 出口的边界，形成入库/出库两种模式。
+      status: pending
+      result_summary: null
+      evidence_refs: []
+      blocking_reason: null
+    - id: item-2
+      title: 设计入库分流与出库召回流程
+      role: orchestration-design
+      mode: sequential
+      input_refs:
+        - specs/03-行动编排规范.md
+        - specs/20-Spark-火花.md
+        - specs/22-ADR-决策.md
+        - specs/23-Pitfall-踩坑经验.md
+        - ldvh-base/sparks/spark-0006-spark-routing-convergence-reminder.yaml
+        - ldvh-base/sparks/spark-0015-reflection-record-routing-and-pitfall-boundary.yaml
+      expected_output: 形成行动编排步骤、触发器、STOP 点、Human Gate、查重/合并/并列/归档/废弃规则和不入库出口。
+      status: pending
+      result_summary: null
+      evidence_refs: []
+      blocking_reason: null
+    - id: item-3
+      title: 执行前子 Agent 方案审核
+      role: subagent-review
+      mode: parallel
+      input_refs:
+        - ldvh-base/workcases/workcase-0010-record-object-routing-recall-orchestration.yaml
+        - ldvh-base/sparks/spark-0028-record-object-routing-recall-orchestration.yaml
+        - specs/03-行动编排规范.md
+        - specs/20-Spark-火花.md
+        - specs/22-ADR-决策.md
+        - specs/23-Pitfall-踩坑经验.md
+      expected_output: 审核统一编排是否比拆成三个编排更合适，是否正确处理 WorkCase/Study 出口、召回触发器、Human Gate 和事实源边界。
+      status: pending
+      result_summary: null
+      evidence_refs: []
+      blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 本 WorkCase 设计新的记录对象行动编排，影响 Spark/ADR/Pitfall 的创建、更新、召回和 Human Gate；执行前需要独立审核。
+      required_perspectives:
+        - 记录对象归口一致性
+        - 行动编排边界
+        - Human Gate 与查重召回
+      optional_perspectives: []
+      tool_method_requirements:
+        - 不把 WorkCase 或 Study 混入 Spark/ADR/Pitfall 记录对象分支。
+        - 创建新记录前必须体现查重与召回。
+        - 不以知识地图或 Code 输出替代权威事实源和 Human Gate。
+      aggregation_rule: 存在 fail 或 needs_human_gate 结论时不得进入 Human 方案确认，必须先处理或提交 Human 裁决。
+    review_items: []
+    controller_resolution: null
+    human_confirmation: null
+  result_review:
+    controller_self_check: null
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 默认结果复核用于防止执行完成后跳过独立检查；execution_items 全部 done 后，必须先由主控进入 result_self_checking 完成 controller_self_check，再进入 subagents_result_reviewing 记录独立复核。
+      required_perspectives:
+        - 记录对象归口一致性
+        - 行动编排边界
+        - Human Gate 与查重召回
+      optional_perspectives: []
+      tool_method_requirements:
+        - 结果复核必须由子 Agent、第三方审核 Agent 或可辨识独立视角执行。
+        - 不得用主控结果自检替代独立结果复核。
+      aggregation_rule: result_review.review_items 为空时不得进入 human_closure_confirming 或 closed。
+    review_items: []
+    controller_resolution: null
+    human_closure_confirmation: null
+plan_confirmed_at: ''
+verification_evidence: ''
+closure_evidence: ''
+closure_requested_at: ''
+review_requested_at: ''
+closed_at: ''
+closure_outcome: ''
+residual_risks: []
+followup_refs: []
+revision_history: []
+related_docs:
+  - specs/03-行动编排规范.md
+  - specs/20-Spark-火花.md
+  - specs/21-WorkCase-工作项.md
+  - specs/22-ADR-决策.md
+  - specs/23-Pitfall-踩坑经验.md
+  - specs/24-Study-研究报告.md
+related_adrs: []
+related_sparks:
+  - spark-0028
+  - spark-0006
+  - spark-0015
+related_pitfalls: []
+related_workcases: []

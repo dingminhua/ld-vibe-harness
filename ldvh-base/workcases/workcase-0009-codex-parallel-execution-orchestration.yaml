@@ -1,0 +1,124 @@
+id: workcase-0009
+type: workcase
+title: Codex 并行执行行动编排落地
+goal: |
+  承接 spark-0027 与 study-0011，把 Codex worktree、新建对话、同目录线程、子 Agent 和一层嵌套子 Agent 的使用方式沉淀为 LDVH 行动编排能力；明确行动编排决定如何调度这些执行资源，WorkCase 只承载具体目标和证据，环境适配只说明能力是否可用。
+status: subagents_plan_reviewing
+created: '2026-06-25T04:13:45.180773'
+updated: '2026-06-25T04:20:00+08:00'
+priority: P0
+description: |
+  Human 已明确：Codex worktree / 子 Agent / 新建对话能力的研究内容应关联到 Spark，并与行动编排联系起来；具体如何执行由行动编排决定。这不是 ADR 主问题，也不能把 WorkCase 自身承担的目标、环境适配负责的能力可用性和行动编排负责的调度机制混在一起。
+
+  本 WorkCase 只负责把 spark-0027 和 study-0011 的研究结论推进为行动编排设计与落地方案，不直接修改业务 WorkCase 的执行内容，不把环境能力声明写成行动规则，不把一层嵌套子 Agent 作为长期风险 ADR 处理。若涉及环境是否支持，应回到运行时扩展/环境适配；若涉及具体业务目标，应由对应 WorkCase 承接。
+success_criteria: |
+  - [ ] 明确三分法：worktree 用于写入隔离和可提交闭环；同目录线程用于轻量只读咨询或短复核；子 Agent 用于读多写少、局部调查、复核、日志分析和完成后检查。
+  - [ ] 设计行动编排中的主控职责：任务卡、范围禁止项、入口读取、Human Gate、轮询、回收、验证、提交、合并顺序、冲突处理和结果复核。
+  - [ ] 明确子 Agent 调用子 Agent 的使用边界：只允许一层、默认只读或复核、不得直接写事实源、不得绕过主控合并权威。
+  - [ ] 区分行动编排、WorkCase 和环境适配：行动编排决定怎么调度；WorkCase 承载目标、证据和关闭；环境适配说明能力是否可用和如何接入。
+  - [ ] 给出应落入 `specs/03-行动编排规范.md` 或新行动编排成员的具体变更方案，并完成执行前子 Agent 方案审核。
+source: |
+  来源 Spark：`ldvh-base/sparks/spark-0027-codex-worktree-subagent-thread-practices.yaml`。
+  来源 Study：`ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md`。
+  Human 补充要求：研究内容要关联到 Spark，并和行动编排联系起来；行动编排决定具体怎么执行，这不是 ADR 问题，也不能和 WorkCase 职责或环境适配混在一起。
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 梳理 Study 结论与职责边界
+      role: design
+      mode: single
+      input_refs:
+        - ldvh-base/sparks/spark-0027-codex-worktree-subagent-thread-practices.yaml
+        - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
+        - specs/03-行动编排规范.md
+        - specs/21-WorkCase-工作项.md
+        - specs/06-运行时扩展规范.md
+      expected_output:  明确行动编排、WorkCase 和环境适配的边界，形成并行执行资源的调度模型。
+      status: pending
+      result_summary: null
+      evidence_refs: []
+      blocking_reason: null
+    - id: item-2
+      title: 设计 Codex 并行行动编排
+      role: orchestration-design
+      mode: sequential
+      input_refs:
+        - specs/03-行动编排规范.md
+        - specs/21-WorkCase-工作项.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - rules/LDVH-MAINTAINER-ENTRY.md
+      expected_output: 设计任务卡、线程类型选择、子 Agent 使用、主控轮询、交还格式、验证清单、合并顺序和冲突处理规则。
+      status: pending
+      result_summary: null
+      evidence_refs: []
+      blocking_reason: null
+    - id: item-3
+      title: 执行前子 Agent 方案审核
+      role: subagent-review
+      mode: parallel
+      input_refs:
+        - ldvh-base/workcases/workcase-0009-codex-parallel-execution-orchestration.yaml
+        - specs/03-行动编排规范.md
+        - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
+      expected_output: 审核设计是否正确区分行动编排、WorkCase 和环境适配，是否遗漏主控责任、Human Gate 或事实源边界。
+      status: pending
+      result_summary: null
+      evidence_refs: []
+      blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 本 WorkCase 将研究结论推进为行动编排设计，影响主控与子线程/子 Agent 的协作边界，执行前需要独立审核职责边界。
+      required_perspectives:
+        - 行动编排职责边界
+        - WorkCase/环境适配分离
+        - 子 Agent 与 worktree 风险
+      optional_perspectives: []
+      tool_method_requirements:
+        - 不把环境能力声明写成行动编排规则。
+        - 不把具体业务 WorkCase 的目标转移给行动编排。
+        - 不使用 ADR 承接本 WorkCase 的主要落地方向。
+      aggregation_rule: 存在 fail 或 needs_human_gate 结论时不得进入 Human 方案确认，必须先处理或提交 Human 裁决。
+    review_items: []
+    controller_resolution: null
+    human_confirmation: null
+  result_review:
+    controller_self_check: null
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 默认结果复核用于防止执行完成后跳过独立检查；execution_items 全部 done 后，必须先由主控进入 result_self_checking 完成 controller_self_check，再进入 subagents_result_reviewing 记录独立复核。
+      required_perspectives:
+        - 行动编排职责边界
+        - WorkCase/环境适配分离
+        - 验证证据和事实源边界
+      optional_perspectives: []
+      tool_method_requirements:
+        - 结果复核必须由子 Agent、第三方审核 Agent 或可辨识独立视角执行。
+        - 不得用主控结果自检替代独立结果复核。
+      aggregation_rule: result_review.review_items 为空时不得进入 human_closure_confirming 或 closed。
+    review_items: []
+    controller_resolution: null
+    human_closure_confirmation: null
+plan_confirmed_at: ''
+verification_evidence: ''
+closure_evidence: ''
+closure_requested_at: ''
+review_requested_at: ''
+closed_at: ''
+closure_outcome: ''
+residual_risks: []
+followup_refs: []
+revision_history: []
+related_docs:
+  - specs/03-行动编排规范.md
+  - specs/21-WorkCase-工作项.md
+  - specs/06-运行时扩展规范.md
+  - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
+related_adrs: []
+related_sparks:
+  - spark-0027
+related_pitfalls: []
+related_workcases: []
