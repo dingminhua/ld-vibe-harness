@@ -8,7 +8,7 @@ created: '2026-06-24T07:42:18.318860'
 updated: '2026-06-24T08:30:00+08:00'
 priority: P1
 description: |
-  当前 Rules 入口已经强调知识地图任务导航，但仍保留大量静态场景路由、必读 specs 清单和维护检查清单。多视角审查一致认为：知识地图不应替代 specs 原文，也不应替代 Rules 的入口启动、STOP 和降级职责；但它应该替代 Rules 里大量“场景 X 读文件 A/B/C”的人工路线表。
+  当前 Rules 入口已经强调知识地图任务导航，但仍保留大量静态场景路由、必读 specs 清单和维护检查清单。多视角审查一致认为：知识地图不应替代 specs 原文，也不应替代 Rules 的入口启动、STOP 和降级职责；但它应该替代 Rules 里大量“场景 X 读文件 A/B/C”的手写读取路线表。
 
   本 WorkCase 以“先增强知识地图，再瘦 Rules”为推进主线：先在 04/04.Att.06 等规范中定义 read_plan / navigation 等输出契约，再实现 Code 侧任务导航能力，最后用 active 30 执行 Rules 同步审查并收缩 Rules 入口信息量。
 success_criteria: |
