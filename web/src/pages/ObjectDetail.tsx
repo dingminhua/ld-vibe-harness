@@ -2420,6 +2420,9 @@ export function DetailSection({
   icon?: ReactNode;
   children: ReactNode;
 }) {
+  const { locale } = useI18n();
+  const [state, setState] = useState<ReadingNodeState>('expanded');
+  const StateIcon = getReadingNodeIcon(state);
   const toneClass = {
     primary: 'border-ldvh-border bg-ldvh-panel',
     checklist: 'border-ldvh-border bg-ldvh-panel',
@@ -2430,11 +2433,17 @@ export function DetailSection({
 
   return (
     <section className={`rounded-xl border p-4 ${toneClass}`}>
-      <h2 className="ldvh-section-title mb-3 flex min-w-0 items-center gap-2">
-        {icon ?? <span className="h-1.5 w-1.5 rounded-full bg-ldvh-accent" />}
-        <span className="min-w-0 truncate">{title}</span>
-      </h2>
-      {children}
+      <button
+        type="button"
+        onClick={() => setState((current) => getReadingNodeNextState(current))}
+        aria-label={getReadingNodeAriaLabel(title, state, locale)}
+        className={`ldvh-section-title flex w-full min-w-0 items-center gap-2 text-left transition-colors hover:text-ldvh-accent ${state === 'collapsed' ? '' : 'mb-3'}`}
+      >
+        {icon ?? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ldvh-accent" />}
+        <span className="min-w-0 flex-1 truncate">{title}</span>
+        <StateIcon size={14} className="shrink-0 text-ldvh-text-secondary/80" aria-hidden="true" />
+      </button>
+      {state !== 'collapsed' && children}
     </section>
   );
 }
