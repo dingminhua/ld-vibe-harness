@@ -3,7 +3,7 @@ type: spark
 title: 降级概念收敛与命名治理
 status: pending
 created: '2026-06-24T23:50:16+08:00'
-updated: '2026-06-25T01:16:33+08:00'
+updated: '2026-06-25T01:19:12+08:00'
 description: |
   本 Spark 记录 LDVH 中“降级”概念过度泛化的问题，并作为逐项讨论和结论登记入口。
 
@@ -165,6 +165,17 @@ evolution:
       Human-facing 层不应展示泛化的“降级”结论，而应展示具体原因态势和不可证明范围，例如输入不可用、能力缺口、证据不足、来源冲突、同步异常、验证失败、待 Human Gate 或环境入口缺口。
 
       `degraded` 最多作为后端兼容字段或诊断聚合信号，不应作为面向 Human 的主展示态。展示层必须帮助 Human 看见真实问题类型、来源和影响范围，而不是用一个状态词把问题压扁。
+  - at: '2026-06-25T01:19:12+08:00'
+    summary: |
+      D15 形成结论：“降级说明与残留风险回写”应拆分处理，不保留“降级说明”作为泛化概念，但保留“残留风险”和“受控回写”。
+
+      “降级说明”容易把前面已经拆开的工具不可用、能力缺口、证据不足、事实冲突、未验证、环境入口缺口、取消、延期实现等问题重新压回一个模糊标签。后续应改为具体的问题原因说明、不可证明范围、未验证原因、缺口原因、冲突原因或取消原因。
+
+      “残留风险”不是降级，而是验证、关闭、决策或长期接受缺口时必须留下的事实信息。它应说明仍未覆盖、未证明、未完成、未自动化、未接入的范围，以及这些状态带来的执行、追溯或判断风险。
+
+      “回写”只在稳定结论、风险、决策、失败诊断或确认记录需要后续追溯时发生。Web 显示、工具输出、对话说明或候选草案都不能直接等同于稳定事实已经形成。必须写入对应权威事实源、满足事实源边界、必要时经过 Human Gate、可由 Git 追溯，且不与已有权威事实冲突。
+
+      处理方法：验证相关内容进入 08 验证声明；WorkCase 关闭相关内容进入 `closure_evidence`、`residual_risks` 和 `followup_refs`；功能应该做但暂时长期不做时，按 D12 进入 Human Gate 和 ADR；新发现的问题、缺口或想法进入 Spark；可执行修复项进入 WorkCase；可复用经验教训进入 Pitfall；Web/Validate/Confirm 只负责展示原因、风险、回写位置和修复线索，不得自动修复、自动关闭或自动写入验证结论。
 input_refs:
   - rules/LDVH-WORKSPACE-ENTRY.md
   - rules/LDVH-MAINTAINER-ENTRY.md
@@ -191,5 +202,7 @@ related_docs:
   - specs/attachments/05.Att.08-缓存与同步状态矩阵.md
   - specs/attachments/06.Att.06-能力缺口分流核对表.md
   - specs/attachments/06.Att.08-适配状态表.md
+  - specs/attachments/07.Att.06-过程输出回写核对表.md
+  - specs/attachments/08.Att.02-验证声明字段表.md
   - specs/attachments/08.Att.07-失败阻断核对表.md
   - specs/attachments/08.Att.08-等价验证适用表.md
