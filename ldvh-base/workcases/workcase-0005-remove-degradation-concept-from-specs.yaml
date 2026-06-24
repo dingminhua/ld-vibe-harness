@@ -3,10 +3,11 @@ type: workcase
 title: specs 降级概念取消与替代语义迁移
 goal: |
   以 spark-0025 的逐项结论为来源，取消 LDVH active specs 中“降级”作为正式机制概念、状态、路径、说明、关闭结果和 Human-facing 展示态的用法，并建立“问题原因 + 当前影响 + 是否阻断 + 后续承接位置”的替代语义体系。
-status: human_plan_confirming
+status: human_closure_confirming
 created: '2026-06-25T01:31:00+08:00'
-updated: '2026-06-25T01:36:26+08:00'
+updated: '2026-06-25T02:40:46+08:00'
 priority: P0
+plan_confirmed_at: '2026-06-25T02:05:54+08:00'
 description: |
   Human 已确认：LDVH 中很多所谓“降级”场景不存在真实可接受的替代路径；继续要求提供降级说明或措施，会遮掩工具、能力、证据、事实冲突、环境入口、验证和关闭判断中的真实问题，使 LDVH 难以进步。
 
@@ -50,9 +51,12 @@ orchestration:
         - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
       expected_output: |
         使用 `rg "降级|degraded|degraded_accepted|人工降级|长期降级|适配降级|降级说明|降级路径|降级态|降级提示|降级兜底"` 扫描 `specs/`、`specs/attachments/` 和 `rules/`，形成迁移清单，并将命中项分类为正式机制、legacy compatibility、反例、历史迁移说明或无需修改；后续执行项必须以该清单为准，不得只依赖手写 input_refs。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已用全量命中扫描驱动迁移：`rg "降级|degraded|degraded_accepted|人工降级|长期降级|适配降级|降级说明|降级路径|降级态|降级提示|降级兜底" specs rules -S --glob '*.md' --glob '*.yaml' --glob '*.yml'`。中文旧概念命中已在 specs/rules 清零；剩余 `degraded` 均分类为 legacy 字段、旧接口兼容、历史兼容枚举或后续实现迁移对象。
+      evidence_refs:
+        - specs/
+        - rules/
       blocking_reason: null
     - id: item-1
       title: 建立全局替代语义和禁用原则
@@ -65,9 +69,14 @@ orchestration:
         - specs/attachments/01.Att.02-术语表.md
       expected_output: |
         在全局规范表达层建立“降级不再作为正式机制概念”的原则，并给出替代语义表：工具不可用、工具输出不足、输入不足、能力缺口、证据不足、事实冲突、环境入口缺口、未验证、失败阻断、取消、延期实现、风险接受、残留风险和受控回写。每个替代项必须说明问题原因、当前影响、是否阻断、禁止写成什么、后续承接事实源和是否需要 Human Gate；其中“风险接受”必须绑定 Human Gate、ADR、触发/退出条件和残留风险。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已在 01 建立“问题原因 + 当前影响 + 是否阻断 + 后续承接位置”替代语义，并把工具不可用、输出不足、输入不足、能力缺口、证据不足、事实冲突、环境入口缺口、未验证或失败阻断、取消/部分完成、延期实现或风险接受纳入统一表。01 附件的表达清单、术语和保障要求类型同步改为缺口、临时核对动作、Human Gate、ADR 和后续分流口径。
+      evidence_refs:
+        - specs/01-规范体系基础规范.md
+        - specs/attachments/01.Att.02-术语表.md
+        - specs/attachments/01.Att.03-规范保障要求类型表.md
+        - specs/attachments/01.Att.08-规范表达清单.md
       blocking_reason: null
     - id: item-2
       title: 迁移行动、Code、Web、运行时、回写和测试主干规范
@@ -82,9 +91,16 @@ orchestration:
         - specs/08-测试基础规范.md
       expected_output: |
         将主干规范中的“降级路径/降级说明/长期降级/失败降级/人工降级检查/degraded 状态”等表达替换为具体问题原因、阻断规则、缺口分流、受控回写、验证声明、Human Gate 和后续承接位置。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已迁移 03/04/05/06/07/08 主干规范：行动编排、Code、Web、运行时、事实源回写和测试不再使用泛化旧概念；工具不可用改为直接报告问题原因，输出不足改为补诊断/来源/范围，失败和未验证阻断完成或关闭。04/05/08 中 `degraded` 仅保留为 legacy compatibility 字段。
+      evidence_refs:
+        - specs/03-行动编排规范.md
+        - specs/04-Code确定性执行规范.md
+        - specs/05-Web信息同步规范.md
+        - specs/06-运行时扩展规范.md
+        - specs/07-事实源边界与Git追溯规范.md
+        - specs/08-测试基础规范.md
       blocking_reason: null
     - id: item-3
       title: 迁移事实模型成员、Rules 同步和环境适配规范
@@ -100,9 +116,18 @@ orchestration:
         - specs/32-environment-entry-adaptation-环境入口落地与适配检查.md
       expected_output: |
         将事实模型成员、Rules 同步和环境适配中的 `degraded_accepted`、长期降级、记录降级、环境适配降级、Rules 降级提示等语义迁移为取消/部分完成、Human Gate + ADR、Spark/WorkCase/ADR/Pitfall 分流、环境入口缺口、工具不可用报告、权威回读和后续分流。`specs/32` 当前不是 active 权威来源，清理时需标明其状态边界。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已迁移 20-24、30、31、32：事实模型成员的未接管场景改为临时核对动作；WorkCase 关闭结果不再推荐 `degraded_accepted`，目标未达成走 `cancelled` 或 `partial_completed`，长期风险接受回到 Human Gate + ADR；Rules 同步和环境入口候选改为问题原因、缺口提示、原文回读、待确认和后续分流。
+      evidence_refs:
+        - specs/20-Spark-火花.md
+        - specs/21-WorkCase-工作项.md
+        - specs/22-ADR-决策.md
+        - specs/23-Pitfall-踩坑经验.md
+        - specs/24-Study-研究报告.md
+        - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+        - specs/31-git-commit-action-Git提交行动编排.md
+        - specs/32-environment-entry-adaptation-环境入口落地与适配检查.md
       blocking_reason: null
     - id: item-4
       title: 迁移全量命中附件中的字段、状态、DTO 和回归语义
@@ -127,9 +152,11 @@ orchestration:
         - specs/attachments/08.Att.08-等价验证适用表.md
       expected_output: |
         以 item-0 的全量命中清单为准迁移附件。附件字段和状态不再定义泛化“降级”机制；保留 legacy 字段时必须标明兼容边界和待迁移方向，并与主干规范的替代语义一致。不得只处理本执行项列出的重点附件而漏掉 01/02/03/04/05/06/08 系其它命中附件。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已按全量命中清单迁移附件：字段、状态、DTO、回归、运行时承载、环境适配、过程回写和失败阻断附件均改为问题原因、受限状态、临时核对动作、未承接项、Human Gate 或后续分流。附件中保留的 `degraded` 均标注为 legacy 兼容字段或旧 Code 兼容值。
+      evidence_refs:
+        - specs/attachments/
       blocking_reason: null
     - id: item-5
       title: 同步 Rules 入口派生表达
@@ -143,9 +170,12 @@ orchestration:
         - specs/30-rules-entry-sync-review-Rules入口同步审查.md
       expected_output: |
         在 item-2 和 item-3 完成 06/30 等 specs 语义迁移后，再同步两个 Rules 入口。Rules 不再使用“降级兜底/降级提示/人工降级检查”作为主机制表达，改为工具不可用直接报告、权威事实源回读、问题原因说明、修复建议和后续分流。权威事实源回读只是事实源优先级和核对动作，不得写成新的可接受兜底机制；若需要改变 STOP、source_specs、sync_triggers、职责边界、权限含义或环境薄引用，必须暂停进入 Human Gate。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已同步两个 Rules 入口派生表达：列名改为“问题分流”，工具不可用、输出不足、来源缺失或事实冲突时要求报告问题原因并退回权威事实源和临时核对动作；Rules 不再使用旧概念作为兜底机制或长期可接受路径。本次未改变 source_specs、sync_triggers、职责边界、权限含义或环境薄引用。
+      evidence_refs:
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - rules/LDVH-MAINTAINER-ENTRY.md
       blocking_reason: null
     - id: item-6
       title: 登记 Code Web tests 后续迁移边界
@@ -168,9 +198,13 @@ orchestration:
         - specs/08-测试基础规范.md
       expected_output: |
         梳理 Code/Web/tests 中仍使用 `degraded` 或“降级”的字段、状态、文案和测试，明确哪些是 legacy compatibility、哪些需要后续迁移 WorkCase，避免 specs 改完后实现层继续扩展旧概念。第一阶段不得要求 Code/Web/tests 立即停止输出、消费或测试 `degraded`；替代字段必须覆盖当前影响、是否阻断、来源回指、后续承接位置，`issue_causes` 使用闭集，`suggested_action` 必须带 owner 或 followup/ref 语义。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已扫描 `code/`、`tests/` 和 `web/`，确认实现层仍有旧字段、状态、测试断言和文案：知识地图/preflight/human_gate/assurance/capability_environment 使用 `degraded` 状态；WorkCase CLI/validate 仍允许 `degraded_accepted`；Web i18n、StatusBanner、对象状态计数和 Web docs 仍有旧文案。按本 WorkCase 边界，第一阶段不硬改实现，登记为后续迁移对象。
+      evidence_refs:
+        - code/
+        - tests/
+        - web/
       blocking_reason: null
     - id: item-7
       title: 验证闭环和残留风险登记
@@ -184,9 +218,14 @@ orchestration:
         - specs/08-测试基础规范.md
       expected_output: |
         完成 WorkCase 事实源校验、active specs 诊断、Rules 入口同步审查、必要格式检查和验证声明；再次运行 item-0 的全量命中扫描，并解释所有保留的 `degraded` 或“降级”是否为 legacy compatibility、反例或历史迁移说明；记录未迁移实现层的残留风险、后续承接对象和回写位置。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已完成验证闭环：WorkCase 事实源校验通过；`rg -n "降级" specs rules` 无命中；`git diff --check` 通过；`v2-check --input-scope entry_navigation --fail-on-diagnostics`、`deployment-entries`、`capability-environment`、两个 Rules 入口的 `knowledge-map --task-type rules_sync_review` 和 `specs_validate.py all --fail-on-diagnostics` 均通过。剩余 `degraded` 仅在 specs/rules 中作为 legacy 兼容字段、历史兼容枚举或旧接口名称出现；Code/Web/tests 仍保留旧实现与测试，已登记为后续迁移边界。
+      evidence_refs:
+        - code/fact_validate.py
+        - code/specs_validate.py
+        - specs/
+        - rules/
       blocking_reason: null
   plan_review:
     orchestration_owner: main_controller
@@ -420,8 +459,7 @@ orchestration:
         - 为 item-5 补入 06/07，明确执行顺序和“不形成新的兜底机制”。
         - 为 item-6 补入现有实现兼容点，并明确第一阶段不要求实现层立即停止输出、消费或测试 `degraded`。
         - 为 item-7 增加结果复核阶段的全量命中扫描和保留项解释。
-      unresolved_items:
-        - 等待 Human 确认是否按修订后的 WorkCase 方案进入执行；确认后需填写 `plan_review.human_confirmation` 和 `plan_confirmed_at`。
+      unresolved_items: []
       changed_fields:
         - status
         - description
@@ -434,8 +472,61 @@ orchestration:
       revision_history_refs:
         - revision_history[0]
       summary: |
-        主控吸收四个审核视角的 follow-up 后，已补强 WorkCase 范围、执行顺序、legacy 兼容约束、Rules 同步边界和验证要求。当前方案可进入 `human_plan_confirming`，等待 Human 执行前确认；未进入执行状态。
+        主控吸收四个审核视角的 follow-up 后，已补强 WorkCase 范围、执行顺序、legacy 兼容约束、Rules 同步边界和验证要求。方案已进入 `human_plan_confirming` 并等待 Human 执行前确认；Human 已在 2026-06-25T02:05:54+08:00 要求开始执行，本记录不再保留行动前未确认事项。
+    human_confirmation:
+      decision: execute
+      scope: |
+        批准 workcase-0005 按修订后方案进入执行：先完成全量命中清单与分类，再迁移 specs、attachments 和 Rules 派生表达；Code/Web/tests 第一阶段只登记 legacy 兼容和后续迁移边界，不做未审核的硬改。
+      constraints:
+        - 不处理 `ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml` 的既有未提交修改。
+        - 第一阶段不得要求 Code/Web/tests 立即停止输出、消费或测试 legacy `degraded`。
+        - 若执行中触及 STOP、职责边界、事实源边界、长期风险接受或需要 ADR 的决策，必须暂停并交 Human 确认。
+      confirmed_at: '2026-06-25T02:05:54+08:00'
+      summary: |
+        Human 在当前对话中回复“开始执行吧”，确认按 workcase-0005 的修订方案进入执行。
   result_review:
+    controller_self_check:
+      controller: main_controller
+      checked_at: '2026-06-25T02:33:39+08:00'
+      prompt_context:
+        objective: |
+          检查 workcase-0005 的成功标准、执行项结果、验证证据、legacy 兼容边界、残留风险和是否可进入独立结果复核。
+        input_refs:
+          - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+          - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
+          - specs/
+          - specs/attachments/
+          - rules/
+          - code/
+          - tests/
+          - web/
+          - code/specs_validate.py
+          - code/fact_validate.py
+      result:
+        status: pass_with_followups
+        summary: |
+          执行项均已完成，第一轮独立结果复核发现的 04.Att.06、05.Att.08、Rules runtime-projection、顶层证据和修订历史问题已处理；当前可进入修复后的独立结果复核。仍有实现层 legacy `degraded` / `degraded_accepted` 兼容项和 Web API facts 空 Pitfall 夹具问题未迁移，这是本 WorkCase 第一阶段明确登记的后续边界，不应被解释为 specs/rules 仍保留正式旧概念。
+        key_findings:
+          - specs/rules 中文旧概念扫描无命中，说明 active specs、附件和 Rules 入口已完成第一阶段概念迁移。
+          - specs/rules 中剩余 `degraded` 均标注为 legacy 兼容字段、历史兼容枚举、历史兼容值或旧接口名称；21 已禁止新写 `degraded_accepted`。
+          - 第一轮独立结果复核指出 `04.Att.06`、`05.Att.08`、Rules runtime-projection 和 WorkCase 顶层证据存在缺口；主控已按要求修复并复跑核心校验。
+          - Code/Web/tests 仍有旧实现状态、测试断言和文案；本轮已登记为后续迁移对象，未做未审核硬改。
+          - WorkCase 事实源校验、entry_navigation、runtime-projection、active specs 综合检查、deployment-entries、capability-environment、Rules 入口同步导航、`npm run test:code` 和 diff 格式检查均通过。
+          - '`npm run test:web:api` 失败于 facts 空 Pitfall 夹具假设；该问题已在 workcase-0003 有先例记录，不作为本轮 specs/rules 概念迁移的通过证据。'
+          - 既有 `spark-0026-human-term-usage-cleanup.yaml` 未纳入本轮修改范围，仍按用户要求不处理。
+        required_changes: []
+        evidence_refs:
+          - orchestration.execution_items
+          - rules/LDVH-WORKSPACE-ENTRY.md
+          - rules/LDVH-MAINTAINER-ENTRY.md
+          - specs/
+          - code/fact_validate.py
+          - code/specs_validate.py
+      attested_at: '2026-06-25T02:33:39+08:00'
+      attestation:
+        signer: main_controller
+        statement: |
+          主控已回读修改范围、执行全量命中扫描和验证命令，并按第一轮独立结果复核的 required_changes 修复缺口；当前结论可进入修复后的独立结果复核。
     review_policy:
       selection_reason: |
         本 WorkCase 完成后需要确认 active specs、附件、Rules 入口、legacy 字段边界、验证声明和后续迁移登记均与 spark-0025 的 D01-D15 结论一致。
@@ -450,7 +541,387 @@ orchestration:
         - 主控自检不得替代独立结果复核。
       aggregation_rule: |
         execution_items 全部 done 后，必须先进入 result_self_checking 完成主控自检，再进入 subagents_result_reviewing 完成独立结果复核；存在阻断或未解释的残留风险时不得进入 Human 关闭确认。
-    review_items: []
+    review_items:
+      - id: result-review-1
+        role: 规范一致性与事实源边界
+        agent_name: McClintock
+        requested_at: '2026-06-25T02:25:45+08:00'
+        prompt_context:
+          objective: |
+            复核 workcase-0005 是否已在 active specs、附件和 Rules 入口中取消旧概念作为正式机制，并检查 legacy 保留边界是否与 01/04/05 一致。
+          input_refs:
+            - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+            - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
+            - specs/
+            - specs/attachments/
+            - rules/
+          constraints:
+            - 只读复核，不修改文件。
+            - 区分 specs/rules 正式概念迁移和 Code/Web/tests 后续实现迁移。
+        context_digest: |
+          方向基本正确，中文旧概念已清零；但 04.Att.06 和 05.Att.08 的 legacy 保留方式仍像 active 字段或主状态，需要修复后再复核。
+        result:
+          status: fail
+          summary: |
+            active specs 和 Rules 的主方向正确，但授权附件中仍有 `degraded` 保留方式不够收敛，尤其 04.Att.06 与 04 主规范的替代字段契约不一致，05.Att.08 仍容易被读成当前 Web 主状态。
+          key_findings:
+            - '`rg -n "降级" specs rules` 无命中。'
+            - 04 主规范已要求知识地图输出使用 `result_status`、`issue_causes`、`suggested_action`，但 04.Att.06 当时仍把 `degraded` 列为目标字段。
+            - 05.Att.08 当时仍在 active 状态矩阵主表中保留 `degraded` 行，容易继续作为 Human-facing 主展示态。
+            - Code/Web/tests 旧实现保留在第一阶段边界内可接受，但必须作为后续迁移风险登记。
+          required_changes:
+            - 更新 04.Att.06，把替代字段纳入目标字段，并将 `degraded` 移入 legacy compatibility / 待迁移字段说明。
+            - 更新 05.Att.08，把主状态迁到 `limited` 或等价受限态；旧 `degraded` 只能作为 legacy 兼容说明。
+            - 修正后重跑中文旧概念扫描、`degraded` 分类检查、diff 格式检查、WorkCase 校验和 specs 综合校验。
+          recommendations:
+            - 为 Code/Web/tests 另立后续迁移 WorkCase，优先处理知识地图旧状态、Web 展示标签和测试旧样例。
+          evidence_refs:
+            - specs/01-规范体系基础规范.md
+            - specs/04-Code确定性执行规范.md
+            - specs/attachments/04.Att.06-知识地图投影Schema表.md
+            - specs/attachments/05.Att.08-缓存与同步状态矩阵.md
+            - rules/LDVH-WORKSPACE-ENTRY.md
+            - rules/LDVH-MAINTAINER-ENTRY.md
+        raw_output_ref: subagent:019efae0-5341-7103-8da2-ba8a067feeeb
+        attested_at: '2026-06-25T02:31:00+08:00'
+        attestation:
+          signer: McClintock
+          statement: 基于 prompt context 和 input refs 完成只读复核，未修改文件，并对规范一致性与事实源边界结论负责。
+      - id: result-review-2
+        role: legacy 兼容和实现迁移风险
+        agent_name: Herschel
+        requested_at: '2026-06-25T02:25:45+08:00'
+        prompt_context:
+          objective: |
+            复核 Code/Web/tests 旧 `degraded` / `degraded_accepted` 契约是否被安全保留为 legacy compatibility，并检查完整 Code 验证入口是否通过。
+          input_refs:
+            - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+            - specs/04-Code确定性执行规范.md
+            - specs/attachments/04.Att.06-知识地图投影Schema表.md
+            - specs/attachments/08.Att.05-Code完整验证入口表.md
+            - code/
+            - tests/
+            - web/
+          constraints:
+            - 只读复核，不修改文件。
+            - 不要求第一阶段硬删实现层 legacy 字段。
+        context_digest: |
+          实现层 legacy 保留边界总体正确，但当时 `npm run test:code` 失败，且 04.Att.06 仍裸列 `degraded`。
+        result:
+          status: fail
+          summary: |
+            第一阶段未硬删实现层旧契约是正确的；但当时完整 Code 回归失败，04.Att.06 仍未按上位规则标明 legacy，也未同步父规范新增替代字段，因此不能通过结果复核。
+          key_findings:
+            - 当时 `npm run test:code` 失败于 runtime-projection fast-path，用例看到 Rules 入口输出 `status=degraded` / `RUNTIME_PROJECTION_BODY_COPIED`。
+            - 04.Att.06 顶层和 navigation 目标字段当时仍裸列 `degraded`，未同步 `result_status`、`issue_causes`、`suggested_action`。
+            - '`code/fact_cli.py`、`code/fact_validate.py`、Web 和测试仍保留旧实现契约；这符合第一阶段兼容边界。'
+            - '`npm run test:web:api` 失败于 facts 空 Pitfall 夹具假设，不能写成 Web API 回归已通过。'
+          required_changes:
+            - 修正 04.Att.06 的 active 字段和 legacy 兼容说明。
+            - 修复或解释 Rules runtime-projection 的 `RUNTIME_PROJECTION_BODY_COPIED` 失败，并重新跑通 `npm run test:code`。
+            - 更新 WorkCase 自检与 item-7，不声称未通过的 Web API 全量回归成功。
+            - 登记 Web API facts 空 Pitfall 夹具失败为残留风险或后续承接项。
+          recommendations:
+            - 后续实现迁移应先新增替代字段并保留 legacy 输出，再迁移测试断言和 Web 展示，最后移除旧主标签。
+          evidence_refs:
+            - specs/04-Code确定性执行规范.md
+            - specs/attachments/04.Att.06-知识地图投影Schema表.md
+            - specs/attachments/08.Att.05-Code完整验证入口表.md
+            - tests/code/specs_validate_checks/test_runtime_projection.py
+            - tests/web/api/facts.test.ts
+        raw_output_ref: subagent:019efae0-707e-74b3-a7f0-e811a8dce483
+        attested_at: '2026-06-25T02:31:00+08:00'
+        attestation:
+          signer: Herschel
+          statement: 基于 prompt context 和 input refs 完成只读复核，未修改文件，并对 legacy 兼容和实现迁移风险结论负责。
+      - id: result-review-3
+        role: 验证证据与残留风险
+        agent_name: Avicenna
+        requested_at: '2026-06-25T02:25:45+08:00'
+        prompt_context:
+          objective: |
+            复核 workcase-0005 的验证证据、关闭证据、状态推进条件和修订历史是否满足 21 的结果复核要求。
+          input_refs:
+            - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+            - specs/21-WorkCase-工作项.md
+            - code/fact_validate.py
+            - code/specs_validate.py
+          constraints:
+            - 只读复核，不修改文件。
+            - 区分结构校验通过和进入结果复核所需的顶层证据字段。
+        context_digest: |
+          验证命令本身基本足以支撑复核，但 WorkCase 当时缺少顶层 verification_evidence / closure_evidence，且 revision_history 顺序和引用漂移。
+        result:
+          status: fail
+          summary: |
+            当前验证命令本身基本足以支撑复核，但 WorkCase 事实源还不能直接进入 `subagents_result_reviewing`：顶层 `verification_evidence` / `closure_evidence` 尚未回写，且修订历史顺序与索引引用存在漂移。
+          key_findings:
+            - 21 要求 `subagents_result_reviewing` 状态必须已有顶层 `verification_evidence` 和 `closure_evidence`。
+            - plan_review.controller_resolution 的 `revision_history_refs` 当时指向错误记录，因为 revision_history 顺序为 02:25、01:36、02:05。
+            - '`fact_validate` 在当前状态校验通过，但模拟推进到 `subagents_result_reviewing` 会报顶层证据缺失。'
+            - '`spark-0026-human-term-usage-cleanup.yaml` 是范围外未提交修改，提交与证据包需要隔离。'
+          required_changes:
+            - 补顶层 `verification_evidence`，列出命令、结果、扫描结论、legacy 保留分类和未验证范围。
+            - 补顶层 `closure_evidence`，说明当前为何可提交结果复核、残留风险、后续承接和 Human Gate 情况。
+            - 按时间顺序修复 revision_history，并让 revision_history_refs 指回正确记录。
+            - 推进状态后复跑 `fact_validate`。
+          recommendations:
+            - 为 Code/Web/tests 旧实现迁移和 Web API facts 空 Pitfall 夹具分别建立后续承接对象。
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+            - specs/21-WorkCase-工作项.md
+            - code/fact_validate.py
+        raw_output_ref: subagent:019efae0-8759-79f2-bdca-639eb62d453e
+        attested_at: '2026-06-25T02:31:00+08:00'
+        attestation:
+          signer: Avicenna
+          statement: 基于 prompt context 和 input refs 完成只读复核，未修改文件，并对验证证据与残留风险结论负责。
+      - id: result-review-4
+        role: 规范一致性与事实源边界
+        agent_name: Euler
+        requested_at: '2026-06-25T02:34:00+08:00'
+        prompt_context:
+          objective: |
+            第一轮 fail 修复后，复核 active specs、specs/attachments 和 rules 是否已取消旧概念作为正式机制，并重点检查 04.Att.06、05.Att.08 和两个 Rules 入口的修复是否充分。
+          input_refs:
+            - rules/LDVH-WORKSPACE-ENTRY.md
+            - rules/LDVH-MAINTAINER-ENTRY.md
+            - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+            - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
+            - specs/
+            - specs/attachments/
+          constraints:
+            - 只读复核，不修改文件。
+            - 若可进入 Human 关闭确认，必须说明不能直接 closed。
+        context_digest: |
+          修复后 04.Att.06、05.Att.08、Rules 入口和顶层证据缺口已补齐；旧概念没有继续作为 active specs / attachments / rules 的正式机制。
+        result:
+          status: pass_with_followups
+          summary: |
+            第一轮 fail 后的修复对本轮目标是充分的：04.Att.06、05.Att.08、Rules 入口和顶层证据缺口已补齐，旧概念没有继续作为 active specs / attachments / rules 的正式机制。可以进入 Human 关闭确认，但不能直接 `closed`，仍需 Human 明确确认关闭。
+          key_findings:
+            - 中文旧概念扫描在 specs/rules 无命中；剩余 `degraded` / `degraded_accepted` 均落在 legacy 兼容、旧接口名、历史兼容枚举或测试兼容边界。
+            - 04.Att.06 已把 `result_status`、`issue_causes`、`suggested_action` 放入目标字段，并把 `degraded` / `navigation.degraded` 移入 legacy compatibility。
+            - 05.Att.08 主状态为 `limited`，`degraded` 只读映射到 `limited`，不再作为 Human-facing 主展示态。
+            - 两个 Rules 入口只表达问题原因、事实源回读、临时核对动作和后续分流，未发现把回读写成新兜底机制。
+            - 复核看到 fact_validate、两个 Rules runtime-projection、specs_validate all、npm run test:code 和 git diff --check 均通过。
+          required_changes: []
+          recommendations:
+            - 登记当前独立复核结果后，可推进到 `human_closure_confirming` 并填写 `closure_requested_at`；关闭仍必须等待 Human 确认。
+            - 后续单独承接 Code/Web/tests legacy `degraded` / `degraded_accepted` 迁移，以及 Web API facts 空 Pitfall 夹具问题。
+            - 非阻断观察：04.Att.06 仍有英文 `fallback` 字段名，31 仍有 CI/server-side gate 的“兜底方向”表述；该 reviewer 判断它们不是旧概念正式机制残留。
+          evidence_refs:
+            - specs/01-规范体系基础规范.md
+            - specs/04-Code确定性执行规范.md
+            - specs/attachments/04.Att.06-知识地图投影Schema表.md
+            - specs/attachments/05.Att.08-缓存与同步状态矩阵.md
+            - rules/LDVH-WORKSPACE-ENTRY.md
+            - rules/LDVH-MAINTAINER-ENTRY.md
+            - specs/21-WorkCase-工作项.md
+        raw_output_ref: subagent:019efaec-3e43-73c2-ae52-50e8f7a933f4
+        attested_at: '2026-06-25T02:40:00+08:00'
+        attestation:
+          signer: Euler
+          statement: 基于 prompt context 和 input refs 完成只读复核，未修改文件，并对规范一致性与事实源边界结论负责。
+      - id: result-review-5
+        role: legacy 兼容和实现迁移风险
+        agent_name: Rawls
+        requested_at: '2026-06-25T02:34:00+08:00'
+        prompt_context:
+          objective: |
+            第一轮 fail 修复后，复核 Code/Web/tests 的 legacy `degraded` / `degraded_accepted` 是否正确登记为后续迁移边界，并检查 Web API 回归失败是否被正确排除为通过证据。
+          input_refs:
+            - rules/LDVH-WORKSPACE-ENTRY.md
+            - rules/LDVH-MAINTAINER-ENTRY.md
+            - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+            - specs/04-Code确定性执行规范.md
+            - specs/attachments/04.Att.06-知识地图投影Schema表.md
+            - specs/attachments/05.Att.08-缓存与同步状态矩阵.md
+            - code/
+            - tests/
+            - web/
+          constraints:
+            - 只读复核，不修改文件。
+            - 不要求第一阶段硬删实现层 legacy 字段。
+        context_digest: |
+          Code/Web/tests 旧契约没有被误称已完成迁移，WorkCase 已将它们登记为后续边界；Web API facts 空 Pitfall 夹具失败也未被写成通过证据。
+        result:
+          status: pass_with_followups
+          summary: |
+            修复后结果复核通过本视角。Code/Web/tests 中的 legacy `degraded` / `degraded_accepted` 没有被误称已完成迁移，WorkCase 将其登记为后续迁移边界；`npm run test:web:api` 失败也被明确排除为通过证据。未发现进入 Human 关闭确认前必须修改的事项。
+          key_findings:
+            - WorkCase 明确第一阶段只迁移 specs/attachments/Rules，Code/Web/tests 不硬删旧字段。
+            - 实现层旧契约仍真实存在，且已被 WorkCase item-6 登记为后续迁移对象。
+            - specs/rules 中中文旧概念无命中；剩余 `degraded` 均带 legacy、历史或旧接口边界。
+            - WorkCase 准确记录 `npm run test:code` 通过，且 `npm run test:web:api` 因 facts 空 Pitfall 夹具失败，不作为通过证据。
+            - reviewer 只运行了只读 `fact_validate`，结果 `files=1 errors=0 warnings=0`。
+          required_changes: []
+          recommendations:
+            - 后续单独创建 WorkCase 迁移 Code/Web/tests legacy `degraded` / `degraded_accepted`。
+            - 单独修复 Web API facts 空 Pitfall 夹具假设，避免全量 Web API 回归长期被无样本阻断。
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+            - specs/04-Code确定性执行规范.md
+            - specs/attachments/04.Att.06-知识地图投影Schema表.md
+            - specs/attachments/05.Att.08-缓存与同步状态矩阵.md
+            - tests/web/api/facts.test.ts
+        raw_output_ref: subagent:019efaec-3eb0-78e1-a9fc-d2970fe54253
+        attested_at: '2026-06-25T02:37:00+08:00'
+        attestation:
+          signer: Rawls
+          statement: 基于 prompt context 和 input refs 完成只读复核，未修改文件，并对 legacy 兼容和实现迁移风险结论负责。
+      - id: result-review-6
+        role: 验证证据与 WorkCase 关闭材料
+        agent_name: Plato
+        requested_at: '2026-06-25T02:34:00+08:00'
+        prompt_context:
+          objective: |
+            第一轮 fail 修复后，复核 WorkCase 状态、验证证据、关闭证据、结果复核条目、主控处理记录、修订历史、残留风险和后续承接是否符合 21 与 21.Att.01。
+          input_refs:
+            - rules/LDVH-WORKSPACE-ENTRY.md
+            - rules/LDVH-MAINTAINER-ENTRY.md
+            - specs/21-WorkCase-工作项.md
+            - specs/attachments/21.Att.01-orchestration字段契约表.md
+            - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+          constraints:
+            - 只读复核，不修改文件。
+            - 不得提前填写 Human 关闭确认或 closed 字段。
+        context_digest: |
+          当前 WorkCase 材料符合 `subagents_result_reviewing` 的要求；第一轮 fail 保留在案，主控已登记并处理 required_changes。进入 Human 关闭确认前需要新增本轮干净复核记录。
+        result:
+          status: pass_with_followups
+          summary: |
+            当前 WorkCase 材料符合 `specs/21` 与 `21.Att.01` 对 `subagents_result_reviewing` 的要求；第一轮结果复核的三条 `fail` 仍记录在案，主控已登记并处理 required_changes。本轮结果复核记录写回并由主控重新形成处理结论后，可考虑进入 `human_closure_confirming`。
+          key_findings:
+            - 当时状态是 `subagents_result_reviewing`，尚未提前填写 `closure_requested_at`、`human_closure_confirmation`、`closed_at` 或 `closure_outcome`。
+            - '`verification_evidence` / `closure_evidence` 已补齐，且明确写明不足以直接关闭。'
+            - 第一轮 result-review-1/2/3 均仍为 `fail`，required_changes 未被改写成通过。
+            - 主控 controller_resolution 已接受 fail 结论，并登记 required_changes 的处理结果。
+            - reviewer 复跑只读校验通过：fact_validate errors=0 warnings=0，中文旧概念无命中，specs_validate all、两个 Rules runtime-projection、deployment-entries、capability-environment 均通过；v2-check entry_navigation 仅有 unrelated review hints，diagnostics=0。
+          required_changes: []
+          recommendations:
+            - 新增修复后的独立结果复核记录，不覆盖第一轮 fail；新复核通过并由主控重新形成 controller_resolution 后，才可考虑进入 `human_closure_confirming`。
+            - 若后续复核通过并请求 Human 关闭确认，转入 `human_closure_confirming` 时填写 `closure_requested_at`；`human_closure_confirmation` 只能在 Human 实际确认关闭或退回后填写。
+          evidence_refs:
+            - specs/21-WorkCase-工作项.md
+            - specs/attachments/21.Att.01-orchestration字段契约表.md
+            - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+            - specs/attachments/04.Att.06-知识地图投影Schema表.md
+            - specs/attachments/05.Att.08-缓存与同步状态矩阵.md
+        raw_output_ref: subagent:019efaec-3f1b-7780-8cbf-fe6c03d8f7b2
+        attested_at: '2026-06-25T02:39:00+08:00'
+        attestation:
+          signer: Plato
+          statement: 基于 prompt context 和 input refs 完成只读复核，未修改文件，并对验证证据与 WorkCase 关闭材料结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-25T02:40:46+08:00'
+      resolver: main_controller
+      source_review_item_ids:
+        - result-review-1
+        - result-review-2
+        - result-review-3
+        - result-review-4
+        - result-review-5
+        - result-review-6
+      accepted_findings:
+        - 第一轮三个结果复核视角均为 `fail`，主控已保留原始结论，不将其改写为通过。
+        - 第一轮要求修复的 04.Att.06、05.Att.08、Rules runtime-projection、`npm run test:code`、顶层证据和 revision_history 问题均已处理。
+        - 第二轮三个结果复核视角均为 `pass_with_followups`，且无 required_changes。
+        - Euler 确认旧概念没有继续作为 active specs / attachments / rules 的正式机制，04.Att.06、05.Att.08 和 Rules 入口修复充分。
+        - Rawls 确认 Code/Web/tests legacy 实现边界和 Web API facts 空 Pitfall 夹具失败均已准确登记，没有被误称已完成或通过。
+        - Plato 确认 WorkCase 材料符合 21 与 21.Att.01 的结果复核记录要求；转入 Human 关闭确认时只能请求确认，不能直接 closed。
+      rejected_findings: []
+      required_changes_applied:
+        - 已修正 04.Att.06：active 字段改为 `result_status`、`issue_causes`、`suggested_action`，历史 `degraded` / `navigation.degraded` 仅作为 legacy compatibility。
+        - 已修正 05.Att.08：主状态改为 `limited`，历史 `degraded` 仅只读映射到 `limited`。
+        - 已修正两个 Rules 入口的 runtime-projection 命中问题，并复跑通过 workspace 与 maintainer 两个入口的 runtime-projection。
+        - 已复跑 `npm run test:code` 并通过；`npm run test:web:api` 的 facts 空 Pitfall 夹具失败已登记为残留风险。
+        - 已补顶层 `verification_evidence` 和 `closure_evidence`，并按时间顺序重排 `revision_history`。
+        - 已新增第二轮修复后结果复核记录，并确认无阻断 required_changes。
+      unresolved_items:
+        - 等待 Human 对是否关闭 workcase-0005 作最终确认；在 Human 确认前不得填写 `human_closure_confirmation`、`closed_at` 或 `closure_outcome`。
+        - Code/Web/tests 的 legacy 实现迁移和 Web API facts 空 Pitfall 夹具问题需后续承接。
+      changed_fields:
+        - status
+        - updated
+        - orchestration.result_review.controller_self_check
+        - orchestration.result_review.review_items
+        - orchestration.result_review.controller_resolution
+        - verification_evidence
+        - closure_evidence
+        - residual_risks
+        - followup_refs
+        - closure_requested_at
+        - revision_history
+      revision_history_refs:
+        - revision_history[4]
+      summary: |
+        主控保留第一轮结果复核的 fail 结论，并接受第二轮修复后结果复核的 pass_with_followups 结论。当前无进入 Human 关闭确认前的 required_changes，状态推进到 `human_closure_confirming`，请求 Human 判断是否关闭；这不是自动关闭。
+verification_evidence: |
+  ## 验证计划
+  - 复核 active specs、附件和 Rules 中旧概念是否已从正式机制、状态、路径、关闭结果和 Human-facing 主展示态移除。
+  - 复核剩余 `degraded` / `degraded_accepted` 是否只属于 legacy compatibility、历史兼容枚举、旧接口名称或后续实现迁移边界。
+  - 复核 WorkCase、Rules 入口、Code 完整验证入口和 specs 综合诊断是否能够支撑修复后的独立结果复核。
+
+  ## 验证命令
+  - `rg -n "降级" specs rules -S --glob '*.md' --glob '*.yaml' --glob '*.yml'`：无命中。
+  - `rg -n "degraded|degraded_accepted" specs rules -S --glob '*.md' --glob '*.yaml' --glob '*.yml'`：剩余项均已分类为 legacy 兼容、历史兼容值或旧接口名称。
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml --format text`：通过。
+  - `git diff --check`：通过。
+  - `python3 code/specs_validate.py v2-check --input-scope entry_navigation --fail-on-diagnostics --format text`：通过。
+  - `python3 code/specs_validate.py deployment-entries`：通过。
+  - `python3 code/specs_validate.py capability-environment`：通过。
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node rules/LDVH-WORKSPACE-ENTRY.md --task-type rules_sync_review --format text`：通过。
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node rules/LDVH-MAINTAINER-ENTRY.md --task-type rules_sync_review --format text`：通过。
+  - `python3 code/specs_validate.py runtime-projection rules/LDVH-WORKSPACE-ENTRY.md --format text`：通过。
+  - `python3 code/specs_validate.py runtime-projection rules/LDVH-MAINTAINER-ENTRY.md --format text`：通过。
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过。
+  - `npm run test:code`：通过，337 个 pytest 用例通过，并通过 specs check。
+
+  ## 验证结果
+  已通过命令如上；未通过或未完成范围如下：
+  - `npm run test:web:api` 失败于 `tests/web/api/facts.test.ts:27`，原因是当前事实源没有 Pitfall 列表项，测试仍假设 `pitfalls.data.items[0]` 存在；`python3 code/fact_cli.py list pitfall` 返回未找到 Pitfall 对象。该失败与 workcase-0003 中记录的 facts 空 Pitfall 夹具旁路问题一致，不作为本 WorkCase 的通过证据。
+  - Code/Web/tests 中 legacy `degraded` / `degraded_accepted` 实现、测试断言和展示文案尚未迁移；本 WorkCase 第一阶段只登记边界，不硬改实现。
+
+  ## 结论
+  - specs/rules 第一阶段概念迁移与第一轮复核提出的阻断修复已通过核心校验。
+  - 第二轮修复后独立结果复核均为 `pass_with_followups`，且无 required_changes。
+  - 当前证据足以请求 Human 关闭确认，但不足以直接自动关闭 WorkCase。
+closure_evidence: |
+  ## 验证计划
+  - 判断本 WorkCase 是否可以进入 Human 关闭确认，或是否仍需独立结果复核、后续承接和 Human Gate。
+
+  ## 验证命令
+  - 参见 `verification_evidence` 中列出的扫描、事实源校验、Rules 校验、runtime-projection、Code 完整验证和 Web API 回归命令。
+
+  ## 验证结果
+  当前 WorkCase 不能直接关闭，但可以进入 Human 关闭确认。第一轮独立结果复核给出 `fail`，主控已处理 required_changes 并补足验证证据、关闭证据和修订历史；第二轮修复后独立结果复核给出三条 `pass_with_followups`，且无 required_changes。
+
+  已满足范围：
+  - active specs、附件和 Rules 不再把旧概念作为正式机制、状态、路径、关闭结果、验证方式、长期接受方案或 Human-facing 主展示态。
+  - 01 已建立全局替代语义；04/05/21/Rules 等处已把 legacy 字段和历史兼容值从 active 契约中分离。
+  - 04.Att.06、05.Att.08 和两个 Rules 入口已按第一轮复核意见修复。
+  - 第二轮结果复核已确认可请求 Human 关闭确认，但不得直接 closed。
+
+  残留风险：
+  - Code/Web/tests 仍有 legacy `degraded` / `degraded_accepted` 输出、消费、测试断言和展示文案，需要后续迁移 WorkCase 承接。
+  - Web API 全量回归仍被 facts 空 Pitfall 夹具假设阻断，需要后续修复测试夹具或补可控样本。
+  - `ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml` 是用户安排的另一个 Spark 相关修改，按用户要求未纳入本 WorkCase。
+
+  Human Gate：
+  本轮没有新增接受长期缺口运行、改变事实源边界或关闭关键缺口的决策，因此未触发新的 ADR / Human Gate。若后续决定长期保留 Code/Web/tests legacy 实现或接受 Web API 回归失败，必须单独进入 Human Gate + ADR。
+
+  ## 结论
+  当前证据支持进入 Human 关闭确认；在 Human 明确确认关闭前，不得填写 `human_closure_confirmation`、`closed_at` 或 `closure_outcome`。
+closure_requested_at: '2026-06-25T02:40:46+08:00'
+residual_risks:
+  - Code/Web/tests 仍保留 legacy `degraded` / `degraded_accepted` 实现、测试断言和展示文案；需后续迁移，不能解释为 specs/rules 仍允许旧概念作为正式机制。
+  - '`npm run test:web:api` 失败于 facts 空 Pitfall 夹具假设；需要后续修复测试数据或测试断言。'
+  - 当前已进入 Human 关闭确认阶段，尚未得到 Human 关闭确认，也未关闭 WorkCase。
+  - '`ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml` 为范围外既有修改，提交和证据隔离时必须排除。'
+followup_refs:
+  - 待创建 WorkCase：Code/Web/tests legacy `degraded` / `degraded_accepted` 实现迁移。
+  - 待创建 WorkCase 或 Pitfall：Web API facts 空 Pitfall 夹具假设修复。
 revision_history:
   - at: '2026-06-25T01:36:26+08:00'
     from_status: subagents_plan_reviewing
@@ -468,6 +939,90 @@ revision_history:
       - related_docs
     summary: |
       新增全量命中清单步骤，扩展 active 20-24、00/02/31 和全量附件扫描范围；明确第一阶段不得要求 Code/Web/tests 立即停止输出、消费或测试 legacy `degraded`；Rules 同步须在主干 specs 迁移后执行且不形成新的兜底机制。
+  - at: '2026-06-25T02:05:54+08:00'
+    from_status: human_plan_confirming
+    to_status: executing
+    actor: Human
+    reason: |
+      Human 在当前对话中确认“开始执行吧”，批准按 workcase-0005 的修订方案进入执行。
+    changed_fields:
+      - status
+      - updated
+      - plan_confirmed_at
+      - orchestration.execution_items[0].status
+      - orchestration.plan_review.controller_resolution.unresolved_items
+      - orchestration.plan_review.human_confirmation
+    summary: |
+      进入执行状态，item-0 标记为 in_progress。执行边界保持：只处理本 WorkCase 范围内的 specs、attachments、Rules 和后续迁移登记，不处理 spark-0026 的既有未提交修改。
+  - at: '2026-06-25T02:25:30+08:00'
+    from_status: executing
+    to_status: result_self_checking
+    actor: main_controller
+    summary: |
+      执行项全部完成并进入主控自检；本次变更已通过事实源校验、specs/rules 命中扫描、格式检查和相关 specs/Rules 诊断。
+    reason: |
+      item-0 至 item-7 已完成，进入主控自检阶段。验证结果显示：WorkCase 事实源校验通过、specs/rules 中文旧概念清零、diff 格式检查通过、active specs 综合诊断通过、部署入口与能力环境检查通过、两个 Rules 入口同步导航无 diagnostics。
+    changed_fields:
+      - status
+      - updated
+      - orchestration.execution_items
+    evidence_refs:
+      - specs/
+      - rules/
+      - code/specs_validate.py
+      - code/fact_validate.py
+  - at: '2026-06-25T02:33:39+08:00'
+    from_status: result_self_checking
+    to_status: subagents_result_reviewing
+    actor: main_controller
+    reason: |
+      第一轮独立结果复核发现附件字段、Web 主状态、Rules runtime-projection、顶层证据和修订历史缺口。主控已修复相关 required_changes，补齐验证与关闭证据，并进入修复后的独立结果复核阶段。
+    changed_fields:
+      - status
+      - updated
+      - orchestration.result_review.controller_self_check
+      - orchestration.result_review.review_items
+      - orchestration.result_review.controller_resolution
+      - verification_evidence
+      - closure_evidence
+      - residual_risks
+      - followup_refs
+      - revision_history
+    evidence_refs:
+      - specs/attachments/04.Att.06-知识地图投影Schema表.md
+      - specs/attachments/05.Att.08-缓存与同步状态矩阵.md
+      - rules/LDVH-WORKSPACE-ENTRY.md
+      - rules/LDVH-MAINTAINER-ENTRY.md
+      - code/specs_validate.py
+      - code/fact_validate.py
+    summary: |
+      记录第一轮结果复核 fail 结论和主控处理结果；当前已准备好进行修复后的独立结果复核，但不得直接进入 Human 关闭确认。
+  - at: '2026-06-25T02:40:46+08:00'
+    from_status: subagents_result_reviewing
+    to_status: human_closure_confirming
+    actor: main_controller
+    reason: |
+      第二轮修复后独立结果复核已完成，Euler、Rawls 和 Plato 均给出 `pass_with_followups` 且无 required_changes。主控聚合后确认可请求 Human 关闭确认，但不能自动关闭。
+    changed_fields:
+      - status
+      - updated
+      - orchestration.result_review.review_items
+      - orchestration.result_review.controller_resolution
+      - verification_evidence
+      - closure_evidence
+      - closure_requested_at
+      - residual_risks
+      - revision_history
+    evidence_refs:
+      - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+      - specs/21-WorkCase-工作项.md
+      - specs/attachments/21.Att.01-orchestration字段契约表.md
+      - specs/attachments/04.Att.06-知识地图投影Schema表.md
+      - specs/attachments/05.Att.08-缓存与同步状态矩阵.md
+      - rules/LDVH-WORKSPACE-ENTRY.md
+      - rules/LDVH-MAINTAINER-ENTRY.md
+    summary: |
+      写入第二轮真实子 Agent 结果复核记录，并形成主控处理结论。当前 WorkCase 等待 Human 判断是否关闭；若 Human 未确认，不得写入 `human_closure_confirmation`、`closed_at` 或 `closure_outcome`。
 related_docs:
   - specs/00-LDVH理念与价值标准.md
   - specs/01-规范体系基础规范.md

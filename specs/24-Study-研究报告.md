@@ -227,7 +227,7 @@ Study 的创建、状态变化、核心报告改写和归档都应留下 Git com
 3. 将 Study 标记为 `archived`；
 4. 大幅改写 `summary`、`conclusion` 或报告正文；
 5. 将 Study 作为 ADR、WorkCase 或 Spark 的关键依据；
-6. 接受报告中的不确定性、降级结论或高影响判断。
+6. 接受报告中的不确定性、残留风险或高影响判断。
 
 ## 9. 字段契约
 
@@ -302,11 +302,11 @@ Web 可展示 Study 列表、状态、摘要、结论、正文入口和关联对
 
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Study 实例和后续行动编排应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter、正文骨架和事实源边界 | 本文、active `specs/24-Study-研究报告.md`、v2 02、Human Gate；行动编排未接管前为人工降级检查 | 事实模型治理 | 创建、修改、迁移、引用或归档 Study 时 |
-| 入口可见要求 | AI 处理需要长期保留的调研报告时，应能定位 Study active 规范、本文和对应实例事实源 | 02 成员身份、Rules 入口、`v2-check` 只读诊断和知识地图输入；行动编排未接管前为人工降级检查 | AI 执行入口 | 报告创建、引用、吸收、归档、Rules 入口、`v2-check` 或知识地图输入变化时 |
-| 确定性执行要求 | Study frontmatter、状态、引用、文件命名、URL 结构和正文骨架应由 Code 校验或记录缺口 | 现有 active Code、`02.Att.04`、`02.Att.05`、`02.Att.06`、人工降级检查 | Code 校验 | 字段契约、状态机、Markdown 承载或引用关系变化时 |
+| 上位约束承接要求 | Study 实例和后续行动编排应遵守本文定义的准入、状态机、字段契约、Markdown frontmatter、正文骨架和事实源边界 | 本文、active `specs/24-Study-研究报告.md`、v2 02、Human Gate；行动编排未接管前使用临时核对动作 | 事实模型治理 | 创建、修改、迁移、引用或归档 Study 时 |
+| 入口可见要求 | AI 处理需要长期保留的调研报告时，应能定位 Study active 规范、本文和对应实例事实源 | 02 成员身份、Rules 入口、`v2-check` 只读诊断和知识地图输入；行动编排未接管前使用临时核对动作 | AI 执行入口 | 报告创建、引用、吸收、归档、Rules 入口、`v2-check` 或知识地图输入变化时 |
+| 确定性执行要求 | Study frontmatter、状态、引用、文件命名、URL 结构和正文骨架应由 Code 校验或记录缺口 | 现有 active Code、`02.Att.04`、`02.Att.05`、`02.Att.06`、临时核对动作 | Code 校验 | 字段契约、状态机、Markdown 承载或引用关系变化时 |
 | Human 交互要求 | Study 创建、核心报告改写、归档和作为关键依据时应触发 Human Gate | Human Gate、影响范围说明、确认记录 | Human Gate | §8 中任一场景发生时 |
-| 生命周期触发要求 | Study 规范变化后，应检查 Spark、WorkCase、ADR、Pitfall、Code、Web、运行时扩展、行动编排和待补齐事项是否需要同步 | 本文、02 授权附件、Code 诊断、人工降级检查 | 生命周期同步 | Study 字段、状态、事实源边界、Markdown frontmatter 或检查要求变化时 |
+| 生命周期触发要求 | Study 规范变化后，应检查 Spark、WorkCase、ADR、Pitfall、Code、Web、运行时扩展、行动编排和待补齐事项是否需要同步 | 本文、02 授权附件、Code 诊断、临时核对动作 | 生命周期同步 | Study 字段、状态、事实源边界、Markdown frontmatter 或检查要求变化时 |
 
 ## 13. 对象特有实例检查
 
@@ -320,7 +320,7 @@ Web 可展示 Study 列表、状态、摘要、结论、正文入口和关联对
 | 归档规则 | archived Study 已说明归档原因 |
 | URL 结构 | `urls` 条目使用结构化对象，至少包含完整 `http(s)` URL 和中文用途摘要 |
 | 对象边界 | Study 未替代 Spark、ADR、WorkCase、Pitfall 或 docs/sources |
-| Human Gate | §8 场景已完成确认或记录降级 |
+| Human Gate | §8 场景已完成确认或记录残留风险 |
 | Git 追溯 | Study 关键变化有 Git 可追溯记录 |
 | Code / Web 边界 | 派生输出未替代 Git 文件事实源 |
 

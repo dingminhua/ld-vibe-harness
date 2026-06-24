@@ -10,10 +10,10 @@ ldvh_asset:
     - "specs/01-规范体系基础规范.md"
     - "specs/04-Code确定性执行规范.md"
     - "specs/06-运行时扩展规范.md"
-    - "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
-    - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
+    - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+    - specs/attachments/06.Att.02-固定运行时扩展登记表.md
     - "specs/07-事实源边界与Git追溯规范.md"
-    - "specs/31-git-commit-action-Git提交行动编排.md"
+    - specs/31-git-commit-action-Git提交行动编排.md
     - "specs/08-测试基础规范.md"
   consumption_scenarios:
     - "LDVH 产品资产维护"
@@ -89,7 +89,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 3. 选择 `task_type`：入口理解用 `rules_entry`，规范修改用 `spec_change`，Rules 同步用 `rules_sync_review`，Code 修改用 `code_change`，Web 修改用 `web_change`，Git 提交准备用 `git_trace`；
 4. 运行 `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type <task_type> --format json` 建立任务视图；
 5. 先消费 `navigation`、`read_plan`、`next_queries`、`stop_conditions` 和 `impact_summary`：只读取 `read_plan` 中 P0/P1 的权威原文，P2/P3 仅在当前判断需要时展开；若 `next_queries` 要求 expand 或换范围，按其建议追加查询；
-6. 若知识地图降级、无来源回指、起点无法定位或与原文冲突，说明降级原因，并退回 active specs、产品资产文件、Rules 入口、07 Git 文件事实源和人工降级检查；
+6. 若知识地图工具不可用、输出不足、无来源回指、起点无法定位或与原文冲突，说明问题原因，并退回 active specs、产品资产文件、Rules 入口、07 Git 文件事实源和临时核对动作；
 7. 修改前按任务目标运行必要的 `preflight`、`deployment-entries`、`capability-environment`、`v2-check` 或测试；修改后运行对应校验命令，并把稳定结论写回权威事实源。
 
 常用查询命令如下：
@@ -106,28 +106,28 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 | LDVH Git 提交准备 | `specs/31-git-commit-action-Git提交行动编排.md`、`ldvh-git-commit` Skill、`python3 code/commit_validate.py --check-message-file <message-file>` | 按 31 的行动流程和 07 的 commit message 契约拆分、编写、预检并创建提交 |
 | Rules 环境入口接入 | 按 `specs/06-运行时扩展规范.md` §4.1-§4.4 执行 | 官方维护 Codex App 适配路径；默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口 |
 
-工具输出、知识地图投影和读取建议只作为导航、聚合和诊断结果，不替代权威文件原文。当工具不可用、输出无法回指事实源、结果与原文冲突或当前场景超出工具能力时，应退回 Git 文件事实源、对应规范和人工降级检查。若 active specs、产品资产文件、Rules 入口和知识地图投影冲突，优先级为 active specs 与 Git 文件事实源、产品资产文件、Rules 入口、知识地图投影。
+工具输出、知识地图投影和读取建议只作为导航、聚合和诊断结果，不替代权威文件原文。当工具不可用、输出无法回指事实源、结果与原文冲突或当前场景超出工具能力时，应报告问题原因，并退回 Git 文件事实源、对应规范和临时核对动作。若 active specs、产品资产文件、Rules 入口和知识地图投影冲突，优先级为 active specs 与 Git 文件事实源、产品资产文件、Rules 入口、知识地图投影。
 
-不得用 `ls`、全文 Read 或只查看 `v2-check` 摘要替代知识地图任务导航。手工文件读取只能用于核对知识地图 `read_plan` 定位出的权威原文，或在工具降级后按本文说明的事实源顺序执行人工降级检查。
+不得用 `ls`、全文 Read 或只查看 `v2-check` 摘要替代知识地图任务导航。手工文件读取只能用于核对知识地图 `read_plan` 定位出的权威原文，或在工具不可用、输出不足、来源缺失或事实冲突后按本文说明的事实源顺序执行临时核对动作。
 
-本文承载的入口表达只包括：入口判断、场景路由、最小读取、STOP 点、工具导航、交接、降级提示和来源规范回指。知识地图入口只能表现为 Code 命令、读取建议和影响判断，不得在本文内展开或固化图谱内容。
+本文承载的入口表达只包括：入口判断、场景路由、最小读取、STOP 点、工具导航、交接、缺口提示和来源规范回指。知识地图入口只能表现为 Code 命令、读取建议和影响判断，不得在本文内展开或固化图谱内容。
 
-按 active `specs/30-rules-entry-sync-review-Rules入口同步审查.md`，active specs、附件或行动成员主文件变化若影响固定 Rules 的入口路由、最小读取、STOP、工具入口、交接、验证、降级提示、知识地图任务导航、知识地图入口或 Code 检查入口含义，应执行 Rules 入口同步审查。普通文案澄清、路径错字或不改变入口行为的读取建议调整，可在说明依据并完成验证后处理；修改职责边界、STOP、`source_specs`、`sync_triggers`、canonical path、固定承载物身份、权限含义或环境薄引用前，必须评估 Human Gate。
+按 active `specs/30-rules-entry-sync-review-Rules入口同步审查.md`，active specs、附件或行动成员主文件变化若影响固定 Rules 的入口路由、最小读取、STOP、工具入口、交接、验证、缺口提示、知识地图任务导航、知识地图入口或 Code 检查入口含义，应执行 Rules 入口同步审查。普通文案澄清、路径错字或不改变入口行为的读取建议调整，可在说明依据并完成验证后处理；修改职责边界、STOP、`source_specs`、`sync_triggers`、canonical path、固定承载物身份、权限含义或环境薄引用前，必须评估 Human Gate。
 
 ---
 ## 4. 任务类型与起点
 
-| 场景 | `task_type` | 默认 `start_node` | 降级兜底 |
+| 场景 | `task_type` | 默认 `start_node` | 问题分流 |
 |---|---|---|---|
 | 理解或修改维护入口 | `rules_entry` | `rules/LDVH-MAINTAINER-ENTRY.md` | 本文、`source_specs` 和固定运行时扩展登记 |
 | 修改 specs、附件或行动成员 | `spec_change` | 用户点名文件或变化来源文件 | 目标原文、01、04、06、07 和 `preflight` |
-| 判断 Rules 同步影响 | `rules_sync_review` | 变化来源文件；不明确时用受影响 Rules 入口 | 30、06 §4.2、受影响 Rules 原文和人工降级检查 |
+| 判断 Rules 同步影响 | `rules_sync_review` | 变化来源文件；不明确时用受影响 Rules 入口 | 30、06 §4.2、受影响 Rules 原文和临时核对动作 |
 | 修改 Code 或测试 | `code_change` | 目标 Code / test 文件 | 04、08、对应测试命令和工具帮助 |
 | 修改 Web 或 Human-facing 入口 | `web_change` | 目标 Web / API / 文档文件 | 05、08 和相关 Web 校验 |
 | 准备 Git 提交或追溯事实源 | `git_trace` | 变化文件或提交范围 | 31、07、commit records、`commit_validate.py` |
 | 处理 LDVH 自身工作对象 | `work_object` | 目标 WorkCase/ADR/Spark/Pitfall/Study | 转入 `rules/LDVH-WORKSPACE-ENTRY.md` |
 
-场景同时命中多个入口时，先用最具体的用户点名对象作为 `start_node`。若知识地图 `read_plan` 给出 P0/P1 权威原文，应以该计划替代本文的静态读取猜测；本文只保留起点选择、任务类型、STOP 和降级规则。
+场景同时命中多个入口时，先用最具体的用户点名对象作为 `start_node`。若知识地图 `read_plan` 给出 P0/P1 权威原文，应以该计划替代本文的静态读取猜测；本文只保留起点选择、任务类型、STOP 和问题分流规则。
 
 ---
 ## 5. STOP 点
@@ -139,7 +139,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 3. 要修改工作区级入口、环境入口、项目规则或等价配置；
 4. 要声明任一环境完整支持 LDVH，或把一次本地适配检查结果写成环境类型结论；
 5. 要把 LDVH 项目级维护入口用于默认处理管辖项目工作对象；
-6. 要接受长期降级、关闭关键缺口、绕过 Human Gate 或改变事实源边界；
+6. 要接受长期能力缺口、关闭关键缺口、绕过 Human Gate 或改变事实源边界；
 7. 入口内容与 specs 正式规范、固定运行时扩展登记、Code 校验结果或工作区入口冲突。
 8. 要修改本文职责边界、STOP、入口交接、`source_specs`、`sync_triggers`、canonical path、固定承载物身份、权限含义或环境薄引用。
 

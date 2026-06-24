@@ -11,10 +11,10 @@ ldvh_asset:
     - "specs/02-事实模型基础规范.md"
     - "specs/04-Code确定性执行规范.md"
     - "specs/06-运行时扩展规范.md"
-    - "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
-    - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
+    - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+    - specs/attachments/06.Att.02-固定运行时扩展登记表.md
     - "specs/07-事实源边界与Git追溯规范.md"
-    - "specs/31-git-commit-action-Git提交行动编排.md"
+    - specs/31-git-commit-action-Git提交行动编排.md
   consumption_scenarios:
     - "工作区级管辖项目识别"
     - "管辖项目工作对象处理"
@@ -90,7 +90,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 5. 运行 `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type <task_type> --format json` 建立任务视图；
 6. 先消费 `navigation`、`read_plan`、`next_queries`、`stop_conditions` 和 `impact_summary`：只读取 P0/P1 的权威原文，P2/P3 按任务需要展开；若输出要求追加查询，按 `next_queries` 渐进展开；
 7. 判断当前目录或用户目标是否命中某个 `projects[].path`；命中后按该项目自身事实源工作，未命中时不得静默接管；
-8. 涉及工作对象准入、状态流转、关闭、长期降级、项目清单修改或用户文档写入时，回到对应 specs、工作对象事实源和 Human Gate。
+8. 涉及工作对象准入、状态流转、关闭、长期能力缺口、项目清单修改或用户文档写入时，回到对应 specs、工作对象事实源和 Human Gate。
 
 常用查询命令如下：
 
@@ -108,18 +108,18 @@ AI 进入工作区入口后，应按以下顺序启动：
 | 工作对象统计 | `python3 code/fact_cli.py stats` | 统计工作对象状态分布 |
 | Rules 环境入口接入 | 按 `specs/06-运行时扩展规范.md` §4.1-§4.4 执行 | 官方维护 Codex App 适配路径；默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口 |
 
-工具输出、知识地图投影和读取建议只作为导航、聚合和诊断结果，不替代权威文件原文。当工具不可用、输出无法回指事实源、结果与原文冲突或当前场景超出工具能力时，应退回 Git 文件事实源、对应规范和人工降级检查。若 active specs、工作对象事实源、Rules 入口和知识地图投影冲突，优先级为 active specs 与 Git 文件事实源、工作对象事实源、Rules 入口、知识地图投影。
+工具输出、知识地图投影和读取建议只作为导航、聚合和诊断结果，不替代权威文件原文。当工具不可用、输出无法回指事实源、结果与原文冲突或当前场景超出工具能力时，应报告问题原因，并退回 Git 文件事实源、对应规范和临时核对动作。若 active specs、工作对象事实源、Rules 入口和知识地图投影冲突，优先级为 active specs 与 Git 文件事实源、工作对象事实源、Rules 入口、知识地图投影。
 
-不得用 `ls`、全文 Read 或只查看 `v2-check` 摘要替代知识地图任务导航。手工文件读取只能用于核对知识地图 `read_plan` 定位出的权威原文，或在工具降级后按本文说明的事实源顺序执行人工降级检查。
+不得用 `ls`、全文 Read 或只查看 `v2-check` 摘要替代知识地图任务导航。手工文件读取只能用于核对知识地图 `read_plan` 定位出的权威原文，或在工具不可用、输出不足、来源缺失或事实冲突后按本文说明的事实源顺序执行临时核对动作。
 
-本文承载的入口表达只包括：入口判断、场景路由、最小读取、STOP 点、工具导航、交接、降级提示和来源规范回指。知识地图入口只能表现为 Code 命令、读取建议和影响判断，不得在本文内展开或固化图谱内容。
+本文承载的入口表达只包括：入口判断、场景路由、最小读取、STOP 点、工具导航、交接、缺口提示和来源规范回指。知识地图入口只能表现为 Code 命令、读取建议和影响判断，不得在本文内展开或固化图谱内容。
 
-按 active `specs/30-rules-entry-sync-review-Rules入口同步审查.md`，active specs、附件或行动成员主文件变化若影响本文的入口路由、最小读取、STOP、工具入口、交接、验证、降级提示、知识地图任务导航、知识地图入口或 Code 检查入口含义，应转入维护入口执行 Rules 入口同步审查。普通文案澄清、路径错字或不改变入口行为的读取建议调整，可在说明依据并完成验证后处理；修改职责边界、STOP、`source_specs`、`sync_triggers`、canonical path、固定承载物身份、权限含义或环境薄引用前，必须评估 Human Gate。
+按 active `specs/30-rules-entry-sync-review-Rules入口同步审查.md`，active specs、附件或行动成员主文件变化若影响本文的入口路由、最小读取、STOP、工具入口、交接、验证、缺口提示、知识地图任务导航、知识地图入口或 Code 检查入口含义，应转入维护入口执行 Rules 入口同步审查。普通文案澄清、路径错字或不改变入口行为的读取建议调整，可在说明依据并完成验证后处理；修改职责边界、STOP、`source_specs`、`sync_triggers`、canonical path、固定承载物身份、权限含义或环境薄引用前，必须评估 Human Gate。
 
 ---
 ## 4. 任务类型与起点
 
-| 场景 | `task_type` | 默认 `start_node` | 降级兜底 |
+| 场景 | `task_type` | 默认 `start_node` | 问题分流 |
 |---|---|---|---|
 | 工作区入口理解 | `workspace_entry` | `rules/LDVH-WORKSPACE-ENTRY.md` | 本文、`LDVH-GOVERNED-PROJECTS.yaml` 和 `source_specs` |
 | 判断当前是否为管辖项目 | `governed_project_check` | `LDVH-GOVERNED-PROJECTS.yaml` 或当前项目路径 | `governed-projects`、Human Gate |
@@ -128,7 +128,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 | 判断 specs 变化是否影响固定 Rules 入口表达 | `rules_sync_review` | 变化来源文件或受影响 Rules 入口 | 转入维护入口并按 active 30 执行 |
 | 维护 LDVH 产品资产 | `rules_entry` | `rules/LDVH-MAINTAINER-ENTRY.md` 或用户点名资产 | 转入 `rules/LDVH-MAINTAINER-ENTRY.md` |
 
-场景同时命中多个入口时，先用最具体的用户点名对象作为 `start_node`。若知识地图 `read_plan` 给出 P0/P1 权威原文，应以该计划替代本文的静态读取猜测；本文只保留管辖判断、起点选择、任务类型、STOP 和降级规则。
+场景同时命中多个入口时，先用最具体的用户点名对象作为 `start_node`。若知识地图 `read_plan` 给出 P0/P1 权威原文，应以该计划替代本文的静态读取猜测；本文只保留管辖判断、起点选择、任务类型、STOP 和问题分流规则。
 
 ---
 ## 5. STOP 点

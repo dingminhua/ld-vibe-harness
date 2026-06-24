@@ -184,7 +184,7 @@ ldvh-base/workcases/workcase-{NNNN}-short-title.yaml
 | `human_closure_confirming` | Human 关闭确认中：结果复核和主控处理记录已形成，等待 Human 确认是否关闭、退回补审、继续执行或修改方案 |
 | `closed` | 关闭判断已确认，工作项终态稳定 |
 
-`closed` 是稳定终态，只表示该工作项不再继续推进，不等同于目标成功。关闭可以表示目标完成、被新工作项承接、范围失效、终止、降级接受或其他经证据说明的关闭结果。
+`closed` 是稳定终态，只表示该工作项不再继续推进，不等同于目标成功。关闭可以表示目标完成、被新工作项承接、范围失效、终止、取消、部分完成或其他经证据说明的关闭结果。
 
 主控起草方案不是 WorkCase 状态。WorkCase 的第一个权威状态是 `subagents_plan_reviewing`；若方案尚不足以审核，应继续留在当前对话、Spark、Study 或其他前置事实源中。
 
@@ -316,7 +316,7 @@ Human Gate 发生在 WorkCase 层。执行项、角色说明、子 Agent 输出�
 | `closure_evidence` | 公共字段，WorkCase 采用 | 为什么可以关闭、关闭结果、残留风险和 Human Gate 结果 | evidence_markdown | 条件必填 | `subagents_result_reviewing`、`human_closure_confirming` 或 `closed` 时必须填写 | evidence | 21 | AI、Code、Web |
 | `closure_requested_at` | WorkCase 模型特有字段 | 请求 Human 关闭确认时间 | datetime | 条件必填 | `human_closure_confirming` 或 `closed` 时必须填写 | reference | 21 | AI、Code、Web |
 | `closed_at` | 公共字段，WorkCase 采用 | 关闭时间 | datetime | 条件必填 | `closed` 时必须填写 | reference | 02、21 | AI、Code、Web |
-| `closure_outcome` | WorkCase 模型特有字段 | 关闭结果分类 | string | 条件必填 | `closed` 时必须为 `completed`、`partial_completed`、`cancelled`、`superseded`、`invalid` 或 `degraded_accepted` | reference | 21 | AI、Code、Web |
+| `closure_outcome` | WorkCase 模型特有字段 | 关闭结果分类 | string | 条件必填 | `closed` 时必须为 `completed`、`partial_completed`、`cancelled`、`superseded` 或 `invalid`；历史 `degraded_accepted` 只读兼容，新增或重写不得使用 | reference | 21 | AI、Code、Web |
 | `residual_risks` | WorkCase 模型特有字段 | 残留风险摘要列表 | list_string | 可选 | 默认为空列表；关闭时如接受风险或未完成项必须填写 | evidence / log | 21 | AI、Web |
 | `followup_refs` | WorkCase 模型特有字段 | 后续承接引用 | list_string | 可选 | 默认为空列表；可引用后续 WorkCase、Spark、ADR、Pitfall 或文档路径 | reference | 21 | AI、Code、Web |
 | `revision_history` | WorkCase 模型特有字段 | 方案、执行或关闭确认退回后的修订记录 | list_object | 可选 | 发生退回、方案修改、成功标准修改或执行编排修改时必须追加 | structured / log | 21 | AI、Code、Web |
@@ -419,12 +419,12 @@ Web 应把 WorkCase 作为 Human 直接查看和确认的主对象。Web 可以�
 
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | WorkCase 实例和后续行动编排应遵守本文定义的准入、状态机、执行项内部化、审核记录、Human Gate、字段契约和关闭判断 | 本文、active `specs/21-WorkCase-工作项.md`、v2 02、Human Gate；行动编排未接管前为人工降级检查 | 事实模型治理 | 创建、迁移、关闭、重排或审计 WorkCase 时 |
-| 入口可见要求 | AI 处理需要组织为可执行、可验证、可关闭目标时，应能定位 WorkCase active 规范、本文和对应实例事实源 | 02 成员身份、Rules 入口、`v2-check` 只读诊断和知识地图输入；行动编排未接管前为人工降级检查 | AI 执行入口 | WorkCase 入口、成员身份、实例目录、Rules 入口、`v2-check` 或知识地图输入变化时 |
-| 确定性执行要求 | WorkCase 状态、执行项、方案审核、自检、结果复核、关闭确认、修订记录、条件必填和完成口径应由 Code 校验或记录缺口 | 现有 active Code、`02.Att.04`、`02.Att.05`、`02.Att.06`、`21.Att.01`、人工降级检查；v2 双读实现和测试仍待后续 Code 规范承接 | Code 校验 | 字段契约、状态机、执行编排、Web 派生态势或 Code 消费入口变化时 |
+| 上位约束承接要求 | WorkCase 实例和后续行动编排应遵守本文定义的准入、状态机、执行项内部化、审核记录、Human Gate、字段契约和关闭判断 | 本文、active `specs/21-WorkCase-工作项.md`、v2 02、Human Gate；行动编排未接管前使用临时核对动作 | 事实模型治理 | 创建、迁移、关闭、重排或审计 WorkCase 时 |
+| 入口可见要求 | AI 处理需要组织为可执行、可验证、可关闭目标时，应能定位 WorkCase active 规范、本文和对应实例事实源 | 02 成员身份、Rules 入口、`v2-check` 只读诊断和知识地图输入；行动编排未接管前使用临时核对动作 | AI 执行入口 | WorkCase 入口、成员身份、实例目录、Rules 入口、`v2-check` 或知识地图输入变化时 |
+| 确定性执行要求 | WorkCase 状态、执行项、方案审核、自检、结果复核、关闭确认、修订记录、条件必填和完成口径应由 Code 校验或记录缺口 | 现有 active Code、`02.Att.04`、`02.Att.05`、`02.Att.06`、`21.Att.01`、临时核对动作；v2 双读实现和测试仍待后续 Code 规范承接 | Code 校验 | 字段契约、状态机、执行编排、Web 派生态势或 Code 消费入口变化时 |
 | 子 Agent 思考要求 | 方案审核和结果复核必须记录审核 Agent、角色、提示上下文、输入引用、重点结论、可审计签署声明和主控处理记录 | Agent 能力、主控多视角审查、事实实例校验；后续可由行动编排接管 | 独立审查 | 方案审核、结果复核、Agent 能力、签署字段或主控处理记录变化时 |
 | Human 交互要求 | 方案执行和最终关闭必须经 Human 确认；退回、修改方案或接受残留风险必须记录原因和修改内容 | Human Gate、Web 展示、事实实例校验 | Human Gate | 方案确认、关闭确认、退回或修改关键字段时 |
-| 生命周期触发要求 | WorkCase 规范变化后应检查 Spark、ADR、Pitfall、Code、Web、运行时扩展、行动编排和待补齐事项是否同步 | 本文、02 授权附件、active 20-23、Code 诊断、人工降级检查；建议由规范生命周期同步行动编排接管 | 生命周期同步 | 字段、状态、执行编排、事实源路径或展示规则变化时 |
+| 生命周期触发要求 | WorkCase 规范变化后应检查 Spark、ADR、Pitfall、Code、Web、运行时扩展、行动编排和待补齐事项是否同步 | 本文、02 授权附件、active 20-23、Code 诊断、临时核对动作；建议由规范生命周期同步行动编排接管 | 生命周期同步 | 字段、状态、执行编排、事实源路径或展示规则变化时 |
 
 ## 14. 对象特有实例检查
 

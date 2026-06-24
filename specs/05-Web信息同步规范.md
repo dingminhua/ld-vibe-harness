@@ -145,10 +145,10 @@ Web 可以展示知识地图，但只能消费 04 定义的知识地图只读投
 
 1. 每个节点和关系边都能查看或追溯 `source_refs`；
 2. 关系边类型来自 `attachments/01.Att.01-知识地图关系类型表.md`；
-3. `diagnostics`、`excluded_inputs` 和 `degraded` 状态必须对 Human 可见；
+3. `diagnostics`、`excluded_inputs`、`issue_causes`、`suggested_action` 和 legacy `degraded` 兼容字段必须对 Human 可见；
 4. 图布局、筛选、折叠、颜色和交互状态不成为稳定事实；
 5. Web 不得补写 Code 未输出的节点、关系边或来源回指；
-6. Web 必须呈现本次查询的 `input_scope`、`project_scope`、生成时间、降级原因和项目命名空间；
+6. Web 必须呈现本次查询的 `input_scope`、`project_scope`、生成时间、问题原因、不可证明范围和项目命名空间；
 7. 跨项目关系必须显示来源项目和目标项目，不得把不同项目中的同名对象 ID 合并展示为同一节点。
 
 Web 展示知识地图必须使用无缓存语义。API 响应应使用 `Cache-Control: no-store` 或等价措施；前端不得使用 localStorage、sessionStorage、IndexedDB、Service Worker cache 或等价浏览器持久化机制保存图谱节点、关系边、诊断结果、项目范围或展开状态。页面可以在内存中保留当前交互态，但刷新、重新查询或事实源变化后必须重新向 Code/API 获取只读投影。
@@ -225,13 +225,13 @@ Confirm UI 是 Human-facing 交互入口，不等于 Human Gate 已完成。Web 
 3. 关联事实源；
 4. 证据或验证状态；
 5. 确认后的回写位置；
-6. 取消、失败或降级后的状态。
+6. 取消、失败、未验证、部分完成或待 Human Gate 的状态。
 
 Web 可以展示 Gate、Validate、待确认事项和验证结果，但不得用按钮点击替代行动编排 Gate、测试验证声明、事实源回写或 Human 的高影响判断。
 
-Confirm UI 字段由 `attachments/05.Att.04-Confirm-UI字段表.md` 承载。Confirm UI 至少应支持 Gate 触发原因、确认对象、影响范围、确认依据、风险、可替代方案、用户选择、确认人/时间、确认后的执行动作、验证结果、错误状态、降级说明、回写位置和残留风险被 Human 看见或被确认结果记录。
+Confirm UI 字段由 `attachments/05.Att.04-Confirm-UI字段表.md` 承载。Confirm UI 至少应支持 Gate 触发原因、确认对象、影响范围、确认依据、风险、可替代方案、用户选择、确认人/时间、确认后的执行动作、验证结果、错误状态、问题原因说明、回写位置和残留风险被 Human 看见或被确认结果记录。
 
-Gate 与 Validate 阶段边界由 `attachments/05.Att.05-Gate与Validate阶段边界矩阵.md` 承载。Gate 只能展示候选待确认事项、确认对象、影响范围、风险和可选操作；在回写合同、对象规范和 Human Gate 证据落点明确前，确认、取消、暂缓和修改反馈只能作为占位或候选过程输出。Validate 只展示验证结果、错误态、降级说明、来源命令和修复线索，不得自动修复、自动关闭任务或自动写入验证结论。
+Gate 与 Validate 阶段边界由 `attachments/05.Att.05-Gate与Validate阶段边界矩阵.md` 承载。Gate 只能展示候选待确认事项、确认对象、影响范围、风险和可选操作；在回写合同、对象规范和 Human Gate 证据落点明确前，确认、取消、暂缓和修改反馈只能作为占位或候选过程输出。Validate 只展示验证结果、错误态、问题原因说明、来源命令和修复线索，不得自动修复、自动关闭任务或自动写入验证结论。
 
 ## 10. Web 文档、缓存和变更触发
 
@@ -250,7 +250,7 @@ Web 缓存只能用于性能和交互体验。缓存失效、重建或页面刷�
 5. 08 Web 测试、API contract 或验证声明要求变化；
 6. Web 页面、API、路由、缓存、文案、i18n 或权限边界变化。
 
-Web 回归矩阵由 `attachments/05.Att.09-Web回归矩阵.md` 承载。Web 测试应优先 API contract；高风险 API 优先覆盖 `POST /api/sparks`、ProjectFiles、Validate 和 Objects；页面优先覆盖 Gate、Validate、ProjectFiles 和 ObjectDetail 的空态、错误态、降级态、只读边界和来源呈现。
+Web 回归矩阵由 `attachments/05.Att.09-Web回归矩阵.md` 承载。Web 测试应优先 API contract；高风险 API 优先覆盖 `POST /api/sparks`、ProjectFiles、Validate 和 Objects；页面优先覆盖 Gate、Validate、ProjectFiles 和 ObjectDetail 的空态、错误态、原因态势、只读边界和来源呈现。
 
 ## 11. 暂不实施期间的回归线
 
@@ -292,7 +292,7 @@ Web v2 暂不实施不等于 Web 契约可以忽略。以下 v1 线索必须在�
 | `attachments/05.Att.05-Gate与Validate阶段边界矩阵.md` | Gate/Validate 阶段边界 | 自动修复或回写流程 |
 | `attachments/05.Att.06-Human-facing态势语义表.md` | Human-facing 派生态势原因语义 | 事实源状态机 |
 | `attachments/05.Att.07-提交记录展示矩阵.md` | Changelog 和对象详情提交展示 | Git commit 规范本体 |
-| `attachments/05.Att.08-缓存与同步状态矩阵.md` | 缓存、同步、降级和冲突展示状态 | 稳定事实源 |
+| `attachments/05.Att.08-缓存与同步状态矩阵.md` | 缓存、同步、受限和冲突展示状态 | 稳定事实源 |
 | `attachments/05.Att.09-Web回归矩阵.md` | Web API、页面、Confirm UI 和轻写入回归优先级 | 测试治理本体 |
 | `attachments/05.Att.10-Web差距审计模板.md` | Web AI 只读差距审计模板 | 执行授权 |
 | `attachments/05.Att.11-Web能力删除核对表.md` | Web 页面、API 或能力删除前核对项 | 删除授权本体 |
@@ -304,13 +304,13 @@ Web v2 暂不实施不等于 Web 契约可以忽略。以下 v1 线索必须在�
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 上位约束承接要求 | Web 应承接 00、01、07、v1 历史 `11` 和 Human 确认后的 v2 08 测试治理，不反向定义事实模型、Code 或测试规则 | 本文、00、01、07、v1 历史 `11`、v2 08、Human Gate | Web 治理 | Web 展示、DTO、写入边界或事实源回指变化时 |
-| 入口可见要求 | Human 或 AI 需要查看状态、风险、证据、提交记录或待确认事项时应能定位 Web 入口或降级视图 | Web 导航、Code 输出、Rules 入口、人工降级检查 | Human-facing 入口 | Web 路由、导航、页面职责或展示入口变化时 |
+| 入口可见要求 | Human 或 AI 需要查看状态、风险、证据、提交记录或待确认事项时应能定位 Web 入口或受限视图 | Web 导航、Code 输出、Rules 入口、临时核对动作 | Human-facing 入口 | Web 路由、导航、页面职责或展示入口变化时 |
 | 轻写入白名单要求 | Web 写入必须限定在规范授权白名单内，并具备写后验证、错误反馈和事实源追溯 | Web API、Code DTO、事实模型、07、测试 | 受控轻写入 | Web 写入入口、字段、API 或权限变化时 |
-| 确定性执行要求 | Web 消费 DTO、API contract、页面状态和写入白名单应有 Code 或测试校验 | Code DTO、Web 测试、API contract、人工降级检查 | 校验实现 | DTO、API、页面、白名单或 Confirm UI 变化时 |
-| 知识地图展示要求 | Web 展示知识地图时必须显示来源回指、诊断、排除输入和降级状态，不得补写关系 | 04 知识地图投影、01.Att.01、Web 回归、人工降级检查 | 派生展示 | 知识地图视图、过滤、布局、DTO 或诊断展示变化时 |
+| 确定性执行要求 | Web 消费 DTO、API contract、页面状态和写入白名单应有 Code 或测试校验 | Code DTO、Web 测试、API contract、临时核对动作 | 校验实现 | DTO、API、页面、白名单或 Confirm UI 变化时 |
+| 知识地图展示要求 | Web 展示知识地图时必须显示来源回指、诊断、排除输入、问题原因和 legacy `degraded` 兼容状态，不得补写关系 | 04 知识地图投影、01.Att.01、Web 回归、临时核对动作 | 派生展示 | 知识地图视图、过滤、布局、DTO 或诊断展示变化时 |
 | Human 交互要求 | 改变受控写入、Confirm UI、Human Gate 展示或高影响操作入口前应评估 Human Gate | Human Gate、影响范围说明、确认记录 | Human Gate | Web 写入、确认、验收或权限边界变化时 |
-| 流程复用要求 | Web AI 或并行 AI 承接 Web 工作前，必须先完成只读差距审计，不得直接扩大白名单、写入事实源或声明完整支持 | `05.Att.10`、人工降级检查、后续行动编排 | Web 协作 | Web 实现、页面/API 重写、白名单变更或差距审计结论变化时 |
-| 生命周期触发要求 | 事实模型、行动编排、Code、事实源、测试或运行时入口变化后，应检查 Web 展示和交互是否同步 | Web 回归、Code DTO 检查、测试、人工降级检查 | 生命周期同步 | 上游契约变化影响 Human-facing 展示或交互时 |
+| 流程复用要求 | Web AI 或并行 AI 承接 Web 工作前，必须先完成只读差距审计，不得直接扩大白名单、写入事实源或声明完整支持 | `05.Att.10`、临时核对动作、后续行动编排 | Web 协作 | Web 实现、页面/API 重写、白名单变更或差距审计结论变化时 |
+| 生命周期触发要求 | 事实模型、行动编排、Code、事实源、测试或运行时入口变化后，应检查 Web 展示和交互是否同步 | Web 回归、Code DTO 检查、测试、临时核对动作 | 生命周期同步 | 上游契约变化影响 Human-facing 展示或交互时 |
 
 ## 15. Human Gate
 
@@ -335,10 +335,10 @@ Web 检查至少包括：
 | 写入边界 | 只允许白名单内受控轻写入 |
 | Human Gate | 高影响交互有确认范围和事实源回写位置 |
 | DTO 稳定 | DTO 与 02、04、07 保持一致 |
-| 知识地图展示 | 节点、边、诊断、排除输入和降级状态来自 04 投影且可回指 |
+| 知识地图展示 | 节点、边、诊断、排除输入、问题原因和 legacy `degraded` 兼容状态来自 04 投影且可回指 |
 | 原因语义 | Human-facing 态势能说明来源事实和归因原因 |
 | 提交展示 | 提交记录来自 Git history 或 Code 派生 DTO |
-| 测试回归 | 关键页面、API contract 和写入边界有验证或降级说明 |
+| 测试回归 | 关键页面、API contract 和写入边界有验证声明、问题原因和残留风险说明 |
 | Web 差距审计 | Web AI 承接前已按 05.Att.10 列出事实源来源、派生状态、Human Gate、写入白名单、测试归属、错误态和 Human 决策项 |
 
 ## 17. 待补齐事项

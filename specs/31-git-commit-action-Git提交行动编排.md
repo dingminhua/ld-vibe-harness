@@ -118,7 +118,7 @@ ldvh_member:
 1. 用户要求“提交”“先提交”“修复提交信息”时，AI 进入哪个行动入口；
 2. AI 如何读取最小 Context，避免只靠记忆或聊天约定提交；
 3. Skill、Code validator、Hook registry、Web 展示和环境适配各自如何协作；
-4. 何时必须暂停、拆分、回到 Human Gate 或记录降级；
+4. 何时必须暂停、拆分、回到 Human Gate 或记录问题原因；
 5. 提交行动过程如何留下可追溯证据，尤其是 Skill runtime 调用与手动等价执行的区别。
 
 本文不定义 commit message 格式、type/scope/body 闭集、提交语言、Git records 的事实源追溯性质、Web 页面布局、Hook 资产登记、环境安装方式或 CI 实现。上述内容分别由 07、05、06、08 和后续环境适配或 CI 工作承接。
@@ -177,7 +177,7 @@ ldvh_member:
 4. 本次提交目标可被描述为一个原子意图，或可拆分为多个原子意图；
 5. 若要修改环境安装、native Git hook、IDE、Codex settings 或 CI，必须把该部分排除出本文，另行走 06 的环境适配边界。
 
-不满足准入条件时，AI 应停留在当前任务、事实源回写或人工降级检查中，不得冒充已进入提交流程。
+不满足准入条件时，AI 应停留在当前任务、事实源回写或临时核对动作中，不得冒充已进入提交流程。
 
 ## 6. 事实源边界
 
@@ -234,7 +234,7 @@ AI 不应为了提交默认全文读取所有 specs、全部工作对象或完�
 5. 选择单一 type 和零个或一个 scope，按 07 写简体中文 description。
 6. 按 07 判断是否必须写 body；涉及 specs、rules、code、tests、web、hooks、skills、agents、配置、多文件或 Human Gate 时通常需要 body。
 7. 使用 `code/commit_validate.py` 或 `code/hook_dispatch.py run git.commit-msg` 预检。
-8. 运行与变更面匹配的验证命令；无法运行或部分失败时，按 08 记录失败、降级或阻断。
+8. 运行与变更面匹配的验证命令；无法运行或部分失败时，按 08 记录失败原因、残留风险或阻断。
 9. 修复全部 error。warning 必须处理为改写正文、说明残留风险或暂停等待 Human。
 10. 用已验证消息创建 commit。
 11. 提交后报告 commit hash、验证摘要、剩余 `git status --short` 和本次 Skill 使用方式。
@@ -274,7 +274,7 @@ Git 提交记录本身不额外触发 Human Gate；Gate 由被修改的事实源
 
 1. `skill_runtime_invoked`：运行时确实加载并执行 `ldvh-git-commit`；
 2. `manual_equivalent_execution`：主控读取 Skill 原文并按其步骤执行；
-3. `skill_unavailable`：Skill 文件不可读或不适用，只能按 07 和人工降级检查执行。
+3. `skill_unavailable`：Skill 文件不可读或不适用，只能按 07 和临时核对动作执行。
 
 本文不要求固定 Agent。高风险提交、跨规范争议、提交失败原因不明或涉及环境安装时，可以安排独立 Agent 审查，但 Agent 输出必须交还主控，不能替代 Human Gate 或 Code validator。
 
@@ -302,7 +302,7 @@ Web 负责展示提交记录、body、解析字段、关联提交和 ProjectFile
 3. 预检命令和结果；
 4. 变更面匹配的验证命令和结果；
 5. 剩余 `git status --short`；
-6. Skill 使用方式：runtime 调用、手动等价执行或不可用降级；
+6. Skill 使用方式：runtime 调用、手动等价执行或不可用原因；
 7. 未覆盖验证、失败、warning 或 residual risk。
 
 若本次提交属于 WorkCase 执行，应把稳定证据写入 WorkCase 的执行项、`verification_evidence`、`closure_evidence` 或相关字段。若形成长期规则、经验、缺口或后续动作，应分流为 specs、Spark、Pitfall、ADR、Study、WorkCase 或 Git commit records。
@@ -337,7 +337,7 @@ Web 负责展示提交记录、body、解析字段、关联提交和 ProjectFile
 | 固定资产登记 | `python3 code/specs_validate.py deployment-entries` 和 `python3 code/specs_validate.py capability-environment` |
 | message validator | `python3 -m pytest tests/code/test_commit_validate.py -q` |
 | Hook dispatcher | 使用临时 message 文件运行 `python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` |
-| Skill 自描述 | `python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit` 或等价人工降级检查 |
+| Skill 自描述 | `python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit` 或等价临时核对动作 |
 | Web commit DTO | `npm --prefix web run check` 和 commit DTO 相关 API 测试 |
 | 行动边界 | 人工核对本文没有复制 07 的 commit message 本体规则，也没有声明环境安装状态 |
 
@@ -348,7 +348,7 @@ Web 负责展示提交记录、body、解析字段、关联提交和 ProjectFile
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 来源承接：03 流程复用与行动成员要求 | 回指 `specs/03-行动编排规范.md` §5、§11、§12；本文只承接 Git 提交行动的执行闭环、证据、Gate 和能力映射 | 本文 `v2_action_member.assurance_takeover`、Context/Scenario/Gate/执行/证据章节、Human Gate | 行动编排治理 | 03 的成员机制、承接边界、骨架或 active 判定变化时 |
-| 来源承接：07 Git 追溯和 commit 契约 | 回指 `specs/07-事实源边界与Git追溯规范.md` §9 及 07 授权附件；本文只编排执行，不复制 type/scope/body、语言或关联提交规则 | 07 原文、本文 §6/§7/§9、`code/commit_validate.py`、人工降级检查 | Git 提交行动 | 07 的提交契约、Git 追溯、关联提交派生或事实源回写边界变化时 |
+| 来源承接：07 Git 追溯和 commit 契约 | 回指 `specs/07-事实源边界与Git追溯规范.md` §9 及 07 授权附件；本文只编排执行，不复制 type/scope/body、语言或关联提交规则 | 07 原文、本文 §6/§7/§9、`code/commit_validate.py`、临时核对动作 | Git 提交行动 | 07 的提交契约、Git 追溯、关联提交派生或事实源回写边界变化时 |
 | 来源承接：06 运行时扩展与环境边界 | 回指 `specs/06-运行时扩展规范.md` 与 `specs/attachments/06.Att.02-固定运行时扩展登记表.md`；本文只声明本行动需要哪些能力，不声明环境已安装 | `capability_assets`、`skills/ldvh-git-commit/SKILL.md`、`hooks/ldvh-hooks.yaml`、`capability-environment` | 能力资产编排 | Skill、Hook、Rules、环境适配、部署状态或固定资产登记边界变化时 |
 | 来源承接：04/05/08 Code、Web 和测试本体 | 回指 04、05、08；本文只编排 validator、Hook dispatcher、Web commit DTO 和测试证据的使用方式，不复制实现契约 | `code/commit_validate.py`、`code/hook_dispatch.py`、Web commit DTO 测试、08 验证声明边界 | 能力协作与验证 | Code CLI、Web commit 展示、测试入口或验证声明规则变化时 |
 | 行动 Gate 承接 | 回指 03 Human Gate 原则和 07/06 的事实源与环境边界；本文只列出 Git 提交行动中必须暂停的触发条件 | 本文 §11、Human Gate 记录、WorkCase 证据或过程输出 | 人工确认 | 拆分不清、绕过校验、环境安装变更、破坏性 Git 操作或事实源 Gate 不明时 |
