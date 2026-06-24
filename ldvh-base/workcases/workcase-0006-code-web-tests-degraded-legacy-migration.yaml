@@ -3,9 +3,9 @@ type: workcase
 title: Code Web tests degraded legacy migration
 goal: |
   承接 workcase-0005 的实现层残留风险，迁移 `code/`、`tests/`、`web/` 中 legacy `degraded`、`degraded_accepted` 和“降级”输出、消费、断言与 Human-facing 展示，使旧字段只作为兼容信号存在，并以具体问题原因、受限状态、后续动作和承接位置表达当前语义。
-status: result_self_checking
+status: human_closure_confirming
 created: '2026-06-25T11:33:00+08:00'
-updated: '2026-06-25T04:52:00+08:00'
+updated: '2026-06-25T05:07:00+08:00'
 priority: P0
 plan_confirmed_at: '2026-06-25T11:33:00+08:00'
 description: |
@@ -274,8 +274,119 @@ orchestration:
         - 不得用本 controller_self_check 替代独立 result_review.review_items。
       aggregation_rule: |
         review_items 为空时不得进入 human_closure_confirming 或 closed；若复核出现 fail 或 needs_human_gate，必须退回复核、自检或执行并记录原因。
-    review_items: []
-    controller_resolution: null
+    review_items:
+      - id: result-review-1
+        role: independent_result_review
+        agent_name: ldvh-worktree-worker-wc0006-result-review
+        requested_at: '2026-06-25T05:07:00+08:00'
+        prompt_context:
+          objective: |
+            对 workcase-0006 做独立结果复核，判断 controller_self_check 中的验证命令、legacy compatibility 边界、Web Human-facing 展示和 WorkCase 状态流转结论是否可信，并决定是否可以提交 Human 关闭确认。
+          input_refs:
+            - /Users/dmh2002/poker_hud_projects/AGENTS.md
+            - /Users/dmh2002/poker_hud_projects/ld-vibe-harness/AGENTS.md
+            - /Users/dmh2002/poker_hud_projects/ld-vibe-harness/rules/LDVH-WORKSPACE-ENTRY.md
+            - /Users/dmh2002/poker_hud_projects/ld-vibe-harness/rules/LDVH-MAINTAINER-ENTRY.md
+            - ldvh-base/workcases/workcase-0006-code-web-tests-degraded-legacy-migration.yaml
+            - specs/21-WorkCase-工作项.md
+            - specs/attachments/21.Att.01-orchestration字段契约表.md
+            - code/
+            - tests/
+            - web/
+          constraints:
+            - 只允许修改 workcase-0006 YAML；不得修改 workcase-0008、workcase-0009、workcase-0010 或 specs/code/web/tests。
+            - 必须独立复跑事实源校验、specs 校验、相关 pytest、必要 Web 检查和 git diff 检查。
+        context_digest: |
+          复核在 /Users/dmh2002/.codex/worktrees/ldvh-wc0006-result-review 执行；知识地图任务导航因 worktree 缺少 LDVH-GOVERNED-PROJECTS.yaml 且 start_node 未被该投影定位而受限，已回退到 WorkCase 原文、21/21.Att.01 原文和确定性命令证据。
+        result:
+          status: pass_with_followups
+          summary: |
+            独立复核通过。controller_self_check 关于执行项完成、验证命令通过、legacy degraded 仅作为兼容信号保留、Web 主展示迁移到 Limited/受限以及不得直接 closed 的判断可信。按 21 状态机，本轮应视为已完成 result_self_checking -> subagents_result_reviewing 的独立复核，并在 controller_resolution 完成后推进到 human_closure_confirming，等待 Human 关闭确认；不得填写 closed_at、closure_outcome 或 Human 关闭确认。
+          key_findings:
+            - |
+              `python3 code/fact_cli.py show workcase-0006` 可读取对象，复核前状态为 result_self_checking，执行项均为 done，主控自检已存在且 required_changes 为空。
+            - |
+              `python3 code/fact_validate.py ldvh-base --format text`、`python3 code/specs_validate.py all --fail-on-diagnostics`、定向 pytest 111 passed、`npm run web:check`、`npm run test:web:api`、runtime-projection、human-gate-report、capability-environment 和 `git diff --check` 均通过。
+            - |
+              `rg -n "degraded|degraded_accepted|降级" code tests web -g '!node_modules'` 的剩余命中与自检分类一致：legacy compatibility 字段/测试、旧诊断命名、Web legacy backend input、响应式 fallback 文档或历史实现计划说明；未发现需退回执行的主状态或 Human-facing 展示缺口。
+            - |
+              Web 检查初次失败原因是 worktree 未安装前端依赖，`npm --prefix web ci` 按锁文件安装后复跑通过；这属于环境准备问题，不构成结果失败。
+            - |
+              知识地图任务导航输出受限不是关闭证据；本复核只把它作为入口限制记录，并以权威原文和确定性命令兜底。
+          recommendations:
+            - 进入 Human 关闭确认后，由 Human 决定是否关闭；若 Human 要求旧接口移除或文档归档，应另行分流，不在本 WorkCase 直接扩大范围。
+          required_changes: []
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0006-code-web-tests-degraded-legacy-migration.yaml
+            - specs/21-WorkCase-工作项.md
+            - specs/attachments/21.Att.01-orchestration字段契约表.md
+            - code/spec_checks/knowledge_map.py
+            - code/spec_checks/v2.py
+            - code/fact_validate.py
+            - code/fact_cli.py
+            - code/spec_checks/assurance_report.py
+            - code/spec_checks/runtime_projection.py
+            - code/spec_checks/capability_environment.py
+            - code/spec_checks/human_gate.py
+            - code/spec_checks/ldvh_assurance.py
+            - tests/code/specs_validate_checks/test_v2.py
+            - tests/code/test_fact_validate.py
+            - tests/code/specs_validate_checks/test_assurance_report.py
+            - tests/code/specs_validate_checks/test_runtime_projection.py
+            - tests/code/specs_validate_checks/test_human_gate.py
+            - tests/code/specs_validate_checks/test_capability_environment.py
+            - tests/code/specs_validate_checks/test_ldvh_assurance.py
+            - web/src/i18n/locales.ts
+            - web/src/utils/executionFlowStatus.ts
+            - web/api/routes/objects.ts
+            - web/src/components/StatusBanner.tsx
+            - web/src/utils/statusColors.ts
+            - command: python3 code/fact_cli.py show workcase-0006
+            - command: python3 code/fact_validate.py ldvh-base --format text
+            - command: python3 code/specs_validate.py all --fail-on-diagnostics
+            - command: python3 -m pytest tests/code/specs_validate_checks/test_v2.py tests/code/test_fact_validate.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_runtime_projection.py tests/code/specs_validate_checks/test_human_gate.py tests/code/specs_validate_checks/test_capability_environment.py tests/code/specs_validate_checks/test_ldvh_assurance.py -q
+            - command: npm run web:check
+            - command: npm run test:web:api
+            - command: python3 code/specs_validate.py runtime-projection
+            - command: python3 code/specs_validate.py human-gate-report
+            - command: python3 code/specs_validate.py capability-environment
+            - command: rg -n "degraded|degraded_accepted|降级" code tests web -g '!node_modules'
+            - command: git diff --check
+        raw_output_ref: null
+        attested_at: '2026-06-25T05:07:00+08:00'
+        attestation:
+          signer: ldvh-worktree-worker-wc0006-result-review
+          statement: |
+            已按用户指定的独立复核范围回读入口、WorkCase、21/21.Att.01 和当前 Code/Web/tests 证据，并复跑验证命令；本结论不替代 Human 关闭确认。
+    controller_resolution:
+      resolved_at: '2026-06-25T05:07:00+08:00'
+      resolver: ldvh-worktree-worker-wc0006-result-review
+      source_review_item_ids:
+        - result-review-1
+      accepted_findings:
+        - 独立复核通过，controller_self_check 中关于验证覆盖、legacy compatibility 边界和状态机限制的结论可信。
+        - 当前已满足进入 human_closure_confirming 的字段条件：结果复核条目、主控处理记录和关闭确认请求时间已补齐。
+      rejected_findings: []
+      required_changes_applied:
+        - 补写 result_review.review_items[result-review-1]。
+        - 补写 result_review.controller_resolution。
+        - 将状态按完整流转推进到 human_closure_confirming，并填写 closure_requested_at。
+        - 更新 closure_evidence 与 residual_risks，使其反映等待 Human 关闭确认而非仍缺结果复核。
+      unresolved_items: []
+      changed_fields:
+        - status
+        - updated
+        - orchestration.result_review.review_items
+        - orchestration.result_review.controller_resolution
+        - closure_evidence
+        - closure_requested_at
+        - residual_risks
+        - revision_history
+      revision_history_refs:
+        - revision_history[1]
+        - revision_history[2]
+      summary: |
+        接受独立复核结论，无范围内强制修改项。根据 21 状态机，本轮补齐独立结果复核后先完成 result_self_checking -> subagents_result_reviewing，再在主控处理记录和关闭请求时间补齐后推进到 human_closure_confirming，等待 Human 决定关闭或退回；本轮不直接 closed。
     human_closure_confirmation: null
 verification_evidence: |
   ## 验证计划
@@ -316,36 +427,41 @@ verification_evidence: |
 
   ## 结论
 
-  执行项、成功标准和验证证据足以支持 workcase-0006 离开 `executing` 并进入 `result_self_checking`。当前不满足进入 `human_closure_confirming` 或 `closed` 的条件，因为独立结果复核 `review_items` 和主控处理记录尚未完成。
+  执行项、成功标准和验证证据足以支持 workcase-0006 离开 `executing` 并进入结果自检。2026-06-25T05:07:00+08:00 的独立结果复核已补齐 `review_items`、`controller_resolution` 和关闭确认请求时间；当前可进入 `human_closure_confirming`，等待 Human 决定关闭或退回。Human 未确认前不得进入 `closed`。
 closure_evidence: |
   ## 验证计划
 
-  本轮关闭判断只评估是否可离开执行态、是否可进入结果复核或 Human 关闭确认；不执行 Human 关闭确认，不填写 closed 字段。
+  本轮关闭判断评估执行结果、主控自检和独立结果复核是否足以提交 Human 关闭确认；不执行 Human 关闭确认，不填写 closed 字段。
 
   ## 验证命令
 
   - `python3 code/fact_validate.py ldvh-base --format text`
   - `python3 code/fact_cli.py show workcase-0006`
-  - `python3 -m pytest tests/code -q`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 -m pytest tests/code/specs_validate_checks/test_v2.py tests/code/test_fact_validate.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_runtime_projection.py tests/code/specs_validate_checks/test_human_gate.py tests/code/specs_validate_checks/test_capability_environment.py tests/code/specs_validate_checks/test_ldvh_assurance.py -q`
   - `npm run web:check`
   - `npm run test:web:api`
+  - `python3 code/specs_validate.py runtime-projection`
+  - `python3 code/specs_validate.py human-gate-report`
+  - `python3 code/specs_validate.py capability-environment`
+  - `rg -n "degraded|degraded_accepted|降级" code tests web -g '!node_modules'`
   - `git diff --check`
 
   ## 验证结果
 
-  本轮复核判断为：workcase-0006 的执行阶段已经真实完成，执行项和成功标准与当前仓库状态基本一致；原 item-1 `in_progress`、缺少顶层验证/关闭证据、缺少修订历史和结果自检材料是事实对象回写缺口，已在本次修正。
+  本轮复核判断为：workcase-0006 的执行阶段已经真实完成，执行项和成功标准与当前仓库状态一致；主控自检结论可信，独立结果复核未发现范围内硬问题。
 
-  依据 21 WorkCase 状态机，执行项全部完成后不得直接进入 `human_closure_confirming` 或 `closed`。当前状态推进到 `result_self_checking`，下一步应由主控提交独立结果复核，补齐 `orchestration.result_review.review_items` 和 `controller_resolution`。
+  依据 21 WorkCase 状态机，执行项全部完成后不得直接进入 `human_closure_confirming` 或 `closed`。本轮已经先具备 `result_self_checking` 的主控自检，再补齐独立 `result_review.review_items` 和 `controller_resolution`，因此可推进到 `human_closure_confirming` 等待 Human 关闭确认。Human 未确认前不得填写 `closed_at`、`closure_outcome` 或 `human_closure_confirmation`。
 
   ## 结论
 
-  当前关闭判断：不可关闭，尚未进入 Human 关闭确认。只有复核通过并形成主控处理记录后，才可进入 Human 关闭确认。Human 未确认前不得填写 `closure_requested_at`、`closed_at`、`closure_outcome` 或 `human_closure_confirmation`。
-closure_requested_at: ''
+  当前关闭判断：可提交 Human 关闭确认，但不可直接关闭。若 Human 确认关闭，再填写 `closed_at`、`closure_outcome` 和 `result_review.human_closure_confirmation`；若 Human 要求补审、继续执行或修改方案，应按 21 状态机退回并追加 revision_history。
+closure_requested_at: '2026-06-25T05:07:00+08:00'
 closed_at: ''
 closure_outcome: ''
 residual_risks:
-  - 结果复核尚未完成；当前不能进入 Human 关闭确认或 closed。
-  - 知识地图任务导航输出因 limited_output 受限；本轮已以原文和事实源命令兜底，但独立结果复核仍应知悉该限制。
+  - 当前仅进入 Human 关闭确认，尚未获得 Human 关闭决定；不得直接视为 closed。
+  - 知识地图任务导航在本 worktree 中因入口配置/start_node 定位受限；本轮已以原文和事实源命令兜底，但后续复核应知悉该限制。
   - "`degraded|degraded_accepted|降级` 扫描仍有 legacy compatibility、旧诊断命名、Web docs fallback 和历史实现计划命中；若后续扩大目标到文档归档或旧接口移除，需要另行决策。"
 followup_refs: []
 revision_history:
@@ -375,6 +491,34 @@ revision_history:
       - revision_history
     summary: |
       item-1 修正为 done；补写 2026-06-25 的事实源查询、Code/Web 测试、specs 校验、扫描结果和状态判断。当前进入 result_self_checking，下一步应进入独立结果复核；不得跳过 Human Gate 或直接关闭。
+  - at: '2026-06-25T05:07:00+08:00'
+    from_status: result_self_checking
+    to_status: subagents_result_reviewing
+    actor: ldvh-worktree-worker-wc0006-result-review
+    reason: |
+      按用户委派执行独立结果复核，回读 WorkCase、21 WorkCase 状态机、21.Att.01 orchestration 字段契约和当前 Code/Web/tests 证据，复跑要求的验证命令；确认 controller_self_check 可提交独立复核且 required_changes 为空。
+    changed_fields:
+      - orchestration.result_review.review_items
+      - updated
+      - revision_history
+    summary: |
+      补写 result-review-1 独立复核条目，结论为 pass_with_followups 且无 required_changes；该步骤承载 result_self_checking -> subagents_result_reviewing 的独立复核事实。
+  - at: '2026-06-25T05:07:00+08:00'
+    from_status: subagents_result_reviewing
+    to_status: human_closure_confirming
+    actor: ldvh-worktree-worker-wc0006-result-review
+    reason: |
+      独立结果复核通过后，主控处理记录已接受复核发现，确认无未决项或范围内强制修改项；按 21 状态机可提交 Human 关闭确认，但不得直接关闭。
+    changed_fields:
+      - status
+      - updated
+      - orchestration.result_review.controller_resolution
+      - closure_evidence
+      - closure_requested_at
+      - residual_risks
+      - revision_history
+    summary: |
+      补齐 controller_resolution、closure_requested_at、closure_evidence 和 residual_risks，将状态推进到 human_closure_confirming，等待 Human 决定关闭、退回补审、继续执行或修改方案；未填写 closed_at、closure_outcome 或 human_closure_confirmation。
 related_sparks:
   - spark-0025
 related_workcases:
