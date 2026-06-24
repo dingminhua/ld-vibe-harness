@@ -343,15 +343,15 @@ Web 负责展示提交记录、body、解析字段、关联提交和 ProjectFile
 
 ## 17. 规范保障要求
 
-本文通过以下规范保障要求说明相关要求的同步、检查或审计触发条件。本文承接的来源要求见 `v2_action_member.assurance_takeover`，不得把本表扩展为新的 commit message 规则。
+本节是 03 要求的成员一致性兼容章节，不生成新的规范保障要求。本文承接的来源要求见 `v2_action_member.assurance_takeover`；下表只记录来源要求承接与能力实践关联。本文必须通过来源规范路径、章节锚点和能力资产路径引用来源要求，不得复制 07 的 commit message 规则、06 的运行时扩展规则、04 的 Code 规则、05 的 Web 规则或 08 的测试规则原文。
 
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 上位约束承接要求 | Git 提交行动必须承接 03、07、06 和 08，不重定义 commit message 本体规则、运行时扩展登记或测试治理 | 本文、03、07、06、08、Human Gate | 行动编排治理 | 提交行动流程、提交契约、运行时扩展边界或验证声明规则变化时 |
-| 入口可见要求 | AI 准备提交、修复提交消息或追溯提交行动时应能定位本文、07、Skill、validator 和 Hook registry | Rules 入口、知识地图读取建议、Skill 自描述、人工降级检查 | AI 执行入口提示 | Rules 入口、Skill 描述、Hook 事件或 Code validator 入口变化时 |
-| 确定性执行要求 | 提交消息预检、Hook dispatcher 等可机械判断部分应由 Code 或命令执行，不能只靠 AI 自觉 | `code/commit_validate.py`、`code/hook_dispatch.py`、测试、人工降级检查 | Code 校验 | commit validator CLI、Hook registry schema 或提交质量检查变化时 |
-| Human 交互要求 | 拆分不清、绕过校验、环境安装变更、破坏性 Git 操作或事实源 Gate 不明时必须暂停等待 Human | Human Gate、影响范围说明、确认记录 | 人工确认 | 本文 §11 任一 Gate 条件发生时 |
-| 生命周期触发要求 | 03、06、07、08、Rules、Skill、Hook、Code、Web 或环境适配变化后，应检查本文和相关资产是否同步 | 30 Rules 同步审查、Code 检查、测试、人工降级检查 | 生命周期同步 | 相关规范、成员主文件或能力资产改变提交行动入口、能力映射、验证或证据边界时 |
+| 来源承接：03 流程复用与行动成员要求 | 回指 `specs/03-行动编排规范.md` §5、§11、§12；本文只承接 Git 提交行动的执行闭环、证据、Gate 和能力映射 | 本文 `v2_action_member.assurance_takeover`、Context/Scenario/Gate/执行/证据章节、Human Gate | 行动编排治理 | 03 的成员机制、承接边界、骨架或 active 判定变化时 |
+| 来源承接：07 Git 追溯和 commit 契约 | 回指 `specs/07-事实源边界与Git追溯规范.md` §9 及 07 授权附件；本文只编排执行，不复制 type/scope/body、语言或关联提交规则 | 07 原文、本文 §6/§7/§9、`code/commit_validate.py`、人工降级检查 | Git 提交行动 | 07 的提交契约、Git 追溯、关联提交派生或事实源回写边界变化时 |
+| 来源承接：06 运行时扩展与环境边界 | 回指 `specs/06-运行时扩展规范.md` 与 `specs/attachments/06.Att.02-固定运行时扩展登记表.md`；本文只声明本行动需要哪些能力，不声明环境已安装 | `capability_assets`、`skills/ldvh-git-commit/SKILL.md`、`hooks/ldvh-hooks.yaml`、`capability-environment` | 能力资产编排 | Skill、Hook、Rules、环境适配、部署状态或固定资产登记边界变化时 |
+| 来源承接：04/05/08 Code、Web 和测试本体 | 回指 04、05、08；本文只编排 validator、Hook dispatcher、Web commit DTO 和测试证据的使用方式，不复制实现契约 | `code/commit_validate.py`、`code/hook_dispatch.py`、Web commit DTO 测试、08 验证声明边界 | 能力协作与验证 | Code CLI、Web commit 展示、测试入口或验证声明规则变化时 |
+| 行动 Gate 承接 | 回指 03 Human Gate 原则和 07/06 的事实源与环境边界；本文只列出 Git 提交行动中必须暂停的触发条件 | 本文 §11、Human Gate 记录、WorkCase 证据或过程输出 | 人工确认 | 拆分不清、绕过校验、环境安装变更、破坏性 Git 操作或事实源 Gate 不明时 |
 
 ## 18. 行动编排成员检查要求
 
@@ -364,7 +364,7 @@ Web 负责展示提交记录、body、解析字段、关联提交和 ProjectFile
 | 锚点 | Scenario、Context、Gate、执行、问题分流、回写、证据和可测试性锚点可定位 |
 | 来源承接 | `assurance_takeover` 回指 03、07、06、08 的执行和保障要求 |
 | 能力映射 | `capability_assets` 只登记流程所需能力，不声明部署完成 |
-| 边界 | 本文不复制 07 提交规则，不替代 Skill/Hook/Code/Web/环境适配事实源 |
+| 边界 | 本文通过引用承接来源要求，不复制 07/06/04/05/08 原文，不替代 Skill/Hook/Code/Web/环境适配事实源 |
 | Human Gate | 拆分不清、绕过校验、环境安装和破坏性 Git 操作均被阻断 |
 | 证据 | 提交后交还 hash、验证、status 和 Skill 使用方式 |
 
