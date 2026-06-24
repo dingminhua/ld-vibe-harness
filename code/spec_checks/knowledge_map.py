@@ -337,7 +337,7 @@ class KnowledgeMapMixin:
                 node = nodes_by_id.get(counterpart_id)
                 if not node:
                     continue
-                priority, role = self.read_role_for_relation(edge.get("type"), edge.get("source_structure"), node)
+                priority, role = self.read_role_for_relation(edge, node, resolved_start_id)
                 reason = self.read_reason_for_relation(edge, resolved_start_id)
                 plan.append(self.read_plan_entry(node, priority, role, edge.get("type") or "related", reason))
         else:
@@ -351,9 +351,12 @@ class KnowledgeMapMixin:
 
         return self.compact_read_plan(plan)
 
-    def read_role_for_relation(self, relation_type, source_structure, node=None):
+    def read_role_for_relation(self, edge, node=None, resolved_start_id=None):
         node = node or {}
+        relation_type = edge.get("type") or "related"
+        source_structure = edge.get("source_structure") or edge.get("derived_from")
         path = node.get("canonical_path") or node.get("path") or ""
+        node_type = node.get("type")
         if (
             self.task_type in {"workcase_execution", "work_object"}
             and relation_type == "consumes"
@@ -365,12 +368,22 @@ class KnowledgeMapMixin:
             return "P1", "context"
         if self.task_type == "code_change" and path.startswith(("code/", "tests/")):
             return "P1", "context"
-        if self.task_type == "code_change" and path.startswith(("specs/04-", "specs/08-", "specs/attachments/04.", "specs/attachments/08.")):
+        if self.task_type == "code_change" and path.startswith(("specs/04-", "specs/08-")):
             return "P1", "authority"
-        if source_structure in {"ldvh_asset.source_specs", "basis", "parent_spec"}:
+        if source_structure == "ldvh_asset.source_specs":
             return "P1", "authority"
-        if relation_type in {"basis", "parent", "derives_from", "gated_by"}:
+        if relation_type in {"basis", "gated_by"}:
             return "P1", "authority"
+        if node_type == "attachment":
+            return self.read_role_for_attachment(node)
+        if relation_type == "parent" and node_type in {"spec", "member_spec"}:
+            if resolved_start_id and edge.get("from") == resolved_start_id:
+                return "P1", "authority"
+            return "P2", "context"
+        if relation_type == "derives_from":
+            if path.startswith(("history/", "history/")) or "specs-v1" in path:
+                return "P3", "fallback"
+            return "P2", "context"
         if relation_type in {"impacts", "writes_to"}:
             return "P1", "impact"
         if relation_type in {"validates", "renders"}:
@@ -378,6 +391,19 @@ class KnowledgeMapMixin:
         if relation_type in {"related", "owns_attachment", "consumes"}:
             return "P2", "context"
         return "P3", "context"
+
+    def read_role_for_attachment(self, node):
+        path = node.get("canonical_path") or node.get("path") or ""
+        title = node.get("label") or ""
+        if any(marker in path for marker in ("01.Att.01", "04.Att.05", "04.Att.06")):
+            return "P1", "authority"
+        if any(term in title for term in ("知识地图投影Schema", "知识地图输入范围", "关系类型")):
+            return "P1", "authority"
+        if any(term in title for term in ("回归", "验证", "测试", "诊断码")):
+            return "P2", "verification"
+        if any(term in title for term in ("参考实现", "边界清单", "删除核对")):
+            return "P3", "fallback"
+        return "P2", "context"
 
     def read_reason_for_relation(self, edge, resolved_start_id):
         relation_type = edge.get("type") or "related"
@@ -549,6 +575,59 @@ class KnowledgeMapMixin:
                     "source_refs": self.diagnostic_source_refs(),
                 }
             )
+        path_to_plan = {
+            item.get("path"): item
+            for item in read_plan
+            if item.get("path")
+        }
+        has_path = lambda path: path in path_to_plan or self.start_node == path or resolved_start_id == path
+        if has_path("rules/LDVH-WORKSPACE-ENTRY.md"):
+            conditions.append(
+                self.task_stop_condition(
+                    "workspace_entry_stop_points",
+                    "任务涉及工作区入口；命中管辖项目配置、项目入口、环境入口、职责边界或入口冲突等 STOP 点时必须暂停。",
+                    "回读 rules/LDVH-WORKSPACE-ENTRY.md 的 STOP 点和维护规则，必要时等待 Human 确认。",
+                    "rules/LDVH-WORKSPACE-ENTRY.md",
+                    "STOP 点",
+                    path_to_plan.get("rules/LDVH-WORKSPACE-ENTRY.md"),
+                )
+            )
+        if has_path("rules/LDVH-MAINTAINER-ENTRY.md"):
+            conditions.append(
+                self.task_stop_condition(
+                    "maintainer_entry_stop_points",
+                    "任务涉及 LDVH 产品资产维护入口；命中产品资产定位、环境部署声明、事实源边界或入口冲突等 STOP 点时必须暂停。",
+                    "回读 rules/LDVH-MAINTAINER-ENTRY.md 的 STOP 点和维护规则，必要时等待 Human 确认。",
+                    "rules/LDVH-MAINTAINER-ENTRY.md",
+                    "STOP 点",
+                    path_to_plan.get("rules/LDVH-MAINTAINER-ENTRY.md"),
+                )
+            )
+        if self.task_type == "rules_sync_review" or has_path("specs/30-rules-entry-sync-review-Rules入口同步审查.md"):
+            conditions.append(
+                self.task_stop_condition(
+                    "rules_sync_review_human_gate",
+                    "任务涉及 Rules 入口同步审查；高影响入口边界、长期降级、冲突或自动同步判断必须进入 Human Gate。",
+                    "按 active 30 回读同步审查流程、Human Gate 和降级路径，不得用知识地图输出自动批准 Rules 修改。",
+                    "specs/30-rules-entry-sync-review-Rules入口同步审查.md",
+                    "Human Gate",
+                    path_to_plan.get("specs/30-rules-entry-sync-review-Rules入口同步审查.md"),
+                )
+            )
+        if (
+            self.task_type in {"code_change", "spec_change", "rules_sync_review"}
+            or has_path("specs/04-Code确定性执行规范.md")
+        ):
+            conditions.append(
+                self.task_stop_condition(
+                    "code_human_gate",
+                    "任务涉及 Code 知识地图或确定性执行边界；改变事实源、Gate、Git 判断、长期降级或输出持久化口径时必须暂停。",
+                    "回读 specs/04-Code确定性执行规范.md 的 Code Human Gate；只把知识地图输出作为实时只读投影。",
+                    "specs/04-Code确定性执行规范.md",
+                    "Human Gate",
+                    path_to_plan.get("specs/04-Code确定性执行规范.md"),
+                )
+            )
         if self.start_node and not self.read_plan_matches_start(read_plan, resolved_start_id):
             conditions.append(
                 {
@@ -567,7 +646,47 @@ class KnowledgeMapMixin:
                     "source_refs": self.diagnostic_source_refs(),
                 }
             )
-        return conditions
+        return self.dedupe_stop_conditions(conditions)
+
+    def task_stop_condition(self, condition, reason, fallback, source_path, section_title, read_plan_item=None):
+        source_refs = self.section_source_refs(source_path, section_title)
+        if not source_refs and read_plan_item:
+            source_refs = read_plan_item.get("source_refs") or []
+        return {
+            "condition": condition,
+            "reason": reason,
+            "fallback": fallback,
+            "source_refs": source_refs,
+        }
+
+    def section_source_refs(self, source_path, section_title):
+        path = self.resolve_source_path(source_path)
+        if not path.exists() or not path.is_file():
+            return []
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            return []
+        pattern = re.compile(r"^##+\s+(?:\d+(?:\.\d+)*\.?\s+)?(.+?)\s*$")
+        for index, line in enumerate(lines, start=1):
+            match = pattern.match(line)
+            if match and match.group(1).strip() == section_title:
+                return [self.source_ref(source_path, index, index, anchor=section_title)]
+        for index, line in enumerate(lines, start=1):
+            if section_title in line:
+                return [self.source_ref(source_path, index, index, anchor=section_title)]
+        return []
+
+    def dedupe_stop_conditions(self, conditions):
+        seen = set()
+        result = []
+        for item in conditions:
+            key = item.get("condition")
+            if key in seen:
+                continue
+            seen.add(key)
+            result.append(item)
+        return result
 
     def read_plan_matches_start(self, read_plan, resolved_start_id=None):
         expected = {value for value in (self.start_node, resolved_start_id) if value}

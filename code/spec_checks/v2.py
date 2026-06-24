@@ -793,6 +793,9 @@ def format_navigation_text_lines(knowledge_map):
                 f"- {item.get('priority')}/{item.get('role')}: {item.get('path')} "
                 f"({item.get('source_relation')}) - {item.get('reason')}"
             )
+            sections = item.get("suggested_sections") or []
+            if sections:
+                lines.append(f"  suggested_sections: {json.dumps(sections, ensure_ascii=False)}")
         omitted = len(read_plan) - len(shown)
         if omitted > 0:
             lines.append(f"- omitted: {omitted} lower-priority items; use --format json or layer expand for the full plan")

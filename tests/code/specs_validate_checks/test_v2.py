@@ -153,6 +153,238 @@ v2_attachment:
     return specs_v2
 
 
+def write_navigation_value_fixture(root):
+    specs = root / "specs"
+    attachments = specs / "attachments"
+    rules = root / "rules"
+    write_md(
+        specs / "04-Code确定性执行规范.md",
+        """
+# Code确定性执行规范
+
+```yaml
+v2_spec:
+  spec_id: "04"
+  spec_kind: "spec"
+  title: "Code确定性执行规范"
+  status: "active"
+  authority: "active"
+  canonical_path: "specs/04-Code确定性执行规范.md"
+  created: "2026-06-24"
+  updated: "2026-06-24"
+  parent_spec: ""
+  relation: ""
+  positioning: "定义 Code"
+  scope: "Code"
+  basis: []
+  related_specs:
+    - "specs/attachments/04.Att.01-Code需求记录字段表.md"
+    - "specs/attachments/04.Att.03-Code结构化输出Schema表.md"
+    - "specs/attachments/04.Att.05-知识地图输入范围表.md"
+    - "specs/attachments/04.Att.06-知识地图投影Schema表.md"
+    - "specs/attachments/04.Att.09-Code回归入口表.md"
+  migration_sources:
+    - "history/specs-v1/07-Code确定性执行实现规范.md"
+  active_fact_source: []
+  code_consumption:
+    - "knowledge_map_input"
+  migration_status: "migrated"
+```
+
+## 1. 本文解决的问题
+
+定义 Code。
+
+## 2. 上位依据
+
+无。
+
+## 3. 构成要素归属与价值判断
+
+属于 Code。
+
+## 4. 规范保障要求
+
+| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+|---|---|---|---|---|
+| 知识地图投影要求 | 需要实时投影 | Code | Code | 修改时 |
+
+## 5. Human Gate
+
+改变事实源、Gate、Git 判断、长期降级或输出持久化口径时必须暂停。
+
+## 6. 待补齐事项
+
+无。
+""",
+    )
+    write_md(
+        specs / "30-rules-entry-sync-review-Rules入口同步审查.md",
+        """
+# rules-entry-sync-review-Rules入口同步审查
+
+```yaml
+v2_spec:
+  spec_id: "30"
+  spec_kind: "member_spec"
+  title: "rules-entry-sync-review-Rules入口同步审查"
+  status: "active"
+  authority: "active"
+  canonical_path: "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
+  created: "2026-06-24"
+  updated: "2026-06-24"
+  parent_spec: "specs/03-行动编排规范.md"
+  relation: "action_member"
+  positioning: "Rules 同步审查"
+  scope: "Rules"
+  basis: []
+  related_specs: []
+  migration_sources: []
+  active_fact_source: []
+  code_consumption:
+    - "action_member_identity"
+  migration_status: "migrated"
+```
+
+```yaml
+v2_action_member:
+  spec_id: "30"
+  kind: "action_process"
+  name_en: "rules-entry-sync-review"
+  name_zh: "Rules入口同步审查"
+  collection_status: "active"
+  canonical_path: "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
+  scenario_anchor: "§4"
+  context_anchor: "§3"
+  gate_anchor: "§5"
+  execution_anchor: "§6"
+  issue_routing_anchor: "§7"
+  writeback_anchor: "§8"
+  evidence_anchor: "§8"
+  testability_anchor: "§9"
+  assurance_takeover: []
+  capability_assets: []
+  code_consumption:
+    - "action_member_identity"
+```
+
+## 1. 本文解决的问题
+
+定义 Rules 同步审查。
+
+## 2. 上位依据
+
+承接 03。
+
+## 3. 构成要素归属与价值判断
+
+属于行动编排。
+
+## 4. 规范保障要求
+
+| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+|---|---|---|---|---|
+| Rules 同步要求 | 需要审查入口 | 行动编排 | Rules | 修改时 |
+
+## 5. Human Gate
+
+高影响入口边界、长期降级、冲突或自动同步判断必须进入 Human Gate。
+
+## 6. 待补齐事项
+
+无。
+""",
+    )
+    attachment_specs = {
+        "04.Att.01-Code需求记录字段表.md": ("Code需求记录字段表", "需求字段", "code_requirement_fields"),
+        "04.Att.03-Code结构化输出Schema表.md": ("Code结构化输出Schema表", "Schema", "code_output_schema"),
+        "04.Att.05-知识地图输入范围表.md": ("知识地图输入范围表", "输入范围", "knowledge_map_input_scope"),
+        "04.Att.06-知识地图投影Schema表.md": ("知识地图投影Schema表", "Schema", "knowledge_map_projection_schema"),
+        "04.Att.09-Code回归入口表.md": ("Code回归入口表", "回归入口", "code_regression_entry"),
+    }
+    for filename, (title, purpose, code_consumption) in attachment_specs.items():
+        write_md(
+            attachments / filename,
+            f"""
+# {title}
+
+```yaml
+v2_attachment:
+  attachment_id: "{filename.split('-')[0]}"
+  title: "{title}"
+  status: "active"
+  authority: "active_with_parent_spec"
+  parent_spec: "specs/04-Code确定性执行规范.md"
+  canonical_path: "specs/attachments/{filename}"
+  purpose: "{purpose}"
+  migration_sources: []
+  code_consumption:
+    - "{code_consumption}"
+```
+
+## 1. 定位
+
+{purpose}。
+
+## 2. 待补齐事项
+
+无。
+""",
+        )
+    for filename, asset_id, source_specs in (
+        (
+            "LDVH-WORKSPACE-ENTRY.md",
+            "ldvh-workspace-entry",
+            ["specs/04-Code确定性执行规范.md", "specs/30-rules-entry-sync-review-Rules入口同步审查.md"],
+        ),
+        ("LDVH-MAINTAINER-ENTRY.md", "ldvh-maintainer-entry", ["specs/04-Code确定性执行规范.md"]),
+    ):
+        write_md(
+            rules / filename,
+            f"""
+# {asset_id}
+
+```yaml
+ldvh_asset:
+  id: "{asset_id}"
+  type: "rule"
+  status: "active"
+  canonical_path: "rules/{filename}"
+  source_specs:
+{chr(10).join(f'    - "{item}"' for item in source_specs)}
+  consumption_scenarios:
+    - "测试"
+  inputs:
+    - "测试"
+  outputs:
+    - "测试"
+  handoff: "测试"
+  verification:
+    - "pytest"
+  sync_triggers:
+    - "测试"
+  deprecation: "测试"
+```
+
+## 1. 最小启动顺序
+
+先查询知识地图。
+
+## 2. 场景路由
+
+按任务路由。
+
+## 3. STOP 点
+
+命中职责边界、环境入口、入口冲突或高影响修改时暂停。
+
+## 4. 维护规则
+
+修改后验证。
+""",
+        )
+
+
 def test_v2_check_builds_read_only_knowledge_map(tmp_path):
     specs_v2 = tmp_path / "specs-v2"
     write_md(
@@ -938,8 +1170,103 @@ def test_v2_check_json_and_text_output_shape_are_stable(tmp_path, capsys):
     assert "Next queries:" in text_output
     assert "Stop conditions:" in text_output
     assert "Impact summary:" in text_output
+    assert "suggested_sections:" in text_output
     assert "- degraded: False" in text_output
     assert "- diagnostics: 0" in text_output
+
+
+def test_knowledge_map_text_output_includes_suggested_sections(tmp_path, capsys):
+    write_minimal_v2_knowledge_map_fixture(tmp_path)
+
+    exit_code = checker.knowledge_map_main(
+        tmp_path,
+        input_scope="active_specs",
+        query_layer="neighbors",
+        start_node="specs-v2/01-规范体系基础规范.md",
+        output_format="text",
+    )
+    text_output = capsys.readouterr().out
+
+    assert exit_code == 0
+    assert "- P0/start:" in text_output
+    assert 'suggested_sections: ["本文解决的问题", "构成要素归属与价值判断", "待补齐事项"]' in text_output
+
+
+def test_knowledge_map_stop_conditions_include_task_level_human_gates(tmp_path):
+    write_navigation_value_fixture(tmp_path)
+
+    workspace_report = checker.v2_check_build(
+        tmp_path,
+        input_scope="entry_navigation",
+        query_layer="neighbors",
+        start_node="rules/LDVH-WORKSPACE-ENTRY.md",
+        task_type="workspace_entry",
+    )
+    workspace_stops = {item["condition"]: item for item in workspace_report["knowledge_map"]["stop_conditions"]}
+
+    assert "workspace_entry_stop_points" in workspace_stops
+    assert workspace_stops["workspace_entry_stop_points"]["source_refs"]
+
+    maintainer_report = checker.v2_check_build(
+        tmp_path,
+        input_scope="entry_navigation",
+        query_layer="neighbors",
+        start_node="rules/LDVH-MAINTAINER-ENTRY.md",
+        task_type="rules_entry",
+    )
+    maintainer_stops = {item["condition"]: item for item in maintainer_report["knowledge_map"]["stop_conditions"]}
+
+    assert "maintainer_entry_stop_points" in maintainer_stops
+    assert maintainer_stops["maintainer_entry_stop_points"]["source_refs"]
+
+    code_report = checker.v2_check_build(
+        tmp_path,
+        input_scope="entry_navigation",
+        query_layer="neighbors",
+        start_node="specs/04-Code确定性执行规范.md",
+        task_type="rules_sync_review",
+    )
+    code_stops = {item["condition"]: item for item in code_report["knowledge_map"]["stop_conditions"]}
+
+    assert "rules_sync_review_human_gate" in code_stops
+    assert "code_human_gate" in code_stops
+    assert code_stops["rules_sync_review_human_gate"]["source_refs"]
+    assert code_stops["code_human_gate"]["source_refs"]
+
+
+def test_knowledge_map_read_plan_roles_are_refined_for_attachments(tmp_path):
+    write_navigation_value_fixture(tmp_path)
+
+    report = checker.v2_check_build(
+        tmp_path,
+        input_scope="entry_navigation",
+        query_layer="neighbors",
+        start_node="specs/04-Code确定性执行规范.md",
+        task_type="rules_sync_review",
+    )
+    read_roles = {item["path"]: item["role"] for item in report["knowledge_map"]["read_plan"]}
+    edge_pairs = {(edge["from"], edge["to"], edge["type"]) for edge in report["knowledge_map"]["edges"]}
+
+    assert read_roles["specs/attachments/04.Att.05-知识地图输入范围表.md"] == "authority"
+    assert read_roles["specs/attachments/04.Att.06-知识地图投影Schema表.md"] == "authority"
+    assert read_roles["specs/attachments/04.Att.09-Code回归入口表.md"] == "verification"
+    assert read_roles["specs/attachments/04.Att.01-Code需求记录字段表.md"] == "context"
+    assert read_roles["specs/attachments/04.Att.03-Code结构化输出Schema表.md"] == "context"
+    assert "authority" not in {
+        read_roles["specs/attachments/04.Att.09-Code回归入口表.md"],
+        read_roles["specs/attachments/04.Att.01-Code需求记录字段表.md"],
+        read_roles["specs/attachments/04.Att.03-Code结构化输出Schema表.md"],
+    }
+    assert (
+        "specs/attachments/04.Att.05-知识地图输入范围表.md",
+        "specs/04-Code确定性执行规范.md",
+        "parent",
+    ) in edge_pairs
+    assert (
+        "specs/04-Code确定性执行规范.md",
+        "specs/attachments/04.Att.05-知识地图输入范围表.md",
+        "owns_attachment",
+    ) in edge_pairs
 
 
 def test_v2_check_entry_navigation_resolves_workcase_start_node(tmp_path):
