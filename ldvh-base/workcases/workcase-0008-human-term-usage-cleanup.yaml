@@ -52,9 +52,8 @@ orchestration:
         读取工作区入口、维护入口、知识地图导航和 P0/P1 权威原文，确认产品资产维护和 dogfood 工作对象处理边界。
       status: done
       result_summary: |
-        已读取工作区入口、维护入口和 P0/P1 权威原文。知识地图在当前 worktree 中因未找到工作区根 `LDVH-GOVERNED-PROJECTS.yaml` 输出 degraded 诊断；已回退到外部工作区配置、active specs 和文件事实源原文核对。
+        已读取工作区入口、维护入口和 P0/P1 权威原文。知识地图在当前 worktree 中因未找到工作区根 `LDVH-GOVERNED-PROJECTS.yaml` 输出受限诊断；已回退到外部工作区配置、active specs 和文件事实源原文核对。外部工作区管辖配置核对路径为 `/Users/dmh2002/poker_hud_projects/LDVH-GOVERNED-PROJECTS.yaml`。
       evidence_refs:
-        - /Users/dmh2002/poker_hud_projects/LDVH-GOVERNED-PROJECTS.yaml
         - rules/LDVH-WORKSPACE-ENTRY.md
         - rules/LDVH-MAINTAINER-ENTRY.md
       blocking_reason: null
@@ -210,9 +209,9 @@ orchestration:
       status: done
       result_summary: |
         已在 `specs/attachments/01.Att.08-规范表达清单.md` 增加执行主体命名规则和不推荐表达条目：默认执行主体、真实 Human 判断、子 Agent、Code/测试、Web、环境/运行时扩展、Git/事实对象和手动命令均有推荐主语、适用动作和禁止写法。`preflight` 提示 specs 写入需识别 Human Gate；本轮依据主线程/Human 明确要求“主体命名原则必须沉淀到 specs”继续执行，未改变状态机、事实源边界、Rules STOP/source_specs/sync_triggers 或 Code 结构化契约。
+        预检命令：`python3 code/specs_validate.py preflight --target-path specs/attachments/01.Att.08-规范表达清单.md`。
       evidence_refs:
         - specs/attachments/01.Att.08-规范表达清单.md
-        - python3 code/specs_validate.py preflight --target-path specs/attachments/01.Att.08-规范表达清单.md
       blocking_reason: null
     - id: item-9
       title: 扩展方案子 Agent 审核
