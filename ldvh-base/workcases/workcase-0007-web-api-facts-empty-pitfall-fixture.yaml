@@ -32,10 +32,9 @@ orchestration:
       role: maintainer
       mode: single
       input_refs:
-        - /Users/dmh2002/poker_hud_projects/AGENTS.md
-        - /Users/dmh2002/poker_hud_projects/ld-vibe-harness/AGENTS.md
-        - /Users/dmh2002/poker_hud_projects/ld-vibe-harness/rules/LDVH-WORKSPACE-ENTRY.md
-        - /Users/dmh2002/poker_hud_projects/ld-vibe-harness/rules/LDVH-MAINTAINER-ENTRY.md
+        - AGENTS.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - rules/LDVH-MAINTAINER-ENTRY.md
         - specs/05-Web信息同步规范.md
         - specs/08-测试基础规范.md
         - specs/02-事实模型基础规范.md
