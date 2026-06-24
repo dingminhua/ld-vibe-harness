@@ -14,6 +14,7 @@ ldvh_asset:
     - "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
     - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
     - "specs/07-事实源边界与Git追溯规范.md"
+    - "specs/31-git-commit-action-Git提交行动编排.md"
   consumption_scenarios:
     - "工作区级管辖项目识别"
     - "管辖项目工作对象处理"
@@ -45,7 +46,7 @@ ldvh_asset:
 ```
 
 > 文件性质：工作区级 Rules 入口资产，不是 specs 正式规范或最终事实源
-> 规范来源：`specs/01-规范体系基础规范.md`、`specs/02-事实模型基础规范.md`、`specs/04-Code确定性执行规范.md`、`specs/06-运行时扩展规范.md`、`specs/30-rules-entry-sync-review-Rules入口同步审查.md`、`specs/attachments/06.Att.02-固定运行时扩展登记表.md`、`specs/07-事实源边界与Git追溯规范.md`
+> 规范来源：`specs/01-规范体系基础规范.md`、`specs/02-事实模型基础规范.md`、`specs/04-Code确定性执行规范.md`、`specs/06-运行时扩展规范.md`、`specs/30-rules-entry-sync-review-Rules入口同步审查.md`、`specs/attachments/06.Att.02-固定运行时扩展登记表.md`、`specs/07-事实源边界与Git追溯规范.md`、`specs/31-git-commit-action-Git提交行动编排.md`
 > 适用范围：安装或使用 LDVH 的工作区级入口、管辖项目识别、管辖项目工作对象处理和 dogfood 管辖判断
 
 ---
@@ -123,7 +124,7 @@ AI 进入工作区入口后，应按以下顺序启动：
 | 工作区入口理解 | `workspace_entry` | `rules/LDVH-WORKSPACE-ENTRY.md` | 本文、`LDVH-GOVERNED-PROJECTS.yaml` 和 `source_specs` |
 | 判断当前是否为管辖项目 | `governed_project_check` | `LDVH-GOVERNED-PROJECTS.yaml` 或当前项目路径 | `governed-projects`、Human Gate |
 | 处理管辖项目工作对象 | `work_object` | 目标 WorkCase/ADR/Spark/Pitfall/Study 路径或对象 ID | `fact_cli.py show/list/search/stats` 和对应事实源原文 |
-| 处理管辖项目 Git 提交记录 | `git_trace` | 目标工作对象、变化文件或提交范围 | Git commit records 和 07 |
+| 处理管辖项目 Git 提交记录或提交准备 | `git_trace` | 目标工作对象、变化文件或提交范围 | 31、Git commit records 和 07 |
 | 判断 specs 变化是否影响固定 Rules 入口表达 | `rules_sync_review` | 变化来源文件或受影响 Rules 入口 | 转入维护入口并按 active 30 执行 |
 | 维护 LDVH 产品资产 | `rules_entry` | `rules/LDVH-MAINTAINER-ENTRY.md` 或用户点名资产 | 转入 `rules/LDVH-MAINTAINER-ENTRY.md` |
 

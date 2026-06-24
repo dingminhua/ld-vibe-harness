@@ -74,6 +74,11 @@ evolution:
   summary: 新建 workcase-0080 承接固定能力资产登记制、资产类型最佳实践标准、同步监督和部署分层边界；本 Spark 继续保持 pending，三条并行承接线暂为 workcase-0074、workcase-0024 和 workcase-0080。
 - at: '2026-06-21T00:39:27+08:00'
   summary: workcase-0074 已完成真实落地的一部分：`ldvh-git-commit` Skill 按 04.02 登记为 active 固定能力资产，10 号规范和维护入口已指向该 Skill；Hook 口径同步修正为统一 Hook registry / dispatcher 与环境接入层分离，不再描述为仓库级原生 Git hook 安装脚本。
+- at: '2026-06-24T09:40:00+08:00'
+  summary: v2 当前提交规则权威已收敛到 `specs/07-事实源边界与Git追溯规范.md`，固定 Skill/Hook/Rules
+    资产已登记；本轮由 workcase-0003 承接剩余“提交行动如何落地”的薄入口问题，并新增
+    `specs/31-git-commit-action-Git提交行动编排.md` 接管 AI 准备、拆分、预检、创建和交还 commit
+    的执行责任。旧 workcase-0074 只保留历史追溯价值，不再作为当前推进入口。
 input_refs:
 - study-0008
 source: conversation
@@ -82,7 +87,8 @@ priority: P1
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''
-related_workcases: []
+related_workcases:
+- workcase-0003
 related_adrs: []
 related_studies:
 - study-0008

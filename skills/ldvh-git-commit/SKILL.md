@@ -1,6 +1,6 @@
 ---
 name: ldvh-git-commit
-description: Prepare, validate, and create LDVH Git commits under specs/03 and specs/07. Use when Codex is asked to commit LDVH changes, write or repair a commit message, split staged changes, run commit prechecks, or explain/fix commit validation failures in an LDVH governed repository.
+description: Prepare, validate, and create LDVH Git commits under specs/31 and specs/07. Use when Codex is asked to commit LDVH changes, write or repair a commit message, split staged changes, run commit prechecks, or explain/fix commit validation failures in an LDVH governed repository.
 ---
 
 # LDVH Git Commit
@@ -13,6 +13,7 @@ ldvh_asset:
   canonical_path: "skills/ldvh-git-commit/SKILL.md"
   source_specs:
     - "specs/03-行动编排规范.md"
+    - "specs/31-git-commit-action-Git提交行动编排.md"
     - "specs/07-事实源边界与Git追溯规范.md"
     - "specs/06-运行时扩展规范.md"
     - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
@@ -43,11 +44,11 @@ ldvh_asset:
   deprecation: "废弃或重命名前必须同步 03、06、07、commit_validate、hooks、spark-0017 和 deployment-entries。"
 ```
 
-Use this Skill to execute the commit workflow coordinated by `specs/03-行动编排规范.md` and constrained by `specs/07-事实源边界与Git追溯规范.md`. Do not create new commit rules here. Treat `specs/07-事实源边界与Git追溯规范.md` as the canonical commit-message rule, `code/commit_validate.py` as the canonical validator, `hooks/ldvh-hooks.yaml` as the Hook event registry, and `code/hook_dispatch.py` as the unified dispatcher.
+Use this Skill to execute the commit workflow coordinated by `specs/31-git-commit-action-Git提交行动编排.md` and constrained by `specs/07-事实源边界与Git追溯规范.md`. Do not create new commit rules here. Treat `specs/07-事实源边界与Git追溯规范.md` as the canonical commit-message rule, `code/commit_validate.py` as the canonical validator, `hooks/ldvh-hooks.yaml` as the Hook event registry, and `code/hook_dispatch.py` as the unified dispatcher.
 
 ## Workflow
 
-1. Read the relevant parts of `specs/07-事实源边界与Git追溯规范.md`: commit message format, body requirements, type/scope selection, Git traceability, verification, risk, and Human Gate boundaries. If a future active Git commit action orchestration exists under 30-59, read it as the workflow authority.
+1. Read `specs/31-git-commit-action-Git提交行动编排.md` as the workflow authority, then read the relevant parts of `specs/07-事实源边界与Git追溯规范.md`: commit message format, body requirements, type/scope selection, Git traceability, verification, risk, and Human Gate boundaries.
 2. Inspect `git status --short` and staged files. Include only files that belong to the requested commit; never stage unrelated user changes.
 3. Decide whether to split commits. Split independent intents. Keep one atomic closure together when specs, Code, tests, hooks, rules, or skills are all part of the same landing.
 4. Choose one `type` and zero or one `scope`. Write the description in Simplified Chinese and make it state the concrete result.
@@ -72,7 +73,7 @@ python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>
 
 7. Run verification commands that match the changed surface. Prefer focused tests for narrow changes and broader checks for shared specs, validators, hooks, or asset registration.
 8. Fix all precheck errors before committing. Treat warnings as review prompts: refine the body, record a justified residual risk, or pause for Human judgment when needed.
-9. Commit with the validated message. After committing, report the commit hash and the remaining `git status --short`.
+9. Commit with the validated message. After committing, report the commit hash, the remaining `git status --short`, and whether this was a real Skill runtime invocation or a manual equivalent execution based on this Skill file.
 
 ## Boundaries
 

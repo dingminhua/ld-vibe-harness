@@ -5,6 +5,7 @@ ldvh_asset:
   canonical_path: "hooks/ldvh-hooks.yaml"
   source_specs:
     - "specs/03-行动编排规范.md"
+    - "specs/31-git-commit-action-Git提交行动编排.md"
     - "specs/07-事实源边界与Git追溯规范.md"
     - "specs/06-运行时扩展规范.md"
     - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
@@ -23,7 +24,7 @@ ldvh_asset:
     - "python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>"
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:
-    - "specs/03-行动编排规范.md 提交行动编排或 Hook 边界变化"
+    - "specs/31-git-commit-action-Git提交行动编排.md 提交行动编排或 Hook 边界变化"
     - "specs/07-事实源边界与Git追溯规范.md 提交格式或门禁规则变化"
     - "code/commit_validate.py CLI 参数或错误等级变化"
     - "code/hook_dispatch.py 事件参数、执行语义或 registry schema 变化"

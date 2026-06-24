@@ -13,6 +13,7 @@ ldvh_asset:
     - "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
     - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
     - "specs/07-事实源边界与Git追溯规范.md"
+    - "specs/31-git-commit-action-Git提交行动编排.md"
     - "specs/08-测试基础规范.md"
   consumption_scenarios:
     - "LDVH 产品资产维护"
@@ -41,12 +42,12 @@ ldvh_asset:
     - "LDVH 产品资产目录边界变化"
     - "固定运行时扩展登记规则变化"
     - "环境入口适配或部署规则变化"
-    - "Git 提交规范或事实源追溯规则变化"
+    - "Git 提交规范、Git 提交行动编排或事实源追溯规则变化"
   deprecation: "废弃、重命名或合并维护入口前必须评估 Human Gate，并同步 01、06、30、工作区入口和 Code 检查。"
 ```
 
 > 文件性质：LDVH 项目级 Rules 入口资产，不是 specs 正式规范或最终事实源
-> 规范来源：`specs/01-规范体系基础规范.md`、`specs/04-Code确定性执行规范.md`、`specs/06-运行时扩展规范.md`、`specs/30-rules-entry-sync-review-Rules入口同步审查.md`、`specs/attachments/06.Att.02-固定运行时扩展登记表.md`、`specs/07-事实源边界与Git追溯规范.md`、`specs/08-测试基础规范.md`
+> 规范来源：`specs/01-规范体系基础规范.md`、`specs/04-Code确定性执行规范.md`、`specs/06-运行时扩展规范.md`、`specs/30-rules-entry-sync-review-Rules入口同步审查.md`、`specs/attachments/06.Att.02-固定运行时扩展登记表.md`、`specs/07-事实源边界与Git追溯规范.md`、`specs/31-git-commit-action-Git提交行动编排.md`、`specs/08-测试基础规范.md`
 > 适用范围：维护 LDVH 自身产品资产时的项目级入口
 
 ---
@@ -102,7 +103,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 | 能力资产环境保障矩阵 | `python3 code/specs_validate.py capability-environment` | 只读投影固定能力资产的来源规范、同步责任、验证链和环境落地边界；不声明环境已安装 |
 | specs 写入前检查 | `python3 code/specs_validate.py preflight --target-path <path>` | 只读提示 Human Gate、Git 追溯、同步影响和固定 Rules 资产影响；不授权写入 |
 | specs 综合检查 | `python3 code/specs_validate.py all --fail-on-diagnostics` | 执行 active specs 综合校验 |
-| LDVH Git 提交准备 | `ldvh-git-commit` Skill、`python3 code/commit_validate.py --check-message-file <message-file>` | 按 07 的 commit message 契约拆分、编写、预检并创建提交 |
+| LDVH Git 提交准备 | `specs/31-git-commit-action-Git提交行动编排.md`、`ldvh-git-commit` Skill、`python3 code/commit_validate.py --check-message-file <message-file>` | 按 31 的行动流程和 07 的 commit message 契约拆分、编写、预检并创建提交 |
 | Rules 环境入口接入 | 按 `specs/06-运行时扩展规范.md` §4.1-§4.4 执行 | 官方维护 Codex App 适配路径；默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口 |
 
 工具输出、知识地图投影和读取建议只作为导航、聚合和诊断结果，不替代权威文件原文。当工具不可用、输出无法回指事实源、结果与原文冲突或当前场景超出工具能力时，应退回 Git 文件事实源、对应规范和人工降级检查。若 active specs、产品资产文件、Rules 入口和知识地图投影冲突，优先级为 active specs 与 Git 文件事实源、产品资产文件、Rules 入口、知识地图投影。
@@ -123,7 +124,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 | 判断 Rules 同步影响 | `rules_sync_review` | 变化来源文件；不明确时用受影响 Rules 入口 | 30、06 §4.2、受影响 Rules 原文和人工降级检查 |
 | 修改 Code 或测试 | `code_change` | 目标 Code / test 文件 | 04、08、对应测试命令和工具帮助 |
 | 修改 Web 或 Human-facing 入口 | `web_change` | 目标 Web / API / 文档文件 | 05、08 和相关 Web 校验 |
-| 准备 Git 提交或追溯事实源 | `git_trace` | 变化文件或提交范围 | 07、commit records、`commit_validate.py` |
+| 准备 Git 提交或追溯事实源 | `git_trace` | 变化文件或提交范围 | 31、07、commit records、`commit_validate.py` |
 | 处理 LDVH 自身工作对象 | `work_object` | 目标 WorkCase/ADR/Spark/Pitfall/Study | 转入 `rules/LDVH-WORKSPACE-ENTRY.md` |
 
 场景同时命中多个入口时，先用最具体的用户点名对象作为 `start_node`。若知识地图 `read_plan` 给出 P0/P1 权威原文，应以该计划替代本文的静态读取猜测；本文只保留起点选择、任务类型、STOP 和降级规则。

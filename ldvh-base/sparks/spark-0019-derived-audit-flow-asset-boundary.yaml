@@ -59,13 +59,19 @@ evolution:
   summary: 进一步讨论后形成新判断：工作流程不应复制来源规范规则，而应作为规范保障、能力资产编排和环境部署适配之间的极薄接口契约；Git 提交样例显示 `specs/10` 可作为规则事实源，提交工作流程接管执行落地，Skill/Code/Hook/Web 分别承担执行转换、确定性校验、触发和展示。该模型可推广到 40/41，将其从厚审核流程主文件降为薄入口，同时保留行动发现、接管范围、资产协作、回写、Gate 和部署检查职责。
 - at: '2026-06-21T05:12:21+08:00'
   summary: 补充初步影响面清单：该方向至少会牵动 06、03.03、04.02、04.03、10、40/41、可能的 42/43、01、07、08、09、Git 提交相关 Skill/Code/Hook 资产和 Rules 入口；后续应作为 Human Gate 级架构变更由独立 WorkCase 承接。
+- at: '2026-06-24T09:40:00+08:00'
+  summary: Git 提交样例已按 v2 形态进入实际落地：`specs/31-git-commit-action-Git提交行动编排.md`
+    作为极薄行动成员接管执行责任，07 保留 commit message 与 Git 追溯规则权威，Skill/Code/Hook/Web
+    作为能力资产协作。这验证了“来源规范 + 薄行动入口 + 能力资产 + 环境边界”的方向，但不自动决定
+    40/41/42/43 的最终形态。
 source: conversation
 source_detail: 用户围绕 40/41 审核流程是否应作为独立 specs 主文件存在，还是应作为由既有 specs 派生的 LDVH 能力资产落地进行讨论，要求新建 Spark 记录以便后续思考。
 priority: P1
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''
-related_workcases: []
+related_workcases:
+- workcase-0003
 related_adrs: []
 related_studies: []
 related_docs:

@@ -1,0 +1,360 @@
+id: workcase-0003
+type: workcase
+title: Git 提交行动编排薄入口落地
+goal: |
+  将 LDVH Git 提交从“07 规则 + Skill/Hook/Code 资产已经存在”推进为 active 的 Git 提交行动编排薄入口，使 AI 准备、拆分、预检、创建和交还 commit 的执行责任有单一流程归口。
+status: result_self_checking
+created: '2026-06-24T09:23:35.843460'
+updated: '2026-06-24T09:55:00+08:00'
+priority: P1
+description: |
+  当前 v2 已将 commit message 契约和 Git records 追溯归口到 07，并登记了 `ldvh-git-commit` Skill、`hooks/ldvh-hooks.yaml`、`code/commit_validate.py` 和 Web commit DTO / 展示链路。但 03 所要求的 Git 提交行动编排成员尚未存在，导致“规则、资产、环境边界、执行证据和 Skill 是否真实调用”之间仍缺少薄入口接管。
+
+  本 WorkCase 新增 active `specs/31-git-commit-action-Git提交行动编排.md`，只接管提交行动执行责任，不复制 07 的提交本体规则；并同步 01/03/07、Skill、Hook、Rules 和相关 Spark 的状态记录。
+success_criteria: |
+  - [x] 新增 active 31 Git 提交行动编排成员，具备 `v2_spec`、`v2_action_member` 和兼容 `ldvh_member` 身份块。
+  - [x] 31 明确 Context、Scenario、Gate、执行流程、问题分流、Skill 使用证据、Code/Hook/Web 协作、环境适配边界和可测试性锚点。
+  - [x] 07 明确提交行动流程由 31 接管，且 31 不复制 commit message 本体规则。
+  - [x] `ldvh-git-commit` Skill 和 Hook registry 回指 31，旧“10 规范”描述被清理。
+  - [x] Rules 入口能在 Git 提交准备或追溯场景定位 31、07、Skill 和 validator。
+  - [x] spark-0017 / spark-0019 记录本次承接进展，避免旧 workcase-0074 口径继续误导。
+  - [x] 通过 active specs、固定运行时扩展、能力环境矩阵、commit validator、Skill 快速校验、Web typecheck、commit DTO 单测和工作对象事实源校验；Web API 全量回归仍被 facts 夹具空 pitfall 假设阻断，已记录边界。
+source: |
+  用户在 2026-06-24 要求先了解 LDVH 当前状态，再按建议推进“提交”落地。主控检查发现：07 规则、Skill、Hook、Code 和 Web DTO 已基本存在，但 30-59 中缺少 Git 提交行动编排薄入口；用户随后明确“按你建议执行”。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 建立 WorkCase 和执行边界
+    role: main-controller
+    mode: single
+    input_refs:
+    - current-conversation
+    - specs/03-行动编排规范.md
+    - specs/07-事实源边界与Git追溯规范.md
+    expected_output: |
+      WorkCase 明确目标、成功标准、Human Gate 授权和执行颗粒度。
+    status: done
+    result_summary: |
+      已创建 workcase-0003，并记录用户“按你建议执行”为本轮新增 active 31 行动成员和推进提交落地的 Human Gate 授权。执行范围限定为 Git 提交行动薄入口、资产回指和状态记录，不实现 native hook 安装或 CI。
+    evidence_refs:
+    - ldvh-base/workcases/workcase-0003-git-commit-action-orchestration.yaml
+    blocking_reason: null
+  - id: item-2
+    title: 新增 31 Git 提交行动编排成员
+    role: specs
+    mode: single
+    input_refs:
+    - specs/03-行动编排规范.md
+    - specs/attachments/03.Att.01-成员身份字段表.md
+    - specs/attachments/03.Att.02-成员主文件骨架模板.md
+    - specs/07-事实源边界与Git追溯规范.md
+    expected_output: |
+      31 成员主文件成为 active Git 提交流程薄入口，并声明来源承接、能力资产、Gate、证据和环境边界。
+    status: done
+    result_summary: |
+      已新增 active `specs/31-git-commit-action-Git提交行动编排.md`，包含 `v2_spec`、`v2_action_member` 和兼容 `ldvh_member`，并按 03 骨架声明 Context、Scenario、Human Gate、执行、问题分流、回写证据、环境适配边界和可测试性锚点。v2-check 已通过。
+    evidence_refs:
+    - specs/31-git-commit-action-Git提交行动编排.md
+    blocking_reason: null
+  - id: item-3
+    title: 同步规则与能力资产回指
+    role: specs-runtime
+    mode: single
+    input_refs:
+    - specs/01-规范体系基础规范.md
+    - specs/03-行动编排规范.md
+    - specs/07-事实源边界与Git追溯规范.md
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - rules/LDVH-WORKSPACE-ENTRY.md
+    - skills/ldvh-git-commit/SKILL.md
+    - hooks/ldvh-hooks.yaml
+    expected_output: |
+      01/03/07、Rules、Skill 和 Hook 均能定位 31；旧 10/0074 执行口径不再作为当前入口。
+    status: done
+    result_summary: |
+      已同步 01 active 成员登记、03 active 成员说明、07 的提交流程归口、Rules 入口、`ldvh-git-commit` Skill、OpenAI agent metadata 和 Hook registry。31 接管执行责任，07 继续保留 commit message 本体规则。
+    evidence_refs:
+    - specs/01-规范体系基础规范.md
+    - specs/03-行动编排规范.md
+    - specs/07-事实源边界与Git追溯规范.md
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - rules/LDVH-WORKSPACE-ENTRY.md
+    - skills/ldvh-git-commit/SKILL.md
+    - skills/ldvh-git-commit/agents/openai.yaml
+    - hooks/ldvh-hooks.yaml
+    blocking_reason: null
+  - id: item-4
+    title: 更新 Spark 承接状态
+    role: facts
+    mode: single
+    input_refs:
+    - ldvh-base/sparks/spark-0017-commit-spec-assurance-assets.yaml
+    - ldvh-base/sparks/spark-0019-derived-audit-flow-asset-boundary.yaml
+    expected_output: |
+      相关 Spark 记录 Git 提交落地由 workcase-0003 和 31 接管，避免继续指向旧 workcase-0074。
+    status: done
+    result_summary: |
+      已在 spark-0017 和 spark-0019 的 evolution 中记录 workcase-0003 与 31 的承接进展，并把 `related_workcases` 指向 workcase-0003。旧 workcase-0074 保留为历史追溯，不再作为当前入口。
+    evidence_refs:
+    - ldvh-base/sparks/spark-0017-commit-spec-assurance-assets.yaml
+    - ldvh-base/sparks/spark-0019-derived-audit-flow-asset-boundary.yaml
+    blocking_reason: null
+  - id: item-5
+    title: 验证闭环和残留风险记录
+    role: verification
+    mode: single
+    input_refs:
+    - code/specs_validate.py
+    - code/fact_validate.py
+    - tests/code/test_commit_validate.py
+    - web/
+    expected_output: |
+      运行必要验证，记录验证证据、Web API 旁路风险和后续提交要求。
+    status: done
+    result_summary: |
+      已运行 active specs 综合检查、知识地图 31 git_trace 导航、固定运行时扩展登记、能力环境矩阵、WorkCase/Spark 事实源校验、commit validator 测试、Skill 快速校验、Hook dispatcher 临时消息验证、Web typecheck、commit DTO 单测和 `git diff --check`。Web API 全量回归仍在 facts.test.ts 空 pitfall 假设处失败，属于本次提交 DTO 之外的旁路夹具问题。
+    evidence_refs:
+    - code/specs_validate.py
+    - code/fact_validate.py
+    - tests/code/test_commit_validate.py
+    - skills/ldvh-git-commit/SKILL.md
+    - hooks/ldvh-hooks.yaml
+    - web/
+    blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本 WorkCase 来源于用户直接要求继续推进提交落地；主控已完成当前状态审查，确认缺口是 30-59 Git 提交行动编排薄入口，而不是继续加厚 07、Skill 或 Hook。
+      required_perspectives:
+      - 规范边界
+      - 能力资产边界
+      - 环境适配边界
+      optional_perspectives: []
+      tool_method_requirements:
+      - 核对 03/07/06 的归口边界。
+      - 不声明 native hook、Skill runtime 或 CI 已安装。
+      - 不复制 07 commit message 本体规则。
+      aggregation_rule: |
+        若发现 31 会重定义 07 规则、声明环境已安装或绕过 Human Gate，必须退回修改；否则可按用户授权直接执行。
+    review_items:
+    - id: plan-review-1
+      role: 规范边界与能力资产边界
+      agent_name: main-controller-independent-pass
+      requested_at: '2026-06-24T09:28:00+08:00'
+      prompt_context:
+        objective: |
+          判断 Git 提交落地应继续加厚 07/Skill/Hook，还是新增 30-59 薄行动成员接管执行责任。
+        input_refs:
+        - specs/03-行动编排规范.md
+        - specs/07-事实源边界与Git追溯规范.md
+        - specs/attachments/06.Att.02-固定运行时扩展登记表.md
+        - skills/ldvh-git-commit/SKILL.md
+        - hooks/ldvh-hooks.yaml
+        constraints:
+        - 不创建第二套 commit message 规则。
+        - 不声明环境安装状态。
+      context_digest: 规则和固定资产已存在，缺口是提交行动薄入口和 Skill 使用证据。
+      result:
+        status: pass_with_followups
+        summary: |
+          应新增 31 Git 提交行动编排薄入口。07 保持提交规则权威，Skill/Hook/Code/Web 保持能力资产和实现边界，31 接管执行责任、证据和失败分流。
+        key_findings:
+        - 07 已明确 AI 创建、拆分、预检、提交和交还 commit 的流程归 03 与 30-59 成员。
+        - 固定能力资产登记状态为 closed，但环境安装状态为 not_claimed。
+        - Skill 需要记录真实 runtime 调用与手动等价执行的区别。
+        required_changes:
+        - 新增 31 action member。
+        - 同步 01/03/07、Skill、Hook、Rules 和 Spark。
+        - 记录 Web API 全量回归旁路失败边界。
+        recommendations:
+        - CI / server-side gate 保留为 planned 后续兜底，不在本 WorkCase 实现。
+      raw_output_ref: current-conversation
+      attested_at: '2026-06-24T09:30:00+08:00'
+      attestation:
+        signer: main-controller-codex
+        statement: 基于当前仓库事实源和验证输出完成方案边界审查并对结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-24T09:31:00+08:00'
+      resolver: main-controller-codex
+      source_review_item_ids:
+      - plan-review-1
+      accepted_findings:
+      - 新增 31 是当前最小正确落地点。
+      - 31 只接管执行责任，不复制 07 的提交规则。
+      - 环境安装状态必须继续保持 not_claimed。
+      - Skill runtime 调用与手动等价执行必须被区分记录。
+      rejected_findings: []
+      required_changes_applied:
+      - 将执行项拆为新增成员、同步资产、更新 Spark 和验证闭环。
+      unresolved_items: []
+      changed_fields:
+      - status
+      - success_criteria
+      - orchestration.execution_items
+    human_confirmation:
+      confirmed_at: '2026-06-24T09:31:00+08:00'
+      confirmed_by: 用户
+      decision: execute
+      confirmation_context: |
+        用户在当前对话明确回复“按你建议执行”，授权按主控建议创建 WorkCase、落地 31 Git 提交行动编排薄入口并同步相关资产。
+      scope_confirmed:
+      - 新增 active 31 Git 提交行动编排成员。
+      - 同步 01/03/07、Rules、Skill、Hook 和相关 Spark 的回指。
+      - 不安装 native hook，不修改用户环境，不实现 CI。
+      unresolved_items: []
+  result_review:
+    controller_self_check:
+      checked_at: '2026-06-24T09:55:00+08:00'
+      checker: main-controller-codex
+      context:
+        objective: |
+          检查 workcase-0003 是否已完成 Git 提交行动编排薄入口落地，并确认是否可以进入独立结果复核。
+        input_refs:
+        - specs/31-git-commit-action-Git提交行动编排.md
+        - specs/07-事实源边界与Git追溯规范.md
+        - skills/ldvh-git-commit/SKILL.md
+        - hooks/ldvh-hooks.yaml
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - ldvh-base/workcases/workcase-0003-git-commit-action-orchestration.yaml
+      result:
+        status: pass_with_followups
+        summary: |
+          执行项和成功标准已完成。31 已成为 active Git 提交行动薄入口，相关资产已回指 31，环境安装状态未被冒称，核心验证通过。残留风险是 Web API 全量回归被 facts 夹具空 pitfall 假设阻断，commit DTO 单测已单独通过。
+        key_findings:
+        - 31 没有复制 07 commit message 本体规则。
+        - Skill runtime 调用与手动等价执行区别已写入 31 和 Skill。
+        - Hook registry 仍只声明统一事件，不声明 native Git hook 已安装。
+        - Web API 全量回归失败点不在 commit DTO，而在 `tests/web/api/facts.test.ts:27` 对 pitfall 列表非空的假设。
+        required_changes: []
+        followups:
+        - 可后续修复 Web API facts 测试夹具，避免阻断全量 Web API 回归。
+      attestation:
+        signer: main-controller-codex
+        statement: 已基于文件事实源和验证输出完成主控结果自检，建议进入独立结果复核。
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        结果复核用于确认 31 成员没有重定义 07、没有声明环境安装、相关资产回指一致、验证证据充分。
+      required_perspectives:
+      - 规范一致性与事实源边界
+      - 运行时扩展与环境边界
+      - 验证证据和残留风险
+      optional_perspectives: []
+      tool_method_requirements:
+      - 复核 v2-check、deployment-entries、capability-environment、commit validator、Skill 校验、Web typecheck 和 fact_validate 结果。
+      - 检查 Web API 全量回归若失败是否为旁路夹具问题。
+      aggregation_rule: |
+        存在 fail 或 needs_human_gate 时不得提交 Human 关闭确认，必须先处理或退回执行。
+    review_items: []
+    controller_resolution: null
+    human_closure_confirmation: null
+plan_confirmed_at: '2026-06-24T09:31:00+08:00'
+verification_evidence: |
+  ## 验证计划
+  - 覆盖 active specs 结构、31 知识地图导航、固定运行时扩展登记、能力环境矩阵、工作对象事实源、commit validator、Skill、Hook dispatcher、Web typecheck、commit DTO 和 diff 空白检查。
+
+  ## 验证命令
+  - `python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/31-git-commit-action-Git提交行动编排.md --task-type git_trace --format text`
+  - `python3 code/specs_validate.py deployment-entries`
+  - `python3 code/specs_validate.py capability-environment`
+  - `python3 code/fact_validate.py ldvh-base`
+  - `python3 -m pytest tests/code/test_commit_validate.py -q`
+  - `python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit`
+  - `python3 code/hook_dispatch.py run git.commit-msg --message-file <temporary-message-file>`
+  - `npm --prefix web run check`
+  - `npm exec tsx ../tests/web/api/commit-dto.test.ts`（在 `web/` 目录执行）
+  - `git diff --check`
+  - `npm --prefix web run test:web:api`
+
+  ## 验证结果
+  已通过：
+  - `python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/31-git-commit-action-Git提交行动编排.md --task-type git_trace --format text`
+  - `python3 code/specs_validate.py deployment-entries`
+  - `python3 code/specs_validate.py capability-environment`
+  - `python3 code/fact_validate.py ldvh-base`
+  - `python3 -m pytest tests/code/test_commit_validate.py -q`
+  - `python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit`
+  - `python3 code/hook_dispatch.py run git.commit-msg --message-file <temporary-message-file>`
+  - `npm --prefix web run check`
+  - `npm exec tsx ../tests/web/api/commit-dto.test.ts`（在 `web/` 目录执行）
+  - `git diff --check`
+
+  已知未通过：
+  - `npm --prefix web run test:web:api` 失败于 `tests/web/api/facts.test.ts:27`，原因是当前事实源没有 pitfall 列表项但测试假设 `pitfalls.data.items[0]` 存在；commit DTO 单测已单独通过。
+
+  ## 结论
+  31、资产同步和提交相关确定性验证已通过；Web API 全量回归存在旁路夹具缺口，不阻断本次 Git 提交行动编排落地，但应作为后续修复项。
+closure_evidence: |
+  ## 验证计划
+  - 当前只进入结果自检，不提交关闭确认。
+
+  ## 验证命令
+  - 见 `verification_evidence`。
+
+  ## 验证结果
+  当前执行已完成并进入主控结果自检。尚未进入关闭确认；后续需要独立结果复核后，再决定是否提交 Human 关闭确认。
+
+  ## 结论
+  本 WorkCase 暂不关闭；下一步应安排独立结果复核，处理或接受 Web API 旁路风险后再进入 Human 关闭确认。
+closure_requested_at: ''
+review_requested_at: ''
+closed_at: ''
+closure_outcome: ''
+residual_risks:
+- Web API 全量回归仍被 facts 测试的空 pitfall 夹具假设阻断；本 WorkCase 已验证 commit DTO 单测和 Web typecheck，但未修复该旁路测试。
+followup_refs: []
+revision_history:
+- at: '2026-06-24T09:36:00+08:00'
+  from_status: subagents_plan_reviewing
+  to_status: executing
+  actor: main-controller-codex
+  reason: |
+    用户已在对话中明确授权按建议执行；主控完成轻量方案边界审查后，进入执行状态并开始新增 31 与同步资产。
+  changed_fields:
+  - status
+  - success_criteria
+  - orchestration.execution_items
+  - plan_review.human_confirmation
+  summary: |
+    将默认 WorkCase 骨架改为 Git 提交行动编排薄入口的执行计划，并记录用户授权后进入 executing。后续应完成 31、资产同步、Spark 状态记录和验证闭环。
+- at: '2026-06-24T09:55:00+08:00'
+  from_status: executing
+  to_status: result_self_checking
+  actor: main-controller-codex
+  reason: |
+    31、相关资产同步、Spark 状态记录和验证闭环已完成，进入主控结果自检阶段。
+  changed_fields:
+  - status
+  - success_criteria
+  - orchestration.execution_items
+  - verification_evidence
+  - closure_evidence
+  - result_review.controller_self_check
+  - residual_risks
+  summary: |
+    执行项已全部完成并通过核心验证；Web API 全量回归旁路失败已记录为残留风险。下一步应安排独立结果复核，再提交 Human 关闭确认。
+related_docs:
+- specs/03-行动编排规范.md
+- specs/07-事实源边界与Git追溯规范.md
+- specs/31-git-commit-action-Git提交行动编排.md
+- skills/ldvh-git-commit/SKILL.md
+- hooks/ldvh-hooks.yaml
+- code/commit_validate.py
+- code/hook_dispatch.py
+- web/docs/06-Changelog.md
+- web/docs/05-ProjectFiles.md
+related_adrs: []
+related_sparks:
+- spark-0017
+- spark-0019
+related_pitfalls: []
+related_workcases: []

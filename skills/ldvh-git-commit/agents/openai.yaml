@@ -1,4 +1,4 @@
 interface:
   display_name: "LDVH Git Commit"
-  short_description: "按 LDVH 10 规范准备、预检并提交 Git 变更"
+  short_description: "按 LDVH 31 行动编排与 07 提交契约准备、预检并提交 Git 变更"
   default_prompt: "Use $ldvh-git-commit to prepare, validate, and commit the current staged LDVH changes."
