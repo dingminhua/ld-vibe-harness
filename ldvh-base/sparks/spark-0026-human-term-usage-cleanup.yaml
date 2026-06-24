@@ -76,6 +76,13 @@ evolution:
       已对明确低风险的 active specs、attachments、draft/candidate 32、Code 输出文案和 tests 夹具做最小修改。保留项包括：`code/spec_checks/runtime_projection.py` 与 `code/spec_checks/assurance_report.py` 中用于识别 legacy “人工降级”旧表达的检测标记，以及 `ldvh-base` 历史 Spark/Study/WorkCase 中作为来源事实、旧迁移清单或历史过程存在的“人工”表达。
 
       后续未决：是否建立后续 WorkCase 处理历史 Spark/Study/WorkCase 的吸收式改写；是否删除或重命名 Code 中 legacy “人工降级”检测标记；是否把更完整的主体命名规范吸收到 `01.Att.08-规范表达清单` 或其它 active 规范。
+  - at: '2026-06-25T04:20:00+08:00'
+    summary: |
+      Human 明确补充决策：`workcase-0008` 不应关闭为首轮清理完成，而应继续承担完整主体命名治理。历史 Spark/Study/WorkCase 中的旧“人工”表达必须处理掉，尤其是“人工降级”这种同时混淆执行主体和旧降级概念的表达；处理方式应为吸收式改写，保留历史来源可追溯，但当前有效结论必须符合新主体命名要求。
+
+      Code 中 legacy “人工降级”检测标记采用改名策略：不删除检测能力，但不得继续以“人工降级”作为变量名、诊断名、测试名或推荐输出；旧词只允许作为待检测输入样本或废止表达引用出现。
+
+      主体命名原则必须沉淀到 active specs 或附件，形成禁止项和推荐替代表达，确保后续不能再有主语不清晰或主体错误的用法。`workcase-0008` 已追加历史吸收、marker 改名、specs 沉淀、扩展方案子 Agent 审核和完成后子 Agent 复核执行项。
 input_refs:
   - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
   - rules/LDVH-WORKSPACE-ENTRY.md
