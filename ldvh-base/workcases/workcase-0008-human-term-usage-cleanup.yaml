@@ -3,13 +3,13 @@ type: workcase
 title: “人工”用语清理与执行主体命名治理
 goal: |
   承接 spark-0026，对 LDVH 中“人工”、Human、Human 确认、手动、AI、Code、Web 等执行主体表达做完整治理：清理推荐表达、吸收式处理历史工作对象中的旧表达、改名 legacy 检测标记，并把主体命名原则沉淀到 active specs，确保后续不得再出现主语不清晰或主体错误的用法。
-status: executing
+status: human_closure_confirming
 created: '2026-06-25T03:30:52+08:00'
-updated: '2026-06-25T04:56:00+08:00'
+updated: '2026-06-25T05:06:00+08:00'
 priority: P0
 plan_confirmed_at: '2026-06-25T03:30:52+08:00'
 review_requested_at: ''
-closure_requested_at: ''
+closure_requested_at: '2026-06-25T05:06:00+08:00'
 description: |
   本 WorkCase 是 spark-0026 的并行执行线程 C 承接对象。任务要求先分类，不机械全局替换；真实 Human 介入、授权、确认、取舍保留或改为 Human/Human Gate；AI 回读、原文核对、文件事实源核对改为明确核对动作；命令行或环境操作改为手动命令、手动步骤或环境接入；Code 机械校验改为 Code/测试/确定性校验；含混或会触发 Human Gate 的只记录，不擅自改。
 
@@ -24,7 +24,7 @@ success_criteria: |
   - [x] 不修改 workcase-0006、workcase-0007、spark-0027 或 study-0011。
   - [x] 更新 spark-0026 evolution，记录清理结果、保留理由、未决项和后续承接。
   - [x] 运行事实源校验、相关扫描和 `python3 code/specs_validate.py all --fail-on-diagnostics`，并在验证证据中记录结果。
-  - [ ] 历史 Spark/Study/WorkCase 中旧复合表达和旧主体表达完成吸收式改写：历史来源可追溯，但当前有效结论明确改为 Human、AI 回读、Code、Web、环境、手动命令或废止表达。
+  - [x] 历史 Spark/Study/WorkCase 中旧复合表达和旧主体表达完成吸收式改写：历史来源可追溯，但当前有效结论明确改为 Human、AI 回读、Code、Web、环境、手动命令或废止表达。
   - [x] 主体命名原则已沉淀到 active specs 或附件，形成禁止项和推荐替代表达，明确默认执行主体、Human/Human Gate、Code、Web、环境/运行时扩展、手动命令和子 Agent 的主语边界。
   - [x] 扩展方案已完成独立子 Agent 需求审核；完成后已完成独立子 Agent 结果复核，并由主控记录处理结论。
 source: |
@@ -155,11 +155,11 @@ orchestration:
         - ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml
       expected_output: |
         扫描并处理历史工作对象中的旧复合表达和旧主体表达；历史来源不抹除，但当前 summary/evolution/conclusion 必须明确旧表达已废止并给出新主体归口。
-      status: blocked
+      status: done
       result_summary: |
         已按吸收式原则改写一批允许范围内的历史对象：`spark-0025`、`workcase-0005`、`spark-0017`、`spark-0019`、`spark-0022`、`study-0008`、`study-0002`、`study-0003`、`study-0009`、`study-0010` 及若干 Spark 的旧确认表达已改为 Human、AI 回读核对、文件事实源核对、手动命令、临时接入方式或废止表达引用。
 
-        2026-06-25 状态重判时重新扫描 `ldvh-base`，发现此前“保留的旧词均为 01.Att.08/spark-0025/spark-0026/workcase-0005/workcase-0008/Code 输入样本”的表述过宽：`study-0005` 的“人工验收”、`spark-0012` 的“要求人工确认”、`spark-0011` 的“主控人工消化”、`workcase-0001` 的“人工路线表”、`workcase-0004` 的“人工抽查”、`workcase-0003` 的“人工独立视角材料”和 `spark-0005` 的“人工目录表”等仍需逐项判断是否属于允许的历史事实追溯，或应吸收式改写为 Human、AI、Code、静态路线、手动核对等明确主体表达。该项当前不能按完成处理。
+        2026-06-25 补行动已逐项处理此前重新扫描发现的残留：`study-0005` 的“人工验收”改为 `Human 目视验收`；`spark-0012` 的“要求人工确认”改为 `要求 Human 确认`；`spark-0011` 的“主控人工消化”改为 `主控 AI 消化`；`workcase-0001` 的“人工路线表”改为 `手写读取路线表`；`workcase-0004` 的“人工抽查”改为 `手动抽查`；`workcase-0003` 的“人工独立视角材料”改为 `主控整理的独立视角材料`；`spark-0005` 的“人工目录表”改为 `手写目录表`。这些命中均不保留为当前有效主体表达。
       evidence_refs:
         - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
         - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
@@ -172,8 +172,7 @@ orchestration:
         - ldvh-base/workcases/workcase-0004-knowledge-map-navigation-value-realization.yaml
         - ldvh-base/workcases/workcase-0003-git-commit-action-orchestration.yaml
         - ldvh-base/sparks/spark-0005-task-orchestration-boundary.yaml
-      blocking_reason: |
-        重新残留扫描发现多处未在既有允许残留清单中说明的“人工”命中；当前子 Agent 写入范围仅限本 WorkCase，不能擅自改写其它事实对象。需主线程授权补行动或 Human 明确接受这些命中作为允许的历史事实追溯后，才可重新进入结果自检/结果复核。
+      blocking_reason: null
     - id: item-7
       title: legacy 检测标记改名
       role: code-tests
@@ -332,10 +331,10 @@ orchestration:
   result_review:
     controller_self_check:
       controller: main-controller-codex
-      checked_at: '2026-06-25T04:56:00+08:00'
+      checked_at: '2026-06-25T05:06:00+08:00'
       prompt_context:
         objective: |
-          检查 workcase-0008 当前是否已完成主体表达分类、低风险清理、排除对象边界和验证准备，并确认剩余事项是否应作为后续决策而不是阻断本轮执行。
+          检查 workcase-0008 本轮补行动是否已完成点名历史对象残留清理、排除对象边界、验证准备和关闭前状态推进，并确认是否仍需 Human Gate。
         input_refs:
           - ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml
           - ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml
@@ -343,17 +342,18 @@ orchestration:
           - code/
           - tests/
       result:
-        status: fail
+        status: pass_with_followups
         summary: |
-          主体表达分类、legacy 旧表达检测标记改名、specs 主体命名规则沉淀、扩展方案子 Agent 审核和完成后子 Agent 结果复核已完成，未触碰用户明确排除对象，未改变 Code 结构化契约、Web 行为或环境声明。但 2026-06-25 状态重判重新扫描 `ldvh-base` 后发现若干未在既有允许残留清单中说明的“人工”命中，历史对象吸收式改写成功标准不能按已满足处理。
+          主体表达分类、legacy 旧表达检测标记改名、specs 主体命名规则沉淀、扩展方案子 Agent 审核和完成后子 Agent 结果复核已完成。本轮补行动在新增授权写入范围内逐项处理 `study-0005`、`spark-0012`、`spark-0011`、`workcase-0001`、`workcase-0004`、`workcase-0003` 和 `spark-0005` 的残留“人工”命中；未触碰用户明确排除对象，未改变 Code 结构化契约、Web 行为或环境声明。当前可进入独立结果复核并在复核通过后提交 Human 关闭确认，但不得直接关闭。
         key_findings:
           - active specs 附件已明确 AI、主控 AI、子 Agent、Human/Human Gate、Code/测试、Web、环境/运行时扩展、Git/事实对象和手动命令的主体命名边界。
           - code 中旧复合表达仅保留为待检测输入样本或 compatibility alias，不再作为变量正式名、诊断输出名或推荐 Human-facing 文案。
-          - ldvh-base 中允许范围内的一批历史 Spark/Study/WorkCase 已做吸收式改写；但 `study-0005`、`spark-0012`、`spark-0011`、`workcase-0001`、`workcase-0004`、`workcase-0003` 和 `spark-0005` 仍有需要逐项判断的“人工”命中。
+          - ldvh-base 中允许范围内的历史 Spark/Study/WorkCase 已做吸收式改写；本轮新增点名残留分别改为 `Human 目视验收`、`Human 确认`、`主控 AI 消化`、`手写读取路线表`、`手动抽查`、`主控整理的独立视角材料` 和 `手写目录表`。
           - workcase-0006、workcase-0007、spark-0027 和 study-0011 未被修改。
-        required_changes:
-          - 补行动：逐项判断新增残留命中是否属于允许的历史事实追溯；不属于允许追溯的，应在对应事实对象内吸收式改写为明确主体表达。
-          - 若当前写入范围仍只允许修改本 WorkCase，则保持 `executing`，把这些残留作为未解决风险交回主线程/Human 决策。
+        required_changes: []
+        recommendations:
+          - 独立结果复核若发现事实源自相矛盾，应先修复并重跑校验，再提交 Human 关闭确认。
+          - Human Gate 仍需裁决是否接受剩余旧词只作为任务标题、原称说明、废止表达、legacy marker 或输入样本保留。
         evidence_refs:
           - python3 code/fact_validate.py ldvh-base --format text
           - python3 code/specs_validate.py all --fail-on-diagnostics
@@ -434,69 +434,146 @@ orchestration:
         attestation:
           signer: subagent-019efb53-9954-7033-9af6-e39fc0bf521b
           statement: 只读完成 Code/tests 契约与残留扫描复核，结论为 pass。
+      - id: result-review-3
+        role: 本轮残留补行动复核
+        agent_name: subagent-019efb75-1067-7b60-a9d5-81225a7eaca5
+        requested_at: '2026-06-25T05:06:00+08:00'
+        prompt_context:
+          objective: |
+            只读复核本轮点名残留对象改写、越界风险、剩余“人工”命中语境和 WorkCase 状态建议。
+          input_refs:
+            - ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml
+            - ldvh-base/studies/study-0005-vibecoding-product-grade-gap.md
+            - ldvh-base/sparks/spark-0012-specs-vague-language-hardening.yaml
+            - ldvh-base/sparks/spark-0011-execution-items-progress-visibility.yaml
+            - ldvh-base/workcases/workcase-0001-knowledge-map-entry-navigation.yaml
+            - ldvh-base/workcases/workcase-0004-knowledge-map-navigation-value-realization.yaml
+            - ldvh-base/workcases/workcase-0003-git-commit-action-orchestration.yaml
+            - ldvh-base/sparks/spark-0005-task-orchestration-boundary.yaml
+        context_digest: |
+          只读复核，不修改文件；禁止对象包括 workcase-0006、workcase-0007、spark-0027、study-0011、workcase-0009、workcase-0010。
+        result:
+          status: fail
+          summary: |
+            Diff 范围合规，点名残留改写语义成立，剩余“人工”命中基本属于可追溯语境。但 WorkCase 已处于 `human_closure_confirming` 时仍在主控自检 required_changes 和 controller_resolution 中保留 stale 未决项，事实源校验失败。
+          key_findings:
+            - 当前只触碰 8 个允许文件；禁止对象 diff 为空。
+            - '`Human 目视验收`、`要求 Human 确认`、`主控 AI 消化`、`手写读取路线表`、`手动抽查`、`主控整理的独立视角材料`、`手写目录表`均符合上下文语义。'
+            - 剩余“人工”命中主要是任务标题/说明、旧表达原称、禁止项、legacy marker 或测试输入样本；`study-0005:488` 是“个人工具”跨字命中，不是主体表达。
+            - '`workcase-0008` 内部仍有 stale 记录，导致 `python3 code/fact_validate.py ldvh-base --format text` 报 `UNRESOLVED_RESULT_SELF_CHECK_REQUIRED_CHANGES`。'
+          required_changes:
+            - 清理或重分类主控自检 required_changes。
+            - 同步 controller_resolution、closure_evidence、residual_risks 和 revision_history，使其反映本轮点名残留已处理。
+            - 保持 `closure_outcome` 和 `closed_at` 为空，等待 Human 明确确认关闭。
+          recommendations: []
+        evidence_refs:
+          - git diff --name-only
+          - git diff --check
+          - python3 code/fact_validate.py ldvh-base --format text
+          - rg -n "人工" ldvh-base/sparks ldvh-base/studies ldvh-base/workcases
+        raw_output_ref: subagent:019efb75-1067-7b60-a9d5-81225a7eaca5
+        attested_at: '2026-06-25T05:08:00+08:00'
+        attestation:
+          signer: subagent-019efb75-1067-7b60-a9d5-81225a7eaca5
+          statement: 只读完成本轮残留补行动复核，结论为 fail，要求修正 WorkCase stale 记录后再验证。
+      - id: result-review-4
+        role: 本轮残留补行动复核重检
+        agent_name: subagent-019efb75-1067-7b60-a9d5-81225a7eaca5
+        requested_at: '2026-06-25T05:10:00+08:00'
+        prompt_context:
+          objective: |
+            只读复核 Pascal result-review-3 required_changes 是否已应用，确认当前是否可保持 `human_closure_confirming` 等待 Human Gate。
+          input_refs:
+            - ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml
+            - python3 code/fact_validate.py ldvh-base --format text
+            - git diff --check
+        context_digest: |
+          主控已修正 WorkCase stale 记录，事实源全量校验已通过；本次复核只判断是否仍有未决 required_changes。
+        result:
+          status: pass
+          summary: |
+            事实源自相矛盾已清理，事实源校验通过。当前可保持 `human_closure_confirming` 等待 Human Gate；`closure_outcome`、`closed_at` 和 `human_closure_confirmation` 均为空，符合尚未关闭状态。
+          key_findings:
+            - '`python3 code/fact_validate.py ldvh-base --format text` 返回 files=49、errors=0、warnings=0。'
+            - '主控自检 `required_changes: []`，controller_resolution `unresolved_items: []`。'
+            - result-review-3 的 fail required_changes 已在 controller_resolution.required_changes_applied 中吸收处理，不是当前未决项。
+            - '`git diff --check` 通过。'
+          required_changes: []
+          recommendations: []
+        evidence_refs:
+          - python3 code/fact_validate.py ldvh-base --format text
+          - git diff --check
+          - ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml
+        raw_output_ref: subagent:019efb75-1067-7b60-a9d5-81225a7eaca5
+        attested_at: '2026-06-25T05:10:00+08:00'
+        attestation:
+          signer: subagent-019efb75-1067-7b60-a9d5-81225a7eaca5
+          statement: 只读完成本轮残留补行动重检，结论为 pass，无 required_changes。
     controller_resolution:
-      resolved_at: '2026-06-25T04:54:00+08:00'
+      resolved_at: '2026-06-25T05:10:00+08:00'
       resolver: main-controller-codex
       source_review_item_ids:
         - result-review-1
         - result-review-2
+        - result-review-3
+        - result-review-4
       accepted_findings:
         - 扩展方案子 Agent 审核和完成后结果复核已经真实发生，最后一项 success criteria 可标记为满足。
         - 当前变更未越界触碰禁止对象。
         - Code 结构化契约和 `degraded` compatibility 未迁移或破坏。
-      rejected_findings:
-        - 旧表达残留仅作为禁止项、废止表达、历史原称说明、legacy marker 或输入样本引用。
-      required_changes_applied: []
-      unresolved_items:
-        - |
-          `ldvh-base` 仍存在未逐项吸收或确认允许的“人工”命中：`study-0005`、`spark-0012`、`spark-0011`、`workcase-0001`、`workcase-0004`、`workcase-0003`、`spark-0005`。
-        - |
-          当前写入范围仅限本 WorkCase，不能在本轮直接改写上述事实对象；需主线程授权补行动或 Human 明确接受残留语境。
-        - |
-          Rules 同步影响命令在完整工作区仍返回 `result_status: limited`，原因是 `limited_output`；已按 read_plan 回读 `01.Att.08` 和 `01`，未发现必须修改 Rules 入口的具体同步项。
+        - 本轮点名残留对象改写语义成立，不是机械替换；剩余“人工”命中可归为任务标题/说明、旧表达原称、禁止项、legacy marker 或测试输入样本。
+        - Pascal 复核指出的 hard issue 不在对象改写，而在 WorkCase stale 记录；必须先修正再提交 Human 关闭确认。
+        - Pascal 重检通过，确认 stale 记录已修复，当前无未决 required_changes。
+      rejected_findings: []
+      required_changes_applied:
+        - 已将 `result_review.controller_self_check.result.required_changes` 清空，并把 Human Gate 关闭确认事项移入 recommendations / residual_risks。
+        - 已同步 controller_resolution、closure_evidence、residual_risks 和 revision_history，删除“应保持 executing / 残留未处理”的当前结论。
+        - 保持 `closure_outcome`、`closed_at` 和 `result_review.human_closure_confirmation` 为空，等待 Human 关闭确认。
+      unresolved_items: []
       changed_fields:
-        - orchestration.execution_items.item-10
         - orchestration.result_review
         - success_criteria
         - orchestration.execution_items.item-6
         - verification_evidence
         - closure_evidence
         - residual_risks
+        - revision_history
       revision_history_refs: []
       summary: |
-        已吸收两个完成后子 Agent 复核结论，但本次状态重判发现历史对象残留判断不足；WorkCase 不应进入 `human_closure_confirming` 或 `closed`，应保持 `executing` 并补行动或请求 Human 对残留语境作关闭前裁决。
+        已吸收既有完成后复核和本轮 Pascal 只读复核、重检结论。本轮点名残留对象均已完成语义改写；Pascal 发现的 WorkCase stale 记录已按 required_changes 修正，并在重检中通过。当前可保持 `human_closure_confirming`，等待 Human Gate 判断是否关闭；不得直接写入 `closed`。
     human_closure_confirmation: ""
 verification_evidence: |
   ## 验证计划
 
-  运行事实源校验、相关主体表达扫描、定向 Code 测试、active specs 综合检查和 Git 格式检查。
+  运行事实源详情读取、事实源全量校验、相关主体表达扫描、定向 Code 测试、active specs 综合检查和 Git 格式检查。
 
   ## 验证命令
 
+  - `python3 code/fact_cli.py show workcase-0008`
   - `python3 code/fact_validate.py ldvh-base --format text`
   - `python3 -m pytest -q tests/code/specs_validate_checks/test_runtime_projection.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_consistency.py tests/code/test_commit_validate.py`
   - `python3 code/specs_validate.py all --fail-on-diagnostics`
-  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/attachments/01.Att.08-规范表达清单.md --task-type rules_sync_review --format text`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml --task-type work_object --format json`
   - `git diff --check`
   - `rg -n "人工降级|人工核对|人工检查|人工复核|人工审查|用户确认" specs rules code tests web ldvh-base ...`
 
   ## 验证结果
 
+  - `python3 code/fact_cli.py show workcase-0008` 可正常读取当前 WorkCase；状态为 `human_closure_confirming`。
   - 事实源全量校验通过：files=49，errors=0，warnings=0。
   - 定向 pytest 通过：79 passed。
   - active specs 综合检查通过：diagnostics=0。
-  - Rules 入口同步审查命令返回 `result_status: limited`，原因是 `limited_output`；read_plan 指向 `01.Att.08` 和 `01`，affected runtime_extensions=0，未显示需要修改 Rules 入口的具体同步项。
+  - knowledge-map work_object 导航在当前 worktree 返回 `result_status: limited`，原因是未找到外层 `LDVH-GOVERNED-PROJECTS.yaml` 且未定位 start_node；已按入口要求回退到外层管辖配置、active specs 和工作对象文件事实源核对。
   - `git diff --check` 通过。
-  - 残留扫描确认：active specs/rules/code/tests/web 中未发现将旧表达作为正式推荐主体命名的残留；Code/tests 中旧复合表达只作为 legacy marker 或输入样本保留。
-  - 残留扫描同时发现：`ldvh-base` 中除 `01.Att.08` 禁止项、`spark-0025`/`spark-0026`/`workcase-0005`/`workcase-0008` 原称说明和 Code 输入样本外，仍有 `study-0005`、`spark-0012`、`spark-0011`、`workcase-0001`、`workcase-0004`、`workcase-0003`、`spark-0005` 等历史对象命中“人工”；这些命中需要逐项判断是否允许作为历史事实追溯，不能被概括为已完成吸收式改写。
+  - 残留扫描确认：点名残留对象中的旧主体表达已吸收式改写；剩余“人工”命中集中在 workcase-0008 自身任务说明、spark-0025/spark-0026/workcase-0005 的旧表达原称、01.Att.08 禁止项、Code legacy marker 或测试输入样本；`study-0005:488` 为“个人工具”跨字命中，不是主体表达。
 
   ## 结论
 
-  主体命名治理中的 Code marker 改名、specs 主体命名沉淀、执行前子 Agent 审核和完成后子 Agent 结果复核已通过必要验证；历史 Spark/Study/WorkCase 吸收式改写仍存在未决残留，当前不应进入关闭确认。
+  本轮事实源校验、定向测试、specs 综合检查和 diff 检查均通过。WorkCase 可停在 `human_closure_confirming` 等待 Human 关闭确认；不得直接写入 `closed`。
 closure_evidence: |
   ## 验证计划
 
-  核对 success criteria、execution_items、verification_evidence、result_review、残留扫描和 21 WorkCase 状态机，判断当前是否可进入关闭确认。
+  核对 success criteria、execution_items、verification_evidence、result_review、残留扫描和 21 WorkCase 状态机，判断当前是否可提交 Human 关闭确认。
 
   ## 验证命令
 
@@ -510,20 +587,19 @@ closure_evidence: |
 
   ## 验证结果
 
-  当前状态仍应为 `executing`。item-9 扩展方案子 Agent 审核和 item-10 完成后子 Agent 结果复核已完成，因此原最后一项 success criteria 已满足；但 item-6 历史工作对象旧表达吸收式改写在本次重判中发现未决残留，不能继续标记为完成。
+  item-6 历史工作对象旧表达吸收式改写已补行动完成；item-9 扩展方案子 Agent 审核和 item-10 完成后子 Agent 结果复核已完成。本轮新增结果自检已记录，Pascal 独立结果复核先发现 stale 记录并给出 fail，主控修复后 Pascal 重检为 pass，无 required_changes。
 
-  21 WorkCase 状态机要求执行完成后先进入结果自检、结果复核，再进入 Human 关闭确认；不得直接关闭。由于历史对象残留尚未处理或获得 Human 明确接受，本 WorkCase 当前不应进入 `human_closure_confirming`，也不得填写 `closure_outcome` 或 `closed_at`。
+  21 WorkCase 状态机要求执行完成后先进入结果自检、结果复核，再进入 Human 关闭确认；不得直接关闭。本 WorkCase 当前状态应为 `human_closure_confirming`，等待 Human 判断是否关闭。`closure_outcome`、`closed_at` 和 `result_review.human_closure_confirmation` 必须保持空值，直到 Human 明确确认关闭。
 
   ## 结论
 
-  尚未达到关闭确认条件。下一步应补行动处理或裁决 `ldvh-base` 残留“人工”命中；若 Human 明确接受这些命中为允许的历史事实追溯，主控可重新整理自检并再次进入结果复核/关闭确认。
+  可提交 Human 关闭确认，但尚未关闭。Human Gate 需确认是否接受剩余旧词仅作为任务标题、原称说明、废止表达、legacy marker 或输入样本保留。
 closure_outcome: ""
 closed_at: ""
 residual_risks:
-  - 历史对象吸收式改写仍有未决残留：`study-0005`、`spark-0012`、`spark-0011`、`workcase-0001`、`workcase-0004`、`workcase-0003`、`spark-0005` 中的“人工”命中尚未逐项写入允许追溯理由或完成吸收式改写。
-  - 当前写入范围仅限本 WorkCase，不能在本轮直接修改上述事实对象；需要主线程授权补行动，或由 Human 明确接受这些残留作为关闭前可保留的历史事实追溯。
-  - Rules 同步影响命令仍返回 `result_status: limited`、`issue_causes=['limited_output']`；已按 read_plan 回读 `01.Att.08` 和 `01`，未发现必须修改 Rules 入口的具体同步项，但该 limited 结论不能替代 Human/主线程判断。
-  - WorkCase 仍为 `executing`；不得填写 `closure_outcome`、`closed_at` 或 `result_review.human_closure_confirmation`。
+  - 剩余“人工”命中仍存在于 workcase-0008 任务标题/治理说明、spark-0025/spark-0026/workcase-0005 的旧表达原称、01.Att.08 禁止项、Code legacy marker 或测试输入样本中；这些为可追溯治理语境，不作为当前有效主体表达。
+  - Human Gate 尚未完成关闭确认；不得填写 `closure_outcome`、`closed_at` 或 `result_review.human_closure_confirmation`。
+  - 知识地图任务导航命令在当前 worktree 中可能因缺少外层 `LDVH-GOVERNED-PROJECTS.yaml` 或起点定位返回 limited；已按入口要求回退到外层管辖配置、active specs 和工作对象文件事实源核对。
 revision_history:
   - at: '2026-06-25T04:56:00+08:00'
     from_status: executing
@@ -542,6 +618,25 @@ revision_history:
       - residual_risks
     summary: |
       将扩展方案审核/结果复核成功标准改为已满足；将历史 Spark/Study/WorkCase 旧表达吸收式改写改回未满足，并把 item-6 标记为 blocked。状态保持 `executing`，下一步需补行动处理残留或由 Human 明确接受残留语境。
+  - at: '2026-06-25T05:06:00+08:00'
+    from_status: executing
+    to_status: human_closure_confirming
+    actor: ldvh-worktree-worker
+    reason: |
+      主线程已授权补行动处理 `workcase-0008` 记录的点名残留对象。本轮逐项判断后将非允许历史追溯的旧主体表达吸收式改写为明确主体或明确路线表达，并重新整理结果自检、结果复核入口、验证证据、关闭证据和残留风险。
+    changed_fields:
+      - updated
+      - status
+      - closure_requested_at
+      - success_criteria
+      - orchestration.execution_items.item-6
+      - orchestration.result_review.controller_self_check
+      - verification_evidence
+      - closure_evidence
+      - residual_risks
+      - revision_history
+    summary: |
+      `study-0005`、`spark-0012`、`spark-0011`、`workcase-0001`、`workcase-0004`、`workcase-0003` 和 `spark-0005` 的残留“人工”命中已完成语义改写。WorkCase 当前可提交 Human 关闭确认，但尚未关闭，仍等待 Human Gate。
 related_sparks:
   - spark-0026
 related_adrs: []
