@@ -215,7 +215,7 @@ orchestration:
         - 增加 text 输出包含 `suggested_sections` 且保留 `- P0/start:` 主行形状的回归测试。
         recommendations:
         - 用 JSON 数组样式渲染建议章节，避免自然语言逗号分隔歧义。
-        - 最小验证包括定向 pytest 和一次 `knowledge-map --format text` 人工抽查。
+        - 最小验证包括定向 pytest 和一次 `knowledge-map --format text` 手动抽查。
         evidence_refs:
         - LDVH-知识地图价值重新评估报告-v2-20260624.md（背景输入）
         - specs/04-Code确定性执行规范.md

@@ -514,7 +514,7 @@ revision_history:
   to_status: subagents_result_reviewing
   actor: main-controller-codex
   reason: |
-    用户追问是否已经真实子 Agent 审核后，主控确认此前写入的 Noether/Faraday/Curie 为人工独立视角材料，不是实际子 Agent 审核结果。为避免事实源误导，撤回这些复核条目和关闭确认请求，回到等待真实结果复核的状态。
+    用户追问是否已经真实子 Agent 审核后，主控确认此前写入的 Noether/Faraday/Curie 为主控整理的独立视角材料，不是实际子 Agent 审核结果。为避免事实源误导，撤回这些复核条目和关闭确认请求，回到等待真实结果复核的状态。
   changed_fields:
   - status
   - updated
