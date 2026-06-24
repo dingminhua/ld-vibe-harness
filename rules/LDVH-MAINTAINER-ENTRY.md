@@ -31,8 +31,8 @@ ldvh_asset:
   handoff: "处理管辖项目工作对象时交还 rules/LDVH-WORKSPACE-ENTRY.md"
   verification:
     - "python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text"
-    - "python3 code/specs_validate.py knowledge-map --layer neighbors --start-node rules/LDVH-MAINTAINER-ENTRY.md --input-scope runtime_extensions --format text"
-    - "python3 code/specs_validate.py v2-check --input-scope runtime_extensions --fail-on-diagnostics --format text"
+    - "python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node rules/LDVH-MAINTAINER-ENTRY.md --task-type rules_entry --format text"
+    - "python3 code/specs_validate.py v2-check --input-scope entry_navigation --fail-on-diagnostics --format text"
     - "python3 code/specs_validate.py all --fail-on-diagnostics"
     - "python3 code/specs_validate.py deployment-entries"
     - "python3 code/specs_validate.py capability-environment"
@@ -84,13 +84,12 @@ LDVH 维护入口负责产品资产维护，不负责管辖项目工作对象治
 AI 进入 LDVH 维护入口后，应按以下顺序启动：
 
 1. 确认当前任务是否维护 LDVH 产品资产；
-2. 涉及目录、编号或文件归属判断时，读取 `specs/01-规范体系基础规范.md`；
-3. 涉及术语、命名或不推荐表达时，读取 `specs/attachments/01.Att.02-术语表.md`；
-4. 涉及 specs 修改、附件修改、行动成员状态判断或固定 Rules 同步影响判断时，读取 `specs/01-规范体系基础规范.md`、目标规范和必要的 04/06/07/08 规范，优先运行 `python3 code/specs_validate.py knowledge-map --layer neighbors --start-node <path-or-node> --format json` 和 `python3 code/specs_validate.py preflight --target-path <path>`，并按 01、06 与 30 评估固定 Rules 资产是否受影响；
-5. 涉及 Rules、Skill、Agent、Hook 或环境适配时，读取 `specs/06-运行时扩展规范.md`；涉及 Code 或 Web 时分别读取 `specs/04-Code确定性执行规范.md` 或 `specs/05-Web信息同步规范.md`；
-6. 当 specs、附件或行动成员主文件变化可能影响固定 Rules 的入口路由、最小读取、STOP、工具入口、知识地图任务导航、交接、验证或降级提示时，应按 active `specs/30-rules-entry-sync-review-Rules入口同步审查.md` 执行 Rules 入口同步审查；场景超出 30 范围时退回 `specs/06-运行时扩展规范.md` §4.2 和人工降级检查；
-7. 能由 Code 定位、聚合或检查的内容，优先使用 Code 工具查询；工具输出只作为导航、聚合和诊断结果，不替代权威文件原文；
-8. 修改完成后运行对应校验命令，并把稳定结论写回权威事实源。
+2. 选择最小 `start_node`：默认用 `rules/LDVH-MAINTAINER-ENTRY.md`；用户点名文件、变化来源、目标规范、行动成员、Rules 入口或 Code 文件时，优先用被点名对象；
+3. 选择 `task_type`：入口理解用 `rules_entry`，规范修改用 `spec_change`，Rules 同步用 `rules_sync_review`，Code 修改用 `code_change`，Web 修改用 `web_change`，Git 提交准备用 `git_trace`；
+4. 运行 `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type <task_type> --format json` 建立任务视图；
+5. 先消费 `navigation`、`read_plan`、`next_queries`、`stop_conditions` 和 `impact_summary`：只读取 `read_plan` 中 P0/P1 的权威原文，P2/P3 仅在当前判断需要时展开；若 `next_queries` 要求 expand 或换范围，按其建议追加查询；
+6. 若知识地图降级、无来源回指、起点无法定位或与原文冲突，说明降级原因，并退回 active specs、产品资产文件、Rules 入口、07 Git 文件事实源和人工降级检查；
+7. 修改前按任务目标运行必要的 `preflight`、`deployment-entries`、`capability-environment`、`v2-check` 或测试；修改后运行对应校验命令，并把稳定结论写回权威事实源。
 
 常用查询命令如下：
 
@@ -98,7 +97,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 |---|---|---|
 | Code 依赖自举 | `python3 code/bootstrap_code.py` | 在新环境缺少 `PyYAML` 或 `pytest` 时安装 Code 与 Code 测试 Python 依赖；不安装 Web 依赖，不声明环境完整支持 LDVH |
 | specs 汇总健康检查 | `python3 code/specs_validate.py v2-check --format text` | 生成 active specs 结构诊断和知识地图汇总预览；不得替代具体任务导航 |
-| 知识地图任务导航 | `python3 code/specs_validate.py knowledge-map --layer neighbors --start-node <path-or-node> --format json` | 围绕具体规范、附件、行动成员、Rules 入口或承载物查看状态、权威、来源回指、一跳关系和同步影响 |
+| 知识地图任务导航 | `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type <task_type> --format json` | 围绕具体规范、附件、行动成员、Rules 入口、工作对象或承载物生成 `read_plan`、后续查询、STOP 和影响摘要 |
 | 固定运行时扩展自描述 | `python3 code/specs_validate.py v2-check --input-scope runtime_extensions --format text` | 只读投影固定运行时扩展 `ldvh_asset`，辅助定位 Rules/Skill/Hook 来源规范和同步影响 |
 | 能力资产环境保障矩阵 | `python3 code/specs_validate.py capability-environment` | 只读投影固定能力资产的来源规范、同步责任、验证链和环境落地边界；不声明环境已安装 |
 | specs 写入前检查 | `python3 code/specs_validate.py preflight --target-path <path>` | 只读提示 Human Gate、Git 追溯、同步影响和固定 Rules 资产影响；不授权写入 |
@@ -108,28 +107,26 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 
 工具输出、知识地图投影和读取建议只作为导航、聚合和诊断结果，不替代权威文件原文。当工具不可用、输出无法回指事实源、结果与原文冲突或当前场景超出工具能力时，应退回 Git 文件事实源、对应规范和人工降级检查。若 active specs、产品资产文件、Rules 入口和知识地图投影冲突，优先级为 active specs 与 Git 文件事实源、产品资产文件、Rules 入口、知识地图投影。
 
+不得用 `ls`、全文 Read 或只查看 `v2-check` 摘要替代知识地图任务导航。手工文件读取只能用于核对知识地图 `read_plan` 定位出的权威原文，或在工具降级后按本文说明的事实源顺序执行人工降级检查。
+
 本文承载的入口表达只包括：入口判断、场景路由、最小读取、STOP 点、工具导航、交接、降级提示和来源规范回指。知识地图入口只能表现为 Code 命令、读取建议和影响判断，不得在本文内展开或固化图谱内容。
 
 按 active `specs/30-rules-entry-sync-review-Rules入口同步审查.md`，active specs、附件或行动成员主文件变化若影响固定 Rules 的入口路由、最小读取、STOP、工具入口、交接、验证、降级提示、知识地图任务导航、知识地图入口或 Code 检查入口含义，应执行 Rules 入口同步审查。普通文案澄清、路径错字或不改变入口行为的读取建议调整，可在说明依据并完成验证后处理；修改职责边界、STOP、`source_specs`、`sync_triggers`、canonical path、固定承载物身份、权限含义或环境薄引用前，必须评估 Human Gate。
 
 ---
-## 4. 场景路由
+## 4. 任务类型与起点
 
-| 场景 | 先用工具 | 必读权威入口 |
-|---|---|---|
-| 理解 LDVH 总体规则 | `index` | `specs/00-LDVH理念与价值标准.md`、`specs/01-规范体系基础规范.md`、`specs/attachments/01.Att.02-术语表.md` |
-| 修改 specs 正式规范 | `knowledge-map --layer neighbors --start-node <path>`、`preflight`、`v2-check`、`all` | `specs/01-规范体系基础规范.md`、目标规范、必要时 `specs/06-运行时扩展规范.md` |
-| 修改或理解事实模型规范 | `v2-check` | `specs/02-事实模型基础规范.md` 和对应 `specs/20-29` 事实模型规范 |
-| 处理行动编排规范 | `knowledge-map --layer neighbors --start-node <path>`、`v2-check` | `specs/03-行动编排规范.md` 和 `specs/30-59` 行动编排规范 |
-| 定位规范关系、读取建议或同步影响 | `knowledge-map --layer neighbors --start-node <path-or-node>`、`v2-check`、`v2-check --input-scope runtime_extensions`、`capability-environment` | 只读知识地图和 Code 投影；冲突时退回 active specs、06 和 Git 文件事实源 |
-| 处理规范保障、环境适配或适配措施 | `v2-check`、`v2-check --input-scope runtime_extensions` | `specs/01-规范体系基础规范.md`、`specs/06-运行时扩展规范.md` |
-| 处理 specs 变化后的 Rules 入口表达同步 | `knowledge-map --layer neighbors --start-node <changed-path>`、`preflight`、`deployment-entries`、`capability-environment` | active `specs/30-rules-entry-sync-review-Rules入口同步审查.md`；超出 30 范围时退回 `specs/06-运行时扩展规范.md` §4.2 |
-| 处理 Code、工具、脚本或校验 | 对应工具帮助、测试命令 | `specs/06-运行时扩展规范.md`、`specs/04-Code确定性执行规范.md`、对应 `code/` 实现和 `tests/` |
-| 处理 Web 或 Human-facing 入口 | `index`、相关后端或 Web 校验 | `specs/05-Web信息同步规范.md` |
-| 准备 LDVH Git 提交 | `ldvh-git-commit`、`commit_validate.py` | `specs/07-事实源边界与Git追溯规范.md`、`skills/ldvh-git-commit/SKILL.md`、`hooks/ldvh-hooks.yaml` |
-| 处理 LDVH 自身工作对象 | `governed-projects`、`fact_cli.py list/search/show/stats` | 转入 `rules/LDVH-WORKSPACE-ENTRY.md`，按 dogfood 管辖项目处理 |
+| 场景 | `task_type` | 默认 `start_node` | 降级兜底 |
+|---|---|---|---|
+| 理解或修改维护入口 | `rules_entry` | `rules/LDVH-MAINTAINER-ENTRY.md` | 本文、`source_specs` 和固定运行时扩展登记 |
+| 修改 specs、附件或行动成员 | `spec_change` | 用户点名文件或变化来源文件 | 目标原文、01、04、06、07 和 `preflight` |
+| 判断 Rules 同步影响 | `rules_sync_review` | 变化来源文件；不明确时用受影响 Rules 入口 | 30、06 §4.2、受影响 Rules 原文和人工降级检查 |
+| 修改 Code 或测试 | `code_change` | 目标 Code / test 文件 | 04、08、对应测试命令和工具帮助 |
+| 修改 Web 或 Human-facing 入口 | `web_change` | 目标 Web / API / 文档文件 | 05、08 和相关 Web 校验 |
+| 准备 Git 提交或追溯事实源 | `git_trace` | 变化文件或提交范围 | 07、commit records、`commit_validate.py` |
+| 处理 LDVH 自身工作对象 | `work_object` | 目标 WorkCase/ADR/Spark/Pitfall/Study | 转入 `rules/LDVH-WORKSPACE-ENTRY.md` |
 
-场景同时命中多个入口时，选择最小足够查询和读取集。涉及正式规范变更、规范保障要求变化、部署适配缺口、适配措施漂移或 Code/Web/Skill/Agent/Hook/CI 边界变化时，应读取 `specs/03-行动编排规范.md`，并判断是否已有 active 具体行动编排成员接管；当前固定 Rules 入口同步审查已由 active 30 接管，其它 30-59 成员仍按各自主文件状态判断。
+场景同时命中多个入口时，先用最具体的用户点名对象作为 `start_node`。若知识地图 `read_plan` 给出 P0/P1 权威原文，应以该计划替代本文的静态读取猜测；本文只保留起点选择、任务类型、STOP 和降级规则。
 
 ---
 ## 5. STOP 点
@@ -150,14 +147,8 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 
 修改本文后，应检查：
 
-1. `specs/01-规范体系基础规范.md`；
-2. `specs/06-运行时扩展规范.md`;
-3. `specs/04-Code确定性执行规范.md`;
-4. `specs/30-rules-entry-sync-review-Rules入口同步审查.md`;
-5. `rules/LDVH-WORKSPACE-ENTRY.md`；
-6. 本文 `source_specs`、`sync_triggers`、入口路由、STOP 点、验证入口和交接规则；
-7. `python3 code/specs_validate.py knowledge-map --layer neighbors --start-node rules/LDVH-MAINTAINER-ENTRY.md --input-scope runtime_extensions --format text`；
-8. `python3 code/specs_validate.py deployment-entries`；
-9. `python3 code/specs_validate.py capability-environment`；
-10. `python3 code/specs_validate.py v2-check --input-scope runtime_extensions --fail-on-diagnostics --format text`；
-11. LDVH 仓库项目级薄入口。
+1. 运行 `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node rules/LDVH-MAINTAINER-ENTRY.md --task-type rules_sync_review --format text`，确认 `read_plan`、`next_queries` 和 `stop_conditions`；
+2. 按 `read_plan` P0/P1 回读权威原文，必要时执行 `next_queries`，不得用本文维护静态 specs 清单替代；
+3. 检查本文 `source_specs`、`sync_triggers`、入口路由、STOP 点、验证入口和交接规则是否仍与 30 和知识地图输出一致；
+4. 运行 `python3 code/specs_validate.py deployment-entries`、`python3 code/specs_validate.py capability-environment` 和 `python3 code/specs_validate.py v2-check --input-scope entry_navigation --fail-on-diagnostics --format text`；
+5. 若改变职责边界、STOP、入口交接、固定承载物身份或环境薄引用，必须评估 Human Gate。

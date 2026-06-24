@@ -1,0 +1,647 @@
+id: workcase-0001
+type: workcase
+title: 知识地图入口导航能力产品化
+goal: |
+  将 LDVH 知识地图从“节点/边只读投影”推进为入口级任务导航能力，使它承担“在什么情况读什么文件”的主要责任，并在能力可验证后瘦身 Rules 入口中的静态读 specs 清单。
+status: human_closure_confirming
+created: '2026-06-24T07:42:18.318860'
+updated: '2026-06-24T08:05:01.282439'
+priority: P1
+description: |
+  当前 Rules 入口已经强调知识地图任务导航，但仍保留大量静态场景路由、必读 specs 清单和维护检查清单。多视角审查一致认为：知识地图不应替代 specs 原文，也不应替代 Rules 的入口启动、STOP 和降级职责；但它应该替代 Rules 里大量“场景 X 读文件 A/B/C”的人工路线表。
+
+  本 WorkCase 以“先增强知识地图，再瘦 Rules”为推进主线：先在 04/04.Att.06 等规范中定义 read_plan / navigation 等输出契约，再实现 Code 侧任务导航能力，最后用 active 30 执行 Rules 同步审查并收缩 Rules 入口信息量。
+success_criteria: |
+  - [x] 04 和 04.Att.06 明确知识地图入口导航输出契约，至少覆盖 navigation、read_plan、next_queries、stop_conditions 和 impact_summary。
+  - [x] knowledge-map Code 入口能在入口场景输出可执行读取计划，包含路径、优先级、角色、原因、来源关系、建议章节和来源回指。
+  - [x] 支持适合入口导航的输入范围或等价能力，使 Rules 入口和 active specs 能在同一任务视图中被消费。
+  - [x] knowledge-map 文本输出不再只有节点/边计数，而能展示可行动的读取计划摘要。
+  - [x] Rules 入口被瘦身为启动器、start-node 选择、task-type 选择、STOP、降级、交接和权威优先级，不再维护大段正常路径下的静态 specs 读取清单。
+  - [x] 30 完成 Rules 同步审查，确认删除或收缩的入口信息已由知识地图导航字段承接。
+  - [x] 通过 Code 测试、active specs 综合检查、固定运行时扩展登记检查和工作对象事实源校验。
+source: |
+  用户在 2026-06-24 要求将“知识地图到底承担什么责任、入口信息是否可以被知识地图替代、知识地图应渐进式告诉 AI 什么情况读什么文件”的讨论创建为 WorkCase 并继续推进。
+
+  本 WorkCase 吸收了主控 AI 与四个子 Agent / 独立视角的只读审查结论：知识地图应承担任务导航中枢职责，Rules 应作为 bootloader 保留入口启动、STOP、降级和交接，specs 原文仍为最终裁决源。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 定义知识地图入口导航契约
+    role: specs
+    mode: single
+    input_refs:
+    - specs/01-规范体系基础规范.md
+    - specs/04-Code确定性执行规范.md
+    - specs/attachments/04.Att.06-知识地图投影Schema表.md
+    - specs/06-运行时扩展规范.md
+    - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+    expected_output: |
+      specs 明确知识地图不仅输出 nodes / edges，还输出面向 AI 的 read_plan / navigation / next_queries / stop_conditions / impact_summary，并规定 Rules 不长期维护静态读取路线。
+    status: done
+    result_summary: |
+      已在 04 正文定义 knowledge-map 入口导航输出责任，在 04.Att.05 增加 entry_navigation 组合输入范围，并在 04.Att.06 定义 navigation、read_plan、next_queries、stop_conditions 和 impact_summary 字段契约。
+    evidence_refs:
+    - specs/04-Code确定性执行规范.md
+    - specs/attachments/04.Att.05-知识地图输入范围表.md
+    - specs/attachments/04.Att.06-知识地图投影Schema表.md
+    blocking_reason: null
+  - id: item-2
+    title: 实现 knowledge-map 任务导航输出
+    role: code
+    mode: single
+    input_refs:
+    - code/spec_checks/knowledge_map.py
+    - code/spec_checks/v2.py
+    - code/specs_validate.py
+    - tests/code/specs_validate_checks/test_v2.py
+    expected_output: |
+      knowledge-map 支持入口导航读取计划；必要时新增 task-type、entry_context 或等价组合范围；JSON 与 text 输出都能指导 AI 下一步读取。
+    status: done
+    result_summary: |
+      knowledge-map 已支持 task_type、entry_navigation、结构化 read_plan 和可行动 text 摘要；WorkCase 起点能在 entry_navigation 范围内命中并生成读取计划。v2 相关测试通过。
+    evidence_refs:
+    - code/spec_checks/knowledge_map.py
+    - code/spec_checks/v2.py
+    - code/specs_validate.py
+    - tests/code/specs_validate_checks/test_v2.py
+    blocking_reason: null
+  - id: item-3
+    title: 基于读取计划瘦身 Rules 入口
+    role: rules
+    mode: single
+    input_refs:
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - rules/LDVH-WORKSPACE-ENTRY.md
+    - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+    expected_output: |
+      两个 Rules 入口保留身份、入口分流、start-node / task-type 选择、STOP、降级和权威优先级；大段场景到 specs 的手写清单改由 knowledge-map read_plan 承接。
+    status: done
+    result_summary: |
+      两个 Rules 入口已从静态 specs 读取路线表收缩为 task_type/start_node 启动器，正常路径改为运行 entry_navigation 知识地图并按 read_plan 读取 P0/P1 原文；30 和 06 已同步 read_plan 口径。
+    evidence_refs:
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - rules/LDVH-WORKSPACE-ENTRY.md
+    - specs/06-运行时扩展规范.md
+    - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+    blocking_reason: null
+  - id: item-4
+    title: 验证闭环和事实源追溯
+    role: verification
+    mode: single
+    input_refs:
+    - tests/code/
+    - code/specs_validate.py
+    - code/fact_validate.py
+    - specs/07-事实源边界与Git追溯规范.md
+    expected_output: |
+      运行必要验证，更新 WorkCase 执行项和证据；通过 Git commit records 追溯 specs、Code、Rules 和 WorkCase 事实源修改。
+    status: done
+    result_summary: |
+      已运行 Code 测试、active specs 综合检查、entry_navigation 检查、固定运行时扩展登记、能力环境矩阵、管辖项目配置和工作对象事实源校验，均通过。
+    evidence_refs:
+    - tests/code/
+    - code/specs_validate.py
+    - code/fact_validate.py
+    - specs/07-事实源边界与Git追溯规范.md
+    blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本轮方案影响知识地图职责、Rules 入口厚度、Code 输出契约和 AI 行为，需要产品/架构、Rules、Code 实现和 AI 执行四个视角审核。
+      required_perspectives:
+      - 产品架构边界
+      - Rules 入口瘦身边界
+      - Code 知识地图实现能力
+      - AI 行为与提示设计
+      optional_perspectives: []
+      tool_method_requirements:
+      - 只读分析当前仓库，不修改文件。
+      - 判断知识地图、Rules 和 specs 原文的不可替代边界。
+      - 给出是否应由知识地图替代静态读取清单的结论和推进建议。
+      aggregation_rule: |
+        四个视角若均未提出 fail 或 needs_human_gate，则可进入 Human 方案确认；若存在工具能力缺口，作为执行项和风险记录，不阻断方案确认。
+    review_items:
+    - id: plan-review-1
+      role: 产品架构边界
+      agent_name: Ptolemy
+      requested_at: '2026-06-24T07:35:00'
+      prompt_context:
+        objective: |
+          判断知识地图、Rules 和 specs 原文三者职责边界，以及知识地图能否替代 Rules 里“什么情况读什么 specs”的静态信息。
+        input_refs:
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - specs/01-规范体系基础规范.md
+        - specs/04-Code确定性执行规范.md
+        - current-conversation
+        constraints:
+        - 只读分析
+        - 不修改文件
+      context_digest: 架构视角：Rules 是启动器，知识地图是动态导航器，specs 原文是最终裁决源。
+      result:
+        status: pass_with_followups
+        summary: |
+          知识地图应该承担任务导航中枢责任，替代 Rules 中大量静态“场景 X 读 A/B/C”路线；但不能替代 Rules 的入口启动、STOP、降级和交接，也不能替代 specs 原文裁决。
+        key_findings:
+        - Rules 不应消失，应作为 bootloader 保留入口判断、工具入口、降级和权威优先级。
+        - 知识地图应回答起点、状态、权威、关联、影响和下一步最小读取。
+        - 当前工具缺少稳定场景化读取计划，因此 Rules 暂时写得偏厚。
+        recommendations:
+        - 中期把 recommended_reads、impact_nodes、gate_hints、authority_reads 做成 knowledge-map
+          主输出。
+        - 短期先不要把 Rules 砍空，应在工具能力增强后再瘦身。
+        required_changes: []
+        evidence_refs:
+        - current-conversation
+      raw_output_ref: null
+      attested_at: '2026-06-24T07:36:00'
+      attestation:
+        signer: Ptolemy
+        statement: 基于指定上下文完成只读架构边界审查并对结论负责。
+    - id: plan-review-2
+      role: Rules 入口瘦身边界
+      agent_name: Confucius
+      requested_at: '2026-06-24T07:35:00'
+      prompt_context:
+        objective: |
+          判断当前两个 Rules 入口是否保留了过多可由知识地图承担的信息，并给出可收敛边界。
+        input_refs:
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - specs/04-Code确定性执行规范.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - code/spec_checks/preflight.py
+        constraints:
+        - 只读分析
+        - 不修改文件
+      context_digest: Rules 视角：当前 Rules 仍像手写知识地图，但不能在 read_plan 能力落地前直接删除。
+      result:
+        status: pass_with_followups
+        summary: |
+          两份 Rules 入口确实仍包含过多应由知识地图承担的静态入口信息；应先增强知识地图契约和输出，再通过 30 瘦身 Rules。
+        key_findings:
+        - Rules 应保留 ldvh_asset、自描述、入口分流、第一动作、STOP、降级和少量基础命令。
+        - 场景路由表、逐项 specs 检查清单和“对应成员读哪个文件”应逐步交给知识地图。
+        - 04.Att.06 当前还没有 recommended_reads、required_reads、task_route、stop_points、verification_plan
+          等字段。
+        recommendations:
+        - 先在 04/04.Att.06 定义 read_plan 类字段。
+        - 支持 active_specs + runtime_extensions 的入口导航范围或等价能力。
+        - 最后用 30 做 Rules 同步审查，确认删减的信息已被知识地图承接。
+        required_changes: []
+        evidence_refs:
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+      raw_output_ref: null
+      attested_at: '2026-06-24T07:36:00'
+      attestation:
+        signer: Confucius
+        statement: 基于指定上下文完成只读 Rules 入口边界审查并对结论负责。
+    - id: plan-review-3
+      role: Code 知识地图实现能力
+      agent_name: Kepler
+      requested_at: '2026-06-24T07:35:00'
+      prompt_context:
+        objective: |
+          判断当前 knowledge-map / v2-check 能否承担“什么情况读什么文件”的渐进式导航，并列出实现缺口。
+        input_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - code/specs_validate.py
+        - code/spec_checks/preflight.py
+        constraints:
+        - 只读分析
+        - 不修改文件
+      context_digest: 实现视角：已有图谱底座，但没有 task_type 和正式 read_plan，无法稳定给 AI 行动路线。
+      result:
+        status: pass_with_followups
+        summary: |
+          当前 knowledge-map 具备渐进查询、节点边、来源回指和多输入范围底座，但还不足以完全承担场景化读取计划；应将 preflight 中的 recommended_reads 升级为主 knowledge-map 能力。
+        key_findings:
+        - 缺少 task_type / scenario 输入。
+        - 主输出没有一级 read_plan，AI 仍要自行从 nodes / edges 推理读取顺序。
+        - 缺少 must_read / should_read / optional、authority / context / impacted_asset
+          / verification 等读取角色。
+        - runtime_extensions 与 active_specs 范围割裂，Rules source_specs 在 runtime_extensions
+          中只是 external_fact_source。
+        - text 输出只给节点边数量，不足以指导 AI。
+        recommendations:
+        - 新增 navigation、read_plan、next_queries、stop_conditions、impact_summary。
+        - 增加 task_type 和 entry_context 或组合 input scope。
+        - text 输出改成可行动摘要。
+        required_changes: []
+        evidence_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - code/spec_checks/preflight.py
+      raw_output_ref: null
+      attested_at: '2026-06-24T07:36:00'
+      attestation:
+        signer: Kepler
+        statement: 基于指定上下文完成只读 Code 能力审查并对结论负责。
+    - id: plan-review-4
+      role: AI 行为与提示设计
+      agent_name: Mencius
+      requested_at: '2026-06-24T07:35:00'
+      prompt_context:
+        objective: |
+          判断外部 AI 为什么仍会先 ls + Read，而不是消费知识地图，并给出 Rules 入口提示设计建议。
+        input_refs:
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - code/spec_checks/v2.py
+        - code/spec_checks/knowledge_map.py
+        constraints:
+        - 只读分析
+        - 不修改文件
+      context_digest: 行为视角：入口太长和显式路径清单会诱导模型按 checklist 手工读取。
+      result:
+        status: pass_with_followups
+        summary: |
+          外部 AI 仍使用 ls + Read 的原因包括入口过长、Rules 同时给出知识地图和显式文件路径、runtime_extensions 范围只给占位规格节点、text 输出只给计数。Rules 应改为更短更硬的触发器。
+        key_findings:
+        - 长 Rules 和“必读权威入口”表格会诱导 AI 直接执行文件清单。
+        - start-node 找不到时退回全图会制造信息过载。
+        - 正常路径不应暴露大段必读文件清单，fallback 才列不可省略裁决源。
+        recommendations:
+        - Rules 第一屏只保留强触发器、默认 start-node、知识地图消费回执和 fallback。
+        - 场景表改为“场景 -> start-node -> task-type -> 降级兜底”。
+        - 外部 AI 审核应要求先报告 query.start_node、degraded、diagnostics、next_reads 和最小读取理由。
+        required_changes: []
+        evidence_refs:
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - code/spec_checks/v2.py
+      raw_output_ref: null
+      attested_at: '2026-06-24T07:36:00'
+      attestation:
+        signer: Mencius
+        statement: 基于指定上下文完成只读 AI 行为审查并对结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-24T07:55:00'
+      resolver: main-controller-codex
+      source_review_item_ids:
+      - plan-review-1
+      - plan-review-2
+      - plan-review-3
+      - plan-review-4
+      accepted_findings:
+      - 知识地图应承担入口任务导航和读取计划职责，替代 Rules 中大量静态读 specs 清单。
+      - Rules 不应被知识地图替代，应保留 bootloader、入口分流、STOP、降级和权威优先级。
+      - specs 原文仍是最终裁决事实源，知识地图只负责导航和最小读取建议。
+      - 当前 Code 能力尚缺正式 read_plan / task_type / entry_context，不能直接大幅删除 Rules 路由。
+      rejected_findings: []
+      required_changes_applied:
+      - 将 WorkCase 目标收敛为“先增强知识地图，再瘦 Rules”的分阶段计划。
+      - 将四个审查视角转化为执行项、成功标准、风险和后续验证要求。
+      unresolved_items: []
+      changed_fields:
+      - goal
+      - description
+      - success_criteria
+      - source
+      - orchestration.execution_items
+      - orchestration.plan_review.review_policy
+      - orchestration.plan_review.review_items
+      - orchestration.plan_review.controller_resolution
+      - status
+      revision_history_refs:
+      - revision_history[0]
+      summary: |
+        四个审查视角均支持“知识地图替代 Rules 静态读取清单，但不替代 Rules 和 specs 原文”的方向。Human 已在会话中要求创建 WorkCase 并推进本事，行动前未确认事项已由本次 Human 确认覆盖；可进入 executing，并按 item-1 到 item-4 顺序推进。
+    human_confirmation:
+      decision: execute
+      scope: 用户明确要求创建一个 WorkCase 并推进知识地图入口导航能力产品化；授权按已审核方案执行 item-1 到 item-4，范围覆盖
+        specs 契约、Code 知识地图输出、Rules 瘦身和验证闭环。
+      constraints: []
+      confirmed_at: '2026-06-24T07:45:24.794349'
+      summary: user 确认方案可进入执行。
+  result_review:
+    controller_self_check:
+      controller: main-controller-codex
+      checked_at: '2026-06-24T07:56:40'
+      prompt_context:
+        objective: |
+          检查 WorkCase 成功标准、执行项结果、验证证据、残留风险和是否可进入结果复核。
+        input_refs:
+        - ldvh-base/workcases/workcase-0001-knowledge-map-entry-navigation.yaml
+        - specs/04-Code确定性执行规范.md
+        - specs/attachments/04.Att.05-知识地图输入范围表.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - code/specs_validate.py
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - tests/code/
+      result:
+        status: pass_with_followups
+        summary: |
+          执行项均已完成，验证命令通过，可提交后续结果复核；关闭前仍需完成 result_review.controller_resolution 和 Human 关闭确认。
+        key_findings:
+        - 知识地图已具备 entry_navigation、task_type、read_plan、next_queries、stop_conditions
+          和 impact_summary 输出。
+        - WorkCase 起点可在 entry_navigation 范围内命中并生成读取计划，解决工作对象入口导航缺口。
+        - 两个 Rules 入口已瘦身为 task_type/start_node 启动器，正常路径不再维护大段静态 specs 读取清单。
+        - 本轮本地验证通过；Git commit records 追溯需在提交后形成。
+        required_changes: []
+        evidence_refs:
+        - verification_evidence
+      attested_at: '2026-06-24T07:56:40'
+      attestation:
+        signer: main-controller-codex
+        statement: 基于 WorkCase、修改产物和验证命令完成主控结果自检并对结论负责。
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        结果自检后需要 Code 实现、规范/Rules 一致性、AI 入口可用性和 WorkCase 流程四个视角复核，确认知识地图入口导航、Rules 瘦身和事实源状态是否可进入收口。
+      required_perspectives:
+      - Code 实现复查
+      - 规范/Rules 一致性复查
+      - AI 入口可用性复查
+      - WorkCase/事实源流程复查
+      optional_perspectives: []
+      tool_method_requirements:
+      - 只读复查当前工作区修改，不修改文件。
+      - 先读取两个 Rules 入口，并使用 knowledge-map 任务导航。
+      - 检查是否存在 fail、needs_human_gate 或关闭前必须修复项。
+      aggregation_rule: |
+        存在 fail 或 needs_human_gate 结论时不得提交 Human 关闭确认，必须先处理或提交 Human 裁决。
+    review_items:
+    - id: result-review-1
+      role: Code 实现复查
+      agent_name: Aristotle
+      requested_at: '2026-06-24T08:00:00'
+      prompt_context:
+        objective: |
+          复查 entry_navigation、task_type、read_plan、text 输出和 WorkCase / Rules 起点实现是否符合 04 / 04.Att.05 / 04.Att.06。
+        input_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - code/specs_validate.py
+        - tests/code/specs_validate_checks/test_v2.py
+        constraints:
+        - 只读复查
+        - 不修改文件
+      context_digest: Code 实现能跑通入口导航，但发现标题型 start_node 误报 STOP、task_type 未影响 read_plan、WorkCase
+        P1 不足。
+      result:
+        status: pass_with_followups
+        summary: |
+          核心实现通过；已根据复查意见修复标题型 start_node 的 stop_conditions 误报，让 workcase_execution / work_object / code_change 影响 read_plan 优先级，并补充回归测试。
+        key_findings:
+        - Rules/source_specs 起点能生成可靠 P1 权威读取计划。
+        - WorkCase 起点可解析，但原实现对标题型 start_node 存在误报 STOP，已修复。
+        - task_type 原先主要回显，已补充优先级影响。
+        recommendations:
+        - 持续观察更多 task_type 是否需要更细的 suggested_sections 策略。
+        required_changes:
+        - 修复标题型 start_node 误报 STOP。
+        - 补充 task_type 对 read_plan 的实际影响。
+        - 补测试覆盖标题起点和 task_type 优先级。
+        evidence_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - tests/code/specs_validate_checks/test_v2.py
+      raw_output_ref: null
+      attested_at: '2026-06-24T08:02:19'
+      attestation:
+        signer: Aristotle
+        statement: 基于只读复查完成 Code 实现复查并对结论负责。
+    - id: result-review-2
+      role: 规范/Rules 一致性复查
+      agent_name: Hypatia
+      requested_at: '2026-06-24T08:00:00'
+      prompt_context:
+        objective: |
+          复查知识地图、Rules 和 specs 原文的边界是否清楚，以及 30 是否只承接 Rules 同步审查。
+        input_refs:
+        - specs/01-规范体系基础规范.md
+        - specs/04-Code确定性执行规范.md
+        - specs/attachments/04.Att.05-知识地图输入范围表.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - specs/06-运行时扩展规范.md
+        - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        constraints:
+        - 只读复查
+        - 不修改文件
+      context_digest: 边界通过；唯一跟进是 04.Att.05 对 entry_navigation 的实现状态表述过时。
+      result:
+        status: pass_with_followups
+        summary: |
+          知识地图作为 read_plan 导航、Rules 作为 bootloader、specs 原文作为最终事实源的边界成立；04.Att.05 的 entry_navigation 状态表述已按复查意见修正。
+        key_findings:
+        - 01、04、06 均明确知识地图不替代规范原文或事实源。
+        - 两个 Rules 入口保留 source_specs、handoff、STOP、fallback 和 Human Gate。
+        - 30 未变成第二套 Rules，而是承接固定 Rules 入口同步审查。
+        recommendations:
+        - 保持附件待补齐事项与 Code 实现状态同步。
+        required_changes:
+        - 将 04.Att.05 中 entry_navigation 从“应提供”改为“已提供”。
+        evidence_refs:
+        - specs/attachments/04.Att.05-知识地图输入范围表.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+      raw_output_ref: null
+      attested_at: '2026-06-24T08:02:19'
+      attestation:
+        signer: Hypatia
+        statement: 基于只读复查完成规范/Rules 一致性复查并对结论负责。
+    - id: result-review-3
+      role: AI 入口可用性复查
+      agent_name: Heisenberg
+      requested_at: '2026-06-24T08:00:00'
+      prompt_context:
+        objective: |
+          复查外部 AI 是否能从 Rules 入口和 knowledge-map text/json 输出理解 start_node、task_type、read_plan 和 STOP。
+        input_refs:
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - code/spec_checks/v2.py
+        - code/spec_checks/knowledge_map.py
+        constraints:
+        - 只读复查
+        - 实际运行指定 knowledge-map text/json 命令
+      context_digest: 入口方向通过；text 第一屏不够强导航、WorkCase 场景缺 P1，已修复。
+      result:
+        status: pass_with_followups
+        summary: |
+          Rules 入口已显著提高 AI 使用知识地图概率；已根据复查意见让 text 固定输出 Navigation、Read plan、Next queries、Stop conditions 和 Impact summary，并优先展示 P0/P1 与 omitted count。
+        key_findings:
+        - Rules 同步命令可生成 P0/P1 可行动读取计划。
+        - WorkCase text 原先 P1 不足，已让 execution input refs 在 workcase_execution 下提升到
+          P1。
+        - text 输出原先未显式展示 navigation / impact summary，已补齐。
+        recommendations:
+        - 后续可继续优化 task_type 到 suggested_sections 的映射。
+        required_changes:
+        - text 输出固定五段导航结构。
+        - WorkCase 场景直接执行输入提升到 P1。
+        - text 截断时显示 omitted count。
+        evidence_refs:
+        - code/spec_checks/v2.py
+        - code/spec_checks/knowledge_map.py
+      raw_output_ref: null
+      attested_at: '2026-06-24T08:02:19'
+      attestation:
+        signer: Heisenberg
+        statement: 基于只读复查和实际命令输出完成 AI 入口可用性复查并对结论负责。
+    - id: result-review-4
+      role: WorkCase/事实源流程复查
+      agent_name: Dalton
+      requested_at: '2026-06-24T08:00:00'
+      prompt_context:
+        objective: |
+          复查 WorkCase 状态、执行项、验证证据、主控自检、关闭证据和 Human Gate 流程是否符合 21 / 21.Att.01。
+        input_refs:
+        - ldvh-base/workcases/workcase-0001-knowledge-map-entry-navigation.yaml
+        - specs/21-WorkCase-工作项.md
+        - specs/attachments/21.Att.01-orchestration字段契约表.md
+        constraints:
+        - 只读复查
+        - 使用 fact_validate / fact_cli 和 knowledge-map 任务导航
+      context_digest: WorkCase result_self_checking 合规；关闭前需补 closure_evidence 和 result_review.required_perspectives，已补齐。
+      result:
+        status: pass_with_followups
+        summary: |
+          WorkCase 执行项、验证证据和主控自检基本完整；已补 closure_evidence 并把四个结果复核视角登记为 required_perspectives。
+        key_findings:
+        - 4 个 execution_items 均已 done，具备 result_summary 和 evidence_refs。
+        - verification_evidence 和 controller_self_check 已填写。
+        - 原 closure_evidence 为空、review_policy required_perspectives 为空，已修复。
+        recommendations:
+        - 关闭前明确 Git commit records 需由最终提交形成，不得误称已提交。
+        required_changes:
+        - 补写 closure_evidence。
+        - 更新 result_review.review_policy.required_perspectives。
+        - 将结果复核报告写入 review_items。
+        evidence_refs:
+        - ldvh-base/workcases/workcase-0001-knowledge-map-entry-navigation.yaml
+        - code/fact_validate.py
+      raw_output_ref: null
+      attested_at: '2026-06-24T08:02:19'
+      attestation:
+        signer: Dalton
+        statement: 基于只读复查完成 WorkCase/事实源流程复查并对结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-24T08:02:19'
+      resolver: main-controller-codex
+      source_review_item_ids:
+      - result-review-1
+      - result-review-2
+      - result-review-3
+      - result-review-4
+      accepted_findings:
+      - 子 Agent 结果复核均为 pass_with_followups，未出现 fail 或 needs_human_gate。
+      - 标题型 start_node 误报 STOP、task_type 未影响 read_plan、text 第一屏不够强导航、04.Att.05 状态表述过时、closure_evidence
+        为空等问题需要处理。
+      - Git commit records 尚需在最终提交后形成，关闭时不得误称已提交。
+      rejected_findings: []
+      required_changes_applied:
+      - 修复标题型 start_node 命中后误报 start_node_not_in_read_plan。
+      - 让 workcase_execution / work_object / code_change 影响 read_plan 优先级。
+      - text 输出固定展示 Navigation、Read plan、Next queries、Stop conditions 和 Impact summary，并显示
+        omitted count。
+      - 将 04.Att.05 的 entry_navigation 状态表述更新为已提供。
+      - 补写 result_review.required_perspectives、review_items 和 closure_evidence。
+      unresolved_items:
+      - Git commit records 需在最终提交后形成。
+      changed_fields:
+      - code/spec_checks/knowledge_map.py
+      - code/spec_checks/v2.py
+      - tests/code/specs_validate_checks/test_v2.py
+      - specs/attachments/04.Att.05-知识地图输入范围表.md
+      - orchestration.result_review
+      - closure_evidence
+      summary: |
+        四个结果复核视角均确认主方向成立，并提出若干 follow-up。主控已处理可在本轮修复的问题；剩余 Git commit records 属于最终提交动作，不阻断提交 Human 关闭确认前的状态整理。
+    human_closure_confirmation: null
+plan_confirmed_at: '2026-06-24T07:45:24.794349'
+verification_evidence: |
+  ## 验证计划
+
+  覆盖知识地图 Code 输出、active specs 综合诊断、entry_navigation 组合范围、固定运行时扩展、能力环境矩阵、管辖项目配置和工作对象事实源。
+
+  ## 验证命令
+
+  - `python3 -m pytest -q tests/code`：330 passed。
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`：通过，diagnostics=0。
+  - `python3 code/specs_validate.py v2-check --input-scope entry_navigation --fail-on-diagnostics --format text`：通过，diagnostics=0，degraded=False。
+  - `python3 code/specs_validate.py deployment-entries`：固定运行时扩展登记检查通过。
+  - `python3 code/specs_validate.py capability-environment`：状态 closed，诊断数 0。
+  - `python3 code/specs_validate.py governed-projects`：管辖项目配置检查通过。
+  - `python3 code/fact_validate.py ldvh-base/`：files=33 errors=0 warnings=0。
+
+  ## 验证结果
+
+  Code 测试、active specs、知识地图 entry_navigation、固定运行时扩展、能力环境矩阵、管辖项目配置和工作对象事实源均通过。
+
+  ## 结论
+
+  WorkCase 执行项已具备进入结果自检的验证证据；关闭前仍需按 21 完成结果自检、必要结果复核和 Human 关闭确认。
+closure_evidence: |
+  ## 验证计划
+
+  收口证据需要说明成功标准是否达成、子 Agent 结果复核是否完成、复核 follow-up 是否处理、残留风险是否清楚，以及关闭前还需要 Human 确认什么。
+
+  ## 验证命令
+
+  - 结果复核子 Agent：Code 实现、规范/Rules 一致性、AI 入口可用性、WorkCase/事实源流程。
+  - `python3 -m pytest -q tests/code/specs_validate_checks/test_v2.py`：19 passed。
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node "知识地图入口导航能力产品化" --task-type workcase_execution --format text`：degraded=False、diagnostics=0、stop_conditions=0。
+
+  ## 验证结果
+
+  四个结果复核均为 pass_with_followups，未出现 fail 或 needs_human_gate。复核提出的可执行 follow-up 已处理：标题型 start_node STOP 误报已修复，task_type 已影响 read_plan 优先级，text 输出已固定五段导航结构，04.Att.05 状态表述已更新，WorkCase 结果复核策略和关闭证据已补齐。
+
+  ## 结论
+
+  本 WorkCase 已具备提交 Human 关闭确认的主要证据基础；关闭前仍需 Human 判断是否接受“Git commit records 将由最终提交形成”的残留风险，且不得在提交前声称本轮修改已经形成 Git 追溯记录。
+closure_requested_at: '2026-06-24T08:05:01.282431'
+review_requested_at: ''
+closed_at: ''
+closure_outcome: ''
+residual_risks:
+- Git commit records 追溯需在最终提交后形成；当前仅完成工作区文件事实源修改、本地验证和结果复核。
+followup_refs: []
+revision_history:
+- at: '2026-06-24T07:55:00'
+  from_status: subagents_plan_reviewing
+  to_status: human_plan_confirming
+  actor: main-controller-codex
+  reason: |
+    Human 要求创建 WorkCase 并推进知识地图入口导航能力产品化；主控将四个子 Agent / 独立视角审查结果整理为可执行方案。
+  changed_fields:
+  - goal
+  - description
+  - success_criteria
+  - source
+  - orchestration.execution_items
+  - orchestration.plan_review
+  - status
+  summary: |
+    WorkCase 从生成骨架推进到 Human 方案确认状态；下一步需要 Human 确认是否进入 executing，并授权按执行项顺序修改 specs、Code、Rules 和测试。
+related_docs:
+- specs/01-规范体系基础规范.md
+- specs/04-Code确定性执行规范.md
+- specs/attachments/04.Att.06-知识地图投影Schema表.md
+- specs/06-运行时扩展规范.md
+- specs/30-rules-entry-sync-review-Rules入口同步审查.md
+- rules/LDVH-MAINTAINER-ENTRY.md
+- rules/LDVH-WORKSPACE-ENTRY.md
+- code/spec_checks/knowledge_map.py
+- code/spec_checks/v2.py
+related_adrs: []
+related_sparks:
+- spark-0016
+- spark-0021
+related_pitfalls: []
+related_workcases: []

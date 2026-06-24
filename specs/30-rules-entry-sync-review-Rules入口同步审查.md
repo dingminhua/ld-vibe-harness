@@ -66,7 +66,7 @@ v2_action_member:
   capability_assets:
     - "type=rule; path=rules/LDVH-WORKSPACE-ENTRY.md; purpose=工作区入口表达同步审查对象; status=required"
     - "type=rule; path=rules/LDVH-MAINTAINER-ENTRY.md; purpose=维护入口表达同步审查对象; status=required"
-    - "type=code; path=code/specs_validate.py knowledge-map; purpose=以变化来源或受影响入口为 start_node 获取知识地图任务导航; status=required"
+    - "type=code; path=code/specs_validate.py knowledge-map; purpose=以变化来源或受影响入口为 start_node 获取知识地图任务导航、read_plan、stop_conditions 和影响摘要; status=required"
     - "type=code; path=code/specs_validate.py preflight; purpose=写入前提示 Rules 影响和 Human Gate; status=required"
     - "type=code; path=code/specs_validate.py capability-environment; purpose=固定能力资产与环境保障矩阵只读投影; status=required"
     - "type=code; path=code/specs_validate.py deployment-entries; purpose=固定运行时扩展登记一致性检查; status=required"
@@ -123,7 +123,7 @@ ldvh_member:
 2. active specs、附件或成员主文件变化后，应评估固定 Rules 资产是否受影响；
 3. 评估结论只能是无需同步、需要同步 Rules 入口表达，或进入 Human Gate；
 4. 来源规范负责触发影响评估，Rules 文件自身只承载实例自描述和运行时入口表达。
-5. 当来源规范要求知识地图任务导航强触发时，Rules 资产应表达具体触发场景、命令入口、起点选择、输出边界和降级路径。
+5. 当来源规范要求知识地图任务导航强触发时，Rules 资产应表达具体触发场景、命令入口、起点选择、输出边界和降级路径，并要求 AI 消费 `read_plan`、`next_queries`、`stop_conditions` 和 `impact_summary`；应阻止 AI 只用 `v2-check` 摘要、`ls` 或全文 Read 作为入口定位替代。
 
 本文承接 `specs/01-规范体系基础规范.md` 的保障要求和成员机制，承接 `specs/04-Code确定性执行规范.md` 的只读诊断边界，承接 `specs/07-事实源边界与Git追溯规范.md` 的事实源和 Git 追溯边界，承接 `specs/08-测试基础规范.md` 的验证声明边界。
 
@@ -209,7 +209,7 @@ ldvh_member:
 | 维护 Rules 入口资产 | `rules/LDVH-MAINTAINER-ENTRY.md` |
 | 固定运行时扩展登记 | `specs/attachments/06.Att.02-固定运行时扩展登记表.md` |
 | 受控写入前诊断 | `python3 code/specs_validate.py preflight --target-path <path>` |
-| 知识地图任务导航 | `python3 code/specs_validate.py knowledge-map --layer neighbors --start-node <path-or-node> --format json` |
+| 知识地图任务导航 | `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type rules_sync_review --format json` |
 | 能力环境矩阵 | `python3 code/specs_validate.py capability-environment` |
 
 本文产生的审查结论、同步建议、命令输出和草案补丁默认是过程输出。只有写入 specs、Rules、事实对象或 Git commit records 后，才形成可追溯事实。
@@ -223,11 +223,11 @@ ldvh_member:
 3. `specs/06-运行时扩展规范.md` 的 4.1、4.2、5、7、11、12 节；
 4. 受影响的固定 Rules 文件；
 5. `specs/attachments/06.Att.02-固定运行时扩展登记表.md`；
-6. 以变化来源文件或受影响 Rules 入口为 `start_node` 的知识地图邻接查询，确认状态、权威、来源规范、相关规范、Code 消费类别和一跳影响；
+6. 以变化来源文件或受影响 Rules 入口为 `start_node` 的知识地图入口导航查询，确认状态、权威、来源规范、`read_plan`、`next_queries`、`stop_conditions`、Code 消费类别和一跳影响；
 7. 必要 Code 输出：
 
 ```bash
-python3 code/specs_validate.py knowledge-map --layer neighbors --start-node <changed-path> --format json
+python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node <changed-path> --task-type rules_sync_review --format json
 python3 code/specs_validate.py preflight --target-path <changed-path>
 python3 code/specs_validate.py deployment-entries
 python3 code/specs_validate.py capability-environment
@@ -256,7 +256,7 @@ python3 code/specs_validate.py v2-check --input-scope runtime_extensions --forma
 
 1. 确认触发源是否为 specs、附件或行动成员主文件变化；
 2. 摘要变化内容，标注是否影响入口可见、读取顺序、STOP、工具入口、交接、验证或降级提示；
-3. 运行知识地图邻接查询，确认变化来源与 01、04、06、受影响 Rules 资产或其它相关规范的关系；
+3. 运行知识地图邻接查询，确认变化来源与 01、04、06、受影响 Rules 资产或其它相关规范的关系；该查询应早于手工目录枚举或大范围原文读取；
 4. 读取受影响 Rules 的 `ldvh_asset.source_specs`、`sync_triggers`、`verification` 和正文场景路由；
 5. 运行必要 Code 检查；
 6. 判断影响类型：
@@ -321,7 +321,7 @@ python3 code/specs_validate.py v2-check --input-scope runtime_extensions --forma
 | 命令 | 用途 | 边界 |
 |---|---|---|
 | `python3 code/specs_validate.py preflight --target-path <path>` | 写入前提示 Human Gate、Rules 影响和归口 | 不授权写入 |
-| `python3 code/specs_validate.py knowledge-map --layer neighbors --start-node <path-or-node> --format json` | 以变化来源或受影响入口为起点，查看状态、权威、来源规范、相关规范、消费关系和一跳影响 | 不替代 active specs、成员主文件或 Rules 文件原文 |
+| `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type rules_sync_review --format json` | 以变化来源或受影响入口为起点，生成状态、权威、来源规范、`read_plan`、后续查询、STOP、消费关系和一跳影响 | 不替代 active specs、成员主文件或 Rules 文件原文；只能指导最小回读 |
 | `python3 code/specs_validate.py deployment-entries` | 检查固定运行时扩展登记与自描述一致性 | 不说明环境已安装 |
 | `python3 code/specs_validate.py capability-environment` | 投影固定能力资产来源、同步、验证和环境边界 | 不写环境入口，不替代 Rules 判断 |
 | `python3 code/specs_validate.py v2-check --input-scope runtime_extensions --format text` | 查看固定运行时扩展自描述知识地图投影 | 不替代 active specs 或资产原文 |
@@ -379,7 +379,7 @@ Rules 文件同步完成，只说明 LDVH 固定 Rules 资产的入口表达已�
 
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
-| 来源要求承接实践 | 只承接 specs、附件或行动成员主文件对固定 Rules 入口表达的影响，不新增子级规范保障要求 | 本文 §8、`knowledge-map --layer neighbors --start-node <path-or-node>`、`preflight`、受影响 Rules 文件 | 行动实践关联 | 变化可能影响入口可见、读取顺序、STOP、工具入口、知识地图任务导航、交接、验证或降级提示时 |
+| 来源要求承接实践 | 只承接 specs、附件或行动成员主文件对固定 Rules 入口表达的影响，不新增子级规范保障要求 | 本文 §8、`knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type rules_sync_review`、`preflight`、受影响 Rules 文件 | 行动实践关联 | 变化可能影响入口可见、读取顺序、STOP、工具入口、知识地图任务导航、交接、验证或降级提示时 |
 | Rules 修改实践 | Rules 入口表达需要同步时，由主控 AI 在授权范围内修改；高影响项先进入 Human Gate | `rules/LDVH-WORKSPACE-ENTRY.md`、`rules/LDVH-MAINTAINER-ENTRY.md`、本文 §9、§11 | Rules 入口表达同步 | 审查结论为建议同步或 Human Gate 通过时 |
 | Code 辅助实践 | 使用只读 Code 投影辅助判断固定 Rules 来源、验证链、环境边界和知识地图任务导航关系，不把投影当作事实源 | `knowledge-map`、`deployment-entries`、`capability-environment`、`runtime_extensions` | Code 诊断协作 | 需要判断固定 Rules 资产来源、验证链、环境边界或知识地图入口表达时 |
 | 能力协作实践 | Skill/Agent 只给过程输出，必须交还主控 AI | 本文 §12、主控 AI、可选 Agent 输出 | 能力输出交还 | 需要独立审查、并行探索或复用稳定步骤时 |

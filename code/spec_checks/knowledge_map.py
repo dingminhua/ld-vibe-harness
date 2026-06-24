@@ -228,6 +228,7 @@ class KnowledgeMapMixin:
         edges = self.filtered_edges_by_relation(self.edges)
         layer = "expand" if self.query_layer == "raw" else self.query_layer
 
+        resolved_start_id = None
         if layer == "entry":
             selected_nodes = {
                 node["id"]
@@ -246,11 +247,16 @@ class KnowledgeMapMixin:
             if not start_id:
                 selected_nodes, selected_edges = self.entry_fallback(edges)
             else:
+                resolved_start_id = start_id
                 selected_nodes, selected_edges = self.traverse_edges(start_id, edges, 1 if layer == "neighbors" else self.depth)
         else:
             selected_nodes, selected_edges = self.entry_fallback(edges)
 
         projected_nodes = [nodes_by_id[node_id] for node_id in self.sorted_node_ids(selected_nodes) if node_id in nodes_by_id]
+        read_plan = self.build_read_plan(projected_nodes, selected_edges, resolved_start_id)
+        next_queries = self.build_next_queries(resolved_start_id)
+        stop_conditions = self.build_stop_conditions(read_plan, resolved_start_id)
+        impact_summary = self.build_impact_summary(projected_nodes, selected_edges)
         source_refs = self.knowledge_map_source_refs(projected_nodes, selected_edges)
         projection = {
             "schema_version": V2_KNOWLEDGE_MAP_SCHEMA_VERSION,
@@ -267,10 +273,17 @@ class KnowledgeMapMixin:
                 "project_scope": self.project_scope,
                 "projects": self.projects,
                 "start_node": self.start_node,
+                "resolved_start_node": resolved_start_id,
+                "task_type": self.task_type,
                 "relation_types": sorted(self.relation_types),
                 "depth": self.depth,
                 "degraded": self.is_degraded(),
             },
+            "navigation": self.build_navigation(resolved_start_id, read_plan),
+            "read_plan": read_plan,
+            "next_queries": next_queries,
+            "stop_conditions": stop_conditions,
+            "impact_summary": impact_summary,
             "project_namespace": self.project_namespace,
             "nodes": projected_nodes,
             "edges": selected_edges,
@@ -279,6 +292,313 @@ class KnowledgeMapMixin:
         if self.query_layer == "raw":
             projection["raw_content"] = self.raw_content_for_projection(projected_nodes)
         return projection
+
+    def build_navigation(self, resolved_start_id, read_plan):
+        if resolved_start_id:
+            summary = f"已围绕 {resolved_start_id} 生成任务导航读取计划。"
+        elif self.start_node:
+            summary = f"未定位起点 {self.start_node}，已退回入口视图并给出后续查询建议。"
+        else:
+            summary = "未提供 start_node，已生成入口层候选读取计划。"
+        return {
+            "task_type": self.task_type,
+            "start_node": self.start_node,
+            "resolved_start_node": resolved_start_id,
+            "input_scope": self.input_scope,
+            "effective_input_scope": self.effective_input_scope(),
+            "layer": self.query_layer,
+            "project_scope": self.project_scope,
+            "degraded": self.is_degraded(),
+            "summary": summary,
+            "read_plan_count": len(read_plan),
+        }
+
+    def build_read_plan(self, nodes, edges, resolved_start_id):
+        nodes_by_id = {node["id"]: node for node in nodes}
+        plan = []
+        if resolved_start_id and resolved_start_id in nodes_by_id:
+            plan.append(self.read_plan_entry(nodes_by_id[resolved_start_id], "P0", "start", "self", "任务起点原文，先核对身份、状态、权威和目标。"))
+
+        if resolved_start_id:
+            directly_related = [
+                edge for edge in edges if edge.get("from") == resolved_start_id or edge.get("to") == resolved_start_id
+            ]
+            for edge in directly_related:
+                counterpart_id = edge.get("to") if edge.get("from") == resolved_start_id else edge.get("from")
+                node = nodes_by_id.get(counterpart_id)
+                if not node:
+                    continue
+                priority, role = self.read_role_for_relation(edge.get("type"), edge.get("source_structure"), node)
+                reason = self.read_reason_for_relation(edge, resolved_start_id)
+                plan.append(self.read_plan_entry(node, priority, role, edge.get("type") or "related", reason))
+        else:
+            for node in nodes:
+                if len(plan) >= 12:
+                    break
+                if node.get("type") not in {"spec", "member_spec", "attachment", "runtime_extension", "fact_object"}:
+                    continue
+                priority = "P1" if node.get("type") in {"spec", "member_spec", "runtime_extension"} else "P2"
+                plan.append(self.read_plan_entry(node, priority, "context", "entry_candidate", "入口层候选原文；需要具体判断时应以它作为 start_node 追加邻接查询。"))
+
+        return self.compact_read_plan(plan)
+
+    def read_role_for_relation(self, relation_type, source_structure, node=None):
+        node = node or {}
+        path = node.get("canonical_path") or node.get("path") or ""
+        if (
+            self.task_type in {"workcase_execution", "work_object"}
+            and relation_type == "consumes"
+            and isinstance(source_structure, str)
+            and "execution_items" in source_structure
+        ):
+            if path.startswith(("specs/", "specs-v2/", "rules/")):
+                return "P1", "authority"
+            return "P1", "context"
+        if self.task_type == "code_change" and path.startswith(("code/", "tests/")):
+            return "P1", "context"
+        if self.task_type == "code_change" and path.startswith(("specs/04-", "specs/08-", "specs/attachments/04.", "specs/attachments/08.")):
+            return "P1", "authority"
+        if source_structure in {"ldvh_asset.source_specs", "basis", "parent_spec"}:
+            return "P1", "authority"
+        if relation_type in {"basis", "parent", "derives_from", "gated_by"}:
+            return "P1", "authority"
+        if relation_type in {"impacts", "writes_to"}:
+            return "P1", "impact"
+        if relation_type in {"validates", "renders"}:
+            return "P2", "verification"
+        if relation_type in {"related", "owns_attachment", "consumes"}:
+            return "P2", "context"
+        return "P3", "context"
+
+    def read_reason_for_relation(self, edge, resolved_start_id):
+        relation_type = edge.get("type") or "related"
+        source_structure = edge.get("source_structure") or edge.get("derived_from") or "relation"
+        if source_structure == "ldvh_asset.source_specs":
+            return "Rules 或运行时扩展的 source_specs 来源规范，判断入口表达时必须回读。"
+        if relation_type in {"basis", "parent", "derives_from", "gated_by"}:
+            return f"与起点 {resolved_start_id} 存在 {relation_type} 权威或来源关系，影响规则判断。"
+        if relation_type in {"impacts", "writes_to"}:
+            return f"与起点 {resolved_start_id} 存在 {relation_type} 影响关系，需评估同步或写入边界。"
+        if relation_type in {"validates", "renders"}:
+            return f"与起点 {resolved_start_id} 存在 {relation_type} 验证或展示关系，需用于验证计划。"
+        return f"与起点 {resolved_start_id} 存在 {relation_type} 上下文关系，必要时回读确认。"
+
+    def read_plan_entry(self, node, priority, role, source_relation, reason):
+        path = node.get("canonical_path") or node.get("path") or node.get("id")
+        return {
+            "path": path,
+            "node_id": node.get("id"),
+            "title": node.get("label") or node.get("id"),
+            "priority": priority,
+            "role": role,
+            "reason": reason,
+            "source_relation": source_relation,
+            "suggested_sections": self.suggested_sections_for_node(node, role),
+            "project_namespace": node.get("project_namespace"),
+            **({"object_id": node.get("object_id")} if node.get("object_id") else {}),
+            "source_refs": node.get("source_refs") or [],
+        }
+
+    def suggested_sections_for_node(self, node, role):
+        node_type = node.get("type")
+        path = node.get("canonical_path") or node.get("path") or ""
+        if node_type in {"spec", "member_spec"}:
+            if role == "authority":
+                return ["上位依据", "规范保障要求", "Human Gate"]
+            return ["本文解决的问题", "构成要素归属与价值判断", "待补齐事项"]
+        if node_type == "attachment":
+            return ["定位", "目标字段", "任务导航字段", "待补齐事项"]
+        if node_type == "runtime_extension" or path.startswith("rules/"):
+            return ["最小启动顺序", "场景路由", "STOP 点", "维护规则"]
+        if node_type == "fact_object":
+            return ["goal", "success_criteria", "orchestration", "verification_evidence"]
+        return []
+
+    def compact_read_plan(self, plan):
+        priority_order = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
+        best_by_key = {}
+        for item in plan:
+            path = item.get("path")
+            node_id = item.get("node_id")
+            if not path or not self.is_readable_plan_path(path, node_id):
+                continue
+            key = (path, node_id)
+            existing = best_by_key.get(key)
+            if existing and priority_order.get(existing.get("priority"), 9) <= priority_order.get(item.get("priority"), 9):
+                continue
+            best_by_key[key] = item
+        return sorted(
+            best_by_key.values(),
+            key=lambda item: (
+                priority_order.get(item.get("priority"), 9),
+                str(item.get("path") or ""),
+                str(item.get("node_id") or ""),
+            ),
+        )[:24]
+
+    def is_readable_plan_path(self, path, node_id):
+        if not isinstance(path, str) or not path:
+            return False
+        if path.startswith(("code_consumption:", "project:")):
+            return False
+        if node_id and isinstance(node_id, str) and node_id.startswith("code_consumption:"):
+            return False
+        return path.endswith((".md", ".yaml", ".yml", ".py", ".toml", ".json"))
+
+    def build_next_queries(self, resolved_start_id):
+        queries = []
+        start = self.start_node or resolved_start_id
+        if self.start_node and not resolved_start_id:
+            queries.append(
+                self.next_query(
+                    "retry_with_entry_navigation",
+                    self.start_node,
+                    "entry_navigation",
+                    "neighbors",
+                    "当前输入范围未定位起点；入口导航组合范围可同时读取 active specs、runtime extensions 和 governed projects。",
+                )
+            )
+        if start and self.input_scope != "entry_navigation" and self.start_node_needs_entry_navigation(start):
+            queries.append(
+                self.next_query(
+                    "combine_entry_sources",
+                    start,
+                    "entry_navigation",
+                    "neighbors",
+                    "任务涉及 Rules 入口、工作对象或跨入口影响，需在同一任务视图中消费多类节点。",
+                )
+            )
+        if resolved_start_id and self.query_layer == "neighbors":
+            queries.append(
+                self.next_query(
+                    "expand_if_needed",
+                    resolved_start_id,
+                    self.input_scope,
+                    "expand",
+                    "一跳关系不足以判断影响面、验证链或关闭条件时再展开二跳。",
+                    depth=2,
+                )
+            )
+        if not self.start_node and self.query_layer == "entry":
+            queries.append(
+                {
+                    "purpose": "choose_start_node",
+                    "command": "python3 code/specs_validate.py knowledge-map --layer neighbors --start-node <path-or-node> --format json",
+                    "input_scope": self.input_scope,
+                    "layer": "neighbors",
+                    "start_node": "<path-or-node>",
+                    "reason": "入口层只用于选择起点；具体判断必须追加带 start_node 的任务导航查询。",
+                }
+            )
+        return self.dedupe_next_queries(queries)
+
+    def start_node_needs_entry_navigation(self, start):
+        return isinstance(start, str) and (
+            start.startswith(("rules/", "ldvh-base/"))
+            or ":workcase:" in start
+            or ":spark:" in start
+            or ":adr:" in start
+            or ":pitfall:" in start
+            or ":study:" in start
+        )
+
+    def next_query(self, purpose, start_node, input_scope, layer, reason, depth=1):
+        command = (
+            "python3 code/specs_validate.py knowledge-map "
+            f"--input-scope {input_scope} --layer {layer} --start-node {start_node} --format json"
+        )
+        if layer == "expand":
+            command += f" --depth {depth}"
+        return {
+            "purpose": purpose,
+            "command": command,
+            "input_scope": input_scope,
+            "layer": layer,
+            "start_node": start_node,
+            "reason": reason,
+        }
+
+    def dedupe_next_queries(self, queries):
+        seen = set()
+        result = []
+        for query in queries:
+            key = (query.get("purpose"), query.get("input_scope"), query.get("layer"), query.get("start_node"))
+            if key in seen:
+                continue
+            seen.add(key)
+            result.append(query)
+        return result
+
+    def build_stop_conditions(self, read_plan, resolved_start_id=None):
+        conditions = []
+        if self.is_degraded():
+            conditions.append(
+                {
+                    "condition": "knowledge_map_degraded",
+                    "reason": "知识地图查询已降级；不得把当前输出当作完整定位或影响判断。",
+                    "fallback": "说明降级诊断，退回 active specs、Rules 入口、事实对象和 Git 文件事实源原文核对。",
+                    "source_refs": self.diagnostic_source_refs(),
+                }
+            )
+        if self.start_node and not self.read_plan_matches_start(read_plan, resolved_start_id):
+            conditions.append(
+                {
+                    "condition": "start_node_not_in_read_plan",
+                    "reason": "读取计划中没有命中用户给定起点；继续判断前必须重新选择 start_node 或扩大输入范围。",
+                    "fallback": "优先尝试 --input-scope entry_navigation；仍失败时回到文件事实源和人工降级检查。",
+                    "source_refs": self.diagnostic_source_refs(),
+                }
+            )
+        if not read_plan:
+            conditions.append(
+                {
+                    "condition": "empty_read_plan",
+                    "reason": "当前查询未能生成可执行读取计划。",
+                    "fallback": "提供明确 start_node，或使用 entry_navigation 组合范围后重试。",
+                    "source_refs": self.diagnostic_source_refs(),
+                }
+            )
+        return conditions
+
+    def read_plan_matches_start(self, read_plan, resolved_start_id=None):
+        expected = {value for value in (self.start_node, resolved_start_id) if value}
+        for item in read_plan:
+            if item.get("node_id") in expected or item.get("path") in expected or item.get("title") in expected:
+                return True
+        return False
+
+    def diagnostic_source_refs(self):
+        refs = []
+        for diagnostic in self.diagnostics:
+            refs.extend(diagnostic.get("source_refs") or [])
+        return refs
+
+    def build_impact_summary(self, nodes, edges):
+        node_type_counts = {}
+        relation_type_counts = {}
+        affected_specs = []
+        affected_runtime_extensions = []
+        affected_fact_objects = []
+        for node in nodes:
+            node_type = node.get("type") or "unknown"
+            node_type_counts[node_type] = node_type_counts.get(node_type, 0) + 1
+            node_id = node.get("id")
+            if node_type in {"spec", "member_spec", "attachment"}:
+                affected_specs.append(node_id)
+            elif node_type == "runtime_extension":
+                affected_runtime_extensions.append(node_id)
+            elif node_type == "fact_object":
+                affected_fact_objects.append(node_id)
+        for edge in edges:
+            relation_type = edge.get("type") or "unknown"
+            relation_type_counts[relation_type] = relation_type_counts.get(relation_type, 0) + 1
+        return {
+            "node_type_counts": node_type_counts,
+            "relation_type_counts": relation_type_counts,
+            "affected_specs": sorted(filter(None, affected_specs))[:40],
+            "affected_runtime_extensions": sorted(filter(None, affected_runtime_extensions))[:40],
+            "affected_fact_objects": sorted(filter(None, affected_fact_objects))[:40],
+        }
 
     def knowledge_map_source_refs(self, nodes, edges):
         refs = []
@@ -669,6 +989,14 @@ class KnowledgeMapMixin:
                         continue
                     self.add_fact_relation_values(record, object_index, project_root, f"execution_items[{index}].input_refs", item.get("input_refs"), "consumes")
                     self.add_fact_relation_values(record, object_index, project_root, f"execution_items[{index}].evidence_refs", item.get("evidence_refs"), "validates")
+            if field == "orchestration" and isinstance(value, dict):
+                execution_items = value.get("execution_items")
+                if isinstance(execution_items, list):
+                    for index, item in enumerate(execution_items):
+                        if not isinstance(item, dict):
+                            continue
+                        self.add_fact_relation_values(record, object_index, project_root, f"orchestration.execution_items[{index}].input_refs", item.get("input_refs"), "consumes")
+                        self.add_fact_relation_values(record, object_index, project_root, f"orchestration.execution_items[{index}].evidence_refs", item.get("evidence_refs"), "validates")
 
     def add_fact_relation_values(self, record, object_index, project_root, field, value, relation_type):
         values = value if isinstance(value, list) else [value]
@@ -744,6 +1072,8 @@ class KnowledgeMapMixin:
             return node_id
 
         rel = self.project_relative_or_absolute(project_root, resolved)
+        if rel in self.node_ids:
+            return rel
         node_id = f"{project_id}:path:{rel}"
         node_type = "external_fact_source" if resolved.exists() else "missing_reference"
         if not resolved.exists():

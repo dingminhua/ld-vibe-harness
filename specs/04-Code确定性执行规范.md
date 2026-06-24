@@ -233,6 +233,8 @@ Code 不得把“生成知识地图”实现为一次性全量上下文注入。
 
 知识地图作为 AI 任务导航时，Code 必须支持以具体规范、附件、行动成员、运行时扩展承载物、工作对象或节点 ID 作为 `start_node` 的邻接查询。该查询至少应让 AI 能看见起点节点的状态、权威、路径、上位依据、相关规范、Code 消费类别、来源回指和一跳关系。`v2-check --format text` 只表示 active specs 结构诊断和知识地图汇总健康状态，不能替代带 `start_node` 的任务导航；当 AI 需要判断某个对象“该读什么、影响谁、能否 active、是否触发 Rules 同步”时，应使用 `knowledge-map --layer neighbors --start-node <path-or-node>` 或等价结构化查询。
 
+知识地图承担“在什么情况读什么文件”的入口导航责任时，Code 不应只把节点和边交给 AI 自行推理。结构化输出必须提供面向行动的 `navigation`、`read_plan`、`next_queries`、`stop_conditions` 和 `impact_summary`：`navigation` 说明任务类型、起点、有效输入范围和降级状态；`read_plan` 给出最小原文读取计划，至少包含路径、节点、优先级、读取角色、原因、来源关系、建议章节或字段和来源回指；`next_queries` 给出需要继续渐进展开时的后续查询；`stop_conditions` 提示必须暂停、降级或回到 Human Gate 的条件；`impact_summary` 汇总受影响规范、运行时扩展、工作对象和关系类型。Rules 入口在正常路径下应消费这些字段，不应长期维护与这些字段重复的大段静态 specs 读取路线。
+
 当输入范围、起点节点、关系类型或层级不足以支撑任务判断时，Code 应通过 `diagnostics`、`degraded`、`review_hints` 或等价结构化字段提示调用方补充查询或退回文件事实源。Code 不得用“节点数/边数/诊断数”这类汇总指标暗示具体任务已经完成定位、影响分析或 active 条件判断。
 
 知识地图必须支持项目命名空间。Code 读取管辖项目时，应先读取并校验工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml`，再按项目范围生成投影。项目范围至少包括：
@@ -258,7 +260,12 @@ Git 历史查询不进入知识地图默认输入范围，也不要求 LDVH 建�
 7. `tool`；
 8. `input_scope`；
 9. `schema_version`；
-10. `degraded`。
+10. `degraded`；
+11. `navigation`；
+12. `read_plan`；
+13. `next_queries`；
+14. `stop_conditions`；
+15. `impact_summary`。
 
 节点至少声明 `id`、`type`、`label`、`canonical_path`、`source_refs`、`project_namespace`、`status` 和 `authority`。跨项目节点 ID 必须包含 `project_namespace`，不得使用裸对象 ID 当全局节点。节点类型至少覆盖规范、附件、事实模型成员、行动编排成员、工作对象、事实实例、对象字段、管辖项目配置、运行时扩展、Code 入口、Web 视图和事实源。
 

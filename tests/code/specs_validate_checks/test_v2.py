@@ -886,6 +886,9 @@ def test_v2_check_json_and_text_output_shape_are_stable(tmp_path, capsys):
     assert report["knowledge_map"]["query"]["layer"] == "entry"
     assert report["knowledge_map"]["project_namespace"] == "ldvh_self"
     assert report["knowledge_map"]["excluded_inputs"] == []
+    assert {"navigation", "read_plan", "next_queries", "stop_conditions", "impact_summary"} <= set(report["knowledge_map"])
+    assert report["knowledge_map"]["navigation"]["task_type"] == "general"
+    assert report["knowledge_map"]["read_plan"]
     assert report["diagnostics"] == []
     assert all(
         {"id", "type", "label", "canonical_path", "source_refs", "project_namespace", "status", "authority"} <= set(node)
@@ -903,8 +906,98 @@ def test_v2_check_json_and_text_output_shape_are_stable(tmp_path, capsys):
     assert "active specs 规范诊断完成" in text_output
     assert "- input_scope: active_specs" in text_output
     assert "- layer: entry" in text_output
+    assert "- read_plan:" in text_output
+    assert "Navigation:" in text_output
+    assert "Read plan:" in text_output
+    assert "Next queries:" in text_output
+    assert "Stop conditions:" in text_output
+    assert "Impact summary:" in text_output
     assert "- degraded: False" in text_output
     assert "- diagnostics: 0" in text_output
+
+
+def test_v2_check_entry_navigation_resolves_workcase_start_node(tmp_path):
+    workspace = tmp_path / "workspace"
+    project = workspace / "project"
+    write_minimal_v2_knowledge_map_fixture(project)
+    write_md(
+        workspace / "LDVH-GOVERNED-PROJECTS.yaml",
+        f"""
+product_name: Test LDVH
+product_description: Test workspace
+projects:
+  - id: project
+    path: {project}
+    name: Project
+""",
+    )
+    write_md(
+        project / "ldvh-base" / "workcases" / "workcase-0001-entry-navigation.yaml",
+        """
+id: workcase-0001
+type: workcase
+title: Entry Navigation
+status: executing
+created: '2026-06-24'
+updated: '2026-06-24'
+goal: Entry Navigation
+priority: P1
+description: Entry Navigation
+success_criteria: Entry Navigation
+source: conversation
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: Read specs
+      role: specs
+      mode: single
+      input_refs:
+        - specs-v2/01-规范体系基础规范.md
+      expected_output: Read specs
+      status: pending
+""",
+    )
+
+    report = checker.v2_check_build(
+        project,
+        input_scope="entry_navigation",
+        query_layer="neighbors",
+        start_node="ldvh-base/workcases/workcase-0001-entry-navigation.yaml",
+        task_type="workcase_execution",
+    )
+    knowledge_map = report["knowledge_map"]
+    read_plan = knowledge_map["read_plan"]
+    read_paths = {item["path"] for item in read_plan}
+    priorities = {item["path"]: item["priority"] for item in read_plan}
+
+    assert report["metadata"]["effective_input_scope"] == ["active_specs", "runtime_extensions", "governed_projects"]
+    assert knowledge_map["query"]["resolved_start_node"] == "project:workcase:workcase-0001"
+    assert knowledge_map["navigation"]["task_type"] == "workcase_execution"
+    assert "ldvh-base/workcases/workcase-0001-entry-navigation.yaml" in read_paths
+    assert "specs-v2/01-规范体系基础规范.md" in read_paths
+    assert priorities["specs-v2/01-规范体系基础规范.md"] == "P1"
+    assert not knowledge_map["diagnostics"]
+
+    general_report = checker.v2_check_build(
+        project,
+        input_scope="entry_navigation",
+        query_layer="neighbors",
+        start_node="ldvh-base/workcases/workcase-0001-entry-navigation.yaml",
+        task_type="general",
+    )
+    general_priorities = {item["path"]: item["priority"] for item in general_report["knowledge_map"]["read_plan"]}
+    assert general_priorities["specs-v2/01-规范体系基础规范.md"] == "P2"
+
+    title_report = checker.v2_check_build(
+        project,
+        input_scope="entry_navigation",
+        query_layer="neighbors",
+        start_node="Entry Navigation",
+        task_type="workcase_execution",
+    )
+    assert title_report["knowledge_map"]["query"]["resolved_start_node"] == "project:workcase:workcase-0001"
+    assert not title_report["knowledge_map"]["stop_conditions"]
 
 
 def test_v2_check_relation_type_filter_limits_projected_edges(tmp_path):

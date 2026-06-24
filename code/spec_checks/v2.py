@@ -89,7 +89,7 @@ V2_REQUIRED_00_SECTIONS = {
     "待补齐事项",
 }
 V2_ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
-V2_INPUT_SCOPES = {"active_specs", "specs_v2", "all", "history_specs_v1", "governed_projects", "runtime_extensions"}
+V2_INPUT_SCOPES = {"active_specs", "specs_v2", "entry_navigation", "all", "history_specs_v1", "governed_projects", "runtime_extensions"}
 V2_QUERY_LAYERS = {"entry", "neighbors", "expand", "raw"}
 V2_PROJECT_SCOPES = {"current_project", "all_governed_projects", "explicit_projects"}
 class V2Checker(KnowledgeMapMixin):
@@ -104,6 +104,7 @@ class V2Checker(KnowledgeMapMixin):
         relation_types=None,
         depth=1,
         projects=None,
+        task_type=None,
     ):
         self.root = Path(root or PROJECT_ROOT).resolve()
         raw_specs_dir = Path(specs_dir)
@@ -115,6 +116,7 @@ class V2Checker(KnowledgeMapMixin):
         self.relation_types = set(relation_types or [])
         self.depth = max(0, int(depth or 0))
         self.projects = list(projects or [])
+        self.task_type = task_type or "general"
         self.project_namespace = V2_DEFAULT_PROJECT_NAMESPACE
         self.diagnostics = []
         self.review_hints = []
@@ -181,6 +183,7 @@ class V2Checker(KnowledgeMapMixin):
                 "project_scope": self.project_scope,
                 "projects": self.projects,
                 "start_node": self.start_node,
+                "task_type": self.task_type,
                 "relation_types": sorted(self.relation_types),
                 "depth": self.depth,
                 "degraded": self.is_degraded(),
@@ -242,13 +245,13 @@ class V2Checker(KnowledgeMapMixin):
             )
 
     def should_parse_specs_v2(self):
-        return self.input_scope in {"active_specs", "specs_v2", "all"}
+        return self.input_scope in {"active_specs", "specs_v2", "entry_navigation", "all"}
 
     def should_parse_runtime_extensions(self):
-        return self.input_scope in {"runtime_extensions", "all"}
+        return self.input_scope in {"runtime_extensions", "entry_navigation", "all"}
 
     def should_parse_governed_projects(self):
-        return self.input_scope in {"governed_projects", "all"}
+        return self.input_scope in {"governed_projects", "entry_navigation", "all"}
 
     def effective_input_scope(self):
         scopes = []
@@ -727,20 +730,26 @@ def format_text(report):
     diagnostics = report.get("diagnostics", [])
     hints = report.get("review_hints", [])
     docs = report.get("docs", [])
-    nodes = report.get("knowledge_map", {}).get("nodes", [])
-    edges = report.get("knowledge_map", {}).get("edges", [])
-    query = report.get("knowledge_map", {}).get("query", {})
+    knowledge_map = report.get("knowledge_map", {})
+    nodes = knowledge_map.get("nodes", [])
+    edges = knowledge_map.get("edges", [])
+    query = knowledge_map.get("query", {})
     lines = [
         "active specs 规范诊断完成",
         f"- input_scope: {query.get('input_scope')}",
         f"- layer: {query.get('layer')}",
+        f"- task_type: {query.get('task_type')}",
         f"- degraded: {query.get('degraded')}",
         f"- docs: {len(docs)}",
         f"- knowledge_map.nodes: {len(nodes)}",
         f"- knowledge_map.edges: {len(edges)}",
+        f"- read_plan: {len(knowledge_map.get('read_plan', []))}",
+        f"- next_queries: {len(knowledge_map.get('next_queries', []))}",
+        f"- stop_conditions: {len(knowledge_map.get('stop_conditions', []))}",
         f"- diagnostics: {len(diagnostics)}",
         f"- review_hints: {len(hints)}",
     ]
+    lines.extend(format_navigation_text_lines(knowledge_map))
     if diagnostics:
         lines.append("")
         lines.append("Diagnostics:")
@@ -754,21 +763,99 @@ def format_text(report):
     return "\n".join(lines)
 
 
+def format_navigation_text_lines(knowledge_map):
+    lines = []
+    navigation = knowledge_map.get("navigation") or {}
+    read_plan = knowledge_map.get("read_plan") or []
+    next_queries = knowledge_map.get("next_queries") or []
+    stop_conditions = knowledge_map.get("stop_conditions") or []
+    impact_summary = knowledge_map.get("impact_summary") or {}
+
+    lines.append("")
+    lines.append("Navigation:")
+    if navigation:
+        lines.append(
+            f"- task_type={navigation.get('task_type')} start_node={navigation.get('start_node')} "
+            f"resolved_start_node={navigation.get('resolved_start_node')} degraded={navigation.get('degraded')}"
+        )
+        lines.append(f"- summary: {navigation.get('summary')}")
+    else:
+        lines.append("- none")
+
+    lines.append("")
+    lines.append("Read plan:")
+    if read_plan:
+        priority_items = [item for item in read_plan if item.get("priority") in {"P0", "P1"}]
+        other_items = [item for item in read_plan if item.get("priority") not in {"P0", "P1"}]
+        shown = priority_items + other_items[: max(0, 8 - len(priority_items))]
+        for item in shown:
+            lines.append(
+                f"- {item.get('priority')}/{item.get('role')}: {item.get('path')} "
+                f"({item.get('source_relation')}) - {item.get('reason')}"
+            )
+        omitted = len(read_plan) - len(shown)
+        if omitted > 0:
+            lines.append(f"- omitted: {omitted} lower-priority items; use --format json or layer expand for the full plan")
+    else:
+        lines.append("- none")
+
+    lines.append("")
+    lines.append("Next queries:")
+    if next_queries:
+        for item in next_queries[:5]:
+            lines.append(f"- {item.get('purpose')}: {item.get('command')}")
+        omitted = len(next_queries) - min(len(next_queries), 5)
+        if omitted > 0:
+            lines.append(f"- omitted: {omitted} queries; use --format json for the full list")
+    else:
+        lines.append("- none")
+
+    lines.append("")
+    lines.append("Stop conditions:")
+    if stop_conditions:
+        for item in stop_conditions[:5]:
+            lines.append(f"- {item.get('condition')}: {item.get('fallback')}")
+        omitted = len(stop_conditions) - min(len(stop_conditions), 5)
+        if omitted > 0:
+            lines.append(f"- omitted: {omitted} stop conditions; use --format json for the full list")
+    else:
+        lines.append("- none")
+
+    lines.append("")
+    lines.append("Impact summary:")
+    if impact_summary:
+        lines.append(f"- node_type_counts: {impact_summary.get('node_type_counts', {})}")
+        lines.append(f"- relation_type_counts: {impact_summary.get('relation_type_counts', {})}")
+        lines.append(
+            f"- affected: specs={len(impact_summary.get('affected_specs', []))} "
+            f"runtime_extensions={len(impact_summary.get('affected_runtime_extensions', []))} "
+            f"fact_objects={len(impact_summary.get('affected_fact_objects', []))}"
+        )
+    else:
+        lines.append("- none")
+    return lines
+
+
 def format_knowledge_map_text(knowledge_map):
     query = knowledge_map.get("query", {})
     lines = [
         "知识地图只读投影完成",
         f"- input_scope: {knowledge_map.get('input_scope')}",
         f"- layer: {query.get('layer')}",
+        f"- task_type: {query.get('task_type')}",
         f"- project_scope: {query.get('project_scope')}",
         f"- degraded: {knowledge_map.get('degraded')}",
         f"- nodes: {len(knowledge_map.get('nodes', []))}",
         f"- edges: {len(knowledge_map.get('edges', []))}",
+        f"- read_plan: {len(knowledge_map.get('read_plan', []))}",
+        f"- next_queries: {len(knowledge_map.get('next_queries', []))}",
+        f"- stop_conditions: {len(knowledge_map.get('stop_conditions', []))}",
         f"- diagnostics: {len(knowledge_map.get('diagnostics', []))}",
         f"- excluded_inputs: {len(knowledge_map.get('excluded_inputs', []))}",
     ]
     if "raw_content" in knowledge_map:
         lines.append(f"- raw_content: {len(knowledge_map.get('raw_content', []))}")
+    lines.extend(format_navigation_text_lines(knowledge_map))
     return "\n".join(lines)
 
 
@@ -782,6 +869,7 @@ def v2_check_build(
     relation_types=None,
     depth=1,
     projects=None,
+    task_type=None,
 ):
     return V2Checker(
         root or PROJECT_ROOT,
@@ -793,6 +881,7 @@ def v2_check_build(
         relation_types=relation_types,
         depth=depth,
         projects=projects,
+        task_type=task_type,
     ).build()
 
 
@@ -808,6 +897,7 @@ def v2_check_main(
     relation_types=None,
     depth=1,
     projects=None,
+    task_type=None,
 ):
     report = v2_check_build(
         root,
@@ -819,6 +909,7 @@ def v2_check_main(
         relation_types=relation_types,
         depth=depth,
         projects=projects,
+        task_type=task_type,
     )
     if output_format == "json":
         print(json.dumps(report, ensure_ascii=False, indent=2))
@@ -841,6 +932,7 @@ def knowledge_map_main(
     relation_types=None,
     depth=1,
     projects=None,
+    task_type=None,
 ):
     report = v2_check_build(
         root,
@@ -852,6 +944,7 @@ def knowledge_map_main(
         relation_types=relation_types,
         depth=depth,
         projects=projects,
+        task_type=task_type,
     )
     knowledge_map = report.get("knowledge_map", {})
     if output_format == "json":
