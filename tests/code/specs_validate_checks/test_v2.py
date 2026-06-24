@@ -932,7 +932,10 @@ def test_v2_check_reports_degraded_when_governed_projects_config_is_missing(tmp_
     excluded = {item["input"]: item["diagnostic"] for item in report["knowledge_map"]["excluded_inputs"]}
 
     assert report["metadata"]["degraded"] is True
+    assert report["knowledge_map"]["result_status"] == "limited"
+    assert "capability_gap" in report["knowledge_map"]["issue_causes"]
     assert report["knowledge_map"]["query"]["degraded"] is True
+    assert report["knowledge_map"]["legacy_compatibility"]["degraded"]["limited_status"] == "limited"
     assert "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED" in codes
     assert "V2_GOVERNED_PROJECTS_CONFIG_MISSING" in codes
     assert excluded["history_specs_v1"] == "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED"
@@ -1138,7 +1141,16 @@ def test_v2_check_json_and_text_output_shape_are_stable(tmp_path, capsys):
     assert report["knowledge_map"]["generated_at"] == report["metadata"]["generated_at"]
     assert report["knowledge_map"]["tool"] == report["metadata"]["tool"]
     assert report["knowledge_map"]["input_scope"] == "active_specs"
+    assert report["knowledge_map"]["result_status"] == "ok"
+    assert report["knowledge_map"]["issue_causes"] == []
     assert report["knowledge_map"]["degraded"] is False
+    assert report["knowledge_map"]["legacy_compatibility"]["degraded"]["status"] == "legacy_compatibility"
+    assert report["knowledge_map"]["legacy_compatibility"]["degraded"]["replacement_fields"] == [
+        "result_status",
+        "issue_causes",
+        "suggested_action",
+        "diagnostics",
+    ]
     assert report["knowledge_map"]["diagnostics"] == []
     assert report["knowledge_map"]["source_refs"]
     assert report["knowledge_map"]["query"]["layer"] == "entry"
@@ -1171,7 +1183,9 @@ def test_v2_check_json_and_text_output_shape_are_stable(tmp_path, capsys):
     assert "Stop conditions:" in text_output
     assert "Impact summary:" in text_output
     assert "suggested_sections:" in text_output
-    assert "- degraded: False" in text_output
+    assert "- result_status: ok" in text_output
+    assert "- issue_causes: []" in text_output
+    assert "- legacy_degraded: False" in text_output
     assert "- diagnostics: 0" in text_output
 
 
@@ -1496,6 +1510,8 @@ def test_v2_check_neighbors_without_start_node_falls_back_to_entry(tmp_path):
     node_types = {node["type"] for node in report["knowledge_map"]["nodes"]}
 
     assert report["metadata"]["degraded"] is True
+    assert report["knowledge_map"]["result_status"] == "limited"
+    assert "input_issue" in report["knowledge_map"]["issue_causes"]
     assert "V2_QUERY_START_NODE_MISSING" in codes
     assert "section" not in node_types
     assert "code_consumption_category" not in node_types
@@ -1509,6 +1525,8 @@ def test_v2_check_neighbors_unknown_start_node_falls_back_to_entry(tmp_path):
     node_ids = {node["id"] for node in report["knowledge_map"]["nodes"]}
 
     assert report["metadata"]["degraded"] is True
+    assert report["knowledge_map"]["result_status"] == "limited"
+    assert "input_issue" in report["knowledge_map"]["issue_causes"]
     assert "V2_QUERY_START_NODE_NOT_FOUND" in codes
     assert "specs-v2/00-LDVH理念与价值标准.md" in node_ids
     assert "specs-v2/01-规范体系基础规范.md" in node_ids
@@ -1524,6 +1542,8 @@ def test_v2_check_invalid_query_options_return_diagnostics_without_parsing_specs
     codes = {item["code"] for item in report["diagnostics"]}
 
     assert report["metadata"]["degraded"] is True
+    assert report["knowledge_map"]["result_status"] == "limited"
+    assert "input_issue" in report["knowledge_map"]["issue_causes"]
     assert report["metadata"]["effective_input_scope"] == []
     assert report["docs"] == []
     assert report["knowledge_map"]["nodes"] == []

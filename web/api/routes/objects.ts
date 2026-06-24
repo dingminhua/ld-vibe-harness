@@ -66,6 +66,7 @@ const STATUS_PRIORITY: Record<string, number> = {
   needs_human_gate: 10,
   verifying: 11,
   open: 12,
+  // Legacy backend status; Human-facing labels render this as a limited/risk state.
   degraded: 13,
   suspended: 14,
   proposed: 15,

@@ -30,7 +30,7 @@ def _fast_preflight_main(argv):
     parser.add_argument("--root", default=str(_project_root_fast()), help="项目根目录，默认使用当前工具所在项目。")
     parser.add_argument("--target-path", required=True, help="准备写入的目标路径，可为相对或绝对路径。")
     parser.add_argument("--operation", choices=["create", "update", "delete", "move", "rename"], default="update", help="准备执行的写入类型，默认 update。")
-    parser.add_argument("--field-path", default=None, help="可选字段路径；第一版仅暴露降级诊断，不做字段级 Schema 校验。")
+    parser.add_argument("--field-path", default=None, help="可选字段路径；第一版仅暴露输出受限诊断，不做字段级 Schema 校验。")
     parser.add_argument("--status", default=None, help="可选状态值；第一版仅提示回到对应状态规则。")
     parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
     args = parser.parse_args(argv)
@@ -1455,7 +1455,7 @@ def build_parser():
     preflight_parser.add_argument("--root", default=str(PROJECT_ROOT), help="项目根目录，默认使用当前工具所在项目。")
     preflight_parser.add_argument("--target-path", required=True, help="准备写入的目标路径，可为相对或绝对路径。")
     preflight_parser.add_argument("--operation", choices=["create", "update", "delete", "move", "rename"], default="update", help="准备执行的写入类型，默认 update。")
-    preflight_parser.add_argument("--field-path", default=None, help="可选字段路径；第一版仅暴露降级诊断，不做字段级 Schema 校验。")
+    preflight_parser.add_argument("--field-path", default=None, help="可选字段路径；第一版仅暴露输出受限诊断，不做字段级 Schema 校验。")
     preflight_parser.add_argument("--status", default=None, help="可选状态值；第一版仅提示回到对应状态规则。")
     preflight_parser.add_argument("--format", choices=["text", "json"], default="text", help="报告输出格式，默认 text。")
 

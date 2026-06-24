@@ -868,7 +868,9 @@ def format_text(report):
         f"- input_scope: {query.get('input_scope')}",
         f"- layer: {query.get('layer')}",
         f"- task_type: {query.get('task_type')}",
-        f"- degraded: {query.get('degraded')}",
+        f"- result_status: {query.get('result_status')}",
+        f"- issue_causes: {query.get('issue_causes') or []}",
+        f"- legacy_degraded: {query.get('degraded')}",
         f"- docs: {len(docs)}",
         f"- knowledge_map.nodes: {len(nodes)}",
         f"- knowledge_map.edges: {len(edges)}",
@@ -905,7 +907,7 @@ def format_navigation_text_lines(knowledge_map):
     if navigation:
         lines.append(
             f"- task_type={navigation.get('task_type')} start_node={navigation.get('start_node')} "
-            f"resolved_start_node={navigation.get('resolved_start_node')} degraded={navigation.get('degraded')}"
+            f"resolved_start_node={navigation.get('resolved_start_node')} result_status={navigation.get('result_status')}"
         )
         lines.append(f"- summary: {navigation.get('summary')}")
     else:
@@ -978,7 +980,9 @@ def format_knowledge_map_text(knowledge_map):
         f"- layer: {query.get('layer')}",
         f"- task_type: {query.get('task_type')}",
         f"- project_scope: {query.get('project_scope')}",
-        f"- degraded: {knowledge_map.get('degraded')}",
+        f"- result_status: {knowledge_map.get('result_status')}",
+        f"- issue_causes: {knowledge_map.get('issue_causes') or []}",
+        f"- legacy_degraded: {knowledge_map.get('degraded')}",
         f"- nodes: {len(knowledge_map.get('nodes', []))}",
         f"- edges: {len(knowledge_map.get('edges', []))}",
         f"- read_plan: {len(knowledge_map.get('read_plan', []))}",

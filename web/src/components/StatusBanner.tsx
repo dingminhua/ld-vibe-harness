@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { ShieldCheck, ShieldAlert, AlertCircle } from 'lucide-react';
 
 interface StatusBannerProps {
+  // `degraded` remains a legacy compatibility input; callers should prefer concrete open/limited causes.
   status: 'closed' | 'degraded' | 'open' | 'needs_human_gate';
   title: string;
   description?: string;

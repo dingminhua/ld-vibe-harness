@@ -1421,6 +1421,47 @@ def test_current_closed_workcase_contract_validates(tmp_path):
     assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
 
 
+def test_legacy_degraded_accepted_closure_outcome_warns(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="closed")
+    add_current_review_contract(workcase, closure_outcome="degraded_accepted")
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8").replace(
+            """    review_items: []
+    controller_resolution:
+      resolved_at: "2026-06-12T00:50:00"
+""",
+            """    review_items:
+      - id: result-review-1
+        role: fixture-review
+        agent_name: independent-reviewer
+        requested_at: "2026-06-12T00:46:00"
+        result:
+          status: pass
+          summary: Fixture result review passed.
+          key_findings:
+            - 未发现范围内问题。
+          required_changes: []
+          evidence_refs:
+            - tests/code/test_fact_validate.py
+        attested_at: "2026-06-12T00:48:00"
+        attestation:
+          signer: independent-reviewer
+          statement: Checked fixture result review.
+    controller_resolution:
+      resolved_at: "2026-06-12T00:50:00"
+""",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(workcase)
+
+    assert result.returncode == 0
+    assert "LEGACY_WORKCASE_CLOSURE_OUTCOME" in result.stdout
+    assert "warnings=1" in result.stdout
+
+
 def test_workcase_review_item_warns_when_self_signed_by_controller(tmp_path):
     _, workcase = write_valid_workcase_tree(tmp_path, status="human_plan_confirming")
     add_current_review_contract(workcase)

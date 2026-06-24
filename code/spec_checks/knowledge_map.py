@@ -267,12 +267,18 @@ class KnowledgeMapMixin:
         stop_conditions = self.build_stop_conditions(read_plan, resolved_start_id)
         impact_summary = self.build_impact_summary(projected_nodes, selected_edges, edges)
         source_refs = self.knowledge_map_source_refs(projected_nodes, selected_edges)
+        issue_causes = self.issue_causes()
+        suggested_action = self.suggested_action(issue_causes, resolved_start_id)
         projection = {
             "schema_version": V2_KNOWLEDGE_MAP_SCHEMA_VERSION,
             "generated_at": generated_at,
             "tool": V2_KNOWLEDGE_MAP_TOOL,
             "input_scope": self.input_scope,
+            "result_status": self.result_status(),
+            "issue_causes": issue_causes,
+            "suggested_action": suggested_action,
             "degraded": self.is_degraded(),
+            "legacy_compatibility": self.legacy_compatibility(issue_causes, suggested_action),
             "diagnostics": list(self.diagnostics),
             "source_refs": source_refs,
             "query": {
@@ -286,6 +292,8 @@ class KnowledgeMapMixin:
                 "task_type": self.task_type,
                 "relation_types": sorted(self.relation_types),
                 "depth": self.depth,
+                "result_status": self.result_status(),
+                "issue_causes": issue_causes,
                 "degraded": self.is_degraded(),
             },
             "navigation": self.build_navigation(resolved_start_id, read_plan),
@@ -317,9 +325,67 @@ class KnowledgeMapMixin:
             "effective_input_scope": self.effective_input_scope(),
             "layer": self.query_layer,
             "project_scope": self.project_scope,
+            "result_status": self.result_status(),
+            "issue_causes": self.issue_causes(),
             "degraded": self.is_degraded(),
             "summary": summary,
             "read_plan_count": len(read_plan),
+        }
+
+    def result_status(self):
+        return "limited" if self.is_degraded() else "ok"
+
+    def issue_causes(self):
+        causes = []
+        for diagnostic in self.diagnostics:
+            code = diagnostic.get("code", "")
+            if "INVALID" in code or "MISSING" in code or "START_NODE" in code:
+                cause = "input_issue"
+            elif "NOT_IMPLEMENTED" in code or "CONFIG_MISSING" in code:
+                cause = "capability_gap"
+            elif "SOURCE" in code or "REF" in code:
+                cause = "evidence_gap"
+            else:
+                cause = "limited_output"
+            if cause not in causes:
+                causes.append(cause)
+        return causes
+
+    def suggested_action(self, issue_causes, resolved_start_id):
+        if not self.is_degraded():
+            return {
+                "owner": "caller",
+                "action": "consume_read_plan",
+                "followup_ref": None,
+                "description": "当前知识地图投影可作为只读导航输入；仍不得替代权威事实源。",
+            }
+        if "input_issue" in issue_causes:
+            action = "补充 input_scope、query layer、project_scope 或 start_node 后重试；当前任务可先回读权威事实源。"
+        elif "capability_gap" in issue_causes:
+            action = "记录 Code 覆盖缺口，优先回读 active specs、Rules 入口、工作对象和 Git 文件事实源。"
+        elif "evidence_gap" in issue_causes:
+            action = "补充来源回指或原文核对；不得把当前输出当作完整影响判断。"
+        else:
+            action = "说明输出受限原因，完成当前可判断部分，并把剩余缺口分流到 Spark 或 WorkCase。"
+        return {
+            "owner": "code_or_task_controller",
+            "action": "resolve_issue_or_fallback_to_fact_sources",
+            "followup_ref": "Spark/WorkCase as appropriate",
+            "description": action,
+            "resolved_start_node": resolved_start_id,
+        }
+
+    def legacy_compatibility(self, issue_causes, suggested_action):
+        return {
+            "degraded": {
+                "value": self.is_degraded(),
+                "status": "legacy_compatibility",
+                "replacement_fields": ["result_status", "issue_causes", "suggested_action", "diagnostics"],
+                "reason": "旧调用方仍消费 degraded 布尔值；active 口径改用输出受限状态、具体问题原因和后续动作。",
+                "limited_status": self.result_status(),
+                "issue_causes": issue_causes,
+                "followup_ref": suggested_action.get("followup_ref"),
+            }
         }
 
     def build_read_plan(self, nodes, edges, resolved_start_id):
@@ -569,9 +635,9 @@ class KnowledgeMapMixin:
         if self.is_degraded():
             conditions.append(
                 {
-                    "condition": "knowledge_map_degraded",
-                    "reason": "知识地图查询已降级；不得把当前输出当作完整定位或影响判断。",
-                    "fallback": "说明降级诊断，退回 active specs、Rules 入口、事实对象和 Git 文件事实源原文核对。",
+                    "condition": "knowledge_map_output_limited",
+                    "reason": "知识地图查询输出受限；不得把当前输出当作完整定位或影响判断。",
+                    "fallback": "说明具体问题原因，退回 active specs、Rules 入口、事实对象和 Git 文件事实源原文核对。",
                     "source_refs": self.diagnostic_source_refs(),
                 }
             )
@@ -607,8 +673,8 @@ class KnowledgeMapMixin:
             conditions.append(
                 self.task_stop_condition(
                     "rules_sync_review_human_gate",
-                    "任务涉及 Rules 入口同步审查；高影响入口边界、长期降级、冲突或自动同步判断必须进入 Human Gate。",
-                    "按 active 30 回读同步审查流程、Human Gate 和降级路径，不得用知识地图输出自动批准 Rules 修改。",
+                    "任务涉及 Rules 入口同步审查；高影响入口边界、长期风险接受、冲突或自动同步判断必须进入 Human Gate。",
+                    "按 active 30 回读同步审查流程、Human Gate 和问题分流路径，不得用知识地图输出自动批准 Rules 修改。",
                     "specs/30-rules-entry-sync-review-Rules入口同步审查.md",
                     "Human Gate",
                     path_to_plan.get("specs/30-rules-entry-sync-review-Rules入口同步审查.md"),
@@ -621,7 +687,7 @@ class KnowledgeMapMixin:
             conditions.append(
                 self.task_stop_condition(
                     "code_human_gate",
-                    "任务涉及 Code 知识地图或确定性执行边界；改变事实源、Gate、Git 判断、长期降级或输出持久化口径时必须暂停。",
+                    "任务涉及 Code 知识地图或确定性执行边界；改变事实源、Gate、Git 判断、长期风险接受或输出持久化口径时必须暂停。",
                     "回读 specs/04-Code确定性执行规范.md 的 Code Human Gate；只把知识地图输出作为实时只读投影。",
                     "specs/04-Code确定性执行规范.md",
                     "Human Gate",
@@ -633,7 +699,7 @@ class KnowledgeMapMixin:
                 {
                     "condition": "start_node_not_in_read_plan",
                     "reason": "读取计划中没有命中用户给定起点；继续判断前必须重新选择 start_node 或扩大输入范围。",
-                    "fallback": "优先尝试 --input-scope entry_navigation；仍失败时回到文件事实源和人工降级检查。",
+                    "fallback": "优先尝试 --input-scope entry_navigation；仍失败时回到文件事实源和临时核对动作。",
                     "source_refs": self.diagnostic_source_refs(),
                 }
             )

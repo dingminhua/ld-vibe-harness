@@ -75,7 +75,9 @@ WORKCASE_CURRENT_STATUSES = {
     "human_closure_confirming",
     "closed",
 }
-WORKCASE_CLOSURE_OUTCOMES = {"completed", "partial_completed", "cancelled", "superseded", "invalid", "degraded_accepted"}
+WORKCASE_CURRENT_CLOSURE_OUTCOMES = {"completed", "partial_completed", "cancelled", "superseded", "invalid"}
+WORKCASE_LEGACY_CLOSURE_OUTCOMES = {"degraded_accepted"}
+WORKCASE_CLOSURE_OUTCOMES = WORKCASE_CURRENT_CLOSURE_OUTCOMES | WORKCASE_LEGACY_CLOSURE_OUTCOMES
 
 VALID_STATUSES = {
     "workcase": WORKCASE_CURRENT_STATUSES | WORKCASE_LEGACY_STATUSES,

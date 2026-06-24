@@ -52,7 +52,9 @@ WORKCASE_STATUSES_REQUIRING_PLAN_CONFIRMATION = {
 WORKCASE_STATUSES_REQUIRING_RESULT_SELF_CHECK = {"subagents_result_reviewing", "human_closure_confirming", "closed"}
 WORKCASE_STATUSES_REQUIRING_CLOSURE_REQUEST = {"human_closure_confirming", "closed"}
 WORKCASE_STATUSES_WITH_CLOSED_EXECUTION = {"result_self_checking", "subagents_result_reviewing", "human_closure_confirming", "closed", "review_needed"}
-WORKCASE_CLOSURE_OUTCOMES = {"completed", "partial_completed", "cancelled", "superseded", "invalid", "degraded_accepted"}
+WORKCASE_CURRENT_CLOSURE_OUTCOMES = {"completed", "partial_completed", "cancelled", "superseded", "invalid"}
+WORKCASE_LEGACY_CLOSURE_OUTCOMES = {"degraded_accepted"}
+WORKCASE_CLOSURE_OUTCOMES = WORKCASE_CURRENT_CLOSURE_OUTCOMES | WORKCASE_LEGACY_CLOSURE_OUTCOMES
 WORKCASE_CONTROLLER_REVIEW_AGENT_NAMES = {
     "codex-main-controller",
     "codex_main_controller",
@@ -711,6 +713,14 @@ def validate_workcase(path: Path, data: dict[str, Any]) -> list[Issue]:
     if not is_empty(data.get("closure_outcome")) and data.get("closure_outcome") not in WORKCASE_CLOSURE_OUTCOMES:
         valid_outcomes = ", ".join(sorted(WORKCASE_CLOSURE_OUTCOMES))
         issues.append(Issue(str(path), "error", "INVALID_WORKCASE_CLOSURE_OUTCOME", f"closure_outcome 必须是以下值之一: {valid_outcomes}", field="closure_outcome"))
+    if data.get("closure_outcome") in WORKCASE_LEGACY_CLOSURE_OUTCOMES:
+        issues.append(Issue(
+            str(path),
+            "warning",
+            "LEGACY_WORKCASE_CLOSURE_OUTCOME",
+            "degraded_accepted 仅为历史兼容关闭结果；新 WorkCase 应使用 cancelled、partial_completed，或通过 Human Gate + ADR 记录长期风险接受",
+            field="closure_outcome",
+        ))
     for legacy_field in ("tasks", "completion_evidence"):
         if legacy_field in data:
             issues.append(Issue(str(path), "error", "LEGACY_WORKCASE_FIELD", f"WorkCase 不得继续使用旧字段: {legacy_field}", field=legacy_field))
@@ -852,7 +862,7 @@ def validate_workcase(path: Path, data: dict[str, Any]) -> list[Issue]:
                 str(path),
                 "error",
                 "UNRESOLVED_PLAN_ITEMS_AFTER_CONFIRMATION",
-                "executing 及后续状态不得在 plan_review.controller_resolution.unresolved_items 中保留行动前未确认事项；必须由 Human 确认覆盖、改入执行范围、降级为后续事项或退回重审",
+                "executing 及后续状态不得在 plan_review.controller_resolution.unresolved_items 中保留行动前未确认事项；必须由 Human 确认覆盖、改入执行范围、改为后续事项或退回重审",
                 field="orchestration.plan_review.controller_resolution.unresolved_items",
             ))
 

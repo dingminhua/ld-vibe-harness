@@ -451,7 +451,7 @@ def preflight_build(root=None, target_path=None, operation="update", field_path=
             diagnostic(
                 "PREFLIGHT_FAILURE_OWNER_IDENTIFIED",
                 "info",
-                f"检查失败或降级时回到 {sync_owner}",
+                f"检查失败或输出受限时回到 {sync_owner}",
                 relative_path,
                 sync_owner,
                 "failure_owner",
