@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { listObjects, showObject } from '../../../web/api/services/facts.ts'
 import { buildWorkCaseSummaries, type ListedObject } from '../../../web/api/routes/objects.ts'
 import { isObjectRef, isPreviewablePathForField } from '../../../web/src/utils/fieldFormats.ts'
@@ -7,6 +10,43 @@ import { getFallbackStatuses } from '../../../web/src/components/ObjectStatusFil
 import { formatDateTime } from '../../../web/src/utils/dateFormat.ts'
 import { getDefaultListStatus } from '../../../web/src/utils/listStatus.ts'
 import { WORKCASE_DEFAULT_LIST_STATUS, WORKCASE_STATUS_ORDER } from '../../../web/src/utils/workcaseStatus.ts'
+
+function createPitfallFixtureRoot() {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ldvh-pitfall-fixture-'))
+  const pitfallsDir = path.join(root, 'ldvh-base', 'pitfalls')
+  fs.mkdirSync(pitfallsDir, { recursive: true })
+  fs.writeFileSync(
+    path.join(pitfallsDir, 'pitfall-0001-api-contract.yaml'),
+    [
+      'id: pitfall-0001',
+      'type: pitfall',
+      'title: API contract fixture',
+      'status: active',
+      "created: '2026-06-25T03:40:00+08:00'",
+      "updated: '2026-06-25T03:40:00+08:00'",
+      'resolution: Keep fixture data out of the repository fact source.',
+      'source_sparks: []',
+      '',
+    ].join('\n'),
+  )
+  fs.writeFileSync(
+    path.join(pitfallsDir, 'pitfall-0002-archived-contract.yaml'),
+    [
+      'id: pitfall-0002',
+      'type: pitfall',
+      'title: Archived API contract fixture',
+      'status: archived',
+      "created: '2026-06-25T03:41:00+08:00'",
+      "updated: '2026-06-25T03:41:00+08:00'",
+      'archive_reason: Covered by a stronger fixture.',
+      'resolution: Keep archived filtering explicit.',
+      'source_sparks: []',
+      '',
+    ].join('\n'),
+  )
+
+  return root
+}
 
 async function main() {
   const workcases = await listObjects('workcase')
@@ -22,16 +62,32 @@ async function main() {
 
   const pitfalls = await listObjects('pitfall')
   assert.equal(pitfalls.ok, true)
-  assert.ok(Array.isArray(pitfalls.data.items))
-  const firstPitfall = pitfalls.data.items[0] as Record<string, unknown>
-  assert.equal(firstPitfall.type, 'pitfall')
-  assert.equal('repeatability' in firstPitfall, false)
-  assert.deepEqual(getObjectSignals(firstPitfall, 'pitfall'), [])
+  assert.deepEqual(pitfalls.summary, { count: 0 })
+  assert.deepEqual(pitfalls.data.items, [])
   const archivedPitfalls = await listObjects('pitfall', undefined, 'archived')
   assert.equal(archivedPitfalls.ok, true)
-  const archivedPitfall = (archivedPitfalls.data.items as Array<Record<string, unknown>>)[0]
-  assert.equal(typeof archivedPitfall.archive_reason, 'string')
-  assert.ok(String(archivedPitfall.archive_reason).trim().length > 0)
+  assert.deepEqual(archivedPitfalls.summary, { count: 0 })
+  assert.deepEqual(archivedPitfalls.data.items, [])
+
+  const pitfallFixtureRoot = createPitfallFixtureRoot()
+  try {
+    const fixturePitfalls = await listObjects('pitfall', pitfallFixtureRoot)
+    assert.equal(fixturePitfalls.ok, true)
+    assert.equal(fixturePitfalls.summary.count, 2)
+    assert.ok(Array.isArray(fixturePitfalls.data.items))
+    const firstPitfall = fixturePitfalls.data.items[0] as Record<string, unknown>
+    assert.equal(firstPitfall.type, 'pitfall')
+    assert.equal('repeatability' in firstPitfall, false)
+    assert.deepEqual(getObjectSignals(firstPitfall, 'pitfall'), [])
+    const fixtureArchivedPitfalls = await listObjects('pitfall', pitfallFixtureRoot, 'archived')
+    assert.equal(fixtureArchivedPitfalls.ok, true)
+    assert.equal(fixtureArchivedPitfalls.summary.count, 1)
+    const archivedPitfall = (fixtureArchivedPitfalls.data.items as Array<Record<string, unknown>>)[0]
+    assert.equal(typeof archivedPitfall.archive_reason, 'string')
+    assert.ok(String(archivedPitfall.archive_reason).trim().length > 0)
+  } finally {
+    fs.rmSync(pitfallFixtureRoot, { recursive: true, force: true })
+  }
 
   const detail = await showObject(String(firstWorkCase.id))
   assert.equal(detail.ok, true)
@@ -77,9 +133,9 @@ async function main() {
     'result_self_checking',
     'subagents_result_reviewing',
     'human_closure_confirming',
-    'draft',
+    'closed',
   ])
-  assert.equal(getFallbackStatuses('workcase', 'draft').includes('draft'), true)
+  assert.equal(getFallbackStatuses('workcase', 'closed').includes('closed'), true)
   assert.equal(getFallbackStatuses('workcase', WORKCASE_DEFAULT_LIST_STATUS).includes('human_closure_confirming'), true)
 
   const studies = await listObjects('study')
