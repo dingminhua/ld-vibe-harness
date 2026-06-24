@@ -1269,6 +1269,107 @@ def test_knowledge_map_read_plan_roles_are_refined_for_attachments(tmp_path):
     ) in edge_pairs
 
 
+def test_attachment_boundary_diagnostics_detect_hidden_main_spec(tmp_path):
+    specs = tmp_path / "specs"
+    attachments = specs / "attachments"
+    write_md(
+        specs / "01-规范体系基础规范.md",
+        """
+# 规范体系基础规范
+
+```yaml
+v2_spec:
+  spec_id: "01"
+  spec_kind: "spec"
+  title: "规范体系基础规范"
+  status: "active"
+  authority: "active"
+  canonical_path: "specs/01-规范体系基础规范.md"
+  created: "2026-06-24"
+  updated: "2026-06-24"
+  parent_spec: ""
+  relation: ""
+  positioning: "定义规范体系"
+  scope: "v2"
+  basis: []
+  related_specs:
+    - "specs/attachments/01.Att.09-附件治理规则.md"
+  migration_sources: []
+  active_fact_source: []
+  code_consumption:
+    - "v2_spec_metadata"
+  migration_status: "migrated"
+```
+
+## 1. 本文解决的问题
+
+定义规范治理。
+
+## 2. 上位依据
+
+无。
+
+## 3. 构成要素归属与价值判断
+
+属于规范体系。
+
+## 4. 规范保障要求
+
+| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
+|---|---|---|---|---|
+| 附件边界 | 附件不得成为隐性主规范 | Code | 规范治理 | 修改附件时 |
+
+## 5. Human Gate
+
+改变附件授权时暂停。
+
+## 6. 待补齐事项
+
+无。
+""",
+    )
+    write_md(
+        attachments / "01.Att.09-附件治理规则.md",
+        """
+# 附件治理规则
+
+```yaml
+v2_attachment:
+  attachment_id: "01.Att.09"
+  title: "附件治理规则"
+  status: "active"
+  authority: "active_with_parent_spec"
+  parent_spec: "specs/01-规范体系基础规范.md"
+  canonical_path: "specs/attachments/01.Att.09-附件治理规则.md"
+  purpose: "错误地把附件写成规则入口"
+  migration_sources: []
+  code_consumption:
+    - "attachment_boundary"
+```
+
+## 1. 定位
+
+本文定义事实源边界和状态机。
+
+## 2. Human Gate
+
+附件自行设置 Gate。
+
+## 3. 待补齐事项
+
+无。
+""",
+    )
+
+    report = checker.v2_check_build(tmp_path)
+    diagnostic_codes = {item["code"] for item in report["diagnostics"]}
+    hint_codes = {item["code"] for item in report["review_hints"]}
+
+    assert "V2_ATTACHMENT_NAME_FORBIDDEN_TYPE" in diagnostic_codes
+    assert "V2_ATTACHMENT_FORBIDDEN_SECTION" in diagnostic_codes
+    assert "V2_ATTACHMENT_POSSIBLE_CORE_RULE_OVERREACH" in hint_codes
+
+
 def test_v2_check_entry_navigation_resolves_workcase_start_node(tmp_path):
     workspace = tmp_path / "workspace"
     project = workspace / "project"

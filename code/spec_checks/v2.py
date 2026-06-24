@@ -73,6 +73,53 @@ V2_ATTACHMENT_AUTHORITY_VALUES = {
     "deprecated_by",
 }
 V2_ATTACHMENT_FORBIDDEN_SECTION_TITLES = {"AI 检查要求", "Human Gate", "Code 消费要求"}
+V2_ATTACHMENT_FORBIDDEN_NAME_TAILS = ("规则", "规范", "机制", "治理")
+V2_ATTACHMENT_BROAD_NAME_TERMS = ("附录", "补充说明", "综合表", "治理清单")
+V2_ATTACHMENT_CORE_SECTION_TERMS = (
+    "核心原则",
+    "权威域",
+    "状态机",
+    "字段存在性",
+    "流程 Gate",
+    "资产登记机制",
+    "事实源边界",
+    "保障声明原则",
+    "接管责任",
+)
+V2_ATTACHMENT_OVERREACH_TERMS = V2_ATTACHMENT_CORE_SECTION_TERMS + (
+    "Human Gate",
+    "Code 输出 Schema",
+    "诊断字段",
+    "命令入口",
+    "覆盖要求",
+    "降级方式",
+)
+V2_ATTACHMENT_BOUNDARY_MARKERS = (
+    "不得",
+    "不定义",
+    "不承载",
+    "不改变",
+    "不替代",
+    "不直接",
+    "未定义",
+    "未承载",
+    "未改变",
+    "不能",
+    "只维护",
+    "只说明",
+    "只承载",
+    "只能",
+    "仅",
+    "辅助",
+    "仍归",
+    "仍由",
+    "回到",
+)
+V2_ATTACHMENT_OVERREACH_ASSERTION_RE = re.compile(
+    r"(本文|本附件).{0,12}(定义|承接|负责|设置|要求|必须|应当|应|可以).{0,80}("
+    + "|".join(re.escape(term) for term in V2_ATTACHMENT_OVERREACH_TERMS)
+    + r")"
+)
 
 V2_REQUIRED_SPEC_SECTIONS = {
     "本文解决的问题",
@@ -428,6 +475,7 @@ class V2Checker(KnowledgeMapMixin):
         forbidden = sorted(section_titles & V2_ATTACHMENT_FORBIDDEN_SECTION_TITLES)
         for title in forbidden:
             self.diagnostics.append(self.diagnostic(rel_path, 1, "error", "V2_ATTACHMENT_FORBIDDEN_SECTION", f"附件不得设置独立章节: {title}"))
+        self.validate_attachment_boundary(doc)
 
         for field in ("migration_sources",):
             for target in attachment.get(field) or []:
@@ -436,6 +484,87 @@ class V2Checker(KnowledgeMapMixin):
         for category in attachment.get("code_consumption") or []:
             if not isinstance(category, str) or not category.strip():
                 self.diagnostics.append(self.diagnostic(rel_path, line, "error", "V2_ATTACHMENT_CODE_CONSUMPTION_INVALID", "v2_attachment code_consumption 每项必须是非空字符串"))
+
+    def validate_attachment_boundary(self, doc):
+        rel_path = doc["path"]
+        name = self.attachment_name_from_path(rel_path) or doc.get("title") or ""
+        title = doc.get("title") or ""
+        line = doc.get("title_line") or 1
+
+        for broad_name in V2_ATTACHMENT_BROAD_NAME_TERMS:
+            if broad_name in name:
+                self.diagnostics.append(
+                    self.diagnostic(
+                        rel_path,
+                        line,
+                        "error",
+                        "V2_ATTACHMENT_BROAD_NAME_FORBIDDEN",
+                        f"附件名称不得使用宽泛名称包装多个对象: {broad_name}",
+                    )
+                )
+        for tail in V2_ATTACHMENT_FORBIDDEN_NAME_TAILS:
+            if name.endswith(tail):
+                self.diagnostics.append(
+                    self.diagnostic(
+                        rel_path,
+                        line,
+                        "error",
+                        "V2_ATTACHMENT_NAME_FORBIDDEN_TYPE",
+                        f"附件名称不得以 {tail} 作为承载类型",
+                    )
+                )
+
+        is_template_attachment = title.endswith("模板") or name.endswith("模板")
+        for section in doc["sections"]:
+            if section["level"] != 2:
+                continue
+            section_title = section["title_normalized"]
+            if is_template_attachment:
+                continue
+            matched_term = next((term for term in V2_ATTACHMENT_CORE_SECTION_TERMS if term in section_title), None)
+            if matched_term:
+                self.review_hints.append(
+                    self.diagnostic(
+                        rel_path,
+                        section["line"],
+                        "info",
+                        "V2_ATTACHMENT_CORE_SECTION_REVIEW",
+                        f"附件章节包含需要主规范确认的核心边界词: {matched_term}",
+                    )
+                )
+
+        self.add_attachment_overreach_assertion_hints(doc)
+
+    def attachment_name_from_path(self, rel_path):
+        match = V2_ATTACHMENT_RE.match(Path(rel_path).name)
+        return match.group(3) if match else ""
+
+    def add_attachment_overreach_assertion_hints(self, doc):
+        in_fence = False
+        for index, raw_line in enumerate(doc["text"].splitlines(), start=1):
+            stripped = raw_line.strip()
+            if stripped.startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence or not stripped:
+                continue
+            if self.attachment_line_has_boundary_marker(stripped):
+                continue
+            match = V2_ATTACHMENT_OVERREACH_ASSERTION_RE.search(stripped)
+            if not match:
+                continue
+            self.review_hints.append(
+                self.diagnostic(
+                    doc["path"],
+                    index,
+                    "info",
+                    "V2_ATTACHMENT_POSSIBLE_CORE_RULE_OVERREACH",
+                    f"附件正文疑似定义主规范边界内容，应回到父规范正文确认: {match.group(3)}",
+                )
+            )
+
+    def attachment_line_has_boundary_marker(self, line):
+        return any(marker in line for marker in V2_ATTACHMENT_BOUNDARY_MARKERS)
 
     def validate_member_doc(self, doc):
         rel_path = doc["path"]
