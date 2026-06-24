@@ -16,7 +16,7 @@ OFFICIAL_ENVIRONMENT_TARGET = "Codex App"
 RESPONSIBILITY_BY_TYPE = {
     "rule": {
         "capability_owner": "LDVH maintainer",
-        "sync_scope": "入口路由、最小读取、STOP 点、工具入口、交接、验证和降级提示",
+        "sync_scope": "入口路由、最小读取、STOP 点、工具入口、交接、验证和问题原因提示",
         "environment_role": "环境入口只做薄引用，指向 Rules 资产，不复制正文",
     },
     "skill": {
@@ -26,7 +26,7 @@ RESPONSIBILITY_BY_TYPE = {
     },
     "hook": {
         "capability_owner": "LDVH maintainer",
-        "sync_scope": "Hook 事件、参数、阻断语义、底层 Code validator 和降级检查",
+        "sync_scope": "Hook 事件、参数、阻断语义、底层 Code validator 和受限检查",
         "environment_role": "环境可接入 Hook 调用；未实装时退回等价手动命令",
     },
     "agent": {
@@ -116,7 +116,7 @@ def _asset_contract_diagnostics(root, records):
                     "CAPABILITY_ENVIRONMENT_DEPLOYMENT_ENTRY_VERIFICATION_MISSING",
                     "固定能力资产 verification 未包含 deployment-entries，登记一致性未进入自身验证链",
                     severity="warning",
-                    status="degraded",
+                    status="limited",
                 )
             )
     return diagnostics
@@ -191,8 +191,8 @@ def capability_environment_report_build(root=None):
         )
 
     status = "open" if any(item["status"] == "open" for item in diagnostics) else "closed"
-    if status == "closed" and any(item["status"] == "degraded" for item in diagnostics):
-        status = "degraded"
+    if status == "closed" and any(item["status"] == "limited" for item in diagnostics):
+        status = "limited"
 
     return {
         "metadata": {

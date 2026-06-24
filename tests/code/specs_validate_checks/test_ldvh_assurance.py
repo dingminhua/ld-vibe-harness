@@ -112,7 +112,7 @@ def test_ldvh_assurance_check_consumes_existing_reports(tmp_path, monkeypatch):
     assert report["summary"]["bootstrap_baseline_open_item_count"] >= 1
     assert next(item for item in report["checks"] if item["id"] == "governed_projects")["status"] == "closed"
     assert next(item for item in report["checks"] if item["id"] == "fact_validate")["status"] == "closed"
-    assert any(item["id"] == "human_gate" and item["status"] == "degraded" for item in report["remaining_gaps"])
+    assert any(item["id"] == "human_gate" and item["status"] == "evidence_gap" for item in report["remaining_gaps"])
     baseline = report["bootstrap_baseline"]
     assert [item["id"] for item in baseline["definitions"]] == [
         "specs_integrity",

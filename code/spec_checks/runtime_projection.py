@@ -17,8 +17,8 @@ RUNTIME_PROJECTION_DEFAULT_PATHS = [
     ".trae/skills",
 ]
 RUNTIME_PROJECTION_SPEC_REF_RE = re.compile(r"specs/[^`\s，。；、)）]+\.md")
-RUNTIME_PROJECTION_AUTHORITY_RE = re.compile(r"(specs/|规范来源|权威来源|上位依据|相关规范|降级|人工降级|degradation)")
-RUNTIME_PROJECTION_NEGATIVE_AUTHORITY_RE = re.compile(r"(无|没有|缺少|未).{0,8}(权威来源|规范来源|上位依据|相关规范|specs/|降级)")
+RUNTIME_PROJECTION_AUTHORITY_RE = re.compile(r"(specs/|规范来源|权威来源|上位依据|相关规范|问题原因|受限来源|degradation)")
+RUNTIME_PROJECTION_NEGATIVE_AUTHORITY_RE = re.compile(r"(无|没有|缺少|未).{0,8}(权威来源|规范来源|上位依据|相关规范|specs/|问题原因|受限来源)")
 
 
 def relative_path(path):
@@ -105,7 +105,7 @@ def check_file(path, formal_lines_input=None):
     text = path.read_text(encoding="utf-8")
     issues = []
     if not has_authority(text):
-        issues.append(Issue(path, 1, "运行投影缺少 specs 权威来源引用或明确降级来源", code="RUNTIME_PROJECTION_AUTHORITY_MISSING"))
+        issues.append(Issue(path, 1, "运行投影缺少 specs 权威来源引用或明确问题原因来源", code="RUNTIME_PROJECTION_AUTHORITY_MISSING"))
     for ref in spec_refs(text):
         if not spec_path_exists(ref):
             issues.append(Issue(path, 1, f"运行投影引用的正式规范不存在: {ref}", code="RUNTIME_PROJECTION_SPEC_REF_MISSING"))
@@ -118,7 +118,7 @@ def check_file(path, formal_lines_input=None):
 
 def issue_status(issue):
     if issue.code == "RUNTIME_PROJECTION_BODY_COPIED":
-        return "degraded"
+        return "evidence_gap"
     return "open"
 
 
@@ -143,8 +143,8 @@ def report_build(paths=None):
     status = "closed"
     if any(item["status"] == "open" for item in issue_items):
         status = "open"
-    elif any(item["status"] == "degraded" for item in issue_items):
-        status = "degraded"
+    elif any(item["status"] == "evidence_gap" for item in issue_items):
+        status = "evidence_gap"
     elif not files:
         status = "open"
     return {

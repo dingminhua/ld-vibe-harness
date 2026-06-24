@@ -23,7 +23,17 @@ RUNTIME_PROJECTION_DEFAULT_PATHS = list(assurance_report_checks.RUNTIME_PROJECTI
 GOVERNED_PROJECTS_FILENAME = governed_projects_checks.GOVERNED_PROJECTS_FILENAME
 
 RUNTIME_PROJECTION_REMEDIATION_LABELS = assurance_report_checks.RUNTIME_PROJECTION_REMEDIATION_LABELS
-LDVH_ASSURANCE_CHECK_STATUS_ORDER = {"closed": 0, "degraded": 1, "open": 2, "blocked": 3}
+LDVH_ASSURANCE_CHECK_STATUS_ORDER = {
+    "closed": 0,
+    "limited": 1,
+    "input_issue": 1,
+    "capability_gap": 1,
+    "evidence_gap": 1,
+    "fact_conflict": 1,
+    "needs_human_gate": 2,
+    "open": 3,
+    "blocked": 4,
+}
 
 
 def sync_doc_structure_config():
@@ -124,7 +134,7 @@ def ldvh_assurance_check_fact_validate():
     fact_files = ldvh_assurance_check_fact_files()
     if not fact_files:
         return {
-            "status": "degraded",
+            "status": "evidence_gap",
             "issue_count": 0,
             "error_count": 0,
             "warning_count": 0,
@@ -150,7 +160,7 @@ def ldvh_assurance_check_fact_validate():
         if errors or completed.returncode in {1, 2}:
             status = "open"
         elif warnings:
-            status = "degraded"
+            status = "limited"
         return {
             "status": status,
             "issue_count": len(issues),
@@ -780,4 +790,11 @@ def ldvh_assurance_check_main(workspace_root=None, output_format="text"):
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
         print(ldvh_assurance_check_format_text(report))
-    return 0 if report["summary"]["status"] in {"closed", "degraded"} else 1
+    return 0 if report["summary"]["status"] in {
+        "closed",
+        "limited",
+        "input_issue",
+        "capability_gap",
+        "evidence_gap",
+        "fact_conflict",
+    } else 1

@@ -80,7 +80,7 @@ ASSURANCE_REPORT_HUMAN_GATE_SUBCATEGORY_LABELS = {
     "decision_record_required": "必须人类决策记录",
     "policy_clarification": "规范口径说明",
     "implementation_support": "承接实现支持",
-    "diagnostic_coverage": "Code 降级提示/覆盖",
+    "diagnostic_coverage": "Code 覆盖诊断",
 }
 ASSURANCE_REPORT_HUMAN_GATE_DECISION_FLOW_LABELS = {
     "current_record_required": "当前需要记录",
@@ -95,12 +95,12 @@ ASSURANCE_REPORT_HUMAN_GATE_SUPPORT_FLOW_LABELS = {
     "web_human_facing_support": "Web / Human-facing 承接",
 }
 ASSURANCE_REPORT_HUMAN_GATE_DIAGNOSTIC_FLOW_LABELS = {
-    "coverage_degraded": "覆盖范围降级",
+    "coverage_limited": "覆盖范围受限",
 }
 ASSURANCE_REPORT_RUNTIME_PROJECTION_SUBCATEGORY_LABELS = {
     "lifecycle_trigger_sync": "生命周期触发同步",
     "platform_capability_sync": "平台能力承接同步",
-    "projection_coverage_diagnostic": "投影覆盖诊断降级",
+    "projection_coverage_diagnostic": "投影覆盖诊断受限",
     "third_party_skill_projection": "第三方 Skill 投影",
 }
 
@@ -128,7 +128,7 @@ RUNTIME_PROJECTION_REMEDIATION_TERMS = {
     ],
 }
 ASSURANCE_REPORT_HUMAN_GATE_DECISION_TERMS = [
-    "接受长期降级",
+    "接受长期风险",
     "关闭",
     "创建",
     "删除",
@@ -146,7 +146,7 @@ ASSURANCE_REPORT_HUMAN_GATE_DECISION_TERMS = [
     "通过",
     "闭环",
     "核心",
-    "降级",
+    "受限",
 ]
 ASSURANCE_REPORT_HUMAN_GATE_POLICY_TERMS = [
     "评估 Human Gate",
@@ -167,7 +167,7 @@ ASSURANCE_REPORT_HUMAN_GATE_CURRENT_RECORD_TERMS = [
     "当前已",
     "本次已",
     "已现场确认",
-    "已接受长期降级",
+    "已接受长期风险",
     "已判定 LDVH部署与适配检查闭环",
     "已声明 Human",
 ]
@@ -197,7 +197,7 @@ ASSURANCE_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS = [
     "第三方 Skill",
     "包装 Skill",
 ]
-ASSURANCE_REPORT_DEGRADED_MARKERS = [
+ASSURANCE_REPORT_LEGACY_DEGRADED_MARKERS = [
     "open-degraded",
     "degraded",
     "人工降级",
@@ -205,6 +205,13 @@ ASSURANCE_REPORT_DEGRADED_MARKERS = [
     "降级说明",
     "降级方式",
     "记录降级",
+]
+ASSURANCE_REPORT_LIMITED_MARKERS = [
+    "受限说明",
+    "受限方式",
+    "输出受限",
+    "能力受限",
+    "覆盖受限",
 ]
 ASSURANCE_REPORT_OPEN_MARKERS = [
     "TODO",
@@ -230,21 +237,21 @@ ASSURANCE_REPORT_CAPABILITY_CHECKS = [
     {
         "id": "41_trigger_safeguard",
         "capability": "41 触发保障",
-        "status": "degraded",
+        "status": "capability_gap",
         "owner_area": "code",
         "required_terms": ["41", "触发保障"],
         "missing_reason": "assurance-report 未发现 41 触发保障声明，无法判断正式规范或运行投影变化是否应进入 41",
-        "degraded_reason": "assurance-report 只能聚合 41 触发保障要求，尚不能验证所有触发场景是否实际进入 41",
+        "limited_reason": "assurance-report 只能聚合 41 触发保障要求，尚不能验证所有触发场景是否实际进入 41",
         "suggested_writeback": "code_request_or_test",
     },
     {
         "id": "42_consumes_41",
         "capability": "42 消费 41 触发状态",
-        "status": "degraded",
+        "status": "capability_gap",
         "owner_area": "workflow",
         "required_terms": ["42", "41", "消费"],
         "missing_reason": "assurance-report 未发现 42 消费 41 触发状态声明，无法作为 LDVH部署与适配检查输入",
-        "degraded_reason": "assurance-report 能暴露 41/42 联动要求，但尚不能证明 42 现场检查已经消费本次报告",
+        "limited_reason": "assurance-report 能暴露 41/42 联动要求，但尚不能证明 42 现场检查已经消费本次报告",
         "suggested_writeback": "workflow_or_skill_candidate",
     },
     {
@@ -254,17 +261,17 @@ ASSURANCE_REPORT_CAPABILITY_CHECKS = [
         "owner_area": "runtime_projection",
         "required_terms": ["运行投影", "漂移检查"],
         "missing_reason": "assurance-report 未发现运行投影漂移检查声明，无法诊断入口、Skill、Hook、CI、Web 或 Code 投影漂移",
-        "degraded_reason": "assurance-report 只能识别运行投影漂移检查要求，尚不能读取真实运行投影并比对正式规范",
+        "limited_reason": "assurance-report 只能识别运行投影漂移检查要求，尚不能读取真实运行投影并比对正式规范",
         "suggested_writeback": "runtime_projection_or_env_record",
     },
     {
         "id": "human_gate_evidence_consumption",
         "capability": "Human Gate 证据消费",
-        "status": "degraded",
+        "status": "evidence_gap",
         "owner_area": "human_gate",
         "required_terms": ["Human Gate", "证据"],
-        "missing_reason": "assurance-report 未发现 Human Gate 证据消费声明，无法支持降级、关闭或通过声明",
-        "degraded_reason": "assurance-report 能识别 Human Gate 证据消费要求，但尚未把 Human Gate 记录校验结果并入状态判断",
+        "missing_reason": "assurance-report 未发现 Human Gate 证据消费声明，无法支持关闭或通过声明",
+        "limited_reason": "assurance-report 能识别 Human Gate 证据消费要求，但尚未把 Human Gate 记录校验结果并入状态判断",
         "suggested_writeback": "human_gate_record",
     },
 ]
@@ -324,9 +331,13 @@ def assurance_report_infer_status(requirement):
         ]
     )
 
-    marker = assurance_report_match_marker(text, ASSURANCE_REPORT_DEGRADED_MARKERS)
+    marker = assurance_report_match_marker(text, ASSURANCE_REPORT_LIMITED_MARKERS)
     if marker:
-        return "degraded", f"matched degraded marker: {marker}"
+        return "limited", f"matched limited marker: {marker}"
+
+    marker = assurance_report_match_marker(text, ASSURANCE_REPORT_LEGACY_DEGRADED_MARKERS)
+    if marker:
+        return "limited", f"matched legacy compatibility marker: {marker}"
 
     marker = assurance_report_match_marker(text, ASSURANCE_REPORT_OPEN_MARKERS)
     if marker:
@@ -342,7 +353,7 @@ def assurance_report_infer_status(requirement):
         if match:
             return "needs_human_gate", f"matched Human Gate pattern: {match.group(0)}"
 
-    return "closed", "no open/degraded/Human Gate marker matched"
+    return "closed", "no open/legacy limited/Human Gate marker matched"
 
 
 def assurance_report_count_by(requirements, key):
@@ -415,7 +426,7 @@ def assurance_report_human_gate_support_flow(item):
 
 
 def assurance_report_human_gate_diagnostic_flow(item):
-    return "coverage_degraded"
+    return "coverage_limited"
 
 
 def assurance_report_runtime_projection_subcategory(item):
@@ -656,17 +667,17 @@ def assurance_report_build_capability_gaps(formal_files, runtime_projection_repo
     for check in ASSURANCE_REPORT_CAPABILITY_CHECKS:
         terms_present = assurance_report_terms_present(text, check["required_terms"])
         status = check["status"] if terms_present else "open"
-        reason = check["degraded_reason"] if terms_present else check["missing_reason"]
+        reason = check["limited_reason"] if terms_present else check["missing_reason"]
         evidence = "matched formal spec terms" if terms_present else "required terms missing from formal specs"
         if check["id"] == "41_trigger_safeguard":
             status_40 = assurance_report_member_status(text, "40", "work_process")
             status_41 = assurance_report_member_status(text, "41", "work_process")
             evidence = f"workflow 40 status={status_40 or 'missing'}; workflow 41 status={status_41 or 'missing'}"
             if status_41 == "active":
-                status = "degraded" if terms_present else "open"
+                status = "capability_gap" if terms_present else "open"
                 reason = "41 已是 active 工作流程，但 assurance-report 仍只能诊断成员状态，尚不能验证所有触发场景是否实际进入 41"
             elif status_41:
-                status = "degraded"
+                status = "capability_gap"
                 reason = f"41 当前 collection_status={status_41}，assurance-report 已接入成员状态诊断，但候选流程仍不得被当作 active 触发保障"
             else:
                 status = "open"
@@ -679,11 +690,11 @@ def assurance_report_build_capability_gaps(formal_files, runtime_projection_repo
             if runtime_status == "open":
                 status = "open"
                 reason = "runtime-projection 检查发现 open 漂移问题，assurance-report 已接入该诊断"
-            elif runtime_status == "degraded":
-                status = "degraded"
-                reason = "runtime-projection 检查发现 degraded 漂移风险，assurance-report 已接入该诊断"
+            elif runtime_status in {"limited", "evidence_gap", "fact_conflict"}:
+                status = runtime_status
+                reason = f"runtime-projection 检查发现 {runtime_status} 受限或证据问题，assurance-report 已接入该诊断"
             elif terms_present:
-                status = "degraded"
+                status = "evidence_gap"
                 reason = "runtime-projection 检查当前未发现项目内问题，但仍是项目局部启发式，尚不能证明所有运行投影完整覆盖"
         if check["id"] == "human_gate_evidence_consumption" and human_gate_report is not None:
             gate_status = human_gate_report["summary"]["status"]
@@ -694,8 +705,11 @@ def assurance_report_build_capability_gaps(formal_files, runtime_projection_repo
             if gate_status == "open":
                 status = "open"
                 reason = "human-gate 检查发现 open 证据结构问题，assurance-report 已接入该诊断"
+            elif gate_status in {"evidence_gap", "needs_human_gate"}:
+                status = gate_status
+                reason = f"human-gate 检查发现 {gate_status} 证据状态，assurance-report 已接入该诊断"
             elif terms_present:
-                status = "degraded"
+                status = "evidence_gap"
                 reason = "human-gate 检查已接入，但仍是项目局部结构检查，尚不能证明所有 Human Gate 触发与 42 现场消费均已覆盖"
         gaps.append(
             {

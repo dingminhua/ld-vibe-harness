@@ -3,7 +3,7 @@ import { ShieldCheck, ShieldAlert, AlertCircle } from 'lucide-react';
 
 interface StatusBannerProps {
   // `degraded` remains a legacy compatibility input; callers should prefer concrete open/limited causes.
-  status: 'closed' | 'degraded' | 'open' | 'needs_human_gate';
+  status: 'closed' | 'limited' | 'input_issue' | 'capability_gap' | 'evidence_gap' | 'fact_conflict' | 'degraded' | 'open' | 'needs_human_gate';
   title: string;
   description?: string;
   action?: { label: string; onClick: () => void };
@@ -12,6 +12,11 @@ interface StatusBannerProps {
 
 const STATUS_CLASS = {
   closed: 'border-emerald-500/30 bg-emerald-500/10',
+  limited: 'border-amber-500/30 bg-amber-500/10',
+  input_issue: 'border-amber-500/30 bg-amber-500/10',
+  capability_gap: 'border-yellow-500/30 bg-yellow-500/10',
+  evidence_gap: 'border-yellow-500/30 bg-yellow-500/10',
+  fact_conflict: 'border-orange-500/30 bg-orange-500/10',
   degraded: 'border-yellow-500/30 bg-yellow-500/10',
   open: 'border-red-500/30 bg-red-500/10',
   needs_human_gate: 'border-sky-500/30 bg-sky-500/10',
@@ -19,6 +24,11 @@ const STATUS_CLASS = {
 
 const STATUS_ICON_CLASS = {
   closed: 'text-emerald-400',
+  limited: 'text-amber-400',
+  input_issue: 'text-amber-400',
+  capability_gap: 'text-yellow-400',
+  evidence_gap: 'text-yellow-400',
+  fact_conflict: 'text-orange-400',
   degraded: 'text-yellow-400',
   open: 'text-red-400',
   needs_human_gate: 'text-sky-400',

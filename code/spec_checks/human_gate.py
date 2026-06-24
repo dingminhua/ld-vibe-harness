@@ -294,7 +294,7 @@ def report_build(paths=None):
     if issue_items:
         status = "open"
     elif record_count == 0:
-        status = "degraded"
+        status = "evidence_gap"
     return {
         "metadata": {
             "tool": "code/specs_validate.py",

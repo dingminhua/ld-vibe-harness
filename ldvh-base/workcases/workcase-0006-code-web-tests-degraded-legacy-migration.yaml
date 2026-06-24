@@ -5,7 +5,7 @@ goal: |
   承接 workcase-0005 的实现层残留风险，迁移 `code/`、`tests/`、`web/` 中 legacy `degraded`、`degraded_accepted` 和“降级”输出、消费、断言与 Human-facing 展示，使旧字段只作为兼容信号存在，并以具体问题原因、受限状态、后续动作和承接位置表达当前语义。
 status: executing
 created: '2026-06-25T11:33:00+08:00'
-updated: '2026-06-25T04:20:00+08:00'
+updated: '2026-06-25T04:27:44+08:00'
 priority: P0
 plan_confirmed_at: '2026-06-25T11:33:00+08:00'
 description: |
@@ -26,8 +26,8 @@ success_criteria: |
   - [x] v2 text 输出不再把 `degraded` 作为主状态展示，改为展示 `result_status`、`issue_causes` 和 `legacy_degraded`。
   - [x] `degraded_accepted` 在 WorkCase 校验中只作为历史兼容关闭结果，出现时给出 warning 和替代路径。
   - [x] Web i18n 不再把 `degraded` 展示为“降级/Degraded”，改为“受限/Limited”；执行态聚合只把旧状态作为 legacy 风险输入。
-  - [ ] assurance / runtime projection / capability environment / human gate 的旧 `degraded` 聚合状态已迁移为 `limited`、`blocked`、`needs_human_gate`、`capability_gap`、`evidence_gap`、`input_issue`、`fact_conflict` 或其它具体问题状态；旧字段如需保留，必须标为 legacy compatibility。
-  - [ ] 完成相关 pytest、Web 检查/API 测试和 `python3 code/fact_validate.py` 校验。
+  - [x] assurance / runtime projection / capability environment / human gate 的旧 `degraded` 聚合状态已迁移为 `limited`、`blocked`、`needs_human_gate`、`capability_gap`、`evidence_gap`、`input_issue`、`fact_conflict` 或其它具体问题状态；旧字段如需保留，必须标为 legacy compatibility。
+  - [x] 完成相关 pytest、Web 检查/API 测试和 `python3 code/fact_validate.py` 校验。
 source: |
   用户委派本线程处理“Code/Web/tests legacy degraded / degraded_accepted 实现迁移”，要求先扫描 `code/`、`tests/`、`web/`，按 active specs 当前口径迁移实现层，并在能完成可合并变更时提交。
 
@@ -139,9 +139,22 @@ orchestration:
         - tests/code/specs_validate_checks/
       expected_output: |
         将剩余 `degraded` 聚合状态拆为具体问题状态或 legacy compatibility 字段；更新测试夹具和断言，保证 CLI/text 输出不再把 degraded 作为主语义。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已迁移 assurance-report、runtime-projection、capability-environment、human-gate 及 ldvh-assurance 聚合消费：运行投影正文复制风险改为 `evidence_gap`，Human Gate 无记录改为 `evidence_gap`，能力环境非阻断登记一致性问题改为 `limited`，assurance-report 能力检查改为 `capability_gap` / `evidence_gap` / `limited` 等具体状态。Web API 状态排序和 StatusBanner / status color 已加入 `limited`、`input_issue`、`capability_gap`、`evidence_gap`、`fact_conflict`；`degraded` 仅保留为 legacy backend / marker 兼容输入。
+      evidence_refs:
+        - code/spec_checks/assurance_report.py
+        - code/spec_checks/runtime_projection.py
+        - code/spec_checks/capability_environment.py
+        - code/spec_checks/human_gate.py
+        - code/spec_checks/ldvh_assurance.py
+        - tests/code/specs_validate_checks/test_assurance_report.py
+        - tests/code/specs_validate_checks/test_runtime_projection.py
+        - tests/code/specs_validate_checks/test_human_gate.py
+        - tests/code/specs_validate_checks/test_ldvh_assurance.py
+        - web/api/routes/objects.ts
+        - web/src/components/StatusBanner.tsx
+        - web/src/utils/statusColors.ts
       blocking_reason: null
     - id: item-7
       title: 集成验证与结果复核准备
@@ -154,9 +167,23 @@ orchestration:
         - web/
       expected_output: |
         完成 fact_validate、specs_validate all、相关 pytest、Web API/typecheck 和全量 `rg "degraded|degraded_accepted|降级"` 扫描；形成 result_self_checking 所需证据。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已完成验证：`python3 code/fact_validate.py ldvh-base --format text` 通过，`python3 code/specs_validate.py all --fail-on-diagnostics` 通过，定向 pytest 40 passed，完整 `python3 -m pytest tests/code -q` 338 passed，`npm run web:check` 通过，`npm run test:web:api` 通过，`python3 code/specs_validate.py runtime-projection` / `human-gate-report` 均为 closed，`python3 code/specs_validate.py capability-environment` 为 closed，`git diff --check` 通过。全量扫描 `rg -n "degraded|degraded_accepted|降级" code tests web specs rules -g '!node_modules'` 已复核：本线程改动范围内只保留 legacy marker / backend compatibility；其它残留为知识地图 legacy 字段、WorkCase 历史兼容关闭枚举、Web docs 响应式 fallback 表达或既有迁移说明。
+      evidence_refs:
+        - code/spec_checks/assurance_report.py
+        - code/spec_checks/runtime_projection.py
+        - code/spec_checks/capability_environment.py
+        - code/spec_checks/human_gate.py
+        - code/spec_checks/ldvh_assurance.py
+        - tests/code/specs_validate_checks/test_assurance_report.py
+        - tests/code/specs_validate_checks/test_runtime_projection.py
+        - tests/code/specs_validate_checks/test_human_gate.py
+        - tests/code/specs_validate_checks/test_capability_environment.py
+        - tests/code/specs_validate_checks/test_ldvh_assurance.py
+        - web/api/routes/objects.ts
+        - web/src/components/StatusBanner.tsx
+        - web/src/utils/statusColors.ts
       blocking_reason: null
   plan_review:
     orchestration_owner: main_controller
