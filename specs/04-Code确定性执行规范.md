@@ -245,9 +245,11 @@ Code 不得把“生成知识地图”实现为一次性全量上下文注入。
 
 节点、边和诊断必须携带项目维度。对象节点不得使用 `spark-0016`、`workcase-0001` 等裸对象 ID 作为全局 ID；全局节点 ID 必须组合 `project_id`、对象类型、对象 ID 和必要路径。跨项目关系必须显式声明 `from_project`、`to_project`、来源路径和关系类型，不能因路径相似、编号相同或标题相近而猜测隐含关系。
 
+知识地图查询入口优先服务 AI 的确定性任务导航、最小读取和跨项目隔离，不以 Human 自然搜索体验为当前验收目标。`start_node` 可以支持路径、标题或稳定节点 ID 等确定性输入，但不要求把 `workcase-0088` 这类裸对象 ID 自动解析为跨项目唯一节点；若未来需要 Human-facing 模糊搜索、别名解析或裸 ID 补全，应归入 05 Web 展示或后续专门查询体验待办，且不得削弱项目命名空间要求。
+
 Code 读取管辖项目时只能读取登记项目根目录内的 `ldvh-base/`、该项目 Git 记录，以及项目自身约定、用户明确指令、当前任务上下文或 Human Gate 授权的文档位置。项目缺少 `ldvh-base/`、Git 不可读、路径越界、引用目标不存在或文档位置未授权时，应输出当次 `diagnostics`，不得写入缓存、不得补写事实字段、不得修改 `LDVH-GOVERNED-PROJECTS.yaml`。
 
-Git 历史查询不进入知识地图默认输入范围，也不要求 LDVH 建立专用 Git 图谱或查询层。需要追溯历史时，应使用 Git 原生命令按需查询 commit hash、commit message、changed files、diff、author/date 和 commit range；LDVH 只要求 commit message 格式满足 07，以便未来可读、可查、可追溯。
+Git 历史查询不进入知识地图默认输入范围，也不要求 LDVH 建立专用 Git 图谱或查询层。需要追溯历史时，应使用 Git 原生命令按需查询 commit hash、commit message、changed files、diff、author/date 和 commit range；LDVH 对 Git 的硬要求是稳定事实源修改必须形成真实 Git commit records，并且 commit message 格式满足 07，以便未来可读、可查、可追溯。
 
 知识地图输出至少包含：
 
@@ -388,9 +390,9 @@ Code 检查至少包括：
 
 1. 本文和 `04.Att.01` 至 `04.Att.10` 已承接 v1 `07` 主体规则，并已作为 active Code 确定性执行规范生效；
 2. 盘点 `code/specs_validate.py`、`code/fact_cli.py`、`code/commit_validate.py`、`code/hook_dispatch.py` 和 `code/spec_checks` 的 active specs 兼容策略；
-3. 将本文定义的知识地图最小投影契约细化为实现 Schema、正反样例和测试夹具；
-4. 明确 v1-v2 双读、降级诊断和迁移覆盖检查；
+3. 将本文定义的知识地图最小投影契约继续补充正反样例和测试夹具；
+4. 明确 v1-v2 双读、降级诊断和迁移覆盖检查；历史规范图谱不作为当前知识地图验收目标；
 5. 补齐 v2 附件身份一致性检查，覆盖真实路径、身份块、父规范登记、当前目录登记和旧引用残留；
 6. 与 08 对齐 Code 实现测试入口和验证声明；
-7. 与 05 对齐 Web DTO 和 Human-facing 派生展示输入；
-8. 当前 `v2-check` 已提供 active specs 结构诊断、显式 `runtime_extensions` 只读范围和只读知识地图预览，`preflight` 已提供受控写入前检查第一版并能提示固定 Rules 资产同步影响；仍需补齐完整历史双读、完整诊断 Schema、完整知识地图目标 Schema 和字段级 Schema 检查。
+7. Web DTO 和 Human-facing 派生展示输入短期只作为 05 的待办和回归线保留，不作为当前知识地图落地前置条件；
+8. 当前 `v2-check` 与 `knowledge-map` 已提供 active specs、`runtime_extensions`、`governed_projects` 和 `entry_navigation` 的只读投影，`preflight` 已提供受控写入前检查第一版并能提示固定 Rules 资产同步影响；后续重点是补齐诊断 Schema、字段级 Schema 检查、正反样例和测试覆盖。

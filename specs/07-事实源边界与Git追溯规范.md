@@ -290,7 +290,7 @@ AI 如何准备、拆分、预检、执行和交还一次 commit，由 03 与 Gi
 
 commit message 样例由 `attachments/07.Att.05-Commit-Message样例集.md` 承载。样例只用于说明写法，不新增 type、scope、body 条件或流程要求。
 
-Git 历史查询使用 Git 原生命令按需展开。LDVH 不建立专用 Git 图谱、Git 查询层或第二套提交索引；commit message 契约的目的，是让原生 Git 查询结果在未来仍可读、可查、可追溯。
+Git 历史查询使用 Git 原生命令按需展开。LDVH 不建立专用 Git 图谱、Git 查询层或第二套提交索引；commit message 契约的目的，是让原生 Git 查询结果在未来仍可读、可查、可追溯。对知识地图相关工作而言，Git 配合只要求稳定事实源修改最终形成真实提交记录，并能通过 commit hash、commit body、changed files 和 diff 回查；不得把知识地图派生结果、临时索引或缓存当作提交替代物。
 
 知识地图不得反向维护 Git history、不得把派生边写回提交记录、不得用图谱节点替代 commit hash、commit body、changed files 或 diff。需要证明事实源修改时，应回到 Git commit records、对应事实源文件、Git 原生命令输出和必要验证证据。
 

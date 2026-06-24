@@ -463,11 +463,19 @@ def _default_workcase_orchestration() -> dict[str, Any]:
             "orchestration_owner": "main_controller",
             "workflow_ref": None,
             "review_policy": {
-                "selection_reason": "默认由主控在结果自检后选择必要复核视角。",
-                "required_perspectives": [],
+                "selection_reason": "默认结果复核用于防止执行完成后跳过独立检查；execution_items 全部 done 后，必须先由主控进入 result_self_checking 完成 controller_self_check，再进入 subagents_result_reviewing 记录独立复核。",
+                "required_perspectives": [
+                    "规范一致性与事实源边界",
+                    "实现与验证证据",
+                    "WorkCase 治理和关闭材料",
+                ],
                 "optional_perspectives": [],
-                "tool_method_requirements": [],
-                "aggregation_rule": "存在 fail 或 needs_human_gate 结论时不得提交 Human 关闭确认，必须先处理或提交 Human 裁决。",
+                "tool_method_requirements": [
+                    "结果复核必须由子 Agent、第三方审核 Agent 或可辨识独立视角执行。",
+                    "不得用主控结果自检替代独立结果复核。",
+                    "复核应检查成功标准、验证证据、关闭证据、残留风险和是否需要 Human Gate。",
+                ],
+                "aggregation_rule": "result_review.review_items 为空时不得进入 human_closure_confirming 或 closed；存在 fail 或 needs_human_gate 结论时不得提交 Human 关闭确认，必须先处理、退回复核或提交 Human 裁决。",
             },
             "review_items": [],
             "controller_resolution": None,

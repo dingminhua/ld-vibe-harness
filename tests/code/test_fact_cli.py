@@ -506,6 +506,23 @@ def test_workcase_current_transition_chain_sets_gate_fields(tmp_path):
     assert final["orchestration"]["result_review"]["human_closure_confirmation"]["decision"] == "close"
 
 
+def test_workcase_create_prefills_result_review_policy(tmp_path):
+    created = run_cli("create", "workcase", "--title", "Review Policy Plan", "--base-dir", str(tmp_path))
+
+    assert created.returncode == 0, created.stderr
+    path = Path(created.stdout.strip())
+    data = read_yaml(path)
+    policy = data["orchestration"]["result_review"]["review_policy"]
+
+    assert "result_self_checking" in policy["selection_reason"]
+    assert "subagents_result_reviewing" in policy["selection_reason"]
+    assert "规范一致性与事实源边界" in policy["required_perspectives"]
+    assert "实现与验证证据" in policy["required_perspectives"]
+    assert "WorkCase 治理和关闭材料" in policy["required_perspectives"]
+    assert any("不得用主控结果自检替代独立结果复核" in item for item in policy["tool_method_requirements"])
+    assert "review_items 为空时不得进入 human_closure_confirming 或 closed" in policy["aggregation_rule"]
+
+
 def test_workcase_current_backward_transition_requires_reason(tmp_path):
     created = run_cli("create", "workcase", "--title", "Backward Transition Plan", "--base-dir", str(tmp_path))
     assert created.returncode == 0, created.stderr

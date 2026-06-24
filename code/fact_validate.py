@@ -812,14 +812,28 @@ def validate_workcase(path: Path, data: dict[str, Any]) -> list[Issue]:
     if isinstance(result_review, dict):
         issues.extend(validate_workcase_review_section(path, result_review, "orchestration.result_review", allow_self_check=True))
         result_review_items = result_review.get("review_items")
-        if status == "subagents_result_reviewing" and isinstance(result_review_items, list) and not result_review_items:
+        if status in {"subagents_result_reviewing", "human_closure_confirming", "closed"} and isinstance(result_review_items, list) and not result_review_items:
             issues.append(Issue(
                 str(path),
                 "warning",
                 "RESULT_REVIEW_NOT_STARTED",
-                "subagents_result_reviewing 状态下 result_review.review_items 仍为空；应启动并记录独立结果复核子 Agent，避免完成后缺少第三方审核流程",
+                f"{status} 状态下 result_review.review_items 仍为空；不得用主控自检替代独立结果复核，进入关闭确认或关闭前必须记录子 Agent / 独立视角复核结果",
                 field="orchestration.result_review.review_items",
             ))
+
+    if (
+        execution_item_statuses
+        and all(item_status == "done" for item_status in execution_item_statuses)
+        and status in {"executing", "result_self_checking"}
+        and (not isinstance(result_review, dict) or not isinstance(result_review.get("controller_self_check"), dict))
+    ):
+        issues.append(Issue(
+            str(path),
+            "warning",
+            "RESULT_SELF_CHECK_NOT_STARTED",
+            "所有 execution_items 均为 done 后，不得直接进入 human_closure_confirming 或 closed；下一步必须先进入 result_self_checking 并填写 result_review.controller_self_check，再进入 subagents_result_reviewing。",
+            field="orchestration.result_review.controller_self_check",
+        ))
 
     if uses_current_review_contract and status in {"human_plan_confirming", "executing", "result_self_checking", "subagents_result_reviewing", "human_closure_confirming", "closed"}:
         if not isinstance(plan_review, dict) or not isinstance(plan_review.get("controller_resolution"), dict):

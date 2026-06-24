@@ -753,6 +753,10 @@ updated: '2026-06-23'
 summary: Alpha
 input_refs:
   - spark-0001
+related_sparks:
+  - spark-0001
+related_docs:
+  - docs/alpha.md
 ---
 # Alpha Study
 """,
@@ -781,6 +785,8 @@ priority: P1
     assert nodes["project-a:spark:spark-0001"]["project_namespace"] == "project-a"
     assert nodes["project-b:spark:spark-0001"]["project_namespace"] == "project-b"
     assert ("project-a:spark:spark-0001", "project-a:study:study-0001", "related") in edges
+    assert report["knowledge_map"]["impact_summary"]["omitted_semantic_relation_type_counts"]["consumes"] >= 1
+    assert any(item["code"] == "KG_FACT_RELATION_DUPLICATED_AS_RELATED" for item in report["review_hints"])
     assert report["knowledge_map"]["excluded_inputs"] == []
 
     focused_report = checker.v2_check_build(
@@ -791,7 +797,27 @@ priority: P1
         start_node="project-a:study:study-0001",
     )
     focused_edges = {(edge["from"], edge["to"], edge["type"]) for edge in focused_report["knowledge_map"]["edges"]}
+    focused_edge_payloads = focused_report["knowledge_map"]["edges"]
     assert ("project-a:study:study-0001", "project-a:spark:spark-0001", "consumes") in focused_edges
+    assert any(
+        edge["from"] == "project-a:study:study-0001"
+        and edge["to"] == "project-a:spark:spark-0001"
+        and edge["type"] == "consumes"
+        and edge["project_namespace"] == "project-a"
+        for edge in focused_edge_payloads
+    )
+    assert focused_report["knowledge_map"]["impact_summary"]["semantic_relation_type_counts"]["consumes"] >= 1
+    assert any(item["code"] == "KG_FACT_RELATION_ONLY_RELATED" for item in focused_report["review_hints"])
+
+    neighbors_report = checker.v2_check_build(
+        project_a,
+        input_scope="governed_projects",
+        project_scope="all_governed_projects",
+        query_layer="neighbors",
+        start_node="project-a:study:study-0001",
+    )
+    neighbors_edges = {(edge["from"], edge["to"], edge["type"]) for edge in neighbors_report["knowledge_map"]["edges"]}
+    assert ("project-a:study:study-0001", "project-a:spark:spark-0001", "consumes") in neighbors_edges
 
 
 def test_v2_check_history_specs_v1_scope_is_degraded_without_active_parse(tmp_path):

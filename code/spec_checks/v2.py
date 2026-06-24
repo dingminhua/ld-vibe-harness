@@ -826,6 +826,8 @@ def format_navigation_text_lines(knowledge_map):
     if impact_summary:
         lines.append(f"- node_type_counts: {impact_summary.get('node_type_counts', {})}")
         lines.append(f"- relation_type_counts: {impact_summary.get('relation_type_counts', {})}")
+        lines.append(f"- semantic_relation_type_counts: {impact_summary.get('semantic_relation_type_counts', {})}")
+        lines.append(f"- omitted_semantic_relation_type_counts: {impact_summary.get('omitted_semantic_relation_type_counts', {})}")
         lines.append(
             f"- affected: specs={len(impact_summary.get('affected_specs', []))} "
             f"runtime_extensions={len(impact_summary.get('affected_runtime_extensions', []))} "

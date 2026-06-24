@@ -1379,6 +1379,41 @@ def test_current_closed_workcase_requires_closure_outcome(tmp_path):
 def test_current_closed_workcase_contract_validates(tmp_path):
     root, workcase = write_valid_workcase_tree(tmp_path, status="closed")
     add_current_review_contract(workcase)
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8").replace(
+            """    review_items: []
+    controller_resolution:
+      resolved_at: "2026-06-12T00:50:00"
+""",
+            """    review_items:
+      - id: result-review-1
+        role: fixture-review
+        agent_name: independent-reviewer
+        requested_at: "2026-06-12T00:46:00"
+        prompt_context:
+          objective: Check fixture result review.
+          input_refs:
+            - tests/code/test_fact_validate.py
+          constraints: []
+        result:
+          status: pass
+          summary: Fixture result review passed.
+          key_findings:
+            - 未发现范围内问题。
+          required_changes: []
+          evidence_refs:
+            - tests/code/test_fact_validate.py
+        attested_at: "2026-06-12T00:48:00"
+        attestation:
+          signer: independent-reviewer
+          statement: Checked fixture result review.
+    controller_resolution:
+      resolved_at: "2026-06-12T00:50:00"
+""",
+            1,
+        ),
+        encoding="utf-8",
+    )
 
     result = run_checker(root / "ldvh-base")
 
@@ -1453,6 +1488,46 @@ def test_executing_workcase_warns_when_all_execution_items_are_pending(tmp_path)
     assert "warnings=1" in result.stdout
 
 
+def test_workcase_all_done_warns_when_result_self_check_missing(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="executing")
+    add_current_review_contract(workcase)
+    workcase.write_text(
+        workcase.read_text(encoding="utf-8").replace(
+            """  result_review:
+    controller_self_check:
+      controller: test-controller
+      checked_at: "2026-06-12T00:40:00"
+      prompt_context:
+        objective: Check fixture closure.
+        input_refs:
+          - tests/code/test_fact_validate.py
+      result:
+        status: pass
+        summary: Fixture can close.
+        key_findings:
+          - 未发现范围内问题。
+        required_changes: []
+        evidence_refs:
+          - tests/code/test_fact_validate.py
+      attested_at: "2026-06-12T00:45:00"
+      attestation:
+        signer: test-controller
+        statement: Checked fixture evidence.
+""",
+            """  result_review:
+    controller_self_check:
+""",
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(workcase)
+
+    assert result.returncode == 0
+    assert "RESULT_SELF_CHECK_NOT_STARTED" in result.stdout
+    assert "warnings=1" in result.stdout
+
+
 def test_executing_workcase_rejects_unresolved_plan_items(tmp_path):
     _, workcase = write_valid_workcase_tree(tmp_path, status="executing")
     add_current_review_contract(workcase)
@@ -1473,6 +1548,17 @@ def test_executing_workcase_rejects_unresolved_plan_items(tmp_path):
 
 def test_result_reviewing_workcase_warns_when_review_items_empty(tmp_path):
     _, workcase = write_valid_workcase_tree(tmp_path, status="subagents_result_reviewing")
+    add_current_review_contract(workcase)
+
+    result = run_checker(workcase)
+
+    assert result.returncode == 0
+    assert "RESULT_REVIEW_NOT_STARTED" in result.stdout
+    assert "warnings=1" in result.stdout
+
+
+def test_human_closure_confirming_warns_when_review_items_empty(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="human_closure_confirming")
     add_current_review_contract(workcase)
 
     result = run_checker(workcase)

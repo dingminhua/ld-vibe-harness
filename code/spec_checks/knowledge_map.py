@@ -38,6 +38,15 @@ V2_FACT_RELATION_FIELD_PREFIXES = (
     ("related_", "related"),
     ("source_", "derives_from"),
 )
+V2_FACT_SEMANTIC_RELATION_TYPES = {"consumes", "validates", "impacts", "derives_from"}
+V2_FACT_SEMANTIC_RELATION_FIELDS = {
+    "input_refs",
+    "depends_on",
+    "blocked_by",
+    "evidence_refs",
+    "verification_refs",
+    "resolved_to",
+}
 
 
 class KnowledgeMapMixin:
@@ -167,7 +176,7 @@ class KnowledgeMapMixin:
                 "direction": "A -> B",
                 "derived_from": source_structure,
                 "line": line,
-                "project_namespace": self.project_namespace,
+                "project_namespace": self.edge_project_namespace(source, target),
                 "source_refs": [self.edge_source_ref(source, target, line, source_structure)],
                 **({"label": label} if label else {}),
             }
@@ -256,7 +265,7 @@ class KnowledgeMapMixin:
         read_plan = self.build_read_plan(projected_nodes, selected_edges, resolved_start_id)
         next_queries = self.build_next_queries(resolved_start_id)
         stop_conditions = self.build_stop_conditions(read_plan, resolved_start_id)
-        impact_summary = self.build_impact_summary(projected_nodes, selected_edges)
+        impact_summary = self.build_impact_summary(projected_nodes, selected_edges, edges)
         source_refs = self.knowledge_map_source_refs(projected_nodes, selected_edges)
         projection = {
             "schema_version": V2_KNOWLEDGE_MAP_SCHEMA_VERSION,
@@ -573,12 +582,16 @@ class KnowledgeMapMixin:
             refs.extend(diagnostic.get("source_refs") or [])
         return refs
 
-    def build_impact_summary(self, nodes, edges):
+    def build_impact_summary(self, nodes, edges, all_edges=None):
         node_type_counts = {}
         relation_type_counts = {}
+        semantic_relation_type_counts = {}
+        omitted_semantic_relation_type_counts = {}
         affected_specs = []
         affected_runtime_extensions = []
         affected_fact_objects = []
+        projected_node_ids = {node.get("id") for node in nodes}
+        selected_edge_ids = {edge.get("id") for edge in edges}
         for node in nodes:
             node_type = node.get("type") or "unknown"
             node_type_counts[node_type] = node_type_counts.get(node_type, 0) + 1
@@ -592,9 +605,19 @@ class KnowledgeMapMixin:
         for edge in edges:
             relation_type = edge.get("type") or "unknown"
             relation_type_counts[relation_type] = relation_type_counts.get(relation_type, 0) + 1
+            if relation_type in V2_FACT_SEMANTIC_RELATION_TYPES:
+                semantic_relation_type_counts[relation_type] = semantic_relation_type_counts.get(relation_type, 0) + 1
+        for edge in all_edges or []:
+            relation_type = edge.get("type") or "unknown"
+            if relation_type not in V2_FACT_SEMANTIC_RELATION_TYPES or edge.get("id") in selected_edge_ids:
+                continue
+            if edge.get("from") in projected_node_ids or edge.get("to") in projected_node_ids:
+                omitted_semantic_relation_type_counts[relation_type] = omitted_semantic_relation_type_counts.get(relation_type, 0) + 1
         return {
             "node_type_counts": node_type_counts,
             "relation_type_counts": relation_type_counts,
+            "semantic_relation_type_counts": semantic_relation_type_counts,
+            "omitted_semantic_relation_type_counts": omitted_semantic_relation_type_counts,
             "affected_specs": sorted(filter(None, affected_specs))[:40],
             "affected_runtime_extensions": sorted(filter(None, affected_runtime_extensions))[:40],
             "affected_fact_objects": sorted(filter(None, affected_fact_objects))[:40],
@@ -900,6 +923,7 @@ class KnowledgeMapMixin:
             self.add_edge(project_node_id, record["node_id"], "related", "governed_project.ldvh_base", 1)
         for record in records:
             self.add_fact_edges(record, object_index, project_root)
+            self.add_fact_relation_quality_hints(record)
 
     def load_fact_record(self, project_id, project_root, object_type, path):
         try:
@@ -997,6 +1021,62 @@ class KnowledgeMapMixin:
                             continue
                         self.add_fact_relation_values(record, object_index, project_root, f"orchestration.execution_items[{index}].input_refs", item.get("input_refs"), "consumes")
                         self.add_fact_relation_values(record, object_index, project_root, f"orchestration.execution_items[{index}].evidence_refs", item.get("evidence_refs"), "validates")
+
+    def add_fact_relation_quality_hints(self, record):
+        data = record["data"]
+        related_targets = self.fact_targets_by_field(data, lambda field: field.startswith("related_"))
+        semantic_targets = self.fact_targets_by_field(
+            data,
+            lambda field: field.startswith("source_") or field in V2_FACT_SEMANTIC_RELATION_FIELDS,
+        )
+        semantic_target_ids = set(semantic_targets)
+        for target in sorted(set(related_targets) & set(semantic_targets)):
+            related_fields = sorted(related_targets[target])
+            semantic_fields = sorted(semantic_targets[target])
+            line = self.find_text_line(record["text"], related_fields[0])
+            self.review_hints.append(
+                self.diagnostic(
+                    record["relative_path"],
+                    line,
+                    "info",
+                    "KG_FACT_RELATION_DUPLICATED_AS_RELATED",
+                    f"事实对象同时用弱关联字段 {', '.join(related_fields)} 和语义字段 {', '.join(semantic_fields)} 引用 {target}；如语义字段已表达真实消费、证据、来源或承接关系，应避免用 related_* 替代语义边。",
+                    suggested_owner="01.Att.01-知识地图关系类型表",
+                    source_refs=[self.source_ref(record["relative_path"], line, field=related_fields[0], object_id=record["object_id"])],
+                )
+            )
+        if not self.review_only_related_hints_for_record(record):
+            return
+        for target in sorted(set(related_targets) - semantic_target_ids):
+            related_fields = sorted(related_targets[target])
+            line = self.find_text_line(record["text"], related_fields[0])
+            self.review_hints.append(
+                self.diagnostic(
+                    record["relative_path"],
+                    line,
+                    "info",
+                    "KG_FACT_RELATION_ONLY_RELATED",
+                    f"事实对象仅通过弱关联字段 {', '.join(related_fields)} 引用 {target}；若它实际表达输入、依赖、证据、来源或承接关系，应改用对应语义字段，不能用 related_* 替代。",
+                    suggested_owner="01.Att.01-知识地图关系类型表",
+                    source_refs=[self.source_ref(record["relative_path"], line, field=related_fields[0], object_id=record["object_id"])],
+                )
+            )
+
+    def review_only_related_hints_for_record(self, record):
+        if not self.start_node:
+            return False
+        return self.start_node in {record["node_id"], record["relative_path"], record["object_id"]}
+
+    def fact_targets_by_field(self, data, field_predicate):
+        targets = {}
+        for field, value in data.items():
+            if not field_predicate(field):
+                continue
+            for raw_target in value if isinstance(value, list) else [value]:
+                target = self.normalize_fact_target(raw_target)
+                if target:
+                    targets.setdefault(target, set()).add(field)
+        return targets
 
     def add_fact_relation_values(self, record, object_index, project_root, field, value, relation_type):
         values = value if isinstance(value, list) else [value]
@@ -1128,6 +1208,16 @@ class KnowledgeMapMixin:
                 "source": "ldvh_base_fact_reference",
             },
         )
+
+    def edge_project_namespace(self, source, target):
+        for node_id in (source, target):
+            if not isinstance(node_id, str):
+                continue
+            if node_id.startswith("project:"):
+                return node_id.split(":", 1)[1]
+            if ":" in node_id and not node_id.startswith("code_consumption:"):
+                return node_id.split(":", 1)[0]
+        return self.project_namespace
 
     def ensure_reference_node(self, node_id, line):
         if node_id in self.node_ids:

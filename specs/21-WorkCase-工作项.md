@@ -224,6 +224,8 @@ human_closure_confirming -> subagents_plan_reviewing
 
 未列出的状态流转为非法流转。Code、Web 和行动编排不得把 `human_closure_confirming` 派生为 `closed`。
 
+执行项全部进入 `done` 后，不得直接进入 `human_closure_confirming` 或 `closed`。下一状态必须先是 `result_self_checking`，由主控填写 `result_review.controller_self_check`；随后进入 `subagents_result_reviewing`，由子 Agent、第三方审核 Agent 或可辨识独立视角填写 `result_review.review_items`。主控自检不得替代独立结果复核。
+
 ## 7. 对象关系
 
 ### 7.1 WorkCase 与执行项
@@ -393,7 +395,9 @@ Code 应检查：
 16. `orchestration_owner` 必须属于 `main_controller` 或 `workflow`，主控不得在 `review_items` 中自签冒充子 Agent；
 17. `controller_self_check.result.key_findings` 必须非空，`required_changes` 非空时不得进入结果复核；
 18. `subagents_result_reviewing` 状态下 `result_review.review_items` 为空时，Code 应至少给出 warning；
-19. `related_workcases` 只承载 WorkCase ID，不承载执行项 ID、提交 hash 或自由文本关系。
+19. `human_closure_confirming` 或 `closed` 状态下 `result_review.review_items` 为空时，Code 应至少给出 warning，提示不得跳过独立结果复核；
+20. 执行项全部为 `done` 但 `result_review.controller_self_check` 为空时，Code 应至少给出 warning，提示先做主控结果自检，再进入子 Agent 结果复核。
+21. `related_workcases` 只承载 WorkCase ID，不承载执行项 ID、提交 hash 或自由文本关系。
 
 Web 应把 WorkCase 作为 Human 直接查看和确认的主对象。Web 可以展示执行编排、验证证据和关闭证据，但不得把执行项提升为一级导航、独立对象详情页或可独立写入的权威事实。
 
