@@ -136,7 +136,7 @@ Superpowers 的“控制器-工作者”模式可以被 LDVH 吸收，但应降�
 Superpowers 的 TDD 铁律非常强，适合软件实现场景。但 LDVH 不应把它无差别套到所有治理动作上。更合适的吸收方式是分层：
 
 - 修 bug、回归问题、validator、parser、状态机、事实源迁移：强测试先行；
-- Web 交互、样式、阅读体验：先定义可观察验收，再用截图、Playwright 或人工审查验证；
+- Web 交互、样式、阅读体验：先定义可观察验收，再用截图、Playwright 或 Human 审查验证；
 - 文档和规范：先写检查点、反例或审查清单，再改正文；
 - 抛弃式探索和一次性分析：允许不 TDD，但不能伪装为已验证生产结论。
 
@@ -151,7 +151,7 @@ Superpowers 的 TDD 铁律非常强，适合软件实现场景。但 LDVH 不应
 - Skill description 只写触发条件、适用边界和必须读取 Skill 的理由；
 - 不在 description 中放完整步骤；
 - 关键流程、STOP 点、Human Gate、验证命令必须在 Skill 正文或引用规范里；
-- 对高风险 Skill 做触发测试或人工压力测试，观察 AI 是否跳读正文。
+- 对高风险 Skill 做触发测试或 Human 压力测试，观察 AI 是否跳读正文。
 
 该结论应进入第三方 Skill 使用规范、固定能力资产登记制和未来 LDVH 自建 Skill 模板。
 

@@ -174,7 +174,7 @@ def test_ldvh_private_trailers_warn():
         body=(
             "动机:\n"
             "- 说明本次测试内容。\n\n"
-            "Human-Gate: 用户确认\n"
+            "Human-Gate: Human 确认\n"
             "Verification: pytest\n"
             "Risk: 无"
         ),

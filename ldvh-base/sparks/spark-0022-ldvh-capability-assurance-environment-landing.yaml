@@ -14,12 +14,12 @@ description: |
   1. Rules 如何被视为 LDVH 固定能力资产，而不是松散提示文本；
   2. specs 修改后，谁负责判断是否影响 Rules、Skill、Agent、Hook、Code、Web 和环境入口；
   3. 谁负责把已登记能力资产落地到 Codex、Trae、Claude Code 或其它环境；
-  4. 环境中缺少对应能力时，如何暴露降级、人工替代路径和未落地风险；
+  4. 环境中缺少对应能力时，如何暴露环境入口缺口、临时接入方式、手动命令边界和未落地风险；
   5. 能力资产自身如何登记 source_specs、sync_triggers、verification 和部署检查入口；
   6. Code / preflight / knowledge-map 如何只读提示同步影响，而不越权替 Human 修改 Rules 或环境配置；
   7. 后续所有 WorkCase 和行动编排，应先挂到这条能力保障与环境落地责任链之下，而不是各自孤立推进。
 
-  该 Spark 是后续主要工作入口：先把 LDVH 能力和环境挂钩，建立“规范变化 -> 能力资产同步 -> 环境落地/降级 -> 验证反馈”的责任链，再继续推进知识地图、子 Agent 编排、Web 治理或其它功能工作。
+  该 Spark 是后续主要工作入口：先把 LDVH 能力和环境挂钩，建立“规范变化 -> 能力资产同步 -> 环境落地/环境入口缺口 -> 验证反馈”的责任链，再继续推进知识地图、子 Agent 编排、Web 治理或其它功能工作。
 
   第一层落地已形成只读检查入口：`python3 code/specs_validate.py capability-environment`。该入口汇总固定 Rules / Skill / Hook 的来源规范、同步触发、验证链、责任归口和环境落地边界，并明确不声明当前环境已安装。
 

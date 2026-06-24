@@ -300,8 +300,8 @@ Codex 当前缺少 Trae SOLO 这种产品化“主控自动调度角色团队”
 | Explore / 查询型 agent | `explorer` 或只读 custom agent 并行查询 | 查询/搜索型自定义智能体或 SOLO 多任务并行 | 技术 worker 模式，进入行动编排而非事实模型 |
 | agent teams 的 lead / teammates | Codex 没有等价团队界面，可由主控 + 多个 subagent + WorkCase intake 模拟 | SOLO Agent + 可调用智能体 + 多任务面板较接近 | WorkCase / ExecutionItem + 子 Agent 复核编排 |
 | shared task list / mailbox | 无直接等价，需由 WorkCase execution_items、临时 intake 和主控摘要模拟 | Trae 多任务与 Spec/Plan 可作为运行界面，但非最终事实源 | 21 WorkCase 字段或后续流程扩展 |
-| 计划批准后写入 | 主控先要求 subagent 只读计划，再决定是否授权 worker 写入 | SOLO Plan / Spec 与用户确认可作为环境执行界面 | Human Gate + 行动编排 Gate |
-| hooks 生命周期控制 | Codex Hook 候选事件如 SubagentStart/Stop、Stop、PreCompact 可适配但需实测 | Trae Hook 能力较弱或需降级为规则/命令/人工检查 | 04.03 环境适配 + 07 Code 校验 |
+| 计划批准后写入 | 主控先要求 subagent 只读计划，再决定是否授权 worker 写入 | SOLO Plan / Spec 与 Human 或环境操作者确认可作为环境执行界面 | Human Gate + 行动编排 Gate |
+| hooks 生命周期控制 | Codex Hook 候选事件如 SubagentStart/Stop、Stop、PreCompact 可适配但需实测 | Trae Hook 能力较弱时需收敛为 Rules、命令或文件事实源核对 | 04.03 环境适配 + 07 Code 校验 |
 
 结论是：Claude 的机制大多可以在 LDVH 中抽象成 Role Contract、ExecutionItem、Agent 调度、输出 intake、Human Gate 和 Hook/Code 校验；但在 Codex 中需要更多由 LDVH 机制主动补齐，因为 Codex 偏显式 spawn，没有 Claude agent teams 那样的团队层，也没有 Trae SOLO 那样的产品化主控面板。Trae 对“主控 + 角色团队”的转换更自然，但仍要防止 Trae 运行期任务、Spec/Plan 和智能体配置变成 LDVH 第二事实源。
 

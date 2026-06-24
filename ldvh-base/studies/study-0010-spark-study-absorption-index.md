@@ -7,7 +7,7 @@ created: '2026-06-24T01:40:00+08:00'
 updated: '2026-06-24T03:20:00+08:00'
 summary: |
   本 Study 记录 LDVH v2 迁移后对现有 Spark 和 Study 的吸收判断。结论是：Spark 和 Study 不属于本轮事实源清理对象；Spark 的 `pending` 与 Study 的 `active` 均可作为合法保留状态。迁移后的主要工作不是关闭它们，而是建立读取索引，说明哪些内容已经被 specs、Code、Web、运行时扩展或 Git 事实源吸收，哪些内容仍作为后续工作入口保留。
-user_intent: 用户确认 Spark 和 Study 应保留，要求继续推进迁移后的吸收标注和误读风险清理。
+user_intent: Human 确认 Spark 和 Study 应保留，要求继续推进迁移后的吸收标注和误读风险清理。
 conclusion: |
   当前应把 Spark/Study 视为 v2 后续建设的入口层和研究证据层。已被迁移吸收的内容可以在本索引中标注为“已吸收但保留证据”，不能据此自动关闭 Spark；仍有未承接议题的 Spark 继续保持 `pending`。Study 继续保持 `active`，除非 Human 明确确认其不再作为当前引用入口。后续若要推进具体实现，应从本索引中选择候选议题创建新的 WorkCase 或行动编排，而不是把旧 WorkCase 或旧流程机械迁回。
 urls: []

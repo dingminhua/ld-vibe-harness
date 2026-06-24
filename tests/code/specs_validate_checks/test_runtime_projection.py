@@ -41,6 +41,26 @@ def test_runtime_projection_reports_missing_authority_and_spec_ref(tmp_path, mon
     }
 
 
+def test_runtime_projection_deprecated_subject_expression_is_not_authority(tmp_path, monkeypatch):
+    docs_specs = tmp_path / "specs"
+    (tmp_path / "rules").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(checker, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(checker, "FORMAL_SPECS_DIR", docs_specs)
+    projection = write_md(
+        tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md",
+        """
+# Runtime Projection
+
+人工降级检查
+""",
+    )
+
+    report = checker.runtime_projection_report_build([str(projection)])
+
+    assert report["summary"]["status"] == "open"
+    assert report["issues"][0]["code"] == "RUNTIME_PROJECTION_AUTHORITY_MISSING"
+
+
 def test_runtime_projection_reports_copied_formal_body(tmp_path, monkeypatch):
     docs_specs = tmp_path / "specs"
     (tmp_path / "rules").mkdir(parents=True, exist_ok=True)

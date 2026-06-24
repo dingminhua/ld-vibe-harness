@@ -2,10 +2,10 @@ id: workcase-0008
 type: workcase
 title: “人工”用语清理与执行主体命名治理
 goal: |
-  承接 spark-0026，对 LDVH 中“人工”、Human、用户确认、手动、AI、Code、Web 等执行主体表达做完整治理：清理推荐表达、吸收式处理历史工作对象中的旧表达、改名 legacy 检测标记，并把主体命名原则沉淀到 active specs，确保后续不得再出现主语不清晰或主体错误的用法。
+  承接 spark-0026，对 LDVH 中“人工”、Human、Human 确认、手动、AI、Code、Web 等执行主体表达做完整治理：清理推荐表达、吸收式处理历史工作对象中的旧表达、改名 legacy 检测标记，并把主体命名原则沉淀到 active specs，确保后续不得再出现主语不清晰或主体错误的用法。
 status: executing
 created: '2026-06-25T03:30:52+08:00'
-updated: '2026-06-25T04:20:00+08:00'
+updated: '2026-06-25T04:27:34+08:00'
 priority: P0
 plan_confirmed_at: '2026-06-25T03:30:52+08:00'
 review_requested_at: ''
@@ -13,19 +13,19 @@ closure_requested_at: ''
 description: |
   本 WorkCase 是 spark-0026 的并行执行线程 C 承接对象。任务要求先分类，不机械全局替换；真实 Human 介入、授权、确认、取舍保留或改为 Human/Human Gate；AI 回读、原文核对、文件事实源核对改为明确核对动作；命令行或环境操作改为手动命令、手动步骤或环境接入；Code 机械校验改为 Code/测试/确定性校验；含混或会触发 Human Gate 的只记录，不擅自改。
 
-  首轮扫描覆盖 `specs/`、`rules/`、`code/`、`tests/`、`web/` 和 `ldvh-base/`，并完成低风险推荐表达清理。Human 随后明确要求历史旧表达也必须处理掉，尤其是“人工降级”这种同时混淆执行主体和旧降级概念的表达；主体命名原则必须沉淀到 specs，后续不能再有主语不清晰或主体错误的用法。
+  首轮扫描覆盖 `specs/`、`rules/`、`code/`、`tests/`、`web/` 和 `ldvh-base/`，并完成低风险推荐表达清理。Human 随后明确要求历史旧表达也必须处理掉，尤其是旧复合表达（原称“人工降级”）这种同时混淆执行主体和旧降级概念的表达；主体命名原则必须沉淀到 specs，后续不能再有主语不清晰或主体错误的用法。
 
-  因此本 WorkCase 不关闭，继续承接扩展范围：历史 Spark/Study/WorkCase 采用吸收式改写，Code 中 legacy “人工降级”检测标记采用改名策略，主体命名规范沉淀到 active specs，并补齐需求方案子 Agent 审核与完成后子 Agent 检查。
+  因此本 WorkCase 不关闭，继续承接扩展范围：历史 Spark/Study/WorkCase 采用吸收式改写，Code 中旧复合表达检测标记采用改名策略，主体命名规范沉淀到 active specs，并补齐需求方案子 Agent 审核与完成后子 Agent 检查。
 success_criteria: |
   - [x] 新建 workcase-0008，并与 spark-0026 建立关联。
-  - [x] 全量扫描 `人工|Human|用户确认|手动|AI|Code|Web` 相关主体表达，并重点分类“人工”和“用户确认”命中。
+  - [x] 全量扫描 `人工|Human|Human 确认|手动|AI|Code|Web` 相关主体表达，并重点分类“人工”和旧确认表达命中。
   - [x] 对明确低风险的 active specs、attachments、draft/candidate 32、Code 输出文案和测试夹具做最小修改。
-  - [ ] code 中用于识别 legacy “人工降级”旧表达的检测能力已改名，不再以“人工降级”作为变量名、诊断名、测试名或推荐输出；旧词只允许作为待检测输入样本或废止表达引用出现。
+  - [x] code 中用于识别旧复合表达（原称“人工降级”）的检测能力已改名，不再以“人工降级”作为变量名、诊断名、测试名或推荐输出；旧词只允许作为待检测输入样本或废止表达引用出现。
   - [x] 不修改 workcase-0006、workcase-0007、spark-0027 或 study-0011。
   - [x] 更新 spark-0026 evolution，记录清理结果、保留理由、未决项和后续承接。
   - [x] 运行事实源校验、相关扫描和 `python3 code/specs_validate.py all --fail-on-diagnostics`，并在验证证据中记录结果。
-  - [ ] 历史 Spark/Study/WorkCase 中“人工降级”“人工降级检查”“人工核对/检查/复核”等旧表达完成吸收式改写：历史来源可追溯，但当前有效结论明确改为 Human、AI 回读、Code、Web、环境、手动命令或废止表达。
-  - [ ] 主体命名原则已沉淀到 active specs 或附件，形成禁止项和推荐替代表达，明确默认执行主体、Human/Human Gate、Code、Web、环境/运行时扩展、手动命令和子 Agent 的主语边界。
+  - [x] 历史 Spark/Study/WorkCase 中旧复合表达和旧主体表达完成吸收式改写：历史来源可追溯，但当前有效结论明确改为 Human、AI 回读、Code、Web、环境、手动命令或废止表达。
+  - [x] 主体命名原则已沉淀到 active specs 或附件，形成禁止项和推荐替代表达，明确默认执行主体、Human/Human Gate、Code、Web、环境/运行时扩展、手动命令和子 Agent 的主语边界。
   - [ ] 扩展方案已完成独立子 Agent 需求审核；完成后已完成独立子 Agent 结果复核，并由主控记录处理结论。
 source: |
   来源 Spark：`ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml`。
@@ -70,7 +70,7 @@ orchestration:
         - web/
         - ldvh-base/
       expected_output: |
-        使用 `rg` 全量扫描主体表达，重点输出“人工”和“用户确认”命中分类；保留历史事实和含混项，不机械替换。
+        使用 `rg` 全量扫描主体表达，重点输出“人工”和旧确认表达命中分类；保留历史事实和含混项，不机械替换。
       status: done
       result_summary: |
         已完成扫描。active specs/rules/code/tests/web 中的“人工”主要分为：真实 Human 确认/复核、AI 回读或临时核对、手动步骤/手动命令、Code legacy 检测标记、测试夹具文案。`ldvh-base` 中大量命中属于 spark-0025/0026、workcase-0005、历史 Study/Spark 或既有 WorkCase 的过程事实，未批量改写。
@@ -118,7 +118,7 @@ orchestration:
         记录未改表达的保留理由和需要主线程/Human 决策的问题。
       status: done
       result_summary: |
-        code 中剩余 `人工降级` 首轮仅作为 legacy 旧表达检测标记保留，用于识别历史或不推荐用语，不作为推荐输出。Human 已在后续决策中要求采用改名策略，见 item-7。`ldvh-base` 中剩余命中主要是历史工作对象、来源 Spark、Study 原文或被本任务明确排除对象之外的过程事实；Human 已要求历史旧表达也必须处理，见 item-6。
+        code 中剩余旧复合表达首轮仅作为 legacy 旧表达检测标记保留，用于识别历史或不推荐用语，不作为推荐输出。Human 已在后续决策中要求采用改名策略，见 item-7。`ldvh-base` 中剩余命中主要是历史工作对象、来源 Spark、Study 原文或被本任务明确排除对象之外的过程事实；Human 已要求历史旧表达也必须处理，见 item-6。
       evidence_refs:
         - code/spec_checks/runtime_projection.py
         - code/spec_checks/assurance_report.py
@@ -136,7 +136,7 @@ orchestration:
         运行事实源校验、相关扫描、Code 综合校验和提交预检，记录结果与残留风险。
       status: done
       result_summary: |
-        已完成验证：`python3 code/fact_validate.py ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml` 通过；定向 pytest 115 项通过；`python3 code/specs_validate.py all --fail-on-diagnostics` 通过；`git diff --check` 通过。最终扫描显示 active specs/rules/code/tests/web 中仅剩 code legacy “人工降级”检测标记和 `test_commit_validate.py` 私有 trailer 旧写法样本；`ldvh-base` 剩余命中为历史事实、来源 Spark、既有 WorkCase/Study 或本 WorkCase 的分类记录。
+        首轮验证已完成：`python3 code/fact_validate.py ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml` 通过；定向 pytest 115 项通过；`python3 code/specs_validate.py all --fail-on-diagnostics` 通过；`git diff --check` 通过。扩展治理后重新运行验证，结果见 verification_evidence。
       evidence_refs:
         - code/fact_validate.py
         - code/specs_validate.py
@@ -154,10 +154,15 @@ orchestration:
         - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
         - ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml
       expected_output: |
-        扫描并处理历史工作对象中的“人工降级”“人工降级检查”“人工核对/检查/复核”等旧表达；历史来源不抹除，但当前 summary/evolution/conclusion 必须明确旧表达已废止并给出新主体归口。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+        扫描并处理历史工作对象中的旧复合表达和旧主体表达；历史来源不抹除，但当前 summary/evolution/conclusion 必须明确旧表达已废止并给出新主体归口。
+      status: done
+      result_summary: |
+        已按吸收式原则改写允许范围内的历史对象：`spark-0025`、`workcase-0005`、`spark-0017`、`spark-0019`、`spark-0022`、`study-0008`、`study-0002`、`study-0003`、`study-0009`、`study-0010` 及若干 Spark 的旧确认表达已改为 Human、AI 回读核对、文件事实源核对、手动命令、临时接入方式或废止表达引用。保留的旧词均为 `01.Att.08`、`spark-0025`、`spark-0026`、`workcase-0005`、`workcase-0008` 中的废止表达、原称说明或 Code 输入样本，不作为推荐写法。
+      evidence_refs:
+        - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
+        - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml
+        - ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml
+        - ldvh-base/studies/study-0008-ai-capability-asset-industry-practices.md
       blocking_reason: null
     - id: item-7
       title: legacy 检测标记改名
@@ -169,9 +174,14 @@ orchestration:
         - tests/code/
       expected_output: |
         保留旧表达检测能力，但将变量名、诊断名、测试名和输出文案从“人工降级”改为历史废止表达检测；旧词只作为输入样本或 quoted legacy phrase 出现。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已将 assurance-report 内部 marker 改名为 `ASSURANCE_REPORT_LEGACY_LIMITED_STATUS_MARKERS`，输出原因改为 `matched legacy limited-status marker`；`coverage_degraded` 的 Human-facing label 改为“覆盖范围受限”。runtime-projection 新增 `RUNTIME_PROJECTION_DEPRECATED_SUBJECT_EXPRESSION_RE`，旧复合表达本身不再被视为 authority 线索；测试新增旧表达样本，确认仅有旧表达时继续报 `RUNTIME_PROJECTION_AUTHORITY_MISSING`。未迁移 `degraded` 结构化状态、schema key 或 legacy compatibility 字段。
+      evidence_refs:
+        - code/spec_checks/assurance_report.py
+        - code/spec_checks/runtime_projection.py
+        - tests/code/specs_validate_checks/test_assurance_report.py
+        - tests/code/specs_validate_checks/test_runtime_projection.py
       blocking_reason: null
     - id: item-8
       title: 主体命名规范沉淀
@@ -188,9 +198,12 @@ orchestration:
         - specs/08-测试基础规范.md
       expected_output: |
         将主体命名原则沉淀为 active specs/附件中的正式表达要求和禁止项，明确 AI、主控 AI、子 Agent、Human/Human Gate、Code、Web、环境/运行时扩展、手动命令、Git/Tests/事实对象的主语边界。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已在 `specs/attachments/01.Att.08-规范表达清单.md` 增加执行主体命名规则和不推荐表达条目：默认执行主体、真实 Human 判断、子 Agent、Code/测试、Web、环境/运行时扩展、Git/事实对象和手动命令均有推荐主语、适用动作和禁止写法。`preflight` 提示 specs 写入需识别 Human Gate；本轮依据主线程/Human 明确要求“主体命名原则必须沉淀到 specs”继续执行，未改变状态机、事实源边界、Rules STOP/source_specs/sync_triggers 或 Code 结构化契约。
+      evidence_refs:
+        - specs/attachments/01.Att.08-规范表达清单.md
+        - python3 code/specs_validate.py preflight --target-path specs/attachments/01.Att.08-规范表达清单.md
       blocking_reason: null
     - id: item-9
       title: 扩展方案子 Agent 审核
@@ -204,9 +217,12 @@ orchestration:
         - specs/07-事实源边界与Git追溯规范.md
       expected_output: |
         由独立子 Agent 审核扩展方案是否会破坏历史事实、是否正确沉淀 specs、是否遗漏 Human Gate 或事实源边界；审核通过后再执行 item-6 至 item-8。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已完成两个真实只读子 Agent 执行前方案审核。事实源/边界视角结论为“可执行，但必须带边界执行”：不得写入 workcase-0006/0007/0009/0010、spark-0027/0028、study-0011，历史对象必须吸收式改写，不改变事实源边界或 Code 结构化契约。Code/测试视角结论为“建议执行，但范围钉死在 legacy 旧表达检测命名”：不迁移 `degraded` 结构化状态，只改旧表达检测命名、输出理由和 authority 识别。
+      evidence_refs:
+        - subagent:019efb4b-a91c-77d0-82c0-c7739605cf63
+        - subagent:019efb4b-ba0c-7ad3-8c61-9b00a79e8b0f
       blocking_reason: null
     - id: item-10
       title: 完成后子 Agent 结果复核
@@ -220,9 +236,12 @@ orchestration:
         - tests/
       expected_output: |
         执行完成后由独立子 Agent 复核全量残留、specs 表达一致性、Code marker 改名、事实源合法性和验证证据；主控处理复核结论后再请求 Human 关闭确认。
-      status: pending
-      result_summary: ''
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已完成两个真实只读子 Agent 完成后结果复核。事实源/历史边界视角结论为 `pass_with_notes`：22 个变更文件未包含禁止对象，事实源全量校验通过，旧表达残留语境可接受；建议主线程在完整工作区补充确认一次 Rules 同步影响。Code/tests 契约视角结论为 `pass`：旧表达检测能力保留，旧词仅作为 legacy marker 或输入样本，未迁移 `degraded` 结构化状态、schema key 或诊断契约，相关 pytest 和 specs 综合校验通过。
+      evidence_refs:
+        - subagent:019efb53-98c8-7e31-afa9-af380393104e
+        - subagent:019efb53-9954-7033-9af6-e39fc0bf521b
       blocking_reason: null
   plan_review:
     orchestration_owner: main_controller
@@ -316,19 +335,115 @@ orchestration:
       result:
         status: pass_with_followups
         summary: |
-          主体表达分类和低风险清理已完成，未触碰用户明确排除对象，未改变 Code 结构化契约、Web 行为或环境声明。验证和提交仍在 item-5 收尾中；历史事实改写和 legacy 检测标记删除应交主线程/Human 后续决策。
+          主体表达分类、历史对象吸收式改写、legacy 旧表达检测标记改名、specs 主体命名规则沉淀和完成后子 Agent 结果复核已完成，未触碰用户明确排除对象，未改变 Code 结构化契约、Web 行为或环境声明。WorkCase 关闭仍需主线程/Human 判断。
         key_findings:
-          - active specs/rules/code/tests/web 中的推荐表达已不再使用泛化“人工”作为默认执行主体。
-          - code 中剩余 `人工降级` 是 legacy 旧表达检测标记，不是推荐输出文案。
-          - ldvh-base 中剩余“人工”多为历史事实、来源 Spark、Study 原文或本轮明确保留项。
+          - active specs 附件已明确 AI、主控 AI、子 Agent、Human/Human Gate、Code/测试、Web、环境/运行时扩展、Git/事实对象和手动命令的主体命名边界。
+          - code 中旧复合表达仅保留为待检测输入样本或 compatibility alias，不再作为变量正式名、诊断输出名或推荐 Human-facing 文案。
+          - ldvh-base 中允许范围内的历史 Spark/Study/WorkCase 已做吸收式改写；剩余旧词仅作为废止表达、原称说明或输入样本引用。
           - workcase-0006、workcase-0007、spark-0027 和 study-0011 未被修改。
         required_changes: []
         evidence_refs:
-          - rg 人工 specs rules code tests web
-          - rg 人工 ldvh-base
-          - git status --short --untracked-files=all
-    review_items: []
-    controller_resolution: {}
+          - python3 code/fact_validate.py ldvh-base --format text
+          - python3 code/specs_validate.py all --fail-on-diagnostics
+          - python3 -m pytest -q tests/code/specs_validate_checks/test_runtime_projection.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_consistency.py tests/code/test_commit_validate.py
+          - git diff --check
+          - rg 旧主体表达与旧复合表达残留
+    review_items:
+      - id: result-review-1
+        role: 事实源与历史对象边界
+        agent_name: subagent-019efb53-98c8-7e31-afa9-af380393104e
+        requested_at: '2026-06-25T04:43:00+08:00'
+        prompt_context:
+          objective: |
+            只读复核 workcase-0008 完成后 diff、历史对象吸收式改写、旧表达残留语境、specs 主体命名沉淀和事实源合法性。
+          input_refs:
+            - ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml
+            - ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml
+            - specs/attachments/01.Att.08-规范表达清单.md
+            - ldvh-base/sparks/
+            - ldvh-base/studies/
+            - ldvh-base/workcases/
+        context_digest: |
+          不修改文件；不得建议写入 workcase-0006、workcase-0007、workcase-0009、workcase-0010、spark-0027、spark-0028 或 study-0011。
+        result:
+          status: pass_with_followups
+          summary: |
+            22 个变更文件未包含禁止对象；禁止对象直接 diff 为空；事实源全量校验通过，files=49、errors=0、warnings=0。旧表达残留语境可接受：active 表达清单禁止项、历史引用、迁移来源、输入样本或废止说明。WorkCase 记录与现状基本一致。
+          key_findings:
+            - 未发现越界修改。
+            - 01.Att.08 已明确旧主体表达和旧复合表达的禁止项、拆分口径和允许历史引用边界。
+            - Code/tests 中旧词只作为 legacy marker 或输入样本保留。
+          required_changes: []
+          recommendations:
+            - 合并前建议主线程在完整工作区再确认一次 Rules 同步影响，因为当前 worktree 缺少 governed-projects 输入，rules_sync_review 输出为 limited。
+        evidence_refs:
+          - python3 code/fact_validate.py ldvh-base --format text
+          - git diff --stat
+          - rg 旧主体表达与旧复合表达残留
+        raw_output_ref: subagent:019efb53-98c8-7e31-afa9-af380393104e
+        attested_at: '2026-06-25T04:51:00+08:00'
+        attestation:
+          signer: subagent-019efb53-98c8-7e31-afa9-af380393104e
+          statement: 只读完成事实源与历史对象边界复核，结论为 pass_with_notes。
+      - id: result-review-2
+        role: Code/tests 契约与残留扫描
+        agent_name: subagent-019efb53-9954-7033-9af6-e39fc0bf521b
+        requested_at: '2026-06-25T04:43:00+08:00'
+        prompt_context:
+          objective: |
+            只读复核 legacy 旧复合表达检测标记改名、runtime_projection authority 判断、assurance_report 输出文案、相关 tests 和 Code/tests 残留。
+          input_refs:
+            - code/spec_checks/runtime_projection.py
+            - code/spec_checks/assurance_report.py
+            - code/specs_validate.py
+            - tests/code/specs_validate_checks/test_runtime_projection.py
+            - tests/code/specs_validate_checks/test_assurance_report.py
+            - tests/code/test_commit_validate.py
+        context_digest: |
+          保留旧表达检测能力；不得迁移或破坏 `degraded` 结构化状态、schema key 或诊断契约。
+        result:
+          status: pass
+          summary: |
+            未发现阻断问题。旧复合表达检测能力仍保留，但旧词只出现在废止表达检测入口、legacy marker 或测试输入样本中；`degraded` 结构化状态、schema/key 和诊断码契约未迁移或破坏；runtime_projection 已避免把旧复合表达当作 authority 证据，并有测试覆盖。
+          key_findings:
+            - assurance_report 输出原因已改为 `matched legacy limited-status marker`，未发现旧诊断文案残留。
+            - 定向 pytest 通过：79 passed。
+            - specs 综合校验通过：diagnostics=0。
+            - Code/tests 中 `人工降级` 仅 3 处命中，均为检测实现或测试输入样本/legacy marker。
+          required_changes: []
+          recommendations:
+            - 兼容别名 `ASSURANCE_REPORT_DEGRADED_MARKERS` 可保留；后续确认外部调用方迁移后再单独清理。
+        evidence_refs:
+          - python3 -m pytest -q tests/code/specs_validate_checks/test_runtime_projection.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_consistency.py tests/code/test_commit_validate.py
+          - python3 code/specs_validate.py all --fail-on-diagnostics
+          - rg -n "matched degraded marker|人工降级" code tests
+        raw_output_ref: subagent:019efb53-9954-7033-9af6-e39fc0bf521b
+        attested_at: '2026-06-25T04:49:00+08:00'
+        attestation:
+          signer: subagent-019efb53-9954-7033-9af6-e39fc0bf521b
+          statement: 只读完成 Code/tests 契约与残留扫描复核，结论为 pass。
+    controller_resolution:
+      resolved_at: '2026-06-25T04:54:00+08:00'
+      resolver: main-controller-codex
+      source_review_item_ids:
+        - result-review-1
+        - result-review-2
+      accepted_findings:
+        - 完成后复核未发现必须修改项。
+        - 当前变更未越界触碰禁止对象。
+        - 旧表达残留仅作为禁止项、废止表达、历史原称说明、legacy marker 或输入样本引用。
+        - Code 结构化契约和 `degraded` compatibility 未迁移或破坏。
+      rejected_findings: []
+      required_changes_applied: []
+      unresolved_items:
+        - 当前 worktree 缺少 governed-projects 输入，Rules 同步影响已做 limited 复核；合并前建议主线程在完整工作区再确认。
+        - WorkCase 是否关闭仍需主线程/Human 判断。
+      changed_fields:
+        - orchestration.execution_items.item-10
+        - orchestration.result_review
+      revision_history_refs: []
+      summary: |
+        已吸收两个完成后子 Agent 复核结论；无阻断项，保留主线程/Human 关闭决策和完整工作区 Rules 同步复核建议。
     human_closure_confirmation: ""
 verification_evidence: |
   ## 验证计划
@@ -337,30 +452,29 @@ verification_evidence: |
 
   ## 验证命令
 
-  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml`
-  - `python3 -m pytest -q tests/code/test_fact_cli.py tests/code/test_fact_validate.py tests/code/specs_validate_checks/test_v2.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_human_gate.py`
+  - `python3 code/fact_validate.py ldvh-base --format text`
+  - `python3 -m pytest -q tests/code/specs_validate_checks/test_runtime_projection.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_consistency.py tests/code/test_commit_validate.py`
   - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/attachments/01.Att.08-规范表达清单.md --task-type rules_sync_review --format text`
   - `git diff --check`
-  - `rg -n "人工" specs rules code tests web --glob '*.md' --glob '*.yaml' --glob '*.yml' --glob '*.py' --glob '*.ts' --glob '*.tsx'`
-  - `rg -n "用户确认" specs rules code tests web`
-  - `rg -n "人工" ldvh-base --glob '!ldvh-base/workcases/workcase-0006*' --glob '!ldvh-base/workcases/workcase-0007*' --glob '!ldvh-base/sparks/spark-0027*' --glob '!ldvh-base/studies/study-0011*'`
+  - `rg -n "人工降级|人工核对|人工检查|人工复核|人工审查|用户确认" specs rules code tests web ldvh-base ...`
 
   ## 验证结果
 
-  - 事实源校验通过：files=2，errors=0，warnings=0。
-  - 定向 pytest 通过：115 passed。
+  - 事实源全量校验通过：files=49，errors=0，warnings=0。
+  - 定向 pytest 通过：79 passed。
   - active specs 综合检查通过：diagnostics=0。
+  - Rules 入口同步审查命令返回 `result_status: limited`，原因是当前 worktree 未提供 governed-projects 输入；read_plan 指向 `01.Att.08` 和 `01`，affected runtime_extensions=0，未显示需要修改 Rules 入口的具体同步项。
   - `git diff --check` 通过。
-  - active specs/rules/code/tests/web 中剩余“人工”命中仅为 Code legacy “人工降级”检测标记；剩余“用户确认”命中仅为 `tests/code/test_commit_validate.py` 私有 trailer 旧写法样本。
-  - `ldvh-base` 剩余“人工”命中为历史事实、来源 Spark、既有 WorkCase/Study 或本 WorkCase 的分类记录，本轮按事实源历史保留。
+  - 残留扫描中旧表达仅作为 active 表达清单禁止项、废止表达原称说明、Code 待检测输入样本或本 WorkCase 执行记录出现；未发现将旧表达作为正式推荐主体命名的残留。
 
   ## 结论
 
-  本轮低风险主体命名清理已通过必要验证。需要主线程/Human 决策的内容已记录为残留风险和后续问题。
+  主体命名治理主体工作已通过必要验证。完成后子 Agent 复核通过并提交后，可交由主线程/Human 判断是否关闭 WorkCase。
 closure_evidence: |
   ## 验证计划
 
-  完成 item-5 验证后再请求主线程/Human 判断是否关闭。
+  完成 item-10 结果复核和提交后再请求主线程/Human 判断是否关闭。
 
   ## 验证命令
 
@@ -368,16 +482,16 @@ closure_evidence: |
 
   ## 验证结果
 
-  当前状态为 `executing`，低风险清理和验证已完成，等待主线程/Human 判断是否关闭。
+  当前状态为 `executing`，主体命名治理主体工作已完成，等待完成后子 Agent 结果复核、提交和主线程/Human 关闭判断。
 
   ## 结论
 
-  尚未关闭；历史事实吸收式改写、legacy 检测标记改名和主体命名规范沉淀已纳入后续执行项，完成前不得请求关闭。
+  尚未关闭；关闭动作需由主线程/Human 判断。
 closure_outcome: ""
 closed_at: ""
 residual_risks:
-  - code 中 legacy “人工降级”检测标记已由 Human 决策采用改名策略；当前作为 item-7 待执行，不再作为可关闭残留。
-  - ldvh-base 历史 Spark/Study/WorkCase 中旧“人工”语境已由 Human 决策纳入 item-6 吸收式改写；当前不再作为可关闭残留。
+  - 当前 worktree 缺少 governed-projects 输入，知识地图 rules_sync_review 输出为 limited；已按 read_plan 和 active specs/附件原文临时核对，仍建议主线程在合并前结合完整工作区再确认一次 Rules 同步影响。
+  - WorkCase 仍为 `executing`；是否关闭、关闭时间和 closure_outcome 需主线程/Human 决策。
 related_sparks:
   - spark-0026
 related_adrs: []
