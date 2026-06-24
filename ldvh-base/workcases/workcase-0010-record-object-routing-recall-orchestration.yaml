@@ -5,7 +5,7 @@ goal: |
   承接 spark-0028，设计并落地统一的“记录对象归口、沉淀与召回行动编排”，用于 Spark、ADR、Pitfall 三类记录对象的入库分流、查重合并、冲突判断、出库召回和 Human Gate 识别；WorkCase 与 Study 只作为边界外出口。
 status: human_plan_confirming
 created: '2026-06-25T04:13:45.250316'
-updated: '2026-06-25T05:16:00+08:00'
+updated: '2026-06-25T06:45:00+08:00'
 priority: P1
 description: |
   spark-0028 已收敛出核心判断：Spark、ADR、Pitfall 是记录对象，不宜分别建立三个独立行动编排；它们共享同一类底层问题，即 AI 遇到输入、发现、判断、失败或经验线索时，如何判断是否需要长期记录、归口到哪类记录对象、是否已有对象可召回、是否更新旧对象、合并、新建、归档、废弃或触发 Human Gate。
@@ -137,6 +137,45 @@ orchestration:
       evidence_refs:
         - multi_agent_v1:019efb4d-1573-7d82-82b6-2d6463e7c6b8
         - multi_agent_v1:019efb4d-491d-7c13-a048-494887caab02
+      blocking_reason: null
+    - id: item-4
+      title: 建立候选行动编排成员草案
+      role: orchestration-draft
+      mode: sequential
+      input_refs:
+        - ldvh-base/workcases/workcase-0010-record-object-routing-recall-orchestration.yaml
+        - ldvh-base/sparks/spark-0028-record-object-routing-recall-orchestration.yaml
+        - specs/03-行动编排规范.md
+        - specs/20-Spark-火花.md
+        - specs/21-WorkCase-工作项.md
+        - specs/22-ADR-决策.md
+        - specs/23-Pitfall-踩坑经验.md
+        - specs/24-Study-研究报告.md
+        - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+        - specs/31-git-commit-action-Git提交行动编排.md
+        - specs/32-environment-entry-adaptation-环境入口落地与适配检查.md
+      expected_output: 在 30-59 未占用编号中建立 candidate/draft 草案，分别承接记录对象归口、Study 研究行动产物和 WorkCase 行动承接，不激活成员。
+      status: done
+      result_summary: |
+        已检查 30-59 现有成员：30 和 31 为 active；32 为 draft/candidate；33、34、35 未占用。本轮新增三个候选成员主文件，均为 `v2_spec.status=draft`、`v2_spec.authority=not_active_until_human_approved`、`v2_action_member.collection_status=candidate`，并明确不得被 Rules、Skill、Agent、Hook、Code、Web 或 AI 默认当作 active 流程执行。
+
+        候选拆分：
+
+        - `specs/33-record-object-routing-recall-记录对象归口与召回.md`：只管 Spark、ADR、Pitfall 三类记录对象的归口、创建前召回、出库召回、状态使用、冲突识别和 Human Gate；WorkCase 与 Study 只作为出口。
+        - `specs/34-study-research-output-研究行动产物编排.md`：只管研究行动产物 Study 的准入、承接对象检查、报告写入和后续分流；创建 Study 前必须检查 Spark、ADR 或 Pitfall，缺失时优先创建 Spark 承接研究议题。
+        - `specs/35-workcase-action-carrying-工作项行动承接编排.md`：只管明确行动目标进入 WorkCase 后的方案审核、执行、自检、复核、关闭确认和 Git 提交衔接；`workcase-0009` 仅记录为后续 WorkCase/行动承接编排讨论的并行能力参考，本轮不激活、不并入 `specs/03`。
+
+        未修改 `specs/03`，未修改 active 30/31 语义，未修改 workcase-0009、spark-0026、spark-0027 或 study-0011。
+      evidence_refs:
+        - specs/33-record-object-routing-recall-记录对象归口与召回.md
+        - specs/34-study-research-output-研究行动产物编排.md
+        - specs/35-workcase-action-carrying-工作项行动承接编排.md
+        - specs/03-行动编排规范.md
+        - specs/20-Spark-火花.md
+        - specs/21-WorkCase-工作项.md
+        - specs/22-ADR-决策.md
+        - specs/23-Pitfall-踩坑经验.md
+        - specs/24-Study-研究报告.md
       blocking_reason: null
   plan_review:
     orchestration_owner: main_controller
@@ -306,14 +345,61 @@ orchestration:
     controller_resolution: null
     human_closure_confirmation: null
 plan_confirmed_at: ''
-verification_evidence: ''
+verification_evidence: |
+  ## 验证计划
+
+  验证本轮只新增 candidate/draft 行动编排成员草案和回写 workcase-0010，不激活成员、不修改 active 30/31 语义、不把详细流程塞进 `specs/03`，并确认工作对象事实源和 specs 结构可被 Code 解析。
+
+  ## 验证命令
+
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node ldvh-base/workcases/workcase-0010-record-object-routing-recall-orchestration.yaml --task-type work_object --format json`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/03-行动编排规范.md --task-type spec_change --format json`
+  - `python3 code/specs_validate.py preflight --target-path specs/33-record-object-routing-recall-记录对象归口与召回.md --operation update`
+  - `python3 code/specs_validate.py preflight --target-path specs/34-study-research-output-研究行动产物编排.md --operation update`
+  - `python3 code/specs_validate.py preflight --target-path specs/35-workcase-action-carrying-工作项行动承接编排.md --operation update`
+  - `python3 code/specs_validate.py preflight --target-path specs/33-record-object-routing-recall-记录对象归口与召回.md --operation create --format text`
+  - `python3 code/specs_validate.py preflight --target-path specs/34-study-research-output-研究行动产物编排.md --operation create --format text`
+  - `python3 code/specs_validate.py preflight --target-path specs/35-workcase-action-carrying-工作项行动承接编排.md --operation create --format text`
+  - `python3 code/fact_cli.py show workcase-0010`
+  - `python3 code/fact_validate.py ldvh-base --format text`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 code/specs_validate.py preflight --target-path specs/33-record-object-routing-recall-记录对象归口与召回.md --operation update --format text`
+  - `python3 code/specs_validate.py preflight --target-path specs/34-study-research-output-研究行动产物编排.md --operation update --format text`
+  - `python3 code/specs_validate.py preflight --target-path specs/35-workcase-action-carrying-工作项行动承接编排.md --operation update --format text`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/33-record-object-routing-recall-记录对象归口与召回.md --task-type spec_change --format text`
+  - `git diff --check`
+
+  ## 验证结果
+
+  - 工作对象起点 knowledge-map 在当前 worktree 内受限，提示找不到工作区级 `LDVH-GOVERNED-PROJECTS.yaml` 和 start_node，已按入口规则退回权威文件原文。
+  - `specs/03` 起点 knowledge-map 在当前 worktree 内受限，提示找不到工作区级 `LDVH-GOVERNED-PROJECTS.yaml`；输出仍定位 03、30、31、32、附件和相关规范，已按原文回读。
+  - 新增前 update preflight 对 33/34/35 返回 `PREFLIGHT_TARGET_MISSING`，同时提示 Human Gate、Git 追溯、同步影响和 Rules 入口同步评估；Human 已授权本轮新增 candidate 草案，故按新增草案继续。
+  - 新增后 create preflight 对 33/34/35 返回 `PREFLIGHT_CREATE_TARGET_EXISTS`，确认目标已存在；相关 Human Gate、Git 追溯和同步影响提示保留为后续升级 active 前决策输入。
+  - `python3 code/fact_cli.py show workcase-0010` 可正常解析并显示 item-4、验证证据、未决项和候选文件引用。
+  - `python3 code/fact_validate.py ldvh-base --format text` 通过，errors=0，warnings=0。
+  - `python3 code/specs_validate.py all --fail-on-diagnostics` 通过，diagnostics=0。
+  - 对 33/34/35 的 update preflight 均为 `needs_human_gate`，errors=0；提示 Human Gate、Git 追溯、同步影响和 Rules 入口同步评估，已作为后续升级 active 前的 Human 决策输入记录。
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/33-record-object-routing-recall-记录对象归口与召回.md --task-type spec_change --format text` 完成但 result_status=limited，原因是当前 worktree 缺少工作区级 `LDVH-GOVERNED-PROJECTS.yaml`；已按入口规则退回 active specs 和候选文件原文。
+  - `git diff --check` 通过。
+
+  ## 结论
+
+  候选成员 33/34/35 已形成可解析草案，均保持 draft/candidate；本轮未激活成员、未修改 active 30/31 语义、未修改 `specs/03`。最终是否升级、合并或调整编号仍需 Human 后续决策；preflight 的 `needs_human_gate` 不阻断本轮 candidate 草案登记，但阻断把它们解释为 active 流程。
 closure_evidence: ''
 closure_requested_at: ''
 review_requested_at: ''
 closed_at: ''
 closure_outcome: ''
-residual_risks: []
-followup_refs: []
+residual_risks:
+  - 三个新增成员均为 candidate/draft；是否升级 active、是否合并或调整编号，需要 Human 后续决策。
+  - 管理类编排需要与 33/34/35 及现有 30/31/32 一并讨论，本轮未激活。
+  - workcase-0009 暂缓；仅作为后续 WorkCase/行动承接编排讨论中的并行执行能力参考，本轮未并入 specs/03。
+  - 当前 worktree 缺少工作区级 LDVH-GOVERNED-PROJECTS.yaml，知识地图工作对象导航受限；已用权威文件原文和命令验证兜底。
+followup_refs:
+  - specs/33-record-object-routing-recall-记录对象归口与召回.md
+  - specs/34-study-research-output-研究行动产物编排.md
+  - specs/35-workcase-action-carrying-工作项行动承接编排.md
+  - workcase-0009（后续 WorkCase/行动承接编排讨论参考，本轮不激活）
 revision_history:
   - at: '2026-06-25T05:16:00+08:00'
     from_status: subagents_plan_reviewing
@@ -340,6 +426,22 @@ revision_history:
       - revision_history
     summary: |
       记录 Human 对 0010 的最新裁决：记录对象归口、Study 研究行动产物、WorkCase 行动承接应拆成可协调的候选编排；Study 创建必须有 Spark/ADR/Pitfall 承接链，默认 Spark 优先；workcase-0009 先暂缓并关联到后续 WorkCase/行动承接编排讨论。
+  - at: '2026-06-25T06:32:00+08:00'
+    from_status: human_plan_confirming
+    to_status: human_plan_confirming
+    actor: codex-worker-ldvh-wc0010-candidate-orchestration
+    reason: |
+      根据 Human 最新裁决，在未占用编号中建立记录对象归口、Study 研究行动产物和 WorkCase 行动承接三个候选行动编排成员草案；所有新增成员均保持 draft/candidate，不激活。
+    changed_fields:
+      - updated
+      - orchestration.execution_items[item-4]
+      - verification_evidence
+      - residual_risks
+      - followup_refs
+      - related_docs
+      - revision_history
+    summary: |
+      新增 `specs/33-record-object-routing-recall-记录对象归口与召回.md`、`specs/34-study-research-output-研究行动产物编排.md`、`specs/35-workcase-action-carrying-工作项行动承接编排.md` 三个候选成员草案。33 只管 Spark/ADR/Pitfall 记录对象归口与召回；34 明确 Study 是研究行动产物且创建前必须有 Spark/ADR/Pitfall 承接链，无承接对象时优先 Spark；35 承接 WorkCase 生命周期并把 workcase-0009 留作后续讨论参考。本轮未修改 `specs/03`，未激活任何候选成员。
 related_docs:
   - specs/03-行动编排规范.md
   - specs/20-Spark-火花.md
@@ -347,6 +449,9 @@ related_docs:
   - specs/22-ADR-决策.md
   - specs/23-Pitfall-踩坑经验.md
   - specs/24-Study-研究报告.md
+  - specs/33-record-object-routing-recall-记录对象归口与召回.md
+  - specs/34-study-research-output-研究行动产物编排.md
+  - specs/35-workcase-action-carrying-工作项行动承接编排.md
 related_adrs: []
 related_sparks:
   - spark-0028
