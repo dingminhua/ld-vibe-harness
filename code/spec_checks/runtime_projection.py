@@ -18,6 +18,8 @@ RUNTIME_PROJECTION_DEFAULT_PATHS = [
 ]
 RUNTIME_PROJECTION_SPEC_REF_RE = re.compile(r"specs/[^`\s，。；、)）]+\.md")
 RUNTIME_PROJECTION_AUTHORITY_RE = re.compile(r"(specs/|规范来源|权威来源|上位依据|相关规范|问题原因|受限来源|degradation)")
+RUNTIME_PROJECTION_EXPLICIT_AUTHORITY_RE = re.compile(r"(specs/|规范来源|权威来源|上位依据|相关规范|degradation)")
+RUNTIME_PROJECTION_DEPRECATED_SUBJECT_EXPRESSION_RE = re.compile(r"人工降级")
 RUNTIME_PROJECTION_NEGATIVE_AUTHORITY_RE = re.compile(r"(无|没有|缺少|未).{0,8}(权威来源|规范来源|上位依据|相关规范|specs/|问题原因|受限来源)")
 
 
@@ -61,6 +63,11 @@ def has_authority(text):
         if not stripped or stripped.startswith("#"):
             continue
         if RUNTIME_PROJECTION_NEGATIVE_AUTHORITY_RE.search(stripped):
+            continue
+        if (
+            RUNTIME_PROJECTION_DEPRECATED_SUBJECT_EXPRESSION_RE.search(stripped)
+            and not RUNTIME_PROJECTION_EXPLICIT_AUTHORITY_RE.search(stripped)
+        ):
             continue
         if RUNTIME_PROJECTION_AUTHORITY_RE.search(stripped):
             return True

@@ -197,7 +197,7 @@ ASSURANCE_REPORT_RUNTIME_PROJECTION_THIRD_PARTY_TERMS = [
     "第三方 Skill",
     "包装 Skill",
 ]
-ASSURANCE_REPORT_LEGACY_DEGRADED_MARKERS = [
+ASSURANCE_REPORT_LEGACY_LIMITED_STATUS_MARKERS = [
     "open-degraded",
     "degraded",
     "人工降级",
@@ -206,6 +206,8 @@ ASSURANCE_REPORT_LEGACY_DEGRADED_MARKERS = [
     "降级方式",
     "记录降级",
 ]
+ASSURANCE_REPORT_LEGACY_DEGRADED_MARKERS = ASSURANCE_REPORT_LEGACY_LIMITED_STATUS_MARKERS
+ASSURANCE_REPORT_DEGRADED_MARKERS = ASSURANCE_REPORT_LEGACY_LIMITED_STATUS_MARKERS
 ASSURANCE_REPORT_LIMITED_MARKERS = [
     "受限说明",
     "受限方式",
@@ -335,9 +337,9 @@ def assurance_report_infer_status(requirement):
     if marker:
         return "limited", f"matched limited marker: {marker}"
 
-    marker = assurance_report_match_marker(text, ASSURANCE_REPORT_LEGACY_DEGRADED_MARKERS)
+    marker = assurance_report_match_marker(text, ASSURANCE_REPORT_LEGACY_LIMITED_STATUS_MARKERS)
     if marker:
-        return "limited", f"matched legacy compatibility marker: {marker}"
+        return "limited", f"matched legacy limited-status marker: {marker}"
 
     marker = assurance_report_match_marker(text, ASSURANCE_REPORT_OPEN_MARKERS)
     if marker:

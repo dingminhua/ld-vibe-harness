@@ -16,14 +16,14 @@ description: |
 
   本 WorkCase 是总控迁移项。第一阶段聚焦 `specs/`、`specs/attachments/` 和两个 Rules 入口中的派生表达；Code、Web 和 tests 的字段、状态和展示迁移先作为后续执行项登记，不在同一轮中进行未审核的硬改。
 
-  方案审核后补充约束：执行必须由 `rg "降级|degraded|degraded_accepted|人工降级|长期降级|适配降级|降级说明|降级路径|降级态|降级提示|降级兜底"` 的全量命中清单驱动，覆盖 `specs/`、`specs/attachments/` 和 `rules/`，并将每个命中项分类为正式机制、legacy compatibility、反例、历史迁移说明或无需修改。保留 `degraded` 或“降级”时必须说明保留理由和兼容边界。
+  方案审核后补充约束：执行必须由包含“降级”、`degraded`、`degraded_accepted`、旧复合表达（原称“人工降级”）、“长期降级”“适配降级”“降级说明”“降级路径”“降级态”“降级提示”“降级兜底”的全量命中清单驱动，覆盖 `specs/`、`specs/attachments/` 和 `rules/`，并将每个命中项分类为正式机制、legacy compatibility、反例、历史迁移说明或无需修改。保留 `degraded` 或“降级”时必须说明保留理由和兼容边界。
 success_criteria: |
   - [ ] active specs 不再把“降级”作为独立正式概念、状态、路径、关闭结果、验证方式、长期接受方案或 Human-facing 主展示态。
   - [ ] 建立全局替代语义表，明确工具不可用、工具输出不足、输入不足、能力缺口、证据不足、事实冲突、环境入口缺口、未验证、失败阻断、取消、延期实现、风险接受、残留风险和受控回写的处理口径。
   - [ ] Code Schema 相关 specs 将 `degraded` 从 active 契约收敛为 legacy compatibility / 待迁移对象，并设计 `result_status + issue_causes + suggested_action` 或等价替代字段。
   - [ ] Web/Human-facing 相关 specs 不再要求展示泛化“降级态”，改为展示具体原因态势、不可证明范围、验证状态、阻断原因、Human Gate 和后续承接位置。
   - [ ] WorkCase 相关 specs 不再推荐 `degraded_accepted`；目标未达成时走 `cancelled` 或 `partial_completed`，长期暂不实现走 Human Gate + ADR。
-  - [ ] Rules 入口中的“降级兜底/降级提示/人工降级检查”等派生表达，迁移为工具不可用报告、权威事实源回读、问题原因说明、修复建议和后续分流。
+  - [ ] Rules 入口中的“降级兜底/降级提示”和旧复合表达检测样本，迁移为工具不可用报告、权威事实源回读、问题原因说明、修复建议和后续分流。
   - [ ] Code/Web/tests 中仍需兼容的 `degraded` 字段、状态和测试，已明确作为后续迁移对象、兼容边界和验证入口。
   - [ ] 执行前和结果复核时均完成 `specs/`、`specs/attachments/` 和 `rules/` 的全量命中扫描，并解释所有保留的 `degraded` 或“降级”是否属于 legacy compatibility、反例或历史迁移说明。
   - [ ] 完成 WorkCase 事实源校验、相关 specs 诊断、Rules 入口同步审查和必要格式检查；无法完成的实现迁移必须记录残留风险和后续 WorkCase/Spark/ADR。
@@ -51,10 +51,10 @@ orchestration:
         - rules/
         - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
       expected_output: |
-        使用 `rg "降级|degraded|degraded_accepted|人工降级|长期降级|适配降级|降级说明|降级路径|降级态|降级提示|降级兜底"` 扫描 `specs/`、`specs/attachments/` 和 `rules/`，形成迁移清单，并将命中项分类为正式机制、legacy compatibility、反例、历史迁移说明或无需修改；后续执行项必须以该清单为准，不得只依赖手写 input_refs。
+        使用覆盖“降级”、`degraded`、`degraded_accepted`、旧复合表达（原称“人工降级”）、“长期降级”“适配降级”“降级说明”“降级路径”“降级态”“降级提示”“降级兜底”的扫描命令检查 `specs/`、`specs/attachments/` 和 `rules/`，形成迁移清单，并将命中项分类为正式机制、legacy compatibility、反例、历史迁移说明或无需修改；后续执行项必须以该清单为准，不得只依赖手写 input_refs。
       status: done
       result_summary: |
-        已用全量命中扫描驱动迁移：`rg "降级|degraded|degraded_accepted|人工降级|长期降级|适配降级|降级说明|降级路径|降级态|降级提示|降级兜底" specs rules -S --glob '*.md' --glob '*.yaml' --glob '*.yml'`。中文旧概念命中已在 specs/rules 清零；剩余 `degraded` 均分类为 legacy 字段、旧接口兼容、历史兼容枚举或后续实现迁移对象。
+        已用全量命中扫描驱动迁移，扫描模式覆盖旧复合表达（原称“人工降级”）和相关“降级”词组。中文旧概念命中已在 specs/rules 清零；剩余 `degraded` 均分类为 legacy 字段、旧接口兼容、历史兼容枚举或后续实现迁移对象。
       evidence_refs:
         - specs/
         - rules/
@@ -91,7 +91,7 @@ orchestration:
         - specs/07-事实源边界与Git追溯规范.md
         - specs/08-测试基础规范.md
       expected_output: |
-        将主干规范中的“降级路径/降级说明/长期降级/失败降级/人工降级检查/degraded 状态”等表达替换为具体问题原因、阻断规则、缺口分流、受控回写、验证声明、Human Gate 和后续承接位置。
+        将主干规范中的“降级路径/降级说明/长期降级/失败降级”、旧复合表达和 `degraded` 状态等表达替换为具体问题原因、阻断规则、缺口分流、受控回写、验证声明、Human Gate 和后续承接位置。
       status: done
       result_summary: |
         已迁移 03/04/05/06/07/08 主干规范：行动编排、Code、Web、运行时、事实源回写和测试不再使用泛化旧概念；工具不可用改为直接报告问题原因，输出不足改为补诊断/来源/范围，失败和未验证阻断完成或关闭。04/05/08 中 `degraded` 仅保留为 legacy compatibility 字段。
@@ -170,7 +170,7 @@ orchestration:
         - specs/07-事实源边界与Git追溯规范.md
         - specs/30-rules-entry-sync-review-Rules入口同步审查.md
       expected_output: |
-        在 item-2 和 item-3 完成 06/30 等 specs 语义迁移后，再同步两个 Rules 入口。Rules 不再使用“降级兜底/降级提示/人工降级检查”作为主机制表达，改为工具不可用直接报告、权威事实源回读、问题原因说明、修复建议和后续分流。权威事实源回读只是事实源优先级和核对动作，不得写成新的可接受兜底机制；若需要改变 STOP、source_specs、sync_triggers、职责边界、权限含义或环境薄引用，必须暂停进入 Human Gate。
+        在 item-2 和 item-3 完成 06/30 等 specs 语义迁移后，再同步两个 Rules 入口。Rules 不再使用“降级兜底/降级提示”或旧复合表达作为主机制表达，改为工具不可用直接报告、权威事实源回读、问题原因说明、修复建议和后续分流。权威事实源回读只是事实源优先级和核对动作，不得写成新的可接受兜底机制；若需要改变 STOP、source_specs、sync_triggers、职责边界、权限含义或环境薄引用，必须暂停进入 Human Gate。
       status: done
       result_summary: |
         已同步两个 Rules 入口派生表达：列名改为“问题分流”，工具不可用、输出不足、来源缺失或事实冲突时要求报告问题原因并退回权威事实源和临时核对动作；Rules 不再使用旧概念作为兜底机制或长期可接受路径。本次未改变 source_specs、sync_triggers、职责边界、权限含义或环境薄引用。
@@ -272,7 +272,7 @@ orchestration:
             - 方案保留 legacy compatibility / 待迁移说明，避免把实现层 `degraded` 字段一次性硬删。
             - D12 要求长期缺口接受进入 Human Gate + ADR，但执行项未列入 `specs/22-ADR-决策.md`。
             - D15 提到 Spark/WorkCase/Pitfall/ADR 等承接位置，但执行项缺少 `specs/20-Spark-火花.md` 和 `specs/23-Pitfall-踩坑经验.md`。
-            - 实际扫描显示 00、02、31 和多份附件仍有“降级/人工降级/degraded”表达；当前附件清单不足。
+            - 实际扫描显示 00、02、31 和多份附件仍有“降级”、旧复合表达和 `degraded` 表达；当前附件清单不足。
             - “风险接受”必须绑定 Human Gate、ADR、触发/退出条件和残留风险，否则会成为新的模糊标签。
           required_changes:
             - 执行前补“全量命中清单驱动迁移”步骤，扫描 `specs/`、`specs/attachments/`、`rules/` 并分类每个命中项。
@@ -422,7 +422,7 @@ orchestration:
             - Rules 同步时保留 STOP/Human Gate 实质边界；若需要改变边界，先停下交 Human Gate。
           recommendations:
             - 把 Rules 中“降级兜底”列名改为“事实源回读/可用核对来源”一类中性表达。
-            - 把“人工降级检查”拆为原文核对、文件事实源核对、手动命令核对、工具能力缺口、证据不足、事实冲突。
+            - 把旧复合表达（原称“人工降级检查”）拆为原文核对、文件事实源核对、手动命令核对、工具能力缺口、证据不足、事实冲突。
             - Rules 里对知识地图异常写成工具不可用、输出不足/输入能力证据问题、事实冲突三分支，并回指 D01/D02 统一口径。
           evidence_refs:
             - ldvh-base/workcases/workcase-0005-remove-degradation-concept-from-specs.yaml

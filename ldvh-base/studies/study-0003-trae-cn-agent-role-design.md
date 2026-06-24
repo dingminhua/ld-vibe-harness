@@ -129,7 +129,7 @@ SOLO Agent 则是更接近 LDVH “主控 + 专业角色”设想的入口。官
 
 SOLO Agent 支持 Plan 和 Spec 模式。
 
-Plan 模式适用于中小型功能开发和模块级重构。SOLO Agent 收到需求后生成规划文档，等待用户确认后执行。
+Plan 模式适用于中小型功能开发和模块级重构。SOLO Agent 收到需求后生成规划文档，等待 Human 或环境操作者确认后执行。
 
 Spec 模式面向复杂系统级任务，会生成三阶段文档组：`spec.md`、`tasks.md` 和 `checklist.md`，存储在项目根目录 `.trae/specs/` 下。官方文档说明这些文档可纳入版本控制，作为项目知识资产长期保留。
 

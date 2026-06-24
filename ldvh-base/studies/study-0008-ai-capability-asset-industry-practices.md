@@ -148,12 +148,12 @@ archive_reason: null
 | 风险越高，自由度越低 | 高风险流程需要确定性命令、脚本、审批和失败处理 | 提交、删除、发布、迁移、长期配置等操作有固定命令、审批点、拒绝路径和回滚说明 | 高风险 Skill / Hook 应优先脚本化和低自由度化 | 只写“请谨慎执行” |
 | Agent 输出回主控 | Codex / Claude subagents 解决上下文污染，OpenAI handoff / agent-as-tool 区分最终答复归属 | Agent 声明角色、工具、是否可写、输出格式、主控复核和 Human Gate；默认不直接写事实源 | Agent 资产必须有 `handoff` / `as_tool` / `subagent_review` 式所有权边界 | 子 Agent 直接关闭 WorkCase、直接写事实源或无限分派 |
 | 工具权限最小化 | Agents SDK、Codex subagents、Claude subagents 都支持或强调工具和权限边界 | 资产声明 allowed tools、风险等级、审批条件、MCP / shell / network 边界 | Agent / Skill / Hook 元信息必须暴露工具权限和审批要求 | 给所有 Agent 全量 shell、Git、网络和 MCP 权限 |
-| Guardrails 放在动作边界 | OpenAI 区分 input、output、tool guardrails；工具 guardrails 才覆盖每次工具调用 | 资产声明 guardrail 类型、触发点、tripwire、阻塞或并行、误报降级 | 不能只靠入口文字自律，能机械检查的应放到 Code / Hook / tool boundary | 只在 Rules 写“不要越权” |
+| Guardrails 放在动作边界 | OpenAI 区分 input、output、tool guardrails；工具 guardrails 才覆盖每次工具调用 | 资产声明 guardrail 类型、触发点、tripwire、阻塞或并行、误报处理 | 不能只靠入口文字自律，能机械检查的应放到 Code / Hook / tool boundary | 只在 Rules 写“不要越权” |
 | HITL 可恢复审批 | OpenAI HITL 将敏感工具调用暂停、批准 / 拒绝并恢复状态 | Human Gate 记录 action、参数、风险、批准 / 拒绝、恢复状态或后续分流 | 高影响动作需要结构化审批对象，不只是一句“已确认” | Human 只批准目标，Agent 后续自由扩权 |
 | Hook 只做快速反馈和确定性门禁 | Codex / Claude hooks 是生命周期触发；Git hooks 有明确事件、参数和退出码；本地 Hook 可绕过 | Hook 声明 event、matcher、inputs、command、timeout、exit code、trust、bypass、output | Hook 触发不等于通过；Hook 不能替代 Code、CI、Human Gate 或事实源 | 把 Hook 输出写成最终事实，或用判断型 Hook 放行关键门禁 |
 | 本地 Hook 必须有 CI / server-side 兜底 | Git / Husky / commitlint 体系承认本地 Hook 可被绕过；GitHub required checks 才能作为合并门禁 | 本地门禁有等价 CI command 或 server-side gate；跳过本地 Hook 需证据和解释 | `commit-msg` Hook 只能做本地前置，CI / Code validator 承接可重复检查 | 只要求开发者“记得装 hook” |
 | 复用同一 canonical command | 本地、CI、server-side 分叉实现会漂移 | Hook、CI 和手动命令调用同一 validator 或 wrapper | 提交规范类门禁回指 `specs/10` 和 `code/commit_validate.py`，不得复制正则 | 本地 shell 一套正则，CI 另一套正则 |
-| Trace / eval 形成质量证据 | OpenAI 建议先用 traces 调试，再用 evals 固化回归判断 | 高风险 Agent / Skill / Hook 试点至少有代表性执行证据、失败样例或人工降级记录 | active 固定能力资产前必须有验证证据，不能只靠一次演示 | “跑过一次看起来可以”就登记 active |
+| Trace / eval 形成质量证据 | OpenAI 建议先用 traces 调试，再用 evals 固化回归判断 | 高风险 Agent / Skill / Hook 试点至少有代表性执行证据、失败样例、临时核对记录或 Human Gate 记录 | active 固定能力资产前必须有验证证据，不能只靠一次演示 | “跑过一次看起来可以”就登记 active |
 | 分发层不反向成为事实源 | Codex / Claude plugins 都是打包和分发层 | 插件有 manifest、版本、依赖、启停说明；安装 / 授权状态归环境事实 | Plugin 可以包装稳定资产，但不改变权威路径和字段契约 | 把插件安装状态当成 LDVH 全局支持状态 |
 | compact / memory 非事实源 | 压缩、记忆和聊天摘要会丢细节 | 恢复后重读入口；稳定结论回写 specs、WorkCase、Spark、ADR、Study 或 Git commit records | PreCompact / PostCompact 只做恢复辅助，不做最终证据 | 把 compact 摘要当 Human Gate 或关闭验收 |
 
@@ -161,9 +161,9 @@ archive_reason: null
 
 | 资产类型 | 准入检查 | 最低证据 |
 |---|---|---|
-| Rules | 是否薄入口；是否说明事实源边界；是否包含 STOP 点、恢复后重读、交还规则；是否避免同名环境规则歧义 | 入口文件元信息、来源 specs、人工降级检查或 Code 检查 |
-| Skill | name / description 是否具体；是否说明触发和不触发条件；是否按需加载；是否有输入输出、失败处理、验证步骤；是否不新增规范规则 | `SKILL.md`、示例任务或触发测试、验证命令或人工审查记录 |
-| Agent | 是否有角色边界、工具权限、上下文输入、输出格式、写入权限、主控回收、Human Gate 和并行写入限制 | Agent 元信息、主控合并记录、代表性审查 / trace / 人工降级证据 |
+| Rules | 是否薄入口；是否说明事实源边界；是否包含 STOP 点、恢复后重读、交还规则；是否避免同名环境规则歧义 | 入口文件元信息、来源 specs、AI 回读核对、文件事实源核对或 Code 检查 |
+| Skill | name / description 是否具体；是否说明触发和不触发条件；是否按需加载；是否有输入输出、失败处理、验证步骤；是否不新增规范规则 | `SKILL.md`、示例任务或触发测试、验证命令或 Human 审查记录 |
+| Agent | 是否有角色边界、工具权限、上下文输入、输出格式、写入权限、主控回收、Human Gate 和并行写入限制 | Agent 元信息、主控合并记录、代表性审查 / trace / 临时核对证据 |
 | Hook | 是否声明事件、matcher / 参数、命令、timeout、退出码、信任、可绕过性、CI / server-side 兜底和日志位置 | Hook 文件 / 配置、canonical command、失败样例、CI 或手工复跑证据 |
 | 运行期保障构件 | tools / MCP / guardrails / HITL / tracing / evals 是否作为字段、证据或环境配置进入治理，而不是升级为顶层文本资产 | schema、审批记录、trace / eval 报告、Code / Web 展示或 04.03 适配记录 |
 

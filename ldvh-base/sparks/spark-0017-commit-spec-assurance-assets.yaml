@@ -43,7 +43,7 @@ description: |
 
   1. 固定能力资产应采用登记制，而不是用“当前不维护固定 Skill/Hook”阻断资产建设；
   2. Rules、Skill、Agent、Hook 只要完成来源规范、权威路径、`ldvh_asset` 资产元信息、边界说明、质量审查、同步责任和验证入口登记，就可以成为 LDVH 固定能力资产；
-  3. 未登记的 Skill、Agent、Hook 只能是候选资产、临时过程输出、人工降级步骤或环境适配候选，不得被 Code、Web、Rules 或工作流程当成稳定保障机制；
+  3. 未登记的 Skill、Agent、Hook 只能是候选资产、临时过程输出、手动步骤、临时核对动作或环境适配候选，不得被 Code、Web、Rules 或工作流程当成稳定保障机制；
   4. 登记事实应优先由资产文件自身元信息承载，Code 派生资产索引，Web 只读展示，不手写维护一份容易漂移的总清单；
   5. 10 号 Git 提交规范后续需要的 `ldvh-git-commit` Skill 和 `git.commit-msg` Hook 事件，应按固定能力资产登记制推进。
 
