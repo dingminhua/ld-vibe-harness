@@ -1,0 +1,56 @@
+id: spark-0026
+type: spark
+title: “人工”用语清理与执行主体命名治理
+status: pending
+created: '2026-06-25T00:29:32+08:00'
+updated: '2026-06-25T00:29:32+08:00'
+description: |
+  本 Spark 记录 LDVH 中“人工”一词的用法清理问题，并作为后续调查线程的议题入口。
+
+  Human 指出：在“人工降级检查”等表达中，“人工”一词存在执行主体混淆。若实际动作是 AI 回读文件、核对原文或不用工具投影完成判断，把它称为“人工”会把 AI 拟人化，并模糊 Human、AI、Code 工具和环境承载物之间的责任边界。
+
+  本 Spark 当前只建立主要议题，不展开全量调查和批量修改。后续调查可由其他线程按议题分工完成。
+
+  主要议题：
+
+  1. 执行主体边界：梳理 LDVH 文档中“人工”是否真实表示 Human 介入；若不是，应区分 Human、主控 AI、Code 工具、环境入口、外部系统和手动命令。
+  2. “人工降级检查”：该表达同时存在“降级”遮掩问题和“人工”拟人化问题；需要判断哪些位置应改为原文核对、文件事实源核对、非工具投影核对、Human Gate、能力缺口或未接管缺口。
+  3. “人工核对 / 人工检查 / 人工复核”：仅当执行主体确为 Human 时保留；若由 AI 执行，应改为原文核对、事实源核对、手动命令核对或 AI 回读核对。
+  4. “人工降级路径 / 人工降级方式 / 人工降级步骤”：调查这些表达是否实为工具能力缺口、环境未接入、行动编排未接管或测试覆盖不足；不得把缺口写成完整支持。
+  5. 保障机制与承载矩阵中的“人工”：检查该词是否被用来替代明确的责任归口、验证方式、接管状态和后续解决入口。
+  6. Human Gate 与 Human-facing 边界：保留 Human 相关术语的正当用法，但要求它只指真实 Human 判断、授权、确认或展示对象，不泛化为 AI 的普通核对动作。
+  7. 后续清理产物：建议形成用语清单、替换词典、按文件分布的风险分级、需要 Human Gate 的修改范围，以及是否需要升级为 WorkCase 或 ADR 的建议。
+
+  调查约束：
+
+  - 其他线程应先调查和分类，不直接批量替换。
+  - 每个问题都应保留来源路径、语境和建议替代词。
+  - 若修改会影响 specs、Rules 入口、Human Gate、行动编排或事实源边界，应先回到对应规范和 Human 确认。
+source: conversation
+priority: P0
+source_detail: 用户在 D04 讨论中指出“人工”一词会把 AI 拟人化，要求另外创建 Spark，负责后续检查和清理“人工”这个词的用法，并先建立主要议题供其他线程调查。
+evolution:
+  - at: '2026-06-25T00:29:32+08:00'
+    summary: |
+      建立“人工”用语清理议题入口。当前只登记主要议题和调查约束，不展开全量调查、不执行批量修改，供后续线程按议题继续调查。
+input_refs:
+  - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
+  - rules/LDVH-WORKSPACE-ENTRY.md
+  - rules/LDVH-MAINTAINER-ENTRY.md
+  - specs/01-规范体系基础规范.md
+  - specs/02-事实模型基础规范.md
+  - specs/03-行动编排规范.md
+  - specs/04-Code确定性执行规范.md
+  - specs/06-运行时扩展规范.md
+  - specs/20-Spark-火花.md
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workcases: []
+related_adrs: []
+related_studies: []
+related_docs:
+  - specs/attachments/01.Att.03-规范保障要求类型表.md
+  - specs/attachments/06.Att.05-保障要求承载矩阵.md
+  - specs/attachments/06.Att.06-能力缺口分流核对表.md
+  - specs/attachments/06.Att.08-适配状态表.md
