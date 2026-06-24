@@ -24,7 +24,7 @@ success_criteria: |
 source: |
   用户在 2026-06-24 阅读工作区最新评估报告后，要求“先用 WorkCase 落地报告里更明确的三件事：stop_conditions、text 输出补 suggested_sections、role 细化”，并要求由主控安排。
 
-  本 WorkCase 的计划输入包括：`/Users/dmh2002/poker_hud_projects/LDVH-知识地图价值重新评估报告-20260624.md`、当前对话、active `specs/04-Code确定性执行规范.md`、`specs/attachments/04.Att.06-知识地图投影Schema表.md`、`specs/attachments/01.Att.01-知识地图关系类型表.md`、Rules 入口和 Code 知识地图实现。报告是外部评估输入，不替代 repo 内 active specs、Code 和 WorkCase 事实源。
+  本 WorkCase 的计划输入包括：`LDVH-知识地图价值重新评估报告-v2-20260624.md`（外部评估输入）、当前对话、active `specs/04-Code确定性执行规范.md`、`specs/attachments/04.Att.06-知识地图投影Schema表.md`、`specs/attachments/01.Att.01-知识地图关系类型表.md`、Rules 入口和 Code 知识地图实现。该评估报告仅作为背景输入，不替代 repo 内 active specs、Code 和 WorkCase 事实源。
 orchestration:
   mode: sequential
   execution_items:
@@ -133,7 +133,7 @@ orchestration:
         objective: |
           审核 `knowledge-map stop_conditions` 补齐方案的权威来源、最小覆盖范围、实时投影边界、涉及资产和执行前 Human Gate。
         input_refs:
-        - /Users/dmh2002/poker_hud_projects/LDVH-知识地图价值重新评估报告-20260624.md
+        - LDVH-知识地图价值重新评估报告-v2-20260624.md（背景输入）
         - rules/LDVH-WORKSPACE-ENTRY.md
         - rules/LDVH-MAINTAINER-ENTRY.md
         - specs/04-Code确定性执行规范.md
@@ -166,7 +166,7 @@ orchestration:
         - 三件事保持为三个 execution_items，避免把 STOP、text 输出和 role 语义混成一次不可审核修改。
         - 最小验证包括定向 pytest 和三个典型 knowledge-map JSON 样例检查。
         evidence_refs:
-        - /Users/dmh2002/poker_hud_projects/LDVH-知识地图价值重新评估报告-20260624.md
+        - LDVH-知识地图价值重新评估报告-v2-20260624.md（背景输入）
         - specs/04-Code确定性执行规范.md
         - specs/attachments/04.Att.06-知识地图投影Schema表.md
         - rules/LDVH-WORKSPACE-ENTRY.md
@@ -187,7 +187,7 @@ orchestration:
         objective: |
           审核 `knowledge-map --format text` 补显 `read_plan[].suggested_sections` 的最小实现边界、Schema 同步需要、测试范围和兼容风险。
         input_refs:
-        - /Users/dmh2002/poker_hud_projects/LDVH-知识地图价值重新评估报告-20260624.md
+        - LDVH-知识地图价值重新评估报告-v2-20260624.md（背景输入）
         - specs/04-Code确定性执行规范.md
         - specs/attachments/04.Att.06-知识地图投影Schema表.md
         - code/spec_checks/v2.py
@@ -217,7 +217,7 @@ orchestration:
         - 用 JSON 数组样式渲染建议章节，避免自然语言逗号分隔歧义。
         - 最小验证包括定向 pytest 和一次 `knowledge-map --format text` 人工抽查。
         evidence_refs:
-        - /Users/dmh2002/poker_hud_projects/LDVH-知识地图价值重新评估报告-20260624.md
+        - LDVH-知识地图价值重新评估报告-v2-20260624.md（背景输入）
         - specs/04-Code确定性执行规范.md
         - specs/attachments/04.Att.06-知识地图投影Schema表.md
         - code/spec_checks/v2.py
@@ -236,7 +236,7 @@ orchestration:
         objective: |
           审核 `read_plan[].role` 细化方案的根因、最小规则、关系事实边界和正反测试范围。
         input_refs:
-        - /Users/dmh2002/poker_hud_projects/LDVH-知识地图价值重新评估报告-20260624.md
+        - LDVH-知识地图价值重新评估报告-v2-20260624.md（背景输入）
         - specs/01-规范体系基础规范.md
         - specs/04-Code确定性执行规范.md
         - specs/attachments/01.Att.01-知识地图关系类型表.md
@@ -268,7 +268,7 @@ orchestration:
         - 可引入小型附件分类 helper，优先按附件 code_consumption、purpose 或 title 判断导航角色。
         - 增加正反测试：不允许 `specs/04` 起点下所有 `04.Att.xx` 都是 authority；附件起点回读父规范仍为 authority；关系类型保持不变。
         evidence_refs:
-        - /Users/dmh2002/poker_hud_projects/LDVH-知识地图价值重新评估报告-20260624.md
+        - LDVH-知识地图价值重新评估报告-v2-20260624.md（背景输入）
         - specs/01-规范体系基础规范.md
         - specs/04-Code确定性执行规范.md
         - specs/attachments/01.Att.01-知识地图关系类型表.md

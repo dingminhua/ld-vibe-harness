@@ -1,0 +1,36 @@
+id: spark-0024
+type: spark
+title: 入口触发链工程化：让 AI 稳定先用知识地图
+status: pending
+created: '2026-06-24T10:49:34.237457'
+updated: '2026-06-25T01:16:19+08:00'
+description: |
+  最新知识地图价值评估报告认为知识地图核心价值已基本兑现，剩余最高优先级缺口是触发链：AGENTS.md / 环境规则入口 / Rules 入口 / knowledge-map 命令之间仍依赖 AI 自觉执行。即使 Rules 已写硬，AI 在普通任务里仍可能跳过入口，退回 `ls`、全文 Read 或只看 `v2-check` 摘要。
+
+  本 Spark 记录一个候选工程方向：把入口触发链做成可验证的运行时能力，使新会话、线程恢复、上下文压缩后，AI 稳定先读工作区入口，再运行 `knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type <task_type>`，并消费 `read_plan`、`next_queries`、`stop_conditions` 和 `impact_summary`。
+
+  该方向与 `spark-0023` 不同：它不是恢复面板能力，而是运行时触发保障。它可能涉及 AGENTS 薄引用、Rules 入口、Hook / Skill / Agent 能力资产、环境入口适配和 Human Gate。后续若转 WorkCase，必须先明确不得静默写入外部环境，不得声明环境已安装完整 LDVH。
+source: conversation
+priority: P0
+source_detail: 用户认可将“会话恢复投影器”和“入口触发链工程化”拆成两个 Spark，并结合《LDVH-知识地图价值重新评估报告-v2-20260624.md》确认“AI 触发链稳定性”是未闭环点。外部文件仅记录为名称与核心结论，不建立可解析文件关系。
+evolution: []
+input_refs:
+- spark-0022
+- workcase-0004
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workcases: []
+related_adrs: []
+related_studies: []
+related_docs:
+- AGENTS.md
+- specs/01-规范体系基础规范.md
+- specs/04-Code确定性执行规范.md
+- specs/06-运行时扩展规范.md
+- specs/20-Spark-火花.md
+- specs/30-rules-entry-sync-review-Rules入口同步审查.md
+- specs/31-git-commit-action-Git提交行动编排.md
+- specs/attachments/06.Att.02-固定运行时扩展登记表.md
+- rules/LDVH-WORKSPACE-ENTRY.md
+- rules/LDVH-MAINTAINER-ENTRY.md

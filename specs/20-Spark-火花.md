@@ -322,7 +322,7 @@ Spark 字段契约如下。字段注册表只提供公共语义和消费诊断�
 | `evolution.summary` | Spark 嵌套字段 | 语义转折摘要 | markdown | 条件必填 | `evolution` 条目存在时必须存在，只写关键变化 | log / narrative | 20 | AI、Code、Web |
 | `source` | 公共字段，Spark 采用 | 火花进入事实源的入口来源 | string | 必填 | 只能是 `web` 或 `conversation`；Web 快速创建固定为 `web`，对话整理固定为 `conversation` | reference | 20 | AI、Code、Web |
 | `source_detail` | 公共字段，Spark 采用 | 来源说明、触发场景或原始输入摘要 | markdown | 可选 | 可为空；不承载一般关联清单 | narrative / reference | 20 | AI、Web |
-| `input_refs` | 公共字段，Spark 采用 | 当前 Spark 摘要、判断或后续分流建议实际消费的稳定输入对象或文档 | list_string | 可选 | 默认为空列表；可记录 Study、WorkCase、ADR、Pitfall、Spark ID 或项目内文档路径；不表示 Spark 已完成分流 | reference | 20 | AI、Code、Web、知识地图 |
+| `input_refs` | 公共字段，Spark 采用 | 当前 Spark 摘要、判断或后续分流建议实际消费的稳定输入对象或文档 | list_string | 可选 | 默认为空列表；可记录 Study、WorkCase、ADR、Pitfall、Spark ID 或项目内文档路径；仓外文件仅允许以文件名+结论方式记录在 source_* / source_detail，不得直接进关系引用；不表示 Spark 已完成分流 | reference | 20 | AI、Code、Web、知识地图 |
 | `priority` | 公共字段，Spark 采用 | 优先级，回答哪个火花应先处理 | string | 必填 | 必须是 `P0`、`P1`、`P2` 或 `P3`；判断标准承接 02 | reference | 02、20 | AI、Code、Web |
 | `resolved_to` | Spark 模型特有字段，兼容公共字段语义 | 单一最终分流目标或主承接目标引用 | object | 条件必填 | `status: resolved` 时必须填写；`pending` 时不得用于伪装完整收敛；`discarded` 如来自 resolved 可保留原分流关系 | structured / reference | 20 | AI、Code、Web |
 | `resolved_to.type` | Spark 嵌套字段 | 非 Study 分流目标类型 | string | 条件必填 | `resolved_to` 存在时必须存在；只能是 `workcase`、`adr`、`pitfall`、`docs`、`governed-projects` 或 `other`，不得为 `study` | reference | 20 | AI、Code、Web |
@@ -332,7 +332,7 @@ Spark 字段契约如下。字段注册表只提供公共语义和消费诊断�
 | `related_adrs` | 公共字段，Spark 采用 | 关联 ADR | list_string | 可选 | 默认为空列表；用于关联或并行承接，不表示完成分流 | reference | 20 | AI、Code、Web |
 | `related_studies` | 公共字段，Spark 采用 | 关联 Study | list_string | 可选 | 默认为空列表；Study 不得写入 `resolved_to` | reference | 20 | AI、Code、Web |
 | `related_workcases` | 公共字段，Spark 采用 | 关联 WorkCase | list_string | 可选 | 默认为空列表；可记录多个并行承接、分阶段承接或主题相关的 WorkCase ID，不表示 Spark 已 resolved | reference | 20 | AI、Code、Web |
-| `related_docs` | 公共字段，Spark 采用 | 关联文档路径 | list_string | 可选 | 默认为空列表；用于 docs、sources 或其它项目文档路径，不承载对象 ID | reference | 20 | AI、Code、Web |
+| `related_docs` | 公共字段，Spark 采用 | 关联文档路径 | list_string | 可选 | 默认为空列表；用于 docs、sources 或其它项目文档路径，不承载对象 ID；默认仅对项目内可解析路径生效 | reference | 20 | AI、Code、Web |
 
 ### 9.2 字段写入约束
 
@@ -345,8 +345,9 @@ Spark 字段写入遵循以下规则：
 5. `resolved_to` 保留 active Spark 的 `{type, ref}` 对象结构；公共字段注册摘要中的通用 `resolved_to` 形态不得反向改变 Spark 对象内 schema；
 6. `resolved_to.type` 不得为 `study`；Study 只通过 `related_studies` 关联；
 7. `input_refs` 只表达 Spark 当前判断消费了哪些稳定输入；不得用 `input_refs` 替代 `related_*` 导航、`resolved_to` 分流目标或 `evolution` 中的收敛说明；
-7. 关联字段不等同于完成分流，仍存在未承接议题时必须保持 `pending`；
-8. Spark 不得手写维护 `status_history`；状态变化历史由 Git 提交记录派生。
+8. 关联字段不等同于完成分流，仍存在未承接议题时必须保持 `pending`；
+9. Spark 不得手写维护 `status_history`；状态变化历史由 Git 提交记录派生。
+10. `input_refs` 与 `related_docs` 不应写仓外路径；仓外文件请以文件名和吸收结论记录在 `source_detail` 或证据字段。
 
 ## 10. 事实实例写入、回写、验证和证据留存
 
