@@ -3,7 +3,7 @@ type: spark
 title: 子 Agent 复查编排流程缺口
 status: pending
 created: '2026-06-21T10:02:20.884225'
-updated: '2026-06-24T03:20:00+08:00'
+updated: '2026-06-24T09:29:37+08:00'
 description: |
   本 Spark 承载一个待收敛的流程缺口：`specs/21-WorkCase-工作项.md` 已经把子 Agent 方案审核和结果复核写入 WorkCase 状态机、字段契约和关闭前条件，但当前还没有一个独立的工作流程来规定“子 Agent 复查工作”如何被主控发起、等待、回收、处理和关闭。
 
@@ -23,14 +23,19 @@ description: |
   4. 没有流程级要求主控等待结果、关闭 Agent、处理硬问题并回写 WorkCase；
   5. 没有 Code/Web 可直接消费的“复查是否真实发生”检查锚点，容易出现事后补表、主控代签或空 `review_items` 冒充复核；
   6. 没有稳定说明该流程与 WorkCase 内部状态、40-43 审核流程、Agent 能力资产和 Human Gate 的边界。
+  7. 没有明确哪些角色应固定为 LDVH Role Contract，哪些只作为场景临时视角或技术 worker，导致 AI 容易每次临场构思审查角色、遗漏专业视角或重复发明角色清单。
+  8. 没有 Codex 环境下的低摩擦调用方案，例如固定角色如何投影为 Codex custom agent、何时用内置 `explorer` / `worker`、默认只读复核与写入型子 Agent 如何分开、sandbox / approval / 并发限制如何进入输入包。
 
   候选方向：
 
-  1. 新增一个具体工作流程，例如 `44-subagent-review-orchestration-子Agent复核编排`，专门承接方案审核和结果复核的编排规则；
+  1. 在 30-59 行动编排成员中新增一个具体工作流程，例如“主控-角色调度编排”或“子 Agent 复核编排”，专门承接方案审核、结果复核和角色团队调度规则；具体编号应按当时空位、来源承接和 Human Gate 决定，不预绑定为固定编号；
   2. 或者在 `history/specs-v1/06-行动编排基础规范.md` 与 `specs/21-WorkCase-工作项.md` 中补强通用规则，但不新增 30-59 主文件；
-  3. 若 44 成立，应定义主控调度、输入包、视角选择、并行等待、结果回收、硬问题处理、Agent 关闭、事实源回写、Human Gate 和失败降级；
+  3. 若独立成员成立，应定义主控调度、输入包、视角选择、并行等待、结果回收、硬问题处理、Agent 关闭、事实源回写、Human Gate 和失败降级；
   4. Code 后续可增加检查：进入 `human_closure_confirming` 时，必需视角不得为空，review item 必须具备 Agent 标识、输入引用、结论、证据引用、签署声明和 controller resolution；
   5. Web 后续可展示复核阶段、必需视角完成度、硬问题处理状态和是否等待 Human 关闭确认。
+  6. 角色设计应分层：少量核心治理角色固定为 Role Contract；工程专业角色作为可选角色包；查询、搜索、日志分析和代码探索等技术 worker 保持临时或半固定，避免角色资产膨胀。
+  7. 可吸收外部成熟范式：CrewAI 的 `role / goal / backstory / tools / delegation / execution limits`，MetaGPT 的 PM / Architect / Project Manager / Engineer / QA + SOP，LangGraph 的 supervisor / subagents / router，AutoGen 的 group chat manager / selector，以及 ECC 的固定 agent 清单、触发条件、并行策略和审查门禁。
+  8. ECC 不应被全量导入，也不应把 ECC agents 直接变成 LDVH 默认 agents；应吸收其角色分类、触发条件、输出合同、prompt defense baseline、双审流程和 plan/apply/verify 思路，再转译为 LDVH Role Contract、行动编排和 Codex / Trae / Claude 环境投影。
 
   本 Spark 只记录分支问题，不在当前 WorkCase 主线中直接修改流程架构。
 input_refs:
@@ -45,6 +50,8 @@ evolution:
   summary: 补充主控监督与角色团队设想：后续流程不应只补审核表格，还应定义业务治理层的主控/角色/Role Contract/事实源回写，以及技术执行层的并行查询、搜索、探索和只读证据收集；Codex 缺少 Trae SOLO 式自动调度角色团队时，需要由 LDVH 行动编排、WorkCase 输入包和环境适配机制模拟该能力。
 - at: '2026-06-23T09:10:34+08:00'
   summary: 补充 Claude Code 可学习机制：subagent 角色容器、agent teams 的 lead/teammates/shared task list/mailbox、计划批准后写入、输出 intake 和 hooks 生命周期控制可作为子 Agent 复核编排的设计参照；Codex 需更多机制模拟，Trae 可映射到 SOLO Agent 与自定义智能体但仍需事实源边界。
+- at: '2026-06-24T09:29:37+08:00'
+  summary: 补充角色设计未决问题：后续需要讨论是否创建固定 Role Contract 角色成员，以避免 AI 临时构思角色；初步倾向为“核心治理角色固定、工程专业角色可选包、技术探索 worker 临时或半固定”。同时记录外部角色设计可吸收来源，包括 CrewAI、MetaGPT、LangGraph、AutoGen 和本地 ECC；ECC 可借鉴固定 agent 清单、触发条件、专业角色、prompt defense baseline、双审门禁和多模型协作，但不建议全量导入 ECC agents 或让其成为 LDVH 默认角色。
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''
