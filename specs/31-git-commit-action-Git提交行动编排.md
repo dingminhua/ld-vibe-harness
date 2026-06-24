@@ -339,7 +339,7 @@ Web 负责展示提交记录、body、解析字段、关联提交和 ProjectFile
 | Hook dispatcher | 使用临时 message 文件运行 `python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` |
 | Skill 自描述 | `python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit` 或等价临时核对动作 |
 | Web commit DTO | `npm --prefix web run check` 和 commit DTO 相关 API 测试 |
-| 行动边界 | 人工核对本文没有复制 07 的 commit message 本体规则，也没有声明环境安装状态 |
+| 行动边界 | AI 回读核对本文没有复制 07 的 commit message 本体规则，也没有声明环境安装状态 |
 
 ## 17. 规范保障要求
 
@@ -351,7 +351,7 @@ Web 负责展示提交记录、body、解析字段、关联提交和 ProjectFile
 | 来源承接：07 Git 追溯和 commit 契约 | 回指 `specs/07-事实源边界与Git追溯规范.md` §9 及 07 授权附件；本文只编排执行，不复制 type/scope/body、语言或关联提交规则 | 07 原文、本文 §6/§7/§9、`code/commit_validate.py`、临时核对动作 | Git 提交行动 | 07 的提交契约、Git 追溯、关联提交派生或事实源回写边界变化时 |
 | 来源承接：06 运行时扩展与环境边界 | 回指 `specs/06-运行时扩展规范.md` 与 `specs/attachments/06.Att.02-固定运行时扩展登记表.md`；本文只声明本行动需要哪些能力，不声明环境已安装 | `capability_assets`、`skills/ldvh-git-commit/SKILL.md`、`hooks/ldvh-hooks.yaml`、`capability-environment` | 能力资产编排 | Skill、Hook、Rules、环境适配、部署状态或固定资产登记边界变化时 |
 | 来源承接：04/05/08 Code、Web 和测试本体 | 回指 04、05、08；本文只编排 validator、Hook dispatcher、Web commit DTO 和测试证据的使用方式，不复制实现契约 | `code/commit_validate.py`、`code/hook_dispatch.py`、Web commit DTO 测试、08 验证声明边界 | 能力协作与验证 | Code CLI、Web commit 展示、测试入口或验证声明规则变化时 |
-| 行动 Gate 承接 | 回指 03 Human Gate 原则和 07/06 的事实源与环境边界；本文只列出 Git 提交行动中必须暂停的触发条件 | 本文 §11、Human Gate 记录、WorkCase 证据或过程输出 | 人工确认 | 拆分不清、绕过校验、环境安装变更、破坏性 Git 操作或事实源 Gate 不明时 |
+| 行动 Gate 承接 | 回指 03 Human Gate 原则和 07/06 的事实源与环境边界；本文只列出 Git 提交行动中必须暂停的触发条件 | 本文 §11、Human Gate 记录、WorkCase 证据或过程输出 | Human 确认 | 拆分不清、绕过校验、环境安装变更、破坏性 Git 操作或事实源 Gate 不明时 |
 
 ## 18. 行动编排成员检查要求
 

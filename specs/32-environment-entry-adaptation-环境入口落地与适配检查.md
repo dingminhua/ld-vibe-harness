@@ -80,7 +80,7 @@ v2_action_member:
   capability_assets:
     - "type=rule; path=rules/LDVH-WORKSPACE-ENTRY.md; purpose=工作区入口薄引用目标; status=required"
     - "type=rule; path=rules/LDVH-MAINTAINER-ENTRY.md; purpose=LDVH 产品资产维护入口薄引用目标; status=required"
-    - "type=skill; path=skills/ldvh-git-commit/SKILL.md; purpose=需要在环境中验证 Skill 可发现或可人工等价执行时的固定 Skill 资产; status=optional_by_environment"
+    - "type=skill; path=skills/ldvh-git-commit/SKILL.md; purpose=需要在环境中验证 Skill 可发现或可手动等价执行时的固定 Skill 资产; status=optional_by_environment"
     - "type=hook; path=hooks/ldvh-hooks.yaml; purpose=需要在环境中验证 Hook registry 可被调用或接入时的固定 Hook 资产; status=optional_by_environment"
     - "type=code; path=code/specs_validate.py assurance-report; purpose=聚合 active specs 的规范保障要求，作为环境落地投影的动态需求输入; status=required"
     - "type=code; path=code/specs_validate.py assurance-plan; purpose=聚合保障缺口、写入需求、Human Gate 和回写目标，作为落地优先级与分流输入; status=required"
@@ -158,7 +158,7 @@ v2_action_member:
 
 本文候选定位为保障要求驱动的环境入口落地和适配检查行动。它先从 LDVH 权威 specs、行动编排接管状态、运行时承载矩阵和能力缺口分流生成环境落地投影，再处理投影到具体 AI 协作环境入口之间的部署层事务。
 
-环境入口候选、AGENTS、config、hooks、Skill、Code 命令和人工步骤都只是投影结果中的承载方式，不是落地需求的来源。
+环境入口候选、AGENTS、config、hooks、Skill、Code 命令和手动步骤都只是投影结果中的承载方式，不是落地需求的来源。
 
 适用场景包括：
 
@@ -250,7 +250,7 @@ python3 code/specs_validate.py v2-check --input-scope runtime_extensions --forma
 | 承载方向 | Rules、Skill、Agent、Hook、Code、Web、测试、Human Gate、临时核对动作或外部归口 |
 | 当前资产 | 可回指的固定承载物、自描述、Code 命令或无可用资产 |
 | 环境渲染 | 在目标环境中的入口候选、配置方式、手动步骤或不适用原因 |
-| 验证方式 | 可执行命令、现场检查、测试入口、Human Gate 或人工复核 |
+| 验证方式 | 可执行命令、现场检查、测试入口、Human Gate 或 Human 复核 |
 | 缺口分流 | 06.Att.06 缺口类型、建议回写位置和禁止声明 |
 
 涉及规范、入口或同步影响判断时，应使用带起点的知识地图查询。若知识地图工具不可用、输出不足或无法回指来源，必须说明问题原因，并退回 active specs、附件、资产原文和临时核对动作。

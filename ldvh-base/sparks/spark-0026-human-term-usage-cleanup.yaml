@@ -67,6 +67,15 @@ evolution:
       本次据审查结论修正阶段性原则：保留“用户”在安装者、环境所有者、项目所有者等非 Gate 身份中的语义；将 Code 生成限定为确定性派生输出、结构化结果或诊断；拆分 specs 主体与 Rules 入口主体；拆分环境、运行时扩展、固定能力资产和已部署副本；明确 MCP 归入运行时扩展承载物或具体能力资产名；补充子 Agent 不直接写入事实源、不独立决定状态流转、不拥有独立事实源状态。
 
       后续清理风险提示：不得对“人工”表达做全局机械替换，尤其不得把“人工降级检查”直接替换为 AI、Code 或 Human。应先按主体和问题类型分类标注，再决定替换词，避免覆盖能力缺口、工具不可用、环境未接入、Human Gate 或等价验证差异。
+  - at: '2026-06-25T03:30:52+08:00'
+    summary: |
+      并行执行线程 C 已创建 `workcase-0008-human-term-usage-cleanup.yaml` 承接本 Spark 的首轮清理，并完成 `specs/`、`rules/`、`code/`、`tests/`、`web/`、`ldvh-base/` 中 `人工|Human|用户确认|手动|AI|Code|Web` 相关主体表达扫描。
+
+      本轮分类结论：真实 Human 介入、授权、确认或取舍改为或保留为 Human/Human Gate/Human 确认；AI 可执行的原文核对和文件事实源核对改为 AI 回读核对、文件事实源核对或临时核对动作；环境和命令行替代动作改为手动步骤或手动命令；Code 或测试可机械判断的内容改为 Code/测试/确定性校验；含混、历史事实或会触发 Human Gate 的旧表达仅记录，不机械改写。
+
+      已对明确低风险的 active specs、attachments、draft/candidate 32、Code 输出文案和 tests 夹具做最小修改。保留项包括：`code/spec_checks/runtime_projection.py` 与 `code/spec_checks/assurance_report.py` 中用于识别 legacy “人工降级”旧表达的检测标记，以及 `ldvh-base` 历史 Spark/Study/WorkCase 中作为来源事实、旧迁移清单或历史过程存在的“人工”表达。
+
+      后续未决：是否建立后续 WorkCase 处理历史 Spark/Study/WorkCase 的吸收式改写；是否删除或重命名 Code 中 legacy “人工降级”检测标记；是否把更完整的主体命名规范吸收到 `01.Att.08-规范表达清单` 或其它 active 规范。
 input_refs:
   - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
   - rules/LDVH-WORKSPACE-ENTRY.md
@@ -82,7 +91,8 @@ input_refs:
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''
-related_workcases: []
+related_workcases:
+  - workcase-0008
 related_adrs: []
 related_studies: []
 related_docs:

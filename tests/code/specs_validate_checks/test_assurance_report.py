@@ -49,8 +49,8 @@ def build_assurance_report_fixture(tmp_path, monkeypatch):
 | Human 交互要求 | candidate 流程正式创建前，应先讨论是否独立成流程 | Human Gate、流程讨论 | 工作流程治理 | 从候选项创建流程前 |
 | Human 交互要求 | Human Gate UI 应清楚展示确认对象和影响范围 | Human Gate UI、承接 06 §6.3.1 | 工作流程治理 | Human Gate UI 变化时 |
 | 工作流程接管要求 | 接管后的执行和验证由 active 工作流程承担 | active 工作流程、Code 派生集合索引 | 工作流程治理 | 接管范围变化时 |
-| 生命周期触发要求 | 运行投影不可用时应记录降级说明 | 人工降级检查 | 触发保障 | 工具不可用时 |
-| 生命周期触发要求 | 平台能力变化后应检查平台清单是否同步 | 平台清单、人工降级检查 | 触发保障 | 平台能力变化时 |
+| 生命周期触发要求 | 运行投影不可用时应记录问题原因 | 降级说明 | 触发保障 | 工具不可用时 |
+| 生命周期触发要求 | 平台能力变化后应检查平台清单是否同步 | 平台清单、降级说明 | 触发保障 | 平台能力变化时 |
 | 生命周期触发要求 | 第三方 Skill 入口变化后应检查包装 Skill 和运行投影是否同步 | 包装 Skill、运行投影漂移检查、降级方式 | 触发保障 | 第三方 Skill 使用入口变化时 |
 | 生命周期触发要求 | 41 触发保障应被 42 消费，并覆盖运行投影漂移检查和 Human Gate 证据消费 | 41 分层触发保障、42 消费检查、运行投影漂移检查、Human Gate 证据消费 | 触发保障 | 正式规范、运行投影或 Human Gate 证据变化时 |
 """,
@@ -121,7 +121,7 @@ def test_assurance_report_builds_statuses_and_summary(tmp_path, monkeypatch):
     assert statuses["后续正式规范不得违背本文的价值实现标准"] == "closed"
     assert statuses["后续 Code 应能生成 assurance report"] == "closed"
     assert statuses["高影响变更应触发 Human Gate"] == "needs_human_gate"
-    assert statuses["运行投影不可用时应记录降级说明"] == "degraded"
+    assert statuses["运行投影不可用时应记录问题原因"] == "degraded"
     assert statuses["41 触发保障应被 42 消费，并覆盖运行投影漂移检查和 Human Gate 证据消费"] == "needs_human_gate"
     assert next(item for item in report["requirements"] if item["owner_area"] == "code")["suggested_writeback"] == "code_request_or_test"
 

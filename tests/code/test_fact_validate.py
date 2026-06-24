@@ -121,7 +121,7 @@ closure_evidence: |
 
   ## 验证命令
 
-  人工检查 WorkCase 成功标准、执行项和验证证据。
+  AI 回读核对 WorkCase 成功标准、执行项和验证证据。
 
   ## 验证结果
 

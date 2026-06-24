@@ -22,7 +22,7 @@ RESPONSIBILITY_BY_TYPE = {
     "skill": {
         "capability_owner": "LDVH maintainer",
         "sync_scope": "可复用流程、输入输出、失败处理、验证和主控交还",
-        "environment_role": "环境可按 Skill 机制加载；未实装时退回人工步骤",
+        "environment_role": "环境可按 Skill 机制加载；未实装时退回手动步骤",
     },
     "hook": {
         "capability_owner": "LDVH maintainer",

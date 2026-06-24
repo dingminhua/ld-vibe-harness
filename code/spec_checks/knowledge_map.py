@@ -699,7 +699,7 @@ class KnowledgeMapMixin:
                 {
                     "condition": "start_node_not_in_read_plan",
                     "reason": "读取计划中没有命中用户给定起点；继续判断前必须重新选择 start_node 或扩大输入范围。",
-                    "fallback": "优先尝试 --input-scope entry_navigation；仍失败时回到文件事实源和临时核对动作。",
+                    "fallback": "优先尝试 --input-scope entry_navigation；仍失败时回到文件事实源回读、AI 回读核对和必要的临时核对动作。",
                     "source_refs": self.diagnostic_source_refs(),
                 }
             )

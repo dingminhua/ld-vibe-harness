@@ -1,0 +1,308 @@
+id: workcase-0008
+type: workcase
+title: “人工”用语清理与执行主体命名治理
+goal: |
+  承接 spark-0026，对 LDVH 中“人工”、Human、用户确认、手动、AI、Code、Web 等执行主体表达做扫描分类，并对低风险 specs/rules/Code/test 文案做最小清理，避免把 AI、Code、环境、手动命令或 Human Gate 混称为“人工”。
+status: executing
+created: '2026-06-25T03:30:52+08:00'
+updated: '2026-06-25T03:30:52+08:00'
+priority: P0
+plan_confirmed_at: '2026-06-25T03:30:52+08:00'
+review_requested_at: ''
+closure_requested_at: ''
+description: |
+  本 WorkCase 是 spark-0026 的并行执行线程 C 承接对象。任务要求先分类，不机械全局替换；真实 Human 介入、授权、确认、取舍保留或改为 Human/Human Gate；AI 回读、原文核对、文件事实源核对改为明确核对动作；命令行或环境操作改为手动命令、手动步骤或环境接入；Code 机械校验改为 Code/测试/确定性校验；含混或会触发 Human Gate 的只记录，不擅自改。
+
+  本轮扫描覆盖 `specs/`、`rules/`、`code/`、`tests/`、`web/` 和 `ldvh-base/`，排除了用户明确禁止修改的 workcase-0006、workcase-0007、spark-0027 和 study-0011。清理范围仅限明确低风险表达；历史 Spark、Study 和既有 WorkCase 中作为历史事实、来源原文或旧迁移清单存在的“人工”表达不批量改写。
+success_criteria: |
+  - [x] 新建 workcase-0008，并与 spark-0026 建立关联。
+  - [x] 全量扫描 `人工|Human|用户确认|手动|AI|Code|Web` 相关主体表达，并重点分类“人工”和“用户确认”命中。
+  - [x] 对明确低风险的 active specs、attachments、draft/candidate 32、Code 输出文案和测试夹具做最小修改。
+  - [x] 保留 code 中用于识别 legacy “人工降级”旧表达的检测标记，并说明它不是当前推荐主体表达。
+  - [x] 不修改 workcase-0006、workcase-0007、spark-0027 或 study-0011。
+  - [x] 更新 spark-0026 evolution，记录清理结果、保留理由、未决项和后续承接。
+  - [x] 运行事实源校验、相关扫描和 `python3 code/specs_validate.py all --fail-on-diagnostics`，并在验证证据中记录结果。
+source: |
+  来源 Spark：`ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml`。
+
+  来源主线程要求：在独立 worktree 中处理 spark-0026 的“人工”用语清理与执行主体命名治理；先分类，不机械替换；只处理本线程范围；运行必要验证；若完成可合并变更则提交。
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 入口与权威原文读取
+      role: navigation
+      mode: single
+      input_refs:
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - specs/01-规范体系基础规范.md
+        - specs/02-事实模型基础规范.md
+        - specs/04-Code确定性执行规范.md
+        - specs/07-事实源边界与Git追溯规范.md
+        - specs/20-Spark-火花.md
+        - specs/21-WorkCase-工作项.md
+        - specs/31-git-commit-action-Git提交行动编排.md
+      expected_output: |
+        读取工作区入口、维护入口、知识地图导航和 P0/P1 权威原文，确认产品资产维护和 dogfood 工作对象处理边界。
+      status: done
+      result_summary: |
+        已读取工作区入口、维护入口和 P0/P1 权威原文。知识地图在当前 worktree 中因未找到工作区根 `LDVH-GOVERNED-PROJECTS.yaml` 输出 degraded 诊断；已回退到外部工作区配置、active specs 和文件事实源原文核对。
+      evidence_refs:
+        - /Users/dmh2002/poker_hud_projects/LDVH-GOVERNED-PROJECTS.yaml
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - rules/LDVH-MAINTAINER-ENTRY.md
+      blocking_reason: null
+    - id: item-2
+      title: 主体表达扫描与分类
+      role: inventory
+      mode: single
+      input_refs:
+        - specs/
+        - rules/
+        - code/
+        - tests/
+        - web/
+        - ldvh-base/
+      expected_output: |
+        使用 `rg` 全量扫描主体表达，重点输出“人工”和“用户确认”命中分类；保留历史事实和含混项，不机械替换。
+      status: done
+      result_summary: |
+        已完成扫描。active specs/rules/code/tests/web 中的“人工”主要分为：真实 Human 确认/复核、AI 回读或临时核对、手动步骤/手动命令、Code legacy 检测标记、测试夹具文案。`ldvh-base` 中大量命中属于 spark-0025/0026、workcase-0005、历史 Study/Spark 或既有 WorkCase 的过程事实，未批量改写。
+      evidence_refs:
+        - specs/
+        - code/
+        - tests/
+        - ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml
+      blocking_reason: null
+    - id: item-3
+      title: 低风险文案清理
+      role: specs-code-tests
+      mode: single
+      input_refs:
+        - specs/
+        - specs/attachments/
+        - specs/32-environment-entry-adaptation-环境入口落地与适配检查.md
+        - code/spec_checks/knowledge_map.py
+        - code/fact_cli.py
+        - code/spec_checks/capability_environment.py
+        - tests/code/
+      expected_output: |
+        将明确非 Human 的“人工”表达替换为 AI 回读核对、文件事实源核对、临时核对动作、手动步骤或手动命令；将真实确认/取舍表达改为 Human 确认或 Human 复核。
+      status: done
+      result_summary: |
+        已清理 active specs/attachments、draft/candidate 32、Code 输出文案和 tests 夹具：`人工确认` 改为 `Human 确认`，`人工复核/审查` 按语境改为 `Human 复核/审查`，AI 可执行核对改为 `AI 回读核对`、`临时核对动作` 或 `文件事实源核对`，环境替代动作改为 `手动步骤`。未改变 Code 结构化字段、状态枚举或 Web 行为。
+      evidence_refs:
+        - specs/00-LDVH理念与价值标准.md
+        - specs/01-规范体系基础规范.md
+        - specs/02-事实模型基础规范.md
+        - specs/07-事实源边界与Git追溯规范.md
+        - specs/08-测试基础规范.md
+        - code/spec_checks/knowledge_map.py
+        - tests/code/
+      blocking_reason: null
+    - id: item-4
+      title: 保留项与未决项登记
+      role: governance
+      mode: single
+      input_refs:
+        - code/spec_checks/runtime_projection.py
+        - code/spec_checks/assurance_report.py
+        - ldvh-base/
+      expected_output: |
+        记录未改表达的保留理由和需要主线程/Human 决策的问题。
+      status: done
+      result_summary: |
+        code 中剩余 `人工降级` 仅作为 legacy 旧表达检测标记保留，用于识别历史或不推荐用语，不作为推荐输出。`ldvh-base` 中剩余命中主要是历史工作对象、来源 Spark、Study 原文或被本任务明确排除对象之外的过程事实；本轮不重写历史事实。仍需主线程/Human 决策是否建立后续 WorkCase 处理历史 Study/Spark 的吸收改写，以及是否允许删除 legacy 检测标记。
+      evidence_refs:
+        - code/spec_checks/runtime_projection.py
+        - code/spec_checks/assurance_report.py
+        - ldvh-base/
+      blocking_reason: null
+    - id: item-5
+      title: 验证与提交准备
+      role: verification
+      mode: single
+      input_refs:
+        - code/specs_validate.py
+        - code/fact_validate.py
+        - tests/code/
+      expected_output: |
+        运行事实源校验、相关扫描、Code 综合校验和提交预检，记录结果与残留风险。
+      status: done
+      result_summary: |
+        已完成验证：`python3 code/fact_validate.py ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml` 通过；定向 pytest 115 项通过；`python3 code/specs_validate.py all --fail-on-diagnostics` 通过；`git diff --check` 通过。最终扫描显示 active specs/rules/code/tests/web 中仅剩 code legacy “人工降级”检测标记和 `test_commit_validate.py` 私有 trailer 旧写法样本；`ldvh-base` 剩余命中为历史事实、来源 Spark、既有 WorkCase/Study 或本 WorkCase 的分类记录。
+      evidence_refs:
+        - code/fact_validate.py
+        - code/specs_validate.py
+        - tests/code/
+        - git diff --check
+      blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本 WorkCase 由主线程明确委派并限定范围；本轮变更只做低风险主体命名清理，不改变 Human Gate、事实源边界、Code 结构化契约、Web 行为或环境声明。
+      required_perspectives:
+        - 主体归口一致性
+        - 事实源边界
+      optional_perspectives: []
+      tool_method_requirements:
+        - 以 `rg` 扫描结果驱动分类。
+        - 不机械全局替换。
+        - 不修改 workcase-0006、workcase-0007、spark-0027 或 study-0011。
+      aggregation_rule: |
+        若扫描发现需改变 Human Gate、事实源边界、环境声明或 Code 结构化契约的命中项，应记录为未决项并暂停该项修改；低风险文案澄清可直接执行并验证。
+    review_items:
+      - id: plan-review-1
+        role: 主体归口一致性
+        agent_name: main-controller-codex
+        requested_at: '2026-06-25T03:30:52+08:00'
+        prompt_context:
+          objective: |
+            按 spark-0026 的阶段性命名原则分类“人工”表达，只修改主体明确且低风险的文案。
+          input_refs:
+            - ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml
+            - specs/04-Code确定性执行规范.md
+            - specs/07-事实源边界与Git追溯规范.md
+            - specs/08-测试基础规范.md
+        context_digest: |
+          “人工”不能作为默认主体；真实人类参与用 Human/Human Gate，AI 核对用 AI 回读或文件事实源核对，确定性检查用 Code/测试，命令替代用手动步骤/手动命令。
+        result:
+          status: pass_with_followups
+          summary: |
+            可以进行低风险清理；历史事实和 legacy 检测标记不在本轮强改。
+          key_findings:
+            - active specs/rules 不应继续使用泛化“人工”作为默认执行主体。
+            - Code/test 文案可改，但不应在本轮改动结构化契约。
+            - 旧 Spark/Study/WorkCase 中的历史语境需要单独吸收决策。
+          required_changes: []
+          recommendations:
+            - 在 spark-0026 evolution 中记录分类结果和保留理由。
+        evidence_refs:
+          - ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml
+        raw_output_ref: current-thread
+        attested_at: '2026-06-25T03:30:52+08:00'
+        attestation:
+          signer: main-controller-codex
+          statement: 基于入口规范、spark-0026 和扫描结果完成主体归口审核。
+    controller_resolution:
+      resolved_at: '2026-06-25T03:30:52+08:00'
+      resolver: main-controller-codex
+      source_review_item_ids:
+        - plan-review-1
+      accepted_findings:
+        - 本轮仅执行低风险主体命名清理，不改变 Human Gate、事实源边界、Code 结构化契约、Web 行为或环境支持声明。
+        - 历史事实、legacy 检测标记和含混项记录为保留或未决，不机械替换。
+      rejected_findings: []
+      required_changes_applied: []
+      unresolved_items: []
+      changed_fields:
+        - orchestration.plan_review
+      revision_history_refs: []
+      summary: |
+        已吸收审核约束：只处理主体明确且低风险的表达，历史事实和含混项不在本轮强改。
+    human_confirmation:
+      decision: execute
+      scope: |
+        来源主线程明确委派本线程新建并维护 workcase-0008、扫描分类并执行低风险清理，视为本 WorkCase 的执行授权。
+      constraints:
+        - 不修改 workcase-0006、workcase-0007、spark-0027 或 study-0011。
+        - 不机械全局替换“人工”。
+        - 不改变 Human Gate、事实源边界、Code 结构化契约、Web 行为或环境支持声明。
+      confirmed_at: '2026-06-25T03:30:52+08:00'
+      summary: |
+        主线程委派已明确执行范围；关闭仍需主线程/Human 确认。
+  result_review:
+    controller_self_check:
+      controller: main-controller-codex
+      checked_at: ''
+      prompt_context:
+        objective: |
+          检查 workcase-0008 当前是否已完成主体表达分类、低风险清理、排除对象边界和验证准备，并确认剩余事项是否应作为后续决策而不是阻断本轮执行。
+        input_refs:
+          - ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml
+          - ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml
+          - specs/
+          - code/
+          - tests/
+      result:
+        status: pass_with_followups
+        summary: |
+          主体表达分类和低风险清理已完成，未触碰用户明确排除对象，未改变 Code 结构化契约、Web 行为或环境声明。验证和提交仍在 item-5 收尾中；历史事实改写和 legacy 检测标记删除应交主线程/Human 后续决策。
+        key_findings:
+          - active specs/rules/code/tests/web 中的推荐表达已不再使用泛化“人工”作为默认执行主体。
+          - code 中剩余 `人工降级` 是 legacy 旧表达检测标记，不是推荐输出文案。
+          - ldvh-base 中剩余“人工”多为历史事实、来源 Spark、Study 原文或本轮明确保留项。
+          - workcase-0006、workcase-0007、spark-0027 和 study-0011 未被修改。
+        required_changes: []
+        evidence_refs:
+          - rg 人工 specs rules code tests web
+          - rg 人工 ldvh-base
+          - git status --short --untracked-files=all
+    review_items: []
+    controller_resolution: {}
+    human_closure_confirmation: ""
+verification_evidence: |
+  ## 验证计划
+
+  运行事实源校验、相关主体表达扫描、定向 Code 测试、active specs 综合检查和 Git 格式检查。
+
+  ## 验证命令
+
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0008-human-term-usage-cleanup.yaml ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml`
+  - `python3 -m pytest -q tests/code/test_fact_cli.py tests/code/test_fact_validate.py tests/code/specs_validate_checks/test_v2.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_human_gate.py`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `git diff --check`
+  - `rg -n "人工" specs rules code tests web --glob '*.md' --glob '*.yaml' --glob '*.yml' --glob '*.py' --glob '*.ts' --glob '*.tsx'`
+  - `rg -n "用户确认" specs rules code tests web`
+  - `rg -n "人工" ldvh-base --glob '!ldvh-base/workcases/workcase-0006*' --glob '!ldvh-base/workcases/workcase-0007*' --glob '!ldvh-base/sparks/spark-0027*' --glob '!ldvh-base/studies/study-0011*'`
+
+  ## 验证结果
+
+  - 事实源校验通过：files=2，errors=0，warnings=0。
+  - 定向 pytest 通过：115 passed。
+  - active specs 综合检查通过：diagnostics=0。
+  - `git diff --check` 通过。
+  - active specs/rules/code/tests/web 中剩余“人工”命中仅为 Code legacy “人工降级”检测标记；剩余“用户确认”命中仅为 `tests/code/test_commit_validate.py` 私有 trailer 旧写法样本。
+  - `ldvh-base` 剩余“人工”命中为历史事实、来源 Spark、既有 WorkCase/Study 或本 WorkCase 的分类记录，本轮按事实源历史保留。
+
+  ## 结论
+
+  本轮低风险主体命名清理已通过必要验证。需要主线程/Human 决策的内容已记录为残留风险和后续问题。
+closure_evidence: |
+  ## 验证计划
+
+  完成 item-5 验证后再请求主线程/Human 判断是否关闭。
+
+  ## 验证命令
+
+  不适用；当前 WorkCase 仍在执行中。
+
+  ## 验证结果
+
+  当前状态为 `executing`，低风险清理和验证已完成，等待主线程/Human 判断是否关闭。
+
+  ## 结论
+
+  尚未关闭；历史事实改写、legacy 检测标记删除和更大范围 Human-facing 文案治理留作主线程/Human 决策。
+closure_outcome: ""
+closed_at: ""
+residual_risks:
+  - code 中 legacy “人工降级”检测标记仍保留，避免破坏旧表达识别；是否删除需主线程/Human 决策。
+  - ldvh-base 历史 Spark/Study/WorkCase 中仍存在“人工”旧语境，本轮按事实源历史保留，后续若要改写需单独吸收决策。
+related_sparks:
+  - spark-0026
+related_adrs: []
+related_pitfalls: []
+related_workcases:
+  - workcase-0005
+input_refs:
+  - ldvh-base/sparks/spark-0026-human-term-usage-cleanup.yaml
+  - ldvh-base/sparks/spark-0025-degradation-concept-convergence.yaml
+  - specs/01-规范体系基础规范.md
+  - specs/02-事实模型基础规范.md
+  - specs/04-Code确定性执行规范.md
+  - specs/07-事实源边界与Git追溯规范.md
+  - specs/08-测试基础规范.md

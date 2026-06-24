@@ -664,7 +664,7 @@ def cmd_create(args: argparse.Namespace) -> int:
             "## 验证计划\n\n"
             "待补充验证计划。\n\n"
             "## 验证命令\n\n"
-            "待补充验证命令或人工验证方式。\n\n"
+            "待补充验证命令、AI 回读核对或 Human 确认方式。\n\n"
             "## 验证结果\n\n"
             "待补充验证结果。\n\n"
             "## 结论\n\n"
