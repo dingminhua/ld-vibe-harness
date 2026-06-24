@@ -3,20 +3,20 @@ type: workcase
 title: Codex 并行执行行动编排落地
 goal: |
   承接 spark-0027 与 study-0011，把 Codex worktree、新建对话、同目录线程、子 Agent 和一层嵌套子 Agent 的使用方式沉淀为 LDVH 行动编排能力；明确行动编排决定如何调度这些执行资源，WorkCase 只承载具体目标和证据，环境适配只说明能力是否可用。
-status: subagents_plan_reviewing
+status: human_plan_confirming
 created: '2026-06-25T04:13:45.180773'
-updated: '2026-06-25T04:20:00+08:00'
+updated: '2026-06-25T04:26:00+08:00'
 priority: P0
 description: |
   Human 已明确：Codex worktree / 子 Agent / 新建对话能力的研究内容应关联到 Spark，并与行动编排联系起来；具体如何执行由行动编排决定。这不是 ADR 主问题，也不能把 WorkCase 自身承担的目标、环境适配负责的能力可用性和行动编排负责的调度机制混在一起。
 
   本 WorkCase 只负责把 spark-0027 和 study-0011 的研究结论推进为行动编排设计与落地方案，不直接修改业务 WorkCase 的执行内容，不把环境能力声明写成行动规则，不把一层嵌套子 Agent 作为长期风险 ADR 处理。若涉及环境是否支持，应回到运行时扩展/环境适配；若涉及具体业务目标，应由对应 WorkCase 承接。
 success_criteria: |
-  - [ ] 明确三分法：worktree 用于写入隔离和可提交闭环；同目录线程用于轻量只读咨询或短复核；子 Agent 用于读多写少、局部调查、复核、日志分析和完成后检查。
-  - [ ] 设计行动编排中的主控职责：任务卡、范围禁止项、入口读取、Human Gate、轮询、回收、验证、提交、合并顺序、冲突处理和结果复核。
-  - [ ] 明确子 Agent 调用子 Agent 的使用边界：只允许一层、默认只读或复核、不得直接写事实源、不得绕过主控合并权威。
-  - [ ] 区分行动编排、WorkCase 和环境适配：行动编排决定怎么调度；WorkCase 承载目标、证据和关闭；环境适配说明能力是否可用和如何接入。
-  - [ ] 给出应落入 `specs/03-行动编排规范.md` 或新行动编排成员的具体变更方案，并完成执行前子 Agent 方案审核。
+  - [x] 明确三分法：worktree 用于写入隔离和可提交闭环；同目录线程用于轻量只读咨询或短复核；子 Agent 用于读多写少、局部调查、复核、日志分析和完成后检查。
+  - [x] 设计行动编排中的主控职责：任务卡、范围禁止项、入口读取、Human Gate、轮询、回收、验证、提交、合并顺序、冲突处理和结果复核。
+  - [x] 明确子 Agent 调用子 Agent 的使用边界：只允许一层、默认只读或复核、不得直接写事实源、不得绕过主控合并权威。
+  - [x] 区分行动编排、WorkCase 和环境适配：行动编排决定怎么调度；WorkCase 承载目标、证据和关闭；环境适配说明能力是否可用和如何接入。
+  - [x] 给出应落入 `specs/03-行动编排规范.md` 或新行动编排成员的具体变更方案，并完成执行前子 Agent 方案审核。
 source: |
   来源 Spark：`ldvh-base/sparks/spark-0027-codex-worktree-subagent-thread-practices.yaml`。
   来源 Study：`ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md`。
@@ -35,9 +35,15 @@ orchestration:
         - specs/21-WorkCase-工作项.md
         - specs/06-运行时扩展规范.md
       expected_output:  明确行动编排、WorkCase 和环境适配的边界，形成并行执行资源的调度模型。
-      status: pending
-      result_summary: null
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已形成三分法和三层边界：行动编排只决定执行资源如何调度、何时 Gate、如何回收输出、验证和回写触发；WorkCase 只承载目标、成功标准、执行项、审核记录、证据、关闭判断和残留风险；环境适配只说明 Codex worktree、同目录线程、子 Agent 等能力是否可用、如何接入和如何现场检查，不把一次环境观察写成长期能力结论。
+      evidence_refs:
+        - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
+        - specs/03-行动编排规范.md
+        - specs/21-WorkCase-工作项.md
+        - specs/06-运行时扩展规范.md
+        - specs/07-事实源边界与Git追溯规范.md
       blocking_reason: null
     - id: item-2
       title: 设计 Codex 并行行动编排
@@ -49,9 +55,14 @@ orchestration:
         - rules/LDVH-WORKSPACE-ENTRY.md
         - rules/LDVH-MAINTAINER-ENTRY.md
       expected_output: 设计任务卡、线程类型选择、子 Agent 使用、主控轮询、交还格式、验证清单、合并顺序和冲突处理规则。
-      status: pending
-      result_summary: null
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已形成 Codex 并行执行行动编排候选方案：worktree worker 承接写入隔离、独立验证和可提交闭环；同目录线程默认只读咨询、短复核或共享现场观察，不承担并行写入；子 Agent 默认用于读多写少调查、日志分析、方案/结果复核和摘要回收。主控必须维护任务卡、允许写入路径、禁止范围、入口读取、Human Gate、轮询、回收、授权范围核对、验证命令、提交或 diff 交还、合并顺序、冲突分类、结果复核和残留风险。worker 已提交时交还 commit hash；若只交还 diff，主控必须重新验证、提交并记录原因。合并前检查至少包含授权文件核对、git status/diff 核对、相关验证重跑、冲突分类和 Human Gate 判断。
+      evidence_refs:
+        - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
+        - specs/03-行动编排规范.md
+        - specs/31-git-commit-action-Git提交行动编排.md
+        - specs/07-事实源边界与Git追溯规范.md
       blocking_reason: null
     - id: item-3
       title: 执行前子 Agent 方案审核
@@ -62,9 +73,11 @@ orchestration:
         - specs/03-行动编排规范.md
         - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
       expected_output: 审核设计是否正确区分行动编排、WorkCase 和环境适配，是否遗漏主控责任、Human Gate 或事实源边界。
-      status: pending
-      result_summary: null
-      evidence_refs: []
+      status: done
+      result_summary: |
+        已完成两个独立只读方案审核。视角 A 覆盖行动编排职责边界与 WorkCase/环境适配分离，结论为 pass_with_followups；视角 B 覆盖子 Agent、worktree、主控职责、提交验证和冲突风险，结论为 pass_with_followups。两者均无 required_changes，建议把本轮方案明确限定为 workcase-0009 候选计划和执行前审核材料，不等同于 active 行动编排，不批准直接修改 specs/03、创建 30-59 成员或正式启用二级子 Agent 长期规则。
+      evidence_refs:
+        - ldvh-base/workcases/workcase-0009-codex-parallel-execution-orchestration.yaml
       blocking_reason: null
   plan_review:
     orchestration_owner: main_controller
@@ -81,8 +94,139 @@ orchestration:
         - 不把具体业务 WorkCase 的目标转移给行动编排。
         - 不使用 ADR 承接本 WorkCase 的主要落地方向。
       aggregation_rule: 存在 fail 或 needs_human_gate 结论时不得进入 Human 方案确认，必须先处理或提交 Human 裁决。
-    review_items: []
-    controller_resolution: null
+    review_items:
+      - id: plan-review-1
+        role: 行动编排职责边界与 WorkCase/环境适配分离
+        agent_name: subagent-019efb4c-c463-7f63-8a0f-0e3bbd0d2ac2
+        requested_at: '2026-06-25T04:22:00+08:00'
+        prompt_context:
+          objective: |
+            审核 Codex 并行执行行动编排候选方案是否正确区分行动编排、WorkCase、环境适配和事实源边界，是否可进入 Human 方案确认。
+          input_refs:
+            - ldvh-base/workcases/workcase-0009-codex-parallel-execution-orchestration.yaml
+            - ldvh-base/sparks/spark-0027-codex-worktree-subagent-thread-practices.yaml
+            - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
+            - specs/03-行动编排规范.md
+            - specs/21-WorkCase-工作项.md
+            - specs/06-运行时扩展规范.md
+            - specs/07-事实源边界与Git追溯规范.md
+          constraints:
+            - 只读审核，不修改文件。
+            - 不把环境能力声明写成行动编排规则。
+            - 不把 WorkCase 字段、状态或关闭判断转移给行动编排。
+        context_digest: |
+          待审方案把 worktree、同目录线程和子 Agent 定位为行动调度资源；WorkCase 承载目标、证据和关闭；环境适配只说明能力可用性和接入边界。
+        result:
+          status: pass_with_followups
+          summary: |
+            审核通过，可进入 Human 方案确认。方案总体正确区分了行动编排、WorkCase、运行时扩展/环境适配和 07 事实源边界：03 只承接调度、Gate、主控回收、验证和回写触发；21 承载 WorkCase 目标、执行项、审核记录、证据和关闭判断；06 只处理 Codex App/CLI/subagent/worktree 等能力的适配、入口和现场检查边界；07 约束过程输出、Agent 输出、工具输出和环境观察不得直接成为稳定事实源。
+          key_findings:
+            - 方案的“三分法”落在行动编排调度层，没有把 worktree、同目录线程或子 Agent 写成新的事实模型，也没有把执行线程升级为独立事实对象。
+            - 方案明确不定义 WorkCase 字段/状态、不声明环境能力、不中长期保存工具输出，符合 03、21、06 和 07 的边界。
+            - 子 Agent 调用子 Agent 限制为一层、默认只读/复核/摘要、child 不直接写事实源，并要求写入时退回主控改派独立 worktree 或 WorkCase 执行项。
+            - 本轮仅回写 workcase-0009，不直接修改 specs/03；后续若形成 30-59 行动编排成员、改变 03 的 Gate/回写/能力边界，才需要按 03 Human Gate 处理。
+            - 当前 worktree 中知识地图查询受限，因此本审核以用户指定文件和 active specs 原文为权威依据；该工具受限点不影响本次只读方案判断。
+          recommendations:
+            - controller_resolution 中显式写明：本次 Human 方案确认只确认 workcase-0009 的执行方案，不等于批准修改 specs/03、创建 30-59 成员或正式启用二级子 Agent 长期规则。
+            - 后续进入 specs/03 候选计划或新行动编排成员前，应单独列出 Human Gate 触发项。
+            - 若继续采用一层 child 规则，应保持“本 WorkCase 执行约束/候选实践”表述，不写成所有 LDVH 环境默认可用能力。
+          required_changes: []
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0009-codex-parallel-execution-orchestration.yaml
+            - ldvh-base/sparks/spark-0027-codex-worktree-subagent-thread-practices.yaml
+            - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
+            - specs/03-行动编排规范.md
+            - specs/21-WorkCase-工作项.md
+            - specs/06-运行时扩展规范.md
+            - specs/07-事实源边界与Git追溯规范.md
+        raw_output_ref: subagent-019efb4c-c463-7f63-8a0f-0e3bbd0d2ac2
+        attested_at: '2026-06-25T04:23:00+08:00'
+        attestation:
+          signer: subagent-019efb4c-c463-7f63-8a0f-0e3bbd0d2ac2
+          statement: 基于 prompt context 和 input refs 完成只读方案审核，并对结论负责。
+      - id: plan-review-2
+        role: 子 Agent 与 worktree 并行风险
+        agent_name: subagent-019efb4c-f087-73b0-ba37-a51971081a45
+        requested_at: '2026-06-25T04:22:00+08:00'
+        prompt_context:
+          objective: |
+            审核 Codex 并行执行行动编排候选方案是否足以约束 worktree、同目录线程、子 Agent、一层 child、主控提交验证、合并顺序和冲突处理风险。
+          input_refs:
+            - ldvh-base/workcases/workcase-0009-codex-parallel-execution-orchestration.yaml
+            - ldvh-base/sparks/spark-0027-codex-worktree-subagent-thread-practices.yaml
+            - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
+            - specs/03-行动编排规范.md
+            - specs/21-WorkCase-工作项.md
+            - specs/31-git-commit-action-Git提交行动编排.md
+            - specs/07-事实源边界与Git追溯规范.md
+          constraints:
+            - 只读审核，不修改文件。
+            - 不把 WorkCase 候选方案解释为 active 行动编排。
+            - 重点检查主控责任、提交验证、冲突处理和与 workcase-0010 的协调风险。
+        context_digest: |
+          待审方案要求写入/验证/可提交闭环使用 worktree，同目录线程默认只读，子 Agent 默认读多写少；主控负责任务卡、轮询、回收、验证、提交、合并顺序和冲突处理。
+        result:
+          status: pass_with_followups
+          summary: |
+            方案基本足以约束 worktree、同目录线程、子 Agent 和一层 child 的并行风险；主控职责、验证/提交交还、合并顺序和冲突上收 Human 的边界也基本覆盖。建议本轮只回写 workcase-0009 的方案审核结论，不先修改 specs/03；但必须明确这些内容仍是候选方案/WorkCase 计划，不得被解释为 active 行动编排。
+          key_findings:
+            - 线程类型三分法与 study-0011 结论一致：worktree 承载写入隔离和提交闭环，同目录线程默认只读/短复核，子 Agent 用于读多写少调查与复核。
+            - 主控职责覆盖任务卡、范围、入口读取、Human Gate、轮询、回收、验证、提交、合并顺序和冲突处理，符合 03 对能力输出必须交还主控的要求。
+            - worktree worker 交还格式包含路径、改动文件、验证命令、未跑原因、Human Gate、风险和 commit hash，符合 31 对提交行动交还证据的方向。
+            - 同目录线程不承担并行写入、child 不写 Git 文件事实源且不继续 spawn，能降低无法归因 diff、递归 fan-out 和事实源污染风险。
+            - 本轮不改 specs/03 是合理降风险选择，尤其 workcase-0010 也可能面向 specs/03 形成行动编排方案；但不能把 WorkCase 里的候选方案当作已生效流程。
+          recommendations:
+            - 在方案中补充硬边界：未形成 active 行动编排成员前，本方案只能作为 workcase-0009 的候选计划和执行前审核材料。
+            - 明确 commit hash 是 worker 已提交时必填；若主控允许只交还 diff，必须由主控重新验证、提交并记录原因。
+            - 合并前检查清单固定包含授权文件核对、git status/diff 核对、相关验证重跑、冲突分类和 Human Gate 判断。
+            - 与 workcase-0010 协调 specs/03 或新行动成员的落地顺序，避免两个 WorkCase 同时改同一行动编排主规范。
+          required_changes: []
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0009-codex-parallel-execution-orchestration.yaml
+            - ldvh-base/sparks/spark-0027-codex-worktree-subagent-thread-practices.yaml
+            - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
+            - specs/03-行动编排规范.md
+            - specs/21-WorkCase-工作项.md
+            - specs/31-git-commit-action-Git提交行动编排.md
+            - specs/07-事实源边界与Git追溯规范.md
+            - specs/attachments/21.Att.01-orchestration字段契约表.md
+        raw_output_ref: subagent-019efb4c-f087-73b0-ba37-a51971081a45
+        attested_at: '2026-06-25T04:23:00+08:00'
+        attestation:
+          signer: subagent-019efb4c-f087-73b0-ba37-a51971081a45
+          statement: 基于 prompt context 和 input refs 完成只读方案审核，并对结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-25T04:24:00+08:00'
+      resolver: codex-thread-g-main-controller
+      source_review_item_ids:
+        - plan-review-1
+        - plan-review-2
+      accepted_findings:
+        - 采纳三分法：worktree 用于写入隔离、独立验证和可提交闭环；同目录线程默认只读咨询、短复核或共享现场观察；子 Agent 用于读多写少调查、日志分析、方案/结果复核和摘要回收。
+        - 采纳职责边界：行动编排决定如何调度执行资源，WorkCase 承载目标、执行项、证据和关闭，环境适配只说明能力是否可用和如何接入，07 约束过程输出和事实源回写。
+        - 采纳一层 child 边界：仅允许一层、默认只读/复核/摘要、child 不直接写 Git 文件事实源、不继续 spawn、不绕过主控合并权威。
+        - 采纳主控责任：任务卡、范围禁止项、入口读取、Human Gate、轮询、回收、授权范围核对、验证、提交或 diff 交还、合并顺序、冲突处理、结果复核和残留风险必须由主控汇总判断。
+        - 采纳落地降风险策略：本轮只回写 workcase-0009，不直接修改 specs/03、Rules、Code、Web 或其它 WorkCase/Spark；后续 specs/03 或新行动编排成员落地需与 workcase-0010 协调。
+      rejected_findings: []
+      required_changes_applied:
+        - 已在执行项摘要中补充“本方案未形成 active 行动编排成员前，只作为 workcase-0009 的候选计划和执行前审核材料”这一硬边界。
+        - 已补充 worker 已提交时 commit hash 必填；只交还 diff 时由主控重新验证、提交并记录原因。
+        - 已补充合并前检查清单：授权文件核对、git status/diff 核对、相关验证重跑、冲突分类和 Human Gate 判断。
+      unresolved_items:
+        - 等待 Human 或主线程确认是否把本候选方案推进到 specs/03 候选计划或新 30-59 行动编排成员。
+        - 若后续直接修改 specs/03，必须先与 workcase-0010 协调范围和合并顺序，避免同轮硬改同一行动编排主规范。
+        - 本轮不声明 Codex worktree、同目录线程、子 Agent 或一层 child 在所有环境中可用；环境能力可用性仍应由 06/32 的环境适配和现场检查承接。
+      changed_fields:
+        - status
+        - success_criteria
+        - orchestration.execution_items
+        - orchestration.plan_review.review_items
+        - orchestration.plan_review.controller_resolution
+        - revision_history
+      revision_history_refs:
+        - revision_history[0]
+      summary: |
+        两个独立审核视角均为 pass_with_followups 且无 required_changes。主控已吸收 follow-up 边界：本方案只作为 workcase-0009 的候选计划和执行前审核材料，不等于批准修改 specs/03、创建或激活 30-59 行动编排成员，也不等于正式启用二级子 Agent 长期规则。当前可进入 human_plan_confirming，等待 Human 或主线程决定是否推进 specs/03 候选计划、新行动编排成员或与 workcase-0010 的合并协调。
     human_confirmation: null
   result_review:
     controller_self_check: null
@@ -103,19 +247,74 @@ orchestration:
     controller_resolution: null
     human_closure_confirmation: null
 plan_confirmed_at: ''
-verification_evidence: ''
+verification_evidence: |
+  ## 验证计划
+
+  本轮验证只覆盖 workcase-0009 事实源回写和入口/能力诊断，不代表 specs/03 或新行动编排成员已落地。
+
+  ## 验证命令
+
+  - `python3 code/fact_validate.py ldvh-base/`
+  - `python3 code/specs_validate.py deployment-entries`
+  - `python3 code/specs_validate.py capability-environment`
+  - `python3 code/specs_validate.py v2-check --input-scope entry_navigation --format text`
+  - `git diff --check`
+
+  ## 验证结果
+
+  - `python3 code/fact_validate.py ldvh-base/`：检查完成，files=49，errors=0，warnings=0。
+  - `python3 code/specs_validate.py deployment-entries`：固定运行时扩展登记检查通过。
+  - `python3 code/specs_validate.py capability-environment`：固定能力资产数 4，诊断数 0，状态 closed，环境安装状态声明 not_claimed。
+  - `git diff --check`：无输出，未发现空白错误。
+  - `python3 code/specs_validate.py v2-check --input-scope entry_navigation --format text`：result_status=limited，原因是当前独立 worktree 上层缺少 `LDVH-GOVERNED-PROJECTS.yaml`，诊断为 `V2_GOVERNED_PROJECTS_CONFIG_MISSING`。本轮已按入口 STOP 建议退回 active specs、Rules 入口、workcase-0009、spark-0027 和 study-0011 原文核对；不把该本地检查限制写成环境类型能力结论。
+
+  ## 结论
+
+  workcase-0009 事实源回写可通过事实源校验和空白检查；入口诊断在当前独立 worktree 中受上层管辖项目配置缺失限制，已以原工作区知识地图导航和权威原文核对兜底。后续 specs/03 或新行动编排成员落地仍需 Human/主线程确认并与 workcase-0010 协调。
 closure_evidence: ''
 closure_requested_at: ''
 review_requested_at: ''
 closed_at: ''
 closure_outcome: ''
-residual_risks: []
-followup_refs: []
-revision_history: []
+residual_risks:
+  - 本方案仍是 workcase-0009 候选计划和执行前审核材料；未形成 active 行动编排成员前，不得作为默认可执行流程调用。
+  - 本轮未修改 specs/03；后续若进入 specs/03 或新行动编排成员，需与 workcase-0010 协调范围、合并顺序和冲突处理。
+  - 当前 worktree 的 entry_navigation 诊断受上层缺少 LDVH-GOVERNED-PROJECTS.yaml 影响，已使用原工作区导航结果和权威原文兜底核对。
+followup_refs:
+  - workcase-0010
+revision_history:
+  - at: '2026-06-25T04:24:00+08:00'
+    from_status: subagents_plan_reviewing
+    to_status: human_plan_confirming
+    actor: codex-thread-g-main-controller
+    reason: |
+      完成 workcase-0009 的方案设计整理和两个独立只读子 Agent 方案审核；两个审核结论均为 pass_with_followups 且无 required_changes，可进入 Human 方案确认。
+    changed_fields:
+      - status
+      - success_criteria
+      - orchestration.execution_items
+      - orchestration.plan_review.review_items
+      - orchestration.plan_review.controller_resolution
+    summary: |
+      已回写行动编排、WorkCase、环境适配三者边界，Codex 并行执行调度候选方案，子 Agent 调 child 边界，主控职责，审核记录和主控处理决议。本轮未修改 specs/03；后续如落入 specs/03 或新行动编排成员，需与 workcase-0010 协调。
+  - at: '2026-06-25T04:26:00+08:00'
+    from_status: human_plan_confirming
+    to_status: human_plan_confirming
+    actor: codex-thread-g-main-controller
+    reason: |
+      回写本轮事实源校验、入口诊断和后续协调风险，明确当前结果不是 active 行动编排落地。
+    changed_fields:
+      - verification_evidence
+      - residual_risks
+      - followup_refs
+    summary: |
+      已记录 fact_validate、deployment-entries、capability-environment、v2-check entry_navigation 和 git diff --check 结果；登记与 workcase-0010 的后续协调需求。
 related_docs:
   - specs/03-行动编排规范.md
   - specs/21-WorkCase-工作项.md
   - specs/06-运行时扩展规范.md
+  - specs/07-事实源边界与Git追溯规范.md
+  - specs/31-git-commit-action-Git提交行动编排.md
   - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
 related_adrs: []
 related_sparks:
