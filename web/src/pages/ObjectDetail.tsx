@@ -1,6 +1,6 @@
 import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, BookOpenText, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, ExternalLink, FileText, Info } from 'lucide-react';
+import { ArrowLeft, BookOpenText, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, ExternalLink, FileText } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -24,11 +24,7 @@ import { getStatusColor } from '@/utils/statusColors';
 import { executionFlowRowClass, getExecutionFlowLabel, getExecutionFlowTone, sortWorkCaseExecutionItems } from '@/utils/executionFlowStatus';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
-import {
-  isWorkCaseHumanConfirmingStatus,
-  isWorkCaseTerminalStatus,
-  isWorkCaseResultReviewStatus,
-} from '@/utils/workcaseStatus';
+import { isWorkCaseResultReviewStatus } from '@/utils/workcaseStatus';
 import {
   CHECKLIST_COMPAT_FIELDS,
   COLLAPSIBLE_FIELDS,
@@ -244,6 +240,12 @@ export const FIELD_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   closure_evidence: { zh: '关闭证据', en: 'Closure Evidence' },
   verification_evidence: { zh: '验证证据', en: 'Verification Evidence' },
   review_requested_at: { zh: '请求关闭确认时间', en: 'Review Requested At' },
+  plan_confirmed_at: { zh: '方案确认时间', en: 'Plan Confirmed At' },
+  closure_requested_at: { zh: '关闭确认请求时间', en: 'Closure Requested At' },
+  closure_outcome: { zh: '关闭结果', en: 'Closure Outcome' },
+  residual_risks: { zh: '残留风险', en: 'Residual Risks' },
+  followup_refs: { zh: '后续承接', en: 'Follow-up Refs' },
+  revision_history: { zh: '修订记录', en: 'Revision History' },
   transition_reasons: { zh: '流转记录', en: 'Transition Reasons' },
   options: { zh: '选项', en: 'Options' },
   decision: { zh: '决策', en: 'Decision' },
@@ -1064,13 +1066,13 @@ export function WorkCaseReadingLayout({
     ownExecutionItems.length > 0 ? ownExecutionItems : (summary?.executionItems ?? [])
   );
   const isExecutionLoading = loading && ownExecutionItems.length === 0;
-  const orchestration = getWorkCaseOrchestration(obj);
   const relatedDocs = ((obj.aggregated_related_docs as string[] | undefined) ?? (obj.related_docs as string[] | undefined)) || [];
   const relatedAdrs = ((obj.aggregated_related_adrs as string[] | undefined) ?? (obj.related_adrs as string[] | undefined)) || [];
   const relatedSparks = ((obj.aggregated_related_sparks as string[] | undefined) ?? (obj.related_sparks as string[] | undefined)) || [];
   const relatedPitfalls = ((obj.aggregated_related_pitfalls as string[] | undefined) ?? (obj.related_pitfalls as string[] | undefined)) || [];
   const hidden = new Set([
     ...META_KEYS,
+    'goal',
     'priority',
     'description',
     'success_criteria',
@@ -1082,6 +1084,10 @@ export function WorkCaseReadingLayout({
     'closure_requested_at',
     'review_requested_at',
     'closed_at',
+    'closure_outcome',
+    'residual_risks',
+    'followup_refs',
+    'revision_history',
     'related_docs',
     'related_adrs',
     'related_sparks',
@@ -1097,6 +1103,13 @@ export function WorkCaseReadingLayout({
 
   return (
     <div className="mb-6 flex flex-col gap-5">
+      <WorkCaseHumanOverviewSection
+        obj={obj}
+        summary={summary}
+        executionItems={executionItems}
+        locale={locale}
+      />
+
       <WorkCaseLifecycleSection
         obj={obj}
         summary={summary}
@@ -1105,8 +1118,6 @@ export function WorkCaseReadingLayout({
       />
 
       <WorkCaseEvidenceSummarySection obj={obj} summary={summary} />
-
-      <DetailNarrativeSection title={t('objectDetail.planGoal')} value={obj.description} />
 
       <DetailSection title={t('objectDetail.workcaseExecution')} tone="default">
         {isExecutionLoading ? (
@@ -1139,9 +1150,9 @@ export function WorkCaseReadingLayout({
       <DetailSection title={getFieldLabel('closure_evidence', locale)} tone="evidence">
         {hasDetailContent(obj.closure_evidence) ? <EvidenceBlock value={String(obj.closure_evidence)} embedded /> : <EmptyHint text={t('objectDetail.noClosureEvidenceForWorkCase')} />}
       </DetailSection>
-      <WorkCaseReviewSection orchestration={orchestration} />
 
-      <DetailDefinitionSection title={getFieldLabel('source', locale)} value={obj.source} />
+      <WorkCaseAiContextSection obj={obj} locale={locale} />
+
       <RelatedContentSection
         entries={sortRelatedContentEntries([
           ['related_workcases', obj.related_workcases],
@@ -1277,6 +1288,100 @@ function ProgressMetric({
   );
 }
 
+function WorkCaseHumanOverviewSection({
+  obj,
+  summary,
+  executionItems,
+  locale,
+}: {
+  obj: Record<string, unknown>;
+  summary: ObjectItem | null;
+  executionItems: RelatedObjectSummary[];
+  locale: string;
+}) {
+  const { t } = useI18n();
+  const [state, setState] = useState<ReadingNodeState>('expanded');
+  const goal = detailString(obj.goal);
+  const description = detailString(obj.description);
+  const priority = detailString(obj.priority) || detailString(summary?.priority);
+  const checklistProgress = getChecklistProgress(obj.success_criteria);
+  const successCriteriaTotal = summary?.successCriteriaTotal ?? checklistProgress.total;
+  const successCriteriaDone = summary?.successCriteriaDone ?? checklistProgress.done;
+  const executionTotal = summary?.executionItemTotal ?? executionItems.length;
+  const executionDone = summary?.executionItemDone ?? executionItems.filter((item) => item.status === 'done').length;
+  const lifecycle = getWorkCaseLifecycle(obj, summary, executionItems);
+  const humanGateLabel = lifecycle.tone === 'planConfirming'
+    ? t('objectDetail.humanPlanConfirmation')
+    : lifecycle.tone === 'review' || lifecycle.tone === 'closed'
+      ? t('objectDetail.humanClosureConfirmation')
+      : t('objectDetail.humanGateTip');
+  const summaryItems = [
+    { label: t('objectDetail.successCriteriaProgress'), value: successCriteriaTotal > 0 ? `${successCriteriaDone}/${successCriteriaTotal}` : '—' },
+    { label: t('objectDetail.executionItemProgress'), value: executionTotal > 0 ? `${executionDone}/${executionTotal}` : '—' },
+    { label: t('objectDetail.closeDecisionRecordState'), value: summarizeRecordState(obj, summary, executionItems, t) },
+  ];
+
+  return (
+    <ReadingNodeSection
+      title={t('objectDetail.workcaseHumanOverview')}
+      state={state}
+      locale={locale}
+      onToggle={() => setState((current) => getReadingNodeNextState(current))}
+    >
+      <div className="flex flex-col gap-4">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+          <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-4">
+            <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2">
+              <span className="ldvh-caption-strong rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-emerald-400">
+                {t('objectDetail.workcaseHumanContext')}
+              </span>
+              {priority && <span className="ldvh-chip rounded-md border border-ldvh-border bg-ldvh-bg px-2 py-1 text-ldvh-text-secondary">{priority}</span>}
+              <span className="ldvh-chip rounded-md border border-violet-500/25 bg-violet-500/10 px-2 py-1 text-violet-400">{humanGateLabel}</span>
+            </div>
+            {hasDetailContent(goal) ? (
+              <SummaryText value={goal} collapseThreshold={900} />
+            ) : (
+              <EmptyHint text={t('objectDetail.noPlanGoal')} />
+            )}
+            <div className="mt-3 border-t border-ldvh-border/70 pt-3">
+              <div className="ldvh-caption-strong mb-1 text-ldvh-text-secondary">{t('objectDetail.planDescription')}</div>
+              {hasDetailContent(description) ? (
+                <SummaryText value={description} collapseThreshold={900} />
+              ) : (
+                <EmptyHint text={t('objectDetail.noPlanDescription')} />
+              )}
+            </div>
+          </div>
+          <div className="min-w-0 rounded-md border border-ldvh-border bg-ldvh-bg p-4">
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              {summaryItems.map((item) => (
+                <div key={item.label} className="min-w-0 rounded-md border border-ldvh-border/70 bg-ldvh-panel px-3 py-2">
+                  <div className="ldvh-caption mb-1 truncate text-ldvh-text-secondary">{item.label}</div>
+                  <div className="ldvh-section-title truncate">{item.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: t('objectDetail.lifecycleStage'), value: t(getWorkCaseLifecycle(obj, summary, executionItems).labelKey) },
+            { label: t('objectDetail.successCriteriaProgress'), value: successCriteriaTotal > 0 ? `${successCriteriaDone}/${successCriteriaTotal}` : '—' },
+            { label: t('objectDetail.executionItemProgress'), value: executionTotal > 0 ? `${executionDone}/${executionTotal}` : '—' },
+            { label: t('objectDetail.closeDecisionRecordState'), value: summarizeRecordState(obj, summary, executionItems, t) },
+          ].map((item) => (
+            <div key={item.label} className="min-w-0 rounded-lg border border-ldvh-border bg-ldvh-bg px-3 py-2.5">
+              <div className="ldvh-caption mb-1 truncate opacity-85">{item.label}</div>
+              <div className="ldvh-section-title truncate">{item.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </ReadingNodeSection>
+  );
+}
+
 function WorkCaseEvidenceSummarySection({ obj, summary }: { obj: Record<string, unknown>; summary: ObjectItem | null }) {
   const { t } = useI18n();
   const checklistProgress = getChecklistProgress(obj.success_criteria);
@@ -1294,12 +1399,12 @@ function WorkCaseEvidenceSummarySection({ obj, summary }: { obj: Record<string, 
       recorded: Boolean(summary?.hasPlanConfirmedAt ?? hasDetailContent(obj.plan_confirmed_at)),
     },
     {
-      label: t('objectList.verificationEvidence'),
+      label: t('objectDetail.verificationEvidence'),
       value: summary?.hasVerificationEvidence ?? hasDetailContent(obj.verification_evidence) ? t('objectList.hasRecord') : t('objectList.missingRecord'),
       recorded: Boolean(summary?.hasVerificationEvidence ?? hasDetailContent(obj.verification_evidence)),
     },
     {
-      label: t('objectList.closureEvidence'),
+      label: t('objectDetail.closureEvidence'),
       value: summary?.hasClosureEvidence ?? hasDetailContent(obj.closure_evidence) ? t('objectList.hasRecord') : t('objectList.missingRecord'),
       recorded: Boolean(summary?.hasClosureEvidence ?? hasDetailContent(obj.closure_evidence)),
     },
@@ -1324,6 +1429,76 @@ function WorkCaseEvidenceSummarySection({ obj, summary }: { obj: Record<string, 
       </div>
     </DetailSection>
   );
+}
+
+function WorkCaseAiContextSection({ obj, locale }: { obj: Record<string, unknown>; locale: string }) {
+  const { t } = useI18n();
+  const [state, setState] = useState<ReadingNodeState>('collapsed');
+  const orchestration = getWorkCaseOrchestration(obj);
+  const aiEntries: Array<[string, unknown]> = [
+    ['orchestration', obj.orchestration],
+    ['plan_confirmed_at', obj.plan_confirmed_at],
+    ['closure_requested_at', obj.closure_requested_at ?? obj.review_requested_at],
+    ['closed_at', obj.closed_at],
+    ['closure_outcome', obj.closure_outcome],
+    ['residual_risks', obj.residual_risks],
+    ['followup_refs', obj.followup_refs],
+    ['revision_history', orchestration.revision_history],
+    ['source', obj.source],
+  ].filter((entry): entry is [string, unknown] => hasDetailContent(entry[1]));
+
+  const executionRefs = detailStringArray(obj.aggregated_execution_refs);
+
+  return (
+    <ReadingNodeSection
+      title={t('objectDetail.workcaseAiContext')}
+      state={state}
+      locale={locale}
+      onToggle={() => setState((current) => getReadingNodeNextState(current))}
+    >
+      <div className="flex flex-col gap-4">
+        {aiEntries.length > 0 && (
+          <div className="rounded-md border border-ldvh-border bg-ldvh-bg p-3">
+            <div className="ldvh-caption-strong mb-3 text-ldvh-text-secondary">{t('objectDetail.workcaseAiCore')}</div>
+            <div className="flex flex-col gap-2">
+              {aiEntries.map(([fieldKey, value]) => (
+                <ContentField key={fieldKey} fieldKey={fieldKey} value={value} locale={locale} objType="workcase" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <WorkCaseReviewSection orchestration={orchestration} />
+
+        {executionRefs.length > 0 && (
+          <div className="rounded-md border border-ldvh-border bg-ldvh-bg p-3">
+            <div className="ldvh-caption-strong mb-3 text-ldvh-text-secondary">{t('objectDetail.executionReferences')}</div>
+            <StringList items={executionRefs} />
+          </div>
+        )}
+      </div>
+    </ReadingNodeSection>
+  );
+}
+
+function summarizeRecordState(obj: Record<string, unknown>, summary: ObjectItem | null, executionItems: RelatedObjectSummary[], t: (key: string) => string) {
+  const planConfirmed = Boolean(summary?.hasPlanConfirmedAt ?? hasDetailContent(obj.plan_confirmed_at));
+  const verificationRecorded = Boolean(summary?.hasVerificationEvidence ?? hasDetailContent(obj.verification_evidence));
+  const closureRecorded = Boolean(summary?.hasClosureEvidence ?? hasDetailContent(obj.closure_evidence));
+  const closureRequested = Boolean(summary?.hasClosureRequestedAt ?? (hasDetailContent(obj.closure_requested_at) || hasDetailContent(obj.review_requested_at)));
+  const closedAtRecorded = Boolean(summary?.hasClosedAt ?? hasDetailContent(obj.closed_at));
+  const blockedCount = executionItems.filter((item) => item.status === 'blocked' || Boolean(item.blockingReason)).length;
+  const items = [
+    planConfirmed ? t('objectList.planConfirmedAt') : null,
+    verificationRecorded ? t('objectList.verificationEvidence') : null,
+    closureRecorded ? t('objectList.closureEvidence') : null,
+    closureRequested ? t('objectList.closureRequestedAt') : null,
+    closedAtRecorded ? t('objectList.closedAt') : null,
+    blockedCount > 0 ? `${blockedCount} ${t('objectDetail.lifecycleBlocked')}` : null,
+  ].filter(Boolean);
+
+  if (items.length === 0) return t('objectList.missingRecord');
+  return items.slice(0, 3).join(' · ');
 }
 
 function getWorkCaseLifecycle(
@@ -1388,8 +1563,11 @@ function ExecutionItemRow({
       )}
       {(item.inputRefs?.length || item.evidenceRefs?.length) && (
         <div className="mt-2 flex min-w-0 flex-wrap gap-1.5">
-          {[...(item.inputRefs ?? []), ...(item.evidenceRefs ?? [])].map((ref) => (
-            <span key={ref} className="ldvh-chip max-w-full truncate rounded-md border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-secondary">
+          {[
+            ...(item.inputRefs ?? []).map((ref) => ({ kind: 'input', ref })),
+            ...(item.evidenceRefs ?? []).map((ref) => ({ kind: 'evidence', ref })),
+          ].map(({ kind, ref }, index) => (
+            <span key={`${kind}-${index}-${ref}`} className="ldvh-chip max-w-full truncate rounded-md border border-ldvh-border bg-ldvh-bg px-1.5 py-0.5 text-ldvh-text-secondary">
               {ref}
             </span>
           ))}
@@ -2034,35 +2212,6 @@ function parseEvidenceReadingSections(value: string): Array<{ title: string; bod
     .filter((section) => section.body.length > 0);
 }
 
-function DetailDefinitionSection({ title, value, muted = false }: { title: string; value: unknown; muted?: boolean }) {
-  if (!hasDetailContent(value)) return null;
-  return (
-    <DetailSection title={title} tone="primary">
-      <div className={`ldvh-definition-text min-w-0 ${muted ? 'opacity-85' : ''}`}>
-        <DefinitionValue value={String(value)} muted={muted} />
-      </div>
-    </DetailSection>
-  );
-}
-
-function DetailNarrativeSection({ title, value }: { title: string; value: unknown }) {
-  if (!hasDetailContent(value)) return null;
-  return (
-    <DetailSection title={title} tone="primary">
-      <SummaryText value={String(value)} collapseThreshold={900} />
-    </DetailSection>
-  );
-}
-
-function DetailMaterialSection({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string }) {
-  if (!Array.isArray(value) || value.length === 0) return null;
-  return (
-    <DetailSection title={getMaterialLabel(fieldKey, locale)} tone="default">
-      <MaterialValue fieldKey={fieldKey} value={value} locale={locale} referenceVariant="plain" />
-    </DetailSection>
-  );
-}
-
 export function RelatedContentSection({ entries, locale }: { entries: RelatedContentEntry[]; locale: string }) {
   const { t } = useI18n();
   const [state, setState] = useState<ReadingNodeState>('expanded');
@@ -2083,34 +2232,6 @@ export function RelatedContentSection({ entries, locale }: { entries: RelatedCon
         ))}
       </div>
     </ReadingNodeSection>
-  );
-}
-
-function DetailObjectReferenceSection({
-  title,
-  item,
-  fallbackId,
-  objectType,
-  locale,
-}: {
-  title: string;
-  item?: RelatedObjectSummary | ObjectItem | null;
-  fallbackId?: string;
-  objectType: string;
-  locale: string;
-}) {
-  const objectId = item?.id ?? fallbackId;
-  if (!objectId) return null;
-
-  return (
-    <DetailSection title={title} tone="primary">
-      <DetailObjectReferenceValue
-        item={item}
-        fallbackId={fallbackId}
-        objectType={objectType}
-        locale={locale}
-      />
-    </DetailSection>
   );
 }
 
@@ -2227,51 +2348,6 @@ export function DetailObjectRow({
         <CopyPathButton path={item?.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
         <PanelIcon size={16} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
       </div>
-    </div>
-  );
-}
-
-function DetailObjectReferenceValue({
-  item,
-  fallbackId,
-  objectType,
-  locale,
-}: {
-  item?: RelatedObjectSummary | ObjectItem | null;
-  fallbackId?: string;
-  objectType: string;
-  locale: string;
-}) {
-  const { t } = useI18n();
-  const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
-  const objectId = item?.id ?? fallbackId;
-  if (!objectId) return null;
-
-  const title = item ? getLocalizedTitle(item, locale) : objectId;
-  const isCurrentPanelOpen = panelOpen && panelContent?.type === 'object' && panelContent.objectType === objectType && panelContent.objectId === objectId;
-  const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
-  const objectTypeColor = CATEGORY_COLORS[objectType] || CATEGORY_COLORS.other;
-  const open = () => openPanel({ type: 'object', title, objectType, objectId });
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      data-detail-object-id={objectId}
-      data-detail-object-type={objectType}
-      onClick={open}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          open();
-        }
-      }}
-      className="group/detail-ref flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-ldvh-border/35"
-    >
-      <ObjectTypeIcon type={objectType} size={12} className="shrink-0" style={{ color: objectTypeColor }} />
-      <span className="ldvh-body min-w-0 flex-1 truncate transition-colors group-hover/detail-ref:text-ldvh-accent">{title}</span>
-      <CopyPathButton path={item?.path} label={t('common.copyObjectPath')} copiedLabel={t('common.copiedObjectPath')} />
-      <PanelIcon size={16} className={`shrink-0 transition-colors ${isCurrentPanelOpen ? 'text-ldvh-accent' : 'text-ldvh-text-secondary group-hover/detail-ref:text-ldvh-accent'}`} />
     </div>
   );
 }
@@ -2487,6 +2563,13 @@ function isDetailRecord(value: unknown): value is Record<string, unknown> {
 function detailString(value: unknown, fallback = ''): string {
   if (value === null || value === undefined) return fallback;
   if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return fallback;
+    }
+  }
   return String(value);
 }
 
@@ -2660,7 +2743,7 @@ function StudyTextNodeContent({ value, compact = false }: { value: unknown; comp
   );
 }
 
-export function ContentField({ fieldKey, value, locale, objType, objectPath }: { fieldKey: string; value: unknown; locale: string; objType: string; objectPath?: string }) {
+export function ContentField({ fieldKey, value, locale }: { fieldKey: string; value: unknown; locale: string; objType?: string; objectPath?: string }) {
   const isCollapsible = COLLAPSIBLE_FIELDS.includes(fieldKey);
   const [collapsed, setCollapsed] = useState(Boolean(isCollapsible));
 
