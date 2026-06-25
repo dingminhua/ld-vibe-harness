@@ -64,7 +64,7 @@ v2_action_member:
     - "source_spec=specs/04-Code确定性执行规范.md; requirement=知识地图投影要求; scope=知识地图任务导航触发、start_node 查询和汇总健康检查边界变化后的 Rules 表达同步审查"
     - "source_spec=specs/06-运行时扩展规范.md; requirement=Specs 变化与 Rules 资产同步责任; scope=固定 Rules 资产 source_specs、场景、触发、最小读取、路由、STOP、工具入口、知识地图任务导航、交接、验证和废弃规则同步审查"
   capability_assets:
-    - "type=rule; path=rules/LDVH-ENTRY.md; purpose=LDVH 统一入口表达同步审查对象; status=required"
+    - "type=rule; path=rules/LDVH-RUNTIME-PROTOCOL.md; purpose=LDVH 统一入口表达同步审查对象; status=required"
     - "type=code; path=code/specs_validate.py knowledge-map; purpose=以变化来源或受影响入口为 start_node 获取知识地图任务导航、read_plan、stop_conditions 和影响摘要; status=required"
     - "type=code; path=code/specs_validate.py preflight; purpose=写入前提示 Rules 影响和 Human Gate; status=required"
     - "type=code; path=code/specs_validate.py capability-environment; purpose=固定能力资产与环境保障矩阵只读投影; status=required"
@@ -94,7 +94,7 @@ ldvh_member:
 
 ## 1. 本文解决的问题
 
-本文定义当 active specs、附件或行动成员主文件发生变化，并可能影响固定 Rules 资产的入口表达时，AI 如何判断是否需要同步 `rules/LDVH-ENTRY.md`。
+本文定义当 active specs、附件或行动成员主文件发生变化，并可能影响固定 Rules 资产的入口表达时，AI 如何判断是否需要同步 `rules/LDVH-RUNTIME-PROTOCOL.md`。
 
 本文解决：
 
@@ -180,7 +180,7 @@ ldvh_member:
 
 1. 变化来源是 active specs、授权附件或行动成员主文件；
 2. 变化可能影响固定 Rules 资产的入口表达；
-3. 影响对象至少包括 `rules/LDVH-ENTRY.md` 之一；
+3. 影响对象至少包括 `rules/LDVH-RUNTIME-PROTOCOL.md` 之一；
 4. 需要给出无需同步、建议同步或 Human Gate 结论；
 5. 能回指变化来源、影响字段或影响章节。
 
@@ -204,7 +204,7 @@ ldvh_member:
 |---|---|
 | Rules 同步责任通用规则 | `specs/06-运行时扩展规范.md` §4.2 |
 | 行动编排成员机制 | `specs/03-行动编排规范.md` |
-| 统一 Runtime Protocol 入口 | `rules/LDVH-ENTRY.md` |
+| 统一 Runtime Protocol 入口 | `rules/LDVH-RUNTIME-PROTOCOL.md` |
 | 固定运行时扩展登记 | `specs/attachments/06.Att.02-固定运行时扩展登记表.md` |
 | 受控写入前诊断 | `python3 code/specs_validate.py preflight --target-path <path>` |
 | 知识地图任务导航 | `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type rules_sync_review --format json` |
@@ -378,7 +378,7 @@ Rules 文件同步完成，只说明 LDVH 固定 Rules 资产的入口表达已�
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 来源要求承接实践 | 只承接 specs、附件或行动成员主文件对固定 Rules 入口表达的影响，不新增子级规范保障要求 | 本文 §8、`knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type rules_sync_review`、`preflight`、受影响 Rules 文件 | 行动实践关联 | 变化可能影响入口可见、读取顺序、STOP、工具入口、知识地图任务导航、交接、验证或缺口提示时 |
-| Rules 修改实践 | Rules 入口表达需要同步时，由主控 AI 在授权范围内修改；高影响项先进入 Human Gate | `rules/LDVH-ENTRY.md`、本文 §9、§11 | Rules 入口表达同步 | 审查结论为建议同步或 Human Gate 通过时 |
+| Rules 修改实践 | Rules 入口表达需要同步时，由主控 AI 在授权范围内修改；高影响项先进入 Human Gate | `rules/LDVH-RUNTIME-PROTOCOL.md`、本文 §9、§11 | Rules 入口表达同步 | 审查结论为建议同步或 Human Gate 通过时 |
 | Code 辅助实践 | 使用只读 Code 投影辅助判断固定 Rules 来源、验证链、环境边界和知识地图任务导航关系，不把投影当作事实源 | `knowledge-map`、`deployment-entries`、`capability-environment`、`runtime_extensions` | Code 诊断协作 | 需要判断固定 Rules 资产来源、验证链、环境边界或知识地图入口表达时 |
 | 能力协作实践 | Skill/Agent 只给过程输出，必须交还主控 AI | 本文 §12、主控 AI、可选 Agent 输出 | 能力输出交还 | 需要独立审查、并行探索或复用稳定步骤时 |
 | 环境边界实践 | 本文不落地环境入口、不声明部署；环境入口问题回到 06 或后续环境适配编排候选 | 06、固定 Rules、Human Gate、后续候选成员 | 环境适配分流 | 涉及环境入口、部署声明、Hook 生效声明或长期能力缺口时 |

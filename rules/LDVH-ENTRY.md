@@ -167,3 +167,5 @@ AI 进入 LDVH 后：
 3. 检查 `source_specs`、`sync_triggers`、入口路由、STOP 点、验证入口和交接规则是否与 30 和知识地图输出一致；
 4. 运行 `governed-projects`、`deployment-entries`、`capability-environment`、`v2-check --input-scope entry_navigation --fail-on-diagnostics`；
 5. 若改变职责边界、STOP、固定承载物身份、权限含义或环境薄引用，必须评估 Human Gate。
+
+> **已废弃**: 合并为 [rules/LDVH-RUNTIME-PROTOCOL.md](LDVH-RUNTIME-PROTOCOL.md)。本文不再独立使用。

@@ -56,3 +56,5 @@ ldvh_asset:
 - **Rules 路径**：AI 读取本协议后，在对应触发条件出现时自觉执行命令。CLI 参数代替 stdin，`hook_dispatch.py` 执行同一 handler。
 
 两种路径共享同一份协议步骤和同一套 handler，区别仅在于谁发起调用。
+
+> **已废弃**: 合并为 [rules/LDVH-RUNTIME-PROTOCOL.md](LDVH-RUNTIME-PROTOCOL.md)。本文不再独立使用。

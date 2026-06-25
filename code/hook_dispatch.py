@@ -166,7 +166,7 @@ def handle_session_start(cwd: Path, *, via: str = "rules") -> int:
         return 0
 
     # Run knowledge-map to get the entry chain receipt
-    km = _run_knowledge_map("rules/LDVH-ENTRY.md", "rules_entry")
+    km = _run_knowledge_map("rules/LDVH-RUNTIME-PROTOCOL.md", "rules_entry")
     result["receipt"] = km.get("result_status", "unknown")
     result["diagnostics"] = km.get("diagnostics", 0)
 
