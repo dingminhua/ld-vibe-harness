@@ -273,7 +273,7 @@ orchestration:
           - WorkBuddy 与 Codex 均已有四类 Hook 采样证据，且字段结构足以支撑 adapter 设计。
           - Trae 已按 Human 确认和 spark-0031 归入无 AI Hook 环境，使用 Rules 方式自觉消费同一 Runtime Protocol。
           - active specs/06、06.Att.15、specs/33 和 rules/LDVH-RUNTIME-PROTOCOL.md 已承接协议统一、执行分层、canonical event 和 trigger_source 边界。
-          - 当前 session-start 运行可命中 governed 项目，但 knowledge-map 返回 limited，原因是仓库仍存在旧 rules/LDVH-WORKSPACE-ENTRY.md 与 rules/LDVH-MAINTAINER-ENTRY.md 引用；该缺口不阻塞 0011 收口，应作为后续旧入口清理处理。
+          - 当前 session-start 运行可命中 governed 项目；P0-B 已将固定 Rules 入口收敛到 rules/LDVH-RUNTIME-PROTOCOL.md，并保留旧路径兼容重定向，session-start receipt 已可返回 ok。
         required_changes: []
         evidence_refs:
           - verification_evidence
@@ -378,7 +378,7 @@ orchestration:
         - 已补写 result_review.controller_resolution。
         - 已设置 closure_requested_at 并按状态机进入 human_closure_confirming。
       unresolved_items:
-        - 旧路径 rules/LDVH-WORKSPACE-ENTRY.md 与 rules/LDVH-MAINTAINER-ENTRY.md 仍在多个历史事实对象中被引用，需后续单独清理。
+        - 旧路径 rules/LDVH-WORKSPACE-ENTRY.md 与 rules/LDVH-MAINTAINER-ENTRY.md 的 active 入口职责已由 P0-B 收敛到 Runtime Protocol；历史事实对象中的叙述性引用可按后续事实整理节奏处理。
         - 历史 evolution / 早期计划文字中的“降级”等旧措辞可后续统一术语，但不阻塞本 WorkCase 关闭。
         - 生产插件、adapter 和完整 receipt 状态持久化不在本 WorkCase 范围内，需后续实现 WorkCase 承接。
       conclusion: |
@@ -393,7 +393,7 @@ verification_evidence: |
   - item-5: specs/attachments/06.Att.15 已承载环境原生事件到 LDVH canonical event 的映射；LDVH core 只消费 session-start、pre-tool-use、git.commit-msg。
   - item-6: spark-0024 已按 specs/06 双路径原则修正 Hook 入口终态；后续实现可推进，但必须区分插件方式与 Rules 方式。
   - 本轮只读验证：python3 code/specs_validate.py v2-check --input-scope runtime_extensions --format text 结果 result_status=ok。
-  - 本轮运行：python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd /Users/dmh2002/poker_hud_projects/ld-vibe-harness 命中 governed=true，但 receipt=limited；限制来自旧 Rules 入口路径引用，作为后续清理风险记录。
+  - P0-B 复核运行：python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd /Users/dmh2002/poker_hud_projects/ld-vibe-harness 命中 governed=true，receipt=ok，diagnostics=[]。
 closure_evidence: |
   本 WorkCase 范围内的目标已完成，可提交 Human 关闭确认：
   - 最小 Hook Probe 已实现并验证，且不会执行 LDVH 业务逻辑或写用户项目事实源。
@@ -407,7 +407,7 @@ closure_requested_at: '2026-06-26T05:20:07+08:00'
 closed_at: null
 closure_outcome: ''
 residual_risks:
-  - 旧路径 rules/LDVH-WORKSPACE-ENTRY.md 与 rules/LDVH-MAINTAINER-ENTRY.md 在多个事实对象中仍被引用，当前文件也曾引用；这些路径已不在仓库中，导致 session-start knowledge-map receipt limited。需后续单独清理旧入口引用。
+  - 旧路径 rules/LDVH-WORKSPACE-ENTRY.md 与 rules/LDVH-MAINTAINER-ENTRY.md 已降为兼容重定向，不再作为 active fixed Rules 资产；历史事实对象中的叙述性引用仍可后续整理。
   - WorkBuddy/Codex 的 probe evidence 位于本地 .probe-evidence/，用于本次实测恢复和收口；生产 Hook 不应写入 evidence 或日志。
   - 本 WorkCase 不直接实现生产插件、adapter 或完整 receipt 状态持久化；后续应由新的实现 WorkCase 承接。
 followup_refs:

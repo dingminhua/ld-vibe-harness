@@ -11,22 +11,17 @@ DEPLOYMENT_REGISTRY_PATH = "specs/attachments/06.Att.02-固定运行时扩展登
 
 
 def write_deployment_entries_fixture(tmp_path):
-    for path, title, asset_id in [
-        ("LDVH-WORKSPACE-ENTRY.md", "LDVH 工作区入口", "ldvh-workspace-entry"),
-        ("LDVH-MAINTAINER-ENTRY.md", "LDVH 维护入口", "ldvh-maintainer-entry"),
-    ]:
-        canonical_path = f"rules/{path}"
-        write_md(
-            tmp_path / "rules" / path,
-            f"""
-# {title}
+    write_md(
+        tmp_path / "rules" / "LDVH-RUNTIME-PROTOCOL.md",
+        f"""
+# LDVH Runtime Protocol
 
 ```yaml
 ldvh_asset:
-  id: "{asset_id}"
+  id: "ldvh-runtime-protocol"
   type: "rule"
   status: "active"
-  canonical_path: "{canonical_path}"
+  canonical_path: "rules/LDVH-RUNTIME-PROTOCOL.md"
   source_specs:
     - "{DEPLOYMENT_REGISTRY_PATH}"
   consumption_scenarios:
@@ -45,7 +40,7 @@ ldvh_asset:
 
 固定运行时扩展登记见 `{DEPLOYMENT_REGISTRY_PATH}`。
 """,
-        )
+    )
     write_md(
         tmp_path / "hooks" / "ldvh-hooks.yaml",
         f"""
@@ -118,8 +113,7 @@ ldvh_asset:
 
 | 类型 | 当前固定承载物 | 权威路径 | 边界 |
 |---|---|---|---|
-| Rules | 工作区入口 | `rules/LDVH-WORKSPACE-ENTRY.md` | 只做薄入口 |
-| Rules | 维护入口 | `rules/LDVH-MAINTAINER-ENTRY.md` | 只做维护入口 |
+| Rules | Runtime Protocol | `rules/LDVH-RUNTIME-PROTOCOL.md` | 只做统一入口 |
 | Skill | Git 提交 Skill | `skills/ldvh-git-commit/SKILL.md` | 只做执行转换 |
 | Hook | Hook registry | `hooks/ldvh-hooks.yaml` | 只做统一登记 |
 """,
@@ -150,11 +144,10 @@ def test_deployment_entries_reports_missing_spec(tmp_path):
 
 def test_deployment_entries_reports_required_type_and_asset_problems(tmp_path):
     write_deployment_entries_fixture(tmp_path)
-    (tmp_path / "rules" / "LDVH-MAINTAINER-ENTRY.md").unlink()
+    (tmp_path / "rules" / "LDVH-RUNTIME-PROTOCOL.md").unlink()
     spec_path = tmp_path / DEPLOYMENT_REGISTRY_PATH
     text = spec_path.read_text(encoding="utf-8")
-    text = text.replace("| Rules | 工作区入口 | `rules/LDVH-WORKSPACE-ENTRY.md` | 只做薄入口 |\n", "")
-    text = text.replace("| Rules | 维护入口 | `rules/LDVH-MAINTAINER-ENTRY.md` | 只做维护入口 |\n", "")
+    text = text.replace("| Rules | Runtime Protocol | `rules/LDVH-RUNTIME-PROTOCOL.md` | 只做统一入口 |\n", "")
     spec_path.write_text(text, encoding="utf-8")
 
     codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
@@ -165,8 +158,8 @@ def test_deployment_entries_reports_required_type_and_asset_problems(tmp_path):
 
 def test_deployment_entries_reports_forbidden_type_and_ai_entry_ref_missing(tmp_path):
     spec_path = write_deployment_entries_fixture(tmp_path)
-    ai_entry = tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md"
-    ai_entry.write_text("# LDVH 工作区入口\n", encoding="utf-8")
+    ai_entry = tmp_path / "rules" / "LDVH-RUNTIME-PROTOCOL.md"
+    ai_entry.write_text("# LDVH Runtime Protocol\n", encoding="utf-8")
     with spec_path.open("a", encoding="utf-8") as file:
         file.write("| Code | `code/specs_validate.py` | Code 检查 | 不适用 |\n")
 
@@ -178,8 +171,8 @@ def test_deployment_entries_reports_forbidden_type_and_ai_entry_ref_missing(tmp_
 
 def test_deployment_entries_reports_missing_asset_metadata(tmp_path):
     write_deployment_entries_fixture(tmp_path)
-    asset_path = tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md"
-    asset_path.write_text(f"# LDVH 工作区入口\n\n固定运行时扩展登记见 `{DEPLOYMENT_REGISTRY_PATH}`。\n", encoding="utf-8")
+    asset_path = tmp_path / "rules" / "LDVH-RUNTIME-PROTOCOL.md"
+    asset_path.write_text(f"# LDVH Runtime Protocol\n\n固定运行时扩展登记见 `{DEPLOYMENT_REGISTRY_PATH}`。\n", encoding="utf-8")
 
     codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
 
@@ -188,9 +181,9 @@ def test_deployment_entries_reports_missing_asset_metadata(tmp_path):
 
 def test_deployment_entries_reports_asset_metadata_mismatch(tmp_path):
     write_deployment_entries_fixture(tmp_path)
-    asset_path = tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md"
+    asset_path = tmp_path / "rules" / "LDVH-RUNTIME-PROTOCOL.md"
     text = asset_path.read_text(encoding="utf-8")
-    asset_path.write_text(text.replace('id: "ldvh-workspace-entry"', 'id: "wrong-entry"'), encoding="utf-8")
+    asset_path.write_text(text.replace('id: "ldvh-runtime-protocol"', 'id: "wrong-entry"'), encoding="utf-8")
 
     codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
 
@@ -202,7 +195,7 @@ def test_deployment_entries_cli_is_in_all(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(checker, "SPECS_DIR", tmp_path / "specs")
     monkeypatch.setattr(checker, "FORMAL_SPECS_DIR", tmp_path / "specs")
     monkeypatch.setattr(checker, "DOCS_DIR", tmp_path / "docs")
-    monkeypatch.setattr(checker, "RUNTIME_PROJECTION_DEFAULT_PATHS", ["rules/LDVH-WORKSPACE-ENTRY.md"])
+    monkeypatch.setattr(checker, "RUNTIME_PROJECTION_DEFAULT_PATHS", ["rules/LDVH-RUNTIME-PROTOCOL.md"])
 
     exit_code = checker.main(["deployment-entries", "--root", str(tmp_path)])
 
