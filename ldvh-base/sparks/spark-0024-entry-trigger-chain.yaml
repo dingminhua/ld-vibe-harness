@@ -3,7 +3,7 @@ type: spark
 title: 入口触发链工程化：让 AI 稳定先用知识地图
 status: pending
 created: '2026-06-24T10:49:34.237457'
-updated: '2026-06-25T08:45:00+08:00'
+updated: '2026-06-25T19:45:00+08:00'
 description: |
   最新知识地图价值评估报告认为知识地图核心价值已基本兑现，剩余最高优先级缺口是触发链：AGENTS.md / 环境规则入口 / Rules 入口 / knowledge-map 命令之间仍依赖 AI 自觉执行。即使 Rules 已写硬，AI 在普通任务里仍可能跳过入口，退回 `ls`、全文 Read 或只看 `v2-check` 摘要。
 
@@ -85,6 +85,17 @@ evolution:
     当前规则文件仍体现旧路径：`rules/LDVH-WORKSPACE-ENTRY.md` 与 `rules/LDVH-MAINTAINER-ENTRY.md` 仍写有“环境入口、项目规则、工作区配置或会话提示只应通过薄引用措施指向本文件”的表述，且工作区入口的常用查询表仍写“Rules 环境入口接入：默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口”。这些是 spark-0024 第二阶段需要替换的对象：从“薄引用安装”迁移为“Hook/插件安装”，并给薄引用保留降级角色。
 
     安装态分层为：当前/降级方案 = 用户在 AGENTS.md 写薄引用；Hook 验证方案 = 用户不改 AGENTS.md，只在 settings 注册 hook；插件终态 = 用户启用 LDVH 插件，插件自带 `hooks/hooks.json`。因此安装角度最终只有一个环境关联点：Hook/插件。Hook 把事件送进 LDVH，LDVH 内部根据 `cwd` 和管辖配置判断是否动作；用户自己的 Agent / AGENTS.md 不再承载 LDVH 内容。
+- at: '2026-06-25T19:45:00+08:00'
+  summary: |
+    本轮基于 `spark-0031` 中 Human 确认的"Trae 不支持 AI Hook"事实，以及 `specs/06` 新增的 AI Hook 强制消费与 AI 自觉消费双路径原则，对本 spark 此前"单一路径"终态进行修正。
+
+    核心修正：spark-0024 此前描述的第二阶段终态（Hook 强制握手、薄引用可移除、AGENTS.md 可空壳、安装角度最终只有一个 Hook/插件关联点）仅对支持 AI Hook 的环境成立（WorkBuddy/Codex/Claude Code）。对于不支持 AI Hook 的环境（Trae 等），握手只能走 AI 自觉消费路径：AGENTS.md 薄引用必须保留，Rules/Agent/instructions 仍是主消费入口，不能宣称"用户不需要再改 AGENTS.md"。
+
+    因此 spark-0024 的终态应按 `specs/06` 分流：
+    - 有 AI Hook 环境：Hook/插件强制握手成立 → AGENTS.md 薄引用可弱化或免除；安装角度最终关联点是 Hook/插件。
+    - 无 AI Hook 环境：AI 自觉消费成立 → AGENTS.md 薄引用必须保留；Rules/Agent/instructions 仍是主入口；不可将插件终态或 Hook 强制握手写成该环境的安装目标。
+
+    此前 evolution 中"四步压缩""最终只有一个环境关联点""用户不需要再改 AGENTS.md"等表述，在无 AI Hook 环境中不适用。不得将 Git hook、MCP、CI、server-side gate 或 Human Gate 等外部机制等同于 AI Hook 或纳入 AI Hook 能力判断。
 input_refs:
 - spark-0022
 - workcase-0004

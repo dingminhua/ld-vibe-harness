@@ -9,7 +9,7 @@ v2_spec:
   authority: "not_active_until_human_approved"
   canonical_path: "specs/32-environment-entry-adaptation-环境入口落地与适配检查.md"
   created: "2026-06-24"
-  updated: "2026-06-24"
+  updated: "2026-06-25"
   parent_spec: "specs/03-行动编排规范.md"
   relation: "action_member"
   positioning: "候选定义 AI 如何从 active specs 的规范保障要求动态生成环境落地投影，并帮助 Human 将所需运行时入口、薄引用、Skill、Hook、Code 命令或等价配置适配到具体 AI 协作环境"
@@ -112,7 +112,7 @@ v2_action_member:
 5. 如何检查薄引用、AGENTS、config、hooks、Skill、Code 命令或等价入口是否服务于对应保障要求；
 6. 如何输出接入证据、失败项、未承接项和禁止声明，避免把本地观察写成长期支持状态。
 
-本文不定义新的规范保障要求类型，不维护静态环境落地清单，不定义 Rules、Skill、Agent、Hook 的资产本体，不定义 Codex、Claude Code、Trae、CI、IDE 或 Shell 的产品能力，不定义 Code 输出 Schema，不定义测试实现，也不声明任何环境已经完整支持 LDVH。
+本文不定义新的规范保障要求类型，不维护静态环境落地清单，不定义 Rules、Skill、Agent、Hook 的资产本体，不定义各 AI 环境的产品能力（Codex/WorkBuddy/Claude Code 支持 AI Hook；Trae 不支持 AI Hook；CI/IDE/Shell 非 AI 协作环境），不定义 Code 输出 Schema，不定义测试实现，也不声明任何环境已经完整支持 LDVH。
 
 ## 2. 上位依据
 
