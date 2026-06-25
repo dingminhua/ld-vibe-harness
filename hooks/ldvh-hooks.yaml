@@ -22,12 +22,12 @@ ldvh_asset:
     - "session-start: governed 状态 + knowledge-map receipt"
     - "pre-tool-use: 管辖项目警告或 no-op"
     - "git.commit-msg: 底层 Code validator 输出和退出码"
-  handoff: "环境适配层和 AI 自觉消费层均通过 code/hook_dispatch.py 执行；Hook 路径走 stdin，Rules 路径走 CLI 参数。失败时回到调用方修改输入或按对应规范回读事实源。"
+  handoff: "环境适配层和 AI 自觉消费层均通过 code/hook_dispatch.py 执行；Hook 路径走 stdin（trigger_source=hook），Rules 路径走 CLI（--trigger-source rules）。失败时回到调用方修改输入或按对应规范回读事实源。"
   verification:
-    - "python3 code/hook_dispatch.py run session-start --cwd <cwd>"
-    - "python3 code/hook_dispatch.py run pre-tool-use --cwd <cwd>"
-    - "python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>"
-    - "echo '{\"event\":\"SessionStart\",\"cwd\":\"<cwd>\"}' | python3 code/hook_dispatch.py"
+    - "python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <cwd>"
+    - "python3 code/hook_dispatch.py run pre-tool-use --trigger-source rules --cwd <cwd>"
+    - "python3 code/hook_dispatch.py run git.commit-msg --trigger-source rules --message-file <message-file>"
+    - "echo '{\"event\":\"SessionStart\",\"cwd\":\"<cwd>\",\"trigger_source\":\"hook\"}' | python3 code/hook_dispatch.py"
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:
     - "specs/31-git-commit-action-Git提交行动编排.md 提交行动编排或 Hook 边界变化"
