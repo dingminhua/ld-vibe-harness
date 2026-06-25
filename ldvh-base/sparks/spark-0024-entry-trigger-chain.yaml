@@ -95,7 +95,7 @@ evolution:
     - 有 AI Hook 环境：Hook/插件强制握手成立 → AGENTS.md 薄引用可弱化或免除；安装角度最终关联点是 Hook/插件。
     - 无 AI Hook 环境：AI 自觉消费成立 → AGENTS.md 薄引用必须保留；Rules/Agent/instructions 仍是主入口；不可将插件终态或 Hook 强制握手写成该环境的安装目标。
 
-    此前 evolution 中"四步压缩""最终只有一个环境关联点""用户不需要再改 AGENTS.md"等表述，在无 AI Hook 环境中不适用。不得将 Git hook、MCP、CI、server-side gate 或 Human Gate 等外部机制等同于 AI Hook 或纳入 AI Hook 能力判断。
+    此前 evolution 中"四步压缩""最终只有一个环境关联点""用户不需要再改 AGENTS.md""降级方案/降级角色"等表述，在无 AI Hook 环境中不适用。Trae 等环境的 Rules 方式是独立安装路径，不是插件方式的降级替代。不得将 Git hook、MCP、CI、server-side gate 或 Human Gate 等外部机制等同于 AI Hook 或纳入 AI Hook 能力判断。
 input_refs:
 - spark-0022
 - workcase-0004
