@@ -66,3 +66,11 @@ Desktop.ini
 *.bak
 *.pid
 *.png
+
+# Local Git worktrees
+worktrees/
+.worktrees/
+.codex/worktrees/
+
+# Hidden probe and runtime directories
+.*/*/
