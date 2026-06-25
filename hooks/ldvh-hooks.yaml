@@ -11,17 +11,23 @@ ldvh_asset:
     - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
   consumption_scenarios:
     - "LDVH 统一 Hook 事件登记"
+    - "AI Hook 路径：环境通过 stdin 传入 event + payload 调用 dispatcher"
+    - "Rules 路径：AI 通过 CLI run <event> 自觉调用 dispatcher"
     - "提交消息本地或环境前置校验"
-    - "未来多类 Hook 的统一调度入口"
   inputs:
-    - "Hook event id"
-    - "事件上下文参数，例如 commit message 文件路径"
+    - "Hook event id 或 lifecycle protocol event"
+    - "事件上下文参数，例如 cwd、commit message 文件路径"
   outputs:
     - "统一 Hook dispatcher 执行结果"
-    - "底层 Code validator 输出和退出码"
-  handoff: "环境适配层只调用 code/hook_dispatch.py；失败时回到调用方修改输入或按对应规范人工降级。"
+    - "session-start: governed 状态 + knowledge-map receipt"
+    - "pre-tool-use: 管辖项目警告或 no-op"
+    - "git.commit-msg: 底层 Code validator 输出和退出码"
+  handoff: "环境适配层和 AI 自觉消费层均通过 code/hook_dispatch.py 执行；Hook 路径走 stdin，Rules 路径走 CLI 参数。失败时回到调用方修改输入或按对应规范回读事实源。"
   verification:
+    - "python3 code/hook_dispatch.py run session-start --cwd <cwd>"
+    - "python3 code/hook_dispatch.py run pre-tool-use --cwd <cwd>"
     - "python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>"
+    - "echo '{\"event\":\"SessionStart\",\"cwd\":\"<cwd>\"}' | python3 code/hook_dispatch.py"
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:
     - "specs/31-git-commit-action-Git提交行动编排.md 提交行动编排或 Hook 边界变化"
@@ -49,3 +55,41 @@ hooks:
       - "{message_file}"
     equivalent_manual_check: "python3 code/commit_validate.py --check-message '<message>'"
     bypass_boundary: "环境可以不接入该事件；接入后仍应承认本地或用户侧 Hook 可被绕过，CI / server-side gate 仍是后续兜底方向。"
+
+  - id: "ldvh-session-start"
+    event: "session-start"
+    status: "active"
+    description: "生命周期协议步骤 1——握手：判定环境类型，补全入口链，返回 receipt。"
+    blocking: false
+    inputs:
+      cwd:
+        required: true
+        description: "当前工作目录。"
+    command:
+      - "python3"
+      - "code/hook_dispatch.py"
+      - "run"
+      - "session-start"
+      - "--cwd"
+      - "{cwd}"
+    equivalent_manual_check: "python3 code/hook_dispatch.py run session-start --cwd <path>"
+    bypass_boundary: "无 AI Hook 环境由 AI 自觉执行同一命令；Hook 路径和 Rules 路径执行同一 handler。"
+
+  - id: "ldvh-pre-tool-use"
+    event: "pre-tool-use"
+    status: "active"
+    description: "生命周期协议步骤 2——写前确认：检查管辖项目中是否已完成握手。"
+    blocking: false
+    inputs:
+      cwd:
+        required: true
+        description: "当前工作目录。"
+    command:
+      - "python3"
+      - "code/hook_dispatch.py"
+      - "run"
+      - "pre-tool-use"
+      - "--cwd"
+      - "{cwd}"
+    equivalent_manual_check: "python3 code/hook_dispatch.py run pre-tool-use --cwd <path>"
+    bypass_boundary: "当前为 stateless 检查；完整 receipt 验证依赖 Hook 环境的会话状态或 AI 自觉判断。"
