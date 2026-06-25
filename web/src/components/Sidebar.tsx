@@ -15,7 +15,7 @@ import { useI18n } from '@/i18n/context';
 import { useTheme } from '@/hooks/useTheme';
 import type { LocaleKey } from '@/i18n/locales';
 import { OBJECT_TYPE_ICONS } from '@/components/SemanticIcon';
-import ldBrandMark from '@/assets/ld-brand-mark.svg';
+import ldvhPluginIcon from '@/assets/ldvh-plugin-icon.png';
 
 type NavIcon = ElementType<LucideProps>;
 
@@ -43,12 +43,7 @@ function ThemeIcon({ mode }: { mode: 'system' | 'light' | 'dark' }) {
 
 function BrandMark() {
   return (
-    <span
-      className="flex h-7 w-7 items-center justify-center rounded-md bg-[#213330]"
-      aria-hidden="true"
-    >
-      <img src={ldBrandMark} alt="" className="w-[17px]" />
-    </span>
+    <img src={ldvhPluginIcon} alt="" className="h-7 w-7 rounded-md" aria-hidden="true" />
   );
 }
 
