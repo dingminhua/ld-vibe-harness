@@ -174,7 +174,7 @@ v2_action_member:
 2. 只准备 Git commit，应按 `specs/31-git-commit-action-Git提交行动编排.md`；
 3. 修改固定运行时扩展承载物本体，应回到 06 和对应资产自描述；
 4. 只需要查看全部规范保障缺口但不涉及环境承载时，应优先使用 `assurance-report` 或 `assurance-plan`；
-5. 判断管辖项目工作对象，应回到工作区入口和事实模型成员规范；
+5. 判断管辖项目工作对象，应回到 Runtime Protocol 入口和事实模型成员规范；
 6. 非 active 环境能力研究或产品调研，应分流为 Study、Spark 或 ADR。
 
 ## 5. 准入条件
