@@ -23,18 +23,18 @@ def test_capability_environment_matrix_links_assets_to_environment_without_insta
     report = checker.capability_environment_report_build(tmp_path)
 
     assert report["summary"]["status"] == "closed"
-    assert report["summary"]["asset_count"] == 4
+    assert report["summary"]["asset_count"] == 3
     assert report["summary"]["environment_installation_status"] == "not_claimed"
     assert report["environment_targets"][0]["name"] == "Codex App"
-    workspace_entry = next(item for item in report["matrix"] if item["asset"]["id"] == "ldvh-workspace-entry")
-    assert workspace_entry["environment_landing"]["installation_status"] == "not_claimed"
-    assert workspace_entry["environment_landing"]["human_gate_required_for_environment_write"] is True
-    assert workspace_entry["responsibility_chain"]["environment_owner"] == "Human or target environment owner authorizes local entry writes and installation"
+    runtime_protocol = next(item for item in report["matrix"] if item["asset"]["id"] == "ldvh-runtime-protocol")
+    assert runtime_protocol["environment_landing"]["installation_status"] == "not_claimed"
+    assert runtime_protocol["environment_landing"]["human_gate_required_for_environment_write"] is True
+    assert runtime_protocol["responsibility_chain"]["environment_owner"] == "Human or target environment owner authorizes local entry writes and installation"
 
 
 def test_capability_environment_reports_missing_source_spec(tmp_path):
     write_deployment_entries_fixture(tmp_path)
-    asset_path = tmp_path / "rules" / "LDVH-WORKSPACE-ENTRY.md"
+    asset_path = tmp_path / "rules" / "LDVH-RUNTIME-PROTOCOL.md"
     text = asset_path.read_text(encoding="utf-8")
     asset_path.write_text(text.replace(DEPLOYMENT_REGISTRY_PATH, "specs/missing.md", 1), encoding="utf-8")
 

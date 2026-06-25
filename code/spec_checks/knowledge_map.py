@@ -647,26 +647,15 @@ class KnowledgeMapMixin:
             if item.get("path")
         }
         has_path = lambda path: path in path_to_plan or self.start_node == path or resolved_start_id == path
-        if has_path("rules/LDVH-WORKSPACE-ENTRY.md"):
+        if has_path("rules/LDVH-RUNTIME-PROTOCOL.md"):
             conditions.append(
                 self.task_stop_condition(
-                    "workspace_entry_stop_points",
-                    "任务涉及工作区入口；命中管辖项目配置、项目入口、环境入口、职责边界或入口冲突等 STOP 点时必须暂停。",
-                    "回读 rules/LDVH-WORKSPACE-ENTRY.md 的 STOP 点和维护规则，必要时等待 Human 确认。",
-                    "rules/LDVH-WORKSPACE-ENTRY.md",
+                    "runtime_protocol_stop_points",
+                    "任务涉及 LDVH Runtime Protocol；命中管辖项目 no-op、知识地图不可用、Human Gate 或入口冲突等 STOP 点时必须暂停。",
+                    "回读 rules/LDVH-RUNTIME-PROTOCOL.md 的 STOP 点和运行协议，必要时等待 Human 确认。",
+                    "rules/LDVH-RUNTIME-PROTOCOL.md",
                     "STOP 点",
-                    path_to_plan.get("rules/LDVH-WORKSPACE-ENTRY.md"),
-                )
-            )
-        if has_path("rules/LDVH-MAINTAINER-ENTRY.md"):
-            conditions.append(
-                self.task_stop_condition(
-                    "maintainer_entry_stop_points",
-                    "任务涉及 LDVH 产品资产维护入口；命中产品资产定位、环境部署声明、事实源边界或入口冲突等 STOP 点时必须暂停。",
-                    "回读 rules/LDVH-MAINTAINER-ENTRY.md 的 STOP 点和维护规则，必要时等待 Human 确认。",
-                    "rules/LDVH-MAINTAINER-ENTRY.md",
-                    "STOP 点",
-                    path_to_plan.get("rules/LDVH-MAINTAINER-ENTRY.md"),
+                    path_to_plan.get("rules/LDVH-RUNTIME-PROTOCOL.md"),
                 )
             )
         if self.task_type == "rules_sync_review" or has_path("specs/30-rules-entry-sync-review-Rules入口同步审查.md"):

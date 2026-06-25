@@ -12,16 +12,16 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 def test_preflight_existing_spec_update_requires_human_gate_but_does_not_authorize_write(tmp_path):
     write_md(tmp_path / "specs" / "04-Code确定性执行规范.md", "# Code\n")
     write_md(
-        tmp_path / "rules" / "LDVH-MAINTAINER-ENTRY.md",
+        tmp_path / "rules" / "LDVH-RUNTIME-PROTOCOL.md",
         """
-# LDVH 维护入口
+# LDVH Runtime Protocol
 
 ```yaml
 ldvh_asset:
-  id: "ldvh-maintainer-entry"
+  id: "ldvh-runtime-protocol"
   type: "rule"
   status: "active"
-  canonical_path: "rules/LDVH-MAINTAINER-ENTRY.md"
+  canonical_path: "rules/LDVH-RUNTIME-PROTOCOL.md"
   source_specs:
     - "specs/04-Code确定性执行规范.md"
   consumption_scenarios:
@@ -53,7 +53,7 @@ ldvh_asset:
     assert "PREFLIGHT_RULES_ASSET_IMPACT_REVIEW_REQUIRED" in codes
     assert report["rules_asset_impact"]["required"] is True
     assert report["rules_asset_impact"]["basis"] == "source_specs"
-    assert [asset["canonical_path"] for asset in report["rules_asset_impact"]["assets"]] == ["rules/LDVH-MAINTAINER-ENTRY.md"]
+    assert [asset["canonical_path"] for asset in report["rules_asset_impact"]["assets"]] == ["rules/LDVH-RUNTIME-PROTOCOL.md"]
     assert not any(item["severity"] == "error" for item in report["diagnostics"])
 
 
@@ -72,9 +72,9 @@ def test_preflight_spec_update_still_requires_rules_review_without_exact_source_
 
 
 def test_preflight_rules_entry_sync_review_only_targets_specs_surface(tmp_path):
-    write_md(tmp_path / "rules" / "LDVH-MAINTAINER-ENTRY.md", "# Rules\n")
+    write_md(tmp_path / "rules" / "LDVH-RUNTIME-PROTOCOL.md", "# Rules\n")
 
-    report = checker.preflight_build(tmp_path, "rules/LDVH-MAINTAINER-ENTRY.md", operation="update")
+    report = checker.preflight_build(tmp_path, "rules/LDVH-RUNTIME-PROTOCOL.md", operation="update")
     codes = {item["code"] for item in report["diagnostics"]}
 
     assert "PREFLIGHT_RULES_ASSET_IMPACT_REVIEW_REQUIRED" in codes
