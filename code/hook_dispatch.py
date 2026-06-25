@@ -140,7 +140,7 @@ def render_command(raw_command: Any, context: dict[str, str]) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-def handle_session_start(cwd: Path, *, via: str = "rules") -> int:
+def handle_session_start(cwd: Path, *, trigger_source: str = "rules") -> int:
     """SessionStart / session-start handler.
 
     Determine whether *cwd* falls inside an LDVH-governed project.
@@ -158,7 +158,7 @@ def handle_session_start(cwd: Path, *, via: str = "rules") -> int:
         "governed": governed,
         "cwd": str(cwd),
         "config_path": str(config),
-        "via": via,
+        "trigger_source": trigger_source,
     }
     if not governed:
         result["message"] = "当前 cwd 未命中管辖项目，no-op"
@@ -184,7 +184,7 @@ def handle_session_start(cwd: Path, *, via: str = "rules") -> int:
     return 1 if has_diagnostics else 0
 
 
-def handle_pre_tool_use(cwd: Path, *, via: str = "rules", tool_name: str = "") -> int:
+def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: str = "") -> int:
     """PreToolUse / pre-tool-use handler.
 
     Check whether the current session has completed the session-start
@@ -194,13 +194,13 @@ def handle_pre_tool_use(cwd: Path, *, via: str = "rules", tool_name: str = "") -
     if config is None:
         # No governed config at all — no LDVH project, allow
         print(json.dumps({"blocked": False, "reason": "非管辖项目，no-op",
-                          "cwd": str(cwd), "via": via}))
+                          "cwd": str(cwd), "trigger_source": trigger_source}))
         return 0
 
     governed = _cwd_in_governed_project(cwd, config)
     if not governed:
         print(json.dumps({"blocked": False, "reason": "当前 cwd 未命中管辖项目，no-op",
-                          "cwd": str(cwd), "via": via}))
+                          "cwd": str(cwd), "trigger_source": trigger_source}))
         return 0
 
     # In governed project — receipt check
@@ -213,7 +213,7 @@ def handle_pre_tool_use(cwd: Path, *, via: str = "rules", tool_name: str = "") -
         "warning": "管辖项目中，请确认已在本会话完成握手（session-start）",
         "cwd": str(cwd),
         "governed": True,
-        "via": via,
+        "trigger_source": trigger_source,
     }
     if tool_name:
         result["tool"] = tool_name
@@ -275,15 +275,16 @@ def main(argv: Optional[list[str]] = None) -> int:
         event = stdin_payload.get("event", "")
         cwd_raw = stdin_payload.get("cwd", os.getcwd())
         cwd = Path(cwd_raw)
+        trigger_source = stdin_payload.get("trigger_source", "hook")
 
         # Normalize event name: both "SessionStart" (Hook) and "session-start" (CLI) accepted
         normalized = event.replace("_", "-").lower().lstrip("-")
 
         if normalized in ("session-start", "sessionstart"):
-            return handle_session_start(cwd, via="hook")
+            return handle_session_start(cwd, trigger_source=trigger_source)
         if normalized in ("pre-tool-use", "pretooluse"):
             tool = stdin_payload.get("tool_name", "")
-            return handle_pre_tool_use(cwd, via="hook", tool_name=tool)
+            return handle_pre_tool_use(cwd, trigger_source=trigger_source, tool_name=tool)
         if normalized in ("git-commit-msg", "git.commit-msg"):
             context: dict[str, str] = {"cwd": str(cwd)}
             if stdin_payload.get("message_file"):
@@ -308,6 +309,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     run_parser.add_argument("event", help="Event: session-start | pre-tool-use | git.commit-msg")
     run_parser.add_argument("--cwd", type=Path, default=Path(os.getcwd()),
                             help="Current working directory for the event.")
+    run_parser.add_argument("--trigger-source", type=str, choices=["hook", "rules"],
+                            default="rules",
+                            help="Trigger source: hook (environment) or rules (AI self-trigger).")
     run_parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY,
                             help="Hook registry YAML path.")
     run_parser.add_argument("--message-file", type=Path, default=None,
@@ -322,14 +326,15 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.command == "run":
         event = args.event
         cwd = args.cwd.resolve()
+        trigger_source = args.trigger_source
 
         try:
             # --- built-in lifecycle handlers ---
             if event in ("session-start", "SessionStart"):
-                return handle_session_start(cwd, via="rules")
+                return handle_session_start(cwd, trigger_source=trigger_source)
 
             if event in ("pre-tool-use", "PreToolUse"):
-                return handle_pre_tool_use(cwd, via="rules", tool_name=args.tool_name)
+                return handle_pre_tool_use(cwd, trigger_source=trigger_source, tool_name=args.tool_name)
 
             if event == "git.commit-msg":
                 context: dict[str, str] = {}
