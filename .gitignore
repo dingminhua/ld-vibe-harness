@@ -6,6 +6,7 @@ __pycache__/
 # Distribution / packaging
 .eggs/
 *.egg-info/
+ld_vibe_harness.egg-info/
 build/
 develop-eggs/
 dist/
