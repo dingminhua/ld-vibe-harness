@@ -3,11 +3,12 @@ type: workcase
 title: Code Web tests degraded legacy migration
 goal: |
   承接 workcase-0005 的实现层残留风险，迁移 `code/`、`tests/`、`web/` 中 legacy `degraded`、`degraded_accepted` 和“降级”输出、消费、断言与 Human-facing 展示，使旧字段只作为兼容信号存在，并以具体问题原因、受限状态、后续动作和承接位置表达当前语义。
-status: human_closure_confirming
+status: closed
 created: '2026-06-25T11:33:00+08:00'
-updated: '2026-06-25T05:07:00+08:00'
+updated: '2026-06-26T05:54:52+08:00'
 priority: P0
 plan_confirmed_at: '2026-06-25T11:33:00+08:00'
+review_requested_at: '2026-06-26T05:54:52+08:00'
 description: |
   背景来源为 `spark-0025-degradation-concept-convergence.yaml` 与已关闭 `workcase-0005-remove-degradation-concept-from-specs.yaml`。workcase-0005 已完成 specs、attachments 和 rules 的正式机制迁移，但明确登记 Code/Web/tests 仍残留旧字段、状态、测试断言和展示文案。
 
@@ -387,7 +388,14 @@ orchestration:
         - revision_history[2]
       summary: |
         接受独立复核结论，无范围内强制修改项。根据 21 状态机，本轮补齐独立结果复核后先完成 result_self_checking -> subagents_result_reviewing，再在主控处理记录和关闭请求时间补齐后推进到 human_closure_confirming，等待 Human 决定关闭或退回；本轮不直接 closed。
-    human_closure_confirmation: null
+    human_closure_confirmation:
+      decision: close
+      confirmed_at: '2026-06-26T05:54:52+08:00'
+      confirmer: human
+      scope: |
+        Human 已确认 workcase-0006 可以关闭。
+      summary: |
+        Human 接受当前验证证据、结果复核和关闭证据，确认本 WorkCase 以 completed 结果关闭.
 verification_evidence: |
   ## 验证计划
 
@@ -457,8 +465,8 @@ closure_evidence: |
 
   当前关闭判断：可提交 Human 关闭确认，但不可直接关闭。若 Human 确认关闭，再填写 `closed_at`、`closure_outcome` 和 `result_review.human_closure_confirmation`；若 Human 要求补审、继续执行或修改方案，应按 21 状态机退回并追加 revision_history。
 closure_requested_at: '2026-06-25T05:07:00+08:00'
-closed_at: ''
-closure_outcome: ''
+closed_at: '2026-06-26T05:54:52+08:00'
+closure_outcome: completed
 residual_risks:
   - 当前仅进入 Human 关闭确认，尚未获得 Human 关闭决定；不得直接视为 closed。
   - 知识地图任务导航在本 worktree 中因入口配置/start_node 定位受限；本轮已以原文和事实源命令兜底，但后续复核应知悉该限制。
