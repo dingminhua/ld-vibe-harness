@@ -67,6 +67,9 @@ Desktop.ini
 *.bak
 *.pid
 *.png
+!icons/ldvh-plugin-icon*.png
+!web/src/assets/ldvh-plugin-icon.png
+!web/public/ldvh-plugin-icon*.png
 
 # Local Git worktrees
 worktrees/
