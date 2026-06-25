@@ -44,7 +44,7 @@ LDVH 运行时协议。定义 AI 在三个关键环节必须触发的 canonical 
 
 | 发生时 | canonical event | Rules 路径命令 |
 |---|---|---|
-| 会话开始 / 恢复 / 上下文压缩后 | `session-start` | `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <cwd>` |
+| 会话开始 / 恢复 / 上下文压缩后 / 子 Agent 启动 | `session-start` | `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <cwd>` |
 | Write / Edit 前 | `pre-tool-use` | `python3 code/hook_dispatch.py run pre-tool-use --trigger-source rules --cwd <cwd>` |
 | Git commit 前 | `git.commit-msg` | `python3 code/hook_dispatch.py run git.commit-msg --trigger-source rules --message-file <message-file>` |
 
