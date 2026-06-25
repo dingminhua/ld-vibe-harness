@@ -78,8 +78,7 @@ v2_action_member:
     - "source_spec=specs/07-事实源边界与Git追溯规范.md; requirement=回写边界要求; scope=环境观察、部署证据、问题原因说明何时能成为稳定事实"
     - "source_spec=specs/08-测试基础规范.md; requirement=失败阻断要求; scope=未完成适配检查、关键验证缺失或证据不可追溯时不得声明接入完成"
   capability_assets:
-    - "type=rule; path=rules/LDVH-ENTRY.md; purpose=工作区入口薄引用目标; status=required"
-    - "type=rule; path=rules/LDVH-ENTRY.md; purpose=LDVH 产品资产维护入口薄引用目标; status=required"
+    - "type=rule; path=rules/LDVH-ENTRY.md; purpose=统一 Runtime Protocol 入口，薄引用目标; status=required"
     - "type=skill; path=skills/ldvh-git-commit/SKILL.md; purpose=需要在环境中验证 Skill 可发现或可手动等价执行时的固定 Skill 资产; status=optional_by_environment"
     - "type=hook; path=hooks/ldvh-hooks.yaml; purpose=需要在环境中验证 Hook registry 可被调用或接入时的固定 Hook 资产; status=optional_by_environment"
     - "type=code; path=code/specs_validate.py assurance-report; purpose=聚合 active specs 的规范保障要求，作为环境落地投影的动态需求输入; status=required"
@@ -107,7 +106,7 @@ v2_action_member:
 
 1. 环境落地项应如何从 specs `规范保障要求`、行动编排接管状态和能力缺口动态生成，而不是手写静态清单；
 2. 如何把每条来源要求投影为承接状态、运行时承载方向、已有能力资产、环境入口候选、验证方式和缺口分流；
-3. 如何区分官方维护入口模板、用户现场配置、本次检查结果、长期适配措施和环境类型能力判断；
+3. 如何区分薄引用模板、用户现场配置、本次检查结果、长期适配措施和环境类型能力判断；
 4. AI 何时只能生成候选薄引用或适配说明，何时可以在 Human 授权后受控写入；
 5. 如何检查薄引用、AGENTS、config、hooks、Skill、Code 命令或等价入口是否服务于对应保障要求；
 6. 如何输出接入证据、失败项、未承接项和禁止声明，避免把本地观察写成长期支持状态。
@@ -165,7 +164,7 @@ v2_action_member:
 1. 用户要求把 LDVH 接入某个 AI 协作环境；
 2. 用户指出入口之外还缺少保障能力，需要识别哪些保障要求尚未被环境承载；
 3. 用户要求生成、检查或修复 AGENTS、instructions、config、hooks、软链、安装脚本或等价入口；
-4. 需要确认环境入口是否只包含薄引用，并能定位工作区入口或维护入口；
+4. 需要确认环境入口是否只包含薄引用，并能定位统一 Runtime Protocol 入口；
 5. 需要检查 Skill、Hook、Code 命令或等价能力在当前环境中是否可发现、可调用或只能使用临时核对动作；
 6. 需要输出“本次接入是否有效”的证据摘要，并说明禁止声明。
 
