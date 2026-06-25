@@ -34,9 +34,9 @@ v2_spec:
     - "specs/attachments/06.Att.09-薄引用模板.md"
     - "specs/attachments/06.Att.10-部署检查核对表.md"
     - "specs/attachments/06.Att.11-Codex环境入口候选矩阵.md"
-    - "specs/attachments/06.Att.12-CodexHook事件候选矩阵.md"
     - "specs/attachments/06.Att.13-非Codex自助适配核对表.md"
     - "specs/attachments/06.Att.14-权威资产副本分层核对表.md"
+    - "specs/attachments/06.Att.15-环境Hook事件映射表.md"
   migration_sources:
     - "history/specs-v1/04.03-环境入口适配与部署规范.md"
   active_fact_source: []
@@ -206,7 +206,6 @@ v2_action_member:
 | 薄引用模板 | `specs/attachments/06.Att.09-薄引用模板.md` |
 | 部署检查阶段 | `specs/attachments/06.Att.10-部署检查核对表.md` |
 | Codex 入口候选 | `specs/attachments/06.Att.11-Codex环境入口候选矩阵.md` |
-| Codex Hook 候选 | `specs/attachments/06.Att.12-CodexHook事件候选矩阵.md` |
 | 非 Codex 自助适配 | `specs/attachments/06.Att.13-非Codex自助适配核对表.md` |
 | 权威资产与部署副本分层 | `specs/attachments/06.Att.14-权威资产副本分层核对表.md` |
 | 固定承载物基线 | `specs/attachments/06.Att.02-固定运行时扩展登记表.md` 和资产自身 `ldvh_asset` |
@@ -249,11 +248,14 @@ python3 code/specs_validate.py v2-check --input-scope runtime_extensions --forma
 | 接管状态 | active 接管、candidate 接管、建议接管、待接管缺口或临时核对动作 |
 | 承载方向 | Rules、Skill、Agent、Hook、Code、Web、测试、Human Gate、临时核对动作或外部归口 |
 | 当前资产 | 可回指的固定承载物、自描述、Code 命令或无可用资产 |
+| 环境原生事件 | 目标环境实际暴露的 Hook 名称或事件名 |
+| LDVH canonical event | 映射后的 `session-start` / `pre-tool-use` / `git.commit-msg` |
+| trigger_source | `hook` 或 `rules` |
 | 环境渲染 | 在目标环境中的入口候选、配置方式、手动步骤或不适用原因 |
 | 验证方式 | 可执行命令、现场检查、测试入口、Human Gate 或 Human 复核 |
 | 缺口分流 | 06.Att.06 缺口类型、建议回写位置和禁止声明 |
 
-涉及规范、入口或同步影响判断时，应使用带起点的知识地图查询。若知识地图工具不可用、输出不足或无法回指来源，必须说明问题原因，并退回 active specs、附件、资产原文和临时核对动作。
+涉及规范、入口、事件映射或同步影响判断时，应使用带起点的知识地图查询。若知识地图工具不可用、输出不足或无法回指来源，必须说明问题原因，并退回 active specs、附件、资产原文和临时核对动作。
 
 ## 8. Scenario 识别
 
@@ -469,6 +471,6 @@ LDVH 提供插件方式和 Rules 方式两种接入路径，由用户根据环�
 2. 需要确认是否由 Code 增加正式的环境落地投影命令，把 `assurance-report`、`assurance-plan`、06.Att.05/06、固定资产和环境候选矩阵合成为机器可读投影；
 3. 需要确认是否由 Code 增加环境入口候选文本、薄引用正文、AGENTS 指向、Hook 配置和投影行回指的机械检查；
 4. 需要确认 Codex App 当前版本的 AGENTS、config、hooks、trust、matcher 和 Hook 返回语义；
-5. 需要评估本文 active 后是否触发 `rules/LDVH-ENTRY.md` 和 `rules/LDVH-ENTRY.md` 的入口表达同步；
+5. 需要评估本文 active 后是否触发 `rules/LDVH-ENTRY.md` 的入口表达同步；
 6. 需要补充动态投影、静态清单反例、入口写入、Hook 检查和验证声明的正反样例测试，并按 08 确认验证声明边界；
 7. 需要根据 `spark-0022` 和 `spark-0024` 判断是否形成后续 WorkCase。
