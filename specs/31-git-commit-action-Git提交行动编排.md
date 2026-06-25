@@ -70,8 +70,8 @@ v2_action_member:
     - "source_spec=specs/06-运行时扩展规范.md; requirement=Skill/Hook/Rules 能力资产协作; scope=提交行动所需 Skill、Hook registry、Rules 入口和环境适配边界的流程映射"
     - "source_spec=specs/08-测试基础规范.md; requirement=验证声明边界; scope=提交前后验证命令、失败阻断和等价验证说明"
   capability_assets:
-    - "type=rule; path=rules/LDVH-MAINTAINER-ENTRY.md; purpose=LDVH 产品资产维护时定位 Git 提交行动入口; status=required"
-    - "type=rule; path=rules/LDVH-WORKSPACE-ENTRY.md; purpose=管辖项目 Git 追溯或提交准备时定位事实源与行动入口; status=required"
+    - "type=rule; path=rules/LDVH-ENTRY.md; purpose=LDVH 产品资产维护时定位 Git 提交行动入口; status=required"
+    - "type=rule; path=rules/LDVH-ENTRY.md; purpose=管辖项目 Git 追溯或提交准备时定位事实源与行动入口; status=required"
     - "type=skill; path=skills/ldvh-git-commit/SKILL.md; purpose=将 07 的提交契约转换为 AI 可执行的提交准备和预检流程; status=required"
     - "type=hook; path=hooks/ldvh-hooks.yaml; purpose=登记 git.commit-msg 统一事件和阻断命令; status=required"
     - "type=code; path=code/commit_validate.py; purpose=确定性检查 commit message 契约和提交正文质量; status=required"
