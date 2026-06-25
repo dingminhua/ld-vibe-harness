@@ -106,7 +106,7 @@ related_workcases: []
 related_adrs: []
 related_studies: []
 related_docs:
-- AGENTS.md
+- rules/LDVH-RUNTIME-PROTOCOL.md
 - specs/01-规范体系基础规范.md
 - specs/04-Code确定性执行规范.md
 - specs/06-运行时扩展规范.md
@@ -114,5 +114,3 @@ related_docs:
 - specs/30-rules-entry-sync-review-Rules入口同步审查.md
 - specs/31-git-commit-action-Git提交行动编排.md
 - specs/attachments/06.Att.02-固定运行时扩展登记表.md
-- rules/LDVH-WORKSPACE-ENTRY.md
-- rules/LDVH-MAINTAINER-ENTRY.md

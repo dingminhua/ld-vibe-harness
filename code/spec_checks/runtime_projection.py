@@ -11,8 +11,7 @@ from .common import Issue, count_by, is_project_local as common_is_project_local
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FORMAL_SPECS_DIR = PROJECT_ROOT / "specs"
 RUNTIME_PROJECTION_DEFAULT_PATHS = [
-    "rules/LDVH-WORKSPACE-ENTRY.md",
-    "rules/LDVH-MAINTAINER-ENTRY.md",
+    "rules/LDVH-RUNTIME-PROTOCOL.md",
     ".trae/rules",
     ".trae/skills",
 ]

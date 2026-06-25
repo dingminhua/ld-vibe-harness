@@ -331,27 +331,20 @@ v2_attachment:
 无。
 """,
         )
-    for filename, asset_id, source_specs in (
-        (
-            "LDVH-WORKSPACE-ENTRY.md",
-            "ldvh-workspace-entry",
-            ["specs/04-Code确定性执行规范.md", "specs/30-rules-entry-sync-review-Rules入口同步审查.md"],
-        ),
-        ("LDVH-MAINTAINER-ENTRY.md", "ldvh-maintainer-entry", ["specs/04-Code确定性执行规范.md"]),
-    ):
-        write_md(
-            rules / filename,
-            f"""
-# {asset_id}
+    write_md(
+        rules / "LDVH-RUNTIME-PROTOCOL.md",
+        """
+# ldvh-runtime-protocol
 
 ```yaml
 ldvh_asset:
-  id: "{asset_id}"
+  id: "ldvh-runtime-protocol"
   type: "rule"
   status: "active"
-  canonical_path: "rules/{filename}"
+  canonical_path: "rules/LDVH-RUNTIME-PROTOCOL.md"
   source_specs:
-{chr(10).join(f'    - "{item}"' for item in source_specs)}
+    - "specs/04-Code确定性执行规范.md"
+    - "specs/30-rules-entry-sync-review-Rules入口同步审查.md"
   consumption_scenarios:
     - "测试"
   inputs:
@@ -382,7 +375,7 @@ ldvh_asset:
 
 修改后验证。
 """,
-        )
+    )
 
 
 def test_v2_check_builds_read_only_knowledge_map(tmp_path):
@@ -1073,16 +1066,16 @@ def test_v2_check_history_specs_v1_scope_is_degraded_without_active_parse(tmp_pa
 
 def test_v2_check_runtime_extensions_scope_projects_fixed_asset_nodes(tmp_path):
     write_md(
-        tmp_path / "rules" / "LDVH-MAINTAINER-ENTRY.md",
+        tmp_path / "rules" / "LDVH-RUNTIME-PROTOCOL.md",
         """
-# LDVH 维护入口
+# LDVH Runtime Protocol
 
 ```yaml
 ldvh_asset:
-  id: "ldvh-maintainer-entry"
+  id: "ldvh-runtime-protocol"
   type: "rule"
   status: "active"
-  canonical_path: "rules/LDVH-MAINTAINER-ENTRY.md"
+  canonical_path: "rules/LDVH-RUNTIME-PROTOCOL.md"
   source_specs:
     - "specs/01-规范体系基础规范.md"
     - "specs/06-运行时扩展规范.md"
@@ -1108,10 +1101,10 @@ ldvh_asset:
 
     assert report["metadata"]["effective_input_scope"] == ["runtime_extensions"]
     assert report["docs"] == []
-    assert nodes["rules/LDVH-MAINTAINER-ENTRY.md"]["type"] == "runtime_extension"
-    assert nodes["rules/LDVH-MAINTAINER-ENTRY.md"]["asset_type"] == "rule"
-    assert "specs/01-规范体系基础规范.md" in nodes["rules/LDVH-MAINTAINER-ENTRY.md"]["source_specs"]
-    assert ("rules/LDVH-MAINTAINER-ENTRY.md", "specs/01-规范体系基础规范.md", "derives_from") in edge_pairs
+    assert nodes["rules/LDVH-RUNTIME-PROTOCOL.md"]["type"] == "runtime_extension"
+    assert nodes["rules/LDVH-RUNTIME-PROTOCOL.md"]["asset_type"] == "rule"
+    assert "specs/01-规范体系基础规范.md" in nodes["rules/LDVH-RUNTIME-PROTOCOL.md"]["source_specs"]
+    assert ("rules/LDVH-RUNTIME-PROTOCOL.md", "specs/01-规范体系基础规范.md", "derives_from") in edge_pairs
     assert report["knowledge_map"]["excluded_inputs"] == []
 
 
@@ -1209,29 +1202,17 @@ def test_knowledge_map_text_output_includes_suggested_sections(tmp_path, capsys)
 def test_knowledge_map_stop_conditions_include_task_level_human_gates(tmp_path):
     write_navigation_value_fixture(tmp_path)
 
-    workspace_report = checker.v2_check_build(
+    runtime_report = checker.v2_check_build(
         tmp_path,
         input_scope="entry_navigation",
         query_layer="neighbors",
-        start_node="rules/LDVH-WORKSPACE-ENTRY.md",
+        start_node="rules/LDVH-RUNTIME-PROTOCOL.md",
         task_type="workspace_entry",
     )
-    workspace_stops = {item["condition"]: item for item in workspace_report["knowledge_map"]["stop_conditions"]}
+    runtime_stops = {item["condition"]: item for item in runtime_report["knowledge_map"]["stop_conditions"]}
 
-    assert "workspace_entry_stop_points" in workspace_stops
-    assert workspace_stops["workspace_entry_stop_points"]["source_refs"]
-
-    maintainer_report = checker.v2_check_build(
-        tmp_path,
-        input_scope="entry_navigation",
-        query_layer="neighbors",
-        start_node="rules/LDVH-MAINTAINER-ENTRY.md",
-        task_type="rules_entry",
-    )
-    maintainer_stops = {item["condition"]: item for item in maintainer_report["knowledge_map"]["stop_conditions"]}
-
-    assert "maintainer_entry_stop_points" in maintainer_stops
-    assert maintainer_stops["maintainer_entry_stop_points"]["source_refs"]
+    assert "runtime_protocol_stop_points" in runtime_stops
+    assert runtime_stops["runtime_protocol_stop_points"]["source_refs"]
 
     code_report = checker.v2_check_build(
         tmp_path,

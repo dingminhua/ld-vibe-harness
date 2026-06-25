@@ -8,6 +8,7 @@ ldvh_asset:
   canonical_path: "rules/LDVH-RUNTIME-PROTOCOL.md"
   source_specs:
     - "specs/06-运行时扩展规范.md"
+    - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
   consumption_scenarios:
     - "AI Hook 路径：环境原生触发 canonical event，trigger_source=hook"
     - "Rules 路径：AI 自觉触发 canonical event，trigger_source=rules"

@@ -9,15 +9,13 @@ from .common import Issue
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEPLOYMENT_ENTRIES_AI_ENTRY_PATHS = [
-    "rules/LDVH-WORKSPACE-ENTRY.md",
-    "rules/LDVH-MAINTAINER-ENTRY.md",
+    "rules/LDVH-RUNTIME-PROTOCOL.md",
 ]
 DEPLOYMENT_ENTRIES_AI_ENTRY_PATH = DEPLOYMENT_ENTRIES_AI_ENTRY_PATHS[0]
 DEPLOYMENT_ENTRIES_SPEC_PATH = "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
 DEPLOYMENT_ENTRIES_REQUIRED_ASSETS = {
     "Rules": [
-        "rules/LDVH-WORKSPACE-ENTRY.md",
-        "rules/LDVH-MAINTAINER-ENTRY.md",
+        "rules/LDVH-RUNTIME-PROTOCOL.md",
     ],
     "Skill": [
         "skills/ldvh-git-commit/SKILL.md",
@@ -27,17 +25,11 @@ DEPLOYMENT_ENTRIES_REQUIRED_ASSETS = {
     ],
 }
 DEPLOYMENT_ENTRIES_REQUIRED_ASSET_METADATA = {
-    "rules/LDVH-WORKSPACE-ENTRY.md": {
-        "id": "ldvh-workspace-entry",
+    "rules/LDVH-RUNTIME-PROTOCOL.md": {
+        "id": "ldvh-runtime-protocol",
         "type": "rule",
         "status": "active",
-        "canonical_path": "rules/LDVH-WORKSPACE-ENTRY.md",
-    },
-    "rules/LDVH-MAINTAINER-ENTRY.md": {
-        "id": "ldvh-maintainer-entry",
-        "type": "rule",
-        "status": "active",
-        "canonical_path": "rules/LDVH-MAINTAINER-ENTRY.md",
+        "canonical_path": "rules/LDVH-RUNTIME-PROTOCOL.md",
     },
     "hooks/ldvh-hooks.yaml": {
         "id": "ldvh-hook-registry",
