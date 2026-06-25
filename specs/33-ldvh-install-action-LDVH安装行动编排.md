@@ -1,10 +1,10 @@
-# ldvh-install-action-LDVH安装行动编排
+# LDVH安装与首次配置行动编排
 
 ```yaml
 v2_spec:
   spec_id: "33"
   spec_kind: "member_spec"
-  title: "ldvh-install-action-LDVH安装行动编排"
+  title: "LDVH安装与首次配置行动编排"
   status: "active"
   authority: "active"
   canonical_path: "specs/33-ldvh-install-action-LDVH安装行动编排.md"
@@ -12,8 +12,8 @@ v2_spec:
   updated: "2026-06-26"
   parent_spec: "specs/03-行动编排规范.md"
   relation: "action_member"
-  positioning: "定义 AI 引导用户安装 LDVH 时的行动流程：判断环境 AI Hook 能力、选择安装方式、放置薄引用或插件、验证安装结果并给出下一步指引"
-  scope: "用户首次接触 LDVH、要求安装或接入 LDVH、不确定应选择哪种接入方式时的 AI 引导行动"
+  positioning: "定义 AI 引导用户安装 LDVH 并完成首次管辖项目配置的行动流程：判断环境 AI Hook 能力、选择安装方式、放置薄引用或插件、验证安装、配置管辖项目并确认生效"
+  scope: "用户首次接触 LDVH、要求安装或接入 LDVH、安装后首次对项目启用 LDVH 时的 AI 引导行动"
   basis:
     - "specs/00-LDVH理念与价值标准.md"
     - "specs/01-规范体系基础规范.md"
@@ -44,7 +44,7 @@ v2_action_member:
   spec_id: "33"
   kind: "action_process"
   name_en: "ldvh-install-action"
-  name_zh: "LDVH安装行动编排"
+  name_zh: "LDVH安装与首次配置行动编排"
   collection_status: "active"
   canonical_path: "specs/33-ldvh-install-action-LDVH安装行动编排.md"
   scenario_anchor: "§8"
@@ -58,7 +58,7 @@ v2_action_member:
   assurance_takeover:
     - "source_spec=specs/03-行动编排规范.md; requirement=流程复用要求; scope=AI 引导用户安装 LDVH 的可复用行动流程，不替代环境自身安装步骤"
     - "source_spec=specs/06-运行时扩展规范.md; requirement=双路径接入要求; scope=按 AI Hook 能力分流：推荐插件方式，提供 Rules 方式；不得将一种方式写成唯一终态"
-    - "source_spec=specs/32-environment-entry-adaptation-环境入口落地与适配检查.md; requirement=环境落地适配; scope=安装后需触达环境落地检查，不得跳过适配验证"
+    - "source_spec=specs/32-environment-entry-adaptation-环境入口落地与适配检查.md; requirement=环境落地适配; scope=安装后须引导用户完成首次管辖项目配置和验证"
   capability_assets:
     - "type=rule; path=rules/LDVH-RUNTIME-PROTOCOL.md; purpose=Rules 方式安装的目标薄引用入口; status=required"
     - "type=code; path=code/hook_dispatch.py; purpose=安装后验证（session-start + pre-tool-use）; status=required"
@@ -227,37 +227,88 @@ AI 引导用户执行：
 
 ## 8. 安装后验证
 
-无论哪种安装方式，AI 都应建议用户做一次快速验证：
+无论哪种安装方式，AI 都应引导用户完成验证。分两步：
+
+### 8.1 安装连通性验证
 
 ```bash
-python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <管辖项目目录>
+python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <任意目录>
 ```
 
-预期输出：
+预期输出中 `governed: false` 且无报错，说明 LDVH 已可连通。若命令不可执行，回到第 5 或第 6 步检查安装。
 
-```json
-{"governed": true, "trigger_source": "rules", "receipt": "ok", ...}
-```
+### 8.2 管辖项目首次配置验证
 
-若 `governed: false`：
-- 检查 `LDVH-GOVERNED-PROJECTS.yaml` 是否已配置当前项目
-- 若尚未配置管辖项目，引导用户进入 `specs/32` 环境落地流程
+安装连通后，继续 §9 配置首个管辖项目。
 
 ---
 
-## 9. 场景入口（AI 如何回到本文）
+## 9. 首次配置管辖项目
+
+安装验证通过后，AI 引导用户对第一个项目启用 LDVH。
+
+### 9.1 用户指定项目
+
+AI 询问："你想对哪个项目启用 LDVH？"
+
+用户提供项目目录路径后，AI 定位该目录下的 `LDVH-GOVERNED-PROJECTS.yaml`：
+
+- 若不存在 → 进入 §9.2 创建
+- 若已存在 → 进入 §9.3 追加
+
+### 9.2 创建管辖项目配置
+
+AI 在用户项目根目录下生成 `LDVH-GOVERNED-PROJECTS.yaml`：
+
+```yaml
+version: "1.0"
+governed_instance: "/Users/<用户>/poker_hud_projects/ld-vibe-harness"
+projects:
+  - path: "<用户项目路径>"
+```
+
+`governed_instance` 为 LDVH 仓库在本机的绝对路径。AI 必须让用户确认后再写入，不得静默创建。
+
+### 9.3 已有配置时追加
+
+若文件已存在，AI 检查当前项目是否已在 `projects` 列表中：
+
+- 已在 → 无需操作
+- 不在 → 提示用户追加条目，由用户确认后写入
+
+### 9.4 配置后验证
+
+```bash
+python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <项目目录>
+```
+
+预期：`governed: true`，`receipt: ok`。
+
+若 `governed: false`：检查 `LDVH-GOVERNED-PROJECTS.yaml` 路径是否正确。
+
+### 9.5 完成
+
+验证通过后，AI 告知用户：
+
+- **插件方式**："下次在这个项目中新建会话，SessionStart Hook 会自动触发 LDVH 协议。"
+- **Rules 方式**："AI 每次新会话会读取 Runtime Protocol，自觉触发协议步骤。子 Agent 启动时同样自觉执行。"
+
+---
+
+## 11. 场景入口（AI 如何回到本文）
 
 | 用户动作 | AI 应从本文读取的入口 |
 |---|---|
-| 首次安装 | §4 → §5 或 §6 → §7 |
+| 首次安装与配置 | §4 → §5/§6 → §8 → §9 |
 | 询问"插件还是 Rules" | §4.1 能力矩阵 |
-| 安装后不生效 | §7 验证 + §10 问题分流 |
+| 安装后不生效 | §8 验证 + §12 问题分流 |
 | 更换环境重新安装 | §4.1 重新判断环境能力 |
 | 仅需薄引用正文模板 | §6.4，同时参照 `06.Att.09` |
+| 对新项目启用 LDVH | §9 首次配置管辖项目 |
 
 ---
 
-## 10. 执行顺序
+## 11. 执行顺序
 
 ```text
 1. 判断环境 AI Hook 能力（§4）
@@ -271,18 +322,19 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 
 ---
 
-## 11. 问题分流
+## 12. 问题分流
 
 | 症状 | 可能原因 | 分流位置 |
 |---|---|---|
-| 插件安装后 Hook 不触发 | 环境未信任、插件未启用、cwd 不在管辖项目 | §7 验证步骤 |
+| 插件安装后 Hook 不触发 | 环境未信任、插件未启用、cwd 不在管辖项目 | §8 验证步骤 |
 | AI 未读取薄引用 | 入口路径不存在或不被环境读取 | §6.2 定位环境目录入口 |
+| 配置后 governed=false | LDVH-GOVERNED-PROJECTS.yaml 路径错误或未写 | §9.4 配置后验证 |
 | session-start 返回 non-zero | knowledge-map 不可用、管辖配置异常 | `hook_dispatch.py` 输出 |
 | 用户不知道环境是否支持 Hook | 未知环境 | §4.2 判断规则 |
 
 ---
 
-## 12. Human Gate
+## 13. Human Gate
 
 | STOP 条件 | 处理 |
 |---|---|
@@ -294,7 +346,7 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 
 ---
 
-## 13. 需要通知相关方
+## 14. 需要通知相关方
 
 - `specs/06`：若本文新增或改变了环境接入的推荐路径
 - `specs/32`：安装完毕后应引导用户进入环境落地检查
@@ -302,7 +354,7 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 
 ---
 
-## 14. 回写与证据
+## 15. 回写与证据
 
 安装行动完成后，AI 应：
 1. 告知用户安装方式（插件 / Rules）和验证结果。
@@ -311,7 +363,7 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 
 ---
 
-## 15. 交付物
+## 16. 交付物
 
 一次成功安装的交付物是：
 
@@ -320,7 +372,7 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 
 ---
 
-## 16. 测试与验证
+## 17. 测试与验证
 
 | 验证项 | 命令 / 检查 |
 |---|---|
@@ -331,7 +383,7 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 
 ---
 
-## 17. 规范保障要求
+## 18. 规范保障要求
 
 本节是 03 要求的成员一致性兼容章节，不生成新的规范保障要求。本文承接的来源要求见 v2_action_member.assurance_takeover。
 
@@ -344,7 +396,7 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 
 ---
 
-## 18. 待补齐事项
+## 19. 待补齐事项
 
 1. 插件方式的安装步骤与具体环境的插件发布机制待对接。
 2. 首次安装后与 specs/32 环境落地流程的衔接步骤待实测验证。
