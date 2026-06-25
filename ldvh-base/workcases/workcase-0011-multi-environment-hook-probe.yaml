@@ -5,19 +5,19 @@ goal: |
   承接 spark-0031，建立并执行 Codex、WorkBuddy、Trae 三个环境的 Hook Probe 测试工作，先用最小 probe 收集各环境 Hook 的真实事件、输入字段、输出语义、blocking 能力、注册方式、信任机制和卸载路径，再判断 LDVH Hook 入口适配层如何设计。
 status: executing
 created: '2026-06-25T08:59:00+08:00'
-updated: '2026-06-25T09:15:00+08:00'
+updated: '2026-06-25T19:45:00+08:00'
 priority: P0
 description: |
-  spark-0024 已经把 LDVH 入口触发链收敛为“Hook 强制握手 + receipt 消费入口链”的终态方向；spark-0031 进一步指出，多环境 Hook 接入不能混在 spark-0024 中处理，因为 Codex、WorkBuddy、Trae 的事件名称、参数字段、注册方式、blocking 语义、信任机制和可注入上下文可能不同。
+  spark-0024 已经把 LDVH 入口触发链收敛为"Hook 强制握手 + receipt 消费入口链"的终态方向；spark-0031 进一步指出，多环境 Hook 接入不能混在 spark-0024 中处理，因为 Codex、WorkBuddy、Trae 的事件名称、参数字段、注册方式、blocking 语义、信任机制和可注入上下文可能不同——且 spark-0031 已确认 Trae 不支持 AI Hook，与 Codex/WorkBuddy 的 AI Hook 能力属于不同消费路径。
 
-  本 WorkCase 只负责三环境 Hook Probe 测试与适配矩阵，不直接实现完整 LDVH 握手，不直接替换用户 AGENTS.md，不直接启用生产 Hook。测试目标是先取得真实证据：每个环境到底能触发哪些事件、传入哪些字段、是否能阻断、如何返回 additional context 或等价上下文、如何安装/启用/卸载，以及如何做到非 LDVH 项目 no-op。
+  本 WorkCase 只负责三环境 Probe 测试：Codex 和 WorkBuddy 走 AI Hook Probe 路径；Trae 走无 AI Hook 降级路径（确认 AI 自觉消费 Rules/Agent/instructions 的可用方式）。测试不直接实现完整 LDVH 握手，不直接替换用户 AGENTS.md，不直接启用生产 Hook。测试目标是先取得真实证据：每个环境到底能触发哪些事件、传入哪些字段、是否能阻断、如何返回 additional context 或等价上下文、如何安装/启用/卸载，以及如何做到非 LDVH 项目 no-op。
 
   环境范围固定为：Codex、WorkBuddy、Trae。若后续加入其他环境，应追加 revision_history 或新 WorkCase，不在本 WorkCase 隐式扩大范围。
 success_criteria: |
   - [ ] 形成一个最小 Hook Probe 方案：只记录事件 payload、环境变量、cwd、退出码和输出处理结果，不执行 LDVH 业务逻辑，不写用户项目事实源。
   - [ ] 在 WorkBuddy 环境完成 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse 至少四类事件的触发与 payload 采样，并记录 settings / 插件两种注册路径的可行性判断。
   - [ ] 在 Codex 环境完成 Hook 能力实测：确认可用事件、注册方式、payload 字段、blocking 语义、上下文注入能力和不可用项，不沿用 WorkBuddy 假设。
-  - [ ] 在 Trae 环境完成 Hook 或等价生命周期能力实测：确认是否存在 Hook、如何接入、能捕获什么、能否阻断、无法接入时的降级路径。
+  - [ ] 在 Trae 环境完成无 AI Hook 降级路径实测：确认 Trae 不支持 AI Hook 后，验证 AI 自觉消费 Rules/Agent/instructions 的可用入口和稳定执行方式，不试图安装、模拟或寻找 AI Hook 替代品。
   - [ ] 形成三环境适配矩阵：事件名、触发时机、输入字段、输出格式、blocking 能力、信任/启用机制、安装路径、卸载路径、no-op 规则和安全边界。
   - [ ] 明确 LDVH 内核与环境 adapter 的边界：LDVH 内核只消费统一 normalized event，环境差异只留在 adapter。
   - [ ] 给出是否可以把 spark-0024 的 Hook 入口推进到实现 WorkCase 的判断，以及需要同步哪些 specs/06、Att.09、Att.10、Att.12、Rules 或插件资产。
@@ -82,13 +82,13 @@ orchestration:
       evidence_refs: []
       blocking_reason: 需要可操作的 Codex 环境或 Human 提供测试入口。
     - id: item-4
-      title: 实测 Trae Hook 或等价生命周期机制
+      title: 实测 Trae 无 AI Hook 降级路径
       role: environment-probe
       mode: sequential
       input_refs:
         - specs/06-运行时扩展规范.md
         - ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml
-      expected_output: 在 Trae 环境中验证是否存在 Hook 或等价生命周期机制；若不存在，记录可用降级路径，例如手动握手、插件入口、MCP/命令入口或 CI/server-side gate。
+      expected_output: 确认 Trae 不支持 AI Hook 后，实测 AI 自觉消费 Rules/Agent/instructions 的可用入口和稳定执行方式；不尝试安装、模拟或寻找 AI Hook 替代品，不把 Git hook、MCP、CI 或 Human Gate 写成 AI Hook 降级补强。
       status: pending
       result_summary: ''
       evidence_refs: []

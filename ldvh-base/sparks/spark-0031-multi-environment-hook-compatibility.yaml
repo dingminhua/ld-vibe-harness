@@ -3,7 +3,7 @@ type: spark
 title: 多环境 Hook 接入兼容：把环境适配单独拆离
 status: pending
 created: '2026-06-25T08:52:00+08:00'
-updated: '2026-06-25T19:02:00+08:00'
+updated: '2026-06-25T19:45:00+08:00'
 description: |
   入口触发链工程化已经明确可以走 Hook 作为入口，但还存在一个独立问题：不同环境的 Hook 事件、参数、blocking 语义、注册方式、信任机制和可用上下文并不相同，不能把某一个环境的接入方式直接当作 LDVH 的通用入口实现。
 
@@ -105,6 +105,18 @@ evolution:
       Human 纠正 Trae 适配判断：Trae 的问题不是“没有插件系统”，而是“不支持 AI Hook”。因此 spark-0031 不应把 Trae 写成“手动 hooks.json 或 Claude Code 兼容路径即可接入”的环境；本地脚本、兼容配置或插件机制都不能替代 AI Agent 生命周期 Hook。
 
       修正后的判断：Trae 归入无 AI Hook 环境。LDVH 协议仍保持统一，但 Trae 不能依赖环境自动 Hook 强制执行，只能由 AI 主动消费生命周期 Rules。这里的区分只发生在 AI 生命周期协议消费层：有 AI Hook 是强制消费，无 AI Hook 是自觉消费；Git hook 是 Git 提交层面的机制，不属于 AI Hook，也不应混入 AI Hook 分发判断。后续除非取得 Trae 真实 AI Hook 证据，否则不得沿用 Codex / WorkBuddy / Claude Code 的事件、stdin、blocking、上下文注入或信任机制假设。
+  - at: '2026-06-25T19:45:00+08:00'
+    summary: |
+      双路径消费模型已写入 `specs/06` 正式规范。`specs/06` §7 新增：
+
+      > LDVH 生命周期协议统一，AI 环境按 AI Hook 能力分流消费：
+      > - 支持 AI Hook 的环境：可通过 Hook/插件强制消费生命周期协议；
+      > - 不支持 AI Hook 的环境：由 AI 通过 Rules/Agent/instructions 等入口自觉消费同一套协议。
+      > Git hook 属于 Git 提交层机制，不属于 AI Hook。
+
+      同时已更新 `specs/attachments/06.Att.09`（薄引用使用规则）、`specs/attachments/06.Att.13`（非 Codex 自助适配核对表）和 `specs/32`（环境入口列出时区分 AI Hook 能力）。
+
+      本 spark-0031 的核心收敛（协议统一、执行分层、Hook 注册只是协议执行方式之一）已与正式规范口径一致。spark-0024 也同步新增了双路径修正 evolution。后续工作对象应以 `specs/06` 的双路径原则为准，不再需要 spark 层面单独论证消费方式分流。
 input_refs:
   - spark-0024
   - specs/06-运行时扩展规范.md
