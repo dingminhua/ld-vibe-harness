@@ -153,3 +153,5 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 3. 检查本文 `source_specs`、`sync_triggers`、入口路由、STOP 点、验证入口和交接规则是否仍与 30 和知识地图输出一致；
 4. 运行 `python3 code/specs_validate.py deployment-entries`、`python3 code/specs_validate.py capability-environment` 和 `python3 code/specs_validate.py v2-check --input-scope entry_navigation --fail-on-diagnostics --format text`；
 5. 若改变职责边界、STOP、入口交接、固定承载物身份或环境薄引用，必须评估 Human Gate。
+
+> **已废弃**: 合并为 [rules/LDVH-ENTRY.md](LDVH-ENTRY.md)。本文不再作为独立入口使用。

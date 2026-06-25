@@ -78,8 +78,8 @@ v2_action_member:
     - "source_spec=specs/07-事实源边界与Git追溯规范.md; requirement=回写边界要求; scope=环境观察、部署证据、问题原因说明何时能成为稳定事实"
     - "source_spec=specs/08-测试基础规范.md; requirement=失败阻断要求; scope=未完成适配检查、关键验证缺失或证据不可追溯时不得声明接入完成"
   capability_assets:
-    - "type=rule; path=rules/LDVH-WORKSPACE-ENTRY.md; purpose=工作区入口薄引用目标; status=required"
-    - "type=rule; path=rules/LDVH-MAINTAINER-ENTRY.md; purpose=LDVH 产品资产维护入口薄引用目标; status=required"
+    - "type=rule; path=rules/LDVH-ENTRY.md; purpose=工作区入口薄引用目标; status=required"
+    - "type=rule; path=rules/LDVH-ENTRY.md; purpose=LDVH 产品资产维护入口薄引用目标; status=required"
     - "type=skill; path=skills/ldvh-git-commit/SKILL.md; purpose=需要在环境中验证 Skill 可发现或可手动等价执行时的固定 Skill 资产; status=optional_by_environment"
     - "type=hook; path=hooks/ldvh-hooks.yaml; purpose=需要在环境中验证 Hook registry 可被调用或接入时的固定 Hook 资产; status=optional_by_environment"
     - "type=code; path=code/specs_validate.py assurance-report; purpose=聚合 active specs 的规范保障要求，作为环境落地投影的动态需求输入; status=required"
@@ -469,6 +469,6 @@ LDVH 提供插件方式和 Rules 方式两种接入路径，由用户根据环�
 2. 需要确认是否由 Code 增加正式的环境落地投影命令，把 `assurance-report`、`assurance-plan`、06.Att.05/06、固定资产和环境候选矩阵合成为机器可读投影；
 3. 需要确认是否由 Code 增加环境入口候选文本、薄引用正文、AGENTS 指向、Hook 配置和投影行回指的机械检查；
 4. 需要确认 Codex App 当前版本的 AGENTS、config、hooks、trust、matcher 和 Hook 返回语义；
-5. 需要评估本文 active 后是否触发 `rules/LDVH-WORKSPACE-ENTRY.md` 和 `rules/LDVH-MAINTAINER-ENTRY.md` 的入口表达同步；
+5. 需要评估本文 active 后是否触发 `rules/LDVH-ENTRY.md` 和 `rules/LDVH-ENTRY.md` 的入口表达同步；
 6. 需要补充动态投影、静态清单反例、入口写入、Hook 检查和验证声明的正反样例测试，并按 08 确认验证声明边界；
 7. 需要根据 `spark-0022` 和 `spark-0024` 判断是否形成后续 WorkCase。
