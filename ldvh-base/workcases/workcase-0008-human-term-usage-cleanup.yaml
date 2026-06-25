@@ -3,12 +3,12 @@ type: workcase
 title: “人工”用语清理与执行主体命名治理
 goal: |
   承接 spark-0026，对 LDVH 中“人工”、Human、Human 确认、手动、AI、Code、Web 等执行主体表达做完整治理：清理推荐表达、吸收式处理历史工作对象中的旧表达、改名 legacy 检测标记，并把主体命名原则沉淀到 active specs，确保后续不得再出现主语不清晰或主体错误的用法。
-status: human_closure_confirming
+status: closed
 created: '2026-06-25T03:30:52+08:00'
-updated: '2026-06-25T05:06:00+08:00'
+updated: '2026-06-26T05:54:52+08:00'
 priority: P0
 plan_confirmed_at: '2026-06-25T03:30:52+08:00'
-review_requested_at: ''
+review_requested_at: '2026-06-26T05:54:52+08:00'
 closure_requested_at: '2026-06-25T05:06:00+08:00'
 description: |
   本 WorkCase 是 spark-0026 的并行执行线程 C 承接对象。任务要求先分类，不机械全局替换；真实 Human 介入、授权、确认、取舍保留或改为 Human/Human Gate；AI 回读、原文核对、文件事实源核对改为明确核对动作；命令行或环境操作改为手动命令、手动步骤或环境接入；Code 机械校验改为 Code/测试/确定性校验；含混或会触发 Human Gate 的只记录，不擅自改。
@@ -540,7 +540,14 @@ orchestration:
       revision_history_refs: []
       summary: |
         已吸收既有完成后复核和本轮 Pascal 只读复核、重检结论。本轮点名残留对象均已完成语义改写；Pascal 发现的 WorkCase stale 记录已按 required_changes 修正，并在重检中通过。当前可保持 `human_closure_confirming`，等待 Human Gate 判断是否关闭；不得直接写入 `closed`。
-    human_closure_confirmation: ""
+    human_closure_confirmation:
+      decision: close
+      confirmed_at: '2026-06-26T05:54:52+08:00'
+      confirmer: human
+      scope: |
+        Human 已确认 workcase-0008 可以关闭。
+      summary: |
+        Human 接受当前事实源校验、结果复核和主体命名治理结果，确认本 WorkCase 以 completed 结果关闭.
 verification_evidence: |
   ## 验证计划
 
@@ -593,8 +600,8 @@ closure_evidence: |
   ## 结论
 
   可提交 Human 关闭确认，但尚未关闭。Human Gate 需确认是否接受剩余旧词仅作为任务标题、原称说明、废止表达、legacy marker 或输入样本保留。
-closure_outcome: ""
-closed_at: ""
+closure_outcome: completed
+closed_at: '2026-06-26T05:54:52+08:00'
 residual_risks:
   - 剩余“人工”命中仍存在于 workcase-0008 任务标题/治理说明、spark-0025/spark-0026/workcase-0005 的旧表达原称、01.Att.08 禁止项、Code legacy marker 或测试输入样本中；这些为可追溯治理语境，不作为当前有效主体表达。
   - Human Gate 尚未完成关闭确认；不得填写 `closure_outcome`、`closed_at` 或 `result_review.human_closure_confirmation`。
