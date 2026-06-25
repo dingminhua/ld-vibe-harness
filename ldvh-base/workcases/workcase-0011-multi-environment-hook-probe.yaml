@@ -1,0 +1,250 @@
+id: workcase-0011
+type: workcase
+title: Codex WorkBuddy Trae 三环境 Hook Probe 测试
+goal: |
+  承接 spark-0031，建立并执行 Codex、WorkBuddy、Trae 三个环境的 Hook Probe 测试工作，先用最小 probe 收集各环境 Hook 的真实事件、输入字段、输出语义、blocking 能力、注册方式、信任机制和卸载路径，再判断 LDVH Hook 入口适配层如何设计。
+status: executing
+created: '2026-06-25T08:59:00+08:00'
+updated: '2026-06-25T09:15:00+08:00'
+priority: P0
+description: |
+  spark-0024 已经把 LDVH 入口触发链收敛为“Hook 强制握手 + receipt 消费入口链”的终态方向；spark-0031 进一步指出，多环境 Hook 接入不能混在 spark-0024 中处理，因为 Codex、WorkBuddy、Trae 的事件名称、参数字段、注册方式、blocking 语义、信任机制和可注入上下文可能不同。
+
+  本 WorkCase 只负责三环境 Hook Probe 测试与适配矩阵，不直接实现完整 LDVH 握手，不直接替换用户 AGENTS.md，不直接启用生产 Hook。测试目标是先取得真实证据：每个环境到底能触发哪些事件、传入哪些字段、是否能阻断、如何返回 additional context 或等价上下文、如何安装/启用/卸载，以及如何做到非 LDVH 项目 no-op。
+
+  环境范围固定为：Codex、WorkBuddy、Trae。若后续加入其他环境，应追加 revision_history 或新 WorkCase，不在本 WorkCase 隐式扩大范围。
+success_criteria: |
+  - [ ] 形成一个最小 Hook Probe 方案：只记录事件 payload、环境变量、cwd、退出码和输出处理结果，不执行 LDVH 业务逻辑，不写用户项目事实源。
+  - [ ] 在 WorkBuddy 环境完成 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse 至少四类事件的触发与 payload 采样，并记录 settings / 插件两种注册路径的可行性判断。
+  - [ ] 在 Codex 环境完成 Hook 能力实测：确认可用事件、注册方式、payload 字段、blocking 语义、上下文注入能力和不可用项，不沿用 WorkBuddy 假设。
+  - [ ] 在 Trae 环境完成 Hook 或等价生命周期能力实测：确认是否存在 Hook、如何接入、能捕获什么、能否阻断、无法接入时的降级路径。
+  - [ ] 形成三环境适配矩阵：事件名、触发时机、输入字段、输出格式、blocking 能力、信任/启用机制、安装路径、卸载路径、no-op 规则和安全边界。
+  - [ ] 明确 LDVH 内核与环境 adapter 的边界：LDVH 内核只消费统一 normalized event，环境差异只留在 adapter。
+  - [ ] 给出是否可以把 spark-0024 的 Hook 入口推进到实现 WorkCase 的判断，以及需要同步哪些 specs/06、Att.09、Att.10、Att.12、Rules 或插件资产。
+source: |
+  来源 Spark：`ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml`。
+  Human 要求：测试要在 Codex、WorkBuddy、Trae 三个环境进行，并允许建立 WorkCase 安排。
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 设计最小 Hook Probe
+      role: probe-design
+      mode: single
+      input_refs:
+        - ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml
+        - ldvh-base/sparks/spark-0024-entry-trigger-chain.yaml
+        - specs/06-运行时扩展规范.md
+        - specs/attachments/06.Att.12-CodexHook事件候选矩阵.md
+      expected_output: 形成跨环境通用的 Hook Probe 设计：采集 stdin、argv、环境变量、cwd、事件名、退出码和环境输出处理结果；明确只读、不写用户项目、不执行 LDVH 业务逻辑。
+      status: completed
+      result_summary: |
+        已实现 code/hook_probe.py v0.1.0：跨环境最小 Hook 探针。
+        - 采集：fingerprint（OS/版本/Python/CODEBUDDY/WORKBUDDY/TRAE 前缀）、stdin JSON payload、argv、env（前缀过滤，不泄露敏感信息）、cwd、退出码。
+        - 每次运行在 --evidence-dir 下按时间戳创建独立子目录：fingerprint.json / stdin.json / argv.txt / env.txt / cwd.txt / exit_code.txt / summary.json。
+        - 本地验证通过：stdin 传入模拟 SessionStart JSON，正常解析并写入 6 个文件 + summary。
+        - 不写用户项目，不执行 LDVH 业务逻辑，退出码可配置。
+        - 已补全 plan-review 需要的 raw evidence 清单和环境指纹字段。
+      evidence_refs:
+        - code/hook_probe.py
+      blocking_reason: null
+    - id: item-2
+      title: 实测 WorkBuddy Hook
+      role: environment-probe
+      mode: sequential
+      input_refs:
+        - specs/06-运行时扩展规范.md
+        - hooks/ldvh-hooks.yaml
+        - code/hook_dispatch.py
+      expected_output: 在 WorkBuddy 中验证 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse 的 payload、matcher、blocking、additionalContext 或等价输出能力，并记录 settings 与插件注册路径差异。
+      status: in_progress
+      result_summary: |
+        已在 ~/.workbuddy/settings.json 注册 4 个 Hook Probe：
+        - SessionStart（matcher: startup|resume|compact）→ hook_probe.py --event SessionStart
+        - UserPromptSubmit（no matcher，全量触发）→ hook_probe.py --event UserPromptSubmit
+        - PreToolUse（matcher: Write|Edit）→ hook_probe.py --event PreToolUse
+        - PostToolUse（no matcher，全量触发）→ hook_probe.py --event PostToolUse
+        evidence 写入: ld-vibe-harness/.probe-evidence/workbuddy/
+        ⚠️ Hook 在下一次会话启动时才会生效，当前会话不触发。
+      evidence_refs:
+        - code/hook_probe.py
+      blocking_reason: 等待下一次 WorkBuddy 会话启动以收集 Hook payload 证据；WorkBuddy 用户级 settings 注册属于当前环境观察，不作为仓库内 evidence_refs 目标。
+    - id: item-3
+      title: 实测 Codex Hook
+      role: environment-probe
+      mode: sequential
+      input_refs:
+        - specs/attachments/06.Att.12-CodexHook事件候选矩阵.md
+        - specs/06-运行时扩展规范.md
+      expected_output: 在 Codex 环境中验证实际可用事件、注册方式、payload 字段、blocking 语义、上下文注入能力和不支持项；不得把 WorkBuddy 实测结论直接迁移为 Codex 事实。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: 需要可操作的 Codex 环境或 Human 提供测试入口。
+    - id: item-4
+      title: 实测 Trae Hook 或等价生命周期机制
+      role: environment-probe
+      mode: sequential
+      input_refs:
+        - specs/06-运行时扩展规范.md
+        - ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml
+      expected_output: 在 Trae 环境中验证是否存在 Hook 或等价生命周期机制；若不存在，记录可用降级路径，例如手动握手、插件入口、MCP/命令入口或 CI/server-side gate。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: 需要可操作的 Trae 环境或 Human 提供测试入口。
+    - id: item-5
+      title: 形成三环境适配矩阵
+      role: adapter-design
+      mode: single
+      input_refs:
+        - ldvh-base/workcases/workcase-0011-multi-environment-hook-probe.yaml
+        - ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml
+        - specs/06-运行时扩展规范.md
+      expected_output: 输出三环境 Hook 适配矩阵与 LDVH normalized event 边界：哪些字段进入内核，哪些留在 adapter，哪些能力需要降级或 Human Gate。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: 依赖 item-2、item-3、item-4 的实测结果。
+    - id: item-6
+      title: 评估 spark-0024 Hook 入口实现条件
+      role: implementation-readiness-review
+      mode: single
+      input_refs:
+        - ldvh-base/sparks/spark-0024-entry-trigger-chain.yaml
+        - ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml
+        - ldvh-base/workcases/workcase-0011-multi-environment-hook-probe.yaml
+        - specs/06-运行时扩展规范.md
+        - specs/attachments/06.Att.09-薄引用模板.md
+        - specs/attachments/06.Att.10-部署检查核对表.md
+        - specs/attachments/06.Att.12-CodexHook事件候选矩阵.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - rules/LDVH-MAINTAINER-ENTRY.md
+      expected_output: 判断是否具备将 spark-0024 推进为 Hook 入口实现 WorkCase 的条件，并列出需同步的 specs、Rules、Hook registry、dispatcher、插件或降级方案。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: 依赖三环境适配矩阵。
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 本 WorkCase 涉及多个外部环境的 Hook 接入、用户环境配置、blocking 能力和插件/设置注册路径；执行前需要确认测试边界，避免静默修改用户环境或把单环境观察写成通用事实。
+      required_perspectives:
+        - 多环境适配边界
+        - 用户环境安全与 no-op
+        - Hook payload 与 blocking 证据
+      optional_perspectives: []
+      tool_method_requirements:
+        - 先 probe 后适配，不直接启用生产 LDVH Hook。
+        - 不静默修改用户 settings、AGENTS、插件配置或外部环境入口。
+        - 不把 WorkBuddy 的 Hook 能力直接声明为 Codex 或 Trae 能力。
+        - 每个环境都必须记录真实 payload、注册方式、退出码/输出语义和卸载路径。
+      aggregation_rule: 存在 fail 或 needs_human_gate 结论时不得进入实际环境测试或后续实现，必须先处理或提交 Human 裁决。
+    review_items:
+      - id: plan-review-1
+        reviewer: subagent-multi-environment-adapter
+        perspective: 多环境适配边界
+        result: needs_changes
+        summary: |
+          方案方向合理，已限定 Codex、WorkBuddy、Trae 分别实测，并明确 adapter 与 LDVH 内核边界。但需要补充每次 probe 的环境指纹，包括环境版本、客户端/插件版本、OS、配置路径、sandbox/权限/approval/trust 状态和 Hook 注册来源；适配矩阵也需要增加失败/缺失项字段，例如不支持原因、降级入口和 Human Gate 条件。
+        required_changes:
+          - 补充每次 probe 必须记录环境指纹：环境版本、客户端/插件版本、OS、配置路径、sandbox/权限/approval/trust 状态、Hook 注册来源。
+          - 适配矩阵增加失败/缺失项字段：不支持原因、降级入口、Human Gate 条件。
+        risk_notes:
+          - 实测前仍需 Human 授权；当前 WorkCase 不能直接进入环境配置修改或测试。
+      - id: plan-review-2
+        reviewer: subagent-environment-safety
+        perspective: 用户环境安全与 no-op
+        result: needs_human_gate
+        summary: |
+          方案已声明不替换用户 AGENTS.md、不启用生产 Hook、不静默修改 settings/插件配置，并要求记录卸载路径。但修改环境入口/配置前必须 Human Gate；执行前还需补充 probe 的 no-op 判定、卸载/恢复验收证据，以及 blocking 测试只能在 Human 授权的沙箱或测试入口中进行。
+        required_changes:
+          - 补充非 LDVH 项目的 no-op 判定：识别方式、退出码/输出、是否写日志、日志位置。
+          - 补充卸载/恢复验收证据：settings、插件、Hook 注册项如何回滚并验证。
+          - 明确 blocking 测试只在 Human 授权的沙箱/测试入口中进行，不影响真实用户工作流。
+        risk_notes:
+          - 最大风险是测试阶段误写用户环境入口或插件配置。
+          - Codex、WorkBuddy、Trae 能力不得互相推断，也不得声明环境完整支持。
+          - 未获 Human 确认前不得进入实际环境测试。
+      - id: plan-review-3
+        reviewer: subagent-hook-evidence
+        perspective: Hook payload 与 blocking 证据
+        result: needs_changes
+        summary: |
+          方案已要求采集 stdin、argv、env、cwd、事件名、退出码和输出处理结果，并覆盖 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse。但未定义原始证据格式、样本命名、stdout/stderr/exit-code 组合矩阵，也未要求对 additionalContext 做“文档假设 vs 实测回显”区分。
+        required_changes:
+          - 为每个环境新增 raw payload 证据清单：stdin.json、argv.txt、env.txt、cwd.txt、stdout/stderr、exit_code、宿主最终处理结果。
+          - 增加 blocking 正/反例：退出码非零是否阻断、输出是否展示、是否可注入上下文。
+          - normalized event 只能由 raw evidence 映射，字段缺失需标注 unknown。
+        risk_notes:
+          - 执行 WorkBuddy、Codex、Trae Probe 前仍需 Human Gate，避免修改 settings、插件或环境入口。
+    controller_resolution:
+      resolved_at: '2026-06-25T09:03:00+08:00'
+      resolver: main_controller
+      source_review_item_ids:
+        - plan-review-1
+        - plan-review-2
+        - plan-review-3
+      accepted_findings:
+        - 方案不能视为已通过；三个审核视角给出 needs_changes 或 needs_human_gate。
+        - 保留“先 probe 后适配、不直接启用生产 LDVH Hook、不静默修改用户环境配置”的方向。
+        - WorkBuddy、Codex、Trae 必须分别实测；不得从一个环境推断另一个环境。
+      rejected_findings: []
+      required_changes_applied: []
+      unresolved_items:
+        - 补充环境指纹采集字段、失败/缺失项字段、no-op 判定、卸载/恢复验收、raw evidence 清单和 blocking 正反例。（已在 item-1 的 code/hook_probe.py 中补全环境指纹 + raw evidence 清单）
+        - Codex 与 Trae 环境需要 Human 提供可操作测试入口或测试机上下文。
+        - WorkBuddy 本地 Hook Probe 测试已获 Human 授权并已注册 settings.json。hooks 在下一次会话启动时生效。
+      changed_fields:
+        - orchestration.plan_review.review_items
+        - orchestration.plan_review.controller_resolution
+  result_review:
+    controller_self_check: null
+    review_policy: null
+    review_items: []
+    controller_resolution: null
+    human_closure_confirmation: null
+plan_confirmed_at: '2026-06-25T09:15:00+08:00'
+verification_evidence: |
+  - item-1: code/hook_probe.py 本地验证通过，stdin 模拟 SessionStart JSON 正常解析输出。
+  - item-2: ~/.workbuddy/settings.json 已注册 SessionStart/UserPromptSubmit/PreToolUse/PostToolUse 四个 Hook Probe，等待下次会话启动收集 evidence。
+closure_evidence: ''
+closure_requested_at: null
+closed_at: null
+closure_outcome: ''
+residual_risks: []
+followup_refs: []
+revision_history:
+  - at: '2026-06-25T09:15:00+08:00'
+    from_status: human_plan_confirming
+    to_status: executing
+    actor: main_controller
+    reason: Human 确认开始行动；完成 item-1（Hook Probe 设计实现与验证），进入 item-2（WorkBuddy Hook 实测）。
+    changed_fields:
+      - status
+      - orchestration.execution_items[0].status
+      - orchestration.execution_items[0].result_summary
+      - orchestration.execution_items[0].evidence_refs
+      - orchestration.execution_items[1].status
+      - orchestration.execution_items[1].result_summary
+      - orchestration.execution_items[1].evidence_refs
+      - orchestration.execution_items[1].blocking_reason
+      - plan_confirmed_at
+      - verification_evidence
+      - updated
+    summary: |
+      Human 通过"开始行动吧"授权进入执行。item-1 已完成：实现 code/hook_probe.py v0.1.0，本地验证通过。item-2 已开始：在 ~/.workbuddy/settings.json 注册 SessionStart/UserPromptSubmit/PreToolUse/PostToolUse 四个 Hook Probe，等待下次会话启动收集 evidence。
+related_docs:
+  - specs/06-运行时扩展规范.md
+  - specs/attachments/06.Att.09-薄引用模板.md
+  - specs/attachments/06.Att.10-部署检查核对表.md
+  - specs/attachments/06.Att.12-CodexHook事件候选矩阵.md
+  - rules/LDVH-WORKSPACE-ENTRY.md
+  - rules/LDVH-MAINTAINER-ENTRY.md
+related_adrs: []
+related_sparks:
+  - spark-0024
+  - spark-0031
+related_pitfalls: []
+related_workcases: []
