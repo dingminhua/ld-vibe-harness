@@ -104,7 +104,7 @@ AI 进入 LDVH 维护入口后，应按以下顺序启动：
 | specs 写入前检查 | `python3 code/specs_validate.py preflight --target-path <path>` | 只读提示 Human Gate、Git 追溯、同步影响和固定 Rules 资产影响；不授权写入 |
 | specs 综合检查 | `python3 code/specs_validate.py all --fail-on-diagnostics` | 执行 active specs 综合校验 |
 | LDVH Git 提交准备 | `specs/31-git-commit-action-Git提交行动编排.md`、`ldvh-git-commit` Skill、`python3 code/commit_validate.py --check-message-file <message-file>` | 按 31 的行动流程和 07 的 commit message 契约拆分、编写、预检并创建提交 |
-| Rules 环境入口接入 | 按 `specs/06-运行时扩展规范.md` §4.1-§4.4 执行 | 官方维护 Codex App 适配路径；默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口 |
+| Rules 环境入口接入 | 按 `specs/06-运行时扩展规范.md` §7 执行 | LDVH 提供插件方式和 Rules 方式两种接入方式；按目标环境 AI Hook 能力生成对应入口文本，由用户自行加入环境规则入口 |
 
 工具输出、知识地图投影和读取建议只作为导航、聚合和诊断结果，不替代权威文件原文。当工具不可用、输出无法回指事实源、结果与原文冲突或当前场景超出工具能力时，应报告问题原因，并退回 Git 文件事实源、对应规范和临时核对动作。若 active specs、产品资产文件、Rules 入口和知识地图投影冲突，优先级为 active specs 与 Git 文件事实源、产品资产文件、Rules 入口、知识地图投影。
 
