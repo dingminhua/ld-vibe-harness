@@ -71,7 +71,7 @@ FORMAT_HELP = """\
   type      必填。变更类型闭集见 {commit_type_spec_path}：{valid_types}
   scope     可选。影响范围优先使用 {commit_scope_spec_path} 推荐值：{valid_scopes}
   !         可选。表示破坏性变更
-  description 必填。简短描述，不超过 72 字符
+  description 必填。简短说明（至少包含一个中文字符），不超过 72 字符
   body      条件必填，条件见 {commit_body_spec_path}。推荐使用结构化语义清单说明动机、关键变更、影响边界、验证结论与风险
   footer    可选，字段契约见 {commit_field_spec_path}。遵守 Conventional Commits / git trailer，例如 BREAKING CHANGE、Refs、Co-authored-by
 
@@ -339,13 +339,16 @@ def check_commit(commit: CommitInfo, touched_files: Optional[list[str]] = None) 
         ))
 
     # 检查是否包含中文（error，强制）
-    # description + body 全文
     if m:
-        content_to_check = description_val + "\n" + commit.body
-        if not HAS_CHINESE_RE.search(content_to_check):
+        if not HAS_CHINESE_RE.search(description_val):
             issues.append(Issue(
                 commit.hash, "error",
-                "commit message 必须包含中文字符（description 和 body 部分），type 和 scope 不要求中文"
+                "commit message 首行 description 必须包含中文字符，type 和 scope 不要求中文"
+            ))
+        if commit.body and not HAS_CHINESE_RE.search(commit.body):
+            issues.append(Issue(
+                commit.hash, "error",
+                "commit message body 必须包含中文字符（当 body 存在时）"
             ))
 
     issues.extend(check_body_quality(commit))
