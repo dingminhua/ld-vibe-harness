@@ -113,7 +113,18 @@ def _read_session_receipt(session_id: str) -> Optional[dict[str, Any]]:
 
 
 def _find_governed_config(cwd: Path) -> Optional[Path]:
-    """Walk upward from *cwd* looking for LDVH-GOVERNED-PROJECTS.yaml."""
+    """Find LDVH-GOVERNED-PROJECTS.yaml from cwd or related Git worktrees."""
+    direct = _walk_for_governed_config(cwd)
+    if direct is not None:
+        return direct
+    for worktree_root in _git_worktree_roots(cwd):
+        config = _walk_for_governed_config(worktree_root)
+        if config is not None:
+            return config
+    return None
+
+
+def _walk_for_governed_config(cwd: Path) -> Optional[Path]:
     for parent in [cwd, *cwd.parents]:
         config = parent / "LDVH-GOVERNED-PROJECTS.yaml"
         if config.is_file():
@@ -121,26 +132,110 @@ def _find_governed_config(cwd: Path) -> Optional[Path]:
     return None
 
 
-def _cwd_in_governed_project(cwd: Path, config_path: Path) -> bool:
-    """Return True when *cwd* is inside a directory listed in the config."""
+def _git_text(cwd: Path, args: list[str]) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(cwd), *args],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return ""
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+def _git_common_dir(cwd: Path) -> str:
+    return _git_text(cwd, ["rev-parse", "--path-format=absolute", "--git-common-dir"])
+
+
+def _git_remote_url(cwd: Path) -> str:
+    return _git_text(cwd, ["remote", "get-url", "origin"])
+
+
+def _git_worktree_roots(cwd: Path) -> list[Path]:
+    output = _git_text(cwd, ["worktree", "list", "--porcelain"])
+    roots: list[Path] = []
+    for line in output.splitlines():
+        if not line.startswith("worktree "):
+            continue
+        raw = line.removeprefix("worktree ").strip()
+        if raw:
+            roots.append(Path(raw))
+    return roots
+
+
+def _project_git_value(entry: dict[str, Any], key: str) -> str:
+    git_info = entry.get("git")
+    if not isinstance(git_info, dict):
+        return ""
+    value = git_info.get(key, "")
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _governed_project_match(cwd: Path, config_path: Path) -> dict[str, Any]:
+    """Return deterministic governed-project match metadata for *cwd*."""
+    base = {
+        "governed": False,
+        "governed_via": "",
+        "governed_project_id": "",
+        "governed_project_path": "",
+        "git_common_dir": "",
+        "git_remote_url": "",
+    }
     try:
         data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
     except (OSError, yaml.YAMLError):
-        return False
+        return base
     projects = data.get("projects", [])
     if not isinstance(projects, list):
-        return False
-    cwd_resolved = cwd.resolve()
+        return base
+
+    try:
+        cwd_resolved = cwd.resolve()
+    except OSError:
+        cwd_resolved = cwd
+    current_common_dir = _git_common_dir(cwd_resolved)
+    current_remote_url = _git_remote_url(cwd_resolved)
+    base["git_common_dir"] = current_common_dir
+    base["git_remote_url"] = current_remote_url
+
     for entry in projects:
         if not isinstance(entry, dict):
             continue
         proj_path = entry.get("path", "")
-        if not proj_path:
+        if not isinstance(proj_path, str) or not proj_path.strip():
             continue
         resolved = (config_path.parent / proj_path).resolve()
+        project_id = entry.get("id", "")
+        match = {
+            **base,
+            "governed": True,
+            "governed_project_id": project_id.strip() if isinstance(project_id, str) else "",
+            "governed_project_path": str(resolved),
+        }
         if cwd_resolved == resolved or str(cwd_resolved).startswith(str(resolved) + os.sep):
-            return True
-    return False
+            match["governed_via"] = "path"
+            return match
+
+        registered_common_dir = _project_git_value(entry, "common_dir")
+        if current_common_dir and registered_common_dir and Path(current_common_dir) == Path(registered_common_dir).expanduser():
+            match["governed_via"] = "git.common_dir"
+            return match
+
+        project_common_dir = _git_common_dir(resolved)
+        if current_common_dir and project_common_dir and Path(current_common_dir) == Path(project_common_dir):
+            match["governed_via"] = "git.common_dir"
+            return match
+
+    return base
+
+
+def _cwd_in_governed_project(cwd: Path, config_path: Path) -> bool:
+    """Return True when *cwd* is inside a directory listed in the config."""
+    return bool(_governed_project_match(cwd, config_path).get("governed"))
 
 
 def _run_knowledge_map(start_node: str, task_type: str) -> dict[str, Any]:
@@ -229,7 +324,8 @@ def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules") -> 
             "message": "未找到 LDVH-GOVERNED-PROJECTS.yaml，no-op",
         }
 
-    governed = _cwd_in_governed_project(cwd, config)
+    project_match = _governed_project_match(cwd, config)
+    governed = bool(project_match.get("governed"))
     result = {
         "governed": governed,
         "cwd": str(cwd),
@@ -239,6 +335,10 @@ def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules") -> 
     if not governed:
         result["message"] = "当前 cwd 未命中管辖项目，no-op"
         return result
+    for key in ("governed_via", "governed_project_id", "governed_project_path", "git_common_dir", "git_remote_url"):
+        value = project_match.get(key)
+        if value:
+            result[key] = value
 
     # Run knowledge-map to get the entry chain receipt
     km = _run_knowledge_map("rules/LDVH-RUNTIME-PROTOCOL.md", "rules_entry")
@@ -291,7 +391,8 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
                           "cwd": str(cwd), "trigger_source": trigger_source}))
         return 0
 
-    governed = _cwd_in_governed_project(cwd, config)
+    project_match = _governed_project_match(cwd, config)
+    governed = bool(project_match.get("governed"))
     if not governed:
         print(json.dumps({"blocked": False, "reason": "当前 cwd 未命中管辖项目，no-op",
                           "cwd": str(cwd), "trigger_source": trigger_source}))
@@ -306,6 +407,10 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         "governed": True,
         "trigger_source": trigger_source,
     }
+    for key in ("governed_via", "governed_project_id", "governed_project_path", "git_common_dir", "git_remote_url"):
+        value = project_match.get(key)
+        if value:
+            result[key] = value
     receipt = _read_session_receipt(session_id)
     if receipt:
         receipt_result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}

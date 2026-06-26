@@ -55,6 +55,26 @@ projects:
     assert checker.governed_projects_check_root(tmp_path) == []
 
 
+def test_governed_projects_git_identity_passes(tmp_path):
+    write_governed_projects(
+        tmp_path,
+        """
+product_name: LD Vibe Harness
+product_description: |
+  管理多个项目。
+projects:
+  - id: app-web
+    path: /Users/me/projects/app-web
+    git:
+      common_dir: /Users/me/projects/app-web/.git
+      remote_url: https://github.com/example/app-web.git
+      default_branch: main
+""",
+    )
+
+    assert checker.governed_projects_check_root(tmp_path) == []
+
+
 def test_governed_projects_product_fields_are_required(tmp_path):
     write_governed_projects(tmp_path, "projects: []")
 
@@ -108,6 +128,29 @@ projects:
 
     assert "GOVERNED_PROJECTS_ROOT_FIELD_FORBIDDEN" in codes
     assert "GOVERNED_PROJECT_FIELD_FORBIDDEN" in codes
+
+
+def test_governed_projects_git_extra_fields_are_reported(tmp_path):
+    write_governed_projects(
+        tmp_path,
+        """
+product_name: LD Vibe Harness
+product_description: |
+  管理当前工作区项目。
+projects:
+  - id: app
+    name: App
+    description: App project
+    path: /tmp/app
+    git:
+      common_dir: /tmp/app/.git
+      status: active
+""",
+    )
+
+    codes = governed_project_codes(checker.governed_projects_check_root(tmp_path))
+
+    assert "GOVERNED_PROJECT_GIT_FIELD_FORBIDDEN" in codes
 
 
 def test_governed_projects_script_fast_path_outputs_text(tmp_path):

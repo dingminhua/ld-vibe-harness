@@ -10,8 +10,9 @@ from .common import Issue
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 GOVERNED_PROJECTS_FILENAME = "LDVH-GOVERNED-PROJECTS.yaml"
 GOVERNED_PROJECTS_ROOT_FIELDS = {"product_name", "product_description", "projects"}
-GOVERNED_PROJECTS_ITEM_FIELDS = {"id", "name", "description", "path"}
+GOVERNED_PROJECTS_ITEM_FIELDS = {"id", "name", "description", "path", "git"}
 GOVERNED_PROJECTS_REQUIRED_ITEM_FIELDS = {"id", "path"}
+GOVERNED_PROJECTS_GIT_FIELDS = {"common_dir", "remote_url", "default_branch"}
 
 
 def check_root(root):
@@ -67,10 +68,23 @@ def check_root(root):
             issues.append(Issue(path, 1, f"projects[{index}] 缺少字段: {field}", code="GOVERNED_PROJECT_FIELD_MISSING"))
         for field in extra_fields:
             issues.append(Issue(path, 1, f"projects[{index}] 不得包含字段: {field}", code="GOVERNED_PROJECT_FIELD_FORBIDDEN"))
-        for field in sorted(GOVERNED_PROJECTS_ITEM_FIELDS & item_fields):
+        scalar_fields = (GOVERNED_PROJECTS_ITEM_FIELDS - {"git"}) & item_fields
+        for field in sorted(scalar_fields):
             value = project.get(field)
             if not isinstance(value, str) or not value.strip():
                 issues.append(Issue(path, 1, f"projects[{index}].{field} 必须是非空字符串", code="GOVERNED_PROJECT_FIELD_INVALID"))
+        if "git" in item_fields:
+            git_info = project.get("git")
+            if not isinstance(git_info, dict):
+                issues.append(Issue(path, 1, f"projects[{index}].git 必须是对象", code="GOVERNED_PROJECT_GIT_INVALID"))
+            else:
+                git_fields = set(git_info)
+                for field in sorted(git_fields - GOVERNED_PROJECTS_GIT_FIELDS):
+                    issues.append(Issue(path, 1, f"projects[{index}].git 不得包含字段: {field}", code="GOVERNED_PROJECT_GIT_FIELD_FORBIDDEN"))
+                for field in sorted(GOVERNED_PROJECTS_GIT_FIELDS & git_fields):
+                    value = git_info.get(field)
+                    if not isinstance(value, str) or not value.strip():
+                        issues.append(Issue(path, 1, f"projects[{index}].git.{field} 必须是非空字符串", code="GOVERNED_PROJECT_GIT_FIELD_INVALID"))
         project_id = project.get("id")
         if isinstance(project_id, str) and project_id.strip():
             normalized_id = project_id.strip()
