@@ -26,7 +26,7 @@ v2_spec:
     - "specs/08-测试基础规范.md"
     - "specs/attachments/07.Att.01-事实归属矩阵.md"
     - "specs/attachments/07.Att.02-Commit-Type枚举表.md"
-    - "specs/attachments/07.Att.03-Commit-Scope推荐表.md"
+    - "specs/attachments/07.Att.03-Commit-Scope允许枚举表.md"
     - "specs/attachments/07.Att.04-Commit-Body必填条件表.md"
     - "specs/attachments/07.Att.05-Commit-Message样例集.md"
     - "specs/attachments/07.Att.06-过程输出回写核对表.md"
@@ -271,14 +271,14 @@ commit message 字段表由 `attachments/07.Att.08-Commit-Message字段表.md` �
 commit message 契约包括：
 
 1. `type` 必填，使用 `attachments/07.Att.02-Commit-Type枚举表.md` 定义的严格闭集；
-2. `scope` 可选，优先使用 `attachments/07.Att.03-Commit-Scope推荐表.md` 定义的推荐值，最多一个；
+2. `scope` 可选，但一旦填写，必须使用 `attachments/07.Att.03-Commit-Scope允许枚举表.md` 定义的允许枚举，最多一个；
 3. `description` 必填，LDVH 自身项目应使用简体中文简短说明；`description` 至少应包含 1 个中文字符；
 4. `body` 按 `attachments/07.Att.04-Commit-Body必填条件表.md` 条件必填，用简体中文说明动机、关键变更、影响边界、验证结论和风险后续；body 存在时也应包含中文；
 5. `footer` 可选，遵守 Conventional Commits 和 git trailer 风格；
 6. `Human-Gate:`、`Verification:`、`Risk:` 等 LDVH 私有 trailer 不得替代 body 语义清单；
 7. 工作对象相关提交由 Git history、touched files、对象 ID、规范编号、路径和正文自然文本派生，不手写维护。
 
-提交首行只表达本次提交的单一主意图和主承载域。不得使用多个 type、多个 scope、斜杠拼接、逗号拼接或“全都写上”的方式规避取舍。多个彼此独立的目的应拆分为多个提交；一个原子闭环可以跨 specs、Code、Web、docs 或测试文件，但首行仍只能选择一个主 type 和零个或一个主 scope。
+提交首行只表达本次提交的单一主意图和主承载域。不得使用多个 type、多个 scope、斜杠拼接、逗号拼接、枚举外 type/scope 或“全都写上”的方式规避取舍。多个彼此独立的目的应拆分为多个提交；一个原子闭环可以跨 specs、Code、Web、docs 或测试文件，但首行仍只能选择一个主 type 和零个或一个主 scope。若当前 scope 枚举没有精确覆盖本次主承载域，应选择最接近的已有 scope 完成本次提交，并在提交后显式告知 Human，建议评估是否补充 `07.Att.03` scope 枚举。
 
 对象、规范、Code 和 Web 的关联提交应由 Git history、touched files、对象 ID、规范编号、路径、commit description/body 自然文本、时间线和必要临时筛选派生。关联提交派生优先级由 `attachments/07.Att.09-关联提交派生优先级表.md` 承载。不得为了追溯强制 AI 补写固定 `Refs:` 字段，不得把关联提交派生结果回写为对象手写字段。
 
@@ -310,7 +310,7 @@ Web 可以展示提交记录、最近提交、关联提交和事实源变更影�
 |---|---|---|
 | `attachments/07.Att.01-事实归属矩阵.md` | 典型事实归属矩阵 | 事实源原则、目录治理规则、迁移流程 |
 | `attachments/07.Att.02-Commit-Type枚举表.md` | commit type 严格闭集 | 提交流程、scope、body 条件 |
-| `attachments/07.Att.03-Commit-Scope推荐表.md` | commit scope 推荐值 | type 闭集、对象字段、Web 标签实现 |
+| `attachments/07.Att.03-Commit-Scope允许枚举表.md` | commit scope 允许枚举 | type 闭集、对象字段、Web 标签实现 |
 | `attachments/07.Att.04-Commit-Body必填条件表.md` | commit body 必填条件与正文质量标准 | commit type/scope 枚举、提交样例 |
 | `attachments/07.Att.05-Commit-Message样例集.md` | commit message 样例 | 新规则、新枚举或流程要求 |
 | `attachments/07.Att.06-过程输出回写核对表.md` | 过程输出回写辅助核对表 | 回写原则、事实模型字段或行动流程 |

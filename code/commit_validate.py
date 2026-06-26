@@ -19,7 +19,7 @@ from typing import Optional
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 COMMIT_SPEC_PATH = "specs/07-事实源边界与Git追溯规范.md"
 COMMIT_TYPE_SPEC_PATH = "specs/attachments/07.Att.02-Commit-Type枚举表.md"
-COMMIT_SCOPE_SPEC_PATH = "specs/attachments/07.Att.03-Commit-Scope推荐表.md"
+COMMIT_SCOPE_SPEC_PATH = "specs/attachments/07.Att.03-Commit-Scope允许枚举表.md"
 COMMIT_BODY_SPEC_PATH = "specs/attachments/07.Att.04-Commit-Body必填条件表.md"
 COMMIT_FIELD_SPEC_PATH = "specs/attachments/07.Att.08-Commit-Message字段表.md"
 
@@ -29,8 +29,8 @@ VALID_TYPES = {
     "refactor", "revert", "style", "test",
 }
 
-# specs/attachments/07.Att.03-Commit-Scope推荐表.md scope 推荐值（非强制）
-RECOMMENDED_SCOPES = {
+# specs/attachments/07.Att.03-Commit-Scope允许枚举表.md scope 允许枚举
+VALID_SCOPES = {
     "specs", "docs", "rules", "code", "web", "tests", "config",
     "workcase", "adr", "spark", "study", "pitfall",
     "studies", "sources", "runtime",
@@ -69,7 +69,7 @@ FORMAT_HELP = """\
 
 各部分说明：
   type      必填。变更类型闭集见 {commit_type_spec_path}：{valid_types}
-  scope     可选。影响范围优先使用 {commit_scope_spec_path} 推荐值：{valid_scopes}
+  scope     可选。影响范围必须属于 {commit_scope_spec_path} 允许枚举：{valid_scopes}
   !         可选。表示破坏性变更
   description 必填。简短说明（至少包含一个中文字符），不超过 72 字符
   body      条件必填，条件见 {commit_body_spec_path}。推荐使用结构化语义清单说明动机、关键变更、影响边界、验证结论与风险
@@ -77,6 +77,7 @@ FORMAT_HELP = """\
 
 注意：
   footer 不得替代 body 的语义清单；LDVH 不定义 Human-Gate、Verification、Risk 作为标准必填 trailer
+  type/scope 不得超出枚举；若确无合适 scope，应先使用最接近的已有 scope 完成提交，并在提交后显式建议 Human 补充 scope 枚举。
 
 示例：
   docs(specs): 采用约定式提交规范
@@ -97,7 +98,7 @@ FORMAT_HELP = """\
     commit_body_spec_path=COMMIT_BODY_SPEC_PATH,
     commit_field_spec_path=COMMIT_FIELD_SPEC_PATH,
     valid_types=", ".join(sorted(VALID_TYPES)),
-    valid_scopes=", ".join(sorted(RECOMMENDED_SCOPES)),
+    valid_scopes=", ".join(sorted(VALID_SCOPES)),
 )
 
 
@@ -304,11 +305,12 @@ def check_commit(commit: CommitInfo, touched_files: Optional[list[str]] = None) 
             f"type 建议使用小写: {raw_type_val}"
         ))
 
-    # 检查 scope（推荐值，warning）
-    if scope_val and scope_val not in RECOMMENDED_SCOPES:
+    # 检查 scope（允许枚举，error）
+    if scope_val and scope_val not in VALID_SCOPES:
         issues.append(Issue(
-            commit.hash, "warning",
-            f"scope '{scope_val}' 不在推荐枚举中 ({', '.join(sorted(RECOMMENDED_SCOPES))})"
+            commit.hash, "error",
+            f"scope '{scope_val}' 不在允许枚举中 ({', '.join(sorted(VALID_SCOPES))})；"
+            f"请使用最接近的已有 scope，提交后显式建议 Human 评估是否新增 scope 枚举"
         ))
 
     # 检查 subject 长度
