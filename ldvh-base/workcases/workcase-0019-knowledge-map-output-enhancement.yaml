@@ -281,13 +281,13 @@ orchestration:
               - ldvh-base/workcases/workcase-0019-knowledge-map-output-enhancement.yaml
               - code/hook_dispatch.py
               - code/spec_checks/knowledge_map.py
-      controller_resolution:
-        resolved_at: '2026-06-27T07:35:00+08:00'
-        resolved_by: main_controller
-        summary: |
-          五轮审查(Explore-1/5/6/9/11)全部完成。4 项 required changes 已吸收。
-          方案可进入执行，建议按 Explore-6 顺序 #5→#1→#6→#3→#4→#2 推进。
-          Explore-11 的 3 项建议在执行时可优化，不阻塞推进。
+    controller_resolution:
+      resolved_at: '2026-06-27T07:35:00+08:00'
+      resolved_by: main_controller
+      summary: |
+        五轮审查(Explore-1/5/6/9/11)全部完成。4 项 required changes 已吸收。
+        方案可进入执行，建议按 Explore-6 顺序 #5→#1→#6→#3→#4→#2 推进。
+        Explore-11 的 3 项建议在执行时可优化，不阻塞推进。
   result_review:
     orchestration_owner: main_controller
     workflow_ref: null
