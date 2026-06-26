@@ -6,7 +6,7 @@ goal: |
 status: human_closure_confirming
 created: '2026-06-25T08:59:00+08:00'
 updated: '2026-06-26T05:20:07+08:00'
-priority: P0
+priority: P1
 description: |
   spark-0024 已经把 LDVH 入口触发链收敛为"Hook 强制握手 + receipt 消费入口链"的终态方向；spark-0031 进一步指出，多环境 Hook 接入不能混在 spark-0024 中处理，因为 Codex、WorkBuddy、Trae 的事件名称、参数字段、注册方式、blocking 语义、信任机制和可注入上下文可能不同——且 spark-0031 已确认 Trae 不支持 AI Hook，与 Codex/WorkBuddy 的 AI Hook 能力属于不同消费路径。
 

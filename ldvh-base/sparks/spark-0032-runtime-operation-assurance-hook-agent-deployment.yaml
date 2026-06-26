@@ -1,0 +1,71 @@
+id: spark-0032
+type: spark
+title: Hook 与 Agent 双层部署保障：确保 LDVH 正常运作
+status: pending
+created: '2026-06-26T10:30:00+08:00'
+updated: '2026-06-26T10:30:00+08:00'
+description: |
+  Human 明确收敛当前最高优先级：不是继续展开其它 P0 议题，而是先确保 LDVH 在真实环境中能正常运作。该问题分为两个层面：
+
+  1. **Hook 层保障**：支持 AI Hook 的环境应通过插件或等价环境入口触发 Runtime Protocol，使 SessionStart / PreToolUse 等生命周期事件能稳定进入 `code/hook_dispatch.py`，生成或查验 receipt，并让 AI 按 read_plan 与 STOP 条件行动。Git `commit-msg` 属于 Git 提交层机制，不是 AI Hook，但它也是 LDVH 正常运作的提交规范保障，应由 native Git hook 或后续 server-side gate 兜住真实提交路径。
+  2. **Agent 层保障**：不支持 AI Hook 的环境、子 Agent、线程恢复、上下文压缩或插件不可用场景，仍必须通过 Rules / Agent / instructions 等入口消费同一份 Runtime Protocol。Agent 层要解决的是 AI 执行者是否真的读取协议、触发握手、按事实源行动、在 Human Gate 和 STOP 点停住，而不是只证明某个 hook 脚本执行过。
+
+  本 Spark 作为当前唯一 P0，用来聚焦“Hook / Agent 两种机制如何共同确保 LDVH 正常运作，以及这些机制如何部署到目标环境”。在该主线完成前，其它原 P0 Spark 和 WorkCase 先调整为 P1，避免优先级噪声稀释当前主线。
+
+  当前已具备的事实基础：
+
+  - `code/hook_dispatch.py` 已能识别 Codex payload，并通过 `~/.codex/ldvh/session-receipts/<session_id>.json` 保留会话 receipt。
+  - 当前仓库已安装 native Git `commit-msg` hook，真实 `git commit` 会调用 `git.commit-msg` 事件并执行 `code/commit_validate.py`。
+  - `specs/06`、`rules/LDVH-RUNTIME-PROTOCOL.md`、`hooks/ldvh-hooks.yaml` 和 `specs/33` 已记录 Hook / Rules 双路径与提交层 hook 的边界。
+  - `workcase-0011` 已完成多环境 Hook Probe，但它只证明环境能力和适配矩阵，不等于 Hook / Agent 双层保障已经部署闭环。
+
+  后续应优先转化为一个或多个 WorkCase，先收掉以下问题：
+
+  1. Codex 插件方式是否已在当前用户环境稳定启用、受信任、可在新对话中自动产生 receipt，并能被 AI 消费；
+  2. WorkBuddy / Claude Code 插件资产是否具备可安装、可卸载、可验证的最小分发形态；
+  3. Trae 等无 AI Hook 环境的 Rules / Agent 入口是否能稳定让 AI 自觉执行 Runtime Protocol；
+  4. 子 Agent 和新线程是否有明确的 Agent 层入口，不依赖主线程记忆；
+  5. native Git `commit-msg`、后续 CI / server-side gate 与 AI Hook 的边界是否在安装和验证流程中清晰呈现；
+  6. 安装验收是否覆盖“脚本触发、receipt 存在、AI 消费、事实源校验、提交规范兜底、卸载/禁用边界”这一整条链。
+source: conversation
+priority: P0
+source_detail: |
+  Human 要求把当前主线收敛为两个层面：Hook 与 Agent 如何确保 LDVH 正常运作，以及这些能力如何部署到环境；同时要求建立一个新的 P0 Spark，并把其它 P0 Spark 和 WorkCase 调整为 P1。
+evolution:
+  - at: '2026-06-26T10:30:00+08:00'
+    summary: |
+      新建当前唯一 P0 Spark。优先级重排后，旧 P0 Spark / WorkCase 暂调为 P1，本 Spark 聚焦 Hook 层、Agent 层和部署落地三者的闭环验收。核心判断是：LDVH 正常运作不能只靠 Hook 脚本触发，也不能只靠 AI 自觉；必须同时证明环境触发链、Agent 消费链、事实源校验链和提交规范链都能工作。
+input_refs:
+  - spark-0022
+  - spark-0024
+  - spark-0027
+  - spark-0031
+  - workcase-0011
+  - specs/06-运行时扩展规范.md
+  - specs/31-git-commit-action-Git提交行动编排.md
+  - specs/33-ldvh-install-action-LDVH安装行动编排.md
+  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - hooks/ldvh-hooks.yaml
+  - code/hook_dispatch.py
+  - code/install_git_hooks.py
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workcases:
+  - workcase-0011
+related_adrs: []
+related_studies: []
+related_sparks:
+  - spark-0022
+  - spark-0024
+  - spark-0027
+  - spark-0031
+related_docs:
+  - specs/06-运行时扩展规范.md
+  - specs/31-git-commit-action-Git提交行动编排.md
+  - specs/33-ldvh-install-action-LDVH安装行动编排.md
+  - specs/attachments/06.Att.15-环境Hook事件映射表.md
+  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - hooks/ldvh-hooks.yaml
+  - code/hook_dispatch.py
+  - code/install_git_hooks.py
