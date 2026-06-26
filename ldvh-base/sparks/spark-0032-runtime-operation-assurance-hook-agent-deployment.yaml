@@ -66,21 +66,9 @@ input_refs:
 resolved_to: ''
 resolved_at: ''
 discard_reason: ''
-related_workcases:
-  - workcase-0011
+related_workcases: []
 related_adrs: []
 related_studies: []
-related_sparks:
-  - spark-0022
-  - spark-0024
-  - spark-0027
-  - spark-0031
+related_sparks: []
 related_docs:
-  - specs/06-运行时扩展规范.md
-  - specs/31-git-commit-action-Git提交行动编排.md
-  - specs/33-ldvh-install-action-LDVH安装行动编排.md
   - specs/attachments/06.Att.15-环境Hook事件映射表.md
-  - rules/LDVH-RUNTIME-PROTOCOL.md
-  - hooks/ldvh-hooks.yaml
-  - code/hook_dispatch.py
-  - code/install_git_hooks.py

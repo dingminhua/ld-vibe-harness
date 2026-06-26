@@ -67,7 +67,6 @@ orchestration:
         - 生产路径不保留 probe evidence，不写用户项目事实源；no-op 由 dispatcher 读取 LDVH-GOVERNED-PROJECTS.yaml 后按 cwd 判定。
       evidence_refs:
         - code/hook_probe.py
-        - .probe-evidence/workbuddy/
         - ldvh-base/sparks/spark-0024-entry-trigger-chain.yaml
         - ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml
       blocking_reason: null
@@ -89,7 +88,6 @@ orchestration:
         - 子 Agent 不按环境 Hook 自动消费 SessionStart；主 Agent spawn 子 Agent 时应提示其走 Rules 路径自觉触发 session-start。
       evidence_refs:
         - code/hook_probe.py
-        - .probe-evidence/codex/
         - ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml
         - specs/attachments/06.Att.15-环境Hook事件映射表.md
       blocking_reason: null
