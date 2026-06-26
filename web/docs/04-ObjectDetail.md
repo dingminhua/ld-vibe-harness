@@ -37,7 +37,7 @@ YAML 源码折叠区
 - 类型标签使用对象类型颜色，显示本地化类型名；状态标签显示本地化状态名，不放在右上操作区。
 - 标题优先使用 `title_zh/title_en`，回退 `title`，再回退 ID；工作对象和普通对象标题前均使用 `ObjectTypeIcon(obj.type)` 识别对象身份。
 - WorkCase 和 Spark 如存在 `priority`，在标题行最前面展示 `P0` / `P1` / `P2` / `P3` 字符徽标，随后才是 `ObjectTypeIcon(obj.type)` 和标题；徽标使用颜色和 tooltip 表达优先级，不在头部、元信息行、正文模块或其他字段区重复展示 priority 文字 chip / 字段。
-- ID 使用 `ldvh-meta`，不做大号标题；右上角只提供 `CopyPathButton`，tooltip 为“复制对象路径”，复制 API 返回的 `data.path` / 对象 `path`，只有缺失时才降级到 `target`，不得再放状态标签或其他对象身份信息。
+- ID 使用 `ldvh-meta`，不做大号标题；右上角只提供 `CopyPathButton`，tooltip 为“复制对象路径”，复制 API 返回的 `data.path` / 对象 `path`，只有缺失时才使用 `target`，不得再放状态标签或其他对象身份信息。
 - 如对象存在 `tags`，标签应在标题下方独立成行，并位于创建/更新时间之上；标签不与时间或其他辅助属性挤在同一行。Pitfall `tags` 展示事实源英文原值，不做中文翻译。
 - 创建/更新时间在标签行下方以短标签展示，统一使用 `formatDateTime()`，格式为 `YYYY-MM-DD HH:mm`；关闭时间或必要辅助属性可在同一元信息行弱化展示，不另起 MetaChip 行。
 - 对象字段必须以对应事实模型主规范为准；只有该对象字段契约内定义的辅助属性才可在元信息行降权展示，不进入主阅读流。`priority` 只适用于 WorkCase 和 Spark，且在详情头部以字符徽标展示；importance 已由 priority 统一承载，不再作为独立字段。
@@ -95,7 +95,7 @@ WorkCase 不使用普通字段卡片堆叠，而作为“一次目标的执行�
 | 兼容检查清单字段 | `ChecklistCard` 或 `SummaryText` | 只有内容包含 `- [ ]` / `- [x]` 时才按检查清单渲染 |
 | 验证证据 | `EvidenceBlock` | Markdown 渲染，命令、路径和代码突出显示；按 05.02 四段式二级标题派生为分段证据视图 |
 | 对象 ID 引用 | `ReferenceCard` | 点击在右侧扩展阅读区打开对象；卡片内提供复制对象路径图标 |
-| 文档路径 / URL | `DocPreviewLink` | 本地 Markdown 文档和外部 URL 均优先在右侧扩展阅读区预览；复制 tooltip 分别为“复制文档路径”和“复制链接”；外部 URL 在扩展阅读区提供新标签降级入口 |
+| 文档路径 / URL | `DocPreviewLink` | 本地 Markdown 文档和外部 URL 均优先在右侧扩展阅读区预览；复制 tooltip 分别为“复制文档路径”和“复制链接”；外部 URL 在扩展阅读区提供新标签备用入口 |
 | 路径文本 | `PathText` | 等宽、可换行的路径标签 |
 | 其他短文本 | `ldvh-body` | 普通文本 |
 
@@ -146,7 +146,7 @@ Pitfall、ADR、Study 和 Spark 等非工作主线对象的长文本阅读组织
 - WorkCase、Pitfall、ADR、Study 和 Spark 必须复用详情页导出的专用阅读布局。
 - WorkCase、Pitfall、ADR、Study 和 Spark 的扩展阅读头部同样不显示状态 chip；右侧面板按详情页身份区顺序展示 `类型 + ID + 标题 + 创建/更新时间 + 复制对象路径入口`，状态由复用的语义阅读布局表达。
 - Spark 必须复用详情页专用 Spark 阅读布局，不得在 `ReadingPanel` 中维护另一套 `PREVIEW_FIELD_ORDER`、字段 label map、关联分组或独立字段渲染器。
-- 对象预览头部提供复制对象路径图标，复制 API 返回的 `data.path` / 对象 `path`，只有缺失时才降级到 `target`。
+- 对象预览头部提供复制对象路径图标，复制 API 返回的 `data.path` / 对象 `path`，只有缺失时才使用 `target`。
 - Markdown 文档预览使用 `MarkdownPreview` + `github-markdown-css`，不是手写 Markdown 标签样式。
 - Markdown 正文基准字号为 14px；表格横向滚动，代码块、引用块、任务列表由全局 Markdown 样式统一控制。
 

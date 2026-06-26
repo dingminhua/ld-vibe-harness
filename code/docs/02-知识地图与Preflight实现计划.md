@@ -15,7 +15,7 @@
 
 Code 第二版先完成两个能力：
 
-1. 知识地图只读投影：从授权输入范围解析节点、关系、来源回指和降级诊断，帮助 AI 控制读取范围和判断关联影响；
+1. 知识地图只读投影：从授权输入范围解析节点、关系、来源回指和受限诊断，帮助 AI 控制读取范围和判断关联影响；
 2. 受控写入 preflight：在写入前只读检查路径、字段、状态、Gate、事实源、Git 追溯和同步影响，帮助 AI 判断是否可以继续、暂停或交给 Human Gate。
 
 这两个能力都不得写入事实源，不得生成长期知识图缓存，不得替代 Human 判断，不得把检查通过解释为写入授权。
@@ -32,8 +32,8 @@ Code 第二版先完成两个能力：
 | runtime extensions 输入 | 显式 `runtime_extensions` 范围读取固定运行时扩展 `ldvh_asset` 自描述 | 不作为默认范围；只读生成节点和来源规范关系，不写入缓存 |
 | governed projects 输入 | 显式 `governed_projects` 范围读取 `LDVH-GOVERNED-PROJECTS.yaml` 和登记项目 `ldvh-base/` | 节点带项目命名空间；不修改项目清单、事实对象或项目 docs |
 | 知识地图查询层 | 已有 `entry`、`neighbors`、`expand`、`raw` 行为 | raw 只返回受控片段；Git history 不进入知识地图范围 |
-| 降级诊断 | 已对部分未实现范围输出 degraded 诊断 | 诊断 Schema 尚未完整统一 |
-| preflight | 已实现 `python3 code/specs_validate.py preflight --target-path <path>`，并能提示 specs/runtime extension 写入对固定 Rules 资产的同步影响、部分字段归口和知识地图上下文 | 只读诊断，不授权写入；未登记字段仍降级 |
+| 受限诊断 | 已对部分未实现范围输出 legacy `degraded` 兼容诊断 | 诊断 Schema 尚未完整统一 |
+| preflight | 已实现 `python3 code/specs_validate.py preflight --target-path <path>`，并能提示 specs/runtime extension 写入对固定 Rules 资产的同步影响、部分字段归口和知识地图上下文 | 只读诊断，不授权写入；未登记字段仍输出受限诊断 |
 
 ## 3. 不做事项
 
@@ -111,7 +111,7 @@ preflight 输出应优先给出机器可消费诊断，同时保留 Human 可读
 1. 计划提交：只新增本文和必要的 Code 文档登记；
 2. 基线测试提交：补当前 `v2-check` 行为测试，不改实现；
 3. 知识地图核心提取提交：无行为变化拆分；
-4. 知识地图 Schema 对齐提交：补字段和降级诊断；
+4. 知识地图 Schema 对齐提交：补字段和受限诊断；
 5. preflight 模块提交：只读诊断核心和测试；
 6. preflight CLI 提交：新增命令、帮助、命令表和回归入口；
 7. 文档收口提交：清理 TODO、更新 Code 结构文档和必要附件。
@@ -120,7 +120,7 @@ preflight 输出应优先给出机器可消费诊断，同时保留 Human 可读
 
 ## 9. 待确认事项
 
-1. preflight 输出状态是否采用 `pass`、`blocked`、`needs_human_gate`、`degraded` 的闭集；
+1. preflight 输出状态是否采用 `pass`、`blocked`、`needs_human_gate`、legacy `degraded` 兼容值的闭集；
 2. 第一版 preflight 是否继续只面向 LDVH 产品资产，或开始纳入管辖项目事实源的写入前检查；
 3. 是否在 Web 介入前先提供只读 JSON 输出，供 AI 和 CLI 消费。
 
@@ -128,11 +128,11 @@ preflight 输出应优先给出机器可消费诊断，同时保留 Human 可读
 
 | 日期 | 阶段 | 结果 | 验证 |
 |---|---|---|---|
-| 2026-06-23 | KM-1 基线固化 | 已补充当前 `v2-check` JSON/text 输出、relation type 过滤、raw 降级、start node 回退和非法参数诊断测试；未改变实现行为 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q`、`npm run test:code` |
-| 2026-06-23 | KM-2 核心提取 | 已将知识地图节点、边、source refs、查询层、降级投影和关系过滤提取到 `code/spec_checks/knowledge_map.py`；`v2-check` CLI 兼容入口保持不变 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q` |
+| 2026-06-23 | KM-1 基线固化 | 已补充当前 `v2-check` JSON/text 输出、relation type 过滤、raw 受限输出、start node 回退和非法参数诊断测试；未改变实现行为 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q`、`npm run test:code` |
+| 2026-06-23 | KM-2 核心提取 | 已将知识地图节点、边、source refs、查询层、受限投影和关系过滤提取到 `code/spec_checks/knowledge_map.py`；`v2-check` CLI 兼容入口保持不变 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q` |
 | 2026-06-23 | KM-3 Schema 对齐 | 已在 `knowledge_map` 输出中补齐 `schema_version`、`generated_at`、`tool`、`input_scope`、`degraded`、`diagnostics`、`source_refs`，并统一节点基础字段 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q` |
-| 2026-06-23 | KM-4 范围约束 | 已将 `history_specs_v1` 接入为合法后置范围，并对 `history_specs_v1`、`governed_projects` 输出 degraded 和 excluded input 诊断；Git history 后续明确不作为知识地图输入范围 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q` |
-| 2026-06-23 | PF-1/PF-2/PF-4/PF-5 第一版 | 已新增 `code/spec_checks/preflight.py` 和 `python3 code/specs_validate.py preflight --target-path <path>`，覆盖授权位置、操作/路径、字段/状态降级、Human Gate、Git 追溯、同步影响和失败归口；始终 `write_authorized=false` | `python3 -m pytest tests/code/specs_validate_checks/test_preflight.py -q` |
+| 2026-06-23 | KM-4 范围约束 | 已将 `history_specs_v1` 接入为合法后置范围，并对 `history_specs_v1`、`governed_projects` 输出 legacy `degraded` 兼容诊断和 excluded input 诊断；Git history 后续明确不作为知识地图输入范围 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q` |
+| 2026-06-23 | PF-1/PF-2/PF-4/PF-5 第一版 | 已新增 `code/spec_checks/preflight.py` 和 `python3 code/specs_validate.py preflight --target-path <path>`，覆盖授权位置、操作/路径、字段/状态受限诊断、Human Gate、Git 追溯、同步影响和失败归口；始终 `write_authorized=false` | `python3 -m pytest tests/code/specs_validate_checks/test_preflight.py -q` |
 | 2026-06-24 | active specs 输入范围收口 | 已将知识地图默认 input_scope 从 `specs_v2` 调整为 `active_specs`，并保留 `specs_v2` 作为兼容别名 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py tests/code/specs_validate_checks/test_preflight.py tests/code/test_specs_validate.py -q` |
 | 2026-06-24 | runtime_extensions 与 Rules 影响提示 | 已复用 `deployment_entries` 的 `ldvh_asset` 解析，新增显式 `runtime_extensions` 知识地图输入范围，并在 preflight 中提示 specs/runtime extension 写入可能影响的固定 Rules 资产 | `python3 -m pytest tests/code/specs_validate_checks/test_preflight.py tests/code/specs_validate_checks/test_v2.py tests/code/specs_validate_checks/test_deployment_entries.py -q` |
 | 2026-06-24 | knowledge-map、raw、governed_projects 与字段级 preflight | 已新增 `knowledge-map` 子命令、raw 受控原文片段、`governed_projects` 事实对象图谱投影、项目命名空间节点、缺失目标诊断、preflight 字段归口和知识地图上下文输出 | `python3 -m pytest tests/code/specs_validate_checks/test_v2.py tests/code/specs_validate_checks/test_preflight.py -q` |

@@ -435,11 +435,19 @@ verification_evidence: |
 
   ## 结论
 
-  执行项、成功标准和验证证据足以支持 workcase-0006 离开 `executing` 并进入结果自检。2026-06-25T05:07:00+08:00 的独立结果复核已补齐 `review_items`、`controller_resolution` 和关闭确认请求时间；当前可进入 `human_closure_confirming`，等待 Human 决定关闭或退回。Human 未确认前不得进入 `closed`。
+  执行项、成功标准和验证证据足以支持 workcase-0006 完成执行、结果自检、独立结果复核和 Human 关闭确认。2026-06-26T05:54:52+08:00 已写入 `closed_at` 与 `closure_outcome=completed`。
+
+  ## 后续分流
+
+  该 WorkCase 的 legacy 迁移尾巴已转为 follow-up 语义，不阻断当前关闭确认；如要继续推进实现迁移，应另起后续 WorkCase 承接。
+
+  ## 收口结果
+
+  当前收口结果为：已完成关闭；后续继续做 legacy 迁移的事项不留在本 WorkCase 主线。
 closure_evidence: |
   ## 验证计划
 
-  本轮关闭判断评估执行结果、主控自检和独立结果复核是否足以提交 Human 关闭确认；不执行 Human 关闭确认，不填写 closed 字段。
+  本轮关闭判断评估执行结果、主控自检、独立结果复核和 Human 关闭确认是否足以支撑已关闭状态。
 
   ## 验证命令
 
@@ -459,19 +467,28 @@ closure_evidence: |
 
   本轮复核判断为：workcase-0006 的执行阶段已经真实完成，执行项和成功标准与当前仓库状态一致；主控自检结论可信，独立结果复核未发现范围内硬问题。
 
-  依据 21 WorkCase 状态机，执行项全部完成后不得直接进入 `human_closure_confirming` 或 `closed`。本轮已经先具备 `result_self_checking` 的主控自检，再补齐独立 `result_review.review_items` 和 `controller_resolution`，因此可推进到 `human_closure_confirming` 等待 Human 关闭确认。Human 未确认前不得填写 `closed_at`、`closure_outcome` 或 `human_closure_confirmation`。
+  依据 21 WorkCase 状态机，本 WorkCase 已完成 `result_self_checking`、独立 `result_review.review_items`、`controller_resolution` 和 Human 关闭确认；当前 `closed_at` 与 `closure_outcome` 已与关闭结果一致。
+
+  ## 后续分流
+
+  该 WorkCase 的 legacy 迁移尾巴已转为 follow-up 语义，不阻断当前关闭确认；如要继续推进实现迁移，应另起后续 WorkCase 承接。
+
+  ## 收口结果
+
+  当前收口结果为：已完成关闭；后续继续做 legacy 迁移的事项不留在本 WorkCase 主线。
 
   ## 结论
 
-  当前关闭判断：可提交 Human 关闭确认，但不可直接关闭。若 Human 确认关闭，再填写 `closed_at`、`closure_outcome` 和 `result_review.human_closure_confirmation`；若 Human 要求补审、继续执行或修改方案，应按 21 状态机退回并追加 revision_history。
+  当前关闭判断：Human 已确认关闭，`closed_at`、`closure_outcome` 和 `result_review.human_closure_confirmation` 已完成一致化；若后续发现新问题，应另行追加 revision_history 或新承接对象。
 closure_requested_at: '2026-06-25T05:07:00+08:00'
 closed_at: '2026-06-26T05:54:52+08:00'
 closure_outcome: completed
 residual_risks:
-  - 当前仅进入 Human 关闭确认，尚未获得 Human 关闭决定；不得直接视为 closed。
+  - Human 已在 2026-06-26T05:54:52+08:00 确认关闭；历史关闭前提醒不再作为当前状态风险。
   - 知识地图任务导航在本 worktree 中因入口配置/start_node 定位受限；本轮已以原文和事实源命令兜底，但后续复核应知悉该限制。
   - "`degraded|degraded_accepted|降级` 扫描仍有 legacy compatibility、旧诊断命名、Web docs fallback 和历史实现计划命中；若后续扩大目标到文档归档或旧接口移除，需要另行决策。"
-followup_refs: []
+followup_refs:
+  - Code guard：`python3 code/specs_validate.py all --fail-on-diagnostics` 追加活跃表面旧表达检查，防止未标注的旧词回流。
 revision_history:
   - at: '2026-06-25T04:52:00+08:00'
     from_status: executing

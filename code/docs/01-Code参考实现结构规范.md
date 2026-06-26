@@ -134,7 +134,7 @@
 AI 修改 `code/` 时，应按以下顺序执行：
 
 1. 读取 `specs/04-Code确定性执行规范.md` 和本文；
-2. 定位需求来源、规则来源、输入范围、失败条件和降级方式；
+2. 定位需求来源、规则来源、输入范围、失败条件和受限/阻断处理方式；
 3. 判断能力域和实现位置；
 4. 若为 specs 校验能力，优先选择 `code/spec_checks/` 目标模块或兼容入口中的对应能力域；
 5. 先补正例、反例、边界样例、测试命令或等价验证方式；
@@ -154,7 +154,7 @@ AI 修改 `code/` 时，应按以下顺序执行：
 
 记录时应优先更新本文中最接近的章节，例如 §2 当前清单、§3 目录边界、§4.2 能力域目标模块、§4.3 防堆砌规则、§6 测试映射、§7 拆分顺序或 §8 待补齐事项。记录内容应说明当前事实、后续归属、兼容要求和必要验证方式；不得只在提交说明、聊天记录或临时任务中保留 Code 结构事实。
 
-若调整会改变上位规则、对象字段契约、状态机、Human Gate 条件、事实源归属、长期降级接受、Web/CLI 对外合同或是否继续保留兼容入口，应先回到 `specs/04-Code确定性执行规范.md` 和相关正式规范判断；仍需取舍时，应暂停请求 Human 判断，再按判断结果更新本文和必要事实源。
+若调整会改变上位规则、对象字段契约、状态机、Human Gate 条件、事实源归属、长期风险接受、Web/CLI 对外合同或是否继续保留兼容入口，应先回到 `specs/04-Code确定性执行规范.md` 和相关正式规范判断；仍需取舍时，应暂停请求 Human 判断，再按判断结果更新本文和必要事实源。
 
 ## 6. 测试映射
 
@@ -185,7 +185,7 @@ Code 参考实现测试放在 `tests/code/`。测试文件应能让 AI 直接定
 
 当实现模块拆分但 CLI 行为不变时，应保留原 CLI 集成测试，并补充必要的模块级单元测试。拆分提交不得以“只是搬文件”为理由跳过测试。
 
-`npm run test:code` 是 Code 参考实现的日常完整测试入口，必须同时执行 `tests/code` 自动化测试和 `python3 code/specs_validate.py all --fail-on-diagnostics` 综合检查。只需要快速运行 pytest 样例时使用 `npm run test:code:unit`；不得把 `test:code` 降级为仅入口加载、仅模块单元测试或不含 specs 聚合检查的烟雾测试。
+`npm run test:code` 是 Code 参考实现的日常完整测试入口，必须同时执行 `tests/code` 自动化测试和 `python3 code/specs_validate.py all --fail-on-diagnostics` 综合检查。只需要快速运行 pytest 样例时使用 `npm run test:code:unit`；不得把 `test:code` 缩减为仅入口加载、仅模块单元测试或不含 specs 聚合检查的烟雾测试。
 
 `tests/code/specs_validate_checks/` 是 `specs_validate.py` 测试的能力域拆分目录。目录名不得使用 `tests/code/spec_checks/`，避免与实现包 `code/spec_checks/` 在 pytest import 解析中发生同名包冲突。
 
