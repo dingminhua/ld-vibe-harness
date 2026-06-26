@@ -63,6 +63,7 @@ v2_action_member:
     - "type=rule; path=rules/LDVH-RUNTIME-PROTOCOL.md; purpose=Rules 方式安装的目标薄引用入口; status=required"
     - "type=code; path=code/hook_dispatch.py; purpose=安装后验证（session-start + pre-tool-use）; status=required"
     - "type=code; path=code/specs_validate.py; purpose=governed-projects 验证管辖项目配置; status=conditional"
+    - "type=code; path=code/install_git_hooks.py; purpose=可选安装 native Git commit-msg hook，防止提交信息绕过 07 校验; status=conditional"
 ```
 
 > 文件性质：03 行动编排成员。定义 AI 引导用户安装 LDVH 的行动流程。
@@ -241,6 +242,24 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 
 安装连通后，继续 §9 配置首个管辖项目。
 
+### 8.3 提交层 Hook 验证
+
+Git `commit-msg` 属于 Git 提交层机制，不属于 AI Hook，也不参与插件 / Rules 方式的分流。但 LDVH 自身仓库或用户明确要求接入的管辖项目，应可选择安装 native Git hook，让真实 `git commit` 在创建提交前调用 `git.commit-msg` 事件。
+
+安装命令：
+
+```bash
+python3 code/install_git_hooks.py install
+```
+
+安装后检查：
+
+```bash
+python3 code/install_git_hooks.py status
+```
+
+预期：输出 `installed:`，且 `.git/hooks/commit-msg` 调用 `code/hook_dispatch.py run git.commit-msg --message-file "$1"`。若目标仓库已有非 LDVH `commit-msg` hook，安装器必须停止并提示，不得静默覆盖。
+
 ---
 
 ## 9. 首次配置管辖项目
@@ -329,6 +348,7 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 | 插件安装后 Hook 不触发 | 环境未信任、插件未启用、cwd 不在管辖项目 | §8 验证步骤 |
 | PreToolUse 报 `未找到 active Hook event` | 环境 payload 字段未被 dispatcher 归一化 | 同步 `code/hook_dispatch.py` payload 解析与 06.Att.15 |
 | 新会话看不到 SessionStart 输出 | 环境不展示 Hook stdout 或子线程不触发 SessionStart | 检查 session receipt；必要时由 PreToolUse 补建非阻断 receipt |
+| 不合规 commit message 仍能提交 | native Git `commit-msg` 未安装、被覆盖或被 `--no-verify` 绕过 | 执行 `python3 code/install_git_hooks.py status`；必要时重新安装并做真实 commit smoke |
 | AI 未读取薄引用 | 入口路径不存在或不被环境读取 | §6.2 定位环境目录入口 |
 | 配置后 governed=false | LDVH-GOVERNED-PROJECTS.yaml 路径错误或未写 | §9.4 配置后验证 |
 | session-start 返回 non-zero | knowledge-map 不可用、管辖配置异常 | `hook_dispatch.py` 输出 |
@@ -382,6 +402,7 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 | Rules 安装后验证 | `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <管辖项目>` |
 | Codex Hook payload 验证 | `printf '{"hook_event_name":"PreToolUse","cwd":"<管辖项目>","tool_name":"Bash","session_id":"smoke"}' \| python3 code/hook_dispatch.py` |
 | Codex receipt 验证 | 检查 `~/.codex/ldvh/session-receipts/<session_id>.json` 中 `result.governed=true` 与 `result.receipt=ok` |
+| native Git commit hook 验证 | `python3 code/install_git_hooks.py status`，并用临时提交消息确认不合规 message 被真实 `git commit` 阻断 |
 | 薄引用路径存在 | 检查 `<环境目录>/AGENTS.md` 或等价入口是否包含 `LDVH-RUNTIME-PROTOCOL.md` 绝对路径 |
 | 管辖项目配置 | `python3 code/specs_validate.py governed-projects` |
 
