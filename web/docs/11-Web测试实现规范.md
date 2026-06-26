@@ -45,7 +45,7 @@ Web 测试按以下优先级选择：
 
 1. API contract 测试优先于页面测试；
 2. 高风险 API 优先覆盖 `POST /api/sparks`、ProjectFiles、Objects 和提交记录页；
-3. 页面测试优先覆盖 ProjectFiles、ObjectDetail、ObjectList 和 Dashboard 的空态、错误态、降级态、只读边界和来源呈现；
+3. 页面测试优先覆盖 ProjectFiles、ObjectDetail、ObjectList 和 Dashboard 的空态、错误态、受限态、只读边界和来源呈现；
 4. 组件测试优先覆盖状态徽章、对象卡片、Markdown 阅读、复制按钮、Confirm UI 占位和 i18n 映射；
 5. E2E、视觉回归和复杂浏览器流程后置，不作为当前 Web API contract 测试的前置条件。
 
@@ -72,7 +72,7 @@ Web 测试夹具应遵守：
 
 1. 夹具只覆盖被验证行为所需的最小事实源字段；
 2. 夹具中的对象状态、字段名、枚举和路径必须来自 specs 或现有事实源契约，不得凭页面实现创造第二契约；
-3. API mock 应保留来源路径、同步状态、错误态或降级状态字段，以验证 Web 不把派生视图当成事实源；
+3. API mock 应保留来源路径、同步状态、错误态或受限状态字段，以验证 Web 不把派生视图当成事实源；
 4. 测试不得依赖真实用户环境、全局本机路径或未声明的外部服务；
 5. 截图、覆盖率、trace 和缓存仅作为临时运行产物，不进入长期事实源。
 

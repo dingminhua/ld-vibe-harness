@@ -334,7 +334,7 @@ def _fast_all_main(argv):
 
     specs_dir = args.specs_dir or "specs"
     v2_checks.PROJECT_ROOT = project_root
-    return v2_checks.v2_check_main(
+    v2_result = v2_checks.v2_check_main(
         args.root,
         specs_dir,
         "text",
@@ -343,6 +343,13 @@ def _fast_all_main(argv):
         query_layer="entry",
         project_scope="current_project",
     )
+    if v2_result != 0:
+        return v2_result
+    from spec_checks import consistency as consistency_checks
+
+    consistency_checks.PROJECT_ROOT = project_root
+    consistency_checks.SPECS_DIR = project_root / "specs"
+    return consistency_checks.consistency_active_surface_terminology_main(None)
 
 
 if __name__ == "__main__" and len(sys.argv) > 1:
@@ -1577,7 +1584,7 @@ def main(argv=None):
         if args.paths:
             return doc_main(args.paths)
         specs_dir = args.specs_dir or "specs"
-        return v2_check_main(
+        v2_result = v2_check_main(
             args.root,
             specs_dir,
             "text",
@@ -1586,6 +1593,9 @@ def main(argv=None):
             query_layer="entry",
             project_scope="current_project",
         )
+        if v2_result != 0:
+            return v2_result
+        return consistency_checks.consistency_active_surface_terminology_main(None)
 
 
 if __name__ == "__main__":

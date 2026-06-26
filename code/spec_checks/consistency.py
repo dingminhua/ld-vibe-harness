@@ -78,6 +78,68 @@ CONSISTENCY_FORBIDDEN_TEXT_RULES = (
         "message": "Agent 定义应以 02 术语为准，其他文档不得使用二次定义式表达",
     },
 )
+CONSISTENCY_ACTIVE_SURFACE_PATHS = (
+    "README.md",
+    "specs",
+    "rules",
+    "code",
+    "web/src",
+    "web/api",
+    "web/docs",
+    "hooks",
+)
+CONSISTENCY_ACTIVE_SURFACE_SUFFIXES = {".md", ".yaml", ".yml", ".py", ".ts", ".tsx", ".js", ".json"}
+CONSISTENCY_ACTIVE_SURFACE_SKIP_PARTS = {
+    ".git",
+    ".pytest_cache",
+    ".probe-evidence",
+    "__pycache__",
+    "dist",
+    "history",
+    "node_modules",
+    "public",
+}
+CONSISTENCY_GOVERNED_TERMS = ("降级", "人工")
+CONSISTENCY_GOVERNED_TERM_ALLOWED_CONTEXT = (
+    "legacy",
+    "LEGACY",
+    "compatibility",
+    "fallback",
+    "marker",
+    "DEPRECATED",
+    "OVERREACH",
+    "历史",
+    "旧",
+    "原称",
+    "废止",
+    "不推荐",
+    "不得",
+    "不要",
+    "不应",
+    "不能",
+    "不再",
+    "禁止",
+    "兼容",
+    "输入样本",
+    "检测",
+    "扫描",
+    "命中",
+    "保留",
+    "残留",
+    "后续",
+    "受限",
+    "底部抽屉",
+    "移动端",
+    "响应式",
+    "复制",
+    "弱标签",
+    "SLO",
+    "风险分级",
+    "Human Gate",
+    "必须暂停",
+    "禁止写法",
+    "适配降级",
+)
 
 # 04 系列文件预期清单（文件名 → 预期标题，包含实际空格）
 CONSISTENCY_04_SERIES_FILES = {
@@ -169,6 +231,82 @@ def consistency_forbidden_text_issues(paths):
                     )
                 )
     return issues
+
+
+def consistency_active_surface_paths(paths=None):
+    raw_paths = paths
+    if raw_paths is None:
+        raw_paths = [PROJECT_ROOT / item for item in CONSISTENCY_ACTIVE_SURFACE_PATHS]
+    files = []
+    for raw_path in raw_paths:
+        path = Path(raw_path)
+        if not path.is_absolute():
+            path = PROJECT_ROOT / path
+        if path.is_file():
+            candidates = [path]
+        elif path.is_dir():
+            candidates = [child for child in path.rglob("*") if child.is_file()]
+        else:
+            continue
+        for candidate in candidates:
+            rel_parts = set(candidate.parts)
+            if rel_parts & CONSISTENCY_ACTIVE_SURFACE_SKIP_PARTS:
+                continue
+            if candidate.suffix not in CONSISTENCY_ACTIVE_SURFACE_SUFFIXES:
+                continue
+            files.append(candidate)
+    return sorted(set(files))
+
+
+def consistency_line_has_allowed_governed_term_context(line, context=""):
+    # legacy governed-term detector: avoid flagging the word boundary helper itself.
+    if "个人" in line and "人工" not in line.replace("个人", ""):
+        return True
+    combined = f"{context}\n{line}"
+    return any(token in combined for token in CONSISTENCY_GOVERNED_TERM_ALLOWED_CONTEXT)
+
+
+def consistency_active_surface_terminology_issues(paths=None):
+    issues = []
+    for path in consistency_active_surface_paths(paths):
+        in_code = False
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except UnicodeDecodeError:
+            continue
+        for line_number, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if path.suffix == ".md" and (stripped.startswith("```") or stripped.startswith("~~~")):
+                in_code = not in_code
+                continue
+            if in_code or not stripped:
+                continue
+            matched_terms = [term for term in CONSISTENCY_GOVERNED_TERMS if term in stripped]
+            if not matched_terms:
+                continue
+            context = "\n".join(lines[max(0, line_number - 6): min(len(lines), line_number + 5)])
+            if consistency_line_has_allowed_governed_term_context(stripped, context):
+                continue
+            issues.append(
+                Issue(
+                    path,
+                    line_number,
+                    f"旧表达缺少废止/历史/兼容/受限等上下文标记: {', '.join(matched_terms)}",
+                    code="ACTIVE_SURFACE_GOVERNED_TERM_CONTEXT_MISSING",
+                )
+            )
+    return issues
+
+
+def consistency_active_surface_terminology_main(paths=None):
+    issues = consistency_active_surface_terminology_issues(paths)
+    if issues:
+        print(f"活跃表面旧表达检查失败，共 {len(issues)} 个问题：")
+        for issue in issues:
+            print(f"- {issue.format(PROJECT_ROOT)}")
+        return 1
+    print("活跃表面旧表达检查通过。")
+    return 0
 
 
 CONSISTENCY_WORKFLOW_REQUIRED_SECTIONS = {
@@ -680,6 +818,7 @@ def consistency_check(paths=None):
     issues.extend(consistency_bare_term_issues(check_paths))
     issues.extend(consistency_deprecated_expression_issues(check_paths))
     issues.extend(consistency_forbidden_text_issues(check_paths))
+    issues.extend(consistency_active_surface_terminology_issues(paths))
     issues.extend(consistency_04_series_issues())
     issues.extend(consistency_index_overrun_issues(check_paths))
     return issues

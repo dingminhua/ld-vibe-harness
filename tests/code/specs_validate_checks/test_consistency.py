@@ -427,6 +427,36 @@ Agent 是某种能力。
     assert any(issue.code == "FORBIDDEN_AGENT_SECOND_DEFINITION" for issue in issues)
 
 
+def test_consistency_reports_active_surface_governed_term_without_context(tmp_path):
+    write_md(
+        tmp_path / "README.md",
+        """
+# 测试文档
+
+工具不可用时走人工降级检查。
+""",
+    )
+
+    issues = consistency_checks.consistency_active_surface_terminology_issues([str(tmp_path)])
+
+    assert any(issue.code == "ACTIVE_SURFACE_GOVERNED_TERM_CONTEXT_MISSING" for issue in issues)
+
+
+def test_consistency_allows_legacy_governed_term_context(tmp_path):
+    write_md(
+        tmp_path / "README.md",
+        """
+# 测试文档
+
+旧表达“人工降级检查”仅作为废止表达引用；当前写法为 AI 回读核对和能力受限说明。
+""",
+    )
+
+    issues = consistency_checks.consistency_active_surface_terminology_issues([str(tmp_path)])
+
+    assert issues == []
+
+
 # ── 04 系列文件存在性/标题检查 ────────────────────────────────────
 
 

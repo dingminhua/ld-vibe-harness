@@ -565,7 +565,7 @@ verification_evidence: |
 
   ## 验证结果
 
-  - `python3 code/fact_cli.py show workcase-0008` 可正常读取当前 WorkCase；状态为 `human_closure_confirming`。
+  - `python3 code/fact_cli.py show workcase-0008` 可正常读取当前 WorkCase；状态已完成关闭。
   - 事实源全量校验通过：files=49，errors=0，warnings=0。
   - 定向 pytest 通过：79 passed。
   - active specs 综合检查通过：diagnostics=0。
@@ -575,7 +575,7 @@ verification_evidence: |
 
   ## 结论
 
-  本轮事实源校验、定向测试、specs 综合检查和 diff 检查均通过。WorkCase 可停在 `human_closure_confirming` 等待 Human 关闭确认；不得直接写入 `closed`。
+  本轮事实源校验、定向测试、specs 综合检查和 diff 检查均通过。Human 已确认关闭，当前关闭结果为 `completed`。
 closure_evidence: |
   ## 验证计划
 
@@ -595,16 +595,24 @@ closure_evidence: |
 
   item-6 历史工作对象旧表达吸收式改写已补行动完成；item-9 扩展方案子 Agent 审核和 item-10 完成后子 Agent 结果复核已完成。本轮新增结果自检已记录，Pascal 独立结果复核先发现 stale 记录并给出 fail，主控修复后 Pascal 重检为 pass，无 required_changes。
 
-  21 WorkCase 状态机要求执行完成后先进入结果自检、结果复核，再进入 Human 关闭确认；不得直接关闭。本 WorkCase 当前状态应为 `human_closure_confirming`，等待 Human 判断是否关闭。`closure_outcome`、`closed_at` 和 `result_review.human_closure_confirmation` 必须保持空值，直到 Human 明确确认关闭。
+  21 WorkCase 状态机要求执行完成后先进入结果自检、结果复核，再进入 Human 关闭确认；本 WorkCase 已完成这些步骤并由 Human 确认关闭。`closure_outcome`、`closed_at` 和 `result_review.human_closure_confirmation` 当前应保持与关闭事实一致。
+
+  ## 后续分流
+
+  剩余“人工”命中属于对象级渐进治理语境，不需要在本 WorkCase 主线继续推进；如需继续处理，应由新的治理 WorkCase 或相关条目承接。
+
+  ## 收口结果
+
+  本次收口结果为：当前目标已收口干净，剩余词项仅保留为治理语境 follow-up。
 
   ## 结论
 
-  可提交 Human 关闭确认，但尚未关闭。Human Gate 需确认是否接受剩余旧词仅作为任务标题、原称说明、废止表达、legacy marker 或输入样本保留。
+  Human 已确认关闭；剩余旧词仅作为任务标题、原称说明、废止表达、legacy marker 或输入样本保留，不作为当前有效主体表达。
 closure_outcome: completed
 closed_at: '2026-06-26T05:54:52+08:00'
 residual_risks:
   - 剩余“人工”命中仍存在于 workcase-0008 任务标题/治理说明、spark-0025/spark-0026/workcase-0005 的旧表达原称、01.Att.08 禁止项、Code legacy marker 或测试输入样本中；这些为可追溯治理语境，不作为当前有效主体表达。
-  - Human Gate 尚未完成关闭确认；不得填写 `closure_outcome`、`closed_at` 或 `result_review.human_closure_confirmation`。
+  - Human Gate 已完成关闭确认；后续风险转为活跃表面旧表达检查是否持续阻止新旧词回流。
   - 知识地图任务导航命令在当前 worktree 中可能因缺少外层 `LDVH-GOVERNED-PROJECTS.yaml` 或起点定位返回 limited；已按入口要求回退到外层管辖配置、active specs 和工作对象文件事实源核对。
 revision_history:
   - at: '2026-06-25T04:56:00+08:00'
