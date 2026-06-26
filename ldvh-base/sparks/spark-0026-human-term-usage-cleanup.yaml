@@ -49,7 +49,7 @@ description: |
   - 每个问题都应保留来源路径、语境和建议替代词。
   - 若修改会影响 specs、Rules 入口、Human Gate、行动编排或事实源边界，应先回到对应规范和 Human 确认。
 source: conversation
-priority: P0
+priority: P1
 source_detail: 用户在 D04 讨论中指出“人工”一词会把 AI 拟人化，要求另外创建 Spark，负责后续检查和清理“人工”这个词的用法，并先建立主要议题供其他线程调查。
 evolution:
   - at: '2026-06-25T00:29:32+08:00'

@@ -6,7 +6,7 @@ goal: |
 status: subagents_plan_reviewing
 created: '2026-06-26T06:18:56+08:00'
 updated: '2026-06-26T06:18:56+08:00'
-priority: P0
+priority: P1
 description: |
   当前 WorkCase 关闭实践中，尾巴容易在 close 之后失去追踪。用户明确要求：新增设计不能只写进 21，而是要形成整个 WC 生命周期的统一收口规范，并推动已有 WC 进行回填。核心要求是：
   1. 每个 WorkCase 在关闭确认前必须拥有“后续分流 / 收口结果”段落；

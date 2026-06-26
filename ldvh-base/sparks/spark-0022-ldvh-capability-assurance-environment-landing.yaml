@@ -25,7 +25,7 @@ description: |
 
   Rules 环节已拆出 planned 行动编排成员：`specs/30-rules-entry-sync-review-Rules入口同步审查.md`。该成员只处理 specs、附件或行动成员主文件变化影响固定 Rules 入口表达时的同步审查；Skill / Hook / Agent / Code 的能力承载需求和环境入口落地仍应后续另行分流。
 source: conversation
-priority: P0
+priority: P1
 source_detail: Human 在 WorkCase 清空、知识地图治理提交后指出：基础保障仍未落地，尤其是 Rules、LDVH 能力保障责任、specs 修改后的 Rules 同步责任，以及能力落到具体环境中的责任链；要求先记录为之后的主要工作。
 evolution: []
 input_refs:
