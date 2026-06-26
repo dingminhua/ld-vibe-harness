@@ -33,7 +33,7 @@ VALID_TYPES = {
 RECOMMENDED_SCOPES = {
     "specs", "docs", "rules", "code", "web", "tests", "config",
     "workcase", "adr", "spark", "study", "pitfall",
-    "studies", "sources",
+    "studies", "sources", "runtime",
 }
 
 # specs/attachments/07.Att.08-Commit-Message字段表.md: description 推荐不超过 72 字符

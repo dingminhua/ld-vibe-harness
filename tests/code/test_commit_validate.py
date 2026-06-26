@@ -134,6 +134,18 @@ def test_scope_not_recommended_warns():
     assert any("scope" in i.message and "不在推荐枚举" in i.message for i in warnings)
 
 
+def test_runtime_scope_is_recommended():
+    commit = make_commit(
+        subject="fix(runtime): 强化运行时门禁",
+        body="说明本次运行时协议与 Hook 门禁调整内容。",
+    )
+
+    issues = checker.check_commit(commit)
+    warnings = [i for i in issues if i.level == "warning"]
+
+    assert not any("scope" in i.message and "不在推荐枚举" in i.message for i in warnings)
+
+
 def test_subject_too_long():
     long_subject = "a" * 100
     commit = make_commit(subject=f"docs(specs): {long_subject}", body="说明")
