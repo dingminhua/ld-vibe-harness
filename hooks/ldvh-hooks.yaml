@@ -23,7 +23,7 @@ ldvh_asset:
     - "acknowledge-read-plan: AI 回读 P0/P1 后写入 read_plan_consumed 证据"
     - "pre-tool-use: 工作对象管辖判定、receipt 查验、必要时补建 receipt；写类工具缺少 target 或 read_plan_consumed 时阻断，找到已有 receipt 时写入 last_pre_tool_use 可观测字段"
     - "git.commit-msg: 以 repo root、Git common-dir 和 staged paths 判定提交工作对象；提交前先检查 read_plan_consumed，再执行底层 Code validator 输出和退出码"
-  handoff: "环境适配层和 AI 自觉消费层均通过 code/hook_dispatch.py 执行；Hook 路径走 stdin（trigger_source=hook），Rules 路径走 CLI（--trigger-source rules）。各 hook 的 dispatcher_command 是外部入口；command 是 dispatcher 完成 canonical context、管辖判定和门禁后调用的底层动作，不得作为环境入口绕过 dispatcher。失败时回到调用方修改输入或按对应规范回读事实源。"
+  handoff: "环境适配层和 AI 自觉消费层均通过 code/hook_dispatch.py 执行；Hook 路径走 stdin（trigger_source=hook），且环境插件 / wrapper 必须保留并透传原始 payload，Rules 路径走 CLI（--trigger-source rules）。各 hook 的 dispatcher_command 是外部入口；command 是 dispatcher 完成 canonical context、管辖判定和门禁后调用的底层动作，不得作为环境入口绕过 dispatcher。失败时回到调用方修改输入或按对应规范回读事实源。"
   verification:
     - "python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <cwd> --target <target>"
     - "python3 code/hook_dispatch.py run acknowledge-read-plan --trigger-source rules --cwd <cwd>"

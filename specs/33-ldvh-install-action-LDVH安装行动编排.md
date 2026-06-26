@@ -161,9 +161,9 @@ AI 可以询问用户以下问题，或根据上下文推断：
 
 AI 引导用户执行：
 
-1. **安装 LDVH 插件**：按环境自身的插件管理方式安装 LDVH 插件。插件内含 `hooks/hooks.json` 或等价 Hook 配置。
+1. **安装 LDVH 插件**：按环境自身的插件管理方式安装 LDVH 插件。插件内含 `hooks/hooks.json` 或等价 Hook 配置，且其 hook adapter / wrapper 必须先读取原始 stdin payload，再把 payload 透传给 `code/hook_dispatch.py`，不能只转发事件名。
 2. **信任/授权**：环境弹出信任对话框时，用户确认信任。
-3. **验证**：重启环境或开启新会话后，环境自动触发 SessionStart Hook，`hook_dispatch.py` 执行 `session-start`。项目目录直接 smoke 或 workspace root + target-first 验收命中管辖项目时，应生成 `governed=true` + receipt；Codex 等支持 `session_id` 的环境可通过 `~/.codex/ldvh/session-receipts/<session_id>.json` 复核，不要求对话界面一定展示 Hook stdout。
+3. **验证**：重启环境或开启新会话后，先做一次 payload 透传烟测，确认 `payload_present=true` 且 dispatcher 能从 payload 恢复 `tool_input` / `target` / `cwd`；随后再执行 SessionStart Hook 验收。项目目录直接 smoke 或 workspace root + target-first 验收命中管辖项目时，应生成 `governed=true` + receipt；Codex 等支持 `session_id` 的环境可通过 `~/.codex/ldvh/session-receipts/<session_id>.json` 复核，不要求对话界面一定展示 Hook stdout。若烟测失败，必须先修复 adapter/wrapper 或重新安装插件，再进入后续验收。
 
 ### 5.3 AI 的引导话术要求
 

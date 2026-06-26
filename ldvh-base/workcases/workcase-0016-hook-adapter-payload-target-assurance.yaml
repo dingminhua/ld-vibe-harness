@@ -3,9 +3,9 @@ type: workcase
 title: Hook adapter payload 与 target 传递保障
 goal: |
   承接 spark-0034 的运行链路修复部分，修复并防回归 Hook adapter 未转发 stdin payload / target 导致 dispatcher 无法执行 target-first 管辖判定的问题。目标是让 WorkBuddy、Codex、Claude Code 等 AI Hook 环境的 adapter 都必须把真实工作对象交给 `code/hook_dispatch.py`，并让 dispatcher 在 payload/target 断裂时给出可观测诊断，而不是静默 cwd-fallback no-op。
-status: subagents_plan_reviewing
+status: result_self_checking
 created: '2026-06-27T04:10:00+08:00'
-updated: '2026-06-27T04:21:30+08:00'
+updated: '2026-06-27T05:05:54+08:00'
 priority: P0
 description: |
   spark-0034 暴露的直接缺口是：WorkBuddy 适配脚本只传 canonical event，不转发环境通过 stdin 提供的 JSON payload，也不显式传 `--cwd` / `--target`。在 workspace root 发起但实际处理 `ld-vibe-harness` 文件时，dispatcher 只能拿 shell 进程 cwd 做 fallback，导致 target-first、worktree Git common-dir 识别和 read_plan 门禁都没有机会作用于真实工作对象。
@@ -203,7 +203,7 @@ related_docs:
 verification_evidence: |
   ## 验证计划
 
-  覆盖 hook_dispatch.py 诊断分支、tests/code/test_hook_dispatch.py、诊断码表和环境 Hook 事件映射表同步，以及 workcase 0016 的关闭前复核。
+  覆盖 hook_dispatch.py 诊断分支、tests/code/test_hook_dispatch.py、诊断码表和环境 Hook 事件映射表同步，以及 workcase 0016 的自检与后续验收复核。
 
   ## 验证结果
 
@@ -212,22 +212,11 @@ verification_evidence: |
   - `HOOK_ADAPTER_PAYLOAD_GAP` 已作为附加 diagnostics 写入，未替代 `HOOK_UNKNOWN_TARGET`。
   - 非管辖 target 保持 no-op，未冒出不应有的 gap 诊断。
 
-closure_evidence: |
-  ## 关闭说明
-
-  本 WorkCase 仅覆盖 adapter 与 dispatcher 的 payload / target 交接保障、诊断可观测性和防回归测试。当前改动已完成代码、测试和规范同步，且不再需要额外的环境安装或现场脚本归档。
-
-  ## 关闭条件
-
-  - `HOOK_ADAPTER_PAYLOAD_GAP` 只作为 diagnostics 附加。
-  - 写类无 target 仍保持 `HOOK_UNKNOWN_TARGET` 阻断。
-  - 只读缺 payload 低打扰放行。
-  - 非管辖 target 继续 no-op。
-
-closure_requested_at: '2026-06-27T05:02:31+08:00'
-review_requested_at: '2026-06-27T05:02:31+08:00'
-closed_at: '2026-06-27T05:02:31+08:00'
-closure_outcome: completed
+closure_evidence: ''
+closure_requested_at: null
+review_requested_at: null
+closed_at: null
+closure_outcome: ''
 residual_risks:
   - 现场 adapter 若不是仓库受管资产，仍需在安装/环境适配行动中按 Human Gate 处理。
 followup_refs:

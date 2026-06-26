@@ -34,6 +34,11 @@ def test_hook_registry_declares_dispatcher_entrypoints():
     assert hooks["git.commit-msg"]["command"][:2] == ["python3", "code/commit_validate.py"]
     assert "--target" in hooks["session-start"]["dispatcher_command"]
     assert "--target" in hooks["pre-tool-use"]["dispatcher_command"]
+    assert "UserPromptSubmit" not in registry["hooks"]
+    assert "stdin" in registry["ldvh_asset"]["handoff"]
+    assert "payload" in registry["ldvh_asset"]["handoff"]
+    assert any("tool_input" in item for item in registry["ldvh_asset"]["verification"])
+    assert any("target" in item for item in registry["ldvh_asset"]["verification"])
 
 
 def test_session_start_limited_receipt_does_not_block(monkeypatch, tmp_path, capsys):
