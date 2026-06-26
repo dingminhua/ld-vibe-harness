@@ -233,7 +233,7 @@ Code 不得把“生成知识地图”实现为一次性全量上下文注入。
 
 知识地图作为 AI 任务导航时，Code 必须支持以具体规范、附件、行动成员、运行时扩展承载物、工作对象或节点 ID 作为 `start_node` 的邻接查询。该查询至少应让 AI 能看见起点节点的状态、权威、路径、上位依据、相关规范、Code 消费类别、来源回指和一跳关系。`v2-check --format text` 只表示 active specs 结构诊断和知识地图汇总健康状态，不能替代带 `start_node` 的任务导航；当 AI 需要判断某个对象“该读什么、影响谁、能否 active、是否触发 Rules 同步”时，应使用 `knowledge-map --layer neighbors --start-node <path-or-node>` 或等价结构化查询。
 
-知识地图承担“在什么情况读什么文件”的入口导航责任时，Code 不应只把节点和边交给 AI 自行推理。结构化输出必须提供面向行动的 `navigation`、`read_plan`、`next_queries`、`stop_conditions` 和 `impact_summary`：`navigation` 说明任务类型、起点、有效输入范围和受限原因；`read_plan` 给出最小原文读取计划，至少包含路径、节点、优先级、读取角色、原因、来源关系、建议章节或字段和来源回指；`next_queries` 给出需要继续渐进展开时的后续查询；`stop_conditions` 提示必须暂停、分流或回到 Human Gate 的条件；`impact_summary` 汇总受影响规范、运行时扩展、工作对象和关系类型。Rules 入口在正常路径下应消费这些字段，不应长期维护与这些字段重复的大段静态 specs 读取路线。
+知识地图承担“在什么情况读什么文件”的入口导航责任时，Code 不应只把节点和边交给 AI 自行推理。结构化输出必须提供面向行动的 `navigation`、`read_plan`、`next_queries`、`stop_conditions` 和 `impact_summary`：`navigation` 说明任务类型、起点、有效输入范围和受限原因；`read_plan` 给出最小原文读取计划，至少包含路径、节点、优先级、读取角色、原因、来源关系、建议章节或字段和来源回指；`next_queries` 给出需要继续渐进展开时的后续查询；`stop_conditions` 提示必须暂停、分流或回到 Human Gate 的条件；`impact_summary` 汇总受影响规范、运行时扩展、工作对象和关系类型。Rules 入口在正常路径下应消费这些字段，不应长期维护与这些字段重复的大段静态 specs 读取路线。面向管辖项目 Runtime Protocol 的 session-start 若未从知识地图取得有效 P0/P1 read_plan，Code 必须返回固定 fallback read_plan，指向 Runtime Protocol、来源 active specs 和必要登记原文；不得让 AI acknowledge 空读取计划后进入写入或提交。
 
 当输入范围、起点节点、关系类型或层级不足以支撑任务判断时，Code 应通过 `diagnostics`、`issue_causes`、`suggested_action`、`review_hints` 或等价结构化字段提示调用方补充查询或退回文件事实源。`degraded` 仅作为现有实现的 legacy compatibility 字段保留，不作为 active specs 的正式问题概念。Code 不得用“节点数/边数/诊断数”这类汇总指标暗示具体任务已经完成定位、影响分析或 active 条件判断。
 
@@ -248,6 +248,8 @@ Code 不得把“生成知识地图”实现为一次性全量上下文注入。
 知识地图查询入口优先服务 AI 的确定性任务导航、最小读取和跨项目隔离，不以 Human 自然搜索体验为当前验收目标。`start_node` 可以支持路径、标题或稳定节点 ID 等确定性输入，但不要求把 `workcase-0088` 这类裸对象 ID 自动解析为跨项目唯一节点；若未来需要 Human-facing 模糊搜索、别名解析或裸 ID 补全，应归入 05 Web 展示或后续专门查询体验待办，且不得削弱项目命名空间要求。
 
 Code 读取管辖项目时只能读取登记项目根目录内的 `ldvh-base/`、该项目 Git 记录，以及项目自身约定、用户明确指令、当前任务上下文或 Human Gate 授权的文档位置。项目缺少 `ldvh-base/`、Git 不可读、路径越界、引用目标不存在或文档位置未授权时，应输出当次 `diagnostics`，不得写入缓存、不得补写事实字段、不得修改 `LDVH-GOVERNED-PROJECTS.yaml`。
+
+Hook dispatcher 和其它运行时入口执行管辖判定时，Code 必须先归一化 canonical event context，再解析 governed subject。canonical event context 至少包含 `event`、`trigger_source`、`cwd`、`target_paths`、`target_resolutions`、`operation_kind` 或 `read_write_kind`、`tool_name`、`tool_command`、`message_file` 和 `session_id`。管辖判定顺序为：target path、target Git identity、explicit project 校验/消歧、cwd path、cwd Git identity、no-op。`explicit project` 不得覆盖真实 target；写类工具 target 不确定时必须返回 `unknown_target` 并阻断或要求显式 target；多 target 命中多个管辖项目、或写操作混合管辖与非管辖目标时必须阻断或要求拆分。`git.commit-msg` 的工作对象是 repo root、repo common-dir 和 staged paths，`message_file` 只作为提交消息输入。
 
 Git 历史查询不进入知识地图默认输入范围，也不要求 LDVH 建立专用 Git 图谱或查询层。需要追溯历史时，应使用 Git 原生命令按需查询 commit hash、commit message、changed files、diff、author/date 和 commit range；LDVH 对 Git 的硬要求是稳定事实源修改必须形成真实 Git commit records，并且 commit message 格式满足 07，以便未来可读、可查、可追溯。
 

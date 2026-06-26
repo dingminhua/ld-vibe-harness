@@ -163,7 +163,7 @@ AI 引导用户执行：
 
 1. **安装 LDVH 插件**：按环境自身的插件管理方式安装 LDVH 插件。插件内含 `hooks/hooks.json` 或等价 Hook 配置。
 2. **信任/授权**：环境弹出信任对话框时，用户确认信任。
-3. **验证**：重启环境或开启新会话后，环境自动触发 SessionStart Hook，`hook_dispatch.py` 执行 `session-start`。若 cwd 命中管辖项目，应生成 `governed=true` + receipt；Codex 等支持 `session_id` 的环境可通过 `~/.codex/ldvh/session-receipts/<session_id>.json` 复核，不要求对话界面一定展示 Hook stdout。
+3. **验证**：重启环境或开启新会话后，环境自动触发 SessionStart Hook，`hook_dispatch.py` 执行 `session-start`。项目目录直接 smoke 或 workspace root + target-first 验收命中管辖项目时，应生成 `governed=true` + receipt；Codex 等支持 `session_id` 的环境可通过 `~/.codex/ldvh/session-receipts/<session_id>.json` 复核，不要求对话界面一定展示 Hook stdout。
 
 ### 5.3 AI 的引导话术要求
 
@@ -305,12 +305,18 @@ projects:
 ### 9.4 配置后验证
 
 ```bash
-python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <项目目录>
+python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <workspace-root> --target <项目目录>
 ```
 
-预期：`governed: true`，`receipt: ok`。
+预期：`governed: true`，`receipt: ok`，且 receipt 包含 `target_paths`、`target_resolutions`、`governed_subject` 和目标项目的 `governed_project_id`。AI 不得用“我正在处理该项目”的对话意图替代 dispatcher 输出。
 
 若 `governed: false`：检查 `LDVH-GOVERNED-PROJECTS.yaml` 路径是否正确。
+
+项目目录直接 smoke 可作为补充验证：
+
+```bash
+python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <项目目录>
+```
 
 若在 Codex worktree 中验证，应检查 receipt 是否包含 `governed_via: git.common_dir` 或等价 Git 身份命中线索；若没有，应先补齐 `projects[].git.common_dir` 或修复 dispatcher 的 worktree 配置发现路径。
 
@@ -408,8 +414,9 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 
 | 验证项 | 命令 / 检查 |
 |---|---|
-| Rules 安装后验证 | `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <管辖项目>` |
-| Codex Hook payload 验证 | `printf '{"hook_event_name":"PreToolUse","cwd":"<管辖项目>","tool_name":"Bash","session_id":"smoke"}' \| python3 code/hook_dispatch.py` |
+| Rules target-first 主验证 | `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <workspace-root> --target <项目目录>` |
+| Rules 项目目录补充 smoke | `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <项目目录>` |
+| Codex Hook payload 验证 | `printf '{"hook_event_name":"PreToolUse","cwd":"<workspace-root>","tool_name":"Bash","tool_input":{"file_path":"<管辖项目>/README.md"},"session_id":"smoke"}' \| python3 code/hook_dispatch.py` |
 | Codex receipt 验证 | 检查 `~/.codex/ldvh/session-receipts/<session_id>.json` 中 `result.governed=true`、`result.receipt=ok`，并在一次工具调用后出现 `last_pre_tool_use` 或等价工具前检查证据 |
 | native Git commit hook 验证 | `python3 code/install_git_hooks.py status`，并用临时提交消息确认不合规 message 被真实 `git commit` 阻断 |
 | 薄引用路径存在 | 检查 `<环境目录>/AGENTS.md` 或等价入口是否包含 `LDVH-RUNTIME-PROTOCOL.md` 绝对路径 |

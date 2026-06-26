@@ -16,6 +16,7 @@ that a CLI call came from an environment Hook.
 from __future__ import annotations
 
 import argparse
+import shlex
 import json
 import os
 import re
@@ -29,6 +30,35 @@ import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_REGISTRY = PROJECT_ROOT / "hooks" / "ldvh-hooks.yaml"
+RUNTIME_FALLBACK_READ_PLAN = [
+    {
+        "path": "rules/LDVH-RUNTIME-PROTOCOL.md",
+        "node_id": "rules/LDVH-RUNTIME-PROTOCOL.md",
+        "title": "ldvh-runtime-protocol",
+        "priority": "P0",
+        "role": "start",
+        "reason": "knowledge-map 未返回有效 P0/P1 read_plan 时的固定入口原文。",
+        "source_relation": "fallback",
+    },
+    {
+        "path": "specs/06-运行时扩展规范.md",
+        "node_id": "specs/06-运行时扩展规范.md",
+        "title": "运行时扩展规范",
+        "priority": "P1",
+        "role": "authority",
+        "reason": "Runtime Protocol 来源规范，knowledge-map 不可用或无答案时必须回读。",
+        "source_relation": "fallback",
+    },
+    {
+        "path": "specs/attachments/06.Att.02-固定运行时扩展登记表.md",
+        "node_id": "specs/attachments/06.Att.02-固定运行时扩展登记表.md",
+        "title": "固定运行时扩展登记表",
+        "priority": "P1",
+        "role": "authority",
+        "reason": "Runtime Protocol 固定运行时扩展登记依据，knowledge-map 不可用或无答案时必须回读。",
+        "source_relation": "fallback",
+    },
+]
 
 
 def _receipt_root() -> Path:
@@ -114,8 +144,11 @@ def _receipt_matches_cwd(receipt: dict[str, Any], cwd: Path) -> bool:
     if not isinstance(result, dict) or result.get("governed") is not True:
         return False
     candidates = []
-    for key in ("cwd", "governed_project_path"):
+    for key in ("cwd", "governed_project_path", "governed_subject"):
         value = result.get(key)
+        if isinstance(value, str) and value.strip():
+            candidates.append(value)
+    for value in result.get("target_paths", []):
         if isinstance(value, str) and value.strip():
             candidates.append(value)
     for raw in candidates:
@@ -171,6 +204,18 @@ def _required_read_plan_paths(receipt: dict[str, Any]) -> list[str]:
     return required
 
 
+def _has_required_read_plan(read_plan: Any) -> bool:
+    if not isinstance(read_plan, list):
+        return False
+    return any(
+        isinstance(item, dict)
+        and item.get("priority") in {"P0", "P1"}
+        and isinstance(item.get("path"), str)
+        and item.get("path", "").strip()
+        for item in read_plan
+    )
+
+
 def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = "rules") -> dict[str, Any]:
     receipt = _read_session_receipt(session_id) if session_id else _latest_session_receipt(cwd)
     if not receipt:
@@ -188,6 +233,17 @@ def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = 
         "cwd": str(cwd),
         "required_paths": _required_read_plan_paths(receipt),
     }
+    result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
+    if isinstance(result, dict) and result.get("governed") is True and not ack["required_paths"]:
+        return {
+            "acknowledged": False,
+            "blocked": True,
+            "cwd": str(cwd),
+            "trigger_source": trigger_source,
+            "session_id": receipt.get("session_id", ""),
+            "reason": "管辖项目 session receipt 缺少 P0/P1 read_plan required_paths，不能确认空读取计划。",
+            "next_action": "重新运行 session-start 获取 knowledge-map read_plan；若 knowledge-map 无答案，dispatcher 必须返回固定 fallback read_plan。",
+        }
     receipt["read_plan_consumed"] = ack
     receipt["updated_at"] = ack["acknowledged_at"]
     path = _receipt_path(str(receipt.get("session_id", "")))
@@ -225,16 +281,25 @@ def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = 
 # ---------------------------------------------------------------------------
 
 
-def _find_governed_config(cwd: Path) -> Optional[Path]:
-    """Find LDVH-GOVERNED-PROJECTS.yaml from cwd or related Git worktrees."""
-    direct = _walk_for_governed_config(cwd)
-    if direct is not None:
-        return direct
-    for worktree_root in _git_worktree_roots(cwd):
-        config = _walk_for_governed_config(worktree_root)
-        if config is not None:
-            return config
+def _find_governed_config(cwd: Path, targets: list[Path] | None = None) -> Optional[Path]:
+    """Find LDVH-GOVERNED-PROJECTS.yaml from target paths first, then cwd."""
+    for candidate in [*(targets or []), cwd]:
+        direct = _walk_for_governed_config(candidate)
+        if direct is not None:
+            return direct
+        for worktree_root in _git_worktree_roots(candidate):
+            config = _walk_for_governed_config(worktree_root)
+            if config is not None:
+                return config
     return None
+
+
+def _find_governed_config_for_targets(cwd: Path, targets: list[Path]) -> Optional[Path]:
+    try:
+        return _find_governed_config(cwd, targets)
+    except TypeError:
+        # Backward-compatible with tests that monkeypatch the old one-arg helper.
+        return _find_governed_config(cwd)  # type: ignore[call-arg]
 
 
 def _walk_for_governed_config(cwd: Path) -> Optional[Path]:
@@ -245,10 +310,26 @@ def _walk_for_governed_config(cwd: Path) -> Optional[Path]:
     return None
 
 
+def _git_lookup_cwd(path: Path) -> Path:
+    """Return an existing directory suitable for `git -C` for a file/target path."""
+    candidate = path.expanduser()
+    if candidate.is_file():
+        return candidate.parent
+    if candidate.is_dir():
+        return candidate
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+    for parent in [candidate.parent, *candidate.parents]:
+        if parent.exists() and parent.is_dir():
+            return parent
+    return candidate.parent
+
+
 def _git_text(cwd: Path, args: list[str]) -> str:
+    git_cwd = _git_lookup_cwd(cwd)
     try:
         result = subprocess.run(
-            ["git", "-C", str(cwd), *args],
+            ["git", "-C", str(git_cwd), *args],
             capture_output=True,
             text=True,
             check=False,
@@ -288,8 +369,35 @@ def _project_git_value(entry: dict[str, Any], key: str) -> str:
     return value.strip() if isinstance(value, str) else ""
 
 
-def _governed_project_match(cwd: Path, config_path: Path) -> dict[str, Any]:
-    """Return deterministic governed-project match metadata for *cwd*."""
+def _resolve_path(path: Path, base: Path) -> Path:
+    expanded = path.expanduser()
+    if not expanded.is_absolute():
+        expanded = base / expanded
+    try:
+        return expanded.resolve()
+    except OSError:
+        return expanded.absolute()
+
+
+def _resolved_common_dir(raw: str) -> str:
+    if not raw:
+        return ""
+    try:
+        return str(Path(raw).expanduser().resolve())
+    except OSError:
+        return str(Path(raw).expanduser().absolute())
+
+
+def _load_projects(config_path: Path) -> list[dict[str, Any]]:
+    try:
+        data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return []
+    projects = data.get("projects", [])
+    return projects if isinstance(projects, list) else []
+
+
+def _base_match(path: Path, config_path: Path) -> dict[str, Any]:
     base = {
         "governed": False,
         "governed_via": "",
@@ -298,24 +406,14 @@ def _governed_project_match(cwd: Path, config_path: Path) -> dict[str, Any]:
         "git_common_dir": "",
         "git_remote_url": "",
     }
-    try:
-        data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
-    except (OSError, yaml.YAMLError):
-        return base
-    projects = data.get("projects", [])
-    if not isinstance(projects, list):
-        return base
-
-    try:
-        cwd_resolved = cwd.resolve()
-    except OSError:
-        cwd_resolved = cwd
-    current_common_dir = _git_common_dir(cwd_resolved)
-    current_remote_url = _git_remote_url(cwd_resolved)
+    current = _resolve_path(path, Path.cwd())
+    current_common_dir = _resolved_common_dir(_git_common_dir(current))
+    current_remote_url = _git_remote_url(current)
     base["git_common_dir"] = current_common_dir
     base["git_remote_url"] = current_remote_url
 
-    for entry in projects:
+    matches: list[dict[str, Any]] = []
+    for entry in _load_projects(config_path):
         if not isinstance(entry, dict):
             continue
         proj_path = entry.get("path", "")
@@ -328,27 +426,134 @@ def _governed_project_match(cwd: Path, config_path: Path) -> dict[str, Any]:
             "governed": True,
             "governed_project_id": project_id.strip() if isinstance(project_id, str) else "",
             "governed_project_path": str(resolved),
+            "project_key": project_id.strip() if isinstance(project_id, str) and project_id.strip() else str(resolved),
         }
-        if cwd_resolved == resolved or str(cwd_resolved).startswith(str(resolved) + os.sep):
+        if current == resolved or str(current).startswith(str(resolved) + os.sep):
             match["governed_via"] = "path"
-            return match
+            matches.append(match)
+            continue
 
-        registered_common_dir = _project_git_value(entry, "common_dir")
-        if current_common_dir and registered_common_dir and Path(current_common_dir) == Path(registered_common_dir).expanduser():
+        registered_common_dir = _resolved_common_dir(_project_git_value(entry, "common_dir"))
+        if current_common_dir and registered_common_dir and current_common_dir == registered_common_dir:
             match["governed_via"] = "git.common_dir"
-            return match
+            matches.append(match)
+            continue
 
-        project_common_dir = _git_common_dir(resolved)
-        if current_common_dir and project_common_dir and Path(current_common_dir) == Path(project_common_dir):
+        project_common_dir = _resolved_common_dir(_git_common_dir(resolved))
+        if current_common_dir and project_common_dir and current_common_dir == project_common_dir:
             match["governed_via"] = "git.common_dir"
-            return match
+            matches.append(match)
+
+    project_ids = {item.get("governed_project_id", "") for item in matches}
+    if len(project_ids) > 1:
+        return {
+            **base,
+            "blocked": True,
+            "reason": "Git identity 命中多个管辖项目，必须拆分或显式确认。",
+            "ambiguous_project_ids": sorted(project_ids),
+        }
+    if matches:
+        return matches[0]
 
     return base
+
+
+def _governed_project_match(cwd: Path, config_path: Path) -> dict[str, Any]:
+    """Return deterministic governed-project match metadata for *cwd*."""
+    return _base_match(cwd, config_path)
 
 
 def _cwd_in_governed_project(cwd: Path, config_path: Path) -> bool:
     """Return True when *cwd* is inside a directory listed in the config."""
     return bool(_governed_project_match(cwd, config_path).get("governed"))
+
+
+def _target_resolution(path: Path, config_path: Path, *, source: str) -> dict[str, Any]:
+    match = _base_match(path, config_path)
+    resolved = _resolve_path(path, Path.cwd())
+    return {
+        "target": str(path),
+        "normalized_path": str(resolved),
+        "source": source,
+        "governed": bool(match.get("governed")),
+        "governed_via": match.get("governed_via", ""),
+        "governed_project_id": match.get("governed_project_id", ""),
+        "governed_project_path": match.get("governed_project_path", ""),
+        "project_key": match.get("project_key", ""),
+        "git_common_dir": match.get("git_common_dir", ""),
+        "git_remote_url": match.get("git_remote_url", ""),
+        "status": "governed" if match.get("governed") else "not_governed",
+        "unknown_reason": "" if match.get("governed") else "not_in_governed_project",
+    }
+
+
+def resolve_governed_subject(cwd: Path, targets: list[Path], *, target_sources: list[str] | None = None) -> dict[str, Any]:
+    explicit_targets = bool(targets)
+    effective_targets = targets if targets else [cwd]
+    sources = target_sources if target_sources and len(target_sources) == len(effective_targets) else []
+    if not sources:
+        sources = ["target"] * len(effective_targets) if explicit_targets else ["cwd-fallback"]
+    config = _find_governed_config_for_targets(cwd, effective_targets)
+    result: dict[str, Any] = {
+        "governed": False,
+        "cwd": str(cwd),
+        "target_paths": [str(_resolve_path(path, cwd)) for path in effective_targets],
+        "target_resolutions": [],
+        "event": "",
+        "operation_kind": "",
+        "read_write_kind": "",
+        "tool_name": "",
+        "tool_command": "",
+        "message_file": "",
+        "session_id": "",
+        "governed_subject": "",
+        "governed_via": "",
+        "governed_project_id": "",
+        "governed_project_path": "",
+        "git_common_dir": "",
+        "git_remote_url": "",
+        "config_path": str(config) if config else "",
+        "subject_source": "target" if explicit_targets else "cwd-fallback",
+    }
+    if config is None:
+        result["message"] = "未找到 LDVH-GOVERNED-PROJECTS.yaml，no-op"
+        return result
+
+    resolutions = [_target_resolution(path, config, source=source) for path, source in zip(effective_targets, sources)]
+    result["target_resolutions"] = resolutions
+    governed_resolutions = [item for item in resolutions if item.get("governed")]
+    governed_ids = {item.get("project_key") or item.get("governed_project_path", "") for item in governed_resolutions}
+    nongoverned = [item for item in resolutions if not item.get("governed")]
+
+    if len(governed_ids) > 1:
+        result.update({
+            "blocked": True,
+            "reason": "一次操作命中多个管辖项目，必须拆分或显式确认。",
+            "blocked_reason": "multiple_governed_projects",
+        })
+        return result
+    if governed_resolutions and nongoverned and explicit_targets:
+        result.update({
+            "blocked": True,
+            "reason": "一次写入操作混合管辖与非管辖目标，必须拆分或显式确认。",
+            "blocked_reason": "mixed_governed_and_ungoverned_targets",
+        })
+        return result
+    if not governed_resolutions:
+        result["message"] = "工作对象未命中管辖项目，no-op"
+        return result
+
+    subject = governed_resolutions[0]
+    result.update({
+        "governed": True,
+        "governed_subject": subject.get("normalized_path", ""),
+        "governed_via": subject.get("governed_via", ""),
+        "governed_project_id": subject.get("governed_project_id", ""),
+        "governed_project_path": subject.get("governed_project_path", ""),
+        "git_common_dir": subject.get("git_common_dir", ""),
+        "git_remote_url": subject.get("git_remote_url", ""),
+    })
+    return result
 
 
 def _run_knowledge_map(start_node: str, task_type: str) -> dict[str, Any]:
@@ -427,31 +632,19 @@ def render_command(raw_command: Any, context: dict[str, str]) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules") -> dict[str, Any]:
-    config = _find_governed_config(cwd)
-    if config is None:
-        return {
-            "governed": False,
-            "cwd": str(cwd),
-            "trigger_source": trigger_source,
-            "message": "未找到 LDVH-GOVERNED-PROJECTS.yaml，no-op",
-        }
-
-    project_match = _governed_project_match(cwd, config)
-    governed = bool(project_match.get("governed"))
+def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules",
+                                targets: list[Path] | None = None) -> dict[str, Any]:
+    subject = resolve_governed_subject(cwd, targets or [])
+    governed = bool(subject.get("governed"))
     result = {
-        "governed": governed,
-        "cwd": str(cwd),
-        "config_path": str(config),
+        **subject,
+        "event": "session-start",
+        "operation_kind": "session",
+        "read_write_kind": "read",
         "trigger_source": trigger_source,
     }
     if not governed:
-        result["message"] = "当前 cwd 未命中管辖项目，no-op"
         return result
-    for key in ("governed_via", "governed_project_id", "governed_project_path", "git_common_dir", "git_remote_url"):
-        value = project_match.get(key)
-        if value:
-            result[key] = value
 
     # Run knowledge-map to get the entry chain receipt
     km = _run_knowledge_map("rules/LDVH-RUNTIME-PROTOCOL.md", "rules_entry")
@@ -461,16 +654,26 @@ def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules") -> 
     # Extract read_plan and stop_conditions for AI consumption
     read_plan = km.get("read_plan", [])
     stop_conditions = km.get("stop_conditions", [])
-    if read_plan:
+    if _has_required_read_plan(read_plan):
         result["read_plan"] = read_plan[:8]  # top entries only
+        result["read_plan_source"] = "knowledge-map"
+    else:
+        result["read_plan"] = RUNTIME_FALLBACK_READ_PLAN
+        result["read_plan_source"] = "fallback"
+        result["action_policy"] = "fallback_read_plan_required"
+        result["fallback"] = (
+            "knowledge-map 未返回有效 P0/P1 read_plan；AI 必须按 fallback read_plan "
+            "回读 Runtime Protocol、active specs 和固定登记原文后再 acknowledge。"
+        )
     if stop_conditions:
         result["stop_conditions"] = stop_conditions
 
     diags = km.get("diagnostics")
     has_diagnostics = bool(diags) if isinstance(diags, list) else bool(diags)
     if has_diagnostics:
-        result["action_policy"] = "continue_with_limited_receipt"
-        result["fallback"] = (
+        result.setdefault("action_policy", "continue_with_limited_receipt")
+        result["diagnostics_policy"] = "continue_with_limited_receipt"
+        result["fallback"] = result.get("fallback") or (
             "知识地图或事实源投影受限；入口握手不阻断行动。AI 应回读 Runtime Protocol、"
             "active specs 和相关事实源原文，并优先修复 diagnostics 指向的问题。"
         )
@@ -485,14 +688,15 @@ def handle_acknowledge_read_plan(cwd: Path, *, trigger_source: str = "rules", se
     return 0 if result.get("acknowledged") else 1
 
 
-def handle_session_start(cwd: Path, *, trigger_source: str = "rules", session_id: str = "") -> int:
+def handle_session_start(cwd: Path, *, trigger_source: str = "rules", session_id: str = "",
+                         targets: list[Path] | None = None) -> int:
     """SessionStart / session-start handler.
 
-    Determine whether *cwd* falls inside an LDVH-governed project.
+    Determine whether the operation target falls inside an LDVH-governed project.
     If yes, run knowledge-map and return a receipt so the AI can consume
     the full entry chain.
     """
-    result = _build_session_start_result(cwd, trigger_source=trigger_source)
+    result = _build_session_start_result(cwd, trigger_source=trigger_source, targets=targets)
     _write_session_receipt(session_id, "session-start", result)
     print(json.dumps(result, ensure_ascii=False))
     return 0
@@ -502,7 +706,10 @@ MUTATING_SHELL_PATTERNS = [
     re.compile(r"(^|[;&|]\s*)apply_patch\b"),
     re.compile(r"(^|\s)cat\s+>"),
     re.compile(r"(^|\s)tee\s+"),
-    re.compile(r"(^|\s)(rm|mv|cp)\s+"),
+    re.compile(r"(^|\s)(rm|mv|cp|touch|mkdir)\s+"),
+    re.compile(r"(^|\s)sed\s+(-[A-Za-z]*i|.*\s-i)\b"),
+    re.compile(r"(^|\s)echo\s+.*>\s*\S+"),
+    re.compile(r">\s*\S+"),
     re.compile(r"(^|\s)git\s+(commit|reset|checkout|merge|rebase|push)\b"),
     re.compile(r"(^|\s)npm\s+version\b"),
     re.compile(r"python3?\s+.*\b(write_text|open\([^)]*['\"]w|unlink|remove|rmtree)\b"),
@@ -526,6 +733,76 @@ def _stdin_tool_command(payload: dict[str, Any]) -> str:
     return ""
 
 
+TARGET_KEYS = {
+    "target",
+    "targets",
+    "target_path",
+    "target_paths",
+    "path",
+    "paths",
+    "file",
+    "files",
+    "file_path",
+    "file_paths",
+    "repo",
+    "repo_path",
+    "repository",
+    "workdir",
+}
+
+
+def _append_target(raw: Any, targets: list[Path], sources: list[str], source: str) -> None:
+    if isinstance(raw, str) and raw.strip():
+        targets.append(Path(raw.strip()))
+        sources.append(source)
+    elif isinstance(raw, list):
+        for item in raw:
+            _append_target(item, targets, sources, source)
+
+
+def _collect_targets_from_mapping(data: dict[str, Any], targets: list[Path], sources: list[str], *,
+                                  prefix: str = "payload") -> None:
+    for key, value in data.items():
+        normalized = key.replace("-", "_")
+        if normalized in TARGET_KEYS:
+            _append_target(value, targets, sources, f"{prefix}.{key}")
+        if isinstance(value, dict):
+            _collect_targets_from_mapping(value, targets, sources, prefix=f"{prefix}.{key}")
+        elif isinstance(value, list):
+            for idx, item in enumerate(value):
+                if isinstance(item, dict):
+                    _collect_targets_from_mapping(item, targets, sources, prefix=f"{prefix}.{key}[{idx}]")
+
+
+def _targets_from_command(command: str) -> tuple[list[Path], list[str]]:
+    targets: list[Path] = []
+    sources: list[str] = []
+    if not command:
+        return targets, sources
+    try:
+        parts = shlex.split(command)
+    except ValueError:
+        return targets, sources
+    for idx, part in enumerate(parts):
+        if part == "-C" and idx + 1 < len(parts):
+            _append_target(parts[idx + 1], targets, sources, "command.-C")
+        if part in {">", ">>"} and idx + 1 < len(parts):
+            _append_target(parts[idx + 1], targets, sources, "command.redirect")
+        if part.startswith(">") and len(part) > 1:
+            _append_target(part.lstrip(">"), targets, sources, "command.redirect")
+    return targets, sources
+
+
+def _extract_payload_targets(payload: dict[str, Any]) -> tuple[list[Path], list[str]]:
+    targets: list[Path] = []
+    sources: list[str] = []
+    _collect_targets_from_mapping(payload, targets, sources)
+    command_targets, command_sources = _targets_from_command(_stdin_tool_command(payload))
+    targets.extend(command_targets)
+    sources.extend(command_sources)
+    return targets, sources
+
+
 def _tool_requires_read_plan_consumed(tool_name: str, command: str = "") -> bool:
     normalized = tool_name.strip().lower()
     if normalized in {"write", "edit", "multiedit", "multi_edit", "apply_patch"}:
@@ -536,14 +813,28 @@ def _tool_requires_read_plan_consumed(tool_name: str, command: str = "") -> bool
 
 
 def _read_plan_guard_result(cwd: Path, receipt: Optional[dict[str, Any]], *, trigger_source: str,
-                            tool_name: str, command: str, action: str) -> Optional[dict[str, Any]]:
+                            tool_name: str, command: str, action: str,
+                            subject: dict[str, Any] | None = None,
+                            message_file: str = "", session_id: str = "") -> Optional[dict[str, Any]]:
     if _receipt_read_plan_consumed(receipt):
         return None
     required_paths = _required_read_plan_paths(receipt) if receipt else []
+    subject = subject or {}
     return {
         "blocked": True,
         "cwd": str(cwd),
         "governed": True,
+        "target_paths": subject.get("target_paths", []),
+        "target_resolutions": subject.get("target_resolutions", []),
+        "event": action,
+        "operation_kind": "commit" if action == "git.commit-msg" else "tool",
+        "read_write_kind": "write",
+        "message_file": message_file,
+        "session_id": session_id,
+        "governed_subject": subject.get("governed_subject", ""),
+        "governed_via": subject.get("governed_via", ""),
+        "governed_project_id": subject.get("governed_project_id", ""),
+        "governed_project_path": subject.get("governed_project_path", ""),
         "trigger_source": trigger_source,
         "tool": tool_name,
         "action": action,
@@ -555,39 +846,67 @@ def _read_plan_guard_result(cwd: Path, receipt: Optional[dict[str, Any]], *, tri
 
 
 def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: str = "",
-                        session_id: str = "", tool_command: str = "") -> int:
+                        session_id: str = "", tool_command: str = "",
+                        targets: list[Path] | None = None,
+                        target_sources: list[str] | None = None) -> int:
     """PreToolUse / pre-tool-use handler.
 
     Check whether the current session has completed the session-start
     handshake before allowing Write/Edit tools.
     """
-    config = _find_governed_config(cwd)
-    if config is None:
-        # No governed config at all — no LDVH project, allow
-        print(json.dumps({"blocked": False, "reason": "非管辖项目，no-op",
-                          "cwd": str(cwd), "trigger_source": trigger_source}))
-        return 0
+    mutating = _tool_requires_read_plan_consumed(tool_name, tool_command)
+    explicit_targets = bool(targets)
+    if mutating and not explicit_targets:
+        blocked = {
+            "blocked": True,
+            "cwd": str(cwd),
+            "governed": False,
+            "event": "pre-tool-use",
+            "operation_kind": "tool",
+            "read_write_kind": "write",
+            "target_paths": [],
+            "target_resolutions": [],
+            "governed_subject": "",
+            "trigger_source": trigger_source,
+            "tool": tool_name,
+            "tool_name": tool_name,
+            "tool_command": tool_command,
+            "session_id": session_id,
+            "action": "pre-tool-use",
+            "blocked_reason": "unknown_target",
+            "reason": "写类工具未提供可确定工作对象；必须由 Hook payload 或 Rules CLI 显式提供 target。",
+            "next_action": "重新触发 pre-tool-use，并传入 --target <path>；Hook adapter 应从 tool_input 提取 file_path/path/workdir 等字段。",
+            "command_observed": tool_command[:200] if tool_command else "",
+        }
+        print(json.dumps(blocked, ensure_ascii=False))
+        return 1
 
-    project_match = _governed_project_match(cwd, config)
-    governed = bool(project_match.get("governed"))
+    subject = resolve_governed_subject(cwd, targets or [], target_sources=target_sources)
+    if subject.get("blocked"):
+        print(json.dumps({**subject, "trigger_source": trigger_source, "action": "pre-tool-use"}, ensure_ascii=False))
+        return 1
+
+    governed = bool(subject.get("governed"))
     if not governed:
-        print(json.dumps({"blocked": False, "reason": "当前 cwd 未命中管辖项目，no-op",
-                          "cwd": str(cwd), "trigger_source": trigger_source}))
+        print(json.dumps({"blocked": False, "reason": subject.get("message", "工作对象未命中管辖项目，no-op"),
+                          **subject, "trigger_source": trigger_source}))
         return 0
 
     # In governed projects, keep the hook non-blocking while making the receipt
     # state queryable. Codex may not surface SessionStart stdout in the thread,
     # so PreToolUse can create the same receipt when a session_id is present.
     result = {
+        **subject,
+        "event": "pre-tool-use",
+        "operation_kind": "tool",
+        "read_write_kind": "write" if mutating else "read",
+        "tool_name": tool_name,
+        "tool_command": tool_command,
+        "session_id": session_id,
         "blocked": False,
-        "cwd": str(cwd),
         "governed": True,
         "trigger_source": trigger_source,
     }
-    for key in ("governed_via", "governed_project_id", "governed_project_path", "git_common_dir", "git_remote_url"):
-        value = project_match.get(key)
-        if value:
-            result[key] = value
     receipt = _read_session_receipt(session_id) if session_id else _latest_session_receipt(cwd)
     if receipt:
         receipt_result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
@@ -598,7 +917,7 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         if _receipt_read_plan_consumed(receipt):
             result["read_plan_consumed"] = "acknowledged"
     elif session_id:
-        session_result = _build_session_start_result(cwd, trigger_source=trigger_source)
+        session_result = _build_session_start_result(cwd, trigger_source=trigger_source, targets=targets)
         _write_session_receipt(session_id, "pre-tool-use-implicit-session-start", session_result)
         receipt = _read_session_receipt(session_id)
         result["session_receipt"] = "created_by_pre_tool_use"
@@ -611,7 +930,7 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         result["tool"] = tool_name
     if tool_command:
         result["command_observed"] = tool_command[:200]
-    if _tool_requires_read_plan_consumed(tool_name, tool_command):
+    if mutating:
         blocked = _read_plan_guard_result(
             cwd,
             receipt,
@@ -619,6 +938,8 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
             tool_name=tool_name,
             command=tool_command,
             action="pre-tool-use",
+            subject=subject,
+            session_id=session_id,
         )
         if blocked:
             print(json.dumps(blocked, ensure_ascii=False))
@@ -703,12 +1024,30 @@ def _stdin_session_id(payload: dict[str, Any]) -> str:
     return ""
 
 
-def _guard_git_commit_msg(cwd: Path, *, trigger_source: str) -> Optional[dict[str, Any]]:
-    config = _find_governed_config(cwd)
-    if config is None:
-        return None
-    project_match = _governed_project_match(cwd, config)
-    if not project_match.get("governed"):
+def _git_repo_root(cwd: Path) -> Path:
+    root = _git_text(cwd, ["rev-parse", "--show-toplevel"])
+    return Path(root) if root else cwd
+
+
+def _git_staged_paths(cwd: Path) -> list[Path]:
+    output = _git_text(cwd, ["diff", "--cached", "--name-only", "--diff-filter=ACMR"])
+    repo_root = _git_repo_root(cwd)
+    paths = [repo_root]
+    for line in output.splitlines():
+        raw = line.strip()
+        if raw:
+            paths.append(repo_root / raw)
+    return paths
+
+
+def _guard_git_commit_msg(cwd: Path, *, trigger_source: str,
+                          targets: list[Path] | None = None,
+                          message_file: str = "", session_id: str = "") -> Optional[dict[str, Any]]:
+    commit_targets = targets if targets else _git_staged_paths(cwd)
+    subject = resolve_governed_subject(cwd, commit_targets)
+    if subject.get("blocked"):
+        return {**subject, "trigger_source": trigger_source, "action": "git.commit-msg"}
+    if not subject.get("governed"):
         return None
     return _read_plan_guard_result(
         cwd,
@@ -717,6 +1056,9 @@ def _guard_git_commit_msg(cwd: Path, *, trigger_source: str) -> Optional[dict[st
         tool_name="git.commit-msg",
         command="git commit",
         action="git.commit-msg",
+        subject=subject,
+        message_file=message_file,
+        session_id=session_id,
     )
 
 
@@ -734,12 +1076,13 @@ def main(argv: Optional[list[str]] = None) -> int:
         cwd = Path(cwd_raw)
         trigger_source = stdin_payload.get("trigger_source", "hook")
         session_id = _stdin_session_id(stdin_payload)
+        targets, target_sources = _extract_payload_targets(stdin_payload)
 
         # Normalize event name: both "SessionStart" (Hook) and "session-start" (CLI) accepted
         normalized = event.replace("_", "-").lower().lstrip("-")
 
         if normalized in ("session-start", "sessionstart"):
-            return handle_session_start(cwd, trigger_source=trigger_source, session_id=session_id)
+            return handle_session_start(cwd, trigger_source=trigger_source, session_id=session_id, targets=targets)
         if normalized in ("acknowledge-read-plan", "acknowledgereadplan"):
             return handle_acknowledge_read_plan(cwd, trigger_source=trigger_source, session_id=session_id)
         if normalized in ("pre-tool-use", "pretooluse"):
@@ -751,13 +1094,22 @@ def main(argv: Optional[list[str]] = None) -> int:
                 tool_name=tool,
                 session_id=session_id,
                 tool_command=command,
+                targets=targets,
+                target_sources=target_sources,
             )
         if normalized in ("git-commit-msg", "git.commit-msg"):
-            blocked = _guard_git_commit_msg(cwd, trigger_source=trigger_source)
+            message_file = stdin_payload.get("message_file", "")
+            blocked = _guard_git_commit_msg(
+                cwd,
+                trigger_source=trigger_source,
+                targets=targets,
+                message_file=message_file if isinstance(message_file, str) else "",
+                session_id=session_id,
+            )
             if blocked:
                 print(json.dumps(blocked, ensure_ascii=False))
                 return 1
-            context: dict[str, str] = {"cwd": str(cwd), "repo_root": str(cwd)}
+            context: dict[str, str] = {"cwd": str(cwd), "repo_root": str(_git_repo_root(cwd))}
             if stdin_payload.get("message_file"):
                 context["message_file"] = stdin_payload["message_file"]
             return run_event("git.commit-msg", DEFAULT_REGISTRY, context)
@@ -787,6 +1139,8 @@ def main(argv: Optional[list[str]] = None) -> int:
                             help="Hook registry YAML path.")
     run_parser.add_argument("--message-file", type=Path, default=None,
                             help="Commit message file (git.commit-msg only).")
+    run_parser.add_argument("--target", type=Path, action="append", default=[],
+                            help="Operation target path. May be passed multiple times.")
     run_parser.add_argument("--tool-name", type=str, default="",
                             help="Tool name being invoked (pre-tool-use only).")
     run_parser.add_argument("--tool-command", type=str, default="",
@@ -802,11 +1156,28 @@ def main(argv: Optional[list[str]] = None) -> int:
         event = args.event
         cwd = args.cwd.resolve()
         trigger_source = args.trigger_source
+        if stdin_payload is not None and cli_has_explicit_event and "--cwd" not in cli_args:
+            payload_cwd = stdin_payload.get("cwd")
+            if isinstance(payload_cwd, str) and payload_cwd.strip():
+                cwd = Path(payload_cwd).resolve()
+        targets = [_resolve_path(target, cwd) for target in args.target]
+        target_sources = ["cli.target"] * len(targets)
+        if stdin_payload is not None and cli_has_explicit_event:
+            payload_targets, payload_sources = _extract_payload_targets(stdin_payload)
+            if not targets:
+                targets = [_resolve_path(target, cwd) for target in payload_targets]
+                target_sources = payload_sources
+            if not args.tool_name:
+                args.tool_name = _stdin_tool_name(stdin_payload)
+            if not args.tool_command:
+                args.tool_command = _stdin_tool_command(stdin_payload)
+            if not args.session_id:
+                args.session_id = _stdin_session_id(stdin_payload)
 
         try:
             # --- built-in lifecycle handlers ---
             if event in ("session-start", "SessionStart"):
-                return handle_session_start(cwd, trigger_source=trigger_source, session_id=args.session_id)
+                return handle_session_start(cwd, trigger_source=trigger_source, session_id=args.session_id, targets=targets)
 
             if event in ("acknowledge-read-plan", "AcknowledgeReadPlan"):
                 return handle_acknowledge_read_plan(cwd, trigger_source=trigger_source, session_id=args.session_id)
@@ -818,14 +1189,22 @@ def main(argv: Optional[list[str]] = None) -> int:
                     tool_name=args.tool_name,
                     session_id=args.session_id,
                     tool_command=args.tool_command,
+                    targets=targets,
+                    target_sources=target_sources,
                 )
 
             if event == "git.commit-msg":
-                blocked = _guard_git_commit_msg(cwd, trigger_source=trigger_source)
+                blocked = _guard_git_commit_msg(
+                    cwd,
+                    trigger_source=trigger_source,
+                    targets=targets,
+                    message_file=str(args.message_file) if args.message_file is not None else "",
+                    session_id=args.session_id,
+                )
                 if blocked:
                     print(json.dumps(blocked, ensure_ascii=False))
                     return 1
-                context: dict[str, str] = {"cwd": str(cwd), "repo_root": str(cwd)}
+                context: dict[str, str] = {"cwd": str(cwd), "repo_root": str(_git_repo_root(cwd))}
                 if args.message_file is not None:
                     context["message_file"] = str(args.message_file)
                 return run_event(event, args.registry, context, dry_run=args.dry_run)

@@ -1614,14 +1614,15 @@ def test_result_reviewing_workcase_warns_when_review_items_empty(tmp_path):
     assert "warnings=1" in result.stdout
 
 
-def test_human_closure_confirming_warns_when_review_items_empty(tmp_path):
+def test_human_closure_confirming_rejects_empty_result_review_items(tmp_path):
     _, workcase = write_valid_workcase_tree(tmp_path, status="human_closure_confirming")
     add_current_review_contract(workcase)
 
     result = run_checker(workcase)
 
-    assert result.returncode == 0
+    assert result.returncode == 1
     assert "RESULT_REVIEW_NOT_STARTED" in result.stdout
+    assert "errors=3" in result.stdout
     assert "warnings=1" in result.stdout
 
 
