@@ -272,8 +272,8 @@ commit message 契约包括：
 
 1. `type` 必填，使用 `attachments/07.Att.02-Commit-Type枚举表.md` 定义的严格闭集；
 2. `scope` 可选，优先使用 `attachments/07.Att.03-Commit-Scope推荐表.md` 定义的推荐值，最多一个；
-3. `description` 必填，LDVH 自身项目应使用简体中文简短说明；
-4. `body` 按 `attachments/07.Att.04-Commit-Body必填条件表.md` 条件必填，用简体中文说明动机、关键变更、影响边界、验证结论和风险后续；
+3. `description` 必填，LDVH 自身项目应使用简体中文简短说明；`description` 至少应包含 1 个中文字符；
+4. `body` 按 `attachments/07.Att.04-Commit-Body必填条件表.md` 条件必填，用简体中文说明动机、关键变更、影响边界、验证结论和风险后续；body 存在时也应包含中文；
 5. `footer` 可选，遵守 Conventional Commits 和 git trailer 风格；
 6. `Human-Gate:`、`Verification:`、`Risk:` 等 LDVH 私有 trailer 不得替代 body 语义清单；
 7. 工作对象相关提交由 Git history、touched files、对象 ID、规范编号、路径和正文自然文本派生，不手写维护。
@@ -282,7 +282,7 @@ commit message 契约包括：
 
 对象、规范、Code 和 Web 的关联提交应由 Git history、touched files、对象 ID、规范编号、路径、commit description/body 自然文本、时间线和必要临时筛选派生。关联提交派生优先级由 `attachments/07.Att.09-关联提交派生优先级表.md` 承载。不得为了追溯强制 AI 补写固定 `Refs:` 字段，不得把关联提交派生结果回写为对象手写字段。
 
-LDVH 自身项目的 commit description 和 body 应使用简体中文表达主要人类可读内容；type、scope、路径、命令、对象 ID、英文专名和代码标识可以保留英文或原文。
+LDVH 自身项目的 commit description（首行）和 body（若存在）应使用简体中文表达主要人类可读内容；type、scope、路径、命令、对象 ID、英文专名和代码标识可以保留英文或原文。
 
 Git 提交记录本身不额外触发 Human Gate。Human Gate 由被修改的事实源、对象、规范、Code、Web、行动编排、运行时扩展或破坏性 Git 操作触发。需要说明高影响确认、残留风险、未验证内容或兼容性影响时，应写入提交正文或对应事实源，不使用 `Human-Gate:`、`Verification:`、`Risk:` 私有 trailer 替代。
 

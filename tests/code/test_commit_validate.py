@@ -199,13 +199,37 @@ def test_ldvh_private_trailers_warn():
     assert any("不建议使用 LDVH 私有 trailer" in i.message for i in warnings)
 
 
-def test_missing_chinese_errors():
+def test_missing_chinese_in_subject_and_body_errors():
     commit = make_commit(subject="docs(specs): test no chinese", body="no chinese here")
 
     issues = checker.check_commit(commit)
     errors = [i for i in issues if i.level == "error"]
 
     assert any("必须包含中文字符" in i.message for i in errors)
+
+
+def test_missing_chinese_in_subject_errors():
+    commit = make_commit(
+        subject="docs(specs): fix commit lint",
+        body="已经确认提交说明已补充中文语义。"
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert any("description 必须包含中文字符" in i.message for i in errors)
+
+
+def test_missing_chinese_in_body_errors():
+    commit = make_commit(
+        subject="docs(specs): 补充提交规范说明",
+        body="update commit spec only with english words"
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert any("body 必须包含中文字符" in i.message for i in errors)
 
 
 # ══════════════════════════════════════════════════════════════════════
