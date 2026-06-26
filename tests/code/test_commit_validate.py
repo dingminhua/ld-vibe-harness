@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import subprocess
 from pathlib import Path
 
@@ -278,6 +279,7 @@ def test_check_message_invalid_format():
 def test_unified_hook_dispatcher_reuses_canonical_validator(tmp_path):
     dispatcher_path = PROJECT_ROOT / "code" / "hook_dispatch.py"
     registry_path = PROJECT_ROOT / "hooks" / "ldvh-hooks.yaml"
+    env = {**dict(os.environ), "CODEX_HOME": str(tmp_path / "codex-home")}
     valid_message = tmp_path / "valid-message.txt"
     invalid_message = tmp_path / "invalid-message.txt"
     valid_message.write_text(
@@ -297,12 +299,42 @@ def test_unified_hook_dispatcher_reuses_canonical_validator(tmp_path):
     assert "ldvh_asset:" in registry_text
     assert "code/commit_validate.py" in registry_text
     assert subprocess.run(
+        [
+            "python3",
+            str(dispatcher_path),
+            "run",
+            "session-start",
+            "--cwd",
+            str(PROJECT_ROOT),
+            "--session-id",
+            "commit-test",
+        ],
+        cwd=PROJECT_ROOT,
+        env=env,
+    ).returncode == 0
+    assert subprocess.run(
+        [
+            "python3",
+            str(dispatcher_path),
+            "run",
+            "acknowledge-read-plan",
+            "--cwd",
+            str(PROJECT_ROOT),
+            "--session-id",
+            "commit-test",
+        ],
+        cwd=PROJECT_ROOT,
+        env=env,
+    ).returncode == 0
+    assert subprocess.run(
         ["python3", str(dispatcher_path), "run", "git.commit-msg", "--message-file", str(valid_message)],
         cwd=PROJECT_ROOT,
+        env=env,
     ).returncode == 0
     assert subprocess.run(
         ["python3", str(dispatcher_path), "run", "git.commit-msg", "--message-file", str(invalid_message)],
         cwd=PROJECT_ROOT,
+        env=env,
     ).returncode != 0
 
 

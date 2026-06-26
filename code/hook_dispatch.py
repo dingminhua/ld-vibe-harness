@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -106,6 +107,118 @@ def _read_session_receipt(session_id: str) -> Optional[dict[str, Any]]:
     except (OSError, json.JSONDecodeError):
         return None
     return data if isinstance(data, dict) else None
+
+
+def _receipt_matches_cwd(receipt: dict[str, Any], cwd: Path) -> bool:
+    result = receipt.get("result")
+    if not isinstance(result, dict) or result.get("governed") is not True:
+        return False
+    candidates = []
+    for key in ("cwd", "governed_project_path"):
+        value = result.get(key)
+        if isinstance(value, str) and value.strip():
+            candidates.append(value)
+    for raw in candidates:
+        try:
+            path = Path(raw).expanduser().resolve()
+        except OSError:
+            path = Path(raw).expanduser()
+        try:
+            cwd_resolved = cwd.resolve()
+        except OSError:
+            cwd_resolved = cwd
+        if cwd_resolved == path or str(cwd_resolved).startswith(str(path) + os.sep):
+            return True
+    return False
+
+
+def _latest_session_receipt(cwd: Path) -> Optional[dict[str, Any]]:
+    root = _receipt_root()
+    try:
+        paths = sorted(root.glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True)
+    except OSError:
+        return None
+    for path in paths:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if isinstance(data, dict) and _receipt_matches_cwd(data, cwd):
+            return data
+    return None
+
+
+def _receipt_read_plan_consumed(receipt: Optional[dict[str, Any]]) -> bool:
+    if not receipt:
+        return False
+    consumed = receipt.get("read_plan_consumed")
+    return isinstance(consumed, dict) and consumed.get("status") == "acknowledged"
+
+
+def _required_read_plan_paths(receipt: dict[str, Any]) -> list[str]:
+    result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
+    read_plan = result.get("read_plan") if isinstance(result, dict) else []
+    required = []
+    if isinstance(read_plan, list):
+        for item in read_plan:
+            if not isinstance(item, dict):
+                continue
+            if item.get("priority") not in {"P0", "P1"}:
+                continue
+            path = item.get("path")
+            if isinstance(path, str) and path.strip():
+                required.append(path.strip())
+    return required
+
+
+def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = "rules") -> dict[str, Any]:
+    receipt = _read_session_receipt(session_id) if session_id else _latest_session_receipt(cwd)
+    if not receipt:
+        return {
+            "acknowledged": False,
+            "blocked": True,
+            "cwd": str(cwd),
+            "trigger_source": trigger_source,
+            "reason": "未找到可确认的 session receipt；必须先完成 session-start。",
+        }
+    ack = {
+        "status": "acknowledged",
+        "acknowledged_at": datetime.now(timezone.utc).isoformat(),
+        "trigger_source": trigger_source,
+        "cwd": str(cwd),
+        "required_paths": _required_read_plan_paths(receipt),
+    }
+    receipt["read_plan_consumed"] = ack
+    receipt["updated_at"] = ack["acknowledged_at"]
+    path = _receipt_path(str(receipt.get("session_id", "")))
+    if path is None:
+        return {
+            "acknowledged": False,
+            "blocked": True,
+            "cwd": str(cwd),
+            "trigger_source": trigger_source,
+            "reason": "receipt 缺少 session_id，无法写入 read_plan 消费证据。",
+        }
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(receipt, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError as exc:
+        return {
+            "acknowledged": False,
+            "blocked": True,
+            "cwd": str(cwd),
+            "trigger_source": trigger_source,
+            "reason": f"写入 read_plan 消费证据失败: {exc}",
+        }
+    return {
+        "acknowledged": True,
+        "blocked": False,
+        "cwd": str(cwd),
+        "trigger_source": trigger_source,
+        "session_id": receipt.get("session_id", ""),
+        "required_paths": ack["required_paths"],
+        "receipt": "read_plan_consumed",
+    }
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -365,6 +478,13 @@ def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules") -> 
     return result
 
 
+def handle_acknowledge_read_plan(cwd: Path, *, trigger_source: str = "rules", session_id: str = "") -> int:
+    """Record that the AI consumed the current receipt read_plan P0/P1 entries."""
+    result = _acknowledge_read_plan(session_id, cwd, trigger_source=trigger_source)
+    print(json.dumps(result, ensure_ascii=False))
+    return 0 if result.get("acknowledged") else 1
+
+
 def handle_session_start(cwd: Path, *, trigger_source: str = "rules", session_id: str = "") -> int:
     """SessionStart / session-start handler.
 
@@ -378,7 +498,64 @@ def handle_session_start(cwd: Path, *, trigger_source: str = "rules", session_id
     return 0
 
 
-def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: str = "", session_id: str = "") -> int:
+MUTATING_SHELL_PATTERNS = [
+    re.compile(r"(^|[;&|]\s*)apply_patch\b"),
+    re.compile(r"(^|\s)cat\s+>"),
+    re.compile(r"(^|\s)tee\s+"),
+    re.compile(r"(^|\s)(rm|mv|cp)\s+"),
+    re.compile(r"(^|\s)git\s+(commit|reset|checkout|merge|rebase|push)\b"),
+    re.compile(r"(^|\s)npm\s+version\b"),
+    re.compile(r"python3?\s+.*\b(write_text|open\([^)]*['\"]w|unlink|remove|rmtree)\b"),
+]
+
+
+def _stdin_tool_command(payload: dict[str, Any]) -> str:
+    for key in ("command", "cmd"):
+        value = payload.get(key)
+        if isinstance(value, str):
+            return value
+    for key in ("tool_input", "toolInput", "input", "args", "arguments"):
+        value = payload.get(key)
+        if isinstance(value, dict):
+            for nested_key in ("command", "cmd"):
+                nested = value.get(nested_key)
+                if isinstance(nested, str):
+                    return nested
+        if isinstance(value, str):
+            return value
+    return ""
+
+
+def _tool_requires_read_plan_consumed(tool_name: str, command: str = "") -> bool:
+    normalized = tool_name.strip().lower()
+    if normalized in {"write", "edit", "multiedit", "multi_edit", "apply_patch"}:
+        return True
+    if normalized == "bash" and command and any(pattern.search(command) for pattern in MUTATING_SHELL_PATTERNS):
+        return True
+    return False
+
+
+def _read_plan_guard_result(cwd: Path, receipt: Optional[dict[str, Any]], *, trigger_source: str,
+                            tool_name: str, command: str, action: str) -> Optional[dict[str, Any]]:
+    if _receipt_read_plan_consumed(receipt):
+        return None
+    required_paths = _required_read_plan_paths(receipt) if receipt else []
+    return {
+        "blocked": True,
+        "cwd": str(cwd),
+        "governed": True,
+        "trigger_source": trigger_source,
+        "tool": tool_name,
+        "action": action,
+        "reason": "管辖项目写入/提交前必须先消费 session-start receipt 的 P0/P1 read_plan，并记录 read_plan_consumed 证据。",
+        "required_paths": required_paths,
+        "next_action": "读取 required_paths 后运行 `python3 code/hook_dispatch.py run acknowledge-read-plan --cwd <cwd>`；支持 session_id 的 Hook 环境应传入同一 session_id。",
+        "command_observed": command[:200] if command else "",
+    }
+
+
+def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: str = "",
+                        session_id: str = "", tool_command: str = "") -> int:
     """PreToolUse / pre-tool-use handler.
 
     Check whether the current session has completed the session-start
@@ -411,24 +588,41 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         value = project_match.get(key)
         if value:
             result[key] = value
-    receipt = _read_session_receipt(session_id)
+    receipt = _read_session_receipt(session_id) if session_id else _latest_session_receipt(cwd)
     if receipt:
         receipt_result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
         result["session_receipt"] = "found"
         if isinstance(receipt_result, dict):
             result["receipt"] = receipt_result.get("receipt", "unknown")
             result["receipt_event"] = receipt.get("event", "")
+        if _receipt_read_plan_consumed(receipt):
+            result["read_plan_consumed"] = "acknowledged"
     elif session_id:
         session_result = _build_session_start_result(cwd, trigger_source=trigger_source)
         _write_session_receipt(session_id, "pre-tool-use-implicit-session-start", session_result)
+        receipt = _read_session_receipt(session_id)
         result["session_receipt"] = "created_by_pre_tool_use"
         result["receipt"] = session_result.get("receipt", "unknown")
-        result["action_policy"] = "continue_with_implicit_receipt"
+        result["action_policy"] = "read_plan_ack_required_before_write"
     else:
         result["session_receipt"] = "unavailable"
         result["warning"] = "管辖项目中，hook payload 未提供 session_id；请确认本会话已完成 session-start。"
     if tool_name:
         result["tool"] = tool_name
+    if tool_command:
+        result["command_observed"] = tool_command[:200]
+    if _tool_requires_read_plan_consumed(tool_name, tool_command):
+        blocked = _read_plan_guard_result(
+            cwd,
+            receipt,
+            trigger_source=trigger_source,
+            tool_name=tool_name,
+            command=tool_command,
+            action="pre-tool-use",
+        )
+        if blocked:
+            print(json.dumps(blocked, ensure_ascii=False))
+            return 1
     if receipt and session_id:
         _mark_pre_tool_use_receipt(session_id, result)
     print(json.dumps(result, ensure_ascii=False))
@@ -509,6 +703,23 @@ def _stdin_session_id(payload: dict[str, Any]) -> str:
     return ""
 
 
+def _guard_git_commit_msg(cwd: Path, *, trigger_source: str) -> Optional[dict[str, Any]]:
+    config = _find_governed_config(cwd)
+    if config is None:
+        return None
+    project_match = _governed_project_match(cwd, config)
+    if not project_match.get("governed"):
+        return None
+    return _read_plan_guard_result(
+        cwd,
+        _latest_session_receipt(cwd),
+        trigger_source=trigger_source,
+        tool_name="git.commit-msg",
+        command="git commit",
+        action="git.commit-msg",
+    )
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     # --- Hook path: stdin JSON ------------------------------------------------
     stdin_payload = _parse_stdin()
@@ -529,10 +740,23 @@ def main(argv: Optional[list[str]] = None) -> int:
 
         if normalized in ("session-start", "sessionstart"):
             return handle_session_start(cwd, trigger_source=trigger_source, session_id=session_id)
+        if normalized in ("acknowledge-read-plan", "acknowledgereadplan"):
+            return handle_acknowledge_read_plan(cwd, trigger_source=trigger_source, session_id=session_id)
         if normalized in ("pre-tool-use", "pretooluse"):
             tool = _stdin_tool_name(stdin_payload)
-            return handle_pre_tool_use(cwd, trigger_source=trigger_source, tool_name=tool, session_id=session_id)
+            command = _stdin_tool_command(stdin_payload)
+            return handle_pre_tool_use(
+                cwd,
+                trigger_source=trigger_source,
+                tool_name=tool,
+                session_id=session_id,
+                tool_command=command,
+            )
         if normalized in ("git-commit-msg", "git.commit-msg"):
+            blocked = _guard_git_commit_msg(cwd, trigger_source=trigger_source)
+            if blocked:
+                print(json.dumps(blocked, ensure_ascii=False))
+                return 1
             context: dict[str, str] = {"cwd": str(cwd), "repo_root": str(cwd)}
             if stdin_payload.get("message_file"):
                 context["message_file"] = stdin_payload["message_file"]
@@ -553,7 +777,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     # run <event>
     run_parser = subparsers.add_parser("run", help="Execute a lifecycle protocol event.")
-    run_parser.add_argument("event", help="Event: session-start | pre-tool-use | git.commit-msg")
+    run_parser.add_argument("event", help="Event: session-start | acknowledge-read-plan | pre-tool-use | git.commit-msg")
     run_parser.add_argument("--cwd", type=Path, default=Path(os.getcwd()),
                             help="Current working directory for the event.")
     run_parser.add_argument("--trigger-source", type=str, choices=["hook", "rules"],
@@ -565,6 +789,10 @@ def main(argv: Optional[list[str]] = None) -> int:
                             help="Commit message file (git.commit-msg only).")
     run_parser.add_argument("--tool-name", type=str, default="",
                             help="Tool name being invoked (pre-tool-use only).")
+    run_parser.add_argument("--tool-command", type=str, default="",
+                            help="Tool command or payload summary (pre-tool-use only).")
+    run_parser.add_argument("--session-id", type=str, default="",
+                            help="Session id for receipt lookup or acknowledgement.")
     run_parser.add_argument("--dry-run", action="store_true",
                             help="Print commands without executing (git.commit-msg only).")
 
@@ -578,12 +806,25 @@ def main(argv: Optional[list[str]] = None) -> int:
         try:
             # --- built-in lifecycle handlers ---
             if event in ("session-start", "SessionStart"):
-                return handle_session_start(cwd, trigger_source=trigger_source)
+                return handle_session_start(cwd, trigger_source=trigger_source, session_id=args.session_id)
+
+            if event in ("acknowledge-read-plan", "AcknowledgeReadPlan"):
+                return handle_acknowledge_read_plan(cwd, trigger_source=trigger_source, session_id=args.session_id)
 
             if event in ("pre-tool-use", "PreToolUse"):
-                return handle_pre_tool_use(cwd, trigger_source=trigger_source, tool_name=args.tool_name)
+                return handle_pre_tool_use(
+                    cwd,
+                    trigger_source=trigger_source,
+                    tool_name=args.tool_name,
+                    session_id=args.session_id,
+                    tool_command=args.tool_command,
+                )
 
             if event == "git.commit-msg":
+                blocked = _guard_git_commit_msg(cwd, trigger_source=trigger_source)
+                if blocked:
+                    print(json.dumps(blocked, ensure_ascii=False))
+                    return 1
                 context: dict[str, str] = {"cwd": str(cwd), "repo_root": str(cwd)}
                 if args.message_file is not None:
                     context["message_file"] = str(args.message_file)
