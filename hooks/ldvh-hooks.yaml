@@ -16,21 +16,21 @@ ldvh_asset:
     - "提交消息本地或环境前置校验"
   inputs:
     - "Hook event id 或 lifecycle protocol event"
-    - "事件上下文参数，例如 cwd、commit message 文件路径"
+    - "事件上下文参数，例如 cwd、target_paths、tool_input、repo root、staged paths、commit message 文件路径"
   outputs:
     - "统一 Hook dispatcher 执行结果"
-    - "session-start: governed 状态 + knowledge-map receipt，可写入用户级 session receipt"
+    - "session-start: target-first governed 状态 + target_resolutions + knowledge-map receipt，可写入用户级 session receipt"
     - "acknowledge-read-plan: AI 回读 P0/P1 后写入 read_plan_consumed 证据"
-    - "pre-tool-use: 管辖项目 receipt 查验、必要时补建 receipt；写类工具缺少 read_plan_consumed 时阻断，找到已有 receipt 时写入 last_pre_tool_use 可观测字段"
-    - "git.commit-msg: 提交前先检查 read_plan_consumed，再执行底层 Code validator 输出和退出码"
-  handoff: "环境适配层和 AI 自觉消费层均通过 code/hook_dispatch.py 执行；Hook 路径走 stdin（trigger_source=hook），Rules 路径走 CLI（--trigger-source rules）。失败时回到调用方修改输入或按对应规范回读事实源。"
+    - "pre-tool-use: 工作对象管辖判定、receipt 查验、必要时补建 receipt；写类工具缺少 target 或 read_plan_consumed 时阻断，找到已有 receipt 时写入 last_pre_tool_use 可观测字段"
+    - "git.commit-msg: 以 repo root、Git common-dir 和 staged paths 判定提交工作对象；提交前先检查 read_plan_consumed，再执行底层 Code validator 输出和退出码"
+  handoff: "环境适配层和 AI 自觉消费层均通过 code/hook_dispatch.py 执行；Hook 路径走 stdin（trigger_source=hook），Rules 路径走 CLI（--trigger-source rules）。各 hook 的 dispatcher_command 是外部入口；command 是 dispatcher 完成 canonical context、管辖判定和门禁后调用的底层动作，不得作为环境入口绕过 dispatcher。失败时回到调用方修改输入或按对应规范回读事实源。"
   verification:
-    - "python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <cwd>"
+    - "python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <cwd> --target <target>"
     - "python3 code/hook_dispatch.py run acknowledge-read-plan --trigger-source rules --cwd <cwd>"
-    - "python3 code/hook_dispatch.py run pre-tool-use --trigger-source rules --cwd <cwd>"
+    - "python3 code/hook_dispatch.py run pre-tool-use --trigger-source rules --cwd <cwd> --target <target>"
     - "python3 code/hook_dispatch.py run git.commit-msg --trigger-source rules --message-file <message-file>"
-    - "echo '{\"event\":\"SessionStart\",\"cwd\":\"<cwd>\",\"trigger_source\":\"hook\"}' | python3 code/hook_dispatch.py"
-    - "printf '{\"hook_event_name\":\"PreToolUse\",\"cwd\":\"<cwd>\",\"tool_name\":\"Bash\",\"session_id\":\"smoke\"}' | python3 code/hook_dispatch.py"
+    - "echo '{\"event\":\"SessionStart\",\"cwd\":\"<cwd>\",\"target\":\"<target>\",\"trigger_source\":\"hook\"}' | python3 code/hook_dispatch.py"
+    - "printf '{\"hook_event_name\":\"PreToolUse\",\"cwd\":\"<cwd>\",\"tool_name\":\"Bash\",\"tool_input\":{\"file_path\":\"<target>\"},\"session_id\":\"smoke\"}' | python3 code/hook_dispatch.py"
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:
     - "specs/31-git-commit-action-Git提交行动编排.md 提交行动编排或 Hook 边界变化"
@@ -58,7 +58,17 @@ hooks:
       - "{message_file}"
       - "--repo"
       - "{repo_root}"
-    equivalent_manual_check: "python3 code/commit_validate.py --check-message '<message>'"
+    dispatcher_command:
+      - "python3"
+      - "code/hook_dispatch.py"
+      - "run"
+      - "git.commit-msg"
+      - "--cwd"
+      - "{repo_root}"
+      - "--message-file"
+      - "{message_file}"
+    equivalent_manual_check: "python3 code/hook_dispatch.py run git.commit-msg --cwd <repo-root> --message-file <message-file>"
+    underlying_validator_check: "python3 code/commit_validate.py --check-message '<message>'；仅校验提交消息格式，不等价于 dispatcher 门禁。"
     bypass_boundary: "环境可以不接入该事件；仓库 native Git hook 可通过 code/install_git_hooks.py install 安装并调用本事件。接入后仍应承认本地或用户侧 Hook 可被绕过，CI / server-side gate 仍是后续兜底方向。"
 
   - id: "ldvh-session-start"
@@ -69,7 +79,10 @@ hooks:
     inputs:
       cwd:
         required: true
-        description: "当前工作目录。"
+        description: "当前工作目录；target 缺失时作为 fallback。"
+      target:
+        required: false
+        description: "本次操作实际工作对象路径，可多次传入。"
     command:
       - "python3"
       - "code/hook_dispatch.py"
@@ -77,7 +90,16 @@ hooks:
       - "session-start"
       - "--cwd"
       - "{cwd}"
-    equivalent_manual_check: "python3 code/hook_dispatch.py run session-start --cwd <path>"
+    dispatcher_command:
+      - "python3"
+      - "code/hook_dispatch.py"
+      - "run"
+      - "session-start"
+      - "--cwd"
+      - "{cwd}"
+      - "--target"
+      - "{target}"
+    equivalent_manual_check: "python3 code/hook_dispatch.py run session-start --cwd <cwd> --target <target>"
     bypass_boundary: "无 AI Hook 环境由 AI 自觉执行同一命令；Hook 路径和 Rules 路径执行同一 handler。"
 
   - id: "ldvh-acknowledge-read-plan"
@@ -107,7 +129,10 @@ hooks:
     inputs:
       cwd:
         required: true
-        description: "当前工作目录。"
+        description: "当前工作目录；target 缺失时作为 fallback。"
+      target:
+        required: false
+        description: "本次工具调用实际工作对象路径，可多次传入；写类工具无法确定 target 时必须阻断。"
     command:
       - "python3"
       - "code/hook_dispatch.py"
@@ -115,5 +140,14 @@ hooks:
       - "pre-tool-use"
       - "--cwd"
       - "{cwd}"
-    equivalent_manual_check: "python3 code/hook_dispatch.py run pre-tool-use --cwd <path>"
-    bypass_boundary: "PreToolUse 使用 Hook payload 中的 session_id 查验用户级 session receipt；缺失 SessionStart 可见输出时可补建 receipt；写类工具缺少 read_plan_consumed 时必须阻断。缺少 session_id 的环境使用最近匹配 cwd 的 receipt 兜底，仍无法确认时由 AI 按 Runtime Protocol 自觉确认。"
+    dispatcher_command:
+      - "python3"
+      - "code/hook_dispatch.py"
+      - "run"
+      - "pre-tool-use"
+      - "--cwd"
+      - "{cwd}"
+      - "--target"
+      - "{target}"
+    equivalent_manual_check: "python3 code/hook_dispatch.py run pre-tool-use --cwd <cwd> --target <target>"
+    bypass_boundary: "PreToolUse 使用 Hook payload 中的 session_id 查验用户级 session receipt；缺失 SessionStart 可见输出时可补建 receipt；写类工具缺少 target 或 read_plan_consumed 时必须阻断。缺少 session_id 的环境使用最近匹配工作对象的 receipt 兜底，仍无法确认时由 AI 按 Runtime Protocol 自觉确认。"

@@ -4,9 +4,12 @@ import json
 import subprocess
 from pathlib import Path
 
+import yaml
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DISPATCHER_PATH = PROJECT_ROOT / "code" / "hook_dispatch.py"
+HOOK_REGISTRY_PATH = PROJECT_ROOT / "hooks" / "ldvh-hooks.yaml"
 
 
 def load_dispatcher():
@@ -16,6 +19,21 @@ def load_dispatcher():
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
+
+
+def test_hook_registry_declares_dispatcher_entrypoints():
+    registry = yaml.safe_load(HOOK_REGISTRY_PATH.read_text(encoding="utf-8"))
+    hooks = {hook["event"]: hook for hook in registry["hooks"]}
+
+    assert hooks["git.commit-msg"]["dispatcher_command"][:4] == [
+        "python3",
+        "code/hook_dispatch.py",
+        "run",
+        "git.commit-msg",
+    ]
+    assert hooks["git.commit-msg"]["command"][:2] == ["python3", "code/commit_validate.py"]
+    assert "--target" in hooks["session-start"]["dispatcher_command"]
+    assert "--target" in hooks["pre-tool-use"]["dispatcher_command"]
 
 
 def test_session_start_limited_receipt_does_not_block(monkeypatch, tmp_path, capsys):
@@ -45,8 +63,66 @@ def test_session_start_limited_receipt_does_not_block(monkeypatch, tmp_path, cap
 
     assert exit_code == 0
     assert payload["receipt"] == "limited"
-    assert payload["action_policy"] == "continue_with_limited_receipt"
+    assert payload["action_policy"] == "fallback_read_plan_required"
+    assert payload["diagnostics_policy"] == "continue_with_limited_receipt"
+    assert payload["read_plan_source"] == "fallback"
+    assert [item["path"] for item in payload["read_plan"]] == [
+        "rules/LDVH-RUNTIME-PROTOCOL.md",
+        "specs/06-运行时扩展规范.md",
+        "specs/attachments/06.Att.02-固定运行时扩展登记表.md",
+    ]
     assert payload["diagnostics"][0]["code"] == "V2_PROJECT_FACT_GRAPH_LOAD_FAILED"
+
+
+def test_session_start_falls_back_when_knowledge_map_has_no_required_read_plan(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    config = tmp_path / "LDVH-GOVERNED-PROJECTS.yaml"
+    config.write_text("projects:\n  - path: .\n", encoding="utf-8")
+
+    monkeypatch.setattr(dispatcher, "_find_governed_config", lambda cwd: config)
+    monkeypatch.setattr(dispatcher, "_cwd_in_governed_project", lambda cwd, config_path: True)
+    monkeypatch.setattr(
+        dispatcher,
+        "_run_knowledge_map",
+        lambda start_node, task_type: {
+            "result_status": "ok",
+            "diagnostics": [],
+            "read_plan": [
+                {"path": "ldvh-base/sparks/spark-0032-runtime-operation-assurance-hook-agent-deployment.yaml", "priority": "P2"}
+            ],
+        },
+    )
+
+    exit_code = dispatcher.handle_session_start(tmp_path, trigger_source="hook")
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["read_plan_source"] == "fallback"
+    assert payload["action_policy"] == "fallback_read_plan_required"
+    assert payload["read_plan"][0]["priority"] == "P0"
+    assert payload["read_plan"][1]["priority"] == "P1"
+
+
+def test_acknowledge_read_plan_blocks_empty_required_paths_for_governed_receipt(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    dispatcher._write_session_receipt(
+        "empty-plan",
+        "session-start",
+        {
+            "governed": True,
+            "cwd": str(tmp_path),
+            "read_plan": [],
+        },
+    )
+
+    exit_code = dispatcher.handle_acknowledge_read_plan(tmp_path, trigger_source="rules", session_id="empty-plan")
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert payload["acknowledged"] is False
+    assert payload["blocked"] is True
+    assert "空读取计划" in payload["reason"]
 
 
 def test_session_start_writes_receipt_state(monkeypatch, tmp_path, capsys):
@@ -214,6 +290,7 @@ def test_pre_tool_use_blocks_write_until_read_plan_acknowledged(monkeypatch, tmp
         trigger_source="hook",
         tool_name="Write",
         session_id="session-5",
+        targets=[tmp_path / "changed.txt"],
     )
     blocked = json.loads(capsys.readouterr().out)
 
@@ -233,12 +310,29 @@ def test_pre_tool_use_blocks_write_until_read_plan_acknowledged(monkeypatch, tmp
         trigger_source="hook",
         tool_name="Write",
         session_id="session-5",
+        targets=[tmp_path / "changed.txt"],
     )
     payload = json.loads(capsys.readouterr().out)
 
     assert exit_code == 0
     assert payload["blocked"] is False
     assert payload["read_plan_consumed"] == "acknowledged"
+
+
+def test_pre_tool_use_blocks_write_when_target_unknown(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+
+    exit_code = dispatcher.handle_pre_tool_use(
+        tmp_path,
+        trigger_source="hook",
+        tool_name="Write",
+        session_id="session-unknown",
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert payload["blocked"] is True
+    assert payload["blocked_reason"] == "unknown_target"
 
 
 def test_pre_tool_use_blocks_mutating_bash_until_read_plan_acknowledged(monkeypatch, tmp_path, capsys):
@@ -264,12 +358,248 @@ def test_pre_tool_use_blocks_mutating_bash_until_read_plan_acknowledged(monkeypa
         tool_name="Bash",
         session_id="session-6",
         tool_command="cat > changed.txt",
+        targets=[tmp_path / "changed.txt"],
     )
     payload = json.loads(capsys.readouterr().out)
 
     assert exit_code == 1
     assert payload["blocked"] is True
     assert payload["tool"] == "Bash"
+
+
+def test_pre_tool_use_target_under_project_is_governed_from_workspace_root(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    workspace = tmp_path / "workspace"
+    project = workspace / "ldvh"
+    project.mkdir(parents=True)
+    config = project / "LDVH-GOVERNED-PROJECTS.yaml"
+    config.write_text("projects:\n  - id: ldvh\n    path: .\n", encoding="utf-8")
+
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    monkeypatch.setattr(
+        dispatcher,
+        "_run_knowledge_map",
+        lambda start_node, task_type: {"result_status": "ok", "diagnostics": [], "read_plan": []},
+    )
+
+    assert dispatcher.handle_session_start(project, trigger_source="rules", session_id="session-target") == 0
+    capsys.readouterr()
+    assert dispatcher.handle_acknowledge_read_plan(project, trigger_source="rules", session_id="session-target") == 0
+    capsys.readouterr()
+
+    exit_code = dispatcher.handle_pre_tool_use(
+        workspace,
+        trigger_source="rules",
+        tool_name="Write",
+        session_id="session-target",
+        targets=[project / "code" / "hook_dispatch.py"],
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["governed"] is True
+    assert payload["governed_project_id"] == "ldvh"
+    assert payload["subject_source"] == "target"
+    assert payload["target_resolutions"][0]["status"] == "governed"
+
+
+def test_hook_payload_and_rules_cli_target_have_same_governance(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "projects:\n  - id: app\n    path: .\n",
+        encoding="utf-8",
+    )
+    target = project / "file.txt"
+
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    monkeypatch.setattr(dispatcher, "_run_knowledge_map", lambda start_node, task_type: {"result_status": "ok", "diagnostics": [], "read_plan": []})
+    assert dispatcher.handle_session_start(project, trigger_source="rules", session_id="session-parity") == 0
+    capsys.readouterr()
+    assert dispatcher.handle_acknowledge_read_plan(project, trigger_source="rules", session_id="session-parity") == 0
+    capsys.readouterr()
+
+    rules_code = dispatcher.main([
+        "run",
+        "pre-tool-use",
+        "--cwd",
+        str(tmp_path),
+        "--target",
+        str(target),
+        "--tool-name",
+        "Write",
+        "--session-id",
+        "session-parity",
+    ])
+    rules_payload = json.loads(capsys.readouterr().out)
+
+    monkeypatch.setattr(
+        "sys.stdin",
+        io.StringIO(
+            json.dumps(
+                {
+                    "hook_event_name": "PreToolUse",
+                    "cwd": str(tmp_path),
+                    "session_id": "session-parity",
+                    "tool_name": "Write",
+                    "tool_input": {"file_path": str(target)},
+                }
+            )
+        ),
+    )
+    hook_code = dispatcher.main([])
+    hook_payload = json.loads(capsys.readouterr().out)
+
+    assert rules_code == 0
+    assert hook_code == 0
+    for key in ("governed_subject", "governed_via", "governed_project_id", "blocked"):
+        assert hook_payload[key] == rules_payload[key]
+    assert hook_payload["target_paths"] == rules_payload["target_paths"]
+    assert hook_payload["target_resolutions"][0]["status"] == rules_payload["target_resolutions"][0]["status"]
+    assert hook_payload["event"] == rules_payload["event"] == "pre-tool-use"
+
+
+def test_target_outside_governed_project_noops(tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    project = tmp_path / "project"
+    outside = tmp_path / "outside"
+    project.mkdir()
+    outside.mkdir()
+    (project / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "projects:\n  - id: app\n    path: .\n",
+        encoding="utf-8",
+    )
+
+    exit_code = dispatcher.handle_pre_tool_use(
+        project,
+        trigger_source="rules",
+        tool_name="Bash",
+        targets=[outside / "README.md"],
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["blocked"] is False
+    assert payload["governed"] is False
+    assert payload["target_resolutions"][0]["status"] == "not_governed"
+
+
+def test_same_project_multiple_targets_are_allowed(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "projects:\n  - id: app\n    path: .\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    monkeypatch.setattr(dispatcher, "_run_knowledge_map", lambda start_node, task_type: {"result_status": "ok", "diagnostics": [], "read_plan": []})
+    assert dispatcher.handle_session_start(project, session_id="multi-same") == 0
+    capsys.readouterr()
+    assert dispatcher.handle_acknowledge_read_plan(project, session_id="multi-same") == 0
+    capsys.readouterr()
+
+    exit_code = dispatcher.handle_pre_tool_use(
+        project,
+        tool_name="Write",
+        session_id="multi-same",
+        targets=[project / "a.txt", project / "b.txt"],
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["blocked"] is False
+    assert len(payload["target_resolutions"]) == 2
+
+
+def test_mixed_governed_and_ungoverned_targets_block(tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    project = tmp_path / "project"
+    outside = tmp_path / "outside"
+    project.mkdir()
+    outside.mkdir()
+    (project / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "projects:\n  - id: app\n    path: .\n",
+        encoding="utf-8",
+    )
+
+    exit_code = dispatcher.handle_pre_tool_use(
+        project,
+        tool_name="Bash",
+        targets=[project / "a.txt", outside / "b.txt"],
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert payload["blocked_reason"] == "mixed_governed_and_ungoverned_targets"
+
+
+def test_multiple_governed_projects_block_even_without_ids(tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    workspace = tmp_path / "workspace"
+    one = workspace / "one"
+    two = workspace / "two"
+    one.mkdir(parents=True)
+    two.mkdir()
+    (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "projects:\n  - path: one\n  - path: two\n",
+        encoding="utf-8",
+    )
+
+    exit_code = dispatcher.handle_pre_tool_use(
+        workspace,
+        tool_name="Bash",
+        targets=[one / "a.txt", two / "b.txt"],
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert payload["blocked_reason"] == "multiple_governed_projects"
+
+
+def test_git_worktree_file_target_matches_common_dir(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    repo = tmp_path / "project"
+    worktree = tmp_path / "project-worktree"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "config", "user.email", "ldvh@example.test"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "LDVH Test"], cwd=repo, check=True)
+    (repo / "README.md").write_text("test\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "test: init"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "worktree", "add", str(worktree)], cwd=repo, check=True, capture_output=True, text=True)
+    common_dir = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    config = tmp_path / "LDVH-GOVERNED-PROJECTS.yaml"
+    config.write_text(
+        f"projects:\n  - id: app\n    path: {repo}\n    git:\n      common_dir: {common_dir}\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    monkeypatch.setattr(dispatcher, "_run_knowledge_map", lambda start_node, task_type: {"result_status": "ok", "diagnostics": [], "read_plan": []})
+    assert dispatcher.handle_session_start(worktree, session_id="wt-file") == 0
+    capsys.readouterr()
+    assert dispatcher.handle_acknowledge_read_plan(worktree, session_id="wt-file") == 0
+    capsys.readouterr()
+
+    exit_code = dispatcher.handle_pre_tool_use(
+        tmp_path,
+        tool_name="Write",
+        session_id="wt-file",
+        targets=[worktree / "README.md"],
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["governed"] is True
+    assert payload["governed_via"] == "git.common_dir"
 
 
 def test_git_commit_msg_blocks_until_latest_read_plan_acknowledged(monkeypatch, tmp_path, capsys):
@@ -319,6 +649,49 @@ def test_git_commit_msg_blocks_until_latest_read_plan_acknowledged(monkeypatch, 
     ])
 
     assert exit_code == 0
+
+
+def test_git_commit_msg_uses_repo_root_and_staged_paths_not_message_file(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "config", "user.email", "ldvh@example.test"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "LDVH Test"], cwd=repo, check=True)
+    (repo / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "projects:\n  - id: app\n    path: .\n",
+        encoding="utf-8",
+    )
+    (repo / "changed.txt").write_text("changed\n", encoding="utf-8")
+    subprocess.run(["git", "add", "changed.txt"], cwd=repo, check=True)
+    message = tmp_path / "message.txt"
+    message.write_text("feat: 提交测试\n", encoding="utf-8")
+    captured = {}
+
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    monkeypatch.setattr(dispatcher, "_run_knowledge_map", lambda start_node, task_type: {"result_status": "ok", "diagnostics": [], "read_plan": []})
+    def fake_run_event(event, registry, context, dry_run=False):
+        captured["context"] = context
+        return 0
+
+    monkeypatch.setattr(dispatcher, "run_event", fake_run_event)
+    assert dispatcher.handle_session_start(repo, session_id="commit-target") == 0
+    capsys.readouterr()
+    assert dispatcher.handle_acknowledge_read_plan(repo, session_id="commit-target") == 0
+    capsys.readouterr()
+
+    exit_code = dispatcher.main([
+        "run",
+        "git.commit-msg",
+        "--cwd",
+        str(repo / "subdir"),
+        "--message-file",
+        str(message),
+    ])
+
+    assert exit_code == 0
+    assert captured["context"]["repo_root"] == str(repo)
+    assert captured["context"]["message_file"] == str(message)
 
 
 def test_cli_event_survives_codex_stdin_payload_without_event(monkeypatch, tmp_path, capsys):
