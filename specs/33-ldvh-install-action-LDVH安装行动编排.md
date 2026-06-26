@@ -401,7 +401,7 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 |---|---|
 | Rules 安装后验证 | `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <管辖项目>` |
 | Codex Hook payload 验证 | `printf '{"hook_event_name":"PreToolUse","cwd":"<管辖项目>","tool_name":"Bash","session_id":"smoke"}' \| python3 code/hook_dispatch.py` |
-| Codex receipt 验证 | 检查 `~/.codex/ldvh/session-receipts/<session_id>.json` 中 `result.governed=true` 与 `result.receipt=ok` |
+| Codex receipt 验证 | 检查 `~/.codex/ldvh/session-receipts/<session_id>.json` 中 `result.governed=true`、`result.receipt=ok`，并在一次工具调用后出现 `last_pre_tool_use` 或等价工具前检查证据 |
 | native Git commit hook 验证 | `python3 code/install_git_hooks.py status`，并用临时提交消息确认不合规 message 被真实 `git commit` 阻断 |
 | 薄引用路径存在 | 检查 `<环境目录>/AGENTS.md` 或等价入口是否包含 `LDVH-RUNTIME-PROTOCOL.md` 绝对路径 |
 | 管辖项目配置 | `python3 code/specs_validate.py governed-projects` |

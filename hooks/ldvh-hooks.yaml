@@ -20,7 +20,7 @@ ldvh_asset:
   outputs:
     - "统一 Hook dispatcher 执行结果"
     - "session-start: governed 状态 + knowledge-map receipt，可写入用户级 session receipt"
-    - "pre-tool-use: 管辖项目 receipt 查验、必要时补建非阻断 receipt，或 no-op"
+    - "pre-tool-use: 管辖项目 receipt 查验、必要时补建非阻断 receipt，找到已有 receipt 时写入 last_pre_tool_use 可观测字段，或 no-op"
     - "git.commit-msg: 底层 Code validator 输出和退出码"
   handoff: "环境适配层和 AI 自觉消费层均通过 code/hook_dispatch.py 执行；Hook 路径走 stdin（trigger_source=hook），Rules 路径走 CLI（--trigger-source rules）。失败时回到调用方修改输入或按对应规范回读事实源。"
   verification:
@@ -95,4 +95,4 @@ hooks:
       - "--cwd"
       - "{cwd}"
     equivalent_manual_check: "python3 code/hook_dispatch.py run pre-tool-use --cwd <path>"
-    bypass_boundary: "PreToolUse 使用 Hook payload 中的 session_id 查验用户级 session receipt；缺失 SessionStart 可见输出时可补建非阻断 receipt。缺少 session_id 的环境仍只能输出提醒，由 AI 按 Runtime Protocol 自觉确认。"
+    bypass_boundary: "PreToolUse 使用 Hook payload 中的 session_id 查验用户级 session receipt；缺失 SessionStart 可见输出时可补建非阻断 receipt；找到已有 receipt 时应更新 last_pre_tool_use 作为触发证据。缺少 session_id 的环境仍只能输出提醒，由 AI 按 Runtime Protocol 自觉确认。"
