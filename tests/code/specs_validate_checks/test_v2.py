@@ -934,6 +934,51 @@ def test_v2_check_reports_degraded_when_governed_projects_config_is_missing(tmp_
     assert excluded["history_specs_v1"] == "V2_HISTORY_SPECS_V1_GRAPH_NOT_IMPLEMENTED"
 
 
+def test_v2_check_finds_governed_projects_config_from_git_worktree(tmp_path):
+    repo = tmp_path / "project"
+    worktree = tmp_path / "project-worktree"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "config", "user.email", "ldvh@example.test"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "LDVH Test"], cwd=repo, check=True)
+    write_md(
+        repo / "ldvh-base" / "sparks" / "spark-0001-alpha.yaml",
+        """
+id: spark-0001
+type: spark
+title: Alpha
+status: pending
+created: '2026-06-23'
+updated: '2026-06-23'
+description: Alpha
+source: conversation
+priority: P1
+""",
+    )
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "test: init"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "worktree", "add", str(worktree)], cwd=repo, check=True, capture_output=True, text=True)
+    write_md(
+        tmp_path / "LDVH-GOVERNED-PROJECTS.yaml",
+        f"""
+product_name: Test LDVH
+product_description: Test workspace
+projects:
+  - id: project-a
+    path: {repo}
+    name: Project A
+""",
+    )
+
+    report = checker.v2_check_build(worktree, input_scope="governed_projects", project_scope="all_governed_projects")
+    codes = {item["code"] for item in report["diagnostics"]}
+    node_ids = {node["id"] for node in report["knowledge_map"]["nodes"]}
+
+    assert "V2_GOVERNED_PROJECTS_CONFIG_MISSING" not in codes
+    assert "project:project-a" in node_ids
+    assert "project-a:spark:spark-0001" in node_ids
+
+
 def test_v2_check_governed_projects_projects_namespaced_fact_nodes(tmp_path):
     workspace = tmp_path / "workspace"
     project_a = workspace / "project-a"
