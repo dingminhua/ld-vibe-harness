@@ -3,9 +3,9 @@ type: workcase
 title: 管辖项目事实对象语义边增强
 goal: |
   在已排除历史图谱、Git 图谱、Web 短期实现和 Human 自然查询体验之后，增强管辖项目事实对象之间的语义关系密度、一致性校验和任务导航中的语义边可见性。
-status: human_closure_confirming
+status: closed
 created: '2026-06-24T08:46:30+08:00'
-updated: '2026-06-24T09:12:00+08:00'
+updated: '2026-06-26T09:52:45+08:00'
 priority: P1
 description: |
   当前知识地图的 Code 侧核心形态已经成立：active specs、runtime extensions、governed_projects、entry_navigation、raw 片段和 read_plan 均可用；历史图谱、Git 图谱、Web 短期实现和 Human 自然查询体验已明确不作为当前推进目标。
@@ -603,8 +603,16 @@ closure_evidence: |
   本次收口结果为：当前目标已收口干净，无需另起 spark、WorkCase 或 ADR。
 closure_requested_at: '2026-06-24T09:04:00+08:00'
 review_requested_at: '2026-06-24T08:59:00+08:00'
-closed_at: ''
-closure_outcome: ''
+closed_at: '2026-06-26T09:52:45+08:00'
+closure_outcome: completed
+human_closure_confirmation:
+  decision: close
+  confirmed_at: '2026-06-26T09:52:45+08:00'
+  confirmer: human
+  scope: |
+    Human 已确认此前复核过且可关闭的 WorkCase 直接关闭，本次范围包含 workcase-0002。
+  summary: |
+    Human 接受当前 closure_evidence、事实源校验和残留风险分流口径，确认本 WorkCase 以 completed 结果关闭。
 residual_risks:
 - "当前只建立关系语义口径、只读诊断和导航摘要，没有批量修复历史事实对象中的弱关联字段；现有 review hints 仍需按具体对象逐步治理。"
 - "`KG_FACT_RELATION_ONLY_RELATED` 仅在具体 start_node 对象导航时提示，避免全局入口噪声；这意味着全量弱关联治理仍依赖后续按对象展开。"
@@ -697,6 +705,21 @@ revision_history:
   - revision_history
   summary: |
     已补充 WorkCase 状态硬提示、fact_validate warning、新建 WorkCase 默认 result_review.review_policy 和相关测试；WorkCase 仍保持 Human 关闭确认状态，等待 Human 最终关闭确认。
+- at: '2026-06-26T09:52:45+08:00'
+  from_status: human_closure_confirming
+  to_status: closed
+  actor: codex-main-thread
+  reason: |
+    Human 确认关闭此前已复核可关闭的 WorkCase。workcase-0002 已完成成功标准、结果复核、closure_evidence 和事实源校验，且关闭证据明确无后续分流。
+  changed_fields:
+  - status
+  - updated
+  - closed_at
+  - closure_outcome
+  - human_closure_confirmation
+  - revision_history
+  summary: |
+    WorkCase 以 completed 结果关闭；残留风险保持为按对象渐进治理的非阻断风险。
 related_docs:
 - specs/01-规范体系基础规范.md
 - specs/04-Code确定性执行规范.md
