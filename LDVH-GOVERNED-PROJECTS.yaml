@@ -1,0 +1,6 @@
+product_name: LD Vibe Harness
+product_description: LDVH self-governed project workspace.
+projects:
+  - id: ldvh-self
+    path: .
+    name: LD Vibe Harness
