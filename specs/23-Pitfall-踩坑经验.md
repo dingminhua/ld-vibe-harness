@@ -304,7 +304,7 @@ Pitfall 证据至少包括问题现象、触发条件、根因、解决方式、
 
 AI 处理 Pitfall 时应先判断经验是否满足准入条件，不得把未解决、未验证或字段不完整的问题写成 Pitfall。读取 `archived` Pitfall 时，应查看 `archive_reason` 和关联字段，判断是否已被规范、运行入口或实现吸收。
 
-Code 可解析 Pitfall YAML，校验文件命名、ID、字段类型、必填字段、条件必填字段、状态枚举、合法流转、引用字段、`archive_reason`、tags 格式和旧字段迁移诊断。Code 不得自行创建、归档、删除 Pitfall 或改写核心经验。
+Code 可创建 Pitfall 结构骨架、解析 Pitfall YAML，校验文件命名、ID、字段类型、必填字段、条件必填字段、状态枚举、合法流转、引用字段、`archive_reason`、tags 格式和旧字段迁移诊断。Code 不得替代 AI/Human 判断 Pitfall 准入、填充核心经验、归档、删除 Pitfall 或改写核心经验。
 
 Web 可展示 Pitfall 状态、症状、触发条件、根因、解决方式、验证结论、规避策略、适用范围、标签、归档原因、吸收关系和待确认项。当前 Web 不得直接创建、编辑、归档、删除 Pitfall 或改写核心经验，也不得维护独立 Pitfall 权威状态。
 

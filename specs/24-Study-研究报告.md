@@ -292,7 +292,7 @@ Study 证据至少包括研究问题和触发来源、报告摘要和正文、�
 
 AI 处理 Study 时应先判断内容是否已经从临时资料整理为稳定报告；不得用 Study 替代 Spark 的议题演变、ADR 的长期决策或 WorkCase 的执行计划。
 
-Code 可解析 Study Markdown frontmatter 和正文，校验文件命名、ID、字段类型、必填字段、条件必填字段、状态枚举、合法流转、`urls`、`related_*` 引用字段和正文骨架。Code 不得自行创建、替代、归档或删除 Study。
+Code 可创建 Study 结构骨架、解析 Study Markdown frontmatter 和正文，校验文件命名、ID、字段类型、必填字段、条件必填字段、状态枚举、合法流转、`urls`、`related_*` 引用字段和正文骨架。Code 不得替代 AI/Human 判断 Study 准入、填充报告正文、归档或删除 Study。
 
 Web 可展示 Study 列表、状态、摘要、结论、正文入口和关联对象。Study 详情页是报告阅读界面，不按普通字段卡片表达主内容。右侧扩展阅读区应复用同一份 Study 事实源，不得维护第二套摘要或正文。当前 Web 不得直接创建、编辑、替代、归档或删除 Study。
 

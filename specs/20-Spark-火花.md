@@ -405,7 +405,7 @@ Code 可依据本文和 active Spark 规范实现或诊断以下能力：
 5. 聚合待处理 Spark、已分流 Spark、已废弃 Spark、分流目标和已有关联对象但仍 `pending` 的多线分流 Spark；
 6. 在 v2 双读期间核对 历史 `ldvh_member` 与 active `v2_fact_model_member` 的编号、路径、实例目录、锚点和 Code 消费入口。
 
-Code 不得自行创建、分流、废弃或删除 Spark，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/sparks/` 权威事实源。Code 默认校验应回到 active `specs/20-Spark-火花.md` 和现有实现。
+Code 可创建 Spark 结构骨架并校验 Spark YAML，但不得替代 AI/Human 判断准入、填充语义摘要、分流、废弃或删除 Spark，不得绕过 Human Gate，不得把派生输出替代 `ldvh-base/sparks/` 权威事实源。Code 默认校验应回到 active `specs/20-Spark-火花.md` 和现有实现。
 
 ### 11.3 Web 消费边界
 

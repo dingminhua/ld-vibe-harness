@@ -625,6 +625,9 @@ def cmd_create(args: argparse.Namespace) -> int:
             data[field] = ""
     if object_type == "workcase":
         data["priority"] = "P2"
+        data["description"] = f"{title} 的工作项背景、范围和问题说明待 AI 根据事实源补充。"
+        data["success_criteria"] = "- [ ] 待 AI 根据 Human 目标补充可验证成功标准。"
+        data["source"] = "conversation"
         data["orchestration"] = _default_workcase_orchestration()
         data["plan_confirmed_at"] = ""
         data["verification_evidence"] = ""
