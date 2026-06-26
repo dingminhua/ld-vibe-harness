@@ -64,6 +64,39 @@ def _write_session_receipt(session_id: str, event: str, result: dict[str, Any]) 
         return
 
 
+def _mark_pre_tool_use_receipt(session_id: str, result: dict[str, Any]) -> None:
+    path = _receipt_path(session_id)
+    if path is None:
+        return
+    receipt = _read_session_receipt(session_id)
+    if receipt is None:
+        return
+    observed_at = datetime.now(timezone.utc).isoformat()
+    observation = {
+        "event": "pre-tool-use",
+        "observed_at": observed_at,
+        "cwd": result.get("cwd", ""),
+        "trigger_source": result.get("trigger_source", ""),
+        "session_receipt": result.get("session_receipt", ""),
+    }
+    if result.get("tool"):
+        observation["tool"] = result["tool"]
+    if result.get("receipt"):
+        observation["receipt"] = result["receipt"]
+
+    events = receipt.get("events")
+    if not isinstance(events, list):
+        events = []
+    events.append(observation)
+    receipt["events"] = events[-20:]
+    receipt["last_pre_tool_use"] = observation
+    receipt["updated_at"] = observed_at
+    try:
+        path.write_text(json.dumps(receipt, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError:
+        return
+
+
 def _read_session_receipt(session_id: str) -> Optional[dict[str, Any]]:
     path = _receipt_path(session_id)
     if path is None or not path.is_file():
@@ -291,6 +324,8 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         result["warning"] = "管辖项目中，hook payload 未提供 session_id；请确认本会话已完成 session-start。"
     if tool_name:
         result["tool"] = tool_name
+    if receipt and session_id:
+        _mark_pre_tool_use_receipt(session_id, result)
     print(json.dumps(result, ensure_ascii=False))
     return 0
 

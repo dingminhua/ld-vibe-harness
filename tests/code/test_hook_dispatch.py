@@ -101,6 +101,39 @@ def test_pre_tool_use_creates_implicit_receipt_when_session_start_missing(monkey
     assert receipt["event"] == "pre-tool-use-implicit-session-start"
 
 
+def test_pre_tool_use_marks_existing_receipt_when_found(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    config = tmp_path / "LDVH-GOVERNED-PROJECTS.yaml"
+    config.write_text("projects:\n  - path: .\n", encoding="utf-8")
+
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    monkeypatch.setattr(dispatcher, "_find_governed_config", lambda cwd: config)
+    monkeypatch.setattr(dispatcher, "_cwd_in_governed_project", lambda cwd, config_path: True)
+    monkeypatch.setattr(
+        dispatcher,
+        "_run_knowledge_map",
+        lambda start_node, task_type: {"result_status": "ok", "diagnostics": []},
+    )
+
+    assert dispatcher.handle_session_start(tmp_path, trigger_source="hook", session_id="session-4") == 0
+    capsys.readouterr()
+    exit_code = dispatcher.handle_pre_tool_use(
+        tmp_path,
+        trigger_source="hook",
+        tool_name="Bash",
+        session_id="session-4",
+    )
+    payload = json.loads(capsys.readouterr().out)
+    receipt = dispatcher._read_session_receipt("session-4")
+
+    assert exit_code == 0
+    assert payload["session_receipt"] == "found"
+    assert receipt["event"] == "session-start"
+    assert receipt["last_pre_tool_use"]["event"] == "pre-tool-use"
+    assert receipt["last_pre_tool_use"]["tool"] == "Bash"
+    assert receipt["events"][-1]["session_receipt"] == "found"
+
+
 def test_cli_event_survives_codex_stdin_payload_without_event(monkeypatch, tmp_path, capsys):
     dispatcher = load_dispatcher()
     config = tmp_path / "LDVH-GOVERNED-PROJECTS.yaml"
