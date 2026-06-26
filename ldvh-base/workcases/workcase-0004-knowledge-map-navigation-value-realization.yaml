@@ -3,9 +3,9 @@ type: workcase
 title: 知识地图任务导航价值兑付改进
 goal: |
   按最新知识地图价值重新评估报告中最明确、可最小闭环落地的三项建议，补齐知识地图任务导航的停止条件、文本输出章节定位和读取计划 role 细化，使 AI 获得“读什么、何时停、优先读哪里”的实时导航结果。
-status: human_closure_confirming
+status: closed
 created: '2026-06-24T09:48:06.626050'
-updated: '2026-06-24T10:12:42+08:00'
+updated: '2026-06-26T09:55:36+08:00'
 priority: P1
 description: |
   工作区最新评估报告确认：LDVH 知识地图功能健康、实时投影和渐进读取方向成立，但从 AI 消费者视角仍有三项直接影响价值兑付的缺口：
@@ -557,34 +557,46 @@ verification_evidence: |
 closure_evidence: |
   ## 验证计划
 
-  - 关闭前先完成主控自检，再由子 Agent / 独立视角复核结果。
+  - 关闭前确认 stop_conditions、text suggested_sections、read_plan role 细化三项功能已完成。
+  - 确认独立结果复核提出的范围污染、结构化引用和验证证据不一致问题已处理。
+  - 确认当前事实源校验与相关 Code 定向测试通过。
 
   ## 验证命令
 
-  - `python3 code/fact_validate.py ldvh-base/ --format text`
-  - 独立结果复核待执行。
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0004-knowledge-map-navigation-value-realization.yaml --format text`
+  - `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q`
 
   ## 验证结果
 
-  - 执行结果满足本 WorkCase 成功标准。
-  - 未修改 Rules、specs、Web、Git 图谱、历史图谱或环境入口。
-  - 知识地图输出仍为 Code 根据当前文件实时生成的只读投影，不落盘、不缓存、不成为事实源。
+  - 当前事实源校验通过，errors=0，warnings=0。
+  - 当前 Code 定向测试通过，23 passed。
+  - 三个独立结果复核视角已写入：Laplace 和 McClintock 的 fail 指向当时的范围外附件边界诊断、WorkCase 结构化命令引用和关闭材料缺口；Pasteur 为 pass_with_followups。
+  - 主控已在 `orchestration.result_review.controller_resolution` 中接受并处理硬问题：移除范围外 `V2_ATTACHMENT_*` 旁支，净化结构化引用，重跑验证并更新验证证据。
+  - 核心实现保持 Code 实时只读投影，不落盘、不缓存、不写回事实源；未扩大到 Web、Git 图谱、历史图谱或环境入口。
 
   ## 结论
 
-  - 独立复核条目和主控处理记录已回写；当前等待 Human 关闭确认，不直接 closed。
+  - 本 WorkCase 的执行结果满足成功标准，独立结果复核硬问题已处理，当前可关闭。
 
   ## 后续分流
 
-  当前残留只属于关闭前的风险留痕，不需要另起对象；后续若继续推进，应由原 WorkCase 的 follow-up 路径承接，不阻断本次收口。
+  无后续分流。当前目标已收口干净，不另起 Spark、WorkCase 或 ADR。
 
   ## 收口结果
 
-  本次收口结果为：可提交 Human 关闭确认，关闭后仍保留风险留痕，不另起新对象。
+  本次收口结果为：completed。
 closure_requested_at: '2026-06-24T10:12:42+08:00'
 review_requested_at: '2026-06-24T09:58:49+08:00'
-closed_at: ''
-closure_outcome: ''
+closed_at: '2026-06-26T09:55:36+08:00'
+closure_outcome: completed
+human_closure_confirmation:
+  decision: close
+  confirmed_at: '2026-06-26T09:55:36+08:00'
+  confirmer: human
+  scope: |
+    Human 授权按主控判断处理 workcase-0004：刷新关闭证据，确认可关闭后直接关闭。
+  summary: |
+    Human 接受当前 closure_evidence、事实源校验和测试结果，确认本 WorkCase 以 completed 结果关闭。
 residual_risks: []
 followup_refs: []
 revision_history:
@@ -657,6 +669,22 @@ revision_history:
   - closure_requested_at
   summary: |
     三个结果复核视角均已回写。主控处理了附件边界诊断旁支、结构化命令引用污染和验证证据不一致问题；核心实现保持实时只读投影、无缓存、无事实源写回。当前不直接关闭，等待 Human 确认。
+- at: '2026-06-26T09:55:36+08:00'
+  from_status: human_closure_confirming
+  to_status: closed
+  actor: codex-main-thread
+  reason: |
+    Human 授权按主控判断执行。主控刷新关闭证据，确认 workcase-0004 的独立结果复核硬问题已处理，当前事实源校验和相关 Code 定向测试通过，可关闭。
+  changed_fields:
+  - status
+  - updated
+  - closure_evidence
+  - closed_at
+  - closure_outcome
+  - human_closure_confirmation
+  - revision_history
+  summary: |
+    WorkCase 以 completed 结果关闭；无后续分流，无残留风险。
 related_docs:
 - specs/04-Code确定性执行规范.md
 - specs/attachments/04.Att.06-知识地图投影Schema表.md

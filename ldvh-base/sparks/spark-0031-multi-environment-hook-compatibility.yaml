@@ -1,9 +1,9 @@
 id: spark-0031
 type: spark
 title: 多环境 Hook 接入兼容：把环境适配单独拆离
-status: pending
+status: resolved
 created: '2026-06-25T08:52:00+08:00'
-updated: '2026-06-25T19:45:00+08:00'
+updated: '2026-06-26T10:06:12+08:00'
 description: |
   入口触发链工程化已经明确可以走 Hook 作为入口，但还存在一个独立问题：不同环境的 Hook 事件、参数、blocking 语义、注册方式、信任机制和可用上下文并不相同，不能把某一个环境的接入方式直接当作 LDVH 的通用入口实现。
 
@@ -117,6 +117,17 @@ evolution:
       同时已更新 `specs/attachments/06.Att.09`（薄引用使用规则）、`specs/attachments/06.Att.13`（非 Codex 自助适配核对表）和 `specs/32`（环境入口列出时区分 AI Hook 能力）。
 
       本 spark-0031 的核心收敛（协议统一、执行分层、Hook 注册只是协议执行方式之一）已与正式规范口径一致。spark-0024 也同步新增了双路径修正 evolution。后续工作对象应以 `specs/06` 的双路径原则为准，不再需要 spark 层面单独论证消费方式分流。
+  - at: '2026-06-26T10:06:12+08:00'
+    summary: |
+      经主工作线程人工确认，本 spark 标记为已分流。多环境 Hook 探测、兼容矩阵与双路径消费口径已经由 workcase-0011 完成验证并沉淀到正式规范；生产级部署保障与同链路工作调度范式改由 spark-0032 承接。
+
+      因此，插件式部署、receipt 持久化、旧入口清理、Skill/subAgent/worktree/new conversation 调度范式建设，不再作为 spark-0031 的未完成项。
+    evidence:
+      - ldvh-base/workcases/workcase-0011-multi-environment-hook-probe.yaml
+      - specs/06-运行时扩展规范.md
+      - specs/33-codex-automation-hooks-proposal.md
+      - ldvh-base/sparks/spark-0032-runtime-operation-assurance-hook-agent-deployment.yaml
+    result: 已分流至 workcase-0011；后续生产运行链路由 spark-0032 继续承接。
 input_refs:
   - spark-0024
   - specs/06-运行时扩展规范.md
@@ -125,8 +136,10 @@ input_refs:
   - specs/30-rules-entry-sync-review-Rules入口同步审查.md
   - rules/LDVH-WORKSPACE-ENTRY.md
   - rules/LDVH-MAINTAINER-ENTRY.md
-resolved_to: ''
-resolved_at: ''
+resolved_to:
+  type: workcase
+  ref: workcase-0011
+resolved_at: '2026-06-26'
 discard_reason: ''
 related_workcases:
   - workcase-0011
