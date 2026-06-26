@@ -1,6 +1,7 @@
 import importlib.util
 import io
 import json
+import subprocess
 from pathlib import Path
 
 
@@ -72,6 +73,55 @@ def test_session_start_writes_receipt_state(monkeypatch, tmp_path, capsys):
     assert receipt["result"]["receipt"] == "ok"
 
 
+def test_session_start_recognizes_git_worktree_as_governed_project(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    repo = tmp_path / "project"
+    worktree = tmp_path / "project-worktree"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "config", "user.email", "ldvh@example.test"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "LDVH Test"], cwd=repo, check=True)
+    (repo / "README.md").write_text("test\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "test: init"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "worktree", "add", str(worktree)], cwd=repo, check=True, capture_output=True, text=True)
+    common_dir = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    config = tmp_path / "LDVH-GOVERNED-PROJECTS.yaml"
+    config.write_text(
+        f"""
+product_name: LD Vibe Harness
+product_description: |
+  Test.
+projects:
+  - id: app
+    path: {repo}
+    git:
+      common_dir: {common_dir}
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        dispatcher,
+        "_run_knowledge_map",
+        lambda start_node, task_type: {"result_status": "ok", "diagnostics": []},
+    )
+
+    exit_code = dispatcher.handle_session_start(worktree, trigger_source="hook")
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["governed"] is True
+    assert payload["governed_via"] == "git.common_dir"
+    assert payload["governed_project_id"] == "app"
+    assert payload["config_path"] == str(config)
+
+
 def test_pre_tool_use_creates_implicit_receipt_when_session_start_missing(monkeypatch, tmp_path, capsys):
     dispatcher = load_dispatcher()
     config = tmp_path / "LDVH-GOVERNED-PROJECTS.yaml"
@@ -141,6 +191,7 @@ def test_cli_event_survives_codex_stdin_payload_without_event(monkeypatch, tmp_p
 
     monkeypatch.setattr(dispatcher, "_find_governed_config", lambda cwd: config)
     monkeypatch.setattr(dispatcher, "_cwd_in_governed_project", lambda cwd, config_path: True)
+    monkeypatch.setattr(dispatcher, "_governed_project_match", lambda cwd, config_path: {"governed": True})
     monkeypatch.setattr(
         "sys.stdin",
         io.StringIO(json.dumps({"cwd": str(tmp_path), "tool_name": "Bash"})),
@@ -162,6 +213,7 @@ def test_cli_event_wins_over_unrecognized_codex_stdin_event(monkeypatch, tmp_pat
 
     monkeypatch.setattr(dispatcher, "_find_governed_config", lambda cwd: config)
     monkeypatch.setattr(dispatcher, "_cwd_in_governed_project", lambda cwd, config_path: True)
+    monkeypatch.setattr(dispatcher, "_governed_project_match", lambda cwd, config_path: {"governed": True})
     monkeypatch.setattr(
         "sys.stdin",
         io.StringIO(json.dumps({"event": "unexpected-shape", "cwd": str(tmp_path)})),

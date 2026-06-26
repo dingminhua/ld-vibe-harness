@@ -55,7 +55,7 @@ Hook 路径：环境适配层将原生事件名映射为 canonical event 后，�
 
 `session-start` 返回 receipt，包含 `governed`、`read_plan`（P0/P1 必读原文列表）、`stop_conditions`。AI 必须按 read_plan P0/P1 顺序读取权威原文，不得跳过。
 
-`governed=false` 时 no-op：当前目录不在管辖项目中。
+`governed=false` 时 no-op：当前目录不在管辖项目中。若当前目录是 Codex worktree 或 Git worktree，dispatcher 可通过 Git `common_dir` 与 `LDVH-GOVERNED-PROJECTS.yaml` 登记项目匹配；AI 不得用路径相似或记忆自行判定管辖关系。receipt 若包含 `governed_via`、`governed_project_id`、`governed_project_path` 或 `git_common_dir`，应作为本轮运行链路证据消费。
 
 支持 `session_id` 的 Hook 环境应把 receipt 写入用户级运行时状态。Codex 使用 `~/.codex/ldvh/session-receipts/<session_id>.json`。该文件只证明当前环境会话完成或补建了 Runtime Protocol 握手，不是事实源，不得替代 Git 文件事实源、规范、WorkCase 或验证证据。
 

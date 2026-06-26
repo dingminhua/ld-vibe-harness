@@ -2,6 +2,7 @@
 
 import hashlib
 import re
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -1007,7 +1008,32 @@ class KnowledgeMapMixin:
         for candidate in (self.root / "LDVH-GOVERNED-PROJECTS.yaml", self.root.parent / "LDVH-GOVERNED-PROJECTS.yaml"):
             if candidate.exists():
                 return candidate
+        for worktree_root in self.git_worktree_roots(self.root):
+            for candidate in (worktree_root / "LDVH-GOVERNED-PROJECTS.yaml", worktree_root.parent / "LDVH-GOVERNED-PROJECTS.yaml"):
+                if candidate.exists():
+                    return candidate
         return None
+
+    def git_worktree_roots(self, cwd):
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(cwd), "worktree", "list", "--porcelain"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except OSError:
+            return []
+        if result.returncode != 0:
+            return []
+        roots = []
+        for line in result.stdout.splitlines():
+            if not line.startswith("worktree "):
+                continue
+            raw = line.removeprefix("worktree ").strip()
+            if raw:
+                roots.append(Path(raw))
+        return roots
 
     def select_governed_projects(self, projects):
         valid_projects = [project for project in projects if isinstance(project, dict) and project.get("id") and project.get("path")]

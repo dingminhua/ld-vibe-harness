@@ -280,13 +280,20 @@ AI 询问："你想对哪个项目启用 LDVH？"
 AI 在用户项目根目录下生成 `LDVH-GOVERNED-PROJECTS.yaml`：
 
 ```yaml
-version: "1.0"
-governed_instance: "/Users/<用户>/poker_hud_projects/ld-vibe-harness"
+product_name: LD Vibe Harness
+product_description: |
+  使用 LDVH 管理当前工作区内的项目需求、任务、决策、变更和证据。
 projects:
-  - path: "<用户项目路径>"
+  - id: "<项目稳定ID>"
+    path: "<用户项目路径>"
+    name: "<项目名称>"
+    description: |
+      <项目说明>
+    git:
+      common_dir: "<用户项目路径>/.git"
 ```
 
-`governed_instance` 为 LDVH 仓库在本机的绝对路径。AI 必须让用户确认后再写入，不得静默创建。
+`projects[].path` 为被管辖项目根目录。`projects[].git.common_dir` 是可选字段，用于让 Codex worktree、Git worktree 或其它临时执行目录通过 Git 身份命中同一管辖项目；能由 `git -C <项目路径> rev-parse --path-format=absolute --git-common-dir` 得到时，AI 可建议填写。AI 必须让用户确认后再写入，不得静默创建。
 
 ### 9.3 已有配置时追加
 
@@ -304,6 +311,8 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 预期：`governed: true`，`receipt: ok`。
 
 若 `governed: false`：检查 `LDVH-GOVERNED-PROJECTS.yaml` 路径是否正确。
+
+若在 Codex worktree 中验证，应检查 receipt 是否包含 `governed_via: git.common_dir` 或等价 Git 身份命中线索；若没有，应先补齐 `projects[].git.common_dir` 或修复 dispatcher 的 worktree 配置发现路径。
 
 ### 9.5 完成
 
