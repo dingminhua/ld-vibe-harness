@@ -812,6 +812,36 @@ def _tool_requires_read_plan_consumed(tool_name: str, command: str = "") -> bool
     return False
 
 
+
+def _hook_adapter_gap_diagnostic(*, cwd: Path, tool_name: str = "", session_id: str = "",
+                                 subject: dict[str, Any] | None = None,
+                                 target_paths: list[str] | None = None,
+                                 trigger_source: str = "hook",
+                                 command_observed: str = "") -> dict[str, Any]:
+    subject = subject or {}
+    return {
+        "severity": "warning",
+        "code": "HOOK_ADAPTER_PAYLOAD_GAP",
+        "message": "Hook adapter 未显式转发 payload / target，dispatcher 只能依赖 cwd fallback；请让 adapter 传入原始 payload 或等价 canonical context。",
+        "source_refs": [
+            "ldvh-base/workcases/workcase-0016-hook-adapter-payload-target-assurance.yaml",
+            "specs/attachments/06.Att.15-环境Hook事件映射表.md",
+            "code/hook_dispatch.py",
+        ],
+        "suggested_owner": "runtime-adapter",
+        "cwd": str(cwd),
+        "trigger_source": trigger_source,
+        "session_id": session_id,
+        "tool": tool_name,
+        "payload_present": False,
+        "target_paths": target_paths or subject.get("target_paths", []),
+        "subject_source": subject.get("subject_source", "cwd-fallback"),
+        "command_observed": command_observed[:200] if command_observed else "",
+    }
+
+
+
+
 def _read_plan_guard_result(cwd: Path, receipt: Optional[dict[str, Any]], *, trigger_source: str,
                             tool_name: str, command: str, action: str,
                             subject: dict[str, Any] | None = None,
@@ -856,6 +886,17 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
     """
     mutating = _tool_requires_read_plan_consumed(tool_name, tool_command)
     explicit_targets = bool(targets)
+    subject = resolve_governed_subject(cwd, targets or [], target_sources=target_sources)
+    payload_gap_diagnostic = None
+    if trigger_source == "hook" and not explicit_targets and subject.get("governed"):
+        payload_gap_diagnostic = _hook_adapter_gap_diagnostic(
+            cwd=cwd,
+            tool_name=tool_name,
+            session_id=session_id,
+            subject=subject,
+            trigger_source=trigger_source,
+            command_observed=tool_command,
+        )
     if mutating and not explicit_targets:
         blocked = {
             "blocked": True,
@@ -878,18 +919,23 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
             "next_action": "重新触发 pre-tool-use，并传入 --target <path>；Hook adapter 应从 tool_input 提取 file_path/path/workdir 等字段。",
             "command_observed": tool_command[:200] if tool_command else "",
         }
+        if payload_gap_diagnostic is not None:
+            blocked["diagnostics"] = [payload_gap_diagnostic]
+            blocked["payload_present"] = False
         print(json.dumps(blocked, ensure_ascii=False))
         return 1
 
-    subject = resolve_governed_subject(cwd, targets or [], target_sources=target_sources)
     if subject.get("blocked"):
         print(json.dumps({**subject, "trigger_source": trigger_source, "action": "pre-tool-use"}, ensure_ascii=False))
         return 1
 
     governed = bool(subject.get("governed"))
     if not governed:
-        print(json.dumps({"blocked": False, "reason": subject.get("message", "工作对象未命中管辖项目，no-op"),
-                          **subject, "trigger_source": trigger_source}))
+        result = {"blocked": False, "reason": subject.get("message", "工作对象未命中管辖项目，no-op"),
+                  **subject, "trigger_source": trigger_source, "payload_present": explicit_targets}
+        if payload_gap_diagnostic is not None:
+            result["diagnostics"] = [payload_gap_diagnostic]
+        print(json.dumps(result, ensure_ascii=False))
         return 0
 
     # In governed projects, keep the hook non-blocking while making the receipt
@@ -906,6 +952,7 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         "blocked": False,
         "governed": True,
         "trigger_source": trigger_source,
+        "payload_present": explicit_targets,
     }
     receipt = _read_session_receipt(session_id) if session_id else _latest_session_receipt(cwd)
     if receipt:
@@ -930,6 +977,8 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         result["tool"] = tool_name
     if tool_command:
         result["command_observed"] = tool_command[:200]
+    if payload_gap_diagnostic is not None:
+        result["diagnostics"] = [payload_gap_diagnostic]
     if mutating:
         blocked = _read_plan_guard_result(
             cwd,

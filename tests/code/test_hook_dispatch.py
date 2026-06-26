@@ -767,3 +767,82 @@ def test_codex_hook_event_name_stdin_payload_routes_to_builtin_handler(monkeypat
     assert payload["tool"] == "Bash"
     assert payload["trigger_source"] == "hook"
     assert payload["session_receipt"] == "created_by_pre_tool_use"
+
+
+
+def test_hook_payload_gap_is_reported_for_governed_read_without_target(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "LDVH-GOVERNED-PROJECTS.yaml").write_text("projects:\n  - id: app\n    path: .\n", encoding="utf-8")
+
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    monkeypatch.setattr(dispatcher, "_run_knowledge_map", lambda start_node, task_type: {"result_status": "ok", "diagnostics": [], "read_plan": []})
+    assert dispatcher.handle_session_start(project, trigger_source="hook", session_id="session-gap") == 0
+    capsys.readouterr()
+    assert dispatcher.handle_acknowledge_read_plan(project, trigger_source="hook", session_id="session-gap") == 0
+    capsys.readouterr()
+
+    exit_code = dispatcher.handle_pre_tool_use(
+        project,
+        trigger_source="hook",
+        tool_name="Bash",
+        session_id="session-gap",
+        tool_command="pwd",
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["blocked"] is False
+    assert payload["payload_present"] is False
+    assert payload["diagnostics"][0]["code"] == "HOOK_ADAPTER_PAYLOAD_GAP"
+    assert payload["diagnostics"][0]["payload_present"] is False
+
+
+
+def test_hook_payload_gap_blocking_write_keeps_unknown_target(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "LDVH-GOVERNED-PROJECTS.yaml").write_text("projects:\n  - id: app\n    path: .\n", encoding="utf-8")
+
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    monkeypatch.setattr(dispatcher, "_run_knowledge_map", lambda start_node, task_type: {"result_status": "ok", "diagnostics": [], "read_plan": []})
+    assert dispatcher.handle_session_start(project, trigger_source="hook", session_id="session-gap-write") == 0
+    capsys.readouterr()
+
+    exit_code = dispatcher.handle_pre_tool_use(
+        project,
+        trigger_source="hook",
+        tool_name="Write",
+        session_id="session-gap-write",
+        tool_command="apply_patch",
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert payload["blocked_reason"] == "unknown_target"
+    assert payload["diagnostics"][0]["code"] == "HOOK_ADAPTER_PAYLOAD_GAP"
+
+
+
+def test_hook_payload_gap_not_reported_for_non_governed_noop(tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    project = tmp_path / "project"
+    outside = tmp_path / "outside"
+    project.mkdir()
+    outside.mkdir()
+    (project / "LDVH-GOVERNED-PROJECTS.yaml").write_text("projects:\n  - id: app\n    path: .\n", encoding="utf-8")
+
+    exit_code = dispatcher.handle_pre_tool_use(
+        project,
+        trigger_source="hook",
+        tool_name="Bash",
+        targets=[outside / "README.md"],
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["blocked"] is False
+    assert payload["governed"] is False
+    assert "diagnostics" not in payload
