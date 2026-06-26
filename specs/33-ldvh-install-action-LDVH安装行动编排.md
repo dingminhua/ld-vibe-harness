@@ -162,7 +162,7 @@ AI 引导用户执行：
 
 1. **安装 LDVH 插件**：按环境自身的插件管理方式安装 LDVH 插件。插件内含 `hooks/hooks.json` 或等价 Hook 配置。
 2. **信任/授权**：环境弹出信任对话框时，用户确认信任。
-3. **验证**：重启环境或开启新会话后，环境自动触发 SessionStart Hook，`hook_dispatch.py` 执行 `session-start`。若 cwd 命中管辖项目，返回 `governed=true` + receipt。
+3. **验证**：重启环境或开启新会话后，环境自动触发 SessionStart Hook，`hook_dispatch.py` 执行 `session-start`。若 cwd 命中管辖项目，应生成 `governed=true` + receipt；Codex 等支持 `session_id` 的环境可通过 `~/.codex/ldvh/session-receipts/<session_id>.json` 复核，不要求对话界面一定展示 Hook stdout。
 
 ### 5.3 AI 的引导话术要求
 
@@ -327,6 +327,8 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 | 症状 | 可能原因 | 分流位置 |
 |---|---|---|
 | 插件安装后 Hook 不触发 | 环境未信任、插件未启用、cwd 不在管辖项目 | §8 验证步骤 |
+| PreToolUse 报 `未找到 active Hook event` | 环境 payload 字段未被 dispatcher 归一化 | 同步 `code/hook_dispatch.py` payload 解析与 06.Att.15 |
+| 新会话看不到 SessionStart 输出 | 环境不展示 Hook stdout 或子线程不触发 SessionStart | 检查 session receipt；必要时由 PreToolUse 补建非阻断 receipt |
 | AI 未读取薄引用 | 入口路径不存在或不被环境读取 | §6.2 定位环境目录入口 |
 | 配置后 governed=false | LDVH-GOVERNED-PROJECTS.yaml 路径错误或未写 | §9.4 配置后验证 |
 | session-start 返回 non-zero | knowledge-map 不可用、管辖配置异常 | `hook_dispatch.py` 输出 |
@@ -368,6 +370,7 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 一次成功安装的交付物是：
 
 - 插件方式：环境已启用 LDVH 插件，SessionStart Hook 可自动触发
+- Codex 插件方式：能生成或找到 `~/.codex/ldvh/session-receipts/<session_id>.json`，且 `PreToolUse` 不因 payload 字段差异误阻断普通只读命令
 - Rules 方式：环境目录中存在指向 `LDVH-RUNTIME-PROTOCOL.md` 的薄引用，AI 可稳定读取
 
 ---
@@ -377,6 +380,8 @@ python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <�
 | 验证项 | 命令 / 检查 |
 |---|---|
 | Rules 安装后验证 | `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <管辖项目>` |
+| Codex Hook payload 验证 | `printf '{"hook_event_name":"PreToolUse","cwd":"<管辖项目>","tool_name":"Bash","session_id":"smoke"}' \| python3 code/hook_dispatch.py` |
+| Codex receipt 验证 | 检查 `~/.codex/ldvh/session-receipts/<session_id>.json` 中 `result.governed=true` 与 `result.receipt=ok` |
 | 薄引用路径存在 | 检查 `<环境目录>/AGENTS.md` 或等价入口是否包含 `LDVH-RUNTIME-PROTOCOL.md` 绝对路径 |
 | 管辖项目配置 | `python3 code/specs_validate.py governed-projects` |
 

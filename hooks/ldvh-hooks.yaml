@@ -19,8 +19,8 @@ ldvh_asset:
     - "事件上下文参数，例如 cwd、commit message 文件路径"
   outputs:
     - "统一 Hook dispatcher 执行结果"
-    - "session-start: governed 状态 + knowledge-map receipt"
-    - "pre-tool-use: 管辖项目警告或 no-op"
+    - "session-start: governed 状态 + knowledge-map receipt，可写入用户级 session receipt"
+    - "pre-tool-use: 管辖项目 receipt 查验、必要时补建非阻断 receipt，或 no-op"
     - "git.commit-msg: 底层 Code validator 输出和退出码"
   handoff: "环境适配层和 AI 自觉消费层均通过 code/hook_dispatch.py 执行；Hook 路径走 stdin（trigger_source=hook），Rules 路径走 CLI（--trigger-source rules）。失败时回到调用方修改输入或按对应规范回读事实源。"
   verification:
@@ -28,6 +28,7 @@ ldvh_asset:
     - "python3 code/hook_dispatch.py run pre-tool-use --trigger-source rules --cwd <cwd>"
     - "python3 code/hook_dispatch.py run git.commit-msg --trigger-source rules --message-file <message-file>"
     - "echo '{\"event\":\"SessionStart\",\"cwd\":\"<cwd>\",\"trigger_source\":\"hook\"}' | python3 code/hook_dispatch.py"
+    - "printf '{\"hook_event_name\":\"PreToolUse\",\"cwd\":\"<cwd>\",\"tool_name\":\"Bash\",\"session_id\":\"smoke\"}' | python3 code/hook_dispatch.py"
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:
     - "specs/31-git-commit-action-Git提交行动编排.md 提交行动编排或 Hook 边界变化"
@@ -92,4 +93,4 @@ hooks:
       - "--cwd"
       - "{cwd}"
     equivalent_manual_check: "python3 code/hook_dispatch.py run pre-tool-use --cwd <path>"
-    bypass_boundary: "当前为 stateless 检查；完整 receipt 验证依赖 Hook 环境的会话状态或 AI 自觉判断。"
+    bypass_boundary: "PreToolUse 使用 Hook payload 中的 session_id 查验用户级 session receipt；缺失 SessionStart 可见输出时可补建非阻断 receipt。缺少 session_id 的环境仍只能输出提醒，由 AI 按 Runtime Protocol 自觉确认。"
