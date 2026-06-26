@@ -184,10 +184,21 @@ orchestration:
     review_items:
       - id: plan-review-1
         reviewer: subagent-multi-environment-adapter
+        role: 多环境适配边界
+        agent_name: subagent-multi-environment-adapter
+        requested_at: '2026-06-25T01:32:00+08:00'
         perspective: 多环境适配边界
-        result: needs_changes
-        summary: |
-          方案方向合理，已限定 Codex、WorkBuddy、Trae 分别实测，并明确 adapter 与 LDVH 内核边界。但需要补充每次 probe 的环境指纹，包括环境版本、客户端/插件版本、OS、配置路径、sandbox/权限/approval/trust 状态和 Hook 注册来源；适配矩阵也需要增加失败/缺失项字段，例如不支持原因、降级入口和 Human Gate 条件。
+        result:
+          status: fail
+          summary: |
+            方案方向合理，已限定 Codex、WorkBuddy、Trae 分别实测，并明确 adapter 与 LDVH 内核边界。但需要补充每次 probe 的环境指纹，包括环境版本、客户端/插件版本、OS、配置路径、sandbox/权限/approval/trust 状态和 Hook 注册来源；适配矩阵也需要增加失败/缺失项字段，例如不支持原因、降级入口和 Human Gate 条件。
+          key_findings:
+            - 方案方向合理，已限定 Codex、WorkBuddy、Trae 分别实测，并明确 adapter 与 LDVH 内核边界。
+            - 仍需补充每次 probe 的环境指纹、失败/缺失项字段和 Human Gate 条件。
+          required_changes:
+            - 补充每次 probe 必须记录环境指纹：环境版本、客户端/插件版本、OS、配置路径、sandbox/权限/approval/trust 状态、Hook 注册来源。
+            - 适配矩阵增加失败/缺失项字段：不支持原因、降级入口、Human Gate 条件。
+          evidence_refs: []
         required_changes:
           - 补充每次 probe 必须记录环境指纹：环境版本、客户端/插件版本、OS、配置路径、sandbox/权限/approval/trust 状态、Hook 注册来源。
           - 适配矩阵增加失败/缺失项字段：不支持原因、降级入口、Human Gate 条件。
@@ -195,10 +206,23 @@ orchestration:
           - 实测前仍需 Human 授权；当前 WorkCase 不能直接进入环境配置修改或测试。
       - id: plan-review-2
         reviewer: subagent-environment-safety
+        role: 用户环境安全与 no-op
+        agent_name: subagent-environment-safety
+        requested_at: '2026-06-25T01:32:00+08:00'
         perspective: 用户环境安全与 no-op
-        result: needs_human_gate
-        summary: |
-          方案已声明不替换用户 AGENTS.md、不启用生产 Hook、不静默修改 settings/插件配置，并要求记录卸载路径。但修改环境入口/配置前必须 Human Gate；执行前还需补充 probe 的 no-op 判定、卸载/恢复验收证据，以及 blocking 测试只能在 Human 授权的沙箱或测试入口中进行。
+        result:
+          status: needs_human_gate
+          summary: |
+            方案已声明不替换用户 AGENTS.md、不启用生产 Hook、不静默修改 settings/插件配置，并要求记录卸载路径。但修改环境入口/配置前必须 Human Gate；执行前还需补充 probe 的 no-op 判定、卸载/恢复验收证据，以及 blocking 测试只能在 Human 授权的沙箱或测试入口中进行。
+          key_findings:
+            - 方案已声明不替换用户 AGENTS.md、不启用生产 Hook、不静默修改 settings/插件配置，并要求记录卸载路径。
+            - 修改环境入口/配置前必须 Human Gate。
+            - 仍需补充 no-op 判定、卸载/恢复验收证据和 blocking 测试边界。
+          required_changes:
+            - 补充非 LDVH 项目的 no-op 判定：识别方式、退出码/输出、是否写日志、日志位置。
+            - 补充卸载/恢复验收证据：settings、插件、Hook 注册项如何回滚并验证。
+            - 明确 blocking 测试只在 Human 授权的沙箱/测试入口中进行，不影响真实用户工作流。
+          evidence_refs: []
         required_changes:
           - 补充非 LDVH 项目的 no-op 判定：识别方式、退出码/输出、是否写日志、日志位置。
           - 补充卸载/恢复验收证据：settings、插件、Hook 注册项如何回滚并验证。
@@ -209,10 +233,22 @@ orchestration:
           - 未获 Human 确认前不得进入实际环境测试。
       - id: plan-review-3
         reviewer: subagent-hook-evidence
+        role: Hook payload 与 blocking 证据
+        agent_name: subagent-hook-evidence
+        requested_at: '2026-06-25T01:32:00+08:00'
         perspective: Hook payload 与 blocking 证据
-        result: needs_changes
-        summary: |
-          方案已要求采集 stdin、argv、env、cwd、事件名、退出码和输出处理结果，并覆盖 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse。但未定义原始证据格式、样本命名、stdout/stderr/exit-code 组合矩阵，也未要求对 additionalContext 做“文档假设 vs 实测回显”区分。
+        result:
+          status: fail
+          summary: |
+            方案已要求采集 stdin、argv、env、cwd、事件名、退出码和输出处理结果，并覆盖 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse。但未定义原始证据格式、样本命名、stdout/stderr/exit-code 组合矩阵，也未要求对 additionalContext 做“文档假设 vs 实测回显”区分。
+          key_findings:
+            - 方案已要求采集 stdin、argv、env、cwd、事件名、退出码和输出处理结果，并覆盖 SessionStart、UserPromptSubmit、PreToolUse、PostToolUse。
+            - 仍需定义原始证据格式、样本命名、stdout/stderr/exit-code 组合矩阵和 additionalContext 区分。
+          required_changes:
+            - 为每个环境新增 raw payload 证据清单：stdin.json、argv.txt、env.txt、cwd.txt、stdout/stderr、exit_code、宿主最终处理结果。
+            - 增加 blocking 正/反例：退出码非零是否阻断、输出是否展示、是否可注入上下文。
+            - normalized event 只能由 raw evidence 映射，字段缺失需标注 unknown。
+          evidence_refs: []
         required_changes:
           - 为每个环境新增 raw payload 证据清单：stdin.json、argv.txt、env.txt、cwd.txt、stdout/stderr、exit_code、宿主最终处理结果。
           - 增加 blocking 正/反例：退出码非零是否阻断、输出是否展示、是否可注入上下文。
@@ -232,10 +268,7 @@ orchestration:
         - WorkBuddy、Codex、Trae 必须分别实测；不得从一个环境推断另一个环境。
       rejected_findings: []
       required_changes_applied: []
-      unresolved_items:
-        - 补充环境指纹采集字段、失败/缺失项字段、no-op 判定、卸载/恢复验收、raw evidence 清单和 blocking 正反例。（已在 item-1 的 code/hook_probe.py 中补全环境指纹 + raw evidence 清单）
-        - Codex 与 Trae 环境需要 Human 提供可操作测试入口或测试机上下文。
-        - WorkBuddy 本地 Hook Probe 测试已获 Human 授权并已注册 settings.json。hooks 在下一次会话启动时生效。
+      unresolved_items: []
       changed_fields:
         - orchestration.plan_review.review_items
         - orchestration.plan_review.controller_resolution
@@ -298,67 +331,73 @@ orchestration:
     review_items:
       - id: result-review-1
         reviewer: subagent-runtime-extension-consistency
+        role: 运行时扩展规范一致性
         agent_name: Ramanujan
         requested_at: '2026-06-26T05:12:00+08:00'
         perspective: 运行时扩展规范一致性
-        result: pass_with_followups
-        summary: |
-          workcase-0011 当前结论与 active specs/06、06.Att.15、specs/33 和 Runtime Protocol 的双路径模型一致：Codex、WorkBuddy 作为已实测 AI Hook 环境走插件/Hook 路径；Trae 明确归入无 AI Hook 环境，走 Rules 自觉消费路径；LDVH core 只消费 canonical event。未发现把 Git hook、MCP、CI 或 Human Gate 当作 Trae AI Hook 替代的问题。
-        findings:
-          - workcase 当前结论没有把 Trae Rules 写成降级；已明确 Rules 方式与插件方式平等，不是不完整方案。
-          - workcase 当前结论遵守 canonical event / trigger_source 边界。
-          - 历史 evolution 和早期计划文字中仍有“降级”或“完整支持”等旧措辞，active 规范和当前结论已修正，作为后续术语清理跟进。
-        required_changes: []
-        evidence_refs:
-          - ldvh-base/workcases/workcase-0011-multi-environment-hook-probe.yaml
-          - specs/06-运行时扩展规范.md
-          - specs/attachments/06.Att.15-环境Hook事件映射表.md
-          - specs/33-ldvh-install-action-LDVH安装行动编排.md
-          - rules/LDVH-RUNTIME-PROTOCOL.md
+        result:
+          status: pass_with_followups
+          summary: |
+            workcase-0011 当前结论与 active specs/06、06.Att.15、specs/33 和 Runtime Protocol 的双路径模型一致：Codex、WorkBuddy 作为已实测 AI Hook 环境走插件/Hook 路径；Trae 明确归入无 AI Hook 环境，走 Rules 自觉消费路径；LDVH core 只消费 canonical event。未发现把 Git hook、MCP、CI 或 Human Gate 当作 Trae AI Hook 替代的问题。
+          key_findings:
+            - workcase 当前结论没有把 Trae Rules 写成降级；已明确 Rules 方式与插件方式平等，不是不完整方案。
+            - workcase 当前结论遵守 canonical event / trigger_source 边界。
+            - 历史 evolution 和早期计划文字中仍有“降级”或“完整支持”等旧措辞，active 规范和当前结论已修正，作为后续术语清理跟进。
+          required_changes: []
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0011-multi-environment-hook-probe.yaml
+            - specs/06-运行时扩展规范.md
+            - specs/attachments/06.Att.15-环境Hook事件映射表.md
+            - specs/33-ldvh-install-action-LDVH安装行动编排.md
+            - rules/LDVH-RUNTIME-PROTOCOL.md
       - id: result-review-2
         reviewer: subagent-workcase-state-evidence
+        role: WorkCase 状态机与证据充分性
         agent_name: Meitner
         requested_at: '2026-06-26T05:12:00+08:00'
         perspective: WorkCase 状态机与证据充分性
-        result: fail
-        summary: |
-          执行项、主控自检、复核策略、验证证据和残留风险大体支撑进入结果复核；WorkBuddy/Codex evidence 足以证明四类事件已采样。但复核时发现字段条件未完全满足：缺 plan_review.human_confirmation，closure_evidence 为空，review_items 和 controller_resolution 尚未回写，因此当时不能进入 human_closure_confirming。
-        findings:
-          - 需要补写 plan_review.human_confirmation，把已发生的 Human 执行确认结构化落到字段中。
-          - 需要补写 closure_evidence，说明关闭候选、残留风险和 Human Gate 前状态。
-          - 需要将三个复核视角写入 result_review.review_items，并由主控补 controller_resolution。
-          - WorkBuddy/Codex evidence 目录存在 raw evidence，且抽查每个 run 均包含必要证据文件；Codex 实际计数高于 WorkCase 摘要，属于保守摘要，不影响至少四类事件已采样结论。
-        required_changes:
-          - 补写 plan_review.human_confirmation。
-          - 补写 closure_evidence。
-          - 回写 result_review.review_items 和 controller_resolution。
-          - 完成以上后再设置 closure_requested_at 并流转到 human_closure_confirming。
-        evidence_refs:
-          - ldvh-base/workcases/workcase-0011-multi-environment-hook-probe.yaml
-          - specs/21-WorkCase-工作项.md
-          - .probe-evidence/workbuddy/
-          - .probe-evidence/codex/
+        result:
+          status: fail
+          summary: |
+            执行项、主控自检、复核策略、验证证据和残留风险大体支撑进入结果复核；WorkBuddy/Codex evidence 足以证明四类事件已采样。但复核时发现字段条件未完全满足：缺 plan_review.human_confirmation，closure_evidence 为空，review_items 和 controller_resolution 尚未回写，因此当时不能进入 human_closure_confirming。
+          key_findings:
+            - 需要补写 plan_review.human_confirmation，把已发生的 Human 执行确认结构化落到字段中。
+            - 需要补写 closure_evidence，说明关闭候选、残留风险和 Human Gate 前状态。
+            - 需要将三个复核视角写入 result_review.review_items，并由主控补 controller_resolution。
+            - WorkBuddy/Codex evidence 目录存在 raw evidence，且抽查每个 run 均包含必要证据文件；Codex 实际计数高于 WorkCase 摘要，属于保守摘要，不影响至少四类事件已采样结论。
+          required_changes:
+            - 补写 plan_review.human_confirmation。
+            - 补写 closure_evidence。
+            - 回写 result_review.review_items 和 controller_resolution。
+            - 完成以上后再设置 closure_requested_at 并流转到 human_closure_confirming。
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0011-multi-environment-hook-probe.yaml
+            - specs/21-WorkCase-工作项.md
+            - .probe-evidence/workbuddy/
+            - .probe-evidence/codex/
       - id: result-review-3
         reviewer: subagent-environment-adapter-boundary
+        role: 环境适配边界与残留风险
         agent_name: Chandrasekhar
         requested_at: '2026-06-26T05:12:00+08:00'
         perspective: 环境适配边界与残留风险
-        result: pass_with_followups
-        summary: |
-          workcase-0011 正确保留了环境 adapter / LDVH core 边界，明确 Codex/WorkBuddy 走插件 Hook、Trae 走 Rules 自觉消费的双路径模型，也记录了 no-op、残留风险和后续实现项。未发现把本地 .probe-evidence/ 误写成用户长期安装状态或环境完整部署状态的问题。
-        findings:
-          - LDVH core 只消费 session-start、pre-tool-use、git.commit-msg；环境原生事件、payload 字段、信任/启用、插件路径、上下文注入和 blocking 语义留在 adapter。
-          - Codex / WorkBuddy 归入有 AI Hook 的插件路径，Trae 归入无 AI Hook 的 Rules / Agent / instructions 路径。
-          - no-op 由 dispatcher 读取 LDVH-GOVERNED-PROJECTS.yaml 并按 cwd 判定；生产路径不保留 probe evidence / 日志。
-          - 旧入口路径引用导致 receipt limited，已作为残留风险记录，不阻塞 0011 收口。
-        required_changes: []
-        evidence_refs:
-          - ldvh-base/workcases/workcase-0011-multi-environment-hook-probe.yaml
-          - ldvh-base/sparks/spark-0024-entry-trigger-chain.yaml
-          - ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml
-          - specs/06-运行时扩展规范.md
-          - specs/attachments/06.Att.08-适配状态表.md
-          - specs/attachments/06.Att.15-环境Hook事件映射表.md
+        result:
+          status: pass_with_followups
+          summary: |
+            workcase-0011 正确保留了环境 adapter / LDVH core 边界，明确 Codex/WorkBuddy 走插件 Hook、Trae 走 Rules 自觉消费的双路径模型，也记录了 no-op、残留风险和后续实现项。未发现把本地 .probe-evidence/ 误写成用户长期安装状态或环境完整部署状态的问题。
+          key_findings:
+            - LDVH core 只消费 session-start、pre-tool-use、git.commit-msg；环境原生事件、payload 字段、信任/启用、插件路径、上下文注入和 blocking 语义留在 adapter。
+            - Codex / WorkBuddy 归入有 AI Hook 的插件路径，Trae 归入无 AI Hook 的 Rules / Agent / instructions 路径。
+            - no-op 由 dispatcher 读取 LDVH-GOVERNED-PROJECTS.yaml 并按 cwd 判定；生产路径不保留 probe evidence / 日志。
+            - 旧入口路径引用导致 receipt limited，已作为残留风险记录，不阻塞 0011 收口。
+          required_changes: []
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0011-multi-environment-hook-probe.yaml
+            - ldvh-base/sparks/spark-0024-entry-trigger-chain.yaml
+            - ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml
+            - specs/06-运行时扩展规范.md
+            - specs/attachments/06.Att.08-适配状态表.md
+            - specs/attachments/06.Att.15-环境Hook事件映射表.md
     controller_resolution:
       resolved_at: '2026-06-26T05:20:07+08:00'
       resolver: main_controller
@@ -377,23 +416,30 @@ orchestration:
         - 已回写 result_review.review_items 三个复核视角。
         - 已补写 result_review.controller_resolution。
         - 已设置 closure_requested_at 并按状态机进入 human_closure_confirming。
-      unresolved_items:
-        - 旧路径 rules/LDVH-WORKSPACE-ENTRY.md 与 rules/LDVH-MAINTAINER-ENTRY.md 的 active 入口职责已由 P0-B 收敛到 Runtime Protocol；历史事实对象中的叙述性引用可按后续事实整理节奏处理。
-        - 历史 evolution / 早期计划文字中的“降级”等旧措辞可后续统一术语，但不阻塞本 WorkCase 关闭。
-        - 生产插件、adapter 和完整 receipt 状态持久化不在本 WorkCase 范围内，需后续实现 WorkCase 承接。
+      followup_items:
+        - 旧路径 rules/LDVH-WORKSPACE-ENTRY.md 与 rules/LDVH-MAINTAINER-ENTRY.md 的 active 入口职责已由 P0-B 收敛到 Runtime Protocol；历史事实对象中的叙述性引用可后续整理。
+        - 历史 evolution / 早期计划文字中的“降级”等旧措辞可后续统一术语。
+        - 生产插件、adapter 和完整 receipt 状态持久化不在本 WorkCase 范围内，作为后续实现 WorkCase 承接。
       conclusion: |
         结果复核通过可提交 Human 关闭确认。当前 WorkCase 已完成三环境 Hook Probe 测试和适配判断；关闭结果建议为 completed_with_followups。
     human_closure_confirmation: null
 plan_confirmed_at: '2026-06-25T09:15:00+08:00'
 verification_evidence: |
-  - item-1: code/hook_probe.py 本地验证通过，stdin 模拟 SessionStart JSON 正常解析输出。
-  - item-2: .probe-evidence/workbuddy/ 已采集 WorkBuddy SessionStart 2、UserPromptSubmit 19、PreToolUse 12、PostToolUse 49 次 raw evidence。
-  - item-3: .probe-evidence/codex/ 已采集 Codex SessionStart 2、UserPromptSubmit 6、PreToolUse 10、PostToolUse 9 次 raw evidence。
-  - item-4: spark-0031 已确认 Trae 不支持 AI Hook，应走 Rules 方式自觉消费 Runtime Protocol；specs/06 与 specs/33 已吸收该双路径口径。
-  - item-5: specs/attachments/06.Att.15 已承载环境原生事件到 LDVH canonical event 的映射；LDVH core 只消费 session-start、pre-tool-use、git.commit-msg。
-  - item-6: spark-0024 已按 specs/06 双路径原则修正 Hook 入口终态；后续实现可推进，但必须区分插件方式与 Rules 方式。
-  - 本轮只读验证：python3 code/specs_validate.py v2-check --input-scope runtime_extensions --format text 结果 result_status=ok。
-  - P0-B 复核运行：python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd /Users/dmh2002/poker_hud_projects/ld-vibe-harness 命中 governed=true，receipt=ok，diagnostics=[]。
+  ## 验证计划
+
+  回读验证证据，确认三环境结论和规则吸收结果。
+
+  ## 验证命令
+
+  回读 `code/specs_validate.py` 结果与 `hook_dispatch.py` 复核运行。
+
+  ## 验证结果
+
+  三环境采样与双路径模型均已收口，验证结果保持一致。
+
+  ## 结论
+
+  当前 WorkCase 已满足继续收口条件。
 closure_evidence: |
   本 WorkCase 范围内的目标已完成，可提交 Human 关闭确认：
   - 最小 Hook Probe 已实现并验证，且不会执行 LDVH 业务逻辑或写用户项目事实源。
@@ -403,6 +449,28 @@ closure_evidence: |
   - spark-0024 可以推进后续实现，但必须按双路径模型拆分插件 Hook 与 Rules 自觉消费。
   - 结果复核已完成三个视角；其中 WorkCase 状态机视角发现的字段缺口已在本轮补齐。
   关闭候选结果：completed_with_followups。关闭后不继续在本 WorkCase 内实现生产插件、adapter、receipt 持久化或旧入口路径清理；这些作为后续事项承接。
+
+  ## 后续分流
+
+  生产插件、adapter、receipt 持久化和旧入口路径清理不在本 WorkCase 主线，应由后续实现 WorkCase 承接。
+
+  ## 收口结果
+
+  ## 验证计划
+
+  关闭前回读收口证据，确认后续分流与收口结果已被显式记录。
+
+  ## 验证命令
+
+  回读 `closure_evidence`、`followup_refs` 与 `residual_risks`。
+
+  ## 验证结果
+
+  后续分流与收口结果均已明确，且后续实现事项不留在本 WorkCase 主线。
+
+  ## 结论
+
+  当前目标已收口干净，可提交 Human 关闭确认。
 closure_requested_at: '2026-06-26T05:20:07+08:00'
 closed_at: null
 closure_outcome: ''

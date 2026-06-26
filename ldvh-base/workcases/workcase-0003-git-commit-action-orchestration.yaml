@@ -472,6 +472,14 @@ closure_evidence: |
 
   ## 结论
   本 WorkCase 已推进到 Human 关闭确认阶段，但尚未关闭。是否接受残留 Web API facts 夹具风险并关闭，仍需 Human Gate 确认。
+
+  ## 后续分流
+
+  Web API 全量回归仍被 facts 测试的空 pitfall 夹具假设阻断，后续应由独立修复 WorkCase 或测试夹具治理项继续承接，不阻断本 WorkCase 收口。
+
+  ## 收口结果
+
+  当前收口结果为：可提交 Human 关闭确认，但需 Human 明确接受该 follow-up 风险后再关闭。
 closure_requested_at: '2026-06-24T10:58:00+08:00'
 review_requested_at: '2026-06-24T10:44:30+08:00'
 closed_at: ''

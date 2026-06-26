@@ -356,8 +356,8 @@ Human Gate 发生在 WorkCase 层。执行项、角色说明、子 Agent 输出�
 | `executing` | `plan_confirmed_at` 和 `plan_review.human_confirmation` 已填写；执行项可以处于 `pending`、`in_progress`、`blocked`、`done` 或 `skipped` |
 | `result_self_checking` | 执行项不得仍为 `pending` 或 `in_progress`；`blocked` 执行项必须填写阻塞原因；主控正在整理或填写自检、验证证据和关闭证据 |
 | `subagents_result_reviewing` | 主控自检已填写并签署；`verification_evidence` 和 `closure_evidence` 已填写；结果复核策略已存在 |
-| `human_closure_confirming` | 结果复核条目和主控处理记录已完成；`closure_requested_at` 已填写；等待 Human 关闭确认 |
-| `closed` | 满足 `human_closure_confirming` 条件；`closed_at`、`closure_outcome` 和 `result_review.human_closure_confirmation` 已填写 |
+| `human_closure_confirming` | 结果复核条目和主控处理记录已完成；`closure_requested_at` 已填写；`closure_evidence` 已包含 `后续分流 / 收口结果` 段落；等待 Human 关闭确认 |
+| `closed` | 满足 `human_closure_confirming` 条件；`closed_at`、`closure_outcome` 和 `result_review.human_closure_confirmation` 已填写；`closure_evidence` 已包含 `后续分流 / 收口结果` 段落 |
 
 ## 10. 事实实例写入、回写、验证和证据留存
 
@@ -369,7 +369,16 @@ WorkCase 的目标、成功标准、执行编排、验证证据和关闭证据�
 2. 主控自检结论；
 3. 必要时的专业角色复检结论；
 4. 验证命令、文件路径、产物引用或 Human 确认记录；
-5. 经验、决策、火花或提交追溯的分流结果。
+5. 经验、决策、火花或提交追溯的分流结果；
+6. `## 后续分流 / 收口结果` 段落，明确当前目标是否收口干净、是否存在残留尾巴、尾巴由谁承接以及承接到什么对象。
+
+`closure_evidence` 必须保留一个可直接读取的 `后续分流 / 收口结果` 段落：
+
+- 若收口干净，必须明确写“无后续分流”“无残留尾巴”或语义等价表达，并与 `followup_refs`、`residual_risks`、`closure_outcome` 保持一致；
+- 若收口不干净，必须明确列出后续承接对象、承接边界、责任人和继续处理方式，且 Human 在关闭前应给出明确回复；
+- 不得仅用“后续再看”“待定”“另行处理”之类模糊语句替代承接结论；
+- 若后续事项具备独立目标、独立验收标准或独立责任人，应另起新 WorkCase、Spark 或 ADR，而不是把长尾悬空在已关闭 WorkCase 中；
+- 存量 WorkCase 也应补齐该段落；若历史已关闭 WorkCase 未记录该段落，应在下一次事实源修订时补写为无后续分流或明确的后续承接。
 
 事实源回写必须跟上对话进度。主控不得只在对话中宣布已完成、已通过或进入下一阶段，却让 WorkCase 仍呈现全部执行项 `pending`、成功标准未检查、结果自检为空或 Web 无法派生真实态势。
 
@@ -386,18 +395,21 @@ Code 应检查：
 7. `subagents_result_reviewing` 及后续状态必须填写主控自检、验证证据和关闭证据；
 8. `human_closure_confirming` 和 `closed` 必须填写 `closure_requested_at`；
 9. `closed` 必须填写 `closed_at`、`closure_outcome` 和 Human 关闭确认；
-10. 退回、关键字段修改或主控根据审核意见修改字段时必须追加 `revision_history`；
-11. 执行项不得被其他工作对象作为独立对象引用；
-12. 工作项相关提交由 Git history 和提交正文自然文本派生，不得手写维护 `related_changes`。
-13. `plan_review.review_items[].result.status`、`result_review.review_items[].result.status` 和 `controller_self_check.result.status` 必须属于 `pass`、`pass_with_followups`、`fail`、`needs_human_gate`；
-14. `plan_review.human_confirmation.decision` 必须属于 `execute`、`revise_plan`、`close`；
-15. `result_review.human_closure_confirmation.decision` 必须属于 `close`、`continue_execution`、`revise_plan`、`request_result_review`、`request_self_check`；
-16. `orchestration_owner` 必须属于 `main_controller` 或 `workflow`，主控不得在 `review_items` 中自签冒充子 Agent；
-17. `controller_self_check.result.key_findings` 必须非空，`required_changes` 非空时不得进入结果复核；
-18. `subagents_result_reviewing` 状态下 `result_review.review_items` 为空时，Code 应至少给出 warning；
-19. `human_closure_confirming` 或 `closed` 状态下 `result_review.review_items` 为空时，Code 应至少给出 warning，提示不得跳过独立结果复核；
-20. 执行项全部为 `done` 但 `result_review.controller_self_check` 为空时，Code 应至少给出 warning，提示先做主控结果自检，再进入子 Agent 结果复核。
-21. `related_workcases` 只承载 WorkCase ID，不承载执行项 ID、提交 hash 或自由文本关系。
+10. `closure_evidence` 必须包含 `后续分流 / 收口结果` 段落，且该段落应与 `followup_refs`、`residual_risks` 和 `closure_outcome` 保持一致；
+11. 若 `后续分流 / 收口结果` 表示收口不干净，则 Human 在关闭前必须明确后续承接对象；
+12. 若后续事项具备独立目标、独立验收标准或独立责任人，应另起新 WorkCase、Spark 或 ADR，不得仅挂空描述；
+13. 退回、关键字段修改或主控根据审核意见修改字段时必须追加 `revision_history`；
+14. 执行项不得被其他工作对象作为独立对象引用；
+15. 工作项相关提交由 Git history 和提交正文自然文本派生，不得手写维护 `related_changes`。
+16. `plan_review.review_items[].result.status`、`result_review.review_items[].result.status` 和 `controller_self_check.result.status` 必须属于 `pass`、`pass_with_followups`、`fail`、`needs_human_gate`；
+17. `plan_review.human_confirmation.decision` 必须属于 `execute`、`revise_plan`、`close`；
+18. `result_review.human_closure_confirmation.decision` 必须属于 `close`、`continue_execution`、`revise_plan`、`request_result_review`、`request_self_check`；
+19. `orchestration_owner` 必须属于 `main_controller` 或 `workflow`，主控不得在 `review_items` 中自签冒充子 Agent；
+20. `controller_self_check.result.key_findings` 必须非空，`required_changes` 非空时不得进入结果复核；
+21. `subagents_result_reviewing` 状态下 `result_review.review_items` 为空时，Code 应至少给出 warning；
+22. `human_closure_confirming` 或 `closed` 状态下 `result_review.review_items` 为空时，Code 应至少给出 warning，提示不得跳过独立结果复核；
+23. 执行项全部为 `done` 但 `result_review.controller_self_check` 为空时，Code 应至少给出 warning，提示先做主控结果自检，再进入子 Agent 结果复核；
+24. `related_workcases` 只承载 WorkCase ID，不承载执行项 ID、提交 hash 或自由文本关系。
 
 Web 应把 WorkCase 作为 Human 直接查看和确认的主对象。Web 可以展示执行编排、验证证据和关闭证据，但不得把执行项提升为一级导航、独立对象详情页或可独立写入的权威事实。
 
@@ -440,8 +452,8 @@ Web 应把 WorkCase 作为 Human 直接查看和确认的主对象。Web 可以�
 | Web 感知 | `executing` 及后续状态的执行项、成功标准和证据回写足以支持 Web 派生真实态势 |
 | 结果自检 | `subagents_result_reviewing` 及后续状态具备主控自检、验证证据和关闭证据 |
 | 结果复核 | `human_closure_confirming` 及后续状态具备真实独立结果复核材料；硬问题已处理或退回 |
-| 关闭证据 | `human_closure_confirming` / `closed` 具备验证证据、关闭证据和关闭确认请求时间 |
-| 完成口径 | 能清楚区分执行完成、可提交关闭确认、已关闭和已提交 |
+| 关闭证据 | `human_closure_confirming` / `closed` 具备验证证据、关闭证据、后续分流 / 收口结果和关闭确认请求时间 |
+| 完成口径 | 能清楚区分执行完成、可提交关闭确认、已关闭和已提交，且关闭前必须明确后续分流或无后续分流 |
 | 修订记录 | 退回、方案修改、成功标准修改、执行编排修改或主控根据审核意见修改字段时，`revision_history` 记录原因、字段和修改内容 |
 
 ## 15. 待补齐事项

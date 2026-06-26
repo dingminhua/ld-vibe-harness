@@ -896,6 +896,14 @@ verification_evidence: |
   - `npm run test:web:api` 失败于 `tests/web/api/facts.test.ts:27`，原因是当前事实源没有 Pitfall 列表项，测试仍假设 `pitfalls.data.items[0]` 存在；`python3 code/fact_cli.py list pitfall` 返回未找到 Pitfall 对象。该失败与 workcase-0003 中记录的 facts 空 Pitfall 夹具旁路问题一致，不作为本 WorkCase 的通过证据。
   - Code/Web/tests 中 legacy `degraded` / `degraded_accepted` 实现、测试断言和展示文案尚未迁移；本 WorkCase 第一阶段只登记边界，不硬改实现。
 
+  ## 后续分流
+
+  Code/Web/tests 中的 legacy `degraded` / `degraded_accepted` 迁移仍需后续 WorkCase 承接，属于独立实现范围，不在本次关闭范围内。
+
+  ## 收口结果
+
+  本次收口结果为：当前目标已收口干净，后续实现迁移需由新的 WorkCase 继续推进。
+
   ## 结论
   - specs/rules 第一阶段概念迁移与第一轮复核提出的阻断修复已通过核心校验。
   - 第二轮修复后独立结果复核均为 `pass_with_followups`，且无 required_changes。
@@ -909,6 +917,14 @@ closure_evidence: |
 
   ## 验证结果
   当前 WorkCase 不能直接关闭，但可以进入 Human 关闭确认。第一轮独立结果复核给出 `fail`，主控已处理 required_changes 并补足验证证据、关闭证据和修订历史；第二轮修复后独立结果复核给出三条 `pass_with_followups`，且无 required_changes。
+
+  ## 后续分流
+
+  Code/Web/tests 中的 legacy `degraded` / `degraded_accepted` 迁移仍需后续 WorkCase 承接，属于独立实现范围，不在本次关闭范围内。
+
+  ## 收口结果
+
+  本次收口结果为：当前目标已收口干净，后续实现迁移需由新的 WorkCase 继续推进。
 
   已满足范围：
   - active specs、附件和 Rules 不再把旧概念作为正式机制、状态、路径、关闭结果、验证方式、长期接受方案或 Human-facing 主展示态。
