@@ -39,7 +39,7 @@ type GovernedProject = {
   path: string
 }
 
-type FileKind = 'directory' | 'markdown' | 'yaml' | 'text' | 'binary'
+type FileKind = 'directory' | 'markdown' | 'yaml' | 'svg' | 'text' | 'binary'
 
 function isValidCommitHash(hash: string): boolean {
   return /^[0-9a-f]{7,40}$/i.test(hash)
@@ -118,6 +118,7 @@ function detectKind(name: string, isDirectory: boolean, sample?: Buffer): FileKi
   if (isDirectory) return 'directory'
   if (/\.(md|markdown)$/i.test(name)) return 'markdown'
   if (/\.(ya?ml)$/i.test(name)) return 'yaml'
+  if (/\.svg$/i.test(name)) return 'svg'
   if (sample?.includes(0)) return 'binary'
   if (/\.(txt|json|ts|tsx|js|jsx|css|html|py|sh|toml|lock|gitignore|env|csv|xml)$/i.test(name)) return 'text'
   return sample?.includes(0) ? 'binary' : 'text'
