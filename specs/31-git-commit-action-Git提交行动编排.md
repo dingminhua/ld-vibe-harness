@@ -76,6 +76,7 @@ v2_action_member:
     - "type=hook; path=hooks/ldvh-hooks.yaml; purpose=登记 git.commit-msg 统一事件和阻断命令; status=required"
     - "type=code; path=code/commit_validate.py; purpose=确定性检查 commit message 契约和提交正文质量; status=required"
     - "type=code; path=code/hook_dispatch.py; purpose=按统一 Hook registry 执行 git.commit-msg 事件; status=required"
+    - "type=code; path=code/install_git_hooks.py; purpose=把 git.commit-msg 接入当前仓库 native commit-msg hook; status=conditional"
     - "type=web; path=web/docs/06-Changelog.md; purpose=Human-facing 展示 commit body、解析字段和提交详情; status=required"
     - "type=web; path=web/docs/05-ProjectFiles.md; purpose=工具页展示 Git status、diff、提交历史和提交详情; status=required"
     - "type=ci; path=future-ci/server-side-git-gate; purpose=本地 Hook 可绕过时的后续兜底方向; status=planned"
@@ -190,6 +191,7 @@ ldvh_member:
 | Skill 执行说明和运行时承载物自描述 | `skills/ldvh-git-commit/SKILL.md` 与 06 |
 | Hook 事件登记和 dispatcher 调用 | `hooks/ldvh-hooks.yaml`、`code/hook_dispatch.py` 与 06 |
 | commit message 确定性检查 | `code/commit_validate.py` 与 04 |
+| native Git hook 安装器 | `code/install_git_hooks.py` 与 04/06 |
 | commit 展示、最近提交、提交详情和 ProjectFiles 提交历史 | 05 与 Web docs/实现 |
 | 环境安装、native hook、用户 hook manager、IDE 或 CI 接入 | 06 环境适配，不由本文默认声明 |
 
@@ -288,6 +290,7 @@ Code 和命令协作：
 | `python3 code/commit_validate.py --check-message '<message>' --files <files>` | 直接检查提交消息和文件范围 |
 | `python3 code/commit_validate.py --check-message-file <message-file> --files <files>` | 检查 message 文件 |
 | `python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` | 通过统一 Hook registry 执行等价事件 |
+| `python3 code/install_git_hooks.py install` | 为当前或指定 Git 仓库安装 native `commit-msg` hook |
 | `python3 code/specs_validate.py deployment-entries` | 检查固定运行时扩展登记一致性 |
 | `python3 code/specs_validate.py capability-environment` | 查看固定能力资产与环境保障矩阵，不声明安装 |
 
@@ -337,6 +340,7 @@ Web 负责展示提交记录、body、解析字段、关联提交和 ProjectFile
 | 固定资产登记 | `python3 code/specs_validate.py deployment-entries` 和 `python3 code/specs_validate.py capability-environment` |
 | message validator | `python3 -m pytest tests/code/test_commit_validate.py -q` |
 | Hook dispatcher | 使用临时 message 文件运行 `python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` |
+| native Git hook | `python3 code/install_git_hooks.py status`，并用真实 `git commit` smoke 确认不合规 message 会被阻断 |
 | Skill 自描述 | `python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit` 或等价临时核对动作 |
 | Web commit DTO | `npm --prefix web run check` 和 commit DTO 相关 API 测试 |
 | 行动边界 | AI 回读核对本文没有复制 07 的 commit message 本体规则，也没有声明环境安装状态 |

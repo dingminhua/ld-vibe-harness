@@ -393,7 +393,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             tool = _stdin_tool_name(stdin_payload)
             return handle_pre_tool_use(cwd, trigger_source=trigger_source, tool_name=tool, session_id=session_id)
         if normalized in ("git-commit-msg", "git.commit-msg"):
-            context: dict[str, str] = {"cwd": str(cwd)}
+            context: dict[str, str] = {"cwd": str(cwd), "repo_root": str(cwd)}
             if stdin_payload.get("message_file"):
                 context["message_file"] = stdin_payload["message_file"]
             return run_event("git.commit-msg", DEFAULT_REGISTRY, context)
@@ -444,7 +444,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                 return handle_pre_tool_use(cwd, trigger_source=trigger_source, tool_name=args.tool_name)
 
             if event == "git.commit-msg":
-                context: dict[str, str] = {}
+                context: dict[str, str] = {"cwd": str(cwd), "repo_root": str(cwd)}
                 if args.message_file is not None:
                     context["message_file"] = str(args.message_file)
                 return run_event(event, args.registry, context, dry_run=args.dry_run)
