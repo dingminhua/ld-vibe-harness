@@ -122,7 +122,7 @@ orchestration:
         - ldvh-base/workcases/workcase-0011-multi-environment-hook-probe.yaml
         - ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml
         - specs/06-运行时扩展规范.md
-      expected_output: 输出三环境 Hook 适配矩阵与 LDVH normalized event 边界：哪些字段进入内核，哪些留在 adapter，哪些能力需要降级或 Human Gate。
+      expected_output: 输出三环境 Hook 适配矩阵与 LDVH normalized event 边界：哪些字段进入内核，哪些留在 adapter，哪些能力受限或需要 Human Gate。
       status: done
       result_summary: |
         三环境适配矩阵已收敛为协议统一、执行分层：
@@ -150,7 +150,7 @@ orchestration:
         - specs/attachments/06.Att.10-部署检查核对表.md
         - specs/attachments/06.Att.15-环境Hook事件映射表.md
         - rules/LDVH-RUNTIME-PROTOCOL.md
-      expected_output: 判断是否具备将 spark-0024 推进为 Hook 入口实现 WorkCase 的条件，并列出需同步的 specs、Rules、Hook registry、dispatcher、插件或降级方案。
+      expected_output: 判断是否具备将 spark-0024 推进为 Hook 入口实现 WorkCase 的条件，并列出需同步的 specs、Rules、Hook registry、dispatcher、插件或受限接入说明。
       status: done
       result_summary: |
         可以把 spark-0024 推进到 Hook 入口实现，但实现条件必须按双路径模型拆分：

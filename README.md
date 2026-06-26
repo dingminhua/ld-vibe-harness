@@ -94,7 +94,7 @@ python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text
 
 `npm run test:code` 是 Code 侧完整验证入口；`v2-check` 是 active specs 诊断和只读知识地图预览入口，不替代完整测试、Web 回归或 Human Gate。
 
-如果 Code 工具在当前环境不可用，不能把工具输出缺失解释为规范通过；应回到 Git 文件事实源、对应 `specs/` 原文、Rules 入口和人工降级检查。
+如果 Code 工具在当前环境不可用，不能把工具输出缺失解释为规范通过；应回到 Git 文件事实源、对应 `specs/` 原文、Rules 入口和 AI 回读核对。
 
 ## 资料目录边界
 
