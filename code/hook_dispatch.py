@@ -632,6 +632,25 @@ def render_command(raw_command: Any, context: dict[str, str]) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+def _build_user_diagnostic_report(diagnostics: list[dict[str, Any]]) -> str:
+    """Build a human-readable diagnostic summary for AI to relay to the user."""
+    if not diagnostics:
+        return ""
+    severity_map = {"error": "错误", "warning": "警告", "info": "提示"}
+    lines = [f"LDVH 诊断检测到 {len(diagnostics)} 个问题：", ""]
+    for idx, diag in enumerate(diagnostics, 1):
+        severity = severity_map.get(diag.get("severity", ""), diag.get("severity", ""))
+        code = diag.get("code", "")
+        message = diag.get("message", "")
+        suggested_owner = diag.get("suggested_owner", "")
+        lines.append(f"  {idx}. [{severity}] {code}")
+        if message:
+            lines.append(f"     {message}")
+        if suggested_owner:
+            lines.append(f"     建议归口: {suggested_owner}")
+    return "\n".join(lines)
+
+
 def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules",
                                 targets: list[Path] | None = None) -> dict[str, Any]:
     subject = resolve_governed_subject(cwd, targets or [])
@@ -669,6 +688,8 @@ def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules",
         result["stop_conditions"] = stop_conditions
 
     diags = km.get("diagnostics")
+    if isinstance(diags, list) and diags:
+        result["diagnostics"] = diags
     has_diagnostics = bool(diags) if isinstance(diags, list) else bool(diags)
     if has_diagnostics:
         result.setdefault("action_policy", "continue_with_limited_receipt")
@@ -676,6 +697,13 @@ def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules",
         result["fallback"] = result.get("fallback") or (
             "知识地图或事实源投影受限；入口握手不阻断行动。AI 应回读 Runtime Protocol、"
             "active specs 和相关事实源原文，并优先修复 diagnostics 指向的问题。"
+        )
+        report = _build_user_diagnostic_report(diags)
+        result["user_diagnostic_report"] = report
+        result["next_action"] = (
+            "本次 session-start receipt 包含诊断问题。AI 必须在收到此 receipt 后的首次回复中，"
+            "主动将 user_diagnostic_report 内容告知用户，不得静默消费。"
+            "待用户确认后，优先修复 diagnostics 指向的问题。"
         )
 
     return result
@@ -922,6 +950,18 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         if payload_gap_diagnostic is not None:
             blocked["diagnostics"] = [payload_gap_diagnostic]
             blocked["payload_present"] = False
+            blocked["user_diagnostic_report"] = (
+                "LDVH 诊断检测到 1 个问题：\n"
+                "  1. [警告] HOOK_ADAPTER_PAYLOAD_GAP\n"
+                "     Hook adapter 未显式转发 payload / target，"
+                "dispatcher 只能依赖 cwd fallback 判定工作对象。\n"
+                "     建议归口: runtime-adapter"
+            )
+            blocked["next_action"] = (
+                blocked.get("next_action", "")
+                + " 同时请向用户报告：Hook adapter 未传递真实工作对象，"
+                "写类工具的管辖判定和 read_plan 门禁可能无法作用在正确目标上。"
+            )
         print(json.dumps(blocked, ensure_ascii=False))
         return 1
 
@@ -979,6 +1019,16 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         result["command_observed"] = tool_command[:200]
     if payload_gap_diagnostic is not None:
         result["diagnostics"] = [payload_gap_diagnostic]
+        result["user_diagnostic_report"] = (
+            "LDVH 诊断检测到 1 个问题：\n"
+            "  1. [警告] HOOK_ADAPTER_PAYLOAD_GAP\n"
+            "     Hook adapter 未显式转发 payload / target，"
+            "dispatcher 只能依赖 cwd fallback 判定工作对象。\n"
+            "     建议归口: runtime-adapter"
+        )
+        result.setdefault("next_action",
+            "请向用户报告：Hook adapter 未传递真实工作对象，当前管辖判定基于 cwd fallback。"
+        )
     if mutating:
         blocked = _read_plan_guard_result(
             cwd,
