@@ -264,11 +264,9 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
                           "cwd": str(cwd), "trigger_source": trigger_source}))
         return 0
 
-    # In governed project — receipt check
-    # For now, this is a light check: can we find the governed config?
-    # Full receipt validation requires session state which isn't available
-    # in this stateless dispatcher.  The AI self-check path is:
-    #   "Did I run session-start in this session?"
+    # In governed projects, keep the hook non-blocking while making the receipt
+    # state queryable. Codex may not surface SessionStart stdout in the thread,
+    # so PreToolUse can create the same receipt when a session_id is present.
     result = {
         "blocked": False,
         "cwd": str(cwd),

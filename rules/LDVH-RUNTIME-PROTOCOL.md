@@ -49,13 +49,17 @@ LDVH 运行时协议。定义 AI 在三个关键环节必须触发的 canonical 
 | Write / Edit 前 | `pre-tool-use` | `python3 code/hook_dispatch.py run pre-tool-use --trigger-source rules --cwd <cwd>` |
 | Git commit 前 | `git.commit-msg` | `python3 code/hook_dispatch.py run git.commit-msg --trigger-source rules --message-file <message-file>` |
 
-Hook 路径：环境适配层将原生事件名映射为 canonical event 后，通过 stdin 传入 `{"event":"<canonical>","cwd":"...","trigger_source":"hook"}`。
+Hook 路径：环境适配层将原生事件名映射为 canonical event 后，通过 stdin 传入 `{"event":"<canonical>","cwd":"...","trigger_source":"hook"}` 或环境等价 payload。Codex 当前 payload 使用 `hook_event_name`、`tool_name`、`session_id` 等字段，dispatcher 必须先归一化再执行 canonical handler。
 
 ## 3. 消费 receipt
 
 `session-start` 返回 receipt，包含 `governed`、`read_plan`（P0/P1 必读原文列表）、`stop_conditions`。AI 必须按 read_plan P0/P1 顺序读取权威原文，不得跳过。
 
 `governed=false` 时 no-op：当前目录不在管辖项目中。
+
+支持 `session_id` 的 Hook 环境应把 receipt 写入用户级运行时状态。Codex 使用 `~/.codex/ldvh/session-receipts/<session_id>.json`。该文件只证明当前环境会话完成或补建了 Runtime Protocol 握手，不是事实源，不得替代 Git 文件事实源、规范、WorkCase 或验证证据。
+
+若当前环境未在对话中展示 `SessionStart` 输出，AI 不得直接判定 Hook 无效；应检查是否存在对应 session receipt，或由 `PreToolUse` 在管辖项目中补建非阻断 receipt。`PreToolUse` 输出中的 `session_receipt=found` 或 `session_receipt=created_by_pre_tool_use` 均表示本轮可继续，但仍应按 read_plan 回读权威事实源。
 
 ## 4. STOP
 
