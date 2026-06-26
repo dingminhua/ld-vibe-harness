@@ -135,11 +135,11 @@ def parse_message_text(text: str) -> CommitInfo:
     return CommitInfo(hash="<message>", subject=subject, body=body, full_message=full)
 
 
-def git_log(n: int) -> list[CommitInfo]:
+def git_log(n: int, repo_root: Path = PROJECT_ROOT) -> list[CommitInfo]:
     """获取最近 n 条 commit 信息。"""
     result = subprocess.run(
         ["git", "log", f"-{n}", "--format=%H%x00%s%x00%b%x1e"],
-        capture_output=True, text=True, cwd=PROJECT_ROOT,
+        capture_output=True, text=True, cwd=repo_root,
     )
     if result.returncode != 0:
         print(f"git log 失败: {result.stderr}", file=sys.stderr)
@@ -162,11 +162,11 @@ def git_log(n: int) -> list[CommitInfo]:
     return commits
 
 
-def get_staged_files() -> list[str]:
+def get_staged_files(repo_root: Path = PROJECT_ROOT) -> list[str]:
     """返回当前 index 中 staged 的文件路径；失败时保守返回空列表。"""
     result = subprocess.run(
         ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMRT"],
-        capture_output=True, text=True, cwd=PROJECT_ROOT,
+        capture_output=True, text=True, cwd=repo_root,
     )
     if result.returncode != 0:
         return []
@@ -382,6 +382,10 @@ def main():
         help="指定本次提交的文件清单；未指定时 --check-message 会读取 staged files"
     )
     parser.add_argument(
+        "--repo", type=Path, default=PROJECT_ROOT,
+        help="读取 staged files 或 git log 的目标 Git 仓库，默认当前 LDVH 仓库"
+    )
+    parser.add_argument(
         "-n", "--count", type=int, default=10,
         help="检查最近 N 条 commit（默认 10，仅在默认模式下有效）"
     )
@@ -410,7 +414,8 @@ def main():
                 sys.exit(1)
         else:
             message_text = args.check_message
-        touched_files = args.files if args.files is not None else get_staged_files()
+        repo_root = args.repo.resolve()
+        touched_files = args.files if args.files is not None else get_staged_files(repo_root)
         issues = check_message(message_text, touched_files=touched_files)
         errors = [i for i in issues if i.level == "error"]
         warnings = [i for i in issues if i.level == "warning"]
@@ -432,7 +437,7 @@ def main():
         return
 
     # 默认模式：检查 git log
-    commits = git_log(args.count)
+    commits = git_log(args.count, repo_root=args.repo.resolve())
     if not commits:
         print("没有找到 commit 记录")
         return

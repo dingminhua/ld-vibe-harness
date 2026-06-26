@@ -221,6 +221,19 @@ def test_check_message_requires_body_for_staged_specs_file():
     assert any("要求 commit body 非空" in i.message for i in errors)
 
 
+def test_get_staged_files_uses_requested_repo(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    specs_dir = repo / "specs"
+    specs_dir.mkdir()
+    changed = specs_dir / "example.md"
+    changed.write_text("content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "specs/example.md"], cwd=repo, check=True)
+
+    assert checker.get_staged_files(repo) == ["specs/example.md"]
+
+
 def test_show_format_uses_v2_commit_spec(capsys):
     checker.show_format()
 

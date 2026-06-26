@@ -54,8 +54,10 @@ hooks:
       - "code/commit_validate.py"
       - "--check-message-file"
       - "{message_file}"
+      - "--repo"
+      - "{repo_root}"
     equivalent_manual_check: "python3 code/commit_validate.py --check-message '<message>'"
-    bypass_boundary: "环境可以不接入该事件；接入后仍应承认本地或用户侧 Hook 可被绕过，CI / server-side gate 仍是后续兜底方向。"
+    bypass_boundary: "环境可以不接入该事件；仓库 native Git hook 可通过 code/install_git_hooks.py install 安装并调用本事件。接入后仍应承认本地或用户侧 Hook 可被绕过，CI / server-side gate 仍是后续兜底方向。"
 
   - id: "ldvh-session-start"
     event: "session-start"
