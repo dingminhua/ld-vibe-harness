@@ -3,9 +3,9 @@ type: workcase
 title: Git 提交行动编排薄入口落地
 goal: |
   将 LDVH Git 提交从“07 规则 + Skill/Hook/Code 资产已经存在”推进为 active 的 Git 提交行动编排薄入口，使 AI 准备、拆分、预检、创建和交还 commit 的执行责任有单一流程归口。
-status: human_closure_confirming
+status: closed
 created: '2026-06-24T09:23:35.843460'
-updated: '2026-06-24T10:58:00+08:00'
+updated: '2026-06-26T09:52:45+08:00'
 priority: P1
 description: |
   当前 v2 已将 commit message 契约和 Git records 追溯归口到 07，并登记了 `ldvh-git-commit` Skill、`hooks/ldvh-hooks.yaml`、`code/commit_validate.py` 和 Web commit DTO / 展示链路。但 03 所要求的 Git 提交行动编排成员尚未存在，导致“规则、资产、环境边界、执行证据和 Skill 是否真实调用”之间仍缺少薄入口接管。
@@ -18,7 +18,7 @@ success_criteria: |
   - [x] `ldvh-git-commit` Skill 和 Hook registry 回指 31，旧“10 规范”描述被清理。
   - [x] Rules 入口能在 Git 提交准备或追溯场景定位 31、07、Skill 和 validator。
   - [x] spark-0017 / spark-0019 记录本次承接进展，避免旧 workcase-0074 口径继续误导。
-  - [x] 通过 active specs、固定运行时扩展、能力环境矩阵、commit validator、Skill 快速校验、Web typecheck、commit DTO 单测和工作对象事实源校验；Web API 全量回归仍被 facts 夹具空 pitfall 假设阻断，已记录边界。
+  - [x] 通过 active specs、固定运行时扩展、能力环境矩阵、commit validator、Skill 快速校验、Web typecheck、commit DTO 单测和工作对象事实源校验；执行当时 Web API 全量回归被 facts 夹具空 pitfall 假设阻断，已记录边界，后续由 `workcase-0007` 承接并关闭。
 source: |
   用户在 2026-06-24 要求先了解 LDVH 当前状态，再按建议推进“提交”落地。主控检查发现：07 规则、Skill、Hook、Code 和 Web DTO 已基本存在，但 30-59 中缺少 Git 提交行动编排薄入口；用户随后明确“按你建议执行”。
 orchestration:
@@ -462,31 +462,49 @@ verification_evidence: |
 closure_evidence: |
   ## 验证计划
   - 检查执行项、成功标准、主控自检、真实子 Agent 结果复核和残留风险是否足以提交 Human 关闭确认。
+  - 关闭前刷新旧残留风险：确认 Web API facts 空 Pitfall 夹具问题是否已由后续 WorkCase 承接，以及当前失败是否仍属于本 WorkCase 阻断。
 
   ## 验证命令
   - 见 `verification_evidence`。
   - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0003-git-commit-action-orchestration.yaml --format text`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/31-git-commit-action-Git提交行动编排.md --task-type git_trace --format text`
+  - `npm --prefix web run test:web:api`
 
   ## 验证结果
-  执行项和成功标准已完成，主控自检已记录，三条真实子 Agent 结果复核已写入，主控已形成处理结论。Web API 全量回归仍存在 facts 空 pitfall 夹具旁路失败，已作为残留风险保留，不阻断本 WorkCase 进入 Human 关闭确认。
+  执行项和成功标准已完成，主控自检已记录，三条真实子 Agent 结果复核已写入，主控已形成处理结论。关闭前复核显示：
+
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0003-git-commit-action-orchestration.yaml --format text` 通过，errors=0，warnings=0。
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/31-git-commit-action-Git提交行动编排.md --task-type git_trace --format text` 返回 result_status=ok，diagnostics=0。
+  - 原 Web API facts 空 Pitfall 夹具问题已由 `workcase-0007` 承接并关闭，`workcase-0007` 的关闭证据显示 `npm run test:web:api` 已通过，且测试不再假设真实事实源必须存在 Pitfall 对象。
+  - 当前再次运行 `npm --prefix web run test:web:api` 时，失败已不再是 `pitfalls.data.items[0]` 为空导致的 TypeError，而是 `tests/web/api/facts.test.ts:65` 仍期望真实 Pitfall count 为 0；当前事实源已有 `ldvh-base/pitfalls/pitfall-0001-workcase-closure-tail-routing.yaml`，实际 count 为 1。该新失败属于 Web facts 测试随事实源新增 Pitfall 后的测试假设漂移，不属于 Git 提交行动编排薄入口落地的本体阻断。
 
   ## 结论
-  本 WorkCase 已推进到 Human 关闭确认阶段，但尚未关闭。是否接受残留 Web API facts 夹具风险并关闭，仍需 Human Gate 确认。
+  本 WorkCase 已推进到 Human 关闭确认阶段，但尚未关闭。0003 的本体目标已经完成，旧的 Web API facts 空 Pitfall 残留已由 `workcase-0007` 修复并关闭；当前 Web facts 测试的 Pitfall 非空断言漂移应作为新的测试维护尾巴另行承接，不阻断本 WorkCase 关闭。
 
   ## 后续分流
 
-  Web API 全量回归仍被 facts 测试的空 pitfall 夹具假设阻断，后续应由独立修复 WorkCase 或测试夹具治理项继续承接，不阻断本 WorkCase 收口。
+  原 Web API facts 空 Pitfall 夹具问题已分流到 `workcase-0007` 并完成关闭。当前新出现的 Pitfall 非空断言漂移不属于 0003 本体，可由 Web facts 测试维护事项或后续 WorkCase 承接；不要求在 0003 内继续处理。
 
   ## 收口结果
 
-  当前收口结果为：可提交 Human 关闭确认，但需 Human 明确接受该 follow-up 风险后再关闭。
+  当前收口结果为：0003 本体收口干净，可提交 Human 关闭确认。关闭前仍需 Human Gate 明确确认是否以 completed 结果关闭。
 closure_requested_at: '2026-06-24T10:58:00+08:00'
 review_requested_at: '2026-06-24T10:44:30+08:00'
-closed_at: ''
-closure_outcome: ''
+closed_at: '2026-06-26T09:52:45+08:00'
+closure_outcome: completed
+human_closure_confirmation:
+  decision: close
+  confirmed_at: '2026-06-26T09:52:45+08:00'
+  confirmer: human
+  scope: |
+    Human 已确认此前复核过且可关闭的 WorkCase 直接关闭，本次范围包含 workcase-0003。
+  summary: |
+    Human 接受刷新后的 closure_evidence、workcase-0007 对历史 Web API facts 空 Pitfall 残留的承接结果，以及当前 Web facts 测试漂移不阻断 0003 本体关闭的判断，确认本 WorkCase 以 completed 结果关闭。
 residual_risks:
-- Web API 全量回归仍被 facts 测试的空 pitfall 夹具假设阻断；本 WorkCase 已验证 commit DTO 单测和 Web typecheck，但未修复该旁路测试。
-followup_refs: []
+- 0003 本体无未处理残留；历史 Web API facts 空 Pitfall 夹具问题已由 workcase-0007 承接并关闭。
+- 当前 Web API facts 测试仍存在 Pitfall 非空断言漂移：真实事实源新增 `pitfall-0001` 后，测试仍期望 Pitfall count 为 0。该问题不属于 Git 提交行动编排薄入口落地本体，需由 Web facts 测试维护事项或后续 WorkCase 承接。
+followup_refs:
+- workcase-0007
 revision_history:
 - at: '2026-06-24T09:36:00+08:00'
   from_status: subagents_plan_reviewing
@@ -549,6 +567,35 @@ revision_history:
   - revision_history
   summary: |
     回填真实子 Agent 复核记录并形成主控处理结论后，进入 Human 关闭确认阶段。当前 WorkCase 仍未关闭，等待 Human 对残留 Web API facts 夹具风险和关闭结果作最终确认。
+- at: '2026-06-26T09:47:54+08:00'
+  from_status: human_closure_confirming
+  to_status: human_closure_confirming
+  actor: codex-main-thread
+  reason: |
+    Human 要求关闭前复核 workcase-0003 是否真的可以关闭。主控确认 0003 本体目标已完成，旧 Web API facts 空 Pitfall 残留已由 workcase-0007 承接并关闭；当前 Web API 测试失败已变为 Pitfall 非空断言漂移，不属于 0003 本体阻断。
+  changed_fields:
+  - updated
+  - closure_evidence
+  - residual_risks
+  - followup_refs
+  - related_workcases
+  summary: |
+    刷新关闭证据和后续分流口径：0003 本体收口干净，可提交 Human 关闭确认；当前仍保持 human_closure_confirming，等待 Human Gate 明确是否关闭。
+- at: '2026-06-26T09:52:45+08:00'
+  from_status: human_closure_confirming
+  to_status: closed
+  actor: codex-main-thread
+  reason: |
+    Human 确认关闭此前已复核可关闭的 WorkCase。workcase-0003 已完成 Git 提交行动编排薄入口落地，历史 Web API facts 空 Pitfall 残留已由 workcase-0007 承接并关闭。
+  changed_fields:
+  - status
+  - updated
+  - closed_at
+  - closure_outcome
+  - human_closure_confirmation
+  - revision_history
+  summary: |
+    WorkCase 以 completed 结果关闭；当前 Web facts 测试的 Pitfall 非空断言漂移不属于本 WorkCase 本体阻断，保留为外部测试维护尾巴。
 related_docs:
 - specs/03-行动编排规范.md
 - specs/07-事实源边界与Git追溯规范.md
@@ -564,4 +611,5 @@ related_sparks:
 - spark-0017
 - spark-0019
 related_pitfalls: []
-related_workcases: []
+related_workcases:
+- workcase-0007

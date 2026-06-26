@@ -3,9 +3,9 @@ type: workcase
 title: Codex WorkBuddy Trae 三环境 Hook Probe 测试
 goal: |
   承接 spark-0031，建立并执行 Codex、WorkBuddy、Trae 三个环境的 Hook Probe 测试工作，先用最小 probe 收集各环境 Hook 的真实事件、输入字段、输出语义、blocking 能力、注册方式、信任机制和卸载路径，再判断 LDVH Hook 入口适配层如何设计。
-status: human_closure_confirming
+status: closed
 created: '2026-06-25T08:59:00+08:00'
-updated: '2026-06-26T05:20:07+08:00'
+updated: '2026-06-26T09:52:45+08:00'
 priority: P1
 description: |
   spark-0024 已经把 LDVH 入口触发链收敛为"Hook 强制握手 + receipt 消费入口链"的终态方向；spark-0031 进一步指出，多环境 Hook 接入不能混在 spark-0024 中处理，因为 Codex、WorkBuddy、Trae 的事件名称、参数字段、注册方式、blocking 语义、信任机制和可注入上下文可能不同——且 spark-0031 已确认 Trae 不支持 AI Hook，与 Codex/WorkBuddy 的 AI Hook 能力属于不同消费路径。
@@ -441,44 +441,55 @@ verification_evidence: |
 
   当前 WorkCase 已满足继续收口条件。
 closure_evidence: |
+  ## 验证计划
+
+  关闭前回读执行项、结果复核、后续分流与收口结果，确认三环境 Hook Probe 是否已完成，且生产实现事项是否已从本 WorkCase 主线分流。
+
+  ## 验证命令
+
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0011-multi-environment-hook-probe.yaml --format text`
+  - 回读 `closure_evidence`、`followup_refs`、`residual_risks`、`orchestration.result_review.controller_resolution`。
+
+  ## 验证结果
+
   本 WorkCase 范围内的目标已完成，可提交 Human 关闭确认：
   - 最小 Hook Probe 已实现并验证，且不会执行 LDVH 业务逻辑或写用户项目事实源。
   - WorkBuddy 与 Codex 已完成四类事件采样并形成 raw evidence；采样结果足以支撑 adapter/core 边界判断。
   - Trae 已确认不支持 AI Hook，走 Rules / Agent / instructions 自觉消费 Runtime Protocol；该路径是平等接入方式，不是降级。
   - 三环境适配矩阵已被 active specs/06、06.Att.15、specs/33 和 rules/LDVH-RUNTIME-PROTOCOL.md 吸收。
-  - spark-0024 可以推进后续实现，但必须按双路径模型拆分插件 Hook 与 Rules 自觉消费。
+  - spark-0024 可以推进后续实现，但必须按双路径模型拆分插件 Hook 与 Rules 自觉消费；该后续实现链路已被当前 P0 `spark-0032` 统一承接。
   - 结果复核已完成三个视角；其中 WorkCase 状态机视角发现的字段缺口已在本轮补齐。
-  关闭候选结果：completed_with_followups。关闭后不继续在本 WorkCase 内实现生产插件、adapter、receipt 持久化或旧入口路径清理；这些作为后续事项承接。
-
-  ## 后续分流
-
-  生产插件、adapter、receipt 持久化和旧入口路径清理不在本 WorkCase 主线，应由后续实现 WorkCase 承接。
-
-  ## 收口结果
-
-  ## 验证计划
-
-  关闭前回读收口证据，确认后续分流与收口结果已被显式记录。
-
-  ## 验证命令
-
-  回读 `closure_evidence`、`followup_refs` 与 `residual_risks`。
-
-  ## 验证结果
-
-  后续分流与收口结果均已明确，且后续实现事项不留在本 WorkCase 主线。
+  关闭候选结果：completed，并保留 follow-up 分流记录。关闭后不继续在本 WorkCase 内实现生产插件、adapter、receipt 持久化或旧入口路径清理；这些作为 `spark-0032` 下的后续运行链路/实现 WorkCase 承接。
 
   ## 结论
 
-  当前目标已收口干净，可提交 Human 关闭确认。
+  当前目标已收口干净，可提交 Human 关闭确认。关闭前仍需 Human Gate 明确确认是否以 completed 结果关闭，并保留 follow-up 分流记录。
+
+  ## 后续分流
+
+  生产插件、adapter、receipt 持久化和旧入口路径清理不在本 WorkCase 主线，应由 `spark-0032` 作为当前 P0 主线承接，再按需要分解为后续实现 WorkCase。`spark-0024`、`spark-0031`、specs/06 和 specs/33 保留为来源与约束背景，不再作为本 WorkCase 内继续执行的尾巴。
+
+  ## 收口结果
+
+  探测任务收口干净；后续实现事项已分流到 `spark-0032`。
+review_requested_at: '2026-06-26T05:12:00+08:00'
 closure_requested_at: '2026-06-26T05:20:07+08:00'
-closed_at: null
-closure_outcome: ''
+closed_at: '2026-06-26T09:52:45+08:00'
+closure_outcome: completed
+human_closure_confirmation:
+  decision: close
+  confirmed_at: '2026-06-26T09:52:45+08:00'
+  confirmer: human
+  scope: |
+    Human 已确认此前复核过且可关闭的 WorkCase 直接关闭，本次范围包含 workcase-0011。
+  summary: |
+    Human 接受当前 closure_evidence、三环境 Hook Probe 已完成的判断，以及后续生产插件、adapter、receipt 持久化和旧入口路径清理由 spark-0032 承接的分流口径，确认本 WorkCase 以 completed 结果关闭，并保留 follow-up 分流记录。
 residual_risks:
   - 旧路径 rules/LDVH-WORKSPACE-ENTRY.md 与 rules/LDVH-MAINTAINER-ENTRY.md 已降为兼容重定向，不再作为 active fixed Rules 资产；历史事实对象中的叙述性引用仍可后续整理。
   - WorkBuddy/Codex 的 probe evidence 位于本地 .probe-evidence/，用于本次实测恢复和收口；生产 Hook 不应写入 evidence 或日志。
-  - 本 WorkCase 不直接实现生产插件、adapter 或完整 receipt 状态持久化；后续应由新的实现 WorkCase 承接。
+  - 本 WorkCase 不直接实现生产插件、adapter 或完整 receipt 状态持久化；后续由 spark-0032 统一承接，再按需要分解为新的实现 WorkCase。
 followup_refs:
+  - ldvh-base/sparks/spark-0032-runtime-operation-assurance-hook-agent-deployment.yaml
   - ldvh-base/sparks/spark-0024-entry-trigger-chain.yaml
   - ldvh-base/sparks/spark-0031-multi-environment-hook-compatibility.yaml
   - specs/06-运行时扩展规范.md
@@ -546,6 +557,35 @@ revision_history:
       - closure_requested_at
     summary: |
       结果复核记录已回写。运行时扩展规范一致性与环境适配边界视角均为 pass_with_followups；WorkCase 状态机与证据充分性视角为 fail，指出缺少 human_confirmation、closure_evidence、review_items 和 controller_resolution。主控接受该 fail 并已补齐全部关闭前字段缺口；剩余事项均为后续 followup，不阻塞提交 Human 关闭确认。
+  - at: '2026-06-26T09:50:44+08:00'
+    from_status: human_closure_confirming
+    to_status: human_closure_confirming
+    actor: codex-main-thread
+    reason: |
+      Human 要求按主控计划刷新 workcase-0011 关闭前后续承接口径。主控确认本 WorkCase 作为三环境 Hook Probe 已完成，生产插件、adapter、receipt 持久化和旧入口路径清理应由当前 P0 spark-0032 承接，不继续留在 0011 主线。
+    changed_fields:
+      - updated
+      - closure_evidence
+      - residual_risks
+      - followup_refs
+      - related_sparks
+    summary: |
+      刷新关闭证据和后续分流口径：0011 探测任务收口干净，可提交 Human 关闭确认；后续运行链路实现由 spark-0032 统一承接。
+  - at: '2026-06-26T09:52:45+08:00'
+    from_status: human_closure_confirming
+    to_status: closed
+    actor: codex-main-thread
+    reason: |
+      Human 确认关闭此前已复核可关闭的 WorkCase。workcase-0011 已完成三环境 Hook Probe 和适配判断，后续生产实现事项已由 spark-0032 承接。
+    changed_fields:
+      - status
+      - updated
+      - closed_at
+      - closure_outcome
+      - human_closure_confirmation
+      - revision_history
+    summary: |
+      WorkCase 以 completed 结果关闭，并保留 follow-up 分流记录；生产插件、adapter、receipt 持久化和旧入口路径清理不在本 WorkCase 内继续执行。
 related_docs:
   - specs/06-运行时扩展规范.md
   - specs/attachments/06.Att.09-薄引用模板.md
@@ -557,5 +597,6 @@ related_adrs: []
 related_sparks:
   - spark-0024
   - spark-0031
+  - spark-0032
 related_pitfalls: []
 related_workcases: []
