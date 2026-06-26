@@ -167,7 +167,6 @@ orchestration:
 
         未修改 `specs/03`，未修改 active 30/31 语义，未修改 workcase-0009、spark-0026、spark-0027 或 study-0011。
       evidence_refs:
-        - specs/33-record-object-routing-recall-记录对象归口与召回.md
         - specs/34-study-research-output-研究行动产物编排.md
         - specs/35-workcase-action-carrying-工作项行动承接编排.md
         - specs/03-行动编排规范.md
@@ -396,7 +395,6 @@ residual_risks:
   - workcase-0009 暂缓；仅作为后续 WorkCase/行动承接编排讨论中的并行执行能力参考，本轮未并入 specs/03。
   - 当前 worktree 缺少工作区级 LDVH-GOVERNED-PROJECTS.yaml，知识地图工作对象导航受限；已用权威文件原文和命令验证兜底。
 followup_refs:
-  - specs/33-record-object-routing-recall-记录对象归口与召回.md
   - specs/34-study-research-output-研究行动产物编排.md
   - specs/35-workcase-action-carrying-工作项行动承接编排.md
   - workcase-0009（后续 WorkCase/行动承接编排讨论参考，本轮不激活）
@@ -449,7 +447,6 @@ related_docs:
   - specs/22-ADR-决策.md
   - specs/23-Pitfall-踩坑经验.md
   - specs/24-Study-研究报告.md
-  - specs/33-record-object-routing-recall-记录对象归口与召回.md
   - specs/34-study-research-output-研究行动产物编排.md
   - specs/35-workcase-action-carrying-工作项行动承接编排.md
 related_adrs: []
