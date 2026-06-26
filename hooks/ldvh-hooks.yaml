@@ -20,11 +20,13 @@ ldvh_asset:
   outputs:
     - "统一 Hook dispatcher 执行结果"
     - "session-start: governed 状态 + knowledge-map receipt，可写入用户级 session receipt"
-    - "pre-tool-use: 管辖项目 receipt 查验、必要时补建非阻断 receipt，找到已有 receipt 时写入 last_pre_tool_use 可观测字段，或 no-op"
-    - "git.commit-msg: 底层 Code validator 输出和退出码"
+    - "acknowledge-read-plan: AI 回读 P0/P1 后写入 read_plan_consumed 证据"
+    - "pre-tool-use: 管辖项目 receipt 查验、必要时补建 receipt；写类工具缺少 read_plan_consumed 时阻断，找到已有 receipt 时写入 last_pre_tool_use 可观测字段"
+    - "git.commit-msg: 提交前先检查 read_plan_consumed，再执行底层 Code validator 输出和退出码"
   handoff: "环境适配层和 AI 自觉消费层均通过 code/hook_dispatch.py 执行；Hook 路径走 stdin（trigger_source=hook），Rules 路径走 CLI（--trigger-source rules）。失败时回到调用方修改输入或按对应规范回读事实源。"
   verification:
     - "python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <cwd>"
+    - "python3 code/hook_dispatch.py run acknowledge-read-plan --trigger-source rules --cwd <cwd>"
     - "python3 code/hook_dispatch.py run pre-tool-use --trigger-source rules --cwd <cwd>"
     - "python3 code/hook_dispatch.py run git.commit-msg --trigger-source rules --message-file <message-file>"
     - "echo '{\"event\":\"SessionStart\",\"cwd\":\"<cwd>\",\"trigger_source\":\"hook\"}' | python3 code/hook_dispatch.py"
@@ -78,11 +80,30 @@ hooks:
     equivalent_manual_check: "python3 code/hook_dispatch.py run session-start --cwd <path>"
     bypass_boundary: "无 AI Hook 环境由 AI 自觉执行同一命令；Hook 路径和 Rules 路径执行同一 handler。"
 
+  - id: "ldvh-acknowledge-read-plan"
+    event: "acknowledge-read-plan"
+    status: "active"
+    description: "生命周期协议步骤 2——消费确认：AI 按 receipt 回读 P0/P1 read_plan 后写入确认。"
+    blocking: true
+    inputs:
+      cwd:
+        required: true
+        description: "当前工作目录。"
+    command:
+      - "python3"
+      - "code/hook_dispatch.py"
+      - "run"
+      - "acknowledge-read-plan"
+      - "--cwd"
+      - "{cwd}"
+    equivalent_manual_check: "python3 code/hook_dispatch.py run acknowledge-read-plan --cwd <path>"
+    bypass_boundary: "该事件是 AI 消费 read_plan 的运行证据，不替代规范原文、事实源、验证证据或 Human Gate。"
+
   - id: "ldvh-pre-tool-use"
     event: "pre-tool-use"
     status: "active"
-    description: "生命周期协议步骤 2——写前确认：检查管辖项目中是否已完成握手。"
-    blocking: false
+    description: "生命周期协议步骤 3——写前确认：检查管辖项目中是否已完成握手和 read_plan 消费确认。"
+    blocking: true
     inputs:
       cwd:
         required: true
@@ -95,4 +116,4 @@ hooks:
       - "--cwd"
       - "{cwd}"
     equivalent_manual_check: "python3 code/hook_dispatch.py run pre-tool-use --cwd <path>"
-    bypass_boundary: "PreToolUse 使用 Hook payload 中的 session_id 查验用户级 session receipt；缺失 SessionStart 可见输出时可补建非阻断 receipt；找到已有 receipt 时应更新 last_pre_tool_use 作为触发证据。缺少 session_id 的环境仍只能输出提醒，由 AI 按 Runtime Protocol 自觉确认。"
+    bypass_boundary: "PreToolUse 使用 Hook payload 中的 session_id 查验用户级 session receipt；缺失 SessionStart 可见输出时可补建 receipt；写类工具缺少 read_plan_consumed 时必须阻断。缺少 session_id 的环境使用最近匹配 cwd 的 receipt 兜底，仍无法确认时由 AI 按 Runtime Protocol 自觉确认。"

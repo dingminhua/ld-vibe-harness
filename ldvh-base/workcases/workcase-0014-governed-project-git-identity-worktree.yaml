@@ -5,7 +5,7 @@ goal: |
   承接 spark-0032，把“管辖项目需要登记 Git 路径/身份，Codex worktree 也应被稳定识别为同一管辖项目”的想法落到规范、Code 和测试。目标是让 Hook dispatcher、知识地图入口和 governed-projects 校验共同基于 Git 可验证事实识别管辖关系，不依赖 AI 主观判断，也不把执行状态写入管辖项目配置。
 status: result_self_checking
 created: '2026-06-26T12:20:00+08:00'
-updated: '2026-06-26T12:45:00+08:00'
+updated: '2026-06-26T23:20:00+08:00'
 priority: P0
 description: |
   当前 Codex worktree 位于 `~/.codex/worktrees/...`，不在登记项目 `path` 目录之下。旧 dispatcher 只向上查找 `LDVH-GOVERNED-PROJECTS.yaml` 并做目录包含判断，导致 worktree 虽然与原仓库共享 Git common-dir，却被判为非管辖项目。该问题会让 SessionStart / PreToolUse receipt 在真实 worktree 场景中失效，削弱 spark-0032 要建立的 Hook / Agent 运行保障链路。
@@ -16,6 +16,7 @@ success_criteria: |
   - [x] `code/spec_checks/governed_projects.py` 允许并校验 `projects[].git` 的最小字段。
   - [x] 测试覆盖 dispatcher worktree 识别和 governed-projects schema。
   - [x] 使用当前 Codex worktree 做实际 smoke，证明 `session-start` 返回 `governed=true`。
+  - [x] Hook 有效但 AI 未消费 receipt 的缺口已补为硬保障：AI 读完 P0/P1 read_plan 后必须写入 `read_plan_consumed`，写类工具和提交路径缺少该证据时阻断。
 source: |
   来源对话：Human 判断“管辖项目需要登记 git 路径，这样应该就可以解决了”，随后要求建立 WorkCase，从想法到规范、实现、测试形成闭环。
 orchestration:
@@ -72,6 +73,32 @@ orchestration:
         - tests/code/test_hook_dispatch.py
         - tests/code/specs_validate_checks/test_governed_projects.py
         - tests/code/specs_validate_checks/test_v2.py
+      blocking_reason: ''
+    - id: item-4
+      title: 补齐 read_plan 消费硬门禁
+      role: runtime-hardening
+      mode: single
+      input_refs:
+        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - specs/06-运行时扩展规范.md
+        - specs/attachments/06.Att.02-固定运行时扩展登记表.md
+        - specs/attachments/06.Att.15-环境Hook事件映射表.md
+        - hooks/ldvh-hooks.yaml
+        - code/hook_dispatch.py
+        - tests/code/test_hook_dispatch.py
+        - tests/code/test_commit_validate.py
+      expected_output: Hook receipt 不只证明触发，还必须在写入和提交前证明 AI 已消费 P0/P1 read_plan。
+      status: done
+      result_summary: |
+        已新增 `acknowledge-read-plan` canonical event，在 session receipt 中写入 `read_plan_consumed.status=acknowledged`、确认时间和 P0/P1 required paths。`pre-tool-use` 对 Write / Edit / apply_patch / 明确写入型 Bash 缺少该证据时返回 blocking；`git.commit-msg` 在提交前检查最近匹配 cwd 的 session receipt，缺少消费证据时阻断。只读命令保留放行和 warning 语义，避免入口确认动作被锁死。
+      evidence_refs:
+        - code/hook_dispatch.py
+        - tests/code/test_hook_dispatch.py
+        - tests/code/test_commit_validate.py
+        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - specs/06-运行时扩展规范.md
+        - specs/attachments/06.Att.15-环境Hook事件映射表.md
+        - hooks/ldvh-hooks.yaml
       blocking_reason: ''
   plan_review:
     orchestration_owner: main_controller
@@ -132,10 +159,11 @@ orchestration:
       result:
         status: pass_with_followups
         summary: |
-          成功标准已满足：规范边界、dispatcher、knowledge-map、governed-projects validator 和测试均已同步；当前 worktree 的 session-start smoke 返回 governed=true 与 receipt=ok。WorkCase 可进入结果复核或 Human 关闭确认，但关闭前仍需按 WorkCase 生命周期补正式结果复核/关闭确认。
+          成功标准已满足：规范边界、dispatcher、knowledge-map、governed-projects validator 和测试均已同步；当前 worktree 的 session-start smoke 返回 governed=true 与 receipt=ok。针对 Human 指出的“Hook 有效但 AI 未消费 receipt”缺口，已补 `acknowledge-read-plan` 和写入/提交硬门禁。WorkCase 可进入结果复核或 Human 关闭确认，但关闭前仍需按 WorkCase 生命周期补正式结果复核/关闭确认。
         key_findings:
           - Git common-dir 识别由 Code 执行，不依赖 AI 主观判断。
           - 管辖项目配置仅新增 Git 身份字段，不新增状态字段。
+          - 写入和提交路径现在要求 `read_plan_consumed.status=acknowledged`，不再只证明 Hook 被触发。
           - 当前本机外部配置已补 `git.common_dir`，作为环境验证输入，不进入仓库提交。
         required_changes: []
         evidence_refs:
@@ -152,11 +180,13 @@ plan_confirmed_at: '2026-06-26T12:20:00+08:00'
 verification_evidence: |
   ## 验证计划
 
-  覆盖 dispatcher、governed-projects validator、v2 knowledge-map、事实源校验、active specs 校验、当前 Codex worktree session-start smoke 和 diff 空白检查。
+  覆盖 dispatcher、governed-projects validator、v2 knowledge-map、read_plan 消费门禁、事实源校验、active specs 校验、当前 Codex worktree session-start smoke 和 diff 空白检查。
 
   ## 验证命令
 
   - `python3 -m pytest -q tests/code/test_hook_dispatch.py tests/code/specs_validate_checks/test_governed_projects.py tests/code/specs_validate_checks/test_v2.py`
+  - `python3 -m pytest -q tests/code/test_hook_dispatch.py tests/code/test_commit_validate.py::test_unified_hook_dispatcher_reuses_canonical_validator`
+  - `python3 code/hook_dispatch.py run acknowledge-read-plan --trigger-source rules --cwd /Users/dmh2002/poker_hud_projects/ld-vibe-harness`
   - `python3 code/fact_validate.py ldvh-base/`
   - `python3 code/specs_validate.py all --fail-on-diagnostics`
   - `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd /Users/dmh2002/.codex/worktrees/1279/ld-vibe-harness`
@@ -165,6 +195,8 @@ verification_evidence: |
   ## 验证结果
 
   - pytest：40 passed。
+  - read_plan 门禁聚焦测试：12 passed。
+  - acknowledge-read-plan smoke：返回 `acknowledged=true`，并记录 P0/P1 required paths。
   - fact_validate：errors=0 warnings=0。
   - specs_validate all：diagnostics=0；保留既有 06.Att.12 review hint，不构成本轮 diagnostics。
   - session-start smoke：返回 `governed=true`、`receipt=ok`、`diagnostics=[]`。
@@ -172,7 +204,7 @@ verification_evidence: |
 
   ## 结论
 
-  本 WorkCase 的规范、Code、测试和本机运行 smoke 均通过；Git common-dir 管辖识别已具备可回归证据。
+  本 WorkCase 的规范、Code、测试和本机运行 smoke 均通过；Git common-dir 管辖识别和 read_plan 消费硬门禁均具备可回归证据。
 closure_evidence: ''
 closure_requested_at: null
 closed_at: null
@@ -205,6 +237,19 @@ revision_history:
       - verification_evidence
     summary: |
       完成 Git common-dir 管辖识别闭环，验证通过；关闭前仍需按 WorkCase 生命周期完成结果复核/关闭确认。
+  - at: '2026-06-26T23:20:00+08:00'
+    from_status: result_self_checking
+    to_status: result_self_checking
+    actor: main_controller
+    reason: Human 指出 Hook 已触发但 AI 未消费 receipt，要求按长期保障先解决该 P0 缺口。
+    changed_fields:
+      - updated
+      - success_criteria
+      - orchestration.execution_items
+      - orchestration.result_review.controller_self_check
+      - verification_evidence
+    summary: |
+      新增 read_plan 消费确认事件和写入/提交硬门禁，使 receipt 从可观测握手证据升级为写入前置条件。
 related_docs:
   - specs/01-规范体系基础规范.md
   - specs/06-运行时扩展规范.md
@@ -213,6 +258,8 @@ related_docs:
   - code/hook_dispatch.py
   - code/spec_checks/knowledge_map.py
   - code/spec_checks/governed_projects.py
+  - specs/attachments/06.Att.15-环境Hook事件映射表.md
+  - hooks/ldvh-hooks.yaml
 related_adrs: []
 related_sparks:
   - spark-0032
