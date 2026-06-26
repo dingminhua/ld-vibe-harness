@@ -1,0 +1,189 @@
+id: workcase-0020
+type: workcase
+title: 文件类型到 Code 命令映射 + subprocess 结构化错误处理
+goal: |
+  LDVH 有 20+ Code 命令，当前只有 3 个被 Hook 自动触发。其余全部靠 AI 记住 CLI --help。
+
+  本 WorkCase 做两件独立的事：
+  1. 建立文件类型 → Code 命令的只读导航映射表，供 knowledge-map 生成 tool_plan 和 post_change_verification（喂给 wc-0019 的知识地图输出字段）
+  2. 统一 dispatcher 中所有 subprocess 调用的错误处理，结构化输出并保留原始 stderr 供 AI 诊断
+
+  本 WorkCase 不修改 pre-tool-use 的阻断逻辑、不引入自动补位 acknowledge、不在 dispatcher 层追加 command_suggestions。
+  命令建议全部通过 knowledge-map 输出路径（04.Att.06 授权），不进 dispatcher 治理字段。
+
+  执行依赖：必须在 wc-0019 完成后执行（本 WorkCase 的映射表喂给 wc-0019 新增的 tool_plan 和 post_change_verification 字段）。
+status: human_plan_confirming
+created: '2026-06-27T07:15:00+08:00'
+updated: '2026-06-27T07:22:00+08:00'
+priority: P1
+description: |
+  问题起源：本次会话从"hook 机制出了问题"出发，沿链路逐层剥开。发现入口（session-start）和出口（git commit）的 Hook 已经打通，但中间地带——AI 知道任务后、修改前、修改后——Code 命令调度是空白。20+ 命令只有 3 个被自动触发。
+
+  审查收敛（Explore-3 + Explore-4）：
+  - 原 item-3（acknowledge 自动补位）违反 06 §7，已移除。dispatcher 不能替 AI 伪造 read_plan_consumed 证据。
+  - 原 item-2（pre-tool-use command_suggestions）越权——dispatcher 职责是治理（receipt/blocking/required_paths/next_action），不是操作指导。命令建议改走 knowledge-map 输出路径。
+  - 原 item-4（post_change_verification）同理改走 knowledge-map 输出路径。
+
+  与 wc-0019 的分工：
+  - wc-0019 管 knowledge-map 输出增强：新增 tool_plan、post_read_action、post_change_verification 等字段
+  - wc-0020 管输入基础：提供文件类型映射表喂给 knowledge-map，统一 subprocess 错误处理
+  - 两者串联：先 wc-0019，再 wc-0020
+
+  不改 Hook 阻断语义，不改 specs 架构。
+success_criteria: |
+  - [ ] 文件类型 → Code 命令映射表：基于路径目录结构判定文件类型（specs/ → spec，ldvh-base/workcases/ → workcase，ldvh-base/sparks/ → spark，code/ → code，web/ → web），映射到"修改前建议的命令"和"修改后建议的命令"
+  - [ ] 映射表回指 04.Att.02（Code 命令入口表）和 04.Att.07（受控写入前检查矩阵）作为规范来源，不作为独立的 Code 内规则源
+  - [ ] 映射表输出为只读建议，不要求 AI 必须执行；格式为 Python dict，供 knowledge_map.py 导入
+  - [ ] subprocess 错误处理结构化输出：{"failed_command": "...", "exit_code": N, "stderr_head": "<前 500 字符>", "stderr_summary": "<exit_code 模板>", "suggested_action": "<恢复动作>"}，保留原始 stderr 供 AI 诊断
+  - [ ] 统一 _run_knowledge_map、_acknowledge_read_plan、_git_text 及其他 subprocess 调用点的错误处理，不静默丢弃错误
+  - [ ] stderr_summary 基于 exit_code 的模板映射，已知诊断码对应 04.Att.04，未知 exit_code 保留原始 head + "请人工检查"
+  - [ ] 改动范围：code/hook_dispatch.py（统一错误处理）+ code/spec_checks/knowledge_map.py 或共享 constants（映射表）
+  - [ ] 现有测试继续通过，新增测试覆盖：映射表存在且可导入、subprocess 失败返回结构化错误、stderr_head 非空
+source: |
+  来源：本次会话用户讨论——从 hook 机制断裂 → 知识地图能力评估 → 旧 Rules 命令表对比 → 20+ Code 命令调度空白。
+  审查：Explore-3（规范边界）+ Explore-4（运行时安全），均已吸收修正。
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 定义文件类型到 Code 命令的只读映射表
+      role: design
+      mode: single
+      input_refs:
+        - specs/attachments/04.Att.02-Code命令入口表.md
+        - specs/attachments/04.Att.07-受控写入前检查矩阵.md
+        - code/specs_validate.py
+        - code/fact_cli.py
+      expected_output: |
+        基于 04.Att.02（Code 命令入口表）和 04.Att.07（受控写入前检查矩阵）建立文件类型 → 命令的只读映射。文件类型判定以**目录路径**为主（specs/ → spec、ldvh-base/workcases/ → workcase、ldvh-base/sparks/ → spark、code/ → python code、web/ → web），扩展名为辅（同目录下 .md vs .yaml 区分）。
+
+        映射表为 Python dict，格式：
+        {
+          "spec": {
+            "before_change": [{"command": "python3 code/specs_validate.py preflight --target-path <path>", "purpose": "写入前只读检查"}],
+            "after_change": [{"command": "python3 code/specs_validate.py v2-check --fail-on-diagnostics", "purpose": "修改后验证"}]
+          },
+          "workcase": {
+            "before_change": [{"command": "python3 code/fact_cli.py show <id>", "purpose": "确认当前状态"}],
+            "after_change": [{"command": "python3 code/fact_validate.py ldvh-base", "purpose": "YAML 校验"}]
+          },
+          "python": {
+            "before_change": [{"command": "python3 -m pytest tests/ -q", "purpose": "确认当前测试状态"}],
+            "after_change": [{"command": "python3 -m pytest tests/ -q", "purpose": "回归测试"}]
+          },
+          "web": {
+            "before_change": [{"command": "...", "purpose": "..."}],
+            "after_change": [{"command": "...", "purpose": "..."}]
+          }
+        }
+
+        所有命令为建议性，不要求 AI 必须执行。映射表回指 04.Att.02/07 作为规范来源。放置位置：code/spec_checks/ 下的新模块或 code/hook_dispatch.py 内。
+      status: pending
+      blocking_reason: ''
+      result_summary: ''
+      evidence_refs: []
+    - id: item-2
+      title: 统一 subprocess 错误处理
+      role: code-implementation
+      mode: single
+      input_refs:
+        - code/hook_dispatch.py (_run_knowledge_map, _acknowledge_read_plan, _git_text, handle_pre_tool_use, handle_acknowledge_read_plan)
+        - specs/attachments/04.Att.04-Code诊断码表.md
+      expected_output: |
+        抽取公共的结构化错误包装函数，统一 hook_dispatch.py 中所有 subprocess 调用的错误处理：
+
+        输出格式：
+        {
+          "status": "error",
+          "failed_command": "<完整命令字符串>",
+          "exit_code": N,
+          "stderr_head": "<stderr 前 500 字符>",
+          "stderr_summary": "<基于 exit_code 的模板摘要>",
+          "suggested_action": "<恢复动作>"
+        }
+
+        stderr_summary 基于 exit_code 做模板映射（参考 04.Att.04 已知诊断码），未知 exit_code 用通用模板。stderr_head 始终包含原始输出供 AI 诊断根因。
+
+        覆盖函数：
+        - _run_knowledge_map (line 559-577)：当前返回 raw stderr → 改为结构化错误
+        - _acknowledge_read_plan (line 219-277)：OSError 异常 → 改为结构化错误
+        - _git_text (line 328-341)：静默返回空字符串 → 返回结构化错误或至少记录 exit_code
+
+        不改变 subprocess 调用方式，只改错误返回格式。不引入新的外部依赖。
+      status: pending
+      blocking_reason: ''
+      result_summary: ''
+      evidence_refs: []
+    - id: item-3
+      title: 整体测试
+      role: test-verification
+      mode: single
+      input_refs:
+        - tests/code/test_hook_dispatch.py
+      expected_output: |
+        新增测试覆盖：
+        - 映射表可导入，包含 spec/workcase/spark/python/web 类型
+        - 每个类型的 before_change 和 after_change 命令列表非空
+        - subprocess 失败 → 返回结构化错误（含 failed_command、exit_code、stderr_head、suggested_action）
+        - stderr_head 非空
+        - _git_text 命令失败不静默返回空字符串
+        - 现有测试全部继续通过
+      status: pending
+      blocking_reason: ''
+      result_summary: ''
+      evidence_refs: []
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本 WorkCase 建立文件类型映射表（作为 knowledge-map 输入，不作为 dispatcher 治理字段）并统一 subprocess 错误处理。已吸收 Explore-3（规范边界）和 Explore-4（运行时安全）审查意见：移除自动补位、命令建议改走 knowledge-map 路径、保留 stderr_head。
+      required_perspectives:
+        - 规范边界审查
+        - Code 可实现性审查
+      optional_perspectives: []
+      tool_method_requirements:
+        - 映射表回指 04.Att.02 和 04.Att.07，不作为独立的 Code 内规则源
+        - 映射表输出为只读建议，不要求 AI 必须执行
+        - stderr_head 保留原始错误输出，不替代为模板摘要
+        - 不改 pre-tool-use 阻断逻辑
+      aggregation_rule: 若映射表引入未授权的新命令映射或 stderr_head 被模板替代，必须修正。
+      review_items: []
+  result_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        完成后需验证映射表可导入、结构化错误可诊断、stderr_head 非空。
+      required_perspectives:
+        - 功能完整性
+        - 测试覆盖
+      optional_perspectives: []
+      tool_method_requirements: []
+      aggregation_rule: 全部 success_criteria 有测试证据后提交 Human 关闭确认。
+    review_items: []
+related_sparks: []
+related_workcases:
+  - workcase-0019
+related_adrs: []
+related_pitfalls: []
+related_docs:
+  - code/hook_dispatch.py
+  - code/spec_checks/knowledge_map.py
+  - specs/04-Code确定性执行规范.md
+  - specs/06-运行时扩展规范.md
+  - specs/attachments/04.Att.02-Code命令入口表.md
+  - specs/attachments/04.Att.04-Code诊断码表.md
+  - specs/attachments/04.Att.07-受控写入前检查矩阵.md
+  - tests/code/test_hook_dispatch.py
+  - rules/LDVH-RUNTIME-PROTOCOL.md
+verification_evidence: ''
+closure_evidence: ''
+closure_requested_at: null
+review_requested_at: null
+closed_at: null
+closure_outcome: ''
+residual_risks:
+  - 文件类型判定基于路径目录结构，边缘情况（如用户自定义目录下同扩展名文件）可能误判，但命令均为只读建议，误判不造成损害
+followup_refs: []
+revision_history: []
