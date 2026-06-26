@@ -20,6 +20,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -27,6 +28,51 @@ import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_REGISTRY = PROJECT_ROOT / "hooks" / "ldvh-hooks.yaml"
+
+
+def _receipt_root() -> Path:
+    codex_home = os.environ.get("CODEX_HOME")
+    home = Path(codex_home) if codex_home else Path.home() / ".codex"
+    return home / "ldvh" / "session-receipts"
+
+
+def _safe_receipt_name(session_id: str) -> str:
+    safe = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in session_id)
+    return safe or "unknown"
+
+
+def _receipt_path(session_id: str) -> Optional[Path]:
+    if not session_id:
+        return None
+    return _receipt_root() / f"{_safe_receipt_name(session_id)}.json"
+
+
+def _write_session_receipt(session_id: str, event: str, result: dict[str, Any]) -> None:
+    path = _receipt_path(session_id)
+    if path is None:
+        return
+    payload = {
+        "session_id": session_id,
+        "event": event,
+        "written_at": datetime.now(timezone.utc).isoformat(),
+        "result": result,
+    }
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError:
+        return
+
+
+def _read_session_receipt(session_id: str) -> Optional[dict[str, Any]]:
+    path = _receipt_path(session_id)
+    if path is None or not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return data if isinstance(data, dict) else None
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -140,18 +186,15 @@ def render_command(raw_command: Any, context: dict[str, str]) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-def handle_session_start(cwd: Path, *, trigger_source: str = "rules") -> int:
-    """SessionStart / session-start handler.
-
-    Determine whether *cwd* falls inside an LDVH-governed project.
-    If yes, run knowledge-map and return a receipt so the AI can consume
-    the full entry chain.
-    """
+def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules") -> dict[str, Any]:
     config = _find_governed_config(cwd)
     if config is None:
-        print(json.dumps({"governed": False, "cwd": str(cwd),
-                          "message": "未找到 LDVH-GOVERNED-PROJECTS.yaml，no-op"}))
-        return 0
+        return {
+            "governed": False,
+            "cwd": str(cwd),
+            "trigger_source": trigger_source,
+            "message": "未找到 LDVH-GOVERNED-PROJECTS.yaml，no-op",
+        }
 
     governed = _cwd_in_governed_project(cwd, config)
     result = {
@@ -162,8 +205,7 @@ def handle_session_start(cwd: Path, *, trigger_source: str = "rules") -> int:
     }
     if not governed:
         result["message"] = "当前 cwd 未命中管辖项目，no-op"
-        print(json.dumps(result, ensure_ascii=False))
-        return 0
+        return result
 
     # Run knowledge-map to get the entry chain receipt
     km = _run_knowledge_map("rules/LDVH-RUNTIME-PROTOCOL.md", "rules_entry")
@@ -178,13 +220,32 @@ def handle_session_start(cwd: Path, *, trigger_source: str = "rules") -> int:
     if stop_conditions:
         result["stop_conditions"] = stop_conditions
 
-    print(json.dumps(result, ensure_ascii=False))
     diags = km.get("diagnostics")
     has_diagnostics = bool(diags) if isinstance(diags, list) else bool(diags)
-    return 1 if has_diagnostics else 0
+    if has_diagnostics:
+        result["action_policy"] = "continue_with_limited_receipt"
+        result["fallback"] = (
+            "知识地图或事实源投影受限；入口握手不阻断行动。AI 应回读 Runtime Protocol、"
+            "active specs 和相关事实源原文，并优先修复 diagnostics 指向的问题。"
+        )
+
+    return result
 
 
-def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: str = "") -> int:
+def handle_session_start(cwd: Path, *, trigger_source: str = "rules", session_id: str = "") -> int:
+    """SessionStart / session-start handler.
+
+    Determine whether *cwd* falls inside an LDVH-governed project.
+    If yes, run knowledge-map and return a receipt so the AI can consume
+    the full entry chain.
+    """
+    result = _build_session_start_result(cwd, trigger_source=trigger_source)
+    _write_session_receipt(session_id, "session-start", result)
+    print(json.dumps(result, ensure_ascii=False))
+    return 0
+
+
+def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: str = "", session_id: str = "") -> int:
     """PreToolUse / pre-tool-use handler.
 
     Check whether the current session has completed the session-start
@@ -210,11 +271,26 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
     #   "Did I run session-start in this session?"
     result = {
         "blocked": False,
-        "warning": "管辖项目中，请确认已在本会话完成握手（session-start）",
         "cwd": str(cwd),
         "governed": True,
         "trigger_source": trigger_source,
     }
+    receipt = _read_session_receipt(session_id)
+    if receipt:
+        receipt_result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
+        result["session_receipt"] = "found"
+        if isinstance(receipt_result, dict):
+            result["receipt"] = receipt_result.get("receipt", "unknown")
+            result["receipt_event"] = receipt.get("event", "")
+    elif session_id:
+        session_result = _build_session_start_result(cwd, trigger_source=trigger_source)
+        _write_session_receipt(session_id, "pre-tool-use-implicit-session-start", session_result)
+        result["session_receipt"] = "created_by_pre_tool_use"
+        result["receipt"] = session_result.get("receipt", "unknown")
+        result["action_policy"] = "continue_with_implicit_receipt"
+    else:
+        result["session_receipt"] = "unavailable"
+        result["warning"] = "管辖项目中，hook payload 未提供 session_id；请确认本会话已完成 session-start。"
     if tool_name:
         result["tool"] = tool_name
     print(json.dumps(result, ensure_ascii=False))
@@ -268,23 +344,56 @@ def _parse_stdin() -> Optional[dict[str, Any]]:
         return None
 
 
+def _stdin_event(payload: dict[str, Any]) -> str:
+    """Return the hook event name from known Codex/AI hook payload shapes."""
+    for key in ("event", "hook_event", "hookEvent", "hook_event_name", "hookEventName", "event_name", "eventName"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
+def _stdin_tool_name(payload: dict[str, Any]) -> str:
+    """Return the tool name from known hook payload shapes when present."""
+    for key in ("tool_name", "toolName", "tool"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
+def _stdin_session_id(payload: dict[str, Any]) -> str:
+    """Return the Codex session id from hook payloads when present."""
+    for key in ("session_id", "sessionId"):
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     # --- Hook path: stdin JSON ------------------------------------------------
     stdin_payload = _parse_stdin()
-    if stdin_payload is not None:
-        event = stdin_payload.get("event", "")
+    cli_args = list(sys.argv[1:] if argv is None else argv)
+    cli_has_explicit_event = len(cli_args) >= 2 and cli_args[0] == "run"
+    # Codex command hooks pass JSON on stdin. Plugin-bundled hooks also carry the
+    # event in argv (`run pre-tool-use`). If stdin has no event field, keep the
+    # explicit CLI event instead of treating it as an unknown empty event.
+    if stdin_payload is not None and not cli_has_explicit_event:
+        event = _stdin_event(stdin_payload)
         cwd_raw = stdin_payload.get("cwd", os.getcwd())
         cwd = Path(cwd_raw)
         trigger_source = stdin_payload.get("trigger_source", "hook")
+        session_id = _stdin_session_id(stdin_payload)
 
         # Normalize event name: both "SessionStart" (Hook) and "session-start" (CLI) accepted
         normalized = event.replace("_", "-").lower().lstrip("-")
 
         if normalized in ("session-start", "sessionstart"):
-            return handle_session_start(cwd, trigger_source=trigger_source)
+            return handle_session_start(cwd, trigger_source=trigger_source, session_id=session_id)
         if normalized in ("pre-tool-use", "pretooluse"):
-            tool = stdin_payload.get("tool_name", "")
-            return handle_pre_tool_use(cwd, trigger_source=trigger_source, tool_name=tool)
+            tool = _stdin_tool_name(stdin_payload)
+            return handle_pre_tool_use(cwd, trigger_source=trigger_source, tool_name=tool, session_id=session_id)
         if normalized in ("git-commit-msg", "git.commit-msg"):
             context: dict[str, str] = {"cwd": str(cwd)}
             if stdin_payload.get("message_file"):
@@ -321,7 +430,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     run_parser.add_argument("--dry-run", action="store_true",
                             help="Print commands without executing (git.commit-msg only).")
 
-    args = parser.parse_args(argv)
+    args = parser.parse_args(cli_args)
 
     if args.command == "run":
         event = args.event
