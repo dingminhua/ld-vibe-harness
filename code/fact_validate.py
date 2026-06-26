@@ -114,6 +114,15 @@ EVIDENCE_FIELDS_BY_TYPE = {
     "pitfall": {"verification"},
 }
 EVIDENCE_REQUIRED_HEADINGS = ["验证计划", "验证命令", "验证结果", "结论"]
+WORKCASE_CLOSURE_EVIDENCE_REQUIRED_HEADINGS = ["验证计划", "验证命令", "验证结果", "结论"]
+WORKCASE_CLOSURE_RESULT_MARKERS = (
+    "## 后续分流",
+    "## 收口结果",
+    "后续分流 / 收口结果",
+    "后续分流/收口结果",
+    "无后续分流",
+    "无残留尾巴",
+)
 ADR_CONSEQUENCES_REQUIRED_HEADINGS = ["正向价值", "逆向价值", "实施成本", "风险评估", "注意事项"]
 ADR_NO_REVERSE_VALUE_TEXT = "当前决策无逆向价值"
 VALUE_STANDARD_REF_RE = re.compile(r"(?<![A-Za-z0-9_])V(?:[1-9]|10)(?![A-Za-z0-9_])")
@@ -131,7 +140,7 @@ URL_REF_RE = re.compile(r"^https?://", re.IGNORECASE)
 CHINESE_TEXT_RE = re.compile(r"[\u4e00-\u9fff]")
 STUDY_REQUIRED_BODY_HEADINGS = ["研究问题", "输入与边界", "关键发现", "建议", "后续分流"]
 
-# 05.02：verification 字段不应包含的风险/约束/降级标题模式
+# 05.02：verification 字段不应包含的风险/约束/legacy 旧受限标题模式
 VERIFICATION_MISPLACED_HEADING_PATTERNS = [
     re.compile(r"^##\s*风险", re.MULTILINE),
     re.compile(r"^##\s*约束", re.MULTILINE),
@@ -552,7 +561,7 @@ def validate_dangerous_html(path: Path, data: dict[str, Any], object_type: str) 
 
 
 def validate_verification_misplaced_content(path: Path, data: dict[str, Any], object_type: str) -> list[Issue]:
-    """05.02：verification 字段包含风险/约束/降级标题时报 warning，建议迁移到 description 或 notes。"""
+    """05.02：verification 字段包含风险/约束/legacy 旧受限标题时报 warning，建议迁移到 description 或 notes。"""
     issues = []
     if object_type != "pitfall":
         return issues
@@ -563,11 +572,57 @@ def validate_verification_misplaced_content(path: Path, data: dict[str, Any], ob
         if pattern.search(value):
             issues.append(Issue(
                 str(path), "warning", "VERIFICATION_MISPLACED_CONTENT",
-                "verification 字段不应包含风险、约束或降级说明，建议迁移到 description 或 notes 字段",
+                "verification 字段不应包含风险、约束或旧受限说明，建议迁移到 description 或 notes 字段",
                 field="verification",
-                suggestion="将风险、约束、降级内容从 verification 迁移到 description 或 notes",
+                suggestion="将风险、约束、旧受限内容从 verification 迁移到 description 或 notes",
             ))
             break  # 每个字段只报一次
+    return issues
+
+
+def validate_workcase_closure_evidence_summary(path: Path, data: dict[str, Any]) -> list[Issue]:
+    """WorkCase closure_evidence 必须显式记录收口干净或后续分流结论。"""
+    issues: list[Issue] = []
+    status = data.get("status")
+    if status not in {"human_closure_confirming", "closed"}:
+        return issues
+    closure_evidence = data.get("closure_evidence")
+    if not isinstance(closure_evidence, str) or not closure_evidence.strip():
+        return issues
+    headings = [line[3:].strip() for line in closure_evidence.splitlines() if re.match(r"^##\s+", line)]
+    missing_headings = [heading for heading in WORKCASE_CLOSURE_EVIDENCE_REQUIRED_HEADINGS if heading not in headings]
+    if missing_headings:
+        issues.append(Issue(
+            str(path),
+            "error",
+            "MISSING_WORKCASE_CLOSURE_EVIDENCE_HEADINGS",
+            f"{status} 状态下 closure_evidence 必须保留四段式结构；缺少: {', '.join(missing_headings)}",
+            field="closure_evidence",
+        ))
+    if "## 后续分流" not in closure_evidence:
+        issues.append(Issue(
+            str(path),
+            "error",
+            "MISSING_WORKCASE_CLOSURE_ROUTING_SECTION",
+            f"{status} 状态下 closure_evidence 必须包含 ## 后续分流 段落，用于写明收口干净或后续承接对象",
+            field="closure_evidence",
+        ))
+    if "## 收口结果" not in closure_evidence:
+        issues.append(Issue(
+            str(path),
+            "error",
+            "MISSING_WORKCASE_CLOSURE_RESULT_SECTION",
+            f"{status} 状态下 closure_evidence 必须包含 ## 收口结果 段落，用于写明最终收口结论",
+            field="closure_evidence",
+        ))
+    if not any(marker in closure_evidence for marker in WORKCASE_CLOSURE_RESULT_MARKERS):
+        issues.append(Issue(
+            str(path),
+            "error",
+            "MISSING_WORKCASE_CLOSURE_TAIL_RESULT",
+            f"{status} 状态下 closure_evidence 必须包含收口干净或后续分流的明确结论",
+            field="closure_evidence",
+        ))
     return issues
 
 
@@ -646,7 +701,7 @@ def validate_common(path: Path, data: dict[str, Any], object_type: str) -> list[
     issues.extend(validate_dangerous_html(path, data, object_type))
     # 05.02 工作模型字段内容与格式规范：Evidence 字段格式提示
     issues.extend(validate_evidence_format(path, data, object_type))
-    # 05.02：verification 字段风险/约束/降级内容迁移提示
+    # 05.02：verification 字段风险/约束/legacy 旧受限内容迁移提示
     issues.extend(validate_verification_misplaced_content(path, data, object_type))
     return issues
 
@@ -888,6 +943,7 @@ def validate_workcase(path: Path, data: dict[str, Any]) -> list[Issue]:
     if uses_current_review_contract and status in {"human_closure_confirming", "closed"}:
         if not isinstance(result_review, dict) or not isinstance(result_review.get("controller_resolution"), dict):
             issues.append(Issue(str(path), "error", "MISSING_RESULT_REVIEW_RESOLUTION", f"{status} 状态必须填写 result_review.controller_resolution", field="orchestration.result_review.controller_resolution"))
+        issues.extend(validate_workcase_closure_evidence_summary(path, data))
 
     review = orchestration.get("review")
     if review is not None and not isinstance(review, dict):

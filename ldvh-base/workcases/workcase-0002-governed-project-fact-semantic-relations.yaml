@@ -593,6 +593,34 @@ closure_evidence: |
   ## 结论
 
   本 WorkCase 的执行结果可以提交 Human 关闭确认。残留风险是不进行历史事实对象批量补字段，现有关系质量 review hints 后续按对象渐进治理；该风险符合本 WorkCase 已确认的范围边界。关闭前防漏改进已作为补强项完成，后续 WorkCase 草案和事实校验会更早提示不得跳过主控自检和独立结果复核。
+
+  ## 后续分流
+
+  无后续分流，当前目标已收口干净。
+
+  ## 收口结果
+
+  本次收口结果为：当前目标已收口干净，无需另起 spark、WorkCase 或 ADR。
+  ## 验证计划
+
+  关闭前确认 workcase-0002 是否已经完成规范口径、Code 实时投影、测试夹具、验证闭环和子 Agent 结果复核，并确认剩余风险是否可由后续渐进治理承接。
+
+  ## 验证命令
+
+  - `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q`
+  - `python3 code/specs_validate.py v2-check --input-scope entry_navigation --fail-on-diagnostics --format text`
+  - `python3 code/fact_validate.py ldvh-base/ --format text`
+  - `git diff --check`
+
+  ## 验证结果
+
+  子 Agent 结果复核已完成并写入 `orchestration.result_review.review_items`。Hume 和 Poincare 为 `pass_with_followups`；Laplace 为 `fail`，失败原因是复核时 WorkCase 仍缺 closure_evidence 和 review_items。主控已补齐该流程材料缺口，并吸收 Poincare 的测试覆盖 follow-up。
+
+  Human 在关闭前要求继续落实防漏改进：WorkCase 任务导航/规范加入 execution_items 全 done 后必须先 result_self_checking 再 subagents_result_reviewing 的硬提示；`fact_validate.py` 增加主控自检缺失和独立结果复核缺失 warning；新建 WorkCase 草案默认预置 result_review.review_policy；相关测试已补充。
+
+  ## 结论
+
+  本 WorkCase 的执行结果可以提交 Human 关闭确认。残留风险是不进行历史事实对象批量补字段，现有关系质量 review hints 后续按对象渐进治理；该风险符合本 WorkCase 已确认的范围边界。关闭前防漏改进已作为补强项完成，后续 WorkCase 草案和事实校验会更早提示不得跳过主控自检和独立结果复核。
 closure_requested_at: '2026-06-24T09:04:00+08:00'
 review_requested_at: '2026-06-24T08:59:00+08:00'
 closed_at: ''

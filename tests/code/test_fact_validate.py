@@ -142,7 +142,7 @@ related_workcases: []
     return root, workcase
 
 
-def add_current_review_contract(workcase: Path, *, closure_outcome: str = "completed") -> None:
+def add_current_review_contract(workcase: Path, *, closure_outcome: str = "completed", closure_tail_summary: str = "无后续分流，当前目标已收口干净。") -> None:
     content = workcase.read_text(encoding="utf-8")
     content = content.replace(
         """  review:
@@ -234,7 +234,7 @@ def add_current_review_contract(workcase: Path, *, closure_outcome: str = "compl
     )
     content = content.replace(
         "closed_at: '2026-06-12T01:00:00'\n",
-        f"closed_at: '2026-06-12T01:00:00'\nclosure_outcome: {closure_outcome}\n",
+        f"closed_at: '2026-06-12T01:00:00'\nclosure_outcome: {closure_outcome}\nclosure_evidence: |\n  ## 验证计划\n\n  关闭前确认收口是否干净，或是否有明确后续承接。\n\n  ## 后续分流\n\n  {closure_tail_summary}\n\n  ## 验证命令\n\n  AI 回读 closure_evidence 与 followup_refs。\n\n  ## 验证结果\n\n  {closure_tail_summary}\n\n  ## 收口结果\n\n  {closure_tail_summary}\n\n  ## 结论\n\n  {closure_tail_summary}\n",
     )
     workcase.write_text(content, encoding="utf-8")
 
@@ -1378,7 +1378,7 @@ def test_current_closed_workcase_requires_closure_outcome(tmp_path):
 
 def test_current_closed_workcase_contract_validates(tmp_path):
     root, workcase = write_valid_workcase_tree(tmp_path, status="closed")
-    add_current_review_contract(workcase)
+    add_current_review_contract(workcase, closure_tail_summary="无后续分流，当前目标已收口干净。")
     workcase.write_text(
         workcase.read_text(encoding="utf-8").replace(
             """    review_items: []
@@ -1419,6 +1419,22 @@ def test_current_closed_workcase_contract_validates(tmp_path):
 
     assert result.returncode == 0
     assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+
+
+def test_current_closed_workcase_requires_tail_routing_summary(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path, status="closed")
+    add_current_review_contract(workcase, closure_tail_summary="收口结果待补。")
+    content = workcase.read_text(encoding="utf-8")
+    content = content.replace("## 后续分流", "后续分流", 1)
+    content = content.replace("## 收口结果", "收口结果", 1)
+    workcase.write_text(content, encoding="utf-8")
+
+    result = run_checker(workcase)
+
+    assert result.returncode == 1
+    assert "MISSING_WORKCASE_CLOSURE_TAIL_RESULT" in result.stdout
+    assert "closure_evidence" in result.stdout
+
 
 
 def test_legacy_degraded_accepted_closure_outcome_warns(tmp_path):

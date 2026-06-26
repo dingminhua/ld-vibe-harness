@@ -614,6 +614,15 @@ closure_evidence: |
   ## 结论
 
   本 WorkCase 已具备提交 Human 关闭确认的主要证据基础；关闭前仍需 Human 判断是否接受“Git commit records 将由最终提交形成”的残留风险，且不得在提交前声称本轮修改已经形成 Git 追溯记录。
+
+  ## 后续分流
+
+  无后续分流，当前目标已收口干净。
+
+  ## 收口结果
+
+  本次收口结果为：当前目标已收口干净，无需另起 spark、WorkCase 或 ADR。
+
 closure_requested_at: '2026-06-24T08:05:01.282431'
 review_requested_at: '2026-06-24T08:00:00'
 closed_at: '2026-06-24T08:30:00+08:00'

@@ -1,0 +1,7 @@
+# Local search defaults.
+#
+# history/ is retained for source tracing and migration audit, but it is not an
+# active working surface. Exclude it from everyday rg/fd-style searches to keep
+# current work scans focused. Use --no-ignore or search history/ explicitly when
+# historical material is the task target.
+history/
