@@ -5,13 +5,13 @@ goal: |
   LDVH 有 20+ Code 命令，当前只有 3 个被 Hook 自动触发。其余全部靠 AI 记住 CLI --help。
 
   本 WorkCase 做两件独立的事：
-  1. 建立文件类型 → Code 命令的只读导航映射表，供 knowledge-map 生成 tool_plan 和 post_change_verification（喂给 wc-0019 的知识地图输出字段）
+  1. 建立文件类型 → Code 命令的只读导航映射表，供 wc-0019 的 tool_plan 字段导入，实现文件类型级别的命令建议
   2. 统一 dispatcher 中所有 subprocess 调用的错误处理，结构化输出并保留原始 stderr 供 AI 诊断
 
   本 WorkCase 不修改 pre-tool-use 的阻断逻辑、不引入自动补位 acknowledge、不在 dispatcher 层追加 command_suggestions。
   命令建议全部通过 knowledge-map 输出路径（04.Att.06 授权），不进 dispatcher 治理字段。
 
-  执行依赖：必须在 wc-0019 完成后执行（本 WorkCase 的映射表喂给 wc-0019 新增的 tool_plan 和 post_change_verification 字段）。
+  执行依赖：在 wc-0019 之前执行。wc-0019 的 item-6（tool_plan）在实现 task_type 级命令映射时导入本 WorkCase 产出的文件类型映射表，实现 file_type 级命令增强。
 status: human_plan_confirming
 created: '2026-06-27T07:15:00+08:00'
 updated: '2026-06-27T07:22:00+08:00'
@@ -19,15 +19,18 @@ priority: P1
 description: |
   问题起源：本次会话从"hook 机制出了问题"出发，沿链路逐层剥开。发现入口（session-start）和出口（git commit）的 Hook 已经打通，但中间地带——AI 知道任务后、修改前、修改后——Code 命令调度是空白。20+ 命令只有 3 个被自动触发。
 
-  审查收敛（Explore-3 + Explore-4）：
+  审查收敛（Explore-3 + Explore-4 + Explore-10/12）：
   - 原 item-3（acknowledge 自动补位）违反 06 §7，已移除。dispatcher 不能替 AI 伪造 read_plan_consumed 证据。
-  - 原 item-2（pre-tool-use command_suggestions）越权——dispatcher 职责是治理（receipt/blocking/required_paths/next_action），不是操作指导。命令建议改走 knowledge-map 输出路径。
-  - 原 item-4（post_change_verification）同理改走 knowledge-map 输出路径。
+  - 原 item-2（pre-tool-use command_suggestions）越权——dispatcher 职责是治理，不是操作指导。命令建议改走 knowledge-map 输出路径。
+  - 原"post_change_verification"字段在 wc-0019 中不存在，已从本 WorkCase 移除。wc-0019 的 tool_plan（item-6）承担文件类型级命令建议职责。
+  - 执行依赖修正为"wc-0020 先 → wc-0019 后"，wc-0019 item-6 导入本 WorkCase 的映射表做 file_type 增强。
 
   与 wc-0019 的分工：
-  - wc-0019 管 knowledge-map 输出增强：新增 tool_plan、post_read_action、post_change_verification 等字段
-  - wc-0020 管输入基础：提供文件类型映射表喂给 knowledge-map，统一 subprocess 错误处理
-  - 两者串联：先 wc-0019，再 wc-0020
+  - wc-0019 管 knowledge-map 输出增强：新增 tool_plan、post_read_action、attention_points、deep_read_plan 等字段
+  - wc-0020 管输入基础：提供文件类型映射表（独立共享模块），wc-0019 item-6 导入实现 tool_plan 的 file_type 级命令映射
+  - 两者串联：先 wc-0020，再 wc-0019
+
+  映射表放置位置：独立共享模块 code/constants/file_command_map.py，由 wc-0019 的 knowledge_map.py 导入，避免 hook_dispatch.py ↔ knowledge_map.py 循环依赖。dispatcher（hook_dispatch.py）在构建 session-start receipt 时透传 knowledge-map 输出中的 tool_plan 字段，不直接查询映射表。
 
   不改 Hook 阻断语义，不改 specs 架构。
 success_criteria: |
@@ -35,14 +38,14 @@ success_criteria: |
   - [ ] 映射表只包含 04.Att.02 已授权的命令（当前仅 spec 类型 preflight + v2-check），未授权类型留空列表，不伪造
   - [ ] 映射表回指 04.Att.02 和 04.Att.07 作为规范来源，不作为独立的 Code 内规则源
   - [ ] subprocess 错误处理结构化输出：{"failed_command": "...", "exit_code": N, "stderr_head": "<前 500 字符>", "stderr_summary": "<exit_code 模板>", "suggested_action": "<恢复动作>"}，保留原始 stderr 供 AI 诊断
-  - [ ] _run_knowledge_map subprocess 错误处理改为结构化错误；_git_text 新增 _git_text_structured 包装返回 tuple (stdout, error|None)，原 _git_text 保持 str 签名不变
+  - [ ] _run_knowledge_map subprocess 错误处理改为结构化错误；_git_text 内部委托给 _git_text_structured 实现（路径 B），_git_text 公共签名不变
   - [ ] _acknowledge_read_plan 不纳入 subprocess 范围（它是文件 I/O，非 subprocess 调用）
   - [ ] stderr_summary 基于 exit_code 的模板映射，已知诊断码对应 04.Att.04，未知 exit_code 保留原始 head + "请人工检查"
-  - [ ] 改动范围：code/hook_dispatch.py（统一错误处理）+ code/spec_checks/knowledge_map.py 或共享 constants（映射表）
+  - [ ] 改动范围：code/hook_dispatch.py（subprocess 统一错误处理）+ code/constants/file_command_map.py（映射表共享模块）
   - [ ] 现有测试继续通过，新增测试覆盖：映射表存在且可导入、subprocess 失败返回结构化错误、stderr_head 非空
 source: |
   来源：本次会话用户讨论——从 hook 机制断裂 → 知识地图能力评估 → 旧 Rules 命令表对比 → 20+ Code 命令调度空白。
-  审查：Explore-3（规范边界）+ Explore-4（运行时安全），均已吸收修正。
+  审查：Explore-3（规范边界）+ Explore-4（运行时安全）+ Explore-10/12（目标对齐），均已吸收修正。
 orchestration:
   mode: sequential
   execution_items:
@@ -87,7 +90,12 @@ orchestration:
           }
         }
 
-        所有命令为建议性，不要求 AI 必须执行。映射表回指 04.Att.02/07 作为规范来源。空列表表示"该类型暂无 04.Att.02 授权的建议命令"，不伪造。放置位置：code/spec_checks/ 下的新模块或 code/hook_dispatch.py 内。
+        所有命令为建议性，不要求 AI 必须执行。映射表回指 04.Att.02/07 作为规范来源。空列表附带 reason 说明（如 "04.Att.02 暂未授权该文件类型的建议命令"），帮助 AI 区分"无需操作"与"暂无授权"。
+
+        放置位置：独立共享模块 code/constants/file_command_map.py。选择此位置的原因：
+        - 避免放在 hook_dispatch.py 内导致 knowledge_map.py 跨模块导入 dispatcher 的循环依赖风险
+        - 作为纯数据常量模块，knowledge_map.py（wc-0019 item-6）可直接 import 使用
+        - 文件类型检测函数（基于路径目录结构判断 spec/workcase/spark/code/web）同放在此模块
       status: pending
       blocking_reason: ''
       result_summary: ''
@@ -116,7 +124,7 @@ orchestration:
 
         覆盖函数：
         - _run_knowledge_map (line 559-577)：当前返回 raw stderr → 改为结构化错误
-        - _git_text (line 328-341)：现有签名返回 str，5 个调用者依赖其返回类型做 git 治理判定。不直接改 _git_text 的返回类型。新增包装函数 _git_text_structured，返回 tuple (stdout: str, error: dict | None)，供需要结构化错误的上层调用者使用。原 _git_text 保持 str 返回类型不变，沉默失败行为保持不变
+        - _git_text (line 328-341)：采用实现路径 B——重构 _git_text 内部委托给 _git_text_structured，_git_text_structured 执行 subprocess 并返回 tuple (stdout: str, error: dict | None)；_git_text 调用 _git_text_structured 后丢弃 error 返回 stdout 或空字符串。保持 _git_text 的公共签名不变，5 个现有调用者无需修改。_git_text_structured 供需要结构化错误诊断的上层逻辑使用。
 
         _acknowledge_read_plan (line 219-277) 不在本项范围：它做的是文件 I/O（JSON read/write），不是 subprocess 调用。
         不改变 subprocess 调用方式，只改错误返回格式。不引入新的外部依赖。
@@ -181,7 +189,7 @@ related_adrs: []
 related_pitfalls: []
 related_docs:
   - code/hook_dispatch.py
-  - code/spec_checks/knowledge_map.py
+  - code/constants/file_command_map.py
   - specs/04-Code确定性执行规范.md
   - specs/06-运行时扩展规范.md
   - specs/attachments/04.Att.02-Code命令入口表.md
