@@ -256,7 +256,7 @@ export interface ProjectFileEntry {
   path: string;
   absolutePath: string;
   type: 'directory' | 'file';
-  kind: 'directory' | 'markdown' | 'yaml' | 'text' | 'binary';
+  kind: 'directory' | 'markdown' | 'yaml' | 'svg' | 'text' | 'binary';
   size: number;
   updated: string;
 }
@@ -276,7 +276,7 @@ export interface ProjectFileContentData {
   project: GovernedProject;
   path: string;
   absolutePath: string;
-  kind: 'markdown' | 'yaml' | 'text' | 'binary';
+  kind: 'markdown' | 'yaml' | 'svg' | 'text' | 'binary';
   size: number;
   content: string;
   truncated: boolean;

@@ -8,7 +8,7 @@
 
 ## 1. 页面目标
 
-ProjectFiles 是管辖项目文件、Git 工作区和提交历史的只读工具页。它帮助 Human 查看项目文件、预览 Markdown / 文本内容、检查待提交文件、查看 diff 和追溯提交，不是工作对象列表、对象详情页、完整 IDE、文件管理器或通用 Git 客户端。
+ProjectFiles 是管辖项目文件、Git 工作区和提交历史的只读工具页。它帮助 Human 查看项目文件、预览 Markdown / SVG / 文本内容、检查待提交文件、查看 diff 和追溯提交，不是工作对象列表、对象详情页、完整 IDE、文件管理器或通用 Git 客户端。
 
 ProjectFiles 可以读取项目文件和 Git 信息，但不得新增、修改、移动、删除项目文件，不得提供 stage、commit、checkout、reset、rebase、merge、discard 或等价写入动作。任何未来写入能力都必须先回到 `specs/05-Web信息同步规范.md` 的受控轻写入、Human Gate 和测试要求。
 
@@ -38,7 +38,7 @@ ProjectFiles 可以读取项目文件和 Git 信息，但不得新增、修改�
 - 页面保持工具页信息密度，不强行套用工作对象卡片的情绪化视觉。
 - 顶部项目选择和工具 tab 必须使用全局 tab / control 样式，滚动时保持稳定可见。
 - 文件、diff 和 commit 区域使用浅边框、弱背景和紧凑列表；不使用营销式 hero 区。
-- Markdown 预览使用全局 `MarkdownPreview` / `.ldvh-markdown-preview` 规则，不在 ProjectFiles 中手写 Markdown 标签样式。
+- Markdown 预览使用全局 `MarkdownPreview` / `.ldvh-markdown-preview` 规则；ProjectFiles 文件预览可渲染 Markdown 中的 SVG 块，但不启用任意 HTML。
 - 代码、diff、路径和 hash 使用等宽或弱元信息样式，允许横向滚动或软换行，不能破坏页面主布局。
 - 错误态必须显示失败来源，例如项目不可用、路径越界、文件不可读、Git 命令失败或提交不存在。
 

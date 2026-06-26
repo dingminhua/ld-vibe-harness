@@ -102,6 +102,7 @@ function getKindLabel(kind: EntryKind, locale: string): string {
     directory: { zh: '目录', en: 'Directory' },
     markdown: { zh: 'Markdown', en: 'Markdown' },
     yaml: { zh: 'YAML', en: 'YAML' },
+    svg: { zh: 'SVG', en: 'SVG' },
     text: { zh: '文本', en: 'Text' },
     binary: { zh: '二进制', en: 'Binary' },
   };
@@ -137,6 +138,10 @@ function getCommitFileStatusLabel(status: string, locale: string): string {
   const label = labels[key];
   if (!label) return status;
   return locale === 'en' ? label.en : label.zh;
+}
+
+function getSvgDataUrl(content: string): string {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(content)}`;
 }
 
 function getDiffLineClass(line: string): string {
@@ -217,7 +222,9 @@ function parseSplitDiff(diff: string): SplitDiffRow[] {
 function FileIcon({ entry }: { entry: ProjectFileEntry }) {
   if (entry.type === 'directory') return <Folder size={15} className="text-ldvh-accent" />;
   if (entry.kind === 'markdown') return <FileText size={15} className="text-ldvh-accent" />;
-  if (entry.kind === 'yaml' || entry.kind === 'text') return <FileCode2 size={15} className="text-ldvh-text-secondary" />;
+  if (entry.kind === 'yaml' || entry.kind === 'svg' || entry.kind === 'text') {
+    return <FileCode2 size={15} className="text-ldvh-text-secondary" />;
+  }
   return <Code2 size={15} className="text-ldvh-text-secondary" />;
 }
 
@@ -719,8 +726,16 @@ export default function ProjectFiles() {
                   </div>
                   {filePanel.data.kind === 'markdown' ? (
                     <article className="min-w-0 overflow-auto rounded-md bg-ldvh-bg px-4 py-4 xl:min-h-0 xl:flex-1">
-                      <MarkdownPreview content={filePanel.data.content} />
+                      <MarkdownPreview content={filePanel.data.content} renderSvgBlocks />
                     </article>
+                  ) : filePanel.data.kind === 'svg' ? (
+                    <div className="flex min-w-0 items-center justify-center overflow-auto rounded-md bg-ldvh-bg p-4 xl:min-h-0 xl:flex-1">
+                      <img
+                        src={getSvgDataUrl(filePanel.data.content)}
+                        alt={getFileName(filePanel.data.path)}
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
                   ) : (
                     <pre className="ldvh-meta-primary min-w-0 overflow-auto whitespace-pre-wrap rounded-md bg-ldvh-bg p-4 xl:min-h-0 xl:flex-1">
                       {filePanel.data.content}
