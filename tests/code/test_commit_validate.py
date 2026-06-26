@@ -76,7 +76,7 @@ def test_standard_types_pass():
 
 def test_breaking_change_marker_passes():
     commit = make_commit(
-        subject="feat(api)!: 调整公开接口参数",
+        subject="feat(code)!: 调整公开接口参数",
         body="旧参数不再兼容，调用方需要改为传入新的结构化参数。",
     )
 
@@ -88,7 +88,7 @@ def test_breaking_change_marker_passes():
 
 def test_breaking_change_footer_passes():
     commit = make_commit(
-        subject="feat(api)!: 调整公开接口参数",
+        subject="feat(code)!: 调整公开接口参数",
         body=(
             "动机:\n"
             "- 调整公开接口参数。\n\n"
@@ -125,25 +125,25 @@ def test_valid_type_without_scope():
     assert errors == []
 
 
-def test_scope_not_recommended_warns():
+def test_scope_outside_enum_errors():
     commit = make_commit(subject="feat(unknown-scope): 新功能", body="说明本次功能调整内容。")
 
     issues = checker.check_commit(commit)
-    warnings = [i for i in issues if i.level == "warning"]
+    errors = [i for i in issues if i.level == "error"]
 
-    assert any("scope" in i.message and "不在推荐枚举" in i.message for i in warnings)
+    assert any("scope" in i.message and "不在允许枚举" in i.message for i in errors)
 
 
-def test_runtime_scope_is_recommended():
+def test_runtime_scope_is_allowed():
     commit = make_commit(
         subject="fix(runtime): 强化运行时门禁",
         body="说明本次运行时协议与 Hook 门禁调整内容。",
     )
 
     issues = checker.check_commit(commit)
-    warnings = [i for i in issues if i.level == "warning"]
+    errors = [i for i in issues if i.level == "error"]
 
-    assert not any("scope" in i.message and "不在推荐枚举" in i.message for i in warnings)
+    assert not any("scope" in i.message and "不在允许枚举" in i.message for i in errors)
 
 
 def test_subject_too_long():

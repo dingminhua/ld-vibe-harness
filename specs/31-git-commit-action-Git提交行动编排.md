@@ -28,7 +28,7 @@ v2_spec:
     - "specs/attachments/03.Att.02-成员主文件骨架模板.md"
     - "specs/attachments/06.Att.02-固定运行时扩展登记表.md"
     - "specs/attachments/07.Att.02-Commit-Type枚举表.md"
-    - "specs/attachments/07.Att.03-Commit-Scope推荐表.md"
+    - "specs/attachments/07.Att.03-Commit-Scope允许枚举表.md"
     - "specs/attachments/07.Att.04-Commit-Body必填条件表.md"
     - "specs/attachments/07.Att.05-Commit-Message样例集.md"
     - "specs/attachments/07.Att.07-Git提交留痕范围表.md"
@@ -233,13 +233,13 @@ AI 不应为了提交默认全文读取所有 specs、全部工作对象或完�
 2. 判断 staged / unstaged / untracked 文件是否属于本次提交范围；必要时只 stage 本次范围内文件，不 stage 无关用户变更。
 3. 判断是否需要拆分提交。独立目的应拆分；同一原子闭环可以跨 specs、Code、Web、Rules、Skill、Hook 和测试文件。
 4. 读取 07 的 message 契约和 `ldvh-git-commit` Skill。若运行环境真实加载了 Skill，记录为 Skill runtime 调用；若只是按 Skill 原文执行，记录为手动等价执行。
-5. 选择单一 type 和零个或一个 scope，按 07 写简体中文 description。
+5. 选择单一 type 和零个或一个 scope，按 07 写简体中文 description。type 和 scope 必须命中 07 授权枚举；若无精确匹配的 scope，选择最接近的已有 scope，并把“建议新增 scope 枚举”的提示留到提交后交还 Human。
 6. 按 07 判断是否必须写 body；涉及 specs、rules、code、tests、web、hooks、skills、agents、配置、多文件或 Human Gate 时通常需要 body。
 7. 使用 `code/commit_validate.py` 或 `code/hook_dispatch.py run git.commit-msg` 预检。
 8. 运行与变更面匹配的验证命令；无法运行或部分失败时，按 08 记录失败原因、残留风险或阻断。
 9. 修复全部 error。warning 必须处理为改写正文、说明残留风险或暂停等待 Human。
 10. 用已验证消息创建 commit。
-11. 提交后报告 commit hash、验证摘要、剩余 `git status --short` 和本次 Skill 使用方式。
+11. 提交后报告 commit hash、验证摘要、剩余 `git status --short` 和本次 Skill 使用方式。若提交时发现现有 scope 枚举无法精确覆盖本次主承载域，应显式告知 Human，建议评估是否补充 `07.Att.03` scope 枚举。
 
 ## 10. 执行中问题分流与失败暂停
 
