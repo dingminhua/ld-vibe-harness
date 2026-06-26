@@ -11,7 +11,7 @@ description: |
 
   该方向与 `spark-0023` 不同：它不是恢复面板能力，而是运行时触发保障。它可能涉及 AGENTS 薄引用、Rules 入口、Hook / Skill / Agent 能力资产、环境入口适配和 Human Gate。后续若转 WorkCase，必须先明确不得静默写入外部环境，不得声明环境已安装完整 LDVH。
 source: conversation
-priority: P0
+priority: P1
 source_detail: 用户认可将“会话恢复投影器”和“入口触发链工程化”拆成两个 Spark，并结合《LDVH-知识地图价值重新评估报告-v2-20260624.md》确认“AI 触发链稳定性”是未闭环点。外部文件仅记录为名称与核心结论，不建立可解析文件关系。
 evolution:
 - at: '2026-06-25T05:45:00+08:00'

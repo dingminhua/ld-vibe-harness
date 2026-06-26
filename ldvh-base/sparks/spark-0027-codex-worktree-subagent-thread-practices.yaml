@@ -38,7 +38,7 @@ description: |
   - 如果发现 Codex App 与 Codex CLI 在能力上存在差异，应分别说明，不得把 CLI 能力直接写成 App 已支持。
   - 若要把结论推进为规范或行动编排改造，应另建 WorkCase，并在需要时触发 Human Gate。
 source: conversation
-priority: P0
+priority: P1
 source_detail: Human 要求新建 Spark，标题为“如何在 LDVH 中利用好刚刚发现的 Codex 的这几个能力，工作树、子 Agent、新建对话这些”，并要求直接新建线程，由该线程调研外部最佳实践，结合 LDVH 写成 Study。
 evolution:
   - at: '2026-06-25T03:07:28+08:00'
