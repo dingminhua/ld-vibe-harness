@@ -25,7 +25,7 @@ v2_spec:
     - "specs/22-ADR-决策.md"
     - "specs/23-Pitfall-踩坑经验.md"
     - "specs/24-Study-研究报告.md"
-    - "specs/33-record-object-routing-recall-记录对象归口与召回.md"
+    - "specs/36-record-object-routing-recall-记录对象归口与召回.md"
     - "ldvh-base/workcases/workcase-0010-record-object-routing-recall-orchestration.yaml"
   migration_sources: []
   active_fact_source: []
