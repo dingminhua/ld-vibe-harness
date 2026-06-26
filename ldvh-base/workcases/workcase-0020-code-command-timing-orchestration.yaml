@@ -168,7 +168,134 @@ orchestration:
         - stderr_head 保留原始错误输出，不替代为模板摘要
         - 不改 pre-tool-use 阻断逻辑
       aggregation_rule: 若映射表引入未授权的新命令映射或 stderr_head 被模板替代，必须修正。
-      review_items: []
+      review_items:
+        - id: plan-review-spec-1
+          reviewer: subagent-spec-boundary
+          role: 规范边界审查
+          agent_name: Explore-3
+          requested_at: '2026-06-27T07:17:00+08:00'
+          perspective: specs-boundary
+          result:
+            status: needs_changes
+            summary: |
+              6 项 required changes。CRITICAL：acknowledge 自动回填违反 06 §7，必须移除 item-3。command_suggestions 越权须改走 knowledge-map 路径。post_change_verification 范畴外溢须移出 acknowledge handler。
+            key_findings:
+              - acknowledge 自动补位让机器伪造 AI 消费证据，等于门禁开锁
+              - command_suggestions 跳出治理进入操作指导，属 03 领域
+              - post_change_verification 确认 handler 不负责规划修改后工作流
+              - 映射表须回指 04.Att.02/07
+              - 改动范围声明不精确
+            required_changes:
+              - 移除 item-3（acknowledge 自动回填）
+              - 命令建议改走 knowledge-map 输出路径
+              - post_change_verification 移出 acknowledge handler
+              - 映射表回指 04.Att.02/07
+              - 更正改动范围
+              - 指定与 wc-0019 串联执行顺序
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0020-code-command-timing-orchestration.yaml
+              - specs/04-Code确定性执行规范.md
+              - specs/06-运行时扩展规范.md
+              - code/hook_dispatch.py
+        - id: plan-review-safety-1
+          reviewer: subagent-runtime-safety
+          role: 运行时安全保障审查
+          agent_name: Explore-4
+          requested_at: '2026-06-27T07:17:00+08:00'
+          perspective: runtime-safety
+          result:
+            status: needs_changes
+            summary: |
+              CRITICAL：acknowledge 自动补位绕过消费验证。HIGH：stderr_summary 必须保留原始 stderr_head。
+            key_findings:
+              - auto_acknowledged=true 可观测但不能解决门禁被绕过的问题
+              - 写操作才建议命令，只读不应刷屏
+              - 文件类型判定算法需要基于路径目录结构
+              - pre-tool-use 高频调用，自动补位 + knowledge-map 增加延迟
+            required_changes:
+              - 自动补位必须在输出中显式标记 auto_acknowledged=true
+              - stderr_head 保留原始输出
+              - 文件类型判定基于目录路径为主
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0020-code-command-timing-orchestration.yaml
+              - code/hook_dispatch.py
+              - tests/code/test_hook_dispatch.py
+        - id: plan-review-code-1
+          reviewer: subagent-code-feasibility
+          role: Code 可实现性审查（第一轮）
+          agent_name: Explore-8
+          requested_at: '2026-06-27T07:26:00+08:00'
+          perspective: code-feasibility
+          result:
+            status: needs_changes
+            summary: |
+              3 个阻塞：映射表含未授权命令(fact_cli/pytest 不在 04.Att.02)；_acknowledge_read_plan 被错误纳入 subprocess 范围；_git_text 返回类型变更会破坏 5 个调用者。
+            key_findings:
+              - 仅 specs_validate.py preflight 和 v2-check 可从 04.Att.02 派生
+              - _acknowledge_read_plan 是文件 I/O 非 subprocess
+              - _git_text 签名变更风险 git 治理判定假阴性
+            required_changes:
+              - 映射表只保留 04.Att.02 授权命令
+              - _acknowledge_read_plan 移出 item-2 范围
+              - _git_text 保持 str 签名不变
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0020-code-command-timing-orchestration.yaml
+              - code/hook_dispatch.py
+              - specs/attachments/04.Att.02-Code命令入口表.md
+        - id: plan-review-goal-1
+          reviewer: subagent-goal-alignment
+          role: 目标对齐审查
+          agent_name: Explore-10
+          requested_at: '2026-06-27T07:30:00+08:00'
+          perspective: goal-alignment
+          result:
+            status: needs_changes
+            summary: |
+              依赖矛盾 + 幻影字段：执行依赖声明"wc-0019 后执行"与"喂给 wc-0019"自相矛盾；post_change_verification 在 wc-0019 中不存在。其他部分设计正确。
+            key_findings:
+              - 依赖环矛盾（后执行 vs 喂给前执行）
+              - post_change_verification 是 wc-0019 不存在的幻影字段
+              - 映射表键空间(file_type)与 tool_plan 键空间(task_type)不匹配
+            required_changes:
+              - 修正执行依赖方向（wc-0020 先）
+              - 移除 post_change_verification 引用
+              - 对齐映射表与 tool_plan 的键空间
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0020-code-command-timing-orchestration.yaml
+              - ldvh-base/workcases/workcase-0019-knowledge-map-output-enhancement.yaml
+        - id: plan-review-goal-2
+          reviewer: subagent-implementation-goal
+          role: 可实现性目标对齐审查
+          agent_name: Explore-12
+          requested_at: '2026-06-27T07:31:00+08:00'
+          perspective: implementation-goal-alignment
+          result:
+            status: needs_changes
+            summary: |
+              3 个待澄清：post_change_verification 字段不对齐；映射表物理位置和导入路径未定义；_git_text_structured 实现路径未选定。
+            key_findings:
+              - 映射表放在 hook_dispatch.py 会导致循环依赖
+              - knowledge_map.py 与 dispatcher 的导入路径需明确
+              - _git_text_structured 实现路径 A/B 未选定
+            required_changes:
+              - 映射表指定独立共享模块位置
+              - _git_text_structured 选定实现路径
+              - 明确 knowledge_map.py 如何导入映射表
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0020-code-command-timing-orchestration.yaml
+              - code/hook_dispatch.py
+      controller_resolution:
+        resolved_at: '2026-06-27T07:35:00+08:00'
+        resolved_by: main_controller
+        summary: |
+          六轮审查(Explore-3/4/8/10/12)全部完成。all required changes 已吸收：
+          - 移除 acknowledge 自动补位
+          - 命令建议改 knowledge-map 路径
+          - 移除 post_change_verification 幻影字段
+          - 映射表限定 04.Att.02 授权命令，放 code/constants/file_command_map.py
+          - _git_text 采用路径 B（委托给 _git_text_structured）
+          - 执行依赖修正为 wc-0020 先于 wc-0019
+          方案可进入执行。
   result_review:
     orchestration_owner: main_controller
     workflow_ref: null

@@ -179,7 +179,115 @@ orchestration:
         - attention_points 保持 3-5 条上限，不膨胀
         - 交互密度去重必须能复现，不因字段差异漏去重
       aggregation_rule: 若任一审查发现违反 04/06 边界或引入自然语言猜测，必须先修正方案再推进。
-      review_items: []
+      review_items:
+        - id: plan-review-spec-1
+          reviewer: subagent-spec-boundary
+          role: 规范边界审查
+          agent_name: Explore-1
+          requested_at: '2026-06-27T07:06:00+08:00'
+          perspective: specs-boundary
+          result:
+            status: needs_changes
+            summary: |
+              六项增强核心方向不违反 04/06 边界。4 项 required changes：attention_points/tool_plan 需明确为 dispatcher receipt 字段(非 04.Att.06 扩展)；post_read_action 必须锁定为确定性模板；去重 receipt 结构扩展需记录；与 wc-0018 向前兼容声明需加入。
+            key_findings:
+              - attention_points 和 tool_plan 不在 04.Att.06 顶层字段列表中
+              - post_read_action "自然语言建议"与 04 §6 第 7 条冲突
+              - 去重依赖 receipt 扩展，当前 read_plan_consumed 未存储 target/action_hint
+              - 借用 wc-0018 设计但须声明向前兼容
+            required_changes:
+              - attention_points/tool_plan 定位为 dispatcher receipt 输出增强字段
+              - post_read_action 改为确定性模板字符串
+              - 记录 receipt read_plan_consumed 扩展 target + action_hint
+              - 加入 wc-0018 向前兼容声明
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0019-knowledge-map-output-enhancement.yaml
+              - specs/04-Code确定性执行规范.md
+              - specs/06-运行时扩展规范.md
+              - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - id: plan-review-spec-2
+          reviewer: subagent-spec-boundary
+          role: 规范边界审查（第二轮）
+          agent_name: Explore-5
+          requested_at: '2026-06-27T07:25:00+08:00'
+          perspective: specs-boundary
+          result:
+            status: pass
+            summary: |
+              上一轮 4 项 required changes 全部已吸收：attention_points/tool_plan 已明确为 dispatcher receipt 字段；post_read_action 已锁定为确定性模板；去重 receipt 扩展已记录；wc-0018 向前兼容已声明。
+            key_findings: []
+            required_changes: []
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0019-knowledge-map-output-enhancement.yaml
+        - id: plan-review-code-1
+          reviewer: subagent-code-feasibility
+          role: Code 可实现性审查
+          agent_name: Explore-6
+          requested_at: '2026-06-27T07:25:00+08:00'
+          perspective: code-feasibility
+          result:
+            status: pass
+            summary: |
+              六项增强可安全实现，改动量 ~280-350 行（含测试），不改架构。给出实施顺序建议：#5 → #1 → #6 → #3 → #4 → #2。
+            key_findings:
+              - knowledge_map.py 已有 add_governed_project_graph 可复用
+              - _build_session_start_result 需补 next_queries 提取行
+              - post_read_action 模板化可通过静态 dict 实现
+              - item-3 与 item-6 的映射逻辑重叠需协调
+            required_changes: []
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0019-knowledge-map-output-enhancement.yaml
+              - code/hook_dispatch.py
+              - code/spec_checks/knowledge_map.py
+        - id: plan-review-goal-1
+          reviewer: subagent-goal-alignment
+          role: 目标对齐审查
+          agent_name: Explore-9
+          requested_at: '2026-06-27T07:30:00+08:00'
+          perspective: goal-alignment
+          result:
+            status: pass
+            summary: |
+              六项增强合理回答了"知识地图够不够用、如何加强"的根本问题，无对齐问题。改动边界诚实，执行顺序可行。
+            key_findings:
+              - 增强 1/2/5 为核心价值项
+              - 增强 3/4/6 为辅助项，边际回报递减但可接受
+              - 去重后 pre_tool_use guard 一致性需实施时注意
+            required_changes: []
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0019-knowledge-map-output-enhancement.yaml
+              - code/hook_dispatch.py
+              - code/spec_checks/knowledge_map.py
+        - id: plan-review-goal-2
+          reviewer: subagent-implementation-goal
+          role: 可实现性目标对齐审查
+          agent_name: Explore-11
+          requested_at: '2026-06-27T07:31:00+08:00'
+          perspective: implementation-goal-alignment
+          result:
+            status: pass
+            summary: |
+              六项增强 pass，附 3 项建议：next_queries 展开应可选化；tool_plan 空类型用 null 而非 []；attention_points 无 pending 时输出"正常"正面信号。
+            key_findings:
+              - next_queries 展开延迟 ~1-2s，acknowledge 阶段可能阻塞
+              - tool_plan [] 可能误导 AI 以为不需要工具
+              - attention_points 空列表应显式输出正面信号
+            required_changes: []
+            suggested_changes:
+              - next_queries 展开增加 --expand-next-queries flag
+              - 未覆盖 task_type 的 tool_plan 用 null 非 []
+              - attention_points 无问题显式输出"无待处理事项"
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0019-knowledge-map-output-enhancement.yaml
+              - code/hook_dispatch.py
+              - code/spec_checks/knowledge_map.py
+      controller_resolution:
+        resolved_at: '2026-06-27T07:35:00+08:00'
+        resolved_by: main_controller
+        summary: |
+          五轮审查(Explore-1/5/6/9/11)全部完成。4 项 required changes 已吸收。
+          方案可进入执行，建议按 Explore-6 顺序 #5→#1→#6→#3→#4→#2 推进。
+          Explore-11 的 3 项建议在执行时可优化，不阻塞推进。
   result_review:
     orchestration_owner: main_controller
     workflow_ref: null
