@@ -1,0 +1,220 @@
+id: workcase-0019
+type: workcase
+title: 知识地图输出增强 — attention_points、next_queries 展开、去重、tool_plan 与工作对象感知
+goal: |
+  在现有知识地图能力基础上，补上六项输出增强，使 AI 和用户在每次 session-start 时获得更完整的项目感知与行动指引。不改名、不拆、不删除 knowledge-map。
+
+  六项增强：
+  1. attention_points — 3-5 条中文项目健康提醒
+  2. acknowledge-read-plan 自动展开 next_queries → deep_read_plan
+  3. acknowledge-read-plan 支持 --action-hint → tool_plan + post_read_action
+  4. 交互密度分级 — 已有 receipt 时去重，不重复刷屏
+  5. 工作对象状态推入 read_plan — pending WorkCase/Spark 优先展示
+  6. tool_plan 独立字段 — 基于 task_type 给命令建议
+status: human_plan_confirming
+created: '2026-06-27T06:59:00+08:00'
+updated: '2026-06-27T07:20:00+08:00'
+priority: P1
+description: |
+  本 WorkCase 承接 sp-0035/wc-0018 中可拆出重用的想法，以及本次会话对知识地图"效果等价但可加强"的判断。六项增强都在现有知识地图和 dispatcher 架构上加字段/加参数，不拆不改不删除。
+
+  关键设计澄清：
+  - attention_points 和 tool_plan 属于 dispatcher receipt 输出增强字段（由 hook_dispatch.py 的 session-start/acknowledge handler 透传），不属于 knowledge-map 投影核心 Schema（04.Att.06）。它们服务于 AI 运行时行动感知，而非规范关系图投影。
+  - post_read_action 为确定性模板字符串，基于 task_type 预定义，不含 AI 生成的自然语言。
+  - 若 wc-0018（行动指南替代知识地图）后续推进，本 WorkCase 增强的字段接口保持向前兼容：字段名和数据结构稳定，迁移到 action-guide 输出时不破坏调用方。
+
+  方向收敛来源：
+  - attention_points 来自 sp-0035 的"3-5 条行动前注意事项" + 刚修的 user_diagnostic_report 管道
+  - next_queries 自动展开 来自"知识地图渐进深挖从未走完"的发现
+  - action_hint + tool_plan 来自 sp-0035/wc-0018 的 post-read action plan 设计
+  - 交互密度去重 来自 wc-0018 Locke 审查的"每次刷指南会高打扰"
+  - 工作对象感知 来自"知识地图对工作对象层利用偏浅"
+
+  Code 不猜自然语言：action_type 来自 AI 传入的 action_hint 枚举或知识地图可确定性判定的 task_type，不确定时返回 AMBIGUOUS 不猜测。
+success_criteria: |
+  - [ ] attention_points 字段：session-start receipt 包含 3-5 条中文提醒，来源为 pending WorkCase/Spark + diagnostics + v2-check 结果；格式简洁，每条一行
+  - [ ] acknowledge-read-plan 自动消费 receipt 中的 next_queries，展开为 deep_read_plan 和 deep_stop_conditions 返回
+  - [ ] acknowledge-read-plan 支持 --action-hint <枚举值>，匹配 task_type 后返回 tool_plan 和 post_read_action；action_hint 不确定时返回 AMBIGUOUS；post_read_action 为确定性模板字符串，非 Code 生成的自然语言
+  - [ ] 交互密度：同一 session_id + cwd + target + action_hint 已 ack 时，acknowledge-read-plan 仅返回 guide_receipt=found；read_plan_consumed 扩展存储 target 和 action_hint
+  - [ ] attention_points 和 tool_plan 定位为 dispatcher receipt 输出增强字段，不属于 knowledge-map 投影核心 Schema（04.Att.06）
+  - [ ] 工作对象感知：governed=true 时，read_plan 优先包含 pending/draft 状态的 WorkCase/Spark，AI 可据此判断是否有未闭环工作
+  - [ ] tool_plan 字段：session-start 或 acknowledge 输出中包含基于 task_type/action_hint 的建议 CLI 命令列表
+  - [ ] 改动范围仅限 code/hook_dispatch.py 和 code/spec_checks/knowledge_map.py，不改 specs 架构、不删除 knowledge-map 入口
+  - [ ] 现有测试（tests/code/test_hook_dispatch.py 等）继续通过，新增测试覆盖六项增强
+source: |
+  来源：
+  - 本次会话用户讨论："知识地图是否够用、如何加强"
+  - sp-0035 / wc-0018 可借用的设计想法
+  - 刚完成的 user_diagnostic_report 管道可作为 attention_points 透传基础
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 实现 attention_points 字段
+      role: code-implementation
+      mode: single
+      input_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/hook_dispatch.py
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+      expected_output: |
+        knowledge_map.py 新增 attention_points 生成逻辑：扫描当前项目 pending/draft 状态的工作对象 + diagnostics + v2-check 结果，合成 3-5 条中文提醒。hook_dispatch.py session-start handler 透传该字段到 receipt，与 user_diagnostic_report 共用输出管道。
+      status: pending
+      blocking_reason: ''
+      result_summary: ''
+      evidence_refs: []
+    - id: item-2
+      title: acknowledge-read-plan 自动展开 next_queries
+      role: code-implementation
+      mode: single
+      input_refs:
+        - code/hook_dispatch.py
+        - code/spec_checks/knowledge_map.py
+      expected_output: |
+        hook_dispatch.py 的 acknowledge handler 读取 session receipt 中的 next_queries，逐个调用 knowledge-map 展开，聚合为 deep_read_plan 和 deep_stop_conditions 返回。deep 结果作为 acknowledge 输出的新字段，不修改 session receipt。
+      status: pending
+      blocking_reason: ''
+      result_summary: ''
+      evidence_refs: []
+    - id: item-3
+      title: acknowledge-read-plan 支持 --action-hint
+      role: code-implementation
+      mode: single
+      input_refs:
+        - code/hook_dispatch.py
+        - code/spec_checks/knowledge_map.py
+        - specs/attachments/04.Att.02-Code命令入口表.md
+      expected_output: |
+        hook_dispatch.py 的 acknowledge handler 接收 --action-hint <fix|create|review|modify|discuss|unknown>，匹配为 task_type 枚举，调用 knowledge-map 获取对应的 tool_plan 和 post_read_action。action_hint 不确定时返回 AMBIGUOUS。
+
+        tool_plan 格式为 CLI 命令字符串列表（确定性映射，无自然语言生成）。
+
+        post_read_action 为确定性模板字符串，基于 task_type 预定义、可复查、不含 Code 生成的自然语言。示例模板：
+        - fix/code_change → "建议先运行测试确认当前状态，再基于 read_plan 定位修改点和相关规范"
+        - create → "建议先通过 knowledge-map 检查是否已有类似 Spark/WorkCase，避免重复创建"
+        - review/rules_sync_review → "建议按 30 Rules 入口同步审查流程，检查固定 Rules 资产的 source_specs 和 sync_triggers"
+        - unknown/AMBIGUOUS → 空字符串
+      status: pending
+      blocking_reason: ''
+      result_summary: ''
+      evidence_refs: []
+    - id: item-4
+      title: 实现交互密度去重
+      role: code-implementation
+      mode: single
+      input_refs:
+        - code/hook_dispatch.py
+      expected_output: |
+        acknowledge-read-plan handler 检查当前 session_id 的 receipt 是否已有 read_plan_consumed。若同一 session_id + cwd + target + action_hint 已 ack，仅返回 guide_receipt=found，不重复输出完整指南。target / action_hint 变化或缺少 ack 时正常输出完整指南。
+
+        去重需要 receipt 的 read_plan_consumed 字段扩展存储 target 和 action_hint（当前仅存 status/acknowledged_at/trigger_source/cwd/required_paths）。扩展为：
+        {"status":"acknowledged", "target":"<path>", "action_hint":"<enum>", "acknowledged_at":"...", ...}
+
+        receipt 仍为运行时握手证据（06 §7），扩展不改变其非事实源性质。
+      status: pending
+      blocking_reason: ''
+      result_summary: ''
+      evidence_refs: []
+    - id: item-5
+      title: 工作对象状态推入 read_plan
+      role: code-implementation
+      mode: single
+      input_refs:
+        - code/spec_checks/knowledge_map.py
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+      expected_output: |
+        knowledge_map.py session-start 查询逻辑：当 governed=true 时，扫描当前项目 ldvh-base/ 中 pending/draft 状态的 WorkCase/Spark，将其路径和状态推入 read_plan 的 P0/P1 列表，优先级不低于规范导航。AI 可据此感知未闭环工作的存在。
+      status: pending
+      blocking_reason: ''
+      result_summary: ''
+      evidence_refs: []
+    - id: item-6
+      title: tool_plan 独立字段
+      role: code-implementation
+      mode: single
+      input_refs:
+        - code/spec_checks/knowledge_map.py
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - specs/attachments/04.Att.02-Code命令入口表.md
+      expected_output: |
+        knowledge_map.py 输出新增 tool_plan 字段：基于 task_type 做确定性命令匹配，格式为字符串列表（如 ["python3 code/specs_validate.py preflight --target-path <path>", "python3 -m pytest tests/code/ -q"]）。与 attention_points 并列作为 session-start receipt 输出字段。不确定 task_type 时 tool_plan 为空列表。
+      status: pending
+      blocking_reason: ''
+      result_summary: ''
+      evidence_refs: []
+    - id: item-7
+      title: 整体测试与同步
+      role: test-verification
+      mode: single
+      input_refs:
+        - tests/code/test_hook_dispatch.py
+        - tests/code
+      expected_output: |
+        新增/更新测试覆盖：
+        - attention_points 非空（governed=true 有 pending 对象时）
+        - acknowledge 返回 deep_read_plan（有 next_queries 时）
+        - acknowledge --action-hint fix 返回 tool_plan
+        - acknowledge --action-hint unknown 返回 AMBIGUOUS
+        - 同输入二次 acknowledge 返回 guide_receipt=found
+        - governed=true 时 read_plan 包含 pending WorkCase/Spark
+        - 非管辖项目 attention_points 为空、tool_plan 为空
+        - 现有测试全部继续通过
+      status: pending
+      blocking_reason: ''
+      result_summary: ''
+      evidence_refs: []
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        六项增强都在现有架构上加字段/加参数，风险可控。但涉及知识地图输出 schema 扩展和 dispatcher 行为变化，需确认不违反 04/06 边界、不引入 AI 自然语言猜测、不高频打扰。
+      required_perspectives:
+        - 规范边界审查
+        - Code 可实现性审查
+      optional_perspectives: []
+      tool_method_requirements:
+        - 不改 specs 架构，不删除 knowledge-map 入口
+        - Code 不猜自然语言：action_type 只来自枚举 action_hint 或确定性 task_type
+        - attention_points 保持 3-5 条上限，不膨胀
+        - 交互密度去重必须能复现，不因字段差异漏去重
+      aggregation_rule: 若任一审查发现违反 04/06 边界或引入自然语言猜测，必须先修正方案再推进。
+      review_items: []
+  result_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        六项增强完成后需确认：attention_points 可读、deep_read_plan 正确展开、action_hint 不猜测、去重有效、工作对象感知准确、tool_plan 确定性且可执行、测试覆盖完整。
+      required_perspectives:
+        - 功能完整性
+        - 测试覆盖
+      optional_perspectives: []
+      tool_method_requirements: []
+      aggregation_rule: 全部 6 项 success_criteria 有测试证据后提交 Human 关闭确认。
+    review_items: []
+related_sparks:
+  - spark-0035
+related_workcases:
+  - workcase-0018
+related_adrs: []
+related_pitfalls: []
+related_docs:
+  - code/hook_dispatch.py
+  - code/spec_checks/knowledge_map.py
+  - specs/04-Code确定性执行规范.md
+  - specs/06-运行时扩展规范.md
+  - specs/attachments/04.Att.06-知识地图投影Schema表.md
+  - specs/attachments/04.Att.02-Code命令入口表.md
+  - specs/attachments/04.Att.03-Code结构化输出Schema表.md
+  - tests/code/test_hook_dispatch.py
+  - rules/LDVH-RUNTIME-PROTOCOL.md
+verification_evidence: ''
+closure_evidence: ''
+closure_requested_at: null
+review_requested_at: null
+closed_at: null
+closure_outcome: ''
+residual_risks: []
+followup_refs: []
+revision_history: []
