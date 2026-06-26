@@ -1,0 +1,62 @@
+id: spark-0034
+type: spark
+title: 适配层 payload 断裂与安装验收缺口：Hook 未稳定转发真实工作对象
+status: pending
+created: '2026-06-27T03:05:00+08:00'
+updated: '2026-06-27T03:28:00+08:00'
+description: |
+  在 WorkBuddy 环境中实际使用 LDVH 时发现：适配脚本 `ldvh-hook-dispatch.sh` 通过 `exec python3 dispatcher run "$EVENT" --trigger-source hook` 调用 dispatcher，但既没有转发 WorkBuddy 通过 stdin 传入的 JSON payload（包含 tool_name、tool_input.file_path、session_id 等），也没有传 --cwd 和 --target 参数。
+
+  结果是 dispatcher 只能用 shell 进程的 Path.cwd() 做兜底，拿到的是工作区父目录 `/Users/dmh2002/poker_hud_projects`，不在管辖项目 `ld-vibe-harness` 路径内，于是每次都判定 `not_governed` → no-op。
+
+  这不是 specs 的问题（specs/06 第132行明确要求 target-first），也不是 dispatcher 的问题（hook_dispatch.py 完整实现了 payload 提取和 target-first 逻辑），而是连接 WorkBuddy 和 dispatcher 的 23 行 shell 适配脚本没有把 payload 传过去——典型的适配层断裂。
+
+  该问题与 workcase-0014 已完成的 worktree 管辖识别不是同一层。workcase-0014 已解决“拿到 cwd/target 后，如何通过 Git common_dir 判断 Codex/Git worktree 是否属于管辖项目”；本 Spark 暴露的是更前一环：“Hook / adapter 必须把真实工作对象 payload/target 传给 dispatcher，否则 target-first 和 worktree 识别没有机会生效”。
+
+  当前需要沉淀为五件事：
+  1. 已完成项确认：worktree 管辖识别已由 workcase-0014 落到 specs、code、tests 和 smoke；本 Spark 不重复修该问题。
+  2. 适配层修复：Hook adapter 必须原样转发 stdin JSON payload，并保留 cwd、session_id、tool_name、tool_input、target 等可推导工作对象字段；不得只传 event。
+  3. Dispatcher 自防御：当 trigger_source=hook 且只能 cwd-fallback、缺少 payload/target 时，应输出 diagnostic `adapter_payload_gap`；只读工具 warning 放行，写类工具在 unknown target 时 blocking。
+  4. 安装/验收确定性 Code：需要一个安装或 doctor 工具（如 `code/ldvh_runtime_install.py`）统一检查插件/Rules 接入、adapter payload 转发、target-first smoke、receipt smoke 和非管辖 no-op 体验。
+  5. Bootstrap Skill：需要 `ldvh-install` skill 作为安装前入口。该 skill 不能依赖 LDVH Runtime Protocol 已安装或 receipt 已存在；它只读取 specs/33 并调用安装/验收 Code。安装成功后，日常工作才交给 Hook / Rules / Runtime Protocol。
+
+  五个改进方向：
+  1. Dispatcher 自防御：cwd-fallback 且 trigger_source=hook 时输出 diagnostic "adapter_payload_gap"
+  2. 适配器登记：适配脚本作为运行时扩展资产登记到 06.Att.02，有 spec 引用和验证命令
+  3. 一致性测试：模拟真实 payload 端到端验证适配脚本，期望 governed=true
+  4. No-op 可观测性：cwd-fallback 时加 confidence: "low"，区分"确实不管辖"和"不知道管不管"
+  5. 安装验收封装：将 specs/33 的安装行动落成可执行 verify/doctor Code，并由 `ldvh-install` bootstrap skill 调度，避免不同环境靠人工记忆安装步骤。
+
+  非管辖项目体验要求：
+  - 明确非管辖 target：应 no-op 放行，不要求读取 LDVH specs、receipt 或 acknowledge-read-plan。
+  - 明确管辖 target：应进入 LDVH read_plan、acknowledge-read-plan、写入/提交门禁。
+  - target 不明确 + 只读工具：应放行但保留 warning/diagnostic。
+  - target 不明确 + 写类工具：应 blocking，防止误写管辖项目。
+  - 安装 LDVH 后不得让非管辖项目默认进入高打扰模式；高打扰只允许出现在“已确认管辖”或“写操作但无法确认目标”的风险场景。
+source: conversation
+source_detail: |
+  在 WorkBuddy 会话中操作 ld-vibe-harness/开发者的话.md 时，观察到每次工具调用的 hook 系统消息都返回 governed=false, subject_source="cwd-fallback", status="not_governed"。通过阅读 hook_dispatch.py 源码和 ldvh-hook-dispatch.sh 适配脚本，定位到适配层未转发 stdin payload 和 target 参数。后续对话进一步确认：worktree 管辖识别已由 workcase-0014 修复，本 Spark 应聚焦 adapter payload/target 传递、dispatcher 自防御、安装验收 Code、`ldvh-install` bootstrap skill，以及安装后非管辖项目低打扰体验。
+priority: P1
+evolution:
+  - at: '2026-06-27T03:05:00+08:00'
+    summary: |
+      新建 Spark。在 WorkBuddy 环境实际使用 LDVH 时发现适配脚本 ldvh-hook-dispatch.sh 未转发 stdin payload 和 --target 参数，导致 dispatcher 无法执行 target-first 管辖判定，每次都走 cwd-fallback 并判定 not_governed。specs 和 dispatcher 实现均正确，断裂发生在适配层。已识别四个改进方向：dispatcher 自防御、适配器登记、一致性测试、no-op 可观测性。
+  - at: '2026-06-27T03:28:00+08:00'
+    summary: |
+      补充问题边界和后续需求。确认 workcase-0014 已真实解决 worktree 管辖识别，本 Spark 不重复该层；新增要求包括 Hook adapter 必须转发真实 payload/target，dispatcher 在 hook + cwd-fallback + 缺 payload/target 时输出 adapter_payload_gap，自防御策略按只读 warning、写类 unknown-target blocking 分级；安装验收需要确定性 Code 统一执行 target-first、Hook payload、receipt 和非管辖 no-op smoke；安装前入口应命名为 ldvh-install bootstrap skill，不依赖 LDVH runtime 已安装或 receipt 已存在；安装后非管辖项目必须低打扰 no-op，避免 LDVH 插件使普通项目体验变差。
+input_refs:
+  - specs/06-运行时扩展规范.md
+  - specs/33-ldvh-install-action-LDVH安装行动编排.md
+  - code/hook_dispatch.py
+  - hooks/ldvh-hooks.yaml
+  - spark-0031
+  - spark-0032
+  - workcase-0014
+related_workcases: []
+related_adrs: []
+related_studies: []
+related_docs:
+  - specs/06-运行时扩展规范.md
+  - specs/33-ldvh-install-action-LDVH安装行动编排.md
+  - code/hook_dispatch.py
+  - hooks/ldvh-hooks.yaml

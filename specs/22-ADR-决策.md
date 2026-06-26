@@ -277,7 +277,7 @@ ADR 证据至少包括决策背景、决策内容、决策取舍说明、决策�
 
 AI 处理 ADR 时应先判断是否满足准入条件；`active` ADR 是后续执行应优先参考的决策补丁；`archived` ADR 只作为追溯依据；`deprecated` ADR 不得继续作为执行依据。
 
-Code 可解析 ADR YAML，校验文件命名、ID、字段类型、必填字段、条件必填字段、状态枚举、合法流转、`archive_reason`、`deprecated_reason`、`related_rules` 和对象引用。Code 不得自行创建、归档、废弃或删除 ADR，不得绕过 Human Gate。
+Code 可创建 ADR 结构骨架、解析 ADR YAML，校验文件命名、ID、字段类型、必填字段、条件必填字段、状态枚举、合法流转、`archive_reason`、`deprecated_reason`、`related_rules` 和对象引用。Code 不得替代 AI/Human 判断 ADR 准入、填充决策语义、归档、废弃或删除 ADR，不得绕过 Human Gate。
 
 Web 可展示 ADR 状态、决策内容、关联对象、关联规范和待确认项。Web 不得展示或派生 `proposed`、`accepted`、`rejected`、`superseded`、`superseded_by`、`alternatives` 或 `affects` 等旧生命周期和旧字段语义。Web 页面状态、缓存或数据库不得维护独立 ADR 权威状态。
 

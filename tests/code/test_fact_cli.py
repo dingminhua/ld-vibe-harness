@@ -76,6 +76,9 @@ def test_create_workcase_uses_current_contract(tmp_path):
     assert data["id"] == "workcase-0001"
     assert data["type"] == "workcase"
     assert data["status"] == "subagents_plan_reviewing"
+    assert data["description"]
+    assert data["success_criteria"]
+    assert data["source"] == "conversation"
     assert "orchestration" in data
     assert isinstance(data["orchestration"]["plan_review"], dict)
     assert isinstance(data["orchestration"]["result_review"], dict)
@@ -87,6 +90,13 @@ def test_create_workcase_uses_current_contract(tmp_path):
     assert data["closure_outcome"] == ""
     assert "tasks" not in data
     assert "completion_evidence" not in data
+    validate = subprocess.run(
+        [sys.executable, str(PROJECT_ROOT / "code" / "fact_validate.py"), str(path), "--format", "text"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert validate.returncode == 0, validate.stdout + validate.stderr
 
 
 def test_create_study_defaults_to_active(tmp_path):
