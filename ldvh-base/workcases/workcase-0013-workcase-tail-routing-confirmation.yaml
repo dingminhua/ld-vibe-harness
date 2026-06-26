@@ -76,31 +76,31 @@ orchestration:
       result_summary: ''
       evidence_refs: []
       blocking_reason: 依赖 item-1 至 item-3 的产出。
-plan_review:
-  orchestration_owner: main_controller
-  workflow_ref: null
-  review_policy:
-    selection_reason: 本 WorkCase 直接影响 WorkCase 关闭治理，涉及是否必须补“后续分流 / 收口结果”段落以及已有 WorkCase 的回填策略，需先确认规范边界是否足够硬、是否会误把轻量尾巴拆成新对象。
-    required_perspectives:
-      - WorkCase 关闭治理
-      - 规范分层与事实源边界
-      - 存量迁移与 Human Gate
-    optional_perspectives: []
-    tool_method_requirements:
-      - 先梳理现有规范，不直接修改 21。
-      - 要区分“收口干净”与“收口不干净”的表达口径。
-      - 不把所有尾巴强制拆成新 WorkCase。
-      - 需要给出已有 WorkCase 的回填策略，而不是只约束新增对象。
-    aggregation_rule: 若任一必需视角认为该规范会导致 WC 过度碎片化或无法执行，应先调整分流口径再进入修改。
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 本 WorkCase 直接影响 WorkCase 关闭治理，涉及是否必须补“后续分流 / 收口结果”段落以及已有 WorkCase 的回填策略，需先确认规范边界是否足够硬、是否会误把轻量尾巴拆成新对象。
+      required_perspectives:
+        - WorkCase 关闭治理
+        - 规范分层与事实源边界
+        - 存量迁移与 Human Gate
+      optional_perspectives: []
+      tool_method_requirements:
+        - 先梳理现有规范，不直接修改 21。
+        - 要区分“收口干净”与“收口不干净”的表达口径。
+        - 不把所有尾巴强制拆成新 WorkCase。
+        - 需要给出已有 WorkCase 的回填策略，而不是只约束新增对象。
+      aggregation_rule: 若任一必需视角认为该规范会导致 WC 过度碎片化或无法执行，应先调整分流口径再进入修改。
+      review_items: []
+    controller_resolution: null
+    human_confirmation: null
+  result_review:
+    controller_self_check: null
+    review_policy: null
     review_items: []
-  controller_resolution: null
-  human_confirmation: null
-result_review:
-  controller_self_check: null
-  review_policy: null
-  review_items: []
-  controller_resolution: null
-  human_closure_confirmation: null
+    controller_resolution: null
+    human_closure_confirmation: null
 plan_confirmed_at: null
 verification_evidence: ''
 closure_evidence: ''
