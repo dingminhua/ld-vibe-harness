@@ -1,0 +1,262 @@
+id: workcase-0016
+type: workcase
+title: Hook adapter payload 与 target 传递保障
+goal: |
+  承接 spark-0034 的运行链路修复部分，修复并防回归 Hook adapter 未转发 stdin payload / target 导致 dispatcher 无法执行 target-first 管辖判定的问题。目标是让 WorkBuddy、Codex、Claude Code 等 AI Hook 环境的 adapter 都必须把真实工作对象交给 `code/hook_dispatch.py`，并让 dispatcher 在 payload/target 断裂时给出可观测诊断，而不是静默 cwd-fallback no-op。
+status: subagents_plan_reviewing
+created: '2026-06-27T04:10:00+08:00'
+updated: '2026-06-27T04:21:30+08:00'
+priority: P0
+description: |
+  spark-0034 暴露的直接缺口是：WorkBuddy 适配脚本只传 canonical event，不转发环境通过 stdin 提供的 JSON payload，也不显式传 `--cwd` / `--target`。在 workspace root 发起但实际处理 `ld-vibe-harness` 文件时，dispatcher 只能拿 shell 进程 cwd 做 fallback，导致 target-first、worktree Git common-dir 识别和 read_plan 门禁都没有机会作用于真实工作对象。
+
+  本 WorkCase 不重复 workcase-0014 的 worktree 管辖识别，也不重复 workcase-0015 的 target-based governance 主体建模；它聚焦环境 adapter 与 dispatcher 之间的“事件上下文交接”是否完整、可诊断、可测试。核心判断：Hook 路径必须把原生 payload 或等价 operation context 交给 dispatcher，不能只传 event 名称；若断裂，dispatcher 必须输出 `adapter_payload_gap` 或等价诊断。
+success_criteria: |
+  - [ ] 执行前完成只读采样：记录真实 WorkBuddy raw stdin payload 字段形态、adapter 脚本路径/内容/调用方式和环境版本或来源；采样证据只作为过程证据，不登记为固定资产或环境已部署状态。
+  - [ ] specs/06 和 06.Att.15 明确：AI Hook adapter 必须原样转发 stdin payload 或构造等价 canonical event context，至少保留 cwd、session_id、tool_name、tool_input、target / target_paths 等可推导工作对象字段。
+  - [ ] hooks/ldvh-hooks.yaml 明确 Hook 路径的 dispatcher 调用必须走 stdin payload 或等价 context，不得把底层 command 当成环境入口绕过 dispatcher。
+  - [ ] 若 WorkBuddy adapter 属于仓库受管资产，则修复为转发 stdin payload / target；若具体脚本不在仓库内，则只沉淀受管 adapter 模板、doctor/verify 核对项和现场安装说明，不得声称现场已部署或把现场脚本登记为 fixed asset。
+  - [ ] `code/hook_dispatch.py` 在 `trigger_source=hook` 且缺少 payload/target、只能 cwd-fallback 时输出结构化 `adapter_payload_gap` 或等价诊断；该诊断不得替代现有 `unknown_target` 判定，写类无 target 仍保持 `blocked_reason=unknown_target` / `HOOK_UNKNOWN_TARGET`，并附加 `HOOK_ADAPTER_PAYLOAD_GAP` 诊断。
+  - [ ] 同步 Code 诊断码、输出 schema 和回归入口：新增 `HOOK_ADAPTER_PAYLOAD_GAP`，并明确 Hook dispatcher 输出可包含 `diagnostics[]`、`subject_source`、`payload_present` 或等价字段。
+  - [ ] 保持 workcase-0015 已实现的分级行为，不重做 target-based governance：明确非管辖 target no-op；明确管辖 target 进入 LDVH；target 不明确 + 只读 `blocked=false` warning 放行且不得触发 read_plan / acknowledge 门禁；target 不明确 + 写类 blocking。
+  - [ ] 明确非管辖 target 的验收字段：`governed=false`、`blocked=false`、`target_resolutions[].status=not_governed`，无 read_plan、无 required_paths、无 `adapter_payload_gap` warning。
+  - [ ] 测试以防回归为主，覆盖正常 Hook payload、坏 adapter 缺 payload、非管辖 target、只读 warning、写类 unknown-target blocking，以及 `adapter_payload_gap` 结构化断言；测试必须区分原生 stdin Hook payload、CLI `run <event>` + stdin payload、纯 Rules CLI `--target` 三类入口。
+  - [ ] 验证证明 workspace root + Hook payload target 与 Rules CLI `--target` 对同一工作对象返回一致的 governed_subject / blocking / next_action / target_resolutions.status；该一致性用于守住 workcase-0015 行为，不作为本 WorkCase 重新实现范围。
+source: |
+  来源 Spark：`ldvh-base/sparks/spark-0034-adapter-payload-gap-workbuddy.yaml`。
+
+  Human 明确指出：当前问题不是“是否站在项目根目录”，而是“实际处理的是哪个目录/文件”；安装 LDVH 后，非管辖项目也不能因此体验变差。后续方案需要优先保证真实 target 传递，并在 adapter 断裂时可观测。
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-0
+      title: 只读采样真实 WorkBuddy payload 与 adapter
+      role: runtime-evidence-sampling
+      mode: single
+      input_refs:
+        - ldvh-base/sparks/spark-0034-adapter-payload-gap-workbuddy.yaml
+        - specs/attachments/06.Att.15-环境Hook事件映射表.md
+        - hooks/ldvh-hooks.yaml
+      expected_output: |
+        在不修改现场环境的前提下，采样真实 WorkBuddy raw stdin payload 字段形态、adapter 脚本路径/内容/调用方式和环境版本或来源；输出脱敏字段形态与 target 推导链。若无法采样，必须记录缺口并要求 Human 提供现场 payload / adapter 证据，不得凭记忆写死 WorkBuddy 私有字段。
+      status: pending
+      blocking_reason: ''
+    - id: item-1
+      title: 写硬 Hook adapter payload 契约与字段来源分层
+      role: spec-drafting
+      mode: single
+      input_refs:
+        - specs/06-运行时扩展规范.md
+        - specs/attachments/06.Att.15-环境Hook事件映射表.md
+        - specs/attachments/06.Att.02-固定运行时扩展登记表.md
+        - specs/attachments/04.Att.03-Code结构化输出Schema表.md
+        - specs/attachments/04.Att.04-Code诊断码表.md
+        - specs/attachments/04.Att.09-Code回归入口表.md
+        - specs/attachments/08.Att.05-Code完整验证入口表.md
+        - specs/33-ldvh-install-action-LDVH安装行动编排.md
+        - hooks/ldvh-hooks.yaml
+        - ldvh-base/sparks/spark-0034-adapter-payload-gap-workbuddy.yaml
+      expected_output: |
+        明确 adapter 必须转发原始 payload 或等价 canonical event context，列出最低字段、禁止只传 event 的断裂模式，并把已采样字段、通用字段、未知环境字段分层写入 06.Att.15 / Hook registry。同步 `adapter_payload_gap` 的结构化输出、诊断码、回归入口和安装验收口径；不得把现场 adapter 安装状态写入 06.Att.02。
+      status: pending
+      blocking_reason: ''
+    - id: item-2
+      title: 实现 dispatcher adapter 断裂诊断
+      role: code-implementation
+      mode: single
+      input_refs:
+        - code/hook_dispatch.py
+        - tests/code/test_hook_dispatch.py
+        - specs/attachments/04.Att.03-Code结构化输出Schema表.md
+        - specs/attachments/04.Att.04-Code诊断码表.md
+      expected_output: |
+        在 Hook 路径缺少 payload/target 且只能 cwd-fallback 时返回 `HOOK_ADAPTER_PAYLOAD_GAP` 诊断；该诊断只能附加到结果的 `diagnostics[]`，不得替代现有 `unknown_target` 写类阻断。写类无 target 仍输出 `blocked_reason=unknown_target` / `HOOK_UNKNOWN_TARGET`，只读无 target 输出 `blocked=false` + warning，且不得触发 read_plan / acknowledge 门禁；明确非管辖 target 继续 no-op 放行且不得输出 adapter gap。
+      status: pending
+      blocking_reason: ''
+    - id: item-3
+      title: 修复 repo-owned adapter 或产出模板 / doctor
+      role: runtime-adapter
+      mode: single
+      input_refs:
+        - specs/attachments/06.Att.15-环境Hook事件映射表.md
+        - specs/attachments/06.Att.02-固定运行时扩展登记表.md
+        - specs/33-ldvh-install-action-LDVH安装行动编排.md
+        - hooks/ldvh-hooks.yaml
+      expected_output: |
+        若 WorkBuddy adapter 属于仓库受管资产，修复其 stdin / target 转发；若现场脚本不属于仓库事实源，则提供受管 adapter 模板、doctor/verify 核对项和安装说明，并明确现场安装状态只能作为验证证据，不得写成固定资产已部署。
+      status: pending
+      blocking_reason: ''
+    - id: item-4
+      title: 补齐 Hook / Rules 一致性与低打扰测试
+      role: test-verification
+      mode: single
+      input_refs:
+        - tests/code/test_hook_dispatch.py
+        - specs/33-ldvh-install-action-LDVH安装行动编排.md
+      expected_output: |
+        覆盖正常 payload、坏 adapter、`HOOK_ADAPTER_PAYLOAD_GAP` 结构化诊断、非管辖 target、target 不明确只读放行、target 不明确写类阻断，以及 workspace root + payload target 与 Rules CLI target 的一致性；必须分别覆盖原生 stdin Hook payload、CLI `run <event>` + stdin payload、纯 Rules CLI `--target` 三类入口。测试定位为 workcase-0015 行为防回归，不重新实现 target-based governance。
+      status: pending
+      blocking_reason: ''
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本 WorkCase 会改变 Hook 环境 adapter 与 dispatcher 的入口契约，需要先审核是否把环境现场状态误写成固定资产、是否会让非管辖项目体验变差，以及是否与 workcase-0014/0015 的已完成范围重复。
+      required_perspectives:
+        - Hook adapter 契约完整性
+        - dispatcher 诊断与低打扰边界
+        - 环境资产登记边界
+      optional_perspectives: []
+      tool_method_requirements:
+        - 不重复实现 workcase-0014 的 worktree 识别。
+        - 不重复实现 workcase-0015 的 target-based governance 主体建模。
+        - 不把某个环境现场脚本的安装状态写成固定运行时扩展已部署事实。
+        - 对非管辖项目保持 low-noise no-op；只在写类 unknown target 或明确管辖时提高门禁强度。
+      aggregation_rule: 若 adapter 契约无法覆盖真实环境 payload 字段，必须先用 hook_probe 采样或要求 Human 提供现场 payload 证据，不得凭记忆写死字段。
+      review_items:
+        - id: plan-review-1
+          reviewer: subagent-runtime-fact-boundary
+          role: 规范/事实源边界
+          agent_name: Mencius
+          requested_at: '2026-06-27T04:11:15+08:00'
+          perspective: specs-fact-source-boundary
+          result:
+            status: needs_changes
+            summary: |
+              0016 方向成立，但执行前必须收窄到 adapter 交接层：不重复 workcase-0014 的 worktree 识别，不重做 workcase-0015 的 target-based governance；先采样真实 WorkBuddy payload / adapter；同步 Code 诊断码、输出 schema、回归入口和安装验收；不得把现场 adapter 安装状态写成 fixed asset。
+            key_findings:
+              - 与 workcase-0014 不冲突；与 workcase-0015 在分级行为、Hook/Rules parity、unknown-target 阻断处有局部重复风险。
+              - specs/06、06.Att.15 和 hooks/ldvh-hooks.yaml 是必要同步范围，但新增 adapter_payload_gap 后还需同步 Code 诊断码、输出 schema、回归入口和 specs/33 / 部署验收。
+              - 若 WorkBuddy adapter 不在仓库内，把现场脚本登记到 06.Att.02 会违反固定资产与环境安装状态边界。
+              - 需要先采样真实 WorkBuddy payload / adapter 文件；不能凭记忆写死环境私有字段。
+            required_changes:
+              - 增加只读采样 WorkBuddy raw stdin payload、adapter 脚本路径/内容/调用方式和环境版本或来源的前置执行项。
+              - 将分级行为表述改为保持 workcase-0015 已实现行为并补防回归测试。
+              - 明确 repo-owned adapter 与现场脚本边界；现场安装状态只能作为验证证据。
+              - 扩展 input_refs / related_docs 到 06.Att.02、specs/33、Code 输出 schema、诊断码和回归入口相关附件。
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0016-hook-adapter-payload-target-assurance.yaml
+              - ldvh-base/workcases/workcase-0015-target-based-hook-governance.yaml
+              - specs/attachments/06.Att.02-固定运行时扩展登记表.md
+              - specs/attachments/06.Att.15-环境Hook事件映射表.md
+              - hooks/ldvh-hooks.yaml
+        - id: plan-review-2
+          reviewer: subagent-runtime-code-test-risk
+          role: runtime/code/test 风险
+          agent_name: runtime-review
+          requested_at: '2026-06-27T04:16:00+08:00'
+          perspective: runtime-code-test-risk
+          result:
+            status: needs_changes
+            summary: |
+              0016 方向成立，但执行前必须精确定义 `adapter_payload_gap` 与现有 `unknown_target`、read_plan 门禁和非管辖 no-op 的关系；新增诊断应作为结构化 diagnostics 附加，不能替代既有写类阻断或让只读 / 非管辖路径变吵。
+            key_findings:
+              - 现有 `hook_dispatch.py` 已在写类无 target 时阻断并返回 `blocked_reason=unknown_target`；`adapter_payload_gap` 只能作为 diagnostics 附加，不能改变该阻断语义。
+              - 只读缺 payload 应 `blocked=false` warning 放行，不得触发 read_plan / acknowledge 门禁，也不得要求非管辖项目读 LDVH specs。
+              - 明确非管辖 target 必须 no-op：`governed=false`、`blocked=false`、`target_resolutions[].status=not_governed`，无 read_plan、无 required_paths、无 adapter gap warning。
+              - Hook payload 与 Rules CLI parity 已有基础测试，0016 新增测试应聚焦坏 adapter 可观测与三类入口差异。
+              - 需要新增 `HOOK_ADAPTER_PAYLOAD_GAP` 诊断码，并同步 Hook dispatcher 输出 schema 中的 `diagnostics[]`、`subject_source`、`payload_present` 或等价字段。
+            required_changes:
+              - 在 success criteria 和执行项中写清 `adapter_payload_gap` 不替代 `unknown_target`，写类无 target 仍保持 `HOOK_UNKNOWN_TARGET` 阻断并附加 `HOOK_ADAPTER_PAYLOAD_GAP`。
+              - 明确只读缺 payload 输出 `blocked=false` + diagnostics warning，且不得触发 read_plan / acknowledge 门禁。
+              - 明确非管辖 target no-op 的验收字段和无 adapter gap 条件。
+              - 将 `HOOK_ADAPTER_PAYLOAD_GAP` 纳入 Code 诊断码表、输出 schema 和诊断 schema 测试。
+              - 测试计划区分原生 stdin Hook payload、CLI `run <event>` + stdin payload、纯 Rules CLI `--target` 三类入口。
+            suggested_tests:
+              - 正常 Hook stdin payload：`PreToolUse` + `tool_input.file_path` 命中管辖项目，与 Rules CLI `--target` 的 `governed_subject` / `blocked` / `next_action` / `target_resolutions.status` 一致。
+              - 坏 adapter：`run pre-tool-use --trigger-source hook` 且 stdin 无 target，读类 `Bash` 放行但输出 `HOOK_ADAPTER_PAYLOAD_GAP`，不要求 read_plan ack。
+              - 坏 adapter：写类 `Write` 无 target 阻断，保留 `blocked_reason=unknown_target`，同时输出 `HOOK_ADAPTER_PAYLOAD_GAP`。
+              - 明确非管辖 target：Hook payload 指向非管辖目录，no-op 放行，无 read_plan、无 required_paths、无 adapter gap。
+              - 明确管辖 target：缺少 read_plan ack 的写类仍按现有门禁阻断；ack 后放行。
+              - cwd 在管辖项目但 payload 缺 target：读类只 warning，不应因为 cwd fallback 自动制造更强门禁。
+              - CLI 显式 event + stdin payload 无 event 字段：保留现有兼容行为，不误判为空事件。
+              - 诊断 schema 测试：`diagnostics[]` 至少包含 `severity`、`code`、`message`、`source_refs` 或 `suggested_owner`，并覆盖 `HOOK_ADAPTER_PAYLOAD_GAP`。
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0016-hook-adapter-payload-target-assurance.yaml
+              - code/hook_dispatch.py
+              - tests/code/test_hook_dispatch.py
+              - specs/attachments/04.Att.03-Code结构化输出Schema表.md
+              - specs/attachments/04.Att.04-Code诊断码表.md
+  result_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy: null
+    review_items: []
+related_sparks:
+  - spark-0034
+related_workcases:
+  - workcase-0014
+  - workcase-0015
+related_adrs: []
+related_pitfalls: []
+related_docs:
+  - specs/06-运行时扩展规范.md
+  - specs/attachments/06.Att.15-环境Hook事件映射表.md
+  - specs/attachments/06.Att.02-固定运行时扩展登记表.md
+  - specs/attachments/04.Att.03-Code结构化输出Schema表.md
+  - specs/attachments/04.Att.04-Code诊断码表.md
+  - specs/attachments/04.Att.09-Code回归入口表.md
+  - specs/attachments/08.Att.05-Code完整验证入口表.md
+  - specs/33-ldvh-install-action-LDVH安装行动编排.md
+  - hooks/ldvh-hooks.yaml
+verification_evidence: |
+  ## 验证计划
+
+  覆盖 hook_dispatch.py 诊断分支、tests/code/test_hook_dispatch.py、诊断码表和环境 Hook 事件映射表同步，以及 workcase 0016 的关闭前复核。
+
+  ## 验证结果
+
+  - `python3 -m pytest -q tests/code/test_hook_dispatch.py`：26 passed。
+  - 子 agent 定向审查：未发现实现、测试或文档不一致。
+  - `HOOK_ADAPTER_PAYLOAD_GAP` 已作为附加 diagnostics 写入，未替代 `HOOK_UNKNOWN_TARGET`。
+  - 非管辖 target 保持 no-op，未冒出不应有的 gap 诊断。
+
+closure_evidence: |
+  ## 关闭说明
+
+  本 WorkCase 仅覆盖 adapter 与 dispatcher 的 payload / target 交接保障、诊断可观测性和防回归测试。当前改动已完成代码、测试和规范同步，且不再需要额外的环境安装或现场脚本归档。
+
+  ## 关闭条件
+
+  - `HOOK_ADAPTER_PAYLOAD_GAP` 只作为 diagnostics 附加。
+  - 写类无 target 仍保持 `HOOK_UNKNOWN_TARGET` 阻断。
+  - 只读缺 payload 低打扰放行。
+  - 非管辖 target 继续 no-op。
+
+closure_requested_at: '2026-06-27T05:02:31+08:00'
+review_requested_at: '2026-06-27T05:02:31+08:00'
+closed_at: '2026-06-27T05:02:31+08:00'
+closure_outcome: completed
+residual_risks:
+  - 现场 adapter 若不是仓库受管资产，仍需在安装/环境适配行动中按 Human Gate 处理。
+followup_refs:
+  - ldvh-base/workcases/workcase-0017-ldvh-install-bootstrap-verification.yaml
+revision_history:
+  - at: '2026-06-27T04:11:15+08:00'
+    from_status: subagents_plan_reviewing
+    to_status: subagents_plan_reviewing
+    actor: main_controller
+    summary: 吸收 Mencius 执行前审核 required changes，收窄执行边界并补充采样、同步范围和固定资产边界。
+    reason: |
+      吸收 Mencius 只读方案审核的 needs_changes：增加真实 WorkBuddy payload / adapter 采样前置项，收窄 0016 与 0015 的边界，补齐诊断码 / 输出 schema / 回归入口 / 安装验收同步范围，并明确现场 adapter 不得写成固定资产部署状态。
+    changed_fields:
+      - updated
+      - success_criteria
+      - orchestration.execution_items
+      - orchestration.plan_review.review_items
+      - related_docs
+      - revision_history
+  - at: '2026-06-27T04:21:30+08:00'
+    from_status: subagents_plan_reviewing
+    to_status: subagents_plan_reviewing
+    actor: main_controller
+    summary: 吸收 runtime/code/test 风险审核，补充 adapter_payload_gap 与 unknown_target、read_plan 门禁和非管辖 no-op 的精确边界。
+    reason: |
+      子 agent 只读审核返回 needs_changes：0016 可以进入后续执行方向，但必须先写硬新增诊断不得替代 `unknown_target`，只读缺 payload 不触发 read_plan / acknowledge 门禁，明确非管辖 target 保持低打扰 no-op，并同步 `HOOK_ADAPTER_PAYLOAD_GAP` 诊断码、输出 schema 和三类入口测试要求。
+    changed_fields:
+      - updated
+      - success_criteria
+      - orchestration.execution_items
+      - orchestration.plan_review.review_items
+      - revision_history
