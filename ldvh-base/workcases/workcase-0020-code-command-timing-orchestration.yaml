@@ -109,7 +109,7 @@ orchestration:
       role: code-implementation
       mode: single
       input_refs:
-        - code/hook_dispatch.py (_run_knowledge_map, _git_text)
+        - code/hook_dispatch.py
         - specs/attachments/04.Att.04-Code诊断码表.md
       expected_output: |
         抽取公共的结构化错误包装函数，统一 hook_dispatch.py 中 subprocess 实际调用的错误处理：
@@ -556,4 +556,14 @@ residual_risks:
   - 文件类型判定基于路径目录结构，边缘情况（如用户自定义目录下同扩展名文件）可能误判，但命令均为只读建议，误判不造成损害
 followup_refs:
   - ldvh-base/sparks/spark-0037-file-command-map-tool-plan-integration.yaml
-revision_history: []
+revision_history:
+  - at: '2026-06-27T14:18:00+08:00'
+    from_status: human_closure_confirming
+    to_status: human_closure_confirming
+    actor: codex-main-controller
+    reason: |
+      按新增 input_refs 路径引用规则修复事实对象断链：路径字段不得夹带函数名或括号说明。
+    changed_fields:
+      - orchestration.execution_items[2].input_refs
+    summary: |
+      将 `code/hook_dispatch.py (_run_knowledge_map, _git_text)` 改为纯路径 `code/hook_dispatch.py`。

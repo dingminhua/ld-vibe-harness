@@ -127,6 +127,7 @@ ADR_CONSEQUENCES_REQUIRED_HEADINGS = ["正向价值", "逆向价值", "实施成
 ADR_NO_REVERSE_VALUE_TEXT = "当前决策无逆向价值"
 VALUE_STANDARD_REF_RE = re.compile(r"(?<![A-Za-z0-9_])V(?:[1-9]|10)(?![A-Za-z0-9_])")
 PITFALL_TAG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+PATH_ANNOTATION_RE = re.compile(r"[（\(「【]")
 
 WORKCASE_ORCHESTRATION_MODES = {"single", "sequential", "parallel", "mixed"}
 WORKCASE_EXECUTION_ITEM_MODES = {"single", "sequential", "parallel"}
@@ -365,6 +366,15 @@ def extract_checkable_path_ref(item: str, project_root: Path, *, allow_command_l
         except ValueError:
             return None
     return path_part
+
+
+def looks_like_path_ref(item: str) -> bool:
+    value = item.strip()
+    if not value:
+        return False
+    if "/" not in value and not value.startswith(".") and "." not in value.split("/")[-1]:
+        return False
+    return True
 
 
 def resolve_path_ref(project_root: Path, path_part: str) -> Path:
@@ -837,6 +847,9 @@ def validate_workcase(path: Path, data: dict[str, Any]) -> list[Issue]:
         for list_field in ("input_refs", "evidence_refs"):
             if list_field in item and not isinstance(item[list_field], list):
                 issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_LIST_FIELD", f"{item_field}.{list_field} 必须是 list", field=f"{item_field}.{list_field}"))
+        input_refs = item.get("input_refs")
+        if isinstance(input_refs, list):
+            issues.extend(validate_workcase_input_refs(path, input_refs, f"{item_field}.input_refs"))
         evidence_refs = item.get("evidence_refs")
         if isinstance(evidence_refs, list):
             issues.extend(validate_execution_item_evidence_refs(path, evidence_refs, item_field))
@@ -1026,6 +1039,10 @@ def validate_workcase_review_section(path: Path, section: dict[str, Any], field_
             prompt_context = item.get("prompt_context")
             if prompt_context is not None and not isinstance(prompt_context, dict):
                 issues.append(Issue(str(path), "error", "INVALID_REVIEW_PROMPT_CONTEXT", f"{item_prefix}.prompt_context 必须是 object", field=f"{item_prefix}.prompt_context"))
+            elif isinstance(prompt_context, dict):
+                input_refs = prompt_context.get("input_refs")
+                if isinstance(input_refs, list):
+                    issues.extend(validate_workcase_input_refs(path, input_refs, f"{item_prefix}.prompt_context.input_refs"))
             result = item.get("result")
             if result is not None and not isinstance(result, dict):
                 issues.append(Issue(str(path), "error", "INVALID_REVIEW_RESULT", f"{item_prefix}.result 必须是 object", field=f"{item_prefix}.result"))
@@ -1042,6 +1059,15 @@ def validate_workcase_review_section(path: Path, section: dict[str, Any], field_
         if self_check is not None and not isinstance(self_check, dict):
             issues.append(Issue(str(path), "error", "INVALID_CONTROLLER_SELF_CHECK", f"{field_prefix}.controller_self_check 必须是 object", field=f"{field_prefix}.controller_self_check"))
         elif isinstance(self_check, dict):
+            prompt_context = self_check.get("prompt_context")
+            if isinstance(prompt_context, dict):
+                input_refs = prompt_context.get("input_refs")
+                if isinstance(input_refs, list):
+                    issues.extend(validate_workcase_input_refs(
+                        path,
+                        input_refs,
+                        f"{field_prefix}.controller_self_check.prompt_context.input_refs",
+                    ))
             self_check_result = self_check.get("result")
             result_field = f"{field_prefix}.controller_self_check.result"
             if not isinstance(self_check_result, dict):
@@ -1126,6 +1152,42 @@ def validate_execution_item_evidence_refs(path: Path, evidence_refs: list[Any], 
                 "EVIDENCE_REF_PATH_NOT_FOUND",
                 f"{item_field}.evidence_refs 中引用的路径不存在: {ref}",
                 field=f"{item_field}.evidence_refs",
+            ))
+    return issues
+
+
+def validate_workcase_input_refs(path: Path, input_refs: list[Any], field: str) -> list[Issue]:
+    """WorkCase input_refs are graph relations, so path-like refs must be clean and resolvable."""
+    issues = []
+    project_root = infer_project_root(path)
+    for ref in input_refs:
+        if not isinstance(ref, str):
+            continue
+        if ref.startswith("http://") or ref.startswith("https://"):
+            continue
+        annotation_match = PATH_ANNOTATION_RE.search(ref)
+        if annotation_match:
+            prefix = ref[:annotation_match.start()].strip()
+            if looks_like_path_ref(prefix):
+                issues.append(Issue(
+                    str(path),
+                    "error",
+                    "INPUT_REF_PATH_HAS_ANNOTATION",
+                    f"{field} 中路径引用不得夹带括号说明或函数名: {ref}",
+                    field=field,
+                ))
+                continue
+        path_part = extract_checkable_path_ref(ref, project_root, allow_command_like=False)
+        if path_part is None:
+            continue
+        resolved = resolve_path_ref(project_root, path_part)
+        if not resolved.exists():
+            issues.append(Issue(
+                str(path),
+                "error",
+                "INPUT_REF_PATH_NOT_FOUND",
+                f"{field} 中引用的路径不存在: {ref}",
+                field=field,
             ))
     return issues
 

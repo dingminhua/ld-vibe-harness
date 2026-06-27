@@ -56,6 +56,8 @@ related_docs: []
 
 def write_valid_workcase_tree(tmp_path: Path, *, status: str = "active") -> tuple[Path, Path]:
     root = tmp_path / "project"
+    (root / "code").mkdir(parents=True, exist_ok=True)
+    (root / "code" / "fact_validate.py").write_text("# input fixture\n", encoding="utf-8")
     (root / "tests" / "code").mkdir(parents=True, exist_ok=True)
     (root / "tests" / "code" / "test_fact_validate.py").write_text("# evidence fixture\n", encoding="utf-8")
     workcase = write_yaml(
@@ -1713,6 +1715,63 @@ def test_workcase_evidence_refs_non_paths_are_not_errors(tmp_path):
                     "        - specs/21-WorkCase-工作项.md（修订）",
                 ]
             ),
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(root / "ldvh-base")
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "检查完成: files=1 errors=0 warnings=0"
+
+
+def test_workcase_input_refs_reject_path_annotations(tmp_path):
+    root, workcase = write_valid_workcase_tree(tmp_path)
+    content = workcase.read_text(encoding="utf-8")
+    workcase.write_text(
+        content.replace(
+            "        - code/fact_validate.py",
+            "        - code/fact_validate.py (_validate_workcase)",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(root / "ldvh-base")
+
+    assert result.returncode == 1
+    assert "INPUT_REF_PATH_HAS_ANNOTATION" in result.stdout
+    assert "code/fact_validate.py (_validate_workcase)" in result.stdout
+
+
+def test_workcase_input_refs_missing_path_is_error(tmp_path):
+    root, workcase = write_valid_workcase_tree(tmp_path)
+    content = workcase.read_text(encoding="utf-8")
+    workcase.write_text(
+        content.replace(
+            "        - code/fact_validate.py",
+            "        - code/missing_fact_validate.py",
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    result = run_checker(root / "ldvh-base")
+
+    assert result.returncode == 1
+    assert "INPUT_REF_PATH_NOT_FOUND" in result.stdout
+    assert "code/missing_fact_validate.py" in result.stdout
+
+
+def test_workcase_prompt_input_refs_allow_commands(tmp_path):
+    root, workcase = write_valid_workcase_tree(tmp_path)
+    add_current_review_contract(workcase)
+    content = workcase.read_text(encoding="utf-8")
+    workcase.write_text(
+        content.replace(
+            "          - tests/code/test_fact_validate.py",
+            "          - python3 code/fact_validate.py ldvh-base --format text",
+            1,
         ),
         encoding="utf-8",
     )
