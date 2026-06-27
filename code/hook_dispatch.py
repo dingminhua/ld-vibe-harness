@@ -318,6 +318,32 @@ def _receipt_read_plan_consumed(receipt: Optional[dict[str, Any]]) -> bool:
     return isinstance(consumed, dict) and consumed.get("status") == "acknowledged"
 
 
+def _commit_action_scope(cwd: Path) -> dict[str, Any]:
+    return {
+        "repo_root": str(_git_repo_root(cwd)),
+        "staged_paths": _git_staged_relative_paths(cwd),
+    }
+
+
+def _receipt_commit_action_acknowledged(receipt: Optional[dict[str, Any]], cwd: Path) -> bool:
+    if not receipt:
+        return False
+    execution = receipt.get("commit_action_execution")
+    if not isinstance(execution, dict) or execution.get("status") != "acknowledged":
+        return False
+    if execution.get("skill_id") != GIT_COMMIT_SKILL_ID:
+        return False
+    if execution.get("action_member") != GIT_COMMIT_ACTION_SPEC:
+        return False
+    if execution.get("execution_mode") not in {"skill_runtime_invoked", "manual_equivalent_execution"}:
+        return False
+    scope = _commit_action_scope(cwd)
+    return (
+        execution.get("repo_root") == scope["repo_root"]
+        and execution.get("staged_paths") == scope["staged_paths"]
+    )
+
+
 def _required_read_plan_paths(receipt: dict[str, Any]) -> list[str]:
     result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
     read_plan = result.get("read_plan") if isinstance(result, dict) else []
@@ -569,6 +595,97 @@ def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = 
     if deep_stop_conditions:
         result_payload["deep_stop_conditions"] = deep_stop_conditions
     return result_payload
+
+
+def _acknowledge_commit_action(session_id: str, cwd: Path, *, trigger_source: str = "rules",
+                               execution_mode: str = "manual_equivalent_execution") -> dict[str, Any]:
+    normalized_mode = execution_mode.strip() or "manual_equivalent_execution"
+    if normalized_mode not in {"skill_runtime_invoked", "manual_equivalent_execution"}:
+        return {
+            "acknowledged": False,
+            "blocked": True,
+            "cwd": str(cwd),
+            "trigger_source": trigger_source,
+            "reason": "execution_mode 必须是 skill_runtime_invoked 或 manual_equivalent_execution。",
+        }
+
+    subject = resolve_governed_subject(cwd, _git_staged_paths(cwd))
+    if subject.get("blocked"):
+        return {**subject, **_commit_action_fields(), "acknowledged": False, "trigger_source": trigger_source}
+    if not subject.get("governed"):
+        return {
+            **subject,
+            "acknowledged": True,
+            "blocked": False,
+            "trigger_source": trigger_source,
+            "receipt": "no_op_non_governed",
+        }
+
+    receipt = _read_session_receipt(session_id) if session_id else _latest_session_receipt(cwd)
+    if not receipt:
+        return {
+            **subject,
+            **_commit_action_fields(),
+            "acknowledged": False,
+            "blocked": True,
+            "trigger_source": trigger_source,
+            "reason": "未找到可写入 commit action execution 的 session receipt；必须先完成 session-start。",
+        }
+    if not _receipt_read_plan_consumed(receipt):
+        return {
+            **subject,
+            **_commit_action_fields(),
+            "acknowledged": False,
+            "blocked": True,
+            "trigger_source": trigger_source,
+            "reason": "管辖项目提交行动执行确认前必须先消费 session-start receipt 的 P0/P1 read_plan。",
+            "next_action": "先运行 acknowledge-read-plan，再读取 skills/ldvh-git-commit/SKILL.md 并执行后重试 acknowledge-commit-action。",
+        }
+
+    scope = _commit_action_scope(cwd)
+    execution = {
+        "status": "acknowledged",
+        "acknowledged_at": datetime.now(timezone.utc).isoformat(),
+        "trigger_source": trigger_source,
+        "execution_mode": normalized_mode,
+        "skill_id": GIT_COMMIT_SKILL_ID,
+        "action_member": GIT_COMMIT_ACTION_SPEC,
+        "repo_root": scope["repo_root"],
+        "staged_paths": scope["staged_paths"],
+    }
+    receipt["commit_action_execution"] = execution
+    receipt["updated_at"] = execution["acknowledged_at"]
+    path = _receipt_path(str(receipt.get("session_id", "")))
+    if path is None:
+        return {
+            **subject,
+            **_commit_action_fields(),
+            "acknowledged": False,
+            "blocked": True,
+            "trigger_source": trigger_source,
+            "reason": "receipt 缺少 session_id，无法写入 commit action execution 凭证。",
+        }
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(receipt, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError as exc:
+        return {
+            **subject,
+            **_commit_action_fields(),
+            "acknowledged": False,
+            "blocked": True,
+            "trigger_source": trigger_source,
+            "reason": f"写入 commit action execution 凭证失败: {exc}",
+        }
+    return {
+        **subject,
+        **_commit_action_fields(),
+        "acknowledged": True,
+        "blocked": False,
+        "trigger_source": trigger_source,
+        "receipt": "commit_action_execution",
+        "commit_action_execution": execution,
+    }
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -1137,6 +1254,19 @@ def handle_acknowledge_read_plan(cwd: Path, *, trigger_source: str = "rules", se
     return 0 if result.get("acknowledged") else 1
 
 
+def handle_acknowledge_commit_action(cwd: Path, *, trigger_source: str = "rules", session_id: str = "",
+                                     execution_mode: str = "manual_equivalent_execution") -> int:
+    """Record that ldvh-git-commit was executed for the current staged scope."""
+    result = _acknowledge_commit_action(
+        session_id,
+        cwd,
+        trigger_source=trigger_source,
+        execution_mode=execution_mode,
+    )
+    print(json.dumps(result, ensure_ascii=False))
+    return 0 if result.get("acknowledged") else 1
+
+
 def handle_session_start(cwd: Path, *, trigger_source: str = "rules", session_id: str = "",
                          targets: list[Path] | None = None) -> int:
     """SessionStart / session-start handler.
@@ -1323,6 +1453,40 @@ def _read_plan_guard_result(cwd: Path, receipt: Optional[dict[str, Any]], *, tri
         "required_paths": required_paths,
         "next_action": "读取 required_paths 后运行 `python3 code/hook_dispatch.py run acknowledge-read-plan --cwd <cwd>`；支持 session_id 的 Hook 环境应传入同一 session_id。",
         "command_observed": command[:200] if command else "",
+    }
+
+
+def _commit_action_guard_result(cwd: Path, receipt: Optional[dict[str, Any]], *,
+                                trigger_source: str, subject: dict[str, Any] | None = None,
+                                message_file: str = "", session_id: str = "") -> Optional[dict[str, Any]]:
+    if _receipt_commit_action_acknowledged(receipt, cwd):
+        return None
+    subject = subject or {}
+    return {
+        "blocked": True,
+        "cwd": str(cwd),
+        "governed": True,
+        "target_paths": subject.get("target_paths", []),
+        "target_resolutions": subject.get("target_resolutions", []),
+        "event": "git.commit-msg",
+        "operation_kind": "commit",
+        "read_write_kind": "write",
+        "message_file": message_file,
+        "session_id": session_id,
+        "governed_subject": subject.get("governed_subject", ""),
+        "governed_via": subject.get("governed_via", ""),
+        "governed_project_id": subject.get("governed_project_id", ""),
+        "governed_project_path": subject.get("governed_project_path", ""),
+        "trigger_source": trigger_source,
+        "tool": "git.commit-msg",
+        "action": "git.commit-msg",
+        "reason": "管辖项目提交前必须先执行 ldvh-git-commit，并写入 commit_action_execution 凭证。",
+        "required_execution_modes": ["skill_runtime_invoked", "manual_equivalent_execution"],
+        "next_action": (
+            "读取 skills/ldvh-git-commit/SKILL.md 并按 Workflow 执行后，运行 "
+            "`python3 code/hook_dispatch.py run acknowledge-commit-action --cwd <repo-root> "
+            "--execution-mode manual_equivalent_execution`。"
+        ),
     }
 
 
@@ -1612,6 +1776,9 @@ def handle_commit_preflight(cwd: Path, *, trigger_source: str = "rules",
     result.update(_commit_action_fields())
     result["session_receipt"] = "found" if receipt else "missing"
     result["read_plan_consumed"] = "acknowledged" if _receipt_read_plan_consumed(receipt) else "missing"
+    result["commit_action_execution"] = (
+        "acknowledged" if _receipt_commit_action_acknowledged(receipt, cwd) else "missing"
+    )
     print(json.dumps(result, ensure_ascii=False))
     return 0
 
@@ -1625,13 +1792,25 @@ def _guard_git_commit_msg(cwd: Path, *, trigger_source: str,
         return {**subject, **_commit_action_fields(), "trigger_source": trigger_source, "action": "git.commit-msg"}
     if not subject.get("governed"):
         return None
+    receipt = _latest_session_receipt(cwd)
     blocked = _read_plan_guard_result(
         cwd,
-        _latest_session_receipt(cwd),
+        receipt,
         trigger_source=trigger_source,
         tool_name="git.commit-msg",
         command="git commit",
         action="git.commit-msg",
+        subject=subject,
+        message_file=message_file,
+        session_id=session_id,
+    )
+    if blocked:
+        blocked.update(_commit_action_fields())
+        return blocked
+    blocked = _commit_action_guard_result(
+        cwd,
+        receipt,
+        trigger_source=trigger_source,
         subject=subject,
         message_file=message_file,
         session_id=session_id,
@@ -1670,6 +1849,14 @@ def main(argv: Optional[list[str]] = None) -> int:
                 session_id=session_id,
                 action_hint=action_hint if isinstance(action_hint, str) else "",
                 targets=targets,
+            )
+        if normalized in ("acknowledge-commit-action", "acknowledgecommitaction"):
+            execution_mode = stdin_payload.get("execution_mode", "manual_equivalent_execution")
+            return handle_acknowledge_commit_action(
+                cwd,
+                trigger_source=trigger_source,
+                session_id=session_id,
+                execution_mode=execution_mode if isinstance(execution_mode, str) else "manual_equivalent_execution",
             )
         if normalized in ("pre-tool-use", "pretooluse"):
             tool = _stdin_tool_name(stdin_payload)
@@ -1715,7 +1902,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     # run <event>
     run_parser = subparsers.add_parser("run", help="Execute a lifecycle protocol event.")
-    run_parser.add_argument("event", help="Event: session-start | acknowledge-read-plan | pre-tool-use | commit-preflight | git.commit-msg")
+    run_parser.add_argument("event", help="Event: session-start | acknowledge-read-plan | acknowledge-commit-action | pre-tool-use | commit-preflight | git.commit-msg")
     run_parser.add_argument("--cwd", type=Path, default=Path(os.getcwd()),
                             help="Current working directory for the event.")
     run_parser.add_argument("--trigger-source", type=str, choices=["hook", "rules"],
@@ -1735,6 +1922,9 @@ def main(argv: Optional[list[str]] = None) -> int:
                             help="Session id for receipt lookup or acknowledgement.")
     run_parser.add_argument("--action-hint", type=str, default="",
                             help="Action hint for acknowledge-read-plan: fix | create | review | modify | discuss | unknown.")
+    run_parser.add_argument("--execution-mode", type=str, default="manual_equivalent_execution",
+                            choices=["skill_runtime_invoked", "manual_equivalent_execution"],
+                            help="Execution mode for acknowledge-commit-action.")
     run_parser.add_argument("--dry-run", action="store_true",
                             help="Print commands without executing (git.commit-msg only).")
 
@@ -1774,6 +1964,14 @@ def main(argv: Optional[list[str]] = None) -> int:
                     session_id=args.session_id,
                     action_hint=args.action_hint,
                     targets=targets,
+                )
+
+            if event in ("acknowledge-commit-action", "AcknowledgeCommitAction"):
+                return handle_acknowledge_commit_action(
+                    cwd,
+                    trigger_source=trigger_source,
+                    session_id=args.session_id,
+                    execution_mode=args.execution_mode,
                 )
 
             if event in ("pre-tool-use", "PreToolUse"):

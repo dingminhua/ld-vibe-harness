@@ -59,6 +59,45 @@ DEPLOYMENT_ENTRIES_REQUIRED_METADATA_FIELDS = [
     "deprecation",
 ]
 DEPLOYMENT_ENTRIES_FORBIDDEN_TYPES = {"Code", "Web", "CLI", "MCP", "Command", "CI", "文档"}
+RUNTIME_PROTOCOL_ALLOWED_HEADINGS = [
+    "# LDVH Runtime Protocol",
+    "## 1. 这是什么",
+    "## 2. 四事件触发表",
+    "## 3. 消费 dispatcher 输出",
+    "## 4. STOP",
+]
+RUNTIME_PROTOCOL_REQUIRED_EVENTS = [
+    "session-start",
+    "acknowledge-read-plan",
+    "pre-tool-use",
+    "git.commit-msg",
+]
+RUNTIME_PROTOCOL_FORBIDDEN_TOPICS = [
+    "receipt",
+    "管辖判定",
+    "governed_subject",
+    "target_resolutions",
+    "governed_via",
+    "governed_project_id",
+    "governed_project_path",
+    "git_common_dir",
+    "common_dir",
+    "read_plan_consumed",
+    "last_pre_tool_use",
+    "unknown_target",
+    "fallback read_plan",
+    "session-receipts",
+    "~/.codex/ldvh",
+    "写入门禁",
+    "提交门禁",
+    "tool_input",
+    "hook_event_name",
+    "commit-preflight",
+    "acknowledge-commit-action",
+    "commit_action_execution",
+    "skill_plan",
+    "staged paths",
+]
 
 
 def deployment_entries_required_asset_paths():
@@ -158,6 +197,60 @@ def deployment_entries_check_asset_metadata(root, asset_path_raw):
     return issues
 
 
+def deployment_entries_check_runtime_protocol_whitelist(root):
+    asset_path_raw = DEPLOYMENT_ENTRIES_AI_ENTRY_PATH
+    asset_path = root / asset_path_raw
+    if not asset_path.exists():
+        return []
+
+    issues = []
+    text = asset_path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    headings = [line.strip() for line in lines if line.startswith("#")]
+    if headings != RUNTIME_PROTOCOL_ALLOWED_HEADINGS:
+        issues.append(
+            Issue(
+                asset_path,
+                1,
+                "Runtime Protocol 只能包含固定标题结构: ldvh_asset 自描述、这是什么、四事件触发表、消费 dispatcher 输出、STOP",
+                code="DEPLOYMENT_ENTRIES_RUNTIME_PROTOCOL_WHITELIST_VIOLATION",
+            )
+        )
+
+    for event in RUNTIME_PROTOCOL_REQUIRED_EVENTS:
+        if f"`{event}`" not in text:
+            issues.append(
+                Issue(
+                    asset_path,
+                    1,
+                    f"Runtime Protocol 四事件触发表缺少 canonical event: {event}",
+                    code="DEPLOYMENT_ENTRIES_RUNTIME_PROTOCOL_EVENT_MISSING",
+                )
+            )
+        if f"run {event}" not in text:
+            issues.append(
+                Issue(
+                    asset_path,
+                    1,
+                    f"Runtime Protocol 四事件触发表缺少 dispatcher 命令: {event}",
+                    code="DEPLOYMENT_ENTRIES_RUNTIME_PROTOCOL_EVENT_COMMAND_MISSING",
+                )
+            )
+
+    for forbidden_topic in RUNTIME_PROTOCOL_FORBIDDEN_TOPICS:
+        if forbidden_topic in text:
+            issues.append(
+                Issue(
+                    asset_path,
+                    1,
+                    f"Runtime Protocol 只能模拟派发 hook，不得包含越界主题: {forbidden_topic}",
+                    code="DEPLOYMENT_ENTRIES_RUNTIME_PROTOCOL_WHITELIST_VIOLATION",
+                )
+            )
+
+    return issues
+
+
 def deployment_entries_asset_records(root=None, asset_paths=None):
     root = Path(root) if root is not None else PROJECT_ROOT
     records = []
@@ -232,6 +325,8 @@ def deployment_entries_check(root=None):
         ai_entry_text = ai_entry_path.read_text(encoding="utf-8")
         if DEPLOYMENT_ENTRIES_SPEC_PATH not in ai_entry_text:
             issues.append(Issue(ai_entry_path, 1, f"Rules 入口未引用固定运行时扩展登记表: {DEPLOYMENT_ENTRIES_SPEC_PATH}", code="DEPLOYMENT_ENTRIES_AI_ENTRY_REF_MISSING"))
+
+    issues.extend(deployment_entries_check_runtime_protocol_whitelist(root))
 
     return issues
 

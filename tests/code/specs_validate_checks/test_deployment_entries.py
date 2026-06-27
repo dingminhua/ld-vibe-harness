@@ -39,6 +39,29 @@ ldvh_asset:
 ```
 
 固定运行时扩展登记见 `{DEPLOYMENT_REGISTRY_PATH}`。
+
+## 1. 这是什么
+
+LDVH 固定 Rules 入口。Rules 路径只负责把 canonical event 派发给 `hook_dispatch.py`。
+
+## 2. 四事件触发表
+
+| 发生时 | canonical event | Rules 路径命令 |
+|---|---|---|
+| 会话开始 | `session-start` | `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <cwd> --target <target>` |
+| dispatcher 输出要求确认入口读取后 | `acknowledge-read-plan` | `python3 code/hook_dispatch.py run acknowledge-read-plan --trigger-source rules --cwd <cwd>` |
+| Write / Edit 前 | `pre-tool-use` | `python3 code/hook_dispatch.py run pre-tool-use --trigger-source rules --cwd <cwd> --target <target>` |
+| Git commit 前 | `git.commit-msg` | `python3 code/hook_dispatch.py run git.commit-msg --trigger-source rules --message-file <message-file>` |
+
+Hook 路径：环境原生事件映射为 canonical event，并交给同一 dispatcher。
+
+## 3. 消费 dispatcher 输出
+
+Rules 路径执行表内命令后，AI 只消费 dispatcher 返回的结构化输出。
+
+## 4. STOP
+
+dispatcher 返回停止条件时，AI 必须停止当前动作并按 dispatcher 输出处理。
 """,
     )
     write_md(
@@ -188,6 +211,17 @@ def test_deployment_entries_reports_asset_metadata_mismatch(tmp_path):
     codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
 
     assert "DEPLOYMENT_ENTRIES_ASSET_METADATA_MISMATCH" in codes
+
+
+def test_deployment_entries_reports_runtime_protocol_whitelist_violation(tmp_path):
+    write_deployment_entries_fixture(tmp_path)
+    asset_path = tmp_path / "rules" / "LDVH-RUNTIME-PROTOCOL.md"
+    text = asset_path.read_text(encoding="utf-8")
+    asset_path.write_text(text + "\nreceipt 细节：`governed_subject`。\n", encoding="utf-8")
+
+    codes = deployment_entry_codes(checker.deployment_entries_check(tmp_path))
+
+    assert "DEPLOYMENT_ENTRIES_RUNTIME_PROTOCOL_WHITELIST_VIOLATION" in codes
 
 
 def test_deployment_entries_cli_is_in_all(tmp_path, monkeypatch, capsys):

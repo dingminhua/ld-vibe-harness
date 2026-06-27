@@ -77,6 +77,8 @@ def test_hook_registry_declares_dispatcher_entrypoints():
     assert "payload" in registry["ldvh_asset"]["handoff"]
     assert any("tool_input" in item for item in registry["ldvh_asset"]["verification"])
     assert any("target" in item for item in registry["ldvh_asset"]["verification"])
+    assert any("acknowledge-commit-action" in item for item in registry["ldvh_asset"]["outputs"])
+    assert any("acknowledge-commit-action" in item for item in registry["ldvh_asset"]["verification"])
     assert any("commit-preflight" in item for item in registry["ldvh_asset"]["outputs"])
     assert any("commit-preflight" in item for item in registry["ldvh_asset"]["verification"])
 
@@ -1002,6 +1004,28 @@ def test_git_commit_msg_blocks_until_latest_read_plan_acknowledged(monkeypatch, 
     assert dispatcher.handle_acknowledge_read_plan(tmp_path, trigger_source="rules", session_id="session-7") == 0
     capsys.readouterr()
 
+    still_blocked_code = dispatcher.main([
+        "run",
+        "git.commit-msg",
+        "--cwd",
+        str(tmp_path),
+        "--message-file",
+        str(message),
+    ])
+    still_blocked = json.loads(capsys.readouterr().out)
+
+    assert still_blocked_code == 1
+    assert still_blocked["blocked"] is True
+    assert "commit_action_execution" in still_blocked["reason"]
+
+    assert dispatcher.handle_acknowledge_commit_action(
+        tmp_path,
+        trigger_source="rules",
+        session_id="session-7",
+        execution_mode="manual_equivalent_execution",
+    ) == 0
+    capsys.readouterr()
+
     exit_code = dispatcher.main([
         "run",
         "git.commit-msg",
@@ -1012,6 +1036,49 @@ def test_git_commit_msg_blocks_until_latest_read_plan_acknowledged(monkeypatch, 
     ])
 
     assert exit_code == 0
+
+
+def test_git_commit_msg_blocks_when_commit_action_scope_changes(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    (repo / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "projects:\n  - id: app\n    path: .\n",
+        encoding="utf-8",
+    )
+    (repo / "first.txt").write_text("first\n", encoding="utf-8")
+    subprocess.run(["git", "add", "first.txt"], cwd=repo, check=True)
+    message = tmp_path / "message.txt"
+    message.write_text("feat: 提交测试\n", encoding="utf-8")
+
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    monkeypatch.setattr(dispatcher, "_run_knowledge_map", lambda start_node, task_type: {"result_status": "ok", "diagnostics": [], "read_plan": []})
+    monkeypatch.setattr(dispatcher, "run_event", lambda event, registry, context, dry_run=False: 0)
+
+    assert dispatcher.handle_session_start(repo, session_id="scope-change") == 0
+    capsys.readouterr()
+    assert dispatcher.handle_acknowledge_read_plan(repo, session_id="scope-change") == 0
+    capsys.readouterr()
+    assert dispatcher.handle_acknowledge_commit_action(repo, session_id="scope-change") == 0
+    capsys.readouterr()
+
+    (repo / "second.txt").write_text("second\n", encoding="utf-8")
+    subprocess.run(["git", "add", "second.txt"], cwd=repo, check=True)
+
+    exit_code = dispatcher.main([
+        "run",
+        "git.commit-msg",
+        "--cwd",
+        str(repo),
+        "--message-file",
+        str(message),
+    ])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 1
+    assert payload["blocked"] is True
+    assert "commit_action_execution" in payload["reason"]
 
 
 def test_git_commit_msg_uses_repo_root_and_staged_paths_not_message_file(monkeypatch, tmp_path, capsys):
@@ -1041,6 +1108,8 @@ def test_git_commit_msg_uses_repo_root_and_staged_paths_not_message_file(monkeyp
     assert dispatcher.handle_session_start(repo, session_id="commit-target") == 0
     capsys.readouterr()
     assert dispatcher.handle_acknowledge_read_plan(repo, session_id="commit-target") == 0
+    capsys.readouterr()
+    assert dispatcher.handle_acknowledge_commit_action(repo, session_id="commit-target") == 0
     capsys.readouterr()
 
     exit_code = dispatcher.main([
@@ -1084,6 +1153,7 @@ def test_commit_preflight_reports_governed_project_and_required_action(tmp_path,
     assert payload["action_member"] == "specs/31-git-commit-action-Git提交行动编排.md"
     assert payload["skill_plan"] == ["ldvh-git-commit"]
     assert payload["action_policy"] == "governed_project_commit_action_required"
+    assert payload["commit_action_execution"] == "missing"
 
 
 def test_cli_event_survives_codex_stdin_payload_without_event(monkeypatch, tmp_path, capsys):

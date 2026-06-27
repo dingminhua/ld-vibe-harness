@@ -234,7 +234,7 @@ AI 不应为了提交默认全文读取所有 specs、全部工作对象或完�
 1. 确认用户目标、当前仓库和 `git status --short --untracked-files=all`，并先运行 `python3 code/hook_dispatch.py run commit-preflight --cwd <repo-root>` 或等价入口，记录 staged paths 是否命中管辖项目。
 2. 判断 staged / unstaged / untracked 文件是否属于本次提交范围；必要时只 stage 本次范围内文件，不 stage 无关用户变更。
 3. 判断是否需要拆分提交。独立目的应拆分；同一原子闭环可以跨 specs、Code、Web、Rules、Skill、Hook 和测试文件。
-4. 读取 07 的 message 契约和 `ldvh-git-commit` Skill。若运行环境真实加载了 Skill，记录为 Skill runtime 调用；若只是按 Skill 原文执行，记录为手动等价执行。
+4. 读取 07 的 message 契约和 `ldvh-git-commit` Skill。若运行环境真实加载了 Skill，记录为 Skill runtime 调用；若只是按 Skill 原文执行，记录为手动等价执行。执行后必须运行 `python3 code/hook_dispatch.py run acknowledge-commit-action --cwd <repo-root> --execution-mode <skill_runtime_invoked|manual_equivalent_execution>`，把本次 staged scope 的提交行动执行凭证写入 receipt。
 5. 选择单一 type 和零个或一个 scope，按 07 写简体中文 description。type 和 scope 必须命中 07 授权枚举；若无精确匹配的 scope，选择最接近的已有 scope，并把“建议新增 scope 枚举”的提示留到提交后交还 Human。
 6. 按 07 判断是否必须写 body；涉及 specs、rules、code、tests、web、hooks、skills、agents、配置、多文件或 Human Gate 时通常需要 body。
 7. 使用 `code/commit_validate.py` 或 `code/hook_dispatch.py run git.commit-msg` 预检。
@@ -292,6 +292,7 @@ Code 和命令协作：
 | `python3 code/commit_validate.py --check-message '<message>' --files <files>` | 直接检查提交消息和文件范围 |
 | `python3 code/commit_validate.py --check-message-file <message-file> --files <files>` | 检查 message 文件 |
 | `python3 code/hook_dispatch.py run commit-preflight --cwd <repo-root>` | 提交前只读判定 staged paths 是否命中管辖项目，并输出 31 / `ldvh-git-commit` 行动入口 |
+| `python3 code/hook_dispatch.py run acknowledge-commit-action --cwd <repo-root> --execution-mode manual_equivalent_execution` | 写入本次 staged scope 已执行 `ldvh-git-commit` 的提交行动凭证 |
 | `python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` | 通过统一 Hook registry 执行等价事件 |
 | `python3 code/install_git_hooks.py install` | 为当前或指定 Git 仓库安装 native `commit-msg` hook |
 | `python3 code/specs_validate.py deployment-entries` | 检查固定运行时扩展登记一致性 |
@@ -310,6 +311,8 @@ Web 负责展示提交记录、body、解析字段、关联提交和 ProjectFile
 5. 剩余 `git status --short`；
 6. Skill 使用方式：runtime 调用、手动等价执行或不可用原因；
 7. 未覆盖验证、失败、warning 或 residual risk。
+
+对管辖项目提交，过程输出还应能回指 `commit-preflight` 的管辖判定和 `acknowledge-commit-action` 写入的 `commit_action_execution` 凭证。缺少该凭证时，不能只用 `commit-msg` hook 通过证明已执行本文行动编排。
 
 若本次提交属于 WorkCase 执行，应把稳定证据写入 WorkCase 的执行项、`verification_evidence`、`closure_evidence` 或相关字段。若形成长期规则、经验、缺口或后续动作，应分流为 specs、Spark、Pitfall、ADR、Study、WorkCase 或 Git commit records。
 

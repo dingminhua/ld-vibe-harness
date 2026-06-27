@@ -21,6 +21,7 @@ ldvh_asset:
     - "统一 Hook dispatcher 执行结果"
     - "session-start: target-first governed 状态 + target_resolutions + knowledge-map receipt，可写入用户级 session receipt"
     - "acknowledge-read-plan: AI 回读 P0/P1 后写入 read_plan_consumed 证据"
+    - "acknowledge-commit-action: AI 执行 ldvh-git-commit Skill 或手动等价流程后，写入 commit_action_execution 凭证"
     - "pre-tool-use: 工作对象管辖判定、receipt 查验、必要时补建 receipt；写类工具缺少 target 或 read_plan_consumed 时阻断，找到已有 receipt 时写入 last_pre_tool_use 可观测字段"
     - "commit-preflight: 提交准备阶段先判定 staged paths / target / repo root 是否命中管辖项目；命中时输出 31 行动入口和 ldvh-git-commit skill_plan"
     - "git.commit-msg: 以 repo root、Git common-dir 和 staged paths 判定提交工作对象；提交前先检查 read_plan_consumed，再执行底层 Code validator 输出和退出码"
@@ -28,6 +29,7 @@ ldvh_asset:
   verification:
     - "python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <cwd> --target <target>"
     - "python3 code/hook_dispatch.py run acknowledge-read-plan --trigger-source rules --cwd <cwd>"
+    - "python3 code/hook_dispatch.py run acknowledge-commit-action --trigger-source rules --cwd <repo-root> --execution-mode manual_equivalent_execution"
     - "python3 code/hook_dispatch.py run pre-tool-use --trigger-source rules --cwd <cwd> --target <target>"
     - "python3 code/hook_dispatch.py run commit-preflight --trigger-source rules --cwd <repo-root>"
     - "python3 code/hook_dispatch.py run git.commit-msg --trigger-source rules --message-file <message-file>"
