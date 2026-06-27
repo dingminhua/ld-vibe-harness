@@ -55,6 +55,13 @@ CONCRETE_OBJECT_RE = re.compile(
 )
 
 BODY_MIN_CHARS = 30
+COMMIT_BODY_SECTION_TITLES = [
+    "动机",
+    "关键变更",
+    "影响边界",
+    "验证结论",
+    "风险与后续",
+]
 
 # 中文字符检测（当前 LDVH 自身项目 Code 实现纪律）
 HAS_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
@@ -215,6 +222,18 @@ def body_lines(body: str) -> list[str]:
     return [line.strip() for line in body.splitlines() if line.strip()]
 
 
+def extract_body_section_titles(body: str) -> list[str]:
+    titles: list[str] = []
+    for line in body.splitlines():
+        match = re.match(r"^\s*([^:：\n]+)\s*[:：]\s*$", line)
+        if not match:
+            continue
+        title = match.group(1).strip()
+        if title in COMMIT_BODY_SECTION_TITLES:
+            titles.append(title)
+    return titles
+
+
 def mostly_matches(lines: list[str], pattern: re.Pattern[str]) -> bool:
     if not lines:
         return False
@@ -268,6 +287,20 @@ def check_body_quality(commit: CommitInfo) -> list[Issue]:
         issues.append(Issue(
             commit.hash, "warning",
             "body 缺少明显语义信号；建议覆盖动机、关键变更、影响边界、验证结论或风险中的至少两类"
+        ))
+
+    section_titles = extract_body_section_titles(body)
+    expected_titles = COMMIT_BODY_SECTION_TITLES
+    if section_titles and section_titles != expected_titles:
+        issues.append(Issue(
+            commit.hash, "error",
+            f"body 必须按固定五段顺序编写: {' / '.join(expected_titles)}"
+        ))
+
+    if body and not section_titles and body_lines(body):
+        issues.append(Issue(
+            commit.hash, "warning",
+            "body 未使用固定五段标题；建议按动机、关键变更、影响边界、验证结论、风险与后续编写"
         ))
 
     return issues

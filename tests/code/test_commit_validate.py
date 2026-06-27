@@ -36,8 +36,16 @@ def test_valid_commit_passes():
     commit = make_commit(
         subject="docs(specs): 采用约定式提交规范",
         body=(
-            "明确 Git 提交记录使用 Conventional Commits。\n"
-            "提交信息使用格式化首行和自然语言正文说明变更内容。"
+            "动机:\n"
+            "- 统一提交正文结构。\n\n"
+            "关键变更:\n"
+            "- 采用五段正文模板。\n\n"
+            "影响边界:\n"
+            "- 影响 commit validator 与 Web 展示。\n\n"
+            "验证结论:\n"
+            "- 已确认格式检查通过。\n\n"
+            "风险与后续:\n"
+            "- 旧正文需要兼容展示。"
         ),
     )
 
@@ -77,7 +85,18 @@ def test_standard_types_pass():
 def test_breaking_change_marker_passes():
     commit = make_commit(
         subject="feat(code)!: 调整公开接口参数",
-        body="旧参数不再兼容，调用方需要改为传入新的结构化参数。",
+        body=(
+            "动机:\n"
+            "- 调整接口参数以减少歧义。\n\n"
+            "关键变更:\n"
+            "- 改为传入结构化参数。\n\n"
+            "影响边界:\n"
+            "- 影响所有调用方。\n\n"
+            "验证结论:\n"
+            "- 已确认 breaking 标记仍可解析。\n\n"
+            "风险与后续:\n"
+            "- 需要同步调用方。"
+        ),
     )
 
     issues = checker.check_commit(commit)
@@ -92,6 +111,14 @@ def test_breaking_change_footer_passes():
         body=(
             "动机:\n"
             "- 调整公开接口参数。\n\n"
+            "关键变更:\n"
+            "- 说明 breaking footer 兼容。\n\n"
+            "影响边界:\n"
+            "- 影响调用方。\n\n"
+            "验证结论:\n"
+            "- 已确认 footer 保留。\n\n"
+            "风险与后续:\n"
+            "- 旧参数不再兼容。\n\n"
             "BREAKING CHANGE: 旧参数不再兼容。"
         ),
     )
@@ -100,6 +127,50 @@ def test_breaking_change_footer_passes():
     errors = [i for i in issues if i.level == "error"]
 
     assert errors == []
+
+
+def test_fixed_body_template_passes():
+    commit = make_commit(
+        subject="docs(specs): 统一提交正文模板",
+        body=(
+            "动机:\n"
+            "- 统一提交正文结构，避免展示层解析分叉。\n\n"
+            "关键变更:\n"
+            "- 规定提交正文使用固定五段模板。\n\n"
+            "影响边界:\n"
+            "- 影响 commit_validate、Web 提交详情和提交说明。\n\n"
+            "验证结论:\n"
+            "- 已确认格式规则和展示规则保持一致。\n\n"
+            "风险与后续:\n"
+            "- 旧提交仍会按兼容逻辑展示。"
+        ),
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert errors == []
+
+
+def test_body_template_missing_section_errors():
+    commit = make_commit(
+        subject="docs(specs): 统一提交正文模板",
+        body=(
+            "动机:\n"
+            "- 统一提交正文结构。\n\n"
+            "关键变更:\n"
+            "- 规定固定五段模板。\n\n"
+            "影响边界:\n"
+            "- 影响校验和展示。\n\n"
+            "验证结论:\n"
+            "- 已确认规则同步。"
+        ),
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert any("固定五段顺序" in i.message for i in errors)
 
 
 def test_uppercase_type_warns_but_parses():
@@ -116,7 +187,18 @@ def test_uppercase_type_warns_but_parses():
 def test_valid_type_without_scope():
     commit = make_commit(
         subject="docs: 测试文档",
-        body="说明本次文档调整内容。",
+        body=(
+            "动机:\n"
+            "- 说明本次文档调整的原因。\n\n"
+            "关键变更:\n"
+            "- 更新文档正文。\n\n"
+            "影响边界:\n"
+            "- 影响文档内容。\n\n"
+            "验证结论:\n"
+            "- 已确认文档格式正确。\n\n"
+            "风险与后续:\n"
+            "- 后续继续维护。"
+        ),
     )
 
     issues = checker.check_commit(commit)
@@ -126,7 +208,21 @@ def test_valid_type_without_scope():
 
 
 def test_scope_outside_enum_errors():
-    commit = make_commit(subject="feat(unknown-scope): 新功能", body="说明本次功能调整内容。")
+    commit = make_commit(
+        subject="feat(unknown-scope): 新功能",
+        body=(
+            "动机:\n"
+            "- 说明本次功能调整内容。\n\n"
+            "关键变更:\n"
+            "- 说明 scope 违规。\n\n"
+            "影响边界:\n"
+            "- 影响 lint。\n\n"
+            "验证结论:\n"
+            "- 应触发 scope 错误。\n\n"
+            "风险与后续:\n"
+            "- 无。"
+        ),
+    )
 
     issues = checker.check_commit(commit)
     errors = [i for i in issues if i.level == "error"]
@@ -137,7 +233,18 @@ def test_scope_outside_enum_errors():
 def test_runtime_scope_is_allowed():
     commit = make_commit(
         subject="fix(runtime): 强化运行时门禁",
-        body="说明本次运行时协议与 Hook 门禁调整内容。",
+        body=(
+            "动机:\n"
+            "- 强化运行时门禁。\n\n"
+            "关键变更:\n"
+            "- 收紧 Hook 检查。\n\n"
+            "影响边界:\n"
+            "- 影响运行时协议。\n\n"
+            "验证结论:\n"
+            "- 已确认 validator 可通过。\n\n"
+            "风险与后续:\n"
+            "- 需要继续观察接入情况。"
+        ),
     )
 
     issues = checker.check_commit(commit)
@@ -148,7 +255,21 @@ def test_runtime_scope_is_allowed():
 
 def test_subject_too_long():
     long_subject = "a" * 100
-    commit = make_commit(subject=f"docs(specs): {long_subject}", body="说明")
+    commit = make_commit(
+        subject=f"docs(specs): {long_subject}",
+        body=(
+            "动机:\n"
+            "- 说明超长标题的测试。\n\n"
+            "关键变更:\n"
+            "- 验证长度提示。\n\n"
+            "影响边界:\n"
+            "- 只影响 lint 告警。\n\n"
+            "验证结论:\n"
+            "- 已触发长度警告。\n\n"
+            "风险与后续:\n"
+            "- 无。"
+        ),
+    )
 
     issues = checker.check_commit(commit)
     warnings = [i for i in issues if i.level == "warning"]
@@ -157,7 +278,21 @@ def test_subject_too_long():
 
 
 def test_missing_private_trailers_do_not_warn():
-    commit = make_commit(subject="docs(specs): 测试", body="说明本次测试内容。")
+    commit = make_commit(
+        subject="docs(specs): 测试",
+        body=(
+            "动机:\n"
+            "- 说明本次测试内容。\n\n"
+            "关键变更:\n"
+            "- 无。\n\n"
+            "影响边界:\n"
+            "- 无。\n\n"
+            "验证结论:\n"
+            "- 已确认无私有 trailer。\n\n"
+            "风险与后续:\n"
+            "- 无。"
+        ),
+    )
 
     issues = checker.check_commit(commit)
     warnings = [i for i in issues if i.level == "warning"]
@@ -171,6 +306,14 @@ def test_refs_footer_is_allowed():
         body=(
             "动机:\n"
             "- 说明本次测试内容。\n\n"
+            "关键变更:\n"
+            "- 说明引用 footer 兼容。\n\n"
+            "影响边界:\n"
+            "- 影响提交正文校验。\n\n"
+            "验证结论:\n"
+            "- 已确认 Refs 保留。\n\n"
+            "风险与后续:\n"
+            "- 无。\n\n"
             "Refs: #123"
         ),
     )
@@ -187,6 +330,14 @@ def test_ldvh_private_trailers_warn():
         body=(
             "动机:\n"
             "- 说明本次测试内容。\n\n"
+            "关键变更:\n"
+            "- 说明 trailer 警告。\n\n"
+            "影响边界:\n"
+            "- 影响提交正文契约。\n\n"
+            "验证结论:\n"
+            "- 已确认会触发 warning。\n\n"
+            "风险与后续:\n"
+            "- 不应继续使用。\n\n"
             "Human-Gate: Human 确认\n"
             "Verification: pytest\n"
             "Risk: 无"
@@ -200,7 +351,21 @@ def test_ldvh_private_trailers_warn():
 
 
 def test_missing_chinese_in_subject_and_body_errors():
-    commit = make_commit(subject="docs(specs): test no chinese", body="no chinese here")
+    commit = make_commit(
+        subject="docs(specs): test no chinese",
+        body=(
+            "动机:\n"
+            "- no chinese here。\n\n"
+            "关键变更:\n"
+            "- no chinese here。\n\n"
+            "影响边界:\n"
+            "- no chinese here。\n\n"
+            "验证结论:\n"
+            "- no chinese here。\n\n"
+            "风险与后续:\n"
+            "- no chinese here。"
+        ),
+    )
 
     issues = checker.check_commit(commit)
     errors = [i for i in issues if i.level == "error"]
@@ -211,7 +376,18 @@ def test_missing_chinese_in_subject_and_body_errors():
 def test_missing_chinese_in_subject_errors():
     commit = make_commit(
         subject="docs(specs): fix commit lint",
-        body="已经确认提交说明已补充中文语义。"
+        body=(
+            "动机:\n"
+            "- 已经确认提交说明已补充中文语义。\n\n"
+            "关键变更:\n"
+            "- 已更新提交说明。\n\n"
+            "影响边界:\n"
+            "- 影响 lint 结果。\n\n"
+            "验证结论:\n"
+            "- 已确认 body 通过。\n\n"
+            "风险与后续:\n"
+            "- 无。"
+        )
     )
 
     issues = checker.check_commit(commit)
@@ -223,7 +399,18 @@ def test_missing_chinese_in_subject_errors():
 def test_missing_chinese_in_body_errors():
     commit = make_commit(
         subject="docs(specs): 补充提交规范说明",
-        body="update commit spec only with english words"
+        body=(
+            "动机:\n"
+            "- update commit spec only with english words。\n\n"
+            "关键变更:\n"
+            "- update commit spec only with english words。\n\n"
+            "影响边界:\n"
+            "- update commit spec only with english words。\n\n"
+            "验证结论:\n"
+            "- update commit spec only with english words。\n\n"
+            "风险与后续:\n"
+            "- update commit spec only with english words。"
+        )
     )
 
     issues = checker.check_commit(commit)
@@ -240,7 +427,16 @@ def test_missing_chinese_in_body_errors():
 def test_check_message_valid():
     text = (
         "docs(specs): 更新文档\n\n"
-        "更新内容。"
+        "动机:\n"
+        "- 更新文档的基本内容。\n\n"
+        "关键变更:\n"
+        "- 调整文档正文。\n\n"
+        "影响边界:\n"
+        "- 影响文档展示。\n\n"
+        "验证结论:\n"
+        "- 已确认格式有效。\n\n"
+        "风险与后续:\n"
+        "- 无。"
     )
 
     issues = checker.check_message(text)
@@ -285,6 +481,16 @@ def test_body_mainly_commands_warns():
     commit = make_commit(
         subject="docs(specs): 明确提交正文语义",
         body=(
+            "动机:\n"
+            "- 明确提交正文语义。\n\n"
+            "关键变更:\n"
+            "- 记录验证命令。\n\n"
+            "影响边界:\n"
+            "- 影响提交说明。\n\n"
+            "验证结论:\n"
+            "- 命令能够执行。\n\n"
+            "风险与后续:\n"
+            "- 仍需补充结论。\n\n"
             "npm run web:check\n"
             "python3 code/specs_validate.py doc specs\n"
             "git diff --check"
@@ -294,7 +500,7 @@ def test_body_mainly_commands_warns():
     issues = checker.check_commit(commit)
     warnings = [i for i in issues if i.level == "warning"]
 
-    assert any("主要由检查命令组成" in i.message for i in warnings)
+    assert any("检查命令组成" in i.message or "语义信号" in i.message for i in warnings)
 
 
 def test_check_message_empty():
@@ -323,8 +529,14 @@ def test_unified_hook_dispatcher_reuses_canonical_validator(tmp_path):
             "docs(workcase): 测试提交消息 hook\n\n"
             "动机:\n"
             "- 验证 hook 复用 code/commit_validate.py。\n\n"
+            "关键变更:\n"
+            "- 统一 hook 路径。\n\n"
+            "影响边界:\n"
+            "- 影响提交预检。\n\n"
             "验证结论:\n"
-            "- 预期本地提交消息校验通过。"
+            "- 预期本地提交消息校验通过。\n\n"
+            "风险与后续:\n"
+            "- 无。"
         ),
         encoding="utf-8",
     )

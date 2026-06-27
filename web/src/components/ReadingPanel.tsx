@@ -773,11 +773,6 @@ const COMMIT_BODY_SECTION_TITLES = new Set([
   '影响边界',
   '验证结论',
   '风险与后续',
-  'Motivation',
-  'Key changes',
-  'Impact boundary',
-  'Validation',
-  'Risks and follow-up',
 ]);
 
 function formatCommitBodyForReading(value: string) {

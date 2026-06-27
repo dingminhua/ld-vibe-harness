@@ -1,0 +1,45 @@
+# 开发者的话
+
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="380" viewBox="0 0 640 380" role="img" aria-labelledby="dev3-t dev3-d">
+<title id="dev3-t">开发者的话 3</title>
+<desc id="dev3-d">开发者的话 3 — 入口标题区：上方标题文字，中间 icon 与 LDVH logo，下方 specs 引用。</desc>
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.h{font-size:22px;font-weight:700;fill:#2C2C2A;letter-spacing:0}
+.ic{fill:#0F6E56}
+.ic2{fill:none;stroke:#0F6E56;stroke-width:3;stroke-linecap:round}
+.lg{font-size:30px;font-weight:800;fill:#2C2C2A;letter-spacing:0}
+.sm{font-size:12px;font-weight:600;fill:#5F5E5A;letter-spacing:0}
+.ref{font-size:13px;font-weight:500;fill:#3D3D3A;letter-spacing:0}
+</style>
+
+<!-- 标题文字 -->
+<text class="h" x="320" y="52" text-anchor="middle">开发者的话</text>
+
+<!-- 分隔线 -->
+<line x1="200" y1="72" x2="440" y2="72" stroke="#0F6E56" stroke-width="1.5" stroke-opacity="0.4"/>
+
+<!-- icon -->
+<g transform="translate(296,100)">
+  <rect class="ic" x="0" y="0" width="48" height="48" rx="12"/>
+  <path class="ic2" d="M12 28h24M24 16v24"/>
+  <circle cx="24" cy="24" r="7" fill="#fff" opacity="0.95"/>
+  <path class="ic2" d="M20 24h8"/>
+</g>
+
+<!-- logo 文字 -->
+<g transform="translate(140,168)">
+  <text class="lg" x="180" y="28" text-anchor="middle">LDVH</text>
+  <text class="sm" x="180" y="52" text-anchor="middle">developer note</text>
+</g>
+
+<!-- 分隔线 -->
+<line x1="200" y1="240" x2="440" y2="240" stroke="#0F6E56" stroke-width="1" stroke-opacity="0.3"/>
+
+<!-- specs 引用 -->
+<g transform="translate(60,268)">
+  <text class="ref" x="260" y="20" text-anchor="middle">specs/00 定义为什么存在</text>
+  <text class="ref" x="260" y="46" text-anchor="middle">specs/01 定义怎么进入</text>
+  <text class="ref" x="260" y="72" text-anchor="middle">specs/07 定义事实源边界</text>
+</g>
+</svg>
