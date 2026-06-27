@@ -7,7 +7,7 @@ goal: |
   本 WorkCase 要处理“工作项目可能很多”的风险：将 v3 大方向拆成第一阶段可验证闭环与后续 followup，不把 v2 全量迁移、Runtime 接入、安装 bootstrap、Web 展示、Skill 注册和旧 knowledge-map 删除混入同一轮执行。
 status: result_self_checking
 created: '2026-06-27T23:23:10.196893'
-updated: '2026-06-28T02:35:00+08:00'
+updated: '2026-06-28T02:50:00+08:00'
 priority: P1
 description: |
   Human 已确认 v3 可以大胆推进，但版本隔离应由同级 worktree、分支和管辖项目 id 承载；新工作树内部目录不带版本号，以免未来成熟后再迁移目录名。Human 同时提醒，目标句必须带定语：格式化规范应限定为面向 LDVH 规范、事实对象和运行时资产的结构化契约；确定性 Code 应限定为只读、实时、可复查、无语义猜测的编译层；知识地图 / 行动指南应限定为面向当前任务和目标对象的实时任务导航投影。
@@ -17,6 +17,8 @@ description: |
   Human 后续指出 `specs/00-bootstrap-charter.md` 会制造 specs 自我授权的鸡生蛋问题，并确认第一批核心规范可放在 `specs/core/`。因此本 WorkCase 对 v3 自举链作出修正：第一批核心 Markdown 规范由 v3 项目决策设立，位于 `specs/core/`；`specs/schemas/` 是 core specs 授权后的机器契约；YAML instances / formatted sources 是被授权后的机器表达；deterministic Code 只消费这些显式输入并生成 Action Guide。上位规范先是规范，不先是 YAML。
 
   Human 随后明确纠偏：原 LDVH 已有 specs 文档体系，v3 不能另起一套正文分类目录，也不能把原 specs 正文整体 YAML 化。稳定约束是：原 specs 文档体系继续作为迁移基线；`specs/core/` 只放少量上位父层规范；普通 specs 正文仍按原体系逐步迁移、抽象和去冗余；`specs/schemas/` 与 YAML projection 只服务机器契约和确定性解析，不接管正文权威。
+
+  Human 进一步指出：如果 Code 能从 MD 里确定性提取结构，就不应额外维护一个 per-spec YAML，否则会产生同步负担和第二事实源风险。因此本 WorkCase 追加稳定方向：Markdown 正文是唯一规范事实源；Code 优先直接解析 Markdown 中的稳定结构并生成内存 IR / 行动源；YAML 只用于 schema、临时迁移辅助、生成调试输出或明确授权的机器产物，不作为普通 spec 正文的长期孪生投影。
 
   第一阶段要回答：
 
@@ -339,6 +341,7 @@ verification_evidence: |
   - v3 自举链修正已完成：新增 `specs/core/spec-system.md`、`specs/core/schema-contract.md`、`specs/core/code-determinism.md`、`specs/core/action-guide.md`；原 `specs/code-determinism.yaml` 迁为 `specs/core/code-determinism.yaml`。
   - v3 specs 文档体系稳定约束已记录：不新增新专题目录替代原 LDVH specs 体系，不将普通 specs 正文整体 YAML 化；`specs/core/` 只作为少量父层。
   - v3 临时 specs 体系盘点已建立：`_migration/inventory/specs-inventory.yaml` 覆盖 21 个 specs 正文和 75 个 attachment 文件，只作为迁移评审辅助，不作为正式 v3 权威。
+  - v3 MD 直读 extractor 原型已建立：`_migration/code/md_spec_extractor.py` 可直接读取 v2 `specs/01-规范体系基础规范.md` 的 `v2_spec` 身份块、章节和附件引用，生成可编译为 Action Guide 的行动源；不需要 per-spec YAML。
   - v3 全量测试通过：`python3 -m pytest -q`，9 passed。
 
   ## 结论
@@ -467,6 +470,17 @@ revision_history:
       - verification_evidence
     summary: |
       在 v3 `_migration/inventory/specs-inventory.yaml` 建立临时盘点：覆盖 21 个 v2 specs 正文和 75 个 attachments 文件，按原体系分段记录角色、迁移动作、共同读取来源、风险和停止条件。同步更新 `_migration/README.md`，明确 inventory 只是临时评审辅助，不授权 v3 specs、schema、Code 或 Action Guide。YAML 解析校验通过，`python3 -m pytest -q` 通过：9 passed。
+  - at: '2026-06-28T02:50:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 指出 per-spec YAML 会产生同步负担；若 Code 能确定性读 MD，就应直接读 MD。
+    changed_fields:
+      - updated
+      - description
+      - verification_evidence
+    summary: |
+      修正 v3 技术方向：不采用长期“一个 MD 一个 YAML”的双维护策略。新增 `_migration/code/md_spec_extractor.py`、`_migration/md_spec_extract_cli.py` 和 `_migration/tests/test_md_spec_extractor.py`，直接从 v2 `specs/01-规范体系基础规范.md` 解析 `v2_spec` 身份块、标题、章节和附件引用，生成可交给现有 Action Guide compiler 的行动源。`python3 -m pytest _migration/tests -q` 通过：9 passed。
 related_docs:
   - specs/01-规范体系基础规范.md
   - specs/04-Code确定性执行规范.md
