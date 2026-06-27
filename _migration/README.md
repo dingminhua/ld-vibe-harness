@@ -25,3 +25,9 @@ Do not import `_migration` modules from stable v3 code.
 Inventory files under `_migration/inventory/` are temporary review aids. They
 may list v2 specs, attachments, and suggested migration actions, but they do
 not authorize v3 specs, schemas, Code behavior, or Action Guides.
+
+The Markdown extraction prototype under `_migration/code/md_spec_extractor.py`
+tests the preferred direction: Code reads stable structure directly from the
+Markdown spec body, then generates an in-memory action source for the Action
+Guide compiler. Do not turn this into a manually maintained one-MD-one-YAML
+projection system.

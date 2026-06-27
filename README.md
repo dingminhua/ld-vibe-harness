@@ -19,7 +19,7 @@ formatted LDVH source -> deterministic Code -> task-scoped action guide.
 
 The v3 authority chain is:
 
-project decision -> `specs/core/` -> `specs/schemas/` -> YAML instances -> deterministic Code -> Action Guide.
+project decision -> `specs/core/` -> Markdown specs + `specs/schemas/` -> deterministic Code -> Action Guide.
 
 Stable constraints:
 
@@ -27,4 +27,5 @@ Stable constraints:
 - Do not replace spec bodies with YAML.
 - Do not invent new topical specs directories such as `specs/runtime/`, `specs/facts/`, `specs/action/`, or `specs/git/` unless a later explicit decision changes the document system.
 - Use `specs/core/` only for the small parent layer needed by v3.
-- Use YAML for schemas and authorized machine projections, not as the first authority for specs.
+- Prefer direct Code parsing of stable Markdown structures over manually maintained per-spec YAML.
+- Use YAML for schemas, temporary migration aids, generated debug output, or explicitly authorized machine artifacts, not as the first authority for specs.
