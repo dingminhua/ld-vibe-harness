@@ -55,6 +55,7 @@ Use this Skill to execute the commit workflow coordinated by `specs/31-git-commi
 
 ## Workflow
 
+0. **执行前告知**：在对话中主动告知用户正在按 `ldvh-git-commit` Skill 执行，并说明执行模式（manual_equivalent_execution 或 skill_runtime_invoked）。此为强制入口步骤，所有 Skill 均须遵守（参见 specs/06 §4）。
 1. Ensure current session context covers the commit rules. If this is the first commit in the session, or validation fails with an unclear reason, or the relevant specs were recently modified, read `specs/31-git-commit-action-Git提交行动编排.md` as the workflow authority and the relevant parts of `specs/07-事实源边界与Git追溯规范.md` (commit message format, body requirements, type/scope selection, Git traceability, verification, risk, and Human Gate boundaries). Otherwise, this SKILL.md is sufficient — proceed directly to step 2.
 2. Inspect `git status --short` and staged files. Include only files that belong to the requested commit; never stage unrelated user changes.
 3. Decide whether to split commits. Split independent intents. Keep one atomic closure together when specs, Code, tests, hooks, rules, or skills are all part of the same landing.
