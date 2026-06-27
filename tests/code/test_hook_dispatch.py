@@ -10,6 +10,7 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DISPATCHER_PATH = PROJECT_ROOT / "code" / "hook_dispatch.py"
 HOOK_REGISTRY_PATH = PROJECT_ROOT / "hooks" / "ldvh-hooks.yaml"
+FILE_COMMAND_MAP_PATH = PROJECT_ROOT / "code" / "constants" / "file_command_map.py"
 
 
 def load_dispatcher():
@@ -19,6 +20,35 @@ def load_dispatcher():
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
+
+
+def load_file_command_map():
+    spec = importlib.util.spec_from_file_location("file_command_map", FILE_COMMAND_MAP_PATH)
+    assert spec is not None
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_file_command_map_declares_authorized_suggestions():
+    command_map = load_file_command_map()
+
+    assert set(command_map.FILE_COMMAND_MAP) == {"spec", "workcase", "spark", "python", "web"}
+    spec_commands = command_map.FILE_COMMAND_MAP["spec"]
+    assert spec_commands["before_change"]
+    assert spec_commands["after_change"]
+    assert "preflight --target-path <path>" in spec_commands["before_change"][0]["command"]
+    assert "v2-check --fail-on-diagnostics" in spec_commands["after_change"][0]["command"]
+    for file_type in ("workcase", "spark", "python", "web"):
+        assert command_map.FILE_COMMAND_MAP[file_type]["before_change"] == []
+        assert command_map.FILE_COMMAND_MAP[file_type]["after_change"] == []
+        assert "04.Att.02" in command_map.FILE_COMMAND_MAP[file_type]["reason"]
+    assert command_map.classify_file_type("specs/04-Code确定性执行规范.md") == "spec"
+    assert command_map.classify_file_type("ldvh-base/workcases/workcase-0020-code-command-timing-orchestration.yaml") == "workcase"
+    assert command_map.classify_file_type("ldvh-base/sparks/spark-0036-skill-encapsulation-and-trigger-gap.yaml") == "spark"
+    assert command_map.classify_file_type("code/hook_dispatch.py") == "python"
+    assert command_map.classify_file_type("web/app.tsx") == "web"
 
 
 def test_hook_registry_declares_dispatcher_entrypoints():
@@ -106,6 +136,41 @@ def test_session_start_falls_back_when_knowledge_map_has_no_required_read_plan(m
     assert payload["action_policy"] == "fallback_read_plan_required"
     assert payload["read_plan"][0]["priority"] == "P0"
     assert payload["read_plan"][1]["priority"] == "P1"
+
+
+def test_run_knowledge_map_failure_returns_structured_error(monkeypatch):
+    dispatcher = load_dispatcher()
+
+    class FailedResult:
+        returncode = 2
+        stderr = "bad start node\nwith details"
+        stdout = ""
+
+    monkeypatch.setattr(dispatcher.subprocess, "run", lambda *args, **kwargs: FailedResult())
+
+    payload = dispatcher._run_knowledge_map("missing-node", "general")
+
+    assert payload["status"] == "error"
+    assert "failed_command" in payload
+    assert payload["exit_code"] == 2
+    assert payload["stderr_head"] == "bad start node\nwith details"
+    assert "参数" in payload["stderr_summary"]
+    assert payload["suggested_action"]
+
+
+def test_git_text_structured_preserves_error_and_git_text_signature(tmp_path):
+    dispatcher = load_dispatcher()
+
+    stdout, error = dispatcher._git_text_structured(tmp_path, ["rev-parse", "--show-toplevel"])
+
+    assert stdout == ""
+    assert isinstance(error, dict)
+    assert error["status"] == "error"
+    assert error["failed_command"].startswith("git -C ")
+    assert error["exit_code"] != 0
+    assert error["stderr_head"]
+    assert error["suggested_action"]
+    assert dispatcher._git_text(tmp_path, ["rev-parse", "--show-toplevel"]) == ""
 
 
 def test_acknowledge_read_plan_blocks_empty_required_paths_for_governed_receipt(monkeypatch, tmp_path, capsys):
