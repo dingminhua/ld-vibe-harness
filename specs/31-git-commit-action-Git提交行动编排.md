@@ -168,6 +168,8 @@ ldvh_member:
 4. commit validation 失败，需要解释、修正并重新预检；
 5. 需要判断当前提交行动是否由 Skill runtime 执行，或只能按 Skill 文件手动等价执行。
 
+进入本文的第一道判断不是 commit message，而是本次处理内容是否命中管辖项目。AI 在准备提交前必须先以 staged paths、显式 target 或 repo root 运行等价的管辖判定；若命中管辖项目，本文和 `ldvh-git-commit` Skill 成为必经行动入口。不得只因为最终 `commit-msg` hook 通过，就宣称已完成 Git 提交行动编排。
+
 ## 5. 准入条件
 
 进入本文前必须满足：
@@ -229,7 +231,7 @@ AI 不应为了提交默认全文读取所有 specs、全部工作对象或完�
 
 执行流程如下：
 
-1. 确认用户目标、当前仓库和 `git status --short --untracked-files=all`。
+1. 确认用户目标、当前仓库和 `git status --short --untracked-files=all`，并先运行 `python3 code/hook_dispatch.py run commit-preflight --cwd <repo-root>` 或等价入口，记录 staged paths 是否命中管辖项目。
 2. 判断 staged / unstaged / untracked 文件是否属于本次提交范围；必要时只 stage 本次范围内文件，不 stage 无关用户变更。
 3. 判断是否需要拆分提交。独立目的应拆分；同一原子闭环可以跨 specs、Code、Web、Rules、Skill、Hook 和测试文件。
 4. 读取 07 的 message 契约和 `ldvh-git-commit` Skill。若运行环境真实加载了 Skill，记录为 Skill runtime 调用；若只是按 Skill 原文执行，记录为手动等价执行。
@@ -289,6 +291,7 @@ Code 和命令协作：
 | `python3 code/commit_validate.py --show-format` | 查看当前 07 派生的提交格式说明 |
 | `python3 code/commit_validate.py --check-message '<message>' --files <files>` | 直接检查提交消息和文件范围 |
 | `python3 code/commit_validate.py --check-message-file <message-file> --files <files>` | 检查 message 文件 |
+| `python3 code/hook_dispatch.py run commit-preflight --cwd <repo-root>` | 提交前只读判定 staged paths 是否命中管辖项目，并输出 31 / `ldvh-git-commit` 行动入口 |
 | `python3 code/hook_dispatch.py run git.commit-msg --message-file <message-file>` | 通过统一 Hook registry 执行等价事件 |
 | `python3 code/install_git_hooks.py install` | 为当前或指定 Git 仓库安装 native `commit-msg` hook |
 | `python3 code/specs_validate.py deployment-entries` | 检查固定运行时扩展登记一致性 |

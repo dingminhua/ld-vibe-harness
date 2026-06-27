@@ -77,6 +77,8 @@ def test_hook_registry_declares_dispatcher_entrypoints():
     assert "payload" in registry["ldvh_asset"]["handoff"]
     assert any("tool_input" in item for item in registry["ldvh_asset"]["verification"])
     assert any("target" in item for item in registry["ldvh_asset"]["verification"])
+    assert any("commit-preflight" in item for item in registry["ldvh_asset"]["outputs"])
+    assert any("commit-preflight" in item for item in registry["ldvh_asset"]["verification"])
 
 
 def test_session_start_limited_receipt_does_not_block(monkeypatch, tmp_path, capsys):
@@ -1053,6 +1055,35 @@ def test_git_commit_msg_uses_repo_root_and_staged_paths_not_message_file(monkeyp
     assert exit_code == 0
     assert captured["context"]["repo_root"] == str(repo)
     assert captured["context"]["message_file"] == str(message)
+
+
+def test_commit_preflight_reports_governed_project_and_required_action(tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    (repo / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
+        "projects:\n  - id: app\n    path: .\n",
+        encoding="utf-8",
+    )
+    (repo / "changed.txt").write_text("changed\n", encoding="utf-8")
+    subprocess.run(["git", "add", "changed.txt"], cwd=repo, check=True)
+
+    exit_code = dispatcher.main([
+        "run",
+        "commit-preflight",
+        "--cwd",
+        str(repo),
+    ])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["governed"] is True
+    assert payload["governed_project_id"] == "app"
+    assert payload["staged_paths"] == ["changed.txt"]
+    assert payload["action_member"] == "specs/31-git-commit-action-Git提交行动编排.md"
+    assert payload["skill_plan"] == ["ldvh-git-commit"]
+    assert payload["action_policy"] == "governed_project_commit_action_required"
 
 
 def test_cli_event_survives_codex_stdin_payload_without_event(monkeypatch, tmp_path, capsys):

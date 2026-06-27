@@ -50,6 +50,7 @@ LDVH 运行时协议。定义 AI 在三个关键环节必须触发的 canonical 
 | 会话开始 / 恢复 / 上下文压缩后 / 子 Agent 启动 | `session-start` | `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd <cwd> --target <target>` |
 | AI 已按 receipt 回读 P0/P1 read_plan 后 | `acknowledge-read-plan` | `python3 code/hook_dispatch.py run acknowledge-read-plan --trigger-source rules --cwd <cwd>` |
 | Write / Edit 前 | `pre-tool-use` | `python3 code/hook_dispatch.py run pre-tool-use --trigger-source rules --cwd <cwd> --target <target>` |
+| Git commit 准备 | `commit-preflight` | `python3 code/hook_dispatch.py run commit-preflight --trigger-source rules --cwd <repo-root>` |
 | Git commit 前 | `git.commit-msg` | `python3 code/hook_dispatch.py run git.commit-msg --trigger-source rules --message-file <message-file>` |
 
 Hook 路径：环境适配层将原生事件名映射为 canonical event 后，通过 stdin 传入 `{"event":"<canonical>","cwd":"...","target_paths":[...],"trigger_source":"hook"}` 或环境等价 payload。Codex 当前 payload 使用 `hook_event_name`、`tool_name`、`session_id`、`tool_input.file_path` 等字段，dispatcher 必须先归一化为 canonical event context 再执行 canonical handler。
@@ -67,6 +68,8 @@ AI 读完 P0/P1 后必须触发 `acknowledge-read-plan`，在对应 session rece
 若当前环境未在对话中展示 `SessionStart` 输出，AI 不得直接判定 Hook 无效；应检查是否存在对应 session receipt，或由 `PreToolUse` 在管辖项目中补建 receipt。`PreToolUse` 输出中的 `session_receipt=found` 或 `session_receipt=created_by_pre_tool_use` 只表示握手证据存在或已补建，不表示 AI 已消费 read_plan。
 
 在管辖项目内，`pre-tool-use` 对 Write / Edit / apply_patch / 明确写入型 Bash 等写类工具执行硬门禁：若找不到 `read_plan_consumed.status=acknowledged`，必须阻断并返回 required paths 与 next action；若写类工具无法确定 target，必须返回 `unknown_target` 并要求显式 target。`git.commit-msg` 在提交前也必须以 repo root、repo common-dir 和 staged paths 作为提交工作对象进入同一 dispatcher 判定；缺少 read_plan 消费证据时阻断提交。只读命令可继续执行，但仍应保留 warning 或 receipt 查验证据。支持 `session_id` 且已存在 receipt 的环境，`PreToolUse` 应在 receipt 中更新 `last_pre_tool_use` 或等价可观测字段，使新会话验收能区分“只有 SessionStart 生效”和“工具前检查也确实触发”。
+
+提交准备阶段应先运行 `commit-preflight` 或等价入口。该入口只做 staged paths / target / repo root 的管辖项目判定，并在命中管辖项目时输出 `action_member=specs/31-git-commit-action-Git提交行动编排.md` 与 `skill_plan=["ldvh-git-commit"]`；它不创建提交、不替代 `git.commit-msg` 阻断，也不替代 Human Gate。
 
 ## 4. STOP
 

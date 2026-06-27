@@ -30,6 +30,8 @@ import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_REGISTRY = PROJECT_ROOT / "hooks" / "ldvh-hooks.yaml"
+GIT_COMMIT_ACTION_SPEC = "specs/31-git-commit-action-Git提交行动编排.md"
+GIT_COMMIT_SKILL_ID = "ldvh-git-commit"
 RUNTIME_FALLBACK_READ_PLAN = [
     {
         "path": "rules/LDVH-RUNTIME-PROTOCOL.md",
@@ -1561,16 +1563,69 @@ def _git_staged_paths(cwd: Path) -> list[Path]:
     return paths
 
 
+def _git_staged_relative_paths(cwd: Path) -> list[str]:
+    output = _git_text(cwd, ["diff", "--cached", "--name-only", "--diff-filter=ACMR"])
+    return [line.strip() for line in output.splitlines() if line.strip()]
+
+
+def _commit_action_fields() -> dict[str, Any]:
+    return {
+        "action_member": GIT_COMMIT_ACTION_SPEC,
+        "action_policy": "governed_project_commit_action_required",
+        "skill_plan": [GIT_COMMIT_SKILL_ID],
+        "skill_plan_hint": (
+            "读取 skills/ldvh-git-commit/SKILL.md，并按其中 Workflow 执行；"
+            "若运行时没有真实 Skill 调用机制，必须声明 manual_equivalent_execution。"
+        ),
+        "next_action": (
+            "先按管辖项目判定结果进入 specs/31 Git 提交行动编排和 ldvh-git-commit Skill，"
+            "再检查 staged files、验证命令、commit body 和 Human Gate。"
+        ),
+    }
+
+
+def handle_commit_preflight(cwd: Path, *, trigger_source: str = "rules",
+                            targets: list[Path] | None = None,
+                            session_id: str = "") -> int:
+    commit_targets = targets if targets else _git_staged_paths(cwd)
+    subject = resolve_governed_subject(cwd, commit_targets)
+    result = {
+        **subject,
+        "event": "commit-preflight",
+        "operation_kind": "commit",
+        "read_write_kind": "read",
+        "trigger_source": trigger_source,
+        "session_id": session_id,
+        "repo_root": str(_git_repo_root(cwd)),
+        "staged_paths": _git_staged_relative_paths(cwd),
+    }
+    if subject.get("blocked"):
+        result.update(_commit_action_fields())
+        print(json.dumps(result, ensure_ascii=False))
+        return 1
+    if not subject.get("governed"):
+        result["action_policy"] = "no_op_non_governed"
+        print(json.dumps(result, ensure_ascii=False))
+        return 0
+
+    receipt = _read_session_receipt(session_id) if session_id else _latest_session_receipt(cwd)
+    result.update(_commit_action_fields())
+    result["session_receipt"] = "found" if receipt else "missing"
+    result["read_plan_consumed"] = "acknowledged" if _receipt_read_plan_consumed(receipt) else "missing"
+    print(json.dumps(result, ensure_ascii=False))
+    return 0
+
+
 def _guard_git_commit_msg(cwd: Path, *, trigger_source: str,
                           targets: list[Path] | None = None,
                           message_file: str = "", session_id: str = "") -> Optional[dict[str, Any]]:
     commit_targets = targets if targets else _git_staged_paths(cwd)
     subject = resolve_governed_subject(cwd, commit_targets)
     if subject.get("blocked"):
-        return {**subject, "trigger_source": trigger_source, "action": "git.commit-msg"}
+        return {**subject, **_commit_action_fields(), "trigger_source": trigger_source, "action": "git.commit-msg"}
     if not subject.get("governed"):
         return None
-    return _read_plan_guard_result(
+    blocked = _read_plan_guard_result(
         cwd,
         _latest_session_receipt(cwd),
         trigger_source=trigger_source,
@@ -1581,6 +1636,9 @@ def _guard_git_commit_msg(cwd: Path, *, trigger_source: str,
         message_file=message_file,
         session_id=session_id,
     )
+    if blocked:
+        blocked.update(_commit_action_fields())
+    return blocked
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -1657,7 +1715,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     # run <event>
     run_parser = subparsers.add_parser("run", help="Execute a lifecycle protocol event.")
-    run_parser.add_argument("event", help="Event: session-start | acknowledge-read-plan | pre-tool-use | git.commit-msg")
+    run_parser.add_argument("event", help="Event: session-start | acknowledge-read-plan | pre-tool-use | commit-preflight | git.commit-msg")
     run_parser.add_argument("--cwd", type=Path, default=Path(os.getcwd()),
                             help="Current working directory for the event.")
     run_parser.add_argument("--trigger-source", type=str, choices=["hook", "rules"],
@@ -1727,6 +1785,14 @@ def main(argv: Optional[list[str]] = None) -> int:
                     tool_command=args.tool_command,
                     targets=targets,
                     target_sources=target_sources,
+                )
+
+            if event in ("commit-preflight", "CommitPreflight"):
+                return handle_commit_preflight(
+                    cwd,
+                    trigger_source=trigger_source,
+                    targets=targets,
+                    session_id=args.session_id,
                 )
 
             if event == "git.commit-msg":
