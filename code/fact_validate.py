@@ -768,6 +768,87 @@ def validate_single_id_reference(path: Path, data: dict[str, Any], field: str, o
     return []
 
 
+def validate_workcase_orchestration_mode(path: Path, orchestration: dict[str, Any]) -> list[Issue]:
+    issues: list[Issue] = []
+    mode = orchestration.get("mode")
+    if mode not in WORKCASE_ORCHESTRATION_MODES:
+        valid_modes = ", ".join(sorted(WORKCASE_ORCHESTRATION_MODES))
+        issues.append(Issue(str(path), "error", "INVALID_ORCHESTRATION_MODE", f"orchestration.mode 必须是以下值之一: {valid_modes}", field="orchestration.mode"))
+    return issues
+
+
+def validate_workcase_execution_item(
+    path: Path,
+    item: Any,
+    index: int,
+    workcase_status: Any,
+    seen_item_ids: set[str],
+) -> tuple[list[Issue], str | None]:
+    issues: list[Issue] = []
+    item_field = f"orchestration.execution_items[{index}]"
+    if not isinstance(item, dict):
+        issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM", f"{item_field} 必须是 object", field="orchestration.execution_items"))
+        return issues, None
+
+    for field in ("id", "title", "role", "mode", "input_refs", "expected_output", "status"):
+        if is_empty(item.get(field)):
+            issues.append(Issue(str(path), "error", "MISSING_EXECUTION_ITEM_FIELD", f"{item_field} 缺少非空字段: {field}", field=f"{item_field}.{field}"))
+
+    item_id = item.get("id")
+    if isinstance(item_id, str):
+        if item_id in seen_item_ids:
+            issues.append(Issue(str(path), "error", "DUPLICATE_EXECUTION_ITEM_ID", f"执行项 id 在当前 WorkCase 内重复: {item_id}", field=f"{item_field}.id"))
+        seen_item_ids.add(item_id)
+
+    item_mode = item.get("mode")
+    if item_mode and item_mode not in WORKCASE_EXECUTION_ITEM_MODES:
+        valid_modes = ", ".join(sorted(WORKCASE_EXECUTION_ITEM_MODES))
+        issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_MODE", f"{item_field}.mode 必须是以下值之一: {valid_modes}", field=f"{item_field}.mode"))
+
+    item_status = item.get("status")
+    if item_status and item_status not in WORKCASE_EXECUTION_ITEM_STATUSES:
+        valid_statuses = ", ".join(sorted(WORKCASE_EXECUTION_ITEM_STATUSES))
+        issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_STATUS", f"{item_field}.status 必须是以下值之一: {valid_statuses}", field=f"{item_field}.status"))
+    if workcase_status in WORKCASE_STATUSES_WITH_CLOSED_EXECUTION and item_status in {"pending", "in_progress"}:
+        issues.append(Issue(str(path), "error", "EXECUTION_ITEM_OPEN_IN_REVIEW", f"{workcase_status} 状态下执行项不得仍为 {item_status}", field=f"{item_field}.status"))
+    if item_status == "blocked" and is_empty(item.get("blocking_reason")):
+        issues.append(Issue(str(path), "error", "MISSING_EXECUTION_ITEM_BLOCKING_REASON", "blocked 执行项必须填写 blocking_reason", field=f"{item_field}.blocking_reason"))
+    if item_status in {"done", "skipped"} and is_empty(item.get("result_summary")):
+        issues.append(Issue(str(path), "error", "MISSING_EXECUTION_ITEM_RESULT_SUMMARY", "done 或 skipped 执行项必须填写 result_summary", field=f"{item_field}.result_summary"))
+
+    for list_field in ("input_refs", "evidence_refs"):
+        if list_field in item and not isinstance(item[list_field], list):
+            issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_LIST_FIELD", f"{item_field}.{list_field} 必须是 list", field=f"{item_field}.{list_field}"))
+    input_refs = item.get("input_refs")
+    if isinstance(input_refs, list):
+        issues.extend(validate_workcase_input_refs(path, input_refs, f"{item_field}.input_refs"))
+    evidence_refs = item.get("evidence_refs")
+    if isinstance(evidence_refs, list):
+        issues.extend(validate_execution_item_evidence_refs(path, evidence_refs, item_field))
+
+    return issues, item_status if isinstance(item_status, str) else None
+
+
+def validate_workcase_execution_items(path: Path, orchestration: dict[str, Any], status: Any) -> tuple[list[Issue], list[str]]:
+    issues: list[Issue] = []
+    execution_items = orchestration.get("execution_items")
+    if not isinstance(execution_items, list):
+        issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEMS", "orchestration.execution_items 必须是 list", field="orchestration.execution_items"))
+        return issues, []
+    if status in WORKCASE_STATUSES_REQUIRING_EXECUTION_ITEMS and not execution_items:
+        issues.append(Issue(str(path), "error", "EXECUTION_ITEMS_EMPTY", f"{status} 状态下 orchestration.execution_items 不得为空", field="orchestration.execution_items"))
+
+    seen_item_ids: set[str] = set()
+    execution_item_statuses: list[str] = []
+    for index, item in enumerate(execution_items, start=1):
+        item_issues, item_status = validate_workcase_execution_item(path, item, index, status, seen_item_ids)
+        issues.extend(item_issues)
+        if item_status is not None:
+            execution_item_statuses.append(item_status)
+
+    return issues, execution_item_statuses
+
+
 def validate_workcase(path: Path, data: dict[str, Any]) -> list[Issue]:
     issues = validate_common(path, data, "workcase")
     issues.extend(validate_datetime_fields(path, data, ("plan_confirmed_at", "closure_requested_at", "review_requested_at", "closed_at")))
@@ -796,63 +877,9 @@ def validate_workcase(path: Path, data: dict[str, Any]) -> list[Issue]:
         issues.append(Issue(str(path), "error", "INVALID_ORCHESTRATION", "orchestration 必须是 object", field="orchestration"))
         return issues
 
-    mode = orchestration.get("mode")
-    if mode not in WORKCASE_ORCHESTRATION_MODES:
-        valid_modes = ", ".join(sorted(WORKCASE_ORCHESTRATION_MODES))
-        issues.append(Issue(str(path), "error", "INVALID_ORCHESTRATION_MODE", f"orchestration.mode 必须是以下值之一: {valid_modes}", field="orchestration.mode"))
-
-    execution_items = orchestration.get("execution_items")
-    if not isinstance(execution_items, list):
-        issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEMS", "orchestration.execution_items 必须是 list", field="orchestration.execution_items"))
-        execution_items = []
-    elif status in WORKCASE_STATUSES_REQUIRING_EXECUTION_ITEMS and not execution_items:
-        issues.append(Issue(str(path), "error", "EXECUTION_ITEMS_EMPTY", f"{status} 状态下 orchestration.execution_items 不得为空", field="orchestration.execution_items"))
-
-    seen_item_ids: set[str] = set()
-    execution_item_statuses: list[str] = []
-    for index, item in enumerate(execution_items, start=1):
-        item_field = f"orchestration.execution_items[{index}]"
-        if not isinstance(item, dict):
-            issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM", f"{item_field} 必须是 object", field="orchestration.execution_items"))
-            continue
-
-        for field in ("id", "title", "role", "mode", "input_refs", "expected_output", "status"):
-            if is_empty(item.get(field)):
-                issues.append(Issue(str(path), "error", "MISSING_EXECUTION_ITEM_FIELD", f"{item_field} 缺少非空字段: {field}", field=f"{item_field}.{field}"))
-
-        item_id = item.get("id")
-        if isinstance(item_id, str):
-            if item_id in seen_item_ids:
-                issues.append(Issue(str(path), "error", "DUPLICATE_EXECUTION_ITEM_ID", f"执行项 id 在当前 WorkCase 内重复: {item_id}", field=f"{item_field}.id"))
-            seen_item_ids.add(item_id)
-
-        item_mode = item.get("mode")
-        if item_mode and item_mode not in WORKCASE_EXECUTION_ITEM_MODES:
-            valid_modes = ", ".join(sorted(WORKCASE_EXECUTION_ITEM_MODES))
-            issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_MODE", f"{item_field}.mode 必须是以下值之一: {valid_modes}", field=f"{item_field}.mode"))
-
-        item_status = item.get("status")
-        if isinstance(item_status, str):
-            execution_item_statuses.append(item_status)
-        if item_status and item_status not in WORKCASE_EXECUTION_ITEM_STATUSES:
-            valid_statuses = ", ".join(sorted(WORKCASE_EXECUTION_ITEM_STATUSES))
-            issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_STATUS", f"{item_field}.status 必须是以下值之一: {valid_statuses}", field=f"{item_field}.status"))
-        if status in WORKCASE_STATUSES_WITH_CLOSED_EXECUTION and item_status in {"pending", "in_progress"}:
-            issues.append(Issue(str(path), "error", "EXECUTION_ITEM_OPEN_IN_REVIEW", f"{status} 状态下执行项不得仍为 {item_status}", field=f"{item_field}.status"))
-        if item_status == "blocked" and is_empty(item.get("blocking_reason")):
-            issues.append(Issue(str(path), "error", "MISSING_EXECUTION_ITEM_BLOCKING_REASON", "blocked 执行项必须填写 blocking_reason", field=f"{item_field}.blocking_reason"))
-        if item_status in {"done", "skipped"} and is_empty(item.get("result_summary")):
-            issues.append(Issue(str(path), "error", "MISSING_EXECUTION_ITEM_RESULT_SUMMARY", "done 或 skipped 执行项必须填写 result_summary", field=f"{item_field}.result_summary"))
-
-        for list_field in ("input_refs", "evidence_refs"):
-            if list_field in item and not isinstance(item[list_field], list):
-                issues.append(Issue(str(path), "error", "INVALID_EXECUTION_ITEM_LIST_FIELD", f"{item_field}.{list_field} 必须是 list", field=f"{item_field}.{list_field}"))
-        input_refs = item.get("input_refs")
-        if isinstance(input_refs, list):
-            issues.extend(validate_workcase_input_refs(path, input_refs, f"{item_field}.input_refs"))
-        evidence_refs = item.get("evidence_refs")
-        if isinstance(evidence_refs, list):
-            issues.extend(validate_execution_item_evidence_refs(path, evidence_refs, item_field))
+    issues.extend(validate_workcase_orchestration_mode(path, orchestration))
+    execution_item_issues, execution_item_statuses = validate_workcase_execution_items(path, orchestration, status)
+    issues.extend(execution_item_issues)
 
     if status == "executing" and execution_item_statuses and all(item_status == "pending" for item_status in execution_item_statuses):
         issues.append(Issue(
