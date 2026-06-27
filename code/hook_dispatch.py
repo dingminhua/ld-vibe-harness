@@ -180,7 +180,11 @@ def _cached_skills() -> list[dict[str, Any]]:
 
 def _build_skill_plan(event: str, tool: str = "", command: str = "",
                       action_hint: str = "") -> list[str]:
-    """Return a list of Skill IDs relevant to the current dispatch context."""
+    """Return a list of Skill IDs relevant to the current dispatch context.
+
+    AI should read skills/<id>/SKILL.md for each returned ID and follow the
+    workflow described there.
+    """
     return _match_skill_plan(_cached_skills(), event, tool, command, action_hint)
 
 
@@ -547,6 +551,10 @@ def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = 
         result_payload["tool_plan"] = _tool_plan_for_task_type(task_type)
         result_payload["post_read_action"] = _post_read_action_for_task_type(task_type)
         result_payload["skill_plan"] = _build_skill_plan("acknowledge-read-plan", action_hint=task_type)
+        if result_payload["skill_plan"]:
+            result_payload["skill_plan_hint"] = (
+                "对于列出的每个 skill_id，请读取 skills/<id>/SKILL.md 并按其中的 Workflow 执行。"
+            )
     if deep_read_plan:
         result_payload["deep_read_plan"] = deep_read_plan
     if deep_stop_conditions:
@@ -1441,6 +1449,10 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         _mark_pre_tool_use_receipt(session_id, result)
     result["skill_plan"] = _build_skill_plan("pre-tool-use", tool=tool_name,
                                               command=tool_command)
+    if result["skill_plan"]:
+        result["skill_plan_hint"] = (
+            "对于列出的每个 skill_id，请读取 skills/<id>/SKILL.md 并按其中的 Workflow 执行。"
+        )
     print(json.dumps(result, ensure_ascii=False))
     return 0
 
