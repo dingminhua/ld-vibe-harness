@@ -2,30 +2,18 @@
 
 This branch is a clean v3 root. It does not inherit v2 files by default.
 
-Content enters this tree only when it has a v3 role:
+Current formal scope:
 
-- `specs/`: rule authority.
-- `specs/core/`: parent rule authority established by the v3 project decision.
-- `specs/schemas/`: machine-readable contracts authorized by specs.
-- `code/`: deterministic, read-only compilers and validators.
+- `specs/`: Markdown rule authority.
+- `code/`: deterministic parsers, validators, and generators after explicit need.
 - `tests/`: regression checks.
-- `tests/fixtures/`: test materials, not rule sources.
-- `rules/`, `hooks/`, `skills/`: runtime-facing assets after explicit migration.
-- `ldvh-base/`: real fact objects after explicit migration.
+- `rules/`, `hooks/`, `skills/`, `ldvh-base/`: reserved for later whole-line migration.
+- `_migration/`: temporary evidence and prototypes, not formal authority.
 
-The current first slice proves the action-guide path:
+Current principle:
 
-formatted LDVH source -> deterministic Code -> task-scoped action guide.
+One Markdown spec is the single rule fact source. Human, AI, and Code share that source through stable structure and explicit references; they do not get separate fact sources.
 
-The v3 authority chain is:
+Attachments are allowed only as subordinate content referenced by the body, such as tables, figures, field closures, enums, or reusable machine contracts. Attachments must not carry parent rules, core doctrine, action flows, Human Gate, fact-source boundaries, migration process, or long explanatory prose.
 
-project decision -> `specs/core/` -> Markdown specs + `specs/schemas/` -> deterministic Code -> Action Guide.
-
-Stable constraints:
-
-- Preserve the original LDVH specs document system when migrating spec bodies.
-- Do not replace spec bodies with YAML.
-- Do not invent new topical specs directories such as `specs/runtime/`, `specs/facts/`, `specs/action/`, or `specs/git/` unless a later explicit decision changes the document system.
-- Use `specs/core/` only for the small parent layer needed by v3.
-- Prefer direct Code parsing of stable Markdown structures over manually maintained per-spec YAML.
-- Use YAML for schemas, temporary migration aids, generated debug output, or explicitly authorized machine artifacts, not as the first authority for specs.
+Do not reintroduce `specs/core/`, formal `specs/schemas/`, or 01 structural attachments unless a later explicit decision changes this rule.

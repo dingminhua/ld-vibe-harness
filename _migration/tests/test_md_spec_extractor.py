@@ -9,9 +9,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 V2_ROOT = ROOT.parent / "ld-vibe-harness"
 sys.path.insert(0, str(ROOT / "_migration" / "code"))
-sys.path.insert(0, str(ROOT / "code"))
 
-from action_guide import compile_action_guide  # noqa: E402
 from md_spec_extractor import extract_action_source, extract_markdown_spec  # noqa: E402
 
 
@@ -45,22 +43,19 @@ def test_extracts_v2_spec_identity_directly_from_markdown() -> None:
     assert any(section["title"] == "2. 上位依据" for section in extracted["sections"])
 
 
-def test_markdown_spec_compiles_to_action_guide_without_per_spec_yaml() -> None:
+def test_markdown_spec_produces_action_source_without_per_spec_yaml() -> None:
     source = extract_action_source(SPEC_01)
 
-    guide = compile_action_guide(source)
-
-    assert guide["guide_type"] == "action_guide"
-    assert guide["result_status"] == "usable"
-    assert guide["target"]["id"] == "SPEC-01"
-    assert guide["source_refs"][0]["path"] == "specs/01-规范体系基础规范.md"
-    assert guide["read_plan"][0]["target"] == "specs/01-规范体系基础规范.md"
+    assert _result_status(source) == "usable"
+    assert source["id"] == "SPEC-01"
+    assert source["source_refs"][0]["path"] == "specs/01-规范体系基础规范.md"
+    assert source["read_plan"][0]["target"] == "specs/01-规范体系基础规范.md"
     assert any(
         item["target"] == "specs/attachments/01.Att.04-规范身份字段表.md"
-        for item in guide["read_plan"]
+        for item in source["read_plan"]
     )
-    assert "allowed" not in guide
-    assert "approved" not in guide
+    assert "allowed" not in source
+    assert "approved" not in source
 
 
 @pytest.mark.parametrize(("spec_id", "path", "secondary"), REPRESENTATIVE_SPECS)
@@ -78,10 +73,7 @@ def test_representative_specs_extract_identity_and_compile(
     assert source["read_plan"][0]["target"] == extracted["identity"]["canonical_path"]
     assert source["md_extract"]["secondary_identities"] == secondary
 
-    guide = compile_action_guide(source)
-
-    assert guide["result_status"] == "usable"
-    assert guide["target"]["id"] == f"SPEC-{spec_id}"
+    assert _result_status(source) == "usable"
 
 
 def test_member_specs_expose_parent_and_secondary_identity() -> None:
@@ -108,21 +100,29 @@ def test_member_specs_expose_parent_and_secondary_identity() -> None:
     )
 
 
-def test_all_v2_body_specs_extract_and_compile_from_markdown() -> None:
+def test_all_v2_body_specs_extract_action_sources_from_markdown() -> None:
     spec_paths = sorted((V2_ROOT / "specs").glob("*.md"))
     limited: set[str] = set()
 
     for path in spec_paths:
         source = extract_action_source(path)
-        guide = compile_action_guide(source)
+        result_status = _result_status(source)
 
         assert source["source_refs"][0]["path"].startswith("specs/")
-        assert guide["target"]["id"].startswith("SPEC-")
-        assert guide["read_plan"]
-        if guide["result_status"] == "limited":
+        assert source["id"].startswith("SPEC-")
+        assert source["read_plan"]
+        if result_status == "limited":
             limited.add(path.name)
         else:
-            assert guide["result_status"] == "usable"
+            assert result_status == "usable"
 
     assert len(spec_paths) == 21
     assert limited == EXPECTED_LIMITED_SPECS
+
+
+def _result_status(source: dict[str, object]) -> str:
+    authority = source["authority"]
+    assert isinstance(authority, dict)
+    if source["status"] == "active" and authority["can_authorize_actions"] is True:
+        return "usable"
+    return "limited"
