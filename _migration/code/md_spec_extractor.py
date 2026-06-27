@@ -20,13 +20,15 @@ def extract_markdown_spec(path: str | Path) -> dict[str, Any]:
     source_path = Path(path)
     raw = source_path.read_text(encoding="utf-8")
     title = _extract_title(raw, source_path)
-    identity = _extract_identity(raw, source_path)
+    yaml_blocks = _extract_yaml_blocks(raw, source_path)
+    identity = _extract_identity(yaml_blocks, source_path)
     sections = _extract_sections(raw)
     refs = _extract_path_refs(raw)
     return {
         "source_path": _display_path(source_path),
         "title": title,
         "identity": identity,
+        "secondary_identities": _extract_secondary_identities(yaml_blocks),
         "sections": sections,
         "path_refs": refs,
     }
@@ -46,11 +48,12 @@ def extract_action_source(path: str | Path) -> dict[str, Any]:
 
     related_specs = _as_string_list(identity.get("related_specs"))
     basis = _as_string_list(identity.get("basis"))
-    read_targets = [canonical_path, *basis, *related_specs]
+    parent_spec = str(identity.get("parent_spec") or "").strip()
+    read_targets = [canonical_path, *([parent_spec] if parent_spec else []), *basis, *related_specs]
 
     source_refs = [{"path": canonical_path, "role": "authority"}]
-    for ref in [*basis, *related_specs]:
-        if ref != canonical_path:
+    for ref in [parent_spec, *basis, *related_specs]:
+        if ref and ref != canonical_path:
             source_refs.append({"path": ref, "role": "evidence"})
 
     return {
@@ -64,7 +67,7 @@ def extract_action_source(path: str | Path) -> dict[str, Any]:
             "notes": "Derived directly from the Markdown v2_spec identity block.",
         },
         "source_refs": source_refs,
-        "relations": _relations_from_identity(basis, related_specs),
+        "relations": _relations_from_identity(parent_spec, basis, related_specs),
         "read_plan": [
             {
                 "order": index,
@@ -90,9 +93,15 @@ def extract_action_source(path: str | Path) -> dict[str, Any]:
         ],
         "md_extract": {
             "source_path": extracted["source_path"],
+            "spec_kind": identity.get("spec_kind"),
+            "parent_spec": parent_spec,
+            "relation": identity.get("relation"),
             "section_count": len(extracted["sections"]),
             "path_ref_count": len(extracted["path_refs"]),
             "code_consumption": _as_string_list(identity.get("code_consumption")),
+            "secondary_identities": [
+                block["kind"] for block in extracted["secondary_identities"]
+            ],
         },
     }
 
@@ -104,17 +113,36 @@ def _extract_title(raw: str, source_path: Path) -> str:
     return match.group(2).strip()
 
 
-def _extract_identity(raw: str, source_path: Path) -> dict[str, Any]:
-    match = FENCE_RE.search(raw)
-    if not match:
+def _extract_yaml_blocks(raw: str, source_path: Path) -> list[dict[str, Any]]:
+    blocks: list[dict[str, Any]] = []
+    for match in FENCE_RE.finditer(raw):
+        loaded = yaml.safe_load(match.group(1))
+        if isinstance(loaded, dict):
+            blocks.append(loaded)
+    if not blocks:
         raise MarkdownSpecError(f"{source_path}: missing fenced yaml identity block")
-    loaded = yaml.safe_load(match.group(1))
-    if not isinstance(loaded, dict) or "v2_spec" not in loaded:
+    return blocks
+
+
+def _extract_identity(yaml_blocks: list[dict[str, Any]], source_path: Path) -> dict[str, Any]:
+    first = yaml_blocks[0]
+    if "v2_spec" not in first:
         raise MarkdownSpecError(f"{source_path}: first yaml block must contain v2_spec")
-    identity = loaded["v2_spec"]
+    identity = first["v2_spec"]
     if not isinstance(identity, dict):
         raise MarkdownSpecError(f"{source_path}: v2_spec must be a mapping")
     return identity
+
+
+def _extract_secondary_identities(
+    yaml_blocks: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    secondary: list[dict[str, Any]] = []
+    for block in yaml_blocks[1:]:
+        for key, value in block.items():
+            if isinstance(value, dict):
+                secondary.append({"kind": key, "fields": value})
+    return secondary
 
 
 def _extract_sections(raw: str) -> list[dict[str, Any]]:
@@ -129,9 +157,11 @@ def _extract_path_refs(raw: str) -> list[str]:
 
 
 def _relations_from_identity(
-    basis: list[str], related_specs: list[str]
+    parent_spec: str, basis: list[str], related_specs: list[str]
 ) -> list[dict[str, str]]:
     relations: list[dict[str, str]] = []
+    if parent_spec:
+        relations.append({"type": "inherits", "target": parent_spec})
     for target in basis:
         relations.append({"type": "inherits", "target": target})
     for target in related_specs:

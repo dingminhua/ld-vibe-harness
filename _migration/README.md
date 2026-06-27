@@ -31,3 +31,7 @@ tests the preferred direction: Code reads stable structure directly from the
 Markdown spec body, then generates an in-memory action source for the Action
 Guide compiler. Do not turn this into a manually maintained one-MD-one-YAML
 projection system.
+
+Coverage notes under `_migration/inventory/md-direct-read-coverage.yaml` are
+temporary evidence for the extractor prototype. They record what the prototype
+can parse today; they are not source authority.

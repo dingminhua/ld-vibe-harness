@@ -1,0 +1,67 @@
+coverage_id: md-direct-read-coverage-001
+status: temporary_migration_evidence
+scope: "v2 specs/*.md body specs"
+purpose: >
+  Record whether the temporary Markdown direct-read extractor can parse the
+  existing LDVH Markdown specs without creating per-spec YAML projections.
+
+source_of_truth:
+  - "../ld-vibe-harness/specs/*.md"
+
+parser:
+  path: "_migration/code/md_spec_extractor.py"
+  mode: "temporary prototype"
+  long_term_direction: "Markdown spec body -> deterministic Code parser -> in-memory IR/action source -> Action Guide"
+
+result:
+  scanned_body_specs: 21
+  compiled_to_action_source: 21
+  usable_guides: 17
+  limited_guides: 4
+  limited_reason: "Markdown identity status is draft, so authority.can_authorize_actions is false."
+  limited_specs:
+    - "specs/32-environment-entry-adaptation-环境入口落地与适配检查.md"
+    - "specs/34-study-research-output-研究行动产物编排.md"
+    - "specs/35-workcase-action-carrying-工作项行动承接编排.md"
+    - "specs/36-record-object-routing-recall-记录对象归口与召回.md"
+
+validated_capabilities:
+  - "Read the first fenced v2_spec identity block from Markdown."
+  - "Read title and heading structure from Markdown."
+  - "Read basis, parent_spec, related_specs, status, authority, canonical_path, and code_consumption from the identity block."
+  - "Detect secondary identity blocks such as v2_fact_model_member, v2_action_member, and ldvh_member."
+  - "Generate source_refs, relations, read_plan, impact_judgment, stop_conditions, next_queries, and action_hints for the existing Action Guide compiler."
+  - "Downgrade draft specs to limited guides without Human approval semantics."
+
+representative_samples:
+  - source_path: "specs/00-LDVH理念与价值标准.md"
+    role: "value baseline"
+    expected_status: usable
+  - source_path: "specs/01-规范体系基础规范.md"
+    role: "spec system foundation"
+    expected_status: usable
+  - source_path: "specs/04-Code确定性执行规范.md"
+    role: "Code determinism foundation"
+    expected_status: usable
+  - source_path: "specs/20-Spark-火花.md"
+    role: "fact model member spec"
+    expected_status: usable
+    secondary_identities:
+      - v2_fact_model_member
+  - source_path: "specs/31-git-commit-action-Git提交行动编排.md"
+    role: "action member spec"
+    expected_status: usable
+    secondary_identities:
+      - v2_action_member
+      - ldvh_member
+
+not_validated_yet:
+  - "Attachment Markdown body extraction."
+  - "Markdown table semantic parsing beyond path and identity extraction."
+  - "Section-anchor level mapping for member-specific anchors."
+  - "Promotion of the prototype from _migration into formal v3 code."
+
+stop_conditions:
+  - "Do not create one manually maintained YAML projection per Markdown spec."
+  - "Do not treat this coverage report as formal v3 rule authority."
+  - "Stop if a spec lacks the stable Markdown identity structure required by the parser."
