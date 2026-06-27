@@ -1359,6 +1359,26 @@ def test_workcase_legacy_fields_are_errors(tmp_path):
     assert "completion_evidence" in result.stdout
 
 
+def test_workcase_rejects_invalid_orchestration_mode_and_duplicate_execution_item_id(tmp_path):
+    _, workcase = write_valid_workcase_tree(tmp_path)
+    content = workcase.read_text(encoding="utf-8")
+    content = content.replace("  mode: single", "  mode: invalid-mode", 1)
+    content = content.replace(
+        "      status: done\n      result_summary: Done.",
+        "      status: done\n      result_summary: Done.\n    - id: item-1\n      title: Duplicate\n      role: code\n      mode: invalid-item-mode\n      input_refs:\n        - code/fact_validate.py\n      expected_output: Duplicate item is rejected.\n      status: blocked",
+        1,
+    )
+    workcase.write_text(content, encoding="utf-8")
+
+    result = run_checker(workcase)
+
+    assert result.returncode == 1
+    assert "INVALID_ORCHESTRATION_MODE" in result.stdout
+    assert "DUPLICATE_EXECUTION_ITEM_ID" in result.stdout
+    assert "INVALID_EXECUTION_ITEM_MODE" in result.stdout
+    assert "MISSING_EXECUTION_ITEM_BLOCKING_REASON" in result.stdout
+
+
 def test_legacy_closed_workcase_does_not_require_current_review_contract(tmp_path):
     root, _ = write_valid_workcase_tree(tmp_path, status="closed")
 
