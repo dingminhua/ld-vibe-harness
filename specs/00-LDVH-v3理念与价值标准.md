@@ -10,7 +10,7 @@ v3_spec:
   canonical_path: "specs/00-LDVH-v3理念与价值标准.md"
   parent_spec: ""
   relation: ""
-  positioning: "定义 LDVH v3 的价值锚点、AI 第一服务对象、六类构成要素、事实源原则、Code 确定性边界和行动指南价值标准"
+  positioning: "给 AI 执行者、Code 和 Human 审核者提供 v3 的最高行动判断标准"
   scope: "v3 specs、code、schemas、attachments、Action Guide 以及后续迁移判断"
   basis:
     - "../ld-vibe-harness/specs/00-LDVH理念与价值标准.md"
@@ -18,107 +18,108 @@ v3_spec:
     - "specs/01-规范体系基础规范.md"
   code_consumption:
     - "v3_spec_metadata"
-    - "value_principles"
+    - "value_gate"
+    - "stop_conditions"
     - "action_guide_value_gate"
 ```
 
 > 文件状态：candidate；v3 正式化前不得反向改写 v2 active 规范。
 
-## 1. 本文解决的问题
+## 1. 读者和使用方式
 
-本文定义 v3 为什么成立，以及 v3 如何继续服务 LDVH 的最高目标：让 AI 在持续演进的 Vibe Coding 项目中少读、少猜、少漂移、能停止、能验证、能回写。
+本文首先写给 AI 执行者，其次写给 Code，最后写给 Human 审核者。
 
-v3 的直接目标不是创建更多规范、更多附件或更多工具，而是解决 v2 暴露出的三类负担：
+AI 读本文时，只需要完成一个判断：当前 v3 设计、迁移或实现，是否真的让后续 AI 更容易行动。
 
-1. specs 正文存在结构性重复，AI 需要反复阅读通用 doctrine；
-2. Code 消费规范时仍依赖较多手工约定，难以稳定生成任务导航；
-3. “知识地图”容易被理解为图谱或轻量索引，不能充分表达 AI 行动所需的读取、影响、停止、验证和下一步查询。
+Code 读本文时，只需要提取价值门、禁止项、停止条件和 Action Guide 质量要求。
 
-## 2. 继承的最高价值
+Human 读本文时，只需要审核 v3 是否偏离 v2 00 的最高价值锚点。
 
-v3 继承 v2 00 的最高锚点：
+## 2. AI 执行前价值门
 
-1. LDVH 以 AI 执行者为第一服务对象；
-2. LDVH 服务项目持续演进中的稳定衔接，而不是一次性输出；
-3. AI 的概率性、上下文依赖和无状态风险必须由结构化规则、事实源、行动编排、Code、Web 和运行时扩展共同约束；
-4. 新增机制必须说明减少 AI 哪类定位、理解、判断、执行、验证或回写负担；
-5. 不能只是复制已有规则、制造新入口或增加阅读负担。
+AI 在推进任何 v3 specs 或 Code 工作前，必须先回答：
 
-v3 不重定义 v2 00 的存在理由、AI 第一服务对象、六类构成要素或事实源底层原则。v3 只定义下一代 specs 与 Code 如何更精确地服务这些价值。
-
-## 3. v3 的改进焦点
-
-v3 第一阶段只聚焦 `specs/` 与 `code/`：
-
-| 焦点 | v3 改进 |
+| 问题 | 不满足时的处理 |
 |---|---|
-| specs | 保持 Markdown 正文为规范事实源；通过父层规则、章节角色和附件契约减少重复正文 |
-| Code | 直接解析 Markdown 的稳定结构，生成可复查 IR、诊断和行动指南 |
-| Action Guide | 取代“知识地图”作为面向当前任务的行动导航投影 |
+| 这项工作减少 AI 哪类负担：定位、理解、判断、执行、验证或回写 | 停止，回到 Spark / WorkCase 澄清 |
+| 这项工作是否仍以 Markdown 文件作为规范事实源 | 停止，不得建立第二事实源 |
+| 这项工作是否能被 Code 确定性解析、校验或投影 | 若不能，先补结构或记录缺口 |
+| 这项工作是否保留 Human Gate 和来源回指 | 停止，不得继续迁移 |
+| 这项工作是否只是新增文档、附件或工具数量 | 停止，说明替代方案 |
 
-v3 第一阶段不改变 `rules/`、`hooks/`、`skills/`、Runtime、Web 或 `ldvh-base/` 的策略。后续整体迁移必须另行确认。
+不能通过价值门的内容，不进入 v3 正式 specs。
 
-## 4. 六类构成要素边界
+## 3. v3 当前只做什么
 
-v3 继续使用六类构成要素：
+v3 当前只重构两件事：
 
-| 构成要素 | v3 第一阶段关注点 |
+| 对象 | 当前目标 |
 |---|---|
-| 规范体系 | 定义父层规则、Markdown 结构、附件边界和可解析契约 |
-| 事实模型 | 暂不重构；后续按 02 承接 |
-| 行动编排 | 暂不全量迁移；先由行动指南样板验证读取、停止和回写导航 |
-| Code | 只读解析、校验、投影和诊断，不授权、不替 Human Gate |
-| Web | 暂不重构；未来消费行动指南或 Code DTO |
-| 运行时扩展 | 暂不重构；不得由 v3 specs 重构顺手改变 hooks / dispatcher |
+| specs | 让 Markdown 规范更少重复、更可解析、更能指导 AI 行动 |
+| Code | 从 Markdown 稳定结构生成诊断、索引和 Action Guide |
 
-## 5. 事实源原则
+v3 当前不重构 `rules/`、`hooks/`、`skills/`、Runtime、Web 或 `ldvh-base/`。这些对象只能作为影响判断和后续迁移对象出现。
 
-v3 中稳定规则仍必须回到 Git 可追踪 Markdown 文件。Code 输出、Action Guide、生成索引、调试 YAML、测试 fixture、缓存或对话结论，都不是最终事实源。
+## 4. v3 不解决什么
 
-普通 spec 正文不得长期维护一个人工 YAML 孪生文件。若 Code 无法解析 Markdown，应先改进 Markdown 的稳定结构或 01 的格式约束，而不是新增第二事实源。
+AI 遇到以下目标时，不得把它们塞进当前 v3 specs + Code 工作：
 
-## 6. Action Guide 价值标准
+1. 重新设计 LDVH 六类构成要素；
+2. 修改 Runtime、hook、dispatcher、rules、skills 或 Web 策略；
+3. 把普通 spec 正文改成长期 YAML 双维护；
+4. 把 Action Guide 写成事实源、授权器、缓存或第二 Runtime；
+5. 用一次性扫描结果直接删除 v2 正式规范内容；
+6. 为了让 Code 好写而牺牲 Human 可读边界、Human Gate 或事实源回指。
 
-Action Guide 是确定性 Code 面向当前任务生成的导航投影，不是事实源、授权器、缓存或第二 Runtime。
+## 5. 六类构成要素的 v3 边界
 
-Action Guide 必须至少服务以下行动要素：
+v3 继承 v2 00 的六类构成要素，不新增第七类。
 
-| 要素 | 作用 |
+| 构成要素 | v3 第一阶段处理方式 |
 |---|---|
-| relationships | 告诉 AI 当前对象和哪些规范、附件、事实对象、行动成员有关 |
-| read_plan | 告诉 AI 先读什么、为什么读、读到哪里可以停 |
-| impact_judgment | 帮助 AI 判断改动可能影响哪些上游、下游和同步对象 |
-| stop_conditions | 暴露必须暂停、分流或 Human Gate 的条件 |
-| next_queries | 在信息不足时给出下一步可展开查询 |
-| verification | 提示可复查的验证入口和证据要求 |
-| source_refs | 让每个行动相关判断能回指事实源 |
+| 规范体系 | 写上位规则、父子规则、附件边界和去冗余方法 |
+| 事实模型 | 暂不迁移；后续由 02 承接 |
+| 行动编排 | 暂不全量迁移；先验证行动成员样板 |
+| Code | 只读解析、校验、投影和诊断 |
+| Web | 暂不迁移；未来消费 Code 输出 |
+| 运行时扩展 | 暂不迁移；不得顺手改 hook / dispatcher |
 
-Action Guide 的目标不是单纯轻量，而是渐进、足量、可回指、可停止。
+事实源仍是底层原则，不是第七类构成要素。
 
-## 7. v3 准入判断
+## 6. Action Guide 的价值门
 
-任何 v3 规范、附件、schema、Code 输出或迁移样板，进入正式设计前必须回答：
+Action Guide 是 Code 为当前任务生成的行动导航，不是知识库、图谱资产或事实源。
 
-1. 它服务哪些 v2 V1-V10 价值；
-2. 它减少 AI 哪类负担；
-3. 它是否保持 Markdown 事实源权威；
-4. 它是否可被 Code 确定性解析或验证；
-5. 它是否会制造第二事实源、第二授权器或第二 Runtime；
-6. 它是否保留 Human Gate、事实源边界和来源回指。
+一个 Action Guide 只有在满足以下条件时才有价值：
 
-## 8. Human Gate
+| 条件 | AI 获得的帮助 |
+|---|---|
+| 有明确 target | 知道围绕哪个规范、附件、对象或行动判断 |
+| 有 relationships | 知道上下游和影响范围 |
+| 有 P0/P1 read_plan | 知道先读什么，不全文盲读 |
+| 有 impact_judgment | 知道改动会影响谁 |
+| 有 stop_conditions | 知道何时暂停、分流或 Human Gate |
+| 有 next_queries | 信息不足时知道下一步问什么 |
+| 有 verification | 知道如何验证而不是自述完成 |
+| 有 source_refs | 每个行动相关判断可回到事实源 |
 
-以下情况必须暂停并等待 Human 确认：
+Action Guide 的质量目标是：渐进、足量、可回指、可停止。
 
-1. 改变 v2 00 的存在理由、AI 第一服务对象、六类构成要素、事实源原则或 V1-V10；
-2. 将 Action Guide 升级为事实源、授权器、缓存或 Runtime 阻断器；
-3. 将普通 spec 正文改成长期 YAML 双维护；
-4. 删除本地 Human Gate、本地事实源边界或行动特有 delta；
-5. 修改 Runtime、hook、dispatcher、rules、skills 或 Web 策略。
+## 7. Stop Conditions
 
-## 9. 待补齐事项
+AI 必须暂停并提交 Human 确认：
 
-1. 01 需要定义 v3 Markdown spec 结构、附件边界和去冗余规则；
-2. 02/03/04 需要分别承接事实模型、行动编排和 Code 的 v3 下位规则；
-3. 旧 `specs/core/` 内容需要被 00/01/04/Action Guide 正式规范吸收或清退，避免形成并列权威层；
-4. Code 需要支持 v3 identity block，并保持对 v2 Markdown 的迁移读取能力。
+1. 需要改变 v2 00 的存在理由、AI 第一服务对象、六类构成要素、事实源原则或 V1-V10；
+2. 需要改变 v3 当前范围，从 specs + Code 扩到 Runtime、hook、dispatcher、rules、skills 或 Web；
+3. 需要删除本地 Human Gate、本地事实源边界或行动特有 delta；
+4. 需要把 Action Guide 当作授权结论；
+5. 需要让 Code 输出 `allowed`、`approved`、`unblocked` 等授权语义。
+
+## 8. 下一步读取
+
+AI 读完本文后：
+
+1. 若要写或迁移 v3 spec，读 `specs/01-规范体系基础规范.md`；
+2. 若要判断附件怎么写，读 01 的附件；
+3. 若要实现 Code，先等 04 或 Code 契约成立；
+4. 若发现本文与 v2 00 冲突，停止并提交 Human Gate。
