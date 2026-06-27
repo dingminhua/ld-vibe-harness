@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from "vite-tsconfig-paths";
 import { traeBadgePlugin } from 'vite-plugin-trae-solo-badge';
+import { resolve } from 'node:path';
 
 const apiTarget = process.env.VITE_API_TARGET || 'http://localhost:3001';
 
@@ -26,6 +27,11 @@ export default defineConfig({
     }), 
     tsconfigPaths(),
   ],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
+  },
   server: {
     host: '127.0.0.1',
     port: 5173,
