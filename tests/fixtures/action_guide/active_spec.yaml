@@ -1,0 +1,35 @@
+kind: spec
+id: SPEC-ACTION-GUIDE-BASE
+title: "Action guide base contract"
+status: active
+authority:
+  layer: rule_authority
+  can_authorize_actions: true
+  notes: "Active specs may authorize downstream deterministic action."
+source_refs:
+  - path: specs/schemas/formatted-source.schema.yaml
+    role: authority
+  - path: specs/schemas/action-guide.schema.yaml
+    role: authority
+relations:
+  - type: produces
+    target: ACTION-GUIDE
+    note: "Compiled projection for AI task navigation."
+read_plan:
+  - order: 1
+    target: specs/schemas/formatted-source.schema.yaml
+    reason: "Confirm the source fields and authority layer before action."
+  - order: 2
+    target: specs/schemas/action-guide.schema.yaml
+    reason: "Confirm the output shape before using the guide."
+impact_judgment:
+  - "Changing source_refs changes back-referenceability."
+  - "Changing authority.can_authorize_actions changes whether action can proceed."
+stop_conditions:
+  - "Stop when source_refs are missing."
+  - "Stop when target status is candidate, deprecated, or archived."
+next_queries:
+  - "Which child specs inherit this contract?"
+  - "Which compiler tests cover the target source?"
+action_hints:
+  - "Use the read_plan in order before editing downstream assets."

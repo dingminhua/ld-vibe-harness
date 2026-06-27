@@ -1,0 +1,90 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: "LDVH action guide"
+type: object
+additionalProperties: false
+required:
+  - guide_type
+  - target
+  - result_status
+  - source_refs
+  - relationships
+  - read_plan
+  - impact_judgment
+  - stop_conditions
+  - next_queries
+  - not_authorized
+properties:
+  guide_type:
+    type: string
+    const: action_guide
+  target:
+    type: object
+    additionalProperties: false
+    required:
+      - id
+      - kind
+      - title
+      - status
+      - authority_layer
+      - can_authorize_actions
+    properties:
+      id:
+        type: string
+      kind:
+        type: string
+      title:
+        type: string
+      status:
+        type: string
+      authority_layer:
+        type: string
+      can_authorize_actions:
+        type: boolean
+  result_status:
+    type: string
+    enum:
+      - usable
+      - limited
+      - blocked
+  source_refs:
+    type: array
+    minItems: 1
+    items:
+      type: object
+  relationships:
+    type: array
+    items:
+      type: object
+  read_plan:
+    type: array
+    items:
+      type: object
+  impact_judgment:
+    type: array
+    items:
+      type: string
+  stop_conditions:
+    type: array
+    items:
+      type: string
+  next_queries:
+    type: array
+    items:
+      type: string
+  action_hints:
+    type: array
+    items:
+      type: string
+  not_authorized:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required:
+        - reason
+        - source
+      properties:
+        reason:
+          type: string
+        source:
+          type: string

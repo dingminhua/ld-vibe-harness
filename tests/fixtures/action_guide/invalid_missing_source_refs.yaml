@@ -1,0 +1,12 @@
+kind: spec
+id: SPEC-MISSING-SOURCE-REFS
+title: "Invalid missing source refs"
+status: active
+authority:
+  layer: rule_authority
+  can_authorize_actions: true
+relations: []
+read_plan: []
+impact_judgment: []
+stop_conditions: []
+next_queries: []

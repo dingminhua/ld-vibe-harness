@@ -1,0 +1,16 @@
+purpose: "specs-authorized machine contracts for deterministic LDVH code"
+authority_rules:
+  - "specs/ is the rule authority."
+  - "specs/schemas/ is the machine-readable contract layer authorized by specs."
+  - "code/ consumes schemas and formatted sources, but does not own rule authority."
+  - "tests/fixtures/ supplies regression material and examples, not facts or rules."
+  - "ldvh-base/ stores real fact objects and must not mix in test fixtures."
+contracts:
+  formatted_source: "specs/schemas/formatted-source.schema.yaml"
+  action_guide: "specs/schemas/action-guide.schema.yaml"
+design_formula: >
+  Formatted LDVH source files for specs, fact objects, and runtime assets
+  are compiled by deterministic, read-only, reviewable Code into task-scoped
+  action guides. An action guide organizes AI action by relationships,
+  read plans, impact judgment, stop conditions, and next queries. It must be
+  progressive, sufficient, back-referenceable, and stoppable.

@@ -1,0 +1,25 @@
+kind: attachment
+id: ATTACHMENT-DEPRECATED-KM
+title: "Deprecated knowledge map draft"
+status: deprecated
+authority:
+  layer: factual_record
+  can_authorize_actions: false
+source_refs:
+  - path: specs/attachments/deprecated-knowledge-map-draft.yaml
+    role: evidence
+relations:
+  - type: supersedes
+    target: ATTACHMENT-OLD-KM
+read_plan:
+  - order: 1
+    target: specs/attachments/deprecated-knowledge-map-draft.yaml
+    reason: "Read only to understand migration history."
+impact_judgment:
+  - "Deprecated attachments can explain history but cannot define new behavior."
+stop_conditions:
+  - "Stop if no active replacement is found."
+next_queries:
+  - "Which active action-guide contract replaces this attachment?"
+action_hints:
+  - "Use for migration audit only."
