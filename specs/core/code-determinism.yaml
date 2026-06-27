@@ -5,9 +5,11 @@ status: active
 authority:
   layer: rule_authority
   can_authorize_actions: true
-  notes: "Stable v3 parent spec for deterministic Code boundaries."
+  notes: "Machine-readable projection of specs/core/code-determinism.md."
 source_refs:
-  - path: specs/code-determinism.yaml
+  - path: specs/core/code-determinism.md
+    role: authority
+  - path: specs/core/spec-system.md
     role: authority
   - path: ../ld-vibe-harness/specs/04-Code确定性执行规范.md
     role: evidence
@@ -20,12 +22,15 @@ relations:
     note: "Deterministic Code may produce task-scoped action guides."
 read_plan:
   - order: 1
-    target: specs/code-determinism.yaml
-    reason: "Read the v3 authority first."
+    target: specs/core/code-determinism.md
+    reason: "Read the Markdown core authority first."
   - order: 2
+    target: specs/core/code-determinism.yaml
+    reason: "Read the authorized machine projection before compiler work."
+  - order: 3
     target: specs/schemas/formatted-source.schema.yaml
     reason: "Confirm the source contract before implementing parsers."
-  - order: 3
+  - order: 4
     target: specs/schemas/action-guide.schema.yaml
     reason: "Confirm the navigation output contract before projecting action guides."
 impact_judgment:
@@ -91,4 +96,4 @@ implementation_rules:
     rule: "Runtime, hook, dispatcher, and commit/write strategy changes require separate confirmation outside this parent spec."
 migration_notes:
   legacy_source: "../ld-vibe-harness/specs/04-Code确定性执行规范.md"
-  summary: "This v3 spec extracts upper-level deterministic Code boundaries only. It does not copy v2 prose, command tables, knowledge-map tables, or checklists."
+  summary: "This YAML file is an authorized machine-readable projection of the Markdown core spec. It does not copy v2 prose, command tables, knowledge-map tables, or checklists."

@@ -1,15 +1,15 @@
 decision: migrate
 role: parent_spec
 source_path: specs/04-Code确定性执行规范.md
-target_path: specs/code-determinism.yaml
+target_path: specs/core/code-determinism.md
 reason: parent_spec carries non-derived v3 material in specs
 stop_conditions: []
-next_action: migrate_with_source_refs
+next_action: migrate_core_spec_with_machine_projection
 source_refs:
   - specs/04-Code确定性执行规范.md
 diagnostics: []
 notes: |
   Temporary migration decision only. Do not copy the v2 markdown body into
-  stable v3 specs. The eventual v3 target should extract upper-level,
-  non-derived deterministic Code boundaries and leave checklists, projections,
-  and repeatable validation details to schemas, Code, or tests.
+  stable v3 specs. The v3 target extracts upper-level, non-derived deterministic
+  Code boundaries into specs/core/code-determinism.md, with a separate YAML
+  projection for deterministic compiler input.

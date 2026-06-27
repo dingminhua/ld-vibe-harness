@@ -5,6 +5,7 @@ This branch is a clean v3 root. It does not inherit v2 files by default.
 Content enters this tree only when it has a v3 role:
 
 - `specs/`: rule authority.
+- `specs/core/`: parent rule authority established by the v3 project decision.
 - `specs/schemas/`: machine-readable contracts authorized by specs.
 - `code/`: deterministic, read-only compilers and validators.
 - `tests/`: regression checks.
@@ -15,3 +16,7 @@ Content enters this tree only when it has a v3 role:
 The current first slice proves the action-guide path:
 
 formatted LDVH source -> deterministic Code -> task-scoped action guide.
+
+The v3 authority chain is:
+
+project decision -> `specs/core/` -> `specs/schemas/` -> YAML instances -> deterministic Code -> Action Guide.

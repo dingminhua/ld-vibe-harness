@@ -43,6 +43,7 @@ properties:
         type: string
         enum:
           - rule_authority
+          - core_spec
           - machine_contract
           - runtime_asset
           - factual_record
