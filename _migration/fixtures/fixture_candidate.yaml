@@ -1,0 +1,8 @@
+source_path: tests/code/specs_validate_checks/test_v2.py::knowledge_map_fixture
+source_kind: fixture
+candidate_role: fixture
+authority_source: tests/code/specs_validate_checks/test_v2.py
+target_area: tests/fixtures
+why_needed: Preserves a regression input as a test material only.
+proposed_target: tests/fixtures/action_guide/knowledge_map_regression.yaml
+derived_from: []

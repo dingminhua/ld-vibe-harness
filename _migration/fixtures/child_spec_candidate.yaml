@@ -1,0 +1,9 @@
+source_path: specs/31-git-commit-action-Git提交行动编排.md
+source_kind: spec
+candidate_role: child_spec
+authority_source: specs/31-git-commit-action-Git提交行动编排.md
+target_area: specs
+parent_ref: specs/action-orchestration.yaml
+why_needed: Refines action orchestration for Git commit behavior.
+proposed_target: specs/actions/git-commit.yaml
+derived_from: []

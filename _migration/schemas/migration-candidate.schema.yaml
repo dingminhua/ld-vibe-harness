@@ -1,0 +1,65 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: "Temporary migration candidate"
+description: "Transitional schema. Not part of stable v3 specs/schemas."
+type: object
+additionalProperties: false
+required:
+  - source_path
+  - source_kind
+  - candidate_role
+  - authority_source
+  - target_area
+  - why_needed
+properties:
+  source_path:
+    type: string
+    minLength: 1
+  source_kind:
+    type: string
+    enum:
+      - spec
+      - schema
+      - fixture
+      - code
+      - runtime_asset
+      - fact_object
+      - checklist
+  candidate_role:
+    type: string
+    enum:
+      - parent_spec
+      - child_spec
+      - schema
+      - fixture
+      - fact_object
+      - derived_checklist
+      - runtime_strategy
+      - reject
+  authority_source:
+    type: string
+    minLength: 1
+  target_area:
+    type: string
+    enum:
+      - specs
+      - specs/schemas
+      - code
+      - tests/fixtures
+      - ldvh-base
+      - rules
+      - hooks
+      - skills
+      - none
+  why_needed:
+    type: string
+    minLength: 1
+  parent_ref:
+    type: string
+  proposed_target:
+    type: string
+  derived_from:
+    type: array
+    items:
+      type: string
+  notes:
+    type: string

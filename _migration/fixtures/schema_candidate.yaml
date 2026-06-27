@@ -1,0 +1,9 @@
+source_path: specs/attachments/04.Att.06-知识地图投影Schema表.md
+source_kind: schema
+candidate_role: schema
+authority_source: specs/04-Code确定性执行规范.md
+target_area: specs/schemas
+why_needed: Converts action guide output fields into a machine contract.
+proposed_target: specs/schemas/action-guide.schema.yaml
+derived_from:
+  - specs/attachments/04.Att.06-知识地图投影Schema表.md
