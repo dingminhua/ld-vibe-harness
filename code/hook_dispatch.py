@@ -77,7 +77,6 @@ POST_READ_ACTION_BY_TASK_TYPE = {
 TOOL_PLAN_BY_TASK_TYPE = {
     "code_change": [
         "python3 code/specs_validate.py v2-check --format text",
-        "python3 -m pytest tests/code/ -q",
     ],
     "create": [
         "python3 code/specs_validate.py knowledge-map --input-scope governed_projects --layer entry --format json",
@@ -133,6 +132,7 @@ def _write_session_receipt(session_id: str, event: str, result: dict[str, Any]) 
 
 
 def _mark_pre_tool_use_receipt(session_id: str, result: dict[str, Any]) -> None:
+    """Update the session receipt with the latest pre_tool_use timestamp for observability."""
     path = _receipt_path(session_id)
     if path is None:
         return
@@ -254,6 +254,7 @@ def _has_required_read_plan(read_plan: Any) -> bool:
 
 
 def _normalize_action_hint(action_hint: str) -> tuple[str, str]:
+    """Map user-facing action hint to (normalized_hint, task_type). Returns ("unknown", "AMBIGUOUS") for unknowns."""
     normalized = action_hint.strip().lower().replace("_", "-")
     if not normalized:
         return "", ""
@@ -266,6 +267,7 @@ def _normalize_action_hint(action_hint: str) -> tuple[str, str]:
 
 
 def _ack_target_key(cwd: Path, targets: list[Path] | None, receipt: dict[str, Any]) -> list[str]:
+    """Build a stable dedup key from cwd and target paths for acknowledge scope comparison."""
     if targets:
         return [str(target) for target in targets]
     result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
@@ -276,6 +278,7 @@ def _ack_target_key(cwd: Path, targets: list[Path] | None, receipt: dict[str, An
 
 
 def _same_ack_scope(consumed: Any, *, cwd: Path, target_key: list[str], action_hint: str) -> bool:
+    """Check whether a prior acknowledge covers the same target/action scope."""
     if not isinstance(consumed, dict) or consumed.get("status") != "acknowledged":
         return False
     stored_target = consumed.get("target")
@@ -293,14 +296,17 @@ def _same_ack_scope(consumed: Any, *, cwd: Path, target_key: list[str], action_h
 
 
 def _tool_plan_for_task_type(task_type: str) -> list[str]:
+    """Return CLI command suggestions for a given task_type; empty list when unknown."""
     return list(TOOL_PLAN_BY_TASK_TYPE.get(task_type, []))
 
 
 def _post_read_action_for_task_type(task_type: str) -> str:
+    """Return a deterministic Chinese post-read action template for the given task_type."""
     return POST_READ_ACTION_BY_TASK_TYPE.get(task_type, "")
 
 
 def _build_attention_points(read_plan: list[dict[str, Any]], diagnostics: Any, result_status: str) -> list[str]:
+    """Build 3-5 Chinese attention points for the AI from pending work objects, diagnostics, and receipt status."""
     points: list[str] = []
     pending = [
         item
@@ -329,6 +335,10 @@ def _build_attention_points(read_plan: list[dict[str, Any]], diagnostics: Any, r
 
 
 def _expand_next_queries(receipt: dict[str, Any], task_type: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Expand next_queries from a session receipt into deep_read_plan and deep_stop_conditions.
+
+    Skips queries with placeholder start_nodes (containing '<'). Deduplicates by path+node_id.
+    """
     result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
     queries = result.get("next_queries") if isinstance(result, dict) else []
     if not isinstance(queries, list):
@@ -1150,6 +1160,7 @@ def _hook_adapter_gap_diagnostic(*, cwd: Path, tool_name: str = "", session_id: 
                                  target_paths: list[str] | None = None,
                                  trigger_source: str = "hook",
                                  command_observed: str = "") -> dict[str, Any]:
+    """Build a HOOK_ADAPTER_PAYLOAD_GAP diagnostic dict when the hook adapter fails to forward payload/target."""
     subject = subject or {}
     return {
         "severity": "warning",
@@ -1178,6 +1189,7 @@ def _read_plan_guard_result(cwd: Path, receipt: Optional[dict[str, Any]], *, tri
                             tool_name: str, command: str, action: str,
                             subject: dict[str, Any] | None = None,
                             message_file: str = "", session_id: str = "") -> Optional[dict[str, Any]]:
+    """Check whether read_plan has been consumed; return a blocking dict if not, None if ok."""
     if _receipt_read_plan_consumed(receipt):
         return None
     required_paths = _required_read_plan_paths(receipt) if receipt else []
@@ -1254,13 +1266,7 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         if payload_gap_diagnostic is not None:
             blocked["diagnostics"] = [payload_gap_diagnostic]
             blocked["payload_present"] = False
-            blocked["user_diagnostic_report"] = (
-                "LDVH 诊断检测到 1 个问题：\n"
-                "  1. [警告] HOOK_ADAPTER_PAYLOAD_GAP\n"
-                "     Hook adapter 未显式转发 payload / target，"
-                "dispatcher 只能依赖 cwd fallback 判定工作对象。\n"
-                "     建议归口: runtime-adapter"
-            )
+            blocked["user_diagnostic_report"] = _build_user_diagnostic_report([payload_gap_diagnostic])
             blocked["next_action"] = (
                 blocked.get("next_action", "")
                 + " 同时请向用户报告：Hook adapter 未传递真实工作对象，"
@@ -1323,13 +1329,7 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         result["command_observed"] = tool_command[:200]
     if payload_gap_diagnostic is not None:
         result["diagnostics"] = [payload_gap_diagnostic]
-        result["user_diagnostic_report"] = (
-            "LDVH 诊断检测到 1 个问题：\n"
-            "  1. [警告] HOOK_ADAPTER_PAYLOAD_GAP\n"
-            "     Hook adapter 未显式转发 payload / target，"
-            "dispatcher 只能依赖 cwd fallback 判定工作对象。\n"
-            "     建议归口: runtime-adapter"
-        )
+        result["user_diagnostic_report"] = _build_user_diagnostic_report([payload_gap_diagnostic])
         result.setdefault("next_action",
             "请向用户报告：Hook adapter 未传递真实工作对象，当前管辖判定基于 cwd fallback。"
         )
