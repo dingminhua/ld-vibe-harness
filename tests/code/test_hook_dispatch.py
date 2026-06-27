@@ -49,6 +49,14 @@ def test_file_command_map_declares_authorized_suggestions():
     assert command_map.classify_file_type("ldvh-base/sparks/spark-0036-skill-encapsulation-and-trigger-gap.yaml") == "spark"
     assert command_map.classify_file_type("code/hook_dispatch.py") == "python"
     assert command_map.classify_file_type("web/app.tsx") == "web"
+    assert command_map.classify_file_type(PROJECT_ROOT / "specs/04-Code确定性执行规范.md") == "spec"
+    assert command_map.classify_file_type(PROJECT_ROOT / "ldvh-base/workcases/workcase-0020-code-command-timing-orchestration.yaml") == "workcase"
+    assert command_map.classify_file_type(PROJECT_ROOT / "ldvh-base/sparks/spark-0036-skill-encapsulation-and-trigger-gap.yaml") == "spark"
+    assert command_map.classify_file_type(PROJECT_ROOT / "code/hook_dispatch.py") == "python"
+    assert command_map.classify_file_type(PROJECT_ROOT / "web/app.tsx") == "web"
+    assert command_map.classify_file_type("../specs/not-repo-relative.md") == "unknown"
+    assert command_map.classify_file_type("foo/specs/not-root.md") == "unknown"
+    assert command_map.command_suggestions_for_path("../specs/not-repo-relative.md")["before_change"] == []
 
 
 def test_hook_registry_declares_dispatcher_entrypoints():
@@ -155,6 +163,63 @@ def test_run_knowledge_map_failure_returns_structured_error(monkeypatch):
     assert payload["exit_code"] == 2
     assert payload["stderr_head"] == "bad start node\nwith details"
     assert "参数" in payload["stderr_summary"]
+    assert payload["suggested_action"]
+
+
+def test_run_knowledge_map_oserror_returns_structured_error(monkeypatch):
+    dispatcher = load_dispatcher()
+
+    def fail_to_start(*args, **kwargs):
+        raise OSError("python unavailable")
+
+    monkeypatch.setattr(dispatcher.subprocess, "run", fail_to_start)
+
+    payload = dispatcher._run_knowledge_map("rules/start.md", "general")
+
+    assert payload["status"] == "error"
+    assert payload["failed_command"]
+    assert payload["exit_code"] == -1
+    assert payload["stderr_head"] == "python unavailable"
+    assert payload["stderr_summary"]
+    assert payload["suggested_action"]
+
+
+def test_run_knowledge_map_json_decode_failure_is_structured(monkeypatch):
+    dispatcher = load_dispatcher()
+
+    class BadJsonResult:
+        returncode = 0
+        stderr = ""
+        stdout = "not-json"
+
+    monkeypatch.setattr(dispatcher.subprocess, "run", lambda *args, **kwargs: BadJsonResult())
+
+    payload = dispatcher._run_knowledge_map("rules/start.md", "general")
+
+    assert payload["status"] == "error"
+    assert payload["failed_command"]
+    assert payload["exit_code"] == 0
+    assert payload["stderr_head"]
+    assert payload["raw_stdout"] == "not-json"
+    assert payload["suggested_action"]
+
+
+def test_run_knowledge_map_empty_stderr_preserves_empty_head(monkeypatch):
+    dispatcher = load_dispatcher()
+
+    class FailedResult:
+        returncode = 1
+        stderr = ""
+        stdout = "plain failure"
+
+    monkeypatch.setattr(dispatcher.subprocess, "run", lambda *args, **kwargs: FailedResult())
+
+    payload = dispatcher._run_knowledge_map("rules/start.md", "general")
+
+    assert payload["status"] == "error"
+    assert payload["exit_code"] == 1
+    assert payload["stderr_head"] == ""
+    assert payload["stderr_summary"]
     assert payload["suggested_action"]
 
 

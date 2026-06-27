@@ -9,6 +9,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 SOURCE_REFS = [
     "specs/attachments/04.Att.02-Code命令入口表.md",
     "specs/attachments/04.Att.07-受控写入前检查矩阵.md",
@@ -64,7 +66,15 @@ FILE_COMMAND_MAP: dict[str, dict[str, Any]] = {
 
 def classify_file_type(path: str | Path) -> str:
     """Classify a repository path by directory structure first."""
-    normalized = Path(path).as_posix().lstrip("./")
+    candidate = Path(path)
+    if candidate.is_absolute():
+        try:
+            candidate = candidate.relative_to(PROJECT_ROOT)
+        except ValueError:
+            return "unknown"
+    normalized = candidate.as_posix()
+    if normalized.startswith("./"):
+        normalized = normalized[2:]
     if normalized.startswith("specs/"):
         return "spec"
     if normalized.startswith("ldvh-base/workcases/"):
