@@ -408,6 +408,44 @@ def test_pre_tool_use_target_under_project_is_governed_from_workspace_root(monke
     assert payload["target_resolutions"][0]["status"] == "governed"
 
 
+def test_session_start_discovers_subproject_from_workspace_root(monkeypatch, tmp_path, capsys):
+    """SessionStart from workspace root should discover governed subprojects
+    listed in the root config under cwd-fallback mode."""
+    dispatcher = load_dispatcher()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    subproject = workspace / "governed-app"
+    subproject.mkdir()
+
+    # Root config lists the subproject
+    config = workspace / "LDVH-GOVERNED-PROJECTS.yaml"
+    config.write_text(
+        f"projects:\n  - id: governed-app\n    path: {subproject}\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    monkeypatch.setattr(
+        dispatcher,
+        "_run_knowledge_map",
+        lambda start_node, task_type: {"result_status": "ok", "diagnostics": [], "read_plan": [
+            {"path": "rules/start.md", "priority": "P0", "role": "start"},
+        ]},
+    )
+
+    # SessionStart from workspace root — no explicit targets
+    exit_code = dispatcher.handle_session_start(workspace, trigger_source="rules", session_id="cwd-sub")
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["governed"] is True
+    assert payload["governed_project_id"] == "governed-app"
+    assert payload["subject_source"] == "cwd-subproject"
+    assert len(payload["target_resolutions"]) >= 1
+    assert payload["target_resolutions"][0]["status"] == "governed"
+    assert payload["target_resolutions"][0]["governed_via"] == "path"
+
+
 def test_hook_payload_and_rules_cli_target_have_same_governance(monkeypatch, tmp_path, capsys):
     dispatcher = load_dispatcher()
     project = tmp_path / "project"
