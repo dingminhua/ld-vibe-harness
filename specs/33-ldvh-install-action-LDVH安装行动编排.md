@@ -9,7 +9,7 @@ v2_spec:
   authority: "active"
   canonical_path: "specs/33-ldvh-install-action-LDVH安装行动编排.md"
   created: "2026-06-26"
-  updated: "2026-06-26"
+  updated: "2026-06-27"
   parent_spec: "specs/03-行动编排规范.md"
   relation: "action_member"
   positioning: "定义 AI 引导用户安装 LDVH 并完成首次管辖项目配置的行动流程：判断环境 AI Hook 能力、选择安装方式、放置薄引用或插件、验证安装、配置管辖项目并确认生效"
@@ -174,6 +174,38 @@ AI 引导用户执行：
 ### 5.4 安装后
 
 用户可继续配置管辖项目（`LDVH-GOVERNED-PROJECTS.yaml`），详见 `specs/32` §8。
+
+### 5.5 Hook adapter 统一模板
+
+LDVH 提供 `code/hook_adapter.py` 作为跨环境统一的 Hook adapter 模板。各环境（WorkBuddy、Codex、Claude Code）的插件配置只需指向该脚本，环境 Hook 系统传入 stdin payload 即可完成桥接。
+
+**模板特征：**
+- 零硬编码路径。通过从 stdin payload 的 `cwd` 字段向上遍历寻找 `code/hook_dispatch.py` 自动定位 dispatcher。
+- 找不到 dispatcher 时返回 `{"blocked":false, "governed":false, "receipt":"adapter_no_dispatcher"}`，不阻断环境工具调用。
+- 支持 `--pipe` 模式（subprocess 方式）和默认 exec 模式（环境自己管理进程）。
+
+**使用方法：**
+
+各环境的 Hook 配置中，将命令指向 `code/hook_adapter.py`，并传入 canonical event 名称：
+
+Codex (`hooks.json`)：
+```json
+{ "type": "command", "command": "python3 <repo>/code/hook_adapter.py session-start" }
+```
+
+WorkBuddy (`hooks` 配置)：
+```json
+{ "command": "python3 <repo>/code/hook_adapter.py session-start" }
+```
+
+`<repo>` 替换为 LDVH 仓库的实际路径。canonical event 名称对应 06 §7 定义的四事件：`session-start`、`pre-tool-use`、`acknowledge-read-plan`、`git.commit-msg`。
+
+**验证：**
+安装后执行 payload 透传烟测：
+```bash
+echo '{"cwd":"<repo>","event":"SessionStart"}' | python3 code/hook_adapter.py session-start
+```
+期望输出包含 `governed` 和 `receipt` 字段，不报错退出。
 
 ---
 
