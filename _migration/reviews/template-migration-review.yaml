@@ -1,0 +1,14 @@
+target_spec: "specs/{NN}-标题.md"
+target_sha256: ""
+mapping_evidence:
+  path: "_migration/inventory/{source}-to-{target}-map.yaml"
+code_verification:
+  command: "python3 -m pytest -q && python3 -m pytest -q _migration/tests"
+  passed: false
+  receipt: ""
+subagent_review:
+  agent_id: ""
+  reviewer: ""
+  verdict: "pending"
+  receipt: ""
+  unresolved_blockers: []

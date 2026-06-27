@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path
 
@@ -7,6 +8,58 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
+BOOTSTRAP_OBJECT_IDS = {
+    "00",
+    "01",
+    "01.Att.01",
+    "01.Att.02",
+    "01.Att.03",
+    "01.Att.04",
+    "01.Att.05",
+}
+
+REVIEW_TOP_LEVEL_KEYS = {
+    "target_spec",
+    "target_sha256",
+    "mapping_evidence",
+    "code_verification",
+    "subagent_review",
+}
+REVIEW_NESTED_KEYS = {
+    "mapping_evidence": {"path"},
+    "code_verification": {"command", "passed", "receipt"},
+    "subagent_review": {"agent_id", "reviewer", "verdict", "receipt", "unresolved_blockers"},
+}
+
+
+def _first_yaml_block(path: Path) -> dict:
+    raw = path.read_text(encoding="utf-8")
+    match = re.search(r"```yaml\n(.*?)\n```", raw, re.S)
+    assert match, path
+    return yaml.safe_load(match.group(1))
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _formal_markdown_files() -> list[Path]:
+    return sorted(
+        path
+        for path in (ROOT / "specs").glob("**/*.md")
+        if path.name != ".gitkeep"
+    )
+
+
+def _formal_object_id_and_metadata(path: Path) -> tuple[str, dict]:
+    metadata = _first_yaml_block(path)
+    if "v3_spec" in metadata:
+        spec = metadata["v3_spec"]
+        return spec["spec_id"], spec
+    if "v3_attachment" in metadata:
+        attachment = metadata["v3_attachment"]
+        return attachment["attachment_id"], attachment
+    raise AssertionError(f"{path} missing v3_spec or v3_attachment identity block")
 
 
 def test_v3_starts_from_markdown_specs_only() -> None:
@@ -66,3 +119,48 @@ def test_formal_specs_keep_v3_identity_blocks() -> None:
         raw = path.read_text(encoding="utf-8")
         assert re.search(r"```yaml\nv3_spec:", raw), path
         assert f'canonical_path: "{path.relative_to(ROOT)}"' in raw
+
+
+def test_formal_objects_have_unique_ids_and_real_paths() -> None:
+    seen_ids: set[str] = set()
+    for path in _formal_markdown_files():
+        object_id, metadata = _formal_object_id_and_metadata(path)
+        assert object_id not in seen_ids, object_id
+        seen_ids.add(object_id)
+        assert metadata["canonical_path"] == path.relative_to(ROOT).as_posix(), path
+
+
+def test_review_receipts_stay_narrow() -> None:
+    for path in sorted((ROOT / "_migration" / "reviews").glob("*-migration-review.yaml")):
+        if path.name == "template-migration-review.yaml":
+            continue
+        review = yaml.safe_load(path.read_text(encoding="utf-8"))
+        assert set(review) == REVIEW_TOP_LEVEL_KEYS, path
+        for key, allowed_keys in REVIEW_NESTED_KEYS.items():
+            assert set(review[key]) == allowed_keys, path
+
+
+def test_migrated_specs_and_attachments_require_code_and_subagent_review_gate() -> None:
+    for path in _formal_markdown_files():
+        object_id, metadata = _formal_object_id_and_metadata(path)
+        if object_id in BOOTSTRAP_OBJECT_IDS:
+            continue
+
+        review_path = ROOT / "_migration" / "reviews" / f"{object_id}-migration-review.yaml"
+        assert review_path.exists(), f"{path} missing migration review gate {review_path}"
+        review = yaml.safe_load(review_path.read_text(encoding="utf-8"))
+        assert set(review) == REVIEW_TOP_LEVEL_KEYS, review_path
+        assert review["target_spec"] == metadata["canonical_path"]
+        assert review["target_sha256"] == _sha256(path), review_path
+
+        mapping_path = ROOT / review["mapping_evidence"]["path"]
+        assert mapping_path.exists(), review_path
+        assert mapping_path.relative_to(ROOT).as_posix().startswith("_migration/"), review_path
+
+        assert review["code_verification"]["passed"] is True, review_path
+        assert review["code_verification"]["command"], review_path
+        assert review["code_verification"]["receipt"], review_path
+        assert review["subagent_review"]["agent_id"], review_path
+        assert review["subagent_review"]["verdict"] == "pass", review_path
+        assert review["subagent_review"]["receipt"], review_path
+        assert review["subagent_review"]["unresolved_blockers"] == [], review_path
