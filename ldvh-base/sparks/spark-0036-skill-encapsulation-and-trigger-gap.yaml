@@ -1,0 +1,55 @@
+id: spark-0036
+type: spark
+title: Skill 封装缺口 — 工作流未收敛为 Skill，已有 Skill 无触发时机
+status: pending
+created: '2026-06-27T08:04:00+08:00'
+updated: '2026-06-27T08:04:00+08:00'
+priority: P1
+description: |
+  LDVH 目前只有 1 个 Skill（ldvh-git-commit），大量稳定工作流未封装：
+  - WorkCase 生命周期管理（plan_review → 子Agent审查 → Human Gate → 关闭）
+  - spec 修改流程（preflight → 修改 → v2-check → commit）
+  - Hook 异常诊断（检查 adapter → 检查 payload → 修复）
+  - 子 Agent 审查调度（启动审查 → 吸收意见 → 记录结论）
+
+  更关键的是：即使已有的 ldvh-git-commit Skill 有 `consumption_scenarios` 字段定义了触发条件，也没有任何机制在正确时机提醒 AI"该用这个 Skill 了"。AI 得自己记得。
+
+  本 Spark 记录两个方向：
+  1. 将稳定工作流封装为 Skill（含 consumption_scenarios、inputs/outputs、verification）
+  2. 建立 Skill 触发建议机制——通过 dispatcher（acknowledge/pre-tool-use）输出 skill_plan 字段，提醒 AI 当前场景下可用的 Skill
+
+  触发机制与 wc-0019/0020 的 tool_plan 共用管道：
+  ├─ tool_plan: 建议的 CLI 命令（wc-0019/0020）
+  └─ skill_plan: 建议的 Skill（本 Spark 方向）
+
+  核心约束：Skill 是"怎么做"的操作规程，不是新的事实源或规范权威。Skill 触发建议是确定性匹配（action_hint + file_type → 已登记 Skill 的 consumption_scenarios），不猜自然语言。
+source: conversation
+priority_detail: |
+  本次会话从"hook 机制出了问题"出发，沿链路逐层诊断：
+  - 发现知识地图 diagnostics 用户不可见 → 修了 dispatcher 输出
+  - 发现 workcase-0010 broken reference → 修了数据
+  - 发现 20+ Code 命令只有 3 个自动触发 → 建立了 wc-0019/0020
+  - 发现 AI 不知道 WorkCase 状态机规则 → 暴露了 Skill 层空白
+  - 发现唯一的 ldvh-git-commit Skill 也没有触发机制
+
+  旧 Rules 命令参考表覆盖了全部四层（读什么、检查什么、跑什么命令、用什么 Skill），新系统按层次拆分后，Skill 层始终没有建立。
+evolution: []
+input_refs:
+  - spark-0024
+  - spark-0035
+  - skills/ldvh-git-commit/SKILL.md
+  - specs/06-运行时扩展规范.md
+related_workcases:
+  - workcase-0019
+  - workcase-0020
+related_adrs: []
+related_studies: []
+related_docs:
+  - skills/ldvh-git-commit/SKILL.md
+  - specs/06-运行时扩展规范.md
+  - specs/03-行动编排规范.md
+  - code/hook_dispatch.py
+  - rules/LDVH-RUNTIME-PROTOCOL.md
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
