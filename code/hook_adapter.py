@@ -4,8 +4,8 @@
 Works on any platform that can pipe stdin JSON to a Python script
 (WorkBuddy, Codex, and any future environment with hook support).
 
-Does NOT contain hardcoded paths.  Discovers the dispatcher by walking
-up from the working directory carried in the hook payload.
+Does NOT contain hardcoded paths.  Discovers the dispatcher from the adapter
+installation first; the payload cwd belongs to operation-target governance.
 
 Installation on each platform:
   - Point the environment hook configuration at this script.
@@ -45,8 +45,18 @@ def read_payload(raw: str) -> dict[str, Any]:
 
 
 def find_dispatcher(cwd: Path) -> Path | None:
-    """Walk up from *cwd* looking for code/hook_dispatch.py."""
-    for root in [cwd, *cwd.parents]:
+    """Find hook_dispatch.py without confusing runtime location with target cwd."""
+    local_dispatcher = Path(__file__).resolve().with_name("hook_dispatch.py")
+    if local_dispatcher.is_file():
+        return local_dispatcher
+
+    roots: list[Path] = []
+    ldvh_root = os.environ.get("LDVH_ROOT")
+    if ldvh_root:
+        roots.append(Path(ldvh_root).expanduser())
+    roots.extend([cwd, *cwd.parents])
+
+    for root in roots:
         dispatcher = root / "code" / "hook_dispatch.py"
         if dispatcher.is_file():
             return dispatcher
@@ -78,9 +88,12 @@ def main() -> int:
     event = sys.argv[1] if len(sys.argv) > 1 else "session-start"
     result = subprocess.run(
         [sys.executable, str(dispatcher), "run", event, "--trigger-source", "hook"],
-        input=raw, text=True,
+        input=raw,
+        text=True,
+        capture_output=True,
     )
-    print(result.stdout, end="")
+    if result.stdout:
+        print(result.stdout, end="")
     if result.stderr:
         print(result.stderr, end="", file=sys.stderr)
     return result.returncode
