@@ -7,7 +7,7 @@ goal: |
   本 WorkCase 要处理“工作项目可能很多”的风险：将 v3 大方向拆成第一阶段可验证闭环与后续 followup，不把 v2 全量迁移、Runtime 接入、安装 bootstrap、Web 展示、Skill 注册和旧 knowledge-map 删除混入同一轮执行。
 status: result_self_checking
 created: '2026-06-27T23:23:10.196893'
-updated: '2026-06-28T02:20:00+08:00'
+updated: '2026-06-28T02:35:00+08:00'
 priority: P1
 description: |
   Human 已确认 v3 可以大胆推进，但版本隔离应由同级 worktree、分支和管辖项目 id 承载；新工作树内部目录不带版本号，以免未来成熟后再迁移目录名。Human 同时提醒，目标句必须带定语：格式化规范应限定为面向 LDVH 规范、事实对象和运行时资产的结构化契约；确定性 Code 应限定为只读、实时、可复查、无语义猜测的编译层；知识地图 / 行动指南应限定为面向当前任务和目标对象的实时任务导航投影。
@@ -338,6 +338,7 @@ verification_evidence: |
   - v3 正式上位规范已提交：`978a9657 feat(specs): 添加 Code 确定性上位规范`；该结论后续已被自举链修正为 `specs/core/` Markdown 核心规范优先，YAML 仅作机器投影。
   - v3 自举链修正已完成：新增 `specs/core/spec-system.md`、`specs/core/schema-contract.md`、`specs/core/code-determinism.md`、`specs/core/action-guide.md`；原 `specs/code-determinism.yaml` 迁为 `specs/core/code-determinism.yaml`。
   - v3 specs 文档体系稳定约束已记录：不新增新专题目录替代原 LDVH specs 体系，不将普通 specs 正文整体 YAML 化；`specs/core/` 只作为少量父层。
+  - v3 临时 specs 体系盘点已建立：`_migration/inventory/specs-inventory.yaml` 覆盖 21 个 specs 正文和 75 个 attachment 文件，只作为迁移评审辅助，不作为正式 v3 权威。
   - v3 全量测试通过：`python3 -m pytest -q`，9 passed。
 
   ## 结论
@@ -456,6 +457,16 @@ revision_history:
       - verification_evidence
     summary: |
       记录稳定约束：原 LDVH specs 文档体系继续作为迁移基线；`specs/core/` 只放少量上位父层规范；普通 specs 正文仍按原体系逐步迁移、抽象和去冗余；`specs/schemas/` 与 YAML projection 只服务机器契约和确定性解析。明确不采用 `specs/runtime/`、`specs/facts/`、`specs/action/`、`specs/git/` 这类未经决策的新专题目录。
+  - at: '2026-06-28T02:35:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 要求继续行动，下一步应先盘点原 specs 体系，不迁正文、不新增正式规范。
+    changed_fields:
+      - updated
+      - verification_evidence
+    summary: |
+      在 v3 `_migration/inventory/specs-inventory.yaml` 建立临时盘点：覆盖 21 个 v2 specs 正文和 75 个 attachments 文件，按原体系分段记录角色、迁移动作、共同读取来源、风险和停止条件。同步更新 `_migration/README.md`，明确 inventory 只是临时评审辅助，不授权 v3 specs、schema、Code 或 Action Guide。YAML 解析校验通过，`python3 -m pytest -q` 通过：9 passed。
 related_docs:
   - specs/01-规范体系基础规范.md
   - specs/04-Code确定性执行规范.md
