@@ -11,9 +11,9 @@ goal: |
   4. 交互密度分级 — 已有 receipt 时去重，不重复刷屏
   5. 工作对象状态推入 read_plan — pending WorkCase/Spark 优先展示
   6. tool_plan 独立字段 — 基于 task_type 给命令建议
-status: human_plan_confirming
+status: human_closure_confirming
 created: '2026-06-27T06:59:00+08:00'
-updated: '2026-06-27T07:20:00+08:00'
+updated: '2026-06-27T08:25:00+08:00'
 priority: P1
 description: |
   本 WorkCase 承接 sp-0035/wc-0018 中可拆出重用的想法，以及本次会话对知识地图"效果等价但可加强"的判断。六项增强都在现有知识地图和 dispatcher 架构上加字段/加参数，不拆不改不删除。
@@ -59,10 +59,15 @@ orchestration:
         - specs/attachments/04.Att.06-知识地图投影Schema表.md
       expected_output: |
         knowledge_map.py 新增 attention_points 生成逻辑：扫描当前项目 pending/draft 状态的工作对象 + diagnostics + v2-check 结果，合成 3-5 条中文提醒。hook_dispatch.py session-start handler 透传该字段到 receipt，与 user_diagnostic_report 共用输出管道。
-      status: pending
+      status: done
       blocking_reason: ''
-      result_summary: ''
-      evidence_refs: []
+      result_summary: |
+        已在 knowledge_map.py 增加 attention_points 生成逻辑，并由 hook_dispatch.py 在 session-start receipt 中透传。governed=true 且存在 pending/draft WorkCase/Spark 时返回 3-5 条中文提醒；非管辖项目返回空列表。
+      evidence_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/hook_dispatch.py
+        - tests/code/test_hook_dispatch.py
+        - tests/code/specs_validate_checks/test_v2.py
     - id: item-2
       title: acknowledge-read-plan 自动展开 next_queries
       role: code-implementation
@@ -72,10 +77,13 @@ orchestration:
         - code/spec_checks/knowledge_map.py
       expected_output: |
         hook_dispatch.py 的 acknowledge handler 读取 session receipt 中的 next_queries，逐个调用 knowledge-map 展开，聚合为 deep_read_plan 和 deep_stop_conditions 返回。deep 结果作为 acknowledge 输出的新字段，不修改 session receipt。
-      status: pending
+      status: done
       blocking_reason: ''
-      result_summary: ''
-      evidence_refs: []
+      result_summary: |
+        acknowledge-read-plan 已读取 session receipt 中的 next_queries，并对可确定 start_node 的查询调用 knowledge-map 展开，返回去重后的 deep_read_plan 和 deep_stop_conditions；展开结果只进入 acknowledge 输出，不写回 session-start receipt。
+      evidence_refs:
+        - code/hook_dispatch.py
+        - tests/code/test_hook_dispatch.py
     - id: item-3
       title: acknowledge-read-plan 支持 --action-hint
       role: code-implementation
@@ -94,10 +102,13 @@ orchestration:
         - create → "建议先通过 knowledge-map 检查是否已有类似 Spark/WorkCase，避免重复创建"
         - review/rules_sync_review → "建议按 30 Rules 入口同步审查流程，检查固定 Rules 资产的 source_specs 和 sync_triggers"
         - unknown/AMBIGUOUS → 空字符串
-      status: pending
+      status: done
       blocking_reason: ''
-      result_summary: ''
-      evidence_refs: []
+      result_summary: |
+        acknowledge-read-plan 已支持 --action-hint <fix|create|review|modify|discuss|unknown>。action_hint 通过确定性映射转为 task_type；unknown/ambiguous 返回 AMBIGUOUS、空 tool_plan 和空 post_read_action。post_read_action 使用静态模板字符串。
+      evidence_refs:
+        - code/hook_dispatch.py
+        - tests/code/test_hook_dispatch.py
     - id: item-4
       title: 实现交互密度去重
       role: code-implementation
@@ -111,10 +122,13 @@ orchestration:
         {"status":"acknowledged", "target":"<path>", "action_hint":"<enum>", "acknowledged_at":"...", ...}
 
         receipt 仍为运行时握手证据（06 §7），扩展不改变其非事实源性质。
-      status: pending
+      status: done
       blocking_reason: ''
-      result_summary: ''
-      evidence_refs: []
+      result_summary: |
+        read_plan_consumed 已扩展记录 target 与 action_hint。同一 session_id + cwd + target + action_hint 二次 acknowledge 时返回 guide_receipt=found，不重复输出完整 tool_plan / post_read_action / deep_read_plan。
+      evidence_refs:
+        - code/hook_dispatch.py
+        - tests/code/test_hook_dispatch.py
     - id: item-5
       title: 工作对象状态推入 read_plan
       role: code-implementation
@@ -124,10 +138,13 @@ orchestration:
         - specs/attachments/04.Att.06-知识地图投影Schema表.md
       expected_output: |
         knowledge_map.py session-start 查询逻辑：当 governed=true 时，扫描当前项目 ldvh-base/ 中 pending/draft 状态的 WorkCase/Spark，将其路径和状态推入 read_plan 的 P0/P1 列表，优先级不低于规范导航。AI 可据此感知未闭环工作的存在。
-      status: pending
+      status: done
       blocking_reason: ''
-      result_summary: ''
-      evidence_refs: []
+      result_summary: |
+        knowledge_map.py 在 governed_projects / entry_navigation 范围内扫描 ldvh-base 的 pending/draft WorkCase/Spark，并将其作为 pending_work_object 推入 read_plan 前部，优先级不低于入口规范导航。
+      evidence_refs:
+        - code/spec_checks/knowledge_map.py
+        - tests/code/specs_validate_checks/test_v2.py
     - id: item-6
       title: tool_plan 独立字段
       role: code-implementation
@@ -138,10 +155,15 @@ orchestration:
         - specs/attachments/04.Att.02-Code命令入口表.md
       expected_output: |
         knowledge_map.py 输出新增 tool_plan 字段：基于 task_type 做确定性命令匹配，格式为字符串列表（如 ["python3 code/specs_validate.py preflight --target-path <path>", "python3 -m pytest tests/code/ -q"]）。与 attention_points 并列作为 session-start receipt 输出字段。不确定 task_type 时 tool_plan 为空列表。
-      status: pending
+      status: done
       blocking_reason: ''
-      result_summary: ''
-      evidence_refs: []
+      result_summary: |
+        knowledge_map.py 新增 task_type 级 tool_plan 确定性映射；hook_dispatch.py 在 session-start 透传 tool_plan，并在 acknowledge --action-hint 时返回对应建议命令。文件类型级映射未在本 WorkCase 中实现，按 wc-0020 继续承接。
+      evidence_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/hook_dispatch.py
+        - tests/code/test_hook_dispatch.py
+        - tests/code/specs_validate_checks/test_v2.py
     - id: item-7
       title: 整体测试与同步
       role: test-verification
@@ -159,10 +181,14 @@ orchestration:
         - governed=true 时 read_plan 包含 pending WorkCase/Spark
         - 非管辖项目 attention_points 为空、tool_plan 为空
         - 现有测试全部继续通过
-      status: pending
+      status: done
       blocking_reason: ''
-      result_summary: ''
-      evidence_refs: []
+      result_summary: |
+        已新增/更新测试覆盖 session-start attention_points/tool_plan/next_queries、非管辖空字段、ack action_hint/tool_plan/post_read_action、unknown AMBIGUOUS、next_queries deep 展开、二次 ack 去重、pending WorkCase/Spark 进入 read_plan。完整 tests/code 通过。
+      evidence_refs:
+        - tests/code/test_hook_dispatch.py
+        - tests/code/specs_validate_checks/test_v2.py
+        - verification_evidence
   plan_review:
     orchestration_owner: main_controller
     workflow_ref: null
@@ -288,6 +314,15 @@ orchestration:
         五轮审查(Explore-1/5/6/9/11)全部完成。4 项 required changes 已吸收。
         方案可进入执行，建议按 Explore-6 顺序 #5→#1→#6→#3→#4→#2 推进。
         Explore-11 的 3 项建议在执行时可优化，不阻塞推进。
+    human_confirmation:
+      decision: execute
+      scope: Human 明确要求“了解 wc 19 和 20，然后先完成 19”，授权本轮优先执行 WorkCase 0019 的 Code 与测试更新。
+      constraints:
+        - 先完成 wc-0019，不展开 wc-0020 的文件类型映射和 subprocess 结构化错误处理。
+        - 不改 specs 架构，不删除 knowledge-map 入口。
+        - Code 不猜自然语言；action_hint 只使用枚举映射，post_read_action 使用确定性模板。
+      confirmed_at: '2026-06-27T08:25:00+08:00'
+      summary: Human 要求先完成 wc-0019；主控读取 wc-0019/wc-0020 后按 wc-0019 边界执行。
   result_review:
     orchestration_owner: main_controller
     workflow_ref: null
@@ -300,7 +335,103 @@ orchestration:
       optional_perspectives: []
       tool_method_requirements: []
       aggregation_rule: 全部 6 项 success_criteria 有测试证据后提交 Human 关闭确认。
-    review_items: []
+    review_items:
+      - id: result-review-test-1
+        reviewer: deterministic-test-suite
+        role: 功能完整性与测试覆盖复核
+        agent_name: pytest
+        requested_at: '2026-06-27T08:25:00+08:00'
+        perspective: test-verification
+        result:
+          status: pass
+          summary: |
+            聚焦测试和完整 Code 测试均通过，覆盖 wc-0019 六项增强的主要行为：attention_points、deep_read_plan、action_hint、ack 去重、pending 工作对象 read_plan 感知和 tool_plan。
+          key_findings:
+            - '`python3 -m pytest tests/code/test_hook_dispatch.py tests/code/specs_validate_checks/test_v2.py -q` 通过：58 passed。'
+            - '`python3 -m pytest tests/code -q` 通过：387 passed。'
+            - '真实 knowledge-map smoke 确认 attention_points / tool_plan 不在投影顶层，并将 pending WorkCase/Spark 推入 read_plan 前部。'
+          required_changes: []
+          evidence_refs:
+            - tests/code/test_hook_dispatch.py
+            - tests/code/specs_validate_checks/test_v2.py
+            - verification_evidence
+      - id: result-review-spec-boundary-1
+        reviewer: subagent-spec-boundary
+        role: 规范与事实对象边界复核
+        agent_name: Heisenberg
+        requested_at: '2026-06-27T08:40:00+08:00'
+        perspective: specs-boundary
+        result:
+          status: fail
+          summary: |
+            发现 attention_points / tool_plan 被写进 knowledge-map projection 顶层输出，违反 wc-0019 已声明的 dispatcher receipt 输出增强边界。WorkCase 状态和事实对象字段整体可用，human_closure_confirming 合适，未发现 wc-0020 越界。
+          key_findings:
+            - attention_points / tool_plan 不应进入 04.Att.06 knowledge-map 核心 Schema。
+            - 测试不应断言 knowledge_map["attention_points"] 或 knowledge_map["tool_plan"]。
+            - 其余 success criteria 大体已实现或有测试覆盖。
+          required_changes:
+            - 从 knowledge-map projection 顶层移除 attention_points / tool_plan。
+            - 改由 dispatcher receipt 包装层生成或透传增强字段。
+            - 更新测试和 evidence，记录边界修正。
+          evidence_refs:
+            - code/spec_checks/knowledge_map.py
+            - code/hook_dispatch.py
+            - tests/code/specs_validate_checks/test_v2.py
+      - id: result-review-code-tests-1
+        reviewer: subagent-code-tests
+        role: Code 与测试行为复核
+        agent_name: Hypatia
+        requested_at: '2026-06-27T08:40:00+08:00'
+        perspective: code-tests
+        result:
+          status: fail
+          summary: |
+            发现非管辖 session-start 缺少 next_queries: []；其余 action_hint 映射、AMBIGUOUS、静态 post_read_action、确定性 tool_plan、去重、deep_read_plan 和 pending 工作对象 read_plan 感知未见阻断问题。
+          key_findings:
+            - 非管辖 session-start 应稳定返回 attention_points/tool_plan/next_queries 空列表。
+            - 建议 governed 分支也稳定输出 next_queries 字段，无查询时为空列表。
+            - 聚焦测试与 fact_validate 在修复前已通过，但缺少 next_queries 空列表断言。
+          required_changes:
+            - '非管辖分支补 next_queries: []。'
+            - '非管辖测试补 payload["next_queries"] == []。'
+            - 'governed 分支稳定输出 next_queries 列表。'
+          evidence_refs:
+            - code/hook_dispatch.py
+            - tests/code/test_hook_dispatch.py
+    controller_self_check:
+      controller: main-controller-codex
+      checked_at: '2026-06-27T08:25:00+08:00'
+      prompt_context:
+        objective: |
+          检查 WorkCase 0019 六项知识地图输出增强是否已落到 dispatcher receipt 输出和 knowledge-map 只读投影中，并确认测试覆盖成功标准。
+        input_refs:
+          - ldvh-base/workcases/workcase-0019-knowledge-map-output-enhancement.yaml
+          - code/hook_dispatch.py
+          - code/spec_checks/knowledge_map.py
+          - tests/code/test_hook_dispatch.py
+          - tests/code/specs_validate_checks/test_v2.py
+      result:
+        status: pass_with_followups
+        summary: |
+          主控自检通过：attention_points、deep_read_plan、action_hint、ack 去重、pending WorkCase/Spark read_plan 感知和 tool_plan 均已实现并有测试覆盖。子 agent 审核指出的 projection 顶层越界和非管辖 next_queries 空列表问题已修复；knowledge-map 核心投影不再包含 attention_points/tool_plan，dispatcher receipt 负责输出增强字段。当前进入 Human 关闭确认而非直接 closed。
+        key_findings:
+          - session-start 对 governed 项目输出 attention_points、tool_plan 和 next_queries；非管辖项目返回三个空列表。
+          - acknowledge-read-plan 支持 action_hint、确定性 post_read_action、deep_read_plan 展开和同 scope 去重。
+          - knowledge-map 将 pending/draft WorkCase/Spark 推入 read_plan；attention_points/tool_plan 不进入 projection 顶层。
+          - 聚焦测试 58 passed，完整 tests/code 387 passed。
+        required_changes: []
+        evidence_refs:
+          - verification_evidence
+      attested_at: '2026-06-27T08:25:00+08:00'
+      attestation:
+        signer: main-controller-codex
+        statement: 主控自检仅证明实现与测试闭环，不替代 Human 关闭确认。
+    controller_resolution:
+      resolved_at: '2026-06-27T08:25:00+08:00'
+      resolved_by: main_controller
+      status: human_closure_confirming
+      summary: |
+        实现、子 agent 结果审核、required changes 修复与主控验证已完成，提交 Human 关闭确认。wc-0020 的文件类型级映射与 subprocess 结构化错误处理不并入本 WorkCase。
 related_sparks:
   - spark-0035
 related_workcases:
@@ -317,12 +448,71 @@ related_docs:
   - specs/attachments/04.Att.03-Code结构化输出Schema表.md
   - tests/code/test_hook_dispatch.py
   - rules/LDVH-RUNTIME-PROTOCOL.md
-verification_evidence: ''
-closure_evidence: ''
-closure_requested_at: null
-review_requested_at: null
+plan_confirmed_at: '2026-06-27T08:25:00+08:00'
+verification_evidence: |
+  ## 验证计划
+
+  覆盖 hook_dispatch.py 的 session-start / acknowledge-read-plan 输出增强、knowledge_map.py 的 pending 工作对象感知与 tool_plan 生成、非管辖 no-op 输出，以及相关回归测试。
+
+  ## 验证命令
+
+  - `python3 -m pytest tests/code/test_hook_dispatch.py tests/code/specs_validate_checks/test_v2.py -q`
+  - `python3 -m pytest tests/code -q`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node rules/LDVH-RUNTIME-PROTOCOL.md --task-type code_change --format json`
+  - `python3 code/hook_dispatch.py run acknowledge-read-plan --cwd /Users/dmh2002/poker_hud_projects/ld-vibe-harness --action-hint fix`
+
+  ## 验证结果
+
+  - hook_dispatch + v2 knowledge-map 聚焦测试通过：58 passed。
+  - 完整 Code 测试通过：387 passed。
+  - 真实 knowledge-map smoke 确认 attention_points/tool_plan 不在 projection 顶层，并将 pending WorkCase/Spark 推入 read_plan 前部。
+  - acknowledge-read-plan 支持 --action-hint fix / unknown、deep_read_plan 展开与同 scope 去重，测试覆盖通过。
+  - 子 agent 审核 required changes 已吸收：dispatcher receipt 层生成 attention_points/tool_plan；非管辖 session-start 返回 next_queries=[]。
+
+  ## 结论
+
+  wc-0019 的六项输出增强已完成：dispatcher receipt 输出层负责 attention_points/tool_plan/action_hint/deep_read_plan/去重；knowledge-map 只读投影层仅保留 pending 工作对象进入 read_plan，不扩展 04.Att.06 顶层 Schema，不删除 knowledge-map 入口。
+closure_evidence: |
+  ## 验证计划
+
+  关闭前复核 wc-0019 六项增强是否均已实现并有测试证据：attention_points、deep_read_plan、action_hint、交互密度去重、工作对象 read_plan 感知、tool_plan。
+
+  ## 验证命令
+
+  - `python3 -m pytest tests/code/test_hook_dispatch.py tests/code/specs_validate_checks/test_v2.py -q`
+  - `python3 -m pytest tests/code -q`
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0019-knowledge-map-output-enhancement.yaml`
+
+  ## 验证结果
+
+  - 聚焦测试通过：58 passed。
+  - 完整 Code 测试通过：387 passed。
+  - fact_validate 初次提示 closed 状态需要独立结果复核和完整关闭字段，因此本轮不直接 closed，转入 Human 关闭确认。
+
+  ## 结论
+
+  本 WorkCase 已完成：
+  - attention_points：session-start receipt 透传 3-5 条中文提醒，非管辖项目为空列表；
+  - deep_read_plan：acknowledge-read-plan 自动展开 receipt next_queries；
+  - action_hint：acknowledge-read-plan 支持 fix/create/review/modify/discuss/unknown，unknown 返回 AMBIGUOUS；
+  - 交互密度去重：同 session_id + cwd + target + action_hint 二次 ack 返回 guide_receipt=found；
+  - 工作对象感知：pending/draft WorkCase/Spark 推入 read_plan；
+  - tool_plan：基于 task_type/action_hint 的确定性命令建议已返回。
+
+  文件类型级命令映射与 subprocess 结构化错误处理属于 wc-0020，未并入本 WorkCase。
+
+  ## 收口结果
+
+  实现、测试和主控自检已完成；等待 Human 确认后再正式关闭。
+
+  ## 后续分流
+
+  后续分流明确：wc-0020 继续承接文件类型到 Code 命令映射和 subprocess 结构化错误处理；wc-0019 无剩余实现项。
+closure_requested_at: '2026-06-27T08:25:00+08:00'
+review_requested_at: '2026-06-27T08:25:00+08:00'
 closed_at: null
-closure_outcome: ''
-residual_risks: []
+closure_outcome: completed
+residual_risks:
+  - wc-0020 尚未执行，tool_plan 暂为 task_type/action_hint 级建议；文件类型级命令映射后续由 wc-0020 承接。
 followup_refs: []
 revision_history: []

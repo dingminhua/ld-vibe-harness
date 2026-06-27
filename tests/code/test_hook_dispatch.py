@@ -130,6 +130,145 @@ def test_acknowledge_read_plan_blocks_empty_required_paths_for_governed_receipt(
     assert "空读取计划" in payload["reason"]
 
 
+def test_acknowledge_action_hint_returns_tool_plan_and_post_read_action(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    dispatcher._write_session_receipt(
+        "action-plan",
+        "session-start",
+        {
+            "governed": True,
+            "cwd": str(tmp_path),
+            "target_paths": [str(tmp_path)],
+            "read_plan": [
+                {"path": "rules/LDVH-RUNTIME-PROTOCOL.md", "priority": "P0"},
+                {"path": "specs/06-运行时扩展规范.md", "priority": "P1"},
+            ],
+        },
+    )
+
+    exit_code = dispatcher.handle_acknowledge_read_plan(
+        tmp_path,
+        trigger_source="rules",
+        session_id="action-plan",
+        action_hint="fix",
+    )
+    payload = json.loads(capsys.readouterr().out)
+    receipt = dispatcher._read_session_receipt("action-plan")
+
+    assert exit_code == 0
+    assert payload["acknowledged"] is True
+    assert payload["task_type"] == "code_change"
+    assert payload["tool_plan"]
+    assert "测试" in payload["post_read_action"]
+    assert receipt["read_plan_consumed"]["action_hint"] == "fix"
+    assert receipt["read_plan_consumed"]["target"] == [str(tmp_path)]
+
+
+def test_acknowledge_unknown_action_hint_is_ambiguous(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    dispatcher._write_session_receipt(
+        "unknown-action",
+        "session-start",
+        {
+            "governed": True,
+            "cwd": str(tmp_path),
+            "read_plan": [{"path": "rules/LDVH-RUNTIME-PROTOCOL.md", "priority": "P0"}],
+        },
+    )
+
+    exit_code = dispatcher.handle_acknowledge_read_plan(
+        tmp_path,
+        trigger_source="rules",
+        session_id="unknown-action",
+        action_hint="unknown",
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["task_type"] == "AMBIGUOUS"
+    assert payload["tool_plan"] == []
+    assert payload["post_read_action"] == ""
+
+
+def test_acknowledge_expands_next_queries(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    dispatcher._write_session_receipt(
+        "deep-read",
+        "session-start",
+        {
+            "governed": True,
+            "cwd": str(tmp_path),
+            "read_plan": [{"path": "rules/LDVH-RUNTIME-PROTOCOL.md", "priority": "P0"}],
+            "next_queries": [
+                {
+                    "purpose": "expand_if_needed",
+                    "input_scope": "entry_navigation",
+                    "layer": "expand",
+                    "start_node": "rules/LDVH-RUNTIME-PROTOCOL.md",
+                }
+            ],
+        },
+    )
+
+    def fake_knowledge_map(start_node, task_type, **kwargs):
+        return {
+            "read_plan": [{"path": "specs/06-运行时扩展规范.md", "priority": "P1"}],
+            "stop_conditions": [{"condition": "runtime_protocol_stop_points"}],
+        }
+
+    monkeypatch.setattr(dispatcher, "_run_knowledge_map", fake_knowledge_map)
+
+    exit_code = dispatcher.handle_acknowledge_read_plan(
+        tmp_path,
+        trigger_source="rules",
+        session_id="deep-read",
+        action_hint="fix",
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["deep_read_plan"][0]["path"] == "specs/06-运行时扩展规范.md"
+    assert payload["deep_stop_conditions"][0]["condition"] == "runtime_protocol_stop_points"
+
+
+def test_acknowledge_reuses_existing_guide_receipt_for_same_scope(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    dispatcher._write_session_receipt(
+        "dedupe",
+        "session-start",
+        {
+            "governed": True,
+            "cwd": str(tmp_path),
+            "target_paths": [str(tmp_path)],
+            "read_plan": [{"path": "rules/LDVH-RUNTIME-PROTOCOL.md", "priority": "P0"}],
+        },
+    )
+
+    assert dispatcher.handle_acknowledge_read_plan(
+        tmp_path,
+        trigger_source="rules",
+        session_id="dedupe",
+        action_hint="fix",
+    ) == 0
+    capsys.readouterr()
+
+    exit_code = dispatcher.handle_acknowledge_read_plan(
+        tmp_path,
+        trigger_source="rules",
+        session_id="dedupe",
+        action_hint="fix",
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["guide_receipt"] == "found"
+    assert "tool_plan" not in payload
+
+
 def test_session_start_writes_receipt_state(monkeypatch, tmp_path, capsys):
     dispatcher = load_dispatcher()
     config = tmp_path / "LDVH-GOVERNED-PROJECTS.yaml"
@@ -152,6 +291,55 @@ def test_session_start_writes_receipt_state(monkeypatch, tmp_path, capsys):
     assert payload["receipt"] == "ok"
     assert receipt["event"] == "session-start"
     assert receipt["result"]["receipt"] == "ok"
+
+
+def test_session_start_exposes_attention_points_tool_plan_and_next_queries(monkeypatch, tmp_path, capsys):
+    dispatcher = load_dispatcher()
+    config = tmp_path / "LDVH-GOVERNED-PROJECTS.yaml"
+    config.write_text("projects:\n  - path: .\n", encoding="utf-8")
+
+    monkeypatch.setattr(dispatcher, "_find_governed_config", lambda cwd: config)
+    monkeypatch.setattr(dispatcher, "_cwd_in_governed_project", lambda cwd, config_path: True)
+    monkeypatch.setattr(
+        dispatcher,
+        "_run_knowledge_map",
+        lambda start_node, task_type: {
+            "result_status": "ok",
+            "diagnostics": [],
+            "read_plan": [
+                {
+                    "path": "ldvh-base/workcases/workcase-0001-pending.yaml",
+                    "priority": "P0",
+                    "role": "work_object",
+                    "title": "Pending WorkCase",
+                    "source_relation": "pending_work_object",
+                },
+                {"path": "rules/start.md", "priority": "P1", "role": "start"},
+            ],
+            "next_queries": [{"purpose": "expand_if_needed", "start_node": "rules/start.md"}],
+        },
+    )
+
+    exit_code = dispatcher.handle_session_start(tmp_path, trigger_source="hook")
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert any("未闭环" in point for point in payload["attention_points"])
+    assert payload["tool_plan"] == []
+    assert payload["next_queries"][0]["purpose"] == "expand_if_needed"
+
+
+def test_session_start_non_governed_exposes_empty_runtime_guides(tmp_path, capsys):
+    dispatcher = load_dispatcher()
+
+    exit_code = dispatcher.handle_session_start(tmp_path, trigger_source="rules")
+    payload = json.loads(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert payload["governed"] is False
+    assert payload["attention_points"] == []
+    assert payload["tool_plan"] == []
+    assert payload["next_queries"] == []
 
 
 def test_session_start_recognizes_git_worktree_as_governed_project(monkeypatch, tmp_path, capsys):

@@ -59,6 +59,43 @@ RUNTIME_FALLBACK_READ_PLAN = [
         "source_relation": "fallback",
     },
 ]
+ACTION_HINT_TO_TASK_TYPE = {
+    "fix": "code_change",
+    "create": "create",
+    "review": "review",
+    "modify": "modify",
+    "discuss": "discuss",
+}
+POST_READ_ACTION_BY_TASK_TYPE = {
+    "code_change": "建议先运行测试确认当前状态，再基于 read_plan 定位修改点和相关规范",
+    "create": "建议先通过 knowledge-map 检查是否已有类似 Spark/WorkCase，避免重复创建",
+    "review": "建议按相关审查流程核对来源、影响边界和验证证据",
+    "rules_sync_review": "建议按 30 Rules 入口同步审查流程，检查固定 Rules 资产的 source_specs 和 sync_triggers",
+    "modify": "建议先运行写入前检查，再按 read_plan 核对受影响事实源和验证入口",
+    "discuss": "建议围绕 read_plan 先澄清目标、约束和需要补读的事实源",
+}
+TOOL_PLAN_BY_TASK_TYPE = {
+    "code_change": [
+        "python3 code/specs_validate.py v2-check --format text",
+        "python3 -m pytest tests/code/ -q",
+    ],
+    "create": [
+        "python3 code/specs_validate.py knowledge-map --input-scope governed_projects --layer entry --format json",
+    ],
+    "review": [
+        "python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/30-rules-entry-sync-review-Rules入口同步审查.md --task-type rules_sync_review --format json",
+    ],
+    "rules_sync_review": [
+        "python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/30-rules-entry-sync-review-Rules入口同步审查.md --task-type rules_sync_review --format json",
+    ],
+    "modify": [
+        "python3 code/specs_validate.py preflight --target-path <path>",
+        "python3 code/specs_validate.py v2-check --format text",
+    ],
+    "discuss": [
+        "python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --format json",
+    ],
+}
 
 
 def _receipt_root() -> Path:
@@ -216,7 +253,123 @@ def _has_required_read_plan(read_plan: Any) -> bool:
     )
 
 
-def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = "rules") -> dict[str, Any]:
+def _normalize_action_hint(action_hint: str) -> tuple[str, str]:
+    normalized = action_hint.strip().lower().replace("_", "-")
+    if not normalized:
+        return "", ""
+    if normalized in {"unknown", "ambiguous"}:
+        return normalized, "AMBIGUOUS"
+    task_type = ACTION_HINT_TO_TASK_TYPE.get(normalized)
+    if task_type:
+        return normalized, task_type
+    return normalized, "AMBIGUOUS"
+
+
+def _ack_target_key(cwd: Path, targets: list[Path] | None, receipt: dict[str, Any]) -> list[str]:
+    if targets:
+        return [str(target) for target in targets]
+    result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
+    target_paths = result.get("target_paths") if isinstance(result, dict) else []
+    if isinstance(target_paths, list) and target_paths:
+        return [str(item) for item in target_paths if isinstance(item, str)]
+    return [str(cwd)]
+
+
+def _same_ack_scope(consumed: Any, *, cwd: Path, target_key: list[str], action_hint: str) -> bool:
+    if not isinstance(consumed, dict) or consumed.get("status") != "acknowledged":
+        return False
+    stored_target = consumed.get("target")
+    if isinstance(stored_target, str):
+        stored_targets = [stored_target]
+    elif isinstance(stored_target, list):
+        stored_targets = [str(item) for item in stored_target]
+    else:
+        stored_targets = [str(cwd)]
+    return (
+        consumed.get("cwd") == str(cwd)
+        and stored_targets == target_key
+        and str(consumed.get("action_hint") or "") == action_hint
+    )
+
+
+def _tool_plan_for_task_type(task_type: str) -> list[str]:
+    return list(TOOL_PLAN_BY_TASK_TYPE.get(task_type, []))
+
+
+def _post_read_action_for_task_type(task_type: str) -> str:
+    return POST_READ_ACTION_BY_TASK_TYPE.get(task_type, "")
+
+
+def _build_attention_points(read_plan: list[dict[str, Any]], diagnostics: Any, result_status: str) -> list[str]:
+    points: list[str] = []
+    pending = [
+        item
+        for item in read_plan
+        if isinstance(item, dict) and item.get("source_relation") == "pending_work_object"
+    ]
+    if pending:
+        titles = "、".join(str(item.get("title") or item.get("path")) for item in pending[:3])
+        points.append(f"当前有未闭环工作对象需优先核对：{titles}")
+    if isinstance(diagnostics, list):
+        for diagnostic in diagnostics[:2]:
+            if not isinstance(diagnostic, dict):
+                continue
+            code = diagnostic.get("code") or "diagnostic"
+            message = diagnostic.get("message") or "知识地图输出受限"
+            points.append(f"诊断提醒 {code}：{message}")
+    if result_status == "limited":
+        points.append("知识地图处于 limited 状态，继续前需回读 read_plan 中的权威原文。")
+    if not points:
+        points.append("未发现阻断性知识地图诊断；仍需按 read_plan 回读权威原文。")
+    if len(points) < 3:
+        points.append("行动前请确认目标、工作对象状态和 Human Gate 边界。")
+    if len(points) < 3:
+        points.append("修改后应使用对应 Code 或测试入口留下验证证据。")
+    return points[:5]
+
+
+def _expand_next_queries(receipt: dict[str, Any], task_type: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
+    queries = result.get("next_queries") if isinstance(result, dict) else []
+    if not isinstance(queries, list):
+        return [], []
+    read_plan: list[dict[str, Any]] = []
+    stop_conditions: list[dict[str, Any]] = []
+    seen_read_plan: set[tuple[str, str]] = set()
+    seen_stop_conditions: set[str] = set()
+    for query in queries:
+        if not isinstance(query, dict):
+            continue
+        start_node = query.get("start_node")
+        if not isinstance(start_node, str) or not start_node or "<" in start_node:
+            continue
+        km = _run_knowledge_map(
+            start_node,
+            task_type if task_type and task_type != "AMBIGUOUS" else "general",
+            input_scope=str(query.get("input_scope") or "entry_navigation"),
+            layer=str(query.get("layer") or "neighbors"),
+        )
+        for item in km.get("read_plan", []) if isinstance(km.get("read_plan"), list) else []:
+            if not isinstance(item, dict):
+                continue
+            key = (str(item.get("path") or ""), str(item.get("node_id") or ""))
+            if key in seen_read_plan:
+                continue
+            seen_read_plan.add(key)
+            read_plan.append(item)
+        for item in km.get("stop_conditions", []) if isinstance(km.get("stop_conditions"), list) else []:
+            if not isinstance(item, dict):
+                continue
+            key = str(item.get("condition") or item.get("reason") or "")
+            if key in seen_stop_conditions:
+                continue
+            seen_stop_conditions.add(key)
+            stop_conditions.append(item)
+    return read_plan[:24], stop_conditions[:12]
+
+
+def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = "rules",
+                           action_hint: str = "", targets: list[Path] | None = None) -> dict[str, Any]:
     receipt = _read_session_receipt(session_id) if session_id else _latest_session_receipt(cwd)
     if not receipt:
         return {
@@ -226,11 +379,26 @@ def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = 
             "trigger_source": trigger_source,
             "reason": "未找到可确认的 session receipt；必须先完成 session-start。",
         }
+    normalized_action_hint, task_type = _normalize_action_hint(action_hint)
+    target_key = _ack_target_key(cwd, targets, receipt)
+    consumed = receipt.get("read_plan_consumed")
+    if _same_ack_scope(consumed, cwd=cwd, target_key=target_key, action_hint=normalized_action_hint):
+        return {
+            "acknowledged": True,
+            "blocked": False,
+            "cwd": str(cwd),
+            "trigger_source": trigger_source,
+            "session_id": receipt.get("session_id", ""),
+            "guide_receipt": "found",
+        }
+
     ack = {
         "status": "acknowledged",
         "acknowledged_at": datetime.now(timezone.utc).isoformat(),
         "trigger_source": trigger_source,
         "cwd": str(cwd),
+        "target": target_key,
+        "action_hint": normalized_action_hint,
         "required_paths": _required_read_plan_paths(receipt),
     }
     result = receipt.get("result") if isinstance(receipt.get("result"), dict) else {}
@@ -266,7 +434,8 @@ def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = 
             "trigger_source": trigger_source,
             "reason": f"写入 read_plan 消费证据失败: {exc}",
         }
-    return {
+    deep_read_plan, deep_stop_conditions = _expand_next_queries(receipt, task_type)
+    result_payload = {
         "acknowledged": True,
         "blocked": False,
         "cwd": str(cwd),
@@ -275,6 +444,16 @@ def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = 
         "required_paths": ack["required_paths"],
         "receipt": "read_plan_consumed",
     }
+    if normalized_action_hint:
+        result_payload["action_hint"] = normalized_action_hint
+        result_payload["task_type"] = task_type
+        result_payload["tool_plan"] = _tool_plan_for_task_type(task_type)
+        result_payload["post_read_action"] = _post_read_action_for_task_type(task_type)
+    if deep_read_plan:
+        result_payload["deep_read_plan"] = deep_read_plan
+    if deep_stop_conditions:
+        result_payload["deep_stop_conditions"] = deep_stop_conditions
+    return result_payload
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -599,14 +778,15 @@ def resolve_governed_subject(cwd: Path, targets: list[Path], *, target_sources: 
     return result
 
 
-def _run_knowledge_map(start_node: str, task_type: str) -> dict[str, Any]:
+def _run_knowledge_map(start_node: str, task_type: str, *, input_scope: str = "entry_navigation",
+                       layer: str = "neighbors") -> dict[str, Any]:
     """Run knowledge-map for the given start node and return the JSON receipt."""
     cmd = [
         sys.executable,
         str(PROJECT_ROOT / "code" / "specs_validate.py"),
         "knowledge-map",
-        "--input-scope", "entry_navigation",
-        "--layer", "neighbors",
+        "--input-scope", input_scope,
+        "--layer", layer,
         "--start-node", start_node,
         "--task-type", task_type,
         "--format", "json",
@@ -706,16 +886,21 @@ def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules",
         "trigger_source": trigger_source,
     }
     if not governed:
+        result["attention_points"] = []
+        result["tool_plan"] = []
+        result["next_queries"] = []
         return result
 
     # Run knowledge-map to get the entry chain receipt
     km = _run_knowledge_map("rules/LDVH-RUNTIME-PROTOCOL.md", "rules_entry")
     result["receipt"] = km.get("result_status", "unknown")
     result["diagnostics"] = km.get("diagnostics", 0)
+    result["tool_plan"] = _tool_plan_for_task_type("rules_entry")
 
     # Extract read_plan and stop_conditions for AI consumption
     read_plan = km.get("read_plan", [])
     stop_conditions = km.get("stop_conditions", [])
+    next_queries = km.get("next_queries", [])
     if _has_required_read_plan(read_plan):
         result["read_plan"] = read_plan[:8]  # top entries only
         result["read_plan_source"] = "knowledge-map"
@@ -729,6 +914,7 @@ def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules",
         )
     if stop_conditions:
         result["stop_conditions"] = stop_conditions
+    result["next_queries"] = next_queries if isinstance(next_queries, list) else []
 
     diags = km.get("diagnostics")
     if isinstance(diags, list) and diags:
@@ -749,12 +935,24 @@ def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules",
             "待用户确认后，优先修复 diagnostics 指向的问题。"
         )
 
+    result["attention_points"] = _build_attention_points(
+        result.get("read_plan", []),
+        result.get("diagnostics", []),
+        str(result.get("receipt") or ""),
+    )
     return result
 
 
-def handle_acknowledge_read_plan(cwd: Path, *, trigger_source: str = "rules", session_id: str = "") -> int:
+def handle_acknowledge_read_plan(cwd: Path, *, trigger_source: str = "rules", session_id: str = "",
+                                 action_hint: str = "", targets: list[Path] | None = None) -> int:
     """Record that the AI consumed the current receipt read_plan P0/P1 entries."""
-    result = _acknowledge_read_plan(session_id, cwd, trigger_source=trigger_source)
+    result = _acknowledge_read_plan(
+        session_id,
+        cwd,
+        trigger_source=trigger_source,
+        action_hint=action_hint,
+        targets=targets,
+    )
     print(json.dumps(result, ensure_ascii=False))
     return 0 if result.get("acknowledged") else 1
 
@@ -1226,7 +1424,14 @@ def main(argv: Optional[list[str]] = None) -> int:
         if normalized in ("session-start", "sessionstart"):
             return handle_session_start(cwd, trigger_source=trigger_source, session_id=session_id, targets=targets)
         if normalized in ("acknowledge-read-plan", "acknowledgereadplan"):
-            return handle_acknowledge_read_plan(cwd, trigger_source=trigger_source, session_id=session_id)
+            action_hint = stdin_payload.get("action_hint", "")
+            return handle_acknowledge_read_plan(
+                cwd,
+                trigger_source=trigger_source,
+                session_id=session_id,
+                action_hint=action_hint if isinstance(action_hint, str) else "",
+                targets=targets,
+            )
         if normalized in ("pre-tool-use", "pretooluse"):
             tool = _stdin_tool_name(stdin_payload)
             command = _stdin_tool_command(stdin_payload)
@@ -1289,6 +1494,8 @@ def main(argv: Optional[list[str]] = None) -> int:
                             help="Tool command or payload summary (pre-tool-use only).")
     run_parser.add_argument("--session-id", type=str, default="",
                             help="Session id for receipt lookup or acknowledgement.")
+    run_parser.add_argument("--action-hint", type=str, default="",
+                            help="Action hint for acknowledge-read-plan: fix | create | review | modify | discuss | unknown.")
     run_parser.add_argument("--dry-run", action="store_true",
                             help="Print commands without executing (git.commit-msg only).")
 
@@ -1322,7 +1529,13 @@ def main(argv: Optional[list[str]] = None) -> int:
                 return handle_session_start(cwd, trigger_source=trigger_source, session_id=args.session_id, targets=targets)
 
             if event in ("acknowledge-read-plan", "AcknowledgeReadPlan"):
-                return handle_acknowledge_read_plan(cwd, trigger_source=trigger_source, session_id=args.session_id)
+                return handle_acknowledge_read_plan(
+                    cwd,
+                    trigger_source=trigger_source,
+                    session_id=args.session_id,
+                    action_hint=args.action_hint,
+                    targets=targets,
+                )
 
             if event in ("pre-tool-use", "PreToolUse"):
                 return handle_pre_tool_use(
