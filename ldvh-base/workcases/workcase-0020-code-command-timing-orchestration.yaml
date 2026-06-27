@@ -11,7 +11,8 @@ goal: |
   本 WorkCase 不修改 pre-tool-use 的阻断逻辑、不引入自动补位 acknowledge、不在 dispatcher 层追加 command_suggestions。
   命令建议全部通过 knowledge-map 输出路径（04.Att.06 授权），不进 dispatcher 治理字段。
 
-  执行依赖：在 wc-0019 之前执行。wc-0019 的 item-6（tool_plan）在实现 task_type 级命令映射时导入本 WorkCase 产出的文件类型映射表，实现 file_type 级命令增强。
+  原计划依赖：wc-0020 先于 wc-0019 执行，并由 wc-0019 item-6 导入本 WorkCase 产出的文件类型映射表，实现 file_type 级命令增强。
+  实际执行顺序：wc-0019 已先完成并提交，wc-0020 后完成。因此本 WorkCase 本轮只完成映射表与 subprocess 错误结构化；是否将 file_command_map.py 进一步并入 wc-0019/tool_plan，已分流到 spark-0037。
 status: human_closure_confirming
 created: '2026-06-27T07:15:00+08:00'
 updated: '2026-06-27T09:10:00+08:00'
@@ -23,14 +24,14 @@ description: |
   - 原 item-3（acknowledge 自动补位）违反 06 §7，已移除。dispatcher 不能替 AI 伪造 read_plan_consumed 证据。
   - 原 item-2（pre-tool-use command_suggestions）越权——dispatcher 职责是治理，不是操作指导。命令建议改走 knowledge-map 输出路径。
   - 原"post_change_verification"字段在 wc-0019 中不存在，已从本 WorkCase 移除。wc-0019 的 tool_plan（item-6）承担文件类型级命令建议职责。
-  - 执行依赖修正为"wc-0020 先 → wc-0019 后"，wc-0019 item-6 导入本 WorkCase 的映射表做 file_type 增强。
+  - 执行依赖在计划阶段曾修正为"wc-0020 先 → wc-0019 后"，但实际执行中 wc-0019 先提交、wc-0020 后提交；该偏差已在收口后续分流中记录。
 
   与 wc-0019 的分工：
   - wc-0019 管 knowledge-map 输出增强：新增 tool_plan、post_read_action、attention_points、deep_read_plan 等字段
-  - wc-0020 管输入基础：提供文件类型映射表（独立共享模块），wc-0019 item-6 导入实现 tool_plan 的 file_type 级命令映射
-  - 两者串联：先 wc-0020，再 wc-0019
+  - wc-0020 管输入基础：提供文件类型映射表（独立共享模块）
+  - 是否由 wc-0019 的 tool_plan 导入 file_type 级命令映射，后续由 spark-0037 承接判断
 
-  映射表放置位置：独立共享模块 code/constants/file_command_map.py，由 wc-0019 的 knowledge_map.py 导入，避免 hook_dispatch.py ↔ knowledge_map.py 循环依赖。dispatcher（hook_dispatch.py）在构建 session-start receipt 时透传 knowledge-map 输出中的 tool_plan 字段，不直接查询映射表。
+  映射表放置位置：独立共享模块 code/constants/file_command_map.py，避免 hook_dispatch.py ↔ knowledge_map.py 循环依赖。dispatcher（hook_dispatch.py）本轮不直接查询映射表，不改变 pre-tool-use 阻断语义。
 
   不改 Hook 阻断语义，不改 specs 架构。
 success_criteria: |
@@ -405,6 +406,44 @@ orchestration:
             - code/hook_dispatch.py
             - code/constants/file_command_map.py
             - tests/code/test_hook_dispatch.py
+      - id: result-review-subagent-3
+        reviewer: subagent-spec-boundary
+        role: 规范与事实对象边界复核
+        agent_name: Herschel
+        requested_at: '2026-06-27T09:40:00+08:00'
+        perspective: specs-boundary
+        result:
+          status: fail
+          summary: |
+            规范/代码边界通过，但事实对象收口 needs_changes：wc-0020 顶部仍保留“应在 wc-0019 之前执行 / wc-0019 会导入本映射表”的旧计划陈述；实际历史是 wc-0019 已先提交，wc-0020 后提交，且当前未集成进 wc-0019/tool_plan。closure_evidence 虽记录偏差，但 followup_refs 为空。
+          key_findings:
+            - file_command_map.py 只包含 04.Att.02 授权命令，未授权类型保持空列表。
+            - 未越界修改 pre-tool-use 阻断语义、acknowledge 自动补位或 dispatcher command_suggestions。
+            - wc-0019 集成 file_command_map.py 的后续判断需要事实对象承接。
+          required_changes:
+            - 将 wc-0020 顶部旧依赖陈述改为历史计划与实际偏差说明。
+            - 新增或引用 followup_refs 承接“是否把 file_command_map.py 并入 wc-0019/tool_plan”。
+            - closure_outcome 保持 completed，但明确完成范围仅为映射表与 subprocess 错误处理。
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0020-code-command-timing-orchestration.yaml
+            - code/constants/file_command_map.py
+      - id: result-review-fix-2
+        reviewer: main-controller-codex
+        role: 子 agent 事实对象收口修复复核
+        agent_name: Codex
+        requested_at: '2026-06-27T09:45:00+08:00'
+        perspective: fact-closure
+        result:
+          status: pass
+          summary: |
+            已吸收 Herschel required changes：wc-0020 顶部改为历史计划与实际执行偏差说明；新增 spark-0037 承接 file_command_map.py 是否并入 wc-0019/tool_plan；followup_refs 指向 spark-0037。
+          key_findings:
+            - wc-0020 完成范围限定为文件类型映射表与 subprocess 结构化错误处理。
+            - wc-0019/tool_plan 集成问题已从 closure prose 分流到 Spark。
+          required_changes: []
+          evidence_refs:
+            - ldvh-base/sparks/spark-0037-file-command-map-tool-plan-integration.yaml
+            - ldvh-base/workcases/workcase-0020-code-command-timing-orchestration.yaml
     controller_self_check:
       controller: main-controller-codex
       checked_at: '2026-06-27T09:10:00+08:00'
@@ -437,7 +476,7 @@ orchestration:
       resolved_by: main_controller
       status: human_closure_confirming
       summary: |
-        实现与主控验证已完成，提交 Human 关闭确认。后续若要把文件类型映射导入 wc-0019 的 tool_plan，需要另行评估，因为 wc-0019 已先行完成并提交。
+        实现、子 agent 结果审核、required changes 修复与主控验证已完成，提交 Human 关闭确认。本 WorkCase 完成范围限定为文件类型映射表与 subprocess 结构化错误处理；后续是否把文件类型映射导入 wc-0019/tool_plan，已分流到 spark-0037。
 related_sparks: []
 related_workcases:
   - workcase-0019
@@ -470,11 +509,12 @@ verification_evidence: |
   - 完整 Code 测试通过：390 passed。
   - 新增测试覆盖映射表导入、spec 授权命令、未授权类型空列表、_run_knowledge_map 结构化错误、stderr_head 非空、_git_text_structured error dict 和 _git_text str 返回。
   - active surface 检查发现新增文案中的“人工检查”旧表达，已修正为“手动检查”并重跑完整测试通过。
+  - 子 agent 审核 required changes 已吸收：wc-0020 顶部旧依赖陈述已改为历史计划与实际偏差说明，wc-0019/tool_plan 集成问题已分流到 spark-0037。
   - 子 agent 结果审核发现 _run_knowledge_map OSError、JSON decode 失败与绝对路径分类边界；已补实现和测试覆盖。
 
   ## 结论
 
-  wc-0020 的映射表与 subprocess 结构化错误处理已完成实现与聚焦验证。
+  wc-0020 的映射表与 subprocess 结构化错误处理已完成实现与验证；wc-0019/tool_plan 集成不属于本轮完成范围，已由 spark-0037 承接。
 closure_evidence: |
   ## 验证计划
 
@@ -507,12 +547,13 @@ closure_evidence: |
 
   ## 后续分流
 
-  wc-0019 已先于 wc-0020 提交，因此“将文件类型映射导入 tool_plan”未在本提交中回改；如需进一步合并 task_type 与 file_type 建议，可另行创建 followup 或更新 wc-0019/wc-0020 的后续承接。
+  wc-0019 已先于 wc-0020 提交，因此“将文件类型映射导入 tool_plan”未在本提交中回改；后续是否进一步合并 task_type 与 file_type 建议，已由 spark-0037 承接。
 closure_requested_at: '2026-06-27T09:10:00+08:00'
 review_requested_at: '2026-06-27T09:10:00+08:00'
 closed_at: null
 closure_outcome: completed
 residual_risks:
   - 文件类型判定基于路径目录结构，边缘情况（如用户自定义目录下同扩展名文件）可能误判，但命令均为只读建议，误判不造成损害
-followup_refs: []
+followup_refs:
+  - ldvh-base/sparks/spark-0037-file-command-map-tool-plan-integration.yaml
 revision_history: []
