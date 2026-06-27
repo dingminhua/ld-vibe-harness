@@ -1,11 +1,13 @@
 id: spark-0038
 type: spark
-title: v3 旁路工作树与行动指南编译链探索
+title: v3 specs 与 Code 重构线
 status: pending
 created: '2026-06-27T22:40:41.783405'
-updated: '2026-06-28T03:20:00+08:00'
+updated: '2026-06-28T03:35:00+08:00'
 description: |
-  本 Spark 记录 LDVH v3 的旁路实验线：在同级目录创建 `../ld-vibe-harness-v3`，使用独立分支 `dev-v3`，并以 orphan-style 干净根逐步迁移必要内容。版本身份由外层 worktree、分支和工作区根目录管辖项目 `ldvh-v3` 承载；本轮只允许增加管辖配置，不改变 Runtime、dispatcher、native hook 或提交策略。v2/v3 worktree 共享 Git common_dir 时如何消歧，必须作为后续方案单独沟通确认。新工作树内部直接使用未来主线目录名，一级目录只放稳定构成面：`specs/`、`code/`、`tests/`、`rules/`、`hooks/`、`skills/` 和 `ldvh-base/`，不再使用 `specs-v3/` 或 `code-v3/` 这类临时目录。
+  本 Spark 记录 LDVH v3 的 specs 与 Code 正式重构线：在同级目录创建 `../ld-vibe-harness-v3`，使用独立分支 `dev-v3`，并以 orphan-style 干净根逐步推进 specs 与 Code 两块重构。版本身份由外层 worktree、分支和工作区根目录管辖项目 `ldvh-v3` 承载；本轮只允许增加管辖配置，不改变 Runtime、dispatcher、native hook 或提交策略。v2/v3 worktree 共享 Git common_dir 时如何消歧，必须作为后续方案单独沟通确认。新工作树内部直接使用未来主线目录名，一级目录只放稳定构成面：`specs/`、`code/`、`tests/`、`rules/`、`hooks/`、`skills/` 和 `ldvh-base/`，不再使用 `specs-v3/` 或 `code-v3/` 这类临时目录。
+
+  当前稳定定位：v3 不是“实验后回灌 v2”的路线，而是 LDVH 下一代 specs + Code 的正式重构线。v2 继续作为当前稳定运行线；v3 先集中重构 specs 与 Code，以解决 v2 specs 膨胀、重复、AI 负担高和 knowledge-map 概念过窄的问题。`rules/`、`hooks/`、`skills/`、Runtime、Web、`ldvh-base/` 等其他构成面暂不重构、不改策略、不提前接入；待 specs + Code 两块成熟后，再按整体迁移路线切换。
 
   v3 骨架应体现权威归口：
 
@@ -25,7 +27,7 @@ description: |
 
   `specs/` 是规则权威；`specs/schemas/` 是 specs 授权的机器可读契约层，不是独立事实源，也不是 Code 私有配置；`code/` 消费 schema，但不拥有 schema；`tests/fixtures/` 是验证样例、回归输入和正反例材料，不是规则来源；`ldvh-base/` 承载真实事实对象，不混入测试假数据。简言之：schema 归 specs，fixtures 归 tests。
 
-  v3 的目标不是重写一批 Markdown，也不是在当前 v2 主线删除知识地图入口，而是验证一条带明确边界的最小闭环：
+  v3 的目标不是重写一批 Markdown，也不是在当前 v2 主线删除知识地图入口，而是在 v3 中正式重构 specs 与 Code，使它们形成一条带明确边界的闭环：
 
   ```text
   面向 LDVH 规范、事实对象和运行时资产的格式化规范源文件
@@ -50,7 +52,7 @@ description: |
   6. **入口顺序可观测**：目标顺序是先路由、再读取、再 acknowledge、再行动、再验证。导航不可用时仍必须返回最小 fallback read plan；管辖项目内不得确认空 required paths；写入或提交前仍应有已消费 read plan 的证据。
   7. **控制 AI 负担**：默认输出应为 `brief` 或 receipt 模式；`attention_points` 控制在 3-5 条；P0/P1 有上限；同一 `cwd + targets + action_hint + project_scope + diff/staged hash` 已确认时，只返回 `guide_receipt=found` 或等价结果，不重复刷完整指南。
   8. **跨项目只做召回和影响判断**：所有管辖项目可以作为可发现、可召回、可影响判断范围，但不得默认全文注入上下文。跨项目输出必须保留项目命名空间，不得裸 ID 合并，不得把派生关系或诊断回写为任何项目事实源。
-  9. **v2 继续稳定服务**：当前 v2 的 knowledge-map、Runtime Protocol、dispatcher、Rules 和事实源继续服务现有项目。v3 先在旁路工作树证明编译链、行动指南 schema、target-first / fallback / source_refs / stop_conditions 测试闭环，再决定哪些 v2 specs 值得迁移、抽象、合并或废弃。
+  9. **v2 继续稳定服务，v3 正式重构 specs + Code**：当前 v2 的 knowledge-map、Runtime Protocol、dispatcher、Rules 和事实源继续服务现有项目。v3 不作为回灌 v2 的临时实验，而作为下一代 specs 与 Code 重构线；其他构成面等 specs + Code 成熟后整体迁移。
 
   第一轮实验范围应保持小而完整：建立无版本号目录骨架；定义格式化规范契约、行动指南输出契约、Code 确定性编译规范和 v2 adapter 边界；实现最小 compiler；在 tests/fixtures/ 中放 active spec、active action member、candidate action member、deprecated attachment、invalid input 和 target/fallback 场景；用测试固化 candidate 不可执行、deprecated 不可作为 active 来源、P0/P1 不被噪音挤掉、STOP 可触发、source_refs 可回指、Code 不输出授权语义。
 
@@ -128,6 +130,9 @@ evolution:
   - at: '2026-06-28T03:20:00+08:00'
     summary: |
       回到最初问题：v2 specs 是否存在重复和非必要信息。v3 在 `_migration/code/spec_bloat_scan.py` 新增可复跑的重复结构扫描器，并生成 `_migration/inventory/spec-bloat-scan.yaml` 临时报告。扫描 21 个 specs 正文后发现：通用治理章节在几乎所有文件重复；30/31/32/34/35/36 六个行动成员共享完整 19 节 H2 骨架；20-24 五个事实模型成员共享对象/状态机/关系/字段等骨架；Human Gate、事实源边界、Code、知识地图、不得/不定义等跨切面语言高频出现。初步结论是：保留 Markdown 权威和可解析骨架，但应区分本地 delta、父层规则、Code 检查和行动指南可派生内容。
+  - at: '2026-06-28T03:35:00+08:00'
+    summary: |
+      根据 Human 澄清，修正 v3 定位：不是实验后回灌 v2，而是 specs 与 Code 两块正式重构线。v2 保持当前稳定运行；v3 聚焦解决 specs 膨胀、重复、知识地图概念局限和 Code 编译链升级；`rules/`、`hooks/`、`skills/`、Runtime、Web、`ldvh-base/` 等其他构成面暂不重构、不改变策略，待 specs + Code 成熟后再整体迁移。
 input_refs:
   - spark-0019
   - spark-0023

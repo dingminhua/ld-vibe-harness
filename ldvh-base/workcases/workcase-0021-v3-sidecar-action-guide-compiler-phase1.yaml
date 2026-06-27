@@ -1,18 +1,20 @@
 id: workcase-0021
 type: workcase
-title: v3 旁路工作树与行动指南编译链第一阶段
+title: v3 specs 与 Code 重构线第一阶段
 goal: |
   承接 spark-0038，建立 LDVH v3 旁路实验线的第一阶段执行方案。目标不是立即迁移全部 specs、重写全部 Code 或替换 v2 knowledge-map，而是先把 `../ld-vibe-harness-v3` + `dev-v3` + 管辖项目登记 + 无版本号内部目录 + 最小格式化规范 / compiler / 行动指南 / fixtures / tests 闭环设计清楚，并准备进入 Human 方案确认。
 
   本 WorkCase 要处理“工作项目可能很多”的风险：将 v3 大方向拆成第一阶段可验证闭环与后续 followup，不把 v2 全量迁移、Runtime 接入、安装 bootstrap、Web 展示、Skill 注册和旧 knowledge-map 删除混入同一轮执行。
 status: result_self_checking
 created: '2026-06-27T23:23:10.196893'
-updated: '2026-06-28T03:20:00+08:00'
+updated: '2026-06-28T03:35:00+08:00'
 priority: P1
 description: |
   Human 已确认 v3 可以大胆推进，但版本隔离应由同级 worktree、分支和管辖项目 id 承载；新工作树内部目录不带版本号，以免未来成熟后再迁移目录名。Human 同时提醒，目标句必须带定语：格式化规范应限定为面向 LDVH 规范、事实对象和运行时资产的结构化契约；确定性 Code 应限定为只读、实时、可复查、无语义猜测的编译层；知识地图 / 行动指南应限定为面向当前任务和目标对象的实时任务导航投影。
 
   Human 进一步调整 v3 骨架：一级目录只放稳定构成面，即 `specs/`、`code/`、`tests/`、`rules/`、`hooks/`、`skills/` 和 `ldvh-base/`。Schema 归入 `specs/schemas/`，fixtures 归入 `tests/fixtures/`。权威关系必须写清：`specs/` 是规则权威；`specs/schemas/` 是规范授权的机器契约；`code/` 消费 schema 但不拥有 schema；`tests/fixtures/` 是验证样例而非规则来源；`ldvh-base/` 是真实事实对象，不混入测试假数据。
+
+  Human 已澄清 v3 不是实验后回灌 v2，而是 specs 与 Code 两块正式重构线。v2 保持当前稳定运行；v3 聚焦重构 specs 和 Code，解决 v2 specs 重复、膨胀、非必要信息、knowledge-map 概念局限和 AI 行动负担问题。其他构成面，包括 `rules/`、`hooks/`、`skills/`、Runtime、Web、`ldvh-base/`，当前不进入重构范围；待 specs + Code 成熟后再整体迁移。
 
   Human 后续指出 `specs/00-bootstrap-charter.md` 会制造 specs 自我授权的鸡生蛋问题，并确认第一批核心规范可放在 `specs/core/`。因此本 WorkCase 对 v3 自举链作出修正：第一批核心 Markdown 规范由 v3 项目决策设立，位于 `specs/core/`；`specs/schemas/` 是 core specs 授权后的机器契约；YAML instances / formatted sources 是被授权后的机器表达；deterministic Code 只消费这些显式输入并生成 Action Guide。上位规范先是规范，不先是 YAML。
 
@@ -29,7 +31,7 @@ description: |
   5. 哪些 fixtures / tests 足以证明 v3 思路成立；
   6. 哪些事项必须作为后续 WorkCase / Spark 分流，不能进入第一阶段。
 
-  本 WorkCase 不直接要求删除 v2 knowledge-map，不要求当前 v2 specs 原地迁移，不要求修改 Runtime Protocol 或 dispatcher，也不声明 v3 已经成为默认入口。
+  本 WorkCase 不直接要求删除 v2 knowledge-map，不要求当前 v2 specs 原地迁移，不要求修改 Runtime Protocol 或 dispatcher，也不声明 v3 已经成为默认入口。它的稳定定位是：为 v3 specs + Code 正式重构线建立第一阶段证据、边界和候选降噪策略。
 success_criteria: |
   - [ ] 明确第一阶段边界：只推进 v3 旁路实验线和最小闭环，不执行 v2 全量迁移、不删除 knowledge-map、不重写 Runtime。
   - [ ] 明确 `../ld-vibe-harness-v3` + `dev-v3` + 内部无版本号目录的创建方案和风险；一级目录仅保留 `specs/`、`code/`、`tests/`、`rules/`、`hooks/`、`skills/`、`ldvh-base/`。
@@ -344,6 +346,7 @@ verification_evidence: |
   - v3 MD 直读 extractor 原型已建立：`_migration/code/md_spec_extractor.py` 可直接读取 v2 `specs/01-规范体系基础规范.md` 的 `v2_spec` 身份块、章节和附件引用，生成可编译为 Action Guide 的行动源；不需要 per-spec YAML。
   - v3 MD 直读覆盖面已扩展：5 类代表 spec 和全部 21 个 v2 `specs/*.md` 正文均可解析并生成行动源；其中 17 个 usable，4 个 draft limited。临时证据位于 `_migration/inventory/md-direct-read-coverage.yaml`。
   - v3 specs 膨胀扫描已建立：`_migration/code/spec_bloat_scan.py` 与 `_migration/inventory/spec-bloat-scan.yaml` 记录重复章节、成员模板和跨切面边界语言的临时证据；该扫描不授权删除正文。
+  - v3 定位已修正：不是实验后回灌 v2，而是 specs + Code 正式重构线；其他构成面暂不重构，待 specs + Code 成熟后整体迁移。
   - v3 全量测试通过：`python3 -m pytest -q`，9 passed。
 
   ## 结论
@@ -503,6 +506,18 @@ revision_history:
       - verification_evidence
     summary: |
       新增 `_migration/code/spec_bloat_scan.py`、CLI、测试和 `_migration/inventory/spec-bloat-scan.yaml` 临时报告。扫描结果确认重复主要是结构性：21 个文件重复通用治理章节；30/31/32/34/35/36 行动成员共享完整 19 节骨架；20-24 事实模型成员共享对象定位、状态机、对象关系、字段契约等骨架；Human Gate、事实源边界、Code、知识地图、不得/不定义等跨切面语言高频出现。`python3 -m pytest _migration/tests -q` 通过：19 passed；正式 v3 `python3 -m pytest -q` 通过：9 passed。
+  - at: '2026-06-28T03:35:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 澄清 v3 不是回灌 v2 的实验线，而是 specs 与 Code 两块正式重构线。
+    changed_fields:
+      - title
+      - updated
+      - description
+      - verification_evidence
+    summary: |
+      修正 WorkCase 定位：v3 聚焦 specs + Code 正式重构，目标是消除 v2 specs 膨胀、重复、非必要信息，并将 knowledge-map 升级为 Action Guide。v2 保持当前稳定运行；`rules/`、`hooks/`、`skills/`、Runtime、Web、`ldvh-base/` 等其他构成面暂不重构，待 specs + Code 成熟后整体迁移。
 related_docs:
   - specs/01-规范体系基础规范.md
   - specs/04-Code确定性执行规范.md
