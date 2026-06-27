@@ -3,7 +3,7 @@ type: spark
 title: 入口触发链工程化：让 AI 稳定先用知识地图
 status: pending
 created: '2026-06-24T10:49:34.237457'
-updated: '2026-06-25T19:45:00+08:00'
+updated: '2026-06-27T22:35:00+08:00'
 description: |
   最新知识地图价值评估报告认为知识地图核心价值已基本兑现，剩余最高优先级缺口是触发链：AGENTS.md / 环境规则入口 / Rules 入口 / knowledge-map 命令之间仍依赖 AI 自觉执行。即使 Rules 已写硬，AI 在普通任务里仍可能跳过入口，退回 `ls`、全文 Read 或只看 `v2-check` 摘要。
 
@@ -11,7 +11,7 @@ description: |
 
   该方向与 `spark-0023` 不同：它不是恢复面板能力，而是运行时触发保障。它可能涉及 AGENTS 薄引用、Rules 入口、Hook / Skill / Agent 能力资产、环境入口适配和 Human Gate。后续若转 WorkCase，必须先明确不得静默写入外部环境，不得声明环境已安装完整 LDVH。
 source: conversation
-priority: P1
+priority: P0
 source_detail: 用户认可将“会话恢复投影器”和“入口触发链工程化”拆成两个 Spark，并结合《LDVH-知识地图价值重新评估报告-v2-20260624.md》确认“AI 触发链稳定性”是未闭环点。外部文件仅记录为名称与核心结论，不建立可解析文件关系。
 evolution:
 - at: '2026-06-25T05:45:00+08:00'
@@ -96,6 +96,15 @@ evolution:
     - 无 AI Hook 环境：AI 自觉消费成立 → AGENTS.md 薄引用必须保留；Rules/Agent/instructions 仍是主入口；不可将插件终态或 Hook 强制握手写成该环境的安装目标。
 
     此前 evolution 中"四步压缩""最终只有一个环境关联点""用户不需要再改 AGENTS.md""降级方案/降级角色"等表述，在无 AI Hook 环境中不适用。Trae 等环境的 Rules 方式是独立安装路径，不是插件方式的降级替代。不得将 Git hook、MCP、CI、server-side gate 或 Human Gate 等外部机制等同于 AI Hook 或纳入 AI Hook 能力判断。
+- at: '2026-06-27T22:35:00+08:00'
+  summary: |
+    Human 与主控围绕 00 的 V1 快速定位复盘后，进一步收敛本 Spark 的核心缺口：问题不是知识地图能力不存在，也不是规范、Skill、dispatcher、Code 入口数量本身过多，而是 AI 实际执行顺序还没有稳定等于设计顺序。
+
+    设计顺序应为：先判定场景和工作对象，再由知识地图或等价入口生成 `read_plan`、邻接关系、影响面和后续查询；AI 按 P0/P1 回读最小权威原文后，再进入对应行动入口，如 Rules 同步走 30、Git 提交走 31、环境适配走 32；最后由 Code、Hook 或 validator 做检查和阻断。若 AI 跳过知识地图，直接凭记忆读 spec、改 Rules、跑 validator 或提交，就会出现“事后再追问哪个规范约束它”的倒序执行。
+
+    因此本 Spark 后续若转 WorkCase，重点不应泛化为替换 knowledge-map 或新增大而全行动指南，而应聚焦“入口顺序保障”：让关键场景先通过知识地图或 dispatcher 产出任务路由和最小读取计划，再允许进入行动编排与写入检查。目标是把 V1 快速定位从“有地图但靠 AI 自觉使用”推进为“先路由、再读取、再行动、再验证”的可观测顺序。
+
+    该收敛保留 `spark-0035` 废弃结论：不重启 action-guide 替代 knowledge-map 的大方案，不删除 knowledge-map 独立入口。新的关注点是小范围补强触发链和顺序门禁，例如在 session-start、pre-tool-use、commit-preflight 或未来入口握手中证明 AI 已先消费知识地图/dispatcher 输出，而不是让知识地图停留为可选导航工具。
 input_refs:
 - spark-0022
 - workcase-0004
