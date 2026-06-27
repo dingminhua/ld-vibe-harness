@@ -26,6 +26,9 @@ def build_ldvh_assurance_check_fixture(tmp_path, monkeypatch):
     evidence_file = tmp_path / "tests" / "code" / "specs_validate_checks" / "test_ldvh_assurance.py"
     evidence_file.parent.mkdir(parents=True, exist_ok=True)
     evidence_file.write_text("# evidence fixture\n", encoding="utf-8")
+    code_input = tmp_path / "code" / "specs_validate.py"
+    code_input.parent.mkdir(parents=True, exist_ok=True)
+    code_input.write_text("# input fixture\n", encoding="utf-8")
     write_governed_projects(
         tmp_path,
         """
