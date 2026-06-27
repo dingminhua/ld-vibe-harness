@@ -3,4 +3,15 @@ product_description: LDVH self-governed project workspace.
 projects:
   - id: ldvh-self
     path: .
+    git:
+      remote_url: https://github.com/dingminhua/ld-vibe-harness.git
+      default_branch: dev
     name: LD Vibe Harness
+    description: LDVH v2/current self-governed main worktree.
+  - id: ldvh-v3
+    path: ../ld-vibe-harness-v3
+    git:
+      remote_url: https://github.com/dingminhua/ld-vibe-harness.git
+      default_branch: dev-v3
+    name: LD Vibe Harness v3
+    description: Clean v3 sidecar worktree for progressive migration.

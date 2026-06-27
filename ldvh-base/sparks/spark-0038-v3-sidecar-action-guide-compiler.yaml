@@ -1,0 +1,128 @@
+id: spark-0038
+type: spark
+title: v3 旁路工作树与行动指南编译链探索
+status: pending
+created: '2026-06-27T22:40:41.783405'
+updated: '2026-06-28T01:25:00+08:00'
+description: |
+  本 Spark 记录 LDVH v3 的旁路实验线：在同级目录创建 `../ld-vibe-harness-v3`，使用独立分支 `dev-v3`，并以 orphan-style 干净根逐步迁移必要内容。版本身份由外层 worktree、分支和工作区根目录管辖项目 `ldvh-v3` 承载；本轮只允许增加管辖配置，不改变 Runtime、dispatcher、native hook 或提交策略。v2/v3 worktree 共享 Git common_dir 时如何消歧，必须作为后续方案单独沟通确认。新工作树内部直接使用未来主线目录名，一级目录只放稳定构成面：`specs/`、`code/`、`tests/`、`rules/`、`hooks/`、`skills/` 和 `ldvh-base/`，不再使用 `specs-v3/` 或 `code-v3/` 这类临时目录。
+
+  v3 骨架应体现权威归口：
+
+  ```text
+  ../ld-vibe-harness-v3/
+    specs/
+      schemas/
+      attachments/
+    code/
+    tests/
+      fixtures/
+    rules/
+    hooks/
+    skills/
+    ldvh-base/
+  ```
+
+  `specs/` 是规则权威；`specs/schemas/` 是 specs 授权的机器可读契约层，不是独立事实源，也不是 Code 私有配置；`code/` 消费 schema，但不拥有 schema；`tests/fixtures/` 是验证样例、回归输入和正反例材料，不是规则来源；`ldvh-base/` 承载真实事实对象，不混入测试假数据。简言之：schema 归 specs，fixtures 归 tests。
+
+  v3 的目标不是重写一批 Markdown，也不是在当前 v2 主线删除知识地图入口，而是验证一条带明确边界的最小闭环：
+
+  ```text
+  面向 LDVH 规范、事实对象和运行时资产的格式化规范源文件
+  -> 只读、实时、可复查、无语义猜测的确定性 Code 编译
+  -> 面向当前任务和目标对象的知识地图 / 行动指南投影
+  -> AI 按任务导航要素读取、判断、行动、停止、追问和验证
+  ```
+
+  这里的“格式化规范”不是泛化文档格式，而是面向 LDVH active specs、授权附件、成员身份块、字段闭集、状态闭集、关系类型、Human Gate、运行时资产和管辖项目事实对象的结构化契约。它的目标是让 Code 能确定性解析来源、状态、权威、父子关系、输入范围、读取职责和停止边界。
+
+  这里的“确定性 Code”不是智能解释层，而是只读编译层：它只能基于显式 schema、路径、target、payload、Git 身份、管辖配置、身份块、对象状态和枚举化任务声明生成派生结果；它不猜用户自然语言意图，不替 AI 做价值判断，不替 Human Gate 授权。
+
+  这里的“知识地图 / 行动指南”不是全量知识图谱、缓存或第二事实源，而是面向当前任务和目标对象的实时任务导航投影。它以 AI 行动所需的导航要素组织信息：相关关系、最小读取计划、影响判断、停止条件、下一步查询、工具建议、验证建议和来源回指。它的目标不是“轻量”，而是渐进、足量、可回指、可停止，并让 AI 在更少猜测下行动。
+
+  v3 第一轮应围绕以下原则推进：
+
+  1. **权威规则结构化**：源规范承载权威规则；薄行动入口只声明进入场景、来源、接管范围、能力资产、Gate、回写和环境边界；检查清单、读取路线和审核步骤应由 Code 从结构化规则派生，避免厚写成第二事实源。
+  2. **行动指南面向当前任务行动**：行动指南的核心 schema 可压成行动身份、目标证据、P0/P1 读取计划、停止 / Human Gate 候选、诊断、后续查询、工具建议、读后行动计划、验证 / fallback 和来源回指。节点和边可以作为 compiler IR 或调试输出，但不应成为 AI 的主要消费面。
+  3. **任务导航渐进、足量、可回指、可停止**：默认 target-first、current-project-first、P0/P1-first；P2/P3、跨项目召回和深挖内容通过 `next_queries` 或等价机制展开。每条读取建议、停止条件、工具建议和影响提示都必须能回指来源；缺少来源回指时只能作为诊断或非可信提示。
+  4. **Code 只做确定性编译**：Code 只能解析显式 target、payload、cwd、Git common-dir、管辖配置、对象 ID、身份块、事实对象状态和枚举化 `task_type` / `action_hint`。Code 不猜自然语言意图，不判断业务价值，不声明 Human Gate 已通过，不输出 `allowed`、`approved` 或 `unblocked`。
+  5. **Runtime 与行动指南分层**：行动指南只输出候选读取、候选停止、候选 Human Gate、候选工具计划和下一步建议；Runtime / dispatcher 继续负责 canonical event、receipt、ack、blocking、pre-tool-use、git.commit-msg 和写入 / 提交门禁。Hook 必须转发真实 payload / target；Rules 只能模拟同一 canonical event；Skill 负责指导 AI 把语义转成枚举声明或复用工作流，不复制 Runtime 判断。
+  6. **入口顺序可观测**：目标顺序是先路由、再读取、再 acknowledge、再行动、再验证。导航不可用时仍必须返回最小 fallback read plan；管辖项目内不得确认空 required paths；写入或提交前仍应有已消费 read plan 的证据。
+  7. **控制 AI 负担**：默认输出应为 `brief` 或 receipt 模式；`attention_points` 控制在 3-5 条；P0/P1 有上限；同一 `cwd + targets + action_hint + project_scope + diff/staged hash` 已确认时，只返回 `guide_receipt=found` 或等价结果，不重复刷完整指南。
+  8. **跨项目只做召回和影响判断**：所有管辖项目可以作为可发现、可召回、可影响判断范围，但不得默认全文注入上下文。跨项目输出必须保留项目命名空间，不得裸 ID 合并，不得把派生关系或诊断回写为任何项目事实源。
+  9. **v2 继续稳定服务**：当前 v2 的 knowledge-map、Runtime Protocol、dispatcher、Rules 和事实源继续服务现有项目。v3 先在旁路工作树证明编译链、行动指南 schema、target-first / fallback / source_refs / stop_conditions 测试闭环，再决定哪些 v2 specs 值得迁移、抽象、合并或废弃。
+
+  第一轮实验范围应保持小而完整：建立无版本号目录骨架；定义格式化规范契约、行动指南输出契约、Code 确定性编译规范和 v2 adapter 边界；实现最小 compiler；在 tests/fixtures/ 中放 active spec、active action member、candidate action member、deprecated attachment、invalid input 和 target/fallback 场景；用测试固化 candidate 不可执行、deprecated 不可作为 active 来源、P0/P1 不被噪音挤掉、STOP 可触发、source_refs 可回指、Code 不输出授权语义。
+
+  明确不做：不在当前 v2 主线原地替换 knowledge-map；不删除现有 knowledge-map CLI / active 能力名；不把行动指南做成事实源或跨会话记忆；不把所有管辖项目默认全文展开；不把命令建议做成 dispatcher 阻断语义；不把安装 bootstrap、现场 Hook 适配细节或文件类型命令映射扩张成 v3 compiler 主线。
+source: conversation
+priority: P1
+source_detail: |
+  Human 在连续讨论中提出：知识地图应改名为“行动指南”，这样思路更开阔；v3 不必保守，可以在同级目录新建 `ld-vibe-harness-v3`，开 `dev-v3` 分支，登记为 LDVH 管辖项目，慢慢迁移 specs 和重写 Code。Human 进一步指出：既然外层目录已经表达 v3，内部就不应使用 `specs-v3`、`code-v3` 这类带版本号目录，否则未来还要再迁移。
+evolution:
+  - at: '2026-06-27T22:44:00+08:00'
+    summary: |
+      新建 Spark，记录 v3 旁路推进思路。当前共识是：用独立 worktree 和 `dev-v3` 分支承载版本隔离，内部目录保持未来主线命名；v3 的核心实验对象是“行动指南”与确定性 Code 编译链，而不是原地重命名或立即替换 v2。后续若推进，应先创建旁路工作树和管辖登记，再实现最小格式化 specs、compiler、fixtures 和 tests 闭环。
+  - at: '2026-06-27T23:05:00+08:00'
+    summary: |
+      回收相关 Spark / WorkCase 后补充可吸收内容。v3 应吸收薄入口与能力资产分层、已验证的导航基线、入口顺序保障与 Code 不理解自然语言边界、target-first / fallback read_plan 硬门禁、Schema / 字段预算 / 授权边界审查、attention_points / tool_plan / post_read_action / deep_read_plan / 文件类型命令映射，以及只读会话恢复投影边界。明确不吸收旧路线中“删除 knowledge-map 独立入口”的结论。
+  - at: '2026-06-27T23:24:00+08:00'
+    summary: |
+      吸收子 Agent 分工梳理后重写正文，把历史对象引用清单压缩为 v3 自身的设计原则。新的正文聚焦最小闭环：权威规则结构化、行动指南面向 AI 行动、渐进足量可回指可停止、Code 只做确定性编译、Runtime 与行动指南分层、入口顺序可观测、AI 负担受控、跨项目只做召回和影响判断、v2 继续稳定服务。明确不做当前 v2 原地替换 knowledge-map、不删除既有入口、不把行动指南做成事实源或授权器。
+  - at: '2026-06-27T23:38:00+08:00'
+    summary: |
+      根据 Human 提醒补齐目标句定语：格式化规范限定为面向 LDVH 规范、事实对象和运行时资产的结构化契约；确定性 Code 限定为只读、实时、可复查、无语义猜测的编译层；知识地图 / 行动指南限定为面向当前任务和目标对象的实时任务导航投影；AI 行动限定为按关系、读取计划、影响判断、停止条件、下一步查询、工具建议、验证建议和来源回指进行读取、判断、行动、停止、追问和验证。
+  - at: '2026-06-27T23:55:00+08:00'
+    summary: |
+      根据 Human 要求建立 WorkCase 承接。本 Spark 已关联 `workcase-0021-v3-sidecar-action-guide-compiler-phase1.yaml`；该 WorkCase 只承接 v3 旁路实验线第一阶段方案和最小闭环，不把 v2 全量迁移、Runtime 接入、安装 bootstrap、Web 展示、Skill 注册或旧 knowledge-map 删除混入同一轮执行。
+  - at: '2026-06-28T00:24:00+08:00'
+    summary: |
+      根据 Human 重新审视目录结构后的建议，调整 v3 骨架归口：一级目录只保留 specs、code、tests、rules、hooks、skills、ldvh-base 等稳定构成面；schema 归入 `specs/schemas/`，因为它是 specs 授权的机器可读契约层，不是独立事实源或 Code 私有配置；fixtures 归入 `tests/fixtures/`，因为它是测试样例和回归输入，不是规范权威或事实源。
+  - at: '2026-06-28T00:45:00+08:00'
+    summary: |
+      根据 Human 澄清，v3 不应从 v2 full-copy 起步，而应是空分支逐步迁移。主控已将 `../ld-vibe-harness-v3` 的 `dev-v3` 纠偏为 orphan-style 干净根，只保留稳定一级构成面和最小 action guide 编译闭环。尝试首个 commit 时，现有 commit hook 将 v3 worktree 识别为主仓库 `ldvh-self` 的受管辖提交并阻断，验证 common_dir / worktree 身份消歧必须先解决；因此管辖项目登记继续暂缓。
+  - at: '2026-06-28T01:12:00+08:00'
+    summary: |
+      根据 Human 提醒“要配置管辖目录”，已在工作区根目录 `/Users/dmh2002/poker_hud_projects/LDVH-GOVERNED-PROJECTS.yaml` 登记 `ldvh-v3`，并在仓库内配置同步记录 v3 条目。主控曾临时修改 dispatcher、native hook 和测试以处理 worktree common_dir 消歧，但 Human 指出这超出“只增加配置”的授权范围；相关非配置改动已撤回。v3 首个提交 `d1944cf9` 已存在，但不得把它解释为 Runtime/Hook 策略已获准改变。
+  - at: '2026-06-28T01:25:00+08:00'
+    summary: |
+      根据 Human 判断，迁移准入层是临时系统，不能和正式 v3 内容耦合。已在 v3 worktree 新增 `_migration/` 临时目录，集中放置 migration schemas、classifier、fixtures、tests 和 README；正式 `specs/`、`code/`、`tests/` 不因此增加迁移准入内容。`_migration/` 明确可在首批迁移完成、稳定分类体系形成后整体删除。v3 提交已完成：`c5717f34 chore: 添加临时迁移准入脚手架`。
+input_refs:
+  - spark-0019
+  - spark-0023
+  - spark-0024
+  - spark-0035
+  - spark-0036
+  - spark-0037
+  - workcase-0001
+  - workcase-0004
+  - workcase-0015
+  - workcase-0018
+  - workcase-0019
+  - workcase-0020
+  - specs/01-规范体系基础规范.md
+  - specs/04-Code确定性执行规范.md
+  - specs/attachments/04.Att.06-知识地图投影Schema表.md
+  - LDVH-GOVERNED-PROJECTS.yaml
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workcases:
+  - workcase-0021
+  - workcase-0001
+  - workcase-0004
+  - workcase-0015
+  - workcase-0018
+  - workcase-0019
+  - workcase-0020
+related_adrs: []
+related_studies: []
+related_docs:
+  - specs/01-规范体系基础规范.md
+  - specs/04-Code确定性执行规范.md
+  - specs/attachments/04.Att.06-知识地图投影Schema表.md
+  - specs/20-Spark-火花.md
+  - LDVH-GOVERNED-PROJECTS.yaml
+  - code/spec_checks/knowledge_map.py
+  - code/hook_dispatch.py
+  - code/constants/file_command_map.py
