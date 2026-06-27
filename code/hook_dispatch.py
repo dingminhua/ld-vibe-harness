@@ -487,6 +487,29 @@ def _target_resolution(path: Path, config_path: Path, *, source: str) -> dict[st
     }
 
 
+def _discover_subproject_targets(cwd: Path, config_path: Path) -> list[Path]:
+    """Return config-listed project paths that exist as subdirectories of *cwd*.
+
+    Used when no explicit targets and cwd itself does not match any project,
+    e.g. SessionStart from a workspace root that contains governed subprojects.
+    """
+    sub_targets: list[Path] = []
+    for entry in _load_projects(config_path):
+        if not isinstance(entry, dict):
+            continue
+        proj_path = entry.get("path", "")
+        if not isinstance(proj_path, str) or not proj_path.strip():
+            continue
+        resolved = (config_path.parent / Path(proj_path)).resolve()
+        try:
+            is_subdir = str(resolved).startswith(str(cwd) + os.sep)
+        except (ValueError, OSError):
+            is_subdir = False
+        if is_subdir and resolved.is_dir() and resolved != cwd:
+            sub_targets.append(resolved)
+    return sub_targets
+
+
 def resolve_governed_subject(cwd: Path, targets: list[Path], *, target_sources: list[str] | None = None) -> dict[str, Any]:
     explicit_targets = bool(targets)
     effective_targets = targets if targets else [cwd]
@@ -521,6 +544,26 @@ def resolve_governed_subject(cwd: Path, targets: list[Path], *, target_sources: 
 
     resolutions = [_target_resolution(path, config, source=source) for path, source in zip(effective_targets, sources)]
     result["target_resolutions"] = resolutions
+
+    # --- cwd-fallback subproject discovery -----------------------------------
+    # When no explicit targets were given and none matched from the config,
+    # scan the config's project entries for subdirectories of cwd that exist
+    # on disk. This covers the "workspace root contains governed subproject"
+    # pattern without requiring the user to change cwd.
+    if not explicit_targets and config is not None:
+        first_pass_governed = any(item.get("governed") for item in resolutions)
+        if not first_pass_governed:
+            sub_targets = _discover_subproject_targets(cwd, config)
+            if sub_targets:
+                sub_sources = [f"cwd-subproject:{t.name}" for t in sub_targets]
+                sub_resolutions = [_target_resolution(path, config, source=source)
+                                   for path, source in zip(sub_targets, sub_sources)]
+                resolutions = sub_resolutions
+                result["target_resolutions"] = resolutions
+                result["target_paths"] = [str(r["normalized_path"]) for r in resolutions]
+                result["subject_source"] = "cwd-subproject"
+    # -------------------------------------------------------------------------
+
     governed_resolutions = [item for item in resolutions if item.get("governed")]
     governed_ids = {item.get("project_key") or item.get("governed_project_path", "") for item in governed_resolutions}
     nongoverned = [item for item in resolutions if not item.get("governed")]
