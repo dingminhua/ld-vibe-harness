@@ -35,3 +35,9 @@ projection system.
 Coverage notes under `_migration/inventory/md-direct-read-coverage.yaml` are
 temporary evidence for the extractor prototype. They record what the prototype
 can parse today; they are not source authority.
+
+The repeated-structure scanner under `_migration/code/spec_bloat_scan.py`
+explores whether v2 specs contain repeated skeletons or generic boundary text
+that should become parent rules, generated Action Guide content, or Code
+checks. Its reports are evidence for review only, not permission to delete
+spec content.
