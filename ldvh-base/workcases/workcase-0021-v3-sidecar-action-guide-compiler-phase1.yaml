@@ -7,7 +7,7 @@ goal: |
   本 WorkCase 要处理“工作项目可能很多”的风险：将 v3 大方向拆成第一阶段可验证闭环与后续 followup，不把 v2 全量迁移、Runtime 接入、安装 bootstrap、Web 展示、Skill 注册和旧 knowledge-map 删除混入同一轮执行。
 status: result_self_checking
 created: '2026-06-27T23:23:10.196893'
-updated: '2026-06-28T03:05:00+08:00'
+updated: '2026-06-28T03:20:00+08:00'
 priority: P1
 description: |
   Human 已确认 v3 可以大胆推进，但版本隔离应由同级 worktree、分支和管辖项目 id 承载；新工作树内部目录不带版本号，以免未来成熟后再迁移目录名。Human 同时提醒，目标句必须带定语：格式化规范应限定为面向 LDVH 规范、事实对象和运行时资产的结构化契约；确定性 Code 应限定为只读、实时、可复查、无语义猜测的编译层；知识地图 / 行动指南应限定为面向当前任务和目标对象的实时任务导航投影。
@@ -343,6 +343,7 @@ verification_evidence: |
   - v3 临时 specs 体系盘点已建立：`_migration/inventory/specs-inventory.yaml` 覆盖 21 个 specs 正文和 75 个 attachment 文件，只作为迁移评审辅助，不作为正式 v3 权威。
   - v3 MD 直读 extractor 原型已建立：`_migration/code/md_spec_extractor.py` 可直接读取 v2 `specs/01-规范体系基础规范.md` 的 `v2_spec` 身份块、章节和附件引用，生成可编译为 Action Guide 的行动源；不需要 per-spec YAML。
   - v3 MD 直读覆盖面已扩展：5 类代表 spec 和全部 21 个 v2 `specs/*.md` 正文均可解析并生成行动源；其中 17 个 usable，4 个 draft limited。临时证据位于 `_migration/inventory/md-direct-read-coverage.yaml`。
+  - v3 specs 膨胀扫描已建立：`_migration/code/spec_bloat_scan.py` 与 `_migration/inventory/spec-bloat-scan.yaml` 记录重复章节、成员模板和跨切面边界语言的临时证据；该扫描不授权删除正文。
   - v3 全量测试通过：`python3 -m pytest -q`，9 passed。
 
   ## 结论
@@ -492,6 +493,16 @@ revision_history:
       - verification_evidence
     summary: |
       扩展 `_migration` MD extractor 测试：覆盖 00 价值基线、01 规范体系、04 Code、20 事实模型成员、31 行动编排成员，并新增全量扫描测试确认 21 个 v2 `specs/*.md` 正文均可直接从 Markdown 生成行动源。扫描结果：17 个 usable，4 个 draft limited（32、34、35、36）。新增 `_migration/inventory/md-direct-read-coverage.yaml` 记录临时覆盖证据。`python3 -m pytest _migration/tests -q` 通过：16 passed；正式 v3 `python3 -m pytest -q` 通过：9 passed。
+  - at: '2026-06-28T03:20:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 提醒回到初衷：v2 specs 有大量重复内容和非必要信息，需要继续探索去膨胀。
+    changed_fields:
+      - updated
+      - verification_evidence
+    summary: |
+      新增 `_migration/code/spec_bloat_scan.py`、CLI、测试和 `_migration/inventory/spec-bloat-scan.yaml` 临时报告。扫描结果确认重复主要是结构性：21 个文件重复通用治理章节；30/31/32/34/35/36 行动成员共享完整 19 节骨架；20-24 事实模型成员共享对象定位、状态机、对象关系、字段契约等骨架；Human Gate、事实源边界、Code、知识地图、不得/不定义等跨切面语言高频出现。`python3 -m pytest _migration/tests -q` 通过：19 passed；正式 v3 `python3 -m pytest -q` 通过：9 passed。
 related_docs:
   - specs/01-规范体系基础规范.md
   - specs/04-Code确定性执行规范.md
