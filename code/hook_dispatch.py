@@ -834,7 +834,15 @@ def _run_knowledge_map(start_node: str, task_type: str, *, input_scope: str = "e
         "--task-type", task_type,
         "--format", "json",
     ]
-    result = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True)
+    try:
+        result = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True)
+    except OSError as exc:
+        return _structured_subprocess_error(
+            cmd,
+            -1,
+            str(exc),
+            suggested_action="确认 Python 与 specs_validate.py 可执行，并检查当前运行环境。",
+        )
     if result.returncode != 0:
         return _structured_subprocess_error(
             cmd,
@@ -844,8 +852,15 @@ def _run_knowledge_map(start_node: str, task_type: str, *, input_scope: str = "e
         )
     try:
         return json.loads(result.stdout)
-    except json.JSONDecodeError:
-        return {"status": "error", "raw_stdout": result.stdout[:500]}
+    except json.JSONDecodeError as exc:
+        error = _structured_subprocess_error(
+            cmd,
+            0,
+            result.stderr or str(exc),
+            suggested_action="knowledge-map 已执行但未返回合法 JSON；检查 raw_stdout 与 specs_validate.py 输出格式。",
+        )
+        error["raw_stdout"] = result.stdout[:500]
+        return error
 
 
 # ---------------------------------------------------------------------------

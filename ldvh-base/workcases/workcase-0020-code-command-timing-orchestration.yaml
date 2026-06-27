@@ -342,9 +342,69 @@ orchestration:
             - 映射表可导入，包含 spec/workcase/spark/python/web；仅 spec 类型有授权命令。
             - _run_knowledge_map 失败返回结构化错误；_git_text_structured 返回 error dict；_git_text 仍返回 str。
           required_changes: []
+        evidence_refs:
+          - tests/code/test_hook_dispatch.py
+          - verification_evidence
+      - id: result-review-subagent-1
+        reviewer: subagent-code-implementation
+        role: Code 实现边界复核
+        agent_name: Kuhn
+        requested_at: '2026-06-27T09:20:00+08:00'
+        perspective: implementation-boundary
+        result:
+          status: fail
+          summary: |
+            发现 `_run_knowledge_map` 未捕获 subprocess 启动 OSError，文件类型分类不支持仓库内绝对路径，JSON decode 失败仍是非结构化错误。
+          key_findings:
+            - _run_knowledge_map 的 subprocess.run 若抛 OSError 会直接异常，而非返回结构化错误。
+            - classify_file_type 只支持 repo-relative 路径，且 lstrip("./") 对 traversal-like 路径不够精确。
+            - JSON decode 失败缺少 failed_command、exit_code、stderr_head、stderr_summary、suggested_action。
+          required_changes:
+            - _run_knowledge_map 捕获 OSError 并复用 _structured_subprocess_error。
+            - classify_file_type 支持项目内绝对路径，并避免 traversal-like path 误判。
+            - JSON decode 失败返回结构化诊断，并保留 raw_stdout。
+          evidence_refs:
+            - code/hook_dispatch.py
+            - code/constants/file_command_map.py
+      - id: result-review-subagent-2
+        reviewer: subagent-test-coverage
+        role: 测试覆盖复核
+        agent_name: Lagrange
+        requested_at: '2026-06-27T09:20:00+08:00'
+        perspective: test-coverage
+        result:
+          status: fail
+          summary: |
+            独立确认同类风险：_run_knowledge_map 缺 OSError 覆盖，绝对 target path 会导致文件类型映射落到 unknown。
+          key_findings:
+            - git 路径已包装 OSError，但 knowledge-map 启动失败未包装。
+            - dispatcher 常见 target path 可能是绝对路径，后续导入映射表时可能拿不到 spec 建议。
+          required_changes:
+            - 新增 _run_knowledge_map OSError 测试。
+            - 新增项目内绝对路径分类测试。
+            - 建议固定 JSON decode 与空 stderr 行为。
           evidence_refs:
             - tests/code/test_hook_dispatch.py
-            - verification_evidence
+            - code/hook_dispatch.py
+            - code/constants/file_command_map.py
+      - id: result-review-fix-1
+        reviewer: main-controller-codex
+        role: 子 agent 审核修复复核
+        agent_name: Codex
+        requested_at: '2026-06-27T09:25:00+08:00'
+        perspective: implementation-and-tests
+        result:
+          status: pass
+          summary: |
+            已吸收两名子 agent 的 required changes：_run_knowledge_map 增加 OSError 结构化错误；JSON decode 失败返回结构化诊断并保留 raw_stdout；classify_file_type 支持项目内绝对路径且不误判 ../specs 或 foo/specs。
+          key_findings:
+            - 新增 OSError、JSON decode、空 stderr 和绝对路径/边缘路径测试。
+            - 映射表仍只给 spec 提供 04.Att.02 授权命令，其余类型为空列表。
+          required_changes: []
+          evidence_refs:
+            - code/hook_dispatch.py
+            - code/constants/file_command_map.py
+            - tests/code/test_hook_dispatch.py
     controller_self_check:
       controller: main-controller-codex
       checked_at: '2026-06-27T09:10:00+08:00'
@@ -410,6 +470,7 @@ verification_evidence: |
   - 完整 Code 测试通过：390 passed。
   - 新增测试覆盖映射表导入、spec 授权命令、未授权类型空列表、_run_knowledge_map 结构化错误、stderr_head 非空、_git_text_structured error dict 和 _git_text str 返回。
   - active surface 检查发现新增文案中的“人工检查”旧表达，已修正为“手动检查”并重跑完整测试通过。
+  - 子 agent 结果审核发现 _run_knowledge_map OSError、JSON decode 失败与绝对路径分类边界；已补实现和测试覆盖。
 
   ## 结论
 
@@ -438,6 +499,11 @@ closure_evidence: |
   ## 收口结果
 
   实现、测试和主控自检已完成；未直接 closed。
+
+  ## 子 agent 结果审核修复
+
+  - Kuhn 与 Lagrange 均返回 needs_changes，核心问题为 _run_knowledge_map 缺 OSError 结构化错误、classify_file_type 不支持项目内绝对路径。
+  - 已补 OSError 结构化返回、JSON decode 结构化诊断、项目内绝对路径分类和 traversal-like 路径边界测试。
 
   ## 后续分流
 
