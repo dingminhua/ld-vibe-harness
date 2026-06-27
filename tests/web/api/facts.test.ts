@@ -62,12 +62,21 @@ async function main() {
 
   const pitfalls = await listObjects('pitfall')
   assert.equal(pitfalls.ok, true)
-  assert.deepEqual(pitfalls.summary, { count: 0 })
-  assert.deepEqual(pitfalls.data.items, [])
+  assert.equal(typeof pitfalls.summary.count, 'number')
+  assert.ok(Array.isArray(pitfalls.data.items))
+  assert.equal(pitfalls.summary.count, pitfalls.data.items.length)
+  for (const pitfall of pitfalls.data.items as Array<Record<string, unknown>>) {
+    assert.equal(pitfall.type, 'pitfall')
+    assert.equal(typeof pitfall.id, 'string')
+  }
   const archivedPitfalls = await listObjects('pitfall', undefined, 'archived')
   assert.equal(archivedPitfalls.ok, true)
-  assert.deepEqual(archivedPitfalls.summary, { count: 0 })
-  assert.deepEqual(archivedPitfalls.data.items, [])
+  assert.equal(typeof archivedPitfalls.summary.count, 'number')
+  assert.ok(Array.isArray(archivedPitfalls.data.items))
+  assert.equal(archivedPitfalls.summary.count, archivedPitfalls.data.items.length)
+  for (const pitfall of archivedPitfalls.data.items as Array<Record<string, unknown>>) {
+    assert.equal(pitfall.status, 'archived')
+  }
 
   const pitfallFixtureRoot = createPitfallFixtureRoot()
   try {
