@@ -1,5 +1,6 @@
 target_spec: "specs/{NN}-标题.md"
 target_sha256: ""
+change_type: "migration"
 mapping_evidence:
   path: "_migration/inventory/{source}-to-{target}-map.yaml"
 code_verification:
@@ -12,3 +13,4 @@ subagent_review:
   verdict: "pending"
   receipt: ""
   unresolved_blockers: []
+warnings: []
