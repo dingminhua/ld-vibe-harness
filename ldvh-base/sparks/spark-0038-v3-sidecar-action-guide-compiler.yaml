@@ -3,7 +3,7 @@ type: spark
 title: v3 specs 与 Code 重构线
 status: pending
 created: '2026-06-27T22:40:41.783405'
-updated: '2026-06-28T03:35:00+08:00'
+updated: '2026-06-28T03:40:00+08:00'
 description: |
   本 Spark 记录 LDVH v3 的 specs 与 Code 正式重构线：在同级目录创建 `../ld-vibe-harness-v3`，使用独立分支 `dev-v3`，并以 orphan-style 干净根逐步推进 specs 与 Code 两块重构。版本身份由外层 worktree、分支和工作区根目录管辖项目 `ldvh-v3` 承载；本轮只允许增加管辖配置，不改变 Runtime、dispatcher、native hook 或提交策略。v2/v3 worktree 共享 Git common_dir 时如何消歧，必须作为后续方案单独沟通确认。新工作树内部直接使用未来主线目录名，一级目录只放稳定构成面：`specs/`、`code/`、`tests/`、`rules/`、`hooks/`、`skills/` 和 `ldvh-base/`，不再使用 `specs-v3/` 或 `code-v3/` 这类临时目录。
 
@@ -74,6 +74,10 @@ description: |
   稳定约束追加：v3 不能重做一套 specs 正文分类体系。原 LDVH specs 文档体系是迁移基线；普通 specs 正文继续按原体系逐步迁移和抽象，主要仍是 Markdown。`specs/core/` 只承载少量上位父层规范；`specs/schemas/` 只承载被 specs 授权的机器契约；YAML instances / projection 只是机器表达。不得把所有 specs 正文改写成 YAML，也不得未经明确决策新增 `specs/runtime/`、`specs/facts/`、`specs/action/`、`specs/git/` 之类新专题目录来替代原文档体系。
 
   同步风险进一步收敛：不采用长期“一个 MD 配一个 YAML”的双维护策略。原 specs Markdown 正文应作为唯一规范事实源；Code 优先直接解析 Markdown 中已有或后续规范化的稳定结构，例如身份块、标题层级、表格、附件路径、状态字段和 source refs。YAML 可继续用于 `specs/schemas/`、临时迁移辅助、生成调试输出或明确授权的机器产物，但不得成为普通 spec 正文的人工维护孪生文件。
+
+  信息服务对象进一步校准：Human、AI 和 Code 不应拆成三套事实源或三份并列规范。目标是同一个 Markdown 规范事实源由三方共用，只通过稳定结构、显式引用关系、身份块、章节角色、表格和 source refs 支持不同消费方式。Human 消费判断面，AI 消费行动面，Code 消费结构面，但它们都应回到同一篇 Markdown 权威正文。若为不同消费者拆出并列文件，会制造第二事实源、同步负担和不可控膨胀。
+
+  附件边界随之收紧：附件应回到“正文附属材料”的位置，只承载正文引用的表、图、字段闭集、枚举、schema 说明或复用型机器契约。附件不得承载正文级上位原则、核心规则、行动流程、Human Gate、事实源边界、大段解释或迁移过程。能在正文稳定结构中表达的，不拆附件；能由 Code 从正文和引用关系生成的，不手写附件；只有必须复用且正文放置会损害可读性的纯附属内容，才进入附件。
 source: conversation
 priority: P1
 source_detail: |
@@ -133,6 +137,9 @@ evolution:
   - at: '2026-06-28T03:35:00+08:00'
     summary: |
       根据 Human 澄清，修正 v3 定位：不是实验后回灌 v2，而是 specs 与 Code 两块正式重构线。v2 保持当前稳定运行；v3 聚焦解决 specs 膨胀、重复、知识地图概念局限和 Code 编译链升级；`rules/`、`hooks/`、`skills/`、Runtime、Web、`ldvh-base/` 等其他构成面暂不重构、不改变策略，待 specs + Code 成熟后再整体迁移。
+  - at: '2026-06-28T03:40:00+08:00'
+    summary: |
+      根据 Human 纠偏，记录新的核心约束：v3 不应把 Human、AI、Code 拆成多套并列事实源。正确方向是同一篇 Markdown 规范事实源共用，通过稳定结构和显式引用关系支持不同消费方式。Human 看目标、边界、风险、Gate 和验收判断；AI 看行动规则、读取对象、停止条件、验证和回写要求；Code 看 identity、状态、父子关系、字段闭集、章节角色、source refs 和 schema。附件必须回到正文附属材料位置，只放正文引用的表、图、字段闭集、枚举或复用型机器契约；不得承载正文级规则、上位原则、行动流程、Human Gate 或大段解释。v2 的膨胀教训是 AI 把简单问题复杂化，把附件和正文都写成长规范；v3 应以少解释、多结构、少附件、多引用、少手写清单、多 Code 生成作为后续约束。
 input_refs:
   - spark-0019
   - spark-0023
