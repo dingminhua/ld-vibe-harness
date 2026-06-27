@@ -203,8 +203,8 @@ AI 进入本文时应最小读取或查询：
 
 1. `git status --short --untracked-files=all`；
 2. staged files 和必要 diff；
-3. `specs/07-事实源边界与Git追溯规范.md` 中 Git 追溯和 commit message 契约相关段落；
-4. `skills/ldvh-git-commit/SKILL.md`，确认当前 Skill 工作流和边界；
+3. `skills/ldvh-git-commit/SKILL.md`，确认当前 Skill 工作流和边界；该 SKILL.md 已提炼 07 的核心规则，常态提交可直接按此执行，无需回读 07 原文；
+4. 当 SKILL.md 未覆盖边界、校验失败原因不明或上下文不足以判断时，回读 `specs/07-事实源边界与Git追溯规范.md` 中 Git 追溯和 commit message 契约相关段落；
 5. `code/commit_validate.py --show-format` 或等价帮助；
 6. 若通过 Hook registry 验证，读取 `hooks/ldvh-hooks.yaml` 和 `code/hook_dispatch.py` 调用方式；
 7. 与本次变更面匹配的验证命令和测试证据。

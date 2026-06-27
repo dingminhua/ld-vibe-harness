@@ -55,11 +55,11 @@ Use this Skill to execute the commit workflow coordinated by `specs/31-git-commi
 
 ## Workflow
 
-1. Read `specs/31-git-commit-action-Git提交行动编排.md` as the workflow authority, then read the relevant parts of `specs/07-事实源边界与Git追溯规范.md`: commit message format, body requirements, type/scope selection, Git traceability, verification, risk, and Human Gate boundaries.
+1. Ensure current session context covers the commit rules. If this is the first commit in the session, or validation fails with an unclear reason, or the relevant specs were recently modified, read `specs/31-git-commit-action-Git提交行动编排.md` as the workflow authority and the relevant parts of `specs/07-事实源边界与Git追溯规范.md` (commit message format, body requirements, type/scope selection, Git traceability, verification, risk, and Human Gate boundaries). Otherwise, this SKILL.md is sufficient — proceed directly to step 2.
 2. Inspect `git status --short` and staged files. Include only files that belong to the requested commit; never stage unrelated user changes.
 3. Decide whether to split commits. Split independent intents. Keep one atomic closure together when specs, Code, tests, hooks, rules, or skills are all part of the same landing.
 4. Choose one `type` and zero or one `scope`. Write the description in Simplified Chinese and make it state the concrete result.
-5. Write a body when required by specs/07, especially for specs, rules, code, tests, web, hooks, skills, agents, config, multiple files, Human Gate context, validation, risk, or cross-source changes. Prefer headings: `动机`, `关键变更`, `影响边界`, `验证结论`, `风险与后续`.
+5. Write a body when required by specs/07, especially for specs, rules, code, tests, web, hooks, skills, agents, config, multiple files, Human Gate context, validation, risk, or cross-source changes. Write the body in Simplified Chinese. Among the body sections, only `关键变更` is mandatory; the others are optional but recommended. Preferred order: `动机`, `关键变更`, `验证结论`, `影响边界`, `风险与后续`. The validator (`commit_validate.py`) will reject a body without `关键变更` as an error, and warn if no section titles are present at all.
 6. Precheck the message before committing:
 
 ```bash
