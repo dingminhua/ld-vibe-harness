@@ -182,7 +182,8 @@ LDVH 提供 `code/hook_adapter.py` 作为跨环境统一的 Hook adapter 模板�
 **模板特征：**
 - 零硬编码路径。通过从 stdin payload 的 `cwd` 字段向上遍历寻找 `code/hook_dispatch.py` 自动定位 dispatcher。
 - 找不到 dispatcher 时返回 `{"blocked":false, "governed":false, "receipt":"adapter_no_dispatcher"}`，不阻断环境工具调用。
-- 支持 `--pipe` 模式（subprocess 方式）和默认 exec 模式（环境自己管理进程）。
+- **stdin 透传约束：** adapter 必须先读取 stdin 完整内容，再通过 `subprocess.run(input=raw)` 将原始 payload 透传给 dispatcher。不得使用 `os.execv` 等进程替换方式——父进程 `sys.stdin.read()` 后 stdin 已被消费，子进程无法再读取。适配实现必须保证 dispatcher 能通过 stdin 收到环境 Hook 系统传入的完整 canonical context。
+- 适配实现应返回 dispatcher 的退出码，并透传 stdout/stderr 到自身输出，以便环境 Hook 系统能获取 receipt 和诊断信息。
 
 **使用方法：**
 
