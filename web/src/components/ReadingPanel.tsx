@@ -1049,7 +1049,7 @@ export function CommitDetailContent({
             <div className="ldvh-study-node-content">
               <MarkdownPreview
                 content={section.content}
-                className="ldvh-inline-markdown max-w-none"
+                className="ldvh-inline-markdown ldvh-commit-body-markdown max-w-none"
               />
             </div>
           </CommitReadingNodeSection>

@@ -42,6 +42,8 @@ MAX_SUBJECT_LEN = 72
 # 第一行格式: <type>[optional scope][!]: <description>
 HEADER_RE = re.compile(r"^([A-Za-z]+)(?:\(([^)]+)\))?(!)?:\s+(.+)$")
 LDVH_PRIVATE_TRAILER_RE = re.compile(r"^\s*(Human-Gate|Verification|Risk):\s+.+$", re.MULTILINE)
+CONVENTIONAL_FOOTER_RE = re.compile(r"^\s*(?:BREAKING CHANGE|[A-Za-z][A-Za-z0-9-]*):\s+.+$")
+BODY_LIST_ITEM_RE = re.compile(r"^\s*-\s+\S")
 COMMAND_LINE_RE = re.compile(
     r"^\s*(?:npm|pnpm|yarn|bun|python3?|pytest|ruff|mypy|node|tsc|git|make|cargo|go|deno)\b"
 )
@@ -237,6 +239,48 @@ def extract_body_section_titles(body: str) -> list[str]:
     return titles
 
 
+def body_list_item_issues(commit: CommitInfo) -> list[Issue]:
+    issues: list[Issue] = []
+    current_section: str | None = None
+    blank_line_number: int | None = None
+
+    for line_number, raw_line in enumerate(commit.body.splitlines(), start=2):
+        line = raw_line.strip()
+        if not line:
+            if current_section:
+                blank_line_number = line_number
+            continue
+
+        title_match = re.match(r"^([^:：\n]+)\s*[:：]\s*$", line)
+        if title_match:
+            title = title_match.group(1).strip()
+            current_section = title if title in COMMIT_BODY_SECTION_TITLES else None
+            blank_line_number = None
+            continue
+
+        if CONVENTIONAL_FOOTER_RE.match(line):
+            current_section = None
+            blank_line_number = None
+            continue
+
+        if current_section and blank_line_number is not None:
+            issues.append(Issue(
+                commit.hash,
+                "error",
+                f"body 小标题“{current_section}”下的列表项必须紧凑书写，不得用空行分隔（第 {blank_line_number} 行）"
+            ))
+            blank_line_number = None
+
+        if current_section and not BODY_LIST_ITEM_RE.match(line):
+            issues.append(Issue(
+                commit.hash,
+                "error",
+                f"body 小标题“{current_section}”下的正文行必须使用 '- ' 列表项（第 {line_number} 行）"
+            ))
+
+    return issues
+
+
 def mostly_matches(lines: list[str], pattern: re.Pattern[str]) -> bool:
     if not lines:
         return False
@@ -269,6 +313,8 @@ def check_body_quality(commit: CommitInfo) -> list[Issue]:
             commit.hash, "error",
             "body 必须包含关键变更字段"
         ))
+
+    issues.extend(body_list_item_issues(commit))
 
     return issues
 

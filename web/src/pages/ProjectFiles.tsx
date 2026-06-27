@@ -1001,9 +1001,12 @@ export default function ProjectFiles() {
                                   </div>
                                   <p className="ldvh-body font-medium text-ldvh-text-primary">{selectedCommit.description || selectedCommit.message || selectedCommit.shortHash}</p>
                                   {selectedCommit.body.trim() && (
-                                    <pre className="ldvh-body-muted mt-2 whitespace-pre-wrap break-words">
-                                      {selectedCommit.body.trim()}
-                                    </pre>
+                                    <div className="mt-2 rounded-md border border-ldvh-border/60 bg-ldvh-bg/50 px-2.5 py-2">
+                                      <MarkdownPreview
+                                        content={selectedCommit.body.trim()}
+                                        className="ldvh-inline-markdown ldvh-commit-body-markdown max-w-none"
+                                      />
+                                    </div>
                                   )}
                                   <div className="ldvh-meta mt-2 flex min-w-0 flex-wrap gap-x-3 gap-y-1">
                                     <span>{selectedCommit.author}</span>

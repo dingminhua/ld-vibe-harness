@@ -186,6 +186,76 @@ def test_body_template_wrong_required_order_errors():
     assert any("关键变更字段" in i.message for i in errors)
 
 
+def test_body_section_content_requires_dash_list_item():
+    commit = make_commit(
+        subject="docs(specs): 统一提交正文模板",
+        body=(
+            "关键变更:\n"
+            "这一行没有使用列表项。\n\n"
+            "验证结论:\n"
+            "- 已确认应触发格式错误。"
+        ),
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert any("必须使用 '- ' 列表项" in i.message for i in errors)
+
+
+def test_body_section_footer_does_not_require_dash_list_item():
+    commit = make_commit(
+        subject="docs(specs): 统一提交正文模板",
+        body=(
+            "关键变更:\n"
+            "- 统一正文列表形式。\n\n"
+            "验证结论:\n"
+            "- 已确认 footer 不按正文列表处理。\n\n"
+            "Refs: #123"
+        ),
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert errors == []
+
+
+def test_body_section_list_items_must_be_compact():
+    commit = make_commit(
+        subject="docs(specs): 统一提交正文模板",
+        body=(
+            "关键变更:\n"
+            "- 第一条。\n\n"
+            "- 第二条不应和第一条隔空行。\n\n"
+            "验证结论:\n"
+            "- 已确认应触发紧凑列表错误。"
+        ),
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert any("不得用空行分隔" in i.message for i in errors)
+
+
+def test_body_section_allows_blank_line_between_sections():
+    commit = make_commit(
+        subject="docs(specs): 统一提交正文模板",
+        body=(
+            "关键变更:\n"
+            "- 第一段关键变更。\n\n"
+            "验证结论:\n"
+            "- 已确认小标题之间允许空行。"
+        ),
+    )
+
+    issues = checker.check_commit(commit)
+    errors = [i for i in issues if i.level == "error"]
+
+    assert errors == []
+
+
 def test_uppercase_type_warns_but_parses():
     commit = make_commit(subject="FIX(web): 修复页面错误")
 

@@ -62,6 +62,8 @@ ProjectFiles 的复制入口必须按内容命名：
 
 ProjectFiles 的提交历史必须复用 Changelog / Dashboard 的 commit message 拆分与 Conventional Commits 解析函数，统一输出 `message`、`body`、`category`、`scope`、`description` 和 `isBreaking`。ProjectFiles 可以追加 `parents`、`isMerge`、`files`、`absolutePath`、diff 等工具页字段，但不得维护第二套 commit header parser。
 
+ProjectFiles 展开提交历史项时，commit body 展示必须复用 Changelog 的提交正文显示契约：按 Markdown 渲染 07 强制的 `- ` 无序列表项，不得用 `pre` 原样展示造成结构化列表表现不一致。
+
 ProjectFiles 的提交历史是工具页上下文中的 Git 证据入口；`/changelog` 仍是全站提交记录主入口，`/changelog/:hash` 仍是提交详情主路由。
 
 ## 7. 与右侧扩展阅读的关系

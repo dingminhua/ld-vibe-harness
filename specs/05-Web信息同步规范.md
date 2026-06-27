@@ -214,6 +214,8 @@ Web 不得：
 
 Changelog、Dashboard、ProjectFiles 和对象详情若展示同一提交信息，应共享同一 Code DTO 或同一派生规则，不得维护多套解析逻辑。
 
+提交详情、右侧扩展阅读和 ProjectFiles 提交历史展开区展示 commit body 时，应依赖 07 规定的 `- ` Markdown 无序列表项呈现统一圆点。Web 不得在显示层把非列表正文伪装成列表来掩盖不合格 commit body；若正文行没有按 `- ` 书写，应由 Code commit validator 在提交前拦截。
+
 提交记录展示矩阵由 `attachments/05.Att.07-提交记录展示矩阵.md` 承载。`/changelog` 是 Web 路由和展示名称，不是新的事实源；commit body 应作为提交说明优先展示，改动文件默认收起，复制给 AI 的上下文应保留原始 commit token、body 和可追溯来源。
 
 ## 9. Confirm UI、Gate 与验证展示

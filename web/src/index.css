@@ -401,6 +401,37 @@ input::-moz-focus-inner {
   margin-bottom: 0.125rem;
 }
 
+.ldvh-commit-body-markdown :where(ul) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.ldvh-commit-body-markdown :where(ul > li) {
+  position: relative;
+  margin-top: 0;
+  margin-bottom: 0;
+  min-height: 1.55rem;
+  padding-left: 1.55rem;
+  line-height: 1.75;
+}
+
+.ldvh-commit-body-markdown :where(ul > li)::before {
+  content: "";
+  position: absolute;
+  left: 0.35rem;
+  top: 0.72rem;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: rgb(var(--ldvh-text-secondary) / 0.55);
+  box-shadow: 0 0 0 3px rgb(var(--ldvh-text-secondary) / 0.08);
+}
+
 .ldvh-inline-markdown :where(h2) {
   margin-top: 0.75rem;
   margin-bottom: 0.375rem;
