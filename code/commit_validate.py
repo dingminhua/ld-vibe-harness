@@ -55,13 +55,16 @@ CONCRETE_OBJECT_RE = re.compile(
 )
 
 BODY_MIN_CHARS = 30
-COMMIT_BODY_SECTION_TITLES = [
-    "动机",
+COMMIT_BODY_REQUIRED_TITLES = [
     "关键变更",
-    "影响边界",
+]
+COMMIT_BODY_OPTIONAL_TITLES = [
+    "动机",
     "验证结论",
+    "影响边界",
     "风险与后续",
 ]
+COMMIT_BODY_SECTION_TITLES = COMMIT_BODY_REQUIRED_TITLES + COMMIT_BODY_OPTIONAL_TITLES
 
 # 中文字符检测（当前 LDVH 自身项目 Code 实现纪律）
 HAS_CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
@@ -259,48 +262,12 @@ def check_body_quality(commit: CommitInfo) -> list[Issue]:
         return issues
 
     lines = body_lines(body)
-    if len(body) < BODY_MIN_CHARS:
-        issues.append(Issue(
-            commit.hash, "warning",
-            f"body 过短，可能不足以说明动机、关键变更、影响边界和风险（当前 {len(body)} 字符）"
-        ))
-
-    if mostly_matches(lines, COMMAND_LINE_RE):
-        issues.append(Issue(
-            commit.hash, "warning",
-            "body 主要由检查命令组成；应改写为验证结论和残留风险，命令只能作为辅助证据"
-        ))
-
-    if mostly_matches(lines, FILE_LIST_LINE_RE) or mostly_matches(lines, DIFF_STAT_LINE_RE):
-        issues.append(Issue(
-            commit.hash, "warning",
-            "body 主要像文件清单或 diff stat；Git 已提供这些信息，body 应说明人类语义"
-        ))
-
-    if VAGUE_BODY_RE.search(body) and not CONCRETE_OBJECT_RE.search(body):
-        issues.append(Issue(
-            commit.hash, "warning",
-            "body 命中空泛词且缺少具体对象；应说明具体行为、契约、事实源或展示影响"
-        ))
-
-    if semantic_signal_count(body) < 2:
-        issues.append(Issue(
-            commit.hash, "warning",
-            "body 缺少明显语义信号；建议覆盖动机、关键变更、影响边界、验证结论或风险中的至少两类"
-        ))
-
     section_titles = extract_body_section_titles(body)
-    expected_titles = COMMIT_BODY_SECTION_TITLES
-    if section_titles and section_titles != expected_titles:
+    required_titles = COMMIT_BODY_REQUIRED_TITLES
+    if "关键变更" not in section_titles:
         issues.append(Issue(
             commit.hash, "error",
-            f"body 必须按固定五段顺序编写: {' / '.join(expected_titles)}"
-        ))
-
-    if body and not section_titles and body_lines(body):
-        issues.append(Issue(
-            commit.hash, "warning",
-            "body 未使用固定五段标题；建议按动机、关键变更、影响边界、验证结论、风险与后续编写"
+            "body 必须包含关键变更字段"
         ))
 
     return issues

@@ -768,10 +768,10 @@ function CommitReadingNodeSection({
 }
 
 const COMMIT_BODY_SECTION_TITLES = new Set([
-  '动机',
   '关键变更',
-  '影响边界',
+  '动机',
   '验证结论',
+  '影响边界',
   '风险与后续',
 ]);
 
@@ -829,7 +829,9 @@ function getCommitBodySectionsForReading(value: string, fallbackTitle: string): 
 
   return sections.length > 0
     ? sections
-    : [{ key: 'commit-body', title: fallbackTitle, content: formatted }];
+    : formatted
+      ? [{ key: 'commit-body', title: fallbackTitle, content: formatted }]
+      : [];
 }
 
 function CommitIdentitySection({
@@ -940,7 +942,7 @@ function getCommitDetailLabels(locale: string): CommitDetailLabels {
       files: '文件',
       insertions: '新增',
       deletions: '删除',
-      commitBody: '提交说明',
+      commitBody: '关键变更',
       changedFiles: '改动文件',
       noFiles: '没有可展示的文件统计',
       raw: '原始信息',
