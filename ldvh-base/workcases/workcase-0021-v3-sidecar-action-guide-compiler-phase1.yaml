@@ -7,12 +7,14 @@ goal: |
   本 WorkCase 要处理“工作项目可能很多”的风险：将 v3 大方向拆成第一阶段可验证闭环与后续 followup，不把 v2 全量迁移、Runtime 接入、安装 bootstrap、Web 展示、Skill 注册和旧 knowledge-map 删除混入同一轮执行。
 status: result_self_checking
 created: '2026-06-27T23:23:10.196893'
-updated: '2026-06-28T01:55:00+08:00'
+updated: '2026-06-28T02:10:00+08:00'
 priority: P1
 description: |
   Human 已确认 v3 可以大胆推进，但版本隔离应由同级 worktree、分支和管辖项目 id 承载；新工作树内部目录不带版本号，以免未来成熟后再迁移目录名。Human 同时提醒，目标句必须带定语：格式化规范应限定为面向 LDVH 规范、事实对象和运行时资产的结构化契约；确定性 Code 应限定为只读、实时、可复查、无语义猜测的编译层；知识地图 / 行动指南应限定为面向当前任务和目标对象的实时任务导航投影。
 
   Human 进一步调整 v3 骨架：一级目录只放稳定构成面，即 `specs/`、`code/`、`tests/`、`rules/`、`hooks/`、`skills/` 和 `ldvh-base/`。Schema 归入 `specs/schemas/`，fixtures 归入 `tests/fixtures/`。权威关系必须写清：`specs/` 是规则权威；`specs/schemas/` 是规范授权的机器契约；`code/` 消费 schema 但不拥有 schema；`tests/fixtures/` 是验证样例而非规则来源；`ldvh-base/` 是真实事实对象，不混入测试假数据。
+
+  Human 后续指出 `specs/00-bootstrap-charter.md` 会制造 specs 自我授权的鸡生蛋问题，并确认第一批核心规范可放在 `specs/core/`。因此本 WorkCase 对 v3 自举链作出修正：第一批核心 Markdown 规范由 v3 项目决策设立，位于 `specs/core/`；`specs/schemas/` 是 core specs 授权后的机器契约；YAML instances / formatted sources 是被授权后的机器表达；deterministic Code 只消费这些显式输入并生成 Action Guide。上位规范先是规范，不先是 YAML。
 
   第一阶段要回答：
 
@@ -331,7 +333,9 @@ verification_evidence: |
   - CLI 样例确认 derived checklist 输出 `do_not_migrate`，next_action 为 `encode_as_schema_code_or_test`。
   - v3 `_migration/` 已提交：`c5717f34 chore: 添加临时迁移准入脚手架`。
   - v3 临时迁移决定已提交：`d7868692 chore: 记录 Code 确定性规范迁移决定`；decision 位于 `_migration/decisions/spec-04-code-determinism.decision.yaml`，未迁正文。
-  - v3 正式上位规范已提交：`978a9657 feat(specs): 添加 Code 确定性上位规范`；新增 `specs/code-determinism.yaml` 和 `tests/code/test_formal_specs.py`。
+  - v3 正式上位规范已提交：`978a9657 feat(specs): 添加 Code 确定性上位规范`；该结论后续已被自举链修正为 `specs/core/` Markdown 核心规范优先，YAML 仅作机器投影。
+  - v3 自举链修正已完成：新增 `specs/core/spec-system.md`、`specs/core/schema-contract.md`、`specs/core/code-determinism.md`、`specs/core/action-guide.md`；原 `specs/code-determinism.yaml` 迁为 `specs/core/code-determinism.yaml`。
+  - v3 全量测试通过：`python3 -m pytest -q`，9 passed。
 
   ## 结论
 
@@ -427,6 +431,17 @@ revision_history:
       - verification_evidence
     summary: |
       在 v3 worktree 新增正式规范 `specs/code-determinism.yaml`，只抽象 Code 确定性输入、输出、实现纪律、派生物边界和 Runtime 策略停止条件；新增 `tests/code/test_formal_specs.py` 确认该规范可编译为 action guide 且不依赖 `_migration/`。v3 提交已完成：`978a9657 feat(specs): 添加 Code 确定性上位规范`。
+  - at: '2026-06-28T02:10:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 指出 `specs/00-bootstrap-charter.md` 的自举悖论，并确认第一批核心规范可放入 `specs/core/`。
+    changed_fields:
+      - updated
+      - description
+      - verification_evidence
+    summary: |
+      修正 v3 权威链：不新增 `specs/00-bootstrap-charter.md`，不让 YAML 先定义上位规范。v3 新增 `specs/core/` Markdown 核心规范层；原 `specs/code-determinism.yaml` 迁移为 `specs/core/code-determinism.yaml` 的机器投影，并回指 `specs/core/code-determinism.md`。测试更新为确认 Markdown 权威先于机器投影，`python3 -m pytest -q` 通过：9 passed。
 related_docs:
   - specs/01-规范体系基础规范.md
   - specs/04-Code确定性执行规范.md

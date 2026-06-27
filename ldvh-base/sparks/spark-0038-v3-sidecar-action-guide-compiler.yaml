@@ -3,7 +3,7 @@ type: spark
 title: v3 旁路工作树与行动指南编译链探索
 status: pending
 created: '2026-06-27T22:40:41.783405'
-updated: '2026-06-28T01:55:00+08:00'
+updated: '2026-06-28T02:10:00+08:00'
 description: |
   本 Spark 记录 LDVH v3 的旁路实验线：在同级目录创建 `../ld-vibe-harness-v3`，使用独立分支 `dev-v3`，并以 orphan-style 干净根逐步迁移必要内容。版本身份由外层 worktree、分支和工作区根目录管辖项目 `ldvh-v3` 承载；本轮只允许增加管辖配置，不改变 Runtime、dispatcher、native hook 或提交策略。v2/v3 worktree 共享 Git common_dir 时如何消歧，必须作为后续方案单独沟通确认。新工作树内部直接使用未来主线目录名，一级目录只放稳定构成面：`specs/`、`code/`、`tests/`、`rules/`、`hooks/`、`skills/` 和 `ldvh-base/`，不再使用 `specs-v3/` 或 `code-v3/` 这类临时目录。
 
@@ -55,6 +55,19 @@ description: |
   第一轮实验范围应保持小而完整：建立无版本号目录骨架；定义格式化规范契约、行动指南输出契约、Code 确定性编译规范和 v2 adapter 边界；实现最小 compiler；在 tests/fixtures/ 中放 active spec、active action member、candidate action member、deprecated attachment、invalid input 和 target/fallback 场景；用测试固化 candidate 不可执行、deprecated 不可作为 active 来源、P0/P1 不被噪音挤掉、STOP 可触发、source_refs 可回指、Code 不输出授权语义。
 
   明确不做：不在当前 v2 主线原地替换 knowledge-map；不删除现有 knowledge-map CLI / active 能力名；不把行动指南做成事实源或跨会话记忆；不把所有管辖项目默认全文展开；不把命令建议做成 dispatcher 阻断语义；不把安装 bootstrap、现场 Hook 适配细节或文件类型命令映射扩张成 v3 compiler 主线。
+
+  后续自举链讨论修正了一个关键点：v3 不应让 YAML 先成为上位规范。Human 明确允许将第一批核心规范放入 `specs/core/`。因此 v3 的权威链应收束为：
+
+  ```text
+  v3 项目决策
+  -> specs/core/ Markdown 核心规范
+  -> specs/schemas/ 机器契约
+  -> YAML instances / formatted sources
+  -> deterministic Code
+  -> Action Guide
+  ```
+
+  `specs/core/` 是父层规则权威；YAML 是规范授权后的机器表达，不是上位规范本身。自举不是 `specs/00-*` 文件，也不是 schema 自封，而是由 Human 的 v3 项目决策设立第一批 core specs，之后扩展由 core specs 接管。
 source: conversation
 priority: P1
 source_detail: |
@@ -93,6 +106,9 @@ evolution:
   - at: '2026-06-28T01:55:00+08:00'
     summary: |
       根据首个 migration decision，在 v3 正式 `specs/` 中新增 `specs/code-determinism.yaml`。该文件只抽象 Code 确定性的上位边界，不复制 v2 04 正文，不引用 `_migration/` 作为正式依赖，并明确 Runtime / hook / dispatcher / write strategy 变化必须另行确认。v3 提交已完成：`978a9657 feat(specs): 添加 Code 确定性上位规范`。
+  - at: '2026-06-28T02:10:00+08:00'
+    summary: |
+      根据 Human 对自举悖论的质疑和子 agent 审核，修正 v3 权威链：不新增 `specs/00-bootstrap-charter.md`，也不让 YAML 先定义上位规范。Human 允许将第一批核心规范放入 `specs/core/`；因此 v3 新增 `specs/core/spec-system.md`、`schema-contract.md`、`code-determinism.md`、`action-guide.md`，并将原 `specs/code-determinism.yaml` 迁为 `specs/core/code-determinism.yaml` 的机器投影，回指 Markdown 核心规范。
 input_refs:
   - spark-0019
   - spark-0023
