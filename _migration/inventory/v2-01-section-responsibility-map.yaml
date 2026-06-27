@@ -1,0 +1,295 @@
+map_id: v2-01-section-responsibility-map-001
+status: temporary_migration_evidence
+purpose: >
+  Establish the kill point before rewriting specs/01: every v2 01 section
+  must have a responsibility mapping before any v3 01 body is considered
+  valid.
+
+source_of_truth:
+  - "../ld-vibe-harness/specs/01-规范体系基础规范.md"
+target_candidate:
+  - "specs/01-规范体系基础规范.md"
+
+core_constraint:
+  single_markdown_fact_source: true
+  summary: >
+    Human, AI, and Code must consume the same Markdown rule fact source
+    through stable structure and explicit references. They must not receive
+    separate authority files.
+  attachment_rule: >
+    Attachments are subordinate materials referenced by the body. They may
+    carry tables, figures, field closures, enums, pure data matrices, or
+    reusable machine contracts. They must not carry parent rules, core
+    doctrine, action flows, Human Gate, fact-source boundaries, migration
+    process, or long explanatory prose.
+
+global_kill_points:
+  - id: kp-value
+    rule: "If a section cannot explain which AI burden it reduces, it does not enter formal specs."
+  - id: kp-single-md
+    rule: "If a design requires a second authority file for Human, AI, or Code, kill it."
+  - id: kp-section-duty
+    rule: "If any v2 01 section duty is unmapped, do not rewrite v3 01."
+  - id: kp-attachment
+    rule: "If an attachment carries body-level rules, kill the attachment design."
+  - id: kp-code
+    rule: "If Code must infer unstated meaning from prose, add stable structure or kill the Code path."
+  - id: kp-guide
+    rule: "If Action Guide cannot be generated from Markdown structure and references, do not handwrite it as specs content."
+  - id: kp-gate
+    rule: "If Human Gate, fact-source boundary, verification, or writeback boundary is weakened, stop for Human confirmation."
+
+decision_legend:
+  keep_in_01: "Keep the duty in 01 body, rewritten shorter and more structural."
+  keep_as_inline_table: "Keep as a small table inside 01 body, not as an attachment."
+  generate_by_code: "Do not hand-maintain; generate or diagnose from Markdown facts."
+  move_to_child_spec: "Mention the boundary in 01, but define details in 02/03/04/etc."
+  move_to_migration: "Keep as temporary migration evidence only."
+  remove_from_formal: "Do not carry into formal specs unless a later case proves value."
+
+section_map:
+  - v2_section: "1. 本文解决的问题"
+    responsibility: "Define what 01 exists to solve: minimum spec structure for AI locating, judging, validating, and deriving navigation."
+    human_consumption: "Understand why 01 exists and what it does not decide."
+    ai_consumption: "Know whether a spec-writing task belongs under 01."
+    code_consumption: "Identify the root purpose of 01 and expected parseable structures."
+    v3_decision: keep_in_01
+    v3_target: "01 §1"
+    rewrite_direction: "Keep the problem statement, but phrase it as one Markdown fact source with stable structure and explicit references."
+    kill_point: "If §1 becomes a broad manifesto or redefines 00, kill the draft."
+
+  - v2_section: "2. 上位依据"
+    responsibility: "Anchor 01 under 00 and prevent 01 from redefining LDVH purpose, AI-first principle, fact-source principle, or V1-V10."
+    human_consumption: "See what Human is being asked to accept as inherited authority."
+    ai_consumption: "Know what must be read before changing 01."
+    code_consumption: "Parse basis and parent relation for source_refs and read_plan."
+    v3_decision: keep_in_01
+    v3_target: "01 §2"
+    rewrite_direction: "Restore as a short required section. Do not bury it in identity only."
+    kill_point: "If 01 can be read without seeing its 00 dependency, kill the draft."
+
+  - v2_section: "3. 构成要素归属与价值判断"
+    responsibility: "Declare that 01 belongs to specs and prove it serves V1/V2/V3/V4/V5/V6/V10 without inventing value."
+    human_consumption: "Check whether this spec is worth maintaining."
+    ai_consumption: "Know which LDVH value gates apply when editing specs."
+    code_consumption: "Expose value tags or a small value table for diagnostics and Action Guide impact."
+    v3_decision: keep_in_01
+    v3_target: "01 §3"
+    rewrite_direction: "Keep as a concise table: value, burden reduced, structure that supports it."
+    kill_point: "If values are listed without burden reduction or observable structure, kill the section."
+
+  - v2_section: "4. 适用范围与事实源边界"
+    responsibility: "Define what files 01 governs and reaffirm Markdown as the rule fact source."
+    human_consumption: "Know whether a proposed artifact is in scope."
+    ai_consumption: "Know where stable facts must live and which materials are not authority."
+    code_consumption: "Know allowed input roots and excluded transient sources."
+    v3_decision: keep_in_01
+    v3_target: "01 §4"
+    rewrite_direction: "Keep, but replace v2 active-directory detail with single Markdown fact-source boundary."
+    kill_point: "If process notes, scans, generated outputs, or chats become authority, kill the design."
+
+  - v2_section: "5.1 当前 active 目录登记规则"
+    responsibility: "Hand-maintained inventory of active specs and attachments."
+    human_consumption: "Potential orientation, but too large to maintain by hand."
+    ai_consumption: "Would help lookup, but becomes stale and heavy."
+    code_consumption: "Should be generated from filesystem and identity blocks."
+    v3_decision: generate_by_code
+    v3_target: "Code generated inventory / Action Guide, not 01 body."
+    rewrite_direction: "01 should state that directory inventory is generated from Markdown identities."
+    kill_point: "If 01 hand-maintains the full specs or attachments list, kill the draft."
+
+  - v2_section: "5.1.1 项目目录与管辖项目配置职责归口"
+    responsibility: "Separate specs directory governance from governed-project configuration."
+    human_consumption: "Understand that project config is not specs directory authority."
+    ai_consumption: "Avoid writing project governance into specs inventory."
+    code_consumption: "Parse governed project config from separate facts, not 01."
+    v3_decision: move_to_child_spec
+    v3_target: "07 / runtime-governance / governed-project config rules"
+    rewrite_direction: "01 should only state that non-spec directories are out of 01 authority."
+    kill_point: "If project configuration rules become 01 body detail, kill or move."
+
+  - v2_section: "5.2 规范文件命名与编号"
+    responsibility: "Define stable names, numbering, paths, and member ranges."
+    human_consumption: "Know the visible convention."
+    ai_consumption: "Create or migrate files without inventing paths."
+    code_consumption: "Validate canonical_path, spec_id, and path consistency."
+    v3_decision: keep_in_01
+    v3_target: "01 identity/path section"
+    rewrite_direction: "Keep as a short path and numbering rule, not an exhaustive directory list."
+    kill_point: "If naming rules require a parallel registry to stay correct, kill the registry and parse paths."
+
+  - v2_section: "5.3 v2 规范身份块"
+    responsibility: "Define identity block fields and state closures."
+    human_consumption: "Low; only needs confidence that identity exists."
+    ai_consumption: "Know what fields must be present."
+    code_consumption: "Primary parse target."
+    v3_decision: keep_as_authorized_field_table
+    v3_target: "01 authorized identity field attachments"
+    rewrite_direction: "Keep the rule in 01 body, but move reusable spec and attachment identity field closures to pure subordinate tables."
+    kill_point: "If an identity attachment adds body-level rule explanation instead of only field closures, kill the attachment."
+
+  - v2_section: "5.4 active 身份块"
+    responsibility: "Legacy compatibility for active identity blocks."
+    human_consumption: "Usually none."
+    ai_consumption: "Migration reference only."
+    code_consumption: "Needed for v2 adapter, not formal v3 body."
+    v3_decision: move_to_migration
+    v3_target: "_migration inventory / v2 adapter notes"
+    rewrite_direction: "Do not make active-v2 compatibility a v3 01 body section unless migration needs it."
+    kill_point: "If v2 compatibility expands v3 01 into dual-system documentation, move it out."
+
+  - v2_section: "6. 正式规范必要章节"
+    responsibility: "Define the stable section roles every formal spec needs."
+    human_consumption: "Know what a complete spec visibly contains."
+    ai_consumption: "Write or review specs in a stable order."
+    code_consumption: "Map headings to section roles for Action Guide inputs."
+    v3_decision: keep_in_01
+    v3_target: "01 standard body structure"
+    rewrite_direction: "Keep the role table. Allow title variation, but require stable roles."
+    kill_point: "If section roles are only implicit or stored outside Markdown, kill the draft."
+
+  - v2_section: "7. 权威域、定义归口与吸收规则"
+    responsibility: "Prevent downstream use, attachments, or Code from redefining parent rules."
+    human_consumption: "See authority boundaries before accepting changes."
+    ai_consumption: "Know where to write a rule and where not to."
+    code_consumption: "Flag conflicts, duplicate authority, and second fact sources."
+    v3_decision: keep_in_01
+    v3_target: "01 authority and absorption section"
+    rewrite_direction: "Restore as a concise authority routing section. This is a core anti-bloat guard."
+    kill_point: "If 01 lacks authority routing, do not write child specs."
+
+  - v2_section: "8. 术语治理与表达纪律"
+    responsibility: "Keep terms and expressions stable enough for AI and Code."
+    human_consumption: "Mostly readability."
+    ai_consumption: "Avoid ambiguous terms that change action."
+    code_consumption: "Only closed terms that affect parsing."
+    v3_decision: keep_in_01
+    v3_target: "01 minimal expression discipline"
+    rewrite_direction: "Keep a minimal rule: define terms in body when they affect action or parsing; do not create a broad glossary unless blocked."
+    kill_point: "If terminology becomes a long standalone glossary without action or parsing impact, remove it."
+
+  - v2_section: "9. 引用关系与知识地图输入"
+    responsibility: "Define explicit relations that Code can project into navigation."
+    human_consumption: "Understand impact and source traceability."
+    ai_consumption: "Know what to read and what may be affected."
+    code_consumption: "Generate relationships, read_plan, impact, next_queries."
+    v3_decision: keep_in_01
+    v3_target: "01 explicit references + Action Guide input"
+    rewrite_direction: "Rename knowledge-map wording to Action Guide where appropriate, but do not handwrite maps."
+    kill_point: "If relationships are maintained as a separate hand-written graph, kill it."
+
+  - v2_section: "10. 附件规则"
+    responsibility: "Define when attachment exists and prevent it from becoming hidden main spec."
+    human_consumption: "Know whether an attachment should be trusted as subordinate."
+    ai_consumption: "Know when to create, read, or avoid an attachment."
+    code_consumption: "Parse explicit attachment references and reject body-level rules in attachments."
+    v3_decision: keep_in_01
+    v3_target: "01 attachment boundary"
+    rewrite_direction: "Keep, but make stricter than v2: attachments only subordinate tables/figures/closures/enums/pure matrices."
+    kill_point: "If an attachment contains upper doctrine, action flow, Human Gate, fact-source boundary, or long prose, kill it or move to body/child spec."
+
+  - v2_section: "11. 专题成员与专属骨架规则"
+    responsibility: "Define how member specs such as fact models and action members use specialized skeletons."
+    human_consumption: "Low in 01; useful only as boundary."
+    ai_consumption: "Know that member details are governed elsewhere."
+    code_consumption: "Need parent/member relation and skeleton validation later."
+    v3_decision: move_to_child_spec
+    v3_target: "02 fact model and 03 action orchestration"
+    rewrite_direction: "01 should state member-specific skeletons are defined by their parent specs; do not carry details."
+    kill_point: "If 01 starts defining 02/03 member skeleton details, move them out."
+
+  - v2_section: "12. 规范保障要求"
+    responsibility: "Define how specs express assurance requirements and when action orchestration should take over."
+    human_consumption: "See what is guaranteed and what is only recommended."
+    ai_consumption: "Know which checks or actions are required before claiming completion."
+    code_consumption: "Detect assurance fields, missing validation, and takeover gaps."
+    v3_decision: keep_in_01
+    v3_target: "01 assurance expression section"
+    rewrite_direction: "Keep the duty, but not the large v2 assurance matrix. Use a minimal structure and let Code diagnose repetitions."
+    kill_point: "If assurance requirements become a repeated long checklist in every spec, kill and generate diagnostics."
+
+  - v2_section: "12.1 问题原因替代语义"
+    responsibility: "Replace vague degraded/fallback language with reason, impact, blocking, and followup."
+    human_consumption: "Understand residual risk instead of vague acceptance."
+    ai_consumption: "Classify failure and know whether to stop."
+    code_consumption: "May output diagnostic reason categories."
+    v3_decision: move_to_child_spec
+    v3_target: "04 Code diagnostics / 08 tests / WorkCase closure semantics"
+    rewrite_direction: "01 may state vague fallback language is forbidden; detailed reason taxonomy belongs in diagnostics/testing specs."
+    kill_point: "If 01 carries a long diagnostic taxonomy, move it to the owning spec."
+
+  - v2_section: "13. Human Gate"
+    responsibility: "Define when AI must stop for Human confirmation."
+    human_consumption: "Know what decisions are reserved for Human."
+    ai_consumption: "Know when to stop."
+    code_consumption: "Can surface gate candidates, never approval."
+    v3_decision: keep_in_01
+    v3_target: "01 Human Gate / Stop Conditions"
+    rewrite_direction: "Keep strong. Split global 00 gates, 01 governance gates, and child local gates."
+    kill_point: "If Human Gate is only in generated output or an attachment, kill the draft."
+
+  - v2_section: "14. 规范写作与修改执行顺序"
+    responsibility: "Give AI the execution path for creating, migrating, modifying, and auditing specs."
+    human_consumption: "Know the workflow AI should follow before asking for confirmation."
+    ai_consumption: "Direct action order."
+    code_consumption: "Can verify required inputs and source refs."
+    v3_decision: keep_in_01
+    v3_target: "01 spec editing workflow"
+    rewrite_direction: "Keep as a compact action sequence. Do not include v2-specific knowledge-map commands."
+    kill_point: "If AI cannot follow 01 to edit a spec safely, v3 01 is invalid."
+
+  - v2_section: "14.1 Code 覆盖与缺口处理"
+    responsibility: "Define what Code can check and how to handle missing deterministic coverage."
+    human_consumption: "See residual risk when Code cannot validate."
+    ai_consumption: "Know whether to rely on Code, record a gap, or stop."
+    code_consumption: "Owns diagnostic scope and limitations."
+    v3_decision: keep_in_01
+    v3_target: "01 Code coverage and gap section"
+    rewrite_direction: "Keep as a boundary section: Code parses explicit structures; gaps become diagnostics or followups, not guesses."
+    kill_point: "If Code coverage is assumed without explicit parser/test evidence, kill completion."
+
+  - v2_section: "15. 待补齐事项"
+    responsibility: "Expose unresolved gaps for future work and Action Guide next_queries."
+    human_consumption: "See what remains uncertain."
+    ai_consumption: "Know what not to claim as closed."
+    code_consumption: "Generate next_queries and diagnostics."
+    v3_decision: keep_in_01
+    v3_target: "01 待补齐事项"
+    rewrite_direction: "Keep, but make it current and short. Do not keep stale v2 migration todos."
+    kill_point: "If todos become a dumping ground for process memory, move to Spark/WorkCase."
+
+v3_01_required_body_roles_after_mapping:
+  - "本文解决的问题"
+  - "上位依据"
+  - "构成要素归属与价值判断"
+  - "适用范围与事实源边界"
+  - "规范身份、命名和路径"
+  - "正式规范必要章节"
+  - "权威域、定义归口与吸收规则"
+  - "术语与表达最小纪律"
+  - "引用关系与行动指南输入"
+  - "附件规则"
+  - "保障要求表达"
+  - "Human Gate / Stop Conditions"
+  - "规范写作与修改执行顺序"
+  - "Code 覆盖与缺口处理"
+  - "待补齐事项"
+
+v2_01_duties_not_to_carry_as_body_detail:
+  - duty: "Full active directory inventory"
+    handling: "Generate from Markdown identities."
+  - duty: "Full attachment inventory"
+    handling: "Generate from Markdown references and attachment identities if attachments exist."
+  - duty: "Project directory and governed-project config details"
+    handling: "Move to governed-project/runtime/fact-source rules."
+  - duty: "Detailed problem-cause taxonomy"
+    handling: "Move to Code diagnostics, tests, WorkCase closure, or owning specs."
+  - duty: "Member skeleton specifics"
+    handling: "Move to 02 and 03."
+  - duty: "V2 compatibility fields"
+    handling: "Keep in migration evidence or adapter notes."
+
+immediate_findings:
+  - "The current draft v3 01 is too thin because it removed several v2 01 duties that remain essential: upper basis, value judgment, fact-source boundary, authority routing, assurance expression, writing workflow, and Code gap handling."
+  - "The previous bloated v2 problem is not the existence of these duties; it is hand-maintained inventories, overgrown attachments, repeated checklists, and mixing temporary migration process into formal specs."
+  - "A valid v3 01 should preserve v2 01's duty skeleton while replacing verbose content with stable Markdown structure, explicit references, and Code-generated views."
