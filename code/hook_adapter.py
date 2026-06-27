@@ -76,22 +76,13 @@ def main() -> int:
         return 0
 
     event = sys.argv[1] if len(sys.argv) > 1 else "session-start"
-    cmd = [
-        sys.executable,
-        str(dispatcher),
-        "run",
-        event,
-        "--trigger-source",
-        "hook",
-    ]
-    if "--pipe" in sys.argv:
-        # --pipe mode: forward stdin and write dispatcher stdout to our stdout
-        result = subprocess.run(cmd, input=raw, text=True)
-    else:
-        # default: exec-style so dispatcher exit code becomes ours
-        os.execv(sys.executable, [sys.executable, str(dispatcher), "run", event, "--trigger-source", "hook"])
-        return 0  # unreachable
-
+    result = subprocess.run(
+        [sys.executable, str(dispatcher), "run", event, "--trigger-source", "hook"],
+        input=raw, text=True,
+    )
+    print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
     return result.returncode
 
 
