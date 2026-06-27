@@ -21,6 +21,14 @@ ldvh_asset:
     - "AI 准备创建 Git commit"
     - "提交消息预检失败修正"
     - "提交事实源修改前的拆分与说明生成"
+  trigger_conditions:
+    - event: "pre-tool-use"
+      tool: "Bash"
+      command_pattern: "git commit"
+    - event: "pre-tool-use"
+      tool: "Bash"
+      command_pattern: "commit"
+      result_contains: "commit_validate.py"
   inputs:
     - "用户提交目标"
     - "git status / staged files"
@@ -31,7 +39,6 @@ ldvh_asset:
     - "提交后 hash 和剩余工作区状态"
   handoff: "完成 commit 后交还主控；预检失败、拆分不确定或涉及 Human Gate 时暂停。"
   verification:
-    - "python3 /Users/dmh2002/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/ldvh-git-commit"
     - "python3 code/commit_validate.py --check-message '<message>' --files <files>"
     - "python3 code/specs_validate.py deployment-entries"
   sync_triggers:

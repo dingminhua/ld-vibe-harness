@@ -96,6 +96,93 @@ TOOL_PLAN_BY_TASK_TYPE = {
     ],
 }
 
+# ── Skill registry ──────────────────────────────────────────────────────────
+
+SKILL_MANIFEST_KEY = "ldvh_asset"
+SKILLS_ROOT = PROJECT_ROOT / "skills"
+
+
+def _scan_skills() -> list[dict[str, Any]]:
+    """Walk skills/ dir, parse ldvh_asset blocks from SKILL.md files."""
+    skills: list[dict[str, Any]] = []
+    if not SKILLS_ROOT.is_dir():
+        return skills
+    for skill_md in sorted(SKILLS_ROOT.glob("*/SKILL.md")):
+        try:
+            text = skill_md.read_text()
+        except OSError:
+            continue
+        # Find the ```yaml … ``` block containing ldvh_asset
+        block_start = text.find("```yaml")
+        if block_start == -1:
+            continue
+        block_start = text.find("\n", block_start) + 1
+        block_end = text.find("```", block_start)
+        if block_end == -1:
+            continue
+        try:
+            data = yaml.safe_load(text[block_start:block_end])
+        except yaml.YAMLError:
+            continue
+        if isinstance(data, dict):
+            asset = data.get(SKILL_MANIFEST_KEY, data) if SKILL_MANIFEST_KEY in data else data
+        else:
+            continue
+        if isinstance(asset, dict) and asset.get("type") == "skill":
+            asset.setdefault("_canonical_path", str(skill_md.relative_to(PROJECT_ROOT)))
+            skills.append(asset)
+    return skills
+
+
+def _match_skill_plan(skills: list[dict[str, Any]], event: str, tool: str,
+                      command: str, action_hint: str) -> list[str]:
+    """Return skill IDs whose trigger_conditions match the current context.
+
+    Matching rules (AND within each condition, OR across conditions):
+      - event:       exact match on canonical event name
+      - tool:        substring match on tool name (case-insensitive)
+      - command_pattern: substring match on observed command
+      - action_hint: value in action_hint list
+    """
+    matched: list[str] = []
+    tool_lower = tool.lower()
+    command_lower = command.lower()
+    for skill in skills:
+        conditions = skill.get("trigger_conditions")
+        if not isinstance(conditions, list):
+            continue
+        for cond in conditions:
+            if not isinstance(cond, dict):
+                continue
+            if cond.get("event") != event:
+                continue
+            if "tool" in cond and str(cond["tool"]).lower() not in tool_lower:
+                continue
+            if "command_pattern" in cond and str(cond["command_pattern"]).lower() not in command_lower:
+                continue
+            if "action_hint" in cond and action_hint not in map(str, cond.get("action_hint", [])):
+                continue
+            skill_id = skill.get("id", "")
+            if skill_id and skill_id not in matched:
+                matched.append(skill_id)
+    return matched
+
+
+_SKILL_CACHE: list[dict[str, Any]] | None = None
+
+
+def _cached_skills() -> list[dict[str, Any]]:
+    global _SKILL_CACHE
+    if _SKILL_CACHE is None:
+        _SKILL_CACHE = _scan_skills()
+    return _SKILL_CACHE
+
+
+def _build_skill_plan(event: str, tool: str = "", command: str = "",
+                      action_hint: str = "") -> list[str]:
+    """Return a list of Skill IDs relevant to the current dispatch context."""
+    return _match_skill_plan(_cached_skills(), event, tool, command, action_hint)
+
 
 def _receipt_root() -> Path:
     codex_home = os.environ.get("CODEX_HOME")
@@ -459,6 +546,7 @@ def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = 
         result_payload["task_type"] = task_type
         result_payload["tool_plan"] = _tool_plan_for_task_type(task_type)
         result_payload["post_read_action"] = _post_read_action_for_task_type(task_type)
+        result_payload["skill_plan"] = _build_skill_plan("acknowledge-read-plan", action_hint=task_type)
     if deep_read_plan:
         result_payload["deep_read_plan"] = deep_read_plan
     if deep_stop_conditions:
@@ -962,6 +1050,7 @@ def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules",
         result["attention_points"] = []
         result["tool_plan"] = []
         result["next_queries"] = []
+        result["skill_plan"] = []
         return result
 
     # Run knowledge-map to get the entry chain receipt
@@ -1013,6 +1102,7 @@ def _build_session_start_result(cwd: Path, *, trigger_source: str = "rules",
         result.get("diagnostics", []),
         str(result.get("receipt") or ""),
     )
+    result["skill_plan"] = _build_skill_plan("session-start")
     return result
 
 
@@ -1349,6 +1439,8 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
             return 1
     if receipt and session_id:
         _mark_pre_tool_use_receipt(session_id, result)
+    result["skill_plan"] = _build_skill_plan("pre-tool-use", tool=tool_name,
+                                              command=tool_command)
     print(json.dumps(result, ensure_ascii=False))
     return 0
 
