@@ -1494,6 +1494,71 @@ orchestration:
     assert not title_report["knowledge_map"]["stop_conditions"]
 
 
+def test_knowledge_map_pushes_pending_work_objects_and_runtime_guides(tmp_path):
+    workspace = tmp_path / "workspace"
+    project = workspace / "project"
+    write_minimal_v2_knowledge_map_fixture(project)
+    write_md(
+        workspace / "LDVH-GOVERNED-PROJECTS.yaml",
+        f"""
+product_name: Test LDVH
+product_description: Test workspace
+projects:
+  - id: project
+    path: {project}
+    name: Project
+""",
+    )
+    write_md(
+        project / "ldvh-base" / "workcases" / "workcase-0002-pending.yaml",
+        """
+id: workcase-0002
+type: workcase
+title: Pending Work
+status: pending
+created: '2026-06-24'
+updated: '2026-06-24'
+goal: Pending Work
+priority: P1
+description: Pending Work
+success_criteria: Pending Work
+source: conversation
+orchestration:
+  mode: sequential
+  execution_items: []
+""",
+    )
+    write_md(
+        project / "ldvh-base" / "sparks" / "spark-0001-pending.yaml",
+        """
+id: spark-0001
+type: spark
+title: Pending Spark
+status: draft
+created: '2026-06-24'
+updated: '2026-06-24'
+priority: P1
+description: Pending Spark
+source: conversation
+""",
+    )
+
+    report = checker.v2_check_build(
+        project,
+        input_scope="entry_navigation",
+        query_layer="neighbors",
+        start_node="specs-v2/01-规范体系基础规范.md",
+        task_type="code_change",
+    )
+    knowledge_map = report["knowledge_map"]
+    read_paths = [item["path"] for item in knowledge_map["read_plan"]]
+
+    assert "ldvh-base/workcases/workcase-0002-pending.yaml" in read_paths[:3]
+    assert "ldvh-base/sparks/spark-0001-pending.yaml" in read_paths
+    assert "attention_points" not in knowledge_map
+    assert "tool_plan" not in knowledge_map
+
+
 def test_v2_check_relation_type_filter_limits_projected_edges(tmp_path):
     write_minimal_v2_knowledge_map_fixture(tmp_path)
 

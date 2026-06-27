@@ -48,6 +48,7 @@ V2_FACT_SEMANTIC_RELATION_FIELDS = {
     "verification_refs",
     "resolved_to",
 }
+V2_PENDING_FACT_STATUSES = {"pending", "draft", "human_plan_confirming", "subagents_plan_reviewing"}
 
 
 class KnowledgeMapMixin:
@@ -264,6 +265,7 @@ class KnowledgeMapMixin:
 
         projected_nodes = [nodes_by_id[node_id] for node_id in self.sorted_node_ids(selected_nodes) if node_id in nodes_by_id]
         read_plan = self.build_read_plan(projected_nodes, selected_edges, resolved_start_id)
+        read_plan = self.with_pending_work_objects(read_plan)
         next_queries = self.build_next_queries(resolved_start_id)
         stop_conditions = self.build_stop_conditions(read_plan, resolved_start_id)
         impact_summary = self.build_impact_summary(projected_nodes, selected_edges, edges)
@@ -417,6 +419,30 @@ class KnowledgeMapMixin:
                 plan.append(self.read_plan_entry(node, priority, "context", "entry_candidate", "入口层候选原文；需要具体判断时应以它作为 start_node 追加邻接查询。"))
 
         return self.compact_read_plan(plan)
+
+    def with_pending_work_objects(self, read_plan):
+        if not self.should_parse_governed_projects():
+            return read_plan
+        pending_entries = []
+        for node in self.nodes:
+            if node.get("type") != "fact_object":
+                continue
+            if node.get("object_type") not in {"workcase", "spark"}:
+                continue
+            status = str(node.get("status") or "").strip()
+            if status not in V2_PENDING_FACT_STATUSES:
+                continue
+            priority = "P0" if node.get("object_type") == "workcase" else "P1"
+            pending_entries.append(
+                self.read_plan_entry(
+                    node,
+                    priority,
+                    "work_object",
+                    "pending_work_object",
+                    f"当前项目存在未闭环 {node.get('object_type')}，状态为 {status}，行动前需优先核对目标和关闭条件。",
+                )
+            )
+        return self.compact_read_plan([*pending_entries, *read_plan])
 
     def read_role_for_relation(self, edge, node=None, resolved_start_id=None):
         node = node or {}
