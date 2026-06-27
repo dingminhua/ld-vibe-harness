@@ -555,6 +555,13 @@ def _acknowledge_read_plan(session_id: str, cwd: Path, *, trigger_source: str = 
             result_payload["skill_plan_hint"] = (
                 "对于列出的每个 skill_id，请读取 skills/<id>/SKILL.md 并按其中的 Workflow 执行。"
             )
+    # Surface skill_plan accumulated from pre-tool-use into session receipt
+    receipt_skill_plan = receipt.get("skill_plan", []) if receipt else []
+    if receipt_skill_plan and not result_payload.get("skill_plan"):
+        result_payload["skill_plan"] = receipt_skill_plan
+        result_payload["skill_plan_hint"] = (
+            "对于列出的每个 skill_id，请读取 skills/<id>/SKILL.md 并按其中的 Workflow 执行。"
+        )
     if deep_read_plan:
         result_payload["deep_read_plan"] = deep_read_plan
     if deep_stop_conditions:
@@ -1453,6 +1460,13 @@ def handle_pre_tool_use(cwd: Path, *, trigger_source: str = "rules", tool_name: 
         result["skill_plan_hint"] = (
             "对于列出的每个 skill_id，请读取 skills/<id>/SKILL.md 并按其中的 Workflow 执行。"
         )
+        # Persist to session receipt so acknowledge-read-plan can surface it
+        if receipt and session_id:
+            receipt.setdefault("skill_plan", [])
+            for sid in result["skill_plan"]:
+                if sid not in receipt["skill_plan"]:
+                    receipt["skill_plan"].append(sid)
+            _write_session_receipt(session_id, receipt.get("event", "pre-tool-use"), receipt)
     print(json.dumps(result, ensure_ascii=False))
     return 0
 
