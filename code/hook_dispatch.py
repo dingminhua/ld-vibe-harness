@@ -504,20 +504,63 @@ def _git_lookup_cwd(path: Path) -> Path:
     return candidate.parent
 
 
-def _git_text(cwd: Path, args: list[str]) -> str:
+def _stderr_summary_for_exit_code(exit_code: int) -> str:
+    if exit_code == 1:
+        return "命令返回 exit_code=1，通常表示检查未通过或目标状态不满足要求。"
+    if exit_code == 2:
+        return "命令返回 exit_code=2，通常表示参数、配置或输入解析错误。"
+    if exit_code == 126:
+        return "命令返回 exit_code=126，命令存在但不可执行。"
+    if exit_code == 127:
+        return "命令返回 exit_code=127，命令不存在或未在 PATH 中。"
+    if exit_code < 0:
+        return "命令启动失败，请手动检查可执行文件、权限或运行环境。"
+    return f"命令返回未知 exit_code={exit_code}，请手动检查 stderr_head。"
+
+
+def _structured_subprocess_error(command: list[str], exit_code: int, stderr: str,
+                                 *, suggested_action: str = "") -> dict[str, Any]:
+    stderr_head = (stderr or "").strip()[:500]
+    return {
+        "status": "error",
+        "failed_command": shlex.join(command),
+        "exit_code": exit_code,
+        "stderr_head": stderr_head,
+        "stderr_summary": _stderr_summary_for_exit_code(exit_code),
+        "suggested_action": suggested_action or "检查 failed_command、exit_code 和 stderr_head；必要时回到对应 Code 入口或事实源原文定位问题。",
+    }
+
+
+def _git_text_structured(cwd: Path, args: list[str]) -> tuple[str, Optional[dict[str, Any]]]:
     git_cwd = _git_lookup_cwd(cwd)
+    command = ["git", "-C", str(git_cwd), *args]
     try:
         result = subprocess.run(
-            ["git", "-C", str(git_cwd), *args],
+            command,
             capture_output=True,
             text=True,
             check=False,
         )
-    except OSError:
-        return ""
+    except OSError as exc:
+        return "", _structured_subprocess_error(
+            command,
+            -1,
+            str(exc),
+            suggested_action="确认 git 可执行文件可用，并检查 cwd 是否存在。",
+        )
     if result.returncode != 0:
-        return ""
-    return result.stdout.strip()
+        return "", _structured_subprocess_error(
+            command,
+            result.returncode,
+            result.stderr,
+            suggested_action="确认目标路径位于 Git 仓库内，或改用显式 target/repo root 后重试。",
+        )
+    return result.stdout.strip(), None
+
+
+def _git_text(cwd: Path, args: list[str]) -> str:
+    stdout, _error = _git_text_structured(cwd, args)
+    return stdout
 
 
 def _git_common_dir(cwd: Path) -> str:
@@ -793,7 +836,12 @@ def _run_knowledge_map(start_node: str, task_type: str, *, input_scope: str = "e
     ]
     result = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True)
     if result.returncode != 0:
-        return {"status": "error", "stderr": result.stderr.strip()}
+        return _structured_subprocess_error(
+            cmd,
+            result.returncode,
+            result.stderr,
+            suggested_action="检查 knowledge-map 参数、输入范围和 start_node；必要时回读 active specs 与事实源原文。",
+        )
     try:
         return json.loads(result.stdout)
     except json.JSONDecodeError:
