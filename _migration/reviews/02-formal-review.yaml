@@ -1,5 +1,5 @@
-target_spec: "specs/02-AI行为规范.md"
-target_sha256: "8a78a8b7c7af056ff35718ed078a6a67d242aab1d9d87b623b998f1aeb8bf1df"
+target_spec: "specs/03-AI行为规范.md"
+target_sha256: "1f90abbe2c6a48ab53a51647a261789e6ece73cda050d300f8f099b788de1037"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/inventory/v2-02-behavior-responsibility-map.yaml"
@@ -11,6 +11,6 @@ subagent_review:
   agent_id: "019f0b7e-1a7b-7b32-8d18-2f236ba1a17f"
   reviewer: "Peirce"
   verdict: "pass"
-  receipt: "status=pass; specs/02-AI行为规范.md was reviewed as an actor-level AI behavior spec, found no blocker, and post-review warning fixes clarified 01 formal review receipt ownership plus the value-gate trigger scope."
+  receipt: "status=pass; specs/03-AI行为规范.md keeps the actor-level AI behavior scope after 01 became 保障与承接, now aligns its chapter structure with Specs 基础 guidance without mechanical role chapters, and removes the reader-perspective section."
   unresolved_blockers: []
 warnings: []
