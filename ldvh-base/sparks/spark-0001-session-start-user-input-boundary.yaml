@@ -1,0 +1,42 @@
+id: spark-0001
+type: spark
+title: 会话入口与用户输入承接边界
+status: pending
+created: '2026-06-28T14:20:00+08:00'
+updated: '2026-06-28T14:20:00+08:00'
+description: |
+  本 Spark 记录 v3 运行时与行动指南讨论中的关键边界：会话开始和用户输入是两件事，不能混成一个动作。
+
+  会话开始解决“AI 当前该先知道什么”。它应由 session-start Hook 或 Rules 路径触发 Code / dispatcher，Code 根据 cwd、target、session_id 和管辖配置生成入口 read_plan、stop_conditions、diagnostics、next_action 和 session receipt，再由 AI 回读 P0/P1 required_paths 并通过 acknowledge-read-plan 写入 read_plan_consumed 证据。
+
+  用户输入解决“这次任务实际要做什么”。在用户输入阶段，AI 先做初步语义理解，再主动调用 Code 获取任务承接信息。Code 返回的行动指南应包含 intent、extracted_fields、missing_fields、task_read_plan、stop_conditions、validation_guard 和 next_action。AI 只能按承接包追问、暂停、读取、执行或验证。
+
+  当前 v2 Hook 机制已经较清晰地覆盖 session-start、acknowledge-read-plan、pre-tool-use 和 git.commit-msg，但没有完整的 user-input -> intent/action-guide canonical event。v3 需要明确是否新增 user-input 事件，或用等价机制承接用户问题到任务行动指南的转换。
+
+  本轮讨论还明确：管辖判定必须 target-first、cwd-fallback。会话开始只能根据当前可见 cwd / target 做入口握手；用户输入到达后必须重新识别真实 target。用户问天气、常识或外部事实时，即使 cwd 位于管辖项目，也不应强行套用 LDVH 项目任务链；用户问题指向管辖项目文件、规范、代码、事实对象、提交或工作项时，即使 cwd 不在管辖项目，也必须用真实 target 补跑 session-start 并完成 acknowledge。
+
+  session-start 可以重复触发，但不是完全无副作用。它不应修改项目代码、specs、事实对象、业务文件或 Git 提交；但会写入或刷新运行时 receipt、read_plan、diagnostics 和后续 AI 消费依据。因此 v3 必须把 session-start 设计为幂等、按 target_scope 隔离、只写运行时 receipt、不静默覆盖不同 target、不得跨 target 复用 latest receipt，并且 no-op receipt 与 governed receipt 必须分开。
+source: conversation
+priority: P1
+source_detail: |
+  Human 在 2026-06-28 的讨论中追问 V2 Hook 机制、会话开始、用户输入、cwd 与 target 四象限，以及重复 session-start 的副作用。结论是：会话入口链路和用户输入链路必须分离；会话入口由 Hook 带动 Code 给 AI 提供入口上下文；用户输入阶段由 AI 主动调用 Code 获取任务承接包；重复 session-start 允许但必须控制运行时状态副作用。
+evolution:
+  - at: '2026-06-28T14:20:00+08:00'
+    summary: |
+      创建 Spark，暂存“会话开始”和“用户输入”分离、user-input 事件缺口、target-first 管辖判定、cwd/target 四象限和 session-start 幂等副作用控制要求。该内容已分流到 `workcase-0001-runtime-entry-user-input-contract.yaml`，但在 v3 相关规范和 Code 未正式接管前保持 pending。
+input_refs:
+  - v2-hook-mechanism.md
+  - specs/00-LDVH理念与构成.md
+  - specs/01-AI行为规范.md
+  - specs/attachments/01.Att.01-AI行为保障消费时机表.md
+  - specs/attachments/01.Att.06-AI行为保障机制承接矩阵.md
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workcases:
+  - workcase-0001
+related_adrs: []
+related_studies: []
+related_docs:
+  - v2-hook-mechanism.md
+
