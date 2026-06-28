@@ -12,11 +12,48 @@ BOOTSTRAP_OBJECT_IDS = {
     "00",
     "01",
     "01.Att.01",
-    "01.Att.02",
-    "01.Att.03",
-    "01.Att.04",
-    "01.Att.05",
+    "01.Att.06",
+    "02",
+    "02.Att.01",
+    "02.Att.02",
+    "02.Att.03",
+    "02.Att.04",
+    "02.Att.05",
+    "03",
 }
+FIXED_HEAD_SECTIONS = [
+    "价值判断",
+    "权威依据",
+    "归口边界",
+    "适用范围",
+]
+FIXED_TAIL_SECTIONS = [
+    "保障措施",
+    "验证方法",
+    "Human Gate",
+    "Stop Conditions",
+    "待补齐事项",
+]
+FORBIDDEN_ATTACHMENT_HEADINGS = [
+    "## 上位依据",
+    "## 行动流程",
+    "## Human Gate",
+    "## 事实源边界",
+    "## 迁移过程",
+]
+RULE_LIKE_ATTACHMENT_TERMS = [
+    "必须",
+    "不得",
+    "应当",
+    "需要",
+    "Human Gate",
+    "事实源",
+    "行动流程",
+    "验证",
+    "回写",
+    "触发",
+    "阻断",
+]
 
 REVIEW_TOP_LEVEL_KEYS = {
     "target_spec",
@@ -57,18 +94,53 @@ def _formal_markdown_files() -> list[Path]:
 
 def _formal_object_id_and_metadata(path: Path) -> tuple[str, dict]:
     metadata = _first_yaml_block(path)
-    if "v3_spec" in metadata:
-        spec = metadata["v3_spec"]
+    if "ldvh_spec" in metadata:
+        spec = metadata["ldvh_spec"]
         return spec["spec_id"], spec
-    if "v3_attachment" in metadata:
-        attachment = metadata["v3_attachment"]
+    if "ldvh_attachment" in metadata:
+        attachment = metadata["ldvh_attachment"]
         return attachment["attachment_id"], attachment
-    raise AssertionError(f"{path} missing v3_spec or v3_attachment identity block")
+    raise AssertionError(f"{path} missing ldvh_spec or ldvh_attachment identity block")
 
 
-def test_v3_starts_from_markdown_specs_only() -> None:
-    assert (ROOT / "specs" / "00-LDVH-v3理念与价值标准.md").exists()
-    assert (ROOT / "specs" / "01-Specs基础规范.md").exists()
+def _attachment_body_lines_after_identity(raw: str) -> list[tuple[int, str]]:
+    fence = re.search(r"```yaml\n.*?\n```", raw, re.S)
+    assert fence, raw[:80]
+    start_line = raw[: fence.end()].count("\n") + 1
+    body = raw[fence.end() :].splitlines()
+    return [(start_line + index, line) for index, line in enumerate(body, start=1)]
+
+
+def _is_allowed_attachment_body_line(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped:
+        return True
+    if stripped.startswith("> 文件状态："):
+        return True
+    if stripped.startswith("|"):
+        return True
+    if re.fullmatch(r"[\w`./ -]+[：:]", stripped):
+        return True
+    return False
+
+
+def _normalized_h2_titles(raw: str) -> list[str]:
+    titles: list[str] = []
+    for match in re.finditer(r"^##\s+(.+?)\s*$", raw, re.M):
+        title = match.group(1).strip()
+        titles.append(re.sub(r"^\d+[.、]\s*", "", title))
+    return titles
+
+
+def _h2_titles(raw: str) -> list[str]:
+    return [match.group(1).strip() for match in re.finditer(r"^##\s+(.+?)\s*$", raw, re.M)]
+
+
+def test_ldvh_starts_from_markdown_specs_only() -> None:
+    assert (ROOT / "specs" / "00-理念与构成.md").exists()
+    assert (ROOT / "specs" / "01-保障与承接.md").exists()
+    assert (ROOT / "specs" / "02-Specs基础规范.md").exists()
+    assert (ROOT / "specs" / "03-AI行为规范.md").exists()
 
 
 def test_no_parallel_authority_layers() -> None:
@@ -76,57 +148,83 @@ def test_no_parallel_authority_layers() -> None:
     assert not (ROOT / "specs" / "schemas").exists()
 
 
-def test_01_only_authorizes_subordinate_table_attachments() -> None:
+def test_attachments_stay_subordinate_tables_or_enums() -> None:
     attachments = sorted(
         path.relative_to(ROOT).as_posix()
-        for path in (ROOT / "specs" / "attachments").glob("01.Att.*.md")
+        for path in (ROOT / "specs" / "attachments").glob("*.md")
     )
     assert attachments == [
-        "specs/attachments/01.Att.01-规范身份字段表.md",
-        "specs/attachments/01.Att.02-规范信息角色表.md",
-        "specs/attachments/01.Att.03-引用关系类型表.md",
-        "specs/attachments/01.Att.04-保障要求字段表.md",
-        "specs/attachments/01.Att.05-附件身份字段表.md",
+        "specs/attachments/01.Att.01-保障消费时机表.md",
+        "specs/attachments/01.Att.06-保障机制承接矩阵.md",
+        "specs/attachments/02.Att.01-规范身份字段表.md",
+        "specs/attachments/02.Att.02-规范信息角色表.md",
+        "specs/attachments/02.Att.03-引用关系类型表.md",
+        "specs/attachments/02.Att.04-保障要求字段表.md",
+        "specs/attachments/02.Att.05-附件身份字段表.md",
     ]
 
-    spec_01 = (ROOT / "specs" / "01-Specs基础规范.md").read_text(encoding="utf-8")
-    assert "附件只是正文的附属内容" in spec_01
-    assert "信息角色不是固定章节模板" in spec_01
-    assert "未触发时不得要求空章节" in spec_01
-    assert "验证与证据" in spec_01
-    assert "不要求展开测试计划" in spec_01
-    assert "02 不建立成员规范骨架" in spec_01
-    assert "本段只定义 formal review、Code 诊断和迁移准入中的 warning 收据口径" in spec_01
-    assert "当前 Code 硬门已经覆盖" in spec_01
-    assert "后续 Code 应逐步检查" in spec_01
+    spec_02 = (ROOT / "specs" / "02-Specs基础规范.md").read_text(encoding="utf-8")
+    assert "附件只是正文授权的附属内容" in spec_02
+    assert "附件不得承载上位原则、核心规则、行动流程、Human Gate" in spec_02
 
-    forbidden_body_level_terms = [
-        "## 上位依据",
-        "## 行动流程",
-        "## Human Gate",
-        "## 事实源边界",
-        "## 迁移过程",
-    ]
     for rel_path in attachments:
         raw = (ROOT / rel_path).read_text(encoding="utf-8")
         match = re.search(r"```yaml\n(.*?)\n```", raw, re.S)
         assert match, rel_path
-        metadata = yaml.safe_load(match.group(1))["v3_attachment"]
+        metadata = yaml.safe_load(match.group(1))["ldvh_attachment"]
         assert "authority" not in metadata, rel_path
         assert metadata["relation"] == "authorizes_attachment", rel_path
         assert f'canonical_path: "{rel_path}"' in raw
-        for term in forbidden_body_level_terms:
+        for term in FORBIDDEN_ATTACHMENT_HEADINGS:
             assert term not in raw, rel_path
+        for line_number, line in _attachment_body_lines_after_identity(raw):
+            assert _is_allowed_attachment_body_line(line), f"{rel_path}:{line_number}: {line}"
+            if line.strip() and not line.lstrip().startswith((">", "|")):
+                for term in RULE_LIKE_ATTACHMENT_TERMS:
+                    assert term not in line, f"{rel_path}:{line_number}: {line}"
 
 
-def test_formal_specs_keep_v3_identity_blocks() -> None:
+def test_formal_specs_keep_ldvh_identity_blocks() -> None:
     for path in [
-        ROOT / "specs" / "00-LDVH-v3理念与价值标准.md",
-        ROOT / "specs" / "01-Specs基础规范.md",
+        ROOT / "specs" / "00-理念与构成.md",
+        ROOT / "specs" / "01-保障与承接.md",
+        ROOT / "specs" / "02-Specs基础规范.md",
+        ROOT / "specs" / "03-AI行为规范.md",
     ]:
         raw = path.read_text(encoding="utf-8")
-        assert re.search(r"```yaml\nv3_spec:", raw), path
+        assert re.search(r"```yaml\nldvh_spec:", raw), path
         assert f'canonical_path: "{path.relative_to(ROOT)}"' in raw
+
+
+def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
+    for path in [
+        ROOT / "specs" / "01-保障与承接.md",
+        ROOT / "specs" / "02-Specs基础规范.md",
+        ROOT / "specs" / "03-AI行为规范.md",
+    ]:
+        raw = path.read_text(encoding="utf-8")
+        titles = _normalized_h2_titles(raw)
+        assert titles[: len(FIXED_HEAD_SECTIONS)] == FIXED_HEAD_SECTIONS, path
+        assert titles[-len(FIXED_TAIL_SECTIONS) :] == FIXED_TAIL_SECTIONS, path
+        assert len(titles) > len(FIXED_HEAD_SECTIONS) + len(FIXED_TAIL_SECTIONS), path
+
+
+def test_role_sections_point_to_existing_h2_entries() -> None:
+    for path in [
+        ROOT / "specs" / "01-保障与承接.md",
+        ROOT / "specs" / "02-Specs基础规范.md",
+        ROOT / "specs" / "03-AI行为规范.md",
+    ]:
+        raw = path.read_text(encoding="utf-8")
+        metadata = _first_yaml_block(path)["ldvh_spec"]
+        role_sections = metadata["role_sections"]
+        assert "local_rules" not in role_sections, path
+        assert "rule_body" in role_sections, path
+        h2_titles = set(_h2_titles(raw))
+        for value in role_sections.values():
+            values = value if isinstance(value, list) else [value]
+            for title in values:
+                assert title in h2_titles, f"{path}: {title}"
 
 
 def test_formal_objects_have_unique_ids_and_real_paths() -> None:
