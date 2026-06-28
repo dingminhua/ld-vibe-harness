@@ -1,5 +1,5 @@
 source_spec: "../ld-vibe-harness/specs/03-行动编排规范.md"
-target_spec: "specs/03-行动编排规范.md"
+target_spec: "specs/04-行动编排基础规范.md"
 purpose: "Map v2 03 responsibilities into a smaller v3 orchestration spec without copying the v2 orchestration corpus."
 value_gate:
   goal: "Define how LDVH work is orchestrated for AI action."
@@ -9,11 +9,11 @@ value_gate:
     - verification
     - writeback
   single_markdown_fact_source: true
-  kill_point: "If v3 03 becomes a long workflow catalog or duplicates 01/04/07 rules, stop and split back to owning specs."
+  kill_point: "If v3 04 becomes a long workflow catalog or duplicates 01/02/03 rules, stop and split back to owning specs."
 
 decisions:
   - v2_responsibility: "Context / Scenario / Gate model for action members"
-    v3_handling: "Keep as later action-member material, not the v3 03 first body."
+    v3_handling: "Keep as later action-member material, not the v3 04 first body."
     reason: "Current need is LDVH self-action order, not full action member migration."
 
   - v2_responsibility: "Main controller dispatches Skill, Agent, Code, Web, Hook, Rules"
@@ -26,7 +26,7 @@ decisions:
 
   - v2_responsibility: "Evidence and fact-source writeback"
     v3_handling: "Absorb only task-completion obligation; future 07 owns Git/fact-source details."
-    reason: "03 should say AI must report and route; 07 should define durable records."
+    reason: "04 should say how action orchestration reports and routes; 03 should define work object destinations."
 
   - v2_responsibility: "Orchestration candidates and 30-59 members"
     v3_handling: "Defer."
@@ -40,7 +40,7 @@ decisions:
     v3_handling: "Keep as subagent review and capability-output boundary."
     reason: "Ensures subagent review informs but does not replace main accountability."
 
-required_v3_03_roles:
+required_v3_04_roles:
   - value_gate_before_action
   - authority_order_specs_code_instances
   - formal_change_gate

@@ -1,0 +1,32 @@
+source_refs:
+  - "specs/00-LDVH-v3理念与价值标准.md"
+  - "specs/01-Specs基础规范.md"
+  - "../ld-vibe-harness/specs/03-行动编排规范.md"
+target_spec: "specs/02-AI行为规范.md"
+purpose: "Establish behavior rules for AI doing LDVH work without turning behavior into orchestration or Skill execution."
+value_gate:
+  goal: "Make AI behavior in LDVH predictable before, during, and after work."
+  reduced_ai_burdens:
+    - judgment
+    - execution
+    - verification
+    - writeback
+  single_markdown_fact_source: true
+  kill_point: "If 02 starts defining Context/Scenario/Gate templates, Skill execution steps, or formal review schemas, move that content to 04, skills, or 01."
+
+absorbed_into_02:
+  - duty: "Call the 00 value gate before LDVH work."
+    source: "00"
+  - duty: "Keep main AI accountable for tool, Code, Skill, and subagent outputs."
+    source: "v2 03"
+  - duty: "Treat blocker as blocking, warning as non-blocking but reportable, and follow-up as routed work."
+    source: "Human direction and v2 03 issue routing; 02 only keeps non-silent behavior, 04 owns closed routing semantics."
+  - duty: "Report verification, warnings, blockers, residual risk, and next disposition at completion."
+    source: "v2 03 completion / evidence duties"
+
+not_absorbed_into_02:
+  - "Specs structure, attachment boundary, formal review schema: owned by 01."
+  - "Work object schemas and lifecycle: owned by 03."
+  - "Context / Scenario / Gate orchestration model: owned by 04."
+  - "Skill input, steps, command details, and output format: owned by skills."
+  - "Code diagnostics and compiler schema: owned by later Code spec."

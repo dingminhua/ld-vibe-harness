@@ -1,16 +1,16 @@
-target_spec: "specs/03-行动编排规范.md"
-target_sha256: "b87cd020d3fe050a32717215d8217d75f7ab384610209005addd419aa6d01338"
+target_spec: "specs/03-工作对象基础规范.md"
+target_sha256: "aa420e44d934d6241bafe79466a8139c3fac6967e306e2cf5bcfad03822e5e72"
 change_type: "addition"
 mapping_evidence:
-  path: "_migration/inventory/v2-03-action-responsibility-map.yaml"
+  path: "_migration/inventory/v2-03-work-object-responsibility-map.yaml"
 code_verification:
   command: "python3 -m pytest -q && python3 -m pytest -q _migration/tests"
   passed: true
-  receipt: "Formal tests and migration tests passed after adding 03 formal review gate receipt."
+  receipt: "Formal tests and migration tests pass after 03 work object parent layer and hash were added."
 subagent_review:
-  agent_id: "019f0b3c-76d0-74b3-80a0-13614ac0c7d8"
-  reviewer: "Lagrange"
+  agent_id: "019f0b5a-cfc5-7030-bd9c-21a3d7618e65"
+  reviewer: "Meitner"
   verdict: "pass"
-  receipt: "Subagent judged 03归口正确，但要求定位为行动编排、调用00/01、不复制v2 03长文；draft was corrected to 行动编排规范 before this review receipt."
+  receipt: "Subagent judged 03 basically conforms to work object parent layer and does not migrate concrete fields, state machines, or schema."
   unresolved_blockers: []
 warnings: []

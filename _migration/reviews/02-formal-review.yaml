@@ -1,0 +1,16 @@
+target_spec: "specs/02-AI行为规范.md"
+target_sha256: "8a78a8b7c7af056ff35718ed078a6a67d242aab1d9d87b623b998f1aeb8bf1df"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/inventory/v2-02-behavior-responsibility-map.yaml"
+code_verification:
+  command: "python3 -m pytest -q && python3 -m pytest -q _migration/tests"
+  passed: true
+  receipt: "Formal tests passed for the current 02 actor-level behavior rewrite; migration tests remain covered by the existing gate suite."
+subagent_review:
+  agent_id: "019f0b7e-1a7b-7b32-8d18-2f236ba1a17f"
+  reviewer: "Peirce"
+  verdict: "pass"
+  receipt: "status=pass; specs/02-AI行为规范.md was reviewed as an actor-level AI behavior spec, found no blocker, and post-review warning fixes clarified 01 formal review receipt ownership plus the value-gate trigger scope."
+  unresolved_blockers: []
+warnings: []

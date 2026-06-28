@@ -1,0 +1,16 @@
+target_spec: "specs/04-行动编排基础规范.md"
+target_sha256: "8052953541ef62c6323a2b0e912a2fed762348a0c3560381877df559848906d0"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/inventory/v2-04-orchestration-responsibility-map.yaml"
+code_verification:
+  command: "python3 -m pytest -q && python3 -m pytest -q _migration/tests"
+  passed: true
+  receipt: "Formal tests and migration tests pass after renumbering orchestration to 04 and adding Skill carrier boundary."
+subagent_review:
+  agent_id: "019f0b3c-76d0-74b3-80a0-13614ac0c7d8"
+  reviewer: "Lagrange"
+  verdict: "pass"
+  receipt: "Subagent judged the orchestration归口正确 but warned not to copy v2 03 long text; later renumbered to 04-行动编排基础规范 after 02 行为 and 03 工作对象 were introduced."
+  unresolved_blockers: []
+warnings: []

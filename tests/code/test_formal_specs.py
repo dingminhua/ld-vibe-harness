@@ -68,7 +68,7 @@ def _formal_object_id_and_metadata(path: Path) -> tuple[str, dict]:
 
 def test_v3_starts_from_markdown_specs_only() -> None:
     assert (ROOT / "specs" / "00-LDVH-v3理念与价值标准.md").exists()
-    assert (ROOT / "specs" / "01-规范体系基础规范.md").exists()
+    assert (ROOT / "specs" / "01-Specs基础规范.md").exists()
 
 
 def test_no_parallel_authority_layers() -> None:
@@ -89,12 +89,16 @@ def test_01_only_authorizes_subordinate_table_attachments() -> None:
         "specs/attachments/01.Att.05-附件身份字段表.md",
     ]
 
-    spec_01 = (ROOT / "specs" / "01-规范体系基础规范.md").read_text(encoding="utf-8")
+    spec_01 = (ROOT / "specs" / "01-Specs基础规范.md").read_text(encoding="utf-8")
     assert "附件只是正文的附属内容" in spec_01
     assert "信息角色不是固定章节模板" in spec_01
     assert "未触发时不得要求空章节" in spec_01
     assert "验证与证据" in spec_01
     assert "不要求展开测试计划" in spec_01
+    assert "02 不建立成员规范骨架" in spec_01
+    assert "本段只定义 formal review、Code 诊断和迁移准入中的 warning 收据口径" in spec_01
+    assert "当前 Code 硬门已经覆盖" in spec_01
+    assert "后续 Code 应逐步检查" in spec_01
 
     forbidden_body_level_terms = [
         "## 上位依据",
@@ -118,7 +122,7 @@ def test_01_only_authorizes_subordinate_table_attachments() -> None:
 def test_formal_specs_keep_v3_identity_blocks() -> None:
     for path in [
         ROOT / "specs" / "00-LDVH-v3理念与价值标准.md",
-        ROOT / "specs" / "01-规范体系基础规范.md",
+        ROOT / "specs" / "01-Specs基础规范.md",
     ]:
         raw = path.read_text(encoding="utf-8")
         assert re.search(r"```yaml\nv3_spec:", raw), path

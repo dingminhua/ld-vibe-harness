@@ -1,0 +1,25 @@
+source_refs:
+  - "../ld-vibe-harness/specs/20-Spark-火花.md"
+  - "../ld-vibe-harness/specs/21-WorkCase-工作项.md"
+  - "../ld-vibe-harness/specs/22-ADR-决策.md"
+  - "../ld-vibe-harness/specs/23-Pitfall-踩坑经验.md"
+  - "../ld-vibe-harness/specs/24-Study-研究报告.md"
+target_spec: "specs/03-工作对象基础规范.md"
+purpose: "Establish a parent layer for LDVH work objects without migrating every object schema yet."
+value_gate:
+  goal: "Give warning, follow-up, evidence, task, decision, experience, and study outputs a stable routing surface."
+  reduced_ai_burdens:
+    - locating
+    - judgment
+    - writeback
+  single_markdown_fact_source: true
+  kill_point: "If 03 starts defining full object fields or state machines, move that detail to object member specs."
+absorbed_into_03:
+  - duty: "Define common work object boundary."
+  - duty: "Route warning, follow-up, evidence, and next queries to object types."
+  - duty: "Prevent chat, review, or tool output from becoming durable facts without object/spec writeback."
+not_absorbed_into_03:
+  - "Spark field schema"
+  - "WorkCase lifecycle"
+  - "ADR / Pitfall / Study detailed states"
+  - "fact_cli implementation"

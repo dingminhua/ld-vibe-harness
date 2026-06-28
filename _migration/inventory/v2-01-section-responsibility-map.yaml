@@ -8,7 +8,7 @@ purpose: >
 source_of_truth:
   - "../ld-vibe-harness/specs/01-规范体系基础规范.md"
 target_candidate:
-  - "specs/01-规范体系基础规范.md"
+  - "specs/01-Specs基础规范.md"
 
 core_constraint:
   single_markdown_fact_source: true

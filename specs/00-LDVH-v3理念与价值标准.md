@@ -15,7 +15,7 @@ v3_spec:
   basis:
     - "../ld-vibe-harness/specs/00-LDVH理念与价值标准.md"
   related_specs:
-    - "specs/01-规范体系基础规范.md"
+    - "specs/01-Specs基础规范.md"
   code_consumption:
     - "v3_spec_metadata"
     - "value_gate"
@@ -78,8 +78,9 @@ v3 继承 v2 00 的六类构成要素，不新增第七类。
 | 构成要素 | v3 第一阶段处理方式 |
 |---|---|
 | 规范体系 | 写上位规则、父子规则、附件边界和去冗余方法 |
-| 事实模型 | 暂不迁移；后续由 02 承接 |
-| 行动编排 | 暂不全量迁移；先验证行动成员样板 |
+| 行为规则 | 由 02 承接 AI 通用行为边界 |
+| 工作对象 | 由 03 承接 Spark、WorkCase、ADR、Pitfall、Study 等对象边界 |
+| 行动编排 | 由 04 承接 Context、Scenario、Gate 和 Skill 承载边界 |
 | Code | 只读解析、校验、投影和诊断 |
 | Web | 暂不迁移；未来消费 Code 输出 |
 | 运行时扩展 | 暂不迁移；不得顺手改 hook / dispatcher |
@@ -119,7 +120,7 @@ AI 必须暂停并提交 Human 确认：
 
 AI 读完本文后：
 
-1. 若要写或迁移 v3 spec，读 `specs/01-规范体系基础规范.md`；
+1. 若要写或迁移 v3 spec，读 `specs/01-Specs基础规范.md`；
 2. 若要判断附件怎么写，读 01 的附件；
 3. 若要实现 Code，先等 04 或 Code 契约成立；
 4. 若发现本文与 v2 00 冲突，停止并提交 Human Gate。
