@@ -138,7 +138,7 @@ def _h2_titles(raw: str) -> list[str]:
 
 def test_ldvh_starts_from_markdown_specs_only() -> None:
     assert (ROOT / "specs" / "00-理念与构成.md").exists()
-    assert (ROOT / "specs" / "01-保障与承接.md").exists()
+    assert (ROOT / "specs" / "01-保障与衔接.md").exists()
     assert (ROOT / "specs" / "02-Specs基础规范.md").exists()
     assert (ROOT / "specs" / "03-AI行为规范.md").exists()
 
@@ -187,7 +187,7 @@ def test_attachments_stay_subordinate_tables_or_enums() -> None:
 def test_formal_specs_keep_ldvh_identity_blocks() -> None:
     for path in [
         ROOT / "specs" / "00-理念与构成.md",
-        ROOT / "specs" / "01-保障与承接.md",
+        ROOT / "specs" / "01-保障与衔接.md",
         ROOT / "specs" / "02-Specs基础规范.md",
         ROOT / "specs" / "03-AI行为规范.md",
     ]:
@@ -198,7 +198,7 @@ def test_formal_specs_keep_ldvh_identity_blocks() -> None:
 
 def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
     for path in [
-        ROOT / "specs" / "01-保障与承接.md",
+        ROOT / "specs" / "01-保障与衔接.md",
         ROOT / "specs" / "02-Specs基础规范.md",
         ROOT / "specs" / "03-AI行为规范.md",
     ]:
@@ -211,7 +211,7 @@ def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
 
 def test_role_sections_point_to_existing_h2_entries() -> None:
     for path in [
-        ROOT / "specs" / "01-保障与承接.md",
+        ROOT / "specs" / "01-保障与衔接.md",
         ROOT / "specs" / "02-Specs基础规范.md",
         ROOT / "specs" / "03-AI行为规范.md",
     ]:
