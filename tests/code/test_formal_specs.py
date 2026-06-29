@@ -161,6 +161,7 @@ def test_attachments_stay_subordinate_tables_or_enums() -> None:
         "specs/attachments/02.Att.03-引用关系类型表.md",
         "specs/attachments/02.Att.04-保障要求字段表.md",
         "specs/attachments/02.Att.05-附件身份字段表.md",
+        "specs/attachments/02.Att.06-术语表.md",
     ]
 
     spec_02 = (ROOT / "specs" / "02-Specs基础规范.md").read_text(encoding="utf-8")
