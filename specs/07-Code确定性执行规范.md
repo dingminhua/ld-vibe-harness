@@ -67,7 +67,9 @@ Code 服务 00 的 Code 构成要素定位和 V6 强制验证。Code 可以提�
 
 本文归口定义 Code 的确定性执行边界：读取、解析、校验、诊断、source_refs、Action Guide、preflight、runtime facade、payload/adapter/dispatcher/validator 规则和 Code 变更纪律。
 
-本文不归口定义事实对象字段、行动模板步骤、Web 页面、测试治理、Git commit 契约本体、环境安装方式或 Hook registry。相邻内容分别由 05、06、08、09、03 和 01/06 承接。
+本文不归口定义事实对象字段、行动模板步骤、Web 页面、Web 页面/API 数据路径、测试治理、Git commit 契约本体、环境安装方式或 Hook registry。相邻内容分别由 05、06、08、09、03 和 01/06 承接。
+
+Code 输出可以供 AI、tests、审计或 Web 诊断展示对照使用，但不得成为 Web 页面/API 的主数据源、字段契约或页面状态机。
 
 ## 4. 适用范围
 
@@ -87,7 +89,7 @@ Code 可以提供以下能力：
 | 读取 | 读取 Git 文件事实源、specs、附件、配置和测试输入 | 不修改事实源 |
 | 解析 | 提取 identity block、章节、表格、引用和路径 | 不推断未声明规则 |
 | 校验 | 检查结构、闭集、引用、路径、必读项和证据 | 不替代 Human Gate |
-| 聚合 | 生成对象集合、read_plan、source_refs 和影响摘要 | 不成为集合事实源 |
+| 聚合 | 生成对象集合、read_plan、source_refs 和影响摘要 | 不成为集合事实源或 Web 页面数据源 |
 | 诊断 | 输出 blocking、warning、follow_up、unverifiable 或 error | 不直接授权、放行或关闭 |
 | preflight | 写入或提交前暴露目标、读取、Gate 和验证风险 | 不回答“是否应该写入” |
 | runtime facade | 按 canonical event 消费保障需求并输出 stdout-only receipt | 不证明环境已接入 |
@@ -96,7 +98,7 @@ Code 输出必须声明 authority、authorization 和来源边界。当前未接
 
 ## 6. 结构化输出与诊断
 
-Code 输出应能被 AI 和 tests 稳定消费，至少包含状态、来源、诊断和边界。
+Code 输出应能被 AI 和 tests 稳定消费，至少包含状态、来源、诊断和边界。Web 可以引用 Code 诊断、source_refs 或验证摘要做对照展示，但 Code 输出不是 Web 页面/API 数据契约。
 
 诊断必须区分：
 
@@ -133,7 +135,8 @@ V2 `06` 中的 payload schema、dispatcher、adapter、payload_present、unknown
 2. 正例、反例、失败条件和诊断分流可描述；
 3. 输出不会反向定义 specs、事实源、Human Gate 或 Web/测试规则；
 4. 有自动化测试、命令校验或等价验证；
-5. 无法验证时必须说明原因、范围和后续补齐位置。
+5. 不把 Code 输出设计成 Web 页面/API 的主数据源、字段契约或页面状态机；
+6. 无法验证时必须说明原因、范围和后续补齐位置。
 
 Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范或 `_migration` 承接，不得在实现中硬编码未确认候选规则。
 
@@ -144,6 +147,7 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范或 `_mig
 | 来源回指要求 | Code 行为必须回指正式规则或事实源 | source_refs、identity parser、tests | Code 治理 | 新增 parser、validator、CLI 或 facade 行为时 |
 | 授权边界要求 | Code 输出不得表达授权、放行或风险接受 | 本文、02、04、tests | 语义治理 | 输出 status、diagnostic 或 receipt 时 |
 | 诊断分流要求 | 失败、缺口和不可验证必须结构化输出 | diagnostic、preflight、runtime | 缺口治理 | Code 无法完成确定性判断时 |
+| Web 分离边界要求 | Code 输出不得成为 Web 页面/API 主数据源或字段契约 | 本文、08、tests | 架构治理 | 输出 DTO、diagnostic、source_refs 或验证摘要时 |
 | 测试前置要求 | Code 行为变化必须有测试或等价验证 | 09、tests/code、CLI | 验证治理 | 修改 `code/` 或 Code 消费 specs 时 |
 
 ## 10. 验证方法
@@ -155,6 +159,7 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范或 `_mig
 | 结构检查 | Code 是否从 Markdown specs 和附件读取稳定结构 | 回到 04 或 parser 缺口 |
 | 诊断检查 | 输出是否区分阻断、警告、后续和不可验证 | 修正诊断或 tests |
 | 授权边界检查 | 输出是否避免授权、Human Gate 替代和事实源替代语义 | 阻断完成声明 |
+| Web 边界检查 | 输出是否没有被设计成 Web 页面/API 主数据源、字段契约或页面状态机 | 回到 08 分离边界或补测试 |
 | runtime 检查 | facade 是否保持只读、stdout-only、environment_integrated=false | 记录环境接入缺口 |
 | 回归检查 | `tests/code` 和 specs validator 是否覆盖关键正反例 | 补测试或写明等价验证 |
 
@@ -166,7 +171,8 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范或 `_mig
 2. Code 准备写入事实源、安装 Hook、修改用户环境或覆盖入口；
 3. 接受关键 Code 校验长期不可验证；
 4. 让 Code 规则覆盖 specs 正文、事实源或 Human Gate；
-5. 引入新的持久派生索引、缓存或数据库作为事实判断来源。
+5. 让 Code 输出成为 Web 页面/API 主数据源、字段契约或页面状态机；
+6. 引入新的持久派生索引、缓存或数据库作为事实判断来源。
 
 ## 12. Stop Conditions
 
@@ -176,7 +182,8 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范或 `_mig
 2. Code 输出正在替代事实源、Human Gate 或完成声明；
 3. parser、validator 或 facade 失败但被忽略；
 4. unknown event、空 read_plan、缺失 evidence 或 target unknown 未被阻断或分流；
-5. 代码变更无法验证且没有等价验证说明。
+5. Code 输出被当作 Web 页面/API 主数据源或页面契约；
+6. 代码变更无法验证且没有等价验证说明。
 
 ## 13. 待补齐事项
 

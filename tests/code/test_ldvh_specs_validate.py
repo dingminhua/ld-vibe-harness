@@ -51,6 +51,7 @@ def test_foundation_specs_contracts_are_code_consumable() -> None:
     assert "context_scenario_gate" in contracts["06"]["code_consumption"]
     assert "git_commit_action_template" in contracts["06"]["code_consumption"]
     assert "runtime_facade_contracts" in contracts["07"]["code_consumption"]
+    assert "web_code_separation_boundaries" in contracts["08"]["code_consumption"]
     assert "source_ref_display_requirements" in contracts["08"]["code_consumption"]
     assert "verification_claim_fields" in contracts["09"]["code_consumption"]
     assert "failure_blocking_rules" in contracts["09"]["code_consumption"]
@@ -115,6 +116,59 @@ def test_foundation_validator_reports_missing_human_gate_boundary(tmp_path: Path
 
     assert "FOUNDATION_HUMAN_GATE_TERM_MISSING" in _diagnostic_codes(result)
     assert any("Web 状态" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_web_sync_validator_requires_independent_data_path_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/08-Web信息同步规范.md",
+        "Web 和 Code 是同源的并列实现，不是上下游数据依赖。Web 页面/API 的数据路径必须由 Web 自行从 Git 文件事实源、正式 specs、正式事实对象或 Web 自有 API 聚合读取；不得把 Code 输出、Code DTO、validator 内部对象、preflight/action-guide/runtime receipt 作为页面数据源或长期缓存基础。\n\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WEB_CODE_SEPARATION_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_web_sync_validator_rejects_code_output_as_page_data_source(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/08-Web信息同步规范.md",
+        "Web 派生状态必须满足：\n",
+        "Web 可以使用 Code 输出实现展示。\n\nWeb 派生状态必须满足：\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WEB_CODE_DATA_DEPENDENCY_FORBIDDEN" in _diagnostic_codes(result)
+
+
+def test_web_sync_validator_requires_diagnostic_reference_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/08-Web信息同步规范.md",
+        "Web 可以在测试、审计、调试或不可验证提示中引用 Code 诊断、验证摘要或 source_refs，只能用于对照显示和缺口定位；该引用不得驱动页面字段契约、状态机、排序筛选语义或事实判断。\n\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WEB_DIAGNOSTIC_REFERENCE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_web_sync_validator_requires_native_source_refs_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/08-Web信息同步规范.md",
+        "Web 原生实现可以读取、解析、筛选、排序、聚合、缓存和提供 API；这些实现必须使用正式 specs、正式附件和事实对象中的字段与状态契约，保留 source_refs，不得新增第二套字段契约、状态机、规则判断或事实源归口。\n\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WEB_NATIVE_IMPLEMENTATION_BOUNDARY_MISSING" in _diagnostic_codes(result)
 
 
 def test_fact_model_validator_reports_instance_rule_boundary(tmp_path: Path) -> None:

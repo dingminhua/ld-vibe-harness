@@ -88,7 +88,7 @@ specs 迁入
 | 5B-2 | 附件迁移筛选与授权闭环 | 已完成。48 个 V2 附件分流记录见 `_migration/5B-2-attachment-disposition.md`；正式迁入 `03.Att.01`、`05.Att.01`、`09.Att.01` | V2 `02.Att.*`、`04.Att.*`、`05.Att.*`、`07.Att.*`、`08.Att.*`、`specs/attachments`、`tests/code` | 已补附件解析与负例；validator 0 diagnostics；tests 68 passed | 未整批搬运附件；知识地图附件废弃为 legacy_alias；Web 和成员专属附件后置 |
 | 5B-3 | `03/09` 证据与验证边界专项 validator | 已完成。增强非事实源误用、过程输出回写、测试证据边界、失败阻断和验证声明字段检查 | `specs/03-事实源与Git溯源规范.md`、`specs/09-测试与验证规范.md`、`code/ldvh_specs.py`、`tests/code` | 已补 03/09 正反例；validator 0 diagnostics；tests 73 passed | 未实现 Hook、commit gate 或环境接入；未输出授权语义 |
 | 5B-4 | `06` Git 提交行动模板示范 | 已完成。以 Git 提交行动作为第一个行动模板示范，验证 Context、Scenario、Gate、执行、验证、回写和交还结构；同时确认 Action Guide 取代知识地图、行动模板去 Skill 化 | `specs/06-行动模板基础规范.md`、V2 `31-git-commit-action` 迁移证据、`skills/ldvh-git-commit/SKILL.md`、commit 契约附件、Action Guide 相关 Code、`tests/code` | 已补 `validate_git_commit_action_template` 和负例测试；validator 0 diagnostics；tests 80 passed | 未安装 commit hook；未实现 commit gate；未把 commit validator 输出当授权；未恢复 Skill 顶层机制；未让模板本身定义 commit 规则 |
-| 5B-5 | `08` Web 同源读取与展示边界检查 | 明确 Web 可以自行读取同一 Git 文件事实源，并校验展示、缓存、Confirm UI 和受控交互边界 | `specs/08-Web信息同步规范.md`、Web 边界 validator、`tests/code` 或后续 Web contract tests | 测试 Web 状态、缓存、按钮点击、派生视图不能替代事实源或 Human Gate；测试 source_refs/回指缺失时输出 diagnostic | 不要求 Web 必须由 Code 喂数据；不启动真实 Web 写入；不把 Confirm UI 当作 Human Gate 完成 |
+| 5B-5 | `08` Web 同源独立读取与展示边界检查 | 明确 Web 与 Code 分开实现：Web 页面/API 自行读取同一 Git 文件事实源、正式 specs、事实对象或 Web 自有 API 聚合，Code 输出只作诊断、验证或测试对照 | `specs/08-Web信息同步规范.md`、`specs/07-Code确定性执行规范.md`、Web 边界 validator、`tests/code` 或后续 Web contract tests | 测试 Web 状态、缓存、按钮点击、派生视图不能替代事实源或 Human Gate；测试 source_refs/回指缺失、Code 输出被当作页面数据源、validator 内部对象被当 Web 数据契约时输出 diagnostic | 不要求 Web 必须由 Code 喂数据；不允许 Web 把 Code 输出/DTO/validator 内部对象作为主数据源；不启动真实 Web 写入；不把 Confirm UI 当作 Human Gate 完成 |
 
 5B-1 完成记录：
 1. 术语整治（5B-0）已完成，事实源/事实源边界/过程输出/证据等术语已统一；
@@ -115,7 +115,7 @@ specs 迁入
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。
 2. 行动模板应去 Skill 化。V2 Skill 中有价值的内容只能被吸收为普通行动步骤、Action Guide 提示或外部环境包装候选；不得保留 Skill 身份、Skill registry、Skill 执行闭环或 Skill 顶层机制。
 3. 旧“工作模型”术语在 V3 中应统一校正为“事实模型”。迁移材料中出现“工作模型”时只作为历史来源名，不作为 V3 长期正式概念；相关规则进入 `05` 事实模型归口。
-4. Web 实现可以自行读取相关 Git 文件事实源，也可以使用 Code 输出、Git 查询或 API 聚合作为展示辅助。关键边界是 Web 与 AI/Code 同源读取、展示可回指、缓存和页面状态不成为事实源。
+4. Web 与 Code 是同源的并列实现，不是上下游数据依赖。Web 页面/API 数据路径必须由 Web 自行从 Git 文件事实源、正式 specs、事实对象或 Web 自有 API 聚合读取；Code 输出只能作为诊断、验证或测试对照，不作为页面数据源。
 5. Code validator 的职责是提供只读解析、诊断和测试回归，不替代正式 specs、事实源、Human Gate 或完成声明。
 6. `放行` 不作为 Code/test/runtime 的输出语义；正式表达尽量拆成方向确认、执行授权、风险接受、事实/术语确认、验收通过、暂停/驳回等具体 Human Gate 结果类型。若保留“放行”，只能指 Human 显式决定。
 7. `Human Gate` 是机制名；`Human 确认`、授权、验收、风险接受、方向确认等是动作或结果类型，普通“确认”不得被泛化成授权、验收或风险接受。

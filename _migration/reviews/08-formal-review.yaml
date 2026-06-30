@@ -1,5 +1,5 @@
 target_spec: "specs/08-Web信息同步规范.md"
-target_sha256: "c77c4eb6feeedf810f013ffb0219ec3dd22659bfb63dd3b397ed224c4f1351e0"
+target_sha256: "0a37b72798abfe97433e2d0a1503346de20b35efadf9cfe536f818f065371756"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/v3-specs-absorption-index.md"

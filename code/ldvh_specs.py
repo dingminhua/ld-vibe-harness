@@ -209,6 +209,31 @@ GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
     "skill_unavailable",
     "不得恢复 Skill 顶层机制",
 ]
+WEB_SYNC_BOUNDARY_REQUIREMENTS = [
+    {
+        "code": "WEB_CODE_SEPARATION_BOUNDARY_MISSING",
+        "section": "同源独立读取与派生状态",
+        "message": "08 必须声明 Web 和 Code 分开实现，且 Web 数据路径不依赖 Code 输出",
+        "terms": ["并列实现", "不是上下游数据依赖", "页面/API 的数据路径", "不得把 Code 输出", "Code DTO", "validator 内部对象", "作为页面数据源"],
+    },
+    {
+        "code": "WEB_DIAGNOSTIC_REFERENCE_BOUNDARY_MISSING",
+        "section": "同源独立读取与派生状态",
+        "message": "08 必须声明 Code 诊断只能作为 Web 对照显示和缺口定位",
+        "terms": ["Code 诊断", "只能用于对照显示和缺口定位", "不得驱动页面字段契约、状态机、排序筛选语义或事实判断"],
+    },
+    {
+        "code": "WEB_NATIVE_IMPLEMENTATION_BOUNDARY_MISSING",
+        "section": "同源独立读取与派生状态",
+        "message": "08 必须声明 Web 原生实现可独立读取和聚合，但必须保留来源并服从正式契约",
+        "terms": ["Web 原生实现", "读取、解析、筛选、排序、聚合、缓存和提供 API", "source_refs", "不得新增第二套字段契约、状态机、规则判断或事实源归口"],
+    },
+]
+WEB_SYNC_FORBIDDEN_PHRASES = [
+    "Web 可以使用 Code 输出",
+    "Code 输出作为展示辅助",
+    "Code 输出喂页面数据",
+]
 FOUNDATION_SPEC_CONTRACTS = {
     "03": {
         "path": SHORT_SPEC_REFS["03"],
@@ -329,6 +354,7 @@ FOUNDATION_SPEC_CONTRACTS = {
         "required_code_consumption": [
             "ldvh_spec_metadata",
             "web_sync_boundaries",
+            "web_code_separation_boundaries",
             "human_facing_display_rules",
             "source_ref_display_requirements",
             "controlled_interaction_boundaries",
@@ -337,18 +363,19 @@ FOUNDATION_SPEC_CONTRACTS = {
         ],
         "required_rule_body_sections": [
             "5. Human-facing 展示边界",
-            "6. 同源读取与派生状态",
+            "6. 同源独立读取与派生状态",
             "7. 受控交互与 Confirm UI",
         ],
         "required_assurance_rows": [
             "来源呈现要求",
+            "Web/Code 分离要求",
             "非事实源要求",
             "Confirm UI 要求",
             "受控写入要求",
         ],
-        "required_verification_rows": ["来源检查", "边界检查", "交互检查", "回归检查"],
-        "human_gate_terms": ["Web 写入能力", "Confirm UI", "关键风险", "Web 状态", "Web 回归线"],
-        "stop_condition_terms": ["回指来源", "Web 状态", "Confirm UI", "Web 写入", "暂未实现"],
+        "required_verification_rows": ["来源检查", "分离检查", "边界检查", "交互检查", "回归检查"],
+        "human_gate_terms": ["Web 写入能力", "Confirm UI", "关键风险", "Web 状态", "Code 输出", "Web 回归线"],
+        "stop_condition_terms": ["回指来源", "Web 状态", "Confirm UI", "Web 写入", "Code 输出", "暂未实现"],
     },
     "09": {
         "path": SHORT_SPEC_REFS["09"],
@@ -1129,6 +1156,49 @@ def validate_fact_source_and_verification_boundaries(root: Path = ROOT) -> list[
     return diagnostics
 
 
+def validate_web_sync_boundaries(root: Path = ROOT) -> list[Diagnostic]:
+    path = SHORT_SPEC_REFS["08"]
+    raw = (root / path).read_text(encoding="utf-8")
+    sections = h2_sections(raw)
+    diagnostics: list[Diagnostic] = []
+
+    for phrase in WEB_SYNC_FORBIDDEN_PHRASES:
+        if phrase in raw:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "WEB_CODE_DATA_DEPENDENCY_FORBIDDEN",
+                    path,
+                    f"08 禁止恢复 Web 依赖 Code 输出的数据路径表述: {phrase}",
+                )
+            )
+
+    for requirement in WEB_SYNC_BOUNDARY_REQUIREMENTS:
+        section = sections.get(requirement["section"])
+        if not section:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    requirement["code"],
+                    path,
+                    f"08 缺少可消费章节: {requirement['section']}",
+                )
+            )
+            continue
+        missing_terms = [term for term in requirement["terms"] if term not in section["body"]]
+        if missing_terms:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    requirement["code"],
+                    path,
+                    f"{requirement['message']}: {', '.join(missing_terms)}",
+                )
+            )
+
+    return diagnostics
+
+
 def _table_has_values(rows: list[dict[str, str]], column: str, expected_values: list[str]) -> list[str]:
     actual = {strip_inline_code(row.get(column, "")) for row in rows}
     return [value for value in expected_values if value not in actual]
@@ -1272,6 +1342,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_foundation_spec_contracts(foundation_spec_contracts))
     diagnostics.extend(validate_fact_model_boundaries(root))
     diagnostics.extend(validate_fact_source_and_verification_boundaries(root))
+    diagnostics.extend(validate_web_sync_boundaries(root))
     diagnostics.extend(validate_attachment_contracts(root))
     diagnostics.extend(validate_git_commit_action_template(root))
 
