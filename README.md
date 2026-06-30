@@ -1,19 +1,19 @@
 # LDVH
 
-This branch is a clean v3 root. It does not inherit v2 files by default.
+当前分支是干净的 v3 根目录，默认不继承 v2 文件。
 
-Current formal scope:
+当前正式范围：
 
-- `specs/`: Markdown rule authority.
-- `code/`: deterministic parsers, validators, and generators after explicit need.
-- `tests/`: regression checks.
-- `rules/`, `hooks/`, `skills/`, `ldvh-base/`: reserved for later whole-line migration.
-- `_migration/`: temporary evidence and prototypes, not formal authority.
+- `specs/`：Markdown 规则权威层。
+- `code/`：在明确需要后承接确定性解析、校验和生成。
+- `tests/`：回归检查。
+- `rules/`、`hooks/`、`skills/`、`ldvh-base/`：保留给后续整线迁移。
+- `_migration/`：临时证据和原型，不是正式权威。
 
-Current principle:
+当前原则：
 
-One Markdown spec is the single rule fact source. Human, AI, and Code share that source through stable structure and explicit references; they do not get separate fact sources.
+`specs/` 下的 Markdown specs 是规则事实层。Human、AI 和 Code 通过稳定结构和显式引用共享这一层，不各自维护独立规则事实源。
 
-Attachments are allowed only as subordinate content referenced by the body, such as tables, figures, field closures, enums, or reusable machine contracts. Attachments must not carry parent rules, core doctrine, action flows, Human Gate, fact-source boundaries, migration process, or long explanatory prose.
+附件只能作为正文引用的从属内容，例如表格、图示、字段闭集、枚举或可复用机器契约。附件不得承载父级规则、核心理念、行动流程、Human Gate、事实源边界、迁移过程或长篇解释。
 
-Do not reintroduce `specs/core/`, formal `specs/schemas/`, or 01 structural attachments unless a later explicit decision changes this rule.
+除非后续有明确决定改变此规则，不得重新引入 `specs/core/`、正式 `specs/schemas/` 或 01 结构附件。
