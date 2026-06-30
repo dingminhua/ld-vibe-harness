@@ -1,5 +1,5 @@
 target_spec: "specs/07-Code确定性执行规范.md"
-target_sha256: "58a35bee26b0c4165b9c8ead441309ccd9d7bfe05bb27af250895b4811603105"
+target_sha256: "6cd1d93b8b352a05c91f31d3dbc4a6b5df250305720f77313c4eabc201bba8a9"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/v3-specs-absorption-index.md"

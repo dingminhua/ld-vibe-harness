@@ -16,7 +16,7 @@ ldvh_spec:
     - "specs/00-理念与构成.md"
     - "specs/01-保障与衔接.md"
     - "specs/02-AI行为规范.md"
-    - "specs/03-事实源与Git追溯规范.md"
+    - "specs/03-事实源与Git溯源规范.md"
     - "specs/04-Specs基础规范.md"
   related_specs:
     - "specs/05-事实模型基础规范.md"
@@ -55,11 +55,11 @@ ldvh_spec:
 
 本文存在的价值，是让 Code 承担确定性读取、解析、校验、聚合、诊断和行动前检查，减少 AI 盲读、误判、漏验证和凭记忆执行的负担。
 
-Code 服务 00 的 Code 构成要素定位和 V6 强制验证。Code 可以提供证据和诊断，但不替代 AI 判断、Human Gate、用户事实源或完成结论。
+Code 服务 00 的 Code 构成要素定位和 V6 强制验证。Code 可以提供证据和诊断，但不替代 AI 判断、Human Gate、事实源或完成结论。
 
 ## 2. 权威依据
 
-本文承接 `specs/00-理念与构成.md` 的 Code 定位、`specs/01-保障与衔接.md` 的保障消费语义、`specs/02-AI行为规范.md` 的主控责任、`specs/03-事实源与Git追溯规范.md` 的事实源边界，以及 `specs/04-Specs基础规范.md` 的 Markdown 结构规则。
+本文承接 `specs/00-理念与构成.md` 的 Code 定位、`specs/01-保障与衔接.md` 的保障消费语义、`specs/02-AI行为规范.md` 的主控责任、`specs/03-事实源与Git溯源规范.md` 的事实源边界，以及 `specs/04-Specs基础规范.md` 的 Markdown 结构规则。
 
 若 Code 输出与 specs 正文冲突，以 specs 正文和 Human Gate 为准。Code 发现规则缺口时只能输出 diagnostic 并回到对应规范，不得自行补写规则。
 

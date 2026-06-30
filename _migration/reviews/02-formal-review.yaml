@@ -1,5 +1,5 @@
 target_spec: "specs/02-AI行为规范.md"
-target_sha256: "dc3fd37d995ed3ac2200f6396d4f55feaaa71d0f233aaa92e16c10649c52749d"
+target_sha256: "06e167f14bd981351e8f4100d09ca84caa7632835ab27c5015dc82d27abee07a"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/inventory/v2-02-behavior-responsibility-map.yaml"

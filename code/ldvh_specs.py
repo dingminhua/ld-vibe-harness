@@ -19,7 +19,7 @@ SHORT_SPEC_REFS = {
     "00": "specs/00-理念与构成.md",
     "01": "specs/01-保障与衔接.md",
     "02": "specs/02-AI行为规范.md",
-    "03": "specs/03-事实源与Git追溯规范.md",
+    "03": "specs/03-事实源与Git溯源规范.md",
     "04": "specs/04-Specs基础规范.md",
     "05": "specs/05-事实模型基础规范.md",
     "06": "specs/06-行动模板基础规范.md",
@@ -38,7 +38,7 @@ PREFLIGHT_BASE_READ_PATHS = [
     "specs/00-理念与构成.md",
     "specs/01-保障与衔接.md",
     "specs/02-AI行为规范.md",
-    "specs/03-事实源与Git追溯规范.md",
+    "specs/03-事实源与Git溯源规范.md",
     "specs/04-Specs基础规范.md",
 ]
 PREFLIGHT_TYPE_READ_PATHS = {
@@ -55,7 +55,7 @@ HIGH_IMPACT_SPEC_PATHS = {
     "specs/00-理念与构成.md",
     "specs/01-保障与衔接.md",
     "specs/02-AI行为规范.md",
-    "specs/03-事实源与Git追溯规范.md",
+    "specs/03-事实源与Git溯源规范.md",
     "specs/04-Specs基础规范.md",
 }
 RUNTIME_REQUIRED_ENTRY_PATHS = [
@@ -115,24 +115,24 @@ FOUNDATION_SPEC_CONTRACTS = {
             "stop_conditions",
         ],
         "required_rule_body_sections": [
-            "5. 用户事实源边界",
-            "6. 过程证据与回写",
-            "7. Git 追溯与提交契约",
+            "5. 事实源边界",
+            "6. 过程输出、证据与回写",
+            "7. Git 溯源与提交契约",
         ],
         "required_assurance_rows": [
             "事实源回指要求",
             "非事实源排除要求",
-            "Git 追溯要求",
+            "Git 溯源要求",
             "commit 契约要求",
         ],
         "required_verification_rows": [
             "事实源边界检查",
             "非事实源排除检查",
             "回写检查",
-            "Git 追溯检查",
+            "Git 溯源检查",
         ],
-        "human_gate_terms": ["非 Git 文件", "过程证据", "commit 契约", "Git commit records", "事实源冲突"],
-        "stop_condition_terms": ["权威事实源", "过程证据", "聊天、缓存、测试输出", "commit message", "事实源不一致"],
+        "human_gate_terms": ["非 Git 文件", "过程输出", "commit 契约", "Git commit records", "事实源冲突"],
+        "stop_condition_terms": ["权威事实源", "过程输出", "聊天、缓存、测试输出", "commit message", "事实源不一致"],
     },
     "05": {
         "path": SHORT_SPEC_REFS["05"],
@@ -572,7 +572,7 @@ def parse_foundation_spec_contracts(
                     {"path": obj.path, "role": "foundation_spec"},
                     {"path": "specs/00-理念与构成.md", "role": "value_anchor"},
                     {"path": "specs/01-保障与衔接.md", "role": "assurance_boundary"},
-                    {"path": "specs/03-事实源与Git追溯规范.md", "role": "fact_source_boundary"},
+                    {"path": "specs/03-事实源与Git溯源规范.md", "role": "fact_source_boundary"},
                     {"path": "specs/07-Code确定性执行规范.md", "role": "code_boundary"},
                     {"path": "specs/09-测试与验证规范.md", "role": "verification_boundary"},
                 ],
@@ -955,7 +955,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/00-理念与构成.md", "role": "value_anchor"},
             {"path": "specs/01-保障与衔接.md", "role": "assurance_boundary"},
             {"path": "specs/02-AI行为规范.md", "role": "ai_behavior_requirements"},
-            {"path": "specs/03-事实源与Git追溯规范.md", "role": "fact_source_traceability"},
+            {"path": "specs/03-事实源与Git溯源规范.md", "role": "fact_source_traceability"},
             {"path": "specs/04-Specs基础规范.md", "role": "specs_structure"},
             {"path": "specs/05-事实模型基础规范.md", "role": "fact_model_foundation"},
             {"path": "specs/06-行动模板基础规范.md", "role": "action_template_foundation"},
@@ -1214,7 +1214,7 @@ def classify_target_path(target_path: str) -> dict[str, str]:
             "target_path": normalized,
             "target_type": "code",
             "impact": "medium",
-            "reason": "目标属于正式 Code，输出不得替代 specs、Human Gate 或最终事实源。",
+            "reason": "目标属于正式 Code，输出不得替代 specs、Human Gate 或事实源。",
         }
     if normalized.startswith("tests/"):
         return {
@@ -1388,7 +1388,7 @@ def build_preflight(
                 "source_path": "specs/01-保障与衔接.md",
             },
             {
-                "guard": "确认 Code、测试、review 或行动指南没有替代 Human Gate 或最终事实源。",
+                "guard": "确认 Code、测试、review 或行动指南没有替代 Human Gate 或事实源。",
                 "source_path": "specs/02-AI行为规范.md",
             },
         ],
@@ -1576,7 +1576,7 @@ def build_runtime_event(
         "target_path": normalized_target,
         "acknowledged_paths": normalized_ack_paths,
         "verification_evidence": normalized_verification_evidence,
-        "boundary": "receipt 是过程输出，不是最终事实源、授权、放行、Human Gate 或完成证明。",
+        "boundary": "receipt 是过程输出，不是事实源、授权、放行、Human Gate 或完成证明。",
     }
 
     return {

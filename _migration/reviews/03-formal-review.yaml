@@ -1,5 +1,5 @@
-target_spec: "specs/03-事实源与Git追溯规范.md"
-target_sha256: "9e02c9ab8a5ed2d38efb2b97f4ecec0d7218d8cbe3b107f760407257bbdfc0b7"
+target_spec: "specs/03-事实源与Git溯源规范.md"
+target_sha256: "a653b70024d98381b14b8bcec1b0f88aed179e77b194124cabf03c3d531f2141"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/v3-specs-absorption-index.md"

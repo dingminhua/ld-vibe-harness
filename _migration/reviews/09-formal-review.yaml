@@ -1,5 +1,5 @@
 target_spec: "specs/09-测试与验证规范.md"
-target_sha256: "a8e2bbc6d1c8b991145b436f77cfa1e5f509ceb768d194d1deb5a5d6261d3fc0"
+target_sha256: "b437316495ffb15ed62a997a12db0cb1ef42e7e9f702c1526ed6fe30db08a9bb"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/v3-specs-absorption-index.md"

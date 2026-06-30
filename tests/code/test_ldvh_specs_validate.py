@@ -71,7 +71,7 @@ def test_foundation_validator_reports_missing_code_consumption(tmp_path: Path) -
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/03-事实源与Git追溯规范.md",
+        "specs/03-事实源与Git溯源规范.md",
         '    - "commit_contract_boundaries"\n',
     )
 
@@ -79,7 +79,7 @@ def test_foundation_validator_reports_missing_code_consumption(tmp_path: Path) -
 
     assert "FOUNDATION_CODE_CONSUMPTION_MISSING" in _diagnostic_codes(result)
     assert any(
-        diagnostic["path"] == "specs/03-事实源与Git追溯规范.md"
+        diagnostic["path"] == "specs/03-事实源与Git溯源规范.md"
         and "commit_contract_boundaries" in diagnostic["message"]
         for diagnostic in result["diagnostics"]
     )
@@ -406,7 +406,7 @@ def test_runtime_session_start_generates_stdout_receipt() -> None:
     assert runtime["summary"]["status"] == "ok"
     assert runtime["receipt"]["persistent"] is False
     assert runtime["receipt"]["storage"] == "stdout_only"
-    assert "不是最终事实源" in runtime["receipt"]["boundary"]
+    assert "不是事实源" in runtime["receipt"]["boundary"]
     read_paths = {item["path"] for item in runtime["action_guide"]["task_read_plan"] if item["path"]}
     assert {
         "specs/00-理念与构成.md",

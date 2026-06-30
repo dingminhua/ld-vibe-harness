@@ -1,17 +1,17 @@
-# 事实源与Git追溯规范
+# 事实源与Git溯源规范
 
 ```yaml
 ldvh_spec:
   spec_id: "03"
   spec_kind: "spec"
-  title: "事实源与Git追溯规范"
+  title: "事实源与Git溯源规范"
   status: "candidate"
   authority: "candidate"
-  canonical_path: "specs/03-事实源与Git追溯规范.md"
+  canonical_path: "specs/03-事实源与Git溯源规范.md"
   parent_spec: "specs/00-理念与构成.md"
   relation: "refines"
-  positioning: "定义用户事实源边界、非事实源排除、过程证据回写、Git 追溯和 commit 契约的 V3 基础规则"
-  scope: "用户事实源、Git 可追踪文件事实源、过程证据、receipt、evidence、diagnostic、Git commit records、commit message 契约和事实源读取回写边界"
+  positioning: "定义事实源边界、非事实源排除、过程输出与证据回写、Git 溯源和 commit 契约的 V3 基础规则"
+  scope: "事实源、Git 可追踪文件事实源、过程输出、证据、receipt、evidence、diagnostic、Git commit records、commit message 契约和事实源读取回写边界"
   basis:
     - "specs/00-理念与构成.md"
     - "specs/01-保障与衔接.md"
@@ -37,9 +37,9 @@ ldvh_spec:
     jurisdiction_boundary: "3. 归口边界"
     scope: "4. 适用范围"
     rule_body:
-      - "5. 用户事实源边界"
-      - "6. 过程证据与回写"
-      - "7. Git 追溯与提交契约"
+      - "5. 事实源边界"
+      - "6. 过程输出、证据与回写"
+      - "7. Git 溯源与提交契约"
     assurance_measures: "8. 保障措施"
     verification_method: "9. 验证方法"
     human_gate: "10. Human Gate"
@@ -47,23 +47,23 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 事实源与 Git 追溯父层规则。本文不定义事实对象字段、行动模板步骤、Code parser 细节、Web 页面展示、Hook 安装或测试实现。
+> 文件状态：candidate；本文吸收 V2 事实源与 Git 溯源父层规则。本文不定义事实对象字段、行动模板步骤、Code parser 细节、Web 页面展示、Hook 安装或测试实现。
 
 ## 1. 价值判断
 
-本文存在的价值，是让 AI 在读取、判断、写入、验证和提交时知道哪个位置才是稳定事实，哪些输出只能作为过程证据，以及一次文件事实源修改如何通过 Git 被追溯。
+本文存在的价值，是让 AI 在读取、判断、写入、验证和提交时知道哪个位置才是稳定事实，哪些输出默认只是过程输出，以及一次文件事实源修改如何通过 Git 被溯源。
 
-本文服务 00 的用户事实源底层原则和 V7、V8：稳定事实必须回到用户掌握的 Git 可追踪文件事实源；聊天、工具输出、Code 诊断、Web 状态、运行时 receipt 和迁移材料不得替代事实源。
+本文服务 00 的事实源边界和 V7、V8：稳定事实必须回到用户掌握的 Git 可追踪文件事实源；聊天、工具输出、Code 诊断、Web 状态、运行时 receipt 和迁移材料不得替代事实源。
 
 ## 2. 权威依据
 
-本文承接 `specs/00-理念与构成.md` 的用户事实源底层原则、`specs/01-保障与衔接.md` 的 receipt/evidence/diagnostic 边界、`specs/02-AI行为规范.md` 的过程证据处理责任，以及 `specs/04-Specs基础规范.md` 的 spec 结构规则。
+本文承接 `specs/00-理念与构成.md` 的事实源边界、`specs/01-保障与衔接.md` 的 receipt/evidence/diagnostic 边界、`specs/02-AI行为规范.md` 的过程输出和证据处理责任，以及 `specs/04-Specs基础规范.md` 的 spec 结构规则。
 
 若本文与 00 的事实源原则冲突，以 00 为准。若本文与 01 的保障消费语义冲突，应回到 01 和 Human Gate。若 Code、Web、测试、review 或迁移材料与本文冲突，以本文和上位规范为准。
 
 ## 3. 归口边界
 
-本文归口定义用户事实源、非事实源排除、过程证据回写、Git 追溯和 commit 契约的基础规则。
+本文归口定义事实源、非事实源排除、过程输出与证据回写、Git 溯源和 commit 契约的基础规则。
 
 本文不归口定义事实模型字段、行动模板流程、Code 输出 schema、Web 页面、环境入口、Hook 安装、测试用例或具体 commit validator 实现。相邻规则应分别进入 05、06、07、08、09 或 01。
 
@@ -72,32 +72,32 @@ ldvh_spec:
 本文适用于 LDVH 自身和后续接入项目中的：
 
 1. 规范、事实对象、行动状态、验证结论、决策、经验和缺口的稳定承载判断；
-2. AI、Code、Web、测试、Hook、子 Agent、命令和迁移材料产生的过程证据判断；
-3. Git 文件事实源修改后的追溯说明；
+2. AI、Code、Web、测试、Hook、子 Agent、命令和迁移材料产生的过程输出和证据判断；
+3. Git 文件事实源修改后的溯源说明；
 4. commit message 契约、提交范围说明和提交后回查。
 
-## 5. 用户事实源边界
+## 5. 事实源边界
 
-用户事实源的有效承载形态是 Git 可追踪文件。一个事实只有写入其对应权威文件位置，并可通过 Git 历史追溯，才可能成为稳定事实。
+事实源的有效承载形态是 Git 可追踪文件。一个事实只有写入其对应权威文件位置，并可通过 Git 历史溯源，才可能成为稳定事实。
 
-以下内容默认不是用户事实源：
+以下内容默认不是事实源：
 
 | 内容 | 边界 |
 |---|---|
 | 聊天和 AI 推理 | 只能作为当前上下文或候选判断，稳定结论必须回写。 |
-| Code 输出和测试输出 | 只能作为诊断、验证证据或过程证据，不替代正文规则和事实对象。 |
+| Code 输出和测试输出 | 只能作为诊断、验证证据或过程输出，不替代正文规则和事实对象。 |
 | Web 页面状态和缓存 | 只能展示或辅助 Human 判断，不维护最终事实。 |
 | runtime receipt | 证明某个消费动作发生过，不证明规则满足、授权完成或事实稳定。 |
 | `_migration` 材料 | 只作为迁移证据，不授权正式规则或实现行为。 |
-| Git commit records | 追溯文件事实源修改，不替代被修改的事实源文件。 |
+| Git commit records | 溯源文件事实源修改，不替代被修改的事实源文件。 |
 
 同一稳定事实只能有一个权威位置。其它位置可以引用、摘要、展示或派生，但不得复制维护为第二事实源。
 
-## 6. 过程证据与回写
+## 6. 过程输出、证据与回写
 
-过程证据包括 AI 输出、子 Agent 输出、Code 诊断、测试结果、命令输出、Web 展示、review 收据、runtime receipt 和迁移材料。过程证据必须先被 AI 定性，再决定是否回写。
+过程输出包括 AI 输出、子 Agent 输出、Code 诊断、测试结果、命令输出、Web 展示、review 收据、runtime receipt 和迁移材料。过程输出必须先被 AI 定性，再决定是否记录为证据或回写。
 
-过程证据满足以下条件之一时，应判断是否回写：
+过程输出满足以下条件之一时，应判断是否记录为证据或回写：
 
 1. 形成长期规则、事实、决策、经验、风险或缺口；
 2. 支撑完成声明、验证声明、关闭判断或 Human Gate；
@@ -106,9 +106,9 @@ ldvh_spec:
 
 回写必须说明目标事实源、来源证据、采纳范围和验证方式。不能回写时，AI 必须说明原因、影响范围和后续承接位置，不得把“已输出”写成“已形成稳定事实”。
 
-## 7. Git 追溯与提交契约
+## 7. Git 溯源与提交契约
 
-Git commit records 用于追溯文件事实源的修改。它们回答本次修改改了什么、为什么改、影响哪里、如何验证和后续风险是什么。
+Git commit records 用于溯源文件事实源的修改。它们回答本次修改改了什么、为什么改、影响哪里、如何验证和后续风险是什么。
 
 V3 保留 commit 契约的父层规则：
 
@@ -125,8 +125,8 @@ V3 保留 commit 契约的父层规则：
 | 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |
 |---|---|---|---|---|
 | 事实源回指要求 | 结论、证据、完成声明和风险必须回指 Git 文件事实源或说明不可回写原因 | 本文、02、06、09、Code source_refs | 事实源治理 | AI 形成稳定结论、验证声明或提交说明时 |
-| 非事实源排除要求 | 过程输出不得被写成最终事实源 | 本文、01 receipt 边界、08 证据边界 | 证据治理 | 使用 Code、Web、测试、review 或 runtime 输出时 |
-| Git 追溯要求 | 文件事实源修改应可通过 Git commit records 回查 | 本文、06 的 Git 提交行动模板候选、Code/tests | 追溯治理 | 提交正式 docs、Code、tests 或事实源修改时 |
+| 非事实源排除要求 | 过程输出不得被写成事实源 | 本文、01 receipt 边界、08 证据边界 | 证据治理 | 使用 Code、Web、测试、review 或 runtime 输出时 |
+| Git 溯源要求 | 文件事实源修改应可通过 Git commit records 回查 | 本文、06 的 Git 提交行动模板候选、Code/tests | 溯源治理 | 提交正式 docs、Code、tests 或事实源修改时 |
 | commit 契约要求 | 提交说明不得替代验证、Human Gate 或事实源正文 | 本文、06 提交模板、09 验证声明 | 提交治理 | 生成 commit message 或提交前检查时 |
 
 ## 9. 验证方法
@@ -135,10 +135,10 @@ V3 保留 commit 契约的父层规则：
 
 | 检查类别 | 检查内容 | 不满足时 |
 |---|---|---|
-| 事实源边界检查 | 稳定结论是否写入或回指 Git 可追踪文件事实源 | 改为候选、过程证据或待回写缺口 |
+| 事实源边界检查 | 稳定结论是否写入或回指 Git 可追踪文件事实源 | 改为候选、过程输出或待回写缺口 |
 | 非事实源排除检查 | 聊天、Code、Web、测试、review、receipt 或迁移材料是否被误写成事实源 | 停止完成声明并回到事实源边界 |
-| 回写检查 | 过程证据被采纳时是否说明采纳范围、目标位置和验证方式 | 记录为 unverifiable 或 follow-up |
-| Git 追溯检查 | 提交说明是否说明关键变更和验证，不掩盖风险 | 回到 commit 契约、行动模板或 Human Gate |
+| 回写检查 | 过程输出被采纳时是否说明采纳范围、目标位置和验证方式 | 记录为 unverifiable 或 follow-up |
+| Git 溯源检查 | 提交说明是否说明关键变更和验证，不掩盖风险 | 回到 commit 契约、行动模板或 Human Gate |
 
 Code 可以检查路径、source_refs、commit message 格式和诊断结构；AI 必须判断事实源权威、采纳范围和残留风险；Human Gate 负责确认高影响事实源改变和风险接受。
 
@@ -146,9 +146,9 @@ Code 可以检查路径、source_refs、commit message 格式和诊断结构；A
 
 以下情况必须进入 Human Gate：
 
-1. 改变用户事实源底层原则或允许非 Git 文件成为最终事实源；
-2. 接受过程证据无法回写但仍作为稳定事实使用；
-3. 改变 commit 契约导致追溯能力下降；
+1. 改变事实源边界或允许非 Git 文件成为事实源；
+2. 接受过程输出无法回写但仍作为稳定事实使用；
+3. 改变 commit 契约导致溯源能力下降；
 4. 将 Git commit records 升级为事实对象或替代文件事实源；
 5. 接受事实源冲突、不可验证证据或未完成回写的长期风险。
 
@@ -157,14 +157,14 @@ Code 可以检查路径、source_refs、commit message 格式和诊断结构；A
 出现以下情况时，AI 必须暂停：
 
 1. 无法判断权威事实源位置；
-2. 过程证据正在替代正式 specs、事实对象、验证声明或 Human Gate；
+2. 过程输出正在替代正式 specs、事实对象、验证声明或 Human Gate；
 3. 稳定事实只存在聊天、缓存、测试输出、Web 状态或 runtime receipt 中；
 4. commit message 掩盖未验证范围、Human Gate 未决或事实源冲突；
-5. 需要接受事实源不一致或不可追溯风险但未获得 Human 确认。
+5. 需要接受事实源不一致或不可溯源风险但未获得 Human 确认。
 
 ## 12. 待补齐事项
 
 1. 后续应从 V2 `07.Att.*` 中筛选 commit type、scope、body 条件和非事实源排除清单，只有有正文授权、Code 消费方和测试闭环时才迁入 V3 附件；
-2. 后续 Code 应承接 commit message parser、source_refs 检查和过程证据回写诊断；
+2. 后续 Code 应承接 commit message parser、source_refs 检查和过程输出回写诊断；
 3. 后续行动模板应承接 Git 提交行动、提交拆分、验证说明和提交后交还；
 4. 后续 Web 应承接提交记录展示和事实源证据展示边界。

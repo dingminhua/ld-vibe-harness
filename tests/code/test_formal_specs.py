@@ -140,7 +140,7 @@ def test_ldvh_starts_from_markdown_specs_only() -> None:
     assert (ROOT / "specs" / "00-理念与构成.md").exists()
     assert (ROOT / "specs" / "01-保障与衔接.md").exists()
     assert (ROOT / "specs" / "02-AI行为规范.md").exists()
-    assert (ROOT / "specs" / "03-事实源与Git追溯规范.md").exists()
+    assert (ROOT / "specs" / "03-事实源与Git溯源规范.md").exists()
     assert (ROOT / "specs" / "04-Specs基础规范.md").exists()
     assert (ROOT / "specs" / "05-事实模型基础规范.md").exists()
     assert (ROOT / "specs" / "06-行动模板基础规范.md").exists()
@@ -196,7 +196,7 @@ def test_formal_specs_keep_ldvh_identity_blocks() -> None:
         ROOT / "specs" / "00-理念与构成.md",
         ROOT / "specs" / "01-保障与衔接.md",
         ROOT / "specs" / "02-AI行为规范.md",
-        ROOT / "specs" / "03-事实源与Git追溯规范.md",
+        ROOT / "specs" / "03-事实源与Git溯源规范.md",
         ROOT / "specs" / "04-Specs基础规范.md",
         ROOT / "specs" / "05-事实模型基础规范.md",
         ROOT / "specs" / "06-行动模板基础规范.md",
@@ -213,7 +213,7 @@ def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
     for path in [
         ROOT / "specs" / "01-保障与衔接.md",
         ROOT / "specs" / "02-AI行为规范.md",
-        ROOT / "specs" / "03-事实源与Git追溯规范.md",
+        ROOT / "specs" / "03-事实源与Git溯源规范.md",
         ROOT / "specs" / "04-Specs基础规范.md",
         ROOT / "specs" / "05-事实模型基础规范.md",
         ROOT / "specs" / "06-行动模板基础规范.md",
@@ -232,7 +232,7 @@ def test_role_sections_point_to_existing_h2_entries() -> None:
     for path in [
         ROOT / "specs" / "01-保障与衔接.md",
         ROOT / "specs" / "02-AI行为规范.md",
-        ROOT / "specs" / "03-事实源与Git追溯规范.md",
+        ROOT / "specs" / "03-事实源与Git溯源规范.md",
         ROOT / "specs" / "04-Specs基础规范.md",
         ROOT / "specs" / "05-事实模型基础规范.md",
         ROOT / "specs" / "06-行动模板基础规范.md",
