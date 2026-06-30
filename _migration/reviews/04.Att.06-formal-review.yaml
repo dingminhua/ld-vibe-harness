@@ -1,0 +1,16 @@
+target_spec: "specs/attachments/04.Att.06-术语表.md"
+target_sha256: "380526d43cbfc188998769a8af69f681541f095abf96f9281092f0ef709870af"
+change_type: "migration"
+mapping_evidence:
+  path: "_migration/inventory/v2-terminology-to-v3-02-att-06-map.yaml"
+code_verification:
+  command: "python3 -m pytest -q && python3 -m pytest -q _migration/tests"
+  passed: true
+  receipt: "Formal tests and migration tests passed after adding the 04.Att.06 candidate glossary review gate."
+subagent_review:
+  agent_id: "019f157a-0349-75b2-aeff-96df096a26ef"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Codex read-only reviewed 04.Att.06, 04 attachment authorization boundaries, 00/01/02 terminology consistency, and v2-to-v3 migration evidence; no unresolved content blockers remain for treating 04.Att.06 as a candidate glossary attachment."
+  unresolved_blockers: []
+warnings: []

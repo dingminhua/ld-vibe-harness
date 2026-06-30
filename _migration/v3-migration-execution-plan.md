@@ -6,7 +6,7 @@
 
 本文用于回答：V2 的大量 specs、Code、Hook、外部工作流包装、事实对象和治理能力应按什么顺序进入 V3。
 
-本文不定义新规则，不替代 `specs/00-理念与构成.md`、`specs/01-保障与衔接.md`、`specs/02-Specs基础规范.md` 或 `specs/03-AI行为规范.md`。若本文与正式 specs 冲突，以正式 specs 为准，并应更新本文或废弃对应计划项。
+本文不定义新规则，不替代 `specs/00-理念与构成.md`、`specs/01-保障与衔接.md`、`specs/04-Specs基础规范.md` 或 `specs/02-AI行为规范.md`。若本文与正式 specs 冲突，以正式 specs 为准，并应更新本文或废弃对应计划项。
 
 ## 2. 总原则
 
@@ -56,7 +56,7 @@ specs 迁入
 
 ## 5. 当前下一步
 
-阶段 1 已完成：正式 `code/specs_validate.py` 已能解析 `ldvh_spec`、`ldvh_attachment`、H2 章节、`role_sections`、`code_consumption`、保障消费时机表和 03 AI 行为保障表，并由 `tests/code/` 覆盖。
+阶段 1 已完成：正式 `code/specs_validate.py` 已能解析 `ldvh_spec`、`ldvh_attachment`、H2 章节、`role_sections`、`code_consumption`、保障消费时机表和 02 AI 行为保障表，并由 `tests/code/` 覆盖。
 
 阶段 2 已完成最小只读 Action Guide：Code 已能基于正式 specs 输出 `task_read_plan`、`next_queries`、`stop_conditions`、`validation_guard`、`missing_fields`、`capability_gap`、`impact_summary` 和 `source_refs`。该输出只作为过程指导，不成为独立事实源，也不声称运行时拦截、receipt 写入、Hook 或提交门禁已经生效。
 
@@ -78,7 +78,7 @@ specs 迁入
 
 出现以下情况时，暂停迁移并回到正式 specs 或 Human Gate：
 
-1. 计划要求与 `specs/00-理念与构成.md`、`specs/01-保障与衔接.md`、`specs/02-Specs基础规范.md` 或 `specs/03-AI行为规范.md` 冲突；
+1. 计划要求与 `specs/00-理念与构成.md`、`specs/01-保障与衔接.md`、`specs/04-Specs基础规范.md` 或 `specs/02-AI行为规范.md` 冲突；
 2. 新增 specs 没有明确 Code、Action Guide、preflight、runtime 或事实源消费方；
 3. Code 输出被用作授权、放行、Human Gate 或最终事实源；
 4. Hook、外部工作流包装、Rules 或项目索引开始形成第二规则源；

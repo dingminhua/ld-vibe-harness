@@ -29,13 +29,13 @@ def test_formal_identity_and_role_sections_are_parseable() -> None:
         "01.Att.01",
         "01.Att.06",
         "02",
-        "02.Att.01",
-        "02.Att.02",
-        "02.Att.03",
-        "02.Att.04",
-        "02.Att.05",
-        "02.Att.06",
-        "03",
+        "04",
+        "04.Att.01",
+        "04.Att.02",
+        "04.Att.03",
+        "04.Att.04",
+        "04.Att.05",
+        "04.Att.06",
     }
     assert objects["01"].metadata["role_sections"]["rule_body"] == [
         "5. 内部保障",
@@ -43,7 +43,7 @@ def test_formal_identity_and_role_sections_are_parseable() -> None:
         "7. 行动指南",
     ]
     assert "assurance_requirements" in objects["01"].metadata["code_consumption"]
-    assert "ai_behavior_assurance_requirements" in objects["03"].metadata["code_consumption"]
+    assert "ai_behavior_assurance_requirements" in objects["02"].metadata["code_consumption"]
 
 
 def test_consumption_timing_registry_is_closed_set() -> None:
@@ -132,7 +132,7 @@ def test_action_guide_session_start_read_plan() -> None:
     assert {
         "specs/00-理念与构成.md",
         "specs/01-保障与衔接.md",
-        "specs/03-AI行为规范.md",
+        "specs/02-AI行为规范.md",
     }.issubset(read_paths)
     assert guide["stop_conditions"]
     assert guide["validation_guard"][0]["requirement_id"] == "AI-BEH-001"
@@ -302,7 +302,7 @@ def test_runtime_session_start_generates_stdout_receipt() -> None:
     assert {
         "specs/00-理念与构成.md",
         "specs/01-保障与衔接.md",
-        "specs/03-AI行为规范.md",
+        "specs/02-AI行为规范.md",
     }.issubset(read_paths)
 
 
@@ -329,7 +329,7 @@ def test_runtime_acknowledge_read_plan_accepts_entry_paths() -> None:
         acknowledged_paths=[
             "specs/00-理念与构成.md",
             "specs/01-保障与衔接.md",
-            "specs/03-AI行为规范.md",
+            "specs/02-AI行为规范.md",
         ],
     )
 
@@ -337,7 +337,7 @@ def test_runtime_acknowledge_read_plan_accepts_entry_paths() -> None:
     assert runtime["receipt"]["acknowledged_paths"] == [
         "specs/00-理念与构成.md",
         "specs/01-保障与衔接.md",
-        "specs/03-AI行为规范.md",
+        "specs/02-AI行为规范.md",
     ]
     assert runtime["diagnostics"] == []
 
@@ -350,7 +350,7 @@ def test_runtime_pre_tool_use_includes_preflight() -> None:
         acknowledged_paths=[
             "specs/00-理念与构成.md",
             "specs/01-保障与衔接.md",
-            "specs/03-AI行为规范.md",
+            "specs/02-AI行为规范.md",
         ],
     )
 
@@ -396,7 +396,7 @@ def test_runtime_supports_all_consumption_timings() -> None:
         "acknowledged_paths": [
             "specs/00-理念与构成.md",
             "specs/01-保障与衔接.md",
-            "specs/03-AI行为规范.md",
+            "specs/02-AI行为规范.md",
         ],
         "target_path": "tests/code/test_ldvh_specs_validate.py",
         "verification_evidence": ["python3 -m pytest tests/code"],

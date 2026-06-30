@@ -13,37 +13,37 @@ ROOT = Path(__file__).resolve().parents[1]
 
 TIMING_TABLE_PATH = "specs/attachments/01.Att.01-保障消费时机表.md"
 TAKEOVER_MATRIX_PATH = "specs/attachments/01.Att.06-保障机制承接矩阵.md"
-AI_BEHAVIOR_SPEC_PATH = "specs/03-AI行为规范.md"
+AI_BEHAVIOR_SPEC_PATH = "specs/02-AI行为规范.md"
 
 SHORT_SPEC_REFS = {
     "00": "specs/00-理念与构成.md",
     "01": "specs/01-保障与衔接.md",
-    "02": "specs/02-Specs基础规范.md",
-    "03": "specs/03-AI行为规范.md",
+    "02": "specs/02-AI行为规范.md",
+    "04": "specs/04-Specs基础规范.md",
 }
 BASE_ACTION_GUIDE_SOURCE_REFS = [
     {"path": "specs/00-理念与构成.md", "role": "value_anchor"},
     {"path": "specs/01-保障与衔接.md", "role": "action_guide_contract"},
-    {"path": "specs/03-AI行为规范.md", "role": "ai_behavior_requirements"},
+    {"path": "specs/02-AI行为规范.md", "role": "ai_behavior_requirements"},
     {"path": TIMING_TABLE_PATH, "role": "consumption_timing_registry"},
     {"path": TAKEOVER_MATRIX_PATH, "role": "takeover_matrix"},
 ]
 PREFLIGHT_BASE_READ_PATHS = [
     "specs/00-理念与构成.md",
     "specs/01-保障与衔接.md",
-    "specs/02-Specs基础规范.md",
-    "specs/03-AI行为规范.md",
+    "specs/04-Specs基础规范.md",
+    "specs/02-AI行为规范.md",
 ]
 HIGH_IMPACT_SPEC_PATHS = {
     "specs/00-理念与构成.md",
     "specs/01-保障与衔接.md",
-    "specs/02-Specs基础规范.md",
-    "specs/03-AI行为规范.md",
+    "specs/04-Specs基础规范.md",
+    "specs/02-AI行为规范.md",
 }
 RUNTIME_REQUIRED_ENTRY_PATHS = [
     "specs/00-理念与构成.md",
     "specs/01-保障与衔接.md",
-    "specs/03-AI行为规范.md",
+    "specs/02-AI行为规范.md",
 ]
 
 SPEC_REQUIRED_KEYS = {
@@ -545,8 +545,8 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "source_refs": [
             {"path": "specs/00-理念与构成.md", "role": "value_anchor"},
             {"path": "specs/01-保障与衔接.md", "role": "assurance_boundary"},
-            {"path": "specs/02-Specs基础规范.md", "role": "specs_structure"},
-            {"path": "specs/03-AI行为规范.md", "role": "ai_behavior_requirements"},
+            {"path": "specs/04-Specs基础规范.md", "role": "specs_structure"},
+            {"path": "specs/02-AI行为规范.md", "role": "ai_behavior_requirements"},
             {"path": TIMING_TABLE_PATH, "role": "consumption_timing_registry"},
             {"path": TAKEOVER_MATRIX_PATH, "role": "takeover_matrix"},
         ],
@@ -560,7 +560,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
 
 
 def priority_for_ref(path: str, requirement_id: str) -> str:
-    if path in {"specs/00-理念与构成.md", "specs/01-保障与衔接.md", "specs/03-AI行为规范.md"}:
+    if path in {"specs/00-理念与构成.md", "specs/01-保障与衔接.md", "specs/02-AI行为规范.md"}:
         return "P0"
     if requirement_id in {"AI-BEH-001", "AI-BEH-002", "AI-BEH-003", "AI-BEH-004"}:
         return "P1"
@@ -683,7 +683,7 @@ def build_action_guide(
         capability_gap.extend(capability_gaps_for_requirement(requirement))
 
     if not task_read_plan and consumption_timing in allowed_timings:
-        for path in ("specs/00-理念与构成.md", "specs/01-保障与衔接.md", "specs/03-AI行为规范.md"):
+        for path in ("specs/00-理念与构成.md", "specs/01-保障与衔接.md", "specs/02-AI行为规范.md"):
             task_read_plan.append({
                 "priority": "P0",
                 "role": "fallback_fact_source",
@@ -696,7 +696,7 @@ def build_action_guide(
         capability_gap.append({
             "requirement_id": "",
             "required_capability": "Action Guide requirement matching",
-            "current_gap": "未定位到匹配保障需求，已降级为 00/01/03 fallback read_plan。",
+            "current_gap": "未定位到匹配保障需求，已降级为 00/01/02 fallback read_plan。",
             "disposition": "不得确认空 read_plan；后续应补齐对应保障需求。",
         })
 
@@ -916,8 +916,8 @@ def build_preflight(
         ]
         + [
             {"path": "specs/01-保障与衔接.md", "role": "preflight_assurance_boundary"},
-            {"path": "specs/02-Specs基础规范.md", "role": "preflight_structure_boundary"},
-            {"path": "specs/03-AI行为规范.md", "role": "preflight_ai_behavior_boundary"},
+            {"path": "specs/04-Specs基础规范.md", "role": "preflight_structure_boundary"},
+            {"path": "specs/02-AI行为规范.md", "role": "preflight_ai_behavior_boundary"},
         ],
         ("path", "role"),
     )
@@ -972,7 +972,7 @@ def build_preflight(
             },
             {
                 "guard": "确认 Code、测试、review 或行动指南没有替代 Human Gate 或最终事实源。",
-                "source_path": "specs/03-AI行为规范.md",
+                "source_path": "specs/02-AI行为规范.md",
             },
         ],
         "human_gate_risks": human_gate_risks,
@@ -1132,7 +1132,7 @@ def build_runtime_event(
     receipt_status = "blocked" if status == "blocked" else "generated"
     source_refs = [
         {"path": "specs/01-保障与衔接.md", "role": "runtime_protocol_boundary"},
-        {"path": "specs/03-AI行为规范.md", "role": "runtime_behavior_requirement"},
+        {"path": "specs/02-AI行为规范.md", "role": "runtime_behavior_requirement"},
         {"path": TIMING_TABLE_PATH, "role": "canonical_event_registry"},
     ]
     if action_guide:

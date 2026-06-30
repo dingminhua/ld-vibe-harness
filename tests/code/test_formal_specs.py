@@ -14,12 +14,12 @@ BOOTSTRAP_OBJECT_IDS = {
     "01.Att.01",
     "01.Att.06",
     "02",
-    "02.Att.01",
-    "02.Att.02",
-    "02.Att.03",
-    "02.Att.04",
-    "02.Att.05",
-    "03",
+    "04",
+    "04.Att.01",
+    "04.Att.02",
+    "04.Att.03",
+    "04.Att.04",
+    "04.Att.05",
 }
 FIXED_HEAD_SECTIONS = [
     "价值判断",
@@ -139,8 +139,8 @@ def _h2_titles(raw: str) -> list[str]:
 def test_ldvh_starts_from_markdown_specs_only() -> None:
     assert (ROOT / "specs" / "00-理念与构成.md").exists()
     assert (ROOT / "specs" / "01-保障与衔接.md").exists()
-    assert (ROOT / "specs" / "02-Specs基础规范.md").exists()
-    assert (ROOT / "specs" / "03-AI行为规范.md").exists()
+    assert (ROOT / "specs" / "02-AI行为规范.md").exists()
+    assert (ROOT / "specs" / "04-Specs基础规范.md").exists()
 
 
 def test_no_parallel_authority_layers() -> None:
@@ -156,17 +156,17 @@ def test_attachments_stay_subordinate_tables_or_enums() -> None:
     assert attachments == [
         "specs/attachments/01.Att.01-保障消费时机表.md",
         "specs/attachments/01.Att.06-保障机制承接矩阵.md",
-        "specs/attachments/02.Att.01-规范身份字段表.md",
-        "specs/attachments/02.Att.02-规范信息角色表.md",
-        "specs/attachments/02.Att.03-引用关系类型表.md",
-        "specs/attachments/02.Att.04-保障要求字段表.md",
-        "specs/attachments/02.Att.05-附件身份字段表.md",
-        "specs/attachments/02.Att.06-术语表.md",
+        "specs/attachments/04.Att.01-规范身份字段表.md",
+        "specs/attachments/04.Att.02-规范信息角色表.md",
+        "specs/attachments/04.Att.03-引用关系类型表.md",
+        "specs/attachments/04.Att.04-保障要求字段表.md",
+        "specs/attachments/04.Att.05-附件身份字段表.md",
+        "specs/attachments/04.Att.06-术语表.md",
     ]
 
-    spec_02 = (ROOT / "specs" / "02-Specs基础规范.md").read_text(encoding="utf-8")
-    assert "附件只是正文授权的附属内容" in spec_02
-    assert "附件不得承载上位原则、核心规则、行动流程、Human Gate" in spec_02
+    spec_04 = (ROOT / "specs" / "04-Specs基础规范.md").read_text(encoding="utf-8")
+    assert "附件只是正文授权的附属内容" in spec_04
+    assert "附件不得承载上位原则、核心规则、行动流程、Human Gate" in spec_04
 
     for rel_path in attachments:
         raw = (ROOT / rel_path).read_text(encoding="utf-8")
@@ -189,8 +189,8 @@ def test_formal_specs_keep_ldvh_identity_blocks() -> None:
     for path in [
         ROOT / "specs" / "00-理念与构成.md",
         ROOT / "specs" / "01-保障与衔接.md",
-        ROOT / "specs" / "02-Specs基础规范.md",
-        ROOT / "specs" / "03-AI行为规范.md",
+        ROOT / "specs" / "02-AI行为规范.md",
+        ROOT / "specs" / "04-Specs基础规范.md",
     ]:
         raw = path.read_text(encoding="utf-8")
         assert re.search(r"```yaml\nldvh_spec:", raw), path
@@ -200,8 +200,8 @@ def test_formal_specs_keep_ldvh_identity_blocks() -> None:
 def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
     for path in [
         ROOT / "specs" / "01-保障与衔接.md",
-        ROOT / "specs" / "02-Specs基础规范.md",
-        ROOT / "specs" / "03-AI行为规范.md",
+        ROOT / "specs" / "02-AI行为规范.md",
+        ROOT / "specs" / "04-Specs基础规范.md",
     ]:
         raw = path.read_text(encoding="utf-8")
         titles = _normalized_h2_titles(raw)
@@ -213,8 +213,8 @@ def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
 def test_role_sections_point_to_existing_h2_entries() -> None:
     for path in [
         ROOT / "specs" / "01-保障与衔接.md",
-        ROOT / "specs" / "02-Specs基础规范.md",
-        ROOT / "specs" / "03-AI行为规范.md",
+        ROOT / "specs" / "02-AI行为规范.md",
+        ROOT / "specs" / "04-Specs基础规范.md",
     ]:
         raw = path.read_text(encoding="utf-8")
         metadata = _first_yaml_block(path)["ldvh_spec"]

@@ -2,12 +2,12 @@
 
 ```yaml
 ldvh_spec:
-  spec_id: "02"
+  spec_id: "04"
   spec_kind: "spec"
   title: "Specs基础规范"
   status: "candidate"
   authority: "candidate"
-  canonical_path: "specs/02-Specs基础规范.md"
+  canonical_path: "specs/04-Specs基础规范.md"
   parent_spec: "specs/01-保障与衔接.md"
   relation: "refines"
   positioning: "定义 specs 的正文结构、身份索引、附件授权、术语归口、Code 派生边界、规范修改审核、保障措施、验证方法和 AI 停止条件"
@@ -16,13 +16,13 @@ ldvh_spec:
     - "specs/00-理念与构成.md"
     - "specs/01-保障与衔接.md"
   related_specs:
-    - "specs/03-AI行为规范.md"
-    - "specs/attachments/02.Att.01-规范身份字段表.md"
-    - "specs/attachments/02.Att.02-规范信息角色表.md"
-    - "specs/attachments/02.Att.03-引用关系类型表.md"
-    - "specs/attachments/02.Att.04-保障要求字段表.md"
-    - "specs/attachments/02.Att.05-附件身份字段表.md"
-    - "specs/attachments/02.Att.06-术语表.md"
+    - "specs/02-AI行为规范.md"
+    - "specs/attachments/04.Att.01-规范身份字段表.md"
+    - "specs/attachments/04.Att.02-规范信息角色表.md"
+    - "specs/attachments/04.Att.03-引用关系类型表.md"
+    - "specs/attachments/04.Att.04-保障要求字段表.md"
+    - "specs/attachments/04.Att.05-附件身份字段表.md"
+    - "specs/attachments/04.Att.06-术语表.md"
   code_consumption:
     - "ldvh_spec_metadata"
     - "ldvh_attachment_metadata"
@@ -189,7 +189,7 @@ Code、review、迁移材料、测试输出、行动指南和对话记录不得�
 
 ### 6.1 `ldvh_spec` identity block
 
-正式 spec 必须包含 `ldvh_spec` identity block。字段闭集见 `specs/attachments/02.Att.01-规范身份字段表.md`。
+正式 spec 必须包含 `ldvh_spec` identity block。字段闭集见 `specs/attachments/04.Att.01-规范身份字段表.md`。
 
 `ldvh_spec` 是 Code 读取规范身份、路径、权威承接、显式关系和消费入口的稳定结构。字段不得替代正文判断；字段内容与正文冲突时，必须回到正文和 Human Gate。
 
@@ -205,13 +205,13 @@ Code、review、迁移材料、测试输出、行动指南和对话记录不得�
 
 ### 6.4 显式路径与引用
 
-引用关系必须显式写在 identity block、正文路径或正文引用中。关系类型见 `specs/attachments/02.Att.03-引用关系类型表.md`。
+引用关系必须显式写在 identity block、正文路径或正文引用中。关系类型见 `specs/attachments/04.Att.03-引用关系类型表.md`。
 
 ## 7. 附件授权
 
 ### 7.1 `ldvh_attachment` identity block
 
-附件必须包含 `ldvh_attachment` identity block。字段闭集见 `specs/attachments/02.Att.05-附件身份字段表.md`。
+附件必须包含 `ldvh_attachment` identity block。字段闭集见 `specs/attachments/04.Att.05-附件身份字段表.md`。
 
 ### 7.2 附件允许承载内容
 
