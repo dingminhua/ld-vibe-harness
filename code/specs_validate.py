@@ -103,6 +103,7 @@ def print_text(result: dict[str, Any], command: str) -> None:
     print(f"- consumption_timings: {summary['consumption_timings']}")
     print(f"- ai_behavior_requirements: {summary['ai_behavior_requirements']}")
     print(f"- takeover_matrix_rows: {summary['takeover_matrix_rows']}")
+    print(f"- foundation_spec_contracts: {summary['foundation_spec_contracts']}")
     print(f"- diagnostics: {summary['diagnostics']}")
 
     if result["diagnostics"]:
@@ -120,6 +121,7 @@ def select_output(result: dict[str, Any], command: str) -> dict[str, Any]:
             "summary": result["summary"],
             "specs": result["specs"],
             "attachments": result["attachments"],
+            "foundation_spec_contracts": result["foundation_spec_contracts"],
             "diagnostics": result["diagnostics"],
         }
     if command == "timings":

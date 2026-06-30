@@ -99,6 +99,174 @@ AI_BEHAVIOR_COLUMNS = [
 ]
 TIMING_COLUMNS = ["消费时机", "触发点", "消费主体", "用途"]
 TAKEOVER_COLUMNS = ["需求ID", "触发消费时机", "行动指南承接", "Hook 承接"]
+FOUNDATION_SPEC_IDS = ("03", "05", "06", "07", "08", "09")
+ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
+VERIFICATION_COLUMNS = ["检查类别", "检查内容", "不满足时"]
+FOUNDATION_SPEC_CONTRACTS = {
+    "03": {
+        "path": SHORT_SPEC_REFS["03"],
+        "required_code_consumption": [
+            "ldvh_spec_metadata",
+            "fact_source_boundaries",
+            "process_evidence_boundaries",
+            "git_traceability_rules",
+            "commit_contract_boundaries",
+            "source_ref_requirements",
+            "stop_conditions",
+        ],
+        "required_rule_body_sections": [
+            "5. 用户事实源边界",
+            "6. 过程证据与回写",
+            "7. Git 追溯与提交契约",
+        ],
+        "required_assurance_rows": [
+            "事实源回指要求",
+            "非事实源排除要求",
+            "Git 追溯要求",
+            "commit 契约要求",
+        ],
+        "required_verification_rows": [
+            "事实源边界检查",
+            "非事实源排除检查",
+            "回写检查",
+            "Git 追溯检查",
+        ],
+        "human_gate_terms": ["非 Git 文件", "过程证据", "commit 契约", "Git commit records", "事实源冲突"],
+        "stop_condition_terms": ["权威事实源", "过程证据", "聊天、缓存、测试输出", "commit message", "事实源不一致"],
+    },
+    "05": {
+        "path": SHORT_SPEC_REFS["05"],
+        "required_code_consumption": [
+            "ldvh_spec_metadata",
+            "fact_model_boundaries",
+            "fact_object_admission",
+            "fact_instance_boundaries",
+            "evidence_routing",
+            "field_state_boundary",
+            "stop_conditions",
+        ],
+        "required_rule_body_sections": [
+            "5. 事实模型与事实实例",
+            "6. 事实对象准入与分流",
+            "7. 字段、状态与证据边界",
+        ],
+        "required_assurance_rows": [
+            "对象准入要求",
+            "实例边界要求",
+            "证据分流要求",
+            "字段状态同步要求",
+        ],
+        "required_verification_rows": ["准入检查", "边界检查", "证据检查", "同步检查"],
+        "human_gate_terms": ["事实对象类型", "状态机", "事实实例", "测试夹具", "V2 20-24"],
+        "stop_condition_terms": ["对象化", "事实实例", "字段、状态或证据", "blocker", "旧 TaskPlan"],
+    },
+    "06": {
+        "path": SHORT_SPEC_REFS["06"],
+        "required_code_consumption": [
+            "ldvh_spec_metadata",
+            "action_template_boundaries",
+            "context_scenario_gate",
+            "capability_output_boundary",
+            "action_evidence_requirements",
+            "gap_disposition_rules",
+            "stop_conditions",
+        ],
+        "required_rule_body_sections": [
+            "5. 行动模板结构",
+            "6. 能力输出与主控责任",
+            "7. 模板候选与迁移边界",
+        ],
+        "required_assurance_rows": [
+            "来源回指要求",
+            "Gate 显式要求",
+            "验证要求",
+            "能力输出边界",
+        ],
+        "required_verification_rows": ["结构检查", "来源检查", "能力边界检查", "验证检查"],
+        "human_gate_terms": ["正式可执行模板", "模板 Gate", "Hook、Rules、Skill", "能力输出", "验证、回写"],
+        "stop_condition_terms": ["来源规则", "第二事实源", "顶层机制", "Human Gate", "验证证据"],
+    },
+    "07": {
+        "path": SHORT_SPEC_REFS["07"],
+        "required_code_consumption": [
+            "ldvh_spec_metadata",
+            "code_determinism_rules",
+            "diagnostic_boundaries",
+            "action_guide_contracts",
+            "preflight_contracts",
+            "runtime_facade_contracts",
+            "adapter_dispatcher_boundaries",
+            "stop_conditions",
+        ],
+        "required_rule_body_sections": [
+            "5. Code 能力边界",
+            "6. 结构化输出与诊断",
+            "7. Runtime facade 与环境适配实现边界",
+            "8. Code 变更纪律",
+        ],
+        "required_assurance_rows": [
+            "来源回指要求",
+            "授权边界要求",
+            "诊断分流要求",
+            "测试前置要求",
+        ],
+        "required_verification_rows": ["结构检查", "诊断检查", "授权边界检查", "runtime 检查", "回归检查"],
+        "human_gate_terms": ["授权、放行、验收", "安装 Hook", "不可验证", "Code 规则覆盖", "持久派生索引"],
+        "stop_condition_terms": ["正式规则来源", "事实源、Human Gate", "parser、validator", "unknown event", "无法验证"],
+    },
+    "08": {
+        "path": SHORT_SPEC_REFS["08"],
+        "required_code_consumption": [
+            "ldvh_spec_metadata",
+            "web_sync_boundaries",
+            "human_facing_display_rules",
+            "source_ref_display_requirements",
+            "controlled_interaction_boundaries",
+            "web_cache_boundaries",
+            "stop_conditions",
+        ],
+        "required_rule_body_sections": [
+            "5. Human-facing 展示边界",
+            "6. 同源读取与派生状态",
+            "7. 受控交互与 Confirm UI",
+        ],
+        "required_assurance_rows": [
+            "来源呈现要求",
+            "非事实源要求",
+            "Confirm UI 要求",
+            "受控写入要求",
+        ],
+        "required_verification_rows": ["来源检查", "边界检查", "交互检查", "回归检查"],
+        "human_gate_terms": ["Web 写入能力", "Confirm UI", "关键风险", "Web 状态", "Web 回归线"],
+        "stop_condition_terms": ["回指来源", "Web 状态", "Confirm UI", "Web 写入", "暂未实现"],
+    },
+    "09": {
+        "path": SHORT_SPEC_REFS["09"],
+        "required_code_consumption": [
+            "ldvh_spec_metadata",
+            "verification_rules",
+            "test_evidence_boundaries",
+            "failure_blocking_rules",
+            "equivalent_verification_rules",
+            "sync_trigger_rules",
+            "stop_conditions",
+        ],
+        "required_rule_body_sections": [
+            "5. 验证方式分层",
+            "6. 验证声明与失败阻断",
+            "7. 测试证据与同步触发",
+        ],
+        "required_assurance_rows": [
+            "完成声明验证要求",
+            "失败阻断要求",
+            "证据边界要求",
+            "同步触发要求",
+        ],
+        "required_verification_rows": ["声明检查", "失败检查", "证据检查", "同步检查"],
+        "human_gate_terms": ["声明标准", "高价值测试", "关键验证", "测试输出", "测试通过"],
+        "stop_condition_terms": ["无验证证据", "关键测试失败", "测试结果", "测试代码", "未验证范围"],
+    },
+}
 
 
 @dataclass(frozen=True)
@@ -151,6 +319,23 @@ def first_yaml_block(raw: str, path: str) -> dict[str, Any]:
 
 def h2_titles(raw: str) -> list[str]:
     return [match.group(1).strip() for match in re.finditer(r"^##\s+(.+?)\s*$", raw, re.M)]
+
+
+def normalize_h2_title(title: str) -> str:
+    return re.sub(r"^\d+[.、]\s*", "", title.strip())
+
+
+def h2_sections(raw: str) -> dict[str, dict[str, str]]:
+    matches = list(re.finditer(r"^##\s+(.+?)\s*$", raw, re.M))
+    sections: dict[str, dict[str, str]] = {}
+    for index, match in enumerate(matches):
+        title = match.group(1).strip()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(raw)
+        sections[normalize_h2_title(title)] = {
+            "title": title,
+            "body": raw[match.end() : end],
+        }
+    return sections
 
 
 def load_formal_object(path: Path, root: Path = ROOT) -> FormalObject:
@@ -240,6 +425,10 @@ def find_table(raw: str, required_columns: list[str]) -> list[dict[str, str]]:
     return []
 
 
+def numbered_list_items(raw: str) -> list[str]:
+    return [match.group(1).strip() for match in re.finditer(r"^\s*\d+\.\s+(.+?)\s*$", raw, re.M)]
+
+
 def strip_inline_code(value: str) -> str:
     value = value.strip()
     if value.startswith("`") and value.endswith("`") and value.count("`") == 2:
@@ -315,6 +504,81 @@ def parse_takeover_matrix(root: Path = ROOT) -> list[dict[str, str]]:
         }
         for row in rows
     ]
+
+
+def _table_rows_for_section(sections: dict[str, dict[str, str]], section_name: str, columns: list[str]) -> list[dict[str, str]]:
+    section = sections.get(section_name)
+    if not section:
+        return []
+    return find_table(section["body"], columns)
+
+
+def _section_numbered_items(sections: dict[str, dict[str, str]], section_name: str) -> list[str]:
+    section = sections.get(section_name)
+    if not section:
+        return []
+    return numbered_list_items(section["body"])
+
+
+def parse_foundation_spec_contracts(
+    objects: list[FormalObject],
+    root: Path = ROOT,
+) -> list[dict[str, Any]]:
+    objects_by_id = {obj.object_id: obj for obj in objects if obj.object_type == "spec"}
+    contracts: list[dict[str, Any]] = []
+    for spec_id in FOUNDATION_SPEC_IDS:
+        obj = objects_by_id.get(spec_id)
+        if not obj:
+            continue
+        raw = (root / obj.path).read_text(encoding="utf-8")
+        sections = h2_sections(raw)
+        role_sections = obj.metadata.get("role_sections", {})
+        rule_body_sections = []
+        if isinstance(role_sections, dict):
+            rule_body_sections = flatten_role_sections(role_sections.get("rule_body", []))
+
+        assurance_rows = _table_rows_for_section(sections, "保障措施", ASSURANCE_COLUMNS)
+        verification_rows = _table_rows_for_section(sections, "验证方法", VERIFICATION_COLUMNS)
+        contracts.append(
+            {
+                "spec_id": spec_id,
+                "path": obj.path,
+                "title": obj.title,
+                "status": obj.status,
+                "authority": obj.metadata.get("authority", ""),
+                "code_consumption": obj.metadata.get("code_consumption", []),
+                "rule_body_sections": rule_body_sections,
+                "assurance_measures": [
+                    {
+                        "requirement": row["保障要求"],
+                        "content": row["要求内容"],
+                        "mechanism": row["保障机制"],
+                        "sync_type": row["同步类型"],
+                        "trigger": row["触发条件"],
+                    }
+                    for row in assurance_rows
+                ],
+                "verification_checks": [
+                    {
+                        "check_type": row["检查类别"],
+                        "content": row["检查内容"],
+                        "failure_disposition": row["不满足时"],
+                    }
+                    for row in verification_rows
+                ],
+                "human_gate": _section_numbered_items(sections, "Human Gate"),
+                "stop_conditions": _section_numbered_items(sections, "Stop Conditions"),
+                "source_refs": [
+                    {"path": obj.path, "role": "foundation_spec"},
+                    {"path": "specs/00-理念与构成.md", "role": "value_anchor"},
+                    {"path": "specs/01-保障与衔接.md", "role": "assurance_boundary"},
+                    {"path": "specs/03-事实源与Git追溯规范.md", "role": "fact_source_boundary"},
+                    {"path": "specs/07-Code确定性执行规范.md", "role": "code_boundary"},
+                    {"path": "specs/09-测试与验证规范.md", "role": "verification_boundary"},
+                ],
+            }
+        )
+    return contracts
 
 
 def flatten_role_sections(value: Any) -> list[str]:
@@ -525,6 +789,130 @@ def validate_takeover_matrix(
     return diagnostics
 
 
+def _missing_exact_values(expected: list[str], actual: list[str]) -> list[str]:
+    actual_set = set(actual)
+    return [item for item in expected if item not in actual_set]
+
+
+def _missing_contained_terms(expected: list[str], actual_items: list[str]) -> list[str]:
+    return [term for term in expected if not any(term in item for item in actual_items)]
+
+
+def validate_foundation_spec_contracts(contracts: list[dict[str, Any]]) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    contracts_by_id = {contract["spec_id"]: contract for contract in contracts}
+
+    for spec_id in FOUNDATION_SPEC_IDS:
+        expected = FOUNDATION_SPEC_CONTRACTS[spec_id]
+        path = expected["path"]
+        contract = contracts_by_id.get(spec_id)
+        if not contract:
+            diagnostics.append(Diagnostic("error", "FOUNDATION_SPEC_MISSING", path, f"{spec_id} 基础规范缺失"))
+            continue
+
+        code_consumption = contract["code_consumption"]
+        if not isinstance(code_consumption, list):
+            diagnostics.append(Diagnostic("error", "FOUNDATION_CODE_CONSUMPTION_INVALID", path, "code_consumption 必须是列表"))
+            code_consumption = []
+        for item in _missing_exact_values(expected["required_code_consumption"], code_consumption):
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "FOUNDATION_CODE_CONSUMPTION_MISSING",
+                    path,
+                    f"{spec_id} 缺少 Code 消费入口: {item}",
+                )
+            )
+
+        for title in _missing_exact_values(expected["required_rule_body_sections"], contract["rule_body_sections"]):
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "FOUNDATION_RULE_BODY_SECTION_MISSING",
+                    path,
+                    f"{spec_id} role_sections.rule_body 缺少主体规则区: {title}",
+                )
+            )
+
+        assurance_rows = contract["assurance_measures"]
+        if not assurance_rows:
+            diagnostics.append(Diagnostic("error", "FOUNDATION_ASSURANCE_TABLE_MISSING", path, f"{spec_id} 缺少可解析保障措施表"))
+        else:
+            assurance_names = [row["requirement"] for row in assurance_rows]
+            for item in _missing_exact_values(expected["required_assurance_rows"], assurance_names):
+                diagnostics.append(
+                    Diagnostic(
+                        "error",
+                        "FOUNDATION_ASSURANCE_ROW_MISSING",
+                        path,
+                        f"{spec_id} 缺少保障要求: {item}",
+                    )
+                )
+            for row in assurance_rows:
+                for key in ("requirement", "content", "mechanism", "sync_type", "trigger"):
+                    if not row[key]:
+                        diagnostics.append(
+                            Diagnostic(
+                                "error",
+                                "FOUNDATION_ASSURANCE_FIELD_EMPTY",
+                                path,
+                                f"{spec_id} 保障措施字段为空: {key}",
+                            )
+                        )
+
+        verification_rows = contract["verification_checks"]
+        if not verification_rows:
+            diagnostics.append(Diagnostic("error", "FOUNDATION_VERIFICATION_TABLE_MISSING", path, f"{spec_id} 缺少可解析验证方法表"))
+        else:
+            verification_names = [row["check_type"] for row in verification_rows]
+            for item in _missing_exact_values(expected["required_verification_rows"], verification_names):
+                diagnostics.append(
+                    Diagnostic(
+                        "error",
+                        "FOUNDATION_VERIFICATION_ROW_MISSING",
+                        path,
+                        f"{spec_id} 缺少验证检查: {item}",
+                    )
+                )
+            for row in verification_rows:
+                for key in ("check_type", "content", "failure_disposition"):
+                    if not row[key]:
+                        diagnostics.append(
+                            Diagnostic(
+                                "error",
+                                "FOUNDATION_VERIFICATION_FIELD_EMPTY",
+                                path,
+                                f"{spec_id} 验证方法字段为空: {key}",
+                            )
+                        )
+
+        if not contract["human_gate"]:
+            diagnostics.append(Diagnostic("error", "FOUNDATION_HUMAN_GATE_MISSING", path, f"{spec_id} 缺少 Human Gate 条目"))
+        for term in _missing_contained_terms(expected["human_gate_terms"], contract["human_gate"]):
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "FOUNDATION_HUMAN_GATE_TERM_MISSING",
+                    path,
+                    f"{spec_id} Human Gate 缺少关键边界: {term}",
+                )
+            )
+
+        if not contract["stop_conditions"]:
+            diagnostics.append(Diagnostic("error", "FOUNDATION_STOP_CONDITION_MISSING", path, f"{spec_id} 缺少 Stop Conditions 条目"))
+        for term in _missing_contained_terms(expected["stop_condition_terms"], contract["stop_conditions"]):
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "FOUNDATION_STOP_CONDITION_TERM_MISSING",
+                    path,
+                    f"{spec_id} Stop Conditions 缺少关键边界: {term}",
+                )
+            )
+
+    return diagnostics
+
+
 def build_validation(root: Path = ROOT) -> dict[str, Any]:
     objects = load_formal_objects(root)
     specs = [obj for obj in objects if obj.object_type == "spec"]
@@ -532,12 +920,14 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     timings = parse_consumption_timings(root)
     requirements = parse_ai_behavior_requirements(root)
     takeover_matrix = parse_takeover_matrix(root)
+    foundation_spec_contracts = parse_foundation_spec_contracts(objects, root)
 
     diagnostics: list[Diagnostic] = []
     diagnostics.extend(validate_formal_objects(objects, root))
     diagnostics.extend(validate_consumption_timings(timings))
     diagnostics.extend(validate_ai_behavior_requirements(requirements, timings, objects, root))
     diagnostics.extend(validate_takeover_matrix(takeover_matrix, requirements, timings))
+    diagnostics.extend(validate_foundation_spec_contracts(foundation_spec_contracts))
 
     diagnostic_dicts = [diagnostic.to_dict() for diagnostic in diagnostics]
     status = "ok" if not diagnostic_dicts else "failed"
@@ -556,6 +946,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             "consumption_timings": len(timings),
             "ai_behavior_requirements": len(requirements),
             "takeover_matrix_rows": len(takeover_matrix),
+            "foundation_spec_contracts": len(foundation_spec_contracts),
             "diagnostics": len(diagnostic_dicts),
             "errors": sum(1 for diagnostic in diagnostics if diagnostic.level == "error"),
             "warnings": sum(1 for diagnostic in diagnostics if diagnostic.level == "warning"),
@@ -579,6 +970,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "consumption_timings": timings,
         "ai_behavior_requirements": requirements,
         "takeover_matrix": takeover_matrix,
+        "foundation_spec_contracts": foundation_spec_contracts,
         "diagnostics": diagnostic_dicts,
     }
 

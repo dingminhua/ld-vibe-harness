@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -11,13 +12,105 @@ import ldvh_specs
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def _copy_specs_root(tmp_path: Path) -> Path:
+    root = tmp_path / "repo"
+    shutil.copytree(ROOT / "specs", root / "specs")
+    return root
+
+
+def _replace_in_temp(root: Path, rel_path: str, old: str, new: str = "") -> None:
+    path = root / rel_path
+    raw = path.read_text(encoding="utf-8")
+    assert old in raw
+    path.write_text(raw.replace(old, new), encoding="utf-8")
+
+
+def _diagnostic_codes(result: dict) -> set[str]:
+    return {diagnostic["code"] for diagnostic in result["diagnostics"]}
+
+
 def test_current_specs_validate_without_diagnostics() -> None:
     result = ldvh_specs.build_validation(ROOT)
 
     assert result["summary"]["status"] == "ok"
     assert result["summary"]["specs"] == 10
     assert result["summary"]["attachments"] == 8
+    assert result["summary"]["foundation_spec_contracts"] == 6
     assert result["diagnostics"] == []
+
+
+def test_foundation_specs_contracts_are_code_consumable() -> None:
+    result = ldvh_specs.build_validation(ROOT)
+    contracts = {contract["spec_id"]: contract for contract in result["foundation_spec_contracts"]}
+
+    assert set(contracts) == {"03", "05", "06", "07", "08", "09"}
+    assert "commit_contract_boundaries" in contracts["03"]["code_consumption"]
+    assert "fact_object_admission" in contracts["05"]["code_consumption"]
+    assert "context_scenario_gate" in contracts["06"]["code_consumption"]
+    assert "runtime_facade_contracts" in contracts["07"]["code_consumption"]
+    assert "source_ref_display_requirements" in contracts["08"]["code_consumption"]
+    assert "failure_blocking_rules" in contracts["09"]["code_consumption"]
+
+    assert [row["requirement"] for row in contracts["06"]["assurance_measures"]] == [
+        "来源回指要求",
+        "Gate 显式要求",
+        "验证要求",
+        "能力输出边界",
+    ]
+    assert "8. Code 变更纪律" in contracts["07"]["rule_body_sections"]
+    assert any("测试输出" in item for item in contracts["09"]["human_gate"])
+    for contract in contracts.values():
+        assert contract["source_refs"]
+        assert contract["assurance_measures"]
+        assert contract["verification_checks"]
+        assert contract["human_gate"]
+        assert contract["stop_conditions"]
+
+
+def test_foundation_validator_reports_missing_code_consumption(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/03-事实源与Git追溯规范.md",
+        '    - "commit_contract_boundaries"\n',
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FOUNDATION_CODE_CONSUMPTION_MISSING" in _diagnostic_codes(result)
+    assert any(
+        diagnostic["path"] == "specs/03-事实源与Git追溯规范.md"
+        and "commit_contract_boundaries" in diagnostic["message"]
+        for diagnostic in result["diagnostics"]
+    )
+
+
+def test_foundation_validator_reports_missing_assurance_row(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "| Gate 显式要求 | 模板必须写出暂停、分流和 Human Gate 条件 | 本文、01、02 | 门禁治理 | 模板涉及写入、提交、验收或风险接受时 |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FOUNDATION_ASSURANCE_ROW_MISSING" in _diagnostic_codes(result)
+    assert any("Gate 显式要求" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_foundation_validator_reports_missing_human_gate_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/08-Web信息同步规范.md",
+        "4. 将 Web 状态、缓存、筛选或按钮点击升级为事实源或 Human Gate 完成；\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FOUNDATION_HUMAN_GATE_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("Web 状态" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_formal_identity_and_role_sections_are_parseable() -> None:
