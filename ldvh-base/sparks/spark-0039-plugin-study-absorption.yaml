@@ -1,0 +1,45 @@
+id: spark-0039
+type: spark
+title: CodebaseMemory、TaskmasterAI、Firecrawl 插件调研吸收
+status: pending
+created: '2026-06-30T11:17:07+08:00'
+updated: '2026-06-30T11:24:12+08:00'
+description: |
+  本 Spark 承接对 CodebaseMemory、TaskmasterAI、Firecrawl 三个插件/工具的并行调研。研究产物应分别形成三个 Study，并同时覆盖产品/工作流调研、技术实现调研和 LDVH 可吸收改造建议三类内容。
+
+  本轮执行方式由 Human 明确：调研必须联网，不需要最后汇总，使用新建三个对话同步进行。三个 Study 只承载稳定报告正文；本 Spark 保持为待处理入口，用于后续判断哪些能力应进一步分流到 WorkCase、ADR、Pitfall、docs、规范、Code、Web 或运行时扩展。
+source: conversation
+priority: P1
+source_detail: |
+  Human 要求创建一个 LDVH Spark，并分别针对 codebasememory、taskmasterAI、firecrawl 创建三个 Study 进行调研；产出需同时包含产品/工作流、技术实现、LDVH 可吸收点三类内容；不需要最后汇总；调研必须联网；研究应通过新建三个 Codex 对话同步进行。Human 已确认 Spark 是 LDVH 的工作对象，并授权联网调查。
+evolution:
+  - at: '2026-06-30T11:17:07+08:00'
+    summary: |
+      创建 Spark 作为三个插件/工具研究的承接入口。由于 Study 不能替代 Spark 分流，后续三个研究报告完成后仍需按结论判断是否进一步进入 WorkCase、ADR、Pitfall、docs、规范、Code、Web 或运行时扩展；在未完成分流前本 Spark 保持 pending。
+  - at: '2026-06-30T11:24:12+08:00'
+    summary: |
+      三个并行 Codex 对话已分别联网调研并写入 Study：`study-0012` 记录 CodebaseMemory / Codebase Memory MCP，`study-0013` 记录 TaskmasterAI / Task Master AI，`study-0014` 记录 Firecrawl。三个 Study 均已通过单文件 `fact_validate` 校验。本 Spark 只关联 Study，不因研究报告形成而 resolved；后续仍需按各 Study 的后续分流建议判断是否进入 WorkCase、ADR、Pitfall、docs、规范、Code、Web 或运行时扩展。
+input_refs:
+  - specs/00-LDVH理念与价值标准.md
+  - specs/20-Spark-火花.md
+  - specs/24-Study-研究报告.md
+  - specs/34-study-research-output-研究行动产物编排.md
+  - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
+  - study-0012
+  - study-0013
+  - study-0014
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workcases: []
+related_adrs: []
+related_studies:
+  - study-0012
+  - study-0013
+  - study-0014
+related_docs:
+  - specs/00-LDVH理念与价值标准.md
+  - specs/20-Spark-火花.md
+  - specs/24-Study-研究报告.md
+  - specs/34-study-research-output-研究行动产物编排.md
+  - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
