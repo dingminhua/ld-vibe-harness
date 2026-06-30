@@ -162,12 +162,15 @@ def test_attachments_stay_subordinate_tables_or_enums() -> None:
     assert attachments == [
         "specs/attachments/01.Att.01-保障消费时机表.md",
         "specs/attachments/01.Att.06-保障机制承接矩阵.md",
+        "specs/attachments/03.Att.01-Commit-Message契约字段表.md",
         "specs/attachments/04.Att.01-规范身份字段表.md",
         "specs/attachments/04.Att.02-规范信息角色表.md",
         "specs/attachments/04.Att.03-引用关系类型表.md",
         "specs/attachments/04.Att.04-保障要求字段表.md",
         "specs/attachments/04.Att.05-附件身份字段表.md",
         "specs/attachments/04.Att.06-术语表.md",
+        "specs/attachments/05.Att.01-字段注册表结构.md",
+        "specs/attachments/09.Att.01-验证声明字段表.md",
     ]
 
     spec_04 = (ROOT / "specs" / "04-Specs基础规范.md").read_text(encoding="utf-8")

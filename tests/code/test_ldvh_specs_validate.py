@@ -34,7 +34,7 @@ def test_current_specs_validate_without_diagnostics() -> None:
 
     assert result["summary"]["status"] == "ok"
     assert result["summary"]["specs"] == 10
-    assert result["summary"]["attachments"] == 8
+    assert result["summary"]["attachments"] == 11
     assert result["summary"]["foundation_spec_contracts"] == 6
     assert result["diagnostics"] == []
 
@@ -45,10 +45,13 @@ def test_foundation_specs_contracts_are_code_consumable() -> None:
 
     assert set(contracts) == {"03", "05", "06", "07", "08", "09"}
     assert "commit_contract_boundaries" in contracts["03"]["code_consumption"]
+    assert "commit_message_contract_fields" in contracts["03"]["code_consumption"]
     assert "fact_object_admission" in contracts["05"]["code_consumption"]
+    assert "field_registry_contract" in contracts["05"]["code_consumption"]
     assert "context_scenario_gate" in contracts["06"]["code_consumption"]
     assert "runtime_facade_contracts" in contracts["07"]["code_consumption"]
     assert "source_ref_display_requirements" in contracts["08"]["code_consumption"]
+    assert "verification_claim_fields" in contracts["09"]["code_consumption"]
     assert "failure_blocking_rules" in contracts["09"]["code_consumption"]
 
     assert [row["requirement"] for row in contracts["06"]["assurance_measures"]] == [
@@ -113,6 +116,197 @@ def test_foundation_validator_reports_missing_human_gate_boundary(tmp_path: Path
     assert any("Web 状态" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
+def test_fact_model_validator_reports_instance_rule_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/05-事实模型基础规范.md",
+        "事实实例不得定义、重写或授权任何事实模型规则、字段闭集、状态机、验证口径或 Human Gate。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_INSTANCE_RULE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_fact_model_validator_reports_fixture_as_instance_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/05-事实模型基础规范.md",
+        "测试夹具不得被写成事实实例；它只能提供验证输入或负例样例。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_INSTANCE_FIXTURE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_fact_model_validator_reports_migration_as_instance_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/05-事实模型基础规范.md",
+        "`_migration` 迁移材料不得被写成事实实例；它只作为迁移证据或历史来源。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_INSTANCE_MIGRATION_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_fact_model_validator_reports_missing_field_term_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/05-事实模型基础规范.md",
+        "6. 字段名不得与 `specs/attachments/04.Att.06-术语表.md` 中的术语含义冲突；确需复用术语时，必须说明字段语义和术语边界。\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_FIELD_TERM_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_migrated_attachment_contracts_are_code_consumable() -> None:
+    result = ldvh_specs.build_validation(ROOT)
+    contracts = result["attachment_contracts"]
+
+    assert {row["type"].strip("`") for row in contracts["commit_message_contract"]["types"]} >= {"feat", "fix", "docs", "test"}
+    assert {row["scope"].strip("`") for row in contracts["commit_message_contract"]["scopes"]} >= {"specs", "code", "tests"}
+    assert {row["列"].strip("`") for row in contracts["field_registry_contract"]["columns"]} >= {"field_path", "scope", "meaning", "status"}
+    assert {row["字段"] for row in contracts["verification_claim_fields"]["fields"]} == {
+        "验证目标",
+        "验证方式",
+        "验证入口",
+        "输入范围",
+        "关键输出",
+        "结论",
+        "残留风险",
+        "证据回指",
+    }
+
+
+def test_commit_contract_attachment_reports_missing_required_field(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/attachments/03.Att.01-Commit-Message契约字段表.md",
+        "| `description` | 必填 | 简体中文简短说明 |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "COMMIT_CONTRACT_FIELD_MISSING" in _diagnostic_codes(result)
+
+
+def test_field_registry_attachment_reports_missing_registered_column(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/attachments/05.Att.01-字段注册表结构.md",
+        "| `field_path` | 字段名或重要嵌套字段路径 |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FIELD_REGISTRY_COLUMN_MISSING" in _diagnostic_codes(result)
+
+
+def test_verification_claim_attachment_reports_missing_evidence_ref(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/attachments/09.Att.01-验证声明字段表.md",
+        "| 证据回指 | 回指命令输出、测试入口、事实源、截图说明、Human 记录或提交记录 |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "VERIFICATION_CLAIM_FIELD_MISSING" in _diagnostic_codes(result)
+
+
+def test_attachment_parent_reference_is_required(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/03-事实源与Git溯源规范.md",
+        '    - "specs/attachments/03.Att.01-Commit-Message契约字段表.md"\n',
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "ATTACHMENT_PARENT_REFERENCE_MISSING" in _diagnostic_codes(result)
+
+
+def test_fact_source_validator_reports_chat_as_fact_source_gap(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/03-事实源与Git溯源规范.md",
+        "| 聊天和 AI 推理 | 只能作为当前上下文或候选判断，稳定结论必须回写。 |\n",
+        "| AI 推理 | 只能作为当前上下文或候选判断，稳定结论必须回写。 |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "NON_FACT_SOURCE_EXCLUSION_MISSING" in _diagnostic_codes(result)
+
+
+def test_fact_source_validator_reports_process_output_without_ai_qualification(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/03-事实源与Git溯源规范.md",
+        "过程输出必须先被 AI 定性，再决定是否记录为证据或回写。",
+        "过程输出再决定是否记录为证据或回写。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "PROCESS_OUTPUT_QUALIFICATION_MISSING" in _diagnostic_codes(result)
+
+
+def test_fact_source_validator_reports_process_output_without_writeback_fields(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/03-事实源与Git溯源规范.md",
+        "回写必须说明目标事实源、来源证据、采纳范围和验证方式。",
+        "回写必须说明来源证据和验证方式。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "PROCESS_OUTPUT_WRITEBACK_REQUIREMENT_MISSING" in _diagnostic_codes(result)
+
+
+def test_verification_validator_reports_test_output_as_fact_source_gap(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/09-测试与验证规范.md",
+        "测试证据用于支持判断，不成为事实源。测试输出、覆盖率、截图、trace、缓存、Mock 数据和临时报告不得替代 specs、事实对象、Git 记录或 Human Gate。\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "TEST_OUTPUT_FACT_SOURCE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_verification_validator_reports_missing_failure_blocking_rule(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/09-测试与验证规范.md",
+        "2. 关键验证未运行且没有等价验证；\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FAILURE_BLOCKING_RULE_MISSING" in _diagnostic_codes(result)
+
+
 def test_formal_identity_and_role_sections_are_parseable() -> None:
     objects = {obj.object_id: obj for obj in ldvh_specs.load_formal_objects(ROOT)}
 
@@ -123,6 +317,7 @@ def test_formal_identity_and_role_sections_are_parseable() -> None:
         "01.Att.06",
         "02",
         "03",
+        "03.Att.01",
         "04",
         "04.Att.01",
         "04.Att.02",
@@ -131,10 +326,12 @@ def test_formal_identity_and_role_sections_are_parseable() -> None:
         "04.Att.05",
         "04.Att.06",
         "05",
+        "05.Att.01",
         "06",
         "07",
         "08",
         "09",
+        "09.Att.01",
     }
     assert objects["01"].metadata["role_sections"]["rule_body"] == [
         "5. 内部保障",

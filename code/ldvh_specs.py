@@ -14,6 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 TIMING_TABLE_PATH = "specs/attachments/01.Att.01-保障消费时机表.md"
 TAKEOVER_MATRIX_PATH = "specs/attachments/01.Att.06-保障机制承接矩阵.md"
 AI_BEHAVIOR_SPEC_PATH = "specs/02-AI行为规范.md"
+COMMIT_MESSAGE_CONTRACT_PATH = "specs/attachments/03.Att.01-Commit-Message契约字段表.md"
+FIELD_REGISTRY_CONTRACT_PATH = "specs/attachments/05.Att.01-字段注册表结构.md"
+VERIFICATION_CLAIM_FIELDS_PATH = "specs/attachments/09.Att.01-验证声明字段表.md"
 
 SHORT_SPEC_REFS = {
     "00": "specs/00-理念与构成.md",
@@ -99,9 +102,94 @@ AI_BEHAVIOR_COLUMNS = [
 ]
 TIMING_COLUMNS = ["消费时机", "触发点", "消费主体", "用途"]
 TAKEOVER_COLUMNS = ["需求ID", "触发消费时机", "行动指南承接", "Hook 承接"]
+COMMIT_MESSAGE_FIELD_COLUMNS = ["字段", "要求", "说明"]
+COMMIT_TYPE_COLUMNS = ["type", "简体中文", "English", "含义"]
+COMMIT_SCOPE_COLUMNS = ["scope", "简体中文", "English", "含义"]
+COMMIT_BODY_CONDITION_COLUMNS = ["条件类型", "条件"]
+FIELD_REGISTRY_COLUMNS = ["列", "含义"]
+FIELD_REGISTRY_ALLOWED_COLUMNS = ["注册列", "允许值或写法"]
+FIELD_REGISTRY_CODE_CHECK_COLUMNS = ["code_check_kind", "可机械消费维度", "边界"]
+VERIFICATION_CLAIM_COLUMNS = ["字段", "要求"]
+VERIFICATION_COMPLETE_CONDITION_COLUMNS = ["条件", "内容"]
+VERIFICATION_FORBIDDEN_COLUMNS = ["写法", "边界"]
 FOUNDATION_SPEC_IDS = ("03", "05", "06", "07", "08", "09")
 ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
 VERIFICATION_COLUMNS = ["检查类别", "检查内容", "不满足时"]
+FACT_MODEL_BOUNDARY_REQUIREMENTS = [
+    {
+        "code": "FACT_INSTANCE_RULE_BOUNDARY_MISSING",
+        "section": "事实模型与事实实例",
+        "message": "05 必须声明事实实例不得定义或重写事实模型规则",
+        "terms": ["事实实例不得定义", "事实模型规则", "Human Gate"],
+    },
+    {
+        "code": "FACT_INSTANCE_FIXTURE_BOUNDARY_MISSING",
+        "section": "事实模型与事实实例",
+        "message": "05 必须声明测试夹具不得被写成事实实例",
+        "terms": ["测试夹具不得被写成事实实例"],
+    },
+    {
+        "code": "FACT_INSTANCE_MIGRATION_BOUNDARY_MISSING",
+        "section": "事实模型与事实实例",
+        "message": "05 必须声明迁移材料不得被写成事实实例",
+        "terms": ["`_migration` 迁移材料不得被写成事实实例"],
+    },
+    {
+        "code": "FACT_OBJECT_ADMISSION_VALUE_MISSING",
+        "section": "事实对象准入与分流",
+        "message": "05 必须声明事实对象准入判断说明对象化价值和减少的 AI 负担",
+        "terms": ["对象化价值", "减少的 AI 负担"],
+    },
+    {
+        "code": "FACT_FIELD_TERM_BOUNDARY_MISSING",
+        "section": "字段、状态与证据边界",
+        "message": "05 必须声明字段名不得与术语表冲突",
+        "terms": ["字段名不得", "术语表", "字段语义和术语边界"],
+    },
+    {
+        "code": "FACT_MEMBER_MIGRATION_BOUNDARY_MISSING",
+        "section": "待补齐事项",
+        "message": "05 必须声明 Spark/WorkCase/ADR/Pitfall/Study 成员规范迁移判断条件",
+        "terms": ["Spark", "WorkCase", "ADR", "Pitfall", "Study", "对象化价值", "Code/tests 闭环"],
+    },
+]
+FACT_SOURCE_EVIDENCE_REQUIREMENTS = [
+    {
+        "code": "NON_FACT_SOURCE_EXCLUSION_MISSING",
+        "path": SHORT_SPEC_REFS["03"],
+        "section": "事实源边界",
+        "message": "03 必须列出非事实源排除项",
+        "terms": ["聊天", "Code 输出", "测试输出", "Web 页面状态", "runtime receipt", "`_migration` 材料", "Git commit records"],
+    },
+    {
+        "code": "PROCESS_OUTPUT_QUALIFICATION_MISSING",
+        "path": SHORT_SPEC_REFS["03"],
+        "section": "过程输出、证据与回写",
+        "message": "03 必须声明过程输出先由 AI 定性",
+        "terms": ["过程输出必须先被 AI 定性"],
+    },
+    {
+        "code": "PROCESS_OUTPUT_WRITEBACK_REQUIREMENT_MISSING",
+        "path": SHORT_SPEC_REFS["03"],
+        "section": "过程输出、证据与回写",
+        "message": "03 必须声明过程输出回写所需字段",
+        "terms": ["目标事实源", "来源证据", "采纳范围", "验证方式"],
+    },
+    {
+        "code": "TEST_OUTPUT_FACT_SOURCE_BOUNDARY_MISSING",
+        "path": SHORT_SPEC_REFS["09"],
+        "section": "测试证据与同步触发",
+        "message": "09 必须声明测试输出不得替代事实源",
+        "terms": ["测试输出", "覆盖率", "截图", "trace", "缓存", "Mock 数据", "临时报告", "不得替代 specs、事实对象、Git 记录或 Human Gate"],
+    },
+    {
+        "code": "FAILURE_BLOCKING_RULE_MISSING",
+        "path": SHORT_SPEC_REFS["09"],
+        "section": "验证声明与失败阻断",
+        "message": "09 必须声明失败阻断边界",
+        "terms": ["必须运行的测试失败", "关键验证未运行", "证据无法回指", "Human 验收尚未发生", "仅有工具成功输出"],
+    },
+]
 FOUNDATION_SPEC_CONTRACTS = {
     "03": {
         "path": SHORT_SPEC_REFS["03"],
@@ -111,6 +199,7 @@ FOUNDATION_SPEC_CONTRACTS = {
             "process_evidence_boundaries",
             "git_traceability_rules",
             "commit_contract_boundaries",
+            "commit_message_contract_fields",
             "source_ref_requirements",
             "stop_conditions",
         ],
@@ -143,6 +232,7 @@ FOUNDATION_SPEC_CONTRACTS = {
             "fact_instance_boundaries",
             "evidence_routing",
             "field_state_boundary",
+            "field_registry_contract",
             "stop_conditions",
         ],
         "required_rule_body_sections": [
@@ -245,6 +335,7 @@ FOUNDATION_SPEC_CONTRACTS = {
         "required_code_consumption": [
             "ldvh_spec_metadata",
             "verification_rules",
+            "verification_claim_fields",
             "test_evidence_boundaries",
             "failure_blocking_rules",
             "equivalent_verification_rules",
@@ -504,6 +595,34 @@ def parse_takeover_matrix(root: Path = ROOT) -> list[dict[str, str]]:
         }
         for row in rows
     ]
+
+
+def parse_commit_message_contract(root: Path = ROOT) -> dict[str, list[dict[str, str]]]:
+    raw = (root / COMMIT_MESSAGE_CONTRACT_PATH).read_text(encoding="utf-8")
+    return {
+        "fields": find_table(raw, COMMIT_MESSAGE_FIELD_COLUMNS),
+        "types": find_table(raw, COMMIT_TYPE_COLUMNS),
+        "scopes": find_table(raw, COMMIT_SCOPE_COLUMNS),
+        "body_conditions": find_table(raw, COMMIT_BODY_CONDITION_COLUMNS),
+    }
+
+
+def parse_field_registry_contract(root: Path = ROOT) -> dict[str, list[dict[str, str]]]:
+    raw = (root / FIELD_REGISTRY_CONTRACT_PATH).read_text(encoding="utf-8")
+    return {
+        "columns": find_table(raw, FIELD_REGISTRY_COLUMNS),
+        "allowed_values": find_table(raw, FIELD_REGISTRY_ALLOWED_COLUMNS),
+        "code_check_kinds": find_table(raw, FIELD_REGISTRY_CODE_CHECK_COLUMNS),
+    }
+
+
+def parse_verification_claim_fields(root: Path = ROOT) -> dict[str, list[dict[str, str]]]:
+    raw = (root / VERIFICATION_CLAIM_FIELDS_PATH).read_text(encoding="utf-8")
+    return {
+        "fields": find_table(raw, VERIFICATION_CLAIM_COLUMNS),
+        "complete_conditions": find_table(raw, VERIFICATION_COMPLETE_CONDITION_COLUMNS),
+        "forbidden_writings": find_table(raw, VERIFICATION_FORBIDDEN_COLUMNS),
+    }
 
 
 def _table_rows_for_section(sections: dict[str, dict[str, str]], section_name: str, columns: list[str]) -> list[dict[str, str]]:
@@ -913,6 +1032,140 @@ def validate_foundation_spec_contracts(contracts: list[dict[str, Any]]) -> list[
     return diagnostics
 
 
+def validate_fact_model_boundaries(root: Path = ROOT) -> list[Diagnostic]:
+    path = SHORT_SPEC_REFS["05"]
+    raw = (root / path).read_text(encoding="utf-8")
+    sections = h2_sections(raw)
+    diagnostics: list[Diagnostic] = []
+
+    for requirement in FACT_MODEL_BOUNDARY_REQUIREMENTS:
+        section = sections.get(requirement["section"])
+        if not section:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    requirement["code"],
+                    path,
+                    f"05 缺少可消费章节: {requirement['section']}",
+                )
+            )
+            continue
+        body = section["body"]
+        missing_terms = [term for term in requirement["terms"] if term not in body]
+        if missing_terms:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    requirement["code"],
+                    path,
+                    f"{requirement['message']}: {', '.join(missing_terms)}",
+                )
+            )
+
+    return diagnostics
+
+
+def validate_fact_source_and_verification_boundaries(root: Path = ROOT) -> list[Diagnostic]:
+    raw_by_path: dict[str, str] = {}
+    sections_by_path: dict[str, dict[str, dict[str, str]]] = {}
+    diagnostics: list[Diagnostic] = []
+
+    for requirement in FACT_SOURCE_EVIDENCE_REQUIREMENTS:
+        path = requirement["path"]
+        if path not in raw_by_path:
+            raw_by_path[path] = (root / path).read_text(encoding="utf-8")
+            sections_by_path[path] = h2_sections(raw_by_path[path])
+        section = sections_by_path[path].get(requirement["section"])
+        if not section:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    requirement["code"],
+                    path,
+                    f"缺少可消费章节: {requirement['section']}",
+                )
+            )
+            continue
+        missing_terms = [term for term in requirement["terms"] if term not in section["body"]]
+        if missing_terms:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    requirement["code"],
+                    path,
+                    f"{requirement['message']}: {', '.join(missing_terms)}",
+                )
+            )
+
+    return diagnostics
+
+
+def _table_has_values(rows: list[dict[str, str]], column: str, expected_values: list[str]) -> list[str]:
+    actual = {strip_inline_code(row.get(column, "")) for row in rows}
+    return [value for value in expected_values if value not in actual]
+
+
+def _validate_attachment_authorized_by_parent(
+    root: Path,
+    attachment_path: str,
+    parent_path: str,
+) -> list[Diagnostic]:
+    raw = (root / parent_path).read_text(encoding="utf-8")
+    metadata = first_yaml_block(raw, parent_path)["ldvh_spec"]
+    related_specs = metadata.get("related_specs", [])
+    if attachment_path in related_specs:
+        return []
+    return [
+        Diagnostic(
+            "error",
+            "ATTACHMENT_PARENT_REFERENCE_MISSING",
+            parent_path,
+            f"父规范 related_specs 缺少授权附件: {attachment_path}",
+        )
+    ]
+
+
+def validate_attachment_contracts(root: Path = ROOT) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    diagnostics.extend(_validate_attachment_authorized_by_parent(root, COMMIT_MESSAGE_CONTRACT_PATH, SHORT_SPEC_REFS["03"]))
+    diagnostics.extend(_validate_attachment_authorized_by_parent(root, FIELD_REGISTRY_CONTRACT_PATH, SHORT_SPEC_REFS["05"]))
+    diagnostics.extend(_validate_attachment_authorized_by_parent(root, VERIFICATION_CLAIM_FIELDS_PATH, SHORT_SPEC_REFS["09"]))
+
+    commit_contract = parse_commit_message_contract(root)
+    if not commit_contract["fields"]:
+        diagnostics.append(Diagnostic("error", "COMMIT_CONTRACT_FIELD_TABLE_MISSING", COMMIT_MESSAGE_CONTRACT_PATH, "commit message 字段表缺失"))
+    for value in _table_has_values(commit_contract["fields"], "字段", ["type", "scope", "description", "body", "footer"]):
+        diagnostics.append(Diagnostic("error", "COMMIT_CONTRACT_FIELD_MISSING", COMMIT_MESSAGE_CONTRACT_PATH, f"commit message 字段缺失: {value}"))
+    for value in _table_has_values(commit_contract["types"], "type", ["feat", "fix", "docs", "test", "chore", "revert"]):
+        diagnostics.append(Diagnostic("error", "COMMIT_TYPE_ENUM_MISSING", COMMIT_MESSAGE_CONTRACT_PATH, f"commit type 缺失: {value}"))
+    for value in _table_has_values(commit_contract["scopes"], "scope", ["specs", "code", "web", "tests", "workcase", "spark"]):
+        diagnostics.append(Diagnostic("error", "COMMIT_SCOPE_ENUM_MISSING", COMMIT_MESSAGE_CONTRACT_PATH, f"commit scope 缺失: {value}"))
+    for value in _table_has_values(commit_contract["body_conditions"], "条件类型", ["高影响文件", "事实对象字段", "多文件范围", "边界变化"]):
+        diagnostics.append(Diagnostic("error", "COMMIT_BODY_CONDITION_MISSING", COMMIT_MESSAGE_CONTRACT_PATH, f"commit body 条件缺失: {value}"))
+
+    field_registry = parse_field_registry_contract(root)
+    if not field_registry["columns"]:
+        diagnostics.append(Diagnostic("error", "FIELD_REGISTRY_TABLE_MISSING", FIELD_REGISTRY_CONTRACT_PATH, "字段注册表结构缺失"))
+    for value in _table_has_values(field_registry["columns"], "列", ["field_path", "scope", "meaning", "format_kind", "value_shape", "code_check_kind", "status", "replacement"]):
+        diagnostics.append(Diagnostic("error", "FIELD_REGISTRY_COLUMN_MISSING", FIELD_REGISTRY_CONTRACT_PATH, f"字段注册列缺失: {value}"))
+    for value in _table_has_values(field_registry["allowed_values"], "注册列", ["format_kind", "value_shape", "ref_kind", "code_check_kind", "web_render_kind", "status"]):
+        diagnostics.append(Diagnostic("error", "FIELD_REGISTRY_ALLOWED_VALUE_MISSING", FIELD_REGISTRY_CONTRACT_PATH, f"字段注册闭集缺失: {value}"))
+    for value in _table_has_values(field_registry["code_check_kinds"], "code_check_kind", ["none", "format", "ref", "enum", "structured", "deprecated", "owner_state"]):
+        diagnostics.append(Diagnostic("error", "FIELD_REGISTRY_CODE_CHECK_KIND_MISSING", FIELD_REGISTRY_CONTRACT_PATH, f"字段注册 Code 校验维度缺失: {value}"))
+
+    verification_claims = parse_verification_claim_fields(root)
+    if not verification_claims["fields"]:
+        diagnostics.append(Diagnostic("error", "VERIFICATION_CLAIM_FIELD_TABLE_MISSING", VERIFICATION_CLAIM_FIELDS_PATH, "验证声明字段表缺失"))
+    for value in _table_has_values(verification_claims["fields"], "字段", ["验证目标", "验证方式", "验证入口", "输入范围", "关键输出", "结论", "残留风险", "证据回指"]):
+        diagnostics.append(Diagnostic("error", "VERIFICATION_CLAIM_FIELD_MISSING", VERIFICATION_CLAIM_FIELDS_PATH, f"验证声明字段缺失: {value}"))
+    for value in _table_has_values(verification_claims["complete_conditions"], "条件", ["目标匹配", "入口可复现", "输入明确", "输出明确", "风险记录", "证据回指"]):
+        diagnostics.append(Diagnostic("error", "VERIFICATION_COMPLETE_CONDITION_MISSING", VERIFICATION_CLAIM_FIELDS_PATH, f"完整验证条件缺失: {value}"))
+    for value in _table_has_values(verification_claims["forbidden_writings"], "写法", ["只列命令", "未运行测试但暗示已验证", "局部测试通过写成完整验证", "工具无报错写成 Human 已确认", "看起来正确"]):
+        diagnostics.append(Diagnostic("error", "VERIFICATION_FORBIDDEN_WRITING_MISSING", VERIFICATION_CLAIM_FIELDS_PATH, f"验证声明禁止写法缺失: {value}"))
+
+    return diagnostics
+
+
 def build_validation(root: Path = ROOT) -> dict[str, Any]:
     objects = load_formal_objects(root)
     specs = [obj for obj in objects if obj.object_type == "spec"]
@@ -921,6 +1174,11 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     requirements = parse_ai_behavior_requirements(root)
     takeover_matrix = parse_takeover_matrix(root)
     foundation_spec_contracts = parse_foundation_spec_contracts(objects, root)
+    attachment_contracts = {
+        "commit_message_contract": parse_commit_message_contract(root),
+        "field_registry_contract": parse_field_registry_contract(root),
+        "verification_claim_fields": parse_verification_claim_fields(root),
+    }
 
     diagnostics: list[Diagnostic] = []
     diagnostics.extend(validate_formal_objects(objects, root))
@@ -928,6 +1186,9 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_ai_behavior_requirements(requirements, timings, objects, root))
     diagnostics.extend(validate_takeover_matrix(takeover_matrix, requirements, timings))
     diagnostics.extend(validate_foundation_spec_contracts(foundation_spec_contracts))
+    diagnostics.extend(validate_fact_model_boundaries(root))
+    diagnostics.extend(validate_fact_source_and_verification_boundaries(root))
+    diagnostics.extend(validate_attachment_contracts(root))
 
     diagnostic_dicts = [diagnostic.to_dict() for diagnostic in diagnostics]
     status = "ok" if not diagnostic_dicts else "failed"
@@ -971,6 +1232,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "ai_behavior_requirements": requirements,
         "takeover_matrix": takeover_matrix,
         "foundation_spec_contracts": foundation_spec_contracts,
+        "attachment_contracts": attachment_contracts,
         "diagnostics": diagnostic_dicts,
     }
 

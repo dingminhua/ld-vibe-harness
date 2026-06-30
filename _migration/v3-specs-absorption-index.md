@@ -94,7 +94,26 @@ V3 术语使用：
 
 术语整治必须先于后续事实模型、附件、行动模板和 Web 深入迁移。规则/事实边界整治是 5B-0 的最高优先子项，应先审计 00/03/04/05 中是否把规则系统和事实系统混写。术语表 `specs/attachments/04.Att.06-术语表.md` 应在 5B-0 中同步，且不得把术语表、迁移索引、Code/tests 或子 agent 输出升级为正式规则源。
 
-## 6. Stop Conditions
+## 6. 5B-1/2/3 执行结果
+
+| 子阶段 | 状态 | 正式迁入或增强 | Code/tests 闭环 | 验证结果 |
+|---|---|---|---|---|
+| 5B-1 | 已完成 | `05` 增强事实实例不得定义规则、测试夹具/迁移材料不得写成事实实例、对象准入说明 AI 负担、字段名术语边界、成员规范后置判断条件 | `validate_fact_model_boundaries` 与 05 负例测试 | validator 0 diagnostics；tests 63 passed |
+| 5B-2 | 已完成 | 新增 `03.Att.01-Commit-Message契约字段表`、`05.Att.01-字段注册表结构`、`09.Att.01-验证声明字段表`；新增 `_migration/5B-2-attachment-disposition.md` 覆盖 48 个 V2 附件分流 | `validate_attachment_contracts` 解析 commit 契约、字段注册结构、验证声明字段并覆盖负例 | validator 0 diagnostics；tests 68 passed |
+| 5B-3 | 已完成 | 保持 03/09 正文边界，增强 Code 对非事实源、过程输出回写、测试证据、失败阻断、验证声明附件字段的检查 | `validate_fact_source_and_verification_boundaries` 与 03/09 负例测试 | validator 0 diagnostics；tests 73 passed |
+
+本轮附件分流结果：
+
+| 处理类型 | 结果 |
+|---|---|
+| 迁附件 | `07.Att.02/03/04/08` 合并迁入 `03.Att.01`；`02.Att.01` 结构迁入 `05.Att.01`；`08.Att.02` 迁入 `09.Att.01` |
+| 转正文 | 事实源归属、非事实源排除、过程输出回写、测试证据、失败阻断、等价验证等父层规则已由 03/09 正文承接 |
+| 转Code/tests | 成员一致性、双读映射、字段矩阵、Code 诊断、preflight、commit 样例、同步触发和回归入口等进入 validator/tests 或后续实现测试 |
+| 后置 | 成员模板/成员身份字段后置到事实模型成员规范；Web DTO/API/Confirm UI/缓存/回归后置到 5B-5 |
+| 留_migration | 清退登记、迁移双读材料、Web 差距审计模板保留为迁移证据 |
+| 废弃 | V2 知识地图输入范围表、知识地图投影 Schema 表废弃为 legacy_alias，由 Action Guide/行动指南承接 |
+
+## 7. Stop Conditions
 
 出现以下情况时暂停并回到正式 specs 或 Human Gate：
 

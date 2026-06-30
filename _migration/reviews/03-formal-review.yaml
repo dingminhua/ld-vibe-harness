@@ -1,8 +1,8 @@
 target_spec: "specs/03-事实源与Git溯源规范.md"
-target_sha256: "14d7ce31a54779ad230f823d8f0f3e7f8a9d68c3b4c1266a98307a216a9b0a0d"
+target_sha256: "2af2f3abfa7573dc0d9fe7c38f25b3a0f149ae6f9b347b97249e9f409deb972f"
 change_type: "addition"
 mapping_evidence:
-  path: "_migration/v3-specs-absorption-index.md"
+  path: "_migration/5B-2-attachment-disposition.md"
 code_verification:
   command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true

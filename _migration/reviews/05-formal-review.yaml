@@ -1,8 +1,8 @@
 target_spec: "specs/05-事实模型基础规范.md"
-target_sha256: "82d4a8215e61fe0fc2aed350fa935eddf05b37633ce0598b05a38cce16b6d36a"
+target_sha256: "040e382845cc064c87c341f5696c9bb2017d38bc1304bb3c2c446a314beab52e"
 change_type: "addition"
 mapping_evidence:
-  path: "_migration/v3-specs-absorption-index.md"
+  path: "_migration/5B-2-attachment-disposition.md"
 code_verification:
   command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true

@@ -23,12 +23,14 @@ ldvh_spec:
     - "specs/07-Code确定性执行规范.md"
     - "specs/08-Web信息同步规范.md"
     - "specs/09-测试与验证规范.md"
+    - "specs/attachments/03.Att.01-Commit-Message契约字段表.md"
   code_consumption:
     - "ldvh_spec_metadata"
     - "fact_source_boundaries"
     - "process_evidence_boundaries"
     - "git_traceability_rules"
     - "commit_contract_boundaries"
+    - "commit_message_contract_fields"
     - "source_ref_requirements"
     - "stop_conditions"
   role_sections:
@@ -120,7 +122,7 @@ V3 保留 commit 契约的父层规则：
 4. 影响正式 specs、Code、tests、Web、事实源边界或环境入口的提交，应在正文说明关键变更、验证和风险；
 5. Git 提交记录不替代事实源文件、事实对象、Human Gate 或验证声明。
 
-具体 type、scope、body 条件、message 字段、样例和 parser 规则应由后续授权附件、Code 和 tests 承接。未稳定前，V2 `07.Att.*` 只能作为迁移来源，不自动成为 V3 附件。
+具体 type、scope、body 条件和 message 字段由 `specs/attachments/03.Att.01-Commit-Message契约字段表.md` 承接；该附件只维护字段闭集、枚举和机器契约，不承载提交流程、Human Gate 或 Hook 实现。样例和 parser 规则由 Code 和 tests 承接。未稳定前，其它 V2 `07.Att.*` 只能作为迁移来源，不自动成为 V3 附件。
 
 ## 8. 保障措施
 

@@ -1,8 +1,8 @@
 target_spec: "specs/09-测试与验证规范.md"
-target_sha256: "b437316495ffb15ed62a997a12db0cb1ef42e7e9f702c1526ed6fe30db08a9bb"
+target_sha256: "16d800631f5980f0598ece517e7e066e56ccf8ef5753d9b3fd3738aa0f2ef22a"
 change_type: "addition"
 mapping_evidence:
-  path: "_migration/v3-specs-absorption-index.md"
+  path: "_migration/5B-2-attachment-disposition.md"
 code_verification:
   command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
