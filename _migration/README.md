@@ -33,3 +33,5 @@
 `_migration/v3-migration-execution-plan.md` 记录 V3 迁移执行节奏。它说明大量 specs 迁移应按消费闭环分批进入正式 `specs/`，而不是当前一次性导入或最后整批搬运；它仍是临时计划，不授权正式规则或 Code 行为。
 
 `_migration/stage-5-v2-absorption-checklist.md` 记录第 5 阶段开始前必须完成的 V2 来源吸收、语义转换和测试前置条件。它用于阻止跳过吸收清单直接重写 Hook、Commit 或行动模板代码；它仍是临时证据，不授权环境接入、Hook 安装或提交门禁。
+
+`_migration/v3-formal-spec-numbering-decision.md` 记录 V3 正式 specs 的目标编号和重编号理由。它用于指导当前 02/03/04 重排和后续 V2 吸收归口；它仍是临时决策证据，不替代正式 `specs/` 正文。
