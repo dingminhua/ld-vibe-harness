@@ -1,0 +1,16 @@
+target_spec: "specs/06-行动模板基础规范.md"
+target_sha256: "d58c6ace628ffe3e3b8cc9f7918b673851a32cbdc511cc289fbd7e02a93eecb5"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/v3-specs-absorption-index.md"
+code_verification:
+  command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover the new 06 action template foundation candidate as a formal spec."
+subagent_review:
+  agent_id: "019f16f5-0d83-74a3-a526-cae9622aeb50"
+  reviewer: "Kant"
+  verdict: "pass"
+  receipt: "Read-only subagent review confirmed V2 orchestration and Skill workflow material should convert to action templates, Action Guide hints, or external wrappers instead of V3 top-level Skill."
+  unresolved_blockers: []
+warnings: []

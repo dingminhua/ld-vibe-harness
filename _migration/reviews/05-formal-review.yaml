@@ -1,0 +1,16 @@
+target_spec: "specs/05-事实模型基础规范.md"
+target_sha256: "85dc0004d0d6878ec8a8f072925f7b483add86aeab875e9d75df9b7e2a1058a3"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/v3-specs-absorption-index.md"
+code_verification:
+  command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover the new 05 fact model foundation candidate as a formal spec."
+subagent_review:
+  agent_id: "019f16f5-0d83-74a3-a526-cae9622aeb50"
+  reviewer: "Kant"
+  verdict: "pass"
+  receipt: "Read-only subagent review identified work-object and fact-model material should move to 05, not remain under the old 03 target."
+  unresolved_blockers: []
+warnings: []

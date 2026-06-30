@@ -26,7 +26,7 @@ absorbed_into_02:
 
 not_absorbed_into_02:
   - "Specs structure, attachment boundary, formal review schema: owned by 01."
-  - "Work object schemas and lifecycle: owned by 03."
-  - "Context / Scenario / Gate orchestration model: owned by 04."
-  - "Skill input, steps, command details, and output format: owned by skills."
-  - "Code diagnostics and compiler schema: owned by later Code spec."
+  - "Fact object schemas and lifecycle: owned by 05."
+  - "Context / Scenario / Gate action template model: owned by 06."
+  - "Skill input, steps, command details, and output format: converted to action templates, Action Guide hints, or external environment wrappers."
+  - "Code diagnostics and compiler schema: owned by 07."

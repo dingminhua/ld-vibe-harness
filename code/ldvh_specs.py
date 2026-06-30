@@ -19,7 +19,13 @@ SHORT_SPEC_REFS = {
     "00": "specs/00-理念与构成.md",
     "01": "specs/01-保障与衔接.md",
     "02": "specs/02-AI行为规范.md",
+    "03": "specs/03-事实源与Git追溯规范.md",
     "04": "specs/04-Specs基础规范.md",
+    "05": "specs/05-事实模型基础规范.md",
+    "06": "specs/06-行动模板基础规范.md",
+    "07": "specs/07-Code确定性执行规范.md",
+    "08": "specs/08-Web信息同步规范.md",
+    "09": "specs/09-测试与验证规范.md",
 }
 BASE_ACTION_GUIDE_SOURCE_REFS = [
     {"path": "specs/00-理念与构成.md", "role": "value_anchor"},
@@ -31,14 +37,26 @@ BASE_ACTION_GUIDE_SOURCE_REFS = [
 PREFLIGHT_BASE_READ_PATHS = [
     "specs/00-理念与构成.md",
     "specs/01-保障与衔接.md",
-    "specs/04-Specs基础规范.md",
     "specs/02-AI行为规范.md",
+    "specs/03-事实源与Git追溯规范.md",
+    "specs/04-Specs基础规范.md",
 ]
+PREFLIGHT_TYPE_READ_PATHS = {
+    "code": [
+        "specs/07-Code确定性执行规范.md",
+        "specs/09-测试与验证规范.md",
+    ],
+    "tests": [
+        "specs/09-测试与验证规范.md",
+        "specs/07-Code确定性执行规范.md",
+    ],
+}
 HIGH_IMPACT_SPEC_PATHS = {
     "specs/00-理念与构成.md",
     "specs/01-保障与衔接.md",
-    "specs/04-Specs基础规范.md",
     "specs/02-AI行为规范.md",
+    "specs/03-事实源与Git追溯规范.md",
+    "specs/04-Specs基础规范.md",
 }
 RUNTIME_REQUIRED_ENTRY_PATHS = [
     "specs/00-理念与构成.md",
@@ -431,7 +449,7 @@ def validate_ai_behavior_requirements(
                 "error",
                 "AI_BEHAVIOR_CODE_CONSUMPTION_MISSING",
                 AI_BEHAVIOR_SPEC_PATH,
-                "03 必须声明 ai_behavior_assurance_requirements",
+                "02 必须声明 ai_behavior_assurance_requirements",
             )
         )
 
@@ -545,8 +563,14 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "source_refs": [
             {"path": "specs/00-理念与构成.md", "role": "value_anchor"},
             {"path": "specs/01-保障与衔接.md", "role": "assurance_boundary"},
-            {"path": "specs/04-Specs基础规范.md", "role": "specs_structure"},
             {"path": "specs/02-AI行为规范.md", "role": "ai_behavior_requirements"},
+            {"path": "specs/03-事实源与Git追溯规范.md", "role": "fact_source_traceability"},
+            {"path": "specs/04-Specs基础规范.md", "role": "specs_structure"},
+            {"path": "specs/05-事实模型基础规范.md", "role": "fact_model_foundation"},
+            {"path": "specs/06-行动模板基础规范.md", "role": "action_template_foundation"},
+            {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
+            {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},
+            {"path": "specs/09-测试与验证规范.md", "role": "test_verification"},
             {"path": TIMING_TABLE_PATH, "role": "consumption_timing_registry"},
             {"path": TAKEOVER_MATRIX_PATH, "role": "takeover_matrix"},
         ],
@@ -777,7 +801,7 @@ def classify_target_path(target_path: str) -> dict[str, str]:
             "target_path": normalized,
             "target_type": "core_spec",
             "impact": "high",
-            "reason": "目标属于 00/01/02/03 核心规范，可能影响上位价值、保障、结构或 AI 行为边界。",
+            "reason": "目标属于 00/01/02/03/04 核心规范，可能影响上位价值、保障、事实源、结构或 AI 行为边界。",
         }
     if normalized.startswith("specs/attachments/"):
         return {
@@ -826,6 +850,7 @@ def preflight_read_plan_for_target(classification: dict[str, str]) -> list[dict[
     target_path = classification["target_path"]
     target_type = classification["target_type"]
     read_paths = list(PREFLIGHT_BASE_READ_PATHS)
+    read_paths.extend(PREFLIGHT_TYPE_READ_PATHS.get(target_type, []))
     if target_type in {"spec", "core_spec", "attachment"} and target_path:
         read_paths.append(target_path)
     if target_type == "migration":
@@ -877,7 +902,7 @@ def build_preflight(
             "level": "warning",
             "code": "PREFLIGHT_HUMAN_GATE_RISK",
             "path": normalized_target,
-            "message": "目标可能改变 00/01/02/03 的上位结构、保障、规格或 AI 行为边界；需要评估 Human Gate。",
+            "message": "目标可能改变 00/01/02/03/04 的上位结构、保障、事实源、规格或 AI 行为边界；需要评估 Human Gate。",
             "disposition": "human_gate_review",
         })
 

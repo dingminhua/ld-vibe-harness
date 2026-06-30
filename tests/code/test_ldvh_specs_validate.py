@@ -15,7 +15,7 @@ def test_current_specs_validate_without_diagnostics() -> None:
     result = ldvh_specs.build_validation(ROOT)
 
     assert result["summary"]["status"] == "ok"
-    assert result["summary"]["specs"] == 4
+    assert result["summary"]["specs"] == 10
     assert result["summary"]["attachments"] == 8
     assert result["diagnostics"] == []
 
@@ -29,6 +29,7 @@ def test_formal_identity_and_role_sections_are_parseable() -> None:
         "01.Att.01",
         "01.Att.06",
         "02",
+        "03",
         "04",
         "04.Att.01",
         "04.Att.02",
@@ -36,6 +37,11 @@ def test_formal_identity_and_role_sections_are_parseable() -> None:
         "04.Att.04",
         "04.Att.05",
         "04.Att.06",
+        "05",
+        "06",
+        "07",
+        "08",
+        "09",
     }
     assert objects["01"].metadata["role_sections"]["rule_body"] == [
         "5. 内部保障",
@@ -226,6 +232,11 @@ def test_preflight_code_target_is_unverifiable_not_authorization() -> None:
     assert preflight["summary"]["status"] == "review_required"
     assert preflight["summary"]["unverifiable"] == 1
     assert preflight["diagnostics"][0]["code"] == "PREFLIGHT_CODE_OUTPUT_NOT_AUTHORIZATION"
+    read_paths = {item["path"] for item in preflight["required_read_plan"]}
+    assert {
+        "specs/07-Code确定性执行规范.md",
+        "specs/09-测试与验证规范.md",
+    }.issubset(read_paths)
 
 
 def test_preflight_attachment_keeps_boundary_warning() -> None:
@@ -249,6 +260,11 @@ def test_preflight_known_tests_target_uses_diagnostic_clear_status() -> None:
 
     assert preflight["summary"]["status"] == "diagnostic_clear"
     assert preflight["diagnostics"] == []
+    read_paths = {item["path"] for item in preflight["required_read_plan"]}
+    assert {
+        "specs/07-Code确定性执行规范.md",
+        "specs/09-测试与验证规范.md",
+    }.issubset(read_paths)
 
 
 def test_preflight_unknown_target_blocks() -> None:

@@ -1,0 +1,16 @@
+target_spec: "specs/09-测试与验证规范.md"
+target_sha256: "04d2126af09456cbd116b799c31365ce8fd890dc7f5a8789d3322d479f839927"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/v3-specs-absorption-index.md"
+code_verification:
+  command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover the new 09 testing and verification candidate as a formal spec."
+subagent_review:
+  agent_id: "019f16f5-308a-7091-98cf-bb1247f4b748"
+  reviewer: "Lorentz"
+  verdict: "pass"
+  receipt: "Read-only subagent review identified tests/code fixed counts and review-gate risks; the current update synchronizes the formal spec test expectations."
+  unresolved_blockers: []
+warnings: []

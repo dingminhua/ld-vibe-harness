@@ -1,16 +1,16 @@
-target_spec: "specs/03-工作对象基础规范.md"
-target_sha256: "aa420e44d934d6241bafe79466a8139c3fac6967e306e2cf5bcfad03822e5e72"
+target_spec: "specs/03-事实源与Git追溯规范.md"
+target_sha256: "4f80af274f51ba05d84c0117862d41aa3cb97670de6ba57295a9f8b154f00788"
 change_type: "addition"
 mapping_evidence:
-  path: "_migration/inventory/v2-03-work-object-responsibility-map.yaml"
+  path: "_migration/v3-specs-absorption-index.md"
 code_verification:
-  command: "python3 -m pytest -q && python3 -m pytest -q _migration/tests"
+  command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
-  receipt: "Formal tests and migration tests pass after 03 work object parent layer and hash were added."
+  receipt: "Formal specs validator and tests/code cover the new 03 fact-source and Git traceability candidate as a formal spec."
 subagent_review:
-  agent_id: "019f0b5a-cfc5-7030-bd9c-21a3d7618e65"
-  reviewer: "Meitner"
+  agent_id: "019f16f5-0d83-74a3-a526-cae9622aeb50"
+  reviewer: "Kant"
   verdict: "pass"
-  receipt: "Subagent judged 03 basically conforms to work object parent layer and does not migrate concrete fields, state machines, or schema."
+  receipt: "Read-only subagent review identified the prior 03 work-object review as stale and confirmed 03 should carry fact-source and Git traceability while work objects move to 05."
   unresolved_blockers: []
 warnings: []

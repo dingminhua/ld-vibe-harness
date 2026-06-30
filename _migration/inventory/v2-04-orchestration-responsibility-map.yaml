@@ -13,7 +13,7 @@ value_gate:
 
 decisions:
   - v2_responsibility: "Context / Scenario / Gate model for action members"
-    v3_handling: "Keep as later action-member material, not the v3 04 first body."
+    v3_handling: "Keep as later action-member material, not the v3 06 first body."
     reason: "Current need is LDVH self-action order, not full action member migration."
 
   - v2_responsibility: "Main controller dispatches Skill, Agent, Code, Web, Hook, Rules"
@@ -25,7 +25,7 @@ decisions:
     reason: "Human specifically identified non-blocking warnings that must be reported at completion."
 
   - v2_responsibility: "Evidence and fact-source writeback"
-    v3_handling: "Absorb only task-completion obligation; future 07 owns Git/fact-source details."
+    v3_handling: "Absorb only task-completion obligation; 03 owns fact-source and Git traceability details."
     reason: "06 should say how action templates report and route; 05 should define fact model and work-object destinations."
 
   - v2_responsibility: "Orchestration candidates and 30-59 members"

@@ -19,7 +19,7 @@ core_constraint:
 
 selection_boundary:
   included_now: >
-    Only terms required to keep specs/00, specs/01, specs/02, and specs/03
+    Only terms required to keep specs/00, specs/01, specs/02, specs/03, and specs/04
     internally consistent after the v3 00 self-consistency pass are introduced.
   deferred: >
     The remaining v2 glossary terms stay in v2 until the corresponding v3

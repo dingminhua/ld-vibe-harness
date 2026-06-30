@@ -1,0 +1,16 @@
+target_spec: "specs/07-Code确定性执行规范.md"
+target_sha256: "58a35bee26b0c4165b9c8ead441309ccd9d7bfe05bb27af250895b4811603105"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/v3-specs-absorption-index.md"
+code_verification:
+  command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover the new 07 Code determinism candidate as a formal spec."
+subagent_review:
+  agent_id: "019f16f5-308a-7091-98cf-bb1247f4b748"
+  reviewer: "Lorentz"
+  verdict: "pass"
+  receipt: "Read-only subagent review identified Code hard-coded paths and review gates that must be synchronized when 07 becomes the Code determinism target."
+  unresolved_blockers: []
+warnings: []

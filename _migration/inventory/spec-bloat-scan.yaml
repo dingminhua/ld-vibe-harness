@@ -99,7 +99,7 @@ family_skeletons:
       - "行动编排成员检查要求"
       - "待补齐事项"
     likely_action: >
-      Treat the shared skeleton as a member-template contract owned by 03.
+      Treat the shared skeleton as a member-template contract owned by 06.
       Child action specs should keep scenario/context/gate/execution deltas.
       Action Guide can project read_plan, stop_conditions, tool suggestions,
       and next_queries from these anchors.

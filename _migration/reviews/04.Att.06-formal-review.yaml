@@ -1,8 +1,8 @@
 target_spec: "specs/attachments/04.Att.06-术语表.md"
-target_sha256: "380526d43cbfc188998769a8af69f681541f095abf96f9281092f0ef709870af"
+target_sha256: "0a8c60aa69464cfcd9ce62ec8ca8f7ea8539d32094672a7a199fb432c218a010"
 change_type: "migration"
 mapping_evidence:
-  path: "_migration/inventory/v2-terminology-to-v3-02-att-06-map.yaml"
+  path: "_migration/inventory/v2-terminology-to-v3-04-att-06-map.yaml"
 code_verification:
   command: "python3 -m pytest -q && python3 -m pytest -q _migration/tests"
   passed: true

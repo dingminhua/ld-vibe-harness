@@ -1,0 +1,16 @@
+target_spec: "specs/08-Web信息同步规范.md"
+target_sha256: "aa97599e4f1e58675abd538762e074e47a21a2d87902ca7cb10db5f4cc265f29"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/v3-specs-absorption-index.md"
+code_verification:
+  command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover the new 08 Web sync candidate as a formal spec."
+subagent_review:
+  agent_id: "019f16f5-308a-7091-98cf-bb1247f4b748"
+  reviewer: "Lorentz"
+  verdict: "pass"
+  receipt: "Read-only subagent review found no current formal Web path conflict; V2 Web material remains a later candidate with fact-source and test boundaries."
+  unresolved_blockers: []
+warnings: []
