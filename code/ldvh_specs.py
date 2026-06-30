@@ -27,6 +27,18 @@ BASE_ACTION_GUIDE_SOURCE_REFS = [
     {"path": TIMING_TABLE_PATH, "role": "consumption_timing_registry"},
     {"path": TAKEOVER_MATRIX_PATH, "role": "takeover_matrix"},
 ]
+PREFLIGHT_BASE_READ_PATHS = [
+    "specs/00-理念与构成.md",
+    "specs/01-保障与衔接.md",
+    "specs/02-Specs基础规范.md",
+    "specs/03-AI行为规范.md",
+]
+HIGH_IMPACT_SPEC_PATHS = {
+    "specs/00-理念与构成.md",
+    "specs/01-保障与衔接.md",
+    "specs/02-Specs基础规范.md",
+    "specs/03-AI行为规范.md",
+}
 
 SPEC_REQUIRED_KEYS = {
     "spec_id",
@@ -740,5 +752,223 @@ def build_action_guide(
             "requirement_ids": [requirement["requirement_id"] for requirement in requirements],
         },
         "source_refs": unique_dicts(source_refs, ("path", "role", "requirement_id")),
+        "diagnostics": diagnostics,
+    }
+
+
+def classify_target_path(target_path: str) -> dict[str, str]:
+    normalized = target_path.strip().lstrip("./")
+    if not normalized:
+        return {
+            "target_path": "",
+            "target_type": "unknown",
+            "impact": "unknown",
+            "reason": "未提供 target_path，无法判断写入对象。",
+        }
+    if normalized in HIGH_IMPACT_SPEC_PATHS:
+        return {
+            "target_path": normalized,
+            "target_type": "core_spec",
+            "impact": "high",
+            "reason": "目标属于 00/01/02/03 核心规范，可能影响上位价值、保障、结构或 AI 行为边界。",
+        }
+    if normalized.startswith("specs/attachments/"):
+        return {
+            "target_path": normalized,
+            "target_type": "attachment",
+            "impact": "medium",
+            "reason": "目标属于授权附件，必须保持从属边界，不得承载上位规则或行动流程。",
+        }
+    if normalized.startswith("specs/") and normalized.endswith(".md"):
+        return {
+            "target_path": normalized,
+            "target_type": "spec",
+            "impact": "medium",
+            "reason": "目标属于正式 specs，需要检查价值、权威、归口、保障和验证边界。",
+        }
+    if normalized.startswith("code/"):
+        return {
+            "target_path": normalized,
+            "target_type": "code",
+            "impact": "medium",
+            "reason": "目标属于正式 Code，输出不得替代 specs、Human Gate 或最终事实源。",
+        }
+    if normalized.startswith("tests/"):
+        return {
+            "target_path": normalized,
+            "target_type": "tests",
+            "impact": "low",
+            "reason": "目标属于测试，提供验证证据但不得替代 Human Gate。",
+        }
+    if normalized.startswith("_migration/"):
+        return {
+            "target_path": normalized,
+            "target_type": "migration",
+            "impact": "low",
+            "reason": "目标属于迁移材料，只能作为临时证据，不授权正式规则或 Code 行为。",
+        }
+    return {
+        "target_path": normalized,
+        "target_type": "unknown",
+        "impact": "unknown",
+        "reason": "目标不在当前 preflight 已知归口内，需要 AI 判断归口或进入 Human Gate。",
+    }
+
+
+def preflight_read_plan_for_target(classification: dict[str, str]) -> list[dict[str, str]]:
+    target_path = classification["target_path"]
+    target_type = classification["target_type"]
+    read_paths = list(PREFLIGHT_BASE_READ_PATHS)
+    if target_type in {"spec", "core_spec", "attachment"} and target_path:
+        read_paths.append(target_path)
+    if target_type == "migration":
+        read_paths.append("_migration/v3-migration-execution-plan.md")
+    return [
+        {
+            "priority": "P0" if path in PREFLIGHT_BASE_READ_PATHS else "P1",
+            "path": path,
+            "role": "preflight_required_source",
+        }
+        for path in dict.fromkeys(read_paths)
+    ]
+
+
+def build_preflight(
+    root: Path = ROOT,
+    target_path: str = "",
+    operation: str = "write",
+    task: str = "",
+    trigger_source: str = "manual",
+    high_impact: bool = False,
+) -> dict[str, Any]:
+    validation = build_validation(root)
+    classification = classify_target_path(target_path)
+    action_guide = build_action_guide(
+        root,
+        consumption_timing="pre_tool_use",
+        task=task,
+        target_path=classification["target_path"],
+        trigger_source=trigger_source,
+    )
+
+    diagnostics: list[dict[str, str]] = list(validation["diagnostics"])
+    target_type = classification["target_type"]
+    impact = classification["impact"]
+    normalized_target = classification["target_path"]
+
+    if target_type == "unknown":
+        diagnostics.append({
+            "level": "blocking",
+            "code": "PREFLIGHT_TARGET_UNKNOWN",
+            "path": normalized_target,
+            "message": "无法判断 target 归口；写入前必须补充明确 target 或交还 Human 判断。",
+            "disposition": "blocking",
+        })
+
+    if target_type == "core_spec" or high_impact:
+        diagnostics.append({
+            "level": "warning",
+            "code": "PREFLIGHT_HUMAN_GATE_RISK",
+            "path": normalized_target,
+            "message": "目标可能改变 00/01/02/03 的上位结构、保障、规格或 AI 行为边界；需要评估 Human Gate。",
+            "disposition": "human_gate_review",
+        })
+
+    if target_type == "attachment":
+        diagnostics.append({
+            "level": "warning",
+            "code": "PREFLIGHT_ATTACHMENT_BOUNDARY",
+            "path": normalized_target,
+            "message": "附件只能承载正文授权的表格、字段闭集或枚举，不得承载核心规则、行动流程或 Human Gate。",
+            "disposition": "boundary_review",
+        })
+
+    if target_type == "code":
+        diagnostics.append({
+            "level": "unverifiable",
+            "code": "PREFLIGHT_CODE_OUTPUT_NOT_AUTHORIZATION",
+            "path": normalized_target,
+            "message": "当前 preflight 只能诊断 Code 写入风险，不能授权、放行或替代 Human Gate。",
+            "disposition": "keep_ai_judgment",
+        })
+
+    if target_type == "migration":
+        diagnostics.append({
+            "level": "follow_up",
+            "code": "PREFLIGHT_MIGRATION_NOT_AUTHORITY",
+            "path": normalized_target,
+            "message": "迁移材料是临时证据；有效决定必须由正式 specs、Code 或 tests 承接。",
+            "disposition": "track_absorption",
+        })
+
+    required_read_plan = preflight_read_plan_for_target(classification)
+    source_refs = unique_dicts(
+        [
+            {"path": item["path"], "role": item["role"]}
+            for item in required_read_plan
+        ]
+        + [
+            {"path": "specs/01-保障与衔接.md", "role": "preflight_assurance_boundary"},
+            {"path": "specs/02-Specs基础规范.md", "role": "preflight_structure_boundary"},
+            {"path": "specs/03-AI行为规范.md", "role": "preflight_ai_behavior_boundary"},
+        ],
+        ("path", "role"),
+    )
+
+    blocking_count = sum(1 for diagnostic in diagnostics if diagnostic["level"] == "blocking")
+    human_gate_risks = [
+        diagnostic
+        for diagnostic in diagnostics
+        if diagnostic.get("disposition") == "human_gate_review"
+    ]
+    status = "blocked" if blocking_count else "review_required" if diagnostics else "pass"
+
+    return {
+        "metadata": {
+            "read_only": True,
+            "authority": "derived_from_specs_markdown",
+            "authorization": "none",
+            "root": root.as_posix(),
+        },
+        "summary": {
+            "status": status,
+            "operation": operation,
+            "target_type": target_type,
+            "impact": impact,
+            "diagnostics": len(diagnostics),
+            "blocking": blocking_count,
+            "warnings": sum(1 for diagnostic in diagnostics if diagnostic["level"] == "warning"),
+            "follow_up": sum(1 for diagnostic in diagnostics if diagnostic["level"] == "follow_up"),
+            "unverifiable": sum(1 for diagnostic in diagnostics if diagnostic["level"] == "unverifiable"),
+            "human_gate_risks": len(human_gate_risks),
+        },
+        "input": {
+            "target_path": normalized_target,
+            "operation": operation,
+            "task": task,
+            "trigger_source": trigger_source,
+            "high_impact": high_impact,
+        },
+        "target": classification,
+        "required_read_plan": required_read_plan,
+        "action_guide": {
+            "summary": action_guide["summary"],
+            "task_read_plan": action_guide["task_read_plan"],
+            "stop_conditions": action_guide["stop_conditions"],
+            "missing_fields": action_guide["missing_fields"],
+            "capability_gap": action_guide["capability_gap"],
+        },
+        "validation_guard": [
+            {
+                "guard": "确认价值门、权威依据、归口边界、保障需求、验证方法和 Stop Conditions。",
+                "source_path": "specs/01-保障与衔接.md",
+            },
+            {
+                "guard": "确认 Code、测试、review 或行动指南没有替代 Human Gate 或最终事实源。",
+                "source_path": "specs/03-AI行为规范.md",
+            },
+        ],
+        "human_gate_risks": human_gate_risks,
+        "source_refs": source_refs,
         "diagnostics": diagnostics,
     }

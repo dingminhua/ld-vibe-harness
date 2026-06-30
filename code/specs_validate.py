@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from ldvh_specs import ROOT, build_action_guide, build_validation
+from ldvh_specs import ROOT, build_action_guide, build_preflight, build_validation
 
 
 def _diagnostics_by_level(result: dict[str, Any]) -> dict[str, int]:
@@ -18,6 +18,28 @@ def _diagnostics_by_level(result: dict[str, Any]) -> dict[str, int]:
 
 
 def print_text(result: dict[str, Any], command: str) -> None:
+    if command == "preflight":
+        summary = result["summary"]
+        print("LDVH v3 preflight 诊断完成")
+        print(f"- status: {summary['status']}")
+        print(f"- operation: {summary['operation']}")
+        print(f"- target_type: {summary['target_type']}")
+        print(f"- impact: {summary['impact']}")
+        print(f"- diagnostics: {summary['diagnostics']}")
+        print(f"- blocking: {summary['blocking']}")
+        print(f"- human_gate_risks: {summary['human_gate_risks']}")
+        print("\nRequired read plan:")
+        for item in result["required_read_plan"]:
+            print(f"- {item['priority']}: {item['path']} ({item['role']})")
+        if result["diagnostics"]:
+            print("\nDiagnostics:")
+            for diagnostic in result["diagnostics"]:
+                print(f"- {diagnostic['path']} [{diagnostic['level']}/{diagnostic['code']}] {diagnostic['message']}")
+        else:
+            print("\nDiagnostics: none")
+        print("\nAuthorization: none")
+        return
+
     if command == "action-guide":
         summary = result["summary"]
         print("LDVH v3 Action Guide 生成完成")
@@ -98,7 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
         "command",
         nargs="?",
         default="all",
-        choices=["all", "specs", "timings", "ai-behavior", "action-guide"],
+        choices=["all", "specs", "timings", "ai-behavior", "action-guide", "preflight"],
         help="validation surface to print",
     )
     parser.add_argument("--root", default=ROOT.as_posix(), help="repository root")
@@ -108,6 +130,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--task", default="", help="current task summary for action-guide")
     parser.add_argument("--target-path", default="", help="target path for action-guide")
     parser.add_argument("--trigger-source", default="manual", help="trigger source for action-guide")
+    parser.add_argument("--operation", default="write", help="operation for preflight")
+    parser.add_argument("--high-impact", action="store_true", help="mark preflight as high impact")
     return parser
 
 
@@ -122,6 +146,16 @@ def main(argv: list[str] | None = None) -> int:
             task=args.task,
             target_path=args.target_path,
             trigger_source=args.trigger_source,
+        )
+        result = output
+    elif args.command == "preflight":
+        output = build_preflight(
+            root,
+            target_path=args.target_path,
+            operation=args.operation,
+            task=args.task,
+            trigger_source=args.trigger_source,
+            high_impact=args.high_impact,
         )
         result = output
     else:

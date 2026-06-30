@@ -58,13 +58,15 @@ specs 迁入
 
 阶段 2 已完成最小只读 Action Guide：Code 已能基于正式 specs 输出 `task_read_plan`、`next_queries`、`stop_conditions`、`validation_guard`、`missing_fields`、`capability_gap`、`impact_summary` 和 `source_refs`。该输出只作为过程指导，不成为独立事实源，也不声称运行时拦截、receipt 写入、Hook 或提交门禁已经生效。
 
-当前下一步为阶段 3：
+阶段 3 已完成只读 preflight：Code 已能基于 Action Guide 和正式 specs 判断 target 类型、影响等级、必要读取、Human Gate 风险和 blocking/warning/follow_up/unverifiable 诊断分流。preflight 输出只作为诊断和阻断建议，不输出授权、放行或 Human Gate 替代结论。
 
-1. 基于 Action Guide 输出建立只读 preflight；
-2. 判断写 specs、写 code、改附件时的目标路径、影响范围、必要读取和 Human Gate 风险；
-3. 输出 blocking、warning、follow_up、unverifiable 等诊断分流；
-4. 保持 preflight 为诊断和阻断建议，不输出授权、放行或 Human Gate 替代结论；
-5. 为 specs、code、附件、未知 target 和高影响变更补齐回归测试。
+当前下一步为阶段 4：
+
+1. 基于消费时机闭集建立最小 runtime facade；
+2. 承接 `session_start`、`acknowledge_read_plan`、`pre_tool_use`、`git_commit_msg`、`human_facing_output`、`external_output_intake`、`diagnostic_disposition` 和 `completion_claim`；
+3. 生成本地只读或受控 receipt 结构，并回指 Action Guide、preflight 和来源 specs；
+4. 保持 runtime facade 不声称 Hook、Rules、插件或环境已经完整接入；
+5. 为事件输入、未知事件、receipt 边界和 preflight 联动补齐回归测试。
 
 ## 6. 停止条件
 

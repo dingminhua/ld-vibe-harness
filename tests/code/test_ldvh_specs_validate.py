@@ -183,3 +183,76 @@ def test_specs_validate_cli_action_guide_json() -> None:
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["task_read_plan"] >= 3
     assert payload["source_refs"]
+
+
+def test_preflight_core_spec_marks_human_gate_risk() -> None:
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="specs/01-保障与衔接.md",
+        operation="write",
+        task="修改保障规则",
+    )
+
+    assert preflight["metadata"]["read_only"] is True
+    assert preflight["metadata"]["authorization"] == "none"
+    assert preflight["summary"]["status"] == "review_required"
+    assert preflight["summary"]["target_type"] == "core_spec"
+    assert preflight["summary"]["human_gate_risks"] == 1
+    assert any(item["path"] == "specs/01-保障与衔接.md" for item in preflight["required_read_plan"])
+
+
+def test_preflight_code_target_is_unverifiable_not_authorization() -> None:
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="code/ldvh_specs.py",
+        operation="write",
+    )
+
+    assert preflight["summary"]["target_type"] == "code"
+    assert preflight["summary"]["status"] == "review_required"
+    assert preflight["summary"]["unverifiable"] == 1
+    assert preflight["diagnostics"][0]["code"] == "PREFLIGHT_CODE_OUTPUT_NOT_AUTHORIZATION"
+
+
+def test_preflight_attachment_keeps_boundary_warning() -> None:
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="specs/attachments/01.Att.01-保障消费时机表.md",
+        operation="write",
+    )
+
+    assert preflight["summary"]["target_type"] == "attachment"
+    assert preflight["summary"]["warnings"] == 1
+    assert preflight["diagnostics"][0]["code"] == "PREFLIGHT_ATTACHMENT_BOUNDARY"
+
+
+def test_preflight_unknown_target_blocks() -> None:
+    preflight = ldvh_specs.build_preflight(ROOT, target_path="", operation="write")
+
+    assert preflight["summary"]["status"] == "blocked"
+    assert preflight["summary"]["blocking"] == 1
+    assert preflight["diagnostics"][0]["code"] == "PREFLIGHT_TARGET_UNKNOWN"
+
+
+def test_specs_validate_cli_preflight_json() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/specs_validate.py",
+            "preflight",
+            "--target-path",
+            "code/ldvh_specs.py",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["metadata"]["read_only"] is True
+    assert payload["metadata"]["authorization"] == "none"
+    assert payload["summary"]["target_type"] == "code"
+    assert payload["required_read_plan"]
