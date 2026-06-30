@@ -20,10 +20,10 @@
 | V3 编号 | 正式规范 | 主要吸收来源 | 应吸收内容 | 不直接吸收内容 | 首批 Code/tests 关注点 |
 |---|---|---|---|---|---|
 | 03 | 事实源与 Git 追溯规范 | V2 `07-事实源边界与Git追溯规范.md`、`07.Att.01` 至 `07.Att.12`、`31-git-commit-action` 中的提交证据边界 | Git 可追踪文件作为用户事实源；非事实源排除；过程输出、receipt、evidence、diagnostic 的回写边界；Git commit records 的追溯性质；commit message 契约的上位边界 | Git 提交流程步骤、commit hook 实现、Web 提交记录页面、知识地图派生展示、历史提交列表手写维护 | commit 契约可解析性、非事实源边界、completion evidence 回指、提交前 read_plan 消费证据 |
-| 05 | 事实模型基础规范 | V2 `02-事实模型基础规范.md`、20-24 事实模型成员、`02.Att.*`、`v2-03-work-object-responsibility-map.yaml`、spec-bloat fact member scan | 事实模型/事实实例边界；事实对象准入；字段契约、状态、证据、关系的共同规则；warning/follow-up/evidence/next_queries 的稳定承接位置；成员模板的上位要求 | Spark/WorkCase/ADR/Pitfall/Study 的完整字段表、完整状态机、旧 TaskPlan/Task/SubTask 兼容、具体实例迁移 | 对象身份、事实实例不得定义规则、成员模板骨架、过程证据分流到对象或 specs |
-| 06 | 行动模板基础规范 | V2 `03-行动编排规范.md`、30/31/32/34/35/36 行动成员、`v2-04-orchestration-responsibility-map.yaml`、stage-5 checklist | Context、Scenario、Gate、执行、验证、回写、缺口分流的行动模板基本结构；主控 AI 与能力输出交还边界；Git 提交、Rules 同步、环境适配等作为模板或候选的归口 | V2 30-59 成员全文、Skill 顶层身份、具体 Hook/Rules 安装、完整流程目录、行动模板替代 Human Gate | 模板 read_plan、Gate 分流、能力输出不得成为事实源、行动完成声明需要验证证据 |
+| 05 | 事实模型基础规范 | V2 `02-事实模型基础规范.md`、20-24 事实模型成员、`02.Att.*`、`v2-03-work-object-responsibility-map.yaml`、spec-bloat fact member scan | 事实模型/事实实例边界；事实对象准入；字段契约、状态、证据、关系的共同规则；warning/follow-up/evidence/next_queries 的稳定承接位置；成员模板的上位要求；旧“工作模型”术语统一校正为事实模型 | Spark/WorkCase/ADR/Pitfall/Study 的完整字段表、完整状态机、旧 TaskPlan/Task/SubTask 兼容、具体实例迁移、未授权附件整批复制 | 对象身份、事实实例不得定义规则、成员模板骨架、过程证据分流到对象或 specs；优先迁移 `02.Att.*` 中可被正文授权和 Code/tests 消费的字段/模板信息 |
+| 06 | 行动模板基础规范 | V2 `03-行动编排规范.md`、`31-git-commit-action`、30/32/34/35/36 行动成员、`v2-04-orchestration-responsibility-map.yaml`、stage-5 checklist | Context、Scenario、Gate、执行、验证、回写、缺口分流的行动模板基本结构；主控 AI 与能力输出交还边界；以 Git 提交行动作为首个行动模板示范；Rules 同步、环境适配等作为后续模板或候选归口；V2 Skill 中有价值的工作流内容转写为普通行动步骤或 Action Guide 提示 | V2 30-59 成员全文、Skill 顶层身份、Skill registry、Skill 执行闭环、具体 Hook/Rules 安装、完整流程目录、行动模板替代 Human Gate | Git 提交行动模板示范、模板 read_plan、Gate 分流、能力输出不得成为事实源、行动完成声明需要验证证据；行动模板去 Skill 化 |
 | 07 | Code 确定性执行规范 | V2 `04-Code确定性执行规范.md`、`04.Att.*`、V2 `06` 中 dispatcher/adapter/payload 边界、现有 `code/specs_validate.py` 与 `code/ldvh_specs.py` | Code 读取、解析、校验、聚合、诊断、投影、preflight、runtime facade、stdout-only receipt、payload/adapter/dispatcher 的实现边界；Code 不授权、不替代 AI/Human/事实源 | 具体技术栈细节、Hook 安装、用户环境写入、Web API 细节、测试治理本体、未进入正式 specs 的候选规则 | validator 覆盖、诊断等级、unknown event、read_plan evidence、target 分类、environment_integrated=false |
-| 08 | Web 信息同步规范 | V2 `05-Web信息同步规范.md`、`05.Att.*`、Web 回归材料 | Web 作为 Human-facing 派生展示；状态、风险、证据、待确认事项、提交记录、诊断和验证状态展示边界；Web 状态不成为事实源；受控轻写入必须回写并验证 | 具体页面设计、API 实现、缓存实现、旧知识地图展示细节、未授权的通用写入、Web 作为项目管理看板优先 | DTO/source_refs、Confirm UI 不替代 Human Gate、Web cache 不替代事实源、轻写入白名单测试 |
+| 08 | Web 信息同步规范 | V2 `05-Web信息同步规范.md`、`05.Att.*`、Web 回归材料 | Web 作为 Human-facing 派生展示；Web 可自行读取同一 Git 文件事实源，也可使用 Code 输出、Git 查询或 API 聚合作为展示辅助；状态、风险、证据、待确认事项、提交记录、诊断和验证状态展示边界；Web 状态不成为事实源；受控轻写入必须回写并验证 | 具体页面设计、API 实现、缓存实现、旧知识地图展示细节、未授权的通用写入、Web 作为项目管理看板优先、Web 只能由 Code 喂数据的实现假设 | source_refs/来源回指、Confirm UI 不替代 Human Gate、Web cache 不替代事实源、同源读取边界、轻写入白名单测试 |
 | 09 | 测试与验证规范 | V2 `08-测试基础规范.md`、`08.Att.*`、现有 `tests/code` 和 `_migration/tests` | 自动化测试、命令校验、等价验证、Human 验收、回归验证的分层；验证声明字段；测试证据边界；失败阻断；同步触发；测试不得反向定义规则 | 具体测试框架绑定、测试输出长期落盘、fixture 当事实源、用测试通过替代 Human Gate、Web/Hook 未实现时的虚假覆盖 | `python3 -m pytest tests/code`、`specs_validate all`、runtime/preflight/action-guide 负例、review hash gate |
 
 ## 3. 只能留在 `_migration` 的内容
@@ -41,6 +41,14 @@
 这些内容若有长期价值，必须先按 03/05/06/07/08/09 归口转写为正式规则、Code 输入、tests 或事实对象，不得整段搬入。
 
 ## 4. 应转为 Code 或 tests 的内容
+
+附件迁移口径：
+
+1. V2 附件不得整批搬入 V3；每个附件必须先确认正文授权、V3 归口、Code/tests 消费方和 Human Gate 风险。
+2. 附件内容应先分流为：转写正式 spec 正文、迁入正式附件候选、转为 Code/tests、留在 `_migration`、后置到成员规范或实现域、废弃。
+3. 字段闭集、枚举、纯表、机器契约可以迁为正式附件候选；核心规则、行动流程、Human Gate、大段解释、迁移过程和一次性清单不得进入附件，若有长期价值必须先转写到对应 spec 正文。
+4. `02.Att.*` 优先服务事实模型；`07.Att.*` 优先服务事实源/Git 追溯和 Git 提交行动示范；`08.Att.*` 优先服务测试与验证；`05.Att.*` 后置到 Web 同源读取和展示边界；`04.Att.*` 仅筛选可进入 Code 确定性执行的命令/诊断/schema 信息。
+5. 无法获得正文授权、source_refs、测试闭环或未迁入去向的附件，应暂停迁入并继续留在 `_migration`，不得声称已迁入或已生效。
 
 以下内容不应写成正式 specs 规则正文的长表，应由 Code 或 tests 承接：
 
@@ -70,13 +78,21 @@
 
 V3 术语使用：
 
-| V2 术语 | V3 处理 |
-|---|---|
-| 行动编排 | 改为行动模板；旧行动成员作为模板或候选吸收 |
-| 运行时扩展 | 不作为第六构成要素；上位语义由 01 承接，具体实现边界分流到 07/09/06 |
-| Skill | 不作为 V3 顶层机制；转为行动模板步骤、Action Guide 提示或外部环境包装候选 |
-| 知识地图 | 作为 Code 派生导航能力或 Action Guide 输入，不作为事实源 |
-| 最终事实源/单一事实源 | 在 V3 统一表达为用户事实源和 Git 可追踪文件事实源 |
+| V2 或含糊术语 | V3 处理 | 状态 |
+|---|---|---|
+| 行动编排 | 改为行动模板；旧行动成员作为模板或候选吸收 | legacy_alias |
+| 工作模型 | 改为事实模型；旧术语只作为历史来源名，相关规则进入 `05` 事实模型归口 | legacy_alias |
+| 工作对象 | 已确认统一改为事实对象；旧术语只作为历史来源名，正式 specs 应逐处校正，不得直接作为 V3 对象规则名使用 | confirmed_rename |
+| 运行时扩展 | 不作为第六构成要素；上位语义由 01 承接，具体实现边界分流到 07/09/06 | legacy_alias |
+| Skill | 不作为 V3 顶层机制；行动模板中去掉 Skill 概念。V2 Skill 只作为历史来源名，其有效内容转写为普通行动步骤、Action Guide 提示或外部环境包装候选 | removed_top_level |
+| 知识地图 | 作为 V2 历史来源名；V3 由 Action Guide / 行动指南完全承接并取代其导航能力，不保留知识地图作为长期正式概念、页面或事实层；Action Guide 与行动指南等价 | legacy_alias |
+| 放行 | 不作为 Code/test/runtime 的输出语义；正式表达尽量拆为方向确认、执行授权、风险接受、事实/术语确认、验收通过、暂停/驳回等具体 Human Gate 结果类型；若保留“放行”，只能指 Human 显式决定 | confirmed_boundary |
+| Human 确认 / 授权 / 验收 / 风险接受 / 方向确认 | `Human Gate` 是机制名；这些词是动作或结果类型，不得被泛化为同一种“确认”。已确认结果类型至少包括方向确认、执行授权、风险接受、事实/术语确认、验收通过、暂停/驳回 | confirmed_boundary |
+| Confirm UI / Web 确认 | Web 交互或页面状态不得替代 Human Gate 完成；仅可展示或辅助 Human 明示决定 | needs_review |
+| blocker / blocking / follow_up / follow-up / unverifiable | 诊断等级和输出拼写需要统一闭集；语义降级由 AI 排查，机械拼写由 Code 检查 | needs_review |
+| 用户事实源 / 最终事实源 / 单一事实源 | 暂列高风险待重拆术语；先区分规则源、事实源、用户掌握原则、Human Gate 决定和过程证据。不得把 Specs 规则、事实对象、Human 明示决定和过程输出共同塞进“事实源”概念 | needs_review |
+
+术语整治必须先于后续事实模型、附件、行动模板和 Web 深入迁移。规则/事实边界整治是 5B-0 的最高优先子项，应先审计 00/03/04/05 中是否把规则系统和事实系统混写。术语表 `specs/attachments/04.Att.06-术语表.md` 应在 5B-0 中同步，且不得把术语表、迁移索引、Code/tests 或子 agent 输出升级为正式规则源。
 
 ## 6. Stop Conditions
 
@@ -86,5 +102,5 @@ V3 术语使用：
 2. V2 内容被整段复制，导致 V3 恢复旧目录权威或第二事实源；
 3. Runtime、Skill、Hook、Rules 或 Web 状态被写成独立构成要素；
 4. Code、tests、review 或子 Agent 输出替代正式规则、Human Gate 或完成声明；
-5. 03/05/06/07/08/09 与 00、01、02、04 的上位边界冲突；
+5. 03/05/06/07/08/09 与 00、01、02、04 的上位边界冲突，或规则系统与事实系统边界被混写；
 6. 新增正式 specs 后没有同步 Code 解析、review 收据和 tests。
