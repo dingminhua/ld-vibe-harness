@@ -1,0 +1,16 @@
+target_spec: "specs/23-Pitfall-踩坑经验.md"
+target_sha256: "73e21bfc7a5286af57abe6b207154a7861d7ddefc3ae60b2c62761c9d2acf1ba"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/6B-fact-object-member-completion.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover 23 as the Pitfall fact model member candidate with status, source, evidence, legacy, and Human Gate checks."
+subagent_review:
+  agent_id: "codex-local-6b-fact-members-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review found 23 limited to the Pitfall minimal member contract; full field schema, tag registry, real instances, and Web editing remain postposed."
+  unresolved_blockers: []
+warnings: []

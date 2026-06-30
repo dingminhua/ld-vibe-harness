@@ -33,7 +33,7 @@ def test_current_specs_validate_without_diagnostics() -> None:
     result = ldvh_specs.build_validation(ROOT)
 
     assert result["summary"]["status"] == "ok"
-    assert result["summary"]["specs"] == 11
+    assert result["summary"]["specs"] == 15
     assert result["summary"]["attachments"] == 11
     assert result["summary"]["foundation_spec_contracts"] == 6
     assert result["diagnostics"] == []
@@ -550,6 +550,103 @@ def test_workcase_member_validator_reports_missing_legacy_status_boundary(tmp_pa
     assert "WORKCASE_LEGACY_STATUS_BOUNDARY_MISSING" in _diagnostic_codes(result)
 
 
+def test_fact_model_member_contracts_are_code_consumable() -> None:
+    result = ldvh_specs.build_validation(ROOT)
+    contracts = {contract["spec_id"]: contract for contract in result["fact_model_member_contracts"]}
+
+    assert set(contracts) == {"20", "21", "22", "23", "24"}
+    assert [row["status"] for row in contracts["20"]["statuses"]] == ["pending", "resolved", "discarded"]
+    assert [row["status"] for row in contracts["21"]["statuses"]] == [
+        "subagents_plan_reviewing",
+        "human_plan_confirming",
+        "executing",
+        "result_self_checking",
+        "subagents_result_reviewing",
+        "human_closure_confirming",
+        "closed",
+    ]
+    assert [row["status"] for row in contracts["22"]["statuses"]] == ["active", "archived", "deprecated"]
+    assert [row["status"] for row in contracts["23"]["statuses"]] == ["active", "archived"]
+    assert [row["status"] for row in contracts["24"]["statuses"]] == ["active", "archived"]
+
+    assert contracts["20"]["instance_root"] == "ldvh-base/sparks/"
+    assert contracts["22"]["instance_root"] == "ldvh-base/adrs/"
+    assert contracts["23"]["instance_root"] == "ldvh-base/pitfalls/"
+    assert contracts["24"]["instance_root"] == "ldvh-base/studies/"
+    assert "spark_state_boundaries" in contracts["20"]["code_consumption"]
+    assert "adr_decision_boundaries" in contracts["22"]["code_consumption"]
+    assert "pitfall_evidence_boundaries" in contracts["23"]["code_consumption"]
+    assert "study_markdown_body_boundaries" in contracts["24"]["code_consumption"]
+
+
+def test_fact_member_validator_reports_missing_spark_state(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/20-Spark-火花.md",
+        "| `resolved` | 已完整分流到 WorkCase、ADR、Pitfall、docs、受管项目配置更新或其它非 Study 事实源，或已明确处理 |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_MEMBER_STATUS_MISSING" in _diagnostic_codes(result)
+    assert any("resolved" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_fact_member_validator_reports_missing_adr_legacy_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/22-ADR-决策.md",
+        "新增或重写 ADR 不得使用 V2 legacy 状态 `proposed`、`accepted`、`rejected`、`superseded`，也不得使用旧字段 `superseded_by`、`alternatives` 或 `affects` 作为新写入字段。\n\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_MEMBER_LEGACY_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_fact_member_validator_reports_missing_pitfall_human_gate(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/23-Pitfall-踩坑经验.md",
+        "6. 将未解决或未验证问题写成 `active` Pitfall；\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_MEMBER_HUMAN_GATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+    assert any("未解决或未验证问题" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_fact_member_validator_reports_missing_study_markdown_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/24-Study-研究报告.md",
+        "| `## 后续分流` |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_MEMBER_SPECIAL_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_fact_member_validator_reports_missing_study_source_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/24-Study-研究报告.md",
+        "ldvh-base/studies/",
+        "study-store/",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_MEMBER_SOURCE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
 def test_formal_identity_and_role_sections_are_parseable() -> None:
     objects = {obj.object_id: obj for obj in ldvh_specs.load_formal_objects(ROOT)}
 
@@ -575,7 +672,11 @@ def test_formal_identity_and_role_sections_are_parseable() -> None:
         "08",
         "09",
         "09.Att.01",
+        "20",
         "21",
+        "22",
+        "23",
+        "24",
     }
     assert objects["01"].metadata["role_sections"]["rule_body"] == [
         "5. 内部保障",

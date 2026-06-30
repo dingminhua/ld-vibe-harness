@@ -1,0 +1,16 @@
+target_spec: "specs/20-Spark-火花.md"
+target_sha256: "82169128705cd97d89edde7d5f6611837b4b1f28b2b9defd048fd2fae2c99a20"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/6B-fact-object-member-completion.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover 20 as the Spark fact model member candidate with status, source, resolution, and Human Gate checks."
+subagent_review:
+  agent_id: "codex-local-6b-fact-members-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review found 20 limited to the Spark minimal member contract; full field schema, real Spark instances, and Web quick create remain postposed."
+  unresolved_blockers: []
+warnings: []

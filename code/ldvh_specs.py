@@ -29,7 +29,11 @@ SHORT_SPEC_REFS = {
     "07": "specs/07-Code确定性执行规范.md",
     "08": "specs/08-Web信息同步规范.md",
     "09": "specs/09-测试与验证规范.md",
+    "20": "specs/20-Spark-火花.md",
     "21": "specs/21-WorkCase-工作项.md",
+    "22": "specs/22-ADR-决策.md",
+    "23": "specs/23-Pitfall-踩坑经验.md",
+    "24": "specs/24-Study-研究报告.md",
 }
 BASE_ACTION_GUIDE_SOURCE_REFS = [
     {"path": "specs/00-理念与构成.md", "role": "value_anchor"},
@@ -275,6 +279,103 @@ WORKCASE_HUMAN_GATE_TERMS = [
     "跳过未验证执行项",
 ]
 WORKCASE_LEGACY_STATUSES = ["draft", "active", "review_needed"]
+FACT_MODEL_MEMBER_CONTRACTS = {
+    "20": {
+        "member": "Spark",
+        "instance_root": "ldvh-base/sparks/",
+        "required_code_consumption": [
+            "ldvh_spec_metadata",
+            "fact_model_member_identity",
+            "spark_admission_rules",
+            "spark_source_boundaries",
+            "spark_state_boundaries",
+            "spark_resolution_boundaries",
+            "spark_human_gate_boundaries",
+            "spark_instance_checks",
+            "stop_conditions",
+        ],
+        "required_statuses": ["pending", "resolved", "discarded"],
+        "source_terms": ["ldvh-base/sparks/", "不得定义、重写或授权", "Web、Code、测试输出"],
+        "closure_terms": ["resolved_to", "resolved_at", "discard_reason", "Study", "Git commit records"],
+        "human_gate_terms": ["创建 Spark", "分流为 WorkCase", "标记为 `discarded`", "修改 `resolved_to`"],
+        "legacy_terms": [],
+        "special_terms": [],
+    },
+    "21": {
+        "member": "WorkCase",
+        "instance_root": "ldvh-base/workcases/",
+        "required_code_consumption": WORKCASE_REQUIRED_CODE_CONSUMPTION,
+        "required_statuses": WORKCASE_REQUIRED_STATUSES,
+        "source_terms": WORKCASE_SOURCE_BOUNDARY_TERMS,
+        "closure_terms": WORKCASE_CLOSURE_BOUNDARY_TERMS,
+        "human_gate_terms": WORKCASE_HUMAN_GATE_TERMS,
+        "legacy_terms": WORKCASE_LEGACY_STATUSES,
+        "special_terms": [],
+    },
+    "22": {
+        "member": "ADR",
+        "instance_root": "ldvh-base/adrs/",
+        "required_code_consumption": [
+            "ldvh_spec_metadata",
+            "fact_model_member_identity",
+            "adr_admission_rules",
+            "adr_source_boundaries",
+            "adr_state_boundaries",
+            "adr_decision_boundaries",
+            "adr_human_gate_boundaries",
+            "adr_instance_checks",
+            "stop_conditions",
+        ],
+        "required_statuses": ["active", "archived", "deprecated"],
+        "source_terms": ["ldvh-base/adrs/", "不得定义、重写或授权", "Web、Code、测试输出"],
+        "closure_terms": ["archive_reason", "deprecated_reason", "正式 specs", "Git commit records"],
+        "human_gate_terms": ["创建 ADR", "创建 `active` ADR", "标记为 `archived` 或 `deprecated`", "修改 `active` ADR"],
+        "legacy_terms": ["proposed", "accepted", "rejected", "superseded"],
+        "special_terms": [],
+    },
+    "23": {
+        "member": "Pitfall",
+        "instance_root": "ldvh-base/pitfalls/",
+        "required_code_consumption": [
+            "ldvh_spec_metadata",
+            "fact_model_member_identity",
+            "pitfall_admission_rules",
+            "pitfall_source_boundaries",
+            "pitfall_state_boundaries",
+            "pitfall_evidence_boundaries",
+            "pitfall_human_gate_boundaries",
+            "pitfall_instance_checks",
+            "stop_conditions",
+        ],
+        "required_statuses": ["active", "archived"],
+        "source_terms": ["ldvh-base/pitfalls/", "不得定义、重写或授权", "Web、Code、测试输出"],
+        "closure_terms": ["已解决", "验证证据", "archive_reason", "规避策略", "Git commit records"],
+        "human_gate_terms": ["创建 Pitfall", "标记为 `archived`", "未解决或未验证问题", "删除原 Pitfall"],
+        "legacy_terms": ["repeatability", "severity", "superseded_by"],
+        "special_terms": [],
+    },
+    "24": {
+        "member": "Study",
+        "instance_root": "ldvh-base/studies/",
+        "required_code_consumption": [
+            "ldvh_spec_metadata",
+            "fact_model_member_identity",
+            "study_admission_rules",
+            "study_source_boundaries",
+            "study_state_boundaries",
+            "study_markdown_body_boundaries",
+            "study_human_gate_boundaries",
+            "study_instance_checks",
+            "stop_conditions",
+        ],
+        "required_statuses": ["active", "archived"],
+        "source_terms": ["ldvh-base/studies/", "不得定义、重写或授权", "frontmatter", "Markdown 正文"],
+        "closure_terms": ["archive_reason", "Git commit records", "urls", "ref", "summary"],
+        "human_gate_terms": ["创建 Study", "标记为 `archived`", "大幅改写", "关键依据"],
+        "legacy_terms": [],
+        "special_terms": ["## 研究问题", "## 输入与边界", "## 关键发现", "## 建议", "## 后续分流"],
+    },
+}
 FOUNDATION_SPEC_CONTRACTS = {
     "03": {
         "path": SHORT_SPEC_REFS["03"],
@@ -722,13 +823,17 @@ def parse_git_commit_action_template(root: Path = ROOT) -> list[dict[str, str]]:
     return find_table(section["body"], ACTION_TEMPLATE_COLUMNS)
 
 
-def parse_workcase_member_contract(root: Path = ROOT) -> dict[str, Any]:
-    path = SHORT_SPEC_REFS["21"]
+def parse_fact_model_member_contract(spec_id: str, root: Path = ROOT) -> dict[str, Any]:
+    expected = FACT_MODEL_MEMBER_CONTRACTS[spec_id]
+    path = SHORT_SPEC_REFS[spec_id]
     full_path = root / path
     if not full_path.exists():
         return {
+            "spec_id": spec_id,
+            "member": expected["member"],
             "path": path,
             "code_consumption": [],
+            "instance_root": expected["instance_root"],
             "statuses": [],
             "source_refs": [],
         }
@@ -739,8 +844,11 @@ def parse_workcase_member_contract(root: Path = ROOT) -> dict[str, Any]:
     status_rows = _table_rows_for_section(sections, "状态、证据与关闭边界", WORKCASE_STATUS_COLUMNS)
 
     return {
+        "spec_id": spec_id,
+        "member": expected["member"],
         "path": path,
         "code_consumption": metadata.get("code_consumption", []),
+        "instance_root": expected["instance_root"],
         "statuses": [
             {
                 "status": strip_inline_code(row["状态"]),
@@ -750,11 +858,22 @@ def parse_workcase_member_contract(root: Path = ROOT) -> dict[str, Any]:
         ],
         "source_refs": [
             {"path": SHORT_SPEC_REFS["05"], "role": "parent_fact_model_spec"},
-            {"path": path, "role": "workcase_member_spec"},
+            {"path": path, "role": "fact_model_member_spec"},
             {"path": "specs/03-事实源与Git溯源规范.md", "role": "fact_source_boundary"},
             {"path": "specs/09-测试与验证规范.md", "role": "verification_boundary"},
         ],
     }
+
+
+def parse_fact_model_member_contracts(root: Path = ROOT) -> list[dict[str, Any]]:
+    return [
+        parse_fact_model_member_contract(spec_id, root)
+        for spec_id in sorted(FACT_MODEL_MEMBER_CONTRACTS)
+    ]
+
+
+def parse_workcase_member_contract(root: Path = ROOT) -> dict[str, Any]:
+    return parse_fact_model_member_contract("21", root)
 
 
 def _table_rows_for_section(sections: dict[str, dict[str, str]], section_name: str, columns: list[str]) -> list[dict[str, str]]:
@@ -1485,6 +1604,114 @@ def validate_workcase_member_contract(root: Path = ROOT) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_fact_model_member_contract(root: Path, spec_id: str) -> list[Diagnostic]:
+    expected = FACT_MODEL_MEMBER_CONTRACTS[spec_id]
+    path = SHORT_SPEC_REFS[spec_id]
+    full_path = root / path
+    diagnostics: list[Diagnostic] = []
+    if not full_path.exists():
+        return [Diagnostic("error", "FACT_MEMBER_SPEC_MISSING", path, f"{spec_id} {expected['member']} 成员规范缺失")]
+
+    raw = full_path.read_text(encoding="utf-8")
+    sections = h2_sections(raw)
+    contract = parse_fact_model_member_contract(spec_id, root)
+    member = expected["member"]
+
+    code_consumption = contract["code_consumption"]
+    if not isinstance(code_consumption, list):
+        diagnostics.append(Diagnostic("error", "FACT_MEMBER_CODE_CONSUMPTION_INVALID", path, f"{spec_id} code_consumption 必须是列表"))
+        code_consumption = []
+    for item in _missing_exact_values(expected["required_code_consumption"], code_consumption):
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "FACT_MEMBER_CODE_CONSUMPTION_MISSING",
+                path,
+                f"{spec_id} {member} 缺少 Code 消费入口: {item}",
+            )
+        )
+
+    status_values = [row["status"] for row in contract["statuses"]]
+    for status in _missing_exact_values(expected["required_statuses"], status_values):
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "FACT_MEMBER_STATUS_MISSING",
+                path,
+                f"{member} 状态闭集缺少: {status}",
+            )
+        )
+
+    source_section = sections.get("事实源与实例边界")
+    if not source_section:
+        diagnostics.append(Diagnostic("error", "FACT_MEMBER_SOURCE_BOUNDARY_MISSING", path, f"{member} 缺少事实源与实例边界章节"))
+    else:
+        for term in [term for term in expected["source_terms"] if term not in source_section["body"]]:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "FACT_MEMBER_SOURCE_BOUNDARY_MISSING",
+                    path,
+                    f"{member} 事实源边界缺少: {term}",
+                )
+            )
+
+    state_section = sections.get("状态、证据与关闭边界")
+    if not state_section:
+        diagnostics.append(Diagnostic("error", "FACT_MEMBER_CLOSURE_BOUNDARY_MISSING", path, f"{member} 缺少状态、证据与关闭边界章节"))
+    else:
+        for term in [term for term in expected["closure_terms"] if term not in state_section["body"]]:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "FACT_MEMBER_CLOSURE_BOUNDARY_MISSING",
+                    path,
+                    f"{member} 收口边界缺少: {term}",
+                )
+            )
+        for term in [term for term in expected["legacy_terms"] if term not in state_section["body"]]:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "FACT_MEMBER_LEGACY_BOUNDARY_MISSING",
+                    path,
+                    f"{member} legacy 边界缺少: {term}",
+                )
+            )
+        for term in [term for term in expected["special_terms"] if term not in state_section["body"]]:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "FACT_MEMBER_SPECIAL_BOUNDARY_MISSING",
+                    path,
+                    f"{member} 特有边界缺少: {term}",
+                )
+            )
+
+    human_gate_section = sections.get("Human Gate")
+    if not human_gate_section:
+        diagnostics.append(Diagnostic("error", "FACT_MEMBER_HUMAN_GATE_BOUNDARY_MISSING", path, f"{member} 缺少 Human Gate 章节"))
+    else:
+        for term in [term for term in expected["human_gate_terms"] if term not in human_gate_section["body"]]:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "FACT_MEMBER_HUMAN_GATE_BOUNDARY_MISSING",
+                    path,
+                    f"{member} Human Gate 缺少: {term}",
+                )
+            )
+
+    return diagnostics
+
+
+def validate_fact_model_member_contracts(root: Path = ROOT) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for spec_id in ("20", "22", "23", "24"):
+        diagnostics.extend(validate_fact_model_member_contract(root, spec_id))
+    return diagnostics
+
+
 def build_validation(root: Path = ROOT) -> dict[str, Any]:
     objects = load_formal_objects(root)
     specs = [obj for obj in objects if obj.object_type == "spec"]
@@ -1495,6 +1722,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     foundation_spec_contracts = parse_foundation_spec_contracts(objects, root)
     git_commit_action_template = parse_git_commit_action_template(root)
     workcase_member_contract = parse_workcase_member_contract(root)
+    fact_model_member_contracts = parse_fact_model_member_contracts(root)
     attachment_contracts = {
         "commit_message_contract": parse_commit_message_contract(root),
         "field_registry_contract": parse_field_registry_contract(root),
@@ -1513,6 +1741,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_attachment_contracts(root))
     diagnostics.extend(validate_git_commit_action_template(root))
     diagnostics.extend(validate_workcase_member_contract(root))
+    diagnostics.extend(validate_fact_model_member_contracts(root))
 
     diagnostic_dicts = [diagnostic.to_dict() for diagnostic in diagnostics]
     status = "ok" if not diagnostic_dicts else "failed"
@@ -1547,7 +1776,11 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
             {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},
             {"path": "specs/09-测试与验证规范.md", "role": "test_verification"},
+            {"path": "specs/20-Spark-火花.md", "role": "fact_model_member_spec"},
             {"path": "specs/21-WorkCase-工作项.md", "role": "workcase_member_spec"},
+            {"path": "specs/22-ADR-决策.md", "role": "fact_model_member_spec"},
+            {"path": "specs/23-Pitfall-踩坑经验.md", "role": "fact_model_member_spec"},
+            {"path": "specs/24-Study-研究报告.md", "role": "fact_model_member_spec"},
             {"path": TIMING_TABLE_PATH, "role": "consumption_timing_registry"},
             {"path": TAKEOVER_MATRIX_PATH, "role": "takeover_matrix"},
         ],
@@ -1559,6 +1792,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "foundation_spec_contracts": foundation_spec_contracts,
         "git_commit_action_template": git_commit_action_template,
         "workcase_member_contract": workcase_member_contract,
+        "fact_model_member_contracts": fact_model_member_contracts,
         "attachment_contracts": attachment_contracts,
         "diagnostics": diagnostic_dicts,
     }

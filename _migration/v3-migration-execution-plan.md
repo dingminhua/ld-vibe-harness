@@ -78,7 +78,7 @@ specs 迁入
 - 术语表新增`规则源`、`来源依据`、`必读依据`条目；
 - code/ldvh_specs.py 同步字段名和内部键名。
 
-当前状态：术语整治、规则/事实边界修正以及 5B-1/2/3/4/5 均已完成。5B-5 完成时 validator 0 diagnostics，tests 84 passed。阶段 6A 已启动并完成首个事实对象成员最小迁移：WorkCase 进入 `specs/21-WorkCase-工作项.md`，Code/tests 可消费其最小状态、事实源边界、关闭口径和 Human Gate。后续可继续推进 WorkCase 完整字段表、实例目录或 Spark/ADR/Pitfall/Study 成员规范，但正式行动模板实例仍后置到 Hook / commit gate 接入与 V3 正式启用前。
+当前状态：术语整治、规则/事实边界修正、5B-1/2/3/4/5 和阶段 6 均已完成。阶段 6 完成范围是：Spark、WorkCase、ADR、Pitfall、Study 五个事实对象成员已进入 V3 最小成员规范，Code/tests 可消费其成员身份、状态闭集、实例事实源位置、收口/归档/分流口径和 Human Gate。阶段 6 不包含真实 `ldvh-base` 实例迁移、完整字段表、Web 写入、Hook、commit gate、runtime adapter 或正式行动模板实例；这些后置到受管项目接入、实现域和 V3 正式启用前处理。
 
 阶段 5B 子阶段状态：
 
@@ -95,6 +95,7 @@ specs 迁入
 | 顺序 | 子阶段 | 目标 | 主要对象 | 验证方式 | 不做事项 |
 |---|---|---|---|---|---|
 | 6A | WorkCase 最小成员规范 | 已完成。选 WorkCase 作为首个事实对象成员，迁入对象定位、准入、未来事实源位置、最小状态闭集、执行项内部边界、四层完成口径和 Human Gate | `specs/21-WorkCase-工作项.md`、`specs/05-事实模型基础规范.md`、`_migration/6A-fact-object-member-admission.md`、`code/ldvh_specs.py`、`tests/code` | 已补 `parse_workcase_member_contract`、`validate_workcase_member_contract` 和缺状态/缺事实源/缺关闭口径/缺 Human Gate/缺 legacy 状态边界负例 | 不迁入 V2 `21.Att.01` 长字段表、完整 WorkCase schema、真实实例目录、Web 写入、Hook、commit gate、runtime adapter 或正式行动模板实例 |
+| 6B | 事实对象成员规范完成 | 已完成。迁入 Spark、ADR、Pitfall、Study 最小成员规范，并将 20-24 全部纳入 Code 可消费成员集合 | `specs/20-Spark-火花.md`、`specs/22-ADR-决策.md`、`specs/23-Pitfall-踩坑经验.md`、`specs/24-Study-研究报告.md`、`_migration/6B-fact-object-member-completion.md`、`code/ldvh_specs.py`、`tests/code` | 已补 `parse_fact_model_member_contracts`、`validate_fact_model_member_contracts` 和缺状态/缺事实源/缺 Human Gate/缺 legacy/缺 Study 正文骨架负例 | 不迁真实 `ldvh-base` 实例；不迁完整字段表；不迁 Web 写入；不迁 WorkCase `21.Att.01`；不建立正式行动模板实例 |
 
 5B-1 完成记录：
 1. 术语整治（5B-0）已完成，事实源/事实源边界/过程输出/证据等术语已统一；
@@ -129,6 +130,14 @@ specs 迁入
 2. `specs/21-WorkCase-工作项.md` 已建立最小成员规范，只承接对象定位、事实源位置、状态闭集、关闭口径和 Human Gate；
 3. `05` 已说明 WorkCase 首批迁入，但完整字段表、`orchestration` 长表、实例目录和其它成员仍后置；
 4. 正式行动模板实例未建立；该工作等待 Hook / commit gate 接入与 V3 正式启用前再做，避免纸面模板与真实执行入口脱节。
+
+6B 完成记录：
+
+1. `specs/20-Spark-火花.md` 已建立 Spark 最小成员规范，覆盖分流前对象定位、`pending/resolved/discarded` 状态、分流/废弃口径和 Human Gate；
+2. `specs/22-ADR-决策.md` 已建立 ADR 最小成员规范，覆盖长期决策、`active/archived/deprecated` 状态、规范吸收边界、legacy 状态禁用和 Human Gate；
+3. `specs/23-Pitfall-踩坑经验.md` 已建立 Pitfall 最小成员规范，覆盖已解决已验证经验、`active/archived` 状态、经验吸收边界和 Human Gate；
+4. `specs/24-Study-研究报告.md` 已建立 Study 最小成员规范，覆盖 Markdown frontmatter/正文事实对象、`active/archived` 状态、URL 结构边界、正文骨架和 Human Gate；
+5. `21.Att.01-orchestration字段契约表` 明确不在阶段 6 迁入；后续绑定 Hook / commit gate、正式行动模板实例、真实 WorkCase 实例和 Code/tests schema 后再判断。
 
 阶段 5B 术语校正：
 

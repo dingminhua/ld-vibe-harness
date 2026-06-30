@@ -147,7 +147,11 @@ def test_ldvh_starts_from_markdown_specs_only() -> None:
     assert (ROOT / "specs" / "07-Code确定性执行规范.md").exists()
     assert (ROOT / "specs" / "08-Web信息同步规范.md").exists()
     assert (ROOT / "specs" / "09-测试与验证规范.md").exists()
+    assert (ROOT / "specs" / "20-Spark-火花.md").exists()
     assert (ROOT / "specs" / "21-WorkCase-工作项.md").exists()
+    assert (ROOT / "specs" / "22-ADR-决策.md").exists()
+    assert (ROOT / "specs" / "23-Pitfall-踩坑经验.md").exists()
+    assert (ROOT / "specs" / "24-Study-研究报告.md").exists()
 
 
 def test_no_parallel_authority_layers() -> None:
@@ -207,7 +211,11 @@ def test_formal_specs_keep_ldvh_identity_blocks() -> None:
         ROOT / "specs" / "07-Code确定性执行规范.md",
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
+        ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
+        ROOT / "specs" / "22-ADR-决策.md",
+        ROOT / "specs" / "23-Pitfall-踩坑经验.md",
+        ROOT / "specs" / "24-Study-研究报告.md",
     ]:
         raw = path.read_text(encoding="utf-8")
         assert re.search(r"```yaml\nldvh_spec:", raw), path
@@ -225,7 +233,11 @@ def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
         ROOT / "specs" / "07-Code确定性执行规范.md",
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
+        ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
+        ROOT / "specs" / "22-ADR-决策.md",
+        ROOT / "specs" / "23-Pitfall-踩坑经验.md",
+        ROOT / "specs" / "24-Study-研究报告.md",
     ]:
         raw = path.read_text(encoding="utf-8")
         titles = _normalized_h2_titles(raw)
@@ -245,7 +257,11 @@ def test_role_sections_point_to_existing_h2_entries() -> None:
         ROOT / "specs" / "07-Code确定性执行规范.md",
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
+        ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
+        ROOT / "specs" / "22-ADR-决策.md",
+        ROOT / "specs" / "23-Pitfall-踩坑经验.md",
+        ROOT / "specs" / "24-Study-研究报告.md",
     ]:
         raw = path.read_text(encoding="utf-8")
         metadata = _first_yaml_block(path)["ldvh_spec"]

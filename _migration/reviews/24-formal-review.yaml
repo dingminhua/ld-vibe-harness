@@ -1,0 +1,16 @@
+target_spec: "specs/24-Study-研究报告.md"
+target_sha256: "3cc470603a435dd2d8739037c6e1ab319658de273c33b1c2f7394908d0437174"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/6B-fact-object-member-completion.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover 24 as the Study fact model member candidate with status, source, Markdown body, URL, and Human Gate checks."
+subagent_review:
+  agent_id: "codex-local-6b-fact-members-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review found 24 limited to the Study minimal member contract; full frontmatter schema, real instances, Web reader, and research action templates remain postposed."
+  unresolved_blockers: []
+warnings: []

@@ -1,0 +1,16 @@
+target_spec: "specs/22-ADR-决策.md"
+target_sha256: "849a890ee9542a8de580ab82a7084629d48c44f33ebe12abd451ea5784ac6c23"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/6B-fact-object-member-completion.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover 22 as the ADR fact model member candidate with status, source, decision, legacy, and Human Gate checks."
+subagent_review:
+  agent_id: "codex-local-6b-fact-members-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review found 22 limited to ADR minimal member rules; full decision schema, real ADR instances, and ADR action templates remain postposed."
+  unresolved_blockers: []
+warnings: []
