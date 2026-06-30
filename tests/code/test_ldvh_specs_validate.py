@@ -123,6 +123,7 @@ def test_action_guide_session_start_read_plan() -> None:
     )
 
     assert guide["metadata"]["read_only"] is True
+    assert guide["metadata"]["authorization"] == "none"
     assert guide["summary"]["status"] == "ok"
     assert guide["summary"]["consumption_timing"] == "session_start"
     assert guide["summary"]["requirements"] == 1
@@ -142,6 +143,7 @@ def test_action_guide_pre_tool_use_reports_missing_target() -> None:
     guide = ldvh_specs.build_action_guide(ROOT, consumption_timing="pre_tool_use")
 
     assert guide["summary"]["status"] == "ok"
+    assert "允许写入" not in guide["next_action"]
     assert guide["missing_fields"] == [
         {
             "field": "target_path",
@@ -150,6 +152,18 @@ def test_action_guide_pre_tool_use_reports_missing_target() -> None:
     ]
     assert "补齐 missing_fields" in guide["next_action"]
     assert any(item["requirement_id"] == "AI-BEH-003" for item in guide["stop_conditions"])
+
+
+def test_action_guide_pre_tool_use_next_action_has_no_write_authorization() -> None:
+    guide = ldvh_specs.build_action_guide(
+        ROOT,
+        consumption_timing="pre_tool_use",
+        target_path="tests/code/test_ldvh_specs_validate.py",
+    )
+
+    assert guide["summary"]["status"] == "ok"
+    assert "允许写入" not in guide["next_action"]
+    assert "需交还 Human" in guide["next_action"]
 
 
 def test_action_guide_unknown_timing_diagnostic() -> None:
@@ -224,6 +238,17 @@ def test_preflight_attachment_keeps_boundary_warning() -> None:
     assert preflight["summary"]["target_type"] == "attachment"
     assert preflight["summary"]["warnings"] == 1
     assert preflight["diagnostics"][0]["code"] == "PREFLIGHT_ATTACHMENT_BOUNDARY"
+
+
+def test_preflight_known_tests_target_uses_diagnostic_clear_status() -> None:
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="tests/code/test_ldvh_specs_validate.py",
+        operation="write",
+    )
+
+    assert preflight["summary"]["status"] == "diagnostic_clear"
+    assert preflight["diagnostics"] == []
 
 
 def test_preflight_unknown_target_blocks() -> None:
@@ -322,12 +347,47 @@ def test_runtime_pre_tool_use_includes_preflight() -> None:
         ROOT,
         event="pre_tool_use",
         target_path="code/ldvh_specs.py",
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/03-AI行为规范.md",
+        ],
     )
 
     assert runtime["summary"]["status"] == "review_required"
     assert runtime["summary"]["has_preflight"] is True
     assert runtime["preflight"]["summary"]["target_type"] == "code"
     assert runtime["diagnostics"][0]["code"] == "PREFLIGHT_CODE_OUTPUT_NOT_AUTHORIZATION"
+
+
+def test_runtime_pre_tool_use_blocks_without_read_plan_consumption() -> None:
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="pre_tool_use",
+        target_path="tests/code/test_ldvh_specs_validate.py",
+    )
+
+    assert runtime["summary"]["status"] == "blocked"
+    assert runtime["diagnostics"][0]["code"] == "RUNTIME_READ_PLAN_CONSUMED_EMPTY"
+
+
+def test_runtime_git_commit_msg_blocks_incomplete_read_plan_consumption() -> None:
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="git_commit_msg",
+        target_path="tests/code/test_ldvh_specs_validate.py",
+        acknowledged_paths=["specs/00-理念与构成.md"],
+    )
+
+    assert runtime["summary"]["status"] == "blocked"
+    assert runtime["diagnostics"][0]["code"] == "RUNTIME_READ_PLAN_CONSUMED_INCOMPLETE"
+
+
+def test_runtime_completion_claim_requires_verification_evidence() -> None:
+    runtime = ldvh_specs.build_runtime_event(ROOT, event="completion_claim")
+
+    assert runtime["summary"]["status"] == "blocked"
+    assert runtime["diagnostics"][0]["code"] == "RUNTIME_COMPLETION_VERIFICATION_MISSING"
 
 
 def test_runtime_supports_all_consumption_timings() -> None:
@@ -339,6 +399,7 @@ def test_runtime_supports_all_consumption_timings() -> None:
             "specs/03-AI行为规范.md",
         ],
         "target_path": "tests/code/test_ldvh_specs_validate.py",
+        "verification_evidence": ["python3 -m pytest tests/code"],
     }
 
     for event in events:

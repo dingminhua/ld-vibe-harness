@@ -573,7 +573,7 @@ def action_guide_next_action(timing: str, missing_fields: list[dict[str, str]]) 
     if timing == "session_start":
         return "先读取 P0/P1 task_read_plan，再进入实质行动。"
     if timing == "pre_tool_use":
-        return "确认 target、读取证据和阻断条件后，再决定是否允许写入。"
+        return "确认 target、读取证据和阻断条件后，输出阻断、分流或需交还 Human 的判断。"
     if timing == "git_commit_msg":
         return "确认 read_plan 消费证据、staged paths 和提交说明后，再提交。"
     if timing == "completion_claim":
@@ -727,6 +727,7 @@ def build_action_guide(
         "metadata": {
             "read_only": True,
             "authority": "derived_from_specs_markdown",
+            "authorization": "none",
             "root": root.as_posix(),
         },
         "summary": {
@@ -927,7 +928,7 @@ def build_preflight(
         for diagnostic in diagnostics
         if diagnostic.get("disposition") == "human_gate_review"
     ]
-    status = "blocked" if blocking_count else "review_required" if diagnostics else "pass"
+    status = "blocked" if blocking_count else "review_required" if diagnostics else "diagnostic_clear"
 
     return {
         "metadata": {
@@ -998,8 +999,16 @@ def receipt_id_for(
     session_id: str,
     target_path: str,
     acknowledged_paths: list[str],
+    verification_evidence: list[str],
 ) -> str:
-    raw = "\0".join([event, trigger_source, session_id, target_path, "|".join(acknowledged_paths)])
+    raw = "\0".join([
+        event,
+        trigger_source,
+        session_id,
+        target_path,
+        "|".join(acknowledged_paths),
+        "|".join(verification_evidence),
+    ])
     return "ldvh-rt-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
@@ -1025,12 +1034,14 @@ def build_runtime_event(
     task: str = "",
     operation: str = "write",
     acknowledged_paths: list[str] | None = None,
+    verification_evidence: list[str] | None = None,
 ) -> dict[str, Any]:
     validation = build_validation(root)
     allowed_events = {row["consumption_timing"] for row in validation["consumption_timings"]}
     normalized_event = event.strip()
     normalized_target = target_path.strip().lstrip("./")
     normalized_ack_paths = normalize_path_list(acknowledged_paths)
+    normalized_verification_evidence = normalize_path_list(verification_evidence)
 
     diagnostics: list[dict[str, str]] = list(validation["diagnostics"])
     action_guide: dict[str, Any] | None = None
@@ -1078,6 +1089,27 @@ def build_runtime_event(
                 })
 
         if normalized_event in {"pre_tool_use", "git_commit_msg"}:
+            missing_required = [
+                path
+                for path in RUNTIME_REQUIRED_ENTRY_PATHS
+                if path not in normalized_ack_paths
+            ]
+            if not normalized_ack_paths:
+                diagnostics.append({
+                    "level": "blocking",
+                    "code": "RUNTIME_READ_PLAN_CONSUMED_EMPTY",
+                    "path": f"runtime://{normalized_event}",
+                    "message": f"{normalized_event} 必须提供 read_plan 消费证据。",
+                    "disposition": "blocking",
+                })
+            elif missing_required:
+                diagnostics.append({
+                    "level": "blocking",
+                    "code": "RUNTIME_READ_PLAN_CONSUMED_INCOMPLETE",
+                    "path": f"runtime://{normalized_event}",
+                    "message": f"{normalized_event} 缺少入口必读路径: " + "；".join(missing_required),
+                    "disposition": "blocking",
+                })
             preflight = build_preflight(
                 root,
                 target_path=normalized_target,
@@ -1086,6 +1118,15 @@ def build_runtime_event(
                 trigger_source=trigger_source,
             )
             diagnostics.extend(preflight["diagnostics"])
+
+        if normalized_event == "completion_claim" and not normalized_verification_evidence:
+            diagnostics.append({
+                "level": "blocking",
+                "code": "RUNTIME_COMPLETION_VERIFICATION_MISSING",
+                "path": "runtime://completion_claim",
+                "message": "completion_claim 必须提供验证证据、未验证范围或残留风险说明。",
+                "disposition": "blocking",
+            })
 
     status = runtime_status_from_diagnostics(diagnostics, preflight)
     receipt_status = "blocked" if status == "blocked" else "generated"
@@ -1106,6 +1147,7 @@ def build_runtime_event(
             session_id,
             normalized_target,
             normalized_ack_paths,
+            normalized_verification_evidence,
         ),
         "receipt_type": "runtime_event",
         "status": receipt_status,
@@ -1116,6 +1158,7 @@ def build_runtime_event(
         "session_id": session_id,
         "target_path": normalized_target,
         "acknowledged_paths": normalized_ack_paths,
+        "verification_evidence": normalized_verification_evidence,
         "boundary": "receipt 是过程输出，不是最终事实源、授权、放行、Human Gate 或完成证明。",
     }
 
@@ -1145,6 +1188,7 @@ def build_runtime_event(
             "task": task,
             "operation": operation,
             "acknowledged_paths": normalized_ack_paths,
+            "verification_evidence": normalized_verification_evidence,
         },
         "receipt": receipt,
         "action_guide": action_guide,

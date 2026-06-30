@@ -76,6 +76,7 @@ def print_text(result: dict[str, Any], command: str) -> None:
         print(f"- capability_gap: {summary['capability_gap']}")
         print(f"- diagnostics: {summary['diagnostics']}")
         print(f"- next_action: {result['next_action']}")
+        print("- authorization: none")
         if result["task_read_plan"]:
             print("\nTask read plan:")
             for item in result["task_read_plan"]:
@@ -165,6 +166,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="acknowledged read plan path for runtime acknowledge_read_plan; may be repeated or comma-separated",
     )
+    parser.add_argument(
+        "--verification-evidence",
+        action="append",
+        default=[],
+        help="verification evidence for runtime completion_claim; may be repeated or comma-separated",
+    )
     return parser
 
 
@@ -201,6 +208,7 @@ def main(argv: list[str] | None = None) -> int:
             task=args.task,
             operation=args.operation,
             acknowledged_paths=args.acknowledged_path,
+            verification_evidence=args.verification_evidence,
         )
         result = output
     else:
