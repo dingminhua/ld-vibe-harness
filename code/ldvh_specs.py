@@ -14,6 +14,20 @@ TIMING_TABLE_PATH = "specs/attachments/01.Att.01-保障消费时机表.md"
 TAKEOVER_MATRIX_PATH = "specs/attachments/01.Att.06-保障机制承接矩阵.md"
 AI_BEHAVIOR_SPEC_PATH = "specs/03-AI行为规范.md"
 
+SHORT_SPEC_REFS = {
+    "00": "specs/00-理念与构成.md",
+    "01": "specs/01-保障与衔接.md",
+    "02": "specs/02-Specs基础规范.md",
+    "03": "specs/03-AI行为规范.md",
+}
+BASE_ACTION_GUIDE_SOURCE_REFS = [
+    {"path": "specs/00-理念与构成.md", "role": "value_anchor"},
+    {"path": "specs/01-保障与衔接.md", "role": "action_guide_contract"},
+    {"path": "specs/03-AI行为规范.md", "role": "ai_behavior_requirements"},
+    {"path": TIMING_TABLE_PATH, "role": "consumption_timing_registry"},
+    {"path": TAKEOVER_MATRIX_PATH, "role": "takeover_matrix"},
+]
+
 SPEC_REQUIRED_KEYS = {
     "spec_id",
     "spec_kind",
@@ -201,6 +215,18 @@ def split_semicolon_list(value: str) -> list[str]:
     return [part.strip() for part in re.split(r"[；;]", value) if part.strip()]
 
 
+def normalize_fact_source_ref(value: str, source_path: str) -> dict[str, str]:
+    stripped = strip_inline_code(value).strip()
+    if stripped in SHORT_SPEC_REFS:
+        return {"type": "spec", "path": SHORT_SPEC_REFS[stripped], "label": stripped}
+    refs = extract_spec_path_refs(stripped)
+    if refs:
+        return {"type": "spec", "path": refs[0], "label": stripped}
+    if stripped.startswith("本文"):
+        return {"type": "spec_section", "path": source_path, "label": stripped}
+    return {"type": "process_evidence", "path": "", "label": stripped}
+
+
 def parse_consumption_timings(root: Path = ROOT) -> list[dict[str, str]]:
     path = root / TIMING_TABLE_PATH
     raw = path.read_text(encoding="utf-8")
@@ -273,6 +299,18 @@ def flatten_role_sections(value: Any) -> list[str]:
 
 def extract_spec_path_refs(text: str) -> list[str]:
     return re.findall(r"`?(specs/[^\s`；;，,。]+?\.md)`?", text)
+
+
+def unique_dicts(items: list[dict[str, Any]], key_fields: tuple[str, ...]) -> list[dict[str, Any]]:
+    seen: set[tuple[Any, ...]] = set()
+    unique: list[dict[str, Any]] = []
+    for item in items:
+        key = tuple(item.get(field) for field in key_fields)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(item)
+    return unique
 
 
 def path_exists(root: Path, rel_path: str) -> bool:
@@ -500,4 +538,207 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "ai_behavior_requirements": requirements,
         "takeover_matrix": takeover_matrix,
         "diagnostics": diagnostic_dicts,
+    }
+
+
+def priority_for_ref(path: str, requirement_id: str) -> str:
+    if path in {"specs/00-理念与构成.md", "specs/01-保障与衔接.md", "specs/03-AI行为规范.md"}:
+        return "P0"
+    if requirement_id in {"AI-BEH-001", "AI-BEH-002", "AI-BEH-003", "AI-BEH-004"}:
+        return "P1"
+    return "P2"
+
+
+def action_guide_next_action(timing: str, missing_fields: list[dict[str, str]]) -> str:
+    if missing_fields:
+        return "先补齐 missing_fields；影响写入、提交或完成声明时暂停并分流。"
+    if timing == "session_start":
+        return "先读取 P0/P1 task_read_plan，再进入实质行动。"
+    if timing == "pre_tool_use":
+        return "确认 target、读取证据和阻断条件后，再决定是否允许写入。"
+    if timing == "git_commit_msg":
+        return "确认 read_plan 消费证据、staged paths 和提交说明后，再提交。"
+    if timing == "completion_claim":
+        return "先完成 validation_guard，说明未验证范围和残留风险后再声明完成。"
+    return "按 task_read_plan 读取来源，处理 stop_conditions，再执行当前行动。"
+
+
+def capability_gaps_for_requirement(requirement: dict[str, Any]) -> list[dict[str, str]]:
+    raw_capability = requirement["required_capability"]
+    gap_markers = ("Hook", "dispatcher", "receipt", "环境入口", "Git hook", "pre-tool-use", "commit validator")
+    if any(marker in raw_capability for marker in gap_markers):
+        return [
+            {
+                "requirement_id": requirement["requirement_id"],
+                "required_capability": raw_capability,
+                "current_gap": "当前阶段仅生成只读 Action Guide；运行时拦截、receipt 写入、Hook 和提交门禁由后续阶段承接。",
+                "disposition": "保留为 capability_gap，不得声称对应运行时能力已经生效。",
+            }
+        ]
+    return []
+
+
+def build_action_guide(
+    root: Path = ROOT,
+    consumption_timing: str = "session_start",
+    task: str = "",
+    target_path: str = "",
+    trigger_source: str = "manual",
+) -> dict[str, Any]:
+    validation = build_validation(root)
+    allowed_timings = {row["consumption_timing"] for row in validation["consumption_timings"]}
+    all_requirements = validation["ai_behavior_requirements"]
+    requirements = [
+        requirement
+        for requirement in all_requirements
+        if requirement["consumption_timing"] == consumption_timing
+    ]
+
+    missing_fields: list[dict[str, str]] = []
+    guide_diagnostics: list[dict[str, str]] = []
+    if consumption_timing not in allowed_timings:
+        missing_fields.append({
+            "field": "consumption_timing",
+            "reason": f"消费时机不在 01.Att.01 闭集内: {consumption_timing}",
+        })
+        guide_diagnostics.append(
+            Diagnostic(
+                "error",
+                "ACTION_GUIDE_TIMING_UNKNOWN",
+                TIMING_TABLE_PATH,
+                f"未知消费时机: {consumption_timing}",
+            ).to_dict()
+        )
+        requirements = []
+
+    if consumption_timing in {"pre_tool_use", "git_commit_msg"} and not target_path:
+        missing_fields.append({
+            "field": "target_path",
+            "reason": "写入或提交前需要明确 target/staged paths，当前输入未提供。",
+        })
+
+    task_read_plan: list[dict[str, Any]] = []
+    source_refs = [dict(ref) for ref in BASE_ACTION_GUIDE_SOURCE_REFS]
+    stop_conditions: list[dict[str, str]] = []
+    validation_guard: list[dict[str, str]] = []
+    capability_gap: list[dict[str, str]] = []
+
+    for requirement in requirements:
+        requirement_id = requirement["requirement_id"]
+        source_refs.append({
+            "path": requirement["source_path"],
+            "role": "requirement_source",
+            "requirement_id": requirement_id,
+        })
+
+        for source in requirement["required_fact_sources"]:
+            normalized = normalize_fact_source_ref(source, requirement["source_path"])
+            path = normalized["path"]
+            if path:
+                source_refs.append({
+                    "path": path,
+                    "role": "required_fact_source",
+                    "requirement_id": requirement_id,
+                })
+            task_read_plan.append({
+                "priority": priority_for_ref(path, requirement_id),
+                "role": "required_fact_source",
+                "source_type": normalized["type"],
+                "path": path,
+                "label": normalized["label"],
+                "requirement_id": requirement_id,
+                "reason": requirement["requirement"],
+            })
+
+        for condition in requirement["blocking_conditions"]:
+            stop_conditions.append({
+                "requirement_id": requirement_id,
+                "condition": condition,
+                "disposition": "触发时暂停、分流或进入 Human Gate，不得声明完成。",
+            })
+
+        validation_guard.append({
+            "requirement_id": requirement_id,
+            "guard": requirement["completion_evidence"],
+            "source_path": requirement["source_path"],
+        })
+        capability_gap.extend(capability_gaps_for_requirement(requirement))
+
+    if not task_read_plan and consumption_timing in allowed_timings:
+        for path in ("specs/00-理念与构成.md", "specs/01-保障与衔接.md", "specs/03-AI行为规范.md"):
+            task_read_plan.append({
+                "priority": "P0",
+                "role": "fallback_fact_source",
+                "source_type": "spec",
+                "path": path,
+                "label": path,
+                "requirement_id": "",
+                "reason": "未定位到匹配保障需求时的 fallback read_plan。",
+            })
+        capability_gap.append({
+            "requirement_id": "",
+            "required_capability": "Action Guide requirement matching",
+            "current_gap": "未定位到匹配保障需求，已降级为 00/01/03 fallback read_plan。",
+            "disposition": "不得确认空 read_plan；后续应补齐对应保障需求。",
+        })
+
+    next_queries: list[dict[str, str]] = []
+    if target_path:
+        next_queries.append({
+            "query": "target_impact",
+            "target_path": target_path,
+            "reason": "后续阶段用于定位 target 对 specs、Code、事实源或环境入口的影响。",
+        })
+    else:
+        next_queries.append({
+            "query": "provide_target",
+            "reason": "若当前行动涉及写入、提交或完成声明，应补充 target/staged paths。",
+        })
+
+    impact_paths = sorted(
+        {
+            item["path"]
+            for item in task_read_plan
+            if item.get("path")
+        }
+    )
+    diagnostics = validation["diagnostics"] + guide_diagnostics
+    status = "ok" if not diagnostics else "failed"
+
+    return {
+        "metadata": {
+            "read_only": True,
+            "authority": "derived_from_specs_markdown",
+            "root": root.as_posix(),
+        },
+        "summary": {
+            "status": status,
+            "consumption_timing": consumption_timing,
+            "requirements": len(requirements),
+            "task_read_plan": len(task_read_plan),
+            "missing_fields": len(missing_fields),
+            "capability_gap": len(capability_gap),
+            "diagnostics": len(diagnostics),
+        },
+        "input": {
+            "task": task,
+            "target_path": target_path,
+            "trigger_source": trigger_source,
+            "consumption_timing": consumption_timing,
+        },
+        "requirements": requirements,
+        "task_read_plan": unique_dicts(task_read_plan, ("priority", "role", "source_type", "path", "label", "requirement_id")),
+        "next_queries": next_queries,
+        "stop_conditions": unique_dicts(stop_conditions, ("requirement_id", "condition")),
+        "validation_guard": validation_guard,
+        "next_action": action_guide_next_action(consumption_timing, missing_fields),
+        "missing_fields": missing_fields,
+        "capability_gap": unique_dicts(capability_gap, ("requirement_id", "required_capability")),
+        "impact_summary": {
+            "affected_paths": impact_paths,
+            "affected_path_count": len(impact_paths),
+            "requirement_ids": [requirement["requirement_id"] for requirement in requirements],
+        },
+        "source_refs": unique_dicts(source_refs, ("path", "role", "requirement_id")),
+        "diagnostics": diagnostics,
     }

@@ -112,3 +112,74 @@ def test_specs_validate_cli_json_all() -> None:
     assert payload["metadata"]["read_only"] is True
     assert payload["summary"]["status"] == "ok"
     assert payload["diagnostics"] == []
+
+
+def test_action_guide_session_start_read_plan() -> None:
+    guide = ldvh_specs.build_action_guide(
+        ROOT,
+        consumption_timing="session_start",
+        task="进入 LDVH v3 工作",
+        trigger_source="manual",
+    )
+
+    assert guide["metadata"]["read_only"] is True
+    assert guide["summary"]["status"] == "ok"
+    assert guide["summary"]["consumption_timing"] == "session_start"
+    assert guide["summary"]["requirements"] == 1
+    assert guide["missing_fields"] == []
+    read_paths = {item["path"] for item in guide["task_read_plan"] if item["path"]}
+    assert {
+        "specs/00-理念与构成.md",
+        "specs/01-保障与衔接.md",
+        "specs/03-AI行为规范.md",
+    }.issubset(read_paths)
+    assert guide["stop_conditions"]
+    assert guide["validation_guard"][0]["requirement_id"] == "AI-BEH-001"
+    assert any(gap["requirement_id"] == "AI-BEH-001" for gap in guide["capability_gap"])
+
+
+def test_action_guide_pre_tool_use_reports_missing_target() -> None:
+    guide = ldvh_specs.build_action_guide(ROOT, consumption_timing="pre_tool_use")
+
+    assert guide["summary"]["status"] == "ok"
+    assert guide["missing_fields"] == [
+        {
+            "field": "target_path",
+            "reason": "写入或提交前需要明确 target/staged paths，当前输入未提供。",
+        }
+    ]
+    assert "补齐 missing_fields" in guide["next_action"]
+    assert any(item["requirement_id"] == "AI-BEH-003" for item in guide["stop_conditions"])
+
+
+def test_action_guide_unknown_timing_diagnostic() -> None:
+    guide = ldvh_specs.build_action_guide(ROOT, consumption_timing="unknown_event")
+
+    assert guide["summary"]["status"] == "failed"
+    assert guide["missing_fields"][0]["field"] == "consumption_timing"
+    assert guide["diagnostics"][0]["code"] == "ACTION_GUIDE_TIMING_UNKNOWN"
+
+
+def test_specs_validate_cli_action_guide_json() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/specs_validate.py",
+            "action-guide",
+            "--timing",
+            "session_start",
+            "--format",
+            "json",
+            "--fail-on-diagnostics",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["metadata"]["read_only"] is True
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["task_read_plan"] >= 3
+    assert payload["source_refs"]

@@ -54,13 +54,17 @@ specs 迁入
 
 ## 5. 当前下一步
 
-当前下一步为阶段 1：
+阶段 1 已完成：正式 `code/specs_validate.py` 已能解析 `ldvh_spec`、`ldvh_attachment`、H2 章节、`role_sections`、`code_consumption`、保障消费时机表和 03 AI 行为保障表，并由 `tests/code/` 覆盖。
 
-1. 提交当前 00/01/02/03 相关 specs 基线和本文计划。
-2. 建立正式 `code/specs_validate.py`。
-3. 让 Code 能解析 `ldvh_spec`、`ldvh_attachment`、H2 章节、`role_sections`、`code_consumption`、保障消费时机表和 03 AI 行为保障表。
-4. 为上述解析与校验补齐 `tests/code/` 回归测试。
-5. 运行测试，并把仍不能自动判断的内容归入 diagnostic 或后续待补齐事项。
+阶段 2 已完成最小只读 Action Guide：Code 已能基于正式 specs 输出 `task_read_plan`、`next_queries`、`stop_conditions`、`validation_guard`、`missing_fields`、`capability_gap`、`impact_summary` 和 `source_refs`。该输出只作为过程指导，不成为独立事实源，也不声称运行时拦截、receipt 写入、Hook 或提交门禁已经生效。
+
+当前下一步为阶段 3：
+
+1. 基于 Action Guide 输出建立只读 preflight；
+2. 判断写 specs、写 code、改附件时的目标路径、影响范围、必要读取和 Human Gate 风险；
+3. 输出 blocking、warning、follow_up、unverifiable 等诊断分流；
+4. 保持 preflight 为诊断和阻断建议，不输出授权、放行或 Human Gate 替代结论；
+5. 为 specs、code、附件、未知 target 和高影响变更补齐回归测试。
 
 ## 6. 停止条件
 
