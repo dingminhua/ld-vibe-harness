@@ -55,7 +55,7 @@ Runtime Protocol、环境入口、canonical event、trigger source 和不得声�
 2. `specs/02-Specs基础规范.md` -> `specs/04-Specs基础规范.md`；
 3. `specs/attachments/02.Att.*` -> `specs/attachments/04.Att.*`；
 4. 同步 identity block、canonical_path、parent_spec、basis、related_specs、正文引用、Code 常量、tests 和迁移计划引用；
-5. 不在本轮创建空壳 `03/05/06/07/08/09` 正式 specs；这些文件必须等对应 V2 内容完成吸收、归口和测试闭环后再进入正式 `specs/`。
+5. 不创建空壳 `03/05/06/07/08/09` 正式 specs；这些文件只有在对应 V2 内容完成吸收、归口和测试闭环后，才能进入正式 `specs/`。后续若创建这些文件，必须具备规则本体、保障措施、验证方法、Human Gate、Stop Conditions 和 review 证据。
 
 ## 5. 停止条件
 

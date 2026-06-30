@@ -1,16 +1,16 @@
-target_spec: "specs/04-行动编排基础规范.md"
-target_sha256: "8052953541ef62c6323a2b0e912a2fed762348a0c3560381877df559848906d0"
-change_type: "addition"
+target_spec: "specs/04-Specs基础规范.md"
+target_sha256: "7975b7af0cfcf0681346c0d1e127e24d76d495e34b7797bbaca3ae3e6cb30ce6"
+change_type: "migration"
 mapping_evidence:
-  path: "_migration/inventory/v2-04-orchestration-responsibility-map.yaml"
+  path: "_migration/v3-formal-spec-numbering-decision.md"
 code_verification:
   command: "python3 -m pytest -q && python3 -m pytest -q _migration/tests"
   passed: true
-  receipt: "Formal tests and migration tests pass after renumbering orchestration to 04 and adding Skill carrier boundary."
+  receipt: "Formal tests and migration tests passed after Specs 基础规范 was renumbered to 04 and identity references were synchronized."
 subagent_review:
-  agent_id: "019f0b3c-76d0-74b3-80a0-13614ac0c7d8"
-  reviewer: "Lagrange"
+  agent_id: "019f1731-2492-7f30-affa-ec1568587eec"
+  reviewer: "Ramanujan"
   verdict: "pass"
-  receipt: "Subagent judged the orchestration归口正确 but warned not to copy v2 03 long text; later renumbered to 04-行动编排基础规范 after 02 行为 and 03 工作对象 were introduced."
+  receipt: "Subagent reviewed current code/tests numbering risks and confirmed 04 is now Specs 基础规范; old 04 行动编排 review target must not remain as V3 target."
   unresolved_blockers: []
 warnings: []

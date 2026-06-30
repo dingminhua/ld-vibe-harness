@@ -75,7 +75,7 @@ spec_entries:
       - specs/attachments/01.Att.07-行动编排接管建议矩阵.md
       - specs/attachments/03.Att.01-成员身份字段表.md
     risk: "May blur Action Guide navigation with Runtime approval or Human Gate authority."
-    notes: "Relevant to specs/core/action-guide.md but should not be replaced by it."
+    notes: "Relevant to V3 action-guide and action-template rules, but should not be copied as a separate core directory authority."
 
   - source_path: specs/04-Code确定性执行规范.md
     original_role: code_determinism_foundation
@@ -87,7 +87,7 @@ spec_entries:
       - specs/attachments/04.Att.06-知识地图投影Schema表.md
       - specs/attachments/04.Att.07-受控写入前检查矩阵.md
     risk: "Do not let Code infer authority, approval, or unstated natural-language intent."
-    notes: "Initial v3 extraction exists at specs/core/code-determinism.md with a YAML projection."
+    notes: "Initial V3 extraction should target specs/07-Code确定性执行规范.md; do not restore specs/core or per-spec YAML projection authority."
 
   - source_path: specs/05-Web信息同步规范.md
     original_role: web_sync_foundation

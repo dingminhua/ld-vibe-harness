@@ -24,7 +24,7 @@ def test_parent_spec_candidate_migrates_to_specs() -> None:
 
     assert decision["decision"] == "migrate"
     assert decision["role"] == "parent_spec"
-    assert decision["target_path"] == "specs/code-determinism.yaml"
+    assert decision["target_path"] == "specs/07-Code确定性执行规范.md"
 
 
 def test_child_spec_requires_parent_and_migrates() -> None:

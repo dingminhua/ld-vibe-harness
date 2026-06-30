@@ -1,13 +1,13 @@
-map_id: v2-terminology-to-v3-02-att-06-map-001
+map_id: v2-terminology-to-v3-04-att-06-map-001
 status: temporary_migration_evidence
 purpose: >
   Record the scoped migration evidence for introducing
-  specs/attachments/02.Att.06-术语表.md as the v3 core glossary attachment.
+  specs/attachments/04.Att.06-术语表.md as the v3 core glossary attachment.
 
 source_of_truth:
   - "../ld-vibe-harness/specs/attachments/01.Att.02-术语表.md"
 target_candidate:
-  - "specs/attachments/02.Att.06-术语表.md"
+  - "specs/attachments/04.Att.06-术语表.md"
 
 core_constraint:
   single_git_file_fact_source: true
@@ -27,7 +27,7 @@ selection_boundary:
     rewritten or explicitly deprecated.
   non_migrated_v2_content: >
     v2 headings, status-closure prose, auxiliary checklists, and to-do sections
-    are not copied into the v3 attachment because specs/02 limits attachments
+    are not copied into the v3 attachment because specs/04 limits attachments
     to subordinate tables, enums, pure matrices, term tables, and authorized
     machine contracts.
 
