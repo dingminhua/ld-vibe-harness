@@ -78,7 +78,7 @@ specs 迁入
 - 术语表新增`规则源`、`来源依据`、`必读依据`条目；
 - code/ldvh_specs.py 同步字段名和内部键名。
 
-当前状态：术语整治、规则/事实边界修正以及 5B-1/2/3/4 均已完成。5B-4 完成时 validator 0 diagnostics，tests 80 passed。后续可推进 5B-5 Web 同源读取与展示边界检查。
+当前状态：术语整治、规则/事实边界修正以及 5B-1/2/3/4/5 均已完成。5B-5 完成时 validator 0 diagnostics，tests 84 passed。后续可推进阶段 6 事实源与事实对象迁移。
 
 阶段 5B 子阶段状态：
 
@@ -88,7 +88,7 @@ specs 迁入
 | 5B-2 | 附件迁移筛选与授权闭环 | 已完成。48 个 V2 附件分流记录见 `_migration/5B-2-attachment-disposition.md`；正式迁入 `03.Att.01`、`05.Att.01`、`09.Att.01` | V2 `02.Att.*`、`04.Att.*`、`05.Att.*`、`07.Att.*`、`08.Att.*`、`specs/attachments`、`tests/code` | 已补附件解析与负例；validator 0 diagnostics；tests 68 passed | 未整批搬运附件；知识地图附件废弃为 legacy_alias；Web 和成员专属附件后置 |
 | 5B-3 | `03/09` 证据与验证边界专项 validator | 已完成。增强非事实源误用、过程输出回写、测试证据边界、失败阻断和验证声明字段检查 | `specs/03-事实源与Git溯源规范.md`、`specs/09-测试与验证规范.md`、`code/ldvh_specs.py`、`tests/code` | 已补 03/09 正反例；validator 0 diagnostics；tests 73 passed | 未实现 Hook、commit gate 或环境接入；未输出授权语义 |
 | 5B-4 | `06` Git 提交行动模板示范 | 已完成。以 Git 提交行动作为第一个行动模板示范，验证 Context、Scenario、Gate、执行、验证、回写和交还结构；同时确认 Action Guide 取代知识地图、行动模板去 Skill 化 | `specs/06-行动模板基础规范.md`、V2 `31-git-commit-action` 迁移证据、`skills/ldvh-git-commit/SKILL.md`、commit 契约附件、Action Guide 相关 Code、`tests/code` | 已补 `validate_git_commit_action_template` 和负例测试；validator 0 diagnostics；tests 80 passed | 未安装 commit hook；未实现 commit gate；未把 commit validator 输出当授权；未恢复 Skill 顶层机制；未让模板本身定义 commit 规则 |
-| 5B-5 | `08` Web 同源独立读取与展示边界检查 | 明确 Web 与 Code 分开实现：Web 页面/API 自行读取同一 Git 文件事实源、正式 specs、事实对象或 Web 自有 API 聚合，Code 输出只作诊断、验证或测试对照 | `specs/08-Web信息同步规范.md`、`specs/07-Code确定性执行规范.md`、Web 边界 validator、`tests/code` 或后续 Web contract tests | 测试 Web 状态、缓存、按钮点击、派生视图不能替代事实源或 Human Gate；测试 source_refs/回指缺失、Code 输出被当作页面数据源、validator 内部对象被当 Web 数据契约时输出 diagnostic | 不要求 Web 必须由 Code 喂数据；不允许 Web 把 Code 输出/DTO/validator 内部对象作为主数据源；不启动真实 Web 写入；不把 Confirm UI 当作 Human Gate 完成 |
+| 5B-5 | `08` Web 同源独立读取与展示边界检查 | 已完成。明确 Web 与 Code 分开实现：Web 页面/API 自行读取同一 Git 文件事实源、正式 specs、事实对象或 Web 自有 API 聚合，Code 输出只作诊断、验证或测试对照 | `specs/08-Web信息同步规范.md`、`specs/07-Code确定性执行规范.md`、`validate_web_sync_boundaries`、`tests/code` | 已补 Web/Code 分离 validator 与负例；validator 0 diagnostics；tests 84 passed | 不要求 Web 必须由 Code 喂数据；不允许 Web 把 Code 输出/DTO/validator 内部对象作为主数据源；不启动真实 Web 写入；不把 Confirm UI 当作 Human Gate 完成 |
 
 5B-1 完成记录：
 1. 术语整治（5B-0）已完成，事实源/事实源边界/过程输出/证据等术语已统一；
@@ -109,6 +109,13 @@ specs 迁入
 2. 内容包含核心规则、行动流程或 Human Gate，但尚未进入对应正文；
 3. 附件会形成第二规则源，或 Code/tests 输出反向定义规则；
 4. 缺少 source_refs、验证闭环或未迁入去向。
+
+5B-5 完成记录：
+
+1. `08` 已从“同源读取”收紧为“同源独立读取”，Web 页面/API 数据路径不得依赖 Code 输出、Code DTO 或 validator 内部对象；
+2. `07` 已补反向边界：Code 输出可以供 AI、tests、审计或 Web 诊断展示对照使用，但不得成为 Web 页面/API 主数据源、字段契约或页面状态机；
+3. `code/ldvh_specs.py` 已新增 `validate_web_sync_boundaries`，覆盖 Web/Code 分离、诊断引用边界和 Web 原生实现 source_refs 边界；
+4. `tests/code` 已补 Web/Code 分离负例，最终验证为 validator 0 diagnostics，tests 84 passed。
 
 阶段 5B 术语校正：
 

@@ -47,7 +47,7 @@
 1. V2 附件不得整批搬入 V3；每个附件必须先确认正文授权、V3 归口、Code/tests 消费方和 Human Gate 风险。
 2. 附件内容应先分流为：转写正式 spec 正文、迁入正式附件候选、转为 Code/tests、留在 `_migration`、后置到成员规范或实现域、废弃。
 3. 字段闭集、枚举、纯表、机器契约可以迁为正式附件候选；核心规则、行动流程、Human Gate、大段解释、迁移过程和一次性清单不得进入附件，若有长期价值必须先转写到对应 spec 正文。
-4. `02.Att.*` 优先服务事实模型；`07.Att.*` 优先服务事实源/Git 溯源和 Git 提交行动示范；`08.Att.*` 优先服务测试与验证；`05.Att.*` 后置到 Web 同源读取和展示边界；`04.Att.*` 仅筛选可进入 Code 确定性执行的命令/诊断/schema 信息。
+4. `02.Att.*` 优先服务事实模型；`07.Att.*` 优先服务事实源/Git 溯源和 Git 提交行动示范；`08.Att.*` 优先服务测试与验证；`05.Att.*` 的 Web/Code 分离和同源独立读取父层边界已由 5B-5 承接，具体 Web DTO/API/Confirm UI/缓存/回归实现域继续后置；`04.Att.*` 仅筛选可进入 Code 确定性执行的命令/诊断/schema 信息。
 5. 无法获得正文授权、source_refs、测试闭环或未迁入去向的附件，应暂停迁入并继续留在 `_migration`，不得声称已迁入或已生效。
 
 以下内容不应写成正式 specs 规则正文的长表，应由 Code 或 tests 承接：
@@ -94,7 +94,7 @@ V3 术语使用：
 
 术语整治必须先于后续事实模型、附件、行动模板和 Web 深入迁移。规则/事实边界整治是 5B-0 的最高优先子项，应先审计 00/03/04/05 中是否把规则系统和事实系统混写。术语表 `specs/attachments/04.Att.06-术语表.md` 应在 5B-0 中同步，且不得把术语表、迁移索引、Code/tests 或子 agent 输出升级为正式规则源。
 
-## 6. 5B-1/2/3 执行结果
+## 6. 5B-1/2/3/4/5 执行结果
 
 | 子阶段 | 状态 | 正式迁入或增强 | Code/tests 闭环 | 验证结果 |
 |---|---|---|---|---|
@@ -102,6 +102,7 @@ V3 术语使用：
 | 5B-2 | 已完成 | 新增 `03.Att.01-Commit-Message契约字段表`、`05.Att.01-字段注册表结构`、`09.Att.01-验证声明字段表`；新增 `_migration/5B-2-attachment-disposition.md` 覆盖 48 个 V2 附件分流 | `validate_attachment_contracts` 解析 commit 契约、字段注册结构、验证声明字段并覆盖负例 | validator 0 diagnostics；tests 68 passed |
 | 5B-3 | 已完成 | 保持 03/09 正文边界，增强 Code 对非事实源、过程输出回写、测试证据、失败阻断、验证声明附件字段的检查 | `validate_fact_source_and_verification_boundaries` 与 03/09 负例测试 | validator 0 diagnostics；tests 73 passed |
 | 5B-4 | 已完成 | `06` 新增 Git 提交行动模板示范，覆盖 Context、Scenario、Gate、执行、验证、回写、交还；确认 Action Guide 取代知识地图导航能力，Skill 只作为外部包装候选 | `validate_git_commit_action_template` 与 Git 提交行动模板负例测试 | validator 0 diagnostics；tests 80 passed |
+| 5B-5 | 已完成 | `08` 明确 Web 与 Code 同源但分开实现，Web 页面/API 数据路径不得依赖 Code 输出、Code DTO 或 validator 内部对象；`07` 补充 Code 输出不得成为 Web 页面/API 主数据源、字段契约或页面状态机 | `validate_web_sync_boundaries` 与 Web/Code 分离负例测试 | validator 0 diagnostics；tests 84 passed |
 
 本轮附件分流结果：
 
@@ -110,7 +111,7 @@ V3 术语使用：
 | 迁附件 | `07.Att.02/03/04/08` 合并迁入 `03.Att.01`；`02.Att.01` 结构迁入 `05.Att.01`；`08.Att.02` 迁入 `09.Att.01` |
 | 转正文 | 事实源归属、非事实源排除、过程输出回写、测试证据、失败阻断、等价验证等父层规则已由 03/09 正文承接 |
 | 转Code/tests | 成员一致性、双读映射、字段矩阵、Code 诊断、preflight、commit 样例、同步触发和回归入口等进入 validator/tests 或后续实现测试 |
-| 后置 | 成员模板/成员身份字段后置到事实模型成员规范；Web DTO/API/Confirm UI/缓存/回归后置到 5B-5 |
+| 后置 | 成员模板/成员身份字段后置到事实模型成员规范；Web DTO/API/Confirm UI/缓存/回归具体实现域仍后置，5B-5 只承接 Web/Code 分离和同源独立读取父层边界 |
 | 留_migration | 清退登记、迁移双读材料、Web 差距审计模板保留为迁移证据 |
 | 废弃 | V2 知识地图输入范围表、知识地图投影 Schema 表废弃为 legacy_alias，由 Action Guide/行动指南承接 |
 
