@@ -91,7 +91,7 @@ AI_BEHAVIOR_COLUMNS = [
     "需求ID",
     "保障需求",
     "消费时机",
-    "必读事实源",
+    "必读依据",
     "所需能力",
     "完成证据",
     "阻断条件",
@@ -158,7 +158,7 @@ FOUNDATION_SPEC_CONTRACTS = {
         ],
         "required_verification_rows": ["准入检查", "边界检查", "证据检查", "同步检查"],
         "human_gate_terms": ["事实对象类型", "状态机", "事实实例", "测试夹具", "V2 20-24"],
-        "stop_condition_terms": ["对象化", "事实实例", "字段、状态或证据", "blocker", "旧 TaskPlan"],
+        "stop_condition_terms": ["对象化", "事实实例", "字段或状态规则", "实例事实或证据", "blocker", "旧 TaskPlan"],
     },
     "06": {
         "path": SHORT_SPEC_REFS["06"],
@@ -440,7 +440,7 @@ def split_semicolon_list(value: str) -> list[str]:
     return [part.strip() for part in re.split(r"[；;]", value) if part.strip()]
 
 
-def normalize_fact_source_ref(value: str, source_path: str) -> dict[str, str]:
+def normalize_required_source_ref(value: str, source_path: str) -> dict[str, str]:
     stripped = strip_inline_code(value).strip()
     if stripped in SHORT_SPEC_REFS:
         return {"type": "spec", "path": SHORT_SPEC_REFS[stripped], "label": stripped}
@@ -479,7 +479,7 @@ def parse_ai_behavior_requirements(root: Path = ROOT) -> list[dict[str, Any]]:
                 "requirement_id": row["需求ID"],
                 "requirement": row["保障需求"],
                 "consumption_timing": strip_inline_code(row["消费时机"]),
-                "required_fact_sources": split_semicolon_list(row["必读事实源"]),
+                "required_sources": split_semicolon_list(row["必读依据"]),
                 "required_capability": row["所需能力"],
                 "completion_evidence": row["完成证据"],
                 "blocking_conditions": split_semicolon_list(row["阻断条件"]),
@@ -741,7 +741,7 @@ def validate_ai_behavior_requirements(
 
         for key in (
             "requirement",
-            "required_fact_sources",
+            "required_sources",
             "required_capability",
             "completion_evidence",
             "blocking_conditions",
@@ -750,10 +750,10 @@ def validate_ai_behavior_requirements(
             if not row[key]:
                 diagnostics.append(Diagnostic("error", "AI_BEHAVIOR_FIELD_EMPTY", AI_BEHAVIOR_SPEC_PATH, f"{requirement_id} 字段为空: {key}"))
 
-        for source in row["required_fact_sources"]:
+        for source in row["required_sources"]:
             for ref in extract_spec_path_refs(source):
                 if not path_exists(root, ref):
-                    diagnostics.append(Diagnostic("error", "AI_BEHAVIOR_SOURCE_NOT_FOUND", AI_BEHAVIOR_SPEC_PATH, f"{requirement_id} 必读事实源不存在: {ref}"))
+                    diagnostics.append(Diagnostic("error", "AI_BEHAVIOR_SOURCE_NOT_FOUND", AI_BEHAVIOR_SPEC_PATH, f"{requirement_id} 必读依据不存在: {ref}"))
 
     return diagnostics
 
@@ -1065,18 +1065,18 @@ def build_action_guide(
             "requirement_id": requirement_id,
         })
 
-        for source in requirement["required_fact_sources"]:
-            normalized = normalize_fact_source_ref(source, requirement["source_path"])
+        for source in requirement["required_sources"]:
+            normalized = normalize_required_source_ref(source, requirement["source_path"])
             path = normalized["path"]
             if path:
                 source_refs.append({
                     "path": path,
-                    "role": "required_fact_source",
+                    "role": "required_source",
                     "requirement_id": requirement_id,
                 })
             task_read_plan.append({
                 "priority": priority_for_ref(path, requirement_id),
-                "role": "required_fact_source",
+                "role": "required_source",
                 "source_type": normalized["type"],
                 "path": path,
                 "label": normalized["label"],
@@ -1102,7 +1102,7 @@ def build_action_guide(
         for path in ("specs/00-理念与构成.md", "specs/01-保障与衔接.md", "specs/02-AI行为规范.md"):
             task_read_plan.append({
                 "priority": "P0",
-                "role": "fallback_fact_source",
+                "role": "fallback_source",
                 "source_type": "spec",
                 "path": path,
                 "label": path,

@@ -1,5 +1,5 @@
 target_spec: "specs/attachments/04.Att.06-术语表.md"
-target_sha256: "df78f0b30453c2e196ec8d7c697c8ebc996358475defa29c6bfc71bcd8de8486"
+target_sha256: "6c14246d3e573d8b2970c4d2733cd46937610f8e4c2b310cd2b99d6aecc0c356"
 change_type: "migration"
 mapping_evidence:
   path: "_migration/inventory/v2-terminology-to-v3-04-att-06-map.yaml"

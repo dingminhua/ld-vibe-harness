@@ -1,5 +1,5 @@
 target_spec: "specs/05-事实模型基础规范.md"
-target_sha256: "dce2458c7166e6bb6857fc68fe299fd1b5f60d7b7ef6e93bf26669212986c938"
+target_sha256: "82d4a8215e61fe0fc2aed350fa935eddf05b37633ce0598b05a38cce16b6d36a"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/v3-specs-absorption-index.md"

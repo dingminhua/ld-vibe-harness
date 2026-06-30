@@ -1,5 +1,5 @@
 target_spec: "specs/04-Specs基础规范.md"
-target_sha256: "11f46d961364a87beee278ee34fb5a7f0abc702423d6d2fa9813326d4c1d2025"
+target_sha256: "0ef80899d91953687be6c93610eebdebad95474acd8e5b568b131498211c855d"
 change_type: "migration"
 mapping_evidence:
   path: "_migration/v3-formal-spec-numbering-decision.md"
