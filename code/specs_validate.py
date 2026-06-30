@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from ldvh_specs import ROOT, build_action_guide, build_preflight, build_validation
+from ldvh_specs import ROOT, build_action_guide, build_preflight, build_runtime_event, build_validation
 
 
 def _diagnostics_by_level(result: dict[str, Any]) -> dict[str, int]:
@@ -18,6 +18,31 @@ def _diagnostics_by_level(result: dict[str, Any]) -> dict[str, int]:
 
 
 def print_text(result: dict[str, Any], command: str) -> None:
+    if command == "runtime":
+        summary = result["summary"]
+        print("LDVH v3 runtime facade 处理完成")
+        print(f"- status: {summary['status']}")
+        print(f"- event: {summary['event']}")
+        print(f"- trigger_source: {summary['trigger_source']}")
+        print(f"- diagnostics: {summary['diagnostics']}")
+        print(f"- blocking: {summary['blocking']}")
+        print(f"- receipt_status: {summary['receipt_status']}")
+        print(f"- has_action_guide: {summary['has_action_guide']}")
+        print(f"- has_preflight: {summary['has_preflight']}")
+        print("\nReceipt:")
+        print(f"- id: {result['receipt']['receipt_id']}")
+        print(f"- storage: {result['receipt']['storage']}")
+        print(f"- boundary: {result['receipt']['boundary']}")
+        if result["diagnostics"]:
+            print("\nDiagnostics:")
+            for diagnostic in result["diagnostics"]:
+                print(f"- {diagnostic['path']} [{diagnostic['level']}/{diagnostic['code']}] {diagnostic['message']}")
+        else:
+            print("\nDiagnostics: none")
+        print("\nEnvironment integrated: false")
+        print("Authorization: none")
+        return
+
     if command == "preflight":
         summary = result["summary"]
         print("LDVH v3 preflight 诊断完成")
@@ -120,7 +145,7 @@ def build_parser() -> argparse.ArgumentParser:
         "command",
         nargs="?",
         default="all",
-        choices=["all", "specs", "timings", "ai-behavior", "action-guide", "preflight"],
+        choices=["all", "specs", "timings", "ai-behavior", "action-guide", "preflight", "runtime"],
         help="validation surface to print",
     )
     parser.add_argument("--root", default=ROOT.as_posix(), help="repository root")
@@ -132,6 +157,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--trigger-source", default="manual", help="trigger source for action-guide")
     parser.add_argument("--operation", default="write", help="operation for preflight")
     parser.add_argument("--high-impact", action="store_true", help="mark preflight as high impact")
+    parser.add_argument("--event", default="session_start", help="runtime canonical event")
+    parser.add_argument("--session-id", default="", help="runtime session id")
+    parser.add_argument(
+        "--acknowledged-path",
+        action="append",
+        default=[],
+        help="acknowledged read plan path for runtime acknowledge_read_plan; may be repeated or comma-separated",
+    )
     return parser
 
 
@@ -156,6 +189,18 @@ def main(argv: list[str] | None = None) -> int:
             task=args.task,
             trigger_source=args.trigger_source,
             high_impact=args.high_impact,
+        )
+        result = output
+    elif args.command == "runtime":
+        output = build_runtime_event(
+            root,
+            event=args.event,
+            trigger_source=args.trigger_source,
+            session_id=args.session_id,
+            target_path=args.target_path,
+            task=args.task,
+            operation=args.operation,
+            acknowledged_paths=args.acknowledged_path,
         )
         result = output
     else:

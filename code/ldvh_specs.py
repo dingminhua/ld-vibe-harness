@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import hashlib
 from pathlib import Path
 import re
 from typing import Any
@@ -39,6 +40,11 @@ HIGH_IMPACT_SPEC_PATHS = {
     "specs/02-Specs基础规范.md",
     "specs/03-AI行为规范.md",
 }
+RUNTIME_REQUIRED_ENTRY_PATHS = [
+    "specs/00-理念与构成.md",
+    "specs/01-保障与衔接.md",
+    "specs/03-AI行为规范.md",
+]
 
 SPEC_REQUIRED_KEYS = {
     "spec_id",
@@ -970,5 +976,179 @@ def build_preflight(
         ],
         "human_gate_risks": human_gate_risks,
         "source_refs": source_refs,
+        "diagnostics": diagnostics,
+    }
+
+
+def normalize_path_list(paths: list[str] | None) -> list[str]:
+    if not paths:
+        return []
+    normalized: list[str] = []
+    for value in paths:
+        for part in re.split(r"[,，]", value):
+            stripped = part.strip().lstrip("./")
+            if stripped:
+                normalized.append(stripped)
+    return list(dict.fromkeys(normalized))
+
+
+def receipt_id_for(
+    event: str,
+    trigger_source: str,
+    session_id: str,
+    target_path: str,
+    acknowledged_paths: list[str],
+) -> str:
+    raw = "\0".join([event, trigger_source, session_id, target_path, "|".join(acknowledged_paths)])
+    return "ldvh-rt-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def runtime_status_from_diagnostics(
+    diagnostics: list[dict[str, str]],
+    preflight: dict[str, Any] | None,
+) -> str:
+    if any(diagnostic["level"] in {"error", "blocking"} for diagnostic in diagnostics):
+        return "blocked"
+    if preflight and preflight["summary"]["status"] in {"blocked", "review_required"}:
+        return preflight["summary"]["status"]
+    if diagnostics:
+        return "review_required"
+    return "ok"
+
+
+def build_runtime_event(
+    root: Path = ROOT,
+    event: str = "session_start",
+    trigger_source: str = "manual",
+    session_id: str = "",
+    target_path: str = "",
+    task: str = "",
+    operation: str = "write",
+    acknowledged_paths: list[str] | None = None,
+) -> dict[str, Any]:
+    validation = build_validation(root)
+    allowed_events = {row["consumption_timing"] for row in validation["consumption_timings"]}
+    normalized_event = event.strip()
+    normalized_target = target_path.strip().lstrip("./")
+    normalized_ack_paths = normalize_path_list(acknowledged_paths)
+
+    diagnostics: list[dict[str, str]] = list(validation["diagnostics"])
+    action_guide: dict[str, Any] | None = None
+    preflight: dict[str, Any] | None = None
+
+    if normalized_event not in allowed_events:
+        diagnostics.append({
+            "level": "blocking",
+            "code": "RUNTIME_EVENT_UNKNOWN",
+            "path": TIMING_TABLE_PATH,
+            "message": f"runtime event 不在消费时机闭集内: {normalized_event}",
+            "disposition": "blocking",
+        })
+    else:
+        action_guide = build_action_guide(
+            root,
+            consumption_timing=normalized_event,
+            task=task,
+            target_path=normalized_target,
+            trigger_source=trigger_source,
+        )
+        diagnostics.extend(action_guide["diagnostics"])
+
+        if normalized_event == "acknowledge_read_plan":
+            missing_required = [
+                path
+                for path in RUNTIME_REQUIRED_ENTRY_PATHS
+                if path not in normalized_ack_paths
+            ]
+            if not normalized_ack_paths:
+                diagnostics.append({
+                    "level": "blocking",
+                    "code": "RUNTIME_ACK_REQUIRED_PATHS_EMPTY",
+                    "path": "runtime://acknowledge_read_plan",
+                    "message": "acknowledge_read_plan 必须提供已消费的 required paths。",
+                    "disposition": "blocking",
+                })
+            elif missing_required:
+                diagnostics.append({
+                    "level": "blocking",
+                    "code": "RUNTIME_ACK_REQUIRED_PATHS_INCOMPLETE",
+                    "path": "runtime://acknowledge_read_plan",
+                    "message": "acknowledge_read_plan 缺少入口必读路径: " + "；".join(missing_required),
+                    "disposition": "blocking",
+                })
+
+        if normalized_event in {"pre_tool_use", "git_commit_msg"}:
+            preflight = build_preflight(
+                root,
+                target_path=normalized_target,
+                operation="commit" if normalized_event == "git_commit_msg" else operation,
+                task=task,
+                trigger_source=trigger_source,
+            )
+            diagnostics.extend(preflight["diagnostics"])
+
+    status = runtime_status_from_diagnostics(diagnostics, preflight)
+    receipt_status = "blocked" if status == "blocked" else "generated"
+    source_refs = [
+        {"path": "specs/01-保障与衔接.md", "role": "runtime_protocol_boundary"},
+        {"path": "specs/03-AI行为规范.md", "role": "runtime_behavior_requirement"},
+        {"path": TIMING_TABLE_PATH, "role": "canonical_event_registry"},
+    ]
+    if action_guide:
+        source_refs.extend(action_guide["source_refs"])
+    if preflight:
+        source_refs.extend(preflight["source_refs"])
+
+    receipt = {
+        "receipt_id": receipt_id_for(
+            normalized_event,
+            trigger_source,
+            session_id,
+            normalized_target,
+            normalized_ack_paths,
+        ),
+        "receipt_type": "runtime_event",
+        "status": receipt_status,
+        "persistent": False,
+        "storage": "stdout_only",
+        "canonical_event": normalized_event,
+        "trigger_source": trigger_source,
+        "session_id": session_id,
+        "target_path": normalized_target,
+        "acknowledged_paths": normalized_ack_paths,
+        "boundary": "receipt 是过程输出，不是最终事实源、授权、放行、Human Gate 或完成证明。",
+    }
+
+    return {
+        "metadata": {
+            "read_only": True,
+            "authority": "derived_from_specs_markdown",
+            "environment_integrated": False,
+            "authorization": "none",
+            "root": root.as_posix(),
+        },
+        "summary": {
+            "status": status,
+            "event": normalized_event,
+            "trigger_source": trigger_source,
+            "diagnostics": len(diagnostics),
+            "blocking": sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"error", "blocking"}),
+            "receipt_status": receipt_status,
+            "has_action_guide": action_guide is not None,
+            "has_preflight": preflight is not None,
+        },
+        "input": {
+            "event": normalized_event,
+            "trigger_source": trigger_source,
+            "session_id": session_id,
+            "target_path": normalized_target,
+            "task": task,
+            "operation": operation,
+            "acknowledged_paths": normalized_ack_paths,
+        },
+        "receipt": receipt,
+        "action_guide": action_guide,
+        "preflight": preflight,
+        "source_refs": unique_dicts(source_refs, ("path", "role", "requirement_id")),
         "diagnostics": diagnostics,
     }

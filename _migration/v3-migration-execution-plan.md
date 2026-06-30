@@ -60,13 +60,15 @@ specs 迁入
 
 阶段 3 已完成只读 preflight：Code 已能基于 Action Guide 和正式 specs 判断 target 类型、影响等级、必要读取、Human Gate 风险和 blocking/warning/follow_up/unverifiable 诊断分流。preflight 输出只作为诊断和阻断建议，不输出授权、放行或 Human Gate 替代结论。
 
-当前下一步为阶段 4：
+阶段 4 已完成最小 runtime facade：Code 已能按消费时机闭集承接 `session_start`、`acknowledge_read_plan`、`pre_tool_use`、`git_commit_msg`、`human_facing_output`、`external_output_intake`、`diagnostic_disposition` 和 `completion_claim`，生成 stdout-only receipt，并联动 Action Guide 与 preflight。该能力不声明 Hook、Rules、插件或环境已经完整接入。
 
-1. 基于消费时机闭集建立最小 runtime facade；
-2. 承接 `session_start`、`acknowledge_read_plan`、`pre_tool_use`、`git_commit_msg`、`human_facing_output`、`external_output_intake`、`diagnostic_disposition` 和 `completion_claim`；
-3. 生成本地只读或受控 receipt 结构，并回指 Action Guide、preflight 和来源 specs；
-4. 保持 runtime facade 不声称 Hook、Rules、插件或环境已经完整接入；
-5. 为事件输入、未知事件、receipt 边界和 preflight 联动补齐回归测试。
+当前下一步为阶段 5：
+
+1. 在 runtime facade 之上设计 Hook / Commit / Skill 包装层；
+2. 先迁移 Git commit、Hook、Skill 包装相关 specs 能力，不复制 V2 安装方式或资产权威；
+3. 让包装层只调用 runtime/preflight/action-guide，不重新定义规则；
+4. 明确环境未接入时的 fallback 行为和 diagnostic；
+5. 为 commit gate、hook adapter、skill/action template 包装和环境缺口补齐回归测试。
 
 ## 6. 停止条件
 

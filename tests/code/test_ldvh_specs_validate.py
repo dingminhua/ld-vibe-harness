@@ -256,3 +256,122 @@ def test_specs_validate_cli_preflight_json() -> None:
     assert payload["metadata"]["authorization"] == "none"
     assert payload["summary"]["target_type"] == "code"
     assert payload["required_read_plan"]
+
+
+def test_runtime_session_start_generates_stdout_receipt() -> None:
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="session_start",
+        trigger_source="manual",
+        session_id="test-session",
+    )
+
+    assert runtime["metadata"]["read_only"] is True
+    assert runtime["metadata"]["environment_integrated"] is False
+    assert runtime["metadata"]["authorization"] == "none"
+    assert runtime["summary"]["status"] == "ok"
+    assert runtime["receipt"]["persistent"] is False
+    assert runtime["receipt"]["storage"] == "stdout_only"
+    assert "不是最终事实源" in runtime["receipt"]["boundary"]
+    read_paths = {item["path"] for item in runtime["action_guide"]["task_read_plan"] if item["path"]}
+    assert {
+        "specs/00-理念与构成.md",
+        "specs/01-保障与衔接.md",
+        "specs/03-AI行为规范.md",
+    }.issubset(read_paths)
+
+
+def test_runtime_unknown_event_blocks() -> None:
+    runtime = ldvh_specs.build_runtime_event(ROOT, event="unknown_event")
+
+    assert runtime["summary"]["status"] == "blocked"
+    assert runtime["summary"]["blocking"] == 1
+    assert runtime["receipt"]["status"] == "blocked"
+    assert runtime["diagnostics"][0]["code"] == "RUNTIME_EVENT_UNKNOWN"
+
+
+def test_runtime_acknowledge_read_plan_requires_paths() -> None:
+    runtime = ldvh_specs.build_runtime_event(ROOT, event="acknowledge_read_plan")
+
+    assert runtime["summary"]["status"] == "blocked"
+    assert runtime["diagnostics"][0]["code"] == "RUNTIME_ACK_REQUIRED_PATHS_EMPTY"
+
+
+def test_runtime_acknowledge_read_plan_accepts_entry_paths() -> None:
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="acknowledge_read_plan",
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/03-AI行为规范.md",
+        ],
+    )
+
+    assert runtime["summary"]["status"] == "ok"
+    assert runtime["receipt"]["acknowledged_paths"] == [
+        "specs/00-理念与构成.md",
+        "specs/01-保障与衔接.md",
+        "specs/03-AI行为规范.md",
+    ]
+    assert runtime["diagnostics"] == []
+
+
+def test_runtime_pre_tool_use_includes_preflight() -> None:
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="pre_tool_use",
+        target_path="code/ldvh_specs.py",
+    )
+
+    assert runtime["summary"]["status"] == "review_required"
+    assert runtime["summary"]["has_preflight"] is True
+    assert runtime["preflight"]["summary"]["target_type"] == "code"
+    assert runtime["diagnostics"][0]["code"] == "PREFLIGHT_CODE_OUTPUT_NOT_AUTHORIZATION"
+
+
+def test_runtime_supports_all_consumption_timings() -> None:
+    events = [row["consumption_timing"] for row in ldvh_specs.parse_consumption_timings(ROOT)]
+    common_kwargs = {
+        "acknowledged_paths": [
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/03-AI行为规范.md",
+        ],
+        "target_path": "tests/code/test_ldvh_specs_validate.py",
+    }
+
+    for event in events:
+        runtime = ldvh_specs.build_runtime_event(ROOT, event=event, **common_kwargs)
+        assert runtime["summary"]["event"] == event
+        assert runtime["summary"]["has_action_guide"] is True
+        assert runtime["receipt"]["canonical_event"] == event
+        assert runtime["diagnostics"] == []
+
+
+def test_specs_validate_cli_runtime_json() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/specs_validate.py",
+            "runtime",
+            "--event",
+            "session_start",
+            "--session-id",
+            "cli-session",
+            "--format",
+            "json",
+            "--fail-on-diagnostics",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["metadata"]["read_only"] is True
+    assert payload["metadata"]["environment_integrated"] is False
+    assert payload["summary"]["status"] == "ok"
+    assert payload["receipt"]["receipt_type"] == "runtime_event"
+    assert payload["receipt"]["storage"] == "stdout_only"
