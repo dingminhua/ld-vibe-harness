@@ -1,5 +1,5 @@
 target_spec: "specs/03-事实源与Git追溯规范.md"
-target_sha256: "4f80af274f51ba05d84c0117862d41aa3cb97670de6ba57295a9f8b154f00788"
+target_sha256: "9e02c9ab8a5ed2d38efb2b97f4ecec0d7218d8cbe3b107f760407257bbdfc0b7"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/v3-specs-absorption-index.md"
@@ -11,6 +11,6 @@ subagent_review:
   agent_id: "019f16f5-0d83-74a3-a526-cae9622aeb50"
   reviewer: "Kant"
   verdict: "pass"
-  receipt: "Read-only subagent review identified the prior 03 work-object review as stale and confirmed 03 should carry fact-source and Git traceability while work objects move to 05."
+  receipt: "Read-only subagent reviews identified the prior 03 work-object review as stale, confirmed 03 should carry fact-source and Git traceability while work objects move to 05, and suggested wording commit action as the 06 Git 提交行动模板候选."
   unresolved_blockers: []
 warnings: []

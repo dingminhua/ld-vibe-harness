@@ -126,7 +126,7 @@ V3 保留 commit 契约的父层规则：
 |---|---|---|---|---|
 | 事实源回指要求 | 结论、证据、完成声明和风险必须回指 Git 文件事实源或说明不可回写原因 | 本文、02、06、09、Code source_refs | 事实源治理 | AI 形成稳定结论、验证声明或提交说明时 |
 | 非事实源排除要求 | 过程输出不得被写成最终事实源 | 本文、01 receipt 边界、08 证据边界 | 证据治理 | 使用 Code、Web、测试、review 或 runtime 输出时 |
-| Git 追溯要求 | 文件事实源修改应可通过 Git commit records 回查 | 本文、commit action、Code/tests | 追溯治理 | 提交正式 docs、Code、tests 或事实源修改时 |
+| Git 追溯要求 | 文件事实源修改应可通过 Git commit records 回查 | 本文、06 的 Git 提交行动模板候选、Code/tests | 追溯治理 | 提交正式 docs、Code、tests 或事实源修改时 |
 | commit 契约要求 | 提交说明不得替代验证、Human Gate 或事实源正文 | 本文、06 提交模板、09 验证声明 | 提交治理 | 生成 commit message 或提交前检查时 |
 
 ## 9. 验证方法

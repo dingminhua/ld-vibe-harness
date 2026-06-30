@@ -1,5 +1,5 @@
 target_spec: "specs/09-测试与验证规范.md"
-target_sha256: "04d2126af09456cbd116b799c31365ce8fd890dc7f5a8789d3322d479f839927"
+target_sha256: "a8e2bbc6d1c8b991145b436f77cfa1e5f509ceb768d194d1deb5a5d6261d3fc0"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/v3-specs-absorption-index.md"
@@ -11,6 +11,6 @@ subagent_review:
   agent_id: "019f16f5-308a-7091-98cf-bb1247f4b748"
   reviewer: "Lorentz"
   verdict: "pass"
-  receipt: "Read-only subagent review identified tests/code fixed counts and review-gate risks; the current update synchronizes the formal spec test expectations."
+  receipt: "Read-only subagent reviews identified tests/code fixed counts and review-gate risks; the current update synchronizes formal spec test expectations and clarifies Git commit records do not replace verification fact sources."
   unresolved_blockers: []
 warnings: []
