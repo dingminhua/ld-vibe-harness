@@ -7,7 +7,8 @@
 - `specs/`：Markdown 规则权威层。
 - `code/`：在明确需要后承接确定性解析、校验和生成。
 - `tests/`：回归检查。
-- `rules/`、`hooks/`、`skills/`、`ldvh-base/`：保留给后续整线迁移。
+- `rules/`、`hooks/`、`ldvh-base/`：保留给后续整线迁移。
+- `skills/`：不作为 V3 顶层机制；若后续出现，只能作为外部环境适配候选或历史迁移证据，正式能力应回到行动模板、Action Guide、Code、测试和环境入口边界。
 - `_migration/`：临时证据和原型，不是正式权威。
 
 当前原则：

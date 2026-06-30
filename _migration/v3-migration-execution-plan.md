@@ -4,7 +4,7 @@
 
 ## 1. 计划定位
 
-本文用于回答：V2 的大量 specs、Code、Hook、Skill、事实对象和治理能力应按什么顺序进入 V3。
+本文用于回答：V2 的大量 specs、Code、Hook、外部工作流包装、事实对象和治理能力应按什么顺序进入 V3。
 
 本文不定义新规则，不替代 `specs/00-理念与构成.md`、`specs/01-保障与衔接.md`、`specs/02-Specs基础规范.md` 或 `specs/03-AI行为规范.md`。若本文与正式 specs 冲突，以正式 specs 为准，并应更新本文或废弃对应计划项。
 
@@ -21,18 +21,18 @@ specs 迁入
 
 没有明确消费方的 V2 specs，应继续留在 `_migration` 作为候选证据，不进入正式 `specs/`。
 
-迁移时只迁移 V2 能力和必要规则，不复制 V2 的目录权威、命名权威、Hook 安装方式、Skill 资产身份或派生知识地图事实层。
+迁移时只迁移 V2 能力和必要规则，不复制 V2 的目录权威、命名权威、Hook 安装方式、Skill 资产身份或派生知识地图事实层。V3 不保留 Skill 作为 LDVH 顶层机制；V2 Skill 中仍有价值的工作流能力，应进入行动模板、Action Guide、环境适配或测试。
 
 ## 3. 阶段计划
 
 | 阶段 | 目标 | 先迁入的 specs 能力 | Code / tests 交付 | 不做事项 |
 |---|---|---|---|---|
-| 0. 当前基线 | 固化 00/01/02/03 与迁移计划 | 不新增大量 specs，只稳定保障、衔接、AI 行为和 Specs 基础规则 | 现有 formal specs 测试通过 | 不迁移 Hook、Skill、事实对象大块内容 |
+| 0. 当前基线 | 固化 00/01/02/03 与迁移计划 | 不新增大量 specs，只稳定保障、衔接、AI 行为和 Specs 基础规则 | 现有 formal specs 测试通过 | 不迁移 Hook、行动模板、事实对象大块内容 |
 | 1. Specs 解析与校验 | 让 V3 Code 能直接消费 Markdown specs | 仅补足解析所需字段、保障消费时机、AI 行为保障表 | `code/specs_validate.py`、spec parser、diagnostics、CLI、对应 tests | 不生成运行时拦截，不安装 Hook |
 | 2. Action Guide / read_plan | 迁移 V2 知识地图的只读导航能力 | 迁移任务导航、读取计划、停止条件、影响摘要相关规则 | Action Guide/read_plan 输出、source refs、capability gap tests | 不把派生图谱变成事实源 |
 | 3. Preflight 门禁 | 写入前识别规则读取、Human Gate 和缺口分流 | 迁移写入门禁、规范变更、附件边界、Human Gate 判断相关规则 | preflight CLI、blocking/warning/follow_up diagnostics tests | 不把 Code 输出当授权或放行 |
 | 4. Runtime facade | 承接消费时机和 receipt / diagnostic | 迁移 Runtime Protocol、canonical event、trigger source、receipt 边界规则 | 本地 runtime CLI、receipt 结构、事件测试 | 不声称环境已经完整支持 LDVH |
-| 5. Hook / Commit / Skill 包装 | 接入外部环境触发和可复用工作流 | 迁移 Git commit、Hook、Skill 包装、环境入口相关规则 | hook adapter/dispatcher、commit gate、action template 包装 tests | 不让 Hook/Skill 成为独立规则源 |
+| 5. Hook / Commit / 行动模板适配 | 接入外部环境触发和可复用工作流 | 迁移 Git commit、Hook、行动模板和环境入口相关规则 | hook adapter/dispatcher、commit gate、行动模板适配 tests | 不让 Hook、外部包装或行动模板成为独立规则源 |
 | 6. 事实源与工作对象 | 承接真实行动状态和长期证据 | 迁移 workcase、spark、ADR、pitfall、study 等事实对象规则 | fact validator/CLI、对象状态测试、回写边界测试 | 不直接复制 v2 `ldvh-base` 结构为权威 |
 | 7. 受管项目接入 | 让 V3 判断当前工作归属和项目事实源 | 迁移项目治理、项目发现、跨项目边界规则 | governed projects 配置、项目解析、越界测试 | 不让项目索引替代用户事实源 |
 | 8. 端到端闭环 | 用真实流程验证机制是否减少 AI 负担 | 只补缺口 specs | session start -> read plan -> preflight -> 修改 -> tests -> commit -> receipt -> closure 流程测试 | 不继续堆无消费方机制 |
@@ -47,7 +47,7 @@ specs 迁入
 | Action Guide / 知识地图相关 specs | 阶段 2 前 | 已有 parser 能读身份、章节和保障表；有 Action Guide 输出测试 |
 | preflight / Human Gate / 写入门禁相关 specs | 阶段 3 前 | 能判断目标路径、规则影响、阻断类型和缺口分流 |
 | Runtime Protocol / event / receipt / diagnostic 相关 specs | 阶段 4 前 | 消费时机闭集和 diagnostic 分类已经可由 Code 校验 |
-| Git commit / Hook / Skill 包装相关 specs | 阶段 5 前 | runtime facade 和 preflight 已稳定，能区分环境入口与规则事实源 |
+| Git commit / Hook / 行动模板适配相关 specs | 阶段 5 前 | runtime facade 和 preflight 已稳定，能区分环境入口、行动模板与规则事实源 |
 | 事实对象 / 项目治理相关 specs | 阶段 6-7 | 有正式事实源边界、状态机校验、受管项目解析和回写测试 |
 
 每批 specs 进入正式 `specs/` 前，都必须留下迁移证据、Code 验证命令、测试结果和 unresolved warning 的处理去向。
@@ -64,11 +64,11 @@ specs 迁入
 
 当前下一步为阶段 5：
 
-1. 在 runtime facade 之上设计 Hook / Commit / Skill 包装层；
-2. 先迁移 Git commit、Hook、Skill 包装相关 specs 能力，不复制 V2 安装方式或资产权威；
-3. 让包装层只调用 runtime/preflight/action-guide，不重新定义规则；
+1. 在 runtime facade 之上设计 Hook / Commit / 行动模板适配层；
+2. 先迁移 Git commit、Hook、行动模板和环境入口相关 specs 能力，不复制 V2 安装方式或 Skill 资产权威；
+3. 让适配层只调用 runtime/preflight/action-guide，不重新定义规则；
 4. 明确环境未接入时的 fallback 行为和 diagnostic；
-5. 为 commit gate、hook adapter、skill/action template 包装和环境缺口补齐回归测试。
+5. 为 commit gate、hook adapter、行动模板适配和环境缺口补齐回归测试。
 
 ## 6. 停止条件
 
@@ -77,5 +77,5 @@ specs 迁入
 1. 计划要求与 `specs/00-理念与构成.md`、`specs/01-保障与衔接.md`、`specs/02-Specs基础规范.md` 或 `specs/03-AI行为规范.md` 冲突；
 2. 新增 specs 没有明确 Code、Action Guide、preflight、runtime 或事实源消费方；
 3. Code 输出被用作授权、放行、Human Gate 或最终事实源；
-4. Hook、Skill、Rules 或项目索引开始形成第二规则源；
+4. Hook、外部工作流包装、Rules 或项目索引开始形成第二规则源；
 5. 迁移材料无法说明减少了什么 AI 负担，或无法说明事实源边界和验证方式。
