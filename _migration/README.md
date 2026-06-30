@@ -29,3 +29,5 @@
 `_migration/code/spec_bloat_scan.py` 下的重复结构扫描器用于探索 v2 specs 是否存在重复骨架或泛化边界文本，这些内容可能应转为父级规则、生成式 Action Guide 内容或 Code 检查。扫描报告只作为 review 证据，不授权删除 spec 内容。
 
 `_migration/v2-runtime-capability-migration-notes.md` 整合了根目录 V2 运行时临时讨论残余，用于支持删除根目录草稿后的追溯。它只记录 Rules、Skill、Hook/runtime 和知识地图能力的迁移证据；不授权 v3 specs、Code 行为、Action Guide 输出、Human Gate 决策或环境支持声明。
+
+`_migration/v3-migration-execution-plan.md` 记录 V3 迁移执行节奏。它说明大量 specs 迁移应按消费闭环分批进入正式 `specs/`，而不是当前一次性导入或最后整批搬运；它仍是临时计划，不授权正式规则或 Code 行为。

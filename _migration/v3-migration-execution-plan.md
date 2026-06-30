@@ -1,0 +1,73 @@
+# V3 迁移执行计划
+
+> 文件状态：temporary migration plan；本文只记录 V3 迁移执行节奏，不授权 specs、Code 行为、Action Guide 输出、Human Gate 决策、环境支持声明或事实源变更。正式规则仍以 `specs/` 正文为准。
+
+## 1. 计划定位
+
+本文用于回答：V2 的大量 specs、Code、Hook、Skill、事实对象和治理能力应按什么顺序进入 V3。
+
+本文不定义新规则，不替代 `specs/00-理念与构成.md`、`specs/01-保障与衔接.md`、`specs/02-Specs基础规范.md` 或 `specs/03-AI行为规范.md`。若本文与正式 specs 冲突，以正式 specs 为准，并应更新本文或废弃对应计划项。
+
+## 2. 总原则
+
+大量 specs 迁移不是最后整批搬运，也不是当前一次性导入。每批迁移必须绑定一个可消费闭环：
+
+```text
+specs 迁入
+  -> Code 可解析
+  -> tests 覆盖
+  -> Action Guide / preflight / runtime / 事实源 能消费
+```
+
+没有明确消费方的 V2 specs，应继续留在 `_migration` 作为候选证据，不进入正式 `specs/`。
+
+迁移时只迁移 V2 能力和必要规则，不复制 V2 的目录权威、命名权威、Hook 安装方式、Skill 资产身份或派生知识地图事实层。
+
+## 3. 阶段计划
+
+| 阶段 | 目标 | 先迁入的 specs 能力 | Code / tests 交付 | 不做事项 |
+|---|---|---|---|---|
+| 0. 当前基线 | 固化 00/01/02/03 与迁移计划 | 不新增大量 specs，只稳定保障、衔接、AI 行为和 Specs 基础规则 | 现有 formal specs 测试通过 | 不迁移 Hook、Skill、事实对象大块内容 |
+| 1. Specs 解析与校验 | 让 V3 Code 能直接消费 Markdown specs | 仅补足解析所需字段、保障消费时机、AI 行为保障表 | `code/specs_validate.py`、spec parser、diagnostics、CLI、对应 tests | 不生成运行时拦截，不安装 Hook |
+| 2. Action Guide / read_plan | 迁移 V2 知识地图的只读导航能力 | 迁移任务导航、读取计划、停止条件、影响摘要相关规则 | Action Guide/read_plan 输出、source refs、capability gap tests | 不把派生图谱变成事实源 |
+| 3. Preflight 门禁 | 写入前识别规则读取、Human Gate 和缺口分流 | 迁移写入门禁、规范变更、附件边界、Human Gate 判断相关规则 | preflight CLI、blocking/warning/follow_up diagnostics tests | 不把 Code 输出当授权或放行 |
+| 4. Runtime facade | 承接消费时机和 receipt / diagnostic | 迁移 Runtime Protocol、canonical event、trigger source、receipt 边界规则 | 本地 runtime CLI、receipt 结构、事件测试 | 不声称环境已经完整支持 LDVH |
+| 5. Hook / Commit / Skill 包装 | 接入外部环境触发和可复用工作流 | 迁移 Git commit、Hook、Skill 包装、环境入口相关规则 | hook adapter/dispatcher、commit gate、action template 包装 tests | 不让 Hook/Skill 成为独立规则源 |
+| 6. 事实源与工作对象 | 承接真实行动状态和长期证据 | 迁移 workcase、spark、ADR、pitfall、study 等事实对象规则 | fact validator/CLI、对象状态测试、回写边界测试 | 不直接复制 v2 `ldvh-base` 结构为权威 |
+| 7. 受管项目接入 | 让 V3 判断当前工作归属和项目事实源 | 迁移项目治理、项目发现、跨项目边界规则 | governed projects 配置、项目解析、越界测试 | 不让项目索引替代用户事实源 |
+| 8. 端到端闭环 | 用真实流程验证机制是否减少 AI 负担 | 只补缺口 specs | session start -> read plan -> preflight -> 修改 -> tests -> commit -> receipt -> closure 流程测试 | 不继续堆无消费方机制 |
+| 9. 产品化与迁移层清理 | 收束 alpha/beta 边界 | 把仍有效迁移决定吸收到正式 specs/tests/docs | 清理 `_migration` 条件、用户文档、可选 Web/dashboard | 不保留 `_migration` 作为长期事实源 |
+
+## 4. Specs 迁移节奏
+
+大量 specs 迁移贯穿阶段 2 到阶段 7：
+
+| 迁移批次 | 进入时机 | 进入条件 |
+|---|---|---|
+| Action Guide / 知识地图相关 specs | 阶段 2 前 | 已有 parser 能读身份、章节和保障表；有 Action Guide 输出测试 |
+| preflight / Human Gate / 写入门禁相关 specs | 阶段 3 前 | 能判断目标路径、规则影响、阻断类型和缺口分流 |
+| Runtime Protocol / event / receipt / diagnostic 相关 specs | 阶段 4 前 | 消费时机闭集和 diagnostic 分类已经可由 Code 校验 |
+| Git commit / Hook / Skill 包装相关 specs | 阶段 5 前 | runtime facade 和 preflight 已稳定，能区分环境入口与规则事实源 |
+| 事实对象 / 项目治理相关 specs | 阶段 6-7 | 有正式事实源边界、状态机校验、受管项目解析和回写测试 |
+
+每批 specs 进入正式 `specs/` 前，都必须留下迁移证据、Code 验证命令、测试结果和 unresolved warning 的处理去向。
+
+## 5. 当前下一步
+
+当前下一步为阶段 1：
+
+1. 提交当前 00/01/02/03 相关 specs 基线和本文计划。
+2. 建立正式 `code/specs_validate.py`。
+3. 让 Code 能解析 `ldvh_spec`、`ldvh_attachment`、H2 章节、`role_sections`、`code_consumption`、保障消费时机表和 03 AI 行为保障表。
+4. 为上述解析与校验补齐 `tests/code/` 回归测试。
+5. 运行测试，并把仍不能自动判断的内容归入 diagnostic 或后续待补齐事项。
+
+## 6. 停止条件
+
+出现以下情况时，暂停迁移并回到正式 specs 或 Human Gate：
+
+1. 计划要求与 `specs/00-理念与构成.md`、`specs/01-保障与衔接.md`、`specs/02-Specs基础规范.md` 或 `specs/03-AI行为规范.md` 冲突；
+2. 新增 specs 没有明确 Code、Action Guide、preflight、runtime 或事实源消费方；
+3. Code 输出被用作授权、放行、Human Gate 或最终事实源；
+4. Hook、Skill、Rules 或项目索引开始形成第二规则源；
+5. 迁移材料无法说明减少了什么 AI 负担，或无法说明事实源边界和验证方式。
