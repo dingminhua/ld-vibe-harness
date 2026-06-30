@@ -101,6 +101,7 @@ V3 术语使用：
 | 5B-1 | 已完成 | `05` 增强事实实例不得定义规则、测试夹具/迁移材料不得写成事实实例、对象准入说明 AI 负担、字段名术语边界、成员规范后置判断条件 | `validate_fact_model_boundaries` 与 05 负例测试 | validator 0 diagnostics；tests 63 passed |
 | 5B-2 | 已完成 | 新增 `03.Att.01-Commit-Message契约字段表`、`05.Att.01-字段注册表结构`、`09.Att.01-验证声明字段表`；新增 `_migration/5B-2-attachment-disposition.md` 覆盖 48 个 V2 附件分流 | `validate_attachment_contracts` 解析 commit 契约、字段注册结构、验证声明字段并覆盖负例 | validator 0 diagnostics；tests 68 passed |
 | 5B-3 | 已完成 | 保持 03/09 正文边界，增强 Code 对非事实源、过程输出回写、测试证据、失败阻断、验证声明附件字段的检查 | `validate_fact_source_and_verification_boundaries` 与 03/09 负例测试 | validator 0 diagnostics；tests 73 passed |
+| 5B-4 | 已完成 | `06` 新增 Git 提交行动模板示范，覆盖 Context、Scenario、Gate、执行、验证、回写、交还；确认 Action Guide 取代知识地图导航能力，Skill 只作为外部包装候选 | `validate_git_commit_action_template` 与 Git 提交行动模板负例测试 | validator 0 diagnostics；tests 80 passed |
 
 本轮附件分流结果：
 
@@ -112,6 +113,16 @@ V3 术语使用：
 | 后置 | 成员模板/成员身份字段后置到事实模型成员规范；Web DTO/API/Confirm UI/缓存/回归后置到 5B-5 |
 | 留_migration | 清退登记、迁移双读材料、Web 差距审计模板保留为迁移证据 |
 | 废弃 | V2 知识地图输入范围表、知识地图投影 Schema 表废弃为 legacy_alias，由 Action Guide/行动指南承接 |
+
+5B-4 执行结果：
+
+| 对象 | 处理 |
+|---|---|
+| V2 `31-git-commit-action-Git提交行动编排.md` | 不整篇迁入；提取 Context、Scenario、Gate、执行、验证、回写、交还的最小结构进入 `06` 正文示范 |
+| `skills/ldvh-git-commit/SKILL.md` | 不恢复 Skill 顶层机制；仅作为外部包装候选和迁移来源，06 要求区分 `skill_runtime_invoked`、`manual_equivalent_execution`、`skill_unavailable` |
+| commit message 契约字段 | 不在 06 重定义；继续由 `03` 和 `03.Att.01` 授权 |
+| 验证声明字段 | 不在 06 重定义；继续由 `09` 和 `09.Att.01` 授权 |
+| Hook / commit gate / CI | 本阶段未实现，不声明环境接入或运行时拦截生效 |
 
 ## 7. Stop Conditions
 

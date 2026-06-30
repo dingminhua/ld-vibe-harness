@@ -49,6 +49,7 @@ def test_foundation_specs_contracts_are_code_consumable() -> None:
     assert "fact_object_admission" in contracts["05"]["code_consumption"]
     assert "field_registry_contract" in contracts["05"]["code_consumption"]
     assert "context_scenario_gate" in contracts["06"]["code_consumption"]
+    assert "git_commit_action_template" in contracts["06"]["code_consumption"]
     assert "runtime_facade_contracts" in contracts["07"]["code_consumption"]
     assert "source_ref_display_requirements" in contracts["08"]["code_consumption"]
     assert "verification_claim_fields" in contracts["09"]["code_consumption"]
@@ -305,6 +306,100 @@ def test_verification_validator_reports_missing_failure_blocking_rule(tmp_path: 
     result = ldvh_specs.build_validation(root)
 
     assert "FAILURE_BLOCKING_RULE_MISSING" in _diagnostic_codes(result)
+
+
+def test_git_commit_action_template_is_code_consumable() -> None:
+    result = ldvh_specs.build_validation(ROOT)
+    rows = {row["结构"]: row["最小要求"] for row in result["git_commit_action_template"]}
+
+    assert set(rows) == {"Context", "Scenario", "Gate", "执行", "验证", "回写", "交还"}
+    assert "git status" in rows["Context"]
+    assert "diff" in rows["执行"]
+    assert "Human Gate" in rows["Gate"]
+    assert "09.Att.01" in rows["验证"]
+    assert "commit hash" in rows["交还"]
+
+
+def test_git_commit_action_template_reports_missing_status_context(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "`git status --short --untracked-files=all`、",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("git status" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_git_commit_action_template_reports_missing_split_gate(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "提交拆分边界不清、",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("提交拆分边界不清" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_git_commit_action_template_reports_missing_verification_evidence(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "和证据回指",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("证据回指" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_git_commit_action_template_reports_missing_handoff_fields(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "commit hash、",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("commit hash" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_action_guide_does_not_replace_main_ai_judgment_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "但 Action Guide 不替代主控 AI 判断、事实源、Human Gate、验证声明或行动模板执行结果。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_git_commit_action_template_reports_missing_skill_execution_modes(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "、`manual_equivalent_execution`",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
 
 
 def test_formal_identity_and_role_sections_are_parseable() -> None:

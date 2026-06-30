@@ -78,7 +78,7 @@ specs 迁入
 - 术语表新增`规则源`、`来源依据`、`必读依据`条目；
 - code/ldvh_specs.py 同步字段名和内部键名。
 
-当前状态：术语整治、规则/事实边界修正以及 5B-1/2/3 均已完成。5B-3 完成时 validator 0 diagnostics，tests 73 passed。后续可推进 5B-4 Git 提交行动模板示范和 5B-5 Web 同源读取与展示边界检查。
+当前状态：术语整治、规则/事实边界修正以及 5B-1/2/3/4 均已完成。5B-4 完成时 validator 0 diagnostics，tests 80 passed。后续可推进 5B-5 Web 同源读取与展示边界检查。
 
 阶段 5B 子阶段状态：
 
@@ -87,7 +87,7 @@ specs 迁入
 | 5B-1 | `05` 事实模型优先迁移 | 已完成。增强 05 可消费结构，覆盖事实实例不得定义规则、测试夹具/迁移材料不得写成事实实例、准入 AI 负担说明、字段术语边界和成员规范后置判断条件 | `specs/05-事实模型基础规范.md`、V2 `02.Att.*` 筛选结果、`code/ldvh_specs.py`、`tests/code` | 已补 05 负例；validator 0 diagnostics；tests 63 passed | 未批量复制 Spark/WorkCase/ADR/Pitfall/Study 完整字段表或状态机 |
 | 5B-2 | 附件迁移筛选与授权闭环 | 已完成。48 个 V2 附件分流记录见 `_migration/5B-2-attachment-disposition.md`；正式迁入 `03.Att.01`、`05.Att.01`、`09.Att.01` | V2 `02.Att.*`、`04.Att.*`、`05.Att.*`、`07.Att.*`、`08.Att.*`、`specs/attachments`、`tests/code` | 已补附件解析与负例；validator 0 diagnostics；tests 68 passed | 未整批搬运附件；知识地图附件废弃为 legacy_alias；Web 和成员专属附件后置 |
 | 5B-3 | `03/09` 证据与验证边界专项 validator | 已完成。增强非事实源误用、过程输出回写、测试证据边界、失败阻断和验证声明字段检查 | `specs/03-事实源与Git溯源规范.md`、`specs/09-测试与验证规范.md`、`code/ldvh_specs.py`、`tests/code` | 已补 03/09 正反例；validator 0 diagnostics；tests 73 passed | 未实现 Hook、commit gate 或环境接入；未输出授权语义 |
-| 5B-4 | `06` Git 提交行动模板示范 | 在 5B-3 证据与验证边界、commit 契约附件候选清楚后，以 Git 提交行动作为第一个行动模板示范，验证 Context、Scenario、Gate、执行、验证、回写和交还结构；同时确认 Action Guide 取代知识地图、行动模板去 Skill 化 | `specs/06-行动模板基础规范.md`、`31-git-commit-action` 迁移证据、commit 契约附件候选、Action Guide 相关 Code、`tests/code` | 测试提交模板缺少 status/diff、验证证据、提交拆分、Human Gate 风险或交还字段时输出 diagnostic；测试 Action Guide 输出不替代主控 AI 判断；commit 契约字段只能来自 `03` 正文授权附件、Code/tests 负例或后续 Human Gate | 不安装 commit hook；不把 commit validator 输出当授权；不恢复 Skill 顶层机制；不让模板本身定义 commit 规则；不把行动模板写成第二规则源 |
+| 5B-4 | `06` Git 提交行动模板示范 | 已完成。以 Git 提交行动作为第一个行动模板示范，验证 Context、Scenario、Gate、执行、验证、回写和交还结构；同时确认 Action Guide 取代知识地图、行动模板去 Skill 化 | `specs/06-行动模板基础规范.md`、V2 `31-git-commit-action` 迁移证据、`skills/ldvh-git-commit/SKILL.md`、commit 契约附件、Action Guide 相关 Code、`tests/code` | 已补 `validate_git_commit_action_template` 和负例测试；validator 0 diagnostics；tests 80 passed | 未安装 commit hook；未实现 commit gate；未把 commit validator 输出当授权；未恢复 Skill 顶层机制；未让模板本身定义 commit 规则 |
 | 5B-5 | `08` Web 同源读取与展示边界检查 | 明确 Web 可以自行读取同一 Git 文件事实源，并校验展示、缓存、Confirm UI 和受控交互边界 | `specs/08-Web信息同步规范.md`、Web 边界 validator、`tests/code` 或后续 Web contract tests | 测试 Web 状态、缓存、按钮点击、派生视图不能替代事实源或 Human Gate；测试 source_refs/回指缺失时输出 diagnostic | 不要求 Web 必须由 Code 喂数据；不启动真实 Web 写入；不把 Confirm UI 当作 Human Gate 完成 |
 
 5B-1 完成记录：

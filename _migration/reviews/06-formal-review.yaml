@@ -1,5 +1,5 @@
 target_spec: "specs/06-行动模板基础规范.md"
-target_sha256: "3a953633b315dac87cb96cff98f946cc40401de71d2da8cdc3532e055a36ca40"
+target_sha256: "1052a12a47ac5205947156ed70a5dba9b6ed78f271d2c40cbe8cc7a8518fae1c"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/v3-specs-absorption-index.md"

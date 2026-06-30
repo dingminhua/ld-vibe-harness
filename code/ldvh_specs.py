@@ -112,6 +112,7 @@ FIELD_REGISTRY_CODE_CHECK_COLUMNS = ["code_check_kind", "可机械消费维度",
 VERIFICATION_CLAIM_COLUMNS = ["字段", "要求"]
 VERIFICATION_COMPLETE_CONDITION_COLUMNS = ["条件", "内容"]
 VERIFICATION_FORBIDDEN_COLUMNS = ["写法", "边界"]
+ACTION_TEMPLATE_COLUMNS = ["结构", "最小要求"]
 FOUNDATION_SPEC_IDS = ("03", "05", "06", "07", "08", "09")
 ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
 VERIFICATION_COLUMNS = ["检查类别", "检查内容", "不满足时"]
@@ -190,6 +191,24 @@ FACT_SOURCE_EVIDENCE_REQUIREMENTS = [
         "terms": ["必须运行的测试失败", "关键验证未运行", "证据无法回指", "Human 验收尚未发生", "仅有工具成功输出"],
     },
 ]
+GIT_COMMIT_ACTION_TEMPLATE_REQUIRED_ROWS = {
+    "Context": ["git status", "staged", "diff", "source_refs", "03.Att.01", "09.Att.01"],
+    "Scenario": ["用户明确要求提交", "修复提交消息", "拆分 staged changes", "只回答 03/09 边界"],
+    "Gate": ["staged changes", "提交拆分边界不清", "destructive Git", "commit validator", "失败测试", "Human Gate", "Hook/commit gate/环境入口"],
+    "执行": ["status", "diff", "拆分", "03.Att.01", "单一 type", "scope", "关键变更", "commit validator", "不安装 Hook"],
+    "验证": ["测试或命令", "09.Att.01", "验证目标", "验证入口", "残留风险", "证据回指", "不得声明完整验证"],
+    "回写": ["过程输出", "事实源", "事实对象", "Git commit records", "不替代事实对象或验证声明"],
+    "交还": ["commit hash", "验证摘要", "残留风险", "git status", "source_refs", "执行方式", "阻断原因"],
+}
+GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
+    "Action Guide",
+    "V2 知识地图",
+    "不替代主控 AI 判断",
+    "skill_runtime_invoked",
+    "manual_equivalent_execution",
+    "skill_unavailable",
+    "不得恢复 Skill 顶层机制",
+]
 FOUNDATION_SPEC_CONTRACTS = {
     "03": {
         "path": SHORT_SPEC_REFS["03"],
@@ -256,6 +275,7 @@ FOUNDATION_SPEC_CONTRACTS = {
             "ldvh_spec_metadata",
             "action_template_boundaries",
             "context_scenario_gate",
+            "git_commit_action_template",
             "capability_output_boundary",
             "action_evidence_requirements",
             "gap_disposition_rules",
@@ -623,6 +643,15 @@ def parse_verification_claim_fields(root: Path = ROOT) -> dict[str, list[dict[st
         "complete_conditions": find_table(raw, VERIFICATION_COMPLETE_CONDITION_COLUMNS),
         "forbidden_writings": find_table(raw, VERIFICATION_FORBIDDEN_COLUMNS),
     }
+
+
+def parse_git_commit_action_template(root: Path = ROOT) -> list[dict[str, str]]:
+    raw = (root / SHORT_SPEC_REFS["06"]).read_text(encoding="utf-8")
+    sections = h2_sections(raw)
+    section = sections.get("模板候选与迁移边界")
+    if not section:
+        return []
+    return find_table(section["body"], ACTION_TEMPLATE_COLUMNS)
 
 
 def _table_rows_for_section(sections: dict[str, dict[str, str]], section_name: str, columns: list[str]) -> list[dict[str, str]]:
@@ -1166,6 +1195,60 @@ def validate_attachment_contracts(root: Path = ROOT) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_git_commit_action_template(root: Path = ROOT) -> list[Diagnostic]:
+    path = SHORT_SPEC_REFS["06"]
+    raw = (root / path).read_text(encoding="utf-8")
+    rows = parse_git_commit_action_template(root)
+    diagnostics: list[Diagnostic] = []
+
+    if not rows:
+        return [
+            Diagnostic(
+                "error",
+                "GIT_COMMIT_ACTION_TEMPLATE_MISSING",
+                path,
+                "06 缺少 Git 提交行动模板结构表",
+            )
+        ]
+
+    rows_by_structure = {row["结构"]: row for row in rows}
+    for structure, terms in GIT_COMMIT_ACTION_TEMPLATE_REQUIRED_ROWS.items():
+        row = rows_by_structure.get(structure)
+        if not row:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "GIT_COMMIT_ACTION_TEMPLATE_ROW_MISSING",
+                    path,
+                    f"Git 提交行动模板缺少结构: {structure}",
+                )
+            )
+            continue
+        missing_terms = [term for term in terms if term not in row["最小要求"]]
+        for term in missing_terms:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING",
+                    path,
+                    f"{structure} 缺少关键要求: {term}",
+                )
+            )
+
+    missing_boundary_terms = [term for term in GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS if term not in raw]
+    for term in missing_boundary_terms:
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_MISSING",
+                path,
+                f"Git 提交行动模板缺少边界声明: {term}",
+            )
+        )
+
+    return diagnostics
+
+
 def build_validation(root: Path = ROOT) -> dict[str, Any]:
     objects = load_formal_objects(root)
     specs = [obj for obj in objects if obj.object_type == "spec"]
@@ -1174,6 +1257,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     requirements = parse_ai_behavior_requirements(root)
     takeover_matrix = parse_takeover_matrix(root)
     foundation_spec_contracts = parse_foundation_spec_contracts(objects, root)
+    git_commit_action_template = parse_git_commit_action_template(root)
     attachment_contracts = {
         "commit_message_contract": parse_commit_message_contract(root),
         "field_registry_contract": parse_field_registry_contract(root),
@@ -1189,6 +1273,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_fact_model_boundaries(root))
     diagnostics.extend(validate_fact_source_and_verification_boundaries(root))
     diagnostics.extend(validate_attachment_contracts(root))
+    diagnostics.extend(validate_git_commit_action_template(root))
 
     diagnostic_dicts = [diagnostic.to_dict() for diagnostic in diagnostics]
     status = "ok" if not diagnostic_dicts else "failed"
@@ -1232,6 +1317,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "ai_behavior_requirements": requirements,
         "takeover_matrix": takeover_matrix,
         "foundation_spec_contracts": foundation_spec_contracts,
+        "git_commit_action_template": git_commit_action_template,
         "attachment_contracts": attachment_contracts,
         "diagnostics": diagnostic_dicts,
     }
