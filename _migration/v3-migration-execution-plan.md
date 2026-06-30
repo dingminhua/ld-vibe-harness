@@ -64,11 +64,11 @@ specs 迁入
 
 阶段 4 已完成最小 runtime facade：Code 已能按消费时机闭集承接 `session_start`、`acknowledge_read_plan`、`pre_tool_use`、`git_commit_msg`、`human_facing_output`、`external_output_intake`、`diagnostic_disposition` 和 `completion_claim`，生成 stdout-only receipt，并联动 Action Guide 与 preflight。`pre_tool_use` 与 `git_commit_msg` 缺少 read_plan 消费证据时阻断，`completion_claim` 缺少验证证据时阻断。该能力不声明 Hook、Rules、插件或环境已经完整接入。
 
-当前下一步不是直接写阶段 5 代码，而是阶段 5A：V2 内容吸收与语义映射。当前清单为 `_migration/stage-5-v2-absorption-checklist.md`。
+当前进入阶段 5A：V2 内容吸收与语义映射。当前清单为 `_migration/stage-5-v2-absorption-checklist.md`，正式编号归口由 `_migration/v3-formal-spec-numbering-decision.md` 和 `_migration/v3-specs-absorption-index.md` 共同记录。
 
 1. 按吸收清单逐项确认 V2 来源、当前状态、V3 归口、保留能力、废弃或后置内容、Skill 语义转换、前置 specs、前置 tests 和 Human Gate；
-2. 先把 commit 契约、runtime event mapping、Hook registry、行动模板和环境入口边界吸收到正式 specs 候选；
-3. 再补 Code 可消费结构和负例测试；
+2. 先按吸收索引创建 `03/05/06/07/08/09` 的正式基础规范，确保每篇都有来源归口、保障措施、验证方法、Human Gate 和 Stop Conditions；
+3. 再补 Code 可消费结构和负例测试，使 validator 能识别新正式 specs，而不把新增 docs 当作未验证空壳；
 4. 只有在上述闭环完成后，才设计 Hook / Commit / 行动模板适配层；
 5. 适配层只能调用 runtime/preflight/action-guide，不重新定义规则；
 6. 明确环境未接入时的 fallback 行为和 diagnostic；
