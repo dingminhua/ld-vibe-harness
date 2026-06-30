@@ -20,7 +20,7 @@
 | V3 编号 | 正式规范 | 主要吸收来源 | 应吸收内容 | 不直接吸收内容 | 首批 Code/tests 关注点 |
 |---|---|---|---|---|---|
 | 03 | 事实源与 Git 溯源规范 | V2 `07-事实源边界与Git追溯规范.md`、`07.Att.01` 至 `07.Att.12`、`31-git-commit-action` 中的提交证据边界 | Git 可追踪文件作为事实源；非事实源排除；过程输出、receipt、evidence、diagnostic 的回写边界；Git commit records 的溯源性质；commit message 契约的上位边界 | Git 提交流程步骤、commit hook 实现、Web 提交记录页面、知识地图派生展示、历史提交列表手写维护 | commit 契约可解析性、非事实源边界、completion evidence 回指、提交前 read_plan 消费证据 |
-| 05 | 事实模型基础规范 | V2 `02-事实模型基础规范.md`、20-24 事实模型成员、`02.Att.*`、`v2-03-work-object-responsibility-map.yaml`、spec-bloat fact member scan | 事实模型/事实实例边界；事实对象准入；字段契约、状态、证据、关系的共同规则；warning/follow-up/evidence/next_queries 的稳定承接位置；成员模板的上位要求；旧“工作模型”术语统一校正为事实模型 | Spark/WorkCase/ADR/Pitfall/Study 的完整字段表、完整状态机、旧 TaskPlan/Task/SubTask 兼容、具体实例迁移、未授权附件整批复制 | 对象身份、事实实例不得定义规则、成员模板骨架、过程输出和证据分流到对象或 specs；优先迁移 `02.Att.*` 中可被正文授权和 Code/tests 消费的字段/模板信息 |
+| 05 | 事实模型基础规范 | V2 `02-事实模型基础规范.md`、20-24 事实模型成员、`02.Att.*`、`v2-03-work-object-responsibility-map.yaml`、spec-bloat fact member scan | 事实模型/事实实例边界；事实对象准入；字段契约、状态、证据、关系的共同规则；warning/follow-up/evidence/next_queries 的稳定承接位置；成员模板的上位要求；旧“工作模型”术语统一校正为事实模型；WorkCase 首批最小成员规范归口 | Spark/ADR/Pitfall/Study 的完整字段表、完整状态机、旧 TaskPlan/Task/SubTask 兼容、具体实例迁移、未授权附件整批复制；WorkCase 完整字段表、`21.Att.01` 长表和真实实例目录 | 对象身份、事实实例不得定义规则、成员模板骨架、过程输出和证据分流到对象或 specs；优先迁移 `02.Att.*` 中可被正文授权和 Code/tests 消费的字段/模板信息；WorkCase 最小契约状态/边界校验 |
 | 06 | 行动模板基础规范 | V2 `03-行动编排规范.md`、`31-git-commit-action`、30/32/34/35/36 行动成员、`v2-04-orchestration-responsibility-map.yaml`、stage-5 checklist | Context、Scenario、Gate、执行、验证、回写、缺口分流的行动模板基本结构；主控 AI 与能力输出交还边界；以 Git 提交行动作为首个行动模板示范；Rules 同步、环境适配等作为后续模板或候选归口；V2 Skill 中有价值的工作流内容转写为普通行动步骤或 Action Guide 提示 | V2 30-59 成员全文、Skill 顶层身份、Skill registry、Skill 执行闭环、具体 Hook/Rules 安装、完整流程目录、行动模板替代 Human Gate | Git 提交行动模板示范、模板 read_plan、Gate 分流、能力输出不得成为事实源、行动完成声明需要验证证据；行动模板去 Skill 化 |
 | 07 | Code 确定性执行规范 | V2 `04-Code确定性执行规范.md`、`04.Att.*`、V2 `06` 中 dispatcher/adapter/payload 边界、现有 `code/specs_validate.py` 与 `code/ldvh_specs.py` | Code 读取、解析、校验、聚合、诊断、投影、preflight、runtime facade、stdout-only receipt、payload/adapter/dispatcher 的实现边界；Code 不授权、不替代 AI/Human/事实源 | 具体技术栈细节、Hook 安装、用户环境写入、Web API 细节、测试治理本体、未进入正式 specs 的候选规则 | validator 覆盖、诊断等级、unknown event、read_plan evidence、target 分类、environment_integrated=false |
 | 08 | Web 信息同步规范 | V2 `05-Web信息同步规范.md`、`05.Att.*`、Web 回归材料 | Web 作为 Human-facing 派生展示；Web 与 Code 分开实现，并自行从同一 Git 文件事实源、正式 specs、事实对象或 Web 自有 API 聚合读取页面/API 数据；Code 输出只作诊断、验证或测试对照；状态、风险、证据、待确认事项、提交记录、诊断和验证状态展示边界；Web 状态不成为事实源；受控轻写入必须回写并验证 | 具体页面设计、API 实现、缓存实现、旧知识地图展示细节、未授权的通用写入、Web 作为项目管理看板优先、Web 只能由 Code 喂数据的实现假设、Web 消费 Code 输出/DTO/validator 内部对象作为主数据源 | source_refs/来源回指、Confirm UI 不替代 Human Gate、Web cache 不替代事实源、同源独立读取边界、Code 输出不得成为 Web 数据契约、轻写入白名单测试 |
@@ -76,6 +76,8 @@
 9. `08` Web 信息同步规范；
 10. `09` 测试与验证规范。
 
+阶段 6A 新增 `21` WorkCase-工作项，作为 `05` 的事实模型成员规范候选。`21` 不改变 00-09 基础编号；它只承接 WorkCase 的最小成员规则，后续成员规范继续使用 20-24 段位逐篇判断。
+
 V3 术语使用：
 
 | V2 或含糊术语 | V3 处理 | 状态 |
@@ -103,6 +105,16 @@ V3 术语使用：
 | 5B-3 | 已完成 | 保持 03/09 正文边界，增强 Code 对非事实源、过程输出回写、测试证据、失败阻断、验证声明附件字段的检查 | `validate_fact_source_and_verification_boundaries` 与 03/09 负例测试 | validator 0 diagnostics；tests 73 passed |
 | 5B-4 | 已完成 | `06` 新增 Git 提交行动模板示范，覆盖 Context、Scenario、Gate、执行、验证、回写、交还；确认 Action Guide 取代知识地图导航能力，Skill 只作为外部包装候选 | `validate_git_commit_action_template` 与 Git 提交行动模板负例测试 | validator 0 diagnostics；tests 80 passed |
 | 5B-5 | 已完成 | `08` 明确 Web 与 Code 同源但分开实现，Web 页面/API 数据路径不得依赖 Code 输出、Code DTO 或 validator 内部对象；`07` 补充 Code 输出不得成为 Web 页面/API 主数据源、字段契约或页面状态机 | `validate_web_sync_boundaries` 与 Web/Code 分离负例测试 | validator 0 diagnostics；tests 84 passed |
+| 6A | 已完成 | 新增 `specs/21-WorkCase-工作项.md`，迁入 WorkCase 对象定位、准入、未来事实源位置、最小状态闭集、执行项内部边界、四层完成口径和 Human Gate；`05` 记录 WorkCase 已首批迁入 | `parse_workcase_member_contract`、`validate_workcase_member_contract` 与缺状态/缺事实源/缺关闭口径/缺 Human Gate/缺 legacy 状态边界负例测试 | validator 0 diagnostics；tests/code 与 `_migration/tests` 通过 |
+
+6A 后置项：
+
+| 对象 | 处理 |
+|---|---|
+| V2 `21.Att.01-orchestration字段契约表.md` | 不在 6A 迁入；后续判断是转为正式附件、Code/tests 还是继续留在迁移材料 |
+| WorkCase 完整字段表、实例目录、真实实例 | 后置到事实对象实例能力和受管项目事实源边界稳定后 |
+| WorkCase 创建、方案审核、结果复核、关闭确认行动模板实例 | 后置到 Hook / commit gate 接入与 V3 正式启用前；当前只允许 `06` 中的 Git 提交行动作为正文示范 |
+| Spark/ADR/Pitfall/Study | 后续逐篇按对象化价值、事实源位置、证据回指、Human Gate 和 Code/tests 闭环判断 |
 
 本轮附件分流结果：
 

@@ -29,6 +29,7 @@ SHORT_SPEC_REFS = {
     "07": "specs/07-Code确定性执行规范.md",
     "08": "specs/08-Web信息同步规范.md",
     "09": "specs/09-测试与验证规范.md",
+    "21": "specs/21-WorkCase-工作项.md",
 }
 BASE_ACTION_GUIDE_SOURCE_REFS = [
     {"path": "specs/00-理念与构成.md", "role": "value_anchor"},
@@ -234,6 +235,46 @@ WEB_SYNC_FORBIDDEN_PHRASES = [
     "Code 输出作为展示辅助",
     "Code 输出喂页面数据",
 ]
+WORKCASE_STATUS_COLUMNS = ["状态", "含义"]
+WORKCASE_REQUIRED_CODE_CONSUMPTION = [
+    "ldvh_spec_metadata",
+    "fact_model_member_identity",
+    "workcase_admission_rules",
+    "workcase_source_boundaries",
+    "workcase_state_boundaries",
+    "workcase_closure_boundaries",
+    "workcase_human_gate_boundaries",
+    "workcase_instance_checks",
+    "stop_conditions",
+]
+WORKCASE_REQUIRED_STATUSES = [
+    "subagents_plan_reviewing",
+    "human_plan_confirming",
+    "executing",
+    "result_self_checking",
+    "subagents_result_reviewing",
+    "human_closure_confirming",
+    "closed",
+]
+WORKCASE_SOURCE_BOUNDARY_TERMS = [
+    "ldvh-base/workcases/",
+    "执行项只能作为 WorkCase 内部字段存在",
+    "不得形成独立事实对象",
+]
+WORKCASE_CLOSURE_BOUNDARY_TERMS = [
+    "执行完成",
+    "可提交关闭确认",
+    "已关闭",
+    "已提交",
+    "后续分流 / 收口结果",
+]
+WORKCASE_HUMAN_GATE_TERMS = [
+    "创建 WorkCase",
+    "human_plan_confirming",
+    "human_closure_confirming",
+    "跳过未验证执行项",
+]
+WORKCASE_LEGACY_STATUSES = ["draft", "active", "review_needed"]
 FOUNDATION_SPEC_CONTRACTS = {
     "03": {
         "path": SHORT_SPEC_REFS["03"],
@@ -679,6 +720,41 @@ def parse_git_commit_action_template(root: Path = ROOT) -> list[dict[str, str]]:
     if not section:
         return []
     return find_table(section["body"], ACTION_TEMPLATE_COLUMNS)
+
+
+def parse_workcase_member_contract(root: Path = ROOT) -> dict[str, Any]:
+    path = SHORT_SPEC_REFS["21"]
+    full_path = root / path
+    if not full_path.exists():
+        return {
+            "path": path,
+            "code_consumption": [],
+            "statuses": [],
+            "source_refs": [],
+        }
+
+    raw = full_path.read_text(encoding="utf-8")
+    metadata = first_yaml_block(raw, path).get("ldvh_spec", {})
+    sections = h2_sections(raw)
+    status_rows = _table_rows_for_section(sections, "状态、证据与关闭边界", WORKCASE_STATUS_COLUMNS)
+
+    return {
+        "path": path,
+        "code_consumption": metadata.get("code_consumption", []),
+        "statuses": [
+            {
+                "status": strip_inline_code(row["状态"]),
+                "meaning": row["含义"],
+            }
+            for row in status_rows
+        ],
+        "source_refs": [
+            {"path": SHORT_SPEC_REFS["05"], "role": "parent_fact_model_spec"},
+            {"path": path, "role": "workcase_member_spec"},
+            {"path": "specs/03-事实源与Git溯源规范.md", "role": "fact_source_boundary"},
+            {"path": "specs/09-测试与验证规范.md", "role": "verification_boundary"},
+        ],
+    }
 
 
 def _table_rows_for_section(sections: dict[str, dict[str, str]], section_name: str, columns: list[str]) -> list[dict[str, str]]:
@@ -1319,6 +1395,96 @@ def validate_git_commit_action_template(root: Path = ROOT) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_workcase_member_contract(root: Path = ROOT) -> list[Diagnostic]:
+    path = SHORT_SPEC_REFS["21"]
+    full_path = root / path
+    diagnostics: list[Diagnostic] = []
+    if not full_path.exists():
+        return [Diagnostic("error", "WORKCASE_MEMBER_SPEC_MISSING", path, "21 WorkCase 成员规范缺失")]
+
+    raw = full_path.read_text(encoding="utf-8")
+    sections = h2_sections(raw)
+    contract = parse_workcase_member_contract(root)
+
+    code_consumption = contract["code_consumption"]
+    if not isinstance(code_consumption, list):
+        diagnostics.append(Diagnostic("error", "WORKCASE_CODE_CONSUMPTION_INVALID", path, "21 code_consumption 必须是列表"))
+        code_consumption = []
+    for item in _missing_exact_values(WORKCASE_REQUIRED_CODE_CONSUMPTION, code_consumption):
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "WORKCASE_CODE_CONSUMPTION_MISSING",
+                path,
+                f"21 缺少 Code 消费入口: {item}",
+            )
+        )
+
+    status_values = [row["status"] for row in contract["statuses"]]
+    for status in _missing_exact_values(WORKCASE_REQUIRED_STATUSES, status_values):
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "WORKCASE_STATUS_MISSING",
+                path,
+                f"WorkCase 状态闭集缺少: {status}",
+            )
+        )
+
+    source_section = sections.get("事实源与实例边界")
+    if not source_section:
+        diagnostics.append(Diagnostic("error", "WORKCASE_SOURCE_BOUNDARY_MISSING", path, "21 缺少事实源与实例边界章节"))
+    else:
+        for term in [term for term in WORKCASE_SOURCE_BOUNDARY_TERMS if term not in source_section["body"]]:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "WORKCASE_SOURCE_BOUNDARY_MISSING",
+                    path,
+                    f"WorkCase 事实源边界缺少: {term}",
+                )
+            )
+
+    state_section = sections.get("状态、证据与关闭边界")
+    if not state_section:
+        diagnostics.append(Diagnostic("error", "WORKCASE_CLOSURE_BOUNDARY_MISSING", path, "21 缺少状态、证据与关闭边界章节"))
+    else:
+        for term in [term for term in WORKCASE_CLOSURE_BOUNDARY_TERMS if term not in state_section["body"]]:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "WORKCASE_CLOSURE_BOUNDARY_MISSING",
+                    path,
+                    f"WorkCase 关闭口径缺少: {term}",
+                )
+            )
+        for status in [status for status in WORKCASE_LEGACY_STATUSES if status not in state_section["body"]]:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "WORKCASE_LEGACY_STATUS_BOUNDARY_MISSING",
+                    path,
+                    f"WorkCase legacy 状态边界缺少: {status}",
+                )
+            )
+
+    human_gate_section = sections.get("Human Gate")
+    if not human_gate_section:
+        diagnostics.append(Diagnostic("error", "WORKCASE_HUMAN_GATE_BOUNDARY_MISSING", path, "21 缺少 Human Gate 章节"))
+    else:
+        for term in [term for term in WORKCASE_HUMAN_GATE_TERMS if term not in human_gate_section["body"]]:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "WORKCASE_HUMAN_GATE_BOUNDARY_MISSING",
+                    path,
+                    f"WorkCase Human Gate 缺少: {term}",
+                )
+            )
+
+    return diagnostics
+
+
 def build_validation(root: Path = ROOT) -> dict[str, Any]:
     objects = load_formal_objects(root)
     specs = [obj for obj in objects if obj.object_type == "spec"]
@@ -1328,6 +1494,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     takeover_matrix = parse_takeover_matrix(root)
     foundation_spec_contracts = parse_foundation_spec_contracts(objects, root)
     git_commit_action_template = parse_git_commit_action_template(root)
+    workcase_member_contract = parse_workcase_member_contract(root)
     attachment_contracts = {
         "commit_message_contract": parse_commit_message_contract(root),
         "field_registry_contract": parse_field_registry_contract(root),
@@ -1345,6 +1512,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_web_sync_boundaries(root))
     diagnostics.extend(validate_attachment_contracts(root))
     diagnostics.extend(validate_git_commit_action_template(root))
+    diagnostics.extend(validate_workcase_member_contract(root))
 
     diagnostic_dicts = [diagnostic.to_dict() for diagnostic in diagnostics]
     status = "ok" if not diagnostic_dicts else "failed"
@@ -1379,6 +1547,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
             {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},
             {"path": "specs/09-测试与验证规范.md", "role": "test_verification"},
+            {"path": "specs/21-WorkCase-工作项.md", "role": "workcase_member_spec"},
             {"path": TIMING_TABLE_PATH, "role": "consumption_timing_registry"},
             {"path": TAKEOVER_MATRIX_PATH, "role": "takeover_matrix"},
         ],
@@ -1389,6 +1558,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "takeover_matrix": takeover_matrix,
         "foundation_spec_contracts": foundation_spec_contracts,
         "git_commit_action_template": git_commit_action_template,
+        "workcase_member_contract": workcase_member_contract,
         "attachment_contracts": attachment_contracts,
         "diagnostics": diagnostic_dicts,
     }

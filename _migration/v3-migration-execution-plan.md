@@ -35,7 +35,7 @@ specs 迁入
 | 3. Preflight 门禁 | 写入前识别规则读取、Human Gate 和缺口分流 | 迁移写入门禁、规范变更、附件边界、Human Gate 判断相关规则 | preflight CLI、blocking/warning/follow_up diagnostics tests | 不把 Code 输出当授权或放行 |
 | 4. Runtime facade | 承接消费时机和 receipt / diagnostic | 迁移 Runtime Protocol、canonical event、trigger source、receipt 边界规则 | 本地 runtime CLI、receipt 结构、事件测试 | 不声称环境已经完整支持 LDVH |
 | 5. Hook / Commit / 行动模板适配 | 接入外部环境触发和可复用工作流 | 先完成 V2 吸收清单，再迁移 Git commit、Hook、行动模板和环境入口相关规则 | 吸收清单、正式 specs 候选、adapter/dispatcher、commit gate、行动模板适配 tests | 不跳过吸收清单直接重写代码；不让 Hook、外部包装或行动模板成为独立规则源 |
-| 6. 事实源与事实对象 | 承接真实行动状态和长期证据 | 迁移 workcase、spark、ADR、pitfall、study 等事实对象规则 | fact validator/CLI、对象状态测试、回写边界测试 | 不直接复制 v2 `ldvh-base` 结构为权威 |
+| 6. 事实源与事实对象 | 承接真实行动状态和长期证据 | 先以 WorkCase 最小成员规范验证事实对象逐篇迁移，再迁移 spark、ADR、pitfall、study 等事实对象规则 | fact validator/CLI、对象状态测试、回写边界测试 | 不直接复制 v2 `ldvh-base` 结构为权威；不在 Hook/commit gate 和 V3 正式启用前建立正式行动模板实例 |
 | 7. 受管项目接入 | 让 V3 判断当前工作归属和项目事实源 | 迁移项目治理、项目发现、跨项目边界规则 | governed projects 配置、项目解析、越界测试 | 不让项目索引替代事实源 |
 | 8. 端到端闭环 | 用真实流程验证机制是否减少 AI 负担 | 只补缺口 specs | session start -> read plan -> preflight -> 修改 -> tests -> commit -> receipt -> closure 流程测试 | 不继续堆无消费方机制 |
 | 9. 产品化与迁移层清理 | 收束 alpha/beta 边界 | 把仍有效迁移决定吸收到正式 specs/tests/docs | 清理 `_migration` 条件、用户文档、可选 Web/dashboard | 不保留 `_migration` 作为长期事实源 |
@@ -78,7 +78,7 @@ specs 迁入
 - 术语表新增`规则源`、`来源依据`、`必读依据`条目；
 - code/ldvh_specs.py 同步字段名和内部键名。
 
-当前状态：术语整治、规则/事实边界修正以及 5B-1/2/3/4/5 均已完成。5B-5 完成时 validator 0 diagnostics，tests 84 passed。后续可推进阶段 6 事实源与事实对象迁移。
+当前状态：术语整治、规则/事实边界修正以及 5B-1/2/3/4/5 均已完成。5B-5 完成时 validator 0 diagnostics，tests 84 passed。阶段 6A 已启动并完成首个事实对象成员最小迁移：WorkCase 进入 `specs/21-WorkCase-工作项.md`，Code/tests 可消费其最小状态、事实源边界、关闭口径和 Human Gate。后续可继续推进 WorkCase 完整字段表、实例目录或 Spark/ADR/Pitfall/Study 成员规范，但正式行动模板实例仍后置到 Hook / commit gate 接入与 V3 正式启用前。
 
 阶段 5B 子阶段状态：
 
@@ -89,6 +89,12 @@ specs 迁入
 | 5B-3 | `03/09` 证据与验证边界专项 validator | 已完成。增强非事实源误用、过程输出回写、测试证据边界、失败阻断和验证声明字段检查 | `specs/03-事实源与Git溯源规范.md`、`specs/09-测试与验证规范.md`、`code/ldvh_specs.py`、`tests/code` | 已补 03/09 正反例；validator 0 diagnostics；tests 73 passed | 未实现 Hook、commit gate 或环境接入；未输出授权语义 |
 | 5B-4 | `06` Git 提交行动模板示范 | 已完成。以 Git 提交行动作为第一个行动模板示范，验证 Context、Scenario、Gate、执行、验证、回写和交还结构；同时确认 Action Guide 取代知识地图、行动模板去 Skill 化 | `specs/06-行动模板基础规范.md`、V2 `31-git-commit-action` 迁移证据、`skills/ldvh-git-commit/SKILL.md`、commit 契约附件、Action Guide 相关 Code、`tests/code` | 已补 `validate_git_commit_action_template` 和负例测试；validator 0 diagnostics；tests 80 passed | 未安装 commit hook；未实现 commit gate；未把 commit validator 输出当授权；未恢复 Skill 顶层机制；未让模板本身定义 commit 规则 |
 | 5B-5 | `08` Web 同源独立读取与展示边界检查 | 已完成。明确 Web 与 Code 分开实现：Web 页面/API 自行读取同一 Git 文件事实源、正式 specs、事实对象或 Web 自有 API 聚合，Code 输出只作诊断、验证或测试对照 | `specs/08-Web信息同步规范.md`、`specs/07-Code确定性执行规范.md`、`validate_web_sync_boundaries`、`tests/code` | 已补 Web/Code 分离 validator 与负例；validator 0 diagnostics；tests 84 passed | 不要求 Web 必须由 Code 喂数据；不允许 Web 把 Code 输出/DTO/validator 内部对象作为主数据源；不启动真实 Web 写入；不把 Confirm UI 当作 Human Gate 完成 |
+
+阶段 6A 子阶段状态：
+
+| 顺序 | 子阶段 | 目标 | 主要对象 | 验证方式 | 不做事项 |
+|---|---|---|---|---|---|
+| 6A | WorkCase 最小成员规范 | 已完成。选 WorkCase 作为首个事实对象成员，迁入对象定位、准入、未来事实源位置、最小状态闭集、执行项内部边界、四层完成口径和 Human Gate | `specs/21-WorkCase-工作项.md`、`specs/05-事实模型基础规范.md`、`_migration/6A-fact-object-member-admission.md`、`code/ldvh_specs.py`、`tests/code` | 已补 `parse_workcase_member_contract`、`validate_workcase_member_contract` 和缺状态/缺事实源/缺关闭口径/缺 Human Gate/缺 legacy 状态边界负例 | 不迁入 V2 `21.Att.01` 长字段表、完整 WorkCase schema、真实实例目录、Web 写入、Hook、commit gate、runtime adapter 或正式行动模板实例 |
 
 5B-1 完成记录：
 1. 术语整治（5B-0）已完成，事实源/事实源边界/过程输出/证据等术语已统一；
@@ -116,6 +122,13 @@ specs 迁入
 2. `07` 已补反向边界：Code 输出可以供 AI、tests、审计或 Web 诊断展示对照使用，但不得成为 Web 页面/API 主数据源、字段契约或页面状态机；
 3. `code/ldvh_specs.py` 已新增 `validate_web_sync_boundaries`，覆盖 Web/Code 分离、诊断引用边界和 Web 原生实现 source_refs 边界；
 4. `tests/code` 已补 Web/Code 分离负例，最终验证为 validator 0 diagnostics，tests 84 passed。
+
+6A 完成记录：
+
+1. 事实对象成员准入记录见 `_migration/6A-fact-object-member-admission.md`，WorkCase 被选为首个迁移对象，Spark/ADR/Pitfall/Study 后置；
+2. `specs/21-WorkCase-工作项.md` 已建立最小成员规范，只承接对象定位、事实源位置、状态闭集、关闭口径和 Human Gate；
+3. `05` 已说明 WorkCase 首批迁入，但完整字段表、`orchestration` 长表、实例目录和其它成员仍后置；
+4. 正式行动模板实例未建立；该工作等待 Hook / commit gate 接入与 V3 正式启用前再做，避免纸面模板与真实执行入口脱节。
 
 阶段 5B 术语校正：
 

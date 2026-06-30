@@ -33,7 +33,7 @@ def test_current_specs_validate_without_diagnostics() -> None:
     result = ldvh_specs.build_validation(ROOT)
 
     assert result["summary"]["status"] == "ok"
-    assert result["summary"]["specs"] == 10
+    assert result["summary"]["specs"] == 11
     assert result["summary"]["attachments"] == 11
     assert result["summary"]["foundation_spec_contracts"] == 6
     assert result["diagnostics"] == []
@@ -456,6 +456,100 @@ def test_git_commit_action_template_reports_missing_skill_execution_modes(tmp_pa
     assert "GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
 
 
+def test_workcase_member_contract_is_code_consumable() -> None:
+    result = ldvh_specs.build_validation(ROOT)
+    contract = result["workcase_member_contract"]
+
+    assert contract["path"] == "specs/21-WorkCase-工作项.md"
+    assert set(contract["code_consumption"]) >= {
+        "fact_model_member_identity",
+        "workcase_source_boundaries",
+        "workcase_state_boundaries",
+        "workcase_closure_boundaries",
+        "workcase_human_gate_boundaries",
+        "workcase_instance_checks",
+    }
+    assert [row["status"] for row in contract["statuses"]] == [
+        "subagents_plan_reviewing",
+        "human_plan_confirming",
+        "executing",
+        "result_self_checking",
+        "subagents_result_reviewing",
+        "human_closure_confirming",
+        "closed",
+    ]
+    assert any(item["path"] == "specs/05-事实模型基础规范.md" for item in contract["source_refs"])
+
+
+def test_workcase_member_validator_reports_missing_state(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/21-WorkCase-工作项.md",
+        "| `result_self_checking` | 结果自检中；主控正在检查成功标准、验证证据、关闭证据和残留风险 |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_STATUS_MISSING" in _diagnostic_codes(result)
+    assert any("result_self_checking" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_workcase_member_validator_reports_missing_source_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/21-WorkCase-工作项.md",
+        "执行项只能作为 WorkCase 内部字段存在，不得形成独立事实对象、独立编号段、一级 Web 入口或长期被其它对象引用的事实源。",
+        "执行项作为 WorkCase 的执行信息存在。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_SOURCE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_workcase_member_validator_reports_missing_closure_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/21-WorkCase-工作项.md",
+        "关闭证据必须包含可读取的 `后续分流 / 收口结果` 段落。",
+        "关闭证据必须包含可读取的段落。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_CLOSURE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_workcase_member_validator_reports_missing_human_gate_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/21-WorkCase-工作项.md",
+        "2. 从 `human_plan_confirming` 进入 `executing`，即确认目标、范围、成功标准、执行颗粒度和约束；\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_HUMAN_GATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+    assert any("human_plan_confirming" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_workcase_member_validator_reports_missing_legacy_status_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/21-WorkCase-工作项.md",
+        "新增或重写 WorkCase 不得使用 V2 legacy 状态 `draft`、`active`、`review_needed`。历史材料出现这些状态时，只能作为迁移诊断输入，不能作为 V3 状态闭集。\n\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_LEGACY_STATUS_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
 def test_formal_identity_and_role_sections_are_parseable() -> None:
     objects = {obj.object_id: obj for obj in ldvh_specs.load_formal_objects(ROOT)}
 
@@ -481,6 +575,7 @@ def test_formal_identity_and_role_sections_are_parseable() -> None:
         "08",
         "09",
         "09.Att.01",
+        "21",
     }
     assert objects["01"].metadata["role_sections"]["rule_body"] == [
         "5. 内部保障",

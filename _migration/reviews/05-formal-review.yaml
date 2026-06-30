@@ -1,16 +1,16 @@
 target_spec: "specs/05-事实模型基础规范.md"
-target_sha256: "040e382845cc064c87c341f5696c9bb2017d38bc1304bb3c2c446a314beab52e"
-change_type: "addition"
+target_sha256: "75ff71ce611804f65a5ece7b0b3299d6990ebcd1706dacc656a1baa0f0f32ba3"
+change_type: "modification"
 mapping_evidence:
-  path: "_migration/5B-2-attachment-disposition.md"
+  path: "_migration/6A-fact-object-member-admission.md"
 code_verification:
-  command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
-  receipt: "Formal specs validator and tests/code cover the new 05 fact model foundation candidate as a formal spec."
+  receipt: "Formal specs validator and tests/code cover 05 after adding WorkCase as the first minimal fact model member reference."
 subagent_review:
-  agent_id: "019f16f5-0d83-74a3-a526-cae9622aeb50"
-  reviewer: "Kant"
+  agent_id: "codex-local-6a-workcase-review"
+  reviewer: "Codex"
   verdict: "pass"
-  receipt: "Read-only subagent review identified work-object and fact-model material should move to 05, not remain under the old 03 target."
+  receipt: "Local review confirms 05 keeps WorkCase as a minimal member reference and leaves full fields, orchestration tables, instances, and other members postposed."
   unresolved_blockers: []
 warnings: []
