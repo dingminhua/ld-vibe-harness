@@ -101,3 +101,5 @@
 `_migration/18A-governed-project-hook-adapter.md` 记录阶段 18A 的外部受管项目 Hook adapter。它说明 `code/governed_hook_adapter.py` 已支持受管项目范围内的 `git.commit-msg` status/install/uninstall，并在 install/uninstall 前要求显式 Human Gate；它不表示任何外部项目已自动安装 Hook。
 
 `_migration/19A-migration-archive-decision.md` 记录阶段 19A 的 `_migration` 归档判断。它确认 formal review mapping evidence、迁移测试、test runner 和 Code preflight/read plan 仍依赖 `_migration`，因此当前继续保留，不删除 tracked 迁移材料。
+
+`_migration/20-22-conditional-audit-closure.md` 记录只读审核“有条件通过”后的收口处理。它说明 specs 实现域细节已迁到 `code/docs/`、`tests/docs/` 和 `web/docs/`，外部 Hook 底层安装入口已收紧为当前 worktree / adapter backend，外部受管项目仍必须走 `governed_hook_adapter.py` 和 Human Gate。

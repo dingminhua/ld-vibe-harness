@@ -1,16 +1,16 @@
 target_spec: "specs/09-测试与验证规范.md"
-target_sha256: "20a1475f45f044fbb42ffc65f2d438fdfd20b5953b4cc5435673a7998b21b1b3"
+target_sha256: "c49b8eeb25428e406787470a3a8082d7608dd800c4d124278f26acf72a11a238"
 change_type: "modification"
 mapping_evidence:
   path: "_migration/14A-test-tiering-performance.md"
 code_verification:
   command: "python3 code/test_runner.py smoke && python3 code/test_runner.py targeted --slow skip --changed code/test_runner.py && python3 code/test_runner.py runtime && python3 -m pytest tests/code/test_ldvh_test_runner.py -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
-  receipt: "Stage 14A validation covers the 09 layered testing contract and the runner support for runtime profile plus targeted slow policy."
+  receipt: "Conditional audit closure keeps 09 layered verification responsibilities in specs while moving concrete runner profile commands and slow policy practice to tests/docs."
 subagent_review:
   agent_id: "codex-local-14a-test-tiering-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review confirms 09 defines smoke/targeted/runtime/full responsibilities without deleting slow tests, lowering full regression, or defaulting to parallel slow execution."
+  receipt: "Local review confirms 09 still defines fast/target/runtime/full verification responsibilities without deleting slow tests, lowering full regression, or defaulting to parallel slow execution."
   unresolved_blockers: []
 warnings: []

@@ -129,7 +129,7 @@ Confirm UI 应至少让 Human 看见：
 6. 确认后写入位置；
 7. 失败、取消、暂缓和残留风险。
 
-Web 受控轻写入只有在对应事实模型、事实源、Web API、测试和 Human Gate 边界明确后才能开启。V3 当前只迁入 Spark quick create 这一最小轻写入：它只能创建 `pending` Spark 事实实例，必须写回 Git 可追踪文件并通过回读验证，响应必须包含 `source_refs`，不得写入 legacy 字段，不得替代 Git 提交、Human Gate 或完成声明。新增或扩大任何 Web 写入能力仍需按本文进入 Human Gate。
+Web 受控轻写入只有在对应事实模型、事实源、Web API、测试和 Human Gate 边界明确后才能开启。写入能力必须有对象类型、状态闭集、字段白名单、Git 可追踪回写、回读验证、`source_refs` 和失败处理；不得替代 Git 提交、Human Gate、验证声明或完成声明。当前 Web 写入白名单、API 路由和测试实践由 `web/docs/12-Web写入实践边界.md` 承接。新增或扩大任何 Web 写入能力仍需按本文进入 Human Gate。
 
 ## 8. 保障措施
 

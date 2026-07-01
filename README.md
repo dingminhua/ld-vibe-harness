@@ -89,6 +89,8 @@ python3 code/install_git_hooks.py install --repo .
 python3 code/install_git_hooks.py uninstall --repo .
 ```
 
+`install_git_hooks.py` 是当前 LDVH worktree 本地安装器和 adapter backend；不要用它直接安装或卸载外部 repo。
+
 外部受管项目 Hook adapter：
 
 ```bash

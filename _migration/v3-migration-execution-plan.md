@@ -376,6 +376,14 @@ specs 迁入
 4. `_migration/tests` 当前 19 passed，尚未被稳定替代；
 5. 本阶段决定继续保留 `_migration`，不删除 tracked 迁移材料，不移动目录，不重写 formal review evidence。
 
+20-22 有条件审核收口记录：
+
+1. `_migration/20-22-conditional-audit-closure.md` 已记录只读审核“有条件通过”后的两个优先收口项；
+2. `06/08/09/11` 已把命令长串、当前实现状态、runner 操作策略和 hook path 实践迁到实现域文档；
+3. 新增 `code/docs/01-Git-Commit-and-Hook-Practice.md`、`tests/docs/01-Test-Runner-Practice.md` 和 `web/docs/12-Web写入实践边界.md`；
+4. `code/install_git_hooks.py` CLI 直接写外部 repo 默认阻断，外部受管项目必须使用 `code/governed_hook_adapter.py` 并显式 Human Gate；
+5. 本阶段不新增 Web 写入、不安装外部 Hook、不启用 session/pre-tool/completion 自动触发、不删除 `_migration`。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。

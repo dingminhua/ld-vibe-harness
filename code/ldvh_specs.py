@@ -215,13 +215,13 @@ FACT_SOURCE_EVIDENCE_REQUIREMENTS = [
     },
 ]
 GIT_COMMIT_ACTION_TEMPLATE_REQUIRED_ROWS = {
-    "Context": ["git status", "staged", "diff", "source_refs", "03.Att.01", "09.Att.01"],
-    "Scenario": ["用户明确要求提交", "修复提交消息", "拆分 staged changes", "只回答 03/09 边界"],
-    "Gate": ["staged changes", "提交拆分边界不清", "destructive Git", "commit validator", "失败测试", "Human Gate", "Hook/commit gate/环境入口"],
-    "执行": ["status", "diff", "拆分", "03.Att.01", "单一 type", "scope", "关键变更", "commit validator", "不安装 Hook"],
+    "Context": ["Git 工作区摘要", "staged", "diff", "source_refs", "03.Att.01", "09.Att.01"],
+    "Scenario": ["用户明确要求提交", "修复提交消息", "拆分已暂存变更", "只回答 03/09 边界"],
+    "Gate": ["已暂存变更", "提交拆分边界不清", "破坏性 Git", "commit validator", "失败测试", "Human Gate", "Hook/commit gate/环境入口"],
+    "执行": ["Git 工作区摘要", "diff", "拆分", "03.Att.01", "单一 type", "scope", "关键变更", "commit validator", "不安装 Hook"],
     "验证": ["测试或命令", "09.Att.01", "验证目标", "验证入口", "残留风险", "证据回指", "不得声明完整验证"],
     "回写": ["过程输出", "事实源", "事实对象", "Git commit records", "不替代事实对象或验证声明"],
-    "交还": ["commit hash", "验证摘要", "残留风险", "git status", "source_refs", "执行方式", "阻断原因"],
+    "交还": ["commit hash", "验证摘要", "残留风险", "Git 工作区摘要", "source_refs", "执行方式", "阻断原因"],
 }
 GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
     "Action Guide",
@@ -238,7 +238,7 @@ WORKCASE_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Gate": ["Human Gate", "`human_plan_confirming`", "`human_closure_confirming`", "缺少验证证据", "Web 写入", "Hook", "runtime 自动触发"],
     "执行": ["`subagents_plan_reviewing`", "`executing`", "`result_self_checking`", "`subagents_result_reviewing`", "`human_closure_confirming`", "`closed`"],
     "验证": ["09.Att.01", "状态闭集", "成功标准", "后续分流 / 收口结果", "未验证"],
-    "回写": ["`ldvh-base/workcases/`", "verification_evidence", "closure_evidence", "human_closure_confirmation", "followup_refs", "Git commit records"],
+    "回写": ["正式 WorkCase 事实实例", "verification_evidence", "closure_evidence", "human_closure_confirmation", "followup_refs", "Git commit records"],
     "交还": ["WorkCase ID", "当前状态", "验证摘要", "残留风险", "下一步 Human Gate", "source_refs"],
 }
 WORKCASE_ACTION_TEMPLATE_BOUNDARY_TERMS = [

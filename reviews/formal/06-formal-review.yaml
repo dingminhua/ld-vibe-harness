@@ -1,16 +1,16 @@
 target_spec: "specs/06-行动模板基础规范.md"
-target_sha256: "a523f88eb4165f0b5f2bc62758031aa6c7a3c6ce8cdb4ddf9a4a3364e4c5b214"
+target_sha256: "db68912c9da1831c19f01a018d9baaecfe77a48c53492add0c467d2ffc22c2ef"
 change_type: "modification"
 mapping_evidence:
   path: "_migration/13A-workcase-minimal-action-template.md"
 code_verification:
   command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_ldvh_specs_validate.py -q && python3 code/test_runner.py targeted --changed specs/06-行动模板基础规范.md --changed specs/21-WorkCase-工作项.md --changed code/ldvh_specs.py --changed tests/code/test_ldvh_specs_validate.py"
   passed: true
-  receipt: "Stage 13A validation covers the 06 WorkCase minimal manual action template and keeps Web write, Hook, runtime auto trigger and full Confirm UI deferred."
+  receipt: "Conditional audit closure keeps 06 action template rules in specs while moving Git command practice and WorkCase instance operation detail to implementation-domain docs."
 subagent_review:
   agent_id: "codex-local-13a-workcase-action-template-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review confirms 06 adds only a manual_equivalent_execution WorkCase template and does not declare automatic WorkCase flow, Web write, Hook integration or Human Gate completion."
+  receipt: "Local review confirms 06 still defines only action template contracts and boundaries; implementation command practice is delegated to code/docs and no Web write, Hook integration or Human Gate completion is declared."
   unresolved_blockers: []
 warnings: []

@@ -31,7 +31,7 @@
 | 文件 | 变更 |
 |---|---|
 | `code/governed_hook_adapter.py` | 新增受管项目 Hook adapter CLI，支持 `status`、`install`、`uninstall` |
-| `code/install_git_hooks.py` | 新增 `embed_ldvh_root` 渲染选项，外部 repo Hook 可默认定位到 V3 validator |
+| `code/install_git_hooks.py` | 新增 `embed_ldvh_root` 渲染选项，外部 repo Hook 可默认定位到 V3 validator；阶段 21 后 CLI 直接写外部 repo 默认阻断，只作为当前 worktree 安装器和 adapter backend |
 | `tests/code/test_ldvh_specs_validate.py` | 增加受管项目安装、回滚、Human Gate 缺失和非受管 repo 阻断测试 |
 | `README.md` | 增加外部受管项目 adapter 命令和边界说明 |
 
@@ -42,9 +42,10 @@
 3. `status` 只做只读检查，不要求 Human Gate；
 4. `install` 和 `uninstall` 必须显式传入 `--confirm-human-gate`；
 5. 非受管 target、混合 target、多项目 target 或无法解析的 target 会阻断；
-6. 外部 repo Hook 使用嵌入的 LDVH root 找到 V3 validator，但不复制 specs、facts 或 Code 到外部 repo；
-7. 本阶段不启用 session start、pre tool use、completion claim 自动触发；
-8. 本阶段不恢复 Rules / Skill 顶层机制。
+6. 外部受管项目不得直接调用 `code/install_git_hooks.py` CLI 安装或卸载 Hook；
+7. 外部 repo Hook 使用嵌入的 LDVH root 找到 V3 validator，但不复制 specs、facts 或 Code 到外部 repo；
+8. 本阶段不启用 session start、pre tool use、completion claim 自动触发；
+9. 本阶段不恢复 Rules / Skill 顶层机制。
 
 ## 使用入口
 

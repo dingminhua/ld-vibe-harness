@@ -690,7 +690,7 @@ def test_git_commit_action_template_is_code_consumable() -> None:
     rows = {row["结构"]: row["最小要求"] for row in result["git_commit_action_template"]}
 
     assert set(rows) == {"Context", "Scenario", "Gate", "执行", "验证", "回写", "交还"}
-    assert "git status" in rows["Context"]
+    assert "Git 工作区摘要" in rows["Context"]
     assert "diff" in rows["执行"]
     assert "Human Gate" in rows["Gate"]
     assert "09.Att.01" in rows["验证"]
@@ -702,13 +702,13 @@ def test_git_commit_action_template_reports_missing_status_context(tmp_path: Pat
     _replace_in_temp(
         root,
         "specs/06-行动模板基础规范.md",
-        "`git status --short --untracked-files=all`、",
+        "Git 工作区摘要、",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("git status" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("Git 工作区摘要" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_git_commit_action_template_reports_missing_split_gate(tmp_path: Path) -> None:
@@ -789,7 +789,7 @@ def test_workcase_action_template_is_code_consumable() -> None:
     assert "`human_closure_confirming`" in rows["Gate"]
     assert "`closed`" in rows["执行"]
     assert "09.Att.01" in rows["验证"]
-    assert "`ldvh-base/workcases/`" in rows["回写"]
+    assert "正式 WorkCase 事实实例" in rows["回写"]
     assert "下一步 Human Gate" in rows["交还"]
 
 
@@ -1981,6 +1981,7 @@ def test_install_git_hooks_uses_worktree_local_hooks_path(tmp_path: Path) -> Non
             "install",
             "--repo",
             str(repo),
+            "--backend-allow-external",
         ],
         cwd=ROOT,
         text=True,
@@ -2004,6 +2005,33 @@ def test_install_git_hooks_uses_worktree_local_hooks_path(tmp_path: Path) -> Non
     assert os.access(hook, os.X_OK)
     assert "# LDVH v3 managed commit-msg hook" in hook.read_text(encoding="utf-8")
     assert not (repo / ".git" / "hooks" / "commit-msg").exists()
+
+
+def test_install_git_hooks_blocks_direct_external_repo_write(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/install_git_hooks.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 1
+    assert "governed_hook_adapter.py" in completed.stdout
+    assert "confirm-human-gate" in completed.stdout
+    assert not (repo / "hooks" / "commit-msg").exists()
 
 
 def test_governed_hook_adapter_installs_for_confirmed_governed_repo(tmp_path: Path) -> None:
@@ -2194,6 +2222,7 @@ def test_environment_status_reports_commit_hook_and_manual_entries(tmp_path: Pat
             "install",
             "--repo",
             str(repo),
+            "--backend-allow-external",
             "--ldvh-root",
             str(ROOT),
         ],
@@ -2252,6 +2281,7 @@ def test_environment_status_blocks_missing_commit_hook(tmp_path: Path) -> None:
             "code/environment_status.py",
             "--repo",
             str(repo),
+            "--backend-allow-external",
             "--ldvh-root",
             str(ROOT),
             "--format",
@@ -2288,6 +2318,7 @@ def test_environment_entry_audit_marks_rules_and_skills_removed_top_level(tmp_pa
             "install",
             "--repo",
             str(repo),
+            "--backend-allow-external",
             "--ldvh-root",
             str(ROOT),
         ],
@@ -2349,6 +2380,7 @@ def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_pa
             "install",
             "--repo",
             str(repo),
+            "--backend-allow-external",
             "--ldvh-root",
             str(ROOT),
         ],

@@ -15,6 +15,10 @@ ROOT = Path(__file__).resolve().parents[1]
 HOOKS_PATH = "hooks"
 COMMIT_MSG_HOOK = "commit-msg"
 HOOK_MARKER = "# LDVH v3 managed commit-msg hook"
+EXTERNAL_REPO_BLOCK_MESSAGE = (
+    "External repo install/uninstall must use code/governed_hook_adapter.py "
+    "with governed project resolution and --confirm-human-gate."
+)
 
 
 @dataclass(frozen=True)
@@ -133,6 +137,13 @@ def uninstall(repo: Path, ldvh_root: Path = ROOT) -> HookStatus:
     return inspect_status(resolved_repo, ldvh_root)
 
 
+def is_current_ldvh_repo(repo: Path, ldvh_root: Path = ROOT) -> bool:
+    try:
+        return resolve_repo(repo) == resolve_repo(ldvh_root)
+    except subprocess.CalledProcessError:
+        return False
+
+
 def print_status(status: HookStatus) -> None:
     print("LDVH v3 git hook status")
     print(f"- repo: {status.repo}")
@@ -156,6 +167,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="render the hook with this LDVH root as the default validator location",
     )
+    parser.add_argument(
+        "--backend-allow-external",
+        action="store_true",
+        help="backend-only escape hatch for tests/adapters; external users should use governed_hook_adapter.py",
+    )
     return parser
 
 
@@ -163,6 +179,13 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     repo = Path(args.repo).resolve()
     ldvh_root = Path(args.ldvh_root).resolve()
+
+    if args.command in {"install", "uninstall"} and not args.backend_allow_external:
+        if not is_current_ldvh_repo(repo, ldvh_root):
+            status = inspect_status(repo, ldvh_root)
+            print_status(status)
+            print(f"- diagnostic: {EXTERNAL_REPO_BLOCK_MESSAGE}")
+            return 1
 
     if args.command == "install":
         status = install(repo, ldvh_root, embed_ldvh_root=args.embed_ldvh_root)
