@@ -1,5 +1,5 @@
 target_spec: "specs/23-Pitfall-踩坑经验.md"
-target_sha256: "ffea2a1e1c0d8764de818355998b83176a96433102b181c29dc286ec6fcb72ee"
+target_sha256: "7eeb9af9ac060512397b227890b282312259f9508bc1da35f1d04ead8cc3a283"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/9C-fact-object-full-migration.md"

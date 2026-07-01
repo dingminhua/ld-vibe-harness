@@ -86,7 +86,7 @@ Spark 服务 05 的事实对象准入和分流规则。它不是完成对象，�
 
 ## 5. 对象定位与准入
 
-Spark / 火花是分流前的事实对象。它可以后续转化或关联到 WorkCase、ADR、Pitfall、Study、docs、受管项目配置或其它事实源，但在转化前不替代这些对象的字段契约、状态机、验收规则或配置边界。
+Spark / 火花是分流前的事实对象。它可以后续转化或关联到 WorkCase、ADR、Pitfall、Study、docs、管辖项目配置或其它事实源，但在转化前不替代这些对象的字段契约、状态机、验收规则或配置边界。
 
 一个输入满足以下条件之一时，可以考虑形成 Spark：
 
@@ -108,7 +108,7 @@ Spark 实例未来的权威事实源位置为：
 ldvh-base/sparks/spark-{NNNN}-short-title.yaml
 ```
 
-编号从 `0001` 开始递增，固定 4 位；短标题使用小写短横线。每个受管项目独立编号，不使用跨项目全局编号。
+编号从 `0001` 开始递增，固定 4 位；短标题使用小写短横线。每个管辖项目独立编号，不使用跨项目全局编号。
 
 | 内容 | 权威位置 |
 |---|---|
@@ -127,7 +127,7 @@ Spark 首批状态闭集如下：
 | 状态 | 含义 |
 |---|---|
 | `pending` | 待处理：已捕获，尚未决定是否分流、处理或废弃；或已被部分分流但仍存在未承接议题 |
-| `resolved` | 已完整分流到 WorkCase、ADR、Pitfall、docs、受管项目配置更新或其它非 Study 事实源，或已明确处理 |
+| `resolved` | 已完整分流到 WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其它非 Study 事实源，或已明确处理 |
 | `discarded` | 已废弃：确认不再需要继续跟踪或作为分流入口 |
 
 `resolved` 和 `discarded` 是稳定终态。终态 Spark 不得直接重开；如需重新处理，应新建 Spark，并在新 Spark 中引用原 Spark。
@@ -166,7 +166,7 @@ Spark 的关闭口径必须满足：
 
 1. 创建 Spark、删除或重命名 Spark 实例；
 2. 将对话输入、Study 结论或执行发现写入 Spark；
-3. 将 `pending` Spark 分流为 WorkCase、ADR、Pitfall、docs、受管项目配置更新或其它事实源；
+3. 将 `pending` Spark 分流为 WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其它事实源；
 4. 将 Spark 标记为 `discarded`，且废弃会丢失后续跟踪入口；
 5. 将 Spark 从单线分流改为多线并行分流，或将多个并行承接对象判断为已经共同完整承接；
 6. 修改 `resolved_to`、`priority`、`description`、`evolution` 或关键关联；

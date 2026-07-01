@@ -71,7 +71,7 @@ def build_governed_hook_adapter(
                 "blocking",
                 "GOVERNED_HOOK_TARGET_BLOCKED",
                 ",".join(resolution["target_paths"]),
-                resolution["message"] or "受管项目 target 解析被阻断。",
+                resolution["message"] or "管辖项目 target 解析被阻断。",
             )
         )
     elif not resolution["governed"]:
@@ -80,7 +80,7 @@ def build_governed_hook_adapter(
                 "blocking",
                 "GOVERNED_HOOK_TARGET_NOT_GOVERNED",
                 ",".join(resolution["target_paths"]),
-                "目标 repo 未命中 LDVH 受管项目；adapter 不安装或卸载 Hook。",
+                "目标 repo 未命中 LDVH 管辖项目；adapter 不安装或卸载 Hook。",
             )
         )
 
@@ -91,7 +91,7 @@ def build_governed_hook_adapter(
                 "blocking",
                 "GOVERNED_HOOK_HUMAN_GATE_REQUIRED",
                 resolved_repo.as_posix(),
-                "安装或回滚外部受管项目 Hook 前必须显式提供 Human Gate 确认。",
+                "安装或回滚外部管辖项目 Hook 前必须显式提供 Human Gate 确认。",
             )
         )
 
@@ -171,7 +171,7 @@ def build_governed_hook_adapter(
         "governed_project": resolution,
         "hook_status": hook_status,
         "source_refs": [
-            {"path": "specs/10-受管项目接入规范.md", "role": "governed_project_boundary"},
+            {"path": "specs/10-管辖项目配置规范.md", "role": "governed_project_config_boundary"},
             {"path": "specs/01-保障与衔接.md", "role": "environment_adapter_boundary"},
             {"path": "code/install_git_hooks.py", "role": "hook_install_backend"},
         ],

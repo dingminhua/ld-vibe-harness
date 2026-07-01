@@ -121,7 +121,7 @@
 
 目标：
 
-1. 复用 `specs/10-受管项目接入规范.md` 的 target-first 和 Git common-dir；
+1. 复用 `specs/10-管辖项目配置规范.md` 的 target-first 和 Git common-dir；
 2. 支持安装、状态检查、回滚和验证；
 3. 不默认覆盖外部项目，不绕过 Human Gate。
 

@@ -1,5 +1,5 @@
 target_spec: "specs/21-WorkCase-工作项.md"
-target_sha256: "57eadc5d309e2648a9e347cd6049dd44ca764b569dfbdeeeaadd3a902944db28"
+target_sha256: "f7058f759661523aaa79566e247ffbe97cf3b7646407270c9a36830e46c05aee"
 change_type: "modification"
 mapping_evidence:
   path: "_migration/13A-workcase-minimal-action-template.md"

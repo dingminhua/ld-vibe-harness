@@ -20,7 +20,7 @@ COMMIT_MESSAGE_CONTRACT_PATH = "specs/attachments/03.Att.01-Commit-Message契约
 FIELD_REGISTRY_CONTRACT_PATH = "specs/attachments/05.Att.01-字段注册表结构.md"
 VERIFICATION_CLAIM_FIELDS_PATH = "specs/attachments/09.Att.01-验证声明字段表.md"
 GOVERNED_PROJECTS_CONFIG_PATH = "LDVH-GOVERNED-PROJECTS.yaml"
-GOVERNED_PROJECTS_CONTRACT_PATH = "specs/attachments/10.Att.01-受管项目配置字段表.md"
+GOVERNED_PROJECTS_CONTRACT_PATH = "specs/attachments/10.Att.01-管辖项目配置字段表.md"
 
 SHORT_SPEC_REFS = {
     "00": "specs/00-理念与构成.md",
@@ -33,7 +33,7 @@ SHORT_SPEC_REFS = {
     "07": "specs/07-Code确定性执行规范.md",
     "08": "specs/08-Web信息同步规范.md",
     "09": "specs/09-测试与验证规范.md",
-    "10": "specs/10-受管项目接入规范.md",
+    "10": "specs/10-管辖项目配置规范.md",
     "20": "specs/20-Spark-火花.md",
     "21": "specs/21-WorkCase-工作项.md",
     "22": "specs/22-ADR-决策.md",
@@ -346,8 +346,8 @@ GOVERNED_PROJECT_REQUIRED_RESOLUTION_FIELDS = [
 GOVERNED_PROJECT_SPEC_REQUIREMENTS = [
     {
         "code": "GOVERNED_PROJECT_CONFIG_BOUNDARY_MISSING",
-        "section": "受管项目配置契约",
-        "message": "10 必须定义受管项目配置契约和事实源边界",
+        "section": "管辖项目配置契约",
+        "message": "10 必须定义管辖项目配置契约和事实源边界",
         "terms": ["LDVH-GOVERNED-PROJECTS.yaml", "product_name", "projects", "10.Att.01", "事实源", "不得替代事实对象"],
     },
     {
@@ -360,13 +360,13 @@ GOVERNED_PROJECT_SPEC_REQUIREMENTS = [
         "code": "GOVERNED_PROJECT_MULTI_TARGET_BOUNDARY_MISSING",
         "section": "多目标与 no-op 边界",
         "message": "10 必须定义多目标、混合目标和 no-op 边界",
-        "terms": ["同一受管项目", "跨受管项目", "受管/非受管混合", "no-op", "阻断"],
+        "terms": ["同一管辖项目", "跨管辖项目", "管辖/非管辖混合", "no-op", "阻断"],
     },
     {
         "code": "GOVERNED_PROJECT_ENVIRONMENT_BOUNDARY_MISSING",
-        "section": "事实源接入与环境边界",
-        "message": "10 必须定义事实源接入和环境未接入边界",
-        "terms": ["ldvh-base/", "项目索引不得替代事实源", "Hook", "environment_integrated=false"],
+        "section": "事实源入口与环境引用边界",
+        "message": "10 必须定义事实源入口和环境引用边界",
+        "terms": ["ldvh-base/", "项目索引不得替代事实源", "Hook", "安装授权"],
     },
 ]
 WORKCASE_STATUS_COLUMNS = ["状态", "含义"]
@@ -1800,7 +1800,7 @@ def resolve_governed_subject(
         result.update({
             "blocked": True,
             "blocked_reason": "ambiguous_governed_project",
-            "message": "Git identity 命中多个受管项目，必须拆分或进入 Human Gate。",
+            "message": "Git identity 命中多个管辖项目，必须拆分或进入 Human Gate。",
         })
         return result
 
@@ -1811,18 +1811,18 @@ def resolve_governed_subject(
         result.update({
             "blocked": True,
             "blocked_reason": "multiple_governed_projects",
-            "message": "一次操作命中多个受管项目，必须拆分或进入 Human Gate。",
+            "message": "一次操作命中多个管辖项目，必须拆分或进入 Human Gate。",
         })
         return result
     if governed and nongoverned and explicit_targets and read_write_kind in {"write", "commit"}:
         result.update({
             "blocked": True,
             "blocked_reason": "mixed_governed_and_ungoverned_targets",
-            "message": "一次写入操作混合受管与非受管 target，必须拆分或进入 Human Gate。",
+            "message": "一次写入操作混合管辖与非管辖 target，必须拆分或进入 Human Gate。",
         })
         return result
     if not governed:
-        result["message"] = "工作对象未命中受管项目，no-op"
+        result["message"] = "工作对象未命中管辖项目，no-op"
         return result
 
     subject = governed[0]
@@ -1832,7 +1832,7 @@ def resolve_governed_subject(
         "governed_via": subject["governed_via"],
         "governed_project_id": subject["governed_project_id"],
         "governed_project_path": subject["governed_project_path"],
-        "message": "工作对象命中受管项目。",
+        "message": "工作对象命中管辖项目。",
     })
     return result
 
@@ -2315,15 +2315,15 @@ def validate_governed_project_config_contract(root: Path = ROOT) -> list[Diagnos
     diagnostics: list[Diagnostic] = []
     contract = parse_governed_project_config_contract(root)
     if not contract["root_fields"]:
-        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ROOT_FIELD_TABLE_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, "受管项目根字段表缺失"))
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ROOT_FIELD_TABLE_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, "管辖项目根字段表缺失"))
     for value in _table_has_values(contract["root_fields"], "根字段", GOVERNED_PROJECT_REQUIRED_ROOT_FIELDS):
-        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ROOT_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"受管项目根字段缺失: {value}"))
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ROOT_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"管辖项目根字段缺失: {value}"))
     for value in _table_has_values(contract["project_fields"], "项目字段", GOVERNED_PROJECT_REQUIRED_ITEM_FIELDS):
-        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ITEM_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"受管项目项目字段缺失: {value}"))
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ITEM_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"管辖项目项目字段缺失: {value}"))
     for value in _table_has_values(contract["git_fields"], "Git字段", GOVERNED_PROJECT_REQUIRED_GIT_FIELDS):
-        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"受管项目 Git 字段缺失: {value}"))
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"管辖项目 Git 字段缺失: {value}"))
     for value in _table_has_values(contract["resolution_fields"], "resolution字段", GOVERNED_PROJECT_REQUIRED_RESOLUTION_FIELDS):
-        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_RESOLUTION_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"受管项目 resolution 字段缺失: {value}"))
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_RESOLUTION_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"管辖项目 resolution 字段缺失: {value}"))
     return diagnostics
 
 
@@ -2331,23 +2331,23 @@ def validate_governed_projects_config(root: Path = ROOT) -> list[Diagnostic]:
     path = root / GOVERNED_PROJECTS_CONFIG_PATH
     diagnostics: list[Diagnostic] = []
     if not path.exists():
-        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_MISSING", GOVERNED_PROJECTS_CONFIG_PATH, "缺少受管项目配置: LDVH-GOVERNED-PROJECTS.yaml")]
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_MISSING", GOVERNED_PROJECTS_CONFIG_PATH, "缺少管辖项目配置: LDVH-GOVERNED-PROJECTS.yaml")]
     if not path.is_file():
-        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_NOT_FILE", GOVERNED_PROJECTS_CONFIG_PATH, "受管项目配置不是文件")]
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_NOT_FILE", GOVERNED_PROJECTS_CONFIG_PATH, "管辖项目配置不是文件")]
 
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
     except yaml.YAMLError as exc:
-        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_YAML_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"受管项目配置 YAML 解析失败: {exc}")]
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_YAML_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"管辖项目配置 YAML 解析失败: {exc}")]
 
     if not isinstance(data, dict):
-        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_ROOT_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, "受管项目配置根对象必须是 mapping")]
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_ROOT_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, "管辖项目配置根对象必须是 mapping")]
 
     root_fields = set(data)
     for field in sorted(GOVERNED_PROJECTS_ROOT_FIELDS - root_fields):
-        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_MISSING", GOVERNED_PROJECTS_CONFIG_PATH, f"受管项目配置缺少根字段: {field}"))
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_MISSING", GOVERNED_PROJECTS_CONFIG_PATH, f"管辖项目配置缺少根字段: {field}"))
     for field in sorted(root_fields - GOVERNED_PROJECTS_ROOT_FIELDS):
-        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_FORBIDDEN", GOVERNED_PROJECTS_CONFIG_PATH, f"受管项目配置不得包含根字段: {field}"))
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_FORBIDDEN", GOVERNED_PROJECTS_CONFIG_PATH, f"管辖项目配置不得包含根字段: {field}"))
     for field in sorted({"product_name", "product_description"} & root_fields):
         value = data.get(field)
         if not isinstance(value, str) or not value.strip():
@@ -2378,14 +2378,14 @@ def validate_governed_projects_config(root: Path = ROOT) -> list[Diagnostic]:
         if isinstance(project_id, str) and project_id.strip():
             normalized_id = project_id.strip()
             if normalized_id in seen_ids:
-                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ID_DUPLICATE", GOVERNED_PROJECTS_CONFIG_PATH, f"受管项目 id 重复: {normalized_id}"))
+                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ID_DUPLICATE", GOVERNED_PROJECTS_CONFIG_PATH, f"管辖项目 id 重复: {normalized_id}"))
             seen_ids[normalized_id] = index
 
         project_path = project.get("path")
         if isinstance(project_path, str) and project_path.strip():
             normalized_path = _resolve_path(Path(project_path), path.parent).as_posix()
             if normalized_path in seen_paths:
-                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_PATH_DUPLICATE", GOVERNED_PROJECTS_CONFIG_PATH, f"受管项目 path 重复: {project_path}"))
+                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_PATH_DUPLICATE", GOVERNED_PROJECTS_CONFIG_PATH, f"管辖项目 path 重复: {project_path}"))
             seen_paths[normalized_path] = index
 
         git = project.get("git")
@@ -2859,7 +2859,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
             {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},
             {"path": "specs/09-测试与验证规范.md", "role": "test_verification"},
-            {"path": "specs/10-受管项目接入规范.md", "role": "governed_project_access"},
+            {"path": "specs/10-管辖项目配置规范.md", "role": "governed_project_config"},
             {"path": "specs/01-保障与衔接.md", "role": "environment_adaptation"},
             {"path": "specs/20-Spark-火花.md", "role": "fact_model_member_spec"},
             {"path": "specs/21-WorkCase-工作项.md", "role": "workcase_member_spec"},
@@ -4081,7 +4081,7 @@ def build_e2e_rehearsal(
             "reduces_ai_burden": [
                 "target 归属由 governed project resolver 输出，不靠 AI 记忆判断",
                 "session_start 生成 read_plan，pre_tool_use 复用 acknowledged paths",
-                "preflight 在写入前给出目标归口、Human Gate 风险和受管项目边界",
+                "preflight 在写入前给出目标归口、Human Gate 风险和管辖项目边界",
                 "completion_claim 必须携带验证证据，不能空口声明完成",
             ],
             "postponed_boundaries": [

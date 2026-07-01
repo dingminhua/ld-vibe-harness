@@ -22,8 +22,8 @@
 
 | 产物 | 内容 |
 |---|---|
-| `specs/10-受管项目接入规范.md` | 受管项目配置、工作对象判定、多目标边界、事实源接入和环境边界 |
-| `specs/attachments/10.Att.01-受管项目配置字段表.md` | 配置根字段、项目字段、Git 字段和 target resolution 字段 |
+| `specs/10-管辖项目配置规范.md` | 管辖项目配置、工作对象判定、多目标边界、事实源入口和环境引用边界 |
+| `specs/attachments/10.Att.01-管辖项目配置字段表.md` | 配置根字段、项目字段、Git 字段和 target resolution 字段 |
 | `LDVH-GOVERNED-PROJECTS.yaml` | V3 当前工作树自登记 |
 | `code/ldvh_specs.py` | 受管项目配置解析、字段校验、target-first resolver、preflight 辅助输出 |
 | `tests/code/test_ldvh_specs_validate.py` | 配置契约、缺失/重复/越界负例、target-first、no-op、多 target、worktree 和 CLI 测试 |
@@ -41,4 +41,4 @@
 
 | 验证目标 | 验证方式 | 验证入口 | 输入范围 | 关键输出 | 结论 | 残留风险 | 证据回指 |
 |---|---|---|---|---|---|---|---|
-| 阶段 7 受管项目静态接管能力 | 自动化测试与 specs validator | `python3 -m pytest tests/code _migration/tests -q`；`python3 code/specs_validate.py all --format text --fail-on-diagnostics` | V3 specs、附件、根配置、Code parser/resolver、迁移测试 | 配置契约、target-first、worktree、多 target 和正式 specs review gate 均通过 | 通过 | Hook、commit gate、Web 写入和真实实例迁移仍后置 | 本文、`specs/10-受管项目接入规范.md`、`tests/code/test_ldvh_specs_validate.py` |
+| 阶段 7 管辖项目静态解析能力 | 自动化测试与 specs validator | `python3 -m pytest tests/code _migration/tests -q`；`python3 code/specs_validate.py all --format text --fail-on-diagnostics` | V3 specs、附件、根配置、Code parser/resolver、迁移测试 | 配置契约、target-first、worktree、多 target 和正式 specs review gate 均通过 | 通过 | Hook、commit gate、Web 写入和真实实例迁移仍后置 | 本文、`specs/10-管辖项目配置规范.md`、`tests/code/test_ldvh_specs_validate.py` |

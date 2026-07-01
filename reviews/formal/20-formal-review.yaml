@@ -1,5 +1,5 @@
 target_spec: "specs/20-Spark-火花.md"
-target_sha256: "7c83736f5ccf7af8dce541eb3cd2781f830e04d7d4abc380882d149acdadb0c9"
+target_sha256: "8dee193c39f284c6fc8d5f99a5008d32fe2e67d7dd7ba8e6f4feab17208c966b"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/9C-fact-object-full-migration.md"

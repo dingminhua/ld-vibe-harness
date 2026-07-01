@@ -91,7 +91,7 @@ python3 code/install_git_hooks.py uninstall --repo .
 
 `install_git_hooks.py` 是当前 LDVH worktree 本地安装器和 adapter backend；不要用它直接安装或卸载外部 repo。
 
-外部受管项目 Hook adapter：
+外部管辖项目 Hook adapter：
 
 ```bash
 python3 code/governed_hook_adapter.py status --repo "<repo>" --governance-root "<ldvh-root>"
@@ -99,7 +99,7 @@ python3 code/governed_hook_adapter.py install --repo "<repo>" --governance-root 
 python3 code/governed_hook_adapter.py uninstall --repo "<repo>" --governance-root "<ldvh-root>" --confirm-human-gate
 ```
 
-该 adapter 会先按 `LDVH-GOVERNED-PROJECTS.yaml` 做 target-first / Git common-dir 解析；`install` 和 `uninstall` 必须显式带 `--confirm-human-gate`。它不会默认覆盖非受管项目，也不表示任何外部项目已经自动接入。
+该 adapter 会先按 `LDVH-GOVERNED-PROJECTS.yaml` 做 target-first / Git common-dir 解析；`install` 和 `uninstall` 必须显式带 `--confirm-human-gate`。它不会默认覆盖非管辖项目，也不表示任何外部项目已经自动接入。
 
 统一环境接入状态检查：
 
@@ -173,7 +173,7 @@ python3 code/test_runner.py full
 - `07`：Code 确定性执行规范
 - `08`：Web 信息同步规范
 - `09`：测试与验证规范
-- `10`：受管项目接入规范
+- `10`：管辖项目配置规范
 - `20`：Spark-火花
 - `21`：WorkCase-工作项
 - `22`：ADR-决策

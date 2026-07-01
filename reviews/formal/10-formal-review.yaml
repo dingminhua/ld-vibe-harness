@@ -1,16 +1,16 @@
-target_spec: "specs/10-受管项目接入规范.md"
-target_sha256: "7de99522bdd8b1c238f3543551b98b212db025f7546d67992ae9c78f11a01ffa"
+target_spec: "specs/10-管辖项目配置规范.md"
+target_sha256: "847068432d5ed3e0bd28c4bfed4214f2c2c3fc8d82a6c2185dd460c5eaf01369"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/9D-web-data-contract-migration.md"
 code_verification:
   command: "npm --prefix web run test:web:api && python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
-  receipt: "Formal specs validator, tests/code and tests/web cover 10 as the governed project access candidate after 9C facts and 9D Web independent reading landed."
+  receipt: "Formal specs validator, tests/code and tests/web cover 10 as the governed project configuration contract after 9C facts and 9D Web independent reading landed."
 subagent_review:
   agent_id: "codex-local-7-governed-project-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local 9D review confirms 10 now reflects V3 ldvh-base facts and Web independent reading without restoring knowledge map, Hook installation, Rules authority, universal Web write or Human Gate authorization."
+  receipt: "Local 9D review confirms 10 reflects V3 project governance configuration and Web independent reading without restoring knowledge map, Hook installation, Rules authority, universal Web write or Human Gate authorization."
   unresolved_blockers: []
 warnings: []

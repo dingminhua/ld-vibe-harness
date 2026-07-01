@@ -1,5 +1,5 @@
 target_spec: "specs/24-Study-研究报告.md"
-target_sha256: "7e198c2d9f5208dc557bf4fd118f37b2e83f259fbae7f6188cbebbf7c3064769"
+target_sha256: "a35e764fcbed2399386dbdfd6f6801d09346929e5ccbaaeeed781ace17f3ad64"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/9C-fact-object-full-migration.md"

@@ -219,9 +219,9 @@ def test_governed_project_spec_requires_target_first_boundary(tmp_path: Path) ->
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/10-受管项目接入规范.md",
-        "V3 判定受管项目必须采用 target-first；只有缺少明确 target 时，才允许使用 cwd fallback。",
-        "V3 判定受管项目必须优先使用工作对象。",
+        "specs/10-管辖项目配置规范.md",
+        "V3 判定管辖项目必须采用 target-first；只有缺少明确 target 时，才允许使用 cwd fallback。",
+        "V3 判定管辖项目必须优先使用工作对象。",
     )
 
     result = ldvh_specs.build_validation(root)
@@ -233,7 +233,7 @@ def test_governed_project_contract_reports_missing_resolution_field(tmp_path: Pa
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/attachments/10.Att.01-受管项目配置字段表.md",
+        "specs/attachments/10.Att.01-管辖项目配置字段表.md",
         "| `unknown_reason` | 条件字符串 | 未命中或不确定时说明原因 |\n",
     )
 
@@ -1052,7 +1052,7 @@ def test_fact_member_validator_reports_missing_spark_state(tmp_path: Path) -> No
     _replace_in_temp(
         root,
         "specs/20-Spark-火花.md",
-        "| `resolved` | 已完整分流到 WorkCase、ADR、Pitfall、docs、受管项目配置更新或其它非 Study 事实源，或已明确处理 |\n",
+        "| `resolved` | 已完整分流到 WorkCase、ADR、Pitfall、docs、管辖项目配置更新或其它非 Study 事实源，或已明确处理 |\n",
     )
 
     result = ldvh_specs.build_validation(root)
@@ -1236,7 +1236,7 @@ def test_specs_validate_cli_governed_projects_json() -> None:
             "code/specs_validate.py",
             "governed-projects",
             "--target-path",
-            "specs/10-受管项目接入规范.md",
+            "specs/10-管辖项目配置规范.md",
             "--format",
             "json",
             "--fail-on-diagnostics",

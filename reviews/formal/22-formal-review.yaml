@@ -1,5 +1,5 @@
 target_spec: "specs/22-ADR-决策.md"
-target_sha256: "cb96ff34157c476824809eee2a0fe6b72441b31ad9d251102aaf7c864418fe0f"
+target_sha256: "4450ad340975e94c9331cf6049892a48e6da781bd16667377020b799d116cad6"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/9C-fact-object-full-migration.md"

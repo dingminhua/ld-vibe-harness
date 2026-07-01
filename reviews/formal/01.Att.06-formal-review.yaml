@@ -1,5 +1,5 @@
 target_spec: "specs/attachments/01.Att.06-环境安装回滚检查表.md"
-target_sha256: "4c7189372e7fcfdd125f63149427a80c161f8c3fe389ba9f1ad012ce9dc521f4"
+target_sha256: "449a805d44baadec75ab85752b97efed11a27fbf7f6f60d510034aef9f63bc6b"
 change_type: "modification"
 mapping_evidence:
   path: "_migration/11C-environment-adaptation-admission.md"

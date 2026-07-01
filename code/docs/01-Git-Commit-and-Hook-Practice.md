@@ -43,7 +43,7 @@ python3 code/environment_entry_audit.py --format text
 
 ## 底层安装器边界
 
-`code/install_git_hooks.py` 是当前 LDVH worktree 本地 Hook 安装器，也是 `code/governed_hook_adapter.py` 的底层 backend。它不负责外部受管项目解析，也不负责 Human Gate 判断。
+`code/install_git_hooks.py` 是当前 LDVH worktree 本地 Hook 安装器，也是 `code/governed_hook_adapter.py` 的底层 backend。它不负责外部管辖项目解析，也不负责 Human Gate 判断。
 
 直接 CLI 使用只适合当前 LDVH worktree：
 
@@ -53,7 +53,7 @@ python3 code/install_git_hooks.py install --repo .
 python3 code/install_git_hooks.py uninstall --repo .
 ```
 
-外部受管项目不得直接用底层安装器安装或卸载 Hook。外部 repo 必须使用 governed adapter：
+外部管辖项目不得直接用底层安装器安装或卸载 Hook。外部 repo 必须使用 governed adapter：
 
 ```bash
 python3 code/governed_hook_adapter.py status --repo "<repo>" --governance-root "<ldvh-root>"

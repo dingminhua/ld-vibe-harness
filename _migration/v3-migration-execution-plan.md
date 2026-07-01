@@ -78,7 +78,7 @@ specs 迁入
 - 术语表新增`规则源`、`来源依据`、`必读依据`条目；
 - code/ldvh_specs.py 同步字段名和内部键名。
 
-当前状态：术语整治、规则/事实边界修正、5B-1/2/3/4/5、阶段 6、阶段 7 和阶段 8 均已完成。阶段 6 完成范围是：Spark、WorkCase、ADR、Pitfall、Study 五个事实对象成员已进入 V3 最小成员规范，Code/tests 可消费其成员身份、状态闭集、实例事实源位置、收口/归档/分流口径和 Human Gate。阶段 7 完成范围是：V3 已建立 `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-受管项目接入规范.md`、`10.Att.01` 和 governed project parser/resolver/tests，可静态判断 target/cwd/Git common-dir 是否命中受管项目。阶段 8 完成范围是：V3 已建立只读 e2e rehearsal，把受管项目解析、session_start、read_plan acknowledgement、pre_tool_use、validation、git_commit_msg 和 completion_claim 串成静态闭环。阶段 9A-9F 已完成迁移层依赖审计、最小提交入口、事实对象完整迁移、Web 数据契约迁移、行动模板候选后置和 soft mainline 收口；阶段 10A-10G 已完成当前 worktree 的 `git.commit-msg` 最小 hard switch、manual runtime 三件套、统一 runtime adapter、环境状态检查、外部环境入口审计和 legacy Rules/Skill 顶层机制收口。当前唯一自动入口是 `git.commit-msg`；通用 Web 写入、完整 Confirm UI、非提交行动模板实例和 session/tool/completion 自动触发仍未启用。Rules / Skill 顶层机制已取消，不作为待启用入口。
+当前状态：术语整治、规则/事实边界修正、5B-1/2/3/4/5、阶段 6、阶段 7 和阶段 8 均已完成。阶段 6 完成范围是：Spark、WorkCase、ADR、Pitfall、Study 五个事实对象成员已进入 V3 最小成员规范，Code/tests 可消费其成员身份、状态闭集、实例事实源位置、收口/归档/分流口径和 Human Gate。阶段 7 完成范围是：V3 已建立 `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-管辖项目配置规范.md`、`10.Att.01` 和 governed project parser/resolver/tests，可静态判断 target/cwd/Git common-dir 是否命中管辖项目。阶段 8 完成范围是：V3 已建立只读 e2e rehearsal，把管辖项目解析、session_start、read_plan acknowledgement、pre_tool_use、validation、git_commit_msg 和 completion_claim 串成静态闭环。阶段 9A-9F 已完成迁移层依赖审计、最小提交入口、事实对象完整迁移、Web 数据契约迁移、行动模板候选后置和 soft mainline 收口；阶段 10A-10G 已完成当前 worktree 的 `git.commit-msg` 最小 hard switch、manual runtime 三件套、统一 runtime adapter、环境状态检查、外部环境入口审计和 legacy Rules/Skill 顶层机制收口。当前唯一自动入口是 `git.commit-msg`；通用 Web 写入、完整 Confirm UI、非提交行动模板实例和 session/tool/completion 自动触发仍未启用。Rules / Skill 顶层机制已取消，不作为待启用入口。
 
 阶段 9 采用 `_migration/9-v3-mainline-transition-scope.md` 的用户校正口径：
 
@@ -107,7 +107,7 @@ specs 迁入
 |---|---|---|---|---|---|
 | 6A | WorkCase 最小成员规范 | 已完成。选 WorkCase 作为首个事实对象成员，迁入对象定位、准入、未来事实源位置、最小状态闭集、执行项内部边界、四层完成口径和 Human Gate | `specs/21-WorkCase-工作项.md`、`specs/05-事实模型基础规范.md`、`_migration/6A-fact-object-member-admission.md`、`code/ldvh_specs.py`、`tests/code` | 已补 `parse_workcase_member_contract`、`validate_workcase_member_contract` 和缺状态/缺事实源/缺关闭口径/缺 Human Gate/缺 legacy 状态边界负例 | 不迁入 V2 `21.Att.01` 长字段表、完整 WorkCase schema、真实实例目录、Web 写入、Hook、commit gate、runtime adapter 或正式行动模板实例 |
 | 6B | 事实对象成员规范完成 | 已完成。迁入 Spark、ADR、Pitfall、Study 最小成员规范，并将 20-24 全部纳入 Code 可消费成员集合 | `specs/20-Spark-火花.md`、`specs/22-ADR-决策.md`、`specs/23-Pitfall-踩坑经验.md`、`specs/24-Study-研究报告.md`、`_migration/6B-fact-object-member-completion.md`、`code/ldvh_specs.py`、`tests/code` | 已补 `parse_fact_model_member_contracts`、`validate_fact_model_member_contracts` 和缺状态/缺事实源/缺 Human Gate/缺 legacy/缺 Study 正文骨架负例 | 不迁真实 `ldvh-base` 实例；不迁完整字段表；不迁 Web 写入；不迁 WorkCase `21.Att.01`；不建立正式行动模板实例 |
-| 7 | 受管项目接入 | 已完成。迁入 V2 受管项目静态治理能力，建立 V3 配置契约、target-first resolver、Git common-dir/worktree 匹配、多 target 边界和 no-op 语义 | `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-受管项目接入规范.md`、`specs/attachments/10.Att.01-受管项目配置字段表.md`、`_migration/7-governed-project-admission.md`、`code/ldvh_specs.py`、`tests/code` | 已补配置字段闭集/重复 ID/越界字段、target-first、非受管 no-op、受管/非受管混合阻断、Git worktree common-dir 和 CLI 测试；validator 0 diagnostics | 不安装 Hook；不声明环境入口生效；不恢复知识地图；不迁真实 `ldvh-base` 实例；不建立 Web 写入 |
+| 7 | 管辖项目配置 | 已完成。迁入 V2 项目管辖静态治理能力，建立 V3 配置契约、target-first resolver、Git common-dir/worktree 匹配、多 target 边界和 no-op 语义 | `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-管辖项目配置规范.md`、`specs/attachments/10.Att.01-管辖项目配置字段表.md`、`_migration/7-governed-project-admission.md`、`code/ldvh_specs.py`、`tests/code` | 已补配置字段闭集/重复 ID/越界字段、target-first、非管辖 no-op、管辖/非管辖混合阻断、Git worktree common-dir 和 CLI 测试；validator 0 diagnostics | 不安装 Hook；不声明环境入口生效；不恢复知识地图；不迁真实 `ldvh-base` 实例；不建立 Web 写入 |
 | 8 | 端到端闭环 | 已完成。用只读 e2e rehearsal 验证现有 V3 机制能形成静态行动闭环，并记录仍后置的真实环境边界 | `code/ldvh_specs.py`、`code/specs_validate.py`、`tests/code/test_ldvh_specs_validate.py`、`_migration/8-end-to-end-closure.md` | 已补 `build_e2e_rehearsal`、`specs_validate.py e2e`、e2e workflow/无授权语义/CLI JSON 测试；CLI 演练 diagnostics 0 | 不执行真实写入；不创建提交；不安装 Hook；不启用 commit gate；不声称环境入口生效 |
 
 5B-1 完成记录：
@@ -154,11 +154,11 @@ specs 迁入
 
 阶段 7 完成记录：
 
-1. `specs/10-受管项目接入规范.md` 已定义受管项目配置契约、工作对象判定顺序、多目标/no-op 边界、事实源接入和环境未接入边界；
-2. `specs/attachments/10.Att.01-受管项目配置字段表.md` 已承载配置根字段、项目字段、Git 字段和 target resolution 字段；
+1. `specs/10-管辖项目配置规范.md` 已定义管辖项目配置契约、工作对象判定顺序、多目标/no-op 边界、事实源入口和环境引用边界；
+2. `specs/attachments/10.Att.01-管辖项目配置字段表.md` 已承载配置根字段、项目字段、Git 字段和 target resolution 字段；
 3. V3 根目录已新增 `LDVH-GOVERNED-PROJECTS.yaml`，登记 `ldvh-v3` 自身；
 4. `code/ldvh_specs.py` 已提供 `parse_governed_projects_config`、`validate_governed_projects_config`、`resolve_governed_subject` 和 `build_governed_projects_report`；
-5. `python3 code/specs_validate.py governed-projects --target-path specs/10-受管项目接入规范.md --format text --fail-on-diagnostics` 可输出当前 target 命中 `ldvh-v3`；
+5. `python3 code/specs_validate.py governed-projects --target-path specs/10-管辖项目配置规范.md --format text --fail-on-diagnostics` 可输出当前 target 命中 `ldvh-v3`；
 6. 阶段 7 只代表静态接管能力完成，不代表 Hook、commit gate、Web 写入、runtime adapter 或环境入口已经启用。
 
 阶段 8 完成记录：

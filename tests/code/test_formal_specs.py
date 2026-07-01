@@ -148,7 +148,7 @@ def test_ldvh_starts_from_markdown_specs_only() -> None:
     assert (ROOT / "specs" / "07-Code确定性执行规范.md").exists()
     assert (ROOT / "specs" / "08-Web信息同步规范.md").exists()
     assert (ROOT / "specs" / "09-测试与验证规范.md").exists()
-    assert (ROOT / "specs" / "10-受管项目接入规范.md").exists()
+    assert (ROOT / "specs" / "10-管辖项目配置规范.md").exists()
     assert (ROOT / "specs" / "20-Spark-火花.md").exists()
     assert (ROOT / "specs" / "21-WorkCase-工作项.md").exists()
     assert (ROOT / "specs" / "22-ADR-决策.md").exists()
@@ -182,7 +182,7 @@ def test_attachments_stay_subordinate_tables_or_enums() -> None:
         "specs/attachments/04.Att.06-术语表.md",
         "specs/attachments/05.Att.01-字段注册表结构.md",
         "specs/attachments/09.Att.01-验证声明字段表.md",
-        "specs/attachments/10.Att.01-受管项目配置字段表.md",
+        "specs/attachments/10.Att.01-管辖项目配置字段表.md",
     ]
 
     spec_04 = (ROOT / "specs" / "04-Specs基础规范.md").read_text(encoding="utf-8")
@@ -218,7 +218,7 @@ def test_formal_specs_keep_ldvh_identity_blocks() -> None:
         ROOT / "specs" / "07-Code确定性执行规范.md",
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
-        ROOT / "specs" / "10-受管项目接入规范.md",
+        ROOT / "specs" / "10-管辖项目配置规范.md",
         ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
         ROOT / "specs" / "22-ADR-决策.md",
@@ -241,7 +241,7 @@ def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
         ROOT / "specs" / "07-Code确定性执行规范.md",
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
-        ROOT / "specs" / "10-受管项目接入规范.md",
+        ROOT / "specs" / "10-管辖项目配置规范.md",
         ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
         ROOT / "specs" / "22-ADR-决策.md",
@@ -266,7 +266,7 @@ def test_role_sections_point_to_existing_h2_entries() -> None:
         ROOT / "specs" / "07-Code确定性执行规范.md",
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
-        ROOT / "specs" / "10-受管项目接入规范.md",
+        ROOT / "specs" / "10-管辖项目配置规范.md",
         ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
         ROOT / "specs" / "22-ADR-决策.md",

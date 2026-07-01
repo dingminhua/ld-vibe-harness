@@ -1,5 +1,5 @@
 target_spec: "specs/05-事实模型基础规范.md"
-target_sha256: "9967e975871df0ba72736347ceee3c960bde1e74a601cdb1bdf43b70491c877d"
+target_sha256: "ccbb966121714753193ab5bf5fda2b419b6ffeef07595a6627df922499d506b9"
 change_type: "modification"
 mapping_evidence:
   path: "_migration/9C-fact-object-full-migration.md"

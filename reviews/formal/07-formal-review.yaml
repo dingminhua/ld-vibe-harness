@@ -1,5 +1,5 @@
 target_spec: "specs/07-Code确定性执行规范.md"
-target_sha256: "17595edc7709316ec065d61bd3f6274b83e8e03284d3cd9d6ceaa2d2dd48c506"
+target_sha256: "c5b2246f5df2c653bc519784e433cf697b8fc3ed77d2bf47320a91bd3998b8fc"
 change_type: "modification"
 mapping_evidence:
   path: "_migration/12A-implementation-domain-boundary.md"
