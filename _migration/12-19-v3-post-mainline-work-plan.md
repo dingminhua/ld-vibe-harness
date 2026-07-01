@@ -101,6 +101,10 @@
 2. 定义事实源位置、字段、保留策略和清理策略；
 3. 防止 stdout-only 过程输出直接升级为事实源。
 
+完成记录：
+
+阶段 16A 已完成 receipt 存储判断，记录见 `_migration/16A-receipt-storage-decision.md`。当前不建立独立 runtime receipt 事实源；需要长期保留的内容先由 AI 定性，再分流到既有验证证据、WorkCase、Git commit records、迁移记录或事实对象。
+
 ## 阶段 17：Web Confirm UI 与通用写入
 
 目标：

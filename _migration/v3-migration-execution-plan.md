@@ -344,6 +344,14 @@ specs 迁入
 5. `rules.top_level_mechanism` 和 `skills.top_level_mechanism` 继续为 removed_top_level；
 6. 本阶段不新增代码能力、不安装 Hook、不创建 repo instruction、不恢复 Rules / Skill 顶层机制。
 
+16A 完成记录：
+
+1. `_migration/16A-receipt-storage-decision.md` 已记录 receipt 存储判断；
+2. 当前不建立独立 runtime receipt 事实源，不创建 `ldvh-base/runtime-receipts/` 或等价目录；
+3. 需要长期保留的 receipt 内容必须先由 AI 定性，再分流到验证证据、WorkCase 关闭证据、Git commit records、迁移记录、Spark/Pitfall/Study/ADR 或其它既有事实对象；
+4. dedicated receipt storage 只有在非 Git runtime 自动入口 integrated、现有事实对象无法承接、schema/保留/清理/测试齐备并经 Human Gate 后才重新评估；
+5. 本阶段不新增事实对象类型、不改变 runtime 输出形态、不把 stdout-only receipt 升级为事实源。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。
