@@ -69,4 +69,4 @@ authorization: none
 
 ## 5. 后续
 
-如果后续环境提供真实 session/tool/completion 触发点，应另起 10F，对真实 adapter 安装、payload 来源、失败处理、回滚方式和 Human Gate 进行审计后再接入。没有真实触发能力时，不得声明自动接管。
+10F 已先补环境状态检查入口，用于统一确认哪些入口真实接入、哪些仍是 manual-ready。若后续环境提供真实 session/tool/completion 触发点，应另起接入审计，对真实 adapter 安装、payload 来源、失败处理、回滚方式和 Human Gate 进行审计后再接入。没有真实触发能力时，不得声明自动接管。

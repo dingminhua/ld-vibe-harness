@@ -78,7 +78,7 @@ specs 迁入
 - 术语表新增`规则源`、`来源依据`、`必读依据`条目；
 - code/ldvh_specs.py 同步字段名和内部键名。
 
-当前状态：术语整治、规则/事实边界修正、5B-1/2/3/4/5、阶段 6、阶段 7 和阶段 8 均已完成。阶段 6 完成范围是：Spark、WorkCase、ADR、Pitfall、Study 五个事实对象成员已进入 V3 最小成员规范，Code/tests 可消费其成员身份、状态闭集、实例事实源位置、收口/归档/分流口径和 Human Gate。阶段 7 完成范围是：V3 已建立 `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-受管项目接入规范.md`、`10.Att.01` 和 governed project parser/resolver/tests，可静态判断 target/cwd/Git common-dir 是否命中受管项目。阶段 8 完成范围是：V3 已建立只读 e2e rehearsal，把受管项目解析、session_start、read_plan acknowledgement、pre_tool_use、validation、git_commit_msg 和 completion_claim 串成静态闭环。阶段 9A-9F 已完成迁移层依赖审计、最小提交入口、事实对象完整迁移、Web 数据契约迁移、行动模板候选后置和 soft mainline 收口；Hook、通用 Web 写入、runtime adapter、完整 Confirm UI、非提交行动模板实例和 hard switch 仍未启用。
+当前状态：术语整治、规则/事实边界修正、5B-1/2/3/4/5、阶段 6、阶段 7 和阶段 8 均已完成。阶段 6 完成范围是：Spark、WorkCase、ADR、Pitfall、Study 五个事实对象成员已进入 V3 最小成员规范，Code/tests 可消费其成员身份、状态闭集、实例事实源位置、收口/归档/分流口径和 Human Gate。阶段 7 完成范围是：V3 已建立 `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-受管项目接入规范.md`、`10.Att.01` 和 governed project parser/resolver/tests，可静态判断 target/cwd/Git common-dir 是否命中受管项目。阶段 8 完成范围是：V3 已建立只读 e2e rehearsal，把受管项目解析、session_start、read_plan acknowledgement、pre_tool_use、validation、git_commit_msg 和 completion_claim 串成静态闭环。阶段 9A-9F 已完成迁移层依赖审计、最小提交入口、事实对象完整迁移、Web 数据契约迁移、行动模板候选后置和 soft mainline 收口；阶段 10A-10F 已完成当前 worktree 的 `git.commit-msg` 最小 hard switch、manual runtime 三件套、统一 runtime adapter 和环境状态检查。当前唯一自动入口是 `git.commit-msg`；通用 Web 写入、完整 Confirm UI、非提交行动模板实例、Rules 入口和 session/tool/completion 自动触发仍未启用。
 
 阶段 9 采用 `_migration/9-v3-mainline-transition-scope.md` 的用户校正口径：
 
@@ -231,7 +231,7 @@ specs 迁入
 3. `code/install_git_hooks.py` 已提供 worktree-local Hook `status`、`install` 和 `uninstall`，通过 `core.hooksPath=hooks` 避免覆盖 common `.git/hooks`；
 4. `code/ldvh_specs.py` 已能从提交正文 `读取依据:` 段提取 read_plan 消费路径，`specs/attachments/03.Att.01-Commit-Message契约字段表.md` 已登记该小标题；
 5. 当前状态更新为 `switch_mode=commit_msg_hard_switch_minimal`、`environment_integrated=partial`、`hook_integrated=git.commit-msg`、`authorization=none`；
-6. session start、pre tool use、completion claim、Rules/runtime adapter、通用 Web 写入、外部受管项目 Hook adapter 和非提交正式行动模板仍后置。
+6. session start、pre tool use、completion claim 的自动触发、Rules、通用 Web 写入、外部受管项目 Hook adapter 和非提交正式行动模板仍后置。
 
 10B 完成记录：
 
@@ -266,7 +266,16 @@ specs 迁入
 3. adapter payload 至少包含 `event`、`session_id`、`target_path`、`operation`、`task`、`acknowledged_paths` 和 `verification_evidence`；
 4. 当前环境仍没有真实 session/tool/completion 触发点，因此 `runtime_adapter_entry=manual.runtime_adapter`、`runtime_adapter_integrated=false`；
 5. `tests/code/test_ldvh_specs_validate.py` 已覆盖三类事件转发、unknown event、缺 payload 字段和无授权语义；
-6. 下一步若继续推进，应进入 10F 真实 adapter 接入审计；没有真实触发能力时不得声明自动接管。
+6. 下一步若继续推进，应进入 10F 环境接入状态检查；没有真实触发能力时不得声明自动接管。
+
+10F 完成记录：
+
+1. `_migration/10F-environment-status-check.md` 已记录环境接入状态检查入口、当前 partial 接入状态和未自动接管边界；
+2. `code/environment_status.py` 已提供 text/json CLI，统一报告 `git.commit-msg`、`manual.runtime_adapter`、`manual.session_start`、`manual.pre_tool_use` 和 `manual.completion_claim`；
+3. 状态检查确认当前唯一 integrated 自动入口是 `git.commit-msg`，manual runtime entrypoints 仅 `available=true`、`integrated=false`；
+4. 若目标 repo 未安装 V3 managed `commit-msg` Hook，状态检查返回 `ENV_COMMIT_MSG_HOOK_NOT_INSTALLED` 阻断诊断；
+5. `tests/code/test_ldvh_specs_validate.py` 已覆盖已安装 Hook 的 partial 状态和缺 Hook 阻断；
+6. 下一步若继续推进，应只在存在真实 session/tool/completion 触发能力时进入 adapter 安装或 Rules 接入；否则保持当前状态检查与 manual-ready 边界。
 
 阶段 5B 术语校正：
 

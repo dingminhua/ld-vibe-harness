@@ -1851,6 +1851,96 @@ def test_install_git_hooks_uses_worktree_local_hooks_path(tmp_path: Path) -> Non
     assert not (repo / ".git" / "hooks" / "commit-msg").exists()
 
 
+def test_environment_status_reports_commit_hook_and_manual_entries(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(
+        [
+            sys.executable,
+            "code/install_git_hooks.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/environment_status.py",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    entrypoints = {entry["id"]: entry for entry in payload["entrypoints"]}
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["environment_integrated"] == "partial"
+    assert payload["summary"]["hook_integrated"] == "git.commit-msg"
+    assert payload["summary"]["automated_entrypoints"] == ["git.commit-msg"]
+    assert set(payload["summary"]["manual_entrypoints"]) == {
+        "manual.runtime_adapter",
+        "manual.session_start",
+        "manual.pre_tool_use",
+        "manual.completion_claim",
+    }
+    assert payload["summary"]["manual_entries_available"] is True
+    assert entrypoints["git.commit-msg"]["integrated"] is True
+    assert entrypoints["manual.runtime_adapter"]["available"] is True
+    assert entrypoints["manual.runtime_adapter"]["integrated"] is False
+    assert entrypoints["manual.pre_tool_use"]["details"]["automatic_trigger"] is False
+    assert payload["metadata"]["authorization"] == "none"
+    assert payload["diagnostics"] == []
+
+
+def test_environment_status_blocks_missing_commit_hook(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/environment_status.py",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["summary"]["status"] == "blocked"
+    assert payload["summary"]["environment_integrated"] == "false"
+    assert payload["summary"]["hook_integrated"] == "none"
+    assert payload["summary"]["manual_entries_available"] is True
+    assert payload["summary"]["automated_entrypoints"] == []
+    assert "ENV_COMMIT_MSG_HOOK_NOT_INSTALLED" in _diagnostic_codes(payload)
+
+
 def test_runtime_completion_claim_requires_verification_evidence() -> None:
     runtime = ldvh_specs.build_runtime_event(ROOT, event="completion_claim")
 

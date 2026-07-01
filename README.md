@@ -87,6 +87,14 @@ python3 code/install_git_hooks.py install --repo .
 python3 code/install_git_hooks.py uninstall --repo .
 ```
 
+统一环境接入状态检查：
+
+```bash
+python3 code/environment_status.py --format text
+```
+
+该检查会同时报告真实 `git.commit-msg` Hook、manual runtime adapter、`session_start`、`pre_tool_use` 和 `completion_claim` 的可用/接入状态。当前预期结果是 `environment_integrated: partial`、`hook_integrated: git.commit-msg`，且三类 runtime 入口仍为 manual-ready、未自动触发。
+
 真实提交如果触发 body 必填条件，正文至少包含 `读取依据:` 和 `关键变更:`：
 
 ```text
