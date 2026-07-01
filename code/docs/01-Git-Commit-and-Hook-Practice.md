@@ -13,7 +13,7 @@ Git 提交行动执行时，AI 应按当前目标读取：
 5. 必要 diff；
 6. source_refs、验证证据和残留风险。
 
-提交前应只 stage 本次范围内文件，判断是否需要拆分提交，并按 `specs/attachments/03.Att.01-Commit-Message契约字段表.md` 选择单一 type 和零个或一个 scope。提交正文在触发 body 条件时应包含 `读取依据:` 和 `关键变更:`。
+提交前应只 stage 本次范围内文件，判断是否需要拆分提交，并按 `specs/attachments/03.Att.01-Commit-Message契约字段表.md` 选择单一 type 和零个或一个 scope。提交正文在触发 body 条件时应包含 `关键变更:`；read_plan 消费证据由 runtime receipt、外部运行时入口或显式校验入参承接，不写入 commit body 要求。
 
 提交前可运行：
 

@@ -273,7 +273,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="changed path for commit-gate; may be repeated or comma-separated",
     )
-    parser.add_argument("--no-require-read-plan", action="store_true", help="do not require read_plan evidence for commit-gate")
+    parser.add_argument("--require-read-plan", action="store_true", help="require external read_plan evidence for commit-gate")
+    parser.add_argument("--no-require-read-plan", action="store_true", help=argparse.SUPPRESS)
     return parser
 
 
@@ -299,7 +300,7 @@ def main(argv: list[str] | None = None) -> int:
             message=message,
             changed_paths=args.changed_path,
             acknowledged_paths=args.acknowledged_path,
-            require_read_plan=not args.no_require_read_plan,
+            require_read_plan=args.require_read_plan and not args.no_require_read_plan,
         )
         result = output
     elif args.command == "preflight":

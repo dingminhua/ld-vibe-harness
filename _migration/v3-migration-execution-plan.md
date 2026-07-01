@@ -181,7 +181,7 @@ specs 迁入
 9B 完成记录：
 
 1. `_migration/9B-minimal-commit-entry.md` 已记录最小提交入口迁移结果；
-2. `code/ldvh_specs.py` 新增 `build_commit_gate`，校验 commit header、type/scope 枚举、body 必填条件、`关键变更:` 小标题和 read_plan 消费证据；
+2. `code/ldvh_specs.py` 新增 `build_commit_gate`，校验 commit header、type/scope 枚举、body 必填条件和 `关键变更:` 小标题；read_plan 消费证据不进入 commit body 默认要求；
 3. `code/specs_validate.py` 新增 `commit-gate` CLI；
 4. `code/commit_validate.py` 新增未来 commit-msg Hook 可调用的包装器；
 5. `tests/code/test_ldvh_specs_validate.py` 已覆盖 commit gate 正例、非法 scope、缺 body、缺 read_plan、CLI 和 wrapper；
@@ -229,7 +229,7 @@ specs 迁入
 1. `_migration/10A-commit-msg-hard-switch.md` 已记录当前 worktree 的 `commit-msg` 最小 hard switch；
 2. `hooks/commit-msg` 已成为 V3 tracked Hook 模板，调用 `code/commit_validate.py --hook-integrated`；
 3. `code/install_git_hooks.py` 已提供 worktree-local Hook `status`、`install` 和 `uninstall`，通过 `core.hooksPath=hooks` 避免覆盖 common `.git/hooks`；
-4. `code/ldvh_specs.py` 已能从提交正文 `读取依据:` 段提取 read_plan 消费路径，`specs/attachments/03.Att.01-Commit-Message契约字段表.md` 已登记该小标题；
+4. 后续纠偏确认 commit gate 不再从提交正文提取 read_plan 消费路径，`specs/attachments/03.Att.01-Commit-Message契约字段表.md` 不登记 `读取依据`；
 5. 当前状态更新为 `switch_mode=commit_msg_hard_switch_minimal`、`environment_integrated=partial`、`hook_integrated=git.commit-msg`、`authorization=none`；
 6. session start、pre tool use、completion claim 的自动触发、Rules、通用 Web 写入、外部受管项目 Hook adapter 和非提交正式行动模板仍后置。
 

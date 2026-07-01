@@ -56,7 +56,7 @@
 
 `_migration/9F-mainline-soft-switch-closure.md` 记录阶段 9F 的 V3 soft mainline 收口结论。它说明 V3 已成为日常规则和事实维护主线，并开始用 `code/test_runner.py` 承接 smoke / targeted / full 分层测试入口；其中 `environment_integrated=false`、`hook_integrated=false`、`authorization=none` 是 9F 当时边界。10A 之后当前 worktree 已单独接入 `commit-msg` 最小 Hook。
 
-`_migration/10A-commit-msg-hard-switch.md` 记录当前 worktree 的 `commit-msg` 最小 hard switch。它说明 V3 已通过 worktree-local `core.hooksPath=hooks` 接管真实 Git commit message 校验，并从提交正文 `读取依据:` 段提取 read_plan 消费证据；它不授权 session start、pre tool use、completion claim、Rules/runtime adapter、通用 Web 写入或外部受管项目 Hook adapter。
+`_migration/10A-commit-msg-hard-switch.md` 记录当前 worktree 的 `commit-msg` 最小 hard switch。它说明 V3 已通过 worktree-local `core.hooksPath=hooks` 接管真实 Git commit message 校验；其中曾把提交正文 `读取依据:` 作为 read_plan 消费证据的折中设计已在后续纠偏中撤回，当前提交正文要求按 V2 commit body 契约执行。该记录不授权 session start、pre tool use、completion claim、Rules/runtime adapter、通用 Web 写入或外部受管项目 Hook adapter。
 
 `_migration/10B-session-start-manual-entry.md` 记录 `session_start` 手动入口。它说明当前环境没有可安装的真实会话启动 Hook，V3 只新增 `code/session_start.py` 作为手动/外部 adapter 可调用 read_plan 入口；它不声明 session start 已自动接管，也不授权 pre tool use、completion claim 或 Rules/runtime adapter。
 

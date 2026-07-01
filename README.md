@@ -11,7 +11,7 @@
 - `tests/`：正式回归检查。
 - `reviews/formal/`：正式 specs 和附件的 review hash gate 收据。
 - `_migration/`：历史迁移证据和迁移测试材料；不作为日常规则源、事实维护入口或正式 review ledger。
-- `hooks/`：当前 worktree 的 `commit-msg` Hook 模板已启用，用于真实提交前校验 V3 commit message 契约和 read_plan 消费证据。
+- `hooks/`：当前 worktree 的 `commit-msg` Hook 模板已启用，用于真实提交前校验 V3 commit message 契约；read_plan 消费证据归 runtime receipt 或外部运行时入口，不写入 commit body 要求。
 
 V3 不保留 `rules/` 或 `skills/` 顶层目录机制。V2 Rules 的入口可见能力只作为环境薄引用或 repo instruction 候选承接；V2 Skill 的可复用工作流能力只进入行动模板、Action Guide 或外部包装候选。
 
@@ -112,14 +112,9 @@ python3 code/environment_entry_audit.py --format text
 
 `environment_entry_audit.py` 进一步审计 tool hook、completion hook、AGENTS/Codex repo 指令和外部 runtime adapter 候选，同时确认 Rules / Skill 顶层机制是 `removed_top_level`，不是待启用入口。当前结论是：除 `git.commit-msg` 外，没有可复现证据证明其它入口已自动触发。
 
-真实提交如果触发 body 必填条件，正文至少包含 `读取依据:` 和 `关键变更:`：
+真实提交如果触发 body 必填条件，正文至少包含 `关键变更:`；`读取依据` 不是 commit message 契约字段：
 
 ```text
-读取依据:
-- specs/00-理念与构成.md
-- specs/01-保障与衔接.md
-- specs/02-AI行为规范.md
-
 关键变更:
 - ...
 ```

@@ -31,6 +31,7 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"message_scope: {summary['message_scope']}")
     print(f"changed_paths: {summary['changed_paths']}")
     print(f"body_required: {summary['body_required']}")
+    print(f"read_plan_required: {summary['read_plan_required']}")
     print(f"read_plan_consumed: {summary['read_plan_consumed']}")
     print(f"environment_integrated: {summary['environment_integrated']}")
     if result["diagnostics"]:
@@ -58,7 +59,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="acknowledged read_plan path; may be repeated or comma-separated",
     )
-    parser.add_argument("--no-require-read-plan", action="store_true", help="do not require read_plan evidence")
+    parser.add_argument("--require-read-plan", action="store_true", help="require external read_plan evidence")
+    parser.add_argument("--no-require-read-plan", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument(
         "--hook-integrated",
         action="store_true",
@@ -78,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
         message=message,
         changed_paths=changed_paths,
         acknowledged_paths=args.acknowledged_path,
-        require_read_plan=not args.no_require_read_plan,
+        require_read_plan=args.require_read_plan and not args.no_require_read_plan,
         hook_integrated=args.hook_integrated,
     )
     if args.format == "json":

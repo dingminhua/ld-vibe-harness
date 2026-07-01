@@ -1734,7 +1734,7 @@ def test_runtime_git_commit_msg_blocks_incomplete_read_plan_consumption() -> Non
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_READ_PLAN_CONSUMED_INCOMPLETE"
 
 
-def test_commit_gate_accepts_valid_message_with_read_plan_body() -> None:
+def test_commit_gate_accepts_v2_commit_body_without_read_plan() -> None:
     message = """docs(docs): 对齐阶段9主线切换范围
 
 关键变更:
@@ -1751,11 +1751,6 @@ def test_commit_gate_accepts_valid_message_with_read_plan_body() -> None:
             "_migration/9-v3-mainline-transition-scope.md",
             "_migration/9A-migration-layer-dependency-audit.md",
         ],
-        acknowledged_paths=[
-            "specs/00-理念与构成.md",
-            "specs/01-保障与衔接.md",
-            "specs/02-AI行为规范.md",
-        ],
     )
 
     assert gate["metadata"]["authorization"] == "none"
@@ -1763,12 +1758,13 @@ def test_commit_gate_accepts_valid_message_with_read_plan_body() -> None:
     assert gate["metadata"]["hook_integrated"] is False
     assert gate["summary"]["status"] == "ok"
     assert gate["summary"]["body_required"] is True
+    assert gate["summary"]["read_plan_required"] is False
     assert gate["summary"]["read_plan_consumed"] is True
     assert gate["body_required_reasons"] == ["多文件范围", "边界变化"]
     assert gate["diagnostics"] == []
 
 
-def test_commit_gate_extracts_read_plan_from_message_body() -> None:
+def test_commit_gate_does_not_use_message_body_as_read_plan_evidence() -> None:
     message = """feat(runtime): 接入最小提交 Hook
 
 读取依据:
@@ -1784,17 +1780,15 @@ def test_commit_gate_extracts_read_plan_from_message_body() -> None:
         ROOT,
         message=message,
         changed_paths=["hooks/commit-msg", "code/commit_validate.py"],
+        require_read_plan=True,
     )
 
-    assert gate["summary"]["status"] == "ok"
-    assert gate["summary"]["read_plan_consumed"] is True
-    assert gate["acknowledged_paths"] == [
-        "specs/00-理念与构成.md",
-        "specs/01-保障与衔接.md",
-        "specs/02-AI行为规范.md",
-    ]
-    assert gate["message_acknowledged_paths"] == gate["acknowledged_paths"]
-    assert gate["diagnostics"] == []
+    assert gate["summary"]["status"] == "blocked"
+    assert gate["summary"]["read_plan_required"] is True
+    assert gate["summary"]["read_plan_consumed"] is False
+    assert gate["acknowledged_paths"] == []
+    assert gate["message_acknowledged_paths"] == []
+    assert "COMMIT_READ_PLAN_CONSUMED_EMPTY" in _diagnostic_codes(gate)
 
 
 def test_commit_gate_rejects_unknown_scope() -> None:
@@ -1841,6 +1835,7 @@ def test_commit_gate_requires_read_plan_evidence() -> None:
         ROOT,
         message=message,
         changed_paths=["tests/code/test_ldvh_specs_validate.py"],
+        require_read_plan=True,
     )
 
     assert gate["summary"]["status"] == "blocked"
@@ -1866,12 +1861,6 @@ def test_specs_validate_cli_commit_gate_json(tmp_path: Path) -> None:
             str(message_file),
             "--changed-path",
             "tests/code/test_ldvh_specs_validate.py",
-            "--acknowledged-path",
-            "specs/00-理念与构成.md",
-            "--acknowledged-path",
-            "specs/01-保障与衔接.md",
-            "--acknowledged-path",
-            "specs/02-AI行为规范.md",
             "--format",
             "json",
             "--fail-on-diagnostics",
@@ -1884,6 +1873,7 @@ def test_specs_validate_cli_commit_gate_json(tmp_path: Path) -> None:
 
     payload = json.loads(completed.stdout)
     assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["read_plan_required"] is False
     assert payload["summary"]["environment_integrated"] is False
     assert payload["diagnostics"] == []
 
@@ -1927,11 +1917,6 @@ def test_commit_validate_wrapper_marks_hook_integration(tmp_path: Path) -> None:
     message_file = tmp_path / "message.txt"
     message_file.write_text(
         """feat(runtime): 接入最小提交 Hook
-
-读取依据:
-- specs/00-理念与构成.md
-- specs/01-保障与衔接.md
-- specs/02-AI行为规范.md
 
 关键变更:
 - 接入 worktree-local commit-msg hook。

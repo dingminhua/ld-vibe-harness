@@ -2,6 +2,8 @@
 
 > 文件状态：temporary migration closure。本文记录 V3 在当前 worktree 接管真实 Git `commit-msg` Hook 的最小 hard switch 结果；不授权 session start、pre tool use、completion claim、Rules、runtime adapter、通用 Web 写入或 Human Gate 自动完成。正式规则仍以 `specs/` 正文为准。
 
+> 后续纠偏：10A 曾把提交正文 `读取依据:` 作为 read_plan 消费证据的最小自举折中；该做法已撤回。当前 `commit-msg` Hook 只校验 V2 对齐的 commit message 契约，read_plan 消费证据归 runtime receipt、外部运行时入口或显式校验入参承接，不进入 commit body 要求。
+
 ## 1. 接入目标
 
 10A 只解决一个问题：真实 `git commit` 不再由父仓库 V2 Hook 校验，而由当前 V3 的 commit gate 校验。
@@ -10,8 +12,8 @@
 
 1. 当前 worktree 使用 `core.hooksPath=hooks`；
 2. `hooks/commit-msg` 调用 `code/commit_validate.py --hook-integrated`；
-3. commit gate 从提交正文 `读取依据:` 段提取 read_plan 消费路径；
-4. `读取依据:` 至少覆盖 `specs/00-理念与构成.md`、`specs/01-保障与衔接.md`、`specs/02-AI行为规范.md`；
+3. commit gate 不再从提交正文提取 read_plan 消费路径；
+4. 提交正文按 V2 commit body 契约执行，body 必填时必须包含 `关键变更:`；
 5. V3 Hook 输出仍保持 `authorization=none`，不替代 Human Gate 或事实源。
 
 ## 2. 关键决策
@@ -25,7 +27,7 @@ git config --worktree core.hooksPath hooks
 
 这样当前 V3 worktree 会使用 tracked `hooks/commit-msg`，父仓库或其它 worktree 不会因为 common hook 被覆盖而被 V3 校验器误拦截。
 
-提交正文新增可解析小标题：
+10A 初版曾新增如下可解析小标题：
 
 ```text
 读取依据:
@@ -34,7 +36,7 @@ git config --worktree core.hooksPath hooks
 - specs/02-AI行为规范.md
 ```
 
-该段只作为 commit gate 的 read_plan 消费证据，不声明 session receipt 已存在，也不声明 pre_tool_use 或 completion_claim 已接管。
+该段后续已废止，不再作为 commit gate 的 read_plan 消费证据；session receipt、pre_tool_use 或 completion_claim 的接管状态仍不得由 commit body 声明。
 
 ## 3. 交付物
 
@@ -43,9 +45,9 @@ git config --worktree core.hooksPath hooks
 | `hooks/commit-msg` | V3 tracked commit-msg Hook 模板 |
 | `code/install_git_hooks.py` | 当前 worktree Hook 状态、安装和回滚入口 |
 | `code/commit_validate.py` | 支持 `--hook-integrated`，供真实 Hook 调用 |
-| `code/ldvh_specs.py` | 从 commit message `读取依据:` 段提取 read_plan 消费路径 |
-| `tests/code/test_ldvh_specs_validate.py` | 覆盖 message-body read_plan、Hook 集成标记和 worktree-local hooksPath |
-| `specs/attachments/03.Att.01-Commit-Message契约字段表.md` | 将 `读取依据` 纳入 commit body 小标题契约 |
+| `code/ldvh_specs.py` | 校验 V2 对齐的 commit message 契约；read_plan 证据仅在显式外部入参要求时检查 |
+| `tests/code/test_ldvh_specs_validate.py` | 覆盖 V2 commit body、Hook 集成标记、worktree-local hooksPath 和 message-body read_plan 不再生效 |
+| `specs/attachments/03.Att.01-Commit-Message契约字段表.md` | 承接 V2 对齐的 commit body 小标题契约，不登记 `读取依据` |
 
 ## 4. 当前状态
 

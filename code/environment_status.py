@@ -243,6 +243,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Inspect LDVH v3 environment integration status.")
     parser.add_argument("--repo", default=ROOT.as_posix(), help="target repository root")
     parser.add_argument("--ldvh-root", default=ROOT.as_posix(), help="LDVH v3 root containing code/ and hooks/")
+    parser.add_argument("--backend-allow-external", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--format", choices=["text", "json"], default="text")
     return parser
 

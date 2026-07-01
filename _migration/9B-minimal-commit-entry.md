@@ -2,6 +2,8 @@
 
 > 文件状态：temporary migration decision。本文记录阶段 9B 对 Git 提交行动和最小 commit gate 的迁移结果；它不授权安装 Hook、覆盖现有 Git 配置、写入 Web 或迁移真实事实对象实例。正式规则仍以 `specs/` 正文为准。
 
+> 后续纠偏：9B 初版把 read_plan 消费证据纳入 commit gate 默认要求。该要求已收回为显式外部入参检查；真实 commit message 要求按 V2 body 契约执行，不要求 `读取依据:` 小标题。
+
 ## 1. 迁移目标
 
 9B 只迁最小提交入口：
@@ -16,7 +18,7 @@
 
 | 交付物 | 作用 | 边界 |
 |---|---|---|
-| `build_commit_gate` | 解析 commit message，校验 type/scope/body/read_plan 证据 | 只读诊断，不创建提交 |
+| `build_commit_gate` | 解析 commit message，校验 type/scope/body；显式要求时校验外部 read_plan 证据 | 只读诊断，不创建提交 |
 | `code/specs_validate.py commit-gate` | 暴露 V3 commit gate CLI | 不安装 Hook |
 | `code/commit_validate.py` | 给未来 commit-msg Hook 调用的包装器 | 默认只按 blocking/error 退出非零 |
 | `tests/code/test_ldvh_specs_validate.py` | 覆盖正例、非法 scope、缺 body、缺 read_plan、CLI 和 wrapper | 不证明真实环境 Hook 已启用 |
@@ -30,7 +32,7 @@ commit gate 当前检查：
 3. `scope` 属于 `03.Att.01` Scope 允许枚举；
 4. 高影响文件、事实对象字段、多文件范围或边界变化触发 body 必填；
 5. body 必填时必须包含 `关键变更:` 小标题；
-6. 默认要求提供 00/01/02 的 read_plan 消费证据；
+6. 默认不把 read_plan 消费证据写入 commit message；只有外部运行时入口显式要求时，才通过入参校验 00/01/02 覆盖；
 7. 输出 `authorization: none`、`environment_integrated: false`、`hook_integrated: false`。
 
 ## 4. 未启用项
