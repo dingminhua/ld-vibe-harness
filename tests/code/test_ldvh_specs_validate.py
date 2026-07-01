@@ -1924,6 +1924,161 @@ def test_completion_claim_cli_blocks_missing_verification_evidence() -> None:
     assert "RUNTIME_COMPLETION_VERIFICATION_MISSING" in _diagnostic_codes(payload)
 
 
+def test_runtime_adapter_dispatches_session_start_payload_json() -> None:
+    adapter_payload = {
+        "event": "session_start",
+        "session_id": "test-runtime-adapter",
+        "target_path": "README.md",
+        "operation": "read",
+        "task": "进入 LDVH v3 工作",
+        "acknowledged_paths": [],
+        "verification_evidence": [],
+    }
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/runtime_adapter.py",
+            "--payload-json",
+            json.dumps(adapter_payload, ensure_ascii=False),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    read_paths = {item["path"] for item in payload["dispatch"]["action_guide"]["task_read_plan"] if item["path"]}
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["event"] == "session_start"
+    assert payload["summary"]["adapter_integrated"] is False
+    assert payload["metadata"]["integration_scope"] == "manual.runtime_adapter"
+    assert payload["dispatch"]["summary"]["integration_scope"] == "manual.session_start"
+    assert {
+        "specs/00-理念与构成.md",
+        "specs/01-保障与衔接.md",
+        "specs/02-AI行为规范.md",
+    }.issubset(read_paths)
+
+
+def test_runtime_adapter_dispatches_pre_tool_use_cli_json() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/runtime_adapter.py",
+            "pre-tool-use",
+            "--target-path",
+            "tests/code/test_ldvh_specs_validate.py",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["event"] == "pre_tool_use"
+    assert payload["dispatch"]["summary"]["integration_scope"] == "manual.pre_tool_use"
+    assert payload["dispatch"]["preflight"]["summary"]["target_type"] == "tests"
+    assert payload["diagnostics"] == []
+
+
+def test_runtime_adapter_dispatches_completion_claim_cli_json() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/runtime_adapter.py",
+            "completion-claim",
+            "--target-path",
+            "README.md",
+            "--verification-evidence",
+            "python3 code/specs_validate.py all --format text --fail-on-diagnostics",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["event"] == "completion_claim"
+    assert payload["dispatch"]["summary"]["integration_scope"] == "manual.completion_claim"
+    assert payload["dispatch"]["receipt"]["verification_evidence"] == [
+        "python3 code/specs_validate.py all --format text --fail-on-diagnostics",
+    ]
+
+
+def test_runtime_adapter_blocks_unknown_event_payload() -> None:
+    adapter_payload = {
+        "event": "unknown_event",
+        "session_id": "test-runtime-adapter",
+        "target_path": "README.md",
+        "operation": "read",
+        "task": "进入 LDVH v3 工作",
+        "acknowledged_paths": [],
+        "verification_evidence": [],
+    }
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/runtime_adapter.py",
+            "--payload-json",
+            json.dumps(adapter_payload, ensure_ascii=False),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["summary"]["status"] == "blocked"
+    assert payload["dispatch"] is None
+    assert "RUNTIME_ADAPTER_EVENT_UNKNOWN" in _diagnostic_codes(payload)
+
+
+def test_runtime_adapter_blocks_missing_payload_fields() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/runtime_adapter.py",
+            "--payload-json",
+            json.dumps({"event": "session_start"}, ensure_ascii=False),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["summary"]["status"] == "blocked"
+    assert payload["dispatch"] is None
+    assert "RUNTIME_ADAPTER_PAYLOAD_FIELD_MISSING" in _diagnostic_codes(payload)
+
+
 def test_runtime_supports_all_consumption_timings() -> None:
     events = [row["consumption_timing"] for row in ldvh_specs.parse_consumption_timings(ROOT)]
     common_kwargs = {

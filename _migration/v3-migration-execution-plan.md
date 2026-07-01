@@ -259,6 +259,15 @@ specs 迁入
 5. `tests/code/test_ldvh_specs_validate.py` 已覆盖 completion_claim CLI JSON 正例、缺 verification evidence 阻断和 manual integration scope；
 6. 10B-10D 已形成 manual runtime 三件套；下一步若继续推进，应评估真实 runtime adapter / 外部环境接入。
 
+10E 完成记录：
+
+1. `_migration/10E-runtime-adapter-feasibility.md` 已记录 runtime adapter 可行性、两类接入方式和未自动接管边界；
+2. `code/runtime_adapter.py` 已提供统一 payload/CLI adapter，支持 `session-start`、`pre-tool-use` 和 `completion-claim` 三类事件转发；
+3. adapter payload 至少包含 `event`、`session_id`、`target_path`、`operation`、`task`、`acknowledged_paths` 和 `verification_evidence`；
+4. 当前环境仍没有真实 session/tool/completion 触发点，因此 `runtime_adapter_entry=manual.runtime_adapter`、`runtime_adapter_integrated=false`；
+5. `tests/code/test_ldvh_specs_validate.py` 已覆盖三类事件转发、unknown event、缺 payload 字段和无授权语义；
+6. 下一步若继续推进，应进入 10F 真实 adapter 接入审计；没有真实触发能力时不得声明自动接管。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。

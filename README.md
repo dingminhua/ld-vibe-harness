@@ -19,6 +19,8 @@
 switch_mode: commit_msg_hard_switch_minimal
 environment_integrated: partial
 hook_integrated: git.commit-msg
+runtime_adapter_entry: manual.runtime_adapter
+runtime_adapter_integrated: false
 session_start_entry: manual.session_start
 session_start_integrated: false
 pre_tool_use_entry: manual.pre_tool_use
@@ -29,6 +31,25 @@ authorization: none
 ```
 
 这意味着 V3 已是日常主线，并会通过当前 worktree 的 `core.hooksPath=hooks` 自动拦截真实 Git commit message。系统仍不会自动拦截所有 session start、pre tool use、completion claim 或其它环境操作。需要时应手动运行对应 Code 命令；Code、Web、测试或 commit gate 输出都不替代 Human Gate。
+
+当前支持两种接入方式：
+
+1. 真实 Hook：仅 `git.commit-msg` 已自动触发；
+2. 手动 / 外部 adapter-ready：`session_start`、`pre_tool_use`、`completion_claim` 可通过独立 CLI 或统一 `runtime_adapter.py` 调用，但不会自动触发。
+
+统一 runtime adapter 入口：
+
+```bash
+python3 code/runtime_adapter.py session-start --task "<当前任务>" --target-path "<目标路径>"
+python3 code/runtime_adapter.py pre-tool-use --target-path "<目标路径>" \
+  --acknowledged-path specs/00-理念与构成.md \
+  --acknowledged-path specs/01-保障与衔接.md \
+  --acknowledged-path specs/02-AI行为规范.md
+python3 code/runtime_adapter.py completion-claim --target-path "<目标路径>" \
+  --verification-evidence "<验证命令、未验证范围或残留风险说明>"
+```
+
+该入口输出统一 adapter 包装结果和对应 manual 事件结果；它是 `manual.runtime_adapter`，不是环境自动触发证明。
 
 手动 session start 入口：
 
