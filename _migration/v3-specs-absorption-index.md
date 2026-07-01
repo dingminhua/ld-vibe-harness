@@ -20,7 +20,7 @@
 | V3 编号 | 正式规范 | 主要吸收来源 | 应吸收内容 | 不直接吸收内容 | 首批 Code/tests 关注点 |
 |---|---|---|---|---|---|
 | 03 | 事实源与 Git 溯源规范 | V2 `07-事实源边界与Git追溯规范.md`、`07.Att.01` 至 `07.Att.12`、`31-git-commit-action` 中的提交证据边界 | Git 可追踪文件作为事实源；非事实源排除；过程输出、receipt、evidence、diagnostic 的回写边界；Git commit records 的溯源性质；commit message 契约的上位边界 | Git 提交流程步骤、commit hook 实现、Web 提交记录页面、知识地图派生展示、历史提交列表手写维护 | commit 契约可解析性、非事实源边界、completion evidence 回指、提交前 read_plan 消费证据 |
-| 05 | 事实模型基础规范 | V2 `02-事实模型基础规范.md`、20-24 事实模型成员、`02.Att.*`、`v2-03-work-object-responsibility-map.yaml`、spec-bloat fact member scan | 事实模型/事实实例边界；事实对象准入；字段契约、状态、证据、关系的共同规则；warning/follow-up/evidence/next_queries 的稳定承接位置；成员模板的上位要求；旧“工作模型”术语统一校正为事实模型；Spark/WorkCase/ADR/Pitfall/Study 最小成员规范归口 | 20-24 完整字段表、完整状态机、旧 TaskPlan/Task/SubTask 兼容、真实实例迁移、未授权附件整批复制；WorkCase `21.Att.01` 长表和正式行动模板实例 | 对象身份、事实实例不得定义规则、成员模板骨架、过程输出和证据分流到对象或 specs；20-24 最小契约状态/事实源/Human Gate 校验 |
+| 05 | 事实模型基础规范 | V2 `02-事实模型基础规范.md`、20-24 事实模型成员、`02.Att.*`、`v2-03-work-object-responsibility-map.yaml`、spec-bloat fact member scan | 事实模型/事实实例边界；事实对象准入；字段契约、状态、证据、关系的共同规则；warning/follow-up/evidence/next_queries 的稳定承接位置；成员模板的上位要求；旧“工作模型”术语统一校正为事实模型；Spark/WorkCase/ADR/Pitfall/Study 成员规范归口；阶段 9C 真实实例与 Code 字段 schema | 20-24 完整字段表正文、完整状态机、旧 TaskPlan/Task/SubTask 兼容、未授权附件整批复制；WorkCase `21.Att.01` 长表和非提交行动模板实例 | 对象身份、事实实例不得定义规则、成员模板骨架、过程输出和证据分流到对象或 specs；20-24 状态/事实源/Human Gate 与真实实例 schema 校验 |
 | 06 | 行动模板基础规范 | V2 `03-行动编排规范.md`、`31-git-commit-action`、30/32/34/35/36 行动成员、`v2-04-orchestration-responsibility-map.yaml`、stage-5 checklist | Context、Scenario、Gate、执行、验证、回写、缺口分流的行动模板基本结构；主控 AI 与能力输出交还边界；以 Git 提交行动作为首个行动模板示范；Rules 同步、环境适配等作为后续模板或候选归口；V2 Skill 中有价值的工作流内容转写为普通行动步骤或 Action Guide 提示 | V2 30-59 成员全文、Skill 顶层身份、Skill registry、Skill 执行闭环、具体 Hook/Rules 安装、完整流程目录、行动模板替代 Human Gate | Git 提交行动模板示范、模板 read_plan、Gate 分流、能力输出不得成为事实源、行动完成声明需要验证证据；行动模板去 Skill 化 |
 | 07 | Code 确定性执行规范 | V2 `04-Code确定性执行规范.md`、`04.Att.*`、V2 `06` 中 dispatcher/adapter/payload 边界、现有 `code/specs_validate.py` 与 `code/ldvh_specs.py` | Code 读取、解析、校验、聚合、诊断、投影、preflight、runtime facade、stdout-only receipt、payload/adapter/dispatcher 的实现边界；Code 不授权、不替代 AI/Human/事实源 | 具体技术栈细节、Hook 安装、用户环境写入、Web API 细节、测试治理本体、未进入正式 specs 的候选规则 | validator 覆盖、诊断等级、unknown event、read_plan evidence、target 分类、environment_integrated=false |
 | 08 | Web 信息同步规范 | V2 `05-Web信息同步规范.md`、`05.Att.*`、Web 回归材料 | Web 作为 Human-facing 派生展示；Web 与 Code 分开实现，并自行从同一 Git 文件事实源、正式 specs、事实对象或 Web 自有 API 聚合读取页面/API 数据；Code 输出只作诊断、验证或测试对照；状态、风险、证据、待确认事项、提交记录、诊断和验证状态展示边界；Web 状态不成为事实源；受控轻写入必须回写并验证 | 具体页面设计、API 实现、缓存实现、旧知识地图展示细节、未授权的通用写入、Web 作为项目管理看板优先、Web 只能由 Code 喂数据的实现假设、Web 消费 Code 输出/DTO/validator 内部对象作为主数据源 | source_refs/来源回指、Confirm UI 不替代 Human Gate、Web cache 不替代事实源、同源独立读取边界、Code 输出不得成为 Web 数据契约、轻写入白名单测试 |
@@ -76,7 +76,7 @@
 9. `08` Web 信息同步规范；
 10. `09` 测试与验证规范。
 
-阶段 6 新增 `20` Spark-火花、`21` WorkCase-工作项、`22` ADR-决策、`23` Pitfall-踩坑经验、`24` Study-研究报告，作为 `05` 的事实模型成员规范候选。20-24 不改变 00-09 基础编号；它们只承接五类事实对象的最小成员规则，完整字段表、真实实例和实现入口继续后置。
+阶段 6 新增 `20` Spark-火花、`21` WorkCase-工作项、`22` ADR-决策、`23` Pitfall-踩坑经验、`24` Study-研究报告，作为 `05` 的事实模型成员规范候选。20-24 不改变 00-09 基础编号；阶段 9C 已迁入真实 `ldvh-base/` 实例和 Code 字段 schema。完整字段表正文、Web 数据契约和非提交行动模板实例继续后置。
 
 V3 术语使用：
 
@@ -109,15 +109,16 @@ V3 术语使用：
 | 6B | 已完成 | 新增 `specs/20-Spark-火花.md`、`specs/22-ADR-决策.md`、`specs/23-Pitfall-踩坑经验.md`、`specs/24-Study-研究报告.md`，阶段 6 覆盖 20-24 全部最小成员规范；`05` 记录 20-24 均已进入 V3 | `parse_fact_model_member_contracts`、`validate_fact_model_member_contracts` 与缺状态/缺事实源/缺 Human Gate/缺 legacy 边界/缺 Study 正文骨架负例测试 | validator 0 diagnostics；tests/code 与 `_migration/tests` 通过 |
 | 7 | 已完成 | 新增 `specs/10-受管项目接入规范.md`、`specs/attachments/10.Att.01-受管项目配置字段表.md` 和根配置 `LDVH-GOVERNED-PROJECTS.yaml`，迁入受管项目静态接管能力 | `parse_governed_projects_config`、`validate_governed_projects_config`、`resolve_governed_subject` 与配置/target/worktree/multi-target/CLI 测试 | validator 0 diagnostics；tests/code 与 `_migration/tests` 通过 |
 | 8 | 已完成 | 不新增正式 spec；新增只读 e2e rehearsal，把阶段 1-7 的能力串成静态行动闭环 | `build_e2e_rehearsal`、`specs_validate.py e2e` 与 workflow/无授权语义/CLI JSON 测试 | e2e CLI diagnostics 0；tests/code 与 `_migration/tests` 通过 |
+| 9C | 已完成 | 迁入 V2 真实 Spark、WorkCase、Pitfall、Study 实例，建立 ADR 空目录和 20-24 字段 schema；同步 05/20-24 的真实实例边界 | `parse_fact_instances`、`validate_fact_instances` 与 id/文件名、未知字段、缺必填字段、legacy 字段、缺引用、Study 正文骨架负例测试 | validator 0 diagnostics；全量 tests 122 passed |
 
 6A 后置项：
 
 | 对象 | 处理 |
 |---|---|
 | V2 `21.Att.01-orchestration字段契约表.md` | 不在 6A 迁入；后续判断是转为正式附件、Code/tests 还是继续留在迁移材料 |
-| WorkCase 完整字段表、实例目录、真实实例 | 后置到事实对象实例能力和受管项目事实源边界稳定后 |
+| WorkCase 完整字段表、实例目录、真实实例 | 真实实例已由 9C 迁入；完整字段表和 `21.Att.01` 长表仍后置到正式附件或 Code/tests schema 判断 |
 | WorkCase 创建、方案审核、结果复核、关闭确认行动模板实例 | 后置到 Hook / commit gate 接入与 V3 正式启用前；当前只允许 `06` 中的 Git 提交行动作为正文示范 |
-| Spark/ADR/Pitfall/Study 完整字段表和真实实例 | 最小成员规范已迁入；受管项目配置边界已由 10 承接；完整字段表、真实 `ldvh-base` 实例和 Web 写入继续后置到实现域 |
+| Spark/ADR/Pitfall/Study 完整字段表和真实实例 | 真实实例已由 9C 迁入，ADR 当前无 V2 实例但目录和 schema 已建立；完整字段表和 Web 写入继续后置到实现域 |
 
 本轮附件分流结果：
 
@@ -147,10 +148,10 @@ V3 术语使用：
 | 剩余内容 | 阶段 9 归口 | 处理结论 | 是否阻断 V3 主线切换 |
 |---|---|---|---|
 | Git 提交行动 | 9B 最小提交入口 | 已迁入最小 Code gate。Git 提交行动继续作为唯一正式行动模板示范，commit message 契约、read_plan 消费证据和验证声明边界均可被 V3 Code 校验 | 已完成 |
-| Hook / commit gate | 9B 最小提交入口 | 已新增 V3 commit gate CLI 和 `code/commit_validate.py` wrapper；真实 Git Hook 未安装，启用仍需 Human Gate | Code gate 完成；真实 Hook 不阻断当前继续 9C |
-| runtime adapter / dispatcher | 9B 或后续环境入口 | 最小提交 wrapper 已有；不得恢复 V2 Hook/Rules 顶层权威。通用 session_start、pre_tool_use、completion_claim 环境入口继续后置 | 不阻断当前继续 9C |
-| Spark / WorkCase / ADR / Pitfall / Study 完整字段、schema、真实实例 | 9C 事实对象完整迁移 | 必须完整迁入，但编号、目录和 schema 可以按 V3 重新构造，不照搬 V2 目录权威 | 是 |
-| WorkCase `21.Att.01-orchestration字段契约表` | 9C 事实对象完整迁移 | 重新判断为正式附件、schema/tests 或继续留在迁移材料；不得整表无授权复制 | 是，直到有明确去向 |
+| Hook / commit gate | 9B 最小提交入口 | 已新增 V3 commit gate CLI 和 `code/commit_validate.py` wrapper；真实 Git Hook 未安装，启用仍需 Human Gate | Code gate 完成；真实 Hook 不阻断继续 9D |
+| runtime adapter / dispatcher | 9B 或后续环境入口 | 最小提交 wrapper 已有；不得恢复 V2 Hook/Rules 顶层权威。通用 session_start、pre_tool_use、completion_claim 环境入口继续后置 | 不阻断继续 9D |
+| Spark / WorkCase / ADR / Pitfall / Study 完整字段、schema、真实实例 | 9C 事实对象完整迁移 | 已完成。真实实例进入 V3 `ldvh-base/`，编号按 V3 重构，Code/tests 承接字段 schema、状态和关系校验 | 已完成 |
+| WorkCase `21.Att.01-orchestration字段契约表` | 9C / 后续字段细化 | 9C 未整表搬入正文；当前由 WorkCase 实例字段和 Code schema 承接，后续再判断是否拆成正式附件或继续由 Code/tests schema 承接 | 不阻断继续 9D |
 | Web 表现层 | 9D Web 数据契约迁移 | 不重做。保留既有表现，只调整 V3 数据契约、来源回指、独立读取和验证边界 | 否 |
 | Web DTO/API、Confirm UI、缓存同步、轻写入、Web 回归 | 9D Web 数据契约迁移 | 需要迁入或重建测试边界；Web 仍不得依赖 Code 输出作为主数据源 | 是，限数据和写入边界 |
 | WorkCase 创建、方案审核、结果复核、关闭确认行动模板实例 | 9E 行动模板候选后置 | 只记录准入条件，先不作为 V3 主线切换范围 | 否 |

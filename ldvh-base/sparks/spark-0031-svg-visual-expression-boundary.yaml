@@ -1,0 +1,81 @@
+id: spark-0031
+type: spark
+title: SVG 可视化辅助表达的正文承载边界
+status: pending
+created: '2026-06-25T13:22:00+08:00'
+updated: '2026-06-25T20:18:00+08:00'
+description: |
+  本 Spark 记录一个待讨论议题：LDVH 是否应把 SVG 作为 Human-facing 可视化辅助表达的一种标准承载方式，以及它在正文、临时产物、附件资产和事实源边界中的位置。
+
+  本轮讨论形成的初步观察：
+
+  1. WorkBuddy 一类环境可以让模型在回复中输出 inline `<svg>...</svg>` 源码，并由消息渲染器直接呈现为可视化图；这本质上是“内容为文本、展示为图”的表达方式。
+  2. Codex 当前对话框不能稳定渲染 inline raw SVG；更稳定的方式是让 Codex 生成 `.svg` 文件，再用 Markdown 普通链接或图片引用展示。
+  3. SVG 源码本体属于文本/XML，模型生成和修改时主要消耗文本 token；只有被截图、作为图片附件输入或交给视觉模型读取渲染结果时，才转为图片输入路径。
+  4. SVG 适合表达评估矩阵、优先级分层、Human Gate 边界、行动分流和结构性缺口，但不应替代正文中的结论、依据、风险、Human Gate 判断和事实源引用。
+  5. 临时 SVG 可视化产物不应默认进入 Git 事实源；可放入 `/tmp` 或 git-ignored 临时目录。只有 Human 明确决定作为正式文档配图时，才应进入文档资产目录，并在正文声明“此图为辅助投影，不替代事实源或执行依据”。
+  6. 若要放入 Markdown 正文，不建议直接复制整段 inline SVG；更稳妥的方式是把 SVG 作为独立资产文件，用 Markdown 图片语法或普通链接引用，并保留完整文字正文。
+  7. 本议题可能不是单点 SVG 问题，而是 LDVH 缺少“AI 交互与表达规范”的表征之一。SVG、表格、Mermaid、附件、选择模式确认、Human Gate 问法、建议分层和对话结论分流，属于同一类 AI-Human 协作表达治理问题。
+  8. 若后续新增 `09-AI交互与表达规范.md` 或等价规范成员，较合理的定位不是替代 01/03/06/07/20-22，而是作为交互表达总入口：定义何时用何种表达方式、何时必须选择式确认、如何把对话临时判断分流为工作对象，以及视觉表达如何遵守事实源边界。
+  9. Human 提供的 WorkBuddy visualizer `read_me` 指南表明，WorkBuddy 的可视化能力不是简单“模型画图”，而是有工具渲染契约、设计系统和安全/可访问性约束：正文说明与视觉输出分离，SVG/HTML 只承载视觉元素；图形类型按 flowchart、structural diagram、illustrative diagram、HTML stepper、Mermaid ERD 分流；SVG 固定 viewBox、透明背景、限制字号、颜色、节点数，并要求 title/desc 等可访问性信息。
+  10. 这份 visualizer 指南可作为 09 候选规范的参考输入，但不应被 LDVH 直接照搬为 WorkBuddy 专属规则。LDVH 应抽象出环境无关的表达路由和约束，再由 06 运行时扩展分别映射到 WorkBuddy inline widget、Codex SVG 文件链接、Web 派生展示或其它环境承载方式。
+
+  需要后续讨论的问题：
+
+  1. LDVH 是否需要正式规定一种“可视化辅助投影”承载类型，还是只作为写作实践建议保留？
+  2. 正式文档中的 SVG 应放在哪类目录：docs assets、specs assets、ldvh-base assets，还是只允许作为临时附件？
+  3. Markdown 正文引用 SVG 时，应使用图片语法、普通链接，还是同时提供二者？
+  4. 是否需要为 SVG 辅助图建立固定免责声明，例如“Human-facing 辅助投影，不替代正文事实源、准入判断或 Human Gate 结论”？
+  5. SVG 源码是否应被 Code 校验，例如检查标题、desc、可访问性、是否含外链、是否引用仓外资源、是否与正文结论冲突？
+  6. Codex、WorkBuddy、Web 文档站、GitHub Markdown 等不同渲染环境的能力差异，是否应归入运行时扩展或环境适配规则？
+  7. 是否应新增 `09-AI交互与表达规范.md`，用于统一承接 AI 与 Human 的表达、确认、选择模式、视觉辅助、对话分流和环境呈现差异？
+  8. 若新增 09，它与 03 行动编排中的 Human Gate、06 运行时扩展、07 事实源边界、20/21/22 工作对象分流之间应如何分工，避免把同一规则散落在多个 specs 中或让 09 反向定义事实源？
+  9. WorkBuddy visualizer 指南中的具体设计规则，哪些应上升为 LDVH 通用表达原则，哪些只应作为 WorkBuddy 环境适配细则保留在 06 或环境承载物中？
+  10. 09 是否应建立“表达方式路由表”：普通正文、表格、SVG、Mermaid、HTML 交互控件、文件附件、选择模式确认分别在什么触发条件下使用，以及如何声明不能替代事实源？
+
+  当前建议先保留为 Spark，待 Human 决定是否转为 ADR、WorkCase、规范表达清单补充、09 候选规范设计、运行时扩展适配事项或文档写作约定。
+source: conversation
+priority: P2
+source_detail: |
+  Human 在 2026-06-25 与 AI 讨论 WorkBuddy 和 Codex 中 SVG 可视化表达的差异：WorkBuddy 可在回复中输出 SVG 源码并渲染，Codex 更适合通过 SVG 文件链接或图片引用展示。Human 进一步询问 SVG 是否应进入正文、Markdown 能否渲染 SVG、临时 SVG 保存后如何处理，并要求先建立一个 Spark，之后再考虑。
+evolution:
+  - at: '2026-06-25T13:22:00+08:00'
+    summary: |
+      建立 SVG 可视化辅助表达承载边界议题。当前只登记观察和待讨论问题，不新增规范规则，不要求正文必须复制 SVG，也不改变事实源边界或 Human Gate 规则。
+  - at: '2026-06-25T13:52:00+08:00'
+    summary: |
+      补充 Human 讨论结论：SVG 可能只是更大议题的首个场景，LDVH 可能需要候选 `09-AI交互与表达规范.md` 统一承接 AI-Human 表达、选择式确认、Human Gate 问法、视觉辅助和对话分流规则。当前仍只作为 Spark 记录，不新增 specs，不改变 01/03/06/07/20-22 的既有职责。
+  - at: '2026-06-25T20:18:00+08:00'
+    summary: |
+      记录 Human 提供的 WorkBuddy visualizer `read_me` 指南：其核心是正文与视觉输出分离、视觉类型路由、固定 SVG 生成契约、安全/可访问性约束和 WorkBuddy 工具渲染能力。Human 要求记录后推动 09 specs；本 Spark 关联新建 WorkCase 承接 09-AI交互与表达规范设计，不直接修改 specs。
+input_refs:
+  - rules/LDVH-WORKSPACE-ENTRY.md
+  - specs/01-规范体系基础规范.md
+  - specs/03-行动编排规范.md
+  - specs/06-运行时扩展规范.md
+  - specs/07-事实源边界与Git追溯规范.md
+  - specs/20-Spark-火花.md
+  - specs/21-WorkCase-工作项.md
+  - specs/22-ADR-决策.md
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workcases:
+  - workcase-0013
+related_adrs: []
+related_studies: []
+related_sparks:
+  - spark-0023
+  - spark-0024
+  - spark-0025
+  - spark-0028
+  - spark-0030
+related_docs:
+  - rules/LDVH-WORKSPACE-ENTRY.md
+  - specs/01-规范体系基础规范.md
+  - specs/03-行动编排规范.md
+  - specs/06-运行时扩展规范.md
+  - specs/07-事实源边界与Git追溯规范.md
+  - specs/20-Spark-火花.md
+  - specs/21-WorkCase-工作项.md
+  - specs/22-ADR-决策.md

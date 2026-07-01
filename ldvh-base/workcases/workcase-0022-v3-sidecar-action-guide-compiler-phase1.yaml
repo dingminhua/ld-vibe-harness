@@ -1,0 +1,540 @@
+id: workcase-0022
+type: workcase
+title: v3 specs 与 Code 重构线第一阶段
+goal: |
+  承接 spark-0039，建立 LDVH v3 旁路实验线的第一阶段执行方案。目标不是立即迁移全部 specs、重写全部 Code 或替换 v2 knowledge-map，而是先把 `../ld-vibe-harness-v3` + `dev-v3` + 管辖项目登记 + 无版本号内部目录 + 最小格式化规范 / compiler / 行动指南 / fixtures / tests 闭环设计清楚，并准备进入 Human 方案确认。
+
+  本 WorkCase 要处理“工作项目可能很多”的风险：将 v3 大方向拆成第一阶段可验证闭环与后续 followup，不把 v2 全量迁移、Runtime 接入、安装 bootstrap、Web 展示、Skill 注册和旧 knowledge-map 删除混入同一轮执行。
+status: result_self_checking
+created: '2026-06-27T23:23:10.196893'
+updated: '2026-06-28T03:35:00+08:00'
+priority: P1
+description: |
+  Human 已确认 v3 可以大胆推进，但版本隔离应由同级 worktree、分支和管辖项目 id 承载；新工作树内部目录不带版本号，以免未来成熟后再迁移目录名。Human 同时提醒，目标句必须带定语：格式化规范应限定为面向 LDVH 规范、事实对象和运行时资产的结构化契约；确定性 Code 应限定为只读、实时、可复查、无语义猜测的编译层；知识地图 / 行动指南应限定为面向当前任务和目标对象的实时任务导航投影。
+
+  Human 进一步调整 v3 骨架：一级目录只放稳定构成面，即 `specs/`、`code/`、`tests/`、`rules/`、`hooks/`、`skills/` 和 `ldvh-base/`。Schema 归入 `specs/schemas/`，fixtures 归入 `tests/fixtures/`。权威关系必须写清：`specs/` 是规则权威；`specs/schemas/` 是规范授权的机器契约；`code/` 消费 schema 但不拥有 schema；`tests/fixtures/` 是验证样例而非规则来源；`ldvh-base/` 是真实事实对象，不混入测试假数据。
+
+  Human 已澄清 v3 不是实验后回灌 v2，而是 specs 与 Code 两块正式重构线。v2 保持当前稳定运行；v3 聚焦重构 specs 和 Code，解决 v2 specs 重复、膨胀、非必要信息、knowledge-map 概念局限和 AI 行动负担问题。其他构成面，包括 `rules/`、`hooks/`、`skills/`、Runtime、Web、`ldvh-base/`，当前不进入重构范围；待 specs + Code 成熟后再整体迁移。
+
+  Human 后续指出 `specs/00-bootstrap-charter.md` 会制造 specs 自我授权的鸡生蛋问题，并确认第一批核心规范可放在 `specs/core/`。因此本 WorkCase 对 v3 自举链作出修正：第一批核心 Markdown 规范由 v3 项目决策设立，位于 `specs/core/`；`specs/schemas/` 是 core specs 授权后的机器契约；YAML instances / formatted sources 是被授权后的机器表达；deterministic Code 只消费这些显式输入并生成 Action Guide。上位规范先是规范，不先是 YAML。
+
+  Human 随后明确纠偏：原 LDVH 已有 specs 文档体系，v3 不能另起一套正文分类目录，也不能把原 specs 正文整体 YAML 化。稳定约束是：原 specs 文档体系继续作为迁移基线；`specs/core/` 只放少量上位父层规范；普通 specs 正文仍按原体系逐步迁移、抽象和去冗余；`specs/schemas/` 与 YAML projection 只服务机器契约和确定性解析，不接管正文权威。
+
+  Human 进一步指出：如果 Code 能从 MD 里确定性提取结构，就不应额外维护一个 per-spec YAML，否则会产生同步负担和第二事实源风险。因此本 WorkCase 追加稳定方向：Markdown 正文是唯一规范事实源；Code 优先直接解析 Markdown 中的稳定结构并生成内存 IR / 行动源；YAML 只用于 schema、临时迁移辅助、生成调试输出或明确授权的机器产物，不作为普通 spec 正文的长期孪生投影。
+
+  第一阶段要回答：
+
+  1. v3 旁路 worktree 是否以及如何创建；
+  2. 如何在工作区根目录管辖配置中登记 v3，避免与 v2 worktree 的 Git common-dir 身份产生歧义；
+  3. v3 内部最小目录和最小 specs 应如何命名；
+  4. 格式化规范源文件、compiler IR、行动指南输出和 v2 adapter 的第一版契约如何划界；
+  5. 哪些 fixtures / tests 足以证明 v3 思路成立；
+  6. 哪些事项必须作为后续 WorkCase / Spark 分流，不能进入第一阶段。
+
+  本 WorkCase 不直接要求删除 v2 knowledge-map，不要求当前 v2 specs 原地迁移，不要求修改 Runtime Protocol 或 dispatcher，也不声明 v3 已经成为默认入口。它的稳定定位是：为 v3 specs + Code 正式重构线建立第一阶段证据、边界和候选降噪策略。
+success_criteria: |
+  - [ ] 明确第一阶段边界：只推进 v3 旁路实验线和最小闭环，不执行 v2 全量迁移、不删除 knowledge-map、不重写 Runtime。
+  - [ ] 明确 `../ld-vibe-harness-v3` + `dev-v3` + 内部无版本号目录的创建方案和风险；一级目录仅保留 `specs/`、`code/`、`tests/`、`rules/`、`hooks/`、`skills/`、`ldvh-base/`。
+  - [ ] 写硬目录权威归口：schema 归 `specs/schemas/`，fixtures 归 `tests/fixtures/`；`code/` 消费 schema 但不拥有 schema；`ldvh-base/` 不混入测试假数据。
+  - [ ] 明确 LDVH 管辖项目登记方案，包括 project id、绝对 path、Git common_dir、default_branch，以及同一 Git common-dir 多项目命中时的可验证消歧策略；若现有 dispatcher 会让 v2/v3 worktree 同时命中并阻断，则实际登记必须移出本 WorkCase，或先建立修改 dispatcher 消歧语义的前置 followup。
+  - [ ] 形成 v3 最小 specs 清单：目标与边界、格式化规范契约、行动指南输出契约、Code 确定性编译规范、v2 adapter / 迁移适配边界，以及 `specs/schemas/` 的授权边界。
+  - [ ] 写硬 v3 specs 去冗余约束：每份 v3 spec / schema 必须声明单一信息对象、权威归口、与 v2 的复用 / 差异边界，不搬运 v2 散文正文，不把可派生检查清单厚写成第二事实源。
+  - [ ] 形成 v3 最小 Code 结构建议：parser、compiler IR、validator、action guide projector、v2 adapter、CLI 入口和 tests / tests/fixtures 目录。
+  - [ ] 形成行动指南最小输出契约：行动身份、目标证据、P0/P1 read_plan、stop / Human Gate candidates、diagnostics / result_status、next_queries、tool suggestions、post-read action、verification / fallback、source_refs。
+  - [ ] 写硬 Code 边界：只读、实时、可复查、无语义猜测；不判断自然语言意图、不授权、不输出 `allowed` / `approved` / `unblocked`。
+  - [ ] 写硬 Runtime / dispatcher / Skill 分层：行动指南只输出候选读取、候选停止、候选 Human Gate、候选工具建议和下一步建议；Runtime / dispatcher 继续负责 canonical event、receipt、ack、blocking 和写入 / 提交门禁；Skill 只指导 AI 把语义转成枚举声明或复用流程，不复制 Runtime 判断。
+  - [ ] 写硬 AI 负担控制：默认 brief / receipt，P0/P1 有上限，P2/P3 通过 next_queries 展开，跨项目只做召回和影响判断，不全文注入。
+  - [ ] 形成 fixtures / tests 矩阵：active spec、active action member、candidate action member、deprecated attachment、invalid input、target-first、fallback read_plan、source_refs、STOP、同 common_dir 多登记歧义和非授权输出。
+  - [ ] 列出后续分流清单：v2 specs 选择性迁移、Runtime / Hook 接入、Skill 注册、Web 展示、安装 bootstrap、文件类型 tool_plan、旧 knowledge-map 引用迁移或命名调整。
+  - [ ] 完成方案审核，至少包含规范抽象 / 去冗余、Code / Runtime 边界、AI 行动指南负担控制三个视角；存在 needs_changes 时先吸收再进入 Human 方案确认。
+source: |
+  来源 Spark：`ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml`。
+
+  Human 要求建立 WorkCase 承接 v3 旁路工作树与行动指南编译链方向，并指出工作项目可能很多。因此本 WorkCase 作为第一阶段总控，只收敛可执行方案和最小闭环，不把全部后续工作合并为单次执行。
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 收敛第一阶段范围和后续分流边界
+      role: scope-design
+      mode: single
+      input_refs:
+        - ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml
+        - LDVH-GOVERNED-PROJECTS.yaml
+        - specs/01-规范体系基础规范.md
+        - specs/04-Code确定性执行规范.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+      expected_output: |
+        形成第一阶段执行范围、明确不做事项和后续分流清单。必须把 v2 全量迁移、Runtime 接入、旧 knowledge-map 删除、Web 展示、Skill 注册、安装 bootstrap 等事项移出本轮。
+      status: done
+      result_summary: |
+        已收敛为第一阶段安全子集：创建旁路 worktree 和 orphan-style `dev-v3` 干净根，新增 specs/schemas、action guide 编译器、fixtures 和聚焦测试；不执行 v2 全量迁移、不删除 knowledge-map、不改 Runtime / dispatcher、不修改 Web / Skill / install bootstrap。
+      evidence_refs: []
+      blocking_reason: ''
+    - id: item-2
+      title: 设计 v3 worktree 与管辖项目登记方案
+      role: runtime-governance-design
+      mode: single
+      input_refs:
+        - LDVH-GOVERNED-PROJECTS.yaml
+        - specs/06-运行时扩展规范.md
+        - specs/33-ldvh-install-action-LDVH安装行动编排.md
+        - code/hook_dispatch.py
+      expected_output: |
+        给出 `git worktree add ../ld-vibe-harness-v3 -b dev-v3` 的执行前检查、目录命名、分支命名、父级管辖配置登记方式、Git common_dir 消歧风险和验证矩阵。验证矩阵至少覆盖 `target=/v3/file`、`cwd=/v3`、`cwd=/v2 target=/v3/file`、commit staged paths、同 common_dir 多 project id 的 blocked 行为。不得把登记写成已执行事实，除非后续 Human 明确授权执行。
+      status: done
+      result_summary: |
+        已创建 `../ld-vibe-harness-v3` worktree，并将 `dev-v3` 纠偏为不继承 v2 文件的 orphan-style 干净根。已在工作区根目录 `LDVH-GOVERNED-PROJECTS.yaml` 登记 `ldvh-v3`，并在仓库内管辖配置同步记录。未保留 dispatcher、native hook 或测试策略改动；同 common_dir worktree 的运行时消歧仍需后续单独方案确认。v3 首个提交已存在，commit 为 `d1944cf9`。
+      evidence_refs: []
+      blocking_reason: ''
+    - id: item-3
+      title: 设计 v3 最小 specs 和 schema 契约
+      role: spec-design
+      mode: single
+      input_refs:
+        - ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml
+        - specs/01-规范体系基础规范.md
+        - specs/02-事实模型基础规范.md
+        - specs/03-行动编排规范.md
+        - specs/04-Code确定性执行规范.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+      expected_output: |
+        形成 v3 最小规范清单和 schema 草案边界。重点定义格式化规范源文件、身份块、父子抽象、状态 / authority、source_refs、行动指南输出和 v2 adapter 的第一版契约；schema 必须归入 `specs/schemas/` 并声明由 specs 授权，不能作为一级目录、独立事实源或 Code 私有配置；每份 v3 spec / schema 必须声明单一信息对象、权威归口、与 v2 的复用 / 差异边界，避免把 v2 重复文本或可派生检查清单直接搬迁。
+      status: done
+      result_summary: |
+        已在 v3 worktree 新增 `specs/schemas/` 契约层，包含 formatted-source、action-guide 和 index 三个 schema / 索引文件。Schema 被放在 specs 授权范围下，Code 只消费，不拥有规则权威。
+      evidence_refs: []
+      blocking_reason: ''
+    - id: item-4
+      title: 设计 v3 最小 compiler 和行动指南测试闭环
+      role: code-design
+      mode: single
+      input_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/hook_dispatch.py
+        - code/specs_validate.py
+        - tests/code/specs_validate_checks/test_v2.py
+      expected_output: |
+        给出 v3 code 目录、CLI、parser、compiler IR、validator、action guide projector、v2 adapter、tests 和 `tests/fixtures/` 的最小结构。fixtures 必须归入 `tests/fixtures/`，作为验证样例和回归输入，不得放一级目录、不得作为规则来源、不得混入 `ldvh-base/` 真实事实对象。测试矩阵必须覆盖 candidate 不可执行、deprecated 不可作为 active 来源、P0/P1 不被噪音挤掉、STOP、source_refs、target-first、fallback read plan、同 common_dir 多登记歧义和非授权输出。不得提前实现完整 compiler 或文件类型命令映射。
+      status: done
+      result_summary: |
+        已在 v3 worktree 新增最小确定性编译链：`code/action_guide/`、`code/action_guide_cli.py`、`tests/fixtures/action_guide/` 和 `tests/code/test_action_guide_compiler.py`。编译器只读 YAML 源，要求 source_refs，按 status / authority 生成 usable 或 limited 的行动指南，不输出 allowed / approved。
+      evidence_refs: []
+      blocking_reason: ''
+    - id: item-5
+      title: 主控吸收审核并提交 Human 方案确认
+      role: controller-synthesis
+      mode: single
+      input_refs:
+        - ldvh-base/workcases/workcase-0022-v3-sidecar-action-guide-compiler-phase1.yaml
+      expected_output: |
+        吸收方案审核意见，修正范围、成功标准、执行项和后续分流；controller_resolution 必须明确选择一种登记策略：暂不登记、登记但不启用 runtime、或先改 dispatcher 消歧语义。不得用“Human 后续确认”跳过 common_dir 歧义判断；若无硬问题，再等待 Human 确认是否实际创建 v3 worktree / 修改管辖配置 / 新增 v3 文件。
+      status: done
+      result_summary: |
+        已吸收子 agent 方案审核，并根据 Human 后续要求完成管辖登记：`ldvh-v3` 写入工作区根目录管辖配置，仓库内配置同步记录 v3 条目。非配置策略改动已撤回；dispatcher / native hook 的 common_dir 消歧不在本次授权范围内。
+      evidence_refs: []
+      blocking_reason: ''
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本 WorkCase 会决定是否开启 v3 旁路工作树，并为格式化规范、确定性 Code 编译和行动指南建立第一阶段边界。它影响 specs 体系抽象、Code / Runtime 分层和 AI 行动入口，必须先做方案审核。
+      required_perspectives:
+        - 规范抽象与去冗余
+        - Code / Runtime 确定性边界
+        - AI 行动指南与负担控制
+      optional_perspectives:
+        - v2 迁移风险
+      tool_method_requirements:
+        - 审核只读当前仓库，不修改文件。
+        - 必须判断第一阶段是否过大，哪些事项应移出本 WorkCase。
+        - 必须检查行动指南是否被误写成事实源、授权器、缓存或第二 Runtime。
+        - 必须检查 Code 是否被要求理解自然语言或判断业务价值。
+        - 必须检查 v3 worktree 与管辖项目登记是否存在 Git common_dir 多项目歧义。
+      aggregation_rule: |
+        若任一 required perspective 认为范围过大、Code 边界越权、行动指南造成 AI 负担过高、或管辖登记存在未处理歧义，不得进入 Human 方案确认，必须先修改 WorkCase。
+    review_items:
+      - id: plan-review-spec-1
+        reviewer: subagent-spec-abstraction
+        role: 规范抽象与去冗余
+        agent_name: Hypatia
+        requested_at: '2026-06-28T00:00:00+08:00'
+        perspective: specs-abstraction-and-deduplication
+        result:
+          status: pass_with_followups
+          summary: |
+            第一阶段范围不算过大，前提是按当前文字理解为“方案与最小闭环设计”，而不是立即创建或实现。WorkCase 已正确避免 v2 全量迁移和厚写第二事实源；v3 最小 specs / schema 清单基本够第一阶段使用。
+          key_findings:
+            - 已把 v2 全量迁移、Runtime 接入、Web、Skill、安装 bootstrap 和旧 knowledge-map 删除移出本轮。
+            - 行动指南被限定为实时任务导航投影，Code 边界写明只读、实时、可复查、无语义猜测和不授权。
+            - 风险在于最小 specs 清单执行时仍可能写成多篇互相重叠的小规范。
+          required_changes: []
+          recommendations:
+            - 在 item-3 或 success_criteria 中补充去冗余约束：v3 specs 只写结构化契约和 v2 差异 / 适配边界，不重写 v2 已成立原则。
+            - 行动指南 schema 明确 tool suggestions、Human Gate candidates 和 stop candidates 只能作为导航 / 诊断输入，不是 Runtime 阻断或授权结论。
+            - 管辖项目登记方案保留 common_dir 多项目命中阻断验证。
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0022-v3-sidecar-action-guide-compiler-phase1.yaml
+            - ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml
+            - specs/01-规范体系基础规范.md
+            - specs/04-Code确定性执行规范.md
+            - specs/06-运行时扩展规范.md
+      - id: plan-review-code-runtime-1
+        reviewer: subagent-code-runtime-boundary
+        role: Code / Runtime 确定性边界
+        agent_name: Planck
+        requested_at: '2026-06-28T00:00:00+08:00'
+        perspective: code-runtime-determinism
+        result:
+          status: fail
+          summary: |
+            Code / Runtime 确定性边界总体方向正确；target-first / fallback read_plan 基本足够。硬问题是 v3 worktree 与 v2 可能共用 Git common_dir，现有 dispatcher 会在同 common_dir 多 project id 命中时阻断，WorkCase 必须把该歧义提升为可验证硬标准。
+          key_findings:
+            - WorkCase 已写明 Code 不判断自然语言意图、不授权、不输出 `allowed` / `approved` / `unblocked`。
+            - Hook / Rules / Skill 分层在来源 Spark 和 06 中清楚，但原 success_criteria 未把它作为硬验收项。
+            - v3 作为同仓库 worktree 可能与 v2 共享 Git common_dir；如果同时登记，现有 dispatcher 可能多项目命中并 blocked。
+          required_changes:
+            - 将同一 Git common_dir 多项目命中消歧升级为可验证硬标准。
+            - item-2 增加验证矩阵，覆盖 v3 target、v3 cwd、v2 cwd + v3 target、commit staged paths 和同 common_dir blocked 行为。
+            - item-5 的 controller_resolution 必须明确选择登记策略：暂不登记、登记但不启用 runtime、或先改 dispatcher。
+          recommendations:
+            - success_criteria 增加 Hook / Rules / Skill 分层验收。
+            - item-4 测试矩阵补同 common_dir 多登记 fixture，避免把“项目可发现”误写成“runtime 已可安全管辖”。
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0022-v3-sidecar-action-guide-compiler-phase1.yaml
+            - ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml
+            - specs/06-运行时扩展规范.md
+            - code/hook_dispatch.py
+            - LDVH-GOVERNED-PROJECTS.yaml
+      - id: plan-review-ai-guide-1
+        reviewer: subagent-ai-guide-load
+        role: AI 行动指南与负担控制
+        agent_name: Dalton
+        requested_at: '2026-06-28T00:00:00+08:00'
+        perspective: ai-action-guide-load-control
+        result:
+          status: pass_with_followups
+          summary: |
+            行动指南最小输出契约总体足够，负担控制方向正确。计划已避免把行动指南写成事实源、授权器、缓存或第二 Runtime；post-read action 和 brief / receipt 后续应补成更硬的字段预算与枚举语义。
+          key_findings:
+            - 最小输出契约覆盖 AI 从读取到停止、追问、验证的核心动作。
+            - 默认 brief / receipt、P0/P1 上限、P2/P3 走 next_queries、跨项目不全文注入能避免形成大上下文。
+            - STOP、source_refs、next_queries 和 P0/P1 的意图清楚。
+          required_changes: []
+          recommendations:
+            - 后续 schema 草案明确 brief / receipt 字段预算，例如 attention_points 3-5 条、P0/P1 最大条数和重复调用只返回确认态。
+            - 将 post-read action 明确为候选枚举或短字段，而不是自由文本长计划。
+            - tool suggestions 保持候选建议，不表达 dispatcher 阻断、授权或命令强制执行语义。
+            - source_refs 覆盖每条 read / stop / tool / impact / post-read 建议；缺失来源时只能进入 diagnostics 或非可信提示。
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0022-v3-sidecar-action-guide-compiler-phase1.yaml
+            - ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml
+            - specs/attachments/04.Att.06-知识地图投影Schema表.md
+            - specs/04-Code确定性执行规范.md
+    controller_resolution:
+      resolved_at: '2026-06-28T00:30:00+08:00'
+      resolved_by: main_controller
+      summary: |
+        三个方案审核视角已吸收。Planck 指出的 Git common_dir 多项目歧义仍是硬边界，不能在未沟通时通过修改 dispatcher / hook 策略顺手解决。Human 进一步澄清 v3 应是空分支逐步迁移，主控已将 `dev-v3` 纠偏为 orphan-style 干净根，并在工作区根目录登记 `ldvh-v3`。Hypatia / Dalton 的去冗余和 AI 负担控制建议落入 schema / compiler 边界：schema 归 specs，fixtures 归 tests，行动指南输出关系、读取计划、影响判断、停止条件和下一步查询，不输出授权结论。
+    human_confirmation:
+      decision: execute_safe_subset
+      scope: |
+        Human 明确要求“那就行动吧”，并随后澄清预期是空 v3 分支逐步迁移，而不是从 v2 full-copy 起步；Human 后续提醒必须配置管辖目录。主控按此纠偏：保留 `../ld-vibe-harness-v3` worktree，将 `dev-v3` 改为 orphan-style 干净根，新增 v3 内部无版本号的 `specs/schemas/`、`code/action_guide/`、`tests/fixtures/action_guide/`、聚焦测试和 CLI；登记 `ldvh-v3` 管辖目录；不修改 Runtime / dispatcher / native hook 策略，不删除旧 knowledge-map。
+      constraints:
+        - 不修改 `LDVH-GOVERNED-PROJECTS.yaml`。
+        - 不执行 v2 specs 全量迁移。
+        - 不删除或弱化当前 v2 knowledge-map 入口。
+        - v3 内部新目录不带版本号。
+      confirmed_at: '2026-06-28T00:31:00+08:00'
+      summary: Human 授权进入执行并纠偏为空分支迁移路线；本轮只落地旁路干净根和最小闭环。
+  result_review:
+    controller_self_check:
+      controller: main-controller-codex
+      checked_at: '2026-06-28T00:36:00+08:00'
+      prompt_context:
+        objective: |
+          确认 v3 旁路第一块可执行闭环是否已经按用户目标落地：格式化规范让 Code 可确定性解析，确定性 Code 生成行动指南，行动指南按任务导航要素组织 AI 行动所需的关系、读取计划、影响判断、停止条件和下一步查询。
+        input_refs:
+          - ldvh-base/workcases/workcase-0022-v3-sidecar-action-guide-compiler-phase1.yaml
+          - ldvh-base/sparks/spark-0039-v3-sidecar-action-guide-compiler.yaml
+      result:
+        status: pass_with_followups
+        summary: |
+          主控自检通过：v3 worktree 与 orphan-style dev-v3 干净根已创建，第一版 schema / compiler / fixtures / tests 已落地并通过聚焦测试。行动指南当前能区分 usable 与 limited，并对 candidate / deprecated / can_authorize_actions=false 给出 not_authorized 诊断。工作区根目录已登记 `ldvh-v3`。非配置 Runtime / dispatcher / native hook 改动已撤回；同 common_dir worktree 消歧仍需后续单独方案。v3 首个提交 `d1944cf9` 已存在，但不作为本次配置授权范围的策略依据。
+        key_findings:
+          - 'v3 内部新增目录使用 `specs/schemas/`、`code/action_guide/`、`tests/fixtures/action_guide/`，未使用内部 `-v3` 命名。'
+          - '`python3 -m pytest tests/code/test_action_guide_compiler.py -q` 通过：6 passed。'
+          - '`python3 code/action_guide_cli.py action-guide --source tests/fixtures/action_guide/active_spec.yaml --pretty` 可输出 JSON 行动指南。'
+          - 'v3 目录不再包含 v2 的 `web/`、`history/`、`agents/`、`icons/` 等继承内容。'
+          - '工作区根目录 `/Users/dmh2002/poker_hud_projects/LDVH-GOVERNED-PROJECTS.yaml` 已登记 `ldvh-v3`。'
+          - 'v3 首个 commit 已完成：`d1944cf9 chore: 初始化干净 LDVH v3 骨架`。'
+          - '非配置改动已撤回：未保留 dispatcher、native hook 或 hook_dispatch 测试策略变更。'
+        required_changes: []
+        evidence_refs:
+          - verification_evidence
+      attested_at: '2026-06-28T00:36:00+08:00'
+      attestation:
+        signer: main-controller-codex
+        statement: 主控自检仅证明 v3 旁路最小闭环已经可执行，不替代结果复核或 Human 关闭确认。
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本 WorkCase 若进入执行，结果复核必须确认第一阶段没有越界执行 v2 全量迁移、Runtime 接入或旧入口删除，并确认后续分流完整。
+      required_perspectives:
+        - 规范一致性与事实源边界
+        - Code / Runtime 边界和验证证据
+        - WorkCase 治理和后续分流
+      optional_perspectives: []
+      tool_method_requirements:
+        - 结果复核必须检查成功标准、验证证据、关闭证据、残留风险和 followup_refs。
+        - 不得用主控结果自检替代独立结果复核。
+      aggregation_rule: |
+        result_review.review_items 为空时不得进入 human_closure_confirming 或 closed；存在 fail 或 needs_human_gate 结论时不得提交 Human 关闭确认。
+    review_items: []
+    controller_resolution: null
+    human_closure_confirmation: null
+plan_confirmed_at: '2026-06-28T00:31:00+08:00'
+verification_evidence: |
+  ## 验证计划
+
+  验证 v3 旁路第一块闭环是否真实可执行：schema 位于 specs/schemas，fixtures 位于 tests/fixtures，Code 能从格式化 YAML 源确定性生成行动指南，并对 candidate / deprecated / missing source_refs 给出可复查结果。
+
+  ## 已执行动作
+
+  - 创建 Git worktree：`../ld-vibe-harness-v3`。
+  - 创建并纠偏分支：`dev-v3`，当前是 orphan-style 干净根，不继承 v2 文件。
+  - 清理 v2 full-copy 继承内容，仅保留一级构成面：`specs/`、`code/`、`tests/`、`rules/`、`hooks/`、`skills/`、`ldvh-base/`。
+  - 新增根说明和最小 pytest 配置：`README.md`、`pyproject.toml`。
+  - 在工作区根目录 `/Users/dmh2002/poker_hud_projects/LDVH-GOVERNED-PROJECTS.yaml` 登记 `ldvh-v3` 管辖项目。
+  - 新增 v3 schema 契约层：`specs/schemas/formatted-source.schema.yaml`、`specs/schemas/action-guide.schema.yaml`、`specs/schemas/index.yaml`。
+  - 新增 v3 行动指南编译器：`code/action_guide/` 与 `code/action_guide_cli.py`。
+  - 新增 fixtures：`tests/fixtures/action_guide/`，覆盖 active spec、active action member、candidate action member、deprecated attachment 和 invalid missing source_refs。
+  - 新增聚焦测试：`tests/code/test_action_guide_compiler.py`。
+  - 新增临时迁移准入目录：`_migration/`；该目录集中承载 migration gate 的 schemas、code、fixtures 和 tests，明确不属于正式 v3 构成面，可整体删除。
+
+  ## 验证命令
+
+  - `python3 -m pytest tests/code/test_action_guide_compiler.py -q`
+  - `python3 code/action_guide_cli.py action-guide --source tests/fixtures/action_guide/active_spec.yaml --pretty`
+  - `find . -maxdepth 2 -type d | sort`
+  - `python3 code/specs_validate.py governed-projects --root /Users/dmh2002/poker_hud_projects`
+  - `python3 /Users/dmh2002/poker_hud_projects/ld-vibe-harness/code/commit_validate.py --check-message <v3 initial commit message> --files <v3 staged files>`
+  - `python3 -m pytest _migration/tests -q`
+  - `python3 _migration/migration_gate_cli.py _migration/fixtures/derived_checklist_candidate.yaml --pretty`
+
+  ## 验证结果
+
+  - 聚焦测试通过：6 passed。
+  - CLI 可从 active formatted source 输出 JSON action_guide。
+  - candidate / deprecated 输入被编译为 limited，并带 not_authorized 诊断。
+  - 编译器不输出 `allowed`、`approved` 或 `unblocked`。
+  - 目录清单确认 v3 干净根不再包含 v2 的 `web/`、`history/`、`agents/`、`icons/` 等旧内容。
+  - 工作区根目录管辖配置检查通过。
+  - commit message 预检通过。
+  - v3 首个 commit 成功：`d1944cf9 chore: 初始化干净 LDVH v3 骨架`。
+  - Human 指出本轮只能增加配置；非配置改动已撤回，当前不声明 Runtime / Hook 策略已完成消歧。
+  - `_migration/` 定向测试通过：7 passed。
+  - CLI 样例确认 derived checklist 输出 `do_not_migrate`，next_action 为 `encode_as_schema_code_or_test`。
+  - v3 `_migration/` 已提交：`c5717f34 chore: 添加临时迁移准入脚手架`。
+  - v3 临时迁移决定已提交：`d7868692 chore: 记录 Code 确定性规范迁移决定`；decision 位于 `_migration/decisions/spec-04-code-determinism.decision.yaml`，未迁正文。
+  - v3 正式上位规范已提交：`978a9657 feat(specs): 添加 Code 确定性上位规范`；该结论后续已被自举链修正为 `specs/core/` Markdown 核心规范优先，YAML 仅作机器投影。
+  - v3 自举链修正已完成：新增 `specs/core/spec-system.md`、`specs/core/schema-contract.md`、`specs/core/code-determinism.md`、`specs/core/action-guide.md`；原 `specs/code-determinism.yaml` 迁为 `specs/core/code-determinism.yaml`。
+  - v3 specs 文档体系稳定约束已记录：不新增新专题目录替代原 LDVH specs 体系，不将普通 specs 正文整体 YAML 化；`specs/core/` 只作为少量父层。
+  - v3 临时 specs 体系盘点已建立：`_migration/inventory/specs-inventory.yaml` 覆盖 21 个 specs 正文和 75 个 attachment 文件，只作为迁移评审辅助，不作为正式 v3 权威。
+  - v3 MD 直读 extractor 原型已建立：`_migration/code/md_spec_extractor.py` 可直接读取 v2 `specs/01-规范体系基础规范.md` 的 `v2_spec` 身份块、章节和附件引用，生成可编译为 Action Guide 的行动源；不需要 per-spec YAML。
+  - v3 MD 直读覆盖面已扩展：5 类代表 spec 和全部 21 个 v2 `specs/*.md` 正文均可解析并生成行动源；其中 17 个 usable，4 个 draft limited。临时证据位于 `_migration/inventory/md-direct-read-coverage.yaml`。
+  - v3 specs 膨胀扫描已建立：`_migration/code/spec_bloat_scan.py` 与 `_migration/inventory/spec-bloat-scan.yaml` 记录重复章节、成员模板和跨切面边界语言的临时证据；该扫描不授权删除正文。
+  - v3 定位已修正：不是实验后回灌 v2，而是 specs + Code 正式重构线；其他构成面暂不重构，待 specs + Code 成熟后整体迁移。
+  - v3 全量测试通过：`python3 -m pytest -q`，9 passed。
+
+  ## 结论
+
+  v3 旁路干净根、最小闭环、管辖登记和首个提交已完成；Runtime / Hook 层面的 worktree 消歧不在本轮授权范围内，后续推进前必须单独沟通方案。
+closure_evidence: ''
+closure_requested_at: ''
+review_requested_at: ''
+closed_at: ''
+closure_outcome: ''
+residual_risks:
+  - v3 方向可能拆出多个 WorkCase；本 WorkCase 只承接第一阶段方案和最小闭环，不能作为全部 v3 改造的完成证明。
+  - v3 与 v2 仍共享 Git common_dir；当前只增加配置，不改变 Runtime / Hook 策略，因此后续真实 hook 提交和运行时识别仍可能需要单独消歧设计。
+  - v3 目前只迁入最小 action guide 编译闭环，尚未迁入 v2 adapter、Runtime/Skill/Web 接入或真实 ldvh-base 事实对象。
+  - '`_migration/` 是临时迁移脚手架，后续如果被正式代码引用或被当成事实源，会重新引入体系膨胀风险；必须保持可整体删除。'
+  - 行动指南命名可能与当前 v2 knowledge-map 入口形成概念重叠；第一阶段不得删除或弱化 v2 入口。
+followup_refs:
+  - spark-0039
+revision_history:
+  - at: '2026-06-28T00:36:00+08:00'
+    actor: main-controller-codex
+    from_status: subagents_plan_reviewing
+    to_status: result_self_checking
+    reason: Human 授权执行已审核的安全子集，且 v3 旁路最小闭环已通过聚焦测试。
+    changed_fields:
+      - status
+      - updated
+      - orchestration.execution_items
+      - orchestration.plan_review.controller_resolution
+      - orchestration.plan_review.human_confirmation
+      - result_review.controller_self_check
+      - plan_confirmed_at
+      - verification_evidence
+    summary: |
+      Human 授权行动后，创建 v3 旁路 worktree / dev-v3 分支，落地 specs/schemas、action guide 编译器、fixtures、CLI 和聚焦测试；按审核结论暂不修改管辖项目配置，保留 common_dir 消歧为后续前置项。
+  - at: '2026-06-28T00:45:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 澄清 v3 应为空分支逐步迁移，而不是继承 v2 full-copy。
+    changed_fields:
+      - updated
+      - orchestration.execution_items
+      - orchestration.plan_review.controller_resolution
+      - orchestration.plan_review.human_confirmation
+      - result_review.controller_self_check
+      - verification_evidence
+      - residual_risks
+    summary: |
+      将 `../ld-vibe-harness-v3` 的 `dev-v3` 纠偏为 orphan-style 干净根，只恢复 v3 一级构成面、schema、action guide compiler、fixtures、CLI、测试和最小配置。尝试首个 commit 被现有 hook 按 `ldvh-self` 管辖规则阻断，已记录为 common_dir 消歧前置证据。
+  - at: '2026-06-28T01:12:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 提醒必须配置管辖目录，且 v3 首个提交需要通过真实 Runtime / hook 管辖路径验证。
+    changed_fields:
+      - updated
+      - orchestration.execution_items
+      - orchestration.plan_review.controller_resolution
+      - orchestration.plan_review.human_confirmation
+      - result_review.controller_self_check
+      - verification_evidence
+      - residual_risks
+    summary: |
+      登记 `ldvh-v3` 管辖目录。主控曾临时修正 dispatcher path 优先消歧和 native commit-msg hook 动态 worktree root，但 Human 指出这超出“只增加配置”的授权范围；非配置改动已撤回。v3 初始提交已存在：`d1944cf9 chore: 初始化干净 LDVH v3 骨架`。
+  - at: '2026-06-28T01:25:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 确认迁移准入层应为临时系统，所有相关内容集中放到单独临时目录，避免和正式 v3 内容耦合。
+    changed_fields:
+      - updated
+      - verification_evidence
+      - residual_risks
+    summary: |
+      在 v3 worktree 新增 `_migration/` 临时目录，包含 README、migration schemas、migration_gate classifier、fixtures 和 tests。该目录声明不属于正式 specs/code/tests/fixtures，可在迁移准入完成后整体删除；定向测试 `python3 -m pytest _migration/tests -q` 通过：7 passed。v3 提交已完成：`c5717f34 chore: 添加临时迁移准入脚手架`。
+  - at: '2026-06-28T01:40:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: 按计划用临时准入层试判定第一份 v2 spec，不迁正文，只记录 decision。
+    changed_fields:
+      - updated
+      - verification_evidence
+    summary: |
+      在 v3 worktree 使用 `_migration` 对 `specs/04-Code确定性执行规范.md` 生成临时迁移 decision：`migrate` / `parent_spec` / `specs/code-determinism.yaml`。decision 已提交到 v3：`d7868692 chore: 记录 Code 确定性规范迁移决定`。
+  - at: '2026-06-28T01:55:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: 按首个 migration decision 落地正式 v3 Code 确定性上位规范，不搬 v2 正文。
+    changed_fields:
+      - updated
+      - verification_evidence
+    summary: |
+      在 v3 worktree 新增正式规范 `specs/code-determinism.yaml`，只抽象 Code 确定性输入、输出、实现纪律、派生物边界和 Runtime 策略停止条件；新增 `tests/code/test_formal_specs.py` 确认该规范可编译为 action guide 且不依赖 `_migration/`。v3 提交已完成：`978a9657 feat(specs): 添加 Code 确定性上位规范`。
+  - at: '2026-06-28T02:10:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 指出 `specs/00-bootstrap-charter.md` 的自举悖论，并确认第一批核心规范可放入 `specs/core/`。
+    changed_fields:
+      - updated
+      - description
+      - verification_evidence
+    summary: |
+      修正 v3 权威链：不新增 `specs/00-bootstrap-charter.md`，不让 YAML 先定义上位规范。v3 新增 `specs/core/` Markdown 核心规范层；原 `specs/code-determinism.yaml` 迁移为 `specs/core/code-determinism.yaml` 的机器投影，并回指 `specs/core/code-determinism.md`。测试更新为确认 Markdown 权威先于机器投影，`python3 -m pytest -q` 通过：9 passed。
+  - at: '2026-06-28T02:20:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 纠偏：LDVH 原来已有 specs 文档体系，v3 不应另起新分类体系或将正文 YAML 化。
+    changed_fields:
+      - updated
+      - description
+      - verification_evidence
+    summary: |
+      记录稳定约束：原 LDVH specs 文档体系继续作为迁移基线；`specs/core/` 只放少量上位父层规范；普通 specs 正文仍按原体系逐步迁移、抽象和去冗余；`specs/schemas/` 与 YAML projection 只服务机器契约和确定性解析。明确不采用 `specs/runtime/`、`specs/facts/`、`specs/action/`、`specs/git/` 这类未经决策的新专题目录。
+  - at: '2026-06-28T02:35:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 要求继续行动，下一步应先盘点原 specs 体系，不迁正文、不新增正式规范。
+    changed_fields:
+      - updated
+      - verification_evidence
+    summary: |
+      在 v3 `_migration/inventory/specs-inventory.yaml` 建立临时盘点：覆盖 21 个 v2 specs 正文和 75 个 attachments 文件，按原体系分段记录角色、迁移动作、共同读取来源、风险和停止条件。同步更新 `_migration/README.md`，明确 inventory 只是临时评审辅助，不授权 v3 specs、schema、Code 或 Action Guide。YAML 解析校验通过，`python3 -m pytest -q` 通过：9 passed。
+  - at: '2026-06-28T02:50:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 指出 per-spec YAML 会产生同步负担；若 Code 能确定性读 MD，就应直接读 MD。
+    changed_fields:
+      - updated
+      - description
+      - verification_evidence
+    summary: |
+      修正 v3 技术方向：不采用长期“一个 MD 一个 YAML”的双维护策略。新增 `_migration/code/md_spec_extractor.py`、`_migration/md_spec_extract_cli.py` 和 `_migration/tests/test_md_spec_extractor.py`，直接从 v2 `specs/01-规范体系基础规范.md` 解析 `v2_spec` 身份块、标题、章节和附件引用，生成可交给现有 Action Guide compiler 的行动源。`python3 -m pytest _migration/tests -q` 通过：9 passed。
+  - at: '2026-06-28T03:05:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: 按计划验证 MD 直读是否覆盖原 specs 体系，而不是只对 01 成立。
+    changed_fields:
+      - updated
+      - verification_evidence
+    summary: |
+      扩展 `_migration` MD extractor 测试：覆盖 00 价值基线、01 规范体系、04 Code、20 事实模型成员、31 行动编排成员，并新增全量扫描测试确认 21 个 v2 `specs/*.md` 正文均可直接从 Markdown 生成行动源。扫描结果：17 个 usable，4 个 draft limited（32、34、35、36）。新增 `_migration/inventory/md-direct-read-coverage.yaml` 记录临时覆盖证据。`python3 -m pytest _migration/tests -q` 通过：16 passed；正式 v3 `python3 -m pytest -q` 通过：9 passed。
+  - at: '2026-06-28T03:20:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 提醒回到初衷：v2 specs 有大量重复内容和非必要信息，需要继续探索去膨胀。
+    changed_fields:
+      - updated
+      - verification_evidence
+    summary: |
+      新增 `_migration/code/spec_bloat_scan.py`、CLI、测试和 `_migration/inventory/spec-bloat-scan.yaml` 临时报告。扫描结果确认重复主要是结构性：21 个文件重复通用治理章节；30/31/32/34/35/36 行动成员共享完整 19 节骨架；20-24 事实模型成员共享对象定位、状态机、对象关系、字段契约等骨架；Human Gate、事实源边界、Code、知识地图、不得/不定义等跨切面语言高频出现。`python3 -m pytest _migration/tests -q` 通过：19 passed；正式 v3 `python3 -m pytest -q` 通过：9 passed。
+  - at: '2026-06-28T03:35:00+08:00'
+    actor: main-controller-codex
+    from_status: result_self_checking
+    to_status: result_self_checking
+    reason: Human 澄清 v3 不是回灌 v2 的实验线，而是 specs 与 Code 两块正式重构线。
+    changed_fields:
+      - title
+      - updated
+      - description
+      - verification_evidence
+    summary: |
+      修正 WorkCase 定位：v3 聚焦 specs + Code 正式重构，目标是消除 v2 specs 膨胀、重复、非必要信息，并将 knowledge-map 升级为 Action Guide。v2 保持当前稳定运行；`rules/`、`hooks/`、`skills/`、Runtime、Web、`ldvh-base/` 等其他构成面暂不重构，待 specs + Code 成熟后整体迁移。
+related_docs:
+  - specs/01-规范体系基础规范.md
+  - specs/04-Code确定性执行规范.md
+  - specs/06-运行时扩展规范.md
+  - specs/33-ldvh-install-action-LDVH安装行动编排.md
+  - specs/attachments/04.Att.06-知识地图投影Schema表.md
+  - LDVH-GOVERNED-PROJECTS.yaml
+  - code/spec_checks/knowledge_map.py
+  - code/hook_dispatch.py
+related_adrs: []
+related_sparks:
+  - spark-0039
+related_pitfalls: []
+related_workcases:
+  - workcase-0002
+  - workcase-0005
+  - workcase-0016
+  - workcase-0019
+  - workcase-0020
+  - workcase-0021

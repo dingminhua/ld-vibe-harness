@@ -1,0 +1,37 @@
+id: spark-0009
+type: spark
+title: Vibe Coding 从 Demo 到产品级能力缺口调研入口
+status: pending
+created: '2026-06-18T08:49:21'
+updated: '2026-06-24T03:20:00+08:00'
+description: |
+  本 Spark 承载“Vibe Coding 从 demo 走向产品级开发需要哪些变化，以及 LDVH 目前只有规范和基础流程时还需要增强哪些环节”的待收敛议题。
+
+  当前阶段性结论是：demo 级 Vibe Coding 主要证明“AI 能快速把想法变成可运行样子”；产品级开发则要求需求可追踪、架构可演进、质量可验证、安全可审计、发布可回滚、运行可观测、事故可恢复、用户反馈可闭环。也就是说，产品级不是把 AI 写代码速度继续拉满，而是把 AI 生成能力纳入可持续的软件工程系统。
+
+  对 LDVH 的启发是：现有规范、工作对象和基础流程已经解决了“事实源、计划、证据、决策、事实源修改追溯”的底盘问题，但还缺产品级开发所需的产品需求层、架构与接口治理、测试与质量门禁、DevSecOps 与供应链安全、发布与生产就绪、运行观测与事故复盘、AI 产出评测和 Web 态势驾驶舱等能力。
+
+  完整调研已形成 study-0005。后续修改 00 总纲、06 工作流程、10 测试基础、04 能力资产、07 Code、08 Web 或新增 30-59 流程时，应复读该报告。
+evolution:
+- at: '2026-06-18T08:49:21'
+  summary: 根据用户要求，新增 Vibe Coding 从 demo 到产品级的能力缺口调研入口，并分流完整报告到 study-0005。
+input_refs:
+- study-0005
+source: conversation
+source_detail: 用户要求新建 Spark，调研 Vibe Coding 从 demo 到产品级需要哪些变化，以及 LDVH 面向产品级开发还需要增强哪些环节。
+priority: P1
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workcases: []
+related_adrs: []
+related_studies:
+- study-0005
+related_docs:
+- history/specs-v1/00-LD-Vibe-Harness理念与纲要.md
+- history/specs-v1/04.02-LDVH能力资产与保障机制规范.md
+- history/specs-v1/06-行动编排基础规范.md
+- history/specs-v1/07-Code确定性执行实现规范.md
+- history/specs-v1/08-Web信息同步实现规范.md
+- history/specs-v1/11-测试基础规范.md
+- specs/21-WorkCase-工作项.md

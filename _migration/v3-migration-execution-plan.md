@@ -86,7 +86,7 @@ specs 迁入
 |---|---|---|---|
 | 9A 迁移层依赖审计 | 已完成 | 审计 `_migration` 对正式 code/tests/review gate 的剩余依赖，划分保留、吸收、删除和归档 | 删除尚未明确废弃的 V2 能力时 |
 | 9B 最小提交入口 | 已完成（Hook 未启用） | 先迁 Git 提交行动、commit-msg / commit gate、read_plan 消费证据和验证声明边界 | 启用会阻断真实提交的 Hook 或 gate 时 |
-| 9C 事实对象完整迁移 | 待执行 | 完整迁移 Spark、WorkCase、ADR、Pitfall、Study 字段、schema、实例路径和真实 `ldvh-base/` 实例，编号可按 V3 重构 | 字段丢失、语义冲突、编号冲突或真实实例不可逆转换时 |
+| 9C 事实对象完整迁移 | 已完成 | 完整迁移 Spark、WorkCase、ADR、Pitfall、Study 字段 schema、实例路径和真实 `ldvh-base/` 实例，编号按 V3 重构 | 字段丢失、语义冲突、编号冲突或真实实例不可逆转换时 |
 | 9D Web 数据契约迁移 | 待执行 | 保留既有表现层，只迁 DTO/API、来源回指、独立读取、Confirm UI 边界、缓存同步和回归测试 | Web 写入、Confirm UI 或缓存策略改变 Human 可见状态时 |
 | 9E 行动模板候选后置 | 待执行 | 记录 WorkCase 创建、方案审核、结果复核、关闭确认等候选模板准入条件 | 若要求把非提交行动模板纳入主线切换阻断范围 |
 | 9F 主线切换收口 | 待执行 | 用户文档、启用边界、`_migration` 归档/删除条件和最终验证 | 声明 V3 正式接管主线或接受残留风险时 |
@@ -187,6 +187,16 @@ specs 迁入
 5. `tests/code/test_ldvh_specs_validate.py` 已覆盖 commit gate 正例、非法 scope、缺 body、缺 read_plan、CLI 和 wrapper；
 6. 真实 Git Hook 未安装，`environment_integrated=false`、`hook_integrated=false`；启用 Hook 仍需 Human Gate；
 7. 下一步进入 9C 事实对象完整迁移。
+
+9C 完成记录：
+
+1. `_migration/9C-fact-object-full-migration.md` 已记录事实对象完整迁移结果；
+2. V2 39 个 Spark、21 个 WorkCase、1 个 Pitfall 和 14 个 Study 已迁入 V3 `ldvh-base/`；V3 原有 `spark-0001` 和 `workcase-0001` 保留，最终事实实例总数为 77；
+3. V2 当前无 ADR 实例，V3 已建立 `ldvh-base/adrs/` 空目录和 ADR 字段 schema；
+4. `code/ldvh_specs.py` 新增事实实例 layout、字段 schema、frontmatter 解析、实例校验和关系校验；
+5. `tests/code/test_ldvh_specs_validate.py` 已覆盖事实实例数量、id/文件名一致性、未知字段、缺必填字段、legacy 字段、缺引用和 Study 正文骨架负例；
+6. 正式 `05/20/21/22/23/24` 已同步“真实实例已迁入、字段 schema 由 Code/tests 承接、Web/Hook/行动模板仍后置”的边界；
+7. 下一步进入 9D Web 数据契约迁移。
 
 阶段 5B 术语校正：
 

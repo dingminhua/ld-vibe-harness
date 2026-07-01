@@ -1,0 +1,556 @@
+id: workcase-0007
+type: workcase
+title: Code Web tests degraded legacy migration
+goal: |
+  承接 workcase-0006 的实现层残留风险，迁移 `code/`、`tests/`、`web/` 中 legacy `degraded`、`degraded_accepted` 和“降级”输出、消费、断言与 Human-facing 展示，使旧字段只作为兼容信号存在，并以具体问题原因、受限状态、后续动作和承接位置表达当前语义。
+status: closed
+created: '2026-06-25T11:33:00+08:00'
+updated: '2026-06-26T05:54:52+08:00'
+priority: P1
+plan_confirmed_at: '2026-06-25T11:33:00+08:00'
+review_requested_at: '2026-06-26T05:54:52+08:00'
+description: |
+  背景来源为 `spark-0026-degradation-concept-convergence.yaml` 与已关闭 `workcase-0006-remove-degradation-concept-from-specs.yaml`。workcase-0006 已完成 specs、attachments 和 rules 的正式机制迁移，但明确登记 Code/Web/tests 仍残留旧字段、状态、测试断言和展示文案。
+
+  本 WorkCase 只处理本线程范围内的实现层迁移，不修改 spark-0027、spark-0028、workcase-0008、workcase-0009 或 study-0011。
+
+  全量扫描命令为 `rg -n "degraded|degraded_accepted|降级" code tests web`。扫描分类如下：
+
+  1. Code 结构化输出兼容字段：`code/spec_checks/knowledge_map.py` 和 `code/spec_checks/v2.py` 输出 `degraded`，需要保留旧字段但补 `result_status`、`issue_causes`、`suggested_action` 和 `legacy_compatibility`。
+  2. WorkCase 关闭结果兼容枚举：`code/fact_validate.py` 与 `code/fact_cli.py` 仍允许 `degraded_accepted`，需要标为历史兼容，新增 warning 和替代路径。
+  3. Web Human-facing 展示：`web/src/i18n/locales.ts`、`web/src/utils/executionFlowStatus.ts`、`web/api/routes/objects.ts` 和 `StatusBanner` 周边仍有旧状态消费；本轮迁移主展示文案，将旧状态作为风险/受限兼容输入。
+  4. Assurance / runtime projection / capability environment / human gate：多个 Code 检查仍使用 `degraded` 作为聚合状态，范围较大且涉及历史测试夹具和旧保障报告。Human 已确认按专项迁移继续执行，本 WorkCase 继续承接，不另建同主题 WorkCase。
+  5. Web docs 中的“降级”多数指响应式布局、复制 fallback 或旧实现说明，不属于本 WorkCase 的 Code/Web/tests 行为迁移主线；本轮不改文档体系。
+success_criteria: |
+  - [x] 新建 workcase-0007，并记录 Code/Web/tests 全量扫描清单与分类。
+  - [x] 知识地图结构化输出保留 legacy `degraded` 兼容字段，同时提供 `result_status`、`issue_causes`、`suggested_action` 和 `legacy_compatibility` 替代语义。
+  - [x] v2 text 输出不再把 `degraded` 作为主状态展示，改为展示 `result_status`、`issue_causes` 和 `legacy_degraded`。
+  - [x] `degraded_accepted` 在 WorkCase 校验中只作为历史兼容关闭结果，出现时给出 warning 和替代路径。
+  - [x] Web i18n 不再把 `degraded` 展示为“降级/Degraded”，改为“受限/Limited”；执行态聚合只把旧状态作为 legacy 风险输入。
+  - [x] assurance / runtime projection / capability environment / human gate 的旧 `degraded` 聚合状态已迁移为 `limited`、`blocked`、`needs_human_gate`、`capability_gap`、`evidence_gap`、`input_issue`、`fact_conflict` 或其它具体问题状态；旧字段如需保留，必须标为 legacy compatibility。
+  - [x] 完成相关 pytest、Web 检查/API 测试和 `python3 code/fact_validate.py` 校验。
+source: |
+  用户委派本线程处理“Code/Web/tests legacy degraded / degraded_accepted 实现迁移”，要求先扫描 `code/`、`tests/`、`web/`，按 active specs 当前口径迁移实现层，并在能完成可合并变更时提交。
+
+  来源 Spark：`ldvh-base/sparks/spark-0026-degradation-concept-convergence.yaml`。
+  已关闭 WorkCase：`ldvh-base/workcases/workcase-0006-remove-degradation-concept-from-specs.yaml`。
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 全量扫描 Code Web tests legacy 命中
+      role: inventory
+      mode: single
+      input_refs:
+        - code/
+        - tests/
+        - web/
+      expected_output: |
+        使用 `rg -n "degraded|degraded_accepted|降级" code tests web` 形成清单，并分类为兼容字段、Human-facing 展示、测试断言、实现状态、文档说明或后续迁移对象。
+      status: done
+      result_summary: |
+        已完成扫描并写入 description，并在 2026-06-25T04:50:00+08:00 复核 `rg -n "degraded|degraded_accepted|降级" code tests web -g '!node_modules'`。命中集中在知识地图/v2 legacy compatibility 字段、preflight 旧诊断命名、历史兼容 WorkCase closure outcome、Web legacy backend input、Web docs 响应式 fallback 表达和既有实现计划说明；本 WorkCase 主线中的 Human-facing 展示与聚合主状态已迁移为受限或具体问题原因。
+      evidence_refs:
+        - code/
+        - tests/
+        - web/
+      blocking_reason: null
+    - id: item-2
+      title: 迁移知识地图和 v2 输出语义
+      role: code-tests
+      mode: single
+      input_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - tests/code/specs_validate_checks/test_v2.py
+      expected_output: |
+        保留旧 `degraded` 兼容字段，但新增替代语义字段和测试断言；text 输出以 `result_status` 和 `issue_causes` 为主。
+      status: done
+      result_summary: |
+        已新增 `result_status`、`issue_causes`、`suggested_action` 和 `legacy_compatibility`，并将相关 STOP 文案迁移为输出受限、具体问题原因和临时核对动作。
+      evidence_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - tests/code/specs_validate_checks/test_v2.py
+      blocking_reason: null
+    - id: item-3
+      title: 迁移 WorkCase degraded_accepted 兼容边界
+      role: code-tests
+      mode: single
+      input_refs:
+        - code/fact_validate.py
+        - code/fact_cli.py
+        - tests/code/test_fact_validate.py
+      expected_output: |
+        `degraded_accepted` 保留为 legacy compatibility，校验时提示迁移到 cancelled、partial_completed 或 Human Gate + ADR 风险接受。
+      status: done
+      result_summary: |
+        已拆分 current 与 legacy closure outcome，并新增 `LEGACY_WORKCASE_CLOSURE_OUTCOME` warning 测试。
+      evidence_refs:
+        - code/fact_validate.py
+        - code/fact_cli.py
+        - tests/code/test_fact_validate.py
+      blocking_reason: null
+    - id: item-4
+      title: 迁移 Web Human-facing degraded 展示
+      role: web
+      mode: single
+      input_refs:
+        - web/src/i18n/locales.ts
+        - web/src/utils/executionFlowStatus.ts
+      expected_output: |
+        Web 不再把 `degraded` 展示为“降级/Degraded”，而以具体受限/风险态势呈现；旧字段只作为后端兼容输入。
+      status: done
+      result_summary: |
+        已将 i18n 主展示从“降级/Degraded”改为“受限/Limited”，并在执行流状态归类中标注 `degraded` 仅为 legacy backend input。
+      evidence_refs:
+        - web/src/i18n/locales.ts
+        - web/src/utils/executionFlowStatus.ts
+      blocking_reason: null
+    - id: item-5
+      title: 验证与后续范围裁剪
+      role: verification
+      mode: single
+      input_refs:
+        - tests/code/specs_validate_checks/test_v2.py
+        - tests/code/test_fact_validate.py
+        - web/
+        - code/fact_validate.py
+      expected_output: |
+        运行相关 pytest / npm test 子集和 WorkCase fact_validate；若 assurance/runtime projection 迁移范围过大，记录阻断原因和后续最小方案。
+      status: done
+      result_summary: |
+        早期验证曾发现 Web API pitfall 空夹具失败和 assurance / runtime projection / capability environment 旧聚合状态残留；这些缺口已由 item-6 和 item-7 继续执行并重新验证。当前复核结果显示 `npm run test:web:api` 通过，剩余 `degraded` 命中均为 legacy compatibility、旧诊断命名、文档 fallback 表达或既有迁移说明，不再阻断本 WorkCase 进入结果自检。
+      evidence_refs:
+        - tests/code/specs_validate_checks/test_v2.py
+        - tests/code/test_fact_validate.py
+        - web/src/i18n/locales.ts
+        - web/src/utils/executionFlowStatus.ts
+        - code/fact_validate.py
+      blocking_reason: null
+    - id: item-6
+      title: 迁移剩余 Code 聚合状态
+      role: code-tests
+      mode: sequential
+      input_refs:
+        - code/spec_checks/assurance_report.py
+        - code/spec_checks/runtime_projection.py
+        - code/spec_checks/capability_environment.py
+        - code/spec_checks/human_gate.py
+        - tests/code/specs_validate_checks/
+      expected_output: |
+        将剩余 `degraded` 聚合状态拆为具体问题状态或 legacy compatibility 字段；更新测试夹具和断言，保证 CLI/text 输出不再把 degraded 作为主语义。
+      status: done
+      result_summary: |
+        已迁移 assurance-report、runtime-projection、capability-environment、human-gate 及 ldvh-assurance 聚合消费：运行投影正文复制风险改为 `evidence_gap`，Human Gate 无记录改为 `evidence_gap`，能力环境非阻断登记一致性问题改为 `limited`，assurance-report 能力检查改为 `capability_gap` / `evidence_gap` / `limited` 等具体状态。Web API 状态排序和 StatusBanner / status color 已加入 `limited`、`input_issue`、`capability_gap`、`evidence_gap`、`fact_conflict`；`degraded` 仅保留为 legacy backend / marker 兼容输入。
+      evidence_refs:
+        - code/spec_checks/assurance_report.py
+        - code/spec_checks/runtime_projection.py
+        - code/spec_checks/capability_environment.py
+        - code/spec_checks/human_gate.py
+        - code/spec_checks/ldvh_assurance.py
+        - tests/code/specs_validate_checks/test_assurance_report.py
+        - tests/code/specs_validate_checks/test_runtime_projection.py
+        - tests/code/specs_validate_checks/test_human_gate.py
+        - tests/code/specs_validate_checks/test_ldvh_assurance.py
+        - web/api/routes/objects.ts
+        - web/src/components/StatusBanner.tsx
+        - web/src/utils/statusColors.ts
+      blocking_reason: null
+    - id: item-7
+      title: 集成验证与结果复核准备
+      role: verification
+      mode: single
+      input_refs:
+        - code/fact_validate.py
+        - code/specs_validate.py
+        - tests/code/
+        - web/
+      expected_output: |
+        完成 fact_validate、specs_validate all、相关 pytest、Web API/typecheck 和全量 `rg "degraded|degraded_accepted|降级"` 扫描；形成 result_self_checking 所需证据。
+      status: done
+      result_summary: |
+        已完成验证：`python3 code/fact_validate.py ldvh-base --format text` 通过，`python3 code/specs_validate.py all --fail-on-diagnostics` 通过，定向 pytest 111 passed，完整 `python3 -m pytest tests/code -q` 339 passed，`npm run web:check` 通过，`npm run test:web:api` 通过，`python3 code/specs_validate.py runtime-projection` / `human-gate-report` 均为 closed，`python3 code/specs_validate.py capability-environment` 为 closed，`git diff --check` 通过。全量扫描 `rg -n "degraded|degraded_accepted|降级" code tests web specs rules -g '!node_modules'` 已复核：本线程改动范围内只保留 legacy marker / backend compatibility；其它残留为知识地图 legacy 字段、WorkCase 历史兼容关闭枚举、Web docs 响应式 fallback 表达或既有迁移说明。
+      evidence_refs:
+        - code/spec_checks/assurance_report.py
+        - code/spec_checks/runtime_projection.py
+        - code/spec_checks/capability_environment.py
+        - code/spec_checks/human_gate.py
+        - code/spec_checks/ldvh_assurance.py
+        - tests/code/specs_validate_checks/test_assurance_report.py
+        - tests/code/specs_validate_checks/test_runtime_projection.py
+        - tests/code/specs_validate_checks/test_human_gate.py
+        - tests/code/specs_validate_checks/test_capability_environment.py
+        - tests/code/specs_validate_checks/test_ldvh_assurance.py
+        - web/api/routes/objects.ts
+        - web/src/components/StatusBanner.tsx
+        - web/src/utils/statusColors.ts
+      blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本线程为主线程委派的独立执行线程；范围已由 Human 指令限定为 Code/Web/tests legacy 实现迁移，且不得扩大到指定后续对象。
+      required_perspectives:
+        - 实现兼容边界
+        - Web Human-facing 展示
+        - 测试与事实源校验
+      optional_perspectives: []
+      tool_method_requirements:
+        - 只处理本线程范围。
+        - 不修改 spark-0027、spark-0028、workcase-0008、workcase-0009 或 study-0011。
+      aggregation_rule: |
+        若发现 assurance/runtime projection 等范围过大，不在本轮继续扩大硬改，改为记录后续最小方案。
+    review_items: []
+    controller_resolution:
+      resolved_at: '2026-06-25T11:33:00+08:00'
+      summary: |
+        来源主线程已给出执行范围；本线程按委派任务直接执行最小实现迁移，并把范围过大的旧聚合状态留作后续决策。
+      unresolved_items: []
+    human_confirmation:
+      confirmed_at: '2026-06-25T11:33:00+08:00'
+      confirmer: source-thread-delegation
+      decision: approved
+      scope: |
+        仅处理 Code/Web/tests legacy degraded / degraded_accepted 实现迁移，不碰用户排除对象。
+      constraints:
+        - 不修改 spark-0027、spark-0028、workcase-0008、workcase-0009 或 study-0011。
+  result_review:
+    controller_self_check:
+      controller: ldvh-subagent-state-audit
+      checked_at: '2026-06-25T04:52:00+08:00'
+      prompt_context:
+        objective: |
+          重新判断 workcase-0007 的真实执行状态，核对 success_criteria、execution_items、verification_evidence、closure_evidence、result_review、revision_history 与当前仓库实际是否一致，并决定是否可离开 executing。
+        input_refs:
+          - ldvh-base/workcases/workcase-0007-code-web-tests-degraded-legacy-migration.yaml
+          - specs/21-WorkCase-工作项.md
+          - specs/attachments/21.Att.01-orchestration字段契约表.md
+          - code/
+          - tests/
+          - web/
+      result:
+        status: pass_with_followups
+        summary: |
+          执行项和验证证据足以结束 executing 并进入 result_self_checking；当前不可直接进入 human_closure_confirming 或 closed，因为还没有独立结果复核 review_items 和主控处理记录。
+        key_findings:
+          - 所有执行项均已有完成结果；原 item-1 的 in_progress 与实际扫描完成状态不一致，已修正为 done。
+          - 必跑命令 `python3 code/fact_cli.py show workcase-0007`、`python3 code/fact_validate.py ldvh-base --format text` 已执行，事实源校验通过。
+          - 相关最小验证通过：定向 pytest 111 passed，完整 `tests/code` 339 passed，`npm run web:check` 通过，`npm run test:web:api` 通过，`specs_validate.py all --fail-on-diagnostics` 通过。
+          - 知识地图任务导航输出为 result_status=limited，原因是输出体量受限 limited_output；本轮已使用 read_plan、WorkCase 原文、21/21.Att.01 原文和事实源命令兜底核对，不把该受限输出作为关闭证据。
+          - 当前只可进入结果自检；进入 Human 关闭确认前仍需真实独立结果复核和 controller_resolution。
+        required_changes: []
+        evidence_refs:
+          - ldvh-base/workcases/workcase-0007-code-web-tests-degraded-legacy-migration.yaml
+          - specs/21-WorkCase-工作项.md
+          - specs/attachments/21.Att.01-orchestration字段契约表.md
+          - tests/code/specs_validate_checks/test_v2.py
+          - tests/code/test_fact_validate.py
+          - tests/code/specs_validate_checks/test_assurance_report.py
+          - tests/code/specs_validate_checks/test_runtime_projection.py
+          - tests/code/specs_validate_checks/test_human_gate.py
+          - tests/code/specs_validate_checks/test_capability_environment.py
+          - tests/code/specs_validate_checks/test_ldvh_assurance.py
+          - web/src/i18n/locales.ts
+          - web/src/utils/executionFlowStatus.ts
+          - web/api/routes/objects.ts
+      attested_at: '2026-06-25T04:52:00+08:00'
+      attestation:
+        signer: ldvh-subagent-state-audit
+        statement: |
+          已按用户指定的只读核对和验证命令重新判断 workcase-0007 状态；除本 WorkCase 文件外未修改其它文件，本结论不替代后续独立结果复核或 Human 关闭确认。
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        执行项已全部完成并补齐主控自检材料；下一阶段应进入独立结果复核，防止把执行完成误写成关闭完成。
+      required_perspectives:
+        - 实现迁移结果与 legacy compatibility 边界
+        - 验证覆盖与失败/受限输出解释
+        - WorkCase 状态机、关闭材料和 Human Gate
+      optional_perspectives: []
+      tool_method_requirements:
+        - 结果复核必须回读 WorkCase 原文、21/21.Att.01 状态机要求和当前验证输出。
+        - 不得用本 controller_self_check 替代独立 result_review.review_items。
+      aggregation_rule: |
+        review_items 为空时不得进入 human_closure_confirming 或 closed；若复核出现 fail 或 needs_human_gate，必须退回复核、自检或执行并记录原因。
+    review_items:
+      - id: result-review-1
+        role: independent_result_review
+        agent_name: ldvh-worktree-worker-wc0006-result-review
+        requested_at: '2026-06-25T05:07:00+08:00'
+        prompt_context:
+          objective: |
+            对 workcase-0007 做独立结果复核，判断 controller_self_check 中的验证命令、legacy compatibility 边界、Web Human-facing 展示和 WorkCase 状态流转结论是否可信，并决定是否可以提交 Human 关闭确认。
+          input_refs:
+            - /Users/dmh2002/poker_hud_projects/AGENTS.md
+            - /Users/dmh2002/poker_hud_projects/ld-vibe-harness/AGENTS.md
+            - /Users/dmh2002/poker_hud_projects/ld-vibe-harness/rules/LDVH-WORKSPACE-ENTRY.md
+            - /Users/dmh2002/poker_hud_projects/ld-vibe-harness/rules/LDVH-MAINTAINER-ENTRY.md
+            - ldvh-base/workcases/workcase-0007-code-web-tests-degraded-legacy-migration.yaml
+            - specs/21-WorkCase-工作项.md
+            - specs/attachments/21.Att.01-orchestration字段契约表.md
+            - code/
+            - tests/
+            - web/
+          constraints:
+            - 只允许修改 workcase-0007 YAML；不得修改 workcase-0009、workcase-0010、workcase-0011 或 specs/code/web/tests。
+            - 必须独立复跑事实源校验、specs 校验、相关 pytest、必要 Web 检查和 git diff 检查。
+        context_digest: |
+          复核在 /Users/dmh2002/.codex/worktrees/ldvh-wc0006-result-review 执行；知识地图任务导航因 worktree 缺少 LDVH-GOVERNED-PROJECTS.yaml 且 start_node 未被该投影定位而受限，已回退到 WorkCase 原文、21/21.Att.01 原文和确定性命令证据。
+        result:
+          status: pass_with_followups
+          summary: |
+            独立复核通过。controller_self_check 关于执行项完成、验证命令通过、legacy degraded 仅作为兼容信号保留、Web 主展示迁移到 Limited/受限以及不得直接 closed 的判断可信。按 21 状态机，本轮应视为已完成 result_self_checking -> subagents_result_reviewing 的独立复核，并在 controller_resolution 完成后推进到 human_closure_confirming，等待 Human 关闭确认；不得填写 closed_at、closure_outcome 或 Human 关闭确认。
+          key_findings:
+            - |
+              `python3 code/fact_cli.py show workcase-0007` 可读取对象，复核前状态为 result_self_checking，执行项均为 done，主控自检已存在且 required_changes 为空。
+            - |
+              `python3 code/fact_validate.py ldvh-base --format text`、`python3 code/specs_validate.py all --fail-on-diagnostics`、定向 pytest 111 passed、`npm run web:check`、`npm run test:web:api`、runtime-projection、human-gate-report、capability-environment 和 `git diff --check` 均通过。
+            - |
+              `rg -n "degraded|degraded_accepted|降级" code tests web -g '!node_modules'` 的剩余命中与自检分类一致：legacy compatibility 字段/测试、旧诊断命名、Web legacy backend input、响应式 fallback 文档或历史实现计划说明；未发现需退回执行的主状态或 Human-facing 展示缺口。
+            - |
+              Web 检查初次失败原因是 worktree 未安装前端依赖，`npm --prefix web ci` 按锁文件安装后复跑通过；这属于环境准备问题，不构成结果失败。
+            - |
+              知识地图任务导航输出受限不是关闭证据；本复核只把它作为入口限制记录，并以权威原文和确定性命令兜底。
+          recommendations:
+            - 进入 Human 关闭确认后，由 Human 决定是否关闭；若 Human 要求旧接口移除或文档归档，应另行分流，不在本 WorkCase 直接扩大范围。
+          required_changes: []
+          evidence_refs:
+            - ldvh-base/workcases/workcase-0007-code-web-tests-degraded-legacy-migration.yaml
+            - specs/21-WorkCase-工作项.md
+            - specs/attachments/21.Att.01-orchestration字段契约表.md
+            - code/spec_checks/knowledge_map.py
+            - code/spec_checks/v2.py
+            - code/fact_validate.py
+            - code/fact_cli.py
+            - code/spec_checks/assurance_report.py
+            - code/spec_checks/runtime_projection.py
+            - code/spec_checks/capability_environment.py
+            - code/spec_checks/human_gate.py
+            - code/spec_checks/ldvh_assurance.py
+            - tests/code/specs_validate_checks/test_v2.py
+            - tests/code/test_fact_validate.py
+            - tests/code/specs_validate_checks/test_assurance_report.py
+            - tests/code/specs_validate_checks/test_runtime_projection.py
+            - tests/code/specs_validate_checks/test_human_gate.py
+            - tests/code/specs_validate_checks/test_capability_environment.py
+            - tests/code/specs_validate_checks/test_ldvh_assurance.py
+            - web/src/i18n/locales.ts
+            - web/src/utils/executionFlowStatus.ts
+            - web/api/routes/objects.ts
+            - web/src/components/StatusBanner.tsx
+            - web/src/utils/statusColors.ts
+            - command: python3 code/fact_cli.py show workcase-0007
+            - command: python3 code/fact_validate.py ldvh-base --format text
+            - command: python3 code/specs_validate.py all --fail-on-diagnostics
+            - command: python3 -m pytest tests/code/specs_validate_checks/test_v2.py tests/code/test_fact_validate.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_runtime_projection.py tests/code/specs_validate_checks/test_human_gate.py tests/code/specs_validate_checks/test_capability_environment.py tests/code/specs_validate_checks/test_ldvh_assurance.py -q
+            - command: npm run web:check
+            - command: npm run test:web:api
+            - command: python3 code/specs_validate.py runtime-projection
+            - command: python3 code/specs_validate.py human-gate-report
+            - command: python3 code/specs_validate.py capability-environment
+            - command: rg -n "degraded|degraded_accepted|降级" code tests web -g '!node_modules'
+            - command: git diff --check
+        raw_output_ref: null
+        attested_at: '2026-06-25T05:07:00+08:00'
+        attestation:
+          signer: ldvh-worktree-worker-wc0006-result-review
+          statement: |
+            已按用户指定的独立复核范围回读入口、WorkCase、21/21.Att.01 和当前 Code/Web/tests 证据，并复跑验证命令；本结论不替代 Human 关闭确认。
+    controller_resolution:
+      resolved_at: '2026-06-25T05:07:00+08:00'
+      resolver: ldvh-worktree-worker-wc0006-result-review
+      source_review_item_ids:
+        - result-review-1
+      accepted_findings:
+        - 独立复核通过，controller_self_check 中关于验证覆盖、legacy compatibility 边界和状态机限制的结论可信。
+        - 当前已满足进入 human_closure_confirming 的字段条件：结果复核条目、主控处理记录和关闭确认请求时间已补齐。
+      rejected_findings: []
+      required_changes_applied:
+        - 补写 result_review.review_items[result-review-1]。
+        - 补写 result_review.controller_resolution。
+        - 将状态按完整流转推进到 human_closure_confirming，并填写 closure_requested_at。
+        - 更新 closure_evidence 与 residual_risks，使其反映等待 Human 关闭确认而非仍缺结果复核。
+      unresolved_items: []
+      changed_fields:
+        - status
+        - updated
+        - orchestration.result_review.review_items
+        - orchestration.result_review.controller_resolution
+        - closure_evidence
+        - closure_requested_at
+        - residual_risks
+        - revision_history
+      revision_history_refs:
+        - revision_history[1]
+        - revision_history[2]
+      summary: |
+        接受独立复核结论，无范围内强制修改项。根据 21 状态机，本轮补齐独立结果复核后先完成 result_self_checking -> subagents_result_reviewing，再在主控处理记录和关闭请求时间补齐后推进到 human_closure_confirming，等待 Human 决定关闭或退回；本轮不直接 closed。
+    human_closure_confirmation:
+      decision: close
+      confirmed_at: '2026-06-26T05:54:52+08:00'
+      confirmer: human
+      scope: |
+        Human 已确认 workcase-0007 可以关闭。
+      summary: |
+        Human 接受当前验证证据、结果复核和关闭证据，确认本 WorkCase 以 completed 结果关闭.
+verification_evidence: |
+  ## 验证计划
+
+  本轮复核目标是重新判断 workcase-0007 是否仍应停留在 `executing`，或是否可进入结果自检。验证覆盖 WorkCase 查询、事实源校验、legacy 扫描、Code 相关测试、Web 检查/API 测试、specs 综合检查和 0006 点名的运行投影/Human Gate/能力环境检查。
+
+  ## 验证命令
+
+  - `python3 code/fact_cli.py show workcase-0007`
+  - `python3 code/fact_validate.py ldvh-base --format text`
+  - `rg -n "degraded|degraded_accepted|降级" code tests web -g '!node_modules'`
+  - `python3 -m pytest tests/code/specs_validate_checks/test_v2.py tests/code/test_fact_validate.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_runtime_projection.py tests/code/specs_validate_checks/test_human_gate.py tests/code/specs_validate_checks/test_capability_environment.py tests/code/specs_validate_checks/test_ldvh_assurance.py -q`
+  - `python3 -m pytest tests/code -q`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `npm run web:check`
+  - `npm run test:web:api`
+  - `python3 code/specs_validate.py runtime-projection`
+  - `python3 code/specs_validate.py human-gate-report`
+  - `python3 code/specs_validate.py capability-environment`
+  - `git diff --check`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node ldvh-base/workcases/workcase-0007-code-web-tests-degraded-legacy-migration.yaml --task-type work_object --format json`
+
+  ## 验证结果
+
+  - `python3 code/fact_cli.py show workcase-0007`：可读取 WorkCase；复核前状态为 executing，执行项中 item-1 仍为 in_progress，顶层 verification_evidence / closure_evidence / revision_history 缺失。
+  - `python3 code/fact_validate.py ldvh-base --format text`：检查完成，files=49，errors=0，warnings=0。
+  - `rg -n "degraded|degraded_accepted|降级" code tests web -g '!node_modules'`：仍有 legacy compatibility、旧诊断命名、文档 fallback 表达和历史实现计划命中；未发现需退回执行的 Human-facing 主展示或主聚合状态缺口。
+  - `python3 -m pytest tests/code/specs_validate_checks/test_v2.py tests/code/test_fact_validate.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_runtime_projection.py tests/code/specs_validate_checks/test_human_gate.py tests/code/specs_validate_checks/test_capability_environment.py tests/code/specs_validate_checks/test_ldvh_assurance.py -q`：111 passed。
+  - `python3 -m pytest tests/code -q`：339 passed。
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`：active specs 规范诊断通过，diagnostics=0。
+  - `npm run web:check`：通过。
+  - `npm run test:web:api`：通过。
+  - `python3 code/specs_validate.py runtime-projection`：状态 closed，问题数 0。
+  - `python3 code/specs_validate.py human-gate-report`：状态 closed，问题数 0。
+  - `python3 code/specs_validate.py capability-environment`：状态 closed，诊断数 0，环境安装状态声明 not_claimed。
+  - `git diff --check`：通过。
+  - 知识地图任务导航输出为 result_status=limited，原因是 limited_output；本轮只使用其 read_plan 与 source refs 做导航，并回读 WorkCase、21、21.Att.01 和相关事实源命令兜底核对。
+
+  ## 结论
+
+  执行项、成功标准和验证证据足以支持 workcase-0007 完成执行、结果自检、独立结果复核和 Human 关闭确认。2026-06-26T05:54:52+08:00 已写入 `closed_at` 与 `closure_outcome=completed`。
+
+  ## 后续分流
+
+  该 WorkCase 的 legacy 迁移尾巴已转为 follow-up 语义，不阻断当前关闭确认；如要继续推进实现迁移，应另起后续 WorkCase 承接。
+
+  ## 收口结果
+
+  当前收口结果为：已完成关闭；后续继续做 legacy 迁移的事项不留在本 WorkCase 主线。
+closure_evidence: |
+  ## 验证计划
+
+  本轮关闭判断评估执行结果、主控自检、独立结果复核和 Human 关闭确认是否足以支撑已关闭状态。
+
+  ## 验证命令
+
+  - `python3 code/fact_validate.py ldvh-base --format text`
+  - `python3 code/fact_cli.py show workcase-0007`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 -m pytest tests/code/specs_validate_checks/test_v2.py tests/code/test_fact_validate.py tests/code/specs_validate_checks/test_assurance_report.py tests/code/specs_validate_checks/test_runtime_projection.py tests/code/specs_validate_checks/test_human_gate.py tests/code/specs_validate_checks/test_capability_environment.py tests/code/specs_validate_checks/test_ldvh_assurance.py -q`
+  - `npm run web:check`
+  - `npm run test:web:api`
+  - `python3 code/specs_validate.py runtime-projection`
+  - `python3 code/specs_validate.py human-gate-report`
+  - `python3 code/specs_validate.py capability-environment`
+  - `rg -n "degraded|degraded_accepted|降级" code tests web -g '!node_modules'`
+  - `git diff --check`
+
+  ## 验证结果
+
+  本轮复核判断为：workcase-0007 的执行阶段已经真实完成，执行项和成功标准与当前仓库状态一致；主控自检结论可信，独立结果复核未发现范围内硬问题。
+
+  依据 21 WorkCase 状态机，本 WorkCase 已完成 `result_self_checking`、独立 `result_review.review_items`、`controller_resolution` 和 Human 关闭确认；当前 `closed_at` 与 `closure_outcome` 已与关闭结果一致。
+
+  ## 后续分流
+
+  该 WorkCase 的 legacy 迁移尾巴已转为 follow-up 语义，不阻断当前关闭确认；如要继续推进实现迁移，应另起后续 WorkCase 承接。
+
+  ## 收口结果
+
+  当前收口结果为：已完成关闭；后续继续做 legacy 迁移的事项不留在本 WorkCase 主线。
+
+  ## 结论
+
+  当前关闭判断：Human 已确认关闭，`closed_at`、`closure_outcome` 和 `result_review.human_closure_confirmation` 已完成一致化；若后续发现新问题，应另行追加 revision_history 或新承接对象。
+closure_requested_at: '2026-06-25T05:07:00+08:00'
+closed_at: '2026-06-26T05:54:52+08:00'
+closure_outcome: completed
+residual_risks:
+  - Human 已在 2026-06-26T05:54:52+08:00 确认关闭；历史关闭前提醒不再作为当前状态风险。
+  - 知识地图任务导航在本 worktree 中因入口配置/start_node 定位受限；本轮已以原文和事实源命令兜底，但后续复核应知悉该限制。
+  - "`degraded|degraded_accepted|降级` 扫描仍有 legacy compatibility、旧诊断命名、Web docs fallback 和历史实现计划命中；若后续扩大目标到文档归档或旧接口移除，需要另行决策。"
+followup_refs:
+  - Code guard：`python3 code/specs_validate.py all --fail-on-diagnostics` 追加活跃表面旧表达检查，防止未标注的旧词回流。
+revision_history:
+  - at: '2026-06-25T04:52:00+08:00'
+    from_status: executing
+    to_status: result_self_checking
+    actor: ldvh-subagent-state-audit
+    reason: |
+      重新核对 workcase-0007 的执行项、成功标准、验证证据和当前仓库状态后，确认执行阶段已完成但缺少结果自检、顶层验证/关闭证据和修订记录；按 21 状态机不得直接进入关闭确认或 closed。
+    changed_fields:
+      - status
+      - updated
+      - orchestration.execution_items[0].status
+      - orchestration.execution_items[0].result_summary
+      - orchestration.execution_items[4].result_summary
+      - orchestration.result_review.controller_self_check
+      - orchestration.result_review.review_policy
+      - orchestration.result_review.controller_resolution
+      - orchestration.result_review.human_closure_confirmation
+      - verification_evidence
+      - closure_evidence
+      - closure_requested_at
+      - closed_at
+      - closure_outcome
+      - residual_risks
+      - followup_refs
+      - revision_history
+    summary: |
+      item-1 修正为 done；补写 2026-06-25 的事实源查询、Code/Web 测试、specs 校验、扫描结果和状态判断。当前进入 result_self_checking，下一步应进入独立结果复核；不得跳过 Human Gate 或直接关闭。
+  - at: '2026-06-25T05:07:00+08:00'
+    from_status: result_self_checking
+    to_status: subagents_result_reviewing
+    actor: ldvh-worktree-worker-wc0006-result-review
+    reason: |
+      按用户委派执行独立结果复核，回读 WorkCase、21 WorkCase 状态机、21.Att.01 orchestration 字段契约和当前 Code/Web/tests 证据，复跑要求的验证命令；确认 controller_self_check 可提交独立复核且 required_changes 为空。
+    changed_fields:
+      - orchestration.result_review.review_items
+      - updated
+      - revision_history
+    summary: |
+      补写 result-review-1 独立复核条目，结论为 pass_with_followups 且无 required_changes；该步骤承载 result_self_checking -> subagents_result_reviewing 的独立复核事实。
+  - at: '2026-06-25T05:07:00+08:00'
+    from_status: subagents_result_reviewing
+    to_status: human_closure_confirming
+    actor: ldvh-worktree-worker-wc0006-result-review
+    reason: |
+      独立结果复核通过后，主控处理记录已接受复核发现，确认无未决项或范围内强制修改项；按 21 状态机可提交 Human 关闭确认，但不得直接关闭。
+    changed_fields:
+      - status
+      - updated
+      - orchestration.result_review.controller_resolution
+      - closure_evidence
+      - closure_requested_at
+      - residual_risks
+      - revision_history
+    summary: |
+      补齐 controller_resolution、closure_requested_at、closure_evidence 和 residual_risks，将状态推进到 human_closure_confirming，等待 Human 决定关闭、退回补审、继续执行或修改方案；未填写 closed_at、closure_outcome 或 human_closure_confirmation。
+related_sparks:
+  - spark-0026
+related_workcases:
+  - workcase-0006
+related_adrs: []
+related_pitfalls: []
+related_docs:
+  - specs/04-Code确定性执行规范.md
+  - specs/05-Web信息同步规范.md
+  - specs/08-测试基础规范.md

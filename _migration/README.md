@@ -47,3 +47,5 @@
 `_migration/9A-migration-layer-dependency-audit.md` 记录阶段 9A 的迁移层依赖审计。它确认稳定 `code/` 没有 import `_migration`，但 formal review hash gate、迁移测试和少量运行时 source_ref 仍依赖 `_migration`；因此当前不删除 tracked 迁移材料，下一步进入 9B 最小提交入口。
 
 `_migration/9B-minimal-commit-entry.md` 记录阶段 9B 的最小提交入口迁移。它说明 V3 已新增自有 commit gate、`specs_validate.py commit-gate` 和 `code/commit_validate.py` 包装器，但没有安装真实 Git Hook，也没有声明环境入口已生效。
+
+`_migration/9C-fact-object-full-migration.md` 记录阶段 9C 的事实对象完整迁移。它说明 V2 Spark、WorkCase、Pitfall、Study 真实实例已迁入 V3 `ldvh-base/`，ADR 建立空实例目录和字段 schema，Code/tests 已能校验字段闭集、必填字段、legacy 字段、状态、Study 正文骨架和对象关系；它不授权 Web 写入、Hook 启用或正式行动模板实例创建。

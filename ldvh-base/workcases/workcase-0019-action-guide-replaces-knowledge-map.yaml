@@ -1,0 +1,528 @@
+id: workcase-0019
+type: workcase
+title: 行动指南替代知识地图的默认入口设计
+goal: |
+  承接 spark-0036，把“行动指南”建立为 LDVH 所有 AI 行动开始前的统一指南能力：在既有知识地图能力和前序行动指南要求基础上补充加强，输出本次行动该怎么做、注意什么、遵守什么、用什么工具、哪里必须停、读完后怎么继续和如何验证。行动指南成立后，应按受控迁移删除 knowledge-map 作为独立工具、入口和 active 能力名，但不得删除或弱化既有知识地图已验证的关系投影、来源回指、read_plan、stop_conditions、next_queries、impact_summary、问题诊断和渐进读取能力。
+status: closed
+created: '2026-06-27T06:07:56+08:00'
+updated: '2026-06-27T07:11:29+08:00'
+priority: P1
+description: |
+  spark-0036 已将问题从“知识地图主动提醒不足”收敛为“行动指南应替代旧 Rules 长路由和 knowledge-map 独立入口”。行动指南不是一个与 knowledge-map 并存的第二工具，而是继承知识地图能力后形成的更高层默认入口。它面向所有 LDVH 行动，包括讨论、判断、创建 Spark、处理工作对象、修改 specs/rules/code/web、运行 Hook/Skill/Agent、提交、部署、复核、分流和 Human Gate。
+
+  本 WorkCase 的第一阶段不直接改 Code、不删除 knowledge-map，也不修改 Runtime Protocol 门禁。目标是先把行动指南的 Schema、职责边界、输入范围、迁移清单、删除条件和审查意见收敛到可执行方案，避免把“删除 knowledge-map”误做成先删后补，或把“所有管辖项目事实源”误做成全量上下文注入。
+success_criteria: |
+  - [ ] 明确行动指南的正式定位：替代旧 Rules 长路由和 knowledge-map 独立入口；不得与 knowledge-map 长期并存为两个用户可见工具。
+  - [ ] 明确行动指南必须继承既有知识地图能力：关系投影、来源回指、read_plan、stop_conditions、next_queries、impact_summary、问题诊断和渐进读取不得弱化。
+  - [ ] 定义行动指南 AI-facing Schema 草案，至少包含行动类型、target/职责对象证据、source_refs、must_read_p0_p1、3-5 条注意事项、工具计划、STOP candidates、Human Gate candidates、diagnostics/result_status、next_queries、post-read action plan、verification_plan 和 fallback，并明确必填性、失败态、字段间合成关系和 fallback 分流语义。
+  - [ ] 明确 AI 消费流程：识别 target / action hint → 生成行动指南 → 回读 P0/P1 原文 → acknowledge-read-plan → 基于 read_plan、stop candidates、tool_plan、Human Gate candidates 和 diagnostics 合成 post-read action plan → 执行/STOP/提问 → 验证。
+  - [ ] 明确最小调用输入：用户目标、cwd、target paths、action hint、diff / staged paths、explicit project 和是否请求跨项目召回；Code 不得自行理解自然语言价值取舍。
+  - [ ] 明确输入范围：active specs、授权附件、运行时资产和所有管辖项目事实源默认纳入可发现、可按条件查询、可召回和可影响判断范围；默认输出仍 target-first、current_project 起步、P0/P1 渐进读取；只有跨项目查重、影响判断、全局召回、用户明确要求或 target 指向跨项目关系时才升级 all_governed_projects。
+  - [ ] 写硬跨项目边界：保留项目命名空间，不得裸 ID 合并，不得越界读取未登记项目/未授权 docs/项目根之外路径，不得把派生关系或诊断回写为事实源。
+  - [ ] 写硬分层边界：Runtime Protocol / dispatcher 仍负责 canonical event、receipt、blocking、acknowledge-read-plan、pre-tool-use、git.commit-msg 和写入/提交门禁；行动指南只生成基于事实源的行动指南，不自行放行、阻断或授权 Human Gate。
+  - [ ] 完成 knowledge-map 引用迁移影响清单，覆盖 specs、attachments、rules、code、tests、hooks、web 和工作对象引用，区分 active 入口迁移、内部实现重命名、历史文本保留和删除条件。
+  - [ ] 写硬删除前置：删除 knowledge-map 独立 CLI/API/active 名称/入口前，必须完成影响扫描、action-guide 等价能力验证、测试通过、Rules 同步审查和 Human Gate。
+  - [ ] 定义 AI 价值验收场景和指标，至少覆盖错读防止、旧 Rules 长路由防回潮、跨项目查重、knowledge-map 不可用 fallback、读后行动计划质量和上下文预算控制。
+  - [ ] 定义字段预算：P0/P1 数量上限、attention points 保持 3-5 条、P2/P3 只能通过 next_queries 展开、全管辖项目只做召回/影响判断不注入全文。
+  - [ ] 定义 Code 可实现边界：新增 action-guide 契约和测试前不得删除旧入口；action_type 必须来自显式 action_hint、target 类型、tool/read-write 类型或 staged paths，不能由 Code 猜测自然语言价值取舍。
+  - [ ] 定义 target 解析优先级：事实对象 > active spec / runtime asset > external path placeholder，并按 path 去重 read_plan，避免 WorkCase / Spark 路径被误解析为 external path 节点。
+  - [ ] 定义交互密度策略：支持 receipt / brief / standard / full 输出模式；默认 brief；同一 cwd + targets + action_hint + diff/staged hash + project_scope 已 ack 时只返回 guide_receipt=found，不重复刷完整指南。
+  - [ ] 定义 action-guide 输出授权语义：只能输出 stop_candidates、human_gate_candidates、required_dispatcher_events、not_authorized 等候选和提示字段，不得输出 allowed / approved / unblocked。
+  - [ ] 定义诊断隔离：无关 governed project diagnostics 不得污染本次 action-guide result_status；跨项目诊断只作为召回/影响判断提示或 next_queries。
+  - [ ] 完成方案审查：至少包含 AI 价值审查、规范审查和 Code 可实现性/交互密度审查，并由主控记录处理结论。
+source: |
+  来源 Spark：`ldvh-base/sparks/spark-0036-knowledge-map-proactive-alerting-gap.yaml`。
+
+  Human 明确要求推动下一步：先建立 WorkCase，再安排审查；审查必须包含 AI 价值审查和规范审查。随后补充要求增加 Code 角度审查：确认行动指南到底能不能实现，以及“AI 每次行动时给出所需信息”是否会过于密集、啰嗦或影响执行节奏。前序讨论已确认：行动指南成立后 knowledge-map 应删除为独立工具/入口/active 能力名；行动指南必须在前面收敛出的行动指南要求及既有知识地图能力基础上补充加强，不能违背或弱化；行动指南默认应纳入 active specs 和所有管辖项目事实源作为可查询/可召回范围。
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 定义行动指南定位与 Schema 草案
+      role: spec-design
+      mode: single
+      input_refs:
+        - ldvh-base/sparks/spark-0036-knowledge-map-proactive-alerting-gap.yaml
+        - specs/04-Code确定性执行规范.md
+        - specs/attachments/04.Att.02-Code命令入口表.md
+        - specs/attachments/04.Att.03-Code结构化输出Schema表.md
+        - specs/attachments/04.Att.05-知识地图输入范围表.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - specs/attachments/04.Att.07-受控写入前检查矩阵.md
+        - specs/06-运行时扩展规范.md
+        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - code/specs_validate.py
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/preflight.py
+        - code/spec_checks/deployment_entries.py
+        - code/hook_dispatch.py
+      expected_output: |
+        形成行动指南的职责定位、AI-facing Schema、必填字段、失败态、字段间合成关系、fallback 分流语义、输入范围、渐进读取规则、字段预算、target 解析优先级、输出授权语义、分级输出模式和分层边界草案；明确行动指南继承知识地图能力并补充行动类型、注意事项、工具计划、Human Gate candidates、post-read action plan 和验证建议。
+      status: skipped
+      blocking_reason: ''
+      result_summary: |
+        Human 确认本 WorkCase 不继续推进：行动指南替代 knowledge-map 的整体工作量过大，且当前知识地图已基本满足入口导航需求。本执行项未进入实现。
+      evidence_refs: []
+    - id: item-2
+      title: 扫描 knowledge-map 引用与迁移影响面
+      role: impact-analysis
+      mode: single
+      input_refs:
+        - specs
+        - rules
+        - code
+        - tests
+        - hooks
+        - web
+        - ldvh-base
+        - LDVH-GOVERNED-PROJECTS.yaml
+        - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+        - specs/attachments/04.Att.05-知识地图输入范围表.md
+        - specs/attachments/07.Att.10-事实源读取策略核对表.md
+        - specs/attachments/07.Att.11-非事实源排除清单.md
+      expected_output: |
+        列出所有 `knowledge-map`、`知识地图`、知识地图 Schema / CLI / Runtime / Rules / test / Web 引用，并按 `LDVH-GOVERNED-PROJECTS.yaml` 登记项目核对工作对象事实源引用；分类为必须迁移到行动指南、内部实现命名调整、历史事实文本保留、删除前置条件和必须进入 Human Gate 的范围。
+      status: skipped
+      blocking_reason: ''
+      result_summary: |
+        Human 确认不继续推进 action-guide 替代路线；不再执行 knowledge-map 全量引用迁移影响扫描。
+      evidence_refs: []
+    - id: item-3
+      title: 制定受控删除与兼容迁移顺序
+      role: migration-design
+      mode: single
+      input_refs:
+        - code/specs_validate.py
+        - code/spec_checks/knowledge_map.py
+        - code/hook_dispatch.py
+        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+        - specs/attachments/04.Att.02-Code命令入口表.md
+        - specs/attachments/04.Att.03-Code结构化输出Schema表.md
+        - specs/attachments/04.Att.07-受控写入前检查矩阵.md
+        - tests/code
+      expected_output: |
+        给出从 knowledge-map 到 action-guide 的受控迁移顺序：先新增 `code/spec_checks/action_guide.py` 或等价模块，复用 v2_check_build / KnowledgeMapMixin / preflight_build / deployment_entries_asset_records；再建立 action-guide CLI/API、Schema、dispatcher receipt 消费、fallback read_plan、测试、文案迁移、双跑对照或回退策略；验证 action-guide 完整继承既有能力并完成 Rules 同步审查和 Human Gate 后，再删除 knowledge-map 独立命令和 active 入口表述。短期兼容不得演变为长期双入口。
+      status: skipped
+      blocking_reason: ''
+      result_summary: |
+        Human 确认不删除 knowledge-map 独立入口；受控删除与兼容迁移顺序不再作为本 WorkCase 执行目标。
+      evidence_refs: []
+    - id: item-5
+      title: 设计 action-guide 交互密度与 receipt 策略
+      role: code-design
+      mode: single
+      input_refs:
+        - code/hook_dispatch.py
+        - code/specs_validate.py
+        - code/spec_checks/knowledge_map.py
+        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - specs/06-运行时扩展规范.md
+      expected_output: |
+        明确 action-guide 触发频率、receipt / brief / standard / full 输出模式、默认预算、同输入去重、guide_receipt 指纹、pre-tool-use 只查 receipt 的规则，以及何时因 target/diff/action_hint 变化或缺 ack 重发摘要；避免“每次行动”都刷完整指南造成高噪声高打扰。
+      status: skipped
+      blocking_reason: ''
+      result_summary: |
+        Human 确认不继续推进 action-guide；交互密度与 receipt 策略不再作为本 WorkCase 执行目标。
+      evidence_refs: []
+    - id: item-4
+      title: 主控吸收方案审查并提交 Human 方案确认
+      role: controller-synthesis
+      mode: single
+      input_refs:
+        - ldvh-base/workcases/workcase-0019-action-guide-replaces-knowledge-map.yaml
+      expected_output: |
+        吸收 AI 价值审查和规范审查结论，修正 WorkCase 方案；若无未决硬问题，则填写 plan_review.controller_resolution，并将状态推进到 human_plan_confirming 等待 Human 确认执行；若仍有硬问题，保留 subagents_plan_reviewing 并安排二次审查。
+      status: skipped
+      blocking_reason: ''
+      result_summary: |
+        主控已吸收已有方案审查结论和 Human 最新关闭判断：方向曾成立但不继续执行，WorkCase 以 cancelled 结果关闭。
+      evidence_refs: []
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本 WorkCase 会把 LDVH 默认行动入口从 knowledge-map / 旧 Rules 长路由迁移到行动指南，并涉及 active specs、运行时资产、所有管辖项目事实源、Runtime Protocol、dispatcher、Code CLI、测试和 Web 文案。执行前必须先确认该能力是否真正服务 AI 行动价值，并确认它不冲突现有规范边界和事实源边界。
+      required_perspectives:
+        - AI 价值审查
+        - 规范审查
+        - Code 可实现性/交互密度审查
+      optional_perspectives:
+        - 跨项目事实源边界
+      tool_method_requirements:
+        - 行动指南必须在既有知识地图能力和前序行动指南要求基础上补充加强，不得违背或弱化。
+        - knowledge-map 最终删除前，必须完成 action-guide CLI/API、Schema、dispatcher receipt、fallback read_plan、测试和文案迁移。
+        - 所有管辖项目是可查询/可召回范围，不是全量上下文注入；输出必须 target-first、current_project 起步、P0/P1 渐进读取。
+        - 行动指南不得替代 Runtime Protocol / dispatcher 门禁、specs 权威、Human Gate 授权或 AI 对用户意图的初判。
+        - Code 可实现性审查必须判断 action-guide 能否从现有 specs、事实源、运行时资产和 Git 输入确定性生成；必须评估每次 AI 行动都触发指南是否过密、过长、重复或打断执行，并提出节流、摘要、模式或分级输出策略。
+      aggregation_rule: |
+        若 AI 价值审查认为行动指南不能显著降低 AI 错读、漏读、旧 Rules 长路由回潮或跨项目遗漏风险，本 WorkCase 不得进入实现；若规范审查发现与 04/06/07/21 或 Runtime Protocol 冲突，必须先修正方案；若 Code 可实现性/交互密度审查认为 action-guide 无法确定性生成或会造成高噪声高打扰，必须先补分级输出、节流和预算策略，再提交 Human 方案确认。
+      review_items:
+        - id: plan-review-ai-value-1
+          reviewer: subagent-ai-value
+          role: AI 价值审查
+          agent_name: Anscombe
+          requested_at: '2026-06-27T06:08:30+08:00'
+          perspective: ai-value-review
+          result:
+            status: fail
+            summary: |
+              方向成立，但当前 WorkCase 更像设计任务单，尚不足以作为 AI 可稳定执行的行动指南契约。进入实现前需要补 AI-facing Schema 细化、读后行动计划合成规则、AI 价值成功指标、字段预算和最小调用输入。
+            key_findings:
+              - 缺少字段必填性、失败态、字段间合成关系、post-read action plan 结构和 fallback 分流语义。
+              - 缺少 AI 在消费 P0/P1 后如何从 read_plan、stop candidates、tool_plan、Human Gate candidates 和 diagnostics 合成下一步行动的规则。
+              - 缺少可验证的 AI 价值成功指标与 fixture / 回归场景。
+              - 全行动范围和全管辖项目召回容易对 AI 过重，需要字段预算和渐进展开约束。
+            required_changes:
+              - 补 action_guide 最小 Schema：action_type、target_evidence、source_refs、must_read_p0_p1、tool_plan、stop_candidates、human_gate_candidates、diagnostics/result_status、post_read_action_plan、verification_plan、fallback。
+              - 补 AI 使用流程：识别 target、生成行动指南、读 P0/P1、acknowledge、合成 post-read action plan、执行/STOP/提问、验证。
+              - 补最小提示输入：用户目标、cwd、target paths、action hint、diff/staged paths、explicit project、是否跨项目召回。
+              - 补成功指标和测试场景：错读防止、旧 Rules 长路由防回潮、跨项目查重、knowledge-map 不可用 fallback、读后行动计划质量。
+              - 补字段预算：P0/P1 数量上限、attention points 3-5 条、P2/P3 只通过 next_queries 展开、全管辖项目只做召回/影响判断不注入全文。
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0019-action-guide-replaces-knowledge-map.yaml
+              - ldvh-base/sparks/spark-0036-knowledge-map-proactive-alerting-gap.yaml
+              - specs/attachments/04.Att.06-知识地图投影Schema表.md
+              - specs/06-运行时扩展规范.md
+        - id: plan-review-spec-1
+          reviewer: subagent-spec-boundary
+          role: 规范审查
+          agent_name: Aristotle
+          requested_at: '2026-06-27T06:08:45+08:00'
+          perspective: specs-and-fact-source-boundary
+          result:
+            status: fail
+            summary: |
+              整体方向成立，但进入执行前必须补 WorkCase 字段契约、结果复核策略、knowledge-map 删除 Human Gate 前置、Rules 同步审查输入和跨项目读取措辞收窄。
+            key_findings:
+              - execution_items 缺少 result_summary 和 evidence_refs。
+              - result_review.review_policy 为空，不符合新建 WorkCase 草案应预置结果复核视角的要求。
+              - 删除 knowledge-map 的 Human Gate 前置条件不够硬；删除/重命名 Code 命令、固定 Rules/Runtime 入口或关键回归入口必须先完成影响扫描、等价能力验证、测试、Rules 同步审查和 Human Gate。
+              - “所有管辖项目事实源默认纳入可查询/可召回/可影响判断范围”应收窄为默认可发现/可按条件查询，不是默认读取或注入。
+              - 迁移影响面缺少 specs/30 Rules 入口同步审查作为明确输入。
+            required_changes:
+              - 给每个 execution_items 补 result_summary 和 evidence_refs。
+              - 为 result_review.review_policy 预置规范一致性/事实源边界、实现与验证证据、WorkCase 治理与关闭材料等复核视角。
+              - 把 knowledge-map 删除前置改成硬要求：影响扫描、action-guide 等价能力验证、测试通过、Rules 同步审查和 Human Gate 完成后才可删除旧 CLI/API/active 名称/入口。
+              - 在 related_docs 和 input_refs 增加 specs/30、04.Att.05、04.Att.03、04.Att.07、07.Att.10、07.Att.11。
+              - 收窄所有管辖项目措辞：默认 current_project + target-first；仅在跨项目查重、影响判断、全局召回、用户明确要求或 target 指向跨项目关系时升级 all_governed_projects。
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0019-action-guide-replaces-knowledge-map.yaml
+              - specs/21-WorkCase-工作项.md
+              - specs/attachments/21.Att.01-orchestration字段契约表.md
+              - specs/04-Code确定性执行规范.md
+              - specs/06-运行时扩展规范.md
+              - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+        - id: plan-review-code-density-1
+          reviewer: subagent-code-density
+          role: Code 可实现性/交互密度审查
+          agent_name: Locke
+          requested_at: '2026-06-27T06:20:30+08:00'
+          perspective: code-feasibility-and-interaction-density
+          result:
+            status: fail
+            summary: |
+              可实现，现有 Code 有足够底座：knowledge-map 投影、preflight、Runtime dispatcher/receipt、运行时资产解析和事实对象校验都可复用。但当前 WorkCase 还不能直接实现，必须先收紧 action-guide Schema、触发节流、receipt 缓存、target 解析优先级和 Code 不替代判断的边界。
+            key_findings:
+              - target 解析可能把 WorkCase 路径优先解析成 external path 节点；action-guide 需要事实对象 > active spec/runtime asset > external path placeholder 的确定性优先级。
+              - action-guide 入口和 Schema 尚不存在，现有 CLI、入口表和 dispatcher 仍以 knowledge-map 为中心。
+              - “每次行动给指南”若不加节流会高打扰；必须采用摘要/receipt-first 和同输入去重。
+              - action-guide 只能输出 candidates、required_dispatcher_events 和 not_authorized，不得输出 allowed/approved/unblocked。
+              - action_type 必须来自显式 action_hint、target 类型、tool/read-write 类型或 staged paths；不确定时只能 limited 并要求补 target/action_hint。
+            required_changes:
+              - 新增 action-guide 契约和测试前不得删除旧入口。
+              - 规定 target 解析优先级并按 path 去重 read_plan。
+              - 支持 receipt / brief / standard / full 输出模式，默认 brief；同一 cwd + targets + action_hint + diff/staged hash + project_scope 已 ack 时只返回 guide_receipt=found。
+              - dispatcher session-start 可调用 action-guide，但 dispatcher 继续负责写 receipt、ack、blocking；pre-tool-use 默认只查 receipt，只有 target/diff/action_hint 变化或缺 ack 才重发摘要。
+              - 最终删除 knowledge-map 独立 CLI 前增加 allowlist 扫描测试，确保 active docs/code/tests/hooks/web 不再引用旧入口。
+              - 增补回归：target path 解析到 WorkCase fact object、fallback read_plan、空 P0/P1 不可 ack、brief 输出预算、同输入 receipt 不重复刷屏、跨项目同 ID 不合并、无关 governed project diagnostics 不污染本次 action-guide。
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0019-action-guide-replaces-knowledge-map.yaml
+              - code/specs_validate.py
+              - code/spec_checks/knowledge_map.py
+              - code/spec_checks/preflight.py
+              - code/spec_checks/deployment_entries.py
+              - code/hook_dispatch.py
+              - rules/LDVH-RUNTIME-PROTOCOL.md
+              - specs/04-Code确定性执行规范.md
+              - specs/attachments/04.Att.02-Code命令入口表.md
+    controller_resolution:
+      resolved_at: '2026-06-27T07:11:29+08:00'
+      resolver: main_controller
+      source_review_item_ids:
+        - plan-review-ai-value-1
+        - plan-review-spec-1
+        - plan-review-code-density-1
+      accepted_findings:
+        - 三个方案审查均认为 action-guide 方向成立但不能直接进入实现。
+        - 进入实现前需要补 Schema、字段预算、target 解析、交互节流、诊断隔离、删除前置和 Human Gate。
+        - Code 底座可复用，但迁移和删除 knowledge-map 的工作量较大。
+      rejected_findings: []
+      required_changes_applied:
+        - Human 最新判断取消本 WorkCase，不再推进 action-guide 替代 knowledge-map。
+        - 将执行项标记为 skipped，并明确未实现 action-guide、未删除 knowledge-map。
+      unresolved_items: []
+      changed_fields:
+        - status
+        - orchestration.execution_items
+        - closure_evidence
+        - closure_outcome
+      summary: |
+        主控吸收方案审查和 Human 最新判断：action-guide 替代 knowledge-map 的方案成本过高，当前知识地图能力已基本满足需求。本 WorkCase 不再进入执行或二次方案审查，转为取消关闭。
+    human_confirmation:
+      decision: execute
+      scope: |
+        Human 明确要求将 workcase-0019 视为关闭且已废弃；本次授权范围仅为取消关闭和事实源收口，不授权执行 action-guide 替代实现。
+      constraints:
+        - 不删除 knowledge-map 独立 CLI、入口或 active 能力名。
+        - 不声称 action-guide 已实现。
+        - 同步处理来源 Spark 的废弃状态。
+      confirmed_at: '2026-06-27T07:11:29+08:00'
+      summary: |
+        Human 判断该路线工作量过大，且知识地图基本符合需求；要求关闭并废弃本 WorkCase。
+  result_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    controller_self_check:
+      controller: main-controller-codex
+      checked_at: '2026-06-27T07:11:29+08:00'
+      prompt_context:
+        objective: |
+          检查 workcase-0019 是否应按 Human 最新判断取消关闭，并确认未完成的 action-guide / knowledge-map 删除事项不会被误写为完成。
+        input_refs:
+          - ldvh-base/workcases/workcase-0019-action-guide-replaces-knowledge-map.yaml
+          - ldvh-base/sparks/spark-0036-knowledge-map-proactive-alerting-gap.yaml
+          - specs/20-Spark-火花.md
+          - specs/21-WorkCase-工作项.md
+      result:
+        status: pass_with_followups
+        summary: |
+          主控自检通过：本 WorkCase 尚未进入实现执行，action-guide CLI/API、Schema、dispatcher receipt、fallback read_plan、测试和 knowledge-map 删除迁移均未完成；Human 已确认因工作量过大且知识地图基本满足需求而取消关闭。关闭结果应为 cancelled，来源 Spark 应同步 discarded。
+        key_findings:
+          - 不应新增“已废弃”WorkCase 状态，应使用 `closed` + `closure_outcome: cancelled`。
+          - 未执行的 execution_items 应标记为 skipped，并写清未实现原因。
+          - knowledge-map 现有能力保留，不删除独立入口。
+          - 后续如重新出现强需求，应新建 Spark 或 WorkCase。
+        required_changes: []
+        evidence_refs:
+          - closure_evidence
+          - ldvh-base/sparks/spark-0036-knowledge-map-proactive-alerting-gap.yaml
+      attested_at: '2026-06-27T07:11:29+08:00'
+      attestation:
+        signer: main-controller-codex
+        statement: 基于 Human 最新关闭判断、WorkCase 当前执行状态和 Spark 状态机完成取消关闭自检。
+    review_policy:
+      selection_reason: |
+        本 WorkCase 完成后会形成 action-guide 方案、迁移清单和删除条件，结果复核必须确认方案没有弱化既有知识地图能力、没有越过 Runtime Protocol / dispatcher / Human Gate 边界，也没有把全管辖项目召回误做成全量上下文注入。
+      required_perspectives:
+        - 规范一致性与事实源边界
+        - AI 价值与可执行性
+        - 迁移清单和删除条件完整性
+      optional_perspectives:
+        - Code / tests 可实现性
+      tool_method_requirements:
+        - 结果复核前必须先完成主控自检，检查 success_criteria 每一项是否有证据。
+        - 复核必须确认 knowledge-map 能力继承清单、action-guide 新增字段、Human Gate 删除前置和 Rules 同步审查要求均已回写。
+        - 复核不得把主控自检当成独立复核。
+      aggregation_rule: 若任一 required perspective 发现 action-guide 弱化既有知识地图能力、绕过 Runtime Protocol / dispatcher、或删除 knowledge-map 前置不完整，则不得提交 Human 关闭确认。
+    review_items:
+      - id: result-review-human-cancel-1
+        reviewer: Human
+        role: 关闭范围确认
+        agent_name: Human
+        requested_at: '2026-06-27T07:11:29+08:00'
+        perspective: human-cancel-decision
+        result:
+          status: pass
+          summary: |
+            Human 明确确认 workcase-0019 应视为关闭且已废弃，原因是工作量太大且知识地图基本符合需求。
+          key_findings:
+            - 不继续推进 action-guide 替代 knowledge-map。
+            - 不删除 knowledge-map 独立入口。
+            - 来源 Spark 应同步处理，不继续作为待处理入口悬空。
+          required_changes: []
+          evidence_refs:
+            - current-conversation
+    controller_resolution:
+      resolved_at: '2026-06-27T07:11:29+08:00'
+      resolver: main_controller
+      source_review_item_ids:
+        - result-review-human-cancel-1
+      accepted_findings:
+        - Human 确认本 WorkCase 不继续推进并关闭为 cancelled。
+        - action-guide 未实现，knowledge-map 不删除。
+        - spark-0036 应同步废弃，避免继续作为待处理入口。
+      rejected_findings: []
+      required_changes_applied:
+        - 已将 WorkCase 状态设为 closed，closure_outcome 设为 cancelled。
+        - 已将 execution_items 标记为 skipped，并在 closure_evidence 中说明未完成范围。
+        - 已将 spark-0036 标记为 discarded。
+      unresolved_items: []
+      changed_fields:
+        - status
+        - orchestration.execution_items
+        - orchestration.result_review
+        - closure_evidence
+        - closure_outcome
+        - residual_risks
+      summary: |
+        主控已按 Human 关闭确认收口：本 WorkCase 取消推进，不继续设计或实现 action-guide 替代 knowledge-map；后续若需要处理更小的知识地图缺口，应另建对象。
+    human_closure_confirmation:
+      decision: close
+      scope: |
+        关闭 workcase-0019，不再推进 action-guide 替代 knowledge-map 的方案设计、实现或删除迁移。
+      constraints:
+        - 不删除 knowledge-map 独立 CLI、入口或 active 能力名。
+        - 保留现有知识地图 read_plan、stop_conditions、next_queries、impact_summary、来源回指和渐进读取能力。
+        - 如未来重新出现强需求，应新建 Spark 或 WorkCase，而不是直接重开本 WorkCase。
+      confirmed_at: '2026-06-27T07:11:29+08:00'
+      summary: |
+        Human 确认将 workcase-0019 视为关闭且已废弃；关闭原因是整体工作量过大，而当前知识地图能力已经基本符合需求。
+related_sparks:
+  - spark-0036
+related_workcases: []
+related_adrs: []
+related_pitfalls: []
+related_docs:
+  - specs/04-Code确定性执行规范.md
+  - specs/attachments/04.Att.02-Code命令入口表.md
+  - specs/attachments/04.Att.03-Code结构化输出Schema表.md
+  - specs/attachments/04.Att.05-知识地图输入范围表.md
+  - specs/attachments/04.Att.06-知识地图投影Schema表.md
+  - specs/attachments/04.Att.07-受控写入前检查矩阵.md
+  - specs/06-运行时扩展规范.md
+  - specs/30-rules-entry-sync-review-Rules入口同步审查.md
+  - specs/07-事实源边界与Git追溯规范.md
+  - specs/attachments/07.Att.10-事实源读取策略核对表.md
+  - specs/attachments/07.Att.11-非事实源排除清单.md
+  - specs/21-WorkCase-工作项.md
+  - specs/attachments/21.Att.01-orchestration字段契约表.md
+  - rules/LDVH-RUNTIME-PROTOCOL.md
+  - LDVH-GOVERNED-PROJECTS.yaml
+  - code/specs_validate.py
+  - code/spec_checks/knowledge_map.py
+  - code/spec_checks/preflight.py
+  - code/spec_checks/deployment_entries.py
+  - code/hook_dispatch.py
+verification_evidence: |
+  ## 验证计划
+
+  验证本 WorkCase 未进入 action-guide 实现，关闭口径为取消推进；同时确认当前知识地图能力保留。
+
+  ## 验证命令
+
+  - `python3 code/fact_validate.py ldvh-base/`
+  - `git diff --check`
+
+  ## 验证结果
+
+  本 WorkCase 未进入实现执行，不产生 action-guide CLI/API、Schema、dispatcher receipt、fallback read_plan、测试或 Web 文案迁移结果。
+
+  已有方案审查记录显示：AI 价值、规范边界、Code 可实现性/交互密度三类审查均认为方向成立但不得直接进入实现，必须先补 Schema、字段预算、target 解析、节流、诊断隔离和删除前置。Human 随后确认不继续推进该路线。
+
+  ## 结论
+
+  当前知识地图已具备 read_plan、stop_conditions、next_queries、impact_summary、来源回指和渐进读取能力，基本满足当前入口导航需求；不再以本 WorkCase 推进 action-guide 替代和 knowledge-map 删除。
+closure_evidence: |
+  ## 验证计划
+
+  只验证本次取消关闭事实源收口：确认 WorkCase 未进入实现、未删除 knowledge-map、Human 已明确取消推进，并同步处理来源 Spark。
+
+  ## 验证命令
+
+  - `python3 code/fact_validate.py ldvh-base/`
+  - `git diff --check`
+
+  ## 验证结果
+
+  - WorkCase 当前关闭结果为 `cancelled`，执行项为 `skipped`，关闭证据明确 action-guide 未实现、knowledge-map 未删除。
+  - 来源 Spark `spark-0036` 已同步转为 `discarded`，废弃原因与本 WorkCase 关闭原因一致。
+  - 当前知识地图能力保留为既有入口导航能力。
+
+  ## 结论
+
+  Human 确认关闭并废弃 workcase-0019。关闭原因是 action-guide 替代 knowledge-map 的方案工作量过大，且当前知识地图已基本符合需求；继续推进不具备足够投入产出比。
+
+  ## 未完成范围
+
+  本 WorkCase 未完成 action-guide Schema、CLI/API、dispatcher receipt、fallback read_plan、测试、文案迁移或 knowledge-map 删除迁移；这些内容不应被视为已实现、已验证或已承接。
+
+  ## 收口结果
+
+  收口方式为取消关闭。保留既有 knowledge-map 能力和现有 Runtime Protocol / dispatcher 分工，不删除 knowledge-map 独立入口。来源 Spark `spark-0036` 已同步转为 `discarded`，记录同一废弃原因；后续如重新出现强需求，应新建 Spark 或 WorkCase 重新评估。
+
+  ## 后续分流 / 收口结果
+
+  无继续执行的 WorkCase 尾巴；`spark-0036` 已废弃。保留的只是已知残留风险：如果未来 start_node 解析、诊断隔离或输出密度再次影响实际使用，应另建更小范围的 Spark 或 WorkCase。
+closure_requested_at: '2026-06-27T07:11:29+08:00'
+review_requested_at: '2026-06-27T07:11:29+08:00'
+closed_at: '2026-06-27T07:11:29+08:00'
+closure_outcome: cancelled
+residual_risks:
+  - action-guide 未实现；不得在后续讨论或文档中声称已有 action-guide 默认入口能力。
+  - knowledge-map 保持现状；此前识别出的 start_node 解析、诊断隔离和输出密度问题如再次影响实际使用，应另行创建更小范围的 Spark 或 WorkCase。
+followup_refs: []
+plan_confirmed_at: '2026-06-27T07:11:29+08:00'
+revision_history:
+  - at: '2026-06-27T06:14:13+08:00'
+    from_status: subagents_plan_reviewing
+    to_status: subagents_plan_reviewing
+    actor: main_controller
+    summary: 吸收 AI 价值审查和规范审查的 needs_changes，补强行动指南方案约束。
+    reason: |
+      Anscombe 的 AI 价值审查指出缺少 AI-facing Schema、读后行动计划合成规则、AI 价值成功指标和上下文预算；Aristotle 的规范审查指出执行项字段、结果复核策略、删除 knowledge-map 的 Human Gate 前置、Rules 同步审查输入和跨项目读取措辞需要补强。主控已将这些要求写入 success_criteria、execution_items、plan_review.review_items、result_review.review_policy 和 related_docs；WorkCase 仍保持方案审核态，等待后续主控处理或二次审查。
+    changed_fields:
+      - updated
+      - success_criteria
+      - orchestration.execution_items
+      - orchestration.plan_review.review_items
+      - orchestration.result_review.review_policy
+      - related_docs
+      - revision_history
+  - at: '2026-06-27T06:20:00+08:00'
+    from_status: subagents_plan_reviewing
+    to_status: subagents_plan_reviewing
+    actor: main_controller
+    summary: 补充 Code 可实现性/交互密度审查要求。
+    reason: |
+      Human 追加要求从 Code 角度审查行动指南能否实现，并审查“AI 每次行动时给出所需信息”是否会过于密集、啰嗦或打断执行。主控已将 Code 可实现性/交互密度审查纳入 required_perspectives、tool_method_requirements 和 aggregation_rule，后续需安排只读子 Agent 审查并记录结果。
+    changed_fields:
+      - updated
+      - success_criteria
+      - source
+      - orchestration.plan_review.review_policy
+      - revision_history
+  - at: '2026-06-27T06:29:00+08:00'
+    from_status: subagents_plan_reviewing
+    to_status: subagents_plan_reviewing
+    actor: main_controller
+    summary: 吸收 Code 可实现性/交互密度审查的 needs_changes。
+    reason: |
+      Locke 的 Code 可实现性/交互密度审查认为 action-guide 可实现，但进入实现前必须补 target 解析优先级、action-guide CLI/Schema 前置、receipt / brief / standard / full 分级输出、同输入去重、Code 不判断自然语言价值取舍、输出不得授权、无关项目 diagnostics 不污染本次 guide 等约束。主控已写入 success_criteria、execution_items、plan_review.review_items 和 related_docs；WorkCase 仍保持方案审核态，等待后续主控吸收或二次审查。
+    changed_fields:
+      - updated
+      - success_criteria
+      - orchestration.execution_items
+      - orchestration.plan_review.review_items
+      - related_docs
+      - revision_history
+  - at: '2026-06-27T07:11:29+08:00'
+    from_status: subagents_plan_reviewing
+    to_status: closed
+    actor: Human
+    summary: Human 确认关闭并废弃 workcase-0019。
+    reason: |
+      Human 判断 action-guide 替代 knowledge-map 的整体工作量过大，且当前知识地图已基本符合需求；本 WorkCase 不继续推进，也不删除 knowledge-map 独立入口。
+    changed_fields:
+      - status
+      - updated
+      - orchestration.execution_items
+      - orchestration.result_review.human_closure_confirmation
+      - verification_evidence
+      - closure_evidence
+      - closure_requested_at
+      - closed_at
+      - closure_outcome
+      - residual_risks
+      - revision_history

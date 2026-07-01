@@ -1,0 +1,122 @@
+id: workcase-0014
+type: workcase
+title: WorkCase 收口后续分流确认规范
+goal: |
+  推动 WorkCase 关闭前必须明确“收口后续分流 / 后续承接”段落的治理规范落地：要求每个即将关闭或已进入关闭确认的 WorkCase 先明确尾巴是否收口干净；若不干净，必须由 Human 明确回复后续进入 spark、新 WorkCase、ADR 或 followup_refs 的承接方式，并记录后才能关闭。若收口干净，则该段落明确写为无后续分流、无残留尾巴。该规范需覆盖已有 WorkCase 的存量回填，不仅限于新 WorkCase。
+status: subagents_plan_reviewing
+created: '2026-06-26T06:18:56+08:00'
+updated: '2026-06-26T06:18:56+08:00'
+priority: P1
+description: |
+  当前 WorkCase 关闭实践中，尾巴容易在 close 之后失去追踪。用户明确要求：新增设计不能只写进 21，而是要形成整个 WC 生命周期的统一收口规范，并推动已有 WC 进行回填。核心要求是：
+  1. 每个 WorkCase 在关闭确认前必须拥有“后续分流 / 收口结果”段落；
+  2. 若收口干净，段落只需明确写“无后续分流 / 无残留尾巴”；
+  3. 若收口不干净，必须有人明确回复后续承接对象是 spark、新 WorkCase、ADR 还是 followup_refs，并记录后才能关闭；
+  4. 已有 WorkCase 也要补这一段，避免只对新对象生效；
+  5. 该规范要兼顾治理刚性与不把尾巴机械拆碎。
+success_criteria: |
+  - [ ] 定义 WC 关闭前必须具备的“后续分流 / 收口结果”段落。
+  - [ ] 明确收口干净时的标准写法，以及不干净时的分流选项和记录要求。
+  - [ ] 将该要求落到 `specs/21-WorkCase-工作项.md` 或其授权附件的可执行条款中。
+  - [ ] 设计对已有 WorkCase 的存量回填/迁移要求，避免只约束未来新增对象。
+  - [ ] 明确与 `spark`、新 `wc`、`ADR`、`followup_refs`、`residual_risks` 的边界与适用条件。
+  - [ ] 完成最小验证方案：检查至少一批现有 `human_closure_confirming` / `closed` WorkCase 的收口段落是否可按新规范表达。
+source: |
+  来源对话：用户明确要求“当前 WC 完成，需要有一个后续做什么的段落；收口干净就写收口干净；不干净则需要 Human 明确回复是 spark / wc / 还是别的，并记录后才能关闭；且已有 WC 也要补这个段落”。
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 梳理关闭后分流口径
+      role: spec-architecture
+      mode: single
+      input_refs:
+        - specs/21-WorkCase-工作项.md
+        - specs/20-Spark-火花.md
+        - specs/22-ADR-决策.md
+        - specs/23-Pitfall-踩坑经验.md
+        - specs/24-Study-研究报告.md
+      expected_output: 明确 WC 关闭后后续分流的现有口径、最接近的条款位置，以及需要补入的硬边界。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: ''
+    - id: item-2
+      title: 设计收口结果段落
+      role: spec-drafting
+      mode: single
+      input_refs:
+        - specs/21-WorkCase-工作项.md
+        - specs/02-事实模型基础规范.md
+      expected_output: 提出一个可直接写入 WorkCase 规范的“后续分流 / 收口结果”段落草案，包含收口干净与不干净两种情况。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: ''
+    - id: item-3
+      title: 设计存量回填规则
+      role: governance
+      mode: single
+      input_refs:
+        - ldvh-base/workcases/
+        - specs/21-WorkCase-工作项.md
+      expected_output: 设计已有 WorkCase 的存量回填/迁移规则，说明哪些对象要补、如何补、是否需要 Human Gate。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: ''
+    - id: item-4
+      title: 形成可执行推进方案
+      role: plan-confirmation
+      mode: single
+      input_refs:
+        - ldvh-base/workcases/workcase-0014-workcase-tail-routing-confirmation.yaml
+      expected_output: 汇总规范草案、落地范围、验证方式、风险与回滚方式，进入 Human 方案确认。
+      status: pending
+      result_summary: ''
+      evidence_refs: []
+      blocking_reason: 依赖 item-1 至 item-3 的产出。
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: 本 WorkCase 直接影响 WorkCase 关闭治理，涉及是否必须补“后续分流 / 收口结果”段落以及已有 WorkCase 的回填策略，需先确认规范边界是否足够硬、是否会误把轻量尾巴拆成新对象。
+      required_perspectives:
+        - WorkCase 关闭治理
+        - 规范分层与事实源边界
+        - 存量迁移与 Human Gate
+      optional_perspectives: []
+      tool_method_requirements:
+        - 先梳理现有规范，不直接修改 21。
+        - 要区分“收口干净”与“收口不干净”的表达口径。
+        - 不把所有尾巴强制拆成新 WorkCase。
+        - 需要给出已有 WorkCase 的回填策略，而不是只约束新增对象。
+      aggregation_rule: 若任一必需视角认为该规范会导致 WC 过度碎片化或无法执行，应先调整分流口径再进入修改。
+      review_items: []
+    controller_resolution: null
+    human_confirmation: null
+  result_review:
+    controller_self_check: null
+    review_policy: null
+    review_items: []
+    controller_resolution: null
+    human_closure_confirmation: null
+plan_confirmed_at: null
+verification_evidence: ''
+closure_evidence: ''
+closure_requested_at: null
+closed_at: null
+closure_outcome: ''
+residual_risks: []
+followup_refs: []
+revision_history: []
+related_docs:
+  - specs/21-WorkCase-工作项.md
+  - specs/20-Spark-火花.md
+  - specs/22-ADR-决策.md
+  - specs/23-Pitfall-踩坑经验.md
+  - specs/24-Study-研究报告.md
+related_adrs: []
+related_sparks: []
+related_pitfalls: []
+related_workcases: []

@@ -433,6 +433,224 @@ FACT_MODEL_MEMBER_CONTRACTS = {
         "special_terms": ["## 研究问题", "## 输入与边界", "## 关键发现", "## 建议", "## 后续分流"],
     },
 }
+FACT_INSTANCE_LAYOUT = {
+    "spark": {"spec_id": "20", "directory": "sparks", "suffix": ".yaml"},
+    "workcase": {"spec_id": "21", "directory": "workcases", "suffix": ".yaml"},
+    "adr": {"spec_id": "22", "directory": "adrs", "suffix": ".yaml"},
+    "pitfall": {"spec_id": "23", "directory": "pitfalls", "suffix": ".yaml"},
+    "study": {"spec_id": "24", "directory": "studies", "suffix": ".md"},
+}
+FACT_INSTANCE_FIELD_SCHEMAS = {
+    "spark": {
+        "required": {
+            "id",
+            "type",
+            "title",
+            "status",
+            "created",
+            "updated",
+            "description",
+            "source",
+            "priority",
+            "evolution",
+            "related_adrs",
+            "related_studies",
+            "related_workcases",
+            "related_docs",
+        },
+        "allowed": {
+            "id",
+            "type",
+            "title",
+            "status",
+            "created",
+            "updated",
+            "description",
+            "source",
+            "source_detail",
+            "priority",
+            "priority_detail",
+            "evolution",
+            "input_refs",
+            "resolved_to",
+            "resolved_at",
+            "discard_reason",
+            "related_sparks",
+            "related_adrs",
+            "related_studies",
+            "related_workcases",
+            "related_docs",
+            "key_findings",
+            "owner",
+            "human_gate_records",
+        },
+        "forbidden": {"规范10"},
+    },
+    "workcase": {
+        "required": {
+            "id",
+            "type",
+            "title",
+            "goal",
+            "status",
+            "created",
+            "updated",
+            "priority",
+            "description",
+            "success_criteria",
+            "source",
+            "orchestration",
+            "verification_evidence",
+            "closure_evidence",
+            "closure_requested_at",
+            "closed_at",
+            "closure_outcome",
+            "residual_risks",
+        },
+        "allowed": {
+            "id",
+            "type",
+            "title",
+            "goal",
+            "status",
+            "created",
+            "updated",
+            "priority",
+            "description",
+            "success_criteria",
+            "source",
+            "input_refs",
+            "orchestration",
+            "plan_confirmed_at",
+            "review_requested_at",
+            "verification_evidence",
+            "closure_evidence",
+            "closure_requested_at",
+            "closed_at",
+            "closure_outcome",
+            "human_closure_confirmation",
+            "residual_risks",
+            "followup_refs",
+            "revision_history",
+            "related_docs",
+            "related_adrs",
+            "related_sparks",
+            "related_pitfalls",
+            "related_workcases",
+        },
+        "forbidden": {"draft", "active", "review_needed"},
+    },
+    "adr": {
+        "required": {"id", "type", "title", "status", "created", "updated", "context", "decision", "consequences"},
+        "allowed": {
+            "id",
+            "type",
+            "title",
+            "status",
+            "created",
+            "updated",
+            "context",
+            "decision",
+            "consequences",
+            "source",
+            "verification",
+            "related_docs",
+            "related_sparks",
+            "related_workcases",
+            "related_pitfalls",
+            "related_studies",
+            "related_adrs",
+        },
+        "forbidden": {"superseded_by", "alternatives", "affects"},
+    },
+    "pitfall": {
+        "required": {
+            "id",
+            "type",
+            "title",
+            "status",
+            "created",
+            "updated",
+            "symptoms",
+            "trigger_conditions",
+            "root_cause",
+            "resolution",
+            "verification",
+            "avoidance",
+            "applicability",
+            "tags",
+            "source_objects",
+            "related_workcases",
+            "related_adrs",
+            "related_docs",
+            "related_rules",
+            "source_sparks",
+        },
+        "allowed": {
+            "id",
+            "type",
+            "title",
+            "status",
+            "created",
+            "updated",
+            "symptoms",
+            "trigger_conditions",
+            "root_cause",
+            "resolution",
+            "verification",
+            "avoidance",
+            "applicability",
+            "tags",
+            "source_objects",
+            "related_workcases",
+            "related_adrs",
+            "related_docs",
+            "related_rules",
+            "source_sparks",
+        },
+        "forbidden": {"repeatability", "severity", "superseded_by"},
+    },
+    "study": {
+        "required": {
+            "id",
+            "type",
+            "title",
+            "status",
+            "created",
+            "updated",
+            "summary",
+            "user_intent",
+            "conclusion",
+            "input_refs",
+            "related_sparks",
+            "related_workcases",
+            "related_adrs",
+            "related_pitfalls",
+            "related_docs",
+            "archive_reason",
+        },
+        "allowed": {
+            "id",
+            "type",
+            "title",
+            "status",
+            "created",
+            "updated",
+            "summary",
+            "user_intent",
+            "conclusion",
+            "urls",
+            "input_refs",
+            "related_sparks",
+            "related_workcases",
+            "related_adrs",
+            "related_pitfalls",
+            "related_docs",
+            "archive_reason",
+        },
+        "forbidden": set(),
+    },
+}
 FOUNDATION_SPEC_CONTRACTS = {
     "03": {
         "path": SHORT_SPEC_REFS["03"],
@@ -971,6 +1189,209 @@ def parse_fact_model_member_contracts(root: Path = ROOT) -> list[dict[str, Any]]
 
 def parse_workcase_member_contract(root: Path = ROOT) -> dict[str, Any]:
     return parse_fact_model_member_contract("21", root)
+
+
+def _fact_instance_id_from_filename(path: Path) -> str:
+    match = re.match(r"^([a-z]+-\d{4})-", path.name)
+    return match.group(1) if match else ""
+
+
+def _parse_study_frontmatter(path: Path) -> tuple[dict[str, Any], str]:
+    raw = path.read_text(encoding="utf-8")
+    if not raw.startswith("---"):
+        return {}, raw
+    end = raw.find("\n---", 3)
+    if end == -1:
+        return {}, raw
+    frontmatter = raw[3:end].strip()
+    body = raw[end + 4 :]
+    try:
+        data = yaml.safe_load(frontmatter) or {}
+    except yaml.YAMLError:
+        data = {}
+    return data if isinstance(data, dict) else {}, body
+
+
+def _parse_fact_instance_data(path: Path, kind: str) -> tuple[dict[str, Any], str]:
+    if kind == "study":
+        return _parse_study_frontmatter(path)
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError:
+        data = {}
+    return data if isinstance(data, dict) else {}, ""
+
+
+def parse_fact_instances(root: Path = ROOT) -> list[dict[str, Any]]:
+    instances: list[dict[str, Any]] = []
+    for kind, layout in FACT_INSTANCE_LAYOUT.items():
+        directory = root / "ldvh-base" / layout["directory"]
+        if not directory.exists():
+            continue
+        for path in sorted(directory.glob(f"*{layout['suffix']}")):
+            data, body = _parse_fact_instance_data(path, kind)
+            rel_path = path.relative_to(root).as_posix()
+            instances.append({
+                "kind": kind,
+                "spec_id": layout["spec_id"],
+                "path": rel_path,
+                "filename_id": _fact_instance_id_from_filename(path),
+                "id": str(data.get("id", "")),
+                "type": str(data.get("type", "")),
+                "status": str(data.get("status", "")),
+                "data": data,
+                "body": body,
+            })
+    return instances
+
+
+def _fact_reference_ids(value: Any) -> list[str]:
+    ids: list[str] = []
+    if isinstance(value, str):
+        ids.extend(re.findall(r"\b(?:spark|workcase|adr|pitfall|study)-\d{4}\b", value))
+    elif isinstance(value, list):
+        for item in value:
+            ids.extend(_fact_reference_ids(item))
+    elif isinstance(value, dict):
+        for item in value.values():
+            ids.extend(_fact_reference_ids(item))
+    return ids
+
+
+def _fact_relation_values(data: dict[str, Any]) -> list[str]:
+    relation_keys = {
+        "related_sparks",
+        "related_workcases",
+        "related_adrs",
+        "related_pitfalls",
+        "related_studies",
+        "source_sparks",
+        "source_objects",
+        "input_refs",
+        "followup_refs",
+    }
+    values: list[str] = []
+    for key, value in data.items():
+        if key in relation_keys:
+            values.extend(_fact_reference_ids(value))
+    return values
+
+
+def _fact_statuses_by_kind(root: Path = ROOT) -> dict[str, set[str]]:
+    statuses: dict[str, set[str]] = {}
+    contracts = {contract["spec_id"]: contract for contract in parse_fact_model_member_contracts(root)}
+    for kind, layout in FACT_INSTANCE_LAYOUT.items():
+        contract = contracts.get(layout["spec_id"], {})
+        statuses[kind] = {row["status"] for row in contract.get("statuses", []) if row.get("status")}
+    return statuses
+
+
+def validate_fact_instances(root: Path = ROOT) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    if not (root / "ldvh-base").exists():
+        return diagnostics
+    statuses_by_kind = _fact_statuses_by_kind(root)
+    instances = parse_fact_instances(root)
+    ids: dict[str, str] = {}
+
+    for kind, layout in FACT_INSTANCE_LAYOUT.items():
+        directory = root / "ldvh-base" / layout["directory"]
+        if not directory.exists():
+            diagnostics.append(Diagnostic(
+                "error",
+                "FACT_INSTANCE_DIRECTORY_MISSING",
+                f"ldvh-base/{layout['directory']}/",
+                f"{kind} 实例目录缺失",
+            ))
+
+    for instance in instances:
+        path = instance["path"]
+        expected_kind = instance["kind"]
+        instance_id = instance["id"]
+        filename_id = instance["filename_id"]
+        if not instance["data"]:
+            diagnostics.append(Diagnostic("error", "FACT_INSTANCE_PARSE_FAILED", path, "事实实例无法解析为结构化数据"))
+            continue
+        schema = FACT_INSTANCE_FIELD_SCHEMAS.get(expected_kind, {})
+        fields = set(instance["data"])
+        missing_fields = sorted(schema.get("required", set()) - fields)
+        if missing_fields:
+            diagnostics.append(Diagnostic(
+                "error",
+                "FACT_INSTANCE_REQUIRED_FIELD_MISSING",
+                path,
+                f"{instance_id or filename_id} 缺少必填字段: {', '.join(missing_fields)}",
+            ))
+        forbidden_fields = sorted(fields & schema.get("forbidden", set()))
+        if forbidden_fields:
+            diagnostics.append(Diagnostic(
+                "error",
+                "FACT_INSTANCE_LEGACY_FIELD_FORBIDDEN",
+                path,
+                f"{instance_id or filename_id} 使用了 V3 禁用字段: {', '.join(forbidden_fields)}",
+            ))
+        unknown_fields = sorted(fields - schema.get("allowed", set()) - schema.get("forbidden", set()))
+        if unknown_fields:
+            diagnostics.append(Diagnostic(
+                "error",
+                "FACT_INSTANCE_FIELD_UNKNOWN",
+                path,
+                f"{instance_id or filename_id} 包含未登记字段: {', '.join(unknown_fields)}",
+            ))
+        if not instance_id:
+            diagnostics.append(Diagnostic("error", "FACT_INSTANCE_ID_MISSING", path, "事实实例缺少 id"))
+        elif instance_id != filename_id:
+            diagnostics.append(Diagnostic(
+                "error",
+                "FACT_INSTANCE_ID_FILENAME_MISMATCH",
+                path,
+                f"事实实例 id 与文件名不一致: id={instance_id}, filename={filename_id}",
+            ))
+        if instance_id in ids:
+            diagnostics.append(Diagnostic(
+                "error",
+                "FACT_INSTANCE_ID_DUPLICATE",
+                path,
+                f"事实实例 id 重复: {instance_id}，已见于 {ids[instance_id]}",
+            ))
+        elif instance_id:
+            ids[instance_id] = path
+        if instance["type"] != expected_kind:
+            diagnostics.append(Diagnostic(
+                "error",
+                "FACT_INSTANCE_TYPE_MISMATCH",
+                path,
+                f"事实实例 type 应为 {expected_kind}，实际为 {instance['type']}",
+            ))
+        allowed_statuses = statuses_by_kind.get(expected_kind, set())
+        if instance["status"] not in allowed_statuses:
+            diagnostics.append(Diagnostic(
+                "error",
+                "FACT_INSTANCE_STATUS_INVALID",
+                path,
+                f"{instance_id} status 不在 {expected_kind} 闭集内: {instance['status']}",
+            ))
+        if expected_kind == "study":
+            for heading in FACT_MODEL_MEMBER_CONTRACTS["24"]["special_terms"]:
+                if heading not in instance["body"]:
+                    diagnostics.append(Diagnostic(
+                        "error",
+                        "STUDY_BODY_HEADING_MISSING",
+                        path,
+                        f"Study 正文缺少固定标题: {heading}",
+                    ))
+
+    known_ids = set(ids)
+    for instance in instances:
+        for ref_id in _fact_relation_values(instance["data"]):
+            if ref_id not in known_ids:
+                diagnostics.append(Diagnostic(
+                    "error",
+                    "FACT_INSTANCE_REFERENCE_MISSING",
+                    instance["path"],
+                    f"{instance['id']} 引用不存在的事实对象: {ref_id}",
+                ))
+    return diagnostics
 
 
 def _table_rows_for_section(sections: dict[str, dict[str, str]], section_name: str, columns: list[str]) -> list[dict[str, str]]:
@@ -2193,6 +2614,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     git_commit_action_template = parse_git_commit_action_template(root)
     workcase_member_contract = parse_workcase_member_contract(root)
     fact_model_member_contracts = parse_fact_model_member_contracts(root)
+    fact_instances = parse_fact_instances(root)
     governed_projects_config = parse_governed_projects_config(root)
     governed_project_config_contract = parse_governed_project_config_contract(root)
     governed_project_resolution = resolve_governed_subject(root, cwd=root, target_paths=[])
@@ -2218,6 +2640,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_git_commit_action_template(root))
     diagnostics.extend(validate_workcase_member_contract(root))
     diagnostics.extend(validate_fact_model_member_contracts(root))
+    diagnostics.extend(validate_fact_instances(root))
 
     diagnostic_dicts = [diagnostic.to_dict() for diagnostic in diagnostics]
     status = "ok" if not diagnostic_dicts else "failed"
@@ -2237,6 +2660,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             "ai_behavior_requirements": len(requirements),
             "takeover_matrix_rows": len(takeover_matrix),
             "foundation_spec_contracts": len(foundation_spec_contracts),
+            "fact_instances": len(fact_instances),
             "governed_projects": len(governed_projects_config["projects"]),
             "diagnostics": len(diagnostic_dicts),
             "errors": sum(1 for diagnostic in diagnostics if diagnostic.level == "error"),
@@ -2259,6 +2683,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/22-ADR-决策.md", "role": "fact_model_member_spec"},
             {"path": "specs/23-Pitfall-踩坑经验.md", "role": "fact_model_member_spec"},
             {"path": "specs/24-Study-研究报告.md", "role": "fact_model_member_spec"},
+            {"path": "ldvh-base/", "role": "fact_instances_root"},
             {"path": TIMING_TABLE_PATH, "role": "consumption_timing_registry"},
             {"path": TAKEOVER_MATRIX_PATH, "role": "takeover_matrix"},
             {"path": GOVERNED_PROJECTS_CONFIG_PATH, "role": "governed_project_config"},
@@ -2273,6 +2698,17 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "git_commit_action_template": git_commit_action_template,
         "workcase_member_contract": workcase_member_contract,
         "fact_model_member_contracts": fact_model_member_contracts,
+        "fact_instances": [
+            {
+                "kind": instance["kind"],
+                "spec_id": instance["spec_id"],
+                "path": instance["path"],
+                "id": instance["id"],
+                "type": instance["type"],
+                "status": instance["status"],
+            }
+            for instance in fact_instances
+        ],
         "governed_projects_config": governed_projects_config,
         "governed_project_resolution": governed_project_resolution,
         "attachment_contracts": attachment_contracts,

@@ -1,0 +1,125 @@
+id: spark-0025
+type: spark
+title: 入口触发链工程化：让 AI 稳定先用知识地图
+status: pending
+created: '2026-06-24T10:49:34.237457'
+updated: '2026-06-27T22:35:00+08:00'
+description: |
+  最新知识地图价值评估报告认为知识地图核心价值已基本兑现，剩余最高优先级缺口是触发链：AGENTS.md / 环境规则入口 / Rules 入口 / knowledge-map 命令之间仍依赖 AI 自觉执行。即使 Rules 已写硬，AI 在普通任务里仍可能跳过入口，退回 `ls`、全文 Read 或只看 `v2-check` 摘要。
+
+  本 Spark 记录一个候选工程方向：把入口触发链做成可验证的运行时能力，使新会话、线程恢复、上下文压缩后，AI 稳定先读工作区入口，再运行 `knowledge-map --input-scope entry_navigation --layer neighbors --start-node <path-or-node> --task-type <task_type>`，并消费 `read_plan`、`next_queries`、`stop_conditions` 和 `impact_summary`。
+
+  该方向与 `spark-0024` 不同：它不是恢复面板能力，而是运行时触发保障。它可能涉及 AGENTS 薄引用、Rules 入口、Hook / Skill / Agent 能力资产、环境入口适配和 Human Gate。后续若转 WorkCase，必须先明确不得静默写入外部环境，不得声明环境已安装完整 LDVH。
+source: conversation
+priority: P0
+source_detail: 用户认可将“会话恢复投影器”和“入口触发链工程化”拆成两个 Spark，并结合《LDVH-知识地图价值重新评估报告-v2-20260624.md》确认“AI 触发链稳定性”是未闭环点。外部文件仅记录为名称与核心结论，不建立可解析文件关系。
+evolution:
+- at: '2026-06-25T05:45:00+08:00'
+  summary: |
+    经主控与子 Agent 复核，初步确认 spark-0025 可以推进，但不应直接改 Rules、AGENTS、Hook 或环境入口。第一版候选实现被描述为只读 `entry-trigger` / `enter` Code 入口：由 AI 启动一个命令，命令返回当前应读入口、推荐 `task_type`、稳定 `start_node`、下一条 `knowledge-map` 命令、STOP / Human Gate 候选和环境能力状态。
+
+    这一阶段的价值是把“AI 自觉先读入口、先跑知识地图”改成“AI 先跑一个可复查命令”。但该版本仍隐含一个风险：如果把“解析当前上下文”全部交给 Code，Code 会被迫处理自然语言语义，容易假装理解用户意图。
+- at: '2026-06-25T05:52:00+08:00'
+  summary: |
+    Human 指出“解析当前上下文不是 Code 可以做的”。据此将设计边界修正为：Code 只能解析可观察上下文和显式输入，例如 cwd、管辖项目配置、路径、对象 ID、Git 状态、事实对象状态和运行时扩展自描述；Code 不能可靠判断用户这句话是想讨论、设计、创建 WorkCase、修改规范还是执行实现。
+
+    新分工变成：AI 负责把用户话语做初步语义判断，Code 负责校验 AI 的判断是否能落到事实源，并生成导航、诊断和 STOP。Code 的输出应暴露不确定性，而不是给出语义裁决。
+- at: '2026-06-25T05:58:00+08:00'
+  summary: |
+    Human 进一步指出“语义候选也必须枚举化，否则 Code 怎么懂”。因此候选输入从自然语言 `goal` 收敛为枚举化 `semantic claim`：AI 先把用户意图归类为有限字段，例如 `task_type_candidate`、`target_type_candidate`、`action_intent_candidate`、`operation_mode`、`semantic_source`、`confidence` 和 `intent_basis`。
+
+    Code 对这些枚举只做一致性和事实源校验：对象是否存在、类型是否匹配、状态是否允许、是否需要 Human Gate、应使用哪个 `knowledge-map` 起点。若 AI 声明 `target_type=spec` 但对象解析为 Spark，Code 应给出 `SEMANTIC_TARGET_MISMATCH` 之类诊断；若输入不足，则返回 `TASK_TYPE_AMBIGUOUS`，而不是猜。
+- at: '2026-06-25T06:05:00+08:00'
+  summary: |
+    Human 追问后确认：枚举化语义声明天然涉及 Skill。Skill 适合承载“AI 如何把自然语言请求翻译成枚举 semantic claim”的操作规程；Code 不应承载这层语义归类，AGENTS 也不应写成长提示。枚举本身不能只藏在 Skill 中，后续应由 specs、附件或 WorkCase 明确，以供 Skill 消费、Code 校验、Rules 触发。
+
+    因而候选资产组合从单一 Code 命令扩展为：`ldvh-enter Skill` 负责指导 AI 生成枚举化语义声明；`ldvh_enter Code` 负责校验声明并返回 receipt；AGENTS / Rules 只要求先进入握手流程；specs 定义枚举、边界和 Human Gate。
+- at: '2026-06-25T06:12:23+08:00'
+  summary: |
+    本轮阶段性收敛为“AI 语义声明握手机制”。每次新会话、线程恢复、上下文压缩或 LDVH 相关任务开始时，AI 先通过 `ldvh-enter Skill` 或等价运行时能力生成枚举化 `semantic claim`，再由 `ldvh_enter Code` 校验管辖项目、显式路径/对象 ID、事实对象类型、稳定 `start_node`、`task_type`、`knowledge-map` 查询、`stop_conditions`、诊断和一次性 `entry_receipt`。
+
+    该机制的核心约束是：Code 不得声称自己理解用户语义，不得自动修改 Rules、AGENTS、环境入口或项目配置，不得声明环境已完整安装；AI 不得把自己的语义声明当成事实源证明；知识地图和 receipt 只作为当次导航投影。若后续环境支持 Hook 或自动触发，可作为第二阶段并经 Human Gate 评估，不作为首轮默认写入。
+- at: '2026-06-25T06:53:00+08:00'
+  summary: |
+    Human 修正握手前提，消除上一轮 evolution 隐含的递归风险。握手不再以“AI 先判断是否 LDVH 任务”为前置条件，而是默认动作：新会话、线程恢复、上下文压缩或任务开始时一律先握手，不预设环境类型。环境类型（LDVH 管辖项目 X / 非 LDVH / 子目录层级）由 Code 基于可观察信号判定，包括 cwd 路径、与 `LDVH-GOVERNED-PROJECTS.yaml` 的匹配、从 cwd 向上遍历得到的完整 AGENTS.md 链、`.workbuddy/` 结构、`ld-vibe-harness/` 规范体系是否就位、运行时扩展自描述和 Git 状态。这些均为文件系统事实，Code 读取即可，不需要理解用户语义。
+
+    握手成功的核心收益是补全完整入口链：即使 AI 只在最外层读了 AGENTS.md 而忘记子目录的 AGENTS.md，Code 也会在 receipt 的 read_plan 里把从最外层到当前层的入口链补回来，直接解决“子目录 AGENTS.md 被遗忘”的实际问题。AI 只需记住“跑一个握手命令”，不再需要记住“读一长串入口链”，跳过概率被实质性收窄。
+
+    据此收敛 spark 评估时标注的第一个未闭环点（握手触发可观察性）：原措辞“‘LDVH 相关任务’判定本身是语义判断，存在递归风险”不再成立，握手触发改为可观察信号驱动。剩余两个未闭环点（receipt 消费闭环、枚举完备性）仍待后续收敛。
+- at: '2026-06-25T07:47:00+08:00'
+  summary: |
+    Human 连续三轮收敛入口触发链的资产分层，确认为 spark-0025 转 WorkCase 前的完整设计收敛。三点如下：
+
+    一、表格与知识地图的界限 = 是否依赖任务语义。表格（协议层）只承载固定协议步骤，每次全读、不随任务变化、绝不写“如果 X 任务则 Y”；知识地图（导航层）承载所有任务相关差异，基于 task_type / start_node 裁剪，返回任务相关 read_plan 和 stop_conditions。表格内容草拟为四行：握手 → 按 receipt.read_plan 读入口链 → 跑 knowledge-map 命令 → 按 read_plan 读到 stop_conditions 即停。
+
+    二、表格不是 Rules 的流程子集，而是与 Rules、知识地图并列的第三个 Rules 类资产。三者正交：Rules = 禁令（按需查询、不可机器校验）、表格 = 协议（每次全读、可被 Code 校验执行）、知识地图 = 导航（按任务裁剪、动态）。AGENTS.md 应极薄，只引用入口协议文件与 Rules 入口，不承载表格正文，以避免“AGENTS.md 既要做握手提醒又要承载握手后流程”的长度冲突，并保证 Code 可独立读取协议文件校验流程执行。
+
+    三、现有 `rules/LDVH-WORKSPACE-ENTRY.md` 与 `rules/LDVH-MAINTAINER-ENTRY.md` 未来会合并，但不是现在。两文件结构镜像、§3/§4/§6 模板重复，真差异仅在职责对象（工作对象事实源 vs 产品资产目录）和各自专属 STOP。现在合并会模糊职责对象判断；spark-0025 落地后，§3 抽到表格、§4 收进知识地图、§5/§6 去模板化，两文件各自只剩职责对象加专属 STOP，届时合并为单文件加职责路由表反而更清晰。合并是 spark-0025 的下游效应，不是前置条件；且两文件 frontmatter 均要求合并前必须评估 Human Gate。
+
+    该设计顺带收敛 spark 评估时标注的第二个未闭环点（receipt 消费闭环）：表格明确写了“拿到 receipt 后按 read_plan 读、按 stop 停”，AI 不用自己判断如何消费 receipt。剩余唯一未闭环点为枚举完备性（semantic claim 覆盖率不足会频繁退化为 TASK_TYPE_AMBIGUOUS，反而促退 AI 绕过握手）。
+- at: '2026-06-25T08:21:00+08:00'
+  summary: |
+    本轮基于 WorkBuddy 环境 Hook 机制的实测证据，收敛 spark-0025 第二阶段终态设计，并修正入口与薄引用的角色。
+
+    实测证据：在当前 WorkBuddy 环境中，已安装插件 `weixin-minigame-helper` 和 `godot-mcp` 真实使用 Hook 事件 `SessionStart`（matcher: startup|resume，注入 `CODEBUDDY_PLUGIN_ROOT`）、`PreToolUse`（matcher: Write|Edit|...，可阻断写入）、`PostToolUse`（支持 type: prompt 让 LLM 评估）、`UserPromptSubmit`（占位存在）。Hook 通过 stdin JSON 传入公共字段，包括 `session_id`、`transcript_path`、`cwd`、`permission_mode`、`hook_event_name`——其中 `cwd` 正是握手判定环境类型所需的可观察信号。`SessionStart` 的 `source` 字段区分 startup/resume/clear/compact，正好对应握手的三种触发场景。其他事件（Stop / PreCompact / PostCompact / CwdChanged 等）文档支持但本环境无实际用例，保持“候选/待实测”。
+
+    据此确定第二阶段终态：Hook 在 SessionStart（及可选的 PostCompact）强制触发握手，握手 Code 拿到 `cwd` 判定环境类型、补全入口链、返回 receipt，receipt 通过 SessionStart 的 `additionalContext` 注入 AI 上下文。PreToolUse 可作为强制力补充——若 AI 跳过握手直接 Write/Edit，Hook 用退出码 2 或 `permissionDecision: deny` 阻断，reason 告知“先跑握手”。这是真正的环境强制，不再是 AI 自觉。
+
+    关键修正——薄引用可移除：第二阶段 Hook 落地后，用户项目的 AGENTS.md 不再需要写 LDVH 薄引用。薄引用的存在理由是“提醒 AI 去读 LDVH 入口”，而 Hook 在会话开始时强制触发握手，握手 receipt 直接返回完整入口链，AI 不需要任何提醒，甚至不需要知道“这是 LDVH 项目”。这解决了薄引用长期痛点：用户 AGENTS.md 纯净化（只有用户自己的内容）、用户删不掉 LDVH 触发（Hook 是环境配置/插件，不在 AGENTS.md 里）、不需要每个项目重复写、用户 Agent 与 LDVH 在 AGENTS.md 这一层彻底解耦。移除是逐项目的——配了 Hook 的项目可移除薄引用，没配的仍须保留作为降级。`06.Att.09` 薄引用模板应补“已部署 Hook 触发握手的环境可免除薄引用；未部署的仍须保留”作为可免除条件，走 Rules 入口同步审查（specs/30）时一并改。
+
+    入口角色澄清：入口没有消失，它从“提醒 AI 去读”变成“被 Hook 强制消费的 receipt 内容”。AGENTS.md 的“提醒”职责在第二阶段消失，但入口链本身（协议表格、Rules）仍是 receipt 的内容来源。所以不是“不需要入口”，是“入口的读取不再依赖 AI 自觉”。AGENTS.md 可退到极薄甚至空壳，但协议表格和 Rules 不动。
+
+    插件形态判断：LDVH 第二阶段应以插件形式分发 Hook。路径有二——本地验证可直接在 `~/.workbuddy/settings.json` 或项目级 `.workbuddy/settings.json` 写 `hooks` 键引用 `code/hook_dispatch.py` 绝对路径（最小改动，但有路径硬编码问题）；分发时做成 LDVH 插件，`hooks/hooks.json` 随插件安装，`CODEBUDDY_PLUGIN_ROOT` 解决路径问题，且插件 `hooks/hooks.json` 不受 frontmatter 信任闸门约束（自动放行）。分阶段：先 settings.json 验证，再插件化分发。
+
+    用户体验边界：LDVH 插件附加到用户 Agent，不接管不替换。用户不装 LDVH 插件则一切照旧；装了则只在 cwd 命中 LDVH 管辖项目时握手才动作，其他项目 Hook 触发了也因 cwd 不匹配 no-op。这与 `06` STOP 点“不得覆盖用户已有 Rules、Skill、Agent、instructions、AGENTS、配置或等价入口”一致。唯一体验影响是 Hook 执行时间（默认 60 秒超时），要求握手 Code 秒级返回——只做可观察信号判定 + 入口链补全 + 返回 receipt，不做 knowledge-map 全量查询（那一步交给 AI 在 receipt 指导下后续执行）。
+
+    据此 spark-0025 完整终态为：第一阶段 AI 自觉跑握手（入口存在、薄引用保留、跳过风险高）；第二阶段 Hook 强制握手（入口退为 receipt 内容、薄引用可移除、AGENTS.md 可空壳、LDVH 插件附加不接管）。`06.Att.12` 中 SessionStart / PreToolUse / PostToolUse / UserPromptSubmit 在 WorkBuddy 环境已实测可用，可从 candidate 转为 active；其他事件保持 candidate 待实测。
+- at: '2026-06-25T08:45:00+08:00'
+  summary: |
+    Human 从安装角度追问“用户下载 LDVH 后，需要做什么才能把 LDVH 和环境关联上”。本轮收敛为：下载 LDVH 本体不等于环境关联，真正的关联只需要两个动作：让环境能触发 LDVH，以及让 LDVH 知道管哪些项目。
+
+    最小安装链路为：一，放置 LDVH 本体（下载/克隆 `ld-vibe-harness/`，提供 specs/rules/code/hooks/skills/知识地图等内部资产）；二，登记环境入口（目标形态是启用 LDVH 插件，插件自带 `hooks/hooks.json`；验证阶段也可直接在 WorkBuddy settings 中注册 hook）；三，登记管辖项目（工作区根目录放 `LDVH-GOVERNED-PROJECTS.yaml`，供 LDVH 通过 hook 传入的 `cwd` 判定是否命中管辖项目）；四，必要时初始化 Code 依赖（跑 `code/bootstrap_code.py`，只安装 LDVH Code 校验/导航所需依赖，不声明环境完整支持 LDVH）。
+
+    最终用户视角应压缩为四步：下载/安装 LDVH → 启用 LDVH 插件 → 写一个 `LDVH-GOVERNED-PROJECTS.yaml` → 完成。用户不需要再改自己的 AGENTS.md，也不需要把 LDVH 规则写进用户 Agent。Hook 负责把环境事件送进 LDVH；后续握手、入口链、知识地图、Rules、Skill 都由 LDVH 内部处理。未命中管辖项目时 no-op，不影响普通项目。
+
+    当前规则文件仍体现旧路径：`rules/LDVH-WORKSPACE-ENTRY.md` 与 `rules/LDVH-MAINTAINER-ENTRY.md` 仍写有“环境入口、项目规则、工作区配置或会话提示只应通过薄引用措施指向本文件”的表述，且工作区入口的常用查询表仍写“Rules 环境入口接入：默认只生成可复制的 Codex 薄入口文本，由用户自行加入环境规则入口”。这些是 spark-0025 第二阶段需要替换的对象：从“薄引用安装”迁移为“Hook/插件安装”，并给薄引用保留降级角色。
+
+    安装态分层为：当前/降级方案 = 用户在 AGENTS.md 写薄引用；Hook 验证方案 = 用户不改 AGENTS.md，只在 settings 注册 hook；插件终态 = 用户启用 LDVH 插件，插件自带 `hooks/hooks.json`。因此安装角度最终只有一个环境关联点：Hook/插件。Hook 把事件送进 LDVH，LDVH 内部根据 `cwd` 和管辖配置判断是否动作；用户自己的 Agent / AGENTS.md 不再承载 LDVH 内容。
+- at: '2026-06-25T19:45:00+08:00'
+  summary: |
+    本轮基于 `spark-0032` 中 Human 确认的"Trae 不支持 AI Hook"事实，以及 `specs/06` 新增的 AI Hook 强制消费与 AI 自觉消费双路径原则，对本 spark 此前"单一路径"终态进行修正。
+
+    核心修正：spark-0025 此前描述的第二阶段终态（Hook 强制握手、薄引用可移除、AGENTS.md 可空壳、安装角度最终只有一个 Hook/插件关联点）仅对支持 AI Hook 的环境成立（WorkBuddy/Codex/Claude Code）。对于不支持 AI Hook 的环境（Trae 等），握手只能走 AI 自觉消费路径：AGENTS.md 薄引用必须保留，Rules/Agent/instructions 仍是主消费入口，不能宣称"用户不需要再改 AGENTS.md"。
+
+    因此 spark-0025 的终态应按 `specs/06` 分流：
+    - 有 AI Hook 环境：Hook/插件强制握手成立 → AGENTS.md 薄引用可弱化或免除；安装角度最终关联点是 Hook/插件。
+    - 无 AI Hook 环境：AI 自觉消费成立 → AGENTS.md 薄引用必须保留；Rules/Agent/instructions 仍是主入口；不可将插件终态或 Hook 强制握手写成该环境的安装目标。
+
+    此前 evolution 中"四步压缩""最终只有一个环境关联点""用户不需要再改 AGENTS.md""降级方案/降级角色"等表述，在无 AI Hook 环境中不适用。Trae 等环境的 Rules 方式是独立安装路径，不是插件方式的降级替代。不得将 Git hook、MCP、CI、server-side gate 或 Human Gate 等外部机制等同于 AI Hook 或纳入 AI Hook 能力判断。
+- at: '2026-06-27T22:35:00+08:00'
+  summary: |
+    Human 与主控围绕 00 的 V1 快速定位复盘后，进一步收敛本 Spark 的核心缺口：问题不是知识地图能力不存在，也不是规范、Skill、dispatcher、Code 入口数量本身过多，而是 AI 实际执行顺序还没有稳定等于设计顺序。
+
+    设计顺序应为：先判定场景和工作对象，再由知识地图或等价入口生成 `read_plan`、邻接关系、影响面和后续查询；AI 按 P0/P1 回读最小权威原文后，再进入对应行动入口，如 Rules 同步走 30、Git 提交走 31、环境适配走 32；最后由 Code、Hook 或 validator 做检查和阻断。若 AI 跳过知识地图，直接凭记忆读 spec、改 Rules、跑 validator 或提交，就会出现“事后再追问哪个规范约束它”的倒序执行。
+
+    因此本 Spark 后续若转 WorkCase，重点不应泛化为替换 knowledge-map 或新增大而全行动指南，而应聚焦“入口顺序保障”：让关键场景先通过知识地图或 dispatcher 产出任务路由和最小读取计划，再允许进入行动编排与写入检查。目标是把 V1 快速定位从“有地图但靠 AI 自觉使用”推进为“先路由、再读取、再行动、再验证”的可观测顺序。
+
+    该收敛保留 `spark-0036` 废弃结论：不重启 action-guide 替代 knowledge-map 的大方案，不删除 knowledge-map 独立入口。新的关注点是小范围补强触发链和顺序门禁，例如在 session-start、pre-tool-use、commit-preflight 或未来入口握手中证明 AI 已先消费知识地图/dispatcher 输出，而不是让知识地图停留为可选导航工具。
+input_refs:
+- spark-0023
+- workcase-0005
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workcases: []
+related_adrs: []
+related_studies: []
+related_docs:
+- rules/LDVH-RUNTIME-PROTOCOL.md
+- specs/01-规范体系基础规范.md
+- specs/04-Code确定性执行规范.md
+- specs/06-运行时扩展规范.md
+- specs/20-Spark-火花.md
+- specs/30-rules-entry-sync-review-Rules入口同步审查.md
+- specs/31-git-commit-action-Git提交行动编排.md
+- specs/attachments/06.Att.02-固定运行时扩展登记表.md

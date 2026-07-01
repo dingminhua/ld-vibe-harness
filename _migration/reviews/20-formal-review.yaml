@@ -1,16 +1,16 @@
 target_spec: "specs/20-Spark-火花.md"
-target_sha256: "82169128705cd97d89edde7d5f6611837b4b1f28b2b9defd048fd2fae2c99a20"
+target_sha256: "3a8f21c0808985b880cb7859a7380bb29fe0eded85f9352b3ed87366321a1e39"
 change_type: "addition"
 mapping_evidence:
-  path: "_migration/6B-fact-object-member-completion.md"
+  path: "_migration/9C-fact-object-full-migration.md"
 code_verification:
   command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
-  receipt: "Formal specs validator and tests/code cover 20 as the Spark fact model member candidate with status, source, resolution, and Human Gate checks."
+  receipt: "Formal specs validator and tests/code cover 20 after Spark real instances moved into ldvh-base/sparks with field schema, status, relation, and Human Gate boundaries."
 subagent_review:
   agent_id: "codex-local-6b-fact-members-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review found 20 limited to the Spark minimal member contract; full field schema, real Spark instances, and Web quick create remain postposed."
+  receipt: "Local review found 20 acknowledges real Spark instances and Code/tests schema while keeping Web quick create and full field-table prose postposed."
   unresolved_blockers: []
 warnings: []

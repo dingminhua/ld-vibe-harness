@@ -18,6 +18,12 @@ def _copy_specs_root(tmp_path: Path) -> Path:
     return root
 
 
+def _copy_specs_and_facts_root(tmp_path: Path) -> Path:
+    root = _copy_specs_root(tmp_path)
+    shutil.copytree(ROOT / "ldvh-base", root / "ldvh-base")
+    return root
+
+
 def _replace_in_temp(root: Path, rel_path: str, old: str, new: str = "") -> None:
     path = root / rel_path
     raw = path.read_text(encoding="utf-8")
@@ -798,6 +804,96 @@ def test_fact_model_member_contracts_are_code_consumable() -> None:
     assert "adr_decision_boundaries" in contracts["22"]["code_consumption"]
     assert "pitfall_evidence_boundaries" in contracts["23"]["code_consumption"]
     assert "study_markdown_body_boundaries" in contracts["24"]["code_consumption"]
+
+
+def test_fact_instances_are_migrated_and_code_consumable() -> None:
+    result = ldvh_specs.build_validation(ROOT)
+    instances = result["fact_instances"]
+    counts: dict[str, int] = {}
+    for instance in instances:
+        counts[instance["kind"]] = counts.get(instance["kind"], 0) + 1
+
+    assert result["summary"]["fact_instances"] == 77
+    assert counts == {
+        "spark": 40,
+        "workcase": 22,
+        "pitfall": 1,
+        "study": 14,
+    }
+    assert any(instance["path"] == "ldvh-base/sparks/spark-0001-session-start-user-input-boundary.yaml" for instance in instances)
+    assert any(instance["path"] == "ldvh-base/sparks/spark-0002-subdocument-status-gap.yaml" for instance in instances)
+    assert any(instance["path"] == "ldvh-base/workcases/workcase-0002-knowledge-map-entry-navigation.yaml" for instance in instances)
+    assert any(instance["path"] == "ldvh-base/studies/study-0001-workcase-orchestration-evolution.md" for instance in instances)
+
+
+def test_fact_instance_validator_reports_id_filename_mismatch(tmp_path: Path) -> None:
+    root = _copy_specs_and_facts_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "ldvh-base/sparks/spark-0002-subdocument-status-gap.yaml",
+        "id: spark-0002",
+        "id: spark-9999",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_INSTANCE_ID_FILENAME_MISMATCH" in _diagnostic_codes(result)
+
+
+def test_fact_instance_validator_reports_unknown_field(tmp_path: Path) -> None:
+    root = _copy_specs_and_facts_root(tmp_path)
+    path = root / "ldvh-base/sparks/spark-0002-subdocument-status-gap.yaml"
+    path.write_text(path.read_text(encoding="utf-8") + "\nunknown_v2_field: true\n", encoding="utf-8")
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_INSTANCE_FIELD_UNKNOWN" in _diagnostic_codes(result)
+
+
+def test_fact_instance_validator_reports_missing_required_field(tmp_path: Path) -> None:
+    root = _copy_specs_and_facts_root(tmp_path)
+    _replace_in_temp(root, "ldvh-base/sparks/spark-0002-subdocument-status-gap.yaml", "priority: P1\n")
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_INSTANCE_REQUIRED_FIELD_MISSING" in _diagnostic_codes(result)
+
+
+def test_fact_instance_validator_reports_legacy_field(tmp_path: Path) -> None:
+    root = _copy_specs_and_facts_root(tmp_path)
+    path = root / "ldvh-base/pitfalls/pitfall-0001-workcase-closure-tail-routing.yaml"
+    path.write_text(path.read_text(encoding="utf-8") + "\nseverity: high\n", encoding="utf-8")
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_INSTANCE_LEGACY_FIELD_FORBIDDEN" in _diagnostic_codes(result)
+
+
+def test_fact_instance_validator_reports_missing_related_object(tmp_path: Path) -> None:
+    root = _copy_specs_and_facts_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "ldvh-base/pitfalls/pitfall-0001-workcase-closure-tail-routing.yaml",
+        "spark-0032",
+        "spark-9999",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "FACT_INSTANCE_REFERENCE_MISSING" in _diagnostic_codes(result)
+
+
+def test_fact_instance_validator_reports_missing_study_body_heading(tmp_path: Path) -> None:
+    root = _copy_specs_and_facts_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "ldvh-base/studies/study-0001-workcase-orchestration-evolution.md",
+        "## 后续分流",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "STUDY_BODY_HEADING_MISSING" in _diagnostic_codes(result)
 
 
 def test_fact_member_validator_reports_missing_spark_state(tmp_path: Path) -> None:

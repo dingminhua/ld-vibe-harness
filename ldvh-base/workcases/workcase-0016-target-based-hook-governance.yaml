@@ -1,0 +1,688 @@
+id: workcase-0016
+type: workcase
+title: LDVH Hook 目标对象管辖判定
+goal: |
+  将 LDVH Hook 管辖判定从 cwd-only 模型升级为 target-based governance：以本次操作实际处理的目录、文件、仓库或项目作为 governed subject；当工作对象命中管辖项目时，无论当前 cwd 是否位于项目目录内，都必须启用 LDVH lifecycle；当工作对象不在管辖范围内时 no-op。该模型必须兼容 Hook 路径和 Rules 路径，并覆盖 Git/Codex worktree 的 Git 身份匹配。
+status: closed
+created: '2026-06-26T23:43:04+08:00'
+updated: '2026-06-27T03:15:00+08:00'
+priority: P0
+review_requested_at: '2026-06-27T01:20:00+08:00'
+description: |
+  当前 LDVH Runtime Protocol 和 dispatcher 主要以 cwd 判定管辖关系。该模型在“用户站在 workspace root，但实际处理 ldvh 子项目”的场景中会返回 governed=false，从而让 LDVH lifecycle no-op。Human 明确指出，判断应以实际处理的工作目录/文件/仓库为准：实际工作对象属于 LDVH 管辖项目，就使用 LDVH 机制；不属于管辖范围，就不使用。
+
+  本 WorkCase 承接 workcase-0015 已完成的 Git common-dir / worktree 识别基础，进一步把判定主体从 cwd 扩展为 governed subject / operation target。该变更必须保持 Hook 路径与 Rules 路径共享同一 normalized event context、同一 dispatcher handler 和同一确定性判定函数，避免环境 Hook、AI 自觉 Rules 调用、Git hook 三条入口产生不同管辖结果。
+
+  Runtime Protocol 的职责应收敛为“什么时候触发哪个 canonical event，以及如何把无 Hook 环境模拟成同一个 event context”。它不应承载与 Hook 路径不同的第二套处理逻辑。Rules 路径只负责在无原生 Hook 能力时按触发时机调用 dispatcher；调用之后必须走与 Hook 路径一致的 canonical handler、receipt、blocking 和 next_action 机制。
+
+  本 WorkCase 的验收不得停留在 prose 层。相关 specs 必须使用强约束表述，把 Runtime Protocol prose、Hook registry、dispatcher handler、receipt 和 tests 的职责链写清楚；Code 必须实现这些约束；测试必须证明 Hook 路径与 Rules 路径在同一 canonical context 下结果一致。若只修改 Runtime Protocol 文本而没有 dispatcher 和测试证据，本 WorkCase 不得关闭。
+success_criteria: |
+  - [x] 规范层定义 governed subject / operation target：本次操作实际影响的目录、文件、仓库或项目；cwd 只是 target 缺失时的默认输入。
+  - [x] specs/06 和 Runtime Protocol 明确 Hook 路径与 Rules 路径必须共享 target-based governance 判定语义。
+  - [x] Runtime Protocol 明确自身只定义触发时机和 canonical event 模拟入口，不定义第二套消费、阻断或判定逻辑；Rules 路径触发后必须进入与 Hook 路径相同的 dispatcher handler。
+  - [x] specs 明确：AI 执行时不得以 Runtime Protocol prose 自行判定放行、阻断或管辖命中，必须以 dispatcher 返回的结构化 receipt、blocking、required_paths 和 next_action 作为当次执行依据。
+  - [x] specs/04 明确 Code 确定性判定顺序：target path、target git identity、explicit project 校验/消歧、cwd path、cwd git identity、no-op；explicit project 不得覆盖真实 target。
+  - [x] 所有规范性 cwd-only 表述均替换为 target-first、cwd-fallback；不得同时保留“当前目录决定管辖”的旧口径。
+  - [x] dispatcher 支持 Rules CLI 显式传入 target，并能从 Hook payload / tool_input / command 中归一化目标路径。
+  - [x] canonical event context 具备稳定 schema，至少包含 event、trigger_source、cwd、target_paths、target_resolutions、operation_kind/read_write_kind、tool_name、tool_command、message_file、session_id。
+  - [x] governed config discovery 支持从 target path / target Git identity 查找配置，不能只从 cwd 向上查找。
+  - [x] 写操作 target 不确定时返回 unknown_target 并阻断或要求显式 target，不得回退 cwd 默认放行。
+  - [x] worktree 场景通过 Git common-dir 或登记 Git 身份匹配管辖项目，不依赖路径相似、对话记忆或 AI 主观判断。
+  - [x] Git identity 匹配存在多项目歧义时必须阻断并要求拆分或显式确认；remote_url 只能作为证据线索，不得单独决定管辖；common-dir 比较必须使用绝对 resolved 路径。
+  - [x] 多目标规则明确并实现：同一项目允许，跨管辖项目或管辖/非管辖混合写入需要阻断、拆分或显式确认。
+  - [x] receipt 记录 cwd、target_paths、target_resolutions、governed_subject、governed_via、governed_project_id 和 Git 身份线索；target_resolutions 需逐 target 记录 normalized path、git common-dir、project_id、governance status、source 和 unknown reason。
+  - [x] git.commit-msg 进入同一 canonical event context，以 repo root、repo common-dir 和 staged paths 作为提交工作对象；message_file 只作为提交消息文件，不得被误当作 repo target。
+  - [x] 测试覆盖 workspace root + target 命中、target 非管辖 no-op、worktree target 命中、Hook payload target 归一化、Rules CLI target、Hook/Rules parity、multi-target 边界、unknown-target 写入阻断、commit-msg repo/staged paths 兼容和 cwd-only 文案防回归。
+  - [x] knowledge-map 无答案、不可用或未返回有效 P0/P1 read_plan 时，dispatcher 必须生成固定 fallback read_plan；acknowledge-read-plan 不得确认管辖项目内的空 required_paths；测试必须覆盖 fallback 和空计划阻断。
+source: |
+  来源对话：Human 询问“是不是可以不管我在哪个地方工作，我工作指向的目录是 ldvh 管辖项目要遵守 ldvh hook”，并进一步确认“实际处理的是哪个目录的工作，这个目录属于管辖范围就用 ldvh 的机制，不是管辖范围就不使用”。Human 随后要求考虑 worktree、Hook 与 Rules 双入口兼容，并建议建立 WorkCase 进行落实。
+
+  前置 WorkCase：`ldvh-base/workcases/workcase-0015-governed-project-git-identity-worktree.yaml` 已完成 Git common-dir / worktree 识别基础。
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 规范定义 target-based governance
+      role: spec-drafting
+      mode: single
+      input_refs:
+        - specs/01-规范体系基础规范.md
+        - specs/06-运行时扩展规范.md
+        - specs/04-Code确定性执行规范.md
+        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - ldvh-base/workcases/workcase-0015-governed-project-git-identity-worktree.yaml
+      expected_output: |
+        在基础规范、运行时扩展规范、Code 确定性执行规范和 Runtime Protocol 中同步定义 governed subject / operation target，并明确 cwd 回退、worktree Git 身份、Hook/Rules 双入口一致性和多目标边界。Runtime Protocol 只表达触发时机、canonical event 和 Rules 路径模拟方式；消费、阻断、receipt 和判定必须由 dispatcher 的同一 handler 执行。规范文字必须写成强约束，并明确 prose 不得作为执行时自行放行/阻断依据。
+      status: done
+      result_summary: |
+        已在 `specs/01` 定义 governed subject / operation target；在 `specs/06` 写硬 target-first、cwd-fallback、Hook/Rules 同 dispatcher、Runtime Protocol 不得维护第二套逻辑、AI 必须以 dispatcher 结构化输出为执行依据；在 `specs/04` 写入 canonical event context schema、target-first 判定顺序、unknown_target、multi-target 和 commit-msg 工作对象规则；在 `rules/LDVH-RUNTIME-PROTOCOL.md` 收敛为触发时机 + canonical event 模拟入口。
+      evidence_refs:
+        - specs/01-规范体系基础规范.md
+        - specs/04-Code确定性执行规范.md
+        - specs/06-运行时扩展规范.md
+        - rules/LDVH-RUNTIME-PROTOCOL.md
+      blocking_reason: ''
+    - id: item-2
+      title: 同步入口表、Schema 和安装验证
+      role: spec-attachment-sync
+      mode: single
+      input_refs:
+        - specs/33-ldvh-install-action-LDVH安装行动编排.md
+        - specs/attachments/04.Att.02-Code命令入口表.md
+        - specs/attachments/04.Att.03-Code结构化输出Schema表.md
+        - specs/attachments/04.Att.04-Code诊断码表.md
+        - specs/attachments/04.Att.05-知识地图输入范围表.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - specs/attachments/04.Att.09-Code回归入口表.md
+        - specs/attachments/08.Att.05-Code完整验证入口表.md
+        - specs/attachments/06.Att.02-固定运行时扩展登记表.md
+        - specs/attachments/06.Att.15-环境Hook事件映射表.md
+        - hooks/ldvh-hooks.yaml
+      expected_output: |
+        将 `--target` / target_paths / target_resolutions / governed_subject / Hook payload 归一化 / worktree target 验收场景同步到入口表、结构化输出 schema、诊断码、回归表、完整验证表、安装验证、环境 Hook 事件映射表、固定运行时扩展登记和 Hook registry。同步时必须清理 Runtime Protocol、specs/06、specs/33 等文件中的规范性 cwd-only 旧口径。
+      status: done
+      result_summary: |
+        已同步 Code 命令入口表、结构化输出 Schema、诊断码表、回归入口表、完整验证入口表、环境 Hook 事件映射表、Hook registry 和安装行动编排。入口文档增加 `--target`、`target_paths`、`target_resolutions`、Hook/Rules parity、unknown target 阻断、workspace root + target 验证和 commit-msg repo/staged paths 语义。
+      evidence_refs:
+        - specs/33-ldvh-install-action-LDVH安装行动编排.md
+        - specs/attachments/04.Att.02-Code命令入口表.md
+        - specs/attachments/04.Att.03-Code结构化输出Schema表.md
+        - specs/attachments/04.Att.04-Code诊断码表.md
+        - specs/attachments/04.Att.09-Code回归入口表.md
+        - specs/attachments/06.Att.15-环境Hook事件映射表.md
+        - specs/attachments/08.Att.05-Code完整验证入口表.md
+        - hooks/ldvh-hooks.yaml
+      blocking_reason: ''
+    - id: item-3
+      title: 实现 canonical event context 和目标判定
+      role: code-implementation
+      mode: single
+      input_refs:
+        - code/hook_dispatch.py
+        - code/spec_checks/governed_projects.py
+        - code/spec_checks/knowledge_map.py
+      expected_output: |
+        抽出 `normalize_event_context` 与 `resolve_governed_subject(cwd, targets, config)` 等价能力；Rules CLI 支持 `--target` 多次传入；Hook 路径从 payload、tool_input、message_file、command 和 cwd 中归一化 targets；所有 handler 共享同一判定结果。canonical context schema 至少包含 event、trigger_source、cwd、target_paths、target_resolutions、operation_kind/read_write_kind、tool_name、tool_command、message_file 和 session_id。governed config discovery 必须按 target path / target Git identity 优先查找，再回退 cwd；不得只从 cwd 找配置。dispatcher 返回必须提供足够结构化依据，使 AI 后续动作依赖 receipt、blocking、required_paths 和 next_action，而不是依赖 Runtime Protocol prose 自行解释。
+      status: done
+      result_summary: |
+        `hook_dispatch.py` 已新增 target-first 管辖解析：`resolve_governed_subject` 以 target path / Git common-dir 优先查找管辖配置，再回退 cwd；CLI 支持 `--target` 多次传入；stdin Hook payload 从 `target`、`path`、`file_path`、`workdir`、`tool_input.command` 等字段归一化 target。session-start、pre-tool-use 和 git.commit-msg 均共享该判定结果，并输出 `target_paths`、`target_resolutions`、`governed_subject` 等结构化证据。
+      evidence_refs:
+        - code/hook_dispatch.py
+      blocking_reason: ''
+    - id: item-4
+      title: 实现多目标和写入门禁边界
+      role: runtime-hardening
+      mode: single
+      input_refs:
+        - code/hook_dispatch.py
+        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - specs/06-运行时扩展规范.md
+      expected_output: |
+        同一管辖项目多 target 放行；跨管辖项目或管辖/非管辖混合写入返回 blocking 并要求拆分或显式 project；explicit project 只能用于校验、消歧或 Human 确认，不得覆盖真实 target；写操作 target 不确定时返回 unknown_target 并阻断或要求显式 target；只读命令可保留 warning；写入和 commit-msg 继续要求 read_plan_consumed 证据。Git identity 多项目歧义必须阻断，remote_url 只能作为证据线索，common-dir 比较必须使用 absolute resolved 路径。
+      status: done
+      result_summary: |
+        已实现写类工具 unknown target 阻断、同项目多 target 放行、跨项目或管辖/非管辖混合 target 阻断、Git common-dir absolute resolved 比较、remote_url 仅作证据线索。`git.commit-msg` 以 repo root、Git common-dir 和 staged paths 作为提交工作对象，message_file 只用于提交消息校验，并继续复用 read_plan_consumed 门禁。
+      evidence_refs:
+        - code/hook_dispatch.py
+        - tests/code/test_hook_dispatch.py
+      blocking_reason: ''
+    - id: item-5
+      title: 补齐回归测试和 smoke
+      role: test-verification
+      mode: single
+      input_refs:
+        - tests/code/test_hook_dispatch.py
+        - tests/code/test_install_git_hooks.py
+        - tests/code/specs_validate_checks/test_governed_projects.py
+        - tests/code/specs_validate_checks/test_v2.py
+      expected_output: |
+        测试覆盖 workspace root + target 命中、target 非管辖 no-op、Git/Codex worktree target 命中、Hook payload target 归一化、Rules CLI target、多 target 边界、unknown-target 写入阻断、target_resolutions receipt 证据、commit-msg repo common-dir/staged paths 兼容、Hook/Rules 同 canonical context 结果一致性、cwd-only 文案防回归和 specs/fact validation。同一 cwd + 同一 target 下，Rules CLI 与 Hook stdin 输出的 governed_subject、governed_via、blocking 和 next_action 必须一致，允许 trigger_source、session_id 和时间戳不同。
+      status: done
+      result_summary: |
+        已补充 hook_dispatch 测试覆盖 unknown target 写入阻断、workspace root + target 命中子项目、Hook stdin payload 与 Rules CLI target 的管辖结果一致、target 非管辖 no-op、同项目多 target 放行、管辖/非管辖混合阻断、多管辖项目阻断、worktree 文件 target common-dir 识别、commit-msg repo root/staged paths 和 message_file 非 target 语义。完整 `npm run test:code` 通过，包含 372 个 Code 测试和 `specs_validate.py all --fail-on-diagnostics`。
+      evidence_refs:
+        - tests/code/test_hook_dispatch.py
+        - tests/code/test_fact_validate.py
+      blocking_reason: ''
+    - id: item-6
+      title: 写硬 knowledge-map 无答案时的 fallback read_plan
+      role: runtime-hardening
+      mode: single
+      input_refs:
+        - code/hook_dispatch.py
+        - tests/code/test_hook_dispatch.py
+        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - specs/04-Code确定性执行规范.md
+        - specs/06-运行时扩展规范.md
+      expected_output: |
+        管辖项目内，session-start 若未从 knowledge-map 取得有效 P0/P1 read_plan，必须返回固定 fallback read_plan，至少包含 Runtime Protocol、来源 active specs 和固定运行时扩展登记原文；acknowledge-read-plan 必须拒绝确认空 required_paths，避免 AI 确认空读取计划后获得写入或提交放行。
+      status: done
+      result_summary: |
+        `hook_dispatch.py` 已新增固定 fallback read_plan：knowledge-map 未返回有效 P0/P1 时，session-start 返回 Runtime Protocol、specs/06 和 06.Att.02 三个 P0/P1 fallback 原文，并标识 `read_plan_source=fallback`。`acknowledge-read-plan` 对管辖项目 receipt 缺少 P0/P1 required_paths 的情况返回 blocking，不能确认空读取计划。Runtime Protocol、specs/04 和 specs/06 已同步该硬约束。
+      evidence_refs:
+        - code/hook_dispatch.py
+        - tests/code/test_hook_dispatch.py
+        - rules/LDVH-RUNTIME-PROTOCOL.md
+        - specs/04-Code确定性执行规范.md
+        - specs/06-运行时扩展规范.md
+      blocking_reason: ''
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本 WorkCase 改变 LDVH lifecycle 的管辖判定主体，会影响 Hook 路径、Rules 路径、Git hook、receipt 结构、worktree 场景和写入门禁，需要先固定实施边界，避免用 AI 主观意图替代 Code 可验证事实。
+      required_perspectives:
+        - 事实源与管辖边界
+        - Hook/Rules 双入口一致性
+        - worktree 与 Git 身份确定性
+        - 多目标写入安全
+      optional_perspectives: []
+      tool_method_requirements:
+        - 不得让 AI 依据路径相似、对话记忆或“用户意图”自行判定管辖关系。
+        - Hook 路径和 Rules 路径必须归一化到同一个 canonical event context。
+        - Runtime Protocol 不得维护与 Hook dispatcher 并行的第二套逻辑；Rules 路径只模拟触发 canonical event。
+        - specs 强约束必须有对应 Code 实现和测试证据；只有 prose 修改不得视为完成。
+        - worktree 命中必须基于 Git common-dir 或配置登记的 Git 身份。
+        - 修改 specs 后必须同步固定 Rules 入口、Hook registry、Code 入口表和回归验证表。
+        - 写入门禁不得因 target-based 改造弱化 read_plan_consumed 要求。
+      aggregation_rule: 若 target 提取不确定或多目标跨边界，写操作必须阻断或要求拆分；不得默认放行。
+      review_items:
+        - id: plan-review-1
+          reviewer: subagent-spec-hardening
+          role: 事实源与规范硬约束
+          agent_name: Bohr
+          requested_at: '2026-06-26T23:55:00+08:00'
+          perspective: specs-code-tests-hardening
+          result:
+            status: needs_changes
+            summary: |
+              WorkCase 方向正确，已抓住不能只改 Runtime Protocol prose 的风险；但附件同步清单不完整，仍需把 04.Att.03、04.Att.04、06.Att.02、06.Att.15 纳入，并要求清理 Runtime Protocol、specs/06 中的 cwd-only 规范性旧口径。git.commit-msg 也必须进入同一 normalized event context，不能继续只按 cwd 找 receipt。
+            key_findings:
+              - 附件同步清单需要补结构化输出 schema、诊断码、固定运行时扩展登记和环境 Hook 事件映射表。
+              - 现有 Runtime Protocol 和 specs/06 仍有 cwd-only 规范性表述，WorkCase 必须要求 target-first、cwd-fallback 防回归。
+              - git.commit-msg、native Git hook、Rules CLI、stdin Hook payload 都必须调用同一个 normalize_event_context / resolve_governed_subject。
+            required_changes:
+              - 补充附件同步范围和 cwd-only 文案防回归验收。
+              - 补充 Hook/Rules parity 测试和 specs/33 安装验证 target 场景。
+              - 明确 commit-msg 进入同一 canonical event context。
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0016-target-based-hook-governance.yaml
+              - rules/LDVH-RUNTIME-PROTOCOL.md
+              - specs/06-运行时扩展规范.md
+              - code/hook_dispatch.py
+        - id: plan-review-2
+          reviewer: subagent-hook-rules-parity
+          role: Hook/Rules 双入口一致性
+          agent_name: Aquinas
+          requested_at: '2026-06-26T23:55:00+08:00'
+          perspective: hook-rules-canonical-context
+          result:
+            status: needs_changes
+            summary: |
+              WorkCase 已写清 Runtime Protocol 只定义触发时机和 canonical event 模拟入口；但还需明确 normalized context schema、target-based governed config discovery、Hook stdin payload 与 Rules CLI target 的 parity 测试，以及 Runtime Protocol / Hook registry / 入口表同步 `--target` 和 target_paths。
+            key_findings:
+              - 同一 canonical handler 的可验证性还不够锋利。
+              - governed config discovery 不能只从 cwd 找配置，必须支持 target path / target Git identity。
+              - commit-msg target 规则需要明确 native Git hook、Rules CLI、worktree repo 三种路径。
+            required_changes:
+              - 定义 canonical event context 稳定 schema。
+              - 增加 target-based config discovery 行动项。
+              - 增加 Hook stdin 与 Rules CLI parity 测试。
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0016-target-based-hook-governance.yaml
+              - code/hook_dispatch.py
+              - tests/code/test_hook_dispatch.py
+        - id: plan-review-3
+          reviewer: subagent-target-boundary
+          role: worktree 与多目标安全
+          agent_name: Kierkegaard
+          requested_at: '2026-06-26T23:55:00+08:00'
+          perspective: target-worktree-multitarget-safety
+          result:
+            status: needs_changes
+            summary: |
+              WorkCase 方向正确，但需防止 explicit project 覆盖真实 target、写操作 unknown target 回退 cwd 默认放行、receipt 缺少逐 target 决策证据、commit-msg 只看 message_file，以及 Git common-dir 多项目歧义未阻断。
+            key_findings:
+              - explicit project 只能用于校验、消歧或确认，不能绕过 target 解析。
+              - 写操作 target 不确定时必须 unknown_target 阻断或要求显式 target。
+              - receipt 需要 target_resolutions[]，逐 target 记录 normalized path、git common-dir、project_id、governance status、source 和 unknown reason。
+              - git.commit-msg 的真实 target 是 repo identity 和 staged paths，不是 message_file。
+              - Git identity 多项目匹配必须阻断，remote_url 不得单独决定管辖。
+            required_changes:
+              - 调整 success criteria 中 explicit project 的位置和语义。
+              - 补 target_resolutions receipt 结构和测试。
+              - 补 commit-msg repo/staged paths 与混合边界测试。
+              - 补 common-dir ambiguity/collision 和路径归一化规则。
+            evidence_refs:
+              - ldvh-base/workcases/workcase-0016-target-based-hook-governance.yaml
+              - ldvh-base/workcases/workcase-0015-governed-project-git-identity-worktree.yaml
+              - code/hook_dispatch.py
+              - tests/code/test_hook_dispatch.py
+    controller_resolution:
+      resolved_at: '2026-06-27T00:12:06+08:00'
+      resolver: main_controller
+      source_review_item_ids:
+        - plan-review-1
+        - plan-review-2
+        - plan-review-3
+      accepted_findings:
+        - specs 必须写成强约束，并有 Code 实现和测试证据；只有 prose 修改不得关闭。
+        - Hook 路径和 Rules 路径必须归一化到同一 canonical event context，同一 target 下 governance 结果一致。
+        - governed config discovery 不能只从 cwd 查找，必须支持 target path / target Git identity。
+        - explicit project 不能覆盖真实 target；unknown target 写入必须阻断；receipt 必须记录 target_resolutions。
+        - git.commit-msg 的工作对象是 repo root、Git common-dir 和 staged paths，不是 message_file。
+      rejected_findings: []
+      required_changes_applied:
+        - specs/01、specs/04、specs/06 和 Runtime Protocol 已写入 target-first、cwd-fallback、Rules 只模拟 canonical event、dispatcher 结构化输出作为执行依据。
+        - hook_dispatch.py 已实现 `--target`、payload target 归一化、target-first config discovery、target_resolutions、unknown_target 阻断和 git.commit-msg repo/staged paths。
+        - 附件、Hook registry、安装验证和测试入口已同步。
+        - tests/code/test_hook_dispatch.py 已补 Hook/Rules parity、workspace root + target 和 unknown target 阻断测试。
+      unresolved_items: []
+      changed_fields:
+        - success_criteria
+        - orchestration.execution_items
+        - orchestration.plan_review.controller_resolution
+    human_confirmation:
+      decision: execute
+      scope: Human 明确要求“行动吧，自检通过后开启子agent进行审核”，授权本轮直接落实 WorkCase 0015 的 specs、code、tests 和事实对象更新。
+      constraints:
+        - specs 必须写硬，Code 必须跟上，测试必须证明；不得只改 prose。
+        - Runtime Protocol 只负责触发时机和模拟 Hook，不得形成第二套处理逻辑。
+        - 自检通过后必须调用子 Agent 做结果审核。
+      confirmed_at: '2026-06-27T00:12:06+08:00'
+      summary: Human 要求按 WorkCase 0015 执行，并在主控自检后开启子 Agent 审核。
+  result_review:
+    controller_self_check:
+      controller: main-controller-codex
+      checked_at: '2026-06-27T00:12:06+08:00'
+      prompt_context:
+        objective: |
+          检查 WorkCase 0015 是否已从行动需求落实到 specs、Code、tests 和验证证据，并确认 Hook/Rules 双路径、target-first 管辖判定、worktree/Git 身份和 read_plan 门禁没有分叉。
+        input_refs:
+          - ldvh-base/workcases/workcase-0016-target-based-hook-governance.yaml
+          - rules/LDVH-RUNTIME-PROTOCOL.md
+          - specs/01-规范体系基础规范.md
+          - specs/04-Code确定性执行规范.md
+          - specs/06-运行时扩展规范.md
+          - code/hook_dispatch.py
+          - tests/code/test_hook_dispatch.py
+      result:
+        status: pass_with_followups
+        summary: |
+          主控自检通过：target-first 语义已写入 specs/rules/附件，dispatcher 已支持 `--target`、payload target 归一化、target-first config discovery、target_resolutions、unknown_target 阻断和 git.commit-msg repo/staged paths；Hook/Rules parity、workspace root + target、非管辖 no-op、多目标边界、worktree 文件 target 和 read_plan 门禁测试已补齐。完整 `npm run test:code` 通过。第二轮子 Agent 已确认代码与测试侧通过；registry/specs 侧指出的 `equivalent_manual_check` 和 specs/33 验收顺序已完成修复并补跑 deployment-entries。
+        key_findings:
+          - Runtime Protocol 已收敛为触发时机和 canonical event 模拟入口，执行依据改为 dispatcher 结构化输出。
+          - Hook 路径和 Rules 路径在同一 target 下共享 governed_subject、governed_via、blocking 等结果。
+          - Workspace root + target 命中 LDVH 子项目的 smoke 返回 governed=true 和 target_resolutions。
+          - 写类工具缺少 target 时返回 unknown_target 阻断，避免回退 cwd 默认放行。
+          - npm run test:code 通过，372 passed，active specs diagnostics=0；保留既有 06.Att.12 review hint。
+        required_changes: []
+        evidence_refs:
+          - verification_evidence
+      attested_at: '2026-06-27T00:12:06+08:00'
+      attestation:
+        signer: main-controller-codex
+        statement: 基于代码 diff、测试输出、fact_validate、specs_validate、target smoke 和 cwd-only 残留搜索完成主控自检。
+    review_policy:
+      selection_reason: Human 要求自检通过后开启子 Agent 审核；第一轮结果审核发现测试覆盖、代码边界和 Hook registry 登记仍需补强，修复后进行第二轮聚焦审核；Noether 第二轮剩余两项修复后，再追加第三轮窄口径复审。
+      required_perspectives:
+        - specs-registry-consistency
+        - code-target-governance
+        - tests-verification-evidence
+      optional_perspectives: []
+      tool_method_requirements:
+        - 不编辑文件，只审核结果。
+        - 聚焦第一轮 needs_changes 是否已修复。
+        - 给出 pass / needs_changes / fail 与证据路径。
+      aggregation_rule: 任一 required perspective 仍为 needs_changes 时，主控必须修复后再关闭。
+    review_items:
+      - id: result-review-1
+        reviewer: subagent-specs-registry
+        role: specs / registry consistency
+        agent_name: Noether
+        requested_at: '2026-06-27T00:20:00+08:00'
+        perspective: specs-registry-consistency
+        result:
+          status: fail
+          summary: |
+            第二轮审核确认 Hook registry 已新增 dispatcher_command 且 session-start / pre-tool-use 可表达 target，但指出 `git.commit-msg` 的 equivalent_manual_check 仍指向底层 validator，specs/33 仍把项目目录直接验证放在主验收之前。
+          key_findings:
+            - dispatcher_command 与 handoff 边界已修复。
+            - git.commit-msg equivalent_manual_check 仍可能误导为可绕过 dispatcher。
+            - specs/33 配置后验证顺序仍需 target-first 主验证。
+          required_changes:
+            - 将 git.commit-msg equivalent_manual_check 改为 dispatcher 路径，并把 commit_validate 标为底层 validator 非等价门禁。
+            - 将 specs/33 的 workspace root + --target 设为主验证，项目目录 cwd 验证降为补充 smoke。
+          evidence_refs:
+            - hooks/ldvh-hooks.yaml
+            - specs/33-ldvh-install-action-LDVH安装行动编排.md
+      - id: result-review-2
+        reviewer: subagent-code-target-governance
+        role: code target governance
+        agent_name: Ramanujan
+        requested_at: '2026-06-27T00:20:00+08:00'
+        perspective: code-target-governance
+        result:
+          status: pass
+          summary: |
+            第二轮代码审核通过：worktree 文件 target、未存在文件 target、project_key 多目标比较、canonical 输出字段、git.commit-msg repo_root 和 Bash 写入识别均已修复。
+          key_findings:
+            - _git_lookup_cwd 解决文件 target 和未存在路径 Git common-dir 解析。
+            - project_key 避免无 id 多项目漏判。
+            - pre-tool-use 和 blocking 输出包含 event / operation_kind / read_write_kind / tool_name / message_file / session_id。
+            - git.commit-msg validator context 使用真实 repo root。
+          required_changes: []
+          evidence_refs:
+            - code/hook_dispatch.py
+            - tests/code/test_hook_dispatch.py
+      - id: result-review-3
+        reviewer: subagent-tests-verification
+        role: tests and verification evidence
+        agent_name: Pascal
+        requested_at: '2026-06-27T00:20:00+08:00'
+        perspective: tests-verification-evidence
+        result:
+          status: pass
+          summary: |
+            第二轮测试审核通过：target 非管辖 no-op、多目标边界、worktree 文件 target、commit-msg repo root/message_file 语义、Hook/Rules parity 均已有测试覆盖；聚焦命令复跑通过。
+          key_findings:
+            - target 非管辖 no-op、多目标同项目放行、混合目标阻断、多管辖项目阻断均有测试。
+            - worktree 文件 target 通过 git.common_dir 命中。
+            - Hook/Rules parity 测试比较 target_paths 和 target_resolutions。
+            - WorkCase 证据已更新到聚焦 26 passed 和完整 372 passed。
+          required_changes: []
+          evidence_refs:
+            - tests/code/test_hook_dispatch.py
+            - ldvh-base/workcases/workcase-0016-target-based-hook-governance.yaml
+      - id: result-review-4
+        reviewer: subagent-narrow-noether-followup
+        role: narrow follow-up verification
+        agent_name: Poincare
+        requested_at: '2026-06-27T00:32:00+08:00'
+        perspective: specs-registry-consistency
+        result:
+          status: pass
+          summary: |
+            第三轮窄口径复审通过：Noether 第二轮指出的两处剩余问题均已修复，且复审未编辑文件。
+          key_findings:
+            - hooks/ldvh-hooks.yaml 的 git.commit-msg dispatcher_command 和 equivalent_manual_check 均指向 dispatcher 路径。
+            - commit_validate.py 已降级标注为 underlying_validator_check，明确不等价于 dispatcher 门禁。
+            - specs/33 的配置后主验证已改为 workspace root + --target，项目目录 cwd 验证降为补充 smoke。
+          required_changes: []
+          evidence_refs:
+            - hooks/ldvh-hooks.yaml
+            - specs/33-ldvh-install-action-LDVH安装行动编排.md
+      - id: result-review-5
+        reviewer: subagent-runtime-specs-fallback-review
+        role: specs / runtime fallback hardening
+        agent_name: Harvey
+        requested_at: '2026-06-27T01:20:00+08:00'
+        perspective: specs-runtime-fallback-hardening
+        result:
+          status: pass
+          summary: |
+            追加复审通过：rules/specs/workcase 已把 knowledge-map 无答案 fallback read_plan、空 required_paths acknowledge 阻断和 Runtime Protocol 不自建第二套逻辑写硬。
+          key_findings:
+            - Runtime Protocol 明确 Rules 路径只触发 canonical event，dispatcher 给出管辖判定、receipt、blocking 和 next_action。
+            - Runtime Protocol 明确管辖项目内 dispatcher 不得返回空 P0/P1 read_plan，knowledge-map 不可用/无答案/无有效 P0/P1 时必须 fallback。
+            - Runtime Protocol、specs/04 和 specs/06 均明确 acknowledge-read-plan 不能确认空 required_paths。
+          required_changes: []
+          evidence_refs:
+            - rules/LDVH-RUNTIME-PROTOCOL.md
+            - specs/04-Code确定性执行规范.md
+            - specs/06-运行时扩展规范.md
+            - ldvh-base/workcases/workcase-0016-target-based-hook-governance.yaml
+      - id: result-review-6
+        reviewer: subagent-code-tests-fallback-review
+        role: code / tests fallback hard gate
+        agent_name: Singer
+        requested_at: '2026-06-27T01:20:00+08:00'
+        perspective: code-tests-fallback-hard-gate
+        result:
+          status: pass
+          summary: |
+            追加复审通过：code/tests 已形成硬门禁。session-start 在 knowledge-map 空/无有效 P0/P1 时返回固定 fallback read_plan；diagnostics 不会覆盖 fallback required 语义；governed receipt 空 required_paths 会阻断 acknowledge；写入和 commit-msg 仍依赖 read_plan_consumed。
+          key_findings:
+            - RUNTIME_FALLBACK_READ_PLAN 固定包含 Runtime Protocol、specs/06 和 06.Att.02。
+            - _build_session_start_result 在无有效 P0/P1 read_plan 时设置 read_plan_source=fallback 和 action_policy=fallback_read_plan_required。
+            - _acknowledge_read_plan 对管辖项目空 required_paths 返回 blocking。
+            - tests/code/test_hook_dispatch.py 覆盖 diagnostics+fallback、无 P0/P1 fallback 和空 required_paths 阻断。
+          required_changes: []
+          evidence_refs:
+            - code/hook_dispatch.py
+            - tests/code/test_hook_dispatch.py
+    controller_resolution:
+      resolved_at: '2026-06-27T00:25:00+08:00'
+      resolver: main_controller
+      source_review_item_ids:
+        - result-review-1
+        - result-review-2
+        - result-review-3
+        - result-review-4
+        - result-review-5
+        - result-review-6
+      accepted_findings:
+        - Noether 指出的 registry equivalent_manual_check 和 specs/33 验收顺序问题成立，已修复。
+        - Ramanujan 对代码侧修复给出 pass，无需追加代码改动。
+        - Pascal 对测试覆盖给出 pass，无需追加测试改动。
+        - Poincare 对 Noether 剩余两项修复做窄口径复审并给出 pass，无需追加改动。
+        - Harvey 对追加 fallback read_plan 的 specs/rules 硬约束给出 pass。
+        - Singer 对追加 fallback read_plan 的 code/tests 硬门禁给出 pass。
+      rejected_findings: []
+      required_changes_applied:
+        - hooks/ldvh-hooks.yaml 的 git.commit-msg equivalent_manual_check 已改为 dispatcher 路径，底层 commit_validate 改为 underlying_validator_check。
+        - specs/33 配置后验证已改为 workspace root + --target 主验证，项目目录 cwd 验证降为补充 smoke。
+        - 补跑 `python3 -m pytest -q tests/code/test_hook_dispatch.py tests/code/specs_validate_checks/test_deployment_entries.py tests/code/test_install_git_hooks.py tests/code/test_commit_validate.py::test_unified_hook_dispatcher_reuses_canonical_validator` 通过 35 passed。
+        - 补跑 `python3 code/fact_validate.py ldvh-base/ && python3 code/specs_validate.py deployment-entries && git diff --check` 通过。
+        - 追加 fallback read_plan 硬化：session-start 无有效 P0/P1 时返回固定 fallback read_plan，acknowledge-read-plan 阻断空 required_paths。
+        - 补跑 `python3 -m pytest -q tests/code/test_hook_dispatch.py` 通过 23 passed；完整 `npm run test:code` 通过 374 passed。
+      unresolved_items: []
+      changed_fields:
+        - orchestration.result_review.review_items
+        - orchestration.result_review.controller_resolution
+    human_closure_confirmation:
+      decision: close
+      confirmer: human
+      confirmed_at: '2026-06-27T03:15:00+08:00'
+      scope: 关闭 workcase-0016；本 WorkCase 仅收口 target-based governance、dispatcher 门禁、fallback read_plan 和 Hook/Rules 同路机制本体。
+      constraints:
+        - Codex 环境级自动 Hook 接入不并入 0015 继续执行。
+        - 后续接入落地由安装/环境适配行动承接，执行前仍需按 06 Human Gate 判断是否修改用户环境入口。
+      summary: |
+        Human 明确要求关闭 0015，并询问后续接入工作由谁执行。主控确认 0015 本体已完成并关闭；Codex hooks.json / 插件方式自动触发等环境接入落地不属于 0015 的剩余未完成项。
+plan_confirmed_at: '2026-06-27T00:12:06+08:00'
+verification_evidence: |
+  ## 验证计划
+
+  覆盖 Hook dispatcher 单元测试、安装 Hook 兼容测试、commit-msg 复用 canonical validator、完整 Code 测试、active specs 综合校验、事实对象校验、target-first smoke、cwd-only 旧口径残留搜索和 diff 空白检查。
+
+  ## 验证命令
+
+  - `python3 -m pytest -q tests/code/test_hook_dispatch.py tests/code/test_install_git_hooks.py tests/code/test_commit_validate.py::test_unified_hook_dispatcher_reuses_canonical_validator`
+  - `python3 code/hook_dispatch.py run session-start --trigger-source rules --cwd /Users/dmh2002/poker_hud_projects --target /Users/dmh2002/poker_hud_projects/ld-vibe-harness --session-id target-governance-smoke`
+  - `python3 code/fact_validate.py ldvh-base/`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `rg -n "当前目录不在管辖|当前 cwd 未命中|最近匹配当前 cwd|判断当前目录|--cwd <管辖项目>" rules specs hooks code tests`
+  - `npm run test:code`
+  - `git diff --check`
+
+  ## 验证结果
+
+  - 聚焦 pytest：37 passed。
+  - target-first smoke：从 `/Users/dmh2002/poker_hud_projects` 指向 `/Users/dmh2002/poker_hud_projects/ld-vibe-harness` 返回 `governed=true`、`subject_source=target`、`target_resolutions[0].status=governed`。
+  - fact_validate：errors=0 warnings=0。
+  - specs_validate all：diagnostics=0；保留既有 06.Att.12 review hint。
+  - cwd-only 旧口径搜索：无结果。
+  - 新增 fallback read_plan / 空 required_paths 阻断测试已纳入 `tests/code/test_hook_dispatch.py`。
+  - npm run test:code：374 passed，并完成 specs check。
+  - git diff --check：通过。
+
+  ## 结论
+
+  WorkCase 0015 追加的 fallback read_plan 硬化已完成主控自检，满足进入子 Agent 重新审核的条件。
+closure_evidence: |
+  ## 验证计划
+
+  关闭前复核 WorkCase 是否完成 target-based governance 与 knowledge-map fallback read_plan 的规范、dispatcher、测试、子 Agent 审核和验证证据闭环。
+
+  ## 验证命令
+
+  - `python3 -m pytest -q tests/code/test_hook_dispatch.py`
+  - `python3 -m pytest -q tests/code/test_hook_dispatch.py tests/code/specs_validate_checks/test_deployment_entries.py tests/code/test_install_git_hooks.py tests/code/test_commit_validate.py::test_unified_hook_dispatcher_reuses_canonical_validator`
+  - `python3 code/fact_validate.py ldvh-base/ && python3 code/specs_validate.py deployment-entries && git diff --check`
+  - `npm run test:code`
+
+  ## 验证结果
+
+  - hook_dispatch 聚焦测试通过：23 passed。
+  - 相关回归通过：37 passed。
+  - fact_validate 与 deployment-entries 检查通过；diff 空白检查通过。
+  - 完整 Code 测试通过：374 passed；active specs diagnostics=0，保留既有 06.Att.12 review hint。
+  - 子 Agent 追加复审：Harvey pass，Singer pass。
+
+  ## 收口结果
+
+  WorkCase 0015 本体收口干净。target-based governance、Hook/Rules 同路、写入/提交 read_plan 门禁、knowledge-map 无答案 fallback read_plan 和空 required_paths acknowledge 阻断均已落到 specs、Runtime Protocol、dispatcher 和测试。
+
+  ## 后续分流
+
+  0015 不继续承接环境级自动 Hook 接入。Codex hooks.json / 插件方式自动触发 / 用户环境入口修改属于安装与环境落地工作，由 `specs/33-ldvh-install-action-LDVH安装行动编排.md`、`specs/06-运行时扩展规范.md` 的环境入口 Human Gate、以及运行链路主线 `ldvh-base/sparks/spark-0033-runtime-operation-assurance-hook-agent-deployment.yaml` 或后续专门 WorkCase 承接。剩余风险为持续维护类风险：Hook payload 结构变化、复杂 shell target 解析、非管辖 no-op 边界和 future knowledge-map schema 演进，已保留在 residual_risks，不阻断本轮关闭。
+
+  ## 结论
+
+  WorkCase 0015 已由 Human 确认关闭。
+closure_requested_at: '2026-06-27T01:32:00+08:00'
+closed_at: '2026-06-27T03:15:00+08:00'
+closure_outcome: completed
+residual_risks:
+  - Hook payload 中的工具参数结构可能随环境变化，target 提取必须保持保守；无法确定目标时写操作必须阻断并要求显式 target，而不是猜测或回退 cwd 默认放行。
+  - 命令字符串解析只能作为确定性辅助，复杂 shell 场景可能需要显式 `--target` 或 Human 拆分任务。
+  - target-based governance 会扩大 LDVH lifecycle 触发范围，必须确保非管辖目标 no-op 与只读命令 warning 语义不被误改成硬阻断。
+followup_refs:
+  - ldvh-base/workcases/workcase-0015-governed-project-git-identity-worktree.yaml
+revision_history:
+  - at: '2026-06-27T00:12:06+08:00'
+    from_status: human_plan_confirming
+    to_status: result_self_checking
+    actor: main_controller
+    reason: Human 授权直接行动；已完成 specs、code、tests、验证和主控自检，准备进入子 Agent 结果审核。
+    summary: |
+      将 target-based governance 从行动需求落实到 Runtime Protocol、specs/01/04/06、Hook registry、入口表、dispatcher 和测试；完整 Code 测试通过。
+    changed_fields:
+      - status
+      - success_criteria
+      - orchestration.execution_items
+      - orchestration.plan_review.controller_resolution
+      - orchestration.plan_review.human_confirmation
+      - orchestration.result_review.controller_self_check
+      - verification_evidence
+  - at: '2026-06-27T00:20:00+08:00'
+    from_status: result_self_checking
+    to_status: subagents_result_reviewing
+    actor: main_controller
+    reason: 主控自检通过后按 Human 要求开启子 Agent 结果审核。
+    summary: |
+      分别委托 specs/registry consistency、code target governance、tests/verification evidence 三个视角审核完成结果；第一轮发现的问题已修复后进入第二轮聚焦审核。
+    changed_fields:
+      - status
+      - orchestration.result_review.review_policy
+  - at: '2026-06-27T00:35:00+08:00'
+    from_status: subagents_result_reviewing
+    to_status: human_closure_confirming
+    actor: main_controller
+    reason: 结果复核 required changes 均已处理，并经第三轮窄口径复审通过；等待 Human 判断是否关闭。
+    summary: |
+      保留 Noether 第二轮 fail 作为真实复核记录，同时登记 Poincare 第三轮 pass 证明剩余两项已闭环；当前进入 Human 关闭确认，不自动关闭。
+    evidence_refs:
+      - orchestration.result_review.review_items
+      - orchestration.result_review.controller_resolution
+      - closure_evidence
+      - verification_evidence
+    changed_fields:
+      - status
+      - updated
+      - orchestration.result_review.review_items
+      - orchestration.result_review.controller_resolution
+      - closure_requested_at
+      - closure_evidence
+  - at: '2026-06-27T01:05:00+08:00'
+    from_status: human_closure_confirming
+    to_status: executing
+    actor: main_controller
+    reason: Human 要求在原 WorkCase 内继续完成 knowledge-map 无答案时的硬门禁补强，并在完成后重新审核。
+    summary: |
+      追加验收项：knowledge-map 无答案或无有效 P0/P1 read_plan 时，dispatcher 必须生成 fallback read_plan；acknowledge-read-plan 不得确认空 required_paths。关闭确认撤回，进入执行态。
+    changed_fields:
+      - status
+      - updated
+      - success_criteria
+      - orchestration.execution_items
+  - at: '2026-06-27T01:18:00+08:00'
+    from_status: executing
+    to_status: result_self_checking
+    actor: main_controller
+    reason: fallback read_plan 硬化已完成 specs、Code、tests 和验证。
+    summary: |
+      session-start 在 knowledge-map 无有效 P0/P1 read_plan 时返回固定 fallback read_plan；acknowledge-read-plan 阻断管辖项目空 required_paths；聚焦回归、事实源校验和完整 Code 测试通过，准备重新开启子 Agent 结果审核。
+    evidence_refs:
+      - code/hook_dispatch.py
+      - tests/code/test_hook_dispatch.py
+      - rules/LDVH-RUNTIME-PROTOCOL.md
+      - specs/04-Code确定性执行规范.md
+      - specs/06-运行时扩展规范.md
+      - verification_evidence
+    changed_fields:
+      - status
+      - updated
+      - success_criteria
+      - orchestration.execution_items
+      - verification_evidence
+      - closure_evidence
+      - closure_requested_at
+  - at: '2026-06-27T01:20:00+08:00'
+    from_status: result_self_checking
+    to_status: subagents_result_reviewing
+    actor: main_controller
+    reason: 按 Human 要求，追加硬化完成后重新开启子 Agent 结果审核。
+    summary: |
+      重新审核范围聚焦 knowledge-map 无答案 fallback read_plan、空 required_paths acknowledge 阻断、Runtime Protocol/specs 强约束和测试覆盖。
+    changed_fields:
+      - status
+      - updated
+  - at: '2026-06-27T01:32:00+08:00'
+    from_status: subagents_result_reviewing
+    to_status: human_closure_confirming
+    actor: main_controller
+    reason: 追加子 Agent 结果审核均为 pass，已形成关闭前证据，等待 Human 关闭确认。
+    summary: |
+      Harvey 确认 specs/rules 已写硬 fallback read_plan 与空 required_paths 阻断；Singer 确认 code/tests 已形成硬门禁。主控吸收结果后进入 Human 关闭确认，不自动关闭。
+    evidence_refs:
+      - orchestration.result_review.review_items
+      - orchestration.result_review.controller_resolution
+      - closure_evidence
+      - verification_evidence
+    changed_fields:
+      - status
+      - updated
+      - orchestration.result_review.review_items
+      - orchestration.result_review.controller_resolution
+      - closure_evidence
+      - closure_requested_at
+  - at: '2026-06-27T03:15:00+08:00'
+    from_status: human_closure_confirming
+    to_status: closed
+    actor: human
+    reason: Human 明确要求关闭 0015。
+    summary: |
+      0015 按 Human Gate 关闭；机制本体已完成。Codex 环境级自动 Hook 接入、hooks.json 配置、插件方式启用或环境入口修改不并入 0015，后续由 specs/33 安装行动、specs/06 环境入口 Gate、spark-0033 或专门 WorkCase 承接。
+    evidence_refs:
+      - orchestration.result_review.human_closure_confirmation
+      - closure_evidence
+    changed_fields:
+      - status
+      - updated
+      - orchestration.result_review.human_closure_confirmation
+      - closure_evidence
+      - closed_at
+      - closure_outcome

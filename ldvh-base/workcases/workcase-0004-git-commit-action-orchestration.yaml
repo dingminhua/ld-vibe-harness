@@ -1,0 +1,615 @@
+id: workcase-0004
+type: workcase
+title: Git 提交行动编排薄入口落地
+goal: |
+  将 LDVH Git 提交从“07 规则 + Skill/Hook/Code 资产已经存在”推进为 active 的 Git 提交行动编排薄入口，使 AI 准备、拆分、预检、创建和交还 commit 的执行责任有单一流程归口。
+status: closed
+created: '2026-06-24T09:23:35.843460'
+updated: '2026-06-26T09:52:45+08:00'
+priority: P1
+description: |
+  当前 v2 已将 commit message 契约和 Git records 追溯归口到 07，并登记了 `ldvh-git-commit` Skill、`hooks/ldvh-hooks.yaml`、`code/commit_validate.py` 和 Web commit DTO / 展示链路。但 03 所要求的 Git 提交行动编排成员尚未存在，导致“规则、资产、环境边界、执行证据和 Skill 是否真实调用”之间仍缺少薄入口接管。
+
+  本 WorkCase 新增 active `specs/31-git-commit-action-Git提交行动编排.md`，只接管提交行动执行责任，不复制 07 的提交本体规则；并同步 01/03/07、Skill、Hook、Rules 和相关 Spark 的状态记录。
+success_criteria: |
+  - [x] 新增 active 31 Git 提交行动编排成员，具备 `v2_spec`、`v2_action_member` 和兼容 `ldvh_member` 身份块。
+  - [x] 31 明确 Context、Scenario、Gate、执行流程、问题分流、Skill 使用证据、Code/Hook/Web 协作、环境适配边界和可测试性锚点。
+  - [x] 07 明确提交行动流程由 31 接管，且 31 不复制 commit message 本体规则。
+  - [x] `ldvh-git-commit` Skill 和 Hook registry 回指 31，旧“10 规范”描述被清理。
+  - [x] Rules 入口能在 Git 提交准备或追溯场景定位 31、07、Skill 和 validator。
+  - [x] spark-0018 / spark-0020 记录本次承接进展，避免旧 workcase-0074 口径继续误导。
+  - [x] 通过 active specs、固定运行时扩展、能力环境矩阵、commit validator、Skill 快速校验、Web typecheck、commit DTO 单测和工作对象事实源校验；执行当时 Web API 全量回归被 facts 夹具空 pitfall 假设阻断，已记录边界，后续由 `workcase-0008` 承接并关闭。
+source: |
+  用户在 2026-06-24 要求先了解 LDVH 当前状态，再按建议推进“提交”落地。主控检查发现：07 规则、Skill、Hook、Code 和 Web DTO 已基本存在，但 30-59 中缺少 Git 提交行动编排薄入口；用户随后明确“按你建议执行”。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 建立 WorkCase 和执行边界
+    role: main-controller
+    mode: single
+    input_refs:
+    - current-conversation
+    - specs/03-行动编排规范.md
+    - specs/07-事实源边界与Git追溯规范.md
+    expected_output: |
+      WorkCase 明确目标、成功标准、Human Gate 授权和执行颗粒度。
+    status: done
+    result_summary: |
+      已创建 workcase-0004，并记录用户“按你建议执行”为本轮新增 active 31 行动成员和推进提交落地的 Human Gate 授权。执行范围限定为 Git 提交行动薄入口、资产回指和状态记录，不实现 native hook 安装或 CI。
+    evidence_refs:
+    - ldvh-base/workcases/workcase-0004-git-commit-action-orchestration.yaml
+    blocking_reason: null
+  - id: item-2
+    title: 新增 31 Git 提交行动编排成员
+    role: specs
+    mode: single
+    input_refs:
+    - specs/03-行动编排规范.md
+    - specs/attachments/03.Att.01-成员身份字段表.md
+    - specs/attachments/03.Att.02-成员主文件骨架模板.md
+    - specs/07-事实源边界与Git追溯规范.md
+    expected_output: |
+      31 成员主文件成为 active Git 提交流程薄入口，并声明来源承接、能力资产、Gate、证据和环境边界。
+    status: done
+    result_summary: |
+      已新增 active `specs/31-git-commit-action-Git提交行动编排.md`，包含 `v2_spec`、`v2_action_member` 和兼容 `ldvh_member`，并按 03 骨架声明 Context、Scenario、Human Gate、执行、问题分流、回写证据、环境适配边界和可测试性锚点。v2-check 已通过。
+    evidence_refs:
+    - specs/31-git-commit-action-Git提交行动编排.md
+    blocking_reason: null
+  - id: item-3
+    title: 同步规则与能力资产回指
+    role: specs-runtime
+    mode: single
+    input_refs:
+    - specs/01-规范体系基础规范.md
+    - specs/03-行动编排规范.md
+    - specs/07-事实源边界与Git追溯规范.md
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - rules/LDVH-WORKSPACE-ENTRY.md
+    - skills/ldvh-git-commit/SKILL.md
+    - hooks/ldvh-hooks.yaml
+    expected_output: |
+      01/03/07、Rules、Skill 和 Hook 均能定位 31；旧 10/0074 执行口径不再作为当前入口。
+    status: done
+    result_summary: |
+      已同步 01 active 成员登记、03 active 成员说明、07 的提交流程归口、Rules 入口、`ldvh-git-commit` Skill、OpenAI agent metadata 和 Hook registry。31 接管执行责任，07 继续保留 commit message 本体规则。
+    evidence_refs:
+    - specs/01-规范体系基础规范.md
+    - specs/03-行动编排规范.md
+    - specs/07-事实源边界与Git追溯规范.md
+    - rules/LDVH-MAINTAINER-ENTRY.md
+    - rules/LDVH-WORKSPACE-ENTRY.md
+    - skills/ldvh-git-commit/SKILL.md
+    - skills/ldvh-git-commit/agents/openai.yaml
+    - hooks/ldvh-hooks.yaml
+    blocking_reason: null
+  - id: item-4
+    title: 更新 Spark 承接状态
+    role: facts
+    mode: single
+    input_refs:
+    - ldvh-base/sparks/spark-0018-commit-spec-assurance-assets.yaml
+    - ldvh-base/sparks/spark-0020-derived-audit-flow-asset-boundary.yaml
+    expected_output: |
+      相关 Spark 记录 Git 提交落地由 workcase-0004 和 31 接管，避免继续指向旧 workcase-0074。
+    status: done
+    result_summary: |
+      已在 spark-0018 和 spark-0020 的 evolution 中记录 workcase-0004 与 31 的承接进展，并把 `related_workcases` 指向 workcase-0004。旧 workcase-0074 保留为历史追溯，不再作为当前入口。
+    evidence_refs:
+    - ldvh-base/sparks/spark-0018-commit-spec-assurance-assets.yaml
+    - ldvh-base/sparks/spark-0020-derived-audit-flow-asset-boundary.yaml
+    blocking_reason: null
+  - id: item-5
+    title: 验证闭环和残留风险记录
+    role: verification
+    mode: single
+    input_refs:
+    - code/specs_validate.py
+    - code/fact_validate.py
+    - tests/code/test_commit_validate.py
+    - web/
+    expected_output: |
+      运行必要验证，记录验证证据、Web API 旁路风险和后续提交要求。
+    status: done
+    result_summary: |
+      已运行 active specs 综合检查、知识地图 31 git_trace 导航、固定运行时扩展登记、能力环境矩阵、WorkCase/Spark 事实源校验、commit validator 测试、Skill 快速校验、Hook dispatcher 临时消息验证、Web typecheck、commit DTO 单测和 `git diff --check`。Web API 全量回归仍在 facts.test.ts 空 pitfall 假设处失败，属于本次提交 DTO 之外的旁路夹具问题。
+    evidence_refs:
+    - code/specs_validate.py
+    - code/fact_validate.py
+    - tests/code/test_commit_validate.py
+    - skills/ldvh-git-commit/SKILL.md
+    - hooks/ldvh-hooks.yaml
+    - web/
+    blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本 WorkCase 来源于用户直接要求继续推进提交落地；主控已完成当前状态审查，确认缺口是 30-59 Git 提交行动编排薄入口，而不是继续加厚 07、Skill 或 Hook。
+      required_perspectives:
+      - 规范边界
+      - 能力资产边界
+      - 环境适配边界
+      optional_perspectives: []
+      tool_method_requirements:
+      - 核对 03/07/06 的归口边界。
+      - 不声明 native hook、Skill runtime 或 CI 已安装。
+      - 不复制 07 commit message 本体规则。
+      aggregation_rule: |
+        若发现 31 会重定义 07 规则、声明环境已安装或绕过 Human Gate，必须退回修改；否则可按用户授权直接执行。
+    review_items:
+    - id: plan-review-1
+      role: 规范边界与能力资产边界
+      agent_name: main-controller-independent-pass
+      requested_at: '2026-06-24T09:28:00+08:00'
+      prompt_context:
+        objective: |
+          判断 Git 提交落地应继续加厚 07/Skill/Hook，还是新增 30-59 薄行动成员接管执行责任。
+        input_refs:
+        - specs/03-行动编排规范.md
+        - specs/07-事实源边界与Git追溯规范.md
+        - specs/attachments/06.Att.02-固定运行时扩展登记表.md
+        - skills/ldvh-git-commit/SKILL.md
+        - hooks/ldvh-hooks.yaml
+        constraints:
+        - 不创建第二套 commit message 规则。
+        - 不声明环境安装状态。
+      context_digest: 规则和固定资产已存在，缺口是提交行动薄入口和 Skill 使用证据。
+      result:
+        status: pass_with_followups
+        summary: |
+          应新增 31 Git 提交行动编排薄入口。07 保持提交规则权威，Skill/Hook/Code/Web 保持能力资产和实现边界，31 接管执行责任、证据和失败分流。
+        key_findings:
+        - 07 已明确 AI 创建、拆分、预检、提交和交还 commit 的流程归 03 与 30-59 成员。
+        - 固定能力资产登记状态为 closed，但环境安装状态为 not_claimed。
+        - Skill 需要记录真实 runtime 调用与手动等价执行的区别。
+        required_changes:
+        - 新增 31 action member。
+        - 同步 01/03/07、Skill、Hook、Rules 和 Spark。
+        - 记录 Web API 全量回归旁路失败边界。
+        recommendations:
+        - CI / server-side gate 保留为 planned 后续兜底，不在本 WorkCase 实现。
+      raw_output_ref: current-conversation
+      attested_at: '2026-06-24T09:30:00+08:00'
+      attestation:
+        signer: main-controller-codex
+        statement: 基于当前仓库事实源和验证输出完成方案边界审查并对结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-24T09:31:00+08:00'
+      resolver: main-controller-codex
+      source_review_item_ids:
+      - plan-review-1
+      accepted_findings:
+      - 新增 31 是当前最小正确落地点。
+      - 31 只接管执行责任，不复制 07 的提交规则。
+      - 环境安装状态必须继续保持 not_claimed。
+      - Skill runtime 调用与手动等价执行必须被区分记录。
+      rejected_findings: []
+      required_changes_applied:
+      - 将执行项拆为新增成员、同步资产、更新 Spark 和验证闭环。
+      unresolved_items: []
+      changed_fields:
+      - status
+      - success_criteria
+      - orchestration.execution_items
+    human_confirmation:
+      confirmed_at: '2026-06-24T09:31:00+08:00'
+      confirmed_by: 用户
+      decision: execute
+      confirmation_context: |
+        用户在当前对话明确回复“按你建议执行”，授权按主控建议创建 WorkCase、落地 31 Git 提交行动编排薄入口并同步相关资产。
+      scope_confirmed:
+      - 新增 active 31 Git 提交行动编排成员。
+      - 同步 01/03/07、Rules、Skill、Hook 和相关 Spark 的回指。
+      - 不安装 native hook，不修改用户环境，不实现 CI。
+      unresolved_items: []
+  result_review:
+    controller_self_check:
+      checked_at: '2026-06-24T09:55:00+08:00'
+      checker: main-controller-codex
+      context:
+        objective: |
+          检查 workcase-0004 是否已完成 Git 提交行动编排薄入口落地，并确认是否可以进入独立结果复核。
+        input_refs:
+        - specs/31-git-commit-action-Git提交行动编排.md
+        - specs/07-事实源边界与Git追溯规范.md
+        - skills/ldvh-git-commit/SKILL.md
+        - hooks/ldvh-hooks.yaml
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - ldvh-base/workcases/workcase-0004-git-commit-action-orchestration.yaml
+      result:
+        status: pass_with_followups
+        summary: |
+          执行项和成功标准已完成。31 已成为 active Git 提交行动薄入口，相关资产已回指 31，环境安装状态未被冒称，核心验证通过。残留风险是 Web API 全量回归被 facts 夹具空 pitfall 假设阻断，commit DTO 单测已单独通过。
+        key_findings:
+        - 31 没有复制 07 commit message 本体规则。
+        - Skill runtime 调用与手动等价执行区别已写入 31 和 Skill。
+        - Hook registry 仍只声明统一事件，不声明 native Git hook 已安装。
+        - Web API 全量回归失败点不在 commit DTO，而在 `tests/web/api/facts.test.ts:27` 对 pitfall 列表非空的假设。
+        required_changes: []
+        followups:
+        - 可后续修复 Web API facts 测试夹具，避免阻断全量 Web API 回归。
+      attestation:
+        signer: main-controller-codex
+        statement: 已基于文件事实源和验证输出完成主控结果自检，建议进入独立结果复核。
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        结果复核用于确认 31 成员没有重定义 07、没有声明环境安装、相关资产回指一致、验证证据充分。
+      required_perspectives:
+      - 规范一致性与事实源边界
+      - 运行时扩展与环境边界
+      - 验证证据和残留风险
+      optional_perspectives: []
+      tool_method_requirements:
+      - 复核 v2-check、deployment-entries、capability-environment、commit validator、Skill 校验、Web typecheck 和 fact_validate 结果。
+      - 检查 Web API 全量回归若失败是否为旁路夹具问题。
+      aggregation_rule: |
+        存在 fail 或 needs_human_gate 时不得提交 Human 关闭确认，必须先处理或退回执行。
+    review_items:
+    - id: result-review-1
+      role: 规范一致性与事实源边界
+      agent_name: Hypatia
+      requested_at: '2026-06-24T10:52:00+08:00'
+      prompt_context:
+        objective: |
+          判断 workcase-0004 是否已把 Git 提交行动执行责任正确收敛到 31，且没有重定义 07 的 commit message 本体规则；同时检查当前 WorkCase 状态是否应继续等待结果复核或可进入 Human 关闭确认。
+        input_refs:
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - ldvh-base/workcases/workcase-0004-git-commit-action-orchestration.yaml
+        - specs/31-git-commit-action-Git提交行动编排.md
+        - specs/07-事实源边界与Git追溯规范.md
+        - specs/21-WorkCase-工作项.md
+        constraints:
+        - 只读复核，不修改文件。
+        - 不允许把 31 写成第二套 commit message 规范。
+        - 检查 21 状态机关闭前复核要求。
+      context_digest: |
+        子 Agent 读取入口、WorkCase 和 31/07/21 后确认：31 接管提交行动薄入口，07 保留 commit message 本体规则；回写复核条目和主控处理前不能进入 Human 关闭确认。
+      result:
+        status: pass_with_followups
+        summary: |
+          workcase-0004 在规范边界上成立。31 已把 AI 准备、拆分、预检、创建和交还 Git commit 的执行责任收敛为薄行动入口；07 仍保留 commit message 契约、Git records 追溯性质和关联提交派生规则的本体权威。
+        key_findings:
+        - 31 只接管 Git 提交行动执行责任、验证责任、证据位置、失败分流和能力资产编排。
+        - 07 仍是 commit message 契约和 Git records 追溯性质的本体权威。
+        - 21 要求进入 Human 关闭确认前必须完成真实 `result_review.review_items` 和主控 `controller_resolution`。
+        - '`closure_evidence` 已撤回此前不真实复核表述，没有继续冒称已关闭或已完成复核。'
+        required_changes: []
+        recommendations:
+        - 将本次只读复核作为真实结果复核条目回写。
+        - 补齐其余必需复核视角后，再由主控聚合 `controller_resolution`。
+        evidence_refs:
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - ldvh-base/workcases/workcase-0004-git-commit-action-orchestration.yaml
+        - specs/31-git-commit-action-Git提交行动编排.md
+        - specs/07-事实源边界与Git追溯规范.md
+        - specs/21-WorkCase-工作项.md
+      raw_output_ref: subagent:019ef78c-f5f0-7ee0-9d88-7914b5f9a844
+      attested_at: '2026-06-24T10:54:00+08:00'
+      attestation:
+        signer: Hypatia
+        statement: 基于 prompt context 和 input refs 完成只读复核，未修改文件，并对规范一致性与事实源边界结论负责。
+    - id: result-review-2
+      role: 运行时扩展与环境边界
+      agent_name: Linnaeus
+      requested_at: '2026-06-24T10:52:00+08:00'
+      prompt_context:
+        objective: |
+          判断 workcase-0004 是否错误声明 native hook、Skill runtime、CI 或当前环境安装状态已经落地；检查 Skill runtime 调用与手动等价执行是否被区分记录。
+        input_refs:
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - ldvh-base/workcases/workcase-0004-git-commit-action-orchestration.yaml
+        - specs/attachments/06.Att.02-固定运行时扩展登记表.md
+        - skills/ldvh-git-commit/SKILL.md
+        - hooks/ldvh-hooks.yaml
+        - specs/31-git-commit-action-Git提交行动编排.md
+        constraints:
+        - 只读复核，不修改文件。
+        - 不把固定运行时扩展登记解释为当前环境已安装。
+        - 区分 Skill runtime 调用和手动等价执行证据。
+      context_digest: |
+        子 Agent 确认 31、Skill、Hook registry 和 WorkCase 均区分固定能力资产登记与当前环境安装/真实 runtime 调用。
+      result:
+        status: pass_with_followups
+        summary: |
+          workcase-0004 当前没有错误声明 native Git hook、Skill runtime、CI/server-side gate 或当前用户环境安装状态已经落地。31、Skill、Hook registry 和 WorkCase 均把固定能力资产存在/登记与环境已安装/真实 runtime 调用区分开了。
+        key_findings:
+        - 31 明确不定义环境安装、native hook 或 CI 实现，CI / server-side gate 保持 planned 后续兜底口径。
+        - '`hooks/ldvh-hooks.yaml` 只登记统一 Hook 事件和 dispatcher 命令，未声称 `.git/hooks` 或用户环境已接入。'
+        - '`skills/ldvh-git-commit/SKILL.md` 要求提交后报告真实 Skill runtime invocation 或 manual equivalent execution。'
+        - WorkCase 中的 Skill 快速校验对应 Skill 文件校验，不等于 Skill runtime 已调用。
+        required_changes: []
+        recommendations:
+        - 回写本复核时明确这是只读子 Agent 结果复核，不写成 Skill runtime 调用证据。
+        - 后续真实提交行动应按 31/Skill 记录 `skill_runtime_invoked` 或 `manual_equivalent_execution` 的实际值。
+        evidence_refs:
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - ldvh-base/workcases/workcase-0004-git-commit-action-orchestration.yaml
+        - specs/attachments/06.Att.02-固定运行时扩展登记表.md
+        - skills/ldvh-git-commit/SKILL.md
+        - hooks/ldvh-hooks.yaml
+        - specs/31-git-commit-action-Git提交行动编排.md
+      raw_output_ref: subagent:019ef78d-3a19-7e81-bf86-1e0d5896fc0e
+      attested_at: '2026-06-24T10:56:00+08:00'
+      attestation:
+        signer: Linnaeus
+        statement: 基于 prompt context 和 input refs 完成只读复核，未修改文件，并对运行时扩展与环境边界结论负责。
+    - id: result-review-3
+      role: 验证证据和残留风险
+      agent_name: Copernicus
+      requested_at: '2026-06-24T10:52:00+08:00'
+      prompt_context:
+        objective: |
+          判断 workcase-0004 的验证证据是否足以支撑进入 Human 关闭确认；确认 Web API 全量回归失败是否被准确记录为 facts 夹具旁路问题，且是否阻断本 WorkCase。
+        input_refs:
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - ldvh-base/workcases/workcase-0004-git-commit-action-orchestration.yaml
+        - code/specs_validate.py
+        - code/fact_validate.py
+        - tests/code/test_commit_validate.py
+        - tests/web/api/commit-dto.test.ts
+        - tests/web/api/facts.test.ts
+        constraints:
+        - 只读复核，不修改文件。
+        - 区分 commit DTO 范围内验证和 facts 夹具旁路失败。
+        - 不把未通过的全量 Web API 回归写成已通过。
+      context_digest: |
+        子 Agent 复核确认成功标准、执行项、主控自检和验证证据链基本完整；Web API 全量回归失败点与 WorkCase 记录一致，不属于 commit DTO 或 Git 提交行动编排本体阻断。
+      result:
+        status: pass_with_followups
+        summary: |
+          workcase-0004 的执行证据足以支撑进入 Human 关闭确认，但前提是主控先把真实只读复核写入 `result_review.review_items`，并补齐 `result_review.controller_resolution`。
+        key_findings:
+        - WorkCase 的成功标准、执行项、主控自检和验证证据链基本完整。
+        - Web typecheck、commit DTO 契约测试、commit validator 单测均复核通过。
+        - Web API 全量回归失败点为 `tests/web/api/facts.test.ts:27` 读取空 pitfall 列表首项的 `type`，与 WorkCase 记录一致。
+        - 当前 `ldvh-base` 下没有 pitfall 事实源文件或目录，旁路失败不属于 commit DTO 或 Git 提交行动编排本体阻断。
+        - 知识地图导航复核时有 degraded 输出，原因来自未提交的 spark-0024/spark-0025 项目根外路径引用，不应作为 workcase-0004 的完整影响面证明。
+        required_changes: []
+        recommendations:
+        - 主控回填本复核条目后，再聚合 `controller_resolution` 并推进到 `human_closure_confirming`。
+        - 后续单独修复 `tests/web/api/facts.test.ts` 的空 pitfall 夹具假设，避免继续阻断 Web API 全量回归。
+        evidence_refs:
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - ldvh-base/workcases/workcase-0004-git-commit-action-orchestration.yaml
+        - code/specs_validate.py
+        - code/fact_validate.py
+        - tests/code/test_commit_validate.py
+        - tests/web/api/commit-dto.test.ts
+        - tests/web/api/facts.test.ts
+      raw_output_ref: subagent:019ef78d-9ed3-7640-9cbe-d395aaeb8882
+      attested_at: '2026-06-24T10:57:00+08:00'
+      attestation:
+        signer: Copernicus
+        statement: 基于 prompt context、input refs 和只读复核命令完成结果复核，未修改文件，并对验证证据与残留风险结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-24T10:58:00+08:00'
+      resolver: main-controller-codex
+      source_review_item_ids:
+      - result-review-1
+      - result-review-2
+      - result-review-3
+      accepted_findings:
+      - Hypatia 确认 31/07 职责边界成立，31 接管提交行动薄入口，07 保留 commit message 和 Git records 本体权威。
+      - Linnaeus 确认本 WorkCase 未冒称 native hook、Skill runtime、CI 或当前环境安装状态已落地。
+      - Copernicus 确认验证证据足以支撑进入 Human 关闭确认，Web API 全量回归失败为 facts 空 pitfall 夹具旁路问题，不阻断本 WorkCase。
+      - 三条复核均为 pass_with_followups，均无 required_changes。
+      rejected_findings: []
+      required_changes_applied:
+      - 写入三条真实子 Agent 结果复核记录，并以 `raw_output_ref` 回指对应 subagent。
+      - 写入主控结果复核处理记录。
+      - 更新 `closure_evidence`，声明当前可提交 Human 关闭确认但尚未关闭。
+      - 设置 `closure_requested_at` 并推进到 `human_closure_confirming`。
+      unresolved_items: []
+      changed_fields:
+      - status
+      - updated
+      - orchestration.result_review.review_items
+      - orchestration.result_review.controller_resolution
+      - closure_evidence
+      - closure_requested_at
+      - revision_history
+      revision_history_refs:
+      - revision_history[4]
+      summary: |
+        三个真实子 Agent 结果复核视角均已完成，结论均为 pass_with_followups 且无 required_changes。主控接受复核结论，保留 Web API facts 空 pitfall 夹具问题为后续 follow-up，不作为 Git 提交行动编排薄入口落地的阻断项。当前可进入 Human 关闭确认；不得在没有 Human Gate 的情况下直接 closed。
+    human_closure_confirmation: null
+plan_confirmed_at: '2026-06-24T09:31:00+08:00'
+verification_evidence: |
+  ## 验证计划
+  - 覆盖 active specs 结构、31 知识地图导航、固定运行时扩展登记、能力环境矩阵、工作对象事实源、commit validator、Skill、Hook dispatcher、Web typecheck、commit DTO 和 diff 空白检查。
+
+  ## 验证命令
+  - `python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/31-git-commit-action-Git提交行动编排.md --task-type git_trace --format text`
+  - `python3 code/specs_validate.py deployment-entries`
+  - `python3 code/specs_validate.py capability-environment`
+  - `python3 code/fact_validate.py ldvh-base`
+  - `python3 -m pytest tests/code/test_commit_validate.py -q`
+  - `python3 <skill-creator quick_validate 脚本> skills/ldvh-git-commit`
+  - `python3 code/hook_dispatch.py run git.commit-msg --message-file <temporary-message-file>`
+  - `npm --prefix web run check`
+  - `npm exec tsx ../tests/web/api/commit-dto.test.ts`（在 `web/` 目录执行）
+  - `git diff --check`
+  - `npm --prefix web run test:web:api`
+
+  ## 验证结果
+  已通过：
+  - `python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/31-git-commit-action-Git提交行动编排.md --task-type git_trace --format text`
+  - `python3 code/specs_validate.py deployment-entries`
+  - `python3 code/specs_validate.py capability-environment`
+  - `python3 code/fact_validate.py ldvh-base`
+  - `python3 -m pytest tests/code/test_commit_validate.py -q`
+  - `python3 <skill-creator quick_validate 脚本> skills/ldvh-git-commit`
+  - `python3 code/hook_dispatch.py run git.commit-msg --message-file <temporary-message-file>`
+  - `npm --prefix web run check`
+  - `npm exec tsx ../tests/web/api/commit-dto.test.ts`（在 `web/` 目录执行）
+  - `git diff --check`
+
+  已知未通过：
+  - `npm --prefix web run test:web:api` 失败于 `tests/web/api/facts.test.ts:27`，原因是当前事实源没有 pitfall 列表项但测试假设 `pitfalls.data.items[0]` 存在；commit DTO 单测已单独通过。
+
+  ## 结论
+  31、资产同步和提交相关确定性验证已通过；Web API 全量回归存在旁路夹具缺口，不阻断本次 Git 提交行动编排落地，但应作为后续修复项。
+closure_evidence: |
+  ## 验证计划
+  - 检查执行项、成功标准、主控自检、真实子 Agent 结果复核和残留风险是否足以提交 Human 关闭确认。
+  - 关闭前刷新旧残留风险：确认 Web API facts 空 Pitfall 夹具问题是否已由后续 WorkCase 承接，以及当前失败是否仍属于本 WorkCase 阻断。
+
+  ## 验证命令
+  - 见 `verification_evidence`。
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0004-git-commit-action-orchestration.yaml --format text`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/31-git-commit-action-Git提交行动编排.md --task-type git_trace --format text`
+  - `npm --prefix web run test:web:api`
+
+  ## 验证结果
+  执行项和成功标准已完成，主控自检已记录，三条真实子 Agent 结果复核已写入，主控已形成处理结论。关闭前复核显示：
+
+  - `python3 code/fact_validate.py ldvh-base/workcases/workcase-0004-git-commit-action-orchestration.yaml --format text` 通过，errors=0，warnings=0。
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node specs/31-git-commit-action-Git提交行动编排.md --task-type git_trace --format text` 返回 result_status=ok，diagnostics=0。
+  - 原 Web API facts 空 Pitfall 夹具问题已由 `workcase-0008` 承接并关闭，`workcase-0008` 的关闭证据显示 `npm run test:web:api` 已通过，且测试不再假设真实事实源必须存在 Pitfall 对象。
+  - 当前再次运行 `npm --prefix web run test:web:api` 时，失败已不再是 `pitfalls.data.items[0]` 为空导致的 TypeError，而是 `tests/web/api/facts.test.ts:65` 仍期望真实 Pitfall count 为 0；当前事实源已有 `ldvh-base/pitfalls/pitfall-0001-workcase-closure-tail-routing.yaml`，实际 count 为 1。该新失败属于 Web facts 测试随事实源新增 Pitfall 后的测试假设漂移，不属于 Git 提交行动编排薄入口落地的本体阻断。
+
+  ## 结论
+  本 WorkCase 已推进到 Human 关闭确认阶段，但尚未关闭。0003 的本体目标已经完成，旧的 Web API facts 空 Pitfall 残留已由 `workcase-0008` 修复并关闭；当前 Web facts 测试的 Pitfall 非空断言漂移应作为新的测试维护尾巴另行承接，不阻断本 WorkCase 关闭。
+
+  ## 后续分流
+
+  原 Web API facts 空 Pitfall 夹具问题已分流到 `workcase-0008` 并完成关闭。当前新出现的 Pitfall 非空断言漂移不属于 0003 本体，可由 Web facts 测试维护事项或后续 WorkCase 承接；不要求在 0003 内继续处理。
+
+  ## 收口结果
+
+  当前收口结果为：0003 本体收口干净，可提交 Human 关闭确认。关闭前仍需 Human Gate 明确确认是否以 completed 结果关闭。
+closure_requested_at: '2026-06-24T10:58:00+08:00'
+review_requested_at: '2026-06-24T10:44:30+08:00'
+closed_at: '2026-06-26T09:52:45+08:00'
+closure_outcome: completed
+human_closure_confirmation:
+  decision: close
+  confirmed_at: '2026-06-26T09:52:45+08:00'
+  confirmer: human
+  scope: |
+    Human 已确认此前复核过且可关闭的 WorkCase 直接关闭，本次范围包含 workcase-0004。
+  summary: |
+    Human 接受刷新后的 closure_evidence、workcase-0008 对历史 Web API facts 空 Pitfall 残留的承接结果，以及当前 Web facts 测试漂移不阻断 0003 本体关闭的判断，确认本 WorkCase 以 completed 结果关闭。
+residual_risks:
+- 0003 本体无未处理残留；历史 Web API facts 空 Pitfall 夹具问题已由 workcase-0008 承接并关闭。
+- 当前 Web API facts 测试仍存在 Pitfall 非空断言漂移：真实事实源新增 `pitfall-0001` 后，测试仍期望 Pitfall count 为 0。该问题不属于 Git 提交行动编排薄入口落地本体，需由 Web facts 测试维护事项或后续 WorkCase 承接。
+followup_refs:
+- workcase-0008
+revision_history:
+- at: '2026-06-24T09:36:00+08:00'
+  from_status: subagents_plan_reviewing
+  to_status: executing
+  actor: main-controller-codex
+  reason: |
+    用户已在对话中明确授权按建议执行；主控完成轻量方案边界审查后，进入执行状态并开始新增 31 与同步资产。
+  changed_fields:
+  - status
+  - success_criteria
+  - orchestration.execution_items
+  - plan_review.human_confirmation
+  summary: |
+    将默认 WorkCase 骨架改为 Git 提交行动编排薄入口的执行计划，并记录用户授权后进入 executing。后续应完成 31、资产同步、Spark 状态记录和验证闭环。
+- at: '2026-06-24T09:55:00+08:00'
+  from_status: executing
+  to_status: result_self_checking
+  actor: main-controller-codex
+  reason: |
+    31、相关资产同步、Spark 状态记录和验证闭环已完成，进入主控结果自检阶段。
+  changed_fields:
+  - status
+  - success_criteria
+  - orchestration.execution_items
+  - verification_evidence
+  - closure_evidence
+  - result_review.controller_self_check
+  - residual_risks
+  summary: |
+    执行项已全部完成并通过核心验证；Web API 全量回归旁路失败已记录为残留风险。下一步应安排独立结果复核，再提交 Human 关闭确认。
+- at: '2026-06-24T10:51:00+08:00'
+  from_status: result_self_checking
+  to_status: subagents_result_reviewing
+  actor: main-controller-codex
+  reason: |
+    用户追问是否已经真实子 Agent 审核后，主控确认此前写入的 Noether/Faraday/Curie 为主控整理的独立视角材料，不是实际子 Agent 审核结果。为避免事实源误导，撤回这些复核条目和关闭确认请求，回到等待真实结果复核的状态。
+  changed_fields:
+  - status
+  - updated
+  - orchestration.result_review.review_items
+  - orchestration.result_review.controller_resolution
+  - closure_evidence
+  - closure_requested_at
+  - review_requested_at
+  summary: |
+    WorkCase 已从“主控自检完成”推进到“等待真实结果复核”，但没有记录任何未实际发生的子 Agent 审核结论。下一步应运行真实子 Agent / 独立复核并回写 review_items。
+- at: '2026-06-24T10:58:00+08:00'
+  from_status: subagents_result_reviewing
+  to_status: human_closure_confirming
+  actor: main-controller-codex
+  reason: |
+    Hypatia、Linnaeus 和 Copernicus 三个真实子 Agent 结果复核均已完成，结论均为 pass_with_followups 且无 required_changes。主控已聚合处理复核意见，可提交 Human 判断是否关闭。
+  changed_fields:
+  - status
+  - updated
+  - orchestration.result_review.review_items
+  - orchestration.result_review.controller_resolution
+  - closure_evidence
+  - closure_requested_at
+  - revision_history
+  summary: |
+    回填真实子 Agent 复核记录并形成主控处理结论后，进入 Human 关闭确认阶段。当前 WorkCase 仍未关闭，等待 Human 对残留 Web API facts 夹具风险和关闭结果作最终确认。
+- at: '2026-06-26T09:47:54+08:00'
+  from_status: human_closure_confirming
+  to_status: human_closure_confirming
+  actor: codex-main-thread
+  reason: |
+    Human 要求关闭前复核 workcase-0004 是否真的可以关闭。主控确认 0003 本体目标已完成，旧 Web API facts 空 Pitfall 残留已由 workcase-0008 承接并关闭；当前 Web API 测试失败已变为 Pitfall 非空断言漂移，不属于 0003 本体阻断。
+  changed_fields:
+  - updated
+  - closure_evidence
+  - residual_risks
+  - followup_refs
+  - related_workcases
+  summary: |
+    刷新关闭证据和后续分流口径：0003 本体收口干净，可提交 Human 关闭确认；当前仍保持 human_closure_confirming，等待 Human Gate 明确是否关闭。
+- at: '2026-06-26T09:52:45+08:00'
+  from_status: human_closure_confirming
+  to_status: closed
+  actor: codex-main-thread
+  reason: |
+    Human 确认关闭此前已复核可关闭的 WorkCase。workcase-0004 已完成 Git 提交行动编排薄入口落地，历史 Web API facts 空 Pitfall 残留已由 workcase-0008 承接并关闭。
+  changed_fields:
+  - status
+  - updated
+  - closed_at
+  - closure_outcome
+  - human_closure_confirmation
+  - revision_history
+  summary: |
+    WorkCase 以 completed 结果关闭；当前 Web facts 测试的 Pitfall 非空断言漂移不属于本 WorkCase 本体阻断，保留为外部测试维护尾巴。
+related_docs:
+- specs/03-行动编排规范.md
+- specs/07-事实源边界与Git追溯规范.md
+- specs/31-git-commit-action-Git提交行动编排.md
+- skills/ldvh-git-commit/SKILL.md
+- hooks/ldvh-hooks.yaml
+- code/commit_validate.py
+- code/hook_dispatch.py
+- web/docs/06-Changelog.md
+- web/docs/05-ProjectFiles.md
+related_adrs: []
+related_sparks:
+- spark-0018
+- spark-0020
+related_pitfalls: []
+related_workcases:
+- workcase-0008

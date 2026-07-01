@@ -55,7 +55,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 Pitfall 成员规范的最小父层规则。本文不迁入 V2 完整字段表、标签闭集、真实实例或 Web 编辑能力。
+> 文件状态：candidate；本文吸收 V2 Pitfall 成员规范的父层规则。真实 Pitfall 实例已由阶段 9C 迁入 `ldvh-base/pitfalls/` 并由 Code/tests 校验；本文不迁入 V2 完整字段表、标签闭集或 Web 编辑能力。
 
 ## 1. 价值判断
 
@@ -186,7 +186,6 @@ Pitfall 的经验口径必须满足：
 ## 12. 待补齐事项
 
 1. 后续再判断是否迁入 Pitfall 完整字段表、标签闭集和实例样例；
-2. 后续受管项目事实源稳定后，再决定是否迁移真实 Pitfall 实例目录；
+2. 真实 Pitfall 实例目录已迁入 `ldvh-base/pitfalls/`，后续新增或改写实例必须通过字段 schema、状态闭集和 legacy 字段检查；
 3. 后续行动模板实例启动时，再定义 Pitfall 识别、创建、归档和吸收流程；
 4. 后续 Code 可继续扩展 Pitfall 字段级 validator，但不得让字段级检查反向定义本文未授权规则。
-

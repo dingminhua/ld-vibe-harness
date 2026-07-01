@@ -55,7 +55,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 Spark 成员规范的最小父层规则。本文不迁入 V2 完整字段表、真实实例、Web quick create、完整标签或分流 UI。
+> 文件状态：candidate；本文吸收 V2 Spark 成员规范的父层规则。真实 Spark 实例已由阶段 9C 迁入 `ldvh-base/sparks/` 并由 Code/tests 校验；本文不迁入 V2 完整字段表、Web quick create、完整标签或分流 UI。
 
 ## 1. 价值判断
 
@@ -186,6 +186,5 @@ Spark 的关闭口径必须满足：
 
 1. 后续再判断是否迁入 Spark 完整字段表、字段条件必填和实例样例；
 2. 后续 Web 实现启动时，Spark quick create 必须绑定事实源回写和 Human Gate 边界；
-3. 后续受管项目事实源稳定后，再决定是否迁移真实 Spark 实例目录；
-4. 后续 Code 可继续扩展 Spark 字段级 validator，但不得让字段级检查反向定义本文未授权规则。
-
+3. 真实 Spark 实例目录已迁入 `ldvh-base/sparks/`，后续新增或改写实例必须继续通过字段 schema、状态闭集和关系校验；
+4. 后续 Code 可继续扩展 Spark source_refs、状态条件必填和 Web/API 回归 validator，但不得让字段级检查反向定义本文未授权规则。

@@ -1,0 +1,77 @@
+id: spark-0037
+type: spark
+title: Skill 封装缺口 — 工作流未收敛为 Skill，已有 Skill 无触发时机
+status: pending
+created: '2026-06-27T08:04:00+08:00'
+updated: '2026-06-27T08:23:00+08:00'
+priority: P1
+description: |
+  LDVH 目前只有 1 个 Skill（ldvh-git-commit），大量稳定工作流未封装：
+  - WorkCase 生命周期管理（plan_review → 子Agent审查 → Human Gate → 关闭）
+  - spec 修改流程（preflight → 修改 → v2-check → commit）
+  - Hook 异常诊断（检查 adapter → 检查 payload → 修复）
+  - 子 Agent 审查调度（启动审查 → 吸收意见 → 记录结论）
+
+  更关键的是：即使已有的 ldvh-git-commit Skill 有 `consumption_scenarios` 字段定义了触发条件，也没有任何机制在正确时机提醒 AI"该用这个 Skill 了"。AI 得自己记得。
+
+  后续收敛出的设计方案：
+
+  ## Skill 本质定义
+  Skill 是**事件驱动的可复用工作流**。三个特征：有触发时机（"当 AI 准备 commit 时"）、有执行步骤（"第1步读 specs/07..."）、有完成交还（"commit 后交还主控"）。以下**不是** Skill：
+  - 行为偏好（SVG 沟通、回复语言、详情程度）→ 放配置文件
+  - 命令行工具（preflight、v2-check）→ 放 tool_plan
+  - 规范原文 → 放 knowledge-map read_plan
+
+  ## 三层架构
+  1. **注册层** — `code/skill_registry.py` 扫描 `skills/` 目录下所有 SKILL.md，读 `ldvh_asset` 块建内存索引。不落盘、不缓存，每次实时读取。
+  2. **触发层** — dispatcher（acknowledge/pre-tool-use）用当前 context（event、tool、action_hint、file_type）匹配每个 Skill 的 `trigger_conditions`，输出 `skill_plan` 字段。与 wc-0019/0020 的 `tool_plan` 并列。
+  3. **展示层** — Web 面板只读展示已登记 Skill 列表、消费场景、状态。不做写入。
+
+  ## 触发条件（Skill 自描述新增字段）
+  Skill 的 `ldvh_asset` 块新增 `trigger_conditions` 字段，Skill 作者决定何时触发，dispatcher 只做条件匹配不做判断：
+  ```yaml
+  trigger_conditions:
+    - event: "pre-tool-use"
+      tool: "Bash"
+      command_pattern: "git commit"
+    - event: "acknowledge-read-plan"
+      action_hint: ["modify", "create"]
+      staged_files_present: true
+  ```
+  `consumption_scenarios` 保持原义——给 Human 和 AI 阅读的描述性文本。
+
+  ## 用户控制
+  Skill 文件本身即开关。**存在 = 启用，删了 = 不用。** 不需要独立的 skill_preferences 配置层。LDVH 自带 Skill 被删除时通过 git status 可见，commit 即可。
+
+  ## 环境无关
+  Skill 文件在 LDVH 仓库内，dispatcher 在仓库内运行。不依赖任何环境的 Skill 系统（WorkBuddy/Codex/Trae），不把 Skill 注册到环境。Web 只做只读展示。
+source: conversation
+priority_detail: |
+  本次会话从"hook 机制出了问题"出发，沿链路逐层诊断：
+  - 发现知识地图 diagnostics 用户不可见 → 修了 dispatcher 输出
+  - 发现 workcase-0011 broken reference → 修了数据
+  - 发现 20+ Code 命令只有 3 个自动触发 → 建立了 wc-0019/0020
+  - 发现 AI 不知道 WorkCase 状态机规则 → 暴露了 Skill 层空白
+  - 发现唯一的 ldvh-git-commit Skill 也没有触发机制
+
+  旧 Rules 命令参考表覆盖了全部四层（读什么、检查什么、跑什么命令、用什么 Skill），新系统按层次拆分后，Skill 层始终没有建立。
+evolution: []
+input_refs:
+  - spark-0025
+  - spark-0036
+  - skills/ldvh-git-commit/SKILL.md
+  - specs/06-运行时扩展规范.md
+related_workcases:
+  - workcase-0020
+  - workcase-0021
+related_adrs: []
+related_studies: []
+related_docs:
+  - skills/ldvh-git-commit/SKILL.md
+  - specs/06-运行时扩展规范.md
+  - specs/03-行动编排规范.md
+  - code/hook_dispatch.py
+  - rules/LDVH-RUNTIME-PROTOCOL.md
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''

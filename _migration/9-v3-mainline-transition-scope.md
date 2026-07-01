@@ -1,6 +1,6 @@
 # 阶段 9 V3 主线切换范围
 
-> 文件状态：temporary migration decision。本文记录阶段 9 的剩余 V2 内容归口、用户参与边界和 V3 主线切换完成标准；它不授权 Hook 安装、Web 写入、事实实例迁移或 Human Gate 决策。正式规则仍以 `specs/` 正文为准。
+> 文件状态：temporary migration decision。本文记录阶段 9 的剩余 V2 内容归口、用户参与边界和 V3 主线切换完成标准；它不授权 Hook 安装、Web 写入、Human Gate 决策或 V3 正式接管声明。正式规则仍以 `specs/` 正文为准。
 
 ## 1. 用户校正口径
 
@@ -55,4 +55,4 @@
 
 ## 5. 当前下一步
 
-9A 已完成迁移层依赖审计，结论见 `_migration/9A-migration-layer-dependency-audit.md`。9B 已完成 V3 自有 commit gate、CLI 和 Hook wrapper，但未启用真实 Git Hook。当前下一步是 9C 事实对象完整迁移。
+9A 已完成迁移层依赖审计，结论见 `_migration/9A-migration-layer-dependency-audit.md`。9B 已完成 V3 自有 commit gate、CLI 和 Hook wrapper，但未启用真实 Git Hook。9C 已完成事实对象完整迁移，结论见 `_migration/9C-fact-object-full-migration.md`。当前下一步是 9D Web 数据契约迁移。

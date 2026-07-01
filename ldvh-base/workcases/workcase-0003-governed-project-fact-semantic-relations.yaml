@@ -1,0 +1,744 @@
+id: workcase-0003
+type: workcase
+title: 管辖项目事实对象语义边增强
+goal: |
+  在已排除历史图谱、Git 图谱、Web 短期实现和 Human 自然查询体验之后，增强管辖项目事实对象之间的语义关系密度、一致性校验和任务导航中的语义边可见性。
+status: closed
+created: '2026-06-24T08:46:30+08:00'
+updated: '2026-06-26T09:52:45+08:00'
+priority: P1
+description: |
+  当前知识地图的 Code 侧核心形态已经成立：active specs、runtime extensions、governed_projects、entry_navigation、raw 片段和 read_plan 均可用；历史图谱、Git 图谱、Web 短期实现和 Human 自然查询体验已明确不作为当前推进目标。
+
+  剩余主要缺口集中在管辖项目事实对象之间的语义关系质量：entry 层为了渐进式读取会呈现较多 `related`，具体对象邻接/展开层已经能看到 `consumes`、`validates` 等语义边，但事实对象字段使用、关系一致性诊断和任务导航摘要中的语义边可见性仍需增强。
+
+  Human 已确认执行。本 WorkCase 按审核约束完成规范口径、Code 摘要和只读 review hints、测试夹具验证与校验闭环；未为了图谱密度改写真实事实对象的状态、关闭字段或收敛字段。
+success_criteria: |
+  - [x] 明确管辖项目事实对象字段到知识地图关系类型的最小语义口径，至少覆盖 `input_refs`、`depends_on`、`blocked_by`、`evidence_refs`、`verification_refs`、`resolved_to`、`related_*` 和 `source_*`。
+  - [x] Code 增加或增强关系质量诊断，能提示“应使用语义边却只留下弱关联”的对象级缺口，且诊断输出不写入缓存或事实源。
+  - [x] 知识地图任务导航或 `impact_summary` 能提示语义边分布，使 entry 层不展开全量语义边时也不误导为“只有 related”。
+  - [x] 选择小样本事实对象进行最小修复或验证夹具覆盖，优先考虑 `workcase-0002`、`spark-0017` 和 `study-0006`，不进行全量补字段运动。
+  - [x] 通过工作对象事实源校验、知识地图相关 Code 测试、active specs 诊断和必要的格式检查。
+source: |
+  用户在 2026-06-24 询问：在已排除历史图谱、Git 图谱、Web 短期实现和 Human 自然查询体验之后，当前知识地图剩余主要推进点“增强管辖项目事实对象之间的语义关系密度、一致性校验和任务导航中的语义边可见性”应如何推进、要做什么。
+
+  主控 AI 给出分阶段建议：先定义关系语义，再增加 Code 诊断，再做小样本事实对象修复，最后增强任务导航中的语义边可见性。用户要求建立 WorkCase，走审核流程，并在执行前让 Human 确认。
+orchestration:
+  mode: sequential
+  execution_items:
+  - id: item-1
+    title: 定义事实对象语义边口径
+    role: specs
+    mode: single
+    input_refs:
+    - specs/01-规范体系基础规范.md
+    - specs/04-Code确定性执行规范.md
+    - specs/attachments/01.Att.01-知识地图关系类型表.md
+    - specs/attachments/04.Att.05-知识地图输入范围表.md
+    - specs/attachments/04.Att.06-知识地图投影Schema表.md
+    - specs/21-WorkCase-工作项.md
+    - specs/20-Spark-火花.md
+    - specs/24-Study-研究报告.md
+    expected_output: |
+      明确字段到关系类型的最小映射和边界：`related_*` 只表达弱关联，不能替代 `consumes`、`validates`、`impacts` 或 `derives_from`。
+    status: done
+    result_summary: |
+      已在 01.Att.01 补充管辖项目事实对象字段到知识地图关系类型的最小语义口径，明确 `related_*` 只表达弱关联，不能替代 `consumes`、`validates`、`impacts` 或 `derives_from`；已在 04.Att.06 同步语义边摘要字段。
+    evidence_refs:
+    - specs/attachments/01.Att.01-知识地图关系类型表.md
+    - specs/attachments/04.Att.06-知识地图投影Schema表.md
+    blocking_reason: null
+  - id: item-2
+    title: 增加关系质量诊断和语义边摘要
+    role: code
+    mode: single
+    input_refs:
+    - code/spec_checks/knowledge_map.py
+    - code/spec_checks/v2.py
+    - code/specs_validate.py
+    - tests/code/specs_validate_checks/test_v2.py
+    expected_output: |
+      Code 能报告管辖项目事实对象关系语义缺口，并在知识地图输出中呈现语义边分布或等价摘要；诊断只作为当次输出，不写入事实源。
+    status: done
+    result_summary: |
+      已增强 Code 实时投影：`impact_summary` 增加当前投影语义边计数和被渐进层级省略的语义边计数；文本输出展示这两个摘要；管辖项目事实对象输出只读 review hints，提示弱关联和语义字段重复表达、以及具体 start_node 上仅有弱关联的潜在升级点。未写入缓存或事实源。
+    evidence_refs:
+    - code/spec_checks/knowledge_map.py
+    - code/spec_checks/v2.py
+    - tests/code/specs_validate_checks/test_v2.py
+    blocking_reason: null
+  - id: item-3
+    title: 小样本事实对象关系修复或夹具验证
+    role: facts
+    mode: single
+    input_refs:
+    - ldvh-base/workcases/workcase-0002-knowledge-map-entry-navigation.yaml
+    - ldvh-base/sparks/spark-0017-kg-best-practice-ldvh-review.yaml
+    - ldvh-base/studies/study-0006-ldvh-kg-practice-review.md
+    expected_output: |
+      只对少量代表性对象或测试夹具做最小修复，验证 `consumes`、`validates`、`impacts` 等语义边能被稳定投影；不得进行全量批量改写。
+    status: done
+    result_summary: |
+      按审核约束选择测试夹具覆盖小样本语义关系：夹具验证跨管辖项目命名空间、`input_refs -> consumes`、同一目标的 `related_*`/语义字段重复提示、entry 层省略语义边摘要和 neighbors/raw 层语义边可见性。未修改 `workcase-0002`、`spark-0017` 或 `study-0006` 的状态、`resolved_to`、关闭字段或归档字段。
+    evidence_refs:
+    - tests/code/specs_validate_checks/test_v2.py
+    blocking_reason: null
+  - id: item-4
+    title: 验证闭环和关闭材料准备
+    role: verification
+    mode: single
+    input_refs:
+    - code/fact_validate.py
+    - code/specs_validate.py
+    - tests/code/
+    - specs/07-事实源边界与Git追溯规范.md
+    expected_output: |
+      运行必要验证，记录验证证据、残留风险和 Git 追溯要求；准备结果自检与后续关闭材料。
+    status: done
+    result_summary: |
+      已完成定向测试、active specs 检查、entry_navigation 检查、WorkCase 事实源校验、综合 specs 校验、固定运行时扩展检查、能力资产环境矩阵检查和 `git diff --check`。所有已执行校验均通过。
+    evidence_refs:
+    - code/fact_validate.py
+    - code/specs_validate.py
+    - tests/code/specs_validate_checks/test_v2.py
+    blocking_reason: null
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本方案会影响事实对象字段语义、知识地图关系质量诊断、Code 输出摘要和少量事实对象样本写入，需要在执行前从规范语义、Code 实现、事实对象治理和 AI 任务导航四个视角审核。
+      required_perspectives:
+      - 规范语义边界
+      - Code 诊断实现
+      - 事实对象治理
+      - AI 任务导航可用性
+      optional_perspectives: []
+      tool_method_requirements:
+      - 只读分析当前仓库，不修改文件。
+      - 检查方案是否符合实时投影、无缓存、渐进式读取、项目命名空间和 Git 原生追溯边界。
+      - 判断执行项是否足够小，是否存在必须先由 Human 裁决的范围或事实源风险。
+      aggregation_rule: |
+        若任一视角给出 fail 或 needs_human_gate，主控不得提交执行确认，必须先修改方案或列出需要 Human 裁决的问题。若均为 pass 或 pass_with_followups，主控可吸收 follow-up 并进入 human_plan_confirming，等待 Human 执行前确认。
+    review_items:
+    - id: plan-review-1
+      role: 规范语义边界
+      agent_name: Faraday
+      requested_at: '2026-06-24T08:50:00+08:00'
+      prompt_context:
+        objective: |
+          判断 `related_*` 不能替代 `consumes`、`validates`、`impacts` 或 `derives_from` 的语义口径是否适合先写入 specs，并检查是否存在上位规范冲突或必须 Human Gate 的范围问题。
+        input_refs:
+        - ldvh-base/workcases/workcase-0003-governed-project-fact-semantic-relations.yaml
+        - specs/01-规范体系基础规范.md
+        - specs/04-Code确定性执行规范.md
+        - specs/attachments/01.Att.01-知识地图关系类型表.md
+        - specs/attachments/04.Att.05-知识地图输入范围表.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - specs/21-WorkCase-工作项.md
+        constraints:
+        - 只读审核
+        - 不修改文件
+      context_digest: 规范语义方向成立；先写 specs 语义口径、再驱动 Code 诊断，符合文档约束先行。
+      result:
+        status: pass_with_followups
+        summary: |
+          方案语义方向成立；`related_*` 不能替代强语义边的口径适合先写入 active specs 或授权附件，再驱动 Code 诊断实现。未发现上位规范冲突。
+        key_findings:
+        - 01 已定义关系类型闭集和判定顺序，Code 不应直接凭实现补规则。
+        - 方案排除了历史图谱、Git 图谱、Web 短期实现和 Human 自然查询体验，符合当前知识地图边界。
+        - 进入 specs、Code 或样本事实对象写入前，必须经过 WorkCase Human 执行前确认。
+        required_changes: []
+        recommendations:
+        - 若只是补充正反例或误用诊断，可优先落在 01.Att.01；若改变关系判定原则或派生规则，应回 01 主文。
+        - Code 诊断应输出 warning 或 diagnostic，不自动改写事实对象。
+        evidence_refs:
+        - specs/01-规范体系基础规范.md
+        - specs/04-Code确定性执行规范.md
+        - specs/attachments/01.Att.01-知识地图关系类型表.md
+        - specs/attachments/04.Att.05-知识地图输入范围表.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+      raw_output_ref: null
+      attested_at: '2026-06-24T08:52:00+08:00'
+      attestation:
+        signer: Faraday
+        statement: 基于 prompt context 和 input refs 完成只读规范语义边界审核并对结论负责。
+    - id: plan-review-2
+      role: Code 诊断实现
+      agent_name: Halley
+      requested_at: '2026-06-24T08:50:00+08:00'
+      prompt_context:
+        objective: |
+          判断关系质量诊断、`impact_summary` 语义边摘要和 entry 层非全量展开提示的 Code 执行方案是否可行。
+        input_refs:
+        - ldvh-base/workcases/workcase-0003-governed-project-fact-semantic-relations.yaml
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - code/specs_validate.py
+        - tests/code/specs_validate_checks/test_v2.py
+        - specs/04-Code确定性执行规范.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        constraints:
+        - 只读审核
+        - 不修改文件
+      context_digest: Code 方案可行；已有字段映射和 relation_type_counts，但关系质量诊断和 entry 层语义边摘要仍需实现和测试。
+      result:
+        status: pass_with_followups
+        summary: |
+          Code 执行方案总体可行，当前实现已有事实对象字段到关系类型的投影基础，也已有 `impact_summary.relation_type_counts`。执行前需收紧诊断为保守、可机械判断的规则，并保持 entry 层渐进读取。
+        key_findings:
+        - 当前已有 `related_* -> related`、`source_* -> derives_from`、`input_refs/depends_on/blocked_by -> consumes`、`evidence_refs/verification_refs -> validates`、`resolved_to -> impacts` 的投影基础。
+        - "`impact_summary.relation_type_counts` 只统计当前投影层边；entry 层会隐藏部分事实对象语义边。"
+        - 关系质量诊断尚未实现，需要测试夹具和明确判定规则。
+        - 事实对象 edge 的项目维度应作为 Code follow-up 覆盖。
+        required_changes:
+        - 不新增未登记顶层 `semantic_relation_counts`；优先复用或扩展 `impact_summary`，新增子字段时同步 04.Att.06 和测试。
+        - 关系质量诊断必须限定为确定性规则，不根据标题相似、自然语言含义或 AI 判断推断关系。
+        - entry 层只做摘要或提示，不把全量 `consumes`、`validates`、`impacts` 边塞回 entry。
+        - 增加关系质量诊断正反例、entry 层语义边摘要、neighbors 层语义边可见性和边级项目维度测试。
+        recommendations:
+        - 诊断等级先设为 `info` 或可配置 warning，避免把历史弱关联立即变成阻断。
+        - "`impact_summary.relation_type_counts` 保持当前投影边计数，另加可展开语义边摘要更清楚。"
+        evidence_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - tests/code/specs_validate_checks/test_v2.py
+        - specs/04-Code确定性执行规范.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+      raw_output_ref: null
+      attested_at: '2026-06-24T08:52:00+08:00'
+      attestation:
+        signer: Halley
+        statement: 基于 prompt context 和 input refs 完成只读 Code 诊断实现审核并对结论负责。
+    - id: plan-review-3
+      role: 事实对象治理
+      agent_name: Carson
+      requested_at: '2026-06-24T08:50:00+08:00'
+      prompt_context:
+        objective: |
+          判断小样本事实对象修复是否合适，是否会变成全量补字段运动，以及 `resolved_to`、`input_refs`、`evidence_refs` 的使用是否会破坏事实源边界或关闭状态。
+        input_refs:
+        - ldvh-base/workcases/workcase-0003-governed-project-fact-semantic-relations.yaml
+        - ldvh-base/workcases/workcase-0002-knowledge-map-entry-navigation.yaml
+        - ldvh-base/sparks/spark-0017-kg-best-practice-ldvh-review.yaml
+        - ldvh-base/studies/study-0006-ldvh-kg-practice-review.md
+        - specs/02-事实模型基础规范.md
+        - specs/20-Spark-火花.md
+        - specs/21-WorkCase-工作项.md
+        - specs/24-Study-研究报告.md
+        constraints:
+        - 只读审核
+        - 不修改文件
+      context_digest: 小样本策略成立；执行时必须防止为了图谱密度改状态、`resolved_to` 或关闭字段。
+      result:
+        status: pass_with_followups
+        summary: |
+          方案总体通过事实对象治理审核。小样本修复方向合适，且 WorkCase 已明确不进行全量批量改写、不写缓存或事实源、Human 确认前不执行修改。
+        key_findings:
+        - 小样本优先 `workcase-0002`、`spark-0017` 和 `study-0006`，能降低批量事实源风险。
+        - 公共字段不是默认可写字段池，具体模型是否采用字段只由成员规范定义。
+        - "`resolved_to` 风险最高，不能为了图谱密度伪装 Spark 完整收敛。"
+        - WorkCase 执行项的 `evidence_refs` 可投影为证据相关边，但不能把工具输出或诊断输出当成稳定证据。
+        required_changes:
+        - 样本事实对象修复不得改变 `status`、`resolved_to`、`resolved_at`、关闭字段或归档字段，除非该状态流转独立纳入范围并触发对应 Human Gate。
+        - "`depends_on`、`blocked_by`、`verification_refs` 等未被当前具体模型普遍采用的字段，只能作为存在时的映射候选或诊断提示，不作为批量新增字段目标。"
+        recommendations:
+        - 优先用测试夹具或 Code 诊断覆盖语义边，再考虑真实对象最小修复。
+        - 若修改 `spark-0017`，只考虑 `input_refs`、`related_workcases` 或 `evolution` 的最小事实修正，不把 `workcase-0003` 写成 `resolved_to`。
+        evidence_refs:
+        - specs/02-事实模型基础规范.md
+        - specs/20-Spark-火花.md
+        - specs/21-WorkCase-工作项.md
+        - ldvh-base/sparks/spark-0017-kg-best-practice-ldvh-review.yaml
+      raw_output_ref: null
+      attested_at: '2026-06-24T08:52:00+08:00'
+      attestation:
+        signer: Carson
+        statement: 基于 prompt context 和 input refs 完成只读事实对象治理审核并对结论负责。
+    - id: plan-review-4
+      role: AI 任务导航可用性
+      agent_name: Euler
+      requested_at: '2026-06-24T08:50:00+08:00'
+      prompt_context:
+        objective: |
+          判断 entry 层不展开全量语义边但在 `read_plan` 或 `impact_summary` 中提示语义边，对 AI 是否足够，以及是否会诱导全量读或误把知识地图当事实源。
+        input_refs:
+        - ldvh-base/workcases/workcase-0003-governed-project-fact-semantic-relations.yaml
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - rules/LDVH-MAINTAINER-ENTRY.md
+        - code/spec_checks/knowledge_map.py
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - specs/01-规范体系基础规范.md
+        constraints:
+        - 只读审核
+        - 不修改文件
+      context_digest: AI 导航方向通过；entry 层不展开全量语义边合理，但需注意共享路径节点来源回指可能带偏。
+      result:
+        status: pass_with_followups
+        summary: |
+          任务导航方案总体能帮助 AI。entry 层不展开全量语义边是合理的，当前入口也要求先消费导航字段和 P0/P1 权威原文，避免一次性全量读取。
+        key_findings:
+        - 方案限定为事实对象语义关系质量、诊断和摘要可见性，不扩展历史、Git、Web 或 Human 自然查询目标。
+        - "`impact_summary.relation_type_counts` 已能提示当前投影层的弱关联和语义边分布。"
+        - Rules 入口只承载命令、读取建议、STOP 和影响判断，不固化图谱内容。
+        - 共享路径节点的 `source_refs` 可能复用其它对象首次建节点来源，执行时应优先使用当前边来源回指。
+        required_changes: []
+        recommendations:
+        - 执行 item-2 时确保 `read_plan.source_relation` 和边类型提示保留。
+        - 增加测试覆盖 entry/neighbor 查询不展开全量语义边但能在摘要中看见非 `related` 关系存在。
+        - 修正或验证 `read_plan` 来源回指优先使用当前边的 `source_refs`。
+        evidence_refs:
+        - rules/LDVH-WORKSPACE-ENTRY.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - code/spec_checks/knowledge_map.py
+      raw_output_ref: null
+      attested_at: '2026-06-24T08:52:00+08:00'
+      attestation:
+        signer: Euler
+        statement: 基于 prompt context 和 input refs 完成只读 AI 任务导航可用性审核并对结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-24T08:53:00+08:00'
+      resolver: main-controller-codex
+      source_review_item_ids:
+      - plan-review-1
+      - plan-review-2
+      - plan-review-3
+      - plan-review-4
+      accepted_findings:
+      - 四个审核视角均为 pass_with_followups，未出现 fail 或 needs_human_gate。
+      - 方案方向成立：先补规范语义口径，再做保守 Code 诊断和摘要，最后仅做小样本或测试夹具验证。
+      - 知识地图仍必须保持实时只读投影、无缓存、渐进式读取、项目命名空间和 Git 原生追溯边界。
+      - entry 层不应展开全量语义边，但应在 `impact_summary`、`navigation.summary` 或等价摘要中提示可展开语义边分布。
+      - 事实对象样本修复不得为了图谱密度改变状态、`resolved_to`、关闭字段或归档字段。
+      rejected_findings: []
+      required_changes_applied:
+      - 将执行约束写入主控处理记录，明确执行前必须由 Human 确认。
+      - 明确 Code 诊断应为保守、可机械判断的 info/warning，不自动写回事实源。
+      - 明确新增摘要字段时优先扩展 `impact_summary`，并同步 04.Att.06 和测试。
+      unresolved_items: []
+      changed_fields:
+      - status
+      - updated
+      - orchestration.plan_review.review_items
+      - orchestration.plan_review.controller_resolution
+      - revision_history
+      revision_history_refs:
+      - revision_history[0]
+      summary: |
+        方案审核完成，四个视角均支持进入 Human 执行前确认。主控已吸收所有 follow-up 为执行约束；Human 已在后续记录中确认执行范围，原行动前未确认事项已覆盖。
+    human_confirmation:
+      decision: execute
+      scope: |
+        Human 确认执行 workcase-0003 的 item-1 到 item-4，范围限于规范语义口径、保守 Code 诊断和摘要、测试夹具或少量样本验证、验证闭环与结果复核。
+      constraints:
+      - 不推进历史图谱、Git 图谱、Web 短期实现或 Human 自然查询体验。
+      - 不进行全量补字段运动。
+      - 不为了图谱密度改变事实对象状态、resolved_to、resolved_at、关闭字段或归档字段。
+      - Code 诊断只作为当次只读输出，不自动写回事实源。
+      confirmed_at: '2026-06-24T08:54:00+08:00'
+      summary: |
+        用户明确表示“那就行动吧”，并提醒执行完成后需要子 Agent 检查完成情况。
+  result_review:
+    controller_self_check:
+      controller: main-controller-codex
+      checked_at: '2026-06-24T08:59:00+08:00'
+      prompt_context:
+        objective: |
+          检查 WorkCase 成功标准、执行项结果、验证证据、实时投影无缓存边界和是否可进入子 Agent 结果复核。
+        input_refs:
+        - ldvh-base/workcases/workcase-0003-governed-project-fact-semantic-relations.yaml
+        - specs/attachments/01.Att.01-知识地图关系类型表.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - tests/code/specs_validate_checks/test_v2.py
+      result:
+        status: pass
+        summary: |
+          主控自检通过。实现保持实时 Code 投影，无缓存写入；entry 层没有展开全量语义边，只在 `impact_summary` 中暴露当前和可展开语义边分布；关系质量输出为 review hints，不作为阻断性 diagnostics；真实事实对象样本未被为图谱密度改写。
+        key_findings:
+        - 规范口径、Code 实现、测试夹具和文本输出已覆盖成功标准。
+        - "`semantic_relation_type_counts` 与 `omitted_semantic_relation_type_counts` 只作为导航摘要，不替代事实源原文。"
+        - "`KG_FACT_RELATION_ONLY_RELATED` 已收窄到具体 start_node 对象导航，避免全局入口噪声。"
+        - 本轮验证命令通过，可提交独立结果复核。
+        required_changes: []
+        evidence_refs:
+        - verification_evidence
+      attested_at: '2026-06-24T08:59:00+08:00'
+      attestation:
+        signer: main-controller-codex
+        statement: 基于 WorkCase、修改产物和验证命令完成主控结果自检并对结论负责。
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        本次执行修改了知识地图关系类型口径、Code 投影与文本输出、测试夹具和 WorkCase 执行记录。结果复核需要从规范一致性、Code/测试正确性、事实对象治理与关闭材料三个独立视角确认是否可提交 Human 关闭确认。
+      required_perspectives:
+      - 规范一致性与实时投影边界
+      - Code 与测试正确性
+      - WorkCase 治理和关闭材料
+      optional_perspectives: []
+      tool_method_requirements:
+      - 只读审核当前工作树，不修改文件。
+      - 检查是否仍符合实时生成、无缓存、渐进读取、排除历史/Git/Web/Human 自然查询体验的既定范围。
+      - 检查验证证据是否覆盖成功标准，是否存在必须回退执行或 Human 裁决的问题。
+      aggregation_rule: |
+        若任一结果复核为 fail 或 needs_human_gate，主控必须先修复、退回执行或提交 Human 裁决；若均为 pass 或 pass_with_followups，主控可吸收 follow-up，形成 controller_resolution 并进入 human_closure_confirming。
+    review_items:
+    - id: result-review-1
+      role: 规范一致性与实时投影边界
+      agent_name: Hume
+      requested_at: '2026-06-24T09:01:00+08:00'
+      prompt_context:
+        objective: |
+          审查执行结果是否符合知识地图实时生成、无缓存、渐进读取、entry 不展开全量语义边，以及是否越界推进历史、Git、Web 或 Human 自然查询体验。
+        input_refs:
+        - ldvh-base/workcases/workcase-0003-governed-project-fact-semantic-relations.yaml
+        - specs/attachments/01.Att.01-知识地图关系类型表.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - specs/04-Code确定性执行规范.md
+        - specs/07-事实源边界与Git追溯规范.md
+        constraints:
+        - 只读审核
+        - 不修改文件
+      context_digest: 规范边界总体通过；复核时发现 WorkCase 仍缺 review_items 和 closure_evidence，需补齐后重跑事实校验。
+      result:
+        status: pass_with_followups
+        summary: |
+          规范一致性与实时投影边界总体通过：本轮改动明确了事实对象语义边应实时生成、无缓存、渐进读取，entry 层不展开全量语义边；未越界推进历史图谱、Git 图谱、Web 短期实现或 Human 自然查询体验。
+        key_findings:
+        - 01.Att.01 已将 `related_*` 定义为弱关联，并将事实对象语义字段映射到 `consumes`、`validates`、`impacts` 和 `derives_from`。
+        - 04.Att.06 新增的 `semantic_relation_type_counts` 与 `omitted_semantic_relation_type_counts` 和 01.Att.01 口径一致。
+        - entry 层不展开全量 `consumes`、`validates` 或 `impacts`，只通过摘要和 `next_queries` 引导 neighbors/expand。
+        - 历史规范图谱、Git history、Web 展示/API、Human 自然查询均未作为当前验收目标推进。
+        - 复核时 WorkCase 缺少结果复核记录和 closure_evidence，需补齐后重跑事实校验。
+        required_changes:
+        - 补齐 workcase-0003 的结果复核记录、关闭证据和事实校验证据。
+        recommendations:
+        - 保留当前语义边实现范围，不扩大为全量事实对象补字段。
+        - 后续治理 review hints 时按对象渐进处理，不把弱关联提示升级为事实源错误。
+        evidence_refs:
+        - specs/attachments/01.Att.01-知识地图关系类型表.md
+        - specs/attachments/04.Att.06-知识地图投影Schema表.md
+        - specs/04-Code确定性执行规范.md
+        - specs/07-事实源边界与Git追溯规范.md
+      raw_output_ref: null
+      attested_at: '2026-06-24T09:02:00+08:00'
+      attestation:
+        signer: Hume
+        statement: 基于 prompt context 和 input refs 完成只读规范一致性与实时投影边界复核并对结论负责。
+    - id: result-review-2
+      role: Code 与测试正确性
+      agent_name: Poincare
+      requested_at: '2026-06-24T09:01:00+08:00'
+      prompt_context:
+        objective: |
+          审查 Code 实现和测试是否正确覆盖语义边摘要、只读 review hints、项目命名空间和 entry/neighbors/raw 层语义边可见性。
+        input_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - tests/code/specs_validate_checks/test_v2.py
+        - ldvh-base/workcases/workcase-0003-governed-project-fact-semantic-relations.yaml
+        constraints:
+        - 只读审核
+        - 不修改文件
+      context_digest: Code 方向通过；复核要求补强 neighbors 层、具体 semantic edge 项目命名空间和 focused `ONLY_RELATED` 测试。
+      result:
+        status: pass_with_followups
+        summary: |
+          Code 实现整体方向正确，定向测试通过，且没有发现会写缓存、写事实源或把 review hints 变成阻断 diagnostics 的问题。复核指出测试覆盖口径可进一步收紧。
+        key_findings:
+        - "`relation_type_counts` 统计当前投影实际返回边，`semantic_relation_type_counts` 统计当前投影语义边，`omitted_semantic_relation_type_counts` 统计当前投影节点相邻但未返回的语义边。"
+        - review hints 进入 `review_hints`，severity 为 `info`，不会被 `--fail-on-diagnostics` 作为阻断。
+        - "`edge_project_namespace()` 能从 `project:*` 或命名空间化节点 ID 推导管辖项目边维度。"
+        - 初版测试已覆盖 entry omitted 摘要、raw 语义边可见性、重复 `related_*`/semantic hint 和跨项目节点 namespace。
+        - 复核要求补充 neighbors 层、具体 semantic edge 的 `project_namespace` 和 focused `KG_FACT_RELATION_ONLY_RELATED` 正例。
+        required_changes:
+        - 补一个 `query_layer="neighbors"` 断言 `consumes` 可见。
+        - 把边级项目维度测试收紧为断言具体 semantic edge 的 `project_namespace == "project-a"`。
+        - 增加 focused `start_node` 下 `KG_FACT_RELATION_ONLY_RELATED` 的正例测试。
+        recommendations:
+        - 保留当前实现，不改成 entry 层展开全量语义边。
+        - 后续可考虑限制 broad entry 的 review hints 展示数量。
+        evidence_refs:
+        - code/spec_checks/knowledge_map.py
+        - code/spec_checks/v2.py
+        - tests/code/specs_validate_checks/test_v2.py
+      raw_output_ref: null
+      attested_at: '2026-06-24T09:03:00+08:00'
+      attestation:
+        signer: Poincare
+        statement: 基于 prompt context 和 input refs 完成只读 Code 与测试正确性复核并对结论负责。
+    - id: result-review-3
+      role: WorkCase 治理和关闭材料
+      agent_name: Laplace
+      requested_at: '2026-06-24T09:01:00+08:00'
+      prompt_context:
+        objective: |
+          审查 workcase-0003 的过程记录、验证证据和关闭准备是否合规，是否保留了用户要求的子 Agent 检查完成情况。
+        input_refs:
+        - ldvh-base/workcases/workcase-0003-governed-project-fact-semantic-relations.yaml
+        - ldvh-base/workcases/workcase-0002-knowledge-map-entry-navigation.yaml
+        - code/fact_validate.py
+        - specs/21-WorkCase-工作项.md
+        constraints:
+        - 只读审核
+        - 不修改文件
+      context_digest: 状态机和执行记录合理，但复核时缺少 closure_evidence 和 review_items，不能进入 Human closure confirming。
+      result:
+        status: fail
+        summary: |
+          状态机主路径、方案审核、Human 执行确认、执行项记录、主控自检和验证计划总体合理，也保留了用户要求的“执行完成后需要子 Agent 检查完成情况”。但复核时不能进入 `human_closure_confirming`，因为 `closure_evidence` 为空且 `result_review.review_items` 仍为空。
+        key_findings:
+        - 状态流转 `subagents_plan_reviewing -> human_plan_confirming -> executing -> result_self_checking -> subagents_result_reviewing` 合规。
+        - 用户要求已在 `human_confirmation.summary` 和 `revision_history` 中保留。
+        - 执行项、主控自检、验证证据和残留风险足够支撑提交子 Agent 结果复核，但不足以支撑进入 Human closure confirming。
+        - 复核时 `closure_evidence` 为空，违反 `subagents_result_reviewing` 状态要求。
+        - 复核时 `result_review.review_items` 为空，只能说明已启动复核，不能说明复核完成。
+        - 未发现为了图谱密度修改 `spark-0017`、`study-0006` 的状态、`resolved_to`、关闭或归档字段。
+        required_changes:
+        - 填写 `closure_evidence`。
+        - 将子 Agent 结果复核写入 `orchestration.result_review.review_items`。
+        - 结果复核完成后补 `orchestration.result_review.controller_resolution`。
+        - 进入 `human_closure_confirming` 时填写 `closure_requested_at` 并追加 `revision_history`。
+        - 复跑 `python3 code/fact_validate.py ldvh-base/ --format text`。
+        recommendations:
+        - 区分验证命令通过和复核中发现的过程材料缺口。
+        - 不建议为了解除 review hints 去批量改真实事实对象字段。
+        evidence_refs:
+        - ldvh-base/workcases/workcase-0003-governed-project-fact-semantic-relations.yaml
+        - specs/21-WorkCase-工作项.md
+        - code/fact_validate.py
+      raw_output_ref: null
+      attested_at: '2026-06-24T09:03:00+08:00'
+      attestation:
+        signer: Laplace
+        statement: 基于 prompt context 和 input refs 完成只读 WorkCase 治理和关闭材料复核并对结论负责。
+    controller_resolution:
+      resolved_at: '2026-06-24T09:04:00+08:00'
+      resolver: main-controller-codex
+      source_review_item_ids:
+      - result-review-1
+      - result-review-2
+      - result-review-3
+      accepted_findings:
+      - Hume 确认规范一致性和实时投影边界通过，未发现历史、Git、Web 或 Human 自然查询体验越界。
+      - Poincare 确认 Code 实现方向正确、只读 review hints 非阻断、无缓存或事实源写入风险。
+      - Laplace 确认状态机主路径合理且用户要求已保留，同时指出 closure_evidence 和 review_items 在复核时缺失。
+      - Poincare 指出的测试覆盖缺口已补强：neighbors 层语义边、具体 semantic edge 项目命名空间和 focused `ONLY_RELATED` 正例已加入测试。
+      - Laplace 指出的流程材料缺口已通过补齐 result_review.review_items、closure_evidence、controller_resolution、closure_requested_at 和 revision_history 处理。
+      rejected_findings: []
+      required_changes_applied:
+      - 补充 `tests/code/specs_validate_checks/test_v2.py` 的 neighbors 层、具体 semantic edge 项目命名空间和 focused `KG_FACT_RELATION_ONLY_RELATED` 正例测试。
+      - 写入三条子 Agent 结果复核记录。
+      - 填写 closure_evidence 和 closure_requested_at。
+      - 形成主控结果复核处理记录。
+      unresolved_items: []
+      changed_fields:
+      - status
+      - updated
+      - orchestration.result_review.review_items
+      - orchestration.result_review.controller_resolution
+      - closure_evidence
+      - closure_requested_at
+      - revision_history
+      revision_history_refs:
+      - revision_history[4]
+      summary: |
+        三个结果复核视角均已处理。虽然 Laplace 的复核状态为 fail，但其失败原因是复核执行过程中的材料缺口，已由主控补齐并将在补齐后重跑事实校验确认。当前可提交 Human 关闭确认。
+    human_closure_confirmation: null
+plan_confirmed_at: '2026-06-24T08:54:00+08:00'
+verification_evidence: |
+  ## 验证计划
+
+  覆盖 Code 定向测试、active specs 诊断、entry_navigation 组合范围、WorkCase 事实源校验、维护入口综合校验、固定运行时扩展、能力资产矩阵和差异格式检查。
+
+  ## 验证命令
+
+  - `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q`
+  - `python3 code/specs_validate.py v2-check --fail-on-diagnostics --format text`
+  - `python3 code/fact_validate.py ldvh-base/ --format text`
+  - `python3 code/specs_validate.py v2-check --input-scope entry_navigation --fail-on-diagnostics --format text`
+  - `python3 code/specs_validate.py knowledge-map --input-scope entry_navigation --layer neighbors --start-node ldvh-base/workcases/workcase-0003-governed-project-fact-semantic-relations.yaml --task-type workcase_execution --format text`
+  - `python3 code/specs_validate.py all --fail-on-diagnostics`
+  - `python3 code/specs_validate.py deployment-entries`
+  - `python3 code/specs_validate.py capability-environment`
+  - `git diff --check`
+
+  ## 验证结果
+
+  上述命令均已执行通过；`entry_navigation` 组合范围存在 41 条只读 review hints，均为关系质量提示，不属于 diagnostics，不触发失败。
+
+  ## 结论
+
+  本 WorkCase 的规范、Code、测试夹具、任务导航摘要和事实源记录已达到提交子 Agent 结果复核的条件。
+closure_evidence: |
+  ## 验证计划
+
+  关闭前确认 workcase-0003 是否已经完成规范口径、Code 实时投影、测试夹具、验证闭环和子 Agent 结果复核，并确认剩余风险是否可由后续渐进治理承接。
+
+  ## 验证命令
+
+  - `python3 -m pytest tests/code/specs_validate_checks/test_v2.py -q`
+  - `python3 code/specs_validate.py v2-check --input-scope entry_navigation --fail-on-diagnostics --format text`
+  - `python3 code/fact_validate.py ldvh-base/ --format text`
+  - `git diff --check`
+
+  ## 验证结果
+
+  子 Agent 结果复核已完成并写入 `orchestration.result_review.review_items`。Hume 和 Poincare 为 `pass_with_followups`；Laplace 为 `fail`，失败原因是复核时 WorkCase 仍缺 closure_evidence 和 review_items。主控已补齐该流程材料缺口，并吸收 Poincare 的测试覆盖 follow-up。
+
+  Human 在关闭前要求继续落实防漏改进：WorkCase 任务导航/规范加入 execution_items 全 done 后必须先 result_self_checking 再 subagents_result_reviewing 的硬提示；`fact_validate.py` 增加主控自检缺失和独立结果复核缺失 warning；新建 WorkCase 草案默认预置 result_review.review_policy；相关测试已补充。
+
+  ## 结论
+
+  本 WorkCase 的执行结果可以提交 Human 关闭确认。残留风险是不进行历史事实对象批量补字段，现有关系质量 review hints 后续按对象渐进治理；该风险符合本 WorkCase 已确认的范围边界。关闭前防漏改进已作为补强项完成，后续 WorkCase 草案和事实校验会更早提示不得跳过主控自检和独立结果复核。
+
+  ## 后续分流
+
+  无后续分流，当前目标已收口干净。
+
+  ## 收口结果
+
+  本次收口结果为：当前目标已收口干净，无需另起 spark、WorkCase 或 ADR。
+closure_requested_at: '2026-06-24T09:04:00+08:00'
+review_requested_at: '2026-06-24T08:59:00+08:00'
+closed_at: '2026-06-26T09:52:45+08:00'
+closure_outcome: completed
+human_closure_confirmation:
+  decision: close
+  confirmed_at: '2026-06-26T09:52:45+08:00'
+  confirmer: human
+  scope: |
+    Human 已确认此前复核过且可关闭的 WorkCase 直接关闭，本次范围包含 workcase-0003。
+  summary: |
+    Human 接受当前 closure_evidence、事实源校验和残留风险分流口径，确认本 WorkCase 以 completed 结果关闭。
+residual_risks:
+- "当前只建立关系语义口径、只读诊断和导航摘要，没有批量修复历史事实对象中的弱关联字段；现有 review hints 仍需按具体对象逐步治理。"
+- "`KG_FACT_RELATION_ONLY_RELATED` 仅在具体 start_node 对象导航时提示，避免全局入口噪声；这意味着全量弱关联治理仍依赖后续按对象展开。"
+followup_refs: []
+revision_history:
+- at: '2026-06-24T08:53:00+08:00'
+  from_status: subagents_plan_reviewing
+  to_status: human_plan_confirming
+  actor: main-controller-codex
+  reason: |
+    四个方案审核视角均为 pass_with_followups，未出现 fail 或 needs_human_gate；主控已将 follow-up 收敛为执行约束，可提交 Human 执行前确认。
+  changed_fields:
+  - status
+  - updated
+  - orchestration.plan_review.review_items
+  - orchestration.plan_review.controller_resolution
+  summary: |
+    WorkCase 从方案审核推进到 Human 方案确认状态。下一步需要 Human 确认是否允许执行 item-1 到 item-4，并接受主控处理记录中的执行边界。
+- at: '2026-06-24T08:54:00+08:00'
+  from_status: human_plan_confirming
+  to_status: executing
+  actor: main-controller-codex
+  reason: |
+    Human 明确确认执行 workcase-0003，并要求执行完成后进行子 Agent 结果复核。
+  changed_fields:
+  - status
+  - updated
+  - plan_confirmed_at
+  - orchestration.plan_review.human_confirmation
+  - orchestration.execution_items[0].status
+  - orchestration.execution_items[0].result_summary
+  summary: |
+    WorkCase 进入执行阶段；主控开始 item-1，并将执行约束限制在已审核方案范围内。
+- at: '2026-06-24T08:59:00+08:00'
+  from_status: executing
+  to_status: result_self_checking
+  actor: main-controller-codex
+  reason: |
+    规范口径、Code 实现、测试夹具和验证闭环已完成；主控进入结果自检并准备子 Agent 结果复核。
+  changed_fields:
+  - status
+  - updated
+  - success_criteria
+  - orchestration.execution_items
+  - orchestration.result_review.controller_self_check
+  - verification_evidence
+  - residual_risks
+  - review_requested_at
+  summary: |
+    WorkCase 已完成执行项并通过主控自检。下一步按 Human 要求发起子 Agent 结果复核，确认实现范围、规范一致性和验证证据是否足够。
+- at: '2026-06-24T09:01:00+08:00'
+  from_status: result_self_checking
+  to_status: subagents_result_reviewing
+  actor: main-controller-codex
+  reason: |
+    主控自检和事实源校验通过，按 Human 要求启动子 Agent 结果复核。
+  changed_fields:
+  - status
+  - updated
+  - orchestration.result_review.review_policy
+  - revision_history
+  summary: |
+    WorkCase 进入子 Agent 结果复核中。复核范围分为规范一致性与实时投影边界、Code 与测试正确性、WorkCase 治理和关闭材料。
+- at: '2026-06-24T09:04:00+08:00'
+  from_status: subagents_result_reviewing
+  to_status: human_closure_confirming
+  actor: main-controller-codex
+  reason: |
+    三个子 Agent 结果复核已完成。主控已吸收 Poincare 的测试覆盖 follow-up，并修复 Laplace 指出的结果复核记录和关闭证据缺口，可提交 Human 关闭确认。
+  changed_fields:
+  - status
+  - updated
+  - orchestration.result_review.review_items
+  - orchestration.result_review.controller_resolution
+  - closure_evidence
+  - closure_requested_at
+  - revision_history
+  summary: |
+    WorkCase 进入 Human 关闭确认状态。关闭前仍需 Human 明确确认 `closure_evidence`、残留风险和结果复核处理记录。
+- at: '2026-06-24T09:12:00+08:00'
+  from_status: human_closure_confirming
+  to_status: human_closure_confirming
+  actor: main-controller-codex
+  reason: |
+    Human 在关闭前要求继续落实 WorkCase 结果复核防漏改进，避免 execution_items 全 done 后跳过主控自检和独立结果复核。
+  changed_fields:
+  - updated
+  - closure_evidence
+  - related_docs
+  - revision_history
+  summary: |
+    已补充 WorkCase 状态硬提示、fact_validate warning、新建 WorkCase 默认 result_review.review_policy 和相关测试；WorkCase 仍保持 Human 关闭确认状态，等待 Human 最终关闭确认。
+- at: '2026-06-26T09:52:45+08:00'
+  from_status: human_closure_confirming
+  to_status: closed
+  actor: codex-main-thread
+  reason: |
+    Human 确认关闭此前已复核可关闭的 WorkCase。workcase-0003 已完成成功标准、结果复核、closure_evidence 和事实源校验，且关闭证据明确无后续分流。
+  changed_fields:
+  - status
+  - updated
+  - closed_at
+  - closure_outcome
+  - human_closure_confirmation
+  - revision_history
+  summary: |
+    WorkCase 以 completed 结果关闭；残留风险保持为按对象渐进治理的非阻断风险。
+related_docs:
+- specs/01-规范体系基础规范.md
+- specs/04-Code确定性执行规范.md
+- specs/attachments/01.Att.01-知识地图关系类型表.md
+- specs/attachments/04.Att.05-知识地图输入范围表.md
+- specs/attachments/04.Att.06-知识地图投影Schema表.md
+- specs/attachments/21.Att.01-orchestration字段契约表.md
+- specs/21-WorkCase-工作项.md
+- specs/20-Spark-火花.md
+- specs/24-Study-研究报告.md
+- code/fact_cli.py
+- code/fact_validate.py
+- code/spec_checks/knowledge_map.py
+- code/spec_checks/v2.py
+- tests/code/test_fact_cli.py
+- tests/code/test_fact_validate.py
+related_adrs: []
+related_sparks:
+- spark-0017
+related_pitfalls: []
+related_workcases:
+- workcase-0002

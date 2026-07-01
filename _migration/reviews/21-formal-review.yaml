@@ -1,16 +1,16 @@
 target_spec: "specs/21-WorkCase-工作项.md"
-target_sha256: "a67db5970982f97300448ddffebcdb9e13c283ec92a7c259f7d456c499eecf31"
+target_sha256: "ac354cf287345f2a403f03229fd764836f2de142eca09268a3cbebabdcf23e45"
 change_type: "addition"
 mapping_evidence:
-  path: "_migration/6A-fact-object-member-admission.md"
+  path: "_migration/9C-fact-object-full-migration.md"
 code_verification:
   command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
-  receipt: "Formal specs validator and tests/code cover 21 as the first WorkCase fact model member candidate with status, source, closure, and Human Gate checks."
+  receipt: "Formal specs validator and tests/code cover 21 after real WorkCase instances moved into ldvh-base/workcases with field schema, status, closure, and Human Gate checks."
 subagent_review:
   agent_id: "codex-local-6a-workcase-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review found 21 limited to the WorkCase minimal member contract; full 21.Att.01, complete schema, instances, Hook, Web write, and action template instances remain postposed."
+  receipt: "Local review found 21 acknowledges real WorkCase instances and Code/tests schema while keeping full 21.Att.01, Hook, Web write, and non-commit action templates postposed."
   unresolved_blockers: []
 warnings: []

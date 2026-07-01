@@ -55,7 +55,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 Study 成员规范的最小父层规则。本文不迁入 V2 完整 frontmatter schema、真实实例、Web 阅读实现或研究行动模板。
+> 文件状态：candidate；本文吸收 V2 Study 成员规范的父层规则。真实 Study 实例已由阶段 9C 迁入 `ldvh-base/studies/` 并由 Code/tests 校验；本文不迁入 V2 完整 frontmatter schema、Web 阅读实现或研究行动模板。
 
 ## 1. 价值判断
 
@@ -194,6 +194,6 @@ Study 的报告口径必须满足：
 ## 12. 待补齐事项
 
 1. 后续再判断是否迁入 Study 完整 frontmatter schema、正文样例和 URL 字段细节；
-2. 后续受管项目事实源稳定后，再决定是否迁移真实 Study 实例目录；
+2. 真实 Study 实例目录已迁入 `ldvh-base/studies/`，后续新增或改写实例必须通过 frontmatter schema、正文骨架和关系校验；
 3. 后续 Web 实现启动时，应复用同一份 Study 事实源，不维护第二套摘要或正文；
 4. 后续 Code 可继续扩展 Study frontmatter 和正文骨架 validator，但不得让字段级检查反向定义本文未授权规则。
