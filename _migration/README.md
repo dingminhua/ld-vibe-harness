@@ -99,3 +99,5 @@
 `_migration/17A-web-confirm-ui-write-boundary.md` 记录阶段 17A 的 Web Confirm UI 与通用写入边界判断。它确认 Spark quick create 仍是当前唯一正式 Web 写入；通用事实对象写入、WorkCase 状态推进写入和完整 Confirm UI 继续后置，启用前必须重新进入 Human Gate 和 tests/web 合同验证。
 
 `_migration/18A-governed-project-hook-adapter.md` 记录阶段 18A 的外部受管项目 Hook adapter。它说明 `code/governed_hook_adapter.py` 已支持受管项目范围内的 `git.commit-msg` status/install/uninstall，并在 install/uninstall 前要求显式 Human Gate；它不表示任何外部项目已自动安装 Hook。
+
+`_migration/19A-migration-archive-decision.md` 记录阶段 19A 的 `_migration` 归档判断。它确认 formal review mapping evidence、迁移测试、test runner 和 Code preflight/read plan 仍依赖 `_migration`，因此当前继续保留，不删除 tracked 迁移材料。

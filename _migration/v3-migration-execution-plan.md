@@ -368,6 +368,14 @@ specs 迁入
 4. `code/install_git_hooks.py` 支持为外部 repo Hook 嵌入 LDVH root，避免外部 repo 必须复制 V3 validator；
 5. 本阶段只提供 adapter-ready 能力，不自动安装到任何外部项目，不改变当前环境唯一 integrated 自动入口是当前 worktree `git.commit-msg` 的结论。
 
+19A 完成记录：
+
+1. `_migration/19A-migration-archive-decision.md` 已记录 `_migration` 归档判断；
+2. `reviews/formal` 的 24 份 formal review 仍回指 `_migration/` mapping evidence；
+3. `tests/code/test_formal_specs.py`、`code/test_runner.py`、`code/ldvh_specs.py` 和 `_migration/tests` 仍有稳定依赖；
+4. `_migration/tests` 当前 19 passed，尚未被稳定替代；
+5. 本阶段决定继续保留 `_migration`，不删除 tracked 迁移材料，不移动目录，不重写 formal review evidence。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。

@@ -137,6 +137,10 @@
 2. 判断 mapping evidence 和历史 source_ref 是否仍需要 `_migration`；
 3. 经 Human Gate 后再决定归档、删除或继续保留。
 
+完成记录：
+
+阶段 19A 已完成 `_migration` 归档判断，记录见 `_migration/19A-migration-archive-decision.md`。当前 `reviews/formal`、`tests/code/test_formal_specs.py`、`code/test_runner.py`、`code/ldvh_specs.py` 和 `_migration/tests` 仍依赖 `_migration`；因此本阶段决定继续保留，不删除 tracked 迁移材料，不移动目录，不重写 formal review evidence。
+
 ## 停止条件
 
 出现以下情况时，暂停并回到 Human Gate 或对应正式规范：
