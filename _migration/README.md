@@ -91,3 +91,5 @@
 `_migration/13A-workcase-minimal-action-template.md` 记录阶段 13A 的 WorkCase 最小行动模板。它说明 `06` 已承接 WorkCase 创建、执行推进、结果复核和关闭确认的手动等价行动结构；它不授权 Web 写入、Hook、runtime 自动触发、完整 Confirm UI 或字段表细化。
 
 `_migration/14A-test-tiering-performance.md` 记录阶段 14A 的测试性能与分层优化。它说明 `09` 已定义 smoke/targeted/runtime/full 分层契约，Code runner 支持 runtime profile 和 targeted slow policy；它不删除慢测试、不降低 full regression 覆盖，也不默认并行化 slow 层。
+
+`_migration/15A-runtime-auto-entry-assessment.md` 记录阶段 15A 的 runtime 自动入口复核。它确认当前除 `git.commit-msg` 外没有可升级为 integrated 的 session/tool/completion 自动入口，manual runtime 三件套仍是 manual-ready，Rules / Skill 顶层机制仍是 removed_top_level。

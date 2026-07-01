@@ -335,6 +335,15 @@ specs 迁入
 5. `_migration/14A-test-tiering-performance.md` 已记录本阶段承接、边界和验证要求；
 6. 本阶段不删除慢测试、不降低 full regression、不新增并行依赖、不默认并行化 slow 层。
 
+15A 完成记录：
+
+1. `_migration/15A-runtime-auto-entry-assessment.md` 已记录 runtime 自动入口复核；
+2. `code/environment_entry_audit.py --format json` 确认 integrated 入口只有 `git.commit-msg`；
+3. `runtime.session_start.auto`、`runtime.pre_tool_use.auto`、`runtime.completion_claim.auto` 和 `runtime.adapter.auto` 继续为 deferred；
+4. `manual.runtime_adapter`、`manual.session_start`、`manual.pre_tool_use` 和 `manual.completion_claim` 仍是 manual-ready，不是自动触发；
+5. `rules.top_level_mechanism` 和 `skills.top_level_mechanism` 继续为 removed_top_level；
+6. 本阶段不新增代码能力、不安装 Hook、不创建 repo instruction、不恢复 Rules / Skill 顶层机制。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。

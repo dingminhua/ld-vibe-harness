@@ -89,6 +89,10 @@
 2. 没有真实触发点时继续保持 deferred，不反复讨论；
 3. 有真实触发点时，先补 payload、失败处理、安装状态、回滚、测试和 Human Gate，再判断是否 integrated。
 
+完成记录：
+
+阶段 15A 已完成 runtime 自动入口复核，记录见 `_migration/15A-runtime-auto-entry-assessment.md`。当前除 `git.commit-msg` 外没有可升级为 integrated 的自动入口；manual runtime 三件套继续后置，不再重复讨论，除非出现真实触发点和完整接入证据。
+
 ## 阶段 16：稳定 receipt 存储
 
 目标：
