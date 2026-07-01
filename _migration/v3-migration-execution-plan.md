@@ -84,7 +84,7 @@ specs 迁入
 
 | 子项 | 状态 | 目标 | 需要 Human 参与的边界 |
 |---|---|---|---|
-| 9A 迁移层依赖审计 | 待执行 | 审计 `_migration` 对正式 code/tests/review gate 的剩余依赖，划分保留、吸收、删除和归档 | 删除尚未明确废弃的 V2 能力时 |
+| 9A 迁移层依赖审计 | 已完成 | 审计 `_migration` 对正式 code/tests/review gate 的剩余依赖，划分保留、吸收、删除和归档 | 删除尚未明确废弃的 V2 能力时 |
 | 9B 最小提交入口 | 待执行 | 先迁 Git 提交行动、commit-msg / commit gate、read_plan 消费证据和验证声明边界 | 启用会阻断真实提交的 Hook 或 gate 时 |
 | 9C 事实对象完整迁移 | 待执行 | 完整迁移 Spark、WorkCase、ADR、Pitfall、Study 字段、schema、实例路径和真实 `ldvh-base/` 实例，编号可按 V3 重构 | 字段丢失、语义冲突、编号冲突或真实实例不可逆转换时 |
 | 9D Web 数据契约迁移 | 待执行 | 保留既有表现层，只迁 DTO/API、来源回指、独立读取、Confirm UI 边界、缓存同步和回归测试 | Web 写入、Confirm UI 或缓存策略改变 Human 可见状态时 |
@@ -168,6 +168,15 @@ specs 迁入
 3. `tests/code/test_ldvh_specs_validate.py` 已覆盖 e2e 静态 workflow、无授权语义和 CLI JSON 输出；
 4. `_migration/8-end-to-end-closure.md` 已记录演练结论、交付物、验证声明和后置边界；
 5. 阶段 8 验证的是静态闭环，不执行真实写入、不创建提交、不安装 Hook、不启用 commit gate、不声明 V3 正式环境接管。
+
+9A 完成记录：
+
+1. `_migration/9A-migration-layer-dependency-audit.md` 已记录迁移层依赖审计；
+2. 稳定 `code/` 没有 import `_migration` 模块，但仍有迁移 target 分类、迁移 read_plan 和 e2e source_ref 的路径引用；
+3. `tests/code/test_formal_specs.py` 仍依赖 `_migration/reviews/*-formal-review.yaml` 作为 formal review hash gate；
+4. `_migration/tests` 仍依赖 `_migration/code`、fixtures、schemas、inventory 和 V2 源仓库；
+5. 当前没有 tracked `_migration` 文件可安全删除，只清理未跟踪 `__pycache__`；
+6. 下一步进入 9B 最小提交入口，先迁 Git 提交行动和 commit gate / Hook。
 
 阶段 5B 术语校正：
 

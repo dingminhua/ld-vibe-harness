@@ -55,4 +55,4 @@
 
 ## 5. 当前下一步
 
-阶段 9 从 9A 开始。9A 的输出应是迁移层依赖审计和删除/保留清单；完成后再进入 9B 最小提交 Hook / commit gate。
+9A 已完成迁移层依赖审计，结论见 `_migration/9A-migration-layer-dependency-audit.md`。当前下一步是 9B 最小提交入口：先迁 Git 提交行动、commit-msg / commit gate、read_plan 消费证据和验证声明边界。

@@ -156,7 +156,7 @@ V3 术语使用：
 | WorkCase 创建、方案审核、结果复核、关闭确认行动模板实例 | 9E 行动模板候选后置 | 只记录准入条件，先不作为 V3 主线切换范围 | 否 |
 | V2 知识地图页面、输入范围表、投影 schema 和事实层 | legacy_alias / 废弃 | 不恢复。任务导航能力由 Action Guide / 行动指南承接 | 否 |
 | Skill 顶层机制、Skill registry、Skill 执行闭环 | legacy_alias / 后续外部包装候选 | 不作为 V3 顶层机制；有价值内容只转普通行动步骤、Action Guide 提示或环境包装 | 否 |
-| `_migration` 依赖 | 9A / 9F | 先审计，再吸收、归档或删除；review hash gate 等仍依赖的材料不得提前删 | 是，直到依赖清楚 |
+| `_migration` 依赖 | 9A / 9F | 9A 已完成审计；formal review hash gate、迁移测试和少量 runtime source_ref 仍依赖 `_migration`，tracked 迁移材料不得提前删 | 是，直到 9F 完成归档或替代 |
 
 Human Gate 触发边界见 `_migration/9-v3-mainline-transition-scope.md`。默认不需要 Human 中途参与；只有启用阻断型 Hook、不可逆迁移真实实例、删除未明确废弃能力、改变 Web 写入/Human 可见状态或声明 V3 正式接管主线时需要 Human 明示决定。
 
