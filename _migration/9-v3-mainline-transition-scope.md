@@ -55,4 +55,4 @@
 
 ## 5. 当前下一步
 
-9A 已完成迁移层依赖审计，结论见 `_migration/9A-migration-layer-dependency-audit.md`。当前下一步是 9B 最小提交入口：先迁 Git 提交行动、commit-msg / commit gate、read_plan 消费证据和验证声明边界。
+9A 已完成迁移层依赖审计，结论见 `_migration/9A-migration-layer-dependency-audit.md`。9B 已完成 V3 自有 commit gate、CLI 和 Hook wrapper，但未启用真实 Git Hook。当前下一步是 9C 事实对象完整迁移。

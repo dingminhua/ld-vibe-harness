@@ -9,6 +9,7 @@ from typing import Any
 from ldvh_specs import (
     ROOT,
     build_action_guide,
+    build_commit_gate,
     build_e2e_rehearsal,
     build_governed_projects_report,
     build_preflight,
@@ -145,6 +146,32 @@ def print_text(result: dict[str, Any], command: str) -> None:
         print("\nAuthorization: none")
         return
 
+    if command == "commit-gate":
+        summary = result["summary"]
+        print("LDVH v3 commit gate 校验完成")
+        print(f"- status: {summary['status']}")
+        print(f"- message_type: {summary['message_type']}")
+        print(f"- message_scope: {summary['message_scope']}")
+        print(f"- changed_paths: {summary['changed_paths']}")
+        print(f"- body_required: {summary['body_required']}")
+        print(f"- read_plan_required: {summary['read_plan_required']}")
+        print(f"- read_plan_consumed: {summary['read_plan_consumed']}")
+        print(f"- environment_integrated: {summary['environment_integrated']}")
+        print(f"- diagnostics: {summary['diagnostics']}")
+        print(f"- blocking: {summary['blocking']}")
+        if result["body_required_reasons"]:
+            print("\nBody required reasons:")
+            for reason in result["body_required_reasons"]:
+                print(f"- {reason}")
+        if result["diagnostics"]:
+            print("\nDiagnostics:")
+            for diagnostic in result["diagnostics"]:
+                print(f"- {diagnostic['path']} [{diagnostic['level']}/{diagnostic['code']}] {diagnostic['message']}")
+        else:
+            print("\nDiagnostics: none")
+        print("\nAuthorization: none")
+        return
+
     summary = result["summary"]
     print("LDVH v3 specs 校验完成")
     print(f"- command: {command}")
@@ -200,7 +227,18 @@ def build_parser() -> argparse.ArgumentParser:
         "command",
         nargs="?",
         default="all",
-        choices=["all", "specs", "timings", "ai-behavior", "action-guide", "preflight", "runtime", "governed-projects", "e2e"],
+        choices=[
+            "all",
+            "specs",
+            "timings",
+            "ai-behavior",
+            "action-guide",
+            "preflight",
+            "runtime",
+            "governed-projects",
+            "e2e",
+            "commit-gate",
+        ],
         help="validation surface to print",
     )
     parser.add_argument("--root", default=ROOT.as_posix(), help="repository root")
@@ -226,6 +264,15 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="verification evidence for runtime completion_claim; may be repeated or comma-separated",
     )
+    parser.add_argument("--message", default="", help="commit message text for commit-gate")
+    parser.add_argument("--message-file", default="", help="path to commit message file for commit-gate")
+    parser.add_argument(
+        "--changed-path",
+        action="append",
+        default=[],
+        help="changed path for commit-gate; may be repeated or comma-separated",
+    )
+    parser.add_argument("--no-require-read-plan", action="store_true", help="do not require read_plan evidence for commit-gate")
     return parser
 
 
@@ -240,6 +287,18 @@ def main(argv: list[str] | None = None) -> int:
             task=args.task,
             target_path=args.target_path,
             trigger_source=args.trigger_source,
+        )
+        result = output
+    elif args.command == "commit-gate":
+        message = args.message
+        if args.message_file:
+            message = Path(args.message_file).read_text(encoding="utf-8")
+        output = build_commit_gate(
+            root,
+            message=message,
+            changed_paths=args.changed_path,
+            acknowledged_paths=args.acknowledged_path,
+            require_read_plan=not args.no_require_read_plan,
         )
         result = output
     elif args.command == "preflight":

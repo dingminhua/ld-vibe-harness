@@ -116,6 +116,10 @@ COMMIT_MESSAGE_FIELD_COLUMNS = ["字段", "要求", "说明"]
 COMMIT_TYPE_COLUMNS = ["type", "简体中文", "English", "含义"]
 COMMIT_SCOPE_COLUMNS = ["scope", "简体中文", "English", "含义"]
 COMMIT_BODY_CONDITION_COLUMNS = ["条件类型", "条件"]
+COMMIT_HEADER_RE = re.compile(
+    r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z0-9_-]+)\))?(?P<breaking>!)?: (?P<description>.+)$"
+)
+COMMIT_REQUIRED_BODY_HEADING = "关键变更"
 FIELD_REGISTRY_COLUMNS = ["列", "含义"]
 FIELD_REGISTRY_ALLOWED_COLUMNS = ["注册列", "允许值或写法"]
 FIELD_REGISTRY_CODE_CHECK_COLUMNS = ["code_check_kind", "可机械消费维度", "边界"]
@@ -2777,6 +2781,283 @@ def normalize_path_list(paths: list[str] | None) -> list[str]:
             if stripped:
                 normalized.append(stripped)
     return list(dict.fromkeys(normalized))
+
+
+def _commit_gate_diagnostic(level: str, code: str, path: str, message: str, disposition: str = "blocking") -> dict[str, str]:
+    return {
+        "level": level,
+        "code": code,
+        "path": path,
+        "message": message,
+        "disposition": disposition,
+    }
+
+
+def _commit_message_without_comments(message: str) -> str:
+    lines = []
+    for line in message.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        if line.lstrip().startswith("#"):
+            continue
+        lines.append(line.rstrip())
+    return "\n".join(lines).strip()
+
+
+def parse_commit_message(message: str) -> dict[str, Any]:
+    cleaned = _commit_message_without_comments(message)
+    lines = cleaned.split("\n") if cleaned else []
+    header = lines[0].strip() if lines else ""
+    body = "\n".join(lines[1:]).strip() if len(lines) > 1 else ""
+    match = COMMIT_HEADER_RE.match(header)
+    parsed: dict[str, Any] = {
+        "raw": cleaned,
+        "header": header,
+        "body": body,
+        "type": "",
+        "scope": "",
+        "breaking": False,
+        "description": "",
+        "header_valid": False,
+        "body_headings": [],
+    }
+    if match:
+        parsed.update({
+            "type": match.group("type"),
+            "scope": match.group("scope") or "",
+            "breaking": bool(match.group("breaking")),
+            "description": match.group("description").strip(),
+            "header_valid": True,
+        })
+    parsed["body_headings"] = [
+        line.strip().removesuffix(":")
+        for line in body.splitlines()
+        if line.strip().endswith(":") and len(line.strip()) <= 40
+    ]
+    return parsed
+
+
+def commit_contract_values(root: Path = ROOT) -> dict[str, set[str]]:
+    def cell_token(value: str) -> str:
+        return value.strip().strip("`").strip()
+
+    contract = parse_commit_message_contract(root)
+    return {
+        "types": {cell_token(row["type"]) for row in contract["types"] if row.get("type")},
+        "scopes": {cell_token(row["scope"]) for row in contract["scopes"] if row.get("scope")},
+        "body_conditions": {row["条件类型"] for row in contract["body_conditions"] if row.get("条件类型")},
+    }
+
+
+def _commit_scope_for_path(path: str) -> str:
+    normalized = path.strip().lstrip("./")
+    if normalized.startswith("specs/"):
+        return "specs"
+    if normalized.startswith("code/"):
+        return "code"
+    if normalized.startswith("tests/"):
+        return "tests"
+    if normalized.startswith("web/"):
+        return "web"
+    if normalized.startswith("rules/"):
+        return "rules"
+    if normalized.startswith("docs/studies/"):
+        return "studies"
+    if normalized.startswith("docs/"):
+        return "docs"
+    if normalized.startswith("_migration/"):
+        return "docs"
+    if normalized.startswith(".github/") or normalized.endswith((".yaml", ".yml", ".toml", ".json")):
+        return "config"
+    if normalized.startswith("ldvh-base/sparks/"):
+        return "spark"
+    if normalized.startswith("ldvh-base/workcases/"):
+        return "workcase"
+    if normalized.startswith("ldvh-base/adrs/"):
+        return "adr"
+    if normalized.startswith("ldvh-base/pitfalls/"):
+        return "pitfall"
+    if normalized.startswith("ldvh-base/studies/"):
+        return "study"
+    if normalized.startswith("ldvh-base/"):
+        return "workcase"
+    return ""
+
+
+def _commit_path_is_high_impact(path: str) -> bool:
+    normalized = path.strip().lstrip("./")
+    return (
+        normalized.startswith(("specs/", "code/", "tests/", "web/", "rules/", ".github/", "skills/"))
+        or normalized in {GOVERNED_PROJECTS_CONFIG_PATH, "pyproject.toml", "package.json", "package-lock.json"}
+    )
+
+
+def _commit_path_changes_boundary(path: str) -> bool:
+    normalized = path.strip().lstrip("./")
+    return (
+        normalized in HIGH_IMPACT_SPEC_PATHS
+        or normalized in {
+            SHORT_SPEC_REFS["06"],
+            SHORT_SPEC_REFS["07"],
+            SHORT_SPEC_REFS["08"],
+            SHORT_SPEC_REFS["09"],
+            COMMIT_MESSAGE_CONTRACT_PATH,
+            VERIFICATION_CLAIM_FIELDS_PATH,
+            TAKEOVER_MATRIX_PATH,
+            GOVERNED_PROJECTS_CONFIG_PATH,
+            "_migration/v3-migration-execution-plan.md",
+            "_migration/9-v3-mainline-transition-scope.md",
+        }
+        or normalized.startswith("code/")
+        or normalized.startswith("rules/")
+    )
+
+
+def commit_body_required_reasons(changed_paths: list[str]) -> list[str]:
+    paths = normalize_path_list(changed_paths)
+    reasons: list[str] = []
+    scopes = {scope for scope in (_commit_scope_for_path(path) for path in paths) if scope}
+    if any(_commit_path_is_high_impact(path) for path in paths):
+        reasons.append("高影响文件")
+    if any(path.startswith("ldvh-base/") for path in paths):
+        reasons.append("事实对象字段")
+    if len(paths) >= 2 or len(scopes) >= 2:
+        reasons.append("多文件范围")
+    if any(_commit_path_changes_boundary(path) for path in paths):
+        reasons.append("边界变化")
+    return list(dict.fromkeys(reasons))
+
+
+def build_commit_gate(
+    root: Path = ROOT,
+    message: str = "",
+    changed_paths: list[str] | None = None,
+    acknowledged_paths: list[str] | None = None,
+    require_read_plan: bool = True,
+) -> dict[str, Any]:
+    normalized_changed_paths = normalize_path_list(changed_paths)
+    normalized_ack_paths = normalize_path_list(acknowledged_paths)
+    parsed = parse_commit_message(message)
+    contract = commit_contract_values(root)
+    body_reasons = commit_body_required_reasons(normalized_changed_paths)
+    diagnostics: list[dict[str, str]] = []
+
+    if not parsed["header_valid"]:
+        diagnostics.append(_commit_gate_diagnostic(
+            "blocking",
+            "COMMIT_HEADER_INVALID",
+            COMMIT_MESSAGE_CONTRACT_PATH,
+            "commit header 必须符合 type(scope): description 或 type: description。",
+        ))
+    else:
+        if parsed["type"] not in contract["types"]:
+            diagnostics.append(_commit_gate_diagnostic(
+                "blocking",
+                "COMMIT_TYPE_NOT_ALLOWED",
+                COMMIT_MESSAGE_CONTRACT_PATH,
+                f"commit type 不在 03.Att.01 闭集内: {parsed['type']}",
+            ))
+        if parsed["scope"] and parsed["scope"] not in contract["scopes"]:
+            diagnostics.append(_commit_gate_diagnostic(
+                "blocking",
+                "COMMIT_SCOPE_NOT_ALLOWED",
+                COMMIT_MESSAGE_CONTRACT_PATH,
+                f"commit scope 不在 03.Att.01 允许枚举内: {parsed['scope']}",
+            ))
+        if not parsed["description"]:
+            diagnostics.append(_commit_gate_diagnostic(
+                "blocking",
+                "COMMIT_DESCRIPTION_MISSING",
+                COMMIT_MESSAGE_CONTRACT_PATH,
+                "commit description 不能为空。",
+            ))
+
+    if not normalized_changed_paths:
+        diagnostics.append(_commit_gate_diagnostic(
+            "warning",
+            "COMMIT_CHANGED_PATHS_MISSING",
+            "git://staged-paths",
+            "未提供 changed paths，无法判断 body 条件和影响范围。",
+            "follow_up",
+        ))
+
+    if body_reasons and not parsed["body"]:
+        diagnostics.append(_commit_gate_diagnostic(
+            "blocking",
+            "COMMIT_BODY_REQUIRED",
+            COMMIT_MESSAGE_CONTRACT_PATH,
+            "本次提交触发 body 必填条件: " + "；".join(body_reasons),
+        ))
+    elif body_reasons and COMMIT_REQUIRED_BODY_HEADING not in parsed["body_headings"]:
+        diagnostics.append(_commit_gate_diagnostic(
+            "blocking",
+            "COMMIT_BODY_REQUIRED_HEADING_MISSING",
+            COMMIT_MESSAGE_CONTRACT_PATH,
+            f"本次提交 body 必须包含 `{COMMIT_REQUIRED_BODY_HEADING}:` 小标题。",
+        ))
+
+    if require_read_plan:
+        missing_required = [
+            path
+            for path in RUNTIME_REQUIRED_ENTRY_PATHS
+            if path not in normalized_ack_paths
+        ]
+        if not normalized_ack_paths:
+            diagnostics.append(_commit_gate_diagnostic(
+                "blocking",
+                "COMMIT_READ_PLAN_CONSUMED_EMPTY",
+                "runtime://git_commit_msg",
+                "commit gate 必须提供 read_plan 消费证据。",
+            ))
+        elif missing_required:
+            diagnostics.append(_commit_gate_diagnostic(
+                "blocking",
+                "COMMIT_READ_PLAN_CONSUMED_INCOMPLETE",
+                "runtime://git_commit_msg",
+                "commit gate 缺少入口必读路径: " + "；".join(missing_required),
+            ))
+
+    blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"error", "blocking"})
+    status = "blocked" if blocking else "review_required" if diagnostics else "ok"
+    changed_scopes = sorted({scope for scope in (_commit_scope_for_path(path) for path in normalized_changed_paths) if scope})
+
+    return {
+        "metadata": {
+            "read_only": True,
+            "authority": "derived_from_v3_commit_contract",
+            "authorization": "none",
+            "environment_integrated": False,
+            "hook_integrated": False,
+            "root": root.as_posix(),
+        },
+        "summary": {
+            "status": status,
+            "diagnostics": len(diagnostics),
+            "blocking": blocking,
+            "message_type": parsed["type"],
+            "message_scope": parsed["scope"],
+            "changed_paths": len(normalized_changed_paths),
+            "changed_scopes": len(changed_scopes),
+            "body_required": bool(body_reasons),
+            "read_plan_required": require_read_plan,
+            "read_plan_consumed": not require_read_plan or not any(
+                path for path in RUNTIME_REQUIRED_ENTRY_PATHS if path not in normalized_ack_paths
+            ),
+            "environment_integrated": False,
+        },
+        "message": parsed,
+        "changed_paths": normalized_changed_paths,
+        "changed_scopes": changed_scopes,
+        "body_required_reasons": body_reasons,
+        "acknowledged_paths": normalized_ack_paths,
+        "source_refs": [
+            {"path": SHORT_SPEC_REFS["03"], "role": "commit_traceability_rule"},
+            {"path": COMMIT_MESSAGE_CONTRACT_PATH, "role": "commit_message_contract"},
+            {"path": SHORT_SPEC_REFS["06"], "role": "git_commit_action_template"},
+            {"path": SHORT_SPEC_REFS["09"], "role": "verification_boundary"},
+            {"path": VERIFICATION_CLAIM_FIELDS_PATH, "role": "verification_claim_fields"},
+            {"path": TAKEOVER_MATRIX_PATH, "role": "hook_takeover_mapping"},
+        ],
+        "diagnostics": diagnostics,
+    }
 
 
 def receipt_id_for(

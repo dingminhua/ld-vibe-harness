@@ -1353,6 +1353,166 @@ def test_runtime_git_commit_msg_blocks_incomplete_read_plan_consumption() -> Non
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_READ_PLAN_CONSUMED_INCOMPLETE"
 
 
+def test_commit_gate_accepts_valid_message_with_read_plan_body() -> None:
+    message = """docs(docs): 对齐阶段9主线切换范围
+
+关键变更:
+- 新增阶段9范围和9A审计
+
+验证结论:
+- python3 -m pytest tests/code _migration/tests -q 通过
+"""
+
+    gate = ldvh_specs.build_commit_gate(
+        ROOT,
+        message=message,
+        changed_paths=[
+            "_migration/9-v3-mainline-transition-scope.md",
+            "_migration/9A-migration-layer-dependency-audit.md",
+        ],
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+    )
+
+    assert gate["metadata"]["authorization"] == "none"
+    assert gate["metadata"]["environment_integrated"] is False
+    assert gate["metadata"]["hook_integrated"] is False
+    assert gate["summary"]["status"] == "ok"
+    assert gate["summary"]["body_required"] is True
+    assert gate["summary"]["read_plan_consumed"] is True
+    assert gate["body_required_reasons"] == ["多文件范围", "边界变化"]
+    assert gate["diagnostics"] == []
+
+
+def test_commit_gate_rejects_unknown_scope() -> None:
+    gate = ldvh_specs.build_commit_gate(
+        ROOT,
+        message="docs(migration): 对齐阶段9主线切换范围",
+        changed_paths=["_migration/9-v3-mainline-transition-scope.md"],
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+    )
+
+    assert gate["summary"]["status"] == "blocked"
+    assert "COMMIT_SCOPE_NOT_ALLOWED" in _diagnostic_codes(gate)
+
+
+def test_commit_gate_requires_body_for_high_impact_changes() -> None:
+    gate = ldvh_specs.build_commit_gate(
+        ROOT,
+        message="docs(specs): 调整事实源边界",
+        changed_paths=["specs/03-事实源与Git溯源规范.md"],
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+    )
+
+    assert gate["summary"]["status"] == "blocked"
+    assert gate["body_required_reasons"] == ["高影响文件", "边界变化"]
+    assert "COMMIT_BODY_REQUIRED" in _diagnostic_codes(gate)
+
+
+def test_commit_gate_requires_read_plan_evidence() -> None:
+    message = """test(tests): 增加提交校验测试
+
+关键变更:
+- 增加 commit gate 测试
+"""
+
+    gate = ldvh_specs.build_commit_gate(
+        ROOT,
+        message=message,
+        changed_paths=["tests/code/test_ldvh_specs_validate.py"],
+    )
+
+    assert gate["summary"]["status"] == "blocked"
+    assert "COMMIT_READ_PLAN_CONSUMED_EMPTY" in _diagnostic_codes(gate)
+
+
+def test_specs_validate_cli_commit_gate_json(tmp_path: Path) -> None:
+    message_file = tmp_path / "message.txt"
+    message_file.write_text(
+        """test(tests): 增加提交校验测试
+
+关键变更:
+- 增加 commit gate CLI 测试
+""",
+        encoding="utf-8",
+    )
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/specs_validate.py",
+            "commit-gate",
+            "--message-file",
+            str(message_file),
+            "--changed-path",
+            "tests/code/test_ldvh_specs_validate.py",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--format",
+            "json",
+            "--fail-on-diagnostics",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["environment_integrated"] is False
+    assert payload["diagnostics"] == []
+
+
+def test_commit_validate_wrapper_blocks_invalid_message(tmp_path: Path) -> None:
+    message_file = tmp_path / "message.txt"
+    message_file.write_text("docs(migration): 无效 scope\n", encoding="utf-8")
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/commit_validate.py",
+            "--check-message-file",
+            str(message_file),
+            "--repo",
+            str(ROOT),
+            "--changed-path",
+            "_migration/9-v3-mainline-transition-scope.md",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 1
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "blocked"
+    assert "COMMIT_SCOPE_NOT_ALLOWED" in _diagnostic_codes(payload)
+
+
 def test_runtime_completion_claim_requires_verification_evidence() -> None:
     runtime = ldvh_specs.build_runtime_event(ROOT, event="completion_claim")
 

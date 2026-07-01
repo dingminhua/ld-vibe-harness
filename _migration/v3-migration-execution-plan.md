@@ -85,7 +85,7 @@ specs 迁入
 | 子项 | 状态 | 目标 | 需要 Human 参与的边界 |
 |---|---|---|---|
 | 9A 迁移层依赖审计 | 已完成 | 审计 `_migration` 对正式 code/tests/review gate 的剩余依赖，划分保留、吸收、删除和归档 | 删除尚未明确废弃的 V2 能力时 |
-| 9B 最小提交入口 | 待执行 | 先迁 Git 提交行动、commit-msg / commit gate、read_plan 消费证据和验证声明边界 | 启用会阻断真实提交的 Hook 或 gate 时 |
+| 9B 最小提交入口 | 已完成（Hook 未启用） | 先迁 Git 提交行动、commit-msg / commit gate、read_plan 消费证据和验证声明边界 | 启用会阻断真实提交的 Hook 或 gate 时 |
 | 9C 事实对象完整迁移 | 待执行 | 完整迁移 Spark、WorkCase、ADR、Pitfall、Study 字段、schema、实例路径和真实 `ldvh-base/` 实例，编号可按 V3 重构 | 字段丢失、语义冲突、编号冲突或真实实例不可逆转换时 |
 | 9D Web 数据契约迁移 | 待执行 | 保留既有表现层，只迁 DTO/API、来源回指、独立读取、Confirm UI 边界、缓存同步和回归测试 | Web 写入、Confirm UI 或缓存策略改变 Human 可见状态时 |
 | 9E 行动模板候选后置 | 待执行 | 记录 WorkCase 创建、方案审核、结果复核、关闭确认等候选模板准入条件 | 若要求把非提交行动模板纳入主线切换阻断范围 |
@@ -177,6 +177,16 @@ specs 迁入
 4. `_migration/tests` 仍依赖 `_migration/code`、fixtures、schemas、inventory 和 V2 源仓库；
 5. 当前没有 tracked `_migration` 文件可安全删除，只清理未跟踪 `__pycache__`；
 6. 下一步进入 9B 最小提交入口，先迁 Git 提交行动和 commit gate / Hook。
+
+9B 完成记录：
+
+1. `_migration/9B-minimal-commit-entry.md` 已记录最小提交入口迁移结果；
+2. `code/ldvh_specs.py` 新增 `build_commit_gate`，校验 commit header、type/scope 枚举、body 必填条件、`关键变更:` 小标题和 read_plan 消费证据；
+3. `code/specs_validate.py` 新增 `commit-gate` CLI；
+4. `code/commit_validate.py` 新增未来 commit-msg Hook 可调用的包装器；
+5. `tests/code/test_ldvh_specs_validate.py` 已覆盖 commit gate 正例、非法 scope、缺 body、缺 read_plan、CLI 和 wrapper；
+6. 真实 Git Hook 未安装，`environment_integrated=false`、`hook_integrated=false`；启用 Hook 仍需 Human Gate；
+7. 下一步进入 9C 事实对象完整迁移。
 
 阶段 5B 术语校正：
 

@@ -146,9 +146,9 @@ V3 术语使用：
 
 | 剩余内容 | 阶段 9 归口 | 处理结论 | 是否阻断 V3 主线切换 |
 |---|---|---|---|
-| Git 提交行动 | 9B 最小提交入口 | 必须迁入。作为最小行动模板，承接 commit message 契约、read_plan 消费证据、验证声明和提交前检查 | 是 |
-| Hook / commit gate | 9B 最小提交入口 | 先迁提交链路 Hook / commit gate；通用 session_start、pre_tool_use、completion_claim 环境入口可在提交链路稳定后继续扩展 | 提交链路是；通用 Hook 不是第一批阻断项 |
-| runtime adapter / dispatcher | 9B 或后续环境入口 | 只接入提交链路需要的最小 adapter；不得恢复 V2 Hook/Rules 顶层权威 | 部分阻断 |
+| Git 提交行动 | 9B 最小提交入口 | 已迁入最小 Code gate。Git 提交行动继续作为唯一正式行动模板示范，commit message 契约、read_plan 消费证据和验证声明边界均可被 V3 Code 校验 | 已完成 |
+| Hook / commit gate | 9B 最小提交入口 | 已新增 V3 commit gate CLI 和 `code/commit_validate.py` wrapper；真实 Git Hook 未安装，启用仍需 Human Gate | Code gate 完成；真实 Hook 不阻断当前继续 9C |
+| runtime adapter / dispatcher | 9B 或后续环境入口 | 最小提交 wrapper 已有；不得恢复 V2 Hook/Rules 顶层权威。通用 session_start、pre_tool_use、completion_claim 环境入口继续后置 | 不阻断当前继续 9C |
 | Spark / WorkCase / ADR / Pitfall / Study 完整字段、schema、真实实例 | 9C 事实对象完整迁移 | 必须完整迁入，但编号、目录和 schema 可以按 V3 重新构造，不照搬 V2 目录权威 | 是 |
 | WorkCase `21.Att.01-orchestration字段契约表` | 9C 事实对象完整迁移 | 重新判断为正式附件、schema/tests 或继续留在迁移材料；不得整表无授权复制 | 是，直到有明确去向 |
 | Web 表现层 | 9D Web 数据契约迁移 | 不重做。保留既有表现，只调整 V3 数据契约、来源回指、独立读取和验证边界 | 否 |
