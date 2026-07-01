@@ -13,7 +13,7 @@ BOOTSTRAP_OBJECT_IDS = {
     "00",
     "01",
     "01.Att.01",
-    "01.Att.06",
+    "01.Att.02",
     "02",
     "04",
     "04.Att.01",
@@ -149,7 +149,6 @@ def test_ldvh_starts_from_markdown_specs_only() -> None:
     assert (ROOT / "specs" / "08-Web信息同步规范.md").exists()
     assert (ROOT / "specs" / "09-测试与验证规范.md").exists()
     assert (ROOT / "specs" / "10-受管项目接入规范.md").exists()
-    assert (ROOT / "specs" / "11-环境适配规范.md").exists()
     assert (ROOT / "specs" / "20-Spark-火花.md").exists()
     assert (ROOT / "specs" / "21-WorkCase-工作项.md").exists()
     assert (ROOT / "specs" / "22-ADR-决策.md").exists()
@@ -169,7 +168,11 @@ def test_attachments_stay_subordinate_tables_or_enums() -> None:
     )
     assert attachments == [
         "specs/attachments/01.Att.01-保障消费时机表.md",
-        "specs/attachments/01.Att.06-保障机制承接矩阵.md",
+        "specs/attachments/01.Att.02-保障机制承接矩阵.md",
+        "specs/attachments/01.Att.03-环境入口类型表.md",
+        "specs/attachments/01.Att.04-环境接入状态表.md",
+        "specs/attachments/01.Att.05-runtime-payload字段表.md",
+        "specs/attachments/01.Att.06-环境安装回滚检查表.md",
         "specs/attachments/03.Att.01-Commit-Message契约字段表.md",
         "specs/attachments/04.Att.01-规范身份字段表.md",
         "specs/attachments/04.Att.02-规范信息角色表.md",
@@ -180,10 +183,6 @@ def test_attachments_stay_subordinate_tables_or_enums() -> None:
         "specs/attachments/05.Att.01-字段注册表结构.md",
         "specs/attachments/09.Att.01-验证声明字段表.md",
         "specs/attachments/10.Att.01-受管项目配置字段表.md",
-        "specs/attachments/11.Att.01-环境入口类型表.md",
-        "specs/attachments/11.Att.02-环境接入状态表.md",
-        "specs/attachments/11.Att.03-runtime-payload字段表.md",
-        "specs/attachments/11.Att.04-环境安装回滚检查表.md",
     ]
 
     spec_04 = (ROOT / "specs" / "04-Specs基础规范.md").read_text(encoding="utf-8")
@@ -220,7 +219,6 @@ def test_formal_specs_keep_ldvh_identity_blocks() -> None:
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
         ROOT / "specs" / "10-受管项目接入规范.md",
-        ROOT / "specs" / "11-环境适配规范.md",
         ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
         ROOT / "specs" / "22-ADR-决策.md",
@@ -244,7 +242,6 @@ def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
         ROOT / "specs" / "10-受管项目接入规范.md",
-        ROOT / "specs" / "11-环境适配规范.md",
         ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
         ROOT / "specs" / "22-ADR-决策.md",
@@ -270,7 +267,6 @@ def test_role_sections_point_to_existing_h2_entries() -> None:
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
         ROOT / "specs" / "10-受管项目接入规范.md",
-        ROOT / "specs" / "11-环境适配规范.md",
         ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
         ROOT / "specs" / "22-ADR-决策.md",

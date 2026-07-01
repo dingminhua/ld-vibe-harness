@@ -1,5 +1,5 @@
 target_spec: "specs/10-受管项目接入规范.md"
-target_sha256: "3cd3585fd5addd6ad09793fa5eb21b1c7cb148da3ca01b2fc6e420be0ffc093c"
+target_sha256: "7de99522bdd8b1c238f3543551b98b212db025f7546d67992ae9c78f11a01ffa"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/9D-web-data-contract-migration.md"

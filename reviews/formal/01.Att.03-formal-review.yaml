@@ -1,0 +1,16 @@
+target_spec: "specs/attachments/01.Att.03-环境入口类型表.md"
+target_sha256: "335dc4d2b3d8794e3f93eeeab0f50eab21949730d65e08335254211d75d9b1f1"
+change_type: "modification"
+mapping_evidence:
+  path: "_migration/11C-environment-adaptation-admission.md"
+code_verification:
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py tests/code/test_ldvh_specs_validate.py -q"
+  passed: true
+  receipt: "Formal gate covers the environment entry type closed table as an attachment subordinate to 01."
+subagent_review:
+  agent_id: "codex-local-01-environment-absorption-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review confirms 01.Att.03 only carries the entry type enum and does not define independent environment rules."
+  unresolved_blockers: []
+warnings: []

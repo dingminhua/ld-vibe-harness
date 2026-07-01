@@ -14,7 +14,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 
 TIMING_TABLE_PATH = "specs/attachments/01.Att.01-保障消费时机表.md"
-TAKEOVER_MATRIX_PATH = "specs/attachments/01.Att.06-保障机制承接矩阵.md"
+TAKEOVER_MATRIX_PATH = "specs/attachments/01.Att.02-保障机制承接矩阵.md"
 AI_BEHAVIOR_SPEC_PATH = "specs/02-AI行为规范.md"
 COMMIT_MESSAGE_CONTRACT_PATH = "specs/attachments/03.Att.01-Commit-Message契约字段表.md"
 FIELD_REGISTRY_CONTRACT_PATH = "specs/attachments/05.Att.01-字段注册表结构.md"
@@ -34,7 +34,6 @@ SHORT_SPEC_REFS = {
     "08": "specs/08-Web信息同步规范.md",
     "09": "specs/09-测试与验证规范.md",
     "10": "specs/10-受管项目接入规范.md",
-    "11": "specs/11-环境适配规范.md",
     "20": "specs/20-Spark-火花.md",
     "21": "specs/21-WorkCase-工作项.md",
     "22": "specs/22-ADR-决策.md",
@@ -2861,7 +2860,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},
             {"path": "specs/09-测试与验证规范.md", "role": "test_verification"},
             {"path": "specs/10-受管项目接入规范.md", "role": "governed_project_access"},
-            {"path": "specs/11-环境适配规范.md", "role": "environment_adaptation"},
+            {"path": "specs/01-保障与衔接.md", "role": "environment_adaptation"},
             {"path": "specs/20-Spark-火花.md", "role": "fact_model_member_spec"},
             {"path": "specs/21-WorkCase-工作项.md", "role": "workcase_member_spec"},
             {"path": "specs/22-ADR-决策.md", "role": "fact_model_member_spec"},

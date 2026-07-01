@@ -1,6 +1,6 @@
 # Git Commit 与 Hook 实现实践
 
-本文是 Code 实现域文档，承接 `specs/06-行动模板基础规范.md` 和 `specs/11-环境适配规范.md` 中不应写入 specs 正文的命令、安装和回滚实践。本文不定义新的规则源、事实源、Human Gate 或状态闭集；若与 specs 冲突，以 specs 为准。
+本文是 Code 实现域文档，承接 `specs/06-行动模板基础规范.md` 和 `specs/01-保障与衔接.md` §6 中不应写入 specs 正文的命令、安装和回滚实践。本文不定义新的规则源、事实源、Human Gate 或状态闭集；若与 specs 冲突，以 specs 为准。
 
 ## Git 提交实践
 

@@ -7,7 +7,7 @@
 | V2 能力 / 资产 | V3 承接 | 当前状态 | 说明 |
 |---|---|---|---|
 | 构成要素体系 | `00` | 已迁入 | 五类构成作为正式骨架；保障与衔接层不作为第六类 |
-| AI 行为保障 | `02`、`01.Att.01`、`01.Att.06`、Code read_plan | 已迁入 | session/pre-tool/completion 自动触发仍按 11 后置 |
+| AI 行为保障 | `02`、`01.Att.01`、`01.Att.02`、Code read_plan | 已迁入 | session/pre-tool/completion 自动触发仍按 01 §6 后置 |
 | Commit message 契约 | `03.Att.01`、commit gate、`hooks/commit-msg` | 已迁入 | 当前唯一 integrated 自动入口 |
 | 事实对象模型 | `05`、`20`-`24`、`ldvh-base/`、tests | 已迁入 | 真实 Spark/WorkCase/ADR/Pitfall/Study 已落 V3 |
 | Web 展示和 facts API | `08`、`web/`、`tests/web` | 已迁入 | Web 独立读取 facts，不使用 Code 输出作为主数据源 |

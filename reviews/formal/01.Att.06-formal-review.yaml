@@ -1,0 +1,16 @@
+target_spec: "specs/attachments/01.Att.06-环境安装回滚检查表.md"
+target_sha256: "4c7189372e7fcfdd125f63149427a80c161f8c3fe389ba9f1ad012ce9dc521f4"
+change_type: "modification"
+mapping_evidence:
+  path: "_migration/11C-environment-adaptation-admission.md"
+code_verification:
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py tests/code/test_ldvh_specs_validate.py -q"
+  passed: true
+  receipt: "Formal gate covers installation and rollback check items as an attachment subordinate to 01."
+subagent_review:
+  agent_id: "codex-local-01-environment-absorption-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review confirms 01.Att.06 only carries install/rollback check items and does not declare any new automatic integration."
+  unresolved_blockers: []
+warnings: []

@@ -74,7 +74,7 @@
 
 `_migration/11B-spec-status-activation.md` 记录正式 specs 和附件从 candidate 收口为 active 的处理结果。它只说明规则源状态激活，不授权环境自动入口、Web 通用写入或非提交行动模板。
 
-`_migration/11C-environment-adaptation-admission.md` 记录 `specs/11-环境适配规范.md` 和 11 附件的迁入结果。它承接环境入口类型、接入状态、runtime payload、receipt、安装回滚和 Rules/Skill legacy 边界。
+`_migration/11C-environment-adaptation-admission.md` 记录环境适配规则的迁入结果。独立 `specs/11-环境适配规范.md` 已后续吸收到 `specs/01-保障与衔接.md` §6，原 11 附件已改为 `01.Att.03-06`。
 
 `_migration/11D-runtime-automatic-integration-boundary.md` 记录真实 runtime 自动入口审计结论。当前除 `git.commit-msg` 外，没有 tool hook、completion hook、session hook、Rules 顶层机制或 Skill 顶层机制可以升级为 integrated。
 

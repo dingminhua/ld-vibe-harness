@@ -172,7 +172,7 @@ def build_governed_hook_adapter(
         "hook_status": hook_status,
         "source_refs": [
             {"path": "specs/10-受管项目接入规范.md", "role": "governed_project_boundary"},
-            {"path": "specs/11-环境适配规范.md", "role": "environment_adapter_boundary"},
+            {"path": "specs/01-保障与衔接.md", "role": "environment_adapter_boundary"},
             {"path": "code/install_git_hooks.py", "role": "hook_install_backend"},
         ],
         "diagnostics": diagnostics,

@@ -9,7 +9,7 @@
 1. Git 提交行动继续作为当前唯一正式行动模板示范；
 2. commit message 契约由 `03` 和 `03.Att.01` 授权；
 3. 验证声明边界由 `09` 和 `09.Att.01` 授权；
-4. 提交前 read_plan 消费证据复用 `01.Att.06` 的 `git_commit_msg` 承接；
+4. 提交前 read_plan 消费证据复用 `01.Att.02` 的 `git_commit_msg` 承接；
 5. Code 提供只读 commit gate 诊断，不输出授权、不安装 Hook、不替代 Human Gate。
 
 ## 2. 已完成

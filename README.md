@@ -174,7 +174,6 @@ python3 code/test_runner.py full
 - `08`：Web 信息同步规范
 - `09`：测试与验证规范
 - `10`：受管项目接入规范
-- `11`：环境适配规范
 - `20`：Spark-火花
 - `21`：WorkCase-工作项
 - `22`：ADR-决策

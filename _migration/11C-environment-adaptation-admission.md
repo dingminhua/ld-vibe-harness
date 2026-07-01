@@ -24,6 +24,8 @@
 
 ## 当前状态
 
+后续归口调整：独立 `specs/11-环境适配规范.md` 不再作为正式 spec 保留，其规则已吸收到 `specs/01-保障与衔接.md` §6；原 11 附件已改为 `01.Att.03-06` 并继续作为 01 的授权附件。
+
 当前 worktree 只有 `git.commit-msg` 是 integrated 自动入口。`manual.runtime_adapter`、`manual.session_start`、`manual.pre_tool_use` 和 `manual.completion_claim` 均是 manual-ready，不是自动触发证明。
 
 ## 后置项

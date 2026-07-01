@@ -87,8 +87,7 @@ RUNTIME_SENSITIVE_PREFIXES = (
     "specs/02-",
     "specs/07-",
     "specs/09-",
-    "specs/11-",
-    "specs/attachments/11.",
+    "specs/attachments/01.Att.",
 )
 
 

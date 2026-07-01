@@ -1,0 +1,16 @@
+target_spec: "specs/attachments/01.Att.04-环境接入状态表.md"
+target_sha256: "ab79e5de827aad748aa31dc397a354fa04e8cac5bd6b6e504c3f3d9e55cd9548"
+change_type: "modification"
+mapping_evidence:
+  path: "_migration/11C-environment-adaptation-admission.md"
+code_verification:
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py tests/code/test_ldvh_specs_validate.py -q"
+  passed: true
+  receipt: "Formal gate covers the environment integration status closed table as an attachment subordinate to 01."
+subagent_review:
+  agent_id: "codex-local-01-environment-absorption-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review confirms 01.Att.04 separates integrated, manual_ready, available, deferred, removed_top_level and absent without authorizing entry promotion."
+  unresolved_blockers: []
+warnings: []
