@@ -42,7 +42,7 @@
 
 `_migration/8-end-to-end-closure.md` 记录阶段 8 静态端到端闭环演练。它说明 V3 已能把受管项目解析、Action Guide、runtime facade、preflight、验证、commit message 和 completion claim 串成只读闭环，但不授权真实环境接入或产品化启用。
 
-`_migration/9-v3-mainline-transition-scope.md` 记录阶段 9 的 V3 主线切换范围。它把剩余 V2 内容明确分到 9A 迁移层依赖审计、9B 最小提交入口、9C 事实对象完整迁移、9D Web 数据契约迁移、9E 行动模板候选后置和 9F 主线切换收口；它仍不授权 Hook 启用、Web 写入、真实实例迁移或 V3 正式接管声明。
+`_migration/9-v3-mainline-transition-scope.md` 记录阶段 9 的 V3 主线切换范围。它把剩余 V2 内容明确分到 9A 迁移层依赖审计、9B 最小提交入口、9C 事实对象完整迁移、9D Web 数据契约迁移、9E 行动模板候选后置和 9F 主线切换收口；它仍不授权 Hook 启用、Web 通用写入、真实实例不可逆迁移或 hard switch。
 
 `_migration/9A-migration-layer-dependency-audit.md` 记录阶段 9A 的迁移层依赖审计。它确认稳定 `code/` 没有 import `_migration`，但 formal review hash gate、迁移测试和少量运行时 source_ref 仍依赖 `_migration`；因此当前不删除 tracked 迁移材料，下一步进入 9B 最小提交入口。
 
@@ -53,3 +53,5 @@
 `_migration/9D-web-data-contract-migration.md` 记录阶段 9D 的 Web 数据契约迁移。它说明 V2 Web tracked 资产和 Web API 回归测试已迁入 V3，Web facts API 按 08 从 `ldvh-base/` 独立读取并输出 `source_refs`，Spark quick create 作为唯一最小轻写入被保留；它不授权通用 Web 写入、完整 Confirm UI、Hook 启用或 V3 正式主线接管。
 
 `_migration/9E-action-template-candidate-deferral.md` 记录阶段 9E 的行动模板候选后置结论。它说明 Git 提交行动仍是当前唯一正式模板示范，WorkCase 创建、方案审核、执行推进、结果复核、关闭确认、Rules 同步审查和环境入口适配继续作为后置候选；它不授权正式行动模板实例、Hook 启用、Web 通用写入或 Human Gate 自动完成。
+
+`_migration/9F-mainline-soft-switch-closure.md` 记录阶段 9F 的 V3 soft mainline 收口结论。它说明 V3 已成为日常规则和事实维护主线，但 `environment_integrated=false`、`hook_integrated=false`、`authorization=none` 仍是当前边界；它不授权 hard switch、Hook 安装、Rules/adapter 启用、通用 Web 写入或 Human Gate 自动完成。

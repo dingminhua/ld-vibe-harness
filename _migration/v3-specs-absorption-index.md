@@ -1,6 +1,6 @@
 # V3 正式 specs 吸收索引
 
-> 文件状态：temporary migration index。本文只记录 V2/旧 specs/现有迁移材料进入 V3 正式 `03/05/06/07/08/09/10` 的吸收判断，不授权正式规则、Code 行为、Hook 安装、提交门禁、Web 行为、Human Gate 或环境支持声明。正式规则仍以 `specs/` 正文为准。
+> 文件状态：temporary migration index。本文只记录 V2/旧 specs/现有迁移材料进入 V3 正式 `03/05/06/07/08/09/10` 的吸收判断和 9F soft mainline 收口状态，不授权 hard switch、Hook 安装、提交门禁、Web 通用写入、Human Gate 或环境支持声明。正式规则仍以 `specs/` 正文为准。
 
 ## 1. 索引定位
 
@@ -112,6 +112,7 @@ V3 术语使用：
 | 9C | 已完成 | 迁入 V2 真实 Spark、WorkCase、Pitfall、Study 实例，建立 ADR 空目录和 20-24 字段 schema；同步 05/20-24 的真实实例边界 | `parse_fact_instances`、`validate_fact_instances` 与 id/文件名、未知字段、缺必填字段、legacy 字段、缺引用、Study 正文骨架负例测试 | validator 0 diagnostics；全量 tests 122 passed |
 | 9D | 已完成 | 迁入 V2 Web tracked 资产、Web API 数据契约、来源回指、缓存边界、Spark quick create 轻写入白名单和 Web 回归测试；同步 08/09/10 的 Web 已接入边界 | `tests/web` 覆盖 facts、sparks、commit display contract、project files；Web facts API 独立读取 `ldvh-base/`，不依赖 Code 输出作为主数据源 | Web API tests 与 TypeScript check 通过；完整验证由 9D 提交前记录 |
 | 9E | 已完成 | 记录非提交行动模板候选后置结论，明确 WorkCase 创建、方案审核、执行推进、结果复核、关闭确认、Rules 同步审查和环境入口适配的准入条件 | `specs/06` 承接后置候选边界；`_migration/9E-action-template-candidate-deferral.md` 承接候选清单、后置理由和准入条件 | 目标验证覆盖 formal specs；不运行慢速全量测试 |
+| 9F | 已完成 | 完成 V3 soft mainline 收口，更新用户说明、启用边界、`_migration` 保留/归档条件和最终验证声明 | `README.md` 承接日常入口；`_migration/9F-mainline-soft-switch-closure.md` 承接 soft/hard switch 边界和归档条件 | 全量阶段收口验证通过；hard switch 和 Hook 仍后置 |
 
 6A 后置项：
 
@@ -150,8 +151,8 @@ V3 术语使用：
 | 剩余内容 | 阶段 9 归口 | 处理结论 | 是否阻断 V3 主线切换 |
 |---|---|---|---|
 | Git 提交行动 | 9B 最小提交入口 | 已迁入最小 Code gate。Git 提交行动继续作为唯一正式行动模板示范，commit message 契约、read_plan 消费证据和验证声明边界均可被 V3 Code 校验 | 已完成 |
-| Hook / commit gate | 9B 最小提交入口 | 已新增 V3 commit gate CLI 和 `code/commit_validate.py` wrapper；真实 Git Hook 未安装，启用仍需 Human Gate | Code gate 完成；真实 Hook 不阻断继续 9D |
-| runtime adapter / dispatcher | 9B 或后续环境入口 | 最小提交 wrapper 已有；不得恢复 V2 Hook/Rules 顶层权威。通用 session_start、pre_tool_use、completion_claim 环境入口继续后置 | 不阻断继续 9D |
+| Hook / commit gate | 9B 最小提交入口 / hard switch 后置 | 已新增 V3 commit gate CLI 和 `code/commit_validate.py` wrapper；真实 Git Hook 未安装，启用仍需 Human Gate | Code gate 完成；真实 Hook 不阻断 soft mainline |
+| runtime adapter / dispatcher | 后续环境入口 / hard switch | 最小提交 wrapper 已有；不得恢复 V2 Hook/Rules 顶层权威。通用 session_start、pre_tool_use、completion_claim 环境入口继续后置 | 不阻断 soft mainline |
 | Spark / WorkCase / ADR / Pitfall / Study 完整字段、schema、真实实例 | 9C 事实对象完整迁移 | 已完成。真实实例进入 V3 `ldvh-base/`，编号按 V3 重构，Code/tests 承接字段 schema、状态和关系校验 | 已完成 |
 | WorkCase `21.Att.01-orchestration字段契约表` | 9C / 后续字段细化 | 9C 未整表搬入正文；当前由 WorkCase 实例字段和 Code schema 承接，后续再判断是否拆成正式附件或继续由 Code/tests schema 承接 | 不阻断继续 9D |
 | Web 表现层 | 9D Web 数据契约迁移 | 已保留既有表现层，不重做页面设计；只迁入数据契约、来源回指、独立读取和验证边界 | 已完成，不阻断后续 |
@@ -159,9 +160,9 @@ V3 术语使用：
 | WorkCase 创建、方案审核、结果复核、关闭确认行动模板实例 | 9E 行动模板候选后置 | 已完成后置记录。候选不作为 V3 主线切换范围；后续必须满足来源、字段、Code/Web 入口、Human Gate、测试和环境边界后再判断是否正式迁入 | 否 |
 | V2 知识地图页面、输入范围表、投影 schema 和事实层 | legacy_alias / 废弃 | 不恢复。任务导航能力由 Action Guide / 行动指南承接 | 否 |
 | Skill 顶层机制、Skill registry、Skill 执行闭环 | legacy_alias / 后续外部包装候选 | 不作为 V3 顶层机制；有价值内容只转普通行动步骤、Action Guide 提示或环境包装 | 否 |
-| `_migration` 依赖 | 9A / 9F | 9A 已完成审计；formal review hash gate、迁移测试和少量 runtime source_ref 仍依赖 `_migration`，tracked 迁移材料不得提前删 | 是，直到 9F 完成归档或替代 |
+| `_migration` 依赖 | 9A / 9F | 9F 决定继续保留 tracked `_migration` 作为历史审计、formal review hash gate 和迁移测试证据；它不参与日常规则判断和事实维护 | 不阻断 soft mainline；归档或删除需后续替代 gate/tests 并经 Human Gate |
 
-Human Gate 触发边界见 `_migration/9-v3-mainline-transition-scope.md`。默认不需要 Human 中途参与；只有启用阻断型 Hook、不可逆迁移真实实例、删除未明确废弃能力、改变 Web 写入/Human 可见状态或声明 V3 正式接管主线时需要 Human 明示决定。
+Human Gate 触发边界见 `_migration/9-v3-mainline-transition-scope.md`。默认不需要 Human 中途参与；只有启用阻断型 Hook、不可逆迁移真实实例、删除未明确废弃能力、改变 Web 写入/Human 可见状态或声明 hard switch 时需要 Human 明示决定。
 
 ## 8. Stop Conditions
 

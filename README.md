@@ -1,33 +1,59 @@
-# LDVH
+# LDVH V3
 
-当前分支是干净的 v3 根目录，默认不继承 v2 文件。
+当前仓库处于 V3 soft mainline 状态：日常规则判断、事实对象维护和 Web 数据读取以 V3 为准；Hook、Rules、runtime adapter 和阻断型环境入口尚未强制接管。
 
-当前正式范围：
+## 当前主线
 
-- `specs/`：Markdown 规则权威层。
-- `code/`：在明确需要后承接确定性解析、校验和生成。
-- `tests/`：回归检查。
-- `rules/`、`hooks/`、`ldvh-base/`：保留给后续整线迁移。
-- `skills/`：不作为 V3 顶层机制；若后续出现，只能作为外部环境适配候选或历史迁移证据，正式能力应回到行动模板、Action Guide、Code、测试和环境入口边界。
-- `_migration/`：临时证据和原型，不是正式权威。
+- `specs/`：规则源。Markdown specs 是正式规则权威，不是事实源。
+- `ldvh-base/`：事实对象实例。当前承接 Spark、WorkCase、ADR、Pitfall、Study。
+- `code/`：确定性解析、校验、诊断、commit gate 和 e2e rehearsal。
+- `web/`：Human-facing 展示和 Web API。Web 独立读取 V3 `ldvh-base/`，不依赖 Code 输出作为主数据源。
+- `tests/`：正式回归检查。
+- `_migration/`：历史迁移证据、formal review hash gate 和迁移测试材料；不作为日常规则源或事实维护入口。
+- `rules/`、`hooks/`、`skills/`：仍未正式启用。Skill 不作为 V3 顶层机制。
 
-当前原则：
+## 环境边界
 
-`specs/` 下的 Markdown specs 是规则事实层。Human、AI 和 Code 通过稳定结构和显式引用共享这一层，不各自维护独立规则事实源。
+```yaml
+switch_mode: soft_mainline
+environment_integrated: false
+hook_integrated: false
+authorization: none
+```
 
-附件只能作为正文引用的从属内容，例如表格、图示、字段闭集、枚举或可复用机器契约。附件不得承载父级规则、核心理念、行动流程、Human Gate、事实源边界、迁移过程或长篇解释。
+这意味着 V3 已是日常主线，但系统不会自动拦截所有 session start、pre tool use、completion claim 或真实 Git 操作。需要时应手动运行对应 Code 命令；Code、Web、测试或 commit gate 输出都不替代 Human Gate。
 
-除非后续有明确决定改变此规则，不得重新引入 `specs/core/`、正式 `specs/schemas/` 或 01 结构附件。
+## 常用验证
 
-当前正式 specs 编号：
+```bash
+python3 code/specs_validate.py all --format text --fail-on-diagnostics
+python3 code/specs_validate.py e2e --target-path tests/code/test_ldvh_specs_validate.py --format text --fail-on-diagnostics
+python3 code/specs_validate.py commit-gate --format text --fail-on-diagnostics --message "<message>"
+npm --prefix web run test:web:api
+npm --prefix web run check
+```
+
+慢速全量测试适用于阶段收口、主线切换、跨域迁移或高风险回归：
+
+```bash
+python3 -m pytest tests/code _migration/tests -q
+```
+
+## 当前正式 specs 编号
 
 - `00`：理念与构成
 - `01`：保障与衔接
-- `02`：AI行为规范
+- `02`：AI 行为规范
 - `03`：事实源与 Git 溯源规范
-- `04`：Specs基础规范
+- `04`：Specs 基础规范
 - `05`：事实模型基础规范
 - `06`：行动模板基础规范
-- `07`：Code确定性执行规范
-- `08`：Web信息同步规范
+- `07`：Code 确定性执行规范
+- `08`：Web 信息同步规范
 - `09`：测试与验证规范
+- `10`：受管项目接入规范
+- `20`：Spark-火花
+- `21`：WorkCase-工作项
+- `22`：ADR-决策
+- `23`：Pitfall-踩坑经验
+- `24`：Study-研究报告
