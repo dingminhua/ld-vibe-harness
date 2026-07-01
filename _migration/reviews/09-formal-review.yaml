@@ -1,16 +1,16 @@
 target_spec: "specs/09-测试与验证规范.md"
-target_sha256: "16d800631f5980f0598ece517e7e066e56ccf8ef5753d9b3fd3738aa0f2ef22a"
+target_sha256: "9959311c348477c4cbd7dd7214455ae6ab59a3ee97a39f1bdd32839087ebecdb"
 change_type: "addition"
 mapping_evidence:
-  path: "_migration/5B-2-attachment-disposition.md"
+  path: "_migration/9D-web-data-contract-migration.md"
 code_verification:
-  command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  command: "npm --prefix web run test:web:api && python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
-  receipt: "Formal specs validator and tests/code cover the new 09 testing and verification candidate as a formal spec."
+  receipt: "Formal specs validator, tests/code and tests/web cover the updated 09 statement that Web API contract basics are now tested while Confirm UI and visual regression remain follow-up work."
 subagent_review:
   agent_id: "019f16f5-308a-7091-98cf-bb1247f4b748"
   reviewer: "Lorentz"
   verdict: "pass"
-  receipt: "Read-only subagent reviews identified tests/code fixed counts and review-gate risks; the current update synchronizes formal spec test expectations and clarifies Git commit records do not replace verification fact sources."
+  receipt: "Local 9D review confirms Web API contract tests were migrated into tests/web without treating test output as a fact source or Human Gate result."
   unresolved_blockers: []
 warnings: []

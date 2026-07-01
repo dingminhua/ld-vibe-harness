@@ -49,3 +49,5 @@
 `_migration/9B-minimal-commit-entry.md` 记录阶段 9B 的最小提交入口迁移。它说明 V3 已新增自有 commit gate、`specs_validate.py commit-gate` 和 `code/commit_validate.py` 包装器，但没有安装真实 Git Hook，也没有声明环境入口已生效。
 
 `_migration/9C-fact-object-full-migration.md` 记录阶段 9C 的事实对象完整迁移。它说明 V2 Spark、WorkCase、Pitfall、Study 真实实例已迁入 V3 `ldvh-base/`，ADR 建立空实例目录和字段 schema，Code/tests 已能校验字段闭集、必填字段、legacy 字段、状态、Study 正文骨架和对象关系；它不授权 Web 写入、Hook 启用或正式行动模板实例创建。
+
+`_migration/9D-web-data-contract-migration.md` 记录阶段 9D 的 Web 数据契约迁移。它说明 V2 Web tracked 资产和 Web API 回归测试已迁入 V3，Web facts API 按 08 从 `ldvh-base/` 独立读取并输出 `source_refs`，Spark quick create 作为唯一最小轻写入被保留；它不授权通用 Web 写入、完整 Confirm UI、Hook 启用或 V3 正式主线接管。

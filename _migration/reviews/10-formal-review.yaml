@@ -1,16 +1,16 @@
 target_spec: "specs/10-受管项目接入规范.md"
-target_sha256: "725056043285647063b2b30e6aa871ec9def79c315f78c9ab57e39661e885cf5"
+target_sha256: "b6e0b1df399bdbc79211aa87a32699ce7e50d51e87e9e87fcb9c39df823dacfc"
 change_type: "addition"
 mapping_evidence:
-  path: "_migration/7-governed-project-admission.md"
+  path: "_migration/9D-web-data-contract-migration.md"
 code_verification:
-  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  command: "npm --prefix web run test:web:api && python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
-  receipt: "Formal specs validator and tests/code cover 10 as the governed project access candidate with config, target-first, Git common-dir, multi-target and environment-boundary checks."
+  receipt: "Formal specs validator, tests/code and tests/web cover 10 as the governed project access candidate after 9C facts and 9D Web independent reading landed."
 subagent_review:
   agent_id: "codex-local-7-governed-project-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review confirms 10 migrates V2 governed project static semantics without restoring knowledge map, Hook installation, Rules authority, Web write or Human Gate authorization."
+  receipt: "Local 9D review confirms 10 now reflects V3 ldvh-base facts and Web independent reading without restoring knowledge map, Hook installation, Rules authority, universal Web write or Human Gate authorization."
   unresolved_blockers: []
 warnings: []

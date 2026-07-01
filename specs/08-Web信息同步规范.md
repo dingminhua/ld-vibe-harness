@@ -48,7 +48,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 Web 父层规则。本文不迁移具体页面、API、缓存实现、Code 喂数契约、DTO 长表或视觉回归矩阵。
+> 文件状态：candidate；本文吸收 V2 Web 父层规则。阶段 9D 已迁入 Web API 数据契约、同源独立读取、来源回指、缓存边界和基础回归测试；本文不把具体页面设计、缓存实现细节、DTO 长表或视觉回归矩阵写成规则正文。
 
 ## 1. 价值判断
 
@@ -111,7 +111,7 @@ Web 派生状态必须满足：
 4. 缓存只服务性能和交互，不形成长期事实；
 5. 刷新、重新查询或事实源变化后，应重新获取可溯源来源。
 
-Web 暂不实施时，Web 契约仍可作为迁移回归线保留，但不得声称 Web 保障已经落地。
+Web 尚未实施的具体能力只能作为迁移回归线保留；已经实施的 Web API、页面或轻写入能力必须按本文保留来源回指、独立读取边界和对应测试，不得因页面可见而声称 Human Gate 已完成。
 
 ## 7. 受控交互与 Confirm UI
 
@@ -127,7 +127,7 @@ Confirm UI 应至少让 Human 看见：
 6. 确认后写入位置；
 7. 失败、取消、暂缓和残留风险。
 
-Web 受控轻写入只有在对应事实模型、事实源、Code/API、测试和 Human Gate 边界明确后才能开启。V2 Spark quick create 等具体白名单暂留迁移材料，未迁入前不得作为 V3 已生效能力。
+Web 受控轻写入只有在对应事实模型、事实源、Web API、测试和 Human Gate 边界明确后才能开启。V3 当前只迁入 Spark quick create 这一最小轻写入：它只能创建 `pending` Spark 事实实例，必须写回 Git 可追踪文件并通过回读验证，响应必须包含 `source_refs`，不得写入 legacy 字段，不得替代 Git 提交、Human Gate 或完成声明。新增或扩大任何 Web 写入能力仍需按本文进入 Human Gate。
 
 ## 8. 保障措施
 
@@ -149,7 +149,7 @@ Web 受控轻写入只有在对应事实模型、事实源、Code/API、测试�
 | 分离检查 | Web 页面/API 是否没有把 Code 输出、Code DTO 或 validator 内部对象作为主数据源 | 停止作为 Web 数据契约，改回 Web 同源独立读取或只作为诊断对照 |
 | 边界检查 | Web 状态是否没有替代事实源、Human Gate 或完成结论 | 停止展示为稳定事实 |
 | 交互检查 | Confirm UI 是否呈现影响、证据、风险和回写位置 | 不得启用确认或写入 |
-| 回归检查 | Web 契约变化是否有 API、页面或等价验证 | 写入 09 或 Web 待补齐事项 |
+| 回归检查 | Web 契约变化是否有 API、页面或等价验证 | 写入 09、Web tests 或 Web 待补齐事项 |
 
 ## 10. Human Gate
 
@@ -171,11 +171,11 @@ Web 受控轻写入只有在对应事实模型、事实源、Code/API、测试�
 3. Confirm UI 被当作 Human Gate 自动完成；
 4. Web 写入缺少事实源、验证或 Git 溯源；
 5. Web 页面/API 依赖 Code 输出、Code DTO 或 validator 内部对象作为主数据源；
-6. Web 暂未实现却被描述为保障已生效。
+6. Web 暂未实现、未测试或未接入的能力被描述为保障已生效。
 
 ## 12. 待补齐事项
 
-1. 后续从 V2 `05.Att.*` 中筛选 DTO/API、Confirm UI 和 Web 回归线；
+1. 后续继续判断 V2 `05.Att.*` 中 DTO 长表、Confirm UI 细则和视觉回归矩阵是否进入 Web 实现域或 tests；
 2. 后续定义 Web 只读差距审计模板是否迁入 V3 附件；
-3. 后续 Web 实现启动时，应先按本文和 09 建立独立读取、Web API contract、来源回指和分离检查测试；
+3. 后续补齐 Confirm UI 端到端验证、页面视觉回归和真实 Human Gate 展示验证；
 4. 后续 Code 可继续提供 diagnostics、source_refs 和 verification summary 供测试、审计或诊断对照，不作为 Web 页面/API 数据源。

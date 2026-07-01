@@ -19,7 +19,7 @@
 | 9A 迁移层依赖审计 | 防止 `_migration` 继续充当事实源或规则源 | 审计正式 code/tests/review gate 对 `_migration` 的依赖，划分保留、吸收、删除和归档 | 不删除仍被 review hash gate 或迁移测试依赖的材料 |
 | 9B 最小提交入口 | 让 V3 接管提交链路 | Git 提交行动、commit message 契约、read_plan 消费证据、验证声明边界、commit-msg / commit gate 接入 | 不一次性接所有 Hook，不把 gate 输出写成 Human 授权 |
 | 9C 事实对象完整迁移 | 让 V3 承接长期事实 | 20-24 完整字段、schema、实例路径、真实 `ldvh-base/` 实例和字段级 validator | 不照搬 V2 编号、目录权威或旧 TaskPlan/Task/SubTask 兼容层 |
-| 9D Web 数据契约迁移 | 让已有 Web 表现消费 V3 数据边界 | DTO/API、页面数据来源、Confirm UI 边界、缓存同步、轻写入白名单、Web 回归测试 | 不重做表现层，不让 Web 依赖 Code 输出作为主数据源 |
+| 9D Web 数据契约迁移 | 让已有 Web 表现消费 V3 数据边界 | 已完成。迁入 Web tracked 资产、API 数据契约、页面数据来源、Confirm UI 边界、缓存同步、Spark quick create 轻写入白名单和 Web 回归测试 | 不重做表现层，不让 Web 依赖 Code 输出作为主数据源，不启用通用 Web 写入 |
 | 9E 行动模板候选后置 | 保持行动模板不早产 | 记录 WorkCase 创建、方案审核、结果复核、关闭确认等候选模板的准入条件 | 不作为 V3 主线切换阻断项 |
 | 9F 主线切换收口 | 让 V3 成为日常规则和事实维护主线 | 用户文档、启用边界、迁移层归档/删除条件、最终验证声明 | 不保留 `_migration` 作为长期事实源 |
 
@@ -55,4 +55,4 @@
 
 ## 5. 当前下一步
 
-9A 已完成迁移层依赖审计，结论见 `_migration/9A-migration-layer-dependency-audit.md`。9B 已完成 V3 自有 commit gate、CLI 和 Hook wrapper，但未启用真实 Git Hook。9C 已完成事实对象完整迁移，结论见 `_migration/9C-fact-object-full-migration.md`。当前下一步是 9D Web 数据契约迁移。
+9A 已完成迁移层依赖审计，结论见 `_migration/9A-migration-layer-dependency-audit.md`。9B 已完成 V3 自有 commit gate、CLI 和 Hook wrapper，但未启用真实 Git Hook。9C 已完成事实对象完整迁移，结论见 `_migration/9C-fact-object-full-migration.md`。9D 已完成 Web 数据契约迁移，结论见 `_migration/9D-web-data-contract-migration.md`。当前下一步是 9E 行动模板候选后置和 9F 主线切换收口。

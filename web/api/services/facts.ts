@@ -1,0 +1,200 @@
+/**
+ * Web-native fact source reader.
+ *
+ * This service reads Git-backed fact objects directly for Human-facing
+ * Web views. It supports YAML objects and Study Markdown frontmatter, and
+ * it is read-only and does not replace specs or Code validation.
+ */
+
+import fs from 'fs'
+import path from 'path'
+import yaml from 'js-yaml'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+export const LDVH_ROOT = path.resolve(process.env.LDVH_ROOT || path.resolve(__dirname, '../../..'))
+export const LDVH_BASE_DIR = path.join(LDVH_ROOT, 'ldvh-base')
+
+export const ACTIVE_OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study'] as const
+export const OBJECT_TYPES = ACTIVE_OBJECT_TYPES
+export type ObjectType = (typeof OBJECT_TYPES)[number]
+
+const DIRECTORY_MAP: Record<ObjectType, string> = {
+  workcase: 'workcases',
+  adr: 'adrs',
+  pitfall: 'pitfalls',
+  spark: 'sparks',
+  study: 'studies',
+}
+
+const LIST_SUMMARY_FIELDS = [
+  'priority',
+  'archive_reason',
+  'deprecated_reason',
+  'discard_reason',
+  'closure_evidence',
+] as const
+
+type SourceRef = {
+  path: string
+  role: string
+}
+
+export interface WebFactResult {
+  ok: boolean
+  command: string
+  action: string
+  target: string
+  summary: Record<string, unknown>
+  issues: Array<Record<string, unknown>>
+  data: Record<string, unknown>
+}
+
+export interface WebFactError {
+  ok: false
+  error: string
+  stderr: string
+  exitCode: number | string | null
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value))
+}
+
+function toStringValue(value: unknown, fallback = ''): string {
+  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return fallback
+}
+
+function objectDir(type: ObjectType, baseDir = LDVH_ROOT): string {
+  return path.join(baseDir, 'ldvh-base', DIRECTORY_MAP[type])
+}
+
+function toSourceRef(filePath: string, baseDir = LDVH_ROOT, role = 'fact_instance'): SourceRef {
+  const relativePath = path.relative(baseDir, filePath).split(path.sep).join('/')
+  return {
+    path: relativePath.startsWith('..') ? filePath : relativePath,
+    role,
+  }
+}
+
+function readYamlFile(filePath: string): Record<string, unknown> | null {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8')
+    if (filePath.endsWith('.md')) {
+      if (!content.startsWith('---\n')) return null
+      const end = content.indexOf('\n---', 4)
+      if (end === -1) return null
+      const frontmatter = content.slice(4, end)
+      const body = content.slice(end + 4).replace(/^\n/, '')
+      const data = yaml.load(frontmatter, { schema: yaml.JSON_SCHEMA })
+      return isRecord(data) ? { ...data, report_body: body } : null
+    }
+    const data = yaml.load(content, { schema: yaml.JSON_SCHEMA })
+    return isRecord(data) ? data : null
+  } catch {
+    return null
+  }
+}
+
+function listYamlFiles(type: ObjectType, baseDir = LDVH_ROOT): string[] {
+  const dir = objectDir(type, baseDir)
+  if (!fs.existsSync(dir)) return []
+
+  return fs
+    .readdirSync(dir)
+    .filter((filename) => filename.endsWith('.yaml') || filename.endsWith('.yml') || (type === 'study' && filename.endsWith('.md')))
+    .sort()
+    .map((filename) => path.join(dir, filename))
+}
+
+function normalizeListItem(data: Record<string, unknown>, filePath: string, type: ObjectType, baseDir = LDVH_ROOT): Record<string, unknown> | null {
+  const id = toStringValue(data.id)
+  if (!id) return null
+
+  const item: Record<string, unknown> = {
+    id,
+    type: toStringValue(data.type, type),
+    status: toStringValue(data.status, 'unknown'),
+    title: toStringValue(data.title, id),
+    path: filePath,
+    source_refs: [toSourceRef(filePath, baseDir)],
+    created: toStringValue(data.created),
+    updated: toStringValue(data.updated),
+  }
+
+  const titleEn = toStringValue(data.title_en)
+  const titleZh = toStringValue(data.title_zh)
+  if (titleEn) item.title_en = titleEn
+  if (titleZh) item.title_zh = titleZh
+
+  for (const field of LIST_SUMMARY_FIELDS) {
+    const value = toStringValue(data[field])
+    if (value) item[field] = value
+  }
+
+  return item
+}
+
+function makeResult(action: string, target: string, summary: Record<string, unknown>, data: Record<string, unknown>): WebFactResult {
+  return {
+    ok: true,
+    command: 'web-facts',
+    action,
+    target,
+    summary,
+    issues: [],
+    data,
+  }
+}
+
+export async function listObjects(type: ObjectType, baseDir: string = LDVH_ROOT, status?: string): Promise<WebFactResult | WebFactError> {
+  const files = listYamlFiles(type, baseDir)
+  const sourceRefs = [toSourceRef(objectDir(type, baseDir), baseDir, 'fact_instance_directory')]
+  const items = files
+    .map((filePath) => {
+      const data = readYamlFile(filePath)
+      return data ? normalizeListItem(data, filePath, type, baseDir) : null
+    })
+    .filter((item): item is Record<string, unknown> => Boolean(item))
+    .filter((item) => !status || item.status === status)
+    .sort((a, b) => {
+      const updatedDelta = toStringValue(b.updated).localeCompare(toStringValue(a.updated))
+      if (updatedDelta !== 0) return updatedDelta
+      return toStringValue(a.id).localeCompare(toStringValue(b.id))
+    })
+
+  return makeResult('list', type, { count: items.length, source_refs: sourceRefs }, { items, source_refs: sourceRefs })
+}
+
+export async function showObject(id: string, baseDir: string = LDVH_ROOT): Promise<WebFactResult | WebFactError> {
+  for (const type of OBJECT_TYPES) {
+    for (const filePath of listYamlFiles(type, baseDir)) {
+      const data = readYamlFile(filePath)
+      if (!data || data.id !== id) continue
+      const sourceRefs = [toSourceRef(filePath, baseDir)]
+      return makeResult(
+        'show',
+        id,
+        { id, type: toStringValue(data.type, type), status: toStringValue(data.status, 'unknown'), source_refs: sourceRefs },
+        { ...data, path: filePath, source_refs: sourceRefs },
+      )
+    }
+  }
+
+  return {
+    ok: false,
+    error: `Object not found: ${id}`,
+    stderr: '',
+    exitCode: 1,
+  }
+}
+
+export function readFactData(filePath: string): Record<string, unknown> {
+  const resolvedPath = path.isAbsolute(filePath) ? filePath : path.join(LDVH_ROOT, filePath)
+  return readYamlFile(resolvedPath) ?? {}
+}
