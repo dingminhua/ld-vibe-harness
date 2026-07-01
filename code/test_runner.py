@@ -34,28 +34,74 @@ SMOKE_STAGES: tuple[Stage, ...] = (
     ),
 )
 
+E2E_REHEARSAL_STAGE = Stage(
+    "e2e rehearsal",
+    _python_command(
+        "code/specs_validate.py",
+        "e2e",
+        "--target-path",
+        "tests/code/test_ldvh_specs_validate.py",
+        "--format",
+        "text",
+        "--fail-on-diagnostics",
+    ),
+)
+CODE_FAST_STAGE = Stage(
+    "code pytest fast",
+    _python_command("-m", "pytest", "tests/code", "-q", "-m", "not slow", "--durations=10"),
+)
+CODE_RUNTIME_STAGE = Stage(
+    "code runtime/e2e pytest",
+    _python_command("-m", "pytest", "tests/code", "-q", "-m", "runtime or e2e", "--durations=20"),
+)
+CODE_FULL_STAGE = Stage(
+    "code and migration pytest",
+    _python_command("-m", "pytest", "tests/code", "_migration/tests", "-q", "--durations=20"),
+)
+RUNTIME_STAGES: tuple[Stage, ...] = (
+    *SMOKE_STAGES,
+    E2E_REHEARSAL_STAGE,
+    CODE_RUNTIME_STAGE,
+)
 FULL_STAGES: tuple[Stage, ...] = (
     *SMOKE_STAGES,
-    Stage(
-        "e2e rehearsal",
-        _python_command(
-            "code/specs_validate.py",
-            "e2e",
-            "--target-path",
-            "tests/code/test_ldvh_specs_validate.py",
-            "--format",
-            "text",
-            "--fail-on-diagnostics",
-        ),
-    ),
-    Stage(
-        "code and migration pytest",
-        _python_command("-m", "pytest", "tests/code", "_migration/tests", "-q", "--durations=20"),
-    ),
+    E2E_REHEARSAL_STAGE,
+    CODE_FULL_STAGE,
     Stage("web typecheck", ("npm", "run", "web:check")),
     Stage("web api tests", ("npm", "run", "test:web:api")),
     Stage("web production build", ("npm", "run", "web:build")),
 )
+RUNTIME_SENSITIVE_PATHS = {
+    "code/ldvh_specs.py",
+    "code/specs_validate.py",
+    "code/runtime_adapter.py",
+    "code/session_start.py",
+    "code/pre_tool_use.py",
+    "code/completion_claim.py",
+    "code/environment_status.py",
+    "code/environment_entry_audit.py",
+    "tests/code/test_ldvh_specs_validate.py",
+}
+RUNTIME_SENSITIVE_PREFIXES = (
+    "specs/01-",
+    "specs/02-",
+    "specs/07-",
+    "specs/09-",
+    "specs/11-",
+    "specs/attachments/11.",
+)
+
+
+def _path_requires_runtime_tier(path: str) -> bool:
+    return path in RUNTIME_SENSITIVE_PATHS or path.startswith(RUNTIME_SENSITIVE_PREFIXES)
+
+
+def _include_runtime_tier(paths: list[str], slow_policy: str) -> bool:
+    if slow_policy == "include":
+        return True
+    if slow_policy == "skip":
+        return False
+    return any(_path_requires_runtime_tier(path) for path in paths)
 
 
 def normalize_changed_paths(values: Iterable[str]) -> list[str]:
@@ -82,9 +128,10 @@ def _dedupe(stages: Iterable[Stage]) -> list[Stage]:
     return deduped
 
 
-def build_targeted_stages(changed_paths: Iterable[str]) -> list[Stage]:
+def build_targeted_stages(changed_paths: Iterable[str], *, slow_policy: str = "auto") -> list[Stage]:
     stages: list[Stage] = list(SMOKE_STAGES)
     paths = normalize_changed_paths(changed_paths)
+    include_runtime = _include_runtime_tier(paths, slow_policy)
 
     for path in paths:
         if path.startswith(("web/", "tests/web/")) or path in {"package.json", "web/package.json", "web/package-lock.json"}:
@@ -95,7 +142,9 @@ def build_targeted_stages(changed_paths: Iterable[str]) -> list[Stage]:
                 ]
             )
         if path.startswith(("code/", "tests/code/")):
-            stages.append(Stage("code pytest", _python_command("-m", "pytest", "tests/code", "-q", "--durations=20")))
+            stages.append(CODE_FAST_STAGE)
+            if include_runtime:
+                stages.append(CODE_RUNTIME_STAGE)
         if path.startswith(("_migration/code/", "_migration/tests/", "_migration/fixtures/", "_migration/schemas/")):
             stages.append(Stage("migration pytest", _python_command("-m", "pytest", "_migration/tests", "-q", "--durations=20")))
         if path.startswith("ldvh-base/"):
@@ -109,11 +158,13 @@ def build_targeted_stages(changed_paths: Iterable[str]) -> list[Stage]:
     return _dedupe(stages)
 
 
-def build_stages(profile: str, changed_paths: Iterable[str]) -> list[Stage]:
+def build_stages(profile: str, changed_paths: Iterable[str], *, slow_policy: str = "auto") -> list[Stage]:
     if profile == "smoke":
         return list(SMOKE_STAGES)
     if profile == "targeted":
-        return build_targeted_stages(changed_paths)
+        return build_targeted_stages(changed_paths, slow_policy=slow_policy)
+    if profile == "runtime":
+        return list(RUNTIME_STAGES)
     if profile == "full":
         return list(FULL_STAGES)
     raise ValueError(f"Unknown profile: {profile}")
@@ -170,12 +221,18 @@ def run_stages(stages: list[Stage], *, dry_run: bool, continue_on_fail: bool) ->
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run LDVH v3 test profiles with stage progress.")
-    parser.add_argument("profile", choices=["smoke", "targeted", "full"], help="test profile to run")
+    parser.add_argument("profile", choices=["smoke", "targeted", "runtime", "full"], help="test profile to run")
     parser.add_argument(
         "--changed",
         action="append",
         default=[],
         help="changed path for targeted selection; may be repeated or comma-separated",
+    )
+    parser.add_argument(
+        "--slow",
+        choices=["auto", "skip", "include"],
+        default="auto",
+        help="targeted slow test policy: auto selects runtime/e2e by changed paths, skip omits it, include always adds it",
     )
     parser.add_argument("--dry-run", action="store_true", help="print selected stages without running them")
     parser.add_argument("--continue-on-fail", action="store_true", help="continue running later stages after a failure")
@@ -185,7 +242,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    stages = build_stages(args.profile, args.changed)
+    stages = build_stages(args.profile, args.changed, slow_policy=args.slow)
     return run_stages(stages, dry_run=args.dry_run, continue_on_fail=args.continue_on_fail)
 
 

@@ -1,3 +1,8 @@
 [tool.pytest.ini_options]
 testpaths = ["tests/code"]
 pythonpath = ["code"]
+markers = [
+    "slow: runtime/e2e tests that are intentionally excluded from fast targeted runs",
+    "runtime: runtime facade, preflight, manual adapter, environment entry, or completion claim tests",
+    "e2e: static end-to-end rehearsal tests",
+]

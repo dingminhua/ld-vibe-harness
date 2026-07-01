@@ -326,6 +326,15 @@ specs 迁入
 4. `_migration/13A-workcase-minimal-action-template.md` 已记录本阶段承接、边界和验证要求；
 5. 本阶段只支持 `manual_equivalent_execution`，不启用 Web 写入、Hook、runtime 自动触发、完整 Confirm UI、字段表细化或批量状态迁移。
 
+14A 完成记录：
+
+1. `specs/09-测试与验证规范.md` 已补充分层测试入口契约，区分 smoke、targeted、runtime 和 full；
+2. `code/test_runner.py` 已新增 runtime profile，并为 targeted 增加 `--slow auto|skip|include`；
+3. `pyproject.toml` 和 `tests/code/conftest.py` 已建立 `slow`、`runtime`、`e2e` markers；
+4. `package.json` 和 README 已补充 `test:runtime` 与 slow policy 用法；
+5. `_migration/14A-test-tiering-performance.md` 已记录本阶段承接、边界和验证要求；
+6. 本阶段不删除慢测试、不降低 full regression、不新增并行依赖、不默认并行化 slow 层。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。

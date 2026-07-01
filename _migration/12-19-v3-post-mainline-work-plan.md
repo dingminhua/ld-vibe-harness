@@ -77,6 +77,10 @@
 2. 把 e2e / runtime 慢测试拆成更清晰的 tier；
 3. 保持 `smoke` 日常快反馈、`targeted` 风险覆盖、`full` 阶段收口的职责边界。
 
+完成记录：
+
+阶段 14A 已补充分层测试契约和 runner 支持，记录见 `_migration/14A-test-tiering-performance.md`。本阶段新增 runtime profile 与 targeted slow policy，不删除慢测试、不降低 full regression，也不默认并行化 slow 层。
+
 ## 阶段 15：runtime 自动入口评估
 
 目标：

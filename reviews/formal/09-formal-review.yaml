@@ -1,16 +1,16 @@
 target_spec: "specs/09-测试与验证规范.md"
-target_sha256: "659c90b0c6bc0279830d308d0778de3c9ad9f0b16c80ab6b5c40c30d024a2905"
+target_sha256: "20a1475f45f044fbb42ffc65f2d438fdfd20b5953b4cc5435673a7998b21b1b3"
 change_type: "modification"
 mapping_evidence:
-  path: "_migration/12A-implementation-domain-boundary.md"
+  path: "_migration/14A-test-tiering-performance.md"
 code_verification:
-  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_ldvh_specs_validate.py tests/code/test_formal_specs.py -q && python3 code/test_runner.py targeted --changed specs/04-Specs基础规范.md --changed specs/07-Code确定性执行规范.md --changed specs/08-Web信息同步规范.md --changed specs/09-测试与验证规范.md --changed code/ldvh_specs.py --changed tests/code/test_ldvh_specs_validate.py"
+  command: "python3 code/test_runner.py smoke && python3 code/test_runner.py targeted --slow skip --changed code/test_runner.py && python3 code/test_runner.py runtime && python3 -m pytest tests/code/test_ldvh_test_runner.py -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
-  receipt: "Stage 12A validation covers the 09 test practice boundary and the Code/tests checks that tests/ carries executable practice without requiring tests/docs/."
+  receipt: "Stage 14A validation covers the 09 layered testing contract and the runner support for runtime profile plus targeted slow policy."
 subagent_review:
-  agent_id: "codex-local-12a-implementation-domain-boundary-review"
+  agent_id: "codex-local-14a-test-tiering-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review confirms 09 defines verification governance and evidence boundaries while leaving frameworks, fixtures, regression examples and test maintenance practice to tests/ and implementation domains."
+  receipt: "Local review confirms 09 defines smoke/targeted/runtime/full responsibilities without deleting slow tests, lowering full regression, or defaulting to parallel slow execution."
   unresolved_blockers: []
 warnings: []

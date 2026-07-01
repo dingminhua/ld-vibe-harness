@@ -14,6 +14,7 @@
     "test:web:api": "npm --workspace web run test:web:api",
     "test:smoke": "python3 code/test_runner.py smoke",
     "test:targeted": "python3 code/test_runner.py targeted",
+    "test:runtime": "python3 code/test_runner.py runtime",
     "test:full": "python3 code/test_runner.py full",
     "test:code:unit": "python3 -m pytest tests/code",
     "test:code": "npm run test:code:unit && npm run specs:check",

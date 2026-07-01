@@ -119,6 +119,8 @@ python3 code/environment_entry_audit.py --format text
 ```bash
 python3 code/test_runner.py smoke
 python3 code/test_runner.py targeted --changed specs/09-测试与验证规范.md
+python3 code/test_runner.py targeted --slow skip --changed code/test_runner.py
+python3 code/test_runner.py runtime
 python3 code/test_runner.py full
 ```
 
@@ -127,6 +129,7 @@ python3 code/test_runner.py full
 ```bash
 npm run test:smoke
 npm run test:targeted -- --changed web/api/app.ts
+npm run test:runtime
 npm run test:full
 ```
 
