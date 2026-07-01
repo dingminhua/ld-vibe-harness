@@ -38,7 +38,7 @@ specs 迁入
 | 6. 事实源与事实对象 | 承接真实行动状态和长期证据 | 先以 WorkCase 最小成员规范验证事实对象逐篇迁移，再迁移 spark、ADR、pitfall、study 等事实对象规则 | fact validator/CLI、对象状态测试、回写边界测试 | 不直接复制 v2 `ldvh-base` 结构为权威；不在 Hook/commit gate 和 V3 正式启用前建立正式行动模板实例 |
 | 7. 受管项目接入 | 让 V3 判断当前工作归属和项目事实源 | 迁移项目治理、项目发现、跨项目边界规则 | governed projects 配置、项目解析、越界测试 | 不让项目索引替代事实源 |
 | 8. 端到端闭环 | 用真实流程验证机制是否减少 AI 负担 | 只补缺口 specs | session start -> read plan -> preflight -> 修改 -> tests -> commit -> receipt -> closure 流程测试 | 不继续堆无消费方机制 |
-| 9. 产品化与迁移层清理 | 收束 alpha/beta 边界 | 把仍有效迁移决定吸收到正式 specs/tests/docs | 清理 `_migration` 条件、用户文档、可选 Web/dashboard | 不保留 `_migration` 作为长期事实源 |
+| 9. 产品化与迁移层清理 | 收束 alpha/beta 边界，让 V3 成为主线 | 把仍有效迁移决定吸收到正式 specs/tests/docs，并按 9A-9F 处理剩余 V2 内容 | 迁移层依赖审计、最小提交 Hook/commit gate、事实对象完整迁移、Web 数据契约迁移、用户文档和最终验证 | 不保留 `_migration` 作为长期事实源；不重做 Web 表现层；不把非提交行动模板作为主线切换阻断项 |
 
 ## 4. Specs 迁移节奏
 
@@ -78,7 +78,18 @@ specs 迁入
 - 术语表新增`规则源`、`来源依据`、`必读依据`条目；
 - code/ldvh_specs.py 同步字段名和内部键名。
 
-当前状态：术语整治、规则/事实边界修正、5B-1/2/3/4/5、阶段 6、阶段 7 和阶段 8 均已完成。阶段 6 完成范围是：Spark、WorkCase、ADR、Pitfall、Study 五个事实对象成员已进入 V3 最小成员规范，Code/tests 可消费其成员身份、状态闭集、实例事实源位置、收口/归档/分流口径和 Human Gate。阶段 7 完成范围是：V3 已建立 `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-受管项目接入规范.md`、`10.Att.01` 和 governed project parser/resolver/tests，可静态判断 target/cwd/Git common-dir 是否命中受管项目。阶段 8 完成范围是：V3 已建立只读 e2e rehearsal，把受管项目解析、session_start、read_plan acknowledgement、pre_tool_use、validation、git_commit_msg 和 completion_claim 串成静态闭环。阶段 6/7/8 仍不包含真实 `ldvh-base` 实例迁移、完整字段表、Web 写入、Hook、commit gate、runtime adapter 或正式行动模板实例；这些后置到产品化、环境入口接入和 V3 正式启用前处理。
+当前状态：术语整治、规则/事实边界修正、5B-1/2/3/4/5、阶段 6、阶段 7 和阶段 8 均已完成。阶段 6 完成范围是：Spark、WorkCase、ADR、Pitfall、Study 五个事实对象成员已进入 V3 最小成员规范，Code/tests 可消费其成员身份、状态闭集、实例事实源位置、收口/归档/分流口径和 Human Gate。阶段 7 完成范围是：V3 已建立 `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-受管项目接入规范.md`、`10.Att.01` 和 governed project parser/resolver/tests，可静态判断 target/cwd/Git common-dir 是否命中受管项目。阶段 8 完成范围是：V3 已建立只读 e2e rehearsal，把受管项目解析、session_start、read_plan acknowledgement、pre_tool_use、validation、git_commit_msg 和 completion_claim 串成静态闭环。阶段 6/7/8 仍不包含真实 `ldvh-base` 实例迁移、完整字段表、Web 写入、Hook、commit gate、runtime adapter 或正式行动模板实例；这些进入阶段 9 处理或显式后置。
+
+阶段 9 采用 `_migration/9-v3-mainline-transition-scope.md` 的用户校正口径：
+
+| 子项 | 状态 | 目标 | 需要 Human 参与的边界 |
+|---|---|---|---|
+| 9A 迁移层依赖审计 | 待执行 | 审计 `_migration` 对正式 code/tests/review gate 的剩余依赖，划分保留、吸收、删除和归档 | 删除尚未明确废弃的 V2 能力时 |
+| 9B 最小提交入口 | 待执行 | 先迁 Git 提交行动、commit-msg / commit gate、read_plan 消费证据和验证声明边界 | 启用会阻断真实提交的 Hook 或 gate 时 |
+| 9C 事实对象完整迁移 | 待执行 | 完整迁移 Spark、WorkCase、ADR、Pitfall、Study 字段、schema、实例路径和真实 `ldvh-base/` 实例，编号可按 V3 重构 | 字段丢失、语义冲突、编号冲突或真实实例不可逆转换时 |
+| 9D Web 数据契约迁移 | 待执行 | 保留既有表现层，只迁 DTO/API、来源回指、独立读取、Confirm UI 边界、缓存同步和回归测试 | Web 写入、Confirm UI 或缓存策略改变 Human 可见状态时 |
+| 9E 行动模板候选后置 | 待执行 | 记录 WorkCase 创建、方案审核、结果复核、关闭确认等候选模板准入条件 | 若要求把非提交行动模板纳入主线切换阻断范围 |
+| 9F 主线切换收口 | 待执行 | 用户文档、启用边界、`_migration` 归档/删除条件和最终验证 | 声明 V3 正式接管主线或接受残留风险时 |
 
 阶段 5B 子阶段状态：
 

@@ -140,7 +140,27 @@ V3 术语使用：
 | 验证声明字段 | 不在 06 重定义；继续由 `09` 和 `09.Att.01` 授权 |
 | Hook / commit gate / CI | 本阶段未实现，不声明环境接入或运行时拦截生效 |
 
-## 7. Stop Conditions
+## 7. 阶段 9 剩余内容归口
+
+阶段 9 不等于把所有 V2 形态照搬到 V3。它的目标是让 V3 成为主线，并把剩余 V2 内容分为主线切换前必须完成、主线切换后增强、继续保留迁移证据或废弃。
+
+| 剩余内容 | 阶段 9 归口 | 处理结论 | 是否阻断 V3 主线切换 |
+|---|---|---|---|
+| Git 提交行动 | 9B 最小提交入口 | 必须迁入。作为最小行动模板，承接 commit message 契约、read_plan 消费证据、验证声明和提交前检查 | 是 |
+| Hook / commit gate | 9B 最小提交入口 | 先迁提交链路 Hook / commit gate；通用 session_start、pre_tool_use、completion_claim 环境入口可在提交链路稳定后继续扩展 | 提交链路是；通用 Hook 不是第一批阻断项 |
+| runtime adapter / dispatcher | 9B 或后续环境入口 | 只接入提交链路需要的最小 adapter；不得恢复 V2 Hook/Rules 顶层权威 | 部分阻断 |
+| Spark / WorkCase / ADR / Pitfall / Study 完整字段、schema、真实实例 | 9C 事实对象完整迁移 | 必须完整迁入，但编号、目录和 schema 可以按 V3 重新构造，不照搬 V2 目录权威 | 是 |
+| WorkCase `21.Att.01-orchestration字段契约表` | 9C 事实对象完整迁移 | 重新判断为正式附件、schema/tests 或继续留在迁移材料；不得整表无授权复制 | 是，直到有明确去向 |
+| Web 表现层 | 9D Web 数据契约迁移 | 不重做。保留既有表现，只调整 V3 数据契约、来源回指、独立读取和验证边界 | 否 |
+| Web DTO/API、Confirm UI、缓存同步、轻写入、Web 回归 | 9D Web 数据契约迁移 | 需要迁入或重建测试边界；Web 仍不得依赖 Code 输出作为主数据源 | 是，限数据和写入边界 |
+| WorkCase 创建、方案审核、结果复核、关闭确认行动模板实例 | 9E 行动模板候选后置 | 只记录准入条件，先不作为 V3 主线切换范围 | 否 |
+| V2 知识地图页面、输入范围表、投影 schema 和事实层 | legacy_alias / 废弃 | 不恢复。任务导航能力由 Action Guide / 行动指南承接 | 否 |
+| Skill 顶层机制、Skill registry、Skill 执行闭环 | legacy_alias / 后续外部包装候选 | 不作为 V3 顶层机制；有价值内容只转普通行动步骤、Action Guide 提示或环境包装 | 否 |
+| `_migration` 依赖 | 9A / 9F | 先审计，再吸收、归档或删除；review hash gate 等仍依赖的材料不得提前删 | 是，直到依赖清楚 |
+
+Human Gate 触发边界见 `_migration/9-v3-mainline-transition-scope.md`。默认不需要 Human 中途参与；只有启用阻断型 Hook、不可逆迁移真实实例、删除未明确废弃能力、改变 Web 写入/Human 可见状态或声明 V3 正式接管主线时需要 Human 明示决定。
+
+## 8. Stop Conditions
 
 出现以下情况时暂停并回到正式 specs 或 Human Gate：
 
