@@ -53,7 +53,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：active；本文吸收 V2 WorkCase 成员规范的父层规则。真实 WorkCase 实例已由阶段 9C 迁入 `ldvh-base/workcases/` 并由 Code/tests 校验；本文不迁入 V2 完整字段表、`21.Att.01` 长字段表、正式行动模板、Hook、commit gate、Web 写入或 runtime adapter。
+> 文件状态：active；本文吸收 V2 WorkCase 成员规范的父层规则。真实 WorkCase 实例已由阶段 9C 迁入 `ldvh-base/workcases/` 并由 Code/tests 校验；本文不迁入 V2 完整字段表、`21.Att.01` 长字段表、Hook、commit gate、Web 写入或 runtime adapter。WorkCase 最小手动行动模板由 `specs/06-行动模板基础规范.md` 承接，不改变本文事实对象边界。
 
 ## 1. 价值判断
 
@@ -72,6 +72,8 @@ WorkCase 服务 00 的事实模型构成要素定位。它承接目标、范围�
 本文归口定义 WorkCase 的成员规范最小规则：对象定位、准入条件、事实源边界、最小状态闭集、执行项内部化、完成口径、Human Gate 和首批实例检查。
 
 本文不归口定义行动模板实例、正式 Hook 接入、commit gate、Web 写入、Code 输出 schema 或完整 `orchestration` 嵌套字段表。具体 WorkCase 实例位于 `ldvh-base/workcases/`，由 03 的事实源边界、本文成员规则和 Code/tests 字段 schema 共同约束。
+
+WorkCase 行动模板由 06 承接。本文只为行动模板提供事实对象状态、证据、关闭口径和 Human Gate 边界，不定义模板步骤、Web 写入或环境触发。
 
 ## 4. 适用范围
 
@@ -193,6 +195,6 @@ WorkCase 的完成口径必须区分四层：
 
 1. 后续再判断是否迁入 V2 `21.Att.01-orchestration字段契约表.md` 的最小附件或转为 Code/tests；
 2. 真实 WorkCase 实例目录已迁入 `ldvh-base/workcases/`；后续仍需判断是否定义 WorkCase 完整字段表、状态条件必填和实例样例；
-3. 后续 Hook / commit gate / V3 正式启用前，再判断是否建立 WorkCase 创建、方案审核、结果复核和关闭确认的正式行动模板；
+3. WorkCase 最小手动行动模板已由 06 承接；后续 Web 写入、完整 Confirm UI、外部环境触发、字段表细化和批量状态迁移仍需单独判断；
 4. 后续 Web 实现启动时，应只展示 WorkCase 事实源和可追溯派生状态，不建立执行项独立页面或第二事实源；
 5. 后续继续逐篇判断 Spark、ADR、Pitfall 和 Study 是否进入 V3 成员规范。

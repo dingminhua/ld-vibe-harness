@@ -1,16 +1,16 @@
 target_spec: "specs/21-WorkCase-工作项.md"
-target_sha256: "7a9bdfe9c0dd3ca521132b4b25d3d07a183907b011a6aa0f12a8dea7a52b54da"
-change_type: "addition"
+target_sha256: "57eadc5d309e2648a9e347cd6049dd44ca764b569dfbdeeeaadd3a902944db28"
+change_type: "modification"
 mapping_evidence:
-  path: "_migration/9C-fact-object-full-migration.md"
+  path: "_migration/13A-workcase-minimal-action-template.md"
 code_verification:
-  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_ldvh_specs_validate.py -q && python3 code/test_runner.py targeted --changed specs/06-行动模板基础规范.md --changed specs/21-WorkCase-工作项.md --changed code/ldvh_specs.py --changed tests/code/test_ldvh_specs_validate.py"
   passed: true
-  receipt: "Formal specs validator and tests/code cover 21 after real WorkCase instances moved into ldvh-base/workcases with field schema, status, closure, and Human Gate checks."
+  receipt: "Stage 13A validation covers 21 after clarifying that WorkCase action steps are owned by 06 while 21 remains the fact-object member boundary."
 subagent_review:
-  agent_id: "codex-local-6a-workcase-review"
+  agent_id: "codex-local-13a-workcase-action-template-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review found 21 acknowledges real WorkCase instances and Code/tests schema while keeping full 21.Att.01, Hook, Web write, and non-commit action templates postposed."
+  receipt: "Local review confirms 21 continues to define WorkCase state, evidence, closure and Human Gate boundaries; the minimal manual action template is referenced but not redefined here."
   unresolved_blockers: []
 warnings: []

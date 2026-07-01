@@ -318,6 +318,14 @@ specs 迁入
 6. `_migration/12A-implementation-domain-boundary.md` 已记录本阶段承接、边界和验证要求；
 7. 本阶段不新增 Code/Web/Tests 具体实践文档，不改变 runtime、Hook、Web 写入或测试分层能力。
 
+13A 完成记录：
+
+1. `specs/06-行动模板基础规范.md` 已新增 WorkCase 最小手动行动模板，覆盖 Context、Scenario、Gate、执行、验证、回写和交还；
+2. `specs/21-WorkCase-工作项.md` 已说明 WorkCase 行动模板归 06 承接，21 仍只定义事实对象状态、证据、关闭口径和 Human Gate；
+3. `code/ldvh_specs.py` 和 `tests/code/test_ldvh_specs_validate.py` 已增加 WorkCase 行动模板解析、检查和正反例；
+4. `_migration/13A-workcase-minimal-action-template.md` 已记录本阶段承接、边界和验证要求；
+5. 本阶段只支持 `manual_equivalent_execution`，不启用 Web 写入、Hook、runtime 自动触发、完整 Confirm UI、字段表细化或批量状态迁移。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。

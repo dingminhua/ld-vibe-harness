@@ -64,6 +64,7 @@ def test_foundation_specs_contracts_are_code_consumable() -> None:
     assert "field_registry_contract" in contracts["05"]["code_consumption"]
     assert "context_scenario_gate" in contracts["06"]["code_consumption"]
     assert "git_commit_action_template" in contracts["06"]["code_consumption"]
+    assert "workcase_minimal_action_template" in contracts["06"]["code_consumption"]
     assert "runtime_facade_contracts" in contracts["07"]["code_consumption"]
     assert "web_code_separation_boundaries" in contracts["08"]["code_consumption"]
     assert "source_ref_display_requirements" in contracts["08"]["code_consumption"]
@@ -776,6 +777,61 @@ def test_git_commit_action_template_reports_missing_skill_execution_modes(tmp_pa
     result = ldvh_specs.build_validation(root)
 
     assert "GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_workcase_action_template_is_code_consumable() -> None:
+    result = ldvh_specs.build_validation(ROOT)
+    rows = {row["结构"]: row["最小要求"] for row in result["workcase_action_template"]}
+
+    assert set(rows) == {"Context", "Scenario", "Gate", "执行", "验证", "回写", "交还"}
+    assert "WorkCase ID" in rows["Context"]
+    assert "创建 WorkCase" in rows["Scenario"]
+    assert "`human_closure_confirming`" in rows["Gate"]
+    assert "`closed`" in rows["执行"]
+    assert "09.Att.01" in rows["验证"]
+    assert "`ldvh-base/workcases/`" in rows["回写"]
+    assert "下一步 Human Gate" in rows["交还"]
+
+
+def test_workcase_action_template_reports_missing_human_gate(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "、从 `human_closure_confirming` 关闭",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("human_closure_confirming" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_workcase_action_template_reports_missing_closure_handoff(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "| 交还 | 交还 WorkCase ID、当前状态、变更摘要、验证摘要、残留风险、下一步 Human Gate、source_refs 和未完成分流；阻断时交还阻断原因、缺少证据和建议的下一步。 |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_ACTION_TEMPLATE_ROW_MISSING" in _diagnostic_codes(result)
+
+
+def test_workcase_action_template_reports_missing_manual_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "`manual_equivalent_execution`",
+        "`manual_execution`",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WORKCASE_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
 
 
 def test_workcase_member_contract_is_code_consumable() -> None:

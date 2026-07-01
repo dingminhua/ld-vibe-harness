@@ -65,6 +65,10 @@
 2. 不声明 pre_tool_use 或 completion_claim 已自动 Hook；
 3. 不声明所有 WorkCase 状态推进都能自动执行。
 
+完成记录：
+
+阶段 13A 已建立 WorkCase 最小手动行动模板，记录见 `_migration/13A-workcase-minimal-action-template.md`。本阶段只承接 `manual_equivalent_execution`，不启用 Web 写入、Hook、runtime 自动触发、完整 Confirm UI 或字段表细化。
+
 ## 阶段 14：测试性能与分层优化
 
 目标：

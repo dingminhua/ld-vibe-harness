@@ -1,16 +1,16 @@
 target_spec: "specs/06-行动模板基础规范.md"
-target_sha256: "40ce98f4e605491f98bda2da60d53b5f710e7863554a1cacaf2643ca33447297"
-change_type: "addition"
+target_sha256: "a523f88eb4165f0b5f2bc62758031aa6c7a3c6ce8cdb4ddf9a4a3364e4c5b214"
+change_type: "modification"
 mapping_evidence:
-  path: "_migration/9E-action-template-candidate-deferral.md"
+  path: "_migration/13A-workcase-minimal-action-template.md"
 code_verification:
-  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py -q"
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_ldvh_specs_validate.py -q && python3 code/test_runner.py targeted --changed specs/06-行动模板基础规范.md --changed specs/21-WorkCase-工作项.md --changed code/ldvh_specs.py --changed tests/code/test_ldvh_specs_validate.py"
   passed: true
-  receipt: "Formal specs validator and targeted formal-spec tests cover the updated 06 action template candidate-deferral boundary without requiring a slow full test run."
+  receipt: "Stage 13A validation covers the 06 WorkCase minimal manual action template and keeps Web write, Hook, runtime auto trigger and full Confirm UI deferred."
 subagent_review:
-  agent_id: "019f16f5-0d83-74a3-a526-cae9622aeb50"
-  reviewer: "Kant"
+  agent_id: "codex-local-13a-workcase-action-template-review"
+  reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local 9E review confirms non-commit WorkCase and environment action templates remain deferred candidates and do not block V3 mainline closure."
+  receipt: "Local review confirms 06 adds only a manual_equivalent_execution WorkCase template and does not declare automatic WorkCase flow, Web write, Hook integration or Human Gate completion."
   unresolved_blockers: []
 warnings: []
