@@ -62,6 +62,8 @@ authorization: none
 3. 9A-9F 记录仍是主线切换审计线索；
 4. 删除这些材料会降低追溯能力，且不减少当前 AI 日常判断负担。
 
+11G 更新：formal review hash gate 已迁入 `reviews/formal/`，`_migration/reviews/` 不再是稳定 gate 读取位置，只保留历史迁移证据。
+
 后续满足以下条件后，才可再次判断归档或删除：
 
 1. formal review hash gate 已迁出 `_migration` 或有稳定替代；

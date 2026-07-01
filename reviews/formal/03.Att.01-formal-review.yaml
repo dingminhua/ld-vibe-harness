@@ -1,0 +1,16 @@
+target_spec: "specs/attachments/03.Att.01-Commit-Message契约字段表.md"
+target_sha256: "67ab09945d45d3a60f99ba658abe60c83b3ac24e66bd7f2b07c80357b8760c67"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/5B-2-attachment-disposition.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Validator parses commit message fields, type enum, scope enum, body conditions and the read_plan evidence body heading from the 03 attachment."
+subagent_review:
+  agent_id: "local-5b-2-attachment-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Checked the attachment remains a subordinate table contract authorized by 03 and only registers the read_plan evidence heading; it does not carry Git action flow, Hook implementation or Human Gate decisions."
+  unresolved_blockers: []
+warnings: []

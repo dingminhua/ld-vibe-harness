@@ -1,0 +1,16 @@
+target_spec: "specs/23-Pitfall-踩坑经验.md"
+target_sha256: "ffea2a1e1c0d8764de818355998b83176a96433102b181c29dc286ec6fcb72ee"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/9C-fact-object-full-migration.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover 23 after real Pitfall instances moved into ldvh-base/pitfalls with field schema, status, evidence, and legacy checks."
+subagent_review:
+  agent_id: "codex-local-6b-fact-members-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review found 23 acknowledges real Pitfall instances and Code/tests schema while keeping tag registry prose and Web editing postposed."
+  unresolved_blockers: []
+warnings: []

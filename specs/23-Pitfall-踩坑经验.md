@@ -5,8 +5,8 @@ ldvh_spec:
   spec_id: "23"
   spec_kind: "fact_model_member_spec"
   title: "Pitfall-踩坑经验"
-  status: "candidate"
-  authority: "candidate"
+  status: "active"
+  authority: "active"
   canonical_path: "specs/23-Pitfall-踩坑经验.md"
   parent_spec: "specs/05-事实模型基础规范.md"
   relation: "fact_model_member"
@@ -55,7 +55,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 Pitfall 成员规范的父层规则。真实 Pitfall 实例已由阶段 9C 迁入 `ldvh-base/pitfalls/` 并由 Code/tests 校验；本文不迁入 V2 完整字段表、标签闭集或 Web 编辑能力。
+> 文件状态：active；本文吸收 V2 Pitfall 成员规范的父层规则。真实 Pitfall 实例已由阶段 9C 迁入 `ldvh-base/pitfalls/` 并由 Code/tests 校验；本文不迁入 V2 完整字段表、标签闭集或 Web 编辑能力。
 
 ## 1. 价值判断
 

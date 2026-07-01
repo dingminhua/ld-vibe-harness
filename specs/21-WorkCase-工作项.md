@@ -5,8 +5,8 @@ ldvh_spec:
   spec_id: "21"
   spec_kind: "fact_model_member_spec"
   title: "WorkCase-工作项"
-  status: "candidate"
-  authority: "candidate"
+  status: "active"
+  authority: "active"
   canonical_path: "specs/21-WorkCase-工作项.md"
   parent_spec: "specs/05-事实模型基础规范.md"
   relation: "fact_model_member"
@@ -53,7 +53,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 WorkCase 成员规范的父层规则。真实 WorkCase 实例已由阶段 9C 迁入 `ldvh-base/workcases/` 并由 Code/tests 校验；本文不迁入 V2 完整字段表、`21.Att.01` 长字段表、正式行动模板、Hook、commit gate、Web 写入或 runtime adapter。
+> 文件状态：active；本文吸收 V2 WorkCase 成员规范的父层规则。真实 WorkCase 实例已由阶段 9C 迁入 `ldvh-base/workcases/` 并由 Code/tests 校验；本文不迁入 V2 完整字段表、`21.Att.01` 长字段表、正式行动模板、Hook、commit gate、Web 写入或 runtime adapter。
 
 ## 1. 价值判断
 

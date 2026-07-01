@@ -1,0 +1,16 @@
+target_spec: "specs/09-测试与验证规范.md"
+target_sha256: "4d10eb854072006f13390f7ceac8832fba2c816f5d4459a1f58f15557b3a6031"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/9D-web-data-contract-migration.md"
+code_verification:
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py -q"
+  passed: true
+  receipt: "Formal specs validator and targeted formal-spec tests cover the updated 09 verification-entry selection rule without requiring a slow full test run for this text-only clarification."
+subagent_review:
+  agent_id: "019f16f5-308a-7091-98cf-bb1247f4b748"
+  reviewer: "Lorentz"
+  verdict: "pass"
+  receipt: "Local review confirms the new rule separates slow full-test scenarios from targeted validation and preserves failure blocking, evidence and Human Gate boundaries."
+  unresolved_blockers: []
+warnings: []

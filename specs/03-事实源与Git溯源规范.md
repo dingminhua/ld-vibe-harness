@@ -5,8 +5,8 @@ ldvh_spec:
   spec_id: "03"
   spec_kind: "spec"
   title: "事实源与Git溯源规范"
-  status: "candidate"
-  authority: "candidate"
+  status: "active"
+  authority: "active"
   canonical_path: "specs/03-事实源与Git溯源规范.md"
   parent_spec: "specs/00-理念与构成.md"
   relation: "refines"
@@ -49,7 +49,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 事实源与 Git 溯源父层规则。本文不定义事实对象字段、行动模板步骤、Code parser 细节、Web 页面展示、Hook 安装或测试实现。
+> 文件状态：active；本文吸收 V2 事实源与 Git 溯源父层规则。本文不定义事实对象字段、行动模板步骤、Code parser 细节、Web 页面展示、Hook 安装或测试实现。
 
 ## 1. 价值判断
 

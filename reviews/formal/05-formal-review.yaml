@@ -1,0 +1,16 @@
+target_spec: "specs/05-事实模型基础规范.md"
+target_sha256: "9967e975871df0ba72736347ceee3c960bde1e74a601cdb1bdf43b70491c877d"
+change_type: "modification"
+mapping_evidence:
+  path: "_migration/9C-fact-object-full-migration.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover 05 after 9C aligned real ldvh-base instances and Code field schema with the fact model boundary."
+subagent_review:
+  agent_id: "codex-local-6a-workcase-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review confirms 05 keeps fact model rules separate from fact instances while acknowledging 9C real ldvh-base migration and Code/tests schema coverage."
+  unresolved_blockers: []
+warnings: []

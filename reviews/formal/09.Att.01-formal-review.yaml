@@ -1,0 +1,16 @@
+target_spec: "specs/attachments/09.Att.01-验证声明字段表.md"
+target_sha256: "39f8fa435bda7eddd26970b1e49766cb472116ad77f05221cac0048a4d9e7010"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/5B-2-attachment-disposition.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Validator parses verification claim fields, complete verification conditions and forbidden writing rows from the new 09 attachment."
+subagent_review:
+  agent_id: "local-5b-2-attachment-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Checked the attachment remains a verification statement field table and does not alter failure blocking, Human Gate or evidence boundaries."
+  unresolved_blockers: []
+warnings: []

@@ -1,0 +1,16 @@
+target_spec: "specs/21-WorkCase-工作项.md"
+target_sha256: "7a9bdfe9c0dd3ca521132b4b25d3d07a183907b011a6aa0f12a8dea7a52b54da"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/9C-fact-object-full-migration.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover 21 after real WorkCase instances moved into ldvh-base/workcases with field schema, status, closure, and Human Gate checks."
+subagent_review:
+  agent_id: "codex-local-6a-workcase-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review found 21 acknowledges real WorkCase instances and Code/tests schema while keeping full 21.Att.01, Hook, Web write, and non-commit action templates postposed."
+  unresolved_blockers: []
+warnings: []

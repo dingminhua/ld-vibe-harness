@@ -5,8 +5,8 @@ ldvh_spec:
   spec_id: "22"
   spec_kind: "fact_model_member_spec"
   title: "ADR-决策"
-  status: "candidate"
-  authority: "candidate"
+  status: "active"
+  authority: "active"
   canonical_path: "specs/22-ADR-决策.md"
   parent_spec: "specs/05-事实模型基础规范.md"
   relation: "fact_model_member"
@@ -55,7 +55,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 ADR 成员规范的父层规则。阶段 9C 已建立 `ldvh-base/adrs/` 实例目录和 ADR 字段 schema，但 V2 当前无 ADR 实例可迁入；本文不迁入 V2 完整字段表、决策创建行动模板或 Web 编辑能力。
+> 文件状态：active；本文吸收 V2 ADR 成员规范的父层规则。阶段 9C 已建立 `ldvh-base/adrs/` 实例目录和 ADR 字段 schema，但 V2 当前无 ADR 实例可迁入；本文不迁入 V2 完整字段表、决策创建行动模板或 Web 编辑能力。
 
 ## 1. 价值判断
 

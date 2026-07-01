@@ -5,8 +5,8 @@ ldvh_spec:
   spec_id: "07"
   spec_kind: "spec"
   title: "Code确定性执行规范"
-  status: "candidate"
-  authority: "candidate"
+  status: "active"
+  authority: "active"
   canonical_path: "specs/07-Code确定性执行规范.md"
   parent_spec: "specs/00-理念与构成.md"
   relation: "refines"
@@ -51,7 +51,7 @@ ldvh_spec:
     next_queries: "13. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 Code 父层规则和 V2 runtime 中具体实现边界。本文不授权 Hook 安装、环境接入、Web API 或 Human Gate 放行。
+> 文件状态：active；本文吸收 V2 Code 父层规则和 V2 runtime 中具体实现边界。本文不授权 Hook 安装、环境接入、Web API 或 Human Gate 放行。
 
 ## 1. 价值判断
 

@@ -46,8 +46,8 @@ def test_current_specs_validate_without_diagnostics() -> None:
     result = ldvh_specs.build_validation(ROOT)
 
     assert result["summary"]["status"] == "ok"
-    assert result["summary"]["specs"] == 16
-    assert result["summary"]["attachments"] == 12
+    assert result["summary"]["specs"] == 17
+    assert result["summary"]["attachments"] == 16
     assert result["summary"]["foundation_spec_contracts"] == 6
     assert result["summary"]["governed_projects"] == 1
     assert result["diagnostics"] == []
@@ -84,6 +84,35 @@ def test_foundation_specs_contracts_are_code_consumable() -> None:
         assert contract["verification_checks"]
         assert contract["human_gate"]
         assert contract["stop_conditions"]
+
+
+def test_environment_adaptation_spec_registers_entry_status_and_payload_contracts() -> None:
+    result = ldvh_specs.build_validation(ROOT)
+    specs = {spec["object_id"]: spec for spec in result["specs"]}
+    attachments = {attachment["object_id"]: attachment for attachment in result["attachments"]}
+
+    spec_11 = specs["11"]
+    assert spec_11["path"] == "specs/11-环境适配规范.md"
+    assert spec_11["status"] == "active"
+    assert spec_11["metadata"]["authority"] == "active"
+    assert set(spec_11["metadata"]["code_consumption"]) >= {
+        "environment_entry_type_contract",
+        "environment_integration_status_contract",
+        "runtime_payload_contract",
+        "install_rollback_contract",
+        "manual_ready_boundary",
+        "removed_top_level_boundary",
+        "authorization_none_boundary",
+    }
+    assert spec_11["metadata"]["parent_spec"] == "specs/01-保障与衔接.md"
+    assert {
+        "11.Att.01",
+        "11.Att.02",
+        "11.Att.03",
+        "11.Att.04",
+    }.issubset(attachments)
+    assert attachments["11.Att.01"]["metadata"]["parent_spec"] == "specs/11-环境适配规范.md"
+    assert attachments["11.Att.03"]["metadata"]["parent_spec"] == "specs/11-环境适配规范.md"
 
 
 def test_foundation_validator_reports_missing_code_consumption(tmp_path: Path) -> None:
@@ -992,6 +1021,11 @@ def test_formal_identity_and_role_sections_are_parseable() -> None:
         "09.Att.01",
         "10",
         "10.Att.01",
+        "11",
+        "11.Att.01",
+        "11.Att.02",
+        "11.Att.03",
+        "11.Att.04",
         "20",
         "21",
         "22",

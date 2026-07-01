@@ -1,0 +1,16 @@
+target_spec: "specs/attachments/11.Att.02-环境接入状态表.md"
+target_sha256: "9ac1aca64ae7526e7e9e6ccd6e4b2adf305549dc07cc522be2159f860954ad7b"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/11C-environment-adaptation-admission.md"
+code_verification:
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py tests/code/test_ldvh_specs_validate.py -q"
+  passed: true
+  receipt: "Stage 11 formal gate covers the environment integration status closed table as an attachment subordinate to 11."
+subagent_review:
+  agent_id: "codex-local-11-environment-adaptation-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review confirms 11.Att.02 separates integrated, manual_ready, available, deferred, removed_top_level and absent without authorizing entry promotion."
+  unresolved_blockers: []
+warnings: []

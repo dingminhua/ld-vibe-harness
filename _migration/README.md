@@ -69,3 +69,17 @@
 `_migration/10F-environment-status-check.md` 记录环境接入状态检查入口。它说明 `code/environment_status.py` 统一报告真实 `git.commit-msg` Hook 与 manual runtime entrypoints 的可用/接入状态；该入口只读诊断当前边界，不安装新 Hook，也不声明 manual 入口已自动触发。
 
 `_migration/10G-rules-environment-entry-audit.md` 记录外部环境入口与 legacy Rules/Skill 审计。它说明 `code/environment_entry_audit.py` 已确认当前除 `git.commit-msg` 外，没有可复现证据证明 tool hook、completion hook、Codex repo 指令或外部 runtime adapter 已自动触发；Rules / Skill 顶层机制已取消并标记为 `removed_top_level`，早期骨架占位目录已删除。
+
+`_migration/11A-human-gate-constitutional-remediation.md` 记录第 11 阶段对构成体系变更的 Human Gate 补救。它不声称早期迁移前已有完整确认，只确认从阶段 11 起以当前 V3 五类构成、保障与衔接层、Rules/Skill 顶层取消和环境适配归口作为整改基线。
+
+`_migration/11B-spec-status-activation.md` 记录正式 specs 和附件从 candidate 收口为 active 的处理结果。它只说明规则源状态激活，不授权环境自动入口、Web 通用写入或非提交行动模板。
+
+`_migration/11C-environment-adaptation-admission.md` 记录 `specs/11-环境适配规范.md` 和 11 附件的迁入结果。它承接环境入口类型、接入状态、runtime payload、receipt、安装回滚和 Rules/Skill legacy 边界。
+
+`_migration/11D-runtime-automatic-integration-boundary.md` 记录真实 runtime 自动入口审计结论。当前除 `git.commit-msg` 外，没有 tool hook、completion hook、session hook、Rules 顶层机制或 Skill 顶层机制可以升级为 integrated。
+
+`_migration/11E-v2-v3-capability-coverage-matrix.md` 记录 V2 到 V3 能力覆盖矩阵，把已迁入、转归口、后置和废弃项放到同一张表中。
+
+`_migration/11F-action-template-minimal-closure.md` 记录行动模板最小闭环。Git 提交行动仍是唯一正式模板示范，WorkCase 创建、方案审核、执行推进、结果复核和关闭确认继续后置。
+
+`_migration/11G-migration-dependency-independence.md` 记录迁移层依赖独立处理。formal review hash gate 已迁到 `reviews/formal/`；`_migration/reviews/` 不再是稳定 gate 读取位置，但 `_migration` 仍保留历史证据和迁移测试。

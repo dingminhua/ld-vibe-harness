@@ -5,8 +5,8 @@ ldvh_spec:
   spec_id: "04"
   spec_kind: "spec"
   title: "Specs基础规范"
-  status: "candidate"
-  authority: "candidate"
+  status: "active"
+  authority: "active"
   canonical_path: "specs/04-Specs基础规范.md"
   parent_spec: "specs/01-保障与衔接.md"
   relation: "refines"
@@ -50,7 +50,7 @@ ldvh_spec:
     next_queries: "14. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文是 Specs 的共同治理规则。本文正文是规则本体；附件、Code 输出、review、迁移材料、行动指南和对话记录不得反向改写本文正文。
+> 文件状态：active；本文是 Specs 的共同治理规则。本文正文是规则本体；附件、Code 输出、review、迁移材料、行动指南和对话记录不得反向改写本文正文。
 
 本文自身必须遵守本文对正式 spec 的要求。本文若出现固定头部缺失、固定尾部缺失、主体规则区职责漂移、Code 派生内容手写罗列、保障措施缺失或验证方法缺失，应先修正本文，再用本文约束下位规范。
 
@@ -195,7 +195,7 @@ Code、review、迁移材料、测试输出、行动指南和对话记录不得�
 
 ### 6.2 `role_sections` 过渡索引
 
-`role_sections` 是信息角色到正文章节标题的索引投影，不是第二规则源，也不是事实源或绕过正文的例外机制。当前 candidate 阶段允许人工声明 `role_sections`，作为 Code 尚未稳定推导前的过渡索引；人工声明不得与正文冲突，不得新增信息角色职责，不得覆盖正文标题。Code 能稳定推导后，`role_sections` 应由 Code 生成或诊断，不再作为人工必填规则字段。
+`role_sections` 是信息角色到正文章节标题的索引投影，不是第二规则源，也不是事实源或绕过正文的例外机制。当前 active 主线仍保留人工声明 `role_sections`，作为 Code 尚未稳定推导前的过渡索引；人工声明不得与正文冲突，不得新增信息角色职责，不得覆盖正文标题。Code 能稳定推导后，`role_sections` 应由 Code 生成或诊断，不再作为人工必填规则字段。
 
 `role_sections.rule_body` 可以是单个章节标题，也可以是多个章节标题列表，用于指向主体规则区。主体规则区的标题由单篇 spec 自定义，Code 不得因为主体标题不同而判定结构失败。
 

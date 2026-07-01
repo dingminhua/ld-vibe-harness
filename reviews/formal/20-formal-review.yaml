@@ -1,0 +1,16 @@
+target_spec: "specs/20-Spark-火花.md"
+target_sha256: "7c83736f5ccf7af8dce541eb3cd2781f830e04d7d4abc380882d149acdadb0c9"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/9C-fact-object-full-migration.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover 20 after Spark real instances moved into ldvh-base/sparks with field schema, status, relation, and Human Gate boundaries."
+subagent_review:
+  agent_id: "codex-local-6b-fact-members-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review found 20 acknowledges real Spark instances and Code/tests schema while keeping Web quick create and full field-table prose postposed."
+  unresolved_blockers: []
+warnings: []

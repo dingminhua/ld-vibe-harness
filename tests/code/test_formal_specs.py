@@ -8,6 +8,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
+FORMAL_REVIEW_DIR = ROOT / "reviews" / "formal"
 BOOTSTRAP_OBJECT_IDS = {
     "00",
     "01",
@@ -148,6 +149,7 @@ def test_ldvh_starts_from_markdown_specs_only() -> None:
     assert (ROOT / "specs" / "08-Web信息同步规范.md").exists()
     assert (ROOT / "specs" / "09-测试与验证规范.md").exists()
     assert (ROOT / "specs" / "10-受管项目接入规范.md").exists()
+    assert (ROOT / "specs" / "11-环境适配规范.md").exists()
     assert (ROOT / "specs" / "20-Spark-火花.md").exists()
     assert (ROOT / "specs" / "21-WorkCase-工作项.md").exists()
     assert (ROOT / "specs" / "22-ADR-决策.md").exists()
@@ -178,6 +180,10 @@ def test_attachments_stay_subordinate_tables_or_enums() -> None:
         "specs/attachments/05.Att.01-字段注册表结构.md",
         "specs/attachments/09.Att.01-验证声明字段表.md",
         "specs/attachments/10.Att.01-受管项目配置字段表.md",
+        "specs/attachments/11.Att.01-环境入口类型表.md",
+        "specs/attachments/11.Att.02-环境接入状态表.md",
+        "specs/attachments/11.Att.03-runtime-payload字段表.md",
+        "specs/attachments/11.Att.04-环境安装回滚检查表.md",
     ]
 
     spec_04 = (ROOT / "specs" / "04-Specs基础规范.md").read_text(encoding="utf-8")
@@ -214,6 +220,7 @@ def test_formal_specs_keep_ldvh_identity_blocks() -> None:
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
         ROOT / "specs" / "10-受管项目接入规范.md",
+        ROOT / "specs" / "11-环境适配规范.md",
         ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
         ROOT / "specs" / "22-ADR-决策.md",
@@ -237,6 +244,7 @@ def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
         ROOT / "specs" / "10-受管项目接入规范.md",
+        ROOT / "specs" / "11-环境适配规范.md",
         ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
         ROOT / "specs" / "22-ADR-决策.md",
@@ -262,6 +270,7 @@ def test_role_sections_point_to_existing_h2_entries() -> None:
         ROOT / "specs" / "08-Web信息同步规范.md",
         ROOT / "specs" / "09-测试与验证规范.md",
         ROOT / "specs" / "10-受管项目接入规范.md",
+        ROOT / "specs" / "11-环境适配规范.md",
         ROOT / "specs" / "20-Spark-火花.md",
         ROOT / "specs" / "21-WorkCase-工作项.md",
         ROOT / "specs" / "22-ADR-决策.md",
@@ -290,7 +299,7 @@ def test_formal_objects_have_unique_ids_and_real_paths() -> None:
 
 
 def test_review_receipts_stay_narrow() -> None:
-    for path in sorted((ROOT / "_migration" / "reviews").glob("*-formal-review.yaml")):
+    for path in sorted(FORMAL_REVIEW_DIR.glob("*-formal-review.yaml")):
         if path.name == "template-formal-review.yaml":
             continue
         review = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -315,7 +324,7 @@ def test_formal_specs_and_attachments_require_code_and_subagent_review_gate() ->
         if object_id in BOOTSTRAP_OBJECT_IDS:
             continue
 
-        review_path = ROOT / "_migration" / "reviews" / f"{object_id}-formal-review.yaml"
+        review_path = FORMAL_REVIEW_DIR / f"{object_id}-formal-review.yaml"
         assert review_path.exists(), f"{path} missing migration review gate {review_path}"
         review = yaml.safe_load(review_path.read_text(encoding="utf-8"))
         assert set(review) == REVIEW_TOP_LEVEL_KEYS, review_path

@@ -287,6 +287,18 @@ specs 迁入
 6. 已删除早期骨架遗留的 `rules/.gitkeep` 和 `skills/.gitkeep`，避免误解为待启用目录；
 7. 后续只有在真实触发、稳定 payload、失败处理、安装状态、回滚方式和用户同意同时满足时，才进入接入实现；否则这些入口保持后置。Rules / Skill 顶层机制不得恢复。
 
+11A-11G 完成记录：
+
+1. `_migration/11A-human-gate-constitutional-remediation.md` 已记录构成体系变更的 Human Gate 补救边界：不伪造早期确认，只把阶段 11 之后继续推进的 V3 基线明确下来；
+2. `_migration/11B-spec-status-activation.md` 已记录 specs 和正式附件激活：正式规范正文和已迁入附件不再停留在 candidate 状态；
+3. `_migration/11C-environment-adaptation-admission.md` 已记录 `specs/11-环境适配规范.md` 和 11 附件迁入，补齐 01 中悬空的环境适配归口；
+4. `_migration/11D-runtime-automatic-integration-boundary.md` 已记录 runtime 自动入口审计：当前除 `git.commit-msg` 外没有可升级为 integrated 的自动入口；
+5. `_migration/11E-v2-v3-capability-coverage-matrix.md` 已记录 V2 到 V3 能力覆盖矩阵，区分已迁入、转归口、后置和废弃；
+6. `_migration/11F-action-template-minimal-closure.md` 已记录行动模板最小闭环：Git 提交行动是唯一正式模板示范，WorkCase 非提交模板继续后置；
+7. `_migration/11G-migration-dependency-independence.md` 已记录 formal review hash gate 从 `_migration/reviews` 迁入 `reviews/formal`；
+8. README 已更新 `reviews/formal/` 和 `_migration/` 职责边界；
+9. 阶段 11 完成后，V3 主体以 active specs、V3 facts、Web 独立读取、commit-msg hard switch、环境适配规范和稳定 formal review ledger 为主线；仍后置的是非提交行动模板、外部环境自动 Hook、稳定 receipt 存储和通用 Web 写入。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。

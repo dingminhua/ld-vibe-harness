@@ -1,0 +1,16 @@
+target_spec: "specs/08-Web信息同步规范.md"
+target_sha256: "f98fbca1423fdd5b47f28725263b853759b252fb1ecbdc282c7ef0d0cc190dee"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/9D-web-data-contract-migration.md"
+code_verification:
+  command: "npm --prefix web run test:web:api && npm --prefix web run check && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and Web tests cover the updated 08 Web sync candidate with 9D independent reading, source_refs, cache and Spark quick create boundaries."
+subagent_review:
+  agent_id: "019f16f5-308a-7091-98cf-bb1247f4b748"
+  reviewer: "Lorentz"
+  verdict: "pass"
+  receipt: "Local 9D review confirms Web API data path reads Git-backed V3 facts independently from Code output; remaining Confirm UI and visual regression work is explicitly post-9D."
+  unresolved_blockers: []
+warnings: []

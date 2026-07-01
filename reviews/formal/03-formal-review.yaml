@@ -1,0 +1,16 @@
+target_spec: "specs/03-事实源与Git溯源规范.md"
+target_sha256: "414413a09498e7bdbc258a3e254cf61346641da814193dce707b7477a3b4b7a4"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/5B-2-attachment-disposition.md"
+code_verification:
+  command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover the new 03 fact-source and Git traceability candidate as a formal spec."
+subagent_review:
+  agent_id: "019f16f5-0d83-74a3-a526-cae9622aeb50"
+  reviewer: "Kant"
+  verdict: "pass"
+  receipt: "Read-only subagent reviews identified the prior 03 work-object review as stale, confirmed 03 should carry fact-source and Git traceability while work objects move to 05, and suggested wording commit action as the 06 Git 提交行动模板候选."
+  unresolved_blockers: []
+warnings: []

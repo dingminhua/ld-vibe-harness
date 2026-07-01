@@ -1,0 +1,16 @@
+target_spec: "specs/attachments/11.Att.01-环境入口类型表.md"
+target_sha256: "d2aaf609a3170c800e8af2b4d4b40bdae3c6c5c196cd481b05a379fb466a9469"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/11C-environment-adaptation-admission.md"
+code_verification:
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py tests/code/test_ldvh_specs_validate.py -q"
+  passed: true
+  receipt: "Stage 11 formal gate covers the environment entry type closed table as an attachment subordinate to 11."
+subagent_review:
+  agent_id: "codex-local-11-environment-adaptation-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review confirms 11.Att.01 only carries the entry type enum and does not define independent environment rules."
+  unresolved_blockers: []
+warnings: []

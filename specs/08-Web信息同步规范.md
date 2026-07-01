@@ -5,8 +5,8 @@ ldvh_spec:
   spec_id: "08"
   spec_kind: "spec"
   title: "Web信息同步规范"
-  status: "candidate"
-  authority: "candidate"
+  status: "active"
+  authority: "active"
   canonical_path: "specs/08-Web信息同步规范.md"
   parent_spec: "specs/00-理念与构成.md"
   relation: "refines"
@@ -48,7 +48,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 Web 父层规则。阶段 9D 已迁入 Web API 数据契约、同源独立读取、来源回指、缓存边界和基础回归测试；本文不把具体页面设计、缓存实现细节、DTO 长表或视觉回归矩阵写成规则正文。
+> 文件状态：active；本文吸收 V2 Web 父层规则。阶段 9D 已迁入 Web API 数据契约、同源独立读取、来源回指、缓存边界和基础回归测试；本文不把具体页面设计、缓存实现细节、DTO 长表或视觉回归矩阵写成规则正文。
 
 ## 1. 价值判断
 

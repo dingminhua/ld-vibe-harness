@@ -1,0 +1,16 @@
+target_spec: "specs/11-环境适配规范.md"
+target_sha256: "0f3003748df0b9145815b94c41a00bf7684bf674336cc1ccd190abd63255ba36"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/11C-environment-adaptation-admission.md"
+code_verification:
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py tests/code/test_ldvh_specs_validate.py -q"
+  passed: true
+  receipt: "Stage 11 formal gate covers environment adaptation spec identity, fixed sections, attachment authorization, environment status boundaries and formal hash ledger migration."
+subagent_review:
+  agent_id: "codex-local-11-environment-adaptation-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local stage 11 review confirms 11 creates the missing environment adaptation归口 while keeping Rules/Skill removed_top_level and runtime auto entries deferred except git.commit-msg."
+  unresolved_blockers: []
+warnings: []

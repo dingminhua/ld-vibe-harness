@@ -1,13 +1,21 @@
-# Migration Review Records
+# Historical Migration Review Records
 
-This directory stores temporary migration gate evidence.
+This directory stores historical migration gate evidence.
+
+Current formal review hash gate records live in `reviews/formal/`.
 
 Review records are not spec facts. They cannot define rules, override Markdown specs, approve Human Gate, or replace Code diagnostics.
 
-For every formal spec or attachment addition, migration, or modification after the bootstrap set, create:
+Before stage 11G, every formal spec or attachment addition, migration, or modification after the bootstrap set used:
 
 ```text
 _migration/reviews/{object_id}-formal-review.yaml
+```
+
+After stage 11G, create and update:
+
+```text
+reviews/formal/{object_id}-formal-review.yaml
 ```
 
 The record must show:
@@ -20,4 +28,4 @@ The record must show:
 
 Do not put migrated rules, value explanations, action guide fields, or rewritten spec summaries in a review record. Use it as a receipt only.
 
-Formal tests fail when a formal object lacks this review gate, has a stale target hash, or leaves warnings without disposition.
+Formal tests now read `reviews/formal/`. This directory remains only for historical traceability and mapping evidence.

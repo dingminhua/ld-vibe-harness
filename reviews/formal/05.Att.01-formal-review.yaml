@@ -1,0 +1,16 @@
+target_spec: "specs/attachments/05.Att.01-字段注册表结构.md"
+target_sha256: "cc708c704766f502a36440472b7f1780e211ad3ca87b9315c757a909cbfa6c9e"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/5B-2-attachment-disposition.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Validator parses field registry columns, allowed values and code_check_kind rows from the new 05 attachment."
+subagent_review:
+  agent_id: "local-5b-2-attachment-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Checked the attachment migrates only the field registry structure and leaves member field tables, templates and state machines for later member specs."
+  unresolved_blockers: []
+warnings: []

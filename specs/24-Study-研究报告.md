@@ -5,8 +5,8 @@ ldvh_spec:
   spec_id: "24"
   spec_kind: "fact_model_member_spec"
   title: "Study-研究报告"
-  status: "candidate"
-  authority: "candidate"
+  status: "active"
+  authority: "active"
   canonical_path: "specs/24-Study-研究报告.md"
   parent_spec: "specs/05-事实模型基础规范.md"
   relation: "fact_model_member"
@@ -55,7 +55,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：candidate；本文吸收 V2 Study 成员规范的父层规则。真实 Study 实例已由阶段 9C 迁入 `ldvh-base/studies/` 并由 Code/tests 校验；本文不迁入 V2 完整 frontmatter schema、Web 阅读实现或研究行动模板。
+> 文件状态：active；本文吸收 V2 Study 成员规范的父层规则。真实 Study 实例已由阶段 9C 迁入 `ldvh-base/studies/` 并由 Code/tests 校验；本文不迁入 V2 完整 frontmatter schema、Web 阅读实现或研究行动模板。
 
 ## 1. 价值判断
 
