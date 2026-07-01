@@ -201,7 +201,8 @@ def build_environment_status(repo: Path = ROOT, ldvh_root: Path = ROOT) -> dict[
             "pre_tool_use has no automatic tool-call trigger",
             "completion_claim has no automatic completion trigger",
             "runtime_adapter is manual/external adapter-ready only",
-            "Rules, generic Web writes, and non-commit action templates are not enabled",
+            "generic Web writes and non-commit action templates are not enabled",
+            "Rules and Skill top-level mechanisms are removed, not pending entrypoints",
         ],
         "diagnostics": diagnostics,
     }

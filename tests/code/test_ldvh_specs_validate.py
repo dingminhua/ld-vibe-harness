@@ -1941,7 +1941,7 @@ def test_environment_status_blocks_missing_commit_hook(tmp_path: Path) -> None:
     assert "ENV_COMMIT_MSG_HOOK_NOT_INSTALLED" in _diagnostic_codes(payload)
 
 
-def test_environment_entry_audit_defers_non_commit_entries(tmp_path: Path) -> None:
+def test_environment_entry_audit_marks_rules_and_skills_removed_top_level(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
@@ -1987,16 +1987,21 @@ def test_environment_entry_audit_defers_non_commit_entries(tmp_path: Path) -> No
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["integrated_entrypoints"] == ["git.commit-msg"]
     assert payload["summary"]["rules_entry_integrated"] is False
+    assert payload["summary"]["skill_entry_integrated"] is False
     assert payload["summary"]["tool_hook_integrated"] is False
     assert payload["summary"]["completion_hook_integrated"] is False
     assert payload["summary"]["codex_environment_entry_integrated"] is False
+    assert "rules.top_level_mechanism" in payload["summary"]["removed_top_level_entrypoints"]
+    assert "skills.top_level_mechanism" in payload["summary"]["removed_top_level_entrypoints"]
     assert candidates["git.commit-msg"]["status"] == "integrated"
     assert candidates["runtime.pre_tool_use.auto"]["status"] == "deferred"
     assert candidates["runtime.pre_tool_use.auto"]["manual_fallback"] == "code/pre_tool_use.py"
-    assert candidates["rules.thin-reference"]["status"] == "deferred"
-    assert candidates["skills.external-wrapper"]["status"] == "deferred"
+    assert candidates["rules.top_level_mechanism"]["status"] == "removed_top_level"
+    assert candidates["rules.top_level_mechanism"]["decision"] == "removed_top_level"
+    assert candidates["skills.top_level_mechanism"]["status"] == "removed_top_level"
+    assert candidates["skills.top_level_mechanism"]["decision"] == "removed_top_level"
     assert candidates["codex.repo-instructions"]["status"] == "absent"
-    assert payload["decision"]["next_step"] == "defer_auto_runtime_and_rules_until_real_trigger_exists"
+    assert payload["decision"]["next_step"] == "defer_auto_runtime_until_real_trigger_exists"
     assert payload["diagnostics"] == []
 
 
@@ -2043,6 +2048,8 @@ def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_pa
     assert payload["summary"]["integrated_entrypoints"] == ["git.commit-msg"]
     assert candidates["codex.repo-instructions"]["status"] == "available"
     assert candidates["codex.repo-instructions"]["integrated"] is False
+    assert candidates["rules.top_level_mechanism"]["status"] == "removed_top_level"
+    assert candidates["skills.top_level_mechanism"]["status"] == "removed_top_level"
     assert payload["summary"]["codex_environment_entry_integrated"] is False
     assert "ENV_CODEX_ENTRY_FILES_NOT_INTEGRATED" in _diagnostic_codes(payload)
 

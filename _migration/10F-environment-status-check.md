@@ -60,4 +60,4 @@ authorization: none
 
 ## 5. 后续
 
-10G 已补充 Rules / 外部环境入口审计，确认当前除 `git.commit-msg` 外没有其它 integrated 自动入口。若后续环境提供真实 session/tool/completion 触发点，应先让状态检查和入口审计能识别其安装状态、payload 来源、失败处理和回滚方式，再更新 `*_integrated=true`。在此之前，当前唯一自动入口仍是 `git.commit-msg`。
+10G 已补充外部环境入口审计，确认当前除 `git.commit-msg` 外没有其它 integrated 自动入口；Rules / Skill 顶层机制已取消，不作为待启用入口。若后续环境提供真实 session/tool/completion 触发点，应先让状态检查和入口审计能识别其安装状态、payload 来源、失败处理和回滚方式，再更新 `*_integrated=true`。在此之前，当前唯一自动入口仍是 `git.commit-msg`。

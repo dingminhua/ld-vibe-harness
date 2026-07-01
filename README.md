@@ -1,6 +1,6 @@
 # LDVH V3
 
-当前仓库处于 V3 commit-msg 最小 hard switch 状态：日常规则判断、事实对象维护和 Web 数据读取以 V3 为准；当前 worktree 的真实 Git `commit-msg` Hook 已由 V3 接管。Rules、runtime adapter、session start、pre tool use、completion claim 和其它阻断型环境入口尚未强制接管。
+当前仓库处于 V3 commit-msg 最小 hard switch 状态：日常规则判断、事实对象维护和 Web 数据读取以 V3 为准；当前 worktree 的真实 Git `commit-msg` Hook 已由 V3 接管。Rules / Skill 顶层机制已取消；runtime adapter、session start、pre tool use、completion claim 和其它阻断型环境入口尚未强制接管。
 
 ## 当前主线
 
@@ -11,7 +11,8 @@
 - `tests/`：正式回归检查。
 - `_migration/`：历史迁移证据、formal review hash gate 和迁移测试材料；不作为日常规则源或事实维护入口。
 - `hooks/`：当前 worktree 的 `commit-msg` Hook 模板已启用，用于真实提交前校验 V3 commit message 契约和 read_plan 消费证据。
-- `rules/`、`skills/`：仍未正式启用。Skill 不作为 V3 顶层机制。
+
+V3 不保留 `rules/` 或 `skills/` 顶层目录机制。V2 Rules 的入口可见能力只作为环境薄引用或 repo instruction 候选承接；V2 Skill 的可复用工作流能力只进入行动模板、Action Guide 或外部包装候选。
 
 ## 环境边界
 
@@ -96,7 +97,7 @@ python3 code/environment_entry_audit.py --format text
 
 该检查会同时报告真实 `git.commit-msg` Hook、manual runtime adapter、`session_start`、`pre_tool_use` 和 `completion_claim` 的可用/接入状态。当前预期结果是 `environment_integrated: partial`、`hook_integrated: git.commit-msg`，且三类 runtime 入口仍为 manual-ready、未自动触发。
 
-`environment_entry_audit.py` 进一步审计 Rules、Skill、AGENTS/Codex repo 指令、tool hook、completion hook 和外部 runtime adapter 候选。当前结论是：除 `git.commit-msg` 外，没有可复现证据证明其它入口已自动触发；相关能力保持后置，不再按已接入处理。
+`environment_entry_audit.py` 进一步审计 tool hook、completion hook、AGENTS/Codex repo 指令和外部 runtime adapter 候选，同时确认 Rules / Skill 顶层机制是 `removed_top_level`，不是待启用入口。当前结论是：除 `git.commit-msg` 外，没有可复现证据证明其它入口已自动触发。
 
 真实提交如果触发 body 必填条件，正文至少包含 `读取依据:` 和 `关键变更:`：
 

@@ -72,88 +72,37 @@ def _candidate(
     }
 
 
-def _rules_candidate(repo: Path, diagnostics: list[dict[str, str]]) -> dict[str, Any]:
-    rules_dir = repo / "rules"
-    rule_files = _non_placeholder_files(rules_dir)
-    if rule_files:
+def _removed_top_level_candidate(
+    repo: Path,
+    diagnostics: list[dict[str, str]],
+    *,
+    entry_id: str,
+    category: str,
+    legacy_dir: str,
+    source_name: str,
+    reason: str,
+) -> dict[str, Any]:
+    legacy_path = repo / legacy_dir
+    files = _non_placeholder_files(legacy_path)
+    evidence = [legacy_path.as_posix()] if legacy_path.exists() else []
+    evidence.extend(_as_posix(files))
+    if files:
         diagnostics.append(
             _diagnostic(
                 "warning",
-                "ENV_RULES_FILES_NOT_INTEGRATED",
-                rules_dir.as_posix(),
-                "检测到 rules/ 文件，但当前没有 repo-local 证据证明它们会被环境自动加载或阻断。",
+                "ENV_REMOVED_TOP_LEVEL_FILES_PRESENT",
+                legacy_path.as_posix(),
+                f"检测到 {legacy_dir}/ 内容，但 {source_name} 已取消为 V3 顶层机制；这些文件不能证明环境入口已接入。",
             )
         )
-        return _candidate(
-            entry_id="rules.thin-reference",
-            category="rules",
-            status="available",
-            trigger="environment rules loader",
-            evidence=_as_posix(rule_files),
-            decision="audit_before_integration",
-            reason="rules 文件存在，但不能仅凭文件存在声明环境已自动加载。",
-        )
-    if rules_dir.is_dir():
-        return _candidate(
-            entry_id="rules.thin-reference",
-            category="rules",
-            status="deferred",
-            trigger="environment rules loader",
-            evidence=[rules_dir.as_posix()],
-            decision="defer",
-            reason="rules/ 仅是占位目录，没有可加载规则文件，也没有安装状态证据。",
-        )
     return _candidate(
-        entry_id="rules.thin-reference",
-        category="rules",
-        status="absent",
-        trigger="environment rules loader",
-        evidence=[],
-        decision="defer",
-        reason="未发现 repo-local rules 入口。",
-    )
-
-
-def _skills_candidate(repo: Path, diagnostics: list[dict[str, str]]) -> dict[str, Any]:
-    skills_dir = repo / "skills"
-    skill_files = sorted(item for item in skills_dir.rglob("SKILL.md")) if skills_dir.is_dir() else []
-    other_files = [item for item in _non_placeholder_files(skills_dir) if item.name != "SKILL.md"]
-    if skill_files or other_files:
-        diagnostics.append(
-            _diagnostic(
-                "warning",
-                "ENV_SKILL_FILES_NOT_INTEGRATED",
-                skills_dir.as_posix(),
-                "检测到 skills/ 内容，但 V3 不把 Skill 作为顶层机制；若要使用，只能作为外部包装候选另行审计。",
-            )
-        )
-        return _candidate(
-            entry_id="skills.external-wrapper",
-            category="skill",
-            status="available",
-            trigger="external skill loader",
-            evidence=_as_posix(skill_files + other_files),
-            decision="defer",
-            reason="Skill 内容不能直接成为 V3 规则入口或行动模板实例。",
-        )
-    if skills_dir.is_dir():
-        return _candidate(
-            entry_id="skills.external-wrapper",
-            category="skill",
-            status="deferred",
-            trigger="external skill loader",
-            evidence=[skills_dir.as_posix()],
-            decision="defer",
-            reason="skills/ 仅是占位目录，没有可安装 Skill 内容。",
-        )
-    return _candidate(
-        entry_id="skills.external-wrapper",
-        category="skill",
-        status="absent",
-        trigger="external skill loader",
-        evidence=[],
-        decision="defer",
-        reason="未发现 repo-local Skill 包装入口。",
+        entry_id=entry_id,
+        category=category,
+        status="removed_top_level",
+        trigger="none",
+        evidence=evidence,
+        decision="removed_top_level",
+        reason=reason,
     )
 
 
@@ -269,8 +218,24 @@ def build_environment_entry_audit(repo: Path = ROOT, ldvh_root: Path = ROOT) -> 
             decision="defer",
             reason="统一 adapter 已有，但没有真实外部事件源、安装状态、失败处理和回滚证据。",
         ),
-        _rules_candidate(resolved_repo, diagnostics),
-        _skills_candidate(resolved_repo, diagnostics),
+        _removed_top_level_candidate(
+            resolved_repo,
+            diagnostics,
+            entry_id="rules.top_level_mechanism",
+            category="removed_top_level",
+            legacy_dir="rules",
+            source_name="Rules",
+            reason="V3 已取消 Rules 资产体系和独立规则权威；无 Hook fallback 只能归为环境薄引用或 repo instruction，不恢复 rules/ 目录机制。",
+        ),
+        _removed_top_level_candidate(
+            resolved_repo,
+            diagnostics,
+            entry_id="skills.top_level_mechanism",
+            category="removed_top_level",
+            legacy_dir="skills",
+            source_name="Skill",
+            reason="V3 已取消 Skill 顶层机制、Skill registry 和 Skill 执行闭环；可复用工作流能力只能进入行动模板、Action Guide 或外部包装候选。",
+        ),
         _codex_candidate(resolved_repo, diagnostics),
     ]
 
@@ -279,6 +244,7 @@ def build_environment_entry_audit(repo: Path = ROOT, ldvh_root: Path = ROOT) -> 
     available = [candidate["id"] for candidate in candidates if candidate["status"] == "available"]
     deferred = [candidate["id"] for candidate in candidates if candidate["status"] == "deferred"]
     absent = [candidate["id"] for candidate in candidates if candidate["status"] == "absent"]
+    removed_top_level = [candidate["id"] for candidate in candidates if candidate["status"] == "removed_top_level"]
 
     return {
         "metadata": {
@@ -294,7 +260,9 @@ def build_environment_entry_audit(repo: Path = ROOT, ldvh_root: Path = ROOT) -> 
             "available_unintegrated_entrypoints": available,
             "deferred_entrypoints": deferred,
             "absent_entrypoints": absent,
+            "removed_top_level_entrypoints": removed_top_level,
             "rules_entry_integrated": False,
+            "skill_entry_integrated": False,
             "tool_hook_integrated": False,
             "completion_hook_integrated": False,
             "session_start_integrated": False,
@@ -305,8 +273,8 @@ def build_environment_entry_audit(repo: Path = ROOT, ldvh_root: Path = ROOT) -> 
         },
         "candidates": candidates,
         "decision": {
-            "next_step": "defer_auto_runtime_and_rules_until_real_trigger_exists",
-            "reason": "除 git.commit-msg 外，当前 repo 没有可复现证据证明 Rules、tool hook、completion hook 或 Codex 生命周期入口已自动触发。",
+            "next_step": "defer_auto_runtime_until_real_trigger_exists",
+            "reason": "除 git.commit-msg 外，当前 repo 没有可复现证据证明 tool hook、completion hook 或 Codex 生命周期入口已自动触发；Rules/Skill 顶层机制已取消，不作为待启用入口。",
         },
         "diagnostics": diagnostics,
     }
@@ -320,7 +288,9 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- available_unintegrated_entrypoints: {', '.join(summary['available_unintegrated_entrypoints']) or 'none'}")
     print(f"- deferred_entrypoints: {', '.join(summary['deferred_entrypoints']) or 'none'}")
     print(f"- absent_entrypoints: {', '.join(summary['absent_entrypoints']) or 'none'}")
+    print(f"- removed_top_level_entrypoints: {', '.join(summary['removed_top_level_entrypoints']) or 'none'}")
     print(f"- rules_entry_integrated: {_bool_text(summary['rules_entry_integrated'])}")
+    print(f"- skill_entry_integrated: {_bool_text(summary['skill_entry_integrated'])}")
     print(f"- tool_hook_integrated: {_bool_text(summary['tool_hook_integrated'])}")
     print(f"- completion_hook_integrated: {_bool_text(summary['completion_hook_integrated'])}")
     print(f"- codex_environment_entry_integrated: {_bool_text(summary['codex_environment_entry_integrated'])}")
@@ -347,7 +317,7 @@ def _print_text(result: dict[str, Any]) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Audit LDVH v3 Rules, hook, and Codex environment entry candidates.")
+    parser = argparse.ArgumentParser(description="Audit LDVH v3 hook and Codex environment entry candidates.")
     parser.add_argument("--repo", default=ROOT.as_posix(), help="target repository root")
     parser.add_argument("--ldvh-root", default=ROOT.as_posix(), help="LDVH v3 root containing code/ and hooks/")
     parser.add_argument("--format", choices=["text", "json"], default="text")

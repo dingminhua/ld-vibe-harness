@@ -68,4 +68,4 @@
 
 `_migration/10F-environment-status-check.md` 记录环境接入状态检查入口。它说明 `code/environment_status.py` 统一报告真实 `git.commit-msg` Hook 与 manual runtime entrypoints 的可用/接入状态；该入口只读诊断当前边界，不安装新 Hook，也不声明 manual 入口已自动触发。
 
-`_migration/10G-rules-environment-entry-audit.md` 记录 Rules / 外部环境入口审计。它说明 `code/environment_entry_audit.py` 已确认当前除 `git.commit-msg` 外，没有可复现证据证明 Rules、tool hook、completion hook、Codex repo 指令或外部 runtime adapter 已自动触发；相关能力保持后置。
+`_migration/10G-rules-environment-entry-audit.md` 记录外部环境入口与 legacy Rules/Skill 审计。它说明 `code/environment_entry_audit.py` 已确认当前除 `git.commit-msg` 外，没有可复现证据证明 tool hook、completion hook、Codex repo 指令或外部 runtime adapter 已自动触发；Rules / Skill 顶层机制已取消并标记为 `removed_top_level`，早期骨架占位目录已删除。
