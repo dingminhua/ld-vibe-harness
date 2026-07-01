@@ -125,6 +125,10 @@
 2. 支持安装、状态检查、回滚和验证；
 3. 不默认覆盖外部项目，不绕过 Human Gate。
 
+完成记录：
+
+阶段 18A 已完成外部受管项目 Hook adapter，记录见 `_migration/18A-governed-project-hook-adapter.md`。新增 `code/governed_hook_adapter.py`，在 install/uninstall 前先做受管项目解析并要求显式 Human Gate；当前没有自动安装到任何外部项目，除当前 worktree 的 `git.commit-msg` 外，其它自动入口仍未 integrated。
+
 ## 阶段 19：`_migration` 归档判断
 
 目标：

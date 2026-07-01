@@ -360,6 +360,14 @@ specs 迁入
 4. 通用事实对象写入、WorkCase 状态推进写入、ADR/Pitfall/Study Web 写入和完整 Confirm UI 继续后置；
 5. 后续启用完整 Confirm UI 或扩大 Web 写入前，必须先经 Human Gate，并补齐 Web 实现域展示合同、字段白名单、状态闭集、source_refs、写后校验和 tests/web 回归。
 
+18A 完成记录：
+
+1. `_migration/18A-governed-project-hook-adapter.md` 已记录外部受管项目 Hook adapter；
+2. `code/governed_hook_adapter.py` 已支持 `status`、`install` 和 `uninstall`，并在写操作前要求 `--confirm-human-gate`；
+3. adapter 先复用 10 的受管项目解析，再调用 `code/install_git_hooks.py`，非受管、混合或多项目 target 会阻断；
+4. `code/install_git_hooks.py` 支持为外部 repo Hook 嵌入 LDVH root，避免外部 repo 必须复制 V3 validator；
+5. 本阶段只提供 adapter-ready 能力，不自动安装到任何外部项目，不改变当前环境唯一 integrated 自动入口是当前 worktree `git.commit-msg` 的结论。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。

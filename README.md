@@ -89,6 +89,16 @@ python3 code/install_git_hooks.py install --repo .
 python3 code/install_git_hooks.py uninstall --repo .
 ```
 
+外部受管项目 Hook adapter：
+
+```bash
+python3 code/governed_hook_adapter.py status --repo "<repo>" --governance-root "<ldvh-root>"
+python3 code/governed_hook_adapter.py install --repo "<repo>" --governance-root "<ldvh-root>" --confirm-human-gate
+python3 code/governed_hook_adapter.py uninstall --repo "<repo>" --governance-root "<ldvh-root>" --confirm-human-gate
+```
+
+该 adapter 会先按 `LDVH-GOVERNED-PROJECTS.yaml` 做 target-first / Git common-dir 解析；`install` 和 `uninstall` 必须显式带 `--confirm-human-gate`。它不会默认覆盖非受管项目，也不表示任何外部项目已经自动接入。
+
 统一环境接入状态检查：
 
 ```bash

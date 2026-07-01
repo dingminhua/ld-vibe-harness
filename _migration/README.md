@@ -97,3 +97,5 @@
 `_migration/16A-receipt-storage-decision.md` 记录阶段 16A 的 receipt 存储判断。它决定当前不建立独立 runtime receipt 事实源；需要长期保留的 receipt 内容必须先由 AI 定性，并分流到验证证据、WorkCase 关闭证据、Git commit records、迁移记录或其它既有事实对象。
 
 `_migration/17A-web-confirm-ui-write-boundary.md` 记录阶段 17A 的 Web Confirm UI 与通用写入边界判断。它确认 Spark quick create 仍是当前唯一正式 Web 写入；通用事实对象写入、WorkCase 状态推进写入和完整 Confirm UI 继续后置，启用前必须重新进入 Human Gate 和 tests/web 合同验证。
+
+`_migration/18A-governed-project-hook-adapter.md` 记录阶段 18A 的外部受管项目 Hook adapter。它说明 `code/governed_hook_adapter.py` 已支持受管项目范围内的 `git.commit-msg` status/install/uninstall，并在 install/uninstall 前要求显式 Human Gate；它不表示任何外部项目已自动安装 Hook。

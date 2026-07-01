@@ -4,6 +4,7 @@ import argparse
 from dataclasses import dataclass
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -72,8 +73,15 @@ def template_path(ldvh_root: Path = ROOT) -> Path:
     return ldvh_root / HOOKS_PATH / COMMIT_MSG_HOOK
 
 
-def render_commit_msg_hook(ldvh_root: Path = ROOT) -> str:
-    return template_path(ldvh_root).read_text(encoding="utf-8")
+def render_commit_msg_hook(ldvh_root: Path = ROOT, embed_ldvh_root: bool = False) -> str:
+    text = template_path(ldvh_root).read_text(encoding="utf-8")
+    if not embed_ldvh_root:
+        return text
+    resolved_root = shlex.quote(ldvh_root.resolve().as_posix())
+    return text.replace(
+        "LDVH_ROOT=${LDVH_ROOT:-$REPO_ROOT}",
+        f"LDVH_ROOT=${{LDVH_ROOT:-{resolved_root}}}",
+    )
 
 
 def inspect_status(repo: Path, ldvh_root: Path = ROOT) -> HookStatus:
@@ -99,12 +107,12 @@ def _backup_path(path: Path) -> Path:
     return path.with_name(f"{path.name}.ldvh-backup-{timestamp}")
 
 
-def install(repo: Path, ldvh_root: Path = ROOT) -> HookStatus:
+def install(repo: Path, ldvh_root: Path = ROOT, embed_ldvh_root: bool = False) -> HookStatus:
     resolved_repo = resolve_repo(repo)
     target_dir = resolved_repo / HOOKS_PATH
     target_dir.mkdir(parents=True, exist_ok=True)
     target_hook = target_dir / COMMIT_MSG_HOOK
-    template = render_commit_msg_hook(ldvh_root)
+    template = render_commit_msg_hook(ldvh_root, embed_ldvh_root=embed_ldvh_root)
 
     if target_hook.exists() and target_hook.read_text(encoding="utf-8") != template:
         shutil.copy2(target_hook, _backup_path(target_hook))
@@ -143,6 +151,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("command", choices=["status", "install", "uninstall"])
     parser.add_argument("--repo", default=ROOT.as_posix(), help="target repository root")
     parser.add_argument("--ldvh-root", default=ROOT.as_posix(), help="LDVH v3 root containing hooks/ and code/")
+    parser.add_argument(
+        "--embed-ldvh-root",
+        action="store_true",
+        help="render the hook with this LDVH root as the default validator location",
+    )
     return parser
 
 
@@ -152,7 +165,7 @@ def main(argv: list[str] | None = None) -> int:
     ldvh_root = Path(args.ldvh_root).resolve()
 
     if args.command == "install":
-        status = install(repo, ldvh_root)
+        status = install(repo, ldvh_root, embed_ldvh_root=args.embed_ldvh_root)
     elif args.command == "uninstall":
         status = uninstall(repo, ldvh_root)
     else:
