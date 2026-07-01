@@ -67,3 +67,5 @@
 `_migration/10E-runtime-adapter-feasibility.md` 记录 runtime adapter 可行性和统一入口。它说明当前支持两类接入：真实 `git.commit-msg` Hook 和 manual/external adapter-ready 三件套；`code/runtime_adapter.py` 只提供统一 payload/CLI 转发，不声明 session、tool 或 completion 事件已被真实环境自动触发。
 
 `_migration/10F-environment-status-check.md` 记录环境接入状态检查入口。它说明 `code/environment_status.py` 统一报告真实 `git.commit-msg` Hook 与 manual runtime entrypoints 的可用/接入状态；该入口只读诊断当前边界，不安装新 Hook，也不声明 manual 入口已自动触发。
+
+`_migration/10G-rules-environment-entry-audit.md` 记录 Rules / 外部环境入口审计。它说明 `code/environment_entry_audit.py` 已确认当前除 `git.commit-msg` 外，没有可复现证据证明 Rules、tool hook、completion hook、Codex repo 指令或外部 runtime adapter 已自动触发；相关能力保持后置。

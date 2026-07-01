@@ -1941,6 +1941,112 @@ def test_environment_status_blocks_missing_commit_hook(tmp_path: Path) -> None:
     assert "ENV_COMMIT_MSG_HOOK_NOT_INSTALLED" in _diagnostic_codes(payload)
 
 
+def test_environment_entry_audit_defers_non_commit_entries(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    (repo / "rules").mkdir()
+    (repo / "rules" / ".gitkeep").write_text("", encoding="utf-8")
+    (repo / "skills").mkdir()
+    (repo / "skills" / ".gitkeep").write_text("", encoding="utf-8")
+    subprocess.run(
+        [
+            sys.executable,
+            "code/install_git_hooks.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/environment_entry_audit.py",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    candidates = {candidate["id"]: candidate for candidate in payload["candidates"]}
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["integrated_entrypoints"] == ["git.commit-msg"]
+    assert payload["summary"]["rules_entry_integrated"] is False
+    assert payload["summary"]["tool_hook_integrated"] is False
+    assert payload["summary"]["completion_hook_integrated"] is False
+    assert payload["summary"]["codex_environment_entry_integrated"] is False
+    assert candidates["git.commit-msg"]["status"] == "integrated"
+    assert candidates["runtime.pre_tool_use.auto"]["status"] == "deferred"
+    assert candidates["runtime.pre_tool_use.auto"]["manual_fallback"] == "code/pre_tool_use.py"
+    assert candidates["rules.thin-reference"]["status"] == "deferred"
+    assert candidates["skills.external-wrapper"]["status"] == "deferred"
+    assert candidates["codex.repo-instructions"]["status"] == "absent"
+    assert payload["decision"]["next_step"] == "defer_auto_runtime_and_rules_until_real_trigger_exists"
+    assert payload["diagnostics"] == []
+
+
+def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    (repo / "AGENTS.md").write_text("# Repo instructions\n", encoding="utf-8")
+    subprocess.run(
+        [
+            sys.executable,
+            "code/install_git_hooks.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/environment_entry_audit.py",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    candidates = {candidate["id"]: candidate for candidate in payload["candidates"]}
+    assert payload["summary"]["integrated_entrypoints"] == ["git.commit-msg"]
+    assert candidates["codex.repo-instructions"]["status"] == "available"
+    assert candidates["codex.repo-instructions"]["integrated"] is False
+    assert payload["summary"]["codex_environment_entry_integrated"] is False
+    assert "ENV_CODEX_ENTRY_FILES_NOT_INTEGRATED" in _diagnostic_codes(payload)
+
+
 def test_runtime_completion_claim_requires_verification_evidence() -> None:
     runtime = ldvh_specs.build_runtime_event(ROOT, event="completion_claim")
 
