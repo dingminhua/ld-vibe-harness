@@ -619,6 +619,71 @@ def test_verification_validator_reports_missing_failure_blocking_rule(tmp_path: 
     assert "FAILURE_BLOCKING_RULE_MISSING" in _diagnostic_codes(result)
 
 
+def test_implementation_domain_boundaries_are_code_consumable() -> None:
+    result = ldvh_specs.build_validation(ROOT)
+
+    assert "SPECS_IMPLEMENTATION_DOMAIN_BOUNDARY_MISSING" not in _diagnostic_codes(result)
+    assert "CODE_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING" not in _diagnostic_codes(result)
+    assert "WEB_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING" not in _diagnostic_codes(result)
+    assert "TEST_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING" not in _diagnostic_codes(result)
+
+
+def test_specs_validator_reports_missing_implementation_domain_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/04-Specs基础规范.md",
+        "实现域实践细节由对应实现域承接",
+        "实践细节由对应位置承接",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "SPECS_IMPLEMENTATION_DOMAIN_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_code_validator_reports_missing_code_practice_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/07-Code确定性执行规范.md",
+        "Code 实践由 `code/` 和 `code/docs/` 承接",
+        "Code 实践由实现域承接",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "CODE_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_code_validator_reports_missing_web_practice_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/08-Web信息同步规范.md",
+        "Web 实践由 `web/` 和 `web/docs/` 承接",
+        "Web 实践由实现域承接",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "WEB_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_code_validator_reports_missing_test_practice_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/09-测试与验证规范.md",
+        "V3 不强制要求 `tests/docs/` 作为固定目录。",
+        "V3 不设置固定测试文档目录。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "TEST_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
 def test_git_commit_action_template_is_code_consumable() -> None:
     result = ldvh_specs.build_validation(ROOT)
     rows = {row["结构"]: row["最小要求"] for row in result["git_commit_action_template"]}

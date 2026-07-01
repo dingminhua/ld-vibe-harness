@@ -257,6 +257,59 @@ WEB_SYNC_FORBIDDEN_PHRASES = [
     "Code 输出作为展示辅助",
     "Code 输出喂页面数据",
 ]
+IMPLEMENTATION_DOMAIN_BOUNDARY_REQUIREMENTS = [
+    {
+        "code": "SPECS_IMPLEMENTATION_DOMAIN_BOUNDARY_MISSING",
+        "path": SHORT_SPEC_REFS["04"],
+        "section": "Specs正文结构",
+        "message": "04 必须声明 specs 只定义需求、规则、契约和边界，实践细节由实现域承接",
+        "terms": [
+            "需求、规则、契约、边界",
+            "实现域实践细节",
+            "`code/`",
+            "`web/`",
+            "`tests/`",
+            "不得由实现域文档、代码、测试、review 或迁移材料反向改写 specs",
+        ],
+    },
+    {
+        "code": "CODE_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING",
+        "path": SHORT_SPEC_REFS["07"],
+        "section": "归口边界",
+        "message": "07 必须声明 Code 实践由 code/ 和 code/docs/ 承接",
+        "terms": [
+            "能力契约、输入输出、诊断、source_refs、验证和越界条件",
+            "具体实现语言、框架、内部模块结构",
+            "`code/` 和 `code/docs/`",
+            "不得反向改写 specs、事实源、Human Gate、Web 契约或测试治理",
+        ],
+    },
+    {
+        "code": "WEB_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING",
+        "path": SHORT_SPEC_REFS["08"],
+        "section": "归口边界",
+        "message": "08 必须声明 Web 实践由 web/ 和 web/docs/ 承接",
+        "terms": [
+            "展示契约、来源回指、同源独立读取、受控交互、缓存和写入边界",
+            "具体页面、组件、API 路由",
+            "`web/` 和 `web/docs/`",
+            "不得反向改写 specs、事实源、Human Gate、Code 契约或测试治理",
+        ],
+    },
+    {
+        "code": "TEST_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING",
+        "path": SHORT_SPEC_REFS["09"],
+        "section": "归口边界",
+        "message": "09 必须声明测试实践由 tests/ 承接且不强制 tests/docs",
+        "terms": [
+            "验证要求、测试治理、证据边界、失败阻断、Human 验收和同步触发",
+            "`tests/`",
+            "fixtures、正反例、回归样例",
+            "不得反向改写 specs、事实源、Human Gate、Code/Web 契约或完成声明",
+            "不强制要求 `tests/docs/`",
+        ],
+    },
+]
 GOVERNED_PROJECTS_ROOT_FIELDS = {"product_name", "product_description", "projects"}
 GOVERNED_PROJECTS_ITEM_FIELDS = {"id", "path", "name", "description", "git"}
 GOVERNED_PROJECTS_REQUIRED_ITEM_FIELDS = {"id", "path"}
@@ -2162,6 +2215,41 @@ def validate_web_sync_boundaries(root: Path = ROOT) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_implementation_domain_boundaries(root: Path = ROOT) -> list[Diagnostic]:
+    raw_by_path: dict[str, str] = {}
+    sections_by_path: dict[str, dict[str, dict[str, str]]] = {}
+    diagnostics: list[Diagnostic] = []
+
+    for requirement in IMPLEMENTATION_DOMAIN_BOUNDARY_REQUIREMENTS:
+        path = requirement["path"]
+        if path not in raw_by_path:
+            raw_by_path[path] = (root / path).read_text(encoding="utf-8")
+            sections_by_path[path] = h2_sections(raw_by_path[path])
+        section = sections_by_path[path].get(requirement["section"])
+        if not section:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    requirement["code"],
+                    path,
+                    f"缺少可消费章节: {requirement['section']}",
+                )
+            )
+            continue
+        missing_terms = [term for term in requirement["terms"] if term not in section["body"]]
+        if missing_terms:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    requirement["code"],
+                    path,
+                    f"{requirement['message']}: {', '.join(missing_terms)}",
+                )
+            )
+
+    return diagnostics
+
+
 def validate_governed_project_spec_boundaries(root: Path = ROOT) -> list[Diagnostic]:
     path = SHORT_SPEC_REFS["10"]
     raw = (root / path).read_text(encoding="utf-8")
@@ -2639,6 +2727,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_fact_model_boundaries(root))
     diagnostics.extend(validate_fact_source_and_verification_boundaries(root))
     diagnostics.extend(validate_web_sync_boundaries(root))
+    diagnostics.extend(validate_implementation_domain_boundaries(root))
     diagnostics.extend(validate_governed_project_spec_boundaries(root))
     diagnostics.extend(validate_governed_projects_config(root))
     diagnostics.extend(validate_attachment_contracts(root))

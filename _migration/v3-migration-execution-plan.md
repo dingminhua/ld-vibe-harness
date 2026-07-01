@@ -308,6 +308,16 @@ specs 迁入
 5. 阶段 15-18 分别评估 runtime 自动入口、稳定 receipt、Web Confirm UI 和外部受管项目 Hook adapter；
 6. 阶段 19 再判断 `_migration` 是否可以归档或删除。
 
+12A 完成记录：
+
+1. `specs/04-Specs基础规范.md` 已声明 specs 只定义需求、规则、契约、边界、Human Gate、Stop Conditions 和验证要求；
+2. `specs/07-Code确定性执行规范.md` 已声明 Code 实践由 `code/` 和 `code/docs/` 承接；
+3. `specs/08-Web信息同步规范.md` 已声明 Web 实践由 `web/` 和 `web/docs/` 承接；
+4. `specs/09-测试与验证规范.md` 已声明测试实践由 `tests/` 承接，且 V3 不强制要求 `tests/docs/`；
+5. `code/ldvh_specs.py` 和 `tests/code/test_ldvh_specs_validate.py` 已增加实现域实践边界检查和正反例；
+6. `_migration/12A-implementation-domain-boundary.md` 已记录本阶段承接、边界和验证要求；
+7. 本阶段不新增 Code/Web/Tests 具体实践文档，不改变 runtime、Hook、Web 写入或测试分层能力。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。

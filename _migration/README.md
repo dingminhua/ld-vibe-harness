@@ -85,3 +85,5 @@
 `_migration/11G-migration-dependency-independence.md` 记录迁移层依赖独立处理。formal review hash gate 已迁到 `reviews/formal/`；`_migration/reviews/` 不再是稳定 gate 读取位置，但 `_migration` 仍保留历史证据和迁移测试。
 
 `_migration/12-19-v3-post-mainline-work-plan.md` 记录 V3 主线验收后的后续工作计划。它把阶段 12-19 分为 specs 与实现域边界补强、WorkCase 最小行动模板、测试性能分层、runtime 自动入口评估、稳定 receipt 存储、Web Confirm UI、外部受管项目 Hook adapter 和 `_migration` 归档判断；它不授权这些能力已经生效。
+
+`_migration/12A-implementation-domain-boundary.md` 记录阶段 12A 的实现域实践边界补强。它说明 specs 只定义需求、规则、契约和边界，Code/Web/Tests 的实践分别由 `code/`、`code/docs/`、`web/`、`web/docs/`、`tests/` 和对应实现域承接；它不新增具体实现文档、Web 页面、测试分层或环境入口能力。

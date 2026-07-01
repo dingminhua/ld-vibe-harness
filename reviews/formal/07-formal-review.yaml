@@ -1,16 +1,16 @@
 target_spec: "specs/07-Code确定性执行规范.md"
-target_sha256: "fc54f861c77bbc9ee7cae4369f8baef9f1728d04812cce32ef42cbd05573c6ed"
+target_sha256: "17595edc7709316ec065d61bd3f6274b83e8e03284d3cd9d6ceaa2d2dd48c506"
 change_type: "modification"
 mapping_evidence:
-  path: "_migration/7-governed-project-admission.md"
+  path: "_migration/12A-implementation-domain-boundary.md"
 code_verification:
-  command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_ldvh_specs_validate.py tests/code/test_formal_specs.py -q && python3 code/test_runner.py targeted --changed specs/04-Specs基础规范.md --changed specs/07-Code确定性执行规范.md --changed specs/08-Web信息同步规范.md --changed specs/09-测试与验证规范.md --changed code/ldvh_specs.py --changed tests/code/test_ldvh_specs_validate.py"
   passed: true
-  receipt: "Formal specs validator and tests/code cover 07 after adding the governed_project_resolution Code boundary."
+  receipt: "Stage 12A validation covers the 07 Code practice boundary and the Code/tests checks that keep code/docs as implementation-domain material."
 subagent_review:
-  agent_id: "codex-local-7-governed-project-review"
+  agent_id: "codex-local-12a-implementation-domain-boundary-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review confirms 07 treats governed project parsing as read-only Code output and does not claim Hook or environment integration."
+  receipt: "Local review confirms 07 defines Code capability contracts and diagnostics while leaving implementation language, modules, CLI practice and maintenance notes to code/ and code/docs/."
   unresolved_blockers: []
 warnings: []

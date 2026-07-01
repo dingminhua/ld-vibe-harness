@@ -1,16 +1,16 @@
 target_spec: "specs/04-Specs基础规范.md"
-target_sha256: "d3fe1ea551efe91bd0c29574c158c886c2f20699f4d17e7b1ab80a118cdda215"
-change_type: "migration"
+target_sha256: "0f726705e419663bb8a124a83c6a80138fad2f82efadb32499e2d5fe24d276ae"
+change_type: "modification"
 mapping_evidence:
-  path: "_migration/v3-formal-spec-numbering-decision.md"
+  path: "_migration/12A-implementation-domain-boundary.md"
 code_verification:
-  command: "python3 -m pytest -q && python3 -m pytest -q _migration/tests"
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_ldvh_specs_validate.py tests/code/test_formal_specs.py -q && python3 code/test_runner.py targeted --changed specs/04-Specs基础规范.md --changed specs/07-Code确定性执行规范.md --changed specs/08-Web信息同步规范.md --changed specs/09-测试与验证规范.md --changed code/ldvh_specs.py --changed tests/code/test_ldvh_specs_validate.py"
   passed: true
-  receipt: "Formal tests and migration tests passed after Specs 基础规范 was renumbered to 04 and identity references were synchronized."
+  receipt: "Stage 12A validation covers the 04 implementation-domain boundary and the Code/tests checks that keep specs from carrying implementation practice details."
 subagent_review:
-  agent_id: "019f1731-2492-7f30-affa-ec1568587eec"
-  reviewer: "Ramanujan"
+  agent_id: "codex-local-12a-implementation-domain-boundary-review"
+  reviewer: "Codex"
   verdict: "pass"
-  receipt: "Subagent reviewed current code/tests numbering risks and confirmed 04 is now Specs 基础规范; old 04 行动编排 review target must not remain as V3 target."
+  receipt: "Local review confirms 04 defines specs as requirements, rules, contracts and boundaries only; implementation practice remains in Code/Web/Tests domains and cannot rewrite specs."
   unresolved_blockers: []
 warnings: []

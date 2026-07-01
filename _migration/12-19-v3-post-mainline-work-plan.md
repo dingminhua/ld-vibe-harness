@@ -46,6 +46,10 @@
 4. 在 `specs/09-测试与验证规范.md` 明确 `tests/` 承接测试实现，不强行新建 `tests/docs/`；
 5. 增加 Code/tests 检查，防止该边界再次退化为口头约定。
 
+完成记录：
+
+阶段 12A 已按上述动作完成，记录见 `_migration/12A-implementation-domain-boundary.md`。本阶段只补强职责边界和可验证检查，不新增具体实现域实践文档，也不改变 Hook、runtime、Web 写入或测试分层能力。
+
 ## 阶段 13：WorkCase 最小行动模板
 
 目标：

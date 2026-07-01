@@ -1,16 +1,16 @@
 target_spec: "specs/08-Web信息同步规范.md"
-target_sha256: "f98fbca1423fdd5b47f28725263b853759b252fb1ecbdc282c7ef0d0cc190dee"
-change_type: "addition"
+target_sha256: "2508c9df4b4a3c34460ce257cf03f461969dae3e51d0a206ee1631841aa60741"
+change_type: "modification"
 mapping_evidence:
-  path: "_migration/9D-web-data-contract-migration.md"
+  path: "_migration/12A-implementation-domain-boundary.md"
 code_verification:
-  command: "npm --prefix web run test:web:api && npm --prefix web run check && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_ldvh_specs_validate.py tests/code/test_formal_specs.py -q && python3 code/test_runner.py targeted --changed specs/04-Specs基础规范.md --changed specs/07-Code确定性执行规范.md --changed specs/08-Web信息同步规范.md --changed specs/09-测试与验证规范.md --changed code/ldvh_specs.py --changed tests/code/test_ldvh_specs_validate.py"
   passed: true
-  receipt: "Formal specs validator and Web tests cover the updated 08 Web sync candidate with 9D independent reading, source_refs, cache and Spark quick create boundaries."
+  receipt: "Stage 12A validation covers the 08 Web practice boundary and the Code/tests checks that keep web/docs as implementation-domain material."
 subagent_review:
-  agent_id: "019f16f5-308a-7091-98cf-bb1247f4b748"
-  reviewer: "Lorentz"
+  agent_id: "codex-local-12a-implementation-domain-boundary-review"
+  reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local 9D review confirms Web API data path reads Git-backed V3 facts independently from Code output; remaining Confirm UI and visual regression work is explicitly post-9D."
+  receipt: "Local review confirms 08 defines Web source, display and interaction contracts while leaving pages, components, API aggregation, design system and cache practice to web/ and web/docs/."
   unresolved_blockers: []
 warnings: []
