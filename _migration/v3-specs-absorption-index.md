@@ -158,6 +158,7 @@ V3 术语使用：
 | Web 表现层 | 9D Web 数据契约迁移 | 已保留既有表现层，不重做页面设计；只迁入数据契约、来源回指、独立读取和验证边界 | 已完成，不阻断后续 |
 | Web DTO/API、Confirm UI、缓存同步、轻写入、Web 回归 | 9D Web 数据契约迁移 | DTO/API、来源回指、缓存 no-store、Spark quick create 轻写入和基础 Web 回归已迁入；完整 Confirm UI、视觉回归和通用写入继续后置 | 数据/API 边界已完成；后置项不阻断 9F |
 | WorkCase 创建、方案审核、结果复核、关闭确认行动模板实例 | 9E 行动模板候选后置 | 已完成后置记录。候选不作为 V3 主线切换范围；后续必须满足来源、字段、Code/Web 入口、Human Gate、测试和环境边界后再判断是否正式迁入 | 否 |
+| 测试策略与进度反馈 | 9F 主线切换收口 / 后续测试可用性增强 | 已开始执行。新增 `code/test_runner.py` 和 root npm scripts，提供 smoke / targeted / full 三档、阶段进度、耗时 summary 和 full regression `--durations=20` | 不阻断 soft mainline；pytest-sugar / xdist 等依赖后续按稳定性再评估 |
 | V2 知识地图页面、输入范围表、投影 schema 和事实层 | legacy_alias / 废弃 | 不恢复。任务导航能力由 Action Guide / 行动指南承接 | 否 |
 | Skill 顶层机制、Skill registry、Skill 执行闭环 | legacy_alias / 后续外部包装候选 | 不作为 V3 顶层机制；有价值内容只转普通行动步骤、Action Guide 提示或环境包装 | 否 |
 | `_migration` 依赖 | 9A / 9F | 9F 决定继续保留 tracked `_migration` 作为历史审计、formal review hash gate 和迁移测试证据；它不参与日常规则判断和事实维护 | 不阻断 soft mainline；归档或删除需后续替代 gate/tests 并经 Human Gate |

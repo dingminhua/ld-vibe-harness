@@ -54,4 +54,4 @@
 
 `_migration/9E-action-template-candidate-deferral.md` 记录阶段 9E 的行动模板候选后置结论。它说明 Git 提交行动仍是当前唯一正式模板示范，WorkCase 创建、方案审核、执行推进、结果复核、关闭确认、Rules 同步审查和环境入口适配继续作为后置候选；它不授权正式行动模板实例、Hook 启用、Web 通用写入或 Human Gate 自动完成。
 
-`_migration/9F-mainline-soft-switch-closure.md` 记录阶段 9F 的 V3 soft mainline 收口结论。它说明 V3 已成为日常规则和事实维护主线，但 `environment_integrated=false`、`hook_integrated=false`、`authorization=none` 仍是当前边界；它不授权 hard switch、Hook 安装、Rules/adapter 启用、通用 Web 写入或 Human Gate 自动完成。
+`_migration/9F-mainline-soft-switch-closure.md` 记录阶段 9F 的 V3 soft mainline 收口结论。它说明 V3 已成为日常规则和事实维护主线，并开始用 `code/test_runner.py` 承接 smoke / targeted / full 分层测试入口；但 `environment_integrated=false`、`hook_integrated=false`、`authorization=none` 仍是当前边界。它不授权 hard switch、Hook 安装、Rules/adapter 启用、通用 Web 写入或 Human Gate 自动完成。

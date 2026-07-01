@@ -40,9 +40,16 @@ authorization: none
 | 查事实对象 | `ldvh-base/` | Code/Web 可读取和诊断，但不得替代事实源 |
 | 查项目归属 | `LDVH-GOVERNED-PROJECTS.yaml` + `python3 code/specs_validate.py governed-projects ...` | 静态解析不等于 Hook 已拦截 |
 | 规则/事实校验 | `python3 code/specs_validate.py all --format text --fail-on-diagnostics` | 输出是诊断，不是授权 |
+| 分层测试入口 | `python3 code/test_runner.py smoke`、`python3 code/test_runner.py targeted --changed <path>`、`python3 code/test_runner.py full` | runner 只组织验证入口和进度显示，不改变测试语义 |
 | 静态闭环演练 | `python3 code/specs_validate.py e2e --target-path <path> --format text --fail-on-diagnostics` | `environment_integrated=false` 仍是预期 |
 | 提交前检查 | `python3 code/specs_validate.py commit-gate ... --fail-on-diagnostics` 或 `python3 code/commit_validate.py ...` | 可手动运行；不声称所有提交路径都被自动拦截 |
 | Web 验证 | `npm --prefix web run test:web:api`、`npm --prefix web run check`、`npm --prefix web run build` | Web API 轻写入仅限 Spark quick create |
+
+测试策略采用三档：
+
+1. `smoke`：秒级反馈，覆盖 specs validator 和 formal review hash gate；
+2. `targeted`：按 changed path 选择 Code、Web、迁移测试或事实实例相关验证；
+3. `full`：阶段收口、主线切换、跨域迁移或高风险回归时运行，包含 e2e、Code/迁移 pytest、Web API/typecheck/build，并输出阶段进度和耗时。
 
 ## 3. `_migration` 保留与归档条件
 
@@ -93,3 +100,11 @@ python3 code/specs_validate.py commit-gate --format text --fail-on-diagnostics -
 5. `npm --prefix web run check` 通过；
 6. `npm --prefix web run build` 通过，Vite 仅提示 chunk size warning；
 7. commit gate 对计划提交消息通过，`read_plan_consumed=true`、diagnostics 0、`Authorization: none`。
+
+后续测试策略增强已开始执行：
+
+1. 新增 `code/test_runner.py`，提供 `smoke`、`targeted` 和 `full` 三档入口；
+2. runner 输出 `[n/total]` 阶段进度、每阶段命令、结果和耗时 summary；
+3. `full` 使用 `--durations=20` 输出慢测试统计；
+4. 根 `package.json` 新增 `test:smoke`、`test:targeted` 和 `test:full` scripts；
+5. 该增强不引入第三方测试依赖；后续如需要更细测试级进度，再评估 `pytest-sugar` 或 `pytest-xdist` 作为 dev/test dependency。

@@ -89,7 +89,7 @@ specs 迁入
 | 9C 事实对象完整迁移 | 已完成 | 完整迁移 Spark、WorkCase、ADR、Pitfall、Study 字段 schema、实例路径和真实 `ldvh-base/` 实例，编号按 V3 重构 | 字段丢失、语义冲突、编号冲突或真实实例不可逆转换时 |
 | 9D Web 数据契约迁移 | 已完成 | 保留既有表现层，迁入 Web tracked 资产、API 数据契约、来源回指、独立读取、Confirm UI 边界、缓存同步、Spark quick create 轻写入边界和回归测试 | Web 写入、Confirm UI 或缓存策略改变 Human 可见状态时 |
 | 9E 行动模板候选后置 | 已完成 | 记录 WorkCase 创建、方案审核、执行推进、结果复核、关闭确认、Rules 同步审查和环境入口适配候选的后置理由与准入条件 | 若要求把非提交行动模板纳入主线切换阻断范围 |
-| 9F 主线切换收口 | 已完成 | 用户文档、soft switch 启用边界、`_migration` 保留/归档条件和最终验证 | 启用 hard switch、Hook、Rules、runtime adapter 或接受残留风险时 |
+| 9F 主线切换收口 | 已完成 | 用户文档、soft switch 启用边界、测试策略收口、`_migration` 保留/归档条件和最终验证 | 启用 hard switch、Hook、Rules、runtime adapter 或接受残留风险时 |
 
 阶段 5B 子阶段状态：
 
@@ -221,7 +221,8 @@ specs 迁入
 2. 根 `README.md` 已更新为日常使用说明，明确 `specs/`、`ldvh-base/`、`code/`、`web/` 和 `_migration` 的当前职责；
 3. V3 当前可作为日常规则和事实维护主线，但 `environment_integrated=false`、`hook_integrated=false`、`authorization=none` 仍是预期边界；
 4. `_migration` 当前保留为历史审计、formal review hash gate 和迁移测试证据，不作为日常规则源或事实维护入口；
-5. hard switch、Hook / Rules / runtime adapter、完整 Confirm UI、通用 Web 写入和非提交正式行动模板仍后置，启用前必须进入 Human Gate。
+5. 测试策略开始采用 `code/test_runner.py` 的 `smoke` / `targeted` / `full` 分层入口，runner 提供阶段进度和耗时 summary；
+6. hard switch、Hook / Rules / runtime adapter、完整 Confirm UI、通用 Web 写入和非提交正式行动模板仍后置，启用前必须进入 Human Gate。
 
 阶段 5B 术语校正：
 

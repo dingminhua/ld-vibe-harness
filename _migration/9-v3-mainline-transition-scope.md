@@ -21,7 +21,7 @@
 | 9C 事实对象完整迁移 | 让 V3 承接长期事实 | 20-24 完整字段、schema、实例路径、真实 `ldvh-base/` 实例和字段级 validator | 不照搬 V2 编号、目录权威或旧 TaskPlan/Task/SubTask 兼容层 |
 | 9D Web 数据契约迁移 | 让已有 Web 表现消费 V3 数据边界 | 已完成。迁入 Web tracked 资产、API 数据契约、页面数据来源、Confirm UI 边界、缓存同步、Spark quick create 轻写入白名单和 Web 回归测试 | 不重做表现层，不让 Web 依赖 Code 输出作为主数据源，不启用通用 Web 写入 |
 | 9E 行动模板候选后置 | 保持行动模板不早产 | 已完成。记录 WorkCase 创建、方案审核、执行推进、结果复核、关闭确认、Rules 同步审查和环境入口适配候选的后置理由与准入条件 | 不作为 V3 主线切换阻断项 |
-| 9F 主线切换收口 | 让 V3 成为日常规则和事实维护主线 | 已完成。建立 soft mainline 用户文档、启用边界、迁移层保留/归档条件和最终验证声明 | 不启用 Hook、Rules、runtime adapter 或 hard switch |
+| 9F 主线切换收口 | 让 V3 成为日常规则和事实维护主线 | 已完成。建立 soft mainline 用户文档、启用边界、测试策略收口、迁移层保留/归档条件和最终验证声明 | 不启用 Hook、Rules、runtime adapter 或 hard switch |
 
 ## 3. 需要 Human 参与的情况
 
@@ -52,7 +52,8 @@
 4. Web 保留原表现层，但数据契约、来源回指、写入边界和回归验证对齐 V3；
 5. Action Guide / 行动指南完全承接 V2 知识地图导航能力，旧知识地图不再作为正式概念；
 6. `_migration` 只保留为历史审计、formal review hash gate 和迁移测试证据，不再参与日常规则判断和事实维护；
-7. 当前切换模式是 soft mainline，`environment_integrated=false`、`hook_integrated=false`、`authorization=none` 仍是预期边界。
+7. 当前切换模式是 soft mainline，`environment_integrated=false`、`hook_integrated=false`、`authorization=none` 仍是预期边界；
+8. 测试入口采用 smoke / targeted / full 分层，日常小改使用目标验证，阶段收口、跨域迁移或高风险回归使用 full regression。
 
 ## 5. 当前下一步
 

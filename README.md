@@ -25,6 +25,24 @@ authorization: none
 
 ## 常用验证
 
+优先使用分层测试入口。日常小改用 smoke 或 targeted，阶段收口、跨域迁移和高风险回归再跑 full：
+
+```bash
+python3 code/test_runner.py smoke
+python3 code/test_runner.py targeted --changed specs/09-测试与验证规范.md
+python3 code/test_runner.py full
+```
+
+等价 npm scripts：
+
+```bash
+npm run test:smoke
+npm run test:targeted -- --changed web/api/app.ts
+npm run test:full
+```
+
+底层验证命令仍可直接运行：
+
 ```bash
 python3 code/specs_validate.py all --format text --fail-on-diagnostics
 python3 code/specs_validate.py e2e --target-path tests/code/test_ldvh_specs_validate.py --format text --fail-on-diagnostics
@@ -36,7 +54,7 @@ npm --prefix web run check
 慢速全量测试适用于阶段收口、主线切换、跨域迁移或高风险回归：
 
 ```bash
-python3 -m pytest tests/code _migration/tests -q
+python3 code/test_runner.py full
 ```
 
 ## 当前正式 specs 编号
