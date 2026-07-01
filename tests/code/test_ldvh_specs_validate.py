@@ -1004,6 +1004,76 @@ def test_specs_validate_cli_governed_projects_json() -> None:
     assert payload["resolution"]["governed_via"] == "path"
 
 
+def test_e2e_rehearsal_covers_static_workflow() -> None:
+    result = ldvh_specs.build_e2e_rehearsal(
+        ROOT,
+        target_path="tests/code/test_ldvh_specs_validate.py",
+        task="阶段 8 端到端闭环测试",
+    )
+
+    assert result["metadata"]["read_only"] is True
+    assert result["metadata"]["authorization"] == "none"
+    assert result["metadata"]["environment_integrated"] is False
+    assert result["summary"]["status"] == "ok"
+    assert result["summary"]["governed"] is True
+    assert result["summary"]["validation_status"] == "ok"
+    assert result["summary"]["blocking"] == 0
+    assert [stage["stage"] for stage in result["workflow"]] == [
+        "governed_project_resolution",
+        "session_start",
+        "acknowledge_read_plan",
+        "pre_tool_use",
+        "validation",
+        "git_commit_msg",
+        "completion_claim",
+    ]
+    assert {stage["status"] for stage in result["workflow"]} == {"ok"}
+    assert result["governed_project"]["governed_project_id"] == "ldvh-v3"
+    assert result["preflight"]["summary"]["status"] == "diagnostic_clear"
+    assert result["git_commit_msg"]["summary"]["status"] == "ok"
+    assert result["completion_claim"]["summary"]["status"] == "ok"
+    assert result["closure_assessment"]["static_rehearsal_complete"] is True
+    assert result["closure_assessment"]["authorization"] == "none"
+    assert any("Hook" in item for item in result["closure_assessment"]["postponed_boundaries"])
+
+
+def test_e2e_rehearsal_output_has_no_authorization_terms() -> None:
+    result = ldvh_specs.build_e2e_rehearsal(
+        ROOT,
+        target_path="tests/code/test_ldvh_specs_validate.py",
+    )
+    serialized = json.dumps(result, ensure_ascii=False)
+
+    assert "approved" not in serialized
+    assert "allowed" not in serialized
+    assert "human_gate_passed" not in serialized
+
+
+def test_specs_validate_cli_e2e_json() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/specs_validate.py",
+            "e2e",
+            "--target-path",
+            "tests/code/test_ldvh_specs_validate.py",
+            "--format",
+            "json",
+            "--fail-on-diagnostics",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["stages"] == 7
+    assert payload["summary"]["environment_integrated"] is False
+    assert payload["closure_assessment"]["static_rehearsal_complete"] is True
+
+
 def test_action_guide_session_start_read_plan() -> None:
     guide = ldvh_specs.build_action_guide(
         ROOT,

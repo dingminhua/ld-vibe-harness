@@ -78,7 +78,7 @@ specs 迁入
 - 术语表新增`规则源`、`来源依据`、`必读依据`条目；
 - code/ldvh_specs.py 同步字段名和内部键名。
 
-当前状态：术语整治、规则/事实边界修正、5B-1/2/3/4/5、阶段 6 和阶段 7 均已完成。阶段 6 完成范围是：Spark、WorkCase、ADR、Pitfall、Study 五个事实对象成员已进入 V3 最小成员规范，Code/tests 可消费其成员身份、状态闭集、实例事实源位置、收口/归档/分流口径和 Human Gate。阶段 7 完成范围是：V3 已建立 `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-受管项目接入规范.md`、`10.Att.01` 和 governed project parser/resolver/tests，可静态判断 target/cwd/Git common-dir 是否命中受管项目。阶段 6/7 仍不包含真实 `ldvh-base` 实例迁移、完整字段表、Web 写入、Hook、commit gate、runtime adapter 或正式行动模板实例；这些后置到实现域、环境入口接入和 V3 正式启用前处理。
+当前状态：术语整治、规则/事实边界修正、5B-1/2/3/4/5、阶段 6、阶段 7 和阶段 8 均已完成。阶段 6 完成范围是：Spark、WorkCase、ADR、Pitfall、Study 五个事实对象成员已进入 V3 最小成员规范，Code/tests 可消费其成员身份、状态闭集、实例事实源位置、收口/归档/分流口径和 Human Gate。阶段 7 完成范围是：V3 已建立 `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-受管项目接入规范.md`、`10.Att.01` 和 governed project parser/resolver/tests，可静态判断 target/cwd/Git common-dir 是否命中受管项目。阶段 8 完成范围是：V3 已建立只读 e2e rehearsal，把受管项目解析、session_start、read_plan acknowledgement、pre_tool_use、validation、git_commit_msg 和 completion_claim 串成静态闭环。阶段 6/7/8 仍不包含真实 `ldvh-base` 实例迁移、完整字段表、Web 写入、Hook、commit gate、runtime adapter 或正式行动模板实例；这些后置到产品化、环境入口接入和 V3 正式启用前处理。
 
 阶段 5B 子阶段状态：
 
@@ -97,6 +97,7 @@ specs 迁入
 | 6A | WorkCase 最小成员规范 | 已完成。选 WorkCase 作为首个事实对象成员，迁入对象定位、准入、未来事实源位置、最小状态闭集、执行项内部边界、四层完成口径和 Human Gate | `specs/21-WorkCase-工作项.md`、`specs/05-事实模型基础规范.md`、`_migration/6A-fact-object-member-admission.md`、`code/ldvh_specs.py`、`tests/code` | 已补 `parse_workcase_member_contract`、`validate_workcase_member_contract` 和缺状态/缺事实源/缺关闭口径/缺 Human Gate/缺 legacy 状态边界负例 | 不迁入 V2 `21.Att.01` 长字段表、完整 WorkCase schema、真实实例目录、Web 写入、Hook、commit gate、runtime adapter 或正式行动模板实例 |
 | 6B | 事实对象成员规范完成 | 已完成。迁入 Spark、ADR、Pitfall、Study 最小成员规范，并将 20-24 全部纳入 Code 可消费成员集合 | `specs/20-Spark-火花.md`、`specs/22-ADR-决策.md`、`specs/23-Pitfall-踩坑经验.md`、`specs/24-Study-研究报告.md`、`_migration/6B-fact-object-member-completion.md`、`code/ldvh_specs.py`、`tests/code` | 已补 `parse_fact_model_member_contracts`、`validate_fact_model_member_contracts` 和缺状态/缺事实源/缺 Human Gate/缺 legacy/缺 Study 正文骨架负例 | 不迁真实 `ldvh-base` 实例；不迁完整字段表；不迁 Web 写入；不迁 WorkCase `21.Att.01`；不建立正式行动模板实例 |
 | 7 | 受管项目接入 | 已完成。迁入 V2 受管项目静态治理能力，建立 V3 配置契约、target-first resolver、Git common-dir/worktree 匹配、多 target 边界和 no-op 语义 | `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-受管项目接入规范.md`、`specs/attachments/10.Att.01-受管项目配置字段表.md`、`_migration/7-governed-project-admission.md`、`code/ldvh_specs.py`、`tests/code` | 已补配置字段闭集/重复 ID/越界字段、target-first、非受管 no-op、受管/非受管混合阻断、Git worktree common-dir 和 CLI 测试；validator 0 diagnostics | 不安装 Hook；不声明环境入口生效；不恢复知识地图；不迁真实 `ldvh-base` 实例；不建立 Web 写入 |
+| 8 | 端到端闭环 | 已完成。用只读 e2e rehearsal 验证现有 V3 机制能形成静态行动闭环，并记录仍后置的真实环境边界 | `code/ldvh_specs.py`、`code/specs_validate.py`、`tests/code/test_ldvh_specs_validate.py`、`_migration/8-end-to-end-closure.md` | 已补 `build_e2e_rehearsal`、`specs_validate.py e2e`、e2e workflow/无授权语义/CLI JSON 测试；CLI 演练 diagnostics 0 | 不执行真实写入；不创建提交；不安装 Hook；不启用 commit gate；不声称环境入口生效 |
 
 5B-1 完成记录：
 1. 术语整治（5B-0）已完成，事实源/事实源边界/过程输出/证据等术语已统一；
@@ -148,6 +149,14 @@ specs 迁入
 4. `code/ldvh_specs.py` 已提供 `parse_governed_projects_config`、`validate_governed_projects_config`、`resolve_governed_subject` 和 `build_governed_projects_report`；
 5. `python3 code/specs_validate.py governed-projects --target-path specs/10-受管项目接入规范.md --format text --fail-on-diagnostics` 可输出当前 target 命中 `ldvh-v3`；
 6. 阶段 7 只代表静态接管能力完成，不代表 Hook、commit gate、Web 写入、runtime adapter 或环境入口已经启用。
+
+阶段 8 完成记录：
+
+1. `code/ldvh_specs.py` 已新增 `build_e2e_rehearsal`，把受管项目解析、runtime facade、preflight、validator、git commit message 和 completion claim 聚合为只读闭环；
+2. `code/specs_validate.py` 已新增 `e2e` CLI，支持 `--target-path` 输出 workflow stage、diagnostics、authorization 和 environment boundary；
+3. `tests/code/test_ldvh_specs_validate.py` 已覆盖 e2e 静态 workflow、无授权语义和 CLI JSON 输出；
+4. `_migration/8-end-to-end-closure.md` 已记录演练结论、交付物、验证声明和后置边界；
+5. 阶段 8 验证的是静态闭环，不执行真实写入、不创建提交、不安装 Hook、不启用 commit gate、不声明 V3 正式环境接管。
 
 阶段 5B 术语校正：
 

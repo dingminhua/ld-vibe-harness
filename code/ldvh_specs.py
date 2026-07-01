@@ -2982,3 +2982,197 @@ def build_runtime_event(
         "source_refs": unique_dicts(source_refs, ("path", "role", "requirement_id")),
         "diagnostics": diagnostics,
     }
+
+
+def _workflow_stage(
+    name: str,
+    result: dict[str, Any],
+    *,
+    status_path: str = "summary.status",
+) -> dict[str, Any]:
+    summary = result.get("summary", {})
+    status = summary.get("status", "")
+    diagnostics = result.get("diagnostics", [])
+    return {
+        "stage": name,
+        "status": status,
+        "diagnostics": len(diagnostics),
+        "blocking": sum(1 for diagnostic in diagnostics if diagnostic.get("level") in {"error", "blocking"}),
+        "authorization": result.get("metadata", {}).get("authorization", "none"),
+        "status_source": status_path,
+    }
+
+
+def build_e2e_rehearsal(
+    root: Path = ROOT,
+    target_path: str = "tests/code/test_ldvh_specs_validate.py",
+    task: str = "LDVH v3 stage 8 end-to-end rehearsal",
+    operation: str = "write",
+    trigger_source: str = "manual",
+    verification_evidence: list[str] | None = None,
+) -> dict[str, Any]:
+    normalized_target = target_path.strip().lstrip("./")
+    ack_paths = list(RUNTIME_REQUIRED_ENTRY_PATHS)
+    evidence = verification_evidence or [
+        "python3 -m pytest tests/code _migration/tests -q",
+        "python3 code/specs_validate.py all --format text --fail-on-diagnostics",
+    ]
+
+    governed = build_governed_projects_report(
+        root,
+        cwd=root,
+        target_paths=[normalized_target] if normalized_target else [],
+        read_write_kind="commit" if operation == "commit" else "write",
+    )
+    session_start = build_runtime_event(
+        root,
+        event="session_start",
+        trigger_source=trigger_source,
+        session_id="stage-8-e2e",
+        target_path=normalized_target,
+        task=task,
+        operation=operation,
+    )
+    acknowledge = build_runtime_event(
+        root,
+        event="acknowledge_read_plan",
+        trigger_source=trigger_source,
+        session_id="stage-8-e2e",
+        target_path=normalized_target,
+        task=task,
+        operation=operation,
+        acknowledged_paths=ack_paths,
+    )
+    pre_tool_use = build_runtime_event(
+        root,
+        event="pre_tool_use",
+        trigger_source=trigger_source,
+        session_id="stage-8-e2e",
+        target_path=normalized_target,
+        task=task,
+        operation=operation,
+        acknowledged_paths=ack_paths,
+    )
+    validation = build_validation(root)
+    git_commit_msg = build_runtime_event(
+        root,
+        event="git_commit_msg",
+        trigger_source=trigger_source,
+        session_id="stage-8-e2e",
+        target_path=normalized_target,
+        task=task,
+        operation="commit",
+        acknowledged_paths=ack_paths,
+    )
+    completion_claim = build_runtime_event(
+        root,
+        event="completion_claim",
+        trigger_source=trigger_source,
+        session_id="stage-8-e2e",
+        target_path=normalized_target,
+        task=task,
+        operation=operation,
+        acknowledged_paths=ack_paths,
+        verification_evidence=evidence,
+    )
+
+    stages = [
+        _workflow_stage("governed_project_resolution", governed),
+        _workflow_stage("session_start", session_start),
+        _workflow_stage("acknowledge_read_plan", acknowledge),
+        _workflow_stage("pre_tool_use", pre_tool_use),
+        _workflow_stage("validation", validation),
+        _workflow_stage("git_commit_msg", git_commit_msg),
+        _workflow_stage("completion_claim", completion_claim),
+    ]
+    diagnostics: list[dict[str, str]] = []
+    for origin, result in [
+        ("governed_project_resolution", governed),
+        ("session_start", session_start),
+        ("acknowledge_read_plan", acknowledge),
+        ("pre_tool_use", pre_tool_use),
+        ("validation", validation),
+        ("git_commit_msg", git_commit_msg),
+        ("completion_claim", completion_claim),
+    ]:
+        for diagnostic in result.get("diagnostics", []):
+            diagnostics.append({**diagnostic, "origin": origin})
+
+    blocking = sum(1 for diagnostic in diagnostics if diagnostic.get("level") in {"error", "blocking"})
+    review_required = any(stage["status"] == "review_required" for stage in stages)
+    status = "blocked" if blocking else "review_required" if review_required else "ok"
+
+    return {
+        "metadata": {
+            "read_only": True,
+            "authority": "derived_from_existing_v3_runtime_surfaces",
+            "authorization": "none",
+            "environment_integrated": False,
+            "root": root.as_posix(),
+        },
+        "summary": {
+            "status": status,
+            "target_path": normalized_target,
+            "stages": len(stages),
+            "diagnostics": len(diagnostics),
+            "blocking": blocking,
+            "governed": governed["summary"]["governed"],
+            "validation_status": validation["summary"]["status"],
+            "environment_integrated": False,
+        },
+        "input": {
+            "target_path": normalized_target,
+            "task": task,
+            "operation": operation,
+            "trigger_source": trigger_source,
+            "acknowledged_paths": ack_paths,
+            "verification_evidence": evidence,
+        },
+        "workflow": stages,
+        "governed_project": governed["resolution"],
+        "read_plan": session_start["action_guide"]["task_read_plan"] if session_start.get("action_guide") else [],
+        "preflight": pre_tool_use["preflight"],
+        "validation": {
+            "summary": validation["summary"],
+            "source_refs": validation["source_refs"],
+        },
+        "git_commit_msg": {
+            "summary": git_commit_msg["summary"],
+            "receipt": git_commit_msg["receipt"],
+        },
+        "completion_claim": {
+            "summary": completion_claim["summary"],
+            "receipt": completion_claim["receipt"],
+        },
+        "closure_assessment": {
+            "static_rehearsal_complete": status == "ok",
+            "reduces_ai_burden": [
+                "target 归属由 governed project resolver 输出，不靠 AI 记忆判断",
+                "session_start 生成 read_plan，pre_tool_use 复用 acknowledged paths",
+                "preflight 在写入前给出目标归口、Human Gate 风险和受管项目边界",
+                "completion_claim 必须携带验证证据，不能空口声明完成",
+            ],
+            "postponed_boundaries": [
+                "Hook / Rules / commit gate 尚未接入真实环境",
+                "receipt 仍是 stdout-only 过程输出，不是事实源",
+                "真实 `ldvh-base/` 实例迁移、Web 写入和正式行动模板实例仍后置",
+                "CLI 不创建提交；实际提交仍由主控 AI 按 06 Git 提交行动模板执行",
+            ],
+            "authorization": "none",
+        },
+        "source_refs": unique_dicts(
+            governed["source_refs"]
+            + session_start["source_refs"]
+            + acknowledge["source_refs"]
+            + pre_tool_use["source_refs"]
+            + git_commit_msg["source_refs"]
+            + completion_claim["source_refs"]
+            + [
+                {"path": "_migration/v3-migration-execution-plan.md", "role": "stage_8_plan"},
+                {"path": SHORT_SPEC_REFS["06"], "role": "git_commit_action_boundary"},
+                {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_boundary"},
+            ],
+            ("path", "role", "requirement_id"),
+        ),
+        "diagnostics": diagnostics,
+    }

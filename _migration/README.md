@@ -39,3 +39,5 @@
 `_migration/v3-specs-absorption-index.md` 记录 V3 正式 `03/05/06/07/08/09/10` 应吸收哪些 V2/旧 specs 内容、哪些只能保留在迁移材料、哪些应转为 Code 或 tests。它用于支撑正式 specs 创建和 review 收据；它仍是临时迁移索引，不授权正式规则或实现行为。
 
 `_migration/7-governed-project-admission.md` 记录阶段 7 受管项目接入范围。它说明 V3 已迁入受管项目静态解析、配置契约和 target-first resolver，但不授权 Hook 安装、commit gate、Web 写入或真实 `ldvh-base/` 实例迁移。
+
+`_migration/8-end-to-end-closure.md` 记录阶段 8 静态端到端闭环演练。它说明 V3 已能把受管项目解析、Action Guide、runtime facade、preflight、验证、commit message 和 completion claim 串成只读闭环，但不授权真实环境接入或产品化启用。

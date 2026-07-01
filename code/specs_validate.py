@@ -6,7 +6,15 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from ldvh_specs import ROOT, build_action_guide, build_governed_projects_report, build_preflight, build_runtime_event, build_validation
+from ldvh_specs import (
+    ROOT,
+    build_action_guide,
+    build_e2e_rehearsal,
+    build_governed_projects_report,
+    build_preflight,
+    build_runtime_event,
+    build_validation,
+)
 
 
 def _diagnostics_by_level(result: dict[str, Any]) -> dict[str, int]:
@@ -114,6 +122,29 @@ def print_text(result: dict[str, Any], command: str) -> None:
         print("\nAuthorization: none")
         return
 
+    if command == "e2e":
+        summary = result["summary"]
+        print("LDVH v3 端到端闭环演练完成")
+        print(f"- status: {summary['status']}")
+        print(f"- target_path: {summary['target_path']}")
+        print(f"- stages: {summary['stages']}")
+        print(f"- governed: {summary['governed']}")
+        print(f"- validation_status: {summary['validation_status']}")
+        print(f"- environment_integrated: {summary['environment_integrated']}")
+        print(f"- diagnostics: {summary['diagnostics']}")
+        print(f"- blocking: {summary['blocking']}")
+        print("\nWorkflow:")
+        for stage in result["workflow"]:
+            print(f"- {stage['stage']}: {stage['status']} (diagnostics={stage['diagnostics']}, blocking={stage['blocking']})")
+        if result["diagnostics"]:
+            print("\nDiagnostics:")
+            for diagnostic in result["diagnostics"]:
+                print(f"- {diagnostic['origin']}::{diagnostic['path']} [{diagnostic['level']}/{diagnostic['code']}] {diagnostic['message']}")
+        else:
+            print("\nDiagnostics: none")
+        print("\nAuthorization: none")
+        return
+
     summary = result["summary"]
     print("LDVH v3 specs 校验完成")
     print(f"- command: {command}")
@@ -169,7 +200,7 @@ def build_parser() -> argparse.ArgumentParser:
         "command",
         nargs="?",
         default="all",
-        choices=["all", "specs", "timings", "ai-behavior", "action-guide", "preflight", "runtime", "governed-projects"],
+        choices=["all", "specs", "timings", "ai-behavior", "action-guide", "preflight", "runtime", "governed-projects", "e2e"],
         help="validation surface to print",
     )
     parser.add_argument("--root", default=ROOT.as_posix(), help="repository root")
@@ -241,6 +272,16 @@ def main(argv: list[str] | None = None) -> int:
             cwd=root,
             target_paths=target_paths,
             read_write_kind="commit" if args.operation == "commit" else "write",
+        )
+        result = output
+    elif args.command == "e2e":
+        output = build_e2e_rehearsal(
+            root,
+            target_path=args.target_path or "tests/code/test_ldvh_specs_validate.py",
+            task=args.task or "LDVH v3 stage 8 end-to-end rehearsal",
+            operation=args.operation,
+            trigger_source=args.trigger_source,
+            verification_evidence=args.verification_evidence or None,
         )
         result = output
     else:

@@ -108,6 +108,7 @@ V3 术语使用：
 | 6A | 已完成 | 新增 `specs/21-WorkCase-工作项.md`，迁入 WorkCase 对象定位、准入、未来事实源位置、最小状态闭集、执行项内部边界、四层完成口径和 Human Gate；`05` 记录 WorkCase 已首批迁入 | `parse_workcase_member_contract`、`validate_workcase_member_contract` 与缺状态/缺事实源/缺关闭口径/缺 Human Gate/缺 legacy 状态边界负例测试 | validator 0 diagnostics；tests/code 与 `_migration/tests` 通过 |
 | 6B | 已完成 | 新增 `specs/20-Spark-火花.md`、`specs/22-ADR-决策.md`、`specs/23-Pitfall-踩坑经验.md`、`specs/24-Study-研究报告.md`，阶段 6 覆盖 20-24 全部最小成员规范；`05` 记录 20-24 均已进入 V3 | `parse_fact_model_member_contracts`、`validate_fact_model_member_contracts` 与缺状态/缺事实源/缺 Human Gate/缺 legacy 边界/缺 Study 正文骨架负例测试 | validator 0 diagnostics；tests/code 与 `_migration/tests` 通过 |
 | 7 | 已完成 | 新增 `specs/10-受管项目接入规范.md`、`specs/attachments/10.Att.01-受管项目配置字段表.md` 和根配置 `LDVH-GOVERNED-PROJECTS.yaml`，迁入受管项目静态接管能力 | `parse_governed_projects_config`、`validate_governed_projects_config`、`resolve_governed_subject` 与配置/target/worktree/multi-target/CLI 测试 | validator 0 diagnostics；tests/code 与 `_migration/tests` 通过 |
+| 8 | 已完成 | 不新增正式 spec；新增只读 e2e rehearsal，把阶段 1-7 的能力串成静态行动闭环 | `build_e2e_rehearsal`、`specs_validate.py e2e` 与 workflow/无授权语义/CLI JSON 测试 | e2e CLI diagnostics 0；tests/code 与 `_migration/tests` 通过 |
 
 6A 后置项：
 
