@@ -21,6 +21,8 @@ environment_integrated: partial
 hook_integrated: git.commit-msg
 session_start_entry: manual.session_start
 session_start_integrated: false
+pre_tool_use_entry: manual.pre_tool_use
+pre_tool_use_integrated: false
 authorization: none
 ```
 
@@ -33,6 +35,17 @@ python3 code/session_start.py --task "<当前任务>" --target-path "<目标路�
 ```
 
 该入口输出 P0/P1 read_plan 和 stdout-only receipt；它是 `manual.session_start`，不是环境自动触发证明。
+
+手动 pre tool use 入口：
+
+```bash
+python3 code/pre_tool_use.py --target-path "<目标路径>" --operation write \
+  --acknowledged-path specs/00-理念与构成.md \
+  --acknowledged-path specs/01-保障与衔接.md \
+  --acknowledged-path specs/02-AI行为规范.md
+```
+
+该入口输出写入前 preflight、required read plan 和 stdout-only receipt；它是 `manual.pre_tool_use`，不是工具调用已被自动拦截的证明。
 
 Hook 状态和回滚入口：
 

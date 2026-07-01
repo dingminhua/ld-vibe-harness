@@ -1475,6 +1475,99 @@ def test_runtime_pre_tool_use_blocks_without_read_plan_consumption() -> None:
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_READ_PLAN_CONSUMED_EMPTY"
 
 
+def test_pre_tool_use_cli_accepts_manual_preflight_json() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/pre_tool_use.py",
+            "--session-id",
+            "test-pre-tool-use",
+            "--target-path",
+            "tests/code/test_ldvh_specs_validate.py",
+            "--operation",
+            "write",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["event"] == "pre_tool_use"
+    assert payload["summary"]["environment_integrated"] is False
+    assert payload["summary"]["integration_scope"] == "manual.pre_tool_use"
+    assert payload["summary"]["preflight_status"] == "diagnostic_clear"
+    assert payload["metadata"]["integration_scope"] == "manual.pre_tool_use"
+    assert payload["receipt"]["storage"] == "stdout_only"
+    assert payload["receipt"]["acknowledged_paths"] == [
+        "specs/00-理念与构成.md",
+        "specs/01-保障与衔接.md",
+        "specs/02-AI行为规范.md",
+    ]
+    assert payload["preflight"]["summary"]["target_type"] == "tests"
+    assert payload["diagnostics"] == []
+
+
+def test_pre_tool_use_cli_blocks_missing_read_plan_consumption() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/pre_tool_use.py",
+            "--target-path",
+            "tests/code/test_ldvh_specs_validate.py",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["summary"]["status"] == "blocked"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in _diagnostic_codes(payload)
+    assert payload["summary"]["integration_scope"] == "manual.pre_tool_use"
+
+
+def test_pre_tool_use_cli_blocks_missing_target() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/pre_tool_use.py",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["summary"]["status"] == "blocked"
+    assert "PREFLIGHT_TARGET_UNKNOWN" in _diagnostic_codes(payload)
+    assert payload["preflight"]["summary"]["target_type"] == "unknown"
+
+
 def test_runtime_git_commit_msg_blocks_incomplete_read_plan_consumption() -> None:
     runtime = ldvh_specs.build_runtime_event(
         ROOT,

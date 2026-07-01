@@ -241,6 +241,15 @@ specs 迁入
 4. `tests/code/test_ldvh_specs_validate.py` 已覆盖 session_start CLI JSON 输出、00/01/02 read_plan、manual integration scope 和 receipt 边界；
 5. 下一步若继续环境接入，应进入 10C `pre_tool_use`，且不得在缺少真实工具前置拦截能力时声明自动阻断。
 
+10C 完成记录：
+
+1. `_migration/10C-pre-tool-use-manual-entry.md` 已记录 `pre_tool_use` 最小可用入口和未自动接管边界；
+2. `code/pre_tool_use.py` 已提供 text/json CLI，输出 read_plan 消费证据检查、target preflight、required read plan、Human Gate risks、stdout-only runtime receipt 和 `authorization=none`；
+3. 当前环境没有真实工具调用前置 Hook，因此 `pre_tool_use_entry=manual.pre_tool_use`、`pre_tool_use_integrated=false`；
+4. 入口要求显式传入 `--acknowledged-path`，不会自动补齐 00/01/02；
+5. `tests/code/test_ldvh_specs_validate.py` 已覆盖 pre_tool_use CLI JSON 正例、缺 read_plan 消费证据、缺 target 阻断和 manual integration scope；
+6. 下一步若继续环境接入，应进入 10D `completion_claim` 手动入口，真实工具前置拦截仍需单独环境 adapter。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。
