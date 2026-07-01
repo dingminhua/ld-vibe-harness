@@ -299,6 +299,15 @@ specs 迁入
 8. README 已更新 `reviews/formal/` 和 `_migration/` 职责边界；
 9. 阶段 11 完成后，V3 主体以 active specs、V3 facts、Web 独立读取、commit-msg hard switch、环境适配规范和稳定 formal review ledger 为主线；仍后置的是非提交行动模板、外部环境自动 Hook、稳定 receipt 存储和通用 Web 写入。
 
+12-19 后续计划记录：
+
+1. `_migration/12-19-v3-post-mainline-work-plan.md` 已记录 V3 主线验收后的后续工作顺序；
+2. 阶段 12 优先补齐 specs 与 Code/Web/Tests 实现域实践边界；
+3. 阶段 13 进入 WorkCase 最小行动模板；
+4. 阶段 14 处理测试性能与分层；
+5. 阶段 15-18 分别评估 runtime 自动入口、稳定 receipt、Web Confirm UI 和外部受管项目 Hook adapter；
+6. 阶段 19 再判断 `_migration` 是否可以归档或删除。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。

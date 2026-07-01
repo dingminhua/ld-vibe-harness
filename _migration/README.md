@@ -83,3 +83,5 @@
 `_migration/11F-action-template-minimal-closure.md` 记录行动模板最小闭环。Git 提交行动仍是唯一正式模板示范，WorkCase 创建、方案审核、执行推进、结果复核和关闭确认继续后置。
 
 `_migration/11G-migration-dependency-independence.md` 记录迁移层依赖独立处理。formal review hash gate 已迁到 `reviews/formal/`；`_migration/reviews/` 不再是稳定 gate 读取位置，但 `_migration` 仍保留历史证据和迁移测试。
+
+`_migration/12-19-v3-post-mainline-work-plan.md` 记录 V3 主线验收后的后续工作计划。它把阶段 12-19 分为 specs 与实现域边界补强、WorkCase 最小行动模板、测试性能分层、runtime 自动入口评估、稳定 receipt 存储、Web Confirm UI、外部受管项目 Hook adapter 和 `_migration` 归档判断；它不授权这些能力已经生效。
