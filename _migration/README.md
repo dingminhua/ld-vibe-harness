@@ -61,3 +61,5 @@
 `_migration/10B-session-start-manual-entry.md` 记录 `session_start` 手动入口。它说明当前环境没有可安装的真实会话启动 Hook，V3 只新增 `code/session_start.py` 作为手动/外部 adapter 可调用 read_plan 入口；它不声明 session start 已自动接管，也不授权 pre tool use、completion claim 或 Rules/runtime adapter。
 
 `_migration/10C-pre-tool-use-manual-entry.md` 记录 `pre_tool_use` 手动入口。它说明当前环境没有真实工具调用前置 Hook，V3 只新增 `code/pre_tool_use.py` 作为手动/外部 adapter 可调用写入前检查入口；它不声明 apply_patch、Edit、Write 或 shell 写入已被自动拦截，也不授权 completion claim 或 Rules/runtime adapter。
+
+`_migration/10D-completion-claim-manual-entry.md` 记录 `completion_claim` 手动入口。它说明当前环境没有真实完成前 Hook，V3 只新增 `code/completion_claim.py` 作为手动/外部 adapter 可调用完成声明前检查入口；它不声明自然语言完成声明已被自动拦截，也不替代 Human Gate、验收或 Rules/runtime adapter。

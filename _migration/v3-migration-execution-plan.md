@@ -250,6 +250,15 @@ specs 迁入
 5. `tests/code/test_ldvh_specs_validate.py` 已覆盖 pre_tool_use CLI JSON 正例、缺 read_plan 消费证据、缺 target 阻断和 manual integration scope；
 6. 下一步若继续环境接入，应进入 10D `completion_claim` 手动入口，真实工具前置拦截仍需单独环境 adapter。
 
+10D 完成记录：
+
+1. `_migration/10D-completion-claim-manual-entry.md` 已记录 `completion_claim` 最小可用入口和未自动接管边界；
+2. `code/completion_claim.py` 已提供 text/json CLI，输出 verification evidence、diagnostics、source refs、stdout-only runtime receipt 和 `authorization=none`；
+3. 当前环境没有真实完成前 Hook，因此 `completion_claim_entry=manual.completion_claim`、`completion_claim_integrated=false`；
+4. 入口要求显式传入 `--verification-evidence`，缺失时保持阻断；
+5. `tests/code/test_ldvh_specs_validate.py` 已覆盖 completion_claim CLI JSON 正例、缺 verification evidence 阻断和 manual integration scope；
+6. 10B-10D 已形成 manual runtime 三件套；下一步若继续推进，应评估真实 runtime adapter / 外部环境接入。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。

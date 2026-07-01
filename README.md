@@ -23,6 +23,8 @@ session_start_entry: manual.session_start
 session_start_integrated: false
 pre_tool_use_entry: manual.pre_tool_use
 pre_tool_use_integrated: false
+completion_claim_entry: manual.completion_claim
+completion_claim_integrated: false
 authorization: none
 ```
 
@@ -46,6 +48,15 @@ python3 code/pre_tool_use.py --target-path "<目标路径>" --operation write \
 ```
 
 该入口输出写入前 preflight、required read plan 和 stdout-only receipt；它是 `manual.pre_tool_use`，不是工具调用已被自动拦截的证明。
+
+手动 completion claim 入口：
+
+```bash
+python3 code/completion_claim.py --target-path "<目标路径>" \
+  --verification-evidence "<验证命令、未验证范围或残留风险说明>"
+```
+
+该入口输出完成声明前检查和 stdout-only receipt；它是 `manual.completion_claim`，不是完成声明已被自动拦截或 Human 已验收的证明。
 
 Hook 状态和回滚入口：
 

@@ -1858,6 +1858,72 @@ def test_runtime_completion_claim_requires_verification_evidence() -> None:
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_COMPLETION_VERIFICATION_MISSING"
 
 
+def test_completion_claim_cli_accepts_manual_evidence_json() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/completion_claim.py",
+            "--session-id",
+            "test-completion-claim",
+            "--target-path",
+            "README.md",
+            "--task",
+            "完成 10D",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--verification-evidence",
+            "python3 code/specs_validate.py all --format text --fail-on-diagnostics",
+            "--verification-evidence",
+            "python3 -m pytest tests/code/test_formal_specs.py -q",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["event"] == "completion_claim"
+    assert payload["summary"]["environment_integrated"] is False
+    assert payload["summary"]["integration_scope"] == "manual.completion_claim"
+    assert payload["summary"]["verification_evidence"] == 2
+    assert payload["metadata"]["integration_scope"] == "manual.completion_claim"
+    assert payload["metadata"]["authorization"] == "none"
+    assert payload["receipt"]["storage"] == "stdout_only"
+    assert payload["receipt"]["verification_evidence"] == [
+        "python3 code/specs_validate.py all --format text --fail-on-diagnostics",
+        "python3 -m pytest tests/code/test_formal_specs.py -q",
+    ]
+    assert payload["diagnostics"] == []
+
+
+def test_completion_claim_cli_blocks_missing_verification_evidence() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/completion_claim.py",
+            "--target-path",
+            "README.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["summary"]["status"] == "blocked"
+    assert payload["summary"]["integration_scope"] == "manual.completion_claim"
+    assert payload["receipt"]["storage"] == "stdout_only"
+    assert "RUNTIME_COMPLETION_VERIFICATION_MISSING" in _diagnostic_codes(payload)
+
+
 def test_runtime_supports_all_consumption_timings() -> None:
     events = [row["consumption_timing"] for row in ldvh_specs.parse_consumption_timings(ROOT)]
     common_kwargs = {
