@@ -19,10 +19,20 @@
 switch_mode: commit_msg_hard_switch_minimal
 environment_integrated: partial
 hook_integrated: git.commit-msg
+session_start_entry: manual.session_start
+session_start_integrated: false
 authorization: none
 ```
 
 这意味着 V3 已是日常主线，并会通过当前 worktree 的 `core.hooksPath=hooks` 自动拦截真实 Git commit message。系统仍不会自动拦截所有 session start、pre tool use、completion claim 或其它环境操作。需要时应手动运行对应 Code 命令；Code、Web、测试或 commit gate 输出都不替代 Human Gate。
+
+手动 session start 入口：
+
+```bash
+python3 code/session_start.py --task "<当前任务>" --target-path "<目标路径>"
+```
+
+该入口输出 P0/P1 read_plan 和 stdout-only receipt；它是 `manual.session_start`，不是环境自动触发证明。
 
 Hook 状态和回滚入口：
 

@@ -1373,6 +1373,43 @@ def test_runtime_session_start_generates_stdout_receipt() -> None:
     }.issubset(read_paths)
 
 
+def test_session_start_cli_exports_manual_read_plan_json() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/session_start.py",
+            "--session-id",
+            "test-session-start",
+            "--task",
+            "进入 LDVH v3 工作",
+            "--target-path",
+            "README.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    read_paths = {item["path"] for item in payload["action_guide"]["task_read_plan"] if item["path"]}
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["event"] == "session_start"
+    assert payload["summary"]["environment_integrated"] is False
+    assert payload["summary"]["integration_scope"] == "manual.session_start"
+    assert payload["metadata"]["integration_scope"] == "manual.session_start"
+    assert payload["receipt"]["storage"] == "stdout_only"
+    assert payload["receipt"]["persistent"] is False
+    assert {
+        "specs/00-理念与构成.md",
+        "specs/01-保障与衔接.md",
+        "specs/02-AI行为规范.md",
+    }.issubset(read_paths)
+    assert payload["diagnostics"] == []
+
+
 def test_runtime_unknown_event_blocks() -> None:
     runtime = ldvh_specs.build_runtime_event(ROOT, event="unknown_event")
 

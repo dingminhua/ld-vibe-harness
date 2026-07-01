@@ -233,6 +233,14 @@ specs 迁入
 5. 当前状态更新为 `switch_mode=commit_msg_hard_switch_minimal`、`environment_integrated=partial`、`hook_integrated=git.commit-msg`、`authorization=none`；
 6. session start、pre tool use、completion claim、Rules/runtime adapter、通用 Web 写入、外部受管项目 Hook adapter 和非提交正式行动模板仍后置。
 
+10B 完成记录：
+
+1. `_migration/10B-session-start-manual-entry.md` 已记录 `session_start` 最小可用入口和未自动接管边界；
+2. `code/session_start.py` 已提供 text/json CLI，输出 P0/P1 `task_read_plan`、stdout-only runtime receipt、stop conditions、diagnostics 和 `authorization=none`；
+3. 当前环境没有可安装的真实会话启动 Hook，因此 `session_start_entry=manual.session_start`、`session_start_integrated=false`；
+4. `tests/code/test_ldvh_specs_validate.py` 已覆盖 session_start CLI JSON 输出、00/01/02 read_plan、manual integration scope 和 receipt 边界；
+5. 下一步若继续环境接入，应进入 10C `pre_tool_use`，且不得在缺少真实工具前置拦截能力时声明自动阻断。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。
