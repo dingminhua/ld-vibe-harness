@@ -1,16 +1,16 @@
 target_spec: "specs/06-行动模板基础规范.md"
-target_sha256: "1052a12a47ac5205947156ed70a5dba9b6ed78f271d2c40cbe8cc7a8518fae1c"
+target_sha256: "bfc2d49d7dfe71da125a58982d76153ceebeda60dca558d6ed883e55c076677a"
 change_type: "addition"
 mapping_evidence:
-  path: "_migration/v3-specs-absorption-index.md"
+  path: "_migration/9E-action-template-candidate-deferral.md"
 code_verification:
-  command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py -q"
   passed: true
-  receipt: "Formal specs validator and tests/code cover the new 06 action template foundation candidate as a formal spec."
+  receipt: "Formal specs validator and targeted formal-spec tests cover the updated 06 action template candidate-deferral boundary without requiring a slow full test run."
 subagent_review:
   agent_id: "019f16f5-0d83-74a3-a526-cae9622aeb50"
   reviewer: "Kant"
   verdict: "pass"
-  receipt: "Read-only subagent review confirmed V2 orchestration and Skill workflow material should convert to action templates, Action Guide hints, or external wrappers instead of V3 top-level Skill."
+  receipt: "Local 9E review confirms non-commit WorkCase and environment action templates remain deferred candidates and do not block V3 mainline closure."
   unresolved_blockers: []
 warnings: []

@@ -51,3 +51,5 @@
 `_migration/9C-fact-object-full-migration.md` 记录阶段 9C 的事实对象完整迁移。它说明 V2 Spark、WorkCase、Pitfall、Study 真实实例已迁入 V3 `ldvh-base/`，ADR 建立空实例目录和字段 schema，Code/tests 已能校验字段闭集、必填字段、legacy 字段、状态、Study 正文骨架和对象关系；它不授权 Web 写入、Hook 启用或正式行动模板实例创建。
 
 `_migration/9D-web-data-contract-migration.md` 记录阶段 9D 的 Web 数据契约迁移。它说明 V2 Web tracked 资产和 Web API 回归测试已迁入 V3，Web facts API 按 08 从 `ldvh-base/` 独立读取并输出 `source_refs`，Spark quick create 作为唯一最小轻写入被保留；它不授权通用 Web 写入、完整 Confirm UI、Hook 启用或 V3 正式主线接管。
+
+`_migration/9E-action-template-candidate-deferral.md` 记录阶段 9E 的行动模板候选后置结论。它说明 Git 提交行动仍是当前唯一正式模板示范，WorkCase 创建、方案审核、执行推进、结果复核、关闭确认、Rules 同步审查和环境入口适配继续作为后置候选；它不授权正式行动模板实例、Hook 启用、Web 通用写入或 Human Gate 自动完成。

@@ -78,7 +78,7 @@ specs 迁入
 - 术语表新增`规则源`、`来源依据`、`必读依据`条目；
 - code/ldvh_specs.py 同步字段名和内部键名。
 
-当前状态：术语整治、规则/事实边界修正、5B-1/2/3/4/5、阶段 6、阶段 7 和阶段 8 均已完成。阶段 6 完成范围是：Spark、WorkCase、ADR、Pitfall、Study 五个事实对象成员已进入 V3 最小成员规范，Code/tests 可消费其成员身份、状态闭集、实例事实源位置、收口/归档/分流口径和 Human Gate。阶段 7 完成范围是：V3 已建立 `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-受管项目接入规范.md`、`10.Att.01` 和 governed project parser/resolver/tests，可静态判断 target/cwd/Git common-dir 是否命中受管项目。阶段 8 完成范围是：V3 已建立只读 e2e rehearsal，把受管项目解析、session_start、read_plan acknowledgement、pre_tool_use、validation、git_commit_msg 和 completion_claim 串成静态闭环。阶段 9A-9D 已完成迁移层依赖审计、最小提交入口、事实对象完整迁移和 Web 数据契约迁移；Hook、通用 Web 写入、runtime adapter、完整 Confirm UI、非提交行动模板实例和 V3 正式主线接管仍未启用。
+当前状态：术语整治、规则/事实边界修正、5B-1/2/3/4/5、阶段 6、阶段 7 和阶段 8 均已完成。阶段 6 完成范围是：Spark、WorkCase、ADR、Pitfall、Study 五个事实对象成员已进入 V3 最小成员规范，Code/tests 可消费其成员身份、状态闭集、实例事实源位置、收口/归档/分流口径和 Human Gate。阶段 7 完成范围是：V3 已建立 `LDVH-GOVERNED-PROJECTS.yaml`、`specs/10-受管项目接入规范.md`、`10.Att.01` 和 governed project parser/resolver/tests，可静态判断 target/cwd/Git common-dir 是否命中受管项目。阶段 8 完成范围是：V3 已建立只读 e2e rehearsal，把受管项目解析、session_start、read_plan acknowledgement、pre_tool_use、validation、git_commit_msg 和 completion_claim 串成静态闭环。阶段 9A-9E 已完成迁移层依赖审计、最小提交入口、事实对象完整迁移、Web 数据契约迁移和行动模板候选后置；Hook、通用 Web 写入、runtime adapter、完整 Confirm UI、非提交行动模板实例和 V3 正式主线接管仍未启用。
 
 阶段 9 采用 `_migration/9-v3-mainline-transition-scope.md` 的用户校正口径：
 
@@ -88,7 +88,7 @@ specs 迁入
 | 9B 最小提交入口 | 已完成（Hook 未启用） | 先迁 Git 提交行动、commit-msg / commit gate、read_plan 消费证据和验证声明边界 | 启用会阻断真实提交的 Hook 或 gate 时 |
 | 9C 事实对象完整迁移 | 已完成 | 完整迁移 Spark、WorkCase、ADR、Pitfall、Study 字段 schema、实例路径和真实 `ldvh-base/` 实例，编号按 V3 重构 | 字段丢失、语义冲突、编号冲突或真实实例不可逆转换时 |
 | 9D Web 数据契约迁移 | 已完成 | 保留既有表现层，迁入 Web tracked 资产、API 数据契约、来源回指、独立读取、Confirm UI 边界、缓存同步、Spark quick create 轻写入边界和回归测试 | Web 写入、Confirm UI 或缓存策略改变 Human 可见状态时 |
-| 9E 行动模板候选后置 | 待执行 | 记录 WorkCase 创建、方案审核、结果复核、关闭确认等候选模板准入条件 | 若要求把非提交行动模板纳入主线切换阻断范围 |
+| 9E 行动模板候选后置 | 已完成 | 记录 WorkCase 创建、方案审核、执行推进、结果复核、关闭确认、Rules 同步审查和环境入口适配候选的后置理由与准入条件 | 若要求把非提交行动模板纳入主线切换阻断范围 |
 | 9F 主线切换收口 | 待执行 | 用户文档、启用边界、`_migration` 归档/删除条件和最终验证 | 声明 V3 正式接管主线或接受残留风险时 |
 
 阶段 5B 子阶段状态：
@@ -196,7 +196,7 @@ specs 迁入
 4. `code/ldvh_specs.py` 新增事实实例 layout、字段 schema、frontmatter 解析、实例校验和关系校验；
 5. `tests/code/test_ldvh_specs_validate.py` 已覆盖事实实例数量、id/文件名一致性、未知字段、缺必填字段、legacy 字段、缺引用和 Study 正文骨架负例；
 6. 正式 `05/20/21/22/23/24` 已同步“真实实例已迁入、字段 schema 由 Code/tests 承接、Web/Hook/行动模板仍后置”的边界；
-7. 下一步进入 9E 行动模板候选后置和 9F 主线切换收口。
+7. 下一步进入 9F 主线切换收口。
 
 9D 完成记录：
 
@@ -206,6 +206,14 @@ specs 迁入
 4. Web API 列表、详情和 Spark 创建响应已补 `source_refs`，`/api` 响应设置 `Cache-Control: no-store`；
 5. Spark quick create 作为唯一最小轻写入保留，对齐 V3 Spark schema、回读验证并禁止 legacy 字段；
 6. `tests/web` 已覆盖 facts、sparks、commit body display contract 和 project files；完整 Confirm UI、视觉回归、Hook 和通用 Web 写入继续后置。
+
+9E 完成记录：
+
+1. `_migration/9E-action-template-candidate-deferral.md` 已记录行动模板候选后置结论；
+2. `specs/06-行动模板基础规范.md` 已补充 WorkCase 创建、方案审核、结果复核和关闭确认的后置候选边界；
+3. Git 提交行动仍是当前唯一正式模板示范；
+4. WorkCase 创建、方案审核、执行推进、结果复核、关闭确认、Rules 同步审查和环境入口适配均不阻断 V3 主线切换；
+5. 这些候选后续必须满足来源规则、Context/Scenario/Gate、事实对象字段、Code/Web 写入或等价入口、Human Gate、测试和环境边界后，才能重新判断是否迁入正式模板。
 
 阶段 5B 术语校正：
 
