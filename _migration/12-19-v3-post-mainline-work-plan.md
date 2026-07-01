@@ -113,6 +113,10 @@
 2. 再评估通用 Web 写入；
 3. 继续保持 Web 独立读取事实源，不依赖 Code 输出作为页面/API 主数据源。
 
+完成记录：
+
+阶段 17A 已完成 Web Confirm UI 与通用写入边界判断，记录见 `_migration/17A-web-confirm-ui-write-boundary.md`。当前 Spark quick create 仍是唯一正式 Web 写入；通用事实对象写入、WorkCase 状态推进写入和完整 Confirm UI 继续后置，启用前必须重新进入 Human Gate 和 tests/web 合同验证。
+
 ## 阶段 18：外部受管项目 Hook adapter
 
 目标：
