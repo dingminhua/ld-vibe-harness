@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -1483,6 +1484,35 @@ def test_commit_gate_accepts_valid_message_with_read_plan_body() -> None:
     assert gate["diagnostics"] == []
 
 
+def test_commit_gate_extracts_read_plan_from_message_body() -> None:
+    message = """feat(runtime): 接入最小提交 Hook
+
+读取依据:
+- specs/00-理念与构成.md
+- `specs/01-保障与衔接.md`
+- specs/02-AI行为规范.md
+
+关键变更:
+- 新增 worktree-local commit-msg hook 接入。
+"""
+
+    gate = ldvh_specs.build_commit_gate(
+        ROOT,
+        message=message,
+        changed_paths=["hooks/commit-msg", "code/commit_validate.py"],
+    )
+
+    assert gate["summary"]["status"] == "ok"
+    assert gate["summary"]["read_plan_consumed"] is True
+    assert gate["acknowledged_paths"] == [
+        "specs/00-理念与构成.md",
+        "specs/01-保障与衔接.md",
+        "specs/02-AI行为规范.md",
+    ]
+    assert gate["message_acknowledged_paths"] == gate["acknowledged_paths"]
+    assert gate["diagnostics"] == []
+
+
 def test_commit_gate_rejects_unknown_scope() -> None:
     gate = ldvh_specs.build_commit_gate(
         ROOT,
@@ -1607,6 +1637,88 @@ def test_commit_validate_wrapper_blocks_invalid_message(tmp_path: Path) -> None:
     payload = json.loads(completed.stdout)
     assert payload["summary"]["status"] == "blocked"
     assert "COMMIT_SCOPE_NOT_ALLOWED" in _diagnostic_codes(payload)
+
+
+def test_commit_validate_wrapper_marks_hook_integration(tmp_path: Path) -> None:
+    message_file = tmp_path / "message.txt"
+    message_file.write_text(
+        """feat(runtime): 接入最小提交 Hook
+
+读取依据:
+- specs/00-理念与构成.md
+- specs/01-保障与衔接.md
+- specs/02-AI行为规范.md
+
+关键变更:
+- 接入 worktree-local commit-msg hook。
+""",
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/commit_validate.py",
+            "--check-message-file",
+            str(message_file),
+            "--repo",
+            str(ROOT),
+            "--changed-path",
+            "hooks/commit-msg",
+            "--changed-path",
+            "code/commit_validate.py",
+            "--hook-integrated",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["metadata"]["hook_integrated"] is True
+    assert payload["metadata"]["environment_integrated"] is True
+    assert payload["metadata"]["integration_scope"] == "git.commit-msg"
+
+
+def test_install_git_hooks_uses_worktree_local_hooks_path(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/install_git_hooks.py",
+            "install",
+            "--repo",
+            str(repo),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    hook = repo / "hooks" / "commit-msg"
+    config = subprocess.run(
+        ["git", "config", "--show-origin", "--get", "core.hooksPath"],
+        cwd=repo,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    assert "- installed: True" in completed.stdout
+    assert "config.worktree" in config.stdout
+    assert config.stdout.rstrip().endswith("\thooks")
+    assert hook.is_file()
+    assert os.access(hook, os.X_OK)
+    assert "# LDVH v3 managed commit-msg hook" in hook.read_text(encoding="utf-8")
+    assert not (repo / ".git" / "hooks" / "commit-msg").exists()
 
 
 def test_runtime_completion_claim_requires_verification_evidence() -> None:

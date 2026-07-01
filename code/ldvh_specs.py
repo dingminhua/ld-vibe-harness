@@ -120,6 +120,10 @@ COMMIT_HEADER_RE = re.compile(
     r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z0-9_-]+)\))?(?P<breaking>!)?: (?P<description>.+)$"
 )
 COMMIT_REQUIRED_BODY_HEADING = "关键变更"
+COMMIT_READ_PLAN_BODY_HEADINGS = {"读取依据", "Read Plan", "read_plan"}
+COMMIT_READ_PLAN_PATH_RE = re.compile(
+    r"`?((?:\.?/)?(?:specs|ldvh-base|code|tests|web|rules|docs|_migration|hooks|skills)/[^`\s,，;；]+)`?"
+)
 FIELD_REGISTRY_COLUMNS = ["列", "含义"]
 FIELD_REGISTRY_ALLOWED_COLUMNS = ["注册列", "允许值或写法"]
 FIELD_REGISTRY_CODE_CHECK_COLUMNS = ["code_check_kind", "可机械消费维度", "边界"]
@@ -3271,6 +3275,28 @@ def parse_commit_message(message: str) -> dict[str, Any]:
     return parsed
 
 
+def extract_commit_read_plan_paths(message: str) -> list[str]:
+    parsed = parse_commit_message(message)
+    collected: list[str] = []
+    in_read_plan_section = False
+
+    for line in parsed["body"].splitlines():
+        stripped = line.strip()
+        is_heading = stripped.endswith(":") and len(stripped) <= 40
+        if is_heading:
+            in_read_plan_section = stripped.removesuffix(":") in COMMIT_READ_PLAN_BODY_HEADINGS
+            continue
+        if not in_read_plan_section or not stripped:
+            continue
+
+        for match in COMMIT_READ_PLAN_PATH_RE.findall(stripped):
+            path = match.strip().strip("`").strip("<>()[]{}，,；;。")
+            if path:
+                collected.append(path)
+
+    return normalize_path_list(collected)
+
+
 def commit_contract_values(root: Path = ROOT) -> dict[str, set[str]]:
     def cell_token(value: str) -> str:
         return value.strip().strip("`").strip()
@@ -3368,13 +3394,20 @@ def build_commit_gate(
     changed_paths: list[str] | None = None,
     acknowledged_paths: list[str] | None = None,
     require_read_plan: bool = True,
+    hook_integrated: bool = False,
+    environment_integrated: bool | None = None,
 ) -> dict[str, Any]:
     normalized_changed_paths = normalize_path_list(changed_paths)
-    normalized_ack_paths = normalize_path_list(acknowledged_paths)
+    message_ack_paths = extract_commit_read_plan_paths(message)
+    normalized_ack_paths = normalize_path_list([
+        *(acknowledged_paths or []),
+        *message_ack_paths,
+    ])
     parsed = parse_commit_message(message)
     contract = commit_contract_values(root)
     body_reasons = commit_body_required_reasons(normalized_changed_paths)
     diagnostics: list[dict[str, str]] = []
+    effective_environment_integrated = hook_integrated if environment_integrated is None else environment_integrated
 
     if not parsed["header_valid"]:
         diagnostics.append(_commit_gate_diagnostic(
@@ -3460,8 +3493,9 @@ def build_commit_gate(
             "read_only": True,
             "authority": "derived_from_v3_commit_contract",
             "authorization": "none",
-            "environment_integrated": False,
-            "hook_integrated": False,
+            "environment_integrated": effective_environment_integrated,
+            "hook_integrated": hook_integrated,
+            "integration_scope": "git.commit-msg" if hook_integrated else "none",
             "root": root.as_posix(),
         },
         "summary": {
@@ -3477,13 +3511,14 @@ def build_commit_gate(
             "read_plan_consumed": not require_read_plan or not any(
                 path for path in RUNTIME_REQUIRED_ENTRY_PATHS if path not in normalized_ack_paths
             ),
-            "environment_integrated": False,
+            "environment_integrated": effective_environment_integrated,
         },
         "message": parsed,
         "changed_paths": normalized_changed_paths,
         "changed_scopes": changed_scopes,
         "body_required_reasons": body_reasons,
         "acknowledged_paths": normalized_ack_paths,
+        "message_acknowledged_paths": message_ack_paths,
         "source_refs": [
             {"path": SHORT_SPEC_REFS["03"], "role": "commit_traceability_rule"},
             {"path": COMMIT_MESSAGE_CONTRACT_PATH, "role": "commit_message_contract"},

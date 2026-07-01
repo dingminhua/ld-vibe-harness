@@ -1,0 +1,23 @@
+#!/bin/sh
+# LDVH v3 managed commit-msg hook
+set -eu
+
+if ! REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
+  echo "LDVH v3 commit-msg hook: unable to resolve repository root" >&2
+  exit 1
+fi
+
+LDVH_ROOT=${LDVH_ROOT:-$REPO_ROOT}
+VALIDATOR="$LDVH_ROOT/code/commit_validate.py"
+if [ ! -f "$VALIDATOR" ]; then
+  echo "LDVH v3 commit-msg hook: missing validator at $VALIDATOR" >&2
+  exit 1
+fi
+
+case "$1" in
+  /*) MSG_FILE="$1" ;;
+  *) MSG_FILE="$REPO_ROOT/$1" ;;
+esac
+
+cd "$REPO_ROOT"
+exec python3 "$VALIDATOR" --check-message-file "$MSG_FILE" --repo "$REPO_ROOT" --hook-integrated

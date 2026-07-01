@@ -59,6 +59,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="acknowledged read_plan path; may be repeated or comma-separated",
     )
     parser.add_argument("--no-require-read-plan", action="store_true", help="do not require read_plan evidence")
+    parser.add_argument(
+        "--hook-integrated",
+        action="store_true",
+        help="mark this invocation as the active git.commit-msg hook integration",
+    )
     parser.add_argument("--format", choices=["text", "json"], default="text")
     return parser
 
@@ -74,6 +79,7 @@ def main(argv: list[str] | None = None) -> int:
         changed_paths=changed_paths,
         acknowledged_paths=args.acknowledged_path,
         require_read_plan=not args.no_require_read_plan,
+        hook_integrated=args.hook_integrated,
     )
     if args.format == "json":
         print(json.dumps(result, ensure_ascii=False, indent=2))

@@ -1,6 +1,8 @@
 # 9F 主线切换收口记录
 
 > 文件状态：temporary migration closure。本文记录阶段 9F 的 V3 soft mainline switch 结论，不授权 Hook 安装、阻断型环境入口、通用 Web 写入、Human Gate 自动完成或 hard switch。正式规则仍以 `specs/` 正文为准。
+>
+> 后续状态：`_migration/10A-commit-msg-hard-switch.md` 已完成当前 worktree 的 `commit-msg` 最小 hard switch。本文中的 `environment_integrated=false`、`hook_integrated=false` 只描述 9F 当时状态，不代表 10A 之后的当前状态。
 
 ## 1. 收口结论
 

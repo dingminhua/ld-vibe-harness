@@ -1,6 +1,6 @@
 # LDVH V3
 
-当前仓库处于 V3 soft mainline 状态：日常规则判断、事实对象维护和 Web 数据读取以 V3 为准；Hook、Rules、runtime adapter 和阻断型环境入口尚未强制接管。
+当前仓库处于 V3 commit-msg 最小 hard switch 状态：日常规则判断、事实对象维护和 Web 数据读取以 V3 为准；当前 worktree 的真实 Git `commit-msg` Hook 已由 V3 接管。Rules、runtime adapter、session start、pre tool use、completion claim 和其它阻断型环境入口尚未强制接管。
 
 ## 当前主线
 
@@ -10,18 +10,39 @@
 - `web/`：Human-facing 展示和 Web API。Web 独立读取 V3 `ldvh-base/`，不依赖 Code 输出作为主数据源。
 - `tests/`：正式回归检查。
 - `_migration/`：历史迁移证据、formal review hash gate 和迁移测试材料；不作为日常规则源或事实维护入口。
-- `rules/`、`hooks/`、`skills/`：仍未正式启用。Skill 不作为 V3 顶层机制。
+- `hooks/`：当前 worktree 的 `commit-msg` Hook 模板已启用，用于真实提交前校验 V3 commit message 契约和 read_plan 消费证据。
+- `rules/`、`skills/`：仍未正式启用。Skill 不作为 V3 顶层机制。
 
 ## 环境边界
 
 ```yaml
-switch_mode: soft_mainline
-environment_integrated: false
-hook_integrated: false
+switch_mode: commit_msg_hard_switch_minimal
+environment_integrated: partial
+hook_integrated: git.commit-msg
 authorization: none
 ```
 
-这意味着 V3 已是日常主线，但系统不会自动拦截所有 session start、pre tool use、completion claim 或真实 Git 操作。需要时应手动运行对应 Code 命令；Code、Web、测试或 commit gate 输出都不替代 Human Gate。
+这意味着 V3 已是日常主线，并会通过当前 worktree 的 `core.hooksPath=hooks` 自动拦截真实 Git commit message。系统仍不会自动拦截所有 session start、pre tool use、completion claim 或其它环境操作。需要时应手动运行对应 Code 命令；Code、Web、测试或 commit gate 输出都不替代 Human Gate。
+
+Hook 状态和回滚入口：
+
+```bash
+python3 code/install_git_hooks.py status
+python3 code/install_git_hooks.py install --repo .
+python3 code/install_git_hooks.py uninstall --repo .
+```
+
+真实提交如果触发 body 必填条件，正文至少包含 `读取依据:` 和 `关键变更:`：
+
+```text
+读取依据:
+- specs/00-理念与构成.md
+- specs/01-保障与衔接.md
+- specs/02-AI行为规范.md
+
+关键变更:
+- ...
+```
 
 ## 常用验证
 

@@ -224,6 +224,15 @@ specs 迁入
 5. 测试策略开始采用 `code/test_runner.py` 的 `smoke` / `targeted` / `full` 分层入口，runner 提供阶段进度和耗时 summary；
 6. hard switch、Hook / Rules / runtime adapter、完整 Confirm UI、通用 Web 写入和非提交正式行动模板仍后置，启用前必须进入 Human Gate。
 
+10A 完成记录：
+
+1. `_migration/10A-commit-msg-hard-switch.md` 已记录当前 worktree 的 `commit-msg` 最小 hard switch；
+2. `hooks/commit-msg` 已成为 V3 tracked Hook 模板，调用 `code/commit_validate.py --hook-integrated`；
+3. `code/install_git_hooks.py` 已提供 worktree-local Hook `status`、`install` 和 `uninstall`，通过 `core.hooksPath=hooks` 避免覆盖 common `.git/hooks`；
+4. `code/ldvh_specs.py` 已能从提交正文 `读取依据:` 段提取 read_plan 消费路径，`specs/attachments/03.Att.01-Commit-Message契约字段表.md` 已登记该小标题；
+5. 当前状态更新为 `switch_mode=commit_msg_hard_switch_minimal`、`environment_integrated=partial`、`hook_integrated=git.commit-msg`、`authorization=none`；
+6. session start、pre tool use、completion claim、Rules/runtime adapter、通用 Web 写入、外部受管项目 Hook adapter 和非提交正式行动模板仍后置。
+
 阶段 5B 术语校正：
 
 1. Action Guide / 行动指南是 V2 知识地图导航能力在 V3 中的升级承接，二者等价，后续应完全取代“知识地图”概念；迁移材料中出现“知识地图”时只作为历史来源名，不作为 V3 长期对象、页面或事实层。
