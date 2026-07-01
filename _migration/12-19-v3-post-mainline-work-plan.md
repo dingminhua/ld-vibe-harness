@@ -10,7 +10,7 @@
 2. `ldvh-base/` 承接 V3 事实对象实例；
 3. Web 已按 08 独立读取 V3 facts，不依赖 Code 输出作为主数据源；
 4. 当前 worktree 已接入 `git.commit-msg` 最小 hard switch；
-5. `specs/11-环境适配规范.md` 已承接环境入口分类、状态、payload、receipt、安装和回滚边界；
+5. `specs/01-保障与衔接.md` §6 与 `01.Att.03-06` 已承接环境入口分类、状态、payload、receipt、安装和回滚边界；
 6. formal review hash gate 已迁入 `reviews/formal/`；
 7. `_migration` 保留为历史证据和迁移测试材料，不作为正式规则源或事实源。
 

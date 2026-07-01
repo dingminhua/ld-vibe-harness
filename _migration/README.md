@@ -52,7 +52,7 @@
 
 `_migration/9D-web-data-contract-migration.md` 记录阶段 9D 的 Web 数据契约迁移。它说明 V2 Web tracked 资产和 Web API 回归测试已迁入 V3，Web facts API 按 08 从 `ldvh-base/` 独立读取并输出 `source_refs`，Spark quick create 作为唯一最小轻写入被保留；它不授权通用 Web 写入、完整 Confirm UI、Hook 启用或 V3 正式主线接管。
 
-`_migration/9E-action-template-candidate-deferral.md` 记录阶段 9E 的行动模板候选后置结论。它说明 Git 提交行动仍是当前唯一正式模板示范，WorkCase 创建、方案审核、执行推进、结果复核、关闭确认、Rules 同步审查和环境入口适配继续作为后置候选；它不授权正式行动模板实例、Hook 启用、Web 通用写入或 Human Gate 自动完成。
+`_migration/9E-action-template-candidate-deferral.md` 记录阶段 9E 的行动模板候选后置结论。9E 当时保留 Git 提交行动作为唯一正式模板示范；后续 13A 和当前 `06` 已补入 WorkCase 最小手动行动模板。Rules 同步审查、环境入口适配、自动化执行、Web 通用写入和 Human Gate 自动完成仍后置。
 
 `_migration/9F-mainline-soft-switch-closure.md` 记录阶段 9F 的 V3 soft mainline 收口结论。它说明 V3 已成为日常规则和事实维护主线，并开始用 `code/test_runner.py` 承接 smoke / targeted / full 分层测试入口；其中 `environment_integrated=false`、`hook_integrated=false`、`authorization=none` 是 9F 当时边界。10A 之后当前 worktree 已单独接入 `commit-msg` 最小 Hook。
 
@@ -80,7 +80,7 @@
 
 `_migration/11E-v2-v3-capability-coverage-matrix.md` 记录 V2 到 V3 能力覆盖矩阵，把已迁入、转归口、后置和废弃项放到同一张表中。
 
-`_migration/11F-action-template-minimal-closure.md` 记录行动模板最小闭环。Git 提交行动仍是唯一正式模板示范，WorkCase 创建、方案审核、执行推进、结果复核和关闭确认继续后置。
+`_migration/11F-action-template-minimal-closure.md` 记录行动模板最小闭环。当前 `06` 已保留 Git 提交行动和 WorkCase 最小手动行动模板；其它非提交模板、自动化执行、Web 写入和完整 Confirm UI 继续后置。
 
 `_migration/11G-migration-dependency-independence.md` 记录迁移层依赖独立处理。formal review hash gate 已迁到 `reviews/formal/`；`_migration/reviews/` 不再是稳定 gate 读取位置，但 `_migration` 仍保留历史证据和迁移测试。
 
@@ -103,3 +103,5 @@
 `_migration/19A-migration-archive-decision.md` 记录阶段 19A 的 `_migration` 归档判断。它确认 formal review mapping evidence、迁移测试、test runner 和 Code preflight/read plan 仍依赖 `_migration`，因此当前继续保留，不删除 tracked 迁移材料。
 
 `_migration/20-22-conditional-audit-closure.md` 记录只读审核“有条件通过”后的收口处理。它说明 specs 实现域细节已迁到 `code/docs/`、`tests/docs/` 和 `web/docs/`，外部 Hook 底层安装入口已收紧为当前 worktree / adapter backend，外部受管项目仍必须走 `governed_hook_adapter.py` 和 Human Gate。
+
+`_migration/23A-v2-close-v3-start-assessment.md` 记录 V2 关闭与 V3 启动判断。它汇总 V3 相对 V2 的结构性改进、已迁入主体内容、仍未迁入但不阻断启动的 V2 后置项，以及正式关闭 V2 / 启动 V3 所需的 Human 确认和验证条件。

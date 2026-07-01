@@ -6,7 +6,7 @@
 
 阶段 15 用于再次确认当前仓库是否存在真实可接入的 session start、pre tool use、completion claim、tool hook、completion hook、Codex repo instruction 或外部 runtime adapter 自动入口。
 
-判定依据沿用 11：
+判定依据沿用 `specs/01-保障与衔接.md` §6 与 `01.Att.03-06`：
 
 1. 真实触发点；
 2. 稳定 payload；

@@ -150,7 +150,7 @@ V3 术语使用：
 
 | 剩余内容 | 阶段 9 归口 | 处理结论 | 是否阻断 V3 主线切换 |
 |---|---|---|---|
-| Git 提交行动 | 9B 最小提交入口 | 已迁入最小 Code gate。Git 提交行动继续作为唯一正式行动模板示范，commit message 契约、read_plan 消费证据和验证声明边界均可被 V3 Code 校验 | 已完成 |
+| Git 提交行动 | 9B 最小提交入口 | 已迁入最小 Code gate。Git 提交行动继续作为正式行动模板示范；commit message 契约和验证声明边界可被 V3 Code 校验，read_plan 消费证据不进入 commit body 默认要求，只由 runtime receipt 或显式外部入参承接 | 已完成 |
 | Hook / commit gate | 9B 最小提交入口 / hard switch 后置 | 已新增 V3 commit gate CLI 和 `code/commit_validate.py` wrapper；真实 Git Hook 未安装，启用仍需 Human Gate | Code gate 完成；真实 Hook 不阻断 soft mainline |
 | runtime adapter / dispatcher | 后续环境入口 / hard switch | 最小提交 wrapper 已有；不得恢复 V2 Hook/Rules 顶层权威。通用 session_start、pre_tool_use、completion_claim 环境入口继续后置 | 不阻断 soft mainline |
 | Spark / WorkCase / ADR / Pitfall / Study 完整字段、schema、真实实例 | 9C 事实对象完整迁移 | 已完成。真实实例进入 V3 `ldvh-base/`，编号按 V3 重构，Code/tests 承接字段 schema、状态和关系校验 | 已完成 |

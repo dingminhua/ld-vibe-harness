@@ -211,8 +211,8 @@ specs 迁入
 
 1. `_migration/9E-action-template-candidate-deferral.md` 已记录行动模板候选后置结论；
 2. `specs/06-行动模板基础规范.md` 已补充 WorkCase 创建、方案审核、结果复核和关闭确认的后置候选边界；
-3. Git 提交行动仍是当前唯一正式模板示范；
-4. WorkCase 创建、方案审核、执行推进、结果复核、关闭确认、Rules 同步审查和环境入口适配均不阻断 V3 主线切换；
+3. 9E 当时保留 Git 提交行动作为唯一正式模板示范；后续 13A 和当前 `06` 已补入 WorkCase 最小手动行动模板；
+4. WorkCase 自动创建、方案审核、执行推进、结果复核、关闭确认、Rules 同步审查和环境入口适配均不阻断 V3 主线切换；
 5. 这些候选后续必须满足来源规则、Context/Scenario/Gate、事实对象字段、Code/Web 写入或等价入口、Human Gate、测试和环境边界后，才能重新判断是否迁入正式模板。
 
 9F 完成记录：
@@ -291,13 +291,13 @@ specs 迁入
 
 1. `_migration/11A-human-gate-constitutional-remediation.md` 已记录构成体系变更的 Human Gate 补救边界：不伪造早期确认，只把阶段 11 之后继续推进的 V3 基线明确下来；
 2. `_migration/11B-spec-status-activation.md` 已记录 specs 和正式附件激活：正式规范正文和已迁入附件不再停留在 candidate 状态；
-3. `_migration/11C-environment-adaptation-admission.md` 已记录 `specs/11-环境适配规范.md` 和 11 附件迁入，补齐 01 中悬空的环境适配归口；
+3. `_migration/11C-environment-adaptation-admission.md` 已记录环境适配归口迁入；后续独立 11 已吸收到 `specs/01-保障与衔接.md` §6，原 11 附件已改为 `01.Att.03-06`；
 4. `_migration/11D-runtime-automatic-integration-boundary.md` 已记录 runtime 自动入口审计：当前除 `git.commit-msg` 外没有可升级为 integrated 的自动入口；
 5. `_migration/11E-v2-v3-capability-coverage-matrix.md` 已记录 V2 到 V3 能力覆盖矩阵，区分已迁入、转归口、后置和废弃；
-6. `_migration/11F-action-template-minimal-closure.md` 已记录行动模板最小闭环：Git 提交行动是唯一正式模板示范，WorkCase 非提交模板继续后置；
+6. `_migration/11F-action-template-minimal-closure.md` 已记录行动模板最小闭环；后续 `06` 已保留 Git 提交行动和 WorkCase 最小手动行动模板，其它非提交模板继续后置；
 7. `_migration/11G-migration-dependency-independence.md` 已记录 formal review hash gate 从 `_migration/reviews` 迁入 `reviews/formal`；
 8. README 已更新 `reviews/formal/` 和 `_migration/` 职责边界；
-9. 阶段 11 完成后，V3 主体以 active specs、V3 facts、Web 独立读取、commit-msg hard switch、环境适配规范和稳定 formal review ledger 为主线；仍后置的是非提交行动模板、外部环境自动 Hook、稳定 receipt 存储和通用 Web 写入。
+9. 阶段 11 完成后，V3 主体以 active specs、V3 facts、Web 独立读取、commit-msg hard switch、01 环境衔接规则和稳定 formal review ledger 为主线；仍后置的是非提交自动化模板、外部环境自动 Hook、稳定 receipt 存储和通用 Web 写入。
 
 12-19 后续计划记录：
 

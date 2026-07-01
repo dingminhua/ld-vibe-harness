@@ -11,7 +11,7 @@
 5. `specs/06-行动模板基础规范.md`
 6. `specs/08-Web信息同步规范.md`
 7. `specs/09-测试与验证规范.md`
-8. `specs/11-环境适配规范.md`
+8. `specs/01-保障与衔接.md` §6 与 `specs/attachments/01.Att.03-06`
 9. `code/install_git_hooks.py`
 10. `code/governed_hook_adapter.py`
 
@@ -36,7 +36,7 @@
 | `specs/06-行动模板基础规范.md` | 保留 Git/WorkCase 行动模板规则和 Gate，移出命令长串与具体实例操作细节 |
 | `specs/08-Web信息同步规范.md` | 保留 Web 受控写入规则，移出当前 Spark quick create 实现状态 |
 | `specs/09-测试与验证规范.md` | 保留分层验证职责，移出具体 runner 命令和 slow policy 操作说明 |
-| `specs/11-环境适配规范.md` | 保留入口类型和状态声明规则，移出当前 hook path 和安装实践 |
+| `specs/01-保障与衔接.md`、`01.Att.03-06` | 保留入口类型和状态声明规则，移出当前 hook path 和安装实践 |
 
 收口后，specs 仍定义需求、规则、契约、边界、Human Gate、Stop Conditions 和验证要求；实践细节由 `code/docs/`、`tests/docs/`、`web/docs/`、README 和可执行代码承接。
 
