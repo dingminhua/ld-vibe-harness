@@ -1,16 +1,16 @@
 target_spec: "specs/05-事实模型基础规范.md"
-target_sha256: "cb8d89bf2823f26714f57fffc3d2b4c679eaae6e677a2d47957f4d007170e5d9"
+target_sha256: "181734c909c5f8ecc292ea4bfda9cc24d48da2aa8fc8f2ddb22a38b3e1e420b3"
 change_type: "modification"
 mapping_evidence:
-  path: "_migration/6B-fact-object-member-completion.md"
+  path: "_migration/7-governed-project-admission.md"
 code_verification:
   command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
-  receipt: "Formal specs validator and tests/code cover 05 after adding Spark, ADR, Pitfall, and Study to the minimal fact model member set."
+  receipt: "Formal specs validator and tests/code cover 05 after referencing 10 as the governed project boundary for future real instance migration."
 subagent_review:
   agent_id: "codex-local-6a-workcase-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review confirms 05 now references all 20-24 minimal member specs while leaving full fields, orchestration tables, real instances, Web write, and action template instances postposed."
+  receipt: "Local review confirms 05 keeps fact model members separate from real instances and now points governed project configuration to 10 without migrating ldvh-base instances."
   unresolved_blockers: []
 warnings: []

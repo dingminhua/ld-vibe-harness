@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
-from ldvh_specs import ROOT, build_action_guide, build_preflight, build_runtime_event, build_validation
+from ldvh_specs import ROOT, build_action_guide, build_governed_projects_report, build_preflight, build_runtime_event, build_validation
 
 
 def _diagnostics_by_level(result: dict[str, Any]) -> dict[str, int]:
@@ -94,6 +94,26 @@ def print_text(result: dict[str, Any], command: str) -> None:
             print("\nDiagnostics: none")
         return
 
+    if command == "governed-projects":
+        summary = result["summary"]
+        resolution = result["resolution"]
+        print("LDVH v3 受管项目解析完成")
+        print(f"- status: {summary['status']}")
+        print(f"- projects: {summary['projects']}")
+        print(f"- governed: {summary['governed']}")
+        print(f"- blocked: {summary['blocked']}")
+        print(f"- governed_project_id: {resolution['governed_project_id']}")
+        print(f"- governed_via: {resolution['governed_via']}")
+        print(f"- diagnostics: {summary['diagnostics']}")
+        if result["diagnostics"]:
+            print("\nDiagnostics:")
+            for diagnostic in result["diagnostics"]:
+                print(f"- {diagnostic['path']} [{diagnostic['level']}/{diagnostic['code']}] {diagnostic['message']}")
+        else:
+            print("\nDiagnostics: none")
+        print("\nAuthorization: none")
+        return
+
     summary = result["summary"]
     print("LDVH v3 specs 校验完成")
     print(f"- command: {command}")
@@ -104,6 +124,7 @@ def print_text(result: dict[str, Any], command: str) -> None:
     print(f"- ai_behavior_requirements: {summary['ai_behavior_requirements']}")
     print(f"- takeover_matrix_rows: {summary['takeover_matrix_rows']}")
     print(f"- foundation_spec_contracts: {summary['foundation_spec_contracts']}")
+    print(f"- governed_projects: {summary['governed_projects']}")
     print(f"- diagnostics: {summary['diagnostics']}")
 
     if result["diagnostics"]:
@@ -148,7 +169,7 @@ def build_parser() -> argparse.ArgumentParser:
         "command",
         nargs="?",
         default="all",
-        choices=["all", "specs", "timings", "ai-behavior", "action-guide", "preflight", "runtime"],
+        choices=["all", "specs", "timings", "ai-behavior", "action-guide", "preflight", "runtime", "governed-projects"],
         help="validation surface to print",
     )
     parser.add_argument("--root", default=ROOT.as_posix(), help="repository root")
@@ -211,6 +232,15 @@ def main(argv: list[str] | None = None) -> int:
             operation=args.operation,
             acknowledged_paths=args.acknowledged_path,
             verification_evidence=args.verification_evidence,
+        )
+        result = output
+    elif args.command == "governed-projects":
+        target_paths = [args.target_path] if args.target_path else []
+        output = build_governed_projects_report(
+            root,
+            cwd=root,
+            target_paths=target_paths,
+            read_write_kind="commit" if args.operation == "commit" else "write",
         )
         result = output
     else:

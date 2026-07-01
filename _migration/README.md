@@ -36,4 +36,6 @@
 
 `_migration/v3-formal-spec-numbering-decision.md` 记录 V3 正式 specs 的目标编号和重编号理由。它用于指导当前 02/03/04 重排和后续 V2 吸收归口；它仍是临时决策证据，不替代正式 `specs/` 正文。
 
-`_migration/v3-specs-absorption-index.md` 记录 V3 正式 `03/05/06/07/08/09` 应吸收哪些 V2/旧 specs 内容、哪些只能保留在迁移材料、哪些应转为 Code 或 tests。它用于支撑正式 specs 创建和 review 收据；它仍是临时迁移索引，不授权正式规则或实现行为。
+`_migration/v3-specs-absorption-index.md` 记录 V3 正式 `03/05/06/07/08/09/10` 应吸收哪些 V2/旧 specs 内容、哪些只能保留在迁移材料、哪些应转为 Code 或 tests。它用于支撑正式 specs 创建和 review 收据；它仍是临时迁移索引，不授权正式规则或实现行为。
+
+`_migration/7-governed-project-admission.md` 记录阶段 7 受管项目接入范围。它说明 V3 已迁入受管项目静态解析、配置契约和 target-first resolver，但不授权 Hook 安装、commit gate、Web 写入或真实 `ldvh-base/` 实例迁移。

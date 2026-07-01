@@ -25,6 +25,12 @@ def _replace_in_temp(root: Path, rel_path: str, old: str, new: str = "") -> None
     path.write_text(raw.replace(old, new), encoding="utf-8")
 
 
+def _write_governed_config(root: Path, content: str) -> Path:
+    path = root / "LDVH-GOVERNED-PROJECTS.yaml"
+    path.write_text(content.strip() + "\n", encoding="utf-8")
+    return path
+
+
 def _diagnostic_codes(result: dict) -> set[str]:
     return {diagnostic["code"] for diagnostic in result["diagnostics"]}
 
@@ -33,9 +39,10 @@ def test_current_specs_validate_without_diagnostics() -> None:
     result = ldvh_specs.build_validation(ROOT)
 
     assert result["summary"]["status"] == "ok"
-    assert result["summary"]["specs"] == 15
-    assert result["summary"]["attachments"] == 11
+    assert result["summary"]["specs"] == 16
+    assert result["summary"]["attachments"] == 12
     assert result["summary"]["foundation_spec_contracts"] == 6
+    assert result["summary"]["governed_projects"] == 1
     assert result["diagnostics"] == []
 
 
@@ -171,6 +178,33 @@ def test_web_sync_validator_requires_native_source_refs_boundary(tmp_path: Path)
     assert "WEB_NATIVE_IMPLEMENTATION_BOUNDARY_MISSING" in _diagnostic_codes(result)
 
 
+def test_governed_project_spec_requires_target_first_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/10-受管项目接入规范.md",
+        "V3 判定受管项目必须采用 target-first；只有缺少明确 target 时，才允许使用 cwd fallback。",
+        "V3 判定受管项目必须优先使用工作对象。",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GOVERNED_PROJECT_TARGET_FIRST_MISSING" in _diagnostic_codes(result)
+
+
+def test_governed_project_contract_reports_missing_resolution_field(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/attachments/10.Att.01-受管项目配置字段表.md",
+        "| `unknown_reason` | 条件字符串 | 未命中或不确定时说明原因 |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GOVERNED_PROJECT_RESOLUTION_FIELD_CONTRACT_MISSING" in _diagnostic_codes(result)
+
+
 def test_fact_model_validator_reports_instance_rule_boundary(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
@@ -240,6 +274,193 @@ def test_migrated_attachment_contracts_are_code_consumable() -> None:
         "残留风险",
         "证据回指",
     }
+    assert {row["根字段"].strip("`") for row in contracts["governed_project_config_contract"]["root_fields"]} == {
+        "product_name",
+        "product_description",
+        "projects",
+    }
+    assert {row["项目字段"].strip("`") for row in contracts["governed_project_config_contract"]["project_fields"]} >= {"id", "path", "git"}
+    assert {row["resolution字段"].strip("`") for row in contracts["governed_project_config_contract"]["resolution_fields"]} >= {
+        "target",
+        "normalized_path",
+        "status",
+        "governed_project_id",
+        "unknown_reason",
+    }
+
+
+def test_governed_projects_config_is_code_consumable() -> None:
+    result = ldvh_specs.build_validation(ROOT)
+    config = result["governed_projects_config"]
+    resolution = result["governed_project_resolution"]
+
+    assert config["product_name"] == "LD Vibe Harness v3"
+    assert [project["id"] for project in config["projects"]] == ["ldvh-v3"]
+    assert resolution["governed"] is True
+    assert resolution["governed_project_id"] == "ldvh-v3"
+    assert resolution["governed_via"] == "path"
+
+
+def test_governed_projects_config_reports_duplicate_id(tmp_path: Path) -> None:
+    _write_governed_config(
+        tmp_path,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: app-one
+  - id: app
+    path: app-two
+""",
+    )
+
+    codes = {diagnostic.code for diagnostic in ldvh_specs.validate_governed_projects_config(tmp_path)}
+
+    assert "GOVERNED_PROJECT_ID_DUPLICATE" in codes
+
+
+def test_governed_projects_config_reports_forbidden_fields(tmp_path: Path) -> None:
+    _write_governed_config(
+        tmp_path,
+        """
+product_name: Test
+product_description: Test registry
+version: 1
+projects:
+  - id: app
+    path: app
+    type: service
+    git:
+      common_dir: /tmp/app/.git
+      status: active
+""",
+    )
+
+    codes = {diagnostic.code for diagnostic in ldvh_specs.validate_governed_projects_config(tmp_path)}
+
+    assert "GOVERNED_PROJECTS_ROOT_FIELD_FORBIDDEN" in codes
+    assert "GOVERNED_PROJECT_FIELD_FORBIDDEN" in codes
+    assert "GOVERNED_PROJECT_GIT_FIELD_FORBIDDEN" in codes
+
+
+def test_governed_project_resolver_uses_target_before_cwd(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    project = root / "governed-app"
+    project.mkdir()
+    _write_governed_config(
+        root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {project}
+""",
+    )
+
+    report = ldvh_specs.build_governed_projects_report(
+        root,
+        cwd=root,
+        target_paths=[project / "README.md"],
+    )
+
+    assert report["summary"]["status"] == "ok"
+    assert report["resolution"]["governed"] is True
+    assert report["resolution"]["subject_source"] == "target"
+    assert report["resolution"]["governed_project_id"] == "app"
+    assert report["resolution"]["target_resolutions"][0]["status"] == "governed"
+
+
+def test_governed_project_resolver_noops_for_outside_target(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    project = root / "governed-app"
+    outside = root / "outside"
+    project.mkdir()
+    outside.mkdir()
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: governed-app
+""",
+    )
+
+    resolution = ldvh_specs.resolve_governed_subject(root, cwd=root, target_paths=[outside / "README.md"])
+
+    assert resolution["governed"] is False
+    assert resolution["blocked"] is False
+    assert resolution["target_resolutions"][0]["status"] == "not_governed"
+
+
+def test_governed_project_resolver_blocks_mixed_write_targets(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    project = root / "governed-app"
+    outside = root / "outside"
+    project.mkdir()
+    outside.mkdir()
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: governed-app
+""",
+    )
+
+    resolution = ldvh_specs.resolve_governed_subject(
+        root,
+        cwd=root,
+        target_paths=[project / "a.txt", outside / "b.txt"],
+        read_write_kind="write",
+    )
+
+    assert resolution["blocked"] is True
+    assert resolution["blocked_reason"] == "mixed_governed_and_ungoverned_targets"
+
+
+def test_governed_project_resolver_matches_git_worktree_common_dir(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    repo = root / "repo"
+    worktree = root / "repo-worktree"
+    repo.mkdir()
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "config", "user.email", "ldvh@example.test"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "LDVH Test"], cwd=repo, check=True)
+    (repo / "README.md").write_text("test\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "test: init"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(["git", "worktree", "add", str(worktree)], cwd=repo, check=True, capture_output=True, text=True)
+    common_dir = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    _write_governed_config(
+        root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+    git:
+      common_dir: {common_dir}
+""",
+    )
+
+    resolution = ldvh_specs.resolve_governed_subject(root, cwd=root, target_paths=[worktree / "README.md"])
+
+    assert resolution["governed"] is True
+    assert resolution["governed_via"] == "git.common_dir"
+    assert resolution["governed_project_id"] == "app"
 
 
 def test_commit_contract_attachment_reports_missing_required_field(tmp_path: Path) -> None:
@@ -672,6 +893,8 @@ def test_formal_identity_and_role_sections_are_parseable() -> None:
         "08",
         "09",
         "09.Att.01",
+        "10",
+        "10.Att.01",
         "20",
         "21",
         "22",
@@ -753,6 +976,32 @@ def test_specs_validate_cli_json_all() -> None:
     assert payload["metadata"]["read_only"] is True
     assert payload["summary"]["status"] == "ok"
     assert payload["diagnostics"] == []
+
+
+def test_specs_validate_cli_governed_projects_json() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/specs_validate.py",
+            "governed-projects",
+            "--target-path",
+            "specs/10-受管项目接入规范.md",
+            "--format",
+            "json",
+            "--fail-on-diagnostics",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["metadata"]["read_only"] is True
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["governed"] is True
+    assert payload["resolution"]["governed_project_id"] == "ldvh-v3"
+    assert payload["resolution"]["governed_via"] == "path"
 
 
 def test_action_guide_session_start_read_plan() -> None:

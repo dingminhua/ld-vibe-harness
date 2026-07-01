@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import hashlib
+import os
 from pathlib import Path
 import re
+import subprocess
 from typing import Any
 
 import yaml
@@ -17,6 +19,8 @@ AI_BEHAVIOR_SPEC_PATH = "specs/02-AI行为规范.md"
 COMMIT_MESSAGE_CONTRACT_PATH = "specs/attachments/03.Att.01-Commit-Message契约字段表.md"
 FIELD_REGISTRY_CONTRACT_PATH = "specs/attachments/05.Att.01-字段注册表结构.md"
 VERIFICATION_CLAIM_FIELDS_PATH = "specs/attachments/09.Att.01-验证声明字段表.md"
+GOVERNED_PROJECTS_CONFIG_PATH = "LDVH-GOVERNED-PROJECTS.yaml"
+GOVERNED_PROJECTS_CONTRACT_PATH = "specs/attachments/10.Att.01-受管项目配置字段表.md"
 
 SHORT_SPEC_REFS = {
     "00": "specs/00-理念与构成.md",
@@ -29,6 +33,7 @@ SHORT_SPEC_REFS = {
     "07": "specs/07-Code确定性执行规范.md",
     "08": "specs/08-Web信息同步规范.md",
     "09": "specs/09-测试与验证规范.md",
+    "10": "specs/10-受管项目接入规范.md",
     "20": "specs/20-Spark-火花.md",
     "21": "specs/21-WorkCase-工作项.md",
     "22": "specs/22-ADR-决策.md",
@@ -117,6 +122,10 @@ FIELD_REGISTRY_CODE_CHECK_COLUMNS = ["code_check_kind", "可机械消费维度",
 VERIFICATION_CLAIM_COLUMNS = ["字段", "要求"]
 VERIFICATION_COMPLETE_CONDITION_COLUMNS = ["条件", "内容"]
 VERIFICATION_FORBIDDEN_COLUMNS = ["写法", "边界"]
+GOVERNED_PROJECT_ROOT_COLUMNS = ["根字段", "要求", "说明"]
+GOVERNED_PROJECT_ITEM_COLUMNS = ["项目字段", "要求", "说明"]
+GOVERNED_PROJECT_GIT_COLUMNS = ["Git字段", "要求", "说明"]
+GOVERNED_PROJECT_RESOLUTION_COLUMNS = ["resolution字段", "要求", "说明"]
 ACTION_TEMPLATE_COLUMNS = ["结构", "最小要求"]
 FOUNDATION_SPEC_IDS = ("03", "05", "06", "07", "08", "09")
 ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
@@ -238,6 +247,50 @@ WEB_SYNC_FORBIDDEN_PHRASES = [
     "Web 可以使用 Code 输出",
     "Code 输出作为展示辅助",
     "Code 输出喂页面数据",
+]
+GOVERNED_PROJECTS_ROOT_FIELDS = {"product_name", "product_description", "projects"}
+GOVERNED_PROJECTS_ITEM_FIELDS = {"id", "path", "name", "description", "git"}
+GOVERNED_PROJECTS_REQUIRED_ITEM_FIELDS = {"id", "path"}
+GOVERNED_PROJECTS_GIT_FIELDS = {"common_dir", "remote_url", "default_branch"}
+GOVERNED_PROJECT_REQUIRED_ROOT_FIELDS = ["product_name", "product_description", "projects"]
+GOVERNED_PROJECT_REQUIRED_ITEM_FIELDS = ["id", "path", "name", "description", "git"]
+GOVERNED_PROJECT_REQUIRED_GIT_FIELDS = ["common_dir", "remote_url", "default_branch"]
+GOVERNED_PROJECT_REQUIRED_RESOLUTION_FIELDS = [
+    "target",
+    "normalized_path",
+    "source",
+    "status",
+    "governed_project_id",
+    "governed_project_path",
+    "governed_via",
+    "git_common_dir",
+    "unknown_reason",
+]
+GOVERNED_PROJECT_SPEC_REQUIREMENTS = [
+    {
+        "code": "GOVERNED_PROJECT_CONFIG_BOUNDARY_MISSING",
+        "section": "受管项目配置契约",
+        "message": "10 必须定义受管项目配置契约和事实源边界",
+        "terms": ["LDVH-GOVERNED-PROJECTS.yaml", "product_name", "projects", "10.Att.01", "事实源", "不得替代事实对象"],
+    },
+    {
+        "code": "GOVERNED_PROJECT_TARGET_FIRST_MISSING",
+        "section": "工作对象与判定顺序",
+        "message": "10 必须定义 target-first、cwd fallback 和 Git common-dir 判定顺序",
+        "terms": ["target-first", "cwd fallback", "Git common-dir", "target_resolutions", "AI 不得依据路径相似"],
+    },
+    {
+        "code": "GOVERNED_PROJECT_MULTI_TARGET_BOUNDARY_MISSING",
+        "section": "多目标与 no-op 边界",
+        "message": "10 必须定义多目标、混合目标和 no-op 边界",
+        "terms": ["同一受管项目", "跨受管项目", "受管/非受管混合", "no-op", "阻断"],
+    },
+    {
+        "code": "GOVERNED_PROJECT_ENVIRONMENT_BOUNDARY_MISSING",
+        "section": "事实源接入与环境边界",
+        "message": "10 必须定义事实源接入和环境未接入边界",
+        "terms": ["ldvh-base/", "项目索引不得替代事实源", "Hook", "environment_integrated=false"],
+    },
 ]
 WORKCASE_STATUS_COLUMNS = ["状态", "含义"]
 WORKCASE_REQUIRED_CODE_CONSUMPTION = [
@@ -814,6 +867,46 @@ def parse_verification_claim_fields(root: Path = ROOT) -> dict[str, list[dict[st
     }
 
 
+def parse_governed_project_config_contract(root: Path = ROOT) -> dict[str, list[dict[str, str]]]:
+    raw = (root / GOVERNED_PROJECTS_CONTRACT_PATH).read_text(encoding="utf-8")
+    return {
+        "root_fields": find_table(raw, GOVERNED_PROJECT_ROOT_COLUMNS),
+        "project_fields": find_table(raw, GOVERNED_PROJECT_ITEM_COLUMNS),
+        "git_fields": find_table(raw, GOVERNED_PROJECT_GIT_COLUMNS),
+        "resolution_fields": find_table(raw, GOVERNED_PROJECT_RESOLUTION_COLUMNS),
+    }
+
+
+def parse_governed_projects_config(root: Path = ROOT) -> dict[str, Any]:
+    path = root / GOVERNED_PROJECTS_CONFIG_PATH
+    if not path.exists() or not path.is_file():
+        return {
+            "config_path": GOVERNED_PROJECTS_CONFIG_PATH,
+            "exists": path.exists(),
+            "product_name": "",
+            "product_description": "",
+            "projects": [],
+            "source_refs": [],
+        }
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError:
+        data = {}
+    projects = data.get("projects", []) if isinstance(data, dict) else []
+    return {
+        "config_path": GOVERNED_PROJECTS_CONFIG_PATH,
+        "exists": True,
+        "product_name": data.get("product_name", "") if isinstance(data, dict) else "",
+        "product_description": data.get("product_description", "") if isinstance(data, dict) else "",
+        "projects": projects if isinstance(projects, list) else [],
+        "source_refs": [
+            {"path": GOVERNED_PROJECTS_CONFIG_PATH, "role": "governed_project_config"},
+            {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_spec"},
+            {"path": GOVERNED_PROJECTS_CONTRACT_PATH, "role": "governed_project_config_contract"},
+        ],
+    }
+
+
 def parse_git_commit_action_template(root: Path = ROOT) -> list[dict[str, str]]:
     raw = (root / SHORT_SPEC_REFS["06"]).read_text(encoding="utf-8")
     sections = h2_sections(raw)
@@ -985,6 +1078,251 @@ def unique_dicts(items: list[dict[str, Any]], key_fields: tuple[str, ...]) -> li
 
 def path_exists(root: Path, rel_path: str) -> bool:
     return (root / rel_path).exists()
+
+
+def _resolve_path(path: Path, base: Path) -> Path:
+    expanded = path.expanduser()
+    if not expanded.is_absolute():
+        expanded = base / expanded
+    return expanded.resolve(strict=False)
+
+
+def _git_lookup_cwd(path: Path) -> Path:
+    candidate = path.expanduser()
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+    if candidate.is_file():
+        return candidate.parent
+    if candidate.is_dir():
+        return candidate
+    for parent in [candidate.parent, *candidate.parents]:
+        if parent.exists() and parent.is_dir():
+            return parent
+    return candidate.parent
+
+
+def _git_text(cwd: Path, args: list[str]) -> str:
+    command = ["git", "-C", str(_git_lookup_cwd(cwd)), *args]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+    except OSError:
+        return ""
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+def _git_common_dir(cwd: Path) -> str:
+    return _git_text(cwd, ["rev-parse", "--path-format=absolute", "--git-common-dir"])
+
+
+def _resolved_common_dir(raw: str) -> str:
+    if not raw:
+        return ""
+    return str(Path(raw).expanduser().resolve(strict=False))
+
+
+def _walk_for_governed_config(candidate: Path) -> Path | None:
+    current = candidate.expanduser()
+    if not current.is_absolute():
+        current = Path.cwd() / current
+    if current.is_file():
+        current = current.parent
+    for parent in [current, *current.parents]:
+        config = parent / GOVERNED_PROJECTS_CONFIG_PATH
+        if config.is_file():
+            return config
+    return None
+
+
+def find_governed_projects_config(root: Path = ROOT, cwd: Path | None = None, targets: list[Path] | None = None) -> Path | None:
+    search_targets = list(targets or [])
+    if cwd is not None:
+        search_targets.append(cwd)
+    for candidate in search_targets:
+        config = _walk_for_governed_config(candidate)
+        if config is not None:
+            return config
+    fallback = root / GOVERNED_PROJECTS_CONFIG_PATH
+    return fallback if fallback.is_file() else None
+
+
+def _load_governed_projects_from_config(config_path: Path) -> list[dict[str, Any]]:
+    try:
+        data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return []
+    if not isinstance(data, dict):
+        return []
+    projects = data.get("projects", [])
+    return projects if isinstance(projects, list) else []
+
+
+def _project_git_value(project: dict[str, Any], key: str) -> str:
+    git = project.get("git")
+    if not isinstance(git, dict):
+        return ""
+    value = git.get(key, "")
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _project_key(project: dict[str, Any], project_path: Path) -> str:
+    project_id = project.get("id", "")
+    if isinstance(project_id, str) and project_id.strip():
+        return project_id.strip()
+    return project_path.as_posix()
+
+
+def _match_governed_project(path: Path, config_path: Path, base: Path) -> dict[str, Any]:
+    current = _resolve_path(path, base)
+    current_common_dir = _resolved_common_dir(_git_common_dir(current))
+    base_result: dict[str, Any] = {
+        "governed": False,
+        "governed_via": "",
+        "governed_project_id": "",
+        "governed_project_path": "",
+        "project_key": "",
+        "git_common_dir": current_common_dir,
+    }
+
+    matches: list[dict[str, Any]] = []
+    for project in _load_governed_projects_from_config(config_path):
+        if not isinstance(project, dict):
+            continue
+        raw_project_path = project.get("path", "")
+        if not isinstance(raw_project_path, str) or not raw_project_path.strip():
+            continue
+        project_path = _resolve_path(Path(raw_project_path), config_path.parent)
+        project_id = project.get("id", "")
+        result = {
+            **base_result,
+            "governed": True,
+            "governed_project_id": project_id.strip() if isinstance(project_id, str) else "",
+            "governed_project_path": project_path.as_posix(),
+            "project_key": _project_key(project, project_path),
+        }
+        if current == project_path or current.as_posix().startswith(project_path.as_posix() + os.sep):
+            matches.append({**result, "governed_via": "path"})
+            continue
+
+        registered_common_dir = _resolved_common_dir(_project_git_value(project, "common_dir"))
+        if current_common_dir and registered_common_dir and current_common_dir == registered_common_dir:
+            matches.append({**result, "governed_via": "git.common_dir"})
+            continue
+
+        project_common_dir = _resolved_common_dir(_git_common_dir(project_path))
+        if current_common_dir and project_common_dir and current_common_dir == project_common_dir:
+            matches.append({**result, "governed_via": "git.common_dir"})
+
+    project_keys = {match["project_key"] for match in matches}
+    if len(project_keys) > 1:
+        return {
+            **base_result,
+            "blocked": True,
+            "blocked_reason": "ambiguous_governed_project",
+            "ambiguous_project_ids": sorted(project_keys),
+        }
+    if matches:
+        return matches[0]
+    return base_result
+
+
+def _target_resolution(path: Path, config_path: Path, base: Path, source: str) -> dict[str, Any]:
+    match = _match_governed_project(path, config_path, base)
+    normalized = _resolve_path(path, base)
+    status = "governed" if match.get("governed") else "not_governed"
+    if match.get("blocked"):
+        status = "ambiguous"
+    return {
+        "target": path.as_posix(),
+        "normalized_path": normalized.as_posix(),
+        "source": source,
+        "status": status,
+        "governed": bool(match.get("governed")),
+        "governed_via": match.get("governed_via", ""),
+        "governed_project_id": match.get("governed_project_id", ""),
+        "governed_project_path": match.get("governed_project_path", ""),
+        "project_key": match.get("project_key", ""),
+        "git_common_dir": match.get("git_common_dir", ""),
+        "unknown_reason": "" if match.get("governed") else match.get("blocked_reason", "not_in_governed_project"),
+    }
+
+
+def resolve_governed_subject(
+    root: Path = ROOT,
+    cwd: str | Path | None = None,
+    target_paths: list[str | Path] | None = None,
+    read_write_kind: str = "write",
+) -> dict[str, Any]:
+    base_cwd = _resolve_path(Path(cwd) if cwd is not None else root, root)
+    raw_targets = [Path(path) for path in (target_paths or []) if str(path).strip()]
+    explicit_targets = bool(raw_targets)
+    effective_targets = raw_targets if explicit_targets else [base_cwd]
+    config = find_governed_projects_config(root, base_cwd, effective_targets)
+    result: dict[str, Any] = {
+        "governed": False,
+        "blocked": False,
+        "blocked_reason": "",
+        "cwd": base_cwd.as_posix(),
+        "target_paths": [_resolve_path(path, base_cwd).as_posix() for path in effective_targets],
+        "target_resolutions": [],
+        "governed_subject": "",
+        "governed_via": "",
+        "governed_project_id": "",
+        "governed_project_path": "",
+        "config_path": config.relative_to(root).as_posix() if config and config.is_relative_to(root) else config.as_posix() if config else "",
+        "subject_source": "target" if explicit_targets else "cwd-fallback",
+        "read_write_kind": read_write_kind,
+        "message": "",
+    }
+    if config is None:
+        result["message"] = "未找到 LDVH-GOVERNED-PROJECTS.yaml，no-op"
+        return result
+
+    source = "target" if explicit_targets else "cwd-fallback"
+    resolutions = [_target_resolution(path, config, base_cwd, source) for path in effective_targets]
+    result["target_resolutions"] = resolutions
+
+    ambiguous = [item for item in resolutions if item["status"] == "ambiguous"]
+    if ambiguous:
+        result.update({
+            "blocked": True,
+            "blocked_reason": "ambiguous_governed_project",
+            "message": "Git identity 命中多个受管项目，必须拆分或进入 Human Gate。",
+        })
+        return result
+
+    governed = [item for item in resolutions if item["governed"]]
+    nongoverned = [item for item in resolutions if not item["governed"]]
+    governed_keys = {item["project_key"] or item["governed_project_path"] for item in governed}
+    if len(governed_keys) > 1:
+        result.update({
+            "blocked": True,
+            "blocked_reason": "multiple_governed_projects",
+            "message": "一次操作命中多个受管项目，必须拆分或进入 Human Gate。",
+        })
+        return result
+    if governed and nongoverned and explicit_targets and read_write_kind in {"write", "commit"}:
+        result.update({
+            "blocked": True,
+            "blocked_reason": "mixed_governed_and_ungoverned_targets",
+            "message": "一次写入操作混合受管与非受管 target，必须拆分或进入 Human Gate。",
+        })
+        return result
+    if not governed:
+        result["message"] = "工作对象未命中受管项目，no-op"
+        return result
+
+    subject = governed[0]
+    result.update({
+        "governed": True,
+        "governed_subject": subject["normalized_path"],
+        "governed_via": subject["governed_via"],
+        "governed_project_id": subject["governed_project_id"],
+        "governed_project_path": subject["governed_project_path"],
+        "message": "工作对象命中受管项目。",
+    })
+    return result
 
 
 def validate_formal_objects(
@@ -1394,6 +1732,131 @@ def validate_web_sync_boundaries(root: Path = ROOT) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_governed_project_spec_boundaries(root: Path = ROOT) -> list[Diagnostic]:
+    path = SHORT_SPEC_REFS["10"]
+    raw = (root / path).read_text(encoding="utf-8")
+    sections = h2_sections(raw)
+    diagnostics: list[Diagnostic] = []
+
+    for requirement in GOVERNED_PROJECT_SPEC_REQUIREMENTS:
+        section = sections.get(requirement["section"])
+        if not section:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    requirement["code"],
+                    path,
+                    f"10 缺少可消费章节: {requirement['section']}",
+                )
+            )
+            continue
+        missing_terms = [term for term in requirement["terms"] if term not in section["body"]]
+        if missing_terms:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    requirement["code"],
+                    path,
+                    f"{requirement['message']}: {', '.join(missing_terms)}",
+                )
+            )
+
+    return diagnostics
+
+
+def validate_governed_project_config_contract(root: Path = ROOT) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    contract = parse_governed_project_config_contract(root)
+    if not contract["root_fields"]:
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ROOT_FIELD_TABLE_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, "受管项目根字段表缺失"))
+    for value in _table_has_values(contract["root_fields"], "根字段", GOVERNED_PROJECT_REQUIRED_ROOT_FIELDS):
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ROOT_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"受管项目根字段缺失: {value}"))
+    for value in _table_has_values(contract["project_fields"], "项目字段", GOVERNED_PROJECT_REQUIRED_ITEM_FIELDS):
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ITEM_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"受管项目项目字段缺失: {value}"))
+    for value in _table_has_values(contract["git_fields"], "Git字段", GOVERNED_PROJECT_REQUIRED_GIT_FIELDS):
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"受管项目 Git 字段缺失: {value}"))
+    for value in _table_has_values(contract["resolution_fields"], "resolution字段", GOVERNED_PROJECT_REQUIRED_RESOLUTION_FIELDS):
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_RESOLUTION_FIELD_CONTRACT_MISSING", GOVERNED_PROJECTS_CONTRACT_PATH, f"受管项目 resolution 字段缺失: {value}"))
+    return diagnostics
+
+
+def validate_governed_projects_config(root: Path = ROOT) -> list[Diagnostic]:
+    path = root / GOVERNED_PROJECTS_CONFIG_PATH
+    diagnostics: list[Diagnostic] = []
+    if not path.exists():
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_MISSING", GOVERNED_PROJECTS_CONFIG_PATH, "缺少受管项目配置: LDVH-GOVERNED-PROJECTS.yaml")]
+    if not path.is_file():
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_NOT_FILE", GOVERNED_PROJECTS_CONFIG_PATH, "受管项目配置不是文件")]
+
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_YAML_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"受管项目配置 YAML 解析失败: {exc}")]
+
+    if not isinstance(data, dict):
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_ROOT_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, "受管项目配置根对象必须是 mapping")]
+
+    root_fields = set(data)
+    for field in sorted(GOVERNED_PROJECTS_ROOT_FIELDS - root_fields):
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_MISSING", GOVERNED_PROJECTS_CONFIG_PATH, f"受管项目配置缺少根字段: {field}"))
+    for field in sorted(root_fields - GOVERNED_PROJECTS_ROOT_FIELDS):
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_FORBIDDEN", GOVERNED_PROJECTS_CONFIG_PATH, f"受管项目配置不得包含根字段: {field}"))
+    for field in sorted({"product_name", "product_description"} & root_fields):
+        value = data.get(field)
+        if not isinstance(value, str) or not value.strip():
+            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"{field} 必须是非空字符串"))
+
+    projects = data.get("projects")
+    if not isinstance(projects, list):
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_LIST_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, "projects 必须是列表"))
+        return diagnostics
+
+    seen_ids: dict[str, int] = {}
+    seen_paths: dict[str, int] = {}
+    for index, project in enumerate(projects, start=1):
+        if not isinstance(project, dict):
+            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ITEM_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}] 必须是对象"))
+            continue
+        fields = set(project)
+        for field in sorted(GOVERNED_PROJECTS_REQUIRED_ITEM_FIELDS - fields):
+            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_FIELD_MISSING", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}] 缺少字段: {field}"))
+        for field in sorted(fields - GOVERNED_PROJECTS_ITEM_FIELDS):
+            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_FIELD_FORBIDDEN", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}] 不得包含字段: {field}"))
+        for field in sorted((GOVERNED_PROJECTS_ITEM_FIELDS - {"git"}) & fields):
+            value = project.get(field)
+            if not isinstance(value, str) or not value.strip():
+                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_FIELD_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}].{field} 必须是非空字符串"))
+
+        project_id = project.get("id")
+        if isinstance(project_id, str) and project_id.strip():
+            normalized_id = project_id.strip()
+            if normalized_id in seen_ids:
+                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ID_DUPLICATE", GOVERNED_PROJECTS_CONFIG_PATH, f"受管项目 id 重复: {normalized_id}"))
+            seen_ids[normalized_id] = index
+
+        project_path = project.get("path")
+        if isinstance(project_path, str) and project_path.strip():
+            normalized_path = _resolve_path(Path(project_path), path.parent).as_posix()
+            if normalized_path in seen_paths:
+                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_PATH_DUPLICATE", GOVERNED_PROJECTS_CONFIG_PATH, f"受管项目 path 重复: {project_path}"))
+            seen_paths[normalized_path] = index
+
+        git = project.get("git")
+        if "git" in fields:
+            if not isinstance(git, dict):
+                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}].git 必须是对象"))
+            else:
+                git_fields = set(git)
+                for field in sorted(git_fields - GOVERNED_PROJECTS_GIT_FIELDS):
+                    diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_FIELD_FORBIDDEN", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}].git 不得包含字段: {field}"))
+                for field in sorted(GOVERNED_PROJECTS_GIT_FIELDS & git_fields):
+                    value = git.get(field)
+                    if not isinstance(value, str) or not value.strip():
+                        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_FIELD_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}].git.{field} 必须是非空字符串"))
+
+    return diagnostics
+
+
 def _table_has_values(rows: list[dict[str, str]], column: str, expected_values: list[str]) -> list[str]:
     actual = {strip_inline_code(row.get(column, "")) for row in rows}
     return [value for value in expected_values if value not in actual]
@@ -1424,6 +1887,7 @@ def validate_attachment_contracts(root: Path = ROOT) -> list[Diagnostic]:
     diagnostics.extend(_validate_attachment_authorized_by_parent(root, COMMIT_MESSAGE_CONTRACT_PATH, SHORT_SPEC_REFS["03"]))
     diagnostics.extend(_validate_attachment_authorized_by_parent(root, FIELD_REGISTRY_CONTRACT_PATH, SHORT_SPEC_REFS["05"]))
     diagnostics.extend(_validate_attachment_authorized_by_parent(root, VERIFICATION_CLAIM_FIELDS_PATH, SHORT_SPEC_REFS["09"]))
+    diagnostics.extend(_validate_attachment_authorized_by_parent(root, GOVERNED_PROJECTS_CONTRACT_PATH, SHORT_SPEC_REFS["10"]))
 
     commit_contract = parse_commit_message_contract(root)
     if not commit_contract["fields"]:
@@ -1456,6 +1920,8 @@ def validate_attachment_contracts(root: Path = ROOT) -> list[Diagnostic]:
         diagnostics.append(Diagnostic("error", "VERIFICATION_COMPLETE_CONDITION_MISSING", VERIFICATION_CLAIM_FIELDS_PATH, f"完整验证条件缺失: {value}"))
     for value in _table_has_values(verification_claims["forbidden_writings"], "写法", ["只列命令", "未运行测试但暗示已验证", "局部测试通过写成完整验证", "工具无报错写成 Human 已确认", "看起来正确"]):
         diagnostics.append(Diagnostic("error", "VERIFICATION_FORBIDDEN_WRITING_MISSING", VERIFICATION_CLAIM_FIELDS_PATH, f"验证声明禁止写法缺失: {value}"))
+
+    diagnostics.extend(validate_governed_project_config_contract(root))
 
     return diagnostics
 
@@ -1723,10 +2189,14 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     git_commit_action_template = parse_git_commit_action_template(root)
     workcase_member_contract = parse_workcase_member_contract(root)
     fact_model_member_contracts = parse_fact_model_member_contracts(root)
+    governed_projects_config = parse_governed_projects_config(root)
+    governed_project_config_contract = parse_governed_project_config_contract(root)
+    governed_project_resolution = resolve_governed_subject(root, cwd=root, target_paths=[])
     attachment_contracts = {
         "commit_message_contract": parse_commit_message_contract(root),
         "field_registry_contract": parse_field_registry_contract(root),
         "verification_claim_fields": parse_verification_claim_fields(root),
+        "governed_project_config_contract": governed_project_config_contract,
     }
 
     diagnostics: list[Diagnostic] = []
@@ -1738,6 +2208,8 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_fact_model_boundaries(root))
     diagnostics.extend(validate_fact_source_and_verification_boundaries(root))
     diagnostics.extend(validate_web_sync_boundaries(root))
+    diagnostics.extend(validate_governed_project_spec_boundaries(root))
+    diagnostics.extend(validate_governed_projects_config(root))
     diagnostics.extend(validate_attachment_contracts(root))
     diagnostics.extend(validate_git_commit_action_template(root))
     diagnostics.extend(validate_workcase_member_contract(root))
@@ -1761,6 +2233,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             "ai_behavior_requirements": len(requirements),
             "takeover_matrix_rows": len(takeover_matrix),
             "foundation_spec_contracts": len(foundation_spec_contracts),
+            "governed_projects": len(governed_projects_config["projects"]),
             "diagnostics": len(diagnostic_dicts),
             "errors": sum(1 for diagnostic in diagnostics if diagnostic.level == "error"),
             "warnings": sum(1 for diagnostic in diagnostics if diagnostic.level == "warning"),
@@ -1776,6 +2249,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
             {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},
             {"path": "specs/09-测试与验证规范.md", "role": "test_verification"},
+            {"path": "specs/10-受管项目接入规范.md", "role": "governed_project_access"},
             {"path": "specs/20-Spark-火花.md", "role": "fact_model_member_spec"},
             {"path": "specs/21-WorkCase-工作项.md", "role": "workcase_member_spec"},
             {"path": "specs/22-ADR-决策.md", "role": "fact_model_member_spec"},
@@ -1783,6 +2257,8 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/24-Study-研究报告.md", "role": "fact_model_member_spec"},
             {"path": TIMING_TABLE_PATH, "role": "consumption_timing_registry"},
             {"path": TAKEOVER_MATRIX_PATH, "role": "takeover_matrix"},
+            {"path": GOVERNED_PROJECTS_CONFIG_PATH, "role": "governed_project_config"},
+            {"path": GOVERNED_PROJECTS_CONTRACT_PATH, "role": "governed_project_config_contract"},
         ],
         "specs": [obj.to_dict() for obj in specs],
         "attachments": [obj.to_dict() for obj in attachments],
@@ -1793,8 +2269,62 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "git_commit_action_template": git_commit_action_template,
         "workcase_member_contract": workcase_member_contract,
         "fact_model_member_contracts": fact_model_member_contracts,
+        "governed_projects_config": governed_projects_config,
+        "governed_project_resolution": governed_project_resolution,
         "attachment_contracts": attachment_contracts,
         "diagnostics": diagnostic_dicts,
+    }
+
+
+def build_governed_projects_report(
+    root: Path = ROOT,
+    cwd: str | Path | None = None,
+    target_paths: list[str | Path] | None = None,
+    read_write_kind: str = "write",
+) -> dict[str, Any]:
+    config = parse_governed_projects_config(root)
+    contract = parse_governed_project_config_contract(root)
+    diagnostics = [diagnostic.to_dict() for diagnostic in validate_governed_projects_config(root)]
+    resolution = resolve_governed_subject(
+        root,
+        cwd=cwd or root,
+        target_paths=target_paths or [],
+        read_write_kind=read_write_kind,
+    )
+    if resolution["blocked"]:
+        diagnostics.append({
+            "level": "blocking",
+            "code": "GOVERNED_PROJECT_BOUNDARY_BLOCKED",
+            "path": resolution["governed_subject"] or ",".join(resolution["target_paths"]),
+            "message": resolution["message"],
+        })
+    status = "blocked" if any(item["level"] in {"error", "blocking"} for item in diagnostics) else "ok"
+    return {
+        "metadata": {
+            "read_only": True,
+            "authority": "derived_from_governed_project_config",
+            "authorization": "none",
+            "root": root.as_posix(),
+        },
+        "summary": {
+            "status": status,
+            "projects": len(config["projects"]),
+            "governed": resolution["governed"],
+            "blocked": resolution["blocked"],
+            "diagnostics": len(diagnostics),
+        },
+        "config": config,
+        "contract": contract,
+        "resolution": resolution,
+        "source_refs": unique_dicts(
+            config["source_refs"]
+            + [
+                {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_spec"},
+                {"path": GOVERNED_PROJECTS_CONTRACT_PATH, "role": "governed_project_config_contract"},
+            ],
+            ("path", "role"),
+        ),
+        "diagnostics": diagnostics,
     }
 
 
@@ -2102,6 +2632,12 @@ def build_preflight(
     target_type = classification["target_type"]
     impact = classification["impact"]
     normalized_target = classification["target_path"]
+    governed_project = resolve_governed_subject(
+        root,
+        cwd=root,
+        target_paths=[normalized_target] if normalized_target else [],
+        read_write_kind="commit" if operation == "commit" else "write",
+    )
 
     if target_type == "unknown":
         diagnostics.append({
@@ -2146,6 +2682,15 @@ def build_preflight(
             "path": normalized_target,
             "message": "迁移材料是临时证据；有效决定必须由正式 specs、Code 或 tests 承接。",
             "disposition": "track_absorption",
+        })
+
+    if governed_project["blocked"]:
+        diagnostics.append({
+            "level": "blocking",
+            "code": "PREFLIGHT_GOVERNED_PROJECT_BOUNDARY",
+            "path": normalized_target,
+            "message": governed_project["message"],
+            "disposition": governed_project["blocked_reason"],
         })
 
     required_read_plan = preflight_read_plan_for_target(classification)
@@ -2197,6 +2742,7 @@ def build_preflight(
             "high_impact": high_impact,
         },
         "target": classification,
+        "governed_project": governed_project,
         "required_read_plan": required_read_plan,
         "action_guide": {
             "summary": action_guide["summary"],

@@ -1,16 +1,16 @@
 target_spec: "specs/07-Code确定性执行规范.md"
-target_sha256: "57d75a2bc6cacbb229e951d49398118d6305ce0c8fcb098620047f5b47199d44"
-change_type: "addition"
+target_sha256: "f409da9b813c72a8900561ac4d7753e23e567c4a38bdca23d27d3715d23d3f4f"
+change_type: "modification"
 mapping_evidence:
-  path: "_migration/v3-specs-absorption-index.md"
+  path: "_migration/7-governed-project-admission.md"
 code_verification:
   command: "python3 -m pytest tests/code && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
   passed: true
-  receipt: "Formal specs validator and tests/code cover the new 07 Code determinism candidate as a formal spec."
+  receipt: "Formal specs validator and tests/code cover 07 after adding the governed_project_resolution Code boundary."
 subagent_review:
-  agent_id: "019f16f5-308a-7091-98cf-bb1247f4b748"
-  reviewer: "Lorentz"
+  agent_id: "codex-local-7-governed-project-review"
+  reviewer: "Codex"
   verdict: "pass"
-  receipt: "Read-only subagent review identified Code hard-coded paths and review gates that must be synchronized when 07 becomes the Code determinism target."
+  receipt: "Local review confirms 07 treats governed project parsing as read-only Code output and does not claim Hook or environment integration."
   unresolved_blockers: []
 warnings: []

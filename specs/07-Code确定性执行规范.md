@@ -23,12 +23,14 @@ ldvh_spec:
     - "specs/06-行动模板基础规范.md"
     - "specs/08-Web信息同步规范.md"
     - "specs/09-测试与验证规范.md"
+    - "specs/10-受管项目接入规范.md"
   code_consumption:
     - "ldvh_spec_metadata"
     - "code_determinism_rules"
     - "diagnostic_boundaries"
     - "action_guide_contracts"
     - "preflight_contracts"
+    - "governed_project_resolution"
     - "runtime_facade_contracts"
     - "adapter_dispatcher_boundaries"
     - "stop_conditions"
@@ -92,6 +94,7 @@ Code 可以提供以下能力：
 | 聚合 | 生成对象集合、read_plan、source_refs 和影响摘要 | 不成为集合事实源或 Web 页面数据源 |
 | 诊断 | 输出 blocking、warning、follow_up、unverifiable 或 error | 不直接授权、放行或关闭 |
 | preflight | 写入或提交前暴露目标、读取、Gate 和验证风险 | 不回答“是否应该写入” |
+| 受管项目解析 | 读取 `LDVH-GOVERNED-PROJECTS.yaml`，解析 target-first 项目归属、Git common-dir 和多目标边界 | 不安装 Hook，不把解析结果写成授权、项目索引或事实对象实例 |
 | runtime facade | 按 canonical event 消费保障需求并输出 stdout-only receipt | 不证明环境已接入 |
 
 Code 输出必须声明 authority、authorization 和来源边界。当前未接入环境时，必须保持 `environment_integrated=false` 或等价缺口说明。
@@ -127,6 +130,8 @@ V3 当前 runtime facade 的边界：
 
 V2 `06` 中的 payload schema、dispatcher、adapter、payload_present、unknown event 和环境 fallback 可作为本文后续实现来源。涉及写入用户环境、安装 Hook、覆盖入口或扩大权限时，必须先进入 Human Gate 和 09 测试设计。
 
+V2 受管项目 target-based governance 中的静态解析能力由 `specs/10-受管项目接入规范.md` 和本文 Code parser 承接。Code 可以输出 `governed_project_resolution`、`target_resolutions` 和受管/非受管边界 diagnostic；这些输出不得被解释为 Hook 已接入、环境已拦截或 Human Gate 已完成。
+
 ## 8. Code 变更纪律
 
 新增或改变 Code 行为前，必须先确认：
@@ -147,6 +152,7 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范或 `_mig
 | 来源回指要求 | Code 行为必须回指正式规则或事实源 | source_refs、identity parser、tests | Code 治理 | 新增 parser、validator、CLI 或 facade 行为时 |
 | 授权边界要求 | Code 输出不得表达授权、放行或风险接受 | 本文、02、04、tests | 语义治理 | 输出 status、diagnostic 或 receipt 时 |
 | 诊断分流要求 | 失败、缺口和不可验证必须结构化输出 | diagnostic、preflight、runtime | 缺口治理 | Code 无法完成确定性判断时 |
+| 受管项目解析要求 | Code 解析受管项目时必须回指 10 和根配置 | 10、`LDVH-GOVERNED-PROJECTS.yaml`、tests | 项目治理 | 新增 governed project parser、resolver 或 CLI 时 |
 | Web 分离边界要求 | Code 输出不得成为 Web 页面/API 主数据源或字段契约 | 本文、08、tests | 架构治理 | 输出 DTO、diagnostic、source_refs 或验证摘要时 |
 | 测试前置要求 | Code 行为变化必须有测试或等价验证 | 09、tests/code、CLI | 验证治理 | 修改 `code/` 或 Code 消费 specs 时 |
 
@@ -160,6 +166,7 @@ Code 暴露规范缺口时，应输出 diagnostic 并回到对应规范或 `_mig
 | 诊断检查 | 输出是否区分阻断、警告、后续和不可验证 | 修正诊断或 tests |
 | 授权边界检查 | 输出是否避免授权、Human Gate 替代和事实源替代语义 | 阻断完成声明 |
 | Web 边界检查 | 输出是否没有被设计成 Web 页面/API 主数据源、字段契约或页面状态机 | 回到 08 分离边界或补测试 |
+| 受管项目检查 | target-first、Git common-dir、多目标和 no-op 是否按 10 解析 | 回到 10、配置或 resolver tests |
 | runtime 检查 | facade 是否保持只读、stdout-only、environment_integrated=false | 记录环境接入缺口 |
 | 回归检查 | `tests/code` 和 specs validator 是否覆盖关键正反例 | 补测试或写明等价验证 |
 

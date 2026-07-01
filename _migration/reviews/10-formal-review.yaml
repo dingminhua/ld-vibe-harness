@@ -1,0 +1,16 @@
+target_spec: "specs/10-受管项目接入规范.md"
+target_sha256: "725056043285647063b2b30e6aa871ec9def79c315f78c9ab57e39661e885cf5"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/7-governed-project-admission.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code cover 10 as the governed project access candidate with config, target-first, Git common-dir, multi-target and environment-boundary checks."
+subagent_review:
+  agent_id: "codex-local-7-governed-project-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review confirms 10 migrates V2 governed project static semantics without restoring knowledge map, Hook installation, Rules authority, Web write or Human Gate authorization."
+  unresolved_blockers: []
+warnings: []

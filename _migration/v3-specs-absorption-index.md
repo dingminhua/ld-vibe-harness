@@ -1,6 +1,6 @@
 # V3 正式 specs 吸收索引
 
-> 文件状态：temporary migration index。本文只记录 V2/旧 specs/现有迁移材料进入 V3 正式 `03/05/06/07/08/09` 的吸收判断，不授权正式规则、Code 行为、Hook 安装、提交门禁、Web 行为、Human Gate 或环境支持声明。正式规则仍以 `specs/` 正文为准。
+> 文件状态：temporary migration index。本文只记录 V2/旧 specs/现有迁移材料进入 V3 正式 `03/05/06/07/08/09/10` 的吸收判断，不授权正式规则、Code 行为、Hook 安装、提交门禁、Web 行为、Human Gate 或环境支持声明。正式规则仍以 `specs/` 正文为准。
 
 ## 1. 索引定位
 
@@ -38,7 +38,7 @@
 6. 测试原始输出、coverage、trace、临时报告和迁移 fixture；
 7. 旧编号、旧路径、旧 active 状态和历史兼容判断。
 
-这些内容若有长期价值，必须先按 03/05/06/07/08/09 归口转写为正式规则、Code 输入、tests 或事实对象，不得整段搬入。
+这些内容若有长期价值，必须先按 03/05/06/07/08/09/10 归口转写为正式规则、Code 输入、tests 或事实对象，不得整段搬入。
 
 ## 4. 应转为 Code 或 tests 的内容
 
@@ -107,6 +107,7 @@ V3 术语使用：
 | 5B-5 | 已完成 | `08` 明确 Web 与 Code 同源但分开实现，Web 页面/API 数据路径不得依赖 Code 输出、Code DTO 或 validator 内部对象；`07` 补充 Code 输出不得成为 Web 页面/API 主数据源、字段契约或页面状态机 | `validate_web_sync_boundaries` 与 Web/Code 分离负例测试 | validator 0 diagnostics；tests 84 passed |
 | 6A | 已完成 | 新增 `specs/21-WorkCase-工作项.md`，迁入 WorkCase 对象定位、准入、未来事实源位置、最小状态闭集、执行项内部边界、四层完成口径和 Human Gate；`05` 记录 WorkCase 已首批迁入 | `parse_workcase_member_contract`、`validate_workcase_member_contract` 与缺状态/缺事实源/缺关闭口径/缺 Human Gate/缺 legacy 状态边界负例测试 | validator 0 diagnostics；tests/code 与 `_migration/tests` 通过 |
 | 6B | 已完成 | 新增 `specs/20-Spark-火花.md`、`specs/22-ADR-决策.md`、`specs/23-Pitfall-踩坑经验.md`、`specs/24-Study-研究报告.md`，阶段 6 覆盖 20-24 全部最小成员规范；`05` 记录 20-24 均已进入 V3 | `parse_fact_model_member_contracts`、`validate_fact_model_member_contracts` 与缺状态/缺事实源/缺 Human Gate/缺 legacy 边界/缺 Study 正文骨架负例测试 | validator 0 diagnostics；tests/code 与 `_migration/tests` 通过 |
+| 7 | 已完成 | 新增 `specs/10-受管项目接入规范.md`、`specs/attachments/10.Att.01-受管项目配置字段表.md` 和根配置 `LDVH-GOVERNED-PROJECTS.yaml`，迁入受管项目静态接管能力 | `parse_governed_projects_config`、`validate_governed_projects_config`、`resolve_governed_subject` 与配置/target/worktree/multi-target/CLI 测试 | validator 0 diagnostics；tests/code 与 `_migration/tests` 通过 |
 
 6A 后置项：
 
@@ -115,7 +116,7 @@ V3 术语使用：
 | V2 `21.Att.01-orchestration字段契约表.md` | 不在 6A 迁入；后续判断是转为正式附件、Code/tests 还是继续留在迁移材料 |
 | WorkCase 完整字段表、实例目录、真实实例 | 后置到事实对象实例能力和受管项目事实源边界稳定后 |
 | WorkCase 创建、方案审核、结果复核、关闭确认行动模板实例 | 后置到 Hook / commit gate 接入与 V3 正式启用前；当前只允许 `06` 中的 Git 提交行动作为正文示范 |
-| Spark/ADR/Pitfall/Study 完整字段表和真实实例 | 最小成员规范已迁入；完整字段表、真实 `ldvh-base` 实例和 Web 写入继续后置到受管项目接入与实现域 |
+| Spark/ADR/Pitfall/Study 完整字段表和真实实例 | 最小成员规范已迁入；受管项目配置边界已由 10 承接；完整字段表、真实 `ldvh-base` 实例和 Web 写入继续后置到实现域 |
 
 本轮附件分流结果：
 
@@ -146,5 +147,5 @@ V3 术语使用：
 2. V2 内容被整段复制，导致 V3 恢复旧目录权威或第二事实源；
 3. Runtime、Skill、Hook、Rules 或 Web 状态被写成独立构成要素；
 4. Code、tests、review 或子 Agent 输出替代正式规则、Human Gate 或完成声明；
-5. 03/05/06/07/08/09 与 00、01、02、04 的上位边界冲突，或规则系统与事实系统边界被混写；
+5. 03/05/06/07/08/09/10 与 00、01、02、04 的上位边界冲突，或规则系统与事实系统边界被混写；
 6. 新增正式 specs 后没有同步 Code 解析、review 收据和 tests。

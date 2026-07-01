@@ -1,0 +1,16 @@
+target_spec: "specs/attachments/10.Att.01-受管项目配置字段表.md"
+target_sha256: "70f56f5a8bd0635da899f8f66382fb0dc0557b13b4024dd1126fc3bd33c78079"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/7-governed-project-admission.md"
+code_verification:
+  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  passed: true
+  receipt: "Formal specs validator and tests/code parse 10.Att.01 root, project, Git and target resolution field contracts."
+subagent_review:
+  agent_id: "codex-local-7-governed-project-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review confirms 10.Att.01 remains a subordinate machine contract and does not carry action flow, Hook implementation or Human Gate decisions."
+  unresolved_blockers: []
+warnings: []
