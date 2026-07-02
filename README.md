@@ -39,7 +39,7 @@ authorization: none
 当前支持三种接入口径：
 
 1. Git Hook：`git.commit-msg` 已自动触发，外部管辖项目通过薄 shim 接入；
-2. Codex 插件：Codex lifecycle Hook 的正式安装形态必须是 LDVH Codex plugin；当前检测到的旧 `ldvh@personal` 插件指向 V2 路径，不能声明为 V3 integrated；
+2. 环境插件 / 扩展：所有支持 Hook 的协作环境都必须通过对应 LDVH 插件、扩展包或 package 安装环境 Hook；当前可审计样例是 Codex，旧 `ldvh@personal` 插件指向 V2 路径，不能声明为 V3 integrated；
 3. 手动 / 外部 adapter-ready：`session_start`、`pre_tool_use`、`completion_claim` 可通过独立 CLI 或统一 `runtime_adapter.py` 调用，但不会自动触发。
 
 统一 runtime adapter 入口：
@@ -113,7 +113,7 @@ python3 code/environment_entry_audit.py --format text
 
 该检查会同时报告真实 `git.commit-msg` Hook、manual runtime adapter、`session_start`、`pre_tool_use` 和 `completion_claim` 的可用/接入状态。当前预期结果是 `environment_integrated: partial`、`hook_integrated: git.commit-msg`，且三类 runtime 入口仍为 manual-ready、未自动触发。
 
-`environment_entry_audit.py` 进一步审计 LDVH Codex plugin、tool hook、completion hook、AGENTS/Codex repo 指令和外部 runtime adapter 候选，同时确认 Rules / Skill 顶层机制是 `removed_top_level`，不是待启用入口。当前结论是：Codex lifecycle Hook 机制存在，但 V3 必须通过 LDVH Codex plugin 安装；旧插件、旧仓库路径或历史 trust 记录不能证明 V3 已接入。除 `git.commit-msg` 外，当前不得声明其它入口已自动触发。
+`environment_entry_audit.py` 进一步审计 LDVH 环境插件样例、tool hook、completion hook、AGENTS/Codex repo 指令和外部 runtime adapter 候选，同时确认 Rules / Skill 顶层机制是 `removed_top_level`，不是待启用入口。当前结论是：所有支持 Hook 的协作环境都必须通过对应 LDVH 插件、扩展包或 package 安装环境 Hook，而不是直接写入环境 Hook 系统文件；Codex lifecycle Hook 是当前可审计样例，但旧插件、旧仓库路径或历史 trust 记录不能证明 V3 已接入。除 `git.commit-msg` 外，当前不得声明其它入口已自动触发。
 
 真实提交如果触发 body 必填条件，正文至少包含 `关键变更:`；`读取依据` 不是 commit message 契约字段：
 

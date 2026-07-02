@@ -126,21 +126,23 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "环境 Hook" in spec_01
     assert "只能定位并调用 LDVH" in spec_01
     assert "核心逻辑都必须留在 LDVH Code 中" in spec_01
-    assert "正式安装形态应是 LDVH Codex 插件" in spec_01
+    assert "所有支持 Hook 的协作环境" in spec_01
+    assert "LDVH 插件、扩展包或 package" in spec_01
     assert "非管辖项目必须 no-op" in spec_01
     assert "卸载时必须移除或禁用该 repo 的 shim" in spec_01
     assert "验证环境不再自动触发 LDVH" in spec_01
 
     assert "| `git_hook_shim` |" in entry_types
     assert "| `environment_hook` |" in entry_types
-    assert "LDVH Codex plugin" in entry_types
+    assert "LDVH 环境插件" in entry_types
+    assert "Codex plugin" in entry_types
     assert "只调用 LDVH" in entry_types
     assert "只指向 LDVH runtime / adapter" in entry_types
 
     assert "| `entry_kind` |" in rollback
     assert "| `shim_boundary` |" in rollback
     assert "| `rollback_state` |" in rollback
-    assert "插件 manifest" in rollback
+    assert "插件或扩展 manifest" in rollback
     assert "恢复或保留原有用户 Hook / 环境配置" in rollback
 
 
@@ -2417,7 +2419,7 @@ def test_environment_entry_audit_marks_rules_and_skills_removed_top_level(tmp_pa
     assert candidates["skills.top_level_mechanism"]["status"] == "removed_top_level"
     assert candidates["skills.top_level_mechanism"]["decision"] == "removed_top_level"
     assert candidates["codex.repo-instructions"]["status"] == "absent"
-    assert payload["decision"]["next_step"] == "install_or_upgrade_ldvh_codex_plugin_before_auto_runtime_claim"
+    assert payload["decision"]["next_step"] == "install_or_upgrade_ldvh_environment_plugin_before_auto_runtime_claim"
     assert payload["diagnostics"] == []
 
 

@@ -30,11 +30,11 @@ python3 code/environment_entry_audit.py --format json
 | 候选 | 当前结论 | 理由 |
 |---|---|---|
 | `git.commit-msg` | integrated | 当前 worktree 已通过 `core.hooksPath=hooks` 启用 managed `hooks/commit-msg` |
-| `codex.ldvh-plugin` | available / absent | Codex lifecycle Hook 的正式安装形态必须是 LDVH plugin；旧插件或旧仓库路径不能证明 V3 接入 |
-| `runtime.session_start.auto` | deferred | Codex 提供 SessionStart 生命周期 Hook 机制；V3 需通过 LDVH plugin 安装并验证 |
-| `runtime.pre_tool_use.auto` | deferred | Codex 提供 PreToolUse 生命周期 Hook 机制；V3 需通过 LDVH plugin 安装并验证 |
-| `runtime.completion_claim.auto` | deferred | Codex 提供 Stop 生命周期 Hook 可作为完成声明邻近候选；V3 尚未通过插件定义和验证 |
-| `runtime.adapter.auto` | deferred | `code/runtime_adapter.py` 已存在，但没有 V3 plugin 的真实触发、安装状态、失败处理和回滚证据 |
+| `codex.ldvh-plugin` | available / absent | Codex lifecycle Hook 是当前可审计样例；通用原则是所有支持 Hook 的环境都必须通过对应 LDVH plugin / extension 安装，旧插件或旧仓库路径不能证明 V3 接入 |
+| `runtime.session_start.auto` | deferred | Codex 提供 SessionStart 生命周期 Hook 机制；V3 需按通用环境 Hook 口径通过对应 LDVH plugin / extension 安装并验证 |
+| `runtime.pre_tool_use.auto` | deferred | Codex 提供 PreToolUse 生命周期 Hook 机制；V3 需按通用环境 Hook 口径通过对应 LDVH plugin / extension 安装并验证 |
+| `runtime.completion_claim.auto` | deferred | Codex 提供 Stop 生命周期 Hook 可作为完成声明邻近候选；V3 尚未通过对应环境插件定义和验证 |
+| `runtime.adapter.auto` | deferred | `code/runtime_adapter.py` 已存在，但没有 V3 环境插件 / 扩展包的真实触发、安装状态、失败处理和回滚证据 |
 | `rules.top_level_mechanism` | removed_top_level | V3 已取消 Rules 资产体系和独立规则权威；无 Hook fallback 只能归为环境薄引用或 repo instruction，不恢复 `rules/` 目录机制 |
 | `skills.top_level_mechanism` | removed_top_level | V3 已取消 Skill 顶层机制、Skill registry 和 Skill 执行闭环；可复用工作流能力只能进入行动模板、Action Guide 或外部包装候选 |
 | `codex.repo-instructions` | absent | 未发现 `AGENTS.md`、`.codex` 或 repo-local Codex 配置入口 |
@@ -57,13 +57,13 @@ removed_top_level_entrypoints:
 authorization: none
 ```
 
-10G 的结论已更新：Codex lifecycle Hook 机制存在，且 V3 的正式环境接入形态必须是 LDVH Codex plugin；但旧插件、旧仓库路径或历史 trust 记录不能证明 V3 已接入。除 `git.commit-msg` 外，当前 repo 没有可复现证据证明 tool hook、completion hook 或 Codex 生命周期入口已按 V3 自动触发。Rules / Skill 顶层机制不是后置项，而是已取消机制；原初始骨架中的 `rules/.gitkeep` 与 `skills/.gitkeep` 已删除。
+10G 的结论已更新：所有支持 Hook 的协作环境都必须通过对应 LDVH plugin / extension / package 安装环境 Hook，而不是直接写入环境 Hook 系统文件；Codex lifecycle Hook 机制只是当前可审计样例。旧插件、旧仓库路径、直接写入的环境 Hook 文件或历史 trust 记录不能证明 V3 已接入。除 `git.commit-msg` 外，当前 repo 没有可复现证据证明 tool hook、completion hook 或 Codex 生命周期入口已按 V3 自动触发。Rules / Skill 顶层机制不是后置项，而是已取消机制；原初始骨架中的 `rules/.gitkeep` 与 `skills/.gitkeep` 已删除。
 
 ## 4. 交付物
 
 | 文件 | 作用 |
 |---|---|
-| `code/environment_entry_audit.py` | 审计 LDVH Codex plugin、Codex repo 指令、runtime auto hook、external adapter 候选和 legacy Rules/Skill 顶层机制 |
+| `code/environment_entry_audit.py` | 审计 LDVH 环境插件样例、Codex repo 指令、runtime auto hook、external adapter 候选和 legacy Rules/Skill 顶层机制 |
 | `tests/code/test_ldvh_specs_validate.py` | 覆盖非提交入口后置、Rules/Skill removed_top_level，以及 AGENTS.md 仅 available 不 integrated 的边界 |
 | `README.md` | 增加审计命令和当前结论 |
 | `_migration/v3-migration-execution-plan.md` | 记录 10G 完成状态 |
@@ -73,8 +73,8 @@ authorization: none
 
 后续只有在出现真实可验证入口时才继续接入，例如：
 
-1. LDVH V3 Codex plugin 已构建、安装或升级；
-2. 插件 Hook 指向 V3 runtime adapter，而不是 V2 路径或旧仓库；
+1. 目标环境对应的 LDVH V3 plugin / extension / package 已构建、安装或升级；
+2. 插件或扩展 Hook 指向 V3 runtime adapter，而不是 V2 路径或旧仓库；
 3. session start、tool call 前或 completion-adjacent 触发点能传稳定 payload；
 4. 失败处理和退出码可阻断或明确报告；
 5. 安装状态、trust 状态和回滚方式可由 Code 检查；
