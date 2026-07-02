@@ -93,6 +93,13 @@ def _formal_markdown_files() -> list[Path]:
     )
 
 
+def _spec_markdown_files(*, include_root: bool) -> list[Path]:
+    paths = sorted((ROOT / "specs").glob("*.md"))
+    if include_root:
+        return paths
+    return [path for path in paths if not path.name.startswith("00-")]
+
+
 def _formal_object_id_and_metadata(path: Path) -> tuple[str, dict]:
     metadata = _first_yaml_block(path)
     if "ldvh_spec" in metadata:
@@ -166,24 +173,7 @@ def test_attachments_stay_subordinate_tables_or_enums() -> None:
         path.relative_to(ROOT).as_posix()
         for path in (ROOT / "specs" / "attachments").glob("*.md")
     )
-    assert attachments == [
-        "specs/attachments/01.Att.01-保障消费时机表.md",
-        "specs/attachments/01.Att.02-保障机制承接矩阵.md",
-        "specs/attachments/01.Att.03-环境入口类型表.md",
-        "specs/attachments/01.Att.04-环境接入状态表.md",
-        "specs/attachments/01.Att.05-runtime-payload字段表.md",
-        "specs/attachments/01.Att.06-环境安装回滚检查表.md",
-        "specs/attachments/03.Att.01-Commit-Message契约字段表.md",
-        "specs/attachments/04.Att.01-规范身份字段表.md",
-        "specs/attachments/04.Att.02-规范信息角色表.md",
-        "specs/attachments/04.Att.03-引用关系类型表.md",
-        "specs/attachments/04.Att.04-保障要求字段表.md",
-        "specs/attachments/04.Att.05-附件身份字段表.md",
-        "specs/attachments/04.Att.06-术语表.md",
-        "specs/attachments/05.Att.01-字段注册表结构.md",
-        "specs/attachments/09.Att.01-验证声明字段表.md",
-        "specs/attachments/10.Att.01-管辖项目配置字段表.md",
-    ]
+    assert attachments
 
     spec_04 = (ROOT / "specs" / "04-Specs基础规范.md").read_text(encoding="utf-8")
     assert "附件只是正文授权的附属内容" in spec_04
@@ -207,47 +197,14 @@ def test_attachments_stay_subordinate_tables_or_enums() -> None:
 
 
 def test_formal_specs_keep_ldvh_identity_blocks() -> None:
-    for path in [
-        ROOT / "specs" / "00-理念与构成.md",
-        ROOT / "specs" / "01-保障与衔接.md",
-        ROOT / "specs" / "02-AI行为规范.md",
-        ROOT / "specs" / "03-事实源与Git溯源规范.md",
-        ROOT / "specs" / "04-Specs基础规范.md",
-        ROOT / "specs" / "05-事实模型基础规范.md",
-        ROOT / "specs" / "06-行动模板基础规范.md",
-        ROOT / "specs" / "07-Code确定性执行规范.md",
-        ROOT / "specs" / "08-Web信息同步规范.md",
-        ROOT / "specs" / "09-测试与验证规范.md",
-        ROOT / "specs" / "10-管辖项目配置规范.md",
-        ROOT / "specs" / "20-Spark-火花.md",
-        ROOT / "specs" / "21-WorkCase-工作项.md",
-        ROOT / "specs" / "22-ADR-决策.md",
-        ROOT / "specs" / "23-Pitfall-踩坑经验.md",
-        ROOT / "specs" / "24-Study-研究报告.md",
-    ]:
+    for path in _spec_markdown_files(include_root=True):
         raw = path.read_text(encoding="utf-8")
         assert re.search(r"```yaml\nldvh_spec:", raw), path
         assert f'canonical_path: "{path.relative_to(ROOT)}"' in raw
 
 
 def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
-    for path in [
-        ROOT / "specs" / "01-保障与衔接.md",
-        ROOT / "specs" / "02-AI行为规范.md",
-        ROOT / "specs" / "03-事实源与Git溯源规范.md",
-        ROOT / "specs" / "04-Specs基础规范.md",
-        ROOT / "specs" / "05-事实模型基础规范.md",
-        ROOT / "specs" / "06-行动模板基础规范.md",
-        ROOT / "specs" / "07-Code确定性执行规范.md",
-        ROOT / "specs" / "08-Web信息同步规范.md",
-        ROOT / "specs" / "09-测试与验证规范.md",
-        ROOT / "specs" / "10-管辖项目配置规范.md",
-        ROOT / "specs" / "20-Spark-火花.md",
-        ROOT / "specs" / "21-WorkCase-工作项.md",
-        ROOT / "specs" / "22-ADR-决策.md",
-        ROOT / "specs" / "23-Pitfall-踩坑经验.md",
-        ROOT / "specs" / "24-Study-研究报告.md",
-    ]:
+    for path in _spec_markdown_files(include_root=False):
         raw = path.read_text(encoding="utf-8")
         titles = _normalized_h2_titles(raw)
         assert titles[: len(FIXED_HEAD_SECTIONS)] == FIXED_HEAD_SECTIONS, path
@@ -256,23 +213,7 @@ def test_non_root_specs_keep_fixed_head_and_tail_entries() -> None:
 
 
 def test_role_sections_point_to_existing_h2_entries() -> None:
-    for path in [
-        ROOT / "specs" / "01-保障与衔接.md",
-        ROOT / "specs" / "02-AI行为规范.md",
-        ROOT / "specs" / "03-事实源与Git溯源规范.md",
-        ROOT / "specs" / "04-Specs基础规范.md",
-        ROOT / "specs" / "05-事实模型基础规范.md",
-        ROOT / "specs" / "06-行动模板基础规范.md",
-        ROOT / "specs" / "07-Code确定性执行规范.md",
-        ROOT / "specs" / "08-Web信息同步规范.md",
-        ROOT / "specs" / "09-测试与验证规范.md",
-        ROOT / "specs" / "10-管辖项目配置规范.md",
-        ROOT / "specs" / "20-Spark-火花.md",
-        ROOT / "specs" / "21-WorkCase-工作项.md",
-        ROOT / "specs" / "22-ADR-决策.md",
-        ROOT / "specs" / "23-Pitfall-踩坑经验.md",
-        ROOT / "specs" / "24-Study-研究报告.md",
-    ]:
+    for path in _spec_markdown_files(include_root=False):
         raw = path.read_text(encoding="utf-8")
         metadata = _first_yaml_block(path)["ldvh_spec"]
         role_sections = metadata["role_sections"]

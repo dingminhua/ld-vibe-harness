@@ -57,6 +57,20 @@ Python CLI 测试应统一走 `tests/code/test_ldvh_specs_validate.py` 中的 `_
 
 调用方不得修改 fixture 返回值。fixture 已使用 `copy.deepcopy` 防御，但测试仍应按只读消费编写。
 
+## 断言维护边界
+
+测试应验证稳定契约、结构边界、负例诊断和关键哨兵样本，不应把持续增长的仓库现状写成固定答案。
+
+事实对象、正式 specs、附件、review 收据等会随日常工作增长的对象，测试不得要求 AI 手动同步当前总数、分类数量或完整清单。应优先使用以下断言：
+
+1. summary 数量与解析结果自洽，例如 `summary == len(parsed_items)`；
+2. 对象类型、字段、状态和引用由 validator/schema 逐项校验；
+3. 关键迁移基线或高风险样本使用少量哨兵路径防丢失；
+4. formal specs、附件和文件集合使用动态枚举覆盖；
+5. 只有 specs 正文、附件或 Code 明确定义闭集时，才允许测试完整闭集值。
+
+新增 Spark、Study、WorkCase、ADR、Pitfall、正式 spec 或附件时，不应仅为同步当前数量而修改测试。若确实需要新增完整清单断言，必须能说明该清单是稳定契约而不是仓库现状快照。
+
 ## Slow Policy
 
 `targeted` 支持：
