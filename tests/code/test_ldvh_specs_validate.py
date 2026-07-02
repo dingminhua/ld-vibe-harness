@@ -1060,6 +1060,10 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "👉" in raw
     assert "✅" in raw
     assert "尚未发生的步骤保持空白" in raw
+    assert "选择框 / 单选控件" in raw
+    assert "每次只问一个问题" in raw
+    assert "选项表必须给出选项、说明和结果" in raw
+    assert "不得把“返回修改”写成第三个主选项" in raw
     assert "📍 路径确认" in raw
     assert "🔎 安装前检查" in raw
     assert "⚙️ 安装选项" in raw
