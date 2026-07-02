@@ -49,7 +49,7 @@ V2 已于 2026-07-02 关闭为历史来源，记录见 `_migration/25A-v2-offici
 | Q7 | V3 薄引用模板 | 35A、36A、V2 `06.Att.09` | done / available-template | 出现无 Hook 或只支持薄引用的协作环境，或 Human 要求复制到外部 repo instruction | 已补 `hooks/LDVH-THIN-REFERENCE-TEMPLATE.md`，只指向 `hooks/LDVH-RUNTIME-PROTOCOL.md` 和 V3 specs；不恢复 `rules/` 目录或 Rules registry，不声明环境 integrated |
 | Q8 | 环境插件正反测试 | 30A、31A、36A | partial / repo-tests-ready / gated-real-env | 真实推进环境插件安装、升级、卸载或 stale V2 path 修复前 | 仓库内已覆盖 payload 透传、PreToolUse 阻断、completion 降级、stale V2 path 和 Git hook install / uninstall / rollback；真实环境插件 positive / negative / rollback 仍需 Human Gate |
 | Q9 | WorkCase 行动模板实战打磨 | 13A、21、25A | minimal manual template ready | 出现真实 WorkCase 创建、推进、复核或关闭场景暴露缺口 | 只补实际缺口，不整篇迁回 V2 30-36 行动编排 |
-| Q10 | 测试输出可观测性增强 | 14A、用户关于全量测试进度的讨论 | optional | full / runtime 测试实际耗时影响日常判断，且引入依赖不会增加维护负担 | 可增强 test runner 分阶段输出或进度显示；不得降低 full 覆盖 |
+| Q10 | 测试输出可观测性增强 | 14A、用户关于全量测试进度的讨论 | partial / validation-cache | full / runtime 测试实际耗时影响日常判断，且引入依赖不会增加维护负担 | 已让 runtime / preflight / action guide 相关测试复用 validation 结果，降低重复全量校验成本；后续如仍影响日常判断，可继续增强 test runner 分阶段输出或进度显示，不得降低 full 覆盖 |
 | Q11 | 成员字段表与长表筛选 | 05、20-24、23A | demand-driven | 某个事实对象的真实读写、Web 展示或验证出现字段缺口 | 逐对象迁入最小字段，不批量搬运 V2 长表 |
 | Q12 | Web 设计参考吸收 | web/design-workspace、23A | reference-only | Human 确认要把设计参考转为正式 Web 改造 | 先开 Web 设计 / 实现 WorkCase，再落代码和 tests/web |
 | Q13 | `git.common_dir` 稳定性补强 | 10、18A、36A | partial / minimal-regression | worktree、dogfood 或多 repo target-first 解析出现不稳定 | 已补 linked worktree 下 install hook 使用 Git common-dir 的回归测试；现有 10 和 resolver/tests 已覆盖基本 common-dir 解析，后续出现实际不稳定再补 resolver / tests |

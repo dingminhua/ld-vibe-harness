@@ -222,7 +222,12 @@ def _format_seconds(seconds: float) -> str:
     return f"{minutes}m {remainder:.1f}s"
 
 
-def run_stages(stages: list[Stage], *, dry_run: bool, continue_on_fail: bool) -> int:
+def run_stages(
+    stages: list[Stage],
+    *,
+    dry_run: bool,
+    continue_on_fail: bool,
+) -> int:
     if not stages:
         print("No test stages selected.")
         return 0

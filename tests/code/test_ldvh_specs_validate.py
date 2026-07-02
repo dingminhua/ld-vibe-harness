@@ -1478,8 +1478,12 @@ def test_action_guide_session_start_read_plan() -> None:
     assert any(gap["requirement_id"] == "AI-BEH-001" for gap in guide["capability_gap"])
 
 
-def test_action_guide_pre_tool_use_reports_missing_target() -> None:
-    guide = ldvh_specs.build_action_guide(ROOT, consumption_timing="pre_tool_use")
+def test_action_guide_pre_tool_use_reports_missing_target(validation_result: dict) -> None:
+    guide = ldvh_specs.build_action_guide(
+        ROOT,
+        consumption_timing="pre_tool_use",
+        validation=validation_result,
+    )
 
     assert guide["summary"]["status"] == "ok"
     assert "允许写入" not in guide["next_action"]
@@ -1493,11 +1497,12 @@ def test_action_guide_pre_tool_use_reports_missing_target() -> None:
     assert any(item["requirement_id"] == "AI-BEH-003" for item in guide["stop_conditions"])
 
 
-def test_action_guide_pre_tool_use_next_action_has_no_write_authorization() -> None:
+def test_action_guide_pre_tool_use_next_action_has_no_write_authorization(validation_result: dict) -> None:
     guide = ldvh_specs.build_action_guide(
         ROOT,
         consumption_timing="pre_tool_use",
         target_path="tests/code/test_ldvh_specs_validate.py",
+        validation=validation_result,
     )
 
     assert guide["summary"]["status"] == "ok"
@@ -1505,8 +1510,12 @@ def test_action_guide_pre_tool_use_next_action_has_no_write_authorization() -> N
     assert "需交还 Human" in guide["next_action"]
 
 
-def test_action_guide_unknown_timing_diagnostic() -> None:
-    guide = ldvh_specs.build_action_guide(ROOT, consumption_timing="unknown_event")
+def test_action_guide_unknown_timing_diagnostic(validation_result: dict) -> None:
+    guide = ldvh_specs.build_action_guide(
+        ROOT,
+        consumption_timing="unknown_event",
+        validation=validation_result,
+    )
 
     assert guide["summary"]["status"] == "failed"
     assert guide["missing_fields"][0]["field"] == "consumption_timing"
@@ -1552,11 +1561,12 @@ def test_preflight_core_spec_marks_human_gate_risk() -> None:
     assert any(item["path"] == "specs/01-保障与衔接.md" for item in preflight["required_read_plan"])
 
 
-def test_preflight_code_target_is_unverifiable_not_authorization() -> None:
+def test_preflight_code_target_is_unverifiable_not_authorization(validation_result: dict) -> None:
     preflight = ldvh_specs.build_preflight(
         ROOT,
         target_path="code/ldvh_specs.py",
         operation="write",
+        validation=validation_result,
     )
 
     assert preflight["summary"]["target_type"] == "code"
@@ -1570,11 +1580,12 @@ def test_preflight_code_target_is_unverifiable_not_authorization() -> None:
     }.issubset(read_paths)
 
 
-def test_preflight_attachment_keeps_boundary_warning() -> None:
+def test_preflight_attachment_keeps_boundary_warning(validation_result: dict) -> None:
     preflight = ldvh_specs.build_preflight(
         ROOT,
         target_path="specs/attachments/01.Att.01-保障消费时机表.md",
         operation="write",
+        validation=validation_result,
     )
 
     assert preflight["summary"]["target_type"] == "attachment"
@@ -1582,11 +1593,12 @@ def test_preflight_attachment_keeps_boundary_warning() -> None:
     assert preflight["diagnostics"][0]["code"] == "PREFLIGHT_ATTACHMENT_BOUNDARY"
 
 
-def test_preflight_known_tests_target_uses_diagnostic_clear_status() -> None:
+def test_preflight_known_tests_target_uses_diagnostic_clear_status(validation_result: dict) -> None:
     preflight = ldvh_specs.build_preflight(
         ROOT,
         target_path="tests/code/test_ldvh_specs_validate.py",
         operation="write",
+        validation=validation_result,
     )
 
     assert preflight["summary"]["status"] == "diagnostic_clear"
@@ -1598,8 +1610,13 @@ def test_preflight_known_tests_target_uses_diagnostic_clear_status() -> None:
     }.issubset(read_paths)
 
 
-def test_preflight_unknown_target_blocks() -> None:
-    preflight = ldvh_specs.build_preflight(ROOT, target_path="", operation="write")
+def test_preflight_unknown_target_blocks(validation_result: dict) -> None:
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path="",
+        operation="write",
+        validation=validation_result,
+    )
 
     assert preflight["summary"]["status"] == "blocked"
     assert preflight["summary"]["blocking"] == 1
@@ -1686,8 +1703,12 @@ def test_session_start_cli_exports_manual_read_plan_json() -> None:
     assert payload["diagnostics"] == []
 
 
-def test_runtime_unknown_event_blocks() -> None:
-    runtime = ldvh_specs.build_runtime_event(ROOT, event="unknown_event")
+def test_runtime_unknown_event_blocks(validation_result: dict) -> None:
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="unknown_event",
+        validation=validation_result,
+    )
 
     assert runtime["summary"]["status"] == "blocked"
     assert runtime["summary"]["blocking"] == 1
@@ -1695,14 +1716,18 @@ def test_runtime_unknown_event_blocks() -> None:
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_EVENT_UNKNOWN"
 
 
-def test_runtime_acknowledge_read_plan_requires_paths() -> None:
-    runtime = ldvh_specs.build_runtime_event(ROOT, event="acknowledge_read_plan")
+def test_runtime_acknowledge_read_plan_requires_paths(validation_result: dict) -> None:
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="acknowledge_read_plan",
+        validation=validation_result,
+    )
 
     assert runtime["summary"]["status"] == "blocked"
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_ACK_REQUIRED_PATHS_EMPTY"
 
 
-def test_runtime_acknowledge_read_plan_accepts_entry_paths() -> None:
+def test_runtime_acknowledge_read_plan_accepts_entry_paths(validation_result: dict) -> None:
     runtime = ldvh_specs.build_runtime_event(
         ROOT,
         event="acknowledge_read_plan",
@@ -1711,6 +1736,7 @@ def test_runtime_acknowledge_read_plan_accepts_entry_paths() -> None:
             "specs/01-保障与衔接.md",
             "specs/02-AI行为规范.md",
         ],
+        validation=validation_result,
     )
 
     assert runtime["summary"]["status"] == "ok"
@@ -1781,7 +1807,7 @@ def test_acknowledge_read_plan_cli_blocks_missing_paths() -> None:
     assert "RUNTIME_ACK_REQUIRED_PATHS_EMPTY" in _diagnostic_codes(payload)
 
 
-def test_runtime_pre_tool_use_includes_preflight() -> None:
+def test_runtime_pre_tool_use_includes_preflight(validation_result: dict) -> None:
     runtime = ldvh_specs.build_runtime_event(
         ROOT,
         event="pre_tool_use",
@@ -1791,6 +1817,7 @@ def test_runtime_pre_tool_use_includes_preflight() -> None:
             "specs/01-保障与衔接.md",
             "specs/02-AI行为规范.md",
         ],
+        validation=validation_result,
     )
 
     assert runtime["summary"]["status"] == "review_required"
@@ -1799,11 +1826,12 @@ def test_runtime_pre_tool_use_includes_preflight() -> None:
     assert runtime["diagnostics"][0]["code"] == "PREFLIGHT_CODE_OUTPUT_NOT_AUTHORIZATION"
 
 
-def test_runtime_pre_tool_use_blocks_without_read_plan_consumption() -> None:
+def test_runtime_pre_tool_use_blocks_without_read_plan_consumption(validation_result: dict) -> None:
     runtime = ldvh_specs.build_runtime_event(
         ROOT,
         event="pre_tool_use",
         target_path="tests/code/test_ldvh_specs_validate.py",
+        validation=validation_result,
     )
 
     assert runtime["summary"]["status"] == "blocked"
@@ -1897,12 +1925,13 @@ def test_pre_tool_use_cli_blocks_missing_target() -> None:
     assert payload["preflight"]["summary"]["target_type"] == "unknown"
 
 
-def test_runtime_git_commit_msg_blocks_incomplete_read_plan_consumption() -> None:
+def test_runtime_git_commit_msg_blocks_incomplete_read_plan_consumption(validation_result: dict) -> None:
     runtime = ldvh_specs.build_runtime_event(
         ROOT,
         event="git_commit_msg",
         target_path="tests/code/test_ldvh_specs_validate.py",
         acknowledged_paths=["specs/00-理念与构成.md"],
+        validation=validation_result,
     )
 
     assert runtime["summary"]["status"] == "blocked"
@@ -2752,8 +2781,12 @@ enabled = true
     assert "ENV_CODEX_LDVH_PLUGIN_STALE" in _diagnostic_codes(payload)
 
 
-def test_runtime_completion_claim_requires_verification_evidence() -> None:
-    runtime = ldvh_specs.build_runtime_event(ROOT, event="completion_claim")
+def test_runtime_completion_claim_requires_verification_evidence(validation_result: dict) -> None:
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="completion_claim",
+        validation=validation_result,
+    )
 
     assert runtime["summary"]["status"] == "blocked"
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_COMPLETION_VERIFICATION_MISSING"
@@ -3014,7 +3047,12 @@ def test_runtime_supports_all_consumption_timings(validation_result: dict) -> No
     }
 
     for event in events:
-        runtime = ldvh_specs.build_runtime_event(ROOT, event=event, **common_kwargs)
+        runtime = ldvh_specs.build_runtime_event(
+            ROOT,
+            event=event,
+            validation=validation_result,
+            **common_kwargs,
+        )
         assert runtime["summary"]["event"] == event
         assert runtime["receipt"]["canonical_event"] == event
 

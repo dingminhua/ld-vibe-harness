@@ -3096,8 +3096,9 @@ def build_action_guide(
     task: str = "",
     target_path: str = "",
     trigger_source: str = "manual",
+    validation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    validation = build_validation(root)
+    validation = validation if validation is not None else build_validation(root)
     allowed_timings = {row["consumption_timing"] for row in validation["consumption_timings"]}
     all_requirements = validation["ai_behavior_requirements"]
     requirements = [
@@ -3342,8 +3343,9 @@ def build_preflight(
     task: str = "",
     trigger_source: str = "manual",
     high_impact: bool = False,
+    validation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    validation = build_validation(root)
+    validation = validation if validation is not None else build_validation(root)
     classification = classify_target_path(target_path)
     action_guide = build_action_guide(
         root,
@@ -3351,6 +3353,7 @@ def build_preflight(
         task=task,
         target_path=classification["target_path"],
         trigger_source=trigger_source,
+        validation=validation,
     )
 
     diagnostics: list[dict[str, str]] = list(validation["diagnostics"])
@@ -3826,8 +3829,9 @@ def build_runtime_event(
     operation: str = "write",
     acknowledged_paths: list[str] | None = None,
     verification_evidence: list[str] | None = None,
+    validation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    validation = build_validation(root)
+    validation = validation if validation is not None else build_validation(root)
     allowed_events = {row["consumption_timing"] for row in validation["consumption_timings"]}
     normalized_event = event.strip()
     normalized_target = target_path.strip().lstrip("./")
@@ -3853,6 +3857,7 @@ def build_runtime_event(
             task=task,
             target_path=normalized_target,
             trigger_source=trigger_source,
+            validation=validation,
         )
         diagnostics.extend(action_guide["diagnostics"])
 
@@ -3907,6 +3912,7 @@ def build_runtime_event(
                 operation="commit" if normalized_event == "git_commit_msg" else operation,
                 task=task,
                 trigger_source=trigger_source,
+                validation=validation,
             )
             diagnostics.extend(preflight["diagnostics"])
 
@@ -4022,6 +4028,7 @@ def build_e2e_rehearsal(
         "python3 -m pytest tests/code _migration/tests -q",
         "python3 code/specs_validate.py all --format text --fail-on-diagnostics",
     ]
+    validation = build_validation(root)
 
     governed = build_governed_projects_report(
         root,
@@ -4037,6 +4044,7 @@ def build_e2e_rehearsal(
         target_path=normalized_target,
         task=task,
         operation=operation,
+        validation=validation,
     )
     acknowledge = build_runtime_event(
         root,
@@ -4047,6 +4055,7 @@ def build_e2e_rehearsal(
         task=task,
         operation=operation,
         acknowledged_paths=ack_paths,
+        validation=validation,
     )
     pre_tool_use = build_runtime_event(
         root,
@@ -4057,8 +4066,8 @@ def build_e2e_rehearsal(
         task=task,
         operation=operation,
         acknowledged_paths=ack_paths,
+        validation=validation,
     )
-    validation = build_validation(root)
     git_commit_msg = build_runtime_event(
         root,
         event="git_commit_msg",
@@ -4068,6 +4077,7 @@ def build_e2e_rehearsal(
         task=task,
         operation="commit",
         acknowledged_paths=ack_paths,
+        validation=validation,
     )
     completion_claim = build_runtime_event(
         root,
@@ -4079,6 +4089,7 @@ def build_e2e_rehearsal(
         operation=operation,
         acknowledged_paths=ack_paths,
         verification_evidence=evidence,
+        validation=validation,
     )
 
     stages = [
