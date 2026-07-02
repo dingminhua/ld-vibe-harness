@@ -13,6 +13,7 @@ from datetime import datetime
 
 ROOT = Path(__file__).resolve().parents[1]
 HOOKS_PATH = "hooks"
+EXTERNAL_HOOKS_PATH = "ldvh-hooks"
 COMMIT_MSG_HOOK = "commit-msg"
 HOOK_MARKER = "# LDVH v3 managed commit-msg hook"
 EXTERNAL_REPO_BLOCK_MESSAGE = (
@@ -35,7 +36,7 @@ class HookStatus:
     @property
     def installed(self) -> bool:
         return (
-            self.hooks_path in {HOOKS_PATH, f"./{HOOKS_PATH}"}
+            bool(self.hooks_path)
             and self.active_hook_exists
             and self.active_hook_executable
             and self.active_hook_managed
@@ -73,6 +74,22 @@ def _common_dir(repo: Path) -> Path:
     return common.resolve()
 
 
+def _configured_hooks_dir(repo: Path, hooks_path: str) -> Path:
+    if not hooks_path:
+        return repo / HOOKS_PATH
+    path = Path(hooks_path)
+    if not path.is_absolute():
+        path = repo / path
+    return path.resolve()
+
+
+def _install_target(repo: Path, ldvh_root: Path) -> tuple[Path, str]:
+    if is_current_ldvh_repo(repo, ldvh_root):
+        return repo / HOOKS_PATH, HOOKS_PATH
+    target_dir = _common_dir(repo) / EXTERNAL_HOOKS_PATH
+    return target_dir, target_dir.as_posix()
+
+
 def template_path(ldvh_root: Path = ROOT) -> Path:
     return ldvh_root / HOOKS_PATH / COMMIT_MSG_HOOK
 
@@ -91,7 +108,7 @@ def render_commit_msg_hook(ldvh_root: Path = ROOT, embed_ldvh_root: bool = False
 def inspect_status(repo: Path, ldvh_root: Path = ROOT) -> HookStatus:
     resolved_repo = resolve_repo(repo)
     hooks_path = _git_config(resolved_repo, "--get", "core.hooksPath")
-    active_hook = resolved_repo / HOOKS_PATH / COMMIT_MSG_HOOK
+    active_hook = _configured_hooks_dir(resolved_repo, hooks_path) / COMMIT_MSG_HOOK
     common_hook = _common_dir(resolved_repo) / "hooks" / COMMIT_MSG_HOOK
     active_text = active_hook.read_text(encoding="utf-8") if active_hook.is_file() else ""
     return HookStatus(
@@ -113,7 +130,7 @@ def _backup_path(path: Path) -> Path:
 
 def install(repo: Path, ldvh_root: Path = ROOT, embed_ldvh_root: bool = False) -> HookStatus:
     resolved_repo = resolve_repo(repo)
-    target_dir = resolved_repo / HOOKS_PATH
+    target_dir, hooks_path_value = _install_target(resolved_repo, ldvh_root)
     target_dir.mkdir(parents=True, exist_ok=True)
     target_hook = target_dir / COMMIT_MSG_HOOK
     template = render_commit_msg_hook(ldvh_root, embed_ldvh_root=embed_ldvh_root)
@@ -125,16 +142,15 @@ def install(repo: Path, ldvh_root: Path = ROOT, embed_ldvh_root: bool = False) -
     target_hook.chmod(target_hook.stat().st_mode | 0o755)
 
     _run_git(resolved_repo, "config", "extensions.worktreeConfig", "true")
-    _run_git(resolved_repo, "config", "--worktree", "core.hooksPath", HOOKS_PATH)
+    _run_git(resolved_repo, "config", "--worktree", "core.hooksPath", hooks_path_value)
     return inspect_status(resolved_repo, ldvh_root)
 
 
 def uninstall(repo: Path, ldvh_root: Path = ROOT) -> HookStatus:
     resolved_repo = resolve_repo(repo)
-    current = _git_config(resolved_repo, "--get", "core.hooksPath")
-    if current in {HOOKS_PATH, f"./{HOOKS_PATH}"}:
-        _run_git(resolved_repo, "config", "--worktree", "--unset", "core.hooksPath", check=False)
     status = inspect_status(resolved_repo, ldvh_root)
+    if status.hooks_path:
+        _run_git(resolved_repo, "config", "--worktree", "--unset", "core.hooksPath", check=False)
     if not is_current_ldvh_repo(resolved_repo, ldvh_root) and status.active_hook_managed:
         status.active_hook.unlink()
         try:

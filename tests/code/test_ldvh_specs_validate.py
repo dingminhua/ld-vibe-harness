@@ -1978,7 +1978,7 @@ def test_commit_validate_wrapper_marks_hook_integration(tmp_path: Path) -> None:
     assert payload["metadata"]["integration_scope"] == "git.commit-msg"
 
 
-def test_install_git_hooks_uses_worktree_local_hooks_path(tmp_path: Path) -> None:
+def test_install_git_hooks_uses_git_local_hooks_path_for_external_repo(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
@@ -1998,7 +1998,7 @@ def test_install_git_hooks_uses_worktree_local_hooks_path(tmp_path: Path) -> Non
         check=True,
     )
 
-    hook = repo / "hooks" / "commit-msg"
+    hook = repo / ".git" / "ldvh-hooks" / "commit-msg"
     config = subprocess.run(
         ["git", "config", "--show-origin", "--get", "core.hooksPath"],
         cwd=repo,
@@ -2009,10 +2009,11 @@ def test_install_git_hooks_uses_worktree_local_hooks_path(tmp_path: Path) -> Non
 
     assert "- installed: True" in completed.stdout
     assert "config.worktree" in config.stdout
-    assert config.stdout.rstrip().endswith("\thooks")
+    assert config.stdout.rstrip().endswith(f"\t{repo / '.git' / 'ldvh-hooks'}")
     assert hook.is_file()
     assert os.access(hook, os.X_OK)
     assert "# LDVH v3 managed commit-msg hook" in hook.read_text(encoding="utf-8")
+    assert not (repo / "hooks" / "commit-msg").exists()
     assert not (repo / ".git" / "hooks" / "commit-msg").exists()
 
 
@@ -2082,14 +2083,16 @@ projects:
     )
 
     payload = json.loads(completed.stdout)
-    hook = repo / "hooks" / "commit-msg"
     assert payload["summary"]["status"] == "ok"
     assert payload["summary"]["governed"] is True
     assert payload["summary"]["governed_project_id"] == "app"
     assert payload["summary"]["hook_integrated"] == "git.commit-msg"
     assert payload["metadata"]["human_gate_confirmed"] is True
+    hook = Path(payload["hook_status"]["active_hook"])
+    assert hook == repo / ".git" / "ldvh-hooks" / "commit-msg"
     assert hook.is_file()
     assert os.access(hook, os.X_OK)
+    assert not (repo / "hooks" / "commit-msg").exists()
     hook_text = hook.read_text(encoding="utf-8")
     assert "# LDVH v3 managed commit-msg hook" in hook_text
     assert ROOT.as_posix() in hook_text
@@ -2154,6 +2157,7 @@ projects:
     assert rollback_payload["summary"]["hook_integrated"] == "none"
     assert hooks_path.returncode != 0
     assert not hook.exists()
+    assert not hook.parent.exists()
     assert not (repo / "hooks").exists()
 
 
