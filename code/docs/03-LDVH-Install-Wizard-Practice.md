@@ -143,11 +143,18 @@
 | `product_name` | LD Vibe Harness | ✅ 通过 |
 | `product_description` | 当前工作区的 LDVH 管理实例摘要 | ✅ 通过 |
 
-| 项目 ID | 名称 | 项目路径 | Git common-dir | 当前目标 | 检查 |
-|---|---|---|---|---|---|
-| `ldvh-v3` | LD Vibe Harness v3 | `/Users/dmh2002/poker_hud_projects/ld-vibe-harness-v3` | `/Users/dmh2002/poker_hud_projects/ld-vibe-harness/.git` | ✅ 命中 | ✅ 通过 |
+| 编号 | 项目 ID | 名称 | 项目路径 | Git common-dir | 管辖状态 | 检查 |
+|---|---|---|---|---|---|---|
+| 1 | `ldvh-v3` | LD Vibe Harness v3 | `/Users/dmh2002/poker_hud_projects/ld-vibe-harness-v3` | `/Users/dmh2002/poker_hud_projects/ld-vibe-harness/.git` | ✅ 已设置 | ✅ 通过 |
 
-配置正确性结论必须说明：字段闭集、必填字段、项目 ID 唯一、路径可解析、target-first 命中和配置层级冲突状态。
+配置正确性结论必须说明：字段闭集、必填字段、项目 ID 唯一、路径可解析、target-first 解析结论和配置层级冲突状态。
+
+| 选项 | 说明 |
+|---|---|
+| 1 | 不改管辖项目配置 |
+| 2 | 按编号设置管辖项目 |
+
+选择 2 时，再要求 Human 提供编号列表，例如 `1,3`。
 
 本步不需要选择。下一步进入安装选项。
 

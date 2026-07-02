@@ -1039,14 +1039,19 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "不得只写“保留工作区配置”" in raw
     assert "product_name" in raw
     assert "product_description" in raw
+    assert "编号" in raw
     assert "项目 ID" in raw
     assert "项目路径" in raw
     assert "Git common-dir" in raw
-    assert "是否命中当前目标" in raw
+    assert "是否已设置为管辖项目" in raw
+    assert "不得展示“当前目标”列" in raw
+    assert "1 不改管辖项目配置" in raw
+    assert "2 按编号设置管辖项目" in raw
+    assert "编号列表" in raw
     assert "配置正确性结论" in raw
     assert "字段闭集" in raw
     assert "项目 ID 唯一" in raw
-    assert "target-first 命中" in raw
+    assert "target-first 解析结论" in raw
     assert "拟写入项目清单" in raw
     assert "bootstrap discovery" in raw
     assert "有限、只读、有证据" in raw
