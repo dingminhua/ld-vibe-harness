@@ -136,6 +136,19 @@
 | 🔎 配置解析 | ✅ 通过 | 管辖项目解析无 diagnostics |
 | 🔌 环境入口 | ⚠️ 需升级 | 已安装插件指向旧路径或 stale V2 path 时，方案预览必须安排升级 |
 
+工作区配置已存在时，必须展示当前配置项目清单；新建或重写配置时，必须展示拟写入项目清单。两种情况都使用同等表格，不能用“保留工作区配置”替代配置内容检查。
+
+| 字段 | 当前值 | 检查 |
+|---|---|---|
+| `product_name` | LD Vibe Harness | ✅ 通过 |
+| `product_description` | 当前工作区的 LDVH 管理实例摘要 | ✅ 通过 |
+
+| 项目 ID | 名称 | 项目路径 | Git common-dir | 当前目标 | 检查 |
+|---|---|---|---|---|---|
+| `ldvh-v3` | LD Vibe Harness v3 | `/Users/dmh2002/poker_hud_projects/ld-vibe-harness-v3` | `/Users/dmh2002/poker_hud_projects/ld-vibe-harness/.git` | ✅ 命中 | ✅ 通过 |
+
+配置正确性结论必须说明：字段闭集、必填字段、项目 ID 唯一、路径可解析、target-first 命中和配置层级冲突状态。
+
 本步不需要选择。下一步进入安装选项。
 
 ### 3/5 安装选项

@@ -1035,6 +1035,19 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "环境插件未安装时必须标为 `⚠️ 需安装` 并安排安装方案" in raw
     assert "环境插件已安装但指向旧路径、旧版本或 stale V2 path 时必须标为 `⚠️ 需升级` 并安排升级方案" in raw
     assert "不得把这类情况表达成“不安装插件”或“不处理插件”" in raw
+    assert "当前配置项目清单" in raw
+    assert "不得只写“保留工作区配置”" in raw
+    assert "product_name" in raw
+    assert "product_description" in raw
+    assert "项目 ID" in raw
+    assert "项目路径" in raw
+    assert "Git common-dir" in raw
+    assert "是否命中当前目标" in raw
+    assert "配置正确性结论" in raw
+    assert "字段闭集" in raw
+    assert "项目 ID 唯一" in raw
+    assert "target-first 命中" in raw
+    assert "拟写入项目清单" in raw
     assert "bootstrap discovery" in raw
     assert "有限、只读、有证据" in raw
     assert "找不到时必须要求 Human 提供 LDVH 本体路径" in raw
