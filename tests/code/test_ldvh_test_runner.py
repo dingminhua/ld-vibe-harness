@@ -46,7 +46,9 @@ def test_targeted_profile_selects_code_and_migration_checks() -> None:
     stages = runner.build_stages("targeted", ["code/ldvh_specs.py,_migration/tests/test_migration_gate.py"])
 
     assert "code pytest fast" in _stage_names(stages)
-    assert "code runtime/e2e pytest" in _stage_names(stages)
+    assert "code runtime core" in _stage_names(stages)
+    assert "code hook adapter checks" in _stage_names(stages)
+    assert "code runtime long-tail" in _stage_names(stages)
     assert "migration pytest" in _stage_names(stages)
 
 
@@ -66,7 +68,9 @@ def test_runtime_profile_runs_runtime_tier_without_web_build() -> None:
 
     assert "specs validator" in _stage_names(stages)
     assert "e2e rehearsal" in _stage_names(stages)
-    assert "code runtime/e2e pytest" in _stage_names(stages)
+    assert "code runtime core" in _stage_names(stages)
+    assert "code hook adapter checks" in _stage_names(stages)
+    assert "code runtime long-tail" in _stage_names(stages)
     assert "web production build" not in _stage_names(stages)
 
 

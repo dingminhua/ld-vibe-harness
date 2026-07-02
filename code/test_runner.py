@@ -11,6 +11,7 @@ from typing import Iterable
 
 
 ROOT = Path(__file__).resolve().parents[1]
+STAGE_TIMEOUT_SECONDS = 1200
 
 
 @dataclass(frozen=True)
@@ -50,9 +51,41 @@ CODE_FAST_STAGE = Stage(
     "code pytest fast",
     _python_command("-m", "pytest", "tests/code", "-q", "-m", "not slow", "--durations=10"),
 )
-CODE_RUNTIME_STAGE = Stage(
-    "code runtime/e2e pytest",
-    _python_command("-m", "pytest", "tests/code", "-q", "-m", "runtime or e2e", "--durations=20"),
+CODE_RUNTIME_CORE_STAGE = Stage(
+    "code runtime core",
+    _python_command(
+        "-m",
+        "pytest",
+        "tests/code",
+        "-q",
+        "-m",
+        "runtime and not runtime_slow and not hook_adapter",
+        "--durations=20",
+    ),
+)
+CODE_HOOK_ADAPTER_STAGE = Stage(
+    "code hook adapter checks",
+    _python_command(
+        "-m",
+        "pytest",
+        "tests/code",
+        "-q",
+        "-m",
+        "hook_adapter",
+        "--durations=20",
+    ),
+)
+CODE_RUNTIME_SLOW_STAGE = Stage(
+    "code runtime long-tail",
+    _python_command(
+        "-m",
+        "pytest",
+        "tests/code",
+        "-q",
+        "-m",
+        "runtime_slow or e2e",
+        "--durations=20",
+    ),
 )
 CODE_FULL_STAGE = Stage(
     "code and migration pytest",
@@ -61,7 +94,9 @@ CODE_FULL_STAGE = Stage(
 RUNTIME_STAGES: tuple[Stage, ...] = (
     *SMOKE_STAGES,
     E2E_REHEARSAL_STAGE,
-    CODE_RUNTIME_STAGE,
+    CODE_RUNTIME_CORE_STAGE,
+    CODE_HOOK_ADAPTER_STAGE,
+    CODE_RUNTIME_SLOW_STAGE,
 )
 FULL_STAGES: tuple[Stage, ...] = (
     *SMOKE_STAGES,
@@ -143,7 +178,10 @@ def build_targeted_stages(changed_paths: Iterable[str], *, slow_policy: str = "a
         if path.startswith(("code/", "tests/code/")):
             stages.append(CODE_FAST_STAGE)
             if include_runtime:
-                stages.append(CODE_RUNTIME_STAGE)
+                stages.append(CODE_RUNTIME_CORE_STAGE)
+                stages.append(CODE_HOOK_ADAPTER_STAGE)
+                if slow_policy in {"auto", "include"}:
+                    stages.append(CODE_RUNTIME_SLOW_STAGE)
         if path.startswith(("_migration/code/", "_migration/tests/", "_migration/fixtures/", "_migration/schemas/")):
             stages.append(Stage("migration pytest", _python_command("-m", "pytest", "_migration/tests", "-q", "--durations=20")))
         if path.startswith("ldvh-base/"):
@@ -198,7 +236,19 @@ def run_stages(stages: list[Stage], *, dry_run: bool, continue_on_fail: bool) ->
             continue
 
         stage_started_at = time.monotonic()
-        completed = subprocess.run(stage.command, cwd=ROOT)
+        try:
+            completed = subprocess.run(stage.command, cwd=ROOT, timeout=STAGE_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            elapsed = time.monotonic() - stage_started_at
+            returncode = 124
+            results.append((stage, returncode, elapsed))
+            print(
+                f"[{index}/{total}] {stage.name} ... timeout({STAGE_TIMEOUT_SECONDS}s)",
+                flush=True,
+            )
+            if not continue_on_fail:
+                break
+            continue
         elapsed = time.monotonic() - stage_started_at
         results.append((stage, completed.returncode, elapsed))
         status = "ok" if completed.returncode == 0 else f"failed({completed.returncode})"

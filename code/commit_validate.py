@@ -46,7 +46,8 @@ def _print_text(result: dict[str, Any]) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Validate an LDVH v3 commit message.")
     parser.add_argument("--check-message-file", "--message-file", dest="message_file", required=True)
-    parser.add_argument("--repo", default=ROOT.as_posix(), help="repository root")
+    parser.add_argument("--repo", default=ROOT.as_posix(), help="target repository root used for staged paths")
+    parser.add_argument("--ldvh-root", default=ROOT.as_posix(), help="LDVH root used for specs and validator contracts")
     parser.add_argument(
         "--changed-path",
         action="append",
@@ -73,10 +74,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     repo = Path(args.repo).resolve()
+    ldvh_root = Path(args.ldvh_root).resolve()
     message = Path(args.message_file).read_text(encoding="utf-8")
     changed_paths = args.changed_path or _staged_paths(repo)
     result = build_commit_gate(
-        repo,
+        ldvh_root,
         message=message,
         changed_paths=changed_paths,
         acknowledged_paths=args.acknowledged_path,

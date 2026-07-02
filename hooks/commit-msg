@@ -20,4 +20,4 @@ case "$1" in
 esac
 
 cd "$REPO_ROOT"
-exec python3 "$VALIDATOR" --check-message-file "$MSG_FILE" --repo "$REPO_ROOT" --hook-integrated
+exec python3 "$VALIDATOR" --check-message-file "$MSG_FILE" --repo "$REPO_ROOT" --ldvh-root "$LDVH_ROOT" --hook-integrated

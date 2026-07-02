@@ -18,10 +18,10 @@ Git 提交行动执行时，AI 应按当前目标读取：
 提交前可运行：
 
 ```bash
-python3 code/commit_validate.py --check-message-file "<message-file>" --repo "<repo>"
+python3 code/commit_validate.py --check-message-file "<message-file>" --repo "<target-repo>" --ldvh-root "<ldvh-root>"
 ```
 
-真实 Git `commit-msg` Hook 会调用同一 validator，并带 `--hook-integrated` 标记。
+`--repo` 表示目标 Git 仓库，用于读取 staged paths；`--ldvh-root` 表示 LDVH 根目录，用于读取 specs、附件和校验契约。真实 Git `commit-msg` Hook 会调用同一 validator，并带 `--hook-integrated` 标记。
 
 ## 当前 Worktree Hook
 
@@ -60,5 +60,7 @@ python3 code/governed_hook_adapter.py status --repo "<repo>" --governance-root "
 python3 code/governed_hook_adapter.py install --repo "<repo>" --governance-root "<ldvh-root>" --confirm-human-gate
 python3 code/governed_hook_adapter.py uninstall --repo "<repo>" --governance-root "<ldvh-root>" --confirm-human-gate
 ```
+
+governed adapter 安装外部 repo 时只写入 LDVH managed `commit-msg` 薄 shim，并把 LDVH 根目录嵌入为默认 validator 位置。卸载时应取消该 repo 的 worktree-local `core.hooksPath`，删除外部 repo 中由 LDVH 管理的 shim；已有用户 Hook 或备份资产不得被静默删除。
 
 测试或 adapter backend 需要调用底层安装器处理外部临时 repo 时，必须显式使用 `--backend-allow-external` 或直接调用 backend 函数；该标记不得作为 Human Gate 替代，也不得面向普通外部项目操作。

@@ -134,6 +134,13 @@ def uninstall(repo: Path, ldvh_root: Path = ROOT) -> HookStatus:
     current = _git_config(resolved_repo, "--get", "core.hooksPath")
     if current in {HOOKS_PATH, f"./{HOOKS_PATH}"}:
         _run_git(resolved_repo, "config", "--worktree", "--unset", "core.hooksPath", check=False)
+    status = inspect_status(resolved_repo, ldvh_root)
+    if not is_current_ldvh_repo(resolved_repo, ldvh_root) and status.active_hook_managed:
+        status.active_hook.unlink()
+        try:
+            status.active_hook.parent.rmdir()
+        except OSError:
+            pass
     return inspect_status(resolved_repo, ldvh_root)
 
 

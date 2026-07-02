@@ -2093,6 +2093,34 @@ projects:
     hook_text = hook.read_text(encoding="utf-8")
     assert "# LDVH v3 managed commit-msg hook" in hook_text
     assert ROOT.as_posix() in hook_text
+    assert '--ldvh-root "$LDVH_ROOT"' in hook_text
+
+    (repo / "README.md").write_text("# app\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True)
+    valid_message = tmp_path / "valid-message.txt"
+    valid_message.write_text("docs(docs): 验证外部hook\n", encoding="utf-8")
+    valid_run = subprocess.run(
+        [str(hook), str(valid_message)],
+        cwd=repo,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert valid_run.returncode == 0, valid_run.stdout + valid_run.stderr
+    assert "FileNotFoundError" not in valid_run.stdout + valid_run.stderr
+
+    invalid_message = tmp_path / "invalid-message.txt"
+    invalid_message.write_text("invalid header\n", encoding="utf-8")
+    invalid_run = subprocess.run(
+        [str(hook), str(invalid_message)],
+        cwd=repo,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert invalid_run.returncode == 1
+    assert "COMMIT_HEADER_INVALID" in invalid_run.stdout
+    assert "FileNotFoundError" not in invalid_run.stdout + invalid_run.stderr
 
     rollback = subprocess.run(
         [
@@ -2125,6 +2153,8 @@ projects:
     assert rollback_payload["summary"]["status"] == "ok"
     assert rollback_payload["summary"]["hook_integrated"] == "none"
     assert hooks_path.returncode != 0
+    assert not hook.exists()
+    assert not (repo / "hooks").exists()
 
 
 def test_governed_hook_adapter_requires_human_gate_for_install(tmp_path: Path) -> None:
