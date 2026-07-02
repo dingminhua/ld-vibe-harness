@@ -1,6 +1,6 @@
 # 24A 用户级 LDVH 配置目录候选记录
 
-文件状态：candidate note。本文只记录 Human 讨论形成的后续设计候选，不授权当前实现改变配置解析顺序，不新增正式事实源，不创建 Spark 实例。待 Spark 可用后，应将本文转入 Spark 或后续 WorkCase 再推进。
+文件状态：candidate note / transferred。本文只记录 Human 讨论形成的后续设计候选，不授权当前实现改变配置解析顺序，不新增正式配置事实源。2026-07-02 已按 Human 确认转入 `ldvh-base/sparks/spark-0041-user-local-ldvh-config-directory.yaml`；本文保留为迁移证据和来源说明。
 
 ## 背景
 
@@ -61,7 +61,7 @@
 
 ## 后续转入 Spark 的内容
 
-待 Spark 可用后，应把本文拆成一个 Spark，至少包含以下问题：
+本文已转入 `ldvh-base/sparks/spark-0041-user-local-ldvh-config-directory.yaml`。该 Spark 至少继续跟踪以下问题：
 
 1. 是否正式引入 `LDVH_USER_HOME` 逻辑目录；
 2. Windows、macOS、Linux 的默认目录是否按本文候选执行；
@@ -85,14 +85,14 @@
 4. 不新增 `~/.ldvh`、`%APPDATA%\ldvh` 或其它真实用户目录；
 5. 不移动现有 `LDVH-GOVERNED-PROJECTS.yaml`；
 6. 不新增配置生成 CLI、安装器交互或 Web 选择界面；
-7. 不把本文写成 Spark、WorkCase、ADR 或正式规范结论。
+7. 不把本文继续作为 Spark、WorkCase、ADR 或正式规范结论；正式后续以 `spark-0041` 和后续 WorkCase / ADR / specs 变更为准。
 
 ## 进入正式工作的条件
 
 后续若要推进，至少需要：
 
 1. Human 确认用户级配置目录进入正式设计；
-2. 先转入 Spark 或 WorkCase，明确目标、边界和验收；
+2. 已转入 `spark-0041`；若继续推进，应从该 Spark 进入 WorkCase 或 ADR，明确目标、边界和验收；
 3. 更新 specs 前先确认是否属于 10 的待补齐事项；
 4. Code/tests 变更与规范变更同步；
 5. 确认不让用户级配置绕过 repo 事实源、Human Gate 或 Hook 安装授权。

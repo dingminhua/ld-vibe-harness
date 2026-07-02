@@ -35,8 +35,8 @@ V2 已于 2026-07-02 关闭为历史来源，记录见 `_migration/25A-v2-offici
 
 | 编号 | 工作 | 来源 | 当前状态 | 前置条件 | 下一步 |
 |---|---|---|---|---|---|
-| Q1 | Spark 可用性与候选转入方式 | 24A、25A | blocked | Spark 创建 / 更新入口可靠可用，且不绕过事实源和 Human Gate | Spark 可用后，先把 24A 用户级配置候选转入 Spark |
-| Q2 | 管辖项目配置生成位置选择 | 24A | candidate | Q1 完成，Human 确认进入正式设计 | 生成配置前必须提问三选一：工作区根目录（推荐，默认 LDVH 安装目录上一级）、用户级 LDVH 配置目录、当前项目根目录；再决定 `LDVH_USER_HOME`、workspace pointer、冲突策略、10 / 10.Att.01 / Code / tests |
+| Q1 | Spark 可用性与候选转入方式 | 24A、25A | done / transferred-to-spark | 已完成 | 24A 用户级配置候选已转入 `ldvh-base/sparks/spark-0041-user-local-ldvh-config-directory.yaml`；24A 保留为迁移证据 |
+| Q2 | 管辖项目配置生成位置选择 | 24A、spark-0041 | candidate / spark-pending | Human 确认进入正式设计，并明确配置生成位置 | 生成配置前必须提问三选一：工作区根目录（推荐，默认 LDVH 安装目录上一级）、用户级 LDVH 配置目录、当前项目根目录；再决定 `LDVH_USER_HOME`、workspace pointer、冲突策略、10 / 10.Att.01 / Code / tests |
 | Q3 | 外部受管项目 Hook 安装试点 | 18A、25A | adapter-ready / gated | Human 指定目标 repo，并显式确认 install / uninstall 风险 | 使用 `code/governed_hook_adapter.py` 做 status，再按 Human Gate 安装或回滚 |
 | Q4 | Web Confirm UI 最小闭环 | 17A、25A | deferred / gated | Human 确认要推进 Web 写入能力，且先建立 WorkCase 或明确验收目标 | 先做 Confirm UI 的最小确认记录，不直接做通用写入 |
 | Q5 | 环境 Hook / V3 插件自动入口闭环 | 30A、31A、35A、36A | partial / stale-confirmed / gated | Human 确认推进真实环境插件安装或升级，且可提供目标环境、触发点、payload、失败处理、安装状态、回滚和测试入口 | 已用 `environment_entry_audit.py` 确认当前 Codex `ldvh@personal` 指向 V2 stale path，只能记为 available；真实插件升级、安装或卸载仍 gated，未完成前不得声明 integrated |
@@ -74,8 +74,8 @@ V2 已于 2026-07-02 关闭为历史来源，记录见 `_migration/25A-v2-offici
 
 如果没有新的用户目标，推荐顺序是：
 
-1. 等 Spark 可用后处理 Q1 / Q2，把 24A 转入正式候选链路；
-2. 如果 Human 想先验证外部项目保护能力，处理 Q3；
+1. 如果 Human 要推进管辖项目配置生成，处理 Q2，并先在 `spark-0041` 基础上确认三选一位置；
+2. 如果 Human 想先验证外部项目保护能力，处理 Q3；仓库内 adapter / 临时 repo 测试已完成，真实外部 repo install / uninstall 仍 gated；
 3. 如果 Human 想先收口 runtime / environment hook 真实自动能力，只处理 Q5，并先进入真实环境插件 Human Gate；Q6 已完成仓库内决策；
 4. 如果 Human 想提升 Web 可控写入，处理 Q4；
 5. 真实工作中遇到 WorkCase、测试、字段、Web 设计或 common-dir 缺口时，再按触发条件处理 Q9-Q13；Q7 已完成模板，Q8 只剩真实环境 gated 验证；

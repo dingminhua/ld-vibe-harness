@@ -1106,15 +1106,16 @@ def test_fact_instances_are_migrated_and_code_consumable(validation_result: dict
     for instance in instances:
         counts[instance["kind"]] = counts.get(instance["kind"], 0) + 1
 
-    assert result["summary"]["fact_instances"] == 77
+    assert result["summary"]["fact_instances"] == 78
     assert counts == {
-        "spark": 40,
+        "spark": 41,
         "workcase": 22,
         "pitfall": 1,
         "study": 14,
     }
     assert any(instance["path"] == "ldvh-base/sparks/spark-0001-session-start-user-input-boundary.yaml" for instance in instances)
     assert any(instance["path"] == "ldvh-base/sparks/spark-0002-subdocument-status-gap.yaml" for instance in instances)
+    assert any(instance["path"] == "ldvh-base/sparks/spark-0041-user-local-ldvh-config-directory.yaml" for instance in instances)
     assert any(instance["path"] == "ldvh-base/workcases/workcase-0002-knowledge-map-entry-navigation.yaml" for instance in instances)
     assert any(instance["path"] == "ldvh-base/studies/study-0001-workcase-orchestration-evolution.md" for instance in instances)
 
