@@ -1081,6 +1081,10 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "👉" in raw
     assert "✅" in raw
     assert "尚未发生的步骤保持空白" in raw
+    assert "用户视角摘要" in raw
+    assert "本步目的" in raw
+    assert "不会做什么" in raw
+    assert "需要决定什么" in raw
     assert "选择框 / 单选控件" in raw
     assert "每次只问一个问题" in raw
     assert "选项表必须给出选项、说明和结果" in raw
@@ -1099,6 +1103,11 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "⚠️ 需升级" in raw
     assert "⛔ 阻断" in raw
     assert "➖ 不适用" in raw
+    assert "下一步处理" in raw
+    assert "状态图例" in raw
+    assert "是否阻断" in raw
+    assert "`⚠️ 注意` 只表示需知情或需关注，不自动阻断" in raw
+    assert "`⚠️ 需安装` 和 `⚠️ 需升级` 必须进入安装方案预览" in raw
     assert "🔌 环境入口" in raw
     assert "🪝 Git Hook" in raw
     assert "🪝 管辖项目 Git Hook" in raw
@@ -1115,6 +1124,14 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "完整安装方案必须同时覆盖 AI 环境 Hook 和管辖项目 Git Hook" in raw
     assert "`core.hooksPath` / active hook 状态" in raw
     assert "验证命令和卸载 / rollback 命令" in raw
+    assert "净变化" in raw
+    assert "将新增" in raw
+    assert "将修改或升级" in raw
+    assert "将保持不变" in raw
+    assert "不会执行" in raw
+    assert "需后置确认" in raw
+    assert "不可验证范围" in raw
+    assert "不得混入“验证通过”" in raw
     assert "安装方案预览必须停止为 blocking" in raw
     assert "管辖项目必须是 Git 仓库" in raw
     assert "当前配置项目清单" in raw
@@ -1146,6 +1163,7 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "最终确认只展示两个主选项" in raw
     assert "1 执行方案" in raw
     assert "2 不执行，停止安装" in raw
+    assert "选择执行后才会开始写入" in raw
     assert "不得把返回修改作为第三个主选项" in raw
     assert "最终确认前" in raw
     assert "不得写入配置" in raw
@@ -1265,6 +1283,21 @@ def test_ldvh_install_action_template_reports_missing_wizard_state_machine(tmp_p
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
     assert any("尚未发生的步骤保持空白" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_missing_user_summary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "用户视角摘要",
+        "步骤摘要",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("用户视角摘要" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_final_confirmation_boundary(tmp_path: Path) -> None:
