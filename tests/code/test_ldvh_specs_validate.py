@@ -881,14 +881,37 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "LDVH-GOVERNED-PROJECTS.yaml" in rows["Context"]
     assert "安装 LDVH" in rows["Scenario"]
     assert "配置生成位置" in rows["Gate"]
+    assert "安装方案预览" in rows["Gate"]
+    assert "最终确认" in rows["Gate"]
     assert "不直接写入环境 Hook 系统文件" in rows["执行"]
+    assert "安装方案预览" in rows["执行"]
+    assert "两类位置" in rows["执行"]
     assert "选择框 / 单选控件" in rows["执行"]
-    assert "编号三选一" in rows["执行"]
-    assert "用户级候选只能记录后置" in rows["执行"]
+    assert "编号二选一" in rows["执行"]
+    assert "理由、限制和建议" in rows["执行"]
+    assert "用户级配置目录只能记录为后置" in rows["执行"]
     assert "target-first resolver" in rows["执行"]
     assert "安装状态可复现" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
     assert "integrated / manual_ready / deferred / removed_top_level" in rows["交还"]
+
+
+def test_ldvh_install_action_template_defines_wizard_state_machine(validation_result: dict) -> None:
+    raw = (ROOT / "specs/30-LDVH安装初始化管辖项目配置行动模板.md").read_text(encoding="utf-8")
+
+    assert "安装向导状态机" in raw
+    assert "流程概览" in raw
+    assert "安装前检查" in raw
+    assert "安装选项" in raw
+    assert "安装方案预览" in raw
+    assert "最终确认" in raw
+    assert "决策 / 结果" in raw
+    assert "箭头" in raw
+    assert "尚未发生的步骤保持空白" in raw
+    assert "不得把事实伪装成 Human 选项" in raw
+    assert "执行、不执行、返回修改" in raw
+    assert "最终确认前" in raw
+    assert "不得写入配置" in raw
 
 
 def test_ldvh_install_action_template_reports_missing_human_gate_for_config_location(tmp_path: Path) -> None:
@@ -910,7 +933,7 @@ def test_ldvh_install_action_template_reports_missing_selection_control_for_conf
     _replace_in_temp(
         root,
         "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
-        "；该询问必须使用选择框 / 单选控件呈现互斥三选一，无法使用 UI 控件时必须使用等价编号三选一，不得用开放文本询问替代",
+        "；该询问必须使用选择框 / 单选控件呈现互斥二选一，无法使用 UI 控件时必须使用等价编号二选一，不得用开放文本询问替代",
         "",
     )
 
@@ -938,14 +961,44 @@ def test_ldvh_install_action_template_reports_missing_user_config_deferral(tmp_p
     _replace_in_temp(
         root,
         "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
-        "；当前 Code 不支持的用户级候选只能记录后置，不得写成已生效解析",
+        "；当前 Code 不支持的用户级配置目录只能记录为后置，不得作为主选项或写成已生效解析",
         "",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "LDVH_INSTALL_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("用户级候选只能记录后置" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("用户级配置目录只能记录为后置" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_missing_wizard_state_machine(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "尚未发生的步骤保持空白",
+        "尚未发生的步骤写入待办状态",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("尚未发生的步骤保持空白" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_missing_final_confirmation_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "最终确认前",
+        "执行前",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("最终确认前" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_workcase_action_template_reports_missing_human_gate(tmp_path: Path) -> None:

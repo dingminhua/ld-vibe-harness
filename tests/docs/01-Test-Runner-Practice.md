@@ -71,6 +71,19 @@ Python CLI 测试应统一走 `tests/code/test_ldvh_specs_validate.py` 中的 `_
 
 新增 Spark、Study、WorkCase、ADR、Pitfall、正式 spec 或附件时，不应仅为同步当前数量而修改测试。若确实需要新增完整清单断言，必须能说明该清单是稳定契约而不是仓库现状快照。
 
+## 交互规格回归
+
+当 specs 新增或修改 Human-facing 交互流程时，测试应覆盖可回归的关键契约，而不是只检查文档存在。
+
+最小同步要求：
+
+1. 在对应 validator 中列出关键术语、边界或必需行；
+2. 在 `tests/code/test_ldvh_specs_validate.py` 增加正例和至少一个负例，证明删除关键要求会产生 diagnostic；
+3. 若交互涉及选择、确认或写入边界，负例应覆盖开放文本替代选择控件、把后置项放入主选项、最终确认前写入等高风险退化；
+4. 测试仍不得固定会随仓库增长的事实对象数量。
+
+例如 LDVH 安装向导的五步状态、当前步骤箭头、`决策 / 结果` 列、配置位置二选一、用户级配置目录后置和最终确认前不写入，都属于稳定交互契约，应由 validator 和正反测试共同覆盖。
+
 ## Slow Policy
 
 `targeted` 支持：

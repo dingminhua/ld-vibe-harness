@@ -231,12 +231,34 @@ GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
 LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Context": ["用户目标", "目标环境", "LDVH 根目录", "工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "workcases/adrs/pitfalls/sparks/studies", "环境入口审计结果", "source_refs", "specs/10-管辖项目配置规范.md"],
     "Scenario": ["安装 LDVH", "接入 LDVH", "初始化 LDVH", "配置管辖项目", "旧插件 / 旧路径", "只回答 01/06/10 边界"],
-    "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "事实源子目录", "配置生成位置", "用户级配置目录后置缺口", "integrated", "多项目", "用户告知清单"],
-    "执行": ["01", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "用户告知清单", "workcases/adrs/pitfalls/sparks/studies", "repo instruction", "manual entrypoint", "不恢复 Rules 顶层机制", "三类位置", "选择框 / 单选控件", "编号三选一", "用户级候选只能记录后置", "10", "Git common-dir", "target-first resolver"],
+    "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "事实源子目录", "配置生成位置", "用户级配置目录后置缺口", "integrated", "多项目", "用户告知清单", "安装方案预览", "最终确认"],
+    "执行": ["01", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "用户告知清单", "安装方案预览", "workcases/adrs/pitfalls/sparks/studies", "repo instruction", "manual entrypoint", "不恢复 Rules 顶层机制", "两类位置", "选择框 / 单选控件", "编号二选一", "理由、限制和建议", "用户级配置目录只能记录为后置", "10", "Git common-dir", "target-first resolver"],
     "验证": ["environment_status.py", "environment_entry_audit.py", "specs_validate.py governed-projects", "target-first resolution", "ldvh-base/", "runtime adapter", "09 验证声明字段", "真实自动触发", "失败可阻断", "安装状态可复现", "integrated"],
     "回写": ["过程输出", "Human 确认", "LDVH-GOVERNED-PROJECTS.yaml", "10 字段契约", "事实源目录创建", "不创建事实实例", "旧插件", "用户级配置目录候选", "Spark", "ADR", "Pitfall", "WorkCase", "Git commit records", "不得把 runtime receipt"],
     "交还": ["安装方式", "配置位置选择", "管辖项目 ID", "Git common-dir", "ldvh-base/", "事实源子目录状态", "环境入口状态", "integrated / manual_ready / deferred / removed_top_level", "用户告知清单", "验证摘要", "回滚或卸载入口", "下一步 Human Gate", "source_refs"],
 }
+LDVH_INSTALL_WIZARD_TERMS = [
+    "安装向导状态机",
+    "五步",
+    "流程概览",
+    "安装前检查",
+    "安装选项",
+    "安装方案预览",
+    "最终确认",
+    "决策 / 结果",
+    "箭头",
+    "尚未发生的步骤保持空白",
+    "不写“待进行 / 待选择 / 待确认”",
+    "系统已检查事实",
+    "不得把事实伪装成 Human 选项",
+    "用户级配置目录是后置缺口",
+    "工作区根目录",
+    "当前项目根目录",
+    "每个选择项必须用表格给出选项、含义、为什么选它、限制和建议",
+    "执行、不执行、返回修改",
+    "最终确认前",
+    "不得写入配置",
+]
 LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_TERMS = [
     "V2 `33-ldvh-install-action`",
     "受 V3 01",
@@ -2675,6 +2697,17 @@ def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]
                 "LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_MISSING",
                 path,
                 f"LDVH 安装初始化配置行动模板缺少边界声明: {term}",
+            )
+        )
+
+    missing_wizard_terms = [term for term in LDVH_INSTALL_WIZARD_TERMS if term not in raw]
+    for term in missing_wizard_terms:
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "LDVH_INSTALL_WIZARD_TERM_MISSING",
+                path,
+                f"LDVH 安装向导状态机缺少关键要求: {term}",
             )
         )
 
