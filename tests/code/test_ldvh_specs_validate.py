@@ -1022,13 +1022,19 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "🧾 配置文件完整路径" in raw
     assert "✅ 通过" in raw
     assert "⚠️ 注意" in raw
+    assert "⚠️ 需安装" in raw
+    assert "⚠️ 需升级" in raw
     assert "⛔ 阻断" in raw
     assert "➖ 不适用" in raw
     assert "🔌 环境入口" in raw
     assert "🗑️ 项目内旧配置" in raw
     assert "🧪 验证" in raw
     assert "↩️ 回滚" in raw
+    assert "需授权动作" in raw
     assert "不得把事实伪装成 Human 选项" in raw
+    assert "环境插件未安装时必须标为 `⚠️ 需安装` 并安排安装方案" in raw
+    assert "环境插件已安装但指向旧路径、旧版本或 stale V2 path 时必须标为 `⚠️ 需升级` 并安排升级方案" in raw
+    assert "不得把这类情况表达成“不安装插件”或“不处理插件”" in raw
     assert "bootstrap discovery" in raw
     assert "有限、只读、有证据" in raw
     assert "找不到时必须要求 Human 提供 LDVH 本体路径" in raw
