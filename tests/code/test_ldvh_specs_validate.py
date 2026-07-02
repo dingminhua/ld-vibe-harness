@@ -2160,6 +2160,58 @@ def test_install_git_hooks_uses_git_local_hooks_path_for_external_repo(tmp_path:
     assert not (repo / ".git" / "hooks" / "commit-msg").exists()
 
 
+def test_install_git_hooks_uses_common_dir_for_external_worktree(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    worktree = tmp_path / "repo-worktree"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    subprocess.run(["git", "config", "user.email", "ldvh@example.test"], cwd=repo, check=True, timeout=30)
+    subprocess.run(["git", "config", "user.name", "LDVH Test"], cwd=repo, check=True, timeout=30)
+    (repo / "README.md").write_text("test\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True, timeout=30)
+    subprocess.run(["git", "commit", "-m", "test: init"], cwd=repo, check=True, capture_output=True, text=True, timeout=30)
+    subprocess.run(["git", "worktree", "add", "--detach", str(worktree), "HEAD"], cwd=repo, check=True, capture_output=True, text=True, timeout=30)
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/install_git_hooks.py",
+            "install",
+            "--repo",
+            str(worktree),
+            "--backend-allow-external",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+    common_dir = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=worktree,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=30,
+    ).stdout.strip()
+    config = subprocess.run(
+        ["git", "config", "--show-origin", "--get", "core.hooksPath"],
+        cwd=worktree,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=30,
+    )
+    hook = Path(common_dir) / "ldvh-hooks" / "commit-msg"
+
+    assert "- installed: True" in completed.stdout
+    assert "config.worktree" in config.stdout
+    assert config.stdout.rstrip().endswith(f"\t{Path(common_dir) / 'ldvh-hooks'}")
+    assert hook.is_file()
+    assert os.access(hook, os.X_OK)
+    assert "# LDVH v3 managed commit-msg hook" in hook.read_text(encoding="utf-8")
+    assert not (worktree / "ldvh-hooks" / "commit-msg").exists()
+    assert not (worktree / "hooks" / "commit-msg").exists()
+
+
 def test_install_git_hooks_blocks_direct_external_repo_write(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()

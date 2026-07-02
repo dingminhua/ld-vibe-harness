@@ -52,7 +52,7 @@ V2 已于 2026-07-02 关闭为历史来源，记录见 `_migration/25A-v2-offici
 | Q10 | 测试输出可观测性增强 | 14A、用户关于全量测试进度的讨论 | optional | full / runtime 测试实际耗时影响日常判断，且引入依赖不会增加维护负担 | 可增强 test runner 分阶段输出或进度显示；不得降低 full 覆盖 |
 | Q11 | 成员字段表与长表筛选 | 05、20-24、23A | demand-driven | 某个事实对象的真实读写、Web 展示或验证出现字段缺口 | 逐对象迁入最小字段，不批量搬运 V2 长表 |
 | Q12 | Web 设计参考吸收 | web/design-workspace、23A | reference-only | Human 确认要把设计参考转为正式 Web 改造 | 先开 Web 设计 / 实现 WorkCase，再落代码和 tests/web |
-| Q13 | `git.common_dir` 稳定性补强 | 10、18A、36A | optional / postposed | worktree、dogfood 或多 repo target-first 解析出现不稳定 | 现有 10 和 resolver/tests 已覆盖基本 common-dir 解析；本轮不扩大范围，后续出现实际不稳定再补 resolver / tests |
+| Q13 | `git.common_dir` 稳定性补强 | 10、18A、36A | partial / minimal-regression | worktree、dogfood 或多 repo target-first 解析出现不稳定 | 已补 linked worktree 下 install hook 使用 Git common-dir 的回归测试；现有 10 和 resolver/tests 已覆盖基本 common-dir 解析，后续出现实际不稳定再补 resolver / tests |
 
 ## Parked 队列
 
