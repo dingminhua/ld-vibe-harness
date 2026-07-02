@@ -21,6 +21,29 @@ def _stage_names(stages) -> list[str]:
     return [stage.name for stage in stages]
 
 
+def _pytest_stages(stages) -> list:
+    return [stage for stage in stages if len(stage.command) >= 3 and stage.command[1:3] == ("-m", "pytest")]
+
+
+def test_all_pytest_stages_use_short_tracebacks() -> None:
+    runner = _load_runner()
+
+    stage_sets = [
+        runner.build_stages("smoke", []),
+        runner.build_stages("runtime", []),
+        runner.build_stages("full", []),
+        runner.build_stages(
+            "targeted",
+            ["code/ldvh_specs.py,_migration/tests/test_migration_gate.py"],
+            slow_policy="include",
+        ),
+    ]
+
+    missing = [stage.name for stages in stage_sets for stage in _pytest_stages(stages) if "--tb=short" not in stage.command]
+
+    assert missing == []
+
+
 def test_smoke_profile_uses_fast_formal_validation_stages() -> None:
     runner = _load_runner()
 

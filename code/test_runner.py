@@ -31,7 +31,7 @@ SMOKE_STAGES: tuple[Stage, ...] = (
     ),
     Stage(
         "formal specs hash tests",
-        _python_command("-m", "pytest", "tests/code/test_formal_specs.py", "-q"),
+        _python_command("-m", "pytest", "tests/code/test_formal_specs.py", "-q", "--tb=short"),
     ),
 )
 
@@ -49,7 +49,7 @@ E2E_REHEARSAL_STAGE = Stage(
 )
 CODE_FAST_STAGE = Stage(
     "code pytest fast",
-    _python_command("-m", "pytest", "tests/code", "-q", "-m", "not slow", "--durations=10"),
+    _python_command("-m", "pytest", "tests/code", "-q", "-m", "not slow", "--durations=10", "--tb=short"),
 )
 CODE_RUNTIME_CORE_STAGE = Stage(
     "code runtime core",
@@ -61,6 +61,7 @@ CODE_RUNTIME_CORE_STAGE = Stage(
         "-m",
         "runtime and not runtime_slow and not hook_adapter",
         "--durations=20",
+        "--tb=short",
     ),
 )
 CODE_HOOK_ADAPTER_STAGE = Stage(
@@ -73,6 +74,7 @@ CODE_HOOK_ADAPTER_STAGE = Stage(
         "-m",
         "hook_adapter",
         "--durations=20",
+        "--tb=short",
     ),
 )
 CODE_RUNTIME_SLOW_STAGE = Stage(
@@ -85,11 +87,12 @@ CODE_RUNTIME_SLOW_STAGE = Stage(
         "-m",
         "runtime_slow or e2e",
         "--durations=20",
+        "--tb=short",
     ),
 )
 CODE_FULL_STAGE = Stage(
     "code and migration pytest",
-    _python_command("-m", "pytest", "tests/code", "_migration/tests", "-q", "--durations=20"),
+    _python_command("-m", "pytest", "tests/code", "_migration/tests", "-q", "--durations=20", "--tb=short"),
 )
 RUNTIME_STAGES: tuple[Stage, ...] = (
     *SMOKE_STAGES,
@@ -183,7 +186,7 @@ def build_targeted_stages(changed_paths: Iterable[str], *, slow_policy: str = "a
                 if slow_policy in {"auto", "include"}:
                     stages.append(CODE_RUNTIME_SLOW_STAGE)
         if path.startswith(("_migration/code/", "_migration/tests/", "_migration/fixtures/", "_migration/schemas/")):
-            stages.append(Stage("migration pytest", _python_command("-m", "pytest", "_migration/tests", "-q", "--durations=20")))
+            stages.append(Stage("migration pytest", _python_command("-m", "pytest", "_migration/tests", "-q", "--durations=20", "--tb=short")))
         if path.startswith("ldvh-base/"):
             stages.append(
                 Stage(
