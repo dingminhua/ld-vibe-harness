@@ -181,7 +181,8 @@ def _codex_ldvh_plugin_candidate(
     commands = _hook_commands(hook_files)
     command_blob = "\n".join(commands)
     v3_adapter = (ldvh_root / "code" / "runtime_adapter.py").as_posix()
-    points_to_v3 = v3_adapter in command_blob
+    v3_codex_shim = (ldvh_root / "code" / "environment_plugins" / "codex-ldvh-v3" / "hooks" / "ldvh_runtime_shim.py").as_posix()
+    points_to_v3 = v3_adapter in command_blob or v3_codex_shim in command_blob
     stale_commands = [command for command in commands if LEGACY_LDVH_PLUGIN_COMMAND_RE.search(command)]
     points_to_legacy = bool(stale_commands)
 

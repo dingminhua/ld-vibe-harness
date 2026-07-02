@@ -1301,8 +1301,12 @@ def _display_path(path: Path, root: Path) -> str:
         return path.as_posix()
 
 
+def _default_governed_projects_config_path(root: Path) -> Path:
+    return find_governed_projects_config(root, root, [root]) or root / GOVERNED_PROJECTS_CONFIG_PATH
+
+
 def parse_governed_projects_config(root: Path = ROOT, config_path: Path | None = None) -> dict[str, Any]:
-    path = config_path or root / GOVERNED_PROJECTS_CONFIG_PATH
+    path = config_path or _default_governed_projects_config_path(root)
     display_path = _display_path(path, root)
     if not path.exists() or not path.is_file():
         return {
@@ -2565,7 +2569,7 @@ def validate_governed_project_config_contract(root: Path = ROOT) -> list[Diagnos
 
 
 def validate_governed_projects_config(root: Path = ROOT, config_path: Path | None = None) -> list[Diagnostic]:
-    path = config_path or root / GOVERNED_PROJECTS_CONFIG_PATH
+    path = config_path or _default_governed_projects_config_path(root)
     display_path = _display_path(path, root)
     diagnostics: list[Diagnostic] = []
     if not path.exists():
@@ -3175,7 +3179,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "ldvh-base/", "role": "fact_instances_root"},
             {"path": TIMING_TABLE_PATH, "role": "consumption_timing_registry"},
             {"path": TAKEOVER_MATRIX_PATH, "role": "takeover_matrix"},
-            {"path": GOVERNED_PROJECTS_CONFIG_PATH, "role": "governed_project_config"},
+            {"path": governed_projects_config["config_path"], "role": "governed_project_config"},
             {"path": GOVERNED_PROJECTS_CONTRACT_PATH, "role": "governed_project_config_contract"},
         ],
         "specs": [obj.to_dict() for obj in specs],

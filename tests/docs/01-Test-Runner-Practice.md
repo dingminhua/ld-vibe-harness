@@ -71,6 +71,8 @@ Python CLI 测试应统一走 `tests/code/test_ldvh_specs_validate.py` 中的 `_
 
 新增 Spark、Study、WorkCase、ADR、Pitfall、正式 spec 或附件时，不应仅为同步当前数量而修改测试。若确实需要新增完整清单断言，必须能说明该清单是稳定契约而不是仓库现状快照。
 
+管辖项目配置测试应覆盖默认从 LDVH 本体向父级工作区发现 `LDVH-GOVERNED-PROJECTS.yaml`，但不得把某台机器当前工作区的完整项目清单写成固定答案。应使用临时目录测试精确发现规则，用少量哨兵断言确认当前 LDVH 本体可被解析为管辖项目。
+
 ## 交互规格回归
 
 当 specs 新增或修改 Human-facing 交互流程时，测试应覆盖可回归的关键契约，而不是只检查文档存在。
@@ -83,6 +85,8 @@ Python CLI 测试应统一走 `tests/code/test_ldvh_specs_validate.py` 中的 `_
 4. 测试仍不得固定会随仓库增长的事实对象数量。
 
 例如 LDVH 安装向导的五步状态、`👉` 当前步骤、`✅` 已完成步骤、`决策 / 结果` 列、路径和检查结果图标、LDVH 本体发现、目标工作区根目录确认、配置固定在工作区根目录、带编号和管辖状态的当前配置项目清单、不改或按编号设置管辖项目的两选项、拟写入项目清单、配置正确性结论、配置层级冲突阻断、环境插件未安装时安排安装、插件过时或 stale V2 path 时安排升级、最终确认两个主选项和最终确认前不写入，都属于稳定交互契约，应由 validator 和正反测试共同覆盖。
+
+环境入口审计测试应同时覆盖 stale V2 path 阻断和 V3 Codex shim 可见但未验证 integrated 的状态；仅发现插件 hook 指向 V3 shim，不足以把 Codex runtime 自动入口声明为 integrated。
 
 ## Slow Policy
 
