@@ -158,7 +158,7 @@
 
 **P2-1：session_start / pre_tool_use / completion_claim 仅 manual-ready**
 - 依据：`environment_status.py` 输出 `manual_entrypoints` + `integrated=false`
-- 影响：AI 必须自觉手动运行这些入口，环境不会自动拦截。这与 00 V5 主动暂停、V6 强制验证存在张力——保障链路存在但非自动触发
+- 影响：AI 必须自觉手动运行这些入口，环境不会自动拦截。这与 00 V5 门禁确认、V6 强制验证存在张力——保障链路存在但非自动触发
 - 判断：已诚实记录为 deferred（11D），进入条件明确（真实触发点+稳定 payload+失败处理+安装状态+回滚+测试+Human Gate）。不阻断主线因为规则判断和事实维护不依赖自动触发。
 
 **P2-2：receipt 仅 stdout-only，无稳定存储**
@@ -195,7 +195,7 @@
 
 2. **解决全量测试内存/性能问题**（对应 P1-1）：132s 运行时间 + 并行 OOM 会侵蚀"验证可信度"。建议把 e2e_rehearsal 相关 4 个慢测试（各 >12s）隔离为独立 tier，或优化 `build_e2e_rehearsal` 的重复加载。smoke 已足够日常使用，但 full 应可靠可重复。
 
-3. **评估 session_start 自动触发的真实环境路径**（对应 P2-1）：当前三件套均 manual-ready，AI 必须自觉运行。如果目标协作环境（如 CodeBuddy/Claude Code/Codex）提供 session lifecycle hook，应评估接入可行性——这是把保障链路从"AI 自觉"升级为"环境拦截"的最小可行步骤，直接服务 00 V5 主动暂停和 V6 强制验证。进入条件已在 11D 列明（7 项），缺的主要是真实触发点。
+3. **评估 session_start 自动触发的真实环境路径**（对应 P2-1）：当前三件套均 manual-ready，AI 必须自觉运行。如果目标协作环境（如 CodeBuddy/Claude Code/Codex）提供 session lifecycle hook，应评估接入可行性——这是把保障链路从"AI 自觉"升级为"环境拦截"的最小可行步骤，直接服务 00 V5 门禁确认和 V6 强制验证。进入条件已在 11D 列明（7 项），缺的主要是真实触发点。
 
 ---
 
