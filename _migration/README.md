@@ -123,3 +123,5 @@
 `_migration/33A-action-template-30-admission.md` 记录行动模板 30 的正式承载。它把 LDVH 安装、初始化与管辖项目配置行动模板从 `06` 父规范正文示范迁出，落到 `specs/30-LDVH安装初始化管辖项目配置行动模板.md`；`06` 只保留父层准入和结构边界。
 
 `_migration/34A-governed-project-fact-source-directories.md` 记录管辖项目事实源目录用途补强。它把项目根 `ldvh-base/` 及 `workcases/`、`adrs/`、`pitfalls/`、`sparks/`、`studies/` 的用途写入 `10` 和 `30`，并确认临时调研材料、外部资料或第三方参考不进入 V3 固定初始化目录；它不创建真实目录、不写配置、不安装 Hook。
+
+`_migration/35A-runtime-protocol-hook-entry.md` 记录 Runtime Protocol 可见入口补强。它新增 `hooks/LDVH-RUNTIME-PROTOCOL.md`，并在 `01` 与 `01.Att.03` 中登记 `hook_protocol_entry`，让环境 Hook、插件、扩展包、external adapter、repo instruction 或 manual entrypoint 有统一入口可引用；它不恢复 Rules / Skill 顶层机制，不声明任何环境入口 integrated。

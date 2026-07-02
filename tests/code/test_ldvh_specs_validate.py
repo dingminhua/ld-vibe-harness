@@ -122,6 +122,7 @@ def test_assurance_spec_registers_environment_entry_status_and_payload_contracts
     assert set(spec_01["metadata"]["code_consumption"]) >= {
         "environment_entry_type_contract",
         "environment_integration_status_contract",
+        "runtime_protocol_hook_entry",
         "runtime_payload_contract",
         "install_rollback_contract",
         "manual_ready_boundary",
@@ -143,8 +144,14 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     spec_01 = (ROOT / "specs/01-保障与衔接.md").read_text(encoding="utf-8")
     entry_types = (ROOT / "specs/attachments/01.Att.03-环境入口类型表.md").read_text(encoding="utf-8")
     rollback = (ROOT / "specs/attachments/01.Att.06-环境安装回滚检查表.md").read_text(encoding="utf-8")
+    runtime_protocol_entry = (ROOT / "hooks/LDVH-RUNTIME-PROTOCOL.md").read_text(encoding="utf-8")
 
     assert "V3 当前 Hook 分为两类" in spec_01
+    assert "hooks/LDVH-RUNTIME-PROTOCOL.md" in spec_01
+    assert "hook_protocol_entry" in spec_01
+    assert "只允许写入口身份、权威回指和当前 Code 入口" in spec_01
+    assert "不得写接入状态" in spec_01
+    assert "接入状态由 `01.Att.04` 和 Code 环境审计承接" in spec_01
     assert "Git Hook" in spec_01
     assert "环境 Hook" in spec_01
     assert "只能定位并调用 LDVH" in spec_01
@@ -156,6 +163,9 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "验证环境不再自动触发 LDVH" in spec_01
 
     assert "| `git_hook_shim` |" in entry_types
+    assert "| `hook_protocol_entry` |" in entry_types
+    assert "hooks/LDVH-RUNTIME-PROTOCOL.md" in entry_types
+    assert "不写接入状态" in entry_types
     assert "| `environment_hook` |" in entry_types
     assert "LDVH 环境插件" in entry_types
     assert "Codex plugin" in entry_types
@@ -167,6 +177,14 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "| `rollback_state` |" in rollback
     assert "插件或扩展 manifest" in rollback
     assert "恢复或保留原有用户 Hook / 环境配置" in rollback
+
+    assert "文件状态：hook protocol entry" in runtime_protocol_entry
+    assert "本文只写三类内容" in runtime_protocol_entry
+    assert "入口身份" in runtime_protocol_entry
+    assert "权威回指" in runtime_protocol_entry
+    assert "当前 Code 入口" in runtime_protocol_entry
+    assert "接入状态" not in runtime_protocol_entry
+    assert "python3 code/runtime_adapter.py session-start --format json" in runtime_protocol_entry
 
 
 def test_foundation_validator_reports_missing_code_consumption(tmp_path: Path) -> None:
@@ -2443,6 +2461,9 @@ def test_environment_entry_audit_marks_rules_and_skills_removed_top_level(tmp_pa
     assert "rules.top_level_mechanism" in payload["summary"]["removed_top_level_entrypoints"]
     assert "skills.top_level_mechanism" in payload["summary"]["removed_top_level_entrypoints"]
     assert candidates["git.commit-msg"]["status"] == "integrated"
+    assert candidates["hooks.runtime-protocol"]["status"] == "available"
+    assert candidates["hooks.runtime-protocol"]["integrated"] is False
+    assert candidates["hooks.runtime-protocol"]["category"] == "hook_protocol_entry"
     assert candidates["runtime.pre_tool_use.auto"]["status"] == "deferred"
     assert candidates["runtime.pre_tool_use.auto"]["manual_fallback"] == "code/pre_tool_use.py"
     assert candidates["codex.ldvh-plugin"]["status"] == "absent"
@@ -2498,6 +2519,8 @@ def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_pa
     payload = json.loads(completed.stdout)
     candidates = {candidate["id"]: candidate for candidate in payload["candidates"]}
     assert payload["summary"]["integrated_entrypoints"] == ["git.commit-msg"]
+    assert candidates["hooks.runtime-protocol"]["status"] == "available"
+    assert candidates["hooks.runtime-protocol"]["integrated"] is False
     assert candidates["codex.repo-instructions"]["status"] == "available"
     assert candidates["codex.repo-instructions"]["integrated"] is False
     assert candidates["codex.ldvh-plugin"]["status"] == "absent"
