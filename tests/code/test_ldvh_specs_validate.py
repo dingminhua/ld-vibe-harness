@@ -116,6 +116,31 @@ def test_assurance_spec_registers_environment_entry_status_and_payload_contracts
     assert attachments["01.Att.05"]["metadata"]["parent_spec"] == "specs/01-保障与衔接.md"
 
 
+def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
+    spec_01 = (ROOT / "specs/01-保障与衔接.md").read_text(encoding="utf-8")
+    entry_types = (ROOT / "specs/attachments/01.Att.03-环境入口类型表.md").read_text(encoding="utf-8")
+    rollback = (ROOT / "specs/attachments/01.Att.06-环境安装回滚检查表.md").read_text(encoding="utf-8")
+
+    assert "V3 当前 Hook 分为两类" in spec_01
+    assert "Git Hook" in spec_01
+    assert "环境 Hook" in spec_01
+    assert "只能定位并调用 LDVH" in spec_01
+    assert "核心逻辑都必须留在 LDVH Code 中" in spec_01
+    assert "非管辖项目必须 no-op" in spec_01
+    assert "卸载时必须移除或禁用该 repo 的 shim" in spec_01
+    assert "验证环境不再自动触发 LDVH" in spec_01
+
+    assert "| `git_hook_shim` |" in entry_types
+    assert "| `environment_hook` |" in entry_types
+    assert "只调用 LDVH" in entry_types
+    assert "只指向 LDVH runtime / adapter" in entry_types
+
+    assert "| `entry_kind` |" in rollback
+    assert "| `shim_boundary` |" in rollback
+    assert "| `rollback_state` |" in rollback
+    assert "恢复或保留原有用户 Hook / 环境配置" in rollback
+
+
 def test_foundation_validator_reports_missing_code_consumption(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
