@@ -227,6 +227,25 @@ GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
     "skill_unavailable",
     "不得恢复 Skill 顶层机制",
 ]
+LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
+    "Context": ["用户目标", "目标环境", "LDVH 根目录", "工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "环境入口审计结果", "source_refs", "specs/10-管辖项目配置规范.md"],
+    "Scenario": ["安装 LDVH", "接入 LDVH", "初始化 LDVH", "配置管辖项目", "旧插件 / 旧路径", "只回答 01/06/10 边界"],
+    "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "LDVH-GOVERNED-PROJECTS.yaml", "配置生成位置", "用户级配置目录后置缺口", "integrated", "多项目"],
+    "执行": ["01", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "repo instruction", "manual entrypoint", "不恢复 Rules 顶层机制", "三类位置", "用户级候选只能记录后置", "10", "Git common-dir", "target-first resolver"],
+    "验证": ["environment_status.py", "environment_entry_audit.py", "specs_validate.py governed-projects", "target-first resolution", "runtime adapter", "09 验证声明字段", "真实自动触发", "失败可阻断", "安装状态可复现", "integrated"],
+    "回写": ["过程输出", "Human 确认", "LDVH-GOVERNED-PROJECTS.yaml", "10 字段契约", "旧插件", "用户级配置目录候选", "Spark", "ADR", "Pitfall", "WorkCase", "Git commit records", "不得把 runtime receipt"],
+    "交还": ["安装方式", "配置位置选择", "管辖项目 ID", "Git common-dir", "环境入口状态", "integrated / manual_ready / deferred / removed_top_level", "验证摘要", "回滚或卸载入口", "下一步 Human Gate", "source_refs"],
+}
+LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_TERMS = [
+    "V2 `33-ldvh-install-action`",
+    "受 V3 01",
+    "V3 01、06、10",
+    "不安装环境插件",
+    "不直接写入用户环境 Hook 系统文件",
+    "不声明 integrated",
+    "不恢复 Rules / Skill 顶层机制",
+    "V2 `32-environment-entry-adaptation`",
+]
 WORKCASE_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Context": ["WorkCase ID", "对象化价值", "成功标准", "source_refs", "specs/21-WorkCase-工作项.md"],
     "Scenario": ["创建 WorkCase", "执行推进", "结果复核", "关闭确认", "只回答 21/06/09 边界"],
@@ -787,6 +806,7 @@ FOUNDATION_SPEC_CONTRACTS = {
             "action_template_boundaries",
             "context_scenario_gate",
             "git_commit_action_template",
+            "ldvh_install_initialization_action_template",
             "workcase_minimal_action_template",
             "capability_output_boundary",
             "action_evidence_requirements",
@@ -1219,6 +1239,23 @@ def parse_workcase_action_template(root: Path = ROOT) -> list[dict[str, str]]:
     if marker_index == -1:
         return []
     return find_table(section["body"][marker_index:], ACTION_TEMPLATE_COLUMNS)
+
+
+def parse_ldvh_install_action_template(root: Path = ROOT) -> list[dict[str, str]]:
+    raw = (root / SHORT_SPEC_REFS["06"]).read_text(encoding="utf-8")
+    sections = h2_sections(raw)
+    section = sections.get("模板候选与迁移边界")
+    if not section:
+        return []
+    marker = "### LDVH 安装、初始化与管辖项目配置行动模板"
+    marker_index = section["body"].find(marker)
+    if marker_index == -1:
+        return []
+    body = section["body"][marker_index:]
+    next_marker_index = body.find("### WorkCase 最小行动模板")
+    if next_marker_index != -1:
+        body = body[:next_marker_index]
+    return find_table(body, ACTION_TEMPLATE_COLUMNS)
 
 
 def parse_fact_model_member_contract(spec_id: str, root: Path = ROOT) -> dict[str, Any]:
@@ -2580,6 +2617,60 @@ def validate_workcase_action_template(root: Path = ROOT) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]:
+    path = SHORT_SPEC_REFS["06"]
+    raw = (root / path).read_text(encoding="utf-8")
+    rows = parse_ldvh_install_action_template(root)
+    diagnostics: list[Diagnostic] = []
+
+    if not rows:
+        return [
+            Diagnostic(
+                "error",
+                "LDVH_INSTALL_ACTION_TEMPLATE_MISSING",
+                path,
+                "06 缺少 LDVH 安装、初始化与管辖项目配置行动模板结构表",
+            )
+        ]
+
+    rows_by_structure = {row["结构"]: row for row in rows}
+    for structure, terms in LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS.items():
+        row = rows_by_structure.get(structure)
+        if not row:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "LDVH_INSTALL_ACTION_TEMPLATE_ROW_MISSING",
+                    path,
+                    f"LDVH 安装初始化配置行动模板缺少结构: {structure}",
+                )
+            )
+            continue
+        missing_terms = [term for term in terms if term not in row["最小要求"]]
+        for term in missing_terms:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "LDVH_INSTALL_ACTION_TEMPLATE_TERM_MISSING",
+                    path,
+                    f"{structure} 缺少关键要求: {term}",
+                )
+            )
+
+    missing_boundary_terms = [term for term in LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_TERMS if term not in raw]
+    for term in missing_boundary_terms:
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_MISSING",
+                path,
+                f"LDVH 安装初始化配置行动模板缺少边界声明: {term}",
+            )
+        )
+
+    return diagnostics
+
+
 def validate_workcase_member_contract(root: Path = ROOT) -> list[Diagnostic]:
     path = SHORT_SPEC_REFS["21"]
     full_path = root / path
@@ -2787,6 +2878,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     takeover_matrix = parse_takeover_matrix(root)
     foundation_spec_contracts = parse_foundation_spec_contracts(objects, root)
     git_commit_action_template = parse_git_commit_action_template(root)
+    ldvh_install_action_template = parse_ldvh_install_action_template(root)
     workcase_action_template = parse_workcase_action_template(root)
     workcase_member_contract = parse_workcase_member_contract(root)
     fact_model_member_contracts = parse_fact_model_member_contracts(root)
@@ -2815,6 +2907,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_governed_projects_config(root))
     diagnostics.extend(validate_attachment_contracts(root))
     diagnostics.extend(validate_git_commit_action_template(root))
+    diagnostics.extend(validate_ldvh_install_action_template(root))
     diagnostics.extend(validate_workcase_action_template(root))
     diagnostics.extend(validate_workcase_member_contract(root))
     diagnostics.extend(validate_fact_model_member_contracts(root))
@@ -2875,6 +2968,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "takeover_matrix": takeover_matrix,
         "foundation_spec_contracts": foundation_spec_contracts,
         "git_commit_action_template": git_commit_action_template,
+        "ldvh_install_action_template": ldvh_install_action_template,
         "workcase_action_template": workcase_action_template,
         "workcase_member_contract": workcase_member_contract,
         "fact_model_member_contracts": fact_model_member_contracts,

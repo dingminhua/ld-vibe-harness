@@ -1,16 +1,16 @@
 target_spec: "specs/06-行动模板基础规范.md"
-target_sha256: "db68912c9da1831c19f01a018d9baaecfe77a48c53492add0c467d2ffc22c2ef"
+target_sha256: "e7d2d837c2211545b4b7df73475cbad96288cb78bc8a1347629161c9309586da"
 change_type: "modification"
 mapping_evidence:
-  path: "_migration/13A-workcase-minimal-action-template.md"
+  path: "_migration/29A-ldvh-install-initialization-action-template.md"
 code_verification:
-  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_ldvh_specs_validate.py -q && python3 code/test_runner.py targeted --changed specs/06-行动模板基础规范.md --changed specs/21-WorkCase-工作项.md --changed code/ldvh_specs.py --changed tests/code/test_ldvh_specs_validate.py"
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py -q && python3 -m pytest tests/code/test_ldvh_specs_validate.py -q -k 'foundation_specs_contracts_are_code_consumable or git_commit_action_template or workcase_action_template or ldvh_install_action_template'"
   passed: true
-  receipt: "Conditional audit closure keeps 06 action template rules in specs while moving Git command practice and WorkCase instance operation detail to implementation-domain docs."
+  receipt: "Formal gate covers the V2 33 absorption into 06 as an LDVH install, initialization and governed-project configuration action template while preserving V3 01/10 boundaries."
 subagent_review:
-  agent_id: "codex-local-13a-workcase-action-template-review"
+  agent_id: "codex-local-29a-ldvh-install-action-template-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review confirms 06 still defines only action template contracts and boundaries; implementation command practice is delegated to code/docs and no Web write, Hook integration or Human Gate completion is declared."
+  receipt: "Local review confirms 06 only defines the action-template structure; plugin install, environment Hook integrated claims, governed-project config contracts and command practice remain delegated to 01, 10 and implementation-domain docs."
   unresolved_blockers: []
 warnings: []

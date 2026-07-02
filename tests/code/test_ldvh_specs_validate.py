@@ -64,6 +64,7 @@ def test_foundation_specs_contracts_are_code_consumable() -> None:
     assert "field_registry_contract" in contracts["05"]["code_consumption"]
     assert "context_scenario_gate" in contracts["06"]["code_consumption"]
     assert "git_commit_action_template" in contracts["06"]["code_consumption"]
+    assert "ldvh_install_initialization_action_template" in contracts["06"]["code_consumption"]
     assert "workcase_minimal_action_template" in contracts["06"]["code_consumption"]
     assert "runtime_facade_contracts" in contracts["07"]["code_consumption"]
     assert "web_code_separation_boundaries" in contracts["08"]["code_consumption"]
@@ -821,6 +822,65 @@ def test_workcase_action_template_is_code_consumable() -> None:
     assert "09.Att.01" in rows["验证"]
     assert "正式 WorkCase 事实实例" in rows["回写"]
     assert "下一步 Human Gate" in rows["交还"]
+
+
+def test_ldvh_install_action_template_is_code_consumable() -> None:
+    result = ldvh_specs.build_validation(ROOT)
+    rows = {row["结构"]: row["最小要求"] for row in result["ldvh_install_action_template"]}
+
+    assert set(rows) == {"Context", "Scenario", "Gate", "执行", "验证", "回写", "交还"}
+    assert "目标环境" in rows["Context"]
+    assert "LDVH-GOVERNED-PROJECTS.yaml" in rows["Context"]
+    assert "安装 LDVH" in rows["Scenario"]
+    assert "配置生成位置" in rows["Gate"]
+    assert "不直接写入环境 Hook 系统文件" in rows["执行"]
+    assert "用户级候选只能记录后置" in rows["执行"]
+    assert "target-first resolver" in rows["执行"]
+    assert "安装状态可复现" in rows["验证"]
+    assert "不得把 runtime receipt" in rows["回写"]
+    assert "integrated / manual_ready / deferred / removed_top_level" in rows["交还"]
+
+
+def test_ldvh_install_action_template_reports_missing_human_gate_for_config_location(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "，选择配置生成位置",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("配置生成位置" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_missing_plugin_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "不直接写入用户环境 Hook 系统文件",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_ldvh_install_action_template_reports_missing_user_config_deferral(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/06-行动模板基础规范.md",
+        "；当前 Code 不支持的用户级候选只能记录后置，不得写成已生效解析",
+        "",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("用户级候选只能记录后置" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_workcase_action_template_reports_missing_human_gate(tmp_path: Path) -> None:

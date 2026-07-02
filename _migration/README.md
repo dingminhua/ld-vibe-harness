@@ -111,3 +111,5 @@
 `_migration/25A-v2-official-closure.md` 记录 V2 正式关闭。它把当前 Human 确认、README 入口更新、验证结果和后置清单合并为关闭收据；关闭只表示 V2 不再作为当前 LDVH 日常规则入口，不删除历史来源，不授权后置能力生效。
 
 `_migration/26A-v3-post-closure-work-queue.md` 整理 V2 正式关闭后的 V3 后置工作队列。它把后置事项分为 P1、P2、Parked 和 Closed，说明下一步触发条件、Human Gate 和不再反复讨论的边界；它不授权任何后置能力生效。
+
+`_migration/29A-ldvh-install-initialization-action-template.md` 记录 V2 `33` 安装与首次配置行动编排向 V3 `06` 的受控吸收。它说明当前只新增 LDVH 安装、初始化与管辖项目配置行动模板，不安装环境插件，不写用户环境配置，不创建管辖项目配置文件，也不声明任何环境 Hook 已 integrated。
