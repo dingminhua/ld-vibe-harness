@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LDVH Study Card Detail Usability V2</title>
+<style>
+:root {
+  --bg: 248 249 251;
+  --panel: 255 255 255;
+  --panel-soft: 244 247 249;
+  --border: 222 226 232;
+  --text: 24 24 27;
+  --muted: 96 105 118;
+  --study: 6 148 162;
+  --accent: 5 150 105;
+  --warn: 180 83 9;
+  --purple: 109 40 217;
+  --blue: 37 99 235;
+  --danger: 190 18 60;
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  --bg: 12 14 20;
+  --panel: 20 23 31;
+  --panel-soft: 27 31 42;
+  --border: 45 51 66;
+  --text: 235 238 242;
+  --muted: 158 167 181;
+  --study: 45 212 191;
+  --accent: 52 211 153;
+  --warn: 251 191 36;
+  --purple: 167 139 250;
+  --blue: 96 165 250;
+  --danger: 251 113 133;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Noto Sans", Helvetica, Arial, sans-serif;
+  background: #17172a;
+  color: rgb(var(--text));
+}
+button { font: inherit; }
+button:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid rgb(var(--study) / .55);
+  outline-offset: 3px;
+}
+.control-bar {
+  position: fixed; inset: 0 0 auto 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+  gap: 8px; padding: 8px 12px; background: #16162a; border-bottom: 1px solid #2a2a4a;
+  color: #d8d8e4; font-size: 12px;
+}
+.control-group { display: flex; align-items: center; gap: 6px; }
+.control-label { color: #9292aa; text-transform: uppercase; letter-spacing: .06em; font-size: 10px; margin-right: 2px; }
+.control-btn {
+  min-height: 44px; min-width: 44px; border: 1px solid #3a3a5a; background: transparent; color: #e5e7eb;
+  border-radius: 10px; padding: 9px 12px; cursor: pointer;
+}
+.control-btn:hover { background: #292947; color: white; }
+.control-btn[aria-pressed="true"] { background: rgb(5 150 105); border-color: rgb(5 150 105); color: white; }
+.device-wrapper { padding: 72px 20px 28px; min-height: 100vh; display: flex; justify-content: center; overflow: auto; }
+.device-frame {
+  flex: 0 0 auto; overflow: hidden; background: rgb(var(--bg)); box-shadow: 0 18px 60px rgba(0,0,0,.38);
+  transition: width .24s ease, height .24s ease, border-radius .24s ease;
+}
+.device-desktop { width: 1440px; height: 900px; border-radius: 12px; }
+.device-narrow { width: 768px; height: 1024px; border-radius: 12px; }
+.device-mobile { width: 375px; height: 812px; border-radius: 32px; border: 8px solid #27283d; }
+.app-shell { height: 100%; display: flex; overflow: hidden; background: rgb(var(--bg)); position: relative; }
+.sidebar { width: 186px; flex: 0 0 auto; border-right: 1px solid rgb(var(--border)); background: rgb(var(--panel)); display: flex; flex-direction: column; transition: width .18s ease; }
+.sidebar.collapsed { width: 56px; }
+.sidebar-header { min-height: 64px; padding: 14px 12px; border-bottom: 1px solid rgb(var(--border)); display: flex; align-items: center; gap: 10px; }
+.brand { width: 32px; height: 32px; border-radius: 9px; flex: 0 0 auto; display: grid; place-items: center; font-weight: 850; color: white; background: linear-gradient(135deg, rgb(var(--accent)), rgb(var(--study))); }
+.brand-text { font-size: 12px; line-height: 1.35; color: rgb(var(--muted)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav { padding: 12px 8px; display: grid; gap: 3px; }
+.nav-item { min-height: 44px; border-radius: 10px; display: flex; align-items: center; gap: 10px; padding: 10px; color: rgb(var(--muted)); font-size: 14px; font-weight: 650; white-space: nowrap; overflow: hidden; }
+.nav-item.active { color: rgb(var(--study)); background: rgb(var(--study) / .11); }
+.nav-ico { width: 18px; text-align: center; flex: 0 0 auto; }
+.sidebar.collapsed .brand-text, .sidebar.collapsed .nav-label { display: none; }
+.sidebar.collapsed .nav-item { justify-content: center; padding-inline: 0; }
+.main { flex: 1 1 auto; min-width: 0; overflow: auto; }
+.mobile-topbar { display: none; position: sticky; top: 0; z-index: 20; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-bottom: 1px solid rgb(var(--border)); background: rgb(var(--panel) / .96); backdrop-filter: blur(14px); }
+.icon-btn { min-width: 44px; min-height: 44px; border-radius: 12px; border: 1px solid rgb(var(--border)); background: rgb(var(--panel-soft)); color: rgb(var(--text)); cursor: pointer; display: inline-grid; place-items: center; }
+.icon-btn:hover { border-color: rgb(var(--study) / .55); color: rgb(var(--study)); }
+.page { padding: 24px; }
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; }
+h1 { margin: 0; font-size: clamp(22px, 2vw, 30px); line-height: 1.18; letter-spacing: -.035em; }
+.subtitle { margin: 8px 0 0; color: rgb(var(--muted)); font-size: 13px; line-height: 1.65; max-width: 76ch; overflow-wrap: anywhere; }
+.badge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid currentColor; border-radius: 999px; padding: 4px 9px; font-size: 12px; line-height: 1.1rem; font-weight: 750; color: rgb(var(--study)); background: color-mix(in srgb, currentColor 9%, transparent); white-space: normal; overflow-wrap: anywhere; }
+.meta { color: rgb(var(--muted)); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.study-layout { margin-top: 18px; display: grid; grid-template-columns: minmax(300px, .9fr) minmax(0, 1.55fr); gap: 18px; align-items: start; }
+.study-list { display: grid; gap: 10px; }
+.study-card {
+  width: 100%; text-align: left; border: 1px solid rgb(var(--border)); border-radius: 14px; background: rgb(var(--panel)); color: rgb(var(--text));
+  padding: 14px 14px 14px 16px; cursor: pointer; min-height: 128px; position: relative; overflow: hidden;
+}
+.study-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: rgb(var(--study)); opacity: .35; }
+.study-card:hover, .study-card[aria-selected="true"] { border-color: rgb(var(--study) / .6); background: linear-gradient(135deg, rgb(var(--panel)), rgb(var(--study) / .055)); }
+.study-card[aria-selected="true"]::before { opacity: 1; }
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.type-chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 4px 8px; color: rgb(var(--study)); background: rgb(var(--study) / .12); font-size: 12px; font-weight: 800; }
+.card-title { margin: 10px 0 0; font-size: 15px; line-height: 1.42; font-weight: 800; overflow-wrap: anywhere; }
+.card-summary { margin: 7px 0 0; color: rgb(var(--muted)); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.card-meta { margin-top: 11px; display: flex; flex-wrap: wrap; gap: 7px 10px; align-items: center; }
+.detail {
+  border: 1px solid rgb(var(--border)); border-radius: 18px; background: rgb(var(--panel)); overflow: hidden;
+}
+.detail-head { padding: 20px; border-bottom: 1px solid rgb(var(--border)); background: radial-gradient(circle at left top, rgb(var(--study) / .16), transparent 38%), rgb(var(--panel)); }
+.detail-kicker { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.detail-title { margin: 14px 0 0; font-size: clamp(22px, 2.2vw, 34px); line-height: 1.13; letter-spacing: -.045em; overflow-wrap: anywhere; }
+.detail-summary { margin: 12px 0 0; max-width: 82ch; color: rgb(var(--muted)); font-size: 14px; line-height: 1.75; overflow-wrap: anywhere; }
+.action-row { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; }
+.action-btn { min-height: 44px; border: 1px solid rgb(var(--border)); border-radius: 12px; padding: 10px 13px; background: rgb(var(--panel-soft)); color: rgb(var(--text)); cursor: pointer; }
+.action-btn.primary { border-color: rgb(var(--study) / .6); color: rgb(var(--study)); background: rgb(var(--study) / .12); font-weight: 800; }
+.detail-content { padding: 16px 20px 20px; display: grid; grid-template-columns: minmax(0, 1fr) 292px; gap: 18px; }
+.reading-flow { display: grid; gap: 12px; min-width: 0; }
+.node { border-top: 1px solid rgb(var(--border)); padding-top: 12px; }
+.node:first-child { border-top: 0; padding-top: 0; }
+.node-toggle { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 0; border-radius: 10px; padding: 8px 10px; background: transparent; color: rgb(var(--text)); cursor: pointer; text-align: left; }
+.node-toggle:hover { background: rgb(var(--panel-soft)); }
+.node-title { display: flex; align-items: center; gap: 9px; min-width: 0; font-size: 14px; font-weight: 820; }
+.node-body { padding: 8px 10px 6px 34px; color: rgb(var(--muted)); font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.node-body[hidden] { display: none; }
+.node-body ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.node-body li { position: relative; padding-left: 18px; }
+.node-body li::before { content: ""; position: absolute; left: 2px; top: .72em; width: 6px; height: 6px; border-radius: 999px; background: rgb(var(--study)); }
+.report-link { width: 100%; min-height: 52px; border: 1px solid rgb(var(--border)); border-radius: 12px; display: flex; align-items: center; gap: 10px; padding: 10px 12px; color: rgb(var(--text)); background: rgb(var(--panel-soft)); cursor: pointer; text-align: left; }
+.report-link:hover { border-color: rgb(var(--study) / .55); }
+.report-path { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.side-rail { display: grid; gap: 14px; align-content: start; }
+.rail-section { border-left: 3px solid rgb(var(--study) / .35); padding-left: 12px; min-width: 0; }
+.rail-title { margin: 0; font-size: 13px; font-weight: 830; }
+.rail-list { list-style: none; padding: 0; margin: 9px 0 0; display: grid; gap: 8px; }
+.rail-item { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; color: rgb(var(--muted)); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.url-block { margin-top: 9px; display: grid; gap: 8px; }
+.url-card { border: 1px solid rgb(var(--border)); border-radius: 10px; padding: 10px; background: rgb(var(--panel-soft)); }
+.url-title { font-size: 13px; font-weight: 790; overflow-wrap: anywhere; }
+.url-summary { margin-top: 4px; color: rgb(var(--muted)); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.reading-panel { width: 0; opacity: 0; flex: 0 0 auto; overflow: hidden; border-left: 0 solid rgb(var(--border)); background: rgb(var(--panel)); transition: width .2s ease, opacity .2s ease; }
+.reading-panel.open { width: 420px; opacity: 1; border-left-width: 1px; }
+.panel-head { min-height: 62px; padding: 10px 14px; border-bottom: 1px solid rgb(var(--border)); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.panel-title { font-size: 14px; font-weight: 830; }
+.panel-body { height: calc(100% - 62px); overflow: auto; padding: 18px; color: rgb(var(--muted)); font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; }
+.panel-body ul { padding-left: 1.2em; }
+.sheet-overlay, .mobile-sheet { display: none; }
+.empty-state { border: 1px dashed rgb(var(--border)); border-radius: 14px; padding: 14px; color: rgb(var(--muted)); font-size: 13px; line-height: 1.6; }
+@media (max-width: 1020px) {
+  .study-layout { grid-template-columns: 1fr; }
+  .detail-content { grid-template-columns: 1fr; }
+}
+@media (max-width: 639px) {
+  .control-bar { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; }
+  .device-wrapper { padding: 72px 8px 20px; }
+  .app-shell { min-width: 0; }
+  .sidebar { display: none; }
+  .mobile-topbar { display: flex; }
+  .page { padding: 14px; }
+  .hero { grid-template-columns: 1fr; }
+  .study-layout { margin-top: 12px; gap: 12px; }
+  .study-list { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; }
+  .study-card { min-width: 285px; scroll-snap-align: start; }
+  .detail-head { padding: 16px; }
+  .detail-content { padding: 12px 16px 16px; }
+  .action-row .action-btn { flex: 1 1 100%; }
+  .reading-panel { display: none; }
+  .sheet-overlay.visible { display: block; position: absolute; inset: 0; z-index: 50; background: rgba(0,0,0,.38); }
+  .mobile-sheet.visible { display: flex; position: absolute; z-index: 60; left: 0; right: 0; bottom: 0; height: 56%; flex-direction: column; border-radius: 18px 18px 0 0; border-top: 1px solid rgb(var(--border)); background: rgb(var(--panel)); box-shadow: 0 -18px 44px rgba(0,0,0,.25); }
+  .mobile-sheet .panel-body { height: auto; flex: 1; }
+}
+</style>
+</head>
+<body>
+<div class="control-bar" aria-label="Prototype controls">
+  <div class="control-group"><span class="control-label">视图</span><button class="control-btn" data-group="view" data-value="desktop" aria-pressed="true" onclick="switchView('desktop')">桌面</button><button class="control-btn" data-group="view" data-value="narrow" aria-pressed="false" onclick="switchView('narrow')">窄屏</button><button class="control-btn" data-group="view" data-value="mobile" aria-pressed="false" onclick="switchView('mobile')">手机</button></div>
+  <div class="control-group"><span class="control-label">语言</span><button class="control-btn" data-group="lang" data-value="zh" aria-pressed="true" onclick="switchLang('zh')">中文</button><button class="control-btn" data-group="lang" data-value="en" aria-pressed="false" onclick="switchLang('en')">English</button></div>
+  <div class="control-group"><span class="control-label">主题</span><button class="control-btn" data-group="theme" data-value="light" aria-pressed="true" onclick="switchTheme('light')">Light</button><button class="control-btn" data-group="theme" data-value="dark" aria-pressed="false" onclick="switchTheme('dark')">Dark</button></div>
+  <div class="control-group"><span class="control-label">操作</span><button class="control-btn" aria-label="折叠或展开侧栏" onclick="toggleSidebar()">侧栏</button><button class="control-btn" aria-label="打开研究正文阅读面板" onclick="openPanel()">正文</button></div>
+</div>
+<div class="device-wrapper"><div class="device-frame device-desktop" id="deviceFrame"><div class="app-shell">
+<aside class="sidebar" id="sidebar" aria-label="主导航">
+  <div class="sidebar-header"><div class="brand">L</div><div class="brand-text" data-zh="让 Vibe Coding 更高效、更稳定、更可控" data-en="Making Vibe Coding more efficient, stable, and controllable">让 Vibe Coding 更高效、更稳定、更可控</div></div>
+  <nav class="nav">
+    <div class="nav-item"><span class="nav-ico">▦</span><span class="nav-label" data-zh="仪表盘" data-en="Dashboard">仪表盘</span></div>
+    <div class="nav-item"><span class="nav-ico">▣</span><span class="nav-label" data-zh="文件" data-en="Files">文件</span></div>
+    <div class="nav-item"><span class="nav-ico">✦</span><span class="nav-label" data-zh="火花" data-en="Sparks">火花</span></div>
+    <div class="nav-item"><span class="nav-ico">⌁</span><span class="nav-label" data-zh="工作" data-en="Work Cases">工作</span></div>
+    <div class="nav-item"><span class="nav-ico">⌘</span><span class="nav-label" data-zh="决策" data-en="ADRs">决策</span></div>
+    <div class="nav-item"><span class="nav-ico">◌</span><span class="nav-label" data-zh="经验" data-en="Pitfalls">经验</span></div>
+    <div class="nav-item active" aria-current="page"><span class="nav-ico">⌕</span><span class="nav-label" data-zh="研究" data-en="Studies">研究</span></div>
+    <div class="nav-item"><span class="nav-ico">●</span><span class="nav-label" data-zh="提交" data-en="Commit Records">提交</span></div>
+  </nav>
+</aside>
+<main class="main">
+  <div class="mobile-topbar"><button class="icon-btn" aria-label="打开研究导航">⌕</button><div><div class="section-title" data-zh="研究" data-en="Studies">研究</div><div class="meta" data-zh="可用性 V2" data-en="Usability V2">可用性 V2</div></div><button class="icon-btn" aria-label="打开研究正文" onclick="openPanel()">◧</button></div>
+  <div class="page">
+    <header class="hero">
+      <div><h1 data-zh="研究 Card 与详情可用性 V2" data-en="Study card and detail usability V2">研究 Card 与详情可用性 V2</h1><p class="subtitle" data-zh="这版把 Study 详情从“字段展示”改成“判断路径”：先扫卡片，再读结论，最后进入正文或关联证据。所有可交互元素补齐触控尺寸和语义。" data-en="This version turns Study detail from a field display into a decision path: scan cards, read the conclusion, then open the report body or related evidence. Interactive controls are sized and labelled for usability.">这版把 Study 详情从“字段展示”改成“判断路径”：先扫卡片，再读结论，最后进入正文或关联证据。所有可交互元素补齐触控尺寸和语义。</p></div>
+      <span class="badge" data-zh="研究对象 · Card + Detail" data-en="Study object · Card + Detail">研究对象 · Card + Detail</span>
+    </header>
+    <section class="study-layout">
+      <div class="study-list" role="listbox" aria-label="研究列表">
+        <button class="study-card" role="option" aria-selected="true" aria-label="选择研究：Vibe Coding 编排模式对比研究" onclick="selectStudy(0)">
+          <div class="card-top"><span class="type-chip" data-zh="研究" data-en="Study">研究</span><span class="badge" style="color:rgb(var(--study))" data-zh="活跃" data-en="Active">活跃</span></div>
+          <div class="card-title" data-zh="Vibe Coding 编排模式对比研究" data-en="Comparative study of Vibe Coding orchestration patterns">Vibe Coding 编排模式对比研究</div>
+          <div class="card-summary" data-zh="比较单 Agent、并行子 Agent、Human Gate 三种编排方式，给出 LDVH 后续执行策略建议。" data-en="Compares single-agent, parallel subagent, and Human Gate orchestration to recommend LDVH execution strategy.">比较单 Agent、并行子 Agent、Human Gate 三种编排方式，给出 LDVH 后续执行策略建议。</div>
+          <div class="card-meta"><span class="meta mono">study-0007</span><span class="meta" data-zh="3 个 ADR" data-en="3 ADRs">3 个 ADR</span><span class="meta" data-zh="今日更新" data-en="Updated today">今日更新</span></div>
+        </button>
+        <button class="study-card" role="option" aria-selected="false" aria-label="选择研究：Dashboard 阅读面板发现性研究" onclick="selectStudy(1)">
+          <div class="card-top"><span class="type-chip" data-zh="研究" data-en="Study">研究</span><span class="badge" style="color:rgb(var(--purple))" data-zh="待关闭" data-en="Pending Close">待关闭</span></div>
+          <div class="card-title" data-zh="Dashboard 阅读面板发现性研究" data-en="Dashboard reading panel discoverability study">Dashboard 阅读面板发现性研究</div>
+          <div class="card-summary" data-zh="验证用户能否从列表项、状态项、报告正文入口意识到可以打开右侧阅读面板。" data-en="Tests whether users discover the reading panel from list items, status rows, and report-body affordances.">验证用户能否从列表项、状态项、报告正文入口意识到可以打开右侧阅读面板。</div>
+          <div class="card-meta"><span class="meta mono">study-0008</span><span class="meta" data-zh="2 个火花" data-en="2 sparks">2 个火花</span><span class="meta" data-zh="1 天前" data-en="1d ago">1 天前</span></div>
+        </button>
+        <button class="study-card" role="option" aria-selected="false" aria-label="选择研究：国际化长文本影响研究" onclick="selectStudy(2)">
+          <div class="card-top"><span class="type-chip" data-zh="研究" data-en="Study">研究</span><span class="badge" style="color:rgb(var(--warn))" data-zh="已归档" data-en="Archived">已归档</span></div>
+          <div class="card-title" data-zh="国际化长文本对 Dashboard 的影响" data-en="Impact of long localized strings on Dashboard surfaces">国际化长文本对 Dashboard 的影响</div>
+          <div class="card-summary" data-zh="梳理英文长状态、路径、标题、引用摘要对 Card 和详情区的挤压风险。" data-en="Maps overflow risks from long English statuses, paths, titles, and reference summaries in cards and details.">梳理英文长状态、路径、标题、引用摘要对 Card 和详情区的挤压风险。</div>
+          <div class="card-meta"><span class="meta mono">study-0009</span><span class="meta" data-zh="4 个 URL" data-en="4 URLs">4 个 URL</span><span class="meta" data-zh="3 天前" data-en="3d ago">3 天前</span></div>
+        </button>
+      </div>
+      <article class="detail" aria-live="polite">
+        <div class="detail-head">
+          <div class="detail-kicker"><span class="type-chip" data-zh="研究详情" data-en="Study detail">研究详情</span><span id="detailStatus" class="badge" style="color:rgb(var(--study))" data-zh="活跃" data-en="Active">活跃</span></div>
+          <h2 id="detailTitle" class="detail-title" data-zh="Vibe Coding 编排模式对比研究" data-en="Comparative study of Vibe Coding orchestration patterns">Vibe Coding 编排模式对比研究</h2>
+          <p id="detailSummary" class="detail-summary" data-zh="推荐默认保留轻量单 Agent 路径；当任务天然可分支时开放并行；当结果影响治理、文件归口或外部动作时强制 Human Gate。" data-en="Keep a lightweight single-agent path by default; allow parallelism when work naturally branches; require Human Gate when outcomes affect governance, file routing, or external action.">推荐默认保留轻量单 Agent 路径；当任务天然可分支时开放并行；当结果影响治理、文件归口或外部动作时强制 Human Gate。</p>
+          <div class="action-row"><button class="action-btn primary" aria-label="打开研究报告正文" onclick="openPanel()" data-zh="阅读正文" data-en="Read report">阅读正文</button><button class="action-btn" aria-label="复制研究对象路径" data-zh="复制路径" data-en="Copy path">复制路径</button><button class="action-btn" aria-label="查看关联对象" data-zh="关联对象" data-en="Related objects">关联对象</button></div>
+        </div>
+        <div class="detail-content">
+          <div class="reading-flow">
+            <section class="node"><button class="node-toggle" aria-expanded="true" aria-controls="intentBody" onclick="toggleNode(this)"><span class="node-title"><span>◎</span><span data-zh="意图" data-en="Intent">意图</span></span><span aria-hidden="true">⌄</span></button><div class="node-body" id="intentBody"><p data-zh="判断 LDVH 在多 Agent 协作时，应默认采用哪种执行编排，并明确 Human 何时介入。" data-en="Determine which execution orchestration LDVH should default to for multi-agent collaboration, and when Human intervention is required.">判断 LDVH 在多 Agent 协作时，应默认采用哪种执行编排，并明确 Human 何时介入。</p></div></section>
+            <section class="node"><button class="node-toggle" aria-expanded="true" aria-controls="summaryBody" onclick="toggleNode(this)"><span class="node-title"><span>◒</span><span data-zh="关键摘要" data-en="Key summary">关键摘要</span></span><span aria-hidden="true">⌄</span></button><div class="node-body" id="summaryBody"><ul><li data-zh="单 Agent 适合低耦合、小范围修改。" data-en="Single-agent mode fits low-coupling, small-scope changes.">单 Agent 适合低耦合、小范围修改。</li><li data-zh="并行子 Agent 适合研究、验证、设计分支并发探索。" data-en="Parallel subagents fit concurrent research, validation, and design branches.">并行子 Agent 适合研究、验证、设计分支并发探索。</li><li data-zh="Human Gate 应放在方案确认、外部动作、收口判断前。" data-en="Human Gate belongs before plan confirmation, external actions, and closure decisions.">Human Gate 应放在方案确认、外部动作、收口判断前。</li></ul></div></section>
+            <section class="node"><button class="node-toggle" aria-expanded="true" aria-controls="reportBody" onclick="toggleNode(this)"><span class="node-title"><span>▤</span><span data-zh="报告正文" data-en="Report body">报告正文</span></span><span aria-hidden="true">⌄</span></button><div class="node-body" id="reportBody"><button class="report-link" aria-label="在阅读面板打开 studies/study-0007/report.md" onclick="openPanel()"><span aria-hidden="true">📖</span><span class="report-path mono" id="reportPath">studies/study-0007/report.md</span><span aria-hidden="true">◧</span></button></div></section>
+            <div class="empty-state" data-zh="空状态示例：如果该研究没有正文，应在这里说明“暂无报告正文”，并提供创建或跳转原始文件的行动。" data-en="Empty-state example: if this study has no report body, explain that no report exists yet and provide a create/open-original action.">空状态示例：如果该研究没有正文，应在这里说明“暂无报告正文”，并提供创建或跳转原始文件的行动。</div>
+          </div>
+          <aside class="side-rail" aria-label="关联证据">
+            <section class="rail-section"><h3 class="rail-title" data-zh="关联证据" data-en="Related evidence">关联证据</h3><ul class="rail-list"><li class="rail-item"><span>✦</span><span data-zh="spark-0012：规则建立方式待讨论" data-en="spark-0012: Rule creation approach discussion">spark-0012：规则建立方式待讨论</span></li><li class="rail-item"><span>⌘</span><span data-zh="ADR-0017：Tailwind 样式系统" data-en="ADR-0017: Tailwind styling system">ADR-0017：Tailwind 样式系统</span></li><li class="rail-item"><span>◌</span><span data-zh="pitfall-0003：上下文缺失导致返工" data-en="pitfall-0003: Rework caused by missing context">pitfall-0003：上下文缺失导致返工</span></li></ul></section>
+            <section class="rail-section"><h3 class="rail-title">URLs</h3><div class="url-block"><div class="url-card"><div class="url-title" data-zh="Impeccable 前端设计参考" data-en="Impeccable frontend design reference">Impeccable 前端设计参考</div><div class="url-summary" data-zh="用于校准视觉层级、响应式和生产级打磨方式。" data-en="Used to calibrate hierarchy, responsive behavior, and production polish.">用于校准视觉层级、响应式和生产级打磨方式。</div></div><div class="url-card"><div class="url-title" data-zh="LDVH Web Dashboard 审计记录" data-en="LDVH Web Dashboard audit notes">LDVH Web Dashboard 审计记录</div><div class="url-summary" data-zh="记录还原、风险与后续方向。" data-en="Records restoration, risks, and next directions.">记录还原、风险与后续方向。</div></div></div></section>
+          </aside>
+        </div>
+      </article>
+    </section>
+  </div>
+</main>
+<aside class="reading-panel" id="readingPanel" aria-label="研究报告正文阅读面板"><div class="panel-head"><div><div class="panel-title" data-zh="报告正文" data-en="Report body">报告正文</div><div class="meta mono" id="panelPath">studies/study-0007/report.md</div></div><button class="icon-btn" aria-label="关闭阅读面板" onclick="closePanel()">×</button></div><div class="panel-body"><p data-zh="这里模拟 StudyReportBodyEntry 打开后的阅读面板。长文放在阅读区，详情页只保留判断路径和关键证据。" data-en="This simulates the reading panel opened by StudyReportBodyEntry. Long-form text lives in the reading area; the detail page keeps the decision path and key evidence.">这里模拟 StudyReportBodyEntry 打开后的阅读面板。长文放在阅读区，详情页只保留判断路径和关键证据。</p><ul><li data-zh="问题：何时并行？何时等待 Human？" data-en="Question: when should work run in parallel, and when should it wait for a Human?">问题：何时并行？何时等待 Human？</li><li data-zh="观察：研究、验证、设计探索天然可并行；写入治理记录和外部动作不应静默执行。" data-en="Observation: research, validation, and design exploration can run in parallel; governance writes and external actions should not run silently.">观察：研究、验证、设计探索天然可并行；写入治理记录和外部动作不应静默执行。</li><li data-zh="建议：以 Human Gate 作为治理边界，而不是把所有动作都降速。" data-en="Recommendation: use Human Gate as a governance boundary instead of slowing every action down.">建议：以 Human Gate 作为治理边界，而不是把所有动作都降速。</li></ul></div></aside>
+<div class="sheet-overlay" id="sheetOverlay" onclick="closePanel()"></div><section class="mobile-sheet" id="mobileSheet" aria-label="移动端报告正文"><div class="panel-head"><div><div class="panel-title" data-zh="报告正文" data-en="Report body">报告正文</div><div class="meta mono">study-report.md</div></div><button class="icon-btn" aria-label="关闭正文抽屉" onclick="closePanel()">×</button></div><div class="panel-body"><p data-zh="移动端使用底部抽屉展示正文，保留上层详情上下文，不把长文塞进主屏。" data-en="Mobile uses a bottom sheet for the report body, preserving detail context without crowding the main screen.">移动端使用底部抽屉展示正文，保留上层详情上下文，不把长文塞进主屏。</p></div></section>
+</div></div></div>
+<script>
+let currentView = 'desktop';
+let currentLang = 'zh';
+let sidebarCollapsed = false;
+const studies = [
+  { zh:'Vibe Coding 编排模式对比研究', en:'Comparative study of Vibe Coding orchestration patterns', zhStatus:'活跃', enStatus:'Active', color:'rgb(var(--study))', path:'studies/study-0007/report.md', zhSummary:'推荐默认保留轻量单 Agent 路径；当任务天然可分支时开放并行；当结果影响治理、文件归口或外部动作时强制 Human Gate。', enSummary:'Keep a lightweight single-agent path by default; allow parallelism when work naturally branches; require Human Gate when outcomes affect governance, file routing, or external action.' },
+  { zh:'Dashboard 阅读面板发现性研究', en:'Dashboard reading panel discoverability study', zhStatus:'待关闭', enStatus:'Pending Close', color:'rgb(var(--purple))', path:'studies/study-0008/report.md', zhSummary:'建议把“可预览”和“会跳转”的交互分开，让用户在列表、详情和正文入口都能预测下一步。', enSummary:'Separate preview and navigation behaviors so users can predict the next step from lists, details, and report-body affordances.' },
+  { zh:'国际化长文本对 Dashboard 的影响', en:'Impact of long localized strings on Dashboard surfaces', zhStatus:'已归档', enStatus:'Archived', color:'rgb(var(--warn))', path:'studies/study-0009/report.md', zhSummary:'长英文状态、路径与引用摘要需要自然换行和下沉 metadata，避免挤压标题和主要判断内容。', enSummary:'Long English statuses, paths, and reference summaries need natural wrapping and metadata drop-down behavior to avoid crushing titles and decisions.' }
+];
+let selected = 0;
+function setPressed(group, value) { document.querySelectorAll(`[data-group="${group}"]`).forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.value === value))); }
+function switchView(view) { currentView = view; setPressed('view', view); document.getElementById('deviceFrame').className = 'device-frame device-' + view; closePanel(); }
+function switchLang(lang) { currentLang = lang; setPressed('lang', lang); document.documentElement.lang = lang; document.querySelectorAll('[data-zh][data-en]').forEach(el => { el.textContent = lang === 'zh' ? el.dataset.zh : el.dataset.en; }); renderStudy(); }
+function switchTheme(theme) { setPressed('theme', theme); document.documentElement.setAttribute('data-theme', theme); }
+function toggleSidebar() { sidebarCollapsed = !sidebarCollapsed; document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed); }
+function selectStudy(index) { selected = index; document.querySelectorAll('.study-card').forEach((card, i) => { card.setAttribute('aria-selected', String(i === index)); }); renderStudy(); }
+function renderStudy() { const s = studies[selected]; document.getElementById('detailTitle').textContent = currentLang === 'zh' ? s.zh : s.en; document.getElementById('detailSummary').textContent = currentLang === 'zh' ? s.zhSummary : s.enSummary; const status = document.getElementById('detailStatus'); status.textContent = currentLang === 'zh' ? s.zhStatus : s.enStatus; status.style.color = s.color; document.getElementById('reportPath').textContent = s.path; document.getElementById('panelPath').textContent = s.path; }
+function toggleNode(btn) { const body = document.getElementById(btn.getAttribute('aria-controls')); const expanded = btn.getAttribute('aria-expanded') === 'true'; btn.setAttribute('aria-expanded', String(!expanded)); body.hidden = expanded; }
+function openPanel() { if (currentView === 'mobile') { document.getElementById('mobileSheet').classList.add('visible'); document.getElementById('sheetOverlay').classList.add('visible'); } else { document.getElementById('readingPanel').classList.add('open'); } }
+function closePanel() { document.getElementById('readingPanel').classList.remove('open'); document.getElementById('mobileSheet').classList.remove('visible'); document.getElementById('sheetOverlay').classList.remove('visible'); }
+</script>
+</body>
+</html>

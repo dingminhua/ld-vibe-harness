@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="zh" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDVH v3 Web — Dashboard 精确还原</title>
+<style>
+/* ============================================================
+   CSS 变量 — 完全复制 index.css :root / :root.dark
+   ============================================================ */
+:root {
+  --ldvh-bg: 248 249 251;
+  --ldvh-panel: 255 255 255;
+  --ldvh-border: 229 231 235;
+  --ldvh-text-primary: 24 24 27;
+  --ldvh-text-secondary: 107 114 128;
+  --ldvh-accent: 5 150 105;
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  --ldvh-bg: 10 10 15;
+  --ldvh-panel: 18 18 26;
+  --ldvh-border: 30 30 46;
+  --ldvh-text-primary: 228 228 231;
+  --ldvh-text-secondary: 161 161 170;
+  --ldvh-accent: 0 212 170;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+*:focus, *:focus-visible { outline: none !important; box-shadow: none !important; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  line-height: 1.5;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #1a1a2e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-height: 100vh;
+  padding: 0;
+}
+
+.font-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
+
+/* ============================================================
+   语义排版类 — 完全复制 index.css @layer components
+   ============================================================ */
+.ldvh-page-title { font-size: 1.25rem; font-weight: 600; line-height: 1.75rem; color: rgb(var(--ldvh-text-primary)); }
+.ldvh-page-subtitle { font-size: 0.875rem; line-height: 1.5rem; color: rgb(var(--ldvh-text-secondary)); }
+.ldvh-section-title { font-size: 0.875rem; font-weight: 600; line-height: 1.25rem; color: rgb(var(--ldvh-text-primary)); }
+.ldvh-card-title { font-size: 0.875rem; font-weight: 500; line-height: 1.25rem; color: rgb(var(--ldvh-text-primary)); }
+.ldvh-body { font-size: 0.875rem; line-height: 1.5rem; color: rgb(var(--ldvh-text-primary)); }
+.ldvh-body-muted { font-size: 0.875rem; line-height: 1.5rem; color: rgb(var(--ldvh-text-secondary)); }
+.ldvh-caption { font-size: 0.75rem; line-height: 1.25rem; color: rgb(var(--ldvh-text-secondary)); }
+.ldvh-caption-strong { font-size: 0.75rem; font-weight: 500; line-height: 1.25rem; color: rgb(var(--ldvh-text-secondary)); }
+.ldvh-meta { font-family: ui-monospace, monospace; font-size: 0.75rem; line-height: 1.25rem; color: rgb(var(--ldvh-text-secondary)); }
+.ldvh-meta-primary { font-family: ui-monospace, monospace; font-size: 0.75rem; line-height: 1.25rem; color: rgb(var(--ldvh-text-primary)); }
+.ldvh-chip { font-size: 0.75rem; font-weight: 500; line-height: 1rem; }
+
+/* ============================================================
+   Grid 布局 — 完全复制 index.css
+   ============================================================ */
+.ldvh-dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0.75rem;
+}
+.ldvh-dashboard-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 1.5rem;
+}
+.ldvh-dashboard-section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1.5rem;
+}
+
+/* ============================================================
+   控制面板（视图切换 / 语言 / 主题）
+   ============================================================ */
+.control-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #16162a;
+  border-bottom: 1px solid #2a2a4a;
+  font-size: 13px;
+  color: #ccc;
+}
+.control-group { display: flex; align-items: center; gap: 4px; }
+.control-label { font-size: 11px; color: #888; margin-right: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.control-btn {
+  padding: 4px 12px;
+  border: 1px solid #3a3a5a;
+  border-radius: 4px;
+  background: transparent;
+  color: #ccc;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.control-btn:hover { background: #2a2a4a; color: #fff; }
+.control-btn.active { background: rgb(5 150 105); border-color: rgb(5 150 105); color: #fff; }
+.control-divider { width: 1px; height: 20px; background: #3a3a5a; margin: 0 4px; }
+
+/* ============================================================
+   设备框架
+   ============================================================ */
+.device-wrapper {
+  padding-top: 48px;
+  padding-bottom: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  min-height: calc(100vh - 48px);
+  background: #1a1a2e;
+  overflow: auto;
+}
+.device-frame {
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  background: rgb(var(--ldvh-bg));
+  transition: width 0.3s ease, height 0.3s ease;
+}
+.device-desktop { width: 1440px; height: 900px; }
+.device-narrow { width: 768px; height: 1024px; }
+.device-mobile { width: 375px; height: 812px; border-radius: 32px; border: 8px solid #2a2a3e; }
+
+/* ============================================================
+   App Shell — 完全复制 Layout.tsx 结构
+   ============================================================ */
+.app-shell {
+  display: flex;
+  height: 100%;
+  min-width: 375px;
+  overflow: hidden;
+  background: rgb(var(--ldvh-bg));
+}
+
+/* ============================================================
+   Sidebar — 完全复制 Sidebar.tsx
+   ============================================================ */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 100%;
+  border-right: 1px solid rgb(var(--ldvh-border));
+  background: rgb(var(--ldvh-panel));
+  transition: width 0.2s ease-in-out;
+  overflow: hidden;
+}
+.sidebar.expanded { width: 186px; }
+.sidebar.collapsed { width: 56px; }
+
+.sidebar-header {
+  border-bottom: 1px solid rgb(var(--ldvh-border));
+  padding: 16px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sidebar.collapsed .sidebar-header { padding: 12px 8px; flex-direction: column; gap: 8px; }
+
+.brand-mark {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #059669, #00d4aa);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.brand-tagline {
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: rgb(var(--ldvh-text-secondary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-nav { flex: 1; padding: 12px 8px; overflow-y: auto; }
+.sidebar-nav ul { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  color: rgb(var(--ldvh-text-secondary));
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.nav-item:hover { background: rgb(var(--ldvh-border) / 0.5); color: rgb(var(--ldvh-text-primary)); }
+.nav-item.active { background: rgb(var(--ldvh-accent) / 0.1); color: rgb(var(--ldvh-accent)); }
+.sidebar.collapsed .nav-item { justify-content: center; padding: 0; height: 40px; }
+.nav-icon { width: 16px; height: 16px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+.nav-label { overflow: hidden; text-overflow: ellipsis; }
+.sidebar.collapsed .nav-label { display: none; }
+
+.sidebar-footer {
+  border-top: 1px solid rgb(var(--ldvh-border));
+  padding: 12px 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sidebar.collapsed .sidebar-footer { flex-direction: column; padding: 12px 8px; align-items: center; }
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 6px;
+  color: rgb(var(--ldvh-text-secondary));
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.tool-btn:hover { background: rgb(var(--ldvh-border) / 0.5); color: rgb(var(--ldvh-text-primary)); }
+.tool-btn.wide { flex: 1; gap: 8px; padding: 6px 12px; width: auto; }
+.sidebar.collapsed .tool-btn.wide { width: 36px; flex: none; padding: 0; }
+
+/* ============================================================
+   Main Content
+   ============================================================ */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+.page-frame { padding: 16px; }
+@media (min-width: 640px) { .page-frame { padding: 24px; } }
+
+/* ============================================================
+   StatsCard — 完全复制 StatsCard.tsx
+   ============================================================ */
+.stats-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid rgb(var(--ldvh-border));
+  border-radius: 8px;
+  background: rgb(var(--ldvh-panel));
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.stats-card:hover { border-color: rgb(var(--ldvh-accent) / 0.4); }
+.stats-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.stats-card-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  color: rgb(var(--ldvh-text-primary));
+}
+.stats-card-icon { color: rgb(var(--ldvh-accent)); flex-shrink: 0; }
+.stats-card-count {
+  font-family: ui-monospace, monospace;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(var(--ldvh-accent));
+}
+.status-bar {
+  display: flex;
+  height: 6px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(var(--ldvh-border) / 0.5);
+}
+.status-segment { height: 100%; }
+.status-labels { display: flex; flex-wrap: wrap; gap: 4px; }
+.status-label {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+/* ============================================================
+   Panel — 完全复制 Dashboard.tsx 面板结构
+   ============================================================ */
+.panel {
+  border: 1px solid rgb(var(--ldvh-border));
+  border-radius: 8px;
+  background: rgb(var(--ldvh-panel));
+  padding: 16px;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.panel-header svg, .panel-header .icon { color: rgb(var(--ldvh-accent)); flex-shrink: 0; }
+
+/* Action Item / Recent Activity list item */
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.list-item:hover { background: rgb(var(--ldvh-border) / 0.3); }
+.list-item.highlight { border-left: 2px solid rgb(var(--ldvh-accent)); }
+.list-item-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+.list-item-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+
+/* Type Chip */
+.type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1rem;
+  flex-shrink: 0;
+}
+
+/* StatusBadge — 完全复制 StatusBadge.tsx */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  border-radius: 999px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1rem;
+  padding: 2px 8px;
+}
+
+/* CopyPathButton — 完全复制 CopyPathButton.tsx */
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgb(var(--ldvh-text-secondary) / 0.7);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.copy-btn:hover { background: rgb(var(--ldvh-border) / 0.3); color: rgb(var(--ldvh-accent)); }
+
+/* ============================================================
+   ReadingPanel — 完全复制 ReadingPanel.tsx
+   ============================================================ */
+.reading-panel {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 100%;
+  border-left: 1px solid rgb(var(--ldvh-border));
+  background: rgb(var(--ldvh-panel));
+  transition: width 0.2s ease-in-out, opacity 0.2s ease-in-out;
+  overflow: hidden;
+}
+.reading-panel.open { opacity: 1; }
+.reading-panel.closed { width: 0 !important; opacity: 0; border-left: 0; overflow: hidden; }
+
+.reading-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid rgb(var(--ldvh-border));
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+.reading-panel-header-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.reading-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+.reading-panel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 0;
+  text-align: center;
+}
+.drag-handle {
+  position: absolute;
+  left: 0; top: 0;
+  width: 8px; height: 100%;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.drag-handle:hover { background: rgb(var(--ldvh-accent) / 0.2); }
+
+/* Mobile bottom sheet */
+.mobile-bottom-sheet {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgb(var(--ldvh-border));
+  border-radius: 16px 16px 0 0;
+  background: rgb(var(--ldvh-panel));
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+}
+.mobile-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0,0,0,0.4);
+}
+.mobile-sheet-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  cursor: ns-resize;
+}
+.mobile-sheet-handle-bar {
+  width: 40px; height: 4px;
+  border-radius: 999px;
+  background: rgb(var(--ldvh-border));
+}
+
+/* SVG icon helper */
+svg.icon { display: inline-block; vertical-align: middle; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgb(var(--ldvh-panel)); }
+::-webkit-scrollbar-thumb { background: rgb(var(--ldvh-border)); border-radius: 3px; }
+
+/* Annotation labels */
+.annotation {
+  position: absolute;
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  color: #6366f1;
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+}
+</style>
+</head>
+<body>
+
+<!-- 控制栏 -->
+<div class="control-bar">
+  <div class="control-group">
+    <span class="control-label">视图</span>
+    <button class="control-btn active" onclick="switchView('desktop')">桌面 1440</button>
+    <button class="control-btn" onclick="switchView('narrow')">窄屏 768</button>
+    <button class="control-btn" onclick="switchView('mobile')">手机 375</button>
+  </div>
+  <div class="control-divider"></div>
+  <div class="control-group">
+    <span class="control-label">语言</span>
+    <button class="control-btn active" onclick="switchLang('zh')">中文</button>
+    <button class="control-btn" onclick="switchLang('en')">English</button>
+  </div>
+  <div class="control-divider"></div>
+  <div class="control-group">
+    <span class="control-label">主题</span>
+    <button class="control-btn active" onclick="switchTheme('light')">Light</button>
+    <button class="control-btn" onclick="switchTheme('dark')">Dark</button>
+  </div>
+  <div class="control-divider"></div>
+  <div class="control-group">
+    <span class="control-label">侧栏</span>
+    <button class="control-btn active" onclick="toggleSidebar(false)">展开</button>
+    <button class="control-btn" onclick="toggleSidebar(true)">折叠</button>
+  </div>
+  <div class="control-divider"></div>
+  <div class="control-group">
+    <span class="control-label">阅读面板</span>
+    <button class="control-btn" onclick="togglePanel(true)">打开</button>
+    <button class="control-btn active" onclick="togglePanel(false)">关闭</button>
+  </div>
+</div>
+
+<!-- 设备框架 -->
+<div class="device-wrapper">
+<div class="device-frame device-desktop" id="deviceFrame">
+<div class="app-shell" id="appShell">
+
+<!-- ============================================================
+     Sidebar — 8 导航项 + 3 工具按钮
+     ============================================================ -->
+<aside class="sidebar expanded" id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand-mark">L</div>
+    <div class="brand-tagline" data-zh="让 Vibe Coding 更高效、更稳定、更可控" data-en="Making Vibe Coding more efficient, stable, and controllable">让 Vibe Coding 更高效、更稳定、更可控</div>
+  </div>
+  <nav class="sidebar-nav">
+    <ul>
+      <!-- Dashboard -->
+      <li class="nav-item active" data-tooltip="仪表盘">
+        <span class="nav-icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>
+        <span class="nav-label" data-zh="仪表盘" data-en="Dashboard">仪表盘</span>
+      </li>
+      <!-- Files -->
+      <li class="nav-item" data-tooltip="文件">
+        <span class="nav-icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg></span>
+        <span class="nav-label" data-zh="文件" data-en="Files">文件</span>
+      </li>
+      <!-- Sparks -->
+      <li class="nav-item" data-tooltip="火花">
+        <span class="nav-icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg></span>
+        <span class="nav-label" data-zh="火花" data-en="Sparks">火花</span>
+      </li>
+      <!-- WorkCases -->
+      <li class="nav-item" data-tooltip="工作">
+        <span class="nav-icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.812 12.373c-.46-.21-.874-.504-1.215-.855l-1.85-1.92c-.425-.44-.844-.76-1.246-.875-.402-.114-.831-.035-1.377.142l-4.543 1.47a1 1 0 0 1-1.236-.451L1 4.924a34 34 0 0 0 2.41 7.44 34 34 0 0 0 4.565 6.17c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l4.543-1.47a1 1 0 0 1 1.236.451l1.85 1.92c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l3.38-1.094a1 1 0 0 0 .451-1.236l-1.094-3.38a1 1 0 0 0-1.236-.451z"/></svg></span>
+        <span class="nav-label" data-zh="工作" data-en="Work Cases">工作</span>
+      </li>
+      <!-- ADRs -->
+      <li class="nav-item" data-tooltip="决策">
+        <span class="nav-icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1-5 0z"/><path d="M14 14l-6.5 6.5a2.121 2.121 0 0 1-3-3L11 11"/><path d="M15 13c1.5-1.5 4-4 4-4s2-2 2-2l-3-3s-2 2-4 4l-2 2"/></svg></span>
+        <span class="nav-label" data-zh="决策" data-en="ADRs">决策</span>
+      </li>
+      <!-- Pitfalls -->
+      <li class="nav-item" data-tooltip="经验">
+        <span class="nav-icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span>
+        <span class="nav-label" data-zh="经验" data-en="Pitfalls">经验</span>
+      </li>
+      <!-- Studies -->
+      <li class="nav-item" data-tooltip="研究">
+        <span class="nav-icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h5"/><path d="M14 2v6a2 2 0 0 0 2 2h4"/><path d="m14 2 6 6v4"/><circle cx="15.5" cy="16.5" r="3.5"/><path d="m18 19 3 3"/></svg></span>
+        <span class="nav-label" data-zh="研究" data-en="Studies">研究</span>
+      </li>
+      <!-- Changelog -->
+      <li class="nav-item" data-tooltip="提交">
+        <span class="nav-icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 .5a12 12 0 1 0 0 24 12 12 0 0 0 0-24zm9.5 12a9.5 9.5 0 0 1-9.5 9.5A9.5 9.5 0 0 1 2.5 12 9.5 9.5 0 0 1 12 2.5a9.5 9.5 0 0 1 9.5 9.5z"/><path d="M16.24 7.76a.5.5 0 0 0-.7 0l-7.07 7.07a.5.5 0 1 0 .7.7l7.08-7.07a.5.5 0 0 0 0-.7z"/></svg></span>
+        <span class="nav-label" data-zh="提交" data-en="Commit Records">提交</span>
+      </li>
+    </ul>
+  </nav>
+  <div class="sidebar-footer">
+    <!-- Language -->
+    <div class="tool-btn wide" onclick="switchLang(currentLang === 'zh' ? 'en' : 'zh')">
+      <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <span class="nav-label lang-label" data-zh="English" data-en="中文">English</span>
+    </div>
+    <!-- Theme -->
+    <div class="tool-btn" onclick="switchTheme(currentTheme === 'light' ? 'dark' : 'light')" id="themeBtn">
+      <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="themeIcon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    </div>
+    <!-- Collapse toggle -->
+    <div class="tool-btn" onclick="toggleSidebar(sidebarCollapsed)">
+      <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="collapseIcon"><rect x="3" y="3" width="24" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+    </div>
+  </div>
+</aside>
+
+<!-- ============================================================
+     Main Content — Dashboard
+     ============================================================ -->
+<main class="main-content">
+  <div class="page-frame">
+    <!-- PageHeader -->
+    <div style="margin-bottom: 24px;">
+      <h1 class="ldvh-page-title" data-zh="仪表盘" data-en="Dashboard">仪表盘</h1>
+    </div>
+
+    <!-- 态势摘要行 -->
+    <p class="ldvh-caption" style="margin-bottom: 16px;" id="summaryRow">
+      2 个方案审核中，1 个方案待确认，3 个执行项运行中，1 个验证中，2 个待处理
+    </p>
+
+    <!-- Stats Grid — 5 StatsCards -->
+    <div class="ldvh-dashboard-stats-grid" style="margin-bottom: 24px;" id="statsGrid">
+      <!-- Spark -->
+      <div class="stats-card" onclick="noop()">
+        <div class="stats-card-header">
+          <span class="stats-card-label">
+            <span class="stats-card-icon"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg></span>
+            <span data-zh="火花" data-en="Sparks">火花</span>
+          </span>
+          <span class="stats-card-count">12</span>
+        </div>
+        <div class="status-bar">
+          <div class="status-segment" style="width: 66.7%; background: #3b82f6;"></div>
+          <div class="status-segment" style="width: 33.3%; background: #8b5cf6;"></div>
+        </div>
+        <div class="status-labels">
+          <span class="status-label" style="color: #3b82f6;"><span data-zh="验证中" data-en="Verifying">验证中</span> 8</span>
+          <span class="status-label" style="color: #8b5cf6;"><span data-zh="待关闭" data-en="Pending Close">待关闭</span> 4</span>
+        </div>
+      </div>
+
+      <!-- WorkCase -->
+      <div class="stats-card" onclick="noop()">
+        <div class="stats-card-header">
+          <span class="stats-card-label">
+            <span class="stats-card-icon"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.812 12.373c-.46-.21-.874-.504-1.215-.855l-1.85-1.92c-.425-.44-.844-.76-1.246-.875-.402-.114-.831-.035-1.377.142l-4.543 1.47a1 1 0 0 1-1.236-.451L1 4.924a34 34 0 0 0 2.41 7.44 34 34 0 0 0 4.565 6.17c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l4.543-1.47a1 1 0 0 1 1.236.451l1.85 1.92c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l3.38-1.094a1 1 0 0 0 .451-1.236l-1.094-3.38a1 1 0 0 0-1.236-.451z"/></svg></span>
+            <span data-zh="工作" data-en="Work Cases">工作</span>
+          </span>
+          <span class="stats-card-count">8</span>
+        </div>
+        <div class="status-bar">
+          <div class="status-segment" style="width: 25%; background: #0ea5e9;"></div>
+          <div class="status-segment" style="width: 12.5%; background: #8b5cf6;"></div>
+          <div class="status-segment" style="width: 37.5%; background: #059669;"></div>
+          <div class="status-segment" style="width: 12.5%; background: #3b82f6;"></div>
+          <div class="status-segment" style="width: 12.5%; background: #6366f1;"></div>
+        </div>
+        <div class="status-labels">
+          <span class="status-label" style="color: #0ea5e9;"><span data-zh="方案审核中" data-en="Plan Review">方案审核中</span> 2</span>
+          <span class="status-label" style="color: #8b5cf6;"><span data-zh="方案待确认" data-en="Plan Confirmation">方案待确认</span> 1</span>
+          <span class="status-label" style="color: #059669;"><span data-zh="执行中" data-en="Executing">执行中</span> 3</span>
+          <span class="status-label" style="color: #3b82f6;"><span data-zh="结果自检中" data-en="Self Check">结果自检中</span> 1</span>
+          <span class="status-label" style="color: #6366f1;"><span data-zh="结果复核中" data-en="Result Review">结果复核中</span> 1</span>
+        </div>
+      </div>
+
+      <!-- ADR -->
+      <div class="stats-card" onclick="noop()">
+        <div class="stats-card-header">
+          <span class="stats-card-label">
+            <span class="stats-card-icon"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1-5 0z"/><path d="M14 14l-6.5 6.5a2.121 2.121 0 0 1-3-3L11 11"/><path d="M15 13c1.5-1.5 4-4 4-4s2-2 2-2l-3-3s-2 2-4 4l-2 2"/></svg></span>
+            <span data-zh="决策" data-en="ADRs">决策</span>
+          </span>
+          <span class="stats-card-count">15</span>
+        </div>
+        <div class="status-bar">
+          <div class="status-segment" style="width: 33.3%; background: #059669;"></div>
+          <div class="status-segment" style="width: 13.3%; background: #d97706;"></div>
+          <div class="status-segment" style="width: 26.7%; background: #6b7280;"></div>
+          <div class="status-segment" style="width: 6.7%; background: #dc2626;"></div>
+          <div class="status-segment" style="width: 20%; background: #6b7280;"></div>
+        </div>
+        <div class="status-labels">
+          <span class="status-label" style="color: #059669;"><span data-zh="活跃" data-en="Active">活跃</span> 5</span>
+          <span class="status-label" style="color: #d97706;"><span data-zh="已提议" data-en="Proposed">已提议</span> 2</span>
+          <span class="status-label" style="color: #6b7280;"><span data-zh="已归档" data-en="Archived">已归档</span> 4</span>
+          <span class="status-label" style="color: #dc2626;"><span data-zh="已拒绝" data-en="Rejected">已拒绝</span> 1</span>
+          <span class="status-label" style="color: #6b7280;"><span data-zh="已替代" data-en="Superseded">已替代</span> 3</span>
+        </div>
+      </div>
+
+      <!-- Pitfall -->
+      <div class="stats-card" onclick="noop()">
+        <div class="stats-card-header">
+          <span class="stats-card-label">
+            <span class="stats-card-icon"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span>
+            <span data-zh="经验" data-en="Pitfalls">经验</span>
+          </span>
+          <span class="stats-card-count">6</span>
+        </div>
+        <div class="status-bar">
+          <div class="status-segment" style="width: 66.7%; background: #6b7280;"></div>
+          <div class="status-segment" style="width: 33.3%; background: #8b5cf6;"></div>
+        </div>
+        <div class="status-labels">
+          <span class="status-label" style="color: #6b7280;"><span data-zh="已分流" data-en="Routed">已分流</span> 4</span>
+          <span class="status-label" style="color: #8b5cf6;"><span data-zh="待关闭" data-en="Pending Close">待关闭</span> 2</span>
+        </div>
+      </div>
+
+      <!-- Study -->
+      <div class="stats-card" onclick="noop()">
+        <div class="stats-card-header">
+          <span class="stats-card-label">
+            <span class="stats-card-icon"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h5"/><path d="M14 2v6a2 2 0 0 0 2 2h4"/><path d="m14 2 6 6v4"/><circle cx="15.5" cy="16.5" r="3.5"/><path d="m18 19 3 3"/></svg></span>
+            <span data-zh="研究" data-en="Studies">研究</span>
+          </span>
+          <span class="stats-card-count">20</span>
+        </div>
+        <div class="status-bar">
+          <div class="status-segment" style="width: 50%; background: #6b7280;"></div>
+          <div class="status-segment" style="width: 50%; background: #8b5cf6;"></div>
+        </div>
+        <div class="status-labels">
+          <span class="status-label" style="color: #6b7280;"><span data-zh="已归档" data-en="Archived">已归档</span> 10</span>
+          <span class="status-label" style="color: #8b5cf6;"><span data-zh="待关闭" data-en="Pending Close">待关闭</span> 10</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel Grid: Action Items + Recent Changes -->
+    <div class="ldvh-dashboard-panel-grid">
+      <!-- Action Items -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4"/></svg></span>
+          <h3 class="ldvh-section-title" data-zh="待推进" data-en="Action Items">待推进</h3>
+        </div>
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px;" id="actionItemsList">
+          <!-- Item 1: Spark, highlight (review_needed) -->
+          <li class="list-item highlight" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #eab30820; color: #eab308;">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                <span data-zh="火花" data-en="Sparks">火花</span>
+              </span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">22 主文档与子文档状态矛盾待修复</span>
+            </div>
+            <div class="list-item-right">
+              <button class="copy-btn"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              <span class="status-badge" style="color: #8b5cf6; background: #8b5cf618; border: 1px solid #8b5cf630;" data-zh="待关闭" data-en="Pending Close">待关闭</span>
+              <span class="ldvh-caption" style="white-space: nowrap;" data-zh="2 小时前" data-en="2h ago">2 小时前</span>
+            </div>
+          </li>
+
+          <!-- Item 2: WorkCase, highlight (human_plan_confirming) -->
+          <li class="list-item highlight" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #0ea5e920; color: #0ea5e9;">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.812 12.373c-.46-.21-.874-.504-1.215-.855l-1.85-1.92c-.425-.44-.844-.76-1.246-.875-.402-.114-.831-.035-1.377.142l-4.543 1.47a1 1 0 0 1-1.236-.451L1 4.924a34 34 0 0 0 2.41 7.44 34 34 0 0 0 4.565 6.17c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l4.543-1.47a1 1 0 0 1 1.236.451l1.85 1.92c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l3.38-1.094a1 1 0 0 0 .451-1.236l-1.094-3.38a1 1 0 0 0-1.236-.451z"/></svg>
+                <span data-zh="工作" data-en="Work Cases">工作</span>
+              </span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Codex 并行执行行动编排落地</span>
+            </div>
+            <div class="list-item-right">
+              <button class="copy-btn"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              <span class="status-badge" style="color: #8b5cf6; background: #8b5cf618; border: 1px solid #8b5cf630;" data-zh="方案待确认" data-en="Plan Confirmation">方案待确认</span>
+              <span class="ldvh-caption" style="white-space: nowrap;" data-zh="5 小时前" data-en="5h ago">5 小时前</span>
+            </div>
+          </li>
+
+          <!-- Item 3: WorkCase, highlight (subagents_result_reviewing) -->
+          <li class="list-item highlight" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #0ea5e920; color: #0ea5e9;">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.812 12.373c-.46-.21-.874-.504-1.215-.855l-1.85-1.92c-.425-.44-.844-.76-1.246-.875-.402-.114-.831-.035-1.377.142l-4.543 1.47a1 1 0 0 1-1.236-.451L1 4.924a34 34 0 0 0 2.41 7.44 34 34 0 0 0 4.565 6.17c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l4.543-1.47a1 1 0 0 1 1.236.451l1.85 1.92c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l3.38-1.094a1 1 0 0 0 .451-1.236l-1.094-3.38a1 1 0 0 0-1.236-.451z"/></svg>
+                <span data-zh="工作" data-en="Work Cases">工作</span>
+              </span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">LDVH 安装验收 Code 与 ldvh-install 对齐</span>
+            </div>
+            <div class="list-item-right">
+              <button class="copy-btn"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              <span class="status-badge" style="color: #6366f1; background: #6366f118; border: 1px solid #6366f130;" data-zh="结果复核中" data-en="Result Review">结果复核中</span>
+              <span class="ldvh-caption" style="white-space: nowrap;" data-zh="1 天前" data-en="1d ago">1 天前</span>
+            </div>
+          </li>
+
+          <!-- Item 4: ADR, highlight (review_needed) -->
+          <li class="list-item highlight" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #a855f720; color: #a855f7;">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1-5 0z"/><path d="M14 14l-6.5 6.5a2.121 2.121 0 0 1-3-3L11 11"/><path d="M15 13c1.5-1.5 4-4 4-4s2-2 2-2l-3-3s-2 2-4 4l-2 2"/></svg>
+                <span data-zh="决策" data-en="ADRs">决策</span>
+              </span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">ADR-0017: 采用 Tailwind CSS 作为样式系统</span>
+            </div>
+            <div class="list-item-right">
+              <button class="copy-btn"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              <span class="status-badge" style="color: #8b5cf6; background: #8b5cf618; border: 1px solid #8b5cf630;" data-zh="待关闭" data-en="Pending Close">待关闭</span>
+              <span class="ldvh-caption" style="white-space: nowrap;" data-zh="2 天前" data-en="2d ago">2 天前</span>
+            </div>
+          </li>
+
+          <!-- Item 5: WorkCase, NOT highlight (closed) -->
+          <li class="list-item" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #0ea5e920; color: #0ea5e9;">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.812 12.373c-.46-.21-.874-.504-1.215-.855l-1.85-1.92c-.425-.44-.844-.76-1.246-.875-.402-.114-.831-.035-1.377.142l-4.543 1.47a1 1 0 0 1-1.236-.451L1 4.924a34 34 0 0 0 2.41 7.44 34 34 0 0 0 4.565 6.17c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l4.543-1.47a1 1 0 0 1 1.236.451l1.85 1.92c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l3.38-1.094a1 1 0 0 0 .451-1.236l-1.094-3.38a1 1 0 0 0-1.236-.451z"/></svg>
+                <span data-zh="工作" data-en="Work Cases">工作</span>
+              </span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Web Dashboard 初始版本搭建</span>
+            </div>
+            <div class="list-item-right">
+              <button class="copy-btn"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              <span class="status-badge" style="color: #6b7280; background: #6b728018; border: 1px solid #6b728030;" data-zh="已关闭" data-en="Closed">已关闭</span>
+              <span class="ldvh-caption" style="white-space: nowrap;" data-zh="3 天前" data-en="3d ago">3 天前</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Recent Changes -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></span>
+          <h3 class="ldvh-section-title" data-zh="最近提交" data-en="Recent Commits">最近提交</h3>
+        </div>
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px;">
+          <!-- Commit 1: feat -->
+          <li class="list-item" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #3b82f620; color: #3b82f6;" data-zh="功能" data-en="Feature">功能</span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Add web dashboard stats grid component</span>
+            </div>
+            <span class="ldvh-caption" style="white-space: nowrap;" data-zh="1 小时前" data-en="1h ago">1 小时前</span>
+          </li>
+          <!-- Commit 2: fix -->
+          <li class="list-item" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #ef444420; color: #ef4444;" data-zh="修复" data-en="Fix">修复</span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Fix ObjectDetail reading node collapse state</span>
+            </div>
+            <span class="ldvh-caption" style="white-space: nowrap;" data-zh="3 小时前" data-en="3h ago">3 小时前</span>
+          </li>
+          <!-- Commit 3: docs -->
+          <li class="list-item" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #6b728020; color: #6b7280;" data-zh="文档" data-en="Docs">文档</span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Update 08-Web信息同步规范 for panel context</span>
+            </div>
+            <span class="ldvh-caption" style="white-space: nowrap;" data-zh="5 小时前" data-en="5h ago">5 小时前</span>
+          </li>
+          <!-- Commit 4: refactor -->
+          <li class="list-item" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #06b6d420; color: #06b6d4;" data-zh="重构" data-en="Refactor">重构</span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Refactor ReadingPanel mobile bottom sheet drag</span>
+            </div>
+            <span class="ldvh-caption" style="white-space: nowrap;" data-zh="6 小时前" data-en="6h ago">6 小时前</span>
+          </li>
+          <!-- Commit 5: chore -->
+          <li class="list-item" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #6b728020; color: #6b7280;" data-zh="杂项" data-en="Chore">杂项</span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Bump vite to 5.4.0 and update lockfile</span>
+            </div>
+            <span class="ldvh-caption" style="white-space: nowrap;" data-zh="8 小时前" data-en="8h ago">8 小时前</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="ldvh-dashboard-section-grid" style="margin-top: 24px;">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="icon"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+          <h3 class="ldvh-section-title" data-zh="最近活动" data-en="Recent Activity">最近活动</h3>
+        </div>
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px;">
+          <!-- Activity 1: Spark -->
+          <li class="list-item" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #eab30820; color: #eab308;">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                <span data-zh="火花" data-en="Sparks">火花</span>
+              </span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">规则建立方式待讨论</span>
+            </div>
+            <div class="list-item-right">
+              <button class="copy-btn"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              <span class="status-badge" style="color: #3b82f6; background: #3b82f618; border: 1px solid #3b82f630;" data-zh="验证中" data-en="Verifying">验证中</span>
+              <span class="ldvh-caption" style="white-space: nowrap;" data-zh="30 分钟前" data-en="30m ago">30 分钟前</span>
+            </div>
+          </li>
+          <!-- Activity 2: WorkCase -->
+          <li class="list-item" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #0ea5e920; color: #0ea5e9;">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.812 12.373c-.46-.21-.874-.504-1.215-.855l-1.85-1.92c-.425-.44-.844-.76-1.246-.875-.402-.114-.831-.035-1.377.142l-4.543 1.47a1 1 0 0 1-1.236-.451L1 4.924a34 34 0 0 0 2.41 7.44 34 34 0 0 0 4.565 6.17c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l4.543-1.47a1 1 0 0 1 1.236.451l1.85 1.92c.425.44.844.76 1.246.875.402.114.831.035 1.377-.142l3.38-1.094a1 1 0 0 0 .451-1.236l-1.094-3.38a1 1 0 0 0-1.236-.451z"/></svg>
+                <span data-zh="工作" data-en="Work Cases">工作</span>
+              </span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Spec 规范覆盖度审查</span>
+            </div>
+            <div class="list-item-right">
+              <button class="copy-btn"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              <span class="status-badge" style="color: #0ea5e9; background: #0ea5e918; border: 1px solid #0ea5e930;" data-zh="方案审核中" data-en="Plan Review">方案审核中</span>
+              <span class="ldvh-caption" style="white-space: nowrap;" data-zh="4 小时前" data-en="4h ago">4 小时前</span>
+            </div>
+          </li>
+          <!-- Activity 3: Study -->
+          <li class="list-item" onclick="noop()">
+            <div class="list-item-left">
+              <span class="type-chip" style="background: #06b6d420; color: #06b6d4;">
+                <svg class="icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h5"/><path d="M14 2v6a2 2 0 0 0 2 2h4"/><path d="m14 2 6 6v4"/><circle cx="15.5" cy="16.5" r="3.5"/><path d="m18 19 3 3"/></svg>
+                <span data-zh="研究" data-en="Studies">研究</span>
+              </span>
+              <span class="ldvh-body" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Vibe Coding 编排模式对比研究</span>
+            </div>
+            <div class="list-item-right">
+              <button class="copy-btn"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              <span class="status-badge" style="color: #8b5cf6; background: #8b5cf618; border: 1px solid #8b5cf630;" data-zh="待关闭" data-en="Pending Close">待关闭</span>
+              <span class="ldvh-caption" style="white-space: nowrap;" data-zh="1 天前" data-en="1d ago">1 天前</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ============================================================
+     ReadingPanel — 桌面端右侧面板 / 移动端底部抽屉
+     ============================================================ -->
+<div id="readingPanelDesktop">
+  <div class="reading-panel closed" id="readingPanel" style="width: 0;">
+    <div class="drag-handle"><div style="width: 6px; height: 48px; border-radius: 999px; background: rgb(var(--ldvh-border) / 0.5);"></div></div>
+    <div class="reading-panel-header">
+      <div class="reading-panel-header-left">
+        <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: rgb(var(--ldvh-text-secondary));"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+        <button class="copy-btn" style="width: auto; height: auto; padding: 4px;"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="copy-btn" style="width: auto; height: auto; padding: 4px; opacity: 0.35;"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+      </div>
+      <button class="copy-btn" style="width: auto; height: auto; padding: 4px;" onclick="togglePanel(false)"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="reading-panel-body">
+      <div class="reading-panel-empty">
+        <p class="ldvh-body-muted" data-zh="选择一个对象或文档以在此预览" data-en="Select an object or document to preview here">选择一个对象或文档以在此预览</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile bottom sheet (hidden on desktop) -->
+<div id="mobilePanelContainer" style="display: none;">
+  <div class="mobile-overlay" onclick="togglePanel(false)"></div>
+  <div class="mobile-bottom-sheet" style="height: 50%;">
+    <div class="mobile-sheet-handle"><div class="mobile-sheet-handle-bar"></div></div>
+    <div class="reading-panel-header" style="border-bottom: 1px solid rgb(var(--ldvh-border));">
+      <div class="reading-panel-header-left">
+        <button class="copy-btn" style="width: auto; height: auto; padding: 4px;"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="copy-btn" style="width: auto; height: auto; padding: 4px; opacity: 0.35;"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+      </div>
+      <button class="copy-btn" style="width: auto; height: auto; padding: 4px;" onclick="togglePanel(false)"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="reading-panel-body">
+      <div class="reading-panel-empty">
+        <p class="ldvh-body-muted" data-zh="选择一个对象或文档以在此预览" data-en="Select an object or document to preview here">选择一个对象或文档以在此预览</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app-shell -->
+</div><!-- /device-frame -->
+</div><!-- /device-wrapper -->
+
+<script>
+let currentView = 'desktop';
+let currentLang = 'zh';
+let currentTheme = 'light';
+let sidebarCollapsed = false;
+let panelOpen = false;
+
+function noop() {}
+
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('.control-btn').forEach(btn => {
+    if (btn.parentElement.querySelector('.control-label')?.textContent === '视图') {
+      btn.classList.remove('active');
+    }
+  });
+  event.target.classList.add('active');
+
+  const frame = document.getElementById('deviceFrame');
+  const sidebar = document.getElementById('sidebar');
+  const mobilePanel = document.getElementById('mobilePanelContainer');
+  const desktopPanel = document.getElementById('readingPanelDesktop');
+
+  frame.className = 'device-frame';
+  if (view === 'desktop') {
+    frame.classList.add('device-desktop');
+    sidebar.style.display = '';
+    mobilePanel.style.display = 'none';
+    desktopPanel.style.display = '';
+  } else if (view === 'narrow') {
+    frame.classList.add('device-narrow');
+    sidebar.style.display = '';
+    mobilePanel.style.display = 'none';
+    desktopPanel.style.display = '';
+  } else if (view === 'mobile') {
+    frame.classList.add('device-mobile');
+    sidebar.style.display = 'none';
+    if (panelOpen) {
+      mobilePanel.style.display = '';
+    } else {
+      mobilePanel.style.display = 'none';
+    }
+    desktopPanel.style.display = 'none';
+  }
+}
+
+function switchLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.control-btn').forEach(btn => {
+    const group = btn.parentElement;
+    const label = group.querySelector('.control-label')?.textContent;
+    if (label === '语言') {
+      btn.classList.remove('active');
+    }
+  });
+  event.target.classList.add('active');
+
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-zh][data-en]').forEach(el => {
+    el.textContent = lang === 'zh' ? el.dataset.zh : el.dataset.en;
+  });
+
+  // Update lang label
+  const langLabel = document.querySelector('.lang-label');
+  if (langLabel) {
+    langLabel.textContent = lang === 'zh' ? 'English' : '中文';
+  }
+
+  // Update summary row
+  const summary = document.getElementById('summaryRow');
+  if (summary) {
+    if (lang === 'zh') {
+      summary.textContent = '2 个方案审核中，1 个方案待确认，3 个执行项运行中，1 个验证中，2 个待处理';
+    } else {
+      summary.textContent = '2 in plan review, 1 awaiting plan confirmation, 3 execution items running, 1 verifying, 2 need follow-up';
+    }
+  }
+}
+
+function switchTheme(theme) {
+  currentTheme = theme;
+  document.querySelectorAll('.control-btn').forEach(btn => {
+    const group = btn.parentElement;
+    const label = group.querySelector('.control-label')?.textContent;
+    if (label === '主题') {
+      btn.classList.remove('active');
+    }
+  });
+  event.target.classList.add('active');
+
+  document.documentElement.setAttribute('data-theme', theme);
+
+  // Update theme icon
+  const icon = document.getElementById('themeIcon');
+  if (icon) {
+    if (theme === 'dark') {
+      icon.innerHTML = '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>';
+    } else {
+      icon.innerHTML = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
+    }
+  }
+}
+
+function toggleSidebar(collapsed) {
+  sidebarCollapsed = collapsed;
+  const sidebar = document.getElementById('sidebar');
+  const collapseIcon = document.getElementById('collapseIcon');
+
+  document.querySelectorAll('.control-btn').forEach(btn => {
+    const group = btn.parentElement;
+    const label = group.querySelector('.control-label')?.textContent;
+    if (label === '侧栏') {
+      btn.classList.remove('active');
+    }
+  });
+  event.target.classList.add('active');
+
+  if (collapsed) {
+    sidebar.classList.remove('expanded');
+    sidebar.classList.add('collapsed');
+    if (collapseIcon) collapseIcon.style.transform = 'rotate(180deg)';
+  } else {
+    sidebar.classList.remove('collapsed');
+    sidebar.classList.add('expanded');
+    if (collapseIcon) collapseIcon.style.transform = '';
+  }
+}
+
+function togglePanel(open) {
+  panelOpen = open;
+  document.querySelectorAll('.control-btn').forEach(btn => {
+    const group = btn.parentElement;
+    const label = group.querySelector('.control-label')?.textContent;
+    if (label === '阅读面板') {
+      btn.classList.remove('active');
+    }
+  });
+  event.target.classList.add('active');
+
+  const panel = document.getElementById('readingPanel');
+  const mobilePanel = document.getElementById('mobilePanelContainer');
+
+  if (open) {
+    panel.classList.remove('closed');
+    panel.classList.add('open');
+    panel.style.width = currentView === 'mobile' ? '100%' : '380px';
+    if (currentView === 'mobile') {
+      mobilePanel.style.display = '';
+    }
+  } else {
+    panel.classList.add('closed');
+    panel.classList.remove('open');
+    panel.style.width = '0';
+    mobilePanel.style.display = 'none';
+  }
+}
+</script>
+
+</body>
+</html>
