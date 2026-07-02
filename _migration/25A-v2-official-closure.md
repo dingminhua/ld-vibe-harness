@@ -66,6 +66,8 @@ Human 确认来源：当前对话中 Human 明确要求“按你的计划推进�
 7. 知识地图不作为 V3 正式概念恢复，导航能力由 Action Guide / 行动指南方向承接；
 8. 用户级 LDVH 配置目录仍是 `_migration/24A-user-local-ldvh-config-candidate.md` 中的候选记录，待 Spark 可用后再转入正式讨论。
 
+后续队列整理见 `_migration/26A-v3-post-closure-work-queue.md`。该队列只整理优先级、触发条件和停止边界，不授权任何后置能力生效。
+
 ## 验证记录
 
 本轮关闭验证于 2026-07-02 执行：

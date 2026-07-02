@@ -8,7 +8,7 @@
 
 ## 初步判断
 
-可以考虑建立用户级配置目录，但不应直接替代现有 repo / workspace 级配置。
+可以考虑建立用户级配置目录，但不应直接替代现有 repo / workspace 级配置。当前更稳定的方向是：配置生成时必须先让 Human 选择放置位置，推荐放在 LDVH 工作区根目录。
 
 建议把配置分为两类：
 
@@ -16,6 +16,18 @@
 2. 用户本机配置：由用户级 LDVH 配置目录承接，适合本机绝对路径、默认 governance root、个人项目登记、缓存和临时状态。
 
 用户级配置目录不得承载 specs、事实对象正式实例、Human Gate 结论、Hook 安装授权或环境入口 integrated 状态。
+
+## 配置生成位置选择候选
+
+后续若新增配置生成入口，不得静默写入固定目录。生成 `LDVH-GOVERNED-PROJECTS.yaml` 前必须让 Human 明确选择放置位置，并至少提供以下三个选项：
+
+1. 工作区根目录，推荐选项。默认候选位置是 LDVH 安装目录的上一级目录，也就是与 LDVH 项目并行的目录。例如 LDVH 安装在 `/Users/example/workspace/ld-vibe-harness-v3` 时，默认工作区根目录候选为 `/Users/example/workspace/`。
+2. 用户级 LDVH 配置目录，例如 macOS / Linux 的 `~/.ldvh` 或 Windows 的 `%APPDATA%\ldvh`。该选项适合单机默认值、路径指针或个人登记，但不得静默覆盖工作区级配置。
+3. 当前项目根目录。该选项适合单项目自管，但如果当前工作区存在多个管辖项目，不应作为默认推荐。
+
+选择界面必须把“工作区根目录”放在推荐位置，并说明推荐理由：它能同时覆盖 LDVH 项目和多个并行管辖项目，便于 target/cwd 向上发现，也避免把主配置藏进用户系统目录或某个单独项目。
+
+若用户选择用户级目录，后续仍应区分“用户级目录保存主配置”与“用户级目录只保存默认工作区指针”。当前更保守的候选是：用户级目录优先保存默认工作区位置或个人默认值，主 `LDVH-GOVERNED-PROJECTS.yaml` 推荐仍放在工作区根目录。
 
 ## 跨平台目录候选
 
@@ -31,8 +43,8 @@
 
 后续可评估以下文件，但本文不创建：
 
-1. `LDVH_USER_HOME/config.yaml`：用户级默认值，例如默认 LDVH root、活动 profile、配置搜索根；
-2. `LDVH_USER_HOME/governed-projects.yaml`：用户本机管辖项目登记，字段应尽量复用或兼容 `LDVH-GOVERNED-PROJECTS.yaml`；
+1. `LDVH_USER_HOME/config.yaml`：用户级默认值，例如默认 LDVH root、默认工作区根目录、活动 profile、配置搜索根；
+2. `LDVH_USER_HOME/governed-projects.yaml`：用户本机管辖项目登记候选，字段应尽量复用或兼容 `LDVH-GOVERNED-PROJECTS.yaml`；是否允许它承载主登记仍需后续确认；
 3. `LDVH_USER_HOME/cache/`：缓存目录，不作为事实源；
 4. `LDVH_USER_HOME/state/` 或 `LDVH_USER_HOME/receipts/`：仅在后续 receipt 存储策略重新通过 Human Gate 后才可考虑。
 
@@ -54,13 +66,16 @@
 1. 是否正式引入 `LDVH_USER_HOME` 逻辑目录；
 2. Windows、macOS、Linux 的默认目录是否按本文候选执行；
 3. `LDVH_HOME` 环境变量是否作为最高优先级入口；
-4. 用户级 `governed-projects.yaml` 是否复用 10.Att.01 字段，还是建立独立字段表；
-5. repo 配置与用户配置冲突时，是阻断、告警还是 repo 优先；
-6. Code resolver 是否需要新增用户级 fallback；
-7. tests 是否覆盖 repo 优先、用户 fallback、Windows 路径、环境变量覆盖和冲突诊断；
-8. 是否需要更新 `specs/10-管辖项目配置规范.md` 与 `10.Att.01`；
-9. 是否需要 Web 展示用户级配置来源，且不得把用户级配置写成 Web 主数据源；
-10. 用户级配置写入是否必须进入 Human Gate。
+4. 配置生成入口是否必须提供“工作区根目录 / 用户级 LDVH 配置目录 / 当前项目根目录”三选项，并默认推荐工作区根目录；
+5. 工作区根目录默认是否固定为 LDVH 安装目录的上一级目录，还是允许安装器另行指定；
+6. 用户级目录保存主登记，还是只保存默认工作区指针和个人默认值；
+7. 用户级 `governed-projects.yaml` 是否复用 10.Att.01 字段，还是建立独立字段表；
+8. repo / workspace 配置与用户配置冲突时，是阻断、告警还是 workspace 优先；
+9. Code resolver 是否需要新增用户级 fallback 或 workspace pointer 发现；
+10. tests 是否覆盖三选项、默认推荐、workspace pointer、Windows 路径、环境变量覆盖和冲突诊断；
+11. 是否需要更新 `specs/10-管辖项目配置规范.md` 与 `10.Att.01`；
+12. 是否需要 Web 展示配置来源，且不得把用户级配置写成 Web 主数据源；
+13. 用户级配置写入、workspace 配置生成和当前项目根配置生成是否都必须进入 Human Gate。
 
 ## 当前不做事项
 
@@ -69,7 +84,8 @@
 3. 不修改 `code/ldvh_specs.py` 的配置发现逻辑；
 4. 不新增 `~/.ldvh`、`%APPDATA%\ldvh` 或其它真实用户目录；
 5. 不移动现有 `LDVH-GOVERNED-PROJECTS.yaml`；
-6. 不把本文写成 Spark、WorkCase、ADR 或正式规范结论。
+6. 不新增配置生成 CLI、安装器交互或 Web 选择界面；
+7. 不把本文写成 Spark、WorkCase、ADR 或正式规范结论。
 
 ## 进入正式工作的条件
 

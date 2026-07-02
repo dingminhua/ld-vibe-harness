@@ -106,6 +106,8 @@
 
 `_migration/23A-v2-close-v3-start-assessment.md` 记录 V2 关闭与 V3 启动判断。它汇总 V3 相对 V2 的结构性改进、已迁入主体内容、仍未迁入但不阻断启动的 V2 后置项，以及正式关闭 V2 / 启动 V3 所需的 Human 确认和验证条件。
 
-`_migration/24A-user-local-ldvh-config-candidate.md` 记录用户级 LDVH 配置目录候选。它说明 `~/.ldvh` 只能作为 macOS / Linux 的默认实现，跨平台应抽象为 `LDVH_USER_HOME`，Windows 默认配置目录候选为 `%APPDATA%\ldvh`，并记录待 Spark 可用后再转入正式讨论；它不修改当前配置解析行为或 `specs/10`。
+`_migration/24A-user-local-ldvh-config-candidate.md` 记录管辖项目配置生成位置候选。它要求后续生成 `LDVH-GOVERNED-PROJECTS.yaml` 前由 Human 三选一：工作区根目录（推荐，默认 LDVH 安装目录上一级）、用户级 LDVH 配置目录或当前项目根目录；`~/.ldvh` / `%APPDATA%\ldvh` 只作为用户级目录候选，不修改当前配置解析行为或 `specs/10`。
 
 `_migration/25A-v2-official-closure.md` 记录 V2 正式关闭。它把当前 Human 确认、README 入口更新、验证结果和后置清单合并为关闭收据；关闭只表示 V2 不再作为当前 LDVH 日常规则入口，不删除历史来源，不授权后置能力生效。
+
+`_migration/26A-v3-post-closure-work-queue.md` 整理 V2 正式关闭后的 V3 后置工作队列。它把后置事项分为 P1、P2、Parked 和 Closed，说明下一步触发条件、Human Gate 和不再反复讨论的边界；它不授权任何后置能力生效。
