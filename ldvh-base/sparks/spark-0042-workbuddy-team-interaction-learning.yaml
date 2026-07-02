@@ -1,0 +1,43 @@
+id: spark-0042
+type: spark
+title: WorkBuddy 专家团团队交互模式与 LDVH 学习方向
+status: pending
+created: '2026-07-02T18:34:24+08:00'
+updated: '2026-07-02T18:34:24+08:00'
+description: |
+  本 Spark 承接 Human 对 WorkBuddy 团队交互模式的观察：截图中同一任务界面同时出现总编辑、质量审核员等角色席位，输入区可在 Craft / Ask / Plan 等意图模式间切换，并可召唤专业文档生成团队、UI 设计师、内容创作专家等专家或专家团。这个模式提示 LDVH 需要进一步研究“角色团队、任务分解、并行执行、过程状态、结果整合、质量复核、权限边界和 Human Gate”如何作为 AI 工作系统的显性结构被表达。
+
+  初步判断是：WorkBuddy 的价值不只是多 Agent 并行，而是把角色身份、方法论、工具链、团队席位、任务状态和结果交付放进同一交互面。LDVH 已有 Spark、Study、WorkCase、ADR、Pitfall、Human Gate、运行时入口和 Web 展示边界，但团队协作层仍偏隐性，主要散落在子 Agent 调研、WorkCase 编排、Hook adapter 和 Web 对象视图中。
+
+  本 Spark 安排 `study-0015` 做稳定调研，重点分析 WorkBuddy / CodeBuddy 的专家、专家团、Agent Teams、Sub-Agents、background TaskOutput 和企业级人机协作信息，对 LDVH 的学习方向进行归纳。研究完成后，本 Spark 仍保持 pending；后续必须按 Study 结论继续判断是否分流到 WorkCase、ADR、Pitfall、docs、specs、Code、Web 或运行时扩展，不得因为 Study 已形成就标记为 resolved。
+source: conversation
+source_detail: |
+  Human 提供 WorkBuddy 任务界面截图，并要求“workbuddy 这种团队交互模式，写个 spark 并安排写一个 study 进行调研，分析对 LDVH 的学习方向”。截图显示 TaskOutput 等待模型响应、顶部角色席位和输入区专家团召唤菜单；本 Spark 将该输入对象化为后续研究入口。
+priority: P1
+evolution:
+  - at: '2026-07-02T18:34:24+08:00'
+    summary: |
+      新建 Spark 并关联 `study-0015`。本次分流只确认“WorkBuddy 团队交互模式值得调研并沉淀 LDVH 学习方向”，不直接修改 specs、Code、Web、运行时扩展或事实模型字段；Study 结论只能作为后续分流依据，不能替代正式 WorkCase 或 ADR。
+input_refs:
+  - /var/folders/gh/szvhx1md1mn9qy9n6p2b2w5h0000gn/T/codex-clipboard-453a907e-11b4-4154-af72-45dea8e5d4c0.png
+  - https://www.codebuddy.cn/work/
+  - https://www.codebuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Expert-Center
+  - https://www.codebuddy.ai/docs/cli/agent-teams
+  - https://www.codebuddy.ai/docs/cli/sub-agents
+  - https://www.tencent.com/zh-cn/articles/2202350.html
+  - study-0011
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workcases: []
+related_adrs: []
+related_studies:
+  - study-0015
+related_docs:
+  - specs/00-理念与构成.md
+  - specs/01-保障与衔接.md
+  - specs/02-AI行为规范.md
+  - specs/20-Spark-火花.md
+  - specs/21-WorkCase-工作项.md
+  - specs/24-Study-研究报告.md
+  - ldvh-base/studies/study-0011-codex-worktree-subagent-thread-practices.md
