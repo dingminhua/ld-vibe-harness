@@ -106,12 +106,25 @@ ldvh_spec:
 2. 写入位置及其级别：用户级、工作区级、项目级、Git 本地目录、插件 cache、仓库内样例或只读检查；
 3. 受影响项目、不受影响项目、跨项目范围和混合非管辖 target 风险；
 4. 会接入哪些 Git hook shim、环境 Hook、plugin lifecycle event、manual entrypoint 或 repo instruction；
-5. 哪些事件可能阻断，哪些只是 diagnostic，哪些仍是 manual-ready 或 deferred；
-6. 旧插件、旧路径、旧配置、stale V2 path、历史 trust 或旧 Hook 的处理方式；
-7. 验证命令、预期结果、不可验证范围和失败处理；
-8. 回滚或卸载入口，以及卸载后如何确认环境不再自动触发 LDVH；
-9. 当前仍未 integrated 的能力；
-10. 残留风险、source_refs 和下一步 Human Gate。
+5. 是否需要创建或检查管辖项目根下的 `ldvh-base/` 事实源目录，以及每个子目录的用途；
+6. 哪些事件可能阻断，哪些只是 diagnostic，哪些仍是 manual-ready 或 deferred；
+7. 旧插件、旧路径、旧配置、stale V2 path、历史 trust 或旧 Hook 的处理方式；
+8. 验证命令、预期结果、不可验证范围和失败处理；
+9. 回滚或卸载入口，以及卸载后如何确认环境不再自动触发 LDVH；
+10. 当前仍未 integrated 的能力；
+11. 残留风险、source_refs 和下一步 Human Gate。
+
+管辖项目事实源目录告知必须说明：
+
+| 目录 | 用途 | 创建边界 |
+|---|---|---|
+| `ldvh-base/workcases/` | 存放 WorkCase 工作项实例，用来追踪目标、推进状态、验证证据和关闭证据。 | 只创建目录不创建工作项，不替代行动模板或 Human Gate。 |
+| `ldvh-base/adrs/` | 存放 ADR 决策实例，用来记录已确认决策、取舍依据和影响。 | 只创建目录不表示已有决策，不替代 specs 正文。 |
+| `ldvh-base/pitfalls/` | 存放 Pitfall 踩坑经验实例，用来沉淀已验证的问题、根因、解决方式和规避策略。 | 只创建目录不替代未解决问题或测试失败记录。 |
+| `ldvh-base/sparks/` | 存放 Spark 火花实例，用来记录待分流想法、候选发现和问题线索。 | 只创建目录不替代 WorkCase、ADR、Study 或聊天上下文。 |
+| `ldvh-base/studies/` | 存放 Study 稳定研究报告实例，用来沉淀被提升后的研究结论。 | 只创建目录不替代临时调研材料、外部资料原文或未经吸收的研究过程。 |
+
+临时调研材料、外部资料或第三方参考不是本模板要求创建的固定目录；只有被提升为稳定事实的研究报告进入 `ldvh-base/studies/`。
 
 缺少用户告知清单时，不得安装、部署、初始化、写入配置、声明接入或要求 Human 验收。告知清单不是授权本身；授权只能来自 Human Gate。
 
@@ -119,13 +132,13 @@ ldvh_spec:
 
 | 结构 | 最小要求 |
 |---|---|
-| Context | 读取用户目标、目标环境、LDVH 根目录、工作区根目录、管辖项目候选、当前 `LDVH-GOVERNED-PROJECTS.yaml`、环境入口审计结果、source_refs，并回指 `specs/01-保障与衔接.md`、`specs/06-行动模板基础规范.md`、`specs/10-管辖项目配置规范.md`、`specs/07-Code确定性执行规范.md`、`specs/09-测试与验证规范.md` 和 `code/docs/01-Git-Commit-and-Hook-Practice.md`。 |
+| Context | 读取用户目标、目标环境、LDVH 根目录、工作区根目录、管辖项目候选、当前 `LDVH-GOVERNED-PROJECTS.yaml`、管辖项目根下 `ldvh-base/` 和 `workcases/adrs/pitfalls/sparks/studies` 事实源目录状态、环境入口审计结果、source_refs，并回指 `specs/01-保障与衔接.md`、`specs/06-行动模板基础规范.md`、`specs/10-管辖项目配置规范.md`、`specs/07-Code确定性执行规范.md`、`specs/09-测试与验证规范.md` 和 `code/docs/01-Git-Commit-and-Hook-Practice.md`。 |
 | Scenario | 用户要求安装 LDVH、接入 LDVH、初始化 LDVH、配置管辖项目、把项目登记为管辖项目、检查安装是否生效或修复旧插件 / 旧路径时适用；用户只是询问概念或规则时，只回答 01/06/10 边界，不写入配置、不安装插件、不修改 Hook。 |
-| Gate | 写入、覆盖、删除或迁移环境入口，安装、升级、禁用或卸载 LDVH 插件 / 扩展包，创建或修改 `LDVH-GOVERNED-PROJECTS.yaml`，选择配置生成位置，接受用户级配置目录后置缺口，声明环境入口 integrated，目标环境 Hook 能力不明，多项目或混合非管辖 target，或缺少用户告知清单，均必须暂停或进入 Human Gate。 |
-| 执行 | 先按 01 判断目标环境入口类型和接入状态；支持 Hook 的环境只生成或检查对应 LDVH 插件 / 扩展包 / package 方案，不直接写入环境 Hook 系统文件；执行安装、部署、初始化、配置或卸载前必须先交付用户告知清单，明示写入对象、写入位置级别、影响范围、Hook / lifecycle event、阻断与 diagnostic 边界、旧插件 / stale V2 path 处理、验证方式、回滚或卸载入口、未 integrated 能力、残留风险和下一步 Human Gate；不支持 Hook 或 Hook 未接入时只作为 repo instruction、manual entrypoint 或外部 adapter 候选处理，不恢复 Rules 顶层机制；配置生成前必须让 Human 在工作区根目录（推荐，默认 LDVH 安装目录上一级）、用户级 LDVH 配置目录、当前项目根目录三类位置中选择；当前 Code 不支持的用户级候选只能记录后置，不得写成已生效解析；随后按 10 登记单一管辖项目、补充 Git common-dir 身份线索，并用 target-first resolver 验证。 |
-| 验证 | 使用 `environment_status.py`、`environment_entry_audit.py`、`specs_validate.py governed-projects`、target-first resolution、必要的 runtime adapter 手动入口和 09 验证声明字段记录验证目标、验证入口、输入范围、关键输出、结论、残留风险和证据回指；只有真实自动触发、失败可阻断、安装状态可复现时，才可声明对应环境入口 integrated。 |
-| 回写 | 安装和初始化检查输出默认是过程输出；配置写入必须落在 Human 确认的 `LDVH-GOVERNED-PROJECTS.yaml` 并受 10 字段契约约束；旧插件、旧路径、用户级配置目录候选、环境适配缺口或长期风险按 03/05/09 分流到 Spark、ADR、Pitfall、WorkCase、实现域文档或 Git commit records，不得把 runtime receipt、环境观察或聊天结论写成事实源。 |
-| 交还 | 交还安装方式、配置位置选择、管辖项目 ID、目标路径、Git common-dir 线索、环境入口状态、integrated / manual_ready / deferred / removed_top_level 结论、用户告知清单及 Human 确认状态、验证摘要、回滚或卸载入口、残留风险、下一步 Human Gate、source_refs 和未完成分流；阻断时交还阻断原因、缺少证据、缺少告知项和建议的下一步。 |
+| Gate | 写入、覆盖、删除或迁移环境入口，安装、升级、禁用或卸载 LDVH 插件 / 扩展包，创建或修改 `LDVH-GOVERNED-PROJECTS.yaml`，创建、删除、迁移或重命名管辖项目 `ldvh-base/` 及事实源子目录，选择配置生成位置，接受用户级配置目录后置缺口，声明环境入口 integrated，目标环境 Hook 能力不明，多项目或混合非管辖 target，或缺少用户告知清单，均必须暂停或进入 Human Gate。 |
+| 执行 | 先按 01 判断目标环境入口类型和接入状态；支持 Hook 的环境只生成或检查对应 LDVH 插件 / 扩展包 / package 方案，不直接写入环境 Hook 系统文件；执行安装、部署、初始化、配置或卸载前必须先交付用户告知清单，明示写入对象、写入位置级别、影响范围、Hook / lifecycle event、阻断与 diagnostic 边界、旧插件 / stale V2 path 处理、验证方式、回滚或卸载入口、未 integrated 能力、管辖项目 `ldvh-base/` 及 `workcases/adrs/pitfalls/sparks/studies` 目录用途、残留风险和下一步 Human Gate；不支持 Hook 或 Hook 未接入时只作为 repo instruction、manual entrypoint 或外部 adapter 候选处理，不恢复 Rules 顶层机制；配置生成前必须让 Human 在工作区根目录（推荐，默认 LDVH 安装目录上一级）、用户级 LDVH 配置目录、当前项目根目录三类位置中选择；当前 Code 不支持的用户级候选只能记录后置，不得写成已生效解析；随后按 10 登记单一管辖项目、补充 Git common-dir 身份线索，检查或建议创建管辖项目事实源目录，并用 target-first resolver 验证。 |
+| 验证 | 使用 `environment_status.py`、`environment_entry_audit.py`、`specs_validate.py governed-projects`、target-first resolution、管辖项目 `ldvh-base/` 目录回读、必要的 runtime adapter 手动入口和 09 验证声明字段记录验证目标、验证入口、输入范围、关键输出、结论、残留风险和证据回指；只有真实自动触发、失败可阻断、安装状态可复现时，才可声明对应环境入口 integrated。 |
+| 回写 | 安装和初始化检查输出默认是过程输出；配置写入必须落在 Human 确认的 `LDVH-GOVERNED-PROJECTS.yaml` 并受 10 字段契约约束；事实源目录创建只建立 `ldvh-base/` 入口和五类对象目录，不创建事实实例、不替代字段 schema；旧插件、旧路径、用户级配置目录候选、环境适配缺口或长期风险按 03/05/09 分流到 Spark、ADR、Pitfall、WorkCase、实现域文档或 Git commit records，不得把 runtime receipt、环境观察或聊天结论写成事实源。 |
+| 交还 | 交还安装方式、配置位置选择、管辖项目 ID、目标路径、Git common-dir 线索、`ldvh-base/` 及五个事实源子目录状态、环境入口状态、integrated / manual_ready / deferred / removed_top_level 结论、用户告知清单及 Human 确认状态、验证摘要、回滚或卸载入口、残留风险、下一步 Human Gate、source_refs 和未完成分流；阻断时交还阻断原因、缺少证据、缺少告知项和建议的下一步。 |
 
 ## 8. 保障措施
 
@@ -134,6 +147,7 @@ ldvh_spec:
 | 告知清单要求 | 安装、部署、初始化、配置或卸载前必须形成用户告知清单并交给 Human 确认 | 本文、01、06、09 | 安装治理 | 涉及写入、入口、配置或卸载时 |
 | 环境入口边界要求 | 插件、扩展包、Hook 或 manual entrypoint 只能作为入口承载，不得声明未验证 integrated | 本文、01、Code audit | 环境治理 | 检查或改变环境入口时 |
 | 配置位置 Gate 要求 | 生成或修改管辖项目配置前必须让 Human 选择位置 | 本文、10、Human Gate | 配置治理 | 创建或迁移 `LDVH-GOVERNED-PROJECTS.yaml` 时 |
+| 事实源目录告知要求 | 首次启用管辖项目时必须说明 `ldvh-base/` 及五个子目录用途 | 本文、10、20-24 | 事实源治理 | 创建或检查管辖项目事实源目录时 |
 | 验证交还要求 | 完成声明前必须交还验证摘要、回滚或卸载入口和残留风险 | 本文、09 | 验证治理 | 声称安装、初始化或配置完成时 |
 
 ## 9. 验证方法
@@ -146,6 +160,7 @@ ldvh_spec:
 | Gate 检查 | 是否识别配置位置、环境入口、插件安装、integrated 声明和多项目 target 的 Human Gate | 暂停并交还 Human |
 | 环境检查 | 是否使用环境状态、入口审计或等价验证区分 integrated / manual_ready / deferred / removed_top_level | 不得声明环境已接入 |
 | 配置检查 | 是否按 10 解析和验证管辖项目配置 | 不得声明管辖项目配置已生效 |
+| 事实源目录检查 | 是否回读管辖项目 `ldvh-base/` 及五个子目录状态，并说明每个目录用途 | 不得声明管辖项目事实源初始化完成 |
 | 回滚检查 | 是否说明回滚或卸载入口，并验证卸载后不再自动触发 LDVH | 不得声明部署闭环完整 |
 
 ## 10. Human Gate
@@ -155,9 +170,10 @@ ldvh_spec:
 1. 安装、升级、禁用、卸载或迁移 LDVH 插件 / 扩展包 / package；
 2. 写入、覆盖、删除或迁移环境入口、Hook、plugin lifecycle event 或 repo instruction；
 3. 创建、修改、迁移或选择 `LDVH-GOVERNED-PROJECTS.yaml` 的配置生成位置；
-4. 接受用户级配置目录后置缺口或其它当前 Code 不支持的配置候选；
-5. 声称环境入口 integrated、接受阻断行为、接受残留风险或要求 Human 验收；
-6. 多项目、跨项目或混合非管辖 target 的安装、配置或验证范围不清。
+4. 创建、删除、迁移或重命名管辖项目 `ldvh-base/` 及事实源子目录；
+5. 接受用户级配置目录后置缺口或其它当前 Code 不支持的配置候选；
+6. 声称环境入口 integrated、接受阻断行为、接受残留风险或要求 Human 验收；
+7. 多项目、跨项目或混合非管辖 target 的安装、配置或验证范围不清。
 
 ## 11. Stop Conditions
 
@@ -167,13 +183,14 @@ ldvh_spec:
 2. 缺少用户告知清单，或告知清单未交给 Human 确认；
 3. 插件、Hook、repo instruction、旧路径或历史 trust 被写成 integrated 证明；
 4. 管辖项目配置位置未由 Human 选择；
-5. Code、环境审计或工具输出正在替代 Human Gate、事实源或完成判断；
-6. 验证、回滚或卸载路径不可复现，却要求声明安装部署完成。
+5. 管辖项目 `ldvh-base/` 目录用途、写入影响或 Human Gate 状态未说明；
+6. Code、环境审计或工具输出正在替代 Human Gate、事实源或完成判断；
+7. 验证、回滚或卸载路径不可复现，却要求声明安装部署完成。
 
 ## 12. 待补齐事项
 
 1. 本模板用于真实安装、升级、禁用、卸载或迁移 LDVH 插件 / 扩展包 / package 前，必须重新生成用户告知清单并进入 Human Gate；
 2. 用户级配置目录候选仍是本模板的后置缺口，当前不得写成已生效解析；
-3. 本模板当前只承接最小安装、初始化和管辖项目配置闭环；若要扩展到批量管辖项目配置、跨项目安装或完整卸载记录，必须先修订本文并重新进入 Human Gate；
+3. 本模板当前只承接最小安装、初始化、管辖项目配置和事实源目录初始化闭环；若要扩展到批量管辖项目配置、跨项目安装或完整卸载记录，必须先修订本文并重新进入 Human Gate；
 4. 本模板声明安装、升级或卸载完成前，需要 Code 实现域提供可复现的 status、正反例和 rollback 证据；
 5. 本模板不得登记 Git 提交、WorkCase 推进或其它 31+ 行动模板候选的迁入判断；跨模板候选筛选统一回到 `specs/06-行动模板基础规范.md`。

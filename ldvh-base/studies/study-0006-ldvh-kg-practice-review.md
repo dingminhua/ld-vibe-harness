@@ -62,7 +62,7 @@ archive_reason: null
 输入边界：
 - 只覆盖 LDVH 项目对象层（WorkCase/Spark/ADR/Pitfall/Study/WorkCase）之间关系治理；
 - 不直接评估外部图数据库选型的托管成本、运维资源或组织预算；
-- 不替代 `docs/studies` 中临时资料，仅吸收可复用、可引用的结论。
+- 不替代临时资料或外部原文，仅吸收可复用、可引用的结论。
 - 图谱输出只能作为运行时投影和当次诊断结果；不得写入 `entities.json`、`edges.json`、`graph-metadata.json` 等派生文件，不得维护长期缓存。
 
 ## 关键发现

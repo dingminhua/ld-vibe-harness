@@ -1,16 +1,16 @@
 target_spec: "specs/24-Study-研究报告.md"
-target_sha256: "a35e764fcbed2399386dbdfd6f6801d09346929e5ccbaaeeed781ace17f3ad64"
+target_sha256: "dc6b65415fe1d5ce7e4b3bbfa6828dbf916ae8e6f4d56258b174827e99f9a37e"
 change_type: "addition"
 mapping_evidence:
   path: "_migration/9C-fact-object-full-migration.md"
 code_verification:
-  command: "python3 -m pytest tests/code _migration/tests -q && python3 code/specs_validate.py all --format text --fail-on-diagnostics"
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py -q && git diff --check"
   passed: true
-  receipt: "Formal specs validator and tests/code cover 24 after real Study instances moved into ldvh-base/studies with frontmatter schema, relation checks, and Markdown body checks."
+  receipt: "Formal specs validator and tests/code cover 24 after real Study instances moved into ldvh-base/studies with frontmatter schema, relation checks, Markdown body checks and temporary-material boundaries."
 subagent_review:
   agent_id: "codex-local-6b-fact-members-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review found 24 acknowledges real Study instances and Code/tests schema while keeping full frontmatter prose, Web reader, and research action templates postposed."
+  receipt: "Local review found 24 acknowledges real Study instances and Code/tests schema while keeping full frontmatter prose, Web reader, research action templates and temporary-material handling postposed."
   unresolved_blockers: []
 warnings: []

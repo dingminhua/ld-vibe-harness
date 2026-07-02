@@ -29,7 +29,7 @@
 | `21-WorkCase-工作项` | 首批迁入 | WorkCase 直接承接目标、范围、执行状态、验证证据、关闭判断和后续分流，最能减少 AI 的恢复、验证和关闭判断负担 | 新增 `specs/21-WorkCase-工作项.md` 最小成员规范和 validator/tests |
 | `22-ADR-决策` | 后置 | ADR 会影响长期规则和 Human 决策边界，应在 WorkCase 最小闭环后迁入 | 保留 V2 来源，不建立决策实例 |
 | `23-Pitfall-踩坑经验` | 后置 | Pitfall 要求问题已解决且验证，适合在 WorkCase 验证和关闭口径稳定后迁入 | 保留 V2 来源，不迁完整经验 schema |
-| `24-Study-研究报告` | 后置 | Study 涉及 Markdown frontmatter、正文契约和资料区边界，适合在事实对象基础校验稳定后迁入 | 保留 V2 来源，不迁报告模板 |
+| `24-Study-研究报告` | 后置 | Study 涉及 Markdown frontmatter、正文契约和临时材料边界，适合在事实对象基础校验稳定后迁入 | 保留 V2 来源，不迁报告模板 |
 
 ## 4. WorkCase 首批迁移范围
 

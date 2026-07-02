@@ -121,3 +121,5 @@
 `_migration/32A-install-action-template-user-disclosure.md` 记录安装初始化行动模板的用户告知清单补强。它把安装、部署、初始化、配置或卸载前必须告知 Human 的写入对象、位置级别、影响范围、Hook / lifecycle event、阻断边界、验证、回滚和未 integrated 能力纳入行动模板；33A 后该清单由 `30` 承载，不安装插件或修改真实环境。
 
 `_migration/33A-action-template-30-admission.md` 记录行动模板 30 的正式承载。它把 LDVH 安装、初始化与管辖项目配置行动模板从 `06` 父规范正文示范迁出，落到 `specs/30-LDVH安装初始化管辖项目配置行动模板.md`；`06` 只保留父层准入和结构边界。
+
+`_migration/34A-governed-project-fact-source-directories.md` 记录管辖项目事实源目录用途补强。它把项目根 `ldvh-base/` 及 `workcases/`、`adrs/`、`pitfalls/`、`sparks/`、`studies/` 的用途写入 `10` 和 `30`，并确认临时调研材料、外部资料或第三方参考不进入 V3 固定初始化目录；它不创建真实目录、不写配置、不安装 Hook。

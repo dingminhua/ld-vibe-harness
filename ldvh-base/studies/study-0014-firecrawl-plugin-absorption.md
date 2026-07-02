@@ -186,7 +186,7 @@ LDVH 可吸收 Firecrawl 的“来源证据结构”而非产品对象本身。�
 
 - `source_url`、`source_title`、`source_type`、`fetched_at`、`fetch_tool`、`fetch_mode`、`output_format`、`cache_policy`、`status_code_or_error`；
 - 对 Firecrawl 特有结果记录 `scrape_id`、`crawl_id`、`map_limit`、`search_query`、`search_filters`、`crawl_scope`、`source_count`、`credit_budget`、`credit_usage_observed`；
-- Study 的 `urls` 继续只写结构化 URL 与中文用途摘要，不写抓取全文；网页正文可进入 docs/sources 或后续专门 SourceSnapshot 对象候选；
+- Study 的 `urls` 继续只写结构化 URL 与中文用途摘要，不写抓取全文；网页正文不得成为固定目录要求，如需长期保留应后续进入专门 SourceSnapshot 对象候选；
 - 对 `extract/agent` 输出增加 `extraction_schema`、`model_or_service`、`confidence_notes`、`human_accepted` 等字段候选，避免把结构化 JSON 直接当事实。
 
 不建议把 Firecrawl 自身建成事实模型成员。它更像运行时工具和资料采集 provider；LDVH 事实模型应描述“外部资料证据”和“吸收状态”，而不是绑定某一家服务。
@@ -200,7 +200,7 @@ LDVH 可吸收 Firecrawl 的“来源证据结构”而非产品对象本身。�
 3. 范围门禁：Human/AI 根据域名可信度、页数、成本、robots、敏感性和是否需要登录决定继续；
 4. 资料获取：单页用 `scrape`，已知站点小范围用 `crawl`，动态页面单独申请 `interact`；
 5. 结构化抽取：只有在 schema 明确、可追溯、可复核时使用 `extract`、`agent` 或 JSON mode；
-6. 事实回写：只把摘要、结论边界、URL 列表和验证结果写入 Study；原始材料另放资料区；
+6. 事实回写：只把摘要、结论边界、URL 列表和验证结果写入 Study；原始材料保留为临时材料或外部来源；
 7. 强制验证：运行 `fact_validate` 或对应对象校验，记录失败和残留不确定性。
 
 这个模式能服务 AI 第一：让 AI 不必每次重做搜索、清洗、来源整理，但仍保留 V3 正确判断和 V6 强制验证。

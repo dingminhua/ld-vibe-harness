@@ -51,7 +51,7 @@ evolution:
 - at: '2026-06-18T10:49:13'
   summary: workcase-0069 的完成后 Code/Web 复审先返回需修复问题，实际拦截了旧对象残留入口；修复后再复审通过。该案例证明完成后专业复审应成为关闭前硬 Gate。
 - at: '2026-06-18T10:49:13'
-  summary: workcase-0070 的 Code/Web 复审确认文件头部元信息契约和 ldvh_member 边界清楚，同时把 docs/studies/sources 后续 Code 覆盖识别为未来候选而非当前阻塞。
+  summary: workcase-0070 的 Code/Web 复审确认文件头部元信息契约和 ldvh_member 边界清楚，同时把旧项目材料目录的后续 Code 覆盖识别为未来候选而非当前阻塞。
 - at: '2026-06-18T10:49:13'
   summary: workcase-0071 将本轮总结分流规则固定为：流程候选和长期风险写 Spark，可复用错误模式写 Pitfall，普通完成证据写 closure_evidence，可执行后续目标另建 WorkCase；本轮除计划审批门漏检外未新增独立 Pitfall。
 - at: '2026-06-18T10:49:13'
