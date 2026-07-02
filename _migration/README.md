@@ -128,4 +128,4 @@
 
 `_migration/36A-independent-v2-v3-reassessment-absorption.md` 记录独立子对话对 V2 到 V3 迁移完成度的只读复核吸收。它确认 V2 主体关闭和 V3 主线启动不被推翻，同时把环境 Hook / 插件自动入口、`acknowledge_read_plan` / receipt 链路、V3 薄引用模板和环境插件测试列为后续收口项；它不授权任何后置能力生效。
 
-后续 `727e5e3c feat(runtime): 收口环境入口后置项` 已吸收 36A 的仓库内可完成项：新增 `acknowledge_read_plan` 手动入口、V3 薄引用模板、环境审计候选和 Codex 样例 shim 正反测试。真实环境插件安装、升级、禁用、卸载、rollback 和自动触发验证仍 gated，不得写成 integrated。
+后续 `727e5e3c feat(runtime): 收口环境入口后置项` 已吸收 36A 的仓库内可完成项：新增 `acknowledge_read_plan` 手动入口、V3 薄引用模板、环境审计候选和 Codex 样例 shim 正反测试。`3662cffb test: 补common-dir worktree回归` 和 `156743a3 perf: 复用validation结果提速测试` 继续补齐 Q13 最小回归与 Q10 测试成本收口。真实环境插件安装、升级、禁用、卸载、rollback 和自动触发验证仍 gated，不得写成 integrated。

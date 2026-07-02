@@ -76,9 +76,9 @@ V2 已于 2026-07-02 关闭为历史来源，记录见 `_migration/25A-v2-offici
 
 1. 等 Spark 可用后处理 Q1 / Q2，把 24A 转入正式候选链路；
 2. 如果 Human 想先验证外部项目保护能力，处理 Q3；
-3. 如果 Human 想先收口 runtime / environment hook 能力，处理 Q5 和 Q6；
+3. 如果 Human 想先收口 runtime / environment hook 真实自动能力，只处理 Q5，并先进入真实环境插件 Human Gate；Q6 已完成仓库内决策；
 4. 如果 Human 想提升 Web 可控写入，处理 Q4；
-5. 真实工作中遇到薄引用、插件测试、WorkCase、测试或字段缺口时，再处理 Q7-Q13；
+5. 真实工作中遇到 WorkCase、测试、字段、Web 设计或 common-dir 缺口时，再按触发条件处理 Q9-Q13；Q7 已完成模板，Q8 只剩真实环境 gated 验证；
 6. Q14-Q19 不作为主动下一步。
 
 ## Human Gate

@@ -25,8 +25,8 @@
 4. 当前只有 `git.commit-msg` 可以声明为 integrated 自动入口；
 5. `session_start`、`pre_tool_use`、`completion_claim` 和 runtime adapter 仍是 manual-ready / external-adapter-ready，不是 integrated；
 6. 本机 Codex 插件审计发现仍可能指向 V2 旧路径时，只能记为 stale / available，不得声明为 V3 integrated；
-7. V2 `06.Att.09` 外部环境薄引用模板没有完整等价物，V3 需要补一个不恢复 `rules/` 的薄引用模板；
-8. V2 `acknowledge_read_plan` / persistent receipt 链路在 V3 中被收窄，需要决定是补入口，还是明确由独立 CLI、validator、runtime receipt 或验证声明承接。
+7. V2 `06.Att.09` 外部环境薄引用模板已补 V3 薄引用模板，但该模板只是 available reference，不是环境 integrated 证据；
+8. V2 `acknowledge_read_plan` / persistent receipt 链路在 V3 中已决策为 stdout-only 手动入口和当次验证证据承接，不恢复 V2 persistent session receipt。
 
 ## 关键覆盖判断
 
@@ -34,9 +34,9 @@
 |---|---|---|---|
 | `specs/06-运行时扩展规范.md` 父层语义 | `specs/01-保障与衔接.md` §6、`01.Att.03-06`、`code/environment_entry_audit.py` | absorbed / strengthened | 维持 01 归口，不恢复运行时扩展为构成要素 |
 | V2 canonical events、Hook / Rules 同语义 | `01.Att.01`、`01.Att.05`、`code/runtime_adapter.py` | absorbed / partial | 保留 manual-ready 边界，后续补环境 Hook 真实集成证据 |
-| V2 `acknowledge_read_plan`、session receipt、写入门禁 | `01` receipt 边界、`runtime_adapter.py`、Code validator | absorbed / narrowed | 列为 P1 决策：补入口或明确替代承接 |
-| V2 `06.Att.09` 外部环境薄引用模板 | `hooks/LDVH-RUNTIME-PROTOCOL.md`、`01.Att.03` | missing / postposed | 列为 P2：补 V3 薄引用模板，但不恢复 `rules/` |
-| V2 `hooks/ldvh-hooks.yaml` 多事件 registry | `code/environment_plugins/` 样例、`environment_entry_audit.py`、`01.Att.03-06` | absorbed / postposed | 不声明通用 Hook registry 已完成 |
+| V2 `acknowledge_read_plan`、session receipt、写入门禁 | `01` receipt 边界、`code/acknowledge_read_plan.py`、`runtime_adapter.py`、Code validator | absorbed / decided | 已补 stdout-only 手动入口；不恢复 V2 persistent receipt，不新增独立环境 lifecycle event |
+| V2 `06.Att.09` 外部环境薄引用模板 | `hooks/LDVH-THIN-REFERENCE-TEMPLATE.md`、`hooks/LDVH-RUNTIME-PROTOCOL.md`、`01.Att.03` | absorbed / available-template | 已补 V3 薄引用模板；不恢复 `rules/`，不声明环境 integrated |
+| V2 `hooks/ldvh-hooks.yaml` 多事件 registry | `code/environment_plugins/` 样例、`environment_entry_audit.py`、`01.Att.03-06`、`tests/code/test_environment_plugins.py` | absorbed / partial | 仓库内样例 shim 和正反测试已补；不声明通用 Hook registry 或真实环境插件已完成 |
 | V2 Runtime Protocol Rule | `hooks/LDVH-RUNTIME-PROTOCOL.md` | migrated / strengthened | 维持 hook entry 的三类内容限制 |
 | V2 Workspace / Maintainer Rules | removed_top_level | discarded | 不恢复顶层 Rules wrapper |
 | V2 Skill `ldvh-git-commit` | `06` Git 提交行动、`code/docs/01-Git-Commit-and-Hook-Practice.md`、commit validator | absorbed / strengthened | 维持行动模板和 Code 实现域承接 |
@@ -63,22 +63,24 @@
 
 后续若推进，必须走 Human Gate，并补齐真实触发点、payload、失败处理、安装状态、回滚方式和正反测试。
 
-### P1-2 `acknowledge_read_plan` / receipt 链路需要决策
+### P1-2 `acknowledge_read_plan` / receipt 链路已决策
 
 V2 曾有更完整的 read-plan acknowledgement 和 persistent receipt 链路。V3 当前把 receipt 约束收敛为 stdout-only / 过程证据，并禁止把 receipt 直接升级为事实源。
 
-后续必须二选一：
+当前决策是：
 
-1. 在 Code runtime adapter 或相关 CLI 中重新暴露明确的 `acknowledge_read_plan` 承接入口；
-2. 明确写成由独立 validator、commit gate、验证声明字段或当次 runtime receipt 承接，不再保留独立 canonical event。
+1. 暴露 `code/acknowledge_read_plan.py` 作为手动 CLI 和外部包装候选入口；
+2. `acknowledge_read_plan` receipt 只输出到 stdout，不建立 persistent session receipt 存储；
+3. 写入前消费证据继续由显式 `acknowledged_paths`、`pre_tool_use`、commit gate、completion claim、验证声明和当次 runtime receipt 承接；
+4. 不把 `acknowledge_read_plan` 升级为 `runtime_adapter.py` 的独立环境 lifecycle event。
 
-在该决策完成前，不得声明 V2 read-plan acknowledgement 链路已经完整等价迁移。
+因此可以说 V3 已完成仓库内最小承接决策；不可以说 V2 persistent receipt 链路已完整等价迁移。
 
 ## P2 吸收项
 
-### P2-1 V3 薄引用模板
+### P2-1 V3 薄引用模板已补
 
-V3 需要补一个面向无 Hook 或只支持薄引用环境的模板。该模板应：
+V3 已补 `hooks/LDVH-THIN-REFERENCE-TEMPLATE.md`，用于无 Hook 或只支持薄引用环境。该模板：
 
 1. 指向 `hooks/LDVH-RUNTIME-PROTOCOL.md`；
 2. 指向 `specs/01-保障与衔接.md`、`01.Att.01`、`01.Att.03`、`01.Att.05`；
@@ -89,7 +91,7 @@ V3 需要补一个面向无 Hook 或只支持薄引用环境的模板。该模�
 
 ### P2-2 环境插件正反测试
 
-真实插件推进前，需要测试覆盖：
+仓库内已补 Codex 样例 shim、环境审计和 Git hook adapter 相关测试，覆盖：
 
 1. payload 透传；
 2. PreToolUse 阻断；
@@ -97,9 +99,11 @@ V3 需要补一个面向无 Hook 或只支持薄引用环境的模板。该模�
 4. stale V2 path 检测；
 5. install / uninstall / rollback。
 
+其中 install / uninstall / rollback 的仓库内覆盖来自 Git hook adapter 临时 repo 测试，不等价于用户级环境插件真实安装。真实插件 positive / negative / rollback 验证仍必须先进入 Human Gate。
+
 ### P2-3 `git.common_dir` 稳定性
 
-受管项目和 worktree / dogfood 场景可以补 `git.common_dir` 身份线索，提高 target-first resolver 的稳定性。该项不是 V3 启动阻断。
+受管项目和 worktree / dogfood 场景已补最小回归：linked worktree 下 install hook 必须使用 Git common-dir 下的 LDVH managed shim，并保持 worktree-local `core.hooksPath`。后续只有出现实际不稳定时，才继续扩展 resolver / adapter 测试。
 
 ## 后续使用方式
 
@@ -119,5 +123,6 @@ V3 需要补一个面向无 Hook 或只支持薄引用环境的模板。该模�
 
 1. 可以说：V2 主体已关闭，V3 是当前主线；
 2. 可以说：V3 相对 V2 在规则归口、事实源、行动模板、Code/Web 边界和环境入口状态上有加强；
-3. 不可以说：V3 的环境 Hook / 插件自动入口已经完整接管；
-4. 不可以说：V2 薄引用模板和 read-plan acknowledgement 链路已经完整等价迁入。
+3. 可以说：V2 薄引用模板、`acknowledge_read_plan` 决策、环境插件仓库内正反测试和 `git.common_dir` 最小回归已完成仓库内收口；
+4. 不可以说：V3 的环境 Hook / 插件自动入口已经完整接管；
+5. 不可以说：V2 persistent receipt、真实环境插件安装和真实外部环境自动触发已经完整等价迁入。
