@@ -1089,6 +1089,13 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "每次只问一个问题" in raw
     assert "选项表必须给出选项、说明和结果" in raw
     assert "不得把“返回修改”写成第三个主选项" in raw
+    assert "方案确认和执行确认" in raw
+    assert "4/5 安装方案预览只能询问“是否进入最终确认”" in raw
+    assert "该选择不是执行授权" in raw
+    assert "不得用“执行方案”或其它会让 Human 误以为已经授权写入的措辞" in raw
+    assert "5/5 最终确认必须直接询问“执行方案”或“不执行，停止安装”" in raw
+    assert "不得再次要求 Human 确认只读检查" in raw
+    assert "不得继续解释流程或再次索要同一授权" in raw
     assert "📍 路径确认" in raw
     assert "🔎 安装前检查" in raw
     assert "⚙️ 安装选项" in raw
@@ -1124,6 +1131,11 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "完整安装方案必须同时覆盖 AI 环境 Hook 和管辖项目 Git Hook" in raw
     assert "`core.hooksPath` / active hook 状态" in raw
     assert "验证命令和卸载 / rollback 命令" in raw
+    assert "主界面只展示普通用户作出下一步判断所需的信息" in raw
+    assert "会改变什么" in raw
+    assert "不会改变什么" in raw
+    assert "执行后还需要验证什么" in raw
+    assert "技术明细" in raw
     assert "净变化" in raw
     assert "将新增" in raw
     assert "将修改或升级" in raw
@@ -1164,6 +1176,9 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "1 执行方案" in raw
     assert "2 不执行，停止安装" in raw
     assert "选择执行后才会开始写入" in raw
+    assert "最终确认摘要只列出将写入对象和不写入对象" in raw
+    assert "不得重复安装前检查表" in raw
+    assert "写入后执行验证" in raw
     assert "不得把返回修改作为第三个主选项" in raw
     assert "最终确认前" in raw
     assert "不得写入配置" in raw
@@ -1313,6 +1328,21 @@ def test_ldvh_install_action_template_reports_missing_final_confirmation_boundar
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
     assert any("最终确认前" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_ambiguous_preview_execution_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "该选择不是执行授权",
+        "该选择可作为执行授权",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("该选择不是执行授权" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_workcase_action_template_reports_missing_human_gate(tmp_path: Path) -> None:
