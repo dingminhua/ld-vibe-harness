@@ -30,6 +30,18 @@ V3 已具备正式启动为日常主线的条件。V2 可以关闭为历史来�
 4. 不把 manual-ready runtime 入口写成 integrated；
 5. 不扩大 Web 写入、外部 Hook 安装或 Human Gate 自动完成能力。
 
+## 36A 独立复核补充
+
+`_migration/36A-independent-v2-v3-reassessment-absorption.md` 对本文结论做了只读复核。复核结论是：无 P0，本文关于 V2 主体关闭和 V3 主线启动的判断不被推翻；但本文不得被理解为 V3 已完整恢复 V2 的 runtime / environment hook 自动化能力。
+
+当前必须分清：
+
+1. V2 主体关闭 / V3 主线启动：已成立；
+2. `git.commit-msg`：当前唯一 integrated 自动入口；
+3. `hooks/LDVH-RUNTIME-PROTOCOL.md`：只是可见入口，不是环境自动触发证明；
+4. `session_start`、`pre_tool_use`、`completion_claim`：manual-ready / external-adapter-ready，不是 integrated；
+5. 36A 指出的 V2 薄引用模板、`acknowledge_read_plan` / receipt 链路和环境插件正反测试，已由 `727e5e3c feat(runtime): 收口环境入口后置项` 在仓库内完成最小收口或测试计划承接；真实环境插件安装、升级、禁用、卸载和自动触发验证仍必须 Human Gate，不得声明 integrated。
+
 ## V3 相对 V2 的主要变动与改进
 
 | 领域 | V2 | V3 | 改进点 |

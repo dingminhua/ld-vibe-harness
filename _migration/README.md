@@ -125,3 +125,7 @@
 `_migration/34A-governed-project-fact-source-directories.md` 记录管辖项目事实源目录用途补强。它把项目根 `ldvh-base/` 及 `workcases/`、`adrs/`、`pitfalls/`、`sparks/`、`studies/` 的用途写入 `10` 和 `30`，并确认临时调研材料、外部资料或第三方参考不进入 V3 固定初始化目录；它不创建真实目录、不写配置、不安装 Hook。
 
 `_migration/35A-runtime-protocol-hook-entry.md` 记录 Runtime Protocol 可见入口补强。它新增 `hooks/LDVH-RUNTIME-PROTOCOL.md`，并在 `01` 与 `01.Att.03` 中登记 `hook_protocol_entry`，让环境 Hook、插件、扩展包、external adapter、repo instruction 或 manual entrypoint 有统一入口可引用；它不恢复 Rules / Skill 顶层机制，不声明任何环境入口 integrated。
+
+`_migration/36A-independent-v2-v3-reassessment-absorption.md` 记录独立子对话对 V2 到 V3 迁移完成度的只读复核吸收。它确认 V2 主体关闭和 V3 主线启动不被推翻，同时把环境 Hook / 插件自动入口、`acknowledge_read_plan` / receipt 链路、V3 薄引用模板和环境插件测试列为后续收口项；它不授权任何后置能力生效。
+
+后续 `727e5e3c feat(runtime): 收口环境入口后置项` 已吸收 36A 的仓库内可完成项：新增 `acknowledge_read_plan` 手动入口、V3 薄引用模板、环境审计候选和 Codex 样例 shim 正反测试。真实环境插件安装、升级、禁用、卸载、rollback 和自动触发验证仍 gated，不得写成 integrated。
