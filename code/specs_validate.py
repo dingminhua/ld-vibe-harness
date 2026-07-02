@@ -248,6 +248,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timing", default="session_start", help="consumption timing for action-guide")
     parser.add_argument("--task", default="", help="current task summary for action-guide")
     parser.add_argument("--target-path", default="", help="target path for action-guide")
+    parser.add_argument("--config-root", default="", help="configuration root for governed-projects hierarchy checks")
     parser.add_argument("--trigger-source", default="manual", help="trigger source for action-guide")
     parser.add_argument("--operation", default="write", help="operation for preflight")
     parser.add_argument("--high-impact", action="store_true", help="mark preflight as high impact")
@@ -333,6 +334,7 @@ def main(argv: list[str] | None = None) -> int:
             cwd=root,
             target_paths=target_paths,
             read_write_kind="commit" if args.operation == "commit" else "write",
+            config_root=args.config_root or None,
         )
         result = output
     elif args.command == "e2e":

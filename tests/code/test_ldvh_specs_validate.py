@@ -307,6 +307,21 @@ def test_governed_project_spec_requires_target_first_boundary(tmp_path: Path) ->
     assert "GOVERNED_PROJECT_TARGET_FIRST_MISSING" in _diagnostic_codes(result)
 
 
+def test_governed_project_spec_requires_config_hierarchy_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/10-管辖项目配置规范.md",
+        "同一路径链上只能存在一个 active `LDVH-GOVERNED-PROJECTS.yaml`。",
+        "",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GOVERNED_PROJECT_CONFIG_BOUNDARY_MISSING" in _diagnostic_codes(result)
+    assert any("同一路径链" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
 def test_governed_project_contract_reports_missing_resolution_field(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
@@ -485,6 +500,85 @@ projects:
     assert report["resolution"]["subject_source"] == "target"
     assert report["resolution"]["governed_project_id"] == "app"
     assert report["resolution"]["target_resolutions"][0]["status"] == "governed"
+
+
+def test_governed_project_resolver_blocks_nested_config_when_config_root_selected(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    project = root / "governed-app"
+    project.mkdir()
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test workspace registry
+projects:
+  - id: app
+    path: governed-app
+""",
+    )
+    _write_governed_config(
+        project,
+        """
+product_name: Test App
+product_description: Test app local registry
+projects:
+  - id: app-local
+    path: .
+""",
+    )
+
+    report = ldvh_specs.build_governed_projects_report(
+        root,
+        cwd=root,
+        target_paths=[project / "README.md"],
+        config_root=root,
+    )
+
+    assert report["summary"]["status"] == "blocked"
+    assert report["resolution"]["blocked"] is True
+    assert report["resolution"]["blocked_reason"] == "nested_governed_projects_config"
+    assert [item["path"] for item in report["resolution"]["config_hierarchy"]["configs"]] == [
+        "LDVH-GOVERNED-PROJECTS.yaml",
+        "governed-app/LDVH-GOVERNED-PROJECTS.yaml",
+    ]
+    assert "GOVERNED_PROJECT_CONFIG_HIERARCHY_CONFLICT" in _diagnostic_codes(report)
+
+
+def test_governed_project_resolver_project_scope_ignores_parent_config_without_config_root(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    project = workspace / "governed-app"
+    project.mkdir(parents=True)
+    _write_governed_config(
+        workspace,
+        """
+product_name: Test
+product_description: Test workspace registry
+projects:
+  - id: workspace-app
+    path: governed-app
+""",
+    )
+    _write_governed_config(
+        project,
+        """
+product_name: Test App
+product_description: Test app local registry
+projects:
+  - id: app-local
+    path: .
+""",
+    )
+
+    resolution = ldvh_specs.resolve_governed_subject(
+        project,
+        cwd=project,
+        target_paths=[project / "README.md"],
+    )
+
+    assert resolution["blocked"] is False
+    assert resolution["governed"] is True
+    assert resolution["governed_project_id"] == "app-local"
+    assert resolution["config_path"] == "LDVH-GOVERNED-PROJECTS.yaml"
 
 
 def test_governed_project_resolver_noops_for_outside_target(tmp_path: Path) -> None:
@@ -881,6 +975,7 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "LDVH-GOVERNED-PROJECTS.yaml" in rows["Context"]
     assert "安装 LDVH" in rows["Scenario"]
     assert "配置生成位置" in rows["Gate"]
+    assert "配置层级冲突" in rows["Gate"]
     assert "安装方案预览" in rows["Gate"]
     assert "最终确认" in rows["Gate"]
     assert "不直接写入环境 Hook 系统文件" in rows["执行"]
@@ -891,6 +986,9 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "配置文件完整路径" in rows["执行"]
     assert "限制和建议" in rows["执行"]
     assert "用户级配置目录只能记录为后置" in rows["执行"]
+    assert "配置层级检查" in rows["执行"]
+    assert "路径链上只有一个 active" in rows["执行"]
+    assert "目标项目内已存在配置" in rows["执行"]
     assert "target-first resolver" in rows["执行"]
     assert "安装状态可复现" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
@@ -911,6 +1009,8 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "尚未发生的步骤保持空白" in raw
     assert "不得把事实伪装成 Human 选项" in raw
     assert "配置文件完整路径必须分别展示工作区根目录和当前项目根目录下的 `LDVH-GOVERNED-PROJECTS.yaml` 实际路径" in raw
+    assert "配置层级冲突" in raw
+    assert "先删除、迁移或明确保留其中一个配置文件" in raw
     assert "执行、不执行、返回修改" in raw
     assert "最终确认前" in raw
     assert "不得写入配置" in raw
@@ -1433,6 +1533,55 @@ def test_specs_validate_cli_governed_projects_json() -> None:
     assert payload["summary"]["governed"] is True
     assert payload["resolution"]["governed_project_id"] == "ldvh-v3"
     assert payload["resolution"]["governed_via"] == "path"
+
+
+def test_specs_validate_cli_governed_projects_reports_config_hierarchy_conflict(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    project = root / "governed-app"
+    project.mkdir()
+    _write_governed_config(
+        root,
+        """
+product_name: Test
+product_description: Test workspace registry
+projects:
+  - id: app
+    path: governed-app
+""",
+    )
+    _write_governed_config(
+        project,
+        """
+product_name: Test App
+product_description: Test app local registry
+projects:
+  - id: app-local
+    path: .
+""",
+    )
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/specs_validate.py",
+            "governed-projects",
+            "--root",
+            str(root),
+            "--config-root",
+            str(root),
+            "--target-path",
+            str(project / "README.md"),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "blocked"
+    assert payload["resolution"]["blocked_reason"] == "nested_governed_projects_config"
+    assert "GOVERNED_PROJECT_CONFIG_HIERARCHY_CONFLICT" in _diagnostic_codes(payload)
 
 
 def test_e2e_rehearsal_covers_static_workflow(e2e_rehearsal_result: dict) -> None:

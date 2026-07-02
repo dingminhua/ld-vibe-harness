@@ -231,8 +231,8 @@ GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
 LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Context": ["用户目标", "目标环境", "LDVH 根目录", "工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "workcases/adrs/pitfalls/sparks/studies", "环境入口审计结果", "source_refs", "specs/10-管辖项目配置规范.md"],
     "Scenario": ["安装 LDVH", "接入 LDVH", "初始化 LDVH", "配置管辖项目", "旧插件 / 旧路径", "只回答 01/06/10 边界"],
-    "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "事实源子目录", "配置生成位置", "用户级配置目录后置缺口", "integrated", "多项目", "用户告知清单", "安装方案预览", "最终确认"],
-    "执行": ["01", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "用户告知清单", "安装方案预览", "workcases/adrs/pitfalls/sparks/studies", "repo instruction", "manual entrypoint", "不恢复 Rules 顶层机制", "两类位置", "选择框 / 单选控件", "编号二选一", "配置文件完整路径", "限制和建议", "用户级配置目录只能记录为后置", "10", "Git common-dir", "target-first resolver"],
+    "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "事实源子目录", "配置生成位置", "用户级配置目录后置缺口", "配置层级冲突", "integrated", "多项目", "用户告知清单", "安装方案预览", "最终确认"],
+    "执行": ["01", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "用户告知清单", "安装方案预览", "workcases/adrs/pitfalls/sparks/studies", "repo instruction", "manual entrypoint", "不恢复 Rules 顶层机制", "两类位置", "选择框 / 单选控件", "编号二选一", "配置文件完整路径", "限制和建议", "用户级配置目录只能记录为后置", "配置层级检查", "路径链上只有一个 active", "目标项目内已存在配置", "10", "Git common-dir", "target-first resolver"],
     "验证": ["environment_status.py", "environment_entry_audit.py", "specs_validate.py governed-projects", "target-first resolution", "ldvh-base/", "runtime adapter", "09 验证声明字段", "真实自动触发", "失败可阻断", "安装状态可复现", "integrated"],
     "回写": ["过程输出", "Human 确认", "LDVH-GOVERNED-PROJECTS.yaml", "10 字段契约", "事实源目录创建", "不创建事实实例", "旧插件", "用户级配置目录候选", "Spark", "ADR", "Pitfall", "WorkCase", "Git commit records", "不得把 runtime receipt"],
     "交还": ["安装方式", "配置位置选择", "管辖项目 ID", "Git common-dir", "ldvh-base/", "事实源子目录状态", "环境入口状态", "integrated / manual_ready / deferred / removed_top_level", "用户告知清单", "验证摘要", "回滚或卸载入口", "下一步 Human Gate", "source_refs"],
@@ -256,6 +256,8 @@ LDVH_INSTALL_WIZARD_TERMS = [
     "当前项目根目录",
     "每个配置位置选择项必须用表格给出选项、位置、配置文件完整路径、含义、限制和建议",
     "配置文件完整路径必须分别展示工作区根目录和当前项目根目录下的 `LDVH-GOVERNED-PROJECTS.yaml` 实际路径",
+    "配置层级冲突",
+    "先删除、迁移或明确保留其中一个配置文件",
     "执行、不执行、返回修改",
     "最终确认前",
     "不得写入配置",
@@ -394,7 +396,18 @@ GOVERNED_PROJECT_SPEC_REQUIREMENTS = [
         "code": "GOVERNED_PROJECT_CONFIG_BOUNDARY_MISSING",
         "section": "管辖项目配置契约",
         "message": "10 必须定义管辖项目配置契约和事实源边界",
-        "terms": ["LDVH-GOVERNED-PROJECTS.yaml", "product_name", "projects", "10.Att.01", "事实源", "不得替代事实对象"],
+        "terms": [
+            "LDVH-GOVERNED-PROJECTS.yaml",
+            "product_name",
+            "projects",
+            "10.Att.01",
+            "事实源",
+            "不得替代事实对象",
+            "同一路径链",
+            "从根目录向深层路径",
+            "多个 active `LDVH-GOVERNED-PROJECTS.yaml`",
+            "先删除、迁移或明确保留其中一个",
+        ],
     },
     {
         "code": "GOVERNED_PROJECT_TARGET_FIRST_MISSING",
@@ -1230,11 +1243,19 @@ def parse_governed_project_config_contract(root: Path = ROOT) -> dict[str, list[
     }
 
 
-def parse_governed_projects_config(root: Path = ROOT) -> dict[str, Any]:
-    path = root / GOVERNED_PROJECTS_CONFIG_PATH
+def _display_path(path: Path, root: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def parse_governed_projects_config(root: Path = ROOT, config_path: Path | None = None) -> dict[str, Any]:
+    path = config_path or root / GOVERNED_PROJECTS_CONFIG_PATH
+    display_path = _display_path(path, root)
     if not path.exists() or not path.is_file():
         return {
-            "config_path": GOVERNED_PROJECTS_CONFIG_PATH,
+            "config_path": display_path,
             "exists": path.exists(),
             "product_name": "",
             "product_description": "",
@@ -1247,13 +1268,13 @@ def parse_governed_projects_config(root: Path = ROOT) -> dict[str, Any]:
         data = {}
     projects = data.get("projects", []) if isinstance(data, dict) else []
     return {
-        "config_path": GOVERNED_PROJECTS_CONFIG_PATH,
+        "config_path": display_path,
         "exists": True,
         "product_name": data.get("product_name", "") if isinstance(data, dict) else "",
         "product_description": data.get("product_description", "") if isinstance(data, dict) else "",
         "projects": projects if isinstance(projects, list) else [],
         "source_refs": [
-            {"path": GOVERNED_PROJECTS_CONFIG_PATH, "role": "governed_project_config"},
+            {"path": display_path, "role": "governed_project_config"},
             {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_spec"},
             {"path": GOVERNED_PROJECTS_CONTRACT_PATH, "role": "governed_project_config_contract"},
         ],
@@ -1713,6 +1734,85 @@ def _walk_for_governed_config(candidate: Path) -> Path | None:
     return None
 
 
+def _config_search_dir(path: Path, base: Path) -> Path:
+    current = _resolve_path(path, base)
+    return current.parent if current.is_file() else current
+
+
+def _governed_config_chain(config_root: Path, candidate: Path, base: Path) -> list[Path]:
+    root = _resolve_path(config_root, base)
+    current = _config_search_dir(candidate, base)
+    try:
+        relative = current.relative_to(root)
+    except ValueError:
+        return []
+
+    chain = [root]
+    cursor = root
+    for part in relative.parts:
+        cursor = cursor / part
+        chain.append(cursor)
+
+    configs: list[Path] = []
+    for directory in chain:
+        config = directory / GOVERNED_PROJECTS_CONFIG_PATH
+        if config.is_file():
+            configs.append(config)
+    return configs
+
+
+def inspect_governed_config_hierarchy(
+    root: Path = ROOT,
+    *,
+    config_root: str | Path | None = None,
+    cwd: str | Path | None = None,
+    target_paths: list[str | Path] | None = None,
+) -> dict[str, Any]:
+    base_cwd = _resolve_path(Path(cwd) if cwd is not None else root, root)
+    search_root = _resolve_path(Path(config_root) if config_root is not None else root, root)
+    raw_targets = [Path(path) for path in (target_paths or []) if str(path).strip()]
+    effective_targets = raw_targets if raw_targets else [base_cwd]
+
+    configs: list[Path] = []
+    target_records: list[dict[str, Any]] = []
+    for target in effective_targets:
+        normalized = _resolve_path(target, base_cwd)
+        chain = _governed_config_chain(search_root, target, base_cwd)
+        configs.extend(chain)
+        target_records.append({
+            "target": target.as_posix(),
+            "normalized_path": normalized.as_posix(),
+            "config_chain": [
+                {
+                    "path": _display_path(config, root),
+                    "absolute_path": config.as_posix(),
+                }
+                for config in chain
+            ],
+        })
+
+    unique_configs = list(dict.fromkeys(configs))
+    conflict = len(unique_configs) > 1
+    return {
+        "config_root": search_root.as_posix(),
+        "target_paths": [record["normalized_path"] for record in target_records],
+        "targets": target_records,
+        "configs": [
+            {
+                "path": _display_path(config, root),
+                "absolute_path": config.as_posix(),
+            }
+            for config in unique_configs
+        ],
+        "conflict": conflict,
+        "blocked_reason": "nested_governed_projects_config" if conflict else "",
+        "message": (
+            "同一路径链上存在多个 LDVH-GOVERNED-PROJECTS.yaml，必须先删除、迁移或明确保留其中一个。"
+            if conflict else ""
+        ),
+    }
+
+
 def find_governed_projects_config(root: Path = ROOT, cwd: Path | None = None, targets: list[Path] | None = None) -> Path | None:
     search_targets = list(targets or [])
     if cwd is not None:
@@ -1831,12 +1931,23 @@ def resolve_governed_subject(
     cwd: str | Path | None = None,
     target_paths: list[str | Path] | None = None,
     read_write_kind: str = "write",
+    config_root: str | Path | None = None,
 ) -> dict[str, Any]:
     base_cwd = _resolve_path(Path(cwd) if cwd is not None else root, root)
     raw_targets = [Path(path) for path in (target_paths or []) if str(path).strip()]
     explicit_targets = bool(raw_targets)
     effective_targets = raw_targets if explicit_targets else [base_cwd]
-    config = find_governed_projects_config(root, base_cwd, effective_targets)
+    config_hierarchy = inspect_governed_config_hierarchy(
+        root,
+        config_root=config_root,
+        cwd=base_cwd,
+        target_paths=effective_targets,
+    )
+    if config_root is not None:
+        hierarchy_configs = [Path(item["absolute_path"]) for item in config_hierarchy["configs"]]
+        config = hierarchy_configs[0] if hierarchy_configs else None
+    else:
+        config = find_governed_projects_config(root, base_cwd, effective_targets)
     result: dict[str, Any] = {
         "governed": False,
         "blocked": False,
@@ -1849,10 +1960,19 @@ def resolve_governed_subject(
         "governed_project_id": "",
         "governed_project_path": "",
         "config_path": config.relative_to(root).as_posix() if config and config.is_relative_to(root) else config.as_posix() if config else "",
+        "config_path_absolute": config.as_posix() if config else "",
+        "config_hierarchy": config_hierarchy,
         "subject_source": "target" if explicit_targets else "cwd-fallback",
         "read_write_kind": read_write_kind,
         "message": "",
     }
+    if config_hierarchy["conflict"]:
+        result.update({
+            "blocked": True,
+            "blocked_reason": config_hierarchy["blocked_reason"],
+            "message": config_hierarchy["message"],
+        })
+        return result
     if config is None:
         result["message"] = "未找到 LDVH-GOVERNED-PROJECTS.yaml，no-op"
         return result
@@ -2393,79 +2513,80 @@ def validate_governed_project_config_contract(root: Path = ROOT) -> list[Diagnos
     return diagnostics
 
 
-def validate_governed_projects_config(root: Path = ROOT) -> list[Diagnostic]:
-    path = root / GOVERNED_PROJECTS_CONFIG_PATH
+def validate_governed_projects_config(root: Path = ROOT, config_path: Path | None = None) -> list[Diagnostic]:
+    path = config_path or root / GOVERNED_PROJECTS_CONFIG_PATH
+    display_path = _display_path(path, root)
     diagnostics: list[Diagnostic] = []
     if not path.exists():
-        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_MISSING", GOVERNED_PROJECTS_CONFIG_PATH, "缺少管辖项目配置: LDVH-GOVERNED-PROJECTS.yaml")]
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_MISSING", display_path, "缺少管辖项目配置: LDVH-GOVERNED-PROJECTS.yaml")]
     if not path.is_file():
-        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_NOT_FILE", GOVERNED_PROJECTS_CONFIG_PATH, "管辖项目配置不是文件")]
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_NOT_FILE", display_path, "管辖项目配置不是文件")]
 
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
     except yaml.YAMLError as exc:
-        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_YAML_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"管辖项目配置 YAML 解析失败: {exc}")]
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_YAML_INVALID", display_path, f"管辖项目配置 YAML 解析失败: {exc}")]
 
     if not isinstance(data, dict):
-        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_ROOT_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, "管辖项目配置根对象必须是 mapping")]
+        return [Diagnostic("error", "GOVERNED_PROJECTS_CONFIG_ROOT_INVALID", display_path, "管辖项目配置根对象必须是 mapping")]
 
     root_fields = set(data)
     for field in sorted(GOVERNED_PROJECTS_ROOT_FIELDS - root_fields):
-        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_MISSING", GOVERNED_PROJECTS_CONFIG_PATH, f"管辖项目配置缺少根字段: {field}"))
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_MISSING", display_path, f"管辖项目配置缺少根字段: {field}"))
     for field in sorted(root_fields - GOVERNED_PROJECTS_ROOT_FIELDS):
-        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_FORBIDDEN", GOVERNED_PROJECTS_CONFIG_PATH, f"管辖项目配置不得包含根字段: {field}"))
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_FORBIDDEN", display_path, f"管辖项目配置不得包含根字段: {field}"))
     for field in sorted({"product_name", "product_description"} & root_fields):
         value = data.get(field)
         if not isinstance(value, str) or not value.strip():
-            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"{field} 必须是非空字符串"))
+            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_ROOT_FIELD_INVALID", display_path, f"{field} 必须是非空字符串"))
 
     projects = data.get("projects")
     if not isinstance(projects, list):
-        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_LIST_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, "projects 必须是列表"))
+        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECTS_LIST_INVALID", display_path, "projects 必须是列表"))
         return diagnostics
 
     seen_ids: dict[str, int] = {}
     seen_paths: dict[str, int] = {}
     for index, project in enumerate(projects, start=1):
         if not isinstance(project, dict):
-            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ITEM_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}] 必须是对象"))
+            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ITEM_INVALID", display_path, f"projects[{index}] 必须是对象"))
             continue
         fields = set(project)
         for field in sorted(GOVERNED_PROJECTS_REQUIRED_ITEM_FIELDS - fields):
-            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_FIELD_MISSING", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}] 缺少字段: {field}"))
+            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_FIELD_MISSING", display_path, f"projects[{index}] 缺少字段: {field}"))
         for field in sorted(fields - GOVERNED_PROJECTS_ITEM_FIELDS):
-            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_FIELD_FORBIDDEN", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}] 不得包含字段: {field}"))
+            diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_FIELD_FORBIDDEN", display_path, f"projects[{index}] 不得包含字段: {field}"))
         for field in sorted((GOVERNED_PROJECTS_ITEM_FIELDS - {"git"}) & fields):
             value = project.get(field)
             if not isinstance(value, str) or not value.strip():
-                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_FIELD_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}].{field} 必须是非空字符串"))
+                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_FIELD_INVALID", display_path, f"projects[{index}].{field} 必须是非空字符串"))
 
         project_id = project.get("id")
         if isinstance(project_id, str) and project_id.strip():
             normalized_id = project_id.strip()
             if normalized_id in seen_ids:
-                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ID_DUPLICATE", GOVERNED_PROJECTS_CONFIG_PATH, f"管辖项目 id 重复: {normalized_id}"))
+                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_ID_DUPLICATE", display_path, f"管辖项目 id 重复: {normalized_id}"))
             seen_ids[normalized_id] = index
 
         project_path = project.get("path")
         if isinstance(project_path, str) and project_path.strip():
             normalized_path = _resolve_path(Path(project_path), path.parent).as_posix()
             if normalized_path in seen_paths:
-                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_PATH_DUPLICATE", GOVERNED_PROJECTS_CONFIG_PATH, f"管辖项目 path 重复: {project_path}"))
+                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_PATH_DUPLICATE", display_path, f"管辖项目 path 重复: {project_path}"))
             seen_paths[normalized_path] = index
 
         git = project.get("git")
         if "git" in fields:
             if not isinstance(git, dict):
-                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}].git 必须是对象"))
+                diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_INVALID", display_path, f"projects[{index}].git 必须是对象"))
             else:
                 git_fields = set(git)
                 for field in sorted(git_fields - GOVERNED_PROJECTS_GIT_FIELDS):
-                    diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_FIELD_FORBIDDEN", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}].git 不得包含字段: {field}"))
+                    diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_FIELD_FORBIDDEN", display_path, f"projects[{index}].git 不得包含字段: {field}"))
                 for field in sorted(GOVERNED_PROJECTS_GIT_FIELDS & git_fields):
                     value = git.get(field)
                     if not isinstance(value, str) or not value.strip():
-                        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_FIELD_INVALID", GOVERNED_PROJECTS_CONFIG_PATH, f"projects[{index}].git.{field} 必须是非空字符串"))
+                        diagnostics.append(Diagnostic("error", "GOVERNED_PROJECT_GIT_FIELD_INVALID", display_path, f"projects[{index}].git.{field} 必须是非空字符串"))
 
     return diagnostics
 
@@ -3040,20 +3161,31 @@ def build_governed_projects_report(
     cwd: str | Path | None = None,
     target_paths: list[str | Path] | None = None,
     read_write_kind: str = "write",
+    config_root: str | Path | None = None,
 ) -> dict[str, Any]:
-    config = parse_governed_projects_config(root)
-    contract = parse_governed_project_config_contract(root)
-    diagnostics = [diagnostic.to_dict() for diagnostic in validate_governed_projects_config(root)]
     resolution = resolve_governed_subject(
         root,
         cwd=cwd or root,
         target_paths=target_paths or [],
         read_write_kind=read_write_kind,
+        config_root=config_root,
     )
+    selected_config_path = Path(resolution["config_path_absolute"]) if resolution["config_path_absolute"] else None
+    config = parse_governed_projects_config(root, selected_config_path)
+    contract = parse_governed_project_config_contract(root)
+    diagnostics = [
+        diagnostic.to_dict()
+        for diagnostic in validate_governed_projects_config(root, selected_config_path)
+    ]
     if resolution["blocked"]:
+        code = (
+            "GOVERNED_PROJECT_CONFIG_HIERARCHY_CONFLICT"
+            if resolution["blocked_reason"] == "nested_governed_projects_config"
+            else "GOVERNED_PROJECT_BOUNDARY_BLOCKED"
+        )
         diagnostics.append({
             "level": "blocking",
-            "code": "GOVERNED_PROJECT_BOUNDARY_BLOCKED",
+            "code": code,
             "path": resolution["governed_subject"] or ",".join(resolution["target_paths"]),
             "message": resolution["message"],
         })

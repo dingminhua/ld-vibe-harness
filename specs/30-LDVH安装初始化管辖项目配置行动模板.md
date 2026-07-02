@@ -160,7 +160,7 @@ ldvh_spec:
 
 安装选项只包含当前可执行且需要 Human 取舍的决策。每个配置位置选择项必须用表格给出选项、位置、配置文件完整路径、含义、限制和建议；配置文件完整路径必须分别展示工作区根目录和当前项目根目录下的 `LDVH-GOVERNED-PROJECTS.yaml` 实际路径。当前配置位置主选项只包含两类：工作区根目录和当前项目根目录。用户级配置目录是后置缺口，只有在 specs、Code 和 tests 均支持后才能进入主选项。
 
-安装方案预览必须合并所有 Human Gate：写入对象、写入位置、将执行动作、不会执行的事项、后置项、验证命令、失败处理和回滚方式都必须在此步展示。最终确认前，AI 只能只读检查、展示结果和收集选择，不得写入配置、创建目录、安装插件、修改 Hook、修改用户环境或声明 integrated。
+安装方案预览必须合并所有 Human Gate：写入对象、写入位置、将执行动作、不会执行的事项、后置项、验证命令、失败处理和回滚方式都必须在此步展示。若 Human 选择工作区根目录，但目标项目内已经存在 `LDVH-GOVERNED-PROJECTS.yaml`，安装方案预览必须报告配置层级冲突，并要求先删除、迁移或明确保留其中一个配置文件；不得继续进入执行。最终确认前，AI 只能只读检查、展示结果和收集选择，不得写入配置、创建目录、安装插件、修改 Hook、修改用户环境或声明 integrated。
 
 最终确认必须给出至少三类选择：执行、不执行、返回修改。Human 选择不执行时，AI 必须停止在方案预览或最终确认状态，不得写入；Human 选择返回修改时，AI 必须回到安装选项；只有 Human 选择执行后，AI 才能按方案执行已确认的仓库内动作。
 
@@ -170,8 +170,8 @@ ldvh_spec:
 |---|---|
 | Context | 读取用户目标、目标环境、LDVH 根目录、工作区根目录、管辖项目候选、当前 `LDVH-GOVERNED-PROJECTS.yaml`、管辖项目根下 `ldvh-base/` 和 `workcases/adrs/pitfalls/sparks/studies` 事实源目录状态、环境入口审计结果、source_refs，并回指 `specs/01-保障与衔接.md`、`specs/06-行动模板基础规范.md`、`specs/10-管辖项目配置规范.md`、`specs/07-Code确定性执行规范.md`、`specs/09-测试与验证规范.md` 和 `code/docs/01-Git-Commit-and-Hook-Practice.md`。 |
 | Scenario | 用户要求安装 LDVH、接入 LDVH、初始化 LDVH、配置管辖项目、把项目登记为管辖项目、检查安装是否生效或修复旧插件 / 旧路径时适用；用户只是询问概念或规则时，只回答 01/06/10 边界，不写入配置、不安装插件、不修改 Hook。 |
-| Gate | 写入、覆盖、删除或迁移环境入口，安装、升级、禁用或卸载 LDVH 插件 / 扩展包，创建或修改 `LDVH-GOVERNED-PROJECTS.yaml`，创建、删除、迁移或重命名管辖项目 `ldvh-base/` 及事实源子目录，选择配置生成位置，接受用户级配置目录后置缺口，声明环境入口 integrated，目标环境 Hook 能力不明，多项目或混合非管辖 target，缺少用户告知清单，或缺少安装方案预览和最终确认，均必须暂停或进入 Human Gate。 |
-| 执行 | 先按 01 判断目标环境入口类型和接入状态；支持 Hook 的环境只生成或检查对应 LDVH 插件 / 扩展包 / package 方案，不直接写入环境 Hook 系统文件；执行安装、部署、初始化、配置或卸载前必须先交付用户告知清单和安装方案预览，明示写入对象、写入位置级别、影响范围、Hook / lifecycle event、阻断与 diagnostic 边界、旧插件 / stale V2 path 处理、验证方式、回滚或卸载入口、未 integrated 能力、管辖项目 `ldvh-base/` 及 `workcases/adrs/pitfalls/sparks/studies` 目录用途、残留风险和下一步 Human Gate；不支持 Hook 或 Hook 未接入时只作为 repo instruction、manual entrypoint 或外部 adapter 候选处理，不恢复 Rules 顶层机制；配置生成前必须让 Human 在工作区根目录（推荐，默认 LDVH 安装目录上一级）和当前项目根目录两类位置中选择；该询问必须使用选择框 / 单选控件呈现互斥二选一，无法使用 UI 控件时必须使用等价编号二选一，不得用开放文本询问替代；选择表必须给出每个选项的位置、配置文件完整路径、含义、限制和建议；当前 Code 不支持的用户级配置目录只能记录为后置，不得作为主选项或写成已生效解析；随后按 10 登记单一管辖项目、补充 Git common-dir 身份线索，检查或建议创建管辖项目事实源目录，并用 target-first resolver 验证。 |
+| Gate | 写入、覆盖、删除或迁移环境入口，安装、升级、禁用或卸载 LDVH 插件 / 扩展包，创建或修改 `LDVH-GOVERNED-PROJECTS.yaml`，创建、删除、迁移或重命名管辖项目 `ldvh-base/` 及事实源子目录，选择配置生成位置，接受用户级配置目录后置缺口，处理配置层级冲突，声明环境入口 integrated，目标环境 Hook 能力不明，多项目或混合非管辖 target，缺少用户告知清单，或缺少安装方案预览和最终确认，均必须暂停或进入 Human Gate。 |
+| 执行 | 先按 01 判断目标环境入口类型和接入状态；支持 Hook 的环境只生成或检查对应 LDVH 插件 / 扩展包 / package 方案，不直接写入环境 Hook 系统文件；执行安装、部署、初始化、配置或卸载前必须先交付用户告知清单和安装方案预览，明示写入对象、写入位置级别、影响范围、Hook / lifecycle event、阻断与 diagnostic 边界、旧插件 / stale V2 path 处理、验证方式、回滚或卸载入口、未 integrated 能力、管辖项目 `ldvh-base/` 及 `workcases/adrs/pitfalls/sparks/studies` 目录用途、残留风险和下一步 Human Gate；不支持 Hook 或 Hook 未接入时只作为 repo instruction、manual entrypoint 或外部 adapter 候选处理，不恢复 Rules 顶层机制；配置生成前必须让 Human 在工作区根目录（推荐，默认 LDVH 安装目录上一级）和当前项目根目录两类位置中选择；该询问必须使用选择框 / 单选控件呈现互斥二选一，无法使用 UI 控件时必须使用等价编号二选一，不得用开放文本询问替代；选择表必须给出每个选项的位置、配置文件完整路径、含义、限制和建议；当前 Code 不支持的用户级配置目录只能记录为后置，不得作为主选项或写成已生效解析；若选择工作区根目录，必须用 10 的配置层级检查确认从工作区根目录到目标项目路径链上只有一个 active `LDVH-GOVERNED-PROJECTS.yaml`；若目标项目内已存在配置，必须阻断并提示先删除、迁移或明确保留其中一个；随后按 10 登记单一管辖项目、补充 Git common-dir 身份线索，检查或建议创建管辖项目事实源目录，并用 target-first resolver 验证。 |
 | 验证 | 使用 `environment_status.py`、`environment_entry_audit.py`、`specs_validate.py governed-projects`、target-first resolution、管辖项目 `ldvh-base/` 目录回读、必要的 runtime adapter 手动入口和 09 验证声明字段记录验证目标、验证入口、输入范围、关键输出、结论、残留风险和证据回指；只有真实自动触发、失败可阻断、安装状态可复现时，才可声明对应环境入口 integrated。 |
 | 回写 | 安装和初始化检查输出默认是过程输出；配置写入必须落在 Human 确认的 `LDVH-GOVERNED-PROJECTS.yaml` 并受 10 字段契约约束；事实源目录创建只建立 `ldvh-base/` 入口和五类对象目录，不创建事实实例、不替代字段 schema；旧插件、旧路径、用户级配置目录候选、环境适配缺口或长期风险按 03/05/09 分流到 Spark、ADR、Pitfall、WorkCase、实现域文档或 Git commit records，不得把 runtime receipt、环境观察或聊天结论写成事实源。 |
 | 交还 | 交还安装方式、配置位置选择、管辖项目 ID、目标路径、Git common-dir 线索、`ldvh-base/` 及五个事实源子目录状态、环境入口状态、integrated / manual_ready / deferred / removed_top_level 结论、用户告知清单及 Human 确认状态、验证摘要、回滚或卸载入口、残留风险、下一步 Human Gate、source_refs 和未完成分流；阻断时交还阻断原因、缺少证据、缺少告知项和建议的下一步。 |
@@ -198,6 +198,7 @@ ldvh_spec:
 | Gate 检查 | 是否识别配置位置、环境入口、插件安装、integrated 声明和多项目 target 的 Human Gate | 暂停并交还 Human |
 | 环境检查 | 是否使用环境状态、入口审计或等价验证区分 integrated / manual_ready / deferred / removed_top_level | 不得声明环境已接入 |
 | 配置检查 | 是否按 10 解析和验证管辖项目配置，并确认配置生成位置询问使用选择框 / 单选控件或等价编号二选一，且选项给出配置文件完整路径、限制和建议 | 不得声明管辖项目配置已生效 |
+| 配置层级检查 | 选择工作区根目录时，是否检查工作区根目录到目标项目路径链上已有项目内配置 | 不得继续执行根目录安装 |
 | 事实源目录检查 | 是否回读管辖项目 `ldvh-base/` 及五个子目录状态，并说明每个目录用途 | 不得声明管辖项目事实源初始化完成 |
 | 回滚检查 | 是否说明回滚或卸载入口，并验证卸载后不再自动触发 LDVH | 不得声明部署闭环完整 |
 
@@ -209,9 +210,10 @@ ldvh_spec:
 2. 写入、覆盖、删除或迁移环境入口、Hook、plugin lifecycle event 或 repo instruction；
 3. 创建、修改、迁移或选择 `LDVH-GOVERNED-PROJECTS.yaml` 的配置生成位置；
 4. 创建、删除、迁移或重命名管辖项目 `ldvh-base/` 及事实源子目录；
-5. 接受用户级配置目录后置缺口或其它当前 Code 不支持的配置候选；
-6. 声称环境入口 integrated、接受阻断行为、接受残留风险、确认安装方案预览、选择执行 / 不执行 / 返回修改或要求 Human 验收；
-7. 多项目、跨项目或混合非管辖 target 的安装、配置或验证范围不清。
+5. 删除、迁移、合并、覆盖或保留同一路径链上的多个 `LDVH-GOVERNED-PROJECTS.yaml`；
+6. 接受用户级配置目录后置缺口或其它当前 Code 不支持的配置候选；
+7. 声称环境入口 integrated、接受阻断行为、接受残留风险、确认安装方案预览、选择执行 / 不执行 / 返回修改或要求 Human 验收；
+8. 多项目、跨项目或混合非管辖 target 的安装、配置或验证范围不清。
 
 ## 12. Stop Conditions
 
@@ -221,9 +223,10 @@ ldvh_spec:
 2. 缺少安装向导状态表、用户告知清单、安装方案预览或最终确认，或这些内容未交给 Human 确认；
 3. 插件、Hook、repo instruction、旧路径或历史 trust 被写成 integrated 证明；
 4. 管辖项目配置位置未由 Human 选择；
-5. 管辖项目 `ldvh-base/` 目录用途、写入影响或 Human Gate 状态未说明，或系统已检查事实被重新包装成 Human 选项；
-6. Code、环境审计或工具输出正在替代 Human Gate、事实源或完成判断；
-7. 验证、回滚或卸载路径不可复现，却要求声明安装部署完成。
+5. 选择工作区根目录安装，但目标项目内已有 `LDVH-GOVERNED-PROJECTS.yaml` 尚未删除、迁移或明确保留；
+6. 管辖项目 `ldvh-base/` 目录用途、写入影响或 Human Gate 状态未说明，或系统已检查事实被重新包装成 Human 选项；
+7. Code、环境审计或工具输出正在替代 Human Gate、事实源或完成判断；
+8. 验证、回滚或卸载路径不可复现，却要求声明安装部署完成。
 
 ## 13. 待补齐事项
 
