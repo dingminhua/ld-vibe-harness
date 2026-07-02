@@ -1002,23 +1002,45 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     raw = (ROOT / "specs/30-LDVH安装初始化管辖项目配置行动模板.md").read_text(encoding="utf-8")
 
     assert "安装向导状态机" in raw
-    assert "流程概览" in raw
+    assert "路径确认" in raw
     assert "安装前检查" in raw
     assert "安装选项" in raw
     assert "安装方案预览" in raw
     assert "最终确认" in raw
     assert "决策 / 结果" in raw
-    assert "箭头" in raw
+    assert "状态、步骤、决策 / 结果三列" in raw
+    assert "👉" in raw
+    assert "✅" in raw
     assert "尚未发生的步骤保持空白" in raw
+    assert "📍 路径确认" in raw
+    assert "🔎 安装前检查" in raw
+    assert "⚙️ 安装选项" in raw
+    assert "🔒 安装方案预览" in raw
+    assert "🛠️ 最终确认" in raw
+    assert "📦 LDVH 本体路径" in raw
+    assert "🗂️ 目标工作区根目录" in raw
+    assert "🧾 配置文件完整路径" in raw
+    assert "✅ 通过" in raw
+    assert "⚠️ 注意" in raw
+    assert "⛔ 阻断" in raw
+    assert "➖ 不适用" in raw
+    assert "🔌 环境入口" in raw
+    assert "🗑️ 项目内旧配置" in raw
+    assert "🧪 验证" in raw
+    assert "↩️ 回滚" in raw
     assert "不得把事实伪装成 Human 选项" in raw
     assert "bootstrap discovery" in raw
     assert "有限、只读、有证据" in raw
     assert "找不到时必须要求 Human 提供 LDVH 本体路径" in raw
     assert "配置位置不是选项，只能是目标工作区根目录" in raw
     assert "项目根目录、用户级目录和 LDVH 本体目录都不是支持位置" in raw
+    assert "说明、限制和建议" in raw
     assert "配置层级冲突" in raw
     assert "先删除、迁移或明确保留其中一个配置文件" in raw
-    assert "执行、不执行、返回修改" in raw
+    assert "最终确认只展示两个主选项" in raw
+    assert "1 执行方案" in raw
+    assert "2 不执行，停止安装" in raw
+    assert "不得把返回修改作为第三个主选项" in raw
     assert "最终确认前" in raw
     assert "不得写入配置" in raw
 
