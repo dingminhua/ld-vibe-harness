@@ -300,13 +300,12 @@ Codebase Memory MCP 的“single binary + install/uninstall/update/config”组�
 | 价值 | 吸收判断 |
 |---|---|
 | V1 快速定位 | 图谱查询能减少 AI 找入口、找调用链、找架构边界的成本 |
-| V2 可行动理解 | 架构摘要、路由、调用链和影响范围可帮助 AI 形成更完整任务理解 |
+| V2 充分理解 | 架构摘要、路由、调用链和影响范围可帮助 AI 形成更完整任务理解 |
 | V3 正确判断 | `detect_changes`、dead code、cross-service links 有助于判断风险和影响 |
 | V4 稳定执行 | CLI/MCP 工具可嵌入固定行动路径 |
 | V6 强制验证 | 可作为验证证据输入，但不能替代 tests / fact_validate |
-| V7 证据沉淀 | 查询命令、索引版本和结果摘要可进入 closure evidence |
-| V8 可靠回写 | 只在输出回写到权威事实源后成立 |
-| V10 持续完善 | 索引缺口和误判可沉淀为 Pitfall、WorkCase 或运行时扩展规则 |
+| V7 格式回写 | 查询命令、索引版本和结果摘要只有按事实模型受控回写后，才能进入 closure evidence |
+| V9 主动迭代 | 索引缺口和误判可沉淀为 Pitfall、WorkCase、Code 或保障与衔接层缺口 |
 
 因此，本报告建议“吸收能力形态，不吸收事实源地位”。
 

@@ -6,7 +6,7 @@
 
 ## 0. 审计方法与执行命令
 
-以 `specs/00-理念与构成.md` 为最高价值锚点，逐项检查 v3 设计是否服务：AI 第一服务对象、事实源为判断依据、保障与衔接层为落地通道、五类构成要素、V1-V10 价值标准。
+以 `specs/00-理念与构成.md` 为最高价值锚点，逐项检查 v3 设计是否服务：AI 第一服务对象、事实源为判断依据、保障与衔接层为落地通道、五类构成要素、V1-V9 价值标准。
 
 实际执行的命令与结果：
 
@@ -120,7 +120,7 @@
 | 事实源为判断依据 | 03 §5 事实源边界 + 非事实源排除表；validator 测试 `test_fact_source_validator_reports_chat_as_fact_source_gap` 等 |
 | 保障与衔接层为落地通道 | 01 三层模型 + 11 环境适配实现；environment_status/audit Code 落地状态闭集 |
 | 五类构成要素 | 00 §5 + 04-08 + 05/20-24 分别承接规范/事实/行动/Code/Web |
-| V1-V10 | 00 §6 定义；01 §5.3 保障需求字段回指 V 项；各 spec 保障措施表回指 |
+| V1-V9 | 00 §6 定义；01 §5.3 保障需求字段回指 V 项；各 spec 保障措施表回指 |
 | Human Gate | 00 §8 + 各 spec Human Gate 章节；11A 诚实补救构成变更；测试验证无授权泄漏 |
 
 ### 4.2 疑似偏离点（经核验不构成偏离）
@@ -158,7 +158,7 @@
 
 **P2-1：session_start / pre_tool_use / completion_claim 仅 manual-ready**
 - 依据：`environment_status.py` 输出 `manual_entrypoints` + `integrated=false`
-- 影响：AI 必须自觉手动运行这些入口，环境不会自动拦截。这与 00 V5 门禁识别、V6 强制验证存在张力——保障链路存在但非自动触发
+- 影响：AI 必须自觉手动运行这些入口，环境不会自动拦截。这与 00 V5 主动暂停、V6 强制验证存在张力——保障链路存在但非自动触发
 - 判断：已诚实记录为 deferred（11D），进入条件明确（真实触发点+稳定 payload+失败处理+安装状态+回滚+测试+Human Gate）。不阻断主线因为规则判断和事实维护不依赖自动触发。
 
 **P2-2：receipt 仅 stdout-only，无稳定存储**
@@ -195,7 +195,7 @@
 
 2. **解决全量测试内存/性能问题**（对应 P1-1）：132s 运行时间 + 并行 OOM 会侵蚀"验证可信度"。建议把 e2e_rehearsal 相关 4 个慢测试（各 >12s）隔离为独立 tier，或优化 `build_e2e_rehearsal` 的重复加载。smoke 已足够日常使用，但 full 应可靠可重复。
 
-3. **评估 session_start 自动触发的真实环境路径**（对应 P2-1）：当前三件套均 manual-ready，AI 必须自觉运行。如果目标协作环境（如 CodeBuddy/Claude Code/Codex）提供 session lifecycle hook，应评估接入可行性——这是把保障链路从"AI 自觉"升级为"环境拦截"的最小可行步骤，直接服务 00 V5 门禁识别和 V6 强制验证。进入条件已在 11D 列明（7 项），缺的主要是真实触发点。
+3. **评估 session_start 自动触发的真实环境路径**（对应 P2-1）：当前三件套均 manual-ready，AI 必须自觉运行。如果目标协作环境（如 CodeBuddy/Claude Code/Codex）提供 session lifecycle hook，应评估接入可行性——这是把保障链路从"AI 自觉"升级为"环境拦截"的最小可行步骤，直接服务 00 V5 主动暂停和 V6 强制验证。进入条件已在 11D 列明（7 项），缺的主要是真实触发点。
 
 ---
 
