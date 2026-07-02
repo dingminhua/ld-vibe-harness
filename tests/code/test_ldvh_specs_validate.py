@@ -106,6 +106,20 @@ def test_foundation_specs_contracts_are_code_consumable(validation_result: dict)
         assert contract["stop_conditions"]
 
 
+def test_readme_indexes_action_template_spec_30() -> None:
+    raw = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "`30`：LDVH 安装初始化管辖项目配置行动模板" in raw
+
+
+def test_migration_33a_marks_formal_review_hash_gate_superseded() -> None:
+    raw = (ROOT / "_migration/33A-action-template-30-admission.md").read_text(encoding="utf-8")
+
+    assert "formal review hash gate 的描述只保留为历史迁移记录" in raw
+    assert "formal review 机制后续已废弃" in raw
+    assert "`reviews/formal/30-formal-review.yaml` 不再是当前仓库应存在的产物" in raw
+
+
 def test_assurance_spec_registers_environment_entry_status_and_payload_contracts(validation_result: dict) -> None:
     result = validation_result
     specs = {spec["object_id"]: spec for spec in result["specs"]}
@@ -1009,13 +1023,20 @@ def test_workcase_action_template_is_code_consumable(validation_result: dict) ->
 def test_ldvh_install_action_template_is_code_consumable(validation_result: dict) -> None:
     result = validation_result
     rows = {row["结构"]: row["最小要求"] for row in result["ldvh_install_action_template"]}
+    contract = result["ldvh_install_spec_contract"]
 
     assert set(rows) == {"Context", "Scenario", "Gate", "执行", "验证", "回写", "交还"}
+    assert contract["spec_id"] == "30"
+    assert set(contract["code_consumption"]) == set(ldvh_specs.LDVH_INSTALL_REQUIRED_CODE_CONSUMPTION)
+    assert contract["action_template"]
+    assert contract["stop_conditions"]
+    assert contract["source_refs"]
     assert "目标环境" in rows["Context"]
     assert "LDVH 本体路径" in rows["Context"]
     assert "目标工作区根目录" in rows["Context"]
     assert "LDVH-GOVERNED-PROJECTS.yaml" in rows["Context"]
     assert "Git Hook 状态" in rows["Context"]
+    assert "code/docs/03-LDVH-Install-Wizard-Practice.md" in rows["Context"]
     assert "安装 LDVH" in rows["Scenario"]
     assert "LDVH 本体路径" in rows["Gate"]
     assert "目标工作区根目录" in rows["Gate"]
@@ -1128,6 +1149,35 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "不得把返回修改作为第三个主选项" in raw
     assert "最终确认前" in raw
     assert "不得写入配置" in raw
+
+
+def test_ldvh_install_action_template_reports_missing_code_consumption(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        '    - "install_user_disclosure_checklist"\n',
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_CODE_CONSUMPTION_MISSING" in _diagnostic_codes(result)
+    assert any("install_user_disclosure_checklist" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_unsupported_code_consumption(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        '    - "stop_conditions"\n',
+        '    - "stop_conditions"\n    - "phantom_install_capability"\n',
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_CODE_CONSUMPTION_UNSUPPORTED" in _diagnostic_codes(result)
+    assert any("phantom_install_capability" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_target_workspace_gate(tmp_path: Path) -> None:

@@ -178,3 +178,4 @@ python3 code/test_runner.py full
 - `22`：ADR-决策
 - `23`：Pitfall-踩坑经验
 - `24`：Study-研究报告
+- `30`：LDVH 安装初始化管辖项目配置行动模板

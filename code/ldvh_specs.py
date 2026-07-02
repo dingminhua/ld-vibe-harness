@@ -229,7 +229,7 @@ GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
     "不得恢复 Skill 顶层机制",
 ]
 LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
-    "Context": ["用户目标", "目标环境", "LDVH 本体路径", "目标工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "workcases/adrs/pitfalls/sparks/studies", "环境入口审计结果", "Git Hook 状态", "source_refs", "specs/10-管辖项目配置规范.md"],
+    "Context": ["用户目标", "目标环境", "LDVH 本体路径", "目标工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "workcases/adrs/pitfalls/sparks/studies", "环境入口审计结果", "Git Hook 状态", "source_refs", "specs/10-管辖项目配置规范.md", "code/docs/03-LDVH-Install-Wizard-Practice.md"],
     "Scenario": ["安装 LDVH", "接入 LDVH", "初始化 LDVH", "配置管辖项目", "旧插件 / 旧路径", "只回答 01/06/10 边界"],
     "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "管辖项目 Git Hook", "有效 Git worktree", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "事实源子目录", "LDVH 本体路径", "目标工作区根目录", "配置层级冲突", "integrated", "多项目", "用户告知清单", "安装方案预览", "最终确认"],
     "执行": ["bootstrap discovery", "有限、只读、有证据", "LDVH_ROOT", "候选路径和证据", "01", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "用户告知清单", "安装方案预览", "workcases/adrs/pitfalls/sparks/studies", "AI 环境 Hook", "Git `commit-msg` Hook", "repo instruction", "manual entrypoint", "不恢复 Rules 顶层机制", "目标工作区根目录", "配置文件完整路径", "项目根目录、用户级目录和 LDVH 本体目录不得作为主选项", "配置层级检查", "目标项目内已存在配置", "10", "Git common-dir", "target-first resolver"],
@@ -237,6 +237,16 @@ LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "回写": ["过程输出", "Human 确认", "LDVH-GOVERNED-PROJECTS.yaml", "10 字段契约", "事实源目录创建", "不创建事实实例", "旧插件", "用户级配置目录候选", "Spark", "ADR", "Pitfall", "WorkCase", "Git commit records", "不得把 runtime receipt"],
     "交还": ["安装方式", "配置位置选择", "管辖项目 ID", "Git common-dir", "ldvh-base/", "事实源子目录状态", "环境入口状态", "integrated / manual_ready / deferred / removed_top_level", "用户告知清单", "验证摘要", "回滚或卸载入口", "下一步 Human Gate", "source_refs"],
 }
+LDVH_INSTALL_REQUIRED_CODE_CONSUMPTION = [
+    "ldvh_spec_metadata",
+    "ldvh_install_initialization_action_template",
+    "install_wizard_state_machine",
+    "install_user_disclosure_checklist",
+    "environment_plugin_install_boundary",
+    "governed_project_config_location_gate",
+    "install_verification_handoff",
+    "stop_conditions",
+]
 LDVH_INSTALL_WIZARD_TERMS = [
     "安装向导状态机",
     "五步",
@@ -342,6 +352,34 @@ LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_TERMS = [
     "不恢复 Rules / Skill 顶层机制",
     "V2 `32-environment-entry-adaptation`",
 ]
+LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS = {
+    "install_user_disclosure_checklist": [
+        "用户告知清单",
+        "写入位置",
+        "受影响项目",
+        "验证命令",
+        "回滚或卸载入口",
+        "残留风险",
+    ],
+    "environment_plugin_install_boundary": [
+        "环境插件",
+        "stale V2 path",
+        "`⚠️ 需安装`",
+        "`⚠️ 需升级`",
+        "不声明 integrated",
+    ],
+    "governed_project_config_location_gate": [
+        "配置位置不是选项，只能是目标工作区根目录",
+        "项目根目录、用户级目录和 LDVH 本体目录都不是支持位置",
+        "配置层级冲突",
+    ],
+    "install_verification_handoff": [
+        "验证摘要",
+        "回滚或卸载入口",
+        "残留风险",
+        "source_refs",
+    ],
+}
 WORKCASE_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Context": ["WorkCase ID", "对象化价值", "成功标准", "source_refs", "specs/21-WorkCase-工作项.md"],
     "Scenario": ["创建 WorkCase", "执行推进", "结果复核", "关闭确认", "只回答 21/06/09 边界"],
@@ -1381,6 +1419,37 @@ def parse_ldvh_install_action_template(root: Path = ROOT) -> list[dict[str, str]
     if not section:
         return []
     return find_table(section["body"], ACTION_TEMPLATE_COLUMNS)
+
+
+def parse_ldvh_install_spec_contract(root: Path = ROOT) -> dict[str, Any]:
+    path = SHORT_SPEC_REFS["30"]
+    full_path = root / path
+    if not full_path.exists():
+        return {
+            "spec_id": "30",
+            "path": path,
+            "code_consumption": [],
+            "action_template": [],
+            "stop_conditions": [],
+            "source_refs": [],
+        }
+
+    raw = full_path.read_text(encoding="utf-8")
+    metadata = first_yaml_block(raw, path).get("ldvh_spec", {})
+    sections = h2_sections(raw)
+
+    return {
+        "spec_id": "30",
+        "path": path,
+        "code_consumption": metadata.get("code_consumption", []),
+        "action_template": parse_ldvh_install_action_template(root),
+        "stop_conditions": _section_numbered_items(sections, "Stop Conditions"),
+        "source_refs": [
+            {"path": path, "role": "ldvh_install_action_template"},
+            {"path": SHORT_SPEC_REFS["06"], "role": "action_template_parent_spec"},
+            {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_config_spec"},
+        ],
+    }
 
 
 def parse_fact_model_member_contract(spec_id: str, root: Path = ROOT) -> dict[str, Any]:
@@ -2846,10 +2915,36 @@ def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]
     path = SHORT_SPEC_REFS["30"]
     raw = (root / path).read_text(encoding="utf-8")
     rows = parse_ldvh_install_action_template(root)
+    contract = parse_ldvh_install_spec_contract(root)
     diagnostics: list[Diagnostic] = []
 
+    code_consumption = contract["code_consumption"]
+    if not isinstance(code_consumption, list) or not all(isinstance(item, str) for item in code_consumption):
+        diagnostics.append(Diagnostic("error", "LDVH_INSTALL_CODE_CONSUMPTION_INVALID", path, "30 code_consumption 必须是字符串列表"))
+        code_consumption = [item for item in code_consumption if isinstance(item, str)] if isinstance(code_consumption, list) else []
+    for item in _missing_exact_values(LDVH_INSTALL_REQUIRED_CODE_CONSUMPTION, code_consumption):
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "LDVH_INSTALL_CODE_CONSUMPTION_MISSING",
+                path,
+                f"30 缺少 Code 消费入口: {item}",
+            )
+        )
+    expected_code_consumption = set(LDVH_INSTALL_REQUIRED_CODE_CONSUMPTION)
+    for item in code_consumption:
+        if item not in expected_code_consumption:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "LDVH_INSTALL_CODE_CONSUMPTION_UNSUPPORTED",
+                    path,
+                    f"30 声明了未被 Code 契约消费的入口: {item}",
+                )
+            )
+
     if not rows:
-        return [
+        return diagnostics + [
             Diagnostic(
                 "error",
                 "LDVH_INSTALL_ACTION_TEMPLATE_MISSING",
@@ -2857,6 +2952,9 @@ def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]
                 "30 缺少 LDVH 安装、初始化与管辖项目配置行动模板结构表",
             )
         ]
+
+    if not contract["stop_conditions"]:
+        diagnostics.append(Diagnostic("error", "LDVH_INSTALL_STOP_CONDITIONS_MISSING", path, "30 必须声明可消费 Stop Conditions"))
 
     rows_by_structure = {row["结构"]: row for row in rows}
     for structure, terms in LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS.items():
@@ -2903,6 +3001,17 @@ def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]
                 f"LDVH 安装向导状态机缺少关键要求: {term}",
             )
         )
+
+    for item, terms in LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS.items():
+        for term in [term for term in terms if term not in raw]:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_MISSING",
+                    path,
+                    f"{item} 缺少可消费支撑声明: {term}",
+                )
+            )
 
     return diagnostics
 
@@ -3115,6 +3224,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     foundation_spec_contracts = parse_foundation_spec_contracts(objects, root)
     git_commit_action_template = parse_git_commit_action_template(root)
     ldvh_install_action_template = parse_ldvh_install_action_template(root)
+    ldvh_install_spec_contract = parse_ldvh_install_spec_contract(root)
     workcase_action_template = parse_workcase_action_template(root)
     workcase_member_contract = parse_workcase_member_contract(root)
     fact_model_member_contracts = parse_fact_model_member_contracts(root)
@@ -3206,6 +3316,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "foundation_spec_contracts": foundation_spec_contracts,
         "git_commit_action_template": git_commit_action_template,
         "ldvh_install_action_template": ldvh_install_action_template,
+        "ldvh_install_spec_contract": ldvh_install_spec_contract,
         "workcase_action_template": workcase_action_template,
         "workcase_member_contract": workcase_member_contract,
         "fact_model_member_contracts": fact_model_member_contracts,

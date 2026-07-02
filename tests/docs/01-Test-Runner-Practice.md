@@ -86,6 +86,8 @@ Python CLI 测试应统一走 `tests/code/test_ldvh_specs_validate.py` 中的 `_
 
 例如 LDVH 安装向导的五步状态、`👉` 当前步骤、`✅` 已完成步骤、`决策 / 结果` 列、选择框 / 单选控件优先、每次只问一个问题、选项表给出说明和结果、路径和检查结果图标、LDVH 本体发现、目标工作区根目录确认、配置固定在工作区根目录、带编号和管辖状态的当前配置项目清单、不改或按编号设置管辖项目的两选项、拟写入项目清单、配置正确性结论、配置层级冲突阻断、环境插件未安装时安排安装、插件过时或 stale V2 path 时安排升级、每个已选择管辖项目 Git Hook 必须进入安装 / 升级方案、非 Git 管辖项目必须阻断并说明管辖项目必须是 Git 仓库、Git Hook 安装后必须验证 status、managed hook、正例放行和负例阻断、最终确认两个主选项和最终确认前不写入，都属于稳定交互契约，应由 validator 和正反测试共同覆盖。
 
+正式行动模板独立成 spec 后，应测试它自己的 `code_consumption` 契约、README 可发现索引和历史迁移记录中的废弃标注。新增消费声明但没有对应 validator 消费、删除实践文档回指、重新把已废弃 formal review hash gate 写成当前机制，都应触发回归失败。
+
 环境入口审计测试应同时覆盖 stale V2 path 阻断和 V3 Codex shim 可见但未验证 integrated 的状态；仅发现插件 hook 指向 V3 shim，不足以把 Codex runtime 自动入口声明为 integrated。真实 AI 环境 Hook 安装完成后应能测试插件状态、V3 shim 指向、直接 shim 正反输入，并在无法触发真实 lifecycle 时明确不可验证范围。
 
 ## Slow Policy
