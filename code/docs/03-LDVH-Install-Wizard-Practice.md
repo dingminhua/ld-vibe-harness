@@ -52,6 +52,7 @@
 | 项目内或用户级配置目录 | 本次后置 | 说明不是支持位置，不放入主选项 |
 | 用户环境插件未安装 | 需授权动作 | 标为 `⚠️ 需安装`，进入安装方案预览 |
 | 用户环境插件过时 | 需授权动作 | 标为 `⚠️ 需升级`，进入升级方案预览 |
+| 管辖项目不是 Git repo | 阻断 | 标为 `⛔ 阻断`，说明管辖项目必须是 Git 仓库 |
 | 管辖项目 Git Hook 未安装 | 需授权动作 | 标为 `⚠️ 需安装`，逐 repo 进入安装方案预览 |
 | 管辖项目 Git Hook 过时或非 V3 managed | 需授权动作 | 标为 `⚠️ 需升级`，逐 repo 进入升级方案预览 |
 
@@ -94,6 +95,8 @@
 7. 残留风险。
 
 完整安装方案必须同时覆盖两类入口：AI 环境 Hook 插件和每个已选择管辖项目的 Git `commit-msg` Hook。Git Hook 预览必须逐 repo 展示 repo 路径、`core.hooksPath`、active hook、当前是否 V3 managed、将执行的 install / upgrade / no-op、验证命令和 rollback 命令。未能确认 repo 或 Human 未授权时，不得把 Git Hook 写成已安装，也不得声明完整安装完成。
+
+每个已选择管辖项目必须是有效 Git worktree。安装前检查发现目标不是 Git 仓库时，必须停在安装前检查或安装方案预览，标为 `⛔ 阻断`，并说明管辖项目必须是 Git 仓库；不得继续进入最终执行，也不得创建 Git Hook 替代 Git 初始化。
 
 安装后验证必须可复现。AI 环境 Hook 至少要验证插件安装状态、Hook 配置指向 V3 shim、直接 shim 正反输入；如果真实 Codex / IDE lifecycle 不能在当前回合触发，必须写明不可验证范围，不得声明 integrated。Git Hook 必须验证 `governed_hook_adapter.py status`、`core.hooksPath`、managed `commit-msg` 文件和可执行位，并直接执行 hook 文件跑有效 commit message 放行和无效 commit message 阻断。
 
@@ -141,7 +144,7 @@
 | 📁 事实源目录 | ✅ 通过 | `ldvh-base/workcases/adrs/pitfalls/sparks/studies` 均存在 |
 | 🔎 配置解析 | ✅ 通过 | 管辖项目解析无 diagnostics |
 | 🔌 环境入口 | ⚠️ 需升级 | 已安装插件指向旧路径或 stale V2 path 时，方案预览必须安排升级 |
-| 🪝 Git Hook | ⚠️ 需安装 | 每个已选择管辖项目都必须检查并安排 Git `commit-msg` Hook 安装或升级 |
+| 🪝 Git Hook | ⛔ 阻断 / ⚠️ 需安装 / ⚠️ 需升级 | 非 Git 仓库必须停止安装；Git 仓库未安装或过时时安排 Git `commit-msg` Hook 安装或升级 |
 
 工作区配置已存在时，必须展示当前配置项目清单；新建或重写配置时，必须展示拟写入项目清单。两种情况都使用同等表格，不能用“保留工作区配置”替代配置内容检查。
 

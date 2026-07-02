@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import subprocess
 from typing import Any
 
 from install_git_hooks import HookStatus, inspect_status, install, uninstall
@@ -42,6 +43,17 @@ def _target_paths(repo: Path, target_paths: list[str] | None) -> list[Path]:
     return [repo]
 
 
+def _is_git_worktree(path: Path) -> bool:
+    completed = subprocess.run(
+        ["git", "-C", path.as_posix(), "rev-parse", "--is-inside-work-tree"],
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=30,
+    )
+    return completed.returncode == 0 and completed.stdout.strip() == "true"
+
+
 def build_governed_hook_adapter(
     *,
     command: str,
@@ -55,6 +67,7 @@ def build_governed_hook_adapter(
     resolved_governance_root = governance_root.resolve()
     resolved_ldvh_root = ldvh_root.resolve()
     effective_targets = _target_paths(resolved_repo, target_paths)
+    repo_is_git_worktree = _is_git_worktree(resolved_repo)
     resolution = resolve_governed_subject(
         resolved_governance_root,
         cwd=resolved_repo,
@@ -81,6 +94,15 @@ def build_governed_hook_adapter(
                 "GOVERNED_HOOK_TARGET_NOT_GOVERNED",
                 ",".join(resolution["target_paths"]),
                 "目标 repo 未命中 LDVH 管辖项目；adapter 不安装或卸载 Hook。",
+            )
+        )
+    elif not repo_is_git_worktree:
+        diagnostics.append(
+            _diagnostic(
+                "blocking",
+                "GOVERNED_HOOK_TARGET_NOT_GIT_REPO",
+                resolved_repo.as_posix(),
+                "管辖项目必须是 Git 仓库；当前目标不是有效 Git worktree，停止安装 Git Hook。",
             )
         )
 
@@ -115,10 +137,17 @@ def build_governed_hook_adapter(
                 )
             )
     else:
-        try:
-            hook_status = _hook_status_dict(inspect_status(resolved_repo, resolved_ldvh_root))
-        except Exception as exc:
-            hook_status = {"error": str(exc), "installed": False}
+        if repo_is_git_worktree:
+            try:
+                hook_status = _hook_status_dict(inspect_status(resolved_repo, resolved_ldvh_root))
+            except Exception as exc:
+                hook_status = {"error": str(exc), "installed": False}
+        else:
+            hook_status = {
+                "repo": resolved_repo.as_posix(),
+                "installed": False,
+                "error": "not_a_git_worktree",
+            }
 
     blocking = sum(1 for item in diagnostics if item["level"] in {"blocking", "error"})
     installed = bool(hook_status.get("installed"))

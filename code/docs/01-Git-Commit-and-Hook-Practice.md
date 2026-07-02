@@ -73,4 +73,6 @@ governed adapter 安装外部 repo 时只写入 LDVH managed `commit-msg` 薄 sh
 
 LDVH 安装向导执行完整安装时，已选择管辖项目的 Git `commit-msg` Hook 是必检、必计划、确认后必执行的入口。安装或升级后必须回读 `governed_hook_adapter.py status`，确认 `core.hooksPath`、active hook、managed marker 和可执行位，并直接执行已安装 hook 文件验证有效 commit message 放行、无效 commit message 阻断。未完成这些验证时，不得声明该管辖项目 Git Hook 安装完成。
 
+已选择管辖项目必须是有效 Git worktree。`governed_hook_adapter.py` 发现目标不是 Git 仓库时必须返回 blocking diagnostic，不得执行安装、不得隐式 `git init`，并应提示 Human 先把目标项目变成 Git 仓库后再继续安装。
+
 测试或 adapter backend 需要调用底层安装器处理外部临时 repo 时，必须显式使用 `--backend-allow-external` 或直接调用 backend 函数；该标记不得作为 Human Gate 替代，也不得面向普通外部项目操作。

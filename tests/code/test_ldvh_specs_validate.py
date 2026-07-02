@@ -322,6 +322,21 @@ def test_governed_project_spec_requires_config_hierarchy_boundary(tmp_path: Path
     assert any("同一路径链" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
+def test_governed_project_spec_requires_git_project_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/10-管辖项目配置规范.md",
+        "管辖项目必须是 Git 管理的项目",
+        "",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GOVERNED_PROJECT_CONFIG_BOUNDARY_MISSING" in _diagnostic_codes(result)
+    assert any("管辖项目必须是 Git 管理的项目" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
 def test_governed_project_contract_reports_missing_resolution_field(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
@@ -1006,6 +1021,7 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "目标工作区根目录" in rows["Gate"]
     assert "配置层级冲突" in rows["Gate"]
     assert "管辖项目 Git Hook" in rows["Gate"]
+    assert "有效 Git worktree" in rows["Gate"]
     assert "安装方案预览" in rows["Gate"]
     assert "最终确认" in rows["Gate"]
     assert "bootstrap discovery" in rows["执行"]
@@ -1069,10 +1085,13 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "环境插件未安装时必须标为 `⚠️ 需安装` 并安排安装方案" in raw
     assert "环境插件已安装但指向旧路径、旧版本或 stale V2 path 时必须标为 `⚠️ 需升级` 并安排升级方案" in raw
     assert "每个已选择管辖项目都必须检查 Git `commit-msg` Hook 状态" in raw
+    assert "非 Git 目录必须标为 `⛔ 阻断` 并说明管辖项目必须是 Git 仓库" in raw
     assert "不得把这类情况表达成“不安装插件”“不处理插件”或“Git Hook 后置可不做”" in raw
     assert "完整安装方案必须同时覆盖 AI 环境 Hook 和管辖项目 Git Hook" in raw
     assert "`core.hooksPath` / active hook 状态" in raw
     assert "验证命令和卸载 / rollback 命令" in raw
+    assert "安装方案预览必须停止为 blocking" in raw
+    assert "管辖项目必须是 Git 仓库" in raw
     assert "当前配置项目清单" in raw
     assert "不得只写“保留工作区配置”" in raw
     assert "product_name" in raw
@@ -2704,6 +2723,52 @@ projects:
     assert payload["summary"]["hook_integrated"] == "none"
     assert "GOVERNED_HOOK_HUMAN_GATE_REQUIRED" in _diagnostic_codes(payload)
     assert not (repo / "hooks" / "commit-msg").exists()
+
+
+def test_governed_hook_adapter_blocks_non_git_governed_project_install(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    governance_root.mkdir()
+    repo.mkdir()
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/governed_hook_adapter.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--governance-root",
+            str(governance_root),
+            "--ldvh-root",
+            str(ROOT),
+            "--confirm-human-gate",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["summary"]["status"] == "blocked"
+    assert payload["summary"]["governed"] is True
+    assert payload["summary"]["hook_integrated"] == "none"
+    assert "GOVERNED_HOOK_TARGET_NOT_GIT_REPO" in _diagnostic_codes(payload)
+    assert "管辖项目必须是 Git 仓库" in payload["diagnostics"][0]["message"]
+    assert payload["hook_status"]["installed"] is False
+    assert not (repo / ".git").exists()
 
 
 def test_governed_hook_adapter_blocks_ungoverned_repo_install(tmp_path: Path) -> None:
