@@ -11,8 +11,7 @@ V2 已于 2026-07-02 关闭为历史来源、迁移审计依据和对照材料�
 - `code/`：确定性解析、校验、诊断、commit gate 和 e2e rehearsal。
 - `web/`：Human-facing 展示和 Web API。Web 独立读取 V3 `ldvh-base/`，不依赖 Code 输出作为主数据源。
 - `tests/`：正式回归检查。
-- `reviews/formal/`：正式 specs 和附件的 review hash gate 收据。
-- `_migration/`：历史迁移证据和迁移测试材料；不作为日常规则源、事实维护入口或正式 review ledger。
+- `_migration/`：历史迁移证据和迁移测试材料；不作为日常规则源、事实维护入口或当前 review gate。
 - `hooks/`：当前 worktree 的 `commit-msg` Hook 模板已启用，用于真实提交前校验 V3 commit message 契约；read_plan 消费证据归 runtime receipt 或外部运行时入口，不写入 commit body 要求。
 
 V3 不保留 `rules/` 或 `skills/` 顶层目录机制。V2 Rules 的入口可见能力只作为环境薄引用或 repo instruction 候选承接；V2 Skill 的可复用工作流能力只进入行动模板、Action Guide 或外部包装候选。

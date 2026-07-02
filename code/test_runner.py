@@ -30,7 +30,7 @@ SMOKE_STAGES: tuple[Stage, ...] = (
         _python_command("code/specs_validate.py", "all", "--format", "text", "--fail-on-diagnostics"),
     ),
     Stage(
-        "formal specs hash tests",
+        "formal specs structure tests",
         _python_command("-m", "pytest", "tests/code/test_formal_specs.py", "-q", "--tb=short"),
     ),
 )

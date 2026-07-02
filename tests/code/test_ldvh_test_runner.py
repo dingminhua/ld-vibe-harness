@@ -49,7 +49,7 @@ def test_smoke_profile_uses_fast_formal_validation_stages() -> None:
 
     stages = runner.build_stages("smoke", [])
 
-    assert _stage_names(stages) == ["specs validator", "formal specs hash tests"]
+    assert _stage_names(stages) == ["specs validator", "formal specs structure tests"]
 
 
 def test_targeted_profile_selects_web_checks_for_web_changes() -> None:
@@ -58,7 +58,7 @@ def test_targeted_profile_selects_web_checks_for_web_changes() -> None:
     stages = runner.build_stages("targeted", ["web/api/app.ts"])
 
     assert "specs validator" in _stage_names(stages)
-    assert "formal specs hash tests" in _stage_names(stages)
+    assert "formal specs structure tests" in _stage_names(stages)
     assert "web typecheck" in _stage_names(stages)
     assert "web api tests" in _stage_names(stages)
 

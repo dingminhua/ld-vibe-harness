@@ -2,7 +2,7 @@
 
 This directory stores historical migration gate evidence.
 
-Current formal review hash gate records live in `reviews/formal/`.
+The current V3 mainline no longer uses a formal review hash gate. These records are retained only as historical migration evidence.
 
 Review records are not spec facts. They cannot define rules, override Markdown specs, approve Human Gate, or replace Code diagnostics.
 
@@ -12,20 +12,14 @@ Before stage 11G, every formal spec or attachment addition, migration, or modifi
 _migration/reviews/{object_id}-formal-review.yaml
 ```
 
-After stage 11G, create and update:
-
-```text
-reviews/formal/{object_id}-formal-review.yaml
-```
-
-The record must show:
+Historical records were expected to show:
 
 1. v2 to v3 mapping evidence exists.
 2. Code verification command passed.
 3. Subagent review passed with no unresolved blockers.
-4. The review is bound to the target Markdown file hash.
+4. The review was bound to the target Markdown file hash at that migration point.
 5. Non-blocking warnings, if any, have a follow-up disposition.
 
-Do not put migrated rules, value explanations, action guide fields, or rewritten spec summaries in a review record. Use it as a receipt only.
+Do not add new current rules, value explanations, action guide fields, or rewritten spec summaries in a review record. Use these files as historical receipts only.
 
-Formal tests now read `reviews/formal/`. This directory remains only for historical traceability and mapping evidence.
+Formal specs tests no longer read review receipt directories. This directory remains only for historical traceability and migration evidence.

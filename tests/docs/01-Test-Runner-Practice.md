@@ -16,7 +16,7 @@ python3 code/test_runner.py full
 
 职责：
 
-1. `smoke`：快速结构验证和 formal review hash gate；
+1. `smoke`：快速结构验证和 formal specs 结构检查；
 2. `targeted`：根据变更路径选择目标测试；
 3. `runtime`：覆盖 runtime facade、manual adapter、preflight、completion claim、环境入口和静态 e2e 演练；
 4. `full`：阶段收口、跨域迁移、发布前验证或高风险回归。

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import re
 from pathlib import Path
 
@@ -8,20 +7,6 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[2]
-FORMAL_REVIEW_DIR = ROOT / "reviews" / "formal"
-BOOTSTRAP_OBJECT_IDS = {
-    "00",
-    "01",
-    "01.Att.01",
-    "01.Att.02",
-    "02",
-    "04",
-    "04.Att.01",
-    "04.Att.02",
-    "04.Att.03",
-    "04.Att.04",
-    "04.Att.05",
-}
 FIXED_HEAD_SECTIONS = [
     "价值判断",
     "权威依据",
@@ -56,33 +41,12 @@ RULE_LIKE_ATTACHMENT_TERMS = [
     "阻断",
 ]
 
-REVIEW_TOP_LEVEL_KEYS = {
-    "target_spec",
-    "target_sha256",
-    "change_type",
-    "mapping_evidence",
-    "code_verification",
-    "subagent_review",
-    "warnings",
-}
-REVIEW_NESTED_KEYS = {
-    "mapping_evidence": {"path"},
-    "code_verification": {"command", "passed", "receipt"},
-    "subagent_review": {"agent_id", "reviewer", "verdict", "receipt", "unresolved_blockers"},
-}
-REVIEW_CHANGE_TYPES = {"migration", "modification", "addition"}
-WARNING_KEYS = {"code", "source_ref", "message", "disposition", "follow_up", "report_required"}
-
 
 def _first_yaml_block(path: Path) -> dict:
     raw = path.read_text(encoding="utf-8")
     match = re.search(r"```yaml\n(.*?)\n```", raw, re.S)
     assert match, path
     return yaml.safe_load(match.group(1))
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _formal_markdown_files() -> list[Path]:
@@ -233,55 +197,3 @@ def test_formal_objects_have_unique_ids_and_real_paths() -> None:
         assert object_id not in seen_ids, object_id
         seen_ids.add(object_id)
         assert metadata["canonical_path"] == path.relative_to(ROOT).as_posix(), path
-
-
-def test_review_receipts_stay_narrow() -> None:
-    for path in sorted(FORMAL_REVIEW_DIR.glob("*-formal-review.yaml")):
-        if path.name == "template-formal-review.yaml":
-            continue
-        review = yaml.safe_load(path.read_text(encoding="utf-8"))
-        assert set(review) == REVIEW_TOP_LEVEL_KEYS, path
-        for key, allowed_keys in REVIEW_NESTED_KEYS.items():
-            assert set(review[key]) == allowed_keys, path
-        assert review["change_type"] in REVIEW_CHANGE_TYPES, path
-        assert isinstance(review["warnings"], list), path
-        for warning in review["warnings"]:
-            assert set(warning) == WARNING_KEYS, path
-            assert warning["code"], path
-            assert warning["source_ref"], path
-            assert warning["message"], path
-            assert warning["disposition"], path
-            assert warning["follow_up"], path
-            assert warning["report_required"] is True, path
-
-
-def test_formal_specs_and_attachments_require_code_and_subagent_review_gate() -> None:
-    for path in _formal_markdown_files():
-        object_id, metadata = _formal_object_id_and_metadata(path)
-        if object_id in BOOTSTRAP_OBJECT_IDS:
-            continue
-
-        review_path = FORMAL_REVIEW_DIR / f"{object_id}-formal-review.yaml"
-        assert review_path.exists(), f"{path} missing migration review gate {review_path}"
-        review = yaml.safe_load(review_path.read_text(encoding="utf-8"))
-        assert set(review) == REVIEW_TOP_LEVEL_KEYS, review_path
-        assert review["change_type"] in REVIEW_CHANGE_TYPES, review_path
-        assert review["target_spec"] == metadata["canonical_path"]
-        assert review["target_sha256"] == _sha256(path), review_path
-
-        mapping_path = ROOT / review["mapping_evidence"]["path"]
-        assert mapping_path.exists(), review_path
-        assert mapping_path.relative_to(ROOT).as_posix().startswith("_migration/"), review_path
-
-        assert review["code_verification"]["passed"] is True, review_path
-        assert review["code_verification"]["command"], review_path
-        assert review["code_verification"]["receipt"], review_path
-        assert review["subagent_review"]["agent_id"], review_path
-        assert review["subagent_review"]["verdict"] == "pass", review_path
-        assert review["subagent_review"]["receipt"], review_path
-        assert review["subagent_review"]["unresolved_blockers"] == [], review_path
-        for warning in review["warnings"]:
-            assert set(warning) == WARNING_KEYS, review_path
-            assert warning["disposition"], review_path
-            assert warning["follow_up"], review_path
-            assert warning["report_required"] is True, review_path
