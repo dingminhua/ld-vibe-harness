@@ -888,7 +888,8 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "两类位置" in rows["执行"]
     assert "选择框 / 单选控件" in rows["执行"]
     assert "编号二选一" in rows["执行"]
-    assert "理由、限制和建议" in rows["执行"]
+    assert "配置文件完整路径" in rows["执行"]
+    assert "限制和建议" in rows["执行"]
     assert "用户级配置目录只能记录为后置" in rows["执行"]
     assert "target-first resolver" in rows["执行"]
     assert "安装状态可复现" in rows["验证"]
@@ -909,6 +910,7 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "箭头" in raw
     assert "尚未发生的步骤保持空白" in raw
     assert "不得把事实伪装成 Human 选项" in raw
+    assert "配置文件完整路径必须分别展示工作区根目录和当前项目根目录下的 `LDVH-GOVERNED-PROJECTS.yaml` 实际路径" in raw
     assert "执行、不执行、返回修改" in raw
     assert "最终确认前" in raw
     assert "不得写入配置" in raw
@@ -969,6 +971,21 @@ def test_ldvh_install_action_template_reports_missing_user_config_deferral(tmp_p
 
     assert "LDVH_INSTALL_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
     assert any("用户级配置目录只能记录为后置" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_missing_config_path_disclosure(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "配置文件完整路径必须分别展示工作区根目录和当前项目根目录下的 `LDVH-GOVERNED-PROJECTS.yaml` 实际路径",
+        "配置文件位置可在执行时说明",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("配置文件完整路径必须分别展示工作区根目录" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_wizard_state_machine(tmp_path: Path) -> None:
