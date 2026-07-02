@@ -33,3 +33,5 @@ python3 code/environment_entry_audit.py --format text
 ```
 
 除当前 worktree 的 `git.commit-msg` 外，样例包存在不等于任何环境入口已自动触发。
+
+当前 Codex 样例包的仓库内测试只覆盖 shim 行为、payload 透传、阻断/非阻断返回和 stale path 审计。真实安装、升级、禁用、卸载或 rollback 仍必须进入 Human Gate。

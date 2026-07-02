@@ -14,6 +14,10 @@ from ldvh_specs import ROOT
 AUTHORIZATION = "none"
 PLACEHOLDER_FILES = {".gitkeep", ".DS_Store"}
 RUNTIME_PROTOCOL_ENTRY = "hooks/LDVH-RUNTIME-PROTOCOL.md"
+THIN_REFERENCE_TEMPLATE = "hooks/LDVH-THIN-REFERENCE-TEMPLATE.md"
+LEGACY_LDVH_PLUGIN_COMMAND_RE = re.compile(
+    r"/ld-vibe-harness(?:-[^/\s]+)?/code/(hook_adapter|hook_dispatch)\.py"
+)
 
 
 def _bool_text(value: bool) -> str:
@@ -176,8 +180,10 @@ def _codex_ldvh_plugin_candidate(
     enabled = _ldvh_plugin_enabled(config_path)
     commands = _hook_commands(hook_files)
     command_blob = "\n".join(commands)
-    points_to_v3 = ldvh_root.as_posix() in command_blob
-    points_to_legacy = bool(re.search(r"/ld-vibe-harness/code/(hook_adapter|hook_dispatch)\.py", command_blob))
+    v3_adapter = (ldvh_root / "code" / "runtime_adapter.py").as_posix()
+    points_to_v3 = v3_adapter in command_blob
+    stale_commands = [command for command in commands if LEGACY_LDVH_PLUGIN_COMMAND_RE.search(command)]
+    points_to_legacy = bool(stale_commands)
 
     if not evidence:
         return _candidate(
@@ -220,7 +226,7 @@ def _codex_ldvh_plugin_candidate(
             manual_fallback="code/runtime_adapter.py",
             decision="reinstall_for_v3",
             reason="LDVH 插件已启用但指向旧 V2/旧仓库路径；需要 V3 插件包重新安装或升级后才可声明接入。",
-            details={"commands": commands},
+            details={"commands": commands, "stale_commands": stale_commands},
         )
     if points_to_v3:
         return _candidate(
@@ -324,6 +330,31 @@ def _runtime_protocol_entry_candidate(ldvh_root: Path) -> dict[str, Any]:
     )
 
 
+def _thin_reference_template_candidate(ldvh_root: Path) -> dict[str, Any]:
+    template_path = ldvh_root / THIN_REFERENCE_TEMPLATE
+    if template_path.is_file():
+        return _candidate(
+            entry_id="hooks.thin-reference-template",
+            category="repo_instruction_candidate",
+            status="available",
+            trigger="repo instruction, agent instruction, or manual thin reference",
+            evidence=[template_path.as_posix()],
+            manual_fallback=RUNTIME_PROTOCOL_ENTRY,
+            decision="reference_only_without_claiming_integration",
+            reason="检测到 V3 薄引用模板；该模板只用于无 Hook 或只支持指令入口的环境引用 V3 Runtime Protocol 和 specs，不能证明环境已自动接入。",
+        )
+    return _candidate(
+        entry_id="hooks.thin-reference-template",
+        category="repo_instruction_candidate",
+        status="absent",
+        trigger="repo instruction, agent instruction, or manual thin reference",
+        evidence=[],
+        manual_fallback=RUNTIME_PROTOCOL_ENTRY,
+        decision="create_template_before_reference",
+        reason="未发现 V3 薄引用模板；无 Hook 环境缺少可复制的最小 repo instruction 引用资产。",
+    )
+
+
 def build_environment_entry_audit(
     repo: Path = ROOT,
     ldvh_root: Path = ROOT,
@@ -339,6 +370,7 @@ def build_environment_entry_audit(
     commit_entry = env_entrypoints.get("git.commit-msg", {})
     codex_plugin = _codex_ldvh_plugin_candidate(resolved_ldvh_root, resolved_codex_home, diagnostics)
     runtime_protocol_entry = _runtime_protocol_entry_candidate(resolved_ldvh_root)
+    thin_reference_template = _thin_reference_template_candidate(resolved_ldvh_root)
     candidates: list[dict[str, Any]] = [
         _candidate(
             entry_id="git.commit-msg",
@@ -352,6 +384,7 @@ def build_environment_entry_audit(
             automatic=bool(commit_entry.get("integrated")),
         ),
         runtime_protocol_entry,
+        thin_reference_template,
         codex_plugin,
         _candidate(
             entry_id="runtime.session_start.auto",

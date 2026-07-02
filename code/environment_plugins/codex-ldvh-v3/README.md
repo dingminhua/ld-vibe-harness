@@ -59,6 +59,7 @@ shim 按以下顺序解析 LDVH root：
 python3 /Users/dmh2002/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py code/environment_plugins/codex-ldvh-v3
 python3 -m json.tool code/environment_plugins/codex-ldvh-v3/hooks/hooks.json >/dev/null
 python3 -m py_compile code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
+python3 -m pytest tests/code/test_environment_plugins.py -q --tb=short
 ```
 
-这些检查只证明 repo-local 包结构和 shim 语法可用，不证明 Codex 已加载或触发该包。
+这些检查只证明 repo-local 包结构、shim 语法、payload 透传、PreToolUse 阻断返回和 Stop 非阻断降级可用，不证明 Codex 已加载或触发该包。

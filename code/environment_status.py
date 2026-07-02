@@ -24,6 +24,11 @@ MANUAL_ENTRYPOINTS = (
         "purpose": "manual session_start read_plan",
     },
     {
+        "id": "manual.acknowledge_read_plan",
+        "script": "acknowledge_read_plan.py",
+        "purpose": "manual read_plan consumption receipt",
+    },
+    {
         "id": "manual.pre_tool_use",
         "script": "pre_tool_use.py",
         "purpose": "manual pre_tool_use preflight",
@@ -184,6 +189,8 @@ def build_environment_status(repo: Path = ROOT, ldvh_root: Path = ROOT) -> dict[
             "runtime_adapter_integrated": False,
             "session_start_entry": "manual.session_start",
             "session_start_integrated": False,
+            "acknowledge_read_plan_entry": "manual.acknowledge_read_plan",
+            "acknowledge_read_plan_integrated": False,
             "pre_tool_use_entry": "manual.pre_tool_use",
             "pre_tool_use_integrated": False,
             "completion_claim_entry": "manual.completion_claim",
@@ -198,6 +205,7 @@ def build_environment_status(repo: Path = ROOT, ldvh_root: Path = ROOT) -> dict[
         "entrypoints": entrypoints,
         "unresolved_boundaries": [
             "session_start has no automatic environment trigger",
+            "acknowledge_read_plan is a stdout-only manual receipt, not persistent environment state",
             "pre_tool_use has no automatic tool-call trigger",
             "completion_claim has no automatic completion trigger",
             "runtime_adapter is manual/external adapter-ready only",

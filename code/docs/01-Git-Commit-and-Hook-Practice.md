@@ -15,6 +15,14 @@ Git 提交行动执行时，AI 应按当前目标读取：
 
 提交前应只 stage 本次范围内文件，判断是否需要拆分提交，并按 `specs/attachments/03.Att.01-Commit-Message契约字段表.md` 选择单一 type 和零个或一个 scope。提交正文在触发 body 条件时应包含 `关键变更:`；read_plan 消费证据由 runtime receipt、外部运行时入口或显式校验入参承接，不写入 commit body 要求。
 
+读取计划确认可使用手动入口：
+
+```bash
+python3 code/acknowledge_read_plan.py --acknowledged-path specs/00-理念与构成.md --acknowledged-path specs/01-保障与衔接.md --acknowledged-path specs/02-AI行为规范.md --format json
+```
+
+该入口只生成 stdout-only receipt，不写入 session 存储，不替代 `pre_tool_use`、commit gate、验证声明或 Human Gate。`runtime_adapter.py` 仍只暴露环境 lifecycle 三件套：`session_start`、`pre_tool_use`、`completion_claim`。
+
 提交前可运行：
 
 ```bash
@@ -39,7 +47,7 @@ python3 code/environment_status.py --format text
 python3 code/environment_entry_audit.py --format text
 ```
 
-当前预期状态是：`git.commit-msg` 为 integrated；`manual.runtime_adapter`、`manual.session_start`、`manual.pre_tool_use` 和 `manual.completion_claim` 为 manual-ready 或 deferred。
+当前预期状态是：`git.commit-msg` 为 integrated；`manual.runtime_adapter`、`manual.session_start`、`manual.acknowledge_read_plan`、`manual.pre_tool_use` 和 `manual.completion_claim` 为 manual-ready 或 deferred。
 
 ## 底层安装器边界
 

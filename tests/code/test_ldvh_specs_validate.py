@@ -145,13 +145,17 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     entry_types = (ROOT / "specs/attachments/01.Att.03-环境入口类型表.md").read_text(encoding="utf-8")
     rollback = (ROOT / "specs/attachments/01.Att.06-环境安装回滚检查表.md").read_text(encoding="utf-8")
     runtime_protocol_entry = (ROOT / "hooks/LDVH-RUNTIME-PROTOCOL.md").read_text(encoding="utf-8")
+    thin_reference_template = (ROOT / "hooks/LDVH-THIN-REFERENCE-TEMPLATE.md").read_text(encoding="utf-8")
 
     assert "V3 当前 Hook 分为两类" in spec_01
     assert "hooks/LDVH-RUNTIME-PROTOCOL.md" in spec_01
+    assert "hooks/LDVH-THIN-REFERENCE-TEMPLATE.md" in spec_01
     assert "hook_protocol_entry" in spec_01
     assert "只允许写入口身份、权威回指和当前 Code 入口" in spec_01
     assert "不得写接入状态" in spec_01
     assert "接入状态由 `01.Att.04` 和 Code 环境审计承接" in spec_01
+    assert "不恢复 V2 persistent session receipt 存储" in spec_01
+    assert "不作为环境 adapter 的独立 lifecycle event" in spec_01
     assert "Git Hook" in spec_01
     assert "环境 Hook" in spec_01
     assert "只能定位并调用 LDVH" in spec_01
@@ -185,6 +189,13 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "当前 Code 入口" in runtime_protocol_entry
     assert "接入状态" not in runtime_protocol_entry
     assert "python3 code/runtime_adapter.py session-start --format json" in runtime_protocol_entry
+
+    assert "文件状态：thin reference template" in thin_reference_template
+    assert "<LDVH_ROOT>/hooks/LDVH-RUNTIME-PROTOCOL.md" in thin_reference_template
+    assert "<LDVH_ROOT>/specs/01-保障与衔接.md" in thin_reference_template
+    assert "<LDVH_ROOT>/specs/10-管辖项目配置规范.md" in thin_reference_template
+    assert "不恢复 `rules/` 目录或 Rules registry" in thin_reference_template
+    assert "不声明任何环境已经 integrated" in thin_reference_template
 
 
 def test_foundation_validator_reports_missing_code_consumption(tmp_path: Path) -> None:
@@ -1711,6 +1722,65 @@ def test_runtime_acknowledge_read_plan_accepts_entry_paths() -> None:
     assert runtime["diagnostics"] == []
 
 
+def test_acknowledge_read_plan_cli_accepts_entry_paths() -> None:
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/acknowledge_read_plan.py",
+            "--session-id",
+            "test-ack",
+            "--target-path",
+            "tests/code/test_ldvh_specs_validate.py",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["event"] == "acknowledge_read_plan"
+    assert payload["summary"]["environment_integrated"] is False
+    assert payload["summary"]["integration_scope"] == "manual.acknowledge_read_plan"
+    assert payload["metadata"]["integration_scope"] == "manual.acknowledge_read_plan"
+    assert payload["receipt"]["storage"] == "stdout_only"
+    assert payload["receipt"]["persistent"] is False
+    assert payload["receipt"]["acknowledged_paths"] == [
+        "specs/00-理念与构成.md",
+        "specs/01-保障与衔接.md",
+        "specs/02-AI行为规范.md",
+    ]
+    assert payload["diagnostics"] == []
+
+
+def test_acknowledge_read_plan_cli_blocks_missing_paths() -> None:
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/acknowledge_read_plan.py",
+            "--target-path",
+            "tests/code/test_ldvh_specs_validate.py",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["summary"]["status"] == "blocked"
+    assert payload["summary"]["integration_scope"] == "manual.acknowledge_read_plan"
+    assert "RUNTIME_ACK_REQUIRED_PATHS_EMPTY" in _diagnostic_codes(payload)
+
+
 def test_runtime_pre_tool_use_includes_preflight() -> None:
     runtime = ldvh_specs.build_runtime_event(
         ROOT,
@@ -2363,6 +2433,7 @@ def test_environment_status_reports_commit_hook_and_manual_entries(tmp_path: Pat
     assert set(payload["summary"]["manual_entrypoints"]) == {
         "manual.runtime_adapter",
         "manual.session_start",
+        "manual.acknowledge_read_plan",
         "manual.pre_tool_use",
         "manual.completion_claim",
     }
@@ -2370,6 +2441,8 @@ def test_environment_status_reports_commit_hook_and_manual_entries(tmp_path: Pat
     assert entrypoints["git.commit-msg"]["integrated"] is True
     assert entrypoints["manual.runtime_adapter"]["available"] is True
     assert entrypoints["manual.runtime_adapter"]["integrated"] is False
+    assert entrypoints["manual.acknowledge_read_plan"]["available"] is True
+    assert entrypoints["manual.acknowledge_read_plan"]["integrated"] is False
     assert entrypoints["manual.pre_tool_use"]["details"]["automatic_trigger"] is False
     assert payload["metadata"]["authorization"] == "none"
     assert payload["diagnostics"] == []
@@ -2464,6 +2537,9 @@ def test_environment_entry_audit_marks_rules_and_skills_removed_top_level(tmp_pa
     assert candidates["hooks.runtime-protocol"]["status"] == "available"
     assert candidates["hooks.runtime-protocol"]["integrated"] is False
     assert candidates["hooks.runtime-protocol"]["category"] == "hook_protocol_entry"
+    assert candidates["hooks.thin-reference-template"]["status"] == "available"
+    assert candidates["hooks.thin-reference-template"]["integrated"] is False
+    assert candidates["hooks.thin-reference-template"]["category"] == "repo_instruction_candidate"
     assert candidates["runtime.pre_tool_use.auto"]["status"] == "deferred"
     assert candidates["runtime.pre_tool_use.auto"]["manual_fallback"] == "code/pre_tool_use.py"
     assert candidates["codex.ldvh-plugin"]["status"] == "absent"
@@ -2521,6 +2597,8 @@ def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_pa
     assert payload["summary"]["integrated_entrypoints"] == ["git.commit-msg"]
     assert candidates["hooks.runtime-protocol"]["status"] == "available"
     assert candidates["hooks.runtime-protocol"]["integrated"] is False
+    assert candidates["hooks.thin-reference-template"]["status"] == "available"
+    assert candidates["hooks.thin-reference-template"]["integrated"] is False
     assert candidates["codex.repo-instructions"]["status"] == "available"
     assert candidates["codex.repo-instructions"]["integrated"] is False
     assert candidates["codex.ldvh-plugin"]["status"] == "absent"
@@ -2616,6 +2694,7 @@ enabled = true
     assert payload["summary"]["codex_plugin_entry_integrated"] is False
     assert candidates["codex.ldvh-plugin"]["status"] == "available"
     assert candidates["codex.ldvh-plugin"]["decision"] == "reinstall_for_v3"
+    assert candidates["codex.ldvh-plugin"]["details"]["stale_commands"]
     assert candidates["runtime.session_start.auto"]["status"] == "deferred"
     assert "LDVH 插件" in candidates["runtime.session_start.auto"]["reason"]
     assert "ENV_CODEX_LDVH_PLUGIN_STALE" in _diagnostic_codes(payload)
@@ -2791,6 +2870,41 @@ def test_runtime_adapter_blocks_unknown_event_payload() -> None:
         "operation": "read",
         "task": "进入 LDVH v3 工作",
         "acknowledged_paths": [],
+        "verification_evidence": [],
+    }
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/runtime_adapter.py",
+            "--payload-json",
+            json.dumps(adapter_payload, ensure_ascii=False),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["summary"]["status"] == "blocked"
+    assert payload["dispatch"] is None
+    assert "RUNTIME_ADAPTER_EVENT_UNKNOWN" in _diagnostic_codes(payload)
+
+
+def test_runtime_adapter_does_not_expose_acknowledge_read_plan_payload() -> None:
+    adapter_payload = {
+        "event": "acknowledge_read_plan",
+        "session_id": "test-runtime-adapter",
+        "target_path": "README.md",
+        "operation": "read",
+        "task": "确认读取计划",
+        "acknowledged_paths": [
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
         "verification_evidence": [],
     }
 

@@ -15,6 +15,7 @@ E2E_NAME_TOKENS = ("e2e",)
 RUNTIME_NAME_TOKENS = (
     "runtime_",
     "runtime_adapter",
+    "acknowledge_read_plan",
     "pre_tool_use",
     "preflight_",
     "session_start",
