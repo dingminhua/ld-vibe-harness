@@ -1,5 +1,7 @@
 # LDVH V3
 
+V2 已于 2026-07-02 关闭为历史来源、迁移审计依据和对照材料，不再作为当前 LDVH 的日常规则入口。关闭记录见 `_migration/25A-v2-official-closure.md`。
+
 当前仓库处于 V3 commit-msg 最小 hard switch 状态：日常规则判断、事实对象维护和 Web 数据读取以 V3 为准；当前 worktree 的真实 Git `commit-msg` Hook 已由 V3 接管。Rules / Skill 顶层机制已取消；runtime adapter、session start、pre tool use、completion claim 和其它阻断型环境入口尚未强制接管。
 
 ## 当前主线
