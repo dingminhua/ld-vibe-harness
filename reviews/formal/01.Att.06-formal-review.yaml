@@ -1,16 +1,16 @@
 target_spec: "specs/attachments/01.Att.06-环境安装回滚检查表.md"
-target_sha256: "0a033db0833430d8ca0d4380af0b6446530db85423f045aed9b22a78819ef8f5"
+target_sha256: "ec63d9afdfb6be1b3898f6fb42a302f13cdcaba25d58e936c1f5ac3708e2c82c"
 change_type: "modification"
 mapping_evidence:
-  path: "_migration/11C-environment-adaptation-admission.md"
+  path: "_migration/28A-codex-plugin-environment-entry-alignment.md"
 code_verification:
   command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py tests/code/test_ldvh_specs_validate.py -q"
   passed: true
-  receipt: "Formal gate covers installation and rollback check items as an attachment subordinate to 01, including entry kind, shim boundary and rollback state checks."
+  receipt: "Formal gate covers installation and rollback check items as an attachment subordinate to 01, including entry kind, plugin manifest, trust state, shim boundary and rollback state checks."
 subagent_review:
   agent_id: "codex-local-01-environment-absorption-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review confirms 01.Att.06 only carries install/rollback check items, requires uninstall state evidence and does not declare any new automatic integration."
+  receipt: "Local review confirms 01.Att.06 only carries install/rollback check items, requires plugin and uninstall state evidence and does not declare any new automatic integration."
   unresolved_blockers: []
 warnings: []

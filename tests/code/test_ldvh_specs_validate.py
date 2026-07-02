@@ -126,18 +126,21 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "环境 Hook" in spec_01
     assert "只能定位并调用 LDVH" in spec_01
     assert "核心逻辑都必须留在 LDVH Code 中" in spec_01
+    assert "正式安装形态应是 LDVH Codex 插件" in spec_01
     assert "非管辖项目必须 no-op" in spec_01
     assert "卸载时必须移除或禁用该 repo 的 shim" in spec_01
     assert "验证环境不再自动触发 LDVH" in spec_01
 
     assert "| `git_hook_shim` |" in entry_types
     assert "| `environment_hook` |" in entry_types
+    assert "LDVH Codex plugin" in entry_types
     assert "只调用 LDVH" in entry_types
     assert "只指向 LDVH runtime / adapter" in entry_types
 
     assert "| `entry_kind` |" in rollback
     assert "| `shim_boundary` |" in rollback
     assert "| `rollback_state` |" in rollback
+    assert "插件 manifest" in rollback
     assert "恢复或保留原有用户 Hook / 环境配置" in rollback
 
 
@@ -2348,7 +2351,9 @@ def test_environment_status_blocks_missing_commit_hook(tmp_path: Path) -> None:
 
 def test_environment_entry_audit_marks_rules_and_skills_removed_top_level(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
     repo.mkdir()
+    codex_home.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
     (repo / "rules").mkdir()
     (repo / "rules" / ".gitkeep").write_text("", encoding="utf-8")
@@ -2379,6 +2384,8 @@ def test_environment_entry_audit_marks_rules_and_skills_removed_top_level(tmp_pa
             str(repo),
             "--ldvh-root",
             str(ROOT),
+            "--codex-home",
+            str(codex_home),
             "--format",
             "json",
         ],
@@ -2396,24 +2403,29 @@ def test_environment_entry_audit_marks_rules_and_skills_removed_top_level(tmp_pa
     assert payload["summary"]["skill_entry_integrated"] is False
     assert payload["summary"]["tool_hook_integrated"] is False
     assert payload["summary"]["completion_hook_integrated"] is False
+    assert payload["summary"]["codex_plugin_entry_integrated"] is False
     assert payload["summary"]["codex_environment_entry_integrated"] is False
     assert "rules.top_level_mechanism" in payload["summary"]["removed_top_level_entrypoints"]
     assert "skills.top_level_mechanism" in payload["summary"]["removed_top_level_entrypoints"]
     assert candidates["git.commit-msg"]["status"] == "integrated"
     assert candidates["runtime.pre_tool_use.auto"]["status"] == "deferred"
     assert candidates["runtime.pre_tool_use.auto"]["manual_fallback"] == "code/pre_tool_use.py"
+    assert candidates["codex.ldvh-plugin"]["status"] == "absent"
+    assert candidates["codex.ldvh-plugin"]["decision"] == "install_plugin_before_claiming"
     assert candidates["rules.top_level_mechanism"]["status"] == "removed_top_level"
     assert candidates["rules.top_level_mechanism"]["decision"] == "removed_top_level"
     assert candidates["skills.top_level_mechanism"]["status"] == "removed_top_level"
     assert candidates["skills.top_level_mechanism"]["decision"] == "removed_top_level"
     assert candidates["codex.repo-instructions"]["status"] == "absent"
-    assert payload["decision"]["next_step"] == "defer_auto_runtime_until_real_trigger_exists"
+    assert payload["decision"]["next_step"] == "install_or_upgrade_ldvh_codex_plugin_before_auto_runtime_claim"
     assert payload["diagnostics"] == []
 
 
 def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
     repo.mkdir()
+    codex_home.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
     (repo / "AGENTS.md").write_text("# Repo instructions\n", encoding="utf-8")
     subprocess.run(
@@ -2441,6 +2453,8 @@ def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_pa
             str(repo),
             "--ldvh-root",
             str(ROOT),
+            "--codex-home",
+            str(codex_home),
             "--format",
             "json",
         ],
@@ -2455,10 +2469,106 @@ def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_pa
     assert payload["summary"]["integrated_entrypoints"] == ["git.commit-msg"]
     assert candidates["codex.repo-instructions"]["status"] == "available"
     assert candidates["codex.repo-instructions"]["integrated"] is False
+    assert candidates["codex.ldvh-plugin"]["status"] == "absent"
     assert candidates["rules.top_level_mechanism"]["status"] == "removed_top_level"
     assert candidates["skills.top_level_mechanism"]["status"] == "removed_top_level"
     assert payload["summary"]["codex_environment_entry_integrated"] is False
     assert "ENV_CODEX_ENTRY_FILES_NOT_INTEGRATED" in _diagnostic_codes(payload)
+
+
+def test_environment_entry_audit_reports_stale_ldvh_codex_plugin(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
+    hook_dir = codex_home / "plugins" / "cache" / "personal" / "ldvh" / "0.1.0" / "hooks"
+    repo.mkdir()
+    hook_dir.mkdir(parents=True)
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    (codex_home / "config.toml").write_text(
+        """
+[plugins."ldvh@personal"]
+enabled = true
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    (hook_dir / "hooks.json").write_text(
+        json.dumps(
+            {
+                "hooks": {
+                    "SessionStart": [
+                        {
+                            "matcher": "startup|resume",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "python3 /Users/example/poker_hud_projects/ld-vibe-harness/code/hook_adapter.py session-start",
+                                }
+                            ],
+                        }
+                    ],
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash|Edit|Write",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "python3 /Users/example/poker_hud_projects/ld-vibe-harness/code/hook_adapter.py pre-tool-use",
+                                }
+                            ],
+                        }
+                    ],
+                }
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    subprocess.run(
+        [
+            sys.executable,
+            "code/install_git_hooks.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--backend-allow-external",
+            "--ldvh-root",
+            str(ROOT),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/environment_entry_audit.py",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+            "--codex-home",
+            str(codex_home),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    candidates = {candidate["id"]: candidate for candidate in payload["candidates"]}
+    assert payload["summary"]["integrated_entrypoints"] == ["git.commit-msg"]
+    assert "codex.ldvh-plugin" in payload["summary"]["available_unintegrated_entrypoints"]
+    assert payload["summary"]["codex_plugin_entry_integrated"] is False
+    assert candidates["codex.ldvh-plugin"]["status"] == "available"
+    assert candidates["codex.ldvh-plugin"]["decision"] == "reinstall_for_v3"
+    assert candidates["runtime.session_start.auto"]["status"] == "deferred"
+    assert "LDVH 插件" in candidates["runtime.session_start.auto"]["reason"]
+    assert "ENV_CODEX_LDVH_PLUGIN_STALE" in _diagnostic_codes(payload)
 
 
 def test_runtime_completion_claim_requires_verification_evidence() -> None:

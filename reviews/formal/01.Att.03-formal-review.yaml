@@ -1,16 +1,16 @@
 target_spec: "specs/attachments/01.Att.03-环境入口类型表.md"
-target_sha256: "ddcfdcd126bda92c7ec1a3945682b895233e1f6d1c0d8cf504351ec9d93e58fd"
+target_sha256: "7cdb897efb3a957c8f412d00da7366ca2cb23945c7c769d7380acd3e375c927a"
 change_type: "modification"
 mapping_evidence:
-  path: "_migration/11C-environment-adaptation-admission.md"
+  path: "_migration/28A-codex-plugin-environment-entry-alignment.md"
 code_verification:
   command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py tests/code/test_ldvh_specs_validate.py -q"
   passed: true
-  receipt: "Formal gate covers the environment entry type closed table as an attachment subordinate to 01, including Git hook shim and environment hook entry kinds."
+  receipt: "Formal gate covers the environment entry type closed table as an attachment subordinate to 01, including Git hook shim, Codex plugin environment hook and external adapter candidate entry kinds."
 subagent_review:
   agent_id: "codex-local-01-environment-absorption-review"
   reviewer: "Codex"
   verdict: "pass"
-  receipt: "Local review confirms 01.Att.03 only carries the entry type enum and keeps Git hook shim / environment hook as LDVH entry pointers, not independent rule sources."
+  receipt: "Local review confirms 01.Att.03 only carries the entry type enum and keeps Git hook shim / LDVH Codex plugin environment hook as LDVH entry pointers, not independent rule sources."
   unresolved_blockers: []
 warnings: []
