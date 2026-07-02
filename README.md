@@ -42,6 +42,8 @@ authorization: none
 2. 环境插件 / 扩展：所有支持 Hook 的协作环境都必须通过对应 LDVH 插件、扩展包或 package 安装环境 Hook；当前可审计样例是 Codex，旧 `ldvh@personal` 插件指向 V2 路径，不能声明为 V3 integrated；
 3. 手动 / 外部 adapter-ready：`session_start`、`pre_tool_use`、`completion_claim` 可通过独立 CLI 或统一 `runtime_adapter.py` 调用，但不会自动触发。
 
+Git Hook 实践见 `code/docs/01-Git-Commit-and-Hook-Practice.md`；环境插件和 Hook 接入实现实践见 `code/docs/02-Environment-Plugin-Practice.md`。后者只记录实现域边界，不表示已安装或升级任何环境插件。
+
 统一 runtime adapter 入口：
 
 ```bash

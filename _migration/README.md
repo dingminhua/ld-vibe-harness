@@ -113,3 +113,5 @@
 `_migration/26A-v3-post-closure-work-queue.md` 整理 V2 正式关闭后的 V3 后置工作队列。它把后置事项分为 P1、P2、Parked 和 Closed，说明下一步触发条件、Human Gate 和不再反复讨论的边界；它不授权任何后置能力生效。
 
 `_migration/29A-ldvh-install-initialization-action-template.md` 记录 V2 `33` 安装与首次配置行动编排向 V3 `06` 的受控吸收。它说明当前只新增 LDVH 安装、初始化与管辖项目配置行动模板，不安装环境插件，不写用户环境配置，不创建管辖项目配置文件，也不声明任何环境 Hook 已 integrated。
+
+`_migration/30A-environment-plugin-implementation-plan.md` 记录环境插件化接入的实现域准备。它新增 `code/docs/02-Environment-Plugin-Practice.md`，明确所有支持 Hook 的协作环境应通过 LDVH 插件、扩展包或 package 承载环境 Hook，插件只做薄 shim 并调用 V3 runtime adapter；它不安装真实插件，不修改用户环境配置，也不声明新的环境入口已 integrated。
