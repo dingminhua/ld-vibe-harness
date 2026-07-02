@@ -71,4 +71,6 @@ python3 code/governed_hook_adapter.py uninstall --repo "<repo>" --governance-roo
 
 governed adapter 安装外部 repo 时只写入 LDVH managed `commit-msg` 薄 shim，并把 LDVH 根目录嵌入为默认 validator 位置。外部 repo 的 shim 放在 Git 本地目录 `.git/ldvh-hooks/commit-msg`，避免把 Hook 文件写入业务工作树；LDVH 自身仍使用仓库内 `hooks/commit-msg` 作为模板和本仓库 Hook。卸载时应取消该 repo 的 worktree-local `core.hooksPath`，删除外部 repo 中由 LDVH 管理的 shim；已有用户 Hook 或备份资产不得被静默删除。
 
+LDVH 安装向导执行完整安装时，已选择管辖项目的 Git `commit-msg` Hook 是必检、必计划、确认后必执行的入口。安装或升级后必须回读 `governed_hook_adapter.py status`，确认 `core.hooksPath`、active hook、managed marker 和可执行位，并直接执行已安装 hook 文件验证有效 commit message 放行、无效 commit message 阻断。未完成这些验证时，不得声明该管辖项目 Git Hook 安装完成。
+
 测试或 adapter backend 需要调用底层安装器处理外部临时 repo 时，必须显式使用 `--backend-allow-external` 或直接调用 backend 函数；该标记不得作为 Human Gate 替代，也不得面向普通外部项目操作。

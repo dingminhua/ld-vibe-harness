@@ -1000,10 +1000,12 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "LDVH 本体路径" in rows["Context"]
     assert "目标工作区根目录" in rows["Context"]
     assert "LDVH-GOVERNED-PROJECTS.yaml" in rows["Context"]
+    assert "Git Hook 状态" in rows["Context"]
     assert "安装 LDVH" in rows["Scenario"]
     assert "LDVH 本体路径" in rows["Gate"]
     assert "目标工作区根目录" in rows["Gate"]
     assert "配置层级冲突" in rows["Gate"]
+    assert "管辖项目 Git Hook" in rows["Gate"]
     assert "安装方案预览" in rows["Gate"]
     assert "最终确认" in rows["Gate"]
     assert "bootstrap discovery" in rows["执行"]
@@ -1018,6 +1020,11 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "配置层级检查" in rows["执行"]
     assert "目标项目内已存在配置" in rows["执行"]
     assert "target-first resolver" in rows["执行"]
+    assert "AI 环境 Hook" in rows["执行"]
+    assert "Git `commit-msg` Hook" in rows["执行"]
+    assert "governed_hook_adapter.py status" in rows["验证"]
+    assert "managed `commit-msg` hook" in rows["验证"]
+    assert "正反样例" in rows["验证"]
     assert "安装状态可复现" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
     assert "integrated / manual_ready / deferred / removed_top_level" in rows["交还"]
@@ -1052,6 +1059,8 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "⛔ 阻断" in raw
     assert "➖ 不适用" in raw
     assert "🔌 环境入口" in raw
+    assert "🪝 Git Hook" in raw
+    assert "🪝 管辖项目 Git Hook" in raw
     assert "🗑️ 项目内旧配置" in raw
     assert "🧪 验证" in raw
     assert "↩️ 回滚" in raw
@@ -1059,7 +1068,11 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "不得把事实伪装成 Human 选项" in raw
     assert "环境插件未安装时必须标为 `⚠️ 需安装` 并安排安装方案" in raw
     assert "环境插件已安装但指向旧路径、旧版本或 stale V2 path 时必须标为 `⚠️ 需升级` 并安排升级方案" in raw
-    assert "不得把这类情况表达成“不安装插件”或“不处理插件”" in raw
+    assert "每个已选择管辖项目都必须检查 Git `commit-msg` Hook 状态" in raw
+    assert "不得把这类情况表达成“不安装插件”“不处理插件”或“Git Hook 后置可不做”" in raw
+    assert "完整安装方案必须同时覆盖 AI 环境 Hook 和管辖项目 Git Hook" in raw
+    assert "`core.hooksPath` / active hook 状态" in raw
+    assert "验证命令和卸载 / rollback 命令" in raw
     assert "当前配置项目清单" in raw
     assert "不得只写“保留工作区配置”" in raw
     assert "product_name" in raw

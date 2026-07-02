@@ -71,7 +71,7 @@ python3 code/environment_entry_audit.py --format text
 
 只有同时具备真实触发、稳定 payload、失败处理、安装状态、回滚方式和测试证据，才可把对应环境入口升级为 integrated。文件存在、插件缓存存在、历史 trust 记录或旧路径命中，都不得声明 integrated。
 
-2026-07-02 的只读审计结果显示：当前 worktree 只有 `git.commit-msg` integrated；本机 Codex `ldvh@personal` 插件可见但仍指向旧 V2 `code/hook_adapter.py` 命令，因此只能记录为 `available` / stale，不得声明为 V3 integrated。修复该状态需要重新安装或升级 V3 插件包，并先进入 Human Gate。
+2026-07-03 的安装审计结果显示：当前 worktree 只有 `git.commit-msg` integrated；本机 Codex `ldvh@personal` 插件已升级并指向 V3 Codex shim，但仍只能记录为 `available`，不得声明为 V3 integrated。只有补齐真实 Codex lifecycle 触发、payload、失败阻断 / 降级和回滚证据后，才能改变 integrated 结论。
 
 ## 安装与卸载边界
 
@@ -101,7 +101,7 @@ python3 code/environment_entry_audit.py --format text
 | stale V2 path | `environment_entry_audit.py` 识别指向旧 `ld-vibe-harness` / `hook_adapter.py` / `hook_dispatch.py` 的 Codex plugin 命令，状态保持 `available` 而不是 integrated | 修复必须走插件升级 / reinstall Human Gate |
 | install / uninstall / rollback | `governed_hook_adapter.py` 与 `install_git_hooks.py` 的临时 repo 测试覆盖 Git hook shim 安装、Human Gate 缺失阻断、卸载后状态回读 | 不等价于安装用户级环境插件 |
 
-真实 Codex / IDE / Agent 环境插件的 positive、negative、status、disable、uninstall 和 rollback 测试仍 gated。没有 Human 明确确认目标环境、写入位置、触发点、payload、失败处理和回滚方式前，不得写入用户环境或修改外部项目 Hook。
+真实 Codex / IDE / Agent 环境插件的 positive、negative、status、disable、uninstall 和 rollback 测试仍 gated。安装完成后至少应能测试插件状态、Hook 配置指向 V3 shim、直接 shim 正反输入；若当前回合不能触发真实 lifecycle，必须记录不可验证范围，不得声明 integrated。没有 Human 明确确认目标环境、写入位置、触发点、payload、失败处理和回滚方式前，不得写入用户环境或修改外部项目 Hook。
 
 ## Codex 样例进入条件
 
