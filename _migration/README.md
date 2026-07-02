@@ -112,6 +112,12 @@
 
 `_migration/26A-v3-post-closure-work-queue.md` 整理 V2 正式关闭后的 V3 后置工作队列。它把后置事项分为 P1、P2、Parked 和 Closed，说明下一步触发条件、Human Gate 和不再反复讨论的边界；它不授权任何后置能力生效。
 
-`_migration/29A-ldvh-install-initialization-action-template.md` 记录 V2 `33` 安装与首次配置行动编排向 V3 `06` 的受控吸收。它说明当前只新增 LDVH 安装、初始化与管辖项目配置行动模板，不安装环境插件，不写用户环境配置，不创建管辖项目配置文件，也不声明任何环境 Hook 已 integrated。
+`_migration/29A-ldvh-install-initialization-action-template.md` 记录 V2 `33` 安装与首次配置行动编排的受控吸收。29A 当时先进入 V3 `06`；33A 后具体模板已迁为 `specs/30-LDVH安装初始化管辖项目配置行动模板.md`，`06` 只保留父层准入和结构边界。
 
 `_migration/30A-environment-plugin-implementation-plan.md` 记录环境插件化接入的实现域准备。它新增 `code/docs/02-Environment-Plugin-Practice.md`，明确所有支持 Hook 的协作环境应通过 LDVH 插件、扩展包或 package 承载环境 Hook，插件只做薄 shim 并调用 V3 runtime adapter；它不安装真实插件，不修改用户环境配置，也不声明新的环境入口已 integrated。
+
+`_migration/31A-environment-plugin-package-skeleton.md` 记录环境插件最小包结构样例。它新增 `code/environment_plugins/codex-ldvh-v3/` 作为 repo-local Codex lifecycle hook 样例包，包含 manifest、hooks 配置、薄 shim 和安装前确认项；它不安装插件，不修改 `~/.codex`，也不声明 Codex 环境入口已 integrated。
+
+`_migration/32A-install-action-template-user-disclosure.md` 记录安装初始化行动模板的用户告知清单补强。它把安装、部署、初始化、配置或卸载前必须告知 Human 的写入对象、位置级别、影响范围、Hook / lifecycle event、阻断边界、验证、回滚和未 integrated 能力纳入行动模板；33A 后该清单由 `30` 承载，不安装插件或修改真实环境。
+
+`_migration/33A-action-template-30-admission.md` 记录行动模板 30 的正式承载。它把 LDVH 安装、初始化与管辖项目配置行动模板从 `06` 父规范正文示范迁出，落到 `specs/30-LDVH安装初始化管辖项目配置行动模板.md`；`06` 只保留父层准入和结构边界。

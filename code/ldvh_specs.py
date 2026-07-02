@@ -34,6 +34,7 @@ SHORT_SPEC_REFS = {
     "08": "specs/08-Web信息同步规范.md",
     "09": "specs/09-测试与验证规范.md",
     "10": "specs/10-管辖项目配置规范.md",
+    "30": "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
     "20": "specs/20-Spark-火花.md",
     "21": "specs/21-WorkCase-工作项.md",
     "22": "specs/22-ADR-决策.md",
@@ -230,16 +231,18 @@ GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
 LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Context": ["用户目标", "目标环境", "LDVH 根目录", "工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "环境入口审计结果", "source_refs", "specs/10-管辖项目配置规范.md"],
     "Scenario": ["安装 LDVH", "接入 LDVH", "初始化 LDVH", "配置管辖项目", "旧插件 / 旧路径", "只回答 01/06/10 边界"],
-    "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "LDVH-GOVERNED-PROJECTS.yaml", "配置生成位置", "用户级配置目录后置缺口", "integrated", "多项目"],
-    "执行": ["01", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "repo instruction", "manual entrypoint", "不恢复 Rules 顶层机制", "三类位置", "用户级候选只能记录后置", "10", "Git common-dir", "target-first resolver"],
+    "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "LDVH-GOVERNED-PROJECTS.yaml", "配置生成位置", "用户级配置目录后置缺口", "integrated", "多项目", "用户告知清单"],
+    "执行": ["01", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "用户告知清单", "repo instruction", "manual entrypoint", "不恢复 Rules 顶层机制", "三类位置", "用户级候选只能记录后置", "10", "Git common-dir", "target-first resolver"],
     "验证": ["environment_status.py", "environment_entry_audit.py", "specs_validate.py governed-projects", "target-first resolution", "runtime adapter", "09 验证声明字段", "真实自动触发", "失败可阻断", "安装状态可复现", "integrated"],
     "回写": ["过程输出", "Human 确认", "LDVH-GOVERNED-PROJECTS.yaml", "10 字段契约", "旧插件", "用户级配置目录候选", "Spark", "ADR", "Pitfall", "WorkCase", "Git commit records", "不得把 runtime receipt"],
-    "交还": ["安装方式", "配置位置选择", "管辖项目 ID", "Git common-dir", "环境入口状态", "integrated / manual_ready / deferred / removed_top_level", "验证摘要", "回滚或卸载入口", "下一步 Human Gate", "source_refs"],
+    "交还": ["安装方式", "配置位置选择", "管辖项目 ID", "Git common-dir", "环境入口状态", "integrated / manual_ready / deferred / removed_top_level", "用户告知清单", "验证摘要", "回滚或卸载入口", "下一步 Human Gate", "source_refs"],
 }
 LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_TERMS = [
     "V2 `33-ldvh-install-action`",
     "受 V3 01",
     "V3 01、06、10",
+    "安装、部署、初始化、配置或卸载前",
+    "用户告知清单",
     "不安装环境插件",
     "不直接写入用户环境 Hook 系统文件",
     "不声明 integrated",
@@ -1242,20 +1245,12 @@ def parse_workcase_action_template(root: Path = ROOT) -> list[dict[str, str]]:
 
 
 def parse_ldvh_install_action_template(root: Path = ROOT) -> list[dict[str, str]]:
-    raw = (root / SHORT_SPEC_REFS["06"]).read_text(encoding="utf-8")
+    raw = (root / SHORT_SPEC_REFS["30"]).read_text(encoding="utf-8")
     sections = h2_sections(raw)
-    section = sections.get("模板候选与迁移边界")
+    section = sections.get("Context、Scenario、Gate 与交还")
     if not section:
         return []
-    marker = "### LDVH 安装、初始化与管辖项目配置行动模板"
-    marker_index = section["body"].find(marker)
-    if marker_index == -1:
-        return []
-    body = section["body"][marker_index:]
-    next_marker_index = body.find("### WorkCase 最小行动模板")
-    if next_marker_index != -1:
-        body = body[:next_marker_index]
-    return find_table(body, ACTION_TEMPLATE_COLUMNS)
+    return find_table(section["body"], ACTION_TEMPLATE_COLUMNS)
 
 
 def parse_fact_model_member_contract(spec_id: str, root: Path = ROOT) -> dict[str, Any]:
@@ -2618,7 +2613,7 @@ def validate_workcase_action_template(root: Path = ROOT) -> list[Diagnostic]:
 
 
 def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]:
-    path = SHORT_SPEC_REFS["06"]
+    path = SHORT_SPEC_REFS["30"]
     raw = (root / path).read_text(encoding="utf-8")
     rows = parse_ldvh_install_action_template(root)
     diagnostics: list[Diagnostic] = []
@@ -2629,7 +2624,7 @@ def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]
                 "error",
                 "LDVH_INSTALL_ACTION_TEMPLATE_MISSING",
                 path,
-                "06 缺少 LDVH 安装、初始化与管辖项目配置行动模板结构表",
+                "30 缺少 LDVH 安装、初始化与管辖项目配置行动模板结构表",
             )
         ]
 
@@ -2945,6 +2940,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/04-Specs基础规范.md", "role": "specs_structure"},
             {"path": "specs/05-事实模型基础规范.md", "role": "fact_model_foundation"},
             {"path": "specs/06-行动模板基础规范.md", "role": "action_template_foundation"},
+            {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "ldvh_install_action_template"},
             {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
             {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},
             {"path": "specs/09-测试与验证规范.md", "role": "test_verification"},

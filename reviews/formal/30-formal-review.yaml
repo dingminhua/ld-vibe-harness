@@ -1,0 +1,16 @@
+target_spec: "specs/30-LDVH安装初始化管辖项目配置行动模板.md"
+target_sha256: "272ef6ccc055010e95f2dd66a373163d742e3854614d41837c7f812cf10fc71e"
+change_type: "addition"
+mapping_evidence:
+  path: "_migration/33A-action-template-30-admission.md"
+code_verification:
+  command: "python3 code/specs_validate.py all --format text --fail-on-diagnostics && python3 -m pytest tests/code/test_formal_specs.py -q"
+  passed: true
+  receipt: "Formal gate covers action template 30 as the first standalone V3 action template, with LDVH install, initialization, governed-project config, user disclosure checklist, Human Gate, validation and rollback boundaries."
+subagent_review:
+  agent_id: "codex-local-33a-action-template-30-review"
+  reviewer: "Codex"
+  verdict: "pass"
+  receipt: "Local review confirms 30 carries the concrete LDVH install/init/governed-project action template while 06 remains the parent action-template foundation; it does not install plugins, declare integrated, or restore Rules/Skill top-level mechanisms."
+  unresolved_blockers: []
+warnings: []

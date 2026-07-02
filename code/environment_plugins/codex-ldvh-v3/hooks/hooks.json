@@ -1,0 +1,40 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/ldvh_runtime_shim.py",
+            "statusMessage": "LDVH V3 session read plan"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/ldvh_runtime_shim.py",
+            "statusMessage": "LDVH V3 pre-tool check"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/ldvh_runtime_shim.py",
+            "statusMessage": "LDVH V3 completion check"
+          }
+        ]
+      }
+    ]
+  }
+}
