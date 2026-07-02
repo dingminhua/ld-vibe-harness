@@ -886,6 +886,8 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "安装 LDVH" in rows["Scenario"]
     assert "配置生成位置" in rows["Gate"]
     assert "不直接写入环境 Hook 系统文件" in rows["执行"]
+    assert "选择框 / 单选控件" in rows["执行"]
+    assert "编号三选一" in rows["执行"]
     assert "用户级候选只能记录后置" in rows["执行"]
     assert "target-first resolver" in rows["执行"]
     assert "安装状态可复现" in rows["验证"]
@@ -905,6 +907,21 @@ def test_ldvh_install_action_template_reports_missing_human_gate_for_config_loca
 
     assert "LDVH_INSTALL_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
     assert any("配置生成位置" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_missing_selection_control_for_config_location(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "；该询问必须使用选择框 / 单选控件呈现互斥三选一，无法使用 UI 控件时必须使用等价编号三选一，不得用开放文本询问替代",
+        "",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("选择框 / 单选控件" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_plugin_boundary(tmp_path: Path) -> None:
