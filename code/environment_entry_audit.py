@@ -18,6 +18,9 @@ THIN_REFERENCE_TEMPLATE = "hooks/LDVH-THIN-REFERENCE-TEMPLATE.md"
 LEGACY_LDVH_PLUGIN_COMMAND_RE = re.compile(
     r"/ld-vibe-harness(?:-[^/\s]+)?/code/(hook_adapter|hook_dispatch)\.py"
 )
+STALE_REPO_ENVIRONMENT_PLUGIN_COMMAND_RE = re.compile(
+    r"/ld-vibe-harness(?:-[^/\s]+)?/code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim\.py"
+)
 
 
 def _bool_text(value: bool) -> str:
@@ -183,7 +186,11 @@ def _codex_ldvh_plugin_candidate(
     v3_adapter = (ldvh_root / "code" / "runtime_adapter.py").as_posix()
     v3_codex_shim = (ldvh_root / "hooks" / "environment-plugins" / "codex-ldvh-v3" / "hooks" / "ldvh_runtime_shim.py").as_posix()
     points_to_v3 = v3_adapter in command_blob or v3_codex_shim in command_blob
-    stale_commands = [command for command in commands if LEGACY_LDVH_PLUGIN_COMMAND_RE.search(command)]
+    legacy_commands = [command for command in commands if LEGACY_LDVH_PLUGIN_COMMAND_RE.search(command)]
+    stale_asset_commands = [
+        command for command in commands if STALE_REPO_ENVIRONMENT_PLUGIN_COMMAND_RE.search(command)
+    ]
+    stale_commands = [*legacy_commands, *stale_asset_commands]
     points_to_legacy = bool(stale_commands)
 
     if not evidence:
@@ -215,7 +222,7 @@ def _codex_ldvh_plugin_candidate(
                 "warning",
                 "ENV_CODEX_LDVH_PLUGIN_STALE",
                 hook_files[0].as_posix() if hook_files else config_path.as_posix(),
-                "检测到已启用的 LDVH Codex 插件，但 Hook 命令指向旧 ld-vibe-harness 路径，不能声明为 V3 环境入口；环境 Hook 正式安装必须通过对应 LDVH 插件或扩展包完成。",
+                "检测到已启用的 LDVH Codex 插件，但 Hook 命令指向旧 ld-vibe-harness 路径或已废弃的 code/environment_plugins 资产路径，不能声明为 V3 环境入口；环境 Hook 正式安装必须通过对应 LDVH 插件或扩展包完成。",
             )
         )
         return _candidate(
@@ -226,8 +233,13 @@ def _codex_ldvh_plugin_candidate(
             evidence=evidence,
             manual_fallback="code/runtime_adapter.py",
             decision="reinstall_for_v3",
-            reason="LDVH 插件已启用但指向旧 V2/旧仓库路径；需要 V3 插件包重新安装或升级后才可声明接入。",
-            details={"commands": commands, "stale_commands": stale_commands},
+            reason="LDVH 插件已启用但指向旧 V2/旧仓库路径或已废弃的 repo-local 插件资产路径；需要 V3 插件包重新安装或升级后才可继续验收。",
+            details={
+                "commands": commands,
+                "stale_commands": stale_commands,
+                "legacy_commands": legacy_commands,
+                "stale_asset_commands": stale_asset_commands,
+            },
         )
     if points_to_v3:
         return _candidate(

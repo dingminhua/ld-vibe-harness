@@ -12,6 +12,8 @@
 | `hooks/hooks.json` | Codex lifecycle hook 配置样例；实际安装前必须确认命令路径解析方式 |
 | `hooks/ldvh_runtime_shim.py` | 薄 shim；读取 stdin payload，解析 LDVH root，转调 V3 `code/runtime_adapter.py` |
 
+本目录是 LDVH 仓库内的 Hook 资产来源，不是 Codex 用户环境插件安装目录。真实安装或升级必须在 Human Gate 后把目标环境需要的插件包写入目标环境位置；不得把本目录存在写成插件已安装。
+
 ## Hook 映射
 
 | Codex event | V3 runtime event | 当前样例处理 |
@@ -62,6 +64,8 @@ python3 -m json.tool hooks/environment-plugins/codex-ldvh-v3/plugin.json >/dev/n
 python3 -m json.tool hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json >/dev/null
 python3 -m py_compile hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
 python3 -m pytest tests/code/test_environment_plugins.py -q --tb=short
+python3 -m pytest tests/code/test_install_verification.py -q --tb=short
+python3 code/test_runner.py targeted --changed hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py --dry-run
 ```
 
-这些检查只证明 repo-local 包结构、manifest 图标资产、shim 语法、payload 透传、PreToolUse 阻断返回和 Stop 非阻断降级可用，不证明 Codex 已加载或触发该包。
+这些检查只证明 repo-local 包结构、manifest 图标资产、shim 语法、payload 透传、PreToolUse 阻断返回、Stop 非阻断降级和安装验收入口的只读行为可用，不证明 Codex 已加载或触发该包。`code/test_runner.py targeted` 必须能为 `hooks/environment-plugins/` 变更选择环境插件测试，防止样例包路径调整后漏跑回归。

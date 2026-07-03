@@ -13,6 +13,8 @@
 
 后续新增环境样例包时，必须先确认目标环境支持的插件、扩展包或 package 形态，再补对应 manifest、Hook 配置、shim、状态检查和卸载边界。不得把 Codex 样例当成所有环境的总规则。
 
+根目录 `icons/` 是 LDVH 通用图标资产来源，不是环境插件安装源。manifest 实际引用的图标必须复制到对应样例包的 `assets/` 目录，并由测试确认存在；真实安装时应从目标环境插件包读取这些资产，而不是从 LDVH 根目录 `icons/` 读取。
+
 ## 共同边界
 
 环境插件样例包必须满足：
@@ -36,4 +38,4 @@ python3 code/environment_entry_audit.py --format text
 
 除当前 worktree 的 `git.commit-msg` 外，样例包存在不等于任何环境入口已自动触发。
 
-当前 Codex 样例包的仓库内测试只覆盖 shim 行为、payload 透传、阻断/非阻断返回和 stale path 审计。真实安装、升级、禁用、卸载或 rollback 仍必须进入 Human Gate。
+当前 Codex 样例包的仓库内测试只覆盖 shim 行为、payload 透传、阻断/非阻断返回和 stale path 审计。若环境审计发现 Hook 命令仍指向旧 `code/environment_plugins/` 路径，应标记为需升级或重装。真实安装、升级、禁用、卸载或 rollback 仍必须进入 Human Gate。

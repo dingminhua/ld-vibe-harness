@@ -75,6 +75,17 @@ def test_targeted_profile_selects_code_and_migration_checks() -> None:
     assert "migration pytest" in _stage_names(stages)
 
 
+def test_targeted_profile_selects_environment_plugin_checks_for_hook_assets() -> None:
+    runner = _load_runner()
+
+    stages = runner.build_stages(
+        "targeted",
+        ["hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"],
+    )
+
+    assert "environment plugin checks" in _stage_names(stages)
+
+
 def test_targeted_profile_can_skip_slow_runtime_checks() -> None:
     runner = _load_runner()
 

@@ -3599,6 +3599,80 @@ enabled = true
     assert "ENV_CODEX_LDVH_PLUGIN_STALE" in _diagnostic_codes(payload)
 
 
+def test_environment_entry_audit_reports_stale_repo_environment_plugin_path(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
+    hook_dir = codex_home / "plugins" / "cache" / "personal" / "ldvh" / "0.1.0" / "hooks"
+    repo.mkdir()
+    hook_dir.mkdir(parents=True)
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    (codex_home / "config.toml").write_text(
+        """
+[plugins."ldvh@personal"]
+enabled = true
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    stale_shim = ROOT / "code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
+    (hook_dir / "hooks.json").write_text(
+        json.dumps(
+            {
+                "hooks": {
+                    "SessionStart": [
+                        {
+                            "matcher": "startup|resume",
+                            "hooks": [{"type": "command", "command": f"{sys.executable} {stale_shim}"}],
+                        }
+                    ]
+                }
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    _run_cli(
+        [
+            sys.executable,
+            "code/install_git_hooks.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--backend-allow-external",
+            "--ldvh-root",
+            str(ROOT),
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/environment_entry_audit.py",
+            "--repo",
+            str(repo),
+            "--ldvh-root",
+            str(ROOT),
+            "--codex-home",
+            str(codex_home),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    candidates = {candidate["id"]: candidate for candidate in payload["candidates"]}
+    assert candidates["codex.ldvh-plugin"]["status"] == "available"
+    assert candidates["codex.ldvh-plugin"]["decision"] == "reinstall_for_v3"
+    assert candidates["codex.ldvh-plugin"]["details"]["stale_asset_commands"] == [
+        f"{sys.executable} {stale_shim}"
+    ]
+    assert "ENV_CODEX_LDVH_PLUGIN_STALE" in _diagnostic_codes(payload)
+
+
 def test_environment_entry_audit_recognizes_v3_codex_shim_without_integration(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     codex_home = tmp_path / "codex-home"

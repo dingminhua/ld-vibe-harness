@@ -8,15 +8,19 @@ import subprocess
 import sys
 from typing import Any
 
-import yaml
-
 from environment_entry_audit import build_environment_entry_audit
 from governed_hook_adapter import build_governed_hook_adapter
-from ldvh_specs import GOVERNED_PROJECTS_CONFIG_PATH, ROOT
+from ldvh_specs import (
+    GOVERNED_PROJECTS_CONFIG_PATH,
+    ROOT,
+    parse_governed_projects_config,
+    validate_governed_projects_config,
+)
 
 
 AUTHORIZATION = "none"
 CODEX_SHIM = "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
+CODEX_ENVIRONMENT_NAME = "Codex"
 
 
 def _diagnostic(level: str, code: str, path: str, message: str, disposition: str = "blocking") -> dict[str, str]:
@@ -38,46 +42,40 @@ def _find_config_root(start: Path) -> Path:
     return resolved
 
 
-def _load_projects(config_root: Path) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+def _spec_diagnostic_to_install(diagnostic: Any) -> dict[str, str]:
+    item = diagnostic.to_dict()
+    item.setdefault("disposition", "blocking")
+    return item
+
+
+def _load_projects(config_root: Path) -> tuple[list[dict[str, Any]], list[dict[str, str]], dict[str, Any]]:
     config_path = config_root / GOVERNED_PROJECTS_CONFIG_PATH
-    if not config_path.is_file():
-        return [], [
-            _diagnostic(
-                "blocking",
-                "INSTALL_VERIFY_GOVERNED_CONFIG_MISSING",
-                config_path.as_posix(),
-                "缺少管辖项目配置，无法验证管辖项目 Git Hook。",
-            )
-        ]
-    try:
-        data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as exc:
-        return [], [
-            _diagnostic(
-                "blocking",
-                "INSTALL_VERIFY_GOVERNED_CONFIG_INVALID",
-                config_path.as_posix(),
-                f"管辖项目配置 YAML 解析失败: {exc}",
-            )
-        ]
-    if not isinstance(data, dict) or not isinstance(data.get("projects"), list):
-        return [], [
-            _diagnostic(
-                "blocking",
-                "INSTALL_VERIFY_GOVERNED_PROJECTS_INVALID",
-                config_path.as_posix(),
-                "管辖项目配置必须包含 projects 列表。",
-            )
-        ]
+    validation_diagnostics = [
+        _spec_diagnostic_to_install(diagnostic)
+        for diagnostic in validate_governed_projects_config(config_root, config_path)
+    ]
+    config = parse_governed_projects_config(config_root, config_path)
+    config_summary = {
+        "path": config_path.as_posix(),
+        "exists": bool(config.get("exists")),
+        "product_name": config.get("product_name", ""),
+        "product_description": config.get("product_description", ""),
+        "projects": len(config.get("projects", [])),
+        "validation_status": "blocked" if validation_diagnostics else "ok",
+        "diagnostics": len(validation_diagnostics),
+    }
+    if validation_diagnostics:
+        return [], validation_diagnostics, config_summary
+
     projects: list[dict[str, Any]] = []
-    for index, project in enumerate(data["projects"], start=1):
+    for index, project in enumerate(config["projects"], start=1):
         if not isinstance(project, dict):
             continue
         project_path = project.get("path")
         if not isinstance(project_path, str) or not project_path.strip():
             continue
         raw_path = Path(project_path).expanduser()
-        resolved_path = raw_path if raw_path.is_absolute() else config_root / raw_path
+        resolved_path = raw_path if raw_path.is_absolute() else config_path.parent / raw_path
         projects.append(
             {
                 "index": index,
@@ -86,7 +84,18 @@ def _load_projects(config_root: Path) -> tuple[list[dict[str, Any]], list[dict[s
                 "path": resolved_path.resolve(),
             }
         )
-    return projects, []
+    if not projects:
+        validation_diagnostics.append(
+            _diagnostic(
+                "blocking",
+                "INSTALL_VERIFY_GOVERNED_PROJECTS_EMPTY",
+                config_path.as_posix(),
+                "管辖项目配置没有可验证项目，无法验证管辖项目 Git Hook。",
+            )
+        )
+        config_summary["validation_status"] = "blocked"
+        config_summary["diagnostics"] = len(validation_diagnostics)
+    return projects, validation_diagnostics, config_summary
 
 
 def _verify_git_hook(project: dict[str, Any], governance_root: Path, ldvh_root: Path) -> dict[str, Any]:
@@ -197,11 +206,55 @@ def _run_shim(ldvh_root: Path, payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _not_run_shim_tests(reason: str) -> dict[str, dict[str, Any]]:
+    return {
+        "session_start_direct": {"status": "not_run", "returncode": None, "reason": reason},
+        "pre_tool_use_direct_block": {"status": "not_run", "returncode": None, "reason": reason},
+        "completion_claim_direct_degrade": {"status": "not_run", "returncode": None, "reason": reason},
+    }
+
+
+def _is_codex_environment(environment_name: str) -> bool:
+    return environment_name.strip().lower() == CODEX_ENVIRONMENT_NAME.lower()
+
+
 def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, environment_name: str) -> dict[str, Any]:
+    if not _is_codex_environment(environment_name):
+        return {
+            "summary": {
+                "status": "review_required",
+                "environment_name": environment_name,
+                "environment_adapter": "unsupported_target_environment",
+                "target_environment_supported": False,
+                "environment_integrated": False,
+                "plugin_integrated": False,
+                "plugin_status": "unsupported_target_environment",
+                "plugin_decision": "create_target_environment_plugin_before_verification",
+                "human_acceptance_required": True,
+                "blocking": 0,
+            },
+            "audit": {},
+            "shim_direct_tests": _not_run_shim_tests(
+                "当前统一验收入口只内置 Codex 样例 shim 直测；目标环境需要对应插件 / 扩展包实装后再验收。"
+            ),
+            "human_acceptance": {
+                "required": True,
+                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据。",
+                "steps": [
+                    f"在 {environment_name} 插件 / 扩展页面确认存在 LDVH 插件或扩展包，并确认已启用且 trusted。",
+                    f"新开一个 {environment_name} 窗口或会话，确认启动事件能看到 LDVH 提示或诊断输出。",
+                    "触发一次受控写入类工具，确认负例会阻断，正例会放行。",
+                    "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
+                    "失败时返回插件页面状态、错误文本、截图或本命令 JSON 输出。",
+                ],
+            },
+            "diagnostics": [],
+        }
+
     audit = build_environment_entry_audit(repo=repo, ldvh_root=ldvh_root, codex_home=codex_home)
     candidates = {candidate["id"]: candidate for candidate in audit["candidates"]}
     codex_plugin = candidates.get("codex.ldvh-plugin", {})
-    diagnostics: list[dict[str, str]] = []
+    diagnostics: list[dict[str, str]] = list(audit.get("diagnostics", []))
 
     session = _run_shim(
         ldvh_root,
@@ -278,6 +331,8 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
         "summary": {
             "status": status,
             "environment_name": environment_name,
+            "environment_adapter": "codex_sample",
+            "target_environment_supported": True,
             "environment_integrated": environment_integrated,
             "plugin_integrated": codex_plugin_integrated,
             "plugin_status": codex_plugin.get("status", "unknown"),
@@ -316,7 +371,7 @@ def build_install_verification(
     resolved_governance_root = governance_root.resolve()
     resolved_ldvh_root = ldvh_root.resolve()
     resolved_repo = repo.resolve()
-    projects, config_diagnostics = _load_projects(resolved_governance_root)
+    projects, config_diagnostics, governed_config = _load_projects(resolved_governance_root)
     git_results = [
         _verify_git_hook(project, resolved_governance_root, resolved_ldvh_root)
         for project in projects
@@ -356,12 +411,14 @@ def build_install_verification(
             "status": "blocked" if blocking else "complete" if install_complete else "review_required",
             "install_complete": install_complete,
             "projects": len(projects),
+            "governed_config_ok": not config_diagnostics,
             "git_hooks_ok": git_ok,
             "environment_hook_integrated": environment_ok,
             "environment_human_acceptance_required": environment["summary"]["human_acceptance_required"],
             "blocking": blocking,
             "diagnostics": len(diagnostics),
         },
+        "governed_config": governed_config,
         "git_hooks": git_results,
         "environment": environment,
         "diagnostics": diagnostics,
@@ -383,6 +440,7 @@ def _print_text(result: dict[str, Any]) -> None:
     print("LDVH v3 installation verification")
     print(f"- status: {summary['status']}")
     print(f"- install_complete: {summary['install_complete']}")
+    print(f"- governed_config_ok: {summary['governed_config_ok']}")
     print(f"- git_hooks_ok: {summary['git_hooks_ok']}")
     print(f"- environment_hook_integrated: {summary['environment_hook_integrated']}")
     print(f"- environment_human_acceptance_required: {summary['environment_human_acceptance_required']}")
@@ -404,6 +462,8 @@ def _print_text(result: dict[str, Any]) -> None:
     env_summary = env["summary"]
     print("\nEnvironment Hook:")
     print(f"- environment_name: {env_summary['environment_name']}")
+    print(f"- environment_adapter: {env_summary['environment_adapter']}")
+    print(f"- target_environment_supported: {env_summary['target_environment_supported']}")
     print(f"- plugin_status: {env_summary['plugin_status']}")
     print(f"- plugin_decision: {env_summary['plugin_decision']}")
     print(f"- environment_integrated: {env_summary['environment_integrated']}")
@@ -434,7 +494,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--ldvh-root", default=ROOT.as_posix(), help="LDVH v3 root")
     parser.add_argument("--repo", default=ROOT.as_posix(), help="repo used for environment entry audit")
     parser.add_argument("--codex-home", default="", help="Codex home for read-only plugin audit")
-    parser.add_argument("--environment-name", default="Codex", help="current AI environment name for Human-facing output")
+    parser.add_argument(
+        "--environment-name",
+        default=CODEX_ENVIRONMENT_NAME,
+        help="current AI environment name for Human-facing output; repo-local shim direct tests currently cover the Codex sample only",
+    )
     parser.add_argument("--require-environment-integrated", action="store_true", help="treat missing real environment integration as blocking")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     return parser
