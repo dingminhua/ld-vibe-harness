@@ -92,6 +92,8 @@ Python CLI 测试应统一走 `tests/code/test_ldvh_specs_validate.py` 中的 `_
 
 安装验收入口测试必须证明 `install_verification.py` 使用 specs 10 的管辖项目配置校验，而不是手写轻量 YAML 解析；坏配置、空项目、非 Git 管辖项目和缺失 Git Hook 都必须阻断。目标环境不是当前实现已覆盖的样例环境时，测试应确认验收入口返回 gated / review_required，不运行错误环境的样例 shim，不声明该环境已 supported 或 integrated。
 
+安装流程当前是模板驱动编排，而不是一键安装 CLI。回归测试应分别覆盖 specs 30 的五步向导契约、`governed_hook_adapter.py` 的安装 / 卸载 / verify、`environment_entry_audit.py` 的插件状态审计、`install_verification.py` 的统一交还验收和 targeted runner 对相关资产路径的选测；不得用单个轻量 smoke 命令替代完整安装配置流程的入口组合验证。
+
 ## Slow Policy
 
 `targeted` 支持：
