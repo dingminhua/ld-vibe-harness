@@ -127,9 +127,26 @@ ldvh_spec:
 
 受控 scratch target 必须是临时、可识别、可清理的测试路径，例如 `.ldvh-runtime/acceptance-probe/` 下的文件。不得用正式 specs、事实对象、外部用户文件、管辖项目业务文件、用户环境配置或插件系统文件做正反例写入目标。
 
+31 的主界面必须使用用户验收卡片表达每一步，不得把 raw diagnostic 当作主问题。卡片至少包含 `用户要做什么`、`正常表现` 和 `失败时给 AI 什么`。技术字段可以放入附录，但主界面不得裸露 raw diagnostic；`environment_hook_integrated=false` 应写成“自动接入待验收”，`target_environment_supported=false` 和 `unsupported_target_environment` 应写成“当前目标环境没有可用 Hook 接入，返回 30 手动可用分支”，`PreToolUse` 应写成“写入前检查”。
+
+用户验收卡片的固定内容如下：
+
+| 步骤 | 用户要做什么 | 正常表现 | 失败时给 AI 什么 |
+|---|---|---|---|
+| 1/8 🧭 验收授权 | 选择开始逐项验收 | AI 只开始本测试组，不安装、不升级、不卸载 | 停止验收即可，不需要解释技术原因 |
+| 2/8 🔌 插件页面状态 | 打开当前目标环境的插件页面、扩展页面或插件管理器 | 页面显示 LDVH 插件启用、已授权或无待授权、无错误 | 插件页面截图、插件名称、错误文本 |
+| 3/8 🔁 重启后状态 | 重启 App 或重载插件宿主后再看插件页面 | 插件仍启用、无新增错误、授权状态仍有效 | 重启后页面状态、错误文本、是否需要重新授权 |
+| 4/8 💬 新会话触发 | 新开当前目标环境窗口或会话 | 能看到 LDVH 启动提示、诊断输出，或 AI 能说出 LDVH runtime 状态 | 新会话中的提示内容、没有出现提示的说明 |
+| 5/8 ⛔ 受控负例阻断 | 授权 AI 对 harmless scratch target 做一次应被阻断的写入类负例 | 写入前检查阻断，scratch 文件未被错误写入 | AI 输出、scratch 路径、文件是否被写入 |
+| 6/8 ✅ 受控正例放行 | 授权 AI 对 harmless scratch target 做一次应被放行的正例 | 操作成功，没有 blocking diagnostic | AI 输出、错误文本、scratch 路径 |
+| 7/8 🧪 统一安装验证 | 等 AI 运行命令，用户只看结论 | `install_verification.py` 显示安装检测通过，Git Hook 正反例仍通过 | AI 输出摘要或完整命令输出 |
+| 8/8 🧾 记录验收与复核 | 确认 AI 记录验收并复核 | `environment_hook_integrated=true` 且 `environment_lifecycle_acceptance_valid=true` | 记录命令输出、复核命令输出 |
+
 ## 7. 验收测试组状态机
 
 31 必须使用测试组状态机。状态表只显示当前步骤和已完成判断；尚未发生的步骤保持空白。每一步只问一个判断，选项只允许 `1 通过` 和 `2 失败，停止验收`；如果需要用户补充截图、错误文本或插件页面状态，应作为失败后的诊断输入，不作为第三个主选项。
+
+主界面不得要求 Human 自行理解专业“通过 / 失败”。AI 应把问题写成“你是否看到 X”或“请贴出当前页面状态 / 错误文本”，再由 AI 根据本文判断通过、失败或暂停诊断；Human 不确定时按失败或暂停诊断处理，不继续后续步骤。编号选项只用于收集 Human 对当前观察的确认，不替代 AI 判断。
 
 示例形态：
 
@@ -146,7 +163,11 @@ ldvh_spec:
 
 每个判断必须说明本步测试目标、预期正常表现、实际观察和下一步。AI 不得连续抛出一串专业问题让 Human 自行判断；AI 必须把可自动检查的部分自己运行，把必须 Human 观察的部分压缩成一句清楚问题。
 
+受控正反例必须在用户主界面写成具体测试动作。默认示例是：`我会尝试写 .ldvh-runtime/acceptance-probe/blocked.txt，预期被写入前检查拦截；再写 .ldvh-runtime/acceptance-probe/allowed.txt，预期放行；不会碰 specs、事实源或业务文件；测试后清理 scratch 文件`。若目标环境无法执行等价安全动作，31 必须暂停并重新设计 harmless scratch target，不得用正式文件替代。
+
 正常情况下，31 的交互应是逐项推进：Human 授权开始后，AI 先检查可自动读取的安装状态；需要 Human 操作时，只要求 Human 完成当前一步并回答通过或失败；失败时立即停止后续测试，交还失败项和诊断入口。
+
+31 失败交还必须输出失败信息包，至少包含：目标环境名称和版本、失败步骤编号、用户看到的插件页面状态或错误文本、`install_verification.py --format json` 完整输出、`environment_entry_audit.py --format text` 输出、是否发生实际写入、scratch target 路径和文件状态。缺少任一项时写“未取得”，不得用聊天印象替代。
 
 ## 8. Context、Scenario、Gate 与交还
 

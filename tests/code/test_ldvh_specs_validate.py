@@ -1103,9 +1103,16 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "✅" in raw
     assert "尚未发生的步骤保持空白" in raw
     assert "用户视角摘要" in raw
+    assert "用户验收卡片" in raw
     assert "本步目的" in raw
     assert "不会做什么" in raw
     assert "需要决定什么" in raw
+    assert "你需要确认什么" in raw
+    assert "为什么需要你确认" in raw
+    assert "选择后会发生什么" in raw
+    assert "看到什么算正常" in raw
+    assert "失败时把什么发给 AI" in raw
+    assert "主界面不得裸露 raw diagnostic" in raw
     assert "进度安全提示" in raw
     assert "当前已完成几步" in raw
     assert "选择框 / 单选控件" in raw
@@ -1173,6 +1180,13 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "该分支不是降级" in raw
     assert "不单独开 32" in raw
     assert "也不得交给 31" in raw
+    assert "可用但不自动拦截" in raw
+    assert "手动可用" in raw
+    assert "AI 可以读取 LDVH 规则" in raw
+    assert "你或 AI 可以手动运行检查命令" in raw
+    assert "当前目标环境不会在写入前自动拦截" in raw
+    assert "1 按手动可用方式完成安装交还" in raw
+    assert "2 暂停，等目标环境 Hook 支持" in raw
     assert "repo-instruction-ready" in raw
     assert "thin-reference-ready" in raw
     assert "external-adapter-candidate" in raw
@@ -1189,6 +1203,19 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "安装检测通过" in raw
     assert "environment_lifecycle_acceptance.py" in raw
     assert "environment_lifecycle_acceptance_valid=true" in raw
+    assert "自动接入待验收" in raw
+    assert "安装完成；自动接入待验收，可进入 31" in raw
+    assert "安装完成；当前环境为手动可用，不会自动拦截" in raw
+    assert "状态牌" in raw
+    assert "环境自动拦截" in raw
+    assert "提交消息检查" in raw
+    assert "用户下一步待办" in raw
+    assert "失败信息包" in raw
+    assert "目标环境名称和版本" in raw
+    assert "install_verification.py --format json" in raw
+    assert "environment_entry_audit.py --format text" in raw
+    assert "失败步骤编号" in raw
+    assert "scratch target 路径和文件状态" in raw
     assert "记录 lifecycle 验收" in raw
     assert "用户侧冒烟检查" in raw
     assert "不阻断安装完成" in raw
@@ -1482,6 +1509,21 @@ def test_ldvh_install_action_template_reports_missing_no_hook_not_31_boundary(tm
     assert any("也不得交给 31" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
+def test_ldvh_install_action_template_reports_missing_user_handoff_status_card(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "状态牌",
+        "交还摘要",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("状态牌" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
 def test_environment_hook_acceptance_action_template_is_code_consumable(validation_result: dict) -> None:
     result = validation_result
     rows = {row["结构"]: row["最小要求"] for row in result["environment_hook_acceptance_action_template"]}
@@ -1525,8 +1567,16 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "31 由 30 交接调用" in raw
     assert "不安装、不升级、不禁用、不卸载" in raw
     assert "测试组状态机" in raw
+    assert "用户验收卡片" in raw
+    assert "用户要做什么" in raw
+    assert "正常表现" in raw
+    assert "失败时给 AI 什么" in raw
+    assert "主界面不得裸露 raw diagnostic" in raw
     assert "尚未发生的步骤保持空白" in raw
     assert "每一步只问一个判断" in raw
+    assert "主界面不得要求 Human 自行理解专业“通过 / 失败”" in raw
+    assert "你是否看到 X" in raw
+    assert "AI 根据本文判断通过、失败或暂停诊断" in raw
     assert "1 通过" in raw
     assert "2 失败，停止验收" in raw
     assert "🧭 验收授权" in raw
@@ -1539,6 +1589,9 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "🧾 记录验收与复核" in raw
     assert "harmless scratch target" in raw
     assert ".ldvh-runtime/acceptance-probe/" in raw
+    assert ".ldvh-runtime/acceptance-probe/blocked.txt" in raw
+    assert ".ldvh-runtime/acceptance-probe/allowed.txt" in raw
+    assert "测试后清理 scratch 文件" in raw
     assert "不得把“用户还没做完测试”写成失败" in raw
     assert "不得把“用户看到了部分提示”写成全部通过" in raw
     assert "失败即停止" in raw
@@ -1546,6 +1599,16 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "target_environment_supported=false" in raw
     assert "unsupported_target_environment" in raw
     assert "返回 30 无 Hook 环境分支" in raw
+    assert "当前目标环境没有可用 Hook 接入，返回 30 手动可用分支" in raw
+    assert "写入前检查" in raw
+    assert "AI 运行命令，用户只看结论" in raw
+    assert "失败信息包" in raw
+    assert "目标环境名称和版本" in raw
+    assert "install_verification.py --format json" in raw
+    assert "environment_entry_audit.py --format text" in raw
+    assert "失败步骤编号" in raw
+    assert "是否发生实际写入" in raw
+    assert "scratch target 路径和文件状态" in raw
     assert "environment_lifecycle_acceptance.py record --confirm-human-gate" in raw
     assert "install_verification.py --require-environment-integrated" in raw
 
@@ -1637,6 +1700,21 @@ def test_environment_hook_acceptance_action_template_reports_missing_unsupported
 
     assert "ENV_HOOK_ACCEPTANCE_FLOW_TERM_MISSING" in _diagnostic_codes(result)
     assert any("unsupported_target_environment" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_environment_hook_acceptance_action_template_reports_missing_user_judgment_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/31-环境Hook接入后验收行动模板.md",
+        "主界面不得要求 Human 自行理解专业“通过 / 失败”",
+        "Human 自行判断通过或失败",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "ENV_HOOK_ACCEPTANCE_FLOW_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("主界面不得要求 Human 自行理解专业“通过 / 失败”" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_workcase_action_template_reports_missing_human_gate(tmp_path: Path) -> None:

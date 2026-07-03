@@ -140,11 +140,20 @@ projects:
     assert any("插件页面" in step for step in human_acceptance["steps"])
     assert any("重启 App" in step for step in human_acceptance["steps"])
     assert any("授权 / trust" in step for step in human_acceptance["steps"])
-    assert any("SessionStart" in step for step in human_acceptance["steps"])
+    assert any("LDVH 提示或诊断输出" in step for step in human_acceptance["steps"])
     assert any("specs/31-环境Hook接入后验收行动模板.md" in step for step in human_acceptance["steps"])
     assert any("当前 V3 shim" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("install_complete=true" in criterion for criterion in human_acceptance["acceptance_criteria"])
-    assert any("PreToolUse 负例被阻断，正例被放行" in criterion for criterion in human_acceptance["acceptance_criteria"])
+    assert any("写入前检查负例被阻断，正例被放行" in criterion for criterion in human_acceptance["acceptance_criteria"])
+    handoff = result["user_handoff"]
+    status_card = {row["item"]: row["value"] for row in handoff["status_card"]}
+    assert status_card["安装完成"] == "是"
+    assert status_card["环境自动拦截"] == "自动接入待验收"
+    assert status_card["提交消息检查"] == "通过"
+    assert "31" in status_card["下一步"]
+    assert [block["name"] for block in handoff["hook_status_blocks"]] == ["环境自动拦截", "提交消息检查"]
+    assert any("插件页面" in step for step in handoff["user_next_steps"])
+    assert any("目标环境名称和版本" in item for item in handoff["failure_info_package"])
     assert result["diagnostics"] == []
 
 
@@ -235,6 +244,10 @@ projects:
     assert result["summary"]["environment_user_smoke_check_recommended"] is False
     assert result["environment"]["summary"]["lifecycle_acceptance_valid"] is True
     assert result["environment"]["lifecycle_acceptance"]["summary"]["valid"] is True
+    status_card = {row["item"]: row["value"] for row in result["user_handoff"]["status_card"]}
+    assert status_card["安装完成"] == "是"
+    assert status_card["环境自动拦截"] == "已 integrated"
+    assert status_card["提交消息检查"] == "通过"
     assert "INSTALL_VERIFY_ENVIRONMENT_NOT_INTEGRATED" not in {
         diagnostic["code"] for diagnostic in result["diagnostics"]
     }
@@ -467,6 +480,13 @@ projects:
     assert not any("specs/31-环境Hook接入后验收行动模板.md" in step for step in human_acceptance["steps"])
     assert any("manual-ready" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("不会自动阻断写入或完成声明" in criterion for criterion in human_acceptance["acceptance_criteria"])
+    handoff = result["user_handoff"]
+    status_card = {row["item"]: row["value"] for row in handoff["status_card"]}
+    assert status_card["安装完成"] == "否"
+    assert status_card["环境自动拦截"] == "手动可用"
+    assert status_card["提交消息检查"] == "通过"
+    assert "30" in status_card["下一步"]
+    assert any("手动可用分支" in step for step in handoff["user_next_steps"])
 
 
 def test_install_verification_keeps_disabled_codex_plugin_review_required(tmp_path: Path) -> None:

@@ -10,6 +10,27 @@
 
 目标环境确认不支持 Hook 时，不进入环境插件安装或 31 验收，也不称为 integrated。该情况由 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的无 Hook 环境分支承接：AI 只能交还 `repo instruction`、`manual entrypoint`、`thin-reference-ready` 或外部 adapter 候选，验证薄引用和手动入口可用，并明确这些入口不会自动阻断写入或完成声明。
 
+环境插件状态对用户展示时必须先翻译，不把内部字段作为主问题：
+
+| 内部状态或事件 | 用户主界面说法 | 使用边界 |
+|---|---|---|
+| `unsupported_target_environment` / `target_environment_supported=false` | 当前目标环境没有可用 Hook 接入 | 返回 30 手动可用分支，不进入 31 |
+| `environment_hook_integrated=false` 且安装检测通过 | 自动接入待验收 | 安装完成；可进入 31 lifecycle 验收 |
+| no-Hook 环境分支 | 手动可用，或可用但不自动拦截 | 不安排插件页面授权、重启 App 或写入前拦截测试 |
+| `PreToolUse` | 写入前检查 | 只有目标环境真实支持阻断时才可作为阻断入口 |
+| `completion_claim_direct_nonblocking` | 完成声明检查只提示问题，不阻断环境关闭 | completion / Stop 类事件不得阻断环境关闭 |
+
+面向用户的插件提示必须回答三件事：用户要打开哪个页面或入口，看到什么算正常，失败时把什么发给 AI。正常表现至少包括插件启用、已授权或无待授权、无错误、入口指向当前 V3 LDVH root / V3 shim；失败反馈至少包括截图、错误文本、插件状态和 AI 可复跑的诊断命令。
+
+当前目标环境能力矩阵必须先给用户可理解结论，再给技术证据：
+
+| 目标环境 | 是否支持 Hook | 是否可安装检测 | 是否可进入 31 | 失败时回到哪里 |
+|---|---|---|---|---|
+| Codex 样例 | 有 repo-local 样例 shim；真实环境仍需插件页面、授权和 lifecycle 证据 | 可检测 V3 shim、manifest、stale path 和 shim 正反输入 | 安装检测通过后可进入 31 | 插件安装 / 授权诊断，或 30 修复流程 |
+| Trae / IDE / Agent runner | 只有实装对应插件 / 扩展包后才算支持 | 未实装前不可安装检测 | 未实装前不可进入 31 | 30 判断支持 Hook 则先做插件方案；不支持 Hook 则走手动可用分支 |
+| repo instruction / manual entrypoint | 不支持环境自动 Hook | 只检测薄引用或 manual CLI | 不进入 31 | 30 手动可用分支 |
+| 未知环境 | 需先确认目标环境能力 | 不可直接检测 | 不进入 31 | 30 路径确认和环境能力确认 |
+
 环境插件只承担薄 shim 职责：
 
 1. 接收目标环境的 lifecycle event 和原始 payload；

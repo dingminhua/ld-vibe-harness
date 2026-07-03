@@ -297,7 +297,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                     "若支持 Hook，必须先实装目标环境插件 / 扩展包并让安装检测通过；安装检测通过后的 integrated 验收再按支持 Hook 分支处理。",
                     "若确认不支持 Hook，回到 specs/30-LDVH安装初始化管辖项目配置行动模板.md 的 30 无 Hook 环境分支。",
                     "无 Hook 环境分支只能交还 repo instruction、manual entrypoint、thin-reference-ready 或外部 adapter 候选。",
-                    "无 Hook 环境分支不得声明 environment_hook_integrated=true，也不得安排 31 的插件页面、重启 App 或 PreToolUse 阻断验收。",
+                    "无 Hook 环境分支不得声明环境自动接入已完成，也不得安排 31 的插件页面、重启 App 或写入前检查阻断验收。",
                 ],
                 "acceptance_criteria": [
                     "目标环境支持 Hook 时，必须能提供插件 / 扩展包实装、入口指向、授权、payload、失败处理和回滚证据。",
@@ -419,9 +419,9 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                 f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器，确认 LDVH 插件已安装。",
                 f"按 {environment_name} 要求重启 App 或重载插件宿主；重启后回到插件页面确认插件仍启用且无错误。",
                 f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
-                f"新开一个 {environment_name} 窗口或会话，确认 SessionStart 能看到 LDVH 提示或诊断输出。",
-                "触发一次受控写入类工具，确认 PreToolUse 负例会阻断，正例会放行。",
-                "如需把 environment_hook_integrated 转为 true，进入 specs/31-环境Hook接入后验收行动模板.md 逐项验收并记录 lifecycle 验收。",
+                f"新开一个 {environment_name} 窗口或会话，确认能看到 LDVH 提示或诊断输出。",
+                "触发一次受控写入类工具，确认写入前检查负例会阻断，正例会放行。",
+                "如需把环境自动接入状态转为已 integrated，进入 specs/31-环境Hook接入后验收行动模板.md 逐项验收并记录 lifecycle 验收。",
                 "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
                 "失败时返回插件页面状态、错误文本、截图或本命令 JSON 输出。",
             ],
@@ -429,8 +429,8 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                 f"{environment_name} 插件页面显示 LDVH 插件已启用、已授权或无待处理授权，且无错误。",
                 f"插件 Hook 命令指向当前 V3 shim: {CODEX_SHIM}。",
                 "重启 App 或重载插件宿主后，插件页面状态保持启用且无错误。",
-                "新窗口或新会话能看到 LDVH SessionStart 提示、诊断输出或可回读的真实触发证据。",
-                "PreToolUse 负例被阻断，正例被放行。",
+                "新窗口或新会话能看到 LDVH 启动提示、诊断输出或可回读的真实触发证据。",
+                "写入前检查负例被阻断，正例被放行。",
                 "install_verification.py 显示 install_complete=true、插件可见、shim 直测通过，并列出 Git Hook 正反例结果。",
             ],
         },
@@ -495,7 +495,7 @@ def build_install_verification(
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})
     git_ok = bool(git_results) and all(result["summary"]["status"] == "ok" for result in git_results)
     install_complete = git_ok and environment_install_verified and blocking == 0
-    return {
+    result = {
         "metadata": {
             "read_only": True,
             "authority": "install_verification",
@@ -532,15 +532,156 @@ def build_install_verification(
             {"path": "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py", "role": "environment_shim_direct_test"},
         ],
     }
+    result["user_handoff"] = _build_user_handoff(result)
+    return result
 
 
 def _mark(value: bool) -> str:
     return "✅" if value else "⛔"
 
 
+def _git_hook_user_status(git_results: list[dict[str, Any]]) -> str:
+    if not git_results:
+        return "未检查"
+    if all(result["summary"]["status"] == "ok" for result in git_results):
+        return "通过"
+    if any(not result["summary"]["hook_installed"] for result in git_results):
+        return "需安装 / 需升级"
+    return "阻断"
+
+
+def _environment_user_status(env_summary: dict[str, Any]) -> str:
+    if not env_summary.get("target_environment_supported"):
+        return "手动可用"
+    if env_summary.get("blocking"):
+        return "阻断"
+    if env_summary.get("environment_integrated"):
+        return "已 integrated"
+    if env_summary.get("install_verified"):
+        return "自动接入待验收"
+    return "需安装 / 需升级"
+
+
+def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
+    summary = result["summary"]
+    env = result["environment"]
+    env_summary = env["summary"]
+    environment_name = env_summary["environment_name"]
+    git_status = _git_hook_user_status(result["git_hooks"])
+    env_status = _environment_user_status(env_summary)
+
+    if summary["blocking"]:
+        install_status = "阻断"
+        next_step = "先处理阻断项，再复跑安装验证"
+    elif summary["install_complete"]:
+        install_status = "是"
+        if env_status == "已 integrated":
+            next_step = "可停止；保留验证输出作为交还证据"
+        elif env_status == "自动接入待验收":
+            next_step = "可进入 31 环境 Hook 接入后验收"
+        else:
+            next_step = "交还当前状态和残留限制"
+    else:
+        install_status = "否"
+        if not env_summary.get("target_environment_supported"):
+            next_step = "回到 30：确认目标环境是否支持 Hook；不支持则走手动可用分支"
+        elif git_status != "通过":
+            next_step = "先安装或修复管辖项目 Git commit-msg Hook"
+        else:
+            next_step = "先安装、升级或授权目标环境插件"
+
+    if env_status == "自动接入待验收":
+        user_next_steps = [
+            f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器。",
+            "重启 App 或重载插件宿主后确认插件仍启用且无错误。",
+            "完成授权 / trust；没有授权提示时记录无待处理授权。",
+            f"新开 {environment_name} 窗口或会话，看是否出现 LDVH 提示或诊断。",
+            "需要正式关闭自动接入状态时，进入 31 逐项验收。",
+        ]
+    elif env_status == "手动可用":
+        user_next_steps = [
+            "确认目标环境当前没有可用 Hook 接入，或先补目标环境插件方案。",
+            "若确认无 Hook，按 30 手动可用分支完成交还。",
+            "复核 repo instruction、thin reference 或 manual CLI 能找到 V3 specs。",
+            "复核每个管辖项目 Git commit-msg Hook 的正反例结果。",
+            "以后目标环境支持 Hook 时，再升级为环境插件并进入安装检测。",
+        ]
+    elif env_status == "已 integrated":
+        user_next_steps = [
+            "保留本次验证输出。",
+            "后续变更插件、授权或 Hook 后重新运行安装验证。",
+        ]
+    else:
+        user_next_steps = [
+            "按 diagnostics 修复环境插件、授权、旧路径或 manifest 问题。",
+            "修复后重新运行 install_verification.py。",
+            "仍失败时复制失败信息包交给 AI 诊断。",
+        ]
+
+    return {
+        "status_card": [
+            {"item": "安装完成", "value": install_status},
+            {"item": "环境自动拦截", "value": env_status},
+            {"item": "提交消息检查", "value": git_status},
+            {"item": "下一步", "value": next_step},
+        ],
+        "hook_status_blocks": [
+            {
+                "name": "环境自动拦截",
+                "status": env_status,
+                "normal": "已 integrated，或安装完成后进入 31 验收；无 Hook 环境只能手动可用。",
+                "next_step": next_step if env_status != "已 integrated" else "无需进入 31。",
+            },
+            {
+                "name": "提交消息检查",
+                "status": git_status,
+                "normal": "每个管辖项目 Git commit-msg Hook 已安装、managed、正例放行、反例阻断。",
+                "next_step": "失败项目先安装或修复 Git Hook。" if git_status != "通过" else "无需处理。",
+            },
+        ],
+        "user_next_steps": user_next_steps,
+        "failure_info_package": [
+            "目标环境名称和版本",
+            "插件页面状态截图或文字",
+            "install_verification.py --format json 完整输出",
+            "environment_entry_audit.py --format text 输出",
+            "失败步骤编号",
+            "是否发生实际写入",
+            "scratch target 路径和文件状态",
+            "相关错误文本",
+        ],
+    }
+
+
 def _print_text(result: dict[str, Any]) -> None:
     summary = result["summary"]
     print("LDVH v3 installation verification")
+    handoff = result.get("user_handoff", {})
+    status_card = handoff.get("status_card", [])
+    if status_card:
+        print("\nUser-facing status:")
+        for row in status_card:
+            print(f"- {row['item']}: {row['value']}")
+    hook_blocks = handoff.get("hook_status_blocks", [])
+    if hook_blocks:
+        print("\nHook status blocks:")
+        for block in hook_blocks:
+            print(f"- {block['name']}: {block['status']}")
+            print(f"  normal: {block['normal']}")
+            print(f"  next: {block['next_step']}")
+    next_steps = handoff.get("user_next_steps", [])
+    if next_steps:
+        print("\nUser next steps:")
+        for step in next_steps:
+            print(f"- {step}")
+    if result["diagnostics"] or summary["status"] != "complete":
+        failure_items = handoff.get("failure_info_package", [])
+        if failure_items:
+            print("\nFailure info package:")
+            for item in failure_items:
+                print(f"- {item}")
+
+    print("\nTechnical summary:")
     print(f"- status: {summary['status']}")
     print(f"- install_complete: {summary['install_complete']}")
     print(f"- governed_config_ok: {summary['governed_config_ok']}")
