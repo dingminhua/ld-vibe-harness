@@ -1145,7 +1145,9 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "不可验证范围" in raw
     assert "不得混入“验证通过”" in raw
     assert "环境 Hook 或插件提示必须按当前目标环境命名" in raw
-    assert "只有环境审计或 Human 明确目标环境为 Codex" in raw
+    assert "当前 AI 运行环境名称" in raw
+    assert "不得沿用示例环境名称" in raw
+    assert "只有当前运行环境、环境审计或 Human 明确目标环境为 Codex" in raw
     assert "目标环境插件 / 工具入口插件" in raw
     assert "插件 / 扩展页面或入口位置" in raw
     assert "授权 / trust" in raw
@@ -1369,6 +1371,21 @@ def test_ldvh_install_action_template_reports_missing_environment_specific_promp
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
     assert any("环境 Hook 或插件提示必须按当前目标环境命名" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_missing_current_environment_name_rule(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "当前 AI 运行环境名称",
+        "目标环境名称",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("当前 AI 运行环境名称" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_workcase_action_template_reports_missing_human_gate(tmp_path: Path) -> None:
