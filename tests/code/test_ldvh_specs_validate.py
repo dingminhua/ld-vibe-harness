@@ -1042,6 +1042,7 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "目标工作区根目录" in rows["Gate"]
     assert "配置层级冲突" in rows["Gate"]
     assert "授权 / trust" in rows["Gate"]
+    assert "记录 lifecycle 验收" in rows["Gate"]
     assert "管辖项目 Git Hook" in rows["Gate"]
     assert "有效 Git worktree" in rows["Gate"]
     assert "安装方案预览" in rows["Gate"]
@@ -1062,6 +1063,7 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "Git `commit-msg` Hook" in rows["执行"]
     assert "governed_hook_adapter.py status" in rows["验证"]
     assert "install_verification.py" in rows["验证"]
+    assert "environment_lifecycle_acceptance.py" in rows["验证"]
     assert "governed_hook_adapter.py verify" in rows["验证"]
     assert "managed `commit-msg` hook" in rows["验证"]
     assert "正反样例" in rows["验证"]
@@ -1070,7 +1072,9 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "重启 App" in rows["验证"]
     assert "授权 / trust" in rows["验证"]
     assert "用户侧冒烟检查" in rows["验证"]
+    assert "lifecycle 验收" in rows["验证"]
     assert "正常判断标准" in rows["验证"]
+    assert "environment_lifecycle_acceptance_valid" in rows["验证"]
     assert "安装状态可复现" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
     assert "integrated / manual_ready / deferred / removed_top_level" in rows["交还"]
@@ -1166,6 +1170,9 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "新开窗口或新会话" in raw
     assert "安装检测标准" in raw
     assert "安装检测通过" in raw
+    assert "environment_lifecycle_acceptance.py" in raw
+    assert "environment_lifecycle_acceptance_valid=true" in raw
+    assert "记录 lifecycle 验收" in raw
     assert "用户侧冒烟检查" in raw
     assert "不阻断安装完成" in raw
     assert "正常判断标准" in raw

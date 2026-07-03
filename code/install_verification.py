@@ -9,6 +9,7 @@ import sys
 from typing import Any
 
 from environment_entry_audit import build_environment_entry_audit
+from environment_lifecycle_acceptance import build_lifecycle_acceptance_status
 from governed_hook_adapter import build_governed_hook_adapter
 from ldvh_specs import (
     GOVERNED_PROJECTS_CONFIG_PATH,
@@ -447,6 +448,7 @@ def build_install_verification(
     repo: Path,
     codex_home: Path | None = None,
     environment_name: str = "Codex",
+    lifecycle_acceptance_path: Path | None = None,
     require_environment_integrated: bool = False,
 ) -> dict[str, Any]:
     resolved_governance_root = governance_root.resolve()
@@ -458,13 +460,32 @@ def build_install_verification(
         for project in projects
     ] if not config_diagnostics else []
     environment = _verify_environment(resolved_ldvh_root, resolved_repo, codex_home, environment_name)
+    lifecycle_acceptance = build_lifecycle_acceptance_status(
+        ldvh_root=resolved_ldvh_root,
+        environment_name=environment_name,
+        path=lifecycle_acceptance_path,
+    )
 
     diagnostics: list[dict[str, str]] = list(config_diagnostics)
     for result in git_results:
         diagnostics.extend(result["diagnostics"])
     diagnostics.extend(environment["diagnostics"])
+    diagnostics.extend(lifecycle_acceptance["diagnostics"])
 
-    if require_environment_integrated and not environment["summary"]["environment_integrated"]:
+    environment_install_verified = environment["summary"]["install_verified"]
+    base_environment_integrated = environment["summary"]["environment_integrated"]
+    lifecycle_acceptance_valid = lifecycle_acceptance["summary"]["valid"]
+    environment_integrated = bool(
+        base_environment_integrated or (environment_install_verified and lifecycle_acceptance_valid)
+    )
+    environment["summary"]["environment_integrated"] = environment_integrated
+    environment["summary"]["lifecycle_acceptance_valid"] = lifecycle_acceptance_valid
+    environment["summary"]["post_install_smoke_check_recommended"] = (
+        environment_install_verified and not environment_integrated
+    )
+    environment["lifecycle_acceptance"] = lifecycle_acceptance
+
+    if require_environment_integrated and not environment_integrated:
         diagnostics.append(
             _diagnostic(
                 "blocking",
@@ -476,8 +497,6 @@ def build_install_verification(
 
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})
     git_ok = bool(git_results) and all(result["summary"]["status"] == "ok" for result in git_results)
-    environment_install_verified = environment["summary"]["install_verified"]
-    environment_integrated = environment["summary"]["environment_integrated"]
     install_complete = git_ok and environment_install_verified and blocking == 0
     return {
         "metadata": {
@@ -497,6 +516,7 @@ def build_install_verification(
             "git_hooks_ok": git_ok,
             "environment_hook_install_verified": environment_install_verified,
             "environment_hook_integrated": environment_integrated,
+            "environment_lifecycle_acceptance_valid": lifecycle_acceptance_valid,
             "environment_human_acceptance_required": environment["summary"]["human_acceptance_required"],
             "environment_user_smoke_check_recommended": environment["summary"]["post_install_smoke_check_recommended"],
             "blocking": blocking,
@@ -510,6 +530,7 @@ def build_install_verification(
             {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "install_handoff_contract"},
             {"path": "code/governed_hook_adapter.py", "role": "git_hook_status_backend"},
             {"path": "code/environment_entry_audit.py", "role": "environment_hook_audit"},
+            {"path": "code/environment_lifecycle_acceptance.py", "role": "environment_lifecycle_acceptance"},
             {"path": "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py", "role": "environment_shim_direct_test"},
         ],
     }
@@ -528,6 +549,7 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- git_hooks_ok: {summary['git_hooks_ok']}")
     print(f"- environment_hook_install_verified: {summary['environment_hook_install_verified']}")
     print(f"- environment_hook_integrated: {summary['environment_hook_integrated']}")
+    print(f"- environment_lifecycle_acceptance_valid: {summary['environment_lifecycle_acceptance_valid']}")
     print(f"- environment_human_acceptance_required: {summary['environment_human_acceptance_required']}")
     print(f"- environment_user_smoke_check_recommended: {summary['environment_user_smoke_check_recommended']}")
     print(f"- diagnostics: {summary['diagnostics']}")
@@ -554,6 +576,7 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- plugin_decision: {env_summary['plugin_decision']}")
     print(f"- install_verified: {env_summary['install_verified']}")
     print(f"- environment_integrated: {env_summary['environment_integrated']}")
+    print(f"- lifecycle_acceptance_valid: {env_summary['lifecycle_acceptance_valid']}")
     print("- shim_direct_tests:")
     for test_name, test_result in env["shim_direct_tests"].items():
         print(f"  - {test_name}: {test_result['status']} (returncode={test_result['returncode']})")
@@ -571,6 +594,15 @@ def _print_text(result: dict[str, Any]) -> None:
             print("\nNormal criteria:")
             for item in criteria:
                 print(f"- {item}")
+
+    lifecycle = env.get("lifecycle_acceptance", {})
+    lifecycle_summary = lifecycle.get("summary", {})
+    if lifecycle_summary.get("valid"):
+        record = lifecycle.get("record", {})
+        print("\nEnvironment lifecycle acceptance:")
+        print(f"- path: {lifecycle_summary.get('path', '')}")
+        print(f"- environment_name: {record.get('environment_name', '')}")
+        print(f"- recorded_at: {record.get('recorded_at', '')}")
 
     if result["diagnostics"]:
         print("\nDiagnostics:")
@@ -595,6 +627,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="current AI environment name for Human-facing output; repo-local shim direct tests currently cover the Codex sample only",
     )
     parser.add_argument("--require-environment-integrated", action="store_true", help="treat missing real environment integration as blocking")
+    parser.add_argument("--lifecycle-acceptance-path", default="", help="override environment lifecycle acceptance evidence path")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     return parser
 
@@ -607,6 +640,7 @@ def main(argv: list[str] | None = None) -> int:
         repo=Path(args.repo),
         codex_home=Path(args.codex_home).resolve() if args.codex_home else None,
         environment_name=args.environment_name,
+        lifecycle_acceptance_path=Path(args.lifecycle_acceptance_path).resolve() if args.lifecycle_acceptance_path else None,
         require_environment_integrated=args.require_environment_integrated,
     )
     if args.format == "json":
