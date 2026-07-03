@@ -25,6 +25,7 @@
 | 项目 | 最小要求 |
 |---|---|
 | manifest | 说明插件身份、版本、目标环境、LDVH 兼容版本、Hook 入口和卸载方式 |
+| 展示资产 | manifest 引用的 icon / logo / composerIcon 等资产必须在插件包内存在并可被静态校验 |
 | Hook 配置 | 映射目标环境 lifecycle event 到 V3 runtime event，且不得覆盖无关用户 Hook |
 | shim 命令 | 只调用 LDVH Code 入口，不内嵌规则判断 |
 | LDVH root 解析 | 明确从插件配置、工作区配置或显式参数解析 LDVH 根目录 |
@@ -117,11 +118,12 @@ Codex 样例后续进入实装前，至少要补齐：
 
 1. repo-local 或用户确认位置下的 LDVH Codex plugin package；
 2. manifest 和 lifecycle Hook 配置；
-3. 只调用 V3 `code/runtime_adapter.py` 的薄 shim；
-4. `SessionStart`、`PreToolUse`、`Stop` 到 V3 runtime event 的 payload 映射；
-5. install、status、trust、disable、uninstall 的可复现步骤；
-6. stale V2 plugin 路径检测和升级前阻断；
-7. status / positive / negative / rollback 测试。
+3. manifest 实际引用的插件展示图标资产；
+4. 只调用 V3 `code/runtime_adapter.py` 的薄 shim；
+5. `SessionStart`、`PreToolUse`、`Stop` 到 V3 runtime event 的 payload 映射；
+6. install、status、trust、disable、uninstall 的可复现步骤；
+7. stale V2 plugin 路径检测和升级前阻断；
+8. status / positive / negative / rollback 测试。
 
 旧 `ldvh@personal`、旧仓库路径、旧 `code/hook_adapter.py` 或历史 trust 记录不能复用为 V3 integrated 证据。
 

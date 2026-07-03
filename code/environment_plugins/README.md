@@ -9,6 +9,7 @@
 | 路径 | 用途 |
 |---|---|
 | `codex-ldvh-v3/` | Codex lifecycle hook 样例包 |
+| `codex-ldvh-v3/assets/` | Codex 样例包展示资产；必须包含 manifest 实际引用的 LDVH 图标 |
 
 后续新增环境样例包时，必须先确认目标环境支持的插件、扩展包或 package 形态，再补对应 manifest、Hook 配置、shim、状态检查和卸载边界。不得把 Codex 样例当成所有环境的总规则。
 
@@ -21,7 +22,8 @@
 3. 只通过 LDVH root 定位 `code/runtime_adapter.py` 或稳定 Code 入口；
 4. Hook 配置不得覆盖无关用户 Hook；
 5. uninstall 只能移除或禁用 LDVH 自己写入的指针；
-6. 未经 Human Gate，不得安装、升级、禁用、卸载或写入用户环境配置。
+6. manifest 展示资产必须位于插件包内，并通过静态测试确认存在和格式有效；
+7. 未经 Human Gate，不得安装、升级、禁用、卸载或写入用户环境配置。
 
 ## 当前状态
 

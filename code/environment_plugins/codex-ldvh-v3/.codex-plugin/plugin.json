@@ -1,0 +1,31 @@
+{
+  "name": "codex-ldvh-v3",
+  "version": "0.1.0",
+  "description": "Repo-local LDVH V3 Codex lifecycle hook package sample.",
+  "author": {
+    "name": "LDVH"
+  },
+  "keywords": [
+    "ldvh",
+    "codex",
+    "hooks",
+    "runtime-adapter"
+  ],
+  "interface": {
+    "displayName": "LDVH V3 Codex Hooks",
+    "shortDescription": "Routes Codex lifecycle hooks to LDVH V3 runtime adapter.",
+    "longDescription": "A repo-local sample package for routing Codex SessionStart, PreToolUse, and Stop events into LDVH V3 runtime adapter through a thin shim. This package is not installed by this repository.",
+    "developerName": "LDVH",
+    "category": "Productivity",
+    "capabilities": [
+      "Hooks"
+    ],
+    "brandColor": "#1F6FEB",
+    "composerIcon": "./assets/ldvh-plugin-icon-128.png",
+    "logo": "./assets/ldvh-plugin-icon-512.png",
+    "defaultPrompt": [
+      "Check LDVH V3 environment status.",
+      "Audit LDVH governed project setup."
+    ]
+  }
+}

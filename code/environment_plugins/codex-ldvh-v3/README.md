@@ -7,6 +7,8 @@
 | 路径 | 职责 |
 |---|---|
 | `.codex-plugin/plugin.json` | Codex plugin manifest；不包含 Rules / Skill 顶层机制，不在 manifest 中声明 unsupported `hooks` 字段 |
+| `assets/ldvh-plugin-icon-128.png` | manifest `composerIcon`；来自 V2 `icons/` 的 LDVH 图标资产 |
+| `assets/ldvh-plugin-icon-512.png` | manifest `logo`；来自 V2 `icons/` 的 LDVH 图标资产 |
 | `hooks/hooks.json` | Codex lifecycle hook 配置样例；实际安装前必须确认命令路径解析方式 |
 | `hooks/ldvh_runtime_shim.py` | 薄 shim；读取 stdin payload，解析 LDVH root，转调 V3 `code/runtime_adapter.py` |
 
@@ -62,4 +64,4 @@ python3 -m py_compile code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_
 python3 -m pytest tests/code/test_environment_plugins.py -q --tb=short
 ```
 
-这些检查只证明 repo-local 包结构、shim 语法、payload 透传、PreToolUse 阻断返回和 Stop 非阻断降级可用，不证明 Codex 已加载或触发该包。
+这些检查只证明 repo-local 包结构、manifest 图标资产、shim 语法、payload 透传、PreToolUse 阻断返回和 Stop 非阻断降级可用，不证明 Codex 已加载或触发该包。

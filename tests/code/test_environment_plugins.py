@@ -8,7 +8,15 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
+PLUGIN_ROOT = ROOT / "code/environment_plugins/codex-ldvh-v3"
 SHIM = ROOT / "code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
+PLUGIN_JSON = PLUGIN_ROOT / ".codex-plugin/plugin.json"
+
+
+def _png_dimensions(path: Path) -> tuple[int, int]:
+    data = path.read_bytes()
+    assert data.startswith(b"\x89PNG\r\n\x1a\n")
+    return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
 
 
 def _run_shim(payload: dict, *, check: bool = True) -> subprocess.CompletedProcess:
@@ -28,6 +36,42 @@ def _run_shim(payload: dict, *, check: bool = True) -> subprocess.CompletedProce
 
 def _diagnostic_codes(result: dict) -> set[str]:
     return {diagnostic["code"] for diagnostic in result.get("diagnostics", [])}
+
+
+def test_codex_sample_plugin_manifest_consumes_package_icons() -> None:
+    manifest = json.loads(PLUGIN_JSON.read_text(encoding="utf-8"))
+    interface = manifest["interface"]
+
+    assert interface["composerIcon"] == "./assets/ldvh-plugin-icon-128.png"
+    assert interface["logo"] == "./assets/ldvh-plugin-icon-512.png"
+
+    for field in ("composerIcon", "logo"):
+        rel_path = interface[field]
+        assert rel_path.startswith("./assets/")
+        asset_path = (PLUGIN_ROOT / rel_path[2:]).resolve()
+        assert PLUGIN_ROOT.resolve() in asset_path.parents
+        assert asset_path.is_file()
+
+
+def test_v2_absorbed_icon_assets_have_expected_png_sizes() -> None:
+    expected_sizes = {
+        "ldvh-plugin-icon-16.png": (16, 16),
+        "ldvh-plugin-icon-32.png": (32, 32),
+        "ldvh-plugin-icon-48.png": (48, 48),
+        "ldvh-plugin-icon-64.png": (64, 64),
+        "ldvh-plugin-icon-128.png": (128, 128),
+        "ldvh-plugin-icon-180.png": (180, 180),
+        "ldvh-plugin-icon-192.png": (192, 192),
+        "ldvh-plugin-icon-256.png": (256, 256),
+        "ldvh-plugin-icon-512.png": (512, 512),
+        "ldvh-plugin-icon.png": (512, 512),
+    }
+
+    for filename, dimensions in expected_sizes.items():
+        assert _png_dimensions(ROOT / "icons" / filename) == dimensions
+
+    assert _png_dimensions(PLUGIN_ROOT / "assets/ldvh-plugin-icon-128.png") == (128, 128)
+    assert _png_dimensions(PLUGIN_ROOT / "assets/ldvh-plugin-icon-512.png") == (512, 512)
 
 
 def test_codex_sample_shim_passes_session_payload_to_runtime_adapter() -> None:

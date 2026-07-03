@@ -1,2 +1,4 @@
 .DS_Store
 .*/
+!code/environment_plugins/codex-ldvh-v3/.codex-plugin/
+!code/environment_plugins/codex-ldvh-v3/.codex-plugin/plugin.json
