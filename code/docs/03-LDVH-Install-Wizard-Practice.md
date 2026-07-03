@@ -18,7 +18,7 @@
 
 避免把内部检查、环境接管状态等技术口径作为用户主标题。这些术语只应出现在技术细节、验证摘要或环境状态说明中。
 
-每一步开头先给三行以内摘要：
+每一步输出前，AI 先做内部摘要检查。内部摘要检查用于组织回答，不默认展示给用户：
 
 | 摘要项 | 写法 |
 |---|---|
@@ -36,6 +36,8 @@
 
 低风险路径确认可以合并成一句话；只读步骤没有用户选择时，不需要输出确认块，只给正常标准和失败反馈。
 
+用户主界面默认只展示流程展示表、关键路径表、检查结果表和选项表。只有存在风险、授权、阻断、容易误解的写入边界，或用户要求解释时，才把内部摘要压缩成一句提示，例如“当前只读检查，不会写入”。不要在正常路径里逐字展示“本步目的 / 不会做什么 / 需要决定什么”三行。
+
 技术状态只放在技术明细或命令输出里。用户主界面必须翻译为可行动语言：
 
 | 技术状态 | 用户主界面说法 | 下一步 |
@@ -46,7 +48,7 @@
 | `PreToolUse` | 写入前检查 | 只在技术明细保留原字段 |
 | `completion_claim_direct_nonblocking` | 完成声明检查只提示问题，不阻断环境关闭 | 写入验证摘要 |
 
-## 状态表模板
+## 流程展示表模板
 
 每次展示向导时，先给流程展示表。当前步骤使用 `👉`，已经完成的步骤使用 `✅` 并把决策或结果写进最后一列，尚未发生的步骤保持空白。
 
@@ -149,7 +151,7 @@ GOVERNED_CONFIG=<workspace-root>/LDVH-GOVERNED-PROJECTS.yaml
 
 安装后验证必须可复现。AI 环境 Hook 至少要验证插件安装证据、Hook 配置指向 V3 shim、直接 shim 正反输入；这些只读安装检测通过后，可以声明安装完成。真实 Codex / IDE lifecycle、插件页面授权和新窗口触发属于用户侧冒烟检查；如果当前回合不能触发，必须写明不可验证范围，不得声明 integrated，但不得仅因此阻断安装完成。Git Hook 必须验证 `governed_hook_adapter.py status`、`core.hooksPath`、managed `commit-msg` 文件和可执行位，并直接执行 hook 文件跑有效 commit message 放行和无效 commit message 阻断。安装完成交还应优先运行 `install_verification.py` 汇总 Git Hook 正反例和环境入口审计。
 
-若后续流程需要 `environment_hook_integrated=true`，不能停在不可验证声明。安装检测已通过后，30 必须把 Human 交还到 `specs/31-环境Hook接入后验收行动模板.md`：由 31 逐项覆盖重启目标 App 或重载插件宿主、新窗口或新会话、插件页面启用与授权、LDVH 启动提示或诊断输出、受控写入负例阻断和正例放行。Human 授权并逐项通过后，AI 运行 `environment_lifecycle_acceptance.py record --confirm-human-gate` 记录验收，再复跑 `install_verification.py`；只有安装检测仍通过且 `environment_lifecycle_acceptance_valid=true` 时，才把 `environment_hook_integrated` 转为 `true`。
+若后续流程需要 `environment_hook_integrated=true`，不能停在不可验证声明。安装检测已通过后，30 必须把 Human 交还到 `specs/31-环境Hook接入后验收行动模板.md`：由 31 逐项覆盖重启目标 App 或重载插件宿主、新会话只读可见性探针、插件页面启用与授权、受控写入负例阻断和正例放行。Human 授权并逐项通过后，AI 运行 `environment_lifecycle_acceptance.py record --confirm-human-gate` 记录验收，再复跑 `install_verification.py`；只有安装检测仍通过且 `environment_lifecycle_acceptance_valid=true` 时，才把 `environment_hook_integrated` 转为 `true`。
 
 不可验证范围单独列出，不能混入“验证通过”。常见不可验证项包括真实 Codex / IDE lifecycle 触发、外部环境自动触发和卸载后自动触发证据。
 
@@ -194,7 +196,7 @@ AI 不得把缺少独立一键安装 CLI 写成安装已完成，也不得在最
 
 Hook 交还必须拆成两个结论块：`环境自动拦截` 和 `提交消息检查`。环境自动拦截说明插件、授权、lifecycle 和 integrated；提交消息检查说明每个管辖项目的 Git Hook、正例放行和反例阻断。不得用一个“Hook 已通过”覆盖两类 Hook。
 
-交还时必须列“用户下一步待办”。支持 Hook 时最多五项：打开插件页、重启 App 或重载插件宿主、完成授权 / trust、新开窗口或新会话看 LDVH 提示或诊断、决定是否进入 31。无 Hook 分支最多五项：确认 repo instruction 或 thin reference、运行 manual CLI、复核 Git Hook、理解不会自动拦截、以后支持 Hook 时再升级。
+交还时必须列“用户下一步待办”。支持 Hook 时最多五项：打开插件页、重启 App 或重载插件宿主、完成授权 / trust、进入 31 后在新窗口或新会话运行只读可见性探针、决定是否继续 31 受控正反例验收。无 Hook 分支最多五项：确认 repo instruction 或 thin reference、运行 manual CLI、复核 Git Hook、理解不会自动拦截、以后支持 Hook 时再升级。
 
 失败或暂停时给可复制失败信息包：
 
@@ -218,7 +220,7 @@ scratch target 路径和文件状态：
 | 目标环境 | 当前 AI 运行环境名称；目标环境不同于当前环境时写目标环境；未知时写目标环境 |
 | 页面或入口 | 插件页面、扩展页面、插件管理器、repo instruction 入口或安装器 |
 | 用户动作 | 安装、升级、启用、重启 App、授权、trust 或新开窗口 / 新会话 |
-| 预期现象 | 插件可见、无报错、入口可用、触发时出现 LDVH 提示或阻断 |
+| 预期现象 | 插件可见、无报错、入口可用、新会话可见性探针有结果、受控写入出现阻断或放行 |
 | 失败反馈 | 截图、错误文本、插件状态或让 AI 运行的诊断命令 |
 | 状态用语 | 未真实写入前只能写待用户安装、需授权、可见 / 需验证或已写入但待用户授权 |
 
@@ -245,14 +247,14 @@ scratch target 路径和文件状态：
 | 2 | 核对插件入口 | 命令、manifest 或入口指向当前 V3 LDVH root / V3 shim |
 | 3 | 重启 App 或重载插件宿主 | 重启后插件仍显示启用，没有新增错误 |
 | 4 | 完成授权 / trust | 页面显示已授权、已信任或没有待处理授权提示 |
-| 5 | 新开目标环境窗口或会话 | 能看到 LDVH 启动提示、诊断输出，或有可回读的 SessionStart 真实触发证据 |
+| 5 | 新开目标环境窗口或会话并运行只读可见性探针 | 输出显示 `status=ok`、`event=session_start`、存在 `receipt_id`，且诊断为空；有真实 SessionStart 触发证据时一并回读 |
 | 6 | 触发一次受控写入类工具 | 负例会被阻断；正例会放行 |
 | 7 | 运行统一安装验证 | `install_verification.py` 显示 `install_complete=true`、插件可见、shim 直测通过，并列出 Git Hook 正反例结果 |
 
 用户侧冒烟检查需要正式关闭 integrated 状态时，应进入 31 的逐项验收。Human 可以用以下句式交还 AI：
 
 ```text
-请进入 31 环境 Hook 接入后验收，我授权按测试组逐项检查插件页面、重启后结果、新对话触发、受控负例阻断、受控正例放行和统一安装验证。
+请进入 31 环境 Hook 接入后验收，我授权按测试组逐项检查插件页面、重启后结果、新会话可见性探针、受控负例阻断、受控正例放行和统一安装验证。
 ```
 
 31 全部必需项通过并收到明确 Human Gate 后，AI 运行：
@@ -275,10 +277,6 @@ python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh
 
 ### 1/5 路径确认
 
-本步目的：确认 LDVH 本体、目标工作区和配置文件完整路径。
-不会做什么：不会写入文件，不会安装插件或 Hook。
-需要决定什么：确认是否进入安装前检查。
-
 | 状态 | 步骤 | 决策 / 结果 |
 |---|---|---|
 | 👉 | 1/5 📍 路径确认 |  |
@@ -295,10 +293,6 @@ python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh
 | 2 | 暂停 |
 
 ### 2/5 安装前检查
-
-本步目的：只读检查当前配置、事实源目录、环境入口和 Git Hook。
-不会做什么：不会写入配置，不会安装或升级任何入口。
-需要决定什么：本步不需要选择；发现阻断时先解除阻断。
 
 | 状态 | 步骤 | 决策 / 结果 |
 |---|---|---|
@@ -342,10 +336,6 @@ python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh
 
 ### 3/5 安装选项
 
-本步目的：收集真正需要 Human 决定的安装选项。
-不会做什么：不会把配置位置作为选项，不会写入。
-需要决定什么：按当前检查结果选择是否调整管辖项目配置。
-
 | 状态 | 步骤 | 决策 / 结果 |
 |---|---|---|
 | ✅ | 1/5 📍 路径确认 | 使用已确认路径 |
@@ -367,10 +357,6 @@ python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh
 如果本例中目标工作区根目录和项目内都已有配置文件，下一步安装方案预览应阻断，不得继续执行工作区安装。
 
 ### 4/5 安装方案预览
-
-本步目的：让 Human 看懂执行后会改变什么。
-不会做什么：不会在最终确认前写入。
-需要决定什么：是否进入最终确认；这不是执行授权。
 
 #### 一句话方案
 
@@ -408,10 +394,6 @@ python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh
 | 回滚 | 插件 uninstall / rollback、Git Hook uninstall / rollback、配置恢复路径 |
 
 ### 5/5 最终确认
-
-本步目的：由 Human 选择执行或停止。
-不会做什么：选择停止时不写入；选择执行前仍不写入。
-需要决定什么：`1 执行方案` 或 `2 不执行，停止安装`。
 
 5/5 摘要只列出将写入对象和不写入对象；不得重复 2/5 的只读检查表。选择 `1 执行方案` 后，AI 立即执行已确认写入，再执行写入后验证并交还结果。
 
@@ -455,7 +437,7 @@ python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh
 | 插件状态 | 可见 / 需验证 |
 | 转接脚本直测 | 通过 / 未运行 / 失败 |
 | 真实自动触发 | 已验证 / 未验证 |
-| 正常判断标准 | 安装检测通过；用户侧冒烟检查包括插件页面启用且无错误、重启后插件仍启用且无新增错误、授权完成、新窗口可见 LDVH 启动提示、受控写入负例阻断且正例放行 |
+| 正常判断标准 | 安装检测通过；用户侧冒烟检查包括插件页面启用且无错误、重启后插件仍启用且无新增错误、授权完成、新会话只读可见性探针输出正常、受控写入负例阻断且正例放行 |
 | integrated 声明 | 只有真实自动触发、失败可阻断且证据齐备时才可声明 |
 
 若当前 AI 运行环境名称可识别，必须在本节使用当前环境名称；若目标环境不是当前环境，必须替换为对应目标环境名称，不得沿用示例环境名称。

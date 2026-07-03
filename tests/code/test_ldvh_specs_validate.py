@@ -1132,20 +1132,22 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "不得新增安装运行时状态闭集" in raw
     assert "不得把交互展示项写成环境入口判定事实" in raw
     assert "具体图标、表格、展示列和交还摘要模板归 `code/docs/03-LDVH-Install-Wizard-Practice.md` 或运行时输出" in raw
-    assert "用户视角摘要" in raw
+    assert "内部摘要检查" in raw
+    assert "默认不在用户主界面逐字展示" in raw
+    assert "流程表、关键路径表、检查结果表或选项表" in raw
+    assert "风险、授权、阻断、容易误解的写入边界" in raw
+    assert "压缩成一句提示" in raw
     assert "简洁确认块" in raw
     assert "用户告知清单必须作为 4/5 安装方案预览的必含内容交给 Human 确认" in raw
     assert "暂停交还时同步列出已能确认的告知清单项、缺失项和解除条件" in raw
     assert "告知清单不得替代 5/5 最终确认" in raw
     assert "本步目的" in raw
     assert "不会做什么" in raw
-    assert "需要决定什么" in raw
+    assert "需要 Human 决定什么" in raw
     assert "确认项" in raw
     assert "选择影响" in raw
     assert "异常反馈" in raw
     assert "主界面不得裸露 raw diagnostic" in raw
-    assert "进度安全提示" in raw
-    assert "当前已完成阶段" in raw
     assert "选择框 / 单选控件" in raw
     assert "每次只问一个问题" in raw
     assert "选项表必须给出选项、说明和结果" in raw
@@ -1421,19 +1423,19 @@ def test_ldvh_install_action_template_reports_missing_action_stage_boundary(tmp_
     assert any("不得新增安装运行时状态闭集" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
-def test_ldvh_install_action_template_reports_missing_user_summary(tmp_path: Path) -> None:
+def test_ldvh_install_action_template_reports_missing_internal_summary_boundary(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
         "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
-        "用户视角摘要",
+        "内部摘要检查",
         "步骤摘要",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("用户视角摘要" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("内部摘要检查" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_final_confirmation_boundary(tmp_path: Path) -> None:
@@ -1639,7 +1641,9 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "每一步只问一个判断" in raw
     assert "闭集确认" in raw
     assert "具体验收展示表格、图标、编号和按钮文案归实现域" in raw
-    assert "具体卡片、表格、图标、编号和 scratch 文件名归 `code/docs/02-Environment-Plugin-Practice.md` 或运行时输出" in raw
+    assert "具体卡片、表格、图标、编号、只读可见性探针命令和 scratch 文件名归 `code/docs/02-Environment-Plugin-Practice.md` 或运行时输出" in raw
+    assert "新会话只读可见性探针" in raw
+    assert "只读可见性探针只能证明新会话能够看见 LDVH runtime" in raw
     assert "主界面不得要求 Human 自行理解专业“通过 / 失败”" in raw
     assert "你是否看到 X" in raw
     assert "AI 根据本文判断通过、失败或暂停诊断" in raw

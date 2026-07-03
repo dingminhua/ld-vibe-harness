@@ -151,9 +151,9 @@ ldvh_spec:
 
 每次向 Human 展示安装行动时，交互输出应表达当前阶段、已确认决策 / 结果和未发生事项。已完成事项应写入简短结果，尚未发生事项应保持空白或不展示噪音占位，不写“待进行 / 待选择 / 待确认”等无效占位。本文不得新增安装运行时状态闭集，不得把交互展示项写成环境入口判定事实、事实对象状态或安装事实记录。具体图标、表格、展示列和交还摘要模板归 `code/docs/03-LDVH-Install-Wizard-Practice.md` 或运行时输出。
 
-每一步开头必须先给用户视角摘要。摘要最多三行，固定说明本步目的、不会做什么、需要决定什么；若本步不需要 Human 决定，必须明确写明本步只读检查或只展示方案，不得伪造选择。摘要必须包含进度安全提示，说明当前已完成阶段，以及最终确认前不会写入；但不得替代用户告知清单、Human Gate 或验证结论。
+每一步开头前，AI 必须先完成内部摘要检查，确认本步目的、不会做什么、需要 Human 决定什么。内部摘要检查默认不在用户主界面逐字展示；用户主界面优先展示流程表、关键路径表、检查结果表或选项表。只有存在风险、授权、阻断、容易误解的写入边界，或 Human 要求说明时，才把内部摘要压缩成一句提示，例如“当前只读检查，不会写入”。内部摘要检查不得替代用户告知清单、Human Gate 或验证结论。
 
-每个需要 Human 判断的步骤必须使用简洁确认块，而不是专业字段解释或固定五问式卡片。确认块最多三行，只保留 `确认项`、`选择影响` 和 `异常反馈`；低风险路径确认可以合并成一句话。不需要 Human 判断的步骤只说明正常标准和失败时应交回的路径、错误文本、截图或命令输出。AI 可以在技术明细中保留 raw diagnostic，但主界面不得裸露 raw diagnostic。
+每个需要 Human 判断的步骤必须使用简洁确认块，而不是专业字段解释、固定五问式卡片或默认三行摘要。确认块最多三行，只保留 `确认项`、`选择影响` 和 `异常反馈`；低风险路径确认可以只给表格和选项，不额外展示确认块。不需要 Human 判断的步骤只说明正常标准和失败时应交回的路径、错误文本、截图或命令输出。AI 可以在技术明细中保留 raw diagnostic，但主界面不得裸露 raw diagnostic。
 
 需要 Human 作出选择时，若当前界面支持选择框 / 单选控件，必须优先使用选择框 / 单选控件；界面不支持时，使用等价编号选项。每次只问一个问题，不把检查事实、后置项或返回修改混入主选项。选项表必须给出选项、说明和结果；最终确认只允许两个主选项，路径候选、工作区候选或项目编号候选按实际候选数量编号展示，但不得把“返回修改”写成第三个主选项。
 
@@ -193,7 +193,7 @@ ldvh_spec:
 
 环境插件安装、升级或复核必须给出安装检测标准、用户侧冒烟检查顺序和正常判断标准；具体检查项由第 10 章验证方法承接。安装检测通过即可作为安装完成条件；用户侧冒烟检查不是安装完成阻断项，不阻断安装完成。缺少真实 lifecycle、授权 / trust、payload 或失败处理证据时，安装检测仍可通过并完成安装交还，但不得声明 integrated；用户侧冒烟检查失败时进入诊断或修复流程，不得直接回写安装检测失败；只有复跑安装检测发现插件缺失、插件未启用、必需 Hook manifest 不完整、旧路径、stale V2 path、shim 直测失败或 Git Hook 正反例失败时，才应返回 `review_required` 或 `blocked`。
 
-当 `integrated` 结论会影响后续逻辑时，必须存在可关闭的 lifecycle 验收机制，不得让 `environment_hook_integrated=false` 成为无法转换的死循环。安装检测已通过但真实 lifecycle 尚未在当前回合验证时，30 只负责交还用户侧冒烟检查要求，并提示 Human 可进入 `specs/31-环境Hook接入后验收行动模板.md` 的逐项验收；31 负责重启目标 App、新窗口或新会话、插件页面授权、受控写入负例阻断、受控正例放行、记录 lifecycle 验收和复跑 `install_verification.py`。只有安装检测仍通过且 `environment_lifecycle_acceptance_valid=true` 时，安装验证才可把 `environment_hook_integrated` 转为 `true`；若验收记录缺失、环境名称不匹配、Human Gate 未确认或安装检测回退，则仍不得声明 integrated。
+当 `integrated` 结论会影响后续逻辑时，必须存在可关闭的 lifecycle 验收机制，不得让 `environment_hook_integrated=false` 成为无法转换的死循环。安装检测已通过但真实 lifecycle 尚未在当前回合验证时，30 只负责交还用户侧冒烟检查要求，并提示 Human 可进入 `specs/31-环境Hook接入后验收行动模板.md` 的逐项验收；31 负责重启目标 App、新会话只读可见性探针、插件页面授权、受控写入负例阻断、受控正例放行、记录 lifecycle 验收和复跑 `install_verification.py`。只有安装检测仍通过且 `environment_lifecycle_acceptance_valid=true` 时，安装验证才可把 `environment_hook_integrated` 转为 `true`；若验收记录缺失、环境名称不匹配、Human Gate 未确认或安装检测回退，则仍不得声明 integrated。
 
 ### 7.7 安装完成交还与失败信息包
 
@@ -201,7 +201,7 @@ ldvh_spec:
 
 安装完成交还必须先给交还摘要，再给技术明细。交还摘要至少覆盖安装完成判断、01.Att.04 环境接入判定分类及证据、环境自动拦截结论、每个管辖项目 Git `commit-msg` Hook 验证摘要、下一步 Human Gate 和不可验证范围；不得在交还摘要中形成新的安装状态闭集。交还摘要之后必须把 Hook 验证分成两个块：`环境自动拦截` 和 `提交消息检查`，不得把环境 Hook 和 Git commit-msg Hook 混成一个“Hook 已通过”。
 
-安装交还必须单列用户下一步待办。支持 Hook 时待办最多五项：打开目标环境插件页面、重启 App 或重载插件宿主、完成授权 / trust、新开窗口或新会话看 LDVH 提示或诊断、决定是否进入 31。手动可用安装交还待办最多五项：确认 repo instruction 或 thin reference 入口、运行 manual CLI 或等价检查、复核每个管辖项目 Git Hook、理解不会自动拦截、以后目标环境支持 Hook 时再升级为环境插件。
+安装交还必须单列用户下一步待办。支持 Hook 时待办最多五项：打开目标环境插件页面、重启 App 或重载插件宿主、完成授权 / trust、进入 31 后在新窗口或新会话运行只读可见性探针、决定是否继续 31 受控正反例验收。手动可用安装交还待办最多五项：确认 repo instruction 或 thin reference 入口、运行 manual CLI 或等价检查、复核每个管辖项目 Git Hook、理解不会自动拦截、以后目标环境支持 Hook 时再升级为环境插件。
 
 失败或暂停时必须提供可复制失败信息包，不得只要求“截图给我”。失败信息包至少列出：目标环境名称和版本、插件页面结果截图或文字、`install_verification.py --format json` 完整输出、`environment_entry_audit.py --format text` 输出、失败步骤编号、是否发生实际写入、scratch target 路径和文件状态、相关错误文本。若某项拿不到，写“未取得”并说明原因。
 
@@ -229,7 +229,7 @@ ldvh_spec:
 | 告知清单要求 | 安装、部署、初始化、配置或卸载前必须形成用户告知清单并交给 Human 确认 | 本文、01、06、09 | 安装治理 | 涉及写入、入口、配置或卸载时 |
 | 环境入口边界要求 | 插件、扩展包、Hook 或 manual entrypoint 只能作为入口承载，不得声明未验证 integrated | 本文、01、Code audit | 环境治理 | 检查或改变环境入口时 |
 | Git Hook 安装验证要求 | 完整安装必须覆盖每个已选择管辖项目的 Git `commit-msg` Hook，并在安装后通过 `install_verification.py` 或等价入口验证 status、managed hook、正例放行和负例阻断 | 本文、01、Code adapter、tests | 环境治理 | 安装、升级或修复 LDVH 时 |
-| lifecycle 验收闭环要求 | 安装检测通过但尚未 integrated 时，必须提供重启 App、新窗口或新会话、插件页面授权、真实触发和受控写入正反例的 Human 验收路径，并用 `environment_lifecycle_acceptance.py` 或等价入口记录后复跑 `install_verification.py` | 本文、01、Code audit、tests | 环境治理 | 环境插件安装检测通过但后续逻辑需要 integrated 时 |
+| lifecycle 验收闭环要求 | 安装检测通过但尚未 integrated 时，必须提供重启 App、新会话只读可见性探针、插件页面授权、真实触发或受控写入正反例的 Human 验收路径，并用 `environment_lifecycle_acceptance.py` 或等价入口记录后复跑 `install_verification.py` | 本文、01、Code audit、tests | 环境治理 | 环境插件安装检测通过但后续逻辑需要 integrated 时 |
 | 环境插件验收提示要求 | 环境插件安装、升级或复核必须提示插件页面、重启 App、授权 / trust、新窗口或新会话测试、正常判断标准和失败反馈 | 本文、01、Code audit、tests | 环境治理 | 安装、升级、复核或交还目标环境插件时 |
 | Git 项目准入要求 | 每个已选择管辖项目必须是有效 Git worktree；非 Git 目录必须阻断安装并说明管辖项目必须是 Git 仓库 | 本文、10、Code adapter、tests | 项目准入 | 安装、初始化或接入管辖项目时 |
 | 工作区配置 Gate 要求 | 生成或修改管辖项目配置前必须确认 LDVH 本体路径、目标工作区根目录和配置文件完整路径；配置位置固定为目标工作区根目录 | 本文、10、Human Gate | 配置治理 | 创建或迁移 `LDVH-GOVERNED-PROJECTS.yaml` 时 |
@@ -246,7 +246,7 @@ ldvh_spec:
 | 行动阶段检查 | 是否使用五阶段安装行动、表达当前阶段与已确认决策 / 结果、覆盖安装方案预览和最终确认；是否把检查事实、用户决策和后置项分开；是否避免把交互展示项写成新的状态闭集 | 不得执行写入或要求 Human 验收 |
 | 清单检查 | 是否在安装、部署、初始化、配置或卸载前列出用户告知清单 | 不得执行写入或要求 Human 验收 |
 | Gate 检查 | 是否识别配置位置、环境入口、插件安装、integrated 声明和多项目 target 的 Human Gate | 暂停并交还 Human |
-| 环境检查 | 是否使用环境审计、入口审计或等价验证区分安装检测通过、integrated / manual_ready / deferred / removed_top_level；安装检测标准至少包括插件或扩展包可被环境审计发现、插件命令 / manifest / 入口指向当前 V3 LDVH root 或 V3 shim、必需 lifecycle Hook manifest 齐全、旧路径和 stale V2 path 诊断为 0、repo-local shim 正反输入直测通过、统一安装验证列出 Git Hook 正反例结果；用户侧冒烟检查顺序至少覆盖插件页面结果、重启 App、授权 / trust、新窗口或新会话、受控写入负例被阻断、正例被放行和 `install_verification.py` 或等价诊断入口；正常判断标准至少覆盖已启用、已授权或无待处理授权且无错误、入口指向当前 V3 LDVH root / V3 shim、重启后插件仍启用且无新增错误、新窗口或新会话能看到 LDVH 启动提示或诊断输出、统一安装验证显示安装检测通过；是否避免把用户侧冒烟检查当作安装完成阻断项 | 不得声明环境 integrated；安装检测未通过时不得声明安装完成 |
+| 环境检查 | 是否使用环境审计、入口审计或等价验证区分安装检测通过、integrated / manual_ready / deferred / removed_top_level；安装检测标准至少包括插件或扩展包可被环境审计发现、插件命令 / manifest / 入口指向当前 V3 LDVH root 或 V3 shim、必需 lifecycle Hook manifest 齐全、旧路径和 stale V2 path 诊断为 0、repo-local shim 正反输入直测通过、统一安装验证列出 Git Hook 正反例结果；用户侧冒烟检查顺序至少覆盖插件页面结果、重启 App、授权 / trust、新会话只读可见性探针、受控写入负例被阻断、正例被放行和 `install_verification.py` 或等价诊断入口；正常判断标准至少覆盖已启用、已授权或无待处理授权且无错误、入口指向当前 V3 LDVH root / V3 shim、重启后插件仍启用且无新增错误、新会话可见性探针输出 `status=ok`、`event=session_start`、`receipt_id` 和无阻断诊断、统一安装验证显示安装检测通过；是否避免把用户侧冒烟检查当作安装完成阻断项 | 不得声明环境 integrated；安装检测未通过时不得声明安装完成 |
 | Git Hook 检查 | 是否把每个已选择管辖项目 Git Hook 纳入安装 / 升级方案，并通过 `install_verification.py` 或等价入口验证 `core.hooksPath`、managed hook、正例放行和负例阻断 | 不得声明完整安装完成 |
 | Git 项目检查 | 是否检查每个已选择管辖项目是有效 Git worktree；非 Git 目录是否阻断并说明管辖项目必须是 Git 仓库 | 不得继续执行安装 |
 | 配置检查 | 是否按 10 解析和验证管辖项目配置，并确认配置固定在目标工作区根目录，且展示 LDVH 本体路径、目标工作区根目录和配置文件完整路径 | 不得声明管辖项目配置已生效 |

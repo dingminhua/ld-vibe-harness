@@ -11,7 +11,7 @@ ldvh_spec:
   parent_spec: "specs/06-行动模板基础规范.md"
   relation: "action_template_member"
   positioning: "定义环境 Hook 安装检测通过后，Human 授权进入逐项验收、记录 lifecycle 验收并复核 integrated 结论的正式行动模板"
-  scope: "环境 Hook 接入后验收、插件页面结果确认、重启后结果确认、新窗口或新会话触发确认、受控负例阻断、受控正例放行、lifecycle 验收记录和 integrated 复核"
+  scope: "环境 Hook 接入后验收、插件页面结果确认、重启后结果确认、新窗口或新会话可见性探针、受控负例阻断、受控正例放行、lifecycle 验收记录和 integrated 复核"
   basis:
     - "specs/00-理念与构成.md"
     - "specs/01-保障与衔接.md"
@@ -77,7 +77,7 @@ ldvh_spec:
 本文适用于：
 
 1. 30 已完成安装检测，`install_verification.py` 显示 `install_complete=true` 且 `environment_hook_install_verified=true`，但 `environment_hook_integrated=false`；
-2. 用户要求确认环境 Hook 是否真正接入、是否能从新窗口或新会话自动触发；
+2. 用户要求确认环境 Hook 是否真正接入、是否能在新窗口或新会话中看到可复核的 LDVH runtime 证据；
 3. 用户已完成或愿意完成插件页面启用、授权 / trust、重启 App 或重载插件宿主；
 4. 后续逻辑明确要求 `environment_hook_integrated=true`，需要可复现验收路径；
 5. 环境插件安装、升级或复核后，需要把用户侧冒烟检查变成可记录、可复跑的 lifecycle 验收。
@@ -118,7 +118,7 @@ ldvh_spec:
 |---|---|---|---|
 | 1 | 插件页面结果 | 插件或扩展包可见、启用、已授权或无待授权、无错误 | 停止并回到插件页面诊断 |
 | 2 | 重启后结果 | 重启 App 或重载插件宿主后插件仍启用且无新增错误 | 停止并回到插件安装 / 授权诊断 |
-| 3 | 新窗口或新会话触发 | 新窗口或新会话能看到 LDVH 启动提示、诊断输出或可回读的 SessionStart 真实触发证据 | 停止，不记录 lifecycle 验收 |
+| 3 | 新会话可见性探针 | 新窗口或新会话中，AI 运行只读 LDVH 可见性探针并返回结果表；结果至少包含 `status=ok`、`event=session_start`、`receipt_id` 和 `Diagnostics: none`；若目标环境能提供真实 SessionStart 触发证据，应一并回读 | 停止，不记录 lifecycle 验收 |
 | 4 | 受控负例阻断 | 对 harmless scratch target 发起应阻断的写入类操作时，PreToolUse 负例被阻断或返回明确 blocking diagnostic | 停止；若意外写入，只记录失败并按 Human Gate 处理清理 |
 | 5 | 受控正例放行 | 对 Human 授权的 harmless scratch target 或等价安全操作发起正例时，操作被放行且无 blocking diagnostic | 停止并诊断授权、payload 或失败处理 |
 | 6 | 统一安装验证 | `install_verification.py` 仍显示安装检测通过，并列出 Git Hook 正反例通过 | 停止并回到安装修复流程 |
@@ -127,7 +127,9 @@ ldvh_spec:
 
 受控 scratch target 必须是临时、可识别、可清理的测试路径，由实现域或运行时输出给出具体位置。不得用正式 specs、事实对象、外部用户文件、管辖项目业务文件、用户环境配置或插件系统文件做正反例写入目标。
 
-31 的主界面必须使用简洁验收提示表达每一步，不得把 raw diagnostic 当作主问题。验收提示至少包含 `用户要做什么`、`正常表现` 和 `失败时给 AI 什么`。技术字段可以放入附录，但主界面不得裸露 raw diagnostic；`environment_hook_integrated=false` 应写成“自动接入待验收”，`target_environment_supported=false` 和 `unsupported_target_environment` 应写成“当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还”，`PreToolUse` 应写成“写入前检查”。具体卡片、表格、图标、编号和 scratch 文件名归 `code/docs/02-Environment-Plugin-Practice.md` 或运行时输出，不得在本文形成新的验收状态闭集。
+31 的主界面必须使用简洁验收提示表达每一步，不得把 raw diagnostic 当作主问题。验收提示至少包含 `用户要做什么`、`正常表现` 和 `失败时给 AI 什么`。技术字段可以放入附录，但主界面不得裸露 raw diagnostic；`environment_hook_integrated=false` 应写成“自动接入待验收”，`target_environment_supported=false` 和 `unsupported_target_environment` 应写成“当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还”，`PreToolUse` 应写成“写入前检查”。具体卡片、表格、图标、编号、只读可见性探针命令和 scratch 文件名归 `code/docs/02-Environment-Plugin-Practice.md` 或运行时输出，不得在本文形成新的验收状态闭集。
+
+31 不得把“重启后用户肉眼看到启动提示”作为唯一正常标准。目标环境不稳定展示 Hook stdout、启动提示或后台诊断时，必须改用新会话只读可见性探针，让 AI 在用户可见输出中返回 `status`、`event`、`receipt_id` 和诊断结论。只读可见性探针只能证明新会话能够看见 LDVH runtime，不得替代后续受控负例阻断、受控正例放行、lifecycle 验收记录和 integrated 复核。
 
 ## 7. 逐项验收推进规则
 
@@ -150,8 +152,8 @@ ldvh_spec:
 | Context | 读取用户目标、目标环境、30 交还结果、`install_verification.py` 当前输出、`environment_hook_integrated=false` 状态、插件页面或插件管理器入口、Human 授权状态、lifecycle 验收记录状态、source_refs，并回指 `specs/01-保障与衔接.md`、`specs/06-行动模板基础规范.md`、`specs/09-测试与验证规范.md`、`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 和本文。 |
 | Scenario | 30 安装检测通过后进入环境 Hook 接入后验收、用户要求验证真实 lifecycle、用户完成插件授权后要求验收、需要 lifecycle 冒烟转换 integrated、或要求只回答 01/06/09/30/31 边界时适用。 |
 | Gate | 开始验收、执行受控负例阻断测试、执行受控正例放行测试、记录 lifecycle 验收、接受插件页面结果、接受授权 / trust 结果、声明 `environment_hook_integrated`、处理意外 scratch 写入或清理测试文件，均必须有 Human Gate 或明确用户授权。 |
-| 执行 | 逐项推进验收，一次只判断一项，使用闭集确认；先运行只读安装检测，再要求 Human 检查插件页面、重启 App、新窗口或新会话，再执行受控 scratch target 的负例和正例；不得安装、不得升级、不得卸载、不得修改用户环境；失败即停止，不进入后续步骤。 |
-| 验证 | 使用 `install_verification.py`、`environment_lifecycle_acceptance.py`、插件页面结果、重启 App、新窗口或新会话、SessionStart 真实触发证据、PreToolUse 受控负例阻断、受控正例放行、Git Hook 正反例、`environment_lifecycle_acceptance_valid=true` 和 `environment_hook_integrated=true` 复核；失败、缺证或 Human 未确认时不得声明 integrated。 |
+| 执行 | 逐项推进验收，一次只判断一项，使用闭集确认；先运行只读安装检测，再要求 Human 检查插件页面、重启 App、执行新会话只读可见性探针，再执行受控 scratch target 的负例和正例；不得安装、不得升级、不得卸载、不得修改用户环境；失败即停止，不进入后续步骤。 |
+| 验证 | 使用 `install_verification.py`、`environment_lifecycle_acceptance.py`、插件页面结果、重启 App、新会话只读可见性探针、SessionStart 真实触发证据（若目标环境可提供）、PreToolUse 受控负例阻断、受控正例放行、Git Hook 正反例、`environment_lifecycle_acceptance_valid=true` 和 `environment_hook_integrated=true` 复核；失败、缺证或 Human 未确认时不得声明 integrated。 |
 | 回写 | 仅在全部必需测试通过且 Human Gate 明确后，写入 Code 管理的 lifecycle 验收记录；记录必须通过 `environment_lifecycle_acceptance.py record --confirm-human-gate` 或等价入口生成，source note 写逐项验收摘要；不得写事实源、不得写 specs、不替代插件页面、不得把聊天观察替代插件页面或真实 payload 证据。 |
 | 交还 | 交还验收结果表、通过项、失败项、未验证项、`environment_hook_integrated` 最终状态、`environment_lifecycle_acceptance_valid` 状态、统一安装验证摘要、回滚或诊断入口、scratch target 处理状态、source_refs 和残留风险；阻断时交还当前停止步骤和下一步诊断建议。 |
 
@@ -172,7 +174,7 @@ ldvh_spec:
 | 检查类别 | 检查内容 | 不满足时 |
 |---|---|---|
 | 结构检查 | 是否具备 Context、Scenario、Gate、执行、验证、回写和交还结构，并能被 Code 解析 | 不得作为正式行动模板执行 |
-| 测试组检查 | 是否覆盖插件页面结果、重启后结果、新窗口或新会话、受控负例阻断、受控正例放行、统一安装验证和验收记录复核 | 不得声明 lifecycle 验收完成 |
+| 测试组检查 | 是否覆盖插件页面结果、重启后结果、新会话可见性探针、受控负例阻断、受控正例放行、统一安装验证和验收记录复核 | 不得声明 lifecycle 验收完成 |
 | Gate 检查 | 是否在开始验收、受控写入测试、记录验收和声明 integrated 前获得 Human Gate | 停止验收或回到用户确认 |
 | 转换检查 | 是否通过 `environment_lifecycle_acceptance.py` 记录并复跑 `install_verification.py --require-environment-integrated` | 不得把 `environment_hook_integrated` 写成 true |
 | 边界检查 | 是否避免安装、升级、卸载、修改用户环境或写事实源 | 停止执行并回到 30 或环境修复流程 |
@@ -197,12 +199,12 @@ ldvh_spec:
 2. 目标环境、插件页面、授权状态或 LDVH 本体路径不清；
 3. 目标环境确认不支持 Hook、`target_environment_supported=false` 或 `unsupported_target_environment`，31 不适用；必须按 01 的无自动环境 Hook 边界回到 30 的手动可用安装交还，不得继续 31；
 4. Human 未明确授权开始验收测试；
-5. 任一必需测试失败、缺少实际观察、缺少插件页面结果或缺少真实 lifecycle 触发证据；
+5. 任一必需测试失败、缺少实际观察、缺少插件页面结果、缺少新会话只读可见性探针结果，或缺少受控正反例证据；
 6. 受控负例没有阻断，或受控正例没有放行；
 7. `environment_lifecycle_acceptance.py record --confirm-human-gate` 失败；
 8. 复跑 `install_verification.py --require-environment-integrated` 仍返回 blocked / review_required；
 9. 测试需要写入 specs、事实源、用户环境、插件系统文件、外部项目业务文件或其它非 scratch target；
-10. AI 试图用聊天印象、缓存、旧 trust、插件可见或 repo-local shim 直测替代真实 lifecycle 验收。
+10. AI 试图用聊天印象、缓存、旧 trust、插件可见、repo-local shim 直测或只读可见性探针替代完整 lifecycle 验收。
 
 ## 13. 待补齐事项
 

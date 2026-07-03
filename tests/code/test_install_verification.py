@@ -140,8 +140,11 @@ projects:
     assert any("插件页面" in step for step in human_acceptance["steps"])
     assert any("重启 App" in step for step in human_acceptance["steps"])
     assert any("授权 / trust" in step for step in human_acceptance["steps"])
-    assert any("LDVH 提示或诊断输出" in step for step in human_acceptance["steps"])
+    assert any("只读 LDVH 可见性探针" in step for step in human_acceptance["steps"])
     assert any("specs/31-环境Hook接入后验收行动模板.md" in step for step in human_acceptance["steps"])
+    assert "runtime_adapter.py" in human_acceptance["visible_probe_command"]
+    assert "session-start" in human_acceptance["visible_probe_command"]
+    assert "manual.31-visible-probe" in human_acceptance["visible_probe_command"]
     assert any("当前 V3 shim" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("install_complete=true" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("写入前检查负例被阻断，正例被放行" in criterion for criterion in human_acceptance["acceptance_criteria"])
@@ -153,6 +156,7 @@ projects:
     assert "31" in status_card["下一步"]
     assert [block["name"] for block in handoff["hook_status_blocks"]] == ["环境自动拦截", "提交消息检查"]
     assert any("插件页面" in step for step in handoff["user_next_steps"])
+    assert "manual.31-visible-probe" in handoff["visible_probe_command"]
     assert any("目标环境名称和版本" in item for item in handoff["failure_info_package"])
     assert result["diagnostics"] == []
 
@@ -181,7 +185,7 @@ def test_lifecycle_acceptance_records_human_confirmed_smoke_check(tmp_path: Path
         environment_name="Codex",
         path=acceptance,
         confirm_human_gate=True,
-        source_note="插件页面启用，重启后 SessionStart 可见，PreToolUse 正反例符合预期。",
+        source_note="插件页面启用，重启后可见性探针正常，PreToolUse 正反例符合预期。",
     )
     status = build_lifecycle_acceptance_status(
         ldvh_root=ROOT,

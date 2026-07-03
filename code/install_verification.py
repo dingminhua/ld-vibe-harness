@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 from typing import Any
@@ -22,6 +23,29 @@ from ldvh_specs import (
 AUTHORIZATION = "none"
 CODEX_SHIM = "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
 CODEX_ENVIRONMENT_NAME = "Codex"
+
+
+def _visible_probe_command(ldvh_root: Path, repo: Path) -> str:
+    parts = [
+        "python3",
+        (ldvh_root / "code/runtime_adapter.py").as_posix(),
+        "session-start",
+        "--root",
+        ldvh_root.as_posix(),
+        "--session-id",
+        "31-visible-probe",
+        "--target-path",
+        repo.as_posix(),
+        "--task",
+        "LDVH 31 visible probe",
+        "--operation",
+        "read",
+        "--trigger-source",
+        "manual.31-visible-probe",
+        "--format",
+        "text",
+    ]
+    return " ".join(shlex.quote(part) for part in parts)
 
 
 def _diagnostic(level: str, code: str, path: str, message: str, disposition: str = "blocking") -> dict[str, str]:
@@ -393,6 +417,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})
     status = "blocked" if blocking else "ok" if environment_install_verified else "review_required"
 
+    visible_probe_command = _visible_probe_command(ldvh_root, repo)
     return {
         "summary": {
             "status": status,
@@ -412,6 +437,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
         "shim_direct_tests": shim_tests,
         "human_acceptance": {
             "required": human_acceptance_required,
+            "visible_probe_command": visible_probe_command,
             "reason": "环境插件安装检测尚未通过。"
             if human_acceptance_required
             else "安装检测已通过；以下为用户侧冒烟检查，不阻断安装完成。",
@@ -419,7 +445,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                 f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器，确认 LDVH 插件已安装。",
                 f"按 {environment_name} 要求重启 App 或重载插件宿主；重启后回到插件页面确认插件仍启用且无错误。",
                 f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
-                f"新开一个 {environment_name} 窗口或会话，确认能看到 LDVH 提示或诊断输出。",
+                f"新开一个 {environment_name} 窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表。",
                 "触发一次受控写入类工具，确认写入前检查负例会阻断，正例会放行。",
                 "如需把环境自动接入判定转为 integrated，进入 specs/31-环境Hook接入后验收行动模板.md 逐项验收并记录 lifecycle 验收。",
                 "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
@@ -429,7 +455,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                 f"{environment_name} 插件页面显示 LDVH 插件已启用、已授权或无待处理授权，且无错误。",
                 f"插件 Hook 命令指向当前 V3 shim: {CODEX_SHIM}。",
                 "重启 App 或重载插件宿主后，插件页面仍保持启用且无错误。",
-                "新窗口或新会话能看到 LDVH 启动提示、诊断输出或可回读的真实触发证据。",
+                "新会话只读可见性探针输出 status=ok、event=session_start、receipt_id，且 Diagnostics: none；若目标环境提供真实触发证据，应一并回读。",
                 "写入前检查负例被阻断，正例被放行。",
                 "install_verification.py 显示 install_complete=true、插件可见、shim 直测通过，并列出 Git Hook 正反例结果。",
             ],
@@ -569,6 +595,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
     environment_name = env_summary["environment_name"]
     git_status = _git_hook_user_status(result["git_hooks"])
     env_status = _environment_user_status(env_summary)
+    visible_probe_command = env.get("human_acceptance", {}).get("visible_probe_command", "")
 
     if summary["blocking"]:
         install_status = "阻断"
@@ -595,7 +622,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器。",
             "重启 App 或重载插件宿主后确认插件仍启用且无错误。",
             "完成授权 / trust；没有授权提示时记录无待处理授权。",
-            f"新开 {environment_name} 窗口或会话，看是否出现 LDVH 提示或诊断。",
+            f"新开 {environment_name} 窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表。",
             "需要正式关闭自动接入待验收结论时，进入 31 逐项验收。",
         ]
     elif env_status == "手动可用":
@@ -640,6 +667,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             },
         ],
         "user_next_steps": user_next_steps,
+        "visible_probe_command": visible_probe_command,
         "failure_info_package": [
             "目标环境名称和版本",
             "插件页面结果截图或文字",
@@ -674,6 +702,10 @@ def _print_text(result: dict[str, Any]) -> None:
         print("\nUser next steps:")
         for step in next_steps:
             print(f"- {step}")
+    visible_probe_command = handoff.get("visible_probe_command")
+    if visible_probe_command:
+        print("\nVisible probe command:")
+        print(visible_probe_command)
     if result["diagnostics"] or summary["status"] != "complete":
         failure_items = handoff.get("failure_info_package", [])
         if failure_items:
