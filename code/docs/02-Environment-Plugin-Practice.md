@@ -8,6 +8,8 @@
 
 所有支持 Hook 的协作环境，都应通过对应 LDVH 插件、扩展包或 package 安装环境 Hook。正式接入不直接写入环境 Hook 系统文件；直接写入环境 Hook 系统文件只能作为调试、探针或迁移验证，不得作为正式接入形态。
 
+目标环境确认不支持 Hook 时，不进入环境插件安装或 31 验收，也不称为 integrated。该情况由 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的无 Hook 环境分支承接：AI 只能交还 `repo instruction`、`manual entrypoint`、`thin-reference-ready` 或外部 adapter 候选，验证薄引用和手动入口可用，并明确这些入口不会自动阻断写入或完成声明。
+
 环境插件只承担薄 shim 职责：
 
 1. 接收目标环境的 lifecycle event 和原始 payload；
@@ -76,7 +78,9 @@ python3 code/environment_entry_audit.py --format text
 
 若后续逻辑显式要求 integrated，必须使用可关闭的 lifecycle 验收路径，而不是让 AI 永久停在不可验证声明。Human 可以按 `specs/31-环境Hook接入后验收行动模板.md` 授权进入逐项验收；AI 逐项判断插件页面启用、重启 App、新窗口或新会话、授权 / trust、SessionStart 可见、PreToolUse 负例阻断和正例放行。全部通过后，AI 只能在 Human Gate 下运行 `environment_lifecycle_acceptance.py record --confirm-human-gate`，并复跑 `install_verification.py`；只有安装检测仍通过且 `environment_lifecycle_acceptance_valid=true` 时，才能把 `environment_hook_integrated` 转为 `true`。该记录是 repo-local 过程证据，不替代插件页面、真实 payload 或失败处理诊断。
 
-安装审计结果必须以当前命令输出为准。当前 worktree 只有通过 `governed_hook_adapter.py verify` 证明的 `git.commit-msg` 可以作为 integrated 入口；Codex 样例插件即使命中缓存，也只能在 Hook 命令指向 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 且完成真实 lifecycle、payload、失败阻断 / 降级、授权 / trust 和回滚证据后，才可改变 integrated 结论。若审计发现 Hook 命令仍指向旧 `code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py`，该状态属于已废弃 repo-local 插件资产路径，必须按环境插件升级或重装处理，不得写成已安装或 integrated。
+31 只适用于目标环境支持 Hook、环境插件安装检测已经通过且 `environment_hook_integrated=false` 的情况。目标环境确认不支持 Hook 时，31 不适用；应回到 30 无 Hook 环境分支交还 manual-ready 或 thin-reference-ready 状态。
+
+安装审计结果必须以当前命令输出为准。当前 worktree 只有通过 `governed_hook_adapter.py verify` 证明的 `git.commit-msg` 可以作为 integrated 入口；Codex 样例插件即使命中缓存，也只能在 Hook 命令指向 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 且完成真实 lifecycle、payload、失败阻断 / 非阻断诊断、授权 / trust 和回滚证据后，才可改变 integrated 结论。若审计发现 Hook 命令仍指向旧 `code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py`，该状态属于已废弃 repo-local 插件资产路径，必须按环境插件升级或重装处理，不得写成已安装或 integrated。
 
 ## 安装与卸载边界
 
@@ -104,7 +108,7 @@ python3 code/environment_entry_audit.py --format text
 |---|---|---|
 | payload 透传 | 对 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 传入 Codex-like JSON，检查 `session_id`、target、task、`trigger_source=codex.ldvh-plugin` 进入 `runtime_adapter.py` | 不证明 Codex 已加载插件 |
 | PreToolUse 阻断 | PreToolUse 缺少 `acknowledged_paths` 时 shim 返回 runtime adapter 非零退出并保留 blocking diagnostic | 真实环境还需验证该退出码确实阻断写入工具 |
-| completion 降级 | Stop / completion payload 缺少 `verification_evidence` 时输出 blocking diagnostic，但 shim 对 Stop 返回 0，避免样例包阻断环境关闭 | 真实环境接入前需确认 Stop 输出可见性和失败处理 |
+| completion 非阻断诊断 | Stop / completion payload 缺少 `verification_evidence` 时输出 blocking diagnostic，但 shim 对 Stop 返回 0，避免样例包阻断环境关闭 | 真实环境接入前需确认 Stop 输出可见性和失败处理 |
 | stale V2 path | `environment_entry_audit.py` 识别指向旧 `ld-vibe-harness` / `hook_adapter.py` / `hook_dispatch.py` 的 Codex plugin 命令，状态保持 `available` 而不是 integrated | 修复必须走插件升级 / reinstall Human Gate |
 | install / uninstall / rollback | `governed_hook_adapter.py` 与 `install_git_hooks.py` 的临时 repo 测试覆盖 Git hook shim 安装、Human Gate 缺失阻断、卸载后状态回读 | 不等价于安装用户级环境插件 |
 

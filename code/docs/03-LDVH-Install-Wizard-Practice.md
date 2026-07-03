@@ -152,6 +152,8 @@ AI 不得把缺少独立一键安装 CLI 写成安装已完成，也不得在最
 
 环境 Hook 提示必须按目标环境命名，不能默认写成 Codex。AI 能从当前运行上下文识别当前 AI 运行环境名称时，用户主界面必须优先使用该名称；只有当前环境或目标环境确认为 Codex 时，才使用 `Codex/工具入口插件`。目标环境是 Trae、IDE、Agent runner、CI、repo instruction 或未知环境时，应改成对应环境名称或写 `目标环境插件 / 工具入口插件`。
 
+目标环境确认不支持 Hook 时，30 走无 Hook 环境分支。该分支不是失败，也不是单独行动模板；它只说明当前环境不能自动触发环境 Hook。安装方案预览必须改为交还 `repo instruction`、`manual entrypoint`、`thin-reference-ready` 或外部 adapter 候选，并明确不会自动阻断写入或完成声明；不得安排插件页面授权、重启 App、PreToolUse 阻断等 31 验收测试，也不得声明 integrated。
+
 提示用户安装、升级或授权环境插件时，至少列出：
 
 | 提示项 | 内容 |
@@ -173,7 +175,7 @@ AI 不得把缺少独立一键安装 CLI 写成安装已完成，也不得在最
 | 入口指向 | 命令、manifest 或入口指向当前 V3 LDVH root / V3 shim |
 | manifest 覆盖 | 必需 lifecycle Hook manifest 覆盖 SessionStart、PreToolUse 和 Stop |
 | 旧路径 | stale V2 path 和已废弃 repo-local 旧路径诊断为 0 |
-| shim 直测 | SessionStart、PreToolUse 阻断、Stop / completion 降级直测通过 |
+| shim 直测 | SessionStart、PreToolUse 阻断、Stop / completion 非阻断诊断直测通过 |
 | Git Hook | 每个已选择管辖项目的 managed hook、正例放行和反例阻断通过 |
 
 安装检测通过即可作为安装完成条件。真实 lifecycle、授权 / trust、payload 或失败处理证据不足时，交还结果仍可写安装完成，但必须保留 `environment_integrated=false` 和用户侧冒烟检查提示。该状态不是终点：Human 完成下表冒烟检查并明确反馈后，AI 可记录 lifecycle 验收并复跑安装验证，把该状态转换为 `environment_integrated=true`。

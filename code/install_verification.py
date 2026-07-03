@@ -244,7 +244,7 @@ def _not_run_shim_tests(reason: str) -> dict[str, dict[str, Any]]:
     return {
         "session_start_direct": {"status": "not_run", "returncode": None, "reason": reason},
         "pre_tool_use_direct_block": {"status": "not_run", "returncode": None, "reason": reason},
-        "completion_claim_direct_degrade": {"status": "not_run", "returncode": None, "reason": reason},
+        "completion_claim_direct_nonblocking": {"status": "not_run", "returncode": None, "reason": reason},
     }
 
 
@@ -291,24 +291,19 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
             ),
             "human_acceptance": {
                 "required": True,
-                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据。",
+                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据；若该环境确认不支持 Hook，应走 30 无 Hook 环境分支。",
                 "steps": [
-                    f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器，确认存在 LDVH 插件或扩展包。",
-                    f"按 {environment_name} 要求重启 App 或重载插件宿主；重启后回到插件页面确认插件仍启用且无错误。",
-                    f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
-                    f"新开一个 {environment_name} 窗口或会话，确认启动事件能看到 LDVH 提示或诊断输出。",
-                    "触发一次受控写入类工具，确认负例会阻断，正例会放行。",
-                    "安装检测通过后，如需声明 integrated，进入 specs/31-环境Hook接入后验收行动模板.md 逐项验收并记录 lifecycle 验收。",
-                    "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
-                    "失败时返回插件页面状态、错误文本、截图或本命令 JSON 输出。",
+                    f"先确认 {environment_name} 是否支持插件 / 扩展包 / package 形态的 Hook 入口。",
+                    "若支持 Hook，必须先实装目标环境插件 / 扩展包并让安装检测通过；安装检测通过后的 integrated 验收再按支持 Hook 分支处理。",
+                    "若确认不支持 Hook，回到 specs/30-LDVH安装初始化管辖项目配置行动模板.md 的 30 无 Hook 环境分支。",
+                    "无 Hook 环境分支只能交还 repo instruction、manual entrypoint、thin-reference-ready 或外部 adapter 候选。",
+                    "无 Hook 环境分支不得声明 environment_hook_integrated=true，也不得安排 31 的插件页面、重启 App 或 PreToolUse 阻断验收。",
                 ],
                 "acceptance_criteria": [
-                    f"{environment_name} 插件页面显示 LDVH 插件或扩展包已启用、已授权或无待处理授权，且无错误。",
-                    "插件命令、manifest 或入口指向当前 V3 LDVH root / V3 入口。",
-                    "重启 App 或重载插件宿主后，插件页面状态保持启用且无错误。",
-                    "新窗口或新会话能看到 LDVH 启动提示、诊断输出或可回读的真实触发证据。",
-                    "受控写入负例被阻断，正例被放行。",
-                    "统一安装验证显示 install_complete=true，并列出插件状态、shim 或目标入口直测结果，以及 Git Hook 正反例结果。",
+                    "目标环境支持 Hook 时，必须能提供插件 / 扩展包实装、入口指向、授权、payload、失败处理和回滚证据。",
+                    "目标环境确认不支持 Hook 时，30 只能交还 manual-ready / repo-instruction-ready / thin-reference-ready / external-adapter-candidate。",
+                    "无 Hook 环境分支的验证标准是 V3 specs 可找到、读取顺序正确、manual CLI 可运行、Git Hook 正反例通过。",
+                    "Human 已理解无 Hook 环境不会自动阻断写入或完成声明。",
                 ],
             },
             "diagnostics": [],
@@ -367,7 +362,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
             else "failed",
             "returncode": pretool.get("returncode"),
         },
-        "completion_claim_direct_degrade": {
+        "completion_claim_direct_nonblocking": {
             "status": "passed"
             if stop.get("returncode") == 0 and stop_payload.get("summary", {}).get("event") == "completion_claim"
             else "failed",

@@ -1063,6 +1063,9 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "target-first resolver" in rows["执行"]
     assert "AI 环境 Hook" in rows["执行"]
     assert "Git `commit-msg` Hook" in rows["执行"]
+    assert "无 Hook 环境分支" in rows["执行"]
+    assert "thin-reference-ready" in rows["执行"]
+    assert "不进入 31" in rows["执行"]
     assert "governed_hook_adapter.py status" in rows["验证"]
     assert "install_verification.py" in rows["验证"]
     assert "environment_lifecycle_acceptance.py" in rows["验证"]
@@ -1079,7 +1082,10 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "environment_lifecycle_acceptance_valid" in rows["验证"]
     assert "安装状态可复现" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
-    assert "integrated / manual_ready / deferred / removed_top_level" in rows["交还"]
+    assert "integrated / manual_ready / repo-instruction-ready / thin-reference-ready / external-adapter-candidate / deferred / removed_top_level" in rows["交还"]
+    assert "无 Hook 环境分支" in rows["交还"]
+    assert "不会自动阻断" in rows["交还"]
+    assert "不得交还进入 31" in rows["交还"]
 
 
 def test_ldvh_install_action_template_defines_wizard_state_machine(validation_result: dict) -> None:
@@ -1162,6 +1168,15 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "不可验证范围" in raw
     assert "不得混入“验证通过”" in raw
     assert "环境 Hook 或插件提示必须按当前目标环境命名" in raw
+    assert "目标环境确认不支持 Hook" in raw
+    assert "30 必须走无 Hook 环境分支" in raw
+    assert "该分支不是降级" in raw
+    assert "不单独开 32" in raw
+    assert "也不得交给 31" in raw
+    assert "repo-instruction-ready" in raw
+    assert "thin-reference-ready" in raw
+    assert "external-adapter-candidate" in raw
+    assert "不会自动阻断写入或完成声明" in raw
     assert "当前 AI 运行环境名称" in raw
     assert "不得沿用示例环境名称" in raw
     assert "只有当前运行环境、环境审计或 Human 明确目标环境为 Codex" in raw
@@ -1437,6 +1452,36 @@ def test_ldvh_install_action_template_reports_missing_plugin_acceptance_standard
     assert any("正常判断标准" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
+def test_ldvh_install_action_template_reports_missing_no_hook_branch(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "30 必须走无 Hook 环境分支",
+        "30 可以后置处理无 Hook 环境",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("30 必须走无 Hook 环境分支" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_missing_no_hook_not_31_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "也不得交给 31",
+        "可以交给后续验收模板",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("也不得交给 31" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
 def test_environment_hook_acceptance_action_template_is_code_consumable(validation_result: dict) -> None:
     result = validation_result
     rows = {row["结构"]: row["最小要求"] for row in result["environment_hook_acceptance_action_template"]}
@@ -1497,6 +1542,10 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "不得把“用户还没做完测试”写成失败" in raw
     assert "不得把“用户看到了部分提示”写成全部通过" in raw
     assert "失败即停止" in raw
+    assert "目标环境确认不支持 Hook" in raw
+    assert "target_environment_supported=false" in raw
+    assert "unsupported_target_environment" in raw
+    assert "返回 30 无 Hook 环境分支" in raw
     assert "environment_lifecycle_acceptance.py record --confirm-human-gate" in raw
     assert "install_verification.py --require-environment-integrated" in raw
 
@@ -1573,6 +1622,21 @@ def test_environment_hook_acceptance_action_template_reports_missing_record_hand
 
     assert "ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_SUPPORT_MISSING" in _diagnostic_codes(result)
     assert any("--confirm-human-gate" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_environment_hook_acceptance_action_template_reports_missing_unsupported_environment_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/31-环境Hook接入后验收行动模板.md",
+        "unsupported_target_environment",
+        "unsupported environment",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "ENV_HOOK_ACCEPTANCE_FLOW_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("unsupported_target_environment" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_workcase_action_template_reports_missing_human_gate(tmp_path: Path) -> None:

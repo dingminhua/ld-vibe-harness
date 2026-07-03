@@ -130,7 +130,7 @@ projects:
     assert result["git_hooks"][0]["summary"]["negative_blocked"] is True
     assert result["environment"]["shim_direct_tests"]["session_start_direct"]["status"] == "passed"
     assert result["environment"]["shim_direct_tests"]["pre_tool_use_direct_block"]["status"] == "passed"
-    assert result["environment"]["shim_direct_tests"]["completion_claim_direct_degrade"]["status"] == "passed"
+    assert result["environment"]["shim_direct_tests"]["completion_claim_direct_nonblocking"]["status"] == "passed"
     assert result["environment"]["summary"]["environment_adapter"] == "codex_sample"
     assert result["environment"]["summary"]["target_environment_supported"] is True
     assert result["environment"]["summary"]["install_verified"] is True
@@ -461,11 +461,12 @@ projects:
     assert result["environment"]["summary"]["plugin_decision"] == "create_target_environment_plugin_before_verification"
     assert result["environment"]["shim_direct_tests"]["session_start_direct"]["status"] == "not_run"
     human_acceptance = result["environment"]["human_acceptance"]
-    assert any("Trae 插件页面" in step for step in human_acceptance["steps"])
-    assert any("重启 App" in step for step in human_acceptance["steps"])
-    assert any("授权 / trust" in step for step in human_acceptance["steps"])
-    assert any("specs/31-环境Hook接入后验收行动模板.md" in step for step in human_acceptance["steps"])
-    assert any("插件命令、manifest 或入口" in criterion for criterion in human_acceptance["acceptance_criteria"])
+    assert any("Trae 是否支持插件 / 扩展包 / package 形态的 Hook 入口" in step for step in human_acceptance["steps"])
+    assert any("30 无 Hook 环境分支" in step for step in human_acceptance["steps"])
+    assert any("thin-reference-ready" in step for step in human_acceptance["steps"])
+    assert not any("specs/31-环境Hook接入后验收行动模板.md" in step for step in human_acceptance["steps"])
+    assert any("manual-ready" in criterion for criterion in human_acceptance["acceptance_criteria"])
+    assert any("不会自动阻断写入或完成声明" in criterion for criterion in human_acceptance["acceptance_criteria"])
 
 
 def test_install_verification_keeps_disabled_codex_plugin_review_required(tmp_path: Path) -> None:

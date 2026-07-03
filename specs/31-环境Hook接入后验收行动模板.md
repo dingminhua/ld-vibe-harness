@@ -86,9 +86,10 @@ ldvh_spec:
 
 1. 环境插件尚未安装或安装检测未通过；
 2. 目标环境、插件页面、授权状态或 LDVH 本体路径不清；
-3. 用户要求安装、升级、禁用、卸载、迁移或覆盖插件 / Git Hook；
-4. 管辖项目 Git Hook 未安装、非 Git worktree 或 `LDVH-GOVERNED-PROJECTS.yaml` 配置仍阻断；
-5. 用户只是询问概念、边界或为何不能声明 integrated。
+3. 目标环境确认不支持 Hook、`target_environment_supported=false` 或 `unsupported_target_environment`，只能走 30 无 Hook 环境分支；
+4. 用户要求安装、升级、禁用、卸载、迁移或覆盖插件 / Git Hook；
+5. 管辖项目 Git Hook 未安装、非 Git worktree 或 `LDVH-GOVERNED-PROJECTS.yaml` 配置仍阻断；
+6. 用户只是询问概念、边界或为何不能声明 integrated。
 
 ## 5. 模板定位与来源
 
@@ -108,6 +109,7 @@ ldvh_spec:
 | integrated 状态 | 当前仍为 `environment_hook_integrated=false`，需要 lifecycle 验收转换 | 若已为 true，只做复核交还 |
 | Human 授权 | Human 明确选择开始验收测试 | 停止，不执行受控测试 |
 | 目标环境 | 目标环境名称、插件页面或插件管理器入口清楚 | 暂停并要求补充 |
+| Hook 支持 | 目标环境支持 Hook 且环境 Hook 安装检测已经通过 | 若目标环境确认不支持 Hook、`target_environment_supported=false` 或 `unsupported_target_environment`，返回 30 无 Hook 环境分支 |
 | 测试安全 | 受控负例和正例只使用 harmless scratch target，不写事实源、specs、用户环境或外部项目 | 暂停并重拟测试 |
 
 验收测试组必须覆盖以下项目：
@@ -198,13 +200,14 @@ ldvh_spec:
 
 1. 30 安装检测未通过，或 `environment_hook_install_verified` 不是 true；
 2. 目标环境、插件页面、授权状态或 LDVH 本体路径不清；
-3. Human 未明确授权开始验收测试；
-4. 任一必需测试失败、缺少实际观察、缺少插件页面状态或缺少真实 lifecycle 触发证据；
-5. 受控负例没有阻断，或受控正例没有放行；
-6. `environment_lifecycle_acceptance.py record --confirm-human-gate` 失败；
-7. 复跑 `install_verification.py --require-environment-integrated` 仍返回 blocked / review_required；
-8. 测试需要写入 specs、事实源、用户环境、插件系统文件、外部项目业务文件或其它非 scratch target；
-9. AI 试图用聊天印象、缓存、旧 trust、插件可见或 repo-local shim 直测替代真实 lifecycle 验收。
+3. 目标环境确认不支持 Hook、`target_environment_supported=false` 或 `unsupported_target_environment`，必须返回 30 无 Hook 环境分支，不得继续 31；
+4. Human 未明确授权开始验收测试；
+5. 任一必需测试失败、缺少实际观察、缺少插件页面状态或缺少真实 lifecycle 触发证据；
+6. 受控负例没有阻断，或受控正例没有放行；
+7. `environment_lifecycle_acceptance.py record --confirm-human-gate` 失败；
+8. 复跑 `install_verification.py --require-environment-integrated` 仍返回 blocked / review_required；
+9. 测试需要写入 specs、事实源、用户环境、插件系统文件、外部项目业务文件或其它非 scratch target；
+10. AI 试图用聊天印象、缓存、旧 trust、插件可见或 repo-local shim 直测替代真实 lifecycle 验收。
 
 ## 13. 待补齐事项
 
