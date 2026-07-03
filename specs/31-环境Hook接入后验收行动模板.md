@@ -122,7 +122,7 @@ ldvh_spec:
 | 4 | 受控负例阻断 | 对 harmless scratch target 发起应阻断的写入类操作时，PreToolUse 负例被阻断或返回明确 blocking diagnostic | 停止；若意外写入，只记录失败并按 Human Gate 处理清理 |
 | 5 | 受控正例放行 | 对 Human 授权的 harmless scratch target 或等价安全操作发起正例时，操作被放行且无 blocking diagnostic | 停止并诊断授权、payload 或失败处理 |
 | 6 | 统一安装验证 | `install_verification.py` 仍显示安装检测通过，并列出 Git Hook 正反例通过 | 停止并回到安装修复流程 |
-| 7 | lifecycle 验收记录 | `environment_lifecycle_acceptance.py record --confirm-human-gate` 成功，复跑显示 `environment_lifecycle_acceptance_valid=true` | 停止，不声明 integrated |
+| 7 | lifecycle 验收记录 | `environment_lifecycle_acceptance.py record --confirm-human-gate` 成功，记录后复跑 `install_verification.py` 显示 `environment_lifecycle_acceptance_valid=true` | 停止，不声明 integrated |
 | 8 | integrated 复核 | `install_verification.py --require-environment-integrated` 显示 `environment_hook_integrated=true` 且无阻断诊断 | 若失败，交还诊断，不强行转换 |
 
 受控 scratch target 必须是临时、可识别、可清理的测试路径，例如 `.ldvh-runtime/acceptance-probe/` 下的文件。不得用正式 specs、事实对象、外部用户文件、管辖项目业务文件、用户环境配置或插件系统文件做正反例写入目标。

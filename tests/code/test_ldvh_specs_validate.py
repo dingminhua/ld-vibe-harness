@@ -1092,6 +1092,13 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     raw = (ROOT / "specs/30-LDVH安装初始化管辖项目配置行动模板.md").read_text(encoding="utf-8")
 
     assert "安装向导状态机" in raw
+    assert "状态机骨架与流程呈现" in raw
+    assert "用户告知、用户选择与检查事实" in raw
+    assert "路径发现、配置位置与管辖项目清单" in raw
+    assert "安装方案预览与最终确认" in raw
+    assert "环境入口状态表达与无 Hook 分支" in raw
+    assert "环境插件安装检测与 lifecycle 验收" in raw
+    assert "安装完成交还与失败信息包" in raw
     assert "路径确认" in raw
     assert "安装前检查" in raw
     assert "安装选项" in raw
@@ -1104,6 +1111,9 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "尚未发生的步骤保持空白" in raw
     assert "用户视角摘要" in raw
     assert "用户验收卡片" in raw
+    assert "用户告知清单必须作为 4/5 安装方案预览的必含内容交给 Human 确认" in raw
+    assert "暂停交还时同步列出已能确认的告知清单项、缺失项和解除条件" in raw
+    assert "告知清单不得替代 5/5 最终确认" in raw
     assert "本步目的" in raw
     assert "不会做什么" in raw
     assert "需要决定什么" in raw
@@ -1524,6 +1534,36 @@ def test_ldvh_install_action_template_reports_missing_user_handoff_status_card(t
     assert any("状态牌" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
+def test_ldvh_install_action_template_reports_missing_wizard_subsection_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "用户告知、用户选择与检查事实",
+        "用户提示",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("用户告知、用户选择与检查事实" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_missing_disclosure_handoff_timing(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "用户告知清单必须作为 4/5 安装方案预览的必含内容交给 Human 确认",
+        "用户告知清单在执行前说明",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("用户告知清单必须作为 4/5 安装方案预览的必含内容交给 Human 确认" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
 def test_environment_hook_acceptance_action_template_is_code_consumable(validation_result: dict) -> None:
     result = validation_result
     rows = {row["结构"]: row["最小要求"] for row in result["environment_hook_acceptance_action_template"]}
@@ -1602,6 +1642,7 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "当前目标环境没有可用 Hook 接入，返回 30 手动可用分支" in raw
     assert "写入前检查" in raw
     assert "AI 运行命令，用户只看结论" in raw
+    assert "记录后复跑 `install_verification.py` 显示 `environment_lifecycle_acceptance_valid=true`" in raw
     assert "失败信息包" in raw
     assert "目标环境名称和版本" in raw
     assert "install_verification.py --format json" in raw
@@ -1715,6 +1756,21 @@ def test_environment_hook_acceptance_action_template_reports_missing_user_judgme
 
     assert "ENV_HOOK_ACCEPTANCE_FLOW_TERM_MISSING" in _diagnostic_codes(result)
     assert any("主界面不得要求 Human 自行理解专业“通过 / 失败”" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_environment_hook_acceptance_action_template_reports_missing_lifecycle_rerun_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/31-环境Hook接入后验收行动模板.md",
+        "记录后复跑 `install_verification.py` 显示 `environment_lifecycle_acceptance_valid=true`",
+        "复跑显示 `environment_lifecycle_acceptance_valid=true`",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "ENV_HOOK_ACCEPTANCE_FLOW_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("记录后复跑 `install_verification.py` 显示 `environment_lifecycle_acceptance_valid=true`" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_workcase_action_template_reports_missing_human_gate(tmp_path: Path) -> None:
