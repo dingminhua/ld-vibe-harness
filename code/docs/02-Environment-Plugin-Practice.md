@@ -8,15 +8,15 @@
 
 所有支持 Hook 的协作环境，都应通过对应 LDVH 插件、扩展包或 package 安装环境 Hook。正式接入不直接写入环境 Hook 系统文件；直接写入环境 Hook 系统文件只能作为调试、探针或迁移验证，不得作为正式接入形态。
 
-目标环境确认不支持 Hook 时，不进入环境插件安装或 31 验收，也不称为 integrated。该情况由 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的无 Hook 环境分支承接：AI 只能交还 `repo instruction`、`manual entrypoint`、`thin-reference-ready` 或外部 adapter 候选，验证薄引用和手动入口可用，并明确这些入口不会自动阻断写入或完成声明。
+目标环境确认不支持 Hook 时，不进入环境插件安装或 31 验收，也不称为 integrated。该情况由 01、`01.Att.03`、`01.Att.04` 和环境审计结果判定，`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 只消费该判定并组织手动可用安装交还：AI 只能交还 `repo instruction`、`manual entrypoint`、`thin reference` 或外部 adapter 候选承接形态，环境接入状态仍使用 `manual_ready`、`available`、`deferred` 或 `absent` 等 01.Att.04 状态，验证薄引用和手动入口可用，并明确这些入口不会自动阻断写入或完成声明。
 
 环境插件状态对用户展示时必须先翻译，不把内部字段作为主问题：
 
 | 内部状态或事件 | 用户主界面说法 | 使用边界 |
 |---|---|---|
-| `unsupported_target_environment` / `target_environment_supported=false` | 当前目标环境没有可用 Hook 接入 | 返回 30 手动可用分支，不进入 31 |
+| `unsupported_target_environment` / `target_environment_supported=false` | 当前目标环境没有可用 Hook 接入 | 回到 30 手动可用安装交还，不进入 31 |
 | `environment_hook_integrated=false` 且安装检测通过 | 自动接入待验收 | 安装完成；可进入 31 lifecycle 验收 |
-| no-Hook 环境分支 | 手动可用，或可用但不自动拦截 | 不安排插件页面授权、重启 App 或写入前拦截测试 |
+| 01 判定为无自动环境 Hook | 手动可用，或可用但不自动拦截 | 不安排插件页面授权、重启 App 或写入前拦截测试 |
 | `PreToolUse` | 写入前检查 | 只有目标环境真实支持阻断时才可作为阻断入口 |
 | `completion_claim_direct_nonblocking` | 完成声明检查只提示问题，不阻断环境关闭 | completion / Stop 类事件不得阻断环境关闭 |
 
@@ -27,8 +27,8 @@
 | 目标环境 | 是否支持 Hook | 是否可安装检测 | 是否可进入 31 | 失败时回到哪里 |
 |---|---|---|---|---|
 | Codex 样例 | 有 repo-local 样例 shim；真实环境仍需插件页面、授权和 lifecycle 证据 | 可检测 V3 shim、manifest、stale path 和 shim 正反输入 | 安装检测通过后可进入 31 | 插件安装 / 授权诊断，或 30 修复流程 |
-| Trae / IDE / Agent runner | 只有实装对应插件 / 扩展包后才算支持 | 未实装前不可安装检测 | 未实装前不可进入 31 | 30 判断支持 Hook 则先做插件方案；不支持 Hook 则走手动可用分支 |
-| repo instruction / manual entrypoint | 不支持环境自动 Hook | 只检测薄引用或 manual CLI | 不进入 31 | 30 手动可用分支 |
+| Trae / IDE / Agent runner | 只有实装对应插件 / 扩展包后才算支持 | 未实装前不可安装检测 | 未实装前不可进入 31 | 由 01 / 环境审计判定；支持 Hook 则先做插件方案，无可用 Hook 则回到 30 手动可用安装交还 |
+| repo instruction / manual entrypoint | 不支持环境自动 Hook | 只检测薄引用或 manual CLI | 不进入 31 | 30 手动可用安装交还 |
 | 未知环境 | 需先确认目标环境能力 | 不可直接检测 | 不进入 31 | 30 路径确认和环境能力确认 |
 
 环境插件只承担薄 shim 职责：
@@ -99,7 +99,7 @@ python3 code/environment_entry_audit.py --format text
 
 若后续逻辑显式要求 integrated，必须使用可关闭的 lifecycle 验收路径，而不是让 AI 永久停在不可验证声明。Human 可以按 `specs/31-环境Hook接入后验收行动模板.md` 授权进入逐项验收；AI 逐项判断插件页面启用、重启 App、新窗口或新会话、授权 / trust、SessionStart 可见、PreToolUse 负例阻断和正例放行。全部通过后，AI 只能在 Human Gate 下运行 `environment_lifecycle_acceptance.py record --confirm-human-gate`，并复跑 `install_verification.py`；只有安装检测仍通过且 `environment_lifecycle_acceptance_valid=true` 时，才能把 `environment_hook_integrated` 转为 `true`。该记录是 repo-local 过程证据，不替代插件页面、真实 payload 或失败处理诊断。
 
-31 只适用于目标环境支持 Hook、环境插件安装检测已经通过且 `environment_hook_integrated=false` 的情况。目标环境确认不支持 Hook 时，31 不适用；应回到 30 无 Hook 环境分支交还 manual-ready 或 thin-reference-ready 状态。
+31 只适用于目标环境支持 Hook、环境插件安装检测已经通过且 `environment_hook_integrated=false` 的情况。目标环境确认不支持 Hook 时，31 不适用；应按 01 的无自动环境 Hook 边界回到 30 手动可用安装交还，交还 01.Att.04 状态和承接形态说明。
 
 安装审计结果必须以当前命令输出为准。当前 worktree 只有通过 `governed_hook_adapter.py verify` 证明的 `git.commit-msg` 可以作为 integrated 入口；Codex 样例插件即使命中缓存，也只能在 Hook 命令指向 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 且完成真实 lifecycle、payload、失败阻断 / 非阻断诊断、授权 / trust 和回滚证据后，才可改变 integrated 结论。若审计发现 Hook 命令仍指向旧 `code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py`，该状态属于已废弃 repo-local 插件资产路径，必须按环境插件升级或重装处理，不得写成已安装或 integrated。
 

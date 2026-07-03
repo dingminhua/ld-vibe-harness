@@ -475,10 +475,10 @@ projects:
     assert result["environment"]["shim_direct_tests"]["session_start_direct"]["status"] == "not_run"
     human_acceptance = result["environment"]["human_acceptance"]
     assert any("Trae 是否支持插件 / 扩展包 / package 形态的 Hook 入口" in step for step in human_acceptance["steps"])
-    assert any("30 无 Hook 环境分支" in step for step in human_acceptance["steps"])
-    assert any("thin-reference-ready" in step for step in human_acceptance["steps"])
+    assert any("手动可用安装交还" in step for step in human_acceptance["steps"])
+    assert any("thin reference" in step for step in human_acceptance["steps"])
     assert not any("specs/31-环境Hook接入后验收行动模板.md" in step for step in human_acceptance["steps"])
-    assert any("manual-ready" in criterion for criterion in human_acceptance["acceptance_criteria"])
+    assert any("manual_ready" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("不会自动阻断写入或完成声明" in criterion for criterion in human_acceptance["acceptance_criteria"])
     handoff = result["user_handoff"]
     status_card = {row["item"]: row["value"] for row in handoff["status_card"]}
@@ -486,7 +486,7 @@ projects:
     assert status_card["环境自动拦截"] == "手动可用"
     assert status_card["提交消息检查"] == "通过"
     assert "30" in status_card["下一步"]
-    assert any("手动可用分支" in step for step in handoff["user_next_steps"])
+    assert any("手动可用安装交还" in step for step in handoff["user_next_steps"])
 
 
 def test_install_verification_keeps_disabled_codex_plugin_review_required(tmp_path: Path) -> None:

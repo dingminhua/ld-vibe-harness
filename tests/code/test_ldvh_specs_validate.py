@@ -1063,8 +1063,10 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "target-first resolver" in rows["执行"]
     assert "AI 环境 Hook" in rows["执行"]
     assert "Git `commit-msg` Hook" in rows["执行"]
-    assert "无 Hook 环境分支" in rows["执行"]
-    assert "thin-reference-ready" in rows["执行"]
+    assert "01.Att.03" in rows["执行"]
+    assert "01.Att.04" in rows["执行"]
+    assert "手动可用安装交还" in rows["执行"]
+    assert "thin reference" in rows["执行"]
     assert "不进入 31" in rows["执行"]
     assert "governed_hook_adapter.py status" in rows["验证"]
     assert "install_verification.py" in rows["验证"]
@@ -1082,8 +1084,9 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "environment_lifecycle_acceptance_valid" in rows["验证"]
     assert "安装状态可复现" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
-    assert "integrated / manual_ready / repo-instruction-ready / thin-reference-ready / external-adapter-candidate / deferred / removed_top_level" in rows["交还"]
-    assert "无 Hook 环境分支" in rows["交还"]
+    assert "`integrated` / `manual_ready` / `available` / `deferred` / `removed_top_level` / `absent`" in rows["交还"]
+    assert "承接形态说明" in rows["交还"]
+    assert "手动可用安装交还" in rows["交还"]
     assert "不会自动阻断" in rows["交还"]
     assert "不得交还进入 31" in rows["交还"]
 
@@ -1096,7 +1099,7 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "用户告知、用户选择与检查事实" in raw
     assert "路径发现、配置位置与管辖项目清单" in raw
     assert "安装方案预览与最终确认" in raw
-    assert "环境入口状态表达与无 Hook 分支" in raw
+    assert "环境入口判定结果的安装交还" in raw
     assert "环境插件安装检测与 lifecycle 验收" in raw
     assert "安装完成交还与失败信息包" in raw
     assert "路径确认" in raw
@@ -1185,9 +1188,12 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "不可验证范围" in raw
     assert "不得混入“验证通过”" in raw
     assert "环境 Hook 或插件提示必须按当前目标环境命名" in raw
-    assert "目标环境确认不支持 Hook" in raw
-    assert "30 必须走无 Hook 环境分支" in raw
-    assert "该分支不是降级" in raw
+    assert "30 不判定目标环境是否支持 Hook" in raw
+    assert "不新增环境入口状态" in raw
+    assert "不得把承接形态写成状态闭集" in raw
+    assert "必须读取 01、`01.Att.03`、`01.Att.04` 和环境审计结果" in raw
+    assert "手动可用安装交还" in raw
+    assert "该交还不是降级" in raw
     assert "不单独开 32" in raw
     assert "也不得交给 31" in raw
     assert "可用但不自动拦截" in raw
@@ -1197,9 +1203,15 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "当前目标环境不会在写入前自动拦截" in raw
     assert "1 按手动可用方式完成安装交还" in raw
     assert "2 暂停，等目标环境 Hook 支持" in raw
-    assert "repo-instruction-ready" in raw
-    assert "thin-reference-ready" in raw
-    assert "external-adapter-candidate" in raw
+    assert "承接形态" in raw
+    assert "repo instruction" in raw
+    assert "thin reference" in raw
+    assert "`external_adapter_candidate` 类型候选" in raw
+    assert "manual_ready" in raw
+    assert "available" in raw
+    assert "deferred" in raw
+    assert "absent" in raw
+    assert "不得把 repo instruction、thin reference 或外部 adapter 候选写成环境接入状态" in raw
     assert "不会自动阻断写入或完成声明" in raw
     assert "当前 AI 运行环境名称" in raw
     assert "不得沿用示例环境名称" in raw
@@ -1489,19 +1501,19 @@ def test_ldvh_install_action_template_reports_missing_plugin_acceptance_standard
     assert any("正常判断标准" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
-def test_ldvh_install_action_template_reports_missing_no_hook_branch(tmp_path: Path) -> None:
+def test_ldvh_install_action_template_reports_missing_environment_authority_boundary(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
         "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
-        "30 必须走无 Hook 环境分支",
-        "30 可以后置处理无 Hook 环境",
+        "30 不判定目标环境是否支持 Hook",
+        "30 可以自行判断目标环境是否支持 Hook",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("30 必须走无 Hook 环境分支" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("30 不判定目标环境是否支持 Hook" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_no_hook_not_31_boundary(tmp_path: Path) -> None:
@@ -1638,8 +1650,8 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "目标环境确认不支持 Hook" in raw
     assert "target_environment_supported=false" in raw
     assert "unsupported_target_environment" in raw
-    assert "返回 30 无 Hook 环境分支" in raw
-    assert "当前目标环境没有可用 Hook 接入，返回 30 手动可用分支" in raw
+    assert "按 01 的无自动环境 Hook 边界回到 30 的手动可用安装交还" in raw
+    assert "当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还" in raw
     assert "写入前检查" in raw
     assert "AI 运行命令，用户只看结论" in raw
     assert "记录后复跑 `install_verification.py` 显示 `environment_lifecycle_acceptance_valid=true`" in raw

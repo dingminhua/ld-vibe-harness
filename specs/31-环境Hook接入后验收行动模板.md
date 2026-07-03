@@ -86,7 +86,7 @@ ldvh_spec:
 
 1. 环境插件尚未安装或安装检测未通过；
 2. 目标环境、插件页面、授权状态或 LDVH 本体路径不清；
-3. 目标环境确认不支持 Hook、`target_environment_supported=false` 或 `unsupported_target_environment`，只能走 30 无 Hook 环境分支；
+3. 目标环境确认不支持 Hook、`target_environment_supported=false` 或 `unsupported_target_environment`，31 不适用；按 01 的无自动环境 Hook 边界回到 30 的手动可用安装交还；
 4. 用户要求安装、升级、禁用、卸载、迁移或覆盖插件 / Git Hook；
 5. 管辖项目 Git Hook 未安装、非 Git worktree 或 `LDVH-GOVERNED-PROJECTS.yaml` 配置仍阻断；
 6. 用户只是询问概念、边界或为何不能声明 integrated。
@@ -109,7 +109,7 @@ ldvh_spec:
 | integrated 状态 | 当前仍为 `environment_hook_integrated=false`，需要 lifecycle 验收转换 | 若已为 true，只做复核交还 |
 | Human 授权 | Human 明确选择开始验收测试 | 停止，不执行受控测试 |
 | 目标环境 | 目标环境名称、插件页面或插件管理器入口清楚 | 暂停并要求补充 |
-| Hook 支持 | 目标环境支持 Hook 且环境 Hook 安装检测已经通过 | 若目标环境确认不支持 Hook、`target_environment_supported=false` 或 `unsupported_target_environment`，返回 30 无 Hook 环境分支 |
+| Hook 支持 | 目标环境支持 Hook 且环境 Hook 安装检测已经通过 | 若目标环境确认不支持 Hook、`target_environment_supported=false` 或 `unsupported_target_environment`，31 不适用；按 01 的无自动环境 Hook 边界回到 30 的手动可用安装交还 |
 | 测试安全 | 受控负例和正例只使用 harmless scratch target，不写事实源、specs、用户环境或外部项目 | 暂停并重拟测试 |
 
 验收测试组必须覆盖以下项目：
@@ -127,7 +127,7 @@ ldvh_spec:
 
 受控 scratch target 必须是临时、可识别、可清理的测试路径，例如 `.ldvh-runtime/acceptance-probe/` 下的文件。不得用正式 specs、事实对象、外部用户文件、管辖项目业务文件、用户环境配置或插件系统文件做正反例写入目标。
 
-31 的主界面必须使用用户验收卡片表达每一步，不得把 raw diagnostic 当作主问题。卡片至少包含 `用户要做什么`、`正常表现` 和 `失败时给 AI 什么`。技术字段可以放入附录，但主界面不得裸露 raw diagnostic；`environment_hook_integrated=false` 应写成“自动接入待验收”，`target_environment_supported=false` 和 `unsupported_target_environment` 应写成“当前目标环境没有可用 Hook 接入，返回 30 手动可用分支”，`PreToolUse` 应写成“写入前检查”。
+31 的主界面必须使用用户验收卡片表达每一步，不得把 raw diagnostic 当作主问题。卡片至少包含 `用户要做什么`、`正常表现` 和 `失败时给 AI 什么`。技术字段可以放入附录，但主界面不得裸露 raw diagnostic；`environment_hook_integrated=false` 应写成“自动接入待验收”，`target_environment_supported=false` 和 `unsupported_target_environment` 应写成“当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还”，`PreToolUse` 应写成“写入前检查”。
 
 用户验收卡片的固定内容如下：
 
@@ -221,7 +221,7 @@ ldvh_spec:
 
 1. 30 安装检测未通过，或 `environment_hook_install_verified` 不是 true；
 2. 目标环境、插件页面、授权状态或 LDVH 本体路径不清；
-3. 目标环境确认不支持 Hook、`target_environment_supported=false` 或 `unsupported_target_environment`，必须返回 30 无 Hook 环境分支，不得继续 31；
+3. 目标环境确认不支持 Hook、`target_environment_supported=false` 或 `unsupported_target_environment`，31 不适用；必须按 01 的无自动环境 Hook 边界回到 30 的手动可用安装交还，不得继续 31；
 4. Human 未明确授权开始验收测试；
 5. 任一必需测试失败、缺少实际观察、缺少插件页面状态或缺少真实 lifecycle 触发证据；
 6. 受控负例没有阻断，或受控正例没有放行；

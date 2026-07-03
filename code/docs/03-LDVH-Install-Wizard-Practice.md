@@ -41,8 +41,8 @@
 | 技术状态 | 用户主界面说法 | 下一步 |
 |---|---|---|
 | `environment_hook_integrated=false` 且 Hook 安装检测已通过 | 自动接入待验收 | 安装完成；可进入 31 |
-| `target_environment_supported=false` / `unsupported_target_environment` | 当前目标环境没有可用 Hook 接入 | 走 30 手动可用分支 |
-| no-Hook 环境分支 | 手动可用，或可用但不自动拦截 | 完成安装交还，不进入 31 |
+| `target_environment_supported=false` / `unsupported_target_environment` | 当前目标环境没有可用 Hook 接入 | 回到 30 手动可用安装交还 |
+| 01 判定为无自动环境 Hook | 手动可用，或可用但不自动拦截 | 完成安装交还，不进入 31 |
 | `PreToolUse` | 写入前检查 | 只在技术明细保留原字段 |
 | `completion_claim_direct_nonblocking` | 完成声明检查只提示问题，不阻断环境关闭 | 写入验证摘要 |
 
@@ -172,13 +172,13 @@ AI 不得把缺少独立一键安装 CLI 写成安装已完成，也不得在最
 
 环境 Hook 提示必须按目标环境命名，不能默认写成 Codex。AI 能从当前运行上下文识别当前 AI 运行环境名称时，用户主界面必须优先使用该名称；只有当前环境或目标环境确认为 Codex 时，才使用 `Codex/工具入口插件`。目标环境是 Trae、IDE、Agent runner、CI、repo instruction 或未知环境时，应改成对应环境名称或写 `目标环境插件 / 工具入口插件`。
 
-目标环境确认不支持 Hook 时，30 走无 Hook 环境分支。该分支不是失败，也不是单独行动模板；它只说明当前环境不能自动触发环境 Hook。安装方案预览必须改为交还 `repo instruction`、`manual entrypoint`、`thin-reference-ready` 或外部 adapter 候选，并明确不会自动阻断写入或完成声明；不得安排插件页面授权、重启 App、PreToolUse 阻断等 31 验收测试，也不得声明 integrated。
+目标环境是否支持 Hook 由 01、`01.Att.03`、`01.Att.04` 和环境审计结果判定，30 不重新定义环境入口分类。判定结果确认目标环境没有可用环境 Hook / 插件入口时，30 做手动可用安装交还。该交还不是失败，也不是单独行动模板；它只说明当前环境不能自动触发环境 Hook。安装方案预览必须改为交还 `repo instruction`、`manual entrypoint`、`thin reference` 或外部 adapter 候选承接形态，并使用 `manual_ready`、`available`、`deferred` 或 `absent` 等 01.Att.04 状态；不得把承接形态写成状态闭集。交还必须明确不会自动阻断写入或完成声明；不得安排插件页面授权、重启 App、PreToolUse 阻断等 31 验收测试，也不得声明 integrated。
 
-无 Hook 环境分支的主选项只保留两个：
+手动可用安装交还的主选项只保留两个：
 
 | 选项 | 用户看到的说法 | 技术结论 | 下一步 |
 |---|---|---|---|
-| 1 | 按手动可用方式完成安装交还 | manual-ready / repo-instruction-ready / thin-reference-ready / external-adapter-candidate | 验证薄引用、手动入口和 Git Hook；交还“不会自动拦截” |
+| 1 | 按手动可用方式完成安装交还 | 01.Att.04 状态 + 承接形态说明 | 验证薄引用、手动入口和 Git Hook；交还“不会自动拦截” |
 | 2 | 暂停，等目标环境 Hook 支持 | 不写入环境插件，不进入 31 | 停止安装或只保留已完成只读检查 |
 
 支持 Hook 且安装检测通过但尚未完成 lifecycle 验收时，交还句式固定为“安装完成；自动接入待验收，可进入 31”。目标环境确认无 Hook 时，交还句式固定为“安装完成；当前环境为手动可用，不会自动拦截”。这两种句式都不能写成 integrated。
@@ -190,7 +190,7 @@ AI 不得把缺少独立一键安装 CLI 写成安装已完成，也不得在最
 | 安装完成 | 是 / 否 / 阻断 |
 | 环境自动拦截 | 已 integrated / 自动接入待验收 / 手动可用 / 需安装或需升级 / 阻断 |
 | 提交消息检查 | 每个管辖项目 Git `commit-msg` Hook 通过 / 需安装或需升级 / 阻断 / 不适用 |
-| 下一步 | 可停止、进入 31、回到 30 手动可用分支、修复阻断项或升级插件 |
+| 下一步 | 可停止、进入 31、回到 30 手动可用安装交还、修复阻断项或升级插件 |
 
 Hook 状态必须拆成两个状态块：`环境自动拦截` 和 `提交消息检查`。环境自动拦截说明插件、授权、lifecycle 和 integrated；提交消息检查说明每个管辖项目的 Git Hook、正例放行和反例阻断。不得用一个“Hook 已通过”覆盖两类 Hook。
 

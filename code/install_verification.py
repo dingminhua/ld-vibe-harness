@@ -291,19 +291,19 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
             ),
             "human_acceptance": {
                 "required": True,
-                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据；若该环境确认不支持 Hook，应走 30 无 Hook 环境分支。",
+                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据；若 01 或环境审计确认没有可用 Hook 入口，应回到 30 的手动可用安装交还。",
                 "steps": [
                     f"先确认 {environment_name} 是否支持插件 / 扩展包 / package 形态的 Hook 入口。",
                     "若支持 Hook，必须先实装目标环境插件 / 扩展包并让安装检测通过；安装检测通过后的 integrated 验收再按支持 Hook 分支处理。",
-                    "若确认不支持 Hook，回到 specs/30-LDVH安装初始化管辖项目配置行动模板.md 的 30 无 Hook 环境分支。",
-                    "无 Hook 环境分支只能交还 repo instruction、manual entrypoint、thin-reference-ready 或外部 adapter 候选。",
-                    "无 Hook 环境分支不得声明环境自动接入已完成，也不得安排 31 的插件页面、重启 App 或写入前检查阻断验收。",
+                    "若 01 或环境审计确认没有可用 Hook 入口，回到 specs/30-LDVH安装初始化管辖项目配置行动模板.md 的手动可用安装交还。",
+                    "手动可用安装交还只能列出 repo instruction、manual entrypoint、thin reference 或外部 adapter 候选承接形态。",
+                    "手动可用安装交还不得声明环境自动接入已完成，也不得安排 31 的插件页面、重启 App 或写入前检查阻断验收。",
                 ],
                 "acceptance_criteria": [
                     "目标环境支持 Hook 时，必须能提供插件 / 扩展包实装、入口指向、授权、payload、失败处理和回滚证据。",
-                    "目标环境确认不支持 Hook 时，30 只能交还 manual-ready / repo-instruction-ready / thin-reference-ready / external-adapter-candidate。",
-                    "无 Hook 环境分支的验证标准是 V3 specs 可找到、读取顺序正确、manual CLI 可运行、Git Hook 正反例通过。",
-                    "Human 已理解无 Hook 环境不会自动阻断写入或完成声明。",
+                    "目标环境确认没有可用 Hook 入口时，30 只能交还 01.Att.04 的 manual_ready / available / deferred / absent 等状态，并补充承接形态说明。",
+                    "手动可用安装交还的验证标准是 V3 specs 可找到、读取顺序正确、manual CLI 可运行、Git Hook 正反例通过。",
+                    "Human 已理解当前目标环境不会自动阻断写入或完成声明。",
                 ],
             },
             "diagnostics": [],
@@ -584,7 +584,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
     else:
         install_status = "否"
         if not env_summary.get("target_environment_supported"):
-            next_step = "回到 30：确认目标环境是否支持 Hook；不支持则走手动可用分支"
+            next_step = "回到 30：按 01 确认目标环境入口；无可用 Hook 时做手动可用安装交还"
         elif git_status != "通过":
             next_step = "先安装或修复管辖项目 Git commit-msg Hook"
         else:
@@ -601,7 +601,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
     elif env_status == "手动可用":
         user_next_steps = [
             "确认目标环境当前没有可用 Hook 接入，或先补目标环境插件方案。",
-            "若确认无 Hook，按 30 手动可用分支完成交还。",
+            "若确认无可用 Hook，按 30 手动可用安装交还完成交还。",
             "复核 repo instruction、thin reference 或 manual CLI 能找到 V3 specs。",
             "复核每个管辖项目 Git commit-msg Hook 的正反例结果。",
             "以后目标环境支持 Hook 时，再升级为环境插件并进入安装检测。",
