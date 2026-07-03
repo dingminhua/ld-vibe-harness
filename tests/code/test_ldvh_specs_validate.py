@@ -1091,43 +1091,44 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "不得交还进入 31" in rows["交还"]
 
 
-def test_ldvh_install_action_template_defines_wizard_state_machine(validation_result: dict) -> None:
+def test_ldvh_install_action_template_defines_action_stage_contract(validation_result: dict) -> None:
     raw = (ROOT / "specs/30-LDVH安装初始化管辖项目配置行动模板.md").read_text(encoding="utf-8")
 
-    assert "安装向导状态机" in raw
-    assert "状态机骨架与流程呈现" in raw
+    assert "安装行动阶段与 Human Gate" in raw
+    assert "行动阶段与交互边界" in raw
     assert "用户告知、用户选择与检查事实" in raw
     assert "路径发现、配置位置与管辖项目清单" in raw
     assert "安装方案预览与最终确认" in raw
     assert "环境入口判定结果的安装交还" in raw
     assert "环境插件安装检测与 lifecycle 验收" in raw
     assert "安装完成交还与失败信息包" in raw
+    assert "五个阶段" in raw
     assert "路径确认" in raw
     assert "安装前检查" in raw
     assert "安装选项" in raw
     assert "安装方案预览" in raw
     assert "最终确认" in raw
-    assert "决策 / 结果" in raw
-    assert "状态、步骤、决策 / 结果三列" in raw
-    assert "👉" in raw
-    assert "✅" in raw
-    assert "尚未发生的步骤保持空白" in raw
+    assert "当前阶段" in raw
+    assert "已确认决策 / 结果" in raw
+    assert "未发生事项" in raw
+    assert "尚未发生事项应保持空白" in raw
+    assert "不得新增安装运行时状态闭集" in raw
+    assert "不得把交互展示项写成环境入口状态" in raw
+    assert "具体图标、表格、状态列和交还摘要模板归 `code/docs/03-LDVH-Install-Wizard-Practice.md` 或运行时输出" in raw
     assert "用户视角摘要" in raw
-    assert "用户验收卡片" in raw
+    assert "简洁确认块" in raw
     assert "用户告知清单必须作为 4/5 安装方案预览的必含内容交给 Human 确认" in raw
     assert "暂停交还时同步列出已能确认的告知清单项、缺失项和解除条件" in raw
     assert "告知清单不得替代 5/5 最终确认" in raw
     assert "本步目的" in raw
     assert "不会做什么" in raw
     assert "需要决定什么" in raw
-    assert "你需要确认什么" in raw
-    assert "为什么需要你确认" in raw
-    assert "选择后会发生什么" in raw
-    assert "看到什么算正常" in raw
-    assert "失败时把什么发给 AI" in raw
+    assert "确认项" in raw
+    assert "选择影响" in raw
+    assert "异常反馈" in raw
     assert "主界面不得裸露 raw diagnostic" in raw
     assert "进度安全提示" in raw
-    assert "当前已完成几步" in raw
+    assert "当前已完成阶段" in raw
     assert "选择框 / 单选控件" in raw
     assert "每次只问一个问题" in raw
     assert "选项表必须给出选项、说明和结果" in raw
@@ -1139,37 +1140,23 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "5/5 最终确认必须直接询问“执行方案”或“不执行，停止安装”" in raw
     assert "不得再次要求 Human 确认只读检查" in raw
     assert "不得继续解释流程或再次索要同一授权" in raw
-    assert "📍 路径确认" in raw
-    assert "🔎 安装前检查" in raw
-    assert "⚙️ 安装选项" in raw
-    assert "🔒 安装方案预览" in raw
-    assert "🛠️ 最终确认" in raw
-    assert "📦 LDVH 本体路径" in raw
-    assert "🗂️ 目标工作区根目录" in raw
-    assert "🧾 配置文件完整路径" in raw
-    assert "✅ 通过" in raw
-    assert "⚠️ 注意" in raw
-    assert "⚠️ 需安装" in raw
-    assert "⚠️ 需升级" in raw
-    assert "⛔ 阻断" in raw
-    assert "➖ 不适用" in raw
+    assert "关键表格必须使用稳定、可扫描的视觉标记" in raw
+    assert "具体图标、状态列和示例形态归实现域" in raw
+    assert "表格正文只展示说明和建议" in raw
+    assert "不单列限制列" in raw
+    assert "不重复展示绝对路径" in raw
     assert "下一步处理" in raw
-    assert "状态图例" in raw
+    assert "检查结论分类" in raw
     assert "是否阻断" in raw
-    assert "`⚠️ 注意` 只表示需知情或需关注，不自动阻断" in raw
-    assert "`⚠️ 需安装` 和 `⚠️ 需升级` 必须进入安装方案预览" in raw
-    assert "🔌 环境入口" in raw
-    assert "🪝 Git Hook" in raw
-    assert "🪝 管辖项目 Git Hook" in raw
-    assert "🗑️ 项目内旧配置" in raw
-    assert "🧪 验证" in raw
-    assert "↩️ 回滚" in raw
+    assert "注意类结论只表示需知情或需关注，不自动阻断" in raw
+    assert "需安装和需升级类结论必须进入安装方案预览" in raw
+    assert "阻断类结论必须停止执行并说明解除阻断条件" in raw
     assert "需授权动作" in raw
     assert "不得把事实伪装成 Human 选项" in raw
-    assert "环境插件未安装时必须标为 `⚠️ 需安装` 并安排安装方案" in raw
-    assert "环境插件已安装但指向旧路径、旧版本或 stale V2 path 时必须标为 `⚠️ 需升级` 并安排升级方案" in raw
+    assert "环境插件未安装时必须记录为需安装类结论并安排安装方案" in raw
+    assert "环境插件已安装但指向旧路径、旧版本或 stale V2 path 时必须记录为需升级类结论并安排升级方案" in raw
     assert "每个已选择管辖项目都必须检查 Git `commit-msg` Hook 状态" in raw
-    assert "非 Git 目录必须标为 `⛔ 阻断` 并说明管辖项目必须是 Git 仓库" in raw
+    assert "非 Git 目录必须记录为阻断类结论并说明管辖项目必须是 Git 仓库" in raw
     assert "不得把这类情况表达成“不安装插件”“不处理插件”或“Git Hook 后置可不做”" in raw
     assert "完整安装方案必须同时覆盖 AI 环境 Hook 和管辖项目 Git Hook" in raw
     assert "`core.hooksPath` / active hook 状态" in raw
@@ -1228,7 +1215,9 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "自动接入待验收" in raw
     assert "安装完成；自动接入待验收，可进入 31" in raw
     assert "安装完成；当前环境为手动可用，不会自动拦截" in raw
-    assert "状态牌" in raw
+    assert "交还摘要" in raw
+    assert "01.Att.04 环境接入状态及证据" in raw
+    assert "不得在交还摘要中形成新的安装状态闭集" in raw
     assert "环境自动拦截" in raw
     assert "提交消息检查" in raw
     assert "用户下一步待办" in raw
@@ -1276,7 +1265,9 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "找不到时必须要求 Human 提供 LDVH 本体路径" in raw
     assert "配置位置不是选项，只能是目标工作区根目录" in raw
     assert "项目根目录、用户级目录和 LDVH 本体目录都不是支持位置" in raw
-    assert "说明、限制和建议" in raw
+    assert "路径确认表解释 LDVH 本体路径、目标工作区根目录和配置文件完整路径分别代表什么" in raw
+    assert "表格列为 `项目`、`说明`、`建议`" in raw
+    assert "不得把绝对路径作为单独列重复展示" in raw
     assert "可复制路径块" in raw
     assert "LDVH_ROOT=<ldvh-root>" in raw
     assert "WORKSPACE_ROOT=<workspace-root>" in raw
@@ -1293,6 +1284,8 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "不得把返回修改作为第三个主选项" in raw
     assert "最终确认前" in raw
     assert "不得写入配置" in raw
+    assert "状态牌固定包含" not in raw
+    assert "安装向导状态机" not in raw
 
 
 def test_ldvh_install_action_template_reports_missing_code_consumption(tmp_path: Path) -> None:
@@ -1396,19 +1389,19 @@ def test_ldvh_install_action_template_reports_missing_workspace_config_location(
     assert any("配置位置不是选项，只能是目标工作区根目录" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
-def test_ldvh_install_action_template_reports_missing_wizard_state_machine(tmp_path: Path) -> None:
+def test_ldvh_install_action_template_reports_missing_action_stage_boundary(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
         "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
-        "尚未发生的步骤保持空白",
-        "尚未发生的步骤写入待办状态",
+        "不得新增安装运行时状态闭集",
+        "可以按安装过程新增临时状态闭集",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("尚未发生的步骤保持空白" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("不得新增安装运行时状态闭集" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_user_summary(tmp_path: Path) -> None:
@@ -1531,19 +1524,19 @@ def test_ldvh_install_action_template_reports_missing_no_hook_not_31_boundary(tm
     assert any("也不得交给 31" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
-def test_ldvh_install_action_template_reports_missing_user_handoff_status_card(tmp_path: Path) -> None:
+def test_ldvh_install_action_template_reports_missing_user_handoff_summary(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
         "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
-        "状态牌",
         "交还摘要",
+        "状态牌",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("状态牌" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("交还摘要" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_wizard_subsection_boundary(tmp_path: Path) -> None:
@@ -1597,16 +1590,16 @@ def test_environment_hook_acceptance_action_template_is_code_consumable(validati
     assert "受控负例阻断" in rows["Gate"]
     assert "受控正例放行" in rows["Gate"]
     assert "记录 lifecycle 验收" in rows["Gate"]
-    assert "测试组状态机" in rows["执行"]
+    assert "逐项推进验收" in rows["执行"]
     assert "一次只判断一项" in rows["执行"]
-    assert "通过 / 失败" in rows["执行"]
+    assert "闭集确认" in rows["执行"]
     assert "受控 scratch target" in rows["执行"]
     assert "不得安装" in rows["执行"]
     assert "不得修改用户环境" in rows["执行"]
     assert "environment_lifecycle_acceptance.py" in rows["验证"]
     assert "environment_lifecycle_acceptance_valid=true" in rows["验证"]
     assert "environment_hook_integrated=true" in rows["验证"]
-    assert ".ldvh-runtime/environment-lifecycle-acceptance.json" in rows["回写"]
+    assert "Code 管理的 lifecycle 验收记录" in rows["回写"]
     assert "--confirm-human-gate" in rows["回写"]
     assert "不得写事实源" in rows["回写"]
     assert "验收结果表" in rows["交还"]
@@ -1615,35 +1608,27 @@ def test_environment_hook_acceptance_action_template_is_code_consumable(validati
 
 def test_environment_hook_acceptance_action_template_defines_stepwise_test_group(validation_result: dict) -> None:
     raw = (ROOT / "specs/31-环境Hook接入后验收行动模板.md").read_text(encoding="utf-8")
+    practice = (ROOT / "code/docs/02-Environment-Plugin-Practice.md").read_text(encoding="utf-8")
 
     assert "31 由 30 交接调用" in raw
     assert "不安装、不升级、不禁用、不卸载" in raw
-    assert "测试组状态机" in raw
-    assert "用户验收卡片" in raw
+    assert "逐项验收推进规则" in raw
+    assert "简洁验收提示" in raw
     assert "用户要做什么" in raw
     assert "正常表现" in raw
     assert "失败时给 AI 什么" in raw
     assert "主界面不得裸露 raw diagnostic" in raw
-    assert "尚未发生的步骤保持空白" in raw
+    assert "尚未发生事项应保持空白" in raw
     assert "每一步只问一个判断" in raw
+    assert "闭集确认" in raw
+    assert "具体状态表、图标、编号和按钮文案归实现域" in raw
+    assert "具体卡片、表格、图标、编号和 scratch 文件名归 `code/docs/02-Environment-Plugin-Practice.md` 或运行时输出" in raw
     assert "主界面不得要求 Human 自行理解专业“通过 / 失败”" in raw
     assert "你是否看到 X" in raw
     assert "AI 根据本文判断通过、失败或暂停诊断" in raw
-    assert "1 通过" in raw
-    assert "2 失败，停止验收" in raw
-    assert "🧭 验收授权" in raw
-    assert "🔌 插件页面状态" in raw
-    assert "🔁 重启后状态" in raw
-    assert "💬 新会话触发" in raw
-    assert "⛔ 受控负例阻断" in raw
-    assert "✅ 受控正例放行" in raw
-    assert "🧪 统一安装验证" in raw
-    assert "🧾 记录验收与复核" in raw
     assert "harmless scratch target" in raw
-    assert ".ldvh-runtime/acceptance-probe/" in raw
-    assert ".ldvh-runtime/acceptance-probe/blocked.txt" in raw
-    assert ".ldvh-runtime/acceptance-probe/allowed.txt" in raw
-    assert "测试后清理 scratch 文件" in raw
+    assert "实现域或运行时输出给出具体位置" in raw
+    assert "具体 scratch 文件名归实现域或运行时输出" in raw
     assert "不得把“用户还没做完测试”写成失败" in raw
     assert "不得把“用户看到了部分提示”写成全部通过" in raw
     assert "失败即停止" in raw
@@ -1653,8 +1638,16 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "按 01 的无自动环境 Hook 边界回到 30 的手动可用安装交还" in raw
     assert "当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还" in raw
     assert "写入前检查" in raw
-    assert "AI 运行命令，用户只看结论" in raw
     assert "记录后复跑 `install_verification.py` 显示 `environment_lifecycle_acceptance_valid=true`" in raw
+    assert ".ldvh-runtime/acceptance-probe/" not in raw
+    assert ".ldvh-runtime/acceptance-probe/blocked.txt" not in raw
+    assert ".ldvh-runtime/acceptance-probe/allowed.txt" not in raw
+    assert "31 验收交互实践" in practice
+    assert "1 通过" in practice
+    assert "2 失败，停止验收" in practice
+    assert ".ldvh-runtime/acceptance-probe/" in practice
+    assert ".ldvh-runtime/acceptance-probe/blocked.txt" in practice
+    assert ".ldvh-runtime/acceptance-probe/allowed.txt" in practice
     assert "失败信息包" in raw
     assert "目标环境名称和版本" in raw
     assert "install_verification.py --format json" in raw

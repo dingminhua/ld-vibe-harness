@@ -103,6 +103,25 @@ python3 code/environment_entry_audit.py --format text
 
 安装审计结果必须以当前命令输出为准。当前 worktree 只有通过 `governed_hook_adapter.py verify` 证明的 `git.commit-msg` 可以作为 integrated 入口；Codex 样例插件即使命中缓存，也只能在 Hook 命令指向 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 且完成真实 lifecycle、payload、失败阻断 / 非阻断诊断、授权 / trust 和回滚证据后，才可改变 integrated 结论。若审计发现 Hook 命令仍指向旧 `code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py`，该状态属于已废弃 repo-local 插件资产路径，必须按环境插件升级或重装处理，不得写成已安装或 integrated。
 
+## 31 验收交互实践
+
+31 的用户主界面使用验收卡片时，卡片固定显示 `用户要做什么`、`正常表现` 和 `失败时给 AI 什么`。建议内容如下：
+
+| 步骤 | 用户要做什么 | 正常表现 | 失败时给 AI 什么 |
+|---|---|---|---|
+| 1/8 验收授权 | 选择开始逐项验收 | AI 只开始本测试组，不安装、不升级、不卸载 | 停止验收即可，不需要解释技术原因 |
+| 2/8 插件页面状态 | 打开当前目标环境的插件页面、扩展页面或插件管理器 | 页面显示 LDVH 插件启用、已授权或无待授权、无错误 | 插件页面截图、插件名称、错误文本 |
+| 3/8 重启后状态 | 重启 App 或重载插件宿主后再看插件页面 | 插件仍启用、无新增错误、授权状态仍有效 | 重启后页面状态、错误文本、是否需要重新授权 |
+| 4/8 新会话触发 | 新开当前目标环境窗口或会话 | 能看到 LDVH 启动提示、诊断输出，或 AI 能说出 LDVH runtime 状态 | 新会话中的提示内容、没有出现提示的说明 |
+| 5/8 受控负例阻断 | 授权 AI 对 harmless scratch target 做一次应被阻断的写入类负例 | 写入前检查阻断，scratch 文件未被错误写入 | AI 输出、scratch 路径、文件是否被写入 |
+| 6/8 受控正例放行 | 授权 AI 对 harmless scratch target 做一次应被放行的正例 | 操作成功，没有 blocking diagnostic | AI 输出、错误文本、scratch 路径 |
+| 7/8 统一安装验证 | 等 AI 运行命令，用户只看结论 | `install_verification.py` 显示安装检测通过，Git Hook 正反例仍通过 | AI 输出摘要或完整命令输出 |
+| 8/8 记录验收与复核 | 确认 AI 记录验收并复核 | `environment_hook_integrated=true` 且 `environment_lifecycle_acceptance_valid=true` | 记录命令输出、复核命令输出 |
+
+逐项验收表可以用 `👉` 标记当前步骤，用 `✅` 标记已完成步骤；尚未发生的步骤保持空白。选项建议只保留 `1 通过` 和 `2 失败，停止验收`，失败后的截图、错误文本或插件页面状态作为诊断输入，不作为第三个主选项。
+
+受控正反例默认使用 `.ldvh-runtime/acceptance-probe/` 下的 scratch 文件。默认动作是：先尝试写 `.ldvh-runtime/acceptance-probe/blocked.txt`，预期被写入前检查拦截；再写 `.ldvh-runtime/acceptance-probe/allowed.txt`，预期放行；不碰 specs、事实源或业务文件；测试后清理 scratch 文件。目标环境无法执行等价安全动作时，先重新设计 harmless scratch target。
+
 ## 安装与卸载边界
 
 本文不安装、升级、禁用或卸载任何真实环境插件。

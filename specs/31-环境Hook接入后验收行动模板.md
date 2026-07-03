@@ -37,7 +37,7 @@ ldvh_spec:
     rule_body:
       - "5. 模板定位与来源"
       - "6. 验收前提与测试组"
-      - "7. 验收测试组状态机"
+      - "7. 逐项验收推进规则"
       - "8. Context、Scenario、Gate 与交还"
     assurance_measures: "9. 保障措施"
     verification_method: "10. 验证方法"
@@ -66,7 +66,7 @@ ldvh_spec:
 
 ## 3. 归口边界
 
-本文归口定义环境 Hook 接入后验收行动：验收前提、测试组状态机、逐项判断方式、失败停止、lifecycle 验收记录、复跑统一验证和交还格式。
+本文归口定义环境 Hook 接入后验收行动：验收前提、逐项验收推进规则、逐项判断方式、失败停止、lifecycle 验收记录、复跑统一验证和交还格式。
 
 本文不归口定义插件 manifest schema、插件安装器、Git Hook 安装器、管辖项目配置字段、runtime adapter 事件语义或真实用户环境配置。环境入口状态闭集归 01，安装初始化归 30，Code 实现实践归 07 和 `code/docs/`，管辖项目配置归 10，验证声明归 09。
 
@@ -125,45 +125,19 @@ ldvh_spec:
 | 7 | lifecycle 验收记录 | `environment_lifecycle_acceptance.py record --confirm-human-gate` 成功，记录后复跑 `install_verification.py` 显示 `environment_lifecycle_acceptance_valid=true` | 停止，不声明 integrated |
 | 8 | integrated 复核 | `install_verification.py --require-environment-integrated` 显示 `environment_hook_integrated=true` 且无阻断诊断 | 若失败，交还诊断，不强行转换 |
 
-受控 scratch target 必须是临时、可识别、可清理的测试路径，例如 `.ldvh-runtime/acceptance-probe/` 下的文件。不得用正式 specs、事实对象、外部用户文件、管辖项目业务文件、用户环境配置或插件系统文件做正反例写入目标。
+受控 scratch target 必须是临时、可识别、可清理的测试路径，由实现域或运行时输出给出具体位置。不得用正式 specs、事实对象、外部用户文件、管辖项目业务文件、用户环境配置或插件系统文件做正反例写入目标。
 
-31 的主界面必须使用用户验收卡片表达每一步，不得把 raw diagnostic 当作主问题。卡片至少包含 `用户要做什么`、`正常表现` 和 `失败时给 AI 什么`。技术字段可以放入附录，但主界面不得裸露 raw diagnostic；`environment_hook_integrated=false` 应写成“自动接入待验收”，`target_environment_supported=false` 和 `unsupported_target_environment` 应写成“当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还”，`PreToolUse` 应写成“写入前检查”。
+31 的主界面必须使用简洁验收提示表达每一步，不得把 raw diagnostic 当作主问题。验收提示至少包含 `用户要做什么`、`正常表现` 和 `失败时给 AI 什么`。技术字段可以放入附录，但主界面不得裸露 raw diagnostic；`environment_hook_integrated=false` 应写成“自动接入待验收”，`target_environment_supported=false` 和 `unsupported_target_environment` 应写成“当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还”，`PreToolUse` 应写成“写入前检查”。具体卡片、表格、图标、编号和 scratch 文件名归 `code/docs/02-Environment-Plugin-Practice.md` 或运行时输出，不得在本文形成新的验收状态闭集。
 
-用户验收卡片的固定内容如下：
+## 7. 逐项验收推进规则
 
-| 步骤 | 用户要做什么 | 正常表现 | 失败时给 AI 什么 |
-|---|---|---|---|
-| 1/8 🧭 验收授权 | 选择开始逐项验收 | AI 只开始本测试组，不安装、不升级、不卸载 | 停止验收即可，不需要解释技术原因 |
-| 2/8 🔌 插件页面状态 | 打开当前目标环境的插件页面、扩展页面或插件管理器 | 页面显示 LDVH 插件启用、已授权或无待授权、无错误 | 插件页面截图、插件名称、错误文本 |
-| 3/8 🔁 重启后状态 | 重启 App 或重载插件宿主后再看插件页面 | 插件仍启用、无新增错误、授权状态仍有效 | 重启后页面状态、错误文本、是否需要重新授权 |
-| 4/8 💬 新会话触发 | 新开当前目标环境窗口或会话 | 能看到 LDVH 启动提示、诊断输出，或 AI 能说出 LDVH runtime 状态 | 新会话中的提示内容、没有出现提示的说明 |
-| 5/8 ⛔ 受控负例阻断 | 授权 AI 对 harmless scratch target 做一次应被阻断的写入类负例 | 写入前检查阻断，scratch 文件未被错误写入 | AI 输出、scratch 路径、文件是否被写入 |
-| 6/8 ✅ 受控正例放行 | 授权 AI 对 harmless scratch target 做一次应被放行的正例 | 操作成功，没有 blocking diagnostic | AI 输出、错误文本、scratch 路径 |
-| 7/8 🧪 统一安装验证 | 等 AI 运行命令，用户只看结论 | `install_verification.py` 显示安装检测通过，Git Hook 正反例仍通过 | AI 输出摘要或完整命令输出 |
-| 8/8 🧾 记录验收与复核 | 确认 AI 记录验收并复核 | `environment_hook_integrated=true` 且 `environment_lifecycle_acceptance_valid=true` | 记录命令输出、复核命令输出 |
-
-## 7. 验收测试组状态机
-
-31 必须使用测试组状态机。状态表只显示当前步骤和已完成判断；尚未发生的步骤保持空白。每一步只问一个判断，选项只允许 `1 通过` 和 `2 失败，停止验收`；如果需要用户补充截图、错误文本或插件页面状态，应作为失败后的诊断输入，不作为第三个主选项。
+31 必须逐项推进验收。交互输出应表达当前验收项、已完成判断和未发生事项；尚未发生事项应保持空白或不展示噪音状态。每一步只问一个判断，并使用闭集确认；如果需要用户补充截图、错误文本或插件页面状态，应作为失败后的诊断输入，不作为第三个主选项。具体状态表、图标、编号和按钮文案归实现域。
 
 主界面不得要求 Human 自行理解专业“通过 / 失败”。AI 应把问题写成“你是否看到 X”或“请贴出当前页面状态 / 错误文本”，再由 AI 根据本文判断通过、失败或暂停诊断；Human 不确定时按失败或暂停诊断处理，不继续后续步骤。编号选项只用于收集 Human 对当前观察的确认，不替代 AI 判断。
 
-示例形态：
-
-| 状态 | 步骤 | 判断 / 结果 |
-|---|---|---|
-| 👉 | 1/8 🧭 验收授权 |  |
-|  | 2/8 🔌 插件页面状态 |  |
-|  | 3/8 🔁 重启后状态 |  |
-|  | 4/8 💬 新会话触发 |  |
-|  | 5/8 ⛔ 受控负例阻断 |  |
-|  | 6/8 ✅ 受控正例放行 |  |
-|  | 7/8 🧪 统一安装验证 |  |
-|  | 8/8 🧾 记录验收与复核 |  |
-
 每个判断必须说明本步测试目标、预期正常表现、实际观察和下一步。AI 不得连续抛出一串专业问题让 Human 自行判断；AI 必须把可自动检查的部分自己运行，把必须 Human 观察的部分压缩成一句清楚问题。
 
-受控正反例必须在用户主界面写成具体测试动作。默认示例是：`我会尝试写 .ldvh-runtime/acceptance-probe/blocked.txt，预期被写入前检查拦截；再写 .ldvh-runtime/acceptance-probe/allowed.txt，预期放行；不会碰 specs、事实源或业务文件；测试后清理 scratch 文件`。若目标环境无法执行等价安全动作，31 必须暂停并重新设计 harmless scratch target，不得用正式文件替代。
+受控正反例必须在用户主界面写成具体测试动作，至少说明 harmless scratch target、预期阻断动作、预期放行动作、不会触碰的文件范围和测试后清理方式；具体 scratch 文件名归实现域或运行时输出。若目标环境无法执行等价安全动作，31 必须暂停并重新设计 harmless scratch target，不得用正式文件替代。
 
 正常情况下，31 的交互应是逐项推进：Human 授权开始后，AI 先检查可自动读取的安装状态；需要 Human 操作时，只要求 Human 完成当前一步并回答通过或失败；失败时立即停止后续测试，交还失败项和诊断入口。
 
@@ -176,9 +150,9 @@ ldvh_spec:
 | Context | 读取用户目标、目标环境、30 交还结果、`install_verification.py` 当前输出、`environment_hook_integrated=false` 状态、插件页面或插件管理器入口、Human 授权状态、lifecycle 验收记录状态、source_refs，并回指 `specs/01-保障与衔接.md`、`specs/06-行动模板基础规范.md`、`specs/09-测试与验证规范.md`、`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 和本文。 |
 | Scenario | 30 安装检测通过后进入环境 Hook 接入后验收、用户要求验证真实 lifecycle、用户完成插件授权后要求验收、需要 lifecycle 冒烟转换 integrated、或要求只回答 01/06/09/30/31 边界时适用。 |
 | Gate | 开始验收、执行受控负例阻断测试、执行受控正例放行测试、记录 lifecycle 验收、接受插件页面状态、接受授权 / trust 状态、声明 `environment_hook_integrated`、处理意外 scratch 写入或清理测试文件，均必须有 Human Gate 或明确用户授权。 |
-| 执行 | 使用测试组状态机逐项推进，一次只判断一项，选项固定为通过 / 失败；先运行只读安装检测，再要求 Human 检查插件页面、重启 App、新窗口或新会话，再执行受控 scratch target 的负例和正例；不得安装、不得升级、不得卸载、不得修改用户环境；失败即停止，不进入后续步骤。 |
+| 执行 | 逐项推进验收，一次只判断一项，使用闭集确认；先运行只读安装检测，再要求 Human 检查插件页面、重启 App、新窗口或新会话，再执行受控 scratch target 的负例和正例；不得安装、不得升级、不得卸载、不得修改用户环境；失败即停止，不进入后续步骤。 |
 | 验证 | 使用 `install_verification.py`、`environment_lifecycle_acceptance.py`、插件页面状态、重启 App、新窗口或新会话、SessionStart 真实触发证据、PreToolUse 受控负例阻断、受控正例放行、Git Hook 正反例、`environment_lifecycle_acceptance_valid=true` 和 `environment_hook_integrated=true` 复核；失败、缺证或 Human 未确认时不得声明 integrated。 |
-| 回写 | 仅在全部必需测试通过且 Human Gate 明确后，写入 `.ldvh-runtime/environment-lifecycle-acceptance.json` 或指定 lifecycle 验收记录；记录必须通过 `environment_lifecycle_acceptance.py record --confirm-human-gate` 或等价入口生成，source note 写逐项验收摘要；不得写事实源、不得写 specs、不替代插件页面、不得把聊天观察替代插件页面或真实 payload 证据。 |
+| 回写 | 仅在全部必需测试通过且 Human Gate 明确后，写入 Code 管理的 lifecycle 验收记录；记录必须通过 `environment_lifecycle_acceptance.py record --confirm-human-gate` 或等价入口生成，source note 写逐项验收摘要；不得写事实源、不得写 specs、不替代插件页面、不得把聊天观察替代插件页面或真实 payload 证据。 |
 | 交还 | 交还验收结果表、通过项、失败项、未验证项、`environment_hook_integrated` 最终状态、`environment_lifecycle_acceptance_valid` 状态、统一安装验证摘要、回滚或诊断入口、scratch target 处理状态、source_refs 和残留风险；阻断时交还当前停止步骤和下一步诊断建议。 |
 
 ## 9. 保障措施
@@ -232,7 +206,7 @@ ldvh_spec:
 
 ## 13. 待补齐事项
 
-1. 本模板当前定义验收行动与 Code 可消费结构，不提供独立交互式 wizard CLI；若未来新增 CLI，必须完整承接本文测试组状态机、Human Gate、失败停止和交还格式；
+1. 本模板当前定义验收行动与 Code 可消费结构，不提供独立交互式 wizard CLI；若未来新增 CLI，必须完整承接本文逐项验收推进规则、Human Gate、失败停止和交还格式；
 2. 不同目标环境的插件页面名称、授权 UI 和真实写入类工具行为可能不同；环境特定实现应进入 `code/docs/02-Environment-Plugin-Practice.md` 或对应插件文档，不写回本文；
 3. 受控正反例测试的 scratch target 默认不进入事实源；若未来需要长期保存验收证据，应先定义事实对象或验证声明承接边界；
 4. 卸载后验收、禁用后验收和跨环境批量验收仍后置；启用前必须新增模板或扩展本文并重新进入 Human Gate、Code 校验和测试闭环；
