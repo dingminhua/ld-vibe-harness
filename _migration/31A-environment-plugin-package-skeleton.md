@@ -2,6 +2,8 @@
 
 文件状态：implementation-domain package skeleton。本文记录 V3 对环境插件最小包结构的 repo-local 样例处理；它不安装插件，不修改 `~/.codex`、IDE 配置、环境 Hook 系统文件或用户级配置目录，不声明任何新的环境入口已 integrated。
 
+> Superseded note（2026-07-03）：本文早期把 repo-local Codex 样例包放在 Code 实现域目录。后续 37A 已将该包修正迁移到 `hooks/environment-plugins/codex-ldvh-v3/`，使其归属 LDVH Hook 资产目录；Code 只消费和验证该资产，不作为资产存放位置。
+
 ## 背景
 
 30A 已把环境插件实践边界放入 `code/docs/02-Environment-Plugin-Practice.md`。31A 继续把“所有支持 Hook 的协作环境通过 LDVH 插件、扩展包或 package 接入”的要求落成一个可审计样例结构。
@@ -14,11 +16,11 @@ Codex 是当前可审计样例，但不是总规则。其它环境后续必须�
 
 | 路径 | 作用 |
 |---|---|
-| `code/environment_plugins/README.md` | 环境插件样例目录的通用边界 |
-| `code/environment_plugins/codex-ldvh-v3/.codex-plugin/plugin.json` | Codex plugin manifest 样例 |
-| `code/environment_plugins/codex-ldvh-v3/hooks/hooks.json` | Codex lifecycle hook 配置样例 |
-| `code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` | 只调用 V3 runtime adapter 的薄 shim |
-| `code/environment_plugins/codex-ldvh-v3/README.md` | Codex 样例包安装前确认项和不做事项 |
+| `hooks/environment-plugins/README.md` | 环境插件样例目录的通用边界 |
+| `hooks/environment-plugins/codex-ldvh-v3/.codex-plugin/plugin.json` | Codex plugin manifest 样例 |
+| `hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json` | Codex lifecycle hook 配置样例 |
+| `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` | 只调用 V3 runtime adapter 的薄 shim |
+| `hooks/environment-plugins/codex-ldvh-v3/README.md` | Codex 样例包安装前确认项和不做事项 |
 
 ## 设计口径
 
@@ -60,10 +62,10 @@ Codex 是当前可审计样例，但不是总规则。其它环境后续必须�
 本阶段使用静态和轻量 smoke 验证：
 
 ```bash
-python3 /Users/dmh2002/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py code/environment_plugins/codex-ldvh-v3
-python3 -m json.tool code/environment_plugins/codex-ldvh-v3/hooks/hooks.json >/dev/null
-python3 -m py_compile code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
-printf '{"hook_event_name":"SessionStart","session_id":"31A-smoke","cwd":"."}' | python3 code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py >/dev/null
+python3 /Users/dmh2002/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py hooks/environment-plugins/codex-ldvh-v3
+python3 -m json.tool hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json >/dev/null
+python3 -m py_compile hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
+printf '{"hook_event_name":"SessionStart","session_id":"31A-smoke","cwd":"."}' | python3 hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py >/dev/null
 git diff --check
 ```
 

@@ -8,8 +8,8 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PLUGIN_ROOT = ROOT / "code/environment_plugins/codex-ldvh-v3"
-SHIM = ROOT / "code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
+PLUGIN_ROOT = ROOT / "hooks/environment-plugins/codex-ldvh-v3"
+SHIM = ROOT / "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
 PLUGIN_JSON = PLUGIN_ROOT / ".codex-plugin/plugin.json"
 
 

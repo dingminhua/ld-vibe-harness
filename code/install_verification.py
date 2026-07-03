@@ -16,7 +16,7 @@ from ldvh_specs import GOVERNED_PROJECTS_CONFIG_PATH, ROOT
 
 
 AUTHORIZATION = "none"
-CODEX_SHIM = "code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
+CODEX_SHIM = "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
 
 
 def _diagnostic(level: str, code: str, path: str, message: str, disposition: str = "blocking") -> dict[str, str]:
@@ -369,7 +369,7 @@ def build_install_verification(
             {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "install_handoff_contract"},
             {"path": "code/governed_hook_adapter.py", "role": "git_hook_status_backend"},
             {"path": "code/environment_entry_audit.py", "role": "environment_hook_audit"},
-            {"path": "code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py", "role": "environment_shim_direct_test"},
+            {"path": "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py", "role": "environment_shim_direct_test"},
         ],
     }
 

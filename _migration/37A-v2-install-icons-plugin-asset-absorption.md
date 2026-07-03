@@ -1,6 +1,6 @@
 # 37A V2 安装图标资产与插件包展示资产吸收
 
-文件状态：implementation-domain absorption record。本文记录 V3 对 V2 安装实现中图标资产的仓库内吸收；本文不安装插件，不修改 `~/.codex`、IDE 配置、环境 Hook 系统文件或外部项目 Hook，不声明任何环境入口 integrated。
+文件状态：implementation-domain absorption record。本文记录 V3 对 V2 安装实现中图标资产的仓库内吸收，并修正 repo-local 环境插件包资产归属到 `hooks/environment-plugins/`；本文不安装插件，不修改 `~/.codex`、IDE 配置、环境 Hook 系统文件或外部项目 Hook，不声明任何环境入口 integrated。
 
 ## 背景
 
@@ -20,10 +20,10 @@ V3 已有 repo-local Codex 样例包，但缺少包内展示资产；Web 图标�
 | 路径 | 处理 |
 |---|---|
 | `icons/` | 吸收 V2 `icons/ldvh-plugin-icon*.png` 作为 V3 共享图标资产目录 |
-| `code/environment_plugins/codex-ldvh-v3/assets/` | 放置 Codex 样例包 manifest 实际引用的 `composerIcon` 和 `logo` 图标 |
-| `code/environment_plugins/codex-ldvh-v3/.codex-plugin/plugin.json` | 通过 `interface.composerIcon` 和 `interface.logo` 消费包内资产 |
-| `code/environment_plugins/README.md` | 补充环境插件样例包展示资产边界 |
-| `code/environment_plugins/codex-ldvh-v3/README.md` | 补充 Codex 样例包资产说明和验证口径 |
+| `hooks/environment-plugins/codex-ldvh-v3/assets/` | 放置 Codex 样例包 manifest 实际引用的 `composerIcon` 和 `logo` 图标 |
+| `hooks/environment-plugins/codex-ldvh-v3/.codex-plugin/plugin.json` | 通过 `interface.composerIcon` 和 `interface.logo` 消费包内资产 |
+| `hooks/environment-plugins/README.md` | 补充环境插件样例包展示资产边界 |
+| `hooks/environment-plugins/codex-ldvh-v3/README.md` | 补充 Codex 样例包资产说明和验证口径 |
 | `code/docs/02-Environment-Plugin-Practice.md` | 将展示资产纳入最小插件包契约 |
 | `tests/code/test_environment_plugins.py` | 增加 manifest 图标路径和 PNG 尺寸验证 |
 
@@ -43,7 +43,7 @@ V3 已有 repo-local Codex 样例包，但缺少包内展示资产；Web 图标�
 应运行：
 
 ```bash
-python3 /Users/dmh2002/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py code/environment_plugins/codex-ldvh-v3
+python3 /Users/dmh2002/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py hooks/environment-plugins/codex-ldvh-v3
 python3 -m pytest tests/code/test_environment_plugins.py -q --tb=short
 ```
 

@@ -1,6 +1,6 @@
 # 环境插件样例包
 
-本文档属于 Code 实现域，承接 `code/docs/02-Environment-Plugin-Practice.md`。本目录只保存 repo-local 环境插件样例包和安装前审计材料，不表示任何插件已安装、启用、trusted 或 integrated。
+本文档属于 LDVH Hook 资产目录说明，承接 `code/docs/02-Environment-Plugin-Practice.md` 的实现实践。本文所在目录只保存 repo-local 环境插件样例包和安装前审计材料，不表示任何插件已安装、启用、trusted 或 integrated。
 
 ## 目录规则
 

@@ -96,7 +96,7 @@ python3 code/environment_entry_audit.py --format text
 
 | 场景 | 仓库内验证 | 后置条件 |
 |---|---|---|
-| payload 透传 | 对 `code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 传入 Codex-like JSON，检查 `session_id`、target、task、`trigger_source=codex.ldvh-plugin` 进入 `runtime_adapter.py` | 不证明 Codex 已加载插件 |
+| payload 透传 | 对 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 传入 Codex-like JSON，检查 `session_id`、target、task、`trigger_source=codex.ldvh-plugin` 进入 `runtime_adapter.py` | 不证明 Codex 已加载插件 |
 | PreToolUse 阻断 | PreToolUse 缺少 `acknowledged_paths` 时 shim 返回 runtime adapter 非零退出并保留 blocking diagnostic | 真实环境还需验证该退出码确实阻断写入工具 |
 | completion 降级 | Stop / completion payload 缺少 `verification_evidence` 时输出 blocking diagnostic，但 shim 对 Stop 返回 0，避免样例包阻断环境关闭 | 真实环境接入前需确认 Stop 输出可见性和失败处理 |
 | stale V2 path | `environment_entry_audit.py` 识别指向旧 `ld-vibe-harness` / `hook_adapter.py` / `hook_dispatch.py` 的 Codex plugin 命令，状态保持 `available` 而不是 integrated | 修复必须走插件升级 / reinstall Human Gate |
@@ -116,7 +116,7 @@ python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh
 
 Codex 样例后续进入实装前，至少要补齐：
 
-1. repo-local 或用户确认位置下的 LDVH Codex plugin package；
+1. `hooks/environment-plugins/` 下的 repo-local LDVH Codex plugin package，或用户确认位置下的目标环境插件包；
 2. manifest 和 lifecycle Hook 配置；
 3. manifest 实际引用的插件展示图标资产；
 4. 只调用 V3 `code/runtime_adapter.py` 的薄 shim；

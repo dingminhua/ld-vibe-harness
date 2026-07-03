@@ -3614,7 +3614,7 @@ enabled = true
         + "\n",
         encoding="utf-8",
     )
-    v3_shim = ROOT / "code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
+    v3_shim = ROOT / "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
     (hook_dir / "hooks.json").write_text(
         json.dumps(
             {

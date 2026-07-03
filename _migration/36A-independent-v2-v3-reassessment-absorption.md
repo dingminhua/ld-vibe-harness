@@ -36,7 +36,7 @@
 | V2 canonical events、Hook / Rules 同语义 | `01.Att.01`、`01.Att.05`、`code/runtime_adapter.py` | absorbed / partial | 保留 manual-ready 边界，后续补环境 Hook 真实集成证据 |
 | V2 `acknowledge_read_plan`、session receipt、写入门禁 | `01` receipt 边界、`code/acknowledge_read_plan.py`、`runtime_adapter.py`、Code validator | absorbed / decided | 已补 stdout-only 手动入口；不恢复 V2 persistent receipt，不新增独立环境 lifecycle event |
 | V2 `06.Att.09` 外部环境薄引用模板 | `hooks/LDVH-THIN-REFERENCE-TEMPLATE.md`、`hooks/LDVH-RUNTIME-PROTOCOL.md`、`01.Att.03` | absorbed / available-template | 已补 V3 薄引用模板；不恢复 `rules/`，不声明环境 integrated |
-| V2 `hooks/ldvh-hooks.yaml` 多事件 registry | `code/environment_plugins/` 样例、`environment_entry_audit.py`、`01.Att.03-06`、`tests/code/test_environment_plugins.py` | absorbed / partial | 仓库内样例 shim 和正反测试已补；不声明通用 Hook registry 或真实环境插件已完成 |
+| V2 `hooks/ldvh-hooks.yaml` 多事件 registry | `hooks/environment-plugins/` 样例、`environment_entry_audit.py`、`01.Att.03-06`、`tests/code/test_environment_plugins.py` | absorbed / partial | 仓库内样例 shim 和正反测试已补；不声明通用 Hook registry 或真实环境插件已完成 |
 | V2 Runtime Protocol Rule | `hooks/LDVH-RUNTIME-PROTOCOL.md` | migrated / strengthened | 维持 hook entry 的三类内容限制 |
 | V2 Workspace / Maintainer Rules | removed_top_level | discarded | 不恢复顶层 Rules wrapper |
 | V2 Skill `ldvh-git-commit` | `06` Git 提交行动、`code/docs/01-Git-Commit-and-Hook-Practice.md`、commit validator | absorbed / strengthened | 维持行动模板和 Code 实现域承接 |

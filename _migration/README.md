@@ -116,7 +116,7 @@
 
 `_migration/30A-environment-plugin-implementation-plan.md` 记录环境插件化接入的实现域准备。它新增 `code/docs/02-Environment-Plugin-Practice.md`，明确所有支持 Hook 的协作环境应通过 LDVH 插件、扩展包或 package 承载环境 Hook，插件只做薄 shim 并调用 V3 runtime adapter；它不安装真实插件，不修改用户环境配置，也不声明新的环境入口已 integrated。
 
-`_migration/31A-environment-plugin-package-skeleton.md` 记录环境插件最小包结构样例。它新增 `code/environment_plugins/codex-ldvh-v3/` 作为 repo-local Codex lifecycle hook 样例包，包含 manifest、hooks 配置、薄 shim 和安装前确认项；它不安装插件，不修改 `~/.codex`，也不声明 Codex 环境入口已 integrated。
+`_migration/31A-environment-plugin-package-skeleton.md` 记录环境插件最小包结构样例。31A 当时新增的 repo-local Codex lifecycle hook 样例包已由 37A 修正迁移到 `hooks/environment-plugins/codex-ldvh-v3/`，包含 manifest、hooks 配置、薄 shim 和安装前确认项；它不安装插件，不修改 `~/.codex`，也不声明 Codex 环境入口已 integrated。
 
 `_migration/32A-install-action-template-user-disclosure.md` 记录安装初始化行动模板的用户告知清单补强。它把安装、部署、初始化、配置或卸载前必须告知 Human 的写入对象、位置级别、影响范围、Hook / lifecycle event、阻断边界、验证、回滚和未 integrated 能力纳入行动模板；33A 后该清单由 `30` 承载，不安装插件或修改真实环境。
 

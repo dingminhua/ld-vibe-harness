@@ -1,6 +1,6 @@
 # Codex LDVH V3 Hook 样例包
 
-本文档属于 Code 实现域。本文只说明 repo-local Codex 样例包结构，不安装插件、不修改 `~/.codex`、不写 marketplace、不声明 Codex lifecycle Hook 已 integrated。
+本文档属于 LDVH Hook 资产说明。本文只说明 repo-local Codex 样例包结构，不安装插件、不修改 `~/.codex`、不写 marketplace、不声明 Codex lifecycle Hook 已 integrated。
 
 ## 包结构
 
@@ -58,9 +58,9 @@ shim 按以下顺序解析 LDVH root：
 本样例包可做安装前静态检查：
 
 ```bash
-python3 /Users/dmh2002/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py code/environment_plugins/codex-ldvh-v3
-python3 -m json.tool code/environment_plugins/codex-ldvh-v3/hooks/hooks.json >/dev/null
-python3 -m py_compile code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
+python3 /Users/dmh2002/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py hooks/environment-plugins/codex-ldvh-v3
+python3 -m json.tool hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json >/dev/null
+python3 -m py_compile hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
 python3 -m pytest tests/code/test_environment_plugins.py -q --tb=short
 ```
 
