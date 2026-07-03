@@ -1087,6 +1087,8 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "本步目的" in raw
     assert "不会做什么" in raw
     assert "需要决定什么" in raw
+    assert "进度安全提示" in raw
+    assert "当前已完成几步" in raw
     assert "选择框 / 单选控件" in raw
     assert "每次只问一个问题" in raw
     assert "选项表必须给出选项、说明和结果" in raw
@@ -1185,6 +1187,10 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "配置位置不是选项，只能是目标工作区根目录" in raw
     assert "项目根目录、用户级目录和 LDVH 本体目录都不是支持位置" in raw
     assert "说明、限制和建议" in raw
+    assert "可复制路径块" in raw
+    assert "LDVH_ROOT=<ldvh-root>" in raw
+    assert "WORKSPACE_ROOT=<workspace-root>" in raw
+    assert "GOVERNED_CONFIG=<workspace-root>/LDVH-GOVERNED-PROJECTS.yaml" in raw
     assert "配置层级冲突" in raw
     assert "先删除、迁移或明确保留其中一个配置文件" in raw
     assert "最终确认只展示两个主选项" in raw
