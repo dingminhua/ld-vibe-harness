@@ -129,7 +129,7 @@ GOVERNED_CONFIG=<workspace-root>/LDVH-GOVERNED-PROJECTS.yaml
 
 安装后验证必须可复现。AI 环境 Hook 至少要验证插件安装状态、Hook 配置指向 V3 shim、直接 shim 正反输入；这些只读安装检测通过后，可以声明安装完成。真实 Codex / IDE lifecycle、插件页面授权和新窗口触发属于用户侧冒烟检查；如果当前回合不能触发，必须写明不可验证范围，不得声明 integrated，但不得仅因此阻断安装完成。Git Hook 必须验证 `governed_hook_adapter.py status`、`core.hooksPath`、managed `commit-msg` 文件和可执行位，并直接执行 hook 文件跑有效 commit message 放行和无效 commit message 阻断。安装完成交还应优先运行 `install_verification.py` 汇总 Git Hook 正反例和环境入口审计。
 
-若后续流程需要 `environment_hook_integrated=true`，不能停在不可验证声明。安装检测已通过后，AI 必须给 Human 一个可执行的 lifecycle 验收路径：重启目标 App 或重载插件宿主，在新窗口或新会话中确认插件页面启用且已授权，观察 LDVH 启动提示或诊断输出，执行一次受控写入负例阻断和正例放行。Human 明确反馈通过后，AI 运行 `environment_lifecycle_acceptance.py record --confirm-human-gate` 记录验收，再复跑 `install_verification.py`；只有安装检测仍通过且 `environment_lifecycle_acceptance_valid=true` 时，才把 `environment_hook_integrated` 转为 `true`。
+若后续流程需要 `environment_hook_integrated=true`，不能停在不可验证声明。安装检测已通过后，30 必须把 Human 交还到 `specs/31-环境Hook接入后验收行动模板.md`：由 31 逐项覆盖重启目标 App 或重载插件宿主、新窗口或新会话、插件页面启用与授权、LDVH 启动提示或诊断输出、受控写入负例阻断和正例放行。Human 授权并逐项通过后，AI 运行 `environment_lifecycle_acceptance.py record --confirm-human-gate` 记录验收，再复跑 `install_verification.py`；只有安装检测仍通过且 `environment_lifecycle_acceptance_valid=true` 时，才把 `environment_hook_integrated` 转为 `true`。
 
 不可验证范围单独列出，不能混入“验证通过”。常见不可验证项包括真实 Codex / IDE lifecycle 触发、外部环境自动触发和卸载后自动触发状态。
 
@@ -190,20 +190,20 @@ AI 不得把缺少独立一键安装 CLI 写成安装已完成，也不得在最
 | 6 | 触发一次受控写入类工具 | 负例会被阻断；正例会放行 |
 | 7 | 运行统一安装验证 | `install_verification.py` 显示 `install_complete=true`、插件可见、shim 直测通过，并列出 Git Hook 正反例结果 |
 
-用户侧冒烟检查通过后，Human 可以用以下句式交还 AI：
+用户侧冒烟检查需要正式关闭 integrated 状态时，应进入 31 的逐项验收。Human 可以用以下句式交还 AI：
 
 ```text
-LDVH 环境冒烟检查通过：插件页面启用且已授权；新对话看到 LDVH 启动提示；受控写入负例阻断，正例放行。请记录 lifecycle 验收。
+请进入 31 环境 Hook 接入后验收，我授权按测试组逐项检查插件页面、重启后状态、新对话触发、受控负例阻断、受控正例放行和统一安装验证。
 ```
 
-收到明确 Human Gate 后，AI 运行：
+31 全部必需项通过并收到明确 Human Gate 后，AI 运行：
 
 ```bash
 python3 code/environment_lifecycle_acceptance.py record --environment-name "<当前 AI 运行环境名称>" --confirm-human-gate --source-note "<Human 交还的冒烟检查摘要>"
 python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --environment-name "<当前 AI 运行环境名称>"
 ```
 
-正常转换标准是 `install_verification.py` 输出 `environment_hook_integrated=true`、`environment_lifecycle_acceptance_valid=true`，且 Git Hook 正反例仍通过。用户侧冒烟检查失败时进入诊断和修复流程，但不直接回写安装检测失败；只有复跑安装检测发现插件缺失、未启用、manifest 不完整、旧路径、stale V2 path、shim 直测失败或 Git Hook 正反例失败时，才改变 `install_complete` 或返回 `review_required` / `blocked`。若缺少真实 lifecycle、授权 / trust、payload 或失败处理证据，交还状态仍不得声明 integrated。
+正常转换标准是 `install_verification.py` 输出 `environment_hook_integrated=true`、`environment_lifecycle_acceptance_valid=true`，且 Git Hook 正反例仍通过。31 任一必需项失败时进入诊断和修复流程，但不直接回写安装检测失败；只有复跑安装检测发现插件缺失、未启用、manifest 不完整、旧路径、stale V2 path、shim 直测失败或 Git Hook 正反例失败时，才改变 `install_complete` 或返回 `review_required` / `blocked`。若缺少真实 lifecycle、授权 / trust、payload 或失败处理证据，交还状态仍不得声明 integrated。
 
 最终确认只提供两个主选项。5/5 不再重复安装前检查表，也不把执行后验证写成新的只读验证选项；只列出将写入对象和不写入对象。Human 选择 `1 执行方案` 后，AI 必须立即执行已确认写入并进行写入后验证；Human 要求调整方案时回到对应前一步，但不作为第三个主选项展示：
 
@@ -432,4 +432,4 @@ Hook 接入后测试优先使用统一只读安装验证入口：
 python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --environment-name "<当前 AI 运行环境名称>"
 ```
 
-该命令只读验收所有管辖项目的 active `commit-msg` Hook，并汇总环境入口审计、repo-local shim 直测和 lifecycle 验收记录。输出中每个项目必须同时满足 Hook 已安装、managed marker 存在、正例 exit `0`、反例 exit 非 `0` 且返回 `COMMIT_HEADER_INVALID`，才可在交还总结中写 Git 提交消息检查通过。命令返回 `complete` 且 `environment_hook_integrated=false` 时，表示安装检测已通过但真实 lifecycle 尚未作为 integrated 证据；必须交还用户侧冒烟检查步骤。Human 冒烟通过后，AI 可先运行 `environment_lifecycle_acceptance.py record --confirm-human-gate`，再复跑本命令；此时若输出 `environment_hook_integrated=true` 和 `environment_lifecycle_acceptance_valid=true`，即可写环境入口 integrated。命令返回 `review_required` 时，通常表示环境插件缺失、未启用、未指向 V3 shim 或目标环境没有当前验收入口支持。
+该命令只读验收所有管辖项目的 active `commit-msg` Hook，并汇总环境入口审计、repo-local shim 直测和 lifecycle 验收记录。输出中每个项目必须同时满足 Hook 已安装、managed marker 存在、正例 exit `0`、反例 exit 非 `0` 且返回 `COMMIT_HEADER_INVALID`，才可在交还总结中写 Git 提交消息检查通过。命令返回 `complete` 且 `environment_hook_integrated=false` 时，表示安装检测已通过但真实 lifecycle 尚未作为 integrated 证据；必须交还进入 31 的选项。31 逐项验收通过后，AI 可先运行 `environment_lifecycle_acceptance.py record --confirm-human-gate`，再复跑本命令；此时若输出 `environment_hook_integrated=true` 和 `environment_lifecycle_acceptance_valid=true`，即可写环境入口 integrated。命令返回 `review_required` 时，通常表示环境插件缺失、未启用、未指向 V3 shim 或目标环境没有当前验收入口支持。

@@ -298,6 +298,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                     f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
                     f"新开一个 {environment_name} 窗口或会话，确认启动事件能看到 LDVH 提示或诊断输出。",
                     "触发一次受控写入类工具，确认负例会阻断，正例会放行。",
+                    "安装检测通过后，如需声明 integrated，进入 specs/31-环境Hook接入后验收行动模板.md 逐项验收并记录 lifecycle 验收。",
                     "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
                     "失败时返回插件页面状态、错误文本、截图或本命令 JSON 输出。",
                 ],
@@ -425,6 +426,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                 f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
                 f"新开一个 {environment_name} 窗口或会话，确认 SessionStart 能看到 LDVH 提示或诊断输出。",
                 "触发一次受控写入类工具，确认 PreToolUse 负例会阻断，正例会放行。",
+                "如需把 environment_hook_integrated 转为 true，进入 specs/31-环境Hook接入后验收行动模板.md 逐项验收并记录 lifecycle 验收。",
                 "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
                 "失败时返回插件页面状态、错误文本、截图或本命令 JSON 输出。",
             ],
@@ -528,6 +530,7 @@ def build_install_verification(
         "diagnostics": diagnostics,
         "source_refs": [
             {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "install_handoff_contract"},
+            {"path": "specs/31-环境Hook接入后验收行动模板.md", "role": "environment_hook_acceptance_handoff"},
             {"path": "code/governed_hook_adapter.py", "role": "git_hook_status_backend"},
             {"path": "code/environment_entry_audit.py", "role": "environment_hook_audit"},
             {"path": "code/environment_lifecycle_acceptance.py", "role": "environment_lifecycle_acceptance"},

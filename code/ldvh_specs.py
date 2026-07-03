@@ -35,6 +35,7 @@ SHORT_SPEC_REFS = {
     "09": "specs/09-测试与验证规范.md",
     "10": "specs/10-管辖项目配置规范.md",
     "30": "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+    "31": "specs/31-环境Hook接入后验收行动模板.md",
     "20": "specs/20-Spark-火花.md",
     "21": "specs/21-WorkCase-工作项.md",
     "22": "specs/22-ADR-决策.md",
@@ -460,6 +461,71 @@ LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS = {
         "回滚或卸载入口",
         "残留风险",
         "source_refs",
+    ],
+}
+ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_REQUIRED_ROWS = {
+    "Context": ["目标环境", "30 交还结果", "install_verification.py", "environment_hook_integrated=false", "插件页面", "Human 授权", "source_refs", "specs/30-LDVH安装初始化管辖项目配置行动模板.md"],
+    "Scenario": ["30 安装检测通过", "环境 Hook 接入后验收", "lifecycle 冒烟", "只回答 01/06/09/30/31 边界"],
+    "Gate": ["开始验收", "受控负例阻断", "受控正例放行", "记录 lifecycle 验收", "授权 / trust", "environment_hook_integrated", "Human Gate"],
+    "执行": ["测试组状态机", "一次只判断一项", "通过 / 失败", "重启 App", "新窗口或新会话", "受控 scratch target", "不得安装", "不得升级", "不得修改用户环境", "失败即停止"],
+    "验证": ["install_verification.py", "environment_lifecycle_acceptance.py", "SessionStart", "PreToolUse", "Git Hook 正反例", "environment_lifecycle_acceptance_valid=true", "environment_hook_integrated=true", "失败"],
+    "回写": [".ldvh-runtime/environment-lifecycle-acceptance.json", "--confirm-human-gate", "逐项验收摘要", "不得写事实源", "不得写 specs", "不替代插件页面"],
+    "交还": ["验收结果表", "通过项", "失败项", "未验证项", "environment_hook_integrated", "environment_lifecycle_acceptance_valid", "回滚或诊断入口", "source_refs"],
+}
+ENV_HOOK_ACCEPTANCE_REQUIRED_CODE_CONSUMPTION = [
+    "ldvh_spec_metadata",
+    "environment_hook_acceptance_action_template",
+    "post_install_lifecycle_acceptance_flow",
+    "environment_hook_acceptance_test_matrix",
+    "lifecycle_acceptance_record_handoff",
+    "stop_conditions",
+]
+ENV_HOOK_ACCEPTANCE_FLOW_TERMS = [
+    "31 由 30 交接调用",
+    "不安装、不升级、不禁用、不卸载",
+    "测试组状态机",
+    "尚未发生的步骤保持空白",
+    "每一步只问一个判断",
+    "1 通过",
+    "2 失败，停止验收",
+    "🧭 验收授权",
+    "🔌 插件页面状态",
+    "🔁 重启后状态",
+    "💬 新会话触发",
+    "⛔ 受控负例阻断",
+    "✅ 受控正例放行",
+    "🧪 统一安装验证",
+    "🧾 记录验收与复核",
+    "harmless scratch target",
+    ".ldvh-runtime/acceptance-probe/",
+    "不得把“用户还没做完测试”写成失败",
+    "不得把“用户看到了部分提示”写成全部通过",
+    "失败即停止",
+    "不得用正式 specs、事实对象、外部用户文件、管辖项目业务文件、用户环境配置或插件系统文件做正反例写入目标",
+]
+ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_SUPPORT_TERMS = {
+    "post_install_lifecycle_acceptance_flow": [
+        "30 安装检测通过",
+        "install_complete=true",
+        "environment_hook_install_verified=true",
+        "environment_hook_integrated=false",
+        "environment_hook_integrated=true",
+    ],
+    "environment_hook_acceptance_test_matrix": [
+        "插件页面状态",
+        "重启 App",
+        "新窗口或新会话",
+        "SessionStart",
+        "PreToolUse",
+        "受控负例阻断",
+        "受控正例放行",
+        "统一安装验证",
+    ],
+    "lifecycle_acceptance_record_handoff": [
+        "environment_lifecycle_acceptance.py record --confirm-human-gate",
+        "environment_lifecycle_acceptance_valid=true",
+        "install_verification.py --require-environment-integrated",
+        ".ldvh-runtime/environment-lifecycle-acceptance.json",
     ],
 }
 WORKCASE_ACTION_TEMPLATE_REQUIRED_ROWS = {
@@ -1530,6 +1596,47 @@ def parse_ldvh_install_spec_contract(root: Path = ROOT) -> dict[str, Any]:
             {"path": path, "role": "ldvh_install_action_template"},
             {"path": SHORT_SPEC_REFS["06"], "role": "action_template_parent_spec"},
             {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_config_spec"},
+        ],
+    }
+
+
+def parse_environment_hook_acceptance_action_template(root: Path = ROOT) -> list[dict[str, str]]:
+    raw = (root / SHORT_SPEC_REFS["31"]).read_text(encoding="utf-8")
+    sections = h2_sections(raw)
+    section = sections.get("Context、Scenario、Gate 与交还")
+    if not section:
+        return []
+    return find_table(section["body"], ACTION_TEMPLATE_COLUMNS)
+
+
+def parse_environment_hook_acceptance_spec_contract(root: Path = ROOT) -> dict[str, Any]:
+    path = SHORT_SPEC_REFS["31"]
+    full_path = root / path
+    if not full_path.exists():
+        return {
+            "spec_id": "31",
+            "path": path,
+            "code_consumption": [],
+            "action_template": [],
+            "stop_conditions": [],
+            "source_refs": [],
+        }
+
+    raw = full_path.read_text(encoding="utf-8")
+    metadata = first_yaml_block(raw, path).get("ldvh_spec", {})
+    sections = h2_sections(raw)
+
+    return {
+        "spec_id": "31",
+        "path": path,
+        "code_consumption": metadata.get("code_consumption", []),
+        "action_template": parse_environment_hook_acceptance_action_template(root),
+        "stop_conditions": _section_numbered_items(sections, "Stop Conditions"),
+        "source_refs": [
+            {"path": path, "role": "environment_hook_acceptance_action_template"},
+            {"path": SHORT_SPEC_REFS["06"], "role": "action_template_parent_spec"},
+            {"path": SHORT_SPEC_REFS["30"], "role": "install_handoff_action_template"},
+            {"path": SHORT_SPEC_REFS["01"], "role": "environment_entry_boundary"},
         ],
     }
 
@@ -3098,6 +3205,104 @@ def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]
     return diagnostics
 
 
+def validate_environment_hook_acceptance_action_template(root: Path = ROOT) -> list[Diagnostic]:
+    path = SHORT_SPEC_REFS["31"]
+    full_path = root / path
+    if not full_path.exists():
+        return [Diagnostic("error", "ENV_HOOK_ACCEPTANCE_SPEC_MISSING", path, "31 环境 Hook 接入后验收行动模板缺失")]
+
+    raw = full_path.read_text(encoding="utf-8")
+    rows = parse_environment_hook_acceptance_action_template(root)
+    contract = parse_environment_hook_acceptance_spec_contract(root)
+    diagnostics: list[Diagnostic] = []
+
+    code_consumption = contract["code_consumption"]
+    if not isinstance(code_consumption, list) or not all(isinstance(item, str) for item in code_consumption):
+        diagnostics.append(Diagnostic("error", "ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_INVALID", path, "31 code_consumption 必须是字符串列表"))
+        code_consumption = [item for item in code_consumption if isinstance(item, str)] if isinstance(code_consumption, list) else []
+    for item in _missing_exact_values(ENV_HOOK_ACCEPTANCE_REQUIRED_CODE_CONSUMPTION, code_consumption):
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_MISSING",
+                path,
+                f"31 缺少 Code 消费入口: {item}",
+            )
+        )
+    expected_code_consumption = set(ENV_HOOK_ACCEPTANCE_REQUIRED_CODE_CONSUMPTION)
+    for item in code_consumption:
+        if item not in expected_code_consumption:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_UNSUPPORTED",
+                    path,
+                    f"31 声明了未被 Code 契约消费的入口: {item}",
+                )
+            )
+
+    if not rows:
+        return diagnostics + [
+            Diagnostic(
+                "error",
+                "ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_MISSING",
+                path,
+                "31 缺少环境 Hook 接入后验收行动模板结构表",
+            )
+        ]
+
+    if not contract["stop_conditions"]:
+        diagnostics.append(Diagnostic("error", "ENV_HOOK_ACCEPTANCE_STOP_CONDITIONS_MISSING", path, "31 必须声明可消费 Stop Conditions"))
+
+    rows_by_structure = {row["结构"]: row for row in rows}
+    for structure, terms in ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_REQUIRED_ROWS.items():
+        row = rows_by_structure.get(structure)
+        if not row:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_ROW_MISSING",
+                    path,
+                    f"环境 Hook 接入后验收行动模板缺少结构: {structure}",
+                )
+            )
+            continue
+        missing_terms = [term for term in terms if term not in row["最小要求"]]
+        for term in missing_terms:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_TERM_MISSING",
+                    path,
+                    f"{structure} 缺少关键要求: {term}",
+                )
+            )
+
+    missing_flow_terms = [term for term in ENV_HOOK_ACCEPTANCE_FLOW_TERMS if term not in raw]
+    for term in missing_flow_terms:
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "ENV_HOOK_ACCEPTANCE_FLOW_TERM_MISSING",
+                path,
+                f"环境 Hook 接入后验收流程缺少关键要求: {term}",
+            )
+        )
+
+    for item, terms in ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_SUPPORT_TERMS.items():
+        for term in [term for term in terms if term not in raw]:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_SUPPORT_MISSING",
+                    path,
+                    f"{item} 缺少可消费支撑声明: {term}",
+                )
+            )
+
+    return diagnostics
+
+
 def validate_workcase_member_contract(root: Path = ROOT) -> list[Diagnostic]:
     path = SHORT_SPEC_REFS["21"]
     full_path = root / path
@@ -3307,6 +3512,8 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     git_commit_action_template = parse_git_commit_action_template(root)
     ldvh_install_action_template = parse_ldvh_install_action_template(root)
     ldvh_install_spec_contract = parse_ldvh_install_spec_contract(root)
+    environment_hook_acceptance_action_template = parse_environment_hook_acceptance_action_template(root)
+    environment_hook_acceptance_spec_contract = parse_environment_hook_acceptance_spec_contract(root)
     workcase_action_template = parse_workcase_action_template(root)
     workcase_member_contract = parse_workcase_member_contract(root)
     fact_model_member_contracts = parse_fact_model_member_contracts(root)
@@ -3336,6 +3543,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_attachment_contracts(root))
     diagnostics.extend(validate_git_commit_action_template(root))
     diagnostics.extend(validate_ldvh_install_action_template(root))
+    diagnostics.extend(validate_environment_hook_acceptance_action_template(root))
     diagnostics.extend(validate_workcase_action_template(root))
     diagnostics.extend(validate_workcase_member_contract(root))
     diagnostics.extend(validate_fact_model_member_contracts(root))
@@ -3374,6 +3582,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/05-事实模型基础规范.md", "role": "fact_model_foundation"},
             {"path": "specs/06-行动模板基础规范.md", "role": "action_template_foundation"},
             {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "ldvh_install_action_template"},
+            {"path": "specs/31-环境Hook接入后验收行动模板.md", "role": "environment_hook_acceptance_action_template"},
             {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
             {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},
             {"path": "specs/09-测试与验证规范.md", "role": "test_verification"},
@@ -3399,6 +3608,8 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "git_commit_action_template": git_commit_action_template,
         "ldvh_install_action_template": ldvh_install_action_template,
         "ldvh_install_spec_contract": ldvh_install_spec_contract,
+        "environment_hook_acceptance_action_template": environment_hook_acceptance_action_template,
+        "environment_hook_acceptance_spec_contract": environment_hook_acceptance_spec_contract,
         "workcase_action_template": workcase_action_template,
         "workcase_member_contract": workcase_member_contract,
         "fact_model_member_contracts": fact_model_member_contracts,

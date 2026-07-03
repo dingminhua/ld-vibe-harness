@@ -141,6 +141,7 @@ projects:
     assert any("重启 App" in step for step in human_acceptance["steps"])
     assert any("授权 / trust" in step for step in human_acceptance["steps"])
     assert any("SessionStart" in step for step in human_acceptance["steps"])
+    assert any("specs/31-环境Hook接入后验收行动模板.md" in step for step in human_acceptance["steps"])
     assert any("当前 V3 shim" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("install_complete=true" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("PreToolUse 负例被阻断，正例被放行" in criterion for criterion in human_acceptance["acceptance_criteria"])
@@ -463,6 +464,7 @@ projects:
     assert any("Trae 插件页面" in step for step in human_acceptance["steps"])
     assert any("重启 App" in step for step in human_acceptance["steps"])
     assert any("授权 / trust" in step for step in human_acceptance["steps"])
+    assert any("specs/31-环境Hook接入后验收行动模板.md" in step for step in human_acceptance["steps"])
     assert any("插件命令、manifest 或入口" in criterion for criterion in human_acceptance["acceptance_criteria"])
 
 
