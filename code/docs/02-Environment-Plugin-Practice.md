@@ -97,7 +97,7 @@ python3 code/environment_entry_audit.py --format text
 
 只有同时具备真实触发、稳定 payload、失败处理、安装与接入证据、回滚方式和测试证据，才可把对应环境入口升级为 integrated。文件存在、插件缓存存在、历史 trust 记录或旧路径命中，都不得声明 integrated。安装检测和 integrated 证明必须分开：插件可见、必需 lifecycle Hook manifest 齐全、指向 V3 shim、旧路径诊断为 0、repo-local shim 直测通过且 Git Hook 正反例通过时，可以作为安装检测通过；真实 lifecycle 尚未回读时，只是不声明 integrated，不应单独阻断安装完成。
 
-若后续逻辑显式要求 integrated，必须使用可关闭的 lifecycle 验收路径，而不是让 AI 永久停在不可验证声明。Human 可以按 `specs/31-环境Hook接入后验收行动模板.md` 授权进入逐项验收；AI 逐项判断插件页面启用、重启 App、新会话只读可见性探针、授权 / trust、PreToolUse 负例阻断和正例放行。目标环境能提供真实 SessionStart lifecycle 证据时应一并回读；目标环境不稳定展示 Hook stdout 时，不得让 Human 去猜启动提示是否出现。全部通过后，AI 只能在 Human Gate 下运行 `environment_lifecycle_acceptance.py record --confirm-human-gate`，并复跑 `install_verification.py`；只有安装检测仍通过且 `environment_lifecycle_acceptance_valid=true` 时，才能把 `environment_hook_integrated` 转为 `true`。该记录是 repo-local 过程证据，不替代插件页面、真实 payload 或失败处理诊断。
+若后续逻辑显式要求 integrated，必须使用当次可执行的 lifecycle 验收路径，而不是让 AI 永久停在不可验证声明。Human 可以按 `specs/31-环境Hook接入后验收行动模板.md` 授权进入逐项验收；AI 逐项判断插件页面启用、重启 App、新会话只读可见性探针、授权 / trust、PreToolUse 负例阻断和正例放行。目标环境能提供真实 SessionStart lifecycle 证据时应一并回读；目标环境不稳定展示 Hook stdout 时，不得让 Human 去猜启动提示是否出现。全部通过后，AI 只能复跑 `install_verification.py` 并交还本次验收总结；本次总结不写长期状态，不替代插件页面、真实 payload 或失败处理诊断，也不得被后续对话消费为 integrated 依据。
 
 31 只适用于目标环境支持 Hook、环境插件安装检测已经通过且 `environment_hook_integrated=false` 的情况。目标环境确认不支持 Hook 时，31 不适用；应按 01 的无自动环境 Hook 边界回到 30 手动可用安装交还，交还 01.Att.04 分类和承接形态说明。
 
@@ -116,7 +116,7 @@ python3 code/environment_entry_audit.py --format text
 | 5/8 受控负例阻断 | 授权 AI 对 harmless scratch target 做一次应被阻断的写入类负例 | 写入前检查阻断，scratch 文件未被错误写入 | AI 输出、scratch 路径、文件是否被写入 |
 | 6/8 受控正例放行 | 授权 AI 对 harmless scratch target 做一次应被放行的正例 | 操作成功，没有 blocking diagnostic | AI 输出、错误文本、scratch 路径 |
 | 7/8 统一安装验证 | 等 AI 运行命令，用户只看结论 | `install_verification.py` 显示安装检测通过，Git Hook 正反例仍通过 | AI 输出摘要或完整命令输出 |
-| 8/8 记录验收与复核 | 确认 AI 记录验收并复核 | `environment_hook_integrated=true` 且 `environment_lifecycle_acceptance_valid=true` | 记录命令输出、复核命令输出 |
+| 8/8 本次验收总结 | 确认 AI 交还本次验收结果 | 通过项、失败项、未验证项、当前 `environment_hook_integrated` 结论和不可跨会话继承说明完整 | 总结遗漏项、复核命令输出 |
 
 逐项验收表可以用 `👉` 标记当前步骤，用 `✅` 标记已完成步骤；尚未发生的步骤保持空白。选项建议只保留 `1 通过` 和 `2 失败，停止验收`，失败后的截图、错误文本或插件页面结果作为诊断输入，不作为第三个主选项。
 
@@ -143,7 +143,7 @@ LDVH v3 runtime adapter
 Diagnostics: none
 ```
 
-该探针只证明新会话里 LDVH runtime 可见，不证明目标环境 lifecycle 已自动 integrated。integrated 仍必须通过插件页面、重启后结果、受控负例阻断、受控正例放行、lifecycle 验收记录和统一安装验证闭合。
+该探针只证明新会话里 LDVH runtime 可见，不证明目标环境 lifecycle 已自动 integrated。integrated 仍必须通过插件页面、重启后结果、受控负例阻断、受控正例放行和统一安装验证在本次验收中闭合。
 
 受控正反例默认使用 `.ldvh-runtime/acceptance-probe/` 下的 scratch 文件。默认动作是：先尝试写 `.ldvh-runtime/acceptance-probe/blocked.txt`，预期被写入前检查拦截；再写 `.ldvh-runtime/acceptance-probe/allowed.txt`，预期放行；不碰 specs、事实源或业务文件；测试后清理 scratch 文件。目标环境无法执行等价安全动作时，先重新设计 harmless scratch target。
 
@@ -177,7 +177,7 @@ Diagnostics: none
 | stale V2 path | `environment_entry_audit.py` 识别指向旧 `ld-vibe-harness` / `hook_adapter.py` / `hook_dispatch.py` 的 Codex plugin 命令，判定保持 `available` 而不是 integrated | 修复必须走插件升级 / reinstall Human Gate |
 | install / uninstall / rollback | `governed_hook_adapter.py` 与 `install_git_hooks.py` 的临时 repo 测试覆盖 Git hook shim 安装、Human Gate 缺失阻断、卸载后状态回读 | 不等价于安装用户级环境插件 |
 
-真实 Codex / IDE / Agent 环境插件的 positive、negative、status、disable、uninstall 和 rollback 测试仍 gated。安装完成前至少应能测试插件状态、Hook 配置指向 V3 shim、直接 shim 正反输入；若当前回合不能触发真实 lifecycle，必须记录用户侧冒烟检查步骤，不得声明 integrated。用户侧冒烟应优先进入 31 的逐项验收测试组；全部通过后，AI 可在 Human Gate 下写入 `.ldvh-runtime/environment-lifecycle-acceptance.json` 或指定的验收记录路径，并由 `install_verification.py` 读取为 `environment_lifecycle_acceptance_valid`；验收记录缺失、环境名称不匹配或 Human Gate 缺失时不得转换 integrated。没有 Human 明确确认目标环境、写入位置、触发点、payload、失败处理和回滚方式前，不得写入用户环境或修改外部项目 Hook。
+真实 Codex / IDE / Agent 环境插件的 positive、negative、status、disable、uninstall 和 rollback 测试仍 gated。安装完成前至少应能测试插件状态、Hook 配置指向 V3 shim、直接 shim 正反输入；若当前回合不能触发真实 lifecycle，必须交还用户侧冒烟检查步骤，不得声明 integrated。用户侧冒烟应优先进入 31 的逐项验收测试组；全部通过后，AI 只交还本次验收总结和复核命令输出，不写 `.ldvh-runtime` 过程状态，也不得让历史过程输出改变 integrated 结论。没有 Human 明确确认目标环境、写入位置、触发点、payload、失败处理和回滚方式前，不得写入用户环境或修改外部项目 Hook。
 
 安装收尾可以使用统一只读验证入口：
 
@@ -185,7 +185,7 @@ Diagnostics: none
 python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --environment-name "<当前 AI 运行环境名称>"
 ```
 
-该命令会先使用 specs 10 的配置校验读取 `LDVH-GOVERNED-PROJECTS.yaml`，再验证每个管辖项目 Git `commit-msg` Hook 的 status、managed marker、正例放行和反例阻断。目标环境为 Codex 时，它会执行 repo-local Codex 样例 shim 的 SessionStart、PreToolUse 和 Stop 直测，并把插件页面、重启 App、授权 / trust、新会话只读可见性探针、真实 lifecycle、payload、失败处理和卸载后自动触发证据列为用户侧冒烟检查，同时输出正常判断标准。目标环境不是 Codex 时，该命令只能输出目标环境插件待实装 / 待验收结论，不运行 Codex 样例 shim，也不得暗示 Trae、IDE 或 Agent runner 已被支持。该命令不会安装、升级、禁用、卸载或写入用户环境；它输出 `complete` 且 `environment_hook_integrated=false` 时表示安装检测已通过但真实环境接入仍不能声明 integrated；它输出 `environment_hook_integrated=true` 和 `environment_lifecycle_acceptance_valid=true` 时表示安装检测与 Human-confirmed lifecycle 验收都通过；它输出 `review_required` 时表示环境插件缺失、未启用、未指向 V3 shim 或目标环境没有当前验收入口支持。
+该命令会先使用 specs 10 的配置校验读取 `LDVH-GOVERNED-PROJECTS.yaml`，再验证每个管辖项目 Git `commit-msg` Hook 的 status、managed marker、正例放行和反例阻断。目标环境为 Codex 时，它会执行 repo-local Codex 样例 shim 的 SessionStart、PreToolUse 和 Stop 直测，并把插件页面、重启 App、授权 / trust、新会话只读可见性探针、真实 lifecycle、payload、失败处理和卸载后自动触发证据列为用户侧冒烟检查，同时输出正常判断标准。目标环境不是 Codex 时，该命令只能输出目标环境插件待实装 / 待验收结论，不运行 Codex 样例 shim，也不得暗示 Trae、IDE 或 Agent runner 已被支持。该命令不会安装、升级、禁用、卸载或写入用户环境；它输出 `complete` 且 `environment_hook_integrated=false` 时表示安装检测已通过但真实环境接入仍不能声明 integrated；它输出 `environment_hook_integrated=true` 时表示当前检测已具备环境 integrated 证据；它输出 `review_required` 时表示环境插件缺失、未启用、未指向 V3 shim 或目标环境没有当前验收入口支持。
 
 ## Codex 样例进入条件
 

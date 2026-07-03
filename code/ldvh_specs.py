@@ -232,9 +232,9 @@ GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
 LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Context": ["用户目标", "目标环境", "LDVH 本体路径", "目标工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "workcases/adrs/pitfalls/sparks/studies", "环境入口审计结果", "Git Hook 状态", "source_refs", "specs/10-管辖项目配置规范.md", "code/docs/03-LDVH-Install-Wizard-Practice.md"],
     "Scenario": ["安装 LDVH", "接入 LDVH", "初始化 LDVH", "配置管辖项目", "旧插件 / 旧路径", "只回答 01/06/10 边界"],
-    "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "管辖项目 Git Hook", "有效 Git worktree", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "事实源子目录", "LDVH 本体路径", "目标工作区根目录", "配置层级冲突", "授权 / trust", "记录 lifecycle 验收", "integrated", "多项目", "用户告知清单", "安装方案预览", "最终确认"],
+    "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "管辖项目 Git Hook", "有效 Git worktree", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "事实源子目录", "LDVH 本体路径", "目标工作区根目录", "配置层级冲突", "授权 / trust", "integrated", "多项目", "用户告知清单", "安装方案预览", "最终确认"],
     "执行": ["bootstrap discovery", "有限、只读、有证据", "LDVH_ROOT", "候选路径和证据", "01", "01.Att.03", "01.Att.04", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "用户告知清单", "安装方案预览", "workcases/adrs/pitfalls/sparks/studies", "AI 环境 Hook", "Git `commit-msg` Hook", "手动可用安装交还", "repo instruction", "manual entrypoint", "thin reference", "外部 adapter 候选", "不进入 31", "不恢复 Rules 顶层机制", "目标工作区根目录", "配置文件完整路径", "项目根目录、用户级目录和 LDVH 本体目录不得作为主选项", "配置层级检查", "目标项目内已存在配置", "10", "Git common-dir", "target-first resolver"],
-    "验证": ["install_verification.py", "environment_lifecycle_acceptance.py", "environment_status.py", "environment_entry_audit.py", "specs_validate.py governed-projects", "target-first resolution", "ldvh-base/", "governed_hook_adapter.py status", "governed_hook_adapter.py verify", "managed `commit-msg` hook", "正反样例", "runtime adapter", "AI 环境 Hook 安装检测通过", "插件页面证据", "重启 App", "授权 / trust", "用户侧冒烟检查", "lifecycle 验收", "真实 lifecycle 触发", "正常判断标准", "09 验证声明字段", "真实自动触发", "失败可阻断", "安装与接入证据可复核", "environment_lifecycle_acceptance_valid", "integrated"],
+    "验证": ["install_verification.py", "environment_status.py", "environment_entry_audit.py", "specs_validate.py governed-projects", "target-first resolution", "ldvh-base/", "governed_hook_adapter.py status", "governed_hook_adapter.py verify", "managed `commit-msg` hook", "正反样例", "runtime adapter", "AI 环境 Hook 安装检测通过", "插件页面证据", "重启 App", "授权 / trust", "用户侧冒烟检查", "本次 lifecycle 验收", "真实 lifecycle 触发", "正常判断标准", "09 验证声明字段", "真实自动触发", "失败可阻断", "安装与接入证据可复核", "integrated"],
     "回写": ["过程输出", "Human 确认", "LDVH-GOVERNED-PROJECTS.yaml", "10 字段契约", "事实源目录创建", "不创建事实实例", "旧插件", "用户级配置目录候选", "Spark", "ADR", "Pitfall", "WorkCase", "Git commit records", "不得把 runtime receipt"],
     "交还": ["安装方式", "配置位置选择", "管辖项目 ID", "Git common-dir", "ldvh-base/", "事实源子目录检查结果", "环境入口判定分类", "`integrated` / `manual_ready` / `available` / `deferred` / `removed_top_level` / `absent`", "承接形态说明", "手动可用安装交还", "不会自动阻断", "不得交还进入 31", "用户告知清单", "验证摘要", "回滚或卸载入口", "下一步 Human Gate", "source_refs"],
 }
@@ -408,9 +408,7 @@ LDVH_INSTALL_WIZARD_TERMS = [
     "新开窗口或新会话",
     "安装检测标准",
     "安装检测通过",
-    "lifecycle 验收",
-    "environment_lifecycle_acceptance.py",
-    "environment_lifecycle_acceptance_valid",
+    "本次 lifecycle 验收",
     "自动接入待验收",
     "安装完成；自动接入待验收，可进入 31",
     "安装完成；当前环境为手动可用，不会自动拦截",
@@ -486,9 +484,7 @@ LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS = {
         "重启 App",
         "授权 / trust",
         "安装检测通过",
-        "environment_lifecycle_acceptance.py",
-        "environment_lifecycle_acceptance_valid",
-        "lifecycle 验收",
+        "本次 lifecycle 验收",
         "必需 Hook manifest 不完整",
         "用户侧冒烟检查",
         "不声明 integrated",
@@ -509,8 +505,6 @@ LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS = {
         "验证摘要",
         "Hook 接入后测试",
         "install_verification.py",
-        "environment_lifecycle_acceptance.py",
-        "environment_lifecycle_acceptance_valid",
         "governed_hook_adapter.py verify",
         "安装检测通过",
         "用户侧冒烟检查",
@@ -523,18 +517,17 @@ LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS = {
 ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Context": ["目标环境", "30 交还结果", "install_verification.py", "environment_hook_integrated=false", "插件页面", "Human 授权", "source_refs", "specs/30-LDVH安装初始化管辖项目配置行动模板.md"],
     "Scenario": ["30 安装检测通过", "环境 Hook 接入后验收", "lifecycle 冒烟", "只回答 01/06/09/30/31 边界"],
-    "Gate": ["开始验收", "受控负例阻断", "受控正例放行", "记录 lifecycle 验收", "授权 / trust", "environment_hook_integrated", "Human Gate"],
+    "Gate": ["开始验收", "受控负例阻断", "受控正例放行", "授权 / trust", "本次自动接入验收结论", "Human Gate"],
     "执行": ["逐项推进验收", "一次只判断一项", "闭集确认", "重启 App", "新会话只读可见性探针", "受控 scratch target", "不得安装", "不得升级", "不得修改用户环境", "失败即停止"],
-    "验证": ["install_verification.py", "environment_lifecycle_acceptance.py", "新会话只读可见性探针", "SessionStart", "PreToolUse", "Git Hook 正反例", "environment_lifecycle_acceptance_valid=true", "environment_hook_integrated=true", "失败"],
-    "回写": ["Code 管理的 lifecycle 验收记录", "--confirm-human-gate", "逐项验收摘要", "不得写事实源", "不得写 specs", "不替代插件页面"],
-    "交还": ["验收结果表", "通过项", "失败项", "未验证项", "environment_hook_integrated", "environment_lifecycle_acceptance_valid", "回滚或诊断入口", "source_refs"],
+    "验证": ["install_verification.py", "新会话只读可见性探针", "SessionStart", "PreToolUse", "Git Hook 正反例", "environment_hook_integrated", "失败"],
+    "回写": ["不回写长期验收状态", "当前对话交还", "不得写事实源", "不得写 specs", "不得写 `.ldvh-runtime` 过程状态"],
+    "交还": ["验收结果表", "通过项", "失败项", "未验证项", "本次自动接入验收结论", "当前 `environment_hook_integrated` 检测值", "不可跨会话继承说明", "回滚或诊断入口", "source_refs"],
 }
 ENV_HOOK_ACCEPTANCE_REQUIRED_CODE_CONSUMPTION = [
     "ldvh_spec_metadata",
     "environment_hook_acceptance_action_template",
-    "post_install_lifecycle_acceptance_flow",
+    "post_install_environment_acceptance_flow",
     "environment_hook_acceptance_test_matrix",
-    "lifecycle_acceptance_record_handoff",
     "stop_conditions",
 ]
 ENV_HOOK_ACCEPTANCE_FLOW_TERMS = [
@@ -557,7 +550,7 @@ ENV_HOOK_ACCEPTANCE_FLOW_TERMS = [
     "`event=session_start`",
     "`receipt_id`",
     "只读可见性探针只能证明新会话能够看见 LDVH runtime",
-    "不得替代后续受控负例阻断、受控正例放行、lifecycle 验收记录和 integrated 复核",
+    "不得替代后续受控负例阻断、受控正例放行和当前验证复核",
     "主界面不得要求 Human 自行理解专业“通过 / 失败”",
     "你是否看到 X",
     "AI 根据本文判断通过、失败或暂停诊断",
@@ -567,7 +560,12 @@ ENV_HOOK_ACCEPTANCE_FLOW_TERMS = [
     "当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还",
     "写入前检查",
     "具体 scratch 文件名归实现域或运行时输出",
-    "记录后复跑 `install_verification.py` 显示 `environment_lifecycle_acceptance_valid=true`",
+    "本次验收总结",
+    "本次自动接入验收结论",
+    "当前 `environment_hook_integrated` 检测值",
+    "不写长期状态",
+    "不可跨会话继承",
+    "不得写 `.ldvh-runtime` 过程状态",
     "失败信息包",
     "目标环境名称和版本",
     "install_verification.py --format json",
@@ -585,12 +583,12 @@ ENV_HOOK_ACCEPTANCE_FLOW_TERMS = [
     "不得用正式 specs、事实对象、外部用户文件、管辖项目业务文件、用户环境配置或插件系统文件做正反例写入目标",
 ]
 ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_SUPPORT_TERMS = {
-    "post_install_lifecycle_acceptance_flow": [
+    "post_install_environment_acceptance_flow": [
         "30 安装检测通过",
         "install_complete=true",
         "environment_hook_install_verified=true",
         "environment_hook_integrated=false",
-        "environment_hook_integrated=true",
+        "本次验收总结",
     ],
     "environment_hook_acceptance_test_matrix": [
         "插件页面结果",
@@ -602,12 +600,6 @@ ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_SUPPORT_TERMS = {
         "受控负例阻断",
         "受控正例放行",
         "统一安装验证",
-    ],
-    "lifecycle_acceptance_record_handoff": [
-        "environment_lifecycle_acceptance.py record --confirm-human-gate",
-        "environment_lifecycle_acceptance_valid=true",
-        "install_verification.py --require-environment-integrated",
-        "Code 管理的 lifecycle 验收记录",
     ],
 }
 WORKCASE_ACTION_TEMPLATE_REQUIRED_ROWS = {

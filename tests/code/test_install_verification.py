@@ -6,10 +6,6 @@ import subprocess
 import sys
 
 import install_verification
-from environment_lifecycle_acceptance import (
-    build_lifecycle_acceptance_status,
-    record_lifecycle_acceptance,
-)
 from install_verification import CODEX_SHIM, build_install_verification
 
 
@@ -121,7 +117,7 @@ projects:
     assert result["summary"]["git_hooks_ok"] is True
     assert result["summary"]["environment_hook_install_verified"] is True
     assert result["summary"]["environment_hook_integrated"] is False
-    assert result["summary"]["environment_lifecycle_acceptance_valid"] is False
+    assert "environment_lifecycle_acceptance_valid" not in result["summary"]
     assert result["summary"]["install_complete"] is True
     assert result["summary"]["environment_human_acceptance_required"] is False
     assert result["summary"]["environment_user_smoke_check_recommended"] is True
@@ -135,7 +131,8 @@ projects:
     assert result["environment"]["summary"]["target_environment_supported"] is True
     assert result["environment"]["summary"]["install_verified"] is True
     assert result["environment"]["summary"]["environment_integrated"] is False
-    assert result["environment"]["summary"]["lifecycle_acceptance_valid"] is False
+    assert "lifecycle_acceptance_valid" not in result["environment"]["summary"]
+    assert "lifecycle_acceptance" not in result["environment"]
     human_acceptance = result["environment"]["human_acceptance"]
     assert any("插件页面" in step for step in human_acceptance["steps"])
     assert any("重启 App" in step for step in human_acceptance["steps"])
@@ -161,51 +158,10 @@ projects:
     assert result["diagnostics"] == []
 
 
-def test_lifecycle_acceptance_requires_human_gate_confirmation(tmp_path: Path) -> None:
-    acceptance = tmp_path / "acceptance.json"
-
-    result = record_lifecycle_acceptance(
-        ldvh_root=ROOT,
-        environment_name="Codex",
-        path=acceptance,
-        confirm_human_gate=False,
-    )
-
-    assert result["summary"]["valid"] is False
-    assert result["summary"]["blocking"] == 1
-    assert result["diagnostics"][0]["code"] == "ENV_LIFECYCLE_ACCEPTANCE_CONFIRMATION_REQUIRED"
-    assert not acceptance.exists()
-
-
-def test_lifecycle_acceptance_records_human_confirmed_smoke_check(tmp_path: Path) -> None:
-    acceptance = tmp_path / "acceptance.json"
-
-    recorded = record_lifecycle_acceptance(
-        ldvh_root=ROOT,
-        environment_name="Codex",
-        path=acceptance,
-        confirm_human_gate=True,
-        source_note="插件页面启用，重启后可见性探针正常，PreToolUse 正反例符合预期。",
-    )
-    status = build_lifecycle_acceptance_status(
-        ldvh_root=ROOT,
-        environment_name="Codex",
-        path=acceptance,
-    )
-
-    assert recorded["summary"]["valid"] is True
-    assert status["summary"]["valid"] is True
-    assert status["record"]["human_gate_confirmed"] is True
-    assert status["record"]["plugin_page_ok"] is True
-    assert status["record"]["blocking_observed"] is True
-    assert status["diagnostics"] == []
-
-
-def test_install_verification_can_close_environment_integrated_after_lifecycle_acceptance(tmp_path: Path) -> None:
+def test_install_verification_ignores_legacy_lifecycle_acceptance_json(tmp_path: Path) -> None:
     governance_root = tmp_path / "governance"
     repo = tmp_path / "repo"
     codex_home = tmp_path / "codex-home"
-    acceptance = tmp_path / "acceptance.json"
     governance_root.mkdir()
     repo.mkdir()
     codex_home.mkdir()
@@ -222,40 +178,55 @@ projects:
     )
     _install_backend_hook(repo)
     _install_codex_v3_plugin(codex_home)
-    record_lifecycle_acceptance(
-        ldvh_root=ROOT,
-        environment_name="Codex",
-        path=acceptance,
-        confirm_human_gate=True,
-        source_note="Human confirmed post-restart lifecycle smoke check.",
+    legacy_acceptance = ROOT / ".ldvh-runtime" / "environment-lifecycle-acceptance.json"
+    previous = legacy_acceptance.read_text(encoding="utf-8") if legacy_acceptance.exists() else None
+    legacy_acceptance.parent.mkdir(parents=True, exist_ok=True)
+    legacy_acceptance.write_text(
+        json.dumps(
+            {
+                "environment_name": "Codex",
+                "human_gate_confirmed": True,
+                "plugin_page_ok": True,
+                "app_restarted": True,
+                "authorization_ok": True,
+                "session_start_observed": True,
+                "pre_tool_use_observed": True,
+                "blocking_observed": True,
+                "positive_observed": True,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
     )
+    try:
+        result = build_install_verification(
+            governance_root=governance_root,
+            ldvh_root=ROOT,
+            repo=repo,
+            codex_home=codex_home,
+            environment_name="Codex",
+            require_environment_integrated=True,
+        )
+    finally:
+        if previous is None:
+            legacy_acceptance.unlink(missing_ok=True)
+            try:
+                legacy_acceptance.parent.rmdir()
+            except OSError:
+                pass
+        else:
+            legacy_acceptance.write_text(previous, encoding="utf-8")
 
-    result = build_install_verification(
-        governance_root=governance_root,
-        ldvh_root=ROOT,
-        repo=repo,
-        codex_home=codex_home,
-        environment_name="Codex",
-        lifecycle_acceptance_path=acceptance,
-        require_environment_integrated=True,
-    )
-
-    assert result["summary"]["status"] == "complete"
-    assert result["summary"]["install_complete"] is True
+    assert result["summary"]["status"] == "blocked"
+    assert result["summary"]["install_complete"] is False
     assert result["summary"]["environment_hook_install_verified"] is True
-    assert result["summary"]["environment_hook_integrated"] is True
-    assert result["summary"]["environment_lifecycle_acceptance_valid"] is True
-    assert result["summary"]["environment_user_smoke_check_recommended"] is False
-    assert result["environment"]["summary"]["lifecycle_acceptance_valid"] is True
-    assert result["environment"]["lifecycle_acceptance"]["summary"]["valid"] is True
-    status_card = {row["item"]: row["value"] for row in result["user_handoff"]["status_card"]}
-    assert status_card["安装完成"] == "是"
-    assert status_card["环境自动拦截"] == "已 integrated"
-    assert status_card["提交消息检查"] == "通过"
-    assert "INSTALL_VERIFY_ENVIRONMENT_NOT_INTEGRATED" not in {
+    assert result["summary"]["environment_hook_integrated"] is False
+    assert "environment_lifecycle_acceptance_valid" not in result["summary"]
+    assert "lifecycle_acceptance_valid" not in result["environment"]["summary"]
+    assert "lifecycle_acceptance" not in result["environment"]
+    assert "INSTALL_VERIFY_ENVIRONMENT_NOT_INTEGRATED" in {
         diagnostic["code"] for diagnostic in result["diagnostics"]
     }
-    assert result["diagnostics"] == []
 
 
 def test_install_verification_requires_complete_codex_hook_manifest(tmp_path: Path) -> None:

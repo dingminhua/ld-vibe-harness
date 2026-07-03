@@ -1059,7 +1059,7 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "目标工作区根目录" in rows["Gate"]
     assert "配置层级冲突" in rows["Gate"]
     assert "授权 / trust" in rows["Gate"]
-    assert "记录 lifecycle 验收" in rows["Gate"]
+    assert "记录 lifecycle 验收" not in rows["Gate"]
     assert "管辖项目 Git Hook" in rows["Gate"]
     assert "有效 Git worktree" in rows["Gate"]
     assert "安装方案预览" in rows["Gate"]
@@ -1085,7 +1085,7 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "不进入 31" in rows["执行"]
     assert "governed_hook_adapter.py status" in rows["验证"]
     assert "install_verification.py" in rows["验证"]
-    assert "environment_lifecycle_acceptance.py" in rows["验证"]
+    assert "environment_lifecycle_acceptance.py" not in rows["验证"]
     assert "governed_hook_adapter.py verify" in rows["验证"]
     assert "managed `commit-msg` hook" in rows["验证"]
     assert "正反样例" in rows["验证"]
@@ -1094,9 +1094,9 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "重启 App" in rows["验证"]
     assert "授权 / trust" in rows["验证"]
     assert "用户侧冒烟检查" in rows["验证"]
-    assert "lifecycle 验收" in rows["验证"]
+    assert "本次 lifecycle 验收" in rows["验证"]
     assert "正常判断标准" in rows["验证"]
-    assert "environment_lifecycle_acceptance_valid" in rows["验证"]
+    assert "environment_lifecycle_acceptance_valid" not in rows["验证"]
     assert "安装与接入证据可复核" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
     assert "`integrated` / `manual_ready` / `available` / `deferred` / `removed_top_level` / `absent`" in rows["交还"]
@@ -1229,8 +1229,8 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "新开窗口或新会话" in raw
     assert "安装检测标准" in raw
     assert "安装检测通过" in raw
-    assert "environment_lifecycle_acceptance.py" in raw
-    assert "environment_lifecycle_acceptance_valid=true" in raw
+    assert "environment_lifecycle_acceptance.py" not in raw
+    assert "environment_lifecycle_acceptance_valid=true" not in raw
     assert "自动接入待验收" in raw
     assert "安装完成；自动接入待验收，可进入 31" in raw
     assert "安装完成；当前环境为手动可用，不会自动拦截" in raw
@@ -1246,7 +1246,7 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "environment_entry_audit.py --format text" in raw
     assert "失败步骤编号" in raw
     assert "scratch target 路径和文件状态" in raw
-    assert "记录 lifecycle 验收" in raw
+    assert "记录 lifecycle 验收" not in raw
     assert "用户侧冒烟检查" in raw
     assert "不阻断安装完成" in raw
     assert "正常判断标准" in raw
@@ -1608,21 +1608,25 @@ def test_environment_hook_acceptance_action_template_is_code_consumable(validati
     assert "开始验收" in rows["Gate"]
     assert "受控负例阻断" in rows["Gate"]
     assert "受控正例放行" in rows["Gate"]
-    assert "记录 lifecycle 验收" in rows["Gate"]
+    assert "记录 lifecycle 验收" not in rows["Gate"]
+    assert "本次自动接入验收结论" in rows["Gate"]
     assert "逐项推进验收" in rows["执行"]
     assert "一次只判断一项" in rows["执行"]
     assert "闭集确认" in rows["执行"]
     assert "受控 scratch target" in rows["执行"]
     assert "不得安装" in rows["执行"]
     assert "不得修改用户环境" in rows["执行"]
-    assert "environment_lifecycle_acceptance.py" in rows["验证"]
-    assert "environment_lifecycle_acceptance_valid=true" in rows["验证"]
-    assert "environment_hook_integrated=true" in rows["验证"]
-    assert "Code 管理的 lifecycle 验收记录" in rows["回写"]
-    assert "--confirm-human-gate" in rows["回写"]
+    assert "environment_lifecycle_acceptance.py" not in rows["验证"]
+    assert "environment_lifecycle_acceptance_valid=true" not in rows["验证"]
+    assert "environment_hook_integrated" in rows["验证"]
+    assert "不回写长期验收状态" in rows["回写"]
+    assert "不得写 `.ldvh-runtime` 过程状态" in rows["回写"]
     assert "不得写事实源" in rows["回写"]
     assert "验收结果表" in rows["交还"]
     assert "失败项" in rows["交还"]
+    assert "本次自动接入验收结论" in rows["交还"]
+    assert "当前 `environment_hook_integrated` 检测值" in rows["交还"]
+    assert "不可跨会话继承说明" in rows["交还"]
 
 
 def test_environment_hook_acceptance_action_template_defines_stepwise_test_group(validation_result: dict) -> None:
@@ -1659,7 +1663,12 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "按 01 的无自动环境 Hook 边界回到 30 的手动可用安装交还" in raw
     assert "当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还" in raw
     assert "写入前检查" in raw
-    assert "记录后复跑 `install_verification.py` 显示 `environment_lifecycle_acceptance_valid=true`" in raw
+    assert "本次验收总结" in raw
+    assert "本次自动接入验收结论" in raw
+    assert "当前 `environment_hook_integrated` 检测值" in raw
+    assert "不写长期状态" in raw
+    assert "不可跨会话继承" in raw
+    assert "不得写 `.ldvh-runtime` 过程状态" in raw
     assert ".ldvh-runtime/acceptance-probe/" not in raw
     assert ".ldvh-runtime/acceptance-probe/blocked.txt" not in raw
     assert ".ldvh-runtime/acceptance-probe/allowed.txt" not in raw
@@ -1676,8 +1685,8 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "失败步骤编号" in raw
     assert "是否发生实际写入" in raw
     assert "scratch target 路径和文件状态" in raw
-    assert "environment_lifecycle_acceptance.py record --confirm-human-gate" in raw
-    assert "install_verification.py --require-environment-integrated" in raw
+    assert "environment_lifecycle_acceptance.py record --confirm-human-gate" not in raw
+    assert "install_verification.py --require-environment-integrated" not in raw
 
 
 def test_environment_hook_acceptance_action_template_reports_missing_code_consumption(tmp_path: Path) -> None:
@@ -1739,19 +1748,19 @@ def test_environment_hook_acceptance_action_template_reports_missing_scratch_tar
     assert any("harmless scratch target" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
-def test_environment_hook_acceptance_action_template_reports_missing_record_handoff(tmp_path: Path) -> None:
+def test_environment_hook_acceptance_action_template_reports_missing_process_state_boundary(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
         "specs/31-环境Hook接入后验收行动模板.md",
-        "environment_lifecycle_acceptance.py record --confirm-human-gate",
-        "environment_lifecycle_acceptance.py record",
+        "不得写 `.ldvh-runtime` 过程状态",
+        "可以写过程状态",
     )
 
     result = ldvh_specs.build_validation(root)
 
-    assert "ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_SUPPORT_MISSING" in _diagnostic_codes(result)
-    assert any("--confirm-human-gate" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert "ENV_HOOK_ACCEPTANCE_FLOW_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("不得写 `.ldvh-runtime` 过程状态" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_environment_hook_acceptance_action_template_reports_missing_unsupported_environment_boundary(tmp_path: Path) -> None:
@@ -1784,19 +1793,19 @@ def test_environment_hook_acceptance_action_template_reports_missing_user_judgme
     assert any("主界面不得要求 Human 自行理解专业“通过 / 失败”" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
-def test_environment_hook_acceptance_action_template_reports_missing_lifecycle_rerun_boundary(tmp_path: Path) -> None:
+def test_environment_hook_acceptance_action_template_reports_missing_current_summary_boundary(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
         "specs/31-环境Hook接入后验收行动模板.md",
-        "记录后复跑 `install_verification.py` 显示 `environment_lifecycle_acceptance_valid=true`",
-        "复跑显示 `environment_lifecycle_acceptance_valid=true`",
+        "本次验收总结",
+        "验收结论",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "ENV_HOOK_ACCEPTANCE_FLOW_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("记录后复跑 `install_verification.py` 显示 `environment_lifecycle_acceptance_valid=true`" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("本次验收总结" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_workcase_action_template_reports_missing_human_gate(tmp_path: Path) -> None:
