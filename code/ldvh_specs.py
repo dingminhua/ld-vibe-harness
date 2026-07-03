@@ -233,7 +233,7 @@ LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Scenario": ["安装 LDVH", "接入 LDVH", "初始化 LDVH", "配置管辖项目", "旧插件 / 旧路径", "只回答 01/06/10 边界"],
     "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "管辖项目 Git Hook", "有效 Git worktree", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "事实源子目录", "LDVH 本体路径", "目标工作区根目录", "配置层级冲突", "integrated", "多项目", "用户告知清单", "安装方案预览", "最终确认"],
     "执行": ["bootstrap discovery", "有限、只读、有证据", "LDVH_ROOT", "候选路径和证据", "01", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "用户告知清单", "安装方案预览", "workcases/adrs/pitfalls/sparks/studies", "AI 环境 Hook", "Git `commit-msg` Hook", "repo instruction", "manual entrypoint", "不恢复 Rules 顶层机制", "目标工作区根目录", "配置文件完整路径", "项目根目录、用户级目录和 LDVH 本体目录不得作为主选项", "配置层级检查", "目标项目内已存在配置", "10", "Git common-dir", "target-first resolver"],
-    "验证": ["environment_status.py", "environment_entry_audit.py", "specs_validate.py governed-projects", "target-first resolution", "ldvh-base/", "governed_hook_adapter.py status", "managed `commit-msg` hook", "正反样例", "runtime adapter", "AI 环境 Hook 插件状态检查", "真实 lifecycle 触发", "09 验证声明字段", "真实自动触发", "失败可阻断", "安装状态可复现", "integrated"],
+    "验证": ["install_verification.py", "environment_status.py", "environment_entry_audit.py", "specs_validate.py governed-projects", "target-first resolution", "ldvh-base/", "governed_hook_adapter.py status", "governed_hook_adapter.py verify", "managed `commit-msg` hook", "正反样例", "runtime adapter", "AI 环境 Hook 插件状态检查", "真实 lifecycle 触发", "09 验证声明字段", "真实自动触发", "失败可阻断", "安装状态可复现", "integrated"],
     "回写": ["过程输出", "Human 确认", "LDVH-GOVERNED-PROJECTS.yaml", "10 字段契约", "事实源目录创建", "不创建事实实例", "旧插件", "用户级配置目录候选", "Spark", "ADR", "Pitfall", "WorkCase", "Git commit records", "不得把 runtime receipt"],
     "交还": ["安装方式", "配置位置选择", "管辖项目 ID", "Git common-dir", "ldvh-base/", "事实源子目录状态", "环境入口状态", "integrated / manual_ready / deferred / removed_top_level", "用户告知清单", "验证摘要", "回滚或卸载入口", "下一步 Human Gate", "source_refs"],
 }
@@ -341,6 +341,7 @@ LDVH_INSTALL_WIZARD_TERMS = [
     "完整安装方案必须同时覆盖 AI 环境 Hook 和管辖项目 Git Hook",
     "repo 路径",
     "`core.hooksPath` / active hook 状态",
+    "install_verification.py",
     "验证命令和卸载 / rollback 命令",
     "主界面只展示普通用户作出下一步判断所需的信息",
     "会改变什么",
@@ -421,6 +422,9 @@ LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS = {
     ],
     "install_verification_handoff": [
         "验证摘要",
+        "Hook 接入后测试",
+        "install_verification.py",
+        "governed_hook_adapter.py verify",
         "回滚或卸载入口",
         "残留风险",
         "source_refs",

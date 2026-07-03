@@ -118,7 +118,9 @@ RUNTIME_SENSITIVE_PATHS = {
     "code/completion_claim.py",
     "code/environment_status.py",
     "code/environment_entry_audit.py",
+    "code/install_verification.py",
     "tests/code/test_ldvh_specs_validate.py",
+    "tests/code/test_install_verification.py",
 }
 RUNTIME_SENSITIVE_PREFIXES = (
     "specs/01-",

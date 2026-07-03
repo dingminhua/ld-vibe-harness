@@ -149,7 +149,7 @@ def install(repo: Path, ldvh_root: Path = ROOT, embed_ldvh_root: bool = False) -
 def uninstall(repo: Path, ldvh_root: Path = ROOT) -> HookStatus:
     resolved_repo = resolve_repo(repo)
     status = inspect_status(resolved_repo, ldvh_root)
-    if status.hooks_path:
+    if status.hooks_path and status.active_hook_managed:
         _run_git(resolved_repo, "config", "--worktree", "--unset", "core.hooksPath", check=False)
     if not is_current_ldvh_repo(resolved_repo, ldvh_root) and status.active_hook_managed:
         status.active_hook.unlink()

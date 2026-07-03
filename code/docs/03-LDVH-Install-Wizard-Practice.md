@@ -127,7 +127,7 @@ GOVERNED_CONFIG=<workspace-root>/LDVH-GOVERNED-PROJECTS.yaml
 
 每个已选择管辖项目必须是有效 Git worktree。安装前检查发现目标不是 Git 仓库时，必须停在安装前检查或安装方案预览，标为 `⛔ 阻断`，并说明管辖项目必须是 Git 仓库；不得继续进入最终执行，也不得创建 Git Hook 替代 Git 初始化。
 
-安装后验证必须可复现。AI 环境 Hook 至少要验证插件安装状态、Hook 配置指向 V3 shim、直接 shim 正反输入；如果真实 Codex / IDE lifecycle 不能在当前回合触发，必须写明不可验证范围，不得声明 integrated。Git Hook 必须验证 `governed_hook_adapter.py status`、`core.hooksPath`、managed `commit-msg` 文件和可执行位，并直接执行 hook 文件跑有效 commit message 放行和无效 commit message 阻断。
+安装后验证必须可复现。AI 环境 Hook 至少要验证插件安装状态、Hook 配置指向 V3 shim、直接 shim 正反输入；如果真实 Codex / IDE lifecycle 不能在当前回合触发，必须写明不可验证范围，不得声明 integrated。Git Hook 必须验证 `governed_hook_adapter.py status`、`core.hooksPath`、managed `commit-msg` 文件和可执行位，并直接执行 hook 文件跑有效 commit message 放行和无效 commit message 阻断。安装完成交还应优先运行 `install_verification.py` 汇总 Git Hook 正反例和环境入口审计。
 
 不可验证范围单独列出，不能混入“验证通过”。常见不可验证项包括真实 Codex / IDE lifecycle 触发、外部环境自动触发和卸载后自动触发状态。
 
@@ -283,7 +283,7 @@ GOVERNED_CONFIG=<workspace-root>/LDVH-GOVERNED-PROJECTS.yaml
 | 将保持不变 | 已有效的工作区配置、已有效的事实源目录 |
 | 不会执行 | 未选择项目、非本工作区 target、未授权的外部环境写入 |
 | 需后置确认 | 真实 lifecycle 验证、卸载后自动触发状态、跨项目批量接入 |
-| 验证 | specs validator、governed-projects、environment audit、Git Hook status 和正反样例 |
+| 验证 | specs validator、governed-projects、environment audit、Git Hook verify / status 和正反样例 |
 | 不可验证范围 | 当前回合无法触发的 Codex / IDE lifecycle |
 | 回滚 | 插件 uninstall / rollback、Git Hook uninstall / rollback、配置恢复路径 |
 
@@ -339,6 +339,7 @@ GOVERNED_CONFIG=<workspace-root>/LDVH-GOVERNED-PROJECTS.yaml
 
 | 验证项 | 结果 |
 |---|---|
+| 统一安装验证 | `install_verification.py` 输出 complete / review_required / blocked |
 | 目录回读 | ✅ 通过 |
 | 管辖项目配置解析 | ✅ 通过 |
 | 环境入口审计 | ✅ 通过 |
@@ -358,3 +359,11 @@ GOVERNED_CONFIG=<workspace-root>/LDVH-GOVERNED-PROJECTS.yaml
 ```
 
 Hook 接入后测试必须作为独立小节出现。即使本次没有修改 Git 提交消息检查，只要完整安装声明覆盖这些项目，也要复核每个已选择项目的 status、managed hook、正例放行和反例阻断。
+
+Hook 接入后测试优先使用统一只读安装验证入口：
+
+```bash
+python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --environment-name "<当前 AI 运行环境名称>"
+```
+
+该命令只读验收所有管辖项目的 active `commit-msg` Hook，并汇总环境入口审计和 repo-local shim 直测。输出中每个项目必须同时满足 Hook 已安装、managed marker 存在、正例 exit `0`、反例 exit 非 `0` 且返回 `COMMIT_HEADER_INVALID`，才可在交还总结中写 Git 提交消息检查通过。命令返回 `review_required` 时，通常表示 Git Hook 正反例通过但目标环境插件仍缺真实 lifecycle、授权 / trust、payload、失败处理或卸载后自动触发证据，必须列入不可验证范围或 Human 验收项。

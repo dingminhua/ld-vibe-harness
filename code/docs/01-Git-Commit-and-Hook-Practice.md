@@ -64,14 +64,22 @@ python3 code/install_git_hooks.py uninstall --repo .
 外部管辖项目不得直接用底层安装器安装或卸载 Hook。外部 repo 必须使用 governed adapter：
 
 ```bash
-python3 code/governed_hook_adapter.py status --repo "<repo>" --governance-root "<ldvh-root>"
-python3 code/governed_hook_adapter.py install --repo "<repo>" --governance-root "<ldvh-root>" --confirm-human-gate
-python3 code/governed_hook_adapter.py uninstall --repo "<repo>" --governance-root "<ldvh-root>" --confirm-human-gate
+python3 code/governed_hook_adapter.py status --repo "<repo>" --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>"
+python3 code/governed_hook_adapter.py install --repo "<repo>" --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --confirm-human-gate
+python3 code/governed_hook_adapter.py uninstall --repo "<repo>" --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --confirm-human-gate
 ```
 
-governed adapter 安装外部 repo 时只写入 LDVH managed `commit-msg` 薄 shim，并把 LDVH 根目录嵌入为默认 validator 位置。外部 repo 的 shim 放在 Git 本地目录 `.git/ldvh-hooks/commit-msg`，避免把 Hook 文件写入业务工作树；LDVH 自身仍使用仓库内 `hooks/commit-msg` 作为模板和本仓库 Hook。卸载时应取消该 repo 的 worktree-local `core.hooksPath`，删除外部 repo 中由 LDVH 管理的 shim；已有用户 Hook 或备份资产不得被静默删除。
+governed adapter 安装外部 repo 时只写入 LDVH managed `commit-msg` 薄 shim，并把 LDVH 根目录嵌入为默认 validator 位置。外部 repo 的 shim 放在 Git 本地目录 `.git/ldvh-hooks/commit-msg`，避免把 Hook 文件写入业务工作树；LDVH 自身仍使用仓库内 `hooks/commit-msg` 作为模板和本仓库 Hook。卸载时只应取消由 LDVH managed active hook 占用的 worktree-local `core.hooksPath`，并删除外部 repo 中由 LDVH 管理的 shim；如果 active hook 不是 LDVH managed，不得静默关闭用户自己的 `core.hooksPath`，已有用户 Hook 或备份资产不得被静默删除。
 
-LDVH 安装向导执行完整安装时，已选择管辖项目的 Git `commit-msg` Hook 是必检、必计划、确认后必执行的入口。安装或升级后必须回读 `governed_hook_adapter.py status`，确认 `core.hooksPath`、active hook、managed marker 和可执行位，并直接执行已安装 hook 文件验证有效 commit message 放行、无效 commit message 阻断。未完成这些验证时，不得声明该管辖项目 Git Hook 安装完成。
+LDVH 安装向导执行完整安装时，已选择管辖项目的 Git `commit-msg` Hook 是必检、必计划、确认后必执行的入口。安装或升级后必须回读 `governed_hook_adapter.py status`，确认 `core.hooksPath`、active hook、managed marker 和可执行位，并直接执行已安装 hook 文件验证有效 commit message 放行、无效 commit message 阻断。推荐使用统一只读安装验证入口一次性完成这些检查：
+
+```bash
+python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --environment-name "<当前 AI 运行环境名称>"
+python3 code/governed_hook_adapter.py verify --all-projects --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>"
+python3 code/governed_hook_adapter.py verify --repo "<repo>" --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>"
+```
+
+`install_verification.py` 不安装、不卸载、不修改管辖项目或用户环境；它调用 `governed_hook_adapter.py verify` 读取当前 active hook，执行有效 commit message 和无效 commit message 两个样例，并用退出码判断放行和阻断，同时汇总环境入口审计的不可验证范围。未完成这些验证时，不得声明该管辖项目 Git Hook 安装完成。
 
 已选择管辖项目必须是有效 Git worktree。`governed_hook_adapter.py` 发现目标不是 Git 仓库时必须返回 blocking diagnostic，不得执行安装、不得隐式 `git init`，并应提示 Human 先把目标项目变成 Git 仓库后再继续安装。
 

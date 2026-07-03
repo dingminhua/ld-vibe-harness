@@ -1060,6 +1060,8 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "AI 环境 Hook" in rows["执行"]
     assert "Git `commit-msg` Hook" in rows["执行"]
     assert "governed_hook_adapter.py status" in rows["验证"]
+    assert "install_verification.py" in rows["验证"]
+    assert "governed_hook_adapter.py verify" in rows["验证"]
     assert "managed `commit-msg` hook" in rows["验证"]
     assert "正反样例" in rows["验证"]
     assert "安装状态可复现" in rows["验证"]
@@ -2732,6 +2734,11 @@ def test_governed_hook_adapter_installs_for_confirmed_governed_repo(tmp_path: Pa
     governance_root.mkdir()
     repo.mkdir()
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    subprocess.run(["git", "config", "user.email", "ldvh@example.test"], cwd=repo, check=True, timeout=30)
+    subprocess.run(["git", "config", "user.name", "LDVH Test"], cwd=repo, check=True, timeout=30)
+    (repo / "README.md").write_text("test\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True, timeout=30)
+    subprocess.run(["git", "commit", "-m", "test: init"], cwd=repo, check=True, capture_output=True, text=True, timeout=30)
     _write_governed_config(
         governance_root,
         f"""
@@ -2840,6 +2847,311 @@ projects:
     assert not hook.exists()
     assert not hook.parent.exists()
     assert not (repo / "hooks").exists()
+
+
+def test_governed_hook_adapter_verifies_installed_governed_repo(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    governance_root.mkdir()
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+    _run_cli(
+        [
+            sys.executable,
+            "code/governed_hook_adapter.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--governance-root",
+            str(governance_root),
+            "--ldvh-root",
+            str(ROOT),
+            "--confirm-human-gate",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+    (repo / "code").mkdir()
+    (repo / "code" / "example.py").write_text("print('changed')\n", encoding="utf-8")
+    subprocess.run(["git", "add", "code/example.py"], cwd=repo, check=True, timeout=30)
+    before_status = subprocess.run(
+        ["git", "status", "--short", "--untracked-files=all"],
+        cwd=repo,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=30,
+    ).stdout
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/governed_hook_adapter.py",
+            "verify",
+            "--repo",
+            str(repo),
+            "--governance-root",
+            str(governance_root),
+            "--ldvh-root",
+            str(ROOT),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    after_status = subprocess.run(
+        ["git", "status", "--short", "--untracked-files=all"],
+        cwd=repo,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=30,
+    ).stdout
+    payload = json.loads(completed.stdout)
+    verification = payload["verification"]
+    assert payload["summary"]["status"] == "ok"
+    assert payload["metadata"]["authorization"] == "none"
+    assert payload["summary"]["hook_integrated"] == "git.commit-msg"
+    assert verification["status"] == "ok"
+    assert verification["positive_case"]["passed"] is True
+    assert verification["positive_case"]["exit_code"] == 0
+    assert verification["negative_case"]["passed"] is True
+    assert verification["negative_case"]["exit_code"] == 1
+    assert verification["negative_case"]["blocking_code_found"] is True
+    assert "governed_hook_adapter.py uninstall" in verification["rollback_command"]
+    assert after_status == before_status
+
+
+def test_governed_hook_adapter_verifies_all_configured_projects(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo_a = tmp_path / "repo-a"
+    repo_b = tmp_path / "repo-b"
+    governance_root.mkdir()
+    repo_a.mkdir()
+    repo_b.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo_a, check=True, timeout=30)
+    subprocess.run(["git", "init", "-q"], cwd=repo_b, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app-a
+    path: {repo_a}
+  - id: app-b
+    path: {repo_b}
+""",
+    )
+    for repo in [repo_a, repo_b]:
+        _run_cli(
+            [
+                sys.executable,
+                "code/governed_hook_adapter.py",
+                "install",
+                "--repo",
+                str(repo),
+                "--governance-root",
+                str(governance_root),
+                "--ldvh-root",
+                str(ROOT),
+                "--confirm-human-gate",
+                "--format",
+                "json",
+            ],
+            cwd=ROOT,
+            check=True,
+        )
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/governed_hook_adapter.py",
+            "verify",
+            "--all-projects",
+            "--governance-root",
+            str(governance_root),
+            "--ldvh-root",
+            str(ROOT),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["projects"] == 2
+    assert payload["summary"]["verified"] == 2
+    assert {project["summary"]["governed_project_id"] for project in payload["projects"]} == {"app-a", "app-b"}
+    assert all(project["verification"]["positive_case"]["passed"] for project in payload["projects"])
+    assert all(project["verification"]["negative_case"]["passed"] for project in payload["projects"])
+
+
+def test_governed_hook_adapter_verify_blocks_missing_hook(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    governance_root.mkdir()
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/governed_hook_adapter.py",
+            "verify",
+            "--repo",
+            str(repo),
+            "--governance-root",
+            str(governance_root),
+            "--ldvh-root",
+            str(ROOT),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["summary"]["status"] == "blocked"
+    assert payload["verification"]["status"] == "blocked"
+    assert "GOVERNED_HOOK_VERIFY_NOT_INSTALLED" in _diagnostic_codes(payload)
+
+
+def test_governed_hook_adapter_install_backs_up_existing_non_managed_hook(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    governance_root.mkdir()
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+    hook_dir = repo / ".git" / "ldvh-hooks"
+    hook_dir.mkdir(parents=True)
+    hook = hook_dir / "commit-msg"
+    hook.write_text("#!/bin/sh\necho custom hook\n", encoding="utf-8")
+    hook.chmod(0o755)
+    subprocess.run(["git", "config", "extensions.worktreeConfig", "true"], cwd=repo, check=True, timeout=30)
+    subprocess.run(["git", "config", "--worktree", "core.hooksPath", str(hook_dir)], cwd=repo, check=True, timeout=30)
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/governed_hook_adapter.py",
+            "install",
+            "--repo",
+            str(repo),
+            "--governance-root",
+            str(governance_root),
+            "--ldvh-root",
+            str(ROOT),
+            "--confirm-human-gate",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    backups = list(hook_dir.glob("commit-msg.ldvh-backup-*"))
+    assert payload["summary"]["status"] == "ok"
+    assert "# LDVH v3 managed commit-msg hook" in hook.read_text(encoding="utf-8")
+    assert len(backups) == 1
+    assert backups[0].read_text(encoding="utf-8") == "#!/bin/sh\necho custom hook\n"
+
+
+def test_governed_hook_adapter_uninstall_preserves_non_managed_active_hook(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    governance_root.mkdir()
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+    hook_dir = repo / ".git" / "custom-hooks"
+    hook_dir.mkdir(parents=True)
+    hook = hook_dir / "commit-msg"
+    hook.write_text("#!/bin/sh\necho custom hook\n", encoding="utf-8")
+    hook.chmod(0o755)
+    subprocess.run(["git", "config", "extensions.worktreeConfig", "true"], cwd=repo, check=True, timeout=30)
+    subprocess.run(["git", "config", "--worktree", "core.hooksPath", str(hook_dir)], cwd=repo, check=True, timeout=30)
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/governed_hook_adapter.py",
+            "uninstall",
+            "--repo",
+            str(repo),
+            "--governance-root",
+            str(governance_root),
+            "--ldvh-root",
+            str(ROOT),
+            "--confirm-human-gate",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    hooks_path = subprocess.run(
+        ["git", "config", "--get", "core.hooksPath"],
+        cwd=repo,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=30,
+    )
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["hook_integrated"] == "none"
+    assert hooks_path.stdout.strip() == str(hook_dir)
+    assert hook.read_text(encoding="utf-8") == "#!/bin/sh\necho custom hook\n"
 
 
 def test_governed_hook_adapter_requires_human_gate_for_install(tmp_path: Path) -> None:

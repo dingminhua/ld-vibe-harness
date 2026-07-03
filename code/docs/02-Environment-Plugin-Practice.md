@@ -103,6 +103,14 @@ python3 code/environment_entry_audit.py --format text
 
 真实 Codex / IDE / Agent 环境插件的 positive、negative、status、disable、uninstall 和 rollback 测试仍 gated。安装完成后至少应能测试插件状态、Hook 配置指向 V3 shim、直接 shim 正反输入；若当前回合不能触发真实 lifecycle，必须记录不可验证范围，不得声明 integrated。没有 Human 明确确认目标环境、写入位置、触发点、payload、失败处理和回滚方式前，不得写入用户环境或修改外部项目 Hook。
 
+安装收尾可以使用统一只读验证入口：
+
+```bash
+python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --environment-name "<当前 AI 运行环境名称>"
+```
+
+该命令会读取环境入口审计结果，执行 repo-local shim 的 SessionStart、PreToolUse 和 Stop 直测，并把真实 lifecycle、授权 / trust、payload、失败处理和卸载后自动触发状态列为 Human 验收项。该命令不会安装、升级、禁用、卸载或写入用户环境；它输出 `review_required` 时表示仓库内直测已完成但真实环境接入仍不能声明 integrated。
+
 ## Codex 样例进入条件
 
 Codex 样例后续进入实装前，至少要补齐：

@@ -29,6 +29,7 @@ HOOK_ADAPTER_NAME_TOKENS = (
     "install_git_hooks",
     "environment_status",
     "environment_entry_audit",
+    "install_verification",
     "runtime_adapter",
     "governed_project_resolver_matches_git_worktree_common_dir",
 )

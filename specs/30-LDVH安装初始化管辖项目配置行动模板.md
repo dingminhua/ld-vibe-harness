@@ -180,7 +180,7 @@ ldvh_spec:
 
 最终确认只展示两个主选项：`1 执行方案` 和 `2 不执行，停止安装`。最终确认前必须明确提示选择执行后才会开始写入；最终确认摘要只列出将写入对象和不写入对象，不得重复安装前检查表或把已完成的只读检查再次作为待确认事项。Human 选择不执行时，AI 必须停止在方案预览或最终确认状态，不得写入；Human 要求调整方案时，AI 必须回到对应前一步，但不得把返回修改作为第三个主选项；只有 Human 选择执行后，AI 才能按方案执行已确认的仓库内动作，并在写入后执行验证、回滚说明和残留风险交还。
 
-安装执行完成后必须输出安装完成交还总结，不得只给零散验证结果。交还总结必须单列实际写入、明确未写入对象、验证摘要、Hook 接入后测试、不可验证范围、撤销 / 恢复入口和残留边界。Hook 接入后测试必须单列每个已选择管辖项目的 Git 提交消息检查状态、managed hook 状态、正例提交消息放行结果和反例提交消息阻断结果；若本次包含 AI 环境 Hook 插件安装、升级或复核，也必须单列插件状态、转接脚本 / runtime 直测结果、真实自动触发是否已验证和不能声明 integrated 的原因。缺少 Hook 接入后测试总结时，不得声明安装完成；只能声明写入已执行但安装交还未完成。
+安装执行完成后必须输出安装完成交还总结，不得只给零散验证结果。交还总结必须单列实际写入、明确未写入对象、验证摘要、Hook 接入后测试、不可验证范围、撤销 / 恢复入口和残留边界。Hook 接入后测试必须优先使用 `install_verification.py` 或等价入口形成可复现验收结果，并单列每个已选择管辖项目的 Git 提交消息检查状态、managed hook 状态、正例提交消息放行结果和反例提交消息阻断结果；若本次包含 AI 环境 Hook 插件安装、升级或复核，也必须单列插件状态、转接脚本 / runtime 直测结果、真实自动触发是否已验证和不能声明 integrated 的原因。缺少 Hook 接入后测试总结或 `install_verification.py` 等价验收结果时，不得声明安装完成；只能声明写入已执行但安装交还未完成。
 
 ## 8. Context、Scenario、Gate 与交还
 
@@ -190,7 +190,7 @@ ldvh_spec:
 | Scenario | 用户要求安装 LDVH、接入 LDVH、初始化 LDVH、配置管辖项目、把项目登记为管辖项目、检查安装是否生效或修复旧插件 / 旧路径时适用；用户只是询问概念或规则时，只回答 01/06/10 边界，不写入配置、不安装插件、不修改 Hook。 |
 | Gate | 写入、覆盖、删除或迁移环境入口，安装、升级、禁用或卸载 LDVH 插件 / 扩展包，安装、升级、禁用、卸载或迁移管辖项目 Git Hook，已选择管辖项目不是有效 Git worktree，创建或修改目标工作区根目录下的 `LDVH-GOVERNED-PROJECTS.yaml`，创建、删除、迁移或重命名管辖项目 `ldvh-base/` 及事实源子目录，确认 LDVH 本体路径和目标工作区根目录，处理配置层级冲突，声明环境入口 integrated，目标环境 Hook 能力不明，多项目或混合非管辖 target，缺少用户告知清单，或缺少安装方案预览和最终确认，均必须暂停或进入 Human Gate。 |
 | 执行 | 先用有限、只读、有证据的 bootstrap discovery 找到 LDVH 本体并从本体读取本文；bootstrap discovery 必须检查 `LDVH_ROOT` / `LDVH_HOME`、插件 / Hook / wrapper 候选并展示候选路径和证据；再按 01 判断目标环境入口类型和接入状态；支持 Hook 的环境只生成或检查对应 LDVH 插件 / 扩展包 / package 方案，不直接写入环境 Hook 系统文件；执行安装、部署、初始化、配置或卸载前必须先交付用户告知清单和安装方案预览，明示写入对象、写入位置级别、影响范围、Hook / lifecycle event、阻断与 diagnostic 边界、旧插件 / stale V2 path 处理、验证方式、回滚或卸载入口、未 integrated 能力、管辖项目 `ldvh-base/` 及 `workcases/adrs/pitfalls/sparks/studies` 目录用途、残留风险和下一步 Human Gate；完整安装必须在 Human 最终确认后同时执行已确认的 AI 环境 Hook 插件安装 / 升级和每个已选择管辖项目的 Git `commit-msg` Hook 安装 / 升级；不支持 Hook 或 Hook 未接入时只作为 repo instruction、manual entrypoint 或外部 adapter 候选处理，不恢复 Rules 顶层机制；配置生成位置固定为目标工作区根目录；必须展示 LDVH 本体路径、目标工作区根目录和配置文件完整路径；项目根目录、用户级目录和 LDVH 本体目录不得作为主选项；必须用 10 的配置层级检查确认目标工作区根目录到目标项目路径链上只有一个 active `LDVH-GOVERNED-PROJECTS.yaml`；目标项目内已存在配置时，必须阻断并提示先删除、迁移或明确保留其中一个；随后按 10 登记单一管辖项目、补充 Git common-dir 身份线索，检查或建议创建管辖项目事实源目录，并用 target-first resolver 验证。 |
-| 验证 | 使用 `environment_status.py`、`environment_entry_audit.py`、`specs_validate.py governed-projects`、target-first resolution、管辖项目 `ldvh-base/` 目录回读、每个已选择管辖项目的 `governed_hook_adapter.py status`、managed `commit-msg` hook 直接执行正反样例、必要的 runtime adapter 手动入口、AI 环境 Hook 插件状态检查、真实 lifecycle 触发或明确的不可验证说明，以及 09 验证声明字段记录验证目标、验证入口、输入范围、关键输出、结论、残留风险和证据回指；只有真实自动触发、失败可阻断、安装状态可复现时，才可声明对应环境入口 integrated。 |
+| 验证 | 使用 `install_verification.py`、`environment_status.py`、`environment_entry_audit.py`、`specs_validate.py governed-projects`、target-first resolution、管辖项目 `ldvh-base/` 目录回读、每个已选择管辖项目的 `governed_hook_adapter.py status` 或 `governed_hook_adapter.py verify`、managed `commit-msg` hook 直接执行正反样例、必要的 runtime adapter 手动入口、AI 环境 Hook 插件状态检查、真实 lifecycle 触发或明确的不可验证说明，以及 09 验证声明字段记录验证目标、验证入口、输入范围、关键输出、结论、残留风险和证据回指；只有真实自动触发、失败可阻断、安装状态可复现时，才可声明对应环境入口 integrated。 |
 | 回写 | 安装和初始化检查输出默认是过程输出；配置写入必须落在 Human 确认的 `LDVH-GOVERNED-PROJECTS.yaml` 并受 10 字段契约约束；事实源目录创建只建立 `ldvh-base/` 入口和五类对象目录，不创建事实实例、不替代字段 schema；旧插件、旧路径、用户级配置目录候选、环境适配缺口或长期风险按 03/05/09 分流到 Spark、ADR、Pitfall、WorkCase、实现域文档或 Git commit records，不得把 runtime receipt、环境观察或聊天结论写成事实源。 |
 | 交还 | 交还安装方式、配置位置选择、管辖项目 ID、目标路径、Git common-dir 线索、`ldvh-base/` 及五个事实源子目录状态、环境入口状态、integrated / manual_ready / deferred / removed_top_level 结论、用户告知清单及 Human 确认状态、安装完成总结、实际写入和未写入对象、验证摘要、Hook 接入后测试、回滚或卸载入口、残留风险、下一步 Human Gate、source_refs 和未完成分流；阻断时交还阻断原因、缺少证据、缺少告知项和建议的下一步。 |
 
@@ -201,7 +201,7 @@ ldvh_spec:
 | 安装向导状态机要求 | 安装交互必须使用五步状态机，流程表只记录当前箭头和已完成决策 / 结果，最终确认前不得写入 | 本文、06、09 | 安装治理 | 安装、接入、初始化或配置管辖项目时 |
 | 告知清单要求 | 安装、部署、初始化、配置或卸载前必须形成用户告知清单并交给 Human 确认 | 本文、01、06、09 | 安装治理 | 涉及写入、入口、配置或卸载时 |
 | 环境入口边界要求 | 插件、扩展包、Hook 或 manual entrypoint 只能作为入口承载，不得声明未验证 integrated | 本文、01、Code audit | 环境治理 | 检查或改变环境入口时 |
-| Git Hook 安装验证要求 | 完整安装必须覆盖每个已选择管辖项目的 Git `commit-msg` Hook，并在安装后验证 status、managed hook、正例放行和负例阻断 | 本文、01、Code adapter、tests | 环境治理 | 安装、升级或修复 LDVH 时 |
+| Git Hook 安装验证要求 | 完整安装必须覆盖每个已选择管辖项目的 Git `commit-msg` Hook，并在安装后通过 `install_verification.py` 或等价入口验证 status、managed hook、正例放行和负例阻断 | 本文、01、Code adapter、tests | 环境治理 | 安装、升级或修复 LDVH 时 |
 | Git 项目准入要求 | 每个已选择管辖项目必须是有效 Git worktree；非 Git 目录必须阻断安装并说明管辖项目必须是 Git 仓库 | 本文、10、Code adapter、tests | 项目准入 | 安装、初始化或接入管辖项目时 |
 | 工作区配置 Gate 要求 | 生成或修改管辖项目配置前必须确认 LDVH 本体路径、目标工作区根目录和配置文件完整路径；配置位置固定为目标工作区根目录 | 本文、10、Human Gate | 配置治理 | 创建或迁移 `LDVH-GOVERNED-PROJECTS.yaml` 时 |
 | 事实源目录告知要求 | 首次启用管辖项目时必须说明 `ldvh-base/` 及五个子目录用途 | 本文、10、20-24 | 事实源治理 | 创建或检查管辖项目事实源目录时 |
@@ -218,13 +218,13 @@ ldvh_spec:
 | 清单检查 | 是否在安装、部署、初始化、配置或卸载前列出用户告知清单 | 不得执行写入或要求 Human 验收 |
 | Gate 检查 | 是否识别配置位置、环境入口、插件安装、integrated 声明和多项目 target 的 Human Gate | 暂停并交还 Human |
 | 环境检查 | 是否使用环境状态、入口审计或等价验证区分 integrated / manual_ready / deferred / removed_top_level | 不得声明环境已接入 |
-| Git Hook 检查 | 是否把每个已选择管辖项目 Git Hook 纳入安装 / 升级方案，并验证 `core.hooksPath`、managed hook、正例放行和负例阻断 | 不得声明完整安装完成 |
+| Git Hook 检查 | 是否把每个已选择管辖项目 Git Hook 纳入安装 / 升级方案，并通过 `install_verification.py` 或等价入口验证 `core.hooksPath`、managed hook、正例放行和负例阻断 | 不得声明完整安装完成 |
 | Git 项目检查 | 是否检查每个已选择管辖项目是有效 Git worktree；非 Git 目录是否阻断并说明管辖项目必须是 Git 仓库 | 不得继续执行安装 |
 | 配置检查 | 是否按 10 解析和验证管辖项目配置，并确认配置固定在目标工作区根目录，且展示 LDVH 本体路径、目标工作区根目录和配置文件完整路径 | 不得声明管辖项目配置已生效 |
 | 配置层级检查 | 是否检查目标工作区根目录到目标项目路径链上已有项目内配置 | 不得继续执行工作区安装 |
 | 事实源目录检查 | 是否回读管辖项目 `ldvh-base/` 及五个子目录状态，并说明每个目录用途 | 不得声明管辖项目事实源初始化完成 |
 | 回滚检查 | 是否说明回滚或卸载入口，并验证卸载后不再自动触发 LDVH | 不得声明部署闭环完整 |
-| 交还总结检查 | 是否在安装完成后单列实际写入、未写入对象、Hook 接入后测试、不可验证范围和撤销 / 恢复入口 | 不得声明安装完成 |
+| 交还总结检查 | 是否在安装完成后单列实际写入、未写入对象、`install_verification.py` 或等价验证结果、Hook 接入后测试、不可验证范围和撤销 / 恢复入口 | 不得声明安装完成 |
 
 ## 11. Human Gate
 
