@@ -10,7 +10,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 PLUGIN_ROOT = ROOT / "hooks/environment-plugins/codex-ldvh-v3"
 SHIM = ROOT / "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
-PLUGIN_JSON = PLUGIN_ROOT / ".codex-plugin/plugin.json"
+PLUGIN_JSON = PLUGIN_ROOT / "plugin.json"
 
 
 def _png_dimensions(path: Path) -> tuple[int, int]:
@@ -39,6 +39,8 @@ def _diagnostic_codes(result: dict) -> set[str]:
 
 
 def test_codex_sample_plugin_manifest_consumes_package_icons() -> None:
+    assert not (PLUGIN_ROOT / ".codex-plugin").exists()
+
     manifest = json.loads(PLUGIN_JSON.read_text(encoding="utf-8"))
     interface = manifest["interface"]
 

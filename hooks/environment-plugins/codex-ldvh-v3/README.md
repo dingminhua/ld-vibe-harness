@@ -6,7 +6,7 @@
 
 | 路径 | 职责 |
 |---|---|
-| `.codex-plugin/plugin.json` | Codex plugin manifest；不包含 Rules / Skill 顶层机制，不在 manifest 中声明 unsupported `hooks` 字段 |
+| `plugin.json` | 目标环境插件 manifest 源资产；不包含 Rules / Skill 顶层机制，不在 manifest 中声明 unsupported `hooks` 字段 |
 | `assets/ldvh-plugin-icon-128.png` | manifest `composerIcon`；来自 V2 `icons/` 的 LDVH 图标资产 |
 | `assets/ldvh-plugin-icon-512.png` | manifest `logo`；来自 V2 `icons/` 的 LDVH 图标资产 |
 | `hooks/hooks.json` | Codex lifecycle hook 配置样例；实际安装前必须确认命令路径解析方式 |
@@ -58,7 +58,7 @@ shim 按以下顺序解析 LDVH root：
 本样例包可做安装前静态检查：
 
 ```bash
-python3 /Users/dmh2002/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py hooks/environment-plugins/codex-ldvh-v3
+python3 -m json.tool hooks/environment-plugins/codex-ldvh-v3/plugin.json >/dev/null
 python3 -m json.tool hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json >/dev/null
 python3 -m py_compile hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
 python3 -m pytest tests/code/test_environment_plugins.py -q --tb=short

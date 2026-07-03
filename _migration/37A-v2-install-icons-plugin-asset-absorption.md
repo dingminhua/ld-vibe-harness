@@ -9,7 +9,7 @@ Human 指出 V2 已经实现了安装相关能力，并且存在 `icons/` 目录
 1. V2 `icons/` 提供 `ldvh-plugin-icon` 多尺寸 PNG 资产；
 2. V2 Web `public/` 和 `dist/` 已消费这些图标；
 3. V2 安装行动 `specs/33-ldvh-install-action-LDVH安装行动编排.md` 已定义插件方式、Rules 方式、Git Hook 安装和验证；
-4. V2 仓库内未发现 `.codex-plugin/plugin.json` 形态的 Codex 插件包，具体插件发布和安装机制在 V2 仍属于待对接。
+4. V2 仓库内未发现 Codex 插件包安装器，具体插件发布和安装机制在 V2 仍属于待对接。
 
 V3 已有 repo-local Codex 样例包，但缺少包内展示资产；Web 图标存在不等于插件包图标存在。
 
@@ -21,7 +21,7 @@ V3 已有 repo-local Codex 样例包，但缺少包内展示资产；Web 图标�
 |---|---|
 | `icons/` | 吸收 V2 `icons/ldvh-plugin-icon*.png` 作为 V3 共享图标资产目录 |
 | `hooks/environment-plugins/codex-ldvh-v3/assets/` | 放置 Codex 样例包 manifest 实际引用的 `composerIcon` 和 `logo` 图标 |
-| `hooks/environment-plugins/codex-ldvh-v3/.codex-plugin/plugin.json` | 通过 `interface.composerIcon` 和 `interface.logo` 消费包内资产 |
+| `hooks/environment-plugins/codex-ldvh-v3/plugin.json` | 通过 `interface.composerIcon` 和 `interface.logo` 消费包内资产 |
 | `hooks/environment-plugins/README.md` | 补充环境插件样例包展示资产边界 |
 | `hooks/environment-plugins/codex-ldvh-v3/README.md` | 补充 Codex 样例包资产说明和验证口径 |
 | `code/docs/02-Environment-Plugin-Practice.md` | 将展示资产纳入最小插件包契约 |
@@ -43,7 +43,7 @@ V3 已有 repo-local Codex 样例包，但缺少包内展示资产；Web 图标�
 应运行：
 
 ```bash
-python3 /Users/dmh2002/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py hooks/environment-plugins/codex-ldvh-v3
+python3 -m json.tool hooks/environment-plugins/codex-ldvh-v3/plugin.json >/dev/null
 python3 -m pytest tests/code/test_environment_plugins.py -q --tb=short
 ```
 

@@ -17,7 +17,7 @@ Codex 是当前可审计样例，但不是总规则。其它环境后续必须�
 | 路径 | 作用 |
 |---|---|
 | `hooks/environment-plugins/README.md` | 环境插件样例目录的通用边界 |
-| `hooks/environment-plugins/codex-ldvh-v3/.codex-plugin/plugin.json` | Codex plugin manifest 样例 |
+| `hooks/environment-plugins/codex-ldvh-v3/plugin.json` | Codex plugin manifest 源资产样例 |
 | `hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json` | Codex lifecycle hook 配置样例 |
 | `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` | 只调用 V3 runtime adapter 的薄 shim |
 | `hooks/environment-plugins/codex-ldvh-v3/README.md` | Codex 样例包安装前确认项和不做事项 |
@@ -62,7 +62,7 @@ Codex 是当前可审计样例，但不是总规则。其它环境后续必须�
 本阶段使用静态和轻量 smoke 验证：
 
 ```bash
-python3 /Users/dmh2002/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py hooks/environment-plugins/codex-ldvh-v3
+python3 -m json.tool hooks/environment-plugins/codex-ldvh-v3/plugin.json >/dev/null
 python3 -m json.tool hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json >/dev/null
 python3 -m py_compile hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
 printf '{"hook_event_name":"SessionStart","session_id":"31A-smoke","cwd":"."}' | python3 hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py >/dev/null

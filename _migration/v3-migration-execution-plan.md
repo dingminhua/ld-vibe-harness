@@ -280,7 +280,7 @@ specs 迁入
 10G 完成记录：
 
 1. `_migration/10G-rules-environment-entry-audit.md` 已记录 tool hook、completion hook、Codex repo 指令、外部 runtime adapter 和 legacy Rules/Skill 顶层机制审计结论；
-2. `code/environment_entry_audit.py` 已提供 text/json CLI，读取 10F 状态并扫描 `AGENTS.md`、`.codex`、`.codex-plugin` 等 repo-local 入口信号，同时把 legacy Rules/Skill 顶层机制标记为 `removed_top_level`；
+2. `code/environment_entry_audit.py` 已提供 text/json CLI，读取 10F 状态并扫描 `AGENTS.md`、`.codex` 等 repo-local 入口信号，同时把 legacy Rules/Skill 顶层机制标记为 `removed_top_level`；
 3. 审计确认当前 integrated entrypoints 只有 `git.commit-msg`；
 4. `runtime.session_start.auto`、`runtime.pre_tool_use.auto`、`runtime.completion_claim.auto` 和 `runtime.adapter.auto` 均为 deferred；`rules.top_level_mechanism` 和 `skills.top_level_mechanism` 均为 removed_top_level；
 5. `codex.repo-instructions` 当前为 absent；即便后续出现 `AGENTS.md`，也只能先标记为 available，不得直接声明 runtime 自动接入；

@@ -263,10 +263,9 @@ def _codex_candidate(repo: Path, diagnostics: list[dict[str, str]]) -> dict[str,
             ".codex/settings.json",
             ".codex/rules.md",
             ".codex/AGENTS.md",
-            ".codex-plugin/plugin.json",
         ],
     )
-    instruction_dirs = _repo_dirs(repo, [".codex", ".codex-plugin"])
+    instruction_dirs = _repo_dirs(repo, [".codex"])
     if instruction_files:
         diagnostics.append(
             _diagnostic(
@@ -302,7 +301,7 @@ def _codex_candidate(repo: Path, diagnostics: list[dict[str, str]]) -> dict[str,
         trigger="codex repo instruction loader",
         evidence=[],
         decision="defer",
-        reason="未发现 AGENTS.md、.codex 或 repo-local Codex 配置入口。",
+        reason="未发现 AGENTS.md 或 .codex repo-local Codex 配置入口。",
     )
 
 
