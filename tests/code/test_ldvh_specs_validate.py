@@ -1041,6 +1041,7 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "LDVH 本体路径" in rows["Gate"]
     assert "目标工作区根目录" in rows["Gate"]
     assert "配置层级冲突" in rows["Gate"]
+    assert "授权 / trust" in rows["Gate"]
     assert "管辖项目 Git Hook" in rows["Gate"]
     assert "有效 Git worktree" in rows["Gate"]
     assert "安装方案预览" in rows["Gate"]
@@ -1064,6 +1065,10 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "governed_hook_adapter.py verify" in rows["验证"]
     assert "managed `commit-msg` hook" in rows["验证"]
     assert "正反样例" in rows["验证"]
+    assert "插件页面状态" in rows["验证"]
+    assert "重启 App" in rows["验证"]
+    assert "授权 / trust" in rows["验证"]
+    assert "正常判断标准" in rows["验证"]
     assert "安装状态可复现" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
     assert "integrated / manual_ready / deferred / removed_top_level" in rows["交还"]
@@ -1153,9 +1158,15 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "不得沿用示例环境名称" in raw
     assert "只有当前运行环境、环境审计或 Human 明确目标环境为 Codex" in raw
     assert "目标环境插件 / 工具入口插件" in raw
-    assert "插件 / 扩展页面或入口位置" in raw
+    assert "插件页面 / 扩展页面或插件管理器入口" in raw
+    assert "重启 App" in raw
     assert "授权 / trust" in raw
     assert "新开窗口或新会话" in raw
+    assert "正常判断标准" in raw
+    assert "插件页面状态" in raw
+    assert "V3 shim" in raw
+    assert "受控写入负例被阻断、正例被放行" in raw
+    assert "`review_required`" in raw
     assert "未真实写入插件包、未进入插件页面或未获得授权证据前，不得写成“插件已安装”" in raw
     assert "`待用户安装`" in raw
     assert "`需授权`" in raw
@@ -1394,6 +1405,21 @@ def test_ldvh_install_action_template_reports_missing_current_environment_name_r
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
     assert any("当前 AI 运行环境名称" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_missing_plugin_acceptance_standard(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "正常判断标准",
+        "验收判断",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("正常判断标准" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_workcase_action_template_reports_missing_human_gate(tmp_path: Path) -> None:

@@ -241,11 +241,21 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                 "required": True,
                 "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据。",
                 "steps": [
-                    f"在 {environment_name} 插件 / 扩展页面确认存在 LDVH 插件或扩展包，并确认已启用且 trusted。",
+                    f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器，确认存在 LDVH 插件或扩展包。",
+                    f"按 {environment_name} 要求重启 App 或重载插件宿主；重启后回到插件页面确认插件仍启用且无错误。",
+                    f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
                     f"新开一个 {environment_name} 窗口或会话，确认启动事件能看到 LDVH 提示或诊断输出。",
                     "触发一次受控写入类工具，确认负例会阻断，正例会放行。",
                     "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
                     "失败时返回插件页面状态、错误文本、截图或本命令 JSON 输出。",
+                ],
+                "acceptance_criteria": [
+                    f"{environment_name} 插件页面显示 LDVH 插件或扩展包已启用、已授权或无待处理授权，且无错误。",
+                    "插件命令、manifest 或入口指向当前 V3 LDVH root / V3 入口。",
+                    "重启 App 或重载插件宿主后，插件页面状态保持启用且无错误。",
+                    "新窗口或新会话能看到 LDVH 启动提示、诊断输出或可回读的真实触发证据。",
+                    "受控写入负例被阻断，正例被放行。",
+                    "统一安装验证列出插件状态、shim 或目标入口直测结果，以及 Git Hook 正反例结果。",
                 ],
             },
             "diagnostics": [],
@@ -348,11 +358,21 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
             if human_acceptance_required
             else "",
             "steps": [
-                f"在 {environment_name} 插件 / 扩展页面确认 LDVH 插件已安装、启用且 trusted。",
+                f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器，确认 LDVH 插件已安装。",
+                f"按 {environment_name} 要求重启 App 或重载插件宿主；重启后回到插件页面确认插件仍启用且无错误。",
+                f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
                 f"新开一个 {environment_name} 窗口或会话，确认 SessionStart 能看到 LDVH 提示或诊断输出。",
                 "触发一次受控写入类工具，确认 PreToolUse 负例会阻断，正例会放行。",
                 "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
                 "失败时返回插件页面状态、错误文本、截图或本命令 JSON 输出。",
+            ],
+            "acceptance_criteria": [
+                f"{environment_name} 插件页面显示 LDVH 插件已启用、已授权或无待处理授权，且无错误。",
+                f"插件 Hook 命令指向当前 V3 shim: {CODEX_SHIM}。",
+                "重启 App 或重载插件宿主后，插件页面状态保持启用且无错误。",
+                "新窗口或新会话能看到 LDVH SessionStart 提示、诊断输出或可回读的真实触发证据。",
+                "PreToolUse 负例被阻断，正例被放行。",
+                "install_verification.py 显示插件可见、shim 直测通过，并列出 Git Hook 正反例结果。",
             ],
         },
         "diagnostics": diagnostics,
@@ -476,6 +496,11 @@ def _print_text(result: dict[str, Any]) -> None:
         print(f"- reason: {env['human_acceptance']['reason']}")
         for step in env["human_acceptance"]["steps"]:
             print(f"- {step}")
+        criteria = env["human_acceptance"].get("acceptance_criteria", [])
+        if criteria:
+            print("\nNormal criteria:")
+            for item in criteria:
+                print(f"- {item}")
 
     if result["diagnostics"]:
         print("\nDiagnostics:")

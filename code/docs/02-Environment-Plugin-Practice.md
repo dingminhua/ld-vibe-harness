@@ -63,12 +63,14 @@ python3 code/environment_entry_audit.py --format text
 状态检查至少应覆盖：
 
 1. 插件或扩展包是否 installed、enabled、trusted；
-2. manifest 与 Hook 配置是否存在；
-3. Hook 命令是否指向当前 V3 LDVH root；
-4. 是否仍指向旧仓库、旧 `code/hook_adapter.py`、旧 Rules/Skill 资产或 stale V2 path；
-5. runtime event 是否真实触发；
-6. 失败是否按预期阻断或返回 diagnostic；
-7. uninstall 后是否不再自动触发 LDVH。
+2. 插件页面、扩展页面或插件管理器是否能显示该条目，且无待处理授权或错误；
+3. manifest 与 Hook 配置是否存在；
+4. Hook 命令是否指向当前 V3 LDVH root；
+5. 是否仍指向旧仓库、旧 `code/hook_adapter.py`、旧 Rules/Skill 资产或 stale V2 path；
+6. 重启 App 或重载插件宿主后状态是否保持；
+7. runtime event 是否真实触发；
+8. 失败是否按预期阻断或返回 diagnostic；
+9. uninstall 后是否不再自动触发 LDVH。
 
 只有同时具备真实触发、稳定 payload、失败处理、安装状态、回滚方式和测试证据，才可把对应环境入口升级为 integrated。文件存在、插件缓存存在、历史 trust 记录或旧路径命中，都不得声明 integrated。
 
@@ -81,12 +83,14 @@ python3 code/environment_entry_audit.py --format text
 后续真实安装或升级必须先进入 Human Gate，并明确：
 
 1. 目标环境和插件包位置；
-2. 写入或修改的配置文件；
-3. 是否影响用户级、工作区级或项目级入口；
-4. 会触发哪些 lifecycle event；
-5. 哪些事件可阻断，哪些只能 diagnostic；
-6. 回滚命令和回滚后状态检查；
-7. 验证命令、输入范围、残留风险和 source_refs。
+2. 插件页面、扩展页面或插件管理器入口；
+3. 写入或修改的配置文件；
+4. 是否影响用户级、工作区级或项目级入口；
+5. 会触发哪些 lifecycle event；
+6. 哪些事件可阻断，哪些只能 diagnostic；
+7. 重启 App 或重载插件宿主、授权 / trust 和新窗口或新会话测试要求；
+8. 回滚命令和回滚后状态检查；
+9. 验证命令、输入范围、正常判断标准、残留风险和 source_refs。
 
 卸载时只能移除或禁用 LDVH 自己写入的插件、扩展包、shim 或指针，不得静默删除原有用户 Hook、其它插件配置、用户事实源或非 LDVH 资产。卸载后必须验证环境不再自动触发 LDVH。
 
@@ -110,7 +114,7 @@ python3 code/environment_entry_audit.py --format text
 python3 code/install_verification.py --governance-root "<workspace-root>" --ldvh-root "<ldvh-root>" --environment-name "<当前 AI 运行环境名称>"
 ```
 
-该命令会先使用 specs 10 的配置校验读取 `LDVH-GOVERNED-PROJECTS.yaml`，再验证每个管辖项目 Git `commit-msg` Hook 的 status、managed marker、正例放行和反例阻断。目标环境为 Codex 时，它会执行 repo-local Codex 样例 shim 的 SessionStart、PreToolUse 和 Stop 直测，并把真实 lifecycle、授权 / trust、payload、失败处理和卸载后自动触发状态列为 Human 验收项。目标环境不是 Codex 时，该命令只能输出目标环境插件待实装 / 待验收状态，不运行 Codex 样例 shim，也不得暗示 Trae、IDE 或 Agent runner 已被支持。该命令不会安装、升级、禁用、卸载或写入用户环境；它输出 `review_required` 时表示仓库内直测已完成或目标环境仍 gated，真实环境接入仍不能声明 integrated。
+该命令会先使用 specs 10 的配置校验读取 `LDVH-GOVERNED-PROJECTS.yaml`，再验证每个管辖项目 Git `commit-msg` Hook 的 status、managed marker、正例放行和反例阻断。目标环境为 Codex 时，它会执行 repo-local Codex 样例 shim 的 SessionStart、PreToolUse 和 Stop 直测，并把插件页面、重启 App、授权 / trust、新窗口或新会话、真实 lifecycle、payload、失败处理和卸载后自动触发状态列为 Human 验收项，同时输出正常判断标准。目标环境不是 Codex 时，该命令只能输出目标环境插件待实装 / 待验收状态，不运行 Codex 样例 shim，也不得暗示 Trae、IDE 或 Agent runner 已被支持。该命令不会安装、升级、禁用、卸载或写入用户环境；它输出 `review_required` 时表示仓库内直测已完成或目标环境仍 gated，真实环境接入仍不能声明 integrated。
 
 ## Codex 样例进入条件
 

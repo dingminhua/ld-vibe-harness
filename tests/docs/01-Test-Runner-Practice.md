@@ -84,11 +84,11 @@ Python CLI 测试应统一走 `tests/code/test_ldvh_specs_validate.py` 中的 `_
 3. 若交互涉及选择、确认或写入边界，负例应覆盖开放文本替代选择控件、把后置项放入主选项、最终确认前写入等高风险退化；
 4. 测试仍不得固定会随仓库增长的事实对象数量。
 
-例如 LDVH 安装向导的五步状态、`👉` 当前步骤、`✅` 已完成步骤、`决策 / 结果` 列、每步用户视角摘要、进度安全提示、路径确认可复制路径块、选择框 / 单选控件优先、每次只问一个问题、选项表给出说明和结果、路径和检查结果图标、状态图例、检查结果下一步处理列、LDVH 本体发现、目标工作区根目录确认、配置固定在工作区根目录、带编号和管辖状态的当前配置项目清单、不改或按编号设置管辖项目的两选项、拟写入项目清单、配置正确性结论、配置层级冲突阻断、环境插件未安装时安排安装、插件过时或 stale V2 path 时安排升级、环境 Hook 提示优先使用当前 AI 运行环境名称、不得沿用示例环境名称、每个已选择管辖项目 Git Hook 必须进入安装 / 升级方案、非 Git 管辖项目必须阻断并说明管辖项目必须是 Git 仓库、Git Hook 安装后必须通过 `install_verification.py` 或等价入口验证 status、managed hook、正例放行和负例阻断、安装方案预览主界面与技术明细分层、4/5 方案确认不是执行授权、不可验证范围单独归组、5/5 不重复安装前检查、最终确认两个主选项、选择执行后立即写入并执行写入后验证、选择执行后才开始写入和最终确认前不写入，都属于稳定交互契约，应由 validator 和正反测试共同覆盖。
+例如 LDVH 安装向导的五步状态、`👉` 当前步骤、`✅` 已完成步骤、`决策 / 结果` 列、每步用户视角摘要、进度安全提示、路径确认可复制路径块、选择框 / 单选控件优先、每次只问一个问题、选项表给出说明和结果、路径和检查结果图标、状态图例、检查结果下一步处理列、LDVH 本体发现、目标工作区根目录确认、配置固定在工作区根目录、带编号和管辖状态的当前配置项目清单、不改或按编号设置管辖项目的两选项、拟写入项目清单、配置正确性结论、配置层级冲突阻断、环境插件未安装时安排安装、插件过时或 stale V2 path 时安排升级、环境 Hook 提示优先使用当前 AI 运行环境名称、不得沿用示例环境名称、环境插件页面 / 扩展页面入口、重启 App、授权 / trust、新窗口或新会话测试、正常判断标准、每个已选择管辖项目 Git Hook 必须进入安装 / 升级方案、非 Git 管辖项目必须阻断并说明管辖项目必须是 Git 仓库、Git Hook 安装后必须通过 `install_verification.py` 或等价入口验证 status、managed hook、正例放行和负例阻断、安装方案预览主界面与技术明细分层、4/5 方案确认不是执行授权、不可验证范围单独归组、5/5 不重复安装前检查、最终确认两个主选项、选择执行后立即写入并执行写入后验证、选择执行后才开始写入和最终确认前不写入，都属于稳定交互契约，应由 validator 和正反测试共同覆盖。
 
 正式行动模板独立成 spec 后，应测试它自己的 `code_consumption` 契约、README 可发现索引和历史迁移记录中的废弃标注。新增消费声明但没有对应 validator 消费、删除实践文档回指、重新把已废弃 formal review hash gate 写成当前机制，都应触发回归失败。
 
-环境入口审计测试应同时覆盖 stale V2 path 阻断、已废弃 `code/environment_plugins/` 资产路径阻断、V3 Codex shim 可见但未验证 integrated 的状态；仅发现插件 hook 指向 V3 shim，不足以把 Codex runtime 自动入口声明为 integrated。`hooks/environment-plugins/` 下样例包、manifest、图标或 shim 变更必须触发 `test_environment_plugins.py` 和 `test_install_verification.py` 的 targeted runner 阶段。真实 AI 环境 Hook 安装完成后应能测试插件状态、V3 shim 指向、直接 shim 正反输入，并在无法触发真实 lifecycle 时明确不可验证范围。
+环境入口审计测试应同时覆盖 stale V2 path 阻断、已废弃 `code/environment_plugins/` 资产路径阻断、V3 Codex shim 可见但未验证 integrated 的状态；仅发现插件 hook 指向 V3 shim，不足以把 Codex runtime 自动入口声明为 integrated。`hooks/environment-plugins/` 下样例包、manifest、图标或 shim 变更必须触发 `test_environment_plugins.py` 和 `test_install_verification.py` 的 targeted runner 阶段。真实 AI 环境 Hook 安装完成后应能测试插件状态、V3 shim 指向、直接 shim 正反输入，并要求交还插件页面状态、重启 App、授权 / trust、新窗口或新会话触发和正常判断标准；无法触发真实 lifecycle 时必须明确不可验证范围。
 
 安装验收入口测试必须证明 `install_verification.py` 使用 specs 10 的管辖项目配置校验，而不是手写轻量 YAML 解析；坏配置、空项目、非 Git 管辖项目和缺失 Git Hook 都必须阻断。目标环境不是当前实现已覆盖的样例环境时，测试应确认验收入口返回 gated / review_required，不运行错误环境的样例 shim，不声明该环境已 supported 或 integrated。
 
