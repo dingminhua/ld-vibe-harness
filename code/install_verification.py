@@ -218,6 +218,18 @@ def _is_codex_environment(environment_name: str) -> bool:
     return environment_name.strip().lower() == CODEX_ENVIRONMENT_NAME.lower()
 
 
+def _shim_tests_passed(shim_tests: dict[str, dict[str, Any]]) -> bool:
+    return bool(shim_tests) and all(item.get("status") == "passed" for item in shim_tests.values())
+
+
+def _codex_plugin_install_detected(codex_plugin: dict[str, Any]) -> bool:
+    return (
+        codex_plugin.get("status") == "available"
+        and codex_plugin.get("decision") == "verify_trust_and_runtime_before_integration"
+        and bool(codex_plugin.get("details", {}).get("commands"))
+    )
+
+
 def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, environment_name: str) -> dict[str, Any]:
     if not _is_codex_environment(environment_name):
         return {
@@ -226,11 +238,13 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                 "environment_name": environment_name,
                 "environment_adapter": "unsupported_target_environment",
                 "target_environment_supported": False,
+                "install_verified": False,
                 "environment_integrated": False,
                 "plugin_integrated": False,
                 "plugin_status": "unsupported_target_environment",
                 "plugin_decision": "create_target_environment_plugin_before_verification",
                 "human_acceptance_required": True,
+                "post_install_smoke_check_recommended": False,
                 "blocking": 0,
             },
             "audit": {},
@@ -255,7 +269,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                     "重启 App 或重载插件宿主后，插件页面状态保持启用且无错误。",
                     "新窗口或新会话能看到 LDVH 启动提示、诊断输出或可回读的真实触发证据。",
                     "受控写入负例被阻断，正例被放行。",
-                    "统一安装验证列出插件状态、shim 或目标入口直测结果，以及 Git Hook 正反例结果。",
+                    "统一安装验证显示 install_complete=true，并列出插件状态、shim 或目标入口直测结果，以及 Git Hook 正反例结果。",
                 ],
             },
             "diagnostics": [],
@@ -333,9 +347,17 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
 
     environment_integrated = bool(audit["summary"].get("codex_environment_entry_integrated"))
     codex_plugin_integrated = bool(audit["summary"].get("codex_plugin_entry_integrated"))
-    human_acceptance_required = not environment_integrated
+    environment_install_verified = (
+        environment_integrated
+        or (
+            _codex_plugin_install_detected(codex_plugin)
+            and _shim_tests_passed(shim_tests)
+        )
+    )
+    human_acceptance_required = not environment_install_verified
+    post_install_smoke_check_recommended = environment_install_verified and not environment_integrated
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})
-    status = "blocked" if blocking else "ok" if environment_integrated else "review_required"
+    status = "blocked" if blocking else "ok" if environment_install_verified else "review_required"
 
     return {
         "summary": {
@@ -343,20 +365,22 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
             "environment_name": environment_name,
             "environment_adapter": "codex_sample",
             "target_environment_supported": True,
+            "install_verified": environment_install_verified,
             "environment_integrated": environment_integrated,
             "plugin_integrated": codex_plugin_integrated,
             "plugin_status": codex_plugin.get("status", "unknown"),
             "plugin_decision": codex_plugin.get("decision", "unknown"),
             "human_acceptance_required": human_acceptance_required,
+            "post_install_smoke_check_recommended": post_install_smoke_check_recommended,
             "blocking": blocking,
         },
         "audit": audit,
         "shim_direct_tests": shim_tests,
         "human_acceptance": {
             "required": human_acceptance_required,
-            "reason": "真实 lifecycle、授权 / trust、payload、失败处理或卸载后自动触发状态尚未由当前回合证明。"
+            "reason": "环境插件安装检测尚未通过。"
             if human_acceptance_required
-            else "",
+            else "安装检测已通过；以下为用户侧冒烟检查，不阻断安装完成。",
             "steps": [
                 f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器，确认 LDVH 插件已安装。",
                 f"按 {environment_name} 要求重启 App 或重载插件宿主；重启后回到插件页面确认插件仍启用且无错误。",
@@ -372,7 +396,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                 "重启 App 或重载插件宿主后，插件页面状态保持启用且无错误。",
                 "新窗口或新会话能看到 LDVH SessionStart 提示、诊断输出或可回读的真实触发证据。",
                 "PreToolUse 负例被阻断，正例被放行。",
-                "install_verification.py 显示插件可见、shim 直测通过，并列出 Git Hook 正反例结果。",
+                "install_verification.py 显示 install_complete=true、插件可见、shim 直测通过，并列出 Git Hook 正反例结果。",
             ],
         },
         "diagnostics": diagnostics,
@@ -415,8 +439,9 @@ def build_install_verification(
 
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})
     git_ok = bool(git_results) and all(result["summary"]["status"] == "ok" for result in git_results)
-    environment_ok = environment["summary"]["environment_integrated"]
-    install_complete = git_ok and environment_ok and blocking == 0
+    environment_install_verified = environment["summary"]["install_verified"]
+    environment_integrated = environment["summary"]["environment_integrated"]
+    install_complete = git_ok and environment_install_verified and blocking == 0
     return {
         "metadata": {
             "read_only": True,
@@ -433,8 +458,10 @@ def build_install_verification(
             "projects": len(projects),
             "governed_config_ok": not config_diagnostics,
             "git_hooks_ok": git_ok,
-            "environment_hook_integrated": environment_ok,
+            "environment_hook_install_verified": environment_install_verified,
+            "environment_hook_integrated": environment_integrated,
             "environment_human_acceptance_required": environment["summary"]["human_acceptance_required"],
+            "environment_user_smoke_check_recommended": environment["summary"]["post_install_smoke_check_recommended"],
             "blocking": blocking,
             "diagnostics": len(diagnostics),
         },
@@ -462,8 +489,10 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- install_complete: {summary['install_complete']}")
     print(f"- governed_config_ok: {summary['governed_config_ok']}")
     print(f"- git_hooks_ok: {summary['git_hooks_ok']}")
+    print(f"- environment_hook_install_verified: {summary['environment_hook_install_verified']}")
     print(f"- environment_hook_integrated: {summary['environment_hook_integrated']}")
     print(f"- environment_human_acceptance_required: {summary['environment_human_acceptance_required']}")
+    print(f"- environment_user_smoke_check_recommended: {summary['environment_user_smoke_check_recommended']}")
     print(f"- diagnostics: {summary['diagnostics']}")
 
     print("\nGit Hook tests:")
@@ -486,13 +515,17 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- target_environment_supported: {env_summary['target_environment_supported']}")
     print(f"- plugin_status: {env_summary['plugin_status']}")
     print(f"- plugin_decision: {env_summary['plugin_decision']}")
+    print(f"- install_verified: {env_summary['install_verified']}")
     print(f"- environment_integrated: {env_summary['environment_integrated']}")
     print("- shim_direct_tests:")
     for test_name, test_result in env["shim_direct_tests"].items():
         print(f"  - {test_name}: {test_result['status']} (returncode={test_result['returncode']})")
 
-    if env["human_acceptance"]["required"]:
-        print("\nHuman acceptance still required:")
+    if env["human_acceptance"]["required"] or env_summary.get("post_install_smoke_check_recommended"):
+        if env["human_acceptance"]["required"]:
+            print("\nHuman acceptance required before install can complete:")
+        else:
+            print("\nPost-install user smoke check (not blocking install_complete):")
         print(f"- reason: {env['human_acceptance']['reason']}")
         for step in env["human_acceptance"]["steps"]:
             print(f"- {step}")

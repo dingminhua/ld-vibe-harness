@@ -1065,9 +1065,11 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "governed_hook_adapter.py verify" in rows["验证"]
     assert "managed `commit-msg` hook" in rows["验证"]
     assert "正反样例" in rows["验证"]
+    assert "安装检测通过" in rows["验证"]
     assert "插件页面状态" in rows["验证"]
     assert "重启 App" in rows["验证"]
     assert "授权 / trust" in rows["验证"]
+    assert "用户侧冒烟检查" in rows["验证"]
     assert "正常判断标准" in rows["验证"]
     assert "安装状态可复现" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
@@ -1162,11 +1164,15 @@ def test_ldvh_install_action_template_defines_wizard_state_machine(validation_re
     assert "重启 App" in raw
     assert "授权 / trust" in raw
     assert "新开窗口或新会话" in raw
+    assert "安装检测标准" in raw
+    assert "安装检测通过" in raw
+    assert "用户侧冒烟检查" in raw
+    assert "不阻断安装完成" in raw
     assert "正常判断标准" in raw
     assert "插件页面状态" in raw
     assert "V3 shim" in raw
     assert "受控写入负例被阻断、正例被放行" in raw
-    assert "`review_required`" in raw
+    assert "安装检测仍可通过并完成安装交还" in raw
     assert "未真实写入插件包、未进入插件页面或未获得授权证据前，不得写成“插件已安装”" in raw
     assert "`待用户安装`" in raw
     assert "`需授权`" in raw
