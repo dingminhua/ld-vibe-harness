@@ -301,7 +301,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                 ],
                 "acceptance_criteria": [
                     "目标环境支持 Hook 时，必须能提供插件 / 扩展包实装、入口指向、授权、payload、失败处理和回滚证据。",
-                    "目标环境确认没有可用 Hook 入口时，30 只能交还 01.Att.04 的 manual_ready / available / deferred / absent 等状态，并补充承接形态说明。",
+                    "目标环境确认没有可用 Hook 入口时，30 只能交还 01.Att.04 的 manual_ready / available / deferred / absent 等分类，并补充承接形态说明。",
                     "手动可用安装交还的验证标准是 V3 specs 可找到、读取顺序正确、manual CLI 可运行、Git Hook 正反例通过。",
                     "Human 已理解当前目标环境不会自动阻断写入或完成声明。",
                 ],
@@ -421,14 +421,14 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                 f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
                 f"新开一个 {environment_name} 窗口或会话，确认能看到 LDVH 提示或诊断输出。",
                 "触发一次受控写入类工具，确认写入前检查负例会阻断，正例会放行。",
-                "如需把环境自动接入状态转为已 integrated，进入 specs/31-环境Hook接入后验收行动模板.md 逐项验收并记录 lifecycle 验收。",
+                "如需把环境自动接入判定转为 integrated，进入 specs/31-环境Hook接入后验收行动模板.md 逐项验收并记录 lifecycle 验收。",
                 "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
-                "失败时返回插件页面状态、错误文本、截图或本命令 JSON 输出。",
+                "失败时返回插件页面结果、错误文本、截图或本命令 JSON 输出。",
             ],
             "acceptance_criteria": [
                 f"{environment_name} 插件页面显示 LDVH 插件已启用、已授权或无待处理授权，且无错误。",
                 f"插件 Hook 命令指向当前 V3 shim: {CODEX_SHIM}。",
-                "重启 App 或重载插件宿主后，插件页面状态保持启用且无错误。",
+                "重启 App 或重载插件宿主后，插件页面仍保持启用且无错误。",
                 "新窗口或新会话能看到 LDVH 启动提示、诊断输出或可回读的真实触发证据。",
                 "写入前检查负例被阻断，正例被放行。",
                 "install_verification.py 显示 install_complete=true、插件可见、shim 直测通过，并列出 Git Hook 正反例结果。",
@@ -596,7 +596,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "重启 App 或重载插件宿主后确认插件仍启用且无错误。",
             "完成授权 / trust；没有授权提示时记录无待处理授权。",
             f"新开 {environment_name} 窗口或会话，看是否出现 LDVH 提示或诊断。",
-            "需要正式关闭自动接入状态时，进入 31 逐项验收。",
+            "需要正式关闭自动接入待验收结论时，进入 31 逐项验收。",
         ]
     elif env_status == "手动可用":
         user_next_steps = [
@@ -642,7 +642,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         "user_next_steps": user_next_steps,
         "failure_info_package": [
             "目标环境名称和版本",
-            "插件页面状态截图或文字",
+            "插件页面结果截图或文字",
             "install_verification.py --format json 完整输出",
             "environment_entry_audit.py --format text 输出",
             "失败步骤编号",

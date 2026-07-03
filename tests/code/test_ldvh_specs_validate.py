@@ -122,7 +122,7 @@ def test_migration_33a_marks_formal_review_hash_gate_superseded() -> None:
     assert "`reviews/formal/30-formal-review.yaml` 不再是当前仓库应存在的产物" in raw
 
 
-def test_assurance_spec_registers_environment_entry_status_and_payload_contracts(validation_result: dict) -> None:
+def test_assurance_spec_registers_environment_entry_classification_and_payload_contracts(validation_result: dict) -> None:
     result = validation_result
     specs = {spec["object_id"]: spec for spec in result["specs"]}
     attachments = {attachment["object_id"]: attachment for attachment in result["attachments"]}
@@ -133,7 +133,7 @@ def test_assurance_spec_registers_environment_entry_status_and_payload_contracts
     assert spec_01["metadata"]["authority"] == "active"
     assert set(spec_01["metadata"]["code_consumption"]) >= {
         "environment_entry_type_contract",
-        "environment_integration_status_contract",
+        "environment_access_classification_contract",
         "runtime_protocol_hook_entry",
         "runtime_payload_contract",
         "install_rollback_contract",
@@ -164,8 +164,8 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "hooks/LDVH-THIN-REFERENCE-TEMPLATE.md" in spec_01
     assert "hook_protocol_entry" in spec_01
     assert "只允许写入口身份、权威回指和当前 Code 入口" in spec_01
-    assert "不得写接入状态" in spec_01
-    assert "接入状态由 `01.Att.04` 和 Code 环境审计承接" in spec_01
+    assert "不得写接入判定分类" in spec_01
+    assert "接入判定分类由 `01.Att.04` 和 Code 环境审计承接" in spec_01
     assert "不恢复 V2 persistent session receipt 存储" in spec_01
     assert "不作为环境 adapter 的独立 lifecycle event" in spec_01
     assert "Git Hook" in spec_01
@@ -181,7 +181,7 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "| `git_hook_shim` |" in entry_types
     assert "| `hook_protocol_entry` |" in entry_types
     assert "hooks/LDVH-RUNTIME-PROTOCOL.md" in entry_types
-    assert "不写接入状态" in entry_types
+    assert "不写接入判定分类" in entry_types
     assert "| `environment_hook` |" in entry_types
     assert "LDVH 环境插件" in entry_types
     assert "Codex plugin" in entry_types
@@ -190,7 +190,7 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
 
     assert "| `entry_kind` |" in rollback
     assert "| `shim_boundary` |" in rollback
-    assert "| `rollback_state` |" in rollback
+    assert "| `rollback_evidence` |" in rollback
     assert "插件或扩展 manifest" in rollback
     assert "恢复或保留原有用户 Hook / 环境配置" in rollback
 
@@ -199,7 +199,7 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "入口身份" in runtime_protocol_entry
     assert "权威回指" in runtime_protocol_entry
     assert "当前 Code 入口" in runtime_protocol_entry
-    assert "接入状态" not in runtime_protocol_entry
+    assert "接入判定分类" not in runtime_protocol_entry
     assert "python3 code/runtime_adapter.py session-start --format json" in runtime_protocol_entry
 
     assert "文件状态：thin reference template" in thin_reference_template
@@ -853,6 +853,7 @@ def test_implementation_domain_boundaries_are_code_consumable(validation_result:
     result = validation_result
 
     assert "SPECS_IMPLEMENTATION_DOMAIN_BOUNDARY_MISSING" not in _diagnostic_codes(result)
+    assert "SPECS_STATE_OWNERSHIP_BOUNDARY_MISSING" not in _diagnostic_codes(result)
     assert "CODE_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING" not in _diagnostic_codes(result)
     assert "WEB_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING" not in _diagnostic_codes(result)
     assert "TEST_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING" not in _diagnostic_codes(result)
@@ -870,6 +871,20 @@ def test_specs_validator_reports_missing_implementation_domain_boundary(tmp_path
     result = ldvh_specs.build_validation(root)
 
     assert "SPECS_IMPLEMENTATION_DOMAIN_BOUNDARY_MISSING" in _diagnostic_codes(result)
+
+
+def test_specs_validator_reports_missing_state_ownership_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/04-Specs基础规范.md",
+        "只有两类对象可以拥有可记录、可迁移、可校验的状态",
+        "多类对象可以拥有可记录、可迁移、可校验的状态",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "SPECS_STATE_OWNERSHIP_BOUNDARY_MISSING" in _diagnostic_codes(result)
 
 
 def test_code_validator_reports_missing_code_practice_boundary(tmp_path: Path) -> None:
@@ -1075,16 +1090,18 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "managed `commit-msg` hook" in rows["验证"]
     assert "正反样例" in rows["验证"]
     assert "安装检测通过" in rows["验证"]
-    assert "插件页面状态" in rows["验证"]
+    assert "插件页面证据" in rows["验证"]
     assert "重启 App" in rows["验证"]
     assert "授权 / trust" in rows["验证"]
     assert "用户侧冒烟检查" in rows["验证"]
     assert "lifecycle 验收" in rows["验证"]
     assert "正常判断标准" in rows["验证"]
     assert "environment_lifecycle_acceptance_valid" in rows["验证"]
-    assert "安装状态可复现" in rows["验证"]
+    assert "安装与接入证据可复核" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
     assert "`integrated` / `manual_ready` / `available` / `deferred` / `removed_top_level` / `absent`" in rows["交还"]
+    assert "事实源子目录检查结果" in rows["交还"]
+    assert "环境入口判定分类" in rows["交还"]
     assert "承接形态说明" in rows["交还"]
     assert "手动可用安装交还" in rows["交还"]
     assert "不会自动阻断" in rows["交还"]
@@ -1113,8 +1130,8 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "未发生事项" in raw
     assert "尚未发生事项应保持空白" in raw
     assert "不得新增安装运行时状态闭集" in raw
-    assert "不得把交互展示项写成环境入口状态" in raw
-    assert "具体图标、表格、状态列和交还摘要模板归 `code/docs/03-LDVH-Install-Wizard-Practice.md` 或运行时输出" in raw
+    assert "不得把交互展示项写成环境入口判定事实" in raw
+    assert "具体图标、表格、展示列和交还摘要模板归 `code/docs/03-LDVH-Install-Wizard-Practice.md` 或运行时输出" in raw
     assert "用户视角摘要" in raw
     assert "简洁确认块" in raw
     assert "用户告知清单必须作为 4/5 安装方案预览的必含内容交给 Human 确认" in raw
@@ -1141,7 +1158,7 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "不得再次要求 Human 确认只读检查" in raw
     assert "不得继续解释流程或再次索要同一授权" in raw
     assert "关键表格必须使用稳定、可扫描的视觉标记" in raw
-    assert "具体图标、状态列和示例形态归实现域" in raw
+    assert "具体图标、展示列和示例形态归实现域" in raw
     assert "表格正文只展示说明和建议" in raw
     assert "不单列限制列" in raw
     assert "不重复展示绝对路径" in raw
@@ -1176,7 +1193,7 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "不得混入“验证通过”" in raw
     assert "环境 Hook 或插件提示必须按当前目标环境命名" in raw
     assert "30 不判定目标环境是否支持 Hook" in raw
-    assert "不新增环境入口状态" in raw
+    assert "不新增环境入口判定分类" in raw
     assert "不得把承接形态写成状态闭集" in raw
     assert "必须读取 01、`01.Att.03`、`01.Att.04` 和环境审计结果" in raw
     assert "手动可用安装交还" in raw
@@ -1198,7 +1215,7 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "available" in raw
     assert "deferred" in raw
     assert "absent" in raw
-    assert "不得把 repo instruction、thin reference 或外部 adapter 候选写成环境接入状态" in raw
+    assert "不得把 repo instruction、thin reference 或外部 adapter 候选写成环境接入事实状态" in raw
     assert "不会自动阻断写入或完成声明" in raw
     assert "当前 AI 运行环境名称" in raw
     assert "不得沿用示例环境名称" in raw
@@ -1216,7 +1233,7 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "安装完成；自动接入待验收，可进入 31" in raw
     assert "安装完成；当前环境为手动可用，不会自动拦截" in raw
     assert "交还摘要" in raw
-    assert "01.Att.04 环境接入状态及证据" in raw
+    assert "01.Att.04 环境接入判定分类及证据" in raw
     assert "不得在交还摘要中形成新的安装状态闭集" in raw
     assert "环境自动拦截" in raw
     assert "提交消息检查" in raw
@@ -1231,7 +1248,7 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "用户侧冒烟检查" in raw
     assert "不阻断安装完成" in raw
     assert "正常判断标准" in raw
-    assert "插件页面状态" in raw
+    assert "插件页面结果" in raw
     assert "V3 shim" in raw
     assert "受控写入负例被阻断、正例被放行" in raw
     assert "安装检测仍可通过并完成安装交还" in raw
@@ -1621,7 +1638,7 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "尚未发生事项应保持空白" in raw
     assert "每一步只问一个判断" in raw
     assert "闭集确认" in raw
-    assert "具体状态表、图标、编号和按钮文案归实现域" in raw
+    assert "具体验收展示表格、图标、编号和按钮文案归实现域" in raw
     assert "具体卡片、表格、图标、编号和 scratch 文件名归 `code/docs/02-Environment-Plugin-Practice.md` 或运行时输出" in raw
     assert "主界面不得要求 Human 自行理解专业“通过 / 失败”" in raw
     assert "你是否看到 X" in raw

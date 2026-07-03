@@ -39,7 +39,7 @@ python3 code/commit_validate.py --check-message-file "<message-file>" --repo "<t
 git config --worktree core.hooksPath hooks
 ```
 
-状态检查：
+证据检查：
 
 ```bash
 python3 code/install_git_hooks.py status --repo .
@@ -47,7 +47,7 @@ python3 code/environment_status.py --format text
 python3 code/environment_entry_audit.py --format text
 ```
 
-当前预期状态是：`git.commit-msg` 为 integrated；`manual.runtime_adapter`、`manual.session_start`、`manual.acknowledge_read_plan`、`manual.pre_tool_use` 和 `manual.completion_claim` 为 manual-ready 或 deferred。
+当前预期判定是：`git.commit-msg` 为 integrated；`manual.runtime_adapter`、`manual.session_start`、`manual.acknowledge_read_plan`、`manual.pre_tool_use` 和 `manual.completion_claim` 为 manual-ready 或 deferred。
 
 ## 底层安装器边界
 

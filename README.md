@@ -105,14 +105,14 @@ python3 code/governed_hook_adapter.py uninstall --repo "<repo>" --governance-roo
 
 该 adapter 会先按 `LDVH-GOVERNED-PROJECTS.yaml` 做 target-first / Git common-dir 解析；`install` 和 `uninstall` 必须显式带 `--confirm-human-gate`。它不会默认覆盖非管辖项目，也不表示任何外部项目已经自动接入。
 
-统一环境接入状态检查：
+统一环境接入判定检查：
 
 ```bash
 python3 code/environment_status.py --format text
 python3 code/environment_entry_audit.py --format text
 ```
 
-该检查会同时报告真实 `git.commit-msg` Hook、manual runtime adapter、`session_start`、`pre_tool_use` 和 `completion_claim` 的可用/接入状态。当前预期结果是 `environment_integrated: partial`、`hook_integrated: git.commit-msg`，且三类 runtime 入口仍为 manual-ready、未自动触发。
+该检查会同时报告真实 `git.commit-msg` Hook、manual runtime adapter、`session_start`、`pre_tool_use` 和 `completion_claim` 的可用性、接入判定分类和证据。当前预期结果是 `environment_integrated: partial`、`hook_integrated: git.commit-msg`，且三类 runtime 入口仍为 manual-ready、未自动触发。
 
 `environment_entry_audit.py` 进一步审计 LDVH 环境插件样例、tool hook、completion hook、AGENTS/Codex repo 指令和外部 runtime adapter 候选，同时确认 Rules / Skill 顶层机制是 `removed_top_level`，不是待启用入口。当前结论是：所有支持 Hook 的协作环境都必须通过对应 LDVH 插件、扩展包或 package 安装环境 Hook，而不是直接写入环境 Hook 系统文件；Codex lifecycle Hook 是当前可审计样例，但旧插件、旧仓库路径或历史 trust 记录不能证明 V3 已接入。除 `git.commit-msg` 外，当前不得声明其它入口已自动触发。
 
