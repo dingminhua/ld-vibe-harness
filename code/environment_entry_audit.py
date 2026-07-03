@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 from typing import Any, Optional
 
 from environment_status import build_environment_status
@@ -21,6 +22,7 @@ LEGACY_LDVH_PLUGIN_COMMAND_RE = re.compile(
 STALE_REPO_ENVIRONMENT_PLUGIN_COMMAND_RE = re.compile(
     r"/ld-vibe-harness(?:-[^/\s]+)?/code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim\.py"
 )
+CODEX_REQUIRED_HOOK_EVENTS = ("SessionStart", "PreToolUse", "Stop")
 
 
 def _bool_text(value: bool) -> str:
@@ -149,8 +151,8 @@ def _ldvh_plugin_hook_files(codex_home: Path) -> list[Path]:
     return sorted(cache_root.glob("*/hooks/hooks.json"))
 
 
-def _hook_commands(hook_files: list[Path]) -> list[str]:
-    commands: list[str] = []
+def _hook_entries(hook_files: list[Path]) -> list[dict[str, str]]:
+    entries: list[dict[str, str]] = []
     for hook_file in hook_files:
         try:
             data = json.loads(hook_file.read_text(encoding="utf-8"))
@@ -159,16 +161,65 @@ def _hook_commands(hook_files: list[Path]) -> list[str]:
         hooks = data.get("hooks", {})
         if not isinstance(hooks, dict):
             continue
-        for groups in hooks.values():
+        for event, groups in hooks.items():
             if not isinstance(groups, list):
                 continue
             for group in groups:
                 if not isinstance(group, dict):
                     continue
+                matcher = group.get("matcher", "")
                 for item in group.get("hooks", []):
                     if isinstance(item, dict) and isinstance(item.get("command"), str):
-                        commands.append(item["command"])
+                        entries.append(
+                            {
+                                "file": hook_file.as_posix(),
+                                "event": str(event),
+                                "matcher": str(matcher) if matcher is not None else "",
+                                "type": str(item.get("type", "")),
+                                "command": item["command"],
+                            }
+                        )
+    return entries
+
+
+def _hook_commands(hook_files: list[Path]) -> list[str]:
+    commands: list[str] = []
+    for entry in _hook_entries(hook_files):
+        commands.append(entry["command"])
     return commands
+
+
+def _command_targets_any_path(command: str, paths: set[str]) -> bool:
+    try:
+        parts = shlex.split(command)
+    except ValueError:
+        parts = command.split()
+    if not parts:
+        return False
+    executable = Path(parts[0]).name.lower()
+    return parts[0] in paths or (
+        executable.startswith("python") and any(part in paths for part in parts[1:])
+    )
+
+
+def _required_hook_event_status(entries: list[dict[str, str]], v3_paths: set[str]) -> dict[str, Any]:
+    by_event: dict[str, list[dict[str, str]]] = {event: [] for event in CODEX_REQUIRED_HOOK_EVENTS}
+    for entry in entries:
+        if entry["event"] in by_event:
+            by_event[entry["event"]].append(entry)
+    satisfied = {
+        event: any(
+            entry["type"] == "command" and _command_targets_any_path(entry["command"], v3_paths)
+            for entry in event_entries
+        )
+        for event, event_entries in by_event.items()
+    }
+    return {
+        "required_events": list(CODEX_REQUIRED_HOOK_EVENTS),
+        "satisfied_events": [event for event, ok in satisfied.items() if ok],
+        "missing_required_events": [event for event, ok in satisfied.items() if not ok],
+        "required_events_ok": all(satisfied.values()),
+    }
 
 
 def _codex_ldvh_plugin_candidate(
@@ -181,11 +232,17 @@ def _codex_ldvh_plugin_candidate(
     evidence = [config_path.as_posix()] if config_path.is_file() else []
     evidence.extend(_as_posix(hook_files))
     enabled = _ldvh_plugin_enabled(config_path)
-    commands = _hook_commands(hook_files)
+    hook_entries = _hook_entries(hook_files)
+    commands = [entry["command"] for entry in hook_entries]
     command_blob = "\n".join(commands)
     v3_adapter = (ldvh_root / "code" / "runtime_adapter.py").as_posix()
     v3_codex_shim = (ldvh_root / "hooks" / "environment-plugins" / "codex-ldvh-v3" / "hooks" / "ldvh_runtime_shim.py").as_posix()
-    points_to_v3 = v3_adapter in command_blob or v3_codex_shim in command_blob
+    v3_paths = {v3_adapter, v3_codex_shim}
+    required_hook_status = _required_hook_event_status(hook_entries, v3_paths)
+    points_to_v3 = any(
+        entry["type"] == "command" and _command_targets_any_path(entry["command"], v3_paths)
+        for entry in hook_entries
+    )
     legacy_commands = [command for command in commands if LEGACY_LDVH_PLUGIN_COMMAND_RE.search(command)]
     stale_asset_commands = [
         command for command in commands if STALE_REPO_ENVIRONMENT_PLUGIN_COMMAND_RE.search(command)
@@ -214,7 +271,7 @@ def _codex_ldvh_plugin_candidate(
             manual_fallback="code/runtime_adapter.py",
             decision="enable_or_install_v3_plugin",
             reason="检测到 Codex LDVH 插件相关文件，但插件未在 Codex config 中启用。",
-            details={"commands": commands},
+            details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
         )
     if points_to_legacy:
         diagnostics.append(
@@ -236,10 +293,24 @@ def _codex_ldvh_plugin_candidate(
             reason="LDVH 插件已启用但指向旧 V2/旧仓库路径或已废弃的 repo-local 插件资产路径；需要 V3 插件包重新安装或升级后才可继续验收。",
             details={
                 "commands": commands,
+                "hook_entries": hook_entries,
                 "stale_commands": stale_commands,
                 "legacy_commands": legacy_commands,
                 "stale_asset_commands": stale_asset_commands,
+                **required_hook_status,
             },
+        )
+    if points_to_v3 and required_hook_status["required_events_ok"]:
+        return _candidate(
+            entry_id="codex.ldvh-plugin",
+            category="environment_hook",
+            status="available",
+            trigger="Codex lifecycle hooks via LDVH plugin",
+            evidence=evidence,
+            manual_fallback="code/runtime_adapter.py",
+            decision="verify_trust_and_runtime_before_integration",
+            reason="检测到指向当前 V3 的 LDVH 插件 Hook 配置，且 SessionStart、PreToolUse、Stop 三类必需事件齐全；仍需真实触发、payload 和失败处理证据后才能声明 integrated。",
+            details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
         )
     if points_to_v3:
         return _candidate(
@@ -249,9 +320,9 @@ def _codex_ldvh_plugin_candidate(
             trigger="Codex lifecycle hooks via LDVH plugin",
             evidence=evidence,
             manual_fallback="code/runtime_adapter.py",
-            decision="verify_trust_and_runtime_before_integration",
-            reason="检测到指向当前 V3 的 LDVH 插件 Hook 配置，但仍需验证 Codex trust、真实触发、payload 和失败处理后才能声明 integrated。",
-            details={"commands": commands},
+            decision="complete_v3_hook_manifest_before_install_verified",
+            reason="检测到部分 Codex LDVH Hook 指向当前 V3，但 SessionStart、PreToolUse、Stop 必需事件尚未齐全，不能把安装检测写成通过。",
+            details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
         )
     return _candidate(
         entry_id="codex.ldvh-plugin",
@@ -262,7 +333,7 @@ def _codex_ldvh_plugin_candidate(
         manual_fallback="code/runtime_adapter.py",
         decision="audit_plugin_hook_target",
         reason="检测到 LDVH 插件配置或缓存，但 Hook 指向无法归属到当前 V3；不得声明环境入口已接入。",
-        details={"commands": commands},
+        details={"commands": commands, "hook_entries": hook_entries, **required_hook_status},
     )
 
 

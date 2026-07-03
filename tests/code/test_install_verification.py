@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 
+import install_verification
 from install_verification import CODEX_SHIM, build_install_verification
 
 
@@ -38,40 +39,42 @@ def _install_backend_hook(repo: Path) -> None:
     )
 
 
-def _install_codex_v3_plugin(codex_home: Path) -> None:
+def _install_codex_v3_plugin(
+    codex_home: Path,
+    *,
+    events: tuple[str, ...] = ("SessionStart", "PreToolUse", "Stop"),
+    command_path: Path | None = None,
+    command: str | None = None,
+    enabled: bool = True,
+) -> None:
     hook_dir = codex_home / "plugins" / "cache" / "personal" / "ldvh" / "0.1.0" / "hooks"
     hook_dir.mkdir(parents=True)
     (codex_home / "config.toml").write_text(
-        """
+        f"""
 [plugins."ldvh@personal"]
-enabled = true
+enabled = {str(enabled).lower()}
 """.strip()
         + "\n",
         encoding="utf-8",
     )
-    v3_shim = ROOT / CODEX_SHIM
+    v3_shim = command_path or ROOT / CODEX_SHIM
+    hook_command = command or f"{sys.executable} {v3_shim}"
+    matchers = {
+        "SessionStart": "startup|resume",
+        "PreToolUse": "Write|Edit|apply_patch",
+        "Stop": "*",
+    }
     (hook_dir / "hooks.json").write_text(
         json.dumps(
             {
                 "hooks": {
-                    "SessionStart": [
+                    event: [
                         {
-                            "matcher": "startup|resume",
-                            "hooks": [{"type": "command", "command": f"{sys.executable} {v3_shim}"}],
+                            "matcher": matchers[event],
+                            "hooks": [{"type": "command", "command": hook_command}],
                         }
-                    ],
-                    "PreToolUse": [
-                        {
-                            "matcher": "Write|Edit|apply_patch",
-                            "hooks": [{"type": "command", "command": f"{sys.executable} {v3_shim}"}],
-                        }
-                    ],
-                    "Stop": [
-                        {
-                            "matcher": "*",
-                            "hooks": [{"type": "command", "command": f"{sys.executable} {v3_shim}"}],
-                        }
-                    ],
+                    ]
+                    for event in events
                 }
             },
             ensure_ascii=False,
@@ -136,6 +139,116 @@ projects:
     assert any("install_complete=true" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("PreToolUse 负例被阻断，正例被放行" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert result["diagnostics"] == []
+
+
+def test_install_verification_requires_complete_codex_hook_manifest(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
+    governance_root.mkdir()
+    repo.mkdir()
+    codex_home.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+    _install_backend_hook(repo)
+    _install_codex_v3_plugin(codex_home, events=("SessionStart",))
+
+    result = build_install_verification(
+        governance_root=governance_root,
+        ldvh_root=ROOT,
+        repo=repo,
+        codex_home=codex_home,
+        environment_name="Codex",
+    )
+
+    assert result["summary"]["status"] == "review_required"
+    assert result["summary"]["install_complete"] is False
+    assert result["summary"]["environment_hook_install_verified"] is False
+    assert result["environment"]["summary"]["install_verified"] is False
+    assert result["environment"]["summary"]["plugin_decision"] == "complete_v3_hook_manifest_before_install_verified"
+    codex_plugin = {
+        candidate["id"]: candidate for candidate in result["environment"]["audit"]["candidates"]
+    }["codex.ldvh-plugin"]
+    assert codex_plugin["details"]["required_events_ok"] is False
+    assert codex_plugin["details"]["missing_required_events"] == ["PreToolUse", "Stop"]
+
+
+def test_install_verification_rejects_codex_hook_command_that_only_mentions_v3_path(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
+    governance_root.mkdir()
+    repo.mkdir()
+    codex_home.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+    _install_backend_hook(repo)
+    _install_codex_v3_plugin(codex_home, command=f"echo {ROOT / CODEX_SHIM}")
+
+    result = build_install_verification(
+        governance_root=governance_root,
+        ldvh_root=ROOT,
+        repo=repo,
+        codex_home=codex_home,
+        environment_name="Codex",
+    )
+
+    assert result["summary"]["status"] == "review_required"
+    assert result["summary"]["install_complete"] is False
+    assert result["summary"]["environment_hook_install_verified"] is False
+    assert result["environment"]["summary"]["plugin_decision"] == "audit_plugin_hook_target"
+
+
+def test_install_verification_keeps_absent_codex_plugin_review_required(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
+    governance_root.mkdir()
+    repo.mkdir()
+    codex_home.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+    _install_backend_hook(repo)
+
+    result = build_install_verification(
+        governance_root=governance_root,
+        ldvh_root=ROOT,
+        repo=repo,
+        codex_home=codex_home,
+        environment_name="Codex",
+    )
+
+    assert result["summary"]["status"] == "review_required"
+    assert result["summary"]["install_complete"] is False
+    assert result["summary"]["environment_hook_install_verified"] is False
+    assert result["environment"]["summary"]["plugin_decision"] == "install_plugin_before_claiming"
 
 
 def test_install_verification_blocks_when_governed_git_hook_missing(tmp_path: Path) -> None:
@@ -252,3 +365,130 @@ projects:
     assert any("重启 App" in step for step in human_acceptance["steps"])
     assert any("授权 / trust" in step for step in human_acceptance["steps"])
     assert any("插件命令、manifest 或入口" in criterion for criterion in human_acceptance["acceptance_criteria"])
+
+
+def test_install_verification_keeps_disabled_codex_plugin_review_required(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
+    governance_root.mkdir()
+    repo.mkdir()
+    codex_home.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+    _install_backend_hook(repo)
+    _install_codex_v3_plugin(codex_home, enabled=False)
+
+    result = build_install_verification(
+        governance_root=governance_root,
+        ldvh_root=ROOT,
+        repo=repo,
+        codex_home=codex_home,
+        environment_name="Codex",
+    )
+
+    assert result["summary"]["status"] == "review_required"
+    assert result["summary"]["install_complete"] is False
+    assert result["summary"]["environment_hook_install_verified"] is False
+    assert result["environment"]["summary"]["plugin_decision"] == "enable_or_install_v3_plugin"
+
+
+def test_install_verification_keeps_stale_codex_plugin_review_required(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
+    governance_root.mkdir()
+    repo.mkdir()
+    codex_home.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+    _install_backend_hook(repo)
+    stale_shim = ROOT / "code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py"
+    _install_codex_v3_plugin(codex_home, command_path=stale_shim)
+
+    result = build_install_verification(
+        governance_root=governance_root,
+        ldvh_root=ROOT,
+        repo=repo,
+        codex_home=codex_home,
+        environment_name="Codex",
+    )
+
+    assert result["summary"]["status"] == "review_required"
+    assert result["summary"]["install_complete"] is False
+    assert result["summary"]["environment_hook_install_verified"] is False
+    assert result["environment"]["summary"]["plugin_decision"] == "reinstall_for_v3"
+    assert "ENV_CODEX_LDVH_PLUGIN_STALE" in {diagnostic["code"] for diagnostic in result["diagnostics"]}
+
+
+def test_install_verification_require_environment_integrated_blocks_after_install_verified(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
+    governance_root.mkdir()
+    repo.mkdir()
+    codex_home.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+    _install_backend_hook(repo)
+    _install_codex_v3_plugin(codex_home)
+
+    result = build_install_verification(
+        governance_root=governance_root,
+        ldvh_root=ROOT,
+        repo=repo,
+        codex_home=codex_home,
+        environment_name="Codex",
+        require_environment_integrated=True,
+    )
+
+    assert result["summary"]["status"] == "blocked"
+    assert result["summary"]["install_complete"] is False
+    assert result["summary"]["environment_hook_install_verified"] is True
+    assert result["summary"]["environment_hook_integrated"] is False
+    assert "INSTALL_VERIFY_ENVIRONMENT_NOT_INTEGRATED" in {
+        diagnostic["code"] for diagnostic in result["diagnostics"]
+    }
+
+
+def test_run_shim_timeout_returns_blocking_diagnostic(monkeypatch) -> None:
+    def timeout_run(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=args[0], timeout=kwargs.get("timeout", 60))
+
+    monkeypatch.setattr(install_verification.subprocess, "run", timeout_run)
+
+    result = install_verification._run_shim(
+        ROOT,
+        {"hook_event_name": "SessionStart", "sessionId": "timeout-test", "cwd": ROOT.as_posix()},
+    )
+
+    assert result["status"] == "failed"
+    assert result["returncode"] is None
+    assert result["diagnostics"][0]["code"] == "INSTALL_VERIFY_CODEX_SHIM_DIRECT_TEST_TIMEOUT"

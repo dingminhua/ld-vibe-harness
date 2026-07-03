@@ -72,7 +72,7 @@ python3 code/environment_entry_audit.py --format text
 8. 失败是否按预期阻断或返回 diagnostic；
 9. uninstall 后是否不再自动触发 LDVH。
 
-只有同时具备真实触发、稳定 payload、失败处理、安装状态、回滚方式和测试证据，才可把对应环境入口升级为 integrated。文件存在、插件缓存存在、历史 trust 记录或旧路径命中，都不得声明 integrated。安装检测和 integrated 证明必须分开：插件可见、指向 V3 shim、旧路径诊断为 0、repo-local shim 直测通过且 Git Hook 正反例通过时，可以作为安装检测通过；真实 lifecycle 尚未回读时，只是不声明 integrated，不应单独阻断安装完成。
+只有同时具备真实触发、稳定 payload、失败处理、安装状态、回滚方式和测试证据，才可把对应环境入口升级为 integrated。文件存在、插件缓存存在、历史 trust 记录或旧路径命中，都不得声明 integrated。安装检测和 integrated 证明必须分开：插件可见、必需 lifecycle Hook manifest 齐全、指向 V3 shim、旧路径诊断为 0、repo-local shim 直测通过且 Git Hook 正反例通过时，可以作为安装检测通过；真实 lifecycle 尚未回读时，只是不声明 integrated，不应单独阻断安装完成。
 
 安装审计结果必须以当前命令输出为准。当前 worktree 只有通过 `governed_hook_adapter.py verify` 证明的 `git.commit-msg` 可以作为 integrated 入口；Codex 样例插件即使命中缓存，也只能在 Hook 命令指向 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 且完成真实 lifecycle、payload、失败阻断 / 降级、授权 / trust 和回滚证据后，才可改变 integrated 结论。若审计发现 Hook 命令仍指向旧 `code/environment_plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py`，该状态属于已废弃 repo-local 插件资产路径，必须按环境插件升级或重装处理，不得写成已安装或 integrated。
 

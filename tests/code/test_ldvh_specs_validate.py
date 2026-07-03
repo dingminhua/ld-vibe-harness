@@ -3736,7 +3736,19 @@ enabled = true
                             "matcher": "startup|resume",
                             "hooks": [{"type": "command", "command": f"{sys.executable} {v3_shim}"}],
                         }
-                    ]
+                    ],
+                    "PreToolUse": [
+                        {
+                            "matcher": "Write|Edit|apply_patch",
+                            "hooks": [{"type": "command", "command": f"{sys.executable} {v3_shim}"}],
+                        }
+                    ],
+                    "Stop": [
+                        {
+                            "matcher": "*",
+                            "hooks": [{"type": "command", "command": f"{sys.executable} {v3_shim}"}],
+                        }
+                    ],
                 }
             },
             ensure_ascii=False,
@@ -3781,6 +3793,7 @@ enabled = true
     assert candidates["codex.ldvh-plugin"]["status"] == "available"
     assert candidates["codex.ldvh-plugin"]["integrated"] is False
     assert candidates["codex.ldvh-plugin"]["decision"] == "verify_trust_and_runtime_before_integration"
+    assert candidates["codex.ldvh-plugin"]["details"]["required_events_ok"] is True
     assert str(v3_shim) in "\n".join(candidates["codex.ldvh-plugin"]["details"]["commands"])
 
 

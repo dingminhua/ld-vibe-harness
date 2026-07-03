@@ -181,16 +181,49 @@ def _run_shim(ldvh_root: Path, payload: dict[str, Any]) -> dict[str, Any]:
         }
     env = dict(os.environ)
     env["LDVH_ROOT"] = ldvh_root.as_posix()
-    completed = subprocess.run(
-        [sys.executable, shim.as_posix()],
-        cwd=ldvh_root,
-        env=env,
-        input=json.dumps(payload, ensure_ascii=False),
-        text=True,
-        capture_output=True,
-        check=False,
-        timeout=60,
-    )
+    try:
+        completed = subprocess.run(
+            [sys.executable, shim.as_posix()],
+            cwd=ldvh_root,
+            env=env,
+            input=json.dumps(payload, ensure_ascii=False),
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=60,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "status": "failed",
+            "returncode": None,
+            "stdout_excerpt": (exc.stdout or "")[:1000] if isinstance(exc.stdout, str) else "",
+            "stderr_excerpt": (exc.stderr or "")[:1000] if isinstance(exc.stderr, str) else "",
+            "payload": {},
+            "diagnostics": [
+                _diagnostic(
+                    "blocking",
+                    "INSTALL_VERIFY_CODEX_SHIM_DIRECT_TEST_TIMEOUT",
+                    shim.as_posix(),
+                    "环境插件 repo-local shim 直测超时，无法确认安装检测通过。",
+                )
+            ],
+        }
+    except OSError as exc:
+        return {
+            "status": "failed",
+            "returncode": None,
+            "stdout_excerpt": "",
+            "stderr_excerpt": str(exc)[:1000],
+            "payload": {},
+            "diagnostics": [
+                _diagnostic(
+                    "blocking",
+                    "INSTALL_VERIFY_CODEX_SHIM_DIRECT_TEST_FAILED_TO_START",
+                    shim.as_posix(),
+                    f"环境插件 repo-local shim 直测无法启动: {exc}",
+                )
+            ],
+        }
     parsed: Any = {}
     try:
         parsed = json.loads(completed.stdout)
@@ -223,10 +256,14 @@ def _shim_tests_passed(shim_tests: dict[str, dict[str, Any]]) -> bool:
 
 
 def _codex_plugin_install_detected(codex_plugin: dict[str, Any]) -> bool:
+    details = codex_plugin.get("details", {})
+    if not isinstance(details, dict):
+        details = {}
     return (
         codex_plugin.get("status") == "available"
         and codex_plugin.get("decision") == "verify_trust_and_runtime_before_integration"
-        and bool(codex_plugin.get("details", {}).get("commands"))
+        and details.get("required_events_ok") is True
+        and bool(details.get("commands"))
     )
 
 

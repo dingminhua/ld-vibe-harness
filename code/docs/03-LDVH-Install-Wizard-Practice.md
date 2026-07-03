@@ -168,6 +168,7 @@ AI 不得把缺少独立一键安装 CLI 写成安装已完成，也不得在最
 |---|---|
 | 插件审计 | 插件或扩展包可见，状态不是 absent / stale / disabled |
 | 入口指向 | 命令、manifest 或入口指向当前 V3 LDVH root / V3 shim |
+| manifest 覆盖 | 必需 lifecycle Hook manifest 覆盖 SessionStart、PreToolUse 和 Stop |
 | 旧路径 | stale V2 path 和已废弃 repo-local 旧路径诊断为 0 |
 | shim 直测 | SessionStart、PreToolUse 阻断、Stop / completion 降级直测通过 |
 | Git Hook | 每个已选择管辖项目的 managed hook、正例放行和反例阻断通过 |
@@ -186,7 +187,7 @@ AI 不得把缺少独立一键安装 CLI 写成安装已完成，也不得在最
 | 6 | 触发一次受控写入类工具 | 负例会被阻断；正例会放行 |
 | 7 | 运行统一安装验证 | `install_verification.py` 显示 `install_complete=true`、插件可见、shim 直测通过，并列出 Git Hook 正反例结果 |
 
-用户侧冒烟检查失败时再诊断和修复；没有失败证据时，不应把缺少真实 lifecycle 证明写成安装失败或 `review_required`。若缺少真实 lifecycle、授权 / trust、payload 或失败处理证据，交还状态仍不得声明 integrated。
+用户侧冒烟检查失败时进入诊断和修复流程，但不直接回写安装检测失败；只有复跑安装检测发现插件缺失、未启用、manifest 不完整、旧路径、stale V2 path、shim 直测失败或 Git Hook 正反例失败时，才改变 `install_complete` 或返回 `review_required` / `blocked`。若缺少真实 lifecycle、授权 / trust、payload 或失败处理证据，交还状态仍不得声明 integrated。
 
 最终确认只提供两个主选项。5/5 不再重复安装前检查表，也不把执行后验证写成新的只读验证选项；只列出将写入对象和不写入对象。Human 选择 `1 执行方案` 后，AI 必须立即执行已确认写入并进行写入后验证；Human 要求调整方案时回到对应前一步，但不作为第三个主选项展示：
 
