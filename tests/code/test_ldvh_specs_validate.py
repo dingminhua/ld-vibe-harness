@@ -1687,6 +1687,11 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "具体验收展示表格、图标、编号和按钮文案归实现域" in raw
     assert "具体卡片、表格、图标、编号、只读可见性探针命令和 scratch 文件名归 `code/docs/02-Environment-Plugin-Practice.md` 或运行时输出" in raw
     assert "新会话只读可见性探针" in raw
+    assert "插件目录与 Hook trust 检查" in raw
+    assert "CLI `/plugins`" in raw
+    assert "CLI `/hooks`" in raw
+    assert "重启后新会话可见性探针" in raw
+    assert "不得要求 Human 观察没有明确入口的“重启后状态”" in raw
     assert "只读可见性探针只能证明新会话能够看见 LDVH runtime" in raw
     assert "主界面不得要求 Human 自行理解专业“通过 / 失败”" in raw
     assert "你是否看到 X" in raw
@@ -1712,6 +1717,10 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "不得只写“让 AI 运行只读可见性探针”" in raw
     assert "可直接复制到输入框的文本" in raw
     assert "用户主结论不得展示 `environment_hook_integrated=false`" in raw
+    assert "不得写成“技术检查通过，但 `environment_hook_integrated=false`，所以仍是自动接入待验收”" in raw
+    assert "User-facing status" in raw
+    assert "技术检查结果" in raw
+    assert "用户侧验收缺口" in raw
     assert "不得直接复用统一安装验证入口的用户下一步提示" in raw
     assert "不得在本次验收通过后再次提示“进入 31”" in raw
     assert "`--require-environment-integrated` 不是 31 收尾通过条件" in raw
@@ -1732,7 +1741,16 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "可见性探针输入文本" in practice
     assert "受控负例输入文本" in practice
     assert "受控正例输入文本" in practice
+    assert "插件目录与 `/hooks` 检查" in practice
+    assert "重启后新会话输入文本" in practice
+    assert "在 Codex App 打开 **Plugins**" in practice
+    assert "CLI 用户可输入 `/plugins`" in practice
+    assert "CLI 用户输入 `/hooks`" in practice
     assert "31 主结论只使用本次验收通过、本次验收失败或本次未验证" in practice
+    assert "本次结论：本次未验证" in practice
+    assert "未验证：" in practice
+    assert "推荐行动：" in practice
+    assert "不要要求用户重复已通过的命令" in practice
     assert ".ldvh-runtime/acceptance-probe/" in practice
     assert ".ldvh-runtime/acceptance-probe/blocked.txt" in practice
     assert ".ldvh-runtime/acceptance-probe/allowed.txt" in practice

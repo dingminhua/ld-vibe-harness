@@ -11,7 +11,7 @@ ldvh_spec:
   parent_spec: "specs/06-行动模板基础规范.md"
   relation: "refines"
   positioning: "定义环境 Hook 安装检测通过后，Human 授权进入逐项验收、形成本次验收总结并复核当前验证结论的正式行动模板"
-  scope: "环境 Hook 接入后验收、插件页面结果确认、重启后结果确认、新窗口或新会话可见性探针、受控负例阻断、受控正例放行、统一安装验证和本次验收总结"
+  scope: "环境 Hook 接入后验收、插件目录与 Hook trust 检查、重启后新窗口或新会话可见性探针、受控负例阻断、受控正例放行、统一安装验证和本次验收总结"
   basis:
     - "specs/00-理念与构成.md"
     - "specs/01-保障与衔接.md"
@@ -109,7 +109,7 @@ ldvh_spec:
 |---|---|---|---|
 | 目标工作区配置和管辖项目关系已写入或保留 | 统一安装验证仍显示 `governed_config_ok=true`，管辖项目 Git Hook 检查有明确项目范围 | `install_verification.py --format json` 的 `governed_config` 和 `git_hooks` | 返回 30 修复配置或管辖项目范围，不进入环境 lifecycle 测试 |
 | 管辖项目 Git `commit-msg` Hook 已安装或升级 | 每个管辖项目 managed hook 可执行，正例提交消息放行，反例提交消息阻断 | `git_hooks[].summary`、正反例结果、`code/governed_hook_adapter.py verify` | 返回 30 修复 Git Hook，不声明本次验收通过 |
-| 目标环境插件 / 扩展包 / package 已安装或升级 | 插件可见、启用、已授权或无待授权，入口指向当前 V3 shim，无 stale V2 path 或旧路径 | 插件页面结果、`environment_entry_audit.py --format text`、`environment.summary` | 停止并回到插件安装 / 授权诊断 |
+| 目标环境插件 / 扩展包 / package 已安装或升级 | 插件可见、已安装或启用，Hook 已 review / trust 或无待处理 trust，入口指向当前 V3 shim，无 stale V2 path 或旧路径 | 插件目录或插件管理器结果、CLI `/plugins` 和 `/hooks` 输出、`environment_entry_audit.py --format text`、`environment.summary` | 停止并回到插件安装 / 授权诊断 |
 | 环境入口能看见当前 LDVH runtime | 新窗口或新会话只读可见性探针返回 `status=ok`、`event=session_start`、`receipt_id` 和 `Diagnostics: none` | `human_acceptance.visible_probe_command` 或等价只读探针输出 | 停止，不写验收通过 |
 | 写入前检查通过环境 Hook 被触发 | harmless scratch target 的受控负例被阻断或返回明确 blocking diagnostic | PreToolUse 负例输出、scratch target 文件状态 | 停止；若意外写入，按 Human Gate 处理清理 |
 | 授权的安全动作不会被误阻断 | Human 授权的 harmless scratch target 正例被放行且无 blocking diagnostic | PreToolUse 正例或等价安全动作输出 | 停止并诊断授权、payload 或失败处理 |
@@ -130,9 +130,9 @@ ldvh_spec:
 
 | 编号 | 测试项 | 判断标准 | 失败处理 |
 |---|---|---|---|
-| 1 | 插件页面结果 | 插件或扩展包可见、启用、已授权或无待授权、无错误 | 停止并回到插件页面诊断 |
-| 2 | 重启后结果 | 重启 App 或重载插件宿主后插件仍启用且无新增错误 | 停止并回到插件安装 / 授权诊断 |
-| 3 | 新会话可见性探针 | 新窗口或新会话中，AI 运行只读 LDVH 可见性探针并返回结果表；结果至少包含 `status=ok`、`event=session_start`、`receipt_id` 和 `Diagnostics: none`；若目标环境能提供真实 SessionStart 触发证据，应一并回读 | 停止，不写验收通过 |
+| 1 | 插件目录与 Hook trust 检查 | Codex App Plugins 中能看到目标插件已安装或启用；CLI `/plugins` 输出能看到插件；CLI `/hooks` 没有待 review / trust 的 LDVH Hook，或 Human 已按提示完成 review / trust | 停止并回到插件安装 / 授权诊断 |
+| 2 | 重启后新会话可见性探针 | 重启 App 或重载插件宿主后，在新窗口或新会话中输入可见性探针文本；结果至少包含 `status=ok`、`event=session_start`、`receipt_id` 和 `Diagnostics: none`；若目标环境能提供真实 SessionStart 触发证据，应一并回读 | 停止，不写验收通过 |
+| 3 | 当前会话可见性复核 | 当前会话中需要复核时，AI 运行同等只读 LDVH 可见性探针并返回结果表；结果至少包含 `status=ok`、`event=session_start`、`receipt_id` 和 `Diagnostics: none` | 停止，不写验收通过 |
 | 4 | 受控负例阻断 | 对 harmless scratch target 发起应阻断的写入类操作时，PreToolUse 负例被阻断或返回明确 blocking diagnostic | 停止；若意外写入，只记录失败并按 Human Gate 处理清理 |
 | 5 | 受控正例放行 | 对 Human 授权的 harmless scratch target 或等价安全操作发起正例时，操作被放行且无 blocking diagnostic | 停止并诊断授权、payload 或失败处理 |
 | 6 | 统一安装验证 | 统一安装验证入口仍显示安装检测通过，并列出 Git Hook 正反例通过 | 停止并回到安装修复流程 |
@@ -142,7 +142,7 @@ ldvh_spec:
 
 31 的主界面必须使用简洁验收提示表达每一步，不得把 raw diagnostic 当作主问题。验收提示至少包含 `用户要做什么`、`正常表现` 和 `失败时给 AI 什么`。技术字段可以放入附录，但主界面不得裸露 raw diagnostic；`environment_hook_integrated=false` 应写成“自动接入待验收”，`target_environment_supported=false` 和 `unsupported_target_environment` 应写成“当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还”，`PreToolUse` 应写成“写入前检查”。具体卡片、表格、图标、编号、只读可见性探针命令和 scratch 文件名归 `code/docs/02-Environment-Plugin-Practice.md` 或运行时输出，不得在本文形成新的验收状态闭集。
 
-31 不得把“重启后用户肉眼看到启动提示”作为唯一正常标准。目标环境不稳定展示 Hook stdout、启动提示或后台诊断时，必须改用新会话只读可见性探针，让 AI 在用户可见输出中返回 `status`、`event`、`receipt_id` 和诊断结论。只读可见性探针只能证明新会话能够看见 LDVH runtime，不得替代后续受控负例阻断、受控正例放行和当前验证复核。
+31 不得要求 Human 观察没有明确入口的“重启后状态”，也不得把“重启后用户肉眼看到启动提示”作为正常标准。目标环境不稳定展示 Hook stdout、启动提示或后台诊断时，必须改用重启后的新会话只读可见性探针，让 AI 在用户可见输出中返回 `status`、`event`、`receipt_id` 和诊断结论。只读可见性探针只能证明新会话能够看见 LDVH runtime，不得替代后续受控负例阻断、受控正例放行和当前验证复核。
 
 ## 7. 逐项验收推进规则
 
@@ -166,6 +166,10 @@ ldvh_spec:
 
 31 的最终交还不得把 `environment_hook_integrated=false` 作为用户主结论或“状态”展示。该字段只允许出现在技术附录或安装检测复核摘要中，用于说明当前统一安装验证入口尚未形成长期 integrated 证据；31 的主结论只能表达本次验收通过、本次验收失败或本次未验证。
 
+31 最终交还不得写成“技术检查通过，但 `environment_hook_integrated=false`，所以仍是自动接入待验收”或等价句式。若技术检查通过但缺少插件目录、CLI `/plugins`、CLI `/hooks`、Hook trust 或重启后新会话可见性探针证据，主结论必须写成“本次未验证”，并在未验证项中逐项列出缺少的用户侧证据。统一安装验证输出中的 `User-facing status`、`Hook status blocks`、`下一步` 或“可进入 31”提示不得复制到 31 最终交还正文。
+
+31 的最终交还必须把“技术检查结果”和“用户侧验收缺口”分开展示：技术检查结果只说明已通过的命令、探针和受控 scratch 测试；用户侧验收缺口只说明还缺插件目录或 `/plugins` 结果、`/hooks` trust 结果、重启后新会话探针或真实 lifecycle 触发证据中的哪几项。推荐行动必须紧跟缺口逐项给出，不得让用户自行从技术状态推断下一步。
+
 最终交还结论只能使用 `本次验收通过`、`本次验收失败` 或 `本次未验证`；统一安装验证入口只作为技术复核来源，其 `下一步`、`user_next_steps` 或进入 31 的提示不得作为 31 的最终行动建议。`--require-environment-integrated` 不是 31 收尾通过条件，只能用于当前审计已经能直接证明环境自动接入时的严格技术检查。
 
 ## 8. Context、Scenario、Gate 与交还
@@ -174,9 +178,9 @@ ldvh_spec:
 |---|---|
 | Context | 读取用户目标、目标环境、30 交还结果、安装变化目标、统一安装验证入口当前输出、`environment_hook_integrated=false` 当前检测输出、插件页面或插件管理器入口、Human 授权状态和 source_refs，并回指 `specs/01-保障与衔接.md`、`specs/06-行动模板基础规范.md`、`specs/09-测试与验证规范.md`、`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 和本文。 |
 | Scenario | 30 安装检测通过后进入环境 Hook 接入后验收、用户要求验证真实 lifecycle、用户完成插件授权后要求验收、需要当次 lifecycle 冒烟结论、或要求只回答 01/06/09/30/31 边界时适用。 |
-| Gate | 开始验收、执行受控负例阻断测试、执行受控正例放行测试、接受插件页面结果、接受授权 / trust 结果、声明本次自动接入验收判断、处理意外 scratch 写入或清理测试文件，均必须有 Human Gate 或明确用户授权。 |
-| 执行 | 先把 30 安装净变化归纳为安装变化目标，再逐项推进验收，一次只判断一项，使用闭集确认；先运行只读安装检测，再要求 Human 检查插件页面、重启 App、执行新会话只读可见性探针，再执行受控 scratch target 的负例和正例；不得安装、不得升级、不得卸载、不得修改用户环境；失败即停止，不进入后续步骤。 |
-| 验证 | 按安装变化目标使用统一安装验证入口、插件页面结果、重启 App、新会话只读可见性探针、SessionStart 真实触发证据（若目标环境可提供）、PreToolUse 受控负例阻断、受控正例放行和 Git Hook 正反例复核；失败、缺证或 Human 未确认时不得声明 `environment_hook_integrated`。 |
+| Gate | 开始验收、执行受控负例阻断测试、执行受控正例放行测试、接受插件目录或 `/plugins` 结果、接受 `/hooks` trust 结果、声明本次自动接入验收判断、处理意外 scratch 写入或清理测试文件，均必须有 Human Gate 或明确用户授权。 |
+| 执行 | 先把 30 安装净变化归纳为安装变化目标，再逐项推进验收，一次只判断一项，使用闭集确认；先运行只读安装检测，再要求 Human 检查插件目录或 `/plugins`、检查 `/hooks` 是否有待 review / trust、重启 App 后执行新会话只读可见性探针，再执行受控 scratch target 的负例和正例；不得安装、不得升级、不得卸载、不得修改用户环境；失败即停止，不进入后续步骤。 |
+| 验证 | 按安装变化目标使用统一安装验证入口、插件目录或 `/plugins` 结果、`/hooks` trust 结果、重启后新会话只读可见性探针、SessionStart 真实触发证据（若目标环境可提供）、PreToolUse 受控负例阻断、受控正例放行和 Git Hook 正反例复核；失败、缺证或 Human 未确认时不得声明 `environment_hook_integrated`。 |
 | 回写 | 本文不回写长期验收状态；验收过程输出只在当前对话交还。不得写事实源、不得写 specs。若长期溯源确有必要，必须按 03/09 分流为正式事实源或验证声明，不得写 `.ldvh-runtime` 过程输出替代。 |
 | 交还 | 交还验收结果表、通过项、失败项、未验证项、本次自动接入验收判断、统一安装验证摘要、回滚或诊断入口、scratch target 处理状态、推荐行动、source_refs、残留风险和不可跨会话继承说明；阻断时交还当前停止步骤和下一步诊断建议。用户主结论不得展示 `environment_hook_integrated=false`，该字段只可作为技术附录。 |
 
@@ -197,7 +201,7 @@ ldvh_spec:
 | 检查类别 | 检查内容 | 不满足时 |
 |---|---|---|
 | 结构检查 | 是否具备 Context、Scenario、Gate、执行、验证、回写和交还结构，并能被 Code 解析 | 不得作为正式行动模板执行 |
-| 测试组检查 | 是否覆盖插件页面结果、重启后结果、新会话可见性探针、受控负例阻断、受控正例放行、统一安装验证和当前验证复核 | 不得交还本次验收通过 |
+| 测试组检查 | 是否覆盖插件目录或 `/plugins` 结果、`/hooks` trust 结果、重启后新会话可见性探针、受控负例阻断、受控正例放行、统一安装验证和当前验证复核 | 不得交还本次验收通过 |
 | Gate 检查 | 是否在开始验收、受控写入测试和声明本次自动接入验收判断前获得 Human Gate | 停止验收或回到用户确认 |
 | 过程输出边界检查 | 是否避免写入或消费长期 lifecycle 过程输出，是否避免用历史过程输出改变 integrated 结论 | 停止验收并清理错误输出 |
 | 边界检查 | 是否避免安装、升级、卸载、修改用户环境或写事实源 | 停止执行并回到 30 或环境修复流程 |

@@ -110,9 +110,9 @@ python3 code/environment_entry_audit.py --format text
 | 步骤 | 用户要做什么 | 正常表现 | 失败时给 AI 什么 |
 |---|---|---|---|
 | 1/8 验收授权 | 选择开始逐项验收 | AI 只开始本测试组，不安装、不升级、不卸载 | 停止验收即可，不需要解释技术原因 |
-| 2/8 插件页面结果 | 打开当前目标环境的插件页面、扩展页面或插件管理器 | 页面显示 LDVH 插件启用、已授权或无待授权、无错误 | 插件页面截图、插件名称、错误文本 |
-| 3/8 重启后结果 | 重启 App 或重载插件宿主后再看插件页面 | 插件仍启用、无新增错误、授权仍有效 | 重启后页面结果、错误文本、是否需要重新授权 |
-| 4/8 新会话可见性探针 | 新开当前目标环境窗口或会话，在输入框粘贴本文下方“可见性探针输入文本” | 结果表显示 `status=ok`、`event=session_start`、存在 `receipt_id`，且诊断为空；若目标环境同时提供真实 SessionStart 触发证据，应一并展示 | 新会话里 AI 的完整输出、无法运行的错误文本 |
+| 2/8 插件目录与授权检查 | 在 Codex App 打开 **Plugins**，找到 LDVH 插件；CLI 用户可输入 `/plugins` 查看插件，并输入 `/hooks` 查看是否有待 review / trust 的 Hook | 插件可见且已安装 / 已启用；`/hooks` 没有待 trust 的 LDVH Hook；如有待 trust，按提示 review / trust 后再继续 | 插件页面截图或 `/plugins`、`/hooks` 输出，包含插件名称、启用状态、待授权或错误文本 |
+| 3/8 重启后新会话探针 | 重启 Codex 或重载插件宿主后，新开当前目标环境窗口或会话，在输入框粘贴本文下方“可见性探针输入文本” | 结果表显示 `status=ok`、`event=session_start`、存在 `receipt_id`，且诊断为空；若目标环境同时提供真实 SessionStart 触发证据，应一并展示 | 新会话里 AI 的完整输出、无法运行的错误文本 |
+| 4/8 当前会话可见性复核 | 在当前会话需要复核时，粘贴“可见性探针输入文本”或让 AI 运行同等只读命令 | 结果表显示 `status=ok`、`event=session_start`、存在 `receipt_id`，且诊断为空 | AI 的完整输出、无法运行的错误文本 |
 | 5/8 受控负例阻断 | 在输入框粘贴本文下方“受控负例输入文本” | 写入前检查阻断，scratch 文件未被错误写入 | AI 输出、scratch 路径、文件是否被写入 |
 | 6/8 受控正例放行 | 在输入框粘贴本文下方“受控正例输入文本” | 操作成功，没有 blocking diagnostic | AI 输出、错误文本、scratch 路径 |
 | 7/8 统一安装验证 | 等 AI 运行命令，用户只看结论 | `install_verification.py` 显示安装检测通过，Git Hook 正反例仍通过 | AI 输出摘要或完整命令输出 |
@@ -143,7 +143,7 @@ LDVH v3 runtime adapter
 Diagnostics: none
 ```
 
-该探针只证明新会话里 LDVH runtime 可见，不证明目标环境 lifecycle 已自动 integrated。integrated 仍必须通过插件页面、重启后结果、受控负例阻断、受控正例放行和统一安装验证在本次验收中闭合。31 收尾不得使用 `install_verification.py --require-environment-integrated` 作为通过条件；该参数只用于当前审计已经能直接证明环境自动接入时的严格技术检查。
+该探针只证明新会话里 LDVH runtime 可见，不证明目标环境 lifecycle 已自动 integrated。integrated 仍必须通过插件目录与授权检查、重启后的新会话探针、受控负例阻断、受控正例放行和统一安装验证在本次验收中闭合。31 收尾不得使用 `install_verification.py --require-environment-integrated` 作为通过条件；该参数只用于当前审计已经能直接证明环境自动接入时的严格技术检查。
 
 受控正反例默认使用 `.ldvh-runtime/acceptance-probe/` 下的 scratch 文件。默认动作是：先尝试写 `.ldvh-runtime/acceptance-probe/blocked.txt`，预期被写入前检查拦截；再写 `.ldvh-runtime/acceptance-probe/allowed.txt`，预期放行；不碰 specs、事实源或业务文件；测试后清理 scratch 文件。目标环境无法执行等价安全动作时，先重新设计 harmless scratch target。
 
@@ -169,9 +169,35 @@ python3 <ldvh-root>/code/runtime_adapter.py session-start --root <ldvh-root> --c
 |---|---|
 | 本次验收通过 | 本次可结束；后续如果重启、升级插件或切换工作区，再重新运行 31 当前验收。 |
 | 本次验收失败 | 停在失败步骤；按失败信息包补充插件页面结果、错误文本、scratch target 状态或命令输出，再从失败步骤重试。 |
-| 本次未验证 | 补齐缺失用户侧证据；优先给出插件页面检查、重启后检查、新会话输入文本、受控负例输入文本和受控正例输入文本。 |
+| 本次未验证 | 补齐缺失用户侧证据；优先给出插件目录与 `/hooks` 检查、重启后新会话输入文本、受控负例输入文本和受控正例输入文本。 |
  
 `environment_hook_integrated` 是统一安装验证入口的技术字段，不是 31 的最终状态。31 主结论只使用本次验收通过、本次验收失败或本次未验证；若需要保留该字段，只放技术附录，写作“统一安装验证当前仍未形成长期 integrated 证据”，不得作为用户主结论。
+
+技术检查全部通过但缺少用户侧证据时，31 收尾推荐使用下面的结构，不得把统一安装验证的 `User-facing status`、`Hook status blocks`、`下一步` 或“自动接入待验收”复制进最终交还：
+
+```text
+本次结论：本次未验证
+
+已通过：
+- 安装验证通过。
+- 3 个管辖项目 Git Hook 正反例通过。
+- 环境插件直测通过。
+- 31 可见性探针通过。
+- 受控负例按预期阻断，scratch 文件未创建。
+- 受控正例按预期放行，scratch 文件未创建。
+
+未验证：
+- 还没有看到 Codex 插件目录或 `/plugins` 输出显示 LDVH 插件已安装 / 已启用。
+- 还没有看到 `/hooks` 输出确认没有待 review / trust 的 LDVH Hook。
+- 还没有看到重启 Codex 后新会话里的可见性探针输出。
+
+推荐行动：
+1. 在 Codex App 打开 **Plugins**，找到 LDVH 插件，把插件名称和是否已安装 / 已启用发回来；CLI 用户可输入 `/plugins`，把 LDVH 插件那一行发回来。
+2. CLI 用户输入 `/hooks`，把是否存在待 review / trust 的 LDVH Hook 发回来；如果没有 CLI 入口，本项写“未取得”。
+3. 重启 Codex 或重载插件宿主后，新开一个 Codex 会话，在输入框粘贴“可见性探针输入文本”，把新会话里的完整输出发回来。
+```
+
+如果可见性探针、受控负例和受控正例都已经在本次同一会话内通过，但插件目录、`/hooks` 或重启后新会话探针仍缺失，推荐行动只列缺失的用户侧观察项；不要要求用户重复已通过的命令。
 
 ## 安装与卸载边界
 
