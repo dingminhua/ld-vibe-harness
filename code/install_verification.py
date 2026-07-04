@@ -24,6 +24,14 @@ CODEX_SHIM = "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
 CODEX_ENVIRONMENT_NAME = "Codex"
 
 
+def _detect_current_environment() -> str:
+    for key, _ in os.environ.items():
+        upper_key = key.upper()
+        if upper_key.startswith("TRAE_"):
+            return "Trae"
+    return CODEX_ENVIRONMENT_NAME
+
+
 def _visible_probe_command(ldvh_root: Path, repo: Path, governance_root: Path | None = None) -> str:
     parts = [
         "python3",
@@ -502,9 +510,11 @@ def build_install_verification(
     ldvh_root: Path,
     repo: Path,
     codex_home: Path | None = None,
-    environment_name: str = "Codex",
+    environment_name: str | None = None,
     require_environment_integrated: bool = False,
 ) -> dict[str, Any]:
+    if environment_name is None:
+        environment_name = _detect_current_environment()
     resolved_governance_root = governance_root.resolve()
     resolved_ldvh_root = ldvh_root.resolve()
     resolved_repo = repo.resolve()
@@ -806,7 +816,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--codex-home", default="", help="Codex home for read-only plugin audit")
     parser.add_argument(
         "--environment-name",
-        default=CODEX_ENVIRONMENT_NAME,
+        default=_detect_current_environment(),
         help="current AI environment name for Human-facing output; repo-local shim direct tests currently cover the Codex sample only",
     )
     parser.add_argument(

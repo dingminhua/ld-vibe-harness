@@ -1,0 +1,89 @@
+id: pitfall-0002
+type: pitfall
+title: Codex Hook 适配必须区分环境协议和内部适配器协议
+status: active
+created: '2026-07-04T16:35:21+08:00'
+updated: '2026-07-04T16:35:21+08:00'
+symptoms: |
+  Codex 插件页面显示 LDVH hooks 已安装、已启用且已授权，hook 配置也能被 Codex CLI 发现，但真实新会话中没有稳定注入 LDVH session read plan，或 CLI 终端显示 `hook: SessionStart Failed`、`hook: PreToolUse Failed`、`hook: Stop Failed`。
+  用户视角会表现为“插件装了，也通过了，但没有生效”，容易误判为 Codex 没加载插件、权限未通过或重启无效。
+trigger_conditions: |
+  1. 环境插件 hook command 直接调用内部 runtime adapter，并把内部 JSON 原样输出到 Codex hook stdout。
+  2. 内部 runtime adapter 用非零退出码表达 LDVH 阻断或诊断，尤其是把 `PreToolUse` 阻断返回为 exit code 1。
+  3. 未先核对目标环境 hook 的 stdout JSON 协议、阻断协议和退出码语义。
+  4. 插件源包使用相对 hook command，假设命令从插件目录执行，而不是从 Codex 会话 cwd 执行。
+  5. 为排查问题临时同时启用用户级 hooks 和插件 hooks，导致同一事件执行两次，干扰判断。
+root_cause: |
+  根因是把三层协议混在了一起：Codex lifecycle hook 协议、LDVH runtime_adapter payload/result 协议、进程退出码语义。
+
+  LDVH runtime_adapter 的 JSON 是内部诊断和运行时事件结果，不是 Codex hook 的 stdout 协议。Codex 对 command hook stdout 和退出码有自己的解释：`SessionStart` 应输出 `hookSpecificOutput.additionalContext` 等 Codex 可识别字段，`PreToolUse` 阻断应使用 `hookSpecificOutput.permissionDecision = "deny"` 或等价阻断协议，普通 hook 成功应退出 0；exit code 1 会被 Codex 视为 hook 执行失败，而不是业务阻断。
+
+  因此，插件安装、trust、matcher 和路径都可以是“看起来通过”的，但只要 shim 输出的是内部 LDVH JSON 或用错误退出码表达阻断，Codex 就会认为 hook failed，session read plan 也不会稳定进入模型上下文。
+
+  另一个次要根因是源插件 `hooks.json` 曾使用 `python3 hooks/ldvh_runtime_shim.py` 这类相对路径。Codex hook command 的工作目录是会话 cwd，不是插件目录；源包应使用插件根路径或安装时生成绝对路径。
+resolution: |
+  将 `hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py` 改成真正的协议转换层：继续调用 `code/runtime_adapter.py` 获取 LDVH 内部判断，但不再把内部 JSON 原样输出给 Codex，而是转换为 Codex hook 协议输出。
+
+  具体处理：
+  1. `SessionStart` 转换为 `hookSpecificOutput.hookEventName = "SessionStart"` 和 `additionalContext`，把 LDVH read plan 注入模型上下文；
+  2. `PreToolUse` 在需要阻断时输出 `hookSpecificOutput.permissionDecision = "deny"` 和 `permissionDecisionReason`，进程仍正常退出 0；
+  3. `Stop` 不把缺验证证据直接变成无限阻断，而是输出 `continue: true` 和 `systemMessage` 作为完成检查提醒；
+  4. 只读 Bash 探针如 `pwd` 直接放行，避免可见性测试被错误阻断；
+  5. 从 transcript 中推断已读取的 00/01/02 read plan，并从命令文本中尽量提取 target path，减少误判；
+  6. 源插件 `hooks.json` 使用 `$PLUGIN_ROOT/hooks/ldvh_runtime_shim.py`，当前安装缓存继续使用绝对 shim 路径；
+  7. 移除临时用户级 fallback hook，保留插件 hook 单独生效，避免同一事件重复执行。
+verification: |
+  ## 验证命令
+
+  ```bash
+  python3 -m pytest tests/code/test_environment_plugins.py tests/code/test_install_verification.py
+  python3 code/install_verification.py --format text
+  codex exec -C /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v3 -s read-only "只读测试 LDVH 插件 hooks。请运行 pwd，然后报告是否收到 LDVH V3 session read plan 上下文。不要改文件。"
+  ```
+
+  ## 验证结果
+
+  `tests/code/test_environment_plugins.py` 和 `tests/code/test_install_verification.py` 共 19 项通过。
+
+  `install_verification.py` 显示 `install_complete: True`、`environment_hook_install_verified: True`、shim 三项直测均 passed。
+
+  插件单独的 `codex exec` 新会话中，终端显示 `hook: SessionStart Completed`、`hook: PreToolUse Completed`、`hook: Stop Completed`，不再出现 `Failed`；模型回答确认已收到 LDVH V3 session read plan，必读路径包括 `specs/00-理念与构成.md`、`specs/01-保障与衔接.md`、`specs/02-AI行为规范.md`。
+
+  Codex App 新线程 `019f2c3f-f2db-7af0-a7d5-524795911cc3` 也确认收到 LDVH V3 session read plan，并返回同样的必读路径。
+avoidance: |
+  1. 为任意环境实现 hook / plugin / extension 时，先查目标环境官方 hook 协议，明确 stdin payload、stdout JSON、退出码和阻断语义；不要用内部 adapter 输出直接充当环境协议输出。
+  2. 内部 runtime adapter 只能作为事实判断和诊断来源；外层 shim 必须负责协议转换、降级处理和错误隔离。
+  3. 阻断语义必须用目标环境支持的阻断协议表达。对 Codex `PreToolUse`，优先使用 `permissionDecision = "deny"`；不要用 exit code 1 表达业务阻断。
+  4. hook 成功运行但业务诊断为 warning/review_required 时，应输出环境可识别的上下文或系统消息，并退出 0。
+  5. hook command 路径不得假设当前目录是插件目录；源插件使用 `$PLUGIN_ROOT` 或打包时生成绝对路径。
+  6. 验证插件是否“生效”不能只看 UI 已启用或 trust 已通过，必须开新会话验证 `SessionStart` 注入、`PreToolUse` 触发、`Stop` 完成，以及模型是否真正看到 read plan。
+  7. 排查时可以临时加用户级 fallback hook，但最终验证必须关闭 fallback，只保留插件 hook 单独运行，避免重复触发造成误判。
+applicability: |
+  适用于 LDVH 接入 Codex lifecycle hooks、其它 AI 环境 hook、插件、扩展包、wrapper 或外部 adapter 的所有实现。
+  不适用于普通 Git commit-msg hook 的消息校验本身；Git hook 仍按 Git 退出码和 stdout/stderr 语义处理。
+  本 Pitfall 不替代 Codex 官方 hook 文档、LDVH 01 保障与衔接、23 Pitfall 规范或具体环境插件规范。
+tags:
+  - codex-hooks
+  - environment-plugin
+  - protocol-adapter
+  - runtime-adapter
+  - hook-exit-code
+  - session-start
+  - pre-tool-use
+  - stop-hook
+source_objects: []
+related_workcases: []
+related_adrs: []
+related_docs:
+  - specs/01-保障与衔接.md
+  - specs/02-AI行为规范.md
+  - specs/23-Pitfall-踩坑经验.md
+  - hooks/LDVH-RUNTIME-PROTOCOL.md
+related_rules:
+  - specs/01-保障与衔接.md
+  - specs/23-Pitfall-踩坑经验.md
+  - hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json
+  - hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
+  - code/runtime_adapter.py
+  - code/install_verification.py
+source_sparks: []
