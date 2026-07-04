@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -17,6 +19,11 @@ from typing import Any
 
 ROOT_MARKERS = ("code/runtime_adapter.py", "specs/00-理念与构成.md")
 TRIGGER_SOURCE = "codex.ldvh-plugin"
+REQUIRED_ENTRY_PATHS = (
+    "specs/00-理念与构成.md",
+    "specs/01-保障与衔接.md",
+    "specs/02-AI行为规范.md",
+)
 EVENT_MAP = {
     "sessionstart": "session_start",
     "session_start": "session_start",
@@ -25,7 +32,19 @@ EVENT_MAP = {
     "stop": "completion_claim",
     "completion_claim": "completion_claim",
 }
-BLOCKING_EVENTS = {"pre_tool_use"}
+READ_ONLY_TOOLS = {"read", "grep", "glob", "ls"}
+READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "tail", "wc"}
+READ_ONLY_GIT_SUBCOMMANDS = {
+    "branch",
+    "diff",
+    "grep",
+    "log",
+    "ls-files",
+    "remote",
+    "rev-parse",
+    "show",
+    "status",
+}
 
 
 def read_payload(raw: str) -> dict[str, Any]:
@@ -98,24 +117,143 @@ def tool_input(payload: dict[str, Any]) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
-def target_path(payload: dict[str, Any], cwd: Path) -> str:
+def command_text(payload: dict[str, Any]) -> str:
+    tool = tool_input(payload)
+    return first_text(tool.get("command"), tool.get("cmd"), payload.get("command"), payload.get("cmd"))
+
+
+def command_parts(command: str) -> list[str]:
+    try:
+        return shlex.split(command)
+    except ValueError:
+        return command.split()
+
+
+def is_likely_read_only_command(command: str) -> bool:
+    stripped = command.strip()
+    if not stripped or re.search(r"[;&|><`$()\n\r]", stripped):
+        return False
+    parts = command_parts(stripped)
+    if not parts:
+        return False
+    executable = Path(parts[0]).name.lower()
+    if executable == "find" and "-exec" in parts:
+        return False
+    if executable == "git":
+        return len(parts) > 1 and parts[1].lower() in READ_ONLY_GIT_SUBCOMMANDS
+    return executable in READ_ONLY_COMMANDS
+
+
+def transcript_read_commands(payload: dict[str, Any]) -> list[str]:
+    raw_path = first_text(payload.get("transcript_path"), payload.get("transcriptPath"))
+    if not raw_path:
+        return []
+    transcript_path = Path(raw_path).expanduser()
+    if not transcript_path.is_file():
+        return []
+    commands: list[str] = []
+    try:
+        lines = transcript_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    for line in lines:
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        item = record.get("payload") if isinstance(record, dict) else {}
+        if not isinstance(item, dict) or item.get("type") != "function_call":
+            continue
+        raw_arguments = item.get("arguments")
+        if isinstance(raw_arguments, str):
+            try:
+                arguments = json.loads(raw_arguments)
+            except json.JSONDecodeError:
+                arguments = {}
+        else:
+            arguments = raw_arguments if isinstance(raw_arguments, dict) else {}
+        command = first_text(arguments.get("cmd"), arguments.get("command"))
+        if command and is_likely_read_only_command(command):
+            commands.append(command)
+    return commands
+
+
+def acknowledged_paths(payload: dict[str, Any]) -> list[str]:
+    explicit = list_text(payload.get("acknowledged_paths") or payload.get("acknowledgedPaths"))
+    inferred: list[str] = []
+    for command in transcript_read_commands(payload):
+        for required_path in REQUIRED_ENTRY_PATHS:
+            if required_path in command:
+                inferred.append(required_path)
+    return list(dict.fromkeys([*explicit, *inferred]))
+
+
+def target_path_from_command(payload: dict[str, Any]) -> str:
+    command = command_text(payload)
+    if not command:
+        return ""
+    for pattern in (
+        r"^\*\*\* Update File: (.+)$",
+        r"^\*\*\* Add File: (.+)$",
+        r"^\*\*\* Delete File: (.+)$",
+    ):
+        match = re.search(pattern, command, re.MULTILINE)
+        if match:
+            return match.group(1).strip()
+    for part in reversed(command_parts(command)):
+        candidate = part.strip().strip("'\"")
+        if not candidate or candidate.startswith("-"):
+            continue
+        if candidate in {"python", "python3", "pytest", "py_compile"}:
+            continue
+        if "/" in candidate or candidate.endswith((".md", ".py", ".json", ".toml", ".yaml", ".yml", ".txt")):
+            return candidate
+    return ""
+
+
+def target_path_values(payload: dict[str, Any], cwd: Path) -> list[str]:
     tool = tool_input(payload)
     candidates = [
         payload.get("target_path"),
         payload.get("targetPath"),
+        payload.get("file_path"),
+        payload.get("filePath"),
+        payload.get("path"),
         tool.get("file_path"),
+        tool.get("filePath"),
         tool.get("path"),
         tool.get("target_path"),
+        tool.get("targetPath"),
     ]
+    values: list[str] = []
     for candidate in candidates:
         if isinstance(candidate, str) and candidate.strip():
-            return candidate.strip()
-    target_paths = payload.get("target_paths") or payload.get("targetPaths")
-    if isinstance(target_paths, list):
+            values.append(candidate.strip())
+    for target_paths in (
+        payload.get("target_paths"),
+        payload.get("targetPaths"),
+        tool.get("target_paths"),
+        tool.get("targetPaths"),
+        payload.get("file_paths"),
+        payload.get("filePaths"),
+        payload.get("paths"),
+        tool.get("file_paths"),
+        tool.get("filePaths"),
+        tool.get("paths"),
+    ):
+        target_paths = list_text(target_paths)
         for candidate in target_paths:
             if isinstance(candidate, str) and candidate.strip():
-                return candidate.strip()
-    return cwd.as_posix()
+                values.append(candidate.strip())
+    command_target = target_path_from_command(payload)
+    if command_target:
+        values.append(command_target)
+    return list(dict.fromkeys(values))
+
+
+def target_path(payload: dict[str, Any], cwd: Path) -> str:
+    values = target_path_values(payload, cwd)
+    return values[0] if values else ""
 
 
 def task_text(payload: dict[str, Any]) -> str:
@@ -130,7 +268,9 @@ def task_text(payload: dict[str, Any]) -> str:
 
 def operation(payload: dict[str, Any]) -> str:
     tool_name = first_text(payload.get("tool_name"), payload.get("toolName")).lower()
-    if tool_name in {"read", "grep", "glob", "ls"}:
+    if tool_name in READ_ONLY_TOOLS:
+        return "read"
+    if tool_name == "bash" and is_likely_read_only_command(command_text(payload)):
         return "read"
     return first_text(payload.get("operation"), "write")
 
@@ -139,38 +279,171 @@ def adapter_payload(payload: dict[str, Any], event: str, cwd: Path) -> dict[str,
     return {
         "event": event,
         "session_id": first_text(payload.get("session_id"), payload.get("sessionId"), "codex-hook"),
+        "cwd": cwd.as_posix(),
+        "config_root": first_text(payload.get("config_root"), payload.get("configRoot"), os.environ.get("LDVH_CONFIG_ROOT")),
         "target_path": target_path(payload, cwd),
+        "target_paths": target_path_values(payload, cwd),
         "operation": operation(payload),
         "task": task_text(payload),
-        "acknowledged_paths": list_text(payload.get("acknowledged_paths") or payload.get("acknowledgedPaths")),
+        "acknowledged_paths": acknowledged_paths(payload),
         "verification_evidence": list_text(payload.get("verification_evidence") or payload.get("verificationEvidence")),
         "trigger_source": TRIGGER_SOURCE,
     }
 
 
-def emit_diagnostic(code: str, message: str, *, blocked: bool = False) -> int:
-    print(
-        json.dumps(
-            {
-                "summary": {
-                    "status": "blocked" if blocked else "ok",
-                    "adapter_integrated": False,
-                    "environment_integrated": False,
-                    "trigger_source": TRIGGER_SOURCE,
-                },
-                "diagnostics": [
-                    {
-                        "level": "blocking" if blocked else "warning",
-                        "code": code,
-                        "path": "runtime://codex-ldvh-v3-shim",
-                        "message": message,
-                    }
-                ],
-            },
-            ensure_ascii=False,
-        )
+def emit_json(data: dict[str, Any]) -> int:
+    print(json.dumps(data, ensure_ascii=False))
+    return 0
+
+
+def emit_warning(message: str) -> int:
+    return emit_json({"systemMessage": message})
+
+
+def read_adapter_json(stdout: str) -> dict[str, Any]:
+    try:
+        parsed = json.loads(stdout)
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def diagnostics(result: dict[str, Any]) -> list[dict[str, Any]]:
+    value = result.get("diagnostics")
+    return value if isinstance(value, list) else []
+
+
+def summary_status(result: dict[str, Any]) -> str:
+    summary = result.get("summary")
+    if not isinstance(summary, dict):
+        return ""
+    return str(summary.get("status") or "")
+
+
+def is_blocking_result(result: dict[str, Any]) -> bool:
+    summary = result.get("summary")
+    if isinstance(summary, dict) and int(summary.get("blocking") or 0) > 0:
+        return True
+    return summary_status(result) == "blocked"
+
+
+def diagnostic_codes(result: dict[str, Any]) -> set[str]:
+    return {str(item.get("code") or "") for item in diagnostics(result) if isinstance(item, dict)}
+
+
+def should_deny_pre_tool(result: dict[str, Any]) -> bool:
+    if not is_blocking_result(result):
+        return False
+    codes = diagnostic_codes(result)
+    if codes and codes <= {"PREFLIGHT_TARGET_UNKNOWN"}:
+        return False
+    return True
+
+
+def diagnostic_reason(result: dict[str, Any]) -> str:
+    items = diagnostics(result)
+    if not items:
+        return "LDVH V3 runtime adapter returned a blocking result."
+    parts = []
+    for item in items[:3]:
+        code = str(item.get("code") or "LDVH_RUNTIME_CHECK")
+        message = str(item.get("message") or "").strip()
+        parts.append(f"{code}: {message}" if message else code)
+    if len(items) > 3:
+        parts.append(f"... plus {len(items) - 3} more")
+    return "；".join(parts)
+
+
+def adapter_dispatch(result: dict[str, Any]) -> dict[str, Any]:
+    value = result.get("dispatch")
+    return value if isinstance(value, dict) else {}
+
+
+def session_additional_context(result: dict[str, Any]) -> str:
+    guide = adapter_dispatch(result).get("action_guide")
+    guide = guide if isinstance(guide, dict) else {}
+    read_plan = guide.get("task_read_plan")
+    read_plan = read_plan if isinstance(read_plan, list) else []
+    paths = [
+        str(item.get("path") or item.get("label") or "").strip()
+        for item in read_plan
+        if isinstance(item, dict) and str(item.get("path") or item.get("label") or "").strip()
+    ]
+    if not paths:
+        return "LDVH V3 session hook ran. Before substantive edits, identify the applicable LDVH read plan and stop conditions."
+    return (
+        "LDVH V3 session read plan is active. Before substantive edits, read: "
+        + ", ".join(paths[:5])
+        + ". Treat this hook output as guidance, not authorization or completion evidence."
     )
-    return 1 if blocked else 0
+
+
+def pre_tool_context(result: dict[str, Any]) -> str:
+    dispatch = adapter_dispatch(result)
+    preflight = dispatch.get("preflight")
+    preflight = preflight if isinstance(preflight, dict) else {}
+    required = preflight.get("required_read_plan")
+    required = required if isinstance(required, list) else []
+    paths = [
+        str(item.get("path") or "").strip()
+        for item in required
+        if isinstance(item, dict) and str(item.get("path") or "").strip()
+    ]
+    if paths:
+        return "LDVH V3 pre-tool check passed. Relevant read plan: " + ", ".join(paths[:5])
+    return "LDVH V3 pre-tool check passed."
+
+
+def pre_tool_deny(result: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": diagnostic_reason(result),
+        }
+    }
+
+
+def codex_protocol_output(event: str, result: dict[str, Any]) -> dict[str, Any]:
+    if event == "session_start":
+        if is_blocking_result(result):
+            return {
+                "hookSpecificOutput": {
+                    "hookEventName": "SessionStart",
+                    "additionalContext": "LDVH V3 session hook returned a blocking diagnostic: " + diagnostic_reason(result),
+                }
+            }
+        return {
+            "hookSpecificOutput": {
+                "hookEventName": "SessionStart",
+                "additionalContext": session_additional_context(result),
+            }
+        }
+
+    if event == "pre_tool_use":
+        if should_deny_pre_tool(result):
+            return pre_tool_deny(result)
+        if is_blocking_result(result):
+            return {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreToolUse",
+                    "additionalContext": "LDVH V3 pre-tool warning: " + diagnostic_reason(result),
+                }
+            }
+        return {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "additionalContext": pre_tool_context(result),
+            }
+        }
+
+    if event == "completion_claim":
+        message = "LDVH V3 completion check passed."
+        if is_blocking_result(result):
+            message = "LDVH V3 completion check warning: " + diagnostic_reason(result)
+        return {"continue": True, "systemMessage": message}
+
+    return {"systemMessage": "LDVH V3 hook ran for unsupported event mapping."}
 
 
 def main() -> int:
@@ -179,16 +452,17 @@ def main() -> int:
     cwd = Path(first_text(payload.get("cwd"), os.getcwd())).expanduser()
     event = normalize_event(payload)
     if not event:
-        return emit_diagnostic(
-            "LDVH_CODEX_SHIM_EVENT_UNKNOWN",
-            "Codex hook payload did not contain a supported SessionStart, PreToolUse, Stop, or completion_claim event.",
+        return emit_warning(
+            "LDVH_CODEX_SHIM_EVENT_UNKNOWN: Codex hook payload did not contain a supported SessionStart, PreToolUse, Stop, or completion_claim event."
         )
+
+    if event == "pre_tool_use" and operation(payload) == "read":
+        return 0
 
     ldvh_root = find_ldvh_root(payload, cwd)
     if ldvh_root is None:
-        return emit_diagnostic(
-            "LDVH_CODEX_SHIM_ROOT_NOT_FOUND",
-            "LDVH root was not found from LDVH_ROOT, payload, cwd, or shim path; hook shim allowed the event.",
+        return emit_warning(
+            "LDVH_CODEX_SHIM_ROOT_NOT_FOUND: LDVH root was not found from LDVH_ROOT, payload, cwd, or shim path; hook shim allowed the event."
         )
 
     runtime_adapter = ldvh_root / "code" / "runtime_adapter.py"
@@ -203,10 +477,14 @@ def main() -> int:
         "--format",
         "json",
     ]
-    result = subprocess.run(command, text=True)
-    if event in BLOCKING_EVENTS:
-        return result.returncode
-    return 0
+    completed = subprocess.run(command, text=True, capture_output=True)
+    parsed = read_adapter_json(completed.stdout)
+    if not parsed:
+        detail = completed.stderr.strip() or completed.stdout.strip() or f"exit={completed.returncode}"
+        return emit_warning("LDVH_CODEX_SHIM_ADAPTER_OUTPUT_INVALID: " + detail[:500])
+    if summary_status(parsed) == "no_op":
+        return 0
+    return emit_json(codex_protocol_output(event, parsed))
 
 
 if __name__ == "__main__":

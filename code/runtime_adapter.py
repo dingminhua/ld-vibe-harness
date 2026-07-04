@@ -86,16 +86,36 @@ def _base_result(root: Path, payload: dict[str, Any], diagnostics: list[dict[str
 
 def _missing_field_diagnostics(payload: dict[str, Any]) -> list[dict[str, str]]:
     missing = [field for field in REQUIRED_PAYLOAD_FIELDS if field not in payload]
-    if not missing:
-        return []
-    return [
-        _diagnostic(
-            "blocking",
-            "RUNTIME_ADAPTER_PAYLOAD_FIELD_MISSING",
-            "runtime://adapter-payload",
-            "runtime adapter payload 缺少字段: " + "；".join(missing),
+    diagnostics: list[dict[str, str]] = []
+    if missing:
+        diagnostics.append(
+            _diagnostic(
+                "blocking",
+                "RUNTIME_ADAPTER_PAYLOAD_FIELD_MISSING",
+                "runtime://adapter-payload",
+                "runtime adapter payload 缺少字段: " + "；".join(missing),
+            )
         )
+
+    trigger_source = str(payload.get("trigger_source") or "")
+    target_values = [
+        str(value).strip()
+        for value in [payload.get("target_path"), *_list_value(payload.get("target_paths"))]
+        if str(value).strip()
     ]
+    is_external_trigger = bool(trigger_source) and not trigger_source.startswith("manual")
+    has_relative_target = any(not Path(target).expanduser().is_absolute() for target in target_values)
+    has_cwd = bool(str(payload.get("cwd") or "").strip())
+    if is_external_trigger and has_relative_target and not has_cwd:
+        diagnostics.append(
+            _diagnostic(
+                "blocking",
+                "RUNTIME_ADAPTER_CWD_REQUIRED_FOR_RELATIVE_TARGET",
+                "runtime://adapter-payload",
+                "外部 adapter 或 Hook payload 使用相对 target_path 时必须提供真实 cwd，不能由 LDVH root 代替。",
+            )
+        )
+    return diagnostics
 
 
 def _dispatchers() -> dict[str, Callable[..., dict[str, Any]]]:
@@ -129,6 +149,9 @@ def dispatch_runtime_payload(root: Path = ROOT, payload: dict[str, Any] | None =
     common_kwargs = {
         "session_id": str(normalized_payload.get("session_id", "")),
         "target_path": str(normalized_payload.get("target_path", "")),
+        "cwd": str(normalized_payload.get("cwd", "")) or None,
+        "config_root": str(normalized_payload.get("config_root", "")) or None,
+        "target_paths": _list_value(normalized_payload.get("target_paths")),
         "task": str(normalized_payload.get("task", "")),
         "operation": str(normalized_payload.get("operation", "")) or "write",
         "trigger_source": trigger_source,
@@ -138,6 +161,9 @@ def dispatch_runtime_payload(root: Path = ROOT, payload: dict[str, Any] | None =
             root,
             session_id=common_kwargs["session_id"],
             target_path=common_kwargs["target_path"],
+            cwd=common_kwargs["cwd"],
+            config_root=common_kwargs["config_root"],
+            target_paths=common_kwargs["target_paths"],
             task=common_kwargs["task"],
             trigger_source=trigger_source,
         )
@@ -174,7 +200,10 @@ def _payload_from_args(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "event": args.event or "",
         "session_id": args.session_id,
+        "cwd": args.cwd,
+        "config_root": args.config_root,
         "target_path": args.target_path,
+        "target_paths": args.target_paths,
         "operation": args.operation,
         "task": args.task,
         "acknowledged_paths": args.acknowledged_path,
@@ -221,7 +250,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--payload-file", default="", help="JSON payload file")
     parser.add_argument("--payload-json", default="", help="JSON payload string")
     parser.add_argument("--session-id", default="", help="current session identifier")
+    parser.add_argument("--cwd", default="", help="current working directory for target resolution")
+    parser.add_argument("--config-root", default="", help="root containing LDVH-GOVERNED-PROJECTS.yaml")
     parser.add_argument("--target-path", default="", help="target path")
+    parser.add_argument("--target-paths", action="append", default=[], help="explicit target path; may be repeated")
     parser.add_argument("--task", default="", help="current task summary")
     parser.add_argument("--operation", default="write", help="operation kind")
     parser.add_argument("--trigger-source", default=INTEGRATION_SCOPE, help="trigger source label")

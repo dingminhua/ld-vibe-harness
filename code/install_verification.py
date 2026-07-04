@@ -24,13 +24,17 @@ CODEX_SHIM = "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
 CODEX_ENVIRONMENT_NAME = "Codex"
 
 
-def _visible_probe_command(ldvh_root: Path, repo: Path) -> str:
+def _visible_probe_command(ldvh_root: Path, repo: Path, governance_root: Path | None = None) -> str:
     parts = [
         "python3",
         (ldvh_root / "code/runtime_adapter.py").as_posix(),
         "session-start",
         "--root",
         ldvh_root.as_posix(),
+    ]
+    if governance_root is not None:
+        parts.extend(["--config-root", governance_root.as_posix()])
+    parts.extend([
         "--session-id",
         "31-visible-probe",
         "--target-path",
@@ -43,7 +47,7 @@ def _visible_probe_command(ldvh_root: Path, repo: Path) -> str:
         "manual.31-visible-probe",
         "--format",
         "text",
-    ]
+    ])
     return " ".join(shlex.quote(part) for part in parts)
 
 
@@ -279,6 +283,24 @@ def _shim_tests_passed(shim_tests: dict[str, dict[str, Any]]) -> bool:
     return bool(shim_tests) and all(item.get("status") == "passed" for item in shim_tests.values())
 
 
+def _hook_specific_output(payload: dict[str, Any]) -> dict[str, Any]:
+    value = payload.get("hookSpecificOutput")
+    return value if isinstance(value, dict) else {}
+
+
+def _hook_event_name(payload: dict[str, Any]) -> str:
+    return str(_hook_specific_output(payload).get("hookEventName") or "")
+
+
+def _pre_tool_denied(payload: dict[str, Any]) -> bool:
+    hook_output = _hook_specific_output(payload)
+    return (
+        hook_output.get("hookEventName") == "PreToolUse"
+        and hook_output.get("permissionDecision") == "deny"
+        and bool(hook_output.get("permissionDecisionReason"))
+    )
+
+
 def _codex_plugin_install_detected(codex_plugin: dict[str, Any]) -> bool:
     details = codex_plugin.get("details", {})
     if not isinstance(details, dict):
@@ -291,7 +313,13 @@ def _codex_plugin_install_detected(codex_plugin: dict[str, Any]) -> bool:
     )
 
 
-def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, environment_name: str) -> dict[str, Any]:
+def _verify_environment(
+    ldvh_root: Path,
+    repo: Path,
+    codex_home: Path | None,
+    environment_name: str,
+    governance_root: Path | None = None,
+) -> dict[str, Any]:
     if not _is_codex_environment(environment_name):
         return {
             "summary": {
@@ -319,7 +347,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                     f"先确认 {environment_name} 是否支持插件 / 扩展包 / package 形态的 Hook 入口。",
                     "若支持 Hook，必须先实装目标环境插件 / 扩展包并让安装检测通过；安装检测通过后的 integrated 验收再按支持 Hook 分支处理。",
                     "若 01 或环境审计确认没有可用 Hook 入口，回到 specs/30-LDVH安装初始化管辖项目配置行动模板.md 的手动可用安装交还。",
-                    "手动可用安装交还只能列出 repo instruction、manual entrypoint、thin reference 或外部 adapter 候选承接形态。",
+                    "手动可用安装交还必须基于 hooks/LDVH-RUNTIME-PROTOCOL.md 生成已替换 LDVH 本体绝对路径的薄引用文本，给出可复制内容和写入路径，不得只列承接形态表。",
                     "手动可用安装交还不得声明环境自动接入已完成，也不得安排 31 的插件页面、重启 App 或写入前检查阻断验收。",
                 ],
                 "acceptance_criteria": [
@@ -343,6 +371,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
             "hook_event_name": "SessionStart",
             "sessionId": "install-verify-session",
             "cwd": repo.as_posix(),
+            "configRoot": governance_root.as_posix() if governance_root is not None else "",
             "prompt": "验证 LDVH 安装入口",
             "targetPath": "README.md",
         },
@@ -353,6 +382,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
             "hook_event_name": "PreToolUse",
             "sessionId": "install-verify-pretool",
             "cwd": repo.as_posix(),
+            "configRoot": governance_root.as_posix() if governance_root is not None else "",
             "toolName": "Write",
             "tool_input": {"file_path": "README.md"},
         },
@@ -363,6 +393,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
             "hook_event_name": "Stop",
             "sessionId": "install-verify-stop",
             "cwd": repo.as_posix(),
+            "configRoot": governance_root.as_posix() if governance_root is not None else "",
             "targetPath": "README.md",
         },
     )
@@ -375,19 +406,21 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
     shim_tests = {
         "session_start_direct": {
             "status": "passed"
-            if session.get("returncode") == 0 and session_payload.get("summary", {}).get("event") == "session_start"
+            if session.get("returncode") == 0 and _hook_event_name(session_payload) == "SessionStart"
             else "failed",
             "returncode": session.get("returncode"),
         },
         "pre_tool_use_direct_block": {
             "status": "passed"
-            if pretool.get("returncode") != 0 and pretool_payload.get("summary", {}).get("event") == "pre_tool_use"
+            if pretool.get("returncode") == 0 and _pre_tool_denied(pretool_payload)
             else "failed",
             "returncode": pretool.get("returncode"),
         },
         "completion_claim_direct_nonblocking": {
             "status": "passed"
-            if stop.get("returncode") == 0 and stop_payload.get("summary", {}).get("event") == "completion_claim"
+            if stop.get("returncode") == 0
+            and stop_payload.get("continue") is True
+            and "LDVH V3 completion check" in str(stop_payload.get("systemMessage") or "")
             else "failed",
             "returncode": stop.get("returncode"),
         },
@@ -416,7 +449,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})
     status = "blocked" if blocking else "ok" if environment_install_verified else "review_required"
 
-    visible_probe_command = _visible_probe_command(ldvh_root, repo)
+    visible_probe_command = _visible_probe_command(ldvh_root, repo, governance_root)
     return {
         "summary": {
             "status": status,
@@ -480,7 +513,13 @@ def build_install_verification(
         _verify_git_hook(project, resolved_governance_root, resolved_ldvh_root)
         for project in projects
     ] if not config_diagnostics else []
-    environment = _verify_environment(resolved_ldvh_root, resolved_repo, codex_home, environment_name)
+    environment = _verify_environment(
+        resolved_ldvh_root,
+        resolved_repo,
+        codex_home,
+        environment_name,
+        resolved_governance_root,
+    )
 
     diagnostics: list[dict[str, str]] = list(config_diagnostics)
     for result in git_results:
@@ -613,7 +652,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         user_next_steps = [
             "确认目标环境当前没有可用 Hook 接入，或先补目标环境插件方案。",
             "若确认无可用 Hook，按 30 手动可用安装交还完成交还。",
-            "复核 repo instruction、thin reference 或 manual CLI 能找到 V3 specs。",
+            "确认薄引用文件已写入并可被 AI 读取到 Runtime Protocol 入口。",
             "复核每个管辖项目 Git commit-msg Hook 的正反例结果。",
             "以后目标环境支持 Hook 时，再升级为环境插件并进入安装检测。",
         ]

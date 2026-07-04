@@ -247,7 +247,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fail-on-diagnostics", action="store_true", help="return non-zero when any diagnostic exists")
     parser.add_argument("--timing", default="session_start", help="consumption timing for action-guide")
     parser.add_argument("--task", default="", help="current task summary for action-guide")
+    parser.add_argument("--cwd", default="", help="current working directory for target resolution")
     parser.add_argument("--target-path", default="", help="target path for action-guide")
+    parser.add_argument(
+        "--target-paths",
+        action="append",
+        default=[],
+        help="explicit target path for preflight/runtime/governed-projects; may be repeated",
+    )
     parser.add_argument("--config-root", default="", help="configuration root for governed-projects hierarchy checks")
     parser.add_argument("--trigger-source", default="manual", help="trigger source for action-guide")
     parser.add_argument("--operation", default="write", help="operation for preflight")
@@ -312,6 +319,9 @@ def main(argv: list[str] | None = None) -> int:
             task=args.task,
             trigger_source=args.trigger_source,
             high_impact=args.high_impact,
+            cwd=args.cwd or None,
+            config_root=args.config_root or None,
+            target_paths=args.target_paths,
         )
         result = output
     elif args.command == "runtime":
@@ -325,13 +335,16 @@ def main(argv: list[str] | None = None) -> int:
             operation=args.operation,
             acknowledged_paths=args.acknowledged_path,
             verification_evidence=args.verification_evidence,
+            cwd=args.cwd or None,
+            config_root=args.config_root or None,
+            target_paths=args.target_paths,
         )
         result = output
     elif args.command == "governed-projects":
-        target_paths = [args.target_path] if args.target_path else []
+        target_paths = args.target_paths or ([args.target_path] if args.target_path else [])
         output = build_governed_projects_report(
             root,
-            cwd=root,
+            cwd=args.cwd or root,
             target_paths=target_paths,
             read_write_kind="commit" if args.operation == "commit" else "write",
             config_root=args.config_root or None,

@@ -65,7 +65,12 @@ PREFLIGHT_TYPE_READ_PATHS = {
         "specs/09-测试与验证规范.md",
         "specs/07-Code确定性执行规范.md",
     ],
+    "acceptance_scratch": [
+        "specs/31-环境Hook接入后验收行动模板.md",
+        "code/docs/02-Environment-Plugin-Practice.md",
+    ],
 }
+ACCEPTANCE_SCRATCH_PREFIX = ".ldvh-runtime/acceptance-probe/"
 HIGH_IMPACT_SPEC_PATHS = {
     "specs/00-理念与构成.md",
     "specs/01-保障与衔接.md",
@@ -78,6 +83,21 @@ RUNTIME_REQUIRED_ENTRY_PATHS = [
     "specs/01-保障与衔接.md",
     "specs/02-AI行为规范.md",
 ]
+
+
+def normalize_relative_path(path: str) -> str:
+    normalized = path.strip()
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    return normalized
+
+
+def _path_is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True
 
 SPEC_REQUIRED_KEYS = {
     "spec_id",
@@ -527,11 +547,11 @@ LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS = {
     ],
 }
 ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_REQUIRED_ROWS = {
-    "Context": ["目标环境", "30 交还结果", "统一安装验证入口", "environment_hook_integrated=false", "插件页面", "Human 授权", "source_refs", "specs/30-LDVH安装初始化管辖项目配置行动模板.md"],
+    "Context": ["目标环境", "30 交还结果", "安装变化目标", "统一安装验证入口", "environment_hook_integrated=false", "插件页面", "Human 授权", "source_refs", "specs/30-LDVH安装初始化管辖项目配置行动模板.md"],
     "Scenario": ["30 安装检测通过", "环境 Hook 接入后验收", "lifecycle 冒烟", "只回答 01/06/09/30/31 边界"],
     "Gate": ["开始验收", "受控负例阻断", "受控正例放行", "授权 / trust", "本次自动接入验收判断", "Human Gate"],
-    "执行": ["逐项推进验收", "一次只判断一项", "闭集确认", "重启 App", "新会话只读可见性探针", "受控 scratch target", "不得安装", "不得升级", "不得修改用户环境", "失败即停止"],
-    "验证": ["统一安装验证入口", "新会话只读可见性探针", "SessionStart", "PreToolUse", "Git Hook 正反例", "environment_hook_integrated", "失败"],
+    "执行": ["30 安装净变化", "安装变化目标", "逐项推进验收", "一次只判断一项", "闭集确认", "重启 App", "新会话只读可见性探针", "受控 scratch target", "不得安装", "不得升级", "不得修改用户环境", "失败即停止"],
+    "验证": ["安装变化目标", "统一安装验证入口", "新会话只读可见性探针", "SessionStart", "PreToolUse", "Git Hook 正反例", "environment_hook_integrated", "失败"],
     "回写": ["不回写长期验收状态", "当前对话交还", "不得写事实源", "不得写 specs", "不得写 `.ldvh-runtime` 过程输出"],
     "交还": ["验收结果表", "通过项", "失败项", "未验证项", "本次自动接入验收判断", "当前 `environment_hook_integrated` 检测输出", "不可跨会话继承说明", "回滚或诊断入口", "source_refs"],
 }
@@ -545,6 +565,9 @@ ENV_HOOK_ACCEPTANCE_REQUIRED_CODE_CONSUMPTION = [
 ENV_HOOK_ACCEPTANCE_FLOW_TERMS = [
     "31 由 30 交接调用",
     "不安装、不升级、不禁用、不卸载",
+    "31 的目标检查只从 30 安装净变化派生",
+    "安装变化目标",
+    "不得新增与安装变化无关的验收目标",
     "逐项验收推进规则",
     "简洁验收提示",
     "用户要做什么",
@@ -605,12 +628,16 @@ ENV_HOOK_ACCEPTANCE_FLOW_TERMS = [
 ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_SUPPORT_TERMS = {
     "post_install_environment_acceptance_flow": [
         "30 安装检测通过",
+        "30 安装净变化",
+        "安装变化目标",
         "install_complete=true",
         "environment_hook_install_verified=true",
         "environment_hook_integrated=false",
         "本次验收总结",
     ],
     "environment_hook_acceptance_test_matrix": [
+        "目标工作区配置和管辖项目关系",
+        "Git `commit-msg` Hook",
         "插件页面结果",
         "重启 App",
         "新会话可见性探针",
@@ -780,7 +807,7 @@ GOVERNED_PROJECT_SPEC_REQUIREMENTS = [
         "code": "GOVERNED_PROJECT_MULTI_TARGET_BOUNDARY_MISSING",
         "section": "多目标与 no-op 边界",
         "message": "10 必须定义多目标、混合目标和 no-op 边界",
-        "terms": ["同一管辖项目", "跨管辖项目", "管辖/非管辖混合", "no-op", "阻断"],
+        "terms": ["同一管辖项目", "跨管辖项目", "管辖/非管辖混合", "no-op", "静默", "additionalContext", "阻断"],
     },
     {
         "code": "GOVERNED_PROJECT_ENVIRONMENT_BOUNDARY_MISSING",
@@ -2408,7 +2435,8 @@ def resolve_governed_subject(
     )
     if config_root is not None:
         hierarchy_configs = [Path(item["absolute_path"]) for item in config_hierarchy["configs"]]
-        config = hierarchy_configs[0] if hierarchy_configs else None
+        explicit_config = _resolve_path(Path(config_root), root) / GOVERNED_PROJECTS_CONFIG_PATH
+        config = hierarchy_configs[0] if hierarchy_configs else explicit_config if explicit_config.is_file() else None
     else:
         config = find_governed_projects_config(root, base_cwd, effective_targets)
     result: dict[str, Any] = {
@@ -4095,13 +4123,20 @@ def build_action_guide(
 
 
 def classify_target_path(target_path: str) -> dict[str, str]:
-    normalized = target_path.strip().lstrip("./")
+    normalized = normalize_relative_path(target_path)
     if not normalized:
         return {
             "target_path": "",
             "target_type": "unknown",
             "impact": "unknown",
             "reason": "未提供 target_path，无法判断写入对象。",
+        }
+    if normalized.startswith(ACCEPTANCE_SCRATCH_PREFIX):
+        return {
+            "target_path": normalized,
+            "target_type": "acceptance_scratch",
+            "impact": "low",
+            "reason": "目标属于 31 环境 Hook 验收的受控 scratch target，只能用于当次正反例探针，不作为事实源或长期过程状态。",
         }
     if normalized in HIGH_IMPACT_SPEC_PATHS:
         return {
@@ -4172,6 +4207,136 @@ def preflight_read_plan_for_target(classification: dict[str, str]) -> list[dict[
     ]
 
 
+def _scope_target_values(target_path: str, target_paths: list[str | Path] | None) -> list[str | Path]:
+    raw_targets = [path for path in (target_paths or []) if str(path).strip()]
+    if raw_targets:
+        return raw_targets
+    return [target_path] if target_path.strip() else []
+
+
+def normalize_target_path_for_root(root: Path, target_path: str, cwd: str | Path | None = None) -> str:
+    raw = target_path.strip()
+    if not raw:
+        return ""
+    base_cwd = _resolve_path(Path(cwd) if cwd is not None else root, root)
+    resolved_root = root.resolve(strict=False)
+    resolved_target = _resolve_path(Path(raw), base_cwd)
+    if _path_is_relative_to(resolved_target, resolved_root):
+        return _display_path(resolved_target, resolved_root)
+    if not Path(raw).expanduser().is_absolute() and _path_is_relative_to(base_cwd, resolved_root):
+        return normalize_relative_path(raw)
+    return resolved_target.as_posix()
+
+
+def _scope_is_outside_ldvh_root(root: Path, governed_project: dict[str, Any]) -> bool:
+    resolved_root = root.resolve(strict=False)
+    scope_targets = [
+        Path(path).expanduser().resolve(strict=False)
+        for path in governed_project.get("target_paths", [])
+        if str(path).strip()
+    ]
+    return bool(scope_targets) and all(not _path_is_relative_to(path, resolved_root) for path in scope_targets)
+
+
+def _scope_touches_ldvh_root(root: Path, governed_project: dict[str, Any]) -> bool:
+    resolved_root = root.resolve(strict=False)
+    return any(
+        _path_is_relative_to(Path(path).expanduser().resolve(strict=False), resolved_root)
+        for path in governed_project.get("target_paths", [])
+        if str(path).strip()
+    )
+
+
+def _should_noop_for_nongoverned_scope(
+    root: Path,
+    classification: dict[str, str],
+    governed_project: dict[str, Any],
+) -> bool:
+    if governed_project.get("blocked") or governed_project.get("governed"):
+        return False
+    if classification.get("target_type") != "unknown":
+        return False
+    if _scope_touches_ldvh_root(root, governed_project):
+        return False
+    if governed_project.get("config_path"):
+        return True
+    return _scope_is_outside_ldvh_root(root, governed_project)
+
+
+def _empty_action_guide_summary() -> dict[str, Any]:
+    return {
+        "summary": {
+            "status": "no_op",
+            "requirements": 0,
+            "task_read_plan": 0,
+            "missing_fields": 0,
+            "capability_gap": 0,
+            "diagnostics": 0,
+        },
+        "task_read_plan": [],
+        "stop_conditions": [],
+        "missing_fields": [],
+        "capability_gap": [],
+    }
+
+
+def _build_preflight_no_op(
+    root: Path,
+    *,
+    cwd: str | Path | None,
+    config_root: str | Path | None,
+    target_paths: list[str | Path] | None,
+    classification: dict[str, str],
+    governed_project: dict[str, Any],
+    operation: str,
+    task: str,
+    trigger_source: str,
+    high_impact: bool,
+) -> dict[str, Any]:
+    normalized_target = classification["target_path"]
+    return {
+        "metadata": {
+            "read_only": True,
+            "authority": "derived_from_specs_markdown",
+            "authorization": "none",
+            "root": root.as_posix(),
+        },
+        "summary": {
+            "status": "no_op",
+            "operation": operation,
+            "target_type": "non_governed",
+            "impact": "none",
+            "diagnostics": 0,
+            "blocking": 0,
+            "warnings": 0,
+            "follow_up": 0,
+            "unverifiable": 0,
+            "human_gate_risks": 0,
+        },
+        "input": {
+            "cwd": _resolve_path(Path(cwd) if cwd is not None else root, root).as_posix(),
+            "config_root": _resolve_path(Path(config_root), root).as_posix() if config_root is not None else "",
+            "target_path": normalized_target,
+            "target_paths": [str(path) for path in (target_paths or [])],
+            "operation": operation,
+            "task": task,
+            "trigger_source": trigger_source,
+            "high_impact": high_impact,
+        },
+        "target": {**classification, "target_type": "non_governed", "impact": "none"},
+        "governed_project": governed_project,
+        "required_read_plan": [],
+        "action_guide": _empty_action_guide_summary(),
+        "validation_guard": [],
+        "human_gate_risks": [],
+        "source_refs": [
+            {"path": "specs/01-保障与衔接.md", "role": "environment_hook_silent_noop_boundary"},
+            {"path": "specs/10-管辖项目配置规范.md", "role": "governed_project_noop_boundary"},
+        ],
+        "diagnostics": [],
+    }
+
+
 def build_preflight(
     root: Path = ROOT,
     target_path: str = "",
@@ -4179,10 +4344,36 @@ def build_preflight(
     task: str = "",
     trigger_source: str = "manual",
     high_impact: bool = False,
+    cwd: str | Path | None = None,
+    config_root: str | Path | None = None,
+    target_paths: list[str | Path] | None = None,
     validation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     validation = validation if validation is not None else build_validation(root)
-    classification = classify_target_path(target_path)
+    normalized_target_for_classification = normalize_target_path_for_root(root, target_path, cwd)
+    classification = classify_target_path(normalized_target_for_classification)
+    raw_scope_targets = _scope_target_values(target_path, target_paths)
+    governed_project = resolve_governed_subject(
+        root,
+        cwd=cwd or root,
+        target_paths=raw_scope_targets,
+        read_write_kind="commit" if operation == "commit" else "write",
+        config_root=config_root,
+    )
+    if _should_noop_for_nongoverned_scope(root, classification, governed_project):
+        return _build_preflight_no_op(
+            root,
+            cwd=cwd,
+            config_root=config_root,
+            target_paths=raw_scope_targets,
+            classification=classification,
+            governed_project=governed_project,
+            operation=operation,
+            task=task,
+            trigger_source=trigger_source,
+            high_impact=high_impact,
+        )
+
     action_guide = build_action_guide(
         root,
         consumption_timing="pre_tool_use",
@@ -4196,12 +4387,6 @@ def build_preflight(
     target_type = classification["target_type"]
     impact = classification["impact"]
     normalized_target = classification["target_path"]
-    governed_project = resolve_governed_subject(
-        root,
-        cwd=root,
-        target_paths=[normalized_target] if normalized_target else [],
-        read_write_kind="commit" if operation == "commit" else "write",
-    )
 
     if target_type == "unknown":
         diagnostics.append({
@@ -4299,7 +4484,10 @@ def build_preflight(
             "human_gate_risks": len(human_gate_risks),
         },
         "input": {
+            "cwd": _resolve_path(Path(cwd) if cwd is not None else root, root).as_posix(),
+            "config_root": _resolve_path(Path(config_root), root).as_posix() if config_root is not None else "",
             "target_path": normalized_target,
+            "target_paths": [str(path) for path in raw_scope_targets],
             "operation": operation,
             "task": task,
             "trigger_source": trigger_source,
@@ -4337,7 +4525,7 @@ def normalize_path_list(paths: list[str] | None) -> list[str]:
     normalized: list[str] = []
     for value in paths:
         for part in re.split(r"[,，]", value):
-            stripped = part.strip().lstrip("./")
+            stripped = normalize_relative_path(part)
             if stripped:
                 normalized.append(stripped)
     return list(dict.fromkeys(normalized))
@@ -4408,7 +4596,7 @@ def commit_contract_values(root: Path = ROOT) -> dict[str, set[str]]:
 
 
 def _commit_scope_for_path(path: str) -> str:
-    normalized = path.strip().lstrip("./")
+    normalized = normalize_relative_path(path)
     if normalized.startswith("specs/"):
         return "specs"
     if normalized.startswith("code/"):
@@ -4441,7 +4629,7 @@ def _commit_scope_for_path(path: str) -> str:
 
 
 def _commit_path_is_high_impact(path: str) -> bool:
-    normalized = path.strip().lstrip("./")
+    normalized = normalize_relative_path(path)
     return (
         normalized.startswith(("specs/", "code/", "tests/", "web/", "rules/", ".github/", "skills/"))
         or normalized in {GOVERNED_PROJECTS_CONFIG_PATH, "pyproject.toml", "package.json", "package-lock.json"}
@@ -4449,7 +4637,7 @@ def _commit_path_is_high_impact(path: str) -> bool:
 
 
 def _commit_path_changes_boundary(path: str) -> bool:
-    normalized = path.strip().lstrip("./")
+    normalized = normalize_relative_path(path)
     return (
         normalized in HIGH_IMPACT_SPEC_PATHS
         or normalized in {
@@ -4642,10 +4830,129 @@ def receipt_id_for(
     return "ldvh-rt-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
+def build_runtime_scope_noop_preflight(
+    root: Path,
+    *,
+    cwd: str | Path | None,
+    config_root: str | Path | None,
+    target_path: str,
+    target_paths: list[str | Path] | None,
+    operation: str,
+    task: str,
+    trigger_source: str,
+    high_impact: bool = False,
+) -> dict[str, Any] | None:
+    normalized_target_for_classification = normalize_target_path_for_root(root, target_path, cwd)
+    classification = classify_target_path(normalized_target_for_classification)
+    raw_scope_targets = _scope_target_values(target_path, target_paths)
+    governed_project = resolve_governed_subject(
+        root,
+        cwd=cwd or root,
+        target_paths=raw_scope_targets,
+        read_write_kind="commit" if operation == "commit" else "write",
+        config_root=config_root,
+    )
+    if not _should_noop_for_nongoverned_scope(root, classification, governed_project):
+        return None
+    return _build_preflight_no_op(
+        root,
+        cwd=cwd,
+        config_root=config_root,
+        target_paths=raw_scope_targets,
+        classification=classification,
+        governed_project=governed_project,
+        operation=operation,
+        task=task,
+        trigger_source=trigger_source,
+        high_impact=high_impact,
+    )
+
+
+def build_runtime_no_op_event(
+    root: Path,
+    *,
+    event: str,
+    trigger_source: str,
+    session_id: str,
+    target_path: str,
+    task: str,
+    operation: str,
+    acknowledged_paths: list[str],
+    verification_evidence: list[str],
+    cwd: str | Path | None,
+    config_root: str | Path | None,
+    target_paths: list[str | Path] | None,
+    preflight: dict[str, Any] | None,
+) -> dict[str, Any]:
+    receipt = {
+        "receipt_id": receipt_id_for(
+            event,
+            trigger_source,
+            session_id,
+            target_path,
+            acknowledged_paths,
+            verification_evidence,
+        ),
+        "receipt_type": "runtime_event",
+        "status": "no_op",
+        "persistent": False,
+        "storage": "stdout_only",
+        "canonical_event": event,
+        "trigger_source": trigger_source,
+        "session_id": session_id,
+        "target_path": target_path,
+        "acknowledged_paths": acknowledged_paths,
+        "verification_evidence": verification_evidence,
+        "boundary": "非管辖项目 no-op；receipt 只是过程输出，不是事实源、授权、放行、Human Gate 或完成证明。",
+    }
+    return {
+        "metadata": {
+            "read_only": True,
+            "authority": "derived_from_specs_markdown",
+            "environment_integrated": False,
+            "authorization": "none",
+            "root": root.as_posix(),
+        },
+        "summary": {
+            "status": "no_op",
+            "event": event,
+            "trigger_source": trigger_source,
+            "diagnostics": 0,
+            "blocking": 0,
+            "receipt_status": "no_op",
+            "has_action_guide": False,
+            "has_preflight": preflight is not None,
+        },
+        "input": {
+            "event": event,
+            "trigger_source": trigger_source,
+            "session_id": session_id,
+            "cwd": _resolve_path(Path(cwd) if cwd is not None else root, root).as_posix(),
+            "config_root": _resolve_path(Path(config_root), root).as_posix() if config_root is not None else "",
+            "target_path": target_path,
+            "target_paths": [str(path) for path in (target_paths or [])],
+            "task": task,
+            "operation": operation,
+            "acknowledged_paths": acknowledged_paths,
+            "verification_evidence": verification_evidence,
+        },
+        "receipt": receipt,
+        "action_guide": None,
+        "preflight": preflight,
+        "source_refs": [
+            {"path": "specs/01-保障与衔接.md", "role": "environment_hook_silent_noop_boundary"},
+            {"path": "specs/10-管辖项目配置规范.md", "role": "governed_project_noop_boundary"},
+        ],
+        "diagnostics": [],
+    }
+
+
 def runtime_status_from_diagnostics(
     diagnostics: list[dict[str, str]],
     preflight: dict[str, Any] | None,
 ) -> str:
+    if preflight and preflight["summary"]["status"] == "no_op":
+        return "no_op"
     if any(diagnostic["level"] in {"error", "blocking"} for diagnostic in diagnostics):
         return "blocked"
     if preflight and preflight["summary"]["status"] in {"blocked", "review_required"}:
@@ -4665,12 +4972,16 @@ def build_runtime_event(
     operation: str = "write",
     acknowledged_paths: list[str] | None = None,
     verification_evidence: list[str] | None = None,
+    cwd: str | Path | None = None,
+    config_root: str | Path | None = None,
+    target_paths: list[str | Path] | None = None,
     validation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     validation = validation if validation is not None else build_validation(root)
     allowed_events = {row["consumption_timing"] for row in validation["consumption_timings"]}
     normalized_event = event.strip()
-    normalized_target = target_path.strip().lstrip("./")
+    normalized_target = normalize_target_path_for_root(root, target_path, cwd)
+    raw_scope_targets = _scope_target_values(target_path, target_paths)
     normalized_ack_paths = normalize_path_list(acknowledged_paths)
     normalized_verification_evidence = normalize_path_list(verification_evidence)
 
@@ -4687,6 +4998,34 @@ def build_runtime_event(
             "disposition": "blocking",
         })
     else:
+        if normalized_event in {"session_start", "pre_tool_use", "completion_claim", "git_commit_msg"}:
+            noop_preflight = build_runtime_scope_noop_preflight(
+                root,
+                cwd=cwd,
+                config_root=config_root,
+                target_path=target_path,
+                target_paths=target_paths,
+                operation="commit" if normalized_event == "git_commit_msg" else operation,
+                task=task,
+                trigger_source=trigger_source,
+            )
+            if noop_preflight is not None:
+                return build_runtime_no_op_event(
+                    root,
+                    event=normalized_event,
+                    trigger_source=trigger_source,
+                    session_id=session_id,
+                    target_path=normalized_target,
+                    task=task,
+                    operation=operation,
+                    acknowledged_paths=normalized_ack_paths,
+                    verification_evidence=normalized_verification_evidence,
+                    cwd=cwd,
+                    config_root=config_root,
+                    target_paths=raw_scope_targets,
+                    preflight=noop_preflight,
+                )
+
         action_guide = build_action_guide(
             root,
             consumption_timing=normalized_event,
@@ -4721,6 +5060,34 @@ def build_runtime_event(
                 })
 
         if normalized_event in {"pre_tool_use", "git_commit_msg"}:
+            preflight = build_preflight(
+                root,
+                target_path=target_path,
+                operation="commit" if normalized_event == "git_commit_msg" else operation,
+                task=task,
+                trigger_source=trigger_source,
+                cwd=cwd,
+                config_root=config_root,
+                target_paths=target_paths,
+                validation=validation,
+            )
+            if preflight["summary"]["status"] == "no_op":
+                return build_runtime_no_op_event(
+                    root,
+                    event=normalized_event,
+                    trigger_source=trigger_source,
+                    session_id=session_id,
+                    target_path=normalized_target,
+                    task=task,
+                    operation=operation,
+                    acknowledged_paths=normalized_ack_paths,
+                    verification_evidence=normalized_verification_evidence,
+                    cwd=cwd,
+                    config_root=config_root,
+                    target_paths=raw_scope_targets,
+                    preflight=preflight,
+                )
+
             missing_required = [
                 path
                 for path in RUNTIME_REQUIRED_ENTRY_PATHS
@@ -4742,14 +5109,6 @@ def build_runtime_event(
                     "message": f"{normalized_event} 缺少入口必读路径: " + "；".join(missing_required),
                     "disposition": "blocking",
                 })
-            preflight = build_preflight(
-                root,
-                target_path=normalized_target,
-                operation="commit" if normalized_event == "git_commit_msg" else operation,
-                task=task,
-                trigger_source=trigger_source,
-                validation=validation,
-            )
             diagnostics.extend(preflight["diagnostics"])
 
         if normalized_event == "completion_claim" and not normalized_verification_evidence:
@@ -4817,7 +5176,10 @@ def build_runtime_event(
             "event": normalized_event,
             "trigger_source": trigger_source,
             "session_id": session_id,
+            "cwd": _resolve_path(Path(cwd) if cwd is not None else root, root).as_posix(),
+            "config_root": _resolve_path(Path(config_root), root).as_posix() if config_root is not None else "",
             "target_path": normalized_target,
+            "target_paths": [str(path) for path in raw_scope_targets],
             "task": task,
             "operation": operation,
             "acknowledged_paths": normalized_ack_paths,
@@ -4858,7 +5220,7 @@ def build_e2e_rehearsal(
     trigger_source: str = "manual",
     verification_evidence: list[str] | None = None,
 ) -> dict[str, Any]:
-    normalized_target = target_path.strip().lstrip("./")
+    normalized_target = normalize_relative_path(target_path)
     ack_paths = list(RUNTIME_REQUIRED_ENTRY_PATHS)
     evidence = verification_evidence or [
         "python3 -m pytest tests/code _migration/tests -q",

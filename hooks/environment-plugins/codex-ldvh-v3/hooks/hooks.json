@@ -2,24 +2,22 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|resume|compact",
+        "matcher": "startup|resume|clear|compact",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 hooks/ldvh_runtime_shim.py",
-            "statusMessage": "LDVH V3 session read plan"
+            "command": "python3 \"$PLUGIN_ROOT/hooks/ldvh_runtime_shim.py\""
           }
         ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash|Edit|Write|apply_patch",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 hooks/ldvh_runtime_shim.py",
-            "statusMessage": "LDVH V3 pre-tool check"
+            "command": "python3 \"$PLUGIN_ROOT/hooks/ldvh_runtime_shim.py\""
           }
         ]
       }
@@ -30,8 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 hooks/ldvh_runtime_shim.py",
-            "statusMessage": "LDVH V3 completion check"
+            "command": "python3 \"$PLUGIN_ROOT/hooks/ldvh_runtime_shim.py\""
           }
         ]
       }

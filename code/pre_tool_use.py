@@ -20,6 +20,9 @@ def build_pre_tool_use(
     *,
     session_id: str = "",
     target_path: str = "",
+    cwd: str | Path | None = None,
+    config_root: str | Path | None = None,
+    target_paths: list[str | Path] | None = None,
     task: str = "",
     operation: str = "write",
     trigger_source: str = "manual",
@@ -33,6 +36,9 @@ def build_pre_tool_use(
         target_path=target_path,
         task=task,
         operation=operation,
+        cwd=cwd,
+        config_root=config_root,
+        target_paths=target_paths,
         acknowledged_paths=acknowledged_paths,
     )
     preflight = result["preflight"] or {}
@@ -91,7 +97,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run the LDVH v3 pre_tool_use check.")
     parser.add_argument("--root", default=ROOT.as_posix(), help="repository root")
     parser.add_argument("--session-id", default="", help="current session identifier")
+    parser.add_argument("--cwd", default="", help="current working directory for target resolution")
+    parser.add_argument("--config-root", default="", help="root containing LDVH-GOVERNED-PROJECTS.yaml")
     parser.add_argument("--target-path", default="", help="target path for the pending write/tool operation")
+    parser.add_argument("--target-paths", action="append", default=[], help="explicit target path; may be repeated")
     parser.add_argument("--task", default="", help="current task summary")
     parser.add_argument("--operation", default="write", help="pending operation kind, such as write/edit/apply_patch")
     parser.add_argument("--trigger-source", default="manual", help="trigger source label")
@@ -111,6 +120,9 @@ def main(argv: list[str] | None = None) -> int:
         Path(args.root).resolve(),
         session_id=args.session_id,
         target_path=args.target_path,
+        cwd=args.cwd or None,
+        config_root=args.config_root or None,
+        target_paths=args.target_paths,
         task=args.task,
         operation=args.operation,
         trigger_source=args.trigger_source,

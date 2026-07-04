@@ -157,13 +157,12 @@ def test_assurance_spec_registers_environment_entry_classification_and_payload_c
 def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     spec_01 = (ROOT / "specs/01-保障与衔接.md").read_text(encoding="utf-8")
     entry_types = (ROOT / "specs/attachments/01.Att.03-环境入口类型表.md").read_text(encoding="utf-8")
+    runtime_payload = (ROOT / "specs/attachments/01.Att.05-runtime-payload字段表.md").read_text(encoding="utf-8")
     rollback = (ROOT / "specs/attachments/01.Att.06-环境安装回滚检查表.md").read_text(encoding="utf-8")
     runtime_protocol_entry = (ROOT / "hooks/LDVH-RUNTIME-PROTOCOL.md").read_text(encoding="utf-8")
-    thin_reference_template = (ROOT / "hooks/LDVH-THIN-REFERENCE-TEMPLATE.md").read_text(encoding="utf-8")
 
     assert "V3 当前 Hook 分为两类" in spec_01
     assert "hooks/LDVH-RUNTIME-PROTOCOL.md" in spec_01
-    assert "hooks/LDVH-THIN-REFERENCE-TEMPLATE.md" in spec_01
     assert "hook_protocol_entry" in spec_01
     assert "只允许写入口身份、权威回指和当前 Code 入口" in spec_01
     assert "不得写接入判定分类" in spec_01
@@ -176,7 +175,8 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "核心逻辑都必须留在 LDVH Code 中" in spec_01
     assert "所有支持 Hook 的协作环境" in spec_01
     assert "LDVH 插件、扩展包或 package" in spec_01
-    assert "非管辖项目必须 no-op" in spec_01
+    assert "非管辖项目必须静默 no-op" in spec_01
+    assert "不得输出 stdout、systemMessage、additionalContext、deny 决策、read_plan 或完成声明 warning" in spec_01
     assert "卸载时必须移除或禁用该 repo 的 shim" in spec_01
     assert "验证环境不再自动触发 LDVH" in spec_01
 
@@ -189,6 +189,11 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "Codex plugin" in entry_types
     assert "只调用 LDVH" in entry_types
     assert "只指向 LDVH runtime / adapter" in entry_types
+
+    assert "| `cwd` |" in runtime_payload
+    assert "| `config_root` |" in runtime_payload
+    assert "| `target_paths` |" in runtime_payload
+    assert "不得用 LDVH 本体根目录替代外部项目 cwd" in runtime_payload
 
     assert "| `entry_kind` |" in rollback
     assert "| `shim_boundary` |" in rollback
@@ -203,13 +208,6 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "当前 Code 入口" in runtime_protocol_entry
     assert "接入判定分类" not in runtime_protocol_entry
     assert "python3 code/runtime_adapter.py session-start --format json" in runtime_protocol_entry
-
-    assert "文件状态：thin reference template" in thin_reference_template
-    assert "<LDVH_ROOT>/hooks/LDVH-RUNTIME-PROTOCOL.md" in thin_reference_template
-    assert "<LDVH_ROOT>/specs/01-保障与衔接.md" in thin_reference_template
-    assert "<LDVH_ROOT>/specs/10-管辖项目配置规范.md" in thin_reference_template
-    assert "不恢复 `rules/` 目录或 Rules registry" in thin_reference_template
-    assert "不声明任何环境已经 integrated" in thin_reference_template
 
 
 def test_foundation_validator_reports_missing_code_consumption(tmp_path: Path) -> None:
@@ -1629,6 +1627,7 @@ def test_environment_hook_acceptance_action_template_is_code_consumable(validati
     assert "| 要求 | 机制 | 触发 | 证据 | 缺口处理 |" in raw
     assert "保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件" not in raw
     assert "30 交还结果" in rows["Context"]
+    assert "安装变化目标" in rows["Context"]
     assert "统一安装验证入口" in rows["Context"]
     assert "environment_hook_integrated=false" in rows["Context"]
     assert "30 安装检测通过" in rows["Scenario"]
@@ -1639,12 +1638,15 @@ def test_environment_hook_acceptance_action_template_is_code_consumable(validati
     assert "受控正例放行" in rows["Gate"]
     assert "记录 lifecycle 验收" not in rows["Gate"]
     assert "本次自动接入验收判断" in rows["Gate"]
+    assert "30 安装净变化" in rows["执行"]
+    assert "安装变化目标" in rows["执行"]
     assert "逐项推进验收" in rows["执行"]
     assert "一次只判断一项" in rows["执行"]
     assert "闭集确认" in rows["执行"]
     assert "受控 scratch target" in rows["执行"]
     assert "不得安装" in rows["执行"]
     assert "不得修改用户环境" in rows["执行"]
+    assert "安装变化目标" in rows["验证"]
     assert "environment_lifecycle_acceptance.py" not in rows["验证"]
     assert "environment_lifecycle_acceptance_valid=true" not in rows["验证"]
     assert "environment_hook_integrated" in rows["验证"]
@@ -1664,6 +1666,13 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
 
     assert "31 由 30 交接调用" in raw
     assert "不安装、不升级、不禁用、不卸载" in raw
+    assert "31 的目标检查只从 30 安装净变化派生" in raw
+    assert "不得新增与安装变化无关的验收目标" in raw
+    assert "| 安装后变化 | 31 验收目标 | 证据入口 | 不满足时 |" in raw
+    assert "目标工作区配置和管辖项目关系已写入或保留" in raw
+    assert "管辖项目 Git `commit-msg` Hook 已安装或升级" in raw
+    assert "目标环境插件 / 扩展包 / package 已安装或升级" in raw
+    assert "环境入口能看见当前 LDVH runtime" in raw
     assert "逐项验收推进规则" in raw
     assert "简洁验收提示" in raw
     assert "用户要做什么" in raw
@@ -2545,6 +2554,39 @@ def test_preflight_known_tests_target_uses_diagnostic_clear_status(validation_re
     }.issubset(read_paths)
 
 
+def test_preflight_acceptance_scratch_target_is_diagnostic_clear(validation_result: dict) -> None:
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path=".ldvh-runtime/acceptance-probe/allowed.txt",
+        operation="write",
+        validation=validation_result,
+    )
+
+    assert preflight["summary"]["status"] == "diagnostic_clear"
+    assert preflight["summary"]["target_type"] == "acceptance_scratch"
+    assert preflight["input"]["target_path"] == ".ldvh-runtime/acceptance-probe/allowed.txt"
+    assert preflight["diagnostics"] == []
+    read_paths = {item["path"] for item in preflight["required_read_plan"]}
+    assert {
+        "specs/31-环境Hook接入后验收行动模板.md",
+        "code/docs/02-Environment-Plugin-Practice.md",
+    }.issubset(read_paths)
+
+
+def test_preflight_other_hidden_runtime_target_still_blocks(validation_result: dict) -> None:
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        target_path=".ldvh-runtime/other.txt",
+        operation="write",
+        validation=validation_result,
+    )
+
+    assert preflight["summary"]["status"] == "blocked"
+    assert preflight["summary"]["target_type"] == "unknown"
+    assert preflight["input"]["target_path"] == ".ldvh-runtime/other.txt"
+    assert preflight["diagnostics"][0]["code"] == "PREFLIGHT_TARGET_UNKNOWN"
+
+
 def test_preflight_unknown_target_blocks(validation_result: dict) -> None:
     preflight = ldvh_specs.build_preflight(
         ROOT,
@@ -2556,6 +2598,27 @@ def test_preflight_unknown_target_blocks(validation_result: dict) -> None:
     assert preflight["summary"]["status"] == "blocked"
     assert preflight["summary"]["blocking"] == 1
     assert preflight["diagnostics"][0]["code"] == "PREFLIGHT_TARGET_UNKNOWN"
+
+
+def test_preflight_external_nongoverned_target_is_silent_noop(tmp_path: Path, validation_result: dict) -> None:
+    outside = tmp_path / "outside-project"
+    outside.mkdir()
+
+    preflight = ldvh_specs.build_preflight(
+        ROOT,
+        cwd=outside,
+        target_path="notes.txt",
+        operation="write",
+        validation=validation_result,
+    )
+
+    assert preflight["summary"]["status"] == "no_op"
+    assert preflight["summary"]["target_type"] == "non_governed"
+    assert preflight["summary"]["blocking"] == 0
+    assert preflight["required_read_plan"] == []
+    assert preflight["validation_guard"] == []
+    assert preflight["diagnostics"] == []
+    assert preflight["governed_project"]["governed"] is False
 
 
 def test_specs_validate_cli_preflight_json() -> None:
@@ -2601,6 +2664,26 @@ def test_runtime_session_start_generates_stdout_receipt() -> None:
         "specs/01-保障与衔接.md",
         "specs/02-AI行为规范.md",
     }.issubset(read_paths)
+
+
+def test_runtime_external_session_start_is_noop_without_read_plan(tmp_path: Path, validation_result: dict) -> None:
+    outside = tmp_path / "outside-session"
+    outside.mkdir()
+
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="session_start",
+        trigger_source="codex.ldvh-plugin",
+        session_id="outside-session",
+        cwd=outside,
+        validation=validation_result,
+    )
+
+    assert runtime["summary"]["status"] == "no_op"
+    assert runtime["summary"]["blocking"] == 0
+    assert runtime["action_guide"] is None
+    assert runtime["preflight"]["required_read_plan"] == []
+    assert runtime["diagnostics"] == []
 
 
 def test_session_start_cli_exports_manual_read_plan_json() -> None:
@@ -2773,6 +2856,128 @@ def test_runtime_pre_tool_use_blocks_without_read_plan_consumption(validation_re
     assert runtime["diagnostics"][0]["code"] == "RUNTIME_READ_PLAN_CONSUMED_EMPTY"
 
 
+def test_runtime_external_pre_tool_use_noops_before_read_plan_ack(tmp_path: Path, validation_result: dict) -> None:
+    outside = tmp_path / "outside-pretool"
+    outside.mkdir()
+
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="pre_tool_use",
+        target_path="notes.txt",
+        cwd=outside,
+        operation="write",
+        validation=validation_result,
+    )
+
+    assert runtime["summary"]["status"] == "no_op"
+    assert runtime["summary"]["blocking"] == 0
+    assert runtime["action_guide"] is None
+    assert runtime["preflight"]["summary"]["status"] == "no_op"
+    assert runtime["preflight"]["required_read_plan"] == []
+    assert runtime["diagnostics"] == []
+
+
+def test_runtime_config_root_governed_target_does_not_noop_before_ack(tmp_path: Path, validation_result: dict) -> None:
+    governance_root = tmp_path / "governance"
+    project = tmp_path / "project"
+    governance_root.mkdir()
+    project.mkdir()
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {project}
+""",
+    )
+
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="pre_tool_use",
+        target_path="README.md",
+        cwd=project,
+        config_root=governance_root,
+        operation="write",
+        validation=validation_result,
+    )
+
+    assert runtime["summary"]["status"] == "blocked"
+    assert runtime["preflight"]["summary"]["status"] == "blocked"
+    assert runtime["preflight"]["governed_project"]["governed"] is True
+    assert runtime["diagnostics"][0]["code"] == "RUNTIME_READ_PLAN_CONSUMED_EMPTY"
+
+
+def test_runtime_config_root_unregistered_target_noops(tmp_path: Path, validation_result: dict) -> None:
+    governance_root = tmp_path / "governance"
+    project = tmp_path / "project"
+    outside = tmp_path / "outside"
+    governance_root.mkdir()
+    project.mkdir()
+    outside.mkdir()
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {project}
+""",
+    )
+
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="pre_tool_use",
+        target_path="notes.txt",
+        cwd=outside,
+        config_root=governance_root,
+        operation="write",
+        validation=validation_result,
+    )
+
+    assert runtime["summary"]["status"] == "no_op"
+    assert runtime["preflight"]["governed_project"]["config_path_absolute"] == (governance_root / "LDVH-GOVERNED-PROJECTS.yaml").as_posix()
+    assert runtime["diagnostics"] == []
+
+
+def test_runtime_ldvh_root_unknown_target_still_blocks_with_external_config_root(tmp_path: Path, validation_result: dict) -> None:
+    governance_root = tmp_path / "governance"
+    outside = tmp_path / "outside"
+    governance_root.mkdir()
+    outside.mkdir()
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: external
+    path: {outside}
+""",
+    )
+
+    runtime = ldvh_specs.build_runtime_event(
+        ROOT,
+        event="pre_tool_use",
+        target_path="tool-test.txt",
+        cwd=ROOT,
+        config_root=governance_root,
+        operation="write",
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+        validation=validation_result,
+    )
+
+    assert runtime["summary"]["status"] == "blocked"
+    assert runtime["preflight"]["summary"]["target_type"] == "unknown"
+    assert "PREFLIGHT_TARGET_UNKNOWN" in _diagnostic_codes(runtime)
+
+
 def test_pre_tool_use_cli_accepts_manual_preflight_json() -> None:
     completed = _run_cli(
         [
@@ -2858,6 +3063,61 @@ def test_pre_tool_use_cli_blocks_missing_target() -> None:
     assert payload["summary"]["status"] == "blocked"
     assert "PREFLIGHT_TARGET_UNKNOWN" in _diagnostic_codes(payload)
     assert payload["preflight"]["summary"]["target_type"] == "unknown"
+
+
+def test_pre_tool_use_cli_external_nongoverned_noops_without_ack(tmp_path: Path) -> None:
+    outside = tmp_path / "outside-cli"
+    outside.mkdir()
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/pre_tool_use.py",
+            "--cwd",
+            outside.as_posix(),
+            "--target-path",
+            "notes.txt",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 0
+    assert payload["summary"]["status"] == "no_op"
+    assert payload["summary"]["blocking"] == 0
+    assert payload["summary"]["preflight_status"] == "no_op"
+    assert payload["diagnostics"] == []
+
+
+def test_pre_tool_use_cli_allows_31_acceptance_probe_target() -> None:
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/pre_tool_use.py",
+            "--target-path",
+            ".ldvh-runtime/acceptance-probe/allowed.txt",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["preflight_status"] == "diagnostic_clear"
+    assert payload["receipt"]["target_path"] == ".ldvh-runtime/acceptance-probe/allowed.txt"
+    assert payload["preflight"]["summary"]["target_type"] == "acceptance_scratch"
+    assert payload["diagnostics"] == []
 
 
 def test_runtime_git_commit_msg_blocks_incomplete_read_plan_consumption(validation_result: dict) -> None:
@@ -3909,9 +4169,6 @@ def test_environment_entry_audit_marks_rules_and_skills_removed_top_level(tmp_pa
     assert candidates["hooks.runtime-protocol"]["status"] == "available"
     assert candidates["hooks.runtime-protocol"]["integrated"] is False
     assert candidates["hooks.runtime-protocol"]["category"] == "hook_protocol_entry"
-    assert candidates["hooks.thin-reference-template"]["status"] == "available"
-    assert candidates["hooks.thin-reference-template"]["integrated"] is False
-    assert candidates["hooks.thin-reference-template"]["category"] == "repo_instruction_candidate"
     assert candidates["runtime.pre_tool_use.auto"]["status"] == "deferred"
     assert candidates["runtime.pre_tool_use.auto"]["manual_fallback"] == "code/pre_tool_use.py"
     assert candidates["codex.ldvh-plugin"]["status"] == "absent"
@@ -3969,8 +4226,6 @@ def test_environment_entry_audit_does_not_treat_agent_file_as_integration(tmp_pa
     assert payload["summary"]["integrated_entrypoints"] == ["git.commit-msg"]
     assert candidates["hooks.runtime-protocol"]["status"] == "available"
     assert candidates["hooks.runtime-protocol"]["integrated"] is False
-    assert candidates["hooks.thin-reference-template"]["status"] == "available"
-    assert candidates["hooks.thin-reference-template"]["integrated"] is False
     assert candidates["codex.repo-instructions"]["status"] == "available"
     assert candidates["codex.repo-instructions"]["integrated"] is False
     assert candidates["codex.ldvh-plugin"]["status"] == "absent"
@@ -4370,6 +4625,119 @@ def test_runtime_adapter_dispatches_pre_tool_use_cli_json() -> None:
     assert payload["dispatch"]["summary"]["integration_scope"] == "manual.pre_tool_use"
     assert payload["dispatch"]["preflight"]["summary"]["target_type"] == "tests"
     assert payload["diagnostics"] == []
+
+
+def test_runtime_adapter_external_pre_tool_payload_noops_without_ack(tmp_path: Path) -> None:
+    outside = tmp_path / "adapter-outside"
+    outside.mkdir()
+    adapter_payload = {
+        "event": "pre_tool_use",
+        "session_id": "test-runtime-adapter-noop",
+        "cwd": outside.as_posix(),
+        "target_path": "notes.txt",
+        "target_paths": ["notes.txt"],
+        "operation": "write",
+        "task": "外部项目写入",
+        "acknowledged_paths": [],
+        "verification_evidence": [],
+    }
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/runtime_adapter.py",
+            "--payload-json",
+            json.dumps(adapter_payload, ensure_ascii=False),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "no_op"
+    assert payload["summary"]["blocking"] == 0
+    assert payload["dispatch"]["summary"]["status"] == "no_op"
+    assert payload["dispatch"]["diagnostics"] == []
+    assert payload["diagnostics"] == []
+
+
+def test_runtime_adapter_external_relative_target_requires_cwd() -> None:
+    adapter_payload = {
+        "event": "pre_tool_use",
+        "session_id": "test-runtime-adapter-missing-cwd",
+        "target_path": "notes.txt",
+        "operation": "write",
+        "task": "外部项目写入",
+        "acknowledged_paths": [],
+        "verification_evidence": [],
+        "trigger_source": "codex.ldvh-plugin",
+    }
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/runtime_adapter.py",
+            "--payload-json",
+            json.dumps(adapter_payload, ensure_ascii=False),
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=False,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert completed.returncode == 1
+    assert payload["summary"]["status"] == "blocked"
+    assert "RUNTIME_ADAPTER_CWD_REQUIRED_FOR_RELATIVE_TARGET" in _diagnostic_codes(payload)
+
+
+def test_runtime_adapter_external_empty_cwd_or_target_paths_only_requires_cwd() -> None:
+    payloads = [
+        {
+            "event": "pre_tool_use",
+            "session_id": "test-runtime-adapter-empty-cwd",
+            "cwd": "",
+            "target_path": "notes.txt",
+            "operation": "write",
+            "task": "外部项目写入",
+            "acknowledged_paths": [],
+            "verification_evidence": [],
+            "trigger_source": "codex.ldvh-plugin",
+        },
+        {
+            "event": "pre_tool_use",
+            "session_id": "test-runtime-adapter-target-paths-only",
+            "target_path": "",
+            "target_paths": ["notes.txt"],
+            "operation": "write",
+            "task": "外部项目写入",
+            "acknowledged_paths": [],
+            "verification_evidence": [],
+            "trigger_source": "codex.ldvh-plugin",
+        },
+    ]
+
+    for adapter_payload in payloads:
+        completed = _run_cli(
+            [
+                sys.executable,
+                "code/runtime_adapter.py",
+                "--payload-json",
+                json.dumps(adapter_payload, ensure_ascii=False),
+                "--format",
+                "json",
+            ],
+            cwd=ROOT,
+            check=False,
+        )
+
+        payload = json.loads(completed.stdout)
+        assert completed.returncode == 1
+        assert payload["summary"]["status"] == "blocked"
+        assert "RUNTIME_ADAPTER_CWD_REQUIRED_FOR_RELATIVE_TARGET" in _diagnostic_codes(payload)
 
 
 def test_runtime_adapter_dispatches_completion_claim_cli_json() -> None:

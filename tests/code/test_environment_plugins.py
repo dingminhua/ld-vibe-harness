@@ -38,6 +38,11 @@ def _diagnostic_codes(result: dict) -> set[str]:
     return {diagnostic["code"] for diagnostic in result.get("diagnostics", [])}
 
 
+def _hook_output(payload: dict) -> dict:
+    value = payload.get("hookSpecificOutput")
+    return value if isinstance(value, dict) else {}
+
+
 def test_codex_sample_plugin_manifest_consumes_package_icons() -> None:
     assert not (PLUGIN_ROOT / ".codex-plugin").exists()
 
@@ -53,6 +58,13 @@ def test_codex_sample_plugin_manifest_consumes_package_icons() -> None:
         asset_path = (PLUGIN_ROOT / rel_path[2:]).resolve()
         assert PLUGIN_ROOT.resolve() in asset_path.parents
         assert asset_path.is_file()
+
+
+def test_codex_sample_plugin_hooks_do_not_emit_status_messages() -> None:
+    hooks = json.loads((PLUGIN_ROOT / "hooks/hooks.json").read_text(encoding="utf-8"))
+    raw = json.dumps(hooks, ensure_ascii=False)
+
+    assert "statusMessage" not in raw
 
 
 def test_v2_absorbed_icon_assets_have_expected_png_sizes() -> None:
@@ -88,15 +100,65 @@ def test_codex_sample_shim_passes_session_payload_to_runtime_adapter() -> None:
     )
 
     payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
     assert completed.returncode == 0
-    assert payload["summary"]["status"] == "ok"
-    assert payload["summary"]["event"] == "session_start"
-    assert payload["payload"]["session_id"] == "shim-session"
-    assert payload["payload"]["target_path"] == "README.md"
-    assert payload["payload"]["task"] == "进入 LDVH v3 工作"
-    assert payload["payload"]["trigger_source"] == "codex.ldvh-plugin"
-    assert payload["dispatch"]["summary"]["integration_scope"] == "manual.session_start"
-    assert payload["dispatch"]["metadata"]["environment_integrated"] is False
+    assert hook_output["hookEventName"] == "SessionStart"
+    assert "LDVH V3 session read plan is active" in hook_output["additionalContext"]
+    assert "specs/00-理念与构成.md" in hook_output["additionalContext"]
+    assert "specs/01-保障与衔接.md" in hook_output["additionalContext"]
+    assert "specs/02-AI行为规范.md" in hook_output["additionalContext"]
+
+
+def test_codex_sample_shim_silent_noops_for_non_governed_events(tmp_path: Path) -> None:
+    outside = tmp_path / "outside-project"
+    outside.mkdir()
+    payloads = [
+        {
+            "hook_event_name": "SessionStart",
+            "sessionId": "shim-outside-session",
+            "cwd": outside.as_posix(),
+            "prompt": "外部项目工作",
+        },
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-outside-pretool",
+            "cwd": outside.as_posix(),
+            "toolName": "Write",
+            "tool_input": {"file_path": "notes.txt"},
+        },
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-outside-edit",
+            "cwd": outside.as_posix(),
+            "toolName": "Edit",
+            "toolInput": {"filePath": "notes.txt"},
+        },
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-outside-multipath",
+            "cwd": outside.as_posix(),
+            "toolName": "MultiEdit",
+            "tool_input": {"file_paths": ["notes.txt", "docs/todo.md"]},
+        },
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-outside-camel-multipath",
+            "cwd": outside.as_posix(),
+            "toolName": "MultiEdit",
+            "toolInput": {"filePaths": ["notes.txt", "docs/todo.md"]},
+        },
+        {
+            "hook_event_name": "Stop",
+            "sessionId": "shim-outside-stop",
+            "cwd": outside.as_posix(),
+        },
+    ]
+
+    for payload in payloads:
+        completed = _run_shim(payload)
+        assert completed.returncode == 0
+        assert completed.stdout == ""
+        assert completed.stderr == ""
 
 
 def test_codex_sample_shim_blocks_pre_tool_use_without_read_plan_ack() -> None:
@@ -112,10 +174,26 @@ def test_codex_sample_shim_blocks_pre_tool_use_without_read_plan_ack() -> None:
     )
 
     payload = json.loads(completed.stdout)
-    assert completed.returncode == 1
-    assert payload["summary"]["status"] == "blocked"
-    assert payload["summary"]["event"] == "pre_tool_use"
-    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in _diagnostic_codes(payload)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["permissionDecision"] == "deny"
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in hook_output["permissionDecisionReason"]
+
+
+def test_codex_sample_shim_allows_read_only_bash_probe_without_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-read",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Bash",
+            "tool_input": {"command": "pwd"},
+        },
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
 
 
 def test_codex_sample_shim_allows_pre_tool_use_with_acknowledged_paths() -> None:
@@ -135,15 +213,11 @@ def test_codex_sample_shim_allows_pre_tool_use_with_acknowledged_paths() -> None
     )
 
     payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
     assert completed.returncode == 0
-    assert payload["summary"]["status"] == "ok"
-    assert payload["summary"]["event"] == "pre_tool_use"
-    assert payload["dispatch"]["receipt"]["acknowledged_paths"] == [
-        "specs/00-理念与构成.md",
-        "specs/01-保障与衔接.md",
-        "specs/02-AI行为规范.md",
-    ]
-    assert payload["dispatch"]["preflight"]["summary"]["target_type"] == "tests"
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["additionalContext"].startswith("LDVH V3 pre-tool check passed.")
+    assert "specs/00-理念与构成.md" in hook_output["additionalContext"]
 
 
 def test_codex_sample_shim_degrades_completion_claim_to_non_blocking_stop() -> None:
@@ -159,7 +233,6 @@ def test_codex_sample_shim_degrades_completion_claim_to_non_blocking_stop() -> N
 
     payload = json.loads(completed.stdout)
     assert completed.returncode == 0
-    assert payload["summary"]["status"] == "blocked"
-    assert payload["summary"]["event"] == "completion_claim"
-    assert "RUNTIME_COMPLETION_VERIFICATION_MISSING" in _diagnostic_codes(payload)
-    assert payload["metadata"]["environment_integrated"] is False
+    assert payload["continue"] is True
+    assert "LDVH V3 completion check warning" in payload["systemMessage"]
+    assert "RUNTIME_COMPLETION_VERIFICATION_MISSING" in payload["systemMessage"]
