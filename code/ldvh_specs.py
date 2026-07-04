@@ -135,6 +135,18 @@ GOVERNED_PROJECT_RESOLUTION_COLUMNS = ["resolution字段", "要求", "说明"]
 ACTION_TEMPLATE_COLUMNS = ["结构", "最小要求"]
 FOUNDATION_SPEC_IDS = ("03", "05", "06", "07", "08", "09")
 ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
+AUTHORIZED_ASSURANCE_COLUMNS = ["要求", "机制", "触发", "证据", "缺口处理"]
+AUTHORIZED_ASSURANCE_SPEC_IDS = {"06", "30", "31"}
+ALLOWED_RELATION_TYPES = {
+    "inherits",
+    "refines",
+    "references",
+    "authorizes_attachment",
+    "consumes",
+    "validates",
+    "blocks",
+    "supersedes",
+}
 VERIFICATION_COLUMNS = ["检查类别", "检查内容", "不满足时"]
 FACT_MODEL_BOUNDARY_REQUIREMENTS = [
     {
@@ -2000,6 +2012,41 @@ def _table_rows_for_section(sections: dict[str, dict[str, str]], section_name: s
     return find_table(section["body"], columns)
 
 
+def _assurance_rows_for_section(sections: dict[str, dict[str, str]]) -> list[dict[str, str]]:
+    section = sections.get("保障措施")
+    if not section:
+        return []
+    authorized_rows = find_table(section["body"], AUTHORIZED_ASSURANCE_COLUMNS)
+    if authorized_rows:
+        return [
+            {
+                "requirement": row["要求"],
+                "content": row["要求"],
+                "mechanism": row["机制"],
+                "sync_type": "",
+                "trigger": row["触发"],
+                "evidence": row["证据"],
+                "gap_handling": row["缺口处理"],
+                "field_style": "authorized",
+            }
+            for row in authorized_rows
+        ]
+    legacy_rows = find_table(section["body"], ASSURANCE_COLUMNS)
+    return [
+        {
+            "requirement": row["保障要求"],
+            "content": row["要求内容"],
+            "mechanism": row["保障机制"],
+            "sync_type": row["同步类型"],
+            "trigger": row["触发条件"],
+            "evidence": "",
+            "gap_handling": "",
+            "field_style": "legacy",
+        }
+        for row in legacy_rows
+    ]
+
+
 def _section_numbered_items(sections: dict[str, dict[str, str]], section_name: str) -> list[str]:
     section = sections.get(section_name)
     if not section:
@@ -2024,7 +2071,7 @@ def parse_foundation_spec_contracts(
         if isinstance(role_sections, dict):
             rule_body_sections = flatten_role_sections(role_sections.get("rule_body", []))
 
-        assurance_rows = _table_rows_for_section(sections, "保障措施", ASSURANCE_COLUMNS)
+        assurance_rows = _assurance_rows_for_section(sections)
         verification_rows = _table_rows_for_section(sections, "验证方法", VERIFICATION_COLUMNS)
         contracts.append(
             {
@@ -2035,16 +2082,7 @@ def parse_foundation_spec_contracts(
                 "authority": obj.metadata.get("authority", ""),
                 "code_consumption": obj.metadata.get("code_consumption", []),
                 "rule_body_sections": rule_body_sections,
-                "assurance_measures": [
-                    {
-                        "requirement": row["保障要求"],
-                        "content": row["要求内容"],
-                        "mechanism": row["保障机制"],
-                        "sync_type": row["同步类型"],
-                        "trigger": row["触发条件"],
-                    }
-                    for row in assurance_rows
-                ],
+                "assurance_measures": assurance_rows,
                 "verification_checks": [
                     {
                         "check_type": row["检查类别"],
@@ -2485,6 +2523,17 @@ def validate_formal_objects(
                 diagnostics.append(Diagnostic("error", "MISSING_PARENT_SPEC", obj.path, f"父规范不存在: {parent}"))
             continue
 
+        relation = metadata.get("relation", "")
+        if obj.object_id in {"30", "31"} and relation and relation not in ALLOWED_RELATION_TYPES:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "SPEC_RELATION_UNSUPPORTED",
+                    obj.path,
+                    f"spec relation 不在 04.Att.03 闭集内: {relation}",
+                )
+            )
+
         code_consumption = metadata.get("code_consumption", [])
         if not isinstance(code_consumption, list) or not code_consumption:
             diagnostics.append(Diagnostic("error", "CODE_CONSUMPTION_MISSING", obj.path, "spec 必须声明 code_consumption"))
@@ -2680,7 +2729,17 @@ def validate_foundation_spec_contracts(contracts: list[dict[str, Any]]) -> list[
                     )
                 )
             for row in assurance_rows:
-                for key in ("requirement", "content", "mechanism", "sync_type", "trigger"):
+                if spec_id in AUTHORIZED_ASSURANCE_SPEC_IDS and row.get("field_style") != "authorized":
+                    diagnostics.append(
+                        Diagnostic(
+                            "error",
+                            "FOUNDATION_ASSURANCE_FIELDSET_UNAUTHORIZED",
+                            path,
+                            f"{spec_id} 保障措施必须使用 04.Att.04 字段: {'、'.join(AUTHORIZED_ASSURANCE_COLUMNS)}",
+                        )
+                    )
+                keys = ("requirement", "mechanism", "trigger", "evidence", "gap_handling") if row.get("field_style") == "authorized" else ("requirement", "content", "mechanism", "sync_type", "trigger")
+                for key in keys:
                     if not row[key]:
                         diagnostics.append(
                             Diagnostic(
@@ -3196,12 +3255,51 @@ def validate_workcase_action_template(root: Path = ROOT) -> list[Diagnostic]:
     return diagnostics
 
 
+def _validate_authorized_assurance_table(root: Path, path: str, label: str) -> list[Diagnostic]:
+    raw = (root / path).read_text(encoding="utf-8")
+    sections = h2_sections(raw)
+    rows = _assurance_rows_for_section(sections)
+    diagnostics: list[Diagnostic] = []
+    if not rows:
+        return [
+            Diagnostic(
+                "error",
+                "ACTION_TEMPLATE_ASSURANCE_TABLE_MISSING",
+                path,
+                f"{label} 缺少可解析保障措施表",
+            )
+        ]
+    for row in rows:
+        if row.get("field_style") != "authorized":
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "ACTION_TEMPLATE_ASSURANCE_FIELDSET_UNAUTHORIZED",
+                    path,
+                    f"{label} 保障措施必须使用 04.Att.04 字段: {'、'.join(AUTHORIZED_ASSURANCE_COLUMNS)}",
+                )
+            )
+            continue
+        for key in ("requirement", "mechanism", "trigger", "evidence", "gap_handling"):
+            if not row[key]:
+                diagnostics.append(
+                    Diagnostic(
+                        "error",
+                        "ACTION_TEMPLATE_ASSURANCE_FIELD_EMPTY",
+                        path,
+                        f"{label} 保障措施字段为空: {key}",
+                    )
+                )
+    return diagnostics
+
+
 def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]:
     path = SHORT_SPEC_REFS["30"]
     raw = (root / path).read_text(encoding="utf-8")
     rows = parse_ldvh_install_action_template(root)
     contract = parse_ldvh_install_spec_contract(root)
     diagnostics: list[Diagnostic] = []
+    diagnostics.extend(_validate_authorized_assurance_table(root, path, "30"))
 
     code_consumption = contract["code_consumption"]
     if not isinstance(code_consumption, list) or not all(isinstance(item, str) for item in code_consumption):
@@ -3311,6 +3409,7 @@ def validate_environment_hook_acceptance_action_template(root: Path = ROOT) -> l
     rows = parse_environment_hook_acceptance_action_template(root)
     contract = parse_environment_hook_acceptance_spec_contract(root)
     diagnostics: list[Diagnostic] = []
+    diagnostics.extend(_validate_authorized_assurance_table(root, path, "31"))
 
     code_consumption = contract["code_consumption"]
     if not isinstance(code_consumption, list) or not all(isinstance(item, str) for item in code_consumption):

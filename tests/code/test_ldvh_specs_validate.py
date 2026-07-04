@@ -97,6 +97,8 @@ def test_foundation_specs_contracts_are_code_consumable(validation_result: dict)
         "验证要求",
         "能力输出边界",
     ]
+    assert all(row["field_style"] == "authorized" for row in contracts["06"]["assurance_measures"])
+    assert all(row["evidence"] and row["gap_handling"] for row in contracts["06"]["assurance_measures"])
     assert "8. Code 变更纪律" in contracts["07"]["rule_body_sections"]
     assert any("测试输出" in item for item in contracts["09"]["human_gate"])
     for contract in contracts.values():
@@ -233,13 +235,28 @@ def test_foundation_validator_reports_missing_assurance_row(tmp_path: Path) -> N
     _replace_in_temp(
         root,
         "specs/06-行动模板基础规范.md",
-        "| Gate 显式要求 | 模板必须写出暂停、分流和 Human Gate 条件 | 本文、01、02 | 门禁治理 | 模板涉及写入、提交、验收或风险接受时 |\n",
+        "| Gate 显式要求 | 模板必须写出暂停、分流和 Human Gate 条件；由本文、01、02 保障 | 模板涉及写入、提交、验收或风险接受时 | Gate、Human Gate、Stop Conditions 和交还中的阻断说明 | 缺少 Gate 时停止执行，回到来源规范补齐 |\n",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "FOUNDATION_ASSURANCE_ROW_MISSING" in _diagnostic_codes(result)
     assert any("Gate 显式要求" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_spec_relation_must_use_authorized_closed_set(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        '  relation: "refines"\n',
+        '  relation: "action_template_member"\n',
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "SPEC_RELATION_UNSUPPORTED" in _diagnostic_codes(result)
+    assert any("action_template_member" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_foundation_validator_reports_missing_human_gate_boundary(tmp_path: Path) -> None:
@@ -1039,6 +1056,7 @@ def test_workcase_action_template_is_code_consumable(validation_result: dict) ->
 
 def test_ldvh_install_action_template_is_code_consumable(validation_result: dict) -> None:
     result = validation_result
+    raw = (ROOT / "specs/30-LDVH安装初始化管辖项目配置行动模板.md").read_text(encoding="utf-8")
     rows = {row["结构"]: row["最小要求"] for row in result["ldvh_install_action_template"]}
     contract = result["ldvh_install_spec_contract"]
 
@@ -1048,6 +1066,9 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert contract["action_template"]
     assert contract["stop_conditions"]
     assert contract["source_refs"]
+    assert 'relation: "refines"' in raw
+    assert "| 要求 | 机制 | 触发 | 证据 | 缺口处理 |" in raw
+    assert "保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件" not in raw
     assert "目标环境" in rows["Context"]
     assert "LDVH 本体路径" in rows["Context"]
     assert "目标工作区根目录" in rows["Context"]
@@ -1594,6 +1615,7 @@ def test_ldvh_install_action_template_reports_missing_disclosure_handoff_timing(
 
 def test_environment_hook_acceptance_action_template_is_code_consumable(validation_result: dict) -> None:
     result = validation_result
+    raw = (ROOT / "specs/31-环境Hook接入后验收行动模板.md").read_text(encoding="utf-8")
     rows = {row["结构"]: row["最小要求"] for row in result["environment_hook_acceptance_action_template"]}
     contract = result["environment_hook_acceptance_spec_contract"]
 
@@ -1603,6 +1625,9 @@ def test_environment_hook_acceptance_action_template_is_code_consumable(validati
     assert contract["action_template"]
     assert contract["stop_conditions"]
     assert contract["source_refs"]
+    assert 'relation: "refines"' in raw
+    assert "| 要求 | 机制 | 触发 | 证据 | 缺口处理 |" in raw
+    assert "保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件" not in raw
     assert "30 交还结果" in rows["Context"]
     assert "install_verification.py" in rows["Context"]
     assert "environment_hook_integrated=false" in rows["Context"]
@@ -1716,6 +1741,21 @@ def test_environment_hook_acceptance_action_template_reports_missing_code_consum
 
     assert "ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_MISSING" in _diagnostic_codes(result)
     assert any("environment_hook_acceptance_test_matrix" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_environment_hook_acceptance_action_template_requires_authorized_assurance_fields(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/31-环境Hook接入后验收行动模板.md",
+        "| 要求 | 机制 | 触发 | 证据 | 缺口处理 |\n|---|---|---|---|---|\n| 验收授权要求 | 进入测试组和执行受控写入类测试前必须 Human 授权；由本文、01、06、09 保障 | 用户要求确认环境 Hook 接入后 | Human 授权记录、当前测试步骤、source_refs | 未授权时停止验收，不执行受控测试 |\n",
+        "| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |\n|---|---|---|---|---|\n| 验收授权要求 | 进入测试组和执行受控写入类测试前必须 Human 授权 | 本文、01、06、09 | 验收治理 | 用户要求确认环境 Hook 接入后 |\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "ACTION_TEMPLATE_ASSURANCE_FIELDSET_UNAUTHORIZED" in _diagnostic_codes(result)
+    assert any("04.Att.04" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_environment_hook_acceptance_action_template_reports_unsupported_code_consumption(tmp_path: Path) -> None:
