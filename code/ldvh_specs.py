@@ -3140,12 +3140,41 @@ def _validate_attachment_authorized_by_parent(
     ]
 
 
+def _validate_all_attachment_parent_references(root: Path = ROOT) -> list[Diagnostic]:
+    objects = load_formal_objects(root)
+    specs_by_path = {obj.path: obj for obj in objects if obj.object_type == "spec"}
+    diagnostics: list[Diagnostic] = []
+    for obj in objects:
+        if obj.object_type != "attachment":
+            continue
+        parent_path = obj.metadata.get("parent_spec", "")
+        parent = specs_by_path.get(parent_path)
+        if parent is None:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "ATTACHMENT_PARENT_SPEC_MISSING",
+                    obj.path,
+                    f"附件 parent_spec 不存在: {parent_path}",
+                )
+            )
+            continue
+        related_specs = parent.metadata.get("related_specs", [])
+        if obj.path not in related_specs:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "ATTACHMENT_PARENT_REFERENCE_MISSING",
+                    parent_path,
+                    f"父规范 related_specs 缺少授权附件: {obj.path}",
+                )
+            )
+    return diagnostics
+
+
 def validate_attachment_contracts(root: Path = ROOT) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    diagnostics.extend(_validate_attachment_authorized_by_parent(root, COMMIT_MESSAGE_CONTRACT_PATH, SHORT_SPEC_REFS["03"]))
-    diagnostics.extend(_validate_attachment_authorized_by_parent(root, FIELD_REGISTRY_CONTRACT_PATH, SHORT_SPEC_REFS["05"]))
-    diagnostics.extend(_validate_attachment_authorized_by_parent(root, VERIFICATION_CLAIM_FIELDS_PATH, SHORT_SPEC_REFS["09"]))
-    diagnostics.extend(_validate_attachment_authorized_by_parent(root, GOVERNED_PROJECTS_CONTRACT_PATH, SHORT_SPEC_REFS["10"]))
+    diagnostics.extend(_validate_all_attachment_parent_references(root))
 
     commit_contract = parse_commit_message_contract(root)
     if not commit_contract["fields"]:

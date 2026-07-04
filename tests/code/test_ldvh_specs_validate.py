@@ -796,6 +796,20 @@ def test_attachment_parent_reference_is_required(tmp_path: Path) -> None:
     assert "ATTACHMENT_PARENT_REFERENCE_MISSING" in _diagnostic_codes(result)
 
 
+def test_all_attachments_must_be_listed_by_parent_related_specs(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/10-管辖项目配置规范.md",
+        '    - "specs/attachments/10.Att.02-路径语义与规范化规则.md"\n',
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "ATTACHMENT_PARENT_REFERENCE_MISSING" in _diagnostic_codes(result)
+    assert any("10.Att.02" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
 def test_fact_source_validator_reports_chat_as_fact_source_gap(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
