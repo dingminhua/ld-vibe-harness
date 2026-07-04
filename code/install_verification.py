@@ -446,7 +446,7 @@ def _verify_environment(ldvh_root: Path, repo: Path, codex_home: Path | None, en
                 f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
                 f"新开一个 {environment_name} 窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表。",
                 "触发一次受控写入类工具，确认写入前检查负例会阻断，正例会放行。",
-                "如需判断环境自动接入是否可写为 integrated，进入 specs/31-环境Hook接入后验收行动模板.md 做本次逐项验收。",
+                "如需确认环境自动接入，进入 specs/31-环境Hook接入后验收行动模板.md 做本次逐项验收。",
                 "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
                 "失败时返回插件页面结果、错误文本、截图或本命令 JSON 输出。",
             ],
@@ -566,7 +566,7 @@ def _environment_user_status(env_summary: dict[str, Any]) -> str:
     if env_summary.get("blocking"):
         return "阻断"
     if env_summary.get("environment_integrated"):
-        return "已 integrated"
+        return "已自动接入"
     if env_summary.get("install_verified"):
         return "自动接入待验收"
     return "需安装 / 需升级"
@@ -586,7 +586,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         next_step = "先处理阻断项，再复跑安装验证"
     elif summary["install_complete"]:
         install_status = "是"
-        if env_status == "已 integrated":
+        if env_status == "已自动接入":
             next_step = "可停止；保留验证输出作为交还证据"
         elif env_status == "自动接入待验收":
             next_step = "可进入 31 环境 Hook 接入后验收"
@@ -607,7 +607,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "重启 App 或重载插件宿主后确认插件仍启用且无错误。",
             "完成授权 / trust；没有授权提示时记录无待处理授权。",
             f"新开 {environment_name} 窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表。",
-            "需要判断环境自动接入是否可写为 integrated 时，进入 31 本次逐项验收。",
+            "需要确认环境自动接入时，进入 31 本次逐项验收。",
         ]
     elif env_status == "手动可用":
         user_next_steps = [
@@ -617,7 +617,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "复核每个管辖项目 Git commit-msg Hook 的正反例结果。",
             "以后目标环境支持 Hook 时，再升级为环境插件并进入安装检测。",
         ]
-    elif env_status == "已 integrated":
+    elif env_status == "已自动接入":
         user_next_steps = [
             "保留本次验证输出。",
             "后续变更插件、授权或 Hook 后重新运行安装验证。",
@@ -640,8 +640,8 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             {
                 "name": "环境自动拦截",
                 "status": env_status,
-                "normal": "当前检测为 integrated 时无需处理；否则安装完成后进入 31 本次验收；无 Hook 环境只能手动可用。",
-                "next_step": next_step if env_status != "已 integrated" else "无需进入 31。",
+                "normal": "当前检测为已自动接入时无需处理；否则安装完成后进入 31 本次验收；无 Hook 环境只能手动可用。",
+                "next_step": next_step if env_status != "已自动接入" else "无需进入 31。",
             },
             {
                 "name": "提交消息检查",
@@ -770,7 +770,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=CODEX_ENVIRONMENT_NAME,
         help="current AI environment name for Human-facing output; repo-local shim direct tests currently cover the Codex sample only",
     )
-    parser.add_argument("--require-environment-integrated", action="store_true", help="treat missing real environment integration as blocking")
+    parser.add_argument(
+        "--require-environment-integrated",
+        action="store_true",
+        help="strict technical audit only; do not use as the spec 31 acceptance handoff condition",
+    )
     parser.add_argument("--format", choices=["text", "json"], default="text")
     return parser
 

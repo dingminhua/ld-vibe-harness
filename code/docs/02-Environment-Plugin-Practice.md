@@ -97,7 +97,7 @@ python3 code/environment_entry_audit.py --format text
 
 只有同时具备真实触发、稳定 payload、失败处理、安装与接入证据、回滚方式和测试证据，才可把对应环境入口升级为 integrated。文件存在、插件缓存存在、历史 trust 记录或旧路径命中，都不得声明 integrated。安装检测和 integrated 证明必须分开：插件可见、必需 lifecycle Hook manifest 齐全、指向 V3 shim、旧路径诊断为 0、repo-local shim 直测通过且 Git Hook 正反例通过时，可以作为安装检测通过；真实 lifecycle 尚未回读时，只是不声明 integrated，不应单独阻断安装完成。
 
-若后续逻辑显式要求 integrated，必须使用当次可执行的 lifecycle 验收路径，而不是让 AI 永久停在不可验证声明。Human 可以按 `specs/31-环境Hook接入后验收行动模板.md` 授权进入逐项验收；AI 逐项判断插件页面启用、重启 App、新会话只读可见性探针、授权 / trust、PreToolUse 负例阻断和正例放行。目标环境能提供真实 SessionStart lifecycle 证据时应一并回读；目标环境不稳定展示 Hook stdout 时，不得让 Human 去猜启动提示是否出现。全部通过后，AI 只能复跑 `install_verification.py` 并交还本次验收总结；本次总结不写长期状态，不替代插件页面、真实 payload 或失败处理诊断，也不得被后续对话消费为 integrated 依据。
+若后续逻辑显式要求 integrated，必须使用当次可执行的 lifecycle 验收路径，而不是让 AI 永久停在不可验证声明。Human 可以按 `specs/31-环境Hook接入后验收行动模板.md` 授权进入逐项验收；AI 逐项判断插件页面启用、重启 App、新会话只读可见性探针、授权 / trust、PreToolUse 负例阻断和正例放行。目标环境能提供真实 SessionStart lifecycle 证据时应一并回读；目标环境不稳定展示 Hook stdout 时，不得让 Human 去猜启动提示是否出现。全部通过后，AI 只能复跑 `install_verification.py` 做技术复核并交还本次验收总结；不得复用该命令输出里的“进入 31”下一步提示。本次总结不写长期状态，不替代插件页面、真实 payload 或失败处理诊断，也不得被后续对话消费为 integrated 依据。
 
 31 只适用于目标环境支持 Hook、环境插件安装检测已经通过且 `environment_hook_integrated=false` 的情况。目标环境确认不支持 Hook 时，31 不适用；应按 01 的无自动环境 Hook 边界回到 30 手动可用安装交还，交还 01.Att.04 分类和承接形态说明。
 
@@ -116,9 +116,9 @@ python3 code/environment_entry_audit.py --format text
 | 5/8 受控负例阻断 | 授权 AI 对 harmless scratch target 做一次应被阻断的写入类负例 | 写入前检查阻断，scratch 文件未被错误写入 | AI 输出、scratch 路径、文件是否被写入 |
 | 6/8 受控正例放行 | 授权 AI 对 harmless scratch target 做一次应被放行的正例 | 操作成功，没有 blocking diagnostic | AI 输出、错误文本、scratch 路径 |
 | 7/8 统一安装验证 | 等 AI 运行命令，用户只看结论 | `install_verification.py` 显示安装检测通过，Git Hook 正反例仍通过 | AI 输出摘要或完整命令输出 |
-| 8/8 本次验收总结 | 确认 AI 交还本次验收结果 | 通过项、失败项、未验证项、当前 `environment_hook_integrated` 结论和不可跨会话继承说明完整 | 总结遗漏项、复核命令输出 |
+| 8/8 本次验收总结 | 确认 AI 交还本次验收结果 | 通过项、失败项、未验证项、本次验收通过 / 失败 / 未验证、当前 `environment_hook_integrated` 检测值和不可跨会话继承说明完整；不再提示进入 31 | 总结遗漏项、复核命令输出 |
 
-逐项验收表可以用 `👉` 标记当前步骤，用 `✅` 标记已完成步骤；尚未发生的步骤保持空白。选项建议只保留 `1 通过` 和 `2 失败，停止验收`，失败后的截图、错误文本或插件页面结果作为诊断输入，不作为第三个主选项。
+逐项验收表可以用 `👉` 标记当前步骤，用 `✅` 标记已完成步骤；尚未发生的步骤保持空白。选项建议只保留 `1 我看到了上述正常表现` 和 `2 没看到或有错误，停止验收`，失败后的截图、错误文本或插件页面结果作为诊断输入，不作为第三个主选项。Human 不选择“通过 / 失败”；AI 根据用户观察和本文规则判断通过、失败或暂停诊断。
 
 31 新会话可见性探针优先使用以下只读命令模板；运行时用当前 LDVH 本体路径和目标路径替换占位符：
 
@@ -143,7 +143,7 @@ LDVH v3 runtime adapter
 Diagnostics: none
 ```
 
-该探针只证明新会话里 LDVH runtime 可见，不证明目标环境 lifecycle 已自动 integrated。integrated 仍必须通过插件页面、重启后结果、受控负例阻断、受控正例放行和统一安装验证在本次验收中闭合。
+该探针只证明新会话里 LDVH runtime 可见，不证明目标环境 lifecycle 已自动 integrated。integrated 仍必须通过插件页面、重启后结果、受控负例阻断、受控正例放行和统一安装验证在本次验收中闭合。31 收尾不得使用 `install_verification.py --require-environment-integrated` 作为通过条件；该参数只用于当前审计已经能直接证明环境自动接入时的严格技术检查。
 
 受控正反例默认使用 `.ldvh-runtime/acceptance-probe/` 下的 scratch 文件。默认动作是：先尝试写 `.ldvh-runtime/acceptance-probe/blocked.txt`，预期被写入前检查拦截；再写 `.ldvh-runtime/acceptance-probe/allowed.txt`，预期放行；不碰 specs、事实源或业务文件；测试后清理 scratch 文件。目标环境无法执行等价安全动作时，先重新设计 harmless scratch target。
 

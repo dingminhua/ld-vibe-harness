@@ -83,6 +83,14 @@ enabled = {str(enabled).lower()}
     )
 
 
+def _symlink_temp_ldvh_root(tmp_path: Path) -> Path:
+    ldvh_root = tmp_path / "ldvh-root"
+    ldvh_root.mkdir()
+    for name in ("code", "hooks", "specs"):
+        (ldvh_root / name).symlink_to(ROOT / name, target_is_directory=True)
+    return ldvh_root
+
+
 def test_install_verification_runs_git_hook_positive_negative_and_marks_install_complete_without_integrated(tmp_path: Path) -> None:
     governance_root = tmp_path / "governance"
     repo = tmp_path / "repo"
@@ -154,6 +162,7 @@ projects:
     assert [block["name"] for block in handoff["hook_status_blocks"]] == ["环境自动拦截", "提交消息检查"]
     assert any("插件页面" in step for step in handoff["user_next_steps"])
     assert "manual.31-visible-probe" in handoff["visible_probe_command"]
+    assert "integrated" not in json.dumps(handoff, ensure_ascii=False)
     assert any("目标环境名称和版本" in item for item in handoff["failure_info_package"])
     assert result["diagnostics"] == []
 
@@ -162,6 +171,7 @@ def test_install_verification_ignores_legacy_lifecycle_acceptance_json(tmp_path:
     governance_root = tmp_path / "governance"
     repo = tmp_path / "repo"
     codex_home = tmp_path / "codex-home"
+    ldvh_root = _symlink_temp_ldvh_root(tmp_path)
     governance_root.mkdir()
     repo.mkdir()
     codex_home.mkdir()
@@ -177,9 +187,8 @@ projects:
 """,
     )
     _install_backend_hook(repo)
-    _install_codex_v3_plugin(codex_home)
-    legacy_acceptance = ROOT / ".ldvh-runtime" / "environment-lifecycle-acceptance.json"
-    previous = legacy_acceptance.read_text(encoding="utf-8") if legacy_acceptance.exists() else None
+    _install_codex_v3_plugin(codex_home, command_path=ldvh_root / CODEX_SHIM)
+    legacy_acceptance = ldvh_root / ".ldvh-runtime" / "environment-lifecycle-acceptance.json"
     legacy_acceptance.parent.mkdir(parents=True, exist_ok=True)
     legacy_acceptance.write_text(
         json.dumps(
@@ -198,24 +207,15 @@ projects:
         ),
         encoding="utf-8",
     )
-    try:
-        result = build_install_verification(
-            governance_root=governance_root,
-            ldvh_root=ROOT,
-            repo=repo,
-            codex_home=codex_home,
-            environment_name="Codex",
-            require_environment_integrated=True,
-        )
-    finally:
-        if previous is None:
-            legacy_acceptance.unlink(missing_ok=True)
-            try:
-                legacy_acceptance.parent.rmdir()
-            except OSError:
-                pass
-        else:
-            legacy_acceptance.write_text(previous, encoding="utf-8")
+
+    result = build_install_verification(
+        governance_root=governance_root,
+        ldvh_root=ldvh_root,
+        repo=repo,
+        codex_home=codex_home,
+        environment_name="Codex",
+        require_environment_integrated=True,
+    )
 
     assert result["summary"]["status"] == "blocked"
     assert result["summary"]["install_complete"] is False

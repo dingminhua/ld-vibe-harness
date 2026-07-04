@@ -1089,15 +1089,19 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "governed_hook_adapter.py verify" in rows["验证"]
     assert "managed `commit-msg` hook" in rows["验证"]
     assert "正反样例" in rows["验证"]
-    assert "安装检测通过" in rows["验证"]
-    assert "插件页面证据" in rows["验证"]
-    assert "重启 App" in rows["验证"]
-    assert "授权 / trust" in rows["验证"]
-    assert "用户侧冒烟检查" in rows["验证"]
+    assert "AI 环境 Hook 安装检测" in rows["验证"]
+    assert "30 只验证安装动作和交接条件" in rows["验证"]
+    assert "不执行 31" in rows["验证"]
+    assert "插件页面" in rows["验证"]
+    assert "重启" in rows["验证"]
+    assert "授权" in rows["验证"]
+    assert "受控正反例" in rows["验证"]
     assert "本次 lifecycle 验收" in rows["验证"]
-    assert "正常判断标准" in rows["验证"]
+    assert "需要声明环境自动接入通过" in rows["验证"]
+    assert "当前已具备的真实自动触发" in rows["验证"]
+    assert "payload" in rows["验证"]
+    assert "失败处理证据" in rows["验证"]
     assert "environment_lifecycle_acceptance_valid" not in rows["验证"]
-    assert "安装与接入证据可复核" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
     assert "`integrated` / `manual_ready` / `available` / `deferred` / `removed_top_level` / `absent`" in rows["交还"]
     assert "事实源子目录检查结果" in rows["交还"]
@@ -1664,8 +1668,16 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还" in raw
     assert "写入前检查" in raw
     assert "本次验收总结" in raw
+    assert "本次验收通过" in raw
+    assert "本次验收失败" in raw
+    assert "本次未验证" in raw
     assert "本次自动接入验收结论" in raw
     assert "当前 `environment_hook_integrated` 检测值" in raw
+    assert "不得直接复用 `install_verification.py` 的用户下一步提示" in raw
+    assert "不得在本次验收通过后再次提示“进入 31”" in raw
+    assert "`--require-environment-integrated` 不是 31 收尾通过条件" in raw
+    assert "1 我看到了上述正常表现" in raw
+    assert "2 没看到或有错误，停止验收" in raw
     assert "不写长期状态" in raw
     assert "不可跨会话继承" in raw
     assert "不得写 `.ldvh-runtime` 过程状态" in raw
@@ -1673,8 +1685,11 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert ".ldvh-runtime/acceptance-probe/blocked.txt" not in raw
     assert ".ldvh-runtime/acceptance-probe/allowed.txt" not in raw
     assert "31 验收交互实践" in practice
-    assert "1 通过" in practice
-    assert "2 失败，停止验收" in practice
+    assert "1 我看到了上述正常表现" in practice
+    assert "2 没看到或有错误，停止验收" in practice
+    assert "1 通过" not in practice
+    assert "2 失败，停止验收" not in practice
+    assert "不再提示进入 31" in practice
     assert ".ldvh-runtime/acceptance-probe/" in practice
     assert ".ldvh-runtime/acceptance-probe/blocked.txt" in practice
     assert ".ldvh-runtime/acceptance-probe/allowed.txt" in practice
