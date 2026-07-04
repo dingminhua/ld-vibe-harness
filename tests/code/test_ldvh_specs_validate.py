@@ -1656,7 +1656,9 @@ def test_environment_hook_acceptance_action_template_is_code_consumable(validati
     assert "验收结果表" in rows["交还"]
     assert "失败项" in rows["交还"]
     assert "本次自动接入验收判断" in rows["交还"]
-    assert "当前 `environment_hook_integrated` 检测输出" in rows["交还"]
+    assert "统一安装验证摘要" in rows["交还"]
+    assert "推荐行动" in rows["交还"]
+    assert "用户主结论不得展示 `environment_hook_integrated=false`" in rows["交还"]
     assert "不可跨会话继承说明" in rows["交还"]
 
 
@@ -1706,7 +1708,10 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "本次验收失败" in raw
     assert "本次未验证" in raw
     assert "本次自动接入验收判断" in raw
-    assert "当前 `environment_hook_integrated` 检测输出" in raw
+    assert "推荐行动" in raw
+    assert "不得只写“让 AI 运行只读可见性探针”" in raw
+    assert "可直接复制到输入框的文本" in raw
+    assert "用户主结论不得展示 `environment_hook_integrated=false`" in raw
     assert "不得直接复用统一安装验证入口的用户下一步提示" in raw
     assert "不得在本次验收通过后再次提示“进入 31”" in raw
     assert "`--require-environment-integrated` 不是 31 收尾通过条件" in raw
@@ -1724,6 +1729,10 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "1 通过" not in practice
     assert "2 失败，停止验收" not in practice
     assert "不再提示进入 31" in practice
+    assert "可见性探针输入文本" in practice
+    assert "受控负例输入文本" in practice
+    assert "受控正例输入文本" in practice
+    assert "31 主结论只使用本次验收通过、本次验收失败或本次未验证" in practice
     assert ".ldvh-runtime/acceptance-probe/" in practice
     assert ".ldvh-runtime/acceptance-probe/blocked.txt" in practice
     assert ".ldvh-runtime/acceptance-probe/allowed.txt" in practice

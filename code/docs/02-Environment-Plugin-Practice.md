@@ -112,11 +112,11 @@ python3 code/environment_entry_audit.py --format text
 | 1/8 验收授权 | 选择开始逐项验收 | AI 只开始本测试组，不安装、不升级、不卸载 | 停止验收即可，不需要解释技术原因 |
 | 2/8 插件页面结果 | 打开当前目标环境的插件页面、扩展页面或插件管理器 | 页面显示 LDVH 插件启用、已授权或无待授权、无错误 | 插件页面截图、插件名称、错误文本 |
 | 3/8 重启后结果 | 重启 App 或重载插件宿主后再看插件页面 | 插件仍启用、无新增错误、授权仍有效 | 重启后页面结果、错误文本、是否需要重新授权 |
-| 4/8 新会话可见性探针 | 新开当前目标环境窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表 | 结果表显示 `status=ok`、`event=session_start`、存在 `receipt_id`，且诊断为空；若目标环境同时提供真实 SessionStart 触发证据，应一并展示 | 探针命令、完整输出、无法运行的错误文本 |
-| 5/8 受控负例阻断 | 授权 AI 对 harmless scratch target 做一次应被阻断的写入类负例 | 写入前检查阻断，scratch 文件未被错误写入 | AI 输出、scratch 路径、文件是否被写入 |
-| 6/8 受控正例放行 | 授权 AI 对 harmless scratch target 做一次应被放行的正例 | 操作成功，没有 blocking diagnostic | AI 输出、错误文本、scratch 路径 |
+| 4/8 新会话可见性探针 | 新开当前目标环境窗口或会话，在输入框粘贴本文下方“可见性探针输入文本” | 结果表显示 `status=ok`、`event=session_start`、存在 `receipt_id`，且诊断为空；若目标环境同时提供真实 SessionStart 触发证据，应一并展示 | 新会话里 AI 的完整输出、无法运行的错误文本 |
+| 5/8 受控负例阻断 | 在输入框粘贴本文下方“受控负例输入文本” | 写入前检查阻断，scratch 文件未被错误写入 | AI 输出、scratch 路径、文件是否被写入 |
+| 6/8 受控正例放行 | 在输入框粘贴本文下方“受控正例输入文本” | 操作成功，没有 blocking diagnostic | AI 输出、错误文本、scratch 路径 |
 | 7/8 统一安装验证 | 等 AI 运行命令，用户只看结论 | `install_verification.py` 显示安装检测通过，Git Hook 正反例仍通过 | AI 输出摘要或完整命令输出 |
-| 8/8 本次验收总结 | 确认 AI 交还本次验收结果 | 通过项、失败项、未验证项、本次验收通过 / 失败 / 未验证、当前 `environment_hook_integrated` 检测值和不可跨会话继承说明完整；不再提示进入 31 | 总结遗漏项、复核命令输出 |
+| 8/8 本次验收总结 | 确认 AI 交还本次验收结果和推荐行动 | 通过项、失败项、未验证项、本次验收通过 / 失败 / 未验证、推荐行动和不可跨会话继承说明完整；不再提示进入 31；用户主结论不展示 `environment_hook_integrated=false` | 总结遗漏项、复核命令输出 |
 
 逐项验收表可以用 `👉` 标记当前步骤，用 `✅` 标记已完成步骤；尚未发生的步骤保持空白。选项建议只保留 `1 我看到了上述正常表现` 和 `2 没看到或有错误，停止验收`，失败后的截图、错误文本或插件页面结果作为诊断输入，不作为第三个主选项。Human 不选择“通过 / 失败”；AI 根据用户观察和本文规则判断通过、失败或暂停诊断。
 
@@ -146,6 +146,32 @@ Diagnostics: none
 该探针只证明新会话里 LDVH runtime 可见，不证明目标环境 lifecycle 已自动 integrated。integrated 仍必须通过插件页面、重启后结果、受控负例阻断、受控正例放行和统一安装验证在本次验收中闭合。31 收尾不得使用 `install_verification.py --require-environment-integrated` 作为通过条件；该参数只用于当前审计已经能直接证明环境自动接入时的严格技术检查。
 
 受控正反例默认使用 `.ldvh-runtime/acceptance-probe/` 下的 scratch 文件。默认动作是：先尝试写 `.ldvh-runtime/acceptance-probe/blocked.txt`，预期被写入前检查拦截；再写 `.ldvh-runtime/acceptance-probe/allowed.txt`，预期放行；不碰 specs、事实源或业务文件；测试后清理 scratch 文件。目标环境无法执行等价安全动作时，先重新设计 harmless scratch target。
+
+用户操作必须给出可复制输入文本。默认输入文本如下；运行时替换 `<ldvh-root>`、`<governance-root>` 和 `<target-path>`：
+
+```text
+请继续 LDVH 31 新会话可见性探针。只读运行下面命令，并把完整输出原样返回：
+
+python3 <ldvh-root>/code/runtime_adapter.py session-start --root <ldvh-root> --config-root <governance-root> --session-id 31-visible-probe --target-path <target-path> --task "LDVH 31 visible probe" --operation read --trigger-source manual.31-visible-probe --format text
+```
+
+```text
+请继续 LDVH 31 受控负例阻断测试。scratch target 使用 <target-path>/.ldvh-runtime/acceptance-probe/blocked.txt。请只运行写入前检查，不要实际写文件；预期结果是阻断，并确认 blocked.txt 没有被创建。
+```
+
+```text
+请继续 LDVH 31 受控正例放行测试。scratch target 使用 <target-path>/.ldvh-runtime/acceptance-probe/allowed.txt。请先确认已读取 00/01/02 和 31 的必读依据，再只运行写入前检查；预期结果是放行，诊断为空，不需要实际写文件。
+```
+
+31 最终交还必须包含“推荐行动”，但只写下一步动作，不写“不建议”。按结论推荐：
+
+| 最终结论 | 推荐行动写法 |
+|---|---|
+| 本次验收通过 | 本次可结束；后续如果重启、升级插件或切换工作区，再重新运行 31 当前验收。 |
+| 本次验收失败 | 停在失败步骤；按失败信息包补充插件页面结果、错误文本、scratch target 状态或命令输出，再从失败步骤重试。 |
+| 本次未验证 | 补齐缺失用户侧证据；优先给出插件页面检查、重启后检查、新会话输入文本、受控负例输入文本和受控正例输入文本。 |
+ 
+`environment_hook_integrated` 是统一安装验证入口的技术字段，不是 31 的最终状态。31 主结论只使用本次验收通过、本次验收失败或本次未验证；若需要保留该字段，只放技术附录，写作“统一安装验证当前仍未形成长期 integrated 证据”，不得作为用户主结论。
 
 ## 安装与卸载边界
 

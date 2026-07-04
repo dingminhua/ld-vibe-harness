@@ -553,7 +553,7 @@ ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "执行": ["30 安装净变化", "安装变化目标", "逐项推进验收", "一次只判断一项", "闭集确认", "重启 App", "新会话只读可见性探针", "受控 scratch target", "不得安装", "不得升级", "不得修改用户环境", "失败即停止"],
     "验证": ["安装变化目标", "统一安装验证入口", "新会话只读可见性探针", "SessionStart", "PreToolUse", "Git Hook 正反例", "environment_hook_integrated", "失败"],
     "回写": ["不回写长期验收状态", "当前对话交还", "不得写事实源", "不得写 specs", "不得写 `.ldvh-runtime` 过程输出"],
-    "交还": ["验收结果表", "通过项", "失败项", "未验证项", "本次自动接入验收判断", "当前 `environment_hook_integrated` 检测输出", "不可跨会话继承说明", "回滚或诊断入口", "source_refs"],
+    "交还": ["验收结果表", "通过项", "失败项", "未验证项", "本次自动接入验收判断", "统一安装验证摘要", "推荐行动", "不可跨会话继承说明", "回滚或诊断入口", "source_refs"],
 }
 ENV_HOOK_ACCEPTANCE_REQUIRED_CODE_CONSUMPTION = [
     "ldvh_spec_metadata",
@@ -600,7 +600,11 @@ ENV_HOOK_ACCEPTANCE_FLOW_TERMS = [
     "本次验收失败",
     "本次未验证",
     "本次自动接入验收判断",
-    "当前 `environment_hook_integrated` 检测输出",
+    "用户主结论不得展示 `environment_hook_integrated=false`",
+    "技术附录",
+    "推荐行动",
+    "不得只写“让 AI 运行只读可见性探针”",
+    "可直接复制到输入框的文本",
     "不得直接复用统一安装验证入口的用户下一步提示",
     "不得在本次验收通过后再次提示“进入 31”",
     "`--require-environment-integrated` 不是 31 收尾通过条件",
