@@ -24,8 +24,8 @@ export const EXCLUDED_DIRS = new Set([
 ])
 
 const GOVERNED_CONFIG_CANDIDATES = [
-  path.join(LDVH_ROOT, 'LDVH-GOVERNED-PROJECTS.yaml'),
   path.join(LDVH_WORKSPACE_ROOT, 'LDVH-GOVERNED-PROJECTS.yaml'),
+  path.join(LDVH_ROOT, 'LDVH-GOVERNED-PROJECTS.yaml'),
 ]
 
 export type GovernedProject = {

@@ -126,7 +126,7 @@ def test_ldvh_starts_from_markdown_specs_only() -> None:
     assert (ROOT / "specs" / "23-Pitfall-踩坑经验.md").exists()
     assert (ROOT / "specs" / "24-Study-研究报告.md").exists()
     assert (ROOT / "specs" / "30-LDVH安装初始化管辖项目配置行动模板.md").exists()
-    assert (ROOT / "specs" / "31-环境Hook接入后验收行动模板.md").exists()
+    assert not (ROOT / "specs" / "31-环境Hook接入后验收行动模板.md").exists()
 
 
 def test_no_parallel_authority_layers() -> None:

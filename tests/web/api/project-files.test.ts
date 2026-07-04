@@ -24,6 +24,17 @@ fs.writeFileSync(
     '',
   ].join('\n'),
 )
+fs.writeFileSync(
+  path.join(projectRoot, 'LDVH-GOVERNED-PROJECTS.yaml'),
+  [
+    'projects:',
+    '  - id: legacy',
+    '    name: Legacy',
+    '    description: Legacy project-local config should not win',
+    '    path: .',
+    '',
+  ].join('\n'),
+)
 
 const svgContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5"/></svg>\n'
 fs.writeFileSync(path.join(projectRoot, 'assets', 'mark.svg'), svgContent)
@@ -81,7 +92,13 @@ async function main() {
   }
   assert.equal(rootEntries.dir, '')
   assert.equal(rootEntries.parent, '')
-  assert.deepEqual(rootEntries.entries.map((entry) => entry.name), ['assets', 'binary.bin', 'large.txt', 'README.md'])
+  assert.deepEqual(rootEntries.entries.map((entry) => entry.name), [
+    'assets',
+    'binary.bin',
+    'large.txt',
+    'LDVH-GOVERNED-PROJECTS.yaml',
+    'README.md',
+  ])
   assert.equal(rootEntries.entries.find((entry) => entry.name === 'assets')?.type, 'directory')
   assert.equal(rootEntries.entries.find((entry) => entry.name === 'README.md')?.kind, 'markdown')
 

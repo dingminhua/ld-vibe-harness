@@ -146,25 +146,63 @@ projects:
     assert any("重启 App" in step for step in human_acceptance["steps"])
     assert any("授权 / trust" in step for step in human_acceptance["steps"])
     assert any("只读 LDVH 可见性探针" in step for step in human_acceptance["steps"])
-    assert any("specs/31-环境Hook接入后验收行动模板.md" in step for step in human_acceptance["steps"])
+    assert any("specs/30-LDVH安装初始化管辖项目配置行动模板.md" in step for step in human_acceptance["steps"])
     assert "runtime_adapter.py" in human_acceptance["visible_probe_command"]
     assert "session-start" in human_acceptance["visible_probe_command"]
-    assert "manual.31-visible-probe" in human_acceptance["visible_probe_command"]
+    assert "manual.lifecycle-verify-probe" in human_acceptance["visible_probe_command"]
     assert any("当前 V3 shim" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("install_complete=true" in criterion for criterion in human_acceptance["acceptance_criteria"])
     assert any("写入前检查负例被阻断，正例被放行" in criterion for criterion in human_acceptance["acceptance_criteria"])
     handoff = result["user_handoff"]
     status_card = {row["item"]: row["value"] for row in handoff["status_card"]}
     assert status_card["安装完成"] == "是"
-    assert status_card["环境自动拦截"] == "自动接入待验收"
+    assert status_card["环境自动拦截"] == "入口已检测，断点后验证"
     assert status_card["提交消息检查"] == "通过"
-    assert "31" in status_card["下一步"]
+    assert "30" in status_card["下一步"]
     assert [block["name"] for block in handoff["hook_status_blocks"]] == ["环境自动拦截", "提交消息检查"]
     assert any("插件页面" in step for step in handoff["user_next_steps"])
-    assert "manual.31-visible-probe" in handoff["visible_probe_command"]
+    assert "manual.lifecycle-verify-probe" in handoff["visible_probe_command"]
     assert "integrated" not in json.dumps(handoff, ensure_ascii=False)
     assert any("目标环境名称和版本" in item for item in handoff["failure_info_package"])
     assert result["diagnostics"] == []
+
+
+def test_install_verification_parser_defaults_to_workspace_parent_without_config(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    ldvh_root = workspace / "ldvh"
+    ldvh_root.mkdir(parents=True)
+    monkeypatch.setattr(install_verification, "ROOT", ldvh_root)
+
+    parser = install_verification.build_parser()
+    args = parser.parse_args([])
+
+    assert args.governance_root == workspace.as_posix()
+    assert args.repo == workspace.as_posix()
+    assert args.ldvh_root == ldvh_root.as_posix()
+
+
+def test_install_verification_parser_defaults_to_existing_workspace_config(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    ldvh_root = workspace / "ldvh"
+    ldvh_root.mkdir(parents=True)
+    _write_governed_config(
+        workspace,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {ldvh_root}
+""",
+    )
+    monkeypatch.setattr(install_verification, "ROOT", ldvh_root)
+
+    parser = install_verification.build_parser()
+    args = parser.parse_args([])
+
+    assert args.governance_root == workspace.as_posix()
+    assert args.repo == workspace.as_posix()
+    assert args.ldvh_root == ldvh_root.as_posix()
 
 
 def test_install_verification_ignores_legacy_lifecycle_acceptance_json(tmp_path: Path) -> None:
@@ -450,18 +488,18 @@ projects:
     assert result["environment"]["shim_direct_tests"]["session_start_direct"]["status"] == "not_run"
     human_acceptance = result["environment"]["human_acceptance"]
     assert any("Trae 是否支持插件 / 扩展包 / package 形态的 Hook 入口" in step for step in human_acceptance["steps"])
-    assert any("手动可用安装交还" in step for step in human_acceptance["steps"])
+    assert any("薄引用 / manual entrypoint" in step for step in human_acceptance["steps"])
     assert any("薄引用文本" in step for step in human_acceptance["steps"])
     assert not any("specs/31-环境Hook接入后验收行动模板.md" in step for step in human_acceptance["steps"])
     assert any("manual_ready" in criterion for criterion in human_acceptance["acceptance_criteria"])
-    assert any("不会自动阻断写入或完成声明" in criterion for criterion in human_acceptance["acceptance_criteria"])
+    assert any("断点后验证方式" in criterion for criterion in human_acceptance["acceptance_criteria"])
     handoff = result["user_handoff"]
     status_card = {row["item"]: row["value"] for row in handoff["status_card"]}
     assert status_card["安装完成"] == "否"
-    assert status_card["环境自动拦截"] == "手动可用"
+    assert status_card["环境自动拦截"] == "薄引用 / manual entrypoint"
     assert status_card["提交消息检查"] == "通过"
     assert "30" in status_card["下一步"]
-    assert any("手动可用安装交还" in step for step in handoff["user_next_steps"])
+    assert any("薄引用 / manual entrypoint" in step for step in handoff["user_next_steps"])
 
 
 def test_install_verification_keeps_disabled_codex_plugin_review_required(tmp_path: Path) -> None:
@@ -573,6 +611,27 @@ projects:
     assert "INSTALL_VERIFY_ENVIRONMENT_NOT_INTEGRATED" in {
         diagnostic["code"] for diagnostic in result["diagnostics"]
     }
+
+
+def test_find_config_root_defaults_to_ldvh_parent_when_config_missing(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    ldvh_root = workspace / "ldvh"
+    ldvh_root.mkdir(parents=True)
+
+    assert install_verification._find_config_root(ldvh_root) == workspace
+
+
+def test_build_parser_defaults_governance_and_repo_to_workspace_parent_when_config_missing(tmp_path: Path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    ldvh_root = workspace / "ldvh"
+    ldvh_root.mkdir(parents=True)
+    monkeypatch.setattr(install_verification, "ROOT", ldvh_root)
+
+    args = install_verification.build_parser().parse_args([])
+
+    assert args.governance_root == workspace.as_posix()
+    assert args.repo == workspace.as_posix()
+    assert args.ldvh_root == ldvh_root.as_posix()
 
 
 def test_run_shim_timeout_returns_blocking_diagnostic(monkeypatch) -> None:

@@ -35,7 +35,6 @@ SHORT_SPEC_REFS = {
     "09": "specs/09-测试与验证规范.md",
     "10": "specs/10-管辖项目配置规范.md",
     "30": "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
-    "31": "specs/31-环境Hook接入后验收行动模板.md",
     "20": "specs/20-Spark-火花.md",
     "21": "specs/21-WorkCase-工作项.md",
     "22": "specs/22-ADR-决策.md",
@@ -66,7 +65,7 @@ PREFLIGHT_TYPE_READ_PATHS = {
         "specs/07-Code确定性执行规范.md",
     ],
     "acceptance_scratch": [
-        "specs/31-环境Hook接入后验收行动模板.md",
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
         "code/docs/02-Environment-Plugin-Practice.md",
     ],
 }
@@ -156,7 +155,7 @@ ACTION_TEMPLATE_COLUMNS = ["结构", "最小要求"]
 FOUNDATION_SPEC_IDS = ("03", "05", "06", "07", "08", "09")
 ASSURANCE_COLUMNS = ["保障要求", "要求内容", "保障机制", "同步类型", "触发条件"]
 AUTHORIZED_ASSURANCE_COLUMNS = ["要求", "机制", "触发", "证据", "缺口处理"]
-AUTHORIZED_ASSURANCE_SPEC_IDS = {"06", "30", "31"}
+AUTHORIZED_ASSURANCE_SPEC_IDS = {"06", "30"}
 ALLOWED_RELATION_TYPES = {
     "inherits",
     "refines",
@@ -265,10 +264,10 @@ LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Context": ["用户目标", "目标环境", "LDVH 本体路径", "目标工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "workcases/adrs/pitfalls/sparks/studies", "环境入口审计结果", "Git Hook 状态", "source_refs", "specs/10-管辖项目配置规范.md", "code/docs/03-LDVH-Install-Wizard-Practice.md"],
     "Scenario": ["安装 LDVH", "接入 LDVH", "初始化 LDVH", "配置管辖项目", "旧插件 / 旧路径", "只回答 01/06/10 边界"],
     "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "管辖项目 Git Hook", "有效 Git worktree", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "事实源子目录", "LDVH 本体路径", "目标工作区根目录", "配置层级冲突", "授权 / trust", "integrated", "多项目", "用户告知清单", "安装方案预览", "最终确认"],
-    "执行": ["bootstrap discovery", "有限、只读、有证据", "LDVH_ROOT", "候选路径和证据", "01", "01.Att.03", "01.Att.04", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "用户告知清单", "安装方案预览", "workcases/adrs/pitfalls/sparks/studies", "AI 环境 Hook", "Git `commit-msg` Hook", "手动可用安装交还", "repo instruction", "manual entrypoint", "thin reference", "外部 adapter 候选", "不进入 31", "不恢复 Rules 顶层机制", "目标工作区根目录", "配置文件完整路径", "项目根目录、用户级目录和 LDVH 本体目录不得作为主选项", "配置层级检查", "目标项目内已存在配置", "10", "Git common-dir", "target-first resolver"],
-    "验证": ["统一安装验证入口", "环境状态检查入口", "环境入口审计入口", "管辖项目配置校验入口", "target-first resolution", "ldvh-base/", "Git Hook adapter", "managed `commit-msg` hook", "正反样例", "runtime adapter", "AI 环境 Hook 安装检测", "30 只验证安装动作和交接条件", "不执行 31", "插件页面", "重启", "授权", "受控正反例", "本次 lifecycle 验收", "需要声明环境自动接入通过", "当前已具备的真实自动触发", "payload", "失败处理证据", "09 验证声明字段"],
+    "执行": ["bootstrap discovery", "有限、只读、有证据", "LDVH_ROOT", "候选路径和证据", "01", "01.Att.03", "01.Att.04", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "用户告知清单", "安装方案预览", "workcases/adrs/pitfalls/sparks/studies", "AI 环境 Hook", "Git `commit-msg` Hook", "repo instruction", "manual entrypoint", "thin reference", "外部 adapter 候选", "不恢复 Rules 顶层机制", "目标工作区根目录", "配置文件完整路径", "项目根目录、用户级目录和 LDVH 本体目录不得作为主选项", "配置层级检查", "目标项目内已存在配置", "10", "Git common-dir", "target-first resolver"],
+    "验证": ["统一安装验证入口", "环境状态检查入口", "环境入口审计入口", "管辖项目配置校验入口", "target-first resolution", "ldvh-base/", "Git Hook adapter", "managed `commit-msg` hook", "正反样例", "runtime adapter", "AI 环境 Hook 安装检测", "当前回合安装检测", "断点后 lifecycle 验证", "runtime 循环", "真实工作流", "receipt", "真实自动触发", "payload", "失败处理证据", "09 验证声明字段"],
     "回写": ["过程输出", "Human 确认", "LDVH-GOVERNED-PROJECTS.yaml", "10 字段契约", "事实源目录创建", "不创建事实实例", "旧插件", "用户级配置目录候选", "Spark", "ADR", "Pitfall", "WorkCase", "Git commit records", "不得把 runtime receipt"],
-    "交还": ["安装方式", "配置位置选择", "管辖项目 ID", "Git common-dir", "ldvh-base/", "事实源子目录检查结果", "环境入口判定分类", "`integrated` / `manual_ready` / `available` / `deferred` / `removed_top_level` / `absent`", "承接形态说明", "手动可用安装交还", "不会自动阻断", "不得交还进入 31", "用户告知清单", "验证摘要", "回滚或卸载入口", "下一步 Human Gate", "source_refs"],
+    "交还": ["安装方式", "配置位置选择", "管辖项目 ID", "Git common-dir", "ldvh-base/", "事实源子目录检查结果", "环境入口判定分类", "`integrated` / `manual_ready` / `available` / `deferred` / `removed_top_level` / `absent`", "承接形态说明", "用户告知清单", "验证摘要", "回滚或卸载入口", "下一步 Human Gate", "source_refs", "断点恢复入口语", "可复制只读可见性探针", "真实工作流验证清单", "失败信息包"],
 }
 LDVH_INSTALL_REQUIRED_CODE_CONSUMPTION = [
     "ldvh_spec_metadata",
@@ -278,6 +277,8 @@ LDVH_INSTALL_REQUIRED_CODE_CONSUMPTION = [
     "environment_plugin_install_boundary",
     "governed_project_config_location_gate",
     "install_verification_handoff",
+    "breakpoint_recovery_protocol",
+    "lifecycle_verification_handoff",
     "stop_conditions",
 ]
 LDVH_INSTALL_WIZARD_TERMS = [
@@ -286,9 +287,9 @@ LDVH_INSTALL_WIZARD_TERMS = [
     "用户告知、用户选择与检查事实",
     "路径发现、配置位置与管辖项目清单",
     "安装方案预览与最终确认",
-    "环境入口判定结果的安装交还",
-    "环境插件安装检测与 lifecycle 验收",
-    "安装完成交还与失败信息包",
+    "环境入口承接与统一验证边界",
+    "写入完成后的断点引导与 lifecycle 验证",
+    "写入完成交还、断点恢复与失败信息包",
     "五个阶段",
     "路径确认",
     "安装前检查",
@@ -297,58 +298,24 @@ LDVH_INSTALL_WIZARD_TERMS = [
     "最终确认",
     "当前阶段",
     "已确认决策 / 结果",
-    "未发生事项",
     "尚未发生事项应保持空白",
-    "不写“待进行 / 待选择 / 待确认”",
     "不得新增安装运行时状态闭集",
-    "不得把交互展示项写成环境入口判定事实",
-    "具体图标、表格、展示列和交还摘要模板归 `code/docs/03-LDVH-Install-Wizard-Practice.md` 或运行时输出",
     "内部摘要检查",
-    "默认不在用户主界面逐字展示",
-    "流程表、关键路径表、检查结果表或选项表",
-    "风险、授权、阻断、容易误解的写入边界",
-    "压缩成一句提示",
     "简洁确认块",
     "用户告知清单必须作为 4/5 安装方案预览的必含内容交给 Human 确认",
-    "暂停交还时同步列出已能确认的告知清单项、缺失项和解除条件",
-    "告知清单不得替代 5/5 最终确认",
-    "本步目的",
-    "不会做什么",
-    "需要 Human 决定什么",
-    "确认项",
-    "选择影响",
-    "异常反馈",
     "主界面不得裸露 raw diagnostic",
     "选择框 / 单选控件",
     "每次只问一个问题",
-    "选项表必须给出选项、说明和结果",
-    "不得把“返回修改”写成第三个主选项",
-    "方案确认和执行确认",
-    "4/5 安装方案预览只能询问“是否进入最终确认”",
     "该选择不是执行授权",
-    "不得用“执行方案”或其它会让 Human 误以为已经授权写入的措辞",
     "5/5 最终确认必须直接询问“执行方案”或“不执行，停止安装”",
-    "不得再次要求 Human 确认只读检查",
     "不得继续解释流程或再次索要同一授权",
-    "关键表格必须使用稳定、可扫描的视觉标记",
-    "具体图标、展示列和示例形态归实现域",
-    "表格正文只展示说明和建议",
-    "不单列限制列",
-    "不重复展示绝对路径",
     "下一步处理",
     "检查结论分类",
-    "是否阻断",
-    "注意类结论只表示需知情或需关注，不自动阻断",
     "需安装和需升级类结论必须进入安装方案预览",
-    "阻断类结论必须停止执行并说明解除阻断条件",
-    "系统已检查事实",
-    "需授权动作",
     "不得把事实伪装成 Human 选项",
     "环境插件未安装时必须记录为需安装类结论并安排安装方案",
-    "环境插件已安装但指向旧路径、旧版本或 stale V2 path 时必须记录为需升级类结论并安排升级方案",
     "每个已选择管辖项目都必须检查 Git `commit-msg` Hook 状态",
     "非 Git 目录必须记录为阻断类结论并说明管辖项目必须是 Git 仓库",
-    "不得把这类情况表达成“不安装插件”“不处理插件”或“Git Hook 后置可不做”",
     "当前配置项目清单",
     "不得只写“保留工作区配置”",
     "product_name",
@@ -357,126 +324,49 @@ LDVH_INSTALL_WIZARD_TERMS = [
     "项目 ID",
     "项目路径",
     "Git common-dir",
-    "是否已设置为管辖项目",
-    "不得展示“当前目标”列",
-    "1 不改管辖项目配置",
-    "2 按编号设置管辖项目",
-    "编号列表",
-    "配置正确性结论",
-    "字段闭集",
-    "项目 ID 唯一",
     "target-first 解析结论",
-    "拟写入项目清单",
-    "LDVH 本体路径",
-    "目标工作区路径",
     "bootstrap discovery",
     "有限、只读、有证据",
-    "找不到时必须要求 Human 提供 LDVH 本体路径",
-    "工作区根目录",
     "配置位置不是选项，只能是目标工作区根目录",
     "项目根目录、用户级目录和 LDVH 本体目录都不是支持位置",
-    "AI 必须用路径确认表解释 LDVH 本体路径、目标工作区根目录和配置文件完整路径分别代表什么",
-    "表格列为 `项目`、`说明`、`建议`",
-    "不得把绝对路径作为单独列重复展示",
     "可复制路径块",
     "LDVH_ROOT=<ldvh-root>",
     "WORKSPACE_ROOT=<workspace-root>",
     "GOVERNED_CONFIG=<workspace-root>/LDVH-GOVERNED-PROJECTS.yaml",
     "配置层级冲突",
-    "先删除、迁移或明确保留其中一个配置文件",
     "完整安装方案必须同时覆盖 AI 环境 Hook 和管辖项目 Git Hook",
-    "repo 路径",
-    "`core.hooksPath` / active hook 状态",
-    "install_verification.py",
-    "验证命令和卸载 / rollback 命令",
-    "主界面只展示普通用户作出下一步判断所需的信息",
-    "会改变什么",
-    "不会改变什么",
-    "执行后还需要验证什么",
-    "技术明细",
     "净变化",
-    "将新增",
-    "将修改或升级",
-    "将保持不变",
-    "不会执行",
-    "需后置确认",
     "不可验证范围",
-    "不得混入“验证通过”",
     "环境 Hook 或插件提示必须按当前目标环境命名",
-    "30 不判定目标环境是否支持 Hook",
-    "不新增环境入口判定分类",
-    "不得把承接形态写成状态闭集",
-    "必须读取 01、`01.Att.03`、`01.Att.04` 和环境审计结果",
-    "手动可用安装交还",
-    "该交还不是降级",
-    "不单独开 32",
-    "也不得交给 31",
-    "可用但不自动拦截",
-    "手动可用",
-    "AI 可以读取 LDVH 规则",
-    "你或 AI 可以手动运行检查命令",
-    "当前目标环境不会在写入前自动拦截",
-    "1 按手动可用方式完成安装交还",
-    "2 暂停，等目标环境 Hook 支持",
-    "承接形态",
-    "repo instruction",
+    "30 不按“支持 Hook / 不支持 Hook”拆成两套写入完成流程",
+    "Runtime Protocol",
+    "runtime adapter",
     "manual entrypoint",
     "thin reference",
-    "`external_adapter_candidate` 类型候选",
-    "01.Att.04",
-    "manual_ready",
-    "available",
-    "deferred",
-    "absent",
-    "不得把 repo instruction、thin reference 或外部 adapter 候选写成环境接入事实状态",
-    "不会自动阻断写入或完成声明",
-    "当前 AI 运行环境名称",
-    "不得沿用示例环境名称",
-    "只有当前运行环境、环境审计或 Human 明确目标环境为 Codex",
-    "目标环境插件 / 工具入口插件",
-    "插件页面 / 扩展页面或插件管理器入口",
-    "重启 App",
-    "授权 / trust",
-    "新开窗口或新会话",
+    "统一验证标准",
+    "status=ok",
+    "event=session_start",
+    "receipt_id",
+    "Diagnostics: none",
     "安装检测标准",
     "安装检测通过",
-    "本次 lifecycle 验收",
-    "自动接入待验收",
-    "安装完成；自动接入待验收，可进入 31",
-    "安装完成；当前环境为手动可用，不会自动拦截",
-    "交还摘要",
-    "安装完成",
-    "01.Att.04 环境接入判定分类及证据",
-    "环境自动拦截",
-    "提交消息检查",
-    "不得在交还摘要中形成新的安装状态闭集",
-    "用户下一步待办",
-    "失败信息包",
-    "目标环境名称和版本",
+    "断点恢复协议",
+    "恢复入口语",
+    "我重启了，继续 LDVH lifecycle 验证",
+    "真实工作流验证清单",
+    "失败反馈包",
     "install_verification.py --format json",
     "environment_entry_audit.py --format text",
-    "失败步骤编号",
-    "scratch target 路径和文件状态",
-    "必需 lifecycle Hook manifest",
-    "用户侧冒烟检查",
-    "不阻断安装完成",
-    "正常判断标准",
-    "插件页面结果",
-    "V3 shim",
-    "未真实写入插件包、未进入插件页面或未获得授权证据前，不得写成“插件已安装”",
-    "`待用户安装`",
-    "`需授权`",
-    "`可见 / 需验证`",
-    "`已写入但待用户授权`",
-    "安装方案预览必须停止为 blocking",
-    "管辖项目必须是 Git 仓库",
+    "本次验证通过",
+    "本次验证失败",
+    "本次未验证",
+    "写入完成。请重启 App 或新开会话",
+    "Runtime 入口与 lifecycle 验证",
+    "提交消息检查",
     "最终确认只展示两个主选项",
     "1 执行方案",
     "2 不执行，停止安装",
     "选择执行后才会开始写入",
-    "最终确认摘要只列出将写入对象和不写入对象",
-    "不得重复安装前检查表",
-    "写入后执行验证",
     "不得把返回修改作为第三个主选项",
     "最终确认前",
     "不得写入配置",
@@ -516,17 +406,14 @@ LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS = {
         "重启 App",
         "授权 / trust",
         "安装检测通过",
-        "本次 lifecycle 验收",
-        "必需 Hook manifest 不完整",
-        "用户侧冒烟检查",
+        "lifecycle 验证",
+        "必需 lifecycle Hook manifest",
         "不声明 integrated",
-        "30 不判定目标环境是否支持 Hook",
         "01.Att.03",
         "01.Att.04",
-        "手动可用安装交还",
         "thin reference",
         "承接形态",
-        "不得交还进入 31",
+        "runtime adapter",
     ],
     "governed_project_config_location_gate": [
         "配置位置不是选项，只能是目标工作区根目录",
@@ -539,126 +426,25 @@ LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS = {
         "install_verification.py",
         "Git Hook adapter",
         "安装检测通过",
-        "用户侧冒烟检查",
         "正常判断标准",
         "回滚或卸载入口",
         "残留风险",
         "source_refs",
     ],
-}
-ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_REQUIRED_ROWS = {
-    "Context": ["目标环境", "30 交还结果", "安装变化目标", "统一安装验证入口", "environment_hook_integrated=false", "插件页面或插件管理器入口", "Human 授权", "source_refs", "specs/30-LDVH安装初始化管辖项目配置行动模板.md"],
-    "Scenario": ["30 安装检测通过", "环境 Hook 接入后验收", "lifecycle 冒烟", "只回答 01/06/09/30/31 边界"],
-    "Gate": ["开始验收", "受控负例阻断", "受控正例放行", "`/hooks` trust", "本次自动接入验收判断", "Human Gate"],
-    "执行": ["30 安装净变化", "安装变化目标", "逐项推进验收", "一次只判断一项", "闭集确认", "重启 App", "新会话只读可见性探针", "受控 scratch target", "不得安装", "不得升级", "不得修改用户环境", "失败即停止"],
-    "验证": ["安装变化目标", "统一安装验证入口", "新会话只读可见性探针", "SessionStart", "PreToolUse", "Git Hook 正反例", "environment_hook_integrated", "失败"],
-    "回写": ["不回写长期验收状态", "当前对话交还", "不得写事实源", "不得写 specs", "不得写 `.ldvh-runtime` 过程输出"],
-    "交还": ["验收结果表", "通过项", "失败项", "未验证项", "本次自动接入验收判断", "统一安装验证摘要", "推荐行动", "不可跨会话继承说明", "回滚或诊断入口", "source_refs"],
-}
-ENV_HOOK_ACCEPTANCE_REQUIRED_CODE_CONSUMPTION = [
-    "ldvh_spec_metadata",
-    "environment_hook_acceptance_action_template",
-    "post_install_environment_acceptance_flow",
-    "environment_hook_acceptance_test_matrix",
-    "stop_conditions",
-]
-ENV_HOOK_ACCEPTANCE_FLOW_TERMS = [
-    "31 由 30 交接调用",
-    "不安装、不升级、不禁用、不卸载",
-    "31 的目标检查只从 30 安装净变化派生",
-    "安装变化目标",
-    "不得新增与安装变化无关的验收目标",
-    "逐项验收推进规则",
-    "简洁验收提示",
-    "用户要做什么",
-    "正常表现",
-    "失败时给 AI 什么",
-    "主界面不得裸露 raw diagnostic",
-    "尚未发生事项应保持空白",
-    "每一步只问一个判断",
-    "闭集确认",
-    "具体验收展示表格、图标、编号和按钮文案归实现域",
-    "具体卡片、表格、图标、编号、只读可见性探针命令和 scratch 文件名归 `code/docs/02-Environment-Plugin-Practice.md` 或运行时输出",
-    "不得要求 Human 观察没有明确入口的“重启后状态”",
-    "重启后新会话可见性探针",
-    "插件目录与 Hook trust 检查",
-    "CLI `/plugins`",
-    "CLI `/hooks`",
-    "新会话只读可见性探针",
-    "`status=ok`",
-    "`event=session_start`",
-    "`receipt_id`",
-    "只读可见性探针只能证明新会话能够看见 LDVH runtime",
-    "不得替代后续受控负例阻断、受控正例放行和当前验证复核",
-    "主界面不得要求 Human 自行理解专业“通过 / 失败”",
-    "你是否看到 X",
-    "AI 根据本文判断通过、失败或暂停诊断",
-    "harmless scratch target",
-    "实现域或运行时输出给出具体位置",
-    "自动接入待验收",
-    "当前目标环境没有可用 Hook 接入，31 不适用，回到 30 手动可用安装交还",
-    "写入前检查",
-    "具体 scratch 文件名归实现域或运行时输出",
-    "本次验收总结",
-    "本次验收通过",
-    "本次验收失败",
-    "本次未验证",
-    "本次自动接入验收判断",
-    "用户主结论不得展示 `environment_hook_integrated=false`",
-    "技术附录",
-    "推荐行动",
-    "不得只写“让 AI 运行只读可见性探针”",
-    "可直接复制到输入框的文本",
-    "不得写成“技术检查通过，但 `environment_hook_integrated=false`，所以仍是自动接入待验收”",
-    "User-facing status",
-    "技术检查结果",
-    "用户侧验收缺口",
-    "不得直接复用统一安装验证入口的用户下一步提示",
-    "不得在本次验收通过后再次提示“进入 31”",
-    "`--require-environment-integrated` 不是 31 收尾通过条件",
-    "1 我看到了上述正常表现",
-    "2 没看到或有错误，停止验收",
-    "不写长期状态",
-    "不可跨会话继承",
-    "不得写 `.ldvh-runtime` 过程输出",
-    "失败信息包",
-    "目标环境名称和版本",
-    "install_verification.py --format json",
-    "environment_entry_audit.py --format text",
-    "失败步骤编号",
-    "是否发生实际写入",
-    "scratch target 路径和文件状态",
-    "不得把“用户还没做完测试”写成失败",
-    "不得把“用户看到了部分提示”写成全部通过",
-    "失败即停止",
-    "目标环境确认不支持 Hook",
-    "target_environment_supported=false",
-    "unsupported_target_environment",
-    "按 01 的无自动环境 Hook 边界回到 30 的手动可用安装交还",
-    "不得用正式 specs、事实对象、外部用户文件、管辖项目业务文件、用户环境配置或插件系统文件做正反例写入目标",
-]
-ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_SUPPORT_TERMS = {
-    "post_install_environment_acceptance_flow": [
-        "30 安装检测通过",
-        "30 安装净变化",
-        "安装变化目标",
-        "install_complete=true",
-        "environment_hook_install_verified=true",
-        "environment_hook_integrated=false",
-        "本次验收总结",
+    "breakpoint_recovery_protocol": [
+        "断点恢复协议",
+        "恢复入口语",
+        "可复制的只读可见性探针",
+        "真实工作流验证清单",
+        "失败反馈包",
     ],
-    "environment_hook_acceptance_test_matrix": [
-        "目标工作区配置和管辖项目关系",
-        "Git `commit-msg` Hook",
-        "插件页面结果",
-        "重启 App",
-        "新会话可见性探针",
-        "只读可见性探针",
-        "SessionStart",
-        "PreToolUse",
-        "受控负例阻断",
-        "受控正例放行",
-        "统一安装验证",
+    "lifecycle_verification_handoff": [
+        "runtime 循环",
+        "真实工作流",
+        "receipt",
+        "本次验证通过",
+        "本次验证失败",
+        "本次未验证",
     ],
 }
 WORKCASE_ACTION_TEMPLATE_REQUIRED_ROWS = {
@@ -1651,7 +1437,10 @@ def _display_path(path: Path, root: Path) -> str:
 
 
 def _default_governed_projects_config_path(root: Path) -> Path:
-    return find_governed_projects_config(root, root, [root]) or root / GOVERNED_PROJECTS_CONFIG_PATH
+    return (
+        find_governed_projects_config(root, root, [root], prefer_workspace_parent=True)
+        or root.resolve().parent / GOVERNED_PROJECTS_CONFIG_PATH
+    )
 
 
 def parse_governed_projects_config(root: Path = ROOT, config_path: Path | None = None) -> dict[str, Any]:
@@ -1743,47 +1532,6 @@ def parse_ldvh_install_spec_contract(root: Path = ROOT) -> dict[str, Any]:
             {"path": path, "role": "ldvh_install_action_template"},
             {"path": SHORT_SPEC_REFS["06"], "role": "action_template_parent_spec"},
             {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_config_spec"},
-        ],
-    }
-
-
-def parse_environment_hook_acceptance_action_template(root: Path = ROOT) -> list[dict[str, str]]:
-    raw = (root / SHORT_SPEC_REFS["31"]).read_text(encoding="utf-8")
-    sections = h2_sections(raw)
-    section = sections.get("Context、Scenario、Gate 与交还")
-    if not section:
-        return []
-    return find_table(section["body"], ACTION_TEMPLATE_COLUMNS)
-
-
-def parse_environment_hook_acceptance_spec_contract(root: Path = ROOT) -> dict[str, Any]:
-    path = SHORT_SPEC_REFS["31"]
-    full_path = root / path
-    if not full_path.exists():
-        return {
-            "spec_id": "31",
-            "path": path,
-            "code_consumption": [],
-            "action_template": [],
-            "stop_conditions": [],
-            "source_refs": [],
-        }
-
-    raw = full_path.read_text(encoding="utf-8")
-    metadata = first_yaml_block(raw, path).get("ldvh_spec", {})
-    sections = h2_sections(raw)
-
-    return {
-        "spec_id": "31",
-        "path": path,
-        "code_consumption": metadata.get("code_consumption", []),
-        "action_template": parse_environment_hook_acceptance_action_template(root),
-        "stop_conditions": _section_numbered_items(sections, "Stop Conditions"),
-        "source_refs": [
-            {"path": path, "role": "environment_hook_acceptance_action_template"},
-            {"path": SHORT_SPEC_REFS["06"], "role": "action_template_parent_spec"},
-            {"path": SHORT_SPEC_REFS["30"], "role": "install_handoff_action_template"},
-            {"path": SHORT_SPEC_REFS["01"], "role": "environment_entry_boundary"},
         ],
     }
 
@@ -2315,7 +2063,16 @@ def inspect_governed_config_hierarchy(
     }
 
 
-def find_governed_projects_config(root: Path = ROOT, cwd: Path | None = None, targets: list[Path] | None = None) -> Path | None:
+def find_governed_projects_config(
+    root: Path = ROOT,
+    cwd: Path | None = None,
+    targets: list[Path] | None = None,
+    *,
+    prefer_workspace_parent: bool = False,
+) -> Path | None:
+    workspace_config = root.resolve().parent / GOVERNED_PROJECTS_CONFIG_PATH
+    if prefer_workspace_parent and workspace_config.is_file():
+        return workspace_config
     search_targets = list(targets or [])
     if cwd is not None:
         search_targets.append(cwd)
@@ -2323,8 +2080,10 @@ def find_governed_projects_config(root: Path = ROOT, cwd: Path | None = None, ta
         config = _walk_for_governed_config(candidate)
         if config is not None:
             return config
-    fallback = root / GOVERNED_PROJECTS_CONFIG_PATH
-    return fallback if fallback.is_file() else None
+    if workspace_config.is_file():
+        return workspace_config
+    legacy_fallback = root / GOVERNED_PROJECTS_CONFIG_PATH
+    return legacy_fallback if legacy_fallback.is_file() else None
 
 
 def _load_governed_projects_from_config(config_path: Path) -> list[dict[str, Any]]:
@@ -2564,7 +2323,7 @@ def validate_formal_objects(
             continue
 
         relation = metadata.get("relation", "")
-        if obj.object_id in {"30", "31"} and relation and relation not in ALLOWED_RELATION_TYPES:
+        if obj.object_id == "30" and relation and relation not in ALLOWED_RELATION_TYPES:
             diagnostics.append(
                 Diagnostic(
                     "error",
@@ -3468,105 +3227,6 @@ def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]
     return diagnostics
 
 
-def validate_environment_hook_acceptance_action_template(root: Path = ROOT) -> list[Diagnostic]:
-    path = SHORT_SPEC_REFS["31"]
-    full_path = root / path
-    if not full_path.exists():
-        return [Diagnostic("error", "ENV_HOOK_ACCEPTANCE_SPEC_MISSING", path, "31 环境 Hook 接入后验收行动模板缺失")]
-
-    raw = full_path.read_text(encoding="utf-8")
-    rows = parse_environment_hook_acceptance_action_template(root)
-    contract = parse_environment_hook_acceptance_spec_contract(root)
-    diagnostics: list[Diagnostic] = []
-    diagnostics.extend(_validate_authorized_assurance_table(root, path, "31"))
-
-    code_consumption = contract["code_consumption"]
-    if not isinstance(code_consumption, list) or not all(isinstance(item, str) for item in code_consumption):
-        diagnostics.append(Diagnostic("error", "ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_INVALID", path, "31 code_consumption 必须是字符串列表"))
-        code_consumption = [item for item in code_consumption if isinstance(item, str)] if isinstance(code_consumption, list) else []
-    for item in _missing_exact_values(ENV_HOOK_ACCEPTANCE_REQUIRED_CODE_CONSUMPTION, code_consumption):
-        diagnostics.append(
-            Diagnostic(
-                "error",
-                "ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_MISSING",
-                path,
-                f"31 缺少 Code 消费入口: {item}",
-            )
-        )
-    expected_code_consumption = set(ENV_HOOK_ACCEPTANCE_REQUIRED_CODE_CONSUMPTION)
-    for item in code_consumption:
-        if item not in expected_code_consumption:
-            diagnostics.append(
-                Diagnostic(
-                    "error",
-                    "ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_UNSUPPORTED",
-                    path,
-                    f"31 声明了未被 Code 契约消费的入口: {item}",
-                )
-            )
-
-    if not rows:
-        return diagnostics + [
-            Diagnostic(
-                "error",
-                "ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_MISSING",
-                path,
-                "31 缺少环境 Hook 接入后验收行动模板结构表",
-            )
-        ]
-
-    if not contract["stop_conditions"]:
-        diagnostics.append(Diagnostic("error", "ENV_HOOK_ACCEPTANCE_STOP_CONDITIONS_MISSING", path, "31 必须声明可消费 Stop Conditions"))
-
-    rows_by_structure = {row["结构"]: row for row in rows}
-    for structure, terms in ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_REQUIRED_ROWS.items():
-        row = rows_by_structure.get(structure)
-        if not row:
-            diagnostics.append(
-                Diagnostic(
-                    "error",
-                    "ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_ROW_MISSING",
-                    path,
-                    f"环境 Hook 接入后验收行动模板缺少结构: {structure}",
-                )
-            )
-            continue
-        missing_terms = [term for term in terms if term not in row["最小要求"]]
-        for term in missing_terms:
-            diagnostics.append(
-                Diagnostic(
-                    "error",
-                    "ENV_HOOK_ACCEPTANCE_ACTION_TEMPLATE_TERM_MISSING",
-                    path,
-                    f"{structure} 缺少关键要求: {term}",
-                )
-            )
-
-    missing_flow_terms = [term for term in ENV_HOOK_ACCEPTANCE_FLOW_TERMS if term not in raw]
-    for term in missing_flow_terms:
-        diagnostics.append(
-            Diagnostic(
-                "error",
-                "ENV_HOOK_ACCEPTANCE_FLOW_TERM_MISSING",
-                path,
-                f"环境 Hook 接入后验收流程缺少关键要求: {term}",
-            )
-        )
-
-    for item, terms in ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_SUPPORT_TERMS.items():
-        for term in [term for term in terms if term not in raw]:
-            diagnostics.append(
-                Diagnostic(
-                    "error",
-                    "ENV_HOOK_ACCEPTANCE_CODE_CONSUMPTION_SUPPORT_MISSING",
-                    path,
-                    f"{item} 缺少可消费支撑声明: {term}",
-                )
-            )
-
-    return diagnostics
-
-
 def validate_workcase_member_contract(root: Path = ROOT) -> list[Diagnostic]:
     path = SHORT_SPEC_REFS["21"]
     full_path = root / path
@@ -3776,8 +3436,6 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     git_commit_action_template = parse_git_commit_action_template(root)
     ldvh_install_action_template = parse_ldvh_install_action_template(root)
     ldvh_install_spec_contract = parse_ldvh_install_spec_contract(root)
-    environment_hook_acceptance_action_template = parse_environment_hook_acceptance_action_template(root)
-    environment_hook_acceptance_spec_contract = parse_environment_hook_acceptance_spec_contract(root)
     workcase_action_template = parse_workcase_action_template(root)
     workcase_member_contract = parse_workcase_member_contract(root)
     fact_model_member_contracts = parse_fact_model_member_contracts(root)
@@ -3807,7 +3465,6 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_attachment_contracts(root))
     diagnostics.extend(validate_git_commit_action_template(root))
     diagnostics.extend(validate_ldvh_install_action_template(root))
-    diagnostics.extend(validate_environment_hook_acceptance_action_template(root))
     diagnostics.extend(validate_workcase_action_template(root))
     diagnostics.extend(validate_workcase_member_contract(root))
     diagnostics.extend(validate_fact_model_member_contracts(root))
@@ -3846,7 +3503,6 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/05-事实模型基础规范.md", "role": "fact_model_foundation"},
             {"path": "specs/06-行动模板基础规范.md", "role": "action_template_foundation"},
             {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "ldvh_install_action_template"},
-            {"path": "specs/31-环境Hook接入后验收行动模板.md", "role": "environment_hook_acceptance_action_template"},
             {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
             {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},
             {"path": "specs/09-测试与验证规范.md", "role": "test_verification"},
@@ -3872,8 +3528,6 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "git_commit_action_template": git_commit_action_template,
         "ldvh_install_action_template": ldvh_install_action_template,
         "ldvh_install_spec_contract": ldvh_install_spec_contract,
-        "environment_hook_acceptance_action_template": environment_hook_acceptance_action_template,
-        "environment_hook_acceptance_spec_contract": environment_hook_acceptance_spec_contract,
         "workcase_action_template": workcase_action_template,
         "workcase_member_contract": workcase_member_contract,
         "fact_model_member_contracts": fact_model_member_contracts,
@@ -4177,7 +3831,7 @@ def classify_target_path(target_path: str) -> dict[str, str]:
             "target_path": normalized,
             "target_type": "acceptance_scratch",
             "impact": "low",
-            "reason": "目标属于 31 环境 Hook 验收的受控 scratch target，只能用于当次正反例探针，不作为事实源或长期过程状态。",
+            "reason": "目标属于 30 断点后 lifecycle 验证的受控 scratch target，只能用于当次正反例探针，不作为事实源或长期过程状态。",
         }
     if normalized in HIGH_IMPACT_SPEC_PATHS:
         return {

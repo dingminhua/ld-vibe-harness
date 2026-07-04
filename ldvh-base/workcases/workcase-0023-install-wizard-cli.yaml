@@ -1,0 +1,167 @@
+id: workcase-0023
+type: workcase
+title: 30 安装向导 CLI 需求收敛
+goal: |
+  将 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的安装、初始化、管辖项目配置和断点后验证流程，收敛为一个可复跑、可测试、可审计的确定性 CLI 需求。
+
+  本 WorkCase 的目标不是立刻实现一键安装器，而是先锁定 CLI 与 30、01、07、09、10 和现有 Code 入口的职责边界：30 继续作为安装规则契约，CLI 只作为确定性执行壳；最终确认前不得写入，写入必须通过 Human Gate；环境插件路径和薄引用 / manual entrypoint 路径必须归入同一套 check -> plan -> apply -> verify 流程。
+status: human_plan_confirming
+created: '2026-07-05T00:00:00+08:00'
+updated: '2026-07-05T00:00:00+08:00'
+priority: P1
+description: |
+  Human 提出：30 的安装流程是否可以做成 CLI；随后继续追问有了 CLI 后是否还需要 30、30 中两种环境情况如何处理，以及 CLI 需求应由谁负责。
+
+  当前结论：
+  - 30 仍是安装规则源，负责 Human Gate、用户告知、写入边界、环境入口声明边界、验证和回滚交还。
+  - CLI 归 Code 实现域，受 07 约束；测试和验收受 09 约束；管辖项目配置受 10 约束；环境入口判定受 01 约束。
+  - CLI 不应成为新的规则源，也不应把安装变成无确认的一键写入。
+  - 30 中的两类环境情况不应拆成两套安装规则，而应在 CLI plan 中体现为 `environment_strategy`：`plugin_hook`、`thin_reference`、`manual_entrypoint` 或 `unsupported`。
+  - 旧 `workcase-0018` 仍保留为安装验收 / bootstrap skill 时代的历史推进载体；本 WorkCase 专门承接 V3 现行 30 安装向导 CLI 需求，不复用 V2 `specs/33` 语义。
+success_criteria: |
+  - [ ] 明确 CLI 不是新规则源：规则需求归 30，实现需求归 Code / 07，测试归 09，配置归 10，环境入口归 01。
+  - [ ] 定义第一版 CLI 命令面：`check`、`plan`、`apply --confirm-human-gate`、`verify`。
+  - [ ] 定义 `install_plan` 最小结构，至少覆盖 LDVH root、workspace root、governed config、target projects、environment_strategy、checks、planned_writes、skipped_writes、human_gate_required、rollback、verification 和 source_refs。
+  - [ ] 明确 `check` 和 `plan` 只读，任何写入动作只能发生在 `apply`，且必须显式带 `--confirm-human-gate`。
+  - [ ] 明确 CLI 复用现有后端：`ldvh_specs.py` / `specs_validate.py`、`environment_entry_audit.py`、`governed_hook_adapter.py`、`install_verification.py` 和 `runtime_adapter.py`。
+  - [ ] 明确支持 Hook / 不支持 Hook 两种情况统一落在同一安装流程，只通过 `environment_strategy` 分支处理，不声明未验证 integrated。
+  - [ ] 明确第一版不做 TUI、不做无确认一键安装、不写用户环境 Hook 系统文件、不新增第二套安装规范。
+  - [ ] 更新 `code/docs/03-LDVH-Install-Wizard-Practice.md`，把 CLI 候选边界写成 Code 实现域实践要求。
+  - [ ] 若进入实现阶段，新增 `code/install_wizard.py` 和 `tests/code/test_install_wizard.py`，覆盖只读、plan、Human Gate、非 Git repo、非管辖项目、两种 environment_strategy 和 verify 汇总。
+source: |
+  来源：2026-07-05 当前会话。
+
+  Human 问题链：
+  - “30 的安装流程 能不能做成 cli 呢？”
+  - “做成 cli 和现在会有什么区别呢”
+  - “那有了 cli 还需要 30 吗？而且 30 里面还区分 2 种情况的”
+  - “那这个 cli 的需求是谁负责？”
+  - “你先制定一个计划，我先看看”
+  - “按你建议推进”
+
+  相关既有材料：
+  - `specs/30-LDVH安装初始化管辖项目配置行动模板.md`
+  - `specs/01-保障与衔接.md`
+  - `specs/06-行动模板基础规范.md`
+  - `specs/07-Code确定性执行规范.md`
+  - `specs/09-测试与验证规范.md`
+  - `specs/10-管辖项目配置规范.md`
+  - `code/docs/03-LDVH-Install-Wizard-Practice.md`
+  - `code/environment_entry_audit.py`
+  - `code/governed_hook_adapter.py`
+  - `code/install_verification.py`
+orchestration:
+  mode: sequential
+  execution_items:
+    - id: item-1
+      title: 锁定 CLI 与 30 的职责边界
+      role: requirements-boundary
+      mode: single
+      input_refs:
+        - specs/30-LDVH安装初始化管辖项目配置行动模板.md
+        - specs/06-行动模板基础规范.md
+        - code/docs/03-LDVH-Install-Wizard-Practice.md
+      expected_output: |
+        明确 30 是规则契约，CLI 是执行壳。CLI 不定义新的 Human Gate、环境入口分类、integrated 判断或配置字段；CLI 只能把 30 的 check / plan / apply / verify 变成可复跑命令。
+      status: pending
+      blocking_reason: ''
+    - id: item-2
+      title: 定义 CLI 命令面和 install_plan 结构
+      role: cli-design
+      mode: single
+      input_refs:
+        - code/install_verification.py
+        - code/governed_hook_adapter.py
+        - code/environment_entry_audit.py
+        - code/ldvh_specs.py
+      expected_output: |
+        形成第一版命令面：`check`、`plan`、`apply --plan <file> --confirm-human-gate`、`verify`。定义 `install_plan` JSON / YAML 输出结构，要求 plan 可审计、可复跑，且 apply 只执行 plan 中列出的动作。
+      status: pending
+      blocking_reason: ''
+    - id: item-3
+      title: 收敛环境策略分支
+      role: environment-strategy-design
+      mode: single
+      input_refs:
+        - specs/01-保障与衔接.md
+        - specs/attachments/01.Att.03-环境入口类型表.md
+        - specs/attachments/01.Att.04-环境接入判定分类表.md
+        - code/docs/02-Environment-Plugin-Practice.md
+        - code/environment_entry_audit.py
+      expected_output: |
+        把支持 Hook / 不支持 Hook 两种情况收敛为 `environment_strategy`。`plugin_hook` 负责插件 / 扩展包安装检测和授权提示；`thin_reference` / `manual_entrypoint` 负责薄引用和 manual runtime adapter 承接；两者最终都回到 runtime receipt、Git Hook 正反例和 install_verification 验证，不声明未验证 integrated。
+      status: pending
+      blocking_reason: ''
+    - id: item-4
+      title: 同步 Code 实现域文档
+      role: docs-update
+      mode: single
+      input_refs:
+        - code/docs/03-LDVH-Install-Wizard-Practice.md
+        - README.md
+      expected_output: |
+        在 Code 实现域文档中登记安装向导 CLI 候选边界：当前未实现时不得把命令写成可用；实现后必须完整承接 30 五步状态、Human Gate、外部 Git Hook Gate、环境插件 Gate、回滚和 install_verification 交还要求。README 只记录候选或已实现入口，不夸大安装状态。
+      status: pending
+      blocking_reason: ''
+    - id: item-5
+      title: 实现前测试矩阵设计
+      role: test-design
+      mode: single
+      input_refs:
+        - tests/code/test_install_verification.py
+        - tests/code/test_ldvh_specs_validate.py
+      expected_output: |
+        设计 `tests/code/test_install_wizard.py` 覆盖矩阵：check 不写入、plan 只读并包含 planned_writes、apply 缺少 Human Gate 必须阻断、非 Git repo 阻断、非管辖项目阻断、plugin_hook 与 thin_reference / manual_entrypoint 两类策略输出正确、verify 汇总 install_verification。
+      status: pending
+      blocking_reason: ''
+  plan_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy:
+      selection_reason: |
+        安装向导 CLI 会把高影响写入流程固化进 Code，必须先审查规则归口、Human Gate、环境策略分支和现有后端复用边界，避免把 CLI 做成绕过 30 的新规则源或无确认安装器。
+      required_perspectives:
+        - 30 / 06 行动模板边界
+        - Code / 07 实现边界
+        - 环境入口 / 01 策略边界
+        - 测试 / 09 验收边界
+      optional_perspectives:
+        - 用户交互可用性
+      tool_method_requirements:
+        - 审核只读当前仓库，不修改文件。
+        - 必须检查 CLI 是否可能绕过 Human Gate。
+        - 必须检查 CLI 是否声明未验证 integrated。
+        - 必须检查是否复用现有后端而不是复制第二套逻辑。
+        - 必须检查支持 Hook / 不支持 Hook 是否统一回到同一验证标准。
+      aggregation_rule: |
+        若任一 required perspective 认为 CLI 会成为新规则源、绕过 Human Gate、复制环境入口分类、绕过现有 adapter / verification 后端，或把薄引用路径写成 integrated，不得进入实现阶段。
+      review_items: []
+  result_review:
+    orchestration_owner: main_controller
+    workflow_ref: null
+    review_policy: null
+    review_items: []
+related_sparks: []
+related_workcases:
+  - workcase-0018
+related_adrs: []
+related_pitfalls: []
+related_docs:
+  - specs/30-LDVH安装初始化管辖项目配置行动模板.md
+  - specs/01-保障与衔接.md
+  - specs/06-行动模板基础规范.md
+  - specs/07-Code确定性执行规范.md
+  - specs/09-测试与验证规范.md
+  - specs/10-管辖项目配置规范.md
+  - code/docs/03-LDVH-Install-Wizard-Practice.md
+  - code/environment_entry_audit.py
+  - code/governed_hook_adapter.py
+  - code/install_verification.py
+verification_evidence: ''
+closure_evidence: ''
+closure_requested_at: null
+review_requested_at: null
+closed_at: null
+closure_outcome: ''
+residual_risks: []
+followup_refs: []

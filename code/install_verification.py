@@ -44,15 +44,15 @@ def _visible_probe_command(ldvh_root: Path, repo: Path, governance_root: Path | 
         parts.extend(["--config-root", governance_root.as_posix()])
     parts.extend([
         "--session-id",
-        "31-visible-probe",
+        "lifecycle-verify-probe",
         "--target-path",
         repo.as_posix(),
         "--task",
-        "LDVH 31 visible probe",
+        "LDVH lifecycle verification probe",
         "--operation",
         "read",
         "--trigger-source",
-        "manual.31-visible-probe",
+        "manual.lifecycle-verify-probe",
         "--format",
         "text",
     ])
@@ -75,7 +75,7 @@ def _find_config_root(start: Path) -> Path:
     for candidate in candidates:
         if (candidate / GOVERNED_PROJECTS_CONFIG_PATH).is_file():
             return candidate
-    return resolved
+    return resolved.parent
 
 
 def _spec_diagnostic_to_install(diagnostic: Any) -> dict[str, str]:
@@ -350,19 +350,19 @@ def _verify_environment(
             ),
             "human_acceptance": {
                 "required": True,
-                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据；若 01 或环境审计确认没有可用 Hook 入口，应回到 30 的手动可用安装交还。",
+                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据；目标环境没有自动 Hook 入口时，仍按 30 交还薄引用 / manual entrypoint，并继续断点后 lifecycle 验证。",
                 "steps": [
                     f"先确认 {environment_name} 是否支持插件 / 扩展包 / package 形态的 Hook 入口。",
-                    "若支持 Hook，必须先实装目标环境插件 / 扩展包并让安装检测通过；安装检测通过后的 integrated 验收再按支持 Hook 分支处理。",
-                    "若 01 或环境审计确认没有可用 Hook 入口，回到 specs/30-LDVH安装初始化管辖项目配置行动模板.md 的手动可用安装交还。",
-                    "手动可用安装交还必须基于 hooks/LDVH-RUNTIME-PROTOCOL.md 生成已替换 LDVH 本体绝对路径的薄引用文本，给出可复制内容和写入路径，不得只列承接形态表。",
-                    "手动可用安装交还不得声明环境自动接入已完成，也不得安排 31 的插件页面、重启 App 或写入前检查阻断验收。",
+                    "若支持 Hook，必须先实装目标环境插件 / 扩展包并让安装检测通过；写入完成后按 30 的断点恢复协议继续 lifecycle 验证。",
+                    "若 01 或环境审计确认没有自动 Hook 入口，按 specs/30-LDVH安装初始化管辖项目配置行动模板.md 交还薄引用 / manual entrypoint 承接。",
+                    "薄引用 / manual entrypoint 承接必须基于 hooks/LDVH-RUNTIME-PROTOCOL.md 生成已替换 LDVH 本体绝对路径的薄引用文本，给出可复制内容和写入路径，不得只列承接形态表。",
+                    "薄引用 / manual entrypoint 承接不得声明环境自动接入已完成；断点后验证仍按 30 的统一 lifecycle 验证执行。",
                 ],
                 "acceptance_criteria": [
                     "目标环境支持 Hook 时，必须能提供插件 / 扩展包实装、入口指向、授权、payload、失败处理和回滚证据。",
-                    "目标环境确认没有可用 Hook 入口时，30 只能交还 01.Att.04 的 manual_ready / available / deferred / absent 等分类，并补充承接形态说明。",
-                    "手动可用安装交还的验证标准是 V3 specs 可找到、读取顺序正确、manual CLI 可运行、Git Hook 正反例通过。",
-                    "Human 已理解当前目标环境不会自动阻断写入或完成声明。",
+                    "目标环境确认没有自动 Hook 入口时，30 仍交还 01.Att.04 的 manual_ready / available / deferred / absent 等分类，并补充承接形态说明。",
+                    "薄引用 / manual entrypoint 承接的验证标准是 V3 specs 可找到、Runtime Protocol 可读、manual CLI 可运行、runtime adapter 产出 receipt、Git Hook 正反例通过。",
+                    "Human 已理解当前目标环境的触发来源、不可验证范围和断点后验证方式。",
                 ],
             },
             "diagnostics": [],
@@ -487,7 +487,7 @@ def _verify_environment(
                 f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
                 f"新开一个 {environment_name} 窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表。",
                 "触发一次受控写入类工具，确认写入前检查负例会阻断，正例会放行。",
-                "如需确认环境自动接入，进入 specs/31-环境Hook接入后验收行动模板.md 做本次逐项验收。",
+                "如需确认 lifecycle 生效，按 specs/30-LDVH安装初始化管辖项目配置行动模板.md 的断点恢复协议继续验证。",
                 "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
                 "失败时返回插件页面结果、错误文本、截图或本命令 JSON 输出。",
             ],
@@ -585,7 +585,6 @@ def build_install_verification(
         "diagnostics": diagnostics,
         "source_refs": [
             {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "install_handoff_contract"},
-            {"path": "specs/31-环境Hook接入后验收行动模板.md", "role": "environment_hook_acceptance_handoff"},
             {"path": "code/governed_hook_adapter.py", "role": "git_hook_status_backend"},
             {"path": "code/environment_entry_audit.py", "role": "environment_hook_audit"},
             {"path": "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py", "role": "environment_shim_direct_test"},
@@ -611,13 +610,13 @@ def _git_hook_user_status(git_results: list[dict[str, Any]]) -> str:
 
 def _environment_user_status(env_summary: dict[str, Any]) -> str:
     if not env_summary.get("target_environment_supported"):
-        return "手动可用"
+        return "薄引用 / manual entrypoint"
     if env_summary.get("blocking"):
         return "阻断"
     if env_summary.get("environment_integrated"):
         return "已自动接入"
     if env_summary.get("install_verified"):
-        return "自动接入待验收"
+        return "入口已检测，断点后验证"
     return "需安装 / 需升级"
 
 
@@ -637,31 +636,31 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         install_status = "是"
         if env_status == "已自动接入":
             next_step = "可停止；保留验证输出作为交还证据"
-        elif env_status == "自动接入待验收":
-            next_step = "可进入 31 环境 Hook 接入后验收"
+        elif env_status == "入口已检测，断点后验证":
+            next_step = "继续 30 断点后 lifecycle 验证"
         else:
             next_step = "交还当前状态和残留限制"
     else:
         install_status = "否"
         if not env_summary.get("target_environment_supported"):
-            next_step = "回到 30：按 01 确认目标环境入口；无可用 Hook 时做手动可用安装交还"
+            next_step = "按 30 确认目标环境入口；无自动 Hook 时交还薄引用 / manual entrypoint 并继续断点后验证"
         elif git_status != "通过":
             next_step = "先安装或修复管辖项目 Git commit-msg Hook"
         else:
             next_step = "先安装、升级或授权目标环境插件"
 
-    if env_status == "自动接入待验收":
+    if env_status == "入口已检测，断点后验证":
         user_next_steps = [
             f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器。",
             "重启 App 或重载插件宿主后确认插件仍启用且无错误。",
             "完成授权 / trust；没有授权提示时记录无待处理授权。",
             f"新开 {environment_name} 窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表。",
-            "需要确认环境自动接入时，进入 31 本次逐项验收。",
+            "需要确认 lifecycle 生效时，按 30 恢复入口继续断点后验证。",
         ]
-    elif env_status == "手动可用":
+    elif env_status == "薄引用 / manual entrypoint":
         user_next_steps = [
             "确认目标环境当前没有可用 Hook 接入，或先补目标环境插件方案。",
-            "若确认无可用 Hook，按 30 手动可用安装交还完成交还。",
+            "若确认无可用 Hook，按 30 薄引用 / manual entrypoint 安装交还完成交还。",
             "确认薄引用文件已写入并可被 AI 读取到 Runtime Protocol 入口。",
             "复核每个管辖项目 Git commit-msg Hook 的正反例结果。",
             "以后目标环境支持 Hook 时，再升级为环境插件并进入安装检测。",
@@ -689,8 +688,8 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             {
                 "name": "环境自动拦截",
                 "status": env_status,
-                "normal": "当前检测为已自动接入时无需处理；否则安装完成后进入 31 本次验收；无 Hook 环境只能手动可用。",
-                "next_step": next_step if env_status != "已自动接入" else "无需进入 31。",
+                "normal": "当前检测为已自动接入时无需处理；否则写入完成后按 30 恢复入口继续 lifecycle 验证。",
+                "next_step": next_step if env_status != "已自动接入" else "无需断点后验证。",
             },
             {
                 "name": "提交消息检查",
@@ -810,9 +809,9 @@ def _print_text(result: dict[str, Any]) -> None:
 def build_parser() -> argparse.ArgumentParser:
     default_config_root = _find_config_root(ROOT)
     parser = argparse.ArgumentParser(description="Verify LDVH installation handoff state without writing user environment.")
-    parser.add_argument("--governance-root", default=default_config_root.as_posix(), help="root containing LDVH-GOVERNED-PROJECTS.yaml")
+    parser.add_argument("--governance-root", default=default_config_root.as_posix(), help="root containing LDVH-GOVERNED-PROJECTS.yaml; defaults to the discovered config root or LDVH root parent")
     parser.add_argument("--ldvh-root", default=ROOT.as_posix(), help="LDVH v3 root")
-    parser.add_argument("--repo", default=ROOT.as_posix(), help="repo used for environment entry audit")
+    parser.add_argument("--repo", default=default_config_root.as_posix(), help="repo used for environment entry audit; defaults to the workspace root")
     parser.add_argument("--codex-home", default="", help="Codex home for read-only plugin audit")
     parser.add_argument(
         "--environment-name",
@@ -822,7 +821,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--require-environment-integrated",
         action="store_true",
-        help="strict technical audit only; do not use as the spec 31 acceptance handoff condition",
+        help="strict technical audit only; do not use as the 30 breakpoint lifecycle handoff condition",
     )
     parser.add_argument("--format", choices=["text", "json"], default="text")
     return parser
