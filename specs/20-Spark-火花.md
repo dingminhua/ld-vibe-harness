@@ -160,6 +160,8 @@ Spark 的关闭口径必须满足：
 | 分流检查 | `resolved` 是否有非 Study 分流目标，`discarded` 是否有废弃原因 | 不得声明分流完整 |
 | 事实源检查 | Web/Code/测试输出是否没有替代 Spark 实例事实 | 回到 03/05 边界修正 |
 
+新增或改写单个 Spark 实例，且不改变本文规则、字段 schema、状态闭集、Code validator、测试基础设施或跨域消费逻辑时，默认验证入口是 Spark / 事实实例的结构、字段、状态、关系和事实源边界校验，不默认要求全量测试。该口径不免除本文 Human Gate，也不允许 validator 输出反向定义 Spark 规则、授权或完成判断。
+
 ## 10. Human Gate
 
 以下情况必须进入 Human Gate：

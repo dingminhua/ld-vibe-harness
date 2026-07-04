@@ -1,0 +1,50 @@
+id: spark-0045
+type: spark
+title: 行动指南渐进式披露与 00/01 读取负担优化
+status: pending
+created: '2026-07-04T16:55:39+08:00'
+updated: '2026-07-04T16:55:39+08:00'
+description: |
+  本 Spark 记录一个较窄的行动指南优化议题：当前 LDVH v3 已能通过 Action Guide / runtime facade 输出 `task_read_plan`、`stop_conditions`、`validation_guard`、`missing_fields`、`capability_gap` 和 `source_refs`，但 `session_start` 仍把 `specs/00-理念与构成.md`、`specs/01-保障与衔接.md` 和 `specs/02-AI行为规范.md` 作为文件级 P0 读取入口。对许多具体执行任务来说，00/01 是权威锚点和声明边界，不是直接操作手册；要求 AI 每次完整读取正文会增加负担，削弱行动指南“渐进式披露”的价值。
+
+  建议后续评估把 00/01/02 的会话入口消费从“默认读全文”优化为“默认消费短契约，风险触发时回读章节或全文”。短契约可以覆盖事实源边界、行动指南非授权器、receipt 非事实源、Human Gate 不可替代、缺 target / 缺验证 / unknown event 必须阻断或分流等硬边界。具体任务再按消费时机和 target 类型追加读取：例如 `pre_tool_use` 只披露 AI-BEH-003 相关要求，测试目标追加 09/07，Code 目标追加 07/09，核心 spec 或 integrated 声明才回读 00/01 正文。
+
+  一个可能的实现方向是为行动指南增加 `read_mode`、`source_ref`、`trigger` 和 `acknowledged_refs` 等字段，使读取建议可以表达 `contract`、`section`、`full` 三种层级。这样 00/01 仍保持权威锚点地位，但默认由 Code 编译成可审计的 runtime contract；只有修改核心规则、声明能力生效、涉及 Human Gate/事实源/环境接入或发现规范冲突时，才要求 AI 回读对应正文。
+
+  本 Spark 只记录优化方向，不直接修改 `AI-BEH-001`、01 行动指南契约、02 行为保障需求或 Code schema。若后续推进到规则或 Code 修改，应先评估 Human Gate，并分流为 WorkCase 或 specs/Code 变更任务。
+source: conversation
+source_detail: |
+  Human 追问行动指南是否真正做到渐进式披露，并指出具体执行时 00/01 全文读取意义不大。主控 AI 判断当前实现已做到第一阶段渐进披露，但仍停留在文件级 read_plan；更合理的方向是保留 00/01 权威锚点，同时把默认读取压缩为短契约，并按消费时机、target 类型和风险触发逐步展开。
+priority: P1
+evolution:
+  - at: '2026-07-04T16:55:39+08:00'
+    summary: |
+      新建 Spark，暂存行动指南渐进式披露优化议题。当前建议是把 session_start 的 00/01/02 文件级默认读取，后续评估为短契约优先、章节/全文按风险触发的分层读取；涉及修改 01/02 保障表达或 Code schema 时必须先走 Human Gate 和后续 WorkCase。
+input_refs:
+  - spark-0036
+  - spark-0039
+  - workcase-0022
+  - specs/00-理念与构成.md
+  - specs/01-保障与衔接.md
+  - specs/02-AI行为规范.md
+  - specs/06-行动模板基础规范.md
+  - specs/07-Code确定性执行规范.md
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_sparks:
+  - spark-0036
+  - spark-0039
+related_workcases:
+  - workcase-0022
+related_adrs: []
+related_studies: []
+related_docs:
+  - specs/00-理念与构成.md
+  - specs/01-保障与衔接.md
+  - specs/02-AI行为规范.md
+  - specs/05-事实模型基础规范.md
+  - specs/06-行动模板基础规范.md
+  - specs/07-Code确定性执行规范.md
+  - specs/20-Spark-火花.md
+  - code/ldvh_specs.py
