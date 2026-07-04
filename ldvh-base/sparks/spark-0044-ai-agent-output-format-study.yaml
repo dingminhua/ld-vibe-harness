@@ -1,0 +1,57 @@
+id: spark-0044
+type: spark
+title: AI Agent 输出格式治理与审计报告吸收
+status: pending
+created: '2026-07-03T14:39:55+08:00'
+updated: '2026-07-03T14:39:55+08:00'
+description: |
+  本 Spark 承接 Human 关于“写一个 spark+study，调研现在主流的 AI agent 输出格式；为什么 Trae 的输出信息感觉更有条理，Codex 能不能做到，或者有没有更先进的格式”的要求，同时承接一份 LDVH v3 specs 审计报告的吸收判断。
+
+  初步判断是：Trae 输出“有条理”的核心不只是模型回答格式，而是产品层把需求理解、计划、任务、工具调用、命令、预览、发布和状态提醒包装成阶段化界面；Codex 在当前对话中可以通过输出契约、AGENTS/Skill、plan/progress/final discipline 做到接近的人类可读结构，并且在非交互式 JSONL、output schema、App Server 事件流和 Agents tracing 层具备更适合系统集成的结构化格式。
+
+  审计报告不应直接替代 specs 修改。它应先作为外部审计输入进入 Study，后续分流到 Human Gate、WorkCase、ADR、Pitfall、docs 或 specs 修改。本 Spark 关联 `study-0017` 做稳定调研和分流建议；Study 形成后，本 Spark 仍保持 pending，等待 Human 决定是否创建后续 WorkCase/ADR 或直接执行 specs 修订。
+source: conversation
+source_detail: |
+  Human 要求新增 Spark + Study 调研主流 AI agent 输出格式，并询问 Trae 输出为何显得有条理、Codex 是否可以做到以及是否存在更先进格式；同时提供一份 LDVH v3 specs 审计报告，要求判断如何吸收。
+priority: P1
+evolution:
+  - at: '2026-07-03T14:39:55+08:00'
+    summary: |
+      新建 Spark 并关联 `study-0017`。本次只形成研究报告和吸收分流建议，不直接修改正文 specs、附件、Code、Web、Hook 或事实模型字段；审计报告中的高优先级项需要 Human Gate 后再进入 WorkCase 或 specs 修订。
+input_refs:
+  - study-0017
+  - /Users/dmh2002/.codex/attachments/0dea0eb3-0ee7-4e21-ac77-3d54c0b3172d/pasted-text.txt
+  - https://docs.trae.ai/ide/solo-mode
+  - https://docs.trae.ai/ide/changelog?_lang=zh
+  - https://github.com/bytedance/trae-agent
+  - https://github.com/bytedance/trae-agent/blob/main/docs/TRAJECTORY_RECORDING.md
+  - https://cursor.com/blog/plan-mode
+  - https://cursor.com/blog/agent-best-practices
+  - https://docs.anthropic.com/en/docs/claude-code/output-styles
+  - https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/start-copilot-sessions
+  - https://docs.devin.ai/desktop/cascade/cascade
+  - https://docs.devin.ai/api-reference/v1/structured-output
+  - https://developers.openai.com/codex/noninteractive
+  - https://developers.openai.com/codex/app-server
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_workcases: []
+related_adrs: []
+related_studies:
+  - study-0017
+related_docs:
+  - specs/01-保障与衔接.md
+  - specs/02-AI行为规范.md
+  - specs/03-事实源与Git溯源规范.md
+  - specs/04-Specs基础规范.md
+  - specs/05-事实模型基础规范.md
+  - specs/20-Spark-火花.md
+  - specs/21-WorkCase-工作项.md
+  - specs/22-ADR-决策.md
+  - specs/23-Pitfall-踩坑经验.md
+  - specs/24-Study-研究报告.md
+  - specs/30-LDVH安装初始化管辖项目配置行动模板.md
+  - specs/attachments/01.Att.06-环境安装回滚检查表.md
+  - specs/attachments/04.Att.04-保障要求字段表.md
+  - specs/attachments/09.Att.01-验证声明字段表.md

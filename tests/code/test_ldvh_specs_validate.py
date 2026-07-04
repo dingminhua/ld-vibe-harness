@@ -1104,10 +1104,10 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "手动可用安装交还" in rows["执行"]
     assert "thin reference" in rows["执行"]
     assert "不进入 31" in rows["执行"]
-    assert "governed_hook_adapter.py status" in rows["验证"]
-    assert "install_verification.py" in rows["验证"]
+    assert "Git Hook adapter" in rows["验证"]
+    assert "统一安装验证入口" in rows["验证"]
     assert "environment_lifecycle_acceptance.py" not in rows["验证"]
-    assert "governed_hook_adapter.py verify" in rows["验证"]
+    assert "governed_hook_adapter.py verify" not in rows["验证"]
     assert "managed `commit-msg` hook" in rows["验证"]
     assert "正反样例" in rows["验证"]
     assert "AI 环境 Hook 安装检测" in rows["验证"]
@@ -1629,7 +1629,7 @@ def test_environment_hook_acceptance_action_template_is_code_consumable(validati
     assert "| 要求 | 机制 | 触发 | 证据 | 缺口处理 |" in raw
     assert "保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件" not in raw
     assert "30 交还结果" in rows["Context"]
-    assert "install_verification.py" in rows["Context"]
+    assert "统一安装验证入口" in rows["Context"]
     assert "environment_hook_integrated=false" in rows["Context"]
     assert "30 安装检测通过" in rows["Scenario"]
     assert "环境 Hook 接入后验收" in rows["Scenario"]
@@ -1638,7 +1638,7 @@ def test_environment_hook_acceptance_action_template_is_code_consumable(validati
     assert "受控负例阻断" in rows["Gate"]
     assert "受控正例放行" in rows["Gate"]
     assert "记录 lifecycle 验收" not in rows["Gate"]
-    assert "本次自动接入验收结论" in rows["Gate"]
+    assert "本次自动接入验收判断" in rows["Gate"]
     assert "逐项推进验收" in rows["执行"]
     assert "一次只判断一项" in rows["执行"]
     assert "闭集确认" in rows["执行"]
@@ -1649,12 +1649,12 @@ def test_environment_hook_acceptance_action_template_is_code_consumable(validati
     assert "environment_lifecycle_acceptance_valid=true" not in rows["验证"]
     assert "environment_hook_integrated" in rows["验证"]
     assert "不回写长期验收状态" in rows["回写"]
-    assert "不得写 `.ldvh-runtime` 过程状态" in rows["回写"]
+    assert "不得写 `.ldvh-runtime` 过程输出" in rows["回写"]
     assert "不得写事实源" in rows["回写"]
     assert "验收结果表" in rows["交还"]
     assert "失败项" in rows["交还"]
-    assert "本次自动接入验收结论" in rows["交还"]
-    assert "当前 `environment_hook_integrated` 检测值" in rows["交还"]
+    assert "本次自动接入验收判断" in rows["交还"]
+    assert "当前 `environment_hook_integrated` 检测输出" in rows["交还"]
     assert "不可跨会话继承说明" in rows["交还"]
 
 
@@ -1696,16 +1696,16 @@ def test_environment_hook_acceptance_action_template_defines_stepwise_test_group
     assert "本次验收通过" in raw
     assert "本次验收失败" in raw
     assert "本次未验证" in raw
-    assert "本次自动接入验收结论" in raw
-    assert "当前 `environment_hook_integrated` 检测值" in raw
-    assert "不得直接复用 `install_verification.py` 的用户下一步提示" in raw
+    assert "本次自动接入验收判断" in raw
+    assert "当前 `environment_hook_integrated` 检测输出" in raw
+    assert "不得直接复用统一安装验证入口的用户下一步提示" in raw
     assert "不得在本次验收通过后再次提示“进入 31”" in raw
     assert "`--require-environment-integrated` 不是 31 收尾通过条件" in raw
     assert "1 我看到了上述正常表现" in raw
     assert "2 没看到或有错误，停止验收" in raw
     assert "不写长期状态" in raw
     assert "不可跨会话继承" in raw
-    assert "不得写 `.ldvh-runtime` 过程状态" in raw
+    assert "不得写 `.ldvh-runtime` 过程输出" in raw
     assert ".ldvh-runtime/acceptance-probe/" not in raw
     assert ".ldvh-runtime/acceptance-probe/blocked.txt" not in raw
     assert ".ldvh-runtime/acceptance-probe/allowed.txt" not in raw
@@ -1748,7 +1748,7 @@ def test_environment_hook_acceptance_action_template_requires_authorized_assuran
     _replace_in_temp(
         root,
         "specs/31-环境Hook接入后验收行动模板.md",
-        "| 要求 | 机制 | 触发 | 证据 | 缺口处理 |\n|---|---|---|---|---|\n| 验收授权要求 | 进入测试组和执行受控写入类测试前必须 Human 授权；由本文、01、06、09 保障 | 用户要求确认环境 Hook 接入后 | Human 授权记录、当前测试步骤、source_refs | 未授权时停止验收，不执行受控测试 |\n",
+        "| 要求 | 机制 | 触发 | 证据 | 缺口处理 |\n|---|---|---|---|---|\n| 验收授权要求 | 进入测试组和执行受控写入类测试前必须 Human 授权；由本文、01、06、09 保障 | 用户要求确认环境 Hook 接入后 | §6 前提表 Human 授权记录、当前测试步骤、source_refs | 未授权时停止验收，不执行受控测试 |\n",
         "| 保障要求 | 要求内容 | 保障机制 | 同步类型 | 触发条件 |\n|---|---|---|---|---|\n| 验收授权要求 | 进入测试组和执行受控写入类测试前必须 Human 授权 | 本文、01、06、09 | 验收治理 | 用户要求确认环境 Hook 接入后 |\n",
     )
 
@@ -1808,14 +1808,14 @@ def test_environment_hook_acceptance_action_template_reports_missing_process_sta
     _replace_in_temp(
         root,
         "specs/31-环境Hook接入后验收行动模板.md",
-        "不得写 `.ldvh-runtime` 过程状态",
-        "可以写过程状态",
+        "不得写 `.ldvh-runtime` 过程输出",
+        "可以写过程输出",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "ENV_HOOK_ACCEPTANCE_FLOW_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("不得写 `.ldvh-runtime` 过程状态" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("不得写 `.ldvh-runtime` 过程输出" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_environment_hook_acceptance_action_template_reports_missing_unsupported_environment_boundary(tmp_path: Path) -> None:

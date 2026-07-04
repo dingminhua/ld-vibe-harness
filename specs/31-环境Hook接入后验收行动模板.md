@@ -16,6 +16,7 @@ ldvh_spec:
     - "specs/00-理念与构成.md"
     - "specs/01-保障与衔接.md"
     - "specs/02-AI行为规范.md"
+    - "specs/03-事实源与Git溯源规范.md"
     - "specs/06-行动模板基础规范.md"
     - "specs/09-测试与验证规范.md"
   related_specs:
@@ -51,7 +52,7 @@ ldvh_spec:
 
 本文存在的价值，是把“环境 Hook 已安装检测通过，但真实 lifecycle 还没有被用户侧验收”的情况变成当次可执行、可交还的验收流程。没有本模板时，AI 容易在 `environment_hook_integrated=false` 和“当前回合无法自证真实环境触发”之间反复绕圈；也容易反过来把插件可见、缓存存在、新对话看起来正常或用户一句笼统确认误写成 integrated。
 
-31 的目标不是扩大安装权，而是减少验收负担：Human 只需要授权进入一组明确测试，AI 按顺序逐项判断，失败即停止，全部通过后复跑 `install_verification.py` 并交还本次验收总结。验收总结只代表本次运行输出，不写长期状态、不跨会话继承，也不替代后续重新检测。
+31 的目标不是扩大安装权，而是减少验收负担：Human 只需要授权进入一组明确测试，AI 按顺序逐项判断，失败即停止，全部通过后复跑统一安装验证入口并交还本次验收总结。验收总结只代表本次运行输出，不写长期状态、不跨会话继承，也不替代后续重新检测。
 
 ## 2. 权威依据
 
@@ -75,7 +76,7 @@ ldvh_spec:
 
 本文适用于：
 
-1. 30 已完成安装检测，`install_verification.py` 显示 `install_complete=true` 且 `environment_hook_install_verified=true`，但 `environment_hook_integrated=false`；
+1. 30 已完成安装检测，统一安装验证入口显示 `install_complete=true` 且 `environment_hook_install_verified=true`，但 `environment_hook_integrated=false`；
 2. 用户要求确认环境 Hook 是否真正接入、是否能在新窗口或新会话中看到可复核的 LDVH runtime 证据；
 3. 用户已完成或愿意完成插件页面启用、授权 / trust、重启 App 或重载插件宿主；
 4. 后续逻辑明确要求确认环境自动接入是否已在本次运行中可验证，需要可复现验收路径；
@@ -104,7 +105,7 @@ ldvh_spec:
 
 | 前提 | 要求 | 不满足时 |
 |---|---|---|
-| 安装检测 | `install_verification.py` 显示 `install_complete=true`、`environment_hook_install_verified=true` | 返回 30 或安装修复流程 |
+| 安装检测 | 统一安装验证入口显示 `install_complete=true`、`environment_hook_install_verified=true` | 返回 30 或安装修复流程 |
 | 当前验证结论 | 当前验证输出仍为 `environment_hook_integrated=false`，需要当次 lifecycle 验收补齐证据 | 若已为 true，只做复核交还 |
 | Human 授权 | Human 明确选择开始验收测试 | 停止，不执行受控测试 |
 | 目标环境 | 目标环境名称、插件页面或插件管理器入口清楚 | 暂停并要求补充 |
@@ -120,11 +121,8 @@ ldvh_spec:
 | 3 | 新会话可见性探针 | 新窗口或新会话中，AI 运行只读 LDVH 可见性探针并返回结果表；结果至少包含 `status=ok`、`event=session_start`、`receipt_id` 和 `Diagnostics: none`；若目标环境能提供真实 SessionStart 触发证据，应一并回读 | 停止，不写验收通过 |
 | 4 | 受控负例阻断 | 对 harmless scratch target 发起应阻断的写入类操作时，PreToolUse 负例被阻断或返回明确 blocking diagnostic | 停止；若意外写入，只记录失败并按 Human Gate 处理清理 |
 | 5 | 受控正例放行 | 对 Human 授权的 harmless scratch target 或等价安全操作发起正例时，操作被放行且无 blocking diagnostic | 停止并诊断授权、payload 或失败处理 |
-| 6 | 统一安装验证 | `install_verification.py` 仍显示安装检测通过，并列出 Git Hook 正反例通过 | 停止并回到安装修复流程 |
-| 7 | 当前验证复核 | `install_verification.py` 仍显示安装检测通过、Git Hook 正反例通过，且未依赖历史过程状态改变结论 | 停止并交还诊断 |
-| 8 | 本次验收总结 | 交还通过项、失败项、未验证项、本次自动接入验收结论、当前 `environment_hook_integrated` 检测值、不可跨会话继承说明和 source_refs | 若证据不足，写未验证，不强行转换 |
-
-31 收尾必须有独立的最终交还，不得直接复用 `install_verification.py` 的用户下一步提示，也不得在本次验收通过后再次提示“进入 31”。最终交还结论只能使用 `本次验收通过`、`本次验收失败` 或 `本次未验证`；`install_verification.py` 只作为技术复核来源，其 `下一步`、`user_next_steps` 或进入 31 的提示不得作为 31 的最终行动建议。`--require-environment-integrated` 不是 31 收尾通过条件，只能用于当前审计已经能直接证明环境自动接入时的严格技术检查。
+| 6 | 统一安装验证 | 统一安装验证入口仍显示安装检测通过，并列出 Git Hook 正反例通过 | 停止并回到安装修复流程 |
+| 7 | 当前验证复核 | 统一安装验证入口仍显示安装检测通过、Git Hook 正反例通过，且未依赖历史过程输出改变结论 | 停止并交还诊断 |
 
 受控 scratch target 必须是临时、可识别、可清理的测试路径，由实现域或运行时输出给出具体位置。不得用正式 specs、事实对象、外部用户文件、管辖项目业务文件、用户环境配置或插件系统文件做正反例写入目标。
 
@@ -146,27 +144,33 @@ ldvh_spec:
 
 31 失败交还必须输出失败信息包，至少包含：目标环境名称和版本、失败步骤编号、用户看到的插件页面结果或错误文本、`install_verification.py --format json` 完整输出、`environment_entry_audit.py --format text` 输出、是否发生实际写入、scratch target 路径和文件状态。缺少任一项时写“未取得”，不得用聊天印象替代。
 
+### 本次验收最终交还
+
+31 收尾必须有独立的最终交还，不得直接复用统一安装验证入口的用户下一步提示，也不得在本次验收通过后再次提示“进入 31”。最终交还必须交还：通过项、失败项、未验证项、本次自动接入验收判断、当前 `environment_hook_integrated` 检测输出、不可跨会话继承说明和 source_refs。若证据不足，写本次未验证，不强行转换。
+
+最终交还结论只能使用 `本次验收通过`、`本次验收失败` 或 `本次未验证`；统一安装验证入口只作为技术复核来源，其 `下一步`、`user_next_steps` 或进入 31 的提示不得作为 31 的最终行动建议。`--require-environment-integrated` 不是 31 收尾通过条件，只能用于当前审计已经能直接证明环境自动接入时的严格技术检查。
+
 ## 8. Context、Scenario、Gate 与交还
 
 | 结构 | 最小要求 |
 |---|---|
-| Context | 读取用户目标、目标环境、30 交还结果、`install_verification.py` 当前输出、`environment_hook_integrated=false` 当前结论、插件页面或插件管理器入口、Human 授权状态和 source_refs，并回指 `specs/01-保障与衔接.md`、`specs/06-行动模板基础规范.md`、`specs/09-测试与验证规范.md`、`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 和本文。 |
+| Context | 读取用户目标、目标环境、30 交还结果、统一安装验证入口当前输出、`environment_hook_integrated=false` 当前检测输出、插件页面或插件管理器入口、Human 授权状态和 source_refs，并回指 `specs/01-保障与衔接.md`、`specs/06-行动模板基础规范.md`、`specs/09-测试与验证规范.md`、`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 和本文。 |
 | Scenario | 30 安装检测通过后进入环境 Hook 接入后验收、用户要求验证真实 lifecycle、用户完成插件授权后要求验收、需要当次 lifecycle 冒烟结论、或要求只回答 01/06/09/30/31 边界时适用。 |
-| Gate | 开始验收、执行受控负例阻断测试、执行受控正例放行测试、接受插件页面结果、接受授权 / trust 结果、声明本次自动接入验收结论、处理意外 scratch 写入或清理测试文件，均必须有 Human Gate 或明确用户授权。 |
+| Gate | 开始验收、执行受控负例阻断测试、执行受控正例放行测试、接受插件页面结果、接受授权 / trust 结果、声明本次自动接入验收判断、处理意外 scratch 写入或清理测试文件，均必须有 Human Gate 或明确用户授权。 |
 | 执行 | 逐项推进验收，一次只判断一项，使用闭集确认；先运行只读安装检测，再要求 Human 检查插件页面、重启 App、执行新会话只读可见性探针，再执行受控 scratch target 的负例和正例；不得安装、不得升级、不得卸载、不得修改用户环境；失败即停止，不进入后续步骤。 |
-| 验证 | 使用 `install_verification.py`、插件页面结果、重启 App、新会话只读可见性探针、SessionStart 真实触发证据（若目标环境可提供）、PreToolUse 受控负例阻断、受控正例放行和 Git Hook 正反例复核；失败、缺证或 Human 未确认时不得声明 `environment_hook_integrated`。 |
-| 回写 | 本文不回写长期验收状态；验收过程输出只在当前对话交还。不得写事实源、不得写 specs。若长期溯源确有必要，必须按 03/09 分流为正式事实源或验证声明，不得写 `.ldvh-runtime` 过程状态替代。 |
-| 交还 | 交还验收结果表、通过项、失败项、未验证项、本次自动接入验收结论、当前 `environment_hook_integrated` 检测值、统一安装验证摘要、回滚或诊断入口、scratch target 处理状态、source_refs、残留风险和不可跨会话继承说明；阻断时交还当前停止步骤和下一步诊断建议。 |
+| 验证 | 使用统一安装验证入口、插件页面结果、重启 App、新会话只读可见性探针、SessionStart 真实触发证据（若目标环境可提供）、PreToolUse 受控负例阻断、受控正例放行和 Git Hook 正反例复核；失败、缺证或 Human 未确认时不得声明 `environment_hook_integrated`。 |
+| 回写 | 本文不回写长期验收状态；验收过程输出只在当前对话交还。不得写事实源、不得写 specs。若长期溯源确有必要，必须按 03/09 分流为正式事实源或验证声明，不得写 `.ldvh-runtime` 过程输出替代。 |
+| 交还 | 交还验收结果表、通过项、失败项、未验证项、本次自动接入验收判断、当前 `environment_hook_integrated` 检测输出、统一安装验证摘要、回滚或诊断入口、scratch target 处理状态、source_refs、残留风险和不可跨会话继承说明；阻断时交还当前停止步骤和下一步诊断建议。 |
 
 ## 9. 保障措施
 
 | 要求 | 机制 | 触发 | 证据 | 缺口处理 |
 |---|---|---|---|---|
-| 验收授权要求 | 进入测试组和执行受控写入类测试前必须 Human 授权；由本文、01、06、09 保障 | 用户要求确认环境 Hook 接入后 | Human 授权记录、当前测试步骤、source_refs | 未授权时停止验收，不执行受控测试 |
-| 逐项判断要求 | AI 必须一次只判断一项，并给出预期、实际和结论；由本文、09、tests 保障 | 执行 31 测试组时 | 验收结果表、通过项、失败项、未验证项 | 步骤混杂或证据不清时暂停，回到当前步骤重新判断 |
-| 安全测试目标要求 | 正反例只能使用 harmless scratch target，不得触碰 specs、事实源、用户环境或业务文件；由本文、07、09 保障 | 执行受控写入类测试时 | scratch target 路径、写入前检查输出、测试后文件状态 | 目标不安全时停止测试，重新设计 harmless scratch target |
-| integrated 声明要求 | 只有当前安装检测、插件证据、真实触发、payload 和失败处理证据都可复核时，才可在本次交还中声明 integrated；由本文、01、30、Code audit、tests 保障 | `environment_hook_integrated=false` 需要验收时 | 插件页面结果、重启后结果、可见性探针、受控正反例、统一验证摘要 | 缺少任一证据时交还本次未验证或本次验收失败，不写长期状态 |
-| 失败停止要求 | 任一必需测试失败、缺少 Human 确认或诊断不可复现时，必须停止后续步骤；由本文、09 保障 | 测试失败或缺证时 | 失败信息包、失败步骤编号、诊断输出、scratch target 状态 | 停止后续测试，交还失败项和下一步诊断入口 |
+| 验收授权要求 | 进入测试组和执行受控写入类测试前必须 Human 授权；由本文、01、06、09 保障 | 用户要求确认环境 Hook 接入后 | §6 前提表 Human 授权记录、当前测试步骤、source_refs | 未授权时停止验收，不执行受控测试 |
+| 逐项判断要求 | AI 必须一次只判断一项，并给出预期、实际和判断；由本文、09、tests 保障 | 执行 31 测试组时 | §6 测试组验收结果表、通过项、失败项、未验证项 | 步骤混杂或证据不清时暂停，回到当前步骤重新判断 |
+| 安全测试目标要求 | 正反例只能使用 harmless scratch target，不得触碰 specs、事实源、用户环境或业务文件；由本文、07、09 保障 | 执行受控写入类测试时 | §6 scratch target 路径、写入前检查输出、测试后文件状态 | 目标不安全时停止测试，重新设计 harmless scratch target |
+| integrated 声明要求 | 只有当前安装检测、插件证据、真实触发、payload 和失败处理证据都可复核时，才可在本次交还中声明 integrated；由本文、01、30、Code audit、tests 保障 | `environment_hook_integrated=false` 需要验收时 | §6 测试组第 1-5 项结果、统一安装验证摘要、§7 本次验收最终交还 | 缺少任一证据时交还本次未验证或本次验收失败，不写长期状态 |
+| 失败停止要求 | 任一必需测试失败、缺少 Human 确认或诊断不可复现时，必须停止后续步骤；由本文、09 保障 | 测试失败或缺证时 | §7 失败信息包、失败步骤编号、诊断输出、scratch target 状态 | 停止后续测试，交还失败项和下一步诊断入口 |
 
 ## 10. 验证方法
 
@@ -175,9 +179,9 @@ ldvh_spec:
 | 检查类别 | 检查内容 | 不满足时 |
 |---|---|---|
 | 结构检查 | 是否具备 Context、Scenario、Gate、执行、验证、回写和交还结构，并能被 Code 解析 | 不得作为正式行动模板执行 |
-| 测试组检查 | 是否覆盖插件页面结果、重启后结果、新会话可见性探针、受控负例阻断、受控正例放行、统一安装验证和本次验收总结 | 不得交还本次验收通过 |
-| Gate 检查 | 是否在开始验收、受控写入测试和声明本次自动接入验收结论前获得 Human Gate | 停止验收或回到用户确认 |
-| 状态边界检查 | 是否避免写入或消费长期 lifecycle 过程状态，是否避免用历史过程输出改变 integrated 结论 | 停止验收并清理错误输出 |
+| 测试组检查 | 是否覆盖插件页面结果、重启后结果、新会话可见性探针、受控负例阻断、受控正例放行、统一安装验证和当前验证复核 | 不得交还本次验收通过 |
+| Gate 检查 | 是否在开始验收、受控写入测试和声明本次自动接入验收判断前获得 Human Gate | 停止验收或回到用户确认 |
+| 过程输出边界检查 | 是否避免写入或消费长期 lifecycle 过程输出，是否避免用历史过程输出改变 integrated 结论 | 停止验收并清理错误输出 |
 | 边界检查 | 是否避免安装、升级、卸载、修改用户环境或写事实源 | 停止执行并回到 30 或环境修复流程 |
 
 ## 11. Human Gate
