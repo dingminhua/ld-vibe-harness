@@ -133,8 +133,8 @@ V3 保留 commit 契约的父层规则：
 | 事实源回指要求 | 结论、证据、完成声明和风险必须回指 Git 文件事实源或说明不可回写原因 | 本文、02、06、09、Code source_refs | 事实源治理 | AI 形成稳定结论、验证声明或提交说明时 |
 | 非事实源排除要求 | 过程输出不得被写成事实源 | 本文、01 receipt 边界、08 证据边界 | 证据治理 | 使用 Code、Web、测试、review 或 runtime 输出时 |
 | 状态归口要求 | 运行、验证、审计、交互或展示输出中的 status/state 不得被写成事实源状态 | 本文、04、05 | 事实源治理 | 使用 Code、Web、测试、环境审计或安装检测输出时 |
-| Git 溯源要求 | 文件事实源修改应可通过 Git commit records 回查 | 本文、06 的 Git 提交行动模板候选、Code/tests | 溯源治理 | 提交正式 docs、Code、tests 或事实源修改时 |
-| commit 契约要求 | 提交说明不得替代验证、Human Gate 或事实源正文 | 本文、06 提交模板、09 验证声明 | 提交治理 | 生成 commit message 或提交前检查时 |
+| Git 溯源要求 | 文件事实源修改应可通过 Git commit records 回查 | 本文、31 Git 提交行动模板、Code/tests | 溯源治理 | 提交正式 docs、Code、tests 或事实源修改时 |
+| commit 契约要求 | 提交说明不得替代验证、Human Gate 或事实源正文 | 本文、31 Git 提交行动模板、09 验证声明 | 提交治理 | 生成 commit message 或提交前检查时 |
 
 ## 9. 验证方法
 
@@ -174,5 +174,5 @@ Code 可以检查路径、source_refs、commit message 格式和诊断结构；A
 
 1. 后续应从 V2 `07.Att.*` 中筛选 commit type、scope、body 条件和非事实源排除清单，只有有正文授权、Code 消费方和测试闭环时才迁入 V3 附件；
 2. 后续 Code 应承接 commit message parser、source_refs 检查和过程输出回写诊断；
-3. 后续行动模板应承接 Git 提交行动、提交拆分、验证说明和提交后交还；
+3. Git 提交行动、提交拆分、验证说明和提交后交还已由 `specs/31-Git提交行动模板.md` 承接；后续只在验证或回写闭环变化时修订 31；
 4. 后续 Web 应承接提交记录展示和事实源证据展示边界。

@@ -118,7 +118,7 @@ python3 code/environment_entry_audit.py --format text
 
 `environment_entry_audit.py` 进一步审计 LDVH 环境插件样例、tool hook、completion hook、AGENTS/Codex repo 指令和外部 runtime adapter 候选，同时确认 Rules / Skill 顶层机制是 `removed_top_level`，不是待启用入口。当前结论是：所有支持 Hook 的协作环境都必须通过对应 LDVH 插件、扩展包或 package 安装环境 Hook，而不是直接写入环境 Hook 系统文件；Codex lifecycle Hook 是当前可审计样例，但旧插件、旧仓库路径或历史 trust 记录不能证明 V3 已接入。除 `git.commit-msg` 外，当前不得声明其它入口已自动触发。
 
-真实提交如果触发 body 必填条件，正文至少包含 `关键变更:`；`读取依据` 不是 commit message 契约字段：
+Git 提交行动模板见 `specs/31-Git提交行动模板.md`。真实提交如果触发 body 必填条件，正文至少包含 `关键变更:`；`读取依据` 不是 commit message 契约字段：
 
 ```text
 关键变更:
@@ -181,3 +181,4 @@ python3 code/test_runner.py full
 - `23`：Pitfall-踩坑经验
 - `24`：Study-研究报告
 - `30`：LDVH 安装初始化管辖项目配置行动模板
+- `31`：Git 提交行动模板

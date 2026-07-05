@@ -35,6 +35,7 @@ SHORT_SPEC_REFS = {
     "09": "specs/09-测试与验证规范.md",
     "10": "specs/10-安装与配置规范.md",
     "30": "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+    "31": "specs/31-Git提交行动模板.md",
     "20": "specs/20-Spark-火花.md",
     "21": "specs/21-WorkCase-工作项.md",
     "22": "specs/22-ADR-决策.md",
@@ -282,6 +283,35 @@ ACTION_TEMPLATE_FOUNDATION_RULE_REQUIREMENTS = [
             "本文不承载具体模板示范",
         ],
     },
+]
+GIT_COMMIT_ACTION_TEMPLATE_REQUIRED_ROWS = {
+    "Context": ["用户提交目标", "当前 Git repo", "工作区摘要", "staged / unstaged / untracked", "必要 diff", "changed paths", "source_refs", "03.Att.01", "09.Att.01"],
+    "Scenario": ["用户明确要求提交", "修复提交消息", "拆分已暂存变更", "提交前预检", "提交门禁阻断分流", "不创建提交"],
+    "Gate": ["已暂存变更与用户目标不一致", "unstaged / untracked", "提交拆分边界不清", "破坏性 Git", "commit validator", "关键测试失败", "Human Gate", "跨管辖 / 非管辖 target", "Hook / commit gate / 环境入口"],
+    "执行": ["Git 工作区摘要", "必要 diff", "只 stage 本次范围内文件", "拆分", "03.Att.01", "单一 type", "scope", "关键变更", "匹配验证", "commit validator", "不安装 Hook"],
+    "验证": ["09", "09.Att.01", "验证目标", "验证方式", "验证入口", "输入范围", "关键输出", "结论", "残留风险", "证据回指", "不得声明完整验证"],
+    "回写": ["过程输出", "验证结论", "失败诊断", "残留风险", "Git commit records", "不替代事实对象、验证声明或 Human Gate"],
+    "交还": ["commit hash", "提交 message 摘要", "changed paths", "验证摘要", "残留风险", "剩余 Git 工作区摘要", "source_refs", "阻断原因"],
+}
+GIT_COMMIT_REQUIRED_CODE_CONSUMPTION = [
+    "ldvh_spec_metadata",
+    "git_commit_action_template",
+    "git_commit_scope_gate",
+    "commit_message_contract_reference",
+    "commit_verification_handoff",
+    "commit_writeback_boundary",
+    "stop_conditions",
+]
+GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
+    "不定义 commit message 字段闭集",
+    "不归口定义 commit message 字段闭集",
+    "不复制 type / scope 枚举",
+    "不得安装、升级、禁用或卸载 Git Hook",
+    "commit validator 通过只说明提交消息格式和机器可检查条件当前通过",
+    "Git commit records 只溯源文件修改和提交说明",
+    "不得把工具通过写成 Human Gate 已完成",
+    "skills/ldvh-git-commit/SKILL.md",
+    "不恢复 Skill 顶层机制",
 ]
 LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Context": ["用户目标", "目标环境", "LDVH 本体路径", "目标工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "workcases/adrs/pitfalls/sparks/studies", "环境入口审计结果", "Git Hook 状态", "source_refs", "specs/10-安装与配置规范.md", "code/docs/03-LDVH-Install-Wizard-Practice.md"],
@@ -1525,6 +1555,15 @@ def parse_ldvh_install_action_template(root: Path = ROOT) -> list[dict[str, str]
     return find_table(section["body"], ACTION_TEMPLATE_COLUMNS)
 
 
+def parse_git_commit_action_template(root: Path = ROOT) -> list[dict[str, str]]:
+    raw = (root / SHORT_SPEC_REFS["31"]).read_text(encoding="utf-8")
+    sections = h2_sections(raw)
+    section = sections.get("Context、Scenario、Gate 与交还")
+    if not section:
+        return []
+    return find_table(section["body"], ACTION_TEMPLATE_COLUMNS)
+
+
 def parse_ldvh_install_spec_contract(root: Path = ROOT) -> dict[str, Any]:
     path = SHORT_SPEC_REFS["30"]
     full_path = root / path
@@ -1552,6 +1591,40 @@ def parse_ldvh_install_spec_contract(root: Path = ROOT) -> dict[str, Any]:
             {"path": path, "role": "ldvh_install_action_template"},
             {"path": SHORT_SPEC_REFS["06"], "role": "action_template_parent_spec"},
             {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_config_spec"},
+        ],
+    }
+
+
+def parse_git_commit_spec_contract(root: Path = ROOT) -> dict[str, Any]:
+    path = SHORT_SPEC_REFS["31"]
+    full_path = root / path
+    if not full_path.exists():
+        return {
+            "spec_id": "31",
+            "path": path,
+            "code_consumption": [],
+            "action_template": [],
+            "stop_conditions": [],
+            "source_refs": [],
+        }
+
+    raw = full_path.read_text(encoding="utf-8")
+    metadata = first_yaml_block(raw, path).get("ldvh_spec", {})
+    sections = h2_sections(raw)
+
+    return {
+        "spec_id": "31",
+        "path": path,
+        "code_consumption": metadata.get("code_consumption", []),
+        "action_template": parse_git_commit_action_template(root),
+        "stop_conditions": _section_numbered_items(sections, "Stop Conditions"),
+        "source_refs": [
+            {"path": path, "role": "git_commit_action_template"},
+            {"path": SHORT_SPEC_REFS["06"], "role": "action_template_parent_spec"},
+            {"path": SHORT_SPEC_REFS["03"], "role": "commit_traceability_rule"},
+            {"path": COMMIT_MESSAGE_CONTRACT_PATH, "role": "commit_message_contract"},
+            {"path": SHORT_SPEC_REFS["09"], "role": "verification_boundary"},
+            {"path": VERIFICATION_CLAIM_FIELDS_PATH, "role": "verification_claim_fields"},
         ],
     }
 
@@ -3052,6 +3125,90 @@ def _validate_authorized_assurance_table(root: Path, path: str, label: str) -> l
     return diagnostics
 
 
+def validate_git_commit_action_template(root: Path = ROOT) -> list[Diagnostic]:
+    path = SHORT_SPEC_REFS["31"]
+    raw = (root / path).read_text(encoding="utf-8")
+    rows = parse_git_commit_action_template(root)
+    contract = parse_git_commit_spec_contract(root)
+    diagnostics: list[Diagnostic] = []
+    diagnostics.extend(_validate_authorized_assurance_table(root, path, "31"))
+
+    code_consumption = contract["code_consumption"]
+    if not isinstance(code_consumption, list) or not all(isinstance(item, str) for item in code_consumption):
+        diagnostics.append(Diagnostic("error", "GIT_COMMIT_CODE_CONSUMPTION_INVALID", path, "31 code_consumption 必须是字符串列表"))
+        code_consumption = [item for item in code_consumption if isinstance(item, str)] if isinstance(code_consumption, list) else []
+    for item in _missing_exact_values(GIT_COMMIT_REQUIRED_CODE_CONSUMPTION, code_consumption):
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "GIT_COMMIT_CODE_CONSUMPTION_MISSING",
+                path,
+                f"31 缺少 Code 消费入口: {item}",
+            )
+        )
+    expected_code_consumption = set(GIT_COMMIT_REQUIRED_CODE_CONSUMPTION)
+    for item in code_consumption:
+        if item not in expected_code_consumption:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "GIT_COMMIT_CODE_CONSUMPTION_UNSUPPORTED",
+                    path,
+                    f"31 声明了未被 Code 契约消费的入口: {item}",
+                )
+            )
+
+    if not rows:
+        return diagnostics + [
+            Diagnostic(
+                "error",
+                "GIT_COMMIT_ACTION_TEMPLATE_MISSING",
+                path,
+                "31 缺少 Git 提交行动模板结构表",
+            )
+        ]
+
+    if not contract["stop_conditions"]:
+        diagnostics.append(Diagnostic("error", "GIT_COMMIT_STOP_CONDITIONS_MISSING", path, "31 必须声明可消费 Stop Conditions"))
+
+    rows_by_structure = {row["结构"]: row for row in rows}
+    for structure, terms in GIT_COMMIT_ACTION_TEMPLATE_REQUIRED_ROWS.items():
+        row = rows_by_structure.get(structure)
+        if not row:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "GIT_COMMIT_ACTION_TEMPLATE_ROW_MISSING",
+                    path,
+                    f"Git 提交行动模板缺少结构: {structure}",
+                )
+            )
+            continue
+        missing_terms = [term for term in terms if term not in row["最小要求"]]
+        for term in missing_terms:
+            diagnostics.append(
+                Diagnostic(
+                    "error",
+                    "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING",
+                    path,
+                    f"{structure} 缺少关键要求: {term}",
+                )
+            )
+
+    missing_boundary_terms = [term for term in GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS if term not in raw]
+    for term in missing_boundary_terms:
+        diagnostics.append(
+            Diagnostic(
+                "error",
+                "GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_MISSING",
+                path,
+                f"Git 提交行动模板缺少边界声明: {term}",
+            )
+        )
+
+    return diagnostics
+
+
 def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]:
     path = SHORT_SPEC_REFS["30"]
     raw = (root / path).read_text(encoding="utf-8")
@@ -3366,6 +3523,8 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     foundation_spec_contracts = parse_foundation_spec_contracts(objects, root)
     ldvh_install_action_template = parse_ldvh_install_action_template(root)
     ldvh_install_spec_contract = parse_ldvh_install_spec_contract(root)
+    git_commit_action_template = parse_git_commit_action_template(root)
+    git_commit_spec_contract = parse_git_commit_spec_contract(root)
     workcase_member_contract = parse_workcase_member_contract(root)
     fact_model_member_contracts = parse_fact_model_member_contracts(root)
     fact_instances = parse_fact_instances(root)
@@ -3394,6 +3553,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_attachment_contracts(root))
     diagnostics.extend(validate_action_template_foundation_rules(root))
     diagnostics.extend(validate_ldvh_install_action_template(root))
+    diagnostics.extend(validate_git_commit_action_template(root))
     diagnostics.extend(validate_workcase_member_contract(root))
     diagnostics.extend(validate_fact_model_member_contracts(root))
     diagnostics.extend(validate_fact_instances(root))
@@ -3431,6 +3591,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/05-事实模型基础规范.md", "role": "fact_model_foundation"},
             {"path": "specs/06-行动模板基础规范.md", "role": "action_template_foundation"},
             {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "ldvh_install_action_template"},
+            {"path": "specs/31-Git提交行动模板.md", "role": "git_commit_action_template"},
             {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
             {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},
             {"path": "specs/09-测试与验证规范.md", "role": "test_verification"},
@@ -3455,6 +3616,8 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "foundation_spec_contracts": foundation_spec_contracts,
         "ldvh_install_action_template": ldvh_install_action_template,
         "ldvh_install_spec_contract": ldvh_install_spec_contract,
+        "git_commit_action_template": git_commit_action_template,
+        "git_commit_spec_contract": git_commit_spec_contract,
         "workcase_member_contract": workcase_member_contract,
         "fact_model_member_contracts": fact_model_member_contracts,
         "fact_instances": [
@@ -4423,7 +4586,7 @@ def build_commit_gate(
         "source_refs": [
             {"path": SHORT_SPEC_REFS["03"], "role": "commit_traceability_rule"},
             {"path": COMMIT_MESSAGE_CONTRACT_PATH, "role": "commit_message_contract"},
-            {"path": SHORT_SPEC_REFS["06"], "role": "action_template_boundary"},
+            {"path": SHORT_SPEC_REFS["31"], "role": "git_commit_action_template"},
             {"path": SHORT_SPEC_REFS["09"], "role": "verification_boundary"},
             {"path": VERIFICATION_CLAIM_FIELDS_PATH, "role": "verification_claim_fields"},
             {"path": TAKEOVER_MATRIX_PATH, "role": "hook_takeover_mapping"},
@@ -4990,8 +5153,8 @@ def build_e2e_rehearsal(
             "postponed_boundaries": [
                 "Hook / Rules / commit gate 尚未接入真实环境",
                 "receipt 仍是 stdout-only 过程输出，不是事实源",
-                "真实 `ldvh-base/` 实例迁移、Web 写入和正式行动模板实例仍后置",
-                "CLI 不创建提交；实际提交仍由主控 AI 按 06 Git 提交行动模板执行",
+                "真实 `ldvh-base/` 实例迁移、Web 写入和部分后续行动模板仍后置",
+                "CLI 不创建提交；实际提交仍由主控 AI 按 31 Git 提交行动模板执行",
             ],
             "authorization": "none",
         },
@@ -5004,7 +5167,7 @@ def build_e2e_rehearsal(
             + completion_claim["source_refs"]
             + [
                 {"path": "_migration/v3-migration-execution-plan.md", "role": "stage_8_plan"},
-                {"path": SHORT_SPEC_REFS["06"], "role": "git_commit_action_boundary"},
+                {"path": SHORT_SPEC_REFS["31"], "role": "git_commit_action_template"},
                 {"path": SHORT_SPEC_REFS["10"], "role": "governed_project_boundary"},
             ],
             ("path", "role", "requirement_id"),

@@ -109,10 +109,11 @@ def test_foundation_specs_contracts_are_code_consumable(validation_result: dict)
         assert contract["stop_conditions"]
 
 
-def test_readme_indexes_action_template_spec_30() -> None:
+def test_readme_indexes_action_template_specs() -> None:
     raw = (ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "`30`：LDVH 安装初始化管辖项目配置行动模板" in raw
+    assert "`31`：Git 提交行动模板" in raw
     assert "`31`：环境 Hook 接入后验收行动模板" not in raw
 
 
@@ -1049,7 +1050,7 @@ def test_action_template_foundation_rules_are_code_consumable(validation_result:
     result = validation_result
     raw = (ROOT / "specs/06-行动模板基础规范.md").read_text(encoding="utf-8")
 
-    assert "git_commit_action_template" not in result
+    assert "git_commit_action_template" in result
     assert "workcase_action_template" not in result
     assert "引用与复制的判断标准" in raw
     assert "七结构粒度要求" in raw
@@ -1057,6 +1058,70 @@ def test_action_template_foundation_rules_are_code_consumable(validation_result:
     assert "字段闭集、字段定义、枚举完整列表" in raw
     assert "不展开来源 spec" in raw
     assert "不重述来源 spec" in raw
+
+
+def test_git_commit_action_template_is_code_consumable(validation_result: dict) -> None:
+    result = validation_result
+    raw = (ROOT / "specs/31-Git提交行动模板.md").read_text(encoding="utf-8")
+    rows = {row["结构"]: row["最小要求"] for row in result["git_commit_action_template"]}
+    contract = result["git_commit_spec_contract"]
+
+    assert set(rows) == {"Context", "Scenario", "Gate", "执行", "验证", "回写", "交还"}
+    assert contract["spec_id"] == "31"
+    assert set(contract["code_consumption"]) == set(ldvh_specs.GIT_COMMIT_REQUIRED_CODE_CONSUMPTION)
+    assert contract["action_template"]
+    assert contract["stop_conditions"]
+    assert contract["source_refs"]
+    assert 'relation: "refines"' in raw
+    assert "不定义 commit message 字段闭集" in raw
+    assert "不复制 type / scope 枚举" in raw
+    assert "不得安装、升级、禁用或卸载 Git Hook" in raw
+
+    assert "用户提交目标" in rows["Context"]
+    assert "staged / unstaged / untracked" in rows["Context"]
+    assert "03.Att.01" in rows["Context"]
+    assert "09.Att.01" in rows["Context"]
+    assert "用户明确要求提交" in rows["Scenario"]
+    assert "提交门禁阻断分流" in rows["Scenario"]
+    assert "已暂存变更与用户目标不一致" in rows["Gate"]
+    assert "提交拆分边界不清" in rows["Gate"]
+    assert "Hook / commit gate / 环境入口" in rows["Gate"]
+    assert "只 stage 本次范围内文件" in rows["执行"]
+    assert "commit validator" in rows["执行"]
+    assert "不安装 Hook" in rows["执行"]
+    assert "验证目标" in rows["验证"]
+    assert "残留风险" in rows["验证"]
+    assert "Git commit records" in rows["回写"]
+    assert "commit hash" in rows["交还"]
+    assert "剩余 Git 工作区摘要" in rows["交还"]
+
+
+def test_git_commit_action_template_reports_missing_commit_contract_reference(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/31-Git提交行动模板.md",
+        "    - \"commit_message_contract_reference\"\n",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GIT_COMMIT_CODE_CONSUMPTION_MISSING" in _diagnostic_codes(result)
+    assert any("commit_message_contract_reference" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_git_commit_action_template_reports_missing_scope_gate(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/31-Git提交行动模板.md",
+        "已暂存变更与用户目标不一致、",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
+    assert any("已暂存变更与用户目标不一致" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_action_template_foundation_reports_missing_copy_boundary(tmp_path: Path) -> None:
