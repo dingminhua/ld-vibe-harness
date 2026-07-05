@@ -491,7 +491,7 @@ def _verify_environment(
             "integrated": environment_integrated,
             "verification_method": "repo_local_shim_direct_test",
             "real_hook_observed": environment_integrated,
-            "user_status": "插件入口可见，shim 直测通过；未观察到真实自动 Hook integrated。"
+            "user_status": "插件入口可见，内部连接检查通过；尚未取得 Codex 生命周期真实触发证据。"
             if environment_install_verified and not environment_integrated
             else "真实自动 Hook integrated 已验证。"
             if environment_integrated
@@ -500,12 +500,12 @@ def _verify_environment(
         },
         "thin_reference": {
             "available": thin_reference_available,
-            "verified": thin_reference_available,
+            "verified": False,
             "integrated": False,
-            "verification_method": "runtime_protocol_read",
+            "verification_method": "not_run_current_mode",
             "real_hook_observed": False,
-            "user_status": "薄引用入口可读；这不是自动 Hook。",
-            "reason": "薄引用只证明 Runtime Protocol 可读，不声明自动 Hook integrated。",
+            "user_status": "当前为插件 Hook 安装方式，未按薄引用方式验证。",
+            "reason": "当前环境使用插件 Hook 安装方式；薄引用不是本次验证入口。",
         },
     }
     impact_matrix = [
@@ -528,13 +528,6 @@ def _verify_environment(
             "trigger": "Stop",
             "expected_result": "输出完成检查提示且不阻断停止",
             "observed": shim_tests["completion_claim_direct_nonblocking"]["status"] == "passed",
-            "writes": False,
-        },
-        {
-            "access_mode": "thin_reference",
-            "trigger": "Runtime Protocol read",
-            "expected_result": "AI 可读取统一入口并转入 runtime adapter / manual entrypoint",
-            "observed": thin_reference_available,
             "writes": False,
         },
     ]
@@ -585,7 +578,7 @@ def _verify_environment(
                 "重启 App 或重载插件宿主后，插件页面仍保持启用且无错误。",
                 "新会话只读可见性探针输出 status=ok、event=session_start、receipt_id，且 Diagnostics: none；若目标环境提供真实触发证据，应一并回读。",
                 "写入前检查负例被阻断，正例被放行。",
-                "install_verification.py 显示 install_complete=true、插件可见、shim 直测通过，并列出 Git Hook 正反例结果。",
+                "install_verification.py 显示 install_complete=true、插件可见、内部连接检查通过，并列出 Git Hook 正反例结果。",
             ],
         },
         "diagnostics": diagnostics,
@@ -653,14 +646,24 @@ def build_install_verification(
     plugin_mode = impact_access_modes.get("plugin_hook", {})
     thin_mode = impact_access_modes.get("thin_reference", {})
     real_hook_observed = bool(plugin_mode.get("real_hook_observed"))
+    plugin_verified = bool(plugin_mode.get("verified"))
+    thin_verified = bool(thin_mode.get("verified"))
+    if plugin_verified or _is_codex_environment(environment_name):
+        primary_access_mode = "plugin_hook"
+        current_install_mode = "插件 Hook"
+    elif thin_verified:
+        primary_access_mode = "thin_reference"
+        current_install_mode = "薄引用"
+    else:
+        primary_access_mode = "unknown"
+        current_install_mode = "未确认"
+    fallback_access_modes: list[str] = []
     if real_hook_observed:
         verification_mode = "真实自动 Hook integrated 验证"
-    elif bool(plugin_mode.get("verified")) and bool(thin_mode.get("verified")):
-        verification_mode = "安装检测直测 + 薄引用可读"
-    elif bool(thin_mode.get("verified")):
+    elif primary_access_mode == "plugin_hook" and plugin_verified:
+        verification_mode = "插件安装检测直测"
+    elif primary_access_mode == "thin_reference" and thin_verified:
         verification_mode = "薄引用可读"
-    elif bool(plugin_mode.get("verified")):
-        verification_mode = "安装检测直测"
     else:
         verification_mode = "未验证"
     side_effects = {
@@ -699,11 +702,18 @@ def build_install_verification(
         "ldvh_impact": {
             "verified": impact_verified,
             "integrated": environment_integrated,
+            "current_environment": environment_name,
+            "current_install_mode": current_install_mode,
+            "primary_access_mode": primary_access_mode,
+            "fallback_access_modes": fallback_access_modes,
             "verification_mode": verification_mode,
             "real_hook_observed": real_hook_observed,
             "human_conclusion": {
                 "result": "本次验证通过" if impact_verified else "本次验证未通过",
+                "environment": environment_name,
+                "install_mode": current_install_mode,
                 "verified_as": verification_mode,
+                "fallback_checked": fallback_access_modes,
                 "not_claimed": []
                 if real_hook_observed
                 else ["未声明真实自动 Hook integrated"],
@@ -751,7 +761,7 @@ def _environment_user_status(env_summary: dict[str, Any]) -> str:
     if env_summary.get("environment_integrated"):
         return "已自动接入"
     if env_summary.get("install_verified"):
-        return "直测通过，真实 Hook 未验证"
+        return "插件可见，待真实触发"
     return "需安装 / 需升级"
 
 
@@ -764,8 +774,31 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
     git_status = _git_hook_user_status(result["git_hooks"])
     env_status = _environment_user_status(env_summary)
     visible_probe_command = env.get("human_acceptance", {}).get("visible_probe_command", "")
-    verification_mode = str(impact.get("verification_mode") or "未验证")
+    current_environment = str(impact.get("current_environment") or environment_name)
+    current_install_mode = str(impact.get("current_install_mode") or "未确认")
     real_hook_observed = bool(impact.get("real_hook_observed"))
+    real_trigger_acceptance_complete = git_status == "通过" and (
+        real_hook_observed or env_status == "薄引用 / manual entrypoint"
+    )
+    real_trigger_result = (
+        "通过"
+        if real_trigger_acceptance_complete
+        else "未完成"
+        if git_status == "通过" and not summary["blocking"]
+        else "失败"
+    )
+    real_trigger_passed_items: list[str] = []
+    real_trigger_pending_items: list[str] = []
+    if git_status == "通过":
+        real_trigger_passed_items.append("Git 提交消息 Hook 正例放行、反例阻断")
+    else:
+        real_trigger_pending_items.append("Git 提交消息 Hook 正反例")
+    if env_status == "已自动接入":
+        real_trigger_passed_items.append(f"{environment_name} 生命周期触发")
+    elif env_status == "薄引用 / manual entrypoint":
+        real_trigger_passed_items.append("Runtime 入口可读")
+    else:
+        real_trigger_pending_items.append(f"{environment_name} 生命周期真实触发")
 
     if summary["blocking"]:
         install_status = "阻断"
@@ -774,8 +807,8 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         install_status = "是"
         if env_status == "已自动接入":
             next_step = "可停止；保留验证输出作为交还证据"
-        elif env_status == "直测通过，真实 Hook 未验证":
-            next_step = "当前验证通过；如要声明自动 Hook integrated，按 30 继续断点后真实触发验证"
+        elif env_status == "插件可见，待真实触发":
+            next_step = "先确认 Codex 插件已授权 / trust 且无待处理授权，再重启或新开会话，触发只读可见性检查和受控写入前检查，回来继续真实触发验收"
         else:
             next_step = "交还当前状态和残留限制"
     else:
@@ -787,13 +820,14 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         else:
             next_step = "先安装、升级或授权目标环境插件"
 
-    if env_status == "直测通过，真实 Hook 未验证":
+    if env_status == "插件可见，待真实触发":
         user_next_steps = [
-            f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器。",
-            "重启 App 或重载插件宿主后确认插件仍启用且无错误。",
-            "完成授权 / trust；没有授权提示时记录无待处理授权。",
-            f"新开 {environment_name} 窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表。",
-            "需要确认 LDVH 影响生效时，按 30 恢复入口继续断点后验证。",
+            f"打开 {environment_name} 插件页面，确认 LDVH 插件启用且无错误。",
+            "确认插件已授权 / trust；如果有授权提示，先完成授权，没有提示则记录无待处理授权。",
+            "重启 App 或新开会话。",
+            "在新会话里触发只读 LDVH 可见性检查，确认返回 runtime 回执。",
+            "触发一次受控写入前检查，确认应阻断的写入会被阻断。",
+            "带着新会话结果回来继续真实触发验收。",
         ]
     elif env_status == "薄引用 / manual entrypoint":
         user_next_steps = [
@@ -817,10 +851,12 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
 
     impact_status_blocks = [
         {
-            "name": "Runtime 入口与 LDVH 影响验证",
-            "status": env_status,
-            "normal": "当前检测为已自动接入时无需处理；否则写入完成后按 30 恢复入口继续 LDVH 影响验证。",
-            "next_step": next_step if env_status != "已自动接入" else "无需断点后验证。",
+            "name": "真实触发验收",
+            "status": real_trigger_result,
+            "normal": "通过标准：当前工作流产生可复核的 LDVH 触发证据，并且提交消息 Hook 正反例通过。",
+            "next_step": "无需处理。"
+            if real_trigger_acceptance_complete
+            else "重启或新开会话后触发 Codex 生命周期，再返回继续验收。",
         },
         {
             "name": "提交消息检查",
@@ -829,24 +865,41 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "next_step": "失败项目先安装或修复 Git Hook。" if git_status != "通过" else "无需处理。",
         },
     ]
+    trigger_passed_text = "；".join(real_trigger_passed_items) if real_trigger_passed_items else "无"
+    trigger_pending_text = "；".join(real_trigger_pending_items) if real_trigger_pending_items else "无"
+    verification_conclusion = (
+        "本次结论：真实触发验收通过。"
+        if real_trigger_acceptance_complete
+        else f"本次结论：真实触发验收未完成；未完成项：{trigger_pending_text}。"
+    )
     return {
         "status_card": [
-            {"item": "安装完成", "value": install_status},
-            {"item": "本次验证方式", "value": verification_mode},
-            {"item": "真实自动 Hook", "value": "已验证 integrated" if real_hook_observed else "未验证 integrated"},
-            {"item": "Runtime 入口", "value": env_status},
-            {"item": "提交消息检查", "value": git_status},
+            {"item": "当前环境", "value": current_environment},
+            {"item": "当前安装方式", "value": current_install_mode},
+            {"item": "验收目标", "value": "真实触发验收"},
+            {"item": "验收结果", "value": real_trigger_result},
+            {"item": "已真实触发", "value": trigger_passed_text},
+            {"item": "未完成触发项", "value": trigger_pending_text},
+            {"item": "技术安装状态", "value": install_status},
             {"item": "下一步", "value": next_step},
         ],
         "plain_conclusion": [
-            "本次验证通过。" if result["summary"].get("ldvh_impact_verified") else "本次验证未通过。",
-            f"本次是在“{verification_mode}”下完成，不等于已经打开或观察到真实自动 Hook。"
-            if not real_hook_observed
-            else "本次已观察到真实自动 Hook integrated。",
-            "薄引用入口可读；它可以验证 LDVH 影响，但不是自动 Hook。",
+            "本次真实触发验收通过。"
+            if real_trigger_acceptance_complete
+            else "本次真实触发验收未完成。",
+            f"当前环境是 {current_environment}，当前安装方式是{current_install_mode}。",
+            f"已真实触发：{trigger_passed_text}。",
+            f"未完成触发项：{trigger_pending_text}。",
+            verification_conclusion,
         ],
         "impact_status_blocks": impact_status_blocks,
         "hook_status_blocks": impact_status_blocks,
+        "real_trigger_acceptance": {
+            "result": real_trigger_result,
+            "complete": real_trigger_acceptance_complete,
+            "passed_items": real_trigger_passed_items,
+            "pending_items": real_trigger_pending_items,
+        },
         "user_next_steps": user_next_steps,
         "visible_probe_command": visible_probe_command,
         "failure_info_package": [
@@ -878,7 +931,7 @@ def _print_text(result: dict[str, Any]) -> None:
             print(f"- {item}")
     impact_blocks = handoff.get("impact_status_blocks") or handoff.get("hook_status_blocks", [])
     if impact_blocks:
-        print("\nLDVH impact status blocks:")
+        print("\nAcceptance items:")
         for block in impact_blocks:
             print(f"- {block['name']}: {block['status']}")
             print(f"  normal: {block['normal']}")
@@ -906,12 +959,9 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- git_hooks_ok: {summary['git_hooks_ok']}")
     print(f"- ldvh_impact_verified: {summary['ldvh_impact_verified']}")
     print(f"- ldvh_impact_integrated: {summary['ldvh_impact_integrated']}")
-    print(f"- ldvh_impact_verification_mode: {result.get('ldvh_impact', {}).get('verification_mode', '')}")
-    print(f"- real_hook_observed: {result.get('ldvh_impact', {}).get('real_hook_observed', False)}")
-    print(f"- environment_hook_install_verified: {summary['environment_hook_install_verified']}")
-    print(f"- environment_hook_integrated: {summary['environment_hook_integrated']}")
-    print(f"- environment_human_acceptance_required: {summary['environment_human_acceptance_required']}")
-    print(f"- environment_user_smoke_check_recommended: {summary['environment_user_smoke_check_recommended']}")
+    print(f"- current_environment: {result.get('ldvh_impact', {}).get('current_environment', '')}")
+    print(f"- current_install_mode: {result.get('ldvh_impact', {}).get('current_install_mode', '')}")
+    print(f"- primary_access_mode: {result.get('ldvh_impact', {}).get('primary_access_mode', '')}")
     print(f"- diagnostics: {summary['diagnostics']}")
 
     print("\nGit Hook tests:")
@@ -925,49 +975,6 @@ def _print_text(result: dict[str, Any]) -> None:
             f"positive={_mark(item_summary['positive_passed'])}, "
             f"negative={_mark(item_summary['negative_blocked'])}"
         )
-
-    env = result["environment"]
-    env_summary = env["summary"]
-    print("\nLDVH impact:")
-    print(f"- environment_name: {env_summary['environment_name']}")
-    print(f"- environment_adapter: {env_summary['environment_adapter']}")
-    print(f"- target_environment_supported: {env_summary['target_environment_supported']}")
-    print(f"- plugin_status: {env_summary['plugin_status']}")
-    print(f"- plugin_decision: {env_summary['plugin_decision']}")
-    print(f"- install_verified: {env_summary['install_verified']}")
-    print(f"- environment_integrated: {env_summary['environment_integrated']}")
-    impact = result.get("ldvh_impact", {})
-    effects = impact.get("effects", [])
-    if effects:
-        access_modes = impact.get("access_modes", {})
-        if access_modes:
-            print("- access_modes:")
-            for mode_name, mode in access_modes.items():
-                if isinstance(mode, dict):
-                    print(f"  - {mode_name}: {mode.get('user_status', '')}")
-        print("- effects:")
-        for effect in effects:
-            print(
-                f"  - {effect['access_mode']} / {effect['trigger']}: "
-                f"observed={_mark(bool(effect['observed']))}, writes={effect['writes']}"
-            )
-    print("- shim_direct_tests:")
-    for test_name, test_result in env["shim_direct_tests"].items():
-        print(f"  - {test_name}: {test_result['status']} (returncode={test_result['returncode']})")
-
-    if env["human_acceptance"]["required"] or env_summary.get("post_install_smoke_check_recommended"):
-        if env["human_acceptance"]["required"]:
-            print("\nHuman acceptance required before install can complete:")
-        else:
-            print("\nPost-install user smoke check (not blocking install_complete):")
-        print(f"- reason: {env['human_acceptance']['reason']}")
-        for step in env["human_acceptance"]["steps"]:
-            print(f"- {step}")
-        criteria = env["human_acceptance"].get("acceptance_criteria", [])
-        if criteria:
-            print("\nNormal criteria:")
-            for item in criteria:
-                print(f"- {item}")
 
     if result["diagnostics"]:
         print("\nDiagnostics:")

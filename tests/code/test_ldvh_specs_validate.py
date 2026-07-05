@@ -1251,6 +1251,8 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "断点恢复协议" in raw
     assert "恢复入口语" in raw
     assert "Runtime Protocol 或等价运行时入口" in raw
+    assert "授权 / trust 检查" in raw
+    assert "必须先提示用户确认插件已授权、已信任或无待处理授权" in raw
     assert "真实工作流验证清单" in raw
     assert "本次验证通过" in raw
     assert "本次验证失败" in raw
@@ -1258,6 +1260,7 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "用户主结论必须明确写入是否完成" in raw
     assert "Runtime 入口与 lifecycle 验证" in raw
     assert "提交消息检查" in raw
+    assert "授权检查必须排在重启或新开会话之前" in raw
     assert "失败信息包" in raw
     assert "最终确认只展示两个主选项" in raw
     assert "1 执行方案" in raw

@@ -147,24 +147,33 @@ projects:
     assert impact["side_effects"]["formal_fact_source_writes"] is False
     assert impact["side_effects"]["spark_0046_writes"] is False
     assert impact["side_effects"]["scratch_writes"] is False
-    assert impact["verification_mode"] == "安装检测直测 + 薄引用可读"
+    assert impact["current_environment"] == "Codex"
+    assert impact["current_install_mode"] == "插件 Hook"
+    assert impact["primary_access_mode"] == "plugin_hook"
+    assert impact["fallback_access_modes"] == []
+    assert impact["verification_mode"] == "插件安装检测直测"
     assert impact["real_hook_observed"] is False
-    assert impact["human_conclusion"]["verified_as"] == "安装检测直测 + 薄引用可读"
+    assert impact["human_conclusion"]["environment"] == "Codex"
+    assert impact["human_conclusion"]["install_mode"] == "插件 Hook"
+    assert impact["human_conclusion"]["verified_as"] == "插件安装检测直测"
+    assert impact["human_conclusion"]["fallback_checked"] == []
     assert "未声明真实自动 Hook integrated" in impact["human_conclusion"]["not_claimed"]
     assert impact["access_modes"]["plugin_hook"]["verified"] is True
     assert impact["access_modes"]["plugin_hook"]["integrated"] is False
     assert impact["access_modes"]["plugin_hook"]["verification_method"] == "repo_local_shim_direct_test"
     assert impact["access_modes"]["plugin_hook"]["real_hook_observed"] is False
-    assert "未观察到真实自动 Hook integrated" in impact["access_modes"]["plugin_hook"]["user_status"]
+    assert "尚未取得 Codex 生命周期真实触发证据" in impact["access_modes"]["plugin_hook"]["user_status"]
     assert impact["access_modes"]["thin_reference"]["available"] is True
-    assert impact["access_modes"]["thin_reference"]["verification_method"] == "runtime_protocol_read"
+    assert impact["access_modes"]["thin_reference"]["verified"] is False
+    assert impact["access_modes"]["thin_reference"]["verification_method"] == "not_run_current_mode"
     assert impact["access_modes"]["thin_reference"]["real_hook_observed"] is False
+    assert "未按薄引用方式验证" in impact["access_modes"]["thin_reference"]["user_status"]
     assert {effect["trigger"] for effect in impact["effects"]} >= {
         "SessionStart",
         "PreToolUse write-class tool",
         "Stop",
-        "Runtime Protocol read",
     }
+    assert "Runtime Protocol read" not in {effect["trigger"] for effect in impact["effects"]}
     assert all(effect["writes"] is False for effect in impact["effects"])
     assert "lifecycle_acceptance_valid" not in result["environment"]["summary"]
     assert "lifecycle_acceptance" not in result["environment"]
@@ -182,22 +191,39 @@ projects:
     assert any("写入前检查负例被阻断，正例被放行" in criterion for criterion in human_acceptance["acceptance_criteria"])
     handoff = result["user_handoff"]
     status_card = {row["item"]: row["value"] for row in handoff["status_card"]}
-    assert status_card["安装完成"] == "是"
-    assert status_card["本次验证方式"] == "安装检测直测 + 薄引用可读"
-    assert status_card["真实自动 Hook"] == "未验证 integrated"
-    assert status_card["Runtime 入口"] == "直测通过，真实 Hook 未验证"
-    assert status_card["提交消息检查"] == "通过"
-    assert "30" in status_card["下一步"]
-    assert any("不等于已经打开或观察到真实自动 Hook" in item for item in handoff["plain_conclusion"])
+    assert status_card["当前环境"] == "Codex"
+    assert status_card["当前安装方式"] == "插件 Hook"
+    assert status_card["验收目标"] == "真实触发验收"
+    assert status_card["验收结果"] == "未完成"
+    assert "Git 提交消息 Hook 正例放行、反例阻断" in status_card["已真实触发"]
+    assert "Codex 生命周期真实触发" in status_card["未完成触发项"]
+    assert status_card["技术安装状态"] == "是"
+    assert "真实" in status_card["下一步"]
+    assert "授权 / trust" in status_card["下一步"]
+    assert any("当前环境是 Codex" in item for item in handoff["plain_conclusion"])
+    assert any("当前安装方式是插件 Hook" in item for item in handoff["plain_conclusion"])
+    assert any("本次真实触发验收未完成" in item for item in handoff["plain_conclusion"])
+    assert any("已真实触发：Git 提交消息 Hook 正例放行、反例阻断" in item for item in handoff["plain_conclusion"])
+    assert any("未完成触发项：Codex 生命周期真实触发" in item for item in handoff["plain_conclusion"])
+    assert any("真实触发验收未完成" in item for item in handoff["plain_conclusion"])
+    assert not any("不等于已经打开或观察到真实自动 Hook" in item for item in handoff["plain_conclusion"])
     assert [block["name"] for block in handoff["impact_status_blocks"]] == [
-        "Runtime 入口与 LDVH 影响验证",
+        "真实触发验收",
         "提交消息检查",
     ]
     assert handoff["hook_status_blocks"] == handoff["impact_status_blocks"]
     assert any("插件页面" in step for step in handoff["user_next_steps"])
+    assert any("授权 / trust" in step for step in handoff["user_next_steps"])
+    assert any("只读 LDVH 可见性检查" in step for step in handoff["user_next_steps"])
+    assert handoff["real_trigger_acceptance"]["result"] == "未完成"
+    assert handoff["real_trigger_acceptance"]["complete"] is False
+    assert handoff["real_trigger_acceptance"]["passed_items"] == [
+        "Git 提交消息 Hook 正例放行、反例阻断"
+    ]
+    assert handoff["real_trigger_acceptance"]["pending_items"] == [
+        "Codex 生命周期真实触发"
+    ]
     assert "manual.lifecycle-verify-probe" in handoff["visible_probe_command"]
-    assert "真实自动 Hook" in json.dumps(handoff, ensure_ascii=False)
-    assert "未验证 integrated" in json.dumps(handoff, ensure_ascii=False)
     assert any("目标环境名称和版本" in item for item in handoff["failure_info_package"])
     assert result["diagnostics"] == []
 
@@ -560,9 +586,16 @@ projects:
     impact = result["ldvh_impact"]
     assert impact["verified"] is True
     assert impact["integrated"] is False
+    assert impact["current_environment"] == "Trae"
+    assert impact["current_install_mode"] == "薄引用"
+    assert impact["primary_access_mode"] == "thin_reference"
+    assert impact["fallback_access_modes"] == []
     assert impact["verification_mode"] == "薄引用可读"
     assert impact["real_hook_observed"] is False
+    assert impact["human_conclusion"]["environment"] == "Trae"
+    assert impact["human_conclusion"]["install_mode"] == "薄引用"
     assert impact["human_conclusion"]["verified_as"] == "薄引用可读"
+    assert impact["human_conclusion"]["fallback_checked"] == []
     assert impact["access_modes"]["plugin_hook"]["verified"] is False
     assert impact["access_modes"]["plugin_hook"]["verification_method"] == "not_run"
     assert impact["access_modes"]["plugin_hook"]["real_hook_observed"] is False
@@ -595,15 +628,20 @@ projects:
     assert any("断点后验证方式" in criterion for criterion in human_acceptance["acceptance_criteria"])
     handoff = result["user_handoff"]
     status_card = {row["item"]: row["value"] for row in handoff["status_card"]}
-    assert status_card["安装完成"] == "否"
-    assert status_card["本次验证方式"] == "薄引用可读"
-    assert status_card["真实自动 Hook"] == "未验证 integrated"
-    assert status_card["Runtime 入口"] == "薄引用 / manual entrypoint"
-    assert status_card["提交消息检查"] == "通过"
+    assert status_card["当前环境"] == "Trae"
+    assert status_card["当前安装方式"] == "薄引用"
+    assert status_card["验收目标"] == "真实触发验收"
+    assert status_card["验收结果"] == "通过"
+    assert "Git 提交消息 Hook 正例放行、反例阻断" in status_card["已真实触发"]
+    assert "Runtime 入口可读" in status_card["已真实触发"]
+    assert status_card["未完成触发项"] == "无"
+    assert status_card["技术安装状态"] == "否"
     assert "30" in status_card["下一步"]
-    assert any("薄引用入口可读" in item for item in handoff["plain_conclusion"])
+    assert any("当前环境是 Trae" in item for item in handoff["plain_conclusion"])
+    assert any("本次真实触发验收通过" in item for item in handoff["plain_conclusion"])
+    assert any("已真实触发：Git 提交消息 Hook 正例放行、反例阻断；Runtime 入口可读" in item for item in handoff["plain_conclusion"])
     assert [block["name"] for block in handoff["impact_status_blocks"]] == [
-        "Runtime 入口与 LDVH 影响验证",
+        "真实触发验收",
         "提交消息检查",
     ]
     assert handoff["hook_status_blocks"] == handoff["impact_status_blocks"]
