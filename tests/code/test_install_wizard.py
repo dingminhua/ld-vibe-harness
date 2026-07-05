@@ -59,9 +59,12 @@ def test_install_wizard_check_and_plan_are_read_only(tmp_path: Path) -> None:
     assert plan["install_plan"]["environment_strategy"] == "plugin_hook"
     hook_write = next(item for item in plan["install_plan"]["planned_writes"] if item["kind"] == "git_commit_msg_hook")
     config_write = next(item for item in plan["install_plan"]["planned_writes"] if item["kind"] == "git_config")
-    assert hook_write["path"] == check["hook_status"]["hook_status"]["active_hook"]
-    assert hook_write["path"] != (repo / ".git/hooks/commit-msg").as_posix()
+    assert hook_write["current_active_hook"] == check["hook_status"]["hook_status"]["active_hook"]
+    assert hook_write["path"] != hook_write["current_active_hook"]
+    assert hook_write["path"].endswith(".git/ldvh-hooks/commit-msg")
     assert config_write["operation"] == "set_worktree_core_hooks_path"
+    assert config_write["current_core_hooks_path"] == ""
+    assert config_write["planned_core_hooks_path"].endswith(".git/ldvh-hooks")
     assert plan["install_plan"]["human_gate_required"] is True
     assert not hook_path.exists()
 

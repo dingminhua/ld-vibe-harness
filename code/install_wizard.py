@@ -7,6 +7,7 @@ from typing import Any
 
 from environment_entry_audit import build_environment_entry_audit
 from governed_hook_adapter import build_governed_hook_adapter
+from install_git_hooks import COMMIT_MSG_HOOK, planned_install_target
 from install_verification import build_install_verification
 from ldvh_specs import (
     GOVERNED_PROJECTS_CONFIG_PATH,
@@ -147,6 +148,8 @@ def _planned_writes(
         status = hook_status.get("hook_status", {})
         writes: list[dict[str, Any]] = []
         for project in target_projects:
+            target_dir, hooks_path_value = planned_install_target(Path(project["path"]), ldvh_root)
+            target_hook = target_dir / COMMIT_MSG_HOOK
             writes.extend([
                 {
                     "kind": "git_config",
@@ -154,11 +157,13 @@ def _planned_writes(
                     "backend": "code/install_git_hooks.py",
                     "operation": "set_worktree_core_hooks_path",
                     "project_id": project["id"],
-                    "core_hooks_path": status.get("core_hooks_path", ""),
+                    "current_core_hooks_path": status.get("core_hooks_path", ""),
+                    "planned_core_hooks_path": hooks_path_value,
                 },
                 {
                     "kind": "git_commit_msg_hook",
-                    "path": status.get("active_hook", ""),
+                    "path": target_hook.as_posix(),
+                    "current_active_hook": status.get("active_hook", ""),
                     "common_hook": status.get("common_hook", ""),
                     "backend": "code/governed_hook_adapter.py",
                     "operation": "install_or_upgrade",
@@ -409,13 +414,15 @@ def build_install_plan(
             environment_strategy=environment_strategy,
         )
         return {**unknown, "install_plan": {}}
-    planned_writes = _planned_writes(
-        strategy,
-        check["target_projects"],
-        resolved_ldvh_root,
-        resolved_repo,
-        check["hook_status"],
-    )
+    planned_writes = []
+    if not check["summary"]["blocking"]:
+        planned_writes = _planned_writes(
+            strategy,
+            check["target_projects"],
+            resolved_ldvh_root,
+            resolved_repo,
+            check["hook_status"],
+        )
     handoff_candidates = _handoff_candidates(strategy, resolved_ldvh_root, resolved_repo)
     skipped_writes = _skipped_writes(strategy)
 

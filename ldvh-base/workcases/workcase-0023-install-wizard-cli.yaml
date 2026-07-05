@@ -260,14 +260,18 @@ verification_evidence: |
   - CLI 第一版最终自检：`git diff --check`：通过。
   - 子 agent 实现审核后补充：`python3 -m pytest tests/code/test_install_wizard.py -q`：通过，12 passed。
   - 子 agent 实现审核后补充：过期 CLI 表述搜索无命中。
-closure_evidence: ''
+  - 真实安装矩阵验证后补充：scratch 路径 `/tmp/ldvh-install-matrix-2`；`check` / `plan` 为 ok；`planned_hook` 与 `apply` 后 `actual_hook` 一致，均为 `/private/tmp/ldvh-install-matrix-2/workspace/app/.git/ldvh-hooks/commit-msg`；`apply` 缺 Human Gate 返回 1 且包含 `INSTALL_WIZARD_HUMAN_GATE_REQUIRED`；`apply --confirm-human-gate` 返回 0，`verification_status=review_required`；`verify` 返回 0 且 `review_required`；`governed_hook_adapter.py uninstall --confirm-human-gate` 返回 0 且 `hook_installed=false`。
+  - 真实安装矩阵阻断路径：受管但非 Git 目录返回 `GOVERNED_HOOK_TARGET_NOT_GIT_REPO`；非管辖 repo 返回 `INSTALL_WIZARD_TARGET_NOT_GOVERNED`；未知 strategy 返回 `INSTALL_WIZARD_UNKNOWN_ENVIRONMENT_STRATEGY`。
+  - 真实安装矩阵非 Hook 策略：`thin_reference` / `manual_entrypoint` 的 `planned_writes=0`、`handoff_candidates=1`；`apply --confirm-human-gate` 返回 1 且包含 `INSTALL_WIZARD_STRATEGY_APPLY_NOT_IMPLEMENTED`；未写入 `AGENTS.md`。
+closure_evidence: |
+  CLI 第一版已完成真实 scratch 安装矩阵验证。矩阵验证发现并修复 `plugin_hook` plan 写入路径与实际 apply 路径不一致的问题：`planned_writes` 现在由 `install_git_hooks.planned_install_target()` 派生，包含 planned Git config 和 planned commit-msg hook，且与实际 apply 后 active hook 一致。
 closure_requested_at: null
 review_requested_at: null
 closed_at: null
 closure_outcome: ''
 residual_risks:
   - CLI 第一版只实现薄 facade；`thin_reference` / `manual_entrypoint` 尚未自动写入，只生成计划和交还。
-  - 30 仍作为 transitional Human-facing shell 保留；废弃条件依赖真实安装矩阵验收和后续环境插件 / 薄引用写入能力承接。
+  - 30 仍作为 transitional Human-facing shell 保留；废弃条件依赖真实环境 integrated 证据和后续环境插件 / 薄引用写入能力承接。
   - 插件 UI trust、重启观察、非 Codex 环境策略仍不能由 Code 全自动证明，需要 Human Gate 或断点后验证证据。
 followup_refs:
   - tests/code/test_install_wizard.py

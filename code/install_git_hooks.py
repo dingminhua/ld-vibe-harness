@@ -90,6 +90,11 @@ def _install_target(repo: Path, ldvh_root: Path) -> tuple[Path, str]:
     return target_dir, target_dir.as_posix()
 
 
+def planned_install_target(repo: Path, ldvh_root: Path = ROOT) -> tuple[Path, str]:
+    resolved_repo = resolve_repo(repo)
+    return _install_target(resolved_repo, ldvh_root)
+
+
 def template_path(ldvh_root: Path = ROOT) -> Path:
     return ldvh_root / HOOKS_PATH / COMMIT_MSG_HOOK
 
