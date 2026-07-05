@@ -50,7 +50,7 @@ ldvh_spec:
     next_queries: "12. 待补齐事项"
 ```
 
-> 文件状态：active；本文吸收 V2 `31-git-commit-action` 的提交行动编排能力。本文只组织一次 Git 提交行动如何按既有规则执行，不定义 commit message 字段闭集、type / scope 枚举、body 条件、验证声明字段、Hook 安装或 commit gate 实现。
+> 文件状态：active；本文承接 Git 提交行动编排能力。本文只组织一次 Git 提交行动如何按既有规则执行，不定义 commit message 字段闭集、type / scope 枚举、body 条件、验证声明字段、Hook 安装或 commit gate 实现。
 
 ## 1. 价值判断
 
@@ -90,9 +90,9 @@ Git 提交行动主要服务 V2、V3、V4、V6、V7、V8 和 V9：它让 AI 快�
 
 本文是 06 之后的第二个独立正式行动模板，编号为 `31`。它不是 06 父规范的正文示范，也不是 commit validator 或 Git Hook 的实现文档；它是可被 AI 直接引用的 Git 提交行动模板成员。
 
-本文吸收 V2 `31-git-commit-action` 的状态读取、diff 判断、验证证据、提交后交还和失败分流能力。`skills/ldvh-git-commit/SKILL.md` 只能作为 V2 来源和外部包装候选，不恢复 Skill 顶层机制；即使后续存在外部包装，行动结果仍必须交还主控 AI 判断。
+本文承接 Git 状态读取、diff 判断、验证证据、提交后交还和失败分流能力。历史 Skill 或外部包装只能作为来源线索和包装候选，不恢复 Skill 顶层机制；即使后续存在外部包装，行动结果仍必须交还主控 AI 判断。
 
-当前迁入最小闭环：读取用户目标和工作区、判断 staged / unstaged / untracked 范围、必要时拆分、引用 03.Att.01 形成提交说明、执行匹配验证或说明未验证范围、运行 commit validator 或等价提交消息检查、创建提交、交还结果和残留风险。Hook 安装、commit gate 部署、CI 配置和环境入口接入不由本文授权。
+当前最小闭环包括：读取用户目标和工作区、判断 staged / unstaged / untracked 范围、必要时拆分、引用 03.Att.01 形成提交说明、执行匹配验证或说明未验证范围、运行 commit validator 或等价提交消息检查、创建提交、交还结果和残留风险。Hook 安装、commit gate 部署、CI 配置和环境入口接入不由本文授权。
 
 ## 6. Git 提交行动边界
 
@@ -111,7 +111,7 @@ Code、Hook、测试或外部包装输出只能作为过程证据。commit valid
 | Context | 读取用户提交目标、当前 Git repo、工作区摘要、staged / unstaged / untracked 范围、必要 diff、changed paths、source_refs，并回指 `specs/03-事实源与Git溯源规范.md`、`specs/attachments/03.Att.01-Commit-Message契约字段表.md`、`specs/06-行动模板基础规范.md`、`specs/09-测试与验证规范.md`、`specs/attachments/09.Att.01-验证声明字段表.md`、`specs/07-Code确定性执行规范.md` 和 `code/docs/01-Git-Commit-and-Hook-Practice.md`。 |
 | Scenario | 用户明确要求提交、修复提交消息、拆分已暂存变更、提交前预检、提交门禁阻断分流或文件事实源修改需要 Git records 溯源时适用；用户只是询问提交规则、验证规则或 Hook 实现时，只回答 03/09/01/07 边界，不创建提交。 |
 | Gate | 已暂存变更与用户目标不一致、存在 unstaged / untracked 变更且范围不清、提交拆分边界不清、需要破坏性 Git 操作、需要绕过 commit validator 或 Git Hook、关键测试失败、缺少验证证据、存在 Human Gate 风险、跨管辖 / 非管辖 target 混合、需要安装或修复 Hook / commit gate / 环境入口时，必须暂停、拆分或进入 Human Gate。 |
-| 执行 | 检查 Git 工作区摘要和必要 diff；只 stage 本次范围内文件；判断是否拆分；按 `03.Att.01` 选择单一 type 和零个或一个 scope，提交说明至少在触发 body 必填条件时包含 `关键变更`；按影响范围运行匹配验证或说明未验证范围；运行 commit validator 或等价提交消息检查；通过后才创建 commit；不安装 Hook、不修改 commit gate、不配置 CI、不把工具输出直接写成完成结论。 |
+| 执行 | 检查 Git 工作区摘要和必要 diff；只 stage 本次范围内文件；判断是否拆分；按 `03.Att.01` 形成提交说明和必要 body 小标题；按影响范围运行匹配验证或说明未验证范围；运行 commit validator 或等价提交消息检查；通过后才创建 commit；不安装 Hook、不修改 commit gate、不配置 CI、不把工具输出直接写成完成结论。 |
 | 验证 | 验证入口按 `specs/09-测试与验证规范.md` 选择自动化测试、命令校验、等价验证或 Human 验收；验证声明回指 `09.Att.01`，至少说明验证目标、验证方式、验证入口、输入范围、关键输出、结论、残留风险和证据回指；失败、未运行或不可复现时不得声明完整验证。 |
 | 回写 | Git 提交流程输出默认是过程输出；需要长期追溯的验证结论、失败诊断、残留风险、缺口或经验按 03/05/09 分流到对应事实源、事实对象、实现域文档或后续工作项；Git commit records 只溯源文件修改和提交说明，不替代事实对象、验证声明或 Human Gate。 |
 | 交还 | 提交成功后交还 commit hash、提交 message 摘要、changed paths、验证摘要、残留风险、剩余 Git 工作区摘要、source_refs 和执行方式；未提交时交还阻断原因、未验证范围、缺少证据、建议拆分或后续分流。 |

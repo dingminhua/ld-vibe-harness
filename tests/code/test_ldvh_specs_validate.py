@@ -1186,28 +1186,31 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
     assert "目标环境" in rows["Context"]
     assert "LDVH 本体路径" in rows["Context"]
     assert "目标工作区根目录" in rows["Context"]
+    assert "目标工作区配置" in rows["Context"]
+    assert "事实源目录状态" in rows["Context"]
     assert "Git Hook 状态" in rows["Context"]
+    assert "Runtime Protocol" in rows["Context"]
     assert "安装 LDVH" in rows["Scenario"]
     assert "配置层级冲突" in rows["Gate"]
     assert "最终确认" in rows["Gate"]
     assert "bootstrap discovery" in rows["执行"]
-    assert "01.Att.03" in rows["执行"]
-    assert "01.Att.04" in rows["执行"]
-    assert "manual entrypoint" in rows["执行"]
-    assert "thin reference" in rows["执行"]
-    assert "target-first resolver" in rows["执行"]
-    assert "统一安装验证入口" in rows["验证"]
+    assert "五阶段" in rows["执行"]
+    assert "环境入口按 01" in rows["执行"]
+    assert "配置和事实源按 10" in rows["执行"]
+    assert "验证按 09" in rows["执行"]
+    assert "具体命令、输出字段和实现入口" in rows["执行"]
+    assert "验证入口" in rows["验证"]
+    assert "09.Att.01" in rows["验证"]
     assert "断点后 lifecycle 验证" in rows["验证"]
-    assert "runtime 循环" in rows["验证"]
-    assert "真实工作流" in rows["验证"]
-    assert "receipt" in rows["验证"]
-    assert "payload" in rows["验证"]
-    assert "失败处理证据" in rows["验证"]
+    assert "通过标准" in rows["验证"]
     assert "不得把 runtime receipt" in rows["回写"]
+    assert "管辖项目配置事实源" in rows["回写"]
+    assert "环境适配缺口" in rows["回写"]
     assert "断点恢复入口语" in rows["交还"]
     assert "可复制只读可见性探针" in rows["交还"]
     assert "真实工作流验证清单" in rows["交还"]
     assert "失败信息包" in rows["交还"]
+    assert "环境接入判定来源" in rows["交还"]
 
 
 def test_ldvh_install_action_template_defines_action_stage_contract(validation_result: dict) -> None:
@@ -1229,35 +1232,30 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "最终确认" in raw
     assert "不得新增安装运行时状态闭集" in raw
     assert "内部摘要检查" in raw
-    assert "简洁确认块" in raw
+    assert "场景复杂度精简呈现" in raw
     assert "用户告知清单必须作为 4/5 安装方案预览的必含内容交给 Human 确认" in raw
     assert "每次只问一个问题" in raw
     assert "该选择不是执行授权" in raw
     assert "5/5 最终确认必须直接询问“执行方案”或“不执行，停止安装”" in raw
     assert "不得继续解释流程或再次索要同一授权" in raw
-    assert "当前配置项目清单" in raw
-    assert "配置位置不是选项，只能是目标工作区根目录" in raw
-    assert "项目根目录、用户级目录和 LDVH 本体目录都不是支持位置" in raw
-    assert "可复制路径块" in raw
-    assert "完整安装方案必须同时覆盖 AI 环境 Hook 和管辖项目 Git Hook" in raw
+    assert "当前配置摘要" in raw
+    assert "管辖项目配置位置" in raw
+    assert "项目内 / 用户级 / LDVH 本体目录边界" in raw
+    assert "目标环境入口承接" in raw
     assert "30 不按“支持 Hook / 不支持 Hook”拆成两套写入完成流程" in raw
     assert "Runtime Protocol" in raw
     assert "manual entrypoint" in raw
     assert "thin reference" in raw
     assert "统一验证标准" in raw
-    assert "runtime 循环在真实工作流里产出可复核输出" in raw
+    assert "runtime 循环在真实工作流里产出可复核证据" in raw
     assert "断点恢复协议" in raw
     assert "恢复入口语" in raw
-    assert "我重启了，继续 LDVH lifecycle 验证" in raw
-    assert "status=ok" in raw
-    assert "event=session_start" in raw
-    assert "receipt_id" in raw
-    assert "Diagnostics: none" in raw
+    assert "Runtime Protocol 或等价运行时入口" in raw
     assert "真实工作流验证清单" in raw
     assert "本次验证通过" in raw
     assert "本次验证失败" in raw
     assert "本次未验证" in raw
-    assert "写入完成。请重启 App 或新开会话" in raw
+    assert "用户主结论必须明确写入是否完成" in raw
     assert "Runtime 入口与 lifecycle 验证" in raw
     assert "提交消息检查" in raw
     assert "失败信息包" in raw
@@ -1379,14 +1377,14 @@ def test_ldvh_install_action_template_reports_missing_unsupported_config_locatio
     _replace_in_temp(
         root,
         "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
-        "项目根目录、用户级目录和 LDVH 本体目录都不是支持位置",
+        "项目内 / 用户级 / LDVH 本体目录边界",
         "",
     )
 
     result = ldvh_specs.build_validation(root)
 
-    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("项目根目录、用户级目录和 LDVH 本体目录都不是支持位置" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert "LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_MISSING" in _diagnostic_codes(result)
+    assert any("项目内 / 用户级 / LDVH 本体目录边界" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_workspace_config_location(tmp_path: Path) -> None:
@@ -1394,14 +1392,14 @@ def test_ldvh_install_action_template_reports_missing_workspace_config_location(
     _replace_in_temp(
         root,
         "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
-        "配置位置不是选项，只能是目标工作区根目录",
+        "管辖项目配置位置",
         "配置文件位置可在执行时说明",
     )
 
     result = ldvh_specs.build_validation(root)
 
-    assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("配置位置不是选项，只能是目标工作区根目录" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert "LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_MISSING" in _diagnostic_codes(result)
+    assert any("管辖项目配置位置" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_action_stage_boundary(tmp_path: Path) -> None:
@@ -1484,14 +1482,14 @@ def test_ldvh_install_action_template_reports_missing_runtime_adapter_rule(tmp_p
     _replace_in_temp(
         root,
         "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
-        "runtime adapter",
+        "运行时入口",
         "运行时适配器",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("runtime adapter" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("运行时入口" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_plugin_acceptance_standard(tmp_path: Path) -> None:
@@ -1499,14 +1497,14 @@ def test_ldvh_install_action_template_reports_missing_plugin_acceptance_standard
     _replace_in_temp(
         root,
         "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
-        "正常判断标准",
+        "安装检测通过",
         "验收判断",
     )
 
     result = ldvh_specs.build_validation(root)
 
     assert "LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_MISSING" in _diagnostic_codes(result)
-    assert any("正常判断标准" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert any("安装检测通过" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_reports_missing_unified_flow_boundary(tmp_path: Path) -> None:
