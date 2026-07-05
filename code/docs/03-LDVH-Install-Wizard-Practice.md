@@ -1,6 +1,6 @@
 # LDVH Install Wizard Practice
 
-本文是 Code 实现域文档，承接 `specs/10-安装与配置规范.md` 的安装与配置机器契约，以及 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的 Human-facing 行动模板编排。本文不定义新的安装授权，不替代 Human Gate，不表示任何插件、Hook 或用户环境已经安装。
+本文是 Code 实现域文档，承接 `specs/10-安装与配置规范.md` 的安装与配置机器契约，以及 `specs/30-安装配置与验证行动模板.md` 的 Human-facing 行动模板编排。本文不定义新的安装授权，不替代 Human Gate，不表示任何插件、Hook 或用户环境已经安装。
 
 ## 展示原则
 
@@ -157,7 +157,7 @@ GOVERNED_CONFIG=<workspace-root>/LDVH-GOVERNED-PROJECTS.yaml
 
 ## 执行编排形态
 
-V3 当前安装执行编排形态已从纯模板驱动进入 Code/CLI 薄执行壳阶段。机器规则以 `specs/10-安装与配置规范.md` 为主；`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 仍是 3x 正式行动模板，负责 Human-facing 五阶段编排、说明、选择收集、最终确认、异常交还和断点恢复。AI 应按 30 组织用户交互，但不得把 30 当成机器核心安装规则源。
+V3 当前安装执行编排形态已从纯模板驱动进入 Code/CLI 薄执行壳阶段。机器规则以 `specs/10-安装与配置规范.md` 为主；`specs/30-安装配置与验证行动模板.md` 仍是 3x 正式行动模板，负责 Human-facing 五阶段编排、说明、选择收集、最终确认、异常交还和断点恢复。AI 应按 30 组织用户交互，但不得把 30 当成机器核心安装规则源。
 
 `ldvh-base/workcases/workcase-0023-install-wizard-cli.yaml` 已承接 10 安装与配置规范及安装 CLI 接管。`code/install_wizard.py` 是第一版确定性执行壳：`check` / `plan` 保持只读，`apply` 必须显式带 Human Gate，`verify` 复用统一安装验证入口；CLI 不定义新的规则源、环境入口分类、配置字段或 integrated 判断，也不替代 30 的行动模板角色。
 

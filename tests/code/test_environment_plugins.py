@@ -261,7 +261,21 @@ def test_codex_sample_shim_degrades_completion_claim_to_non_blocking_stop() -> N
     assert "RUNTIME_COMPLETION_VERIFICATION_MISSING" in payload["systemMessage"]
 
 
-def test_codex_sample_shim_records_six_hook_events_to_research_spark(tmp_path: Path) -> None:
+def test_codex_sample_shim_does_not_capture_research_spark_by_default(tmp_path: Path) -> None:
+    spark_dir = tmp_path / "sparks"
+    completed = _run_shim(
+        {"hook_event_name": "SessionStart", "sessionId": "shim-no-capture", "cwd": ROOT.as_posix()},
+        extra_env={
+            "LDVH_HOOK_SPARK_CAPTURE": "",
+            "LDVH_HOOK_SPARK_DIR": spark_dir.as_posix(),
+        },
+    )
+
+    assert completed.returncode == 0
+    assert not spark_dir.exists()
+
+
+def test_codex_sample_shim_opt_in_records_six_hook_events_to_temp_research_spark(tmp_path: Path) -> None:
     spark_dir = tmp_path / "sparks"
     env = {
         "LDVH_HOOK_SPARK_CAPTURE": "1",

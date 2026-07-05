@@ -40,7 +40,7 @@
 | V2 Runtime Protocol Rule | `hooks/LDVH-RUNTIME-PROTOCOL.md` | migrated / strengthened | 维持 hook entry 的三类内容限制 |
 | V2 Workspace / Maintainer Rules | removed_top_level | discarded | 不恢复顶层 Rules wrapper |
 | V2 Skill `ldvh-git-commit` | `06` Git 提交行动、`code/docs/01-Git-Commit-and-Hook-Practice.md`、commit validator | absorbed / strengthened | 维持行动模板和 Code 实现域承接 |
-| V2 `33` 安装初始化行动 | `specs/30-LDVH安装初始化管辖项目配置行动模板.md` | migrated / strengthened | 维持 30 独立模板 |
+| V2 `33` 安装初始化行动 | `specs/30-安装配置与验证行动模板.md` | migrated / strengthened | 维持 30 独立模板 |
 | V2 `32` 环境适配动态投影 | `01`、`30`、`code/docs/02-Environment-Plugin-Practice.md` | postposed / partial | 只在真实插件闭环出现后推进 |
 
 ## P1 吸收项

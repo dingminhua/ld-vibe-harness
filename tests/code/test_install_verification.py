@@ -123,6 +123,8 @@ projects:
     assert result["summary"]["status"] == "complete"
     assert result["summary"]["governed_config_ok"] is True
     assert result["summary"]["git_hooks_ok"] is True
+    assert result["summary"]["ldvh_impact_verified"] is True
+    assert result["summary"]["ldvh_impact_integrated"] is False
     assert result["summary"]["environment_hook_install_verified"] is True
     assert result["summary"]["environment_hook_integrated"] is False
     assert "environment_lifecycle_acceptance_valid" not in result["summary"]
@@ -139,6 +141,31 @@ projects:
     assert result["environment"]["summary"]["target_environment_supported"] is True
     assert result["environment"]["summary"]["install_verified"] is True
     assert result["environment"]["summary"]["environment_integrated"] is False
+    impact = result["ldvh_impact"]
+    assert impact["verified"] is True
+    assert impact["integrated"] is False
+    assert impact["side_effects"]["formal_fact_source_writes"] is False
+    assert impact["side_effects"]["spark_0046_writes"] is False
+    assert impact["side_effects"]["scratch_writes"] is False
+    assert impact["verification_mode"] == "安装检测直测 + 薄引用可读"
+    assert impact["real_hook_observed"] is False
+    assert impact["human_conclusion"]["verified_as"] == "安装检测直测 + 薄引用可读"
+    assert "未声明真实自动 Hook integrated" in impact["human_conclusion"]["not_claimed"]
+    assert impact["access_modes"]["plugin_hook"]["verified"] is True
+    assert impact["access_modes"]["plugin_hook"]["integrated"] is False
+    assert impact["access_modes"]["plugin_hook"]["verification_method"] == "repo_local_shim_direct_test"
+    assert impact["access_modes"]["plugin_hook"]["real_hook_observed"] is False
+    assert "未观察到真实自动 Hook integrated" in impact["access_modes"]["plugin_hook"]["user_status"]
+    assert impact["access_modes"]["thin_reference"]["available"] is True
+    assert impact["access_modes"]["thin_reference"]["verification_method"] == "runtime_protocol_read"
+    assert impact["access_modes"]["thin_reference"]["real_hook_observed"] is False
+    assert {effect["trigger"] for effect in impact["effects"]} >= {
+        "SessionStart",
+        "PreToolUse write-class tool",
+        "Stop",
+        "Runtime Protocol read",
+    }
+    assert all(effect["writes"] is False for effect in impact["effects"])
     assert "lifecycle_acceptance_valid" not in result["environment"]["summary"]
     assert "lifecycle_acceptance" not in result["environment"]
     human_acceptance = result["environment"]["human_acceptance"]
@@ -156,15 +183,60 @@ projects:
     handoff = result["user_handoff"]
     status_card = {row["item"]: row["value"] for row in handoff["status_card"]}
     assert status_card["安装完成"] == "是"
-    assert status_card["环境自动拦截"] == "入口已检测，断点后验证"
+    assert status_card["本次验证方式"] == "安装检测直测 + 薄引用可读"
+    assert status_card["真实自动 Hook"] == "未验证 integrated"
+    assert status_card["Runtime 入口"] == "直测通过，真实 Hook 未验证"
     assert status_card["提交消息检查"] == "通过"
     assert "30" in status_card["下一步"]
-    assert [block["name"] for block in handoff["hook_status_blocks"]] == ["环境自动拦截", "提交消息检查"]
+    assert any("不等于已经打开或观察到真实自动 Hook" in item for item in handoff["plain_conclusion"])
+    assert [block["name"] for block in handoff["impact_status_blocks"]] == [
+        "Runtime 入口与 LDVH 影响验证",
+        "提交消息检查",
+    ]
+    assert handoff["hook_status_blocks"] == handoff["impact_status_blocks"]
     assert any("插件页面" in step for step in handoff["user_next_steps"])
     assert "manual.lifecycle-verify-probe" in handoff["visible_probe_command"]
-    assert "integrated" not in json.dumps(handoff, ensure_ascii=False)
+    assert "真实自动 Hook" in json.dumps(handoff, ensure_ascii=False)
+    assert "未验证 integrated" in json.dumps(handoff, ensure_ascii=False)
     assert any("目标环境名称和版本" in item for item in handoff["failure_info_package"])
     assert result["diagnostics"] == []
+
+
+def test_install_verification_shim_direct_tests_force_spark_capture_off(tmp_path: Path, monkeypatch) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    codex_home = tmp_path / "codex-home"
+    spark_dir = tmp_path / "spark-capture"
+    governance_root.mkdir()
+    repo.mkdir()
+    codex_home.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, timeout=30)
+    _write_governed_config(
+        governance_root,
+        f"""
+product_name: Test
+product_description: Test registry
+projects:
+  - id: app
+    path: {repo}
+""",
+    )
+    _install_backend_hook(repo)
+    _install_codex_v3_plugin(codex_home)
+    monkeypatch.setenv("LDVH_HOOK_SPARK_CAPTURE", "1")
+    monkeypatch.setenv("LDVH_HOOK_SPARK_DIR", spark_dir.as_posix())
+
+    result = build_install_verification(
+        governance_root=governance_root,
+        ldvh_root=ROOT,
+        repo=repo,
+        codex_home=codex_home,
+        environment_name="Codex",
+    )
+
+    assert result["summary"]["ldvh_impact_verified"] is True
+    assert result["ldvh_impact"]["side_effects"]["spark_0046_writes"] is False
+    assert not spark_dir.exists()
 
 
 def test_install_verification_parser_defaults_to_workspace_parent_without_config(tmp_path: Path, monkeypatch) -> None:
@@ -481,7 +553,35 @@ projects:
 
     assert result["summary"]["status"] == "review_required"
     assert result["summary"]["git_hooks_ok"] is True
+    assert result["summary"]["ldvh_impact_verified"] is True
+    assert result["summary"]["install_complete"] is False
+    assert result["summary"]["environment_hook_install_verified"] is False
     assert result["summary"]["environment_hook_integrated"] is False
+    impact = result["ldvh_impact"]
+    assert impact["verified"] is True
+    assert impact["integrated"] is False
+    assert impact["verification_mode"] == "薄引用可读"
+    assert impact["real_hook_observed"] is False
+    assert impact["human_conclusion"]["verified_as"] == "薄引用可读"
+    assert impact["access_modes"]["plugin_hook"]["verified"] is False
+    assert impact["access_modes"]["plugin_hook"]["verification_method"] == "not_run"
+    assert impact["access_modes"]["plugin_hook"]["real_hook_observed"] is False
+    assert impact["access_modes"]["thin_reference"]["available"] is True
+    assert impact["access_modes"]["thin_reference"]["verified"] is True
+    assert impact["access_modes"]["thin_reference"]["verification_method"] == "runtime_protocol_read"
+    assert impact["access_modes"]["thin_reference"]["real_hook_observed"] is False
+    assert impact["side_effects"]["formal_fact_source_writes"] is False
+    assert impact["side_effects"]["spark_0046_writes"] is False
+    assert impact["side_effects"]["scratch_writes"] is False
+    assert impact["effects"] == [
+        {
+            "access_mode": "thin_reference",
+            "trigger": "Runtime Protocol read",
+            "expected_result": "AI 可读取统一入口并转入 runtime adapter / manual entrypoint",
+            "observed": True,
+            "writes": False,
+        }
+    ]
     assert result["environment"]["summary"]["environment_adapter"] == "unsupported_target_environment"
     assert result["environment"]["summary"]["target_environment_supported"] is False
     assert result["environment"]["summary"]["plugin_decision"] == "create_target_environment_plugin_before_verification"
@@ -496,9 +596,17 @@ projects:
     handoff = result["user_handoff"]
     status_card = {row["item"]: row["value"] for row in handoff["status_card"]}
     assert status_card["安装完成"] == "否"
-    assert status_card["环境自动拦截"] == "薄引用 / manual entrypoint"
+    assert status_card["本次验证方式"] == "薄引用可读"
+    assert status_card["真实自动 Hook"] == "未验证 integrated"
+    assert status_card["Runtime 入口"] == "薄引用 / manual entrypoint"
     assert status_card["提交消息检查"] == "通过"
     assert "30" in status_card["下一步"]
+    assert any("薄引用入口可读" in item for item in handoff["plain_conclusion"])
+    assert [block["name"] for block in handoff["impact_status_blocks"]] == [
+        "Runtime 入口与 LDVH 影响验证",
+        "提交消息检查",
+    ]
+    assert handoff["hook_status_blocks"] == handoff["impact_status_blocks"]
     assert any("薄引用 / manual entrypoint" in step for step in handoff["user_next_steps"])
 
 

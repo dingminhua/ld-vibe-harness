@@ -66,7 +66,7 @@ def test_install_wizard_check_and_plan_are_read_only(tmp_path: Path) -> None:
     assert config_write["current_core_hooks_path"] == ""
     assert config_write["planned_core_hooks_path"].endswith(".git/ldvh-hooks")
     assert plan["install_plan"]["human_gate_required"] is True
-    assert plan["interaction_handoff"]["template"] == "specs/30-LDVH安装初始化管辖项目配置行动模板.md"
+    assert plan["interaction_handoff"]["template"] == "specs/30-安装配置与验证行动模板.md"
     assert plan["interaction_handoff"]["status"] == "requires_final_confirmation"
     assert plan["interaction_handoff"]["human_gate_required"] is True
     assert plan["interaction_handoff"]["planned_writes"] == 2

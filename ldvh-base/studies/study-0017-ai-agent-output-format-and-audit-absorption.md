@@ -105,7 +105,7 @@ input_refs:
   - specs/22-ADR-决策.md
   - specs/23-Pitfall-踩坑经验.md
   - specs/24-Study-研究报告.md
-  - specs/30-LDVH安装初始化管辖项目配置行动模板.md
+  - specs/30-安装配置与验证行动模板.md
 related_sparks:
   - spark-0044
 related_workcases: []
@@ -122,7 +122,7 @@ related_docs:
   - specs/22-ADR-决策.md
   - specs/23-Pitfall-踩坑经验.md
   - specs/24-Study-研究报告.md
-  - specs/30-LDVH安装初始化管辖项目配置行动模板.md
+  - specs/30-安装配置与验证行动模板.md
   - specs/attachments/01.Att.06-环境安装回滚检查表.md
   - specs/attachments/04.Att.04-保障要求字段表.md
   - specs/attachments/09.Att.01-验证声明字段表.md

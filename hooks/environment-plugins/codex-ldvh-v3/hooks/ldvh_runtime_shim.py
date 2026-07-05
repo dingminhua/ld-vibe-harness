@@ -317,8 +317,8 @@ def emit_warning(message: str) -> int:
 
 
 def hook_spark_capture_enabled() -> bool:
-    raw = os.environ.get("LDVH_HOOK_SPARK_CAPTURE", "1").strip().lower()
-    return raw not in {"0", "false", "no", "off"}
+    raw = os.environ.get("LDVH_HOOK_SPARK_CAPTURE", "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
 
 
 def local_timestamp() -> str:

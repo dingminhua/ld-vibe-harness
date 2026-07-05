@@ -1,12 +1,12 @@
 # 33A 行动模板 30 正式承载
 
-文件状态：migration evidence。本文记录 V3 将 LDVH 安装、初始化与管辖项目配置行动模板从 `06` 父规范正文示范迁出，正式落到 `specs/30-LDVH安装初始化管辖项目配置行动模板.md`；它不安装插件，不修改用户环境配置，不声明任何新的环境入口已 integrated。
+文件状态：migration evidence。本文记录 V3 将 安装、配置与验证行动模板从 `06` 父规范正文示范迁出，正式落到 `specs/30-安装配置与验证行动模板.md`；它不安装插件，不修改用户环境配置，不声明任何新的环境入口已 integrated。
 
 > 2026-07-03 追记：本文中关于 `reviews/formal/30-formal-review.yaml` 和 formal review hash gate 的描述只保留为历史迁移记录。该 formal review 机制后续已废弃，`reviews/formal/30-formal-review.yaml` 不再是当前仓库应存在的产物；当前 30 的可消费性由 `code/ldvh_specs.py`、`code/specs_validate.py` 和 `tests/code/test_ldvh_specs_validate.py` 承接。
 
 ## 背景
 
-Human 指出：`LDVH 安装、初始化与管辖项目配置行动模板` 应该是 `30`，而不是长期留在 `06`。该判断成立：
+Human 指出：`安装、配置与验证行动模板` 应该是 `30`，而不是长期留在 `06`。该判断成立：
 
 1. `06` 是行动模板基础规范，应该定义 Context、Scenario、Gate、执行、验证、回写和交还结构；
 2. 具体可执行模板应进入 30+ 成员文件；
@@ -17,7 +17,7 @@ Human 指出：`LDVH 安装、初始化与管辖项目配置行动模板` 应该
 
 本阶段新增：
 
-1. `specs/30-LDVH安装初始化管辖项目配置行动模板.md`；
+1. `specs/30-安装配置与验证行动模板.md`；
 2. `reviews/formal/30-formal-review.yaml`（历史记录中曾声明；该 formal review 产物后续已废弃，当前不再要求存在）；
 3. `code/ldvh_specs.py` 中 `30` 的短引用、模板解析和可消费检查；
 4. `06` 中对 `30` 的父层准入说明；

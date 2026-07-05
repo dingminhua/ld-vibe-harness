@@ -9,7 +9,7 @@ Human 已确认 V3 不再保留 `rules/` 和 `skills/` 顶层目录机制，同�
 当前 V3 已有：
 
 1. `specs/01-保障与衔接.md` 的环境入口和 Hook 分类；
-2. `specs/06-行动模板基础规范.md` 的行动模板父层边界和 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的 LDVH 安装、初始化与管辖项目配置行动模板；
+2. `specs/06-行动模板基础规范.md` 的行动模板父层边界和 `specs/30-安装配置与验证行动模板.md` 的 安装、配置与验证行动模板；
 3. `code/runtime_adapter.py`、`code/session_start.py`、`code/pre_tool_use.py`、`code/completion_claim.py` 的 manual-ready 入口；
 4. `code/environment_status.py` 与 `code/environment_entry_audit.py` 的状态审计；
 5. `code/docs/01-Git-Commit-and-Hook-Practice.md` 的 Git commit-msg Hook 实践。

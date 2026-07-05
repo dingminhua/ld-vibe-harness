@@ -26,7 +26,7 @@ input_refs:
   - specs/10-安装与配置规范.md
   - specs/attachments/10.Att.01-管辖项目配置字段表.md
   - specs/20-Spark-火花.md
-  - specs/30-LDVH安装初始化管辖项目配置行动模板.md
+  - specs/30-安装配置与验证行动模板.md
 key_findings:
   - |
     配置生成入口不得静默写入固定目录。生成 `LDVH-GOVERNED-PROJECTS.yaml` 前必须让 Human 至少在工作区根目录、用户级 LDVH 配置目录、当前项目根目录三类位置中选择；当前推荐候选仍是工作区根目录。
@@ -48,7 +48,7 @@ related_docs:
   - specs/10-安装与配置规范.md
   - specs/attachments/10.Att.01-管辖项目配置字段表.md
   - specs/20-Spark-火花.md
-  - specs/30-LDVH安装初始化管辖项目配置行动模板.md
+  - specs/30-安装配置与验证行动模板.md
 human_gate_records:
   - at: '2026-07-02T18:13:58+08:00'
     decision: create_spark_only

@@ -217,6 +217,7 @@ def _run_shim(ldvh_root: Path, payload: dict[str, Any]) -> dict[str, Any]:
         }
     env = dict(os.environ)
     env["LDVH_ROOT"] = ldvh_root.as_posix()
+    env["LDVH_HOOK_SPARK_CAPTURE"] = "0"
     try:
         completed = subprocess.run(
             [sys.executable, shim.as_posix()],
@@ -328,6 +329,7 @@ def _verify_environment(
     environment_name: str,
     governance_root: Path | None = None,
 ) -> dict[str, Any]:
+    runtime_protocol = ldvh_root / "hooks/LDVH-RUNTIME-PROTOCOL.md"
     if not _is_codex_environment(environment_name):
         return {
             "summary": {
@@ -344,19 +346,48 @@ def _verify_environment(
                 "post_install_smoke_check_recommended": False,
                 "blocking": 0,
             },
+            "access_modes": {
+                "plugin_hook": {
+                    "available": False,
+                    "verified": False,
+                    "integrated": False,
+                    "verification_method": "not_run",
+                    "real_hook_observed": False,
+                    "user_status": "目标环境插件入口未实装；未验证真实自动 Hook。",
+                    "reason": "当前统一验收入口没有目标环境插件 / 扩展包实装证据。",
+                },
+                "thin_reference": {
+                    "available": runtime_protocol.is_file(),
+                    "verified": runtime_protocol.is_file(),
+                    "integrated": False,
+                    "verification_method": "runtime_protocol_read",
+                    "real_hook_observed": False,
+                    "user_status": "薄引用入口可读；这不是自动 Hook。",
+                    "reason": "薄引用只证明 Runtime Protocol 可读，不声明自动 Hook integrated。",
+                },
+            },
+            "impact_matrix": [
+                {
+                    "access_mode": "thin_reference",
+                    "trigger": "Runtime Protocol read",
+                    "expected_result": "AI 可读取统一入口并转入 runtime adapter / manual entrypoint",
+                    "observed": runtime_protocol.is_file(),
+                    "writes": False,
+                }
+            ],
             "audit": {},
             "shim_direct_tests": _not_run_shim_tests(
                 "当前统一验收入口只内置 Codex 样例 shim 直测；目标环境需要对应插件 / 扩展包实装后再验收。"
             ),
             "human_acceptance": {
                 "required": True,
-                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据；目标环境没有自动 Hook 入口时，仍按 30 交还薄引用 / manual entrypoint，并继续断点后 lifecycle 验证。",
+                "reason": f"{environment_name} 目标环境尚无当前验收入口可识别的 LDVH 插件 / 扩展包实装、授权、payload、失败处理和回滚证据；目标环境没有自动 Hook 入口时，仍按 30 交还薄引用 / manual entrypoint，并继续断点后 LDVH 影响验证。",
                 "steps": [
                     f"先确认 {environment_name} 是否支持插件 / 扩展包 / package 形态的 Hook 入口。",
-                    "若支持 Hook，必须先实装目标环境插件 / 扩展包并让安装检测通过；写入完成后按 30 的断点恢复协议继续 lifecycle 验证。",
+                    "若支持 Hook，必须先实装目标环境插件 / 扩展包并让安装检测通过；写入完成后按 30 的断点恢复协议继续 LDVH 影响验证。",
                     "若 01 或环境审计确认没有自动 Hook 入口，按 specs/10-安装与配置规范.md 选择薄引用 / manual entrypoint 承接，并按 specs/30 的交互外壳交还恢复入口。",
                     "薄引用 / manual entrypoint 承接必须基于 hooks/LDVH-RUNTIME-PROTOCOL.md 生成已替换 LDVH 本体绝对路径的薄引用文本，给出可复制内容和写入路径，不得只列承接形态表。",
-                    "薄引用 / manual entrypoint 承接不得声明环境自动接入已完成；断点后验证仍按 30 的统一 lifecycle 验证执行。",
+                    "薄引用 / manual entrypoint 承接不得声明环境自动接入已完成；断点后验证仍按 30 的统一 LDVH 影响验证执行。",
                 ],
                 "acceptance_criteria": [
                     "目标环境支持 Hook 时，必须能提供插件 / 扩展包实装、入口指向、授权、payload、失败处理和回滚证据。",
@@ -452,6 +483,61 @@ def _verify_environment(
             and _shim_tests_passed(shim_tests)
         )
     )
+    thin_reference_available = runtime_protocol.is_file()
+    access_modes = {
+        "plugin_hook": {
+            "available": _codex_plugin_install_detected(codex_plugin),
+            "verified": environment_install_verified,
+            "integrated": environment_integrated,
+            "verification_method": "repo_local_shim_direct_test",
+            "real_hook_observed": environment_integrated,
+            "user_status": "插件入口可见，shim 直测通过；未观察到真实自动 Hook integrated。"
+            if environment_install_verified and not environment_integrated
+            else "真实自动 Hook integrated 已验证。"
+            if environment_integrated
+            else "插件入口未完成安装检测。",
+            "reason": "插件 manifest、必需 lifecycle 事件和 repo-local shim 直测可见；真实自动触发仍按 01 integrated 规则另行判断。",
+        },
+        "thin_reference": {
+            "available": thin_reference_available,
+            "verified": thin_reference_available,
+            "integrated": False,
+            "verification_method": "runtime_protocol_read",
+            "real_hook_observed": False,
+            "user_status": "薄引用入口可读；这不是自动 Hook。",
+            "reason": "薄引用只证明 Runtime Protocol 可读，不声明自动 Hook integrated。",
+        },
+    }
+    impact_matrix = [
+        {
+            "access_mode": "plugin_hook",
+            "trigger": "SessionStart",
+            "expected_result": "输出 LDVH read plan / additionalContext",
+            "observed": shim_tests["session_start_direct"]["status"] == "passed",
+            "writes": False,
+        },
+        {
+            "access_mode": "plugin_hook",
+            "trigger": "PreToolUse write-class tool",
+            "expected_result": "对受管目标写入前检查给出 deny / reason",
+            "observed": shim_tests["pre_tool_use_direct_block"]["status"] == "passed",
+            "writes": False,
+        },
+        {
+            "access_mode": "plugin_hook",
+            "trigger": "Stop",
+            "expected_result": "输出完成检查提示且不阻断停止",
+            "observed": shim_tests["completion_claim_direct_nonblocking"]["status"] == "passed",
+            "writes": False,
+        },
+        {
+            "access_mode": "thin_reference",
+            "trigger": "Runtime Protocol read",
+            "expected_result": "AI 可读取统一入口并转入 runtime adapter / manual entrypoint",
+            "observed": thin_reference_available,
+            "writes": False,
+        },
+    ]
     human_acceptance_required = not environment_install_verified
     post_install_smoke_check_recommended = environment_install_verified and not environment_integrated
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})
@@ -473,6 +559,8 @@ def _verify_environment(
             "post_install_smoke_check_recommended": post_install_smoke_check_recommended,
             "blocking": blocking,
         },
+        "access_modes": access_modes,
+        "impact_matrix": impact_matrix,
         "audit": audit,
         "shim_direct_tests": shim_tests,
         "human_acceptance": {
@@ -487,7 +575,7 @@ def _verify_environment(
                 f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
                 f"新开一个 {environment_name} 窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表。",
                 "触发一次受控写入类工具，确认写入前检查负例会阻断，正例会放行。",
-                "如需确认 lifecycle 生效，按 specs/10-安装与配置规范.md 的验证契约和 specs/30 的断点恢复话术继续验证。",
+                "如需确认 LDVH 影响生效，按 specs/10-安装与配置规范.md 的验证契约和 specs/30 的断点恢复话术继续验证。",
                 "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
                 "失败时返回插件页面结果、错误文本、截图或本命令 JSON 输出。",
             ],
@@ -556,6 +644,33 @@ def build_install_verification(
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})
     git_ok = bool(git_results) and all(result["summary"]["status"] == "ok" for result in git_results)
     install_complete = git_ok and environment_install_verified and blocking == 0
+    impact_access_modes = environment.get("access_modes", {})
+    impact_access_verified = any(
+        bool(mode.get("verified"))
+        for mode in impact_access_modes.values()
+        if isinstance(mode, dict)
+    )
+    plugin_mode = impact_access_modes.get("plugin_hook", {})
+    thin_mode = impact_access_modes.get("thin_reference", {})
+    real_hook_observed = bool(plugin_mode.get("real_hook_observed"))
+    if real_hook_observed:
+        verification_mode = "真实自动 Hook integrated 验证"
+    elif bool(plugin_mode.get("verified")) and bool(thin_mode.get("verified")):
+        verification_mode = "安装检测直测 + 薄引用可读"
+    elif bool(thin_mode.get("verified")):
+        verification_mode = "薄引用可读"
+    elif bool(plugin_mode.get("verified")):
+        verification_mode = "安装检测直测"
+    else:
+        verification_mode = "未验证"
+    side_effects = {
+        "formal_fact_source_writes": False,
+        "spark_0046_writes": False,
+        "scratch_writes": False,
+        "scratch_writes_cleaned": True,
+        "note": "install_verification.py 默认只读；repo-local shim 直测强制 LDVH_HOOK_SPARK_CAPTURE=0。",
+    }
+    impact_verified = git_ok and impact_access_verified and blocking == 0
     result = {
         "metadata": {
             "read_only": True,
@@ -572,12 +687,31 @@ def build_install_verification(
             "projects": len(projects),
             "governed_config_ok": not config_diagnostics,
             "git_hooks_ok": git_ok,
+            "ldvh_impact_verified": impact_verified,
             "environment_hook_install_verified": environment_install_verified,
             "environment_hook_integrated": environment_integrated,
+            "ldvh_impact_integrated": environment_integrated,
             "environment_human_acceptance_required": environment["summary"]["human_acceptance_required"],
             "environment_user_smoke_check_recommended": environment["summary"]["post_install_smoke_check_recommended"],
             "blocking": blocking,
             "diagnostics": len(diagnostics),
+        },
+        "ldvh_impact": {
+            "verified": impact_verified,
+            "integrated": environment_integrated,
+            "verification_mode": verification_mode,
+            "real_hook_observed": real_hook_observed,
+            "human_conclusion": {
+                "result": "本次验证通过" if impact_verified else "本次验证未通过",
+                "verified_as": verification_mode,
+                "not_claimed": []
+                if real_hook_observed
+                else ["未声明真实自动 Hook integrated"],
+            },
+            "access_modes": impact_access_modes,
+            "effects": environment.get("impact_matrix", []),
+            "side_effects": side_effects,
+            "verification_scope": "当前输出只声明本次可复跑检查结果；不写成长效事实状态。",
         },
         "governed_config": governed_config,
         "git_hooks": git_results,
@@ -585,7 +719,7 @@ def build_install_verification(
         "diagnostics": diagnostics,
         "source_refs": [
             {"path": "specs/10-安装与配置规范.md", "role": "install_config_contract"},
-            {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "install_interaction_handoff"},
+            {"path": "specs/30-安装配置与验证行动模板.md", "role": "install_interaction_handoff"},
             {"path": "code/governed_hook_adapter.py", "role": "git_hook_status_backend"},
             {"path": "code/environment_entry_audit.py", "role": "environment_hook_audit"},
             {"path": "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py", "role": "environment_shim_direct_test"},
@@ -617,7 +751,7 @@ def _environment_user_status(env_summary: dict[str, Any]) -> str:
     if env_summary.get("environment_integrated"):
         return "已自动接入"
     if env_summary.get("install_verified"):
-        return "入口已检测，断点后验证"
+        return "直测通过，真实 Hook 未验证"
     return "需安装 / 需升级"
 
 
@@ -626,9 +760,12 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
     env = result["environment"]
     env_summary = env["summary"]
     environment_name = env_summary["environment_name"]
+    impact = result.get("ldvh_impact", {})
     git_status = _git_hook_user_status(result["git_hooks"])
     env_status = _environment_user_status(env_summary)
     visible_probe_command = env.get("human_acceptance", {}).get("visible_probe_command", "")
+    verification_mode = str(impact.get("verification_mode") or "未验证")
+    real_hook_observed = bool(impact.get("real_hook_observed"))
 
     if summary["blocking"]:
         install_status = "阻断"
@@ -637,8 +774,8 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         install_status = "是"
         if env_status == "已自动接入":
             next_step = "可停止；保留验证输出作为交还证据"
-        elif env_status == "入口已检测，断点后验证":
-            next_step = "继续 30 断点后 lifecycle 验证"
+        elif env_status == "直测通过，真实 Hook 未验证":
+            next_step = "当前验证通过；如要声明自动 Hook integrated，按 30 继续断点后真实触发验证"
         else:
             next_step = "交还当前状态和残留限制"
     else:
@@ -650,13 +787,13 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         else:
             next_step = "先安装、升级或授权目标环境插件"
 
-    if env_status == "入口已检测，断点后验证":
+    if env_status == "直测通过，真实 Hook 未验证":
         user_next_steps = [
             f"打开 {environment_name} 插件页面 / 扩展页面 / 插件管理器。",
             "重启 App 或重载插件宿主后确认插件仍启用且无错误。",
             "完成授权 / trust；没有授权提示时记录无待处理授权。",
             f"新开 {environment_name} 窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表。",
-            "需要确认 lifecycle 生效时，按 30 恢复入口继续断点后验证。",
+            "需要确认 LDVH 影响生效时，按 30 恢复入口继续断点后验证。",
         ]
     elif env_status == "薄引用 / manual entrypoint":
         user_next_steps = [
@@ -678,27 +815,38 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "仍失败时复制失败信息包交给 AI 诊断。",
         ]
 
+    impact_status_blocks = [
+        {
+            "name": "Runtime 入口与 LDVH 影响验证",
+            "status": env_status,
+            "normal": "当前检测为已自动接入时无需处理；否则写入完成后按 30 恢复入口继续 LDVH 影响验证。",
+            "next_step": next_step if env_status != "已自动接入" else "无需断点后验证。",
+        },
+        {
+            "name": "提交消息检查",
+            "status": git_status,
+            "normal": "每个管辖项目 Git commit-msg Hook 已安装、managed、正例放行、反例阻断。",
+            "next_step": "失败项目先安装或修复 Git Hook。" if git_status != "通过" else "无需处理。",
+        },
+    ]
     return {
         "status_card": [
             {"item": "安装完成", "value": install_status},
-            {"item": "环境自动拦截", "value": env_status},
+            {"item": "本次验证方式", "value": verification_mode},
+            {"item": "真实自动 Hook", "value": "已验证 integrated" if real_hook_observed else "未验证 integrated"},
+            {"item": "Runtime 入口", "value": env_status},
             {"item": "提交消息检查", "value": git_status},
             {"item": "下一步", "value": next_step},
         ],
-        "hook_status_blocks": [
-            {
-                "name": "环境自动拦截",
-                "status": env_status,
-                "normal": "当前检测为已自动接入时无需处理；否则写入完成后按 30 恢复入口继续 lifecycle 验证。",
-                "next_step": next_step if env_status != "已自动接入" else "无需断点后验证。",
-            },
-            {
-                "name": "提交消息检查",
-                "status": git_status,
-                "normal": "每个管辖项目 Git commit-msg Hook 已安装、managed、正例放行、反例阻断。",
-                "next_step": "失败项目先安装或修复 Git Hook。" if git_status != "通过" else "无需处理。",
-            },
+        "plain_conclusion": [
+            "本次验证通过。" if result["summary"].get("ldvh_impact_verified") else "本次验证未通过。",
+            f"本次是在“{verification_mode}”下完成，不等于已经打开或观察到真实自动 Hook。"
+            if not real_hook_observed
+            else "本次已观察到真实自动 Hook integrated。",
+            "薄引用入口可读；它可以验证 LDVH 影响，但不是自动 Hook。",
         ],
+        "impact_status_blocks": impact_status_blocks,
+        "hook_status_blocks": impact_status_blocks,
         "user_next_steps": user_next_steps,
         "visible_probe_command": visible_probe_command,
         "failure_info_package": [
@@ -723,10 +871,15 @@ def _print_text(result: dict[str, Any]) -> None:
         print("\nUser-facing status:")
         for row in status_card:
             print(f"- {row['item']}: {row['value']}")
-    hook_blocks = handoff.get("hook_status_blocks", [])
-    if hook_blocks:
-        print("\nHook status blocks:")
-        for block in hook_blocks:
+    plain_conclusion = handoff.get("plain_conclusion", [])
+    if plain_conclusion:
+        print("\nPlain conclusion:")
+        for item in plain_conclusion:
+            print(f"- {item}")
+    impact_blocks = handoff.get("impact_status_blocks") or handoff.get("hook_status_blocks", [])
+    if impact_blocks:
+        print("\nLDVH impact status blocks:")
+        for block in impact_blocks:
             print(f"- {block['name']}: {block['status']}")
             print(f"  normal: {block['normal']}")
             print(f"  next: {block['next_step']}")
@@ -751,6 +904,10 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- install_complete: {summary['install_complete']}")
     print(f"- governed_config_ok: {summary['governed_config_ok']}")
     print(f"- git_hooks_ok: {summary['git_hooks_ok']}")
+    print(f"- ldvh_impact_verified: {summary['ldvh_impact_verified']}")
+    print(f"- ldvh_impact_integrated: {summary['ldvh_impact_integrated']}")
+    print(f"- ldvh_impact_verification_mode: {result.get('ldvh_impact', {}).get('verification_mode', '')}")
+    print(f"- real_hook_observed: {result.get('ldvh_impact', {}).get('real_hook_observed', False)}")
     print(f"- environment_hook_install_verified: {summary['environment_hook_install_verified']}")
     print(f"- environment_hook_integrated: {summary['environment_hook_integrated']}")
     print(f"- environment_human_acceptance_required: {summary['environment_human_acceptance_required']}")
@@ -771,7 +928,7 @@ def _print_text(result: dict[str, Any]) -> None:
 
     env = result["environment"]
     env_summary = env["summary"]
-    print("\nEnvironment Hook:")
+    print("\nLDVH impact:")
     print(f"- environment_name: {env_summary['environment_name']}")
     print(f"- environment_adapter: {env_summary['environment_adapter']}")
     print(f"- target_environment_supported: {env_summary['target_environment_supported']}")
@@ -779,6 +936,21 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- plugin_decision: {env_summary['plugin_decision']}")
     print(f"- install_verified: {env_summary['install_verified']}")
     print(f"- environment_integrated: {env_summary['environment_integrated']}")
+    impact = result.get("ldvh_impact", {})
+    effects = impact.get("effects", [])
+    if effects:
+        access_modes = impact.get("access_modes", {})
+        if access_modes:
+            print("- access_modes:")
+            for mode_name, mode in access_modes.items():
+                if isinstance(mode, dict):
+                    print(f"  - {mode_name}: {mode.get('user_status', '')}")
+        print("- effects:")
+        for effect in effects:
+            print(
+                f"  - {effect['access_mode']} / {effect['trigger']}: "
+                f"observed={_mark(bool(effect['observed']))}, writes={effect['writes']}"
+            )
     print("- shim_direct_tests:")
     for test_name, test_result in env["shim_direct_tests"].items():
         print(f"  - {test_name}: {test_result['status']} (returncode={test_result['returncode']})")

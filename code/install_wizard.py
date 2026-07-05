@@ -334,7 +334,7 @@ def _interaction_handoff(
         unverifiable.append("真实 lifecycle、授权 / trust、payload 或失败处理证据需要 Human 断点后验证。")
 
     return {
-        "template": "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "template": "specs/30-安装配置与验证行动模板.md",
         "machine_contract": "specs/10-安装与配置规范.md",
         "command": command,
         "status": status,

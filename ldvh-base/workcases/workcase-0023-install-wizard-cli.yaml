@@ -2,7 +2,7 @@ id: workcase-0023
 type: workcase
 title: 10 安装与配置规范及安装 CLI 接管
 goal: |
-  将 LDVH 安装、初始化、管辖项目配置和断点后验证中的机器可消费规则，从 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 迁入 `specs/10-安装与配置规范.md`，让安装更多依靠 Code / CLI 的 check、plan、apply 和 verify，而不是依赖 AI 每次临场理解长行动模板。
+  将 LDVH 安装、初始化、管辖项目配置和断点后验证中的机器可消费规则，从 `specs/30-安装配置与验证行动模板.md` 迁入 `specs/10-安装与配置规范.md`，让安装更多依靠 Code / CLI 的 check、plan、apply 和 verify，而不是依赖 AI 每次临场理解长行动模板。
 
   目标架构是：10 负责安装与配置的机器契约；01 继续负责环境入口分类和 integrated 判定；07/Code 负责确定性实现；09 负责验证；30 继续作为 3x 正式行动模板，负责 Human-facing 五阶段编排、告知清单、最终确认、异常交还、断点恢复和缺口分流。CLI 不替代 30，30 也不得作为机器规则源。
 status: human_closure_confirming
@@ -43,7 +43,7 @@ source: |
   - “按你建议推进”
 
   相关既有材料：
-  - `specs/30-LDVH安装初始化管辖项目配置行动模板.md`
+  - `specs/30-安装配置与验证行动模板.md`
   - `specs/01-保障与衔接.md`
   - `specs/06-行动模板基础规范.md`
   - `specs/07-Code确定性执行规范.md`
@@ -61,7 +61,7 @@ orchestration:
       role: requirements-boundary
       mode: single
       input_refs:
-        - specs/30-LDVH安装初始化管辖项目配置行动模板.md
+        - specs/30-安装配置与验证行动模板.md
         - specs/06-行动模板基础规范.md
         - code/docs/03-LDVH-Install-Wizard-Practice.md
       expected_output: |
@@ -232,7 +232,7 @@ related_workcases:
 related_adrs: []
 related_pitfalls: []
 related_docs:
-  - specs/30-LDVH安装初始化管辖项目配置行动模板.md
+  - specs/30-安装配置与验证行动模板.md
   - specs/01-保障与衔接.md
   - specs/06-行动模板基础规范.md
   - specs/07-Code确定性执行规范.md

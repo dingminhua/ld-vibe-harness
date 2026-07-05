@@ -34,7 +34,7 @@ SHORT_SPEC_REFS = {
     "08": "specs/08-Web信息同步规范.md",
     "09": "specs/09-测试与验证规范.md",
     "10": "specs/10-安装与配置规范.md",
-    "30": "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+    "30": "specs/30-安装配置与验证行动模板.md",
     "31": "specs/31-Git提交行动模板.md",
     "20": "specs/20-Spark-火花.md",
     "21": "specs/21-WorkCase-工作项.md",
@@ -66,7 +66,7 @@ PREFLIGHT_TYPE_READ_PATHS = {
         "specs/07-Code确定性执行规范.md",
     ],
     "acceptance_scratch": [
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "code/docs/02-Environment-Plugin-Practice.md",
     ],
 }
@@ -3210,7 +3210,7 @@ def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]
                 "error",
                 "LDVH_INSTALL_ACTION_TEMPLATE_MISSING",
                 path,
-                "30 缺少 LDVH 安装、初始化与管辖项目配置行动模板结构表",
+                "30 缺少 安装、配置与验证行动模板结构表",
             )
         ]
 
@@ -3226,7 +3226,7 @@ def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]
                     "error",
                     "LDVH_INSTALL_ACTION_TEMPLATE_ROW_MISSING",
                     path,
-                    f"LDVH 安装初始化配置行动模板缺少结构: {structure}",
+                    f"安装配置与验证行动模板缺少结构: {structure}",
                 )
             )
             continue
@@ -3248,7 +3248,7 @@ def validate_ldvh_install_action_template(root: Path = ROOT) -> list[Diagnostic]
                 "error",
                 "LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_MISSING",
                 path,
-                f"LDVH 安装初始化配置行动模板缺少边界声明: {term}",
+                f"安装配置与验证行动模板缺少边界声明: {term}",
             )
         )
 
@@ -3552,7 +3552,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/04-Specs基础规范.md", "role": "specs_structure"},
             {"path": "specs/05-事实模型基础规范.md", "role": "fact_model_foundation"},
             {"path": "specs/06-行动模板基础规范.md", "role": "action_template_foundation"},
-            {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "ldvh_install_action_template"},
+            {"path": "specs/30-安装配置与验证行动模板.md", "role": "ldvh_install_action_template"},
             {"path": "specs/31-Git提交行动模板.md", "role": "git_commit_action_template"},
             {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
             {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},

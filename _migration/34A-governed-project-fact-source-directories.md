@@ -16,7 +16,7 @@ Human 指出：被管辖项目需要创建 `ldvh-base/`，并且 AI 必须向用
 本阶段同步：
 
 1. `specs/10-安装与配置规范.md`：补充管辖项目 `ldvh-base/` 五个子目录的用途、不得替代边界、Human Gate 和验证要求；
-2. `specs/30-LDVH安装初始化管辖项目配置行动模板.md`：把事实源目录用途纳入用户告知清单、Context、Gate、执行、验证、回写和交还；
+2. `specs/30-安装配置与验证行动模板.md`：把事实源目录用途纳入用户告知清单、Context、Gate、执行、验证、回写和交还；
 3. `code/ldvh_specs.py`：让 specs validator 消费 `ldvh-base/` 五个子目录和用途说明，防止后续再次漏写；
 4. `specs/attachments/03.Att.01-Commit-Message契约字段表.md` 与 `specs/24-Study-研究报告.md`：取消旧项目材料目录 scope 和 Study 临时材料边界口径；
 5. `reviews/formal/03.Att.01-formal-review.yaml`、`reviews/formal/10-formal-review.yaml`、`reviews/formal/24-formal-review.yaml` 与 `reviews/formal/30-formal-review.yaml`：同步 hash 和验证记录。

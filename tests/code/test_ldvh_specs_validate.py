@@ -112,7 +112,7 @@ def test_foundation_specs_contracts_are_code_consumable(validation_result: dict)
 def test_readme_indexes_action_template_specs() -> None:
     raw = (ROOT / "README.md").read_text(encoding="utf-8")
 
-    assert "`30`：LDVH 安装初始化管辖项目配置行动模板" in raw
+    assert "`30`：安装配置与验证行动模板" in raw
     assert "`31`：Git 提交行动模板" in raw
     assert "`31`：环境 Hook 接入后验收行动模板" not in raw
 
@@ -247,7 +247,7 @@ def test_spec_relation_must_use_authorized_closed_set(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         '  relation: "refines"\n',
         '  relation: "action_template_member"\n',
     )
@@ -1169,7 +1169,7 @@ def test_action_template_foundation_reports_missing_concrete_example_boundary(tm
 
 def test_ldvh_install_action_template_is_code_consumable(validation_result: dict) -> None:
     result = validation_result
-    raw = (ROOT / "specs/30-LDVH安装初始化管辖项目配置行动模板.md").read_text(encoding="utf-8")
+    raw = (ROOT / "specs/30-安装配置与验证行动模板.md").read_text(encoding="utf-8")
     rows = {row["结构"]: row["最小要求"] for row in result["ldvh_install_action_template"]}
     contract = result["ldvh_install_spec_contract"]
 
@@ -1214,7 +1214,7 @@ def test_ldvh_install_action_template_is_code_consumable(validation_result: dict
 
 
 def test_ldvh_install_action_template_defines_action_stage_contract(validation_result: dict) -> None:
-    raw = (ROOT / "specs/30-LDVH安装初始化管辖项目配置行动模板.md").read_text(encoding="utf-8")
+    raw = (ROOT / "specs/30-安装配置与验证行动模板.md").read_text(encoding="utf-8")
 
     assert "安装行动阶段与 Human Gate" in raw
     assert "行动阶段与交互边界" in raw
@@ -1275,7 +1275,7 @@ def test_ldvh_install_action_template_reports_missing_code_consumption(tmp_path:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         '    - "install_user_disclosure_checklist"\n',
     )
 
@@ -1289,7 +1289,7 @@ def test_ldvh_install_action_template_reports_unsupported_code_consumption(tmp_p
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         '    - "stop_conditions"\n',
         '    - "stop_conditions"\n    - "phantom_install_capability"\n',
     )
@@ -1304,7 +1304,7 @@ def test_ldvh_install_action_template_reports_missing_target_workspace_gate(tmp_
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "、目标工作区根目录",
     )
 
@@ -1318,7 +1318,7 @@ def test_ldvh_install_action_template_reports_missing_bootstrap_discovery(tmp_pa
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "bootstrap discovery",
         "",
     )
@@ -1333,7 +1333,7 @@ def test_ldvh_install_action_template_reports_missing_plugin_boundary(tmp_path: 
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "不直接写入用户环境 Hook 系统文件",
     )
 
@@ -1346,7 +1346,7 @@ def test_ldvh_install_action_template_reports_missing_cli_does_not_replace_templ
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "CLI 不替代本文",
         "CLI 已替代本文",
     )
@@ -1361,7 +1361,7 @@ def test_ldvh_install_action_template_reports_missing_second_rule_source_boundar
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "不得复制 CLI、10、01 或 07 的机器规则形成第二规则源",
         "可以按需要复制机器规则",
     )
@@ -1376,7 +1376,7 @@ def test_ldvh_install_action_template_reports_missing_unsupported_config_locatio
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "项目内 / 用户级 / LDVH 本体目录边界",
         "",
     )
@@ -1391,7 +1391,7 @@ def test_ldvh_install_action_template_reports_missing_workspace_config_location(
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "管辖项目配置位置",
         "配置文件位置可在执行时说明",
     )
@@ -1406,7 +1406,7 @@ def test_ldvh_install_action_template_reports_missing_action_stage_boundary(tmp_
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "不得新增安装运行时状态闭集",
         "可以按安装过程新增临时状态闭集",
     )
@@ -1421,7 +1421,7 @@ def test_ldvh_install_action_template_reports_missing_internal_summary_boundary(
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "内部摘要检查",
         "步骤摘要",
     )
@@ -1436,7 +1436,7 @@ def test_ldvh_install_action_template_reports_missing_final_confirmation_boundar
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "最终确认前",
         "执行前",
     )
@@ -1451,7 +1451,7 @@ def test_ldvh_install_action_template_reports_ambiguous_preview_execution_bounda
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "该选择不是执行授权",
         "该选择可作为执行授权",
     )
@@ -1466,7 +1466,7 @@ def test_ldvh_install_action_template_reports_missing_environment_specific_promp
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "环境 Hook 或插件提示必须按当前目标环境命名",
         "环境 Hook 或插件提示可以沿用当前示例环境名称",
     )
@@ -1481,7 +1481,7 @@ def test_ldvh_install_action_template_reports_missing_runtime_adapter_rule(tmp_p
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "运行时入口",
         "运行时适配器",
     )
@@ -1496,7 +1496,7 @@ def test_ldvh_install_action_template_reports_missing_plugin_acceptance_standard
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "安装检测通过",
         "验收判断",
     )
@@ -1511,7 +1511,7 @@ def test_ldvh_install_action_template_reports_missing_unified_flow_boundary(tmp_
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "30 不按“支持 Hook / 不支持 Hook”拆成两套写入完成流程",
         "可以按 Hook 支持能力拆成两套写入完成流程",
     )
@@ -1526,7 +1526,7 @@ def test_ldvh_install_action_template_reports_missing_breakpoint_recovery_bounda
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "断点恢复协议",
         "恢复流程",
     )
@@ -1541,7 +1541,7 @@ def test_ldvh_install_action_template_reports_missing_breakpoint_recovery_protoc
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "断点恢复协议",
         "恢复说明",
     )
@@ -1556,7 +1556,7 @@ def test_ldvh_install_action_template_reports_missing_wizard_subsection_boundary
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "用户告知、用户选择与检查事实",
         "用户提示",
     )
@@ -1571,7 +1571,7 @@ def test_ldvh_install_action_template_reports_missing_disclosure_handoff_timing(
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "用户告知清单必须作为 4/5 安装方案预览的必含内容交给 Human 确认",
         "用户告知清单在执行前说明",
     )
@@ -2237,7 +2237,7 @@ def test_preflight_acceptance_scratch_target_is_diagnostic_clear(validation_resu
     assert preflight["diagnostics"] == []
     read_paths = {item["path"] for item in preflight["required_read_plan"]}
     assert {
-        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "specs/30-安装配置与验证行动模板.md",
         "code/docs/02-Environment-Plugin-Practice.md",
     }.issubset(read_paths)
 

@@ -1,6 +1,6 @@
 # 环境插件与 Hook 接入实现实践
 
-本文是 Code 实现域文档，承接 `specs/01-保障与衔接.md` §6、`specs/04-Specs基础规范.md` 的状态归口原则、`specs/10-安装与配置规范.md` 的安装与配置机器契约、`specs/06-行动模板基础规范.md` 的行动模板父层边界、`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的 Human-facing 安装行动编排边界、`specs/07-Code确定性执行规范.md` 和 `specs/09-测试与验证规范.md`。本文不定义新的规则源、事实源、Human Gate、环境入口判定分类或管辖项目配置契约；若与 specs 冲突，以 specs 为准。
+本文是 Code 实现域文档，承接 `specs/01-保障与衔接.md` §6、`specs/04-Specs基础规范.md` 的状态归口原则、`specs/10-安装与配置规范.md` 的安装与配置机器契约、`specs/06-行动模板基础规范.md` 的行动模板父层边界、`specs/30-安装配置与验证行动模板.md` 的 Human-facing 安装行动编排边界、`specs/07-Code确定性执行规范.md` 和 `specs/09-测试与验证规范.md`。本文不定义新的规则源、事实源、Human Gate、环境入口判定分类或管辖项目配置契约；若与 specs 冲突，以 specs 为准。
 
 本文只处理环境 Hook 的插件化实现实践。Git `commit-msg` shim 和外部管辖项目 Git Hook 实践见 `code/docs/01-Git-Commit-and-Hook-Practice.md`。
 
@@ -8,7 +8,7 @@
 
 所有支持 Hook 的协作环境，都应通过对应 LDVH 插件、扩展包或 package 安装环境 Hook。正式接入不直接写入环境 Hook 系统文件；直接写入环境 Hook 系统文件只能作为调试、探针或迁移验证，不得作为正式接入形态。
 
-目标环境确认不支持自动 Hook 时，不另开独立验收模板，也不称为 integrated。该情况由 01、`01.Att.03`、`01.Att.04` 和环境审计结果判定，`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 统一组织写入完成后的断点恢复与 lifecycle 验证：AI 可以交还 `repo instruction`、`manual entrypoint`、`thin reference` 或外部 adapter 候选承接形态，但验证目标仍是 Runtime Protocol 汇聚到 `code/runtime_adapter.py` 并在真实工作流里产出 receipt。
+目标环境确认不支持自动 Hook 时，不另开独立验收模板，也不称为 integrated。该情况由 01、`01.Att.03`、`01.Att.04` 和环境审计结果判定，`specs/30-安装配置与验证行动模板.md` 统一组织写入完成后的断点恢复与 lifecycle 验证：AI 可以交还 `repo instruction`、`manual entrypoint`、`thin reference` 或外部 adapter 候选承接形态，但验证目标仍是 Runtime Protocol 汇聚到 `code/runtime_adapter.py` 并在真实工作流里产出 receipt。
 
 环境插件状态对用户展示时必须先翻译，不把内部字段作为主问题：
 
