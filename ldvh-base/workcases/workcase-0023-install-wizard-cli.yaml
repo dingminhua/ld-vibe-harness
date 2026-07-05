@@ -264,8 +264,11 @@ verification_evidence: |
   - 真实安装矩阵阻断路径：受管但非 Git 目录返回 `GOVERNED_HOOK_TARGET_NOT_GIT_REPO`；非管辖 repo 返回 `INSTALL_WIZARD_TARGET_NOT_GOVERNED`；未知 strategy 返回 `INSTALL_WIZARD_UNKNOWN_ENVIRONMENT_STRATEGY`。
   - 真实安装矩阵非 Hook 策略：`thin_reference` / `manual_entrypoint` 的 `planned_writes=0`、`handoff_candidates=1`；`apply --confirm-human-gate` 返回 1 且包含 `INSTALL_WIZARD_STRATEGY_APPLY_NOT_IMPLEMENTED`；未写入 `AGENTS.md`。
   - 30 模板角色校准后补充：按 06 重新确认 30 仍是 3x 正式行动模板，CLI 不替代 30；10 归口机器契约，`code/install_wizard.py` 归口确定性执行壳，30 归口 Human-facing 五阶段编排、告知清单、最终确认、断点恢复、失败信息包、验证交还和缺口分流。已新增 validator 负例保护 `CLI 不替代本文` 和 `不得复制 CLI、10、01 或 07 的机器规则形成第二规则源`。
+  - 30 可用性收口后补充：`install_wizard.py` JSON 输出新增 `interaction_handoff`，由 Code 直接交还 30 需要的只读 / Human Gate / planned writes / handoff candidates / 两类结论卡 / 下一步动作 / 不可验证范围摘要；`python3 -m pytest tests/code/test_install_wizard.py -q`：通过，12 passed。
+  - 30 可用性 smoke：临时受管 Git repo 完整运行 `plan -> apply --confirm-human-gate`；`plan interaction_handoff.status=requires_final_confirmation`，`apply interaction_handoff.status=write_completed_handoff_required`，结论卡为 `runtime_entry_lifecycle=需用户侧验证`、`commit_message_check=通过`，符合 30 断点后验证交还要求。
 closure_evidence: |
   CLI 第一版已完成真实 scratch 安装矩阵验证。矩阵验证发现并修复 `plugin_hook` plan 写入路径与实际 apply 路径不一致的问题：`planned_writes` 现在由 `install_git_hooks.planned_install_target()` 派生，包含 planned Git config 和 planned commit-msg hook，且与实际 apply 后 active hook 一致。
+  30 可用性收口已完成：`install_wizard.py` 不再只返回 raw JSON，新增稳定 `interaction_handoff`，使 30 可以直接消费 Code 归纳后的写入边界、验证交还和下一步动作。
 closure_requested_at: null
 review_requested_at: null
 closed_at: null
@@ -274,6 +277,7 @@ residual_risks:
   - CLI 第一版只实现薄 facade；`thin_reference` / `manual_entrypoint` 尚未自动写入，只生成计划和交还。
   - 30 仍作为正式行动模板保留；后续风险不是是否废弃 30，而是防止实现者把 30 误当机器规则源，或把 CLI 误当行动模板替代物。
   - 插件 UI trust、重启观察、非 Codex 环境策略仍不能由 Code 全自动证明，需要 Human Gate 或断点后验证证据。
+  - interaction_handoff 只收束当前 CLI 输出，不替代 30 的 Human-facing 编排，也不替代 10 / 01 / 07 / 09 的机器规则。
 followup_refs:
   - tests/code/test_install_wizard.py
   - code/docs/03-LDVH-Install-Wizard-Practice.md

@@ -66,6 +66,12 @@ def test_install_wizard_check_and_plan_are_read_only(tmp_path: Path) -> None:
     assert config_write["current_core_hooks_path"] == ""
     assert config_write["planned_core_hooks_path"].endswith(".git/ldvh-hooks")
     assert plan["install_plan"]["human_gate_required"] is True
+    assert plan["interaction_handoff"]["template"] == "specs/30-LDVH安装初始化管辖项目配置行动模板.md"
+    assert plan["interaction_handoff"]["status"] == "requires_final_confirmation"
+    assert plan["interaction_handoff"]["human_gate_required"] is True
+    assert plan["interaction_handoff"]["planned_writes"] == 2
+    assert plan["interaction_handoff"]["result_cards"][1]["id"] == "commit_message_check"
+    assert plan["interaction_handoff"]["result_cards"][1]["status"] == "需安装或需升级"
     assert not hook_path.exists()
 
 
@@ -87,6 +93,8 @@ def test_install_wizard_apply_requires_human_gate_and_does_not_write(tmp_path: P
 
     assert result["summary"]["status"] == "blocked"
     assert any(diagnostic["code"] == "INSTALL_WIZARD_HUMAN_GATE_REQUIRED" for diagnostic in result["diagnostics"])
+    assert result["interaction_handoff"]["status"] == "blocked"
+    assert result["interaction_handoff"]["human_gate_confirmed"] is False
     assert not hook_path.exists()
 
 
@@ -113,6 +121,11 @@ def test_install_wizard_apply_plugin_hook_uses_governed_hook_backend(tmp_path: P
     hook_status = result["apply_results"][0]["hook_status"]
     assert Path(hook_status["active_hook"]).is_file()
     assert result["verification"]["metadata"]["authority"] == "install_verification"
+    assert result["interaction_handoff"]["status"] == "write_completed_handoff_required"
+    assert result["interaction_handoff"]["human_gate_confirmed"] is True
+    assert result["interaction_handoff"]["result_cards"][0]["status"] == "需用户侧验证"
+    assert result["interaction_handoff"]["result_cards"][1]["status"] == "通过"
+    assert any("断点后 lifecycle 验证" in action for action in result["interaction_handoff"]["next_actions"])
 
 
 def test_install_wizard_blocks_non_git_repo(tmp_path: Path) -> None:
@@ -240,6 +253,9 @@ def test_install_wizard_verify_wraps_install_verification(tmp_path: Path) -> Non
 
     assert result["metadata"]["command"] == "verify"
     assert result["verification"]["metadata"]["authority"] == "install_verification"
+    assert result["interaction_handoff"]["command"] == "verify"
+    assert result["interaction_handoff"]["result_cards"][0]["id"] == "runtime_entry_lifecycle"
+    assert result["interaction_handoff"]["result_cards"][1]["id"] == "commit_message_check"
 
 
 def test_install_wizard_cli_plan_json(tmp_path: Path) -> None:
@@ -275,6 +291,42 @@ def test_install_wizard_cli_plan_json(tmp_path: Path) -> None:
 
     assert result["metadata"]["command"] == "plan"
     assert result["install_plan"]["environment_strategy"] == "plugin_hook"
+
+
+def test_install_wizard_cli_text_includes_interaction_handoff(tmp_path: Path) -> None:
+    governance_root = tmp_path / "governance"
+    repo = tmp_path / "repo"
+    governance_root.mkdir()
+    _init_git_repo(repo)
+    _write_governed_config(governance_root, repo)
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "code/install_wizard.py",
+            "plan",
+            "--governance-root",
+            governance_root.as_posix(),
+            "--ldvh-root",
+            ROOT.as_posix(),
+            "--repo",
+            repo.as_posix(),
+            "--environment-strategy",
+            "plugin_hook",
+            "--format",
+            "text",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=60,
+    )
+
+    assert "Interaction handoff:" in completed.stdout
+    assert "Runtime 入口与 lifecycle 验证" in completed.stdout
+    assert "提交消息检查" in completed.stdout
+    assert "requires_final_confirmation" in completed.stdout
 
 
 def test_install_wizard_cli_check_verify_and_apply_gate_json(tmp_path: Path) -> None:
@@ -384,6 +436,8 @@ def test_install_wizard_cli_unknown_strategy_returns_json_diagnostic(tmp_path: P
     assert completed.returncode == 1
     assert result["summary"]["status"] == "blocked"
     assert result["diagnostics"][0]["code"] == "INSTALL_WIZARD_UNKNOWN_ENVIRONMENT_STRATEGY"
+    assert result["interaction_handoff"]["status"] == "blocked"
+    assert result["interaction_handoff"]["machine_contract"] == "specs/10-安装与配置规范.md"
 
 
 def test_install_wizard_cli_apply_reports_verification_blocking_exit_nonzero(tmp_path: Path, monkeypatch, capsys) -> None:

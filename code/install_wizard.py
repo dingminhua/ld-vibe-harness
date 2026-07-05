@@ -225,6 +225,147 @@ def _skipped_writes(strategy: str) -> list[dict[str, Any]]:
     return []
 
 
+def _runtime_entry_status(verification: dict[str, Any] | None, install_plan: dict[str, Any] | None) -> str:
+    if verification:
+        summary = verification.get("summary", {})
+        if summary.get("environment_hook_integrated"):
+            return "已验证"
+        if summary.get("environment_hook_install_verified"):
+            return "断点后验证"
+        if summary.get("environment_human_acceptance_required"):
+            return "需用户侧验证"
+        return "需安装或需升级"
+    if install_plan and install_plan.get("handoff_candidates"):
+        return "薄引用 / manual entrypoint 承接"
+    return "需验证"
+
+
+def _commit_message_status(verification: dict[str, Any] | None, install_plan: dict[str, Any] | None) -> str:
+    if verification:
+        summary = verification.get("summary", {})
+        if summary.get("git_hooks_ok"):
+            return "通过"
+        if summary.get("blocking"):
+            return "阻断"
+        return "需安装或需升级"
+    if install_plan:
+        planned_git_writes = [
+            item for item in install_plan.get("planned_writes", []) if item.get("kind") == "git_commit_msg_hook"
+        ]
+        if planned_git_writes:
+            return "需安装或需升级"
+        if install_plan.get("target_projects"):
+            return "保持不变或待验证"
+    return "不适用"
+
+
+def _interaction_status(
+    *,
+    command: str,
+    summary: dict[str, Any],
+    install_plan: dict[str, Any] | None,
+    verification: dict[str, Any] | None,
+) -> str:
+    if summary.get("blocking"):
+        return "blocked"
+    if command == "plan":
+        if install_plan and install_plan.get("human_gate_required"):
+            return "requires_final_confirmation"
+        return "ready_for_handoff"
+    if command == "apply":
+        verification_status = summary.get("verification_status")
+        if verification_status == "complete":
+            return "write_completed_verified"
+        if verification_status:
+            return "write_completed_handoff_required"
+        return "write_completed"
+    if command == "verify":
+        if verification and verification.get("summary", {}).get("status") == "complete":
+            return "verified"
+        return "handoff_required"
+    return "ready"
+
+
+def _interaction_next_actions(
+    *,
+    command: str,
+    status: str,
+    install_plan: dict[str, Any] | None,
+    verification: dict[str, Any] | None,
+) -> list[str]:
+    if status == "blocked":
+        return ["修复 blocking diagnostics 后重新运行当前命令。"]
+    if command == "plan" and install_plan and install_plan.get("human_gate_required"):
+        return ["按 30 展示安装方案预览；Human 确认后运行 apply --confirm-human-gate。"]
+    if command == "apply":
+        summary = verification.get("summary", {}) if verification else {}
+        if summary.get("environment_human_acceptance_required"):
+            return [
+                "按 30 交还断点后 lifecycle 验证入口。",
+                "Human 重启 App 或新开会话后，重新运行 verify。",
+            ]
+        return ["按 30 输出写入完成总结和验证结果。"]
+    if command == "verify":
+        summary = verification.get("summary", {}) if verification else {}
+        if summary.get("environment_human_acceptance_required"):
+            return ["继续 30 断点后 lifecycle 验证；收集用户侧冒烟检查结果。"]
+        return ["按 30 输出验证总结。"]
+    return ["按 30 进入下一步。"]
+
+
+def _interaction_handoff(
+    *,
+    command: str,
+    summary: dict[str, Any],
+    install_plan: dict[str, Any] | None = None,
+    verification: dict[str, Any] | None = None,
+    human_gate_confirmed: bool | None = None,
+) -> dict[str, Any]:
+    status = _interaction_status(
+        command=command,
+        summary=summary,
+        install_plan=install_plan,
+        verification=verification,
+    )
+    unverifiable = []
+    if install_plan:
+        unverifiable = list(install_plan.get("verification", {}).get("unverifiable", []))
+    if verification and verification.get("summary", {}).get("environment_human_acceptance_required"):
+        unverifiable.append("真实 lifecycle、授权 / trust、payload 或失败处理证据需要 Human 断点后验证。")
+
+    return {
+        "template": "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "machine_contract": "specs/10-安装与配置规范.md",
+        "command": command,
+        "status": status,
+        "read_only": command in {"check", "plan", "verify"},
+        "human_gate_required": bool(install_plan.get("human_gate_required")) if install_plan else False,
+        "human_gate_confirmed": human_gate_confirmed,
+        "planned_writes": len(install_plan.get("planned_writes", [])) if install_plan else 0,
+        "handoff_candidates": len(install_plan.get("handoff_candidates", [])) if install_plan else 0,
+        "skipped_writes": len(install_plan.get("skipped_writes", [])) if install_plan else 0,
+        "result_cards": [
+            {
+                "id": "runtime_entry_lifecycle",
+                "label": "Runtime 入口与 lifecycle 验证",
+                "status": _runtime_entry_status(verification, install_plan),
+            },
+            {
+                "id": "commit_message_check",
+                "label": "提交消息检查",
+                "status": _commit_message_status(verification, install_plan),
+            },
+        ],
+        "next_actions": _interaction_next_actions(
+            command=command,
+            status=status,
+            install_plan=install_plan,
+            verification=verification,
+        ),
+        "unverifiable": unverifiable,
+    }
+
+
 def _unknown_strategy_result(
     *,
     command: str,
@@ -240,7 +381,13 @@ def _unknown_strategy_result(
         environment_strategy,
         "environment_strategy 必须是 10 允许的枚举值。",
     )
-    return {
+    summary = {
+        "status": "blocked",
+        "blocking": 1,
+        "diagnostics": 1,
+        "environment_strategy": environment_strategy,
+    }
+    result = {
         "metadata": {
             "read_only": command in {"check", "plan", "verify"},
             "authority": "install_wizard",
@@ -251,17 +398,14 @@ def _unknown_strategy_result(
             "repo": repo.resolve().as_posix(),
             "environment_name": environment_name,
         },
-        "summary": {
-            "status": "blocked",
-            "blocking": 1,
-            "diagnostics": 1,
-            "environment_strategy": environment_strategy,
-        },
+        "summary": summary,
         "diagnostics": [diagnostic],
         "source_refs": [
             {"path": "specs/10-安装与配置规范.md", "role": "environment_strategy_contract"},
         ],
     }
+    result["interaction_handoff"] = _interaction_handoff(command=command, summary=summary)
+    return result
 
 
 def build_install_check(
@@ -348,7 +492,15 @@ def build_install_check(
         )
 
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})
-    return {
+    summary = {
+        "status": "blocked" if blocking else "ok",
+        "blocking": blocking,
+        "diagnostics": len(diagnostics),
+        "governed": bool(resolution["governed"]),
+        "governed_project_id": resolution["governed_project_id"],
+        "environment_strategy": strategy,
+    }
+    result = {
         "metadata": {
             "read_only": True,
             "authority": "install_wizard",
@@ -359,14 +511,7 @@ def build_install_check(
             "repo": resolved_repo.as_posix(),
             "environment_name": environment_name,
         },
-        "summary": {
-            "status": "blocked" if blocking else "ok",
-            "blocking": blocking,
-            "diagnostics": len(diagnostics),
-            "governed": bool(resolution["governed"]),
-            "governed_project_id": resolution["governed_project_id"],
-            "environment_strategy": strategy,
-        },
+        "summary": summary,
         "governed_project": resolution,
         "target_projects": target_projects,
         "hook_status": hook_status,
@@ -381,6 +526,8 @@ def build_install_check(
             {"path": "code/environment_entry_audit.py", "role": "environment_audit"},
         ],
     }
+    result["interaction_handoff"] = _interaction_handoff(command="check", summary=summary)
+    return result
 
 
 def build_install_plan(
@@ -467,13 +614,19 @@ def build_install_plan(
         },
         "source_refs": check["source_refs"],
     }
-    return {
+    result = {
         "metadata": {**check["metadata"], "command": "plan"},
         "summary": check["summary"],
         "install_plan": plan,
         "diagnostics": check["diagnostics"],
         "source_refs": check["source_refs"],
     }
+    result["interaction_handoff"] = _interaction_handoff(
+        command="plan",
+        summary=check["summary"],
+        install_plan=plan,
+    )
+    return result
 
 
 def build_install_apply(
@@ -506,15 +659,23 @@ def build_install_apply(
         return {**unknown, "install_plan": {}, "apply_results": [], "verification": {}}
     diagnostics = list(plan["diagnostics"])
     if plan["summary"]["blocking"]:
-        return {
+        summary = {"status": "blocked", "blocking": plan["summary"]["blocking"], "diagnostics": len(diagnostics)}
+        result = {
             "metadata": {**plan["metadata"], "command": "apply", "human_gate_confirmed": confirm_human_gate},
-            "summary": {"status": "blocked", "blocking": plan["summary"]["blocking"], "diagnostics": len(diagnostics)},
+            "summary": summary,
             "install_plan": plan["install_plan"],
             "apply_results": [],
             "verification": {},
             "diagnostics": diagnostics,
             "source_refs": plan["source_refs"],
         }
+        result["interaction_handoff"] = _interaction_handoff(
+            command="apply",
+            summary=summary,
+            install_plan=plan["install_plan"],
+            human_gate_confirmed=confirm_human_gate,
+        )
+        return result
     if not confirm_human_gate:
         diagnostics.append(
             _diagnostic(
@@ -524,15 +685,23 @@ def build_install_apply(
                 "执行 apply 前必须显式提供 --confirm-human-gate。",
             )
         )
-        return {
+        summary = {"status": "blocked", "blocking": 1, "diagnostics": len(diagnostics)}
+        result = {
             "metadata": {**plan["metadata"], "command": "apply", "human_gate_confirmed": False},
-            "summary": {"status": "blocked", "blocking": 1, "diagnostics": len(diagnostics)},
+            "summary": summary,
             "install_plan": plan["install_plan"],
             "apply_results": [],
             "verification": {},
             "diagnostics": diagnostics,
             "source_refs": plan["source_refs"],
         }
+        result["interaction_handoff"] = _interaction_handoff(
+            command="apply",
+            summary=summary,
+            install_plan=plan["install_plan"],
+            human_gate_confirmed=False,
+        )
+        return result
 
     strategy = plan["install_plan"]["environment_strategy"]
     if strategy != "plugin_hook":
@@ -544,15 +713,23 @@ def build_install_apply(
                 "install_wizard v1 不自动写入薄引用或 manual entrypoint；请按 plan 交还 Human 处理。",
             )
         )
-        return {
+        summary = {"status": "blocked", "blocking": 1, "diagnostics": len(diagnostics)}
+        result = {
             "metadata": {**plan["metadata"], "command": "apply", "human_gate_confirmed": True},
-            "summary": {"status": "blocked", "blocking": 1, "diagnostics": len(diagnostics)},
+            "summary": summary,
             "install_plan": plan["install_plan"],
             "apply_results": [],
             "verification": {},
             "diagnostics": diagnostics,
             "source_refs": plan["source_refs"],
         }
+        result["interaction_handoff"] = _interaction_handoff(
+            command="apply",
+            summary=summary,
+            install_plan=plan["install_plan"],
+            human_gate_confirmed=True,
+        )
+        return result
 
     apply_results = [
         build_governed_hook_adapter(
@@ -578,20 +755,29 @@ def build_install_apply(
             diagnostics.append(diagnostic)
     blocking = sum(1 for diagnostic in diagnostics if diagnostic["level"] in {"blocking", "error"})
     status = "blocked" if blocking else "ok"
-    return {
+    summary = {
+        "status": status,
+        "blocking": blocking,
+        "diagnostics": len(diagnostics),
+        "verification_status": verification["summary"]["status"],
+    }
+    result = {
         "metadata": {**plan["metadata"], "command": "apply", "human_gate_confirmed": True},
-        "summary": {
-            "status": status,
-            "blocking": blocking,
-            "diagnostics": len(diagnostics),
-            "verification_status": verification["summary"]["status"],
-        },
+        "summary": summary,
         "install_plan": plan["install_plan"],
         "apply_results": apply_results,
         "verification": verification,
         "diagnostics": diagnostics,
         "source_refs": plan["source_refs"],
     }
+    result["interaction_handoff"] = _interaction_handoff(
+        command="apply",
+        summary=summary,
+        install_plan=plan["install_plan"],
+        verification=verification,
+        human_gate_confirmed=True,
+    )
+    return result
 
 
 def build_install_verify(
@@ -609,7 +795,7 @@ def build_install_verify(
         codex_home=codex_home,
         environment_name=environment_name,
     )
-    return {
+    result = {
         "metadata": {
             "read_only": True,
             "authority": "install_wizard",
@@ -621,6 +807,12 @@ def build_install_verify(
         "diagnostics": verification["diagnostics"],
         "source_refs": verification["source_refs"],
     }
+    result["interaction_handoff"] = _interaction_handoff(
+        command="verify",
+        summary=verification["summary"],
+        verification=verification,
+    )
+    return result
 
 
 def _print_text(result: dict[str, Any]) -> None:
@@ -637,6 +829,14 @@ def _print_text(result: dict[str, Any]) -> None:
         print(f"- handoff_candidates: {len(plan.get('handoff_candidates', []))}")
         print(f"- skipped_writes: {len(plan.get('skipped_writes', []))}")
         print(f"- human_gate_required: {plan.get('human_gate_required')}")
+    handoff = result.get("interaction_handoff")
+    if handoff:
+        print(f"- interaction_status: {handoff.get('status')}")
+        print("\nInteraction handoff:")
+        for card in handoff.get("result_cards", []):
+            print(f"- {card['label']}: {card['status']}")
+        for action in handoff.get("next_actions", []):
+            print(f"- next: {action}")
     if result.get("diagnostics"):
         print("\nDiagnostics:")
         for diagnostic in result["diagnostics"]:

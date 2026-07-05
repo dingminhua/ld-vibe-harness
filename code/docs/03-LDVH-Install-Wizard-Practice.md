@@ -161,6 +161,8 @@ V3 当前安装执行编排形态已从纯模板驱动进入 Code/CLI 薄执行�
 
 `ldvh-base/workcases/workcase-0023-install-wizard-cli.yaml` 已承接 10 安装与配置规范及安装 CLI 接管。`code/install_wizard.py` 是第一版确定性执行壳：`check` / `plan` 保持只读，`apply` 必须显式带 Human Gate，`verify` 复用统一安装验证入口；CLI 不定义新的规则源、环境入口分类、配置字段或 integrated 判断，也不替代 30 的行动模板角色。
 
+`install_wizard.py` 的 JSON 输出必须包含 `interaction_handoff`。该字段是给 30 使用的稳定交还摘要，负责把 raw diagnostics、install plan 和 verification summary 收束为：是否只读、是否需要 Human Gate、计划写入数量、薄引用 / manual entrypoint 交还数量、两类结论卡（`Runtime 入口与 lifecycle 验证`、`提交消息检查`）、下一步动作和不可验证范围。30 可以把该字段翻译成五阶段用户界面，但不得把它当成新的规则源；机器判断仍以 10、01、07、09 和具体 Code 后端输出为准。
+
 当前稳定 Code 入口分工如下：
 
 | 入口 | 分工 |
@@ -170,7 +172,7 @@ V3 当前安装执行编排形态已从纯模板驱动进入 Code/CLI 薄执行�
 | `code/governed_hook_adapter.py status` / `verify` | 只读检查每个管辖项目 Git Hook 状态和正反样例 |
 | `code/governed_hook_adapter.py install` / `uninstall --confirm-human-gate` | 在 Human Gate 后安装或回滚外部管辖项目 Git Hook |
 | `code/install_verification.py` | 写入后统一交还验收，汇总配置校验、Git Hook 正反例和环境插件 gated 状态 |
-| `code/install_wizard.py check` / `plan` / `apply --confirm-human-gate` / `verify` | 第一版安装 CLI 薄执行壳；`plugin_hook` 可安装管辖项目 Git Hook，薄引用 / manual entrypoint 只生成计划和交还 |
+| `code/install_wizard.py check` / `plan` / `apply --confirm-human-gate` / `verify` | 第一版安装 CLI 薄执行壳；`plugin_hook` 可安装管辖项目 Git Hook，薄引用 / manual entrypoint 只生成计划和交还；JSON 输出用 `interaction_handoff` 交还 30 |
 
 AI 不得把 CLI 写成无确认一键安装器，也不得在最终确认前执行写入入口。当前第一版 CLI 已承接 spec 10 的 `check -> plan -> apply -> verify`、Human Gate、外部 Git Hook Gate、回滚和 `install_verification.py` 交还要求；环境插件安装、薄引用写入、manual entrypoint 写入仍只生成计划或交还，不能声明环境 integrated。
 
