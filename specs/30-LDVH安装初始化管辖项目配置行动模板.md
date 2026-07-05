@@ -10,8 +10,8 @@ ldvh_spec:
   canonical_path: "specs/30-LDVH安装初始化管辖项目配置行动模板.md"
   parent_spec: "specs/06-行动模板基础规范.md"
   relation: "refines"
-  positioning: "定义 LDVH 安装、初始化、管辖项目配置、环境插件方案检查和用户告知清单的首个正式行动模板"
-  scope: "安装 LDVH、接入 LDVH、初始化 LDVH、确认目标工作区根目录下的管辖项目配置位置、登记管辖项目、检查旧插件旧路径、写入完成后的断点引导、lifecycle 验证和回滚信息"
+  positioning: "定义 LDVH 安装、初始化、管辖项目配置、环境插件方案检查、用户告知清单、Human-facing 编排和交还闭环的首个正式行动模板"
+  scope: "安装 LDVH、接入 LDVH、初始化 LDVH、确认目标工作区根目录下的管辖项目配置位置、登记管辖项目、组织 install_wizard.py 输出、检查旧插件旧路径、写入完成后的断点引导、lifecycle 验证和回滚信息"
   basis:
     - "specs/00-理念与构成.md"
     - "specs/01-保障与衔接.md"
@@ -64,9 +64,11 @@ ldvh_spec:
 
 ## 2. 权威依据
 
-本文承接 `specs/06-行动模板基础规范.md` 的 Context、Scenario、Gate、执行、验证、回写和交还结构。
+本文承接 `specs/06-行动模板基础规范.md` 的 Context、Scenario、Gate、执行、验证、回写和交还结构。行动模板不是规则源，也不是授权器；本文的职责是把来源规则、Code 输出、Human Gate、验证证据和交还内容组织为可复用行动路径。
 
 本文承接 `specs/01-保障与衔接.md` 的环境入口、Hook 分类、插件 / 扩展包安装口径和 integrated 声明边界；承接 `specs/10-安装与配置规范.md` 的配置事实源和 target-first 解析边界；承接 `specs/07-Code确定性执行规范.md` 和 `specs/09-测试与验证规范.md` 的实现域与验证边界。
+
+安装向导 CLI 或等价 Code facade 已出现时，本文仍保持正式行动模板角色：10 归口安装与配置的机器契约，`code/install_wizard.py` 归口确定性 `check -> plan -> apply -> verify` 执行壳，本文归口 Human-facing 五阶段编排、告知清单、最终确认、断点恢复、失败信息包、验证交还和缺口分流。CLI 不替代本文；本文也不得复制 CLI、10、01 或 07 的机器规则形成第二规则源。
 
 本文受 V3 01 的环境入口边界约束，也受 V3 01、06、10 的共同约束：01 管环境入口、06 管行动模板结构、10 管管辖项目配置契约。本文不声明 integrated；只有真实自动触发、失败可阻断、安装与接入证据可复核、回滚方式明确且验证证据齐备时，才可由对应环境入口规则判断是否 integrated。
 
@@ -78,7 +80,7 @@ ldvh_spec:
 
 本文不归口定义环境入口判定分类、Hook 安装实现、插件 manifest schema、管辖项目配置字段、Code 命令细节、Web 页面、测试框架或真实用户环境配置。环境入口边界归 01，状态归口原则归 04，Code 实现实践归 07 和 `code/docs/`，管辖项目配置契约归 10，验证声明归 09。
 
-本文可以组织“先告知、再确认、再执行、再验证、再断点恢复、再交还”的行动顺序，但不得把行动步骤写成环境入口安装授权、配置事实源契约、Code 实现细节或 integrated 状态证明。
+本文可以组织“先告知、再确认、再执行、再验证、再断点恢复、再交还”的行动顺序，也可以把 `install_wizard.py check/plan/apply/verify` 的输出翻译为 Human 可理解的安装阶段、净变化、风险和下一步；但不得把行动步骤写成环境入口安装授权、配置事实源契约、Code 实现细节、机器规则源或 integrated 状态证明。
 
 本文不得登记 Git 提交、WorkCase 推进或其它后续行动模板候选的迁入判断；跨模板候选筛选统一回到 `specs/06-行动模板基础规范.md`。
 
@@ -97,6 +99,8 @@ ldvh_spec:
 ## 5. 模板定位与来源
 
 本文是 06 之后的第一个独立正式行动模板，编号为 `30`。它不是 06 父规范的正文示范，也不是 Code 实现域文档；它是可被 AI 直接引用的行动模板成员。
+
+因此，30 的成败不取决于是否亲自执行底层安装逻辑，而取决于是否能按 06 的行动模板结构稳定组织安装行动：进入场景识别、Context 收集、Gate 与 Human Gate、五阶段交互、验证入口、回写边界、交还和断点恢复。底层确定性执行可由 `code/install_wizard.py` 承接；30 必须消费其输出并交还主控 AI 与 Human 判断。
 
 本文吸收 V2 `33-ldvh-install-action` 的安装、初始化、首次管辖项目配置和验收交还能力。V2 `32-environment-entry-adaptation` 的动态投影、部署检查和插件边界只能作为后续增强输入，不能让本文复制 32 全文、恢复 Rules/Skill 顶层机制或越过 Human Gate。
 

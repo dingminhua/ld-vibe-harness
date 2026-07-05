@@ -387,6 +387,12 @@ LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_TERMS = [
     "不声明 integrated",
     "不恢复 Rules / Skill 顶层机制",
     "V2 `32-environment-entry-adaptation`",
+    "10 归口安装与配置的机器契约",
+    "`code/install_wizard.py` 归口确定性 `check -> plan -> apply -> verify` 执行壳",
+    "CLI 不替代本文",
+    "不得复制 CLI、10、01 或 07 的机器规则形成第二规则源",
+    "Human-facing 五阶段编排",
+    "30 的成败不取决于是否亲自执行底层安装逻辑",
 ]
 LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS = {
     "install_user_disclosure_checklist": [

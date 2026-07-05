@@ -105,7 +105,7 @@ python3 code/governed_hook_adapter.py uninstall --repo "<repo>" --governance-roo
 
 该 adapter 会先按 `LDVH-GOVERNED-PROJECTS.yaml` 做 target-first / Git common-dir 解析；`install` 和 `uninstall` 必须显式带 `--confirm-human-gate`。它不会默认覆盖非管辖项目，也不表示任何外部项目已经自动接入。
 
-安装与配置规则由 `specs/10-安装与配置规范.md` 归口，安装向导 CLI 第一版入口是 `code/install_wizard.py`，由 `ldvh-base/workcases/workcase-0023-install-wizard-cli.yaml` 承接。该 CLI 只作为 10 的薄执行壳：`check` / `plan` 只读，`apply` 必须显式带 `--confirm-human-gate`，`verify` 复用 `install_verification.py`；当前 `plugin_hook` 可通过现有 `governed_hook_adapter.py` 安装管辖项目 Git Hook，`thin_reference` / `manual_entrypoint` 只生成计划并交还，不自动写入或声明 integrated。`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 仅作为 Human-facing 交互和断点恢复外壳。
+安装与配置规则由 `specs/10-安装与配置规范.md` 归口，安装向导 CLI 第一版入口是 `code/install_wizard.py`，由 `ldvh-base/workcases/workcase-0023-install-wizard-cli.yaml` 承接。该 CLI 只作为 10 的薄执行壳：`check` / `plan` 只读，`apply` 必须显式带 `--confirm-human-gate`，`verify` 复用 `install_verification.py`；当前 `plugin_hook` 可通过现有 `governed_hook_adapter.py` 安装管辖项目 Git Hook，`thin_reference` / `manual_entrypoint` 只生成计划并交还，不自动写入或声明 integrated。`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 仍是 3x 正式行动模板，负责 Human-facing 五阶段编排、告知清单、最终确认、断点恢复、失败信息包和验证交还，不作为机器规则源。
 
 统一环境接入判定检查：
 

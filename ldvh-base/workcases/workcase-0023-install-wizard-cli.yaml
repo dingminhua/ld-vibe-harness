@@ -4,7 +4,7 @@ title: 10 安装与配置规范及安装 CLI 接管
 goal: |
   将 LDVH 安装、初始化、管辖项目配置和断点后验证中的机器可消费规则，从 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 迁入 `specs/10-安装与配置规范.md`，让安装更多依靠 Code / CLI 的 check、plan、apply 和 verify，而不是依赖 AI 每次临场理解长行动模板。
 
-  目标架构是：10 负责安装与配置的机器契约；01 继续负责环境入口分类和 integrated 判定；07/Code 负责确定性实现；09 负责验证；30 降级为 Human-facing 交互外壳、异常解释和断点恢复话术，短期保留兼容，待 CLI 和测试承接后再废弃。
+  目标架构是：10 负责安装与配置的机器契约；01 继续负责环境入口分类和 integrated 判定；07/Code 负责确定性实现；09 负责验证；30 继续作为 3x 正式行动模板，负责 Human-facing 五阶段编排、告知清单、最终确认、异常交还、断点恢复和缺口分流。CLI 不替代 30，30 也不得作为机器规则源。
 status: human_closure_confirming
 created: '2026-07-05T00:00:00+08:00'
 updated: '2026-07-05T00:00:00+08:00'
@@ -14,14 +14,14 @@ description: |
 
   审核后结论：
   - 方案 A 成立：10 可扩展为 `10-安装与配置规范`，承接路径、配置、管辖项目、Git Hook、环境承接、install plan、verify 和 rollback 的机器契约。
-  - 不能直接删除或废弃 30：当前 validator、README、Code docs、install_verification 和测试仍硬引用 30；必须先双轨承接，再把 30 降级。
+  - 不能删除或废弃 30：按 06 定义，30 仍可承担行动模板角色；需要移出的是机器可消费规则源职责，而不是模板职责本身。
   - CLI 第一版应是薄 facade：复用 `ldvh_specs.py` / `specs_validate.py`、`environment_entry_audit.py`、`governed_hook_adapter.py`、`install_verification.py` 和 `runtime_adapter.py`，不复制第二套解析或环境判断逻辑。
   - 已可确定性执行的部分包括配置解析、配置层级冲突、target-first / Git common-dir、管辖项目 Git worktree 检查、Git Hook status/install/verify、Codex 插件 manifest 和 shim 直测、统一安装验证。
   - 仍需 Human/AI 的部分只保留为语义和授权：确认 root / workspace / 项目清单、授权写入、接受覆盖/迁移/薄引用/插件安装风险、插件页面 trust / 重启观察、非 Codex 环境策略。
   - 旧 `workcase-0018` 仍保留为安装验收 / bootstrap skill 时代的历史推进载体；本 WorkCase 专门承接 V3 当前 10/30/CLI 重分工。
 success_criteria: |
   - [x] 将原 10 管辖项目配置规范改名并扩展为 `specs/10-安装与配置规范.md`，保留管辖项目配置契约，同时新增安装计划、apply Gate、环境策略和验证契约。
-  - [x] 明确 CLI 不是新规则源：机器规则归 10，实现归 Code / 07，测试归 09，环境入口分类和 integrated 判断归 01，30 只保留交互外壳。
+  - [x] 明确 CLI 不是新规则源：机器规则归 10，实现归 Code / 07，测试归 09，环境入口分类和 integrated 判断归 01，30 保留为正式行动模板。
   - [x] 定义第一版 CLI 命令面：`check`、`plan`、`apply --confirm-human-gate`、`verify`。
   - [x] 定义 `install_plan` 最小结构，至少覆盖 LDVH root、workspace root、governed config、target projects、environment_strategy、checks、planned_writes、skipped_writes、human_gate_required、rollback、verification 和 source_refs。
   - [x] 明确 `check` 和 `plan` 只读，任何写入动作只能发生在 `apply`，且必须显式带 `--confirm-human-gate`。
@@ -29,7 +29,7 @@ success_criteria: |
   - [x] 明确支持 Hook / 不支持 Hook 两种情况统一落在同一安装流程，只通过 `environment_strategy` 分支处理，不声明未验证 integrated。
   - [x] 明确第一版不做 TUI、不做无确认一键安装、不写用户环境 Hook 系统文件、不新增第二套安装规范。
   - [x] 更新 `code/docs/03-LDVH-Install-Wizard-Practice.md`，把 CLI 候选边界写成 Code 实现域实践要求。
-  - [x] 先更新 validator 和测试，让 10 成为安装与配置机器契约的主 source_ref；30 作为 transitional / fallback 存在。
+  - [x] 先更新 validator 和测试，让 10 成为安装与配置机器契约的主 source_ref；30 作为正式行动模板继续组织 Human-facing 编排和交还。
   - [x] 若进入 CLI 实现阶段，新增 `code/install_wizard.py` 和 `tests/code/test_install_wizard.py`，覆盖只读、plan、Human Gate、非 Git repo、非管辖项目、两种 environment_strategy 和 verify 汇总。
 source: |
   来源：2026-07-05 当前会话。
@@ -65,10 +65,10 @@ orchestration:
         - specs/06-行动模板基础规范.md
         - code/docs/03-LDVH-Install-Wizard-Practice.md
       expected_output: |
-        明确 10 是安装与配置机器契约，30 是 Human-facing 交互外壳。CLI 不定义新的 Human Gate、环境入口分类、integrated 判断或配置字段；CLI 只能把 10 的 check / plan / apply / verify 契约变成可复跑命令。
+        明确 10 是安装与配置机器契约，30 是 Human-facing 正式行动模板。CLI 不定义新的 Human Gate、环境入口分类、integrated 判断或配置字段；CLI 只能把 10 的 check / plan / apply / verify 契约变成可复跑命令，不能替代 30 的 Context、Scenario、Gate、验证、回写和交还结构。
       status: done
       result_summary: |
-        已吸收规则边界、迁移风险和 Code 可执行性三个审核视角。结论为方案 A 可行，但必须先双轨迁移：10 扩展为安装与配置规范，30 保留 transitional 交互外壳；CLI 第一版只做薄 facade，复用现有后端，不做无确认一键安装器。
+        已吸收规则边界、迁移风险和 Code 可执行性三个审核视角。结论为方案 A 可行，但必须区分规则源与行动模板：10 扩展为安装与配置规范，30 继续作为 3x 正式行动模板；CLI 第一版只做薄 facade，复用现有后端，不做无确认一键安装器，也不替代 30。
       blocking_reason: ''
     - id: item-2
       title: 扩展 10 为安装与配置机器契约
@@ -112,7 +112,7 @@ orchestration:
         在 Code 实现域文档中登记安装向导 CLI 边界：第一版必须承接 10 的 `check -> plan -> apply -> verify`、Human Gate、外部 Git Hook Gate、环境插件 Gate、回滚和 install_verification 交还要求，同时保留 30 的交互与断点恢复交还要求。README 记录已实现入口和范围限制，不夸大安装状态。
       status: done
       result_summary: |
-        已同步 README、`code/docs/02-Environment-Plugin-Practice.md` 和 `code/docs/03-LDVH-Install-Wizard-Practice.md`：CLI 第一版已实现为 10 的薄执行壳，不宣称无确认一键安装；安装执行规则迁到 10，30 保留 Human-facing 解释、选择、异常交还和断点恢复外壳。
+        已同步 README、`code/docs/02-Environment-Plugin-Practice.md` 和 `code/docs/03-LDVH-Install-Wizard-Practice.md`：CLI 第一版已实现为 10 的薄执行壳，不宣称无确认一键安装；安装执行规则迁到 10，30 保留正式行动模板角色，负责 Human-facing 解释、选择、最终确认、异常交还和断点恢复。
       blocking_reason: ''
     - id: item-5
       title: CLI 第一版实现与测试矩阵
@@ -155,16 +155,16 @@ orchestration:
           perspective: rules-boundary
           outcome: pass_with_followups
           summary: |
-            方案 A 成立：10 适合承接安装与配置机器契约，30 不应继续作为 Code 执行规则源。审核同时要求 30 不能直接删除，应降级为 Human-facing 交互、异常解释和断点恢复外壳，待 CLI 与测试完成承接后再废弃。
+            方案 A 成立：10 适合承接安装与配置机器契约，30 不应继续作为 Code 执行规则源。后续根据 06 重新校准：30 不能删除或废弃，应继续作为正式行动模板，负责 Human-facing 编排、告知、Gate、验证、回写、交还和断点恢复。
           required_followup: |
             防止 CLI 生成第二套规则源；任何写入仍必须保留 Human Gate 和可验证 source_refs。
         - reviewer: Descartes
           perspective: migration-risk
           outcome: pass_with_required_staging
           summary: |
-            迁移方向正确，但直接删除 30 会破坏 validator、README、Code docs、install_verification 和测试中的硬引用。必须采用双轨迁移：先扩展 10 并同步 validator / source_refs / tests，再把 30 作为 transitional shell 保留。
+            迁移方向正确，但直接删除 30 会破坏行动模板体系和 validator、README、Code docs、install_verification、测试中的模板引用。必须采用分工迁移：先扩展 10 并同步 validator / source_refs / tests，再把 30 校准为正式行动模板而非机器规则源。
           required_followup: |
-            后续 CLI 真正实现并覆盖安装矩阵后，再评估是否把 30 从 transitional 降为归档。
+            后续 CLI 真正实现并覆盖安装矩阵后，不应默认归档 30；应评估 30 是否仍满足 06 的 Context、Scenario、Gate、执行、验证、回写和交还结构。
         - reviewer: Meitner
           perspective: code-executability
           outcome: pass_with_scope_limits
@@ -185,9 +185,9 @@ orchestration:
       tool_method_requirements:
         - 审核只读当前仓库，不修改文件。
         - 必须检查旧 10 文件名是否只作为历史描述存在。
-        - 必须检查 30 是否仍被保留为交互外壳，而不是机器规则主源。
+        - 必须检查 30 是否仍被保留为正式行动模板，而不是机器规则主源。
         - 必须检查 validator / tests 是否会阻止 10 丢失 install_plan、apply Gate 或 environment_strategy。
-        - 必须检查 README / Code docs / install_verification 是否没有宣称 CLI 已实现。
+        - 必须检查 README / Code docs / install_verification 是否没有夸大 CLI 实现范围或安装状态。
       aggregation_rule: |
         若任一 required perspective 发现 10/30 归口混乱、CLI 被宣称为已实现、validator 无法覆盖核心契约缺失，或 30 被误删导致旧流程不可交还，必须回到 executing 修正后重新自检。
     review_items:
@@ -195,7 +195,7 @@ orchestration:
         perspective: spec_boundary_result
         outcome: pass
         summary: |
-          未发现 P0/P1/P2。10 已定义 `check -> plan -> apply -> verify`、`install_plan`、`environment_strategy`、apply Human Gate、验证与回滚；30 仍保留为交互步骤、告知清单、Gate、验证交还和断点恢复外壳；integrated 判定仍归 01。
+          未发现 P0/P1/P2。10 已定义 `check -> plan -> apply -> verify`、`install_plan`、`environment_strategy`、apply Human Gate、验证与回滚；30 仍保留为正式行动模板，组织交互步骤、告知清单、Gate、验证交还和断点恢复；integrated 判定仍归 01。
         residual_risk: |
           30 仍保留较多交互级验证细节，后续实现者如果只读 30 仍可能误当流程主入口；当前文本和 Code docs 已声明机器规则主源迁到 10。
       - reviewer: Noether
@@ -209,7 +209,7 @@ orchestration:
         perspective: documentation_consistency_result
         outcome: pass_after_fixes
         summary: |
-          README 和 Code docs 未宣称 CLI 已可用，已表达 CLI 是 10 的确定性执行 shell、30 是 Human-facing shell。审核指出 WorkCase 成功标准未同步、item-4 expected_output 残留旧表述、formal review receipt hash 失真；主控已修正。
+          README 和 Code docs 已表达 CLI 是 10 的确定性执行壳、30 是 Human-facing 正式行动模板。审核指出 WorkCase 成功标准未同步、item-4 expected_output 残留旧表述、formal review receipt hash 失真；主控已修正。
         residual_risk: |
           `_migration/` 是历史材料，后续若继续批量替换正式路径，应同步检查 receipt/hash 类证据字段。
       - reviewer: Hypatia
@@ -263,6 +263,7 @@ verification_evidence: |
   - 真实安装矩阵验证后补充：scratch 路径 `/tmp/ldvh-install-matrix-2`；`check` / `plan` 为 ok；`planned_hook` 与 `apply` 后 `actual_hook` 一致，均为 `/private/tmp/ldvh-install-matrix-2/workspace/app/.git/ldvh-hooks/commit-msg`；`apply` 缺 Human Gate 返回 1 且包含 `INSTALL_WIZARD_HUMAN_GATE_REQUIRED`；`apply --confirm-human-gate` 返回 0，`verification_status=review_required`；`verify` 返回 0 且 `review_required`；`governed_hook_adapter.py uninstall --confirm-human-gate` 返回 0 且 `hook_installed=false`。
   - 真实安装矩阵阻断路径：受管但非 Git 目录返回 `GOVERNED_HOOK_TARGET_NOT_GIT_REPO`；非管辖 repo 返回 `INSTALL_WIZARD_TARGET_NOT_GOVERNED`；未知 strategy 返回 `INSTALL_WIZARD_UNKNOWN_ENVIRONMENT_STRATEGY`。
   - 真实安装矩阵非 Hook 策略：`thin_reference` / `manual_entrypoint` 的 `planned_writes=0`、`handoff_candidates=1`；`apply --confirm-human-gate` 返回 1 且包含 `INSTALL_WIZARD_STRATEGY_APPLY_NOT_IMPLEMENTED`；未写入 `AGENTS.md`。
+  - 30 模板角色校准后补充：按 06 重新确认 30 仍是 3x 正式行动模板，CLI 不替代 30；10 归口机器契约，`code/install_wizard.py` 归口确定性执行壳，30 归口 Human-facing 五阶段编排、告知清单、最终确认、断点恢复、失败信息包、验证交还和缺口分流。已新增 validator 负例保护 `CLI 不替代本文` 和 `不得复制 CLI、10、01 或 07 的机器规则形成第二规则源`。
 closure_evidence: |
   CLI 第一版已完成真实 scratch 安装矩阵验证。矩阵验证发现并修复 `plugin_hook` plan 写入路径与实际 apply 路径不一致的问题：`planned_writes` 现在由 `install_git_hooks.planned_install_target()` 派生，包含 planned Git config 和 planned commit-msg hook，且与实际 apply 后 active hook 一致。
 closure_requested_at: null
@@ -271,7 +272,7 @@ closed_at: null
 closure_outcome: ''
 residual_risks:
   - CLI 第一版只实现薄 facade；`thin_reference` / `manual_entrypoint` 尚未自动写入，只生成计划和交还。
-  - 30 仍作为 transitional Human-facing shell 保留；废弃条件依赖真实环境 integrated 证据和后续环境插件 / 薄引用写入能力承接。
+  - 30 仍作为正式行动模板保留；后续风险不是是否废弃 30，而是防止实现者把 30 误当机器规则源，或把 CLI 误当行动模板替代物。
   - 插件 UI trust、重启观察、非 Codex 环境策略仍不能由 Code 全自动证明，需要 Human Gate 或断点后验证证据。
 followup_refs:
   - tests/code/test_install_wizard.py

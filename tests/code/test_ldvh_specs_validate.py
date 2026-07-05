@@ -1329,6 +1329,36 @@ def test_ldvh_install_action_template_reports_missing_plugin_boundary(tmp_path: 
     assert "LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
 
 
+def test_ldvh_install_action_template_reports_missing_cli_does_not_replace_template_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "CLI 不替代本文",
+        "CLI 已替代本文",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+    assert any("CLI 不替代本文" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_ldvh_install_action_template_reports_missing_second_rule_source_boundary(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
+        "不得复制 CLI、10、01 或 07 的机器规则形成第二规则源",
+        "可以按需要复制机器规则",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "LDVH_INSTALL_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+    assert any("第二规则源" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
 def test_ldvh_install_action_template_reports_missing_unsupported_config_locations(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(

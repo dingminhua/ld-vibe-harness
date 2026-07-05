@@ -1,6 +1,6 @@
 # 环境插件与 Hook 接入实现实践
 
-本文是 Code 实现域文档，承接 `specs/01-保障与衔接.md` §6、`specs/04-Specs基础规范.md` 的状态归口原则、`specs/10-安装与配置规范.md` 的安装与配置机器契约、`specs/06-行动模板基础规范.md` 的行动模板父层边界、`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的 Human-facing 安装交互外壳、`specs/07-Code确定性执行规范.md` 和 `specs/09-测试与验证规范.md`。本文不定义新的规则源、事实源、Human Gate、环境入口判定分类或管辖项目配置契约；若与 specs 冲突，以 specs 为准。
+本文是 Code 实现域文档，承接 `specs/01-保障与衔接.md` §6、`specs/04-Specs基础规范.md` 的状态归口原则、`specs/10-安装与配置规范.md` 的安装与配置机器契约、`specs/06-行动模板基础规范.md` 的行动模板父层边界、`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的 Human-facing 安装行动编排边界、`specs/07-Code确定性执行规范.md` 和 `specs/09-测试与验证规范.md`。本文不定义新的规则源、事实源、Human Gate、环境入口判定分类或管辖项目配置契约；若与 specs 冲突，以 specs 为准。
 
 本文只处理环境 Hook 的插件化实现实践。Git `commit-msg` shim 和外部管辖项目 Git Hook 实践见 `code/docs/01-Git-Commit-and-Hook-Practice.md`。
 
