@@ -354,7 +354,7 @@ def _verify_environment(
                 "steps": [
                     f"先确认 {environment_name} 是否支持插件 / 扩展包 / package 形态的 Hook 入口。",
                     "若支持 Hook，必须先实装目标环境插件 / 扩展包并让安装检测通过；写入完成后按 30 的断点恢复协议继续 lifecycle 验证。",
-                    "若 01 或环境审计确认没有自动 Hook 入口，按 specs/30-LDVH安装初始化管辖项目配置行动模板.md 交还薄引用 / manual entrypoint 承接。",
+                    "若 01 或环境审计确认没有自动 Hook 入口，按 specs/10-安装与配置规范.md 选择薄引用 / manual entrypoint 承接，并按 specs/30 的交互外壳交还恢复入口。",
                     "薄引用 / manual entrypoint 承接必须基于 hooks/LDVH-RUNTIME-PROTOCOL.md 生成已替换 LDVH 本体绝对路径的薄引用文本，给出可复制内容和写入路径，不得只列承接形态表。",
                     "薄引用 / manual entrypoint 承接不得声明环境自动接入已完成；断点后验证仍按 30 的统一 lifecycle 验证执行。",
                 ],
@@ -487,7 +487,7 @@ def _verify_environment(
                 f"完成 {environment_name} 的授权 / trust；没有授权提示时，记录插件页面无待处理授权。",
                 f"新开一个 {environment_name} 窗口或会话，让 AI 运行只读 LDVH 可见性探针并返回结果表。",
                 "触发一次受控写入类工具，确认写入前检查负例会阻断，正例会放行。",
-                "如需确认 lifecycle 生效，按 specs/30-LDVH安装初始化管辖项目配置行动模板.md 的断点恢复协议继续验证。",
+                "如需确认 lifecycle 生效，按 specs/10-安装与配置规范.md 的验证契约和 specs/30 的断点恢复话术继续验证。",
                 "若卸载或禁用插件，重新打开窗口确认不再自动触发 LDVH。",
                 "失败时返回插件页面结果、错误文本、截图或本命令 JSON 输出。",
             ],
@@ -584,7 +584,8 @@ def build_install_verification(
         "environment": environment,
         "diagnostics": diagnostics,
         "source_refs": [
-            {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "install_handoff_contract"},
+            {"path": "specs/10-安装与配置规范.md", "role": "install_config_contract"},
+            {"path": "specs/30-LDVH安装初始化管辖项目配置行动模板.md", "role": "install_interaction_handoff"},
             {"path": "code/governed_hook_adapter.py", "role": "git_hook_status_backend"},
             {"path": "code/environment_entry_audit.py", "role": "environment_hook_audit"},
             {"path": "hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py", "role": "environment_shim_direct_test"},

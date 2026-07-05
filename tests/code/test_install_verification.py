@@ -146,7 +146,7 @@ projects:
     assert any("重启 App" in step for step in human_acceptance["steps"])
     assert any("授权 / trust" in step for step in human_acceptance["steps"])
     assert any("只读 LDVH 可见性探针" in step for step in human_acceptance["steps"])
-    assert any("specs/30-LDVH安装初始化管辖项目配置行动模板.md" in step for step in human_acceptance["steps"])
+    assert any("specs/10-安装与配置规范.md" in step for step in human_acceptance["steps"])
     assert "runtime_adapter.py" in human_acceptance["visible_probe_command"]
     assert "session-start" in human_acceptance["visible_probe_command"]
     assert "manual.lifecycle-verify-probe" in human_acceptance["visible_probe_command"]

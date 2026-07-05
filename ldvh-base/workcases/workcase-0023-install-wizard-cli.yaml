@@ -1,33 +1,36 @@
 id: workcase-0023
 type: workcase
-title: 30 安装向导 CLI 需求收敛
+title: 10 安装与配置规范及安装 CLI 接管
 goal: |
-  将 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的安装、初始化、管辖项目配置和断点后验证流程，收敛为一个可复跑、可测试、可审计的确定性 CLI 需求。
+  将 LDVH 安装、初始化、管辖项目配置和断点后验证中的机器可消费规则，从 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 迁入 `specs/10-安装与配置规范.md`，让安装更多依靠 Code / CLI 的 check、plan、apply 和 verify，而不是依赖 AI 每次临场理解长行动模板。
 
-  本 WorkCase 的目标不是立刻实现一键安装器，而是先锁定 CLI 与 30、01、07、09、10 和现有 Code 入口的职责边界：30 继续作为安装规则契约，CLI 只作为确定性执行壳；最终确认前不得写入，写入必须通过 Human Gate；环境插件路径和薄引用 / manual entrypoint 路径必须归入同一套 check -> plan -> apply -> verify 流程。
-status: human_plan_confirming
+  目标架构是：10 负责安装与配置的机器契约；01 继续负责环境入口分类和 integrated 判定；07/Code 负责确定性实现；09 负责验证；30 降级为 Human-facing 交互外壳、异常解释和断点恢复话术，短期保留兼容，待 CLI 和测试承接后再废弃。
+status: human_closure_confirming
 created: '2026-07-05T00:00:00+08:00'
 updated: '2026-07-05T00:00:00+08:00'
 priority: P1
 description: |
   Human 提出：30 的安装流程是否可以做成 CLI；随后继续追问有了 CLI 后是否还需要 30、30 中两种环境情况如何处理，以及 CLI 需求应由谁负责。
 
-  当前结论：
-  - 30 仍是安装规则源，负责 Human Gate、用户告知、写入边界、环境入口声明边界、验证和回滚交还。
-  - CLI 归 Code 实现域，受 07 约束；测试和验收受 09 约束；管辖项目配置受 10 约束；环境入口判定受 01 约束。
-  - CLI 不应成为新的规则源，也不应把安装变成无确认的一键写入。
-  - 30 中的两类环境情况不应拆成两套安装规则，而应在 CLI plan 中体现为 `environment_strategy`：`plugin_hook`、`thin_reference`、`manual_entrypoint` 或 `unsupported`。
-  - 旧 `workcase-0018` 仍保留为安装验收 / bootstrap skill 时代的历史推进载体；本 WorkCase 专门承接 V3 现行 30 安装向导 CLI 需求，不复用 V2 `specs/33` 语义。
+  审核后结论：
+  - 方案 A 成立：10 可扩展为 `10-安装与配置规范`，承接路径、配置、管辖项目、Git Hook、环境承接、install plan、verify 和 rollback 的机器契约。
+  - 不能直接删除或废弃 30：当前 validator、README、Code docs、install_verification 和测试仍硬引用 30；必须先双轨承接，再把 30 降级。
+  - CLI 第一版应是薄 facade：复用 `ldvh_specs.py` / `specs_validate.py`、`environment_entry_audit.py`、`governed_hook_adapter.py`、`install_verification.py` 和 `runtime_adapter.py`，不复制第二套解析或环境判断逻辑。
+  - 已可确定性执行的部分包括配置解析、配置层级冲突、target-first / Git common-dir、管辖项目 Git worktree 检查、Git Hook status/install/verify、Codex 插件 manifest 和 shim 直测、统一安装验证。
+  - 仍需 Human/AI 的部分只保留为语义和授权：确认 root / workspace / 项目清单、授权写入、接受覆盖/迁移/薄引用/插件安装风险、插件页面 trust / 重启观察、非 Codex 环境策略。
+  - 旧 `workcase-0018` 仍保留为安装验收 / bootstrap skill 时代的历史推进载体；本 WorkCase 专门承接 V3 当前 10/30/CLI 重分工。
 success_criteria: |
-  - [ ] 明确 CLI 不是新规则源：规则需求归 30，实现需求归 Code / 07，测试归 09，配置归 10，环境入口归 01。
-  - [ ] 定义第一版 CLI 命令面：`check`、`plan`、`apply --confirm-human-gate`、`verify`。
-  - [ ] 定义 `install_plan` 最小结构，至少覆盖 LDVH root、workspace root、governed config、target projects、environment_strategy、checks、planned_writes、skipped_writes、human_gate_required、rollback、verification 和 source_refs。
-  - [ ] 明确 `check` 和 `plan` 只读，任何写入动作只能发生在 `apply`，且必须显式带 `--confirm-human-gate`。
-  - [ ] 明确 CLI 复用现有后端：`ldvh_specs.py` / `specs_validate.py`、`environment_entry_audit.py`、`governed_hook_adapter.py`、`install_verification.py` 和 `runtime_adapter.py`。
-  - [ ] 明确支持 Hook / 不支持 Hook 两种情况统一落在同一安装流程，只通过 `environment_strategy` 分支处理，不声明未验证 integrated。
-  - [ ] 明确第一版不做 TUI、不做无确认一键安装、不写用户环境 Hook 系统文件、不新增第二套安装规范。
-  - [ ] 更新 `code/docs/03-LDVH-Install-Wizard-Practice.md`，把 CLI 候选边界写成 Code 实现域实践要求。
-  - [ ] 若进入实现阶段，新增 `code/install_wizard.py` 和 `tests/code/test_install_wizard.py`，覆盖只读、plan、Human Gate、非 Git repo、非管辖项目、两种 environment_strategy 和 verify 汇总。
+  - [x] 将原 10 管辖项目配置规范改名并扩展为 `specs/10-安装与配置规范.md`，保留管辖项目配置契约，同时新增安装计划、apply Gate、环境策略和验证契约。
+  - [x] 明确 CLI 不是新规则源：机器规则归 10，实现归 Code / 07，测试归 09，环境入口分类和 integrated 判断归 01，30 只保留交互外壳。
+  - [x] 定义第一版 CLI 命令面：`check`、`plan`、`apply --confirm-human-gate`、`verify`。
+  - [x] 定义 `install_plan` 最小结构，至少覆盖 LDVH root、workspace root、governed config、target projects、environment_strategy、checks、planned_writes、skipped_writes、human_gate_required、rollback、verification 和 source_refs。
+  - [x] 明确 `check` 和 `plan` 只读，任何写入动作只能发生在 `apply`，且必须显式带 `--confirm-human-gate`。
+  - [x] 明确 CLI 复用现有后端：`ldvh_specs.py` / `specs_validate.py`、`environment_entry_audit.py`、`governed_hook_adapter.py`、`install_verification.py` 和 `runtime_adapter.py`。
+  - [x] 明确支持 Hook / 不支持 Hook 两种情况统一落在同一安装流程，只通过 `environment_strategy` 分支处理，不声明未验证 integrated。
+  - [x] 明确第一版不做 TUI、不做无确认一键安装、不写用户环境 Hook 系统文件、不新增第二套安装规范。
+  - [x] 更新 `code/docs/03-LDVH-Install-Wizard-Practice.md`，把 CLI 候选边界写成 Code 实现域实践要求。
+  - [x] 先更新 validator 和测试，让 10 成为安装与配置机器契约的主 source_ref；30 作为 transitional / fallback 存在。
+  - [x] 若进入 CLI 实现阶段，新增 `code/install_wizard.py` 和 `tests/code/test_install_wizard.py`，覆盖只读、plan、Human Gate、非 Git repo、非管辖项目、两种 environment_strategy 和 verify 汇总。
 source: |
   来源：2026-07-05 当前会话。
 
@@ -45,7 +48,7 @@ source: |
   - `specs/06-行动模板基础规范.md`
   - `specs/07-Code确定性执行规范.md`
   - `specs/09-测试与验证规范.md`
-  - `specs/10-管辖项目配置规范.md`
+  - `specs/10-安装与配置规范.md`
   - `code/docs/03-LDVH-Install-Wizard-Practice.md`
   - `code/environment_entry_audit.py`
   - `code/governed_hook_adapter.py`
@@ -54,7 +57,7 @@ orchestration:
   mode: sequential
   execution_items:
     - id: item-1
-      title: 锁定 CLI 与 30 的职责边界
+      title: 记录审核意见并重定 10 / 30 / CLI 边界
       role: requirements-boundary
       mode: single
       input_refs:
@@ -62,11 +65,13 @@ orchestration:
         - specs/06-行动模板基础规范.md
         - code/docs/03-LDVH-Install-Wizard-Practice.md
       expected_output: |
-        明确 30 是规则契约，CLI 是执行壳。CLI 不定义新的 Human Gate、环境入口分类、integrated 判断或配置字段；CLI 只能把 30 的 check / plan / apply / verify 变成可复跑命令。
-      status: pending
+        明确 10 是安装与配置机器契约，30 是 Human-facing 交互外壳。CLI 不定义新的 Human Gate、环境入口分类、integrated 判断或配置字段；CLI 只能把 10 的 check / plan / apply / verify 契约变成可复跑命令。
+      status: done
+      result_summary: |
+        已吸收规则边界、迁移风险和 Code 可执行性三个审核视角。结论为方案 A 可行，但必须先双轨迁移：10 扩展为安装与配置规范，30 保留 transitional 交互外壳；CLI 第一版只做薄 facade，复用现有后端，不做无确认一键安装器。
       blocking_reason: ''
     - id: item-2
-      title: 定义 CLI 命令面和 install_plan 结构
+      title: 扩展 10 为安装与配置机器契约
       role: cli-design
       mode: single
       input_refs:
@@ -75,11 +80,13 @@ orchestration:
         - code/environment_entry_audit.py
         - code/ldvh_specs.py
       expected_output: |
-        形成第一版命令面：`check`、`plan`、`apply --plan <file> --confirm-human-gate`、`verify`。定义 `install_plan` JSON / YAML 输出结构，要求 plan 可审计、可复跑，且 apply 只执行 plan 中列出的动作。
-      status: pending
+        将 10 从管辖项目配置规范扩展为安装与配置规范，新增 `install_plan`、`planned_writes`、`human_gate_required`、`rollback`、`verification`、`environment_strategy`、`plugin_hook`、`thin_reference`、`manual_entrypoint` 等机器可消费契约。
+      status: done
+      result_summary: |
+        已将原 10 管辖项目配置规范改名为 `specs/10-安装与配置规范.md`，并在 8 章补入安装计划与执行契约、环境承接策略、apply Gate、验证和回滚要求。
       blocking_reason: ''
     - id: item-3
-      title: 收敛环境策略分支
+      title: 同步 validator 和测试到 10 主规则源
       role: environment-strategy-design
       mode: single
       input_refs:
@@ -89,8 +96,10 @@ orchestration:
         - code/docs/02-Environment-Plugin-Practice.md
         - code/environment_entry_audit.py
       expected_output: |
-        把支持 Hook / 不支持 Hook 两种情况收敛为 `environment_strategy`。`plugin_hook` 负责插件 / 扩展包安装检测和授权提示；`thin_reference` / `manual_entrypoint` 负责薄引用和 manual runtime adapter 承接；两者最终都回到 runtime receipt、Git Hook 正反例和 install_verification 验证，不声明未验证 integrated。
-      status: pending
+        新增或调整 validator 与测试，确保 10 缺少 `install_plan`、`apply` Gate 或 `environment_strategy` 时能报错；同步 README、install_verification、source_refs 和 formal specs 文件路径。
+      status: done
+      result_summary: |
+        已更新 `code/ldvh_specs.py` 的 10 短引用、source_refs 和新增 validator requirement，新增测试覆盖 `install_plan` 与 `environment_strategy` 缺失诊断；同步 `install_verification.py` source_refs，使 10 承接机器契约、30 承接交互交还。
       blocking_reason: ''
     - id: item-4
       title: 同步 Code 实现域文档
@@ -100,19 +109,25 @@ orchestration:
         - code/docs/03-LDVH-Install-Wizard-Practice.md
         - README.md
       expected_output: |
-        在 Code 实现域文档中登记安装向导 CLI 候选边界：当前未实现时不得把命令写成可用；实现后必须完整承接 30 五步状态、Human Gate、外部 Git Hook Gate、环境插件 Gate、回滚和 install_verification 交还要求。README 只记录候选或已实现入口，不夸大安装状态。
-      status: pending
+        在 Code 实现域文档中登记安装向导 CLI 边界：第一版必须承接 10 的 `check -> plan -> apply -> verify`、Human Gate、外部 Git Hook Gate、环境插件 Gate、回滚和 install_verification 交还要求，同时保留 30 的交互与断点恢复交还要求。README 记录已实现入口和范围限制，不夸大安装状态。
+      status: done
+      result_summary: |
+        已同步 README、`code/docs/02-Environment-Plugin-Practice.md` 和 `code/docs/03-LDVH-Install-Wizard-Practice.md`：CLI 第一版已实现为 10 的薄执行壳，不宣称无确认一键安装；安装执行规则迁到 10，30 保留 Human-facing 解释、选择、异常交还和断点恢复外壳。
       blocking_reason: ''
     - id: item-5
-      title: 实现前测试矩阵设计
+      title: CLI 第一版实现与测试矩阵
       role: test-design
       mode: single
       input_refs:
         - tests/code/test_install_verification.py
         - tests/code/test_ldvh_specs_validate.py
+        - code/governed_hook_adapter.py
+        - code/install_verification.py
       expected_output: |
-        设计 `tests/code/test_install_wizard.py` 覆盖矩阵：check 不写入、plan 只读并包含 planned_writes、apply 缺少 Human Gate 必须阻断、非 Git repo 阻断、非管辖项目阻断、plugin_hook 与 thin_reference / manual_entrypoint 两类策略输出正确、verify 汇总 install_verification。
-      status: pending
+        新增 `code/install_wizard.py` 和 `tests/code/test_install_wizard.py`，覆盖矩阵：check 不写入、plan 只读并包含 planned_writes、apply 缺少 Human Gate 必须阻断、非 Git repo 阻断、非管辖项目阻断、plugin_hook 与 thin_reference / manual_entrypoint 两类策略输出正确、verify 汇总 install_verification。
+      status: done
+      result_summary: |
+        已新增 `code/install_wizard.py` 第一版薄 facade，提供 `check`、`plan`、`apply --confirm-human-gate`、`verify`。`check` / `plan` 只读，`apply` 缺 Human Gate 阻断；`plugin_hook` 复用 `governed_hook_adapter.py` 安装管辖项目 Git Hook，`verify` 复用 `install_verification.py`。`thin_reference` / `manual_entrypoint` 当前只生成计划和交还，不自动写入或声明 integrated。已新增 `tests/code/test_install_wizard.py` 覆盖只读、Human Gate、非 Git、非管辖、三类 environment_strategy 和 CLI JSON 输出。
       blocking_reason: ''
   plan_review:
     orchestration_owner: main_controller
@@ -135,12 +150,82 @@ orchestration:
         - 必须检查支持 Hook / 不支持 Hook 是否统一回到同一验证标准。
       aggregation_rule: |
         若任一 required perspective 认为 CLI 会成为新规则源、绕过 Human Gate、复制环境入口分类、绕过现有 adapter / verification 后端，或把薄引用路径写成 integrated，不得进入实现阶段。
-      review_items: []
+      review_items:
+        - reviewer: Fermat
+          perspective: rules-boundary
+          outcome: pass_with_followups
+          summary: |
+            方案 A 成立：10 适合承接安装与配置机器契约，30 不应继续作为 Code 执行规则源。审核同时要求 30 不能直接删除，应降级为 Human-facing 交互、异常解释和断点恢复外壳，待 CLI 与测试完成承接后再废弃。
+          required_followup: |
+            防止 CLI 生成第二套规则源；任何写入仍必须保留 Human Gate 和可验证 source_refs。
+        - reviewer: Descartes
+          perspective: migration-risk
+          outcome: pass_with_required_staging
+          summary: |
+            迁移方向正确，但直接删除 30 会破坏 validator、README、Code docs、install_verification 和测试中的硬引用。必须采用双轨迁移：先扩展 10 并同步 validator / source_refs / tests，再把 30 作为 transitional shell 保留。
+          required_followup: |
+            后续 CLI 真正实现并覆盖安装矩阵后，再评估是否把 30 从 transitional 降为归档。
+        - reviewer: Meitner
+          perspective: code-executability
+          outcome: pass_with_scope_limits
+          summary: |
+            现有 Code 已支持薄 facade 所需的多数确定性能力：配置解析与校验、层级冲突、target-first / Git common-dir、worktree 检查、Git Hook status/install/verify、Codex 插件 manifest / stale path 审计、shim 直测和统一安装验证。缺口是稳定 `install_plan`、plan-to-apply 记录、统一 apply backend 和 CLI 专项测试。
+          required_followup: |
+            CLI 第一版只能实现 `check -> plan -> apply --confirm-human-gate -> verify` 的薄封装；不能做无确认一键安装，且 root / workspace / 项目清单、写入授权、覆盖迁移、插件 trust / 重启观察和非 Codex 环境策略仍需要 Human Gate。
   result_review:
     orchestration_owner: main_controller
     workflow_ref: null
-    review_policy: null
-    review_items: []
+    review_policy:
+      selection_reason: |
+        本轮已经修改正式规范、validator、source_refs、测试和文档，需要子 agent 复核迁移结果是否真的把机器契约迁到 10，且没有把 CLI 或 30 写成新的规则源。
+      required_perspectives:
+        - spec_boundary_result
+        - code_validation_result
+        - documentation_consistency_result
+      tool_method_requirements:
+        - 审核只读当前仓库，不修改文件。
+        - 必须检查旧 10 文件名是否只作为历史描述存在。
+        - 必须检查 30 是否仍被保留为交互外壳，而不是机器规则主源。
+        - 必须检查 validator / tests 是否会阻止 10 丢失 install_plan、apply Gate 或 environment_strategy。
+        - 必须检查 README / Code docs / install_verification 是否没有宣称 CLI 已实现。
+      aggregation_rule: |
+        若任一 required perspective 发现 10/30 归口混乱、CLI 被宣称为已实现、validator 无法覆盖核心契约缺失，或 30 被误删导致旧流程不可交还，必须回到 executing 修正后重新自检。
+    review_items:
+      - reviewer: Gibbs
+        perspective: spec_boundary_result
+        outcome: pass
+        summary: |
+          未发现 P0/P1/P2。10 已定义 `check -> plan -> apply -> verify`、`install_plan`、`environment_strategy`、apply Human Gate、验证与回滚；30 仍保留为交互步骤、告知清单、Gate、验证交还和断点恢复外壳；integrated 判定仍归 01。
+        residual_risk: |
+          30 仍保留较多交互级验证细节，后续实现者如果只读 30 仍可能误当流程主入口；当前文本和 Code docs 已声明机器规则主源迁到 10。
+      - reviewer: Noether
+        perspective: code_validation_result
+        outcome: pass_with_p2_fixed
+        summary: |
+          短引用、source_refs、install_verification 角色和 install_plan / environment_strategy validator 覆盖均成立。审核指出 apply Gate 缺少单独 mutation 测试；主控已新增 `test_install_config_spec_requires_apply_gate_contract` 并验证通过。
+        residual_risk: |
+          该 residual risk 已在后续 CLI 第一版实现阶段处理：已新增 `code/install_wizard.py` 和 `tests/code/test_install_wizard.py`。剩余风险转为薄引用 / manual entrypoint 尚未自动写入。
+      - reviewer: Kant
+        perspective: documentation_consistency_result
+        outcome: pass_after_fixes
+        summary: |
+          README 和 Code docs 未宣称 CLI 已可用，已表达 CLI 是 10 的确定性执行 shell、30 是 Human-facing shell。审核指出 WorkCase 成功标准未同步、item-4 expected_output 残留旧表述、formal review receipt hash 失真；主控已修正。
+        residual_risk: |
+          `_migration/` 是历史材料，后续若继续批量替换正式路径，应同步检查 receipt/hash 类证据字段。
+      - reviewer: Hypatia
+        perspective: cli_implementation_boundary_result
+        outcome: pass_after_p1_p2_fixes
+        summary: |
+          审核确认 `check` / `plan` 没有写入，写入只在 `apply` 后委托 `governed_hook_adapter.py`，缺 Human Gate、非 Git repo、非管辖项目会阻断，`verify` 是 `install_verification.py` 薄封装，thin_reference / manual_entrypoint 不自动写入或声明 integrated。审核指出 P1：`plugin_hook` planned_writes 曾硬编码 `.git/hooks/commit-msg`，以及 apply 未把 verification blocking 计入阻断；P2：未知 strategy 被 argparse choices 截断、thin/manual 放在 planned_writes 容易误读。主控已改为从 hook status 后端派生 planned_writes，追加 Git config 写入项，verification blocking 计入 apply，未知 strategy 返回 JSON diagnostic，thin/manual 改为 `handoff_candidates`。
+        residual_risk: |
+          thin_reference / manual_entrypoint 仍只交还候选，不自动写入；真实环境 integrated 仍依赖断点后证据。
+      - reviewer: Aristotle
+        perspective: cli_tests_docs_workcase_result
+        outcome: pass_after_p2_fixes
+        summary: |
+          审核确认 README 和 Code docs 已准确说明 CLI 第一版范围。审核指出 P2：WorkCase 残留旧的“CLI 候选/未实现”表述，CLI JSON 只覆盖 plan，thin/manual apply 阻断未测试。主控已修正 WorkCase 表述，并补充 CLI check/verify/apply JSON、apply 缺 Human Gate 非零、未知 strategy JSON diagnostic、thin/manual apply 阻断不写入、verification blocking 计入 apply 的测试。
+        residual_risk: |
+          WorkCase 仍保留上一阶段历史审核记录；后续阅读时应以当前 item-5、verification_evidence 和本轮 result_review 为准。
 related_sparks: []
 related_workcases:
   - workcase-0018
@@ -152,16 +237,38 @@ related_docs:
   - specs/06-行动模板基础规范.md
   - specs/07-Code确定性执行规范.md
   - specs/09-测试与验证规范.md
-  - specs/10-管辖项目配置规范.md
+  - specs/10-安装与配置规范.md
   - code/docs/03-LDVH-Install-Wizard-Practice.md
   - code/environment_entry_audit.py
   - code/governed_hook_adapter.py
   - code/install_verification.py
-verification_evidence: ''
+verification_evidence: |
+  已完成主控自检：
+  - `python3 code/specs_validate.py all --format text --fail-on-diagnostics`：通过，diagnostics 0。
+  - `python3 -m pytest tests/code/test_formal_specs.py tests/code/test_ldvh_specs_validate.py tests/code/test_install_verification.py -q`：通过，213 passed。
+  - `npm --prefix web run test:web:api`：通过。
+  - `npm --prefix web run check`：通过。
+  - `python3 code/test_runner.py smoke`：通过。
+  - `git diff --check`：通过。
+  - 子 agent 结果审核后补充：`python3 -m pytest tests/code/test_ldvh_specs_validate.py::test_install_config_spec_requires_install_plan_contract tests/code/test_ldvh_specs_validate.py::test_install_config_spec_requires_apply_gate_contract tests/code/test_ldvh_specs_validate.py::test_install_config_spec_requires_environment_strategy_contract -q`：通过，3 passed。
+  - CLI 第一版实现后补充：`python3 -m pytest tests/code/test_install_wizard.py -q`：通过，8 passed。
+  - CLI 第一版最终自检：`python3 -m pytest tests/code/test_install_wizard.py tests/code/test_install_verification.py tests/code/test_ldvh_specs_validate.py tests/code/test_formal_specs.py -q`：通过，225 passed。
+  - CLI 第一版 smoke：`python3 code/install_wizard.py plan --governance-root /Users/dmh2002/poker_hud_projects --ldvh-root /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v3 --repo /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v3 --environment-strategy plugin_hook --format json`：通过，输出 `plan ok plugin_hook 2 0`。
+  - CLI 第一版最终自检：`npm --prefix web run test:web:api`：通过。
+  - CLI 第一版最终自检：`npm --prefix web run check`：通过。
+  - CLI 第一版最终自检：`python3 code/test_runner.py smoke`：通过。
+  - CLI 第一版最终自检：`git diff --check`：通过。
+  - 子 agent 实现审核后补充：`python3 -m pytest tests/code/test_install_wizard.py -q`：通过，12 passed。
+  - 子 agent 实现审核后补充：过期 CLI 表述搜索无命中。
 closure_evidence: ''
 closure_requested_at: null
 review_requested_at: null
 closed_at: null
 closure_outcome: ''
-residual_risks: []
-followup_refs: []
+residual_risks:
+  - CLI 第一版只实现薄 facade；`thin_reference` / `manual_entrypoint` 尚未自动写入，只生成计划和交还。
+  - 30 仍作为 transitional Human-facing shell 保留；废弃条件依赖真实安装矩阵验收和后续环境插件 / 薄引用写入能力承接。
+  - 插件 UI trust、重启观察、非 Codex 环境策略仍不能由 Code 全自动证明，需要 Human Gate 或断点后验证证据。
+followup_refs:
+  - tests/code/test_install_wizard.py
+  - code/docs/03-LDVH-Install-Wizard-Practice.md

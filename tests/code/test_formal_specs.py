@@ -119,7 +119,7 @@ def test_ldvh_starts_from_markdown_specs_only() -> None:
     assert (ROOT / "specs" / "07-Code确定性执行规范.md").exists()
     assert (ROOT / "specs" / "08-Web信息同步规范.md").exists()
     assert (ROOT / "specs" / "09-测试与验证规范.md").exists()
-    assert (ROOT / "specs" / "10-管辖项目配置规范.md").exists()
+    assert (ROOT / "specs" / "10-安装与配置规范.md").exists()
     assert (ROOT / "specs" / "20-Spark-火花.md").exists()
     assert (ROOT / "specs" / "21-WorkCase-工作项.md").exists()
     assert (ROOT / "specs" / "22-ADR-决策.md").exists()

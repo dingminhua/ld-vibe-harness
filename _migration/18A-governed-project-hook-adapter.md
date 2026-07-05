@@ -7,7 +7,7 @@
 1. `specs/00-理念与构成.md`
 2. `specs/01-保障与衔接.md`
 3. `specs/02-AI行为规范.md`
-4. `specs/10-管辖项目配置规范.md`
+4. `specs/10-安装与配置规范.md`
 5. `specs/01-保障与衔接.md` §6 与 `specs/attachments/01.Att.03-06`
 6. `specs/09-测试与验证规范.md`
 7. `code/install_git_hooks.py`

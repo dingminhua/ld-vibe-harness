@@ -33,7 +33,7 @@ SHORT_SPEC_REFS = {
     "07": "specs/07-Code确定性执行规范.md",
     "08": "specs/08-Web信息同步规范.md",
     "09": "specs/09-测试与验证规范.md",
-    "10": "specs/10-管辖项目配置规范.md",
+    "10": "specs/10-安装与配置规范.md",
     "30": "specs/30-LDVH安装初始化管辖项目配置行动模板.md",
     "20": "specs/20-Spark-火花.md",
     "21": "specs/21-WorkCase-工作项.md",
@@ -261,7 +261,7 @@ GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
     "不得恢复 Skill 顶层机制",
 ]
 LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
-    "Context": ["用户目标", "目标环境", "LDVH 本体路径", "目标工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "workcases/adrs/pitfalls/sparks/studies", "环境入口审计结果", "Git Hook 状态", "source_refs", "specs/10-管辖项目配置规范.md", "code/docs/03-LDVH-Install-Wizard-Practice.md"],
+    "Context": ["用户目标", "目标环境", "LDVH 本体路径", "目标工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "workcases/adrs/pitfalls/sparks/studies", "环境入口审计结果", "Git Hook 状态", "source_refs", "specs/10-安装与配置规范.md", "code/docs/03-LDVH-Install-Wizard-Practice.md"],
     "Scenario": ["安装 LDVH", "接入 LDVH", "初始化 LDVH", "配置管辖项目", "旧插件 / 旧路径", "只回答 01/06/10 边界"],
     "Gate": ["Human Gate", "环境入口", "LDVH 插件 / 扩展包", "管辖项目 Git Hook", "有效 Git worktree", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "事实源子目录", "LDVH 本体路径", "目标工作区根目录", "配置层级冲突", "授权 / trust", "integrated", "多项目", "用户告知清单", "安装方案预览", "最终确认"],
     "执行": ["bootstrap discovery", "有限、只读、有证据", "LDVH_ROOT", "候选路径和证据", "01", "01.Att.03", "01.Att.04", "支持 Hook", "LDVH 插件 / 扩展包 / package", "不直接写入环境 Hook 系统文件", "用户告知清单", "安装方案预览", "workcases/adrs/pitfalls/sparks/studies", "AI 环境 Hook", "Git `commit-msg` Hook", "repo instruction", "manual entrypoint", "thin reference", "外部 adapter 候选", "不恢复 Rules 顶层机制", "目标工作区根目录", "配置文件完整路径", "项目根目录、用户级目录和 LDVH 本体目录不得作为主选项", "配置层级检查", "目标项目内已存在配置", "10", "Git common-dir", "target-first resolver"],
@@ -621,6 +621,39 @@ GOVERNED_PROJECT_SPEC_REQUIREMENTS = [
             "项目索引不得替代事实源",
             "Hook",
             "安装授权",
+        ],
+    },
+    {
+        "code": "INSTALL_CONFIG_CONTRACT_MISSING",
+        "section": "事实源入口与环境引用边界",
+        "message": "10 必须定义安装计划、执行和验证的机器可消费契约",
+        "terms": [
+            "install_plan",
+            "check -> plan -> apply -> verify",
+            "`check` 和 `plan` 必须只读",
+            "`apply` 是唯一可以写入",
+            "`verify` 必须复用可复跑的验证入口",
+            "planned_writes",
+            "human_gate_required",
+            "rollback",
+            "verification",
+            "CLI 不得复制第二套 target resolver",
+        ],
+    },
+    {
+        "code": "INSTALL_ENVIRONMENT_STRATEGY_MISSING",
+        "section": "事实源入口与环境引用边界",
+        "message": "10 必须定义安装环境承接策略",
+        "terms": [
+            "environment_strategy",
+            "`plugin_hook`",
+            "`thin_reference`",
+            "`manual_entrypoint`",
+            "`external_adapter_candidate`",
+            "`unsupported`",
+            "不形成两套安装规则",
+            "runtime adapter",
+            "不得单独写成 integrated",
         ],
     },
 ]
@@ -3506,7 +3539,7 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
             {"path": "specs/07-Code确定性执行规范.md", "role": "code_determinism"},
             {"path": "specs/08-Web信息同步规范.md", "role": "web_sync"},
             {"path": "specs/09-测试与验证规范.md", "role": "test_verification"},
-            {"path": "specs/10-管辖项目配置规范.md", "role": "governed_project_config"},
+            {"path": "specs/10-安装与配置规范.md", "role": "governed_project_config"},
             {"path": "specs/01-保障与衔接.md", "role": "environment_adaptation"},
             {"path": "specs/20-Spark-火花.md", "role": "fact_model_member_spec"},
             {"path": "specs/21-WorkCase-工作项.md", "role": "workcase_member_spec"},
@@ -4026,7 +4059,7 @@ def _build_preflight_no_op(
         "human_gate_risks": [],
         "source_refs": [
             {"path": "specs/01-保障与衔接.md", "role": "environment_hook_silent_noop_boundary"},
-            {"path": "specs/10-管辖项目配置规范.md", "role": "governed_project_noop_boundary"},
+            {"path": "specs/10-安装与配置规范.md", "role": "governed_project_noop_boundary"},
         ],
         "diagnostics": [],
     }
@@ -4636,7 +4669,7 @@ def build_runtime_no_op_event(
         "preflight": preflight,
         "source_refs": [
             {"path": "specs/01-保障与衔接.md", "role": "environment_hook_silent_noop_boundary"},
-            {"path": "specs/10-管辖项目配置规范.md", "role": "governed_project_noop_boundary"},
+            {"path": "specs/10-安装与配置规范.md", "role": "governed_project_noop_boundary"},
         ],
         "diagnostics": [],
     }

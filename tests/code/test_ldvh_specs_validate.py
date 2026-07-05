@@ -327,7 +327,7 @@ def test_governed_project_spec_requires_target_first_boundary(tmp_path: Path) ->
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/10-管辖项目配置规范.md",
+        "specs/10-安装与配置规范.md",
         "V3 判定管辖项目必须采用 target-first；只有缺少明确 target 时，才允许使用 cwd fallback。",
         "V3 判定管辖项目必须优先使用工作对象。",
     )
@@ -341,7 +341,7 @@ def test_governed_project_spec_requires_config_hierarchy_boundary(tmp_path: Path
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/10-管辖项目配置规范.md",
+        "specs/10-安装与配置规范.md",
         "同一路径链上只能存在一个 active `LDVH-GOVERNED-PROJECTS.yaml`。",
         "",
     )
@@ -356,7 +356,7 @@ def test_governed_project_spec_requires_git_project_boundary(tmp_path: Path) -> 
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/10-管辖项目配置规范.md",
+        "specs/10-安装与配置规范.md",
         "管辖项目必须是 Git 管理的项目",
         "",
     )
@@ -365,6 +365,51 @@ def test_governed_project_spec_requires_git_project_boundary(tmp_path: Path) -> 
 
     assert "GOVERNED_PROJECT_CONFIG_BOUNDARY_MISSING" in _diagnostic_codes(result)
     assert any("管辖项目必须是 Git 管理的项目" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_install_config_spec_requires_install_plan_contract(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/10-安装与配置规范.md",
+        "install_plan",
+        "installation plan",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "INSTALL_CONFIG_CONTRACT_MISSING" in _diagnostic_codes(result)
+    assert any("install_plan" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_install_config_spec_requires_apply_gate_contract(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/10-安装与配置规范.md",
+        "`apply` 是唯一可以写入",
+        "`apply` 可以执行安装",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "INSTALL_CONFIG_CONTRACT_MISSING" in _diagnostic_codes(result)
+    assert any("`apply` 是唯一可以写入" in diagnostic["message"] for diagnostic in result["diagnostics"])
+
+
+def test_install_config_spec_requires_environment_strategy_contract(tmp_path: Path) -> None:
+    root = _copy_specs_root(tmp_path)
+    _replace_in_temp(
+        root,
+        "specs/10-安装与配置规范.md",
+        "environment_strategy",
+        "environment mode",
+    )
+
+    result = ldvh_specs.build_validation(root)
+
+    assert "INSTALL_ENVIRONMENT_STRATEGY_MISSING" in _diagnostic_codes(result)
+    assert any("environment_strategy" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_governed_project_contract_reports_missing_resolution_field(tmp_path: Path) -> None:
@@ -841,7 +886,7 @@ def test_all_attachments_must_be_listed_by_parent_related_specs(tmp_path: Path) 
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
-        "specs/10-管辖项目配置规范.md",
+        "specs/10-安装与配置规范.md",
         '    - "specs/attachments/10.Att.02-路径语义与规范化规则.md"\n',
     )
 
@@ -1894,7 +1939,7 @@ def test_specs_validate_cli_governed_projects_json() -> None:
             "code/specs_validate.py",
             "governed-projects",
             "--target-path",
-            "specs/10-管辖项目配置规范.md",
+            "specs/10-安装与配置规范.md",
             "--format",
             "json",
             "--fail-on-diagnostics",

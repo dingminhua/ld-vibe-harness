@@ -22,7 +22,7 @@ ldvh_spec:
   related_specs:
     - "specs/07-Code确定性执行规范.md"
     - "specs/09-测试与验证规范.md"
-    - "specs/10-管辖项目配置规范.md"
+    - "specs/10-安装与配置规范.md"
   migration_sources:
     - "v2:specs/33-ldvh-install-action-LDVH安装行动编排.md"
     - "v2:specs/32-environment-entry-adaptation-环境入口落地与适配检查.md"
@@ -66,7 +66,7 @@ ldvh_spec:
 
 本文承接 `specs/06-行动模板基础规范.md` 的 Context、Scenario、Gate、执行、验证、回写和交还结构。
 
-本文承接 `specs/01-保障与衔接.md` 的环境入口、Hook 分类、插件 / 扩展包安装口径和 integrated 声明边界；承接 `specs/10-管辖项目配置规范.md` 的配置事实源和 target-first 解析边界；承接 `specs/07-Code确定性执行规范.md` 和 `specs/09-测试与验证规范.md` 的实现域与验证边界。
+本文承接 `specs/01-保障与衔接.md` 的环境入口、Hook 分类、插件 / 扩展包安装口径和 integrated 声明边界；承接 `specs/10-安装与配置规范.md` 的配置事实源和 target-first 解析边界；承接 `specs/07-Code确定性执行规范.md` 和 `specs/09-测试与验证规范.md` 的实现域与验证边界。
 
 本文受 V3 01 的环境入口边界约束，也受 V3 01、06、10 的共同约束：01 管环境入口、06 管行动模板结构、10 管管辖项目配置契约。本文不声明 integrated；只有真实自动触发、失败可阻断、安装与接入证据可复核、回滚方式明确且验证证据齐备时，才可由对应环境入口规则判断是否 integrated。
 
@@ -240,7 +240,7 @@ lifecycle 验证的主结论只能表达“本次验证通过”“本次验证�
 
 | 结构 | 最小要求 |
 |---|---|
-| Context | 读取用户目标、目标环境、LDVH 本体路径、目标工作区根目录、管辖项目候选、目标工作区根目录下的 `LDVH-GOVERNED-PROJECTS.yaml`、管辖项目根下 `ldvh-base/` 和 `workcases/adrs/pitfalls/sparks/studies` 事实源目录状态、环境入口审计结果、每个已选择管辖项目的 Git Hook 状态、source_refs，并回指 `specs/01-保障与衔接.md`、`specs/06-行动模板基础规范.md`、`specs/10-管辖项目配置规范.md`、`specs/07-Code确定性执行规范.md`、`specs/09-测试与验证规范.md`、`code/docs/01-Git-Commit-and-Hook-Practice.md` 和 `code/docs/03-LDVH-Install-Wizard-Practice.md`。 |
+| Context | 读取用户目标、目标环境、LDVH 本体路径、目标工作区根目录、管辖项目候选、目标工作区根目录下的 `LDVH-GOVERNED-PROJECTS.yaml`、管辖项目根下 `ldvh-base/` 和 `workcases/adrs/pitfalls/sparks/studies` 事实源目录状态、环境入口审计结果、每个已选择管辖项目的 Git Hook 状态、source_refs，并回指 `specs/01-保障与衔接.md`、`specs/06-行动模板基础规范.md`、`specs/10-安装与配置规范.md`、`specs/07-Code确定性执行规范.md`、`specs/09-测试与验证规范.md`、`code/docs/01-Git-Commit-and-Hook-Practice.md` 和 `code/docs/03-LDVH-Install-Wizard-Practice.md`。 |
 | Scenario | 用户要求安装 LDVH、接入 LDVH、初始化 LDVH、配置管辖项目、把项目登记为管辖项目、检查安装是否生效或修复旧插件 / 旧路径时适用；用户只是询问概念或规则时，只回答 01/06/10 边界，不写入配置、不安装插件、不修改 Hook。 |
 | Gate | 写入、覆盖、删除或迁移环境入口，安装、升级、禁用或卸载 LDVH 插件 / 扩展包，安装、升级、禁用、卸载或迁移管辖项目 Git Hook，已选择管辖项目不是有效 Git worktree，创建或修改目标工作区根目录下的 `LDVH-GOVERNED-PROJECTS.yaml`，创建、删除、迁移或重命名管辖项目 `ldvh-base/` 及事实源子目录，确认 LDVH 本体路径和目标工作区根目录，处理配置层级冲突，完成或接受环境插件授权 / trust，声明环境入口 integrated，目标环境 Hook 能力不明，多项目或混合非管辖 target，缺少用户告知清单，或缺少安装方案预览和最终确认，均必须暂停或进入 Human Gate。 |
 | 执行 | 先用有限、只读、有证据的 bootstrap discovery 找到 LDVH 本体并从本体读取本文；bootstrap discovery 必须检查 `LDVH_ROOT` / `LDVH_HOME`、插件 / Hook / wrapper 候选并展示候选路径和证据；再按 01、`01.Att.03`、`01.Att.04` 和环境审计结果读取目标环境入口类型和接入判定分类；支持 Hook 的环境只生成或检查对应 LDVH 插件 / 扩展包 / package 方案，不直接写入环境 Hook 系统文件；执行安装、部署、初始化、配置或卸载前必须先交付用户告知清单和安装方案预览，明示写入对象、写入位置级别、影响范围、Hook / lifecycle event、阻断与 diagnostic 边界、旧插件 / stale V2 path 处理、验证方式、回滚或卸载入口、未 integrated 能力、管辖项目 `ldvh-base/` 及 `workcases/adrs/pitfalls/sparks/studies` 目录用途、残留风险和下一步 Human Gate；完整安装必须在 Human 最终确认后同时执行已确认的 AI 环境 Hook 插件安装 / 升级和每个已选择管辖项目的 Git `commit-msg` Hook 安装 / 升级；若 01 或环境审计结果确认目标环境没有可用环境 Hook / 插件入口，30 只按薄引用 / manual entrypoint 承接处理，列出 repo instruction、manual entrypoint、thin reference 或外部 adapter 候选承接形态，不恢复 Rules 顶层机制，不另开独立验收模板，不得声明 integrated；配置生成位置固定为目标工作区根目录；必须展示 LDVH 本体路径、目标工作区根目录和配置文件完整路径；项目根目录、用户级目录和 LDVH 本体目录不得作为主选项；必须用 10 的配置层级检查确认目标工作区根目录到目标项目路径链上只有一个 active `LDVH-GOVERNED-PROJECTS.yaml`；目标项目内已存在配置时，必须阻断并提示先删除、迁移或明确保留其中一个；随后按 10 登记单一管辖项目、补充 Git common-dir 身份线索，检查或建议创建管辖项目事实源目录，并用 target-first resolver 验证。 |

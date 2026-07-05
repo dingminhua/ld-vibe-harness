@@ -4,7 +4,7 @@
 
 ## 背景
 
-当前 V3 管辖项目配置由 `specs/10-管辖项目配置规范.md` 定义，默认事实源是 repo / workspace 中的 `LDVH-GOVERNED-PROJECTS.yaml`。Human 进一步提出：如果配置文件总放在仓库或上级工作区，跨项目、单机绝对路径和用户本地默认值会出现放置位置问题，可以考虑建立用户级 LDVH 配置目录。
+当前 V3 管辖项目配置由 `specs/10-安装与配置规范.md` 定义，默认事实源是 repo / workspace 中的 `LDVH-GOVERNED-PROJECTS.yaml`。Human 进一步提出：如果配置文件总放在仓库或上级工作区，跨项目、单机绝对路径和用户本地默认值会出现放置位置问题，可以考虑建立用户级 LDVH 配置目录。
 
 ## 初步判断
 
@@ -73,13 +73,13 @@
 8. repo / workspace 配置与用户配置冲突时，是阻断、告警还是 workspace 优先；
 9. Code resolver 是否需要新增用户级 fallback 或 workspace pointer 发现；
 10. tests 是否覆盖三选项、默认推荐、workspace pointer、Windows 路径、环境变量覆盖和冲突诊断；
-11. 是否需要更新 `specs/10-管辖项目配置规范.md` 与 `10.Att.01`；
+11. 是否需要更新 `specs/10-安装与配置规范.md` 与 `10.Att.01`；
 12. 是否需要 Web 展示配置来源，且不得把用户级配置写成 Web 主数据源；
 13. 用户级配置写入、workspace 配置生成和当前项目根配置生成是否都必须进入 Human Gate。
 
 ## 当前不做事项
 
-1. 不修改 `specs/10-管辖项目配置规范.md`；
+1. 不修改 `specs/10-安装与配置规范.md`；
 2. 不修改 `specs/attachments/10.Att.01-管辖项目配置字段表.md`；
 3. 不修改 `code/ldvh_specs.py` 的配置发现逻辑；
 4. 不新增 `~/.ldvh`、`%APPDATA%\ldvh` 或其它真实用户目录；

@@ -105,7 +105,7 @@ python3 code/governed_hook_adapter.py uninstall --repo "<repo>" --governance-roo
 
 该 adapter 会先按 `LDVH-GOVERNED-PROJECTS.yaml` 做 target-first / Git common-dir 解析；`install` 和 `uninstall` 必须显式带 `--confirm-human-gate`。它不会默认覆盖非管辖项目，也不表示任何外部项目已经自动接入。
 
-安装向导 CLI 仍处于需求收敛阶段，由 `ldvh-base/workcases/workcase-0023-install-wizard-cli.yaml` 承接。实现前，安装、初始化、管辖项目配置和断点后验证仍按 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 由 AI 主控执行，并调用上述 Code 入口；不得把候选 CLI 写成已可用安装器。
+安装与配置规则由 `specs/10-安装与配置规范.md` 归口，安装向导 CLI 第一版入口是 `code/install_wizard.py`，由 `ldvh-base/workcases/workcase-0023-install-wizard-cli.yaml` 承接。该 CLI 只作为 10 的薄执行壳：`check` / `plan` 只读，`apply` 必须显式带 `--confirm-human-gate`，`verify` 复用 `install_verification.py`；当前 `plugin_hook` 可通过现有 `governed_hook_adapter.py` 安装管辖项目 Git Hook，`thin_reference` / `manual_entrypoint` 只生成计划并交还，不自动写入或声明 integrated。`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 仅作为 Human-facing 交互和断点恢复外壳。
 
 统一环境接入判定检查：
 
@@ -174,7 +174,7 @@ python3 code/test_runner.py full
 - `07`：Code 确定性执行规范
 - `08`：Web 信息同步规范
 - `09`：测试与验证规范
-- `10`：管辖项目配置规范
+- `10`：安装与配置规范
 - `20`：Spark-火花
 - `21`：WorkCase-工作项
 - `22`：ADR-决策

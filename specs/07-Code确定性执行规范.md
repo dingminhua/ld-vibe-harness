@@ -23,7 +23,7 @@ ldvh_spec:
     - "specs/06-行动模板基础规范.md"
     - "specs/08-Web信息同步规范.md"
     - "specs/09-测试与验证规范.md"
-    - "specs/10-管辖项目配置规范.md"
+    - "specs/10-安装与配置规范.md"
   code_consumption:
     - "ldvh_spec_metadata"
     - "code_determinism_rules"
@@ -132,7 +132,7 @@ V3 当前 runtime facade 的边界：
 
 V2 `06` 中的 payload schema、dispatcher、adapter、payload_present、unknown event 和环境 fallback 可作为本文后续实现来源。涉及写入用户环境、安装 Hook、覆盖入口或扩大权限时，必须先进入 Human Gate 和 09 测试设计。
 
-V2 项目管辖 target-based governance 中的静态解析能力由 `specs/10-管辖项目配置规范.md` 和本文 Code parser 承接。Code 可以输出 `governed_project_resolution`、`target_resolutions` 和管辖/非管辖边界 diagnostic；这些输出不得被解释为 Hook 已接入、环境已拦截或 Human Gate 已完成。
+V2 项目管辖 target-based governance 中的静态解析能力由 `specs/10-安装与配置规范.md` 和本文 Code parser 承接。Code 可以输出 `governed_project_resolution`、`target_resolutions` 和管辖/非管辖边界 diagnostic；这些输出不得被解释为 Hook 已接入、环境已拦截或 Human Gate 已完成。
 
 ## 8. Code 变更纪律
 

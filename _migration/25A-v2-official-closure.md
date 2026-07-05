@@ -27,7 +27,7 @@ Human 确认来源：当前对话中 Human 明确要求“按你的计划推进�
 7. `specs/06-行动模板基础规范.md`
 8. `specs/08-Web信息同步规范.md`
 9. `specs/09-测试与验证规范.md`
-10. `specs/10-管辖项目配置规范.md`
+10. `specs/10-安装与配置规范.md`
 11. `_migration/12-19-v3-post-mainline-work-plan.md`
 12. `_migration/23A-v2-close-v3-start-assessment.md`
 13. `_migration/24A-user-local-ldvh-config-candidate.md`

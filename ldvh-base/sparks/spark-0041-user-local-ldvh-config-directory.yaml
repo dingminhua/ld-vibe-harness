@@ -23,7 +23,7 @@ evolution:
 input_refs:
   - _migration/24A-user-local-ldvh-config-candidate.md
   - _migration/26A-v3-post-closure-work-queue.md
-  - specs/10-管辖项目配置规范.md
+  - specs/10-安装与配置规范.md
   - specs/attachments/10.Att.01-管辖项目配置字段表.md
   - specs/20-Spark-火花.md
   - specs/30-LDVH安装初始化管辖项目配置行动模板.md
@@ -45,7 +45,7 @@ related_studies: []
 related_docs:
   - _migration/24A-user-local-ldvh-config-candidate.md
   - _migration/26A-v3-post-closure-work-queue.md
-  - specs/10-管辖项目配置规范.md
+  - specs/10-安装与配置规范.md
   - specs/attachments/10.Att.01-管辖项目配置字段表.md
   - specs/20-Spark-火花.md
   - specs/30-LDVH安装初始化管辖项目配置行动模板.md

@@ -1,6 +1,6 @@
 # LDVH Install Wizard Practice
 
-本文是 Code 实现域文档，承接 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的安装向导交互实践。本文不定义新的安装授权，不替代 Human Gate，不表示任何插件、Hook 或用户环境已经安装。
+本文是 Code 实现域文档，承接 `specs/10-安装与配置规范.md` 的安装与配置机器契约，以及 `specs/30-LDVH安装初始化管辖项目配置行动模板.md` 的 Human-facing 交互外壳。本文不定义新的安装授权，不替代 Human Gate，不表示任何插件、Hook 或用户环境已经安装。
 
 ## 展示原则
 
@@ -157,9 +157,9 @@ GOVERNED_CONFIG=<workspace-root>/LDVH-GOVERNED-PROJECTS.yaml
 
 ## 执行编排形态
 
-V3 当前安装执行编排形态是模板驱动，不是独立一键安装 CLI。AI 主控必须先读取 `specs/30-LDVH安装初始化管辖项目配置行动模板.md`，按五步安装向导完成 Human-facing 说明、选择收集和最终确认，再调用 Code 入口执行已授权动作。
+V3 当前安装执行编排形态已从纯模板驱动进入 Code/CLI 薄执行壳阶段。机器规则以 `specs/10-安装与配置规范.md` 为主；`specs/30-LDVH安装初始化管辖项目配置行动模板.md` 只保留 Human-facing 说明、选择收集、异常交还和断点恢复话术。AI 仍可按 30 组织用户交互，但不得把 30 当成机器核心安装规则源。
 
-`ldvh-base/workcases/workcase-0023-install-wizard-cli.yaml` 已承接安装向导 CLI 需求收敛。该 CLI 若进入实现，只能作为 30 的确定性执行壳：`check` / `plan` 保持只读，`apply` 必须显式带 Human Gate，`verify` 复用统一安装验证入口；CLI 不定义新的规则源、环境入口分类、配置字段或 integrated 判断。
+`ldvh-base/workcases/workcase-0023-install-wizard-cli.yaml` 已承接 10 安装与配置规范及安装 CLI 接管。`code/install_wizard.py` 是第一版确定性执行壳：`check` / `plan` 保持只读，`apply` 必须显式带 Human Gate，`verify` 复用统一安装验证入口；CLI 不定义新的规则源、环境入口分类、配置字段或 integrated 判断。
 
 当前稳定 Code 入口分工如下：
 
@@ -170,8 +170,9 @@ V3 当前安装执行编排形态是模板驱动，不是独立一键安装 CLI�
 | `code/governed_hook_adapter.py status` / `verify` | 只读检查每个管辖项目 Git Hook 状态和正反样例 |
 | `code/governed_hook_adapter.py install` / `uninstall --confirm-human-gate` | 在 Human Gate 后安装或回滚外部管辖项目 Git Hook |
 | `code/install_verification.py` | 写入后统一交还验收，汇总配置校验、Git Hook 正反例和环境插件 gated 状态 |
+| `code/install_wizard.py check` / `plan` / `apply --confirm-human-gate` / `verify` | 第一版安装 CLI 薄执行壳；`plugin_hook` 可安装管辖项目 Git Hook，薄引用 / manual entrypoint 只生成计划和交还 |
 
-AI 不得把缺少独立一键安装 CLI 写成安装已完成，也不得在最终确认前执行这些写入入口。若后续新增安装向导 CLI，必须先让该 CLI 完整承接 spec 30 的五步状态、Human Gate、外部 Git Hook Gate、环境插件 Gate、回滚和 `install_verification.py` 交还要求；在 CLI 实现并通过验证前，写入完成声明只能来自模板驱动执行后的可复现验收结果。
+AI 不得把 CLI 写成无确认一键安装器，也不得在最终确认前执行写入入口。当前第一版 CLI 已承接 spec 10 的 `check -> plan -> apply -> verify`、Human Gate、外部 Git Hook Gate、回滚和 `install_verification.py` 交还要求；环境插件安装、薄引用写入、manual entrypoint 写入仍只生成计划或交还，不能声明环境 integrated。
 
 环境 Hook 提示必须按目标环境命名，不能默认写成 Codex。AI 能从当前运行上下文识别当前 AI 运行环境名称时，用户主界面必须优先使用该名称；只有当前环境或目标环境确认为 Codex 时，才使用 `Codex/工具入口插件`。目标环境是 Trae、IDE、Agent runner、CI、repo instruction 或未知环境时，应改成对应环境名称或写 `目标环境插件 / 工具入口插件`。
 

@@ -11,7 +11,7 @@
 5. `specs/06-行动模板基础规范.md`
 6. `specs/08-Web信息同步规范.md`
 7. `specs/09-测试与验证规范.md`
-8. `specs/10-管辖项目配置规范.md`
+8. `specs/10-安装与配置规范.md`
 9. `_migration/11E-v2-v3-capability-coverage-matrix.md`
 10. `_migration/12-19-v3-post-mainline-work-plan.md`
 11. `_migration/20-22-conditional-audit-closure.md`
