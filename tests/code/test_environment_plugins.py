@@ -219,6 +219,89 @@ def test_codex_sample_shim_allows_read_only_bash_probe_without_acknowledgement()
     assert completed.stdout == ""
 
 
+def test_codex_sample_shim_allows_read_only_exec_command_pipeline_without_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-exec-read",
+            "cwd": ROOT.as_posix(),
+            "toolName": "functions.exec_command",
+            "arguments": {"cmd": "rg -n \"read_plan|target_path\" code/runtime_adapter.py | sed -n '1,20p'"},
+        },
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
+def test_codex_sample_shim_infers_read_plan_ack_from_transcript(tmp_path: Path) -> None:
+    transcript = tmp_path / "transcript.jsonl"
+    transcript.write_text(
+        "\n".join(
+            json.dumps(
+                {
+                    "payload": {
+                        "type": "function_call",
+                        "arguments": json.dumps({"cmd": f"cat {path}"}),
+                    }
+                },
+                ensure_ascii=False,
+            )
+            for path in (
+                "specs/00-理念与构成.md",
+                "specs/01-保障与衔接.md",
+                "specs/02-AI行为规范.md",
+            )
+        ),
+        encoding="utf-8",
+    )
+
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-transcript-ack",
+            "cwd": ROOT.as_posix(),
+            "transcript_path": transcript.as_posix(),
+            "toolName": "Write",
+            "tool_input": {"file_path": "tests/code/test_environment_plugins.py"},
+        },
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["additionalContext"].startswith("LDVH V3 pre-tool check passed.")
+
+
+def test_codex_sample_shim_extracts_apply_patch_targets() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-apply-patch",
+            "cwd": ROOT.as_posix(),
+            "toolName": "apply_patch",
+            "input": """*** Begin Patch
+*** Update File: tests/code/test_environment_plugins.py
+@@
+ pass
+*** End Patch
+""",
+            "acknowledgedPaths": [
+                "specs/00-理念与构成.md",
+                "specs/01-保障与衔接.md",
+                "specs/02-AI行为规范.md",
+            ],
+        },
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["additionalContext"].startswith("LDVH V3 pre-tool check passed.")
+
+
 def test_codex_sample_shim_allows_pre_tool_use_with_acknowledged_paths() -> None:
     completed = _run_shim(
         {

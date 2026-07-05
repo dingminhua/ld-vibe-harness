@@ -57,6 +57,7 @@ READ_ONLY_GIT_SUBCOMMANDS = {
     "show",
     "status",
 }
+READ_ONLY_SHELL_PIPE_COMMANDS = READ_ONLY_COMMANDS | {"xargs"}
 
 
 def read_payload(raw: str) -> dict[str, Any]:
@@ -129,8 +130,18 @@ def find_ldvh_root(payload: dict[str, Any], cwd: Path) -> Path | None:
 
 
 def tool_input(payload: dict[str, Any]) -> dict[str, Any]:
-    value = payload.get("tool_input") or payload.get("toolInput") or {}
-    return value if isinstance(value, dict) else {}
+    for key in ("tool_input", "toolInput", "input", "arguments", "parameters"):
+        value = payload.get(key)
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str) and value.strip().startswith("{"):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(parsed, dict):
+                return parsed
+    return {}
 
 
 def command_text(payload: dict[str, Any]) -> str:
@@ -145,9 +156,51 @@ def command_parts(command: str) -> list[str]:
         return command.split()
 
 
+def split_unquoted_pipes(command: str) -> list[str]:
+    segments: list[str] = []
+    current: list[str] = []
+    quote = ""
+    escaped = False
+    for char in command:
+        if escaped:
+            current.append(char)
+            escaped = False
+            continue
+        if char == "\\":
+            current.append(char)
+            escaped = True
+            continue
+        if quote:
+            current.append(char)
+            if char == quote:
+                quote = ""
+            continue
+        if char in {"'", '"'}:
+            current.append(char)
+            quote = char
+            continue
+        if char == "|":
+            segments.append("".join(current).strip())
+            current = []
+            continue
+        current.append(char)
+    segments.append("".join(current).strip())
+    return segments
+
+
 def is_likely_read_only_command(command: str) -> bool:
     stripped = command.strip()
-    if not stripped or re.search(r"[;&|><`$()\n\r]", stripped):
+    if not stripped or re.search(r"[;&><`$()\n\r]", stripped):
+        return False
+    segments = split_unquoted_pipes(stripped)
+    if len(segments) > 1:
+        return all(is_likely_read_only_command_segment(segment) for segment in segments)
+    return is_likely_read_only_command_segment(stripped)
+
+
+def is_likely_read_only_command_segment(command: str) -> bool:
+    stripped = command.strip()
+    if not stripped:
         return False
     parts = command_parts(stripped)
     if not parts:
@@ -157,7 +210,25 @@ def is_likely_read_only_command(command: str) -> bool:
         return False
     if executable == "git":
         return len(parts) > 1 and parts[1].lower() in READ_ONLY_GIT_SUBCOMMANDS
-    return executable in READ_ONLY_COMMANDS
+    return executable in READ_ONLY_SHELL_PIPE_COMMANDS
+
+
+def command_from_record(record: dict[str, Any]) -> str:
+    candidates: list[Any] = []
+    item = record.get("payload") if isinstance(record.get("payload"), dict) else record
+    if isinstance(item, dict):
+        candidates.extend([item.get("arguments"), item.get("input"), item.get("tool_input"), item.get("toolInput")])
+    for candidate in candidates:
+        if isinstance(candidate, str):
+            try:
+                candidate = json.loads(candidate)
+            except json.JSONDecodeError:
+                return first_text(candidate)
+        if isinstance(candidate, dict):
+            command = first_text(candidate.get("cmd"), candidate.get("command"))
+            if command:
+                return command
+    return first_text(record.get("cmd"), record.get("command"))
 
 
 def transcript_read_commands(payload: dict[str, Any]) -> list[str]:
@@ -178,17 +249,12 @@ def transcript_read_commands(payload: dict[str, Any]) -> list[str]:
         except json.JSONDecodeError:
             continue
         item = record.get("payload") if isinstance(record, dict) else {}
-        if not isinstance(item, dict) or item.get("type") != "function_call":
+        if not isinstance(item, dict):
             continue
-        raw_arguments = item.get("arguments")
-        if isinstance(raw_arguments, str):
-            try:
-                arguments = json.loads(raw_arguments)
-            except json.JSONDecodeError:
-                arguments = {}
-        else:
-            arguments = raw_arguments if isinstance(raw_arguments, dict) else {}
-        command = first_text(arguments.get("cmd"), arguments.get("command"))
+        record_type = str(item.get("type") or record.get("type") or "")
+        if record_type and record_type not in {"function_call", "tool_call"}:
+            continue
+        command = command_from_record(record)
         if command and is_likely_read_only_command(command):
             commands.append(command)
     return commands
@@ -227,6 +293,33 @@ def target_path_from_command(payload: dict[str, Any]) -> str:
     return ""
 
 
+def patch_text(payload: dict[str, Any]) -> str:
+    tool = tool_input(payload)
+    return first_text(
+        payload.get("patch"),
+        payload.get("input"),
+        payload.get("command"),
+        tool.get("patch"),
+        tool.get("input"),
+        tool.get("command"),
+        tool.get("cmd"),
+    )
+
+
+def target_paths_from_patch(payload: dict[str, Any]) -> list[str]:
+    raw = patch_text(payload)
+    if not raw:
+        return []
+    values: list[str] = []
+    for pattern in (
+        r"^\*\*\* Update File: (.+)$",
+        r"^\*\*\* Add File: (.+)$",
+        r"^\*\*\* Delete File: (.+)$",
+    ):
+        values.extend(match.strip() for match in re.findall(pattern, raw, flags=re.MULTILINE))
+    return values
+
+
 def target_path_values(payload: dict[str, Any], cwd: Path) -> list[str]:
     tool = tool_input(payload)
     candidates = [
@@ -261,6 +354,7 @@ def target_path_values(payload: dict[str, Any], cwd: Path) -> list[str]:
         for candidate in target_paths:
             if isinstance(candidate, str) and candidate.strip():
                 values.append(candidate.strip())
+    values.extend(target_paths_from_patch(payload))
     command_target = target_path_from_command(payload)
     if command_target:
         values.append(command_target)
@@ -283,10 +377,10 @@ def task_text(payload: dict[str, Any]) -> str:
 
 
 def operation(payload: dict[str, Any]) -> str:
-    tool_name = first_text(payload.get("tool_name"), payload.get("toolName")).lower()
+    tool_name = first_text(payload.get("tool_name"), payload.get("toolName"), payload.get("name")).lower()
     if tool_name in READ_ONLY_TOOLS:
         return "read"
-    if tool_name == "bash" and is_likely_read_only_command(command_text(payload)):
+    if tool_name in {"bash", "exec_command", "functions.exec_command", "shell"} and is_likely_read_only_command(command_text(payload)):
         return "read"
     return first_text(payload.get("operation"), "write")
 
