@@ -1,0 +1,40 @@
+id: spark-0046
+type: spark
+title: Codex Hook 六类事件研究采样
+status: pending
+created: '2026-07-05T00:00:00+08:00'
+updated: '2026-07-05T00:00:00+08:00'
+description: |
+  本 Spark 记录 Codex 环境插件需要覆盖六类 lifecycle hook 的研究入口：SessionStart、PreToolUse、PostToolUse、UserPromptSubmit、Stop 和 Notification。目标是在真实会话中保留最小事件样本，后续研究每类时机分别适合承载哪些 LDVH 行为，例如会话读计划、工具前阻断、工具后审计、用户输入分流、完成声明检查和通知类提示。
+
+  该议题当前仍处于研究采样阶段。hook 写入 Spark 的样本只作为后续分析线索，不等同于规则、payload schema、安装完成证据或自动治理能力声明。若后续要把某类事件升级为稳定治理入口，应分流到 WorkCase、ADR、Study、docs 或 specs/Code 变更。
+source: conversation
+source_detail: |
+  Human 指出：SessionStart、PreToolUse、PostToolUse、UserPromptSubmit、Stop 和 Notification 六种时机都应该被 hook 支持并写入 Spark，之后进行研究。当前实现把六类事件接入 Codex 插件 shim，并将事件元数据追加到本 Spark 的 evolution 中。
+priority: P1
+input_refs:
+  - spark-0032
+  - spark-0033
+  - workcase-0012
+  - specs/01-保障与衔接.md
+  - specs/10-安装与配置规范.md
+  - hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_sparks:
+  - spark-0032
+  - spark-0033
+related_workcases:
+  - workcase-0012
+related_adrs: []
+related_studies: []
+related_docs:
+  - specs/01-保障与衔接.md
+  - specs/10-安装与配置规范.md
+  - hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json
+  - hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
+evolution:
+  - at: '2026-07-05T00:00:00+08:00'
+    summary: |
+      新建 Spark，作为 Codex hook 六类事件研究采样入口。当前边界是：六类事件都进入插件 hook 声明并可追加研究样本；已有治理语义的 SessionStart、PreToolUse 和 Stop 继续走 runtime adapter；PostToolUse、UserPromptSubmit 和 Notification 先只做静默采样，不输出授权、阻断或完成声明。

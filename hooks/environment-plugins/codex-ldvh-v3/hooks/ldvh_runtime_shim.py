@@ -13,24 +13,36 @@ import re
 import shlex
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 
 ROOT_MARKERS = ("code/runtime_adapter.py", "specs/00-理念与构成.md")
 TRIGGER_SOURCE = "codex.ldvh-plugin"
+RESEARCH_SPARK_SLUG = "codex-hook-six-event-research-capture"
+RESEARCH_SPARK_TITLE = "Codex Hook 六类事件研究采样"
 REQUIRED_ENTRY_PATHS = (
     "specs/00-理念与构成.md",
     "specs/01-保障与衔接.md",
     "specs/02-AI行为规范.md",
 )
 EVENT_MAP = {
-    "sessionstart": "session_start",
-    "session_start": "session_start",
-    "pretooluse": "pre_tool_use",
-    "pre_tool_use": "pre_tool_use",
-    "stop": "completion_claim",
-    "completion_claim": "completion_claim",
+    "sessionstart": "SessionStart",
+    "session_start": "SessionStart",
+    "pretooluse": "PreToolUse",
+    "pre_tool_use": "PreToolUse",
+    "posttooluse": "PostToolUse",
+    "post_tool_use": "PostToolUse",
+    "userpromptsubmit": "UserPromptSubmit",
+    "user_prompt_submit": "UserPromptSubmit",
+    "stop": "Stop",
+    "notification": "Notification",
+}
+ADAPTER_EVENT_MAP = {
+    "SessionStart": "session_start",
+    "PreToolUse": "pre_tool_use",
+    "Stop": "completion_claim",
 }
 READ_ONLY_TOOLS = {"read", "grep", "glob", "ls"}
 READ_ONLY_COMMANDS = {"cat", "find", "grep", "head", "ls", "nl", "pwd", "rg", "sed", "tail", "wc"}
@@ -87,6 +99,10 @@ def normalize_event(payload: dict[str, Any]) -> str:
     )
     key = raw.replace("-", "_").replace(" ", "").lower()
     return EVENT_MAP.get(key, "")
+
+
+def adapter_event(event: str) -> str:
+    return ADAPTER_EVENT_MAP.get(event, "")
 
 
 def is_ldvh_root(path: Path) -> bool:
@@ -300,6 +316,142 @@ def emit_warning(message: str) -> int:
     return emit_json({"systemMessage": message})
 
 
+def hook_spark_capture_enabled() -> bool:
+    raw = os.environ.get("LDVH_HOOK_SPARK_CAPTURE", "1").strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
+
+def local_timestamp() -> str:
+    return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def yaml_scalar(value: str) -> str:
+    escaped = value.replace("\\", "\\\\").replace("'", "''")
+    return f"'{escaped}'"
+
+
+def yaml_block(value: str, indent: int = 2) -> str:
+    prefix = " " * indent
+    lines = value.splitlines() or [""]
+    return "\n".join(prefix + line for line in lines)
+
+
+def spark_dir(ldvh_root: Path) -> Path:
+    override = first_text(os.environ.get("LDVH_HOOK_SPARK_DIR"))
+    if override:
+        return Path(override).expanduser().resolve()
+    return ldvh_root / "ldvh-base" / "sparks"
+
+
+def next_spark_id(directory: Path) -> str:
+    max_num = 0
+    if directory.exists():
+        for path in directory.glob("spark-[0-9][0-9][0-9][0-9]-*.yaml"):
+            match = re.match(r"spark-(\d{4})-", path.name)
+            if match:
+                max_num = max(max_num, int(match.group(1)))
+    return f"spark-{max_num + 1:04d}"
+
+
+def research_spark_path(ldvh_root: Path) -> Path:
+    directory = spark_dir(ldvh_root)
+    matches = sorted(directory.glob(f"spark-[0-9][0-9][0-9][0-9]-{RESEARCH_SPARK_SLUG}.yaml"))
+    if matches:
+        return matches[0]
+    return directory / f"{next_spark_id(directory)}-{RESEARCH_SPARK_SLUG}.yaml"
+
+
+def create_research_spark(path: Path, now: str, summary: str) -> None:
+    spark_id = path.name.split("-", 2)
+    object_id = "-".join(spark_id[:2]) if len(spark_id) >= 2 else "spark-0000"
+    text = f"""id: {object_id}
+type: spark
+title: {RESEARCH_SPARK_TITLE}
+status: pending
+created: {yaml_scalar(now)}
+updated: {yaml_scalar(now)}
+description: |
+  本 Spark 作为 Codex 环境插件六类 lifecycle hook 的研究采样入口。它记录 SessionStart、PreToolUse、PostToolUse、UserPromptSubmit、Stop 和 Notification 在真实会话中的触发样本，用于后续判断哪些事件适合承载治理提醒、读计划提示、工具前置阻断、工具后置审计、用户输入分流或通知研究。
+
+  本 Spark 不定义 hook 规则、payload schema、阻断策略或安装完成声明；这些仍由 specs、Code 和环境插件边界承接。自动追加的 evolution 只作为研究线索，后续若要形成稳定规则，应分流到 WorkCase、ADR、Study、docs 或 specs。
+source: codex_hook
+source_detail: |
+  Codex LDVH v3 环境插件 `hooks/ldvh_runtime_shim.py` 自动捕获 lifecycle event 元数据。默认只写事件名、session、cwd、工具名、目标路径和 payload key 摘要，不写完整用户提示或完整工具参数。
+priority: P1
+input_refs:
+  - spark-0032
+  - spark-0033
+  - workcase-0012
+  - specs/01-保障与衔接.md
+  - specs/10-安装与配置规范.md
+  - hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_sparks:
+  - spark-0032
+  - spark-0033
+related_workcases:
+  - workcase-0012
+related_adrs: []
+related_studies: []
+related_docs:
+  - specs/01-保障与衔接.md
+  - specs/10-安装与配置规范.md
+  - hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json
+  - hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
+evolution:
+  - at: {yaml_scalar(now)}
+    summary: |
+{yaml_block(summary, 6)}
+"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def append_research_spark(path: Path, now: str, summary: str) -> None:
+    raw = path.read_text(encoding="utf-8")
+    raw = re.sub(r"^updated: .*$", f"updated: {yaml_scalar(now)}", raw, count=1, flags=re.MULTILINE)
+    if "\nevolution:\n" not in raw:
+        raw = raw.rstrip() + "\nevolution:\n"
+    entry = f"  - at: {yaml_scalar(now)}\n    summary: |\n{yaml_block(summary, 6)}\n"
+    path.write_text(raw.rstrip() + "\n" + entry, encoding="utf-8")
+
+
+def research_summary(payload: dict[str, Any], event: str, cwd: Path) -> str:
+    tool_name = first_text(payload.get("tool_name"), payload.get("toolName"))
+    session_id = first_text(payload.get("session_id"), payload.get("sessionId"), "codex-hook")
+    target = target_path(payload, cwd)
+    keys = ", ".join(sorted(str(key) for key in payload.keys())[:20])
+    lines = [
+        f"event={event}",
+        f"session_id={session_id}",
+        f"cwd={cwd.as_posix()}",
+    ]
+    if tool_name:
+        lines.append(f"tool_name={tool_name}")
+    if target:
+        lines.append(f"target_path={target}")
+    if keys:
+        lines.append(f"payload_keys={keys}")
+    return "\n".join(lines)
+
+
+def record_hook_event_to_spark(ldvh_root: Path, payload: dict[str, Any], event: str, cwd: Path) -> None:
+    if not hook_spark_capture_enabled():
+        return
+    now = local_timestamp()
+    path = research_spark_path(ldvh_root)
+    summary = research_summary(payload, event, cwd)
+    try:
+        if path.exists():
+            append_research_spark(path, now, summary)
+        else:
+            create_research_spark(path, now, summary)
+    except OSError:
+        return
+
+
 def read_adapter_json(stdout: str) -> dict[str, Any]:
     try:
         parsed = json.loads(stdout)
@@ -405,7 +557,7 @@ def pre_tool_deny(result: dict[str, Any]) -> dict[str, Any]:
 
 
 def codex_protocol_output(event: str, result: dict[str, Any]) -> dict[str, Any]:
-    if event == "session_start":
+    if event == "SessionStart":
         if is_blocking_result(result):
             return {
                 "hookSpecificOutput": {
@@ -420,7 +572,7 @@ def codex_protocol_output(event: str, result: dict[str, Any]) -> dict[str, Any]:
             }
         }
 
-    if event == "pre_tool_use":
+    if event == "PreToolUse":
         if should_deny_pre_tool(result):
             return pre_tool_deny(result)
         if is_blocking_result(result):
@@ -437,7 +589,7 @@ def codex_protocol_output(event: str, result: dict[str, Any]) -> dict[str, Any]:
             }
         }
 
-    if event == "completion_claim":
+    if event == "Stop":
         message = "LDVH V3 completion check passed."
         if is_blocking_result(result):
             message = "LDVH V3 completion check warning: " + diagnostic_reason(result)
@@ -453,11 +605,8 @@ def main() -> int:
     event = normalize_event(payload)
     if not event:
         return emit_warning(
-            "LDVH_CODEX_SHIM_EVENT_UNKNOWN: Codex hook payload did not contain a supported SessionStart, PreToolUse, Stop, or completion_claim event."
+            "LDVH_CODEX_SHIM_EVENT_UNKNOWN: Codex hook payload did not contain a supported SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, or Notification event."
         )
-
-    if event == "pre_tool_use" and operation(payload) == "read":
-        return 0
 
     ldvh_root = find_ldvh_root(payload, cwd)
     if ldvh_root is None:
@@ -465,8 +614,17 @@ def main() -> int:
             "LDVH_CODEX_SHIM_ROOT_NOT_FOUND: LDVH root was not found from LDVH_ROOT, payload, cwd, or shim path; hook shim allowed the event."
         )
 
+    record_hook_event_to_spark(ldvh_root, payload, event, cwd)
+
+    runtime_event = adapter_event(event)
+    if not runtime_event:
+        return 0
+
+    if event == "PreToolUse" and operation(payload) == "read":
+        return 0
+
     runtime_adapter = ldvh_root / "code" / "runtime_adapter.py"
-    adapter_json = json.dumps(adapter_payload(payload, event, cwd), ensure_ascii=False)
+    adapter_json = json.dumps(adapter_payload(payload, runtime_event, cwd), ensure_ascii=False)
     command = [
         sys.executable,
         runtime_adapter.as_posix(),

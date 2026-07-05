@@ -19,9 +19,12 @@ def _png_dimensions(path: Path) -> tuple[int, int]:
     return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
 
 
-def _run_shim(payload: dict, *, check: bool = True) -> subprocess.CompletedProcess:
+def _run_shim(payload: dict, *, check: bool = True, extra_env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
     env = dict(os.environ)
     env["LDVH_ROOT"] = ROOT.as_posix()
+    env["LDVH_HOOK_SPARK_CAPTURE"] = "0"
+    if extra_env:
+        env.update(extra_env)
     return subprocess.run(
         [sys.executable, SHIM.as_posix()],
         cwd=ROOT,
@@ -65,6 +68,26 @@ def test_codex_sample_plugin_hooks_do_not_emit_status_messages() -> None:
     raw = json.dumps(hooks, ensure_ascii=False)
 
     assert "statusMessage" not in raw
+
+
+def test_codex_sample_plugin_declares_six_research_hook_events() -> None:
+    hooks = json.loads((PLUGIN_ROOT / "hooks/hooks.json").read_text(encoding="utf-8"))["hooks"]
+
+    assert set(hooks) == {
+        "SessionStart",
+        "PreToolUse",
+        "PostToolUse",
+        "UserPromptSubmit",
+        "Stop",
+        "Notification",
+    }
+    for event_name, entries in hooks.items():
+        assert entries
+        assert all(
+            hook["command"] == 'python3 "$PLUGIN_ROOT/hooks/ldvh_runtime_shim.py"'
+            for entry in entries
+            for hook in entry["hooks"]
+        ), event_name
 
 
 def test_v2_absorbed_icon_assets_have_expected_png_sizes() -> None:
@@ -236,3 +259,44 @@ def test_codex_sample_shim_degrades_completion_claim_to_non_blocking_stop() -> N
     assert payload["continue"] is True
     assert "LDVH V3 completion check warning" in payload["systemMessage"]
     assert "RUNTIME_COMPLETION_VERIFICATION_MISSING" in payload["systemMessage"]
+
+
+def test_codex_sample_shim_records_six_hook_events_to_research_spark(tmp_path: Path) -> None:
+    spark_dir = tmp_path / "sparks"
+    env = {
+        "LDVH_HOOK_SPARK_CAPTURE": "1",
+        "LDVH_HOOK_SPARK_DIR": spark_dir.as_posix(),
+    }
+    payloads = [
+        {"hook_event_name": "SessionStart", "sessionId": "shim-research", "cwd": ROOT.as_posix()},
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-research",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Read",
+            "tool_input": {"file_path": "README.md"},
+        },
+        {
+            "hook_event_name": "PostToolUse",
+            "sessionId": "shim-research",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Read",
+            "tool_input": {"file_path": "README.md"},
+        },
+        {"hook_event_name": "UserPromptSubmit", "sessionId": "shim-research", "cwd": ROOT.as_posix()},
+        {"hook_event_name": "Stop", "sessionId": "shim-research", "cwd": ROOT.as_posix()},
+        {"hook_event_name": "Notification", "sessionId": "shim-research", "cwd": ROOT.as_posix()},
+    ]
+
+    for payload in payloads:
+        completed = _run_shim(payload, extra_env=env)
+        assert completed.returncode == 0
+
+    files = list(spark_dir.glob("spark-0001-codex-hook-six-event-research-capture.yaml"))
+    assert len(files) == 1
+    raw = files[0].read_text(encoding="utf-8")
+
+    for event_name in ("SessionStart", "PreToolUse", "PostToolUse", "UserPromptSubmit", "Stop", "Notification"):
+        assert f"event={event_name}" in raw
+    assert "title: Codex Hook 六类事件研究采样" in raw
+    assert "source: codex_hook" in raw
