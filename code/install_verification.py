@@ -491,7 +491,7 @@ def _verify_environment(
             "integrated": environment_integrated,
             "verification_method": "repo_local_shim_direct_test",
             "real_hook_observed": environment_integrated,
-            "user_status": "插件入口可见，内部连接检查通过；尚未取得 Codex 生命周期真实触发证据。"
+            "user_status": "插件入口可见，内部连接检查通过；若真实 PreToolUse 已阻断，则按 Hook 已触发但 read_plan 消费证据链路未通过处理。"
             if environment_install_verified and not environment_integrated
             else "真实自动 Hook integrated 已验证。"
             if environment_integrated
@@ -798,7 +798,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
     elif env_status == "薄引用 / manual entrypoint":
         real_trigger_passed_items.append("Runtime 入口可读")
     else:
-        real_trigger_pending_items.append(f"{environment_name} 生命周期真实触发")
+        real_trigger_pending_items.append(f"{environment_name} lifecycle Hook 触发证据回读 / read_plan 消费证据链路")
 
     if summary["blocking"]:
         install_status = "阻断"
@@ -808,7 +808,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
         if env_status == "已自动接入":
             next_step = "可停止；保留验证输出作为交还证据"
         elif env_status == "插件可见，待真实触发":
-            next_step = "先确认 Codex 插件已授权 / trust 且无待处理授权，再重启或新开会话，触发只读可见性检查和受控写入前检查，回来继续真实触发验收"
+            next_step = "先确认 Codex 插件已授权 / trust；若已看到 PreToolUse 阻断，按 Hook 已触发处理，继续修复 read_plan 消费证据链路"
         else:
             next_step = "交还当前状态和残留限制"
     else:
@@ -825,6 +825,8 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             f"打开 {environment_name} 插件页面，确认 LDVH 插件启用且无错误。",
             "确认插件已授权 / trust；如果有授权提示，先完成授权，没有提示则记录无待处理授权。",
             "重启 App 或新开会话。",
+            f"查看 {environment_name} 插件 Hook / lifecycle 触发记录；若没有可见记录，返回“未取得 Hook 触发证据”。",
+            "若看到 PreToolUse 阻断，尤其是 RUNTIME_READ_PLAN_CONSUMED_EMPTY 或 PREFLIGHT_TARGET_UNKNOWN，记录为“Hook 已触发，但 read_plan 消费证据链路未通过”。",
             "在新会话里触发只读 LDVH 可见性检查，确认返回 runtime 回执。",
             "触发一次受控写入前检查，确认应阻断的写入会被阻断。",
             "带着新会话结果回来继续真实触发验收。",
@@ -856,7 +858,7 @@ def _build_user_handoff(result: dict[str, Any]) -> dict[str, Any]:
             "normal": "通过标准：当前工作流产生可复核的 LDVH 触发证据，并且提交消息 Hook 正反例通过。",
             "next_step": "无需处理。"
             if real_trigger_acceptance_complete
-            else "重启或新开会话后触发 Codex 生命周期，再返回继续验收。",
+            else "若已出现 PreToolUse 阻断，按 Hook 已触发处理；继续修复 read_plan 消费证据链路后再验收。",
         },
         {
             "name": "提交消息检查",

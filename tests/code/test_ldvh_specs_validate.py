@@ -1253,6 +1253,14 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "Runtime Protocol 或等价运行时入口" in raw
     assert "授权 / trust 检查" in raw
     assert "必须先提示用户确认插件已授权、已信任或无待处理授权" in raw
+    assert "Hook 触发证据检查" in raw
+    assert "未取得 Hook 触发证据" in raw
+    assert "不得用手动探针替代真实 Hook 触发证据" in raw
+    assert "PreToolUse 阻断" in raw
+    assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in raw
+    assert "PREFLIGHT_TARGET_UNKNOWN" in raw
+    assert "Hook 已触发，但 read_plan 消费证据链路未通过" in raw
+    assert "不得继续写成 lifecycle 未触发" in raw
     assert "真实工作流验证清单" in raw
     assert "本次验证通过" in raw
     assert "本次验证失败" in raw
@@ -1261,6 +1269,7 @@ def test_ldvh_install_action_template_defines_action_stage_contract(validation_r
     assert "Runtime 入口与 lifecycle 验证" in raw
     assert "提交消息检查" in raw
     assert "授权检查必须排在重启或新开会话之前" in raw
+    assert "Hook 触发证据检查排在手动 runtime 探针之前" in raw
     assert "失败信息包" in raw
     assert "最终确认只展示两个主选项" in raw
     assert "1 执行方案" in raw
