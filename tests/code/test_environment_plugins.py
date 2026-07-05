@@ -274,6 +274,51 @@ def test_codex_sample_shim_infers_read_plan_ack_from_transcript(tmp_path: Path) 
     assert hook_output["additionalContext"].startswith("LDVH V3 pre-tool check passed.")
 
 
+def test_codex_sample_shim_consumes_session_runtime_cache(tmp_path: Path) -> None:
+    extra_env = {"LDVH_RUNTIME_CACHE_DIR": (tmp_path / "receipt-cache").as_posix()}
+    subprocess.run(
+        [
+            sys.executable,
+            "code/acknowledge_read_plan.py",
+            "--session-id",
+            "shim-runtime-cache",
+            "--target-path",
+            "tests/code/test_environment_plugins.py",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        env={**os.environ, **extra_env},
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=60,
+    )
+
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-runtime-cache",
+            "cwd": ROOT.as_posix(),
+            "toolName": "Write",
+            "tool_input": {"file_path": "tests/code/test_environment_plugins.py"},
+        },
+        extra_env=extra_env,
+    )
+
+    payload = json.loads(completed.stdout)
+    hook_output = _hook_output(payload)
+    assert completed.returncode == 0
+    assert hook_output["hookEventName"] == "PreToolUse"
+    assert hook_output["additionalContext"].startswith("LDVH V3 pre-tool check passed.")
+
+
 def test_codex_sample_shim_extracts_apply_patch_targets() -> None:
     completed = _run_shim(
         {

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 
 import ldvh_specs
+import runtime_receipt_cache
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -42,7 +44,14 @@ def _diagnostic_codes(result: dict) -> set[str]:
     return {diagnostic["code"] for diagnostic in result["diagnostics"]}
 
 
-def _run_cli(args: list[str], *, cwd: Path, timeout: int = 60, check: bool = True) -> subprocess.CompletedProcess:
+def _run_cli(
+    args: list[str],
+    *,
+    cwd: Path,
+    timeout: int = 60,
+    check: bool = True,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess:
     """运行 CLI 子进程，超时时打印 stdout/stderr 再抛出，避免调试信息丢失。"""
     try:
         return subprocess.run(
@@ -52,6 +61,7 @@ def _run_cli(args: list[str], *, cwd: Path, timeout: int = 60, check: bool = Tru
             capture_output=True,
             check=check,
             timeout=timeout,
+            env=env,
         )
     except subprocess.TimeoutExpired as exc:
         stdout = exc.stdout or ""
@@ -117,6 +127,15 @@ def test_readme_indexes_action_template_specs() -> None:
     assert "`31`：环境 Hook 接入后验收行动模板" not in raw
 
 
+def test_install_action_template_discloses_runtime_cache_boundary() -> None:
+    raw = (ROOT / "specs/30-安装配置与验证行动模板.md").read_text(encoding="utf-8")
+
+    assert "session-scoped runtime receipt cache" in raw
+    assert "OS runtime / temporary / cache 目录" in raw
+    assert "cache 不能作为事实源或完成证据" in raw
+    assert "runtime cache 状态" in raw
+
+
 def test_migration_33a_marks_formal_review_hash_gate_superseded() -> None:
     raw = (ROOT / "_migration/33A-action-template-30-admission.md").read_text(encoding="utf-8")
 
@@ -170,6 +189,9 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "接入判定分类由 `01.Att.04` 和 Code 环境审计承接" in spec_01
     assert "不恢复 V2 persistent session receipt 存储" in spec_01
     assert "不作为环境 adapter 的独立 lifecycle event" in spec_01
+    assert "运行态 receipt cache 是 receipt 的短期桥接形态" in spec_01
+    assert "不得写入项目 repo、`specs/`、`ldvh-base/`、Spark、受管项目或工作树隐藏目录" in spec_01
+    assert "stdout receipt 和 runtime cache 都只能作为过程输出" in spec_01
     assert "Git Hook" in spec_01
     assert "环境 Hook" in spec_01
     assert "只能定位并调用 LDVH" in spec_01
@@ -195,12 +217,20 @@ def test_assurance_spec_defines_git_and_environment_hook_boundaries() -> None:
     assert "| `config_root` |" in runtime_payload
     assert "| `target_paths` |" in runtime_payload
     assert "不得用 LDVH 本体根目录替代外部项目 cwd" in runtime_payload
+    assert "runtime receipt cache 字段" in runtime_payload
+    assert "$XDG_RUNTIME_DIR/ldvh/codex-hook/receipts/" in runtime_payload
+    assert "$TMPDIR/ldvh-codex-hook/receipts/" in runtime_payload
+    assert "%LOCALAPPDATA%\\LDVH\\CodexHook\\receipts\\" in runtime_payload
+    assert "`expires_at`" in runtime_payload
+    assert "默认 TTL 不得超过 30 分钟" in runtime_payload
 
     assert "| `entry_kind` |" in rollback
+    assert "| `runtime_cache_disclosure` |" in rollback
     assert "| `shim_boundary` |" in rollback
     assert "| `rollback_evidence` |" in rollback
     assert "插件或扩展 manifest" in rollback
     assert "恢复或保留原有用户 Hook / 环境配置" in rollback
+    assert "清理或说明已过期的 LDVH runtime receipt cache" in rollback
 
     assert "文件状态：hook protocol entry" in runtime_protocol_entry
     assert "本文只写三类内容" in runtime_protocol_entry
@@ -2462,6 +2492,7 @@ def test_acknowledge_read_plan_cli_accepts_entry_paths() -> None:
             "specs/01-保障与衔接.md",
             "--acknowledged-path",
             "specs/02-AI行为规范.md",
+            "--no-runtime-cache",
             "--format",
             "json",
         ],
@@ -2477,6 +2508,7 @@ def test_acknowledge_read_plan_cli_accepts_entry_paths() -> None:
     assert payload["metadata"]["integration_scope"] == "manual.acknowledge_read_plan"
     assert payload["receipt"]["storage"] == "stdout_only"
     assert payload["receipt"]["persistent"] is False
+    assert payload["summary"]["runtime_cache"] == "disabled"
     assert payload["receipt"]["acknowledged_paths"] == [
         "specs/00-理念与构成.md",
         "specs/01-保障与衔接.md",
@@ -2492,6 +2524,7 @@ def test_acknowledge_read_plan_cli_blocks_missing_paths() -> None:
             "code/acknowledge_read_plan.py",
             "--target-path",
             "tests/code/test_ldvh_specs_validate.py",
+            "--no-runtime-cache",
             "--format",
             "json",
         ],
@@ -2504,6 +2537,40 @@ def test_acknowledge_read_plan_cli_blocks_missing_paths() -> None:
     assert payload["summary"]["status"] == "blocked"
     assert payload["summary"]["integration_scope"] == "manual.acknowledge_read_plan"
     assert "RUNTIME_ACK_REQUIRED_PATHS_EMPTY" in _diagnostic_codes(payload)
+
+
+def test_acknowledge_read_plan_cli_writes_runtime_cache(tmp_path: Path) -> None:
+    env = {
+        **os.environ,
+        "LDVH_RUNTIME_CACHE_DIR": (tmp_path / "receipt-cache").as_posix(),
+    }
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/acknowledge_read_plan.py",
+            "--session-id",
+            "test-runtime-cache",
+            "--target-path",
+            "tests/code/test_ldvh_specs_validate.py",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+        env=env,
+    )
+
+    payload = json.loads(completed.stdout)
+    cache_path = Path(payload["runtime_cache"]["path"])
+    assert payload["summary"]["runtime_cache"] == "written"
+    assert cache_path.is_file()
+    assert cache_path.is_relative_to(tmp_path)
 
 
 def test_runtime_pre_tool_use_includes_preflight(validation_result: dict) -> None:
@@ -2719,6 +2786,215 @@ def test_pre_tool_use_cli_blocks_missing_read_plan_consumption() -> None:
     assert payload["summary"]["status"] == "blocked"
     assert "RUNTIME_READ_PLAN_CONSUMED_EMPTY" in _diagnostic_codes(payload)
     assert payload["summary"]["integration_scope"] == "manual.pre_tool_use"
+
+
+def test_pre_tool_use_cli_consumes_runtime_cache(tmp_path: Path) -> None:
+    env = {
+        **os.environ,
+        "LDVH_RUNTIME_CACHE_DIR": (tmp_path / "receipt-cache").as_posix(),
+    }
+    _run_cli(
+        [
+            sys.executable,
+            "code/acknowledge_read_plan.py",
+            "--session-id",
+            "test-pre-tool-cache",
+            "--target-path",
+            "tests/code/test_ldvh_specs_validate.py",
+            "--acknowledged-path",
+            "specs/00-理念与构成.md",
+            "--acknowledged-path",
+            "specs/01-保障与衔接.md",
+            "--acknowledged-path",
+            "specs/02-AI行为规范.md",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+        env=env,
+    )
+
+    completed = _run_cli(
+        [
+            sys.executable,
+            "code/pre_tool_use.py",
+            "--session-id",
+            "test-pre-tool-cache",
+            "--target-path",
+            "tests/code/test_ldvh_specs_validate.py",
+            "--format",
+            "json",
+        ],
+        cwd=ROOT,
+        check=True,
+        env=env,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"]["status"] == "ok"
+    assert payload["summary"]["runtime_cache"] == "hit"
+    assert payload["receipt"]["acknowledged_paths"] == [
+        "specs/00-理念与构成.md",
+        "specs/01-保障与衔接.md",
+        "specs/02-AI行为规范.md",
+    ]
+
+
+def test_runtime_cache_refuses_repo_local_directory(monkeypatch) -> None:
+    monkeypatch.setenv("LDVH_RUNTIME_CACHE_DIR", (ROOT / ".ldvh-runtime-cache-test").as_posix())
+
+    result = runtime_receipt_cache.write_ack_receipt(
+        ROOT,
+        session_id="repo-local-cache",
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+        trigger_source="test",
+    )
+
+    assert result.status == "blocked"
+    assert "must not be inside the LDVH repo" in result.reason
+    assert not (ROOT / ".ldvh-runtime-cache-test").exists()
+
+
+def test_runtime_cache_handles_invalid_payload_without_crashing(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("LDVH_RUNTIME_CACHE_DIR", (tmp_path / "receipt-cache").as_posix())
+    cache_dir = runtime_receipt_cache.runtime_cache_dir()
+    cache_dir.mkdir(parents=True)
+    path = runtime_receipt_cache.receipt_cache_path(ROOT, "bad-cache")
+    path.write_text("[]\n", encoding="utf-8")
+
+    result = runtime_receipt_cache.read_ack_receipt(ROOT, session_id="bad-cache")
+
+    assert result.status in {"invalid", "miss"}
+    assert not path.exists()
+
+
+def test_runtime_cache_removes_structured_invalid_payload(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("LDVH_RUNTIME_CACHE_DIR", (tmp_path / "receipt-cache").as_posix())
+    write_result = runtime_receipt_cache.write_ack_receipt(
+        ROOT,
+        session_id="structured-invalid",
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+        trigger_source="test",
+    )
+    path = Path(write_result.path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["schema_version"] = 999
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = runtime_receipt_cache.read_ack_receipt(ROOT, session_id="structured-invalid")
+
+    assert result.status == "invalid"
+    assert not path.exists()
+
+
+def test_runtime_cache_rejects_session_mismatch(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("LDVH_RUNTIME_CACHE_DIR", (tmp_path / "receipt-cache").as_posix())
+    write_result = runtime_receipt_cache.write_ack_receipt(
+        ROOT,
+        session_id="session-a",
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+        trigger_source="test",
+    )
+
+    read_result = runtime_receipt_cache.read_ack_receipt(ROOT, session_id="session-b")
+
+    assert write_result.status == "written"
+    assert read_result.status == "miss"
+
+
+def test_runtime_cache_clamps_ttl(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("LDVH_RUNTIME_CACHE_DIR", (tmp_path / "receipt-cache").as_posix())
+    write_result = runtime_receipt_cache.write_ack_receipt(
+        ROOT,
+        session_id="expired-cache",
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+        trigger_source="test",
+        ttl_seconds=-1,
+    )
+
+    assert write_result.status == "written"
+    payload = json.loads(Path(write_result.path).read_text(encoding="utf-8"))
+    assert payload["expires_at"] > payload["created_at"]
+
+
+def test_runtime_cache_clamps_large_ttl_to_default(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("LDVH_RUNTIME_CACHE_DIR", (tmp_path / "receipt-cache").as_posix())
+    write_result = runtime_receipt_cache.write_ack_receipt(
+        ROOT,
+        session_id="large-ttl-cache",
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+        trigger_source="test",
+        ttl_seconds=999999,
+    )
+
+    payload = json.loads(Path(write_result.path).read_text(encoding="utf-8"))
+    created_at = datetime.fromisoformat(payload["created_at"].replace("Z", "+00:00"))
+    expires_at = datetime.fromisoformat(payload["expires_at"].replace("Z", "+00:00"))
+    assert (expires_at - created_at).total_seconds() == runtime_receipt_cache.DEFAULT_TTL_SECONDS
+
+
+def test_runtime_cache_rejects_expired_payload(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("LDVH_RUNTIME_CACHE_DIR", (tmp_path / "receipt-cache").as_posix())
+    write_result = runtime_receipt_cache.write_ack_receipt(
+        ROOT,
+        session_id="expired-cache",
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+        trigger_source="test",
+    )
+    path = Path(write_result.path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["expires_at"] = "2000-01-01T00:00:00Z"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    read_result = runtime_receipt_cache.read_ack_receipt(ROOT, session_id="expired-cache")
+
+    assert read_result.status in {"expired", "miss"}
+    assert not path.exists()
+
+
+def test_runtime_cache_uses_private_posix_modes(tmp_path: Path, monkeypatch) -> None:
+    if os.name == "nt":
+        return
+    monkeypatch.setenv("LDVH_RUNTIME_CACHE_DIR", (tmp_path / "receipt-cache").as_posix())
+    write_result = runtime_receipt_cache.write_ack_receipt(
+        ROOT,
+        session_id="mode-cache",
+        acknowledged_paths=[
+            "specs/00-理念与构成.md",
+            "specs/01-保障与衔接.md",
+            "specs/02-AI行为规范.md",
+        ],
+        trigger_source="test",
+    )
+    path = Path(write_result.path)
+
+    assert path.parent.stat().st_mode & 0o777 == 0o700
+    assert path.stat().st_mode & 0o777 == 0o600
 
 
 def test_pre_tool_use_cli_blocks_missing_target() -> None:

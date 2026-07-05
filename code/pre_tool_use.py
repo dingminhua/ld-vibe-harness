@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from ldvh_specs import ROOT, build_runtime_event
+from runtime_receipt_cache import read_ack_receipt
 
 
 INTEGRATION_SCOPE = "manual.pre_tool_use"
@@ -27,7 +28,23 @@ def build_pre_tool_use(
     operation: str = "write",
     trigger_source: str = "manual",
     acknowledged_paths: list[str] | None = None,
+    runtime_cache: bool = True,
 ) -> dict[str, Any]:
+    cache_status = {"status": "skipped", "path": "", "expires_at": "", "reason": "explicit acknowledged_paths supplied"}
+    effective_acknowledged_paths = acknowledged_paths
+    if runtime_cache and not acknowledged_paths:
+        cache = read_ack_receipt(root, session_id=session_id)
+        cache_status = {
+            "status": cache.status,
+            "path": cache.path,
+            "expires_at": cache.expires_at,
+            "reason": cache.reason,
+        }
+        if cache.acknowledged_paths:
+            effective_acknowledged_paths = cache.acknowledged_paths
+    elif not runtime_cache:
+        cache_status = {"status": "disabled", "path": "", "expires_at": "", "reason": "runtime cache disabled for this call"}
+
     result = build_runtime_event(
         root,
         event="pre_tool_use",
@@ -39,7 +56,7 @@ def build_pre_tool_use(
         cwd=cwd,
         config_root=config_root,
         target_paths=target_paths,
-        acknowledged_paths=acknowledged_paths,
+        acknowledged_paths=effective_acknowledged_paths,
     )
     preflight = result["preflight"] or {}
     result["metadata"]["integration_scope"] = INTEGRATION_SCOPE
@@ -48,6 +65,8 @@ def build_pre_tool_use(
     result["summary"]["acknowledged_paths"] = len(result["receipt"]["acknowledged_paths"])
     result["summary"]["preflight_status"] = preflight.get("summary", {}).get("status", "")
     result["summary"]["required_read_plan"] = len(preflight.get("required_read_plan", []))
+    result["runtime_cache"] = cache_status
+    result["summary"]["runtime_cache"] = cache_status["status"]
     return result
 
 
@@ -66,6 +85,9 @@ def _print_text(result: dict[str, Any]) -> None:
     print(f"- receipt_id: {receipt['receipt_id']}")
     print(f"- receipt_storage: {receipt['storage']}")
     print(f"- acknowledged_paths: {summary['acknowledged_paths']}")
+    print(f"- runtime_cache: {summary['runtime_cache']}")
+    if result.get("runtime_cache", {}).get("path"):
+        print(f"- runtime_cache_path: {result['runtime_cache']['path']}")
     print(f"- required_read_plan: {summary['required_read_plan']}")
     print(f"- environment_integrated: {_bool_text(summary['environment_integrated'])}")
     print(f"- integration_scope: {summary['integration_scope']}")
@@ -110,6 +132,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="acknowledged read_plan path; may be repeated or comma-separated",
     )
+    parser.add_argument("--no-runtime-cache", action="store_true", help="do not read the session runtime receipt cache")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     return parser
 
@@ -127,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
         operation=args.operation,
         trigger_source=args.trigger_source,
         acknowledged_paths=args.acknowledged_path,
+        runtime_cache=not args.no_runtime_cache,
     )
     if args.format == "json":
         print(json.dumps(result, ensure_ascii=False, indent=2))
