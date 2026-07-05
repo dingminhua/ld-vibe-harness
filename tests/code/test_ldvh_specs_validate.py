@@ -81,9 +81,10 @@ def test_foundation_specs_contracts_are_code_consumable(validation_result: dict)
     assert "fact_object_admission" in contracts["05"]["code_consumption"]
     assert "field_registry_contract" in contracts["05"]["code_consumption"]
     assert "context_scenario_gate" in contracts["06"]["code_consumption"]
-    assert "git_commit_action_template" in contracts["06"]["code_consumption"]
-    assert "ldvh_install_initialization_action_template" in contracts["06"]["code_consumption"]
-    assert "workcase_minimal_action_template" in contracts["06"]["code_consumption"]
+    assert "capability_output_boundary" in contracts["06"]["code_consumption"]
+    assert "action_evidence_requirements" in contracts["06"]["code_consumption"]
+    assert "git_commit_action_template" not in contracts["06"]["code_consumption"]
+    assert "workcase_minimal_action_template" not in contracts["06"]["code_consumption"]
     assert "runtime_facade_contracts" in contracts["07"]["code_consumption"]
     assert "web_code_separation_boundaries" in contracts["08"]["code_consumption"]
     assert "source_ref_display_requirements" in contracts["08"]["code_consumption"]
@@ -1044,112 +1045,61 @@ def test_code_validator_reports_missing_test_practice_boundary(tmp_path: Path) -
     assert "TEST_IMPLEMENTATION_PRACTICE_BOUNDARY_MISSING" in _diagnostic_codes(result)
 
 
-def test_git_commit_action_template_is_code_consumable(validation_result: dict) -> None:
+def test_action_template_foundation_rules_are_code_consumable(validation_result: dict) -> None:
     result = validation_result
-    rows = {row["结构"]: row["最小要求"] for row in result["git_commit_action_template"]}
+    raw = (ROOT / "specs/06-行动模板基础规范.md").read_text(encoding="utf-8")
 
-    assert set(rows) == {"Context", "Scenario", "Gate", "执行", "验证", "回写", "交还"}
-    assert "Git 工作区摘要" in rows["Context"]
-    assert "diff" in rows["执行"]
-    assert "Human Gate" in rows["Gate"]
-    assert "09.Att.01" in rows["验证"]
-    assert "commit hash" in rows["交还"]
+    assert "git_commit_action_template" not in result
+    assert "workcase_action_template" not in result
+    assert "引用与复制的判断标准" in raw
+    assert "七结构粒度要求" in raw
+    assert "本文不承载具体模板示范" in raw
+    assert "字段闭集、字段定义、枚举完整列表" in raw
+    assert "不展开来源 spec" in raw
+    assert "不重述来源 spec" in raw
 
 
-def test_git_commit_action_template_reports_missing_status_context(tmp_path: Path) -> None:
+def test_action_template_foundation_reports_missing_copy_boundary(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
         "specs/06-行动模板基础规范.md",
-        "Git 工作区摘要、",
+        "| 来源 spec 的字段闭集、字段定义、枚举值完整列表 | 否 | 是 |\n",
     )
 
     result = ldvh_specs.build_validation(root)
 
-    assert "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("Git 工作区摘要" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert "ACTION_TEMPLATE_REFERENCE_COPY_BOUNDARY_MISSING" in _diagnostic_codes(result)
+    assert any("来源 spec 的字段闭集、字段定义、枚举值完整列表" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
-def test_git_commit_action_template_reports_missing_split_gate(tmp_path: Path) -> None:
+def test_action_template_foundation_reports_missing_granularity_boundary(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
         "specs/06-行动模板基础规范.md",
-        "提交拆分边界不清、",
+        "七结构粒度要求",
+        "结构粒度要求",
     )
 
     result = ldvh_specs.build_validation(root)
 
-    assert "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("提交拆分边界不清" in diagnostic["message"] for diagnostic in result["diagnostics"])
+    assert "ACTION_TEMPLATE_GRANULARITY_RULE_MISSING" in _diagnostic_codes(result)
+    assert any("七结构粒度要求" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
-def test_git_commit_action_template_reports_missing_verification_evidence(tmp_path: Path) -> None:
+def test_action_template_foundation_reports_missing_concrete_example_boundary(tmp_path: Path) -> None:
     root = _copy_specs_root(tmp_path)
     _replace_in_temp(
         root,
         "specs/06-行动模板基础规范.md",
-        "和证据回指",
+        "本文不承载具体模板示范",
     )
 
     result = ldvh_specs.build_validation(root)
 
-    assert "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("证据回指" in diagnostic["message"] for diagnostic in result["diagnostics"])
-
-
-def test_git_commit_action_template_reports_missing_handoff_fields(tmp_path: Path) -> None:
-    root = _copy_specs_root(tmp_path)
-    _replace_in_temp(
-        root,
-        "specs/06-行动模板基础规范.md",
-        "commit hash、",
-    )
-
-    result = ldvh_specs.build_validation(root)
-
-    assert "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("commit hash" in diagnostic["message"] for diagnostic in result["diagnostics"])
-
-
-def test_action_guide_does_not_replace_main_ai_judgment_boundary(tmp_path: Path) -> None:
-    root = _copy_specs_root(tmp_path)
-    _replace_in_temp(
-        root,
-        "specs/06-行动模板基础规范.md",
-        "但 Action Guide 不替代主控 AI 判断、事实源、Human Gate、验证声明或行动模板执行结果。",
-    )
-
-    result = ldvh_specs.build_validation(root)
-
-    assert "GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
-
-
-def test_git_commit_action_template_reports_missing_skill_execution_modes(tmp_path: Path) -> None:
-    root = _copy_specs_root(tmp_path)
-    _replace_in_temp(
-        root,
-        "specs/06-行动模板基础规范.md",
-        "、`manual_equivalent_execution`",
-    )
-
-    result = ldvh_specs.build_validation(root)
-
-    assert "GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
-
-
-def test_workcase_action_template_is_code_consumable(validation_result: dict) -> None:
-    result = validation_result
-    rows = {row["结构"]: row["最小要求"] for row in result["workcase_action_template"]}
-
-    assert set(rows) == {"Context", "Scenario", "Gate", "执行", "验证", "回写", "交还"}
-    assert "WorkCase ID" in rows["Context"]
-    assert "创建 WorkCase" in rows["Scenario"]
-    assert "`human_closure_confirming`" in rows["Gate"]
-    assert "`closed`" in rows["执行"]
-    assert "09.Att.01" in rows["验证"]
-    assert "正式 WorkCase 事实实例" in rows["回写"]
-    assert "下一步 Human Gate" in rows["交还"]
+    assert "ACTION_TEMPLATE_CONCRETE_EXAMPLE_BOUNDARY_MISSING" in _diagnostic_codes(result)
+    assert any("本文不承载具体模板示范" in diagnostic["message"] for diagnostic in result["diagnostics"])
 
 
 def test_ldvh_install_action_template_is_code_consumable(validation_result: dict) -> None:
@@ -1567,47 +1517,6 @@ def test_ldvh_install_action_template_reports_missing_disclosure_handoff_timing(
 
     assert "LDVH_INSTALL_WIZARD_TERM_MISSING" in _diagnostic_codes(result)
     assert any("用户告知清单必须作为 4/5 安装方案预览的必含内容交给 Human 确认" in diagnostic["message"] for diagnostic in result["diagnostics"])
-
-
-def test_workcase_action_template_reports_missing_human_gate(tmp_path: Path) -> None:
-    root = _copy_specs_root(tmp_path)
-    _replace_in_temp(
-        root,
-        "specs/06-行动模板基础规范.md",
-        "、从 `human_closure_confirming` 关闭",
-    )
-
-    result = ldvh_specs.build_validation(root)
-
-    assert "WORKCASE_ACTION_TEMPLATE_TERM_MISSING" in _diagnostic_codes(result)
-    assert any("human_closure_confirming" in diagnostic["message"] for diagnostic in result["diagnostics"])
-
-
-def test_workcase_action_template_reports_missing_closure_handoff(tmp_path: Path) -> None:
-    root = _copy_specs_root(tmp_path)
-    _replace_in_temp(
-        root,
-        "specs/06-行动模板基础规范.md",
-        "| 交还 | 交还 WorkCase ID、当前状态、变更摘要、验证摘要、残留风险、下一步 Human Gate、source_refs 和未完成分流；阻断时交还阻断原因、缺少证据和建议的下一步。 |\n",
-    )
-
-    result = ldvh_specs.build_validation(root)
-
-    assert "WORKCASE_ACTION_TEMPLATE_ROW_MISSING" in _diagnostic_codes(result)
-
-
-def test_workcase_action_template_reports_missing_manual_boundary(tmp_path: Path) -> None:
-    root = _copy_specs_root(tmp_path)
-    _replace_in_temp(
-        root,
-        "specs/06-行动模板基础规范.md",
-        "`manual_equivalent_execution`",
-        "`manual_execution`",
-    )
-
-    result = ldvh_specs.build_validation(root)
-
-    assert "WORKCASE_ACTION_TEMPLATE_BOUNDARY_MISSING" in _diagnostic_codes(result)
 
 
 def test_workcase_member_contract_is_code_consumable(validation_result: dict) -> None:

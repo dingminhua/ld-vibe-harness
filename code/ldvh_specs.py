@@ -242,23 +242,46 @@ FACT_SOURCE_EVIDENCE_REQUIREMENTS = [
         "terms": ["必须运行的测试失败", "关键验证未运行", "证据无法回指", "Human 验收尚未发生", "仅有工具成功输出"],
     },
 ]
-GIT_COMMIT_ACTION_TEMPLATE_REQUIRED_ROWS = {
-    "Context": ["Git 工作区摘要", "staged", "diff", "source_refs", "03.Att.01", "09.Att.01"],
-    "Scenario": ["用户明确要求提交", "修复提交消息", "拆分已暂存变更", "只回答 03/09 边界"],
-    "Gate": ["已暂存变更", "提交拆分边界不清", "破坏性 Git", "commit validator", "失败测试", "Human Gate", "Hook/commit gate/环境入口"],
-    "执行": ["Git 工作区摘要", "diff", "拆分", "03.Att.01", "单一 type", "scope", "关键变更", "commit validator", "不安装 Hook"],
-    "验证": ["测试或命令", "09.Att.01", "验证目标", "验证入口", "残留风险", "证据回指", "不得声明完整验证"],
-    "回写": ["过程输出", "事实源", "事实对象", "Git commit records", "不替代事实对象或验证声明"],
-    "交还": ["commit hash", "验证摘要", "残留风险", "Git 工作区摘要", "source_refs", "执行方式", "阻断原因"],
-}
-GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS = [
-    "Action Guide",
-    "V2 知识地图",
-    "不替代主控 AI 判断",
-    "skill_runtime_invoked",
-    "manual_equivalent_execution",
-    "skill_unavailable",
-    "不得恢复 Skill 顶层机制",
+ACTION_TEMPLATE_FOUNDATION_RULE_REQUIREMENTS = [
+    {
+        "code": "ACTION_TEMPLATE_REFERENCE_COPY_BOUNDARY_MISSING",
+        "section": "行动模板结构",
+        "message": "06 必须声明行动模板引用与复制的判断边界",
+        "terms": [
+            "引用与复制的判断标准",
+            "| 来源 spec 的字段闭集、字段定义、枚举值完整列表 | 否 | 是 |",
+            "判定顺序、冲突处理",
+            "策略表",
+            "来源 spec 的示例",
+            "形成第二规则源",
+        ],
+    },
+    {
+        "code": "ACTION_TEMPLATE_GRANULARITY_RULE_MISSING",
+        "section": "行动模板结构",
+        "message": "06 必须声明行动模板七结构粒度要求",
+        "terms": [
+            "七结构粒度要求",
+            "| Context |",
+            "| Scenario |",
+            "| Gate |",
+            "| 执行 |",
+            "| 验证 |",
+            "| 回写 |",
+            "| 交还 |",
+            "不展开来源 spec",
+            "不重述来源 spec",
+        ],
+    },
+    {
+        "code": "ACTION_TEMPLATE_CONCRETE_EXAMPLE_BOUNDARY_MISSING",
+        "section": "行动模板结构",
+        "message": "06 必须声明父层规范不承载具体模板示范",
+        "terms": [
+            "正式行动模板成员的七结构内容以各自 spec 正文为准",
+            "本文不承载具体模板示范",
+        ],
+    },
 ]
 LDVH_INSTALL_ACTION_TEMPLATE_REQUIRED_ROWS = {
     "Context": ["用户目标", "目标环境", "LDVH 本体路径", "目标工作区根目录", "管辖项目候选", "LDVH-GOVERNED-PROJECTS.yaml", "ldvh-base/", "workcases/adrs/pitfalls/sparks/studies", "环境入口审计结果", "Git Hook 状态", "source_refs", "specs/10-安装与配置规范.md", "code/docs/03-LDVH-Install-Wizard-Practice.md"],
@@ -453,22 +476,6 @@ LDVH_INSTALL_CODE_CONSUMPTION_SUPPORT_TERMS = {
         "本次未验证",
     ],
 }
-WORKCASE_ACTION_TEMPLATE_REQUIRED_ROWS = {
-    "Context": ["WorkCase ID", "对象化价值", "成功标准", "source_refs", "specs/21-WorkCase-工作项.md"],
-    "Scenario": ["创建 WorkCase", "执行推进", "结果复核", "关闭确认", "只回答 21/06/09 边界"],
-    "Gate": ["Human Gate", "`human_plan_confirming`", "`human_closure_confirming`", "缺少验证证据", "Web 写入", "Hook", "runtime 自动触发"],
-    "执行": ["`subagents_plan_reviewing`", "`executing`", "`result_self_checking`", "`subagents_result_reviewing`", "`human_closure_confirming`", "`closed`"],
-    "验证": ["09.Att.01", "状态闭集", "成功标准", "后续分流 / 收口结果", "未验证"],
-    "回写": ["正式 WorkCase 事实实例", "verification_evidence", "closure_evidence", "human_closure_confirmation", "followup_refs", "Git commit records"],
-    "交还": ["WorkCase ID", "当前状态", "验证摘要", "残留风险", "下一步 Human Gate", "source_refs"],
-}
-WORKCASE_ACTION_TEMPLATE_BOUNDARY_TERMS = [
-    "manual_equivalent_execution",
-    "不启用 Web 写入",
-    "不安装 Hook",
-    "不声明 runtime 自动触发",
-    "不得替代 Human Gate",
-]
 WEB_SYNC_BOUNDARY_REQUIREMENTS = [
     {
         "code": "WEB_CODE_SEPARATION_BOUNDARY_MISSING",
@@ -1084,9 +1091,6 @@ FOUNDATION_SPEC_CONTRACTS = {
             "ldvh_spec_metadata",
             "action_template_boundaries",
             "context_scenario_gate",
-            "git_commit_action_template",
-            "ldvh_install_initialization_action_template",
-            "workcase_minimal_action_template",
             "capability_output_boundary",
             "action_evidence_requirements",
             "gap_disposition_rules",
@@ -1095,7 +1099,6 @@ FOUNDATION_SPEC_CONTRACTS = {
         "required_rule_body_sections": [
             "5. 行动模板结构",
             "6. 能力输出与主控责任",
-            "7. 模板候选与迁移边界",
         ],
         "required_assurance_rows": [
             "来源回指要求",
@@ -1103,7 +1106,7 @@ FOUNDATION_SPEC_CONTRACTS = {
             "验证要求",
             "能力输出边界",
         ],
-        "required_verification_rows": ["结构检查", "来源检查", "能力边界检查", "验证检查"],
+        "required_verification_rows": ["结构检查", "来源检查", "粒度检查", "能力边界检查", "验证检查"],
         "human_gate_terms": ["正式可执行模板", "模板 Gate", "Hook、Rules、Skill", "能力输出", "验证、回写"],
         "stop_condition_terms": ["来源规则", "第二事实源", "顶层机制", "Human Gate", "验证证据"],
     },
@@ -1511,28 +1514,6 @@ def parse_governed_projects_config(root: Path = ROOT, config_path: Path | None =
             {"path": GOVERNED_PROJECTS_CONTRACT_PATH, "role": "governed_project_config_contract"},
         ],
     }
-
-
-def parse_git_commit_action_template(root: Path = ROOT) -> list[dict[str, str]]:
-    raw = (root / SHORT_SPEC_REFS["06"]).read_text(encoding="utf-8")
-    sections = h2_sections(raw)
-    section = sections.get("模板候选与迁移边界")
-    if not section:
-        return []
-    return find_table(section["body"], ACTION_TEMPLATE_COLUMNS)
-
-
-def parse_workcase_action_template(root: Path = ROOT) -> list[dict[str, str]]:
-    raw = (root / SHORT_SPEC_REFS["06"]).read_text(encoding="utf-8")
-    sections = h2_sections(raw)
-    section = sections.get("模板候选与迁移边界")
-    if not section:
-        return []
-    marker = "### WorkCase 最小行动模板"
-    marker_index = section["body"].find(marker)
-    if marker_index == -1:
-        return []
-    return find_table(section["body"][marker_index:], ACTION_TEMPLATE_COLUMNS)
 
 
 def parse_ldvh_install_action_template(root: Path = ROOT) -> list[dict[str, str]]:
@@ -3011,113 +2992,24 @@ def validate_attachment_contracts(root: Path = ROOT) -> list[Diagnostic]:
     return diagnostics
 
 
-def validate_git_commit_action_template(root: Path = ROOT) -> list[Diagnostic]:
+def validate_action_template_foundation_rules(root: Path = ROOT) -> list[Diagnostic]:
     path = SHORT_SPEC_REFS["06"]
     raw = (root / path).read_text(encoding="utf-8")
     sections = h2_sections(raw)
-    action_section_body = sections.get("模板候选与迁移边界", {}).get("body", raw)
-    git_template_body = action_section_body.split("### WorkCase 最小行动模板", 1)[0]
-    rows = parse_git_commit_action_template(root)
+    body = sections.get("行动模板结构", {}).get("body", "")
     diagnostics: list[Diagnostic] = []
 
-    if not rows:
-        return [
-            Diagnostic(
-                "error",
-                "GIT_COMMIT_ACTION_TEMPLATE_MISSING",
-                path,
-                "06 缺少 Git 提交行动模板结构表",
-            )
-        ]
-
-    rows_by_structure = {row["结构"]: row for row in rows}
-    for structure, terms in GIT_COMMIT_ACTION_TEMPLATE_REQUIRED_ROWS.items():
-        row = rows_by_structure.get(structure)
-        if not row:
-            diagnostics.append(
-                Diagnostic(
-                    "error",
-                    "GIT_COMMIT_ACTION_TEMPLATE_ROW_MISSING",
-                    path,
-                    f"Git 提交行动模板缺少结构: {structure}",
-                )
-            )
-            continue
-        missing_terms = [term for term in terms if term not in row["最小要求"]]
+    for requirement in ACTION_TEMPLATE_FOUNDATION_RULE_REQUIREMENTS:
+        missing_terms = [term for term in requirement["terms"] if term not in body]
         for term in missing_terms:
             diagnostics.append(
                 Diagnostic(
                     "error",
-                    "GIT_COMMIT_ACTION_TEMPLATE_TERM_MISSING",
+                    requirement["code"],
                     path,
-                    f"{structure} 缺少关键要求: {term}",
+                    f"{requirement['message']}: {term}",
                 )
             )
-
-    missing_boundary_terms = [term for term in GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_TERMS if term not in git_template_body]
-    for term in missing_boundary_terms:
-        diagnostics.append(
-            Diagnostic(
-                "error",
-                "GIT_COMMIT_ACTION_TEMPLATE_BOUNDARY_MISSING",
-                path,
-                f"Git 提交行动模板缺少边界声明: {term}",
-            )
-        )
-
-    return diagnostics
-
-
-def validate_workcase_action_template(root: Path = ROOT) -> list[Diagnostic]:
-    path = SHORT_SPEC_REFS["06"]
-    raw = (root / path).read_text(encoding="utf-8")
-    rows = parse_workcase_action_template(root)
-    diagnostics: list[Diagnostic] = []
-
-    if not rows:
-        return [
-            Diagnostic(
-                "error",
-                "WORKCASE_ACTION_TEMPLATE_MISSING",
-                path,
-                "06 缺少 WorkCase 最小行动模板结构表",
-            )
-        ]
-
-    rows_by_structure = {row["结构"]: row for row in rows}
-    for structure, terms in WORKCASE_ACTION_TEMPLATE_REQUIRED_ROWS.items():
-        row = rows_by_structure.get(structure)
-        if not row:
-            diagnostics.append(
-                Diagnostic(
-                    "error",
-                    "WORKCASE_ACTION_TEMPLATE_ROW_MISSING",
-                    path,
-                    f"WorkCase 最小行动模板缺少结构: {structure}",
-                )
-            )
-            continue
-        missing_terms = [term for term in terms if term not in row["最小要求"]]
-        for term in missing_terms:
-            diagnostics.append(
-                Diagnostic(
-                    "error",
-                    "WORKCASE_ACTION_TEMPLATE_TERM_MISSING",
-                    path,
-                    f"{structure} 缺少关键要求: {term}",
-                )
-            )
-
-    missing_boundary_terms = [term for term in WORKCASE_ACTION_TEMPLATE_BOUNDARY_TERMS if term not in raw]
-    for term in missing_boundary_terms:
-        diagnostics.append(
-            Diagnostic(
-                "error",
-                "WORKCASE_ACTION_TEMPLATE_BOUNDARY_MISSING",
-                path,
-                f"WorkCase 最小行动模板缺少边界声明: {term}",
-            )
-        )
 
     return diagnostics
 
@@ -3472,10 +3364,8 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     requirements = parse_ai_behavior_requirements(root)
     takeover_matrix = parse_takeover_matrix(root)
     foundation_spec_contracts = parse_foundation_spec_contracts(objects, root)
-    git_commit_action_template = parse_git_commit_action_template(root)
     ldvh_install_action_template = parse_ldvh_install_action_template(root)
     ldvh_install_spec_contract = parse_ldvh_install_spec_contract(root)
-    workcase_action_template = parse_workcase_action_template(root)
     workcase_member_contract = parse_workcase_member_contract(root)
     fact_model_member_contracts = parse_fact_model_member_contracts(root)
     fact_instances = parse_fact_instances(root)
@@ -3502,9 +3392,8 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
     diagnostics.extend(validate_governed_project_spec_boundaries(root))
     diagnostics.extend(validate_governed_projects_config(root))
     diagnostics.extend(validate_attachment_contracts(root))
-    diagnostics.extend(validate_git_commit_action_template(root))
+    diagnostics.extend(validate_action_template_foundation_rules(root))
     diagnostics.extend(validate_ldvh_install_action_template(root))
-    diagnostics.extend(validate_workcase_action_template(root))
     diagnostics.extend(validate_workcase_member_contract(root))
     diagnostics.extend(validate_fact_model_member_contracts(root))
     diagnostics.extend(validate_fact_instances(root))
@@ -3564,10 +3453,8 @@ def build_validation(root: Path = ROOT) -> dict[str, Any]:
         "ai_behavior_requirements": requirements,
         "takeover_matrix": takeover_matrix,
         "foundation_spec_contracts": foundation_spec_contracts,
-        "git_commit_action_template": git_commit_action_template,
         "ldvh_install_action_template": ldvh_install_action_template,
         "ldvh_install_spec_contract": ldvh_install_spec_contract,
-        "workcase_action_template": workcase_action_template,
         "workcase_member_contract": workcase_member_contract,
         "fact_model_member_contracts": fact_model_member_contracts,
         "fact_instances": [
@@ -4536,7 +4423,7 @@ def build_commit_gate(
         "source_refs": [
             {"path": SHORT_SPEC_REFS["03"], "role": "commit_traceability_rule"},
             {"path": COMMIT_MESSAGE_CONTRACT_PATH, "role": "commit_message_contract"},
-            {"path": SHORT_SPEC_REFS["06"], "role": "git_commit_action_template"},
+            {"path": SHORT_SPEC_REFS["06"], "role": "action_template_boundary"},
             {"path": SHORT_SPEC_REFS["09"], "role": "verification_boundary"},
             {"path": VERIFICATION_CLAIM_FIELDS_PATH, "role": "verification_claim_fields"},
             {"path": TAKEOVER_MATRIX_PATH, "role": "hook_takeover_mapping"},
