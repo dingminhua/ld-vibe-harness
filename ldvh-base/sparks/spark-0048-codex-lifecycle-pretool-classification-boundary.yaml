@@ -1,0 +1,74 @@
+id: spark-0048
+type: spark
+title: Codex lifecycle 验收与 PreToolUse 动作分类边界
+status: pending
+created: '2026-07-07T00:00:00+08:00'
+updated: '2026-07-07T00:00:00+08:00'
+description: |
+  本 Spark 记录一个 Codex 环境 Hook 验收缺口：当前问题不是单个命令误拦，而是 Codex lifecycle Hook 的验收标准、PreToolUse 动作分类和 read_plan 消费链路边界混在一起，导致真实环境验收不断退化为逐条补命令白名单。
+
+  当前已观察到的当次输出可以支持以下判断：
+  - Codex PreToolUse 已在真实环境中触发，并能阻断命令；
+  - 写入 smoke 命令被阻断，说明写入前阻断链路存在；
+  - `runtime_adapter.py session-start` 能产出 `status=ok`、`event=session_start`、`dispatch_status=ok`、`receipt_id` 和 `Diagnostics: none`。
+
+  但这些输出还不能支持以下声明：
+  - 不能声明 Codex `session_start` 已完成真实环境 integrated；
+  - 不能声明 Codex lifecycle Hook integrated；
+  - 不能把 runtime adapter 手动或探针输出等同于目标环境自动 SessionStart 触发依据；
+  - 不能把 PreToolUse 能阻断等同于 `SessionStart -> read_plan/receipt -> read_plan 消费 -> PreToolUse 正负例 -> Stop/completion` 同链路闭环。
+
+  真实 integrated 验收需要证明目标环境自然工作流中同一条 lifecycle 链成立：SessionStart 自动产生 read_plan/receipt；AI 对 read_plan 的消费依据能进入后续 PreToolUse；PreToolUse 对写入负例阻断、对满足条件的正例放行；Stop 或 completion 阶段能给出完成检查且不误阻断环境关闭。该判断只对当次目标环境、插件配置、payload、trust、LDVH root 和触发输出成立，不写成长期安装状态。
+
+  当前 PreToolUse 分类也暴露出设计缺口。只读 shell 链、session_start 查询、runtime session-start 探针和子 agent 审核等非文件写入动作曾被按写入前检查处理，因缺 read_plan 消费依据或 target 归口被误阻断。继续逐条补白名单不能解决根因；需要明确工具 / 动作分类原则：哪些动作可能产生文件写入、外部状态改变或完成声明风险，必须进入 PreToolUse 强制检查；哪些动作属于只读诊断、会话入口查询或协作审核，应允许执行并由主控 AI 对其过程输出作边界判断。
+
+  Human 验收职责也必须维持清晰边界：Human 不应手动运行技术探针来证明 integrated，也不负责判断 pass / fail；Human 只负责在目标环境中用自然语言触发真实工作流，并贴回目标环境原始输出或说明未看到输出。AI 负责本地技术探针、输出判读、问题归类、是否 integrated 的结论和后续分流。
+source: conversation
+source_detail: |
+  在 Codex lifecycle 验收过程中，Human 多次贴回真实环境输出：PreToolUse 阻断了写入 smoke，也误阻断了若干只读或协作类动作；runtime adapter session-start 探针能产出 receipt，但输出仍显示 adapter_integrated=false、environment_integrated=false。Human 追问为什么验收过程“兜兜转转”，并要求把待解决问题写清楚，便于询问其他 AI 是否同意当前判断。
+priority: P1
+input_refs:
+  - spark-0032
+  - spark-0033
+  - spark-0046
+  - specs/00-理念与构成.md
+  - specs/01-保障与衔接.md
+  - specs/02-AI行为规范.md
+  - specs/10-安装与配置规范.md
+  - specs/30-安装配置与验证行动模板.md
+  - code/docs/02-Environment-Plugin-Practice.md
+  - code/install_verification.py
+  - hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
+resolved_to: ''
+resolved_at: ''
+discard_reason: ''
+related_sparks:
+  - spark-0032
+  - spark-0033
+  - spark-0046
+related_workcases:
+  - workcase-0012
+related_adrs: []
+related_studies: []
+related_docs:
+  - specs/00-理念与构成.md
+  - specs/01-保障与衔接.md
+  - specs/02-AI行为规范.md
+  - specs/10-安装与配置规范.md
+  - specs/30-安装配置与验证行动模板.md
+  - code/docs/02-Environment-Plugin-Practice.md
+  - code/docs/03-LDVH-Install-Wizard-Practice.md
+  - code/install_verification.py
+  - hooks/environment-plugins/codex-ldvh-v3/hooks/hooks.json
+  - hooks/environment-plugins/codex-ldvh-v3/hooks/ldvh_runtime_shim.py
+evolution:
+  - at: '2026-07-07T00:00:00+08:00'
+    summary: |
+      新建 Spark，暂存 Codex lifecycle 验收与 PreToolUse 动作分类边界问题。当前临时结论是：Codex PreToolUse 真实触发并能阻断可以成立；runtime adapter session-start 能产出 receipt 可以成立；但 Codex session_start integrated 和 Codex lifecycle integrated 均不能成立。下一步不应继续让 Human 手动跑技术命令，而应先审计并设计 PreToolUse 工具 / 动作分类、read_plan 消费链路和自然语言验收卡边界。
+
+      待评审问题：
+      1. 是否同意当前问题定义不是单个 hook bug，而是验收标准、动作分类和 read_plan 链路边界混杂？
+      2. 是否同意当前不能声明 Codex lifecycle integrated？
+      3. 是否同意优先修 PreToolUse 的工具 / 动作分类，而不是继续补单个命令白名单？
+      4. 子 agent 审核、review、只读协作等工具应归为只读协作、外部过程输出，还是需要独立 Gate？
+      5. integrated 验收标准是否还缺 payload、trust、rollback、Stop/completion 或同 session receipt cache 等关键条件？
