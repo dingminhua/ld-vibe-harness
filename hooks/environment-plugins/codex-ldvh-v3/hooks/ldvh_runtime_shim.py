@@ -58,6 +58,9 @@ READ_ONLY_GIT_SUBCOMMANDS = {
     "status",
 }
 READ_ONLY_SHELL_PIPE_COMMANDS = READ_ONLY_COMMANDS | {"xargs"}
+READ_ONLY_PYTHON_SCRIPTS = {
+    "code/session_start.py",
+}
 
 
 def read_payload(raw: str) -> dict[str, Any]:
@@ -253,6 +256,13 @@ def is_likely_read_only_command_segment(command: str) -> bool:
         return False
     if executable == "git":
         return len(parts) > 1 and parts[1].lower() in READ_ONLY_GIT_SUBCOMMANDS
+    if executable in {"python", "python3"} and len(parts) > 1:
+        script = parts[1].strip()
+        normalized_script = script.replace("\\", "/")
+        return any(
+            normalized_script == allowed or normalized_script.endswith("/" + allowed)
+            for allowed in READ_ONLY_PYTHON_SCRIPTS
+        )
     return executable in READ_ONLY_SHELL_PIPE_COMMANDS
 
 

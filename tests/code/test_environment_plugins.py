@@ -253,6 +253,27 @@ def test_codex_sample_shim_allows_read_only_exec_command_and_chain_without_ackno
         assert completed.stdout == ""
 
 
+def test_codex_sample_shim_allows_session_start_probe_command_without_acknowledgement() -> None:
+    completed = _run_shim(
+        {
+            "hook_event_name": "PreToolUse",
+            "sessionId": "shim-pretool-session-start-probe",
+            "cwd": ROOT.as_posix(),
+            "toolName": "functions.exec_command",
+            "arguments": {
+                "cmd": (
+                    "python3 code/session_start.py --task "
+                    "\"请在当前 ld-vibe-harness-v3 项目中触发 LDVH 会话入口检查；不要写文件，只把你看到的 LDVH read plan、session_start、receipt 或 lifecycle 输出原样告诉我。\" "
+                    f"--target-path \"{ROOT.as_posix()}\""
+                )
+            },
+        },
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == ""
+
+
 def test_codex_sample_shim_does_not_allow_mixed_read_write_and_chain_without_acknowledgement() -> None:
     completed = _run_shim(
         {
